@@ -146,7 +146,7 @@ static struct {
 
 #ifdef CONFIG_SMP
 
-#define rt_request_sched_ipi()  rt_request_irq(SCHED_IPI, rt_schedule_on_schedule_ipi, NULL, 1)
+#define rt_request_sched_ipi()  rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0)
 
 #define rt_free_sched_ipi()     rt_release_irq(SCHED_IPI)
 
@@ -670,7 +670,7 @@ static void lxrt_context_switch(struct task_struct *prev, struct task_struct *ne
 }
 
 #ifdef CONFIG_SMP
-static int rt_schedule_on_schedule_ipi(void)
+static void rt_schedule_on_schedule_ipi(void)
 {
 	RT_TASK *rt_current, *task, *new_task;
 	int cpuid, prio, preempt;
@@ -744,7 +744,6 @@ static int rt_schedule_on_schedule_ipi(void)
 	}
 sched_exit:
 	rtai_cli();
-	return 0;
 }
 #endif
 
@@ -1014,7 +1013,7 @@ int rt_get_timer_cpu(void)
 }
 
 
-static int rt_timer_handler(void)
+static void rt_timer_handler(void)
 {
 	RT_TASK *rt_current, *task, *new_task;
 	int cpuid, prio, preempt;
@@ -1121,7 +1120,6 @@ static int rt_timer_handler(void)
         }
 sched_exit:
 	rtai_cli();
-	return 0;
 }
 
 

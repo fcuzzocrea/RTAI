@@ -329,6 +329,11 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes)
 	kfree(chunk);
 }
 
+static inline int xnarch_shadow_p (xnarchtcb_t *tcb, struct task_struct *task)
+{
+    return tcb->espp == &task->thread.esp; /* Sign of shadow... */
+}
+
 #define xnarch_declare_cpuid  adeos_declare_cpuid
 #define xnarch_get_cpu(flags) adeos_get_cpu(flags)
 #define xnarch_put_cpu(flags) adeos_put_cpu(flags)
@@ -524,6 +529,35 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	}
 
     __switch_threads(out_tcb,in_tcb,outproc,inproc);
+
+    if (xnarch_shadow_p(out_tcb,outproc)) {
+
+	/* Eagerly reinstate the I/O bitmap of any incoming shadow
+	   thread which has previously requested I/O permissions. We
+	   don't want the unexpected latencies induced by lazy update
+	   from the GPF handler to bite shadow threads that
+	   explicitely told the kernel that they would need to perform
+	   raw I/O ops. */
+
+	struct thread_struct *thread = &outproc->thread;
+
+	if (thread->io_bitmap_ptr) {
+	    struct tss_struct *tss = &per_cpu(init_tss, adeos_processor_id());
+
+	    if (tss->io_bitmap_base == INVALID_IO_BITMAP_OFFSET_LAZY) {
+		
+		memcpy(tss->io_bitmap, thread->io_bitmap_ptr,thread->io_bitmap_max);
+
+		if (thread->io_bitmap_max < tss->io_bitmap_max)
+		    memset((char *) tss->io_bitmap +
+			   thread->io_bitmap_max, 0xff,
+			   tss->io_bitmap_max - thread->io_bitmap_max);
+
+		tss->io_bitmap_max = thread->io_bitmap_max;
+		tss->io_bitmap_base = IO_BITMAP_OFFSET;
+	    }
+	}
+    }
 
     stts();
 }

@@ -1,4 +1,9 @@
-2005-02-23  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-03-30  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/devices/mbx_receive_if: Corrected problem with remote
+	IP number
+
+2005-03-23  Roberto Bucher  <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI: Modified text in some blocks
 

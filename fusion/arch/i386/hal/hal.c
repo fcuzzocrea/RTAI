@@ -308,10 +308,8 @@ void rthal_release_timer (void)
 {
     unsigned long flags;
 
-#if 0
     rthal_release_linux_irq(RTHAL_8254_IRQ,
 			    &rthal_broadcast_to_local_timers);
-#endif
 
     flags = rthal_critical_enter(&rthal_critical_sync);
 

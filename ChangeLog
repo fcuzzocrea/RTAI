@@ -1,3 +1,14 @@
+2004-31-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/include/asm/rtai_wrappers.h: added macros to support 
+	Linux cpumask_t, without changing RTAI API.
+
+        * rtai-core/arch/i386/hal/hal.c: adapted to use Linux cpumask_t
+	without without changing RTAI API.
+
+        * rtai-core/sched/rtai/sched_lxrt.c-sched_mup.c-sched_smp.c: adapted
+	to use Linux cpumask_t.
+
 2004-08-30  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: rtai-3.1 test #5

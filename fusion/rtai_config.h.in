@@ -28,6 +28,9 @@
 #undef CONFIG_RTAI_HW_SMI_BIOS
 
 /* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_DETECT
+
+/* Kconfig */
 #undef CONFIG_RTAI_HW_SMI_INTEL_USB2
 
 /* Kconfig */

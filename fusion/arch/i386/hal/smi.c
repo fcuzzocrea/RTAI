@@ -30,28 +30,6 @@
 
 #include <smi.h>
 
-#define DEVFN        0xf8 /* device 31, function 0 */
-
-#define PMBASE_B0    0x40
-#define PMBASE_B1    0x41
-
-#define SMI_CTRL_ADDR    0x30
-#define SMI_STATUS_ADDR  0x34
-#define SMI_MON_ADDR     0x40
-
-/* SMI_EN register: ICH[0](16 bits), ICH[2-5](32 bits) */
-#define INTEL_USB2_EN_BIT   (0x01 << 18) /* ICH4, ... */
-#define LEGACY_USB2_EN_BIT  (0x01 << 17) /* ICH4, ... */
-#define PERIODIC_EN_BIT     (0x01 << 14) /* called 1MIN_ in ICH0 */
-#define TCO_EN_BIT          (0x01 << 13)
-#define MCSMI_EN_BIT        (0x01 << 11)
-#define SWSMI_TMR_EN_BIT    (0x01 << 6)
-#define APMC_EN_BIT         (0x01 << 5)
-#define SLP_EN_BIT          (0x01 << 4)
-#define LEGACY_USB_EN_BIT   (0x01 << 3)
-#define BIOS_EN_BIT         (0x01 << 2)
-#define GBL_SMI_EN_BIT      (0x01) /* This is reset by a PCI reset event! */
-
 static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0, PCI_ANY_ID, PCI_ANY_ID, },
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_0, PCI_ANY_ID, PCI_ANY_ID, },
@@ -88,6 +66,30 @@ pci.ids database, ICH5-M ?)
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_2, PCI_ANY_ID, PCI_ANY_ID, },
 
 */
+
+#ifdef CONFIG_RTAI_HW_SMI_WORKAROUND
+    
+#define DEVFN        0xf8 /* device 31, function 0 */
+
+#define PMBASE_B0    0x40
+#define PMBASE_B1    0x41
+
+#define SMI_CTRL_ADDR    0x30
+#define SMI_STATUS_ADDR  0x34
+#define SMI_MON_ADDR     0x40
+
+/* SMI_EN register: ICH[0](16 bits), ICH[2-5](32 bits) */
+#define INTEL_USB2_EN_BIT   (0x01 << 18) /* ICH4, ... */
+#define LEGACY_USB2_EN_BIT  (0x01 << 17) /* ICH4, ... */
+#define PERIODIC_EN_BIT     (0x01 << 14) /* called 1MIN_ in ICH0 */
+#define TCO_EN_BIT          (0x01 << 13)
+#define MCSMI_EN_BIT        (0x01 << 11)
+#define SWSMI_TMR_EN_BIT    (0x01 << 6)
+#define APMC_EN_BIT         (0x01 << 5)
+#define SLP_EN_BIT          (0x01 << 4)
+#define LEGACY_USB_EN_BIT   (0x01 << 3)
+#define BIOS_EN_BIT         (0x01 << 2)
+#define GBL_SMI_EN_BIT      (0x01) /* This is reset by a PCI reset event! */
 
 static const unsigned rthal_smi_masked_bits =
 #ifdef CONFIG_RTAI_HW_SMI_ALL
@@ -162,6 +164,8 @@ static unsigned short __devinit get_smi_en_addr(struct pci_dev *dev)
     return SMI_CTRL_ADDR + (((byte1 << 1) | (byte0 >> 7)) << 7); // bits 7-15
 }
 
+#endif /* CONFIG_RTAI_HW_SMI_WORKAROUND */
+
 void __devinit rthal_smi_init(void)
 {
     struct pci_dev *dev = NULL;
@@ -175,14 +179,19 @@ void __devinit rthal_smi_init(void)
         dev = pci_find_device(id->vendor, id->device, NULL);
     
     if(dev == NULL || dev->bus->number || dev->devfn != DEVFN)
-        {
-        printk("RTAI[hal]: No Intel chipset found, "
-               "SMI workaround not enabled.\n");
         return ;
-        }
+
+#if CONFIG_RTAI_HW_SMI_WORKAROUND
 
     printk("RTAI[hal]: Intel chipset found, enabling SMI workaround.\n");
     rthal_smi_en_addr = get_smi_en_addr(dev);
+
+#else /* ! CONFIG_RTAI_HW_SMI_WORKAROUND */
+
+    printk("RTAI[hal]: Intel chipset found and SMI workaround not enabled,"
+           " you may encounter high interrupt latencies.\n");
+
+#endif /* ! CONFIG_RTAI_HW_SMI_WORKAROUND */    
 }
 
 /*

@@ -56,6 +56,33 @@ void __cond_pkg_cleanup (void)
 {
 }
 
+/**
+ * @fn int rt_cond_create(RT_COND *cond,
+                          const char *name)
+ * @brief Create a condition variable.
+ *
+ * Create a synchronization object that allows tasks to suspend
+ * execution until some predicate on shared data is satisfied.
+ *
+ * @param cond The address of a condition variable descriptor RTAI
+ * will use to store the variable-related data.  This descriptor must
+ * always be valid while the variable is active therefore it must be
+ * allocated in permanent memory.
+ *
+ * @param name An ASCII string standing for the symbolic name of the
+ * condition variable. When non-NULL and non-empty, this string is
+ * copied to a safe place into the descriptor, and passed to the
+ * registry package if enabled for indexing the created variable.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EEXIST is returned if the @a name is already in use by some
+ * registered object.
+ *
+ * Context: This routine can be called on behalf of a task or from the
+ * initialization code.
+ */
+
 int rt_cond_create (RT_COND *cond,
 		    const char *name)
 {
@@ -63,7 +90,7 @@ int rt_cond_create (RT_COND *cond,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    xnsynch_init(&cond->synch_base,XNSYNCH_PRIO|XNSYNCH_PIP);
+    xnsynch_init(&cond->synch_base,XNSYNCH_PRIO);
     cond->handle = 0;  /* i.e. (still) unregistered cond. */
     cond->magic = RTAI_COND_MAGIC;
     xnobject_copy_name(cond->name,name);
@@ -84,6 +111,33 @@ int rt_cond_create (RT_COND *cond,
 
     return err;
 }
+
+/**
+ * @fn int rt_cond_delete(RT_COND *cond)
+ * @brief Delete a condition variable.
+ *
+ * Destroy a condition variable and release all the tasks currently
+ * pending on it.  A condition variable exists in the system since
+ * rt_cond_create() has been called to create it, so this service must
+ * be called in order to destroy it afterwards.
+ *
+ * @param cond The descriptor address of the affected condition
+ * variable.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a cond is not a condition variable
+ * descriptor.
+ *
+ * - -EIDRM is returned if @a cond is a deleted condition variable
+ * descriptor.
+ *
+ * Side-effect: This routine calls the rescheduling procedure if tasks
+ * have been woken up as a result of the deletion.
+ *
+ * Context: This routine can always be called on behalf of a task, or
+ * from the initialization code.
+ */
 
 int rt_cond_delete (RT_COND *cond)
 
@@ -124,6 +178,31 @@ int rt_cond_delete (RT_COND *cond)
     return err;
 }
 
+/**
+ * @fn int rt_cond_signal(RT_COND *cond)
+ * @brief Signal a condition variable.
+ *
+ * If the condition variable is pended, the first waiting task (by
+ * queuing priority order) is immediately unblocked.
+ *
+ * @param cond The descriptor address of the affected condition
+ * variable.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a cond is not a condition variable
+ * descriptor.
+ *
+ * - -EIDRM is returned if @a cond is a deleted condition variable
+ * descriptor.
+ *
+ * Side-effect: This routine calls the rescheduling procedure if a
+ * task is woken up as a result of the operation.
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ */
+
 int rt_cond_signal (RT_COND *cond)
 
 {
@@ -153,6 +232,31 @@ int rt_cond_signal (RT_COND *cond)
     return err;
 }
 
+/**
+ * @fn int rt_cond_broadcast(RT_COND *cond)
+ * @brief Broadcast a condition variable.
+ *
+ * If the condition variable is pended, all tasks currently waiting on
+ * it are immediately unblocked.
+ *
+ * @param cond The descriptor address of the affected condition
+ * variable.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a cond is not a condition variable
+ * descriptor.
+ *
+ * - -EIDRM is returned if @a cond is a deleted condition variable
+ * descriptor.
+ *
+ * Side-effect: This routine calls the rescheduling procedure if one
+ * or more tasks are woken up as a result of the operation.
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ */
+
 int rt_cond_broadcast (RT_COND *cond)
 
 {
@@ -178,6 +282,54 @@ int rt_cond_broadcast (RT_COND *cond)
 
     return err;
 }
+
+/**
+ * @fn int rt_cond_wait(RT_COND *cond,
+ *                      RT_MUTEX *mutex,
+ *                      RTIME timeout)
+ * @brief Wait on a condition.
+ *
+ * This service atomically release the mutex and causes the calling
+ * task to block on the specified condition variable. The caller will
+ * be unblocked when the variable is signaled, and the mutex
+ * re-acquired before returning from this service.
+
+ * Tasks pend on condition variables by priority order.
+ *
+ * @param cond The descriptor address of the affected condition
+ * variable.
+ *
+ * @param mutex The descriptor address of the mutex protecting the
+ * condition variable.
+ *
+ * @param timeout The number of clock ticks to wait for the condition
+ * variable to be signaled (see note). Passing RT_TIME_INFINITE causes
+ * the caller to block indefinitely until the condition variable is
+ * signaled.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a mutex is not a mutex descriptor, or @a
+ * cond is not a condition variable descriptor.
+ *
+ * - -EIDRM is returned if @a mutex or @a cond is a deleted object
+ * descriptor, including if the deletion occurred while the caller was
+ * sleeping on the variable.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before the condition variable has been signaled.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout equals RT_TIME_NONBLOCK.
+ *
+ * Side-effect: This routine always calls the rescheduling procedure.
+ *
+ * Context: This routine must be called on behalf of a task.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
+ */
 
 int rt_cond_wait (RT_COND *cond,
 		  RT_MUTEX *mutex,
@@ -224,6 +376,32 @@ int rt_cond_wait (RT_COND *cond,
 
     return err;
 }
+
+/**
+ * @fn int rt_cond_inquire(RT_MUTEX *cond, RT_COND_INFO *info)
+ * @brief Inquire about a condition variable.
+ *
+ * Return various information about the status of a given condition
+ * variable.
+ *
+ * @param cond The descriptor address of the inquired condition
+ * variable.
+ *
+ * @param info The address of a structure the condition variable
+ * information will be written to.
+
+ * @return 0 is returned and status information is written to the
+ * structure pointed at by @a info upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a cond is not a condition variable
+ * descriptor.
+ *
+ * - -EIDRM is returned if @a cond is a deleted condition variable
+ * descriptor.
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ */
 
 int rt_cond_inquire (RT_COND *cond,
 		     RT_COND_INFO *info)

@@ -249,7 +249,14 @@ do { \
 #define xnarch_alloc_stack xnmalloc
 #define xnarch_free_stack  xnfree
 
-int xnarch_setimask(int imask);
+static inline int xnarch_setimask (int imask)
+
+{
+    spl_t s;
+    splhigh(s);
+    splexit(!!imask);
+    return !!s;
+}
 
 #ifdef XENO_INTR_MODULE
 
@@ -555,15 +562,6 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb) {
 }
 
 #endif /* CONFIG_RTAI_HW_FPU */
-
-int xnarch_setimask (int imask)
-
-{
-    spl_t s;
-    splhigh(s);
-    splexit(!!imask);
-    return !!s;
-}
 
 void xnarch_sleep_on (int *flagp) {
 

@@ -306,5 +306,8 @@ void __xeno_main_exit (void)
 #endif /* __KERNEL__ */
 }
 
+EXPORT_SYMBOL(xnmod_glink_queue);
+EXPORT_SYMBOL(xnmod_alloc_glinks);
+
 module_init(__xeno_main_init);
 module_exit(__xeno_main_exit);

@@ -1,5 +1,7 @@
 2004-06-29  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/cond.c: Add Doxygen documentation of services.
+
 	* include/nucleus/asm-i386/system.h (xnarch_setimask): Inline it.
 
 	* nucleus/module.c: Export missing symbols.

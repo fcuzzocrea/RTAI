@@ -19,3 +19,5 @@ install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(includedir)
 	rm -f $(DESTDIR)$(includedir)/../asm
 	$(LN_S) asm-i386 $(DESTDIR)$(includedir)/../asm
+
+EXTRA_DIST = rtai_hal.piped rtai_hal.immed

@@ -1221,14 +1221,27 @@ int rt_task_notify (RT_TASK *task,
  * operating conditions; the rt_task_set_mode() service allows to
  * alter three of them, respectively controlling:
  *
+ * - whether the task locks the rescheduling procedure.
  * - whether the task undergoes a round-robin scheduling;
  * - whether the task blocks the delivery of signals;
- * - whether the task locks the rescheduling procedure.
  *
  * To this end, rt_task_set_mode() takes a bitmask of mode bits to
  * clear for disabling the corresponding modes, and another one to set
  * for enabling them. The mode bits which were previously in effect
  * can be returned upon request.
+ *
+ * The following bits can be part of the bitmask:
+ *
+ * - T_LOCK causes the current task to lock the scheduler. Clearing
+ * this bit unlocks the scheduler.
+ *
+ * - T_RRB causes the current task to be marked as undergoing the
+ * round-robin scheduling policy. If the task is already undergoing
+ * the round-robin scheduling policy at the time this service is
+ * called, the time quantum remains unchanged.
+ *
+ * - T_NOSIG disables the asynchronous signal delivery for the current
+ * task.
  *
  * Normally, this service can only be called on behalf of a regular
  * real-time task, either running in kernel or user-space. However, as
@@ -1239,7 +1252,8 @@ int rt_task_notify (RT_TASK *task,
  * scheduler lock until the outer interrupt handler has returned.
  *
  * @param clrmask A bitmask of mode bits to clear for the current
- * task. 0 is an acceptable value which leads to a no-op.
+ * task, before @a setmask is applied. 0 is an acceptable value which
+ * leads to a no-op.
  *
  * @param setmask A bitmask of mode bits to set for the current
  * task. 0 is an acceptable value which leads to a no-op.
@@ -1259,7 +1273,8 @@ int rt_task_notify (RT_TASK *task,
  * - Kernel-based task
  * - User-space task
  *
- * Rescheduling: never.
+ * Rescheduling: possible, if T_LOCK has been passed into @a clrmask
+ * and the calling context is a task.
  */
 
 int rt_task_set_mode (int clrmask,
@@ -1279,6 +1294,8 @@ int rt_task_set_mode (int clrmask,
 	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 	}
 
+    /* FIXME: RR quantum? */
+
     if (((clrmask|setmask) & ~(T_LOCK|T_RRB|T_NOSIG)) != 0)
 	return -EINVAL;
 
@@ -1287,6 +1304,10 @@ int rt_task_set_mode (int clrmask,
 				 setmask);
     if (oldmode)
 	*oldmode = mode;
+
+    if ((clrmask & ~setmask) & T_LOCK)
+	/* Reschedule if the scheduler has been unlocked. */
+	xnpod_schedule();
 
     return 0;
 }

@@ -125,6 +125,7 @@ void xntimer_init (xntimer_t *timer,
     timer->interval = 0;
     timer->date = XN_INFINITE;
     timer->shot = XN_INFINITE;
+    timer->prio = XNTIMER_STDPRIO;
 
     xnarch_init_display_context(timer);
 }
@@ -192,7 +193,9 @@ static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
        the increased flexibility... */
 
     for (p = q->head.last; p != &q->head; p = p->last)
-	if (timer->date >= link2timer(p)->date)
+	if (timer->date > link2timer(p)->date ||
+	    (timer->date == link2timer(p)->date &&
+	     timer->prio <= link2timer(p)->prio))
 	    break;
 	
     insertq(q,p->next,&timer->link);

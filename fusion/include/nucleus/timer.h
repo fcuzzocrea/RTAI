@@ -71,6 +71,10 @@
 #define XNTIMER_SPARE6  0x40000000
 #define XNTIMER_SPARE7  0x80000000
 
+#define XNTIMER_LOPRIO  (-999999999)
+#define XNTIMER_STDPRIO 0
+#define XNTIMER_HIPRIO  999999999
+
 typedef struct xntimer {
 
     xnholder_t link;
@@ -78,17 +82,19 @@ typedef struct xntimer {
 #define link2timer(laddr) \
 ((xntimer_t *)(((char *)laddr) - (int)(&((xntimer_t *)0)->link)))
 
-    xnflags_t status;
+    xnflags_t status;		/* !< Timer status. */
 
-    xnticks_t date;		/* Absolute timeout date (in ticks) */
+    xnticks_t date;		/* !< Absolute timeout date (in ticks). */
 
-    xnticks_t shot;		/* Anticipated shot time (in ticks) */
+    xnticks_t shot;		/* !< Anticipated shot time (in ticks). */
 
-    xnticks_t interval;		/* Periodic interval (in ticks, 0 == one shot) */
+    xnticks_t interval;		/* !< Periodic interval (in ticks, 0 == one shot). */
 
-    void (*handler)(void *cookie); /* Timeout handler */
+    int prio;			/* !< Internal priority. */
 
-    void *cookie;	/* Cookie to pass to the timeout handler */
+    void (*handler)(void *cookie); /* !< Timeout handler. */
+
+    void *cookie;	/* !< Cookie to pass to the timeout handler. */
 
     XNARCH_DECL_DISPLAY_CONTEXT();
 
@@ -97,6 +103,7 @@ typedef struct xntimer {
 #define xntimer_date(t)           ((t)->date)
 #define xntimer_interval(t)       ((t)->interval)
 #define xntimer_set_cookie(t,c)   ((t)->cookie = (c))
+#define xntimer_set_priority(t,p) ((t)->prio = (p))
 
 static inline int xntimer_active_p (xntimer_t *timer) {
     return !testbits(timer->status,XNTIMER_DEQUEUED);

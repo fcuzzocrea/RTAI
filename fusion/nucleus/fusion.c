@@ -89,7 +89,7 @@ static int __pthread_shadow_helper (struct task_struct *curr,
 
     if (xnpod_init_thread(thread,
 			  name,
-			  curr->policy == SCHED_FIFO ? curr->rt_priority : FUSION_LOW_PRI,
+			  curr->policy == SCHED_FIFO ? curr->rt_priority : FUSION_LOW_PRIO,
 			  XNFPU|XNSHADOW,
 			  0) != 0)
 	{
@@ -536,7 +536,7 @@ int xnfusion_attach (void)
 	return 0;
 	}
 
-    if (xnpod_init(&__fusion_pod,FUSION_LOW_PRI,FUSION_HIGH_PRI,0) != 0)
+    if (xnpod_init(&__fusion_pod,FUSION_LOW_PRIO,FUSION_HIGH_PRIO,0) != 0)
 	return -ENOSYS;
 
     __fusion_pod.svctable.unload = &xnfusion_unload_hook;

@@ -48,8 +48,8 @@
 
 #define FUSION_SKIN_MAGIC    0x504f5358
 
-#define FUSION_LOW_PRI       1	/* We (must) conform to the POSIX standard */
-#define FUSION_HIGH_PRI      99	/* RT priority range used by Linux. */
+#define FUSION_LOW_PRIO     1	 /* We (must) conform to the POSIX standard */
+#define FUSION_HIGH_PRIO    99 /* RT priority range used by Linux. */
 
 #ifndef __RTAI_SIM__
 

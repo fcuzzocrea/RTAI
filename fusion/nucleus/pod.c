@@ -286,6 +286,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
        postponed to xnintr_irq_handler(), as part of the interrupt
        exit code. */
     xntimer_init(&pod->htimer,NULL,NULL);
+    xntimer_set_priority(&pod->htimer,XNTIMER_LOPRIO);
 
     xnarch_atomic_set(&pod->schedlck,0);
     pod->minpri = minpri;
@@ -1741,8 +1742,8 @@ unlock_and_exit:
  * nucleus already provides a built-in round-robin mode though (see
  * xnpod_activate_rr()).
  *
- * @param prio The priority level to rotate. if XNPOD_RUNPRI is given,
- * the running thread priority is used to rotate the queue.
+ * @param prio The priority level to rotate. if XNPOD_RUNPRIO is
+ * given, the running thread priority is used to rotate the queue.
  *
  * The priority level which is considered is always the base priority
  * of a thread, not the possibly PIP-boosted current priority
@@ -1778,7 +1779,7 @@ void xnpod_rotate_readyq (int prio)
     /* There is _always_ a regular thread, ultimately the root
        one. Use the base priority, not the priority boost. */
 
-    if (prio == XNPOD_RUNPRI ||
+    if (prio == XNPOD_RUNPRIO ||
         prio == xnthread_base_priority(sched->runthread))
         xnpod_resume_thread(sched->runthread,0);
     else

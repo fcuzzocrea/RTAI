@@ -60,7 +60,7 @@ static u_long rn0_size_arg = 32 * 1024; /* Default size of region #0 */
 MODULE_PARM(rn0_size_arg,"i");
 MODULE_PARM_DESC(rn0_size_arg,"Size of pSOS+ region #0 (in bytes)");
 
-static u_long tick_hz_arg = 1000; /* Default tick period */
+static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK; /* Default tick period */
 MODULE_PARM(tick_hz_arg,"i");
 MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
 
@@ -105,8 +105,6 @@ int __xeno_skin_init (void)
 
     if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
 	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
-
-    xnprintf("timer: %lu ns.\n", nstick);
 
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 

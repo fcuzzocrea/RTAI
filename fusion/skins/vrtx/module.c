@@ -63,7 +63,7 @@ static u_long workspace_size_arg = 32 * 1024; /* Default size of VRTX workspace 
 MODULE_PARM(workspace_size_arg,"i");
 MODULE_PARM_DESC(workspace_size_arg,"Size of VRTX workspace (in bytes)");
 
-static u_long tick_hz_arg = 100; /* Default tick period */
+static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK; /* Default tick period */
 MODULE_PARM(tick_hz_arg,"i");
 MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
 

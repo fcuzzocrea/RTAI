@@ -53,7 +53,7 @@ MODULE_DESCRIPTION("XENOMAI-based uITRON API");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
-static u_long tick_hz_arg = 100; /* Default tick period */
+static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK; /* Default tick period */
 MODULE_PARM(tick_hz_arg,"i");
 MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
 

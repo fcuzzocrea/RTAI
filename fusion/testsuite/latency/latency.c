@@ -120,6 +120,7 @@ int main (int argc, char **argv)
     int err;
 
     signal(SIGINT, cleanup_upon_sig);
+    signal(SIGTERM, cleanup_upon_sig);
     
     err = rt_task_create(&display_task,"display",0,2,0);
 

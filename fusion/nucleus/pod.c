@@ -1156,6 +1156,17 @@ void xnpod_suspend_thread (xnthread_t *thread,
 
     if (!testbits(thread->status,XNTHREAD_BLOCK_BITS))
         {
+#ifdef __KERNEL__
+	/* If attempting to suspend a runnable (shadow) thread which
+	   has received a Linux signal, just raise the break condition
+	   and return immediately. */
+	if (testbits(thread->status,XNKICKED))
+	    {
+	    __setbits(thread->status,XNBREAK);
+	    goto unlock_and_exit;
+	    }
+#endif /* __KERNEL__ */
+
         /* A newly created thread is not linked to the ready thread
            queue yet. */
 

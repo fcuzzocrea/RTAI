@@ -1,3 +1,16 @@
+2004-11-26  Michael Neuhauser <mike@firmix.at>
+
+        * rtai-core/sched/rtai/sys_lxrt.c: fixed copying more than needed 
+	to get the arguments of an LXRT syscall.
+
+2004-11-26  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/ipc/shm/shm.c: added missing #else macro in module
+	initialization condition check for using VMALLOC.
+
+        * rtai-core/malloc/malloc.c: added forgotten assignement of
+	rtai_global_heap_adr.
+
 2004-11-25  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Upgrade to 2.6/hal8.

@@ -1,3 +1,9 @@
+2004-03-22  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/headers-with_magic_numbers: changed definition of all 
+	  magic numbers, now defined by using nam2num. All of them taken away
+	  from modules coding and put in the related header.
+
 2004-03-22  Michael Neuhauser  <mike@firmix.at>
 
 	* base/scripts/mode-control: new script to change and check the

@@ -49,7 +49,7 @@
  */
 
 /*!
- * \ingroup xenomai
+ * \ingroup nucleus
  * \defgroup intr Interrupt management.
  *
  * Interrupt management.

@@ -49,7 +49,7 @@
  */
 
 /*!
- * \ingroup xenomai
+ * \ingroup nucleus
  * \defgroup heap Dynamic memory allocation services.
  *
  * Dynamic memory allocation services.

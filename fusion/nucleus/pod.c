@@ -49,14 +49,7 @@
  */
 
 /*!
- * \defgroup xenomai Xenomai nucleus.
- *
- * A RTOS abstraction layer.
- *
- */
-
-/*!
- * \ingroup xenomai
+ * \ingroup nucleus
  * \defgroup pod Real-time pod services.
  *
  * Real-time pod services.

@@ -49,7 +49,7 @@
  */
 
 /*!
- * \ingroup xenomai
+ * \ingroup nucleus
  * \defgroup synch Thread synchronization services.
  *
  * Thread synchronization services.

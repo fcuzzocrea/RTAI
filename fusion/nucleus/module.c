@@ -43,6 +43,13 @@
  * notice.
  */
 
+/*!
+ * \defgroup nucleus Xenomai nucleus.
+ *
+ * A RTOS abstraction layer.
+ *
+ */
+
 #define XENO_MAIN_MODULE
 
 #include <nucleus/module.h>

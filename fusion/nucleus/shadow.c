@@ -50,7 +50,7 @@
  */
 
 /*!
- * \ingroup xenomai
+ * \ingroup nucleus
  * \defgroup shadow Real-time shadow services.
  *
  * Real-time shadow services.

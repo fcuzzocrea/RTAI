@@ -1,5 +1,7 @@
 2005-01-13  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/heap.c (rt_heap_alloc): Fix shared memory case.
+
 	* skins/rtai: Export the registry contents through the /proc
 	interface.
 

@@ -500,7 +500,7 @@ int rt_heap_alloc (RT_HEAP *heap,
 		}
 
 	    block = heap->shm_block = xnheap_alloc(&heap->heap_base,
-						   xnheap_size(&heap->heap_base));
+						   xnheap_max_contiguous(&heap->heap_base));
 	    }
 
 	if (block)

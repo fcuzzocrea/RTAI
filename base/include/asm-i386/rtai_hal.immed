@@ -305,20 +305,13 @@ do { \
         apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
 } while (0)
 
-#if 1
 #ifdef CONFIG_PREEMPT
-#define rt_spin_lock(lock)    _raw_spin_lock(lock)
-#define rt_spin_unlock(lock)  _raw_spin_unlock(lock)
+#define rt_spin_lock(lock)    do { barrier(); _raw_spin_lock(lock); barrier(); } while (0)
+#define rt_spin_unlock(lock)  do { barrier(); _raw_spin_unlock(lock); barrier(); } while (0)
 #else /* !CONFIG_PREEMPT */
 #define rt_spin_lock(lock)    spin_lock(lock)
 #define rt_spin_unlock(lock)  spin_unlock(lock)
 #endif /* CONFIG_PREEMPT */
-#else
-#define rt_spin_lock(lock) \
-	do { barrier(); while (test_and_set_bit(0, (void *)&lock)) cpu_relax(); barrier(); } while (0)
-#define rt_spin_unlock(lock) \
-	do { barrier(); test_and_clear_bit(0, (void *)&lock); cpu_relax(); barrier(); } while (0)
-#endif
 
 static inline void rt_spin_lock_hw_irq(spinlock_t *lock)
 {
@@ -384,19 +377,14 @@ static inline void rt_get_global_lock(void)
 	barrier();
 }
 
-#include <asm/atomic.h>
 static inline void rt_release_global_lock(void)
 {
 	barrier();
 	rtai_cli();
-#if 1
-	atomic_clear_mask((0xFFFF0001 << adeos_processor_id()), (atomic_t *)&rtai_cpu_lock);
-#else
 	if (test_and_clear_bit(adeos_processor_id(), &rtai_cpu_lock)) {
 		test_and_clear_bit(31, &rtai_cpu_lock);
 		cpu_relax();
 	}
-#endif
 	barrier();
 }
 

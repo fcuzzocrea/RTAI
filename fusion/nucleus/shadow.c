@@ -1634,12 +1634,12 @@ static void linux_kick_process (adevinfo_t *evinfo)
 	}
 
     /* If we are kicking a shadow thread, make sure Linux won't
-       schedule in its mate under our feet as a result of performing
+       schedule in its mate under our feet as a result of running
        signal_wake_up(). The RTAI scheduler must remain in control for
-       now, until we explicitely relax the shadow thread to allow
+       now, until we explicitely relax the shadow thread to allow for
        processing the pending signals. Make sure we keep the
-       additional state flags unmodified so that we don't break
-       ptracing. */
+       additional state flags unmodified so that we don't break any
+       undergoing ptrace. */
 
     if (task->state & TASK_INTERRUPTIBLE)
 	set_task_state(task,(task->state&~TASK_INTERRUPTIBLE)|TASK_UNINTERRUPTIBLE);

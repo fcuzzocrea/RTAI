@@ -684,7 +684,8 @@ void xnshadow_sync_post (pid_t syncpid, int *u_syncp, int err)
 static int xnshadow_sync_wait (int *u_syncp)
 
 {
-    int s, syncflag;
+    int syncflag;
+    spl_t s;
 
     for (;;)	/* Poor man's semaphore P. */
 	{

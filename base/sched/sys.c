@@ -22,6 +22,7 @@
 Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 */
 
+
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/config.h>
@@ -213,7 +214,7 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
 /*
  * End of messaging mess.
  */
-	if ((int)rt_task->is_hard > 0) {
+	if (rt_task->is_hard > 0) {
 		rt_task->retval = ((long long (*)(int, ...))fun)(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
 		if (!rt_task->is_hard) {
 extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
@@ -289,7 +290,7 @@ static int __task_delete(RT_TASK *rt_task)
 	rt_free(rt_task->msg_buf[0]);
 	rt_free(rt_task);
 	if ((process = rt_task->lnxtsk)) {
-		process->this_rt_task[0] = process->this_rt_task[1] = 0;
+		process->rtai_tskext[0] = process->rtai_tskext[1] = 0;
 	}
 	return (!rt_drg_on_adr(rt_task)) ? -ENODEV : 0;
 }
@@ -325,7 +326,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 	int srq;
 	RT_TASK *task;
 
-	__force_soft(task = current->this_rt_task[0]);
+	__force_soft(task = current->rtai_tskext[0]);
 	srq = SRQ(lxsrq);
 	if (srq < MAX_LXRT_FUN) {
 		int idx;
@@ -347,7 +348,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 
 		if ((type = funcm[srq].type)) {
 			int net_rpc;
-			if ((int)task->is_hard > 1) {
+			if (task->is_hard > 1) {
 				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 				task->is_hard = 0;
 				steal_from_linux(task);
@@ -481,22 +482,26 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case MAKE_HARD_RT: {
-			if (!(task = current->this_rt_task[0]) || (int)task->is_hard == 1) {
+#ifndef USE_LINUX_SYSCALL
+			if (!(task = current->rtai_tskext[0]) || task->is_hard == 1) {
 				 return 0;
 			}
 			steal_from_linux(task);
+#endif
 			return 0;
 		}
 
 		case MAKE_SOFT_RT: {
-			if (!(task = current->this_rt_task[0]) || (int)task->is_hard <= 0) {
+#ifndef USE_LINUX_SYSCALL
+			if (!(task = current->rtai_tskext[0]) || task->is_hard <= 0) {
 				return 0;
 			}
-			if ((int)task->is_hard > 1) {
+			if (task->is_hard > 1) {
 				task->is_hard = 0;
 			} else {
 				give_back_to_linux(task);
 			}
+#endif
 			return 0;
 		}
 		case PRINT_TO_SCREEN: {
@@ -517,9 +522,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case RT_BUDDY: {
-			return current->this_rt_task[0] && 
-			       current->this_rt_task[1] == current ?
-			       (unsigned long)(current->this_rt_task[0]) : 0;
+			return current->rtai_tskext[0] && 
+			       current->rtai_tskext[1] == current ?
+			       (unsigned long)(current->rtai_tskext[0]) : 0;
 		}
 
 		case HRT_USE_FPU: {
@@ -541,7 +546,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
                 case SET_USP_FLAGS: {
                         struct arg { RT_TASK *task; unsigned long flags; };
                         arg0.rt_task->usp_flags = larg->flags;
-                        arg0.rt_task->force_soft = ((int)arg0.rt_task->is_hard > 0) && (larg->flags & arg0.rt_task->usp_flags_mask & FORCE_SOFT);
+                        arg0.rt_task->force_soft = (arg0.rt_task->is_hard > 0) && (larg->flags & arg0.rt_task->usp_flags_mask & FORCE_SOFT);
                         return 0;
                 }
 
@@ -550,8 +555,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
                 }
 
                 case SET_USP_FLG_MSK: {
-                        (task = current->this_rt_task[0])->usp_flags_mask = arg0.name;
-                        task->force_soft = ((int)task->is_hard > 0) && (task->usp_flags & arg0.name & FORCE_SOFT);
+                        (task = current->rtai_tskext[0])->usp_flags_mask = arg0.name;
+                        task->force_soft = (task->is_hard > 0) && (task->usp_flags & arg0.name & FORCE_SOFT);
                         return 0;
                 }
 
@@ -559,8 +564,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 			extern void rt_do_force_soft(RT_TASK *rt_task);
                         struct task_struct *ltsk;
                         if ((ltsk = find_task_by_pid(arg0.name)))  {
-                                if ((arg0.rt_task = ltsk->this_rt_task[0])) {
-					if ((arg0.rt_task->force_soft = ((int)arg0.rt_task->is_hard > 0) && FORCE_SOFT)) {
+                                if ((arg0.rt_task = ltsk->rtai_tskext[0])) {
+					if ((arg0.rt_task->force_soft = (arg0.rt_task->is_hard > 0) && FORCE_SOFT)) {
 						rt_do_force_soft(arg0.rt_task);
 					}
                                         return (unsigned long)arg0.rt_task;
@@ -570,7 +575,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
                 }
 
 		case IS_HARD: {
-			return (int)arg0.rt_task->is_hard > 0;
+			return arg0.rt_task->is_hard > 0;
 		}
 		case GET_EXECTIME: {
 			struct arg { RT_TASK *task; RTIME *exectime; };
@@ -595,7 +600,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 	return 0;
 }
 
-asmlinkage long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
+long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
 
 {
     long long retval;
@@ -677,30 +682,22 @@ void linux_process_termination(void)
 				break;
 		}
 	}
-	if ((task2delete = current->this_rt_task[0])) {
+	if ((task2delete = current->rtai_tskext[0])) {
 		if (!clr_rtext(task2delete)) {
 			rt_drg_on_adr(task2delete); 
 			rt_printk("LXRT releases PID %d (ID: %s).\n", current->pid, current->comm);
 			rt_free(task2delete->msg_buf[0]);
 			rt_free(task2delete);
-			current->this_rt_task[0] = current->this_rt_task[1] = 0;
+			current->rtai_tskext[0] = current->rtai_tskext[1] = 0;
 		}
 	}
 }
 
-int lxrt_init_archdep (void)
+void init_fun_ext (void)
 {
-    RT_TASK *rt_linux_tasks[NR_RT_CPUS];
-    rt_fun_ext[0] = rt_fun_lxrt;
-    rt_get_base_linux_task(rt_linux_tasks);
-    rt_linux_tasks[0]->task_trap_handler[0] = (void *)set_rt_fun_ext_index;
-    rt_linux_tasks[0]->task_trap_handler[1] = (void *)reset_rt_fun_ext_index;
-
-    return 0;
+	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
+	rt_fun_ext[0] = rt_fun_lxrt;
+	rt_get_base_linux_task(rt_linux_tasks);
+	rt_linux_tasks[0]->task_trap_handler[0] = (void *)set_rt_fun_ext_index;
+	rt_linux_tasks[0]->task_trap_handler[1] = (void *)reset_rt_fun_ext_index;
 }
-
-void lxrt_exit_archdep (void) { }
-
-#ifdef CONFIG_KBUILD
-EXPORT_SYMBOL(linux_process_termination);
-#endif /* CONFIG_KBUILD */

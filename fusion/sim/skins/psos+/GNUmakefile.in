@@ -511,7 +511,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-libLIBRARIES
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES uninstall-local
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libLIBRARIES clean-libtool ctags distclean \
@@ -524,16 +524,19 @@ uninstall-am: uninstall-info-am uninstall-libLIBRARIES
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-info-am \
-	uninstall-libLIBRARIES
+	uninstall-libLIBRARIES uninstall-local
 
 vpath %.c @MVM_RTAIDIR@/skins/psos+
 
 override CFLAGS = -g
 
 install-data-local:
-	$(mkinstalldirs) $(pkgdatadir)/tcl/psos
-	$(INSTALL_DATA) $(srcdir)/*.tcl $(pkgdatadir)/tcl/psos
-	echo "auto_mkindex $(pkgdatadir)/tcl/psos" | @TCL_SCRIPT@
+	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/tcl/psos
+	$(INSTALL_DATA) $(srcdir)/*.tcl $(DESTDIR)$(pkgdatadir)/tcl/psos
+	echo "auto_mkindex $(DESTDIR)$(pkgdatadir)/tcl/psos" | @TCL_SCRIPT@
+
+uninstall-local:
+	$(RM) -r $(DESTDIR)$(pkgdatadir)/tcl/psos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

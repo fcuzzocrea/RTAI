@@ -76,6 +76,8 @@ CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE@
 CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@
 CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
 CONFIG_RTAI_OPT_NATIVE_SEM_TRUE = @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@
+CONFIG_RTAI_OPT_TRACES_FALSE = @CONFIG_RTAI_OPT_TRACES_FALSE@
+CONFIG_RTAI_OPT_TRACES_TRUE = @CONFIG_RTAI_OPT_TRACES_TRUE@
 CONFIG_RTAI_OPT_VM_FALSE = @CONFIG_RTAI_OPT_VM_FALSE@
 CONFIG_RTAI_OPT_VM_TRUE = @CONFIG_RTAI_OPT_VM_TRUE@
 CONFIG_RTAI_SKIN_NATIVE_FALSE = @CONFIG_RTAI_SKIN_NATIVE_FALSE@
@@ -157,6 +159,7 @@ RTAI_FP_CFLAGS = @RTAI_FP_CFLAGS@
 RTAI_HOST_STRING = @RTAI_HOST_STRING@
 RTAI_KBUILD_CLEAN = @RTAI_KBUILD_CLEAN@
 RTAI_KBUILD_CMD = @RTAI_KBUILD_CMD@
+RTAI_KBUILD_DISTCLEAN = @RTAI_KBUILD_DISTCLEAN@
 RTAI_KBUILD_ENV = @RTAI_KBUILD_ENV@
 RTAI_KMOD_APP_CFLAGS = @RTAI_KMOD_APP_CFLAGS@
 RTAI_KMOD_CFLAGS = @RTAI_KMOD_CFLAGS@
@@ -227,6 +230,8 @@ libmodule_SRC = \
 		timer.c
 
 
+@CONFIG_RTAI_OPT_TRACES_TRUE@MAYBE_TRACE = rtai_trace$(modext)
+
 @CONFIG_RTAI_OPT_VM_TRUE@lib_LIBRARIES = libnucleus.a
 
 @CONFIG_RTAI_OPT_VM_TRUE@nodist_libnucleus_a_SOURCES = \
@@ -248,7 +253,7 @@ libmodule_SRC = \
 
 @CONFIG_RTAI_OPT_VM_TRUE@libnucleus_a_AR = $(CROSS_COMPILE)ar cru
 
-EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) trace.c Makefile.kbuild
 
 SUBDIRS = lib
 subdir = nucleus
@@ -839,7 +844,7 @@ distclean: distclean-recursive
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-libtool distclean-tags
+	distclean-libtool distclean-local distclean-tags
 
 dvi: dvi-recursive
 
@@ -877,7 +882,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-libLIBRARIES
+uninstall-am: uninstall-info-am uninstall-libLIBRARIES uninstall-local
 
 uninstall-info: uninstall-info-recursive
 
@@ -885,9 +890,9 @@ uninstall-info: uninstall-info-recursive
 	check-am clean clean-generic clean-libLIBRARIES clean-libtool \
 	clean-local clean-recursive ctags ctags-recursive distclean \
 	distclean-compile distclean-generic distclean-libtool \
-	distclean-recursive distclean-tags distdir dvi dvi-am \
-	dvi-recursive info info-am info-recursive install install-am \
-	install-data install-data-am install-data-recursive \
+	distclean-local distclean-recursive distclean-tags distdir dvi \
+	dvi-am dvi-recursive info info-am info-recursive install \
+	install-am install-data install-data-am install-data-recursive \
 	install-exec install-exec-am install-exec-local \
 	install-exec-recursive install-info install-info-am \
 	install-info-recursive install-libLIBRARIES install-man \
@@ -898,7 +903,7 @@ uninstall-info: uninstall-info-recursive
 	mostlyclean-generic mostlyclean-libtool mostlyclean-recursive \
 	pdf pdf-am pdf-recursive ps ps-am ps-recursive tags \
 	tags-recursive uninstall uninstall-am uninstall-info-am \
-	uninstall-info-recursive uninstall-libLIBRARIES \
+	uninstall-info-recursive uninstall-libLIBRARIES uninstall-local \
 	uninstall-recursive
 
 
@@ -906,16 +911,26 @@ rtai_nucleus$(modext): @RTAI_KBUILD_ENV@
 rtai_nucleus$(modext): $(libmodule_SRC)
 	@RTAI_KBUILD_CMD@
 
-clean-local:
-	@RTAI_KBUILD_CLEAN@
+@CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): @RTAI_KBUILD_ENV@
+@CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): trace.c
+@CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_CMD@
 
-all-local: rtai_nucleus$(modext)
+all-local: rtai_nucleus$(modext) $(MAYBE_TRACE)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
-install-exec-local: rtai_nucleus$(modext)
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
+install-exec-local: rtai_nucleus$(modext) $(MAYBE_TRACE)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+
+uninstall-local: 
+	$(RM) $(moduledir)/rtai_nucleus$(modext) $(moduledir)/rtai_trace$(modext)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

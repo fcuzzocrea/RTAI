@@ -20,9 +20,6 @@ LDFLAGS = \
 	../../../vm/libmvm.la \
 	../../../vmutils/libmvmutils.la
 
-# \
-#	../../../adaptors/libxenosa.a
-
 check_PROGRAMS= \
 	threads \
 	semaphores \
@@ -32,8 +29,6 @@ check_PROGRAMS= \
 	signals \
 	tsd \
 	clock
-
-TESTS= $(check_PROGRAMS)
 
 threads_DEPENDENCIES= ../libposix_s.a libtests.a
 semaphores_DEPENDENCIES= ../libposix_s.a libtests.a

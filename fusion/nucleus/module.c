@@ -59,13 +59,13 @@
 #include <nucleus/version.h>
 #include <nucleus/dbridge.h>
 #include <nucleus/fusion.h>
+#include <nucleus/trace.h>
 
 MODULE_DESCRIPTION("Xenomai nucleus");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
 xnqueue_t xnmod_glink_queue;
-
 void xnmod_alloc_glinks (xnqueue_t *freehq)
 
 {
@@ -334,6 +334,11 @@ void __xeno_main_exit (void)
 
 EXPORT_SYMBOL(xnmod_glink_queue);
 EXPORT_SYMBOL(xnmod_alloc_glinks);
+
+#if defined(CONFIG_RTAI_OPT_TRACES) && __KERNEL__
+rtai_trace_callback_t *rtai_trace_callback = NULL;
+EXPORT_SYMBOL(rtai_trace_callback);
+#endif /* CONFIG_RTAI_OPT_TRACES && __KERNEL__ */
 
 module_init(__xeno_main_init);
 module_exit(__xeno_main_exit);

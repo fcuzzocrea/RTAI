@@ -181,10 +181,10 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
 
 #define XNARCH_PROMPT "RTAI[nucleus]: "
-#define xnarch_loginfo(fmt,args...)  printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
-#define xnarch_logwarn(fmt,args...)  printk(KERN_WARNING XNARCH_PROMPT fmt, ##args)
-#define xnarch_logerr(fmt,args...)   printk(KERN_ERR XNARCH_PROMPT fmt, ##args)
-#define xnarch_printf(fmt,args...)   printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
+#define xnarch_loginfo(fmt,args...)  printk(KERN_INFO XNARCH_PROMPT fmt , ##args)
+#define xnarch_logwarn(fmt,args...)  printk(KERN_WARNING XNARCH_PROMPT fmt , ##args)
+#define xnarch_logerr(fmt,args...)   printk(KERN_ERR XNARCH_PROMPT fmt , ##args)
+#define xnarch_printf(fmt,args...)   printk(KERN_INFO XNARCH_PROMPT fmt , ##args)
 
 #define xnarch_ullmod(ull,uld,rem)   ({ xnarch_ulldiv(ull,uld,rem); (*rem); })
 #define xnarch_ulldiv                rthal_ulldiv
@@ -842,6 +842,8 @@ static int xnarch_trap_fault (adevinfo_t *evinfo)
 static inline int xnarch_init (void)
 
 {
+    int err;
+
     xnarch_escalation_virq = adeos_alloc_irq();
 
     if (xnarch_escalation_virq == 0)
@@ -855,7 +857,12 @@ static inline int xnarch_init (void)
 
     xnarch_old_trap_handler = rthal_set_trap_handler(&xnarch_trap_fault);
 
-    return xnshadow_init();
+    err = xnshadow_init();
+
+    if (err)
+        adeos_free_irq(xnarch_escalation_virq);
+
+    return err;
 }
 
 static inline void xnarch_exit (void) {

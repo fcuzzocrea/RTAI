@@ -1,3 +1,9 @@
+2004-10-01  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/trace.c: Add tracing module.
+
+	* All GNUmakefile.am: Make the "distcheck" target work.
+
 2004-10-01  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_shutdown): Split the cleanup work into two

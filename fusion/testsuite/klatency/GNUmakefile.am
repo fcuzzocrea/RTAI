@@ -15,6 +15,9 @@ latency_rt$(modext): $(libmodule_SRC)
 clean-local:
 	@RTAI_KBUILD_CLEAN@
 
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
 test_PROGRAMS = latency
 
 latency_SOURCES = latency.c
@@ -44,6 +47,10 @@ install-data-local:
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(testdir)/.runinfo
 	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load" > $(DESTDIR)$(testdir)/run
 	@chmod +x $(DESTDIR)$(testdir)/run
+
+uninstall-local:
+	$(RM) $(DESTDIR)$(testdir)/.runinfo $(DESTDIR)$(testdir)/run
+	$(RM) $(DESTDIR)$(testdir)/latency_rt$(modext)
 
 run: all
 	@$(top_srcdir)/scripts/rtai-load --verbose

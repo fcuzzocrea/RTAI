@@ -76,6 +76,8 @@ CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE@
 CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@
 CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
 CONFIG_RTAI_OPT_NATIVE_SEM_TRUE = @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@
+CONFIG_RTAI_OPT_TRACES_FALSE = @CONFIG_RTAI_OPT_TRACES_FALSE@
+CONFIG_RTAI_OPT_TRACES_TRUE = @CONFIG_RTAI_OPT_TRACES_TRUE@
 CONFIG_RTAI_OPT_VM_FALSE = @CONFIG_RTAI_OPT_VM_FALSE@
 CONFIG_RTAI_OPT_VM_TRUE = @CONFIG_RTAI_OPT_VM_TRUE@
 CONFIG_RTAI_SKIN_NATIVE_FALSE = @CONFIG_RTAI_SKIN_NATIVE_FALSE@
@@ -157,6 +159,7 @@ RTAI_FP_CFLAGS = @RTAI_FP_CFLAGS@
 RTAI_HOST_STRING = @RTAI_HOST_STRING@
 RTAI_KBUILD_CLEAN = @RTAI_KBUILD_CLEAN@
 RTAI_KBUILD_CMD = @RTAI_KBUILD_CMD@
+RTAI_KBUILD_DISTCLEAN = @RTAI_KBUILD_DISTCLEAN@
 RTAI_KBUILD_ENV = @RTAI_KBUILD_ENV@
 RTAI_KMOD_APP_CFLAGS = @RTAI_KMOD_APP_CFLAGS@
 RTAI_KMOD_CFLAGS = @RTAI_KMOD_CFLAGS@
@@ -315,7 +318,8 @@ clean-am: clean-generic clean-libtool clean-local mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-libtool
+distclean-am: clean-am distclean-generic distclean-libtool \
+	distclean-local
 
 dvi: dvi-am
 
@@ -351,17 +355,18 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-info-am uninstall-local
 
 .PHONY: all all-am all-local check check-am clean clean-generic \
 	clean-libtool clean-local distclean distclean-generic \
-	distclean-libtool distdir dvi dvi-am info info-am install \
-	install-am install-data install-data-am install-exec \
-	install-exec-am install-exec-local install-info install-info-am \
-	install-man install-strip installcheck installcheck-am \
-	installdirs maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
-	ps ps-am uninstall uninstall-am uninstall-info-am
+	distclean-libtool distclean-local distdir dvi dvi-am info \
+	info-am install install-am install-data install-data-am \
+	install-exec install-exec-am install-exec-local install-info \
+	install-info-am install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
+	uninstall-info-am uninstall-local
 
 
 rtai_hal.ko: @RTAI_KBUILD_ENV@
@@ -371,6 +376,9 @@ rtai_hal.ko: $(libhal_SRC)
 clean-local:
 	@RTAI_KBUILD_CLEAN@
 
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
 all-local: rtai_hal$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
@@ -378,6 +386,9 @@ all-local: rtai_hal$(modext)
 install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+
+uninstall-local:
+	$(RM) $(moduledir)/rtai_hal$(modext)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

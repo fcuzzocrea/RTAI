@@ -76,6 +76,8 @@ CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE@
 CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@
 CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
 CONFIG_RTAI_OPT_NATIVE_SEM_TRUE = @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@
+CONFIG_RTAI_OPT_TRACES_FALSE = @CONFIG_RTAI_OPT_TRACES_FALSE@
+CONFIG_RTAI_OPT_TRACES_TRUE = @CONFIG_RTAI_OPT_TRACES_TRUE@
 CONFIG_RTAI_OPT_VM_FALSE = @CONFIG_RTAI_OPT_VM_FALSE@
 CONFIG_RTAI_OPT_VM_TRUE = @CONFIG_RTAI_OPT_VM_TRUE@
 CONFIG_RTAI_SKIN_NATIVE_FALSE = @CONFIG_RTAI_SKIN_NATIVE_FALSE@
@@ -156,6 +158,7 @@ RTAI_FP_CFLAGS = @RTAI_FP_CFLAGS@
 RTAI_HOST_STRING = @RTAI_HOST_STRING@
 RTAI_KBUILD_CLEAN = @RTAI_KBUILD_CLEAN@
 RTAI_KBUILD_CMD = @RTAI_KBUILD_CMD@
+RTAI_KBUILD_DISTCLEAN = @RTAI_KBUILD_DISTCLEAN@
 RTAI_KBUILD_ENV = @RTAI_KBUILD_ENV@
 RTAI_KMOD_APP_CFLAGS = @RTAI_KMOD_APP_CFLAGS@
 RTAI_KMOD_CFLAGS = @RTAI_KMOD_CFLAGS@
@@ -209,7 +212,12 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-EXTRA_DIST = autoconf kconfig
+EXTRA_DIST = \
+	kconfig \
+	autoconf/acinclude.m4 \
+	autoconf/arch2host.sh \
+	autoconf/docbook.m4
+
 subdir = config
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs
@@ -247,6 +255,7 @@ top_distdir = ..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
+	$(mkinstalldirs) $(distdir)/autoconf
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -85,15 +85,25 @@ endif
 pkgdata_DATA = plotter.ps
 
 install-data-local: install-tcl
-	$(mkinstalldirs) $(pkgdatadir)/icons
+	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/icons
 	cd $(srcdir)/icons ; \
 	for i in *.png ; do \
-	$(INSTALL_DATA) $$i $(pkgdatadir)/icons/$$i ; \
+	$(INSTALL_DATA) $$i $(DESTDIR)$(pkgdatadir)/icons/$$i ; \
 	done
-	$(mkinstalldirs) $(pkgdatadir)/images
+	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/images
 	cd $(srcdir)/images ; \
 	for i in *.png ; do \
-	$(INSTALL_DATA) $$i $(pkgdatadir)/images/$$i ; \
+	$(INSTALL_DATA) $$i $(DESTDIR)$(pkgdatadir)/images/$$i ; \
+	done
+
+uninstall-local:
+	cd $(srcdir)/icons ; \
+	for i in *.png ; do \
+	$(RM) $(DESTDIR)$(pkgdatadir)/icons/$$i ; \
+	done
+	cd $(srcdir)/images ; \
+	for i in *.png ; do \
+	$(RM) $(DESTDIR)$(pkgdatadir)/images/$$i ; \
 	done
 
 EXTRA_DIST = $(TCL_FILES) $(pkgdata_DATA) tcl/tclIndex icons images

@@ -32,6 +32,9 @@ rtai_vxworks$(modext): $(libmodule_SRC)
 clean-local:
 	@RTAI_KBUILD_CLEAN@
 
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
 all-local: rtai_vxworks$(modext)
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 	$(mkinstalldirs) $(top_srcdir)/modules
@@ -41,6 +44,9 @@ endif
 install-exec-local: rtai_vxworks$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+
+uninstall-local:
+	$(RM) $(moduledir)/rtai_vxworks$(modext)
 
 if CONFIG_RTAI_OPT_VM
 

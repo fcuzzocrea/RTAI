@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: GNUmakefile.in,v 1.1 2004/06/06 14:20:32 rpm Exp $
+# RCS: @(#) $Id: GNUmakefile.in,v 1.2 2004/10/02 09:05:10 gch Exp $
 
 #========================================================================
 # Edit the following few lines when writing a new extension
@@ -339,7 +339,7 @@ clean:
 
 distclean: clean
 	-rm -f *.tab.c
-	-rm -f Makefile $(CONFIG_CLEAN_FILES)
+	-rm -f GNUmakefile $(CONFIG_CLEAN_FILES)
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
 	-rm -f config.status
 
@@ -413,6 +413,7 @@ uninstall-binaries:
 	list='$(BINARIES)'; for p in $$list; do \
 	  rm -f $(DESTDIR)$(libdir)/$$p; \
 	done
+	rm -f $(DESTDIR)$(libdir)/@PACKAGE@/pkgIndex.tcl
 
 installdirs:
 	$(mkinstalldirs)  $(DESTDIR)$(libdir)
@@ -498,8 +499,12 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 
+dvi check installcheck :
+
+uninstall: uninstall-binaries
+
 .PHONY: all binaries clean depend distclean doc install installdirs \
-libraries test
+libraries test dvi check installcheck uninstall
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

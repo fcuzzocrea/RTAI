@@ -52,6 +52,9 @@
 #undef CONFIG_RTAI_OPT_TIMESTAMPS
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_TRACES
+
+/* Kconfig */
 #undef CONFIG_RTAI_REVISION_LEVEL
 
 /* Kconfig */

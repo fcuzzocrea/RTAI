@@ -136,7 +136,7 @@ void xnthread_cleanup_tcb (xnthread_t *thread)
     /* Does not wreck the TCB, only releases the held resources. */
 
     if (tcb->stackbase)
-	xnfree(tcb->stackbase);
+	xnarch_free_stack((void *) tcb->stackbase);
 
     thread->magic = 0;
 }

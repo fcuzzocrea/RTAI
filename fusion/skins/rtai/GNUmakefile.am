@@ -17,35 +17,43 @@ include_HEADERS = \
 		types.h \
 		syscall.h
 
+distfiles = $(libmodule_SRC)
+
 if CONFIG_RTAI_OPT_NATIVE_REGISTRY
 libmodule_SRC += registry.c
 include_HEADERS += registry.h
 endif
+distfiles += registry.c registry.h
 
 if CONFIG_RTAI_OPT_NATIVE_PIPE
 libmodule_SRC += pipe.c
 include_HEADERS += pipe.h
 endif
+distfiles += pipe.c pipe.h
 
 if CONFIG_RTAI_OPT_NATIVE_SEM
 libmodule_SRC += sem.c
 include_HEADERS += sem.h
 endif
+distfiles += sem.c sem.h
 
 if CONFIG_RTAI_OPT_NATIVE_EVENT
 libmodule_SRC += event.c
 include_HEADERS += event.h
 endif
+distfiles += event.c event.h
 
 if CONFIG_RTAI_OPT_NATIVE_MUTEX
 libmodule_SRC += mutex.c
 include_HEADERS += mutex.h
 endif
+distfiles += mutex.c mutex.h
 
 if CONFIG_RTAI_OPT_NATIVE_COND
 libmodule_SRC += cond.c
 include_HEADERS += cond.h
 endif
+distfiles += cond.c cond.h
 
 rtai_native$(modext): @RTAI_KBUILD_ENV@
 rtai_native$(modext): $(libmodule_SRC)
@@ -53,6 +61,9 @@ rtai_native$(modext): $(libmodule_SRC)
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@
+
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
 
 all-local: rtai_native$(modext)
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
@@ -64,6 +75,9 @@ install-exec-local: rtai_native$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
 
-EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild Kconfig
+uninstall-local:
+	$(RM) $(moduledir)/rtai_native$(modext)
+
+EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig
 
 SUBDIRS = lib

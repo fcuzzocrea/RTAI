@@ -6,4 +6,8 @@ distclean-local:
 	rm -f $(DESTDIR)$(includedir)/asm $(DESTDIR)$(includedir)/rtai_config.h
 endif
 
+uninstall-local:
+	$(RM) $(DESTDIR)$(pkgdatadir)/config-rtai-$(VERSION)
+	$(RM) $(DESTDIR)$(includedir)/rtai_config.h
+
 SUBDIRS = nucleus

@@ -151,6 +151,15 @@ dist-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
 	    popd ; \
 	done
 
+uninstall-dbx-htmldocs:
+	if test -n "$(DBX_ALL_HTML)"; then \
+	    targets="$(DBX_ALL_HTML:%=$(DESTDIR)$(docdir)/html/%)"; \
+	    for t in $$targets; do \
+		if test -d $$t; then $(RM) $$t/*; $(RM) -r $$t; \
+		else $(RM) $$t; fi; \
+	    done; \
+        fi
+
 # installation and distribution of pdf files: use generic rules.
 PDF_DOCS=$(DBX_PDF_DOCS)
 
@@ -160,4 +169,4 @@ install-data-local: install-dbx-htmldocs install-docs-local
 
 dist-hook: dist-dbx-htmldocs dist-docs-hook
 
-uninstall-local: uninstall-docs
+uninstall-local: uninstall-dbx-htmldocs uninstall-docs

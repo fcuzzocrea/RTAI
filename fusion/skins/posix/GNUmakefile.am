@@ -41,6 +41,9 @@ rtai_posix$(modext): $(libmodule_SRC)
 clean-local:
 	@RTAI_KBUILD_CLEAN@
 
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
 all-local: rtai_posix$(modext)
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 	$(mkinstalldirs) $(top_srcdir)/modules
@@ -50,5 +53,8 @@ endif
 install-exec-local: rtai_posix$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+
+uninstall-local:
+	$(RM) $(moduledir)/rtai_posix$(modext)
 
 EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild Kconfig

@@ -13,6 +13,9 @@ rtai_hal.ko: $(libhal_SRC)
 clean-local:
 	@RTAI_KBUILD_CLEAN@
 
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
 all-local: rtai_hal$(modext)
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 	$(mkinstalldirs) $(top_srcdir)/modules
@@ -22,5 +25,8 @@ endif
 install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+
+uninstall-local:
+	$(RM) $(moduledir)/rtai_hal$(modext)
 
 EXTRA_DIST = $(libhal_SRC) Makefile.kbuild

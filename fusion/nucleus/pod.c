@@ -106,7 +106,7 @@ const char *xnpod_fatal_helper (const char *format, ...)
         {
         xnthread_t *thread = link2thread(holder,glink);
         xnprintf("%3d  %-12s %4d  0x%lx\n",
-		 xnsched_cpu(xnthread_sched(thread)),
+		 (int) xnsched_cpu(xnthread_sched(thread)),
                  thread->name,
                  thread->cprio,thread->status);
         holder = nextq(&nkpod->threadq,holder);
@@ -671,8 +671,8 @@ int xnpod_init_thread (xnthread_t *thread,
  * (e.g. cli()). Conversely, a zero value should always mark a fully
  * preemptible state regarding interrupts (i.e. sti()).
  *
- * @param affinity The processor affinity of this thread. Passing zero
- * is a legitimate value meaning "any cpu".
+ * @param affinity The processor affinity of this thread. Passing
+ * XNPOD_ALL_CPUS means "any cpu".
  *
  * @param entry The address of the thread's body routine. In other
  * words, it is the thread entry point.
@@ -1096,7 +1096,7 @@ void xnpod_delete_thread (xnthread_t *thread)
  * thread pends for a resource. This value is a wait time given in
  * ticks (see note).  Passing XN_INFINITE specifies an unbounded
  * wait. All other values are used to initialize a watchdog timer.  If
- * the current operation mode is oneshot and @timeout elapses before
+ * the current operation mode is oneshot and @a timeout elapses before
  * xnpod_suspend_thread() has completed, then the target thread will
  * not be suspended, and this routine leads to a null effect.
  *
@@ -2780,7 +2780,7 @@ int xnpod_announce_tick (xnintr_t *intr)
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
  unlock_and_exit:
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     xnlock_put_irqrestore(&nklock,s);
 

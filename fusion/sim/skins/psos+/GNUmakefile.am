@@ -27,8 +27,11 @@ nodist_libpsos_s_a_SOURCES = \
 	vmctl.c
 
 install-data-local:
-	$(mkinstalldirs) $(pkgdatadir)/tcl/psos
-	$(INSTALL_DATA) $(srcdir)/*.tcl $(pkgdatadir)/tcl/psos
-	echo "auto_mkindex $(pkgdatadir)/tcl/psos" | @TCL_SCRIPT@
+	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/tcl/psos
+	$(INSTALL_DATA) $(srcdir)/*.tcl $(DESTDIR)$(pkgdatadir)/tcl/psos
+	echo "auto_mkindex $(DESTDIR)$(pkgdatadir)/tcl/psos" | @TCL_SCRIPT@
+
+uninstall-local:
+	$(RM) -r $(DESTDIR)$(pkgdatadir)/tcl/psos
 
 EXTRA_DIST = queue.tcl task.tcl vmctl.c

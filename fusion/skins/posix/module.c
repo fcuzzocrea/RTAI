@@ -29,7 +29,7 @@ MODULE_DESCRIPTION("XENOMAI-based PSE51 API.");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
-static u_long tick_hz_arg = 0;  /* Default: aperiodic. */
+static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK;
 MODULE_PARM(tick_hz_arg,"i");
 MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz), 0 for aperiodic mode");
 
@@ -54,7 +54,7 @@ static void pse51_shutdown(int xtype)
 
 int __xeno_skin_init(void)
 {
-    u_long nstick = XNPOD_APERIODIC_TICK;
+    u_long nstick;
     int err;
 
     xnprintf("POSIX %s: Starting skin\n",PSE51_SKIN_VERSION_STRING);
@@ -66,6 +66,8 @@ int __xeno_skin_init(void)
 
     if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
 	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
+    else
+        nstick = XNPOD_APERIODIC_TICK;
 
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
     

@@ -4,4 +4,9 @@ install-exec-local:
 	$(INSTALL_SCRIPT) rtai-load $(DESTDIR)$(bindir)
 	$(INSTALL_SCRIPT) $(srcdir)/rtai-info $(DESTDIR)$(bindir)
 
+uninstall-local:
+	$(RM) $(DESTDIR)$(bindir)/rtai-info
+	$(RM) $(DESTDIR)$(bindir)/rtai-load
+	$(RM) $(DESTDIR)$(bindir)/rtai-config
+
 EXTRA_DIST = rtai-info bootstrap

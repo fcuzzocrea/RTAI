@@ -40,6 +40,7 @@ gcc-build/.gcic-built: gcc-build/.gcic-configured
 	&& cd .. ) && touch $@
 
 $(libexecdir)/gcic/.gcic-installed: gcc-build/.gcic-built
+	test -d $(libexecdir) && chmod u+rw $(libexecdir) || :
 	( cd gcc-build && $(MAKE) LANGUAGES="c c++" install \
 	&& cd .. ) && touch $@
 
@@ -50,5 +51,9 @@ install-exec-local:
 	$(mkinstalldirs) $(libexecdir)/gcic/lib/gcc-lib/$(host_alias)/$(GCCVER)
 	cp @MVM_GCCLD@ $(libexecdir)/gcic/lib/gcc-lib/$(host_alias)/$(GCCVER)
 	cp @MVM_GCCAS@ $(libexecdir)/gcic/lib/gcc-lib/$(host_alias)/$(GCCVER)
+
+uninstall-local:
+	$(RM) $(libexecdir)/gcic/.gcic-installed
+	$(RM) -r $(libexecdir)/gcic
 
 EXTRA_DIST = gcc-2.95.3.patch make-patch

@@ -89,6 +89,8 @@ CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE@
 CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@
 CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
 CONFIG_RTAI_OPT_NATIVE_SEM_TRUE = @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@
+CONFIG_RTAI_OPT_TRACES_FALSE = @CONFIG_RTAI_OPT_TRACES_FALSE@
+CONFIG_RTAI_OPT_TRACES_TRUE = @CONFIG_RTAI_OPT_TRACES_TRUE@
 CONFIG_RTAI_OPT_VM_FALSE = @CONFIG_RTAI_OPT_VM_FALSE@
 CONFIG_RTAI_OPT_VM_TRUE = @CONFIG_RTAI_OPT_VM_TRUE@
 CONFIG_RTAI_SKIN_NATIVE_FALSE = @CONFIG_RTAI_SKIN_NATIVE_FALSE@
@@ -169,6 +171,7 @@ RTAI_FP_CFLAGS = @RTAI_FP_CFLAGS@
 RTAI_HOST_STRING = @RTAI_HOST_STRING@
 RTAI_KBUILD_CLEAN = @RTAI_KBUILD_CLEAN@
 RTAI_KBUILD_CMD = @RTAI_KBUILD_CMD@
+RTAI_KBUILD_DISTCLEAN = @RTAI_KBUILD_DISTCLEAN@
 RTAI_KBUILD_ENV = @RTAI_KBUILD_ENV@
 RTAI_KMOD_APP_CFLAGS = @RTAI_KMOD_APP_CFLAGS@
 RTAI_KMOD_CFLAGS = @RTAI_KMOD_CFLAGS@
@@ -534,6 +537,15 @@ dist-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
 	    popd ; \
 	done
 
+uninstall-dbx-htmldocs:
+	if test -n "$(DBX_ALL_HTML)"; then \
+	    targets="$(DBX_ALL_HTML:%=$(DESTDIR)$(docdir)/html/%)"; \
+	    for t in $$targets; do \
+		if test -d $$t; then $(RM) $$t/*; $(RM) -r $$t; \
+		else $(RM) $$t; fi; \
+	    done; \
+        fi
+
 install-htmldocs: $(HTML_DOCS:%=$(HTML_DOCSDIR)%)
 	docs="$^"; \
 	for dir in $$docs; do \
@@ -613,7 +625,7 @@ install-data-local: install-dbx-htmldocs install-docs-local
 
 dist-hook: dist-dbx-htmldocs dist-docs-hook
 
-uninstall-local: uninstall-docs
+uninstall-local: uninstall-dbx-htmldocs uninstall-docs
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -9,6 +9,11 @@ die() {
 
 echo
 
+echo -n "removing autom4te.cache..."
+rm -Rf autom4te.cache
+if [ "$?" != "0" ]; then die "removing autom4te.cache"; fi
+echo "done"
+
 echo -n "running autoheader..."
 autoheader
 if [ "$?" != "0" ]; then die "running autoheader"; fi

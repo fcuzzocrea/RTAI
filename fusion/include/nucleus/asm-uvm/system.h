@@ -107,9 +107,9 @@ typedef unsigned long xnlock_t;
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
 
 #define XNARCH_PROMPT "RTAI[nucleus/UVM]: "
-#define xnarch_loginfo(fmt,args...)  fprintf(stdout, XNARCH_PROMPT fmt, ##args)
-#define xnarch_logwarn(fmt,args...)  fprintf(stderr, XNARCH_PROMPT fmt, ##args)
-#define xnarch_logerr(fmt,args...)   fprintf(stderr, XNARCH_PROMPT fmt, ##args)
+#define xnarch_loginfo(fmt,args...)  fprintf(stdout, XNARCH_PROMPT fmt , ##args)
+#define xnarch_logwarn(fmt,args...)  fprintf(stderr, XNARCH_PROMPT fmt , ##args)
+#define xnarch_logerr(fmt,args...)   fprintf(stderr, XNARCH_PROMPT fmt , ##args)
 #define xnarch_printf(fmt,args...)   fprintf(stdout, fmt, ##args)
 #define printk(fmt,args...)          xnarch_loginfo(fmt, ##args)
 

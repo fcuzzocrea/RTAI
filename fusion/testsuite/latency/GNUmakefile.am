@@ -20,6 +20,9 @@ install-data-local:
 	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load" > $(DESTDIR)$(testdir)/run
 	@chmod +x $(DESTDIR)$(testdir)/run
 
+uninstall-local:
+	$(RM) $(DESTDIR)$(testdir)/.runinfo $(DESTDIR)$(testdir)/run
+
 run: all
 	@$(top_srcdir)/scripts/rtai-load --verbose
 

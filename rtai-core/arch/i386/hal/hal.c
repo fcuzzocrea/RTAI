@@ -1467,48 +1467,67 @@ long long rtai_usrq_trampoline (unsigned srq, unsigned label)
     return r;
 }
 
-static void rtai_uvec_handler (void)
+asmlinkage int rtai_syscall_fastpath (void)
+{
+	if (in_hrt_mode(adeos_processor_id())) {
+		return 1;
+	}
+	rtai_linux_sti();
+	return 0;
+}
 
+void *rtai_syscall_entry = rtai_usrq_trampoline;
+static void rtai_uvec_handler (void)
 {
     __asm__ __volatile__ ( \
 	"cld\n\t" \
+	"pushl $0\n\t" \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
+        "pushl %eax\n\t" \
         "pushl %ebp\n\t" \
 	"pushl %edi\n\t" \
         "pushl %esi\n\t" \
+        "pushl %edx\n\t" \
         "pushl %ecx\n\t" \
 	"pushl %ebx\n\t" \
-        "pushl %edx\n\t" \
-        "pushl %eax\n\t" \
 	__LXRT_GET_DATASEG(ebx) \
-        "movl %ebx,%ds\n\t" \
-        "movl %ebx,%es\n\t" \
-        "call "SYMBOL_NAME_STR(rtai_usrq_trampoline)"\n\t" \
-	"addl $8,%esp\n\t" \
+        "movl %ebx, %ds\n\t" \
+        "movl %ebx, %es\n\t" \
+	"pushl %edx\n\t" \
+	"pushl %eax\n\t" \
+        "call *"SYMBOL_NAME_STR(rtai_syscall_entry)"\n\t" \
+	"addl $8,%esp;\n\t" \
+	"movl %edx,  8(%esp);\n\t" \
+	"movl %eax, 24(%esp);\n\t" \
+	"call "SYMBOL_NAME_STR(rtai_syscall_fastpath)"\n\t" \
+	"testl %eax,%eax;\n\t" \
+	"jz "SYMBOL_NAME_STR(ret_from_intr)"\n\t" \
         "popl %ebx\n\t" \
         "popl %ecx\n\t" \
+        "popl %edx\n\t" \
         "popl %esi\n\t" \
 	"popl %edi\n\t" \
         "popl %ebp\n\t" \
+        "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+	"addl $4, %esp\n\t" \
         "iret");
 }
 
-#define rtai_set_gate(gate_addr,type,dpl,addr) \
-do { \
-  int __d0, __d1; \
-  __asm__ __volatile__ ("movw %%dx,%%ax\n\t" \
-	"movw %4,%%dx\n\t" \
-	"movl %%eax,%0\n\t" \
-	"movl %%edx,%1" \
-	:"=m" (*((long *) (gate_addr))), \
-	 "=m" (*(1+(long *) (gate_addr))), "=&a" (__d0), "=&d" (__d1) \
-	:"i" ((short) (0x8000+(dpl<<13)+(type<<8))), \
-	 "3" ((char *) (addr)),"2" (__KERNEL_CS << 16)); \
-} while (0)
+struct desc_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler)
+{
+	struct desc_struct e = idt_table[vector];
+	idt_table[vector].a = (__KERNEL_CS << 16) | ((unsigned)handler & 0x0000FFFF);
+	idt_table[vector].b = ((unsigned)handler & 0xFFFF0000) | (0x8000 + (dpl << 13) + (type << 8));
+	return e;
+}
 
+void rtai_reset_gate_vector (unsigned vector, struct desc_struct e)
+{
+    idt_table[vector] = e;
+}
 static void rtai_install_archdep (void)
 
 {
@@ -1517,8 +1536,7 @@ static void rtai_install_archdep (void)
     flags = rtai_critical_enter(NULL);
 
     /* Backup and replace the sysreq vector. */
-    rtai_sysvec = idt_table[RTAI_SYS_VECTOR];
-    rtai_set_gate(idt_table+RTAI_SYS_VECTOR,15,3,&rtai_uvec_handler);
+    rtai_sysvec = rtai_set_gate_vector(RTAI_SYS_VECTOR, 15, 3, &rtai_uvec_handler);
 
     rtai_critical_exit(flags);
 
@@ -1874,4 +1892,5 @@ EXPORT_SYMBOL(rtai_cpu_realtime);
 EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 
+EXPORT_SYMBOL(rtai_syscall_entry);
 /*@}*/

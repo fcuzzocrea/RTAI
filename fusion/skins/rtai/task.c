@@ -1443,6 +1443,58 @@ int rt_task_slice (RT_TASK *task, RTIME quantum)
     return err;
 }
 
+/**
+ * @fn int rt_task_bind(RT_TASK *task,
+			const char *name)
+ * @brief Bind to a real-time task.
+ *
+ * This user-space only service retrieves the ubiquitous descriptor of
+ * a given RTAI task identified by its symbolic name. If the task does
+ * not exist on entry, this service blocks the caller until a task of
+ * the given name is created.
+ *
+ * @param name A valid NULL-terminated name which identifies the
+ * task to bind to.
+ *
+ * @param task The address of a task descriptor retrieved by the
+ * operation. Contents of this memory is undefined upon failure.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EFAULT is returned if @a task or @a name is referencing invalid
+ * memory.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before the retrieval has completed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied.
+ */
+
+/**
+ * @fn int rt_task_unbind(RT_TASK *task)
+ *
+ * @brief Unbind from a real-time task.
+ *
+ * This user-space only service unbinds the calling task from the task
+ * object previously retrieved by a call to rt_task_bind().
+ *
+ * @param task The address of a task descriptor to unbind from.
+ *
+ * @return 0 is always returned.
+ *
+ * This service can be called from:
+ *
+ * - User-space task.
+ *
+ * Rescheduling: never.
+ */
+
 /*@}*/
 
 EXPORT_SYMBOL(rt_task_create);

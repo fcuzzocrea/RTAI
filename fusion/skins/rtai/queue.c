@@ -764,6 +764,64 @@ int rt_queue_inquire (RT_QUEUE *q,
     return err;
 }
 
+/**
+ * @fn int rt_queue_bind(RT_QUEUE *q,
+			const char *name)
+ * @brief Bind to a shared message queue.
+ *
+ * This user-space only service retrieves the ubiquitous descriptor of
+ * a given shared RTAI message queue identified by its symbolic
+ * name. If the queue does not exist on entry, this service blocks the
+ * caller until a queue of the given name is created.
+ *
+ * @param name A valid NULL-terminated name which identifies the
+ * queue to bind to.
+ *
+ * @param q The address of a queue descriptor retrieved by the
+ * operation. Contents of this memory is undefined upon failure.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EFAULT is returned if @a heap or @a name is referencing invalid
+ * memory.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before the retrieval has completed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied.
+ */
+
+/**
+ * @fn int rt_queue_unbind(RT_QUEUE *q)
+ *
+ * @brief Unbind from a shared message queue.
+ *
+ * This user-space only service unbinds the calling task from the
+ * message queue object previously retrieved by a call to
+ * rt_queue_bind().
+ *
+ * Unbinding from a message queue when it is no more needed is
+ * especially important in order to properly release the mapping
+ * resources used to attach the shared queue memory to the caller's
+ * address space.
+ *
+ * @param q The address of a queue descriptor to unbind from.
+ *
+ * @return 0 is always returned.
+ *
+ * This service can be called from:
+ *
+ * - User-space task.
+ *
+ * Rescheduling: never.
+ */
+
 EXPORT_SYMBOL(rt_queue_create);
 EXPORT_SYMBOL(rt_queue_delete);
 EXPORT_SYMBOL(rt_queue_alloc);

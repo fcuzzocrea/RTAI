@@ -341,7 +341,7 @@ int rt_registry_enter (const char *key,
  *
  * @param phandle A pointer to a memory location which will be written
  * upon success with the generic handle defined by the registry for
- * the retrieved object. Contents of this memory is undefined on
+ * the retrieved object. Contents of this memory is undefined upon
  * failure.
  *
  * @return 0 is returned upon success. Otherwise:

@@ -408,6 +408,58 @@ int rt_mutex_inquire (RT_MUTEX *mutex,
     return err;
 }
 
+/**
+ * @fn int rt_mutex_bind(RT_MUTEX *mutex,
+		         const char *name)
+ * @brief Bind to a mutex.
+ *
+ * This user-space only service retrieves the ubiquitous descriptor of
+ * a given RTAI mutex identified by its symbolic name. If the
+ * mutex does not exist on entry, this service blocks the caller
+ * until a mutex of the given name is created.
+ *
+ * @param name A valid NULL-terminated name which identifies the
+ * mutex to bind to.
+ *
+ * @param task The address of a mutex descriptor retrieved by the
+ * operation. Contents of this memory is undefined upon failure.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EFAULT is returned if @a mutex or @a name is referencing invalid
+ * memory.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before the retrieval has completed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied.
+ */
+
+/**
+ * @fn int rt_mutex_unbind(RT_MUTEX *mutex)
+ *
+ * @brief Unbind from a mutex.
+ *
+ * This user-space only service unbinds the calling task from the
+ * mutex object previously retrieved by a call to rt_mutex_bind().
+ *
+ * @param mutex The address of a mutex descriptor to unbind from.
+ *
+ * @return 0 is always returned.
+ *
+ * This service can be called from:
+ *
+ * - User-space task.
+ *
+ * Rescheduling: never.
+ */
+
 /*@}*/
 
 EXPORT_SYMBOL(rt_mutex_create);

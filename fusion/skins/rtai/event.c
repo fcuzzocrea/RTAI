@@ -570,6 +570,61 @@ int rt_event_inquire (RT_EVENT *event,
     return err;
 }
 
+/**
+ * @fn int rt_event_bind(RT_EVENT *event,
+			const char *name)
+ * @brief Bind to an event flag group.
+ *
+ * This user-space only service retrieves the ubiquitous descriptor of
+ * a given RTAI event flag group identified by its symbolic name. If
+ * the event flag group does not exist on entry, this service blocks
+ * the caller until a event flag group of the given name is created.
+ *
+ * @param name A valid NULL-terminated name which identifies the
+ * event flag group to bind to.
+ *
+ * @param event The address of an event flag group descriptor
+ * retrieved by the operation. Contents of this memory is undefined
+ * upon failure.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EFAULT is returned if @a event or @a name is referencing invalid
+ * memory.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before the retrieval has completed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied.
+ */
+
+/**
+ * @fn int rt_event_unbind(RT_EVENT *event)
+ *
+ * @brief Unbind from an event flag group.
+ *
+ * This user-space only service unbinds the calling task from the
+ * event flag group object previously retrieved by a call to
+ * rt_event_bind().
+ *
+ * @param event The address of an event flag group descriptor to
+ * unbind from.
+ *
+ * @return 0 is always returned.
+ *
+ * This service can be called from:
+ *
+ * - User-space task.
+ *
+ * Rescheduling: never.
+ */
+
 /*@}*/
 
 EXPORT_SYMBOL(rt_event_create);

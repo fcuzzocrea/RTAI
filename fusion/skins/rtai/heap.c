@@ -633,6 +633,62 @@ int rt_heap_inquire (RT_HEAP *heap,
     return err;
 }
 
+/**
+ * @fn int rt_heap_bind(RT_HEAP *heap,
+			const char *name)
+ * @brief Bind to a shared heap.
+ *
+ * This user-space only service retrieves the ubiquitous descriptor of
+ * a given shared RTAI heap identified by its symbolic name. If the
+ * heap does not exist on entry, this service blocks the caller until
+ * a heap of the given name is created.
+ *
+ * @param name A valid NULL-terminated name which identifies the
+ * heap to bind to.
+ *
+ * @param heap The address of a heap descriptor retrieved by the
+ * operation. Contents of this memory is undefined upon failure.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EFAULT is returned if @a heap or @a name is referencing invalid
+ * memory.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before the retrieval has completed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied.
+ */
+
+/**
+ * @fn int rt_heap_unbind(RT_HEAP *heap)
+ *
+ * @brief Unbind from a shared heap.
+ *
+ * This user-space only service unbinds the calling task from the heap
+ * object previously retrieved by a call to rt_heap_bind().
+ *
+ * Unbinding from a heap when it is no more needed is especially
+ * important in order to properly release the mapping resources used
+ * to attach the shared heap memory to the caller's address space.
+ *
+ * @param heap The address of a heap descriptor to unbind from.
+ *
+ * @return 0 is always returned.
+ *
+ * This service can be called from:
+ *
+ * - User-space task.
+ *
+ * Rescheduling: never.
+ */
+
 EXPORT_SYMBOL(rt_heap_create);
 EXPORT_SYMBOL(rt_heap_delete);
 EXPORT_SYMBOL(rt_heap_alloc);

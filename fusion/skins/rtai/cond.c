@@ -468,6 +468,61 @@ int rt_cond_inquire (RT_COND *cond,
     return err;
 }
 
+/**
+ * @fn int rt_cond_bind(RT_COND *cond,
+			const char *name)
+ * @brief Bind to a condition variable.
+ *
+ * This user-space only service retrieves the ubiquitous descriptor of
+ * a given RTAI condition variable identified by its symbolic name. If
+ * the condition variable does not exist on entry, this service blocks
+ * the caller until a condition variable of the given name is created.
+ *
+ * @param name A valid NULL-terminated name which identifies the
+ * condition variable to bind to.
+ *
+ * @param task The address of a condition variable descriptor
+ * retrieved by the operation. Contents of this memory is undefined
+ * upon failure.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EFAULT is returned if @a cond or @a name is referencing invalid
+ * memory.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before the retrieval has completed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied.
+ */
+
+/**
+ * @fn int rt_cond_unbind(RT_COND *cond)
+ *
+ * @brief Unbind from a condition variable.
+ *
+ * This user-space only service unbinds the calling task from the
+ * condition variable object previously retrieved by a call to
+ * rt_cond_bind().
+ *
+ * @param cond The address of a condition variable descriptor to
+ * unbind from.
+ *
+ * @return 0 is always returned.
+ *
+ * This service can be called from:
+ *
+ * - User-space task.
+ *
+ * Rescheduling: never.
+ */
+
 /*@}*/
 
 EXPORT_SYMBOL(rt_cond_create);

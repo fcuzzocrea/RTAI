@@ -1,3 +1,7 @@
+2005-03-29  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: fusion-0.7
+
 2005-03-28  Philippe Gerum  <rpm@xenomai.org>
 
 	* testsuite/cruncher/cruncher.c (main): Limit stack space of

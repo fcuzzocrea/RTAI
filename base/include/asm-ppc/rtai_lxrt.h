@@ -83,6 +83,8 @@ static inline union rtai_lxrt_t rtai_lxrt(short dynx, short lsize, unsigned long
     return retval;
 }
 
+static inline int iopl(int i) { return 0; }
+
 #endif /* !__KERNEL__ */
 
 #endif /* !_RTAI_ASM_PPC_LXRT_H */

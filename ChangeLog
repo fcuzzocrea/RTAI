@@ -1,3 +1,9 @@
+2004-08-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/include/asm/rtai_hal.h: Re-enable back a minimalistic
+	cpu relaxation, or we will badly lockup on some SMP boxen with old
+	flaky hardware.
+
 2004-27-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/include/asm/rtai_hal.h: disabled CPU_RELAX.

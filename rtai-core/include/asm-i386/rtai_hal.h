@@ -344,12 +344,7 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags,
     rtai_local_irq_restore(flags);
 }
 
-#if 0
-#define CPU_RELAX(x) \
-	do { int i = 0; do cpu_relax(); while (++i < x); } while(0)
-#else
-#define CPU_RELAX(x)
-#endif
+#define CPU_RELAX(x) cpu_relax()
 
 static inline void rt_get_global_lock(void) {
 

@@ -181,7 +181,7 @@ static MSG_HDR* getnode(Q_CTRL *queue)
 //should be used first to check for space on the queue. 
 //
 uint ind;
-unsigned char msg_size;
+int msg_size;
 MSG_HDR *msg;
 
     DBG("\n");
@@ -517,7 +517,7 @@ mqd_t mq_open(char *mq_name, int oflags, mode_t permissions,
 int queue_size = 0;
 MQ_ATTR default_data_queue_attrs = {MAX_MSGS, MAX_MSGSIZE, MQ_NONBLOCK, 0};
 int q_index = 0, t_index = 0;
-char msg_size;
+int msg_size;
 int q_ind = 0;
 mq_bool_t q_found = FALSE;
 int spare_count = 0;

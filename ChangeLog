@@ -2,6 +2,7 @@
 
         * rtai-core/sched/rtai/sched_lxrt.c: revised RR related macros,
 	eliminated useless initializations in the scheduling functions,
+	took away redundancies in making hard through an ADEOS virq,
 	reworked scheduling of RTAI proper tasks (untested yet).
 
 2004-09-17  Philippe Gerum  <rpm@xenomai.org>

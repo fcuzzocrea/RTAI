@@ -21,7 +21,6 @@
  * \defgroup nucleus RTAI/fusion nucleus.
  *
  * A RTOS abstraction layer.
- *
  */
 
 #define XENO_MAIN_MODULE
@@ -44,6 +43,7 @@ MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
 xnqueue_t xnmod_glink_queue;
+
 void xnmod_alloc_glinks (xnqueue_t *freehq)
 
 {
@@ -284,7 +284,7 @@ int __fusion_sys_init (void)
     }
 #endif /* __KERNEL__ */
 
-    xnloginfo("RTAI/fusion core v%s started.\n",PACKAGE_VERSION);
+    xnloginfo("RTAI/fusion v%s started.\n",PACKAGE_VERSION);
 
     return 0;
 
@@ -315,7 +315,7 @@ int __fusion_sys_init (void)
 
  fail:
 
-    xnlogerr("RTAI/fusion core init failed, code %d.\n",err);
+    xnlogerr("RTAI/fusion init failed, code %d.\n",err);
 
     return err;
 }
@@ -339,7 +339,7 @@ void __fusion_sys_exit (void)
     xnpipe_umount();
 #endif /* CONFIG_RTAI_OPT_PIPE */
 #endif /* __KERNEL__ */
-    xnloginfo("RTAI/fusion core stopped.\n");
+    xnloginfo("RTAI/fusion stopped.\n");
 }
 
 EXPORT_SYMBOL(xnmod_glink_queue);

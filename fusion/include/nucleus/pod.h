@@ -360,8 +360,7 @@ static inline u_long xnpod_get_tickval (void) {
 
 static inline xntime_t xnpod_ticks2ns (xnticks_t ticks) {
     /* Convert a count of ticks in nanoseconds */
-    /* FIXME: wasteful. */
-    return xnarch_llimd(ticks, xnpod_get_tickval(), 1);
+    return ticks * xnpod_get_tickval();
 }
 
 static inline xnticks_t xnpod_ns2ticks (xntime_t t) {

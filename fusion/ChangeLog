@@ -1,3 +1,7 @@
+2004-12-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/pod.h (xnpod_ticks2ns) : Remove useless llimd.
+
 2004-12-20  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-i386/hal.h: Mark arithmetic routines

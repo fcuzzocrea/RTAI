@@ -1,3 +1,10 @@
+2004-01-24  Michael Neuhauser <mike@firmix.at>
+
+	* configure.in: allow CONFIG_RTAI_SCHED_LXRT to be enabled for ARM,
+	removed old ARM sub-architectures (SA1110, CLPS711X, PXA), added new
+	ARM sub-architecture (EP9301)
+	* configure, all GNUmakefile.in: regenerated because of above change
+
 2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
 
 	* rtai-lab/xrtailab.cpp: Fixed problem with the counter by parameter

@@ -568,8 +568,10 @@ else
   unset CONFIG_RTAI_SCHED_SMP
   test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
   unset CONFIG_RTAI_SCHED_MUP
-  test x$CONFIG_RTAI_SCHED_LXRT = xy && lxrt_forced="(forced)"
-  unset CONFIG_RTAI_SCHED_LXRT
+  if test "$CONFIG_ARM" != y; then
+    test x$CONFIG_RTAI_SCHED_LXRT = xy && lxrt_forced="(forced)"
+    unset CONFIG_RTAI_SCHED_LXRT
+  fi
   CONFIG_RTAI_CPUS=1
 fi
 
@@ -1166,9 +1168,7 @@ dnl CPU architecture
 AM_CONDITIONAL(CONFIG_X86,[test "$CONFIG_X86" = y])
 AM_CONDITIONAL(CONFIG_PPC,[test "$CONFIG_PPC" = y])
 AM_CONDITIONAL(CONFIG_ARM,[test "$CONFIG_ARM" = y])
-AM_CONDITIONAL(CONFIG_ARCH_SA1100,[test "$CONFIG_ARCH_SA1100" = y])
-AM_CONDITIONAL(CONFIG_ARCH_CLPS711X,[test "$CONFIG_ARCH_CLPS711X" = y])
-AM_CONDITIONAL(CONFIG_ARCH_PXA,[test "$CONFIG_ARCH_PXA" = y])
+AM_CONDITIONAL(CONFIG_ARCH_EP9301,[test "$CONFIG_ARCH_EP9301" = y])
 AM_CONDITIONAL(CONFIG_UCLINUX,[test "$CONFIG_UCLINUX" = y])
 AM_CONDITIONAL(CONFIG_SMP,[test "$CONFIG_SMP" = y])
 
@@ -1292,12 +1292,8 @@ case $RTAI_TARGET_ARCH in
 	fi
         ;;
  arm)
-	if test "$CONFIG_ARCH_SA1100" = y; then
-		RTAI_TARGET_SUBARCH=sa1100
-	elif test "$CONFIG_ARCH_CLPS711X" = y; then
-		RTAI_TARGET_SUBARCH=clps711x
-	elif test "$CONFIG_ARCH_PXA" = y; then
-               RTAI_TARGET_SUBARCH=pxa
+	if test "$CONFIG_ARCH_EP9301" = y; then
+               RTAI_TARGET_SUBARCH=ep9301
 	else
 	   echo
 	   echo "******************************************"

@@ -215,6 +215,8 @@ modext = @RTAI_MODULE_EXT@
 
 libmodule_SRC = latency-module.c
 
+noinst_HEADERS = latency.h
+
 test_PROGRAMS = latency
 
 latency_SOURCES = latency.c
@@ -257,7 +259,9 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(latency_SOURCES)
-DIST_COMMON = $(srcdir)/GNUmakefile.in GNUmakefile.am
+HEADERS = $(noinst_HEADERS)
+
+DIST_COMMON = $(noinst_HEADERS) $(srcdir)/GNUmakefile.in GNUmakefile.am
 SOURCES = $(latency_SOURCES)
 
 all: all-am
@@ -473,7 +477,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: GNUmakefile $(PROGRAMS) all-local
+all-am: GNUmakefile $(PROGRAMS) $(HEADERS) all-local
 
 installdirs:
 	$(mkinstalldirs) $(DESTDIR)$(testdir)

@@ -267,7 +267,8 @@ ssize_t rt_uart_write (RT_UART *uart,
 int rt_uart_open (RT_UART *uart,
 		  RT_UART_CONFIG *config)
 {
-    int err = 0;
+    char name[XNOBJECT_NAME_LEN];
+    int err;
     spl_t s;
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
@@ -282,6 +283,9 @@ int rt_uart_open (RT_UART *uart,
 	goto unlock_and_exit;
 
     uart->intr_desc.private_data = uart;
+    uart->magic = RTAI_UART_MAGIC;
+    uart->handle = 0;
+    snprintf(name,sizeof(name),"uart/%x",config->port.base);
 
     /* Mask all UART interrupts and clear pending ones. */
     outb(0,IER(uart));
@@ -328,7 +332,14 @@ int rt_uart_open (RT_UART *uart,
     uart->source = RT_KAPI_SOURCE;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-    uart->magic = RTAI_UART_MAGIC;
+    /* <!> Since rt_register_enter() may reschedule, only register
+       complete objects, so that the registry cannot return handles to
+       half-baked objects... */
+
+    err = rt_registry_enter(name,uart,&uart->handle);
+
+    if (err)
+	rt_uart_close(uart);
 
  unlock_and_exit:
 

@@ -19,6 +19,8 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <nucleus/heap.h>
+#include <rtai/registry.h>
 #include <16550A/16550A.h>
 #include <16550A/syscall.h>
 
@@ -26,14 +28,43 @@ static int __muxid;
 
 /*
  * int __rt_uart_open(RT_UART_PLACEHOLDER *ph,
- *                    unsigned irq,
- *                    int mode)
+ *                    RT_UART_CONFIG *config)
  */
 
 int __rt_uart_open (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return 0;
+    RT_UART_PLACEHOLDER ph;
+    RT_UART_CONFIG config;
+    RT_UART *uart;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(config)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&config,(void __user *)__xn_reg_arg2(regs),sizeof(config));
+
+    uart = (RT_UART *)xnmalloc(sizeof(*uart));
+
+    if (!uart)
+	return -ENOMEM;
+
+    err = rt_uart_open(uart,&config);
+
+    if (err == 0)
+	{
+	uart->source = RT_UAPI_SOURCE;
+	/* Copy back the registry handle to the ph struct. */
+	ph.opaque = uart->handle;
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	}
+    else
+	xnfree(uart);
+
+    return err;
 }
 
 /*
@@ -43,7 +74,26 @@ int __rt_uart_open (struct task_struct *curr, struct pt_regs *regs)
 int __rt_uart_close (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return 0;
+    RT_UART_PLACEHOLDER ph;
+    RT_UART *uart;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    uart = (RT_UART *)rt_registry_fetch(ph.opaque);
+
+    if (!uart)
+	return -ESRCH;
+
+    err = rt_uart_close(uart);
+
+    if (!err && uart->source == RT_UAPI_SOURCE)
+	xnfree(uart);
+
+    return err;
 }
 
 /*
@@ -56,7 +106,37 @@ int __rt_uart_close (struct task_struct *curr, struct pt_regs *regs)
 int __rt_uart_read (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return 0;
+    RT_UART_PLACEHOLDER ph;
+    void __user *buf;
+    RT_UART *uart;
+    size_t nbytes;
+    RTIME timeout;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    /* (mlocked) Buffer to write. */
+    buf = (void __user *)__xn_reg_arg2(regs);
+
+    /* Number of bytes in buffer. */
+    nbytes = (size_t)__xn_reg_arg3(regs);
+
+    if (nbytes > 0 && !__xn_access_ok(curr,VERIFY_WRITE,buf,nbytes))
+	return -EFAULT;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg4(regs),sizeof(timeout)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg4(regs),sizeof(timeout));
+
+    uart = (RT_UART *)rt_registry_fetch(ph.opaque);
+
+    if (!uart)
+	return -ESRCH;
+
+    return rt_uart_read(uart,buf,nbytes,timeout);
 }
 
 /*
@@ -68,7 +148,31 @@ int __rt_uart_read (struct task_struct *curr, struct pt_regs *regs)
 int __rt_uart_write (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return 0;
+    RT_UART_PLACEHOLDER ph;
+    const void __user *buf;
+    RT_UART *uart;
+    size_t nbytes;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    /* (mlocked) Buffer to write. */
+    buf = (const void __user *)__xn_reg_arg2(regs);
+
+    /* Number of bytes in buffer. */
+    nbytes = (size_t)__xn_reg_arg3(regs);
+
+    if (nbytes > 0 && !__xn_access_ok(curr,VERIFY_READ,buf,nbytes))
+	return -EFAULT;
+
+    uart = (RT_UART *)rt_registry_fetch(ph.opaque);
+
+    if (!uart)
+	return -ESRCH;
+
+    return rt_uart_write(uart,buf,nbytes);
 }
 
 /*
@@ -80,7 +184,28 @@ int __rt_uart_write (struct task_struct *curr, struct pt_regs *regs)
 int __rt_uart_control (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return 0;
+    RT_UART_PLACEHOLDER ph;
+    void __user *arg;
+    RT_UART *uart;
+    int cmd;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    uart = (RT_UART *)rt_registry_fetch(ph.opaque);
+
+    if (!uart)
+	return -ESRCH;
+
+    /* Command word. */
+    cmd = (int)__xn_reg_arg2(regs);
+
+    /* (mlocked) Arg buffer. */
+    arg = (void __user *)__xn_reg_arg3(regs);
+
+    return rt_uart_control(uart,cmd,arg);
 }
 
 static xnsysent_t __systab[] = {

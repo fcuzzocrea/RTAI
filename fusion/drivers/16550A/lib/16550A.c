@@ -17,6 +17,7 @@
  */
 
 #include <unistd.h>
+#include <16550A/16550A.h>
 #include <16550A/syscall.h>
 
 extern int __16550A_muxid;
@@ -24,3 +25,58 @@ extern int __16550A_muxid;
 int __init_skin(void);
 
 /* Public 16550A interface. */
+
+int rt_uart_open (RT_UART *uart,
+		  RT_UART_CONFIG *config)
+{
+    if (__16550A_muxid < 0 && __init_skin() < 0)
+	return -ENOSYS;
+
+    return XENOMAI_SKINCALL2(__16550A_muxid,
+			     __rtai_uart_open,
+			     uart,
+			     config);
+}
+
+int rt_uart_close (RT_UART *uart)
+
+{
+    return XENOMAI_SKINCALL1(__16550A_muxid,
+			     __rtai_uart_close,
+			     uart);
+}
+
+ssize_t rt_uart_read (RT_UART *uart,
+		      void *buf,
+		      size_t nbytes,
+		      RTIME timeout)
+{
+    return (ssize_t)XENOMAI_SKINCALL4(__16550A_muxid,
+				      __rtai_uart_read,
+				      uart,
+				      buf,
+				      nbytes,
+				      &timeout);
+}
+
+ssize_t rt_uart_write (RT_UART *uart,
+		       const void *buf,
+		       size_t nbytes)
+{
+    return (ssize_t)XENOMAI_SKINCALL3(__16550A_muxid,
+				      __rtai_uart_write,
+				      uart,
+				      buf,
+				      nbytes);
+}
+
+int rt_uart_control (RT_UART *uart,
+		     int cmd,
+		     void *arg)
+{
+    return XENOMAI_SKINCALL3(__16550A_muxid,
+			     __rtai_uart_control,
+			     uart,
+			     cmd,
+			     arg);
+}

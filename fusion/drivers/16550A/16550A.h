@@ -85,6 +85,7 @@ typedef struct rt_uart_config {
 
 #include <rtai/sem.h>
 #include <rtai/intr.h>
+#include <rtai/registry.h>
 
 #define uart_base(uart) ((uart)->config.port.base)
 #define RHR(uart) (uart_base(uart) + 0)	/* Receive Holding Buffer */
@@ -169,6 +170,8 @@ typedef struct rt_uart {
     unsigned char o_buf[RT_UART_BUFSZ]; /* !< Output store buffer. */
 
     int status;			/* !< UART status information. */
+
+    rt_handle_t handle;		/* !< Handle in registry -- zero if unregistered. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     int source;			/* !< Opener's space. */

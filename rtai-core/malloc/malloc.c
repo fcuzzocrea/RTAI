@@ -54,85 +54,70 @@ void *rtai_global_heap_adr = NULL;
 rtheap_t rtai_global_heap;	/* Global system heap */
 
 static void *alloc_extent (u_long size)
-
 {
-    caddr_t p;
+	caddr_t p;
 #ifdef CONFIG_RTAI_MALLOC_VMALLOC
-    caddr_t p;
+	caddr_t _p;
 
-    size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-    p = _p = (caddr_t)vmalloc(size);
-    printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
-    if (!p)
-	return NULL;
-
-    /* Reserve the allocated space. */
-    for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE)
-	mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
-
+	p = _p = (caddr_t)vmalloc(size);
+	if (p) {
+		printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
+		for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
+			mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+		}
+	}
 #else /* !CONFIG_RTAI_MALLOC_VMALLOC */
-    if (size > KMALLOC_LIMIT)
-	printk("RTAI[malloc]: extent > 128Kb unavailable in kmalloc() mode\n");
-
-    p = kmalloc(size,GFP_KERNEL);
-    printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
+	p = (caddr_t)kmalloc(size,GFP_KERNEL);
+	printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
 #endif /* CONFIG_RTAI_MALLOC_VMALLOC */
-    return p;
+	return p;
 }
 
 static void free_extent (void *p, u_long size)
-
 {
 #ifdef CONFIG_RTAI_MALLOC_VMALLOC
-    caddr_t _p = (caddr_t)p;
+	caddr_t _p = (caddr_t)p;
 
-    /* Unreserve the space before freeing it. */
-
-    size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-    printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
-    for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE)
-	mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
-
-    vfree(p);
+	printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
+	for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE) {
+		mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
+	}
+	vfree(p);
 #else /* !CONFIG_RTAI_MALLOC_VMALLOC */
-    printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
-    kfree(p);
+	printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
+	kfree(p);
 #endif /* CONFIG_RTAI_MALLOC_VMALLOC */
 }
 
-static void init_extent (rtheap_t *heap,
-			 rtextent_t *extent)
+static void init_extent (rtheap_t *heap, rtextent_t *extent)
 {
-    caddr_t freepage;
-    int n, lastpgnum;
+	caddr_t freepage;
+	int n, lastpgnum;
 
-    INIT_LIST_HEAD(&extent->link);
+	INIT_LIST_HEAD(&extent->link);
 
-    /* The page area starts right after the (aligned) header. */
-    extent->membase = (caddr_t)extent + heap->hdrsize;
-    lastpgnum = heap->npages - 1;
+	/* The page area starts right after the (aligned) header. */
+	extent->membase = (caddr_t)extent + heap->hdrsize;
+	lastpgnum = heap->npages - 1;
 
-    /* Mark each page as free in the page map. */
-    for (n = 0, freepage = extent->membase;
-	 n < lastpgnum; n++, freepage += heap->pagesize)
-	{
-	*((caddr_t *)freepage) = freepage + heap->pagesize;
-	extent->pagemap[n] = RTHEAP_PFREE;
+	/* Mark each page as free in the page map. */
+	for (n = 0, freepage = extent->membase; n < lastpgnum; n++, freepage += heap->pagesize) {
+		*((caddr_t *)freepage) = freepage + heap->pagesize;
+		extent->pagemap[n] = RTHEAP_PFREE;
 	}
+	*((caddr_t *)freepage) = NULL;
+	extent->pagemap[lastpgnum] = RTHEAP_PFREE;
+	extent->memlim = freepage + heap->pagesize;
 
-    *((caddr_t *)freepage) = NULL;
-    extent->pagemap[lastpgnum] = RTHEAP_PFREE;
-    extent->memlim = freepage + heap->pagesize;
-
-    /* The first page starts the free list of a new extent. */
-    extent->freelist = extent->membase;
+	/* The first page starts the free list of a new extent. */
+	extent->freelist = extent->membase;
 }
 
 /*! 
  * \fn int rtheap_init(rtheap_t *heap,
                        void *heapaddr,
-		         u_long heapsize,
-		         u_long pagesize);
+		       u_long heapsize,
+		       u_long pagesize);
  * \brief Initialize a memory heap.
  *
  * Initializes a memory heap suitable for dynamic memory allocation
@@ -187,116 +172,92 @@ static void init_extent (rtheap_t *heap,
  * Context: This routine must be called on behalf of a thread context.
  */
 
-int rtheap_init (rtheap_t *heap,
-		 void *heapaddr,
-		 u_long heapsize,
-		 u_long pagesize)
+int rtheap_init (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize)
 {
-    u_long hdrsize, pmapsize, shiftsize, pageshift;
-    struct list_head *holder;
-    rtextent_t *extent;
-    int n;
+	u_long hdrsize, pmapsize, shiftsize, pageshift;
+	rtextent_t *extent;
+	int n;
 
-    /*
-     * Perform some parametrical checks first.
-     * Constraints are:
-     * PAGESIZE must be >= 2 ** MINLOG2.
-     * PAGESIZE must be <= 2 ** MAXLOG2.
-     * PAGESIZE must be a power of 2.
-     * HEAPSIZE must be large enough to contain the static part of an
-     * extent header.
-     * HEAPSIZE must be a multiple of PAGESIZE.
-     * HEAPSIZE must be lower than RTHEAP_MAXEXTSZ.
-     */
-
-    if ((pagesize < (1 << RTHEAP_MINLOG2)) ||
-	(pagesize > (1 << RTHEAP_MAXLOG2)) ||
-	(pagesize & (pagesize - 1)) != 0 ||
-	heapsize <= sizeof(rtextent_t) ||
-	heapsize > RTHEAP_MAXEXTSZ ||
-	(heapsize & (pagesize - 1)) != 0)
-	return RTHEAP_PARAM;
-
-    /* Determine the page map overhead inside the given extent
-       size. We need to reserve a byte in a page map for each page
-       which is addressable into this extent. The page map is itself
-       stored in the extent space, right after the static part of its
-       header, and before the first allocatable page. */
-    pmapsize = ((heapsize - sizeof(rtextent_t)) * sizeof(u_char)) / (pagesize + sizeof(u_char));
-
-    /* The overall header size is: static_part + page_map rounded to
-       the minimum alignment size. */
-    hdrsize = (sizeof(rtextent_t) + pmapsize + RTHEAP_MINALIGNSZ - 1) & ~(RTHEAP_MINALIGNSZ - 1);
-
-    /* An extent must contain at least two addressable pages to cope
-       with allocation sizes between pagesize and 2 * pagesize. */
-    if (hdrsize + 2 * pagesize > heapsize)
-	return RTHEAP_PARAM;
-
-    /* Compute the page shiftmask from the page size (i.e. log2 value). */
-    for (pageshift = 0, shiftsize = pagesize;
-	 shiftsize > 1; shiftsize >>= 1, pageshift++)
-	; /* Loop */
-
-    heap->flags = 0;
-    heap->pagesize = pagesize;
-    heap->pageshift = pageshift;
-    heap->hdrsize = hdrsize;
-    heap->npages = (heapsize - hdrsize) >> pageshift;
-    heap->ubytes = 0;
-    heap->extentsize = heapsize;
-    heap->maxcont = heap->npages * pagesize;
-    INIT_LIST_HEAD(&heap->extents);
-    spin_lock_init(&heap->lock);
-
-    for (n = 0; n < RTHEAP_NBUCKETS; n++)
-	heap->buckets[n] = NULL;
-
-    if (heapaddr)
-	{
-	extent = (rtextent_t *)heapaddr;
-	init_extent(heap,extent);
-	list_add_tail(&extent->link,&heap->extents);
+	/*
+	 * Perform some parametrical checks first.
+	 * Constraints are:
+	 * PAGESIZE must be >= 2 ** MINLOG2.
+	 * PAGESIZE must be <= 2 ** MAXLOG2.
+	 * PAGESIZE must be a power of 2.
+	 * HEAPSIZE must be large enough to contain the static part of an
+	 * extent header.
+	 * HEAPSIZE must be a multiple of PAGESIZE.
+	 * HEAPSIZE must be lower than RTHEAP_MAXEXTSZ.
+	 */
+	if ((pagesize < (1 << RTHEAP_MINLOG2)) ||
+	    (pagesize > (1 << RTHEAP_MAXLOG2)) ||
+	    (pagesize & (pagesize - 1)) != 0 ||
+	    heapsize <= sizeof(rtextent_t) ||
+	    heapsize > RTHEAP_MAXEXTSZ ||
+	    (heapsize & (pagesize - 1)) != 0) {
+		return RTHEAP_PARAM;
 	}
-    else
-	{
-	u_long init_size = 0;
 
-	/* NULL initial heap address means that we should obtain it
-	   from the kernel allocation service. This also means that
-	   this heap is extendable by requesting additional extents to
-	   the very same service upon memory starvation. */
+	/* Determine the page map overhead inside the given extent
+	   size. We need to reserve a byte in a page map for each page
+	   which is addressable into this extent. The page map is itself
+	   stored in the extent space, right after the static part of its
+	   header, and before the first allocatable page. */
+	pmapsize = ((heapsize - sizeof(rtextent_t)) * sizeof(u_char)) / (pagesize + sizeof(u_char));
 
-#ifndef CONFIG_RTAI_MALLOC_VMALLOC
-	/* Kmalloc() cannot handle chunks over KMALLOC_LIMIT. So let's
-	   obtain the requested initial heap by allocating extents of
-	   this size, and keep the extent size under this limit. */
-	heap->extentsize = KMALLOC_LIMIT;
+	/* The overall header size is: static_part + page_map rounded to
+	   the minimum alignment size. */
+	hdrsize = (sizeof(rtextent_t) + pmapsize + RTHEAP_MINALIGNSZ - 1) & ~(RTHEAP_MINALIGNSZ - 1);
+
+	/* An extent must contain at least two addressable pages to cope
+	   with allocation sizes between pagesize and 2 * pagesize. */
+	if (hdrsize + 2 * pagesize > heapsize) {
+		return RTHEAP_PARAM;
+	}
+
+	/* Compute the page shiftmask from the page size (i.e. log2 value). */
+	for (pageshift = 0, shiftsize = pagesize; shiftsize > 1; shiftsize >>= 1, pageshift++);
+
+	heap->pagesize   = pagesize;
+	heap->pageshift  = pageshift;
+	heap->hdrsize    = hdrsize;
+#ifdef CONFIG_RTAI_MALLOC_VMALLOC
+	heap->extentsize = heapsize;
+#else  /* !CONFIG_RTAI_MALLOC_VMALLOC */
+	heap->extentsize = heapsize > KMALLOC_LIMIT ? KMALLOC_LIMIT : heapsize;
 #endif /* CONFIG_RTAI_MALLOC_VMALLOC */
+	heap->npages     = (heap->extentsize - hdrsize) >> pageshift;
+	heap->maxcont    = heap->npages*pagesize;
+	heap->flags      =
+	heap->ubytes     = 0;
+	INIT_LIST_HEAD(&heap->extents);
+	spin_lock_init(&heap->lock);
 
-	while (init_size < heapsize)
-	    {
-	    extent = (rtextent_t *)alloc_extent(heap->extentsize);
-
-	    if (!extent)
-		{
-		list_for_each(holder,&heap->extents) {
-	            extent = list_entry(holder,rtextent_t,link);
-		    free_extent(extent,heap->extentsize);
-		}
-
-		return RTHEAP_NOMEM;
-		}
-
-	    init_extent(heap,extent);
-	    list_add_tail(&extent->link,&heap->extents);
-	    init_size += heap->extentsize;
-	    }
-
-	heap->flags |= RTHEAP_EXTENDABLE;
+	for (n = 0; n < RTHEAP_NBUCKETS; n++) {
+		heap->buckets[n] = NULL;
 	}
 
-    return 0;
+	if (heapaddr) {
+		extent = (rtextent_t *)heapaddr;
+		init_extent(heap, extent);
+		list_add_tail(&extent->link, &heap->extents);
+	} else {
+		u_long init_size = 0;
+		while (init_size < heapsize) {
+			if (!(extent = (rtextent_t *)alloc_extent(heap->extentsize))) {
+				struct list_head *holder, *nholder;
+				list_for_each_safe(holder, nholder, &heap->extents) {
+					extent = list_entry(holder, rtextent_t, link);
+					free_extent(extent, heap->extentsize);
+				}
+				return RTHEAP_NOMEM;
+			}
+			init_extent(heap, extent);
+			list_add_tail(&extent->link, &heap->extents);
+			init_size += heap->extentsize;
+		}
+	}
+	return 0;
 }
 
 /*! 
@@ -314,19 +275,12 @@ int rtheap_init (rtheap_t *heap,
  */
 
 void rtheap_destroy (rtheap_t *heap)
-
 {
-    struct list_head *holder, *nholder;
+	struct list_head *holder, *nholder;
 
-    if (!(heap->flags & RTHEAP_EXTENDABLE))
-	return;
-
-    /* If the heap is marked as extendable, we have to release each
-       allocated extent back to the arch-dependent allocator. */
-
-    list_for_each_safe(holder, nholder, &heap->extents) {
-        free_extent(list_entry(holder, rtextent_t, link), heap->extentsize);
-    }
+	list_for_each_safe(holder, nholder, &heap->extents) {
+		free_extent(list_entry(holder, rtextent_t, link), heap->extentsize);
+	}
 }
 
 /*
@@ -349,9 +303,6 @@ static caddr_t get_free_range (rtheap_t *heap,
     list_for_each(holder,&heap->extents) {
 
 	extent = list_entry(holder,rtextent_t,link);
-
-searchrange:
-
 	freepage = extent->freelist;
 
 	while (freepage != NULL)
@@ -391,20 +342,7 @@ searchrange:
        cannot extend the heap, we have failed and we are done with
        this request. */
 
-    if (!(heap->flags & RTHEAP_EXTENDABLE) || !(mode & RTHEAP_EXTEND))
-	return NULL;
-
-    /* Get a new extent. */
-    extent = (rtextent_t *)alloc_extent(heap->extentsize);
-
-    if (extent == NULL)
-	return NULL;
-
-    init_extent(heap,extent);
-
-    list_add_tail(&extent->link,&heap->extents);
-
-    goto searchrange;	/* Always successful at the first try */
+    return NULL;
 
 splitpage:
 
@@ -687,45 +625,25 @@ unlock_and_fail:
 }
 
 int __rtai_heap_init (void)
-
 {
-
-#ifdef CONFIG_RTAI_MALLOC_VMALLOC
 	rtai_global_heap_size = (rtai_global_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	if (!(rtai_global_heap_adr = alloc_extent(rtai_global_heap_size))) {
-		printk(KERN_INFO "RTAI[malloc]: initial alloc_extent() failed (size=%d bytes).\n", rtai_global_heap_size);
+	if (rtheap_init(&rtai_global_heap, NULL, rtai_global_heap_size, PAGE_SIZE)) {
+		printk(KERN_INFO "RTAI[malloc]: failed to initialize the global heap (size=%d bytes).\n", rtai_global_heap_size);
 		return 1;
 	}
+	/* The global heap is extendable once, only at init. */
+	rtai_global_heap.flags &= ~RTHEAP_EXTENDABLE;
+#ifdef CONFIG_RTAI_MALLOC_VMALLOC
+	rtai_global_heap_adr = rtai_global_heap.extents.next;
 #endif
-
-    /* The global heap is extendable once, only at init. */
-
-    if (rtheap_init(&rtai_global_heap,rtai_global_heap_adr,rtai_global_heap_size,PAGE_SIZE))
-	{
-	printk(KERN_INFO "RTAI[malloc]: failed to initialize the global heap (size=%d bytes).\n",
-	       rtai_global_heap_size);
-
-	return 1;
-	}
-
-    rtai_global_heap.flags &= ~RTHEAP_EXTENDABLE;
-
-    printk(KERN_INFO "RTAI[malloc]: loaded (global heap size=%d bytes).\n",
-	   rtai_global_heap_size);
-
-    return 0;
+	printk(KERN_INFO "RTAI[malloc]: loaded (global heap size=%d bytes).\n", rtai_global_heap_size);
+	return 0;
 }
 
-void __rtai_heap_exit (void) {
-
-
-#ifdef CONFIG_RTAI_MALLOC_VMALLOC
-        free_extent(rtai_global_heap_adr, rtai_global_heap_size);
-        return;
-#endif
-    rtai_global_heap.flags |= RTHEAP_EXTENDABLE;
-    rtheap_destroy(&rtai_global_heap);
-    printk("RTAI[malloc]: unloaded.\n");
+void __rtai_heap_exit (void)
+{
+	rtheap_destroy(&rtai_global_heap);
+	printk("RTAI[malloc]: unloaded.\n");
 }
 
 /*

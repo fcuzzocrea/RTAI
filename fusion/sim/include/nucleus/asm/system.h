@@ -558,6 +558,10 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     tcb->vmthread = mvm_spawn_thread(tcb,(void *)entry,name);
 }
 
+static inline void xnarch_enable_fpu(xnarchtcb_t *current_tcb) {
+    /* Nop */
+}
+
 static inline void xnarch_init_fpu(xnarchtcb_t *tcb) {
     /* Nop */
 }

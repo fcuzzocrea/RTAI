@@ -505,6 +505,15 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     tcb->name = name;
 }
 
+static inline void xnarch_enable_fpu (xnarchtcb_t *current_tcb)
+
+{
+#ifdef CONFIG_RTAI_HW_FPU
+    if(!current_tcb->user_task)
+        rthal_enable_fpu();
+#endif /* CONFIG_RTAI_HW_FPU */
+}
+
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 
 {

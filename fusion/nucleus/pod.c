@@ -145,7 +145,16 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
        stepping properly. */
 
     if (xnpod_shadow_p())
+        {
+#ifdef CONFIG_RTAI_OPT_DEBUG
+        xnprintf("Switching %s to secondary mode after exception #%u from "
+                 "user-space at 0x%lx\n",
+                 xnpod_current_thread()->name,
+                 xnarch_fault_trap(fltinfo),
+                 xnarch_fault_pc(fltinfo));
+#endif /* CONFIG_RTAI_OPT_DEBUG */
         xnshadow_relax();
+        }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     return 0;
@@ -2048,7 +2057,10 @@ static inline void __xnpod_switch_fpu (xnsched_t *sched)
 {
     xnthread_t *runthread = sched->runthread;
 
-    if (testbits(runthread->status,XNFPU) && sched->fpuholder != runthread)
+    if (!testbits(runthread->status,XNFPU))
+        return;
+
+    if(sched->fpuholder != runthread)
         {
         if (sched->fpuholder == NULL ||
             xnarch_fpu_ptr(xnthread_archtcb(sched->fpuholder)) !=
@@ -2062,6 +2074,8 @@ static inline void __xnpod_switch_fpu (xnsched_t *sched)
 
         sched->fpuholder = runthread;
         }
+    else
+        xnarch_enable_fpu(xnthread_archtcb(runthread));
 }
 
 /* xnpod_switch_fpu() -- Switches to the current thread's FPU context,

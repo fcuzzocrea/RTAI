@@ -621,6 +621,8 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 
 #ifdef CONFIG_RTAI_HW_FPU
 
+#define xnarch_enable_fpu(current_tcb) clts()
+
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 
 {
@@ -680,6 +682,8 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 }
 
 #else /* !CONFIG_RTAI_HW_FPU */
+
+#define xnarch_enable_fpu(current_tcb)
 
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 

@@ -619,6 +619,10 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     pthread_sync_rt(&tcb->syncflag);
 }
 
+static inline void xnarch_enable_fpu(xnarchtcb_t *current_tcb) {
+    /* Handled by the in-kernel nucleus */
+}
+
 static inline void xnarch_init_fpu(xnarchtcb_t *tcb) {
     /* Handled by the in-kernel nucleus */
 }

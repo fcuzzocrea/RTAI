@@ -305,11 +305,20 @@ void rthal_restore_fpu(rthal_fpenv_t *fpuenv);
 #endif /* CONFIG_SMP */
     
 #define rthal_disable_fpu() ({                          \
-    register long msr;                                  \
-    __asm__ __volatile__ ( "mfmsr %0" : "=r"(msr) );    \
+    register long _msr;                                 \
+    __asm__ __volatile__ ( "mfmsr %0" : "=r"(_msr) );   \
     __asm__ __volatile__ ( "mtmsr %0"                   \
                            : /* no output */            \
-                           : "r"(msr & ~(MSR_FP))       \
+                           : "r"(_msr & ~(MSR_FP))      \
+                           : "memory" );                \
+})
+
+#define rthal_enable_fpu() ({                           \
+    register long _msr;                                 \
+    __asm__ __volatile__ ( "mfmsr %0" : "=r"(_msr) );   \
+    __asm__ __volatile__ ( "mtmsr %0"                   \
+                           : /* no output */            \
+                           : "r"(_msr | MSR_FP)         \
                            : "memory" );                \
 })
 

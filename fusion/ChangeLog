@@ -1,3 +1,13 @@
+2005-03-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_fault_handler): Print a message in debug
+	mode when switching a real-time user-space thread to secondary
+	mode after a fault.
+	(__xnpod_switch_fpu): Re-enable use of FPU when switching back to
+	the FPU owner.
+	asm/system.h (xnarch_enable_fpu): Add arch-dependent support
+	for previous item.
+
 2005-03-13  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r6c15.
@@ -76,12 +86,12 @@
 	* skins/rtai/module.c (rtai_shutdown): Make sure to wipe out all
 	lazybones before trying to unregister the skin, otherwise the
 	operation might fail because some threads did not exit, and leave
-	a dandling pointer to our module into the global syscall
+	a dangling pointer to our module into the global syscall
 	multiplexer table.
 
 	* nucleus/shadow.c (xnshadow_unmap): Fix regression wrt refcount
 	handling, damnit.
-
+ 
 	* configure.in: (Re-)enable compilation w/ 2.95.x.
 
 2005-03-06  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

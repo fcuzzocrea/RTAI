@@ -686,23 +686,18 @@ void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
  */
 int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 {
-	int pid, thread;
+	int thread;
 
 	rt_remove_tasklet(tasklet);
 	tasklet->handler = 0;
-	pid = ((tasklet->task)->lnxtsk)->pid;
 	copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	rt_task_resume(tasklet->task);
-	while (find_task_by_pid(pid)) {
-		current->state = TASK_INTERRUPTIBLE;
-		schedule_timeout(2);
-	}
 	thread = tasklet->thread;	
 	sched_free(tasklet);
 	return thread;	
 }
 
-static int tasklets_stacksize = STACK_SIZE;
+static int tasklets_stacksize = TASKLET_STACK_SIZE;
 MODULE_PARM(tasklets_stacksize, "i");
 
 static RT_TASK *rt_base_linux_task;

@@ -385,17 +385,45 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 
     if (inproc && inproc != outproc)
 	{
-	struct mm_struct *oldmm = outproc->active_mm;
+	struct mm_struct *prev = outproc->active_mm;
+	struct mm_struct *next = inproc->active_mm;
 
-	switch_mm(oldmm,inproc->active_mm,inproc);
+	inproc->thread.pgdir = next->pgd;
+
+	if (prev != next)
+	    {
+	    get_mmu_context(next);
+	    set_context(next->context, next->pgd);
+	    }
 
 	if (!inproc->mm)
-	    enter_lazy_tlb(oldmm,inproc);
+	    enter_lazy_tlb(prev,inproc);
 
-	__switch_to(outproc,inproc);
+#ifdef CONFIG_SMP
+	if (outproc->thread.regs && (outproc->thread.regs->msr & MSR_FP))
+	    giveup_fpu(outproc);
+#ifdef CONFIG_ALTIVEC
+	if ((outproc->thread.regs && (outproc->thread.regs->msr & MSR_VEC)))
+	    giveup_altivec(outproc);
+#endif /* CONFIG_ALTIVEC */
+#ifdef CONFIG_SPE
+	if ((outproc->thread.regs && (outproc->thread.regs->msr & MSR_SPE)))
+	    giveup_spe(outproc);
+#endif /* CONFIG_SPE */
+#endif /* CONFIG_SMP */
+
+	if (inproc->thread.regs && last_task_used_altivec == inproc)
+	    inproc->thread.regs->msr |= MSR_VEC;
+
+#ifdef CONFIG_SPE
+	if (inproc->thread.regs && last_task_used_spe == inproc)
+	    inproc->thread.regs->msr |= MSR_SPE;
+#endif /* CONFIG_SPE */
+
+	_switch(&outproc->thread,&inproc->thread);
 	}
     else
-	rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
+        rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,

@@ -28,13 +28,8 @@ ACKNOWLEDGMENTS:
 
 #define USE_RTAI_TASKS  0
 
-#ifdef CONFIG_RTAI_MAINTAINER_PMA
 #define ALLOW_RR        1
 #define ONE_SHOT        0
-#else /* STANDARD SETTINGS */
-#define ALLOW_RR        1
-#define ONE_SHOT        0
-#endif
 
 #include <linux/module.h>
 #include <linux/kernel.h>

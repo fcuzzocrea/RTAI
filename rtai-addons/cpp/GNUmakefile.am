@@ -30,6 +30,7 @@ noinst_HEADERS = \
 
 libcpp_a_SOURCES = \
 		builtin.c \
+		cs.cc \
 		cond.cc \
 		count.cc \
 		init.c \

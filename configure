@@ -9356,6 +9356,69 @@ fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_CPLUSPLUS:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_CPLUSPLUS:-no}" >&6
 
+echo "$as_me:$LINENO: checking if gcc accepts -fno-use-cxa-atexit" >&5
+echo $ECHO_N "checking if gcc accepts -fno-use-cxa-atexit... $ECHO_C" >&6
+save_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="-fno-use-cxa-atexit -Werror"
+if test "${ac_cv_accepts_cxa_atexit+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+int i = 0; return i;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_accepts_cxa_atexit=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_accepts_cxa_atexit=no
+fi
+rm -f conftest.$ac_objext conftest.$ac_ext
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+
+echo "$as_me:$LINENO: result: $ac_cv_accepts_cxa_atexit" >&5
+echo "${ECHO_T}$ac_cv_accepts_cxa_atexit" >&6
+CXXFLAGS="$save_CXXFLAGS"
+
 echo "$as_me:$LINENO: checking for comedi support over LXRT" >&5
 echo $ECHO_N "checking for comedi support over LXRT... $ECHO_C" >&6
 # Check whether --enable-comedi-lxrt or --disable-comedi-lxrt was given.
@@ -12224,8 +12287,8 @@ echo "$as_me: error: Built-in math support is not currently available with Linux
 fi
 
 if test x$CONFIG_KBUILD = xy -a x$CONFIG_RTAI_CPLUSPLUS = xy ; then
-   { { echo "$as_me:$LINENO: error: In-kernel C++ support is not currently available with Linux >= 2.6.x" >&5
-echo "$as_me: error: In-kernel C++ support is not currently available with Linux >= 2.6.x" >&2;}
+   { { echo "$as_me:$LINENO: error: In-kernel C++ support is not available with Linux >= 2.6.x" >&5
+echo "$as_me: error: In-kernel C++ support is not available with Linux >= 2.6.x" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -13324,6 +13387,10 @@ esac
 if test x$CONFIG_RTAI_KMOD_DEBUG = xy; then
    RTAI_KMOD_CFLAGS="-g $RTAI_KMOD_CFLAGS"
    RTAI_KMOD_CXXFLAGS="-g $RTAI_KMOD_CXXFLAGS"
+fi
+
+if [ $ac_cv_accepts_cxa_atexit = yes ]; then
+   RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CXXFLAGS -fno-use-cxa-atexit"
 fi
 
 

@@ -26,6 +26,7 @@
 
 #include <rtai_types.h>
 #include <rtai_nam2num.h>
+#include <rtai_sched.h>
 
 #define RT_SEM_MAGIC 0xaabcdeff
 
@@ -34,8 +35,6 @@
 #define SEM_ERR (0xFfff)
 
 #if defined(__KERNEL__) && !defined(__cplusplus)
-
-#include <rtai_sched.h>
 
 typedef struct rt_semaphore {
     struct rt_queue queue; /* <= Must be first in struct. */

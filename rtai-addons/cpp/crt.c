@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework 
  *
- * File: $Id: crt.c,v 1.1 2004/06/06 14:13:43 rpm Exp $
+ * File: $Id: crt.c,v 1.2 2004/08/04 09:01:40 rpm Exp $
  *
  * Specialized bits of code needed to support construction and
  * destruction of file-scope objects in C++ code.
@@ -52,10 +52,10 @@ static int errno;
 #include <rtai_malloc.h>
  
 extern int rt_printk(const char *format, ...);
+extern void __do_atexit( void );
+extern int __init_atexit( int max_size );
 
-#ifdef CONFIG_RTAI_ADEOS
-#define rt_printk printk
-#endif
+#if (__GNUC__ <= 2)
 
 #ifndef CTORS_SECTION_ASM_OP
 #define CTORS_SECTION_ASM_OP    ".section\t.ctors,\"aw\""
@@ -64,14 +64,24 @@ extern int rt_printk(const char *format, ...);
 #define DTORS_SECTION_ASM_OP    ".section\t.dtors,\"aw\""
 #endif
 
+#else /* ! (__GNUC__ > 3) */
+
+extern void __do_global_ctors_aux(void);
+#define __do_global_ctors __do_global_ctors_aux
+extern void __do_global_dtors_aux(void);
+#define __do_global_dtors __do_global_dtors_aux
+
+#endif /* __GNUC__ > 3 */
+
 /*  Declare a pointer to void function type.  */
+#if (__GNUC__ <= 2)
 typedef void (*func_ptr) (void);
+#endif /* ! (__GNUC__ > 3) */
 
 #ifdef CRT_BEGIN
 
+#if (__GNUC__ <= 2)
 extern int atexit( func_ptr function );
-extern void __do_atexit( void );
-extern int __init_atexit( int max_size );
 
 static func_ptr __DTOR_LIST__[];
 static void
@@ -110,6 +120,8 @@ __do_global_ctors(void)
 
 	rt_printk("GLOBAL CTORS END\n");	  
 }
+
+#endif /* ! (__GNUC__ > 3) */
 
 #ifdef USE_MAIN
 
@@ -191,6 +203,8 @@ module_exit(startup_cleanup)
 
 #endif /* NO_MOD_INIT */
 
+#if (__GNUC__ <= 2)
+
 /* Force cc1 to switch to .data section.  */
 static func_ptr force_to_data[0] __attribute__ ((__unused__)) = { };
 
@@ -201,9 +215,13 @@ static func_ptr __CTOR_LIST__[1] __attribute__ ((__unused__))
 asm (DTORS_SECTION_ASM_OP);     /* cc1 doesn't know that we are switching! */
 static func_ptr __DTOR_LIST__[1] __attribute__ ((__unused__)) 
   = { (func_ptr) (-1) };
+
+#endif /* ! (__GNUC__ > 3) */
  
 #else // CRT_BEGIN
-  
+
+#if (__GNUC__ <= 2)
+
 /* Force cc1 to switch to .data section.  */
 static func_ptr force_to_data[0] __attribute__ ((__unused__)) = { };
 
@@ -214,5 +232,7 @@ static func_ptr __CTOR_END__[1] __attribute__ ((__unused__))
 asm (DTORS_SECTION_ASM_OP);     /* cc1 doesn't know that we are switching! */
 static func_ptr __DTOR_END__[1] __attribute__ ((__unused__))
   = { (func_ptr) 0 };
+
+#endif /* ! (__GNUC__ > 3) */
 
 #endif // CRT_BEGIN

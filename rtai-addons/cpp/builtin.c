@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework
  *
- * File: $Id: builtin.c,v 1.1 2004/06/06 14:13:43 rpm Exp $
+ * File: $Id: builtin.c,v 1.2 2004/08/04 09:01:40 rpm Exp $
  *
  * Copyright: (C) 2001,2002 Erwin Rol <erwin@muffin.org>
  *
@@ -22,6 +22,8 @@
 
 #include <rtai_sched.h>
 #include <rtai_malloc.h>
+
+#if __GNUC__ < 3
 
 void
 __builtin_delete(void* vp){
@@ -50,6 +52,8 @@ __builtin_vec_new(int size){
 	rt_printk("__builtin_vec_new %p %d\n",vp,size);
 	return vp;
 }
+
+#endif
 
 extern void __default_terminate (void) __attribute__ ((__noreturn__));
 

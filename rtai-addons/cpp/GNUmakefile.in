@@ -350,6 +350,7 @@ noinst_HEADERS = \
 
 libcpp_a_SOURCES = \
 		builtin.c \
+		cs.cc \
 		cond.cc \
 		count.cc \
 		init.c \
@@ -497,17 +498,18 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 
 libcpp_a_LIBADD =
-am__libcpp_a_SOURCES_DIST = builtin.c cond.cc count.cc init.c \
+am__libcpp_a_SOURCES_DIST = builtin.c cs.cc cond.cc count.cc init.c \
 	iostream.cc mbx.cc module.cc mutex.cc sem.cc task.cc time.cc \
 	tld_key.c rtai_wrapper.c trace.cc
 @CONFIG_RTAI_TRACE_TRUE@am__objects_1 = libcpp_a-trace.$(OBJEXT)
-am_libcpp_a_OBJECTS = libcpp_a-builtin.$(OBJEXT) libcpp_a-cond.$(OBJEXT) \
-	libcpp_a-count.$(OBJEXT) libcpp_a-init.$(OBJEXT) \
-	libcpp_a-iostream.$(OBJEXT) libcpp_a-mbx.$(OBJEXT) \
-	libcpp_a-module.$(OBJEXT) libcpp_a-mutex.$(OBJEXT) \
-	libcpp_a-sem.$(OBJEXT) libcpp_a-task.$(OBJEXT) \
-	libcpp_a-time.$(OBJEXT) libcpp_a-tld_key.$(OBJEXT) \
-	libcpp_a-rtai_wrapper.$(OBJEXT) $(am__objects_1)
+am_libcpp_a_OBJECTS = libcpp_a-builtin.$(OBJEXT) libcpp_a-cs.$(OBJEXT) \
+	libcpp_a-cond.$(OBJEXT) libcpp_a-count.$(OBJEXT) \
+	libcpp_a-init.$(OBJEXT) libcpp_a-iostream.$(OBJEXT) \
+	libcpp_a-mbx.$(OBJEXT) libcpp_a-module.$(OBJEXT) \
+	libcpp_a-mutex.$(OBJEXT) libcpp_a-sem.$(OBJEXT) \
+	libcpp_a-task.$(OBJEXT) libcpp_a-time.$(OBJEXT) \
+	libcpp_a-tld_key.$(OBJEXT) libcpp_a-rtai_wrapper.$(OBJEXT) \
+	$(am__objects_1)
 libcpp_a_OBJECTS = $(am_libcpp_a_OBJECTS)
 libcpp_bits_a_LIBADD =
 am_libcpp_bits_a_OBJECTS = libcpp_bits_a-bits.$(OBJEXT) \
@@ -536,6 +538,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libcpp_a-builtin.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libcpp_a-cond.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libcpp_a-count.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libcpp_a-cs.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libcpp_a-init.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libcpp_a-iostream.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libcpp_a-mbx.Po \
@@ -626,6 +629,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcpp_a-builtin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcpp_a-cond.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcpp_a-count.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcpp_a-cs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcpp_a-init.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcpp_a-iostream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libcpp_a-mbx.Po@am__quote@
@@ -1111,6 +1115,39 @@ libcpp_wd_a-linux_wrapper.lo: linux_wrapper.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+libcpp_a-cs.o: cs.cc
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcpp_a_CXXFLAGS) $(CXXFLAGS) -MT libcpp_a-cs.o -MD -MP -MF "$(DEPDIR)/libcpp_a-cs.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o libcpp_a-cs.o `test -f 'cs.cc' || echo '$(srcdir)/'`cs.cc; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libcpp_a-cs.Tpo" "$(DEPDIR)/libcpp_a-cs.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/libcpp_a-cs.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='cs.cc' object='libcpp_a-cs.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libcpp_a-cs.Po' tmpdepfile='$(DEPDIR)/libcpp_a-cs.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcpp_a_CXXFLAGS) $(CXXFLAGS) -c -o libcpp_a-cs.o `test -f 'cs.cc' || echo '$(srcdir)/'`cs.cc
+
+libcpp_a-cs.obj: cs.cc
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcpp_a_CXXFLAGS) $(CXXFLAGS) -MT libcpp_a-cs.obj -MD -MP -MF "$(DEPDIR)/libcpp_a-cs.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o libcpp_a-cs.obj `if test -f 'cs.cc'; then $(CYGPATH_W) 'cs.cc'; else $(CYGPATH_W) '$(srcdir)/cs.cc'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libcpp_a-cs.Tpo" "$(DEPDIR)/libcpp_a-cs.Po"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/libcpp_a-cs.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='cs.cc' object='libcpp_a-cs.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libcpp_a-cs.Po' tmpdepfile='$(DEPDIR)/libcpp_a-cs.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcpp_a_CXXFLAGS) $(CXXFLAGS) -c -o libcpp_a-cs.obj `if test -f 'cs.cc'; then $(CYGPATH_W) 'cs.cc'; else $(CYGPATH_W) '$(srcdir)/cs.cc'; fi`
+
+libcpp_a-cs.lo: cs.cc
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcpp_a_CXXFLAGS) $(CXXFLAGS) -MT libcpp_a-cs.lo -MD -MP -MF "$(DEPDIR)/libcpp_a-cs.Tpo" \
+@am__fastdepCXX_TRUE@	  -c -o libcpp_a-cs.lo `test -f 'cs.cc' || echo '$(srcdir)/'`cs.cc; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libcpp_a-cs.Tpo" "$(DEPDIR)/libcpp_a-cs.Plo"; \
+@am__fastdepCXX_TRUE@	else rm -f "$(DEPDIR)/libcpp_a-cs.Tpo"; exit 1; \
+@am__fastdepCXX_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='cs.cc' object='libcpp_a-cs.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libcpp_a-cs.Plo' tmpdepfile='$(DEPDIR)/libcpp_a-cs.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcpp_a_CXXFLAGS) $(CXXFLAGS) -c -o libcpp_a-cs.lo `test -f 'cs.cc' || echo '$(srcdir)/'`cs.cc
 
 libcpp_a-cond.o: cond.cc
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libcpp_a_CXXFLAGS) $(CXXFLAGS) -MT libcpp_a-cond.o -MD -MP -MF "$(DEPDIR)/libcpp_a-cond.Tpo" \

@@ -28,8 +28,11 @@
 
 #ifdef __KERNEL__
 
+#ifndef __cplusplus
+
 #include <linux/kernel.h>
 #include <linux/list.h>
+#include <linux/spinlock.h>
 
 /*
  * LIMITS:
@@ -63,7 +66,7 @@
 #define RTHEAP_PCONT   1
 #define RTHEAP_PLIST   2
 
-#define KMALLOC_LIMIT     (128 * 1024)
+#define KMALLOC_LIMIT  (128 * 1024)
 
 #define RTHEAP_NOMEM   (-1)
 #define RTHEAP_PARAM   (-2)
@@ -105,6 +108,14 @@ typedef struct rtheap {
     caddr_t buckets[RTHEAP_NBUCKETS];
 
 } rtheap_t;
+
+#else /* __cplusplus */
+
+struct rtheap;
+
+typedef struct rtheap rtheap_t;
+
+#endif /* !__cplusplus */
 
 extern rtheap_t rtai_global_heap;
 

@@ -73,10 +73,14 @@ void xnmod_alloc_glinks (xnqueue_t *freehq)
 	}
 }
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#ifdef CONFIG_PROC_FS
 
 #include <linux/proc_fs.h>
 #include <linux/ctype.h>
+
+extern struct proc_dir_entry *rthal_proc_root;
+
+static struct proc_dir_entry *iface_proc_root;
 
 static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
 
@@ -280,8 +284,6 @@ static ssize_t iface_read_proc (char *page,
     return len;
 }
 
-extern struct proc_dir_entry *rthal_proc_root;
-
 void xnpod_init_proc (void)
 
 {
@@ -324,44 +326,49 @@ void xnpod_init_proc (void)
 	}
 
 #ifdef CONFIG_RTAI_OPT_FUSION
-    {
-    struct proc_dir_entry *ifdir, *ifent[XENOMAI_MUX_NR];
-    int n;
-
-    ifdir = create_proc_entry("interfaces",S_IFDIR,rthal_proc_root);
-
-    if (ifdir)
-	{
-	for (n = 0; n < XENOMAI_MUX_NR; n++)
-	    {
-	    if (muxtable[n].magic != 0)
-		continue;
-
-	    entry = create_proc_entry(muxtable[n].name,0444,ifdir);
-
-	    if (!entry)
-		continue;
-
-	    ifent[n] = entry;
-	    entry->nlink = 1;
-	    entry->data = muxtable + n;
-	    entry->read_proc = &iface_read_proc;
-	    entry->write_proc = NULL;
-	    entry->owner = THIS_MODULE;
-	    }
-	}
-    }
+    iface_proc_root = create_proc_entry("interfaces",S_IFDIR,rthal_proc_root);
 #endif /* CONFIG_RTAI_OPT_FUSION */
 }
 
 void xnpod_delete_proc (void)
 
 {
+#ifdef CONFIG_RTAI_OPT_FUSION
     remove_proc_entry("rtai/interfaces",NULL);
+#endif /* CONFIG_RTAI_OPT_FUSION */
     remove_proc_entry("rtai/version",NULL);
     remove_proc_entry("rtai/latency",NULL);
     remove_proc_entry("rtai/system",NULL);
 }
+
+#ifdef CONFIG_RTAI_OPT_FUSION
+
+void xnpod_declare_iface_proc (struct xnskentry *iface)
+
+{
+    struct proc_dir_entry *entry;
+
+    entry = create_proc_entry(iface->name,0444,iface_proc_root);
+
+    if (!entry)
+	return;
+
+    entry->nlink = 1;
+    entry->data = iface;
+    entry->read_proc = &iface_read_proc;
+    entry->write_proc = NULL;
+    entry->owner = THIS_MODULE;
+    iface->proc = entry;
+}
+
+void xnpod_discard_iface_proc (struct xnskentry *iface)
+
+{
+    remove_proc_entry(iface->name,NULL);
+    iface->proc = NULL;
+}
+
+#endif /* CONFIG_RTAI_OPT_FUSION */
 
 #endif /* CONFIG_PROC_FS */
 

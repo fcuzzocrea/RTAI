@@ -96,6 +96,10 @@ do { \
 
 static struct task_struct *switch_lock_owner[XNARCH_NR_CPUS];
 
+void xnpod_declare_iface_proc(struct xnskentry *iface);
+
+void xnpod_discard_iface_proc(struct xnskentry *iface);
+
 static inline struct task_struct *get_calling_task (adevinfo_t *evinfo) {
 
     return (xnpod_shadow_p()
@@ -906,6 +910,10 @@ static int attach_interface (struct task_struct *curr,
 		   help here... */
 		return -ENOSYS;
 
+#ifdef CONFIG_PROC_FS
+	    xnpod_declare_iface_proc(muxtable + muxid);
+#endif /* CONFIG_PROC_FS */
+
 	    if (infarg)
 		{
 		info.cpufreq = xnarch_get_cpu_freq();
@@ -963,6 +971,10 @@ static int detach_interface (struct task_struct *curr, int muxid)
 	    testbits(thread->status,XNSHADOW))
 	    xnpod_delete_thread(thread);
 	}
+
+#ifdef CONFIG_PROC_FS
+    xnpod_discard_iface_proc(muxtable + muxid);
+#endif /* CONFIG_PROC_FS */
 
     xnlock_put_irqrestore(&nklock,s);
 

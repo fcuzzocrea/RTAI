@@ -1,4 +1,4 @@
-/*!\file intr.c
+/*!\file
  * \brief Interrupt management.
  * \author Philippe Gerum
  *

@@ -1,3 +1,16 @@
+2004-08-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h (xnarch_sleep_on): Properly
+	set the task state before sleeping on schedule_timeout().
+
+	* include/nucleus/asm-ppc/system.h (xnarch_program_timer_shot): Do
+	not rescale the delay value uselessly.
+
+	* arch/ppc/hal/hal.c (__rthal_init): Fix tunables.timer_freq.
+
+	* arch/i386/hal/hal.c: Make proper use of
+	IPIPE_NR_XIRQS/IPIPE_NR_IRQS.
+
 2004-08-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/hal/hal.c (rthal_request_timer, rthal_release_timer):

@@ -342,7 +342,7 @@ static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
 
 #ifdef XENO_TIMER_MODULE
 
-static void xnarch_program_timer_shot (unsigned long long delay) {
+static inline void xnarch_program_timer_shot (unsigned long long delay) {
 
     /* 1 tsc unit of the virtual CPU == 1 ns. */
     mvm_program_timer(delay);

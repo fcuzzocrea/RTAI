@@ -384,6 +384,10 @@ int main (int argc, char *argv[])
 
 void *vml_timer_handle;
 
+static inline void xnarch_program_timer_shot (unsigned long long delay) {
+    /* Empty -- not available */
+}
+
 static inline void xnarch_stop_timer (void) {
     __pthread_cancel_vm(vml_timer_handle,NULL);
 }

@@ -681,7 +681,7 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 
 #ifdef XENO_TIMER_MODULE
 
-static void xnarch_program_timer_shot (unsigned long long delay) {
+static inline void xnarch_program_timer_shot (unsigned long long delay) {
     /* Delays are expressed in CPU ticks, so we need to keep a 64bit
        value here, especially for 64bit arch ports using an interval
        timer based on the internal cycle counter of the CPU. This PPC

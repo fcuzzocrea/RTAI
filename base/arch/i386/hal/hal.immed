@@ -1301,16 +1301,16 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 //1)	lflags = adeos_test_and_stall_pipeline_from (adp_root);
 	adp_root->irqs[irq].acknowledge(irq);
 	if (rtai_realtime_irq[irq].handler) {
-		int retval;
 		RTAI_SCHED_ISR_LOCK();
-		retval = ((int (*)(int, void *))rtai_realtime_irq[irq].handler)(irq, rtai_realtime_irq[irq].cookie);
-                if (rtai_realtime_irq[irq].retmode && retval) {
+                if (rtai_realtime_irq[irq].retmode && ((int (*)(int, void *))rtai_realtime_irq[irq].handler)(irq, rtai_realtime_irq[irq].cookie)) {
 			rtai_cli();
 			adp_root->cpudata[cpuid].status = lflags;
 //1)			adeos_restore_pipeline_nosync(adp_root, lflags, cpuid);
 			RTAI_SCHED_ISR_UNLOCK();
 			return 0;
-                }
+                } else {
+			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
+		}
 		rtai_cli();
 		RTAI_SCHED_ISR_UNLOCK();
 	} else {

@@ -337,9 +337,6 @@ static inline void rthal_set_timer_shot (unsigned long delay) {
 
     /* Private interface -- Internal use only */
 
-void rthal_linux_switch_mm(struct task_struct *prev,
-			   struct task_struct *next);
-
 unsigned long rthal_critical_enter(void (*synch)(void));
 
 void rthal_critical_exit(unsigned long flags);

@@ -1148,17 +1148,6 @@ static void rthal_ssrq_trampoline (unsigned virq)
     rthal_spin_unlock(&rthal_ssrq_lock);
 }
 
-void rthal_linux_switch_mm (struct task_struct *prev,
-			    struct task_struct *next)
-{
-    struct mm_struct *oldmm = prev->active_mm;
-
-    switch_mm(oldmm,next->active_mm,next);
-
-    if (!next->mm)
-	enter_lazy_tlb(oldmm,next);
-}
-
 static int errno;
 
 static inline _syscall3(int,
@@ -1407,7 +1396,6 @@ EXPORT_SYMBOL(rthal_request_timer);
 EXPORT_SYMBOL(rthal_free_timer);
 EXPORT_SYMBOL(rthal_set_trap_handler);
 
-EXPORT_SYMBOL(rthal_linux_switch_mm);
 EXPORT_SYMBOL(rthal_broadcast_to_local_timers);
 EXPORT_SYMBOL(rthal_critical_enter);
 EXPORT_SYMBOL(rthal_critical_exit);

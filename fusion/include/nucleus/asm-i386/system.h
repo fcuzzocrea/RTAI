@@ -398,7 +398,14 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
     in_tcb->active_task = inproc ?: outproc;
 
     if (inproc && inproc != outproc)
-	rthal_linux_switch_mm(outproc,inproc);
+	{
+	struct mm_struct *oldmm = outproc->active_mm;
+
+	switch_mm(oldmm,inproc->active_mm,inproc);
+
+	if (!inproc->mm)
+	    enter_lazy_tlb(oldmm,inproc);
+	}
 
     __switch_threads(out_tcb,in_tcb,outproc,inproc);
 

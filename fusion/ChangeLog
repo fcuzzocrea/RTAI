@@ -1,3 +1,10 @@
+2004-06-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h (xnarch_switch_to): Integrate
+	memory context switch code inline.
+
+	* arch/i386/hal/hal.c: Discard rthal_linux_switch_mm().
+
 2004-06-07  Philippe Gerum  <rpm@xenomai.org>
 
 	* scripts/rtai-load.in: Add application loader adapted from

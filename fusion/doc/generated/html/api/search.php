@@ -338,7 +338,7 @@ main();
 
 
 ?>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Jun 29 22:22:56 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Wed Jun 30 17:31:16 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

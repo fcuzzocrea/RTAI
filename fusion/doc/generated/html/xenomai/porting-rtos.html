@@ -39,7 +39,7 @@
 <p>Throughout this document, we will use the expression
       <span class="emphasis"><em>source RTOS</em></span> to indicate the traditional
       real-time operating from which the application is to be ported,
-      and<span class="emphasis"><em>target OS</em></span>to indicate GNU/Linux or any
+      and <span class="emphasis"><em>target OS</em></span> to indicate GNU/Linux or any
       other free operating system to which the application could be
       ported.</p>
 <div class="sect3" lang="en">
@@ -117,7 +117,7 @@
 	real-time tasks seamlessly aside of the hosting GNU/Linux
 	system [4]. The 'regular' Linux kernel is eventually seen as a
 	low-priority, background of the small real-time executive. The
-	<a href="http://www.rtlinux.org" target="_top">RTLinux</a>project
+	<a href="http://www.rtlinux.org" target="_top">RTLinux</a> project
 	is representative of this technical path. However, this
 	approach has a major drawback when it comes to port complex
 	applications from a foreign software platform: since the
@@ -189,7 +189,7 @@
 </div>
 <p>
 <span class="emphasis"><em>Real-time enabling GNU/Linux using
-	  RTAI.</em></span>Strictly speaking Linux/RTAI [7] is not a
+	  RTAI.</em></span> Strictly speaking Linux/RTAI [7] is not a
 	  real-time operating system but rather a real-time Linux
 	  kernel extension, which allows running real-time tasks
 	  seamlessly aside of the hosting GNU/Linux system. The RTAI
@@ -214,7 +214,7 @@
 	  system sanity, at the expense of a few microseconds more
 	  latency.</p>
 <p>
-<span class="emphasis"><em>Ad hoc services emulation.</em></span>A first
+<span class="emphasis"><em>Ad hoc services emulation.</em></span> A first
 	  approach consists in emulating each real-time facility
 	  needed by the application using a combination of the RTAI
 	  services. An ad hoc wrapping interface has to be written to
@@ -225,7 +225,7 @@
 	  same reason, conflicts between the emulated and native RTAI
 	  services may occur in some way.</p>
 <p>
-<span class="emphasis"><em>Complete port to RTAI.</em></span>A second
+<span class="emphasis"><em>Complete port to RTAI.</em></span> A second
 	  approach consists in fully porting the application over the
 	  native RTAI API. In such a case, RTAI facilities are
 	  globally substituted from the facilities from the source
@@ -250,10 +250,10 @@
 	  used to be the Legacy2linux project [8]. This project,
 	  sponsored by Montavista Software, aimed at providing
 	  [<span class="citation">&quot;a series of Linux-resident emulators for various
-	  legacy RTOS kernels.&quot;</span>]Just like Xenomai,
+	  legacy RTOS kernels.&quot;</span>] Just like Xenomai,
 	  [<span class="citation">these emulators are designed to ease the task of
 	  porting legacy RTOS code to an embedded Linux
-	  environment&quot;.</span>]Two emulators have been made
+	  environment&quot;.</span>] Two emulators have been made
 	  available by this project, respectively mimicking the APIs
 	  of WindRiver's pSOS+ and VxWorks real-time operating
 	  systems. However, this project has stalled due to a lack of

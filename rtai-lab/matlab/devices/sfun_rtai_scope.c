@@ -102,13 +102,13 @@ static void mdlStart(SimStruct *S)
 static void mdlOutputs(SimStruct *S, int_T tid)
 {
 	InputRealPtrsType uPtrs = ssGetInputPortRealSignalPtrs(S,0);
+#ifndef MATLAB_MEX_FILE
 	struct {
 		float t;
 		float u[NUM_CHANNELS];
 	} data;
 	int i;
 
-#ifndef MATLAB_MEX_FILE
 	MBX *mbx = (MBX *)ssGetPWorkValue(S,0);
 	data.t = ssGetT(S);
 	for (i = 0; i < NUM_CHANNELS; i++) {

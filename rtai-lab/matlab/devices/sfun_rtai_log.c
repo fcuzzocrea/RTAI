@@ -93,12 +93,12 @@ static void mdlOutputs(SimStruct *S, int_T tid)
 {
 	InputRealPtrsType uPtrs = ssGetInputPortRealSignalPtrs(S,0);
 	int_T *dim = ssGetInputPortDimensions(S,0);
+#ifndef MATLAB_MEX_FILE
 	struct {
 		float u[dim[0]*dim[1]];
 	} data;
 	int i;
 
-#ifndef MATLAB_MEX_FILE
 	MBX *mbx = (MBX *)ssGetPWork(S)[0];
 	for (i = 0; i < (dim[0]*dim[1]); i++) {
 		data.u[i] = (float)*uPtrs[i];

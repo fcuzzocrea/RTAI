@@ -661,11 +661,11 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
     if (task)
 	{
-#ifdef tsk_used_math
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
 	if (!tsk_used_math(task))
-#else /* !tsk_used_math -- < 2.6.11 */
+#else
 	if (!task->used_math)
-#endif /* tsk_used_math */
+#endif
             {
             stts();
 	    return;	/* Uninit fpu area -- do not restore. */

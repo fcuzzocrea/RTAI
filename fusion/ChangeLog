@@ -1,5 +1,7 @@
 2004-12-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-uvm: Fix and validate the UVM support.
+
 	* include/nucleus/types.h: XNPOD_APERIODIC_TICK ->
 	XN_APERIODIC_TICK, XNPOD_NO_TICK -> XN_NO_TICK.
 

@@ -501,7 +501,7 @@ static inline void xnpod_preempt_current_thread (void)
  * @param adcookie An architecture-dependent cookie. The caller should
  * pass the XNARCH_THREAD_COOKIE value defined for all real-time
  * control layers in their respective interface file
- * (i.e. xenomai/arch/<archname>.h). This system-defined cookie must
+ * (i.e. xenomai/arch/\<archname\>.h). This system-defined cookie must
  * not be confused with the user-defined thread cookie passed to the
  * xnpod_start_thread() service.
  *

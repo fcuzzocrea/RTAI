@@ -579,7 +579,7 @@ Initializes a new thread attached to the active pod. The thread is left in an in
     <tr><td valign=top><em>prio</em>&nbsp;</td><td>The base priority of the new thread. This value must range from [minpri .. maxpri] (inclusive) as specified when calling the <a class="el" href="group__pod.html#a21">xnpod_init()</a> service.</td></tr>
     <tr><td valign=top><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. The only defined flag available to the upper interfaces is XNFPU (enable FPU), which tells the nanokernel that the new thread will use the floating-point unit. In such a case, the nanokernel will handle the FPU context save/restore ops upon thread switches at the expense of a few additional cycles per context switch. By default, a thread is not expected to use the FPU. This flag is simply ignored when Xenomai runs on behalf of a userspace-based real-time control layer since the FPU management is always active if present. This flag only applies to kernel-based layers such as Adeos or RTAI.</td></tr>
     <tr><td valign=top><em>stacksize</em>&nbsp;</td><td>The size of the stack (in bytes) for the new thread. If zero is passed, the nanokernel will use a reasonable pre-defined size depending on the underlying real-time control layer.</td></tr>
-    <tr><td valign=top><em>adcookie</em>&nbsp;</td><td>An architecture-dependent cookie. The caller should pass the XNARCH_THREAD_COOKIE value defined for all real-time control layers in their respective interface file (i.e. xenomai/arch/.h). This system-defined cookie must not be confused with the user-defined thread cookie passed to the <a class="el" href="group__pod.html#a28">xnpod_start_thread()</a> service.</td></tr>
+    <tr><td valign=top><em>adcookie</em>&nbsp;</td><td>An architecture-dependent cookie. The caller should pass the XNARCH_THREAD_COOKIE value defined for all real-time control layers in their respective interface file (i.e. xenomai/arch/&lt;archname&gt;.h). This system-defined cookie must not be confused with the user-defined thread cookie passed to the <a class="el" href="group__pod.html#a28">xnpod_start_thread()</a> service.</td></tr>
     <tr><td valign=top><em>magic</em>&nbsp;</td><td>A magic cookie each skin can define to unambiguously identify threads created in their realm. This value is copied as-is to the "maagic" field of the thread struct. 0 is a conventional value for "no magic".</td></tr>
   </table>
 </dl>
@@ -1481,7 +1481,7 @@ Thread prologue - INTERNAL.
 This internal routine is called on behalf of a (re)starting thread's prologue before the user entry point is invoked. This call is reserved for internal housekeeping chores and cannot be inlined.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 23:52:44 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 16:23:55 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

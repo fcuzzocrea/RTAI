@@ -1,5 +1,5 @@
 /**
- * @ingroup lxrt
+ * @ingroup lxrt sched
  * @file
  *
  * @author Paolo Mantegazza
@@ -330,7 +330,22 @@ RTAI_PROTO(int, rt_sem_count,(SEM *sem))
 	return rtai_lxrt(BIDX, SIZARG, SEM_COUNT, &arg).i[LOW];
 }
 
-#define rt_cond_init(cnd)                  rt_typed_sem_init(cnd, 0, BIN_SEM)
+/**
+ * @ingroup lxrt
+ * Initialize a condition variable.
+ *
+ * Allocates and initializes a semaphore to be referred by @a name.
+ *
+ * @param name name of the condition variable.
+ *
+ * It is important to remark that the returned pointer cannot be used
+ * directly, it is for kernel space data, but just passed as arguments when
+ * needed.
+ *
+ * @return a pointer to the condition variable to be used in related calls or 0
+ * if an error has occured.
+ */ 
+#define rt_cond_init(name)                 rt_typed_sem_init(name, 0, BIN_SEM)
 #define rt_cond_delete(cnd)                rt_sem_delete(cnd)
 #define rt_cond_destroy(cnd)               rt_sem_delete(cnd)
 #define rt_cond_broadcast(cnd)             rt_sem_broadcast(cnd)

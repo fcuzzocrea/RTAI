@@ -37,7 +37,7 @@ echo -n 'Looking for removed files...'
 { cd "$abs_srcdir" && find generated -name CVS -prune -o -type f -print ; } | {
 cd tmp-dist && while read -a file; do
     if ! [ -f "${file[*]}" ]; then
-        echo "${file[*]}" >> ../removed
+        echo "${file[*]}" >> removed
     fi
 done
 }

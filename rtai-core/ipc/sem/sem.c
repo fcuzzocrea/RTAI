@@ -709,7 +709,7 @@ int rt_sem_wait_barrier(SEM *sem)
  * @param cnd points to the structure used in the call to @ref
  *	  rt_cond_init().
  *
- * @it returns 0 always.
+ * @return 0
  *
  */
 int rt_cond_signal(CND *cnd)
@@ -834,7 +834,7 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
  * value to indicate if it has been signalled pr timedout.
  *
  * @param cnd points to the structure used in the call to @ref
- *	  rt_cnd_init().
+ *	  rt_cond_init().
  *
  * @param mtx points to the structure used in the call to @ref
  *	  rt_sem_init().
@@ -894,7 +894,7 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
  * value to indicate if it has been signalled pr timedout.
  *
  * @param cnd points to the structure used in the call to @ref
- *	  rt_cnd_init().
+ *	  rt_cond_init().
  *
  * @param mtx points to the structure used in the call to @ref
  *	  rt_sem_init().
@@ -917,7 +917,7 @@ int rt_cond_wait_timed(CND *cnd, SEM *mtx, RTIME delay)
  * @anchor rt_rwl_init
  * @brief Initialize a multi readers single writer lock.
  *
- * rt_rwl_init initializes a multi readers single writer lock @rwl.
+ * rt_rwl_init initializes a multi readers single writer lock @a rwl.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
@@ -942,11 +942,11 @@ int rt_rwl_init(RWL *rwl)
  * @anchor rt_rwl_delete
  * @brief destroys a multi readers single writer lock.
  *
- * rt_rwl_init destroys a multi readers single writer lock @rwl.
+ * rt_rwl_init destroys a multi readers single writer lock @a rwl.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
- * @returns 0 if OK, SEM_ERR if anything went wrong.
+ * @return 0 if OK, SEM_ERR if anything went wrong.
  *
  */
 
@@ -964,7 +964,7 @@ int rt_rwl_delete(RWL *rwl)
  * @anchor rt_rwl_rdlock
  * @brief acquires a multi readers single writer lock just for reading.
  *
- * rt_rwl_rdlock acquires a multi readers single writer lock @rwl just for
+ * rt_rwl_rdlock acquires a multi readers single writer lock @a rwl just for
  * reading. The calling task will block only if there is a writer already 
  * or a task attempting to acquire write acces.
  *
@@ -1001,7 +1001,7 @@ int rt_rwl_rdlock(RWL *rwl)
  * @anchor rt_rwl_rdlock_if
  * @brief try to acquire a multi readers single writer lock just for reading.
  *
- * rt_rwl_rdlock tries to acquire a multi readers single writer lock @rwl 
+ * rt_rwl_rdlock tries to acquire a multi readers single writer lock @a rwl 
  * just for reading immediately, i.e. without blocking if a writer owns or is
  * attempting to own the lock already.  
  *
@@ -1031,13 +1031,13 @@ int rt_rwl_rdlock_if(RWL *rwl)
  * @brief try to acquire a multi readers single writer lock for reading within
  * an absolute deadline time.
  *
- * rt_rwl_rdlock tries to acquire a multi readers single writer lock @rwl 
+ * rt_rwl_rdlock tries to acquire a multi readers single writer lock @a rwl 
  * just for reading, timing out if the lock has not been acquired within an
  * assigned deadline.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
- * @time is the time deadline, in internal count units.
+ * @param time is the time deadline, in internal count units.
  *
  * @returns 0 if the lock was acquired, SEM_TIMOUT if the deadline expired
  * without acquiring the lock, SEM_ERR in case something went wrong.
@@ -1072,13 +1072,13 @@ int rt_rwl_rdlock_until(RWL *rwl, RTIME time)
  * @brief try to acquire a multi readers single writer lock for reading within
  * a relative deadline time.
  *
- * rt_rwl_rdlock tries to acquire a multi readers single writer lock @rwl 
+ * rt_rwl_rdlock tries to acquire a multi readers single writer lock @a rwl 
  * just for reading, timing out if the lock has not been acquired within an
  * assigned deadline.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
- * @delay is the time delay within which the lock must be acquired, in 
+ * @param delay is the time delay within which the lock must be acquired, in 
  * internal count units.
  *
  * @returns 0 if the lock was acquired, SEM_TIMOUT if the deadline expired

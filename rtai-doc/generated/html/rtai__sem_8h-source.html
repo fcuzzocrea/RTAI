@@ -299,44 +299,44 @@
 00330         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, SEM_COUNT, &amp;arg).i[LOW];
 00331 }
 00332 
-00333 <span class="preprocessor">#define rt_cond_init(cnd)                  rt_typed_sem_init(cnd, 0, BIN_SEM)</span>
-00334 <span class="preprocessor"></span><span class="preprocessor">#define rt_cond_delete(cnd)                rt_sem_delete(cnd)</span>
-00335 <span class="preprocessor"></span><span class="preprocessor">#define rt_cond_destroy(cnd)               rt_sem_delete(cnd)</span>
-00336 <span class="preprocessor"></span><span class="preprocessor">#define rt_cond_broadcast(cnd)             rt_sem_broadcast(cnd)</span>
-00337 <span class="preprocessor"></span><span class="preprocessor">#define rt_cond_timedwait(cnd, mtx, time)  rt_cond_wait_until(cnd, mtx, time)</span>
-00338 <span class="preprocessor"></span>
-<a name="l00339"></a><a class="code" href="group__sem.html#a13">00339</a> RTAI_PROTO(<span class="keywordtype">int</span>, rt_cond_signal,(CND *cnd))
-00340 {
-00341         <span class="keyword">struct </span>{ CND *cnd; } arg = { cnd };
-00342         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, COND_SIGNAL, &amp;arg).i[LOW];
-00343 }
-00344 
-<a name="l00345"></a><a class="code" href="group__sem.html#a15">00345</a> RTAI_PROTO(<span class="keywordtype">int</span>, rt_cond_wait,(CND *cnd, SEM  *mutex))
-00346 {
-00347         <span class="keyword">struct </span>{ CND *cnd; SEM *mutex; } arg = { cnd, mutex };
-00348         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, COND_WAIT, &amp;arg).i[LOW];
-00349 }
-00350 
-<a name="l00351"></a><a class="code" href="group__sem.html#a16">00351</a> RTAI_PROTO(<span class="keywordtype">int</span>, rt_cond_wait_until,(CND *cnd, SEM *mutex, RTIME time))
-00352 {
-00353         <span class="keyword">struct </span>{ CND *cnd; SEM *mutex; RTIME time; } arg = { cnd, mutex, time };
-00354         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, COND_WAIT_UNTIL, &amp;arg).i[LOW];
-00355 }
-00356 
-<a name="l00357"></a><a class="code" href="group__sem.html#a17">00357</a> RTAI_PROTO(<span class="keywordtype">int</span>, rt_cond_wait_timed,(CND *cnd, SEM *mutex, RTIME delay))
-00358 {
-00359         <span class="keyword">struct </span>{ CND *cnd; SEM *mutex; RTIME delay; } arg = { cnd, mutex, delay };
-00360         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, COND_WAIT_TIMED, &amp;arg).i[LOW];
-00361 }
-00362 
-00363 <span class="preprocessor">#ifdef __cplusplus</span>
-00364 <span class="preprocessor"></span>}
-00365 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00366 
-00367 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00368 
-00369 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_SEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 23:52:26 2004 for RTAI API by
+<a name="l00348"></a><a class="code" href="group__lxrt.html#a350">00348</a> <span class="preprocessor">#define rt_cond_init(name)                 rt_typed_sem_init(name, 0, BIN_SEM)</span>
+00349 <span class="preprocessor"></span><span class="preprocessor">#define rt_cond_delete(cnd)                rt_sem_delete(cnd)</span>
+00350 <span class="preprocessor"></span><span class="preprocessor">#define rt_cond_destroy(cnd)               rt_sem_delete(cnd)</span>
+00351 <span class="preprocessor"></span><span class="preprocessor">#define rt_cond_broadcast(cnd)             rt_sem_broadcast(cnd)</span>
+00352 <span class="preprocessor"></span><span class="preprocessor">#define rt_cond_timedwait(cnd, mtx, time)  rt_cond_wait_until(cnd, mtx, time)</span>
+00353 <span class="preprocessor"></span>
+<a name="l00354"></a><a class="code" href="group__sem.html#a13">00354</a> RTAI_PROTO(<span class="keywordtype">int</span>, rt_cond_signal,(CND *cnd))
+00355 {
+00356         <span class="keyword">struct </span>{ CND *cnd; } arg = { cnd };
+00357         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, COND_SIGNAL, &amp;arg).i[LOW];
+00358 }
+00359 
+<a name="l00360"></a><a class="code" href="group__sem.html#a15">00360</a> RTAI_PROTO(<span class="keywordtype">int</span>, rt_cond_wait,(CND *cnd, SEM  *mutex))
+00361 {
+00362         <span class="keyword">struct </span>{ CND *cnd; SEM *mutex; } arg = { cnd, mutex };
+00363         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, COND_WAIT, &amp;arg).i[LOW];
+00364 }
+00365 
+<a name="l00366"></a><a class="code" href="group__sem.html#a16">00366</a> RTAI_PROTO(<span class="keywordtype">int</span>, rt_cond_wait_until,(CND *cnd, SEM *mutex, RTIME time))
+00367 {
+00368         <span class="keyword">struct </span>{ CND *cnd; SEM *mutex; RTIME time; } arg = { cnd, mutex, time };
+00369         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, COND_WAIT_UNTIL, &amp;arg).i[LOW];
+00370 }
+00371 
+<a name="l00372"></a><a class="code" href="group__sem.html#a17">00372</a> RTAI_PROTO(<span class="keywordtype">int</span>, rt_cond_wait_timed,(CND *cnd, SEM *mutex, RTIME delay))
+00373 {
+00374         <span class="keyword">struct </span>{ CND *cnd; SEM *mutex; RTIME delay; } arg = { cnd, mutex, delay };
+00375         <span class="keywordflow">return</span> rtai_lxrt(BIDX, SIZARG, COND_WAIT_TIMED, &amp;arg).i[LOW];
+00376 }
+00377 
+00378 <span class="preprocessor">#ifdef __cplusplus</span>
+00379 <span class="preprocessor"></span>}
+00380 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00381 
+00382 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00383 
+00384 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_SEM_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 16:23:37 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

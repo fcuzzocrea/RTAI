@@ -43,6 +43,8 @@ Note also that, as already done for the shared memory services in user space, th
 
 <tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a349">rt_sem_init</a>(name, value)&nbsp;&nbsp;&nbsp;rt_typed_sem_init(name, value, CNT_SEM)</td></tr>
 
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a350">rt_cond_init</a>(name)&nbsp;&nbsp;&nbsp;rt_typed_sem_init(name, 0, BIN_SEM)</td></tr>
+
 <tr><td colspan=2><br><h2>Functions</h2></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a0">rt_lxrt_loaded</a> (void)</td></tr>
 
@@ -167,6 +169,42 @@ Note also that, as already done for the shared memory services in user space, th
 
 </table>
 <hr><h2>Define Documentation</h2>
+<a class="anchor" name="a350" doxytag="rtai_sem.h::rt_cond_init" ></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top"> #define rt_cond_init</td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">name&nbsp;</td>
+          <td class="mdname1" valign="top" nowrap>          </td>
+          <td class="md" valign="top">&nbsp;)&nbsp;</td>
+          <td class="md" nowrap>&nbsp;&nbsp;&nbsp;rt_typed_sem_init(name, 0, BIN_SEM)
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing=5 cellpadding=0 border=0>
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Initialize a condition variable.<p>
+Allocates and initializes a semaphore to be referred by <em>name</em>.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign=top><em>name</em>&nbsp;</td><td>name of the condition variable.</td></tr>
+  </table>
+</dl>
+It is important to remark that the returned pointer cannot be used directly, it is for kernel space data, but just passed as arguments when needed.<p>
+<dl compact><dt><b>Returns:</b></dt><dd>a pointer to the condition variable to be used in related calls or 0 if an error has occured. </dd></dl>
+    </td>
+  </tr>
+</table>
 <a class="anchor" name="a348" doxytag="rtai_mbx.h::rt_mbx_init" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
@@ -1957,7 +1995,7 @@ stop_rt_timer stops the timer. The timer mode is set to periodic.<p>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 23:52:43 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 16:23:54 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

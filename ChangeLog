@@ -1,5 +1,18 @@
 2004-06-11  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
+	* rtai-core/include/asm-i386/rtai_lxrt.h: Set __USER_DS when
+	entering a 2.6 kernel (instead of __KERNEL_DS with 2.4). This
+	fixes the random SEGVs experienced by user-space apps while LXRT
+	apps were running. This bug was due to data segment register
+	corruption and was specifically triggered by libc6 using the new
+	sysenter/sysexit support.
+
+2004-06-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Pass ARCH in RTAI_KBUILD_CMD for 2.6.
+
+2004-06-11  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
         * rtai-core/sched/rtai/sched_lxrt.c: forced keeping Linux tasks 
 	preempted by RTAI on the CPU they are. Affecting just SMP.
 

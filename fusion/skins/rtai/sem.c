@@ -359,6 +359,60 @@ int rt_sem_v (RT_SEM *sem)
 }
 
 /**
+ * @fn int rt_sem_broadcast(RT_SEM *sem)
+ * @brief Broadcast a semaphore.
+ *
+ * Unblock all tasks waiting on a semaphore. Awaken tasks return from
+ * rt_sem_p() as if the semaphore has been signaled. The semaphore
+ * count is not affected by the operation.
+ *
+ * @param sem The descriptor address of the affected semaphore.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a sem is not a semaphore descriptor.
+ *
+ * - -EIDRM is returned if @a sem is a deleted semaphore descriptor.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
+int rt_sem_broadcast (RT_SEM *sem)
+
+{
+    int err = 0;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
+
+    if (!sem)
+        {
+        err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
+        goto unlock_and_exit;
+        }
+
+    if (xnsynch_flush(&sem->synch_base,0) == XNSYNCH_RESCHED)
+	xnpod_schedule();
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/**
  * @fn int rt_sem_inquire(RT_SEM *sem, RT_SEM_INFO *info)
  * @brief Inquire about a semaphore.
  *

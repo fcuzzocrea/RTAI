@@ -133,6 +133,8 @@ int rt_sem_p(RT_SEM *sem,
 
 int rt_sem_v(RT_SEM *sem);
 
+int rt_sem_broadcast(RT_SEM *sem);
+
 int rt_sem_inquire(RT_SEM *sem,
 		   RT_SEM_INFO *info);
 

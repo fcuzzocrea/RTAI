@@ -1,3 +1,9 @@
+2004-03-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/ipc/tbx/tbx.c: fixed a misused sem_wait, sem_wait_if needed 
+	  instead, and added rt_msg_evdrp support.
+	* base/include/rtai_tbx.h: added declarations to support rt_msg_evdrp.
+
 2004-03-01  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/ipc/tbx/tbx.c: totally rewritten as RTAI own messages queue,

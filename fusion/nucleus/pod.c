@@ -3237,11 +3237,11 @@ static void xnpod_calibration_thread (void *cookie)
 
     xnpod_delay(XNARCH_CALIBRATION_PERIOD * 5);
 
+    expected = xnarch_get_cpu_tsc();
+
     xnpod_set_thread_periodic(xnpod_current_thread(),
 			      XN_INFINITE,
 			      XNARCH_CALIBRATION_PERIOD);
-
-    expected = xnarch_get_cpu_tsc();
 
     for (count = 0; count < 300000000 / XNARCH_CALIBRATION_PERIOD; count++)
         {

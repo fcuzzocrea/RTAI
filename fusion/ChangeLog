@@ -1,3 +1,8 @@
+2004-08-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_kick_process): Check shared pending
+	signal mask too.
+
 2004-08-25  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/hal/hal.c (rthal_calibration_timer): On PowerPC

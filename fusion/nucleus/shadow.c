@@ -1534,9 +1534,13 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
     if (xnshadow_thread(next))
 	{
 	rootprio = xnshadow_thread(next)->cprio;
-        if(testbits(xnshadow_thread(next)->status,
-                    XNTHREAD_BLOCK_BITS & ~XNRELAX))
-            xnarch_halt("Scheduling a thread marked as blocked");
+
+#ifdef CONFIG_RTAI_OPT_DEBUG
+        if (testbits(xnshadow_thread(next)->status,
+		     XNTHREAD_BLOCK_BITS & ~XNRELAX))
+            xnpod_fatal("blocked thread %s rescheduled?!",
+			xnshadow_thread(next)->name);
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 
 	engage_irq_shield(adeos_processor_id());
 	}
@@ -1629,6 +1633,7 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
     struct { struct task_struct *task; } *evdata = (__typeof(evdata))evinfo->evdata;
     struct task_struct *task = evdata->task;
     xnthread_t *thread = xnshadow_thread(task);
+    sigset_t sigpending;
     spl_t s;
 
     if (!thread || testbits(thread->status,XNRELAX|XNROOT))
@@ -1643,15 +1648,22 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
        propagated and cannot be dismissed, but again, at least we have
        been warned. */
 
-    if (sigismember(&task->pending.signal,SIGTERM) ||
-	sigismember(&task->pending.signal,SIGKILL) ||
-	sigismember(&task->pending.signal,SIGQUIT) ||
-	sigismember(&task->pending.signal,SIGINT))
+    /* Collect _all_ pending signals. */
+
+    sigorsets(&sigpending,
+	      &task->pending.signal,
+	      &task->signal->shared_pending.signal);
+
+    if (sigismember(&sigpending,SIGTERM) ||
+	sigismember(&sigpending,SIGKILL) ||
+	sigismember(&sigpending,SIGQUIT) ||
+	sigismember(&sigpending,SIGINT))
 	{
 	xnlock_get_irqsave(&nklock,s);
 
 	setbits(thread->status,XNKILLED);
-        if(thread == thread->sched->runthread)
+
+        if (thread == thread->sched->runthread)
             xnsched_set_resched(thread->sched);
 
 	if (!testbits(thread->status,XNSTARTED))

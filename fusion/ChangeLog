@@ -1,7 +1,7 @@
 2005-01-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c (__rt_intr_wait): Raise task priority as
-	needed.
+	needed, and prevent TM_NONBLOCK from being applied.
 
 	* skins/rtai/lib/intr.c (rt_intr_create): Use specific prototype
 	for user-space.

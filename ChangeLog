@@ -1,3 +1,7 @@
+2004-09-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Upgrade to hal16 final.
+
 2004-08-25  Ignacio García Pérez <iggarpe@terra.es>
 
 	* rtai-core/ipc/sem/sem.c: Dead code removal.

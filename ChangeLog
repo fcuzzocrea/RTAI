@@ -71,8 +71,8 @@
 	call stub.
 
 	* rtai-core/scripts/rtai-load.in: Use modprobe -n instead of
-	insmod -nq, so that we compatible with both insmod.modutils and
-	newer module-init-tools.
+	insmod -nq, so that we remain compatible with both insmod.modutils
+	and newer module-init-tools.
 
 2004-06-05  Philippe Gerum  <rpm@xenomai.org>
 

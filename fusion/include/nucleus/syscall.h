@@ -30,13 +30,6 @@
 #define __xn_sys_migrate    2	/* switched = xnshadow_relax/harden() */
 #define __xn_sys_barrier    3	/* started = xnshadow_wait_barrier(&entry,&cookie) */
 
-typedef struct xncompletion {
-
-    long syncflag;		/* Semaphore variable. */
-    pid_t pid;			/* Single waiter ID. */
-
-} xncompletion_t;
-
 typedef struct xnsysinfo {
 
     unsigned long long cpufreq;	/* CPU frequency */
@@ -55,6 +48,8 @@ typedef struct xninquiry {
 } xninquiry_t;
 
 #ifdef __KERNEL__
+
+#include <linux/types.h>
 
 struct task_struct;
 
@@ -93,6 +88,17 @@ extern int nkgkptd;
 #define xnshadow_ptd(t)    ((t)->ptd[nkgkptd])
 #define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))
 
+#else /* !__KERNEL__ */
+
+#include <sys/types.h>
+
 #endif /* __KERNEL__ */
+
+typedef struct xncompletion {
+
+    long syncflag;		/* Semaphore variable. */
+    pid_t pid;			/* Single waiter ID. */
+
+} xncompletion_t;
 
 #endif /* !_RTAI_NUCLEUS_SYSCALL_H */

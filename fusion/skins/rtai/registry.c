@@ -56,8 +56,9 @@
 
 static RT_OBJECT __rtai_obj_slots[CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS];
 
-static xnqueue_t __rtai_obj_busyq,
-                 __rtai_obj_freeq;
+static DECLARE_XNQUEUE(__rtai_obj_busyq);
+
+static DECLARE_XNQUEUE(__rtai_obj_freeq);
 
 static u_long __rtai_obj_stamp;
 
@@ -80,9 +81,6 @@ int __registry_pkg_init (void)
  (n) : sizeof(primes) / sizeof(u_long) - 1)
 
     int n;
-
-    initq(&__rtai_obj_freeq);
-    initq(&__rtai_obj_busyq);
 
     for (n = 0; n < CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS; n++)
 	{

@@ -26,15 +26,23 @@ extern int __rtai_muxid;
 int __init_skin(void);
 
 int rt_intr_create (RT_INTR *intr,
-		    unsigned irq)
+		    unsigned irq,
+		    rt_isr_t isr,
+		    int mode)
 {
     if (__rtai_muxid < 0 && __init_skin() < 0)
 	return -ENOSYS;
 
-    return XENOMAI_SKINCALL2(__rtai_muxid,
+    if (isr)
+	/* Interrupts are only available in DSR mode from
+	   user-space. */
+	return -EINVAL;
+
+    return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_intr_create,
 			     intr,
-			     irq);
+			     irq,
+			     mode);
 }
 
 int rt_intr_bind (RT_INTR *intr,
@@ -68,6 +76,22 @@ int rt_intr_wait (RT_INTR *intr,
 			     __rtai_intr_wait,
 			     intr,
 			     &timeout);
+}
+
+int rt_intr_enable (RT_INTR *intr)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_intr_enable,
+			     intr);
+}
+
+int rt_intr_disable (RT_INTR *intr)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_intr_disable,
+			     intr);
 }
 
 int rt_intr_inquire (RT_INTR *intr,

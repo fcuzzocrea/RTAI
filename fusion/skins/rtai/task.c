@@ -43,7 +43,7 @@
 #include <rtai/task.h>
 #include <rtai/registry.h>
 
-static xnqueue_t __rtai_task_q;
+static DECLARE_XNQUEUE(__rtai_task_q);
 
 static void __task_delete_hook (xnthread_t *thread)
 
@@ -72,7 +72,6 @@ static void __task_delete_hook (xnthread_t *thread)
 int __task_pkg_init (void)
 
 {
-    initq(&__rtai_task_q);
     xnpod_add_hook(XNHOOK_THREAD_DELETE,&__task_delete_hook);
 
     return 0;

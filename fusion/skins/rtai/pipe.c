@@ -49,7 +49,7 @@ static xnheap_t *__pipe_heap = &kheap;
 
 static unsigned __pipe_flush_virq;
 
-static xnqueue_t __pipe_flush_q;
+static DECLARE_XNQUEUE(__pipe_flush_q);
 
 static inline ssize_t __pipe_flush (RT_PIPE *pipe)
 
@@ -105,8 +105,6 @@ static int __pipe_output_handler (int bminor,
 int __pipe_pkg_init (void)
 
 {
-    initq(&__pipe_flush_q);
-
     __pipe_flush_virq = rthal_request_srq(0,&__pipe_flush_handler);
 
     if (__pipe_flush_virq <= 0)

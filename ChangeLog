@@ -10,7 +10,7 @@
 	  cleaned unused functions, modified switching to realtime/linux
 	  and related data for nested use.
         * rtai-core/include/asm-i386/rtai_lxrt.h: added a prudential saving
-	  of all registers in lxrt own syscall.
+	  of all registers in task switching.
         * rtai-core/include/rtai_schedcore.h: set to zero ready soft task 
 	  state and omitted the redundant setting of Linux state in timed
 	  enquieing.

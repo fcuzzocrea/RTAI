@@ -1,3 +1,11 @@
+2004-09-12  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/fusion.c (__pthread_ticks2ns_rt, __pthread_ns2ticks_rt):
+	Use signed input/output.
+
+	* skins/rtai/timer.c (rt_timer_ticks2ns, rt_timer_ns2ticks):
+	Consider CONFIG_RTAI_HW_APERIODIC_TIMER when converting.
+
 2004-09-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/*/hal/hal.c: Discard obsolete rthal_linux_context[] which

@@ -318,8 +318,8 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
 /**
  * @fn int rt_pipe_write(RT_PIPE *pipe,
                          RT_PIPE_MSG *msg,
-			    size_t size,
-			    int flags)
+			 size_t size,
+			 int flags)
  *
  * @brief Write a message to a pipe.
  *

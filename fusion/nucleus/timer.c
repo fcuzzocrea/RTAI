@@ -338,17 +338,14 @@ void xntimer_do_timers (void)
     xnsched_t *sched = xnpod_current_sched();
     xnholder_t *nextholder, *holder;
     xnqueue_t *timerq, reschedq;
+    xnticks_t now = 0; /* Silence preposterous warning. */
     xntimer_t *timer;
-    xnticks_t now;
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
     int aperiodic = !testbits(nkpod->status,XNTMPER);
 
     if (aperiodic)
-	{
 	/* Only use slot #0 in aperiodic mode. */
 	timerq = &nkpod->timerwheel[0];
-	now = xnarch_get_cpu_tsc();
-	}
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	{
@@ -375,6 +372,8 @@ void xntimer_do_timers (void)
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)
 	    {
+	    now = xnarch_get_cpu_tsc();
+
 	    if (timer->shot > now)
 		/* No need to continue in aperiodic mode since
 		   timeout dates are ordered by increasing
@@ -428,10 +427,6 @@ void xntimer_do_timers (void)
 		   until the current dispatching loop is over. */
 		appendq(&reschedq,&timer->link);
 	    }
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (aperiodic)
-	    now = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	}
 
     /* Reschedule elapsed interval timers for the next shot. */

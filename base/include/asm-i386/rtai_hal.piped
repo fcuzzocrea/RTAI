@@ -225,11 +225,16 @@ typedef int (*rt_irq_handler_t)(unsigned irq, void *cookie);
 #define RTAI_CALIBRATED_CPU_FREQ   0
 #define RTAI_CPU_FREQ              (rtai_tunables.cpu_freq)
 
-static inline unsigned long long rtai_rdtsc (void) {
+#if 0
+static inline unsigned long long rtai_hidden_rdtsc (void) {
     unsigned long long t;
     __asm__ __volatile__( "rdtsc" : "=A" (t));
     return t;
 }
+#define rtai_rdtsc() _rtai_hidden_rdtsc()
+#else
+#define rtai_rdtsc() ({ unsigned long long t; __asm__ __volatile__( "rdtsc" : "=A" (t)); t; })
+#endif
 
 #else  /* !CONFIG_X86_TSC */
 
@@ -684,6 +689,7 @@ static inline struct task_struct *rtai_get_root_current (int cpuid)
 #endif /* __KERNEL__ */
 
 #include <asm/rtai_oldnames.h>
+#include <asm/rtai_emulate_tsc.h>
 
 #define RTAI_DEFAULT_TICK    100000
 #ifdef CONFIG_RTAI_TRACE

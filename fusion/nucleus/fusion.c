@@ -489,24 +489,24 @@ static void xnfusion_shadow_delete_hook (xnthread_t *thread)
    domain. */
 
 static xnsysent_t __systab[] = {
-    { &__pthread_init_rt, __xn_flag_init }, /* __xn_fusion_init */
-    { &__pthread_create_rt, __xn_flag_init }, /* __xn_fusion_create */
-    { &__pthread_start_rt, __xn_flag_anycall }, /* __xn_fusion_start */
-    { &__pthread_set_periodic_rt, __xn_flag_regular },   /* __xn_fusion_set_periodic */
-    { &__pthread_wait_period_rt, __xn_flag_regular },   /* __xn_fusion_wait_period */
-    { &__pthread_time_rt, __xn_flag_anycall  },   /* __xn_fusion_time */
-    { &__pthread_cputime_rt, __xn_flag_anycall  },   /* __xn_fusion_cputime */
-    { &__pthread_start_timer_rt, __xn_flag_anycall  },   /* __xn_fusion_start_timer */
-    { &__pthread_stop_timer_rt, __xn_flag_anycall  },   /* __xn_fusion_stop_timer */
-    { &__pthread_sleep_rt, __xn_flag_regular  },   /* __xn_fusion_sleep */
-    { &__pthread_ns2ticks_rt, __xn_flag_anycall  },   /* __xn_fusion_ns2ticks */
-    { &__pthread_ticks2ns_rt, __xn_flag_anycall  },   /* __xn_fusion_ticks2ns */
-    { &__pthread_inquire_rt, __xn_flag_shadow },   /* __xn_fusion_inquire */
-    { &__pthread_idle_vm, __xn_flag_regular }, /* __xn_fusion_idle */
-    { &__pthread_cancel_vm, __xn_flag_regular }, /* __xn_fusion_cancel */
-    { &__pthread_activate_vm, __xn_flag_shadow },   /* __xn_fusion_activate */
-    { &__pthread_hold_vm, __xn_flag_regular },   /* __xn_fusion_hold */
-    { &__pthread_release_vm, __xn_flag_shadow },   /* __xn_fusion_release */
+    [__xn_fusion_init] = { &__pthread_init_rt, __xn_flag_init },
+    [__xn_fusion_create] = { &__pthread_create_rt, __xn_flag_init },
+    [__xn_fusion_start] = { &__pthread_start_rt, __xn_flag_anycall },
+    [__xn_fusion_set_periodic] = { &__pthread_set_periodic_rt, __xn_flag_regular },
+    [__xn_fusion_wait_period] = { &__pthread_wait_period_rt, __xn_flag_regular },
+    [__xn_fusion_time] = { &__pthread_time_rt, __xn_flag_anycall  },
+    [__xn_fusion_cputime] = { &__pthread_cputime_rt, __xn_flag_anycall  },
+    [__xn_fusion_start_timer] = { &__pthread_start_timer_rt, __xn_flag_anycall  },
+    [__xn_fusion_stop_timer] = { &__pthread_stop_timer_rt, __xn_flag_anycall  },
+    [__xn_fusion_sleep] = { &__pthread_sleep_rt, __xn_flag_regular  },
+    [__xn_fusion_ns2ticks] = { &__pthread_ns2ticks_rt, __xn_flag_anycall  },
+    [__xn_fusion_ticks2ns] = { &__pthread_ticks2ns_rt, __xn_flag_anycall  },
+    [__xn_fusion_inquire] = { &__pthread_inquire_rt, __xn_flag_shadow },
+    [__xn_fusion_idle] = { &__pthread_idle_vm, __xn_flag_regular },
+    [__xn_fusion_cancel] = { &__pthread_cancel_vm, __xn_flag_regular },
+    [__xn_fusion_activate] = { &__pthread_activate_vm, __xn_flag_shadow },
+    [__xn_fusion_hold] = { &__pthread_hold_vm, __xn_flag_regular },
+    [__xn_fusion_release] = { &__pthread_release_vm, __xn_flag_shadow },
 };
 
 static int xnfusion_unload_hook (void)

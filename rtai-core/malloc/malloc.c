@@ -37,7 +37,7 @@
 #include <linux/kernel.h>
 #include <linux/version.h>
 #include <rtai_config.h>
-#include <asm/rtai_hal.h>
+#include <asm/rtai.h>
 #ifdef CONFIG_RTAI_MALLOC_VMALLOC
 #include <rtai_shm.h>
 #else /* !CONFIG_RTAI_MALLOC_VMALLOC */

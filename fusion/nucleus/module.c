@@ -122,9 +122,11 @@ static int xnpod_read_proc (char *page,
     for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
 	if (muxtable[muxid].magic != 0)
 	    {
-	    p += sprintf(p,"%s%s (%d)",nrxfaces > 0 ? ", " : "",
-			 muxtable[muxid].name, 
-			 xnarch_atomic_get(&muxtable[muxid].refcnt));
+	    p += sprintf(p,"%s%s",nrxfaces > 0 ? ", " : "",muxtable[muxid].name);
+
+	    if (xnarch_atomic_get(&muxtable[muxid].refcnt) > 0)
+		p += sprintf(p,"[%d]",xnarch_atomic_get(&muxtable[muxid].refcnt));
+
 	    nrxfaces++;
 	    }
 

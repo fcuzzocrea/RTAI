@@ -27,7 +27,7 @@ static void xnthread_timeout_handler (void *cookie)
 
 {
     xnthread_t *thread = (xnthread_t *)cookie;
-    __setbits(thread->status,XNTIMEO);
+    __setbits(thread->status,XNTIMEO); /* Interrupts are off. */
     xnpod_resume_thread(thread,XNDELAY);
 }
 

@@ -1,5 +1,22 @@
 2005-01-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/fusion.c: Add pthread_exit_rt() to unmap a shadow thread
+	from a regular Linux task without destroying the latter.
+
+	* nucleus/shadow.c (xnshadow_unmap): Handle differently unmapping
+	calls from either primary or secondary modes.
+
+	* nucleus/shadow.c (rtai_sysentry): Return -EPERM upon attempt to
+	migrate a non-fusion thread.
+
+	* configure.in: Use -fno-strict-aliasing when compiling user-space
+	stuff since 2.6.10 enforces it to silence its own warnings, and we
+	need to recycle a few of its offending headers. When have been
+	pretty careful up to now not to break the type aliasing rules, so
+	it should be ok, but we definitely need to keep going on this
+	way... This hack should be removed asap when the kernel side is
+	fixed.
+
 	* nucleus/shadow.c: Handle the XNSHIELD bit on a per-shadow basis,
 	dynamically controlling whether the interrupt shield needs to be
 	enforced at context switch time or not.

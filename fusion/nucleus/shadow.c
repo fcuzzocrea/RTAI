@@ -555,51 +555,6 @@ void xnshadow_relax (void)
 #endif
 }
 
-void xnshadow_unmap (xnthread_t *thread) /* Must be called by the task deletion hook. */
-
-{
-    struct task_struct *task;
-    unsigned muxid, magic;
-
-    task = xnthread_archtcb(thread)->user_task;
-
-#if 1
-    if (traceme)
-	printk("__UNMAP__: %s, pid=%d, task=%s (ipipe=%lu, domain=%s, taskstate=%ld)\n",
-	       thread->name,
-	       task ? task->pid : -1,
-	       task ? task->comm : "<null>",
-	       adeos_test_pipeline_from(&rthal_domain),
-	       adp_current->name,
-	       task ? task->state : -1);
-#endif
-
-    magic = xnthread_get_magic(thread);
-
-    for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
-	{
-	if (muxtable[muxid].magic == magic)
-            {
-            if (xnarch_atomic_dec_and_test(&muxtable[muxid].refcnt))
-                /* We were the last thread, decrement the counter,
-		   since it was incremented by the first "attach"
-		   operation. */
-                xnarch_atomic_dec(&muxtable[muxid].refcnt);
-
-            break;
-            }
-        }
-
-    if (!task)
-	return;
-
-    xnshadow_ptd(task) = NULL;
-
-    /* The zombie side returning to user-space will be trapped and
-       exited inside the pod's rescheduling routines. */
-    schedule_linux_call(SB_WAKEUP_REQ,task,0);
-}
-
 void xnshadow_sync_post (pid_t syncpid, int __user *u_syncp, int err)
 
 {
@@ -745,6 +700,66 @@ void xnshadow_map (xnthread_t *thread,
        }
    else
        xnshadow_sync_post(syncpid,u_syncp,0);
+}
+
+void xnshadow_unmap (xnthread_t *thread)
+
+{
+    struct task_struct *task;
+    unsigned muxid, magic;
+
+#ifdef CONFIG_RTAI_OPT_DEBUG
+    if (!testbits(xnpod_current_sched()->status,XNKCOUT))
+	xnpod_fatal("xnshadow_map() called from invalid context");
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+
+    task = xnthread_archtcb(thread)->user_task;
+
+#if 1
+    if (traceme)
+	printk("__UNMAP__: %s, pid=%d, task=%s (ipipe=%lu, domain=%s, taskstate=%ld)\n",
+	       thread->name,
+	       task ? task->pid : -1,
+	       task ? task->comm : "<null>",
+	       adeos_test_pipeline_from(&rthal_domain),
+	       adp_current->name,
+	       task ? task->state : -1);
+#endif
+
+    magic = xnthread_get_magic(thread);
+
+    for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
+	{
+	if (muxtable[muxid].magic == magic)
+            {
+            if (xnarch_atomic_dec_and_test(&muxtable[muxid].refcnt))
+                /* We were the last thread, decrement the counter,
+		   since it was incremented by the first "attach"
+		   operation. */
+                xnarch_atomic_dec(&muxtable[muxid].refcnt);
+
+            break;
+            }
+        }
+
+    if (!task)
+	return;
+
+    xnshadow_ptd(task) = NULL;
+
+    if (task->state != TASK_RUNNING)
+	/* If the shadow is being unmapped in primary mode, the
+	   associated Linux task should also die. The zombie Linux
+	   side returning to user-space will be trapped and exited
+	   inside the pod's rescheduling routines. */
+	schedule_linux_call(SB_WAKEUP_REQ,task,0);
+    else
+	/* Otherwise, if the shadow is being unmapped in secondary
+	   mode, we only detach the shadow thread from its Linux mate,
+	   and renice the root thread appropriately. We do not
+	   reschedule since xnshadow_unmap() must be called from a
+	   thread deletion hook. */
+	xnpod_renice_root(XNPOD_ROOT_PRIO_BASE);
 }
 
 int xnshadow_wait_barrier (struct pt_regs *regs)
@@ -1259,7 +1274,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	case __xn_sys_migrate:
 
 	    if (!thread)	/* Not a shadow anyway. */
-		__xn_success_return(regs,0);
+		__xn_success_return(regs,-EPERM);
 	    else if (__xn_reg_arg1(regs) == FUSION_RTAI_DOMAIN) /* Linux => RTAI */
 		{
 		if (!xnthread_test_flags(thread,XNRELAX))
@@ -1469,6 +1484,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
  skin_syscall:
 
     if ((muxtable[muxid - 1].systab[muxop].flags & __xn_exec_histage) != 0)
+	{
 	/* This request originates from the Linux domain and must be
 	   run into the RTAI domain: harden the caller and execute the
 	   syscall. */
@@ -1477,6 +1493,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	    __xn_error_return(regs,-ERESTARTSYS);
 	    return;
 	    }
+	}
 
     __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(current,regs));
 

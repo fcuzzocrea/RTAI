@@ -70,10 +70,12 @@ typedef struct _xnsysent {
 #define __xn_exec_shadow     0x4
 /* Context-agnostic syscall. */
 #define __xn_exec_any        0x0
-/* Short-hand for shadow initializing syscall. */
+/* Short-hand for shadow init syscall. */
 #define __xn_exec_init       __xn_exec_lostage
-/* Short-hand for pure shadow syscall in RTAI space. */
+/* Short-hand for shadow syscall in RTAI space. */
 #define __xn_exec_primary   (__xn_exec_shadow|__xn_exec_histage)
+/* Short-hand for shadow syscall in Linux space. */
+#define __xn_exec_secondary (__xn_exec_shadow|__xn_exec_lostage)
 
     u_long flags;
 

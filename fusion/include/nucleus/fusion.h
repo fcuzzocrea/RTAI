@@ -41,21 +41,22 @@
 #define FUSION_RTAI_DOMAIN     1
 
 #define __xn_fusion_init         0
-#define __xn_fusion_create       1
-#define __xn_fusion_start        2
-#define __xn_fusion_set_periodic 3
-#define __xn_fusion_wait_period  4
-#define __xn_fusion_time         5
-#define __xn_fusion_cputime      6
-#define __xn_fusion_start_timer  7
-#define __xn_fusion_stop_timer   8
-#define __xn_fusion_sleep        9
-#define __xn_fusion_inquire      10
-#define __xn_fusion_idle         11
-#define __xn_fusion_cancel       12
-#define __xn_fusion_activate     13
-#define __xn_fusion_hold         14
-#define __xn_fusion_release      15
+#define __xn_fusion_exit         1
+#define __xn_fusion_create       2
+#define __xn_fusion_start        3
+#define __xn_fusion_set_periodic 4
+#define __xn_fusion_wait_period  5
+#define __xn_fusion_time         6
+#define __xn_fusion_cputime      7
+#define __xn_fusion_start_timer  8
+#define __xn_fusion_stop_timer   9
+#define __xn_fusion_sleep        10
+#define __xn_fusion_inquire      11
+#define __xn_fusion_idle         12
+#define __xn_fusion_cancel       13
+#define __xn_fusion_activate     14
+#define __xn_fusion_hold         15
+#define __xn_fusion_release      16
 
 typedef unsigned long long nanotime_t;
 
@@ -85,6 +86,8 @@ int pthread_info_rt(xnsysinfo_t *infop);
 int pthread_init_rt(const char *name,
 		    void *uhandle,
 		    void **khandlep);
+
+int pthread_exit_rt(void);
 
 int pthread_create_rt(const char *name,
 		      void *uhandle,

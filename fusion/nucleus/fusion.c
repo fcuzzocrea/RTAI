@@ -128,6 +128,17 @@ static int __pthread_init_rt (struct task_struct *curr, struct pt_regs *regs) {
     return __pthread_shadow_helper(curr,regs,0,NULL);
 }
 
+static int __pthread_exit_rt (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
+
+    /* We are currently running in secondary mode. */
+    xnpod_delete_thread(thread);
+
+    return 0;
+}
+
 static int __pthread_create_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -445,6 +456,7 @@ static void xnfusion_shadow_delete_hook (xnthread_t *thread)
 static xnsysent_t __systab[] = {
     /* Exported calls. */
     [__xn_fusion_init] = { &__pthread_init_rt, __xn_exec_init },
+    [__xn_fusion_exit] = { &__pthread_exit_rt, __xn_exec_secondary },
     [__xn_fusion_create] = { &__pthread_create_rt, __xn_exec_init },
     [__xn_fusion_start] = { &__pthread_start_rt, __xn_exec_any },
     [__xn_fusion_set_periodic] = { &__pthread_set_periodic_rt, __xn_exec_primary },

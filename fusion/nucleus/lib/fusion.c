@@ -91,6 +91,13 @@ int pthread_init_rt (const char *name,
     return XENOMAI_SKINCALL3(__fusion_muxid,__xn_fusion_init,name,khandlep,uhandle);
 }
 
+int pthread_exit_rt (void)
+
+{
+    return XENOMAI_SKINCALL0(__fusion_muxid,
+			     __xn_fusion_exit);
+}
+
 int pthread_create_rt (const char *name,
 		       void *uhandle,
 		       pid_t syncpid,

@@ -47,7 +47,7 @@
 #define	XNHEAP_MINLOG2    3
 #define	XNHEAP_MAXLOG2    22
 #define	XNHEAP_MINALLOCSZ (1 << XNHEAP_MINLOG2)
-#define	XNHEAP_MINALIGNSZ (1 << (XNHEAP_MINLOG2 + 1))
+#define	XNHEAP_MINALIGNSZ (1 << 4) /* i.e. 16 bytes */
 #define	XNHEAP_NBUCKETS   (XNHEAP_MAXLOG2 - XNHEAP_MINLOG2 + 2)
 #define	XNHEAP_MAXEXTSZ   (1 << 24) /* i.e. 16Mb */
 
@@ -161,6 +161,10 @@ int xnheap_extend(xnheap_t *heap,
 
 void *xnheap_alloc(xnheap_t *heap,
 		   u_long size);
+
+int xnheap_test_and_free(xnheap_t *heap,
+			 void *block,
+			 int (*ckfn)(void *block));
 
 int xnheap_free(xnheap_t *heap,
 		void *block);

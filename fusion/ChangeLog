@@ -1,3 +1,13 @@
+2005-02-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/queue.c (rt_queue_free): Make sure we don't fiddle
+	with the refcount before the pointer validity has been
+	checked. Use xnheap_test_and_free() for that purpose.
+
+	* nucleus/heap.c (xnheap_test_and_free): Provide a mean for client
+	code to further check freed data after the mere addressing issues
+	have been scanned by the heap manager.
+
 2005-02-15  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* scripts/rtai-config.in: Add --cross-compile option and normal
@@ -7,6 +17,9 @@
 	not exist.
 
 2005-02-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/heap.h (XNHEAP_MINALIGNSZ): Do not make this
+	constant depend on XNHEAP_MINLOG2; those are unrelated.
 
 	* skins/rtai/queue.c (rt_queue_recv): Transfer message ownership
 	by properly incrementing the refcount upon direct receive

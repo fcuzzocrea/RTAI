@@ -497,19 +497,32 @@ release_and_exit:
 }
 
 /*! 
- * \fn int xnheap_free(xnheap_t *heap, void *block);
- * \brief Release a memory block to a memory heap.
+ * \fn int xnheap_test_and_free(xnheap_t *heap, void *block, int (*ckfn)(void *));
+ * \brief Test and release a memory block to a memory heap.
  *
  * Releases a memory region to the memory heap it was previously
- * allocated from.
+ * allocated from. Before the actual release is performed, an optional
+ * user-defined can be invoked to check for additional criteria with
+ * respect to the request consistency.
  *
  * @param heap The descriptor address of the heap to release memory
  * to.
  *
  * @param block The address of the region to be returned to the heap.
  *
+ * @param ckfn The address of a user-supplied verification routine
+ * which is to be called after the memory address specified by @a
+ * block has been checked for validity. The routine is expected to
+ * proceed to further consistency checks, and either return zero upon
+ * success, or non-zero upon error. In the latter case, the release
+ * process is aborted, and @a ckfn's return value is passed back to
+ * the caller of this service as its error return code. @a ckfn must
+ * not trigger the rescheduling procedure either directly or
+ * indirectly.
+ *
  * @return 0 is returned upon success, or -EINVAL is returned whenever
- * the block is not a valid region of the specified heap.
+ * the block is not a valid region of the specified heap. Additional
+ * return codes can also be defined locally by the @a ckfn routine.
  *
  * Environments:
  *
@@ -523,13 +536,13 @@ release_and_exit:
  * Rescheduling: never.
  */
 
-int xnheap_free (xnheap_t *heap, void *block)
+int xnheap_test_and_free (xnheap_t *heap, void *block, int (*ckfn)(void *block))
 
 {
     caddr_t freepage, lastpage, nextpage, tailpage;
     u_long pagenum, pagecont, boffset, bsize;
     xnextent_t *extent = NULL;
-    int log2size, npages;
+    int log2size, npages, err;
     xnholder_t *holder;
     spl_t s;
 
@@ -549,7 +562,7 @@ int xnheap_free (xnheap_t *heap, void *block)
 	}
 
     if (!holder)
-	goto unlock_and_fail;
+	goto bad_block;
 
     /* Compute the heading page number in the page map. */
     pagenum = ((caddr_t)block - extent->membase) >> heap->pageshift;
@@ -560,12 +573,18 @@ int xnheap_free (xnheap_t *heap, void *block)
 	case XNHEAP_PFREE: /* Unallocated page? */
 	case XNHEAP_PCONT:  /* Not a range heading page? */
 
+bad_block:
+	    err = -EINVAL;
+
 unlock_and_fail:
 
 	    xnlock_put_irqrestore(&heap->lock,s);
-	    return -EINVAL;
+	    return err;
 
 	case XNHEAP_PLIST:
+
+	    if (ckfn && (err = ckfn(block)) != 0)
+		goto unlock_and_fail;
 
 	    npages = 1;
 
@@ -610,6 +629,9 @@ unlock_and_fail:
 	    bsize = (1 << log2size);
 
 	    if ((boffset & (bsize - 1)) != 0) /* Not a block start? */
+		goto bad_block;
+
+	    if (ckfn && (err = ckfn(block)) != 0)
 		goto unlock_and_fail;
 
 	    /* Return the block to the bucketed memory space. */
@@ -625,6 +647,39 @@ unlock_and_fail:
     xnlock_put_irqrestore(&heap->lock,s);
 
     return 0;
+}
+
+/*! 
+ * \fn int xnheap_free(xnheap_t *heap, void *block);
+ * \brief Release a memory block to a memory heap.
+ *
+ * Releases a memory region to the memory heap it was previously
+ * allocated from.
+ *
+ * @param heap The descriptor address of the heap to release memory
+ * to.
+ *
+ * @param block The address of the region to be returned to the heap.
+ *
+ * @return 0 is returned upon success, or -EINVAL is returned whenever
+ * the block is not a valid region of the specified heap.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
+int xnheap_free (xnheap_t *heap, void *block)
+
+{
+    return xnheap_test_and_free(heap,block,NULL);
 }
 
 /*! 

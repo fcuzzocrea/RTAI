@@ -448,9 +448,9 @@ int rt_sem_wait(SEM *sem)
 		unsigned long schedmap;
 		if (sem->type > 0) {
 			if (sem->owndby == rt_current) {
-				sem->type++;
+				count = sem->type++;
 				rt_global_restore_flags(flags);
-				return count;
+				return count + 1;
 			}
 			schedmap = pass_prio(sem->owndby, rt_current);
 		} else {
@@ -513,9 +513,9 @@ int rt_sem_wait_if(SEM *sem)
 	flags = rt_global_save_flags_and_cli();
 	if ((count = sem->count) <= 0) {
 		if (sem->type > 0 && sem->owndby == RT_CURRENT) {
-			sem->type++;
+			count = sem->type++;
 			rt_global_restore_flags(flags);
-			return 0;
+			return count + 1;
 		}
 	} else {
 		sem->count--;
@@ -580,9 +580,9 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 			unsigned long schedmap;
 			if (sem->type > 0) {
 				if (sem->owndby == rt_current) {
-					sem->type++;
+					count = sem->type++;
 					rt_global_restore_flags(flags);
-					return 0;
+					return count + 1;
 				}
 				schedmap = pass_prio(sem->owndby, rt_current);
 			} else {

@@ -65,7 +65,7 @@ typedef struct xntimer {
 
     int prio;			/* !< Internal priority. */
 
-    struct xnsched *sched;      /* Sched structure to which the timer is
+    struct xnsched *sched;      /* !< Sched structure to which the timer is
                                    attached. */
 
     void (*handler)(void *cookie); /* !< Timeout handler. */

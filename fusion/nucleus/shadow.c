@@ -1163,13 +1163,13 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	    return;
 
 #if CONFIG_TRACE
-	case 20:
+	case 100:
 
 	    TRACE_PROCESS(TRACE_EV_PROCESS_SIGNAL, -888, adp_root->cpudata[0].irq_pending_lo[0]);
 	    __xn_reg_rval(regs) = 0;
 	    return;
 
-	case 21:
+	case 101:
 
 	    TRACE_PROCESS(TRACE_EV_PROCESS_SIGNAL, -999, 0);
 	    __xn_reg_rval(regs) = 0;

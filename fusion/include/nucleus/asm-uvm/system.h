@@ -686,6 +686,9 @@ static inline void xnarch_halt (const char *emsg) {
 #define xnarch_get_cpu(x)     do  { (x) = (x); } while(0)
 #define xnarch_put_cpu(x)     do { } while(0)
 
+#define xnarch_alloc_stack xnmalloc
+#define xnarch_free_stack  xnfree
+
 #ifdef __cplusplus
 }
 #endif

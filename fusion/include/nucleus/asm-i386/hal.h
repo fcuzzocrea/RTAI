@@ -228,6 +228,7 @@ static inline unsigned long long rthal_rdtsc (void) {
 
 #define rthal_cli()                     adeos_stall_pipeline_from(&rthal_domain)
 #define rthal_sti()                     adeos_unstall_pipeline_from(&rthal_domain)
+#define rthal_sync_irqs()               adeos_sync_pipeline()
 #define rthal_local_irq_save(x)         ((x) = !!adeos_test_and_stall_pipeline_from(&rthal_domain))
 #define rthal_local_irq_restore(x)      adeos_restore_pipeline_from(&rthal_domain,(x))
 #define rthal_local_irq_flags(x)        ((x) = !!adeos_test_pipeline_from(&rthal_domain))

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2001,2002,2003 Philippe Gerum <rpm@xenomai.org>.
+ * Copyright (C) 2004 The HYADES Project (http://www.hyades-itea.org).
  *
  * Xenomai is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -104,8 +105,16 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
     adeos_load_cpuid();
 
     if (!test_and_set_bit(cpuid,lock))
-	while (test_and_set_bit(BITS_PER_LONG - 1,lock))
-	    rthal_cpu_relax(cpuid);
+        {
+	if (test_and_set_bit(BITS_PER_LONG - 1,lock))
+	    {
+            do {
+	        rthal_cpu_relax(cpuid);
+            } while (test_and_set_bit(BITS_PER_LONG - 1,lock));
+
+            rthal_sync_irqs();
+	    }
+        }
     else
         flags |= 2;
 
@@ -236,6 +245,9 @@ do { \
     show_stack(NULL,NULL);			\
     for (;;) safe_halt();			\
 } while(0)
+
+#define xnarch_alloc_stack xnmalloc
+#define xnarch_free_stack  xnfree
 
 int xnarch_setimask(int imask);
 
@@ -492,17 +504,10 @@ static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
     /* Must be followed by xnarch_init_thread(). */
 }
 
-static void xnarch_thread_redirect(struct xnthread *self,
-				   int imask,
-				   void(*entry)(void *),
-				   void *cookie)
-/* Just in case CONFIG_REGPARM is enabled... */
-    __attribute__ ((regparm(0)));
-
-static void xnarch_thread_redirect (struct xnthread *self,
-				    int imask,
-				    void(*entry)(void *),
-				    void *cookie)
+asmlinkage static void xnarch_thread_redirect (struct xnthread *self,
+					       int imask,
+					       void(*entry)(void *),
+					       void *cookie)
 {
     rthal_local_irq_restore(!!imask);
     xnpod_welcome_thread(self);
@@ -628,13 +633,25 @@ static inline int xnarch_trigger_ipi (int cpuid)
 #endif /* CONFIG_SMP */
 }
 
+static void (*nucleus_ipi_handler) (void);
+
+static void xnarch_ipi_handler(unsigned irq)
+
+{
+    nucleus_ipi_handler();
+
+    adeos_propagate_irq(irq);
+}
+
 static inline int xnarch_hook_ipi (void (*handler)(void))
 
 {
 #ifdef CONFIG_SMP
+    nucleus_ipi_handler = handler;
+    
     return adeos_virtualize_irq_from(&rthal_domain,
                                      ADEOS_SERVICE_IPI,
-                                     (void (*)(unsigned)) handler,
+                                     xnarch_ipi_handler,
                                      NULL,
                                      (handler
                                       ? IPIPE_HANDLE_MASK

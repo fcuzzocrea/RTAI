@@ -1,5 +1,8 @@
 2005-03-16  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-*/system.h (xnarch_switch_to): Add membar
+	after switch with mm change.
+
 	* nucleus/module.c (stat_read_proc): Add /proc/rtai/stat entry
 	aimed at giving various statistics about the schedulable objects.
 

@@ -542,6 +542,8 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 
 	struct thread_struct *thread = &outproc->thread;
 
+        barrier();
+
 	if (thread->io_bitmap_ptr) {
 	    struct tss_struct *tss = &per_cpu(init_tss, adeos_processor_id());
 

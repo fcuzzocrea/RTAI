@@ -434,6 +434,8 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 #endif /* CONFIG_SPE */
 
         _switch(&prev->thread, &next->thread);
+
+	barrier();
 	}
     else
         /* Kernel-to-kernel context switch. */

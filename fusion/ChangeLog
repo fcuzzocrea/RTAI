@@ -1,5 +1,7 @@
 2004-11-07  Philippe Gerum  <rpm@xenomai.org>
 
+	* GNUMakefile.am (device): Create /dev/rtheap.
+
 	* skins/rtai/task.c: Add asynchronous notification support.
 
 	* skins/rtai: Add shared heap (standalone) support.

@@ -1541,7 +1541,7 @@ static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
     __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(current,regs));
 
     if (xnpod_shadow_p() && signal_pending(current))
-	request_syscall_restart(thread,regs);
+	request_syscall_restart(xnshadow_thread(current),regs);
 }
 
 static void xnshadow_linux_taskexit (adevinfo_t *evinfo)

@@ -317,6 +317,15 @@ AC_ARG_ENABLE(nucleus-debug,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_DEBUG:-no})
 
+AC_MSG_CHECKING(for watchdog support)
+AC_ARG_ENABLE(nucleus-debug,
+	AS_HELP_STRING([--enable-nucleus-watchdog], [Enable watchdog support in nucleus]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_WATCHDOG=y ;;
+	*) unset CONFIG_RTAI_OPT_WATCHDOG ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_WATCHDOG:-no})
+
 AC_MSG_CHECKING(for FPU support)
 AC_ARG_ENABLE(fpu,
 	AS_HELP_STRING([--enable-fpu],	[Enable FPU support]),
@@ -940,6 +949,7 @@ test \! x$CONFIG_RTAI_HW_APERIODIC_TIMER = x && AC_DEFINE(CONFIG_RTAI_HW_APERIOD
 
 test x$CONFIG_RTAI_OPT_PERCPU_TIMER = xy && AC_DEFINE(CONFIG_RTAI_OPT_PERCPU_TIMER,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_DEBUG = xy && AC_DEFINE(CONFIG_RTAI_OPT_DEBUG,1,[Kconfig])
+test x$CONFIG_RTAI_OPT_WATCHDOG = xy && AC_DEFINE(CONFIG_RTAI_OPT_WATCHDOG,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_FUSION = xy && AC_DEFINE(CONFIG_RTAI_OPT_FUSION,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_PIPE = xy && AC_DEFINE(CONFIG_RTAI_OPT_PIPE,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_PIPE_NRDEV,$CONFIG_RTAI_OPT_PIPE_NRDEV,[Kconfig])

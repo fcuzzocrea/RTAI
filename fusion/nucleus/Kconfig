@@ -59,6 +59,20 @@ config RTAI_OPT_DEBUG
 	This option activates runtime checking of the real-time
 	nucleus state.
 
+config RTAI_OPT_WATCHDOG
+	bool "Watchdog support"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+	
+	This option activates a watchdog aimed at detecting runaway
+	real-time threads. If enabled, the watchdog triggers after 4
+	seconds of uninterrupted real-time activity without Linux
+	interaction; in such event, the current real-time thread is
+	forcibly suspended. The built-in watchdog support operates on
+	bahalf of the timer tick handler, thus is only active after
+	the timer has been started.
+
 menu "LTT tracepoints filtering"
 
 config RTAI_OPT_FILTER_EVIRQ

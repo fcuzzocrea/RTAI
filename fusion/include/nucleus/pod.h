@@ -181,6 +181,12 @@ typedef struct xnpod {
 	int (*unload)(void);	/*!< Unloading hook. */
     } svctable;			/*!< Table of overridable service entry points. */
 
+#if CONFIG_RTAI_OPT_WATCHDOG
+    xnticks_t watchdog_trigger;	/* !< Watchdog trigger value. */
+    xnticks_t watchdog_reload;	/* !< Watchdog reload value. */
+    int watchdog_armed;		/* !< Watchdog state. */
+#endif /* CONFIG_RTAI_OPT_WATCHDOG */
+
 #ifdef __RTAI_SIM__
     void (*schedhook)(xnthread_t *thread,
 		      xnflags_t mask); /*!< Internal scheduling hook. */
@@ -218,24 +224,40 @@ void xnpod_renice_thread_inner(xnthread_t *thread,
 void xnpod_switch_fpu(xnsched_t *sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
-static inline int xnpod_get_qdir (xnpod_t *pod) {
+#if CONFIG_RTAI_OPT_WATCHDOG
+static inline void xnpod_reset_watchdog (void)
+{
+    nkpod->watchdog_trigger = xnarch_get_cpu_tsc() + nkpod->watchdog_reload;
+    nkpod->watchdog_armed = 0;
+}
+#else /* !CONFIG_RTAI_OPT_WATCHDOG */
+static inline void xnpod_reset_watchdog (void)
+{
+}
+#endif /* CONFIG_RTAI_OPT_WATCHDOG */
+
+static inline int xnpod_get_qdir (xnpod_t *pod)
+{
     /* Returns the queuing direction of threads for a given pod */
     return testbits(pod->status,XNRPRIO) ? xnqueue_up : xnqueue_down;
 }
 
-static inline int xnpod_get_minprio (xnpod_t *pod, int incr) {
+static inline int xnpod_get_minprio (xnpod_t *pod, int incr)
+{
     return xnpod_get_qdir(pod) == xnqueue_up ?
 	pod->minpri + incr :
 	pod->minpri - incr;
 }
 
-static inline int xnpod_get_maxprio (xnpod_t *pod, int incr) {
+static inline int xnpod_get_maxprio (xnpod_t *pod, int incr)
+{
     return xnpod_get_qdir(pod) == xnqueue_up ?
 	pod->maxpri - incr :
 	pod->maxpri + incr;
 }
 
-static inline int xnpod_priocompare (int inprio, int outprio) {
+static inline int xnpod_priocompare (int inprio, int outprio)
+{
     /* Returns a negative, null or positive value whether inprio is
        lower than, equal to or greater than outprio. */
     int delta = inprio - outprio;

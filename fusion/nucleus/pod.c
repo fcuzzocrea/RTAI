@@ -516,8 +516,10 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
 
     sched->runthread = threadin;
 
-    if (testbits(threadin->status,XNROOT))
+    if (testbits(threadin->status,XNROOT)) {
+	xnpod_reset_watchdog();
         xnarch_enter_root(xnthread_archtcb(threadin));
+    }
 
      /* FIXME: Catch 22 here, whether we choose to run on an invalid
         stack (cleanup then hooks), or to access the TCB space shortly
@@ -2295,8 +2297,10 @@ void xnpod_schedule (void)
 
     if (testbits(threadout->status,XNROOT))
         xnarch_leave_root(xnthread_archtcb(threadout));
-    else if (testbits(threadin->status,XNROOT))
+    else if (testbits(threadin->status,XNROOT)) {
+	xnpod_reset_watchdog();
         xnarch_enter_root(xnthread_archtcb(threadin));
+    }
 
     xnarch_switch_to(xnthread_archtcb(threadout),
                      xnthread_archtcb(threadin));
@@ -2449,8 +2453,10 @@ maybe_switch:
 
     if (testbits(runthread->status,XNROOT))
         xnarch_leave_root(xnthread_archtcb(runthread));
-    else if (testbits(threadin->status,XNROOT))
+    else if (testbits(threadin->status,XNROOT)) {
+	xnpod_reset_watchdog();
         xnarch_enter_root(xnthread_archtcb(threadin));
+    }
 
 #ifdef __RTAI_SIM__
     if (nkpod->schedhook)
@@ -2913,6 +2919,11 @@ unlock_and_exit:
 
     setbits(nkpod->status,XNTIMED);
 
+#if CONFIG_RTAI_OPT_WATCHDOG
+    nkpod->watchdog_reload = xnarch_ns_to_tsc(4000000000LL);
+    xnpod_reset_watchdog();
+#endif /* CONFIG_RTAI_OPT_WATCHDOG */
+
     xnlock_put_irqrestore(&nklock,s);
 
     /* The following service should return the remaining time before
@@ -3047,6 +3058,20 @@ int xnpod_announce_tick (xnintr_t *intr)
     xnlock_get_irqsave(&nklock,s);
 
     xnltt_log_event(rtai_ev_tmtick,xnpod_current_thread()->name);
+
+#if CONFIG_RTAI_OPT_WATCHDOG
+    if (xnarch_get_cpu_tsc() >= nkpod->watchdog_trigger) {
+	if (!xnpod_root_p() && nkpod->watchdog_armed) {
+	    xnltt_log_event(rtai_ev_watchdog,xnpod_current_thread()->name);
+	    xnprintf("RTAI: watchdog triggered -- suspending runaway thread '%s'\n",
+		     xnpod_current_thread()->name);
+	    xnpod_suspend_thread(xnpod_current_thread(),XNDORMANT,XN_INFINITE,NULL);
+	} else {
+	    xnpod_reset_watchdog();
+	    nkpod->watchdog_armed = !xnpod_root_p();
+	}
+    }
+#endif /* CONFIG_RTAI_OPT_WATCHDOG */
 
     xntimer_do_timers(); /* Fire the timeouts, if any. */
 

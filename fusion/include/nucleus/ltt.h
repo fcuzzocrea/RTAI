@@ -83,6 +83,7 @@ struct xnltt_evmap {
 #define rtai_ev_tmstart      45
 #define rtai_ev_tmstop       46
 #define rtai_ev_mark         47
+#define rtai_ev_watchdog     48
 
 #define rtai_evthr  0x1
 #define rtai_evirq  0x2

@@ -49,6 +49,7 @@ configuration switches can be listed by running ./configure
  --enable-uitron-skin	Build uITRON API skin
  --enable-user-vm	Build user-space VMs
  --enable-nucleus-debug	Enable debug support in nucleus
+ --enable-nucleus-watchdog	Enable nucleus watchdog support
  --enable-fpu		Enable FPU support
  --enable-aperiodic_timer Enable aperiodic timer support (oneshot mode)
  --enable-module-debug	Enable debug information in kernel modules

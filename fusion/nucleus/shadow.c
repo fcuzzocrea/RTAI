@@ -900,54 +900,52 @@ static int bind_to_interface (struct task_struct *curr,
     xnlock_get_irqsave(&nklock,s);
 
     for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
-	{
 	if (muxtable[muxid].magic == magic)
-	    {
-	    /* Increment the reference count now (actually, only the
-	       first call to bind_to_interface() really increments the
-	       counter), so that the interface cannot be removed under
-	       our feet. */
-
-            if (!xnarch_atomic_inc_and_test(&muxtable[muxid].refcnt))
-                xnarch_atomic_dec(&muxtable[muxid].refcnt);
-
-	    xnlock_put_irqrestore(&nklock,s);
-
-	    /* Since the pod might be created by the event callback
-	       and not earlier than that, do not refer to nkpod until
-	       the latter had a chance to call xnpod_init(). */
-
-	    if (muxtable[muxid].eventcb)
-		{
-		int err = muxtable[muxid].eventcb(XNSHADOW_CLIENT_ATTACH);
-
-		if (err)
-		    {
-		    xnarch_atomic_dec(&muxtable[muxid].refcnt);
-		    return err;
-		    }
-		}
-
-	    if (!nkpod || testbits(nkpod->status,XNPIDLE))
-		/* Ok mate, but you really ought to create some pod in
-		   a way or another if you want me to be of some
-		   help here... */
-		return -ENOSYS;
-
-	    if (infarg)
-		{
-		info.cpufreq = xnarch_get_cpu_freq();
-		info.tickval = xnpod_get_tickval();
-		__xn_copy_to_user(curr,(void *)infarg,&info,sizeof(info));
-		}
-
-	    return ++muxid;
-	    }
-	}
+	    goto do_bind;
 
     xnlock_put_irqrestore(&nklock,s);
 
     return -ESRCH;
+
+ do_bind:
+
+    /* Increment the reference count now (actually, only the first
+       call to bind_to_interface() really increments the counter), so
+       that the interface cannot be removed under our feet. */
+
+    if (!xnarch_atomic_inc_and_test(&muxtable[muxid].refcnt))
+	xnarch_atomic_dec(&muxtable[muxid].refcnt);
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    /* Since the pod might be created by the event callback and not
+       earlier than that, do not refer to nkpod until the latter had a
+       chance to call xnpod_init(). */
+
+    if (muxtable[muxid].eventcb)
+	{
+	int err = muxtable[muxid].eventcb(XNSHADOW_CLIENT_ATTACH);
+
+	if (err)
+	    {
+	    xnarch_atomic_dec(&muxtable[muxid].refcnt);
+	    return err;
+	    }
+	}
+
+    if (!nkpod || testbits(nkpod->status,XNPIDLE))
+	/* Ok mate, but you really ought to create some pod in a way
+	   or another if you want me to be of some help here... */
+	return -ENOSYS;
+
+    if (infarg)
+	{
+	info.cpufreq = xnarch_get_cpu_freq();
+	info.tickval = xnpod_get_tickval();
+	__xn_copy_to_user(curr,(void *)infarg,&info,sizeof(info));
+	}
+
+    return ++muxid;
 }
 
 static int substitute_linux_syscall (struct task_struct *curr,

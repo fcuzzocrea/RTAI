@@ -36,7 +36,7 @@ MODULE_LICENSE("GPL");
 
 /* +++++++++++++++++++++++++++++ MAIL BOXES ++++++++++++++++++++++++++++++++ */
 
-static inline void mbx_signal(MBX *mbx)
+static void mbx_signal(MBX *mbx)
 {
 	unsigned long flags;
 	RT_TASK *task;
@@ -99,7 +99,7 @@ res:	if (mbx->sndsem.type > 0) {
 
 #define RT_MBX_MAGIC 0x3ad46e9b
 
-static inline int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)
+static int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)
 {
 	unsigned long flags;
 
@@ -128,7 +128,7 @@ static inline int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)
 	return 0;
 }
 
-static inline int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current)
+static int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current)
 {
 	unsigned long flags;
 
@@ -168,7 +168,7 @@ static inline int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_
 
 #define MOD_SIZE(indx) ((indx) < mbx->size ? (indx) : (indx) - mbx->size)
 
-static inline int mbxput(MBX *mbx, char **msg, int msg_size, int space)
+static int mbxput(MBX *mbx, char **msg, int msg_size, int space)
 {
 	unsigned long flags;
 	int tocpy;
@@ -196,7 +196,7 @@ static inline int mbxput(MBX *mbx, char **msg, int msg_size, int space)
 	return msg_size;
 }
 
-static inline int mbxovrwrput(MBX *mbx, char **msg, int msg_size, int space)
+static int mbxovrwrput(MBX *mbx, char **msg, int msg_size, int space)
 {
 	unsigned long flags;
 	int tocpy,n;
@@ -245,7 +245,7 @@ static inline int mbxovrwrput(MBX *mbx, char **msg, int msg_size, int space)
 	return 0;
 }
 
-static inline int mbxget(MBX *mbx, char **msg, int msg_size, int space)
+static int mbxget(MBX *mbx, char **msg, int msg_size, int space)
 {
 	unsigned long flags;
 	int tocpy;
@@ -273,7 +273,7 @@ static inline int mbxget(MBX *mbx, char **msg, int msg_size, int space)
 	return msg_size;
 }
 
-static inline int mbxevdrp(MBX *mbx, char **msg, int msg_size, int space)
+static int mbxevdrp(MBX *mbx, char **msg, int msg_size, int space)
 {
 	int tocpy, fbyte, avbs;
 

@@ -167,12 +167,10 @@ int pthread_join(pthread_t thread, void **value_ptr)
 
     cur = pse51_current_thread();
 
-    xnmutex_lock(&__imutex);
-    if(thread == cur) {
-        xnmutex_unlock(&__imutex);
+    if(thread == cur)
         return EDEADLK;
-    }
 
+    xnmutex_lock(&__imutex);
     if(!pse51_obj_active(thread, PSE51_THREAD_MAGIC, struct pse51_thread)
        && !pse51_obj_deleted(thread, PSE51_THREAD_MAGIC, struct pse51_thread)) {
         xnmutex_unlock(&__imutex);

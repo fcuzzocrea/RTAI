@@ -138,7 +138,7 @@ int sem_getvalue(sem_t *sem, int *value)
     }
 
     *value=sem->value ? (int) sem->value : -(xnsynch_nsleepers(&sem->synchbase));
-    xnmutex_lock(&__imutex);
+    xnmutex_unlock(&__imutex);
 
     return 0;
 }

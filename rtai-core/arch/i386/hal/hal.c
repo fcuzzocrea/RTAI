@@ -1727,7 +1727,7 @@ static int rtai_proc_register (void)
 
     if (!rtai_proc_root)
 	{
-	printk("Unable to initialize /proc/rtai.\n");
+	printk(KERN_ERR "Unable to initialize /proc/rtai.\n");
 	return -1;
         }
 
@@ -1737,7 +1737,7 @@ static int rtai_proc_register (void)
 
     if (!ent)
 	{
-	printk("Unable to initialize /proc/rtai/rtai.\n");
+	printk(KERN_ERR "Unable to initialize /proc/rtai/rtai.\n");
 	return -1;
         }
 
@@ -1792,7 +1792,7 @@ int __rtai_hal_init (void)
 
     if (!rtai_sysreq_virq)
 	{
-	printk("RTAI[hal]: no virtual interrupt available.\n");
+	printk(KERN_ERR "RTAI[hal]: no virtual interrupt available.\n");
 	return 1;
 	}
 
@@ -1809,7 +1809,7 @@ int __rtai_hal_init (void)
 
     if (key0 != 0 && key1 != 1)
 	{
-	printk("RTAI[hal]: per-thread keys #0 and/or #1 are busy.\n");
+	printk(KERN_ERR "RTAI[hal]: per-thread keys #0 and/or #1 are busy.\n");
 	return 1;
 	}
 

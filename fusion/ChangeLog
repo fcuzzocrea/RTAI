@@ -1,3 +1,12 @@
+2005-03-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i386/system.h (xnarch_save_fpu): Save
+	user-space threads FPU context when switching to a kernel-space
+	thread using FPU.
+	(xnarch_enable_fpu): Restore FPU context of user-space tasks when
+	not switching FPU on processors without fxsr, where fnsave, called
+	by __switch_to, reinitialized FPU context.
+
 2005-03-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r6 final.

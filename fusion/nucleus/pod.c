@@ -195,6 +195,17 @@ static void xnpod_init_rootcb (void)
     sched->rootcb.affinity = 1 << xnsched_cpu(sched);
 }
 
+void xnpod_schedule_handler (void)
+
+{
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+    xnsched_set_resched(xnpod_current_sched());
+    xnpod_schedule();
+    xnlock_put_irqrestore(&nklock,s);
+}
+
 /*! 
  * \fn int xnpod_init(xnpod_t *pod,
                       int minpri,
@@ -389,6 +400,12 @@ fail:
 
     xnarch_init_all_cpus(&xnpod_init_rootcb);
 
+#ifdef CONFIG_SMP
+    xnarch_hook_ipi(&xnpod_schedule_handler);
+#endif
+
+    xnarch_memory_barrier();
+    
     clrbits(pod->status,XNPINIT);
 
     xnarch_notify_ready();
@@ -662,7 +679,7 @@ int xnpod_init_thread (xnthread_t *thread,
         return err;
 
     xnlock_get_irqsave(&nklock,s);
-    thread->sched = xnpod_sched_slot(xnarch_current_cpu());
+    thread->sched = xnpod_current_sched();
     appendq(&nkpod->threadq,&thread->glink);
     xnpod_suspend_thread(thread,XNDORMANT,XN_INFINITE,NULL);
     xnlock_put_irqrestore(&nklock,s);
@@ -800,7 +817,7 @@ int xnpod_start_thread (xnthread_t *thread,
     thread->affinity = affinity & valid_cpumask;
 
 #ifdef CONFIG_SMP
-    if (!testbits(thread->affinity, 1 << xnarch_current_cpu()))
+    if (!testbits(thread->affinity, 1 << xnsched_cpu(thread->sched)))
         thread->sched = xnpod_sched_slot(ffnz(thread->affinity));
 #endif /* CONFIG_SMP */
 
@@ -813,7 +830,11 @@ int xnpod_start_thread (xnthread_t *thread,
         !testbits(thread->status,XNTHREAD_SYSTEM_BITS))
         xnpod_fire_callouts(&nkpod->tstartq,thread);
 
-    if (xnpod_root_p() && xnpod_current_sched() == thread->sched)
+    if (
+#ifdef CONFIG_SMP
+        xnpod_current_sched() == thread->sched &&
+#endif
+        xnpod_root_p())
         xnarch_escalate();
     else
         xnpod_schedule();
@@ -1166,7 +1187,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 
     if (thread == sched->runthread)
         {
-        if (xnpod_locked_p())
+        if (sched == xnpod_current_sched() && xnpod_locked_p())
             xnpod_fatal("suspensive call issued while the scheduler was locked");
 
         xnsched_set_resched(sched);
@@ -1386,7 +1407,6 @@ void xnpod_resume_thread (xnthread_t *thread,
             getheadpq(&sched->readyq) != &thread->rlink)
             {
             xnlock_put_irqrestore(&nklock,s);
-
             /* The running thread does no longer lead the ready
                queue. */
             nkpod->schedhook(thread,XNREADY);
@@ -2045,17 +2065,6 @@ noswitch:
 
  unlock_and_exit:
 
-    xnlock_put_irqrestore(&nklock,s);
-}
-
-void xnpod_schedule_handler (void)
-
-{
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-    xnsched_set_resched(xnpod_current_sched());
-    xnpod_schedule();
     xnlock_put_irqrestore(&nklock,s);
 }
 

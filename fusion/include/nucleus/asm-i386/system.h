@@ -115,12 +115,12 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
 static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 
 {
-    rthal_cli();
-
     if (!(flags & 2))
         {
         adeos_declare_cpuid;
-    
+
+        rthal_cli();
+
         adeos_load_cpuid();
 
         if (test_bit(cpuid,lock))
@@ -610,12 +610,14 @@ static inline int xnarch_trigger_ipi (int cpuid)
 #endif /* CONFIG_SMP */
 }
 
-static inline int xnarch_hook_ipi (void (*handler)(unsigned irq))
+static inline int xnarch_hook_ipi (void (*handler)(void))
 
 {
 #ifdef CONFIG_SMP
     return adeos_virtualize_irq_from(&rthal_domain,
-                                     ADEOS_SERVICE_IPI, handler, NULL,
+                                     ADEOS_SERVICE_IPI,
+                                     (void (*)(unsigned)) handler,
+                                     NULL,
                                      (handler
                                       ? IPIPE_HANDLE_MASK
                                       : IPIPE_PASS_MASK));

@@ -100,7 +100,7 @@ static inline unsigned long long xnarch_ulldiv (unsigned long long ull,
 }
 
 static inline unsigned long ffnz (unsigned long word) {
-    return ffsl((long)word) - 1;
+    return ffs((int)word) - 1;
 }
 
 #define xnarch_stack_size(tcb)     ((tcb)->stacksize)

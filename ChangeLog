@@ -1,3 +1,8 @@
+2004-03-21  Michael Neuhauser  <mike@firmix.at>
+
+	* base/include/asm-arm/rtai_hal.*: made rtai_hw_*() on ARM fully
+	compatible to x86 names (i.e. added rtai_hw_cli() and rtai_hw_sti())
+
 2004-03-19  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/ipc/msg/msg.c: added priority inheritance to rt_send/until/timed

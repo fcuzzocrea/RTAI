@@ -105,6 +105,8 @@ static inline void initq (xnqueue_t *qslot) {
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
 
+#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
+
 #define XENO_DEBUG_CHECK_QUEUE() \
 do { \
     xnholder_t *curr; \
@@ -154,6 +156,18 @@ do { \
 		    qslot); \
     xnlock_put_irqrestore(&qslot->lock,s); \
 } while(0)
+
+#else /* !(__KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__) */
+
+/* Disable queue checks in user-space code which does not run as part
+   of any virtual machine, e.g. skin syslibs. */
+
+#define XENO_DEBUG_CHECK_QUEUE()
+#define XENO_DEBUG_INSERT_QUEUE()
+#define XENO_DEBUG_REMOVE_QUEUE()
+
+#endif /* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */
+
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
 static inline int insertq (xnqueue_t *qslot,

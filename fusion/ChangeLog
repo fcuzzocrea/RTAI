@@ -1,5 +1,13 @@
 2004-12-10  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/event.c (rt_event_signal): Do not auto-clear matched
+	bits; this makes no sense with multiple waiters.
+
+	* include/nucleus/queue.h: Disable queue checks in user-space code
+	which does not run as part of any virtual machine, e.g. skin
+	syslibs. This fixes the CONFIG_RTAI_OPT_DEBUG problem with
+	skin/rtai/lib.
+
 	* arch/*/hal/hal.c (rthal_request_irq): Only virtualize requested
 	IRQs.
 

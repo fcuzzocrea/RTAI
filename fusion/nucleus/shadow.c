@@ -426,8 +426,8 @@ unsigned long long xnshadow_ts2ticks (const struct timespec *v)
        of sec * 1e9 by tickval. nsec may not fit on 32 bits if v is not
        normalized. */
     nsec = v->tv_nsec + tickval - 1;
-    /* tickval is 100000 or so in the worst case, the result is hence expected
-       to fit on 32 bits, and we can use uldiv instead of ulldiv. */
+    /* the result is expected to fit on 32 bits, we can hence use uldiv instead
+       of ulldiv. */
     ticks = xnarch_uldiv(nsec, tickval);
     return xnarch_ullmul(hz, v->tv_sec) + ticks;
 }

@@ -214,14 +214,10 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
     return getheadq(&timer->sched->timerwheel[0]) == &timer->link;
 }
 	
-#if CONFIG_SMP
-
 static inline void xntimer_next_remote_shot (xnsched_t *sched)
 {
     xnarch_send_timer_ipi(xnarch_cpumask_of_cpu(xnsched_cpu(sched)));
 }
-
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
 
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
@@ -296,11 +292,9 @@ int xntimer_start (xntimer_t *timer,
 
 	    if (xntimer_heading_p(timer))
                 {
-#if CONFIG_SMP
                 if(xntimer_sched(timer) != xnpod_current_sched())
                     xntimer_next_remote_shot(xntimer_sched(timer));
                 else
-#endif /* CONFIG_SMP */
                     xntimer_next_local_shot(xntimer_sched(timer));
                 }
 	    }
@@ -407,7 +401,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
     /* Avoid the pathological case where the timer interrupt did not occur yet
        for the current date on the timer source CPU, whereas we are trying to
        migrate it to a CPU where the timer interrupt already occured. This would
-       not be a problem in one-shot mode. */
+       not be a problem in aperiodic mode. */
     if (queued && timer->sched != xnpod_current_sched())
         {
         err = -EINVAL;

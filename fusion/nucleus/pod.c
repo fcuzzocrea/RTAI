@@ -287,12 +287,6 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
         for (n = 0; n < XNTIMER_WHEELSIZE; n++)
             initq(&pod->sched[cpu].timerwheel[n]);
 
-    /* No direct handler here since the host timer processing is
-       postponed to xnintr_irq_handler(), as part of the interrupt
-       exit code. */
-    xntimer_init(&pod->htimer,NULL,NULL);
-    xntimer_set_priority(&pod->htimer,XNTIMER_LOPRIO);
-
     xnarch_atomic_set(&pod->schedlck,0);
     pod->minpri = minpri;
     pod->maxpri = maxpri;
@@ -327,6 +321,12 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
        the remaining operations. */
 
     nkpod = pod;
+
+    /* No direct handler here since the host timer processing is
+       postponed to xnintr_irq_handler(), as part of the interrupt
+       exit code. */
+    xntimer_init(&pod->htimer,NULL,NULL);
+    xntimer_set_priority(&pod->htimer,XNTIMER_LOPRIO);
 
     xnlock_put_irqrestore(&nklock,s);
 
@@ -2897,6 +2897,7 @@ unlock_and_exit:
        through xnarch_start_timer(). */
 
     xntimer_set_sched(&nkpod->htimer, XNTIMER_KEEPER_ID);
+
     xntimer_start(&nkpod->htimer,
                   delta,
                   XNARCH_HOST_TICK / nkpod->tickvalue);

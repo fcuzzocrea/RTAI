@@ -947,12 +947,14 @@ static inline void xnarch_stop_timer (void) {
     rthal_release_timer();
 }
 
-#if CONFIG_SMP
 static inline int xnarch_send_timer_ipi (cpumask_t mask) {
 
+#if CONFIG_SMP
     return adeos_send_ipi(RTHAL_APIC_TIMER_IPI, mask);
-}
+#else /* ! CONFIG_SMP */
+    return 0;
 #endif /* CONFIG_SMP */
+}
 
 static inline void xnarch_read_timings (unsigned long long *shot,
 					unsigned long long *delivery,

@@ -106,7 +106,11 @@ typedef struct xntimer {
 } xntimer_t;
 
 #define xntimer_date(t)           ((t)->date)
+#if CONFIG_SMP
 #define xntimer_sched(t)          ((t)->sched)
+#else /* !CONFIG_SMP */
+#define xntimer_sched(t)          xnpod_current_sched()
+#endif /* CONFIG_SMP */
 #define xntimer_interval(t)       ((t)->interval)
 #define xntimer_set_cookie(t,c)   ((t)->cookie = (c))
 #define xntimer_set_priority(t,p) ((t)->prio = (p))

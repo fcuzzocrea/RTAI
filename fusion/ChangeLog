@@ -3,7 +3,12 @@
 	* configure.in, Kconfig: Allow kernel built ouside their source 
 	tree to be used. The configure and Kconfig parameter is the 
 	kernel build tree root.
+
 	Fix architecture tuning flags determination for that case.
+
+	Remember CROSS_COMPILE value across configure invocations.
+
+	Allow linux-dir to be passed as a relative path.
 
 2005-02-24  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 

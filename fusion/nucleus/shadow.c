@@ -418,7 +418,8 @@ unsigned long long xnshadow_ts2ticks (const struct timespec *v)
 {
     unsigned long long nsecs;
     nsecs = xnarch_ullmul(v->tv_sec, 1000000000UL) + v->tv_nsec;
-    return xnarch_ulldiv(nsecs, xnpod_get_tickval(), NULL);
+    nsecs += xnpod_get_tickval() / 2; /* for rounding to next ticks count. */
+    return xnpod_ns2ticks(nsecs);
 }
 
 void xnshadow_ticks2ts (unsigned long long ticks, struct timespec *v)
@@ -433,7 +434,8 @@ unsigned long long xnshadow_tv2ticks (const struct timeval *v)
 {
     unsigned long long nsecs;
     nsecs = xnarch_ullmul(v->tv_sec, 1000000000UL) + v->tv_usec * 1000;
-    return xnarch_ulldiv(nsecs, xnpod_get_tickval(), NULL);
+    nsecs += xnpod_get_tickval() / 2; /* for rounding to next ticks count. */
+    return xnpod_ns2ticks(nsecs);
 }
 
 void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)

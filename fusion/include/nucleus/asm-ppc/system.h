@@ -471,18 +471,6 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
     tcb->name = name;
 }
 
-static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
-
-    tcb->user_task = NULL;
-    tcb->active_task = NULL;
-    tcb->kspp = &tcb->ksp;
-#ifdef CONFIG_RTAI_HW_FPU
-    tcb->user_fpu_owner = NULL;
-    tcb->fpup = &tcb->fpuenv;
-#endif /* CONFIG_RTAI_HW_FPU */
-    /* Must be followed by xnarch_init_thread(). */
-}
-
 asmlinkage static void xnarch_thread_trampoline (xnarchtcb_t *tcb)
 
 {
@@ -666,6 +654,22 @@ static void xnarch_notify_ready (void)
 }
 
 #endif /* XENO_POD_MODULE */
+
+#ifdef XENO_THREAD_MODULE
+
+static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
+
+    tcb->user_task = NULL;
+    tcb->active_task = NULL;
+    tcb->kspp = &tcb->ksp;
+#ifdef CONFIG_RTAI_HW_FPU
+    tcb->user_fpu_owner = NULL;
+    tcb->fpup = &tcb->fpuenv;
+#endif /* CONFIG_RTAI_HW_FPU */
+    /* Must be followed by xnarch_init_thread(). */
+}
+
+#endif /* XENO_THREAD_MODULE */
 
 #ifdef XENO_SHADOW_MODULE
 

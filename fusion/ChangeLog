@@ -1,5 +1,8 @@
 2005-03-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/fusion.c (xnfusion_mount): Do not wreck the current
+	fusion interface id. in case somebody tries to mount it twice.
+
 	* nucleus/shadow.c (xnshadow_unmap): Check task pointer value
 	earlier.
 

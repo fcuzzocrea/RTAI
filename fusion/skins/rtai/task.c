@@ -580,7 +580,7 @@ int rt_task_yield (void)
  * @param period The period of the task, expressed in clock ticks (see
  * note). Passing TM_INFINITE attempts to stop the task's periodic
  * timer; in the latter case, the routine always exits succesfully,
- * regardless of the pervious state of this timer.
+ * regardless of the previous state of this timer.
  *
  * @return 0 is returned upon success. Otherwise:
  *

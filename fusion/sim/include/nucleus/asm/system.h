@@ -535,11 +535,6 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
     tcb->vmthread = mvm_thread_self();
 }
 
-static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
-
-    tcb->vmthread = NULL;
-}
-
 static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 				       void (*entry)(void *),
 				       void *cookie,
@@ -603,6 +598,15 @@ static inline void xnarch_escalate (void) {
 #define xnarch_notify_shutdown() /* Nullified */
 
 #endif /* XENO_POD_MODULE */
+
+#ifdef XENO_THREAD_MODULE
+
+static inline void xnarch_init_tcb (xnarchtcb_t *tcb)
+{
+    tcb->vmthread = NULL;
+}
+
+#endif /* XENO_THREAD_MODULE */
 
 static inline unsigned long long xnarch_tsc_to_ns (unsigned long long ts) {
     return ts;

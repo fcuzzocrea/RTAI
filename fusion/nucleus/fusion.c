@@ -535,17 +535,17 @@ static int xnfusion_event_cb (int event)
 int xnfusion_mount (void)
 
 {
-    __fusion_muxid =
-	xnshadow_register_interface("fusion",
-				    FUSION_SKIN_MAGIC,
-				    sizeof(__systab) / sizeof(__systab[0]),
-				    __systab,
-				    &xnfusion_event_cb);
-    if (__fusion_muxid < 0)
-	{
-	xnpod_shutdown(XNPOD_NORMAL_EXIT);
+    int ifid;
+
+    ifid = xnshadow_register_interface("fusion",
+				       FUSION_SKIN_MAGIC,
+				       sizeof(__systab) / sizeof(__systab[0]),
+				       __systab,
+				       &xnfusion_event_cb);
+    if (ifid < 0)
 	return -ENOSYS;
-	}
+
+    __fusion_muxid = ifid;
 
     return 0;
 }

@@ -2027,6 +2027,9 @@ void xnpod_welcome_thread (xnthread_t *thread)
         xnpod_lock_sched();
 
 #ifdef CONFIG_RTAI_HW_FPU
+   /* When switching to a newly created thread, it is necessary to switch FPU
+      contexts, as a replacement for xnpod_schedule epilogue (a newly created
+      was not switched out by calling xnpod_schedule, since it is new). */
    if (testbits(thread->status,XNFPU))
        {
        xnsched_t *sched = thread->sched;

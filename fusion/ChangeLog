@@ -1,5 +1,7 @@
 2004-11-07  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/task.c: Add asynchronous notification support.
+
 	* skins/rtai: Add shared heap (standalone) support.
 
 2004-11-06  Philippe Gerum  <rpm@xenomai.org>

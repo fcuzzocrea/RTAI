@@ -459,7 +459,7 @@ int rt_queue_free (RT_QUEUE *q,
  *
  * - -EIDRM is returned if @a q is a deleted queue descriptor.
  *
- * - -EAGAIN is returned if queuing the message would exceed the limit
+ * - -ENOMEM is returned if queuing the message would exceed the limit
  * defined for the queue at creation.
  *
  * Environments:
@@ -499,7 +499,7 @@ int rt_queue_send (RT_QUEUE *q,
 
     if (q->qlimit != Q_UNLIMITED && countq(&q->pendq) >= q->qlimit)
 	{
-	err = -EAGAIN;
+	err = -ENOMEM;
 	goto unlock_and_exit;
 	}
 

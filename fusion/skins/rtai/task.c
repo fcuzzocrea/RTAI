@@ -505,7 +505,7 @@ int rt_task_yield (void)
 /**
  * @fn int rt_task_set_periodic(RT_TASK *task,
                                 RTIME idate,
-				    RTIME period)
+                                RTIME period)
  * @brief Make a real-time task periodic.
  *
  * Make a task periodic by programing its first release point and its
@@ -981,34 +981,32 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
  *
  * @param type Defines the kind of hook to install:
  *
- *        - RT_HOOK_TSTART: The user-defined routine will be called on
- *        behalf of the starter task whenever a new task starts. An
- *        opaque cookie is passed to the routine which can use it to
- *        retrieve the descriptor address of the started task through
- *        the RT_HOOK_TASKPTR() macro.
+ * - RT_HOOK_TSTART: The user-defined routine will be called on behalf
+ * of the starter task whenever a new task starts. An opaque cookie is
+ * passed to the routine which can use it to retrieve the descriptor
+ * address of the started task through the RT_HOOK_TASKPTR() macro.
  *
- *        - RT_HOOK_TDELETE: The user-defined routine will be called
- *        on behalf of the deletor task whenever a task is deleted. An
- *        opaque cookie is passed to the routine which can use it to
- *        retrieve the descriptor address of the deleted task through
- *        the RT_HOOK_TASKPTR() macro.
+ * - RT_HOOK_TDELETE: The user-defined routine will be called on
+ * behalf of the deletor task whenever a task is deleted. An opaque
+ * cookie is passed to the routine which can use it to retrieve the
+ * descriptor address of the deleted task through the
+ * RT_HOOK_TASKPTR() macro.
  *
- *        - RT_HOOK_TSWITCH: The user-defined routine will be called
- *        on behalf of the resuming task whenever a context switch
- *        takes place. An opaque cookie is passed to the routine which
- *        can use it to retrieve the descriptor address of the task
- *        which has been switched in through the RT_HOOK_TASKPTR()
- *        macro.
+ * - RT_HOOK_TSWITCH: The user-defined routine will be called on
+ * behalf of the resuming task whenever a context switch takes
+ * place. An opaque cookie is passed to the routine which can use it
+ * to retrieve the descriptor address of the task which has been
+ * switched in through the RT_HOOK_TASKPTR() macro.
  *
  * @param routine The address of the user-supplied routine to call.
  *
  * @return 0 is returned upon success. Otherwise, one of the following
  * error codes indicates the cause of the failure:
  *
- *         - -EINVAL is returned if @a type is incorrect.
+ * - -EINVAL is returned if @a type is incorrect.
  *
- *         - -ENOMEM is returned if not enough memory is available
- *         from the system heap to add the new hook.
+ * - -ENOMEM is returned if not enough memory is available from the
+ * system heap to add the new hook.
  *
  * Environments:
  *
@@ -1036,9 +1034,9 @@ int rt_task_add_hook (int type, void (*routine)(void *cookie)) {
  * @param type Defines the kind of hook to uninstall. Possible values
  * are:
  *
- *        - RT_HOOK_TSTART
- *        - RT_HOOK_TDELETE
- *        - RT_HOOK_TSWITCH
+ * - RT_HOOK_TSTART
+ * - RT_HOOK_TDELETE
+ * - RT_HOOK_TSWITCH
  *
  * @param routine The address of the user-supplied routine to remove
  * from the hook list.
@@ -1046,7 +1044,7 @@ int rt_task_add_hook (int type, void (*routine)(void *cookie)) {
  * @return 0 is returned upon success. Otherwise, one of the following
  * error codes indicates the cause of the failure:
  *
- *         - -EINVAL is returned if @a type is incorrect.
+ * - -EINVAL is returned if @a type is incorrect.
  *
  * Environments:
  *
@@ -1062,6 +1060,133 @@ int rt_task_add_hook (int type, void (*routine)(void *cookie)) {
 int rt_task_remove_hook (int type, void (*routine)(void *cookie)) {
 
     return xnpod_remove_hook(type,(void (*)(xnthread_t *))routine);
+}
+
+/**
+ * @fn int rt_task_catch(void (*handler)(rt_sigset_t))
+ * @brief Install a signal handler.
+ *
+ * This service installs a signal handler for the current
+ * task. Signals are discrete events tasks can receive each time they
+ * resume execution. When signals are pending upon resumption, @a
+ * handler is fired to process them. Signals can be sent using
+ * rt_task_notify().
+ *
+ * @param handler The address of the user-supplied routine to fire
+ * when signals are pending for the task. This handler is passed the
+ * set of pending signals as its first and only argument.
+ *
+ * @return 0 is always returned.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
+int rt_task_catch (void (*handler)(rt_sigset_t))
+
+{
+    spl_t s;
+
+    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+
+    xnlock_get_irqsave(&nklock,s);
+    rtai_current_task()->thread_base.asr = (xnasr_t)handler;
+    rtai_current_task()->thread_base.asrmode &= ~XNASDI;
+    rtai_current_task()->thread_base.asrimask = 0;
+    xnlock_put_irqrestore(&nklock,s);
+
+    /* The rescheduling procedure checks for pending signals. */
+    xnpod_schedule();
+
+    return 0;
+}
+
+/**
+ * @fn int rt_task_notify(RT_TASK *task,
+                          rt_sigset_t signals)
+ * @brief Send signals to a task.
+ *
+ * This service sends a set of signals to a given task.  A task can
+ * install a signal handler using the rt_task_catch() service to
+ * process them.
+ *
+ * @param signals The set of signals to make pending for the
+ * task. This set is OR'ed with the current set of pending signals for
+ * the task; there is no count of occurence maintained for each
+ * available signal, which is either pending or cleared.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a task is not a task descriptor, or if @a
+ * task is NULL but not called from a task context.
+ *
+ * - -EIDRM is returned if @a task is a deleted task descriptor.
+ *
+ * - -ESRCH is returned if @a task has not set any signal handler.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * only if @a task is non-NULL.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
+int rt_task_notify (RT_TASK *task,
+		    rt_sigset_t signals)
+{
+    int err = 0;
+    spl_t s;
+
+    if (!task)
+	{
+	if (xnpod_asynch_p() || xnpod_root_p())
+	    return -EINVAL;
+
+	task = rtai_current_task();
+	}
+
+    xnlock_get_irqsave(&nklock,s);
+
+    task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
+
+    if (!task)
+	{
+	err = rtai_handle_error(task,RTAI_TASK_MAGIC,RT_TASK);
+	goto unlock_and_exit;
+	}
+    
+    if (task->thread_base.asr == RT_HANDLER_NONE)
+	{
+	err = -ESRCH;
+	goto unlock_and_exit;
+	}
+
+    if (signals > 0)
+	{
+	task->thread_base.signals |= signals;
+
+	if (xnpod_current_thread() == &task->thread_base)
+	    xnpod_schedule();
+	}
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
 }
 
 /*@}*/
@@ -1081,3 +1206,5 @@ EXPORT_SYMBOL(rt_task_unblock);
 EXPORT_SYMBOL(rt_task_inquire);
 EXPORT_SYMBOL(rt_task_add_hook);
 EXPORT_SYMBOL(rt_task_remove_hook);
+EXPORT_SYMBOL(rt_task_catch);
+EXPORT_SYMBOL(rt_task_notify);

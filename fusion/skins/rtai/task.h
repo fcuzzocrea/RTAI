@@ -223,6 +223,11 @@ int rt_task_unblock(RT_TASK *task);
 int rt_task_inquire (RT_TASK *task,
 		     RT_TASK_INFO *info);
 
+int rt_task_catch (void (*handler)(rt_sigset_t));
+
+int rt_task_notify(RT_TASK *task,
+		   rt_sigset_t signals);
+
 #ifdef __cplusplus
 }
 #endif

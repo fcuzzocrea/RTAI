@@ -41,7 +41,7 @@
 #define MODULE_AUTHOR(s);
 #define MODULE_PARM(var,type)    static const char *vartype(var) = type
 #define MODULE_PARM_DESC(var,desc);
-#define MODULE_PARM_VALUE(var)   ({ xnarch_read_environ(#var,&vartype(var),&var); var; )}
+#define MODULE_PARM_VALUE(var)   ({ xnarch_read_environ(#var,&vartype(var),&var); var; })
 
 /* Nullify other kernel macros */
 #define EXPORT_SYMBOL(sym);
@@ -56,7 +56,7 @@ typedef unsigned long cpumask_t;
 #error "SMP not supported for UVM yet"
 #endif /* CONFIG_SMP */
 
-extern int vml_irqlock;
+extern int uvm_irqlock;
 
 #define splhigh(x)    ((x) = xnarch_lock_irq())
 #define splexit(x)    xnarch_unlock_irq(x)
@@ -184,9 +184,9 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
 
 } xnarchtcb_t;
 
-extern xnarchtcb_t *vml_root;
+extern xnarchtcb_t *uvm_root;
 
-extern xnarchtcb_t *vml_current;
+extern xnarchtcb_t *uvm_current;
 
 typedef void *xnarch_fltinfo_t;	/* Unused but required */
 
@@ -231,19 +231,19 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
 
 static int inline xnarch_lock_irq (void) {
 
-    return xnarch_atomic_xchg(&vml_irqlock,1);
+    return xnarch_atomic_xchg(&uvm_irqlock,1);
 }
 
 static inline void xnarch_unlock_irq (int x) {
 
-    extern int vml_irqpend;
+    extern int uvm_irqpend;
 
-    if (!x && vml_irqlock)
+    if (!x && uvm_irqlock)
 	{
-	if (xnarch_atomic_xchg(&vml_irqpend,0))
-	    __pthread_release_vm(&vml_irqlock);
+	if (xnarch_atomic_xchg(&uvm_irqpend,0))
+	    __pthread_release_vm(&uvm_irqlock);
 	else
-	    vml_irqlock = 0;
+	    uvm_irqlock = 0;
 	}
 }
 
@@ -259,15 +259,15 @@ void xnpod_welcome_thread(struct xnthread *);
 
 #ifdef XENO_INTR_MODULE
 
-int vml_irqlock = 0;
+int uvm_irqlock = 0;
 
-int vml_irqpend = 0;
+int uvm_irqpend = 0;
 
 void xnarch_sync_irq (void)
 
 {
-    if (vml_irqlock)
-	__pthread_hold_vm(&vml_irqpend);
+    if (uvm_irqlock)
+	__pthread_hold_vm(&uvm_irqpend);
 }
 
 static inline int xnarch_hook_irq (unsigned irq,
@@ -323,8 +323,6 @@ int __fusion_user_init(void);
 
 void __fusion_user_exit(void);
 
-int vml_done = 0;
-
 static inline int xnarch_init (void) {
     return 0;
 }
@@ -334,7 +332,7 @@ static inline void xnarch_exit (void) {
 
 static void xnarch_restart_handler (int sig) {
 
-    longjmp(vml_current->rstenv,1);
+    longjmp(uvm_current->rstenv,1);
 }
 
 int main (int argc, char *argv[])
@@ -378,8 +376,8 @@ int main (int argc, char *argv[])
     sa.sa_flags = SA_RESTART;
     sigaction(XNARCH_SIG_RESTART,&sa,NULL);
 
-    while (!vml_done)
-	__pthread_idle_vm(&vml_irqlock);
+    for (;;)
+	__pthread_idle_vm(&uvm_irqlock);
 
     __fusion_user_exit();
     __fusion_skin_exit();
@@ -392,14 +390,14 @@ int main (int argc, char *argv[])
 
 #ifdef XENO_TIMER_MODULE
 
-void *vml_timer_handle;
+void *uvm_timer_handle;
 
 static inline void xnarch_program_timer_shot (unsigned long long delay) {
     /* Empty -- not available */
 }
 
 static inline void xnarch_stop_timer (void) {
-    __pthread_cancel_vm(vml_timer_handle,NULL);
+    __pthread_cancel_vm(uvm_timer_handle,NULL);
 }
 
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
@@ -419,13 +417,13 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 
 #ifdef XENO_POD_MODULE
 
-extern void *vml_timer_handle;
+extern void *uvm_timer_handle;
 
-xnsysinfo_t vml_info;
+xnsysinfo_t uvm_info;
 
-xnarchtcb_t *vml_root;
+xnarchtcb_t *uvm_root;
 
-xnarchtcb_t *vml_current;
+xnarchtcb_t *uvm_current;
 
 /* NOTES:
 
@@ -459,7 +457,7 @@ static void *xnarch_timer_thread (void *cookie)
     ts.tv_nsec = p->nsec;
     tickhandler = p->tickhandler;
 
-    pthread_create_rt("vmtimer",NULL,p->ppid,&p->syncflag,&vml_timer_handle);
+    pthread_create_rt("vmtimer",NULL,p->ppid,&p->syncflag,&uvm_timer_handle);
     pthread_barrier_rt();
 
     for (;;)
@@ -509,7 +507,7 @@ static inline int xnarch_start_timer (unsigned long nstick,
 
     pthread_create(&thid,&thattr,&xnarch_timer_thread,&parms);
     pthread_sync_rt(&parms.syncflag);
-    pthread_start_rt(vml_timer_handle);
+    pthread_start_rt(uvm_timer_handle);
 
     return 0;
 }
@@ -522,13 +520,13 @@ static inline void xnarch_enter_root(xnarchtcb_t *rootcb) {
 
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 				     xnarchtcb_t *in_tcb) {
-    vml_current = in_tcb;
+    uvm_current = in_tcb;
     __pthread_activate_vm(in_tcb->khandle,out_tcb->khandle);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
 					       xnarchtcb_t *next_tcb) {
-    vml_current = next_tcb;
+    uvm_current = next_tcb;
     __pthread_cancel_vm(dead_tcb->khandle,next_tcb->khandle);
 }
 
@@ -546,7 +544,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 
     param.sched_priority = sched_get_priority_min(SCHED_FIFO);
     sched_setscheduler(0,SCHED_FIFO,&param);
-    err = pthread_info_rt(&vml_info);
+    err = pthread_info_rt(&uvm_info);
 
     if (err)
 	{
@@ -556,7 +554,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 
     pthread_init_rt("vmroot",tcb,&tcb->khandle);
     tcb->name = name;
-    vml_root = vml_current = tcb;
+    uvm_root = uvm_current = tcb;
 }
 
 static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
@@ -685,7 +683,7 @@ static inline void xnarch_escalate (void) {
 
 #endif /* XENO_POD_MODULE */
 
-extern xnsysinfo_t vml_info;
+extern xnsysinfo_t uvm_info;
 
 static inline unsigned long long xnarch_tsc_to_ns (unsigned long long ts) {
     return ts;
@@ -706,7 +704,7 @@ static inline unsigned long long xnarch_get_cpu_tsc (void) {
 }
 
 static inline unsigned long long xnarch_get_cpu_freq (void) {
-    return vml_info.cpufreq;
+    return uvm_info.cpufreq;
 }
 
 static inline void xnarch_halt (const char *emsg) {

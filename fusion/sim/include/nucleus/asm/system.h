@@ -231,7 +231,7 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
 #define MODULE_AUTHOR(s);
 #define MODULE_PARM(var,type)      static const char *vartype(var) = type
 #define MODULE_PARM_DESC(var,desc);
-#define MODULE_PARM_VALUE(var)   ({ xnarch_read_environ(#var,&vartype(var),&var); var; )}
+#define MODULE_PARM_VALUE(var)   ({ xnarch_read_environ(#var,&vartype(var),&var); var; })
 
 /* Nullify other kernel macros */
 #define EXPORT_SYMBOL(sym);

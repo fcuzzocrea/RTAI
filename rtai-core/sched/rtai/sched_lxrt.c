@@ -644,6 +644,48 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
         }
 }
 
+static inline RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cpuid)
+{
+	if (rt_current->lnxtsk) {
+		LOCK_LINUX(cpuid);
+		rt_linux_task.prevp = rt_current;
+		save_cr0_and_clts(linux_cr0);
+		if (new_task->uses_fpu) {
+			save_fpenv(rt_linux_task.fpu_reg);
+			fpu_task = new_task;
+			restore_fpenv(fpu_task->fpu_reg);
+		}
+		KEXECTIME();
+		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
+		restore_cr0(linux_cr0);
+		UNLOCK_LINUX(cpuid);
+		if (rt_linux_task.nextp != rt_current) {
+			return rt_linux_task.nextp;
+		}
+	} else {
+		if (new_task->lnxtsk) {
+			rt_linux_task.nextp = new_task;
+			new_task = rt_linux_task.prevp;
+			if (fpu_task != &rt_linux_task) {
+				save_fpenv(fpu_task->fpu_reg);
+				fpu_task = &rt_linux_task;
+				restore_fpenv(fpu_task->fpu_reg);
+			}
+		} else if (new_task->uses_fpu && fpu_task != new_task) {
+			save_fpenv(fpu_task->fpu_reg);
+			fpu_task = new_task;
+			restore_fpenv(fpu_task->fpu_reg);
+		}
+		KEXECTIME();
+		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
+	}
+	if (rt_current->signal) {
+		(*rt_current->signal)();
+	}
+	return NULL;
+}
+
+
 #ifdef CONFIG_SMP
 void rt_schedule_on_schedule_ipi(void)
 {
@@ -692,37 +734,10 @@ void rt_schedule_on_schedule_ipi(void)
 
 	if (new_task != rt_current) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
-			if (rt_current->lnxtsk) {
-				LOCK_LINUX(cpuid);
-				save_cr0_and_clts(linux_cr0);
-				rt_linux_task.nextp = (void *)rt_current;
-			} else if (new_task->lnxtsk) {
-				rt_linux_task.prevp = (void *)new_task;
-				new_task = (void *)rt_linux_task.nextp;
+			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
+				goto sched_exit;
 			}
-			KEXECTIME();
-			rt_exchange_tasks(rt_smp_current[cpuid], new_task);
-			if (rt_current->lnxtsk) {
-				UNLOCK_LINUX(cpuid);
-				restore_cr0(linux_cr0);
-				if (rt_current != (void *)rt_linux_task.prevp) {
-					new_task = (void *)rt_linux_task.prevp;
-					goto schedlnxtsk;
-				}
-			} else if (rt_current->uses_fpu) {
-				enable_fpu();
-				if (rt_current != fpu_task) {
-					save_fpenv(fpu_task->fpu_reg);
-					fpu_task = rt_current;
-					restore_fpenv(fpu_task->fpu_reg);
-				}
-			}
-			if (rt_current->signal) {
-				(*rt_current->signal)();
-			}
-			goto sched_exit;
 		}
-schedlnxtsk:
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
 			if (!rt_current->is_hard) {
@@ -746,7 +761,7 @@ schedlnxtsk:
 			}
 		}
 	}
- sched_exit:
+sched_exit:
 	rtai_cli();
         rtai_hw_unlock(flags);
 }
@@ -825,37 +840,10 @@ void rt_schedule(void)
 
 	if (new_task != rt_current) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
-			if (rt_current->lnxtsk) {
-				LOCK_LINUX(cpuid);
-				save_cr0_and_clts(linux_cr0);
-				rt_linux_task.nextp = (void *)rt_current;
-			} else if (new_task->lnxtsk) {
-				rt_linux_task.prevp = (void *)new_task;
-				new_task = (void *)rt_linux_task.nextp;
+			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
+				goto sched_exit;
 			}
-			KEXECTIME();
-			rt_exchange_tasks(rt_smp_current[cpuid], new_task);
-			if (rt_current->lnxtsk) {
-				UNLOCK_LINUX(cpuid);
-				restore_cr0(linux_cr0);
-				if (rt_current != (void *)rt_linux_task.prevp) {
-					new_task = (void *)rt_linux_task.prevp;
-					goto schedlnxtsk;
-				}
-			} else if (rt_current->uses_fpu) {
-				enable_fpu();
-				if (rt_current != fpu_task) {
-					save_fpenv(fpu_task->fpu_reg);
-					fpu_task = rt_current;
-					restore_fpenv(fpu_task->fpu_reg);
-				}
-			}
-			if (rt_current->signal) {
-				(*rt_current->signal)();
-			}
-			goto sched_exit;
 		}
-schedlnxtsk:
 		rt_smp_current[cpuid] = new_task;
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
@@ -897,7 +885,7 @@ sched_soft:
 			rt_smp_current[cpuid] = rt_current;
         	}
 	}
- sched_exit:
+sched_exit:
 	rtai_cli();
         rtai_hw_unlock(flags);
 }
@@ -1143,38 +1131,10 @@ static void rt_timer_handler(void)
 
 	if (new_task != rt_current) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
-			if (rt_current->lnxtsk) {
-				LOCK_LINUX(cpuid);
-				save_cr0_and_clts(linux_cr0);
-				rt_linux_task.nextp = (void *)rt_current;
-			} else if (new_task->lnxtsk) {
-				rt_linux_task.prevp = (void *)new_task;
-				new_task = (void *)rt_linux_task.nextp;
+			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
+				goto sched_exit;
 			}
-			KEXECTIME();
-			rt_exchange_tasks(rt_smp_current[cpuid], new_task);
-			if (rt_current->lnxtsk) {
-				UNLOCK_LINUX(cpuid);
-				restore_cr0(linux_cr0);
-				if (rt_current != (void *)rt_linux_task.prevp) {
-					new_task = (void *)rt_linux_task.prevp;
-					goto schedlnxtsk;
-				}
-			} else if (rt_current->uses_fpu) {
-				enable_fpu();
-				if (rt_current != fpu_task) {
-					save_fpenv(fpu_task->fpu_reg);
-					fpu_task = rt_current;
-					restore_fpenv(fpu_task->fpu_reg);
-				}
-			}
-			if (rt_current->signal) {
-				(*rt_current->signal)();
-			}	
-
-			goto sched_exit;
 		}
-schedlnxtsk:
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
 			if (!rt_current->is_hard) {
@@ -1198,7 +1158,7 @@ schedlnxtsk:
 			}
 		}
         }
- sched_exit:
+sched_exit:
 	rtai_cli();
         rtai_hw_unlock(flags);
 }
@@ -1220,10 +1180,10 @@ static irqreturn_t recover_jiffies(int irq, void *dev_id, struct pt_regs *regs)
 
 int rt_is_hard_timer_running(void) 
 { 
-    int cpuid, running;
+	int cpuid, running;
 	for (running = cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		if (rt_time_h) {
-		running |= (1 << cpuid);
+			running |= (1 << cpuid);
 		}
 	}
 	return running;

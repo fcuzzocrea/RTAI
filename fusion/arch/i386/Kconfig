@@ -98,7 +98,7 @@ config RTAI_HW_SMI_DETECT_DISABLE
         default y
 
 config RTAI_HW_SMI_WORKAROUND
-        depends on !RTAI_HW_SMI_DETECT_DISABLE
+        depends on RTAI_HW_SMI_DETECT
         bool "Enable SMI workaround"
         default n
         help
@@ -124,16 +124,16 @@ config RTAI_HW_SMI_ALL
         bool "Globally disable SMI"
         default y
         help
-        SMIs may be disabled globally, which avoid any jitter they 
-        could cause with a big drawback: any peripheral or feature 
-        relying on them will stop working when RTAI is running.
+        This option causes the SMIs to be globally disabled, which avoid
+        any jitter they could cause with a big drawback: any peripheral or
+        feature relying on them will stop working when RTAI is running.
 
         The alternative is to selectively enable the SMIs sources needed 
         by your peripherals. The main drawback is that the peripheral 
         which you need may be the one causing jitter, so that extensive
-        testing is needed when choosing this option. Another drawback
-        is that other unknown SMI sources may exist which RTAI can not 
-        disable.
+        testing is needed when choosing to not disable SMI globally. 
+        Another drawback is that other unknown SMI sources may exist which
+        RTAI can not disable.
 
         This option causes the SMIs to be globally disabled.
 

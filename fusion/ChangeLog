@@ -1,5 +1,10 @@
 2005-01-02  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-ppc/system.h (xnarch_sysalloc): Temporarily
+	disable the use of vmalloc() for large chunks. We've (likely) got
+	some on-demand mapping problem when running over the non-Linux
+	domain.
+
 	* include/nucleus/asm-*/calibration.h: Add per-arch calibration
 	data.
 

@@ -26,6 +26,15 @@
 #define LOW   1
 #define HIGH  0
 
+#define LINUX_SYSCALL_NR      gpr[0]
+#define LINUX_SYSCALL_REG1    gpr[1]
+#define LINUX_SYSCALL_REG2    gpr[2]
+#define LINUX_SYSCALL_REG3    gpr[3]
+#define LINUX_SYSCALL_REG4    gpr[4]
+#define LINUX_SYSCALL_REG5    gpr[5]
+#define LINUX_SYSCALL_REG6    gpr[6]
+#define LINUX_SYSCALL_RETREG  gpr[0]
+
 #ifdef __KERNEL__
 
 #include <linux/interrupt.h>
@@ -40,8 +49,7 @@
 
 #define IN_INTERCEPT_IRQ_ENABLE()       do { /* nop */ } while (0)
 
-#define RTAI_SYSCALL_NR  gpr[0]
-#define LINUX_SYSCALL_RETREG  gpr[0]
+#define RTAI_SYSCALL_NR      gpr[0]
 
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {

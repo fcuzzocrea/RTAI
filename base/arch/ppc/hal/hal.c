@@ -41,10 +41,12 @@
  *
  *@{*/
 
+#define __KERNEL__
+
 #include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/errno.h>
-#include <linux/wrapper.h>
+//#include <linux/wrapper.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
@@ -58,6 +60,7 @@
 #include <asm/time.h>
 #include <asm/types.h>
 #define __RTAI_HAL__
+#include <asm/rtai_lxrt.h>
 #include <asm/rtai_hal.h>
 #ifdef CONFIG_PROC_FS
 #include <linux/stat.h>
@@ -173,7 +176,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 	flags = rtai_critical_enter(NULL);
 /* Disable decrementer handling in Linux timer_interrupt() */
 	if (irq == RTAI_TIMER_DECR_IRQ)	{
-		disarm_decr[cpuid] = 1;
+		disarm_decr[rtai_cpuid()] = 1;
 	}
 	rtai_realtime_irq[irq].handler = (void *)handler;
 	rtai_realtime_irq[irq].cookie  = cookie;
@@ -192,7 +195,7 @@ int rt_release_irq (unsigned irq)
 	rtai_realtime_irq[irq].handler = NULL;
 /* Reenable decrementer handling in Linux timer_interrupt() */
 	if (irq == RTAI_TIMER_DECR_IRQ)	{
-		disarm_decr[cpuid] = 0;
+		disarm_decr[rtai_cpuid()] = 0;
 	}
 	rtai_critical_exit(flags);
 	return 0;
@@ -211,6 +214,8 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 		rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
 	}
 }
+
+extern struct hw_interrupt_type __adeos_std_irq_dtype[];
 
 #define BEGIN_PIC() \
 do { \
@@ -795,7 +800,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 
     rtai_sync_level = 2;
     rt_release_irq(RTAI_TIMER_DECR_IRQ);
-    if (rt_request_irq(RTAI_TIMER_DECR_IRQ,(rt_irq_handler_t)handler,NULL) < 0)
+    if (rt_request_irq(RTAI_TIMER_DECR_IRQ,(rt_irq_handler_t)handler,NULL, 0) < 0)
 	{
 	rtai_critical_exit(flags);
 	return -EINVAL;
@@ -865,9 +870,10 @@ RT_TRAP_HANDLER rt_set_trap_handler (RT_TRAP_HANDLER handler) {
         do { rtai_cli(); } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
-static void rtai_irq_trampoline (unsigned irq)
+static int rtai_irq_trampoline (unsigned irq)
 {
 	unsigned long lflags;
+	int cpuid = rtai_cpuid();
 	TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 
 	lflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
@@ -888,11 +894,6 @@ static void rtai_irq_trampoline (unsigned irq)
         adp_root->cpudata[cpuid].status = lflags;
 
         if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &lflags)) {
-                if (irq == __adeos_tick_irq) {
-                        __adeos_tick_regs.eflags = regs->eflags;
-                        __adeos_tick_regs.eip    = regs->eip;
-                        __adeos_tick_regs.xcs    = regs->xcs;
-                }
                 if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
                 	rtai_sti();
                 	rtai_cli();
@@ -903,10 +904,6 @@ static void rtai_irq_trampoline (unsigned irq)
         return 0;
 
 TRACE_RTAI_GLOBAL_IRQ_EXIT();
-}
-
-
-    TRACE_RTAI_GLOBAL_IRQ_EXIT();
 }
 
 #ifdef FIXME
@@ -1048,7 +1045,7 @@ static inline long long rtai_usrq_trampoline (unsigned srq, unsigned label)
 {
     long long r = 0;
 
-    TRACE_RTAI_SRQ_ENTRY(srq);
+    TRACE_RTAI_SRQ_ENTRY(srq, 0);
 
     if (srq > 1 && srq < RTAI_NR_SRQS &&
         test_bit(srq,&rtai_sysreq_map) &&
@@ -1073,6 +1070,7 @@ asmlinkage int rtai_syscall_entry(struct pt_regs *regs)
 	unsigned long vec, srq, args; 
 
 	if (regs->gpr[0] && regs->gpr[0] == ((srq = regs->gpr[3]) + (args = regs->gpr[4]))) {
+		unsigned long long retval;
 		retval = !(vec = srq >> 24) ? rtai_usrq_trampoline(srq, args) : rtai_lxrt_invoke_entry(srq, args);
 		regs->gpr[0] = 0;
 		regs->gpr[3] = ((unsigned long *)&retval)[0];
@@ -1110,7 +1108,7 @@ static void rtai_uninstall_archdep (void) {
     unsigned long flags;
 
     flags = rtai_critical_enter(NULL);
-    __adeos_handle_trap = 0;
+//    __adeos_handle_trap = 0;
     rtai_critical_exit(flags);
 }
 
@@ -1139,7 +1137,6 @@ static int rtai_read_proc (char *page,
     int i, none;
 
     PROC_PRINT("\n** RTAI/ppc over Adeos:\n\n");
-    PROC_PRINT("    RTAI mount count: %d\n",rtai_mount_count);
     PROC_PRINT("    Decr. Frequency: %lu\n",rtai_tunables.cpu_freq);
     PROC_PRINT("    Decr. Latency: %d ns\n",RTAI_LATENCY_8254);
     PROC_PRINT("    Decr. Setup Time: %d ns\n",RTAI_SETUP_TIME_8254);
@@ -1246,7 +1243,7 @@ extern void *adeos_extern_irq_handler;
 static void rt_printk_srq_handler(void);
 #define RT_PRINTK_SRQ  1
 
-int init_module (void)
+int __rtai_hal_init (void)
 {
 	unsigned long flags;
 	int trapnr;
@@ -1300,7 +1297,7 @@ int init_module (void)
         return 0;
 }
 
-void cleanup_module (void)
+void __rtai_hal_exit (void)
 {
 #ifdef CONFIG_PROC_FS
 	rtai_proc_unregister();
@@ -1318,4 +1315,148 @@ void cleanup_module (void)
         printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 }
 
+
+module_init(__rtai_hal_init);
+module_exit(__rtai_hal_exit);
+
+/*
+ *  rt_printk.c, hacked from linux/kernel/printk.c.
+ *
+ * Modified for RT support, David Schleef.
+ *
+ * Adapted to RTAI, and restyled his own way by Paolo Mantegazza.
+ *
+ */
+
+#define PRINTK_BUF_SIZE  (10000) // Test programs may generate much output. PC
+#define TEMP_BUF_SIZE	 (500)
+
+static char rt_printk_buf[PRINTK_BUF_SIZE];
+
+static int buf_front, buf_back;
+static char buf[TEMP_BUF_SIZE];
+
+int rt_printk (const char *fmt, ...)
+{
+	unsigned long flags;
+        static spinlock_t display_lock = SPIN_LOCK_UNLOCKED;
+	va_list args;
+	int len, i;
+
+        flags = rt_spin_lock_irqsave(&display_lock);
+	va_start(args, fmt);
+	len = vsprintf(buf, fmt, args);
+	va_end(args);
+	if ((buf_front + len) >= PRINTK_BUF_SIZE) {
+		i = PRINTK_BUF_SIZE - buf_front;
+		memcpy(rt_printk_buf + buf_front, buf, i);
+		memcpy(rt_printk_buf, buf + i, len - i);
+		buf_front = len - i;
+	} else {
+		memcpy(rt_printk_buf + buf_front, buf, len);
+		buf_front += len;
+	}
+        rt_spin_unlock_irqrestore(flags, &display_lock);
+	rt_pend_linux_srq(RT_PRINTK_SRQ);
+
+	return len;
+}
+
+static void rt_printk_srq_handler (void)
+{
+	int tmp;
+
+	while(1) {
+		tmp = buf_front;
+		if (buf_back > tmp) {
+			printk("%.*s", PRINTK_BUF_SIZE - buf_back, rt_printk_buf + buf_back);
+			buf_back = 0;
+		}
+		if (buf_back == tmp) {
+			break;
+		}
+		printk("%.*s", tmp - buf_back, rt_printk_buf + buf_back);
+		buf_back = tmp;
+	}
+}
+
+/*
+ *  support for decoding long long numbers in kernel space.
+ */
+
+void *ll2a (long long ll, char *s)
+{
+	unsigned long i, k, ul;
+	char a[20];
+
+	if (ll < 0) {
+		s[0] = 1;
+		ll = -ll;
+	} else {
+		s[0] = 0;
+	}
+	i = 0;
+	while (ll > 0xFFFFFFFF) {
+		ll = rtai_ulldiv(ll, 10, &k);
+		a[++i] = k + '0';
+	}
+	ul = ((unsigned long *)&ll)[LOW];
+	do {
+		ul = (k = ul)/10;
+		a[++i] = k - ul*10 + '0';
+	} while (ul);
+	if (s[0]) {
+		k = 1;
+		s[0] = '-';
+	} else {
+		k = 0;
+	}
+	a[0] = 0;
+	while ((s[k++] = a[i--]));
+	return s;
+}
+
+EXPORT_SYMBOL(rtai_realtime_irq);
+EXPORT_SYMBOL(rt_request_irq);
+EXPORT_SYMBOL(rt_release_irq);
+EXPORT_SYMBOL(rt_set_irq_cookie);
+EXPORT_SYMBOL(rt_set_irq_retmode);
+EXPORT_SYMBOL(rt_startup_irq);
+EXPORT_SYMBOL(rt_shutdown_irq);
+EXPORT_SYMBOL(rt_enable_irq);
+EXPORT_SYMBOL(rt_disable_irq);
+EXPORT_SYMBOL(rt_mask_and_ack_irq);
+EXPORT_SYMBOL(rt_unmask_irq);
+EXPORT_SYMBOL(rt_ack_irq);
+EXPORT_SYMBOL(rt_request_linux_irq);
+EXPORT_SYMBOL(rt_free_linux_irq);
+EXPORT_SYMBOL(rt_pend_linux_irq);
+EXPORT_SYMBOL(rt_request_srq);
+EXPORT_SYMBOL(rt_free_srq);
+EXPORT_SYMBOL(rt_pend_linux_srq);
+EXPORT_SYMBOL(rt_assign_irq_to_cpu);
+EXPORT_SYMBOL(rt_reset_irq_to_sym_mode);
+EXPORT_SYMBOL(rt_request_apic_timers);
+EXPORT_SYMBOL(rt_request_timer);
+EXPORT_SYMBOL(rt_free_timer);
+EXPORT_SYMBOL(rt_set_ihook);
+
+EXPORT_SYMBOL(rtai_critical_enter);
+EXPORT_SYMBOL(rtai_critical_exit);
+EXPORT_SYMBOL(rtai_set_linux_task_priority);
+
+EXPORT_SYMBOL(rtai_linux_context);
+EXPORT_SYMBOL(rtai_domain);
+EXPORT_SYMBOL(rtai_proc_root);
+EXPORT_SYMBOL(rtai_tunables);
+EXPORT_SYMBOL(rtai_cpu_lock);
+EXPORT_SYMBOL(rtai_cpu_realtime);
+EXPORT_SYMBOL(rt_times);
+EXPORT_SYMBOL(rt_smp_times);
+
+EXPORT_SYMBOL(rt_printk);
+EXPORT_SYMBOL(ll2a);
+
+EXPORT_SYMBOL(rtai_lxrt_invoke_entry);
+EXPORT_SYMBOL(rt_scheduling);
 /*@}*/

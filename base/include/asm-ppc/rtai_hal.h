@@ -63,9 +63,9 @@ static inline unsigned long long rtai_ullmul(unsigned long m0,
     unsigned long long res;
     
     __asm__ __volatile__ ("mulhwu %0, %1, %2"
-			  : "=r" (((unsigned long *)&res)[0]) 
+			  : "=r" (((unsigned long *)(void *)&res)[0]) 
 			  : "%r" (m0), "r" (m1));
-    ((unsigned long *)&res)[1] = m0*m1;
+    ((unsigned long *)(void *)&res)[1] = m0*m1;
     
     return res;
 }
@@ -83,10 +83,10 @@ static inline unsigned long long rtai_ulldiv(unsigned long long ull,
     
     while (ull >= uld) 
 	{
-	((unsigned long *)&q)[0] += (qh = ((unsigned long *)&ull)[0] / uld);
-	rh = ((unsigned long *)&ull)[0] - qh * uld;
-	q += rh * (unsigned long long)qf + (ql = ((unsigned long *)&ull)[1] / uld);
-	ull = rh * rf + (((unsigned long *)&ull)[1] - ql * uld);
+	((unsigned long *)(void *)&q)[0] += (qh = ((unsigned long *)(void *)&ull)[0] / uld);
+	rh = ((unsigned long *)(void *)&ull)[0] - qh * uld;
+	q += rh * (unsigned long long)qf + (ql = ((unsigned long *)(void *)&ull)[1] / uld);
+	ull = rh * rf + (((unsigned long *)(void *)&ull)[1] - ql * uld);
 	}
     
     *r = ull;
@@ -113,11 +113,11 @@ static inline unsigned long long rtai_llimd(unsigned long long ull,
     unsigned long long low;
     unsigned long q, r;
     
-    low  = rtai_ullmul(((unsigned long *)&ull)[1], mult);	
-    q = rtai_ulldiv(rtai_ullmul(((unsigned long *)&ull)[0], mult) + 
-		((unsigned long *)&low)[0], div, (unsigned long *)&low);
+    low  = rtai_ullmul(((unsigned long *)(void *)&ull)[1], mult);	
+    q = rtai_ulldiv(rtai_ullmul(((unsigned long *)(void *)&ull)[0], mult) + 
+		((unsigned long *)(void *)&low)[0], div, (unsigned long *)(void *)&low);
     low = rtai_ulldiv(low, div, &r);
-    ((unsigned long *)&low)[0] += q;
+    ((unsigned long *)(void *)&low)[0] += q;
     
     return (r + r) > div ? low + 1 : low;
 }
@@ -543,7 +543,7 @@ void rtai_switch_linux_mm(struct task_struct *prev,
 extern "C" {
 #endif /* __cplusplus */
 
-int rt_request_irq(unsigned irq, void (*handler)(unsigned irq, void *cookie), void *cookie, int retmode);
+int rt_request_irq(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode);
 
 int rt_release_irq(unsigned irq);
 
@@ -572,9 +572,9 @@ void rt_ack_irq(unsigned irq);
 void rt_do_irq(unsigned irq);
 
 int rt_request_linux_irq(unsigned irq,
-			 void (*handler)(int irq,
-					 void *dev_id,
-					 struct pt_regs *regs), 
+			 int (*handler)(int irq,
+			 void *dev_id,
+			 struct pt_regs *regs), 
 			 char *name,
 			 void *dev_id);
 

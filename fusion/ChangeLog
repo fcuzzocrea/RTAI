@@ -1,3 +1,9 @@
+2005-02-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/task.h (thread2rtask): Convert to inline function to
+	prevent spurious evaluation side-effects due to multiple macro arg
+	expansion. Such bug affected condvar and mutex supports.
+
 2005-02-03  Max Krasnyansky <maxk@qualcomm.com>
 
 	* configure.in: Fix GCC tuning flags determination script.

@@ -96,9 +96,6 @@ typedef struct rt_task {
 
     xnthread_t thread_base;
 
-#define thread2rtask(taddr) \
-((taddr) ? ((RT_TASK *)(((char *)(taddr)) - (int)(&((RT_TASK *)0)->thread_base))) : NULL)
-
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 
     int suspend_depth;
@@ -124,6 +121,11 @@ typedef struct rt_task {
     } wait_args;
 
 } RT_TASK;
+
+static inline RT_TASK *thread2rtask (xnthread_t *t)
+{
+    return t ? ((RT_TASK *)(((char *)(t)) - (int)(&((RT_TASK *)0)->thread_base))) : NULL;
+}
 
 #define rtai_current_task() thread2rtask(xnpod_current_thread())
 

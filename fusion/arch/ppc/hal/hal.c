@@ -176,7 +176,9 @@ void rthal_release_timer (void)
     rthal_critical_exit(flags);
 }
 
-unsigned long rthal_calibrate_timer (void) {
+unsigned long rthal_calibrate_timer (void)
+
+{
     /* On PowerPC systems, the cost of setting the decrementer or the
        PIT does not induce significant latency. In such a case, let's
        return the shortest possible delay for a one-shot setup. In any

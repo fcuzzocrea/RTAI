@@ -226,7 +226,7 @@ typedef int (*rt_irq_handler_t)(unsigned irq, void *cookie);
 #define RTAI_CPU_FREQ              (rtai_tunables.cpu_freq)
 
 #if 0
-static inline unsigned long long rtai_hidden_rdtsc (void) {
+static inline unsigned long long _rtai_hidden_rdtsc (void) {
     unsigned long long t;
     __asm__ __volatile__( "rdtsc" : "=A" (t));
     return t;

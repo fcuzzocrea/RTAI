@@ -1,3 +1,7 @@
+2004-07-12  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/*: Directory files modified for Scilab-3.0
+
 2004-07-12  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Upgrade the x86 patch to

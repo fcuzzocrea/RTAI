@@ -353,7 +353,7 @@ int main (int argc, char *argv[])
 
     if (err)
 	{
-        fprintf(stderr,"sys_init() failed: %s\n",strerror(err));
+        fprintf(stderr,"sys_init() failed: %s\n",strerror(-err));
         exit(2);
 	}
 
@@ -361,7 +361,7 @@ int main (int argc, char *argv[])
 
     if (err)
 	{
-        fprintf(stderr,"skin_init() failed: %s\n",strerror(err));
+        fprintf(stderr,"skin_init() failed: %s\n",strerror(-err));
         exit(3);
 	}
 
@@ -369,7 +369,7 @@ int main (int argc, char *argv[])
 
     if (err)
 	{
-        fprintf(stderr,"user_init() failed: %s\n",strerror(err));
+        fprintf(stderr,"user_init() failed: %s\n",strerror(-err));
         exit(4);
 	}
 
@@ -550,7 +550,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 
     if (err)
 	{
-        fprintf(stderr,"UVM init failed: %s\n",strerror(err));
+        fprintf(stderr,"UVM init failed: %s\n",strerror(-err));
 	exit(1);
 	}
 

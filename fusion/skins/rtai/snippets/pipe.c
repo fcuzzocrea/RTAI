@@ -40,20 +40,21 @@ void cleanup (void)
 
 /* Kernel-side */
 
+#define TASK_PRIO  0               /* Highest RT priority */
+#define TASK_MODE  T_FPU|T_CPU(0)  /* Uses FPU, bound to CPU #0 */
+#define TASK_STKSZ 4096            /* Stack size (in bytes) */
+
+RT_TASK task_desc;
+
 RT_PIPE pipe_desc;
 
-int init_module (void)
+void task_body (void)
 
 {
     RT_PIPE_MSG *msgout, *msgin;
     int err, len;
 
     /* ... */
-
-    err = rt_pipe_open(&pipe_desc,PIPE_MINOR);
-
-    if (err)
-	fail();
 
     len = sizeof("Hello");
     /* Get a message block of the right size in order to initiate the
@@ -80,8 +81,32 @@ int init_module (void)
     /* ... */
 }
 
+init init_module (void)
+
+{
+    int err;
+
+    err = rt_pipe_open(&pipe_desc,PIPE_MINOR);
+
+    if (err)
+	fail();
+
+    /* ... */
+
+    err = rt_task_create(&task_desc,
+			 "MyTaskName",
+			 TASK_STKSZ,
+			 TASK_PRIO,
+			 TASK_MODE);
+    if (!err)
+	rt_task_start(&task_desc,&task_body,NULL);
+
+    /* ... */
+}
+
 void cleanup_module (void)
 
 {
     rt_pipe_close(&pipe_desc);
+    rt_task_delete(&task_desc);
 }

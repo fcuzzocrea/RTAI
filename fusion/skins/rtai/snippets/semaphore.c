@@ -5,26 +5,29 @@
 
 RT_SEM sem_desc;
 
-int main (int argc, char *argv[])
+void foo (void)
 
 {
     int err;
 
-    /* Create a sempahore; we could also have attempted to bind to
+    /* Create a semaphore; we could also have attempted to bind to
        some pre-existing object, using rt_sem_bind() instead of
        creating it. */
 
     err = rt_sem_create(&sem_desc,"MySemaphore",SEM_INIT,SEM_MODE);
 
-    /* Now, wait for a semaphore unit, then release it: */
+    for (;;) {
 
-    rt_sem_p(&sem_desc,TM_INFINITE);
+    	/* Now, wait for a semaphore unit... */
+    	rt_sem_p(&sem_desc,TM_INFINITE);
 
-    /* ... */
+	/* ... */
 
-    rt_sem_v(&sem_desc);
+	/* then release it. */
+	rt_sem_v(&sem_desc);
 
-    /* ... */
+	/* ... */
+    }
 }
 
 void cleanup (void)

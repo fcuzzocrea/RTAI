@@ -27,7 +27,7 @@ int main (int argc, char *argv[])
 
     /* Get the address of the shared memory segment. The "size" and
        "timeout" arguments are unused here. */
-    rt_heap_alloc(&heap_desc,0,TM_INFINITE,&shared_mem);
+    rt_heap_alloc(&heap_desc,0,TM_NONBLOCK,&shared_mem);
 
     /* ... */
 }

@@ -429,6 +429,20 @@ void *rt_queue_alloc (RT_QUEUE *q,
     return msg;
 }
 
+static int __queue_check_msg (void *p)
+
+{
+    rt_queue_msg_t *msg = ((rt_queue_msg_t *)p) - 1;
+
+    if (msg->refcount == 0)
+	return -EINVAL;
+
+    if (--msg->refcount > 0)
+	return -EBUSY;
+
+    return 0;
+}
+
 /**
  * @fn int rt_queue_free(RT_QUEUE *q,
                          void *buf)
@@ -465,28 +479,13 @@ void *rt_queue_alloc (RT_QUEUE *q,
 int rt_queue_free (RT_QUEUE *q,
 		   void *buf)
 {
-    rt_queue_msg_t *msg;
     int err;
     spl_t s;
 
     if (buf == NULL)
 	return -EINVAL;
 
-    msg = ((rt_queue_msg_t *)buf) - 1;
-
     xnlock_get_irqsave(&nklock,s);
-
-    if (msg->refcount == 0)
-	{
-	err = -EINVAL;
-	goto unlock_and_exit;
-	}
-
-    if (--msg->refcount > 0)
-	{
-	err = 0;
-	goto unlock_and_exit;
-	}
 
     q = rtai_h2obj_validate(q,RTAI_QUEUE_MAGIC,RT_QUEUE);
 
@@ -496,7 +495,13 @@ int rt_queue_free (RT_QUEUE *q,
         goto unlock_and_exit;
         }
     
-    err = xnheap_free(&q->bufpool,msg);
+    err = xnheap_test_and_free(&q->bufpool,
+			       ((rt_queue_msg_t *)buf) - 1,
+			       &__queue_check_msg);
+    if (err == -EBUSY)
+	/* Release failed due to non-zero refcount; this is not an
+	 * error from the interface POV. */
+	err = 0;
 
  unlock_and_exit:
 

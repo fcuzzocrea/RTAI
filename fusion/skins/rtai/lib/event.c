@@ -84,6 +84,17 @@ int rt_event_signal (RT_EVENT *event,
 			     mask);
 }
 
+int rt_event_clear (RT_EVENT *event,
+		    unsigned long mask,
+		    unsigned long *mask_r)
+{
+    return XENOMAI_SKINCALL3(__rtai_muxid,
+			     __rtai_event_clear,
+                             event,
+                             mask,
+                             mask_r);
+}
+
 int rt_event_inquire (RT_EVENT *event,
 		      RT_EVENT_INFO *info)
 {

@@ -212,7 +212,7 @@ extern struct klist_t wake_up_srq;
 static inline void enq_ready_task(RT_TASK *ready_task)
 {
 	RT_TASK *task;
-	if (ready_task->is_hard || (ready_task->lnxtsk)->state != TASK_HARDREALTIME) {
+	if (ready_task->is_hard) {
 #ifdef CONFIG_SMP
 		task = rt_smp_linux_task[ready_task->runnable_on_cpus & sqilter].rnext;
 #else
@@ -224,6 +224,7 @@ static inline void enq_ready_task(RT_TASK *ready_task)
 		task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task;
 		ready_task->rnext = task;
 	} else {
+		ready_task->state = 0;
 		wake_up_srq.task[wake_up_srq.in] = ready_task->lnxtsk;
 		wake_up_srq.in = (wake_up_srq.in + 1) & (MAX_WAKEUP_SRQ - 1);
 		rt_pend_linux_srq(wake_up_srq.srq);
@@ -235,7 +236,7 @@ static inline int renq_ready_task(RT_TASK *ready_task, int priority)
 	int retval;
 	if ((retval = ready_task->priority != priority)) {
 		ready_task->priority = priority;
-		if ((ready_task->is_hard || (ready_task->lnxtsk)->state != TASK_HARDREALTIME) && ready_task->state == RT_SCHED_READY) {
+		if (ready_task->state == RT_SCHED_READY) {
 			(ready_task->rprev)->rnext = ready_task->rnext;
 			(ready_task->rnext)->rprev = ready_task->rprev;
 			enq_ready_task(ready_task);
@@ -279,9 +280,6 @@ static inline void rem_ready_current(RT_TASK *rt_current)
 static inline void enq_timed_task(RT_TASK *timed_task)
 {
 	RT_TASK *task;
-	if (!timed_task->is_hard) {
-		(timed_task->lnxtsk)->state = TASK_HARDREALTIME;
-	}
 #ifdef CONFIG_SMP
 	task = rt_smp_linux_task[timed_task->runnable_on_cpus & sqilter].tnext;
 #else

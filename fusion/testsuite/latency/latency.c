@@ -38,8 +38,8 @@ void latency (void *cookie)
 
 {
     long minj, maxj = -10000000, dt, sumj;
-    RTIME itime, expected, period;
     int err, count, nsamples;
+    RTIME expected, period;
 
     err = rt_timer_start(TM_ONESHOT);
 
@@ -51,9 +51,8 @@ void latency (void *cookie)
 
     nsamples = 1000000000 / sampling_period;
     period = rt_timer_ns2ticks(sampling_period);
-    itime = rt_timer_read() + sampling_period * 5;
-    expected = rt_timer_ns2ticks(itime);
-    err = rt_task_set_periodic(NULL,itime,sampling_period);
+    expected = rt_timer_tsc();
+    err = rt_task_set_periodic(NULL,TM_NOW,sampling_period);
 
     if (err)
 	{

@@ -25,8 +25,8 @@ void latency (void *cookie)
 
 {
     long minj, maxj = -10000000, dt, sumj;
-    RTIME itime, expected, period;
     struct rtai_latency_stat *s;
+    RTIME expected, period;
     int  err, count;
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
     int tsflag = 0;
@@ -43,9 +43,8 @@ void latency (void *cookie)
 	}
 
     period = rt_timer_ns2ticks(TASK_PERIOD_NS);
-    itime = rt_timer_read() + TASK_PERIOD_NS * 5;
-    expected = rt_timer_ns2ticks(itime);
-    err = rt_task_set_periodic(NULL,itime,TASK_PERIOD_NS);
+    expected = rt_timer_tsc();
+    err = rt_task_set_periodic(NULL,TM_NOW,TASK_PERIOD_NS);
 
     if (err)
 	{

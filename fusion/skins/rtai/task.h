@@ -123,6 +123,15 @@ typedef struct rt_task {
 
     int overrun;
 
+    union { /* Saved args for current synch. wait operation. */
+
+	struct {
+	    int mode;
+	    unsigned long mask;
+	} event;
+
+    } wait_args;
+
 } RT_TASK;
 
 #define rtai_current_task() thread2rtask(xnpod_current_thread())

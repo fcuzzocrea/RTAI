@@ -87,7 +87,7 @@ int pthread_init_rt (const char *name,
     mlockall(MCL_CURRENT|MCL_FUTURE);
     memset(stack,0,sizeof(stack));
 
-    /* Move the current thread into the RTAI realm. */
+    /* Move the current Linux task into the RTAI realm. */
     return XENOMAI_SKINCALL3(__fusion_muxid,__xn_fusion_init,name,khandlep,uhandle);
 }
 
@@ -107,7 +107,10 @@ int pthread_create_rt (const char *name,
     mlockall(MCL_CURRENT|MCL_FUTURE);
     memset(stack,0,sizeof(stack));
 
-    /* Move the current thread into the RTAI realm. */
+    /* Move the current Linux task into the RTAI realm, but do not
+       start the mated shadow thread. Caller will need to wait on the
+       barrier (pthread_barrier_rt()) for the start event
+       (pthread_start_rt()). */
     return XENOMAI_SKINCALL5(__fusion_muxid,__xn_fusion_create,name,khandlep,uhandle,syncpid,syncp);
 }
 
@@ -117,9 +120,10 @@ int pthread_barrier_rt (void)
     void (*entry)(void *), *cookie;
     int err;
 
-    /* Wait on the barrier for the thread to be started. The barrier
-       could be released in order to process Linux signals while the
-       fusion shadow is still dormant; in such a case, resume wait. */
+    /* Make the current Linux task wait on the barrier for its mated
+       shadow thread to be started. The barrier could be released in
+       order to process Linux signals while the fusion shadow is still
+       dormant; in such a case, resume wait. */
 
     do
 	err = XENOMAI_SYSCALL2(__xn_sys_barrier,&entry,&cookie);

@@ -520,18 +520,17 @@ void xnshadow_harden (void)
 	       adeos_test_pipeline_from(&rthal_domain),
 	       adp_current->name);
 #endif
+
     /* Enqueue the request to move "current" from the Linux domain to
        the RTAI domain. This will cause the shadow thread to resume
        using the register state of the Linux task. */
 
-    splhigh(s);
-    adeos_load_cpuid();
-
-    gk_enter_wheel[cpuid][gk_enter_in[cpuid]] = xnshadow_thread(current);
-    gk_enter_in[cpuid] = (gk_enter_in[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
-
     engage_irq_shield(cpuid);
 
+    splhigh(s);
+    adeos_load_cpuid();
+    gk_enter_wheel[cpuid][gk_enter_in[cpuid]] = xnshadow_thread(current);
+    gk_enter_in[cpuid] = (gk_enter_in[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
     splexit(s);
 
     if (xnshadow_thread(current)->cprio > gatekeeper[cpuid]->rt_priority)
@@ -1608,12 +1607,10 @@ static void xnshadow_schedule_tail (adevinfo_t *evinfo)
 
 {
     if (evinfo->domid == RTHAL_DOMAIN_ID)
-        {
 	/* About to resume in xnshadow_harden() after the gatekeeper
 	   switched us back. Do _not_ propagate this event so that
 	   Linux's tail scheduling won't be performed. */
 	return;
-	}
 
     adeos_propagate_event(evinfo);
 }

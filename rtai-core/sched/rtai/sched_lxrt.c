@@ -626,8 +626,6 @@ do { preempt = 0; } while (0)
 #define restore_fpu(tsk) \
 	do { restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk); } while (0)
 
-static volatile int to_linux_depth[NR_RT_CPUS];
-
 #define LOCK_LINUX(cpuid)    do { rt_switch_to_real_time(cpuid); } while (0)
 
 #define UNLOCK_LINUX(cpuid)  do { if (rt_switch_to_linux(cpuid)) rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n"); } while (0)

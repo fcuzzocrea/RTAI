@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <linux/ioport.h>
 #include <nucleus/pod.h>
 #include <16550A/16550A.h>
 #include <16550A/syscall.h>
@@ -144,6 +145,140 @@ static int __uart_isr (RT_INTR *intr)
     return req > 0 ? RT_INTR_HANDLED|RT_INTR_ENABLE : RT_INTR_CHAINED;
 }
 
+int rt_uart_open (RT_UART *uart,
+		  RT_UART_CONFIG *config)
+{
+    char name[XNOBJECT_NAME_LEN];
+    int err;
+    spl_t s;
+
+    if (!xnpod_root_p())
+	return -EACCES;
+
+    if (!request_region(config->port.base,8,"RTAI-based 16550A driver"))
+	return -EBUSY;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    err = rt_intr_create(&uart->intr_desc,
+			 config->port.irq,
+			 &__uart_isr,
+			 0);
+    if (err)
+	goto unlock_and_exit;
+
+    uart->intr_desc.private_data = uart;
+    uart->magic = RTAI_UART_MAGIC;
+    uart->handle = 0;
+    snprintf(name,sizeof(name),"uart/%x",config->port.base);
+
+    /* Mask all UART interrupts and clear pending ones. */
+    outb(0,IER(uart));
+    inb(IIR(uart));
+    inb(LSR(uart));
+    inb(RHR(uart));
+    inb(MSR(uart));
+
+    uart->config = *config;
+
+    uart->i_head = 0;
+    uart->i_tail = 0;
+    uart->i_nwait = 0;
+    uart->i_count = 0;
+    rt_sem_create(&uart->i_pulse,NULL,0,S_FIFO|S_PULSE);
+    rt_sem_create(&uart->i_lock,NULL,1,S_PRIO);
+
+    uart->o_head = 0;
+    uart->o_tail = 0;
+    uart->o_count = 0;
+    rt_sem_create(&uart->o_pulse,NULL,0,S_FIFO|S_PULSE);
+
+    uart->status = 0;
+
+    /* Set Baud rate. */
+    outb(LCR_DLAB,LCR(uart));
+    outb(config->speed & 0xff,DLL(uart));
+    outb(config->speed >> 8,DLM(uart));
+
+    /* Set parity, stop bits and character size. */
+    outb((config->parity << 3)|(config->stop_bits << 2)|config->data_bits,LCR(uart));
+
+    /* Reset FIFO and set triggers. */
+    outb(FCR_FIFO|FCR_RESET,FCR(uart));
+    outb(FCR_FIFO|config->fifo_depth,FCR(uart));
+
+    /* Set modem control information. */
+    outb(MCR_DTR|MCR_RTS|MCR_OP1|MCR_OP2,MCR(uart));
+
+    /* Enable UART interrupts (except TX). */
+    outb(IER_RX|IER_STAT|IER_MODEM,IER(uart));
+
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    uart->source = RT_KAPI_SOURCE;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
+    /* <!> Since rt_register_enter() may reschedule, only register
+       complete objects, so that the registry cannot return handles to
+       half-baked objects... */
+
+    err = rt_registry_enter(name,uart,&uart->handle);
+
+    if (err)
+	rt_uart_close(uart);
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+int rt_uart_close (RT_UART *uart)
+
+{
+    int err = 0;
+    spl_t s;
+
+    if (!xnpod_root_p())
+	return -EACCES;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    uart = rtai_h2obj_validate(uart,RTAI_UART_MAGIC,RT_UART);
+
+    if (!uart)
+        {
+        err = rtai_handle_error(uart,RTAI_UART_MAGIC,RT_UART);
+        goto unlock_and_exit;
+        }
+    
+    rt_intr_delete(&uart->intr_desc);
+
+    /* Mask all UART interrupts and clear pending ones. */
+    outb(0,IER(uart));
+    inb(IIR(uart));
+    inb(LSR(uart));
+    inb(RHR(uart));
+    inb(MSR(uart));
+
+    /* Clear DTS/RTS. */
+    outb(MCR_OP1|MCR_OP2,MCR(uart));
+
+    release_region(config->port.base,8);
+
+    rt_sem_delete(&uart->o_pulse);
+    rt_sem_delete(&uart->i_pulse);
+    rt_sem_delete(&uart->i_lock);
+
+    rtai_mark_deleted(uart);
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
 ssize_t rt_uart_read (RT_UART *uart,
 		      void *buf,
 		      size_t nbytes,
@@ -262,133 +397,6 @@ ssize_t rt_uart_write (RT_UART *uart,
     xnlock_put_irqrestore(&nklock,s);
 
     return ret;
-}
-
-int rt_uart_open (RT_UART *uart,
-		  RT_UART_CONFIG *config)
-{
-    char name[XNOBJECT_NAME_LEN];
-    int err;
-    spl_t s;
-
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
-    xnlock_get_irqsave(&nklock,s);
-
-    err = rt_intr_create(&uart->intr_desc,
-			 config->port.irq,
-			 &__uart_isr,
-			 0);
-    if (err)
-	goto unlock_and_exit;
-
-    uart->intr_desc.private_data = uart;
-    uart->magic = RTAI_UART_MAGIC;
-    uart->handle = 0;
-    snprintf(name,sizeof(name),"uart/%x",config->port.base);
-
-    /* Mask all UART interrupts and clear pending ones. */
-    outb(0,IER(uart));
-    inb(IIR(uart));
-    inb(LSR(uart));
-    inb(RHR(uart));
-    inb(MSR(uart));
-
-    uart->config = *config;
-
-    uart->i_head = 0;
-    uart->i_tail = 0;
-    uart->i_nwait = 0;
-    uart->i_count = 0;
-    rt_sem_create(&uart->i_pulse,NULL,0,S_FIFO|S_PULSE);
-    rt_sem_create(&uart->i_lock,NULL,1,S_PRIO);
-
-    uart->o_head = 0;
-    uart->o_tail = 0;
-    uart->o_count = 0;
-    rt_sem_create(&uart->o_pulse,NULL,0,S_FIFO|S_PULSE);
-
-    uart->status = 0;
-
-    /* Set Baud rate. */
-    outb(LCR_DLAB,LCR(uart));
-    outb(config->speed & 0xff,DLL(uart));
-    outb(config->speed >> 8,DLM(uart));
-
-    /* Set parity, stop bits and character size. */
-    outb((config->parity << 3)|(config->stop_bits << 2)|config->data_bits,LCR(uart));
-
-    /* Reset FIFO and set triggers. */
-    outb(FCR_FIFO|FCR_RESET,FCR(uart));
-    outb(FCR_FIFO|config->fifo_depth,FCR(uart));
-
-    /* Set modem control information. */
-    outb(MCR_DTR|MCR_RTS|MCR_OP1|MCR_OP2,MCR(uart));
-
-    /* Enable UART interrupts (except TX). */
-    outb(IER_RX|IER_STAT|IER_MODEM,IER(uart));
-
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    uart->source = RT_KAPI_SOURCE;
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
-
-    /* <!> Since rt_register_enter() may reschedule, only register
-       complete objects, so that the registry cannot return handles to
-       half-baked objects... */
-
-    err = rt_registry_enter(name,uart,&uart->handle);
-
-    if (err)
-	rt_uart_close(uart);
-
- unlock_and_exit:
-
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
-}
-
-int rt_uart_close (RT_UART *uart)
-
-{
-    int err = 0;
-    spl_t s;
-
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
-    xnlock_get_irqsave(&nklock,s);
-
-    uart = rtai_h2obj_validate(uart,RTAI_UART_MAGIC,RT_UART);
-
-    if (!uart)
-        {
-        err = rtai_handle_error(uart,RTAI_UART_MAGIC,RT_UART);
-        goto unlock_and_exit;
-        }
-    
-    rt_intr_delete(&uart->intr_desc);
-
-    /* Mask all UART interrupts and clear pending ones. */
-    outb(0,IER(uart));
-    inb(IIR(uart));
-    inb(LSR(uart));
-    inb(RHR(uart));
-    inb(MSR(uart));
-
-    /* Clear DTS/RTS. */
-    outb(MCR_OP1|MCR_OP2,MCR(uart));
-
-    rt_sem_delete(&uart->o_pulse);
-    rt_sem_delete(&uart->i_pulse);
-    rt_sem_delete(&uart->i_lock);
-
-    rtai_mark_deleted(uart);
-
- unlock_and_exit:
-
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
 }
 
 int rt_uart_control (RT_UART *uart,

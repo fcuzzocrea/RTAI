@@ -1,5 +1,7 @@
 2004-08-30  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus: Define CONFIG_RTAI_HW_APERIODIC_TIMER.
+
 	* nucleus/timer.c (xntimer_enqueue): Completely dissociate
 	periodic from aperiodic timer enqueueing/dequeueing.
 

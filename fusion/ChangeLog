@@ -1,3 +1,9 @@
+2004-12-27  Philippe Gerum  <rpm@localhost>
+
+	* nucleus/shadow.c (xnshadow_substitute_syscall): Discard useless
+	migration flag; in any case, we know that we should migrate
+	each time xnpod_shadow_p() is false.
+
 2004-12-25  Philippe Gerum  <rpm@localhost>
 
 	* nucleus/fusion.c (__pthread_start_timer_rt): Fix return code.

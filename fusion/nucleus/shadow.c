@@ -267,6 +267,12 @@ static void xnshadow_renice_handler (unsigned virq)
 	}
 }
 
+static void xnshadow_resched_handler (unsigned virq)
+
+{
+   xnpod_schedule();
+}
+
 static void xnshadow_wakeup_handler (unsigned virq)
 
 {
@@ -370,12 +376,12 @@ static void gatekeeper_thread (void *data)
 
     sigfillset(&current->blocked);
 
+    set_linux_task_priority(current,MAX_USER_RT_PRIO - 1);
+
     up(&gksync);
 
     for (;;)
         {
-	set_linux_task_priority(current,1);
-
 	down_interruptible(&gkreq[cpu]);
 
 	splnone();
@@ -524,9 +530,6 @@ void xnshadow_harden (void)
     gk_enter_wheel[cpuid][gk_enter_in[cpuid]] = xnshadow_thread(current);
     gk_enter_in[cpuid] = (gk_enter_in[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
     splexit(s);
-
-    if (xnshadow_thread(current)->cprio > gatekeeper[cpuid]->rt_priority)
-	set_linux_task_priority(gatekeeper[cpuid],xnshadow_thread(current)->cprio);
 
     set_current_state(TASK_INTERRUPTIBLE);
 
@@ -1021,8 +1024,7 @@ static int xnshadow_detach_skin (struct task_struct *curr, int muxid)
 }
 
 static int xnshadow_substitute_syscall (struct task_struct *curr,
-					struct pt_regs *regs,
-					int migrate)
+					struct pt_regs *regs)
 {
     xnthread_t *thread = xnshadow_thread(curr);
 
@@ -1051,7 +1053,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		return 1;
 		}
 
-	    if (migrate) /* Shall we migrate to RTAI first? */
+	    if (!xnpod_shadow_p()) /* Shall we migrate to RTAI first? */
 		xnshadow_harden();
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
@@ -1276,7 +1278,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	       evinfo->domid);
 #endif
 
-    if (xnshadow_substitute_syscall(task,regs,0))
+    if (xnshadow_substitute_syscall(task,regs))
 	/* This is a Linux syscall issued on behalf of a shadow thread
 	   running inside the RTAI domain. This call has just been
 	   intercepted by the nucleus and a RTAI replacement has been
@@ -1462,7 +1464,7 @@ static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
     if (__xn_reg_mux_p(regs))
 	goto xenomai_syscall;
 
-    if (thread && xnshadow_substitute_syscall(current,regs,1))
+    if (thread && xnshadow_substitute_syscall(current,regs))
 	/* This is a Linux syscall issued on behalf of a shadow thread
 	   running inside the Linux domain. If the call has been
 	   substituted with a RTAI replacement, do not let Linux know

@@ -87,7 +87,11 @@ typedef struct rt_queue_placeholder {
 
     rt_handle_t opaque;
 
+    void *opaque2;
+
     caddr_t mapbase;
+
+    size_t mapsize;
 
 } RT_QUEUE_PLACEHOLDER;
 

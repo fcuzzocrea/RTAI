@@ -17,7 +17,6 @@
  */
 
 #include <sys/types.h>
-#include <errno.h>
 #include <rtai/syscall.h>
 #include <rtai/sem.h>
 

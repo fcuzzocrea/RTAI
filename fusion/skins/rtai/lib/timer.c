@@ -17,12 +17,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/mman.h>
-#include <stdio.h>
-#include <memory.h>
-#include <errno.h>
-#include <unistd.h>
-#include <limits.h>
 #include <rtai/syscall.h>
 #include <rtai/task.h>
 

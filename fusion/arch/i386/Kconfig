@@ -191,8 +191,14 @@ config RTAI_HW_TIMER_LATENCY
 
 config RTAI_HW_SCHED_LATENCY
 	depends on RTAI_OPT_EXPERT
-	string "scheduling latency (ns)"
-	default 5000
+	string "Scheduling latency (ns)"
+	default 0
+	help
+	Scheduling latency is the time between the termination of an
+	interrupt handler and the execution of the first instruction
+	of the real-time thread this handler resumes. A
+	default value of 0 (recommended) will cause this value to be
+	estimated by the nucleus at startup.
 
 endmenu
 

@@ -91,11 +91,14 @@ void __task_pkg_cleanup (void)
 
 /**
  * @fn int rt_task_create(RT_TASK *task,
-		            const char *name,
-			     int stksize,
-			     int prio,
-			     int mode)
+		          const char *name,
+			  int stksize,
+			  int prio,
+			  int mode)
  * @brief Create a new real-time task.
+ *
+ * Creates a real-time task, either running in a kernel module or in
+ * user-space depending on the caller's context.
  *
  * @param task The address of a task descriptor RTAI will use to store
  * the task-related data.  This descriptor must always be valid while
@@ -112,7 +115,7 @@ void __task_pkg_cleanup (void)
  *
  * @param stksize The size of the stack (in bytes) for the new
  * task. If zero is passed, a reasonable pre-defined size will be
- * substituted.
+ * substituted. This parameter is ignored for user-space tasks.
  *
  * @param prio The base priority of the new thread. This value must
  * range from [1 .. 99] (inclusive) where 1 is the highest priority.
@@ -121,7 +124,7 @@ void __task_pkg_cleanup (void)
  * OR'ed into this bitmask, each of them affecting the new task:
  *
  * - T_FPU allows the task to use the FPU whenever available on the
- * platform.
+ * platform. This flag is forced for user-space tasks.
  *
  * - T_CPU(cpuid) makes the new task affine to CPU # @b cpuid. CPU
  * identifiers range from 0 to RTHAL_NR_CPUS - 1 (inclusive).

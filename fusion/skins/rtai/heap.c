@@ -70,24 +70,24 @@ static void __heap_flush_private (xnheap_t *heap,
                           const char *name,
                           size_t heapsize,
                           int mode);
- * \brief Create a memory heap or shared memory segment.
+ * \brief Create a memory heap or a shared memory segment.
  *
  * Initializes a memory heap suitable for time-bounded allocation
  * requests of dynamic memory. Memory heaps can be local to the kernel
  * space, or shared between kernel and user-space.
  *
- * In the latter case, heaps are used as shared memory segments. All
+ * In their simplest form, heaps are only accessible from kernel
+ * space, and are merely usable as regular memory allocators.
+ *
+ * In the shared case, heaps are used as shared memory segments. All
  * allocation requests made through rt_heap_alloc() will then return
  * the same memory block, which will point at to the beginning of the
  * heap memory, and cover the entire heap space. This operating mode
  * is specified by passing the H_SHARED flag into the @a mode
  * parameter. By the proper use of a common @a name, all tasks can
  * bind themselves to the same heap and thus share the same memory
- * space, which start address should be retrieved by a call to
- * rt_heap_alloc().
- *
- * In their simplest form, heaps are only accessible from kernel
- * space, and are merely usable as regular memory allocators.
+ * space, which start address should be subsequently retrieved by a
+ * call to rt_heap_alloc().
  *
  * @param heap The address of a heap descriptor RTAI will use to store
  * the heap-related data.  This descriptor must always be valid while
@@ -320,9 +320,12 @@ int rt_heap_delete (RT_HEAP *heap)
                          RTIME timeout,
                          void **blockp)
  *
- * @brief Allocate a block.
+ * @brief Allocate a block or return the shared memory base.
  *
- * This service allocates a block from the heap's internal pool.
+ * This service allocates a block from the heap's internal pool, or
+ * return the address of the shared memory segment in the caller's
+ * address space if the heap is shared. Tasks may wait for some
+ * requested amount of memory to become available from local heaps.
  *
  * @param heap The descriptor address of the heap to allocate a block
  * from.
@@ -334,14 +337,17 @@ int rt_heap_delete (RT_HEAP *heap)
  * service.
  *
  * @param timeout The number of clock ticks to wait for a block of
- * sufficient size to be available (see note). Passing
- * RT_TIME_INFINITE causes the caller to block indefinitely until some
- * block is eventually available. Passing RT_TIME_NONBLOCK causes the
- * service to return immediately without waiting if no block is
- * available on entry.
+ * sufficient size to be available from a local heap (see
+ * note). Passing RT_TIME_INFINITE causes the caller to block
+ * indefinitely until some block is eventually available. Passing
+ * RT_TIME_NONBLOCK causes the service to return immediately without
+ * waiting if no block is available on entry. This parameter has no
+ * influence if the heap is shared since the entire shared memory
+ * space is always available.
  *
  * @param blockp A pointer to a memory location which will be written
- * upon success with the address of the allocated block. The block
+ * upon success with the address of the allocated block, or the start
+ * address of the shared memory segment. In the former case, the block
  * should be freed using rt_heap_free().
  *
  * @return 0 is returned upon success. Otherwise:
@@ -368,13 +374,15 @@ int rt_heap_delete (RT_HEAP *heap)
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @a timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to RT_TIME_NONBLOCK, or the heap is
+ *   shared.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
  *
  * Rescheduling: always unless the request is immediately satisfied or
- * @a timeout specifies a non-blocking operation.
+ * @a timeout specifies a non-blocking operation. Operations on shared
+ * heaps never start the rescheduling procedure.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In

@@ -19574,8 +19574,8 @@ echo "${ECHO_T}$RTAI_MODULE_DIR" >&6
 CONFIG_RTAI_MODULE_DIR=$RTAI_MODULE_DIR
 
 
-echo "$as_me:$LINENO: checking for Linux source tree" >&5
-echo $ECHO_N "checking for Linux source tree... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for Linux build tree" >&5
+echo $ECHO_N "checking for Linux build tree... $ECHO_C" >&6
 
 unset CONFIG_MODULES
 
@@ -19621,8 +19621,8 @@ fi
 
 if test \! -r ${RTAI_LINUX_DIR}/Makefile; then
    echo
-   { { echo "$as_me:$LINENO: error: No Linux kernel tree in ${RTAI_LINUX_DIR}" >&5
-echo "$as_me: error: No Linux kernel tree in ${RTAI_LINUX_DIR}" >&2;}
+   { { echo "$as_me:$LINENO: error: No Linux kernel build tree in ${RTAI_LINUX_DIR}" >&5
+echo "$as_me: error: No Linux kernel build tree in ${RTAI_LINUX_DIR}" >&2;}
    { (exit 1); exit 1; }; }
 fi
 

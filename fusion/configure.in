@@ -126,7 +126,7 @@ dnl
 dnl Process the Linux kernel configuration
 dnl
 
-AC_MSG_CHECKING([for Linux source tree])
+AC_MSG_CHECKING([for Linux build tree])
 
 dnl CONFIG_MODULES has been forcibly set in RTAI's configuration
 dnl file, therefore we must unset it before later checking if the kernel
@@ -167,7 +167,7 @@ fi
 
 if test \! -r ${RTAI_LINUX_DIR}/Makefile; then
    echo
-   AC_MSG_ERROR([No Linux kernel tree in ${RTAI_LINUX_DIR}])
+   AC_MSG_ERROR([No Linux kernel build tree in ${RTAI_LINUX_DIR}])
 fi
 
 dnl RTAI_LINUX_DIR contains the Linux kernel build tree, try to deduce the

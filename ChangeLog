@@ -1,9 +1,21 @@
+2004-06-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Add support for 2.6.7.
+
+2004-06-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Clobber *.o in RTAI_KBUILD_CLEAN.
+
 2004-06-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/sched_rtai/sched_lxrt.c: set a barrier() after context 
 	  switching, no need for lxrt_context_switch return, fast_schedule
 	  uses internal enq_soft_ready_task so that stealing from Linux can 
-	  can be semplified.
+	  can be simplified.
+
+2004-06-16  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: rtai-3.1 test #3
 
 2004-06-16  Roberto Bucher <roberto.bucher@supsi.ch>
 

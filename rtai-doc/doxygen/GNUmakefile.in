@@ -341,9 +341,9 @@ EXTRA_DIST = \
 	lxrt_faq.dox \
 	schedulers_overview.dox
 
-@CONFIG_RTAI_DOX_DOC_TRUE@HTML_DOCSDIR = ./
 
 @CONFIG_RTAI_DOX_DOC_FALSE@HTML_DOCSDIR = $(srcdir)/../generated/html/
+@CONFIG_RTAI_DOX_DOC_TRUE@HTML_DOCSDIR = ./
 
 docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 doc_top_distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)

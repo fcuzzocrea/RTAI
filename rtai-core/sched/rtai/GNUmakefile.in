@@ -345,9 +345,9 @@ schedulers = $(am__append_2) $(am__append_4) $(am__append_7) $(am__append_9) $(a
 
 noinst_LIBRARIES = $(am__append_1) $(am__append_3) $(am__append_6) $(am__append_8) $(am__append_11) $(am__append_13) $(am__append_16)
 builtins = @RTAI_BUILTIN_MODLIST@
+@CONFIG_SMP_FALSE@default_ksched = rtai_up$(modext)
 
 @CONFIG_SMP_TRUE@default_ksched = rtai_smp$(modext)
-@CONFIG_SMP_FALSE@default_ksched = rtai_up$(modext)
 
 @CONFIG_KBUILD_TRUE@builtins_srclist = $(wildcard $(foreach mod,$(builtins),$(patsubst %,$(top_srcdir)/rtai-core/%/*.[chS],$(mod))))
 @CONFIG_KBUILD_FALSE@builtins_objlist = $(foreach mod,$(builtins),$(patsubst %,../../%/rtai_$(notdir $(mod)).o,$(mod)))

@@ -401,9 +401,9 @@ crt_files = \
 
 crtobjs = $(crt_files:%.c=%.o)
 
-@CONFIG_KBUILD_FALSE@modules = $(foreach lib,$(noinst_LIBRARIES),$(patsubst lib%.a,rtai_%.o,$(lib)))
-
 @CONFIG_KBUILD_TRUE@modules = rtai_cpp.ko rtai_cpp_rtf.ko rtai_cpp_tbx.ko rtai_cpp_wd.ko
+
+@CONFIG_KBUILD_FALSE@modules = $(foreach lib,$(noinst_LIBRARIES),$(patsubst lib%.a,rtai_%.o,$(lib)))
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = \
 @CONFIG_KBUILD_FALSE@		libcpp.a \
 @CONFIG_KBUILD_FALSE@		libcpp_bits.a \

@@ -883,6 +883,7 @@ EXPORT_SYMBOL(rthal_calibrate_timer);
 EXPORT_SYMBOL(rthal_critical_enter);
 EXPORT_SYMBOL(rthal_critical_exit);
 EXPORT_SYMBOL(rthal_set_linux_task_priority);
+EXPORT_SYMBOL(rthal_switch_context);
 
 EXPORT_SYMBOL(rthal_linux_context);
 EXPORT_SYMBOL(rthal_domain);

@@ -255,10 +255,8 @@ void rthal_set_linux_task_priority(struct task_struct *task,
 				   int policy,
 				   int prio);
 
-void rthal_switch_context(void *out_tcb,
-			  void *in_tcb,
-			  struct task_struct *outproc,
-			  struct task_struct *inproc);
+void rthal_switch_context(unsigned long *out_kspp,
+			  unsigned long *in_kspp);
 
 #ifdef CONFIG_RTAI_HW_FPU
 

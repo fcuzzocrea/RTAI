@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2001,2002,2003,2004 Philippe Gerum <rpm@xenomai.org>.
- * Copyright (C) 2004 The HYADES Project (http://www.hyades-itea.org).
  *
  * Xenomai is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -200,6 +199,13 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
     struct task_struct *user_task;	/* Shadowed user-space task */
     struct task_struct *active_task;	/* Active user-space task */
 
+    /* Init block */
+    struct xnthread *self;
+    int imask;
+    const char *name;
+    void (*entry)(void *cookie);
+    void *cookie;
+
 } xnarchtcb_t;
 
 typedef struct xnarch_fltinfo {
@@ -385,9 +391,11 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 
 	if (!inproc->mm)
 	    enter_lazy_tlb(oldmm,inproc);
-	}
 
-    rthal_switch_context(out_tcb,in_tcb,outproc,inproc);
+	__switch_to(outproc,inproc);
+	}
+    else
+	rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
@@ -463,15 +471,13 @@ static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
     /* Must be followed by xnarch_init_thread(). */
 }
 
-asmlinkage static void xnarch_thread_redirect (struct xnthread *self,
-					       int imask,
-					       void(*entry)(void *),
-					       void *cookie)
+asmlinkage static void xnarch_thread_trampoline (xnarchtcb_t *tcb)
+
 {
-    rthal_local_irq_restore(!!imask);
-    xnpod_welcome_thread(self);
-    entry(cookie);
-    xnpod_delete_thread(self);
+    rthal_local_irq_restore(!!tcb->imask);
+    xnpod_welcome_thread(tcb->self);
+    tcb->entry(tcb->cookie);
+    xnpod_delete_thread(tcb->self);
 }
 
 static inline void xnarch_init_thread (xnarchtcb_t *tcb,
@@ -481,7 +487,21 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 				       struct xnthread *thread,
 				       char *name)
 {
-    /* FIXME */
+    unsigned long *ksp, flags;
+
+    adeos_hw_local_irq_flags(flags);
+
+    *tcb->stackbase = 0;
+    tcb->ksp = (((unsigned long)tcb->stackbase + tcb->stacksize - 0x10) & ~0xf) - 108;
+    ksp = (unsigned long *)tcb->ksp;
+    ksp[3] = (unsigned long)tcb; /* r3 */
+    ksp[25] = (unsigned long)&xnarch_thread_trampoline; /* lr */
+    ksp[26] = flags & ~MSR_EE; /* msr */
+    tcb->entry = entry;
+    tcb->cookie = cookie;
+    tcb->self = thread;
+    tcb->imask = imask;
+    tcb->name = name;
 }
 
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)

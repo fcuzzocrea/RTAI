@@ -20,34 +20,6 @@
 #ifndef _RTAI_ASM_I386_SCHED_H
 #define _RTAI_ASM_I386_SCHED_H
 
-#define __STR(x) #x
-#define STR(x) __STR(x)
-
-#define rt_switch_to(tsk) \
-	__asm__ __volatile__( \
-	"pushl %%eax\n\t" \
-	"pushl %%ebp\n\t" \
-	"pushl %%edi\n\t" \
-	"pushl %%esi\n\t" \
-	"pushl %%edx\n\t" \
-	"pushl %%ecx\n\t" \
-	"pushl %%ebx\n\t" \
-	"movl "SYMBOL_NAME_STR(rt_smp_current)", %%edx\n\t" \
-	"pushl $1f\n\t" \
-	"movl %%esp, (%%edx)\n\t" \
-	"movl (%%ecx), %%esp\n\t" \
-	"movl %%ecx, "SYMBOL_NAME_STR(rt_smp_current)"\n\t" \
-	"ret\n\t" \
-"1:	popl %%ebx\n\t \
-	popl %%ecx\n\t \
-	popl %%edx\n\t \
-	popl %%esi\n\t \
-	popl %%edi\n\t \
-	popl %%ebp\n\t \
-	popl %%eax\n\t" \
-	: \
-	: "c" (tsk));
-
 #define rt_exchange_tasks(oldtask, newtask) \
 	__asm__ __volatile__( \
 	"pushl %%eax\n\t" \
@@ -72,7 +44,7 @@
 	popl %%eax\n\t" \
 	: \
 	: "c" (&oldtask), "d" (newtask) \
-	: "bx");
+	);
 
 #define init_arch_stack() \
 do { \
@@ -82,9 +54,9 @@ do { \
 	*--(task->stack) = (int) rt_startup;	\
 } while(0)
 
-#define DEFINE_LINUX_CR0 static unsigned long linux_cr0;
+#define DEFINE_LINUX_CR0      static unsigned long linux_cr0;
 
-#define DEFINE_LINUX_SMP_CR0 static unsigned long linux_smp_cr0[NR_RT_CPUS];
+#define DEFINE_LINUX_SMP_CR0  static unsigned long linux_smp_cr0[NR_RT_CPUS];
 
 #define init_fp_env(spare_fpu_reg) \
 do { \
@@ -103,8 +75,8 @@ static inline void *get_stack_pointer(void)
 	return sp;
 }
 
-#define RT_SET_RTAI_TRAP_HANDLER(x) rt_set_rtai_trap_handler(x)
+#define RT_SET_RTAI_TRAP_HANDLER(x)  rt_set_rtai_trap_handler(x)
 
-#define DO_TIMER_PROPER_OP()
+#define DO_TIMER_PROPER_OP();
 
 #endif /* !_RTAI_ASM_I386_SCHED_H */

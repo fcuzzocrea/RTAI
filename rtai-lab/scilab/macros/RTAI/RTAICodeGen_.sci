@@ -996,7 +996,7 @@ zcptr=cpr.sim.zcptr;
   // Get the name of the file
   //***********************************
   foo=3;okk=%f;rdnom='foo';rpat=getcwd();archname='';sTsamp=sci2exp(eval(sTsamp));
-  label1=[hname;getcwd()+'/'+hname;sTsamp];
+  label1=[hname;getcwd()+'/'+hname+"_rtai";sTsamp];
   while %t do
     [okk,rdnom,rpat,Tsamp,label1]=getvalue(..
 			'PLEASE, GIVE US SOME INFORMATION. ',..
@@ -1311,7 +1311,7 @@ function Makename=gen_make(name,files,libs,Makename)
      "rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL)_standalone.c $(MODEL)_io.c"
      ascii(9)+"cp $< ."
      ""
-     name+": $(OBJSSTAN) $(ULIBRARY)"
+     "../"+name+": $(OBJSSTAN) $(ULIBRARY)"
       ascii(9)+"gcc -static -o $@  $(OBJSSTAN) $(SCILIBS) $(ULIBRARY) -lpthread -lm"
       ascii(9)+"@echo ""### Created executable: $(MODEL) ###"""];
   mputl(T,Makename)
@@ -2029,7 +2029,7 @@ function ok = compile_rt_standalone()
   wd = unix_g('pwd');
   chdir(rpat);
 
-  exec_str = 'make -f '+ rdnom + '_Makefile ' + rdnom;
+  exec_str = 'make -f '+ rdnom + '_Makefile ../' + rdnom;
   unix_w(exec_str)
   
   chdir(wd);

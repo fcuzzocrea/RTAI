@@ -94,7 +94,7 @@ case 'define' then
 
   label=list([sci2exp(port),sci2exp(in),name],[])
 
-  gr_i=['xstringb(orig(1),orig(2),''RTAI Scope'',sz(1),sz(2),''fill'');']
+  gr_i=['xstringb(orig(1),orig(2),''Scope'',sz(1),sz(2),''fill'');']
   x=standard_define([2 2],model,label,gr_i)
 
 end

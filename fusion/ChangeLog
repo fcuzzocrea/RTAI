@@ -1,5 +1,8 @@
 2005-02-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* configure.in: Prevent invalid SMI workaround configurations
+	through configure command line.
+
 	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Do not
 	enforce MSR FP state when switching context, create kernel
 	threads, with FP bit disabled, then let xnarch_init_thread set it

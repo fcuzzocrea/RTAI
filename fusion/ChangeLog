@@ -12,8 +12,9 @@
 	* include/nucleus/types.h: Change xnsigmask_t to the natural
 	integer type available on the platform, so that we can map it
 	properly over some data carried by siginfo_t. In any case, it does
-	not make any sense to allow different sig numbers across platforms
-	depending on the size of their respective natural long type.
+	not make any sense to allow different amount of possible signals
+	across platforms by depending on the size of their respective
+	natural long type.
 
 	* skins/rtai/syscall.c: Fix "self" task determination code to
 	encompass the case where the caller is a relaxed shadow.

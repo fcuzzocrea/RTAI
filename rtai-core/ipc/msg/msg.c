@@ -1587,7 +1587,7 @@ RT_TASK *rt_evdrpx(RT_TASK *task, void *msg, int size, int *len)
  * @anchor rt_receivex
  * @brief Receive an extended message.
  *
- * rt_receivex gets an extended message @msg of size @size from the task 
+ * rt_receivex gets an extended message @a msg of size @a size from the task 
  * specified by @e task task. If task
  * is equal to 0, the caller accepts messages from any task. If there
  * is a pending message, rt_receivex does not block but can be
@@ -1638,7 +1638,7 @@ RT_TASK *rt_receivex(RT_TASK *task, void *msg, int size, int *len)
  * @anchor rt_receivex_if
  * @brief Receive an extended message, only if the calling task is not blocked.
  *
- * rt_receivex gets an extended message @msg of size @size from the task 
+ * rt_receivex gets an extended message @a msg of size @a size from the task 
  * specified by @e task task. If task
  * is equal to 0, the caller accepts messages from any task. The caller task 
  * is never blocked but can be preempted if the task that rt_sentx the just 
@@ -1689,17 +1689,16 @@ RT_TASK *rt_receivex_if(RT_TASK *task, void *msg, int size, int *len)
  * @anchor rt_receivex_until
  * @brief Receive an extended message with an absolute timeout.
  *
- * rt_receivex_until gets an extended message @msg of size @size from the task
- * specified by @e task task. If task
- * is equal to 0, the caller accepts messages from any task. If there
- * is a pending message, rt_receivex does not block but can be
- * preempted if the task that rt_sent the just received message has a
- * higher priority. The task will not block if it receives rpcxed messages
+ * rt_receivex_until gets an extended message @a msg of size @a size from the
+ * task specified by @e task task. If task is equal to 0, the caller accepts
+ * messages from any task. If there is a pending message, rt_receivex does not
+ * block but can be preempted if the task that rt_sent the just received message
+ * has a higher priority. The task will not block if it receives rpcxed messages
  * since rpcxing tasks always wait for a returned message. Moreover it
  * inheredits the highest priority of any rpcxing task waiting on the receive
  * queue. The receiving task will then recover its priority as explained in
- * rt_returnx. Otherwise the caller task is blocked waiting for any
- * message to be sentx/rpcxed.
+ * rt_returnx. Otherwise the caller task is blocked waiting for any message to
+ * be sentx/rpcxed.
  *
  * In this case these functions return if:
  *   a sender sendxs a message and has a lower priority;
@@ -1747,17 +1746,16 @@ RT_TASK *rt_receivex_until(RT_TASK *task, void *msg, int size, int *len, RTIME t
  * @anchor rt_receivex_timed
  * @brief Receive an extended message with a relative timeout.
  *
- * rt_receivex_until gets an extended message @msg of size @size from the task
- * specified by @e task task. If task
- * is equal to 0, the caller accepts messages from any task. If there
- * is a pending message, rt_receivex does not block but can be
- * preempted if the task that rt_sent the just received message has a
- * higher priority. The task will not block if it receives rpcxed messages
+ * rt_receivex_until gets an extended message @a msg of size @a size from the
+ * task specified by @e task task. If task is equal to 0, the caller accepts
+ * messages from any task. If there is a pending message, rt_receivex does not
+ * block but can be preempted if the task that rt_sent the just received message
+ * has a higher priority. The task will not block if it receives rpcxed messages
  * since rpcxing tasks always wait for a returned message. Moreover it
  * inheredits the highest priority of any rpcxing task waiting on the receive
  * queue. The receiving task will then recover its priority as explained in
- * rt_returnx. Otherwise the caller task is blocked waiting for any
- * message to be sentx/rpcxed.
+ * rt_returnx. Otherwise the caller task is blocked waiting for any message to
+ * be sentx/rpcxed.
  *
  * In this case these functions return if:
  *   a sender sendxs a message and has a lower priority;

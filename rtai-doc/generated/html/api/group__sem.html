@@ -165,7 +165,7 @@ Initialize a multi readers single writer lock identified by a name.
 _rt_named_rwl_init allocate and initializes a multi readers single writer lock (RWL) identified by <em>name</em>. Once the lock structure is allocated the initialization is as for rt_rwl_init. The function returns the handle pointing to the allocated multi readers single writer lock o structure, to be used as the usual lock address in all rwl based services. Named objects are useful for use among different processes, kernel/user space and in distributed applications, see netrpc.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
+    <tr><td valign=top><em>rwl_name</em>&nbsp;</td><td>is the identifier associated with the returned object.</td></tr>
   </table>
 </dl>
 Since <em>name</em> can be a clumsy identifier, services are provided to convert 6 characters identifiers to unsigned long, and vice versa.<p>
@@ -207,7 +207,7 @@ Initialize a spinlock identified by a name.
 _rt_named_spl_init allocate and initializes a spinlock (SPL) identified by <em>name</em>. Once the spinlock structure is allocated the initialization is as for rt_spl_init. The function returns the handle pointing to the allocated spinlock structure, to be used as the usual spinlock address in all spinlock based services. Named objects are useful for use among different processes and kernel/user space.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>spl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
+    <tr><td valign=top><em>spl_name</em>&nbsp;</td><td>is the identifier associated with the returned object.</td></tr>
   </table>
 </dl>
 Since <em>name</em> can be a clumsy identifier, services are provided to convert 6 characters identifiers to unsigned long, and vice versa.<p>
@@ -264,7 +264,7 @@ Initialize a specifically typed (counting, binary, resource) semaphore identifie
 _rt_typed_named_sem_init allocate and initializes a semaphore identified by <em>name</em> of type <em>type</em>. Once the semaphore structure is allocated the initialization is as for rt_typed_sem_init. The function returns the handle pointing to the allocated semaphore structure, to be used as the usual semaphore address in all semaphore based services. Named objects are useful for use among different processes, kernel/user space and in distributed applications, see netrpc.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>sem</em>&nbsp;</td><td>must point to an allocated SEM structure.</td></tr>
+    <tr><td valign=top><em>sem_name</em>&nbsp;</td><td>is the identifier associated with the returned object.</td></tr>
     <tr><td valign=top><em>value</em>&nbsp;</td><td>is the initial value of the semaphore, always set to 1 for a resource semaphore.</td></tr>
     <tr><td valign=top><em>type</em>&nbsp;</td><td>is the semaphore type and queuing policy. It can be an OR a semaphore kind: CNT_SEM for counting semaphores, BIN_SEM for binary semaphores, RES_SEM for resource semaphores; and queuing policy: FIFO_Q, PRIO_Q for a fifo and priority queueing respectively. Resource semaphores will enforce a PRIO_Q policy anyhow.</td></tr>
   </table>
@@ -306,13 +306,14 @@ As for all the named initialization functions it must be remarked that only the 
 Wait for a signal to a conditional variable. 
 <p>
 <a class="anchor" name="rt_cond_signal"></a><p>
-rt_cond_signal resumes one of the tasks that are waiting on the condition semaphore cnd. Nothing happens if no task is waiting on cnd, while it resumed the first queued task blocked on cnd, according to the queueing method set at rt_cond_init.<p>
+rt_cond_signal resumes one of the tasks that are waiting on the condition semaphore cnd. Nothing happens if no task is waiting on <em>cnd</em>, while it resumed the first queued task blocked on cnd, according to the queueing method set at rt_cond_init.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>cnd</em>&nbsp;</td><td>points to the structure used in the call to rt_cond_init().</td></tr>
+    <tr><td valign=top><em>cnd</em>&nbsp;</td><td>points to the structure used in the call to <a class="el" href="group__lxrt.html#a348">rt_cond_init</a>().</td></tr>
   </table>
 </dl>
-returns 0 always.     </td>
+<dl compact><dt><b>Returns:</b></dt><dd>0 </dd></dl>
+    </td>
   </tr>
 </table>
 <a class="anchor" name="a15" doxytag="rtai_sem.h::rt_cond_wait" ></a><p>
@@ -356,7 +357,7 @@ Wait for a signal to a conditional variable.
 rt_cond_wait atomically unlocks mtx (as for using rt_sem_signal) and waits for the condition semaphore cnd to be signaled. The task execution is suspended until the condition semaphore is signalled. Mtx must be obtained by the calling task, before calling rt_cond_wait is called. Before returning to the calling task rt_cond_wait reacquires mtx by calling rt_sem_wait.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>cnd</em>&nbsp;</td><td>points to the structure used in the call to rt_cond_init().</td></tr>
+    <tr><td valign=top><em>cnd</em>&nbsp;</td><td>points to the structure used in the call to <a class="el" href="group__lxrt.html#a348">rt_cond_init</a>().</td></tr>
     <tr><td valign=top><em>mtx</em>&nbsp;</td><td>points to the structure used in the call to <a class="el" href="sem_8c.html#rt_sem_init">rt_sem_init</a>().</td></tr>
   </table>
 </dl>
@@ -411,7 +412,7 @@ Wait a semaphore with timeout.
 rt_cond_wait_timed atomically unlocks mtx (as for using rt_sem_signal) and waits for the condition semaphore cnd to be signalled. The task execution is suspended until the condition semaphore is either signaled or a timeout expires. Mtx must be obtained by the calling task, before calling rt_cond_wait is called. Before returning to the calling task rt_cond_wait_until reacquires mtx by calling rt_sem_wait and returns a value to indicate if it has been signalled pr timedout.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>cnd</em>&nbsp;</td><td>points to the structure used in the call to rt_cnd_init().</td></tr>
+    <tr><td valign=top><em>cnd</em>&nbsp;</td><td>points to the structure used in the call to <a class="el" href="group__lxrt.html#a348">rt_cond_init</a>().</td></tr>
     <tr><td valign=top><em>mtx</em>&nbsp;</td><td>points to the structure used in the call to <a class="el" href="sem_8c.html#rt_sem_init">rt_sem_init</a>().</td></tr>
     <tr><td valign=top><em>delay</em>&nbsp;</td><td>is a realtive time values with respect to the current time, in timer count unit.</td></tr>
   </table>
@@ -467,7 +468,7 @@ Wait a semaphore with timeout.
 rt_cond_wait_until atomically unlocks mtx (as for using rt_sem_signal) and waits for the condition semaphore cnd to be signalled. The task execution is suspended until the condition semaphore is either signaled or a timeout expires. Mtx must be obtained by the calling task, before calling rt_cond_wait is called. Before returning to the calling task rt_cond_wait_until reacquires mtx by calling rt_sem_wait and returns a value to indicate if it has been signalled pr timedout.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>cnd</em>&nbsp;</td><td>points to the structure used in the call to rt_cnd_init().</td></tr>
+    <tr><td valign=top><em>cnd</em>&nbsp;</td><td>points to the structure used in the call to <a class="el" href="group__lxrt.html#a348">rt_cond_init</a>().</td></tr>
     <tr><td valign=top><em>mtx</em>&nbsp;</td><td>points to the structure used in the call to <a class="el" href="sem_8c.html#rt_sem_init">rt_sem_init</a>().</td></tr>
     <tr><td valign=top><em>time</em>&nbsp;</td><td>is an absolute value to the current time, in timer count unit.</td></tr>
   </table>
@@ -505,7 +506,7 @@ rt_cond_wait_until atomically unlocks mtx (as for using rt_sem_signal) and waits
 Delete a multi readers single writer lock in named mode. 
 <p>
 <a class="anchor" name="rt_named_rwl_delete"></a><p>
-rt_named_rwl_delete deletes a multi readers single writer lock previously created with rt_named_rwl_init().<p>
+rt_named_rwl_delete deletes a multi readers single writer lock previously created with <a class="el" href="sem_8c.html#_rt_named_rwl_init">_rt_named_rwl_init</a>().<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>points to the structure pointer returned by a corresponding call to rt_named_rwl_init.</td></tr>
@@ -585,7 +586,7 @@ Any tasks blocked on this semaphore is returned in error and allowed to run when
 Delete a spinlock in named mode. 
 <p>
 <a class="anchor" name="rt_named_spl_delete"></a><p>
-rt_named_spl_delete deletes a spinlock previously created with rt_named_spl_init().<p>
+rt_named_spl_delete deletes a spinlock previously created with <a class="el" href="sem_8c.html#_rt_named_spl_init">_rt_named_spl_init</a>().<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>spl</em>&nbsp;</td><td>points to the structure pointer returned by a corresponding call to rt_named_spl_init.</td></tr>
@@ -625,7 +626,7 @@ As it is done by all the named allocation functions delete calls have just the e
 destroys a multi readers single writer lock. 
 <p>
 <a class="anchor" name="rt_rwl_delete"></a><p>
-rt_rwl_init destroys a multi readers single writer lock .<p>
+rt_rwl_init destroys a multi readers single writer lock <em>rwl</em>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
@@ -664,7 +665,7 @@ rt_rwl_init destroys a multi readers single writer lock .<p>
 Initialize a multi readers single writer lock. 
 <p>
 <a class="anchor" name="rt_rwl_init"></a><p>
-rt_rwl_init initializes a multi readers single writer lock .<p>
+rt_rwl_init initializes a multi readers single writer lock <em>rwl</em>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
@@ -704,7 +705,7 @@ A multi readers single writer lock (RWL) is a synchronization mechanism that all
 acquires a multi readers single writer lock for reading. 
 <p>
 <a class="anchor" name="rt_rwl_rdlock"></a><p>
-rt_rwl_rdlock acquires a multi readers single writer lock  for reading. The calling task will block only if any writer owns the lock already or there are writers with higher priority waiting to acquire write access.<p>
+rt_rwl_rdlock acquires a multi readers single writer lock <em>rwl</em> for reading. The calling task will block only if any writer owns the lock already or there are writers with higher priority waiting to acquire write access.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
@@ -743,7 +744,7 @@ rt_rwl_rdlock acquires a multi readers single writer lock  for reading. The call
 try to acquire a multi readers single writer lock just for reading. 
 <p>
 <a class="anchor" name="rt_rwl_rdlock_if"></a><p>
-rt_rwl_rdlock_if tries to acquire a multi readers single writer lock  for reading immediately, i.e. without blocking if a writer owns the lock or there are writers with higher priority waiting to acquire write access.<p>
+rt_rwl_rdlock_if tries to acquire a multi readers single writer lock <em>rwl</em> for reading immediately, i.e. without blocking if a writer owns the lock or there are writers with higher priority waiting to acquire write access.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
@@ -791,13 +792,13 @@ rt_rwl_rdlock_if tries to acquire a multi readers single writer lock  for readin
 try to acquire a multi readers single writer lock for reading within a relative deadline time. 
 <p>
 <a class="anchor" name="rt_rwl_rdlock_timed"></a><p>
-rt_rwl_rdlock_timed tries to acquire a multi readers single writer lock  for reading, as for rt_rwl_rdlock, but timing out if the lock has not been acquired within an assigned deadline.<p>
+rt_rwl_rdlock_timed tries to acquire a multi readers single writer lock <em>rwl</em> for reading, as for rt_rwl_rdlock, but timing out if the lock has not been acquired within an assigned deadline.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
+    <tr><td valign=top><em>delay</em>&nbsp;</td><td>is the time delay within which the lock must be acquired, in internal count units.</td></tr>
   </table>
 </dl>
-is the time delay within which the lock must be acquired, in internal count units.<p>
 <dl compact><dt><b>Returns:</b></dt><dd>0 if the lock was acquired, SEM_TIMOUT if the deadline expired without acquiring the lock, SEM_ERR in case something went wrong. </dd></dl>
     </td>
   </tr>
@@ -840,13 +841,13 @@ is the time delay within which the lock must be acquired, in internal count unit
 try to acquire a multi readers single writer lock for reading within an absolute deadline time. 
 <p>
 <a class="anchor" name="rt_rwl_rdlock_until"></a><p>
-rt_rwl_rdlock_untill tries to acquire a multi readers single writer lock  for reading, as for rt_rwl_rdlock, but timing out if the lock has not been acquired within an assigned deadline.<p>
+rt_rwl_rdlock_untill tries to acquire a multi readers single writer lock <em>rwl</em> for reading, as for rt_rwl_rdlock, but timing out if the lock has not been acquired within an assigned deadline.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
+    <tr><td valign=top><em>time</em>&nbsp;</td><td>is the time deadline, in internal count units.</td></tr>
   </table>
 </dl>
-is the time deadline, in internal count units.<p>
 <dl compact><dt><b>Returns:</b></dt><dd>0 if the lock was acquired, SEM_TIMOUT if the deadline expired without acquiring the lock, SEM_ERR in case something went wrong. </dd></dl>
     </td>
   </tr>
@@ -880,7 +881,7 @@ is the time deadline, in internal count units.<p>
 unlock an acquired multi readers single writer lock. 
 <p>
 <a class="anchor" name="rt_rwl_unlock"></a><p>
-rt_rwl_unlock unlocks an acquired multi readers single writer lock . After releasing the lock any task waiting to acquire it will own the lock according to its priority, whether it is a reader or a writer, otherwise the lock will be fully unlocked.<p>
+rt_rwl_unlock unlocks an acquired multi readers single writer lock <em>rwl</em>. After releasing the lock any task waiting to acquire it will own the lock according to its priority, whether it is a reader or a writer, otherwise the lock will be fully unlocked.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
@@ -919,7 +920,7 @@ rt_rwl_unlock unlocks an acquired multi readers single writer lock . After relea
 acquires a multi readers single writer lock for wrtiting. 
 <p>
 <a class="anchor" name="rt_rwl_wrlock"></a><p>
-rt_rwl_rwlock acquires a multi readers single writer lock  for writing. The calling task will block if any other task, reader or writer, owns the lock already.<p>
+rt_rwl_rwlock acquires a multi readers single writer lock <em>rwl</em> for writing. The calling task will block if any other task, reader or writer, owns the lock already.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
@@ -958,7 +959,7 @@ rt_rwl_rwlock acquires a multi readers single writer lock  for writing. The call
 acquires a multi readers single writer lock for writing. 
 <p>
 <a class="anchor" name="rt_rwl_wrlock_if"></a><p>
-rt_rwl_wrlock_if try to acquire a multi readers single writer lock  for writing immediately, i.e without blocking if the lock is owned already.<p>
+rt_rwl_wrlock_if try to acquire a multi readers single writer lock <em>rwl</em> for writing immediately, i.e without blocking if the lock is owned already.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
@@ -1006,13 +1007,13 @@ rt_rwl_wrlock_if try to acquire a multi readers single writer lock  for writing 
 try to acquire a multi readers single writer lock for writing within a relative deadline time. 
 <p>
 <a class="anchor" name="rt_rwl_wrlock_timed"></a><p>
-rt_rwl_wrlock_timed tries to acquire a multi readers single writer lock  for writing, as for rt_rwl_wrlock, timing out if the lock has not been acquired within an assigned deadline.<p>
+rt_rwl_wrlock_timed tries to acquire a multi readers single writer lock <em>rwl</em> for writing, as for rt_rwl_wrlock, timing out if the lock has not been acquired within an assigned deadline.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
+    <tr><td valign=top><em>delay</em>&nbsp;</td><td>is the time delay within which the lock must be acquired, in internal count units.</td></tr>
   </table>
 </dl>
-is the time delay within which the lock must be acquired, in internal count units.<p>
 <dl compact><dt><b>Returns:</b></dt><dd>0 if the lock was acquired, SEM_TIMOUT if the deadline expired without acquiring the lock, SEM_ERR in case something went wrong. </dd></dl>
     </td>
   </tr>
@@ -1055,13 +1056,13 @@ is the time delay within which the lock must be acquired, in internal count unit
 try to acquire a multi readers single writer lock for writing within an absolute deadline time. 
 <p>
 <a class="anchor" name="rt_rwl_wrlock_until"></a><p>
-rt_rwl_rwlock_until tries to acquire a multi readers single writer lock  for writing, as for rt_rwl_rwlock, but timing out if the lock has not been acquired within an assigned deadline.<p>
+rt_rwl_rwlock_until tries to acquire a multi readers single writer lock <em>rwl</em> for writing, as for rt_rwl_rwlock, but timing out if the lock has not been acquired within an assigned deadline.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>rwl</em>&nbsp;</td><td>must point to an allocated <em>RWL</em> structure.</td></tr>
+    <tr><td valign=top><em>time</em>&nbsp;</td><td>is the time deadline, in internal count units.</td></tr>
   </table>
 </dl>
-is the time deadline, in internal count units.<p>
 <dl compact><dt><b>Returns:</b></dt><dd>0 if the lock was acquired, SEM_TIMOUT if the deadline expired without acquiring the lock, SEM_ERR in case something went wrong. </dd></dl>
     </td>
   </tr>
@@ -1503,7 +1504,7 @@ In case of a timeout, the semaphore value is incremented before return.<p>
 Initialize a spinlock. 
 <p>
 <a class="anchor" name="rt_spl_delete"></a><p>
-rt_spl_delete destroies a spinlock .<p>
+rt_spl_delete destroies a spinlock <em>spl</em>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>spl</em>&nbsp;</td><td>must point to an allocated <em>SPL</em> structure.</td></tr>
@@ -1542,7 +1543,7 @@ rt_spl_delete destroies a spinlock .<p>
 Initialize a spinlock. 
 <p>
 <a class="anchor" name="rt_spl_init"></a><p>
-rt_spl_init initializes a spinlock .<p>
+rt_spl_init initializes a spinlock <em>spl</em>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>spl</em>&nbsp;</td><td>must point to an allocated <em>SPL</em> structure.</td></tr>
@@ -1582,7 +1583,7 @@ A spinlock is an active wait synchronization mechanism useful for multi processo
 Acquire a spinlock. 
 <p>
 <a class="anchor" name="rt_spl_lock"></a><p>
-rt_spl_lock acquires a spinlock .<p>
+rt_spl_lock acquires a spinlock <em>spl</em>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>spl</em>&nbsp;</td><td>must point to an allocated <em>SPL</em> structure.</td></tr>
@@ -1622,7 +1623,7 @@ rt_spl_lock spins on lock till it can be acquired. If a tasks asks for lock it o
 Acquire a spinlock without waiting. 
 <p>
 <a class="anchor" name="rt_spl_lock_if"></a><p>
-rt_spl_lock_if acquires a spinlock  without waiting.<p>
+rt_spl_lock_if acquires a spinlock <em>spl</em> without waiting.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>spl</em>&nbsp;</td><td>must point to an allocated <em>SPL</em> structure.</td></tr>
@@ -1671,10 +1672,11 @@ rt_spl_lock_if tries to acquire a spinlock but will not spin on it if it is owne
 Acquire a spinlock with timeout. 
 <p>
 <a class="anchor" name="rt_spl_lock_timed"></a><p>
-rt_spl_lock_timed acquires a spinlock , but waiting spinning only for an allowed time.<p>
+rt_spl_lock_timed acquires a spinlock <em>spl</em>, but waiting spinning only for an allowed time.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>spl</em>&nbsp;</td><td>must point to an allocated <em>SPL</em> structure.</td></tr>
+    <tr><td valign=top><em>ns</em>&nbsp;</td><td>timeout</td></tr>
   </table>
 </dl>
 rt_spl_lock spins on lock till it can be acquired, as for rt_spl_lock, but only for an allowed time. If the spinlock cannot be acquired in time the functions returns in error. This function can be usefull either in itself or as a diagnosis toll during code development.<p>
@@ -1711,7 +1713,7 @@ rt_spl_lock spins on lock till it can be acquired, as for rt_spl_lock, but only 
 Release an owned spinlock. 
 <p>
 <a class="anchor" name="rt_spl_unlock"></a><p>
-rt_spl_lock releases an owned spinlock .<p>
+rt_spl_lock releases an owned spinlock <em>spl</em>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>spl</em>&nbsp;</td><td>must point to an allocated <em>SPL</em> structure.</td></tr>
@@ -1779,7 +1781,7 @@ Counting semaphores can register up to 0xFFFE events. Binary semaphores do not c
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:22:39 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 19:51:30 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

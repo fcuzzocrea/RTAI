@@ -702,14 +702,14 @@ int rt_sem_wait_barrier(SEM *sem)
  * @brief Wait for a signal to a conditional variable.
  *
  * rt_cond_signal resumes one of the tasks that are waiting on the condition 
- * semaphore cnd. Nothing happens if no task is waiting on cnd, while it
+ * semaphore cnd. Nothing happens if no task is waiting on @a cnd, while it
  * resumed the first queued task blocked on cnd, according to the queueing
  * method set at rt_cond_init.
  *
  * @param cnd points to the structure used in the call to @ref
  *	  rt_cond_init().
  *
- * @it returns 0 always.
+ * @returns 0
  *
  */
 int rt_cond_signal(CND *cnd)
@@ -834,7 +834,7 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
  * value to indicate if it has been signalled pr timedout.
  *
  * @param cnd points to the structure used in the call to @ref
- *	  rt_cnd_init().
+ *	  rt_cond_init().
  *
  * @param mtx points to the structure used in the call to @ref
  *	  rt_sem_init().
@@ -894,7 +894,7 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
  * value to indicate if it has been signalled pr timedout.
  *
  * @param cnd points to the structure used in the call to @ref
- *	  rt_cnd_init().
+ *	  rt_cond_init().
  *
  * @param mtx points to the structure used in the call to @ref
  *	  rt_sem_init().
@@ -917,7 +917,7 @@ int rt_cond_wait_timed(CND *cnd, SEM *mtx, RTIME delay)
  * @anchor rt_rwl_init
  * @brief Initialize a multi readers single writer lock.
  *
- * rt_rwl_init initializes a multi readers single writer lock @rwl.
+ * rt_rwl_init initializes a multi readers single writer lock @a rwl.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
@@ -944,7 +944,7 @@ int rt_rwl_init(RWL *rwl)
  * @anchor rt_rwl_delete
  * @brief destroys a multi readers single writer lock.
  *
- * rt_rwl_init destroys a multi readers single writer lock @rwl.
+ * rt_rwl_init destroys a multi readers single writer lock @a rwl.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
@@ -966,7 +966,7 @@ int rt_rwl_delete(RWL *rwl)
  * @anchor rt_rwl_rdlock
  * @brief acquires a multi readers single writer lock for reading.
  *
- * rt_rwl_rdlock acquires a multi readers single writer lock @rwl for
+ * rt_rwl_rdlock acquires a multi readers single writer lock @a rwl for
  * reading. The calling task will block only if any writer owns the lock
  * already or there are writers with higher priority waiting to acquire 
  * write access.
@@ -1004,7 +1004,7 @@ int rt_rwl_rdlock(RWL *rwl)
  * @anchor rt_rwl_rdlock_if
  * @brief try to acquire a multi readers single writer lock just for reading.
  *
- * rt_rwl_rdlock_if tries to acquire a multi readers single writer lock @rwl 
+ * rt_rwl_rdlock_if tries to acquire a multi readers single writer lock @a rwl 
  * for reading immediately, i.e. without blocking if a writer owns the lock
  * or there are writers with higher priority waiting to acquire write access.
  *
@@ -1035,12 +1035,12 @@ int rt_rwl_rdlock_if(RWL *rwl)
  * an absolute deadline time.
  *
  * rt_rwl_rdlock_untill tries to acquire a multi readers single writer lock 
- * @rwl for reading, as for rt_rwl_rdlock, but timing out if the lock has not 
+ * @a rwl for reading, as for rt_rwl_rdlock, but timing out if the lock has not 
  * been acquired within an assigned deadline.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
- * @time is the time deadline, in internal count units.
+ * @param time is the time deadline, in internal count units.
  *
  * @returns 0 if the lock was acquired, SEM_TIMOUT if the deadline expired
  * without acquiring the lock, SEM_ERR in case something went wrong.
@@ -1075,13 +1075,13 @@ int rt_rwl_rdlock_until(RWL *rwl, RTIME time)
  * @brief try to acquire a multi readers single writer lock for reading within
  * a relative deadline time.
  *
- * rt_rwl_rdlock_timed tries to acquire a multi readers single writer lock @rwl 
- * for reading, as for rt_rwl_rdlock, but timing out if the lock has not been 
- * acquired within an assigned deadline.
+ * rt_rwl_rdlock_timed tries to acquire a multi readers single writer lock
+ * @a rwl for reading, as for rt_rwl_rdlock, but timing out if the lock has not
+ * been acquired within an assigned deadline.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
- * @delay is the time delay within which the lock must be acquired, in 
+ * @param delay is the time delay within which the lock must be acquired, in 
  * internal count units.
  *
  * @returns 0 if the lock was acquired, SEM_TIMOUT if the deadline expired
@@ -1098,7 +1098,7 @@ int rt_rwl_rdlock_timed(RWL *rwl, RTIME delay)
  * @anchor rt_rwl_wrlock
  * @brief acquires a multi readers single writer lock for wrtiting.
  *
- * rt_rwl_rwlock acquires a multi readers single writer lock @rwl for
+ * rt_rwl_rwlock acquires a multi readers single writer lock @a rwl for
  * writing. The calling task will block if any other task, reader or writer, 
  * owns the lock already.
  *
@@ -1132,7 +1132,7 @@ int rt_rwl_wrlock(RWL *rwl)
  * @anchor rt_rwl_wrlock_if
  * @brief acquires a multi readers single writer lock for writing.
  *
- * rt_rwl_wrlock_if try to acquire a multi readers single writer lock @rwl 
+ * rt_rwl_wrlock_if try to acquire a multi readers single writer lock @a rwl 
  * for writing immediately, i.e without blocking if the lock is owned already.
  *
  * @param rwl must point to an allocated @e RWL structure.
@@ -1160,12 +1160,12 @@ int rt_rwl_wrlock_if(RWL *rwl)
  * an absolute deadline time.
  *
  * rt_rwl_rwlock_until tries to acquire a multi readers single writer lock 
- * @rwl for writing, as for rt_rwl_rwlock, but timing out if the lock has not 
+ * @a rwl for writing, as for rt_rwl_rwlock, but timing out if the lock has not 
  * been acquired within an assigned deadline.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
- * @time is the time deadline, in internal count units.
+ * @param time is the time deadline, in internal count units.
  *
  * @returns 0 if the lock was acquired, SEM_TIMOUT if the deadline expired
  * without acquiring the lock, SEM_ERR in case something went wrong.
@@ -1197,13 +1197,13 @@ int rt_rwl_wrlock_until(RWL *rwl, RTIME time)
  * @brief try to acquire a multi readers single writer lock for writing within
  * a relative deadline time.
  *
- * rt_rwl_wrlock_timed tries to acquire a multi readers single writer lock @rwl 
- * for writing, as for rt_rwl_wrlock, timing out if the lock has not been 
- * acquired within an assigned deadline.
+ * rt_rwl_wrlock_timed tries to acquire a multi readers single writer lock
+ * @a rwl  for writing, as for rt_rwl_wrlock, timing out if the lock has not
+ * been acquired within an assigned deadline.
  *
  * @param rwl must point to an allocated @e RWL structure.
  *
- * @delay is the time delay within which the lock must be acquired, in 
+ * @param delay is the time delay within which the lock must be acquired, in 
  * internal count units.
  *
  * @returns 0 if the lock was acquired, SEM_TIMOUT if the deadline expired
@@ -1220,7 +1220,7 @@ int rt_rwl_wrlock_timed(RWL *rwl, RTIME delay)
  * @anchor rt_rwl_unlock
  * @brief unlock an acquired multi readers single writer lock.
  *
- * rt_rwl_unlock unlocks an acquired multi readers single writer lock @rwl. 
+ * rt_rwl_unlock unlocks an acquired multi readers single writer lock @a rwl. 
  * After releasing the lock any task waiting to acquire it will own the lock
  * according to its priority, whether it is a reader or a writer, otherwise
  * the lock will be fully unlocked.
@@ -1269,7 +1269,7 @@ int rt_rwl_unlock(RWL *rwl)
  * @anchor rt_spl_init
  * @brief Initialize a spinlock.
  *
- * rt_spl_init initializes a spinlock @spl.
+ * rt_spl_init initializes a spinlock @a spl.
  *
  * @param spl must point to an allocated @e SPL structure.
  *
@@ -1295,7 +1295,7 @@ int rt_spl_init(SPL *spl)
  * @anchor rt_spl_delete
  * @brief Initialize a spinlock.
  *
- * rt_spl_delete destroies a spinlock @spl.
+ * rt_spl_delete destroies a spinlock @a spl.
  *
  * @param spl must point to an allocated @e SPL structure.
  *
@@ -1312,7 +1312,7 @@ int rt_spl_delete(SPL *spl)
  * @anchor rt_spl_lock
  * @brief Acquire a spinlock.
  *
- * rt_spl_lock acquires a spinlock @spl.
+ * rt_spl_lock acquires a spinlock @a spl.
  *
  * @param spl must point to an allocated @e SPL structure.
  *
@@ -1343,7 +1343,7 @@ int rt_spl_lock(SPL *spl)
  * @anchor rt_spl_lock_if
  * @brief Acquire a spinlock without waiting.
  *
- * rt_spl_lock_if acquires a spinlock @spl without waiting.
+ * rt_spl_lock_if acquires a spinlock @a spl without waiting.
  *
  * @param spl must point to an allocated @e SPL structure.
  *
@@ -1376,10 +1376,12 @@ int rt_spl_lock_if(SPL *spl)
  * @anchor rt_spl_lock_timed
  * @brief Acquire a spinlock with timeout.
  *
- * rt_spl_lock_timed acquires a spinlock @spl, but waiting spinning only 
+ * rt_spl_lock_timed acquires a spinlock @a spl, but waiting spinning only 
  * for an allowed time.
  *
  * @param spl must point to an allocated @e SPL structure.
+ *
+ * @param ns timeout 
  *
  * rt_spl_lock spins on lock till it can be acquired, as for rt_spl_lock,
  * but only for an allowed time. If the spinlock cannot be acquired in time
@@ -1417,7 +1419,7 @@ int rt_spl_lock_timed(SPL *spl, unsigned long ns)
  * @anchor rt_spl_unlock
  * @brief Release an owned spinlock.
  *
- * rt_spl_lock releases an owned spinlock @spl.
+ * rt_spl_lock releases an owned spinlock @a spl.
  *
  * @param spl must point to an allocated @e SPL structure.
  *
@@ -1467,7 +1469,7 @@ int rt_spl_unlock(SPL *spl)
  * are useful for use among different processes, kernel/user space and
  * in distributed applications, see netrpc.
  *
- * @param sem must point to an allocated SEM structure.
+ * @param sem_name is the identifier associated with the returned object.
  *
  * @param value is the initial value of the semaphore, always set to 1
  *	  for a resource semaphore.
@@ -1560,7 +1562,7 @@ int rt_named_sem_delete(SEM *sem)
  * Named objects are useful for use among different processes, kernel/user 
  * space and in distributed applications, see netrpc.
  *
- * @param rwl must point to an allocated @e RWL structure.
+ * @param rwl_name is the identifier associated with the returned object.
  *
  * Since @a name can be a clumsy identifier, services are provided to
  * convert 6 characters identifiers to unsigned long, and vice versa.
@@ -1600,7 +1602,7 @@ RWL *_rt_named_rwl_init(unsigned long rwl_name)
  * @brief Delete a multi readers single writer lock in named mode.
  *
  * rt_named_rwl_delete deletes a multi readers single writer lock
- * previously created with @ref rt_named_rwl_init(). 
+ * previously created with @ref _rt_named_rwl_init(). 
  *
  * @param rwl points to the structure pointer returned by a corresponding 
  * call to rt_named_rwl_init. 
@@ -1640,7 +1642,7 @@ int rt_named_rwl_delete(RWL *rwl)
  * in all spinlock based services. Named objects are useful for use among 
  * different processes and kernel/user space.
  *
- * @param spl must point to an allocated @e RWL structure.
+ * @param spl_name is the identifier associated with the returned object.
  *
  * Since @a name can be a clumsy identifier, services are provided to
  * convert 6 characters identifiers to unsigned long, and vice versa.
@@ -1680,7 +1682,7 @@ SPL *_rt_named_spl_init(unsigned long spl_name)
  * @brief Delete a spinlock in named mode.
  *
  * rt_named_spl_delete deletes a spinlock previously created with
- * @ref rt_named_spl_init(). 
+ * @ref _rt_named_spl_init(). 
  *
  * @param spl points to the structure pointer returned by a corresponding 
  * call to rt_named_spl_init. 

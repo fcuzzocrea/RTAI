@@ -570,7 +570,7 @@ int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int space)
  *   in the queueing of all sending tasks or the timeout has expired.
  * - @b EINVAL: mbx points to an invalid mailbox.
  *
- * See also: notes under @ref rt_mbx_send_timed().
+ * See also: notes under @ref _rt_mbx_send_timed().
  */
 int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 {
@@ -613,7 +613,7 @@ int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
  *   in the queueing of all sending tasks or the timeout has expired.
  * - @b EINVAL: mbx points to an invalid mailbox.
  *
- * See also: notes under @ref rt_mbx_send_until().
+ * See also: notes under @ref _rt_mbx_send_until().
  */
 int _rt_mbx_send_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int space)
 {

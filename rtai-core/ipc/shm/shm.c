@@ -29,6 +29,11 @@
 // when shm.c will become the only real time memory management support
 // (using xnheap_alloc/free, in xenomai/heap.c).
 
+/**
+ * @defgroup shm Unified RTAI real-time memory management.
+ * 
+ *@{*/
+
 #define RTAI_SHM_MISC_MINOR  254 // The same minor used to mknod for major 10.
 
 #include <linux/version.h>
@@ -409,7 +414,7 @@ void *rt_named_malloc(unsigned long name, int size)
  * rt_named_free is used to free a previously allocated chunk of the global
  * real time heap.
  *
- * @param addr is the addr of the memory to be freed.
+ * @param adr is the addr of the memory to be freed.
  *
  * Analogously to what done by all the named allocation functions the freeing 
  * calls of named memory chunks have just the effect of decrementing its usage
@@ -522,7 +527,7 @@ void *rt_halloc(int size)
  * rt_hfree is used to free a previously allocated chunck of a group real 
  * time heap.
  *
- * @param addr is the addr of the memory to be freed.
+ * @param adr is the addr of the memory to be freed.
  *
  */
 
@@ -575,7 +580,7 @@ void *rt_named_halloc(unsigned long name, int size)
  * rt_named_hfree is used to free a previously allocated chunk of the global
  * real time heap.
  *
- * @param addr is the addr of the memory to be freed.
+ * @param adr is the address of the memory to be freed.
  *
  * Analogously to what done by all the named allocation functions the freeing 
  * calls of named memory chunks have just the effect of decrementing a usage

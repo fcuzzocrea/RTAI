@@ -472,7 +472,7 @@ See also: <a class="el" href="ipc_2msg_2msg_8c.html#rt_receive_timed">rt_receive
 Receive an extended message. 
 <p>
 <a class="anchor" name="rt_receivex"></a> <p>
-rt_receivex gets an extended message  of size  from the task specified by <em>task</em> task. If task is equal to 0, the caller accepts messages from any task. If there is a pending message, rt_receivex does not block but can be preempted if the task that rt_sent the just received message has a higher priority. The task will not block if it receives rpcxed messages since rpcxing tasks always wait for a returned message. Moreover it inheredits the highest priority of any rpcxing task waiting on the receive queue. The receiving task will then recover its priority as explained in rt_returnx. Otherwise the caller task is blocked waiting for any message to be sentx/rpcxed.<p>
+rt_receivex gets an extended message <em>msg</em> of size <em>size</em> from the task specified by <em>task</em> task. If task is equal to 0, the caller accepts messages from any task. If there is a pending message, rt_receivex does not block but can be preempted if the task that rt_sent the just received message has a higher priority. The task will not block if it receives rpcxed messages since rpcxing tasks always wait for a returned message. Moreover it inheredits the highest priority of any rpcxing task waiting on the receive queue. The receiving task will then recover its priority as explained in rt_returnx. Otherwise the caller task is blocked waiting for any message to be sentx/rpcxed.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>task</em>&nbsp;</td><td>is a pointer to a <em>RT_TASK</em> structure.</td></tr>
@@ -540,7 +540,7 @@ rt_receivex gets an extended message  of size  from the task specified by <em>ta
 Receive an extended message, only if the calling task is not blocked. 
 <p>
 <a class="anchor" name="rt_receivex_if"></a> <p>
-rt_receivex gets an extended message  of size  from the task specified by <em>task</em> task. If task is equal to 0, the caller accepts messages from any task. The caller task is never blocked but can be preempted if the task that rt_sentx the just received message has a higher priority. The task will not block if it receives rpcxed messages since rpcxing tasks always wait for a returned message. Moreover it inheredits the highest priority of any rpcxing task waiting on the receive queue. The receiving task will then recover its priority as explained in rt_returnx. Otherwise the caller task is blocked waiting for any message to be sentx/rpcxed.<p>
+rt_receivex gets an extended message <em>msg</em> of size <em>size</em> from the task specified by <em>task</em> task. If task is equal to 0, the caller accepts messages from any task. The caller task is never blocked but can be preempted if the task that rt_sentx the just received message has a higher priority. The task will not block if it receives rpcxed messages since rpcxing tasks always wait for a returned message. Moreover it inheredits the highest priority of any rpcxing task waiting on the receive queue. The receiving task will then recover its priority as explained in rt_returnx. Otherwise the caller task is blocked waiting for any message to be sentx/rpcxed.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>task</em>&nbsp;</td><td>is a pointer to a <em>RT_TASK</em> structure.</td></tr>
@@ -614,7 +614,7 @@ rt_receivex gets an extended message  of size  from the task specified by <em>ta
 Receive an extended message with a relative timeout. 
 <p>
 <a class="anchor" name="rt_receivex_timed"></a> <p>
-rt_receivex_until gets an extended message  of size  from the task specified by <em>task</em> task. If task is equal to 0, the caller accepts messages from any task. If there is a pending message, rt_receivex does not block but can be preempted if the task that rt_sent the just received message has a higher priority. The task will not block if it receives rpcxed messages since rpcxing tasks always wait for a returned message. Moreover it inheredits the highest priority of any rpcxing task waiting on the receive queue. The receiving task will then recover its priority as explained in rt_returnx. Otherwise the caller task is blocked waiting for any message to be sentx/rpcxed.<p>
+rt_receivex_until gets an extended message <em>msg</em> of size <em>size</em> from the task specified by <em>task</em> task. If task is equal to 0, the caller accepts messages from any task. If there is a pending message, rt_receivex does not block but can be preempted if the task that rt_sent the just received message has a higher priority. The task will not block if it receives rpcxed messages since rpcxing tasks always wait for a returned message. Moreover it inheredits the highest priority of any rpcxing task waiting on the receive queue. The receiving task will then recover its priority as explained in rt_returnx. Otherwise the caller task is blocked waiting for any message to be sentx/rpcxed.<p>
 In this case these functions return if: a sender sendxs a message and has a lower priority; any rpcxed message is received;<ul>
 <li>timeout occurs;</li><li>an error occurs (e.g. the sender task is killed.) <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -690,7 +690,7 @@ In this case these functions return if: a sender sendxs a message and has a lowe
 Receive an extended message with an absolute timeout. 
 <p>
 <a class="anchor" name="rt_receivex_until"></a> <p>
-rt_receivex_until gets an extended message  of size  from the task specified by <em>task</em> task. If task is equal to 0, the caller accepts messages from any task. If there is a pending message, rt_receivex does not block but can be preempted if the task that rt_sent the just received message has a higher priority. The task will not block if it receives rpcxed messages since rpcxing tasks always wait for a returned message. Moreover it inheredits the highest priority of any rpcxing task waiting on the receive queue. The receiving task will then recover its priority as explained in rt_returnx. Otherwise the caller task is blocked waiting for any message to be sentx/rpcxed.<p>
+rt_receivex_until gets an extended message <em>msg</em> of size <em>size</em> from the task specified by <em>task</em> task. If task is equal to 0, the caller accepts messages from any task. If there is a pending message, rt_receivex does not block but can be preempted if the task that rt_sent the just received message has a higher priority. The task will not block if it receives rpcxed messages since rpcxing tasks always wait for a returned message. Moreover it inheredits the highest priority of any rpcxing task waiting on the receive queue. The receiving task will then recover its priority as explained in rt_returnx. Otherwise the caller task is blocked waiting for any message to be sentx/rpcxed.<p>
 In this case these functions return if: a sender sendxs a message and has a lower priority; any rpcxed message is received;<ul>
 <li>timeout occurs;</li><li>an error occurs (e.g. the sender task is killed.) <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -1205,7 +1205,7 @@ rt_sendx_until sends an arbitrary message <em>msg</em> of size <em>size</em> byt
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:22:38 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 19:51:30 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

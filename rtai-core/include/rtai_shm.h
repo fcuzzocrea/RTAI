@@ -314,7 +314,7 @@ static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int
  * 
  * rtai_malloc_adr is used to allocate shared memory from user space.
  *
- * @start_address size is the amount of required shared memory.
+ * @param start_address is the amount of required shared memory.
  * 
  * @param name is an unsigned long identifier;
  * 
@@ -362,6 +362,8 @@ static inline int rt_shm_free(unsigned long name)
  *
  * @param name is the unsigned long identifier used when the memory was
  * allocated;
+ *
+ * @param adr is not used.
  *
  * rtai_free is a legacy helper macro, the real job is carried out by a
  * call to rt_shm_free with the same name. This function should not be used 
@@ -432,7 +434,9 @@ RTAI_PROTO(void, rt_named_free, (void *addr))
  * 
  * rt_heap_close is used to close a previously opened real time group heap.
  *
- * @param name is the unsigned long identifier used to identify the hep.
+ * @param name is the unsigned long identifier used to identify the heap.
+ *
+ * @param adr is not used.
  *
  * Analogously to what done by any allocation function this group real time
  * heap closing call have just the effect of decrementing a usage count, 

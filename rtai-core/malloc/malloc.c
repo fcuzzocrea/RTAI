@@ -26,6 +26,11 @@
  * Allocator for the 4.3BSD Unix Kernel" by Marshall K. McKusick and
  * Michael J. Karels.
  *
+ * \ingroup shm
+ */
+
+/*!
+ * @addtogroup shm
  *@{*/
 
 #include <linux/module.h>

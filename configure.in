@@ -912,24 +912,6 @@ DBX_ROOT="$CONFIG_RTAI_DBX_ROOT"
 DBX_XSL_ROOT="$CONFIG_RTAI_DBX_XSL_ROOT"
 DBX_DOC_INIT(rtai-doc/docbook, rtai-doc/generated, 4.2)
 
-AC_MSG_CHECKING(for LaTeX documentation)
-AC_ARG_ENABLE(doc,
-	[ --enable-latex-doc	Build LaTeX documentation],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_LATEX_DOC=y ;;
-	*) unset CONFIG_RTAI_LATEX_DOC ;;
-	esac])
-
-if test \! -d $srcdir/rtai-doc; then
-    if test x$CONFIG_RTAI_LATEX_DOC = xy; 
-    then
-        AC_MSG_ERROR([documentation tree is missing.])
-    fi
-    AC_MSG_RESULT([not present])
-else
-    AC_MSG_RESULT(${CONFIG_RTAI_LATEX_DOC:-no})
-fi
-
 AC_MSG_CHECKING(whether using LaTeX non-stop mode)
 AC_ARG_ENABLE(verbose-latex,
         [ --enable-verbose-latex Uses LaTeX non-stop mode],
@@ -1321,7 +1303,6 @@ AM_CONDITIONAL(CONFIG_RTAI_COMPAT,[test "$CONFIG_RTAI_COMPAT" = y])
 
 dnl Documentation
 AM_CONDITIONAL(CONFIG_RTAI_DOX_DOC,[test "$CONFIG_RTAI_DOX_DOC" = y])
-AM_CONDITIONAL(CONFIG_RTAI_LATEX_DOC,[test "$CONFIG_RTAI_LATEX_DOC" = y])
 # Automake variables related to DocBook documentation are handled in docbook.m4.
 
 dnl Maintenance symbols and profiles
@@ -1669,7 +1650,6 @@ if test \! x$RTAI_MAYBE_DOCDIR = x; then
 	   rtai-doc/docbook/custom-stylesheets/xsl/html/GNUmakefile \
 	   rtai-doc/docbook/custom-stylesheets/xsl/html/chunk.xsl \
 	   rtai-doc/docbook/docbook-test/GNUmakefile \
-	   rtai-doc/latex/GNUmakefile
       ])
 fi
 

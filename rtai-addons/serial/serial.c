@@ -1243,6 +1243,7 @@ void __rtai_serial_exit(void)
 module_init(__rtai_serial_init);
 module_exit(__rtai_serial_exit);
 
+#ifdef CONFIG_KBUILD
 EXPORT_SYMBOL(rt_spclear_rx);
 EXPORT_SYMBOL(rt_spclear_tx);
 EXPORT_SYMBOL(rt_spget_err);
@@ -1265,3 +1266,4 @@ EXPORT_SYMBOL(rt_spset_err_callback_fun_usr);
 EXPORT_SYMBOL(rt_spwait_usr_callback);
 EXPORT_SYMBOL(rt_spread_timed);
 EXPORT_SYMBOL(rt_spwrite_timed);
+#endif /* CONFIG_KBUILD */

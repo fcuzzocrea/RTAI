@@ -25,8 +25,32 @@
 
 #include <asm/rtai_vectors.h>
 
+//#define USE_LINUX_SYSCALL
+
 #define LOW  0
 #define HIGH 1
+
+#ifdef __USE_APIC__
+
+#define TIMER_NAME "APIC"
+#define FAST_TO_READ_TSC
+#define TIMER_FREQ RTAI_FREQ_APIC
+#define TIMER_LATENCY RTAI_LATENCY_APIC
+#define TIMER_SETUP_TIME RTAI_SETUP_TIME_APIC
+#define ONESHOT_SPAN (0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
+#define update_linux_timer(cpuid)
+
+#else /* !__USE_APIC__ */
+
+#define USE_LINUX_TIMER
+#define TIMER_NAME "8254-PIT"
+#define TIMER_FREQ RTAI_FREQ_8254
+#define TIMER_LATENCY RTAI_LATENCY_8254
+#define TIMER_SETUP_TIME RTAI_SETUP_TIME_8254
+#define ONESHOT_SPAN (0x7FFF*(CPU_FREQ/TIMER_FREQ))
+#define update_linux_timer(cpuid) adeos_pend_uncond(TIMER_8254_IRQ, cpuid)
+
+#endif /* __USE_APIC__ */
 
 union rtai_lxrt_t {
 
@@ -51,8 +75,8 @@ extern "C" {
 #endif  /* KERNEL_VERSION < 2.6.0 */
 
 static inline void _lxrt_context_switch (struct task_struct *prev,
-					struct task_struct *next,
-					int cpuid)
+					 struct task_struct *next,
+					 int cpuid)
 {
     struct mm_struct *oldmm = prev->active_mm;
 
@@ -64,22 +88,29 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 #else /* >= 2.6.0 */
     switch_mm(oldmm,next->active_mm,next);
 
-    if (!next->mm)
-        enter_lazy_tlb(oldmm,next);
+    if (!next->mm) enter_lazy_tlb(oldmm,next);
 #endif /* < 2.6.0 */
 
 /* NOTE: Do not use switch_to() directly: this is a compiler
    compatibility issue. */
 
+/* It might be so but, with 2.6.xx at least, only for the inlined case. 
+   Compiler compatibility issues related to inlines can appear anywhere.
+   This case seems to be solved by staticalising without inlining, see LXRT.
+   So let's experiment a bit more, simple Linux reuse is better (Paolo) */
+
+#if 1
+    switch_to(prev, next, prev);
+#else
     __asm__ __volatile__(						\
 		 "pushfl\n\t"				       		\
 		 "cli\n\t"				       		\
 		 "pushl %%esi\n\t"				        \
 		 "pushl %%edi\n\t"					\
 		 "pushl %%ebp\n\t"					\
-		 "movl %%esp,%0\n\t"	/* save ESP */		\
+		 "movl %%esp,%0\n\t"	/* save ESP */			\
 		 "movl %3,%%esp\n\t"	/* restore ESP */		\
-		 "movl $1f,%1\n\t"	/* save EIP */		\
+		 "movl $1f,%1\n\t"	/* save EIP */			\
 		 "pushl %4\n\t"		/* restore EIP */		\
 		 "jmp "SYMBOL_NAME_STR(__switch_to)"\n"			\
 		 "1:\t"							\
@@ -92,6 +123,7 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
 		  "a" (prev), "d" (next),				\
 		  "b" (prev));						
+#endif
 
     barrier();
 }
@@ -104,7 +136,11 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
+#ifdef USE_LINUX_SYSCALL
+	RTAI_DO_TRAP(SYSCALL_VECTOR, retval, srq, arg);
+#else
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
+#endif
 	return retval;
 }
 

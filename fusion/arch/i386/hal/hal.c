@@ -1014,9 +1014,8 @@ static int rthal_read_proc (char *page,
     int len = 0, cpuid, irq, nirqs;
     char *p = page;
 
-    p += sprintf(p,"\nRTAI/hal over Adeos %s\n",ADEOS_VERSION_STRING);
-    p += sprintf(p,"System compiler: %s\n",CONFIG_RTAI_COMPILER);
-    p += sprintf(p,"Registered real-time interrupts:");
+    p += sprintf(p,"RTAI/hal over Adeos %s\n",ADEOS_VERSION_STRING);
+    p += sprintf(p,"Compiled with: %s\n",CONFIG_RTAI_COMPILER);
 
     for (irq = nirqs = 0; irq < IPIPE_NR_XIRQS; irq++)
 	if (rthal_realtime_irq[irq].handler != NULL)
@@ -1024,14 +1023,14 @@ static int rthal_read_proc (char *page,
 
     if (nirqs == 0)
 	{
-	p += sprintf(p,"none.");
+	p += sprintf(p,"No real-time interrupt registered");
 	goto out;
 	}
 
-    p += sprintf(p,"\n");
+    p += sprintf(p,"\nRT-IRQ");
 
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	p += sprintf(p,"       CPU%d",cpuid);
+	p += sprintf(p,"        CPU%d",cpuid);
 
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 	{
@@ -1041,7 +1040,7 @@ static int rthal_read_proc (char *page,
 	p += sprintf(p,"\n%3d:",irq);
 
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	    p += sprintf(p,"    %12lu",rthal_realtime_irq[irq].hits[cpuid]);
+	    p += sprintf(p,"  %12lu",rthal_realtime_irq[irq].hits[cpuid]);
 	}
 
  out:

@@ -116,7 +116,7 @@ static int xnpod_read_proc (char *page,
     char buf[64];
     spl_t s;
 
-    p += sprintf(p,"\nRTAI/fusion system v%s\n",PACKAGE_VERSION);
+    p += sprintf(p,"RTAI/fusion nucleus v%s\n",PACKAGE_VERSION);
     p += sprintf(p,"Mounted over Adeos %s\n",ADEOS_VERSION_STRING);
     p += sprintf(p,"Registered interface(s): ");
 
@@ -134,31 +134,31 @@ static int xnpod_read_proc (char *page,
     if (nrxfaces == 0)
 	p += sprintf(p,"<none>");
 
-    p += sprintf(p,"\n\nTimer latency: %Lu ns\n",xnarch_tsc_to_ns(nktimerlat));
+    p += sprintf(p,"\nLatencies: timer=%Lu ns, scheduling=%Lu ns\n",
+		 xnarch_tsc_to_ns(nktimerlat),
+		 xnarch_tsc_to_ns(nkschedlat));
 
     if (nkpod != NULL && testbits(nkpod->status,XNTIMED))
 	{
 	if (testbits(nkpod->status,XNTMPER))
-	    p += sprintf(p,"Timer status: periodic [tickval=%lu us, elapsed=%Lu]\n",
+	    p += sprintf(p,"Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
 			 xnpod_get_tickval() / 1000,
 			 nkpod->jiffies);
 	else
-	    p += sprintf(p,"Timer status: aperiodic.\n");
+	    p += sprintf(p,"Aperiodic timer is running\n");
 	}
     else
-	p += sprintf(p,"Timer status: inactive.\n");
-
-    p += sprintf(p,"Scheduling latency: %Lu ns\n",xnarch_tsc_to_ns(nkschedlat));
+	p += sprintf(p,"No system timer\n");
 
     if (!nkpod)
 	{
-	p += sprintf(p,"No active pod.\n");
+	p += sprintf(p,"No active pod\n");
 	goto out;
 	}
 
     if (testbits(nkpod->status, XNPINIT))
         {
-        p += sprintf(p, "Pod initializing.\n");
+        p += sprintf(p, "Pod initializing\n");
         goto out;
         }
 
@@ -172,7 +172,7 @@ static int xnpod_read_proc (char *page,
 
     xnlock_put_irqrestore(&nklock, s);
 
-    p += sprintf(p,"\nScheduler status: %d threads, %d ready, %d blocked\n",
+    p += sprintf(p,"Scheduler status: %d threads, %d ready, %d blocked\n",
                  nkpod->threadq.elems,
                  ready_threads,
                  nkpod->suspendq.elems);

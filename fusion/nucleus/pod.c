@@ -99,14 +99,15 @@ const char *xnpod_fatal_helper (const char *format, ...)
     setbits(nkpod->status,XNFATAL);
     xntimer_freeze();
 
-    xnprintf("%-12s PRI   STATUS\n","NAME");
+    xnprintf("CPU  %-12s PRI   STATUS\n","NAME");
 
     holder = getheadq(&nkpod->threadq);
 
     while (holder)
         {
         xnthread_t *thread = link2thread(holder,glink);
-        xnprintf("%-12s %4d  0x%lx\n",
+        xnprintf("%3d  %-12s %4d  0x%lx\n",
+		 xnsched_cpu(xnthread_sched(thread)),
                  thread->name,
                  thread->cprio,thread->status);
         holder = nextq(&nkpod->threadq,holder);
@@ -115,14 +116,14 @@ const char *xnpod_fatal_helper (const char *format, ...)
     if (testbits(nkpod->status,XNTIMED))
         {
         if (testbits(nkpod->status,XNTMPER))
-            xnprintf("Timer: periodic [tickval=%lu us, elapsed=%Lu]\n",
+            xnprintf("Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
                      xnpod_get_tickval() / 1000,
                      nkpod->jiffies);
         else
-            xnprintf("Timer: aperiodic.\n");
+            xnprintf("Aperiodic timer is running.\n");
         }
     else
-        xnprintf("Timer: none.\n");
+        xnprintf("No system timer.\n");
 
  out:
 

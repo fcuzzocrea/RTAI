@@ -418,14 +418,14 @@ static void gatekeeper_thread (void *data)
 unsigned long long xnshadow_ts2ticks (const struct timespec *v)
   
 {
-    unsigned long long nsec = v->tv_nsec, ticks;
-    u_long tickval = xnpod_get_tickval();
+    u_long tickval = xnpod_get_tickval(), ticks;
     u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
+    unsigned long long nsec;
 
     /* save a division: we add to nsec the worst remainder of the division
        of sec * 1e9 by tickval. nsec may not fit on 32 bits if v is not
        normalized. */
-    nsec += tickval - 1;
+    nsec = v->tv_nsec + tickval - 1;
     /* tickval is 100000 or so in the worst case, the result is hence expected
        to fit on 32 bits, and we can use uldiv instead of ulldiv. */
     ticks = xnarch_uldiv(nsec, tickval);
@@ -444,11 +444,11 @@ void xnshadow_ticks2ts (unsigned long long ticks, struct timespec *v)
 unsigned long long xnshadow_tv2ticks (const struct timeval *v)
 
 {
-    unsigned long long nsec = v->tv_usec * 1000UL, ticks;
-    u_long tickval = xnpod_get_tickval();
+    u_long tickval = xnpod_get_tickval(), ticks;
     u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
+    unsigned long long nsec;
 
-    nsec += tickval - 1;
+    nsec = xnarch_ullmul(v->tv_usec,1000UL) + tickval - 1;
     ticks = xnarch_uldiv(nsec, tickval);
     return xnarch_ullmul(hz, v->tv_sec) + ticks;
 }

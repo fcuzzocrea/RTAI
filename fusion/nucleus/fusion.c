@@ -292,35 +292,6 @@ static int __pthread_inquire_rt (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
-static int __pthread_migrate_rt (struct task_struct *curr, struct pt_regs *regs)
-
-{
-    xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
-
-    switch (__xn_reg_arg1(regs))
-	{
-	case FUSION_RTAI_DOMAIN:
-
-	    if (testbits(thread->status,XNRELAX))
-		xnshadow_harden();
-
-	    break;
-
-	case FUSION_LINUX_DOMAIN:
-
-	    if (!testbits(thread->status,XNRELAX))
-		xnshadow_relax();
-
-	    break;
-
-	default:
-
-	    return -EINVAL;
-	}
-
-    return 0;
-}
-
 int __pthread_set_periodic_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -508,7 +479,6 @@ static xnsysent_t __systab[] = {
     { &__pthread_init_rt, __xn_flag_init }, /* __xn_fusion_init */
     { &__pthread_create_rt, __xn_flag_init }, /* __xn_fusion_create */
     { &__pthread_start_rt, __xn_flag_anycall }, /* __xn_fusion_start */
-    { &__pthread_migrate_rt, __xn_flag_shadow },   /* __xn_fusion_migrate */
     { &__pthread_set_periodic_rt, __xn_flag_regular },   /* __xn_fusion_set_periodic */
     { &__pthread_wait_period_rt, __xn_flag_regular },   /* __xn_fusion_wait_period */
     { &__pthread_time_rt, __xn_flag_anycall  },   /* __xn_fusion_time */

@@ -149,9 +149,20 @@ int pthread_inquire_rt (xninquiry_t *buf) {
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_inquire,buf);
 }
 
-int pthread_migrate_rt (int domain) {
+int pthread_migrate_rt (int domain)
 
-    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_migrate,domain);
+{
+    switch (domain)
+	{
+	case FUSION_LINUX_DOMAIN:
+	case FUSION_RTAI_DOMAIN:
+
+	    return XENOMAI_SYSCALL1(__xn_sys_migrate,domain);
+
+	default:
+
+	    return -EINVAL;
+	}
 }
 
 int pthread_set_periodic_rt (nanotime_t idate,

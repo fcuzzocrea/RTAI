@@ -1,3 +1,9 @@
+2004-06-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/lib/fusion.c (pthread_migrate_rt): Directly use the
+	nucleus-based migration service: this one works properly in all
+	cases...
+
 2004-06-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* configure.in, GNUmakefile.am: handle correctly the "all" and "dist"

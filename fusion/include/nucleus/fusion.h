@@ -57,28 +57,27 @@
 
 #define FUSION_APERIODIC_TIMER 0
 
-#define FUSION_RTAI_DOMAIN     0
-#define FUSION_LINUX_DOMAIN    1
+#define FUSION_LINUX_DOMAIN    0
+#define FUSION_RTAI_DOMAIN     1
 
 #define __xn_fusion_init         0
 #define __xn_fusion_create       1
 #define __xn_fusion_start        2
-#define __xn_fusion_migrate      3
-#define __xn_fusion_set_periodic 4
-#define __xn_fusion_wait_period  5
-#define __xn_fusion_time         6
-#define __xn_fusion_cputime      7
-#define __xn_fusion_start_timer  8
-#define __xn_fusion_stop_timer   9
-#define __xn_fusion_sleep        10
-#define __xn_fusion_ns2ticks     11
-#define __xn_fusion_ticks2ns     12
-#define __xn_fusion_inquire      13
-#define __xn_fusion_idle         14
-#define __xn_fusion_cancel       15
-#define __xn_fusion_activate     16
-#define __xn_fusion_hold         17
-#define __xn_fusion_release      18
+#define __xn_fusion_set_periodic 3
+#define __xn_fusion_wait_period  4
+#define __xn_fusion_time         5
+#define __xn_fusion_cputime      6
+#define __xn_fusion_start_timer  7
+#define __xn_fusion_stop_timer   8
+#define __xn_fusion_sleep        9
+#define __xn_fusion_ns2ticks     10
+#define __xn_fusion_ticks2ns     11
+#define __xn_fusion_inquire      12
+#define __xn_fusion_idle         13
+#define __xn_fusion_cancel       14
+#define __xn_fusion_activate     15
+#define __xn_fusion_hold         16
+#define __xn_fusion_release      17
 
 typedef unsigned long long nanotime_t;
 

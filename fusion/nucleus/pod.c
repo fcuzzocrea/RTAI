@@ -1080,7 +1080,10 @@ void xnpod_delete_thread (xnthread_t *thread)
  * @param timeout The timeout which may be used to limit the time the
  * thread pends for a resource. This value is a wait time given in
  * ticks (see note).  Passing XN_INFINITE specifies an unbounded
- * wait. All other values are used to initialize a watchdog timer.
+ * wait. All other values are used to initialize a watchdog timer.  If
+ * the current operation mode is oneshot and @timeout elapses before
+ * xnpod_suspend_thread() has completed, then the target thread will
+ * not be suspended, and this routine leads to a null effect.
  *
  * @param wchan The address of a pended resource. This parameter is
  * used internally by the synchronization object implementation code
@@ -1165,7 +1168,13 @@ void xnpod_suspend_thread (xnthread_t *thread,
         /* Don't start the timer for a thread indefinitely delayed by
            a call to xnpod_suspend_thread(thread,XNDELAY,0,NULL). */
         __setbits(thread->status,XNDELAY);
-        xntimer_start(&thread->rtimer,timeout,XN_INFINITE);
+
+        if (xntimer_start(&thread->rtimer,timeout,XN_INFINITE) < 0)
+	    {
+	    /* Bad timeout: rollback everything we've just done... */
+	    xnpod_unblock_thread(thread);
+	    goto unlock_and_exit;
+	    }
         }
     
     if (nkpod->schedhook)
@@ -1175,6 +1184,8 @@ void xnpod_suspend_thread (xnthread_t *thread,
         /* If "thread" is runnning on another CPU, xnpod_schedule will
            just trigger the IPI. */
         xnpod_schedule();
+
+ unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
 }

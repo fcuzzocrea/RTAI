@@ -90,6 +90,8 @@ static struct {
 
 } rthal_sysreq_table[RTHAL_NR_SRQS];
 
+static int rthal_realtime_faults[RTHAL_NR_CPUS][ADEOS_NR_FAULTS];
+
 static int rthal_init_done;
 
 static unsigned rthal_sysreq_virq;
@@ -529,11 +531,15 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 
     adeos_load_cpuid();
 
-    if (evinfo->domid == RTHAL_DOMAIN_ID &&
-	rthal_trap_handler != NULL &&
-	test_bit(cpuid,&rthal_cpu_realtime) &&
-	rthal_trap_handler(evinfo) != 0)
-	return;
+    if (evinfo->domid == RTHAL_DOMAIN_ID)
+	{
+	rthal_realtime_faults[cpuid][evinfo->event]++;
+
+	if (rthal_trap_handler != NULL &&
+	    test_bit(cpuid,&rthal_cpu_realtime) &&
+	    rthal_trap_handler(evinfo) != 0)
+	    return;
+	}
 
     adeos_propagate_event(evinfo);
 }
@@ -712,6 +718,58 @@ static int irq_read_proc (char *page,
     return len;
 }
 
+static int faults_read_proc (char *page,
+			     char **start,
+			     off_t off,
+			     int count,
+			     int *eof,
+			     void *data)
+{
+    static char *fault_labels[] = {
+	[0] = "Data or instruction access",
+	[1] = "Alignment",
+	[2] = "Altivec unavailable",
+	[3] = "Program check exception",
+	[4] = "Machine check exception",
+	[5] = "Unknown",
+	[6] = "Instruction breakpoint",
+	[7] = "Run mode exception",
+	[8] = "Single-step exception",
+	[9] = "Non-recoverable exception",
+	[10] = "Software emulation",
+	[11] = "Debug",
+	[12] = "SPE",
+	[13] = "Altivec assist"
+    };
+    int len = 0, cpuid, trap;
+    char *p = page;
+
+    p += sprintf(p,"TRAP ");
+
+    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	p += sprintf(p,"        CPU%d",cpuid);
+
+    for (trap = 0; trap < 14; trap++)
+	{
+	p += sprintf(p,"\n%3d:",trap);
+
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	    p += sprintf(p," %12d   (%s)",
+			 rthal_realtime_faults[cpuid][trap],
+			 fault_labels[trap]);
+	}
+
+    p += sprintf(p,"\n");
+
+    len = p - page - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if (len > count) len = count;
+    if (len < 0) len = 0;
+
+    return len;
+}
+
 static struct proc_dir_entry *add_proc_leaf (const char *name,
 					     read_proc_t rdproc,
 					     write_proc_t wrproc,
@@ -765,6 +823,12 @@ static int rthal_proc_register (void)
 		  NULL,
 		  NULL,
 		  rthal_proc_root);
+
+    add_proc_leaf("faults",
+		  &faults_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
     return 0;
 }
 
@@ -774,6 +838,7 @@ static void rthal_proc_unregister (void)
     remove_proc_entry("hal",rthal_proc_root);
     remove_proc_entry("compiler",rthal_proc_root);
     remove_proc_entry("irq",rthal_proc_root);
+    remove_proc_entry("faults",rthal_proc_root);
     remove_proc_entry("rtai",NULL);
 }
 

@@ -1,5 +1,8 @@
 2005-02-27  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/hal/hal.c (faults_read_proc):  Add proc entry to
+	display faults occurring in real-time mode.
+
 	* testsuite/switch/switch.c (main): Add missing mlockall().
 
 2005-02-25  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

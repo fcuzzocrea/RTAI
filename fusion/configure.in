@@ -250,12 +250,12 @@ include Makefile
 
 rtai-arch:
 	@for flag in \$(CFLAGS); do case \$\$flag in \
-        -march*|-mcpu*|-mtune*) echo -n "\$\$flag ";;
+        -march*|-mcpu*|-mtune*) echo -n "\$\$flag ";; \
 	*);; \
 	esac; done
 EOF
 RTAI_ARCH_TUNE_FLAGS=`make -s -C $RTAI_LINUX_DIR -f $rtai_mf rtai-arch`
-rm $rtai_mf
+rm -f $rtai_mf
 AC_MSG_RESULT(${RTAI_ARCH_TUNE_FLAGS:-none})
 
 AC_MSG_CHECKING(for real-time support in user-space)

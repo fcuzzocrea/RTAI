@@ -30,8 +30,6 @@
 
 struct xnintr;
 
-typedef int (*xnisr_t)(struct xnintr *intr);
-
 typedef struct xnintr {
 
     xnflags_t status;	/*!< Status bitmask. */

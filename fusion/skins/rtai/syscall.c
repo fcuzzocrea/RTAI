@@ -2441,12 +2441,15 @@ static int __rt_alarm_wait (struct task_struct *curr, struct pt_regs *regs)
 
     __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
 
-    alarm = (RT_ALARM *)rt_registry_fetch(ph.opaque);
+    xnlock_get_irqsave(&nklock,s);
+
+    alarm = rtai_h2obj_validate(rt_registry_fetch(ph.opaque),RTAI_ALARM_MAGIC,RT_ALARM);
 
     if (!alarm)
-	return -ESRCH;
-
-    xnlock_get_irqsave(&nklock,s);
+        {
+        err = rtai_handle_error(alarm,RTAI_ALARM_MAGIC,RT_ALARM);
+        goto unlock_and_exit;
+        }
 
     if (xnthread_base_priority(&task->thread_base) != FUSION_IRQ_PRIO)
 	/* Renice the waiter above all regular tasks if needed. */
@@ -2459,6 +2462,8 @@ static int __rt_alarm_wait (struct task_struct *curr, struct pt_regs *regs)
 	err = -EIDRM; /* Alarm deleted while pending. */
     else if (xnthread_test_flags(&task->thread_base,XNBREAK))
 	err = -EINTR; /* Unblocked.*/
+
+ unlock_and_exit:
     
     xnlock_put_irqrestore(&nklock,s);
 
@@ -2512,6 +2517,19 @@ static int __rt_alarm_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #if CONFIG_RTAI_OPT_NATIVE_INTR
 
+static int __rt_intr_handler (xnintr_t *cookie)
+
+{
+    RT_INTR *intr = I_DESC(cookie);
+
+    ++intr->pending;
+
+    if (xnsynch_nsleepers(&intr->synch_base) > 0)
+	xnsynch_flush(&intr->synch_base,0);
+
+    return XN_ISR_HANDLED|(intr->mode & XN_ISR_ENABLE);
+}
+
 /*
  * int __rt_intr_create(RT_INTR_PLACEHOLDER *ph,
  *                      unsigned irq,
@@ -2540,7 +2558,7 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
     if (!intr)
 	return -ENOMEM;
 
-    err = rt_intr_create(intr,irq,NULL,mode);
+    err = rt_intr_create(intr,irq,&__rt_intr_handler,mode);
 
     if (err == 0)
 	{
@@ -2606,20 +2624,56 @@ static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
     RT_INTR_PLACEHOLDER ph;
     RTIME timeout;
     RT_INTR *intr;
+    RT_TASK *task;
+    int err = 0;
+    spl_t s;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;
 
     __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
 
-    intr = (RT_INTR *)rt_registry_fetch(ph.opaque);
-
-    if (!intr)
-	return -ESRCH;
-
     __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg2(regs),sizeof(timeout));
 
-    return rt_intr_wait(intr,timeout);
+    xnlock_get_irqsave(&nklock,s);
+
+    intr = rtai_h2obj_validate(rt_registry_fetch(ph.opaque),RTAI_INTR_MAGIC,RT_INTR);
+
+    if (!intr)
+        {
+        err = rtai_handle_error(intr,RTAI_INTR_MAGIC,RT_INTR);
+        goto unlock_and_exit;
+        }
+
+    if (intr->pending < 0)
+	{
+	if (timeout == TM_NONBLOCK)
+	    {
+            err = -EWOULDBLOCK;
+	    goto unlock_and_exit;
+	    }
+
+	xnpod_check_context(XNPOD_THREAD_CONTEXT);
+
+	task = rtai_current_task();
+
+	xnsynch_sleep_on(&intr->synch_base,timeout);
+        
+	if (xnthread_test_flags(&task->thread_base,XNRMID))
+	    err = -EIDRM; /* Interrupt object deleted while pending. */
+	else if (xnthread_test_flags(&task->thread_base,XNTIMEO))
+	    err = -ETIMEDOUT; /* Timeout.*/
+	else if (xnthread_test_flags(&task->thread_base,XNBREAK))
+	    err = -EINTR; /* Unblocked.*/
+	}
+    else
+	--intr->pending;
+    
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
 }
 
 /*

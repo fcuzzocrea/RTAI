@@ -51,6 +51,8 @@ typedef struct rt_intr_placeholder {
 #define RT_INTR_CHAINED XN_ISR_CHAINED
 #define RT_INTR_ENABLE  XN_ISR_ENABLE
 
+#define I_DESC(xintr)  ((RT_INTR *)(xintr)->cookie)
+
 typedef struct rt_intr {
 
     unsigned magic;   /* !< Magic code - must be first */
@@ -65,8 +67,6 @@ typedef struct rt_intr {
     xnsynch_t synch_base; /* !< Base synchronization object. */
 
     int pending;	/* !< Pending hits to wait for. */
-
-    rt_isr_t isr;	/* !< User-defined interrupt service routine. */
 
     int mode;		/* !< Interrupt control mode. */
 
@@ -113,6 +113,9 @@ static inline int rt_intr_unbind (RT_INTR *intr)
     return 0;
 }
 
+int rt_intr_wait(RT_INTR *intr,
+		 RTIME timeout);
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus
@@ -127,9 +130,6 @@ int rt_intr_create(RT_INTR *intr,
 		   int mode);
 
 int rt_intr_delete(RT_INTR *intr);
-
-int rt_intr_wait(RT_INTR *intr,
-		 RTIME timeout);
 
 int rt_intr_enable(RT_INTR *intr);
 

@@ -1,5 +1,8 @@
 2005-01-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/intr.c: Make rt_intr_wait() a user-space only
+	service.
+
 	* drivers/16550A/16550A.c (rt_uart_close): Add missing
 	unregistration.
 

@@ -33,6 +33,10 @@ typedef unsigned long long xntime_t; /* ns */
 
 typedef long long xnstime_t;
 
+struct xnintr;
+
+typedef int (*xnisr_t)(struct xnintr *intr);
+
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
 typedef struct xntimes {
     xnticks_t tick_shot;

@@ -1,5 +1,7 @@
 2004-06-18  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c: Properly handle calls on self task object.
+	
 	* skins/rtai/syscall.c: Only fetch objects address but do not lock
 	them since the descriptor will be (re-)verified by the syscall,
 	and we want the possibly pended object to be destroyable, and

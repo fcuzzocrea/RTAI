@@ -145,7 +145,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 	   _before_ current is suspended in xnshadow_map(). */
 
 	ph.opaque = task->handle;
-	__xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	__xn_copy_to_user(curr,(void *)bulk.a1,&ph,sizeof(ph));
 
 	/* The following service blocks until rt_task_start() is
 	   issued. */
@@ -217,17 +217,24 @@ static int __rt_task_suspend (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task;
+    RT_TASK *task = NULL;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
-	return -EFAULT;
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	    return -EFAULT;
 
-    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+	__xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
 
-    task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	}
+    else if (xnpod_regular_p())
+	goto call_on_self;
 
     if (!task)
 	return -ENOENT;
+
+call_on_self:
 
     return rt_task_suspend(task);
 }
@@ -263,17 +270,24 @@ static int __rt_task_delete (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task;
+    RT_TASK *task = NULL;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
-	return -EFAULT;
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	    return -EFAULT;
 
-    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+	__xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
 
-    task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	}
+    else if (xnpod_regular_p())
+	goto call_on_self;
 
     if (!task)
 	return -ENOENT;
+
+call_on_self:
 
     return rt_task_delete(task);
 }
@@ -297,18 +311,25 @@ static int __rt_task_set_periodic (struct task_struct *curr, struct pt_regs *reg
 
 {
     RT_TASK_PLACEHOLDER ph;
+    RT_TASK *task = NULL;
     RTIME idate, period;
-    RT_TASK *task;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
-	return -EFAULT;
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	    return -EFAULT;
 
-    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+	__xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
 
-    task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	}
+    else if (xnpod_regular_p())
+	goto call_on_self;
 
     if (!task)
 	return -ENOENT;
+
+call_on_self:
 
     __xn_copy_from_user(curr,&idate,(void *)__xn_reg_arg2(regs),sizeof(idate));
     __xn_copy_from_user(curr,&period,(void *)__xn_reg_arg3(regs),sizeof(period));
@@ -334,18 +355,25 @@ static int __rt_task_set_priority (struct task_struct *curr, struct pt_regs *reg
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task;
+    RT_TASK *task = NULL;
     int prio;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
-	return -EFAULT;
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	    return -EFAULT;
 
-    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+	__xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
 
-    task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	}
+    else if (xnpod_regular_p())
+	goto call_on_self;
 
     if (!task)
 	return -ENOENT;
+
+call_on_self:
 
     prio = __xn_reg_arg2(regs);
 
@@ -412,19 +440,26 @@ static int __rt_task_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_TASK_PLACEHOLDER ph;
+    RT_TASK *task = NULL;
     RT_TASK_INFO info;
-    RT_TASK *task;
     int err;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
-	return -EFAULT;
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	    return -EFAULT;
 
-    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+	__xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
 
-    task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	}
+    else if (xnpod_regular_p())
+	goto call_on_self;
 
     if (!task)
 	return -ENOENT;
+
+call_on_self:
 
     err = rt_task_inquire(task,&info);
 

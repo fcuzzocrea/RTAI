@@ -325,6 +325,9 @@ static inline xnthread_t *xnpod_current_thread (void)
 #define xnpod_userspace_p() \
     (!!testbits(xnpod_current_thread()->status,XNROOT|XNSHADOW))
 
+#define xnpod_regular_p() \
+    (!(xnpod_asynch_p() || xnpod_root_p()))
+
 #define xnpod_idle_p() xnpod_root_p()
 
 #define xnpod_timeset_p() \

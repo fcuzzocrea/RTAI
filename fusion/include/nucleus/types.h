@@ -61,7 +61,6 @@ typedef long long xnstime_t;
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
 typedef struct xntimes {
-    xnticks_t timer_top;
     xnticks_t timer_entry;
     xnticks_t timer_handler;
     xnticks_t timer_handled;

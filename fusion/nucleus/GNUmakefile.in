@@ -796,11 +796,15 @@ uninstall-info: uninstall-info-recursive
 
 rtai_nucleus$(modext): @RTAI_KBUILD_ENV@
 rtai_nucleus$(modext): $(libmodule_SRC) FORCE
-	@RTAI_KBUILD_TOP@ @RTAI_KBUILD_CMD@ @RTAI_KBUILD_BOTTOM@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
+	@RTAI_KBUILD_BOTTOM@
 
 @CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): @RTAI_KBUILD_ENV@
 @CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): trace.c FORCE
-@CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_TOP@ @RTAI_KBUILD_CMD@ @RTAI_KBUILD_BOTTOM@
+@CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_TOP@ \
+@CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
+@CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_BOTTOM@
 
 all-local: rtai_nucleus$(modext) $(MAYBE_TRACE)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules

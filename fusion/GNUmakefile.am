@@ -45,7 +45,6 @@ clean-local:
 	rm -fr modules .cfchanged
 
 distclean-local:
-	find . -name GNUmakefile -print0 | xargs -0 rm -f
         test -d $(top_builddir)/config/kconfig && \
 	$(MAKE) -C $(srcdir)/config/kconfig \
 	-f Makefile.kconfig distclean srctree=$(srcdir) || : ; \
@@ -55,7 +54,6 @@ clean-local:
 	rm -f .cfchanged
 
 distclean-local:
-	find . -name GNUmakefile -print0 | xargs -0 rm -f
 	test -d $(top_builddir)/config/kconfig && \
 	$(MAKE) -C $(top_builddir)/config/kconfig \
 	-f @abs_srcdir@/config/kconfig/Makefile.kconfig distclean \

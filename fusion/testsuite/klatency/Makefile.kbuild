@@ -4,7 +4,7 @@ EXTRA_CFLAGS += -I$(rtai_srctree)/include \
 		-I$(src)/../../include \
 		-I$(src)/../.. \
 		-I$(rtai_srcdir) \
-		-D__IN_RTAI__
+		$(rtai_extradef)
 
 obj-m += $(rtai_target).o
 

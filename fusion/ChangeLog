@@ -1,6 +1,19 @@
+2004-11-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* fusion: Pass RTAI_KMOD_CFLAGS as needed.
+
+2004-11-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/module.c (__xeno_skin_init): Fix init without
+	user-space support.
+
+	* arch/i386/hal/hal.c (rthal_trap_fault): Remove lazy handling of
+	on-demand kernel memory mapping, leaving the burden to Adeos
+	(which does it eagerly instead, see include/asm-i386/pgalloc.h).
+
 2004-11-24  Marc Kleine-Budde <kleine-budde@gmx.de>
 
-	* configure.in: Fix various M4 quoting issues.
+	* configure.in: Fix various m4 quoting issues.
 
 2004-11-23  Philippe Gerum  <rpm@xenomai.org>
 

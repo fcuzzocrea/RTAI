@@ -520,7 +520,7 @@ void xntimer_do_timers (void)
 	}
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.timer_top = xnarch_get_cpu_tsc();
+    nkpod->timestamps.timer_entry = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
     initq(&reschedq);
@@ -557,7 +557,6 @@ void xntimer_do_timers (void)
 	else
 	    {
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-	    nkpod->timestamps.timer_entry = nkpod->timestamps.timer_top;
 	    nkpod->timestamps.timer_drift = (xnsticks_t)now - (xnsticks_t)timer->date;
 	    nkpod->timestamps.timer_drift2 = (xnsticks_t)now - (xnsticks_t)timer->shot;
 	    nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();

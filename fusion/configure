@@ -19771,8 +19771,8 @@ rtai-arch:
 EOF
 RTAI_ARCH_TUNE_FLAGS=`make -s -C $RTAI_LINUX_DIR -f $rtai_mf rtai-arch`
 rm $rtai_mf
-echo "$as_me:$LINENO: result: $RTAI_ARCH_TUNE_FLAGS" >&5
-echo "${ECHO_T}$RTAI_ARCH_TUNE_FLAGS" >&6
+echo "$as_me:$LINENO: result: ${RTAI_ARCH_TUNE_FLAGS:-no}" >&5
+echo "${ECHO_T}${RTAI_ARCH_TUNE_FLAGS:-no}" >&6
 
 echo "$as_me:$LINENO: checking for real-time support in user-space" >&5
 echo $ECHO_N "checking for real-time support in user-space... $ECHO_C" >&6

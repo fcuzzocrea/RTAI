@@ -749,7 +749,6 @@ reconfig xconfig gconfig mconfig menuconfig config oldconfig:
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	rm -fr modules .cfchanged
 
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@distclean-local:
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	find . -name GNUmakefile -print0 | xargs -0 rm -f
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@        test -d $(top_builddir)/config/kconfig && \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(MAKE) -C $(srcdir)/config/kconfig \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	-f Makefile.kconfig distclean srctree=$(srcdir) || : ; \
@@ -758,7 +757,6 @@ reconfig xconfig gconfig mconfig menuconfig config oldconfig:
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	rm -f .cfchanged
 
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@distclean-local:
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	find . -name GNUmakefile -print0 | xargs -0 rm -f
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	test -d $(top_builddir)/config/kconfig && \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	$(MAKE) -C $(top_builddir)/config/kconfig \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	-f @abs_srcdir@/config/kconfig/Makefile.kconfig distclean \

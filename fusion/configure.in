@@ -256,7 +256,7 @@ rtai-arch:
 EOF
 RTAI_ARCH_TUNE_FLAGS=`make -s -C $RTAI_LINUX_DIR -f $rtai_mf rtai-arch`
 rm $rtai_mf
-AC_MSG_RESULT($RTAI_ARCH_TUNE_FLAGS)
+AC_MSG_RESULT(${RTAI_ARCH_TUNE_FLAGS:-no})
 
 AC_MSG_CHECKING(for real-time support in user-space)
 AC_ARG_ENABLE(nucleus-fusion,

@@ -379,6 +379,14 @@
 
 #define FORCE_SOFT 0x80000000
 
+// Keep LXRT call enc/decoding together, so you are ure to act consistently.
+// This is the encoding, note " |  0x8000" to ensure not a Linux syscall, ...
+#define ENCODE_LXRT_REQ(dynx, srq, lsize)  (((dynx) << 28) | (((srq) & 0xFFF) << 16) | 0x8000 | (lsize))
+// ... and this is the decoding.
+#define SRQ(x)   (((x) >> 16) & 0xFFF)
+#define NARG(x)  ((x) & 0x7FFF)
+#define INDX(x)  (((x) >> 28) & 0xF)
+
 #ifdef __KERNEL__
 
 #include <asm/rtai_lxrt.h>
@@ -458,10 +466,6 @@ If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long lon
 #define USP_WSZ2(x)    	((((unsigned long *)&(x))[HIGH] >> 23) & 0x7F)
 #define USP_WSZ1LL(x)   (((unsigned long *)&(x))[HIGH] & 0x40000000)
 #define USP_WSZ2LL(x)   (((unsigned long *)&(x))[HIGH] & 0x80000000)
-
-#define SRQ(x)   (((x) >> 16) & 0xFFF)
-#define NARG(x)  ((x) & 0xFFFF)
-#define INDX(x)  (((x) >> 28) & 0xF)
 
 struct rt_fun_entry {
     unsigned long long type;

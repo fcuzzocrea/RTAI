@@ -21,6 +21,8 @@
 #ifndef _RTAI_ASM_I386_LXRT_H
 #define _RTAI_ASM_I386_LXRT_H
 
+#define USE_LINUX_SYSCALL_FOR_LXRT
+
 #include <linux/version.h>
 
 #include <asm/rtai_vectors.h>
@@ -140,22 +142,28 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
     barrier();
 }
 
-#endif /* __KERNEL__ */
+#else /* !__KERNEL__ */
 
 /* NOTE: Keep the following routines unfold: this is a compiler
    compatibility issue. */
 
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
-    union rtai_lxrt_t retval;
-    RTAI_DO_TRAP(RTAI_LXRT_VECTOR,retval,srq,arg);
-    return retval;
+	union rtai_lxrt_t retval;
+#ifdef USE_LINUX_SYSCALL_FOR_LXRT
+	RTAI_DO_LXRT_CALL(srq, arg, retval);
+#else
+	RTAI_DO_TRAP(RTAI_LXRT_VECTOR, retval, srq, arg);
+#endif
+	return retval;
 }
 
 static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
 {
-    return _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
+	return _rtai_lxrt(ENCODE_LXRT_REQ(dynx, srq, lsize), arg);
 }
+
+#endif /* __KERNEL__ */
 
 #ifdef __cplusplus
 }

@@ -29,6 +29,7 @@ ACKNOWLEDGMENTS:
 #define USE_RTAI_TASKS  0
 #define ALLOW_RR        1
 #define ONE_SHOT        0
+#define NO_KTHREAD_B    1
 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -1667,14 +1668,14 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	rt_global_sti();
 }
 
-static inline void fast_schedule(RT_TASK *new_task, int cpuid)
+static inline void fast_schedule(RT_TASK *new_task, void *lnxtsk, int cpuid)
 {
 	RT_TASK *rt_current;
 	new_task->state |= RT_SCHED_READY;
 	enq_soft_ready_task(new_task);
 	sched_release_global_lock(cpuid);
 	LOCK_LINUX(cpuid);
-	(rt_current = &rt_linux_task)->lnxtsk = kthreadb[cpuid];
+	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
 	UEXECTIME();
 	rt_smp_current[cpuid] = new_task;
 	lxrt_context_switch(rt_current->lnxtsk, new_task->lnxtsk, cpuid);
@@ -1682,14 +1683,14 @@ static inline void fast_schedule(RT_TASK *new_task, int cpuid)
 	rtai_cli();
 }
 
-static void *task_to_make_hard[NR_RT_CPUS];
+static void *task_to_make_hard[NR_RT_CPUS + 1];
 static void lxrt_migration_handler (unsigned virq)
 {
 	int cpuid;
 	adeos_hw_cli();
 	rt_global_cli();
 	cpuid = hard_cpu_id();
-	fast_schedule(task_to_make_hard[cpuid], cpuid);
+	fast_schedule(task_to_make_hard[cpuid], task_to_make_hard[NR_RT_CPUS], cpuid);
 	rt_global_sti();
 	adeos_hw_sti();
 	task_to_make_hard[cpuid] = NULL;
@@ -1710,6 +1711,7 @@ static void kthread_b(int cpuid)
 	while (!endkthread) {
 		current->state = TASK_UNINTERRUPTIBLE;
 		schedule();
+		task_to_make_hard[NR_RT_CPUS] = kthreadb[cpuid];
 		while (klistp->out != klistp->in) {
     			task = klistp->task[klistp->out];
 			klistp->out = (klistp->out + 1) & (MAX_WAKEUP_SRQ - 1);
@@ -1849,11 +1851,13 @@ void steal_from_linux(RT_TASK *rt_task)
 	klistp->task[klistp->in] = rt_task;
 	klistp->in = (klistp->in + 1) & (MAX_WAKEUP_SRQ - 1);
 	rtai_sti();
+#if !NO_KTHREAD_B
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	wake_up_process(kthreadb[cpuid]);
 #else /* KERNEL_VERSION >= 2.6.0 */
 	default_wake_function(&kthreadb_q[cpuid], TASK_HARDREALTIME, 1, 0);
 #endif /* KERNEL_VERSION < 2.6.0 */
+#endif
 	current->state = TASK_HARDREALTIME;
 	schedule();
 	rt_task->is_hard = 1;
@@ -2053,6 +2057,23 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 	   won't be performed. */
 	return;
 
+#if NO_KTHREAD_B
+	do {
+		int cpuid;
+		struct klist_t *klistp = &klistb[cpuid = smp_processor_id()];
+		RT_TASK *task;
+		task_to_make_hard[NR_RT_CPUS] = current;
+		preempt_disable();
+		while (klistp->out != klistp->in) {
+			task = klistp->task[klistp->out];
+			klistp->out = (klistp->out + 1) & (MAX_WAKEUP_SRQ - 1);
+    			task_to_make_hard[cpuid] = task;
+			adeos_trigger_irq(lxrt_migration_virq);
+		}
+		preempt_enable_no_resched();
+	} while (0);
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     {
     struct mmreq *p;
@@ -2096,6 +2117,16 @@ static void lxrt_intercept_signal (adevinfo_t *evinfo)
 static void lxrt_intercept_syscall(adevinfo_t *evinfo)
 {
 	adeos_declare_cpuid;
+
+#ifdef USE_LINUX_SYSCALL_FOR_LXRT
+	extern asmlinkage long long rtai_lxrt_invoke (unsigned int, void *);
+	struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
+	if (r->orig_eax >= NR_syscalls) {
+		long long retval = rtai_lxrt_invoke(r->eax, (void *)r->ecx);
+		copy_to_user((void *)r->edx, &retval, sizeof(retval));
+		return;
+	}
+#endif
 
 	adeos_propagate_event(evinfo);
     	if (evinfo->domid != RTAI_DOMAIN_ID) {
@@ -2333,7 +2364,7 @@ static int lxrt_init(void)
 #endif  /* KERNEL_VERSION < 2.6.0 */
     adeos_catch_event(ADEOS_SCHEDULE_TAIL,&lxrt_intercept_schedule_tail);
     adeos_catch_event(ADEOS_SIGNAL_PROCESS,&lxrt_intercept_signal);
-    adeos_catch_event_from(&rtai_domain,ADEOS_SYSCALL_PROLOGUE,&lxrt_intercept_syscall);
+    adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&lxrt_intercept_syscall);
 
     return 0;
 }
@@ -2402,7 +2433,7 @@ static void lxrt_exit(void)
     adeos_catch_event(ADEOS_SIGNAL_PROCESS,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_TAIL,NULL);
-    adeos_catch_event_from(&rtai_domain,ADEOS_SYSCALL_PROLOGUE,NULL);
+    adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
     
     flags = rtai_critical_enter(NULL);
 

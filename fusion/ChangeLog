@@ -5,7 +5,7 @@
 	provide more debugging info to chase spurious latencies induced by
 	fault recovery.
 
-2005-02-23  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+2005-02-24 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* nucleus/timer.c (xntimer_set_sched): Remove superfluous check
 	for timer remoteness.

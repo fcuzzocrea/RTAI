@@ -1246,9 +1246,9 @@ int rt_task_notify (RT_TASK *task,
  * operating conditions; the rt_task_set_mode() service allows to
  * alter three of them, respectively controlling:
  *
- * - whether the task locks the rescheduling procedure.
- * - whether the task undergoes a round-robin scheduling;
- * - whether the task blocks the delivery of signals;
+ * - whether the task locks the rescheduling procedure,
+ * - whether the task undergoes a round-robin scheduling,
+ * - whether the task blocks the delivery of signals.
  *
  * To this end, rt_task_set_mode() takes a bitmask of mode bits to
  * clear for disabling the corresponding modes, and another one to set

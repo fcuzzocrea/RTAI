@@ -152,19 +152,23 @@ static struct {
 
 #define sched_get_global_lock(cpuid) \
 do { \
+	barrier(); \
 	if (!test_and_set_bit(cpuid, &rtai_cpu_lock)) { \
 		while (test_and_set_bit(31, &rtai_cpu_lock)) { \
 			cpu_relax(); \
 		} \
 	} \
+	barrier(); \
 } while (0)
 
 #define sched_release_global_lock(cpuid) \
 do { \
+	barrier(); \
 	if (test_and_clear_bit(cpuid, &rtai_cpu_lock)) { \
 		test_and_clear_bit(31, &rtai_cpu_lock); \
 		cpu_relax(); \
 	} \
+	barrier(); \
 } while (0)
 
 #else /* !CONFIG_SMP */
@@ -857,6 +861,7 @@ sched_soft:
 	}
 sched_exit:
 	rtai_cli();
+	sched_get_global_lock(cpuid);
 }
 
 

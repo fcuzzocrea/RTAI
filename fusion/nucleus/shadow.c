@@ -589,10 +589,10 @@ void xnshadow_relax (void)
 
     xnshadow_sched_wakeup(xnthread_archtcb(thread)->user_task);
     xnpod_renice_root(thread->cprio);
-    xnlock_get_irqsave(&nklock, s);
+    splhigh(s);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
     __adeos_schedule_back_root(current);
-    xnlock_put_irqrestore(&nklock, s);
+    splexit(s);
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */
@@ -1647,9 +1647,9 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
 		xnpod_resume_thread(thread,XNSUSP);
 	    }
 
-	xnshadow_schedule(); /* Schedule in the RTAI space. */
-
 	xnlock_put_irqrestore(&nklock,s);
+
+	xnshadow_schedule(); /* Schedule in the RTAI space. */
 	}
 }
 

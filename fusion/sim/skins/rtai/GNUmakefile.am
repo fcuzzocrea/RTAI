@@ -1,0 +1,20 @@
+vpath %.c @MVM_RTAIDIR@/skins/rtai
+
+CC = $(top_builddir)/gcic/gcic
+
+override CFLAGS = -g
+
+AM_CPPFLAGS = \
+	--gcic-backend=$(prefix)/libexec/gcic \
+	--skin-code \
+	-I$(srcdir)/.. \
+	-I$(top_srcdir)/include \
+	-I@MVM_RTAIDIR@/skins \
+	-I@MVM_RTAIDIR@/include
+
+lib_LIBRARIES = librtai_s.a
+
+nodist_librtai_s_a_SOURCES = \
+	module.c \
+	task.c \
+	timer.c

@@ -1,0 +1,79 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+includedir = $(prefix)/include/vrtx
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_SRC = \
+	event.c \
+	heap.c \
+	mb.c \
+	module.c \
+	mx.c \
+	pt.c \
+	queue.c \
+	sem.c \
+	task.c \
+	time.c
+
+include_HEADERS = \
+	vrtx.h
+
+noinst_HEADERS = \
+	defs.h \
+	event.h \
+	heap.h \
+	mb.h \
+	mx.h \
+	pt.h \
+	queue.h \
+	sem.h \
+	task.h
+
+rtai_vrtx$(modext): @RTAI_KBUILD_ENV@
+rtai_vrtx$(modext): $(libmodule_SRC)
+	@RTAI_KBUILD_CMD@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+all-local: rtai_vrtx$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_vrtx$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+if CONFIG_RTAI_OPT_VM
+
+lib_LIBRARIES = libvrtx.a
+
+nodist_libvrtx_a_SOURCES = \
+	event.c \
+	heap.c \
+	mb.c \
+	module.c \
+	mx.c \
+	pt.c \
+	queue.c \
+	sem.c \
+	task.c \
+	time.c
+
+libvrtx_a_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-D_GNU_SOURCE -D_REENTRANT -D__RTAI_UVM__ \
+	-I$(srcdir)/.. \
+	-I$(top_srcdir)/include \
+	-I../../include \
+	-I@RTAI_LINUX_DIR@/include
+
+libvrtx_a_AR = $(CROSS_COMPILE)ar cru
+
+endif
+
+EXTRA_DIST = doc Makefile.kbuild

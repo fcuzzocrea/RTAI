@@ -1,0 +1,54 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+includedir = $(prefix)/include/posix
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_SRC = \
+	module.c \
+	sched.c \
+	thread_attr.c \
+	thread.c \
+	mutex_attr.c \
+	mutex.c \
+	cond_attr.c \
+	cond.c \
+	sem.c \
+	cancel.c \
+	once.c \
+	signal.c \
+	tsd.c \
+	clock.c 
+
+include_HEADERS = \
+	posix.h
+
+noinst_HEADERS = \
+	cancel.h \
+	cond.h \
+	internal.h \
+	mutex.h \
+	sem.h \
+	signal.h \
+	thread.h \
+	tsd.h
+
+rtai_posix$(modext): @RTAI_KBUILD_ENV@
+rtai_posix$(modext): $(libmodule_SRC)
+	@RTAI_KBUILD_CMD@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+all-local: rtai_posix$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_posix$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+EXTRA_DIST = doc Makefile.kbuild

@@ -1,0 +1,59 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+includedir = $(prefix)/include/rtai
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_SRC = \
+	module.c \
+	syscall.c \
+	task.c \
+	timer.c
+
+include_HEADERS = \
+		task.h \
+		timer.h \
+		types.h \
+		syscall.h
+
+if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+libmodule_SRC += registry.c
+include_HEADERS += registry.h
+endif
+
+if CONFIG_RTAI_OPT_NATIVE_PIPE
+libmodule_SRC += pipe.c
+include_HEADERS += pipe.h
+endif
+
+if CONFIG_RTAI_OPT_NATIVE_SEM
+libmodule_SRC += sem.c
+include_HEADERS += sem.h
+endif
+
+if CONFIG_RTAI_OPT_NATIVE_EVENT
+libmodule_SRC += event.c
+include_HEADERS += event.h
+endif
+
+rtai_native$(modext): @RTAI_KBUILD_ENV@
+rtai_native$(modext): $(libmodule_SRC)
+	@RTAI_KBUILD_CMD@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+all-local: rtai_native$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_native$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+EXTRA_DIST = Makefile.kbuild
+
+SUBDIRS = lib

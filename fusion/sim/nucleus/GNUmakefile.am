@@ -1,0 +1,28 @@
+vpath %.c @MVM_RTAIDIR@/nucleus
+
+CC = $(top_builddir)/gcic/gcic
+
+override CFLAGS = -g
+
+lib_LIBRARIES = libnucleus_s.a
+
+# Shadow, dbridge and fusion supports make no sense compiling in
+# native simulation mode. Therefore, their respective files are not
+# included here.
+
+nodist_libnucleus_s_a_SOURCES = \
+			heap.c \
+			intr.c \
+			module.c \
+			pod.c \
+			synch.c \
+			thread.c \
+			timer.c
+
+AM_CPPFLAGS = \
+	--gcic-backend=$(prefix)/libexec/gcic \
+	--kernel-code \
+	-I$(top_srcdir)/include \
+	-I@MVM_RTAIDIR@/include
+
+libnucleus_s_a_LIBADD = ../adapter/adapter.o

@@ -1,0 +1,9 @@
+install-data-local:
+	$(INSTALL_HEADER) $(CONFIG_HEADER) $(DESTDIR)$(includedir)/rtai_config.h
+
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+distclean-local:
+	rm -f $(DESTDIR)$(includedir)/asm $(DESTDIR)$(includedir)/rtai_config.h
+endif
+
+SUBDIRS = nucleus

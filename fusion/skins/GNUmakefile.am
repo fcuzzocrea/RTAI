@@ -1,0 +1,27 @@
+OPTDIRS =
+
+if CONFIG_RTAI_SKIN_NATIVE
+OPTDIRS += rtai
+endif
+
+if CONFIG_RTAI_SKIN_POSIX
+OPTDIRS += posix
+endif
+
+if CONFIG_RTAI_SKIN_PSOS
+OPTDIRS += psos+
+endif
+
+if CONFIG_RTAI_SKIN_VXWORKS
+OPTDIRS += vxworks
+endif
+
+if CONFIG_RTAI_SKIN_VRTX
+OPTDIRS += vrtx
+endif
+
+if CONFIG_RTAI_SKIN_UITRON
+OPTDIRS += uitron
+endif
+
+SUBDIRS = $(OPTDIRS)

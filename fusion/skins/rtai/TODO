@@ -1,0 +1,6 @@
+o Detachement automatique des clients du skin lorsque le thread
+initial du processus se termine. Sinon => cat /proc/rtai/system part
+en faute car le skin ne peut pas être déréférencé de la table
+centrale (refcnt > 0).
+
+o Vérifier que __xn_verify() + __xn_copy_user() est ok.

@@ -1,0 +1,16 @@
+lib_LIBRARIES = librtai.a
+
+librtai_a_AR = $(CROSS_COMPILE)ar cru
+
+librtai_a_SOURCES = \
+	task.c \
+	timer.c \
+	sem.c
+
+librtai_a_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-D_GNU_SOURCE -D_REENTRANT \
+	-I$(srcdir)/../../../include/nucleus/vm \
+	-I../../../include \
+	-I$(top_srcdir)/include \
+	-I$(srcdir)/../..

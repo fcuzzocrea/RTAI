@@ -1,0 +1,13 @@
+includedir = $(prefix)/include/nucleus/asm-i386
+
+include_HEADERS = \
+		atomic.h \
+		fpu.h \
+		hal.h \
+		system.h \
+		syscall.h
+
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	rm -f $(DESTDIR)$(includedir)/../asm
+	$(LN_S) asm-i386 $(DESTDIR)$(includedir)/../asm

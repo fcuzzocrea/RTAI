@@ -1,0 +1,10 @@
+noinst_LIBRARIES = libadapter.a
+
+libadapter_a_SOURCES = adapter.cc
+
+INCLUDES = \
+	-D__RTAI_SIM__ \
+	@MVM_CXXFLAGS@ \
+	-I$(srcdir)/../include \
+	-I$(srcdir)/.. \
+	-I@MVM_RTAIDIR@/include

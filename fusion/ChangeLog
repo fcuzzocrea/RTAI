@@ -1,0 +1,301 @@
+2004-06-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* Move to GNA (http://www.gna.org/projects/rtai/).
+
+2004-06-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/system.h: New wrapper file for user-space
+	inclusion. Wraps to the nucleus/asm-uvm/ pseudo-architecture when
+	compiling the user-space VMs.
+
+	* include/nucleus/vm: Replaced and refactored by nucleus/asm-uvm/.
+
+2004-06-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/hal.h,
+	sim/include/nucleus/asm/system/h,
+	include/nucleus/vm/nucleus/asm/system.h: Add ffnz().
+
+2004-06-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_calibrate_sched): Make extern.
+
+2004-06-04  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* fusion: SMP port.
+	
+2004-06-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/mutex.c: Remove mutex support which proved to raise
+	performances issues, especially in SMP mode.
+
+	* nucleus/pod.c (xnpod_init_thread, xnpod_start_thread): Kill
+	arch-dependent cookie.
+
+	* include/nucleus/asm-i386/hal.h: Cleanup a few obsolete macros.
+
+	* nucleus/shadow.c: Discard autoswitch mode to RTAI upon return
+	from Linux; it proved useless by design. Additionally, this
+	removes the need for intercepting the syscall exit event.
+
+2004-06-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c: Wrap semaphore services.
+
+2004-06-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c: Add autocalibration code for scheduling and timer
+	latencies.
+
+	* fusion: Replace Xenomai-defined errcodes by standard POSIX ones.
+
+	* nucleus/pod.c (xnpod_start_timer): Make sure the user cannot
+	specify a host tick shorter than the timer precision.
+
+2004-05-31  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/uitron, skins/vrtx: Use interrupt masking instead of
+	an interface mutex.
+
+	* nucleus/timer.c (xntimer_do_timers): Postpone the propagation of
+	the host tick to the interrupt epilogue (xnintr_irq_handler()).
+
+2004-05-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai: Use interrupt masking instead of an interface mutex.
+
+	* nucleus/intr.c, nucleus/pod.c: Dismantle support for interrupt
+	service threads, which proved to be too higher an abstraction for
+	the nanokernel which would be better provided by the skins
+	themselves, using their own semantics (e.g. the fact that ISVCs
+	could not block is a major drawback wrt usability).
+	Performance-wise, handling the clock interrupt over an ISVC also
+	showed far too much overhead compared to a direct handling over
+	ISRs. This global change also means that clock ticks are now
+	directly handled over the timer ISR.
+
+	* nucleus/pod.c (xnpod_schedule_runnable): Clear the XNSCHED flag.
+
+2004-05-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_stop_timer): Freeze all running timers.
+
+	* nucleus/timer.c (xntimer_freeze): Add support for dequeuing all
+	running software timers upon request to stop the hardware timer.
+
+	* nucleus/pod.c (xnpod_init_thread): Make sure we don't accept
+	extraneous flags for the thread.
+
+2004-05-26  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* GNUmakefile.am (SUBDIRS): moved the distribution of the "config"
+	directory to config/GNUmakefile.am to avoid a conflict with the
+	phony config target which occured when running "make dist".
+
+2004-05-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c: Remove the obsolete and unfinished debugger
+	support and xnpod_freeze()/unfreeze() routines which are
+	definitely lethal in a mutex-enabled system, since one could
+	accidentally suspend a thread owning a mutex without competing for
+	the said mutex first.
+	(xnpod_init): Manage a "still initializing" bit so that we don't
+	try to refer to a half-baked pod from some Adeos event hooks that
+	may preempt xnpod_init()
+	[e.g. ADEOS_SCHEDULE_HEAD set up by the shadow support].
+
+2004-05-26  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/mutex.h (xnmutex_clear_lock, xnmutex_set_lock):
+	Make sure we account for any change of the mutex state
+	(pended/free) when reinstating its value.
+	
+2004-05-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/mutex.c (xnmutex_forget_sleeper): 
+
+	* nucleus/timer.c (xntimer_set_initial_date): Make sure interval
+	timers using an aperiodic time source use a constant epoch to
+	compute the time of the next shot, and not the current CPU time.
+	(xntimer_stop): Reprogram the aperiodic hardware for the next shot
+	if removing the heading timer.
+
+	* skins/rtai/task.c (__task_delete_hook): Destroy the periodic
+	timer.
+
+2004-05-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/fusion.c: Fix modifier of pthread_sleep_rt().
+
+	* nucleus/intr.c (xnintr_svc_thread): Ensure nested interrupts are
+	never lost.
+
+2004-05-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h (xnarch_program_timer_shot):
+	Make sure we do not set the timer for an elapse time shorter than
+	the calibrated value for programming it.
+	
+2004-05-23  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/task.c (rt_task_set_periodic): Properly test the
+	return value of xntimer_start() so that any attempt to set the
+	first periodic release point in the past is detected.
+
+	* include/nucleus/asm-i386/system.h: Properly scale the CPU
+	frequency-based input value to a PIT frequency-based one.
+
+2004-05-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_exit): Make sure to run the Linux
+	scheduling tail code before exiting a mapped task.
+
+2004-05-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_realtime_sysentry): Always propagate
+	regular Linux syscalls to the low domain stage handler if we are
+	running over the root thread.
+
+	* nucleus/shadow.c (get_calling_task): Improve robustness.
+
+2004-05-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/lib/fusion.c: Fix migration switches.
+
+2004-05-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/cond.c (cond_timedwait_internal): no longer try to
+	be smart about why xnsynch_sleep_on returned; cause a wakeup and
+	let the application decide. Move the functions saving and
+	restoring mutex lock counts to mutex.h.
+
+	* skins/posix/signal.c: replace the direct bitfields
+	manipulations by the macros setbits, clrbits et testbits.
+
+	* skins/vxworks/taskLib.c (testSafe): removed the useless and
+	harmful calls to xnpod_lock_sched and xnpod_unlock_sched.
+
+2004-05-18  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* rtai-doc/install-dist.rules, rtai-doc/docbook/docbook.rules :
+	suppressed empty 'for' loops to avoid a bug occuring with versions
+	of bash before 2.05a. For details, see :
+	http://www.unixguide.net/unix/bash/E7.shtml
+
+2004-05-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_map): Rely on the standard
+	xnthread_init() routine for having prepared the thread struct; do
+	not handcraft it anymore.
+
+	* skins/rtai/registry.c (rt_registry_get): Fix the return value.
+	(rt_registry_enter): Properly index the specified opaque object.
+
+	* nucleus/shadow.c (xnshadow_realtime_sysentry): Mark the syscalls
+	requiring a shadow context to run instead of the opposite.
+
+2004-05-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/module.c (__xeno_skin_init): Set up init sequence.
+
+	* skins/rtai/timer.c (rt_timer_start): Add call to start the
+	timer.
+
+	* skins/rtai/registry.c: Rework safe/unsafe handling.
+
+	* skins/rtai/pipe.c (rt_pipe_write): Flush the streamed output
+	prior to sending.
+
+	* include/nucleus/asm-i386/hal.h (rthal_ulldiv): Allow for
+	optional remainder.
+
+	* nucleus/shadow.c: Use a per-thread status bit to handle the kill
+	condition instead of polluting the signal namespace.
+
+	* nucleus/shadow.c (xnshadow_substitute_syscall): Fix timeout
+	handling in aperiodic mode.
+
+2004-05-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/pipe.c (rt_pipe_fill): Add flushable bit to prevent
+	multiple enqueing.
+
+	* skins/rtai/pipe.c (rt_pipe_close): Ensure the flushable data are
+	purged on pipe closure.
+
+	* arch/i386/hal/hal.c (rthal_pend_linux_srq): Return the TAS flag
+	for the operation.
+
+	* skins/rtai/pipe.c (rt_pipe_fill): Add primitive to use pipe in
+	byte stream mode from kernel to userland.
+
+	* arch/i386/hal/hal.c: Reserve SRQ #0 as invalid.
+
+	* skin/rtai/pipe.c: Provide support for inter-domain communication
+	channels.
+	
+	* skins/rtai, configure.in: Make registry support optional.
+
+2004-05-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/task.c: Return -ETIMEDOUT instead of -EAGAIN.
+
+	* configure.in, arch/i386/Kconfig: Make the total number of
+	registry slots configurable.
+	
+	* skins/rtai/registry.c: Add registry support.
+
+2004-05-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/hal.c: Fix placeholder names of IRQ affinity
+	services in UP case.
+
+	* skins/rtai/task.c: Allow passing implicit 'self' argument using
+	a NULL task pointer to rt_task_delete(), rt_task_suspend() and
+	rt_task_inquire().
+
+2004-05-12  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/timer.c: Deal with CPU ticks internally when running in
+	aperiodic mode, but still expose nanosecond parameters to the
+	upper interface.
+
+	* nucleus/timer.c, nucleus/thread.h: Make all time computations
+	consistent with the current internal unit.
+
+2004-05-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* fusion: Put baseline on the public CVS.
+
+2004-05-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* sim: Adapt simulation support. Discard (now useless)
+	VRTAI-related support.
+	
+	* nucleus/fusion.c: Integrate the fusion interface to the nucleus and
+	make it auto loadable/unloadable.
+
+2004-05-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/native: Start skin aimed at refactoring the original RTAI
+	API.
+	
+	* nucleus/heap.c (xnheap_free): Fix a potential race upon concurrent
+	release of the same block.
+
+2004-05-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix: Coding style updates.
+
+2004-05-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Ensure that rtai_srctree and rtai_srcdir are
+	always absolute paths. This fixes out-of-tree builds when
+	executing the configure script by hand.
+
+2004-04-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* fusion: Organize directory layout and adapt configuration and
+	build systems.
+
+	* Started: baseline from 3.1-test2.

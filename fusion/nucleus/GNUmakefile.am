@@ -1,0 +1,61 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_SRC = \
+		fusion.c \
+		dbridge.c \
+		heap.c \
+		intr.c \
+		module.c \
+		pod.c \
+		shadow.c \
+		synch.c \
+		thread.c \
+		timer.c
+
+rtai_nucleus$(modext): @RTAI_KBUILD_ENV@
+rtai_nucleus$(modext): $(libmodule_SRC)
+	@RTAI_KBUILD_CMD@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+all-local: rtai_nucleus$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_nucleus$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+if CONFIG_RTAI_OPT_VM
+
+lib_LIBRARIES = libnucleus.a
+
+nodist_libnucleus_a_SOURCES = \
+			heap.c \
+			intr.c \
+			module.c \
+			pod.c \
+			synch.c \
+			thread.c \
+			timer.c
+
+libnucleus_a_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-D_GNU_SOURCE -D_REENTRANT -D__RTAI_UVM__ \
+	-I$(srcdir)/../include \
+	-I../include
+
+libnucleus_a_AR = $(CROSS_COMPILE)ar cru
+
+endif
+
+EXTRA_DIST = Makefile.kbuild
+
+SUBDIRS = lib

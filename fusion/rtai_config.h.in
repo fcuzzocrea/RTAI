@@ -1,0 +1,119 @@
+/* rtai_config.h.in.  Generated from configure.in by autoheader.  */
+
+/* Build system alias */
+#undef CONFIG_RTAI_BUILD_STRING
+
+/* Compiler */
+#undef CONFIG_RTAI_COMPILER
+
+/* Host system alias */
+#undef CONFIG_RTAI_HOST_STRING
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_8254_LATENCY
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_APIC_LATENCY
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_FPU
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_NRCPUS
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SCHED_LATENCY
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_DEBUG
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_EVENT
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_PIPE
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_REGISTRY
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_SEM
+
+/* Kconfig */
+#undef CONFIG_RTAI_REVISION_LEVEL
+
+/* Kconfig */
+#undef CONFIG_RTAI_VERSION_MAJOR
+
+/* Kconfig */
+#undef CONFIG_RTAI_VERSION_MINOR
+
+#ifdef __IN_RTAI__
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#undef YYTEXT_POINTER
+
+#endif /* __IN_RTAI__ */
+
+#include <linux/config.h>

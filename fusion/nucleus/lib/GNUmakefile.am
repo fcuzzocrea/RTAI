@@ -1,0 +1,10 @@
+lib_LIBRARIES = libfusion.a
+
+libfusion_a_AR = $(CROSS_COMPILE)ar cru
+
+libfusion_a_SOURCES = fusion.c
+
+libfusion_a_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-I$(top_srcdir)/include \
+	-I../../include

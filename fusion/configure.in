@@ -1,0 +1,831 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_PREREQ(2.57)
+
+AC_INIT(fusion,0.9,rpm@xenomai.org)
+
+CONFIG_RTAI_VERSION_MAJOR=0
+CONFIG_RTAI_VERSION_MINOR=1
+CONFIG_RTAI_REVISION_LEVEL=0
+
+AC_CONFIG_HEADERS(rtai_config.h)
+AC_CONFIG_AUX_DIR(config/autoconf)
+AC_CONFIG_SRCDIR(nucleus/module.c)
+AC_PREFIX_DEFAULT(/usr/realtime)
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+AC_PROG_INSTALL
+
+AC_ARG_WITH(CC,
+    [  --with-cc=compiler      use specific C compiler],
+    [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([You must supply an argument to --with-cc.])
+	  ;;
+	esac
+	CC="$withval"
+    ])
+AC_PROG_CC
+CFLAGS=""
+
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_BUILD_STRING,"$build",[Build system alias])
+RTAI_BUILD_STRING="$build"
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_HOST_STRING,"$host",[Host system alias])
+RTAI_HOST_STRING="$host"
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_COMPILER,"`$CC -v 2>&1 | tail -n 1`",[Compiler])
+
+AM_INIT_AUTOMAKE([foreign no-exeext dist-bzip2])
+AM_MAINTAINER_MODE
+AC_PROG_LIBTOOL
+AM_PROG_AS
+AM_PROG_LEX
+
+arch_have_sim=
+
+case "$host" in
+ i*86*-*)
+	RTAI_TARGET_ARCH=i386
+	wanted_kernel_arch=CONFIG_X86
+	arch_have_sim=y
+        ;;
+ *) echo ""
+   echo "*******************************************"
+   echo "Still unsupported host: $host -- Sorry."
+   echo "*******************************************"
+   echo ""
+   exit 1;;
+esac
+
+dnl
+dnl Load the RTAI configuration.
+dnl
+
+RTAI_KCONFIG_FILE=$srcdir/arch/$RTAI_TARGET_ARCH/defconfig
+kconfig_type=default
+
+AC_ARG_WITH(kconfig-file,
+    [  --with-kconfig-file=<kconfig-file>      KConfig parameter file],
+    [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([You must supply an argument to --with-kconfig-file.])
+	  ;;
+	esac
+	RTAI_KCONFIG_FILE="$withval"
+	kconfig_type=supplied
+    ])
+
+AC_MSG_CHECKING([for RTAI Kconfig file])
+if test \! -f $RTAI_KCONFIG_FILE; then
+    AC_MSG_ERROR([Kconfig-file $RTAI_KCONFIG_FILE not found -- --with-kconfig-file sets Kconfig file])
+fi
+. $RTAI_KCONFIG_FILE
+AC_MSG_RESULT([$RTAI_KCONFIG_FILE ($kconfig_type)])
+
+dnl
+dnl Installation directory for modules
+dnl
+
+AC_MSG_CHECKING([for module installation directory])
+
+AC_ARG_WITH(module-dir,
+    [  --with-module-dir=<module-dir>      Installation directory for modules],
+    [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([You must supply an argument to --with-module-dir.])
+	  ;;
+	esac
+	RTAI_MODULE_DIR="$withval"
+    ])
+
+dnl Are we building into the source tree?
+if test "$srcdir" = `pwd`; then
+   CONFIG_RTAI_OLD_FASHIONED_BUILD=y
+else
+   CONFIG_RTAI_OLD_FASHIONED_BUILD=
+fi
+
+dnl Set a default module dir if unspecified
+if test "x" = "x$RTAI_MODULE_DIR"
+then
+   RTAI_MODULE_DIR='${exec_prefix}/modules'
+fi
+
+AC_MSG_RESULT([$RTAI_MODULE_DIR])
+CONFIG_RTAI_MODULE_DIR=$RTAI_MODULE_DIR
+
+dnl
+dnl Process the Linux kernel configuration
+dnl
+
+AC_MSG_CHECKING([for Linux source tree])
+
+dnl CONFIG_MODULES has been forcibly set in RTAI's configuration
+dnl file, therefore we must unset it before later checking if the kernel
+dnl actually defined it as required too.
+unset CONFIG_MODULES
+
+RTAI_LINUX_DIR=$CONFIG_RTAI_LINUXDIR
+
+AC_ARG_WITH(linux-dir,
+    [  --with-linux-dir=<linux-dir>      RTAI-enabled Linux kernel tree],
+    [
+	case "$withval" in
+	"" | y | ye | yes | n | no)
+	    AC_MSG_ERROR([You must supply an argument to --with-linux-dir.])
+	  ;;
+	esac
+	RTAI_LINUX_DIR="$withval"
+    ])
+
+if test x${RTAI_LINUX_DIR} = x; then
+   echo
+   AC_MSG_ERROR([Linux kernel tree not specified -- use --with-linux-dir])
+fi
+
+if test \! -r ${RTAI_LINUX_DIR}/Makefile; then
+   echo
+   AC_MSG_ERROR([No Linux kernel tree in ${RTAI_LINUX_DIR}])
+fi
+
+eval linux_`grep '^EXTRAVERSION =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^PATCHLEVEL =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^SUBLEVEL =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^VERSION =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
+
+dnl Load Linux kernel configuration now, before config symbols are tested.
+if test \! -r ${RTAI_LINUX_DIR}/.config; then
+   AC_MSG_RESULT([invalid])
+   AC_MSG_ERROR([$RTAI_LINUX_DIR is not configured -- --with-linux-dir sets linux-dir])
+fi
+
+. $RTAI_LINUX_DIR/.config
+
+RTAI_LINUX_VERSION="$linux_VERSION.$linux_PATCHLEVEL.$linux_SUBLEVEL"
+AC_MSG_RESULT([$RTAI_LINUX_DIR (kernel ${RTAI_LINUX_VERSION}${CONFIG_SMP:+-SMP})])
+CONFIG_RTAI_LINUXDIR=$RTAI_LINUX_DIR
+
+dnl
+dnl Check the kernel has been Adeos-enabled.
+dnl
+
+AC_MSG_CHECKING([for Adeos support])
+
+if test -r $RTAI_LINUX_DIR/include/linux/adeos.h; then
+   AC_MSG_RESULT([ok])
+   CONFIG_RTAI_ADEOS=y
+else
+     AC_MSG_ERROR([No Adeos support found in $RTAI_LINUX_DIR/include/linux/adeos.h -- Please remedy.])
+fi
+
+dnl
+dnl We need Linux 2.6.
+dnl
+
+case "$RTAI_LINUX_VERSION" in
+  2.6.*)
+    ;;
+  *) 
+    AC_MSG_ERROR([Unsupported kernel version $RTAI_LINUX_VERSION])
+esac
+
+dnl
+dnl Perform a few sanity checks.
+dnl
+
+arch_select=`eval echo \\$$wanted_kernel_arch`
+if test x$arch_select = x; then
+   echo
+   echo "************************************************************"
+   echo " The target RTAI architecture ($RTAI_TARGET_ARCH) does not match"
+   echo " the kernel architecture selected in $RTAI_LINUX_DIR"
+   echo " (i.e. $wanted_kernel_arch is undefined)"
+   echo "************************************************************"
+   exit 1
+fi
+
+if test x${CONFIG_MODULES} = x ; then
+  AC_MSG_ERROR([Please set CONFIG_MODULES for $RTAI_LINUX_DIR and rebuild your kernel])
+fi
+
+if test x${CONFIG_ADEOS_CORE} = x; then
+   AC_MSG_ERROR([Please activate the Adeos support in $RTAI_LINUX_DIR and rebuild your kernel])
+fi
+
+dnl Some sanity checks again. We are only rearranging defaults and
+dnl discarding preposterous settings here, previous user selection
+dnl is kept as long as it is sane.
+
+if test x$CONFIG_SMP = x; then
+    CONFIG_RTAI_HW_NRCPUS=1
+else
+    CONFIG_RTAI_HW_NRCPUS=2
+fi
+if test "$CONFIG_X86" = y; then
+   if test x$CONFIG_X86_CMPXCHG = x; then
+      AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cmpxchg() is missing, need >= CONFIG_M486)])
+   fi
+   if test x$CONFIG_X86_WP_WORKS_OK = x; then
+      AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cannot rely on WP bit, need >= CONFIG_M486)])
+   fi
+fi
+if test x${CONFIG_FRAME_POINTER} = xy ; then
+   AC_MSG_ERROR([RTAI won't work properly if CONFIG_FRAME_POINTER is enabled in the kernel configuration])
+fi
+
+AC_MSG_CHECKING(for POSIX skin)
+AC_ARG_ENABLE(posix-skin,
+	[ --enable-posix-skin	Build POSIX skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_SKIN_POSIX=y ;;
+	*) unset CONFIG_RTAI_SKIN_POSIX ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_SKIN_POSIX:-no})
+
+AC_MSG_CHECKING(for RTAI skin)
+AC_ARG_ENABLE(rtai-skin,
+	[ --enable-rtai-skin	Build RTAI skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_SKIN_NATIVE=y ;;
+	*) unset CONFIG_RTAI_SKIN_NATIVE ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_SKIN_NATIVE:-no})
+
+AC_MSG_CHECKING(for native registry support)
+AC_ARG_ENABLE(native-registry,
+	[ --enable-native-registry	Enable registry support for native skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_NATIVE_REGISTRY=y ;;
+	*) unset CONFIG_RTAI_OPT_NATIVE_REGISTRY ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_REGISTRY:-no})
+
+if test x$CONFIG_RTAI_OPT_NATIVE_REGISTRY = xy; then
+AC_MSG_CHECKING(for native registry slots)
+AC_ARG_ENABLE(native-registry-slots,
+	[ --enable-native-registry-slots	Set maximum number of registry slots],
+	[case "$enableval" in
+ changequote(,)dnl
+	[0-9]*) CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-native-registry-slots=<number>]) ;;
+	esac])
+if test x$CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS=512
+fi
+AC_MSG_RESULT($CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS)
+fi
+
+AC_MSG_CHECKING(for native pipe support)
+AC_ARG_ENABLE(native-pipe,
+	[ --enable-native-pipe	Enable pipe support for native skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_NATIVE_PIPE=y ;;
+	*) unset CONFIG_RTAI_OPT_NATIVE_PIPE ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_PIPE:-no})
+
+if test x$CONFIG_RTAI_OPT_NATIVE_PIPE = xy; then
+AC_MSG_CHECKING(for size of native pipe fill space)
+AC_ARG_ENABLE(native-pipe-bufsz,
+	[ --enable-native-pipe-bufsz	Set size of pipe fill space],
+	[case "$enableval" in
+ changequote(,)dnl
+	[0-9]*) CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-native-pipe-bufsz=<number>]) ;;
+	esac])
+if test x$CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ=4096
+fi
+AC_MSG_RESULT($CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ)
+fi
+
+AC_MSG_CHECKING(for native semaphore support)
+AC_ARG_ENABLE(native-sem,
+	[ --enable-native-sem	Enable semaphore support for native skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_NATIVE_SEM=y ;;
+	*) unset CONFIG_RTAI_OPT_NATIVE_SEM ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_SEM:-no})
+
+AC_MSG_CHECKING(for native event flag support)
+AC_ARG_ENABLE(native-event,
+	[ --enable-native-event	Enable event flag support for native skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_NATIVE_EVENT=y ;;
+	*) unset CONFIG_RTAI_OPT_NATIVE_EVENT ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_EVENT:-no})
+
+AC_MSG_CHECKING(for pSOS+ skin)
+AC_ARG_ENABLE(psos-skin,
+	[ --enable-psos-skin	Build pSOS+ emulator],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_SKIN_PSOS=y ;;
+	*) unset CONFIG_RTAI_SKIN_PSOS ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_SKIN_PSOS:-no})
+
+AC_MSG_CHECKING(for VxWorks skin)
+AC_ARG_ENABLE(vxworks-skin,
+	[ --enable-vxworks-skin	Build VxWorks emulator],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_SKIN_VXWORKS=y ;;
+	*) unset CONFIG_RTAI_SKIN_VXWORKS ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_SKIN_VXWORKS:-no})
+
+AC_MSG_CHECKING(for VRTX skin)
+AC_ARG_ENABLE(vrtx-skin,
+	[ --enable-vrtx-skin	Build VRTX emulator],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_SKIN_VRTX=y ;;
+	*) unset CONFIG_RTAI_SKIN_VRTX ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_SKIN_VRTX:-no})
+
+AC_MSG_CHECKING(for uITRON skin)
+AC_ARG_ENABLE(uitron-skin,
+	[ --enable-uitron-skin	Build uITRON API skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_SKIN_UITRON=y ;;
+	*) unset CONFIG_RTAI_SKIN_UITRON ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_SKIN_UITRON:-no})
+
+AC_MSG_CHECKING(for virtual machines in user-space)
+AC_ARG_ENABLE(user-vm,
+	[ --enable-user-vm	Build user-space VMs],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_VM=y ;;
+	*) unset CONFIG_RTAI_OPT_VM ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_VM:-no})
+
+AC_MSG_CHECKING(for RTAI nucleus debug support)
+AC_ARG_ENABLE(nucleus-debug,
+	[ --enable-nucleus-debug	Enable RTAI nucleus debug],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_DEBUG=y ;;
+	*) unset CONFIG_RTAI_OPT_DEBUG ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_DEBUG:-no})
+
+AC_MSG_CHECKING(for number of CPUs (SMP-only))
+AC_ARG_ENABLE(cpus,
+	[ --enable-cpus		Enable CPUs],
+	[case "$enableval" in
+ changequote(,)dnl
+	[1-8]) CONFIG_RTAI_HW_NRCPUS=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-cpus=<number-of-CPUs>]) ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_NRCPUS:-1})
+
+AC_MSG_CHECKING(for FPU support)
+AC_ARG_ENABLE(fpu,
+	[ --enable-fpu		Enable FPU support],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_FPU=y ;;
+	*) unset CONFIG_RTAI_HW_FPU ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_FPU:-no})
+
+AC_MSG_CHECKING(for debug symbols in kernel modules)
+AC_ARG_ENABLE(module-debug,
+	[ --enable-module-debug	Enable debug information in kernel modules],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_KSYMS=y ;;
+	*) unset CONFIG_RTAI_OPT_KSYMS ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_KSYMS:-no})
+
+AC_MSG_CHECKING(for debug symbols in user-space programs)
+AC_ARG_ENABLE(user-debug,
+	[ --enable-user-debug	Enable debug information in user-space programs],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_USYMS=y ;;
+	*) unset CONFIG_RTAI_OPT_USYMS ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_USYMS:-no})
+
+if test "$CONFIG_X86" = y; then
+
+AC_MSG_CHECKING(for 8254 tuning latency)
+AC_ARG_ENABLE(8254-latency,
+	[ --enable-8254-latency	Set 8254 tuning latency],
+	[case "$enableval" in
+ changequote(,)dnl
+	[0-9]*) CONFIG_RTAI_HW_8254_LATENCY=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-8254-latency=<nanoseconds>]) ;;
+	esac])
+if test x$CONFIG_RTAI_HW_8254_LATENCY = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_HW_8254_LATENCY=4700
+fi
+if test $CONFIG_RTAI_HW_8254_LATENCY = 0; then
+   AC_MSG_RESULT(autocalibration)
+else
+   AC_MSG_RESULT($CONFIG_RTAI_HW_8254_LATENCY)
+fi
+
+AC_MSG_CHECKING(for APIC tuning latency)
+AC_ARG_ENABLE(apic-latency,
+	[ --enable-apic-latency	Set APIC tuning latency],
+	[case "$enableval" in
+ changequote(,)dnl
+	[0-9]*) CONFIG_RTAI_HW_APIC_LATENCY=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-apic-latency=<nanoseconds>]) ;;
+	esac])
+if test x$CONFIG_RTAI_HW_APIC_LATENCY = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_HW_APIC_LATENCY=3944
+fi
+if test $CONFIG_RTAI_HW_APIC_LATENCY = 0; then
+   AC_MSG_RESULT(autocalibration)
+else
+   AC_MSG_RESULT($CONFIG_RTAI_HW_APIC_LATENCY)
+fi
+
+fi
+
+AC_MSG_CHECKING(for scheduling latency)
+AC_ARG_ENABLE(sched-latency,
+	[ --enable-sched-latency	Set scheduling latency],
+	[case "$enableval" in
+ changequote(,)dnl
+	[0-9]*) CONFIG_RTAI_HW_SCHED_LATENCY=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-sched-latency=<nanoseconds>]) ;;
+	esac])
+if test x$CONFIG_RTAI_HW_SCHED_LATENCY = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_HW_SCHED_LATENCY=5000
+fi
+if test $CONFIG_RTAI_HW_SCHED_LATENCY = 0; then
+   AC_MSG_RESULT(autocalibration)
+else
+   AC_MSG_RESULT($CONFIG_RTAI_HW_SCHED_LATENCY)
+fi
+
+dnl Catch sub-package flags
+
+AC_MSG_CHECKING(for RTAI simulator)
+AC_ARG_ENABLE(sim,
+	[ --enable-sim		Build RTAI simulator (MVM) ],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_MVM=y ;;
+	*) unset CONFIG_RTAI_MVM ;;
+	esac])
+
+unset RTAI_MAYBE_SIMDIR
+if test \! -d $srcdir/sim; then
+    if test x$CONFIG_RTAI_MVM = xy; then
+        AC_MSG_ERROR([simulator is missing.])
+    fi
+    AC_MSG_RESULT([not present])
+else
+    if test x$CONFIG_RTAI_MVM = xy; then
+	RTAI_MAYBE_SIMDIR=sim
+	export CONFIG_RTAI_MVM_DEBUG
+    	export CONFIG_RTAI_MVM_GCC_TARBALL
+	export CONFIG_RTAI_OPT_DEBUG
+    fi
+    AC_MSG_RESULT(${CONFIG_RTAI_MVM:-no})
+fi
+if test x$arch_have_sim = x -a x$CONFIG_RTAI_MVM = xy; then
+   AC_MSG_ERROR([simulator is not available on this architecture.])
+fi
+AC_SUBST(RTAI_MAYBE_SIMDIR)
+
+dnl Documentation package.
+
+if test \! -d $srcdir/doc; then 
+    unset RTAI_MAYBE_DOCDIR
+else
+    RTAI_MAYBE_DOCDIR=doc
+fi
+AC_SUBST(RTAI_MAYBE_DOCDIR)
+
+AC_MSG_CHECKING(for Doxygen documentation)
+AC_ARG_ENABLE(doc,
+	[ --enable-dox-doc	Build Doxygen documentation],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_DOC_DOX=y ;;
+	*) unset CONFIG_RTAI_DOC_DOX ;;
+	esac])
+
+if test \! -d $srcdir/doc; then
+    if test x$CONFIG_RTAI_DOC_DOX = xy ; 
+    then
+        AC_MSG_ERROR([documentation tree is missing.])
+    fi
+    AC_MSG_RESULT([not present])
+else
+    AC_MSG_RESULT(${CONFIG_RTAI_DOC_DOX:-no})
+fi
+
+AC_CHECK_PROG(DOXYGEN, doxygen, doxygen)
+
+if test x${CONFIG_RTAI_DOC} = xy -a x"$DOXYGEN" = x; then
+   AC_MSG_ERROR([Missing the Doxygen tools to generate the RTAI documentation.])
+fi
+
+AC_CHECK_PROG(DOXYGEN_HAVE_DOT, dot, YES, NO)
+if test x"$DOXYGEN_HAVE_DOT" = xYES; then
+   DOXYGEN_SHOW_INCLUDE_FILES=NO
+else
+   DOXYGEN_SHOW_INCLUDE_FILES=YES
+fi
+
+case "$CONFIG_RTAI_DOC_DBX" in
+y | ye | yes)
+    DBX_DOC=yes;;
+*)
+    DBX_DOC="";;
+esac
+DBX_NET="$CONFIG_RTAI_DBX_NET"
+DBX_ROOT="$CONFIG_RTAI_DBX_ROOT"
+DBX_XSL_ROOT="$CONFIG_RTAI_DBX_XSL_ROOT"
+DBX_DOC_INIT(doc/docbook, doc/generated, 4.2)
+
+AC_MSG_CHECKING(for LaTeX documentation)
+AC_ARG_ENABLE(doc,
+	[ --enable-latex-doc	Build LaTeX documentation],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_DOC_LATEX=y ;;
+	*) unset CONFIG_RTAI_DOC_LATEX ;;
+	esac])
+
+if test \! -d $srcdir/doc; then
+    if test x$CONFIG_RTAI_DOC_LATEX = xy; 
+    then
+        AC_MSG_ERROR([documentation tree is missing.])
+    fi
+    AC_MSG_RESULT([not present])
+else
+    AC_MSG_RESULT(${CONFIG_RTAI_DOC_LATEX:-no})
+fi
+
+AC_MSG_CHECKING(whether using LaTeX non-stop mode)
+AC_ARG_ENABLE(verbose-latex,
+        [ --enable-verbose-latex Uses LaTeX non-stop mode],
+        [case "$enableval" in
+        y | yes) CONFIG_RTAI_DOC_LATEX_NONSTOP=y ;;
+        *) unset CONFIG_RTAI_DOC_LATEX_NONSTOP ;;
+        esac])
+AC_MSG_RESULT(${CONFIG_RTAI_DOC_LATEX_NONSTOP:-no})
+
+if test x${CONFIG_RTAI_DOC_LATEX_NONSTOP} = xy; then
+   LATEX_BATCHMODE=NO
+   LATEX_MODE=nonstopmode
+else
+   LATEX_BATCHMODE=YES
+   LATEX_MODE=batchmode
+fi
+
+dnl We need to know this before building the APIC support
+dnl into the SMP scheduler for the x86 platform. Autoconf imposes
+dnl us to define all Automake conditionals...unconditionally. e.g.
+dnl regardless of the current architecture setup.
+AM_CONDITIONAL(CONFIG_X86_LOCAL_APIC,[test -n "$CONFIG_X86_LOCAL_APIC"])
+
+dnl
+dnl Build a Kconfig file corresponding to the current configuration
+dnl if none exists.
+dnl
+
+if test \! -r .rtai_config; then
+   set | grep -e '^CONFIG_RTAI' -e '^CONFIG_MODULES' | \
+   sed -e 's,\(.*\)=\(.*\)$,\1=\"\2\",' > .rtai_config
+fi
+
+dnl
+dnl Produce the info needed to build rtai_config.h
+dnl
+
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_VERSION_MAJOR,$CONFIG_RTAI_VERSION_MAJOR,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_VERSION_MINOR,$CONFIG_RTAI_VERSION_MINOR,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_REVISION_LEVEL,$CONFIG_RTAI_REVISION_LEVEL,[Kconfig])
+
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_NRCPUS,$CONFIG_RTAI_HW_NRCPUS,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_8254_LATENCY,$CONFIG_RTAI_HW_8254_LATENCY,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_APIC_LATENCY,$CONFIG_RTAI_HW_APIC_LATENCY,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_SCHED_LATENCY,$CONFIG_RTAI_HW_SCHED_LATENCY,[Kconfig])
+test \! x$CONFIG_RTAI_HW_FPU = x && AC_DEFINE(CONFIG_RTAI_HW_FPU,1,[Kconfig])
+
+test x$CONFIG_RTAI_OPT_DEBUG = xy && AC_DEFINE(CONFIG_RTAI_OPT_DEBUG,1,[Kconfig])
+
+dnl Native skin options
+test \! x$CONFIG_RTAI_OPT_NATIVE_REGISTRY = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_REGISTRY,1,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS,$CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_NATIVE_PIPE = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_PIPE,1,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ,$CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_NATIVE_SEM = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_SEM,1,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_NATIVE_EVENT = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_EVENT,1,[Kconfig])
+
+dnl CAUTION: We need to have the CONFIG_RTAI_XX symbols always defined when
+dnl the configuration header is read, but we want the Autoconf-produced
+dnl symbols to be defined only when compiling RTAI. This way, we won't
+dnl pollute the namespace with the latter when our configuration header is
+dnl indirectly included by a client application. To achieve this, we ask
+dnl autoheader to produce the following header structure:
+dnl #define CONFIG_XX
+dnl #define CONFIG_XX ...
+dnl #ifdef __IN_RTAI__
+dnl <Autoconf-defined symbols>
+dnl #endif /* __IN_RTAI__ */
+dnl This is quite a hack since we have to rely on the fact that
+dnl all Autoconf-generated symbols are lexicographically sorted
+dnl after CONFIG_RTAI_XX ones, but, well...
+
+dnl Use a key which will cause the verbatim string to be put after
+dnl all CONFIG_RTAI_XX symbols, but still before any Autoconf-generated
+dnl symbol, hence CONFIG_RTAI___.
+AH_VERBATIM(CONFIG_RTAI___,[#ifdef __IN_RTAI__])
+
+dnl Now we can close the conditional section, right after all
+dnl Autoconf-generated symbols have been listed.
+AH_BOTTOM([#endif /* __IN_RTAI__ */])
+
+AH_BOTTOM([#include <linux/config.h>])
+
+dnl
+dnl Produce automake conditionals.
+dnl
+
+dnl CPU architecture
+AM_CONDITIONAL(CONFIG_X86,[test "$CONFIG_X86" = y])
+AM_CONDITIONAL(CONFIG_SMP,[test "$CONFIG_SMP" = y])
+
+dnl Supported skins
+AM_CONDITIONAL(CONFIG_RTAI_SKIN_POSIX,[test x$CONFIG_RTAI_SKIN_POSIX = xy])
+AM_CONDITIONAL(CONFIG_RTAI_SKIN_NATIVE,[test x$CONFIG_RTAI_SKIN_NATIVE = xy])
+AM_CONDITIONAL(CONFIG_RTAI_SKIN_PSOS,[test x$CONFIG_RTAI_SKIN_PSOS = xy])
+AM_CONDITIONAL(CONFIG_RTAI_SKIN_VXWORKS,[test x$CONFIG_RTAI_SKIN_VXWORKS = xy])
+AM_CONDITIONAL(CONFIG_RTAI_SKIN_VRTX,[test x$CONFIG_RTAI_SKIN_VRTX = xy])
+AM_CONDITIONAL(CONFIG_RTAI_SKIN_UITRON,[test x$CONFIG_RTAI_SKIN_UITRON = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_VM,[test x$CONFIG_RTAI_OPT_VM = xy])
+
+dnl Native skin options
+AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_REGISTRY,[test x$CONFIG_RTAI_OPT_NATIVE_REGISTRY = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_PIPE,[test x$CONFIG_RTAI_OPT_NATIVE_PIPE = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_SEM,[test x$CONFIG_RTAI_OPT_NATIVE_SEM = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_EVENT,[test x$CONFIG_RTAI_OPT_NATIVE_EVENT = xy])
+
+dnl Documentation.
+AM_CONDITIONAL(CONFIG_RTAI_DOC_DOX,[test "$CONFIG_RTAI_DOC_DOX" = y])
+AM_CONDITIONAL(CONFIG_RTAI_DOC_LATEX,[test "$CONFIG_RTAI_DOC_LATEX" = y])
+
+dnl Maintenance symbols and profiles
+AM_CONDITIONAL(CONFIG_RTAI_MAINT,[test "$CONFIG_RTAI_MAINT" = y])
+AM_CONDITIONAL(CONFIG_RTAI_MAINT_PMA,[test "$CONFIG_RTAI_MAINT_PMA" = y])
+AM_CONDITIONAL(CONFIG_RTAI_MAINT_PGM,[test "$CONFIG_RTAI_MAINT_PGM" = y])
+AM_CONDITIONAL(CONFIG_RTAI_OLD_FASHIONED_BUILD,[test "$CONFIG_RTAI_OLD_FASHIONED_BUILD" = y])
+
+dnl
+dnl Define arch-specific CFLAGS and links
+dnl
+
+RTAI_MODULE_EXT=.ko
+RTAI_KBUILD_ENV='src2obj = $(patsubst %.$(1),%.o,$(filter %.$(1),$(call notdir,$(2))))'
+RTAI_KBUILD_CMD="@for src in \$^; do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
+		    rm -f $RTAI_LINUX_DIR/.tmp_versions/rtai_*.mod $RTAI_LINUX_DIR/.tmp_versions/*_rt.mod; \
+                    \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC \
+		    SUBDIRS=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
+		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
+RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd'
+
+AC_MSG_CHECKING([for kernel module extension])
+AC_MSG_RESULT([$RTAI_MODULE_EXT])
+
+AC_MSG_CHECKING([for RTAI target architecture])
+
+RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include"
+
+case $RTAI_TARGET_ARCH in
+ i386)
+	RTAI_TARGET_SUBARCH=
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
+	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+        ;;
+esac
+
+if test x$CONFIG_RTAI_OPT_KSYMS = xy; then
+   RTAI_KMOD_CFLAGS="-g $RTAI_KMOD_CFLAGS"
+fi
+
+if test x$CONFIG_RTAI_OPT_USYMS = xy; then
+   RTAI_USER_CFLAGS="-g $RTAI_USER_CFLAGS"
+else
+   RTAI_USER_CFLAGS="-O2 $RTAI_USER_CFLAGS"
+fi
+
+RTAI_KMOD_APP_CFLAGS=$RTAI_KMOD_CFLAGS
+RTAI_USER_APP_CFLAGS=$RTAI_USER_CFLAGS
+RTAI_KMOD_CFLAGS="$RTAI_KMOD_CFLAGS -D__IN_RTAI__"
+RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -D__IN_RTAI__"
+
+AC_CONFIG_LINKS(include/nucleus/asm:include/nucleus/asm-$RTAI_TARGET_ARCH)
+
+if test x$CONFIG_RTAI_OLD_FASHIONED_BUILD = xy; then
+   AC_CONFIG_LINKS(include/rtai_config.h:rtai_config.h)
+fi
+
+if test x$RTAI_TARGET_SUBARCH = x; then
+   AC_MSG_RESULT([$RTAI_TARGET_ARCH])
+else
+   AC_MSG_RESULT([$RTAI_TARGET_ARCH ($RTAI_TARGET_SUBARCH)])
+fi
+
+AC_CONFIG_LINKS(arch/$RTAI_TARGET_ARCH/hal/Makefile:arch/$RTAI_TARGET_ARCH/hal/Makefile.kbuild)
+AC_CONFIG_LINKS(nucleus/Makefile:nucleus/Makefile.kbuild)
+AC_CONFIG_LINKS(skins/posix/Makefile:skins/posix/Makefile.kbuild)
+AC_CONFIG_LINKS(skins/rtai/Makefile:skins/rtai/Makefile.kbuild)
+AC_CONFIG_LINKS(skins/psos+/Makefile:skins/psos+/Makefile.kbuild)
+AC_CONFIG_LINKS(skins/uitron/Makefile:skins/uitron/Makefile.kbuild)
+AC_CONFIG_LINKS(skins/vrtx/Makefile:skins/vrtx/Makefile.kbuild)
+AC_CONFIG_LINKS(skins/vxworks/Makefile:skins/vxworks/Makefile.kbuild)
+
+dnl
+dnl Build the Makefiles
+dnl
+
+AC_SUBST(CROSS_COMPILE)
+AC_SUBST(DOXYGEN_SHOW_INCLUDE_FILES)
+AC_SUBST(DOXYGEN_HAVE_DOT)
+AC_SUBST(DOXYGEN)
+AC_SUBST(LATEX_BATCHMODE)
+AC_SUBST(LATEX_MODE)
+
+AC_SUBST(RTAI_BUILD_STRING)
+AC_SUBST(RTAI_HOST_STRING)
+AC_SUBST(RTAI_TARGET_ARCH)
+AC_SUBST(RTAI_TARGET_SUBARCH)
+AC_SUBST(RTAI_KMOD_CFLAGS)
+AC_SUBST(RTAI_USER_CFLAGS)
+AC_SUBST(RTAI_KMOD_APP_CFLAGS)
+AC_SUBST(RTAI_USER_APP_CFLAGS)
+AC_SUBST(RTAI_FP_CFLAGS)
+AC_SUBST(RTAI_LINUX_DIR)
+AC_SUBST(RTAI_LINUX_VERSION)
+AC_SUBST(RTAI_MODULE_DIR)
+AC_SUBST(RTAI_MODULE_EXT)
+AC_SUBST(RTAI_KBUILD_ENV)
+AC_SUBST(RTAI_KBUILD_CMD)
+AC_SUBST(RTAI_KBUILD_CLEAN)
+
+AC_CONFIG_FILES([ \
+	GNUmakefile \
+	config/GNUmakefile \
+	arch/GNUmakefile \
+        arch/i386/GNUmakefile \
+	arch/i386/hal/GNUmakefile \
+	include/GNUmakefile \
+	include/nucleus/GNUmakefile \
+	include/nucleus/asm-i386/GNUmakefile \
+	include/nucleus/asm-uvm/GNUmakefile \
+	nucleus/GNUmakefile \
+	nucleus/lib/GNUmakefile \
+	scripts/GNUmakefile \
+	scripts/rtai-config \
+	skins/GNUmakefile \
+       	skins/posix/GNUmakefile \
+       	skins/rtai/GNUmakefile \
+       	skins/rtai/lib/GNUmakefile \
+       	skins/psos+/GNUmakefile \
+       	skins/uitron/GNUmakefile \
+       	skins/vrtx/GNUmakefile \
+       	skins/vxworks/GNUmakefile \
+	])
+
+if test \! x$RTAI_MAYBE_DOCDIR = x; then
+      AC_CONFIG_FILES([ \
+	   doc/GNUmakefile \
+	   doc/doxygen/GNUmakefile \
+	   doc/doxygen/Doxyfile \
+	   doc/docbook/GNUmakefile \
+	   doc/docbook/catalog \
+	   doc/docbook/custom-stylesheets/GNUmakefile \
+	   doc/docbook/custom-stylesheets/xsl/GNUmakefile \
+	   doc/docbook/custom-stylesheets/xsl/common/GNUmakefile \
+	   doc/docbook/custom-stylesheets/xsl/fo/GNUmakefile \
+	   doc/docbook/custom-stylesheets/xsl/html/GNUmakefile \
+	   doc/docbook/custom-stylesheets/xsl/html/chunk.xsl \
+	   doc/docbook/docbook-test/GNUmakefile \
+	   doc/latex/GNUmakefile
+      ])
+fi
+
+if test x$CONFIG_RTAI_MVM = xy; then
+   AC_CONFIG_SUBDIRS(sim)
+fi
+
+AC_OUTPUT()

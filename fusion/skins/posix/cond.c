@@ -1,0 +1,245 @@
+/*
+ * Written by Gilles Chanteperdrix <gilles.chanteperdrix@laposte.net>.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+
+#include "posix/mutex.h"
+#include "posix/cond.h"
+
+#define link2cond(laddr) \
+((pthread_cond_t *)(((char *)laddr)-(int)(&((pthread_cond_t *)0)->link)))
+
+static pthread_condattr_t default_cond_attr;
+
+static xnqueue_t pse51_condq;
+
+static void cond_destroy_internal (pthread_cond_t *cond)
+
+{
+    pse51_mark_deleted(cond);
+    xnsynch_destroy(&cond->synchbase);
+    removeq(&pse51_condq, &cond->link);
+}
+
+int pthread_cond_init (pthread_cond_t *cond, const pthread_condattr_t *attr)
+
+{
+    xnflags_t synch_flags = XNSYNCH_PRIO & XNSYNCH_NOPIP;
+    spl_t s;
+
+
+    if (!attr)
+        attr = &default_cond_attr;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (attr->magic != PSE51_COND_ATTR_MAGIC)
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return EINVAL;
+	}
+
+    cond->magic = PSE51_COND_MAGIC;
+    xnsynch_init(&cond->synchbase, synch_flags);
+    inith(&cond->link);
+    cond->attr = *attr;
+    cond->mutex = NULL;
+
+    appendq(&pse51_condq, &cond->link);
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return 0;    
+}
+
+int pthread_cond_destroy (pthread_cond_t *cond)
+
+{
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (!pse51_obj_active(cond, PSE51_COND_MAGIC, pthread_cond_t))
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return EINVAL;
+	}
+
+    if (xnsynch_nsleepers(&cond->synchbase))
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return EBUSY;
+	}
+
+    pse51_mark_deleted(cond);
+    xnsynch_destroy(&cond->synchbase);
+    removeq(&pse51_condq, &cond->link);
+    
+    xnlock_put_irqrestore(&nklock, s);
+
+    return 0;
+}
+
+static int cond_timedwait_internal (pthread_cond_t *cond,
+				    pthread_mutex_t *mutex,
+				    xnticks_t to)
+{
+    int err;
+    unsigned count;
+    pthread_t cur;
+    spl_t s;
+
+
+    if (!cond || !mutex)
+        return EINVAL;
+    
+    xnlock_get_irqsave(&nklock, s);
+
+    /* If another thread waiting for cond does not use the same mutex */
+    if (!pse51_obj_active(cond, PSE51_COND_MAGIC, pthread_cond_t)
+       || (cond->mutex && cond->mutex != mutex))
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return EINVAL;
+	}
+
+    /* Unlock mutex, with its previous recursive lock count stored
+       in "count". */
+    if(mutex_save_count(mutex, &count))
+        {
+        xnlock_put_irqrestore(&nklock, s);
+        return EINVAL;
+        }
+
+    cur = pse51_current_thread();
+
+    /* Bind mutex to cond. */
+    if (cond->mutex == NULL)
+        {
+        cond->mutex = mutex;
+        ++mutex->condvars;
+        }
+
+    /* Wait for another thread to signal the condition. */
+    xnsynch_sleep_on(&cond->synchbase,
+                     (to == XN_INFINITE ? to : to - xnpod_get_time()));
+
+    /* There are four possible wakeup conditions :
+       - cond_signal / cond_broadcast, no status bit is set, and the function
+         should return 0 ;
+       - timeout, the status XNTIMEO is set, and the function should return
+         ETIMEDOUT ;
+       - pthread_kill, the status bit XNBREAK is set, but ignored, the function
+         simply returns 0, causing a wakeup, spurious or not whether
+         pthread_cond_signal was called between pthread_kill and the moment
+         where xnsynch_sleep_on returns ;
+       - pthread_cancel, no status bit is set, but cancellation specific bits are
+         set, and tested only once the mutex is reacquired, so that the
+         cancellation handler can be called with the mutex locked, as required by
+         the specification.
+    */
+
+    /* relock mutex */
+    mutex_restore_count(mutex, count);
+
+    if (xnthread_test_flags(&cur->threadbase, XNTIMEO))
+        err = ETIMEDOUT;
+    else
+        err = 0;
+    
+    /* Unbind mutex and cond, if no other thread is waiting is the job was not
+       already done. */
+    if (!xnsynch_nsleepers(&cond->synchbase) && cond->mutex != NULL)
+	{
+        --mutex->condvars;
+        cond->mutex = NULL;
+	}
+
+    thread_cancellation_point(cur);
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return err;
+}
+
+int pthread_cond_wait (pthread_cond_t *cond, pthread_mutex_t *mutex) {
+    return cond_timedwait_internal(cond, mutex, XN_INFINITE);
+}
+
+int pthread_cond_timedwait (pthread_cond_t *cond,
+			    pthread_mutex_t *mutex,
+			    const struct timespec *abstime) {
+    return cond_timedwait_internal(cond, mutex, timespec2ticks(abstime));
+}
+
+int pthread_cond_signal (pthread_cond_t *cond)
+
+{
+    spl_t s;
+
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (!pse51_obj_active(cond, PSE51_COND_MAGIC, pthread_cond_t))
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return EINVAL;
+	}
+
+    if(xnsynch_wakeup_one_sleeper(&cond->synchbase) != NULL)
+        xnpod_schedule();
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return 0;
+}
+
+int pthread_cond_broadcast (pthread_cond_t *cond)
+
+{
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (!pse51_obj_active(cond, PSE51_COND_MAGIC, pthread_cond_t))
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return EINVAL;
+	}
+
+    if(xnsynch_flush(&cond->synchbase, 0) == XNSYNCH_RESCHED)
+        xnpod_schedule();
+    xnlock_put_irqrestore(&nklock, s);
+
+    return 0;
+}
+
+void pse51_cond_obj_init (void)
+
+{
+    initq(&pse51_condq);
+    pthread_condattr_init(&default_cond_attr);
+}
+
+void pse51_cond_obj_cleanup (void)
+
+{
+    xnholder_t *holder;
+
+    while ((holder = getq(&pse51_condq)) != NULL)
+	cond_destroy_internal(link2cond(holder));
+}

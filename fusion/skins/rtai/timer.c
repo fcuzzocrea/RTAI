@@ -1,0 +1,263 @@
+/**
+ * This file is part of the RTAI project.
+ *
+ * @note Copyright (C) 2004 Philippe Gerum <rpm@xenomai.org> 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#include <nucleus/pod.h>
+#include <rtai/timer.h>
+
+/**
+ * @fn RTIME rt_timer_ns2ticks(RTIME ns)
+ * @brief Convert nanoseconds to internal clock ticks.
+ *
+ * Convert a count of nanoseconds to internal clock ticks.
+ *
+ * @param ns The count of nanoseconds to convert.
+ *
+ * @return The corresponding value expressed in internal clock ticks
+ * (see note). If the system timer is inactive or operating in oneshot
+ * mode, this routine returns @a ns unmodified.
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed as CPU ticks (e.g. TSC
+ * value).
+ */
+
+RTIME rt_timer_ns2ticks (RTIME ns)
+
+{
+    if (testbits(nkpod->status,XNTMPER))
+	return xnpod_ns2ticks(ns);
+
+    return xnarch_ns_to_tsc(ns);
+}
+
+/*!
+ * @fn int rt_timer_ticks2ns(RTIME ticks)
+ * @brief Convert internal clock ticks to nanoseconds.
+ *
+ * Convert a count of internal clock ticks to nanoseconds.
+ *
+ * @param ticks The count of internal clock ticks to convert (see
+ * note).
+ *
+ * @return The corresponding value expressed in nanoseconds.
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed as CPU ticks (e.g. TSC
+ * value).
+ */
+
+RTIME rt_timer_ticks2ns (RTIME ticks)
+
+{
+    if (testbits(nkpod->status,XNTMPER))
+	return xnpod_ticks2ns(ticks);
+
+    return xnarch_tsc_to_ns(ticks);
+}
+
+/*!
+ * @fn RTIME rt_timer_inquire(void)
+ * @brief Inquire about the timer status.
+ *
+ * Return the current settings of the system timer.
+ *
+ * @return The timer status expressed as follows:
+ *
+ * - RT_TIMER_UNSET is a special value indicating that the system
+ * timer is inactive. A call to rt_timer_start() activates it.
+ *
+ * - RT_TIMER_ONESHOT is a special value indicating that the timer has
+ * been set up in oneshot mode.
+ *
+ * - Any other value indicates that the system timer is currently
+ * running in periodic mode; it is a count of nanoseconds representing
+ * the period of the timer, i.e. the duration of a periodic tick or
+ * "jiffy".
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ *
+ */
+
+RTIME rt_timer_inquire (void)
+
+{
+    if (!testbits(nkpod->status,XNTIMED))
+	return RT_TIMER_UNSET;
+
+    if (!testbits(nkpod->status,XNTMPER))
+	return RT_TIMER_ONESHOT;
+
+    return xnpod_get_tickval();
+}
+
+/*!
+ * @fn RTIME rt_timer_read(void)
+ * @brief Return the current system time.
+ *
+ * Return the current time maintained by the system timer.
+ *
+ * @return The current time expressed in clock ticks (see note).
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
+ */
+
+RTIME rt_timer_read (void) {
+
+    return xnpod_get_time();
+}
+
+/*!
+ * @fn RTIME rt_timer_tsc(void)
+ * @brief Return the current TSC value.
+ *
+ * Return the value of the time stamp counter (TSC) maintained by the
+ * CPU of the underlying architecture.
+ *
+ * @return The current value of the TSC.
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ */
+
+RTIME rt_timer_tsc (void) {
+
+    return xnarch_get_cpu_tsc();
+}
+
+/*!
+ * @fn void rt_timer_spin(RTIME ns)
+ * @brief Busy wait burning CPU cycles.
+ *
+ * Enter a busy waiting loop for a count of nanoseconds. The precision
+ * of this service largely depends on the availability of a time stamp
+ * counter on the current CPU.
+ *
+ * Since this service is usually called with interrupts enabled, the
+ * caller might be preempted by other real-time activities, therefore
+ * the actual delay might be longer than specified.
+ *
+ * @param ns The time to wait expressed in nanoseconds.
+ *
+ * Context: This routine can be called on behalf of a task, interrupt
+ * context or from the initialization code.
+ */
+
+void rt_timer_spin (RTIME ns)
+
+{
+    RTIME etime = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(ns);
+
+    while (xnarch_get_cpu_tsc() < etime)
+	; /* Empty spinning loop */
+}
+
+/**
+ * @fn int rt_timer_start(RTIME nstick)
+ * @brief Start the system timer.
+ *
+ * The real-time kernel needs a time source to provide the
+ * time-related services to the RTAI tasks. rt_timer_start() sets the
+ * current operation mode of the system timer. On architectures that
+ * provide a oneshot-programmable time source, the system timer can
+ * operate either in oneshot or periodic mode. In oneshot mode, the
+ * underlying hardware will be reprogrammed after each clock tick so
+ * that the next one occurs after a (possibly non-constant) specified
+ * interval, at the expense of a larger overhead due to hardware
+ * programming duties. Periodic mode provides timing services at a
+ * lower programming cost when the underlying hardware is a true PIT
+ * (and not a simple decrementer), but at the expense of a lower
+ * precision since all delays are rounded up to the constant interval
+ * value used to program the timer.
+ *
+ * This service defines the time unit which will be relevant when
+ * specifying time intervals to the services taking timeout or delays
+ * as input parameters. In periodic mode, clock ticks will represent
+ * periodic jiffies. In oneshot mode, clock ticks will represent
+ * nanoseconds.
+ *
+ * @param nstick The timer period in nanoseconds. If this parameter is
+ * equal to RT_TIMER_ONESHOT, the underlying hardware timer is set to
+ * operate in oneshot-programmable mode. In this mode, timing accuracy
+ * is higher - since it is not rounded to a constant time slice - at
+ * the expense of a lesser efficicency when many timers are
+ * simultaneously active. The oneshot mode gives better results in
+ * configuration involving a few tasks requesting timing services over
+ * different time scales that cannot be easily expressed as multiples
+ * of a single base tick, or would lead to a waste of high frequency
+ * periodical ticks.
+ *
+ * @return 0 is returned on success. Otherwise:
+ *
+ * - -EBUSY is returned if the timer has already been set.
+ * xnpod_stop_timer() must be issued before xnpod_start_timer() is
+ * called again.
+ *
+ * - -ENOSYS is returned if the underlying architecture does not
+ * support the requested oneshot timing.
+ *
+ * Context: This routine can be called on behalf of a task or the
+ * initialization code.
+ */
+
+int rt_timer_start (RTIME tickval) {
+
+    return xnpod_start_timer(tickval,XNPOD_DEFAULT_TICKHANDLER);
+}
+
+/**
+ * @fn void rt_timer_stop(void)
+ * @brief Stop the system timer.
+ *
+ * This service stops the system timer previously started by a call to
+ * rt_timer_start(). Calling rt_timer_stop() whilst the system timer
+ * has not been started leads to a null-effect.
+ *
+ * Context: This routine can be called on behalf of a task or the
+ * initialization code.
+ */
+
+void rt_timer_stop (void) {
+
+    xnpod_stop_timer();
+}
+
+EXPORT_SYMBOL(rt_timer_ns2ticks);
+EXPORT_SYMBOL(rt_timer_ticks2ns);
+EXPORT_SYMBOL(rt_timer_inquire);
+EXPORT_SYMBOL(rt_timer_spin);
+EXPORT_SYMBOL(rt_timer_start);
+EXPORT_SYMBOL(rt_timer_stop);

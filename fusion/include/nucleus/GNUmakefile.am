@@ -1,0 +1,31 @@
+includedir = $(prefix)/include/nucleus
+
+if CONFIG_X86
+ARCHDIR = asm-i386
+endif
+
+if CONFIG_RTAI_OPT_VM
+ARCHDIR += asm-uvm
+endif
+
+include_HEADERS = \
+		dbridge.h \
+		fusion.h \
+		heap.h \
+		intr.h \
+		module.h \
+		pod.h \
+		procfs.h \
+		queue.h \
+		shadow.h \
+		synch.h \
+		system.h \
+		thread.h \
+		timer.h \
+		types.h \
+		version.h \
+		xenomai.h
+
+SUBDIRS = $(ARCHDIR)
+
+DISTCLEANFILES = asm

@@ -1,0 +1,65 @@
+EXTRA_DIST = \
+	appendix \
+	development \
+	internals \
+	intro \
+	services
+
+PS_DOCS=RTAI-RefGuide.ps 
+PDF_DOCS=RTAI-RefGuide.pdf
+
+if !CONFIG_RTAI_DOC_LATEX
+PS_DOCSDIR = $(srcdir)/../generated/ps/
+PDF_DOCSDIR = $(srcdir)/../generated/pdf/
+else
+PDF_DOCSDIR = ./
+PS_DOCSDIR = ./
+
+
+# latex documentation
+TEX_SRCS=$(shell find $(srcdir) -name "*.tex")
+
+all-local: $(PS_DOCS) $(PDF_DOCS)
+
+CLEANFILES = *.aux *.dvi *.log *.idx *.ilg *.ind *.toc *.out
+DISTCLEANFILES = *.pdf *.ps
+
+RTAI-RefGuide.dvi RTAI-RefGuide.pdf: $(TEX_SRCS)
+
+# rules for latex  documentation.
+RTAIDOC_TEXINPUTS=.:$(srcdir):$(TEXINPUTS)
+LATEX=TEXINPUTS=$(RTAIDOC_TEXINPUTS) latex --interaction @LATEX_MODE@
+PDFLATEX=TEXINPUTS=$(RTAIDOC_TEXINPUTS) pdflatex --interaction @LATEX_MODE@
+
+SUFFIXES=pdf dvi tex
+
+.tex.pdf:
+	@$(PDFLATEX) $<
+	@makeindex $*.idx
+	@$(PDFLATEX) $<
+	@while egrep -q 'Rerun (LaTeX|to get cross-references right)' $*.log; \
+	    do $(PDFLATEX) $< || exit 1; \
+	done;
+
+.tex.dvi:
+	@$(LATEX) $<
+	@makeindex $*.idx
+	@$(LATEX) $<
+	@while egrep -q 'Rerun (LaTeX|to get cross-references right)' $*.log; \
+	    do $(LATEX) $< || exit 1; \
+	done;
+
+.dvi.ps:
+	@dvips -o $@ $<
+
+.DELETE_ON_ERROR:
+
+endif
+
+include ../install-dist.rules
+
+install-data-local: install-docs-local
+
+dist-hook: dist-docs-hook
+
+uninstall-local: uninstall-docs

@@ -1,0 +1,286 @@
+This working document is basically here to help me (rpm) in keeping
+track of the various design issues & decisions made during the
+refactoring process of the native RTAI API over the Xenomai
+nucleus. It is aimed at:
+
+o enumerating all the real-time services exported by the RTAI 3.x
+schedulers.
+
+o explaining the relationship/differences between their new
+implementation in the native skin and the former one when already
+available in 3.x.
+
+o indicating the rationale behind the dropping of some 3.x services,
+and suggesting a possible emulation of them when applicable, through
+some compatibility interface based on the new native skin.
+
+===== DROPPED/REPLACED ==========
+
+* rt_set_period()
+* rt_set_resume_time()
+* rt_task_set_resume_end_times()
+
+  [ One _must_ use rt_task_set_periodic() to change periodic task
+  parameters. Doing it on-the-fly using some ad hoc accessor won't
+  work over the nucleus. ]
+
+* rt_linux_use_fpu()
+
+  [ Indication to save/restore the FPU state or not for the Linux
+  context is directly obtained from the kernel. This is no more in the
+  hand of the users. ]
+
+* rt_preempt_always()
+* rt_preempt_always_cpuid()
+
+  [ Internal magic for 3.x which is not needed anymore since the
+  oneshot timer optimization is done differently. ]
+
+* rt_alloc_dynamic_task()
+* rt_register_watchdog()
+* rt_deregister_watchdog()
+  
+  [ Useless helpers for discontinued features. ]
+
+* rt_enq_ready_edf_task()
+* rt_enq_ready_task()
+* rt_enq_timed_task()
+* rt_rem_ready_current()
+* rt_rem_ready_task()
+* rt_rem_timed_task()
+* rt_renq_current()
+* rt_renq_ready_task()
+* rt_enqueue_blocked()
+* rt_dequeue_blocked()
+* rt_smp_linux_task()
+* rt_get_base_linux_task()
+* rt_smp_current()
+* rt_smp_oneshot_timer()
+* rt_smp_time_h()
+* rt_get_timer_cpu()
+
+  [ Internal scheduler services. Not applicable to the nucleus
+  scheduler. In any case, direct manipulation of internal structures
+  is freaking bad, so these routines can't survive the refactoring. ]
+
+* rt_check_current_stack()
+
+  [ It's usually too late when you discover that you currently tread
+  on an overflowed stack, so... ]
+
+* rt_task_make_periodic_relative_ns()
+
+  [ Deprecated since rt_task_set_periodic() already takes relative
+  delay values, either ticks (periodic timer) or nanoseconds (oneshot
+  timer). ]
+
+* rt_task_use_fpu()
+
+  [ FPU support is a static property of tasks which must be defined at
+  creation time. I see no legitimate reason to make this a dynamic
+  property. ]
+
+* rt_register()
+* rt_get_registry_slot()
+* is_process_registered()
+* rt_drg_on_adr()
+* rt_drg_on_adr_cnt()
+* rt_drg_on_name()
+* rt_drg_on_name_cnt()
+* rt_get_adr()
+* rt_get_adr_cnt()
+* rt_get_type()
+* rt_named_task_delete()
+* rt_named_task_init()
+* rt_named_task_init_cpuid()
+
+  [ Registry handling will be built in the syscalls, no need for
+  auxilliary services. ]
+
+* set_rt_fun_entries()
+* set_rt_fun_ext_index()
+* reset_rt_fun_entries()
+* reset_rt_fun_ext_index()
+* rt_kthread_init()
+
+  [ LXRT-internal. User-space support is consubstantial to fusion,
+  which provides its own internal support. ]
+
+* rt_sched_type()
+
+  [ There is only a single type of scheduler remaining which is
+  included in the nucleus. ]
+
+* rt_schedule()
+
+  [ Rescheduling is fully controlled by the skin and the underlying
+  real-time nucleus: there is absolutely no legitimate reason for
+  leaving it accessible to the application developer. ]
+
+* rt_set_periodic_mode()
+
+  [ rt_timer_start() automatically sets the timing mode depending on
+  its parameter. If the timer is inactive, oneshot mode is assumed, so
+  that the time source is the CPU (e.g. TSC) or some clock hardware
+  (e.g. 8254). ]
+
+* rt_set_oneshot_mode()
+
+  [ Functionally deprecated since rt_set_oneshot_mode() has been
+  dropped. ]
+
+* rt_get_task_state()
+* rt_get_name()
+* rt_get_prio()
+* rt_get_inher_prio()
+* next_period()
+
+  [ Superseded by rt_task_inquire(). ]
+
+* rt_task_signal_handler()
+
+  [ rt_task_add_hook() provides for extended task hooks, including
+  TSWITCH which maps perfectly on 3.x's signal handler. ]
+
+* rt_gettimeorig()
+
+  [ Depends on do_gettimeofday(), which is very hazardous to call from
+    RT context. ]
+
+* rt_nanosleep()
+
+  [ It is basically a wrapper around rt_sleep_until(). Having an
+  emulation of the latter return the time difference in internal clock
+  ticks would do it. The rest is only a matter of using timespecs,
+  which is not the time unit of the native interface. Likely a
+  POSIXish clinker which is not consistent anymore in the native API
+  since a full-blown POSIX skin exists. Compatibility: good candidate
+  as a wrapper. ]
+
+* rt_task_init()
+* rt_task_init_cpuid()
+
+  [ Reimplemented as a two-fold procedure using rt_task_create() +
+  rt_task_start(). ]
+
+* rt_set_runnable_on_cpuid()
+* rt_set_runnable_on_cpus()
+
+  FIXME/MISSING--  [ Replaced by rt_task_set_affinity(). ]
+
+* rt_spv_RMS()
+
+  [ Rate Monotonic and EDF not supported (yet?). ]
+
+* rt_get_time_ns()
+
+  [ rt_timer_read() already returns nanoseconds in oneshot
+  mode. Getting the wallclock value as nanoseconds from periodic mode
+  ticks makes little sense since the epoch is variable in this case. ]
+
+* rt_set_sched_policy()
+* rt_sched_lock() => ?
+* rt_sched_unlock() => ?
+
+  FIXME/MISSING--  [ Superseded by rt_task_...() ? ]
+
+* nano2count_cpuid()
+* count2nano_cpuid()
+* rt_get_time_cpuid()
+* rt_get_time_ns_cpuid()
+
+  [ Timer support will remain uniform across CPUs, including with MUP
+  configurations. Mode mixing is brain-damage for the user and for the
+  maintainer, so it won't be allowed. Consequently, CPUs need not be
+  distinguished for such operations. ]
+
+* rt_wake_up_timed_tasks()
+
+  [ Ad hoc manipulation of a dynamic task group... Cannot see a
+  legitimate usage of this beast by an application developer. ]
+
+========= SEMANTICS CHANGED =============
+
+For all services which get passed a time value: changed the unit
+expressing ticks in oneshot mode from TSC values to
+nanoseconds. Rationale: it is much more simple to handle, reduces the
+number of time unit conversions required at call time, and above all,
+not all platforms have a TSC, so using a non-tainted unit like a count
+of nanoseconds is more consistent. This way, a tick in oneshot mode
+simply equals a nanosecond _everywhere_, which can also be construed
+as the shortest tick value thus giving the highest possible precision
+in timings -- which the oneshot mode is exactly designed for.
+
+* rt_change_prio() => rt_task_set_priority()
+
+  [ Priorities are now bounded in the range [ 1 .. 99 ] in order to
+  map perfectly on the Linux priority scheme, which is more than
+  desirable for consistency with the user-space support, and allows
+  for various internal optimizations. ]
+
+* rt_task_wakeup_sleeping() => rt_task_unblock()
+
+  [ Generalize the effect so that any blocking condition could be
+  lifted by this call, but the forcible suspension obtained from
+  rt_task_suspend(). Since only killing the running timer of a task
+  pending for a resource without waking it up completely makes no
+  sense, such extension should be safe. ]
+
+* rt_task_make_periodic() => rt_task_set_periodic()
+  
+  [ Aside of the time unit used in expressing the delay in oneshot
+  mode, the name has also been changed to avoid confusion with the 3.x
+  implementation. ]
+
+* rt_is_hard_timer_running() => rt_timer_inquire()
+
+  [ Returns an extended status including the period when
+  applicable. ]
+
+* count2nano() => rt_timer_ticks2ns()
+* nano2count() => rt_timer_ns2ticks()
+* rt_get_time() => rt_timer_read()
+
+  [ Make those calls belong to the timer class since they actually
+  depend on the timer settings. Additionally, using "ticks" instead of
+  the generic "count" notion is more accurate here. ]
+
+* rt_sleep_until() => rt_task_sleep_until()
+* rt_sleep() => rt_task_sleep()
+
+  [ Make these call belong to the task class. The form using an
+  absolute time specification has been kept in order to deal with the
+  case where we don't want to be preempted between the determination
+  of the delay and the actual execution of the syscall; in such a
+  case, the delay would not be accurate anymore. ]
+
+* start_rt_timer() =>  rt_timer_start()
+* stop_rt_timer() => rt_timer_stop()
+
+  [ Make those calls belong to the timer class. ]
+
+* rt_whoami() => rt_task_inquire()
+
+  [ Returns an extended status of the task. ]
+
+========= ONLY RENAMED ==================
+
+* rt_set_task_trap_handler() => ?
+* rt_get_cpu_time_ns() => ?
+
+* rt_busy_sleep() => rt_timer_wait()
+
+  [ Make this call belong to the timer class. ]
+
+========= UNCHANGED =====================
+
+* rt_task_yield()
+* rt_task_resume()
+* rt_task_delete()
+* rt_task_suspend()
+* rt_task_wait_period()
+
+======== STILL PENDING ==================
+
+* start_rt_apic_timers()
+* start_rt_timer_cpuid()

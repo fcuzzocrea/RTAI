@@ -1,0 +1,665 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
+<title>1.4. The Xenomai approach</title>
+<link rel="stylesheet" href="../css/rtai.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
+<link rel="home" href="index.html" title="The XENOMAI project Implementing a RTOS emulation framework
+      on GNU/Linux">
+<link rel="up" href="whitepaper.html" title="1. White paper">
+<link rel="previous" href="common-framework.html" title="1.3. A common emulation framework">
+<link rel="next" href="emulating-psos.html" title="1.5. Emulating pSOS+ on top of Xenomai">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">1.4. The Xenomai approach</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="common-framework.html"><img src="../pictures/prev.gif" alt="Prev"></a> </td>
+<th width="60%" align="center">1. White paper</th>
+<td width="20%" align="right"> <a accesskey="n" href="emulating-psos.html"><img src="../pictures/next.gif" alt="Next"></a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect2" lang="en">
+<div class="titlepage">
+<div><div><h3 class="title">
+<a name="xeno-approach"></a>1.4. The Xenomai approach</h3></div></div>
+<div></div>
+</div>
+<div class="sect3" lang="en">
+<div class="titlepage">
+<div><div><h4 class="title">
+<a name="xeno-arch"></a>1.4.1. Xenomai architecture</h4></div></div>
+<div></div>
+</div>
+<p>The common emulation framework precedently envisioned
+	translates in the Xenomai architecture as follows:</p>
+</div>
+<div class="sect3" lang="en">
+<div class="titlepage">
+<div><div><h4 class="title">
+<a name="host-arch"></a>1.4.2. Host software architecture</h4></div></div>
+<div></div>
+</div>
+<p>Xenomai's nanokernel relies on an host software
+	architecture to provide the needed hardware control and
+	real-time capabilities. </p>
+<p>The nanokernel is connected to the host architecture
+	through a standardized interface. The following services
+	compose the nanokernel-to-real-time subsystem
+	interface:</p>
+<div class="informaltable"><table border="1">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td>xnarch_init</td>
+<td>Mount the real-time subsystem</td>
+</tr>
+<tr>
+<td>xnarch_exit</td>
+<td>Unmount the real-time subsystem</td>
+</tr>
+<tr>
+<td>xnarch_hook_irq</td>
+<td>Attach a handler to an interrupt line</td>
+</tr>
+<tr>
+<td>xnarch_release_irq</td>
+<td>Detach a handler from an interrupt</td>
+</tr>
+<tr>
+<td>xnarch_enable_irq</td>
+<td>Enable dispatching of an interrupt</td>
+</tr>
+<tr>
+<td>xnarch_disable_irq</td>
+<td>Disable dispatching of an interrupt</td>
+</tr>
+<tr>
+<td>xnarch_chain_irq</td>
+<td>Pass the interrupt request to the handler</td>
+</tr>
+<tr>
+<td>xnarch_start_timer</td>
+<td>Stop the periodic timer</td>
+</tr>
+<tr>
+<td>xnarch_stop_timer</td>
+<td>Stop the periodic timer</td>
+</tr>
+<tr>
+<td>xnarch_enter_realtime</td>
+<td>Switch current context to real-time</td>
+</tr>
+<tr>
+<td>xnarch_exit_realtime</td>
+<td>Switch current context to non real-time</td>
+</tr>
+<tr>
+<td>xnarch_init_stack</td>
+<td>Initialize a new thread's stack</td>
+</tr>
+<tr>
+<td>xnarch_save_fpu</td>
+<td>Save FPU registers for an outgoing thread</td>
+</tr>
+<tr>
+<td>xnarch_restore_fpu</td>
+<td>Restore FPU registers for an incoming thread</td>
+</tr>
+<tr>
+<td>xnarch_init_fpu</td>
+<td>Initialize a thread's FPU context</td>
+</tr>
+<tr>
+<td>xnarch_set_imask</td>
+<td>Set the global interrupt mask</td>
+</tr>
+<tr>
+<td>xnarch_sysalloc</td>
+<td>Allocate non-pageable memory</td>
+</tr>
+<tr>
+<td>xnarch_sysfree</td>
+<td>Free memory obtained from xnarch_sysalloc()</td>
+</tr>
+</tbody>
+</table></div>
+<p>Depending on the execution environment, some of the
+	above services may be emulated or simply stubbed as soon as
+	they are not needed. However, all of them are needed for
+	porting the nanokernel on top of RTAI. For instance, the
+	interrupt-related services can be emulated by the POSIX signal
+	feature when running a combination of the nanokernel, the RTOS
+	emulator and the (soft) real-time application as a user-space
+	GNU/Linux process. In the same spirit, the real-time context
+	switch routines have no purpose, thus can be empty in such
+	environment. </p>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="rtai-softarch"></a>1.4.2.1. Using RTAI as the host software architecture</h5></div></div>
+<div></div>
+</div>
+<p>The Real-Time Application Interface (RTAI) is a
+	  real-time GNU/Linux extension, which allows running
+	  real-time tasks seamlessly aside of the hosting GNU/Linux
+	  system. The RTAI co-kernel is hooked to the hosting system
+	  through an hardware abstraction layer (HAL). RTAI considers
+	  the Linux kernel as a background task that should run when
+	  no real-time activity occurs. RTAI applications run in
+	  supervisor mode, in the Linux kernel address space.</p>
+<p>When running on top of RTAI, the Xenomai framework
+	  gains hard real-time capabilities, replacing the standard
+	  RTAI scheduler module (namely rtai_sched) in order to
+	  provide the real-time scheduling subsystem. RTOS emulation
+	  modules can then be loaded on top of Xenomai's nanokernel,
+	  followed by a client application module using the emulated
+	  API.</p>
+<p>RTAI port of Xenomai is based on the facilities
+	  provided by the core HAL module (namely rtai). The
+	  nanokernel-to-host software architecture interface is
+	  implemented using the real-time services exported by this
+	  module. For instance, let us look to the implementation of
+	  two critical functions, which respectively allow to enter
+	  and exit the RTAI context, thus preempting then reinstating
+	  the Linux kernel context.</p>
+<p>From the file
+	  <span class="emphasis"><em>xenomai/include/arch/rtai-386.h,</em></span>
+</p>
+<table border="0" bgcolor="#E0E0E0"><tr><td><pre class="programlisting">
+		#define INTERFACE_TO_LINUX
+		#include &quot;asm/rtai_sched.h&quot;
+		#include &quot;rtai.h&quot;
+
+		DEFINE_LINUX_CR0
+
+		static inline void xnarch_enter_realtime () {
+			rt_switch_to_real_time(0);
+			save_cr0_and_clts(linux_cr0);
+ 		}
+
+		static inline void xnarch_exit_realtime () {
+			rt_switch_to_linux(0);
+			restore_cr0(linux_cr0);
+		}
+	</pre></td></tr></table>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="posix-arch"></a>1.4.2.2. Using the POSIX 1003.1-1996 layer as the software
+	  architecture</h5></div></div>
+<div></div>
+</div>
+<p>The aftermaths of the real-time constraints
+	  reevaluation - that we suggest to conduct when considering a
+	  port of a real-time application to a GNU/Linux system - may
+	  lead to envision a user-space execution, since soft
+	  real-time capabilities may be sufficient to support the
+	  requirements.</p>
+<p>In such a case, implementing the nanokernel-to-host
+	  software architecture interface should be quite
+	  straightforward. For instance, the thread-related services
+	  can be mapped to the POSIX thread facility, and the periodic
+	  timer can be obtained from the POSIX virtual timer
+	  facility.</p>
+<p>Combined to existing Linux kernel patches providing
+	  fixed-priority scheduling and fine-grain kernel
+	  preemptability, Xenomai's user-space execution may well
+	  deliver the expected soft to firm real-time performance
+	  needed while preserving the standard GNU/Linux programming
+	  model.</p>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="carbonkernel"></a>1.4.2.3. Using CarbonKernel to support Xenomai's Virtual
+	  Architecture</h5></div></div>
+<div></div>
+</div>
+<p>CarbonKernel is a RTOS simulator based on event-driven
+	  simulation techniques. The main idea is to provide a
+	  consistent framework for building simulation models which
+	  mimic the behavior of real-time operating systems on a
+	  workstation. The simulated RTOS kernels are built on top of
+	  a generic virtual RTOS. CarbonKernel allows tracing the
+	  execution of embedded software at source code level, running
+	  in a single regular GNU/Linux process, with concurrent
+	  target debugging capabilities, dynamic control of kernel
+	  resources, UI simulation, and much more. In other words,
+	  Xenomai can be thought as CarbonKernel's companion project,
+	  the former providing support for emulating RTOS APIs on the
+	  real target, whereas the latter simulates the RTOS APIs on a
+	  GNU/Linux workstation.</p>
+<p>Since CarbonKernel is a powerful tool for
+	  understanding the dynamics of a real-time system, it is very
+	  well suited for helping in the nanokernel and RTOS emulators
+	  development. Moreover, it alleviates the burden of debugging
+	  a complex software in a rather 'hostile' kernel environment,
+	  especially in the first stages of its development. The idea
+	  is to implement a trivial CarbonKernel simulation model
+	  standing for a virtual architecture on top of which Xenomai
+	  can run. This way, Xenomai's internals could be debugged
+	  like mere application code running in a simulated
+	  environment. </p>
+<p>A RTOS simulation model (called a 'personality')
+	  stacked on top of CarbonKernel is able to run, debug and
+	  stress an embedded application using the RTOS' native
+	  API. Simulating the RTOS behavior in a host-based
+	  environment instead of emulating the machine code of the
+	  target platform has a lot of advantages: it's faster, does
+	  not require the cross-development tools, gives extended
+	  debugging, monitoring and tracing features and provides an
+	  easy way to stress the application under test with run-time
+	  situations otherwise barely conceivable on a real
+	  target. For instance, one can easily generate bursts of
+	  simulated interrupts at a very unreasonable rate while still
+	  being able to observe and analyze the resulting
+	  situation.</p>
+<p>Xenomai's Virtual Architecture (VA) is implemented as
+	  a CarbonKernel model exporting a limited set of services
+	  which provides a trivial thread management facility
+	  (i.e. basically: creation, deletion, suspension,
+	  resuming). The interrupt management is directly handled by
+	  the CarbonKernel built-in simulation facilities, whilst raw
+	  memory is obtained from the standard ANSI-C malloc
+	  routines.</p>
+<p>From the file
+	  <span class="emphasis"><em>xenomai/include/arch/va.h,</em></span>
+</p>
+<table border="0" bgcolor="#E0E0E0"><tr><td><pre class="programlisting">
+	#include &quot;va/va.h&quot; /* Include the VA model interface file */ 
+
+	typedef struct xnarchtcb { /* Per-thread arch-dependent block */
+	ckhandle_t vahandle; /* The underlying VA thread handle */
+	void *cookie; /* XENO thread cookie passed on entry */ 
+	int imask; /* Initial interrupt mask */
+	 unsigned stacksize; /* Aligned size of stack (bytes) */
+	 int *sp; /* Saved stack pointer - unused */
+	 int *stackbase; /* Stack space - unused */
+ 	} xnarchtcb_t ;
+
+	static inline void xnarch_switch_to (xnarchtcb_t *outtcb, xnarchtcb_t *intcb) {
+		va_thread_resume(intcb-&gt;vahandle);
+		va_thread_suspend(outtcb-&gt;vahandle);
+	}
+	</pre></td></tr></table>
+<p>Here is a snapshot of a CarbonKernel debug session
+	  running the Xenomai's nanokernel on top of the Virtual
+	  Architecture:</p>
+</div>
+</div>
+<div class="sect3" lang="en">
+<div class="titlepage">
+<div><div><h4 class="title">
+<a name="nanokernel"></a>1.4.3. Nanokernel description</h4></div></div>
+<div></div>
+</div>
+<p>Xenomai's Virtual Architecture (VA) is implemented as a
+	CarbonKernel model exporting a limited set of services which
+	provides a trivial thread management facility (i.e. basically:
+	Xenomai's nanokernel implements a set of generic services
+	aimed at being a foundation for a set of RTOS API emulators
+	running on top of a host software architecture. These services
+	exhibit common traditional RTOS behaviors.</p>
+<p>RTOS emulations are software modules which connects to
+	the nanokernel through the pod abstraction. Only one pod can
+	be active at a given time on top of the host software
+	architecture. The pod is responsible for the critical
+	housekeeping chores, and the real-time scheduling of
+	threads.</p>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="multi-threading-support"></a>1.4.3.1. Multi-threading support</h5></div></div>
+<div></div>
+</div>
+<p> The nanokernel provides thread object (xnthread) and
+	  pod (xnpod) abstractions which exhibit the following
+	  characteristics:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>Threads are scheduled according to a 32bit
+		integer priority value, using a preemptive
+		algorithm. Priority ordering can be increasing or
+		decreasing depending on the pod configuration. </p></li>
+<li><p>A thread can be either waiting for
+		initialization, forcibly suspended, pending on a
+		resource, delayed for a count of ticks, ready-to-run
+		or running.</p></li>
+<li><p>Timed wait for a resource can be bounded by a
+		per-thread watchdog.</p></li>
+<li><p>The priority inheritance protocol is supported
+		to prevent thread priority inversion when it is
+		detected by a synchronization object.</p></li>
+<li><p>A group of threads having the same base priority
+		can undergo a round-robin scheduling, each of them
+		being given an individual time quantum.</p></li>
+<li><p>A support for sending signals to threads and
+		running asynchronous service routines (ASR) to process
+		them is built-in.</p></li>
+<li><p>FPU support can be optionally enabled or
+		disabled for any thread at creation time.</p></li>
+<li><p>Each thread can enter a disjunctive wait on
+		multiple resources.</p></li>
+</ul></div>
+<p>
+	</p>
+<div class="informaltable"><table border="1">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td>xnpod_thread</td>
+<td>Create a new thread (left suspended)</td>
+</tr>
+<tr>
+<td>xnpod_delete_thread</td>
+<td>Delete a thread</td>
+</tr>
+<tr>
+<td>xnpod_start_thread</td>
+<td>Start a newly created thread</td>
+</tr>
+<tr>
+<td>xnpod_suspend_thread</td>
+<td>Make a thread enter a suspended state</td>
+</tr>
+<tr>
+<td>xnpod_resume_thread</td>
+<td>Resume a thread from a suspended state</td>
+</tr>
+<tr>
+<td>xnpod_unblock_thread</td>
+<td>Unblock a thread waiting for a resource</td>
+</tr>
+<tr>
+<td>xnpod_renice_thread</td>
+<td>Change a thread's base priority</td>
+</tr>
+<tr>
+<td>xnpod_boost_thread</td>
+<td>Boost a thread's current priority (inheritance)</td>
+</tr>
+<tr>
+<td>xnpod_lock_sched</td>
+<td>Disable the rescheduling procedure</td>
+</tr>
+<tr>
+<td>xnpod_unlock_sched</td>
+<td>Re-enable the rescheduling procedure</td>
+</tr>
+<tr>
+<td>xnpod_activate_rr</td>
+<td>Enable the round-robin scheduling</td>
+</tr>
+<tr>
+<td>xnpod_deactivate_rr</td>
+<td>Disable the undergoing round-scheduling</td>
+</tr>
+<tr>
+<td>xnpod_reschedule</td>
+<td>Start the rescheduling procedure</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="synchro-support"></a>1.4.3.2. Basic synchronization support</h5></div></div>
+<div></div>
+</div>
+<p>The nanokernel provides a synchronization object
+	  abstraction <span class="emphasis"><em>(xnsynch)</em></span> aimed at
+	  implementing the common behavior of RTOS resources, which
+	  has the following characteristics:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>Support for the priority inheritance protocol,
+		in order to prevent priority inversion problems. The
+		implementation is shared with the scheduler
+		code.</p></li>
+<li><p>Support for time-bounded wait and forcible
+		deletion with waiters awakening.</p></li>
+</ul></div>
+<p>
+	</p>
+<div class="informaltable"><table border="1">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td>xnsynch_init</td>
+<td>Initialize a synchronization object</td>
+</tr>
+<tr>
+<td>xnsynch_destroy</td>
+<td>Flush and destroy a synchronization object</td>
+</tr>
+<tr>
+<td>xnsynch_block_thread</td>
+<td>Make a thread pending on the resource</td>
+</tr>
+<tr>
+<td>xnsynch_unblock_thread</td>
+<td>Release a thread from pending on the resource</td>
+</tr>
+<tr>
+<td>xnsynch_flush</td>
+<td>Release all threads from pending on the resource</td>
+</tr>
+<tr>
+<td>xnsynch_enter_pip</td>
+<td>Make a thread own the resource</td>
+</tr>
+<tr>
+<td>xnsynch_apply_pip</td>
+<td>Prevent priority inversion (inheritance)</td>
+</tr>
+<tr>
+<td>xnsynch_exit_pip</td>
+<td>Release the ownership on the resource</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="irq-management"></a>1.4.3.3. Interrupt management</h5></div></div>
+<div></div>
+</div>
+<p> Xenomai's nanokernel exhibits a split interrupt
+	  handling scheme, in which interrupt handling is separated
+	  into two parts. The first part is known as the Interrupt
+	  Service Routine (ISR), the second being the Deferred Service
+	  Routine (DSR). When an interrupt occurs, the ISR may be run
+	  with interrupts disabled, thus it should run as quickly as
+	  possible. To reduce this unpreemptable delay, lengthy
+	  processing can be delegated by the ISR to an associated DSR
+	  which will run later, outside the interrupt context, as soon
+	  as all pending interrupts are processed. This scheme allows
+	  for the DSRs to be run with interrupts enabled, thus
+	  allowing other potentially higher priority interrupts to be
+	  taken and processed.</p>
+<p>This rather sophisticated scheme allows to easily
+	  emulate virtually all RTOS interrupt handling scheme on top
+	  of the nanokernel. Xenomai's interrupt-related services are
+	  the following:</p>
+<div class="informaltable"><table border="1">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td>xnpod_enter_interrupt</td>
+<td>Signal an ISR entry to the scheduler</td>
+</tr>
+<tr>
+<td>xnpod_exit_interrupt</td>
+<td>xnpod_exit_interrupt</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="timer-clock"></a>1.4.3.4. Timer and clock management</h5></div></div>
+<div></div>
+</div>
+<p>Xenomai's nanokernel measures time as a count of
+	  periodic clock ticks. The periodic source is usually an
+	  external interrupt controlled by the underlying host
+	  architecture. Under RTAI/x86 for instance, the 8254 chip can
+	  be programmed to generate a periodic interrupt which can be
+	  hooked to a user-defined handler through the
+	  <span class="emphasis"><em>rt_request_timer()</em></span> service. Each
+	  incoming clock tick is announced to the timer manager which
+	  fires in turn the timeout handlers of elapsed timers. The
+	  scheduler itself uses per-thread watchdogs to wake up
+	  threads undergoing a bounded time wait, while waiting for a
+	  resource availability or being delayed.</p>
+<p>A special care has been taken to offer bounded
+	  worst-case time for starting, stopping and maintaining
+	  timers. The timer facility is based on the timer wheel
+	  algorithm[11] described by Adam M. Costello and George
+	  Varghese, which is implemented in the NetBSD operating
+	  system for instance.</p>
+<p>The nanokernel globally maintains three distinct time
+	  values, all expressed in clock ticks:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>
+The absolute number of elapsed ticks announced
+	    since the nanokernel is running,</p></li>
+<li><p>The last date set by a call to
+	    xnpod_set_date(),</p></li>
+<li><p>The number of clock ticks announced since the
+	    last time the date was set.</p></li>
+</ul></div>
+<div class="informaltable"><table border="1">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td>xnpod_tick_announce</td>
+<td>Announce a new clock tick to the scheduler</td>
+</tr>
+<tr>
+<td>xnpod_set_date</td>
+<td>Set the system date (in ticks)</td>
+</tr>
+<tr>
+<td>xnpod_get_date</td>
+<td>Get the system date (in ticks)</td>
+</tr>
+<tr>
+<td>xntimer_init</td>
+<td>Initialize a timer</td>
+</tr>
+<tr>
+<td>xntimer_destroy</td>
+<td>Stop and destroy a timer</td>
+</tr>
+<tr>
+<td>xntimer_start</td>
+<td>Start a timer</td>
+</tr>
+<tr>
+<td>xntimer_stop</td>
+<td>Stop a timer</td>
+</tr>
+<tr>
+<td>xntimer_do_tick</td>
+<td>Signal an incoming clock tick to the timer manager</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="memory-allocation"></a>1.4.3.5. Basic memory allocation</h5></div></div>
+<div></div>
+</div>
+<p>Xenomai's nanokernel provides dynamic memory
+	  allocation support with real-time guarantee, based on
+	  McKusick's and Karels' proposal for a general purpose memory
+	  allocator[10]. Any number of memory heaps can be maintained
+	  dynamically by Xenomai, only limited by the actual amount of
+	  system memory.</p>
+<p>The memory chunks are obtained from the underlying
+	  software architecture. As far as RTAI is concerned, the
+	  memory pages composing the allocation heap are managed using
+	  the <span class="emphasis"><em>kmalloc()/kfree()</em></span> Linux kernel
+	  routines. As soon as it is called on behalf of a real-time
+	  thread, the allocator transparently switches to the Linux
+	  kernel context using the RTAI-to-Linux service request
+	  feature when needed
+	  (i.e. <span class="emphasis"><em>rt_pend_linux_srq()</em></span>). The
+	  proposed services are synchronous to the calling
+	  thread.</p>
+<p>Memory-related services are the following:</p>
+<div class="informaltable"><table border="1">
+<colgroup>
+<col>
+<col>
+</colgroup>
+<tbody>
+<tr>
+<td>xnheap_init</td>
+<td>Initialize a new memory heap</td>
+</tr>
+<tr>
+<td>xnheap_destroy</td>
+<td>Destroy a memory heap</td>
+</tr>
+<tr>
+<td>xnheap_alloc</td>
+<td>Allocate a variable-size block of memory</td>
+</tr>
+<tr>
+<td>xnheap_free</td>
+<td>Free a block of memory</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+</div>
+</div>
+<hr>
+<p class="copyright">© 2004 RTAI Project</p>
+<a href="http://validator.w3.org/check/referer" title="Markup validation for this page"><img src="../pictures/w3_xhtml11.png" alt="Standard-compliant XHTML" width="80" height="15"></a><a href="http://jigsaw.w3.org/css-validator/check/referer" title="Style Sheet validation for this page"><img src="../pictures/w3_css2.png" alt="Standard-compliant CSS 2" width="80" height="15"></a><div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="common-framework.html"><img src="../pictures/prev.gif" alt="Prev"></a> </td>
+<td width="20%" align="center"><a accesskey="u" href="whitepaper.html"><img src="../pictures/up.gif" alt="Up"></a></td>
+<td width="40%" align="right"> <a accesskey="n" href="emulating-psos.html"><img src="../pictures/next.gif" alt="Next"></a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">1.3. A common emulation framework </td>
+<td width="20%" align="center"><a accesskey="h" href="index.html"><img src="../pictures/home.gif" alt="Home"></a></td>
+<td width="40%" align="right" valign="top"> 1.5. Emulating pSOS+ on top of Xenomai</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

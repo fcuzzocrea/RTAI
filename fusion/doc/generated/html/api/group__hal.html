@@ -78,7 +78,7 @@ int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group
 <p>
 Uninstall a system request handler. 
 <p>
-rthal_release_srq uninstalls the specified system call <em>srq</em>, returned by installing the related handler with a previous call to <a class="el" href="group__hal__ppc.html#ga50">rthal_request_srq()</a>.<p>
+rthal_release_srq uninstalls the specified system call <em>srq</em>, returned by installing the related handler with a previous call to <a class="el" href="group__hal__ppc.html#ga49">rthal_request_srq()</a>.<p>
 <dl compact><dt><b>Return values:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>EINVAL</em>&nbsp;</td><td>if <em>srq</em> is invalid. </td></tr>
@@ -144,7 +144,7 @@ rthal_request_linux_irq installs function <em>handler</em> as a standard Linux i
     <tr><td valign="top"></td><td valign="top"><em>dev_id</em>&nbsp;</td><td>is to pass to the interrupt handler, in the same way as the standard Linux irq request call.</td></tr>
   </table>
 </dl>
-The interrupt service routine can be uninstalled using <a class="el" href="group__hal__ppc.html#ga48">rthal_release_linux_irq()</a>.<p>
+The interrupt service routine can be uninstalled using <a class="el" href="group__hal__ppc.html#ga47">rthal_release_linux_irq()</a>.<p>
 <dl compact><dt><b>Return values:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>0</em>&nbsp;</td><td>on success. </td></tr>
@@ -154,7 +154,7 @@ The interrupt service routine can be uninstalled using <a class="el" href="group
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:27 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Fri Mar 18 19:09:46 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

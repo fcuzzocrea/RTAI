@@ -23,30 +23,30 @@ All high-level real-time objects created by the RTAI skin can be registered. The
 
 <p>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga14">rt_registry_enter</a> (const char *key, void *objaddr, rt_handle_t *phandle, RT_OBJECT_PROCNODE *pnode)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga15">rt_registry_enter</a> (const char *key, void *objaddr, rt_handle_t *phandle, RT_OBJECT_PROCNODE *pnode)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Register a real-time object.  <a href="#ga14"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga15">rt_registry_bind</a> (const char *key, RTIME timeout, rt_handle_t *phandle)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Register a real-time object.  <a href="#ga15"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga16">rt_registry_bind</a> (const char *key, RTIME timeout, rt_handle_t *phandle)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a real-time object.  <a href="#ga15"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga16">rt_registry_remove</a> (rt_handle_t handle)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a real-time object.  <a href="#ga16"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga17">rt_registry_remove</a> (rt_handle_t handle)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Forcibly unregister a real-time object.  <a href="#ga16"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga17">rt_registry_remove_safe</a> (rt_handle_t handle, RTIME timeout)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Forcibly unregister a real-time object.  <a href="#ga17"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga18">rt_registry_remove_safe</a> (rt_handle_t handle, RTIME timeout)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unregister an idle real-time object.  <a href="#ga17"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">void *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga18">rt_registry_get</a> (rt_handle_t handle)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unregister an idle real-time object.  <a href="#ga18"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">void *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga19">rt_registry_get</a> (rt_handle_t handle)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Find and lock a real-time object into the registry.  <a href="#ga18"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">u_long&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga19">rt_registry_put</a> (rt_handle_t handle)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Find and lock a real-time object into the registry.  <a href="#ga19"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">u_long&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga20">rt_registry_put</a> (rt_handle_t handle)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unlock a real-time object from the registry.  <a href="#ga19"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">void *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga20">rt_registry_fetch</a> (rt_handle_t handle)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unlock a real-time object from the registry.  <a href="#ga20"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">void *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__registry.html#ga21">rt_registry_fetch</a> (rt_handle_t handle)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Find a real-time object into the registry.  <a href="#ga20"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Find a real-time object into the registry.  <a href="#ga21"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
-<a class="anchor" name="ga15" doxytag="registry.c::rt_registry_bind"></a><p>
+<a class="anchor" name="ga16" doxytag="registry.c::rt_registry_bind"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -125,7 +125,7 @@ Rescheduling: always unless the request is immediately satisfied or <em>timeout<
     </td>
   </tr>
 </table>
-<a class="anchor" name="ga14" doxytag="registry.c::rt_registry_enter"></a><p>
+<a class="anchor" name="ga15" doxytag="registry.c::rt_registry_enter"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -178,7 +178,7 @@ This service allocates a new registry slot for an associated object, and indexes
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>key</em>&nbsp;</td><td>A valid NULL-terminated string by which the object will be indexed and later retrieved in the registry. Since it is assumed that such key is stored into the registered object, it will *not* be copied but only kept by reference in the registry.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>objaddr</em>&nbsp;</td><td>An opaque pointer to the object to index by <em>key</em>.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>phandle</em>&nbsp;</td><td>A pointer to a generic handle defined by the registry which will uniquely identify the indexed object, until the latter is unregistered using the <a class="el" href="group__registry.html#ga16">rt_registry_remove()</a> service.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>phandle</em>&nbsp;</td><td>A pointer to a generic handle defined by the registry which will uniquely identify the indexed object, until the latter is unregistered using the <a class="el" href="group__registry.html#ga17">rt_registry_remove()</a> service.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>pnode</em>&nbsp;</td><td>A pointer to an optional /proc node class descriptor. This structure provides the information needed to export all objects from the given class through the /proc filesystem, under the /proc/rtai/registry entry. Passing NULL indicates that no /proc support is available for the newly registered object.</td></tr>
   </table>
 </dl>
@@ -200,7 +200,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga20" doxytag="registry.c::rt_registry_fetch"></a><p>
+<a class="anchor" name="ga21" doxytag="registry.c::rt_registry_fetch"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -245,7 +245,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga18" doxytag="registry.c::rt_registry_get"></a><p>
+<a class="anchor" name="ga19" doxytag="registry.c::rt_registry_get"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -272,7 +272,7 @@ Rescheduling: never.     </td>
 <p>
 Find and lock a real-time object into the registry. 
 <p>
-This service retrieves an object from its handle into the registry and prevents it deletion atomically. A locking count is tracked, so that <a class="el" href="group__registry.html#ga18">rt_registry_get()</a> and <a class="el" href="group__registry.html#ga19">rt_registry_put()</a> must be used in pair.<p>
+This service retrieves an object from its handle into the registry and prevents it deletion atomically. A locking count is tracked, so that <a class="el" href="group__registry.html#ga19">rt_registry_get()</a> and <a class="el" href="group__registry.html#ga20">rt_registry_put()</a> must be used in pair.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>handle</em>&nbsp;</td><td>The generic handle of the object to find and lock. If RT_REGISTRY_SELF is passed, the object is the calling RTAI task.</td></tr>
@@ -290,7 +290,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga19" doxytag="registry.c::rt_registry_put"></a><p>
+<a class="anchor" name="ga20" doxytag="registry.c::rt_registry_put"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -317,7 +317,7 @@ Rescheduling: never.     </td>
 <p>
 Unlock a real-time object from the registry. 
 <p>
-This service decrements the lock count of a registered object previously locked by a call to <a class="el" href="group__registry.html#ga18">rt_registry_get()</a>. The object is actually unlocked from the registry when the locking count falls down to zero, thus waking up any task currently waiting inside <a class="el" href="group__registry.html#ga16">rt_registry_remove()</a> for unregistering it.<p>
+This service decrements the lock count of a registered object previously locked by a call to <a class="el" href="group__registry.html#ga19">rt_registry_get()</a>. The object is actually unlocked from the registry when the locking count falls down to zero, thus waking up any task currently waiting inside <a class="el" href="group__registry.html#ga17">rt_registry_remove()</a> for unregistering it.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>handle</em>&nbsp;</td><td>The generic handle of the object to unlock. If RT_REGISTRY_SELF is passed, the object is the calling RTAI task.</td></tr>
@@ -335,7 +335,7 @@ This service can be called from:<p>
 Rescheduling: possible if the lock count falls down to zero and some task is currently waiting for the object to be unlocked.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga16" doxytag="registry.c::rt_registry_remove"></a><p>
+<a class="anchor" name="ga17" doxytag="registry.c::rt_registry_remove"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -380,7 +380,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga17" doxytag="registry.c::rt_registry_remove_safe"></a><p>
+<a class="anchor" name="ga18" doxytag="registry.c::rt_registry_remove_safe"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -416,7 +416,7 @@ Rescheduling: never.     </td>
 <p>
 Unregister an idle real-time object. 
 <p>
-This service removes an object from the registry. The caller might sleep as a result of waiting for the target object to be unlocked prior to the removal (see <a class="el" href="group__registry.html#ga19">rt_registry_put()</a>).<p>
+This service removes an object from the registry. The caller might sleep as a result of waiting for the target object to be unlocked prior to the removal (see <a class="el" href="group__registry.html#ga20">rt_registry_put()</a>).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>handle</em>&nbsp;</td><td>The generic handle of the object to remove.</td></tr>
@@ -452,7 +452,7 @@ Rescheduling: possible if the object to remove is currently locked and the calli
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:27 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Fri Mar 18 19:09:46 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -144,12 +144,12 @@ This service should be called by upper interfaces under circumstances requiring 
   </table>
 </dl>
 <ul>
-<li>XNRMID should be set to indicate that the synchronization object is about to be destroyed (see <a class="el" href="group__pod.html#ga31">xnpod_resume_thread()</a>).</li></ul>
+<li>XNRMID should be set to indicate that the synchronization object is about to be destroyed (see <a class="el" href="group__pod.html#ga32">xnpod_resume_thread()</a>).</li></ul>
 <p>
 <ul>
-<li>XNBREAK should be set to indicate that the wait has been forcibly interrupted (see <a class="el" href="group__pod.html#ga32">xnpod_unblock_thread()</a>).</li></ul>
+<li>XNBREAK should be set to indicate that the wait has been forcibly interrupted (see <a class="el" href="group__pod.html#ga33">xnpod_unblock_thread()</a>).</li></ul>
 <p>
-<dl compact><dt><b>Returns:</b></dt><dd>XNSYNCH_RESCHED is returned if at least one thread is unblocked, which means the caller should invoke <a class="el" href="group__pod.html#ga36">xnpod_schedule()</a> for applying the new scheduling state. Otherwise, XNSYNCH_DONE is returned.</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>XNSYNCH_RESCHED is returned if at least one thread is unblocked, which means the caller should invoke <a class="el" href="group__pod.html#ga37">xnpod_schedule()</a> for applying the new scheduling state. Otherwise, XNSYNCH_DONE is returned.</dd></dl>
 Side-effects:<p>
 <ul>
 <li>The effective priority of the previous resource owner might be lowered to its base priority value as a consequence of the priority inheritance boost being cleared.</li></ul>
@@ -390,7 +390,7 @@ This service can be called from:<p>
 <li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
 Rescheduling: always.<p>
-<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga22">xnpod_start_timer()</a> service. In periodic mode, clock ticks are interpreted as periodic jiffies. In oneshot mode, clock ticks are interpreted as nanoseconds. </dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga23">xnpod_start_timer()</a> service. In periodic mode, clock ticks are interpreted as periodic jiffies. In oneshot mode, clock ticks are interpreted as nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
@@ -504,7 +504,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:27 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Fri Mar 18 19:09:46 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -40,66 +40,67 @@
 00030 <span class="preprocessor">#define __xn_sys_sync       2   </span><span class="comment">/* xnshadow_sync(&amp;syncflag) */</span>
 00031 <span class="preprocessor">#define __xn_sys_migrate    3   </span><span class="comment">/* switched = xnshadow_relax/harden() */</span>
 00032 <span class="preprocessor">#define __xn_sys_barrier    4   </span><span class="comment">/* started = xnshadow_wait_barrier(&amp;entry,&amp;cookie) */</span>
-00033 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_TIMESTAMPS</span>
-00034 <span class="preprocessor"></span><span class="preprocessor">#define __xn_sys_timestamps 5   </span><span class="comment">/* xnpod_get_timestamps(&amp;timestamps) */</span>
-00035 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_TIMESTAMPS */</span>
-00036 
-00037 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnsysinfo {
+00033 
+00034 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnsysinfo {
+00035 
+00036     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> cpufreq; <span class="comment">/* CPU frequency */</span>
+00037     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> tickval;      <span class="comment">/* Tick duration (ns) */</span>
 00038 
-00039     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> cpufreq; <span class="comment">/* CPU frequency */</span>
-00040     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> tickval;      <span class="comment">/* Tick duration (ns) */</span>
-00041 
-00042 } xnsysinfo_t;
-00043 
-00044 <span class="keyword">typedef</span> <span class="keyword">struct </span>xninquiry {
-00045 
-00046     <span class="keywordtype">char</span> name[32];
-00047     <span class="keywordtype">int</span> prio;
-00048     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> status;
-00049     <span class="keywordtype">void</span> *khandle;
-00050     <span class="keywordtype">void</span> *uhandle;
-00051 
-00052 } xninquiry_t;
-00053 
-00054 <span class="preprocessor">#ifdef __KERNEL__</span>
-00055 <span class="preprocessor"></span>
-00056 <span class="keyword">struct </span>task_struct;
-00057 
-00058 <span class="preprocessor">#define XNARCH_MAX_SYSENT 255</span>
-00059 <span class="preprocessor"></span>
-00060 <span class="keyword">typedef</span> <span class="keyword">struct </span>_xnsysent {
+00039 } xnsysinfo_t;
+00040 
+00041 <span class="keyword">typedef</span> <span class="keyword">struct </span>xninquiry {
+00042 
+00043     <span class="keywordtype">char</span> name[32];
+00044     <span class="keywordtype">int</span> prio;
+00045     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> status;
+00046     <span class="keywordtype">void</span> *khandle;
+00047     <span class="keywordtype">void</span> *uhandle;
+00048 
+00049 } xninquiry_t;
+00050 
+00051 <span class="preprocessor">#ifdef __KERNEL__</span>
+00052 <span class="preprocessor"></span>
+00053 <span class="keyword">struct </span>task_struct;
+00054 
+00055 <span class="preprocessor">#define XNARCH_MAX_SYSENT 255</span>
+00056 <span class="preprocessor"></span>
+00057 <span class="keyword">typedef</span> <span class="keyword">struct </span>_xnsysent {
+00058 
+00059     int (*svc)(<span class="keyword">struct </span>task_struct *task,
+00060                <span class="keyword">struct </span>pt_regs *regs);
 00061 
-00062     int (*svc)(<span class="keyword">struct </span>task_struct *task,
-00063                <span class="keyword">struct </span>pt_regs *regs);
-00064 
-00065 <span class="comment">/* Syscall must run into the Linux domain. */</span>
-00066 <span class="preprocessor">#define __xn_exec_lostage    0x1</span>
-00067 <span class="preprocessor"></span><span class="comment">/* Syscall must run into the RTAI domain. */</span>
-00068 <span class="preprocessor">#define __xn_exec_histage    0x2</span>
-00069 <span class="preprocessor"></span><span class="comment">/* Shadow syscall; caller must be mapped. */</span>
-00070 <span class="preprocessor">#define __xn_exec_shadow     0x4</span>
-00071 <span class="preprocessor"></span><span class="comment">/* Context-agnostic syscall. */</span>
-00072 <span class="preprocessor">#define __xn_exec_any        0x0</span>
-00073 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow init syscall. */</span>
-00074 <span class="preprocessor">#define __xn_exec_init       __xn_exec_lostage</span>
-00075 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow syscall in RTAI space. */</span>
-00076 <span class="preprocessor">#define __xn_exec_primary   (__xn_exec_shadow|__xn_exec_histage)</span>
-00077 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow syscall in Linux space. */</span>
-00078 <span class="preprocessor">#define __xn_exec_secondary (__xn_exec_shadow|__xn_exec_lostage)</span>
-00079 <span class="preprocessor"></span>
-00080     u_long flags;
-00081 
-00082 } xnsysent_t;
-00083 
-00084 <span class="keyword">extern</span> <span class="keywordtype">int</span> nkgkptd;
-00085 
-00086 <span class="preprocessor">#define xnshadow_ptd(t)    ((t)-&gt;ptd[nkgkptd])</span>
-00087 <span class="preprocessor"></span><span class="preprocessor">#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))</span>
-00088 <span class="preprocessor"></span>
-00089 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00090 
-00091 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
+00062 <span class="comment">/* Syscall must run into the Linux domain. */</span>
+00063 <span class="preprocessor">#define __xn_exec_lostage    0x1</span>
+00064 <span class="preprocessor"></span><span class="comment">/* Syscall must run into the RTAI domain. */</span>
+00065 <span class="preprocessor">#define __xn_exec_histage    0x2</span>
+00066 <span class="preprocessor"></span><span class="comment">/* Shadow syscall; caller must be mapped. */</span>
+00067 <span class="preprocessor">#define __xn_exec_shadow     0x4</span>
+00068 <span class="preprocessor"></span><span class="comment">/* Switch back toggle; caller must return to its original mode. */</span>
+00069 <span class="preprocessor">#define __xn_exec_switchback 0x8</span>
+00070 <span class="preprocessor"></span><span class="comment">/* Exec in current domain. */</span>
+00071 <span class="preprocessor">#define __xn_exec_current    0x10</span>
+00072 <span class="preprocessor"></span><span class="comment">/* Context-agnostic syscall. */</span>
+00073 <span class="preprocessor">#define __xn_exec_any        0x0</span>
+00074 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow init syscall. */</span>
+00075 <span class="preprocessor">#define __xn_exec_init       __xn_exec_lostage</span>
+00076 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow syscall in RTAI space. */</span>
+00077 <span class="preprocessor">#define __xn_exec_primary   (__xn_exec_shadow|__xn_exec_histage)</span>
+00078 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow syscall in Linux space. */</span>
+00079 <span class="preprocessor">#define __xn_exec_secondary (__xn_exec_shadow|__xn_exec_lostage)</span>
+00080 <span class="preprocessor"></span>
+00081     u_long flags;
+00082 
+00083 } xnsysent_t;
+00084 
+00085 <span class="keyword">extern</span> <span class="keywordtype">int</span> nkgkptd;
+00086 
+00087 <span class="preprocessor">#define xnshadow_ptd(t)    ((t)-&gt;ptd[nkgkptd])</span>
+00088 <span class="preprocessor"></span><span class="preprocessor">#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))</span>
+00089 <span class="preprocessor"></span>
+00090 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00091 
+00092 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_SYSCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Mar 18 19:09:45 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

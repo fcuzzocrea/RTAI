@@ -307,76 +307,72 @@
 00334 
 00335 <span class="keywordtype">void</span> rthal_critical_exit(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags);
 00336 
-00337 <span class="keywordtype">void</span> rthal_set_linux_task_priority(<span class="keyword">struct</span> task_struct *task,
-00338                                    <span class="keywordtype">int</span> policy,
-00339                                    <span class="keywordtype">int</span> prio);
+00337 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
+00338 
+00339     <span class="comment">/* Public interface */</span>
 00340 
-00341 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
-00342 
-00343     <span class="comment">/* Public interface */</span>
+00341 <span class="preprocessor">#ifdef __KERNEL__</span>
+00342 <span class="preprocessor"></span>
+00343 <span class="preprocessor">#include &lt;linux/kernel.h&gt;</span>
 00344 
-00345 <span class="preprocessor">#ifdef __KERNEL__</span>
-00346 <span class="preprocessor"></span>
-00347 <span class="preprocessor">#include &lt;linux/kernel.h&gt;</span>
+00345 <span class="keyword">typedef</span> int (*rthal_trap_handler_t)(adevinfo_t *evinfo);
+00346 
+00347 <span class="preprocessor">#define rthal_printk    printk </span><span class="comment">/* This is safe over Adeos */</span>
 00348 
-00349 <span class="keyword">typedef</span> int (*rthal_trap_handler_t)(adevinfo_t *evinfo);
-00350 
-00351 <span class="preprocessor">#define rthal_printk    printk </span><span class="comment">/* This is safe over Adeos */</span>
+00349 <span class="preprocessor">#ifdef __cplusplus</span>
+00350 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00351 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
 00352 
-00353 <span class="preprocessor">#ifdef __cplusplus</span>
-00354 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00355 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00353 <span class="keywordtype">int</span> rthal_request_irq(<span class="keywordtype">unsigned</span> irq,
+00354                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq, <span class="keywordtype">void</span> *cookie),
+00355                       <span class="keywordtype">void</span> *cookie);
 00356 
-00357 <span class="keywordtype">int</span> rthal_request_irq(<span class="keywordtype">unsigned</span> irq,
-00358                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq, <span class="keywordtype">void</span> *cookie),
-00359                       <span class="keywordtype">void</span> *cookie);
-00360 
-00361 <span class="keywordtype">int</span> rthal_release_irq(<span class="keywordtype">unsigned</span> irq);
-00362 
-00368 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga45">rthal_enable_irq</a>(<span class="keywordtype">unsigned</span> irq);
-00369 
-00370 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga46">rthal_disable_irq</a>(<span class="keywordtype">unsigned</span> irq);
-00371 
-00374 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga47">rthal_request_linux_irq</a>(<span class="keywordtype">unsigned</span> irq,
-00375                             irqreturn_t (*handler)(<span class="keywordtype">int</span> irq,
-00376                                                    <span class="keywordtype">void</span> *dev_id,
-00377                                                    <span class="keyword">struct</span> pt_regs *regs), 
-00378                             <span class="keywordtype">char</span> *name,
-00379                             <span class="keywordtype">void</span> *dev_id);
-00380 
-00381 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga48">rthal_release_linux_irq</a>(<span class="keywordtype">unsigned</span> irq,
-00382                             <span class="keywordtype">void</span> *dev_id);
+00357 <span class="keywordtype">int</span> rthal_release_irq(<span class="keywordtype">unsigned</span> irq);
+00358 
+00364 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga44">rthal_enable_irq</a>(<span class="keywordtype">unsigned</span> irq);
+00365 
+00366 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga45">rthal_disable_irq</a>(<span class="keywordtype">unsigned</span> irq);
+00367 
+00370 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga46">rthal_request_linux_irq</a>(<span class="keywordtype">unsigned</span> irq,
+00371                             irqreturn_t (*handler)(<span class="keywordtype">int</span> irq,
+00372                                                    <span class="keywordtype">void</span> *dev_id,
+00373                                                    <span class="keyword">struct</span> pt_regs *regs), 
+00374                             <span class="keywordtype">char</span> *name,
+00375                             <span class="keywordtype">void</span> *dev_id);
+00376 
+00377 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga47">rthal_release_linux_irq</a>(<span class="keywordtype">unsigned</span> irq,
+00378                             <span class="keywordtype">void</span> *dev_id);
+00379 
+00380 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga48">rthal_pend_linux_irq</a>(<span class="keywordtype">unsigned</span> irq);
+00381 
+00382 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga51">rthal_pend_linux_srq</a>(<span class="keywordtype">unsigned</span> srq);
 00383 
-00384 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga49">rthal_pend_linux_irq</a>(<span class="keywordtype">unsigned</span> irq);
-00385 
-00386 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga52">rthal_pend_linux_srq</a>(<span class="keywordtype">unsigned</span> srq);
-00387 
-00388 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga50">rthal_request_srq</a>(<span class="keywordtype">unsigned</span> label,
-00389                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>));
-00390 
-00391 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga51">rthal_release_srq</a>(<span class="keywordtype">unsigned</span> srq);
+00384 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga49">rthal_request_srq</a>(<span class="keywordtype">unsigned</span> label,
+00385                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>));
+00386 
+00387 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga50">rthal_release_srq</a>(<span class="keywordtype">unsigned</span> srq);
+00388 
+00389 <span class="keywordtype">int</span> rthal_set_irq_affinity(<span class="keywordtype">unsigned</span> irq,
+00390                            cpumask_t cpumask,
+00391                            cpumask_t *oldmask);
 00392 
-00393 <span class="keywordtype">int</span> rthal_set_irq_affinity(<span class="keywordtype">unsigned</span> irq,
-00394                            cpumask_t cpumask,
-00395                            cpumask_t *oldmask);
-00396 
-00397 <span class="keywordtype">int</span> rthal_request_timer(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
-00398                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> nstick);
+00393 <span class="keywordtype">int</span> rthal_request_timer(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
+00394                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> nstick);
+00395 
+00396 <span class="keywordtype">void</span> rthal_release_timer(<span class="keywordtype">void</span>);
+00397 
+00398 rthal_trap_handler_t rthal_set_trap_handler(rthal_trap_handler_t handler);
 00399 
-00400 <span class="keywordtype">void</span> rthal_release_timer(<span class="keywordtype">void</span>);
+00400 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rthal_calibrate_timer(<span class="keywordtype">void</span>);
 00401 
-00402 rthal_trap_handler_t rthal_set_trap_handler(rthal_trap_handler_t handler);
-00403 
-00404 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rthal_calibrate_timer(<span class="keywordtype">void</span>);
+00402 <span class="preprocessor">#ifdef __cplusplus</span>
+00403 <span class="preprocessor"></span>}
+00404 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
 00405 
-00406 <span class="preprocessor">#ifdef __cplusplus</span>
-00407 <span class="preprocessor"></span>}
-00408 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00409 
-00410 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00411 
-00414 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
+00406 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00407 
+00410 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Mar 18 19:09:45 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

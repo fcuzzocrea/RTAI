@@ -16,151 +16,157 @@
 00026 <span class="preprocessor">#include &lt;nucleus/heap.h&gt;</span>
 00027 <span class="preprocessor">#include &lt;<a class="code" href="skins_2rtai_2types_8h.html">rtai/types.h</a>&gt;</span>
 00028 
-00029 <span class="keyword">struct </span>RT_TASK;
-00030 
-00031 <span class="comment">/* Creation flags. */</span>
-00032 <span class="preprocessor">#define Q_PRIO   XNSYNCH_PRIO   </span><span class="comment">/* Pend by task priority order. */</span>
-00033 <span class="preprocessor">#define Q_FIFO   XNSYNCH_FIFO   </span><span class="comment">/* Pend by FIFO order. */</span>
-00034 <span class="preprocessor">#define Q_DMA    0x100          </span><span class="comment">/* Use memory suitable for DMA. */</span>
-00035 <span class="preprocessor">#define Q_SHARED 0x200          </span><span class="comment">/* Use mappable shared memory. */</span>
+00029 <span class="comment">/* Creation flags. */</span>
+00030 <span class="preprocessor">#define Q_PRIO   XNSYNCH_PRIO   </span><span class="comment">/* Pend by task priority order. */</span>
+00031 <span class="preprocessor">#define Q_FIFO   XNSYNCH_FIFO   </span><span class="comment">/* Pend by FIFO order. */</span>
+00032 <span class="preprocessor">#define Q_DMA    0x100          </span><span class="comment">/* Use memory suitable for DMA. */</span>
+00033 <span class="preprocessor">#define Q_SHARED 0x200          </span><span class="comment">/* Use mappable shared memory. */</span>
+00034 
+00035 <span class="preprocessor">#define Q_UNLIMITED 0           </span><span class="comment">/* No size limit. */</span>
 00036 
-00037 <span class="preprocessor">#define Q_UNLIMITED 0           </span><span class="comment">/* No size limit. */</span>
-00038 
-00039 <span class="comment">/* Operation flags. */</span>
-00040 <span class="preprocessor">#define Q_NORMAL     0x0</span>
-00041 <span class="preprocessor"></span><span class="preprocessor">#define Q_URGENT     0x1</span>
-00042 <span class="preprocessor"></span><span class="preprocessor">#define Q_BROADCAST  0x2</span>
-00043 <span class="preprocessor"></span>
-00044 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_queue_info {
+00037 <span class="comment">/* Operation flags. */</span>
+00038 <span class="preprocessor">#define Q_NORMAL     0x0</span>
+00039 <span class="preprocessor"></span><span class="preprocessor">#define Q_URGENT     0x1</span>
+00040 <span class="preprocessor"></span><span class="preprocessor">#define Q_BROADCAST  0x2</span>
+00041 <span class="preprocessor"></span>
+00042 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_queue_info {
+00043 
+00044     <span class="keywordtype">int</span> nwaiters;               <span class="comment">/* !&lt; Number of pending tasks. */</span>
 00045 
-00046     <span class="keywordtype">int</span> nwaiters;               <span class="comment">/* !&lt; Number of pending tasks. */</span>
+00046     <span class="keywordtype">int</span> nmessages;              <span class="comment">/* !&lt; Number of queued messages. */</span>
 00047 
-00048     <span class="keywordtype">int</span> nmessages;              <span class="comment">/* !&lt; Number of queued messages. */</span>
+00048     <span class="keywordtype">int</span> mode;                   <span class="comment">/* !&lt; Creation mode. */</span>
 00049 
-00050     <span class="keywordtype">int</span> mode;                   <span class="comment">/* !&lt; Creation mode. */</span>
+00050     size_t qlimit;              <span class="comment">/* !&lt; Queue limit. */</span>
 00051 
-00052     size_t qlimit;              <span class="comment">/* !&lt; Queue limit. */</span>
+00052     size_t poolsize;            <span class="comment">/* !&lt; Size of pool memory. */</span>
 00053 
-00054     size_t poolsize;            <span class="comment">/* !&lt; Size of pool memory. */</span>
+00054     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
 00055 
-00056     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
+00056 } RT_QUEUE_INFO;
 00057 
-00058 } RT_QUEUE_INFO;
+00058 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_queue_placeholder {
 00059 
-00060 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_queue_placeholder {
+00060     rt_handle_t opaque;
 00061 
-00062     rt_handle_t opaque;
+00062     <span class="keywordtype">void</span> *opaque2;
 00063 
-00064     <span class="keywordtype">void</span> *opaque2;
+00064     caddr_t mapbase;
 00065 
-00066     caddr_t mapbase;
+00066     size_t mapsize;
 00067 
-00068     size_t mapsize;
+00068 } RT_QUEUE_PLACEHOLDER;
 00069 
-00070 } RT_QUEUE_PLACEHOLDER;
-00071 
-00072 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
+00070 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
+00071 <span class="preprocessor"></span>
+00072 <span class="preprocessor">#define RTAI_QUEUE_MAGIC 0x55550707</span>
 00073 <span class="preprocessor"></span>
-00074 <span class="preprocessor">#define RTAI_QUEUE_MAGIC 0x55550707</span>
-00075 <span class="preprocessor"></span>
-00076 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_queue {
+00074 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_queue {
+00075 
+00076     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
 00077 
-00078     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
+00078     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
 00079 
-00080     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
+00080     xnqueue_t pendq;    <span class="comment">/* !&lt; Pending message queue. */</span>
 00081 
-00082     xnqueue_t pendq;    <span class="comment">/* !&lt; Pending message queue. */</span>
+00082     xnheap_t bufpool;   <span class="comment">/* !&lt; Message buffer pool. */</span>
 00083 
-00084     xnheap_t bufpool;   <span class="comment">/* !&lt; Message buffer pool. */</span>
+00084     <span class="keywordtype">int</span> mode;           <span class="comment">/* !&lt; Creation mode. */</span>
 00085 
-00086     <span class="keywordtype">int</span> mode;           <span class="comment">/* !&lt; Creation mode. */</span>
+00086     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
 00087 
-00088     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
+00088     <span class="keywordtype">int</span> qlimit;         <span class="comment">/* !&lt; Maximum queued elements. */</span>
 00089 
-00090     <span class="keywordtype">int</span> qlimit;         <span class="comment">/* !&lt; Maximum queued elements. */</span>
+00090     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
 00091 
-00092     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
-00093 
-00094 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
-00095 <span class="preprocessor"></span>    pid_t cpid;                 <span class="comment">/* !&lt; Creator's pid. */</span>
-00096 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
+00092 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
+00093 <span class="preprocessor"></span>    pid_t cpid;                 <span class="comment">/* !&lt; Creator's pid. */</span>
+00094 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
+00095 
+00096 } RT_QUEUE;
 00097 
-00098 } RT_QUEUE;
+00098 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_queue_msg {
 00099 
-00100 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_queue_msg {
+00100     size_t size;
 00101 
-00102     size_t size;
+00102     <span class="keyword">volatile</span> <span class="keywordtype">unsigned</span> refcount;
 00103 
-00104     <span class="keyword">volatile</span> <span class="keywordtype">unsigned</span> refcount;
+00104     xnholder_t link;
 00105 
-00106     xnholder_t link;
-00107 
-00108 <span class="preprocessor">#define link2rtmsg(laddr) \</span>
-00109 <span class="preprocessor">((rt_queue_msg_t *)(((char *)laddr) - (int)(&amp;((rt_queue_msg_t *)0)-&gt;link)))</span>
-00110 <span class="preprocessor"></span>
-00111 } rt_queue_msg_t;
-00112 
-00113 <span class="preprocessor">#ifdef __cplusplus</span>
-00114 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00115 <span class="preprocessor">#endif</span>
-00116 <span class="preprocessor"></span>
-00117 <span class="keywordtype">int</span> __queue_pkg_init(<span class="keywordtype">void</span>);
+00106 <span class="preprocessor">#define link2rtmsg(laddr) \</span>
+00107 <span class="preprocessor">((rt_queue_msg_t *)(((char *)laddr) - (int)(&amp;((rt_queue_msg_t *)0)-&gt;link)))</span>
+00108 <span class="preprocessor"></span>
+00109 } rt_queue_msg_t;
+00110 
+00111 <span class="preprocessor">#ifdef __cplusplus</span>
+00112 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00113 <span class="preprocessor">#endif</span>
+00114 <span class="preprocessor"></span>
+00115 <span class="keywordtype">int</span> __queue_pkg_init(<span class="keywordtype">void</span>);
+00116 
+00117 <span class="keywordtype">void</span> __queue_pkg_cleanup(<span class="keywordtype">void</span>);
 00118 
-00119 <span class="keywordtype">void</span> __queue_pkg_cleanup(<span class="keywordtype">void</span>);
-00120 
-00121 <span class="preprocessor">#ifdef __cplusplus</span>
-00122 <span class="preprocessor"></span>}
-00123 <span class="preprocessor">#endif</span>
-00124 <span class="preprocessor"></span>
-00125 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00119 <span class="preprocessor">#ifdef __cplusplus</span>
+00120 <span class="preprocessor"></span>}
+00121 <span class="preprocessor">#endif</span>
+00122 <span class="preprocessor"></span>
+00123 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00124 
+00125 <span class="keyword">typedef</span> RT_QUEUE_PLACEHOLDER RT_QUEUE;
 00126 
-00127 <span class="keyword">typedef</span> RT_QUEUE_PLACEHOLDER RT_QUEUE;
-00128 
-00129 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga12">rt_queue_bind</a>(RT_QUEUE *q,
-00130                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
-00131 
-00132 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga13">rt_queue_unbind</a>(RT_QUEUE *q);
+00127 <span class="preprocessor">#ifdef __cplusplus</span>
+00128 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00129 <span class="preprocessor">#endif</span>
+00130 <span class="preprocessor"></span>
+00131 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga12">rt_queue_bind</a>(RT_QUEUE *q,
+00132                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
 00133 
-00134 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
+00134 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga13">rt_queue_unbind</a>(RT_QUEUE *q);
 00135 
 00136 <span class="preprocessor">#ifdef __cplusplus</span>
-00137 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00137 <span class="preprocessor"></span>}
 00138 <span class="preprocessor">#endif</span>
 00139 <span class="preprocessor"></span>
-00140 <span class="comment">/* Public interface. */</span>
+00140 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
 00141 
-00142 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga2">rt_queue_create</a>(RT_QUEUE *q,
-00143                     <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
-00144                     size_t poolsize,
-00145                     size_t qlimit,
-00146                     <span class="keywordtype">int</span> mode);
+00142 <span class="preprocessor">#ifdef __cplusplus</span>
+00143 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00144 <span class="preprocessor">#endif</span>
+00145 <span class="preprocessor"></span>
+00146 <span class="comment">/* Public interface. */</span>
 00147 
-00148 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga3">rt_queue_delete</a>(RT_QUEUE *q);
-00149 
-00150 <span class="keywordtype">void</span> *<a class="code" href="group__native__queue.html#ga4">rt_queue_alloc</a>(RT_QUEUE *q,
-00151                      size_t size);
-00152 
-00153 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga6">rt_queue_free</a>(RT_QUEUE *q,
-00154                   <span class="keywordtype">void</span> *buf);
+00148 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga2">rt_queue_create</a>(RT_QUEUE *q,
+00149                     <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00150                     size_t poolsize,
+00151                     size_t qlimit,
+00152                     <span class="keywordtype">int</span> mode);
+00153 
+00154 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga3">rt_queue_delete</a>(RT_QUEUE *q);
 00155 
-00156 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga7">rt_queue_send</a>(RT_QUEUE *q,
-00157                   <span class="keywordtype">void</span> *buf,
-00158                   size_t size,
-00159                   <span class="keywordtype">int</span> mode);
-00160 
-00161 ssize_t <a class="code" href="group__native__queue.html#ga8">rt_queue_recv</a>(RT_QUEUE *q,
-00162                       <span class="keywordtype">void</span> **bufp,
-00163                       RTIME timeout);
-00164 
-00165 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga9">rt_queue_inquire</a>(RT_QUEUE *q,
-00166                      RT_QUEUE_INFO *info);
-00167 
-00168 <span class="preprocessor">#ifdef __cplusplus</span>
-00169 <span class="preprocessor"></span>}
-00170 <span class="preprocessor">#endif</span>
-00171 <span class="preprocessor"></span>
-00172 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_QUEUE_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
+00156 <span class="keywordtype">void</span> *<a class="code" href="group__native__queue.html#ga4">rt_queue_alloc</a>(RT_QUEUE *q,
+00157                      size_t size);
+00158 
+00159 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga6">rt_queue_free</a>(RT_QUEUE *q,
+00160                   <span class="keywordtype">void</span> *buf);
+00161 
+00162 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga7">rt_queue_send</a>(RT_QUEUE *q,
+00163                   <span class="keywordtype">void</span> *buf,
+00164                   size_t size,
+00165                   <span class="keywordtype">int</span> mode);
+00166 
+00167 ssize_t <a class="code" href="group__native__queue.html#ga8">rt_queue_recv</a>(RT_QUEUE *q,
+00168                       <span class="keywordtype">void</span> **bufp,
+00169                       RTIME timeout);
+00170 
+00171 <span class="keywordtype">int</span> <a class="code" href="group__native__queue.html#ga9">rt_queue_inquire</a>(RT_QUEUE *q,
+00172                      RT_QUEUE_INFO *info);
+00173 
+00174 <span class="preprocessor">#ifdef __cplusplus</span>
+00175 <span class="preprocessor"></span>}
+00176 <span class="preprocessor">#endif</span>
+00177 <span class="preprocessor"></span>
+00178 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_QUEUE_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Mar 18 19:09:45 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

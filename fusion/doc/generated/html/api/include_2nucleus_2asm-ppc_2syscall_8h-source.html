@@ -124,8 +124,8 @@
 00114 <span class="preprocessor">#include &lt;linux/errno.h&gt;</span>
 00115 <span class="preprocessor">#include &lt;asm/uaccess.h&gt;</span>
 00116 
-00117 <span class="preprocessor">#define __xn_copy_from_user(task,dstP,srcP,n)  __copy_from_user(dstP,srcP,n)</span>
-00118 <span class="preprocessor"></span><span class="preprocessor">#define __xn_copy_to_user(task,dstP,srcP,n)    __copy_to_user(dstP,srcP,n)</span>
+00117 <span class="preprocessor">#define __xn_copy_from_user(task,dstP,srcP,n)  __copy_from_user_inatomic(dstP,srcP,n)</span>
+00118 <span class="preprocessor"></span><span class="preprocessor">#define __xn_copy_to_user(task,dstP,srcP,n)    __copy_to_user_inatomic(dstP,srcP,n)</span>
 00119 <span class="preprocessor"></span><span class="preprocessor">#define __xn_put_user(task,src,dstP)           __put_user(src,dstP)</span>
 00120 <span class="preprocessor"></span><span class="preprocessor">#define __xn_get_user(task,dst,srcP)           __get_user(dst,srcP)</span>
 00121 <span class="preprocessor"></span>
@@ -183,7 +183,7 @@
 00173 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00174 
 00175 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Mar 18 19:09:45 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

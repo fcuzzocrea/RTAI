@@ -87,7 +87,7 @@
 00077 } xntimer_t;
 00078 
 00079 <span class="preprocessor">#define xntimer_date(t)           ((t)-&gt;date)</span>
-00080 <span class="preprocessor"></span><span class="preprocessor">#if CONFIG_SMP</span>
+00080 <span class="preprocessor"></span><span class="preprocessor">#ifdef CONFIG_SMP</span>
 00081 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_sched(t)          ((t)-&gt;sched)</span>
 00082 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* !CONFIG_SMP */</span>
 00083 <span class="preprocessor">#define xntimer_sched(t)          xnpod_current_sched()</span>
@@ -124,7 +124,7 @@
 00114 
 00115 xnticks_t <a class="code" href="group__timer.html#ga12">xntimer_get_timeout</a>(xntimer_t *timer);
 00116 
-00117 <span class="preprocessor">#if CONFIG_SMP</span>
+00117 <span class="preprocessor">#ifdef CONFIG_SMP</span>
 00118 <span class="preprocessor"></span><span class="keywordtype">int</span> xntimer_set_sched(xntimer_t *timer, <span class="keyword">struct</span> <a class="code" href="structxnsched.html">xnsched</a> *sched);
 00119 <span class="preprocessor">#else </span><span class="comment">/* ! CONFIG_SMP */</span>
 00120 <span class="preprocessor">#define xntimer_set_sched(timer,sched)</span>
@@ -137,7 +137,7 @@
 00127 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
 00128 
 00129 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TIMER_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Mar 18 19:09:45 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

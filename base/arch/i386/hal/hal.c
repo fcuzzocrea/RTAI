@@ -1357,9 +1357,10 @@ asmlinkage int rtai_syscall_entry (long bx, unsigned long cx_args, long long *dx
 	return 0;
 }
 
-static void rtai_uvec_handler (void)
-{
-    __asm__ __volatile__ ( \
+void rtai_uvec_handler (void);
+    __asm__ ( \
+	"\n" __ALIGN_STR"\n\t" \
+	SYMBOL_NAME_STR(rtai_uvec_handler) ":\n\t" \
 	"cld\n\t" \
 	"pushl $0\n\t" \
         "pushl %es\n\t" \
@@ -1388,7 +1389,6 @@ static void rtai_uvec_handler (void)
         "popl %es\n\t" \
 	"addl $4, %esp\n\t" \
         "iret");
-}
 
 struct desc_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler)
 {

@@ -273,6 +273,22 @@ int xnintr_disable (xnintr_t *intr) {
     return xnarch_disable_irq(intr->irq);
 }
 
+/**
+ * Set processor affinity.
+ *
+ * Causes the IRQ associated with the interrupt object @a intr to be received
+ * only on processors which bits are set in @a cpumask.
+ *
+ * @note Depending on architectures, setting more than one bit in @a cpumask can
+ * be meaningless.
+ *
+ * @param intr The descriptor address of the interrupt object which affinity is
+ * to be changed.
+ *
+ * @param cpumask is the new processor affinity of the interrupt object.
+ *
+ * @return the previous cpumask on success, or an empty mask on failure.
+ */
 xnarch_cpumask_t xnintr_affinity (xnintr_t *intr, xnarch_cpumask_t cpumask) {
 
     return xnarch_set_irq_affinity(intr->irq,cpumask);
@@ -334,4 +350,5 @@ EXPORT_SYMBOL(xnintr_destroy);
 EXPORT_SYMBOL(xnintr_detach);
 EXPORT_SYMBOL(xnintr_disable);
 EXPORT_SYMBOL(xnintr_enable);
+EXPORT_SYMBOL(xnintr_affinity);
 EXPORT_SYMBOL(xnintr_init);

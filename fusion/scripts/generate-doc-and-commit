@@ -1,5 +1,6 @@
 #! /bin/bash
 
+# set -x
 set -e
 
 die()
@@ -19,7 +20,9 @@ builddir=`pwd`
 abs_srcdir=`cd $srcdir && pwd`
 
 echo -n 'Running cvs update in the source tree...'
-cd "$abs_srcdir/.." && cvs up -dP && cd "$builddir"
+cd "$abs_srcdir/.."
+cvs up -dP
+cd "$builddir"
 echo done
 
 echo 'Generating documentation in the build tree.'
@@ -43,7 +46,7 @@ done
 }
 echo `cat tmp-dist/removed`.
 
-echo -n 'Looking for added files and directories...'
+echo -n 'Looking for added files and non empty directories...'
 : > tmp-dist/added_files
 : > tmp-dist/added_dirs
 { cd tmp-dist/doc && find generated; } | {
@@ -52,7 +55,9 @@ cd "$abs_srcdir" && while read -a file; do
         if [ -f "$builddir/tmp-dist/doc/${file[*]}" ]; then
             echo "${file[*]}" >> "$builddir/tmp-dist/added_files"
         else
-            echo "${file[*]}" >> "$builddir/tmp-dist/added_dirs"
+            if ! rmdir "$builddir/tmp-dist/doc/${file[*]}" >& /dev/null; then
+                echo "${file[*]}" >> "$builddir/tmp-dist/added_dirs"
+            fi
         fi
     fi
 done

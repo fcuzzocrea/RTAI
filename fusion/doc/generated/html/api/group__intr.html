@@ -39,8 +39,59 @@ Interrupt management.
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__intr.html#ga7">xnintr_disable</a> (xnintr_t *intr)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Disable an interrupt object.  <a href="#ga7"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">xnarch_cpumask_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__intr.html#ga8">xnintr_affinity</a> (xnintr_t *intr, xnarch_cpumask_t cpumask)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set processor affinity.  <a href="#ga8"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
+<a class="anchor" name="ga8" doxytag="intr.c::xnintr_affinity"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">xnarch_cpumask_t xnintr_affinity           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">xnintr_t *&nbsp;</td>
+          <td class="mdname" nowrap> <em>intr</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td></td>
+          <td class="md" nowrap>xnarch_cpumask_t&nbsp;</td>
+          <td class="mdname" nowrap> <em>cpumask</em></td>
+        </tr>
+        <tr>
+          <td></td>
+          <td class="md">)&nbsp;</td>
+          <td class="md" colspan="2"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Set processor affinity. 
+<p>
+Causes the IRQ associated with the interrupt object <em>intr</em> to be received only on processors which bits are set in <em>cpumask</em>.<p>
+<dl compact><dt><b>Note:</b></dt><dd>Depending on architectures, setting more than one bit in <em>cpumask</em> can be meaningless.</dd></dl>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The descriptor address of the interrupt object which affinity is to be changed.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>cpumask</em>&nbsp;</td><td>is the new processor affinity of the interrupt object.</td></tr>
+  </table>
+</dl>
+<dl compact><dt><b>Returns:</b></dt><dd>the previous cpumask on success, or an empty mask on failure. </dd></dl>
+    </td>
+  </tr>
+</table>
 <a class="anchor" name="ga4" doxytag="intr.c::xnintr_attach"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
@@ -311,7 +362,7 @@ Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine must be called on behalf of a thread.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sat Oct 2 11:34:05 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Oct 2 13:32:39 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.8-20040913 </small></address>
 </body>

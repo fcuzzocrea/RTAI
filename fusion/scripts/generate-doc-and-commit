@@ -19,12 +19,6 @@ fi
 builddir=`pwd`
 abs_srcdir=`cd $srcdir && pwd`
 
-echo -n 'Running cvs update in the source tree...'
-cd "$abs_srcdir/.."
-cvs up -dP
-cd "$builddir"
-echo done
-
 echo 'Generating documentation in the build tree.'
 [ -d tmp-dist ] && rm -Rf tmp-dist
 make clean

@@ -18,7 +18,7 @@
 #
 #  - "docbook-dtd-version" is the version of the Docbook-XML DTD used.
 #
-# DOX_DOC_INIT(docbook-root, generated-doc-root, docbook-dtd-version)
+# DBX_DOC_INIT(docbook-root, generated-doc-root, docbook-dtd-version)
 # ------------------------------------------------------------------------------
 AC_DEFUN([DBX_DOC_INIT], 
 [
@@ -26,8 +26,8 @@ DBX_DOC_ROOT="$1"
 AC_SUBST(DBX_DOC_ROOT)
 
 AC_MSG_CHECKING(whether compiling Docbook XML documentation)
-AC_ARG_ENABLE(dbx,
-	[--enable-dbx	Build Docbook XML documentation.],
+AC_ARG_ENABLE(dbx, 
+        AS_HELP_STRING([--enable-dbx],[Build Docbook XML documentation.]),
 	[case "$enableval" in
 	y | ye | yes) DBX_DOC=yes;;
 	*) DBX_DOC="" ;;
@@ -76,9 +76,9 @@ DBX_DTD_VERSION="$3"
 
 AC_MSG_CHECKING(whether Docbook XML documentation generation can use network.)
 AC_ARG_ENABLE(dbx-network,
-        [--enable-dbx-network	Try to access Docbook DTD and
+        AS_HELP_STRING([--enable-dbx-network],[Try to access Docbook DTD and
 XSL stylesheets through network (default is to die if local installation can not
-be found by configure).],
+be found by configure).]),
         [ case "$enable_dbx_network" in 
            y | yes | yes )
                 DBX_NET=yes;;
@@ -100,9 +100,9 @@ AC_SUBST(DBX_MAYBE_NONET)
 
 AC_MSG_CHECKING(for docbook-xml root dir)
 AC_ARG_WITH(dbx-root,
-        [--with-dbx-root	specify the Docbook XML root (that 
+        AS_HELP_STRING([--with-dbx-root],[specify the Docbook XML root (that 
 is, the directory where docbookx.dtd should be found). Default is to use
-well-known locations (or network if --enable-dbx-network was passed).],
+well-known locations (or network if --enable-dbx-network was passed).]),
         [DBX_ROOT="$withval"])
 if test x"$DBX_ROOT" = x; then
    # Still not found, we will hence look for it using the "well-known"
@@ -131,9 +131,9 @@ AC_SUBST(DBX_ROOT)
 
 AC_MSG_CHECKING(for docbook-xsl root dir)
 AC_ARG_WITH(docbook-xsl-root,
-	[--with-dbx-xsl-root	specify the Docbook XML XSL
+	AS_HELP_STRING([--with-dbx-xsl-root],[specify the Docbook XML XSL
 stylesheet root. Default is to use well-known locations (or network if
---enable-dbx-network was passed)],
+--enable-dbx-network was passed)]),
         [ DBX_XSL_ROOT="$withval" ])
 if test x"$DBX_XSL_ROOT" = x; then
    # Still not found, we will hence look for it using the "well-known"

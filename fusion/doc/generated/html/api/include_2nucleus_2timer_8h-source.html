@@ -81,69 +81,76 @@
 00071 <span class="preprocessor"></span><span class="preprocessor">#define XNTIMER_SPARE6  0x40000000</span>
 00072 <span class="preprocessor"></span><span class="preprocessor">#define XNTIMER_SPARE7  0x80000000</span>
 00073 <span class="preprocessor"></span>
-00074 <span class="keyword">typedef</span> <span class="keyword">struct </span>xntimer {
-00075 
-00076     xnholder_t link;
-00077 
-00078 <span class="preprocessor">#define link2timer(laddr) \</span>
-00079 <span class="preprocessor">((xntimer_t *)(((char *)laddr) - (int)(&amp;((xntimer_t *)0)-&gt;link)))</span>
-00080 <span class="preprocessor"></span>
-00081     xnflags_t status;
-00082 
-00083     xnticks_t date;             <span class="comment">/* Absolute timeout date (in ticks) */</span>
-00084 
-00085     xnticks_t shot;             <span class="comment">/* Anticipated shot time (in ticks) */</span>
+00074 <span class="preprocessor">#define XNTIMER_LOPRIO  (-999999999)</span>
+00075 <span class="preprocessor"></span><span class="preprocessor">#define XNTIMER_STDPRIO 0</span>
+00076 <span class="preprocessor"></span><span class="preprocessor">#define XNTIMER_HIPRIO  999999999</span>
+00077 <span class="preprocessor"></span>
+00078 <span class="keyword">typedef</span> <span class="keyword">struct </span>xntimer {
+00079 
+00080     xnholder_t link;
+00081 
+00082 <span class="preprocessor">#define link2timer(laddr) \</span>
+00083 <span class="preprocessor">((xntimer_t *)(((char *)laddr) - (int)(&amp;((xntimer_t *)0)-&gt;link)))</span>
+00084 <span class="preprocessor"></span>
+00085     xnflags_t status;           <span class="comment">/* !&lt; Timer status. */</span>
 00086 
-00087     xnticks_t interval;         <span class="comment">/* Periodic interval (in ticks, 0 == one shot) */</span>
+00087     xnticks_t date;             <span class="comment">/* !&lt; Absolute timeout date (in ticks). */</span>
 00088 
-00089     void (*handler)(<span class="keywordtype">void</span> *cookie); <span class="comment">/* Timeout handler */</span>
+00089     xnticks_t shot;             <span class="comment">/* !&lt; Anticipated shot time (in ticks). */</span>
 00090 
-00091     <span class="keywordtype">void</span> *cookie;       <span class="comment">/* Cookie to pass to the timeout handler */</span>
+00091     xnticks_t interval;         <span class="comment">/* !&lt; Periodic interval (in ticks, 0 == one shot). */</span>
 00092 
-00093     XNARCH_DECL_DISPLAY_CONTEXT();
+00093     <span class="keywordtype">int</span> prio;                   <span class="comment">/* !&lt; Internal priority. */</span>
 00094 
-00095 } xntimer_t;
+00095     void (*handler)(<span class="keywordtype">void</span> *cookie); <span class="comment">/* !&lt; Timeout handler. */</span>
 00096 
-00097 <span class="preprocessor">#define xntimer_date(t)           ((t)-&gt;date)</span>
-00098 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_interval(t)       ((t)-&gt;interval)</span>
-00099 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_set_cookie(t,c)   ((t)-&gt;cookie = (c))</span>
-00100 <span class="preprocessor"></span>
-00101 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xntimer_active_p (xntimer_t *timer) {
-00102     <span class="keywordflow">return</span> !testbits(timer-&gt;status,XNTIMER_DEQUEUED);
-00103 }
-00104 
-00105 <span class="preprocessor">#ifdef __cplusplus</span>
-00106 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00107 <span class="preprocessor">#endif</span>
-00108 <span class="preprocessor"></span>
-00109 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga0">xntimer_init</a>(xntimer_t *timer,
-00110                   <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span> *cookie),
-00111                   <span class="keywordtype">void</span> *cookie);
-00112 
-00113 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga1">xntimer_destroy</a>(xntimer_t *timer);
-00114 
-00115 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga12">xntimer_do_timers</a>(<span class="keywordtype">void</span>);
-00116 
-00117 <span class="keywordtype">int</span> <a class="code" href="group__timer.html#ga8">xntimer_start</a>(xntimer_t *timer,
-00118                   xnticks_t value,
-00119                   xnticks_t interval);
-00120 
-00121 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga9">xntimer_stop</a>(xntimer_t *timer);
-00122 
-00123 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga13">xntimer_freeze</a>(<span class="keywordtype">void</span>);
-00124 
-00125 xnticks_t <a class="code" href="group__timer.html#ga10">xntimer_get_date</a>(xntimer_t *timer);
-00126 
-00127 xnticks_t <a class="code" href="group__timer.html#ga11">xntimer_get_timeout</a>(xntimer_t *timer);
-00128 
-00129 <span class="preprocessor">#ifdef __cplusplus</span>
-00130 <span class="preprocessor"></span>}
-00131 <span class="preprocessor">#endif</span>
-00132 <span class="preprocessor"></span>
-00133 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
-00134 
-00135 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TIMER_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Nov 29 12:14:06 2004 for RTAI API by&nbsp;
+00097     <span class="keywordtype">void</span> *cookie;       <span class="comment">/* !&lt; Cookie to pass to the timeout handler. */</span>
+00098 
+00099     XNARCH_DECL_DISPLAY_CONTEXT();
+00100 
+00101 } xntimer_t;
+00102 
+00103 <span class="preprocessor">#define xntimer_date(t)           ((t)-&gt;date)</span>
+00104 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_interval(t)       ((t)-&gt;interval)</span>
+00105 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_set_cookie(t,c)   ((t)-&gt;cookie = (c))</span>
+00106 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_set_priority(t,p) ((t)-&gt;prio = (p))</span>
+00107 <span class="preprocessor"></span>
+00108 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xntimer_active_p (xntimer_t *timer) {
+00109     <span class="keywordflow">return</span> !testbits(timer-&gt;status,XNTIMER_DEQUEUED);
+00110 }
+00111 
+00112 <span class="preprocessor">#ifdef __cplusplus</span>
+00113 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00114 <span class="preprocessor">#endif</span>
+00115 <span class="preprocessor"></span>
+00116 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga0">xntimer_init</a>(xntimer_t *timer,
+00117                   <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span> *cookie),
+00118                   <span class="keywordtype">void</span> *cookie);
+00119 
+00120 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga1">xntimer_destroy</a>(xntimer_t *timer);
+00121 
+00122 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga12">xntimer_do_timers</a>(<span class="keywordtype">void</span>);
+00123 
+00124 <span class="keywordtype">int</span> <a class="code" href="group__timer.html#ga8">xntimer_start</a>(xntimer_t *timer,
+00125                   xnticks_t value,
+00126                   xnticks_t interval);
+00127 
+00128 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga9">xntimer_stop</a>(xntimer_t *timer);
+00129 
+00130 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga13">xntimer_freeze</a>(<span class="keywordtype">void</span>);
+00131 
+00132 xnticks_t <a class="code" href="group__timer.html#ga10">xntimer_get_date</a>(xntimer_t *timer);
+00133 
+00134 xnticks_t <a class="code" href="group__timer.html#ga11">xntimer_get_timeout</a>(xntimer_t *timer);
+00135 
+00136 <span class="preprocessor">#ifdef __cplusplus</span>
+00137 <span class="preprocessor"></span>}
+00138 <span class="preprocessor">#endif</span>
+00139 <span class="preprocessor"></span>
+00140 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00141 
+00142 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TIMER_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Dec 5 21:37:12 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

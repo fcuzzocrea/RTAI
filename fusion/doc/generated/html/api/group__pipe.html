@@ -345,7 +345,7 @@ Unless otherwise specified, the caller is blocked for a given amount of time if 
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>pipe</em>&nbsp;</td><td>The descriptor address of the pipe to read from.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>msgp</em>&nbsp;</td><td>A pointer to a memory location which will be written upon success with the address of the received message. Once consumed, the message space should be freed using <a class="el" href="group__pipe.html#ga16">rt_pipe_free()</a>. The application code can retrieve the actual data and size carried by the message by respectively using the P_MSGPTR() and P_MSGSIZE() macros.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The number of clock ticks to wait for some message to arrive (see note). Passing RT_TIME_INFINITE causes the caller to block indefinitely until some data is eventually available. Passing RT_TIME_NONBLOCK causes the service to return immediately without waiting if no data is available on entry.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The number of clock ticks to wait for some message to arrive (see note). Passing TM_INFINITE causes the caller to block indefinitely until some data is eventually available. Passing TM_NONBLOCK causes the service to return immediately without waiting if no data is available on entry.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>The number of read bytes available from the received message is returned upon success; this value will be equal to P_MSGSIZE(*msgp). Otherwise:</dd></dl>
@@ -359,10 +359,10 @@ Unless otherwise specified, the caller is blocked for a given amount of time if 
 <li>-ENODEV or -EBADF are returned if <em>pipe</em> is scrambled.</li></ul>
 <p>
 <ul>
-<li>-ETIMEDOUT is returned if <em>timeout</em> is different from RT_TIME_NONBLOCK and no data is available within the specified amount of time.</li></ul>
+<li>-ETIMEDOUT is returned if <em>timeout</em> is different from TM_NONBLOCK and no data is available within the specified amount of time.</li></ul>
 <p>
 <ul>
-<li>-EWOULDBLOCK is returned if <em>timeout</em> is equal to RT_TIME_NONBLOCK and no data is immediately available on entry.</li></ul>
+<li>-EWOULDBLOCK is returned if <em>timeout</em> is equal to TM_NONBLOCK and no data is immediately available on entry.</li></ul>
 <p>
 <ul>
 <li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before any data was available.</li></ul>
@@ -370,13 +370,13 @@ Unless otherwise specified, the caller is blocked for a given amount of time if 
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>timeout</em> is equal to RT_TIME_NONBLOCK.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>timeout</em> is equal to TM_NONBLOCK.</li></ul>
 <p>
 <ul>
 <li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
 <p>
 Rescheduling: always unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation.<p>
-<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are interpreted as periodic jiffies. In oneshot mode, clock ticks are interpreted as nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
@@ -544,7 +544,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Nov 29 12:14:07 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Dec 5 21:37:12 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -78,31 +78,31 @@
 	  round-robin scheduling is given an individual time
 	  quantum.</p>
 <p><span class="emphasis"><em>Priority management.</em></span> It is
-	  possible to use whether an increasing or decreasing thread
+	  possible to use either an increasing or decreasing thread
 	  priority ordering, depending on an initial configuration. In
-	  other words, numerically highest priority values could
-	  whether represent highest or lowest scheduling priorities
-	  depending on the configuration choosen. This feature is
+	  other words, numerically higher priority values could
+	  either represent higher or lower scheduling priorities
+	  depending on the configuration chosen. This feature is
 	  motivated by the existence of this two possible ordering
 	  among traditional RTOS. For instance, VxWorks, VRTX, ThreadX
 	  and Chorus O/S use a reversed priority management scheme,
-	  where the highest the value, the lowest the priority. pSOS+
-	  instead uses the opposite ordering, in which the highest the
-	  value, the highest the priority.</p>
+	  where the higher the value, the lower the priority. pSOS+
+	  instead uses the opposite ordering, in which the higher the
+	  value, the higher the priority.</p>
 <p><span class="emphasis"><em>Running thread.</em></span> At any given
 	  time, the highest priority thread which has been ready to
-	  run for the longuest time among the currently runnable
+	  run for the longest time among the currently runnable
 	  threads (i.e. not currently blocked by any delay or resource
 	  wait) is elected to run by the scheduler.</p>
 <p><span class="emphasis"><em>Preemption.</em></span> When preempted by a
-	  more prioritary thread, the running thread is put at front
+	  higher priority thread, the running thread is put at the front
 	  of the ready thread queue waiting for the processor
 	  resource, provided it has not been suspended or blocked in
 	  any way. Thus it is expected to regain the processor
-	  resource as soon as no other prioritary activity (i.e. a
+	  resource as soon as no other higher priority activity (i.e. a
 	  thread having a higher priority level, or an interrupt
 	  service routine) is eligible for running.</p>
-<p>Manual round-robin.<span class="emphasis"><em></em></span> As a
+<p><span class="emphasis"><em>Manual round-robin.</em></span> As a
 	  side-effect of attempting to resume an already runnable
 	  thread or the running thread itself, this thread is moved at
 	  the end of its priority group in the ready thread
@@ -125,7 +125,7 @@
 <p><span class="emphasis"><em>Disjunctive wait.</em></span> A thread is
 	  able to wait in a disjunctive manner on multiple
 	  resources. The nucleus unblocks the thread when at least one
-	  among the pended resources is available.</p>
+	  of the pending resources is available.</p>
 </div>
 <div class="sect4" lang="en">
 <div class="titlepage"><div><div><h5 class="title">
@@ -137,7 +137,7 @@
 	  the characteristics of a basic mechanism which will be
 	  usable in turn to build these facilities.</p>
 <p><span class="emphasis"><em>Pending mode.</em></span> The thread
-	  synchronization facility provides a mean for threads to pend
+	  synchronization facility provides a means for threads to pend
 	  either by priority or FIFO ordering. Multiple threads should
 	  be able to pend on a single resource.</p>
 <p><span class="emphasis"><em>Priority inheritance protocol.</em></span> In
@@ -148,7 +148,7 @@
 	  protocol as a derivative of the priority inheritance
 	  protocol.</p>
 <p><span class="emphasis"><em>Time-bounded wait.</em></span> The thread
-	  synchronization facility provides a mean to limit the time a
+	  synchronization facility provides a means to limit the time a
 	  thread waits for a given resource using a watchdog.</p>
 <p><span class="emphasis"><em>Forcible deletion.</em></span> It is legal to
 	  destroy a resource while threads are pending on it. This
@@ -171,7 +171,7 @@
 	  execution, the rescheduling procedure is locked until the
 	  outer ISR has exited (i.e. in case of nested
 	  interrupts).</p>
-<p><span class="emphasis"><em>Priority.</em></span> ISRs is always
+<p><span class="emphasis"><em>Priority.</em></span> ISRs are always
 	  considered as prioritary over thread execution. Interrupt
 	  prioritization is left to the underlying
 	  hardware.</p>
@@ -222,11 +222,11 @@
 	layer. Basically, the host real-time layer must handle at
 	least the following tasks: </p>
 <div class="itemizedlist"><ul type="disc">
-<li><p>Start/stop dispatching on request the external
+<li><p>On request start/stop dispatching the external
 	      interrupts to a specialized handler ;</p></li>
-<li><p>Provide a mean to mask and unmask interrupts ;
+<li><p>Provide a means to mask and unmask interrupts ;
 	      </p></li>
-<li><p>Provide a mean to create new threads of control in
+<li><p>Provide a means to create new threads of control in
 	      their simplest form ; </p></li>
 <li><p>Provide support for periodic and aperiodic
 	      interrupt sources used in timer management ; </p></li>
@@ -248,7 +248,7 @@
 	complexity in designing new RTOS emulations. The
 	architecture-neutral abstraction layer provides the foundation
 	for developing accurate emulations of traditional RTOS API,
-	saving the burden of implementing each time their fundamental
+	saving the burden of repeatedly implementing their fundamental
 	real-time behaviours. Since the abstraction layer also favours
 	code sharing and mutualization, we can expect the RTOS
 	emulations to take advantage of them in terms of code

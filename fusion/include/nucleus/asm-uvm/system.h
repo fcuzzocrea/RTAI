@@ -636,7 +636,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
 
     pthread_sync_rt(&tcb->syncflag);
-    pthread_start_rt(&tcb->khandle);
+    pthread_start_rt(tcb->khandle);
 }
 
 static inline void xnarch_init_fpu(xnarchtcb_t *tcb) {

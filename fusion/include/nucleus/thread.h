@@ -48,11 +48,11 @@
 #define XNSHADOW  0x00040000	/* Shadow thread */
 #define XNROOT    0x00080000	/* Root thread (i.e. Linux/IDLE) */
 
-/* Must follow the above bits declaration order. */
+/* Must follow the declaration order of the above bits. */
 #define XNTHREAD_SLABEL_INIT \
 { "ssp", "pnd", "dly", "rdy", "dor", \
   "zom", "rst", "sta", "rlx", "tmo", \
-  "rmi", "brk", "sig", "bst", "lck", \
+  "rmi", "brk", "sig", "pip", "lck", \
   "rrb", "asd", "fpu", "usr", "idl" }
 
 #define XNTHREAD_BLOCK_BITS   (XNSUSP|XNPEND|XNDELAY|XNDORMANT|XNRELAX)

@@ -1,3 +1,18 @@
+2004-12-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c: Rewrite the whole hardening migration
+	path. This solves the long-suffered "bad: scheduling while atomic"
+	issue, both in UP and SMP configs. For this, we basically use a
+	wait queue between the gatekeeper and xnshadow_harden(), so that
+	synchronous wakeups of the former can be performed right after the
+	latter went aslept, and _never_ before due to preemption
+	artefacts.
+
+2004-12-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_substitute_syscall): Fix
+	__NR_getitimer.
+
 2004-12-27  Philippe Gerum  <rpm@localhost>
 
 	* nucleus/shadow.c (xnshadow_substitute_syscall): Discard useless

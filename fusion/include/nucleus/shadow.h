@@ -67,8 +67,6 @@ void xnshadow_unmap(struct xnthread *thread);
 
 void xnshadow_relax(void);
 
-void xnshadow_harden(void);
-
 void xnshadow_renice(struct xnthread *thread);
 
 int xnshadow_wait_barrier(struct pt_regs *regs);

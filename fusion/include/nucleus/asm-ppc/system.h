@@ -369,25 +369,6 @@ static inline int xnarch_start_timer (unsigned long ns,
     return rthal_request_timer(tickhandler,ns);
 }
 
-#ifndef CONFIG_SMP
-#define rthal_get_fpu_owner(cur) last_task_used_math
-#else
-#define rthal_get_fpu_owner(cur) ({                             \
-    struct task_struct * _cur = (cur);                          \
-    ((_cur->thread.regs && (_cur->thread.regs->msr & MSR_FP))   \
-     ? _cur : NULL);                                            \
-})
-#endif
-    
-#define rthal_disable_fpu() ({                          \
-    register long msr;                                  \
-    __asm__ __volatile__ ( "mfmsr %0" : "=r"(msr) );    \
-    __asm__ __volatile__ ( "mtmsr %0"                   \
-                           : /* no output */            \
-                           : "r"(msr & ~(MSR_FP))       \
-                           : "memory" );                \
-})    
-
 static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
 
 {
@@ -400,9 +381,9 @@ static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
     __set_bit(cpuid,&rthal_cpu_realtime);
     /* Remember the preempted Linux task pointer. */
     rootcb->user_task = rootcb->active_task = rthal_get_current(cpuid);
-    /* So that xnarch_save_fpu() will operate on the right FPU area. */
 #ifdef CONFIG_RTAI_HW_FPU
     rootcb->user_fpu_owner = rthal_get_fpu_owner(rootcb->user_task);
+    /* So that xnarch_save_fpu() will operate on the right FPU area. */
     rootcb->fpup = (rootcb->user_fpu_owner
                     ? (rthal_fpenv_t *)&rootcb->user_fpu_owner->thread.fpr[0]
                     : NULL);
@@ -449,8 +430,10 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
         /* Kernel-to-kernel context switch. */
         rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
 
+#ifdef CONFIG_RTAI_HW_FPU
         /* FPU will be reenabled by xnarch_save_fpu when needed */
         rthal_disable_fpu();
+#endif /* CONFIG_RTAI_HW_FPU */
         }
 }
 
@@ -563,11 +546,8 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
     /* FIXME: We restore FPU "as it was" when RTAI preempted Linux, whereas we
        could be much lazier. */
-    if(tcb->user_task && tcb->user_task != tcb->user_fpu_owner)
-        {
-        tcb->user_task->thread.regs->msr &= ~MSR_FP;
+    if(tcb->user_task)
         rthal_disable_fpu();
-        }
 
 #endif /* CONFIG_RTAI_HW_FPU */
 }

@@ -298,6 +298,25 @@ void rthal_save_fpu(rthal_fpenv_t *fpuenv);
 
 void rthal_restore_fpu(rthal_fpenv_t *fpuenv);
 
+#ifndef CONFIG_SMP
+#define rthal_get_fpu_owner(cur) last_task_used_math
+#else /* CONFIG_SMP */
+#define rthal_get_fpu_owner(cur) ({                             \
+    struct task_struct * _cur = (cur);                          \
+    ((_cur->thread.regs && (_cur->thread.regs->msr & MSR_FP))   \
+     ? _cur : NULL);                                            \
+})
+#endif /* CONFIG_SMP */
+    
+#define rthal_disable_fpu() ({                          \
+    register long msr;                                  \
+    __asm__ __volatile__ ( "mfmsr %0" : "=r"(msr) );    \
+    __asm__ __volatile__ ( "mtmsr %0"                   \
+                           : /* no output */            \
+                           : "r"(msr & ~(MSR_FP))       \
+                           : "memory" );                \
+})
+
 #endif /* CONFIG_RTAI_HW_FPU */
 
 #endif /* __KERNEL__ && !__cplusplus */

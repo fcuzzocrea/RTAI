@@ -154,7 +154,7 @@ int rt_task_add_hook(int type,
 }
 #endif
 
-#else /* !(__KERNEL__ && __RTAI_SIM__) */
+#else /* !(__KERNEL__ || __RTAI_SIM__) */
 
 typedef RT_TASK_PLACEHOLDER RT_TASK;
 

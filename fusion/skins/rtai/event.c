@@ -17,7 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * \ingroup event
  */
+
+/*!
+ * \ingroup native
+ * \defgroup event Event flag group services.
+ *
+ * Event flag group services.
+ *
+ *@{*/
 
 #include <nucleus/pod.h>
 #include <rtai/task.h>
@@ -454,3 +464,11 @@ int rt_event_inquire (RT_EVENT *event,
 
     return err;
 }
+
+/*@}*/
+
+EXPORT_SYMBOL(rt_event_create);
+EXPORT_SYMBOL(rt_event_delete);
+EXPORT_SYMBOL(rt_event_post);
+EXPORT_SYMBOL(rt_event_pend);
+EXPORT_SYMBOL(rt_event_inquire);

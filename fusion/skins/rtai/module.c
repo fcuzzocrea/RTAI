@@ -19,6 +19,13 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+/*!
+ * \defgroup native Native RTAI API.
+ *
+ * The native RTAI programming interface to real-time applications.
+ *
+ */
+
 #include <nucleus/pod.h>
 #ifdef __KERNEL__
 #include <rtai/syscall.h>

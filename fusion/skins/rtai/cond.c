@@ -17,7 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * \ingroup cond
  */
+
+/*!
+ * \ingroup native
+ * \defgroup cond Condition variable services.
+ *
+ * Condition variable services.
+ *
+ *@{*/
 
 #include <nucleus/pod.h>
 #include <rtai/task.h>
@@ -230,3 +240,12 @@ int rt_cond_inquire (RT_COND *cond,
 
     return err;
 }
+
+/*@}*/
+
+EXPORT_SYMBOL(rt_cond_create);
+EXPORT_SYMBOL(rt_cond_delete);
+EXPORT_SYMBOL(rt_cond_signal);
+EXPORT_SYMBOL(rt_cond_broadcast);
+EXPORT_SYMBOL(rt_cond_wait);
+EXPORT_SYMBOL(rt_cond_inquire);

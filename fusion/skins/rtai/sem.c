@@ -17,7 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * \ingroup semaphore
  */
+
+/*!
+ * \ingroup native
+ * \defgroup semaphore Semaphore services.
+ *
+ * Semaphore services.
+ *
+ *@{*/
 
 #include <nucleus/pod.h>
 #include <rtai/task.h>
@@ -364,3 +374,11 @@ int rt_sem_inquire (RT_SEM *sem,
 
     return err;
 }
+
+/*@}*/
+
+EXPORT_SYMBOL(rt_sem_create);
+EXPORT_SYMBOL(rt_sem_delete);
+EXPORT_SYMBOL(rt_sem_p);
+EXPORT_SYMBOL(rt_sem_v);
+EXPORT_SYMBOL(rt_sem_inquire);

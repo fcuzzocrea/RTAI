@@ -49,13 +49,10 @@
  */
 
 /*!
- * \defgroup xenomai Xenomai scheduler.
+ * \defgroup xenomai Xenomai nucleus.
  *
- * A scheduler for mimicking real-time operating systems.
+ * A RTOS abstraction layer.
  *
- * Xenomai is an RTAI scheduler which provides generic real-time operating
- * services suited for the implementation of real-time operating system
- * interfaces.
  */
 
 /*!
@@ -148,7 +145,7 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 {
     if (!xnpod_userspace_p())
         {
-        xnprintf("Xenomai: suspending kernel thread %p ('%s') at 0x%lx after exception #%u\n",
+        xnprintf("RTAI: suspending kernel thread %p ('%s') at 0x%lx after exception #%u\n",
                  xnpod_current_thread(),
                  xnpod_current_thread()->name,
                  xnarch_fault_pc(fltinfo),
@@ -409,7 +406,6 @@ fail:
 
     return 0;
 }
-
 
 /*! 
  * \fn void xnpod_shutdown(int xtype)

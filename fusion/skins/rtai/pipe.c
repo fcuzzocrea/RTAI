@@ -17,7 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * \ingroup pipe
  */
+
+/*!
+ * \ingroup native
+ * \defgroup pipe Pipe management services.
+ *
+ * Pipe management services.
+ *
+ *@{*/
 
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
@@ -623,3 +633,13 @@ int rt_pipe_free (RT_PIPE_MSG *msg) {
 
     return xnheap_free(__pipe_heap,msg) == 0 ? 0 : -EINVAL;
 }
+
+/*@}*/
+
+EXPORT_SYMBOL(rt_pipe_open);
+EXPORT_SYMBOL(rt_pipe_close);
+EXPORT_SYMBOL(rt_pipe_read);
+EXPORT_SYMBOL(rt_pipe_write);
+EXPORT_SYMBOL(rt_pipe_stream);
+EXPORT_SYMBOL(rt_pipe_alloc);
+EXPORT_SYMBOL(rt_pipe_free);

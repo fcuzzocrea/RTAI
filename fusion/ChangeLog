@@ -1,3 +1,7 @@
+2004-06-20  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai: Export interface symbols.
+
 2004-06-19  Philippe Gerum  <rpm@xenomai.org>
 
 	* doc/docbook/docbook-test/xenomai.xml: Refactor the paper

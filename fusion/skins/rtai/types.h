@@ -73,7 +73,7 @@ typedef xnticks_t RTIME;
 #define rtai_test_magic(h,m) \
 ((h) && *((unsigned *)(h)) == (m))
 
-#else /* !__KERNEL__ && !__RTAI_SIM__ */
+#else /* !(__KERNEL__ || __RTAI_SIM__) */
 
 typedef unsigned long long RTIME;
 

@@ -17,7 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * \ingroup task
  */
+
+/*!
+ * \ingroup native
+ * \defgroup task Task management services.
+ *
+ * Task management services.
+ *
+ *@{*/
 
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
@@ -932,6 +942,8 @@ int rt_task_add_hook (int type, void (*routine)(void *cookie)) {
 
     return xnpod_add_hook(type,(void (*)(xnthread_t *))routine);
 }
+
+/*@}*/
 
 EXPORT_SYMBOL(rt_task_create);
 EXPORT_SYMBOL(rt_task_start);

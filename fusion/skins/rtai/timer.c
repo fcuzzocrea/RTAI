@@ -17,7 +17,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * \ingroup timer
  */
+
+/*!
+ * \ingroup native
+ * \defgroup timer Timer management services.
+ *
+ * Timer management services.
+ *
+ *@{*/
 
 #include <nucleus/pod.h>
 #include <rtai/timer.h>
@@ -268,9 +278,13 @@ void rt_timer_stop (void) {
     xnpod_stop_timer();
 }
 
+/*@}*/
+
 EXPORT_SYMBOL(rt_timer_ns2ticks);
 EXPORT_SYMBOL(rt_timer_ticks2ns);
 EXPORT_SYMBOL(rt_timer_inquire);
+EXPORT_SYMBOL(rt_timer_read);
+EXPORT_SYMBOL(rt_timer_tsc);
 EXPORT_SYMBOL(rt_timer_spin);
 EXPORT_SYMBOL(rt_timer_start);
 EXPORT_SYMBOL(rt_timer_stop);

@@ -3,17 +3,17 @@
 	* testsuite/user/switches.c: set stack size of the threads herd to
 	  a reasonable size, to allow execution with relatively small RAM
 	  availability (Paolo Mantegazza added a copy using of RTAI proper
-	  user psace threads).
+	  user space threads).
 
 2004-01-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c, base/include/asm-i38/rtai_lxrt.h: modified
-	  support for usyng Linux syscalls to have it arch independent
+	  support for using Linux syscalls to have it arch independent
 	  (specific remarks from Michael Neuhauser).
-	* base/include/rtai_lxrt.h: added inlines to create RTAI propper
+	* base/include/rtai_lxrt.h: added inlines to create RTAI proper
 	  user space threads.
 	* base/tasklets/tasklets.c, base/include/rtai_tasklets.h: modified 
-	  to use RTAI propper user space threads.
+	  to use RTAI proper user space threads.
 	* base/usi/usi.c, base/include/rtai_usi.h: modified to use native 
 	  user irq tasks (found in api.c).
 

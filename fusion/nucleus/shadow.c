@@ -860,7 +860,11 @@ void xnshadow_renice (xnthread_t *thread)
 
     if (xnpod_root_p()) {
 	struct task_struct *task = xnthread_archtcb(thread)->user_task;
-	rthal_set_linux_task_priority(task,SCHED_FIFO,thread->cprio);
+	int prio = thread->cprio;
+	spl_t s;
+	rthal_local_irq_sync(s);
+	rthal_set_linux_task_priority(task,SCHED_FIFO,prio);
+	rthal_local_irq_restore(s);
     }
 }
 

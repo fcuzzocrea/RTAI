@@ -1,7 +1,7 @@
 OPTDIRS =
 
 if CONFIG_RTAI_SKIN_NATIVE
-OPTDIRS += latency cruncher klatency
+OPTDIRS += latency klatency
 endif
 
-SUBDIRS = $(OPTDIRS)
+SUBDIRS = cruncher $(OPTDIRS)

@@ -1,3 +1,4 @@
+#include <sys/mman.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -189,6 +190,8 @@ int main (int argc, char **argv)
     setlinebuf(stdout);
 
     printf("== Sampling period: %d us\n",sampling_period / 1000);
+
+    mlockall(MCL_CURRENT|MCL_FUTURE);
 
     err = rt_task_create(&display_task,"display",0,2,0);
 

@@ -983,7 +983,7 @@ int clr_rtext(RT_TASK *task)
 	if (!(task->owndres & SEMHLF) || task == rt_current || rt_current->priority == RT_SCHED_LINUX_PRIORITY) {
 		call_exit_handlers(task);
 		rem_timed_task(task);
-		if (task->blocked_on) {
+		if (task->blocked_on && (task->state & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN))) {
 			(task->queue.prev)->next = task->queue.next;
 			(task->queue.next)->prev = task->queue.prev;
 			if (task->state & RT_SCHED_SEMAPHORE) {
@@ -1771,6 +1771,7 @@ static void thread_fun(int cpuid)
 	((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
 	give_back_to_linux(task);
 	rt_task_delete(task);
+	current->comm[0] = 'D';
 //	rt_task_suspend(task);
 }
 
@@ -1802,10 +1803,10 @@ static void kthread_m(int cpuid)
 			flags = rt_global_save_flags_and_cli();
 			hard = (unsigned long)(lnxtsk = klistp->task[klistp->out]);
 			if (hard > 1) {
+				lnxtsk->this_rt_task[0] = NULL;
 				lnxtsk->state = TASK_ZOMBIE;
-				lnxtsk->exit_signal = SIGCHLD;
 				rt_global_sti();
-				waitpid(lnxtsk->pid, 0, 0);
+				force_sig(SIGKILL, lnxtsk);
 				rt_global_cli();
 			} else {
 				if (taskidx[cpuid] < Reservoir) {

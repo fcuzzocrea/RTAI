@@ -438,7 +438,11 @@ static void *xnarch_timer_thread (void *cookie)
 {
     struct xnarch_tick_parms *p = (struct xnarch_tick_parms *)cookie;
     void (*tickhandler)(void);
+    struct sched_param param;
     struct timespec ts;
+
+    param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 2;
+    sched_setscheduler(0,SCHED_FIFO,&param);
 
     /* Copy the following values laid in our parent's stack before it
        is unblocked from the sync barrier by pthread_create_rt(). */
@@ -446,8 +450,8 @@ static void *xnarch_timer_thread (void *cookie)
     ts.tv_nsec = p->nsec;
     tickhandler = p->tickhandler;
 
-    pthread_create_rt("vmtimer",NULL,p->ppid,&p->syncflag,&uvm_timer_handle);
-    pthread_barrier_rt();
+    pthread_create_rt("uvm-timer",NULL,p->ppid,&p->syncflag,&uvm_timer_handle);
+    pthread_barrier_rt();	/* Wait for start. */
 
     for (;;)
 	{
@@ -463,16 +467,9 @@ static inline int xnarch_start_timer (unsigned long nstick,
 				      void (*tickhandler)(void))
 {
     struct xnarch_tick_parms parms;
-    struct sched_param param;
     pthread_attr_t thattr;
     pthread_t thid;
     int err;
-
-    pthread_attr_init(&thattr);
-    pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
-    pthread_attr_setschedpolicy(&thattr,SCHED_FIFO);
-    param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 2;
-    pthread_attr_setschedparam(&thattr,&param);
 
     /* If oneshot timing is available, use it. Otherwise, ask for
        plain periodic mode, hoping that the period given will be
@@ -494,6 +491,8 @@ static inline int xnarch_start_timer (unsigned long nstick,
     parms.syncflag = 0;
     parms.ppid = getpid();
 
+    pthread_attr_init(&thattr);
+    pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
     pthread_create(&thid,&thattr,&xnarch_timer_thread,&parms);
     pthread_sync_rt(&parms.syncflag);
     pthread_start_rt(uvm_timer_handle);
@@ -541,7 +540,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 	exit(1);
 	}
 
-    pthread_init_rt("vmroot",tcb,&tcb->khandle);
+    pthread_init_rt("uvm-root",tcb,&tcb->khandle);
     tcb->name = name;
     uvm_root = uvm_current = tcb;
 }

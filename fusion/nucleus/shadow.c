@@ -407,9 +407,8 @@ static void gatekeeper_thread (void *data)
 
 	xnpod_renice_root(XNPOD_ROOT_PRIO_BASE);
 
-	/* Reschedule on behalf of the RTAI domain reflecting all
-	   changes in a row. */
-	xnshadow_schedule();
+	/* Reschedule now, reflecting all changes in a row. */
+	xnpod_schedule();
 	}
 
     up(&gksync);
@@ -472,7 +471,7 @@ void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)
  * domain as returning from schedule().
  *
  * Side-effect: This routine indirectly triggers the rescheduling
- * procedure (see __xn_sys_sched service).
+ * procedure.
  *
  * Context: This routine must be called on behalf of a user-space task
  * from the Linux domain.
@@ -786,8 +785,8 @@ void xnshadow_map (xnthread_t *thread,
     xnshadow_harden();
 
     if (autostart)
-	/* We are immediately joining the RTAI realm on behalf of the
-	   current Linux task. */
+	/* Immediately join the RTAI realm on behalf of the current
+	   Linux task. */
 	xnshadow_start(thread,0,NULL,NULL,1);
     else if (xnshadow_ptd(current) == NULL)
 	    /* Whoops, this shadow was unmapped while in dormant state
@@ -834,8 +833,7 @@ void xnshadow_start (xnthread_t *thread,
     xnlock_put_irqrestore(&nklock,s);
 
     if (resched)
-	/* Reschedule on behalf of the RTAI domain. */
-	xnshadow_schedule();
+	xnpod_schedule();
 }
 
 void xnshadow_renice (xnthread_t *thread)
@@ -1267,11 +1265,6 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 
     switch (muxop)
 	{
-	case __xn_sys_sched:
-
-	    xnpod_schedule();
-	    return;
-
 	case __xn_sys_migrate:
 
 	    if (!thread)	/* Not a shadow anyway. */
@@ -1621,7 +1614,7 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
 
     xnlock_put_irqrestore(&nklock,s);
 
-    xnshadow_schedule(); /* Schedule in the RTAI space. */
+    xnpod_schedule();
 }
 
 static void xnshadow_renice_process (adevinfo_t *evinfo)
@@ -1647,7 +1640,7 @@ static void xnshadow_renice_process (adevinfo_t *evinfo)
 
     xnpod_renice_thread_inner(thread,evdata->param->sched_priority,0);
 
-    xnpod_schedule(); /* We are already running into the RTAI domain. */
+    xnpod_schedule();
 }
 
 /*

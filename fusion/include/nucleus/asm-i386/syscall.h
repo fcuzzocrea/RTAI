@@ -64,11 +64,10 @@
 /* Xenomai nucleus syscalls. */
 #define __xn_sys_attach     0	/* muxid = xnshadow_attach_skin(magic,infp) */
 #define __xn_sys_detach     1	/* xnshadow_detach_skin(muxid) */
-#define __xn_sys_sched      2	/* xnpod_schedule(void) */
-#define __xn_sys_sync       3	/* xnshadow_sync(&syncflag) */
-#define __xn_sys_migrate    4	/* switched = xnshadow_relax/harden() */
+#define __xn_sys_sync       2	/* xnshadow_sync(&syncflag) */
+#define __xn_sys_migrate    3	/* switched = xnshadow_relax/harden() */
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-#define __xn_sys_timestamps 5	/* xnpod_get_timestamps(&timestamps) */
+#define __xn_sys_timestamps 4	/* xnpod_get_timestamps(&timestamps) */
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
 asm (".L__X'%ebx = 1\n\t"

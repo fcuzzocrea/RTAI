@@ -210,11 +210,11 @@ rthal_time_t rthal_get_8254_tsc(void);
 
 #define rthal_cli()                     adeos_stall_pipeline_from(&rthal_domain)
 #define rthal_sti()                     adeos_unstall_pipeline_from(&rthal_domain)
-#define rthal_sync_irqs()               adeos_sync_pipeline()
 #define rthal_local_irq_save(x)         ((x) = !!adeos_test_and_stall_pipeline_from(&rthal_domain))
 #define rthal_local_irq_restore(x)      adeos_restore_pipeline_from(&rthal_domain,(x))
 #define rthal_local_irq_flags(x)        ((x) = !!adeos_test_pipeline_from(&rthal_domain))
 #define rthal_local_irq_test()          (!!adeos_test_pipeline_from(&rthal_domain))
+#define rthal_local_irq_sync(x)         ((x) = !!adeos_test_and_unstall_pipeline_from(&rthal_domain))
 
 #define rthal_hw_lock(flags)            adeos_hw_local_irq_save(flags)
 #define rthal_hw_unlock(flags)          adeos_hw_local_irq_restore(flags)

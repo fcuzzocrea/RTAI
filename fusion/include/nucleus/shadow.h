@@ -117,10 +117,6 @@ int xnshadow_register_skin(const char *name,
 
 int xnshadow_unregister_skin(int muxid);
 
-static inline void xnshadow_schedule (void) {
-    XENOMAI_SYSCALL0(__xn_sys_sched);
-}
-
 unsigned long long xnshadow_ts2ticks(const struct timespec *v);
 
 void xnshadow_ticks2ts(unsigned long long,

@@ -768,14 +768,7 @@ int xnpod_start_thread (xnthread_t *thread,
         !testbits(thread->status,XNTHREAD_SYSTEM_BITS))
         xnpod_fire_callouts(&nkpod->tstartq,thread);
 
-#ifdef CONFIG_SMP
-    if (xnpod_current_sched() == thread->sched && xnpod_root_p())
-#else /* !CONFIG_SMP */
-    if (xnpod_root_p())
-#endif /* CONFIG_SMP */
-        xnarch_escalate();
-    else
-        xnpod_schedule();
+    xnpod_schedule();
 
     err = 0;
 
@@ -1998,6 +1991,9 @@ void xnpod_schedule (void)
     spl_t s;
 #ifdef __KERNEL__
     int shadow;
+
+    if (xnarch_escalate())
+	return;
 #endif /* __KERNEL__ */
 
     /* No immediate rescheduling is possible if an ISR or callout

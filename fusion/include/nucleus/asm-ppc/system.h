@@ -61,8 +61,8 @@
 #include <nucleus/asm/atomic.h>
 #include <nucleus/shadow.h>
 
-#if ADEOS_RELEASE_NUMBER < 0x02060608
-#error "Adeos 2.6r6c8/ppc or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x02060609
+#error "Adeos 2.6r6c9/ppc or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/ppc/"
 #endif
 
@@ -79,6 +79,7 @@ typedef unsigned long spl_t;
 #define splnone()   rthal_sti()
 #define spltest()   rthal_local_irq_test()
 #define splget(x)   rthal_local_irq_flags(x)
+#define splsync(x)  rthal_local_irq_sync(x)
 
 typedef unsigned long xnlock_t;
 
@@ -663,10 +664,21 @@ static inline void xnarch_notify_shutdown(void)
     xnarch_release_ipi();
 }
 
-static inline void xnarch_escalate (void) {
+static inline int xnarch_escalate (void)
 
+{
     extern int xnarch_escalation_virq;
-    adeos_trigger_irq(xnarch_escalation_virq);
+
+    if (adp_current == adp_root)
+	{
+	spl_t s;
+	splsync(s);
+	adeos_trigger_irq(xnarch_escalation_virq);
+	splexit(s);
+	return 1;
+	}
+
+    return 0;
 }
 
 static inline void *xnarch_sysalloc (u_long bytes) {

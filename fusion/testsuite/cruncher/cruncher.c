@@ -16,7 +16,9 @@ static sem_t semX, semA, semB;
 
 static int sample_count;
 
-static int has_fusion;
+static int has_fusion, dim;
+
+static double ref;
 
 int do_histogram = 0, finished = 0;
 
@@ -61,7 +63,7 @@ static inline double compute (void)
     double s;
 
     for (j = 0; j < 1000; j++)
-	for (k = ndims - 1, s = 0.0; k >= 0; k--)
+	for (k = dim - 1, s = 0.0; k >= 0; k--)
 	    s += a[k] * b[k];
 
     return s;
@@ -85,7 +87,7 @@ void *cruncher_thread (void *arg)
 
 {
     struct sched_param param;
-    double result, ref = compute();
+    double result;
 
     param.sched_priority = 99;
 
@@ -111,6 +113,10 @@ void *cruncher_thread (void *arg)
 	}
 }
 
+#define IDEAL      10000
+#define MARGIN       100
+#define FIRST_DIM    300
+
 void *sampler_thread (void *arg)
 
 {
@@ -120,6 +126,9 @@ void *sampler_thread (void *arg)
     struct sched_param param;
     struct timespec ts;
     int count, policy;
+
+    dim = FIRST_DIM;
+    ref = compute();
 
     param.sched_priority = 99;
 
@@ -134,21 +143,34 @@ void *sampler_thread (void *arg)
 	pthread_init_rt("sampler",NULL,NULL);
 
     printf("Calibrating cruncher...");
-    fflush(stdout);
-    sleep(1);                   /* Let the cruncher compute the reference
-                                   result, and the terminal display the previous
+
+    for(;;) {
+        fflush(stdout);
+        sleep(1);               /* Let the terminal display the previous
                                    message. */
-    get_time_us(&t0);
 
-    for (count = 0; count < 100; count++)
-	{
-	sem_post(&semA);
-	sem_wait(&semB);
-	}
+        get_time_us(&t0);
 
-    get_time_us(&t1);
+        for (count = 0; count < 100; count++)
+	    {
+            sem_post(&semA);
+            sem_wait(&semB);
+            }
 
-    ideal = (t1 - t0) / count;
+        get_time_us(&t1);
+
+        ideal = (t1 - t0) / count;
+
+        if(dim == ndims || (ideal > IDEAL - MARGIN) && (ideal < IDEAL + MARGIN))
+            break;
+
+        printf("%d, ", ideal);
+
+        dim = dim*IDEAL/ideal;
+        if(dim > ndims)
+            dim = ndims;
+        ref = compute();
+    }
 
     printf("done -- ideal computation time = %ld us.\n",ideal);
 

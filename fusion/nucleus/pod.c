@@ -1218,7 +1218,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 
     if (!testbits(thread->status,XNTHREAD_BLOCK_BITS))
         {
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
 	/* If attempting to suspend a runnable (shadow) thread which
 	   has received a Linux signal, just raise the break condition
 	   and return immediately. */
@@ -1229,7 +1229,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 	    thread->wchan = NULL;
 	    goto unlock_and_exit;
 	    }
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
         /* A newly created thread is not linked to the ready thread
            queue yet. */
@@ -1307,7 +1307,10 @@ void xnpod_suspend_thread (xnthread_t *thread,
  * - XNDELAY. This flag removes the counted delay wait condition.
  *
  * - XNPEND. This flag removes the resource wait condition. If a
- * watchdog is armed, it is automatically disarmed by this call.
+ * watchdog is armed, it is automatically disarmed by this
+ * call. Unlike the two previous conditions, only the current thread
+ * can set this condition for itself, i.e. no thread can force another
+ * one to pend on a resource.
  *
  * When the thread is eventually resumed by one or more calls to
  * xnpod_resume_thread(), the caller of xnpod_suspend_thread() in the
@@ -1352,7 +1355,7 @@ void xnpod_resume_thread (xnthread_t *thread,
 
     if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Is thread blocked? */
         {
-        __clrbits(thread->status,mask); /* Remove suspensive condition(s) */
+        __clrbits(thread->status,mask); /* Remove specified block bit(s) */
 
         if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* still blocked? */
             {
@@ -1374,7 +1377,9 @@ void xnpod_resume_thread (xnthread_t *thread,
                         goto unlock_and_exit;
                     }
                 else
-                    /* The thread is still suspended (XNSUSP) */
+                    /* The thread is still suspended (XNSUSP or even
+		       XNDORMANT if xnpod_set_thread_periodic() has
+		       been applied to a non-started thread) */
 		    goto unlock_and_exit;
                 }
             else if (testbits(thread->status,XNDELAY))
@@ -1389,7 +1394,23 @@ void xnpod_resume_thread (xnthread_t *thread,
                     }
 
                 if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Still blocked? */
+		    {
+		    if (testbits(thread->status,XNDELAY))
+			/* Funky corner case here: the condition we've
+			   just removed was not XNDELAY, but we are
+			   still blocked by it after having attempted
+			   to remove the only situation where XNDELAY
+			   can be a secondary condition (i.e. mated to
+			   primary XNPEND). We thus need to remove the
+			   thread from the suspension queue to reflect
+			   the removal of the condition bit passed on
+			   entry (i.e. 'mask'), since thread on
+			   resource-free timed waits should not be
+			   linked to it. */
+			removeq(&nkpod->suspendq,&thread->slink);
+
 		    goto unlock_and_exit;
+		    }
                 }
             else
                 {
@@ -3075,15 +3096,17 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
 
     xnlock_get_irqsave(&nklock,s);
 
-    now = xnpod_get_time();
-
     if (idate == XN_INFINITE)
-	idate = now + period;
-
-    if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
-	xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
+	xntimer_start(&thread->ptimer,period,period);
     else
-	err = -ETIMEDOUT;
+	{
+	now = xnpod_get_time();
+
+	if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
+	    xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
+	else
+	    err = -ETIMEDOUT;
+	}
 
     thread->poverrun = -1;
 
@@ -3203,15 +3226,14 @@ static void xnpod_calibration_thread (void *cookie)
 
 {
     int *flagp = (int *)cookie, count;
-    xnticks_t expected, period, idate;
+    xnticks_t expected, period;
     long jitter = 0;
 
     period = xnarch_ns_to_tsc(XNARCH_CALIBRATION_PERIOD);
-    idate = xnpod_get_time() + 2 * XNARCH_CALIBRATION_PERIOD;
-    expected = xnarch_ns_to_tsc(idate);
+    expected = xnpod_get_time();
 
     xnpod_set_thread_periodic(xnpod_current_thread(),
-			      idate,
+			      XN_INFINITE,
 			      XNARCH_CALIBRATION_PERIOD);
 
     for (count = 0; count < 300000000 / XNARCH_CALIBRATION_PERIOD; count++)

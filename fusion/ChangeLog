@@ -1,5 +1,11 @@
 2004-11-30  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/pod.c (xnpod_set_thread_periodic): Fix start mode with
+	idate == XN_INFINITE (i.e. do not enter any initial wait state).
+	(xnpod_resume_thread): Fix interesting corner case involving
+	partial resumption of a thread still blocked on a primary XNDELAY
+	condition.
+
 	* skins/rtai/types.h: RT_TIME_INFINITE -> TM_INFINITE,
 	RT_TIME_NONBLOCK -> TM_NONBLOCK for consistency purpose with other
 	namings.
@@ -47,8 +53,8 @@
 	* skins/rtai/snippets: Add code snippets illustrating the use of
 	the API.
 
-	* nucleus/pod.c: Compile out the scheduler hook unless we are
-	actually building the simulator.
+	* nucleus/pod.c: Compile out calls to the scheduler hook unless we
+	are actually building the simulator.
 	(xnpod_switch_fpu): Inline calls on the fast path.
 
 	* skins/rtai/lib/task.c (rt_task_set_mode, rt_task_notify): Export

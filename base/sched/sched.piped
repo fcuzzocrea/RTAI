@@ -258,8 +258,8 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->blocked_on = NOTHING;        
 	task->signal = signal;
 	memset(task->task_trap_handler, 0, RTAI_NR_TRAPS*sizeof(void *));
-	task->tick_queue        = NOTHING;
-	task->trap_handler_data = NOTHING;
+	task->linux_syscall_server = NULL;
+	task->trap_handler_data = NULL;
 	task->resync_frame = 0;
 	task->ExitHook = 0;
 	task->usp_flags = task->usp_flags_mask = task->force_soft = 0;
@@ -380,8 +380,8 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stac
 	for (i = 0; i < RTAI_NR_TRAPS; i++) {
 		task->task_trap_handler[i] = NULL;
 	}
-	task->tick_queue        = SOMETHING;
-	task->trap_handler_data = NOTHING;
+	task->linux_syscall_server = NULL;
+	task->trap_handler_data = NULL;
 	task->resync_frame = 0;
 	task->ExitHook = 0;
 	task->exectime[0] = task->exectime[1] = 0;
@@ -2144,12 +2144,12 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 		RT_TASK *task = rt_smp_current[cpuid];
 		if (task->is_hard == 1) {
 
-			if (task->trap_handler_data) {
+			if (task->linux_syscall_server) {
 #if 1
-				rt_exec_linux_syscall(task, (void *)task->trap_handler_data, (struct pt_regs *)evinfo->evdata);
+				rt_exec_linux_syscall(task, task->linux_syscall_server, (struct pt_regs *)evinfo->evdata);
 #else
 				struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-				((void (*)(void *, void *, void *, int, int))rt_fun_lxrt[RPCX].fun)((void *)task->trap_handler_data, r, &r->LINUX_SYSCALL_RETREG, sizeof(struct pt_regs), sizeof(long));
+				((void (*)(RT_TASK *, void *, void *, int, int))rt_fun_lxrt[RPCX].fun)(task->linux_syscall_server, r, &r->LINUX_SYSCALL_RETREG, sizeof(struct pt_regs), sizeof(long));
 #endif
 				return;
 			}

@@ -2638,7 +2638,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
     xnintr_init(&nkclock,0,nkpod->svctable.tickhandler,0);
 
     /* The following service should return the remaining time before
-       the next host clock tick, expressed in internal clock
+       the next host jiffy elapses, expressed in internal clock
        ticks. Returning zero is always valid and means to use a full
        tick duration; in such a case, the elapsed portion of the
        current tick would be lost, but this is not that critical.

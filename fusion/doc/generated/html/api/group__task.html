@@ -10,7 +10,8 @@
 <small>
 [<a class="el" href="group__native.html">Native RTAI API.</a>]</small>
 </h1><hr><a name="_details"></a><h2>Detailed Description</h2>
-Task management services. 
+RTAI provides a set of multitasking mechanisms. The basic process object performing actions in RTAI is a task, a logically complete path of application code. Each RTAI task is an independent portion of the overall application code embodied in a C procedure, which executes on its own stack context.<p>
+The RTAI scheduler ensures that concurrent tasks are run according to one of the supported scheduling policies. Currently, the RTAI scheduler supports fixed priority-based FIFO and round-robin policies. 
 <p>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
@@ -856,7 +857,7 @@ Rescheduling: always unless a date in the past is given.<p>
 Start a real-time task. 
 <p>
 Start a (newly) created task, scheduling it for the first time. This call releases the target task from the dormant state.<p>
-The START hooks are called on behalf of the calling context (if any, see <a class="el" href="group__task.html#ga17">rt_task_add_hook()</a>).<p>
+The TSTART hooks are called on behalf of the calling context (if any, see <a class="el" href="group__task.html#ga17">rt_task_add_hook()</a>).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>task</em>&nbsp;</td><td>The descriptor address of the affected task which must have been previously created by the <a class="el" href="group__task.html#ga4">rt_task_create()</a> service.</td></tr>
@@ -1064,7 +1065,7 @@ This service can be called from:<p>
 Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 00:23:13 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 19:31:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

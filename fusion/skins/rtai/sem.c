@@ -23,9 +23,20 @@
 
 /*!
  * \ingroup native
- * \defgroup semaphore Semaphore services.
+ * \defgroup semaphore Counting semaphore services.
  *
- * Semaphore services.
+ * A counting semaphore is a synchronization object granting RTAI
+ * tasks a concurrent access to a given number of resources maintained
+ * in an internal counter variable. The semaphore is used through the
+ * P ("Proberen", test and decrement) and V ("Verhogen", increment)
+ * operations. The P operation waits for a unit to become available
+ * from the count, and the V operation releases a resource by
+ * incrementing the unit count by one.
+ *
+ * If no more than a single resource is made available at any point in
+ * time, the semaphore enforces mutual exclusion and thus can be used
+ * to serialize access to a critical section. However, mutexes should
+ * be used instead in order to prevent priority inversions.
  *
  *@{*/
 

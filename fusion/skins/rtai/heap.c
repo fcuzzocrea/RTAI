@@ -25,11 +25,19 @@
  * \ingroup native
  * \defgroup native_heap Memory heap services.
  *
- * Memory heap services.
+ * Memory heaps are regions of memory used for dynamic memory
+ * allocation in a time-bounded fashion. Blocks of memory are
+ * allocated and freed in an arbitrary order and the pattern of
+ * allocation and size of blocks is not known until run time.
  *
- * Memory heaps are built over Xenomai's heap objects, which in turn
- * provide the needed support for sharing a memory area between kernel
- * and user-space using direct memory mapping.
+ * The implementation of the memory allocator follows the algorithm
+ * described in a USENIX 1988 paper called "Design of a General
+ * Purpose Memory Allocator for the 4.3BSD Unix Kernel" by Marshall
+ * K. McKusick and Michael J. Karels.
+ *
+ * RTAI memory heaps are built over Xenomai's heap objects, which in
+ * turn provide the needed support for sharing a memory area between
+ * kernel and user-space using direct memory mapping.
  *
  *@{*/
 
@@ -78,9 +86,9 @@ static void __heap_flush_private (xnheap_t *heap,
  * place into the descriptor, and passed to the registry package if
  * enabled for indexing the created heap.
  *
- * @param heapsize The size (in bytes) of the buffer pool which is
- * going to be pre-allocated to the heap. Memory buffers will be
- * claimed and released to this pool.  The buffer pool is not
+ * @param heapsize The size (in bytes) of the block pool which is
+ * going to be pre-allocated to the heap. Memory blocks will be
+ * claimed and released to this pool.  The block pool is not
  * extensible, so this value must be compatible with the highest
  * memory pressure that could be expected.
  *
@@ -88,17 +96,17 @@ static void __heap_flush_private (xnheap_t *heap,
  * OR'ed into this bitmask, each of them affecting the new heap:
  *
  * - H_FIFO makes tasks pend in FIFO order on the heap when waiting
- * for available buffers.
+ * for available blocks.
  *
  * - H_PRIO makes tasks pend in priority order on the heap when
- * waiting for available buffers.
+ * waiting for available blocks.
  *
  * - H_SHARED causes the heap to be sharable between kernel and
  * user-space tasks. Otherwise, the new heap is only available for
  * kernel-based usage. This feature requires the real-time support in
  * user-space to be configured in (CONFIG_OPT_RTAI_FUSION).
  *
- * - H_DMA causes the buffer pool associated to the heap to be
+ * - H_DMA causes the block pool associated to the heap to be
  * allocated in physically contiguous memory, suitable for DMA
  * operations with I/O devices. A 128Kb limit exists for @a heapsize
  * when this flag is passed.
@@ -112,7 +120,7 @@ static void __heap_flush_private (xnheap_t *heap,
  *
  * - -ENOMEM is returned if not enough system memory is available to
  * create the heap. Additionally, and if H_SHARED has been passed in
- * @a mode, errors while mapping the buffer pool in the caller's
+ * @a mode, errors while mapping the block pool in the caller's
  * address space might beget this return code too.
  *
  * - -ENOSYS is returned if @a mode specifies H_SHARED, but the
@@ -275,26 +283,26 @@ int rt_heap_delete (RT_HEAP *heap)
  * @fn int rt_heap_alloc(RT_HEAP *heap,
                          size_t size,
                          RTIME timeout,
-                         void **bufp)
+                         void **blockp)
  *
- * @brief Allocate a buffer.
+ * @brief Allocate a block.
  *
- * This service allocates a buffer from the heap's internal pool.
+ * This service allocates a block from the heap's internal pool.
  *
- * @param heap The descriptor address of the heap to allocate a buffer
+ * @param heap The descriptor address of the heap to allocate a block
  * from.
  *
- * @param size The requested size in bytes of the buffer.
+ * @param size The requested size in bytes of the block.
  *
- * @param timeout The number of clock ticks to wait for a buffer of
+ * @param timeout The number of clock ticks to wait for a block of
  * sufficient size to be available (see note). Passing
  * RT_TIME_INFINITE causes the caller to block indefinitely until some
- * buffer is eventually available. Passing RT_TIME_NONBLOCK causes the
- * service to return immediately without waiting if no buffer is
+ * block is eventually available. Passing RT_TIME_NONBLOCK causes the
+ * service to return immediately without waiting if no block is
  * available on entry.
  *
- * @param bufp A pointer to a memory location which will be written
- * upon success with the address of the allocated buffer. The buffer
+ * @param blockp A pointer to a memory location which will be written
+ * upon success with the address of the allocated block. The block
  * should be freed using rt_heap_free().
  *
  * @return 0 is returned upon success. Otherwise:
@@ -304,14 +312,14 @@ int rt_heap_delete (RT_HEAP *heap)
  * - -EIDRM is returned if @a q is a deleted heap descriptor.
  *
  * - -ETIMEDOUT is returned if @a timeout is different from
- * RT_TIME_NONBLOCK and no buffer is available within the specified
+ * RT_TIME_NONBLOCK and no block is available within the specified
  * amount of time.
  *
  * - -EWOULDBLOCK is returned if @a timeout is equal to
- * RT_TIME_NONBLOCK and no buffer is immediately available on entry.
+ * RT_TIME_NONBLOCK and no block is immediately available on entry.
  *
  * - -EINTR is returned if rt_task_unblock() has been called for the
- * waiting task before any buffer was available.
+ * waiting task before any block was available.
  *
  * Environments:
  *
@@ -336,9 +344,9 @@ int rt_heap_delete (RT_HEAP *heap)
 int rt_heap_alloc (RT_HEAP *heap,
 		   size_t size,
 		   RTIME timeout,
-		   void **bufp)
+		   void **blockp)
 {
-    void *buf = NULL;
+    void *block = NULL;
     RT_TASK *task;
     int err = 0;
     spl_t s;
@@ -353,9 +361,9 @@ int rt_heap_alloc (RT_HEAP *heap,
 	goto unlock_and_exit;
 	}
 
-    buf = xnheap_alloc(&heap->heap_base,size);
+    block = xnheap_alloc(&heap->heap_base,size);
 
-    if (buf)
+    if (block)
 	goto unlock_and_exit;
 
     if (timeout == RT_TIME_NONBLOCK)
@@ -366,7 +374,7 @@ int rt_heap_alloc (RT_HEAP *heap,
 
     task = rtai_current_task();
     task->wait_args.heap.size = size;
-    task->wait_args.heap.buf = NULL;
+    task->wait_args.heap.block = NULL;
     xnsynch_sleep_on(&heap->synch_base,timeout);
 
     if (xnthread_test_flags(&task->thread_base,XNRMID))
@@ -376,11 +384,11 @@ int rt_heap_alloc (RT_HEAP *heap,
     else if (xnthread_test_flags(&task->thread_base,XNBREAK))
 	err = -EINTR; /* Unblocked.*/
     else
-	buf = task->wait_args.heap.buf;
+	block = task->wait_args.heap.block;
 
  unlock_and_exit:
 
-    *bufp = buf;
+    *blockp = block;
 
     xnlock_put_irqrestore(&nklock,s);
 
@@ -389,22 +397,22 @@ int rt_heap_alloc (RT_HEAP *heap,
 
 /**
  * @fn int rt_heap_free(RT_HEAP *heap,
-                        void *buf)
+                        void *block)
  *
- * @brief Free a buffer.
+ * @brief Free a block.
  *
- * This service releases a buffer to the heap's internal pool. If some
- * task is currently waiting for a buffer so that it's pending request
+ * This service releases a block to the heap's internal pool. If some
+ * task is currently waiting for a block so that it's pending request
  * could be satisfied as a result of the release, it is immediately
  * resumed.
  *
- * @param heap The address of the heap descriptor to which the buffer @a buf
- * belong.
+ * @param heap The address of the heap descriptor to which the block
+ * @a block belong.
  *
- * @param buf The address of the buffer to free.
+ * @param block The address of the block to free.
  *
- * @return 0 is returned upon success, or -EINVAL if @a buf is not a
- * valid buffer previously allocated by the rt_heap_alloc() service.
+ * @return 0 is returned upon success, or -EINVAL if @a block is not a
+ * valid block previously allocated by the rt_heap_alloc() service.
  *
  * Environments:
  *
@@ -419,12 +427,12 @@ int rt_heap_alloc (RT_HEAP *heap,
  */
 
 int rt_heap_free (RT_HEAP *heap,
-		  void *buf)
+		  void *block)
 {
     int err, nwake;
     spl_t s;
 
-    if (buf == NULL)
+    if (block == NULL)
 	return -EINVAL;
 
     xnlock_get_irqsave(&nklock,s);
@@ -437,7 +445,7 @@ int rt_heap_free (RT_HEAP *heap,
         goto unlock_and_exit;
         }
     
-    err = xnheap_free(&heap->heap_base,buf);
+    err = xnheap_free(&heap->heap_base,block);
 
     if (!err && xnsynch_nsleepers(&heap->synch_base) > 0)
 	{
@@ -449,14 +457,14 @@ int rt_heap_free (RT_HEAP *heap,
 	while ((holder = nholder) != NULL)
 	    {
 	    RT_TASK *sleeper = thread2rtask(link2thread(holder,plink));
-	    void *buf;
+	    void *block;
 
-	    buf = xnheap_alloc(&heap->heap_base,
+	    block = xnheap_alloc(&heap->heap_base,
 			       sleeper->wait_args.heap.size);
-	    if (buf)
+	    if (block)
 		{
 		nholder = xnsynch_wakeup_this_sleeper(&heap->synch_base,holder);
-		sleeper->wait_args.heap.buf = buf;
+		sleeper->wait_args.heap.block = block;
 		nwake++;
 		}
 	    else

@@ -4,7 +4,8 @@
 
 	* nucleus/pipe.c: Make it optional.
 
-	* skins/rtai/registry.c: Add feature intro.
+	* skins/rtai/registry.c, skins/rtai/event.c, skins/rtai/heap.c,
+	skins/rtai/sem.c, skins/rtai/task.c: Add feature intro.
 
 2004-11-13  Philippe Gerum  <rpm@xenomai.org>
 

@@ -11,7 +11,8 @@
 [<a class="el" href="group__native.html">Native RTAI API.</a>]</small>
 </h1><hr><a name="_details"></a><h2>Detailed Description</h2>
 Pipe management services.<p>
-Real-time pipes are an improved replacement for the legacy RT-FIFOS. A pipe is a two-way communication channel between a kernel-based real-time thread and a user-space process. Pipes can be operated in a message-oriented fashion so that message boundaries are preserved, and also in byte streaming mode from kernel to user-space for optimal throughput. 
+Real-time pipes are an improved replacement for the legacy RT-FIFOS. A pipe is a two-way communication channel between a kernel-based real-time thread and a user-space process. Pipes can be operated in a message-oriented fashion so that message boundaries are preserved, and also in byte streaming mode from kernel to user-space for optimal throughput.<p>
+Kernel-based RTAI tasks open their side of the pipe using the <a class="el" href="group__pipe.html#ga9">rt_pipe_open()</a> service; user-space processes do the same by opening the /dev/rtpN special devices, where N is the minor number agreed between both ends of each pipe. 
 <p>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
@@ -274,6 +275,7 @@ Rescheduling: never.     </td>
 Open a pipe. 
 <p>
 This service opens a bi-directional communication channel allowing data exchange between real-time tasks and regular user-space processes. Pipes natively preserve message boundaries, but can also be used in byte stream mode from kernel to user space.<p>
+<a class="el" href="group__pipe.html#ga9">rt_pipe_open()</a> always returns immediately, even if the user-space side of the same pipe has not been opened yet. On the contrary, the user-space opener might be suspended until <a class="el" href="group__pipe.html#ga9">rt_pipe_open()</a> is issued on the same pipe from kernel space, unless O_NONBLOCK has been specified to open(2).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>pipe</em>&nbsp;</td><td>The address of a pipe descriptor RTAI will use to store the pipe-related data. This descriptor must always be valid while the pipe is active therefore it must be allocated in permanent memory.</td></tr>
@@ -282,7 +284,7 @@ This service opens a bi-directional communication channel allowing data exchange
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
 <ul>
-<li>-ENODEV is returned if <em>minor</em> is not a valid minor number of for pipe pseudo-devices.</li></ul>
+<li>-ENODEV is returned if <em>minor</em> is not a valid minor number for the pipe pseudo-device (i.e. /dev/rtp*).</li></ul>
 <p>
 <ul>
 <li>-EBUSY is returned if <em>minor</em> is already open.</li></ul>
@@ -542,7 +544,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 00:23:13 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 19:31:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

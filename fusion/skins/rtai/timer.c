@@ -25,7 +25,8 @@
  * \ingroup native
  * \defgroup native_timer Timer management services.
  *
- * Timer management services.
+ * Timer-related services allow to control the RTAI system timer which
+ * is used in all timed operations.
  *
  *@{*/
 

@@ -10,7 +10,9 @@
 <small>
 [<a class="el" href="group__native.html">Native RTAI API.</a>]</small>
 </h1><hr><a name="_details"></a><h2>Detailed Description</h2>
-Registry services. 
+The registry provides a mean to index real-time object descriptors created by the RTAI skin on unique alphanumeric keys. When labeled this way, a real-time object is globally exported; it can be searched for, and its descriptor returned to the caller for further use; the latter operation is called a "binding". When no object has been registered under the given name yet, the registry can be asked to set up a rendez-vous, blocking the caller until the object is eventually registered.<p>
+The registry is a simple yet powerful mechanism for sharing real-time objects between kernel-based and user-space tasks, or between tasks belonging to different user-space processes. Once the binding has been done, an exported object can be controlled through the regular API using the ubiquitous descriptor returned by the registry.<p>
+All high-level real-time objects created by the RTAI skin can be registered. The name parameter passed to the various object creation routines is used to have the new object indexed by the RTAI registry. Such registration is always optional though, and can be avoided by passing a null or empty name string. 
 <p>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
@@ -440,7 +442,7 @@ Rescheduling: possible if the object to remove is currently locked and the calli
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 00:23:13 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 19:31:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

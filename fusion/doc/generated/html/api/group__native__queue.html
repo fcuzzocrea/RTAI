@@ -169,7 +169,7 @@ Create a message queue object that allows multiple tasks to exchange data throug
 <li>Q_PRIO makes tasks pend in priority order on the queue.</li></ul>
 <p>
 <ul>
-<li>Q_SHARED causes the queue to be sharable between kernel and user-space tasks. Otherwise, the new queue is only available for kernel-based usage.</li></ul>
+<li>Q_SHARED causes the queue to be sharable between kernel and user-space tasks. Otherwise, the new queue is only available for kernel-based usage. This feature requires the real-time support in user-space to be configured in (CONFIG_OPT_RTAI_FUSION).</li></ul>
 <p>
 <ul>
 <li>Q_DMA causes the buffer pool associated to the queue to be allocated in physically contiguous memory, suitable for DMA operations with I/O devices. A 128Kb limit exists for <em>poolsize</em> when this flag is passed.</li></ul>
@@ -183,6 +183,9 @@ Create a message queue object that allows multiple tasks to exchange data throug
 <p>
 <ul>
 <li>-ENOMEM is returned if not enough system memory is available to create the queue. Additionally, and if Q_SHARED has been passed in <em>mode</em>, errors while mapping the buffer pool in the caller's address space might beget this return code too.</li></ul>
+<p>
+<ul>
+<li>-ENOSYS is returned if <em>mode</em> specifies Q_SHARED, but the real-time support in user-space is unavailable.</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -513,7 +516,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 00:23:13 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 19:31:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

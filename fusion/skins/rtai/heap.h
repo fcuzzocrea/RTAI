@@ -144,10 +144,10 @@ int rt_heap_delete(RT_HEAP *heap);
 int rt_heap_alloc(RT_HEAP *heap,
 		  size_t size,
 		  RTIME timeout,
-		  void **bufp);
+		  void **blockp);
 
 int rt_heap_free(RT_HEAP *heap,
-		 void *buf);
+		 void *block);
 
 int rt_heap_inquire(RT_HEAP *heap,
 		    RT_HEAP_INFO *info);

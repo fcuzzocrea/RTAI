@@ -137,7 +137,7 @@ typedef struct rt_task {
 
 	struct {
 	    size_t size;
-	    void *buf;
+	    void *block;
 	} heap;
 
     } wait_args;

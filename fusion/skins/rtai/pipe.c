@@ -34,6 +34,11 @@
  * boundaries are preserved, and also in byte streaming mode from
  * kernel to user-space for optimal throughput.
  *
+ * Kernel-based RTAI tasks open their side of the pipe using the
+ * rt_pipe_open() service; user-space processes do the same by opening
+ * the /dev/rtpN special devices, where N is the minor number agreed
+ * between both ends of each pipe.
+ *
  *@{*/
 
 #include <nucleus/pod.h>
@@ -126,6 +131,12 @@ void __pipe_pkg_cleanup (void)
  * processes. Pipes natively preserve message boundaries, but can also
  * be used in byte stream mode from kernel to user space.
  *
+ * rt_pipe_open() always returns immediately, even if the user-space
+ * side of the same pipe has not been opened yet. On the contrary, the
+ * user-space opener might be suspended until rt_pipe_open() is issued
+ * on the same pipe from kernel space, unless O_NONBLOCK has been
+ * specified to open(2).
+ *
  * @param pipe The address of a pipe descriptor RTAI will use to store
  * the pipe-related data.  This descriptor must always be valid while
  * the pipe is active therefore it must be allocated in permanent
@@ -135,8 +146,8 @@ void __pipe_pkg_cleanup (void)
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -ENODEV is returned if @a minor is not a valid minor number of
- * for pipe pseudo-devices.
+ * - -ENODEV is returned if @a minor is not a valid minor number for
+ * the pipe pseudo-device (i.e. /dev/rtp*).
  *
  * - -EBUSY is returned if @a minor is already open.
  *

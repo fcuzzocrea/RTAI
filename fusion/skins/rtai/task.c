@@ -25,7 +25,16 @@
  * \ingroup native
  * \defgroup task Task management services.
  *
- * Task management services.
+ * RTAI provides a set of multitasking mechanisms. The basic process
+ * object performing actions in RTAI is a task, a logically complete
+ * path of application code. Each RTAI task is an independent portion
+ * of the overall application code embodied in a C procedure, which
+ * executes on its own stack context.
+ *
+ * The RTAI scheduler ensures that concurrent tasks are run according
+ * to one of the supported scheduling policies. Currently, the RTAI
+ * scheduler supports fixed priority-based FIFO and round-robin
+ * policies.
  *
  *@{*/
 

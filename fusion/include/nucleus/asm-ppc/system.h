@@ -399,6 +399,9 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 {
     struct task_struct *outproc = out_tcb->active_task;
     struct task_struct *inproc = in_tcb->user_task;
+    unsigned long flags;
+
+    rthal_hw_lock(flags);
 
     in_tcb->active_task = inproc ?: outproc;
 
@@ -451,6 +454,8 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
     else
 	/* Kernel-to-kernel context switch. */
         rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
+
+    rthal_hw_unlock(flags);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,

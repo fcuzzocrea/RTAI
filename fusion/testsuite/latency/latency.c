@@ -6,7 +6,7 @@
 #include <rtai/timer.h>
 #include <rtai/sem.h>
 
-#define TASK_PERIOD_NS 100000LL
+#define TASK_PERIOD_NS XNARCH_CALIBRATION_PERIOD
 
 #define SAMPLE_COUNT (1000000000 / TASK_PERIOD_NS)
 

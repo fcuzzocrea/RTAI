@@ -1252,7 +1252,7 @@ function ok=gen_ccode();
   Code=['#include '"'+SCI+'/routines/machine.h'"';
 	make_actuator(%t);
 	make_sensor(%t)]
-  ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_void_io.c'')','errcatch')
+  ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_io.c'')','errcatch')
   if ierr<>0 then
     message(lasterror())
     ok=%f
@@ -1620,8 +1620,8 @@ nztotal=size(z,1);
 	 '  return(' + string(Tsamp) + ');'
 	 '}'
 	 ''
-	 '#define N_ACT  ' + string(nact)
-	 '#define N_SENS ' + string(ncap)
+	 '#define N_ACT  0'
+	 '#define N_SENS 0'
 	 ''
 	 '#include ""' + rdnom + '_io.c""'
 	 ''
@@ -2018,26 +2018,6 @@ function ok = compile_rt_standalone()
   wd = unix_g('pwd');
   chdir(rpat);
 
-  nact=size(act,'*');
-  ncap=size(cap,'*');
-
-  [fd,ierr]=mopen(rpat+'/' + cffile,'r')
-  if ierr==0 then 
-     mclose(fd);
-  else
-     mputl('end',rpat+'/' + cffile)
-  end
-
-  if (nact+ncap) ~= 0 then
-    n = x_choose(['Yes';'No'],'Create a new config file ?')
-    if n==1 then
-      exec_str='xgenconfig -i' + string(ncap) + ' -o' + string(nact) + ' -f ' + cffile;
-      unix_w(exec_str);
-    end
-  end
-
-  exec_str = 'gen_io '+ rdnom + ' ' + cffile;
-  unix_w(exec_str);
   exec_str = 'make -f '+ rdnom + '_Makefile ' + rdnom;
   unix_w(exec_str)
   

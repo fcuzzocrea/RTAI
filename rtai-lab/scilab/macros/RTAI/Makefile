@@ -9,9 +9,7 @@ include ../../Makefile.incl
 NAME = rtailib
 NAM = SCI/macros/RTAI
 
-MACROS= rtai_act.sci \
-	rtai_sens.sci \
-	rtai_sinus.sci \
+MACROS= rtai_sinus.sci \
 	rtai_square.sci \
 	rtai_step.sci \
 	rtai_scope.sci \
@@ -29,6 +27,7 @@ MACROS= rtai_act.sci \
 	rtai_mbx_rcv_if.sci \
 	rtai_mbx_rcv.sci \
 	rtai_extdata.sci \
+	rtai_fifo.sci \
 	RTAICodeGen_.sci
 
 include ../Make.lib

@@ -1608,4 +1608,6 @@ EXPORT_SYMBOL(mq_getattr);
 EXPORT_SYMBOL(mq_setattr);
 EXPORT_SYMBOL(mq_notify);
 EXPORT_SYMBOL(mq_unlink);
+EXPORT_SYMBOL(init_z_apps);
+EXPORT_SYMBOL(free_z_apps);
 #endif /* CONFIG_KBUILD */

@@ -3,7 +3,8 @@
 	* skins/rtai/syscall.c: Check for writability of the return buffer
 	for all inquiry services.
 	
-	* skins/rtai/syscall.c (__rt_queue_free): General fix.
+	* skins/rtai/syscall.c (__rt_queue_free, __rt_queue_send): General
+	fix.
 
 	* skins/rtai/queue.c, skins/rtai/syscalls.c,
 	skins/rtai/lib/queue.c: Fix various issues for user-space use.

@@ -1,5 +1,9 @@
 2005-01-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/module.c: Rework /proc interface. Provide
+	/proc/rtai/latency to dynamically read/update the scheduling
+	latency value.
+
 	* nucleus/pod.c (xnpod_set_thread_periodic): Passing XN_INFINITE
 	as the period just stops any undergoing timing.
 

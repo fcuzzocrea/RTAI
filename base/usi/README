@@ -9,11 +9,12 @@ Instead if you are using any PC that kids use nowdays to play their favourite
 video games it can be of some interest. On such machines task switching times 
 are far less than the worst latency you'll encounter in getting to the first 
 line of code in your interrupt handler, even if it seats in kernel space. 
-If you do not believe it try the interrupt latency check available int the 
+If you do not believe it try the interrupt latency check available in the 
 calibration program for a few minutes, under intense Linux peripheral 
 activities. 
+
 So if your concern is mostly on the worst case and some added overhead does
-not impede meeting you deadlines you might find it not so bad and what 
+not impede meeting your deadlines you might find it not so bad and what 
 found here might be usefull. In any case it can be a helper for preliminary
 development and easy proof of concept verifications of interrupt handlers code.
 
@@ -25,10 +26,11 @@ wake up a hard real time task, in whatever space you like.
 USI does much the same but adds something that permits you to avoid writing 
 anything in kernel space.
 
-In fact it contains a few support functions that allow you to write interrupt
-handlers directly in user space, without intalling anything in the kernel. 
+In fact it contains a few support functions allowing to write interrupt
+handlers directly in user space, without installing anything in the kernel. 
 The related APIs are much the same as those available from RTAI for kernel 
-space, so there is not much else to be said. 
+space, so there is not much else to be saidi, from the conceptual point of
+view. 
 You should just care of getting ioperm/iopl in order to gain the often 
 needed access to IO space.
 
@@ -54,7 +56,7 @@ int rt_irq_wait_until(unsigned long irq, RTIME until);
 int rt_irq_wait_timed(unsigned long irq, RTIME delay);
 The value returned by the above functions can be checked for possible interrupt
 overruns. Their number  will be signalled by a value > 0. The special value 
-RT_IRQ_TASK_ERR indicates an irregular endi of the function. It can be either 
+RT_IRQ_TASK_ERR indicates an irregular end of the handler. It can be either 
 an unexpected error or related to the handler cancellation by another task.
 Since you coded it you should know why it appears.
 
@@ -77,9 +79,9 @@ be a frightening possibility but real time must not be slave to anything.
 It should be remarked that on an x86, apart from the PIC handling services, 
 all the hard interrupt flags manipulating functions can be coded, directly 
 and more effectively, with inlined asm in user space also. So one needs not 
-use what found in rtai_usi.h for those services. Nonetheless that can be 
-useful for those that could find it useful an easier coding without minding 
-of too many details.
+use what found in rtai_usi.h for those services. Nonetheless thay can be 
+useful for those that could find it easier coding without minding of too 
+many details.
 
 All the available APIs can be easily understood if you master RTAI usage 
 already, in fact it makes little sense using them if you do not. So have a 

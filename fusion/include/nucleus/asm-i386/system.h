@@ -844,6 +844,12 @@ static inline int xnarch_init (void)
 {
     int err;
 
+#ifdef CONFIG_SMP
+    /* The HAL layer also sets the same CPU affinity so that both
+       modules keep their execution sequence on SMP boxen. */
+    set_cpus_allowed(current,cpumask_of_cpu(0));
+#endif /* CONFIG_SMP */
+
     xnarch_escalation_virq = adeos_alloc_irq();
 
     if (xnarch_escalation_virq == 0)

@@ -737,6 +737,12 @@ int __rthal_init (void)
 	return 1;
 	}
 
+#ifdef CONFIG_SMP
+    /* The nucleus also sets the same CPU affinity so that both
+       modules keep their execution sequence on SMP boxen. */
+    set_cpus_allowed(current,cpumask_of_cpu(0));
+#endif /* CONFIG_SMP */
+
     /* Allocate a virtual interrupt to handle sysreqs within the Linux
        domain. */
     rthal_sysreq_virq = adeos_alloc_irq();

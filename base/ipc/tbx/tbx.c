@@ -1,6 +1,5 @@
 /*
- * Copyright (C) 2001  G.M. Bertani <gmbertani@yahoo.it>
- * Copyright (C) 2002 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -15,842 +14,407 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
  */
+
 
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/version.h>
 #include <linux/errno.h>
-#include <linux/slab.h>
+#include <asm/uaccess.h>
+
+#include <rtai_registry.h>
 #include <rtai_schedcore.h>
+#include <rtai_tbx.h>
 
 MODULE_LICENSE("GPL");
 
-/*++++++++++++++++++++++++++++ TYPED MAILBOXES ++++++++++++++++++++++++++++++*/ 
-
-#define CHK_TBX_MAGIC \
-do { \
-	if (tbx->magic != RT_TBX_MAGIC) {  \
-		return -EINVAL; \
-	} \
-} while (0);
-
-#define TBX_MOD_SIZE(indx) ((indx) < tbx->size ? (indx) : (indx) - tbx->size)
-
-#define TBX_REVERSE_MOD_SIZE(indx) ((indx) >= 0 ? (indx) : tbx->size + (indx))
-
-static inline void tbx_smx_signal(TBX* tbx, SEM *smx)
+static inline void enq_msg(RT_MSGQ *q, RT_MSGH *msg)
 {
-	unsigned long flags;
-	RT_TASK *task;
+	RT_MSGH *prev, *next;
 
-	flags = rt_global_save_flags_and_cli();
-	if ((task = (smx->queue.next)->task)) {
-        	tbx->waiting_nr--;
-		dequeue_blocked(task);
-		rem_timed_task(task);
-		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-			enq_ready_task(task);
-			RT_SCHEDULE(task, rtai_cpuid());
-		}
+	for (prev = next = q->firstmsg; msg->priority >= next->priority; prev = next, next = next->next);
+	if (next == prev) {
+		msg->next = next;
+		q->firstmsg = msg;
 	} else {
-		smx->count = 1;
-	}
-	rt_global_restore_flags(flags);
-}
-
-static inline int tbx_smx_wait(TBX* tbx, SEM *smx, RT_TASK *rt_current)
-{
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
-    	if (!(smx->count)) {
-		tbx->waiting_nr++;
-	        rt_current->state |= RT_SCHED_SEMAPHORE;
-                rem_ready_current(rt_current);
-                enqueue_blocked(rt_current, &smx->queue, smx->qtype);
-		rt_schedule();
-	} else {
-		smx->count = 0;
-	}
-	rt_global_restore_flags(flags);
-	return (int)(rt_current->blocked_on);
-}
-
-static inline int tbx_smx_wait_until(TBX *tbx, SEM *smx, RTIME time, RT_TASK *rt_current)
-{
-	int timed = 0;
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
-	if (!(smx->count)) {
-		tbx->waiting_nr++;
-		rt_current->blocked_on = &smx->queue;
-		rt_current->resume_time = time;
-		rt_current->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED);
-		rem_ready_current(rt_current);
-		enqueue_blocked(rt_current, &smx->queue, smx->qtype);
-		enq_timed_task(rt_current);
-		rt_schedule();
-        	if (rt_current->blocked_on) {
-                        dequeue_blocked(rt_current);
-			timed = 1;
-			tbx->waiting_nr--;
-		}
-	} else {
-		smx->count = 0;
-	}
-	rt_global_restore_flags(flags);
-	return timed;
-}
-
-static inline int tbx_wait_room(TBX *tbx, int *fravbs, int msgsize, RT_TASK *rt_current)
-{
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
-	if ((*fravbs) < msgsize) {
-		tbx->waiting_nr++;
-		rt_current->suspdepth = 1;
-		rt_current->state |= RT_SCHED_MBXSUSP;
-		rem_ready_current(rt_current);
-		rt_current->blocked_on = SOMETHING;
-		tbx->waiting_task = rt_current;
-		rt_schedule();
-	}
-	rt_global_restore_flags(flags);
-	return (int)(rt_current->blocked_on);
-}
-
-static inline int tbx_check_room(TBX *tbx, int *fravbs, int msgsize)
-{
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
-	if (((*fravbs) < msgsize) || !tbx->sndsmx.count) {
-		rt_global_restore_flags(flags);
-		return 0;    
-	}
-	tbx->sndsmx.count = 0;
-	rt_global_restore_flags(flags);
-	return msgsize;
-}
-
-static inline int tbx_wait_room_until(TBX *tbx, int *fravbs, int msgsize, RTIME time, RT_TASK *rt_current)
-{
-	int timed = 0;
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
-	if ((*fravbs) < msgsize) {
-	        tbx->waiting_nr++;
-		rt_current->blocked_on = SOMETHING;
-		rt_current->resume_time = time;
-		rt_current->state |= (RT_SCHED_MBXSUSP | RT_SCHED_DELAYED);
-		rem_ready_current(rt_current);
-		tbx->waiting_task = rt_current;
-		enq_timed_task(rt_current);
-		rt_schedule();
-		if (rt_current->blocked_on) {
-			tbx->waiting_nr--;
-			rt_current->blocked_on = NOTHING;
-			tbx->waiting_task = NOTHING;
-			timed = 1;
-		}
-	}
-	rt_global_restore_flags(flags);
-	return timed;
-}
-
-static inline unsigned char tbx_check_msg(TBX *tbx, int *fravbs, int msgsize, unsigned char* type)
-{
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
-	if (tbx->rcvsmx.count == 0 || (*fravbs) < msgsize ) {
-		rt_global_restore_flags(flags);
-		return 0;
-	}
-	tbx->rcvsmx.count = 0;
-	if (*tbx->bcbadr == TYPE_BROADCAST) {
-		*type = TYPE_BROADCAST;
-	} else {
-	        *type = *(tbx->bufadr + tbx->fbyte);
-		tbx->fbyte = TBX_MOD_SIZE(tbx->fbyte + sizeof(*type));
-		tbx->frbs += sizeof(*type);
-		tbx->avbs -= sizeof(*type);
-	}        
-	rt_global_restore_flags(flags);
-	return *type;
-}
-
-static inline int tbx_wait_msg(TBX *tbx, int *fravbs, int msgsize, unsigned char*type, RT_TASK *rt_current)
-{
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
-	if (*tbx->bcbadr == TYPE_BROADCAST) {
-		*type = TYPE_BROADCAST;
-	} else {
-		if ((*fravbs) < msgsize ) {
-			tbx->waiting_nr++;
-			rt_current->state |= RT_SCHED_MBXSUSP;
-	                rem_ready_current(rt_current);
-			rt_current->blocked_on = SOMETHING;
-			tbx->waiting_task = rt_current;
-			rt_schedule();
-        	}
-	        *type = *(tbx->bufadr + tbx->fbyte);
-        	tbx->fbyte = TBX_MOD_SIZE(tbx->fbyte + sizeof(*type));
-	        tbx->frbs += sizeof(*type);
-        	tbx->avbs -= sizeof(*type);
-	}        
-	rt_global_restore_flags(flags);
-	return (int)(rt_current->blocked_on);
-}
-
-static inline int tbx_wait_msg_until(TBX *tbx, int *fravbs, int msgsize, RTIME time, unsigned char *type, RT_TASK *rt_current)
-{
-	int timed = 0;
-	unsigned long flags;
-
-	flags = rt_global_save_flags_and_cli();
-	if (*tbx->bcbadr == TYPE_BROADCAST) {
-		*type = TYPE_BROADCAST;
-	} else {
-	        *type = *(tbx->bufadr + tbx->fbyte);
-        	if ((*fravbs) < msgsize && *tbx->bcbadr == TYPE_NONE) {
-			tbx->waiting_nr++;
-        		rt_current->blocked_on = SOMETHING;
-			rt_current->resume_time = time;
-			rt_current->state |= (RT_SCHED_MBXSUSP | RT_SCHED_DELAYED);
-                        rem_ready_current(rt_current);
-			tbx->waiting_task = rt_current;
-                        enq_timed_task(rt_current);
-			rt_schedule();
-			if (rt_current->blocked_on) {
-				tbx->waiting_nr--;
-				rt_current->blocked_on = NOTHING;
-				tbx->waiting_task = NOTHING;
-				timed = 1;
-				*type = TYPE_NONE;
-				rt_global_restore_flags(flags);
-				return timed;
-			}
-	        }
-        	tbx->fbyte = TBX_MOD_SIZE(tbx->fbyte + sizeof(*type));
-	        tbx->frbs += sizeof(*type);
-        	tbx->avbs -= sizeof(*type);
-	}
-	rt_global_restore_flags(flags);
-	return timed;
-}
-
-static inline void tbx_signal(TBX *tbx)
-{
-	unsigned long flags;
-	RT_TASK *task;
-
-	flags = rt_global_save_flags_and_cli();
-	if ((task = tbx->waiting_task)) {
-		tbx->waiting_nr--;
-                rem_timed_task(task);
-        	task->blocked_on = NOTHING;
-		tbx->waiting_task = NOTHING;
-		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-                        enq_ready_task(task);
-			rt_schedule();
-		}
-	}
-	rt_global_restore_flags(flags);
-}
-
-static inline int tbxput(TBX *tbx, char **msg, int msg_size, unsigned char type)
-{
-	int tocpy, last_byte;
-	unsigned long flags;
-	int msgpacksize;
-            
-	msgpacksize = msg_size + sizeof(type); 
-	flags = rt_global_save_flags_and_cli();
-	while (tbx->frbs && msgpacksize > 0) {
-        	last_byte = TBX_MOD_SIZE(tbx->fbyte + tbx->avbs);
-		tocpy = tbx->size - last_byte;
-		if (tocpy > msgpacksize) {
-			tocpy = msgpacksize;
-		}
-//		rt_global_restore_flags(flags);
-		if (type != TYPE_NONE) {
-			tocpy = sizeof(type);
-			*(tbx->bufadr + last_byte) = type;
-			msgpacksize -= tocpy;
-			type = TYPE_NONE;
-	        } else {
-			memcpy(tbx->bufadr + last_byte, *msg, tocpy);
-			msgpacksize -= tocpy;
-			*msg += tocpy;
-		}
-//		flags = rt_global_save_flags_and_cli();
-        	tbx->frbs -= tocpy;
-		tbx->avbs += tocpy;
-	}    
-	rt_global_restore_flags(flags);
-	return msgpacksize;
-}
-
-static inline int tbxget(TBX *tbx, char **msg, int msg_size)
-{
-	int tocpy;
-	unsigned long flags;
-    
-	flags = rt_global_save_flags_and_cli();
-	while (tbx->avbs && msg_size > 0) {
-		tocpy = tbx->size - tbx->fbyte;
-		if (tocpy > msg_size) {
-			tocpy = msg_size;
-		}
-		if (tocpy > tbx->avbs) {
-			tocpy = tbx->avbs;
-		}
-//		rt_global_restore_flags(flags);
-	        memcpy(*msg, tbx->bufadr + tbx->fbyte, tocpy);
-        	msg_size  -= tocpy;
-	        *msg      += tocpy;
-//		flags = rt_global_save_flags_and_cli();
-	        tbx->fbyte = TBX_MOD_SIZE(tbx->fbyte + tocpy);
-        	tbx->frbs += tocpy;
-	        tbx->avbs -= tocpy;
-	}
-	rt_global_restore_flags(flags);
-	return msg_size;
-}
-
-static inline int tbxbackput(TBX *tbx, char **msg, int msg_size, unsigned char type)
-{
-	int tocpy = 0, first_byte = -1;
-	unsigned long flags;
-	int msgpacksize;
-        
-	msgpacksize = msg_size + sizeof(type); 
-	flags = rt_global_save_flags_and_cli();
-	while (tbx->frbs && msgpacksize > 0) {
-        	if (first_byte == -1) {
-			tbx->fbyte = TBX_REVERSE_MOD_SIZE(tbx->fbyte - msgpacksize);
-			first_byte = tbx->fbyte;
-	        } else {
-        		first_byte = TBX_MOD_SIZE(first_byte + tocpy);
-		}
-		tocpy = tbx->size - first_byte;
-		if (tocpy > msgpacksize) {
-			tocpy = msgpacksize;
-		}
-//		rt_global_restore_flags(flags);
-		if (type != TYPE_NONE) {
-			tocpy = sizeof(type);
-			*(tbx->bufadr + first_byte) = type;
-			msgpacksize -= tocpy;
-			type = TYPE_NONE;
-	        } else {
-        		memcpy(tbx->bufadr + first_byte, *msg, tocpy);
-			msgpacksize -= tocpy;
-			*msg += tocpy;
-		}
-//		flags = rt_global_save_flags_and_cli();
-		tbx->frbs -= tocpy;
-		tbx->avbs += tocpy;
-	}    
-	rt_global_restore_flags(flags);
-	return msgpacksize;
-}
-
-static inline void tbx_receive_core(TBX *tbx, void *msg, int *msg_size, unsigned char type, unsigned char *lock)
-{
-	char *temp;
-
-	temp = msg;    
-	if (type == TYPE_BROADCAST) {
-		if (*tbx->bcbadr == TYPE_NONE) {
-			tbxget(tbx, (char **)(&temp), *msg_size);
-			if (tbx->waiting_nr > 0) {
-				memcpy((char*)(tbx->bcbadr+sizeof(type)), msg, *msg_size);
-				*tbx->bcbadr = TYPE_BROADCAST;
-				*lock = 1;
-			} else {
-				rt_sem_broadcast(&(tbx->bcbsmx));
-			}
-			*msg_size = 0;
-		} else {
-			memcpy(msg, (char*)(tbx->bcbadr+sizeof(type)), *msg_size);
-			*msg_size = 0;                
-			if (tbx->waiting_nr == 0) {
-				*tbx->bcbadr = TYPE_NONE;
-				rt_sem_broadcast(&(tbx->bcbsmx));
-            		} else {
-				*lock = 1;
-			}
-		}
-	} else {
-		*msg_size = tbxget(tbx, (char **)(&temp), *msg_size);
+		msg->next = prev->next;
+		prev->next = msg;
 	}
 }
 
-int rt_tbx_init(TBX *tbx, int size, int flags)
+int rt_msgq_init(RT_MSGQ *mq, int nmsg, int msg_size)
 {
-	if (!(tbx->bufadr = sched_malloc(size))) { 
+	int i;
+        void *p;
+
+	if (!(mq->slots = rt_malloc((msg_size + RT_MSGH_SIZE + sizeof(void *))*nmsg + RT_MSGH_SIZE))) {
 		return -ENOMEM;
 	}
-	if (!(tbx->bcbadr = sched_malloc(size))) { 
-		sched_free(tbx->bufadr);
-		return -ENOMEM;
+	mq->nmsg  = nmsg;
+	mq->fastsize = msg_size;
+	mq->slot = 0;
+	p = mq->slots + nmsg;
+	for (i = 0; i < nmsg; i++) {
+                mq->slots[i] = p;
+		((RT_MSGH *)p)->priority = 0;
+		p += (msg_size + RT_MSGH_SIZE);
 	}
-	*tbx->bcbadr = TYPE_NONE;
-	memset(tbx->bufadr, 0, size);
-	memset(tbx->bcbadr, 0, size);
-	rt_typed_sem_init(&(tbx->sndsmx), 1, CNT_SEM | flags);
-	rt_typed_sem_init(&(tbx->rcvsmx), 1, CNT_SEM | flags);
-	rt_typed_sem_init(&(tbx->bcbsmx), 1, BIN_SEM | flags);
-	tbx->magic = RT_TBX_MAGIC;
-	tbx->size = tbx->frbs = size;
-	tbx->waiting_task = 0;
-	tbx->waiting_nr = 0;
-	spin_lock_init(&(tbx->buflock));
-	tbx->fbyte = tbx->avbs = 0;
+        ((RT_MSGH *)(mq->firstmsg = p))->priority = (0xFFFFFFFF/2);
+	rt_typed_sem_init(&mq->receivers, 1, RES_SEM);
+	rt_typed_sem_init(&mq->senders, 1, RES_SEM);
+	rt_typed_sem_init(&mq->received, 0, CNT_SEM);
+	rt_typed_sem_init(&mq->freslots, nmsg, CNT_SEM);
+	spin_lock_init(&mq->lock);
 	return 0;
 }
 
-int rt_tbx_delete(TBX *tbx)
+int rt_msgq_delete(RT_MSGQ *mq)
 {
-	CHK_TBX_MAGIC;
-	tbx->magic = 0;
-	if (rt_sem_delete(&(tbx->sndsmx)) || rt_sem_delete(&(tbx->rcvsmx))|| rt_sem_delete(&(tbx->bcbsmx))) {
-		return -EFAULT;
-	}
-	while (tbx->waiting_task) {
-		tbx_signal(tbx);
-	}
-	sched_free(tbx->bufadr); 
-	sched_free(tbx->bcbadr); 
-	return 0;
+        if (rt_sem_delete(&mq->receivers) | rt_sem_delete(&mq->senders) | rt_sem_delete(&mq->received) | rt_sem_delete(&mq->freslots) | rt_sem_delete(&mq->broadcast)) {
+                return -EFAULT;
+        }
+        rt_free(mq->slots);
+        return 0;
 }
 
-int rt_tbx_send(TBX *tbx, void *msg, int msg_size)
+RT_MSGQ *_rt_named_msgq_init(unsigned long msgq_name, int nmsg, int msg_size)
 {
-	unsigned char type = TYPE_NORMAL;
-	DECLARE_RT_CURRENT;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-		return -EMSGSIZE;
-	}
-	ASSIGN_RT_CURRENT;
-	if (tbx_smx_wait(tbx, &(tbx->sndsmx), rt_current)) {
-		return msg_size;
-	}
-   	if (tbx_wait_room(tbx, &tbx->frbs, msg_size + sizeof(type), rt_current)) {
-		tbx_smx_signal(tbx, &(tbx->sndsmx));
-		return msg_size;
-	}
-	msg_size = tbxput(tbx, (char **)(&msg), msg_size, type);
-	tbx_signal(tbx);
-	tbx_smx_signal(tbx, &(tbx->sndsmx));
-	return msg_size;
-}
+	RT_MSGQ *msgq;
 
-int rt_tbx_send_if(TBX *tbx, void *msg, int msg_size)
-{
-	unsigned char type = TYPE_NORMAL;
-	CHK_TBX_MAGIC;
-
-	if ((msg_size + sizeof(type)) > tbx->size) {
-		return -EMSGSIZE;
+	if ((msgq = rt_get_adr_cnt(msgq_name))) {
+		return msgq;
 	}
-	if (tbx_check_room(tbx, &tbx->frbs, (msg_size + sizeof(type)))) {
-		tbxput(tbx, (char **)(&msg), msg_size, type);
-		tbx_signal(tbx);
-		tbx_smx_signal(tbx, &(tbx->sndsmx));
-		return 0;
-	}
-	return msg_size;
-}
-
-int rt_tbx_send_until(TBX *tbx, void *msg, int msg_size, RTIME time)
-{
-	unsigned char type = TYPE_NORMAL;
-	DECLARE_RT_CURRENT;
-
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-		return -EMSGSIZE;
-	}
-	ASSIGN_RT_CURRENT;
-	if (tbx_smx_wait_until(tbx, &(tbx->sndsmx), time, rt_current)) {
-		return msg_size;
-	}
-	if (tbx_wait_room_until(tbx, &tbx->frbs, msg_size + sizeof(type), time, rt_current)) {
-		tbx_smx_signal(tbx, &(tbx->sndsmx));
-		return msg_size;
-	}
-	msg_size = tbxput(tbx, (char **)(&msg), msg_size, type);
-	tbx_signal(tbx);
-	tbx_smx_signal(tbx, &(tbx->sndsmx));
-	return msg_size;
-}
-
-int rt_tbx_send_timed(TBX *tbx, void *msg, int msg_size, RTIME delay)
-{
-	return rt_tbx_send_until(tbx, msg, msg_size, get_time() + delay);
-}
-
-int rt_tbx_receive(TBX *tbx, void *msg, int msg_size)
-{
-	unsigned char type = TYPE_NONE, lock = 0;  
-	char* temp;
-	DECLARE_RT_CURRENT;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-		return -EMSGSIZE;
-	}
-	ASSIGN_RT_CURRENT;
-	if (tbx_smx_wait(tbx, &(tbx->rcvsmx), rt_current)) {
-		return msg_size;
-	}
-	temp = msg;
-	if (tbx_wait_msg(tbx, &tbx->avbs, msg_size + sizeof(type), &type, rt_current)) {
-		tbx_smx_signal(tbx, &(tbx->rcvsmx));
-		return msg_size;
-	}
-	tbx_receive_core(tbx, msg, &msg_size, type, &lock);
-	tbx_signal(tbx);
-	tbx_smx_signal(tbx, &(tbx->rcvsmx));
-	if (lock == 1) {
-        	rt_sem_wait(&(tbx->bcbsmx));
-	}
-	return msg_size;
-}
-
-int rt_tbx_receive_if(TBX *tbx, void *msg, int msg_size)
-{
-	unsigned char type = TYPE_NONE, lock = 0; 
-	char* temp;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-		return -EMSGSIZE;
-	}
-	temp = msg;
-	if (tbx_check_msg(tbx, &tbx->avbs, (msg_size + sizeof(type)), &type)) {
-        	tbx_receive_core(tbx, msg, &msg_size, type, &lock);
-	        tbx_signal(tbx);
-        	tbx_smx_signal(tbx, &(tbx->rcvsmx));
-	        if(lock == 1) {
-			rt_sem_wait(&(tbx->bcbsmx));
-	        }
-	}
-	return msg_size;
-}
-
-int rt_tbx_receive_until(TBX *tbx, void *msg, int msg_size, RTIME time)
-{
-	unsigned char type = TYPE_NONE, lock = 0;
-	char* temp;
-	DECLARE_RT_CURRENT;
-
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-		return -EMSGSIZE;
-	}
-	ASSIGN_RT_CURRENT;
-	if (tbx_smx_wait_until(tbx, &(tbx->rcvsmx), time, rt_current)) {
-		return msg_size;
-	}
-	temp = msg;
-	if (tbx_wait_msg_until(tbx, &tbx->avbs, msg_size + sizeof(type), time, &type, rt_current)) {
-		tbx_smx_signal(tbx, &(tbx->rcvsmx));
-		return msg_size;
-	}
-	tbx_receive_core(tbx, msg, &msg_size, type, &lock);
-	tbx_signal(tbx);
-	tbx_smx_signal(tbx, &(tbx->rcvsmx));
-	if(lock == 1) {
-		rt_sem_wait(&(tbx->bcbsmx));
-	}
-	return msg_size;
-}
-
-int rt_tbx_receive_timed(TBX *tbx, void *msg, int msg_size, RTIME delay)
-{
-	return rt_tbx_receive_until(tbx, msg, msg_size, get_time() + delay);
-}
-
-int rt_tbx_broadcast(TBX *tbx, void *msg, int msg_size)
-{
-	unsigned char type = TYPE_BROADCAST; 
-	int wakedup;
-	DECLARE_RT_CURRENT;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-		return -EMSGSIZE;
-	}
-	wakedup = tbx->waiting_nr;
-	if (wakedup == 0) {
-		return wakedup;
-	}
-	ASSIGN_RT_CURRENT;
-	if (tbx_smx_wait(tbx, &(tbx->sndsmx), rt_current)) {
-		return 0;
-	}
-	if (tbx_wait_room(tbx, &tbx->frbs, msg_size + sizeof(type), rt_current)) {
-		tbx_smx_signal(tbx, &(tbx->sndsmx));
-		return 0;
-	}
-	msg_size = tbxput(tbx, (char **)(&msg), msg_size, type);
-	tbx_signal(tbx);
-	tbx_smx_signal(tbx, &(tbx->sndsmx));
-	return wakedup;
-}
-
-int rt_tbx_broadcast_if(TBX *tbx, void *msg, int msg_size)
-{
-	unsigned char type = TYPE_BROADCAST; 
-	int wakedup;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-		return -EMSGSIZE;
-	}
-	wakedup = tbx->waiting_nr;
-	if (wakedup == 0) {
-		return wakedup;
-	}
-	if (tbx_check_room(tbx, &tbx->frbs, (msg_size + sizeof(type)))) {
-		msg_size = tbxput(tbx, (char **)(&msg), msg_size, type);
-		tbx_signal(tbx);
-		tbx_smx_signal(tbx, &(tbx->sndsmx));
-		return wakedup;
-	}
-	return 0;
-}
-
-int rt_tbx_broadcast_until(TBX *tbx, void *msg, int msg_size, RTIME time)
-{
-	unsigned char type = TYPE_BROADCAST; 
-	int wakedup;
-	DECLARE_RT_CURRENT;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-        	return -EMSGSIZE;
-	}
-	wakedup = tbx->waiting_nr;
-	if (wakedup == 0) {
-        	return wakedup;
-	}
-	ASSIGN_RT_CURRENT;
-	if (tbx_smx_wait_until(tbx, &(tbx->sndsmx), time, rt_current)) {
-		return 0;
-	}
-	if (tbx_wait_room_until(tbx, &tbx->frbs, (msg_size + sizeof(type)), time, rt_current)) {
-		tbx_smx_signal(tbx, &(tbx->sndsmx));
-		return 0;
-	}
-	msg_size = tbxput(tbx, (char **)(&msg), msg_size, type);
-	tbx_signal(tbx);
-	tbx_smx_signal(tbx, &(tbx->sndsmx));
-	return wakedup;
-}
-
-int rt_tbx_broadcast_timed(TBX *tbx, void *msg, int msg_size, RTIME delay)
-{
-	return rt_tbx_broadcast_until(tbx, msg, msg_size, get_time() + delay);
-}
-
-int rt_tbx_urgent(TBX *tbx, void *msg, int msg_size)
-{
-	unsigned char type = TYPE_URGENT;
-	DECLARE_RT_CURRENT;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-        	return -EMSGSIZE;
-	}
-	ASSIGN_RT_CURRENT;
-	if (tbx_smx_wait(tbx, &(tbx->sndsmx), rt_current)) {
-		return msg_size;
-	}
-	if (tbx_wait_room(tbx, &tbx->frbs, msg_size + sizeof(type), rt_current)) {
-        	tbx_smx_signal(tbx, &(tbx->sndsmx));
-		return msg_size;
-	}
-	msg_size = tbxbackput(tbx, (char **)(&msg), msg_size, type);
-	tbx_signal(tbx);
-	tbx_smx_signal(tbx, &(tbx->sndsmx));
-	return msg_size;
-}
-
-int rt_tbx_urgent_if(TBX *tbx, void *msg, int msg_size)
-{
-	unsigned char type = TYPE_URGENT;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-        	return -EMSGSIZE;
-	}
-	if (tbx_check_room(tbx, &tbx->frbs, (msg_size + sizeof(type)))) {
-        	msg_size = tbxbackput(tbx, (char **)(&msg), msg_size, type);
-		tbx_signal(tbx);
-		tbx_smx_signal(tbx, &(tbx->sndsmx));
-		return 0;
-	}
-	return msg_size;
-}
-
-int rt_tbx_urgent_until(TBX *tbx, void *msg, int msg_size, RTIME time)
-{
-	unsigned char type = TYPE_URGENT;
-	DECLARE_RT_CURRENT;
-    
-	CHK_TBX_MAGIC;
-	if ((msg_size + sizeof(type)) > tbx->size) {
-        	return -EMSGSIZE;
-	}
-	ASSIGN_RT_CURRENT;
-	if (tbx_smx_wait_until(tbx, &(tbx->sndsmx), time, rt_current)) {
-		return msg_size;
-	}
-	if (tbx_wait_room_until(tbx, &tbx->frbs, (msg_size + sizeof(type)), time, rt_current)) {
-	        tbx_smx_signal(tbx, &(tbx->sndsmx));
-        	return msg_size;
-	}
-	msg_size = tbxbackput(tbx, (char **)(&msg), msg_size, type);
-    	tbx_signal(tbx);
-	tbx_smx_signal(tbx, &(tbx->sndsmx));
-	return msg_size;
-}
-
-int rt_tbx_urgent_timed(TBX *tbx, void *msg, int msg_size, RTIME delay)
-{
-	return rt_tbx_urgent_until(tbx, msg, msg_size, get_time() + delay);
-}
-
-/* ++++++++++++++++++++++++ NAMED TYPED MAIL BOXES ++++++++++++++++++++++++++ */
-
-#include <rtai_registry.h>
-
-TBX *rt_named_tbx_init(const char *tbx_name, int value, int type)
-{
-	TBX *tbx;
-	unsigned long name;
-
-	if ((tbx = rt_get_adr(name = nam2num(tbx_name)))) {
-		return tbx;
-	}
-	if ((tbx = rt_malloc(sizeof(SEM)))) {
-		rt_tbx_init(tbx, value, type);
-		if (rt_register(name, tbx, IS_SEM, 0)) {
-			return tbx;
+	if ((msgq = rt_malloc(sizeof(RT_MSGQ)))) {
+		rt_msgq_init(msgq, nmsg, msg_size);
+		if (rt_register(msgq_name, msgq, IS_MBX, 0)) {
+			return msgq;
 		}
-		rt_tbx_delete(tbx);
+		rt_msgq_delete(msgq);
 	}
-	rt_free(tbx);
-	return (TBX *)0;
+	rt_free(msgq);
+	return NULL;
 }
 
-int rt_named_tbx_delete(TBX *tbx)
+int rt_named_msgq_delete(RT_MSGQ *msgq)
 {
-	if (!rt_tbx_delete(tbx)) {
-		rt_free(tbx);
-	}
-	return rt_drg_on_adr(tbx);
-}
-
-int rt_tbx_init_u(unsigned long name, int size, int flags)
-{
-	TBX *tbx;
-	if (rt_get_adr(name)) {
-		return 0;
-	}
-	if ((tbx = rt_malloc(sizeof(TBX)))) {
-		rt_tbx_init(tbx, size, flags);
-		if (rt_register(name, tbx, IS_MBX, current)) {
-			return (int)tbx;
+	int ret;
+	if (!(ret = rt_drg_on_adr_cnt(msgq))) {
+		if (!rt_msgq_delete(msgq)) {
+			rt_free(msgq);
+			return 0;
 		} else {
-			rt_free(tbx);
+			return -EFAULT;
 		}
 	}
+	return ret;
+}
+
+static int _send(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
+{
+	unsigned long flags;
+	RT_MSG *msg_ptr;
+	void *p;
+
+	if (msg_size > mq->fastsize) {
+		if (!(p = rt_malloc(msg_size))) {
+			rt_sem_signal(&mq->freslots);
+			rt_sem_signal(&mq->senders);
+			return -ENOMEM;
+		}
+	} else {
+		p = NULL;
+	}
+	flags = rt_spin_lock_irqsave(&mq->lock);
+	msg_ptr = mq->slots[mq->slot++];
+	rt_spin_unlock_irqrestore(flags, &mq->lock);
+	msg_ptr->hdr.size = msg_size;
+	msg_ptr->hdr.priority = msgpri;
+	msg_ptr->hdr.malloc = p;
+	msg_ptr->hdr.broadcast = 0;
+	if (space) {
+		memcpy(p ? p : msg_ptr->msg, msg, msg_size);
+	} else {
+		copy_from_user(p ? p : msg_ptr->msg, msg, msg_size);
+	}
+	flags = rt_spin_lock_irqsave(&mq->lock);
+	enq_msg(mq, &msg_ptr->hdr);
+	rt_spin_unlock_irqrestore(flags, &mq->lock);
+	rt_sem_signal(&mq->received);
+	rt_sem_signal(&mq->senders);
 	return 0;
 }
 
-int rt_tbx_delete_u(TBX *tbx)
+int _rt_msg_send(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
 {
-	if (rt_tbx_delete(tbx)) {
-		return -EFAULT;
+	if (rt_sem_wait(&mq->senders) >= SEM_TIMOUT) {
+                return msg_size;
+        }
+	if (rt_sem_wait(&mq->freslots) >= SEM_TIMOUT) {
+		rt_sem_signal(&mq->senders);
+		return msg_size;
 	}
-	rt_free(tbx);
-	return rt_drg_on_adr(tbx);
+	return _send(mq, msg, msg_size, msgpri, space);
 }
 
-struct rt_native_fun_entry rt_tbx_entries[] = {
-	{ { 0, rt_tbx_init_u },                     TBX_INIT },
-	{ { 0, rt_tbx_delete_u },                   TBX_DELETE },
-	{ { 0, rt_named_tbx_init },               NAMED_TBX_INIT },
-	{ { 0, rt_named_tbx_delete },             NAMED_TBX_DELETE },
-	{ { UR1(2, 3), rt_tbx_send },             TBX_SEND },
-	{ { UR1(2, 3), rt_tbx_send_if },          TBX_SEND_IF },
-	{ { UR1(2, 3), rt_tbx_send_until },       TBX_SEND_UNTIL },
-	{ { UR1(2, 3), rt_tbx_send_timed },       TBX_SEND_TIMED },
-	{ { UW1(2, 3), rt_tbx_receive },          TBX_RECEIVE },
-	{ { UW1(2, 3), rt_tbx_receive_if },       TBX_RECEIVE_IF },
-	{ { UW1(2, 3), rt_tbx_receive_until },    TBX_RECEIVE_UNTIL },
-	{ { UW1(2, 3), rt_tbx_receive_timed },    TBX_RECEIVE_TIMED },
-	{ { UR1(2, 3), rt_tbx_broadcast },        TBX_BROADCAST },
-	{ { UR1(2, 3), rt_tbx_broadcast_if },     TBX_BROADCAST_IF },
-	{ { UR1(2, 3), rt_tbx_broadcast_until },  TBX_BROADCAST_UNTIL },
-	{ { UR1(2, 3), rt_tbx_broadcast_timed },  TBX_BROADCAST_TIMED },
-	{ { UR1(2, 3), rt_tbx_urgent },           TBX_URGENT },
-	{ { UR1(2, 3), rt_tbx_urgent_if },        TBX_URGENT_IF },
-	{ { UR1(2, 3), rt_tbx_urgent_until },     TBX_URGENT_UNTIL },
-	{ { UR1(2, 3), rt_tbx_urgent_timed },     TBX_URGENT_TIMED },
-	{ { 0, 0 },  		                  000 }
+int _rt_msg_send_if(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
+{
+	if (rt_sem_wait_if(&mq->senders) <= 0) {
+                return msg_size;
+        }
+	if (rt_sem_wait_if(&mq->freslots) <= 0) {
+		rt_sem_signal(&mq->senders);
+		return msg_size;
+	}
+	return _send(mq, msg, msg_size, msgpri, space);
+}
+
+int _rt_msg_send_until(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME until, int space)
+{
+	if (rt_sem_wait_until(&mq->senders, until) >= SEM_TIMOUT) {
+                return msg_size;
+        }
+	if (rt_sem_wait_until(&mq->freslots, until) >= SEM_TIMOUT) {
+		rt_sem_signal(&mq->senders);
+		return msg_size;
+	}
+	return _send(mq, msg, msg_size, msgpri, space);
+}
+
+int _rt_msg_send_timed(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME delay, int space)
+{
+	return _rt_msg_send_until(mq, msg, msg_size, msgpri, get_time() + delay, space);
+}
+
+static int _receive(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int space)
+{
+	int size;
+	RT_MSG *msg_ptr;
+	void *p;
+
+	size = min((msg_ptr = mq->firstmsg)->hdr.size, msg_size);
+	if (space) {
+		memcpy(msg, (p = msg_ptr->hdr.malloc) ? p : msg_ptr->msg, size);
+		if (msgpri) {
+			*msgpri = msg_ptr->hdr.priority;
+		}
+	} else {
+		copy_to_user(msg, (p = msg_ptr->hdr.malloc) ? p : msg_ptr->msg, size);
+		if (msgpri) {
+			put_user(msg_ptr->hdr.priority, msgpri);
+		}
+	}
+
+	if (msg_ptr->hdr.broadcast) {
+		if (!--msg_ptr->hdr.broadcast) {
+			rt_sem_wait_barrier(&mq->broadcast);
+			goto relslot;
+		} else {
+			rt_sem_signal(&mq->received);
+			rt_sem_signal(&mq->receivers);
+			rt_sem_wait_barrier(&mq->broadcast);
+		}
+	} else {
+		unsigned long flags;
+relslot:	flags = rt_spin_lock_irqsave(&mq->lock);
+		mq->firstmsg = msg_ptr->hdr.next;
+		mq->slots[--mq->slot] = msg_ptr;
+		rt_spin_unlock_irqrestore(flags, &mq->lock);
+		rt_sem_signal(&mq->freslots);
+		rt_sem_signal(&mq->receivers);
+		if (p) {
+			rt_free(p);
+		}
+	}
+	return msg_size - size;
+}
+
+int _rt_msg_receive(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int space)
+{
+	if (rt_sem_wait(&mq->receivers) >= SEM_TIMOUT) {
+		return msg_size;
+	}
+	if (rt_sem_wait(&mq->received) >= SEM_TIMOUT) { ;
+		rt_sem_signal(&mq->receivers);
+		return msg_size;
+	}
+	return _receive(mq, msg, msg_size, msgpri, space);
+}
+
+int _rt_msg_receive_if(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int space)
+{
+	if (rt_sem_wait_if(&mq->receivers) <= 0) {
+		return msg_size;
+	}
+	if (rt_sem_wait(&mq->received) <= 0) { ;
+		rt_sem_signal(&mq->receivers);
+		return msg_size;
+	}
+	return _receive(mq, msg, msg_size, msgpri, space);
+}
+
+int _rt_msg_receive_until(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, RTIME until, int space)
+{
+	if (rt_sem_wait_until(&mq->receivers, until) >= SEM_TIMOUT) {
+		return msg_size;
+	}
+	if (rt_sem_wait_until(&mq->received, until) >= SEM_TIMOUT) { ;
+		rt_sem_signal(&mq->receivers);
+		return msg_size;
+	}
+	return _receive(mq, msg, msg_size, msgpri, space);
+}
+
+int _rt_msg_receive_timed(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, RTIME delay, int space)
+{
+	return _rt_msg_receive_until(mq, msg, msg_size, msgpri, get_time() + delay, space);
+}
+
+static int _broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int broadcast, int space)
+{
+	unsigned long flags;
+	RT_MSG *msg_ptr;
+	void *p;
+
+	if (msg_size > mq->fastsize) {
+		if (!(p = rt_malloc(msg_size))) {
+			rt_sem_signal(&mq->freslots);
+			rt_sem_signal(&mq->senders);
+			return -ENOMEM;
+		}
+	} else {
+		p = NULL;
+	}
+	flags = rt_spin_lock_irqsave(&mq->lock);
+	msg_ptr = mq->slots[mq->slot++];
+	rt_spin_unlock_irqrestore(flags, &mq->lock);
+	msg_ptr->hdr.size = msg_size;
+	msg_ptr->hdr.priority = msgpri;
+	msg_ptr->hdr.malloc = p;
+	if (space) {
+		memcpy(p ? p : msg_ptr->msg, msg, msg_size);
+	} else {
+		copy_from_user(p ? p : msg_ptr->msg, msg, msg_size);
+	}
+	rt_typed_sem_init(&mq->broadcast, broadcast + 1, CNT_SEM | PRIO_Q);
+	msg_ptr->hdr.broadcast = broadcast; 
+	flags = rt_spin_lock_irqsave(&mq->lock);
+	enq_msg(mq, &msg_ptr->hdr);
+	rt_spin_unlock_irqrestore(flags, &mq->lock);
+	rt_sem_signal(&mq->received);
+	rt_sem_wait_barrier(&mq->broadcast);
+	rt_sem_signal(&mq->senders);
+	return broadcast;
+}
+
+int _rt_msg_broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
+{
+	if (rt_sem_wait(&mq->senders) >= SEM_TIMOUT) {
+                return 0;
+        }
+	if (mq->received.count >= 0) {
+		rt_sem_signal(&mq->senders);
+		return 0;
+	}
+	if (rt_sem_wait(&mq->freslots) >= SEM_TIMOUT) {
+		rt_sem_signal(&mq->senders);
+                return 0;
+	}
+	return _broadcast(mq, msg, msg_size, msgpri, -(mq->received.count + mq->receivers.count), space);
+}
+
+int _rt_msg_broadcast_if(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
+{
+	if (rt_sem_wait_if(&mq->senders) <= 0) {
+                return 0;
+        }
+	if (mq->received.count >= 0) {
+		rt_sem_signal(&mq->senders);
+		return 0;
+	}
+	if (rt_sem_wait_if(&mq->freslots) <= 0) {
+		rt_sem_signal(&mq->senders);
+                return 0;
+	}
+	return _broadcast(mq, msg, msg_size, msgpri, -(mq->received.count + mq->receivers.count), space);
+}
+
+int _rt_msg_broadcast_until(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME until, int space)
+{
+	if (rt_sem_wait_until(&mq->senders, until) >= SEM_TIMOUT) {
+                return 0;
+        }
+	if (mq->received.count >= 0) {
+		rt_sem_signal(&mq->senders);
+		return 0;
+	}
+	if (rt_sem_wait_until(&mq->freslots, until) >= SEM_TIMOUT) {
+		rt_sem_signal(&mq->senders);
+                return 0;
+	}
+	return _broadcast(mq, msg, msg_size, msgpri, -(mq->received.count + mq->receivers.count), space);
+}
+
+int _rt_msg_broadcast_timed(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME delay, int space)
+{
+	return _rt_msg_broadcast_until(mq, msg, msg_size, msgpri, get_time() + delay, space);
+}
+
+struct rt_native_fun_entry rt_msg_queue_entries[] = {
+	{ { 0, rt_msgq_init },  	       	MSGQ_INIT },
+        { { 1, rt_msgq_delete },		MSGQ_DELETE },
+	{ { 0, _rt_named_msgq_init },  	       	NAMED_MSGQ_INIT },
+        { { 1, rt_named_msgq_delete },		NAMED_MSGQ_DELETE },
+        { { 1, _rt_msg_send },    	     	MSG_SEND },
+        { { 1, _rt_msg_send_if },  	     	MSG_SEND_IF },
+        { { 1, _rt_msg_send_until }, 		MSG_SEND_UNTIL },
+        { { 1, _rt_msg_send_timed }, 		MSG_SEND_TIMED },
+        { { 1, _rt_msg_receive },          	MSG_RECEIVE },
+        { { 1, _rt_msg_receive_if },       	MSG_RECEIVE_IF },
+        { { 1, _rt_msg_receive_until },		MSG_RECEIVE_UNTIL },
+        { { 1, _rt_msg_receive_timed },		MSG_RECEIVE_TIMED },
+        { { 1, _rt_msg_broadcast },          	MSG_BROADCAST },
+        { { 1, _rt_msg_broadcast_if },       	MSG_BROADCAST_IF },
+        { { 1, _rt_msg_broadcast_until },	MSG_BROADCAST_UNTIL },
+        { { 1, _rt_msg_broadcast_timed }, 	MSG_BROADCAST_TIMED },
+	{ { 0, 0 },  		      		000 }
 };
 
-int __rtai_tbx_init (void)
+extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
+extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
+
+int __rtai_msg_queue_init(void) 
 {
-	return set_rt_fun_entries(rt_tbx_entries);
+	printk(KERN_INFO "RTAI[rtai_msgq]: loaded.\n");
+	return set_rt_fun_entries(rt_msg_queue_entries);
 }
 
-void __rtai_tbx_exit (void)
+void __rtai_msg_queue_exit(void) 
 {
-	reset_rt_fun_entries(rt_tbx_entries);
+	reset_rt_fun_entries(rt_msg_queue_entries);
+	printk(KERN_INFO "RTAI[rtai_msgq]: unloaded.\n");
 }
 
-#ifndef CONFIG_RTAI_TBX_BUILTIN
-module_init(__rtai_tbx_init);
-module_exit(__rtai_tbx_exit);
-#endif /* !CONFIG_RTAI_TBX_BUILTIN */
+#ifndef CONFIG_RTAI_MQ_BUILTIN
+module_init(__rtai_msg_queue_init);
+module_exit(__rtai_msg_queue_exit);
+#endif /* !CONFIG_RTAI_MQ_BUILTIN */
 
 #ifdef CONFIG_KBUILD
-EXPORT_SYMBOL(rt_tbx_init);
-EXPORT_SYMBOL(rt_tbx_delete);
-EXPORT_SYMBOL(rt_tbx_send);
-EXPORT_SYMBOL(rt_tbx_send_if);
-EXPORT_SYMBOL(rt_tbx_send_until);
-EXPORT_SYMBOL(rt_tbx_send_timed);
-EXPORT_SYMBOL(rt_tbx_receive);
-EXPORT_SYMBOL(rt_tbx_receive_if);
-EXPORT_SYMBOL(rt_tbx_receive_until);
-EXPORT_SYMBOL(rt_tbx_receive_timed);
-EXPORT_SYMBOL(rt_tbx_broadcast);
-EXPORT_SYMBOL(rt_tbx_broadcast_if);
-EXPORT_SYMBOL(rt_tbx_broadcast_until);
-EXPORT_SYMBOL(rt_tbx_broadcast_timed);
-EXPORT_SYMBOL(rt_tbx_urgent);
-EXPORT_SYMBOL(rt_tbx_urgent_if);
-EXPORT_SYMBOL(rt_tbx_urgent_until);
-EXPORT_SYMBOL(rt_tbx_urgent_timed);
-EXPORT_SYMBOL(rt_named_tbx_init);
-EXPORT_SYMBOL(rt_named_tbx_delete);
-EXPORT_SYMBOL(rt_tbx_init_u);
-EXPORT_SYMBOL(rt_tbx_delete_u);
+EXPORT_SYMBOL(rt_msgq_init);
+EXPORT_SYMBOL(rt_msgq_delete);
+EXPORT_SYMBOL(_rt_named_msgq_init);
+EXPORT_SYMBOL(rt_named_msgq_delete);
+EXPORT_SYMBOL(_rt_msg_send);
+EXPORT_SYMBOL(_rt_msg_send_if);
+EXPORT_SYMBOL(_rt_msg_send_until);
+EXPORT_SYMBOL(_rt_msg_send_timed);
+EXPORT_SYMBOL(_rt_msg_receive);
+EXPORT_SYMBOL(_rt_msg_receive_if);
+EXPORT_SYMBOL(_rt_msg_receive_until);
+EXPORT_SYMBOL(_rt_msg_receive_timed);
+EXPORT_SYMBOL(_rt_msg_broadcast);
+EXPORT_SYMBOL(_rt_msg_broadcast_if);
+EXPORT_SYMBOL(_rt_msg_broadcast_until);
+EXPORT_SYMBOL(_rt_msg_broadcast_timed);
 #endif /* CONFIG_KBUILD */

@@ -420,7 +420,7 @@ unsigned long msg_ind;
 	((MSG_HDR*)msg_ptr)->size = 0;
 	((MSG_HDR*)msg_ptr)->priority = MQ_MIN_MSG_PRIORITY;
 	((MSG_HDR*)msg_ptr)->next = NULL;
-	msg_ptr += (char)msg_size;
+	msg_ptr += msg_size;
     }
 
 } // End function - initialise_queue

@@ -131,22 +131,17 @@ static inline void lxrt_context_switch (struct task_struct *prev,
 		  "=b" (prev)						\
 		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
 		  "a" (prev), "d" (next),				\
-		  "b" (prev));						\
-    barrier();
+		  "b" (prev): "memory");				
+	barrier();
 }
 
 #endif /* __KERNEL__ */
 
-static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
-{
-    union rtai_lxrt_t retval;
-    RTAI_DO_TRAP(RTAI_LXRT_VECTOR,retval,srq,arg);
-    return retval;
-}
-
 static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
 {
-    return _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
+	union rtai_lxrt_t retval;
+	RTAI_DO_TRAP(RTAI_LXRT_VECTOR, retval.rt, (dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
+	return retval;
 }
 
 #ifdef __cplusplus

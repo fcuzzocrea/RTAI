@@ -23981,7 +23981,7 @@ if test x$CONFIG_RTAI_SKIN_NATIVE = xy; then
    *******************************************************************
    Starting with version 0.7 of RTAI/fusion, the native RTAI skin uses
    an increasing priority scale for tasks, which is the same as the
-   one Linux uses for the SCHED_FIFO scheduling class, i.e. \1 - 99\
+   one Linux uses for the SCHED_FIFO scheduling class, i.e. 1 - 99
    with 1 being the _lowest_ effective priority level. Make sure to
    adapt your application software accordingly.
    *******************************************************************
@@ -23990,7 +23990,7 @@ echo "$as_me:
    *******************************************************************
    Starting with version 0.7 of RTAI/fusion, the native RTAI skin uses
    an increasing priority scale for tasks, which is the same as the
-   one Linux uses for the SCHED_FIFO scheduling class, i.e. \1 - 99\
+   one Linux uses for the SCHED_FIFO scheduling class, i.e. 1 - 99
    with 1 being the _lowest_ effective priority level. Make sure to
    adapt your application software accordingly.
    *******************************************************************

@@ -610,6 +610,137 @@ else
    AC_MSG_RESULT($CONFIG_RTAI_HW_SCHED_LATENCY ns)
 fi
 
+dnl SMI workaround bits
+
+AC_MSG_CHECKING(for SMI workaround)
+AC_ARG_ENABLE(smi-workaround,
+        AS_HELP_STRING([--disable-smi-workaround], [Disable SMI workaround]),
+	[case "$enableval" in
+	no | no) unset CONFIG_RTAI_HW_SMI_WORKAROUND;;
+	*) CONFIG_RTAI_HW_SMI_WORKAROUND=y ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_WORKAROUND:no})
+test x$CONFIG_RTAI_HW_SMI_WORKAROUND = xy && \
+    AC_DEFINE(CONFIG_RTAI_HW_SMI_WORKAROUND, 1, [Kconfig])
+AM_CONDITIONAL(CONFIG_RTAI_HW_SMI_WORKAROUND,
+                [test -n "$CONFIG_RTAI_HW_SMI_WORKAROUND"])
+
+AC_MSG_CHECKING(for global SMI masking)
+AC_ARG_ENABLE(global-smi,
+        AS_HELP_STRING([--enable-global-smi], [Enable SMI sources globally]),
+	[case "$enableval" in
+	y | yes) unset CONFIG_RTAI_HW_SMI_GLOBAL_DIS ;;
+	*) CONFIG_RTAI_HW_SMI_GLOBAL_DIS=y;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_GLOBAL_DIS:-no})
+test x$CONFIG_RTAI_HW_SMI_GLOBAL_DIS = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_GLOBAL_DIS, 1, [Kconfig])
+
+
+AC_MSG_CHECKING(for Intel-specific USB2 SMI)
+AC_ARG_ENABLE(intel-usb2-smi,
+        AS_HELP_STRING([--enable-intel-usb2-smi], 
+                        [Enable Intel-specific USB2 SMI]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_SMI_INTEL_USB2=y ;;
+	*) unset CONFIG_RTAI_HW_SMI_INTEL_USB2;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_INTEL_USB2:-no})
+test x$CONFIG_RTAI_HW_SMI_INTEL_USB2 = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_INTEL_USB2, 1, [Kconfig])
+
+
+AC_MSG_CHECKING(for Legacy USB2 SMI)
+AC_ARG_ENABLE(legacy-usb2-smi,
+        AS_HELP_STRING([--enable-legacy-usb2-smi], 
+                        [Enable legacy USB2 SMI]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_SMI_LEGACY_USB2=y ;;
+	*) unset CONFIG_RTAI_HW_SMI_LEGACY_USB2;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_LEGACY_USB2:-no})
+test x$CONFIG_RTAI_HW_SMI_LEGACY_USB2 = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_LEGACY_USB2, 1, [Kconfig])
+
+
+AC_MSG_CHECKING(for periodic SMI)
+AC_ARG_ENABLE(periodic-smi,
+        AS_HELP_STRING([--enable-periodic-smi], 
+                        [Enable periodic SMI]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_SMI_PERIODIC=y ;;
+	*) unset CONFIG_RTAI_HW_SMI_PERIODIC;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_PERIODIC:-no})
+test x$CONFIG_RTAI_HW_SMI_PERIODIC = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_PERIODIC, 1, [Kconfig])
+
+
+AC_MSG_CHECKING(for TCO SMI)
+AC_ARG_ENABLE(tco-smi,
+        AS_HELP_STRING([--enable-tco-smi], 
+                        [Enable TCO SMI]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_SMI_TCO=y ;;
+	*) unset CONFIG_RTAI_HW_SMI_TCO;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_TCO:-no})
+test x$CONFIG_RTAI_HW_SMI_TCO = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_TCO, 1, [Kconfig])
+
+
+AC_MSG_CHECKING(for microcontroller SMI)
+AC_ARG_ENABLE(mc-smi,
+        AS_HELP_STRING([--enable-mc-smi], 
+                        [Enable microcontroller SMI]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_SMI_MC=y ;;
+	*) unset CONFIG_RTAI_HW_SMI_MC;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_MC:-no})
+test x$CONFIG_RTAI_HW_SMI_MC = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_MC, 1, [Kconfig])
+
+
+AC_MSG_CHECKING(for APM SMI)
+AC_ARG_ENABLE(apmc-smi,
+        AS_HELP_STRING([--enable-apmc-smi], 
+                        [Enable APM SMI]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_SMI_APMC=y ;;
+	*) unset CONFIG_RTAI_HW_SMI_APMC;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_APMC:-no})
+test x$CONFIG_RTAI_HW_SMI_APMC = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_APMC, 1, [Kconfig])
+
+
+AC_MSG_CHECKING(for legacy USB SMI)
+AC_ARG_ENABLE(legacy-usb-smi,
+        AS_HELP_STRING([--enable-legacy-usb-smi], 
+                        [Enable legacy USB SMI]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_SMI_LEGACY_USB=y ;;
+	*) unset CONFIG_RTAI_HW_SMI_LEGACY_USB;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_LEGACY_USB:-no})
+test x$CONFIG_RTAI_HW_SMI_LEGACY_USB = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_LEGACY_USB, 1, [Kconfig])
+
+AC_MSG_CHECKING(for ACPI BIOS SMI)
+AC_ARG_ENABLE(bios-smi,
+        AS_HELP_STRING([--enable-bios-smi], 
+                        [Enable ACPI BIOS SMI]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_SMI_BIOS=y ;;
+	*) unset CONFIG_RTAI_HW_SMI_BIOS;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_SMI_BIOS:-no})
+test x$CONFIG_RTAI_HW_SMI_BIOS = xy && \
+        AC_DEFINE(CONFIG_RTAI_HW_SMI_BIOS, 1, [Kconfig])
+
+
+
 dnl Catch sub-package flags
 
 AC_MSG_CHECKING(for RTAI simulator)

@@ -1,3 +1,7 @@
+2005-01-25  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* arch/i386/hal: Add workaround for SMI.
+
 2005-01-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/hal/fpu.S (rthal_restore_fpu): Fix code re-enabling the

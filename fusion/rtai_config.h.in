@@ -19,6 +19,36 @@
 #undef CONFIG_RTAI_HW_SCHED_LATENCY
 
 /* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_APMC
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_BIOS
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_GLOBAL_DIS
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_INTEL_USB2
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_LEGACY_USB
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_LEGACY_USB2
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_MC
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_PERIODIC
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_TCO
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_SMI_WORKAROUND
+
+/* Kconfig */
 #undef CONFIG_RTAI_HW_TIMER_LATENCY
 
 /* Kconfig */

@@ -53,14 +53,14 @@
 #define GBL_SMI_EN_BIT      (0x01) // this is reset by a PCI reset event!
 
 static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
-	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0, PCI_ANY_ID, PCI_ANY_ID, },
-	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_0, PCI_ANY_ID, PCI_ANY_ID, },
-	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_0, PCI_ANY_ID, PCI_ANY_ID, },
-	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_0, PCI_ANY_ID, PCI_ANY_ID, },
-	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_0, PCI_ANY_ID, PCI_ANY_ID, },
-        { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_12, PCI_ANY_ID, PCI_ANY_ID, },
-	{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801EB_0, PCI_ANY_ID, PCI_ANY_ID, },
-	{ 0, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_12, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801EB_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ 0, },
 };
 
 /* FIXME: Probably crippled too, need to be checked :
@@ -89,59 +89,56 @@ pci.ids database, ICH5-M ?)
 
 */
 
-static const unsigned short rthal_smi_masked_bits =
-#ifdef CONFIG_SMI_GLOBAL
-    GBL_SMI_EN_BIT
-#else /* ! CONFIG_SMI_GLOBAL */
+static const unsigned rthal_smi_masked_bits =
+#ifdef CONFIG_RTAI_HW_SMI_GLOBAL_DIS
+    GBL_SMI_EN_BIT;
+#else /* !defined(CONFIG_RTAI_HW_SMI_GLOBAL_DIS) */
+
     0
-#if CONFIG_SMI_INTL_USB2
+#ifndef CONFIG_RTAI_HW_SMI_INTEL_USB2
     | INTEL_USB2_EN_BIT
-#endif /* !CONFIG_SMI_INTL_USB2 */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_INTEL_USB2) */
 
-#if CONFIG_SMI_LEGACY_USB2
+#ifndef CONFIG_RTAI_HW_SMI_LEGACY_USB2
     | LEGACY_USB2_EN_BIT
-#endif /* !CONFIG_SMI_LEGACY_USB2 */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_LEGACY_USB2) */
 
-#if CONFIG_SMI_PERIODIC
+#ifndef CONFIG_RTAI_HW_SMI_PERIODIC
     | PERIODIC_EN_BIT
-#endif /* !CONFIG_SMI_PERIODC */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_PERIODC) */
 
-#if CONFIG_SMI_TCO
+#ifndef CONFIG_RTAI_HW_SMI_TCO
     | TCO_EN_BIT
-#endif /* !CONFIG_SMI_TCO */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_TCO) */
 
-#if CONFIG_SMI_MCSMI
+#ifndef CONFIG_RTAI_HW_SMI_MC
     | MCSMI_EN_BIT
-#endif /* !CONFIG_SMI_MCSMI */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_MCSMI) */
 
-#if CONFIG_SMI_SWSMI_TMR
-    | SWSMI_TMR_EN_BIT
-#endif /* !CONFIG_SMI_SWSMI_TMR */
-
-#if CONFIG_SMI_APMC
+#ifndef CONFIG_RTAI_HW_SMI_APMC
     | APMC_EN_BIT
-#endif /* !CONFIG_SMI_APMC */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_APMC) */
 
-#if CONFIG_SMI_SLP
-    | SLP_EN_BIT
-#endif /* !CONFIG_SMI_SLP */
-
-#if CONFIG_SMI_LEGACY_USB
+#ifndef CONFIG_RTAI_HW_SMI_LEGACY_USB
     | LEGACY_USB_EN_BIT
-#endif /* !CONFIG_SMI_LEGACY_USB */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_LEGACY_USB) */
 
-#if CONFIG_SMI_BIOS
+#ifndef CONFIG_RTAI_HW_SMI_BIOS
     | BIOS_EN_BIT
-#endif /* !CONFIG_SMI_BIOS */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_BIOS) */
+    ;
 
-#endif /* CONFIG_SMI_GLOBAL */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_GLOBAL_DIS) */
 
 static unsigned short rthal_smi_en_addr;
 static unsigned rthal_smi_saved_bits;
 
+#define mask_bits(v, p) outl(inl(p)&~(v),(p))
+#define set_bits(v, p)  outl(inl(p)|(v), (p))
+
 void rthal_smi_disable(void)
 {
-    if(!smi_en_addr)
+    if(!rthal_smi_en_addr)
         return;
 
     rthal_smi_saved_bits = inl(rthal_smi_en_addr) & rthal_smi_masked_bits;
@@ -150,7 +147,7 @@ void rthal_smi_disable(void)
 
 void rthal_smi_restore(void)
 {
-    if(!smi_en_addr)
+    if(!rthal_smi_en_addr)
         return;
 
     set_bits(rthal_smi_saved_bits, rthal_smi_en_addr);
@@ -160,9 +157,9 @@ static unsigned short __devinit get_smi_en_addr(struct pci_dev *dev)
 {
     u_int8_t byte0, byte1;
     
-    pci_read_config_byte (pci_dev, PMBASE_B0, &byte0);
-    pci_read_config_byte (pci_dev, PMBASE_B1, &byte1);
-    return SMI_CTRL_ADDR + ((byte1 << 1) | (byte0 >> 7)) << 7; // bits 7-15
+    pci_read_config_byte (dev, PMBASE_B0, &byte0);
+    pci_read_config_byte (dev, PMBASE_B1, &byte1);
+    return SMI_CTRL_ADDR + (((byte1 << 1) | (byte0 >> 7)) << 7); // bits 7-15
 }
 
 void __devinit rthal_smi_init(void)

@@ -65,6 +65,7 @@
 #include <linux/proc_fs.h>
 #endif /* CONFIG_PROC_FS */
 #include <stdarg.h>
+#include <smi.h>
 
 MODULE_LICENSE("GPL");
 
@@ -307,8 +308,10 @@ void rthal_release_timer (void)
 {
     unsigned long flags;
 
+#if 0
     rthal_release_linux_irq(RTHAL_8254_IRQ,
 			    &rthal_broadcast_to_local_timers);
+#endif
 
     flags = rthal_critical_enter(&rthal_critical_sync);
 
@@ -1048,6 +1051,9 @@ int __rthal_init (void)
     adattr_t attr;
     int err;
 
+    rthal_smi_init();
+    rthal_smi_disable();
+    
 #ifdef CONFIG_X86_LOCAL_APIC
     if (!test_bit(X86_FEATURE_APIC,boot_cpu_data.x86_capability))
 	{
@@ -1144,6 +1150,8 @@ void __rthal_exit (void)
     if (rthal_init_done)
 	adeos_unregister_domain(&rthal_domain);
 
+    rthal_smi_restore();
+    
     printk(KERN_INFO "RTAI[hal]: Unloaded.\n");
 }
 

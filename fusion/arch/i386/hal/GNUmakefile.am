@@ -4,12 +4,16 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
-libhal_SRC = hal.c
+libhal_SRC = hal.c 
+
+if CONFIG_RTAI_HW_SMI_WORKAROUND
+libhal_SRC += smi.c
+endif
 
 rtai_hal.ko: @RTAI_KBUILD_ENV@
 rtai_hal.ko: $(libhal_SRC) FORCE
 	@RTAI_KBUILD_TOP@ \
-	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
+	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@ -I$(srcdir)" \
 	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
@@ -34,4 +38,3 @@ uninstall-local:
 .PHONY: FORCE
 
 EXTRA_DIST = $(libhal_SRC) Makefile.kbuild
-

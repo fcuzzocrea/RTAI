@@ -417,6 +417,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 
     if (queued)
         xntimer_stop(timer);
+
     timer->sched = sched;
 
     if (queued)
@@ -580,11 +581,8 @@ void xntimer_do_timers (void)
     int aperiodic = !testbits(nkpod->status,XNTMPER);
 
     if (aperiodic)
-	{
-	now = xnarch_get_cpu_tsc();
 	/* Only use slot #0 in aperiodic mode. */
         timerq = &sched->timerwheel[0];
-        }
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	{
@@ -609,6 +607,8 @@ void xntimer_do_timers (void)
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)
 	    {
+	    now = xnarch_get_cpu_tsc();
+
 	    if (timer->date - nkschedlat > now)
 		/* No need to continue in aperiodic mode since
 		   timeout dates are ordered by increasing
@@ -619,6 +619,13 @@ void xntimer_do_timers (void)
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	    if (timer->date > now)
 		continue;
+
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+	if (aperiodic)
+	    xntimer_dequeue_aperiodic(timer);
+	else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+	    xntimer_dequeue_periodic(timer);
 
 	if (timer == &nkpod->htimer)
 	    /* By postponing the propagation of the low-priority host
@@ -633,25 +640,15 @@ void xntimer_do_timers (void)
 	/* Restart the timer for the next period if a valid interval
 	   has been given. The status is checked in order to prevent
 	   rescheduling a timer which has been destroyed, or already
-	   rescheduled on behalf of its timeout handler. A killed
-	   timer has already been dequeued, so there is no need to
-	   specifically check for the XNTIMER_KILLED status here. */
+	   rescheduled on behalf of its timeout handler. */
 
-	if (!testbits(timer->status,XNTIMER_DEQUEUED))
-	    {
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
-	    if (aperiodic)
-		xntimer_dequeue_aperiodic(timer);
-	    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-		xntimer_dequeue_periodic(timer);
-
-	    if (timer->interval != XN_INFINITE)
-		/* Temporarily move the interval timer to the
-		   rescheduling queue, so that we don't see it again
-		   until the current dispatching loop is over. */
-		appendq(&reschedq,&timer->link);
-	    }
+	if (timer->interval != XN_INFINITE &&
+	    testbits(timer->status,XNTIMER_DEQUEUED) &&
+	    !testbits(timer->status,XNTIMER_KILLED))
+	    /* Temporarily move the interval timer to the rescheduling
+	       queue, so that we don't see it again until the current
+	       dispatching loop is over. */
+	    appendq(&reschedq,&timer->link);
 	}
 
     /* Reschedule elapsed interval timers for the next shot. */

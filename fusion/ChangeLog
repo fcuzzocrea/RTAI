@@ -1,5 +1,12 @@
 2005-02-24  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/timer.c (xntimer_do_timers): Dequeue an elapsed timer
+	before calling its handler, so that xntimer_stop() called on
+	behalf of the latter won't attempt to stop it uselessly
+	(e.g. xnpod_resume_thread()).
+	(xntimer_do_timers): Update the reference time inside the inner
+	processing loop for aperiodic support.
+
 	* nucleus/shadow.c: Add support for switch back syscall mode,
 	resetting the original exec mode for the caller after a switch has
 	been made to process the syscall.

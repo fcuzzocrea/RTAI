@@ -2,7 +2,8 @@
 
         * rtai-core/sched/rtai/sched_lxrt.c: revised oneshot timing, nomore
 	including preempt_always used no more, Linux timing accounted nomore
-	on SMP.
+	on SMP. Cleaned macros for the pseudo locking of a switched off 
+	Linux task to its current cpu.
 
 2004-09-06  Philippe Gerum  <rpm@xenomai.org>
 

@@ -29,187 +29,96 @@
 00021 <span class="preprocessor">#ifndef _RTAI_ASM_I386_LXRT_H</span>
 00022 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_ASM_I386_LXRT_H</span>
 00023 <span class="preprocessor"></span>
-00024 <span class="preprocessor">#include &lt;asm/segment.h&gt;</span>
-00025 <span class="preprocessor">#include &lt;asm/rtai_vectors.h&gt;</span>
-00026 
-00027 <span class="preprocessor">#define LOW  0</span>
-00028 <span class="preprocessor"></span><span class="preprocessor">#define HIGH 1</span>
-00029 <span class="preprocessor"></span>
-00030 <span class="keyword">union </span>rtai_lxrt_t {
-00031 
-00032     RTIME rt;
-00033     <span class="keywordtype">int</span> i[2];
-00034     <span class="keywordtype">void</span> *v[2];
-00035 };
-00036 
-00037 <span class="preprocessor">#ifdef __cplusplus</span>
-00038 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00039 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00040 
-00041 <span class="preprocessor">#ifdef __KERNEL__</span>
-00042 <span class="preprocessor"></span>
-00043 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> RTAI_LXRT_TASK_SWITCH (<span class="keyword">struct</span> task_struct *prev,
-00044                                           <span class="keyword">struct</span> task_struct *next,
-00045                                           <span class="keywordtype">int</span> cpuid)
-00046 {
-00047     rthal.switch_mem(prev,next,cpuid);
-00048 
-00049     __asm__ __volatile__(                                               \
-00050                  <span class="stringliteral">"pushl %%esi\n\t"</span>                                      \
-00051                  <span class="stringliteral">"pushl %%edi\n\t"</span>                                      \
-00052                  <span class="stringliteral">"pushl %%ebp\n\t"</span>                                      \
-00053                  <span class="stringliteral">"movl %%esp,%0\n\t"</span>    <span class="comment">/* save ESP */</span>          \
-00054                  <span class="stringliteral">"movl %3,%%esp\n\t"</span>    <span class="comment">/* restore ESP */</span>               \
-00055                  <span class="stringliteral">"movl $1f,%1\n\t"</span>      <span class="comment">/* save EIP */</span>          \
-00056                  <span class="stringliteral">"pushl %4\n\t"</span>         <span class="comment">/* restore EIP */</span>               \
-00057                  <span class="stringliteral">"jmp *"</span>SYMBOL_NAME_STR(rthal + 4)<span class="stringliteral">"\n"</span>                  \
-00058                  <span class="stringliteral">"1:\t"</span>                                                 \
-00059                  <span class="stringliteral">"popl %%ebp\n\t"</span>                                       \
-00060                  <span class="stringliteral">"popl %%edi\n\t"</span>                                       \
-00061                  <span class="stringliteral">"popl %%esi\n\t"</span>                                       \
-00062                  :<span class="stringliteral">"=m"</span> (prev-&gt;thread.esp),<span class="stringliteral">"=m"</span> (prev-&gt;thread.eip),      \
-00063                   <span class="stringliteral">"=b"</span> (prev)                                           \
-00064                  :<span class="stringliteral">"m"</span> (next-&gt;thread.esp),<span class="stringliteral">"m"</span> (next-&gt;thread.eip),        \
-00065                   <span class="stringliteral">"a"</span> (prev), <span class="stringliteral">"d"</span> (next),                               \
-00066                   <span class="stringliteral">"b"</span> (prev));                                          \
-00067 }
-00068 
-00069 <span class="preprocessor">#define RTAI_LXRT_HANDLER rtai_lxrt_handler</span>
-00070 <span class="preprocessor"></span>
-00071 <span class="preprocessor">#define DEFINE_LXRT_HANDLER() \</span>
-00072 <span class="preprocessor">asmlinkage long long rtai_lxrt_invoke(unsigned int lxsrq, void *arg); \</span>
-00073 <span class="preprocessor">asmlinkage int rtai_lxrt_fastpath(void); \</span>
-00074 <span class="preprocessor">asmlinkage void RTAI_LXRT_HANDLER(void); \</span>
-00075 <span class="preprocessor">__asm__( \</span>
-00076 <span class="preprocessor">        "\n" __ALIGN_STR"\n\t" \</span>
-00077 <span class="preprocessor">        SYMBOL_NAME_STR(rtai_lxrt_handler) ":\n\t" \</span>
-00078 <span class="preprocessor">        "cld\n\t" \</span>
-00079 <span class="preprocessor">        "pushl $0\n\t" \</span>
-00080 <span class="preprocessor">        "pushl %es\n\t" \</span>
-00081 <span class="preprocessor">        "pushl %ds\n\t" \</span>
-00082 <span class="preprocessor">        "pushl %eax\n\t" \</span>
-00083 <span class="preprocessor">        "pushl %ebp\n\t" \</span>
-00084 <span class="preprocessor">        "pushl %edi\n\t" \</span>
-00085 <span class="preprocessor">        "pushl %esi\n\t" \</span>
-00086 <span class="preprocessor">        "pushl %edx\n\t" \</span>
-00087 <span class="preprocessor">        "pushl %ecx\n\t" \</span>
-00088 <span class="preprocessor">        "pushl %ebx\n\t" \</span>
-00089 <span class="preprocessor">        "movl $" STR(__KERNEL_DS) ",%ebx\n\t" \</span>
-00090 <span class="preprocessor">        "mov %bx,%ds\n\t" \</span>
-00091 <span class="preprocessor">        "mov %bx,%es\n\t" \</span>
-00092 <span class="preprocessor">        "pushl %edx\n\t" \</span>
-00093 <span class="preprocessor">        "pushl %eax\n\t" \</span>
-00094 <span class="preprocessor">        "call "SYMBOL_NAME_STR(rtai_lxrt_invoke)"\n\t" \</span>
-00095 <span class="preprocessor">        "addl $8,%esp;\n\t" \</span>
-00096 <span class="preprocessor">        "movl %edx,8(%esp);\n\t" \</span>
-00097 <span class="preprocessor">        "movl %eax,24(%esp);\n\t" \</span>
-00098 <span class="preprocessor">        "call "SYMBOL_NAME_STR(rtai_lxrt_fastpath)"\n\t" \</span>
-00099 <span class="preprocessor">        "testl %eax,%eax;\n\t" \</span>
-00100 <span class="preprocessor">        "jz 1f\n\t" \</span>
-00101 <span class="preprocessor">        "popl %ebx\n\t" \</span>
-00102 <span class="preprocessor">        "popl %ecx\n\t" \</span>
-00103 <span class="preprocessor">        "popl %edx\n\t" \</span>
-00104 <span class="preprocessor">        "popl %esi\n\t" \</span>
-00105 <span class="preprocessor">        "popl %edi\n\t" \</span>
-00106 <span class="preprocessor">        "popl %ebp\n\t" \</span>
-00107 <span class="preprocessor">        "popl %eax\n\t" \</span>
-00108 <span class="preprocessor">        "popl %ds\n\t" \</span>
-00109 <span class="preprocessor">        "popl %es\n\t" \</span>
-00110 <span class="preprocessor">        "addl $4,%esp\n\t" \</span>
-00111 <span class="preprocessor">        "iret\n\t" \</span>
-00112 <span class="preprocessor">    "1:  call *" SYMBOL_NAME_STR(rthal + 16) "\n\t" </span><span class="comment">/* local_irq_enable() */</span>  \
-00113         "jmp *" SYMBOL_NAME_STR(rthal) <span class="comment">/* ret_from_intr */</span> )
-00114 
-00115 <span class="preprocessor">#define LXRT_LINUX_SYSCALL_TRAP lxrt_linux_syscall_handler</span>
-00116 <span class="preprocessor"></span>
-00117 <span class="preprocessor">#define DEFINE_LXRT_SYSCALL_HANDLER() \</span>
-00118 <span class="preprocessor">asmlinkage void LXRT_LINUX_SYSCALL_TRAP(void); \</span>
-00119 <span class="preprocessor">__asm__( \</span>
-00120 <span class="preprocessor">        "\n" __ALIGN_STR"\n\t" \</span>
-00121 <span class="preprocessor">        SYMBOL_NAME_STR(lxrt_linux_syscall_handler) ":\n\t"     \</span>
-00122 <span class="preprocessor">         "cld\n\t"                              \</span>
-00123 <span class="preprocessor">         "push $0\n\t"                          \</span>
-00124 <span class="preprocessor">         "pushl %es\n\t"                        \</span>
-00125 <span class="preprocessor">         "pushl %ds\n\t"                        \</span>
-00126 <span class="preprocessor">         "pushl %ebp\n\t"                       \</span>
-00127 <span class="preprocessor">         "pushl %edi\n\t"                       \</span>
-00128 <span class="preprocessor">         "pushl %esi\n\t"                       \</span>
-00129 <span class="preprocessor">         "pushl %ecx\n\t"                       \</span>
-00130 <span class="preprocessor">         "pushl %ebx\n\t"                       \</span>
-00131 <span class="preprocessor">         "pushl %edx\n\t"                       \</span>
-00132 <span class="preprocessor">         "pushl %eax\n\t"                       \</span>
-00133 <span class="preprocessor">         "movl $" STR(__KERNEL_DS) ",%ebx\n\t"  \</span>
-00134 <span class="preprocessor">         "mov %bx,%ds\n\t"                                              \</span>
-00135 <span class="preprocessor">         "mov %bx,%es\n\t"                                              \</span>
-00136 <span class="preprocessor">         "movl " SYMBOL_NAME_STR(linux_syscall_handler) ",%ebx\n\t"     \</span>
-00137 <span class="preprocessor">         "movl %ebx,36(%esp)\n\t"                                       \</span>
-00138 <span class="preprocessor">         "call " SYMBOL_NAME_STR(rtai_inhrtp) "\n\t"                    \</span>
-00139 <span class="preprocessor">         "testl %eax,%eax\n\t"                                          \</span>
-00140 <span class="preprocessor">         "popl %eax\n\t"                                                \</span>
-00141 <span class="preprocessor">         "popl %edx\n\t"                                                \</span>
-00142 <span class="preprocessor">         "popl %ebx\n\t"                                                \</span>
-00143 <span class="preprocessor">         "popl %ecx\n\t"                                                \</span>
-00144 <span class="preprocessor">         "popl %esi\n\t"                                                \</span>
-00145 <span class="preprocessor">         "popl %edi\n\t"                                                \</span>
-00146 <span class="preprocessor">         "popl %ebp\n\t"                                                \</span>
-00147 <span class="preprocessor">         "popl %ds\n\t"                                                 \</span>
-00148 <span class="preprocessor">         "popl %es\n\t"                                                 \</span>
-00149 <span class="preprocessor">         "jz 1f\n\t"                                                    \</span>
-00150 <span class="preprocessor">         "addl $4,%esp\n\t"                                             \</span>
-00151 <span class="preprocessor">         "movl $-38,%eax\n\t"   </span><span class="comment">/* return -ENOSYS */</span>                    \
-00152          "iret\n\t"                                                     \
-00153       "1: ret\n\t")
-00154 
-00155 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00156 
-00157 <span class="keyword">static</span> <span class="keyword">union </span>rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
-00158 {
-00159         <span class="keyword">union </span>rtai_lxrt_t retval;
-00160         RTAI_DO_TRAP(RTAI_LXRT_VECTOR,retval,srq,arg);
-00161         <span class="keywordflow">return</span> retval;
-00162 }
-00163 
-00164 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> my_cs(<span class="keywordtype">void</span>)
-00165 {
-00166         <span class="keywordtype">int</span> reg; __asm__(<span class="stringliteral">"movl %%cs,%%eax "</span> : <span class="stringliteral">"=a"</span> (reg) : ); <span class="keywordflow">return</span> reg;
-00167 }
-00168 
-00169 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> memxcpy(<span class="keywordtype">void</span> *dst, <span class="keywordtype">int</span> dseg, <span class="keywordtype">void</span> *src, <span class="keywordtype">int</span> sseg, <span class="keywordtype">int</span> longs)
-00170 {
-00171         <span class="comment">// Generalised memxcpy</span>
-00172         __asm__ __volatile__ (\
-00173         <span class="stringliteral">"cld; pushl %%ds; pushl %%es;\n\t"</span>\
-00174         <span class="stringliteral">"movl %%edx,%%es; movl %%eax,%%ds; rep; movsl;\n\t"</span>\
-00175         <span class="stringliteral">"popl %%es; popl %%ds;\n\t"</span>\
-00176     :<span class="comment">/*empty*/</span>: <span class="stringliteral">"D"</span> (dst),<span class="stringliteral">"S"</span> (src),<span class="stringliteral">"c"</span> (longs),<span class="stringliteral">"a"</span> (sseg),<span class="stringliteral">"d"</span> (dseg));
-00177 }
-00178 
-00179 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> _memxcpy(<span class="keywordtype">void</span> *dst, <span class="keywordtype">void</span> *src, <span class="keywordtype">int</span> srcseg, <span class="keywordtype">int</span> longsize)
-00180 {
-00181         __asm__ __volatile__ (\
-00182         <span class="stringliteral">"cld;pushl %%ds;movl %%eax,%%ds;rep;movsl;popl %%ds;\n\t"</span>\
-00183     :<span class="comment">/*empty*/</span>: <span class="stringliteral">"D"</span> (dst), <span class="stringliteral">"S"</span> (src), <span class="stringliteral">"c"</span> (longsize), <span class="stringliteral">"a"</span> (srcseg));
-00184 } <span class="comment">// Choice of registers limited by liblxrt gcc -fPIC option.</span>
-00185 
-00186 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">union </span>rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
-00187 {
-00188         <span class="keywordtype">int</span> __args[12]; <span class="keywordtype">void</span> *pt;
-00189         lsize /= <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>);
-00190         <span class="keywordflow">if</span>(my_cs() == __KERNEL_CS) {
-00191                 <span class="comment">// With this we can reenter lxrt from a kernel space function.</span>
-00192                 _memxcpy( &amp;__args, arg, __KERNEL_DS, lsize);
-00193                 pt = &amp;__args;
-00194         } <span class="keywordflow">else</span> pt = arg;
-00195 
-00196         <span class="keywordflow">return</span> _rtai_lxrt((dynx &lt;&lt; 28) | ((srq &amp; 0xFFF) &lt;&lt; 16) | lsize, pt);
-00197 }
-00198 
-00199 <span class="preprocessor">#ifdef __cplusplus</span>
-00200 <span class="preprocessor"></span>}
-00201 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00202 
-00203 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_LXRT_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:07 2004 for RTAI API by
+00024 <span class="preprocessor">#include &lt;asm/rtai_vectors.h&gt;</span>
+00025 
+00026 <span class="preprocessor">#define LOW  0</span>
+00027 <span class="preprocessor"></span><span class="preprocessor">#define HIGH 1</span>
+00028 <span class="preprocessor"></span>
+00029 <span class="keyword">union </span>rtai_lxrt_t {
+00030 
+00031     RTIME rt;
+00032     <span class="keywordtype">int</span> i[2];
+00033     <span class="keywordtype">void</span> *v[2];
+00034 };
+00035 
+00036 <span class="preprocessor">#ifdef __cplusplus</span>
+00037 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00038 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00039 
+00040 <span class="preprocessor">#ifdef __KERNEL__</span>
+00041 <span class="preprocessor"></span>
+00042 <span class="preprocessor">#include &lt;asm/segment.h&gt;</span>
+00043 
+00044 <span class="preprocessor">#define RTAI_LXRT_HANDLER rtai_lxrt_handler</span>
+00045 <span class="preprocessor"></span>
+00046 <span class="preprocessor">#if LINUX_VERSION_CODE &lt; KERNEL_VERSION(2,6,0)</span>
+00047 <span class="preprocessor"></span><span class="preprocessor">#define __LXRT_GET_DATASEG(reg) "movl $" STR(__KERNEL_DS) ",%" #reg "\n\t"</span>
+00048 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* KERNEL_VERSION &gt;= 2.6.0 */</span>
+00049 <span class="preprocessor">#define __LXRT_GET_DATASEG(reg) "movl $" STR(__USER_DS) ",%" #reg "\n\t"</span>
+00050 <span class="preprocessor"></span><span class="preprocessor">#endif  </span><span class="comment">/* KERNEL_VERSION &lt; 2.6.0 */</span>
+00051 
+00052 <span class="preprocessor">#define DEFINE_LXRT_HANDLER() \</span>
+00053 <span class="preprocessor">asmlinkage long long rtai_lxrt_invoke(unsigned int lxsrq, void *arg); \</span>
+00054 <span class="preprocessor">asmlinkage int rtai_lxrt_fastpath(void); \</span>
+00055 <span class="preprocessor">asmlinkage void RTAI_LXRT_HANDLER(void); \</span>
+00056 <span class="preprocessor">__asm__( \</span>
+00057 <span class="preprocessor">        "\n" __ALIGN_STR"\n\t" \</span>
+00058 <span class="preprocessor">        SYMBOL_NAME_STR(rtai_lxrt_handler) ":\n\t" \</span>
+00059 <span class="preprocessor">        "cld\n\t" \</span>
+00060 <span class="preprocessor">        "pushl $0\n\t" \</span>
+00061 <span class="preprocessor">        "pushl %es\n\t" \</span>
+00062 <span class="preprocessor">        "pushl %ds\n\t" \</span>
+00063 <span class="preprocessor">        "pushl %eax\n\t" \</span>
+00064 <span class="preprocessor">        "pushl %ebp\n\t" \</span>
+00065 <span class="preprocessor">        "pushl %edi\n\t" \</span>
+00066 <span class="preprocessor">        "pushl %esi\n\t" \</span>
+00067 <span class="preprocessor">        "pushl %edx\n\t" \</span>
+00068 <span class="preprocessor">        "pushl %ecx\n\t" \</span>
+00069 <span class="preprocessor">        "pushl %ebx\n\t" \</span>
+00070 <span class="preprocessor">        __LXRT_GET_DATASEG(ebx) \</span>
+00071 <span class="preprocessor">        "movl %ebx,%ds\t\n"  \</span>
+00072 <span class="preprocessor">        "movl %ebx,%es\t\n" \</span>
+00073 <span class="preprocessor">        "pushl %edx\n\t" \</span>
+00074 <span class="preprocessor">        "pushl %eax\n\t" \</span>
+00075 <span class="preprocessor">        "call "SYMBOL_NAME_STR(rtai_lxrt_invoke)"\n\t" \</span>
+00076 <span class="preprocessor">        "addl $8,%esp;\n\t" \</span>
+00077 <span class="preprocessor">        "movl %edx,8(%esp);\n\t" \</span>
+00078 <span class="preprocessor">        "movl %eax,24(%esp);\n\t" \</span>
+00079 <span class="preprocessor">        "call "SYMBOL_NAME_STR(rtai_lxrt_fastpath)"\n\t" \</span>
+00080 <span class="preprocessor">        "testl %eax,%eax;\n\t" \</span>
+00081 <span class="preprocessor">        "jz "SYMBOL_NAME_STR(ret_from_intr)"\n\t" \</span>
+00082 <span class="preprocessor">        "popl %ebx\n\t" \</span>
+00083 <span class="preprocessor">        "popl %ecx\n\t" \</span>
+00084 <span class="preprocessor">        "popl %edx\n\t" \</span>
+00085 <span class="preprocessor">        "popl %esi\n\t" \</span>
+00086 <span class="preprocessor">        "popl %edi\n\t" \</span>
+00087 <span class="preprocessor">        "popl %ebp\n\t" \</span>
+00088 <span class="preprocessor">        "popl %eax\n\t" \</span>
+00089 <span class="preprocessor">        "popl %ds\n\t" \</span>
+00090 <span class="preprocessor">        "popl %es\n\t" \</span>
+00091 <span class="preprocessor">        "addl $4,%esp\n\t" \</span>
+00092 <span class="preprocessor">        "iret\n\t")</span>
+00093 <span class="preprocessor"></span>
+00094 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00095 
+00096 <span class="keyword">static</span> <span class="keyword">union </span>rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
+00097 {
+00098     <span class="keyword">union </span>rtai_lxrt_t retval;
+00099     RTAI_DO_TRAP(RTAI_LXRT_VECTOR,retval,srq,arg);
+00100     <span class="keywordflow">return</span> retval;
+00101 }
+00102 
+00103 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">union </span>rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
+00104 {
+00105     <span class="keywordflow">return</span> _rtai_lxrt((dynx &lt;&lt; 28) | ((srq &amp; 0xFFF) &lt;&lt; 16) | lsize, arg);
+00106 }
+00107 
+00108 <span class="preprocessor">#ifdef __cplusplus</span>
+00109 <span class="preprocessor"></span>}
+00110 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00111 
+00112 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_LXRT_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:31 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -59,200 +59,203 @@
 00051 <span class="preprocessor">#ifdef __KERNEL__</span>
 00052 <span class="preprocessor"></span>
 00053 <span class="preprocessor">#include &lt;asm/uaccess.h&gt;</span>
-00054 
-00055 <span class="preprocessor">#define __xn_copy_from_user(task,dstP,srcP,n)  __copy_from_user(dstP,srcP,n)</span>
-00056 <span class="preprocessor"></span><span class="preprocessor">#define __xn_copy_to_user(task,dstP,srcP,n)    __copy_to_user(dstP,srcP,n)</span>
-00057 <span class="preprocessor"></span><span class="preprocessor">#define __xn_put_user(task,src,dstP)           __put_user(src,dstP)</span>
-00058 <span class="preprocessor"></span><span class="preprocessor">#define __xn_get_user(task,dst,srcP)           __get_user(dst,srcP)</span>
-00059 <span class="preprocessor"></span><span class="preprocessor">#define __xn_range_ok(task,addr,size) ({ \</span>
-00060 <span class="preprocessor">        unsigned long flag,sum; \</span>
-00061 <span class="preprocessor">        asm("addl %3,%1 ; sbbl %0,%0; cmpl %1,%4; sbbl $0,%0" \</span>
-00062 <span class="preprocessor">                :"=&amp;r" (flag), "=r" (sum) \</span>
-00063 <span class="preprocessor">                :"1" (addr),"g" ((int)(size)),"g" ((task)-&gt;addr_limit.seg)); \</span>
-00064 <span class="preprocessor">        flag; })</span>
-00065 <span class="preprocessor"></span><span class="comment">/* WP bit must work for using the shadow support, so we only need</span>
-00066 <span class="comment">   trivial range checking here. */</span>
-00067 <span class="preprocessor">#define __xn_access_ok(task,type,addr,size)    (__xn_range_ok(task,addr,size) == 0)</span>
-00068 <span class="preprocessor"></span>
-00069 <span class="preprocessor">#define XNARCH_MAX_SYSENT 255</span>
-00070 <span class="preprocessor"></span>
-00071 <span class="keyword">typedef</span> <span class="keyword">struct </span>_xnsysent {
-00072 
-00073     int (*svc)(<span class="keyword">struct </span>task_struct *task,
-00074                <span class="keyword">struct </span>pt_regs *regs);
+00054 <span class="preprocessor">#include &lt;rtai_wrappers.h&gt;</span>
+00055 
+00056 <span class="preprocessor">#define __xn_copy_from_user(task,dstP,srcP,n)  __copy_from_user(dstP,srcP,n)</span>
+00057 <span class="preprocessor"></span><span class="preprocessor">#define __xn_copy_to_user(task,dstP,srcP,n)    __copy_to_user(dstP,srcP,n)</span>
+00058 <span class="preprocessor"></span><span class="preprocessor">#define __xn_put_user(task,src,dstP)           __put_user(src,dstP)</span>
+00059 <span class="preprocessor"></span><span class="preprocessor">#define __xn_get_user(task,dst,srcP)           __get_user(dst,srcP)</span>
+00060 <span class="preprocessor"></span>
+00061 <span class="preprocessor">#define __xn_range_ok(task,addr,size) ({ \</span>
+00062 <span class="preprocessor">        unsigned long flag,sum; \</span>
+00063 <span class="preprocessor">        asm("addl %3,%1 ; sbbl %0,%0; cmpl %1,%4; sbbl $0,%0" \</span>
+00064 <span class="preprocessor">                :"=&amp;r" (flag), "=r" (sum) \</span>
+00065 <span class="preprocessor">                :"1" (addr),"g" ((int)(size)),"g" get_tsk_addr_limit(task)); \</span>
+00066 <span class="preprocessor">        flag; })</span>
+00067 <span class="preprocessor"></span>
+00068 <span class="comment">/* WP bit must work for using the shadow support, so we only need</span>
+00069 <span class="comment">   trivial range checking here. */</span>
+00070 <span class="preprocessor">#define __xn_access_ok(task,type,addr,size)    (__xn_range_ok(task,addr,size) == 0)</span>
+00071 <span class="preprocessor"></span>
+00072 <span class="preprocessor">#define XNARCH_MAX_SYSENT 255</span>
+00073 <span class="preprocessor"></span>
+00074 <span class="keyword">typedef</span> <span class="keyword">struct </span>_xnsysent {
 00075 
-00076 <span class="preprocessor">#define __xn_flag_suspensive 0x1</span>
-00077 <span class="preprocessor"></span><span class="preprocessor">#define __xn_flag_anycontext 0x2</span>
-00078 <span class="preprocessor"></span>
-00079     u_long flags;
-00080 
-00081 } xnsysent_t;
-00082 
-00083 <span class="keyword">extern</span> <span class="keywordtype">int</span> nkgkptd;
-00084 
-00085 <span class="preprocessor">#define xnshadow_ptd(t)    ((t)-&gt;ptd[nkgkptd])</span>
-00086 <span class="preprocessor"></span><span class="preprocessor">#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))</span>
-00087 <span class="preprocessor"></span>
-00088 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00089 
-00090 <span class="comment">/*</span>
-00091 <span class="comment"> * Some of the following macros have been adapted from glibc's syscall</span>
-00092 <span class="comment"> * mechanism implementation:</span>
-00093 <span class="comment"> * Copyright (C) 1992,1993,1995-2000,2002,2003 Free Software Foundation, Inc.</span>
-00094 <span class="comment"> * Contributed by Ulrich Drepper, &lt;drepper@gnu.org&gt;, August 1995.</span>
-00095 <span class="comment"> *</span>
-00096 <span class="comment"> * The following code defines an inline syscall mechanism used by</span>
-00097 <span class="comment"> * Xenomai's real-time interfaces to invoke the skin module services</span>
-00098 <span class="comment"> * in kernel space.</span>
-00099 <span class="comment"> */</span>
-00100 
-00101 <span class="comment">/* Xenomai multiplexer syscall. */</span>
-00102 <span class="preprocessor">#define __xn_sys_mux    555</span>
-00103 <span class="preprocessor"></span><span class="comment">/* Xenomai nucleus syscalls. */</span>
-00104 <span class="preprocessor">#define __xn_sys_attach  0      </span><span class="comment">/* muxid = xnshadow_attach_skin(magic,infp) */</span>
-00105 <span class="preprocessor">#define __xn_sys_detach  1      </span><span class="comment">/* xnshadow_detach_skin(muxid) */</span>
-00106 <span class="preprocessor">#define __xn_sys_sched   2      </span><span class="comment">/* xnpod_schedule(void) */</span>
-00107 <span class="preprocessor">#define __xn_sys_sync    3      </span><span class="comment">/* xnshadow_sync(&amp;syncflag) */</span>
-00108 <span class="preprocessor">#define __xn_sys_migrate 4      </span><span class="comment">/* switched = xnshadow_relax/harden() */</span>
-00109 
-00110 <span class="keyword">asm</span> (<span class="stringliteral">".L__X'%ebx = 1\n\t"</span>
-00111      <span class="stringliteral">".L__X'%ecx = 2\n\t"</span>
-00112      <span class="stringliteral">".L__X'%edx = 2\n\t"</span>
-00113      <span class="stringliteral">".L__X'%eax = 3\n\t"</span>
-00114      <span class="stringliteral">".L__X'%esi = 3\n\t"</span>
-00115      <span class="stringliteral">".L__X'%edi = 3\n\t"</span>
-00116      <span class="stringliteral">".L__X'%ebp = 3\n\t"</span>
-00117      <span class="stringliteral">".L__X'%esp = 3\n\t"</span>
-00118      <span class="stringliteral">".macro bpushl name reg\n\t"</span>
-00119      <span class="stringliteral">".if 1 - \\name\n\t"</span>
-00120      <span class="stringliteral">".if 2 - \\name\n\t"</span>
-00121      <span class="stringliteral">"pushl %ebx\n\t"</span>
-00122      <span class="stringliteral">".else\n\t"</span>
-00123      <span class="stringliteral">"xchgl \\reg, %ebx\n\t"</span>
-00124      <span class="stringliteral">".endif\n\t"</span>
-00125      <span class="stringliteral">".endif\n\t"</span>
-00126      <span class="stringliteral">".endm\n\t"</span>
-00127      <span class="stringliteral">".macro bpopl name reg\n\t"</span>
-00128      <span class="stringliteral">".if 1 - \\name\n\t"</span>
-00129      <span class="stringliteral">".if 2 - \\name\n\t"</span>
-00130      <span class="stringliteral">"popl %ebx\n\t"</span>
-00131      <span class="stringliteral">".else\n\t"</span>
-00132      <span class="stringliteral">"xchgl \\reg, %ebx\n\t"</span>
-00133      <span class="stringliteral">".endif\n\t"</span>
-00134      <span class="stringliteral">".endif\n\t"</span>
-00135      <span class="stringliteral">".endm\n\t"</span>
-00136      <span class="stringliteral">".macro bmovl name reg\n\t"</span>
-00137      <span class="stringliteral">".if 1 - \\name\n\t"</span>
-00138      <span class="stringliteral">".if 2 - \\name\n\t"</span>
-00139      <span class="stringliteral">"movl \\reg, %ebx\n\t"</span>
-00140      <span class="stringliteral">".endif\n\t"</span>
-00141      <span class="stringliteral">".endif\n\t"</span>
-00142      <span class="stringliteral">".endm\n\t"</span>);
-00143 
-00144 <span class="preprocessor">#define XENOMAI_SYS_MUX(nr, op, args...) \</span>
-00145 <span class="preprocessor">  ({                                                                  \</span>
-00146 <span class="preprocessor">    unsigned resultvar;                                               \</span>
-00147 <span class="preprocessor">    asm volatile (                                                    \</span>
-00148 <span class="preprocessor">    LOADARGS_##nr                                                     \</span>
-00149 <span class="preprocessor">    "movl %1, %%eax\n\t"                                              \</span>
-00150 <span class="preprocessor">    "int $0x80\n\t"                                                   \</span>
-00151 <span class="preprocessor">    RESTOREARGS_##nr                                                  \</span>
-00152 <span class="preprocessor">    : "=a" (resultvar)                                                \</span>
-00153 <span class="preprocessor">    : "i" (__xn_mux_code(0,op)) ASMFMT_##nr(args) : "memory", "cc");  \</span>
-00154 <span class="preprocessor">    (int) resultvar; })</span>
-00155 <span class="preprocessor"></span>
-00156 <span class="preprocessor">#define XENOMAI_SKIN_MUX(nr, id, op, args...) \</span>
-00157 <span class="preprocessor">  ({                                                                  \</span>
-00158 <span class="preprocessor">    int muxcode = __xn_mux_code(id,op);                               \</span>
-00159 <span class="preprocessor">    unsigned resultvar;                                               \</span>
-00160 <span class="preprocessor">    asm volatile (                                                    \</span>
-00161 <span class="preprocessor">    LOADARGS_##nr                                                     \</span>
-00162 <span class="preprocessor">    "movl %1, %%eax\n\t"                                              \</span>
-00163 <span class="preprocessor">    "int $0x80\n\t"                                                   \</span>
-00164 <span class="preprocessor">    RESTOREARGS_##nr                                                  \</span>
-00165 <span class="preprocessor">    : "=a" (resultvar)                                                \</span>
-00166 <span class="preprocessor">    : "m" (muxcode) ASMFMT_##nr(args) : "memory", "cc");              \</span>
-00167 <span class="preprocessor">    (int) resultvar; })</span>
-00168 <span class="preprocessor"></span>
-00169 <span class="preprocessor">#define LOADARGS_0</span>
-00170 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_1 \</span>
-00171 <span class="preprocessor">    "bpushl .L__X'%k2, %k2\n\t" \</span>
-00172 <span class="preprocessor">    "bmovl .L__X'%k2, %k2\n\t"</span>
-00173 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_2      LOADARGS_1</span>
-00174 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_3      LOADARGS_1</span>
-00175 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_4      LOADARGS_1</span>
-00176 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_5      LOADARGS_1</span>
-00177 <span class="preprocessor"></span>
-00178 <span class="preprocessor">#define RESTOREARGS_0</span>
-00179 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_1 \</span>
-00180 <span class="preprocessor">    "bpopl .L__X'%k2, %k2\n\t"</span>
-00181 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_2   RESTOREARGS_1</span>
-00182 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_3   RESTOREARGS_1</span>
-00183 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_4   RESTOREARGS_1</span>
-00184 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_5   RESTOREARGS_1</span>
-00185 <span class="preprocessor"></span>
-00186 <span class="preprocessor">#define ASMFMT_0()</span>
-00187 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_1(arg1) \</span>
-00188 <span class="preprocessor">        , "acdSD" (arg1)</span>
-00189 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_2(arg1, arg2) \</span>
-00190 <span class="preprocessor">        , "adSD" (arg1), "c" (arg2)</span>
-00191 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_3(arg1, arg2, arg3) \</span>
-00192 <span class="preprocessor">        , "aSD" (arg1), "c" (arg2), "d" (arg3)</span>
-00193 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_4(arg1, arg2, arg3, arg4) \</span>
-00194 <span class="preprocessor">        , "aD" (arg1), "c" (arg2), "d" (arg3), "S" (arg4)</span>
-00195 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_5(arg1, arg2, arg3, arg4, arg5) \</span>
-00196 <span class="preprocessor">        , "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5)</span>
-00197 <span class="preprocessor"></span>
-00198 <span class="comment">/* Register mapping for accessing syscall args. */</span>
-00199 
-00200 <span class="preprocessor">#define __xn_reg_mux(regs)    ((regs)-&gt;orig_eax)</span>
-00201 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_rval(regs)   ((regs)-&gt;eax)</span>
-00202 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg1(regs)   ((regs)-&gt;ebx)</span>
-00203 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg2(regs)   ((regs)-&gt;ecx)</span>
-00204 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg3(regs)   ((regs)-&gt;edx)</span>
-00205 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg4(regs)   ((regs)-&gt;esi)</span>
-00206 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg5(regs)   ((regs)-&gt;edi)</span>
-00207 <span class="preprocessor"></span>
-00208 <span class="preprocessor">#define __xn_reg_mux_p(regs)        ((__xn_reg_mux(regs) &amp; 0xffff) == __xn_sys_mux)</span>
-00209 <span class="preprocessor"></span><span class="preprocessor">#define __xn_mux_id(regs)           ((__xn_reg_mux(regs) &gt;&gt; 16) &amp; 0xff)</span>
-00210 <span class="preprocessor"></span><span class="preprocessor">#define __xn_mux_op(regs)           ((__xn_reg_mux(regs) &gt;&gt; 24) &amp; 0xff)</span>
-00211 <span class="preprocessor"></span><span class="preprocessor">#define __xn_mux_code(id,op)        ((op &lt;&lt; 24)|((id &lt;&lt; 16) &amp; 0xff0000)|(__xn_sys_mux &amp; 0xffff))</span>
-00212 <span class="preprocessor"></span>
-00213 <span class="preprocessor">#define XENOMAI_SYSCALL0(op)                XENOMAI_SYS_MUX(0,op)</span>
-00214 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL1(op,a1)             XENOMAI_SYS_MUX(1,op,a1)</span>
-00215 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL2(op,a1,a2)          XENOMAI_SYS_MUX(2,op,a1,a2)</span>
-00216 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL3(op,a1,a2,a3)       XENOMAI_SYS_MUX(3,op,a1,a2,a3)</span>
-00217 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL4(op,a1,a2,a3,a4)    XENOMAI_SYS_MUX(4,op,a1,a2,a3,a4)</span>
-00218 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL5(op,a1,a2,a3,a4,a5) XENOMAI_SYS_MUX(5,op,a1,a2,a3,a4,a5)</span>
-00219 <span class="preprocessor"></span>
-00220 <span class="preprocessor">#define XENOMAI_SKINCALL0(id,op)                XENOMAI_SKIN_MUX(0,id,op)</span>
-00221 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL1(id,op,a1)             XENOMAI_SKIN_MUX(1,id,op,a1)</span>
-00222 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL2(id,op,a1,a2)          XENOMAI_SKIN_MUX(2,id,op,a1,a2)</span>
-00223 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL3(id,op,a1,a2,a3)       XENOMAI_SKIN_MUX(3,id,op,a1,a2,a3)</span>
-00224 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL4(id,op,a1,a2,a3,a4)    XENOMAI_SKIN_MUX(4,id,op,a1,a2,a3,a4)</span>
-00225 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL5(id,op,a1,a2,a3,a4,a5) XENOMAI_SKIN_MUX(5,id,op,a1,a2,a3,a4,a5)</span>
-00226 <span class="preprocessor"></span>
-00227 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnsysinfo {
-00228 
-00229     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> cpufreq; <span class="comment">/* CPU frequency */</span>
-00230     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> tickval;      <span class="comment">/* Tick duration (ns) */</span>
+00076     int (*svc)(<span class="keyword">struct </span>task_struct *task,
+00077                <span class="keyword">struct </span>pt_regs *regs);
+00078 
+00079 <span class="preprocessor">#define __xn_flag_suspensive 0x1</span>
+00080 <span class="preprocessor"></span><span class="preprocessor">#define __xn_flag_anycontext 0x2</span>
+00081 <span class="preprocessor"></span>
+00082     u_long flags;
+00083 
+00084 } xnsysent_t;
+00085 
+00086 <span class="keyword">extern</span> <span class="keywordtype">int</span> nkgkptd;
+00087 
+00088 <span class="preprocessor">#define xnshadow_ptd(t)    ((t)-&gt;ptd[nkgkptd])</span>
+00089 <span class="preprocessor"></span><span class="preprocessor">#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))</span>
+00090 <span class="preprocessor"></span>
+00091 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00092 
+00093 <span class="comment">/*</span>
+00094 <span class="comment"> * Some of the following macros have been adapted from glibc's syscall</span>
+00095 <span class="comment"> * mechanism implementation:</span>
+00096 <span class="comment"> * Copyright (C) 1992,1993,1995-2000,2002,2003 Free Software Foundation, Inc.</span>
+00097 <span class="comment"> * Contributed by Ulrich Drepper, &lt;drepper@gnu.org&gt;, August 1995.</span>
+00098 <span class="comment"> *</span>
+00099 <span class="comment"> * The following code defines an inline syscall mechanism used by</span>
+00100 <span class="comment"> * Xenomai's real-time interfaces to invoke the skin module services</span>
+00101 <span class="comment"> * in kernel space.</span>
+00102 <span class="comment"> */</span>
+00103 
+00104 <span class="comment">/* Xenomai multiplexer syscall. */</span>
+00105 <span class="preprocessor">#define __xn_sys_mux    555</span>
+00106 <span class="preprocessor"></span><span class="comment">/* Xenomai nucleus syscalls. */</span>
+00107 <span class="preprocessor">#define __xn_sys_attach  0      </span><span class="comment">/* muxid = xnshadow_attach_skin(magic,infp) */</span>
+00108 <span class="preprocessor">#define __xn_sys_detach  1      </span><span class="comment">/* xnshadow_detach_skin(muxid) */</span>
+00109 <span class="preprocessor">#define __xn_sys_sched   2      </span><span class="comment">/* xnpod_schedule(void) */</span>
+00110 <span class="preprocessor">#define __xn_sys_sync    3      </span><span class="comment">/* xnshadow_sync(&amp;syncflag) */</span>
+00111 <span class="preprocessor">#define __xn_sys_migrate 4      </span><span class="comment">/* switched = xnshadow_relax/harden() */</span>
+00112 
+00113 <span class="keyword">asm</span> (<span class="stringliteral">".L__X'%ebx = 1\n\t"</span>
+00114      <span class="stringliteral">".L__X'%ecx = 2\n\t"</span>
+00115      <span class="stringliteral">".L__X'%edx = 2\n\t"</span>
+00116      <span class="stringliteral">".L__X'%eax = 3\n\t"</span>
+00117      <span class="stringliteral">".L__X'%esi = 3\n\t"</span>
+00118      <span class="stringliteral">".L__X'%edi = 3\n\t"</span>
+00119      <span class="stringliteral">".L__X'%ebp = 3\n\t"</span>
+00120      <span class="stringliteral">".L__X'%esp = 3\n\t"</span>
+00121      <span class="stringliteral">".macro bpushl name reg\n\t"</span>
+00122      <span class="stringliteral">".if 1 - \\name\n\t"</span>
+00123      <span class="stringliteral">".if 2 - \\name\n\t"</span>
+00124      <span class="stringliteral">"pushl %ebx\n\t"</span>
+00125      <span class="stringliteral">".else\n\t"</span>
+00126      <span class="stringliteral">"xchgl \\reg, %ebx\n\t"</span>
+00127      <span class="stringliteral">".endif\n\t"</span>
+00128      <span class="stringliteral">".endif\n\t"</span>
+00129      <span class="stringliteral">".endm\n\t"</span>
+00130      <span class="stringliteral">".macro bpopl name reg\n\t"</span>
+00131      <span class="stringliteral">".if 1 - \\name\n\t"</span>
+00132      <span class="stringliteral">".if 2 - \\name\n\t"</span>
+00133      <span class="stringliteral">"popl %ebx\n\t"</span>
+00134      <span class="stringliteral">".else\n\t"</span>
+00135      <span class="stringliteral">"xchgl \\reg, %ebx\n\t"</span>
+00136      <span class="stringliteral">".endif\n\t"</span>
+00137      <span class="stringliteral">".endif\n\t"</span>
+00138      <span class="stringliteral">".endm\n\t"</span>
+00139      <span class="stringliteral">".macro bmovl name reg\n\t"</span>
+00140      <span class="stringliteral">".if 1 - \\name\n\t"</span>
+00141      <span class="stringliteral">".if 2 - \\name\n\t"</span>
+00142      <span class="stringliteral">"movl \\reg, %ebx\n\t"</span>
+00143      <span class="stringliteral">".endif\n\t"</span>
+00144      <span class="stringliteral">".endif\n\t"</span>
+00145      <span class="stringliteral">".endm\n\t"</span>);
+00146 
+00147 <span class="preprocessor">#define XENOMAI_SYS_MUX(nr, op, args...) \</span>
+00148 <span class="preprocessor">  ({                                                                  \</span>
+00149 <span class="preprocessor">    unsigned resultvar;                                               \</span>
+00150 <span class="preprocessor">    asm volatile (                                                    \</span>
+00151 <span class="preprocessor">    LOADARGS_##nr                                                     \</span>
+00152 <span class="preprocessor">    "movl %1, %%eax\n\t"                                              \</span>
+00153 <span class="preprocessor">    "int $0x80\n\t"                                                   \</span>
+00154 <span class="preprocessor">    RESTOREARGS_##nr                                                  \</span>
+00155 <span class="preprocessor">    : "=a" (resultvar)                                                \</span>
+00156 <span class="preprocessor">    : "i" (__xn_mux_code(0,op)) ASMFMT_##nr(args) : "memory", "cc");  \</span>
+00157 <span class="preprocessor">    (int) resultvar; })</span>
+00158 <span class="preprocessor"></span>
+00159 <span class="preprocessor">#define XENOMAI_SKIN_MUX(nr, id, op, args...) \</span>
+00160 <span class="preprocessor">  ({                                                                  \</span>
+00161 <span class="preprocessor">    int muxcode = __xn_mux_code(id,op);                               \</span>
+00162 <span class="preprocessor">    unsigned resultvar;                                               \</span>
+00163 <span class="preprocessor">    asm volatile (                                                    \</span>
+00164 <span class="preprocessor">    LOADARGS_##nr                                                     \</span>
+00165 <span class="preprocessor">    "movl %1, %%eax\n\t"                                              \</span>
+00166 <span class="preprocessor">    "int $0x80\n\t"                                                   \</span>
+00167 <span class="preprocessor">    RESTOREARGS_##nr                                                  \</span>
+00168 <span class="preprocessor">    : "=a" (resultvar)                                                \</span>
+00169 <span class="preprocessor">    : "m" (muxcode) ASMFMT_##nr(args) : "memory", "cc");              \</span>
+00170 <span class="preprocessor">    (int) resultvar; })</span>
+00171 <span class="preprocessor"></span>
+00172 <span class="preprocessor">#define LOADARGS_0</span>
+00173 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_1 \</span>
+00174 <span class="preprocessor">    "bpushl .L__X'%k2, %k2\n\t" \</span>
+00175 <span class="preprocessor">    "bmovl .L__X'%k2, %k2\n\t"</span>
+00176 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_2      LOADARGS_1</span>
+00177 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_3      LOADARGS_1</span>
+00178 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_4      LOADARGS_1</span>
+00179 <span class="preprocessor"></span><span class="preprocessor">#define LOADARGS_5      LOADARGS_1</span>
+00180 <span class="preprocessor"></span>
+00181 <span class="preprocessor">#define RESTOREARGS_0</span>
+00182 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_1 \</span>
+00183 <span class="preprocessor">    "bpopl .L__X'%k2, %k2\n\t"</span>
+00184 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_2   RESTOREARGS_1</span>
+00185 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_3   RESTOREARGS_1</span>
+00186 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_4   RESTOREARGS_1</span>
+00187 <span class="preprocessor"></span><span class="preprocessor">#define RESTOREARGS_5   RESTOREARGS_1</span>
+00188 <span class="preprocessor"></span>
+00189 <span class="preprocessor">#define ASMFMT_0()</span>
+00190 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_1(arg1) \</span>
+00191 <span class="preprocessor">        , "acdSD" (arg1)</span>
+00192 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_2(arg1, arg2) \</span>
+00193 <span class="preprocessor">        , "adSD" (arg1), "c" (arg2)</span>
+00194 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_3(arg1, arg2, arg3) \</span>
+00195 <span class="preprocessor">        , "aSD" (arg1), "c" (arg2), "d" (arg3)</span>
+00196 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_4(arg1, arg2, arg3, arg4) \</span>
+00197 <span class="preprocessor">        , "aD" (arg1), "c" (arg2), "d" (arg3), "S" (arg4)</span>
+00198 <span class="preprocessor"></span><span class="preprocessor">#define ASMFMT_5(arg1, arg2, arg3, arg4, arg5) \</span>
+00199 <span class="preprocessor">        , "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5)</span>
+00200 <span class="preprocessor"></span>
+00201 <span class="comment">/* Register mapping for accessing syscall args. */</span>
+00202 
+00203 <span class="preprocessor">#define __xn_reg_mux(regs)    ((regs)-&gt;orig_eax)</span>
+00204 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_rval(regs)   ((regs)-&gt;eax)</span>
+00205 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg1(regs)   ((regs)-&gt;ebx)</span>
+00206 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg2(regs)   ((regs)-&gt;ecx)</span>
+00207 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg3(regs)   ((regs)-&gt;edx)</span>
+00208 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg4(regs)   ((regs)-&gt;esi)</span>
+00209 <span class="preprocessor"></span><span class="preprocessor">#define __xn_reg_arg5(regs)   ((regs)-&gt;edi)</span>
+00210 <span class="preprocessor"></span>
+00211 <span class="preprocessor">#define __xn_reg_mux_p(regs)        ((__xn_reg_mux(regs) &amp; 0xffff) == __xn_sys_mux)</span>
+00212 <span class="preprocessor"></span><span class="preprocessor">#define __xn_mux_id(regs)           ((__xn_reg_mux(regs) &gt;&gt; 16) &amp; 0xff)</span>
+00213 <span class="preprocessor"></span><span class="preprocessor">#define __xn_mux_op(regs)           ((__xn_reg_mux(regs) &gt;&gt; 24) &amp; 0xff)</span>
+00214 <span class="preprocessor"></span><span class="preprocessor">#define __xn_mux_code(id,op)        ((op &lt;&lt; 24)|((id &lt;&lt; 16) &amp; 0xff0000)|(__xn_sys_mux &amp; 0xffff))</span>
+00215 <span class="preprocessor"></span>
+00216 <span class="preprocessor">#define XENOMAI_SYSCALL0(op)                XENOMAI_SYS_MUX(0,op)</span>
+00217 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL1(op,a1)             XENOMAI_SYS_MUX(1,op,a1)</span>
+00218 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL2(op,a1,a2)          XENOMAI_SYS_MUX(2,op,a1,a2)</span>
+00219 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL3(op,a1,a2,a3)       XENOMAI_SYS_MUX(3,op,a1,a2,a3)</span>
+00220 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL4(op,a1,a2,a3,a4)    XENOMAI_SYS_MUX(4,op,a1,a2,a3,a4)</span>
+00221 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SYSCALL5(op,a1,a2,a3,a4,a5) XENOMAI_SYS_MUX(5,op,a1,a2,a3,a4,a5)</span>
+00222 <span class="preprocessor"></span>
+00223 <span class="preprocessor">#define XENOMAI_SKINCALL0(id,op)                XENOMAI_SKIN_MUX(0,id,op)</span>
+00224 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL1(id,op,a1)             XENOMAI_SKIN_MUX(1,id,op,a1)</span>
+00225 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL2(id,op,a1,a2)          XENOMAI_SKIN_MUX(2,id,op,a1,a2)</span>
+00226 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL3(id,op,a1,a2,a3)       XENOMAI_SKIN_MUX(3,id,op,a1,a2,a3)</span>
+00227 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL4(id,op,a1,a2,a3,a4)    XENOMAI_SKIN_MUX(4,id,op,a1,a2,a3,a4)</span>
+00228 <span class="preprocessor"></span><span class="preprocessor">#define XENOMAI_SKINCALL5(id,op,a1,a2,a3,a4,a5) XENOMAI_SKIN_MUX(5,id,op,a1,a2,a3,a4,a5)</span>
+00229 <span class="preprocessor"></span>
+00230 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnsysinfo {
 00231 
-00232 } xnsysinfo_t;
-00233 
-00234 <span class="keyword">typedef</span> <span class="keyword">struct </span>xninquiry {
-00235 
-00236     <span class="keywordtype">char</span> name[32];
-00237     <span class="keywordtype">int</span> prio;
-00238     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> status;
-00239     <span class="keywordtype">void</span> *khandle;
-00240     <span class="keywordtype">void</span> *uhandle;
-00241 
-00242 } xninquiry_t;
-00243 
-00244 <span class="keyword">struct </span>task_struct;
-00245 
-00246 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_XNCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:08 2004 for RTAI API by
+00232     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> cpufreq; <span class="comment">/* CPU frequency */</span>
+00233     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> tickval;      <span class="comment">/* Tick duration (ns) */</span>
+00234 
+00235 } xnsysinfo_t;
+00236 
+00237 <span class="keyword">typedef</span> <span class="keyword">struct </span>xninquiry {
+00238 
+00239     <span class="keywordtype">char</span> name[32];
+00240     <span class="keywordtype">int</span> prio;
+00241     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> status;
+00242     <span class="keywordtype">void</span> *khandle;
+00243     <span class="keywordtype">void</span> *uhandle;
+00244 
+00245 } xninquiry_t;
+00246 
+00247 <span class="keyword">struct </span>task_struct;
+00248 
+00249 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_XNCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:31 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

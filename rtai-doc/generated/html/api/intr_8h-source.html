@@ -61,72 +61,66 @@
 00053 <span class="preprocessor"></span><span class="preprocessor">#define XN_ISR_SCHED_T   0x2</span>
 00054 <span class="preprocessor"></span><span class="preprocessor">#define XN_ISR_ENABLE    0x4</span>
 00055 <span class="preprocessor"></span>
-00056 <span class="comment">/* Creation flags -- none currently defined */</span>
-00057 
-00058 <span class="preprocessor">#define XNINTR_ATTACHED  0x2</span>
+00056 <span class="preprocessor">#define XNINTR_ATTACHED  0x2</span>
+00057 <span class="preprocessor"></span>
+00058 <span class="preprocessor">#define XNINTR_MAX_PRIORITY 15</span>
 00059 <span class="preprocessor"></span>
-00060 <span class="comment">/* Error codes thrown by the interrupt management routines */</span>
-00061 <span class="preprocessor">#define XNINTR_ERRBASE      0xffff4000</span>
-00062 <span class="preprocessor"></span><span class="preprocessor">#define XNERR_INTR_INVALID  (XNINTR_ERRBASE)</span>
-00063 <span class="preprocessor"></span><span class="preprocessor">#define XNERR_INTR_BUSY     (XNINTR_ERRBASE + 1)</span>
-00064 <span class="preprocessor"></span>
-00065 <span class="preprocessor">#define XNINTR_MAX_PRIORITY 15</span>
-00066 <span class="preprocessor"></span>
-00067 <span class="keyword">struct </span>xnintr;
+00060 <span class="keyword">struct </span>xnintr;
+00061 
+00062 <span class="keyword">typedef</span> int (*xnisr_t)(<span class="keyword">struct </span>xnintr *intr);
+00063 
+00064 <span class="keyword">typedef</span> void (*xnist_t)(<span class="keyword">struct </span>xnintr *intr,
+00065                         <span class="keywordtype">int</span> hits);
+00066 
+00067 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnintr {
 00068 
-00069 <span class="keyword">typedef</span> int (*xnisr_t)(<span class="keyword">struct </span>xnintr *intr);
-00070 
-00071 <span class="keyword">typedef</span> void (*xnist_t)(<span class="keyword">struct </span>xnintr *intr);
+00069     xnflags_t status;   
+00071     <span class="keywordtype">unsigned</span> irq;       <span class="comment">/* IRQ number */</span>
 00072 
-00073 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnintr {
+00073     <span class="keywordtype">int</span> priority;       <span class="comment">/* Service thread priority */</span>
 00074 
-00075     xnflags_t status;           
-00077     <span class="keywordtype">unsigned</span> irq;       <span class="comment">/* IRQ number */</span>
+00075     xnisr_t isr;        <span class="comment">/* Interrupt service routine */</span>
+00076 
+00077     xnist_t ist;        <span class="comment">/* Interrupt service task */</span>
 00078 
-00079     <span class="keywordtype">int</span> priority;       <span class="comment">/* Service thread priority */</span>
+00079     <span class="keywordtype">int</span> pending;        <span class="comment">/* Pending IRQ hits */</span>
 00080 
-00081     xnisr_t isr;        <span class="comment">/* Interrupt service routine */</span>
+00081     <span class="keywordtype">void</span> *cookie;       <span class="comment">/* User-defined cookie value */</span>
 00082 
-00083     xnist_t ist;        <span class="comment">/* Interrupt service task */</span>
+00083     xnthread_t svcthread; <span class="comment">/* Service thread */</span>
 00084 
-00085     <span class="keywordtype">int</span> hits;           <span class="comment">/* Pending IRQ hits */</span>
+00085 } xnintr_t;
 00086 
-00087     <span class="keywordtype">void</span> *cookie;       <span class="comment">/* User-defined cookie value */</span>
+00087 <span class="keyword">extern</span> xnintr_t nkclock;
 00088 
-00089     xnthread_t svcthread; <span class="comment">/* Service thread */</span>
-00090 
-00091 } xnintr_t;
-00092 
-00093 <span class="keyword">extern</span> xnintr_t nkclock;
-00094 
-00095 <span class="preprocessor">#ifdef __cplusplus</span>
-00096 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00097 <span class="preprocessor">#endif</span>
-00098 <span class="preprocessor"></span>
-00099 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#a3">xnintr_init</a>(xnintr_t *intr,
-00100                 <span class="keywordtype">unsigned</span> irq,
-00101                 <span class="keywordtype">int</span> priority,
-00102                 xnisr_t isr,
-00103                 xnist_t ist,
-00104                 xnflags_t flags);
-00105 
-00106 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#a4">xnintr_destroy</a>(xnintr_t *intr);
-00107 
-00108 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#a5">xnintr_attach</a>(xnintr_t *intr,
-00109                   <span class="keywordtype">void</span> *cookie);
-00110 
-00111 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#a6">xnintr_detach</a>(xnintr_t *intr);
-00112 
-00113 <span class="keywordtype">void</span> xnintr_enable(xnintr_t *intr);
-00114 
-00115 <span class="keywordtype">void</span> xnintr_disable(xnintr_t *intr);
-00116     
-00117 <span class="preprocessor">#ifdef __cplusplus</span>
-00118 <span class="preprocessor"></span>}
-00119 <span class="preprocessor">#endif</span>
-00120 <span class="preprocessor"></span>
-00121 <span class="preprocessor">#endif </span><span class="comment">/* !_xenomai_intr_h */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:09 2004 for RTAI API by
+00089 <span class="preprocessor">#ifdef __cplusplus</span>
+00090 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00091 <span class="preprocessor">#endif</span>
+00092 <span class="preprocessor"></span>
+00093 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#a3">xnintr_init</a>(xnintr_t *intr,
+00094                 <span class="keywordtype">unsigned</span> irq,
+00095                 <span class="keywordtype">int</span> priority,
+00096                 xnisr_t isr,
+00097                 xnist_t ist,
+00098                 xnflags_t flags);
+00099 
+00100 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#a4">xnintr_destroy</a>(xnintr_t *intr);
+00101 
+00102 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#a5">xnintr_attach</a>(xnintr_t *intr,
+00103                   <span class="keywordtype">void</span> *cookie);
+00104 
+00105 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#a6">xnintr_detach</a>(xnintr_t *intr);
+00106 
+00107 <span class="keywordtype">void</span> xnintr_enable(xnintr_t *intr);
+00108 
+00109 <span class="keywordtype">void</span> xnintr_disable(xnintr_t *intr);
+00110     
+00111 <span class="preprocessor">#ifdef __cplusplus</span>
+00112 <span class="preprocessor"></span>}
+00113 <span class="preprocessor">#endif</span>
+00114 <span class="preprocessor"></span>
+00115 <span class="preprocessor">#endif </span><span class="comment">/* !_xenomai_intr_h */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:33 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -60,10 +60,10 @@
 00052 <span class="preprocessor">        do { \</span>
 00053 <span class="preprocessor">                if (x &amp; 8) { \</span>
 00054 <span class="preprocessor">                       unsigned long flags; \</span>
-00055 <span class="preprocessor">                       arti_hw_lock(flags); \</span>
+00055 <span class="preprocessor">                       rtai_hw_lock(flags); \</span>
 00056 <span class="preprocessor">                        __asm__ __volatile__ ("movl %%cr0, %0": "=r" (x)); \</span>
 00057 <span class="preprocessor">                        __asm__ __volatile__ ("movl %0, %%cr0": :"r" (8 | x)); \</span>
-00058 <span class="preprocessor">                       arti_hw_unlock(flags); \</span>
+00058 <span class="preprocessor">                       rtai_hw_unlock(flags); \</span>
 00059 <span class="preprocessor">                } \</span>
 00060 <span class="preprocessor">        } while (0)</span>
 00061 <span class="preprocessor"></span>
@@ -121,7 +121,7 @@
 00113 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_FPU_SUPPORT */</span>
 00114 
 00115 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_FPU_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:07 2004 for RTAI API by
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:31 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -25,48 +25,105 @@
 00017 <span class="comment">*/</span>
 00018 
 00019 
-00020 <span class="preprocessor">#ifndef RTAI_SHM_ASM_H</span>
-00021 <span class="preprocessor"></span><span class="preprocessor">#define RTAI_SHM_ASM_H</span>
+00020 <span class="preprocessor">#ifndef _RTAI_ASM_PPC_SHM_H</span>
+00021 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_ASM_PPC_SHM_H</span>
 00022 <span class="preprocessor"></span>
-00023 <span class="preprocessor">#include &lt;asm/rtai_vectors.h&gt;</span>
-00024 
-00025 <span class="preprocessor">#undef __SHM_USE_VECTOR</span>
-00026 <span class="preprocessor"></span>
-00027 <span class="preprocessor">#ifndef __KERNEL__</span>
+00023 <span class="preprocessor">#include &lt;asm/pgtable.h&gt;</span>
+00024 <span class="preprocessor">#include &lt;asm/io.h&gt;</span>
+00025 <span class="preprocessor">#include &lt;asm/rtai_vectors.h&gt;</span>
+00026 
+00027 <span class="preprocessor">#undef __SHM_USE_VECTOR</span>
 00028 <span class="preprocessor"></span>
-00029 <span class="preprocessor">#ifdef __SHM_USE_VECTOR</span>
-00030 <span class="preprocessor"></span><span class="comment">// the following function is adapted from Linux PPC unistd.h </span>
-00031 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> rtai_shmrq(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> srq, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> whatever)
-00032 {
-00033         <span class="keywordtype">long</span> <span class="keywordtype">long</span> retval;
-00034         <span class="keyword">register</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __sc_0 __asm__ (<span class="stringliteral">"r0"</span>);
-00035         <span class="keyword">register</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __sc_3 __asm__ (<span class="stringliteral">"r3"</span>);
-00036         <span class="keyword">register</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __sc_4 __asm__ (<span class="stringliteral">"r4"</span>);
-00037 
-00038         __sc_0 = (__sc_3 = srq | (RTAI_SHM_VECTOR &lt;&lt; 24)) + (__sc_4 = whatever);
-00039         __asm__ __volatile__
-00040                 (<span class="stringliteral">"trap         \n\t"</span>
-00041                 : <span class="stringliteral">"=&amp;r"</span> (__sc_3), <span class="stringliteral">"=&amp;r"</span> (__sc_4)
-00042                 : <span class="stringliteral">"0"</span>   (__sc_3), <span class="stringliteral">"1"</span>   (__sc_4),
-00043                   <span class="stringliteral">"r"</span>   (__sc_0)
-00044                 : <span class="stringliteral">"r0"</span>, <span class="stringliteral">"r3"</span>, <span class="stringliteral">"r4"</span> );
-00045         ((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;retval)[0] = __sc_3;
-00046         ((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;retval)[1] = __sc_4;
-00047         <span class="keywordflow">return</span> retval;
-00048 }
-00049 
-00050 <span class="preprocessor">#else</span>
-00051 <span class="preprocessor"></span>
-00052 <span class="preprocessor">#define RTAI_SHM_HANDLER shm_handler</span>
-00053 <span class="preprocessor"></span>
-00054 <span class="preprocessor">#define DEFINE_SHM_HANDLER</span>
+00029 <span class="preprocessor">#ifndef __KERNEL__</span>
+00030 <span class="preprocessor"></span>
+00031 <span class="preprocessor">#ifdef __SHM_USE_VECTOR</span>
+00032 <span class="preprocessor"></span><span class="comment">// the following function is adapted from Linux PPC unistd.h </span>
+00033 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> rtai_shmrq(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> srq, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> whatever)
+00034 {
+00035         <span class="keywordtype">long</span> <span class="keywordtype">long</span> retval;
+00036         <span class="keyword">register</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __sc_0 __asm__ (<span class="stringliteral">"r0"</span>);
+00037         <span class="keyword">register</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __sc_3 __asm__ (<span class="stringliteral">"r3"</span>);
+00038         <span class="keyword">register</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __sc_4 __asm__ (<span class="stringliteral">"r4"</span>);
+00039 
+00040         __sc_0 = (__sc_3 = srq | (RTAI_SHM_VECTOR &lt;&lt; 24)) + (__sc_4 = whatever);
+00041         __asm__ __volatile__
+00042                 (<span class="stringliteral">"trap         \n\t"</span>
+00043                 : <span class="stringliteral">"=&amp;r"</span> (__sc_3), <span class="stringliteral">"=&amp;r"</span> (__sc_4)
+00044                 : <span class="stringliteral">"0"</span>   (__sc_3), <span class="stringliteral">"1"</span>   (__sc_4),
+00045                   <span class="stringliteral">"r"</span>   (__sc_0)
+00046                 : <span class="stringliteral">"r0"</span>, <span class="stringliteral">"r3"</span>, <span class="stringliteral">"r4"</span> );
+00047         ((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;retval)[0] = __sc_3;
+00048         ((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;retval)[1] = __sc_4;
+00049         <span class="keywordflow">return</span> retval;
+00050 }
+00051 
+00052 <span class="preprocessor">#else  </span><span class="comment">/* __KERNEL__ */</span>
+00053 
+00054 <span class="preprocessor">#define RTAI_SHM_HANDLER shm_handler</span>
 00055 <span class="preprocessor"></span>
-00056 <span class="preprocessor">#endif </span><span class="comment">/* __SHM_USE_VECTOR */</span>
-00057 
-00058 <span class="preprocessor">#endif </span><span class="comment">/* !__KERNEL__ */</span>
+00056 <span class="preprocessor">#define DEFINE_SHM_HANDLER</span>
+00057 <span class="preprocessor"></span>
+00058 <span class="preprocessor">#endif </span><span class="comment">/* __SHM_USE_VECTOR */</span>
 00059 
-00060 <span class="preprocessor">#endif </span><span class="comment">/* !RTAI_SHM_ASM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:08 2004 for RTAI API by
+00060 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00061 
+00062 <span class="comment">/* convert virtual user memory address to physical address */</span>
+00063 <span class="comment">/* (virt_to_phys only works for kmalloced kernel memory) */</span>
+00064 
+00065 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> uvirt_to_kva(pgd_t *pgd, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> adr)
+00066 {
+00067         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ret = 0UL;
+00068         pmd_t *pmd;
+00069         pte_t *ptep, pte;
+00070 
+00071         <span class="keywordflow">if</span>(!pgd_none(*pgd)) {
+00072                 pmd = pmd_offset(pgd, adr);
+00073                 <span class="keywordflow">if</span> (!pmd_none(*pmd)) {
+00074                         ptep = pte_offset(pmd, adr);
+00075                         pte = *ptep;
+00076                         <span class="keywordflow">if</span>(pte_present(pte)){
+00077                                 ret = (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>) page_address(pte_page(pte));
+00078                                 ret |= (adr&amp;(PAGE_SIZE-1));
+00079                         }
+00080                 }
+00081         }
+00082         <span class="keywordflow">return</span> ret;
+00083 }
+00084 
+00085 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> uvirt_to_bus(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> adr)
+00086 {
+00087         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> kva, ret;
+00088 
+00089         kva = uvirt_to_kva(pgd_offset(current-&gt;mm, adr), adr);
+00090         ret = virt_to_bus((<span class="keywordtype">void</span> *)kva);
+00091 
+00092         <span class="keywordflow">return</span> ret;
+00093 }
+00094 
+00095 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> kvirt_to_bus(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> adr)
+00096 {
+00097         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> va, kva, ret;
+00098 
+00099         va = VMALLOC_VMADDR(adr);
+00100         kva = uvirt_to_kva(pgd_offset_k(va), va);
+00101         ret = virt_to_bus((<span class="keywordtype">void</span> *)kva);
+00102 
+00103         <span class="keywordflow">return</span> ret;
+00104 }
+00105 
+00106 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> kvirt_to_pa(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> adr)
+00107 {
+00108         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> va, kva, ret;
+00109 
+00110         va = VMALLOC_VMADDR(adr);
+00111         kva = uvirt_to_kva(pgd_offset_k(va), va);
+00112         ret = __pa(kva);
+00113 
+00114         <span class="keywordflow">return</span> ret;
+00115 }
+00116 
+00117 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SHM_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:31 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -160,7 +160,7 @@
 00152 <span class="keyword">extern</span> <span class="keywordtype">void</span> send_ipi_logical(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> dest, <span class="keywordtype">int</span> irq);
 00153 <span class="preprocessor">#define rt_assign_irq_to_cpu(irq, cpu)</span>
 00154 <span class="preprocessor"></span><span class="preprocessor">#define rt_reset_irq_to_sym_mode(irq)</span>
-00155 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="keywordtype">int</span>  <a class="code" href="group__hal.html#a93">rt_request_global_irq</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq, <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq));
+00155 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="keywordtype">int</span>  rt_request_global_irq(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq, <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq));
 00156 <span class="keyword">extern</span> <span class="keywordtype">int</span>  rt_request_global_irq_arg(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq,
 00157                 <span class="keywordtype">int</span> (*handler)(<span class="keywordtype">int</span>,<span class="keywordtype">void</span> *,<span class="keyword">struct</span> pt_regs *),
 00158                 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags,<span class="keyword">const</span> <span class="keywordtype">char</span> *dev,<span class="keywordtype">void</span> *dev_id);
@@ -168,7 +168,7 @@
 00160                                      <span class="keywordtype">int</span> (*handler)(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> handler), 
 00161                                      <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> data);
 00162 <span class="keyword">extern</span> <span class="keywordtype">void</span> rt_set_global_irq_ext(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq, <span class="keywordtype">int</span> ext, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> data);
-00163 <span class="keyword">extern</span> <span class="keywordtype">int</span>  <a class="code" href="group__hal.html#a94">rt_free_global_irq</a>(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq);
+00163 <span class="keyword">extern</span> <span class="keywordtype">int</span>  rt_free_global_irq(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq);
 00164 <span class="keyword">extern</span> <span class="keywordtype">void</span> rt_ack_irq(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq);
 00165 <span class="keyword">extern</span> <span class="keywordtype">void</span> rt_mask_and_ack_irq(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq);
 00166 <span class="keyword">extern</span> <span class="keywordtype">void</span> rt_unmask_irq(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq);
@@ -192,7 +192,7 @@
 00184 <span class="preprocessor">#define rt_request_cpu_own_irq(irq, handler) rt_request_global_irq((irq), (handler))</span>
 00185 <span class="preprocessor"></span><span class="preprocessor">#define rt_free_cpu_own_irq(irq) rt_free_global_irq((irq))</span>
 00186 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="keywordtype">void</span> rt_request_timer(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>), <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> tick, <span class="keywordtype">int</span> apic);
-00187 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__hal.html#a69">rt_free_timer</a>(<span class="keywordtype">void</span>);
+00187 <span class="keyword">extern</span> <span class="keywordtype">void</span> <a class="code" href="group__hal.html#a64">rt_free_timer</a>(<span class="keywordtype">void</span>);
 00188 <span class="keyword">extern</span> <span class="keywordtype">void</span> rt_request_apic_timers(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>), <span class="keyword">struct</span> apic_timer_setup_data *apic_timer_data);
 00189 <span class="keyword">extern</span> <span class="keywordtype">void</span> rt_free_apic_timers(<span class="keywordtype">void</span>);
 00190 <span class="keyword">extern</span> <span class="keywordtype">void</span> rt_mount_rtai(<span class="keywordtype">void</span>);
@@ -302,191 +302,183 @@
 00296 <span class="preprocessor"></span>
 00297 <span class="preprocessor">#endif  </span><span class="comment">/* CONFIG_SMP */</span>
 00298 
-00299 <span class="keyword">typedef</span> <span class="keyword">struct </span>ppc_fpu_env { <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fpu_reg[66]; } FPU_ENV;
-00300 
-00301 <span class="preprocessor">#define save_cr0_and_clts(x)</span>
-00302 <span class="preprocessor"></span>
-00303 <span class="preprocessor">#define restore_cr0(x)</span>
-00304 <span class="preprocessor"></span>
-00305 <span class="preprocessor">#define enable_fpu()</span>
-00306 <span class="preprocessor"></span>
-00307 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_lock_irq(spinlock_t *lock)          
-00308 {
-00309         hard_cli(); 
-00310         rt_spin_lock(lock);
-00311 }
-00312 
-00313 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_unlock_irq(spinlock_t *lock)
-00314 {
-00315         rt_spin_unlock(lock);
-00316         hard_sti();
-00317 }
-00318 
-00319 <span class="comment">// Note that the spinlock calling convention below for irqsave/restore is </span>
-00320 <span class="comment">// sligtly different from the one used in Linux. Done on purpose to get an </span>
-00321 <span class="comment">// error if you use Linux spinlocks in real time applications as they do not</span>
-00322 <span class="comment">// guaranty any protection because of the soft irq disable. Be careful and </span>
-00323 <span class="comment">// sure to call the other spinlocks the right way, as they are compatible </span>
-00324 <span class="comment">// with Linux.</span>
+00299 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_lock_irq(spinlock_t *lock)          
+00300 {
+00301         hard_cli(); 
+00302         rt_spin_lock(lock);
+00303 }
+00304 
+00305 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_unlock_irq(spinlock_t *lock)
+00306 {
+00307         rt_spin_unlock(lock);
+00308         hard_sti();
+00309 }
+00310 
+00311 <span class="comment">// Note that the spinlock calling convention below for irqsave/restore is </span>
+00312 <span class="comment">// sligtly different from the one used in Linux. Done on purpose to get an </span>
+00313 <span class="comment">// error if you use Linux spinlocks in real time applications as they do not</span>
+00314 <span class="comment">// guaranty any protection because of the soft irq disable. Be careful and </span>
+00315 <span class="comment">// sure to call the other spinlocks the right way, as they are compatible </span>
+00316 <span class="comment">// with Linux.</span>
+00317 
+00318 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> rt_spin_lock_irqsave(spinlock_t *lock)          
+00319 {
+00320         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
+00321         hard_save_flags_and_cli(flags);
+00322         rt_spin_lock(lock);
+00323         <span class="keywordflow">return</span> flags;
+00324 }
 00325 
-00326 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> rt_spin_lock_irqsave(spinlock_t *lock)          
+00326 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_unlock_irqrestore(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags, spinlock_t *lock)
 00327 {
-00328         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
-00329         hard_save_flags_and_cli(flags);
-00330         rt_spin_lock(lock);
-00331         <span class="keywordflow">return</span> flags;
-00332 }
-00333 
-00334 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_unlock_irqrestore(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags, spinlock_t *lock)
-00335 {
-00336         rt_spin_unlock(lock);
-00337         hard_restore_flags(flags);
+00328         rt_spin_unlock(lock);
+00329         hard_restore_flags(flags);
+00330 }
+00331 
+00332 <span class="comment">/* Global interrupts and flags control (simplified, and modified, version of */</span>
+00333 <span class="comment">/* similar global stuff in Linux irq.c).                                     */</span>
+00334 
+00335 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_cli(<span class="keywordtype">void</span>)
+00336 {
+00337         rt_get_global_lock();
 00338 }
 00339 
-00340 <span class="comment">/* Global interrupts and flags control (simplified, and modified, version of */</span>
-00341 <span class="comment">/* similar global stuff in Linux irq.c).                                     */</span>
-00342 
-00343 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_cli(<span class="keywordtype">void</span>)
-00344 {
-00345         rt_get_global_lock();
-00346 }
-00347 
-00348 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_sti(<span class="keywordtype">void</span>)
-00349 {
-00350         rt_release_global_lock();
-00351         hard_sti();
-00352 }
-00353 
-00354 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_global_save_flags_and_cli(<span class="keywordtype">void</span>)
-00355 {
-00356         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
-00357 
-00358         hard_save_flags_and_cli(flags);
-00359         <span class="keywordflow">if</span> (!test_and_set_bit(hard_cpu_id(), locked_cpus)) {
-00360                 <span class="keywordflow">while</span> (test_and_set_bit(31, locked_cpus));
-00361                 <span class="keywordflow">return</span> ((flags &amp; (1 &lt;&lt; IFLAG)) + 1);
-00362         } <span class="keywordflow">else</span> {
-00363                 <span class="keywordflow">return</span> (flags &amp; (1 &lt;&lt; IFLAG));
-00364         }
-00365 }
-00366 
-00367 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_save_flags(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *flags)
-00368 {
-00369         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> hflags, rflags;
-00370 
-00371         hard_save_flags_and_cli(hflags);
-00372         hflags = hflags &amp; (1 &lt;&lt; IFLAG);
-00373         rflags = hflags | !test_bit(hard_cpu_id(), locked_cpus);
-00374         <span class="keywordflow">if</span> (hflags) {
-00375                 hard_sti();
-00376         }
-00377         *flags = rflags;
-00378 }
-00379 
-00380 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_restore_flags(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags)
-00381 {
-00382         <span class="keywordflow">switch</span> (flags) {
-00383                 <span class="keywordflow">case</span> (1 &lt;&lt; IFLAG) | 1:  rt_release_global_lock();
-00384                                         hard_sti();
-00385                                         <span class="keywordflow">break</span>;
-00386                 <span class="keywordflow">case</span> (1 &lt;&lt; IFLAG) | 0:  rt_get_global_lock();
-00387                                         hard_sti();
-00388                                         <span class="keywordflow">break</span>;
-00389                 <span class="keywordflow">case</span> (0 &lt;&lt; IFLAG) | 1:  rt_release_global_lock();
-00390                                         <span class="keywordflow">break</span>;
-00391                 <span class="keywordflow">case</span> (0 &lt;&lt; IFLAG) | 0:  rt_get_global_lock();
-00392                                         <span class="keywordflow">break</span>;
-00393         }
-00394 }
-00395 
-00396 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TRAP_HANDLER rt_set_rtai_trap_handler(RT_TRAP_HANDLER handler)
-00397 {
-00398         <span class="keywordflow">return</span> (RT_TRAP_HANDLER) 0;
-00399 }
+00340 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_sti(<span class="keywordtype">void</span>)
+00341 {
+00342         rt_release_global_lock();
+00343         hard_sti();
+00344 }
+00345 
+00346 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_global_save_flags_and_cli(<span class="keywordtype">void</span>)
+00347 {
+00348         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
+00349 
+00350         hard_save_flags_and_cli(flags);
+00351         <span class="keywordflow">if</span> (!test_and_set_bit(hard_cpu_id(), locked_cpus)) {
+00352                 <span class="keywordflow">while</span> (test_and_set_bit(31, locked_cpus));
+00353                 <span class="keywordflow">return</span> ((flags &amp; (1 &lt;&lt; IFLAG)) + 1);
+00354         } <span class="keywordflow">else</span> {
+00355                 <span class="keywordflow">return</span> (flags &amp; (1 &lt;&lt; IFLAG));
+00356         }
+00357 }
+00358 
+00359 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_save_flags(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *flags)
+00360 {
+00361         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> hflags, rflags;
+00362 
+00363         hard_save_flags_and_cli(hflags);
+00364         hflags = hflags &amp; (1 &lt;&lt; IFLAG);
+00365         rflags = hflags | !test_bit(hard_cpu_id(), locked_cpus);
+00366         <span class="keywordflow">if</span> (hflags) {
+00367                 hard_sti();
+00368         }
+00369         *flags = rflags;
+00370 }
+00371 
+00372 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_restore_flags(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags)
+00373 {
+00374         <span class="keywordflow">switch</span> (flags) {
+00375                 <span class="keywordflow">case</span> (1 &lt;&lt; IFLAG) | 1:  rt_release_global_lock();
+00376                                         hard_sti();
+00377                                         <span class="keywordflow">break</span>;
+00378                 <span class="keywordflow">case</span> (1 &lt;&lt; IFLAG) | 0:  rt_get_global_lock();
+00379                                         hard_sti();
+00380                                         <span class="keywordflow">break</span>;
+00381                 <span class="keywordflow">case</span> (0 &lt;&lt; IFLAG) | 1:  rt_release_global_lock();
+00382                                         <span class="keywordflow">break</span>;
+00383                 <span class="keywordflow">case</span> (0 &lt;&lt; IFLAG) | 0:  rt_get_global_lock();
+00384                                         <span class="keywordflow">break</span>;
+00385         }
+00386 }
+00387 
+00388 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TRAP_HANDLER rt_set_rtai_trap_handler(RT_TRAP_HANDLER handler)
+00389 {
+00390         <span class="keywordflow">return</span> (RT_TRAP_HANDLER) 0;
+00391 }
+00392 
+00393 <span class="keyword">struct </span>calibration_data {
+00394         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> cpu_freq;
+00395         <span class="keywordtype">int</span> latency;
+00396         <span class="keywordtype">int</span> setup_time_TIMER_CPUNIT;
+00397         <span class="keywordtype">int</span> setup_time_TIMER_UNIT;
+00398         <span class="keywordtype">int</span> timers_tol[NR_RT_CPUS];
+00399 };
 00400 
-00401 <span class="keyword">struct </span>calibration_data {
-00402         <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> cpu_freq;
-00403         <span class="keywordtype">int</span> latency;
-00404         <span class="keywordtype">int</span> setup_time_TIMER_CPUNIT;
-00405         <span class="keywordtype">int</span> setup_time_TIMER_UNIT;
-00406         <span class="keywordtype">int</span> timers_tol[NR_RT_CPUS];
-00407 };
-00408 
-00409 <span class="keyword">extern</span> <span class="keyword">struct </span>rt_times rt_times;
-00410 <span class="keyword">extern</span> <span class="keyword">struct </span>rt_times rt_smp_times[NR_RT_CPUS];
-00411 <span class="keyword">extern</span> <span class="keyword">struct </span>calibration_data tuned;
-00412 
-00413 <span class="preprocessor">#if 0</span>
-00414 <span class="preprocessor"></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> get_dec(<span class="keywordtype">void</span>)
-00415 {
-00416         <span class="keywordflow">return</span> (mfspr(SPRN_DEC));
-00417 }
-00418 
-00419 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> set_dec(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> val)
-00420 {
-00421         mtspr(SPRN_DEC, val);
-00422 }
-00423 <span class="preprocessor">#endif</span>
-00424 <span class="preprocessor"></span><span class="preprocessor">#ifdef CONFIG_4xx</span>
-00425 <span class="preprocessor"></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> get_dec_4xx(<span class="keywordtype">void</span>)
-00426 {
-00427         <span class="keywordflow">return</span> (mfspr(SPRN_PIT));
-00428 }
-00429 
-00430 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> set_dec_4xx(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> val)
-00431 {
-00432         mtspr(SPRN_PIT, val);
-00433 }
-00434 <span class="preprocessor">#endif</span>
-00435 <span class="preprocessor"></span>
-00436 <span class="preprocessor">#define DECLR_8254_TSC_EMULATION</span>
-00437 <span class="preprocessor"></span><span class="preprocessor">#define TICK_8254_TSC_EMULATION</span>
-00438 <span class="preprocessor"></span><span class="preprocessor">#define SETUP_8254_TSC_EMULATION</span>
-00439 <span class="preprocessor"></span><span class="preprocessor">#define CLEAR_8254_TSC_EMULATION</span>
-00440 <span class="preprocessor"></span>
-00441 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> rdtsc(<span class="keywordtype">void</span>)
-00442 {
-00443         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> ts;
-00444         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> chk;
-00445 <span class="comment">// The code below is as suggested in Motorola reference manual for 32 bits PPCs.</span>
-00446         __asm__ __volatile__ (<span class="stringliteral">"1: mftbu %0; mftb %1; mftbu %2; cmpw %2,%0; bne 1b"</span>
-00447         : <span class="stringliteral">"=r"</span> (((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;ts)[0]), <span class="stringliteral">"=r"</span> (((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;ts)[1]), <span class="stringliteral">"=r"</span> (chk) );
-00448 
-00449         <span class="keywordflow">return</span> ts;
-00450 }
-00451 
-00452 <span class="preprocessor">#define RT_BUG() do{hard_cli();BUG();}while(0)</span>
-00453 <span class="preprocessor"></span>
-00454 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_set_decrementer_count(<span class="keywordtype">int</span> delay)
-00455 {
-00456 <span class="comment">// NOTE: delay MUST be 0 if a periodic timer is being used.</span>
-00457         <span class="keywordflow">if</span>(!delay)delay = rt_times.intr_time - rdtsc();
+00401 <span class="keyword">extern</span> <span class="keyword">struct </span>rt_times rt_times;
+00402 <span class="keyword">extern</span> <span class="keyword">struct </span>rt_times rt_smp_times[NR_RT_CPUS];
+00403 <span class="keyword">extern</span> <span class="keyword">struct </span>calibration_data tuned;
+00404 
+00405 <span class="preprocessor">#if 0</span>
+00406 <span class="preprocessor"></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> get_dec(<span class="keywordtype">void</span>)
+00407 {
+00408         <span class="keywordflow">return</span> (mfspr(SPRN_DEC));
+00409 }
+00410 
+00411 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> set_dec(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> val)
+00412 {
+00413         mtspr(SPRN_DEC, val);
+00414 }
+00415 <span class="preprocessor">#endif</span>
+00416 <span class="preprocessor"></span><span class="preprocessor">#ifdef CONFIG_4xx</span>
+00417 <span class="preprocessor"></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> get_dec_4xx(<span class="keywordtype">void</span>)
+00418 {
+00419         <span class="keywordflow">return</span> (mfspr(SPRN_PIT));
+00420 }
+00421 
+00422 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> set_dec_4xx(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> val)
+00423 {
+00424         mtspr(SPRN_PIT, val);
+00425 }
+00426 <span class="preprocessor">#endif</span>
+00427 <span class="preprocessor"></span>
+00428 <span class="preprocessor">#define DECLR_8254_TSC_EMULATION</span>
+00429 <span class="preprocessor"></span><span class="preprocessor">#define TICK_8254_TSC_EMULATION</span>
+00430 <span class="preprocessor"></span><span class="preprocessor">#define SETUP_8254_TSC_EMULATION</span>
+00431 <span class="preprocessor"></span><span class="preprocessor">#define CLEAR_8254_TSC_EMULATION</span>
+00432 <span class="preprocessor"></span>
+00433 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> rdtsc(<span class="keywordtype">void</span>)
+00434 {
+00435         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> ts;
+00436         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> chk;
+00437 <span class="comment">// The code below is as suggested in Motorola reference manual for 32 bits PPCs.</span>
+00438         __asm__ __volatile__ (<span class="stringliteral">"1: mftbu %0; mftb %1; mftbu %2; cmpw %2,%0; bne 1b"</span>
+00439         : <span class="stringliteral">"=r"</span> (((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;ts)[0]), <span class="stringliteral">"=r"</span> (((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;ts)[1]), <span class="stringliteral">"=r"</span> (chk) );
+00440 
+00441         <span class="keywordflow">return</span> ts;
+00442 }
+00443 
+00444 <span class="preprocessor">#define RT_BUG() do{hard_cli();BUG();}while(0)</span>
+00445 <span class="preprocessor"></span>
+00446 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_set_decrementer_count(<span class="keywordtype">int</span> delay)
+00447 {
+00448 <span class="comment">// NOTE: delay MUST be 0 if a periodic timer is being used.</span>
+00449         <span class="keywordflow">if</span>(!delay)delay = rt_times.intr_time - rdtsc();
+00450 
+00451         <span class="keywordflow">if</span>(delay&lt;1){RT_BUG();}
+00452 <span class="preprocessor">#ifdef CONFIG_4xx</span>
+00453 <span class="preprocessor"></span>        set_dec_4xx(delay);
+00454 <span class="preprocessor">#else</span>
+00455 <span class="preprocessor"></span>        set_dec(delay);
+00456 <span class="preprocessor">#endif</span>
+00457 <span class="preprocessor"></span>}
 00458 
-00459         <span class="keywordflow">if</span>(delay&lt;1){RT_BUG();}
-00460 <span class="preprocessor">#ifdef CONFIG_4xx</span>
-00461 <span class="preprocessor"></span>        set_dec_4xx(delay);
-00462 <span class="preprocessor">#else</span>
-00463 <span class="preprocessor"></span>        set_dec(delay);
-00464 <span class="preprocessor">#endif</span>
-00465 <span class="preprocessor"></span>}
+00459 <span class="comment">// We like keeping it as for i386.</span>
+00460 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> ffnz(<span class="keywordtype">long</span> ul)
+00461 {
+00462         __asm__ __volatile__ (<span class="stringliteral">"cntlzw %0, %1"</span> : <span class="stringliteral">"=r"</span> (ul) : <span class="stringliteral">"r"</span> (ul &amp; (-ul)));
+00463 
+00464         <span class="keywordflow">return</span> 31 - ul;
+00465 }
 00466 
-00467 <span class="comment">// We like keeping it as for i386.</span>
-00468 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> ffnz(<span class="keywordtype">long</span> ul)
-00469 {
-00470         __asm__ __volatile__ (<span class="stringliteral">"cntlzw %0, %1"</span> : <span class="stringliteral">"=r"</span> (ul) : <span class="stringliteral">"r"</span> (ul &amp; (-ul)));
-00471 
-00472         <span class="keywordflow">return</span> 31 - ul;
-00473 }
-00474 
-00475 <span class="preprocessor">#define rt_set_timer_delay(x)  rt_set_decrementer_count(x)</span>
-00476 <span class="preprocessor"></span>
-00477 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00478 
-00479 <span class="preprocessor">#define RTAI_DEFAULT_TICK    200000</span>
-00480 <span class="preprocessor"></span><span class="preprocessor">#define RTAI_DEFAULT_STACKSZ 2000</span>
-00481 <span class="preprocessor"></span>
-00482 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_RTAI_H_ */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:07 2004 for RTAI API by
+00467 <span class="preprocessor">#define rt_set_timer_delay(x)  rt_set_decrementer_count(x)</span>
+00468 <span class="preprocessor"></span>
+00469 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00470 
+00471 <span class="preprocessor">#define RTAI_DEFAULT_TICK    200000</span>
+00472 <span class="preprocessor"></span><span class="preprocessor">#define RTAI_DEFAULT_STACKSZ 2000</span>
+00473 <span class="preprocessor"></span>
+00474 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_RTAI_H_ */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:31 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

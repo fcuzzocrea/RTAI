@@ -126,7 +126,7 @@ Note also that, as already done for the shared memory services in user space, th
 <tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a31">rt_get_cpu_time_ns</a> (void)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a31"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a32">rt_set_runnable_on_cpus</a> (RT_TASK *task, unsigned int cpu_mask)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a32">rt_set_runnable_on_cpus</a> (RT_TASK *task, unsigned long cpu_mask)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Assign CPUs to a task. </em> <a href="#a32"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a33">rt_set_runnable_on_cpuid</a> (RT_TASK *task, unsigned int cpuid)</td></tr>
@@ -1213,7 +1213,7 @@ See also: <a class="el" href="sched__lxrt_8c.html#rt_set_runnable_on_cpus">rt_se
         <tr>
           <td></td>
           <td></td>
-          <td class="md" nowrap>unsigned int&nbsp;</td>
+          <td class="md" nowrap>unsigned long&nbsp;</td>
           <td class="mdname" nowrap> <em>runnable_on_cpus</em></td>
         </tr>
         <tr>
@@ -1471,12 +1471,12 @@ On failure a 0 value is returned if it was not possible to setup the buddy task 
 Make a task run periodically. 
 <p>
 <a class="anchor" name="rt_task_make_periodic"></a> rt_task_make_periodic mark the task <em>task</em>, previously created with <a class="el" href="sched__lxrt_8c.html#rt_task_init">rt_task_init</a>(), as suitable for a periodic execution, with period <em>period</em>, when <a class="el" href="rtai__lxrt_8h.html#rt_task_wait_period">rt_task_wait_period</a>() is called.<p>
-The time of first execution is given by <em>start_time</em> or <em>start_delay</em>. <em>start_time</em> is an absolute value measured in clock ticks. <em>start_delay</em> is relative to the current time and measured in nanoseconds.<p>
+The time of first execution is defined through <em>start_time</em> or <em>start_delay</em>. <em>start_time</em> is an absolute value measured in clock ticks. <em>start_delay</em> is relative to the current time and measured in nanoseconds.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>task</em>&nbsp;</td><td>is a pointer to the task you want to make periodic.</td></tr>
-    <tr><td valign=top><em>start_time</em>&nbsp;</td><td>is the time to wait before the task start running.</td></tr>
-    <tr><td valign=top><em>period</em>&nbsp;</td><td>corresponds to the period of the task.</td></tr>
+    <tr><td valign=top><em>start_time</em>&nbsp;</td><td>is the absolute time to wait before the task start running, in clock ticks.</td></tr>
+    <tr><td valign=top><em>period</em>&nbsp;</td><td>corresponds to the period of the task, in clock ticks.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Return values:</b></dt><dd>
@@ -1486,7 +1486,7 @@ The time of first execution is given by <em>start_time</em> or <em>start_delay</
 </td></tr>
   </table>
 </dl>
-See also: <a class="el" href="rtai__lxrt_8h.html#rt_task_make_periodic_relative_ns">rt_task_make_periodic_relative_ns</a>().     </td>
+See also: <a class="el" href="rtai__lxrt_8h.html#rt_task_make_periodic_relative_ns">rt_task_make_periodic_relative_ns</a>(). Recall that the term clock ticks depends on the mode in which the hard timer runs. So if the hard timer was set as periodic a clock tick will last as the period set in start_rt_timer, while if oneshot mode is used a clock tick will last as the inverse of the running frequency of the hard timer in use and irrespective of any period used in the call to start_rt_timer.     </td>
   </tr>
 </table>
 <a class="anchor" name="a12" doxytag="rtai_lxrt.h::rt_task_make_periodic_relative_ns" ></a><p>
@@ -1533,22 +1533,22 @@ See also: <a class="el" href="rtai__lxrt_8h.html#rt_task_make_periodic_relative_
 Make a task run periodically. 
 <p>
 <a class="anchor" name="rt_task_make_periodic_relative_ns"></a> rt_task_make_periodic_relative_ns mark the task <em>task</em>, previously created with <a class="el" href="sched__lxrt_8c.html#rt_task_init">rt_task_init</a>(), as suitable for a periodic execution, with period <em>period</em>, when <a class="el" href="rtai__lxrt_8h.html#rt_task_wait_period">rt_task_wait_period</a>() is called.<p>
-The time of first execution is given by <em>start_time</em> or <em>start_delay</em>. <em>start_time</em> is an absolute value measured in clock ticks. <em>start_delay</em> is relative to the current time and measured in nanoseconds.<p>
+The time of first execution is defined through <em>start_time</em> or <em>start_delay</em>. <em>start_time</em> is an absolute value measured in clock ticks. <em>start_delay</em> is relative to the current time and measured in nanoseconds.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>task</em>&nbsp;</td><td>is a pointer to the task you want to make periodic.</td></tr>
-    <tr><td valign=top><em>start_delay</em>&nbsp;</td><td>is the time to wait before the task start running.</td></tr>
-    <tr><td valign=top><em>period</em>&nbsp;</td><td>corresponds to the period of the task.</td></tr>
+    <tr><td valign=top><em>start_delay</em>&nbsp;</td><td>is the time, to wait before the task start running, in nanoseconds.</td></tr>
+    <tr><td valign=top><em>period</em>&nbsp;</td><td>corresponds to the period of the task, in nanoseconds.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Return values:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>0</em>&nbsp;</td><td>on success. A negative value on failure as described below:<ul>
-<li><b>EINVAL</b>: task does not refer to a valid task. </li></ul>
+<li><b>EINVAL</b>: task does not refer to a valid task.</li></ul>
 </td></tr>
   </table>
 </dl>
-    </td>
+Recall that the term clock ticks depends on the mode in which the hard timer runs. So if the hard timer was set as periodic a clock tick will last as the period set in start_rt_timer, while if oneshot mode is used a clock tick will last as the inverse of the running frequency of the hard timer in use and irrespective of any period used in the call to start_rt_timer.     </td>
   </tr>
 </table>
 <a class="anchor" name="a10" doxytag="rtai_lxrt.h::rt_task_resume" ></a><p>
@@ -1917,7 +1917,7 @@ stop_rt_timer stops the timer. The timer mode is set to periodic.<p>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:23 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:50 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

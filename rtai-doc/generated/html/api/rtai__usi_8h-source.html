@@ -68,259 +68,251 @@
 00060 <span class="preprocessor"></span>
 00061 <span class="preprocessor">#ifdef __KERNEL__</span>
 00062 <span class="preprocessor"></span>
-00063 <span class="preprocessor">#ifdef CONFIG_RTAI_USI_BUILTIN</span>
-00064 <span class="preprocessor"></span><span class="preprocessor">#define USI_INIT_MODULE     usi_init_module</span>
-00065 <span class="preprocessor"></span><span class="preprocessor">#define USI_CLEANUP_MODULE  usi_cleanup_module</span>
-00066 <span class="preprocessor"></span><span class="preprocessor">#else  </span><span class="comment">/* !CONFIG_RTAI_USI_BUILTIN */</span>
-00067 <span class="preprocessor">#define USI_INIT_MODULE     init_module</span>
-00068 <span class="preprocessor"></span><span class="preprocessor">#define USI_CLEANUP_MODULE  cleanup_module</span>
-00069 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_USI_BUILTIN */</span>
+00063 <span class="preprocessor">#ifdef __cplusplus</span>
+00064 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00065 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00066 
+00067 <span class="keywordtype">int</span> __rtai_usi_init(<span class="keywordtype">void</span>);
+00068 
+00069 <span class="keywordtype">void</span> __rtai_usi_exit(<span class="keywordtype">void</span>);
 00070 
 00071 <span class="preprocessor">#ifdef __cplusplus</span>
-00072 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00072 <span class="preprocessor"></span>}
 00073 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
 00074 
-00075 <span class="keywordtype">int</span> USI_INIT_MODULE(<span class="keywordtype">void</span>);
+00075 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
 00076 
-00077 <span class="keywordtype">void</span> USI_CLEANUP_MODULE(<span class="keywordtype">void</span>);
+00077 <span class="preprocessor">#include &lt;<a class="code" href="rtai__lxrt_8h.html">rtai_lxrt.h</a>&gt;</span>
 00078 
 00079 <span class="preprocessor">#ifdef __cplusplus</span>
-00080 <span class="preprocessor"></span>}
+00080 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
 00081 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
 00082 
-00083 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
-00084 
-00085 <span class="preprocessor">#include &lt;<a class="code" href="rtai__lxrt_8h.html">rtai_lxrt.h</a>&gt;</span>
-00086 
-00087 <span class="preprocessor">#ifdef __cplusplus</span>
-00088 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00089 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00090 
-00091 RTAI_PROTO(<span class="keywordtype">int</span>, rt_expand_handler_data,(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> data, <span class="keywordtype">int</span> *irq))
-00092 {
-00093         *irq = data &amp; 0xFFFF;
-00094         <span class="keywordflow">return</span> (data &amp; 0xFFFF0000) &gt;&gt; 16;
-00095 }
-00096 
-00097 RTAI_PROTO(<span class="keywordtype">int</span>, rt_request_global_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq, <span class="keywordtype">void</span> *hook, <span class="keywordtype">int</span> hooktype))
-00098 {
-00099         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; <span class="keywordtype">void</span> *hook; <span class="keywordtype">int</span> hooktype; } arg = { irq, hook, hooktype };
-00100         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _REQ_GLB_IRQ, &amp;arg).i[LOW];
-00101 }
-00102  
-00103 RTAI_PROTO(<span class="keywordtype">int</span>, rt_free_global_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00104 {
-00105         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00106         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _FREE_GLB_IRQ, &amp;arg).i[LOW];
-00107 }
-00108  
-00109 RTAI_PROTO(<span class="keywordtype">int</span>, rt_startup_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00110 {
-00111         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00112         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _STARTUP_IRQ, &amp;arg).i[LOW];
-00113 }
-00114  
-00115 RTAI_PROTO(<span class="keywordtype">void</span>, rt_shutdown_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00116 {
-00117         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00118         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SHUTDOWN_IRQ, &amp;arg);
-00119 }
-00120  
-00121 RTAI_PROTO(<span class="keywordtype">void</span>, rt_enable_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00122 {
-00123         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00124         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _ENABLE_IRQ, &amp;arg);
-00125 }
-00126  
-00127 RTAI_PROTO(<span class="keywordtype">void</span>, rt_disable_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00128 {
-00129         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00130         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _DISABLE_IRQ, &amp;arg);
-00131 }
-00132  
-00133 RTAI_PROTO(<span class="keywordtype">void</span>, rt_mask_and_ack_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00134 {
-00135         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00136         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _MASK_AND_ACK_IRQ, &amp;arg);
-00137 }
-00138  
-00139 RTAI_PROTO(<span class="keywordtype">void</span>, rt_ack_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00140 {
-00141         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00142         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _ACK_IRQ, &amp;arg);
-00143 }
-00144  
-00145 RTAI_PROTO(<span class="keywordtype">void</span>, rt_unmask_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00146 {
-00147         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00148         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _UNMASK_IRQ, &amp;arg);
-00149 }
-00150  
-00151 RTAI_PROTO(<span class="keywordtype">void</span>, rt_pend_linux_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
-00152 {
-00153         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
-00154         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _PEND_LINUX_IRQ, &amp;arg);
-00155 }
-00156  
-00157 RTAI_PROTO(<span class="keywordtype">void</span> *, rt_spin_lock_init,(<span class="keywordtype">void</span>))
-00158 {
-00159         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00160         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _INIT_SPIN_LOCK, &amp;arg).v[LOW];
-00161 }
-00162  
-00163 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_lock,(<span class="keywordtype">void</span> *lock))
-00164 {
-00165         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
-00166         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_LOCK, &amp;arg);
-00167 }
-00168  
-00169 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_unlock,(<span class="keywordtype">void</span> *lock))
-00170 {
-00171         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
-00172         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_UNLOCK, &amp;arg);
-00173 }
-00174  
-00175 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_lock_irq,(<span class="keywordtype">void</span> *lock))
-00176 {
-00177         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
-00178         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_LOCK_IRQ, &amp;arg);
-00179 }
-00180  
-00181 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_unlock_irq,(<span class="keywordtype">void</span> *lock))
-00182 {
-00183         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
-00184         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_UNLOCK_IRQ, &amp;arg);
-00185 }
-00186  
-00187 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, rt_spin_lock_irqsave,(<span class="keywordtype">void</span> *lock))
-00188 {
-00189         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
-00190         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_LOCK_IRQSV, &amp;arg).i[LOW];
-00191 }
-00192  
-00193 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_unlock_irqrestore,(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags, <span class="keywordtype">void</span> *lock))
-00194 {
-00195         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags; <span class="keywordtype">void</span> *lock; } arg = { flags, lock };
-00196         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_UNLOCK_IRQRST, &amp;arg);
-00197 }
-00198  
-00199 
-00200 RTAI_PROTO(<span class="keywordtype">void</span>, rt_global_cli,(<span class="keywordtype">void</span>))
-00201 {
-00202         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00203         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_CLI, &amp;arg);
-00204 }
-00205 
-00206 RTAI_PROTO(<span class="keywordtype">void</span>, rt_global_sti,(<span class="keywordtype">void</span>))
-00207 {
-00208         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00209         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_STI, &amp;arg);
-00210 }
-00211 
-00212 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, rt_global_save_flags_and_cli,(<span class="keywordtype">void</span>))
-00213 {
-00214         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00215         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_SVFLAGS_CLI, &amp;arg).i[LOW];
-00216 }
-00217  
-00218 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, rt_global_save_flags,(<span class="keywordtype">void</span>))
-00219 {
-00220         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00221         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_SVFLAGS, &amp;arg).i[LOW];
-00222 }
-00223  
-00224 RTAI_PROTO(<span class="keywordtype">void</span>, rt_global_restore_flags,(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags))
-00225 {
-00226         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags; } arg = { flags };
-00227         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_RSTFLAGS, &amp;arg);
-00228 }
-00229 
-00230 RTAI_PROTO(<span class="keywordtype">void</span>, hard_cli,(<span class="keywordtype">void</span>))
-00231 {
-00232         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00233         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _CLI, &amp;arg);
-00234 }
-00235 
-00236 RTAI_PROTO(<span class="keywordtype">void</span>, hard_sti,(<span class="keywordtype">void</span>))
-00237 {
-00238         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00239         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _STI, &amp;arg);
-00240 }
-00241 
-00242 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, hard_save_flags_and_cli,(<span class="keywordtype">void</span>))
-00243 {
-00244         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00245         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SVFLAGS_CLI, &amp;arg).i[LOW];
-00246 }
-00247  
-00248 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, hard_save_flags,(<span class="keywordtype">void</span>))
-00249 {
-00250         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
-00251         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SVFLAGS, &amp;arg).i[LOW];
-00252 }
-00253  
-00254 RTAI_PROTO(<span class="keywordtype">void</span>, hard_restore_flags,(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags))
-00255 {
-00256         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags; } arg = { flags };
-00257         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _RSTFLAGS, &amp;arg);
-00258 }
-00259 
-00260 RTAI_PROTO(<span class="keywordtype">int</span>, rt_wait_intr,(<span class="keywordtype">void</span> *sem, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *irq))
-00261 {
-00262         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lirq;
-00263         <span class="keywordtype">int</span> retval;
-00264         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *sem; <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *lirq; <span class="keywordtype">int</span> size; } arg = { sem, &amp;lirq, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *) };
-00265         retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR, &amp;arg).i[LOW];
-00266         <span class="keywordflow">if</span> (irq) {
-00267                 *irq = lirq;
-00268         }
-00269         <span class="keywordflow">return</span> retval;
-00270 }                                                                               
-00271 
-00272 RTAI_PROTO(<span class="keywordtype">int</span>, rt_wait_intr_if,(<span class="keywordtype">void</span> *sem, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *irq))
-00273 {
-00274         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lirq;
-00275         <span class="keywordtype">int</span> retval;
-00276         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *sem; <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *lirq; <span class="keywordtype">int</span> size; } arg = { sem, &amp;lirq, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *) };
-00277         retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_IF, &amp;arg).i[LOW];
-00278         <span class="keywordflow">if</span> (irq) {
-00279                 *irq = lirq;
-00280         }
-00281         <span class="keywordflow">return</span> retval;
-00282 }                                                                               
-00283 
-00284 RTAI_PROTO(<span class="keywordtype">int</span>, rt_wait_intr_until,(<span class="keywordtype">void</span> *sem, RTIME until, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *irq))
-00285 {
-00286         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lirq;
-00287         <span class="keywordtype">int</span> retval;
-00288         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *sem; RTIME until; <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *lirq; <span class="keywordtype">int</span> size; } arg = { sem, until, &amp;lirq, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *) };
-00289         retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_UNTIL, &amp;arg).i[LOW];
-00290         <span class="keywordflow">if</span> (irq) {
-00291                 *irq = lirq;
-00292         }
-00293         <span class="keywordflow">return</span> retval;
-00294 }                                                                               
-00295 
-00296 RTAI_PROTO(<span class="keywordtype">int</span>, rt_wait_intr_timed,(<span class="keywordtype">void</span> *sem, RTIME delay, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *irq))
-00297 {
-00298         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lirq;
-00299         <span class="keywordtype">int</span> retval;
-00300         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *sem; RTIME delay; <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *lirq; <span class="keywordtype">int</span> size; } arg = { sem, delay, &amp;lirq, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *) };
-00301         retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_TIMED, &amp;arg).i[LOW];
-00302         <span class="keywordflow">if</span> (irq) {
-00303                 *irq = lirq;
-00304         }
-00305         <span class="keywordflow">return</span> retval;
-00306 }                                                                               
-00307 
-00308 <span class="preprocessor">#ifdef __cplusplus</span>
-00309 <span class="preprocessor"></span>}
-00310 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00311 
-00312 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00313 
-00314 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_USI_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:09 2004 for RTAI API by
+00083 RTAI_PROTO(<span class="keywordtype">int</span>, rt_expand_handler_data,(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> data, <span class="keywordtype">int</span> *irq))
+00084 {
+00085         *irq = data &amp; 0xFFFF;
+00086         <span class="keywordflow">return</span> (data &amp; 0xFFFF0000) &gt;&gt; 16;
+00087 }
+00088 
+00089 RTAI_PROTO(<span class="keywordtype">int</span>, rt_request_global_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq, <span class="keywordtype">void</span> *hook, <span class="keywordtype">int</span> hooktype))
+00090 {
+00091         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; <span class="keywordtype">void</span> *hook; <span class="keywordtype">int</span> hooktype; } arg = { irq, hook, hooktype };
+00092         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _REQ_GLB_IRQ, &amp;arg).i[LOW];
+00093 }
+00094  
+00095 RTAI_PROTO(<span class="keywordtype">int</span>, rt_free_global_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00096 {
+00097         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00098         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _FREE_GLB_IRQ, &amp;arg).i[LOW];
+00099 }
+00100  
+00101 RTAI_PROTO(<span class="keywordtype">int</span>, rt_startup_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00102 {
+00103         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00104         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _STARTUP_IRQ, &amp;arg).i[LOW];
+00105 }
+00106  
+00107 RTAI_PROTO(<span class="keywordtype">void</span>, rt_shutdown_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00108 {
+00109         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00110         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SHUTDOWN_IRQ, &amp;arg);
+00111 }
+00112  
+00113 RTAI_PROTO(<span class="keywordtype">void</span>, rt_enable_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00114 {
+00115         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00116         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _ENABLE_IRQ, &amp;arg);
+00117 }
+00118  
+00119 RTAI_PROTO(<span class="keywordtype">void</span>, rt_disable_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00120 {
+00121         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00122         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _DISABLE_IRQ, &amp;arg);
+00123 }
+00124  
+00125 RTAI_PROTO(<span class="keywordtype">void</span>, rt_mask_and_ack_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00126 {
+00127         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00128         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _MASK_AND_ACK_IRQ, &amp;arg);
+00129 }
+00130  
+00131 RTAI_PROTO(<span class="keywordtype">void</span>, rt_ack_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00132 {
+00133         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00134         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _ACK_IRQ, &amp;arg);
+00135 }
+00136  
+00137 RTAI_PROTO(<span class="keywordtype">void</span>, rt_unmask_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00138 {
+00139         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00140         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _UNMASK_IRQ, &amp;arg);
+00141 }
+00142  
+00143 RTAI_PROTO(<span class="keywordtype">void</span>, rt_pend_linux_irq,(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq))
+00144 {
+00145         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> irq; } arg = { irq };
+00146         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _PEND_LINUX_IRQ, &amp;arg);
+00147 }
+00148  
+00149 RTAI_PROTO(<span class="keywordtype">void</span> *, rt_spin_lock_init,(<span class="keywordtype">void</span>))
+00150 {
+00151         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00152         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _INIT_SPIN_LOCK, &amp;arg).v[LOW];
+00153 }
+00154  
+00155 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_lock,(<span class="keywordtype">void</span> *lock))
+00156 {
+00157         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
+00158         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_LOCK, &amp;arg);
+00159 }
+00160  
+00161 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_unlock,(<span class="keywordtype">void</span> *lock))
+00162 {
+00163         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
+00164         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_UNLOCK, &amp;arg);
+00165 }
+00166  
+00167 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_lock_irq,(<span class="keywordtype">void</span> *lock))
+00168 {
+00169         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
+00170         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_LOCK_IRQ, &amp;arg);
+00171 }
+00172  
+00173 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_unlock_irq,(<span class="keywordtype">void</span> *lock))
+00174 {
+00175         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
+00176         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_UNLOCK_IRQ, &amp;arg);
+00177 }
+00178  
+00179 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, rt_spin_lock_irqsave,(<span class="keywordtype">void</span> *lock))
+00180 {
+00181         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *lock; } arg = { lock };
+00182         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_LOCK_IRQSV, &amp;arg).i[LOW];
+00183 }
+00184  
+00185 RTAI_PROTO(<span class="keywordtype">void</span>, rt_spin_unlock_irqrestore,(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags, <span class="keywordtype">void</span> *lock))
+00186 {
+00187         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags; <span class="keywordtype">void</span> *lock; } arg = { flags, lock };
+00188         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SPIN_UNLOCK_IRQRST, &amp;arg);
+00189 }
+00190  
+00191 
+00192 RTAI_PROTO(<span class="keywordtype">void</span>, rt_global_cli,(<span class="keywordtype">void</span>))
+00193 {
+00194         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00195         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_CLI, &amp;arg);
+00196 }
+00197 
+00198 RTAI_PROTO(<span class="keywordtype">void</span>, rt_global_sti,(<span class="keywordtype">void</span>))
+00199 {
+00200         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00201         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_STI, &amp;arg);
+00202 }
+00203 
+00204 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, rt_global_save_flags_and_cli,(<span class="keywordtype">void</span>))
+00205 {
+00206         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00207         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_SVFLAGS_CLI, &amp;arg).i[LOW];
+00208 }
+00209  
+00210 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, rt_global_save_flags,(<span class="keywordtype">void</span>))
+00211 {
+00212         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00213         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_SVFLAGS, &amp;arg).i[LOW];
+00214 }
+00215  
+00216 RTAI_PROTO(<span class="keywordtype">void</span>, rt_global_restore_flags,(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags))
+00217 {
+00218         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags; } arg = { flags };
+00219         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_RSTFLAGS, &amp;arg);
+00220 }
+00221 
+00222 RTAI_PROTO(<span class="keywordtype">void</span>, hard_cli,(<span class="keywordtype">void</span>))
+00223 {
+00224         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00225         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _CLI, &amp;arg);
+00226 }
+00227 
+00228 RTAI_PROTO(<span class="keywordtype">void</span>, hard_sti,(<span class="keywordtype">void</span>))
+00229 {
+00230         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00231         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _STI, &amp;arg);
+00232 }
+00233 
+00234 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, hard_save_flags_and_cli,(<span class="keywordtype">void</span>))
+00235 {
+00236         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00237         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SVFLAGS_CLI, &amp;arg).i[LOW];
+00238 }
+00239  
+00240 RTAI_PROTO(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>, hard_save_flags,(<span class="keywordtype">void</span>))
+00241 {
+00242         <span class="keyword">struct </span>{ <span class="keywordtype">int</span> dummy; } arg = { 0 };
+00243         <span class="keywordflow">return</span> rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SVFLAGS, &amp;arg).i[LOW];
+00244 }
+00245  
+00246 RTAI_PROTO(<span class="keywordtype">void</span>, hard_restore_flags,(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags))
+00247 {
+00248         <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags; } arg = { flags };
+00249         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _RSTFLAGS, &amp;arg);
+00250 }
+00251 
+00252 RTAI_PROTO(<span class="keywordtype">int</span>, rt_wait_intr,(<span class="keywordtype">void</span> *sem, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *irq))
+00253 {
+00254         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lirq;
+00255         <span class="keywordtype">int</span> retval;
+00256         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *sem; <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *lirq; <span class="keywordtype">int</span> size; } arg = { sem, &amp;lirq, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *) };
+00257         retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR, &amp;arg).i[LOW];
+00258         <span class="keywordflow">if</span> (irq) {
+00259                 *irq = lirq;
+00260         }
+00261         <span class="keywordflow">return</span> retval;
+00262 }                                                                               
+00263 
+00264 RTAI_PROTO(<span class="keywordtype">int</span>, rt_wait_intr_if,(<span class="keywordtype">void</span> *sem, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *irq))
+00265 {
+00266         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lirq;
+00267         <span class="keywordtype">int</span> retval;
+00268         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *sem; <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *lirq; <span class="keywordtype">int</span> size; } arg = { sem, &amp;lirq, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *) };
+00269         retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_IF, &amp;arg).i[LOW];
+00270         <span class="keywordflow">if</span> (irq) {
+00271                 *irq = lirq;
+00272         }
+00273         <span class="keywordflow">return</span> retval;
+00274 }                                                                               
+00275 
+00276 RTAI_PROTO(<span class="keywordtype">int</span>, rt_wait_intr_until,(<span class="keywordtype">void</span> *sem, RTIME until, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *irq))
+00277 {
+00278         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lirq;
+00279         <span class="keywordtype">int</span> retval;
+00280         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *sem; RTIME until; <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *lirq; <span class="keywordtype">int</span> size; } arg = { sem, until, &amp;lirq, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *) };
+00281         retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_UNTIL, &amp;arg).i[LOW];
+00282         <span class="keywordflow">if</span> (irq) {
+00283                 *irq = lirq;
+00284         }
+00285         <span class="keywordflow">return</span> retval;
+00286 }                                                                               
+00287 
+00288 RTAI_PROTO(<span class="keywordtype">int</span>, rt_wait_intr_timed,(<span class="keywordtype">void</span> *sem, RTIME delay, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *irq))
+00289 {
+00290         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> lirq;
+00291         <span class="keywordtype">int</span> retval;
+00292         <span class="keyword">struct </span>{ <span class="keywordtype">void</span> *sem; RTIME delay; <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *lirq; <span class="keywordtype">int</span> size; } arg = { sem, delay, &amp;lirq, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *) };
+00293         retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_TIMED, &amp;arg).i[LOW];
+00294         <span class="keywordflow">if</span> (irq) {
+00295                 *irq = lirq;
+00296         }
+00297         <span class="keywordflow">return</span> retval;
+00298 }                                                                               
+00299 
+00300 <span class="preprocessor">#ifdef __cplusplus</span>
+00301 <span class="preprocessor"></span>}
+00302 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00303 
+00304 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00305 
+00306 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_USI_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:32 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

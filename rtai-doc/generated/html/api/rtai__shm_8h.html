@@ -22,6 +22,7 @@ Include dependency graph for rtai_shm.h:<p><center><img src="rtai__shm_8h__incl.
 <area href="rtai__lxrt_8h.html" shape="rect" coords="558,154,625,173" alt="">
 <area href="rtai__sched_8h-source.html" shape="rect" coords="165,85,247,103" alt="">
 <area href="rtai_8h-source.html" shape="rect" coords="14,15,54,34" alt="">
+<area href="errno_8h-source.html" shape="rect" coords="241,15,294,34" alt="">
 <area href="rtai__types_8h-source.html" shape="rect" coords="318,15,398,34" alt="">
 <area href="rtai__nam2num_8h.html" shape="rect" coords="294,85,398,103" alt="">
 </map>
@@ -44,33 +45,33 @@ This graph shows which files directly or indirectly include this file:<p><center
 <a href="rtai__shm_8h-source.html">Go to the source code of this file.</a><table border=0 cellpadding=0 cellspacing=0>
 <tr><td></td></tr>
 <tr><td colspan=2><br><h2>Defines</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a17">rtai_kmalloc</a>(name, size)&nbsp;&nbsp;&nbsp;rt_shm_alloc(name, size, USE_VMALLOC)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a15">rtai_kmalloc</a>(name, size)&nbsp;&nbsp;&nbsp;rt_shm_alloc(name, size, USE_VMALLOC)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a17"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a18">rtai_kfree</a>(name)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a15"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a16">rtai_kfree</a>(name)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a18"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a22">rtai_malloc</a>(name, size)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(0, name, size, USE_VMALLOC, 0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a16"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a20">rtai_malloc</a>(name, size)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(0, name, size, USE_VMALLOC, 0)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a22"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a23">rt_shm_alloc_adr</a>(start_address, name, size, suprt)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(start_address, name, size, suprt, 0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a20"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a21">rt_shm_alloc_adr</a>(start_address, name, size, suprt)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(start_address, name, size, suprt, 0)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a21"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a23">rtai_malloc_adr</a>(start_address, name, size)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(start_address, name, size, USE_VMALLOC, 0)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a23"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a25">rtai_malloc_adr</a>(start_address, name, size)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(start_address, name, size, USE_VMALLOC, 0)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a24">rtai_free</a>(name, adr)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a25"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a26">rtai_free</a>(name, adr)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a24"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a25">rt_heap_close</a>(name, adr)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a26"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a27">rt_heap_close</a>(name, adr)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Close a real time group heap being shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a25"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a35">rt_global_heap_open</a>()&nbsp;&nbsp;&nbsp;rt_heap_open(GLOBAL_HEAP_ID, 0, 0)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Close a real time group heap being shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a27"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a37">rt_global_heap_open</a>()&nbsp;&nbsp;&nbsp;rt_heap_open(GLOBAL_HEAP_ID, 0, 0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Open the global real time heap to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a35"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a36">rt_global_heap_close</a>()&nbsp;&nbsp;&nbsp;rt_heap_close(GLOBAL_HEAP_ID, 0)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Open the global real time heap to be shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a37"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a38">rt_global_heap_close</a>()&nbsp;&nbsp;&nbsp;rt_heap_close(GLOBAL_HEAP_ID, 0)</td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Close the global real time heap being shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a38"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Close the global real time heap being shared inter-intra kernel modules and Linux processes. </em> <a href="group__shm.html#a36"></a><em><br><br></td></tr>
 <tr><td colspan=2><br><h2>Functions</h2></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a1">rt_shm_free</a> (unsigned long name)</td></tr>
 
@@ -100,7 +101,7 @@ This graph shows which files directly or indirectly include this file:<p><center
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a named chunk of the global real time heap. </em> <a href="group__shm.html#a9"></a><em><br><br></td></tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:12 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:35 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -79,7 +79,7 @@ Attach an interrupt object previously initialized by <a class="el" href="group__
     <tr><td valign=top><em>cookie</em>&nbsp;</td><td>A user-defined opaque value which is stored into the interrupt object descriptor for further retrieval by the ISR/ISR handlers.</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned on success. Otherwise, XNERR_INTR_INVALID is returned if a low-level error occurred while attaching the interrupt. XNERR_INTR_BUSY is specifically returned if the interrupt object was already attached.</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned on success. Otherwise, XNERR_NOSYS is returned if a low-level error occurred while attaching the interrupt. XNERR_BUSY is specifically returned if the interrupt object was already attached.</dd></dl>
 Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine must be called on behalf of a thread or IST context.     </td>
   </tr>
@@ -118,7 +118,7 @@ Destroys an interrupt object previously initialized by <a class="el" href="group
     <tr><td valign=top><em>intr</em>&nbsp;</td><td>The descriptor address of the interrupt object to destroy.</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned on success. Otherwise, XNERR_INTR_INVALID is returned if an error occurred while detaching the interrupt (see <a class="el" href="group__intr.html#a5">xnintr_detach()</a>).</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned on success. Otherwise, XNERR_BUSY is returned if an error occurred while detaching the interrupt (see <a class="el" href="group__intr.html#a5">xnintr_detach()</a>).</dd></dl>
 Side-effect: This routine calls the rescheduling procedure as a result of an interrupt service thread deleting its own interrupt object (this should rarely happen though).<p>
 Context: This routine must be called on behalf of a thread or IST context.     </td>
   </tr>
@@ -157,7 +157,7 @@ Detach an interrupt object previously attached by <a class="el" href="group__int
     <tr><td valign=top><em>intr</em>&nbsp;</td><td>The descriptor address of the interrupt object to detach.</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned on success. Otherwise, XNERR_INTR_INVALID is returned if a low-level error occurred while detaching the interrupt. Detaching a non-attached interrupt object leads to a null-effect and returns XN_OK.</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned on success. Otherwise, XNERR_BUSY is returned if a low-level error occurred while detaching the interrupt. Detaching a non-attached interrupt object leads to a null-effect and returns XN_OK.</dd></dl>
 Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine must be called on behalf of a thread or IST context.     </td>
   </tr>
@@ -225,13 +225,20 @@ Initialize an interrupt object.
 <p>
 The nanokernel defines a threaded interrupt model in order to:<p>
 <ul>
-<li>provide a mean to prioritize interrupt handling by software.</li><li>allow the interrupt code to synchronize with other system code using kernel mutexes, therefore reducing the need for hard interrupt masking in critical sections.</li></ul>
+<li>provide a mean for prioritizing interrupt handling by software.</li></ul>
+<p>
+<ul>
+<li>allow the interrupt code to synchronize with other system code using mutexes, therefore reducing the need for hard interrupt masking in critical sections.</li></ul>
 <p>
 Xenomai's nanokernel exhibits a split interrupt handling scheme separated into two parts. The first part is known as the Interrupt Service Routine (ISR), the second is the Interrupt Service Tasklet (IST).<p>
 When an interrupt occurs, the ISR is fired in order to deal with the hardware event as fast as possible, without any interaction with the nanokernel. If the interrupt service code needs to reenter the nanokernel, the ISR may require an associated interrupt service tasklet to be scheduled immediately upon return. The IST has a lightweight thread context that allows it to invoke all nanokernel services safely. A Xenomai interrupt object may be associated with an ISR and/or an IST to process each IRQ event.<p>
+[WARNING] Interrupt service threads/tasklets are deprecated in newer versions of the Xenomai nucleus, basically due to design and performance issues. Do not use the IST facility if you plan to port to RTAI/fusion.<p>
 Upon receipt of an IRQ, the ISR/IST invocation policy is as follows:<p>
 <ul>
-<li>if an ISR has been defined, it is immediately called on behalf of the interrupt stack context.</li><li>if an IST has been defined, then its is scheduled upon return of the ISR if the XN_ISR_SCHED_T bit set in its return code or if no ISR has been defined for this interrupt object. The tasklet will run after all ISRs have completed and all more prioritary IST have returned. In any cases, the IST will run before any regular real-time threads (i.e. all but interrupt service threads).</li></ul>
+<li>if an ISR has been defined, it is immediately called on behalf of the interrupt stack context.</li></ul>
+<p>
+<ul>
+<li>if an IST has been defined, then its is scheduled upon return of the ISR if the XN_ISR_SCHED_T bit set in its return code or if no ISR has been defined for this interrupt object. The tasklet will run after all ISRs have completed and all more prioritary IST have returned. In any cases, the IST will run before any regular real-time threads (i.e. all but interrupt service threads).</li></ul>
 <p>
 If an ISR has been defined, the following bits are checked from its return value:<p>
 <ul>
@@ -253,12 +260,12 @@ If an ISR has been defined, the following bits are checked from its return value
     <tr><td valign=top><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. Since no flags are currently defined, zero should be passed for this parameter.</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned upon success. Otherwise XNERR_INTR_INVALID is returned if the interrupt priority level is out of range.</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned upon success. Otherwise XNERR_PARAM is returned if the interrupt priority level is out of range.</dd></dl>
 Side-effect: This routine calls the rescheduling procedure as a result of starting the interrupt service thread (if any).<p>
 Context: This routine must be called on behalf of a thread context.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:24 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:51 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -174,9 +174,7 @@ Releases a memory region to the memory heap it was previously allocated from.<p>
     <tr><td valign=top><em>block</em>&nbsp;</td><td>The address of the region to release returned by a previous call to <a class="el" href="group__heap.html#a5">xnheap_alloc()</a>.</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned upon success, or one of the possible error codes is returned upon failure:<ul>
-<li>XNERR_HEAP_NOTINH is returned whenever block does not belong to the specified heap.</li><li>XNERR_HEAP_BADBLK is returned whenever block is not a valid region from the specified heap.</li></ul>
-</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned upon success, or XNERR_PARAM is returned whenever the block is not a valid region of the specified heap.</dd></dl>
 Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine can be called on behalf of a thread or IST context     </td>
   </tr>
@@ -240,13 +238,13 @@ Initializes a memory heap suitable for dynamic memory allocation requests. The h
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>XN_OK is returned upon success, or one of the following error codes:<ul>
-<li>XNERR_HEAP_PARAM is returned whenever a parameter is invalid.</li><li>XNERR_HEAP_NOMEM is returned if no initial extent can be allocated for a dynamically extendable heap (i.e. heapaddr == NULL).</li></ul>
+<li>XNERR_PARAM is returned whenever a parameter is invalid.</li><li>XNERR_NOMEM is returned if no initial extent can be allocated for a dynamically extendable heap (i.e. heapaddr == NULL).</li></ul>
 </dd></dl>
 Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine must be called on behalf of a thread context.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:24 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:51 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

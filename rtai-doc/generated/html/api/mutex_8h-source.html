@@ -54,8 +54,8 @@
 00046 <span class="preprocessor">#ifndef _xenomai_mutex_h</span>
 00047 <span class="preprocessor"></span><span class="preprocessor">#define _xenomai_mutex_h</span>
 00048 <span class="preprocessor"></span>
-00049 <span class="preprocessor">#include "<a class="code" href="pod_8h.html">xenomai/pod.h</a>"</span>
-00050 <span class="preprocessor">#include "xenomai/synch.h"</span>
+00049 <span class="preprocessor">#include &lt;<a class="code" href="pod_8h.html">xenomai/pod.h</a>&gt;</span>
+00050 <span class="preprocessor">#include &lt;xenomai/synch.h&gt;</span>
 00051 
 00052 <span class="keyword">struct </span>xnthread;
 00053 
@@ -71,102 +71,112 @@
 00063 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
 00064 <span class="preprocessor">#endif</span>
 00065 <span class="preprocessor"></span>
-00066 <span class="keywordtype">void</span> xnmutex_sleepon_inner(xnmutex_t *mutex,
-00067                            <span class="keyword">struct</span> xnthread *thread);
-00068 
-00069 <span class="keywordtype">void</span> xnmutex_wakeup_inner(xnmutex_t *mutex,
-00070                           <span class="keywordtype">int</span> flags);
-00071 
-00072 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnmutex_owner_p (xnmutex_t *mutex) {
+00066 <span class="keywordtype">void</span> xnmutex_forget_sleeper(<span class="keyword">struct</span> xnthread *sleeper);
+00067 
+00068 <span class="keywordtype">void</span> xnmutex_sleepon_inner(xnmutex_t *mutex,
+00069                            <span class="keyword">struct</span> xnthread *thread);
+00070 
+00071 <span class="keywordtype">void</span> xnmutex_wakeup_inner(xnmutex_t *mutex,
+00072                           <span class="keywordtype">int</span> flags);
 00073 
-00074     <span class="comment">/* This code must be entered interrupts off. */</span>
+00074 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnmutex_owner_p (xnmutex_t *mutex) {
 00075 
-00076     <span class="keywordflow">return</span> (xnarch_atomic_get(&amp;mutex-&gt;lockcnt) &lt; 1 &amp;&amp;
-00077             mutex-&gt;synchbase.owner == nkpod-&gt;<a class="code" href="structxnpod.html#o0">sched</a>.<a class="code" href="structxnsched.html#o3">runthread</a>);
-00078 }
-00079 
-00080 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnmutex_clear_lock (xnmutex_t *mutex,
-00081                                       atomic_counter_t *pcounter) {
-00082 
-00083     <span class="comment">/* This code must be entered interrupts off. */</span>
+00076     <span class="comment">/* This code must be entered interrupts off. */</span>
+00077 
+00078     <span class="keywordflow">return</span> (xnarch_atomic_get(&amp;mutex-&gt;lockcnt) &lt; 1 &amp;&amp;
+00079             mutex-&gt;synchbase.owner == nkpod-&gt;<a class="code" href="structxnpod.html#o0">sched</a>.<a class="code" href="structxnsched.html#o3">runthread</a>);
+00080 }
+00081 
+00082 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnmutex_clear_lock (xnmutex_t *mutex,
+00083                                       atomic_counter_t *pcounter) {
 00084 
-00085     <span class="keywordtype">int</span> s = 0;
+00085     <span class="comment">/* This code must be entered interrupts off. */</span>
 00086 
-00087     <span class="keywordflow">if</span> (xnmutex_owner_p(mutex)) {
-00088         *pcounter = mutex-&gt;lockcnt;
-00089         <span class="keywordflow">if</span> (xnsynch_nsleepers(&amp;mutex-&gt;synchbase) &gt; 0) {
-00090             xnarch_atomic_set(&amp;mutex-&gt;lockcnt,0);
-00091             <span class="comment">/* Wake up one sleeper. */</span>
-00092             xnmutex_wakeup_inner(mutex,XNPOD_NOSWITCH);
-00093             s = -1;
-00094         } <span class="keywordflow">else</span> {
-00095             xnarch_atomic_set(&amp;mutex-&gt;lockcnt,1);
-00096             s = 1;
-00097         }
-00098     }
-00099 
-00100     <span class="keywordflow">return</span> s;
-00101 }
-00102 
-00103 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnmutex_set_lock (xnmutex_t *mutex,
-00104                                      atomic_counter_t *pcounter) {
-00105 
-00106     xnthread_t *runthread = nkpod-&gt;<a class="code" href="structxnpod.html#o0">sched</a>.<a class="code" href="structxnsched.html#o3">runthread</a>;
+00087     <span class="keywordtype">int</span> s = 0;
+00088 
+00089     <span class="keywordflow">if</span> (xnmutex_owner_p(mutex)) {
+00090         *pcounter = mutex-&gt;lockcnt;
+00091         <span class="keywordflow">if</span> (xnsynch_nsleepers(&amp;mutex-&gt;synchbase) &gt; 0) {
+00092             <span class="comment">/* Remove the lock count which accounted for the</span>
+00093 <span class="comment">               sleepers. */</span>
+00094             xnarch_atomic_inc(pcounter);
+00095             xnarch_atomic_set(&amp;mutex-&gt;lockcnt,0);
+00096             <span class="comment">/* Wake up one sleeper. */</span>
+00097             xnmutex_wakeup_inner(mutex,XNPOD_NOSWITCH);
+00098             s = -1;
+00099         } <span class="keywordflow">else</span> {
+00100             xnarch_atomic_set(&amp;mutex-&gt;lockcnt,1);
+00101             s = 1;
+00102         }
+00103     }
+00104 
+00105     <span class="keywordflow">return</span> s;
+00106 }
 00107 
-00108     <span class="comment">/* This code must be entered interrupts off. */</span>
-00109 
-00110     <span class="keywordflow">if</span> (xnarch_atomic_dec_and_test(&amp;mutex-&gt;lockcnt)) {
-00111         <span class="comment">/* Mutex was free on entry */</span>
-00112         xnsynch_set_owner(&amp;mutex-&gt;synchbase,runthread);
-00113     } <span class="keywordflow">else</span> {
-00114            <span class="keywordflow">if</span> (xnsynch_owner(&amp;mutex-&gt;synchbase) != runthread) {
-00115                <span class="comment">/* Mutex was busy on entry */</span>
-00116                xnmutex_sleepon_inner(mutex,runthread);
-00117         }
-00118     }
-00119     xnarch_atomic_set(&amp;mutex-&gt;lockcnt,xnarch_atomic_get(pcounter));
-00120 }
-00121 
-00122     <span class="comment">/* -- Beginning of the exported interface */</span>
-00123 
-00124 <span class="keywordtype">void</span> xnmutex_init(xnmutex_t *mutex);
-00125 
-00126 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnmutex_lock (xnmutex_t *mutex) {
-00127 
-00128     xnthread_t *runthread = nkpod-&gt;<a class="code" href="structxnpod.html#o0">sched</a>.<a class="code" href="structxnsched.html#o3">runthread</a>;
-00129     spl_t s;
-00130 
-00131     splhigh(s);
-00132 
-00133     <span class="keywordflow">if</span> (xnarch_atomic_dec_and_test(&amp;mutex-&gt;lockcnt)) {
-00134         <span class="comment">/* Mutex was free on entry */</span>
-00135         xnsynch_set_owner(&amp;mutex-&gt;synchbase,runthread);
-00136     } <span class="keywordflow">else</span> {
-00137         <span class="keywordflow">if</span> (xnsynch_owner(&amp;mutex-&gt;synchbase) != runthread) {
-00138             <span class="comment">/* Mutex was busy on entry. */</span>
-00139             xnmutex_sleepon_inner(mutex,runthread);
-00140         }
-00141     }
+00108 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnmutex_set_lock (xnmutex_t *mutex,
+00109                                      atomic_counter_t *pcounter) {
+00110 
+00111     xnthread_t *runthread = nkpod-&gt;<a class="code" href="structxnpod.html#o0">sched</a>.<a class="code" href="structxnsched.html#o3">runthread</a>;
+00112 
+00113     <span class="comment">/* This code must be entered interrupts off. */</span>
+00114 
+00115     <span class="keywordflow">if</span> (xnarch_atomic_dec_and_test(&amp;mutex-&gt;lockcnt)) {
+00116         <span class="comment">/* Mutex was free on entry */</span>
+00117         xnsynch_set_owner(&amp;mutex-&gt;synchbase,runthread);
+00118     } <span class="keywordflow">else</span> {
+00119            <span class="keywordflow">if</span> (xnsynch_owner(&amp;mutex-&gt;synchbase) != runthread) {
+00120                <span class="comment">/* Mutex was busy on entry */</span>
+00121                xnmutex_sleepon_inner(mutex,runthread);
+00122         }
+00123     }
+00124 
+00125     <span class="comment">/* Account for the sleepers if any. */</span>
+00126     <span class="keywordflow">if</span> (xnsynch_nsleepers(&amp;mutex-&gt;synchbase) &gt; 0)
+00127         xnarch_atomic_dec(pcounter);
+00128 
+00129     xnarch_atomic_set(&amp;mutex-&gt;lockcnt,xnarch_atomic_get(pcounter));
+00130 }
+00131 
+00132     <span class="comment">/* -- Beginning of the exported interface */</span>
+00133 
+00134 <span class="keywordtype">void</span> xnmutex_init(xnmutex_t *mutex);
+00135 
+00136 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnmutex_lock (xnmutex_t *mutex) {
+00137 
+00138     xnthread_t *runthread = nkpod-&gt;<a class="code" href="structxnpod.html#o0">sched</a>.<a class="code" href="structxnsched.html#o3">runthread</a>;
+00139     spl_t s;
+00140 
+00141     splhigh(s);
 00142 
-00143     splexit(s);
-00144 }
-00145 
-00146 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnmutex_unlock (xnmutex_t *mutex) {
-00147 
-00148     <span class="keywordflow">if</span> (xnarch_atomic_inc_and_test(&amp;mutex-&gt;lockcnt)) {
-00149         <span class="keywordflow">if</span> (xnsynch_nsleepers(&amp;mutex-&gt;synchbase) &gt; 0) {
-00150             <span class="comment">/* Wake up one sleeper. */</span>
-00151             xnmutex_wakeup_inner(mutex,0);
-00152         }
-00153     }
+00143     <span class="keywordflow">if</span> (xnarch_atomic_dec_and_test(&amp;mutex-&gt;lockcnt)) {
+00144         <span class="comment">/* Mutex was free on entry */</span>
+00145         xnsynch_set_owner(&amp;mutex-&gt;synchbase,runthread);
+00146     } <span class="keywordflow">else</span> {
+00147         <span class="keywordflow">if</span> (xnsynch_owner(&amp;mutex-&gt;synchbase) != runthread) {
+00148             <span class="comment">/* Mutex was busy on entry. */</span>
+00149             xnmutex_sleepon_inner(mutex,runthread);
+00150         }
+00151     }
+00152 
+00153     splexit(s);
 00154 }
 00155 
-00156 <span class="preprocessor">#ifdef __cplusplus</span>
-00157 <span class="preprocessor"></span>}
-00158 <span class="preprocessor">#endif</span>
-00159 <span class="preprocessor"></span>
-00160 <span class="preprocessor">#endif </span><span class="comment">/* !_xenomai_mutex_h */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:09 2004 for RTAI API by
+00156 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnmutex_unlock (xnmutex_t *mutex) {
+00157 
+00158     <span class="keywordflow">if</span> (xnarch_atomic_inc_and_test(&amp;mutex-&gt;lockcnt)) {
+00159         <span class="keywordflow">if</span> (xnsynch_nsleepers(&amp;mutex-&gt;synchbase) &gt; 0) {
+00160             <span class="comment">/* Wake up one sleeper. */</span>
+00161             xnmutex_wakeup_inner(mutex,0);
+00162         }
+00163     }
+00164 }
+00165 
+00166 <span class="preprocessor">#ifdef __cplusplus</span>
+00167 <span class="preprocessor"></span>}
+00168 <span class="preprocessor">#endif</span>
+00169 <span class="preprocessor"></span>
+00170 <span class="preprocessor">#endif </span><span class="comment">/* !_xenomai_mutex_h */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:33 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

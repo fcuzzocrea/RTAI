@@ -88,7 +88,7 @@
 00080     <span class="keywordtype">int</span>   arg2;
 00081 } XHDL;
 00082 
-00083 <span class="keyword">struct </span>rt_heap_t { <span class="keywordtype">void</span> *hkadr, *huadr; <span class="keywordtype">int</span> hsize; spinlock_t *hlock; };
+00083 <span class="keyword">struct </span>rt_heap_t { <span class="keywordtype">void</span> *hkadr, *huadr; <span class="keywordtype">int</span> hsize; };
 00084 
 00085 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_task_struct {
 00086 
@@ -175,7 +175,7 @@
 00167 <span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
 00168 <span class="preprocessor">#endif </span><span class="comment">/* !__cplusplus */</span>
 00169 
-00170 <span class="keywordtype">int</span> <a class="code" href="sched__up_8c.html#a50">rt_task_init</a>(<span class="keyword">struct</span> rt_task_struct *task,
+00170 <span class="keywordtype">int</span> <a class="code" href="sched__up_8c.html#a47">rt_task_init</a>(<span class="keyword">struct</span> rt_task_struct *task,
 00171                  <span class="keywordtype">void</span> (*rt_thread)(<span class="keywordtype">int</span>),
 00172                  <span class="keywordtype">int</span> data,
 00173                  <span class="keywordtype">int</span> stack_size,
@@ -183,7 +183,7 @@
 00175                  <span class="keywordtype">int</span> uses_fpu,
 00176                  <span class="keywordtype">void</span>(*signal)(<span class="keywordtype">void</span>));
 00177 
-00178 <span class="keywordtype">int</span> <a class="code" href="sched__up_8c.html#a51">rt_task_init_cpuid</a>(<span class="keyword">struct</span> rt_task_struct *task,
+00178 <span class="keywordtype">int</span> <a class="code" href="sched__up_8c.html#a48">rt_task_init_cpuid</a>(<span class="keyword">struct</span> rt_task_struct *task,
 00179                        <span class="keywordtype">void</span> (*rt_thread)(<span class="keywordtype">int</span>),
 00180                        <span class="keywordtype">int</span> data,
 00181                        <span class="keywordtype">int</span> stack_size,
@@ -192,17 +192,17 @@
 00184                        <span class="keywordtype">void</span>(*signal)(<span class="keywordtype">void</span>),
 00185                        <span class="keywordtype">unsigned</span> run_on_cpu);
 00186 
-00187 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a54">rt_set_runnable_on_cpus</a>(<span class="keyword">struct</span> rt_task_struct *task,
-00188                              <span class="keywordtype">unsigned</span> cpu_mask);
+00187 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a51">rt_set_runnable_on_cpus</a>(<span class="keyword">struct</span> rt_task_struct *task,
+00188                              <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> cpu_mask);
 00189 
-00190 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a55">rt_set_runnable_on_cpuid</a>(<span class="keyword">struct</span> rt_task_struct *task,
+00190 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a52">rt_set_runnable_on_cpuid</a>(<span class="keyword">struct</span> rt_task_struct *task,
 00191                               <span class="keywordtype">unsigned</span> cpuid);
 00192 
 00193 <span class="keywordtype">void</span> rt_set_sched_policy(<span class="keyword">struct</span> rt_task_struct *task,
 00194                          <span class="keywordtype">int</span> policy,
 00195                          <span class="keywordtype">int</span> rr_quantum_ns);
 00196 
-00197 <span class="keywordtype">int</span> <a class="code" href="sched__up_8c.html#a61">rt_task_delete</a>(<span class="keyword">struct</span> rt_task_struct *task);
+00197 <span class="keywordtype">int</span> <a class="code" href="sched__up_8c.html#a58">rt_task_delete</a>(<span class="keyword">struct</span> rt_task_struct *task);
 00198 
 00199 <span class="keywordtype">int</span> <a class="code" href="common_8c.html#a12">rt_get_task_state</a>(<span class="keyword">struct</span> rt_task_struct *task);
 00200 
@@ -216,14 +216,14 @@
 00208 
 00209 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a24">rt_set_oneshot_mode</a>(<span class="keywordtype">void</span>);
 00210 
-00211 RTIME <a class="code" href="sched__up_8c.html#a68">start_rt_timer</a>(<span class="keywordtype">int</span> period);
+00211 RTIME <a class="code" href="sched__up_8c.html#a65">start_rt_timer</a>(<span class="keywordtype">int</span> period);
 00212 
 00213 RTIME start_rt_timer_cpuid(<span class="keywordtype">int</span> period,
 00214                            <span class="keywordtype">int</span> cpuid);
 00215 
 00216 <span class="preprocessor">#define start_rt_timer_ns(period) start_rt_timer(nano2count((period)))</span>
 00217 <span class="preprocessor"></span>
-00218 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a70">start_rt_apic_timers</a>(<span class="keyword">struct</span> apic_timer_setup_data *setup_mode,
+00218 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a67">start_rt_apic_timers</a>(<span class="keyword">struct</span> apic_timer_setup_data *setup_mode,
 00219                           <span class="keywordtype">unsigned</span> rcvr_jiffies_cpuid);
 00220 
 00221 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a18">stop_rt_timer</a>(<span class="keywordtype">void</span>);
@@ -240,28 +240,28 @@
 00232   
 00233 <span class="keywordtype">void</span> <a class="code" href="common_8c.html#a13">rt_linux_use_fpu</a>(<span class="keywordtype">int</span> use_fpu_flag);
 00234 
-00235 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a73">rt_preempt_always</a>(<span class="keywordtype">int</span> yes_no);
+00235 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a70">rt_preempt_always</a>(<span class="keywordtype">int</span> yes_no);
 00236 
-00237 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a74">rt_preempt_always_cpuid</a>(<span class="keywordtype">int</span> yes_no,
+00237 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a71">rt_preempt_always_cpuid</a>(<span class="keywordtype">int</span> yes_no,
 00238                              <span class="keywordtype">unsigned</span> cpuid);
 00239 
-00240 RTIME <a class="code" href="sched__up_8c.html#a90">count2nano</a>(RTIME timercounts);
+00240 RTIME <a class="code" href="sched__up_8c.html#a81">count2nano</a>(RTIME timercounts);
 00241 
-00242 RTIME <a class="code" href="sched__up_8c.html#a91">nano2count</a>(RTIME nanosecs);
+00242 RTIME <a class="code" href="sched__up_8c.html#a82">nano2count</a>(RTIME nanosecs);
 00243   
-00244 RTIME <a class="code" href="sched__up_8c.html#a92">count2nano_cpuid</a>(RTIME timercounts,
+00244 RTIME <a class="code" href="sched__up_8c.html#a83">count2nano_cpuid</a>(RTIME timercounts,
 00245                        <span class="keywordtype">unsigned</span> cpuid);
 00246 
-00247 RTIME <a class="code" href="sched__up_8c.html#a93">nano2count_cpuid</a>(RTIME nanosecs,
+00247 RTIME <a class="code" href="sched__up_8c.html#a84">nano2count_cpuid</a>(RTIME nanosecs,
 00248                        <span class="keywordtype">unsigned</span> cpuid);
 00249   
 00250 RTIME <a class="code" href="group__lxrt.html#a19">rt_get_time</a>(<span class="keywordtype">void</span>);
 00251 
-00252 RTIME <a class="code" href="sched__up_8c.html#a95">rt_get_time_cpuid</a>(<span class="keywordtype">unsigned</span> cpuid);
+00252 RTIME <a class="code" href="sched__up_8c.html#a86">rt_get_time_cpuid</a>(<span class="keywordtype">unsigned</span> cpuid);
 00253 
 00254 RTIME <a class="code" href="group__lxrt.html#a30">rt_get_time_ns</a>(<span class="keywordtype">void</span>);
 00255 
-00256 RTIME <a class="code" href="sched__up_8c.html#a97">rt_get_time_ns_cpuid</a>(<span class="keywordtype">unsigned</span> cpuid);
+00256 RTIME <a class="code" href="sched__up_8c.html#a88">rt_get_time_ns_cpuid</a>(<span class="keywordtype">unsigned</span> cpuid);
 00257 
 00258 RTIME <a class="code" href="group__lxrt.html#a31">rt_get_cpu_time_ns</a>(<span class="keywordtype">void</span>);
 00259 
@@ -340,23 +340,23 @@
 00332 
 00333 <span class="keyword">static</span> <span class="keyword">inline</span> RTIME timeval2count(<span class="keyword">struct</span> timeval *t)
 00334 {
-00335         <span class="keywordflow">return</span> <a class="code" href="sched__up_8c.html#a91">nano2count</a>(t-&gt;tv_sec*1000000000LL + t-&gt;tv_usec*1000);
+00335         <span class="keywordflow">return</span> <a class="code" href="sched__up_8c.html#a82">nano2count</a>(t-&gt;tv_sec*1000000000LL + t-&gt;tv_usec*1000);
 00336 }
 00337 
 00338 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> count2timeval(RTIME rt, <span class="keyword">struct</span> timeval *t)
 00339 {
-00340         t-&gt;tv_sec = ulldiv(<a class="code" href="sched__up_8c.html#a90">count2nano</a>(rt), 1000000000, (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;t-&gt;tv_usec);
+00340         t-&gt;tv_sec = ulldiv(<a class="code" href="sched__up_8c.html#a81">count2nano</a>(rt), 1000000000, (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;t-&gt;tv_usec);
 00341         t-&gt;tv_usec /= 1000;
 00342 }
 00343 
 00344 <span class="keyword">static</span> <span class="keyword">inline</span> RTIME timespec2count(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *t)
 00345 {
-00346         <span class="keywordflow">return</span> <a class="code" href="sched__up_8c.html#a91">nano2count</a>(t-&gt;tv_sec*1000000000LL + t-&gt;tv_nsec);
+00346         <span class="keywordflow">return</span> <a class="code" href="sched__up_8c.html#a82">nano2count</a>(t-&gt;tv_sec*1000000000LL + t-&gt;tv_nsec);
 00347 }
 00348 
 00349 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> count2timespec(RTIME rt, <span class="keyword">struct</span> timespec *t)
 00350 {
-00351         t-&gt;tv_sec = ulldiv(<a class="code" href="sched__up_8c.html#a90">count2nano</a>(rt), 1000000000, (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;t-&gt;tv_nsec);
+00351         t-&gt;tv_sec = ulldiv(<a class="code" href="sched__up_8c.html#a81">count2nano</a>(rt), 1000000000, (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;t-&gt;tv_nsec);
 00352 }
 00353 
 00354 <span class="keyword">static</span> <span class="keyword">inline</span> RTIME timespec2nanos(<span class="keyword">const</span> <span class="keyword">struct</span> timespec *t)
@@ -423,7 +423,7 @@
 00415 <span class="preprocessor">#endif </span><span class="comment">/* !__KERNEL__ || __cplusplus */</span>
 00416 
 00417 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_SCHED_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Feb 13 21:08:08 2004 for RTAI API by
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jun 14 03:17:31 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -199,22 +199,22 @@ unsigned long sqilter = 0xFFFFFFFF;
 
 #define rt_free_sched_ipi()     rt_free_cpu_own_irq(SCHED_IPI)
 
-static inline void sched_get_global_lock(int cpuid)
-{
-	if (!test_and_set_bit(cpuid, locked_cpus)) {
-		while (test_and_set_bit(31, locked_cpus)) {
-			CPU_RELAX(cpuid);
-		}
-	}
-}
+#define sched_get_global_lock(cpuid) \
+do { \
+	if (!test_and_set_bit(cpuid, locked_cpus)) { \
+		while (test_and_set_bit(31, locked_cpus)) { \
+			CPU_RELAX(cpuid); \
+		} \
+	} \
+} while (0)
 
-static inline void sched_release_global_lock(int cpuid)
-{
-	if (test_and_clear_bit(cpuid, locked_cpus)) {
-		test_and_clear_bit(31, locked_cpus);
-		CPU_RELAX(cpuid);
-	}
-}
+#define sched_release_global_lock(cpuid) \
+do { \
+	if (test_and_clear_bit(cpuid, locked_cpus)) { \
+		test_and_clear_bit(31, locked_cpus); \
+		CPU_RELAX(cpuid); \
+	} \
+} while (0)
 
 #else /* !CONFIG_SMP */
 
@@ -708,13 +708,13 @@ void rt_schedule_on_schedule_ipi(void)
 	int prio, delay, preempt;
 	unsigned long flags;
 
+        rtai_hw_lock(flags);
 	ASSIGN_RT_CURRENT;
 
 	sched_rqsted[cpuid] = 1;
 	prio = RT_SCHED_LINUX_PRIORITY;
 	task = new_task = &rt_linux_task;
 
-        rtai_hw_lock(flags);
 	sched_get_global_lock(cpuid);
 	RR_YIELD();
 	if (oneshot_running) {
@@ -838,13 +838,13 @@ void rt_schedule(void)
 	int prio, delay, preempt;
 	unsigned long flags;
 
+        rtai_hw_lock(flags);
 	ASSIGN_RT_CURRENT;
 
 	sched_rqsted[cpuid] = 1;
 	prio = RT_SCHED_LINUX_PRIORITY;
 	task = new_task = &rt_linux_task;
 
-        rtai_hw_lock(flags);
 	RR_YIELD();
 	if (oneshot_running) {
 #ifdef ANTICIPATE
@@ -1136,13 +1136,13 @@ static void rt_timer_handler(void)
 	int prio, delay, preempt; 
 	unsigned long flags;
 
+        rtai_hw_lock(flags);
 	ASSIGN_RT_CURRENT;
 
 	sched_rqsted[cpuid] = 1;
 	prio = RT_SCHED_LINUX_PRIORITY;
 	task = new_task = &rt_linux_task;
 
-        rtai_hw_lock(flags);
 #ifdef CONFIG_X86_REMOTE_DEBUG
 	if (oneshot_timer) {    // Resync after possibly hitting a breakpoint
 		rt_times.intr_time = rdtsc();

@@ -128,11 +128,14 @@ static unsigned rthal_smi_saved_bits;
 
 void rthal_smi_disable(void)
 {
+    unsigned ctrl;
+
     if(!rthal_smi_en_addr)
         return;
 
-    rthal_smi_saved_bits = inl(rthal_smi_en_addr) & rthal_smi_masked_bits;
-    mask_bits(rthal_smi_masked_bits, rthal_smi_en_addr);
+    ctrl = inl(rthal_smi_en_addr)
+    rthal_smi_saved_bits = ctrl & rthal_smi_masked_bits;
+    outl(ctrl & ~rthal_smi_saved_bits, rthal_smi_en_addr);
 }
 
 void rthal_smi_restore(void)

@@ -173,3 +173,10 @@ int pthread_mutexattr_setprotocol (pthread_mutexattr_t *attr, int proto)
 
     return 0;
 }
+
+EXPORT_SYMBOL(pthread_mutexattr_init);
+EXPORT_SYMBOL(pthread_mutexattr_destroy);
+EXPORT_SYMBOL(pthread_mutexattr_gettype);
+EXPORT_SYMBOL(pthread_mutexattr_settype);
+EXPORT_SYMBOL(pthread_mutexattr_getprotocol);
+EXPORT_SYMBOL(pthread_mutexattr_setprotocol);

@@ -27,7 +27,7 @@ int clock_getres (clockid_t clock_id, struct timespec *res)
     if (clock_id != CLOCK_MONOTONIC || !res)
         return EINVAL;
 
-    ticks2timespec(res, 1);
+    ticks2ts(res, 1);
 
     return 0;
 }
@@ -38,7 +38,7 @@ int clock_gettime (clockid_t clock_id, struct timespec *tp)
     if (clock_id != CLOCK_MONOTONIC || !tp)
         return EINVAL;
 
-    ticks2timespec(tp, xnpod_get_time());
+    ticks2ts(tp, xnpod_get_time());
 
     return 0;    
 }
@@ -49,7 +49,7 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
     if (clock_id != CLOCK_MONOTONIC || !tp || tp->tv_nsec > 1000000000)
         return EINVAL;
 
-    xnpod_set_time(timespec2ticks(tp));
+    xnpod_set_time(ts2ticks_ceil(tp));
 
     return 0;
 }
@@ -67,7 +67,7 @@ int clock_nanosleep (clockid_t clock_id,
         return EINVAL;
 
     cur = pse51_current_thread();
-    timeout = timespec2ticks(rqtp);
+    timeout = ts2ticks_ceil(rqtp);
     start = xnpod_get_time();
 
     switch (flags)
@@ -87,7 +87,7 @@ int clock_nanosleep (clockid_t clock_id,
 
     xnlock_get_irqsave(&nklock, s);
     
-    xnpod_suspend_thread(&cur->threadbase, XNDELAY, timeout,NULL);
+    xnpod_suspend_thread(&cur->threadbase, XNDELAY, timeout+1, NULL);
 
     thread_cancellation_point(cur);
         
@@ -98,7 +98,7 @@ int clock_nanosleep (clockid_t clock_id,
         if (flags == 0 && rmtp) {
             xnticks_t passed = xnpod_get_time() - start;
 
-            ticks2timespec(rmtp, passed < timeout ? timeout-passed : 0);
+            ticks2ts(rmtp, passed < timeout ? timeout-passed : 0);
         }
 
         return EINTR;
@@ -113,3 +113,9 @@ int nanosleep(const struct timespec *rqtp, struct timespec *rmtp) {
 
     return clock_nanosleep(CLOCK_REALTIME, 0, rqtp, rmtp);
 }
+
+EXPORT_SYMBOL(clock_getres);
+EXPORT_SYMBOL(clock_gettime);
+EXPORT_SYMBOL(clock_settime);
+EXPORT_SYMBOL(clock_nanosleep);
+EXPORT_SYMBOL(nanosleep);

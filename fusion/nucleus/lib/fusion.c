@@ -23,12 +23,37 @@
 #include <errno.h>
 #include <unistd.h>
 #include <limits.h>
-#include <nucleus/asm/hal.h>            /* For rthal_llimd. */
 #include <nucleus/fusion.h>
 
 static int __fusion_muxid;
 
 static xnsysinfo_t __fusion_info;
+
+static unsigned long long ullimd(unsigned long long ull, u_long m, u_long d)
+
+{
+    u_long h, l, mlh, mll, qh, r, ql;
+    unsigned long long mh, ml;
+
+    h = ull >> 32; l = ull & 0xffffffff; /* Split ull. */
+    mh = (unsigned long long) h * m;
+    ml = (unsigned long long) l * m;
+    mlh = ml >> 32; mll = ml & 0xffffffff; /* Split ml. */
+    mh += mlh;
+    qh = mh / d;
+    r = mh % d;
+    ml = (((unsigned long long) r) << 32) + mll; /* assemble r and mll */
+    ql = ml / d;
+
+    return (((unsigned long long) qh) << 32) + ql;
+}
+
+static long long llimd(long long ll, u_long m, u_long d) {
+
+    if(ll < 0)
+        return -ullimd(-ll, m, d);
+    return ullimd(ll, m, d);
+}
 
 static inline int __init_skin (void)
 
@@ -176,9 +201,7 @@ int pthread_ns2tsc_rt(nanostime_t ns, nanostime_t *ptsc)
     if (__fusion_muxid == 0)
 	return -ENOSYS;
 
-    *ptsc = ( ns >= 0
-              ? rthal_llimd(ns, __fusion_info.cpufreq, 1000000000)
-              : -rthal_llimd(-ns, __fusion_info.cpufreq, 1000000000) );
+    *ptsc = llimd(ns, __fusion_info.cpufreq, 1000000000);
 
     return 0;
 }
@@ -189,9 +212,7 @@ int pthread_tsc2ns_rt(nanostime_t tsc, nanostime_t *pns)
     if (__fusion_muxid == 0)
 	return -ENOSYS;
 
-    *pns = ( tsc >= 0
-             ? rthal_llimd(tsc, 1000000000, __fusion_info.cpufreq)
-             : -rthal_llimd(-tsc, 1000000000, __fusion_info.cpufreq) );
+    *pns = llimd(tsc, 1000000000, __fusion_info.cpufreq);
 
     return 0;
 }

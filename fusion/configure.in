@@ -298,6 +298,25 @@ else
   RTAI_PIPE_NRDEV=-1
 fi
 
+AC_MSG_CHECKING(for per-cpu timer list)
+AC_ARG_ENABLE(percpu-timer,
+	AS_HELP_STRING([--enable-percpu-timer], 
+                        [Enable per-cpu timer support in nucleus]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_PERCPU_TIMER=y ;;
+	*) unset CONFIG_RTAI_OPT_PERCPU_TIMER ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_PERCPU_TIMER:-no})
+
+AC_MSG_CHECKING(for trace module)
+AC_ARG_ENABLE(traces,
+        AS_HELP_STRING([--enable-traces], [Enable trace module]),
+        [case "$enableval" in
+        y | yes) CONFIG_RTAI_OPT_TRACES=y ;;
+        *) unset CONFIG_RTAI_OPT_TRACES ;;
+        esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_TRACES:-no})
+
 AC_MSG_CHECKING(for debug support in nucleus)
 AC_ARG_ENABLE(nucleus-debug,
 	AS_HELP_STRING([--enable-nucleus-debug], [Enable debug support in nucleus]),
@@ -351,15 +370,6 @@ AC_ARG_ENABLE(user-debug,
 	*) unset CONFIG_RTAI_OPT_USYMS ;;
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_USYMS:-no})
-
-AC_MSG_CHECKING(for trace module)
-AC_ARG_ENABLE(traces,
-        AS_HELP_STRING([--enable-traces], [Enable trace module]),
-        [case "$enableval" in
-        y | yes) CONFIG_RTAI_OPT_TRACES=y ;;
-        *) unset CONFIG_RTAI_OPT_TRACES ;;
-        esac])
-AC_MSG_RESULT(${CONFIG_RTAI_OPT_TRACES:-no})
 
 AC_MSG_CHECKING(for POSIX skin)
 AC_ARG_ENABLE(posix-skin,
@@ -710,9 +720,10 @@ AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_SCHED_LATENCY,$CONFIG_RTAI_HW_SCHED_LATENCY,[K
 test \! x$CONFIG_RTAI_HW_FPU = x && AC_DEFINE(CONFIG_RTAI_HW_FPU,1,[Kconfig])
 test \! x$CONFIG_RTAI_HW_APERIODIC_TIMER = x && AC_DEFINE(CONFIG_RTAI_HW_APERIODIC_TIMER,1,[Kconfig])
 
+test x$CONFIG_RTAI_OPT_PERCPU_TIMER = xy && AC_DEFINE(CONFIG_RTAI_OPT_PERCPU_TIMER,1,[Kconfig])
+test x$CONFIG_RTAI_OPT_TRACES = xy && AC_DEFINE(CONFIG_RTAI_OPT_TRACES,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_DEBUG = xy && AC_DEFINE(CONFIG_RTAI_OPT_DEBUG,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_TIMESTAMPS = xy && AC_DEFINE(CONFIG_RTAI_OPT_TIMESTAMPS,1,[Kconfig])
-test x$CONFIG_RTAI_OPT_TRACES = xy && AC_DEFINE(CONFIG_RTAI_OPT_TRACES,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_FUSION = xy && AC_DEFINE(CONFIG_RTAI_OPT_FUSION,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_PIPE = xy && AC_DEFINE(CONFIG_RTAI_OPT_PIPE,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_PIPE_NRDEV,$CONFIG_RTAI_OPT_PIPE_NRDEV,[Kconfig])

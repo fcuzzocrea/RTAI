@@ -279,8 +279,13 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     initq(&pod->tswitchq);
     initq(&pod->tdeleteq);
 
-    for (n = 0; n < XNTIMER_WHEELSIZE; n++)
-        initq(&pod->timerwheel[n]);
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+    for (cpu = 0; cpu < xnarch_num_online_cpus(); cpu++)
+#else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
+        cpu = XNTIMER_KEEPER_ID;
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+        for (n = 0; n < XNTIMER_WHEELSIZE; n++)
+            initq(&pod->sched[cpu].timerwheel[n]);
 
     /* No direct handler here since the host timer processing is
        postponed to xnintr_irq_handler(), as part of the interrupt
@@ -1263,6 +1268,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
            a call to xnpod_suspend_thread(thread,XNDELAY,0,NULL). */
         __setbits(thread->status,XNDELAY);
 
+        xntimer_set_sched(&thread->rtimer, thread->sched);
         if (xntimer_start(&thread->rtimer,timeout,XN_INFINITE) < 0)
 	    {
 	    /* Bad timeout: rollback everything we've just done... */
@@ -1720,6 +1726,9 @@ int xnpod_migrate_thread (int cpu)
     xnsched_set_resched(thread->sched);
 
     thread->sched = xnpod_sched_slot(cpu);
+
+    /* Migrate the thread periodic timer. */
+    xntimer_set_sched(&thread->ptimer, thread->sched);
 
     /* Put thread in the ready queue of the destination CPU's scheduler. */
     xnpod_resume_thread(thread, 0);
@@ -2887,6 +2896,7 @@ unlock_and_exit:
        xntimer_start() only _after_ the hw timer has been set up
        through xnarch_start_timer(). */
 
+    xntimer_set_sched(&nkpod->htimer, XNTIMER_KEEPER_ID);
     xntimer_start(&nkpod->htimer,
                   delta,
                   XNARCH_HOST_TICK / nkpod->tickvalue);
@@ -2973,18 +2983,20 @@ void xnpod_stop_timer (void)
 int xnpod_announce_tick (xnintr_t *intr)
 
 {
-    unsigned cpu, nr_cpus;
+#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
+    unsigned nr_cpus;
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+    unsigned cpu;
     spl_t s;
 
-#if CONFIG_SMP
+    cpu = xnarch_current_cpu();
+
+#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
     /* On SMP machines, the timers may tick on several CPUs, in which case, only
        one must be used. */
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
-    if(testbits(nkpod->status, XNTMPER))
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        if(xnarch_current_cpu() != 0)
-            return XN_ISR_HANDLED;
-#endif /* CONFIG_SMP */
+    if(cpu != XNTIMER_KEEPER_ID)
+        return XN_ISR_HANDLED;
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -2998,9 +3010,11 @@ int xnpod_announce_tick (xnintr_t *intr)
 	goto unlock_and_exit;
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
+#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
     nr_cpus = xnarch_num_online_cpus();
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
+#endif /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
         {
         xnthread_t *runthread = xnpod_sched_slot(cpu)->runthread;
 
@@ -3100,6 +3114,7 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
 
     xnlock_get_irqsave(&nklock,s);
 
+    xntimer_set_sched(&thread->ptimer, thread->sched);
     if (idate == XN_INFINITE)
 	xntimer_start(&thread->ptimer,period,period);
     else

@@ -19,8 +19,9 @@
 #ifndef _POSIX_INTERNAL_H
 #define _POSIX_INTERNAL_H
 
-#include "nucleus/xenomai.h"
-#include "posix/posix.h"
+#include <nucleus/xenomai.h>
+#include <nucleus/fusion.h>
+#include <posix/posix.h>
 
 #define PSE51_MAGIC(n) (0x8686##n##n)
 #define PSE51_ANY_MAGIC         PSE51_MAGIC(00)
@@ -34,8 +35,8 @@
 #define PSE51_KEY_MAGIC         PSE51_MAGIC(07)
 #define PSE51_ONCE_MAGIC        PSE51_MAGIC(08)
 
-#define PSE51_MIN_PRIORITY      0
-#define PSE51_MAX_PRIORITY      255
+#define PSE51_MIN_PRIORITY      FUSION_LOW_PRIO
+#define PSE51_MAX_PRIORITY      FUSION_HIGH_PRIO
 
 
 #define pse51_obj_active(h,m,t) \
@@ -46,14 +47,29 @@
 
 #define pse51_mark_deleted(t) ((t)->magic = ~(t)->magic)
 
-#define ticks2timespec(timespec, ticks)                         \
-do {                                                            \
-    (timespec)->tv_nsec = xnpod_ticks2ns(ticks);              \
-    (timespec)->tv_sec = (timespec)->tv_nsec / 1000000000;      \
-    (timespec)->tv_nsec %= 1000000000;                          \
-} while(0)
+static inline void ticks2ts(struct timespec *ts, xnticks_t ticks)
+{
+    ts->tv_sec = xnarch_uldivrem(xnpod_ticks2ns(ticks),
+                                 1000000000, &ts->tv_nsec);
+}
 
-#define timespec2ticks(timespec) \
-(xnpod_ns2ticks((timespec)->tv_sec*1000000000+(timespec)->tv_nsec))
+static inline xnticks_t ts2ticks_floor(const struct timespec *ts)
+{
+    xntime_t nsecs = ts->tv_nsec;
+    if(ts->tv_sec)
+        nsecs += (xntime_t) ts->tv_sec * 1000000000;
+    return xnpod_ns2ticks(nsecs);
+}
+
+static inline xnticks_t ts2ticks_ceil(const struct timespec *ts)
+{
+    xntime_t nsecs = ts->tv_nsec;
+    unsigned long rem;
+    xnticks_t ticks;
+    if(ts->tv_sec)
+        nsecs += (xntime_t) ts->tv_sec * 1000000000;
+    ticks = xnarch_ulldiv(nsecs, xnpod_get_tickval(), &rem);
+    return rem ? ticks+1 : ticks;
+}
 
 #endif /* !_POSIX_INTERNAL_H */

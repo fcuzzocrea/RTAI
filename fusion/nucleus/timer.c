@@ -124,7 +124,12 @@ void xntimer_init (xntimer_t *timer,
     timer->interval = 0;
     timer->date = XN_INFINITE;
     timer->prio = XNTIMER_STDPRIO;
-
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+    timer->sched = xnpod_current_sched();
+#else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
+    timer->sched = xnpod_sched_slot(XNTIMER_KEEPER_ID);
+#endif  /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+    
     xnarch_init_display_context(timer);
 }
 
@@ -163,8 +168,9 @@ void xntimer_destroy (xntimer_t *timer)
 static inline void xntimer_enqueue_periodic (xntimer_t *timer)
 
 {
+    xnsched_t *sched = timer->sched;
     /* Just prepend the new timer to the proper slot. */
-    prependq(&nkpod->timerwheel[timer->date & XNTIMER_WHEELMASK],&timer->link);
+    prependq(&sched->timerwheel[timer->date & XNTIMER_WHEELMASK],&timer->link);
     __clrbits(timer->status,XNTIMER_DEQUEUED);
 }
 
@@ -172,7 +178,7 @@ static inline void xntimer_dequeue_periodic (xntimer_t *timer)
 
 {
     unsigned slot = (timer->date & XNTIMER_WHEELMASK);
-    removeq(&nkpod->timerwheel[slot],&timer->link);
+    removeq(&timer->sched->timerwheel[slot],&timer->link);
     __setbits(timer->status,XNTIMER_DEQUEUED);
 }
 
@@ -181,7 +187,7 @@ static inline void xntimer_dequeue_periodic (xntimer_t *timer)
 static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
 
 {
-    xnqueue_t *q = &nkpod->timerwheel[0];
+    xnqueue_t *q = &timer->sched->timerwheel[0];
     xnholder_t *p;
 
     /* Insert the new timer at the proper place in the single
@@ -202,14 +208,14 @@ static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
 static inline void xntimer_dequeue_aperiodic (xntimer_t *timer)
 
 {
-    removeq(&nkpod->timerwheel[0],&timer->link);
+    removeq(&timer->sched->timerwheel[0],&timer->link);
     __setbits(timer->status,XNTIMER_DEQUEUED);
 }
 
-static inline void xntimer_next_shot (void)
+static inline void xntimer_next_local_shot (xnsched_t *this_sched)
 
 {
-    xnholder_t *holder = getheadq(&nkpod->timerwheel[0]);
+    xnholder_t *holder = getheadq(&this_sched->timerwheel[0]);
     xnticks_t now, delay, xdate;
     xntimer_t *timer;
 
@@ -225,12 +231,17 @@ static inline void xntimer_next_shot (void)
     else
 	delay = timer->date - xdate;
 
-    xnarch_program_timer_shot(delay);
+    xnarch_program_timer_shot(delay <= ULONG_MAX ? delay : ULONG_MAX);
+}
+
+static inline void xntimer_next_remote_shot (xnsched_t *sched)
+{
+    xnarch_send_timer_ipi(xnarch_cpumask_of_cpu(xnsched_cpu(sched)));
 }
 
 static inline int xntimer_heading_p (xntimer_t *timer) {
 
-    return getheadq(&nkpod->timerwheel[0]) == &timer->link;
+    return getheadq(&timer->sched->timerwheel[0]) == &timer->link;
 }
 	
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -305,7 +316,12 @@ int xntimer_start (xntimer_t *timer,
 	    xntimer_enqueue_aperiodic(timer);
 
 	    if (xntimer_heading_p(timer))
-		xntimer_next_shot();
+                {
+                if(xntimer_sched(timer) == xnpod_current_sched())
+                    xntimer_next_local_shot(xntimer_sched(timer));
+                else
+                    xntimer_next_remote_shot(xntimer_sched(timer));
+                }
 	    }
 	else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -364,8 +380,10 @@ void xntimer_stop (xntimer_t *timer)
 	    int heading = xntimer_heading_p(timer);
 	    xntimer_dequeue_aperiodic(timer);
 	    /* If we removed the heading timer, reprogram the next
-	       shot if any. */
-	    if (heading) xntimer_next_shot();
+	       shot if any. If the timer was running on another CPU, let it
+	       tick. */
+	    if (heading && xntimer_sched(timer) == xnpod_current_sched())
+                xntimer_next_local_shot(xntimer_sched(timer));
 	    }
 	else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -373,6 +391,77 @@ void xntimer_stop (xntimer_t *timer)
 	}
 
     xnlock_put_irqrestore(&nklock,s);
+}
+
+/**
+ * Migrate a timer.
+ *
+ * This call migrates a timer to another cpu. In order to avoid pathological
+ * cases, it must be called from the CPU to which @a timer is currently
+ * attached.
+ *
+ * @param timer The address of the timer object to be migrated.
+ *
+ * @param sched The address of the destination CPU xnsched_t structure.
+ *
+ * @retval -EINVAL if @a timer is queued on another CPU than current ;
+ * @retval 0 otherwise.
+ *
+ */
+int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
+{
+    int err = 0;
+
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+    int queued;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (sched == timer->sched)
+        goto unlock_and_exit;
+
+    queued = !testbits(timer->status,XNTIMER_DEQUEUED);
+
+    /* Avoid the pathological case where the timer interrupt did not occur yet
+       for the current date on the timer source CPU, whereas we are trying to
+       migrate it to a CPU where the timer interrupt already occured. This would
+       not be a problem in one-shot mode. */
+    if (queued && timer->sched != xnpod_current_sched())
+        {
+        err = -EINVAL;
+        goto unlock_and_exit;
+        }
+
+    if (queued)
+        xntimer_stop(timer);
+    timer->sched = sched;
+
+    if (queued)
+        {
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+	if (!testbits(nkpod->status,XNTMPER))
+            {
+            xntimer_enqueue_aperiodic(timer);
+            if (xntimer_heading_p(timer))
+                {
+                if (sched == xnpod_current_sched())
+                    xntimer_next_local_shot(sched);
+                else
+                    xntimer_next_remote_shot(sched);
+                }
+            }
+        else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+            xntimer_enqueue_periodic(timer);
+        }
+
+ unlock_and_exit:
+    xnlock_put_irqrestore(&nklock, s);
+
+#endif  /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+
+    return err;
 }
 
 /*!
@@ -510,16 +599,22 @@ void xntimer_do_timers (void)
 	{
 	now = xnarch_get_cpu_tsc();
 	/* Only use slot #0 in aperiodic mode. */
-	timerq = &nkpod->timerwheel[0];
-	}
+        timerq = &sched->timerwheel[0];
+        }
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	{
 	/* Update the periodic clocks keeping the things strictly
-	   monotonous. */
-	now = ++nkpod->jiffies;
-	timerq = &nkpod->timerwheel[now & XNTIMER_WHEELMASK];
-	++nkpod->wallclock;
+	   monotonous (only CPU XNTIMER_KEEPER_ID does this). */
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+        if (sched == xnpod_sched_slot(XNTIMER_KEEPER_ID))
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+            {
+            ++nkpod->jiffies;
+            ++nkpod->wallclock;
+            }
+        now = nkpod->jiffies;
+        timerq = &sched->timerwheel[now & XNTIMER_WHEELMASK];
 	}
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
@@ -617,7 +712,7 @@ void xntimer_do_timers (void)
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (aperiodic)
-	xntimer_next_shot();
+	xntimer_next_local_shot(sched);
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
@@ -649,8 +744,11 @@ void xntimer_do_timers (void)
 void xntimer_freeze (void)
 
 {
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+    int nr_cpus;
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+    int n, cpu;
     spl_t s;
-    int n;
 
     xnarch_stop_timer();
 
@@ -659,17 +757,23 @@ void xntimer_freeze (void)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	goto unlock_and_exit;
 
-    for (n = 0; n < XNTIMER_WHEELSIZE; n++)
-	{
-	xnqueue_t *timerq = &nkpod->timerwheel[n];
-	xnholder_t *holder = getheadq(timerq);
-
-	while (holder != NULL)
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+    nr_cpus = xnarch_num_online_cpus();
+    for (cpu = 0; cpu < nr_cpus; cpu++)
+#else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
+	cpu = XNTIMER_KEEPER_ID;
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+        for (n = 0; n < XNTIMER_WHEELSIZE; n++)
 	    {
-	    __setbits(link2timer(holder)->status,XNTIMER_DEQUEUED);
-	    holder = popq(timerq,holder);
-	    }
-	}
+            xnqueue_t *timerq = &xnpod_sched_slot(cpu)->timerwheel[n];
+            xnholder_t *holder = getheadq(timerq);
+
+            while (holder != NULL)
+	        {
+                __setbits(link2timer(holder)->status,XNTIMER_DEQUEUED);
+                holder = popq(timerq,holder);
+                }
+            }
 
  unlock_and_exit:
 

@@ -44,31 +44,15 @@
 
 typedef unsigned long long rthal_time_t;
 
-/* FIXME: temporary fix pasted from include/linux/compiler*.h, in order to have
-   nucleus/lib/fusion.c. The proper fix is to implement llimd in user-space,
-   since this is the only routine needed. */
-#ifndef __KERNEL__
-#if __GNUC__ == 2 && __GNUC_MINOR >= 96 || __GNUC__ >= 3
-#define __attribute_const__ __attribute__((__const__))
-#else
-#define __attribute_const__
-#endif
-#if __GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 1
-# define inline         inline          __attribute__((always_inline))
-#endif
-#endif
-
 #define __rthal_u64tou32(ull, h, l) ({          \
     (l) = ull & 0xffffffff;                     \
     (h) = ull >> 32;                            \
 })
 
-#define __rthal_u64fromu32(h, l) ({                     \
-    union { unsigned long long _ull;                    \
-        struct { unsigned long _sl, _sh; } _s; } _tmp;  \
-    _tmp._s._sh=(h);                                    \
-    _tmp._s._sl=(l);                                    \
-    _tmp._ull;                                          \
+#define __rthal_u64fromu32(h, l) ({             \
+    unsigned long long ull;                     \
+    asm ( "": "=A"(ull) : "d"(h), "a"(l));      \
+    ull;                                        \
 })
 
 /* Fast longs multiplication. */
@@ -88,8 +72,15 @@ __rthal_uldivrem(unsigned long long ull, unsigned long d) {
     return ull;
 }
 
+static inline __attribute_const__ int rthal_imuldiv (int i, int mult, int div) {
+
+    /* Returns (unsigned)i =
+               (unsigned long long)i*(unsigned)(mult)/(unsigned)div. */
+    unsigned long ui = (unsigned long) i, um = (unsigned long) mult;
+    return __rthal_uldivrem((unsigned long long) ui * um, div);
+}
+
 /* Fast long long division: when the quotient and remainder fit on 32 bits.
-   Eg.: conversion between POSIX struct timespec and nanoseconds count.
    Recent compilers remove redundant calls to this function. */
 static inline unsigned long
 rthal_uldivrem(unsigned long long ull, unsigned long d, unsigned long *rp) {
@@ -102,65 +93,68 @@ rthal_uldivrem(unsigned long long ull, unsigned long d, unsigned long *rp) {
     return q;
 }
 
-/* Slow long long division. Uses rthal_uldivrem, hence has the same property:
-   compiler removes redundant calls. It seems to inline quite well too. */
-static inline unsigned long long rthal_ulldiv (unsigned long long ull,
-                                               unsigned long d,
-                                               unsigned long *rp) {
 
-    unsigned long h, l, qh, rh, ql;
-    __rthal_u64tou32(ull, h, l);
+/* Division of an unsigned 96 bits ((h << 32) + l) by an unsigned 32 bits.
+   Common building block for ulldiv and llimd. */
+static inline unsigned long long __rthal_div96by32 (unsigned long long h,
+                                                    unsigned long l,
+                                                    unsigned long d,
+                                                    unsigned long *rp) {
+    unsigned long long t;
+    u_long qh, rh, ql;
 
     qh = rthal_uldivrem(h, d, &rh);
-    __asm__ ( "": "=A"(ull) : "d"(rh), "a"(l));
-    ql = rthal_uldivrem(ull, d, rp);
+    t = __rthal_u64fromu32(rh, l);
+    ql = rthal_uldivrem(t, d, rp);
 
     return __rthal_u64fromu32(qh, ql);
 }
 
-/* Replaced the helper with rthal_ulldiv: rthal_ulldiv inlines better. */
+
+/* Slow long long division. Uses rthal_uldivrem, hence has the same property:
+   the compiler removes redundant calls. */
+static inline unsigned long long rthal_ulldiv (unsigned long long ull,
+                                               unsigned long d,
+                                               unsigned long *rp) {
+
+    unsigned long h, l;
+    __rthal_u64tou32(ull, h, l);
+    return __rthal_div96by32(h, l, d, rp);
+}
+
+/* Replaced the helper with rthal_ulldiv. */
 #define rthal_u64div32c rthal_ulldiv
 
-static inline __attribute_const__ int rthal_imuldiv (int i, int mult, int div) {
+static inline unsigned long long __rthal_ullimd (unsigned long long op,
+                                                 unsigned long m,
+                                                 unsigned long d) {
 
-    /* Returns (unsigned)i = (unsigned)i*(unsigned)(mult)/(unsigned)div. */
-    unsigned long ui = (unsigned long) i, um = (unsigned long) mult;
-    return __rthal_uldivrem((unsigned long long) ui * um, div);
+    unsigned long long th, tl;
+    u_long oph, opl, tlh, tll;
+
+    __rthal_u64tou32(op, oph, opl);
+    tl = (unsigned long long) opl * m;
+    __rthal_u64tou32(tl, tlh, tll);
+    th = (unsigned long long) oph * m;
+    /* op * m == ((th + tlh) << 32) + tll */
+
+    __asm__ (  "addl %1, %%eax\n\t"
+               "adcl $0, %%edx"
+               : "=A,A"(th)
+               : "r,?m"(tlh), "A,A"(th) );
+    /* op * m == (th << 32) + tll */
+
+    return __rthal_div96by32(th, tll, d, NULL);
 }
 
-static inline __attribute_const__ long long rthal_llimd(long long ll,
-                                                        int mult,
-                                                        int div) {
+static inline long long rthal_llimd (long long op,
+                                     unsigned long m,
+                                     unsigned long d) {
 
-    /* Returns (long long)ll = (int)ll*(int)(mult)/(int)div. */
-
-    __asm__  ( \
-	"movl %%edx,%%ecx\t\n" \
-	"mull %%esi\t\n" \
-	"movl %%eax,%%ebx\n\t" \
-	"movl %%ecx,%%eax\t\n" \
-        "movl %%edx,%%ecx\t\n" \
-        "mull %%esi\n\t" \
-	"addl %%ecx,%%eax\t\n" \
-	"adcl $0,%%edx\t\n" \
-        "divl %%edi\n\t" \
-        "movl %%eax,%%ecx\t\n" \
-        "movl %%ebx,%%eax\t\n" \
-	"divl %%edi\n\t" \
-	"sal $1,%%edx\t\n" \
-        "cmpl %%edx,%%edi\t\n" \
-        "movl %%ecx,%%edx\n\t" \
-	"jge 1f\t\n" \
-        "addl $1,%%eax\t\n" \
-        "adcl $0,%%edx\t\n" \
-	"1:\t\n" \
-	: "=A" (ll) \
-	: "A" (ll), "S" (mult), "D" (div) \
-	: "%ebx", "%ecx");
-
-    return ll;
+    if(op < 0LL)
+        return -__rthal_ullimd(-op, m, d);
+    return __rthal_ullimd(op, m, d);
 }
-
 
 static inline __attribute_const__ unsigned long ffnz (unsigned long word) {
     /* Derived from bitops.h's ffs() */

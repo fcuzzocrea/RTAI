@@ -69,21 +69,6 @@ typedef void sighandler_t (int sig);
 
 /* Error Codes (pse51_errno_location is implemented in sem.c). */
 /* errno values pasted from Linux asm/errno.h and bits/errno.h (ENOTSUP). */
-#if 0
-#define	EPERM		 1	/* Operation not permitted */
-#define	ESRCH		 3	/* No such process */
-#define	EINTR		 4	/* Interrupted system call */
-#define	EAGAIN		11	/* Try again */
-#define	EWOULDBLOCK	EAGAIN	/* Operation would block */
-#define	ENOMEM		12	/* Out of memory */
-#define	EBUSY		16	/* Device or resource busy */
-#define	EINVAL		22	/* Invalid argument */
-#define	ENOSPC		28	/* No space left on device */
-#define	EDEADLK		35	/* Resource deadlock would occur */
-#define	EDEADLOCK	EDEADLK
-#define	ENOSYS		38	/* Function not implemented */
-#define	EOPNOTSUPP	95	/* Operation not supported on transport endpoint */
-#endif
 #define ENOTSUP         EOPNOTSUPP
 #define	ETIMEDOUT	110	/* Connection timed out */
 
@@ -308,12 +293,6 @@ int pthread_mutex_timedlock(pthread_mutex_t *mutex,
 			    const struct timespec *to);
 
 int pthread_mutex_unlock(pthread_mutex_t *mutex);
-
-int pthread_mutex_getprioceiling(const pthread_mutex_t *mutex,
-				 int *prioceiling);
-
-int pthread_mutex_setprioceiling(pthread_mutex_t *mutex,
-				 int prioceiling);
 
 END_C_DECLS
 
@@ -551,6 +530,15 @@ int clock_nanosleep(clockid_t clock_id,
 		    int flags,
                     const struct timespec *rqtp,
 		    struct timespec *rmtp);
+
+int nanosleep(const struct timespec *rqtp,
+              struct timespec *rmtp);
+
+int pthread_make_periodic_np (pthread_t thread,
+                              struct timespec *starttp,
+                              struct timespec *periodtp);
+
+int pthread_wait_np(void);
 
 END_C_DECLS
 

@@ -16,7 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "posix/signal.h"
+#include <posix/signal.h>
 
 static struct sigaction actions[PSE51_SIGMAX - PSE51_SIGMIN + 1];
 
@@ -445,3 +445,14 @@ void pse51_default_handler (int sig)
     xnpod_fatal("Thread %s received unhandled signal %d.\n",
                 thread_name(cur), sig);
 }
+
+EXPORT_SYMBOL(sigemptyset);
+EXPORT_SYMBOL(sigfillset);
+EXPORT_SYMBOL(sigaddset);
+EXPORT_SYMBOL(sigdelset);
+EXPORT_SYMBOL(sigismember);
+EXPORT_SYMBOL(pthread_kill);
+EXPORT_SYMBOL(pthread_sigmask);
+EXPORT_SYMBOL(pse51_sigaction);
+EXPORT_SYMBOL(sigpending);
+EXPORT_SYMBOL(sigwait);

@@ -75,6 +75,10 @@
 #define XNTIMER_STDPRIO 0
 #define XNTIMER_HIPRIO  999999999
 
+#define XNTIMER_KEEPER_ID 0
+
+struct xnsched;
+
 typedef struct xntimer {
 
     xnholder_t link;
@@ -90,6 +94,9 @@ typedef struct xntimer {
 
     int prio;			/* !< Internal priority. */
 
+    struct xnsched *sched;      /* Sched structure to which the timer is
+                                   attached. */
+
     void (*handler)(void *cookie); /* !< Timeout handler. */
 
     void *cookie;	/* !< Cookie to pass to the timeout handler. */
@@ -99,6 +106,7 @@ typedef struct xntimer {
 } xntimer_t;
 
 #define xntimer_date(t)           ((t)->date)
+#define xntimer_sched(t)          ((t)->sched)
 #define xntimer_interval(t)       ((t)->interval)
 #define xntimer_set_cookie(t,c)   ((t)->cookie = (c))
 #define xntimer_set_priority(t,p) ((t)->prio = (p))
@@ -130,6 +138,8 @@ void xntimer_freeze(void);
 xnticks_t xntimer_get_date(xntimer_t *timer);
 
 xnticks_t xntimer_get_timeout(xntimer_t *timer);
+
+int xntimer_set_sched(xntimer_t *timer, struct xnsched *sched);
 
 #ifdef __cplusplus
 }

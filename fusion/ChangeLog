@@ -1,3 +1,39 @@
+2004-12-19  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* Per-cpu timers implementation; pod and timer: Each CPU has a
+	timerwheel, a timer object is attached to a sched structure, a new
+	call xntimer_set_sched allowing to change this structure. When a
+	timer is modified on a distant CPU, xnarch_send_timer_ipi is
+	called. The HAL is expected to either install the handler passed
+	to rthal_request_timer for this IPI, or to use the same interrupt
+	for the timer and this IPI (the x86 case).
+
+	* nucleus/timer.c (xntimer_next_shot): Round delays greater than
+	ULONG_MAX ticks to ULONG_MAX, so that 32 bits are enough.
+
+	* arch/i386/hal/hal.c (rthal_critical_sync, rthal_request_timer):
+	Avoid timers to tick at the same time on all CPUS on SMP systems.
+
+	* skins/posix: add missing EXPORT_SYMBOL, use fusion POD, add
+	pthread_make_periodic_np, pthread_wait_np calls, round towards
+	infinity while converting timespec to ticks count and add one more
+	tick.
+
+2004-12-18  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/shadow.c (xnshadow_*2ticks, xnshadow_ticks2*):
+	Roll-back slow implementations.
+	
+	* nucleus/lib/fusion.c: Provide a C-onliy implementation of llimd
+	to avoid inclusion of hal.h in user-space.
+
+	* include/nucleus/asm-uvm/system.h,
+	  sim/include/nucleus/asm/system.h: Correct rounding of llimd for
+	negative arguments.
+
+	* include/nucleus/asm-i386/hal.h: Re-implement llimd for correct
+	rounding and minimized inline assembly.
+
 2004-12-13  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.6.7

@@ -242,3 +242,8 @@ void pse51_tsd_cleanup (void)
     while ((key = link2key(getq(&free_keys))) != NULL)
         xnfree(key);
 }
+
+EXPORT_SYMBOL(pthread_key_create);
+EXPORT_SYMBOL(pthread_key_delete);
+EXPORT_SYMBOL(pthread_getspecific);
+EXPORT_SYMBOL(pthread_setspecific);

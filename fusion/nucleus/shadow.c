@@ -412,14 +412,23 @@ static void gatekeeper_thread (void *data)
     up(&gksync);
 }
 
-/* FIXME: slow implementation. */
+/* timespec/timeval <-> ticks conversion routines -- Lifted and
+  adapted from include/linux/time.h. */
+ 
 unsigned long long xnshadow_ts2ticks (const struct timespec *v)
-
+  
 {
-    unsigned long long nsecs;
-    nsecs = xnarch_ullmul(v->tv_sec, 1000000000UL) + v->tv_nsec;
-    nsecs += xnpod_get_tickval() / 2; /* for rounding to next ticks count. */
-    return xnpod_ns2ticks(nsecs);
+    unsigned long long nsec = v->tv_nsec, ticks;
+    u_long tickval = xnpod_get_tickval();
+    u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
+
+    /* save a division: we add to nsec the worst remainder of the division
+       of sec by tickval. nsec may not fit on 32 bits if v is not normalized. */
+    nsec += tickval - 1;
+    /* tickval is 100000 or so in the worst case, the result is hence expected
+       to fit on 32 bits, and we can use uldiv instead of ulldiv. */
+    ticks = xnarch_uldiv(nsec, tickval);
+    return xnarch_ullmul(hz, v->tv_sec) + ticks;
 }
 
 void xnshadow_ticks2ts (unsigned long long ticks, struct timespec *v)
@@ -432,10 +441,13 @@ void xnshadow_ticks2ts (unsigned long long ticks, struct timespec *v)
 unsigned long long xnshadow_tv2ticks (const struct timeval *v)
 
 {
-    unsigned long long nsecs;
-    nsecs = xnarch_ullmul(v->tv_sec, 1000000000UL) + v->tv_usec * 1000;
-    nsecs += xnpod_get_tickval() / 2; /* for rounding to next ticks count. */
-    return xnpod_ns2ticks(nsecs);
+    unsigned long long nsec = v->tv_usec * 1000UL, ticks;
+    u_long tickval = xnpod_get_tickval();
+    u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
+
+    nsec += tickval - 1;
+    ticks = xnarch_uldiv(nsec, tickval);
+    return xnarch_ullmul(hz, v->tv_sec) + ticks;
 }
 
 void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)

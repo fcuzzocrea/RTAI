@@ -156,16 +156,26 @@ static void rthal_critical_sync (void)
 
 {
     struct rthal_apic_data *p;
+    long long sync_time;
+    adeos_declare_cpuid;
 
     switch (rthal_sync_op)
 	{
 	case 1:
+            adeos_load_cpuid();
 
-	    p = &rthal_timer_mode[adeos_processor_id()];
-	    
-	    while (rthal_rdtsc() < rthal_timers_sync_time)
-		;
+	    p = &rthal_timer_mode[cpuid];
 
+            sync_time = rthal_timers_sync_time;
+
+            /* Stagger local timers on SMP systems, to avoid tick handler
+               stupidly spinning while running on other CPU. */
+            if(p->mode)
+                sync_time += rthal_imuldiv(p->count, cpuid, num_online_cpus());
+
+            while (rthal_rdtsc() < sync_time)
+                ;
+            
 	    if (p->mode)
 		rthal_setup_periodic_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
 	    else
@@ -224,6 +234,7 @@ int rthal_request_timer (void (*handler)(void),
 			 unsigned long nstick)
 {
     struct rthal_apic_data *p;
+    long long sync_time;
     unsigned long flags;
     int cpuid;
 
@@ -260,9 +271,16 @@ int rthal_request_timer (void (*handler)(void),
 	    p->count = RTHAL_APIC_ICOUNT;
 	}
 
-    p = &rthal_timer_mode[adeos_processor_id()];
+    adeos_load_cpuid();
 
-    while (rthal_rdtsc() < rthal_timers_sync_time)
+    p = &rthal_timer_mode[cpuid];
+
+    sync_time = rthal_timers_sync_time;
+
+    if(p->mode)
+        sync_time += rthal_imuldiv(p->count, cpuid, num_online_cpus());
+    
+    while (rthal_rdtsc() < sync_time)
 	;
 
     if (p->mode)

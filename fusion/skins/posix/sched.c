@@ -70,7 +70,7 @@ int sched_rr_get_interval (int pid, struct timespec *interval)
         return -1;
 	}
 
-    ticks2timespec(interval, pse51_time_slice);
+    ticks2ts(interval, pse51_time_slice);
 
     return 0;
 }
@@ -163,3 +163,9 @@ int pthread_setschedparam (pthread_t tid, int pol, const struct sched_param *par
 
     return 0;
 }
+
+EXPORT_SYMBOL(sched_get_priority_min);
+EXPORT_SYMBOL(sched_get_priority_max);
+EXPORT_SYMBOL(sched_rr_get_interval);
+EXPORT_SYMBOL(pthread_getschedparam);
+EXPORT_SYMBOL(pthread_setschedparam);

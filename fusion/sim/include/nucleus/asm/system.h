@@ -27,6 +27,7 @@
 #include <malloc.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
 
 struct xnthread;
 struct xnsynch;
@@ -88,10 +89,6 @@ typedef unsigned long xnlock_t;
 #define xnarch_printf(fmt,args...)   fprintf(stdout, fmt , ##args)
 #define printk(fmt,args...)          xnarch_loginfo(fmt , ##args)
 
-#define xnarch_llimd(ll,m,d)       ((int)(ll) * (int)(m) / (int)(d))
-#define xnarch_imuldiv(i,m,d)      ((int)(i) * (int)(m) / (int)(d))
-#define xnarch_ullmod(ull,uld,rem) ((*rem) = ((ull) % (uld)))
-
 typedef unsigned long xnarch_cpumask_t;
 #define xnarch_num_online_cpus()         XNARCH_NR_CPUS
 #define xnarch_cpu_online_map            ((1<<xnarch_num_online_cpus()) - 1)
@@ -106,9 +103,53 @@ typedef unsigned long xnarch_cpumask_t;
 #define xnarch_first_cpu(mask)           (ffnz(mask))
 #define XNARCH_CPU_MASK_ALL              (~0UL)
 
+#define xnarch_ullmod(ull,uld,rem)   ((*rem) = ((ull) % (uld)))
+#define xnarch_uldivrem(ull,uld,rem) ((u_long)xnarch_ulldiv((ull),(uld),(rem)))
+#define xnarch_uldiv(ull, d)         xnarch_uldivrem(ull, d, NULL)
+#define xnarch_ulmod(ull, d)         ({ u_long _rem;                    \
+                                        rthal_uldivrem(ull,uld,&_rem); _rem; })
+
+static inline int xnarch_imuldiv(int i, int mult, int div)
+{
+    unsigned long long ull = (unsigned long long) (unsigned) i * (unsigned) mult;
+    return ull / (unsigned) div;
+}
+
+static inline unsigned long long __xnarch_ullimd(unsigned long long ull,
+                                                 u_long m,
+                                                 u_long d) {
+
+    unsigned long long mh, ml;
+    u_long h, l, mlh, mll, qh, r, ql;
+
+    h = ull >> 32; l = ull & 0xffffffff; /* Split ull. */
+    mh = (unsigned long long) h * m;
+    ml = (unsigned long long) l * m;
+    mlh = ml >> 32; mll = ml & 0xffffffff; /* Split ml. */
+    mh += mlh;
+    qh = mh / d;
+    r = mh % d;
+    ml = (((unsigned long long) r) << 32) + mll; /* assemble r and mll */
+    ql = ml / d;
+
+    return (((unsigned long long) qh) << 32) + ql;
+}
+
+static inline long long xnarch_llimd(long long ll, u_long m, u_long d) {
+    if(ll < 0)
+        return -__xnarch_ullimd(-ll, m, d);
+    return __xnarch_ullimd(ll, m, d);
+}
+
+static inline unsigned long long xnarch_ullmul(unsigned long m1,
+                                               unsigned long m2) {
+    return (unsigned long long) m1 * m2;
+}
+
 static inline unsigned long long xnarch_ulldiv (unsigned long long ull,
 						unsigned long uld,
-						unsigned long *rem) {
+						unsigned long *rem)
+{
     if (rem)
 	*rem = ull % uld;
 

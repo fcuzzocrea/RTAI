@@ -205,7 +205,7 @@ int pthread_mutex_lock (pthread_mutex_t *mutex) {
 
 int pthread_mutex_timedlock (pthread_mutex_t *mutex, const struct timespec *to) {
 
-    return mutex_timedlock(mutex, timespec2ticks(to));
+    return mutex_timedlock(mutex, ts2ticks_ceil(to)+1);
 }
 
 int pthread_mutex_unlock (pthread_mutex_t *mutex)
@@ -231,3 +231,10 @@ int pthread_mutex_unlock (pthread_mutex_t *mutex)
 
     return err;
 }
+
+EXPORT_SYMBOL(pthread_mutex_init);
+EXPORT_SYMBOL(pthread_mutex_destroy);
+EXPORT_SYMBOL(pthread_mutex_trylock);
+EXPORT_SYMBOL(pthread_mutex_lock);
+EXPORT_SYMBOL(pthread_mutex_timedlock);
+EXPORT_SYMBOL(pthread_mutex_unlock);

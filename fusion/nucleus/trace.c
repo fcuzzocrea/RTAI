@@ -160,7 +160,7 @@ static int rtai_trace_read_proc (char *page,
             continue;
         
         diff_nsecs = xnarch_tsc_to_ns(trace->stamp - rtai_trace_start);
-        secs = (unsigned long) xnarch_ulldiv(diff_nsecs, 1000000000, &nsecs);
+        secs = (unsigned long) xnarch_uldivrem(diff_nsecs, 1000000000, &nsecs);
         mins = secs / 60;
         hrs = mins / 60;
         secs %= 60;
@@ -232,7 +232,7 @@ void rtai_trace_dump(void)
         unsigned long long diff_nsecs;
 
         diff_nsecs = xnarch_tsc_to_ns(trace->stamp - rtai_trace_start);
-        secs = (unsigned long) xnarch_ulldiv(diff_nsecs, 1000000000, &nsecs);
+        secs = xnarch_uldivrem(diff_nsecs, 1000000000, &nsecs);
         mins = secs / 60;
         hrs = mins / 60;
         secs %= 60;

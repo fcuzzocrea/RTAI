@@ -301,6 +301,46 @@ int sched_yield (void)
     return 0;
 }
 
+int pthread_make_periodic_np (pthread_t thread,
+                              struct timespec *starttp,
+                              struct timespec *periodtp)
+
+{
+
+    xnticks_t start, period;
+    int err;
+    spl_t s;
+
+    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+
+    if (!periodtp || !starttp)
+        return EINVAL;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (!pse51_obj_active(thread, PSE51_THREAD_MAGIC, struct pse51_thread))
+	{
+        err = ESRCH;
+        goto unlock_and_exit;
+        }
+
+    start = ts2ticks_ceil(starttp);
+    period = ts2ticks_ceil(periodtp);
+    err = -xnpod_set_thread_periodic(&thread->threadbase,start,period);
+    
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return err;
+}
+
+int pthread_wait_np(void)
+{
+    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    return -xnpod_wait_thread_period();
+}
+
 void pse51_thread_abort (pthread_t thread, void *status)
 
 {
@@ -348,3 +388,13 @@ int *pse51_errno_location (void)
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
     return &thread_errno();
 }
+
+EXPORT_SYMBOL(pthread_create);
+EXPORT_SYMBOL(pthread_detach);
+EXPORT_SYMBOL(pthread_equal);
+EXPORT_SYMBOL(pthread_exit);
+EXPORT_SYMBOL(pthread_join);
+EXPORT_SYMBOL(pthread_self);
+EXPORT_SYMBOL(sched_yield);
+EXPORT_SYMBOL(pthread_make_periodic_np);
+EXPORT_SYMBOL(pthread_wait_np);

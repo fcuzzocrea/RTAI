@@ -109,3 +109,8 @@ int pthread_condattr_setclock (pthread_condattr_t *attr, clockid_t clk_id)
 
     return 0;
 }
+
+EXPORT_SYMBOL(pthread_condattr_init);
+EXPORT_SYMBOL(pthread_condattr_destroy);
+EXPORT_SYMBOL(pthread_condattr_getclock);
+EXPORT_SYMBOL(pthread_condattr_setclock);

@@ -54,6 +54,7 @@
 #include <string.h>
 #include <signal.h>
 #include <stdio.h>
+#include <limits.h>
 #include <setjmp.h>
 #include <rtai_config.h>
 #include <nucleus/asm/atomic.h>
@@ -139,23 +140,30 @@ static inline int xnarch_imuldiv(int i, int mult, int div)
     return ull / (unsigned) div;
 }
 
+static inline unsigned long long __xnarch_ullimd(unsigned long long ull,
+                                                 u_long m,
+                                                 u_long d) {
+
+    unsigned long long mh, ml;
+    u_long h, l, mlh, mll, qh, r, ql;
+
+    h = ull >> 32; l = ull & 0xffffffff; /* Split ull. */
+    mh = (unsigned long long) h * m;
+    ml = (unsigned long long) l * m;
+    mlh = ml >> 32; mll = ml & 0xffffffff; /* Split ml. */
+    mh += mlh;
+    qh = mh / d;
+    r = mh % d;
+    ml = (((unsigned long long) r) << 32) + mll; /* assemble r and mll */
+    ql = ml / d;
+
+    return (((unsigned long long) qh) << 32) + ql;
+}
+
 static inline long long xnarch_llimd(long long ll, u_long m, u_long d) {
-
-    unsigned long long h, l, ull = (unsigned long long) ll;
-    u_long qh, rh, ql;
-
-    h = (ull >> 32) * m;
-    l = (ull & 0xffffffff) * m;
-    h += l >> 32;
-    l &= 0xffffffff;
-
-    qh = h / d;
-    rh = h % d;
-    l += ((unsigned long long) rh) << 32;
-
-    ql = l / d;
-    ull = (((unsigned long long) qh) << 32) + ql;
-    return (long long) ull;
+    if(ll < 0)
+        return -__xnarch_ullimd(-ll, m, d);
+    return __xnarch_ullimd(ll, m, d);
 }
 
 static inline unsigned long long xnarch_ullmul(unsigned long m1,

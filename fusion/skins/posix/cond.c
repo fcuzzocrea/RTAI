@@ -183,7 +183,7 @@ int pthread_cond_wait (pthread_cond_t *cond, pthread_mutex_t *mutex) {
 int pthread_cond_timedwait (pthread_cond_t *cond,
 			    pthread_mutex_t *mutex,
 			    const struct timespec *abstime) {
-    return cond_timedwait_internal(cond, mutex, timespec2ticks(abstime));
+    return cond_timedwait_internal(cond, mutex, ts2ticks_ceil(abstime)+1);
 }
 
 int pthread_cond_signal (pthread_cond_t *cond)
@@ -243,3 +243,10 @@ void pse51_cond_obj_cleanup (void)
     while ((holder = getq(&pse51_condq)) != NULL)
 	cond_destroy_internal(link2cond(holder));
 }
+
+EXPORT_SYMBOL(pthread_cond_init);
+EXPORT_SYMBOL(pthread_cond_destroy);
+EXPORT_SYMBOL(pthread_cond_wait);
+EXPORT_SYMBOL(pthread_cond_timedwait);
+EXPORT_SYMBOL(pthread_cond_signal);
+EXPORT_SYMBOL(pthread_cond_broadcast);

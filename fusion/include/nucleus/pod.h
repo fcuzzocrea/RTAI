@@ -125,6 +125,8 @@ typedef struct xnsched {
 
     xnpqueue_t readyq;		/*!< Ready-to-run threads (prioritized). */
 
+    xnqueue_t timerwheel[XNTIMER_WHEELSIZE]; /*!< BSDish timer wheel. */
+
     volatile unsigned inesting;	/*!< Interrupt nesting level. */
 
 #ifdef CONFIG_RTAI_HW_FPU
@@ -181,8 +183,6 @@ typedef struct xnpod {
 
     xnqueue_t threadq;		/*!< All existing threads. */
 
-    xnqueue_t timerwheel[XNTIMER_WHEELSIZE]; /*!< BSDish timer wheel. */
-
     atomic_counter_t schedlck;	/*!< Scheduler lock count. */
 
     xnqueue_t tstartq,		/*!< Thread start hook queue. */
@@ -196,7 +196,7 @@ typedef struct xnpod {
 
     u_long tickvalue;		/*!< Tick duration (ns, 1 if aperiodic). */
 
-    xnticks_t ticks2sec;	/*!< Number of ticks per second (1e9
+    u_long ticks2sec;	/*!< Number of ticks per second (1e9
 				  if aperiodic). */
 
     struct {
@@ -349,7 +349,7 @@ static inline xnthread_t *xnpod_current_thread (void)
 #define xnpod_timeset_p() \
     (!!testbits(nkpod->status,XNTMSET))
 
-static inline xnticks_t xnpod_get_ticks2sec (void) {
+static inline u_long xnpod_get_ticks2sec (void) {
     return nkpod->ticks2sec;
 }
 
@@ -360,7 +360,8 @@ static inline u_long xnpod_get_tickval (void) {
 
 static inline xntime_t xnpod_ticks2ns (xnticks_t ticks) {
     /* Convert a count of ticks in nanoseconds */
-    return xnarch_llimd(ticks,xnpod_get_tickval(),1);
+    /* FIXME: wasteful. */
+    return xnarch_llimd(ticks, xnpod_get_tickval(), 1);
 }
 
 static inline xnticks_t xnpod_ns2ticks (xntime_t t) {

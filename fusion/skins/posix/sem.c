@@ -123,7 +123,7 @@ int sem_wait (sem_t *sem) {
 
 int sem_timedwait (sem_t *sem, const struct timespec *abs_timeout) {
 
-    return sem_timedwait_internal(sem, timespec2ticks(abs_timeout));
+    return sem_timedwait_internal(sem, ts2ticks_ceil(abs_timeout)+1);
 }
 
 int sem_post (sem_t *sem)
@@ -263,3 +263,11 @@ void pse51_sem_obj_cleanup (void)
     while ((holder = getheadq(&pse51_semq)) != NULL)
         sem_destroy_internal(link2sem(holder));
 }
+
+EXPORT_SYMBOL(sem_init);
+EXPORT_SYMBOL(sem_destroy);
+EXPORT_SYMBOL(sem_post);
+EXPORT_SYMBOL(sem_trywait);
+EXPORT_SYMBOL(sem_wait);
+EXPORT_SYMBOL(sem_timedwait);
+EXPORT_SYMBOL(sem_getvalue);

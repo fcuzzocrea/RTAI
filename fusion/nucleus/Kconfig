@@ -33,6 +33,16 @@ config RTAI_OPT_PIPE_NRDEV
 	in the system. Pipe devices are named /dev/rtpN where N is a
 	device minor number ranging from 0 to RTAI_OPT_PIPE_NRDEV - 1.
 
+config RTAI_OPT_PERCPU_TIMER
+        bool "Per-cpu timers list"
+        default n
+        help
+
+        This option make the nucleus timer module use one timers list by CPU,
+        this reduces the need for inter-cpu communication and should
+        significantly reduce the scheduling latency on other CPUs than the first
+        one.
+
 config RTAI_OPT_TRACES
         bool "Trace support"
 	depends on RTAI_OPT_EXPERT

@@ -960,15 +960,21 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 
 #ifdef XENO_TIMER_MODULE
 
-static inline void xnarch_program_timer_shot (unsigned long long delay) {
-    /* Delays are expressed in CPU ticks, so we need to keep a 64bit
-       value here, especially for 64bit arch ports using an interval
-       timer based on the internal cycle counter of the CPU. */ 
+static inline void xnarch_program_timer_shot (unsigned long delay) {
+    /* Even though some architectures may use a 64 bits delay here, we voluntary
+       limit to 32 bits, 4 billions ticks should be enough for now. If a
+       timer need more, a spurious but harmless call to the tick handler will
+       occur after 4 billions ticks. */
     rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
 }
 
 static inline void xnarch_stop_timer (void) {
     rthal_release_timer();
+}
+
+static inline int xnarch_send_timer_ipi (cpumask_t mask) {
+
+    return adeos_send_ipi(RTHAL_APIC_TIMER_IPI, mask);
 }
 
 static inline void xnarch_read_timings (unsigned long long *shot,

@@ -1,3 +1,18 @@
+2004-02-15  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: added thread support for Linux server,
+	  supporting Linux syscalls while remaining in hard real time.
+	* base/include/rtai_sched.h: added declaration of light
+	  rpc/receive/return to support the Linux syscall server.
+	* base/include/asm-arm/rtai_lxrt.h and asm-i386/rtai_lxrt.h: added
+	  declarations for Linux syscall registers.
+	* base/sched/sched.*: added support to rpc to the Linux syscall
+	  server, if installed.
+	* base/sched/api.c: added specific light rpc/receive/return to
+	  support the syscall server.
+	* base/sched/sys.c: added an entry to create and init the Linux 
+	  syscall server.
+
 2004-02-14  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/hal.*: define rt_scheduling[] unconditionally, i.e.

@@ -47,8 +47,7 @@ randomly. Of course, if your application only operates in primary mode
 during all of its time critical duties, it will not be adversely
 affected by DMA deactivation or IDE masking, since activities from the
 RTAI domain can preempt any activity from the Linux domain, including
-disk drivers. When enabling DMA for disks, be prepared for interrupt
-latencies of around 80 micro-seconds.
+disk drivers.
 
 ======================================================================
 

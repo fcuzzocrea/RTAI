@@ -1749,7 +1749,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	}
 
 	rt_global_cli();
-	rt_task->state = (rt_task->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;
+	rt_task->state |= RT_SCHED_READY;
 	while (rt_task->state != RT_SCHED_READY) {
 		current->state = TASK_HARDREALTIME;
 		rt_global_sti();
@@ -1762,7 +1762,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	rt_global_sti();
 	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
 	rt_global_cli();
-	rt_task->state &= ~RT_SCHED_READY;
+	rt_task->state &= ~(RT_SCHED_READY | RT_SCHED_SFTRDY);
 	(rt_task->rprev)->rnext = rt_task->rnext;
        	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_smp_current[cpuid] = &rt_linux_task;
@@ -1974,6 +1974,12 @@ void steal_from_linux(RT_TASK *rt_task)
 	}
 	if (current->used_math) {
 		restore_fpu(current);
+	}
+	if (rt_task->priority >= BASE_SOFT_PRIORITY) {
+		atomic_sub(BASE_SOFT_PRIORITY, (atomic_t *)&rt_task->priority);
+	}
+	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
+		atomic_sub(BASE_SOFT_PRIORITY, (atomic_t *)&rt_task->base_priority);
 	}
 	rtai_sti();
 }

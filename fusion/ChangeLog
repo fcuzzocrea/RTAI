@@ -1,3 +1,9 @@
+2004-09-14  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c: Call __adeos_schedule_back_root() with the
+	proper "prev" task pointer at the time the Linux scheduling tail
+	should be run, which must be different from "current".
+
 2004-09-12  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/fusion.c (__pthread_ticks2ns_rt, __pthread_ns2ticks_rt):

@@ -606,7 +606,10 @@ void xnshadow_relax (void)
     xnpod_renice_root(thread->cprio);
     splhigh(s);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
-    __adeos_schedule_back_root(current);
+    /* Here, the previous Linux task is the last one which has been
+       preempted by a real-time thread since we are exiting from the
+       latter context, back on the root thread. */
+    __adeos_schedule_back_root(xnthread_archtcb(xnpod_current_root())->user_task);
     splexit(s);
 
     /* "current" is now running into the Linux domain on behalf of the
@@ -716,7 +719,13 @@ static int xnshadow_sync_wait (int *u_syncp)
 void xnshadow_exit (void)
 
 {
-    __adeos_schedule_back_root(current);
+    /* Here, the previous Linux task is the last one which has been
+       preempted by a real-time thread since we must be exiting from
+       the latter context, back on the root thread. In this respect,
+       there is always a valid ->user_task member since the root
+       thread must have been preempted in the first place by the
+       real-time thread. */
+    __adeos_schedule_back_root(xnthread_archtcb(xnpod_current_root())->user_task);
     do_exit(0);
 }
 

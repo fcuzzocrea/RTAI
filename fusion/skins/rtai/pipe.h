@@ -106,7 +106,7 @@ ssize_t rt_pipe_read(RT_PIPE *pipe,
 ssize_t rt_pipe_write(RT_PIPE *pipe,
 		      RT_PIPE_MSG *msg,
 		      size_t size,
-		      int flags);
+		      int mode);
 
 ssize_t rt_pipe_stream(RT_PIPE *pipe,
 		       const void *buf,

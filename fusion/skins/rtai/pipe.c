@@ -345,7 +345,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  * @fn int rt_pipe_write(RT_PIPE *pipe,
                          RT_PIPE_MSG *msg,
 			 size_t size,
-			 int flags)
+			 int mode)
  *
  * @brief Write a message to a pipe.
  *
@@ -374,7 +374,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  * the caller if some pending data has been flushed, even if @a size
  * was zero on entry.
  *
- * @param flags A set of flags affecting the operation:
+ * @param mode A set of flags affecting the operation:
  *
  * - P_URGENT causes the message to be prepended to the output
  * queue, ensuring a LIFO ordering.
@@ -410,7 +410,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
 ssize_t rt_pipe_write (RT_PIPE *pipe,
 		       RT_PIPE_MSG *msg,
 		       size_t size,
-		       int flags)
+		       int mode)
 {
     ssize_t n = 0;
     spl_t s;
@@ -436,7 +436,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
 
     if (size > 0)
 	/* We need to add the size of the message header here. */
-	n = xnpipe_send(pipe->minor,msg,size + sizeof(RT_PIPE_MSG),flags);
+	n = xnpipe_send(pipe->minor,msg,size + sizeof(RT_PIPE_MSG),mode);
 
  unlock_and_exit:
 
@@ -645,12 +645,12 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
 /**
  * @fn RT_PIPE_MSG *rt_pipe_alloc(size_t size)
  *
- * @brief Allocate a message buffer.
+ * @brief Allocate a message pipe buffer.
  *
  * This service allocates a message buffer from the system heap which
- * can be subsequently filled then passed to rt_pipe_write() for
- * sending. The beginning of the available data area of @a size
- * contiguous bytes is accessible from P_MSGPTR(msg).
+ * can be subsequently filled by the caller then passed to
+ * rt_pipe_write() for sending. The beginning of the available data
+ * area of @a size contiguous bytes is accessible from P_MSGPTR(msg).
  *
  * @param size The requested size in bytes of the buffer. This value
  * should represent the size of the payload data.
@@ -687,7 +687,7 @@ RT_PIPE_MSG *rt_pipe_alloc (size_t size)
 /**
  * @fn int rt_pipe_free(RT_PIPE_MSG *msg)
  *
- * @brief Free a message buffer.
+ * @brief Free a message pipe buffer.
  *
  * This service releases a message buffer returned by rt_pipe_read()
  * to the system heap.

@@ -31,10 +31,12 @@
  * or pass data through a RTAI-managed queue of messages. Messages can
  * vary in length and be assigned different types or usages. A message
  * queue can be created by one task and used by multiple tasks that
- * read and/or write messages to the queue.
+ * send and/or receive messages to the queue.
  *
  * This implementation is based on a zero-copy scheme for message
- * buffers.
+ * buffers. Message buffer pools are built over Xenomai's heap
+ * objects, which in turn provide the needed support for exchanging
+ * messages between kernel and user-space using direct memory mapping.
  *
  *@{*/
 
@@ -201,6 +203,34 @@ int rt_queue_create (RT_QUEUE *q,
     return err;
 }
 
+/**
+ * @fn int rt_queue_delete(RT_QUEUE *q)
+ * @brief Delete a message queue.
+ *
+ * Destroy a message queue and release all the tasks currently pending
+ * on it.  A queue exists in the system since rt_queue_create() has
+ * been called to create it, so this service must be called in order
+ * to destroy it afterwards.
+ *
+ * @param q The descriptor address of the affected queue.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a q is not a message queue descriptor.
+ *
+ * - -EIDRM is returned if @a q is a deleted queue descriptor.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
 int rt_queue_delete (RT_QUEUE *q)
 
 {
@@ -250,6 +280,35 @@ int rt_queue_delete (RT_QUEUE *q)
     return err;
 }
 
+/**
+ * @fn void *rt_queue_alloc(RT_QUEUE *q,
+                            size_t size)
+ *
+ * @brief Allocate a message queue buffer.
+ *
+ * This service allocates a message buffer from the queue's internal
+ * pool which can be subsequently filled by the caller then passed to
+ * rt_queue_send() for sending.
+ *
+ * @param size The requested size in bytes of the buffer. Zero is an
+ * acceptable value, meaning that the message will not carry any
+ * payload data; the receiver will thus receive a zero-sized message.
+ *
+ * @return The address of the allocated message buffer upon success,
+ * or NULL if the allocation fails.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
 void *rt_queue_alloc (RT_QUEUE *q,
 		      size_t size)
 {
@@ -280,6 +339,36 @@ void *rt_queue_alloc (RT_QUEUE *q,
 
     return msg;
 }
+
+/**
+ * @fn int rt_queue_free(RT_QUEUE *q,
+                         void *buf)
+ *
+ * @brief Free a message queue buffer.
+ *
+ * This service releases a message buffer returned by rt_queue_recv()
+ * to the queue's internal pool.
+ *
+ * @param buf The address of the message buffer to free. Even
+ * zero-sized messages carrying no payload data must be freed, since
+ * they are assigned a valid memory space to store internal
+ * information.
+ *
+ * @return 0 is returned upon success, or -EINVAL if @a buf is not a
+ * valid message buffer previously allocated by the rt_queue_alloc()
+ * service.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
 
 int rt_queue_free (RT_QUEUE *q,
 		   void *buf)
@@ -324,6 +413,68 @@ int rt_queue_free (RT_QUEUE *q,
     return err;
 }
 
+/**
+ * @fn int rt_queue_send(RT_QUEUE *q,
+                         void *buf,
+			 size_t size,
+			 int mode)
+ *
+ * @brief Send a message to a queue.
+ *
+ * This service sends a complete message to a given queue.
+ *
+ * @param q The descriptor address of the message queue to send to.
+ *
+ * @param buf The address of the message to be sent.  The message
+ * space must have been allocated using the rt_queue_alloc() service.
+ * Once passed to rt_queue_send(), the memory pointed to by @a buf is
+ * no more under the control of the sender and thus should not be
+ * referenced by it anymore; deallocation of this memory must be
+ * handled on the receiving side.
+ *
+ * @param size The size in bytes of the message. Zero is a valid
+ * value, in which case an empty message will be sent.
+ *
+ * @param mode A set of flags affecting the operation:
+ *
+ * - Q_URGENT causes the message to be prepended to the message queue,
+ * ensuring a LIFO ordering.
+ *
+ * - Q_NORMAL causes the message to be appended to the message queue,
+ * ensuring a FIFO ordering.
+ *
+ * - Q_BROADCAST causes the message to be sent to all tasks currently
+ * waiting for messages. The message is not copied; a reference count
+ * is maintained instead so that the message will remain valid until
+ * the last receiver releases its own reference using rt_queue_free(),
+ * after which the message space will be returned to the queue's
+ * internal pool.
+ *
+ * @return Upon success, this service returns the number of receivers
+ * which got awaken as a result of the operation. If zero is returned,
+ * no task was waiting on the receiving side of the queue, and the
+ * message has been enqueued. Upon error, one of the following error
+ * codes is returned:
+ *
+ * - -EINVAL is returned if @a q is not a message queue descriptor.
+ *
+ * - -EIDRM is returned if @a q is a deleted queue descriptor.
+ *
+ * - -EAGAIN is returned if queuing the message would exceed the limit
+ * defined for the queue at creation.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
 int rt_queue_send (RT_QUEUE *q,
 		   void *buf,
 		   size_t size,
@@ -349,7 +500,7 @@ int rt_queue_send (RT_QUEUE *q,
 
     if (q->qlimit != Q_UNLIMITED && countq(&q->pendq) >= q->qlimit)
 	{
-	err = -EBUSY;
+	err = -EAGAIN;
 	goto unlock_and_exit;
 	}
 
@@ -394,6 +545,69 @@ int rt_queue_send (RT_QUEUE *q,
 
     return err;
 }
+
+/**
+ * @fn int rt_queue_recv(RT_QUEUE *q,
+                         void **bufp,
+			 RTIME timeout)
+ *
+ * @brief Receive a message from a queue.
+ *
+ * This service retrieves the next message available from the given
+ * queue. Unless otherwise specified, the caller is blocked for a
+ * given amount of time if no message is immediately available on
+ * entry.
+ *
+ * @param q The descriptor address of the message queue to receive
+ * from.
+ *
+ * @param bufp A pointer to a memory location which will be written
+ * upon success with the address of the received message. Once
+ * consumed, the message space should be freed using rt_queue_free().
+ *
+ * @param timeout The number of clock ticks to wait for some message
+ * to arrive (see note). Passing RT_TIME_INFINITE causes the caller to
+ * block indefinitely until some message is eventually
+ * available. Passing RT_TIME_NONBLOCK causes the service to return
+ * immediately without waiting if no message is available on entry.
+ *
+ * @return The number of bytes available from the received message is
+ * returned upon success. Zero is a possible value corresponding to a
+ * zero-sized message passed to rt_queue_send(). Otherwise:
+ *
+ * - -EINVAL is returned if @a q is not a message queue descriptor.
+ *
+ * - -EIDRM is returned if @a q is a delete queue descriptor.
+ *
+ * - -ETIMEDOUT is returned if @a timeout is different from
+ * RT_TIME_NONBLOCK and no message is available within the specified
+ * amount of time.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout is equal to
+ * RT_TIME_NONBLOCK and no message is immediately available on entry.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before any data was available.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ *   only if @timeout is equal to RT_TIME_NONBLOCK.
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
+ */
 
 ssize_t rt_queue_recv (RT_QUEUE *q,
 		       void **bufp,
@@ -458,6 +672,36 @@ ssize_t rt_queue_recv (RT_QUEUE *q,
 
     return err;
 }
+
+/**
+ * @fn int rt_queue_inquire(RT_QUEUE *queue, RT_QUEUE_INFO *info)
+ * @brief Inquire about a message queue.
+ *
+ * Return various information about the status of a given queue.
+ *
+ * @param q The descriptor address of the inquired queue.
+ *
+ * @param info The address of a structure the queue information will
+ * be written to.
+
+ * @return 0 is returned and status information is written to the
+ * structure pointed at by @a info upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a q is not a message queue descriptor.
+ *
+ * - -EIDRM is returned if @a q is a deleted queue descriptor.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
 
 int rt_queue_inquire (RT_QUEUE *q,
                       RT_QUEUE_INFO *info)

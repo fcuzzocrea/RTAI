@@ -611,21 +611,20 @@ void xnshadow_relax (void)
 void xnshadow_unmap (xnthread_t *thread) /* Must be called by the task deletion hook. */
 
 {
-    struct task_struct *task = xnthread_archtcb(thread)->user_task;
+    struct task_struct *task;
     unsigned muxid, magic;
 
-    if (!task)
-	return;
+    task = xnthread_archtcb(thread)->user_task;
 
 #if 1
     if (traceme)
 	printk("__UNMAP__: %s, pid=%d, task=%s (ipipe=%lu, domain=%s, taskstate=%ld)\n",
 	       thread->name,
-	       task->pid,
-	       task->comm,
+	       task ? task->pid : -1,
+	       task ? task->comm : "<null>",
 	       adeos_test_pipeline_from(&rthal_domain),
 	       adp_current->name,
-	       task->state);
+	       task ? task->state : -1);
 #endif
 
     magic = xnthread_get_magic(thread);
@@ -634,13 +633,18 @@ void xnshadow_unmap (xnthread_t *thread) /* Must be called by the task deletion 
 	{
 	if (muxtable[muxid].magic == magic)
             {
-            if(xnarch_atomic_dec_and_test(&muxtable[muxid].refcnt))
-                /* We were the last thread, decrement the counter, since it was
-                   incremented by the first "attach" operation. */
+            if (xnarch_atomic_dec_and_test(&muxtable[muxid].refcnt))
+                /* We were the last thread, decrement the counter,
+		   since it was incremented by the first "attach"
+		   operation. */
                 xnarch_atomic_dec(&muxtable[muxid].refcnt);
+
             break;
             }
         }
+
+    if (!task)
+	return;
 
     xnshadow_ptd(task) = NULL;
 

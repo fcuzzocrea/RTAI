@@ -11,7 +11,7 @@
  *   and others.
  *
  *   RTAI/x86 rewrite over Adeos: \n
- *   Copyright &copy 2002 Philippe Gerum.
+ *   Copyright &copy; 2002 Philippe Gerum.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by

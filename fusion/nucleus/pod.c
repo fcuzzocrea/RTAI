@@ -2503,7 +2503,7 @@ int xnpod_trap_fault (void *fltinfo)
 
 /*! 
  * \fn int xnpod_start_timer(u_long nstick,
-                             xnisr_t handler)
+                             xnisr_t tickhandler)
  * \brief Start the system timer.
  *
  * The nucleus needs a time source to provide the time-related
@@ -2532,7 +2532,7 @@ int xnpod_trap_fault (void *fltinfo)
  * that cannot be easily expressed as multiples of a single base tick,
  * or would lead to a waste of high frequency periodical ticks.
  *
- * @param handler The address of the tick handler which will process
+ * @param tickhandler The address of the tick handler which will process
  * each incoming tick. XNPOD_DEFAULT_TICKHANDLER can be passed to use
  * the system-defined entry point (i.e. xnpod_announce_tick()). In any
  * case, a user-supplied handler should end up calling

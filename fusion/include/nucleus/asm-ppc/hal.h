@@ -1,5 +1,5 @@
 /**
- *   @ingroup hal
+ *   @ingroup hal_ppc
  *   @file
  *
  *   Adeos-based Real-Time Hardware Abstraction Layer for PPC.
@@ -11,7 +11,7 @@
  *   Copyright &copy; 2004 Wolfgang Grandegger, \n
  *   and others.
  *
- *   Copyright &copy 2002-2004 Philippe Gerum.
+ *   Copyright &copy; 2002-2004 Philippe Gerum.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@
  */
 
 /**
- * @addtogroup hal
+ * @addtogroup hal_ppc
  *@{*/
 
 #ifndef _RTAI_ASM_PPC_HAL_H

@@ -310,8 +310,13 @@ irqreturn_t rtai_broadcast_to_local_timers(int irq,
 
 #ifdef CONFIG_SMP
 
+#ifdef CONFIG_PREEMPT
 #define rt_spin_lock(lock)    _raw_spin_lock(lock)
 #define rt_spin_unlock(lock)  _raw_spin_unlock(lock)
+#else /* !CONFIG_PREEMPT */
+#define rt_spin_lock(lock)    spin_lock(lock)
+#define rt_spin_unlock(lock)  spin_unlock(lock)
+#endif /* CONFIG_PREEMPT */
 
 static inline void rt_spin_lock_irq(spinlock_t *lock) {
 

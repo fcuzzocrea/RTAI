@@ -116,8 +116,10 @@ int rt_task_create (RT_TASK *task,
 
     pthread_attr_init(&thattr);
 
-    if (stksize < PTHREAD_STACK_MIN * 2)
-	stksize = PTHREAD_STACK_MIN * 2;
+    if (stksize == 0)
+	stksize = PTHREAD_STACK_MIN * 4;
+    else if (stksize < PTHREAD_STACK_MIN)
+	stksize = PTHREAD_STACK_MIN;
 
     pthread_attr_setstacksize(&thattr,stksize);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);

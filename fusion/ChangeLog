@@ -4,7 +4,7 @@
 	spawned threads to PTHREAD_STACK_MIN * 2.
 
 	* skins/rtai/lib/task.c (rt_task_create): Limit stack space to
-	PTHREAD_STACK_MIN * 2 when none has been specified. 1Mb default is
+	PTHREAD_STACK_MIN * 4 when none has been specified. 1Mb default is
 	clearly overkill for real-time threads.
 
 2005-03-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

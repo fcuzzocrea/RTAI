@@ -650,15 +650,13 @@ int __rtai_shm_init (void)
 		printk("***** UNABLE TO REGISTER THE SHARED MEMORY DEVICE (miscdev minor: %d) *****\n", RTAI_SHM_MISC_MINOR);
 		return -EBUSY;
 	}
-
-	if (!rtai_global_heap_adr) {
-		printk("***** WARNING: GLOBAL HEAP NEITHER SHARABLE NOR USABLE FROM USER SPACE (use the vmalloc option for RTAI malloc) *****\n");
-	}
+#ifndef CONFIG_RTAI_MALLOC_VMALLOC
+	printk("***** WARNING: GLOBAL HEAP NEITHER SHARABLE NOR USABLE FROM USER SPACE (use the vmalloc option for RTAI malloc) *****\n");
 	rt_register(GLOBAL_HEAP_ID, rtai_global_heap_adr, rtai_global_heap_size, 0);
 	rt_smp_linux_task->heap[GLOBAL].heap = &rtai_global_heap;
 	rt_smp_linux_task->heap[GLOBAL].kadr =
 	rt_smp_linux_task->heap[GLOBAL].uadr = rtai_global_heap_adr;
-
+#endif
 	return set_rt_fun_entries(rt_shm_entries);
 }
 

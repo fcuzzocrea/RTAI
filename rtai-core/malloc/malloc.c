@@ -632,10 +632,6 @@ int __rtai_heap_init (void)
 		return 1;
 	}
 	/* The global heap is extendable once, only at init. */
-	rtai_global_heap.flags &= ~RTHEAP_EXTENDABLE;
-#ifdef CONFIG_RTAI_MALLOC_VMALLOC
-	rtai_global_heap_adr = rtai_global_heap.extents.next;
-#endif
 	printk(KERN_INFO "RTAI[malloc]: loaded (global heap size=%d bytes).\n", rtai_global_heap_size);
 	return 0;
 }

@@ -1599,8 +1599,6 @@ void rt_deregister_watchdog(RT_TASK *wd, int cpuid)
 #define SYSW_DIAG_MSG(x)
 #endif
 
-int lxrtmodechoed;
-
 static RT_TRAP_HANDLER lxrt_old_trap_handler;
 
 #ifdef CONFIG_RTAI_FPU_SUPPORT
@@ -1967,10 +1965,6 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 	}
 
 	if (rt_task->is_hard == 1) {
-		if (!lxrtmodechoed) {
-			lxrtmodechoed = 1;
-			rt_printk("\nLXRT CHANGED MODE (TRAP), PID = %d\n", (rt_task->lnxtsk)->pid);
-		}
 		SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (TRAP), PID = %d.\n", (rt_task->lnxtsk)->pid););
 	        give_back_to_linux(rt_task);
 		rt_task->is_hard = 2;
@@ -2100,10 +2094,6 @@ static void lxrt_intercept_syscall(adevinfo_t *evinfo)
 	if (test_bit(cpuid, &rtai_cpu_realtime)) {
 		RT_TASK *task = rt_smp_current[cpuid];
 		if (task->is_hard == 1) {
-			if (!lxrtmodechoed) {
-				lxrtmodechoed = 1;
-				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d\n", (task->lnxtsk)->pid);
-			}
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d.\n", (task->lnxtsk)->pid););
 			give_back_to_linux(task);
 			task->is_hard = 2;

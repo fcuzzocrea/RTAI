@@ -39,7 +39,7 @@ void sc_gclock (struct timespec *timep, unsigned long *nsp, int *errp)
 
     now = xnpod_get_time ();
 
-    timep->seconds = xnarch_ulldiv(now, 1000000000, &remain);
+    timep->seconds = xnarch_uldivrem(now, 1000000000, &remain);
     timep->nanoseconds = remain;
 
     xnlock_put_irqrestore(&nklock,s);

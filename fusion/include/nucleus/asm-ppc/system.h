@@ -152,9 +152,9 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define xnarch_printf(fmt,args...)   printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
 
 #define xnarch_ullmod(ull,uld,rem)   ({ xnarch_ulldiv(ull,uld,rem); (*rem); })
-#define xnarch_uldiv(ull, d)         xnarch_uldivrem(ull, d, NULL)
+#define xnarch_uldiv(ull, d)         rthal_uldivrem(ull, d, NULL)
 #define xnarch_ulmod(ull, d)         ({ u_long _rem;                    \
-                                        xnarh_uldivrem(ull,uld,&_rem); _rem; })
+                                        rthal_uldivrem(ull,d,&_rem); _rem; })
 
 #define xnarch_ullmul                rthal_ullmul
 #define xnarch_uldivrem              rthal_uldivrem
@@ -254,11 +254,11 @@ static inline void xnarch_init_heapcb (xnarch_heapcb_t *hcb)
 extern "C" {
 #endif
 
-static inline unsigned long long xnarch_tsc_to_ns (unsigned long long ts) {
+static inline long long xnarch_tsc_to_ns (long long ts) {
     return xnarch_llimd(ts,1000000000,RTHAL_CPU_FREQ);
 }
 
-static inline unsigned long long xnarch_ns_to_tsc (unsigned long long ns) {
+static inline long long xnarch_ns_to_tsc (long long ns) {
     return xnarch_llimd(ns,RTHAL_CPU_FREQ,1000000000);
 }
 

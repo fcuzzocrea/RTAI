@@ -98,7 +98,7 @@ typedef unsigned long xnarch_cpumask_t;
 #define xnarch_cpus_and(dst, src1, src2) ((dst) = (src1) & (src2))
 #define xnarch_cpus_equal(mask1, mask2)  ((mask1) == (mask2))
 #define xnarch_cpus_empty(mask)          ((mask) == 0UL)
-#define xnarch_cpumask_of_cpu(cpu)       (1 << (cpu))
+#define xnarch_cpumask_of_cpu(cpu)       (1 << (cpu)) 
 #define xnarch_first_cpu(mask)           (ffnz(mask))
 #define XNARCH_CPU_MASK_ALL              (~0UL)
 
@@ -106,7 +106,7 @@ typedef unsigned long xnarch_cpumask_t;
 #define xnarch_uldivrem(ull,uld,rem) ((u_long)xnarch_ulldiv((ull),(uld),(rem)))
 #define xnarch_uldiv(ull, d)         xnarch_uldivrem(ull, d, NULL)
 #define xnarch_ulmod(ull, d)         ({ u_long _rem;                    \
-                                        rthal_uldivrem(ull,uld,&_rem); _rem; })
+                                        xnarch_uldivrem(ull,d,&_rem); _rem; })
 
 static inline int xnarch_imuldiv(int i, int mult, int div)
 {

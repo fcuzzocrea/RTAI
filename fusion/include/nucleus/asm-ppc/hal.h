@@ -92,7 +92,9 @@ static inline int rthal_imuldiv (int i, int mult, int div) {
     return (r + r) > div ? q + 1 : q;
 }
 
-static inline long long rthal_llimd(long long ll, int mult, int div) {
+static inline unsigned long long __rthal_ullimd(unsigned long long ll,
+                                               int mult,
+                                               int div) {
 
     /* Returns (long long)ll = (int)ll*(int)(mult)/(int)div. */
 
@@ -106,6 +108,15 @@ static inline long long rthal_llimd(long long ll, int mult, int div) {
     ((unsigned long *)&low)[0] += q;
     
     return (r + r) > div ? low + 1 : low;
+}
+
+static inline long long rthal_llimd (long long op,
+                                     unsigned long m,
+                                     unsigned long d) {
+
+    if(op < 0LL)
+        return -__rthal_ullimd(-op, m, d);
+    return __rthal_ullimd(op, m, d);
 }
 
 static inline unsigned long ffnz (unsigned long ul) {

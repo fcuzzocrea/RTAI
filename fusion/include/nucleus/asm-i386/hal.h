@@ -275,6 +275,9 @@ static inline void rthal_spin_unlock_irqrestore(unsigned long flags,
 }
 
 #ifdef CONFIG_SMP
+#if CONFIG_MPENTIUM4
+#define rthal_cpu_relax(x) __asm__ __volatile__ ( "pause" )
+#else /* ! CONFIG_MPENTIUM4 */
 #define rthal_cpu_relax(x) \
 do { \
    int i = 0; \
@@ -282,6 +285,7 @@ do { \
      cpu_relax(); \
    while (++i < x); \
 } while(0)
+#endif /* CONFIG_MPENTIUM4 */
 #endif /* CONFIG_SMP */
 
 #if !defined(CONFIG_ADEOS_NOTHREADS)

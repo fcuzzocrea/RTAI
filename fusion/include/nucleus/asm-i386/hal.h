@@ -40,11 +40,7 @@
 
 #include <rtai_config.h>
 
-#ifdef CONFIG_SMP
-#define RTHAL_NR_CPUS  CONFIG_RTAI_HW_NRCPUS
-#else /* !CONFIG_SMP */
-#define RTHAL_NR_CPUS  1
-#endif /* CONFIG_SMP */
+#define RTHAL_NR_CPUS  ADEOS_NR_CPUS
 
 typedef unsigned long long rthal_time_t;
 

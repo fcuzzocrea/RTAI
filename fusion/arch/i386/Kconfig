@@ -35,16 +35,6 @@ config RTAI_HW_APERIODIC_TIMER
 	save a few hundreds bytes if you plan to use the system timer
 	in periodic mode only.
 
-config RTAI_HW_NRCPUS
-	string "Number of CPUs (SMP-only)"
-	default 2
-	help
-	RTAI has native support for Symmetrical Multi-Processing
-	machines. If it is your case, you may want to enter here the
-	number of CPUs of your motherboard.
-
-	PAY ATTENTION: the default value is 2.
-
 config RTAI_HW_TIMER_LATENCY
 	depends on RTAI_OPT_EXPERT
 	string "Timer tuning latency (ns)"

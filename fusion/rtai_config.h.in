@@ -16,9 +16,6 @@
 #undef CONFIG_RTAI_HW_FPU
 
 /* Kconfig */
-#undef CONFIG_RTAI_HW_NRCPUS
-
-/* Kconfig */
 #undef CONFIG_RTAI_HW_SCHED_LATENCY
 
 /* Kconfig */

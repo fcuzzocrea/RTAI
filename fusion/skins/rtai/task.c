@@ -115,7 +115,7 @@ void __task_pkg_cleanup (void)
  * platform.
  *
  * - T_CPU(cpuid) makes the new task affine to CPU # @b cpuid. CPU
- * identifiers range from 0 to CONFIG_RTAI_HW_NRCPUS - 1 (inclusive).
+ * identifiers range from 0 to RTHAL_NR_CPUS - 1 (inclusive).
  *
  * Passing T_FPU|T_CPU(1) in the @a mode parameter thus creates a task
  * with FPU support enabled and which will be affine to CPU #1.

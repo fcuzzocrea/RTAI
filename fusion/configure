@@ -1038,7 +1038,6 @@ Optional Features:
  --enable-user-vm	Build user-space VMs
  --enable-nucleus-debug	Enable debug support in nucleus
  --enable-nucleus-timestamps	Enable execution timestamps in nucleus
- --enable-cpus		Enable CPUs
  --enable-fpu		Enable FPU support
  --enable-aperiodic-timer		Enable aperiodic timer support
  --enable-module-debug	Enable debug information in kernel modules
@@ -4702,7 +4701,7 @@ test "x$enable_libtool_lock" != xno && enable_libtool_lock=yes
 case $host in
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4705 "configure"' > conftest.$ac_ext
+  echo '#line 4704 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5231,7 +5230,7 @@ chmod -w .
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -o out/conftest2.$ac_objext"
 compiler_c_o=no
-if { (eval echo configure:5234: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
+if { (eval echo configure:5233: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
   # The compiler can only warn and ignore the option if not recognized
   # So say no if there are warnings
   if test -s out/conftest.err; then
@@ -7063,7 +7062,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7066 "configure"
+#line 7065 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -7161,7 +7160,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7164 "configure"
+#line 7163 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8587,28 +8586,6 @@ fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_OPT_TIMESTAMPS:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_OPT_TIMESTAMPS:-no}" >&6
 
-echo "$as_me:$LINENO: checking for number of CPUs (SMP-only)" >&5
-echo $ECHO_N "checking for number of CPUs (SMP-only)... $ECHO_C" >&6
-# Check whether --enable-cpus or --disable-cpus was given.
-if test "${enable_cpus+set}" = set; then
-  enableval="$enable_cpus"
-  case "$enableval" in
- 	[1-8]) CONFIG_RTAI_HW_NRCPUS=$enableval ;;
- 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-cpus=<number-of-CPUs>" >&5
-echo "$as_me: error: Bad argument to option: --enable-cpus=<number-of-CPUs>" >&2;}
-   { (exit 1); exit 1; }; } ;;
-	esac
-fi;
-if test x$CONFIG_RTAI_HW_NRCPUS = x; then
-    if test x$CONFIG_SMP = x; then
-        CONFIG_RTAI_HW_NRCPUS=1
-    else
-        CONFIG_RTAI_HW_NRCPUS=CONFIG_NR_CPUS
-    fi
-fi
-echo "$as_me:$LINENO: result: ${CONFIG_RTAI_HW_NRCPUS:-1}" >&5
-echo "${ECHO_T}${CONFIG_RTAI_HW_NRCPUS:-1}" >&6
-
 echo "$as_me:$LINENO: checking for FPU support" >&5
 echo $ECHO_N "checking for FPU support... $ECHO_C" >&6
 # Check whether --enable-fpu or --disable-fpu was given.
@@ -9238,11 +9215,6 @@ cat >>confdefs.h <<_ACEOF
 #define CONFIG_RTAI_REVISION_LEVEL $CONFIG_RTAI_REVISION_LEVEL
 _ACEOF
 
-
-
-cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_HW_NRCPUS $CONFIG_RTAI_HW_NRCPUS
-_ACEOF
 
 
 cat >>confdefs.h <<_ACEOF

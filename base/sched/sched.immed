@@ -916,15 +916,15 @@ void rt_sched_unlock(void)
 	unsigned long flags;
 	int cpuid;
 
-	rtai_save_flags_and_cli(flags);
+	flags = rt_global_save_flags_and_cli();
 	if (rt_scheduling[cpuid = rtai_cpuid()].locked && !(--rt_scheduling[cpuid].locked)) {
 		if (rt_scheduling[cpuid].rqsted > 0) {
 			rt_schedule();
 		}
 	} else {
-		rt_printk("*** TOO MANY SCHED_UNLOCK ***\n");
+//		rt_printk("*** TOO MANY SCHED_UNLOCK ***\n");
 	}
-	rtai_restore_flags(flags);
+	rt_global_restore_flags(flags);
 }
 
 

@@ -45,7 +45,7 @@ MODULE_PARM_DESC(use_fpu, "Use full FPU support (default: 1)");
 int use_fpu = 0;
 #endif
 
-int stack_size = 2000;
+int stack_size = 5000;
 MODULE_PARM(stack_size, "i");
 MODULE_PARM_DESC(stack_size, "Task stack size in bytes (default: 2000)");
 

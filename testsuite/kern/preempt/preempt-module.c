@@ -138,9 +138,9 @@ static int __preempt_init(void)
 
 	rtf_create(FIFO, 1000);
 	rt_linux_use_fpu(USE_FPU);
-	rt_task_init_cpuid(&thread, fun, 0, 3000, 0, USE_FPU, 0, 0);
-	rt_task_init_cpuid(&Fast_Task, Fast_Thread, 0, 3000, 1, 0, 0, 0);
-	rt_task_init_cpuid(&Slow_Task, Slow_Thread, 0, 3000, 2, 0, 0, 0);
+	rt_task_init_cpuid(&thread, fun, 0, 5000, 0, USE_FPU, 0, 0);
+	rt_task_init_cpuid(&Fast_Task, Fast_Thread, 0, 5000, 1, 0, 0, 0);
+	rt_task_init_cpuid(&Slow_Task, Slow_Thread, 0, 5000, 2, 0, 0, 0);
 #ifdef ONESHOT_MODE
 	rt_set_oneshot_mode();
 #endif

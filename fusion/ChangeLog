@@ -1,5 +1,8 @@
 2005-01-09  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/hal/hal.c (rthal_calibrate_timer): Stop using
+	rthal_llimd() uselessly.
+
 	* include/nucleus/intr.h: Move the ISR return codes to the
 	context-independent section, so that they are also visible from
 	user-space.

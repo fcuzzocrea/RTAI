@@ -109,40 +109,80 @@ static atomic_t rthal_sync_count = ATOMIC_INIT(1);
 
 static rthal_trap_handler_t rthal_trap_handler;
 
+static int rthal_periodic_p;
+
 struct rthal_switch_info rthal_linux_context[RTHAL_NR_CPUS];
 
 struct rthal_calibration_data rthal_tunables;
 
 volatile unsigned long rthal_cpu_realtime;
 
-#ifdef CONFIG_SMP
-
 int rthal_request_timer (void (*handler)(void),
 			 unsigned long nstick)
 {
-    return 0;
+    unsigned long flags;
+    int err;
+
+    flags = rthal_critical_enter(NULL);
+
+    if (nstick > 0)
+	{
+	/* Periodic setup --
+	   Use the built-in Adeos service directly. */
+	err = adeos_tune_timer(nstick,0);
+	rthal_periodic_p = 1;
+	}
+    else
+	{
+	/* Oneshot setup. */
+	disarm_decr[adeos_processor_id()] = 1;
+	rthal_periodic_p = 0;
+#ifdef CONFIG_40x
+        mtspr(SPRN_TCR,mfspr(SPRN_TCR) & ~TCR_ARE); /* Auto-reload off. */
+#endif /* CONFIG_40x */
+	}
+
+    rthal_release_irq(RTHAL_TIMER_IRQ);
+
+    err = rthal_request_irq(RTHAL_TIMER_IRQ,
+			    (rthal_irq_handler_t)handler,
+			    NULL);
+
+    rthal_critical_exit(flags);
+
+    return err;
 }
 
 void rthal_release_timer (void)
 
 {
+    unsigned long flags;
+
+    flags = rthal_critical_enter(NULL);
+
+    if (rthal_periodic_p)
+	adeos_tune_timer(0,ADEOS_RESET_TIMER);
+    else
+	{
+	disarm_decr[adeos_processor_id()] = 0;
+#ifdef CONFIG_40x
+	mtspr(SPRN_TCR,mfspr(SPRN_TCR)|TCR_ARE); /* Auto-reload on. */
+	mtspr(SPRN_PIT,tb_ticks_per_jiffy);
+#else /* !CONFIG_40x */
+	set_dec(tb_ticks_per_jiffy);
+#endif /* CONFIG_40x */
+	}
+
+    rthal_release_irq(RTHAL_TIMER_IRQ);
+
+    rthal_critical_exit(flags);
 }
 
-#else /* !CONFIG_SMP */
-
-int rthal_request_timer (void (*handler)(void),
-			 unsigned long nstick)
-{
+#ifdef CONFIG_40x
+unsigned long rthal_calibrate_timer (void) {
     return 0;
 }
-
-void rthal_release_timer (void)
-
-{
-}
-
-#endif /* CONFIG_SMP */
-
+#else /* !CONFIG_40x */
 unsigned long rthal_calibrate_timer (void)
 
 {
@@ -152,23 +192,20 @@ unsigned long rthal_calibrate_timer (void)
 
     flags = rthal_critical_enter(NULL);
 
-    /* get_dec(orig) */
-
     t = rthal_rdtsc();
 
-    for (i = 0; i < 10000; i++)
-	{
-	/* set_dec() */
-	}
+    for (i = 0; i < 1000; i++)
+	set_dec(tb_ticks_per_jiffy);
 
     dt = rthal_rdtsc() - t;
 
-    /* set_dec(orig) */
-
+    set_dec(tb_ticks_per_jiffy); /* FIXME: we've just lost the current
+				    tick here... */
     rthal_critical_exit(flags);
 
     return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
 }
+#endif /* CONFIG_40x */
 
 unsigned long rthal_critical_enter (void (*synch)(void))
 
@@ -892,6 +929,7 @@ EXPORT_SYMBOL(rthal_tunables);
 EXPORT_SYMBOL(rthal_cpu_realtime);
 
 #ifdef CONFIG_RTAI_HW_FPU
+EXPORT_SYMBOL(rthal_init_fpu);
 EXPORT_SYMBOL(rthal_save_fpu);
 EXPORT_SYMBOL(rthal_restore_fpu);
 #endif /* CONFIG_RTAI_HW_FPU */

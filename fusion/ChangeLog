@@ -1,3 +1,11 @@
+2004-08-23  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc/hal/hal.c (rthal_request_timer, rthal_release_timer):
+	Implement timer setup code.
+
+	* testsuite/cruncher/cruncher.c: Remove useless and offending
+	<asm/io.h> inclusion (x86-specific).
+
 2004-08-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc: Various compilation fixes.

@@ -119,7 +119,7 @@ static inline unsigned long ffnz (unsigned long ul) {
 #include <linux/sched.h>
 #include <linux/interrupt.h>
 #include <asm/system.h>
-#include <asm/io.h>
+#include <asm/time.h>
 #include <asm/timex.h>
 #include <nucleus/asm/atomic.h>
 #include <asm/processor.h>
@@ -148,6 +148,7 @@ extern adomain_t rthal_domain;
 
 #define RTHAL_NR_SRQS    32
 
+#define RTHAL_TIMER_IRQ   __adeos_timer_virq
 #define RTHAL_TIMER_FREQ  (rthal_tunables.timer_freq)
 #define RTHAL_CPU_FREQ    (rthal_tunables.cpu_freq)
 
@@ -228,6 +229,7 @@ static inline struct task_struct *rthal_get_current (int cpuid)
 
 {
     register int *esp asm ("r1");
+    /* FIXME: r2 should be ok or even __adeos_current_threadinfo() - offsetof(THREAD) */
     
     if (esp >= rthal_domain.estackbase[cpuid] && esp < rthal_domain.estackbase[cpuid] + 2048)
 	return rthal_get_root_current(cpuid);
@@ -238,10 +240,11 @@ static inline struct task_struct *rthal_get_current (int cpuid)
 static inline void rthal_set_timer_shot (unsigned long delay) {
 
     if (delay) {
-        unsigned long flags;
-        rthal_hw_lock(flags);
-	
-        rthal_hw_unlock(flags);
+#ifdef CONFIG_40x
+	mtspr(SPRN_PIT,delay);
+#else /* !CONFIG_40x */
+	set_dec(delay);
+#endif /* CONFIG_40x */
     }
 }
 

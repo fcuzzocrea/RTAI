@@ -1,7 +1,6 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <sys/param.h>
-#include <sys/io.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -458,6 +458,11 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 #ifdef CONFIG_RTAI_HW_FPU
     tcb->fpup = NULL;
 #endif /* CONFIG_RTAI_HW_FPU */
+    tcb->entry = NULL;
+    tcb->cookie = NULL;
+    tcb->self = thread;
+    tcb->imask = 0;
+    tcb->name = name;
 }
 
 static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
@@ -611,6 +616,11 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 #ifdef CONFIG_RTAI_HW_FPU
     tcb->fpup = (rthal_fpenv_t *)&task->thread.fpr[0];
 #endif /* CONFIG_RTAI_HW_FPU */
+    tcb->entry = NULL;
+    tcb->cookie = NULL;
+    tcb->self = thread;
+    tcb->imask = 0;
+    tcb->name = name;
 }
 
 #endif /* XENO_SHADOW_MODULE */

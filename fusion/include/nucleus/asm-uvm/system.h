@@ -614,7 +614,6 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
 
     pthread_sync_rt(&tcb->syncflag);
-    pthread_start_rt(tcb->khandle);
 }
 
 static inline void xnarch_init_fpu(xnarchtcb_t *tcb) {
@@ -651,30 +650,6 @@ static inline int xnarch_hook_ipi (void (*handler)(void)) {
 static inline int xnarch_release_ipi (void) {
 
     return 0;
-}
-
-int xnarch_sleep_on (int *flagp)
-
-{
-    while (!*flagp)
-	{
-	struct timespec ts;
-	ts.tv_sec = 0;
-	ts.tv_nsec = 10000000;
-#if !CONFIG_RTAI_OPT_DEBUG
-	nanosleep(&ts,NULL);
-#else /* CONFIG_RTAI_OPT_DEBUG. */
-        if(nanosleep(&ts, NULL))
-            return -errno;
-#endif /* !CONFIG_RTAI_OPT_DEBUG. */
-	}
-    return 0;
-}
-
-static inline void xnarch_escalate (void) {
-
-    void xnpod_schedule_handler(void);
-    xnpod_schedule_handler();
 }
 
 #define xnarch_notify_ready()  /* Nullified */

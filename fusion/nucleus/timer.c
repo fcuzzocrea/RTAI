@@ -44,35 +44,60 @@
  * notice.
  */
 
+/*!
+ * \ingroup nucleus
+ * \defgroup timer Timer services.
+ *
+ * The Xenomai timer facility behaves slightly differently depending
+ * on the underlying system timer mode, i.e. periodic or aperiodic. In
+ * periodic mode, the hardware timer ticks periodically without any
+ * external programming (aside of the initial one which sets its
+ * period). In such a case, a BSD timer wheel (see "Redesigning the
+ * BSD Callout and Timer Facilities" by Adam M. Costello and George
+ * Varghese) is used to its full addressing capabilities.
+ * 
+ * If the underlying timer source is aperiodic, we need to reprogram
+ * the next shot after each tick at hardware level, and we cannot
+ * count on a strictly periodic source. In such a case, the timer
+ * manager only uses a single slot (#0) from the wheel as a plain
+ * linked list, which is ordered by increasing timeout values of the
+ * running timers.
+ *
+ * Depending on the above mode, the timer object stores time values
+ * either as count of periodic ticks, or as count of CPU ticks.
+ *
+ *@{*/
+
 #define XENO_TIMER_MODULE
 
 #include <nucleus/pod.h>
 #include <nucleus/thread.h>
 #include <nucleus/timer.h>
 
-/*
- * This code implements a timer facility based on the timer wheel
- * algorithm described in "Redesigning the BSD Callout and Timer
- * Facilities" by Adam M. Costello and George Varghese.
+
+/*! 
+ * \fn void xntimer_init(xntimer_t *timer,
+                         void (*handler)(void *cookie),
+			 void *cookie)
+ * \brief Initialize a timer object.
  *
- * This code behaves slightly differently depending on the underlying
- * system timer mode, i.e. periodic or aperiodic. In periodic mode,
- * the hardware timer ticks periodically without any external
- * programming (aside of the initial one which sets its period). In
- * such a case, a BSD timer wheel is used to its full addressing
- * capabilities. If the underlying timer source is aperiodic, we need
- * to reprogram the next shot after each tick at hardware level, and
- * we cannot count on a strictly periodic source. In such a case, the
- * timer manager only uses a single slot from the wheel as a plain
- * linked list, which is ordered by increasing timeout values of the
- * running timers. See the discussion about xnpod_start_timer() for
- * more.
+ * Create a timer. When created, a timer is left disarmed; it must be
+ * started using xntimer_start() in order to be activated.
  *
- * Depending on the above mode, the timer object stores time values
- * either as count of periodic ticks, or as count of CPU ticks for
- * performance reasons. In the latter case, the upper interface must
- * express delay values as count of nanoseconds when calling the timer
- * services though.
+ * @param timer The address of a timer descriptor Xenomai will use to
+ * store the object-specific data.  This descriptor must always be
+ * valid while the object is active therefore it must be allocated in
+ * permanent memory.
+ *
+ * @param handler The routine to call upon expiration of the timer.
+ *
+ * @param cookie A user-defined opaque cookie the nucleus will pass
+ * unmodified to the handler as its unique argument.
+ *
+ * There is no limitation on the number of timers which can be
+ * created/active concurrently.
+ *
+ * Context: This routine can be called on behalf of a thread or ISR.
  */
 
 void xntimer_init (xntimer_t *timer,
@@ -185,11 +210,11 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
 		   xnticks_t interval)
  * \brief Arm a timer.
  *
- * Starts a timer. The associated timeout handler will be fired after
- * each elapse time. A timer can be either periodic or single-shot,
- * depending on the reload value passed to this routine. The given
- * timer must have been previously initialized by a call to
- * xntimer_init().
+ * Activates a timer so that the associated timeout handler will be
+ * fired after each expiration time. A timer can be either periodic or
+ * single-shot, depending on the reload value passed to this
+ * routine. The given timer must have been previously initialized by a
+ * call to xntimer_init().
  *
  * @param timer The address of a valid timer descriptor.
  *
@@ -199,12 +224,14 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
  * @param interval The reload value of the timer. It is a periodic
  * interval value to be used for reprogramming the next timer shot,
  * expressed in clock ticks (see note). If @a interval is equal to
- * XN_INFINITE, the timer will not be reloaded when it elapses.
+ * XN_INFINITE, the timer will not be reloaded after it has expired.
  *
  * @return 0 is returned on success. Otherwise:
  *
  * - -EAGAIN is returned if the underlying time source is operating in
  * one-shot mode and @a value is anterior to the current date.
+ *
+ * Context: This routine can be called on behalf of a thread or ISR.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
@@ -281,6 +308,7 @@ int xntimer_start (xntimer_t *timer,
  *
  * @param timer The address of a valid timer descriptor.
  *
+ * Context: This routine can be called on behalf of a thread or ISR.
  */
 
 void xntimer_stop (xntimer_t *timer)
@@ -309,9 +337,26 @@ void xntimer_stop (xntimer_t *timer)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-/*
- * xntimer_get_date() -- Return the next trigger date of a timer
- * converted to the current time unit.
+/*!
+ * \fn xnticks_t xntimer_get_date(xntimer_t *timer)
+ *
+ * \brief Return the absolute expiration date.
+ *
+ * Return the next expiration date of a timer in absolute clock ticks
+ * (see note).
+ *
+ * @param timer The address of a valid timer descriptor.
+ *
+ * @return The expiration date converted to the current time unit. The
+ * special value XN_INFINITE is returned if @a timer is currently
+ * inactive.
+ *
+ * Context: This routine can be called on behalf of a thread or ISR.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the xnpod_start_timer() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
  */
 
 xnticks_t xntimer_get_date (xntimer_t *timer)
@@ -328,9 +373,28 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
     return xntimer_date(timer);
 }
 
-/*
- * xntimer_get_timeout() -- Return the time remaining up to the next
- * trigger date of a timer converted to the current time unit.
+/*!
+ * \fn xnticks_t xntimer_get_timeout(xntimer_t *timer)
+ *
+ * \brief Return the relative expiration date.
+ *
+ * Return the next expiration date of a timer in relative clock ticks
+ * (see note).
+ *
+ * @param timer The address of a valid timer descriptor.
+ *
+ * @return The expiration date converted to the current time unit. The
+ * special value XN_INFINITE is returned if @a timer is currently
+ * inactive. In oneshot mode, it might happen that the timer has
+ * already expired when this service is run (even if the associated
+ * handler has not been fired yet); in such a case, 1 is returned.
+ *
+ * Context: This routine can be called on behalf of a thread or ISR.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the xnpod_start_timer() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
  */
 
 xnticks_t xntimer_get_timeout (xntimer_t *timer)
@@ -354,12 +418,19 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
     return xntimer_date(timer) - nkpod->jiffies;
 }
 
-/**
+/*!
  * @internal
- * xntimer_do_timers() -- Inform all active timers that the clock has
- * been updated. Elapsed timer handlers will be called upon timeout.
- * Only enabled timers are inserted into the timer wheel. Called with
- * nklock locked, interrupts off.
+ * \fn void xntimer_do_timers(void)
+ *
+ * \brief Process a timer tick.
+ *
+ * This routine informs all active timers that the clock has been
+ * updated by processing the timer wheel. Elapsed timer actions will
+ * be fired.
+ *
+ * Context: Called from ISR with nklock locked, interrupts off.
+ *
+ * @note Only active timers are inserted into the timer wheel.
  */
 
 void xntimer_do_timers (void)
@@ -518,6 +589,8 @@ void xntimer_freeze (void)
 
     xnlock_put_irqrestore(&nklock,s);
 }
+
+/*@}*/
 
 EXPORT_SYMBOL(xntimer_init);
 EXPORT_SYMBOL(xntimer_destroy);

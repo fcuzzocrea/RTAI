@@ -2687,7 +2687,7 @@ static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
         goto unlock_and_exit;
         }
 
-    if (intr->pending < 0)
+    if (!intr->pending)
 	{
 	task = rtai_current_task();
 
@@ -2704,8 +2704,9 @@ static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
 	else if (xnthread_test_flags(&task->thread_base,XNBREAK))
 	    err = -EINTR; /* Unblocked.*/
 	}
-    else
-	--intr->pending;
+
+    err = intr->pending;
+    intr->pending = 0;
     
  unlock_and_exit:
 

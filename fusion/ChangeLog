@@ -1,3 +1,10 @@
+2005-02-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c (__rt_intr_wait): Fix pending count
+	handling and return it to the caller as a success value.
+
+	* include/nucleus/intr.h: Discard unused status field.
+
 2005-02-01  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/hal/hal.c (rthal_set_linux_task_priority): Limit

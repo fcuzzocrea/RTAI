@@ -121,7 +121,6 @@ int xnintr_init (xnintr_t *intr,
     intr->irq = irq;
     intr->isr = isr;
     intr->cookie = NULL;
-    intr->status = 0;
     intr->hits = 0;
 
     return 0;

@@ -132,7 +132,7 @@ int rt_intr_create (RT_INTR *intr,
     xnintr_init(&intr->intr_base,irq,isr,0);
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     xnsynch_init(&intr->synch_base,XNSYNCH_PRIO);
-    intr->pending = -1;
+    intr->pending = 0;
     intr->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     intr->magic = RTAI_INTR_MAGIC;
@@ -489,7 +489,8 @@ int rt_intr_inquire (RT_INTR *intr,
  * indefinitely until an interrupt triggers. Passing TM_NONBLOCK is
  * invalid.
  *
- * @return 0 is returned upon success. Otherwise:
+ * @return a positive value is returned upon success, representing the
+ * number of pending interrupts to process. Otherwise:
  *
  * - -ETIMEDOUT is returned if no interrupt occurred within the
  * specified amount of time.

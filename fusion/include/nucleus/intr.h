@@ -32,8 +32,6 @@ struct xnintr;
 
 typedef struct xnintr {
 
-    xnflags_t status;	/*!< Status bitmask. */
-
     unsigned irq;	/* !< IRQ number. */
 
     xnisr_t isr;	/* !< Interrupt service routine. */

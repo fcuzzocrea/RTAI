@@ -74,7 +74,7 @@ typedef struct rt_intr {
 
     int mode;		/* !< Interrupt control mode. */
 
-    int pending;	/* !< Pending hits to wait for. */
+    int pending;	/* !< Pending hits to process. */
 
     xnsynch_t synch_base; /* !< Base synchronization object. */
 

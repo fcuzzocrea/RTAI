@@ -1,3 +1,10 @@
+2004-09-23  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-*/syscall.h: Define an arch-dependent way of
+	setting the value returned by syscalls, using
+	__xn_success_return(), __xn_error_return() and
+	__xn_status_return().
+
 2004-09-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/procfs.h: Discard.

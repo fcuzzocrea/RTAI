@@ -220,6 +220,21 @@ asm (".L__X'%ebx = 1\n\t"
 #define __xn_reg_arg4(regs)   ((regs)->esi)
 #define __xn_reg_arg5(regs)   ((regs)->edi)
 
+/* Purposedly used inlines and not macros for the following routines
+   so that we don't risk spurious side-effects on the value arg. */
+
+static inline void __xn_success_return(struct pt_regs *regs, int v) {
+    __xn_reg_rval(regs) = v;
+}
+
+static inline void __xn_error_return(struct pt_regs *regs, int v) {
+    __xn_reg_rval(regs) = v;
+}
+
+static inline void __xn_status_return(struct pt_regs *regs, int v) {
+    __xn_reg_rval(regs) = v;
+}
+
 #define __xn_reg_mux_p(regs)        ((__xn_reg_mux(regs) & 0xffff) == __xn_sys_mux)
 #define __xn_mux_id(regs)           ((__xn_reg_mux(regs) >> 16) & 0xff)
 #define __xn_mux_op(regs)           ((__xn_reg_mux(regs) >> 24) & 0xff)

@@ -1024,7 +1024,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 
 	    if (!__xn_access_ok(curr,VERIFY_READ,(void *)__xn_reg_arg1(regs),sizeof(t)))
 		{
-		__xn_reg_rval(regs) = -EFAULT;
+		__xn_error_return(regs,-EFAULT);
 		return 1;
 		}
 
@@ -1032,7 +1032,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 
 	    if (t.tv_nsec >= 1000000000L || t.tv_nsec < 0 || t.tv_sec < 0)
 		{
-		__xn_reg_rval(regs) = -EINVAL;
+		__xn_error_return(regs,-EINVAL);
 		return 1;
 		}
 
@@ -1060,14 +1060,14 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		now = nkpod->jiffies;
 
 	    if (now >= expire)
-		__xn_reg_rval(regs) = 0;
+		__xn_success_return(regs,0);
 	    else
 		{
 		if (__xn_reg_arg2(regs))
 		    {
 		    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg2(regs),sizeof(t)))
 			{
-			__xn_reg_rval(regs) = -EFAULT;
+			__xn_error_return(regs,-EFAULT);
 			return 1;
 			}
 
@@ -1075,7 +1075,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		    __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&t,sizeof(t));
 		    }
 
-		__xn_reg_rval(regs) = -1;
+		__xn_success_return(regs,-1);
 		}
 
 	    return 1;
@@ -1095,7 +1095,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		{
 		if (!__xn_access_ok(curr,VERIFY_READ,(void *)__xn_reg_arg2(regs),sizeof(itv)))
 		    {
-		    __xn_reg_rval(regs) = -EFAULT;
+		    __xn_error_return(regs,-EFAULT);
 		    return 1;
 		    }
 
@@ -1111,7 +1111,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 
 	    if (delay > 0 && xntimer_start(&thread->atimer,delay,interval) < 0)
 		{
-		__xn_reg_rval(regs) = -ETIMEDOUT;
+		__xn_error_return(regs,-ETIMEDOUT);
 		return 1;
 		}
 
@@ -1119,7 +1119,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		{
 		if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg3(regs),sizeof(itv)))
 		    {
-		    __xn_reg_rval(regs) = -EFAULT;
+		    __xn_error_return(regs,-EFAULT);
 		    return 1;
 		    }
 
@@ -1140,7 +1140,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		__xn_copy_to_user(curr,(void *)__xn_reg_arg3(regs),&itv,sizeof(itv));
 		}
 
-	    __xn_reg_rval(regs) = 0;
+	    __xn_success_return(regs,0);
 
 	    return 1;
 	    }
@@ -1157,7 +1157,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    if (!__xn_reg_arg2(regs) ||
 		!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg2(regs),sizeof(itv)))
 		{
-		__xn_reg_rval(regs) = -EFAULT;
+		__xn_error_return(regs,-EFAULT);
 		return 1;
 		}
 
@@ -1176,7 +1176,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    xnshadow_ticks2tv(delay,&itv.it_value);
 	    xnshadow_ticks2tv(interval,&itv.it_interval);
 	    __xn_copy_to_user(curr,(void *)__xn_reg_arg3(regs),&itv,sizeof(itv));
-	    __xn_reg_rval(regs) = 0;
+	    __xn_success_return(regs,0);
 
 	    return 1;
 	    }
@@ -1212,7 +1212,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 		  __xn_mux_id(regs),
 		  __xn_mux_op(regs));
 
-	__xn_reg_rval(regs) = -ENOSYS;
+	__xn_error_return(regs,-ENOSYS);
 	}
     else
 	/* Regular Linux syscall with no skin loaded -- propagate it
@@ -1308,11 +1308,11 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	case __xn_sys_migrate:
 
 	    if (!thread)	/* Not a shadow anyway. */
-		__xn_reg_rval(regs) = 0;
+		__xn_success_return(regs,0);
 	    else if (__xn_reg_arg1(regs)) /* Linux => RTAI */
 		{
 		if (!xnthread_test_flags(thread,XNRELAX))
-		    __xn_reg_rval(regs) = 0;
+		    __xn_success_return(regs,0);
 		else
 		    /* Migration to RTAI from the Linux domain must be
 		       done from the latter: propagate the request to
@@ -1322,10 +1322,10 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	    else	/* RTAI => Linux */
 		{
 		if (xnthread_test_flags(thread,XNRELAX))
-		    __xn_reg_rval(regs) = 0;
+		    __xn_success_return(regs,0);
 		else
 		    {
-		    __xn_reg_rval(regs) = 1;
+		    __xn_success_return(regs,1);
 		    xnshadow_relax();
 		    }
 		}
@@ -1355,10 +1355,10 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 		xntimes_t ts;
 		xnpod_get_timestamps(&ts);
 		__xn_copy_to_user(task,(void *)__xn_reg_arg1(regs),&ts,sizeof(ts));
-		__xn_reg_rval(regs) = sizeof(ts);
+		__xn_success_return(regs,sizeof(ts));
 		}
 	    else
-		__xn_reg_rval(regs) = -EFAULT;
+		__xn_error_return(regs,-EFAULT);
 
 	    return;
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
@@ -1366,7 +1366,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	default:
 
  bad_syscall:
-	    __xn_reg_rval(regs) = -ENOSYS;
+	    __xn_error_return(regs,-ENOSYS);
 	    return;
 	}
 
@@ -1380,7 +1380,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 
     if ((sysflags & __xn_flag_shadow) != 0 && !thread)
 	{
-	__xn_reg_rval(regs) = -EACCES;
+	__xn_error_return(regs,-EACCES);
 	return;
 	}
 
@@ -1424,7 +1424,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	   immediately. */
 	}
 
-    __xn_reg_rval(regs) = muxtable[muxid - 1].systab[muxop].svc(task,regs);
+    __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(task,regs));
 }
 
 static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
@@ -1476,12 +1476,12 @@ static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
 	{
 	case __xn_sys_sync:
 
-	    __xn_reg_rval(regs) = xnshadow_sync_wait((int *)__xn_reg_arg1(regs));
+	    __xn_status_return(regs,xnshadow_sync_wait((int *)__xn_reg_arg1(regs)));
 	    return;
 
 	case __xn_sys_migrate:
 
-	    __xn_reg_rval(regs) = 1;
+	    __xn_success_return(regs,1);
 	    xnshadow_harden();
 	    return;
 
@@ -1507,7 +1507,7 @@ static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
 	   syscall. */
 	xnshadow_harden();
 
-    __xn_reg_rval(regs) = muxtable[muxid - 1].systab[muxop].svc(current,regs);
+    __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(current,regs));
 }
 
 static void xnshadow_linux_taskexit (adevinfo_t *evinfo)

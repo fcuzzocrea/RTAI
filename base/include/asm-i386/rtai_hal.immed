@@ -305,6 +305,7 @@ do { \
         apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
 } while (0)
 
+#if 0
 #ifdef CONFIG_PREEMPT
 #define rt_spin_lock(lock)    _raw_spin_lock(lock)
 #define rt_spin_unlock(lock)  _raw_spin_unlock(lock)
@@ -312,6 +313,38 @@ do { \
 #define rt_spin_lock(lock)    spin_lock(lock)
 #define rt_spin_unlock(lock)  spin_unlock(lock)
 #endif /* CONFIG_PREEMPT */
+#else
+#define rt_spin_lock(lock) \
+	do { barrier(); while (test_and_set_bit(0, (void *)&lock)) cpu_relax(); barrier(); } while (0)
+#define rt_spin_unlock(lock) \
+	do { barrier(); test_and_clear_bit(0, (void *)&lock); cpu_relax(); barrier(); } while (0)
+#endif
+
+static inline void rt_spin_lock_hw_irq(spinlock_t *lock)
+{
+	rtai_hw_cli();
+	rt_spin_lock(lock);
+}
+
+static inline void rt_spin_unlock_hw_irq(spinlock_t *lock)
+{
+	rt_spin_unlock(lock);
+	rtai_hw_sti();
+}
+
+static inline unsigned long rt_spin_lock_hw_irqsave(spinlock_t *lock)
+{
+	unsigned long flags;
+	rtai_hw_save_flags_and_cli(flags);
+	rt_spin_lock(lock);
+	return flags;
+}
+
+static inline void rt_spin_unlock_hw_irqrestore(unsigned long flags, spinlock_t *lock)
+{
+	rt_spin_unlock(lock);
+	rtai_hw_restore_flags(flags);
+}
 
 static inline void rt_spin_lock_irq(spinlock_t *lock) {
 
@@ -341,21 +374,25 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags, spinlock_t *lo
 
 static inline void rt_get_global_lock(void)
 {
+	barrier();
 	rtai_cli();
 	if (!test_and_set_bit(adeos_processor_id(), &rtai_cpu_lock)) {
 		while (test_and_set_bit(31, &rtai_cpu_lock)) {
 			cpu_relax();
 		}
 	}
+	barrier();
 }
 
 static inline void rt_release_global_lock(void)
 {
+	barrier();
 	rtai_cli();
 	if (test_and_clear_bit(adeos_processor_id(), &rtai_cpu_lock)) {
 		test_and_clear_bit(31, &rtai_cpu_lock);
 		cpu_relax();
 	}
+	barrier();
 }
 
 /**
@@ -408,14 +445,17 @@ static volatile inline unsigned long rtai_save_flags_irqbit_and_cli(void)
  */
 static inline int rt_global_save_flags_and_cli(void)
 {
+	barrier();
 	unsigned long flags = rtai_save_flags_irqbit_and_cli();
 
 	if (!test_and_set_bit(adeos_processor_id(), &rtai_cpu_lock)) {
 		while (test_and_set_bit(31, &rtai_cpu_lock)) {
 			cpu_relax();
 		}
+		barrier();
 		return flags | 1;
 	}
+	barrier();
 	return flags;
 }
 
@@ -445,6 +485,7 @@ static inline void rt_global_save_flags(unsigned long *flags)
  */
 static inline void rt_global_restore_flags(unsigned long flags)
 {
+	barrier();
 	switch (flags & ((1 << RTAI_IFLAG) | 1)) {
 		case (1 << RTAI_IFLAG) | 1:
 			rt_release_global_lock();
@@ -461,6 +502,7 @@ static inline void rt_global_restore_flags(unsigned long flags)
 			rt_get_global_lock();
 			break;
 	}
+	barrier();
 }
 
 #else /* !CONFIG_SMP */

@@ -917,7 +917,7 @@ int rt_assign_irq_to_cpu (int irq, unsigned long cpumask)
 
     spin_lock(&rtai_iset_lock);
 
-    oldmask = adeos_set_irq_affinity(irq,cpumask);
+    oldmask = CPUMASK(adeos_set_irq_affinity(irq, CPUMASK_T(cpumask)));
 
     if (oldmask == 0)
 	{
@@ -973,12 +973,12 @@ int rt_reset_irq_to_sym_mode (int irq)
 	return -EINVAL;
 	}
 
-    oldmask = adeos_set_irq_affinity(irq,0); /* Query -- no change. */
+    oldmask = CPUMASK(adeos_set_irq_affinity(irq, CPUMASK_T(0))); /* Query -- no change. */
 
     if (oldmask == rtai_set_irq_affinity[irq])
 	{
 	/* Ok, proceed since nobody changed it in the meantime. */
-	adeos_set_irq_affinity(irq,rtai_old_irq_affinity[irq]);
+	adeos_set_irq_affinity(irq, CPUMASK_T(rtai_old_irq_affinity[irq]));
 	rtai_old_irq_affinity[irq] = 0;
 	}
 

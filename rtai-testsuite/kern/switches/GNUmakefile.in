@@ -648,7 +648,7 @@ uninstall-am: uninstall-info-am
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
 
 @CONFIG_KBUILD_FALSE@switches_rt.o: libswitches_rt.a
-@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)ld --whole-archive $< -r -o $@
 
 all-local: switches_rt$(modext)
 

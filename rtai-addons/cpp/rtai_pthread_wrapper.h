@@ -39,7 +39,7 @@ extern "C" {
 
 // ----------------------------------------------------------------------------
 
-#define RT_TASK struct rt_task_struct
+typedef struct rt_task_struct RT_TASK;
 #define SEM_ERR (0xffff)          // MUST be the same as rtai_sched.c
 #define RT_SEM_MAGIC 0xaabcdeff   // MUST be the same as rtai_sched.c
 

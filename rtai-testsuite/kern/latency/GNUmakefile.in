@@ -736,7 +736,7 @@ uninstall-am: uninstall-info-am uninstall-testPROGRAMS
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
 
 @CONFIG_KBUILD_FALSE@latency_rt.o: liblatency_rt.a
-@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)ld --whole-archive $< -r -o $@
 
 all-local: latency_rt$(modext)
 

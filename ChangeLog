@@ -1,3 +1,7 @@
+2004-08-05  Marius Groeger <mgroeger@sysgo.com>
+
+	* rtai-testsuite/kern/*/Makefile.am: $(CROSS_COMPILE)ld.
+
 2004-08-04  Malte Cornils <mcornils@fzi.de>
 
 	* rtai-addons/cpp: Fix compilation and runtime support issues.

@@ -24,7 +24,7 @@ libswitches_rt_a_CPPFLAGS = \
 	-I../../../rtai-core/include
 
 switches_rt.o: libswitches_rt.a
-	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+	$(CROSS_COMPILE)ld --whole-archive $< -r -o $@
 endif
 
 all-local: switches_rt$(modext)

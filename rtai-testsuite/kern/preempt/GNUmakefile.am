@@ -24,7 +24,7 @@ libpreempt_rt_a_CPPFLAGS = \
 	-I../../../rtai-core/include
 
 preempt_rt.o: libpreempt_rt.a
-	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+	$(CROSS_COMPILE)ld --whole-archive $< -r -o $@
 endif
 
 test_PROGRAMS = display

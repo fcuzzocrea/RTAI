@@ -156,7 +156,7 @@ static inline void xnsynch_renice_thread (xnthread_t *thread, int prio)
  * @param timeout The timeout which may be used to limit the time the
  * thread pends on the resource. This value is a count of ticks (see
  * note).  Passing XN_INFINITE specifies an unbounded wait. All other
- * values are used to initialize a nanokernel watchdog timer.
+ * values are used to initialize a nucleus watchdog timer.
  *
  * Side-effect: This routine always calls the rescheduling procedure.
  *
@@ -426,7 +426,7 @@ xnpholder_t *xnsynch_wakeup_this_sleeper (xnsynch_t *synch,
  *
  * @param reason Some flags to set in the status mask of every
  * unblocked thread. The following bits are pre-defined by the
- * nanokernel:
+ * nucleus:
  *
  * - XNRMID should be set to indicate that the synchronization object
  * is about to be destroyed (see xnpod_resume_thread()).

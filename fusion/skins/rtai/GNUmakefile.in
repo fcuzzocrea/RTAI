@@ -255,7 +255,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	installdirs-recursive install-recursive uninstall-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = $(include_HEADERS) $(srcdir)/GNUmakefile.in \
-	GNUmakefile.am TODO
+	GNUmakefile.am
 DIST_SUBDIRS = $(SUBDIRS)
 all: all-recursive
 

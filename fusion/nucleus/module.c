@@ -52,7 +52,7 @@
 #include <nucleus/dbridge.h>
 #include <nucleus/fusion.h>
 
-MODULE_DESCRIPTION("XENOMAI nanokernel");
+MODULE_DESCRIPTION("Xenomai nucleus");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 

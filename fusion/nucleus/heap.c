@@ -54,9 +54,9 @@
  *
  * Dynamic memory allocation services.
  *
- * Implements the nanokernel memory allocator based on the algorithm described
- * in "Design of a General Purpose Memory  Allocator for the 4.3BSD Unix Kernel"
- * by Marshall K. McKusick and  Michael J. Karels.
+ * Implements a memory allocator based on the algorithm described in
+ * "Design of a General Purpose Memory Allocator for the 4.3BSD Unix
+ * Kernel" by Marshall K. McKusick and Michael J. Karels.
  *
  *@{*/
 

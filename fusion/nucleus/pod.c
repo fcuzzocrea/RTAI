@@ -233,7 +233,7 @@ void xnpod_schedule_handler (void)
  *
  * @param flags A set of creation flags affecting the operation.  The
  * only defined flag is XNDREORD (Disable REORDering), which tells the
- * nanokernel that the (xnsynch_t) pend queue should not be reordered
+ * nucleus that the (xnsynch_t) pend queue should not be reordered
  * whenever the priority of a blocked thread it holds is changed. If
  * this flag is not specified, changing the priority of a blocked
  * thread using xnpod_renice_thread() will cause the pended queue to
@@ -415,14 +415,14 @@ fail:
  * \fn void xnpod_shutdown(int xtype)
  * \brief Default shutdown handler.
  *
- * Forcibly shutdowns the active pod. All existing nanokernel threads
+ * Forcibly shutdowns the active pod. All existing nucleus threads
  * (but the root one) are terminated, and the system heap is freed.
  *
  * @param xtype An exit code passed to the host environment who
- * started the nanokernel. Zero is always interpreted as a successful
+ * started the nucleus. Zero is always interpreted as a successful
  * return.
  *
- * The nanokernel will not call this routine directly but rather use
+ * The nucleus will not call this routine directly but rather use
  * the routine pointed to at by the pod.svctable.shutdown member in
  * the service table. This allows upper interfaces to interpose their
  * own shutdown handlers so that they have their word before any
@@ -604,7 +604,7 @@ static inline void xnpod_preempt_current_thread (void)
  * @param name An ASCII string standing for the symbolic name of the
  * thread. This name is copied to a safe place into the thread
  * descriptor. This name might be used in various situations by the
- * nanokernel for issuing human-readable diagnostic messages, so it is
+ * nucleus for issuing human-readable diagnostic messages, so it is
  * usually a good idea to provide a sensible value here. The simulator
  * even uses this name intensively to identify threads in the
  * debugging GUI it provides. However, passing NULL here is always
@@ -616,8 +616,8 @@ static inline void xnpod_preempt_current_thread (void)
  *
  * @param flags A set of creation flags affecting the operation. The
  * only defined flag available to the upper interfaces is XNFPU
- * (enable FPU), which tells the nanokernel that the new thread will
- * use the floating-point unit. In such a case, the nanokernel will
+ * (enable FPU), which tells the nucleus that the new thread will
+ * use the floating-point unit. In such a case, the nucleus will
  * handle the FPU context save/restore ops upon thread switches at the
  * expense of a few additional cycles per context switch. By default,
  * a thread is not expected to use the FPU. This flag is simply
@@ -626,7 +626,7 @@ static inline void xnpod_preempt_current_thread (void)
  * present.
  *
  * @param stacksize The size of the stack (in bytes) for the new
- * thread. If zero is passed, the nanokernel will use a reasonable
+ * thread. If zero is passed, the nucleus will use a reasonable
  * pre-defined size depending on the underlying real-time control
  * layer.
  *
@@ -702,7 +702,7 @@ int xnpod_init_thread (xnthread_t *thread,
  * service.
  *
  * @param mode The initial thread mode. The following flags can be
- * part of this bitmask, each of them affecting the nanokernel
+ * part of this bitmask, each of them affecting the nucleus
  * behaviour regarding the started thread:
  *
  * - XNLOCK causes the thread to lock the scheduler when it starts.
@@ -735,7 +735,7 @@ int xnpod_init_thread (xnthread_t *thread,
  * @param entry The address of the thread's body routine. In other
  * words, it is the thread entry point.
  *
- * @param cookie A user-defined opaque cookie the nanokernel will pass
+ * @param cookie A user-defined opaque cookie the nucleus will pass
  * to the emerging thread as the sole argument of its entry point.
  *
  * The START hooks are called on behalf of the calling context (if
@@ -934,7 +934,7 @@ void xnpod_restart_thread (xnthread_t *thread)
  * \brief Change a thread's control mode.
  *
  * Change the control mode of a given thread. The control mode affects
- * the behaviour of the nanokernel regarding the specified thread.
+ * the behaviour of the nucleus regarding the specified thread.
  *
  * @param thread The descriptor address of the affected thread.
  *
@@ -944,7 +944,7 @@ void xnpod_restart_thread (xnthread_t *thread)
  * mask. In this case, the lock nesting count is also reset to zero.
  *
  * @param setmask The new thread mode. The following flags can be part
- * of this bitmask, each of them affecting the nanokernel behaviour
+ * of this bitmask, each of them affecting the nucleus behaviour
  * regarding the thread:
  *
  * - XNLOCK causes the thread to lock the scheduler.  The target
@@ -1001,7 +1001,7 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
  *
  * \brief Delete a thread.
  *
- * Terminates a thread and releases all the nanokernel resources it
+ * Terminates a thread and releases all the nucleus resources it
  * currently holds. A thread exists in the system since
  * xnpod_init_thread() has been called to create it, so this service
  * must be called in order to destroy it afterwards.
@@ -1487,7 +1487,7 @@ void xnpod_unblock_thread (xnthread_t *thread)
  * Changes the base priority of a thread.  If the XNDREORD flag has
  * not been passed to xnpod_init() and the reniced thread is currently
  * blocked waiting in priority-pending mode (XNSYNCH_PRIO) for a
- * synchronization object to be signaled, the nanokernel will attempt
+ * synchronization object to be signaled, the nucleus will attempt
  * to reorder the object's pend queue so that it reflects the new
  * sleeper's priority.
  *
@@ -1578,7 +1578,7 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
  * of threads having the same priority is switched.  Round-robin
  * scheduling policies may be implemented by periodically issuing this
  * call in a given period of time. It should be noted that the
- * nanokernel already provides a built-in round-robin mode though (see
+ * nucleus already provides a built-in round-robin mode though (see
  * xnpod_activate_rr()).
  *
  * @param prio The priority level to rotate. if XNPOD_RUNPRI is given,
@@ -1840,7 +1840,7 @@ void xnpod_switch_fpu (void)
  *
  * This is the central rescheduling routine which should be called to
  * validate and apply changes which have previously been made to the
- * nanokernel scheduling state, such as suspending, resuming or
+ * nucleus scheduling state, such as suspending, resuming or
  * changing the priority of threads.  This call first determines if a
  * thread switch should take place, and performs it as
  * needed. xnpod_schedule() actually switches threads if:
@@ -1854,7 +1854,7 @@ void xnpod_switch_fpu (void)
  *   scheduler idle state (i.e. The root thread was
  *   running so far).
  *
- * The nanokernel implements a lazy rescheduling scheme so that most
+ * The nucleus implements a lazy rescheduling scheme so that most
  * of the services affecting the threads state MUST be followed by a
  * call to the rescheduling procedure for the new scheduling state to
  * be applied. In other words, multiple changes on the scheduler state
@@ -2101,7 +2101,7 @@ noswitch:
  *        the FIFO ordering is applied.
  *
  *        - XNPOD_NOSWITCH reorders the ready queue without switching
- *        contexts. This feature is used by the nanokernel mutex code
+ *        contexts. This feature is used by the nucleus mutex code
  *        to preserve the atomicity of some operations.
  */
 
@@ -2206,13 +2206,13 @@ maybe_switch:
 
 /*! 
  * \fn void xnpod_set_time(xnticks_t newtime);
- * \brief Set the nanokernel idea of time.
+ * \brief Set the nucleus idea of time.
  *
- * The nanokernel tracks the current time as a monotonously increasing
+ * The nucleus tracks the current time as a monotonously increasing
  * count of ticks announced by the timer source since the epoch. The
- * epoch is initially defined by the time the nanokernel has started.
+ * epoch is initially defined by the time the nucleus has started.
  * This service changes the epoch. Running timers use a different time
- * base thus are not affected by this operation. The nanokernel time
+ * base thus are not affected by this operation. The nucleus time
  * is only accounted when the system timer runs in periodic mode.
  *
  * Side-effect:
@@ -2235,11 +2235,11 @@ void xnpod_set_time (xnticks_t newtime)
 
 /*! 
  * \fn xnticks_t xnpod_get_time(void);
- * \brief Get the nanokernel idea of time.
+ * \brief Get the nucleus idea of time.
  *
- * This service gets the nanokernel (external) clock time.
+ * This service gets the nucleus (external) clock time.
  *
- * @return The current nanokernel time (in ticks) if the underlying
+ * @return The current nucleus time (in ticks) if the underlying
  * time source runs in periodic mode, or the system time (converted to
  * nanoseconds) as maintained by the CPU if aperiodic mode is in
  * effect, or no timer is running.
@@ -2264,9 +2264,9 @@ xnticks_t xnpod_get_time (void)
 /*! 
  * \fn int xnpod_add_hook(int type,
                           void (*routine)(xnthread_t *))
- * \brief Install a nanokernel hook.
+ * \brief Install a nucleus hook.
  *
- * The nanokernel allows to register user-defined routines which get
+ * The nucleus allows to register user-defined routines which get
  * called whenever a specific scheduling event occurs. Multiple hooks
  * can be chained for a single event type, and get called on a FIFO
  * basis.
@@ -2344,9 +2344,9 @@ int xnpod_add_hook (int type, void (*routine)(xnthread_t *))
 /*! 
  * \fn int xnpod_remove_hook(int type,
                              void (*routine)(xnthread_t *))
- * \brief Remove a nanokernel hook.
+ * \brief Remove a nucleus hook.
  *
- * This service removes a nanokernel hook previously registered using
+ * This service removes a nucleus hook previously registered using
  * xnpod_add_hook().
  *
  * @param type Defines the kind of hook to remove among
@@ -2446,7 +2446,7 @@ void xnpod_check_context (int mask)
  * on behalf of a real-time thread, the fault handler stored into the
  * service table (svctable.faulthandler) is invoked and the fault is
  * not propagated to the host system. Otherwise, the fault is
- * unhandled by the nanokernel and simply propagated.
+ * unhandled by the nucleus and simply propagated.
  *
  * @param fltinfo An opaque pointer to the arch-specific buffer
  * describing the fault. The actual layout is defined by the
@@ -2468,13 +2468,13 @@ int xnpod_trap_fault (void *fltinfo)
                              xnisr_t handler)
  * \brief Start the system timer.
  *
- * The nanokernel needs a time source to provide the time-related
+ * The nucleus needs a time source to provide the time-related
  * services to the upper interfaces. xnpod_start_timer() tunes the
  * timer hardware so that a user-defined routine is called according
  * to a given frequency. On architectures that provide a
  * oneshot-programmable time source, the system timer can operate
  * either in aperiodic or periodic mode. Using the aperiodic mode
- * still allows to run periodic nanokernel timers over it: the
+ * still allows to run periodic nucleus timers over it: the
  * underlying hardware will simply be reprogrammed after each tick by
  * the timer manager using the appropriate interval value (see
  * xntimer_start()).
@@ -2498,7 +2498,7 @@ int xnpod_trap_fault (void *fltinfo)
  * each incoming tick. XNPOD_DEFAULT_TICKHANDLER can be passed to use
  * the system-defined entry point (i.e. xnpod_announce_tick()). In any
  * case, a user-supplied handler should end up calling
- * xnpod_announce_tick() to inform the nanokernel of the incoming
+ * xnpod_announce_tick() to inform the nucleus of the incoming
  * tick.
  *
  * @return 0 is returned on success. Otherwise:
@@ -2651,8 +2651,8 @@ void xnpod_stop_timer (void)
  *
  * This is the default service routine for clock ticks which performs
  * the necessary housekeeping chores for time-related services managed
- * by the nanokernel. In a way or another, this routine must be called
- * to announce each incoming clock tick to the nanokernel.
+ * by the nucleus. In a way or another, this routine must be called
+ * to announce each incoming clock tick to the nucleus.
  *
  * @param intr The descriptor address of the interrupt object
  * associated to the timer interrupt.
@@ -2660,7 +2660,7 @@ void xnpod_stop_timer (void)
  * Side-effect: Since this routine manages the round-robin scheduling,
  * the running thread (which has been preempted by the timer
  * interrupt) can be switched out as a result of its time credit being
- * exhausted. The nanokernel always calls the rescheduling procedure
+ * exhausted. The nucleus always calls the rescheduling procedure
  * after the outer interrupt has been processed.
  *
  * @return XN_ISR_HANDLED is always returned.

@@ -78,22 +78,22 @@ xnintr_t nkclock;
  * When an interrupt occurs from the given @a irq line, the ISR is
  * fired in order to deal with the hardware event. The interrupt
  * service code may call any non-suspensive service from the
- * nanokernel.
+ * nucleus.
  *
  * Upon receipt of an IRQ, the ISR is immediately called on behalf of
  * the interrupted stack context. The status value returned by the ISR
  * is then checked for the following bits:
  *
- * - XN_ISR_ENABLE asks the nanokernel to re-enable the IRQ line. Over
+ * - XN_ISR_ENABLE asks the nucleus to re-enable the IRQ line. Over
  * some real-time control layers which mask and acknowledge IRQs, this
  * operation is necessary to revalidate the interrupt channel so that
  * more interrupts can be notified. The presence of such bit in the
  * ISR's return code causes Xenomai to ask the real-time control layer
  * to re-enable the interrupt.
  *
- * - XN_ISR_CHAINED tells the nanokernel to require the real-time
- * control layer to forward the IRQ. For instance, this would cause the
- * Adeos control layer to propagate the interrupt down the interrupt
+ * - XN_ISR_CHAINED tells the nucleus to require the real-time control
+ * layer to forward the IRQ. For instance, this would cause the Adeos
+ * control layer to propagate the interrupt down the interrupt
  * pipeline to other Adeos domains, such as Linux. This is the regular
  * way to share interrupts between Xenomai and the host system.
  *

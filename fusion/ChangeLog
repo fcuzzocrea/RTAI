@@ -1,3 +1,8 @@
+2004-06-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* doc/docbook/docbook-test/xenomai.xml: Refactor the paper
+	according to the latest RTAI/Xenomai evolution.
+
 2004-06-18  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.1

@@ -65,9 +65,9 @@ struct rt_tasklet_struct {
     struct rt_tasklet_struct *usptasklet;
 };
 
-#ifdef __KERNEL__
+#define TASKLET_STACK_SIZE  8196
 
-#define STACK_SIZE 8196
+#ifdef __KERNEL__
 
 #ifdef __cplusplus
 extern "C" {
@@ -264,48 +264,43 @@ void rt_register_task(struct rt_tasklet_struct *tasklet,
 #else /* !__KERNEL__ */
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/mman.h>
 #include <stdarg.h>
-#include <pthread.h>
 #include <rtai_lxrt.h>
 
 #ifndef __SUPPORT_TASKLET__
 #define __SUPPORT_TASKLET__
 
-static void *support_tasklet(void *arg)
+static int support_tasklet(void *tasklet)
 {
 	RT_TASK *task;
-	struct rt_tasklet_struct *tasklet, usptasklet;
-	struct { void *tasklet; void *handler; } upd;
+	struct rt_tasklet_struct usptasklet;
+	struct { struct rt_tasklet_struct *tasklet; void *handler; } arg = { tasklet, };
 
-	upd.tasklet = tasklet = ((struct rt_tasklet_struct **)arg)[0];
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-	if (!(task = rt_task_init_schmod((unsigned long)tasklet, 98, 0, 0, SCHED_FIFO, 0xF))) {
+	if (!(task = rt_thread_init((unsigned long)arg.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
 		printf("CANNOT INIT SUPPORT TASKLET\n");
-		return (void *)1;
-	}
-
-	{
-		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } arg = { tasklet, &usptasklet, task };
-		rtai_lxrt(TSKIDX, SIZARG, REG_TASK, &arg);
+		return -1;
+	} else {
+		struct { struct rt_tasklet_struct *tasklet, *usptasklet; RT_TASK *task; } reg = { arg.tasklet, &usptasklet, task };
+		rtai_lxrt(TSKIDX, sizeof(reg), REG_TASK, &reg);
 	}
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
-
 	rt_make_hard_real_time();
 	while (1) {
 		rt_task_suspend(task);
-		if ((upd.handler = (void*)usptasklet.handler)) {
-			rtai_lxrt(TSKIDX, SIZARG, SET_HDL, &upd);
+		if ((arg.handler = (void*)usptasklet.handler)) {
+			rtai_lxrt(TSKIDX, SIZARG, SET_HDL, &arg);
 			usptasklet.handler(usptasklet.data);
 		} else {
 			break;
 		}
 	}
 	rt_make_soft_real_time();
-
 	rt_task_delete(task);
-	return (void *)0;
+
+	return 0;
 }
 #endif /* __SUPPORT_TASKLET__ */
 
@@ -315,32 +310,25 @@ extern "C" {
 
 RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 {
-	pthread_t thread;
-	struct rt_tasklet_struct *tasklet;
+	void *sp;
+	struct { void *tasklet; int thread; } arg;
 
-	{
-		struct { int dummy; } arg = { 0 };
-		tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
-	}
+	memset(sp = malloc(TASKLET_STACK_SIZE), 0, TASKLET_STACK_SIZE);
+	arg.tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
+	arg.thread = clone(support_tasklet, sp + TASKLET_STACK_SIZE - 1, CLONE_VM | CLONE_FS | CLONE_FILES, arg.tasklet);
+	rtai_lxrt(TSKIDX, SIZARG, WAIT_IS_HARD, &arg);
 
-	pthread_create(&thread, NULL, support_tasklet, &tasklet);
-
-	{
-		struct { struct rt_tasklet_struct *tasklet; pthread_t thread; } arg = { tasklet, thread };
-		rtai_lxrt(TSKIDX, SIZARG, WAIT_IS_HARD, &arg);
-	}
-
-	return tasklet;
+	return arg.tasklet;
 }
 
 #define rt_init_timer rt_init_tasklet
 
 RTAI_PROTO(void, rt_delete_tasklet,(struct rt_tasklet_struct *tasklet))
 {
-	pthread_t thread;
+	int thread;
 	struct { struct rt_tasklet_struct *tasklet; } arg = { tasklet };
-	if ((thread = (pthread_t)rtai_lxrt(TSKIDX, SIZARG, DELETE, &arg).i[LOW])) {
-		pthread_join(thread, NULL);
+	if ((thread = rtai_lxrt(TSKIDX, SIZARG, DELETE, &arg).i[LOW])) {
+		waitpid(thread, NULL, 0);
 	}
 }
 

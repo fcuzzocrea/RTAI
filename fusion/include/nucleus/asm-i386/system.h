@@ -947,12 +947,12 @@ static inline void xnarch_stop_timer (void) {
     rthal_release_timer();
 }
 
-#if CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_SMP
 static inline int xnarch_send_timer_ipi (cpumask_t mask) {
 
     return adeos_send_ipi(RTHAL_APIC_TIMER_IPI, mask);
 }
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+#endif /* CONFIG_SMP */
 
 static inline void xnarch_read_timings (unsigned long long *shot,
 					unsigned long long *delivery,

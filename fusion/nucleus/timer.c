@@ -214,7 +214,7 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
     return getheadq(&timer->sched->timerwheel[0]) == &timer->link;
 }
 	
-#if CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_SMP
 
 static inline void xntimer_next_remote_shot (xnsched_t *sched)
 {
@@ -296,11 +296,11 @@ int xntimer_start (xntimer_t *timer,
 
 	    if (xntimer_heading_p(timer))
                 {
-#if CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_SMP
                 if(xntimer_sched(timer) != xnpod_current_sched())
                     xntimer_next_remote_shot(xntimer_sched(timer));
                 else
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+#endif /* CONFIG_SMP */
                     xntimer_next_local_shot(xntimer_sched(timer));
                 }
 	    }

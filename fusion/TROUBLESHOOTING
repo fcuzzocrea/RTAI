@@ -1,0 +1,60 @@
+This file is a troubleshooting guide about various known issues,
+addressed in a Q&A form. The material is divided into several
+sections, depending on whether it is arch-specific or generic.
+
+                           GENERIC
+===================================================================
+
+Q: My user-space application has unexpected latencies which seem to
+appear between transitioning from primary (mere RTAI) to secondary
+(shielded Linux) real-time modes. Why?
+
+A: Such transition requires to wake up the Linux task underlying your
+real-time thread when running in secondary mode, since the latter
+needs to leave the RTAI domain for executing under the control of the
+regular Linux scheduler. Therefore, it all depends on the Linux kernel
+granularity, i.e. its ability to reach the next rescheduling point as
+soon as such wakeup has been requested. Additionally, the task wakeup
+request is performed from a virtual interrupt handler which has to be
+run from the Linux domain upon request from the RTAI domain, so the
+time required to handle and dispatch this interrupt outside of any
+critical kernel section also needs to be accounted for. Even if the
+kernel granularity improves at each new release, there are still a few
+catches:
+
+o Although the use of DMA might induce additional interrupt latency
+due to bus bandwidth saturation, disabling it for disk I/O is a bad
+idea when using mixed real-time modes. This is due to the fact that
+using PIO often leads to lengthy non-preemptible sections of kernel
+code being run from e.g. IDE drivers, from which pending real-time
+mode transitions could be delayed. In the same vein, make sure that
+your IDE driver runs in unmasked IRQ mode. In any case, a quick check
+using the "hdparm" tool will help:
+
+# hdparm -v /dev/hda
+
+/dev/hda:
+ ...
+ unmaskirq    =  1 (on)
+ using_dma    =  1 (on)
+ ...
+
+Even if your application does not directly request disk I/O, remember
+that the kernel routinely performs housekeeping activities which do,
+like filesystem journal updates or VM commits to backing store, so
+latencies due to improper disk settings may well trigger apparently
+randomly. Of course, if your application only operates in primary mode
+during all of its time critical duties, it will not be adversely
+affected by DMA deactivation or IDE masking, since activities from the
+RTAI domain can preempt any activity from the Linux domain, including
+disk drivers.
+
+______________________________________________________________________
+
+
+                             x86
+======================================================================
+
+                           PowerPC
+
+======================================================================

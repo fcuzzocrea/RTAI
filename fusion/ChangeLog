@@ -1,4 +1,14 @@
+2005-02-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* TROUBLESHOOTING: Start troubleshooting guide.
+
+	* nucleus/shadow.c (xnshadow_relax): Engage interrupt shield when
+	moving to secondary mode.
+
 2005-02-20  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h (__switch_threads): Make sure
+	show_stack() could find %ebp at TOS.
 
 	* nucleus/pod.c (xnpod_fault_handler): Suspend on XNSUSP instead
 	of XNDORMANT.

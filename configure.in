@@ -1376,7 +1376,7 @@ else
 		    rm -f $RTAI_LINUX_DIR/.tmp_versions/rtai_*.mod $RTAI_LINUX_DIR/.tmp_versions/*_rt.mod; \
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=@RTAI_TARGET_ARCH@ \
 		    SUBDIRS=\$\$PWD M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
-		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
+		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
    RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
 fi
 

@@ -4,6 +4,8 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
+include_HEADERS = rtai_cpp.h
+
 noinst_HEADERS = \
 		bits.h \
 		cond.h \
@@ -14,7 +16,6 @@ noinst_HEADERS = \
 		module.h \
 		mutex.h \
 		new.h \
-		rtai_cpp.h \
 		rtai_wrapper.h \
 		rtai_pqueue_wrapper.h \
 		rtai_pthread_int_wrapper.h \

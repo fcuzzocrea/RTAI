@@ -323,6 +323,8 @@ moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 
 modext = @RTAI_MODULE_EXT@
 
+include_HEADERS = rtai_cpp.h
+
 noinst_HEADERS = \
 		bits.h \
 		cond.h \
@@ -333,7 +335,6 @@ noinst_HEADERS = \
 		module.h \
 		mutex.h \
 		new.h \
-		rtai_cpp.h \
 		rtai_wrapper.h \
 		rtai_pqueue_wrapper.h \
 		rtai_pthread_int_wrapper.h \
@@ -580,9 +581,10 @@ CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 DIST_SOURCES = $(am__libcpp_a_SOURCES_DIST) $(libcpp_bits_a_SOURCES) \
 	$(libcpp_rtf_a_SOURCES) $(libcpp_tbx_a_SOURCES) \
 	$(libcpp_wd_a_SOURCES)
-HEADERS = $(noinst_HEADERS)
+HEADERS = $(include_HEADERS) $(noinst_HEADERS)
 
-DIST_COMMON = $(noinst_HEADERS) $(srcdir)/GNUmakefile.in GNUmakefile.am
+DIST_COMMON = $(include_HEADERS) $(noinst_HEADERS) \
+	$(srcdir)/GNUmakefile.in GNUmakefile.am
 SOURCES = $(libcpp_a_SOURCES) $(libcpp_bits_a_SOURCES) $(libcpp_rtf_a_SOURCES) $(libcpp_tbx_a_SOURCES) $(libcpp_wd_a_SOURCES)
 
 all: all-am
@@ -1620,6 +1622,24 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
+	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
+	  rm -f $(DESTDIR)$(includedir)/$$f; \
+	done
 
 ETAGS = etags
 ETAGSFLAGS =
@@ -1711,6 +1731,7 @@ check: check-am
 all-am: GNUmakefile $(LIBRARIES) $(HEADERS) all-local
 
 installdirs:
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -1754,7 +1775,7 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-includeHEADERS
 
 install-exec-am: install-exec-local
 
@@ -1782,19 +1803,20 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-includeHEADERS uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
 	clean-generic clean-libtool clean-local clean-noinstLIBRARIES \
 	ctags distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am info \
 	info-am install install-am install-data install-data-am \
-	install-exec install-exec-am install-exec-local install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-info-am
+	install-exec install-exec-am install-exec-local \
+	install-includeHEADERS install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool pdf \
+	pdf-am ps ps-am tags uninstall uninstall-am \
+	uninstall-includeHEADERS uninstall-info-am
 
 
 @CONFIG_KBUILD_TRUE@rtai_cpp.ko: @RTAI_KBUILD_ENV@

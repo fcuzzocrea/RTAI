@@ -1,3 +1,16 @@
+2004-08-25  Ignacio García Pérez <iggarpe@terra.es>
+
+	* rtai-core/ipc/sem/sem.c: Dead code removal.
+
+2004-08-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-addons/cpp/GNUmakefile.am: Make rtai_cpp.h an installable
+	file.
+
+2004-08-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Allow for assembly files in 2.6 targets.
+
 2004-25-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
         * rtai-core/sched/rtai/sched_lxrt.c: on 2.6.x stealing from linux 
 	uses Linux default wake up function to insure syncing with 

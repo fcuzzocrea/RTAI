@@ -314,7 +314,7 @@ int __fusion_sys_init (void)
 
  fail:
 
-    xnlogerr("RTAI/fusion init failed, code %d.\n",err);
+    xnlogerr("System init failed, code %d.\n",err);
 
     return err;
 }

@@ -2455,6 +2455,19 @@ static void lxrt_exit(void)
     reset_rt_fun_entries(rt_sched_entries);
 }
 
+#if defined(EMULATE_TSC) || !defined(CONFIG_X86_TSC)
+DECLR_8254_TSC_EMULATION;
+
+#define TSC_EMULATION_GUARD_FREQ 20
+static struct timer_list timer;
+
+static void timer_fun(unsigned long none)
+{
+	TICK_8254_TSC_EMULATION();
+	timer.expires = jiffies + (HZ + TSC_EMULATION_GUARD_FREQ/2 - 1)/TSC_EMULATION_GUARD_FREQ;
+	add_timer(&timer);
+}
+#endif
 
 static int __rtai_lxrt_init(void)
 {
@@ -2533,6 +2546,13 @@ static int __rtai_lxrt_init(void)
 	       imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq),
 	       imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 
+#if defined(EMULATE_TSC) || !defined(CONFIG_X86_TSC)
+	SETUP_8254_TSC_EMULATION();
+	init_timer(&timer);
+	timer.function = timer_fun;
+	timer_fun(0);
+#endif
+
 	retval = rtai_init_features(); /* see rtai_schedcore.h */
 exit:
 	return retval;
@@ -2575,6 +2595,12 @@ static void __rtai_lxrt_exit(void)
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 	rt_set_ihook(NULL);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+
+#if defined(EMULATE_TSC) || !defined(CONFIG_X86_TSC)
+	del_timer(&timer);
+	CLEAR_8254_TSC_EMULATION();
+#endif
+
 	printk(KERN_INFO "RTAI[sched_lxrt]: unloaded (forced hard/soft/hard transitions: %d).\n", lxrtmodtrans);
 }
 

@@ -1,5 +1,12 @@
 2004-06-29  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/fusion.c (__pthread_shadow_helper): Protect the mapping
+	phase from asynchronous deletion of the new shadow thread.
+
+	* skins/rtai/syscall.c (__rt_task_create): Downgrade the lock held
+	during xnshadow_map() from global (nucleus superlock) to local
+	(IRQ masking).
+
 	* skins/rtai/cond.c: Add Doxygen documentation of services.
 
 	* include/nucleus/asm-i386/system.h (xnarch_setimask): Inline it.

@@ -131,12 +131,6 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
     if (!task)
 	return -ENOMEM;
 
-    /* We don't want some funny guy to rip the new TCB off while two
-       user-space threads are being synchronized on it, so enter a
-       critical section. */
-
-    xnlock_get_irqsave(&nklock,s);
-
     /* Force FPU support in user-space. This will lead to a no-op if
        the platform does not support it. */
 
@@ -144,6 +138,16 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
+	/* We don't want some funny guy to rip the new TCB off while
+	   two user-space threads are being synchronized on it, so
+	   enter a critical section. Do *not* take the big lock here:
+	   this is useless since deleting a thread through an
+	   inter-CPU request requires the target CPU to accept IPIs,
+	   and this is bugous since xnshadow_map() would block
+	   "current" with the superlock held. */
+
+	splhigh(s);
+
 	/* Copy back the registry handle to the ph struct
 	   _before_ current is suspended in xnshadow_map(). */
 
@@ -157,6 +161,8 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 		     syncpid,
 		     u_syncp);
 
+	splexit(s);
+
 	/* Pass back the entry and the cookie pointers obtained from
 	   rt_task_start(). */
 
@@ -169,8 +175,6 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 	xnfree(task);
 	xnshadow_sync_post(syncpid,u_syncp,err);
 	}
-
-    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

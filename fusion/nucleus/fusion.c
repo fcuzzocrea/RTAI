@@ -57,6 +57,7 @@ static int __pthread_shadow_helper (struct task_struct *curr,
 {
     char name[XNOBJECT_NAME_LEN];
     xnthread_t *thread;
+    spl_t s;
 
     if (__xn_reg_arg2(regs) &&
 	!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(thread)))
@@ -98,6 +99,16 @@ static int __pthread_shadow_helper (struct task_struct *curr,
 	}
 
     xnthread_set_magic(thread,FUSION_SKIN_MAGIC);
+    
+    /* We don't want some funny guy to rip the new TCB off while two
+       user-space threads are being synchronized on it, so enter a
+       critical section. Do *not* take the big lock here: this is
+       useless since deleting a thread through an inter-CPU request
+       requires the target CPU to accept IPIs, and this is bugous
+       since xnshadow_map() would block "current" with the superlock
+       held. */
+
+    splhigh(s);
 
     if (__xn_reg_arg2(regs))
 	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&thread,sizeof(thread));
@@ -105,6 +116,8 @@ static int __pthread_shadow_helper (struct task_struct *curr,
     xnthread_extended_info(thread) = (void *)__xn_reg_arg3(regs);
 
     xnshadow_map(thread,syncpid,u_syncp);
+
+    splexit(s);
 
     return 0;
 }

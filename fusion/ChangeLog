@@ -10,6 +10,10 @@
 	adeos_virtualize_irq() and adeos_register_domain(). Perform the 
 	necessary cleanups on all failures in this function.
 	
+	* arch/ppc/hal.c (__rthal_init): Handle the possible failure of
+	adeos_virtualize_irq() and adeos_register_domain(). Perform the 
+	necessary cleanups on all failures in this function.
+	
 2005-03-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/module.c (rtai_shutdown): Make sure to wipe out all

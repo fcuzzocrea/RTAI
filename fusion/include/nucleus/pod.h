@@ -303,8 +303,8 @@ static inline xnthread_t *xnpod_current_thread (void)
 #define xnpod_locked_p() \
     (!!testbits(xnpod_current_thread()->status,XNLOCK))
 
-#define xnpod_pendable_p() \
-    (!(xnpod_asynch_p() || testbits(xnpod_current_thread()->status,XNLOCK)))
+#define xnpod_unblockable_p() \
+    (xnpod_asynch_p() || testbits(xnpod_current_thread()->status,XNLOCK|XNROOT))
 
 #define xnpod_root_p() \
     (!!testbits(xnpod_current_thread()->status,XNROOT))
@@ -315,8 +315,11 @@ static inline xnthread_t *xnpod_current_thread (void)
 #define xnpod_userspace_p() \
     (!!testbits(xnpod_current_thread()->status,XNROOT|XNSHADOW))
 
-#define xnpod_regular_p() \
+#define xnpod_primary_p() \
     (!(xnpod_asynch_p() || xnpod_root_p()))
+
+#define xnpod_secondary_p() \
+    (xnpod_root_p())
 
 #define xnpod_idle_p() xnpod_root_p()
 

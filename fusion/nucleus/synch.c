@@ -175,13 +175,12 @@ void xnsynch_sleep_on (xnsynch_t *synch,
 		setbits(owner->status,XNBOOST);
 		}
 
-	    if (!testbits(synch->status,XNSYNCH_CLAIMED))
-		{
-		insertpqf(&owner->claimq,
-			  &synch->link,
-			  getheadpq(&synch->pendq)->prio);
+	    if (testbits(synch->status,XNSYNCH_CLAIMED))
+		removepq(&owner->claimq,&synch->link);
+	    else
 		setbits(synch->status,XNSYNCH_CLAIMED);
-		}
+
+	    insertpqf(&owner->claimq,&synch->link,thread->cprio);
 
 	    xnsynch_renice_thread(owner,thread->cprio);
 	    }
@@ -260,11 +259,7 @@ void xnsynch_renice_sleeper (xnthread_t *thread)
 	    xnpod_priocompare(thread->cprio,owner->cprio) > 0)
 	    {
 	    removepq(&owner->claimq,&synch->link);
-
-	    insertpqf(&owner->claimq,
-		      &synch->link,
-		      thread->cprio);
-
+	    insertpqf(&owner->claimq,&synch->link,thread->cprio);
 	    xnsynch_renice_thread(owner,thread->cprio);
 	    }
 	}
@@ -317,7 +312,7 @@ xnthread_t *xnsynch_wakeup_one_sleeper (xnsynch_t *synch)
 
     xnlock_get_irqsave(&nklock,s);
 
-    holder = getpq(xnsynch_wait_queue(synch));
+    holder = getpq(&synch->pendq);
 
     if (holder)
 	{
@@ -391,7 +386,7 @@ xnpholder_t *xnsynch_wakeup_this_sleeper (xnsynch_t *synch,
 
     xnlock_get_irqsave(&nklock,s);
 
-    nholder = poppq(xnsynch_wait_queue(synch),holder);
+    nholder = poppq(&synch->pendq,holder);
     thread = link2thread(holder,plink);
     thread->wchan = NULL;
     synch->owner = thread;

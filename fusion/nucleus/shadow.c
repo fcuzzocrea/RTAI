@@ -970,8 +970,8 @@ static int detach_from_interface (struct task_struct *curr, int muxid)
     return 0;
 }
 
-static int substitute_syscall (struct task_struct *curr,
-			       struct pt_regs *regs)
+static int substitute_linux_syscall (struct task_struct *curr,
+				     struct pt_regs *regs)
 {
     xnthread_t *thread = xnshadow_thread(curr);
 
@@ -1165,6 +1165,53 @@ intr:
 	}
 }
 
+static void exec_nucleus_syscall (int muxop, struct pt_regs *regs)
+
+{
+    /* Called on behalf of the root thread. */
+
+    switch (muxop)
+	{
+	case __xn_sys_sync:
+
+	    __xn_status_return(regs,xnshadow_sync_wait((int *)__xn_reg_arg1(regs)));
+	    break;
+
+	case __xn_sys_migrate:
+
+	    if (xnshadow_harden() == -EINTR)
+		__xn_error_return(regs,-ERESTARTSYS);
+	    else
+		__xn_success_return(regs,1);
+
+	    break;
+
+	case __xn_sys_barrier:
+
+	    __xn_status_return(regs,xnshadow_wait_barrier(regs));
+	    break;
+
+	case __xn_sys_attach:
+
+	    __xn_status_return(regs,
+                               attach_to_interface(current,
+						   __xn_reg_arg1(regs),
+						   __xn_reg_arg2(regs)));
+	    break;
+		
+	case __xn_sys_detach:
+	    
+	    __xn_status_return(regs,
+                               detach_from_interface(current,
+						     __xn_reg_arg1(regs)));
+	    break;
+
+	default:
+
+	    printk(KERN_WARNING "RTAI[nucleus]: Unknown nucleus syscall #%d\n",muxop);
+	}
+}
+
 static void rtai_sysentry (adevinfo_t *evinfo)
 
 {
@@ -1175,7 +1222,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     u_long sysflags;
 
     if (nkpod && !testbits(nkpod->status,XNPIDLE))
-	goto skin_loaded;
+	goto nucleus_loaded;
 
     if (__xn_reg_mux_p(regs))
 	{
@@ -1198,7 +1245,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
     return;
 
- skin_loaded:
+ nucleus_loaded:
 
     task = get_calling_task(evinfo);
     thread = xnshadow_thread(task);
@@ -1228,7 +1275,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	       evinfo->domid);
 #endif
 
-    if (substitute_syscall(task,regs))
+    if (substitute_linux_syscall(task,regs))
 	/* This is a Linux syscall issued on behalf of a shadow thread
 	   running inside the RTAI domain. This call has just been
 	   intercepted by the nucleus and a RTAI replacement has been
@@ -1309,6 +1356,30 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	case __xn_sys_detach:
 	case __xn_sys_sync:
 	case __xn_sys_barrier:
+
+	    /* If called from RTAI, switch to secondary mode then run
+	     * the internal syscall afterwards. If called from Linux,
+	     * propagate the event so that linux_sysentry() will catch
+	     * it and run the syscall from there. We need to play this
+	     * trick here and at a few other locations because Adeos
+	     * will propagate events down the pipeline up to (and
+	     * including) the calling domain itself, so if RTAI is the
+	     * original caller, there is no way Linux can receive the
+	     * syscall from propagation because Adeos won't cross the
+	     * boundary delimited by the calling RTAI stage for this
+	     * particular syscall instance. If the latter is still
+	     * unclear in your mind, have a look at the
+	     * adeos_catch_event() documentation and get back to this
+	     * later. */
+
+	    if (evinfo->domid == RTHAL_DOMAIN_ID)
+	        {
+		xnshadow_relax();
+		exec_nucleus_syscall(muxop,regs);
+		return;
+		}
+
+	    /* Falldown wanted. */
 
  propagate_syscall:
 
@@ -1414,7 +1485,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
     if (__xn_reg_mux_p(regs))
 	goto xenomai_syscall;
 
-    if (thread && substitute_syscall(current,regs))
+    if (thread && substitute_linux_syscall(current,regs))
 	/* This is a Linux syscall issued on behalf of a shadow thread
 	   running inside the Linux domain. If the call has been
 	   substituted with a RTAI replacement, do not let Linux know
@@ -1447,44 +1518,11 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	goto skin_syscall;
 
     /* These are special built-in services which must run on behalf of
-       the Linux domain. */
+       the Linux domain (over which we are currently running). */
 
-    switch (muxop)
-	{
-	case __xn_sys_sync:
+    exec_nucleus_syscall(muxop,regs);
 
-	    __xn_status_return(regs,xnshadow_sync_wait((int *)__xn_reg_arg1(regs)));
-	    return;
-
-	case __xn_sys_migrate:
-
-	    if (xnshadow_harden() == -EINTR)
-		__xn_error_return(regs,-ERESTARTSYS);
-	    else
-		__xn_success_return(regs,1);
-
-	    return;
-
-	case __xn_sys_barrier:
-
-	    __xn_status_return(regs,xnshadow_wait_barrier(regs));
-	    return;
-
-	case __xn_sys_attach:
-
-	    __xn_status_return(regs,
-                               attach_to_interface(current,
-						   __xn_reg_arg1(regs),
-						   __xn_reg_arg2(regs)));
-	    return;
-		
-	case __xn_sys_detach:
-	    
-	    __xn_status_return(regs,
-                               detach_from_interface(current,
-						     __xn_reg_arg1(regs)));
-	    return;
-	}
+    return;
 
  skin_syscall:
 

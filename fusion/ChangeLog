@@ -1,5 +1,9 @@
 2005-02-17  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (rtai_sysentry): Make sure to properly run the
+	internal nucleus syscalls even when issued over the RTAI domain,
+	providing the required switch to secondary mode automagically.
+
 	* arch/i386/hal/GNUmakefile.am: Add smi.h to the source list.
 
 2005-02-15  Philippe Gerum  <rpm@xenomai.org>

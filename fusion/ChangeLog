@@ -1,3 +1,16 @@
+2005-01-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* drivers/16550A/16550A.h: Fix namespace clash with PPC's MSR
+	flags.
+
+	* drivers/16550A/16550A.c (rt_uart_open): Fix call to
+	rt_registry_enter().
+
+	* include/nucleus/asm-ppc/hal.h (__rthal_ullimd): Fix const
+	attribute name.
+
+	* GNUmakefile.am (SUBDIRS): Add missing drivers entry.
+
 2005-01-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.9-i386-r9c2.

@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <asm/io.h>
 #include <linux/ioport.h>
 #include <nucleus/pod.h>
 #include <16550A/16550A.h>
@@ -244,7 +245,7 @@ int rt_uart_open (RT_UART *uart,
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
 
-    err = rt_registry_enter(uart->name,uart,&uart->handle);
+    err = rt_registry_enter(uart->name,uart,&uart->handle,NULL);
 
     if (err)
 	{

@@ -100,7 +100,7 @@ static inline int rthal_imuldiv (int i, int mult, int div) {
     return rthal_uldivrem(ull, div, NULL);
 }
 
-static inline __attribute_const
+static inline __attribute_const__
 unsigned long long __rthal_ullimd(unsigned long long ll,
                                   int mult,
                                   int div)

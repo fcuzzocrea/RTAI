@@ -22,6 +22,8 @@
 #ifndef _RTAI_ASM_PPC_UART_H
 #define _RTAI_ASM_PPC_UART_H
 
+#include <linux/config.h>
+
 #if defined(CONFIG_SANDPOINT)
 
 #define TTYS0  { 0xfe0003f8, 4 }

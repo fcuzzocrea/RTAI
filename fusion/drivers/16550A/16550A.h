@@ -141,8 +141,8 @@ typedef struct rt_uart_config {
 #define MSR_DDCD  0x08
 #define MSR_CTS   0x10
 #define MSR_DSR   0x20
-#define MSR_RI    0x40
-#define MSR_DCD   0x80
+#define MSR_CRI   0x40
+#define MSR_CDCD  0x80
 
 #define FCR_FIFO  0x1
 #define FCR_RESET 0x6

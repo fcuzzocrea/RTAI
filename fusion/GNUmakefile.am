@@ -5,6 +5,7 @@ SUBDIRS = \
 	nucleus \
 	arch \
 	skins \
+	drivers \
 	testsuite \
 	scripts \
 	@RTAI_MAYBE_DOCDIR@ \

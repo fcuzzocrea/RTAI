@@ -1,3 +1,11 @@
+2004-06-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* scripts/rtai-load.in: Add application loader adapted from
+	vesuvio.
+
+	* testsuite: Add testsuite embryo. First, a plain and simple
+	latency test.
+
 2004-06-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/system.h: Remove useless inclusions for plain

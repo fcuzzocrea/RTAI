@@ -796,6 +796,9 @@ AC_CONFIG_FILES([ \
 	nucleus/lib/GNUmakefile \
 	scripts/GNUmakefile \
 	scripts/rtai-config \
+	scripts/rtai-load \
+	testsuite/GNUmakefile \
+	testsuite/latency/GNUmakefile \
 	skins/GNUmakefile \
        	skins/posix/GNUmakefile \
        	skins/rtai/GNUmakefile \

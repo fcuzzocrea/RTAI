@@ -9592,7 +9592,7 @@ fi
 
 
 
-                                                                                                                                                                                                                  ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile"
+                                                                                                                                                                                                                                                ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load testsuite/GNUmakefile testsuite/latency/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile"
 
 
 if test \! x$RTAI_MAYBE_DOCDIR = x; then
@@ -10332,6 +10332,9 @@ do
   "nucleus/lib/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES nucleus/lib/GNUmakefile" ;;
   "scripts/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES scripts/GNUmakefile" ;;
   "scripts/rtai-config" ) CONFIG_FILES="$CONFIG_FILES scripts/rtai-config" ;;
+  "scripts/rtai-load" ) CONFIG_FILES="$CONFIG_FILES scripts/rtai-load" ;;
+  "testsuite/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/GNUmakefile" ;;
+  "testsuite/latency/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/latency/GNUmakefile" ;;
   "skins/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/GNUmakefile" ;;
   "skins/posix/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/posix/GNUmakefile" ;;
   "skins/rtai/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/rtai/GNUmakefile" ;;

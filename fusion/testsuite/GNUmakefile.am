@@ -1,0 +1,7 @@
+OPTDIRS =
+
+if CONFIG_RTAI_SKIN_NATIVE
+OPTDIRS += latency
+endif
+
+SUBDIRS = $(OPTDIRS)

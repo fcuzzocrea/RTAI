@@ -1421,7 +1421,7 @@ static int __rt_queue_create (struct task_struct *curr, struct pt_regs *regs)
     /* Copy back the registry handle to the ph struct. */
     ph.opaque = q->handle;
     ph.opaque2 = &q->bufpool;
-    ph.mapsize = q->bufpool.extentsize;
+    ph.mapsize = xnheap_size(&q->bufpool);
 
     __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
 
@@ -1476,7 +1476,7 @@ static int __rt_queue_bind (struct task_struct *curr, struct pt_regs *regs)
 
     ph.opaque = q->handle;
     ph.opaque2 = &q->bufpool;
-    ph.mapsize = q->bufpool.extentsize;
+    ph.mapsize = xnheap_size(&q->bufpool);
 
     __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
 
@@ -1842,7 +1842,7 @@ static int __rt_heap_create (struct task_struct *curr, struct pt_regs *regs)
     /* Copy back the registry handle to the ph struct. */
     ph.opaque = heap->handle;
     ph.opaque2 = &heap->heap_base;
-    ph.mapsize = heap->heap_base.extentsize;
+    ph.mapsize = xnheap_size(&heap->heap_base);
 
     __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
 
@@ -1897,7 +1897,7 @@ static int __rt_heap_bind (struct task_struct *curr, struct pt_regs *regs)
 
     ph.opaque = heap->handle;
     ph.opaque2 = &heap->heap_base;
-    ph.mapsize = heap->heap_base.extentsize;
+    ph.mapsize = xnheap_size(&heap->heap_base);
 
     __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
 

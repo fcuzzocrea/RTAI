@@ -85,7 +85,8 @@ static void __queue_flush_private (xnheap_t *heap,
  * @param name An ASCII string standing for the symbolic name of the
  * queue. When non-NULL and non-empty, this string is copied to a safe
  * place into the descriptor, and passed to the registry package if
- * enabled for indexing the created queue.
+ * enabled for indexing the created queue. Shared queues must be given
+ * a valid name.
  *
  * @param poolsize The size (in bytes) of the message buffer pool
  * which is going to be pre-allocated to the queue. Message buffers
@@ -121,7 +122,8 @@ static void __queue_flush_private (xnheap_t *heap,
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
- * - -EINVAL is returned if @a poolsize is null.
+ * - -EINVAL is returned if @a poolsize is null, greater than the
+ * system limit, or @a name is null or empty for a shared queue.
  *
  * - -ENOMEM is returned if not enough system memory is available to
  * create the queue. Additionally, and if Q_SHARED has been passed in
@@ -169,6 +171,9 @@ int rt_queue_create (RT_QUEUE *q,
 #ifdef __KERNEL__
     if (mode & Q_SHARED)
 	{
+	if (!name || !*name)
+	    return -EINVAL;
+
 #ifdef CONFIG_RTAI_OPT_FUSION
 	err = xnheap_init_shared(&q->bufpool,
 				 poolsize,
@@ -746,7 +751,7 @@ int rt_queue_inquire (RT_QUEUE *q,
     info->nwaiters = xnsynch_nsleepers(&q->synch_base);
     info->nmessages = countq(&q->pendq);
     info->qlimit = q->qlimit;
-    info->poolsize = q->bufpool.extentsize;
+    info->poolsize = xnheap_size(&q->bufpool);
     info->mode = q->mode;
 
  unlock_and_exit:

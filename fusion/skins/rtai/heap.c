@@ -70,11 +70,24 @@ static void __heap_flush_private (xnheap_t *heap,
                           const char *name,
                           size_t heapsize,
                           int mode);
- * \brief Create a real-time memory heap.
+ * \brief Create a memory heap or shared memory segment.
  *
  * Initializes a memory heap suitable for time-bounded allocation
  * requests of dynamic memory. Memory heaps can be local to the kernel
  * space, or shared between kernel and user-space.
+ *
+ * In the latter case, heaps are used as shared memory segments. All
+ * allocation requests made through rt_heap_alloc() will then return
+ * the same memory block, which will point at to the beginning of the
+ * heap memory, and cover the entire heap space. This operating mode
+ * is specified by passing the H_SHARED flag into the @a mode
+ * parameter. By the proper use of a common @a name, all tasks can
+ * bind themselves to the same heap and thus share the same memory
+ * space, which start address should be retrieved by a call to
+ * rt_heap_alloc().
+ *
+ * In their simplest form, heaps are only accessible from kernel
+ * space, and are merely usable as regular memory allocators.
  *
  * @param heap The address of a heap descriptor RTAI will use to store
  * the heap-related data.  This descriptor must always be valid while
@@ -84,7 +97,8 @@ static void __heap_flush_private (xnheap_t *heap,
  * @param name An ASCII string standing for the symbolic name of the
  * heap. When non-NULL and non-empty, this string is copied to a safe
  * place into the descriptor, and passed to the registry package if
- * enabled for indexing the created heap.
+ * enabled for indexing the created heap. Shared heaps must be given a
+ * valid name.
  *
  * @param heapsize The size (in bytes) of the block pool which is
  * going to be pre-allocated to the heap. Memory blocks will be
@@ -102,9 +116,10 @@ static void __heap_flush_private (xnheap_t *heap,
  * waiting for available blocks.
  *
  * - H_SHARED causes the heap to be sharable between kernel and
- * user-space tasks. Otherwise, the new heap is only available for
- * kernel-based usage. This feature requires the real-time support in
- * user-space to be configured in (CONFIG_OPT_RTAI_FUSION).
+ * user-space tasks, and make it usable as a shared memory
+ * segment. Otherwise, the new heap is only available for kernel-based
+ * usage. This feature requires the real-time support in user-space to
+ * be configured in (CONFIG_OPT_RTAI_FUSION).
  *
  * - H_DMA causes the block pool associated to the heap to be
  * allocated in physically contiguous memory, suitable for DMA
@@ -116,7 +131,8 @@ static void __heap_flush_private (xnheap_t *heap,
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
- * - -EINVAL is returned if @a heapsize is null.
+ * - -EINVAL is returned if @a heapsize is null, greater than the
+ * system limit, or @a name is null or empty for a shared heap.
  *
  * - -ENOMEM is returned if not enough system memory is available to
  * create the heap. Additionally, and if H_SHARED has been passed in
@@ -155,7 +171,10 @@ int rt_heap_create (RT_HEAP *heap,
 	heapsize = 2 * PAGE_SIZE;
 
     /* Account for the overhead so that the actual free space is large
-       enough to match the requested size. */
+       enough to match the requested size. Using PAGE_SIZE for large
+       shared heaps might reserve way too much useless page map
+       memory, but this should never get pathological anyway, since we
+       are only consuming 1 byte per page. */
 
     heapsize += xnheap_overhead(heapsize,PAGE_SIZE);
     heapsize = PAGE_ALIGN(heapsize);
@@ -163,6 +182,9 @@ int rt_heap_create (RT_HEAP *heap,
 #ifdef __KERNEL__
     if (mode & H_SHARED)
 	{
+	if (!name || !*name)
+	    return -EINVAL;
+
 #ifdef CONFIG_RTAI_OPT_FUSION
 	err = xnheap_init_shared(&heap->heap_base,
 				 heapsize,
@@ -196,6 +218,7 @@ int rt_heap_create (RT_HEAP *heap,
     heap->handle = 0;  /* i.e. (still) unregistered heap. */
     heap->magic = RTAI_HEAP_MAGIC;
     heap->mode = mode;
+    heap->shm_block = NULL;
     xnobject_copy_name(heap->name,name);
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
@@ -304,7 +327,11 @@ int rt_heap_delete (RT_HEAP *heap)
  * @param heap The descriptor address of the heap to allocate a block
  * from.
  *
- * @param size The requested size in bytes of the block.
+ * @param size The requested size in bytes of the block. If the heap
+ * is shared, this value can be either zero, or the same value given
+ * to rt_heap_create(). In any case, the same block covering the
+ * entire heap space will always be returned to all callers of this
+ * service.
  *
  * @param timeout The number of clock ticks to wait for a block of
  * sufficient size to be available (see note). Passing
@@ -319,7 +346,9 @@ int rt_heap_delete (RT_HEAP *heap)
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a heap is not a heap descriptor.
+ * - -EINVAL is returned if @a heap is not a heap descriptor, or @heap
+ * is shared (i.e. H_SHARED mode) and @a size is non-zero but does not
+ * match the actual heap size passed to rt_heap_create().
  *
  * - -EIDRM is returned if @a q is a deleted heap descriptor.
  *
@@ -373,6 +402,38 @@ int rt_heap_alloc (RT_HEAP *heap,
 	goto unlock_and_exit;
 	}
 
+    /* In shared mode, there is only a single allocation returning the
+       whole addressable heap space to the user. All users referring
+       to this heap are then returned the same block. */
+
+    if (heap->mode & H_SHARED)
+	{
+	block = heap->shm_block;
+
+	if (!block)
+	    {
+	    /* It's ok to pass zero for size here, since the requested
+	       size is implictely the whole heap space; but if
+	       non-zero is given, it must match the actual heap
+	       size. */
+
+	    if (size > 0 && size != xnheap_size(&heap->heap_base))
+		{
+		err = -EINVAL;
+		goto unlock_and_exit;
+		}
+
+	    block = heap->shm_block = xnheap_alloc(&heap->heap_base,
+						   xnheap_size(&heap->heap_base));
+	    }
+
+	if (block)
+	    goto unlock_and_exit;
+
+	err = -ENOMEM;	/* This should never happen. Paranoid. */
+	goto unlock_and_exit;
+	}
+
     block = xnheap_alloc(&heap->heap_base,size);
 
     if (block)
@@ -418,6 +479,9 @@ int rt_heap_alloc (RT_HEAP *heap,
  * could be satisfied as a result of the release, it is immediately
  * resumed.
  *
+ * If the heap is shared (i.e. H_SHARED mode), this service leads to a
+ * null-effect and always returns successfully.
+ *
  * @param heap The address of the heap descriptor to which the block
  * @a block belong.
  *
@@ -457,6 +521,12 @@ int rt_heap_free (RT_HEAP *heap,
         goto unlock_and_exit;
         }
     
+    if (heap->mode & H_SHARED)	/* No-op if shared. */
+	{
+	err = 0;
+	goto unlock_and_exit;
+	}
+
     err = xnheap_free(&heap->heap_base,block);
 
     if (!err && xnsynch_nsleepers(&heap->synch_base) > 0)
@@ -542,7 +612,7 @@ int rt_heap_inquire (RT_HEAP *heap,
     
     strcpy(info->name,heap->name);
     info->nwaiters = xnsynch_nsleepers(&heap->synch_base);
-    info->heapsize = heap->heap_base.extentsize;
+    info->heapsize = xnheap_size(&heap->heap_base);
     info->mode = heap->mode;
 
  unlock_and_exit:

@@ -99,6 +99,8 @@ typedef struct rt_heap {
 
     int mode;		/* !< Creation mode. */
 
+    void *shm_block;	/* !< Single shared block (H_SHARED only) */
+
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */

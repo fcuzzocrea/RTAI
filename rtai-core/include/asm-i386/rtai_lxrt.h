@@ -21,7 +21,6 @@
 #ifndef _RTAI_ASM_I386_LXRT_H
 #define _RTAI_ASM_I386_LXRT_H
 
-#include <asm/segment.h>
 #include <asm/rtai_vectors.h>
 
 #define LOW  0
@@ -40,11 +39,19 @@ extern "C" {
 
 #ifdef __KERNEL__
 
+#include <asm/segment.h>
+
 #define RTAI_LXRT_HANDLER rtai_lxrt_handler
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define __LXRT_GET_DATASEG(reg) "movl $" STR(__KERNEL_DS) ",%" #reg "\n\t"
+#else /* KERNEL_VERSION >= 2.6.0 */
+#define __LXRT_GET_DATASEG(reg) "movl $" STR(__USER_DS) ",%" #reg "\n\t"
+#endif  /* KERNEL_VERSION < 2.6.0 */
 
 #define DEFINE_LXRT_HANDLER() \
 asmlinkage long long rtai_lxrt_invoke(unsigned int lxsrq, void *arg); \
-asmlinkage int rtai_lxrt_fastpath(void); \
+asmlinkage int rtai_lxrt_fastpath(struct pt_regs); \
 asmlinkage void RTAI_LXRT_HANDLER(void); \
 __asm__( \
 	"\n" __ALIGN_STR"\n\t" \
@@ -60,9 +67,9 @@ __asm__( \
 	"pushl %edx\n\t" \
 	"pushl %ecx\n\t" \
         "pushl %ebx\n\t" \
-	"movl $" STR(__KERNEL_DS) ",%ebx\n\t" \
-	"mov %bx,%ds\n\t" \
-	"mov %bx,%es\n\t" \
+	__LXRT_GET_DATASEG(ebx) \
+	"movl %ebx,%ds\t\n"  \
+	"movl %ebx,%es\t\n" \
 	"pushl %edx\n\t" \
 	"pushl %eax\n\t" \
 	"call "SYMBOL_NAME_STR(rtai_lxrt_invoke)"\n\t" \

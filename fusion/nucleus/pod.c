@@ -2637,7 +2637,7 @@ void xnpod_stop_timer (void)
 int xnpod_announce_tick (xnintr_t *intr)
 
 {
-    unsigned cpu, nr_cpus = xnarch_num_online_cpus();
+    unsigned cpu, nr_cpus;
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
@@ -2646,15 +2646,19 @@ int xnpod_announce_tick (xnintr_t *intr)
 
     /* Do the round-robin processing. */
 
+    /* Round-robin in aperiodic mode makes no sense. */
+    if (!testbits(nkpod->status,XNTMPER))
+	goto unlock_and_exit;
+
+    nr_cpus = xnarch_num_online_cpus();
+
     for (cpu = 0 ; cpu < nr_cpus ;++cpu)
         {
         xnthread_t *usrthread = xnpod_sched_slot(cpu)->usrthread;
 
         if (testbits(usrthread->status,XNRRB) &&
             usrthread->rrcredit != XN_INFINITE &&
-            !testbits(usrthread->status,XNLOCK) &&
-            /* Round-robin in aperiodic mode makes no sense. */
-            testbits(nkpod->status,XNTMPER))
+            !testbits(usrthread->status,XNLOCK))
             {
             /* The thread can be preempted and undergoes a round-robin
                scheduling. Round-robin time credit is only consumed by a
@@ -2676,6 +2680,8 @@ int xnpod_announce_tick (xnintr_t *intr)
                 usrthread->rrcredit--;
             }
         }
+
+ unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
 

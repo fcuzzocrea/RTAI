@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-SOURCES = $(libfusion_a_SOURCES)
+SOURCES = $(libfusion_la_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -56,12 +56,11 @@ am__vpath_adj = case $$p in \
   esac;
 am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(libdir)"
-libLIBRARIES_INSTALL = $(INSTALL_DATA)
-LIBRARIES = $(lib_LIBRARIES)
-ARFLAGS = cru
-libfusion_a_LIBADD =
-am_libfusion_a_OBJECTS = libfusion_a-fusion.$(OBJEXT)
-libfusion_a_OBJECTS = $(am_libfusion_a_OBJECTS)
+libLTLIBRARIES_INSTALL = $(INSTALL)
+LTLIBRARIES = $(lib_LTLIBRARIES)
+libfusion_la_LIBADD =
+am_libfusion_la_OBJECTS = libfusion_la-fusion.lo
+libfusion_la_OBJECTS = $(am_libfusion_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -73,8 +72,8 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libfusion_a_SOURCES)
-DIST_SOURCES = $(libfusion_a_SOURCES)
+SOURCES = $(libfusion_la_SOURCES)
+DIST_SOURCES = $(libfusion_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -282,10 +281,10 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-lib_LIBRARIES = libfusion.a
-libfusion_a_AR = $(CROSS_COMPILE)ar cru
-libfusion_a_SOURCES = fusion.c
-libfusion_a_CPPFLAGS = \
+lib_LTLIBRARIES = libfusion.la
+libfusion_la_LDFLAGS = -module -version-info 0:0:0
+libfusion_la_SOURCES = fusion.c
+libfusion_la_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
 	-I$(top_srcdir)/include \
 	-I../../include
@@ -323,39 +322,35 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-libLIBRARIES: $(lib_LIBRARIES)
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  if test -f $$p; then \
 	    f=$(am__strip_dir) \
-	    echo " $(libLIBRARIES_INSTALL) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(libLIBRARIES_INSTALL) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
-	  else :; fi; \
-	done
-	@$(POST_INSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    p=$(am__strip_dir) \
-	    echo " $(RANLIB) '$(DESTDIR)$(libdir)/$$p'"; \
-	    $(RANLIB) "$(DESTDIR)$(libdir)/$$p"; \
+	    echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
+	    $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
 	  else :; fi; \
 	done
 
-uninstall-libLIBRARIES:
+uninstall-libLTLIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	@set -x; list='$(lib_LTLIBRARIES)'; for p in $$list; do \
 	  p=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(libdir)/$$p'"; \
-	  rm -f "$(DESTDIR)$(libdir)/$$p"; \
+	  echo " $(LIBTOOL) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$p'"; \
+	  $(LIBTOOL) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$p"; \
 	done
 
-clean-libLIBRARIES:
-	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-libfusion.a: $(libfusion_a_OBJECTS) $(libfusion_a_DEPENDENCIES) 
-	-rm -f libfusion.a
-	$(libfusion_a_AR) libfusion.a $(libfusion_a_OBJECTS) $(libfusion_a_LIBADD)
-	$(RANLIB) libfusion.a
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
+libfusion.la: $(libfusion_la_OBJECTS) $(libfusion_la_DEPENDENCIES) 
+	$(LINK) -rpath $(libdir) $(libfusion_la_LDFLAGS) $(libfusion_la_OBJECTS) $(libfusion_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -363,7 +358,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfusion_a-fusion.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libfusion_la-fusion.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -386,19 +381,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
-libfusion_a-fusion.o: fusion.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfusion_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libfusion_a-fusion.o -MD -MP -MF "$(DEPDIR)/libfusion_a-fusion.Tpo" -c -o libfusion_a-fusion.o `test -f 'fusion.c' || echo '$(srcdir)/'`fusion.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libfusion_a-fusion.Tpo" "$(DEPDIR)/libfusion_a-fusion.Po"; else rm -f "$(DEPDIR)/libfusion_a-fusion.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fusion.c' object='libfusion_a-fusion.o' libtool=no @AMDEPBACKSLASH@
+libfusion_la-fusion.lo: fusion.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfusion_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libfusion_la-fusion.lo -MD -MP -MF "$(DEPDIR)/libfusion_la-fusion.Tpo" -c -o libfusion_la-fusion.lo `test -f 'fusion.c' || echo '$(srcdir)/'`fusion.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libfusion_la-fusion.Tpo" "$(DEPDIR)/libfusion_la-fusion.Plo"; else rm -f "$(DEPDIR)/libfusion_la-fusion.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fusion.c' object='libfusion_la-fusion.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfusion_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libfusion_a-fusion.o `test -f 'fusion.c' || echo '$(srcdir)/'`fusion.c
-
-libfusion_a-fusion.obj: fusion.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfusion_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libfusion_a-fusion.obj -MD -MP -MF "$(DEPDIR)/libfusion_a-fusion.Tpo" -c -o libfusion_a-fusion.obj `if test -f 'fusion.c'; then $(CYGPATH_W) 'fusion.c'; else $(CYGPATH_W) '$(srcdir)/fusion.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libfusion_a-fusion.Tpo" "$(DEPDIR)/libfusion_a-fusion.Po"; else rm -f "$(DEPDIR)/libfusion_a-fusion.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='fusion.c' object='libfusion_a-fusion.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfusion_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libfusion_a-fusion.obj `if test -f 'fusion.c'; then $(CYGPATH_W) 'fusion.c'; else $(CYGPATH_W) '$(srcdir)/fusion.c'; fi`
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libfusion_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libfusion_la-fusion.lo `test -f 'fusion.c' || echo '$(srcdir)/'`fusion.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -487,7 +475,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: GNUmakefile $(LIBRARIES)
+all-am: GNUmakefile $(LTLIBRARIES)
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
@@ -518,7 +506,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libLIBRARIES clean-libtool \
+clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -539,7 +527,7 @@ info-am:
 
 install-data-am:
 
-install-exec-am: install-libLIBRARIES
+install-exec-am: install-libLTLIBRARIES
 
 install-info: install-info-am
 
@@ -565,20 +553,20 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-libLIBRARIES
+uninstall-am: uninstall-info-am uninstall-libLTLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES clean-libtool ctags distclean \
+	clean-libLTLIBRARIES clean-libtool ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-exec \
 	install-exec-am install-info install-info-am \
-	install-libLIBRARIES install-man install-strip installcheck \
+	install-libLTLIBRARIES install-man install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-info-am \
-	uninstall-libLIBRARIES
+	uninstall-libLTLIBRARIES
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

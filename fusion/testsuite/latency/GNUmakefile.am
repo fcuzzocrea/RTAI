@@ -11,7 +11,7 @@ latency_CPPFLAGS = \
 	-I../../include
 
 latency_LDADD = \
-	../../skins/rtai/lib/librtai.a \
+	../../skins/rtai/lib/librtai.la \
 	-lpthread
 
 install-data-local:

@@ -15,7 +15,7 @@ cruncher_CFLAGS = \
 	-funroll-loops
 
 cruncher_LDADD = \
-	../../nucleus/lib/libfusion.a \
+	../../nucleus/lib/libfusion.la \
 	-lpthread
 
 install-data-local:

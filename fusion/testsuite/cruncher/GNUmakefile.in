@@ -54,7 +54,7 @@ testPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(test_PROGRAMS)
 am_cruncher_OBJECTS = cruncher-cruncher.$(OBJEXT)
 cruncher_OBJECTS = $(am_cruncher_OBJECTS)
-cruncher_DEPENDENCIES = ../../nucleus/lib/libfusion.a
+cruncher_DEPENDENCIES = ../../nucleus/lib/libfusion.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -288,7 +288,7 @@ cruncher_CFLAGS = \
 	-funroll-loops
 
 cruncher_LDADD = \
-	../../nucleus/lib/libfusion.a \
+	../../nucleus/lib/libfusion.la \
 	-lpthread
 
 EXTRA_DIST = runinfo

@@ -54,7 +54,7 @@ testPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(test_PROGRAMS)
 am_latency_OBJECTS = latency-latency.$(OBJEXT)
 latency_OBJECTS = $(am_latency_OBJECTS)
-latency_DEPENDENCIES = ../../skins/rtai/lib/librtai.a
+latency_DEPENDENCIES = ../../skins/rtai/lib/librtai.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -284,7 +284,7 @@ latency_CPPFLAGS = \
 	-I../../include
 
 latency_LDADD = \
-	../../skins/rtai/lib/librtai.a \
+	../../skins/rtai/lib/librtai.la \
 	-lpthread
 
 EXTRA_DIST = runinfo

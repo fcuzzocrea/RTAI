@@ -574,22 +574,30 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
  * the xnpod_init() service.
  *
  * @param flags A set of creation flags affecting the operation. The
- * only defined flag available to the upper interfaces is XNFPU
- * (enable FPU), which tells the nucleus that the new thread will
- * use the floating-point unit. In such a case, the nucleus will
- * handle the FPU context save/restore ops upon thread switches at the
+ * following flags can be part of this bitmask, each of them affecting
+ * the nucleus behaviour regarding the created thread:
+ *
+ * - XNSUSP creates the thread in a suspended state. In such a case,
+ * the thread will have to be explicitely resumed using the
+ * xnpod_resume_thread() service for its execution to actually begin,
+ * additionally to issuing xnpod_start_thread() for it. This flag can
+ * also be specified when invoking xnpod_start_thread() as a starting
+ * mode.
+
+ * - XNFPU (enable FPU) tells the nucleus that the new thread will use
+ * the floating-point unit. In such a case, the nucleus will handle
+ * the FPU context save/restore ops upon thread switches at the
  * expense of a few additional cycles per context switch. By default,
  * a thread is not expected to use the FPU. This flag is simply
  * ignored when Xenomai runs on behalf of a userspace-based real-time
- * control layer since the FPU management is always active if
- * present.
+ * control layer since the FPU management is always active if present.
  *
  * @param stacksize The size of the stack (in bytes) for the new
  * thread. If zero is passed, the nucleus will use a reasonable
  * pre-defined size depending on the underlying real-time control
  * layer.
  *
- * After creation, the new thraed can be set a magic cookie by skins
+ * After creation, the new thread can be set a magic cookie by skins
  * using xnthread_set_magic() to unambiguously identify threads
  * created in their realm. This value will be copied as-is to the @a
  * magic field of the thread struct. 0 is a conventional value for "no
@@ -630,7 +638,7 @@ int xnpod_init_thread (xnthread_t *thread,
         /* Allow the caller to bypass parametrical checks... */
         return -ENOMEM;
 
-    if (flags & ~(XNFPU|XNSHADOW))
+    if (flags & ~(XNFPU|XNSHADOW|XNSUSP))
         return -EINVAL;
 
     if (stacksize == 0)

@@ -1,5 +1,11 @@
 2004-11-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/task.c (rt_task_create): Allow for creation in
+	suspended state passing T_SUSP.
+	(rt_task_start): Apply CPU affinity.
+
+	* skins/rtai/task.h (T_CPU): Fix for multiple cpu affinity.
+
 	* skins/rtai/event.c: Rename rt_event_post() -> rt_event_signal(),
 	rt_event_pend() -> rt_event_wait() for consistency purpose with
 	the condvar support.

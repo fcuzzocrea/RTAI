@@ -714,7 +714,6 @@ void rt_schedule_on_schedule_ipi(void)
         rtai_hw_lock(flags);
 
 	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
-	sched_rqsted[cpuid] = 1;
 
 	sched_get_global_lock(cpuid);
 	RR_YIELD();
@@ -750,7 +749,7 @@ void rt_schedule_on_schedule_ipi(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (!sched_locked[cpuid] && new_task != rt_current) {
+	if ((sched_rqsted[cpuid] = new_task != rt_current) && !sched_locked[cpuid]) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;
@@ -792,7 +791,6 @@ void rt_schedule(void)
         rtai_hw_lock(flags);
 
 	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
-	sched_rqsted[cpuid] = 1;
 
 	RR_YIELD();
 	if (oneshot_running) {
@@ -844,7 +842,7 @@ void rt_schedule(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (!sched_locked[cpuid] && new_task != rt_current) {
+	if ((sched_rqsted[cpuid] = new_task != rt_current) && !sched_locked[cpuid]) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;
@@ -1064,7 +1062,6 @@ static void rt_timer_handler(void)
         rtai_hw_lock(flags);
 
 	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
-	sched_rqsted[cpuid] = 1;
 
 #ifdef CONFIG_X86_REMOTE_DEBUG
 	if (oneshot_timer) {    // Resync after possibly hitting a breakpoint
@@ -1132,7 +1129,7 @@ static void rt_timer_handler(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (!sched_locked[cpuid] && new_task != rt_current) {
+	if ((sched_rqsted[cpuid] = new_task != rt_current) && !sched_locked[cpuid]) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;

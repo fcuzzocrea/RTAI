@@ -315,7 +315,7 @@ void rtheap_destroy (rtheap_t *heap)
 {
     struct list_head *holder;
 
-    if (!(heap->flags & RTHEAP_EXTENDABLE) && heap != &rtai_global_heap)
+    if (!(heap->flags & RTHEAP_EXTENDABLE))
 	return;
 
     /* If the heap is marked as extendable, we have to release each

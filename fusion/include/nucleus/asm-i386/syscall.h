@@ -48,57 +48,6 @@
 
 #include <asm/ptrace.h>
 
-#ifdef __KERNEL__
-
-#include <asm/uaccess.h>
-
-#define __xn_copy_from_user(task,dstP,srcP,n)  __copy_from_user(dstP,srcP,n)
-#define __xn_copy_to_user(task,dstP,srcP,n)    __copy_to_user(dstP,srcP,n)
-#define __xn_put_user(task,src,dstP)           __put_user(src,dstP)
-#define __xn_get_user(task,dst,srcP)           __get_user(dst,srcP)
-
-#define __xn_range_ok(task,addr,size) ({ \
-	unsigned long flag,sum; \
-	asm("addl %3,%1 ; sbbl %0,%0; cmpl %1,%4; sbbl $0,%0" \
-		:"=&r" (flag), "=r" (sum) \
-	        :"1" (addr),"g" ((int)(size)),"g" ((task)->thread_info->addr_limit.seg)); \
-	flag; })
-
-/* WP bit must work for using the shadow support, so we only need
-   trivial range checking here. */
-#define __xn_access_ok(task,type,addr,size)    (__xn_range_ok(task,addr,size) == 0)
-
-#define XNARCH_MAX_SYSENT 255
-
-typedef struct _xnsysent {
-
-    int (*svc)(struct task_struct *task,
-	       struct pt_regs *regs);
-
-/* Syscall must run into the Linux domain. */
-#define __xn_flag_lostage    0x1
-/* Syscall must run into the RTAI domain. */
-#define __xn_flag_histage    0x2
-/* Shadow syscall; caller must be mapped. */
-#define __xn_flag_shadow     0x4
-/* Context-agnostic syscall. */
-#define __xn_flag_anycall    0x0
-/* Short-hand for shadow initializing syscall. */
-#define __xn_flag_init       __xn_flag_lostage
-/* Short-hand for pure shadow syscall in RTAI space. */
-#define __xn_flag_regular   (__xn_flag_shadow|__xn_flag_histage)
-
-    u_long flags;
-
-} xnsysent_t;
-
-extern int nkgkptd;
-
-#define xnshadow_ptd(t)    ((t)->ptd[nkgkptd])
-#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))
-
-#endif /* __KERNEL__ */
-
 /*
  * Some of the following macros have been adapted from glibc's syscall
  * mechanism implementation:
@@ -220,21 +169,6 @@ asm (".L__X'%ebx = 1\n\t"
 #define __xn_reg_arg4(regs)   ((regs)->esi)
 #define __xn_reg_arg5(regs)   ((regs)->edi)
 
-/* Purposedly used inlines and not macros for the following routines
-   so that we don't risk spurious side-effects on the value arg. */
-
-static inline void __xn_success_return(struct pt_regs *regs, int v) {
-    __xn_reg_rval(regs) = v;
-}
-
-static inline void __xn_error_return(struct pt_regs *regs, int v) {
-    __xn_reg_rval(regs) = v;
-}
-
-static inline void __xn_status_return(struct pt_regs *regs, int v) {
-    __xn_reg_rval(regs) = v;
-}
-
 #define __xn_reg_mux_p(regs)        ((__xn_reg_mux(regs) & 0xffff) == __xn_sys_mux)
 #define __xn_mux_id(regs)           ((__xn_reg_mux(regs) >> 16) & 0xff)
 #define __xn_mux_op(regs)           ((__xn_reg_mux(regs) >> 24) & 0xff)
@@ -272,5 +206,76 @@ typedef struct xninquiry {
 } xninquiry_t;
 
 struct task_struct;
+
+#ifdef __KERNEL__
+
+#include <linux/errno.h>
+#include <asm/uaccess.h>
+
+#define __xn_copy_from_user(task,dstP,srcP,n)  __copy_from_user(dstP,srcP,n)
+#define __xn_copy_to_user(task,dstP,srcP,n)    __copy_to_user(dstP,srcP,n)
+#define __xn_put_user(task,src,dstP)           __put_user(src,dstP)
+#define __xn_get_user(task,dst,srcP)           __get_user(dst,srcP)
+
+#define __xn_range_ok(task,addr,size) ({ \
+	unsigned long flag,sum; \
+	asm("addl %3,%1 ; sbbl %0,%0; cmpl %1,%4; sbbl $0,%0" \
+		:"=&r" (flag), "=r" (sum) \
+	        :"1" (addr),"g" ((int)(size)),"g" ((task)->thread_info->addr_limit.seg)); \
+	flag; })
+
+/* WP bit must work for using the shadow support, so we only need
+   trivial range checking here. */
+#define __xn_access_ok(task,type,addr,size)    (__xn_range_ok(task,addr,size) == 0)
+
+#define XNARCH_MAX_SYSENT 255
+
+typedef struct _xnsysent {
+
+    int (*svc)(struct task_struct *task,
+	       struct pt_regs *regs);
+
+/* Syscall must run into the Linux domain. */
+#define __xn_flag_lostage    0x1
+/* Syscall must run into the RTAI domain. */
+#define __xn_flag_histage    0x2
+/* Shadow syscall; caller must be mapped. */
+#define __xn_flag_shadow     0x4
+/* Context-agnostic syscall. */
+#define __xn_flag_anycall    0x0
+/* Short-hand for shadow initializing syscall. */
+#define __xn_flag_init       __xn_flag_lostage
+/* Short-hand for pure shadow syscall in RTAI space. */
+#define __xn_flag_regular   (__xn_flag_shadow|__xn_flag_histage)
+
+    u_long flags;
+
+} xnsysent_t;
+
+extern int nkgkptd;
+
+#define xnshadow_ptd(t)    ((t)->ptd[nkgkptd])
+#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))
+
+/* Purposedly used inlines and not macros for the following routines
+   so that we don't risk spurious side-effects on the value arg. */
+
+static inline void __xn_success_return(struct pt_regs *regs, int v) {
+    __xn_reg_rval(regs) = v;
+}
+
+static inline void __xn_error_return(struct pt_regs *regs, int v) {
+    __xn_reg_rval(regs) = v;
+}
+
+static inline void __xn_status_return(struct pt_regs *regs, int v) {
+    __xn_reg_rval(regs) = v;
+}
+
+static inline int __xn_interrupted_p(struct pt_regs *regs) {
+    return __xn_reg_rval(regs) == -EINTR;
+}
+
+#endif /* __KERNEL__ */
 
 #endif /* !_RTAI_ASM_I386_SYSCALL_H */

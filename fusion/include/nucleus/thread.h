@@ -61,24 +61,25 @@
 
 #define XNTIMEO   0x00000200	/* Woken up due to a timeout condition */
 #define XNRMID    0x00000400	/* Pending on a removed resource */
-#define XNBREAK   0x00000800	/* Forcibly woken up from a wait state */
-#define XNBOOST   0x00001000	/* Undergoes regular PIP boost */
+#define XNBREAK   0x00000800	/* Forcibly awaken from a wait state */
+#define XNKICKED  0x00001000	/* Kicked upon signal (shadow only) */
+#define XNBOOST   0x00002000	/* Undergoes regular PIP boost */
 
 /* Mode flags. */
-#define XNLOCK    0x00002000	/* Not preemptable */
-#define XNRRB     0x00004000	/* Undergoes a round-robin scheduling */
-#define XNASDI    0x00008000	/* ASR are disabled */
+#define XNLOCK    0x00004000	/* Not preemptable */
+#define XNRRB     0x00008000	/* Undergoes a round-robin scheduling */
+#define XNASDI    0x00010000	/* ASR are disabled */
 
-#define XNFPU     0x00010000	/* Thread uses FPU */
-#define XNSHADOW  0x00020000	/* Shadow thread */
-#define XNROOT    0x00040000	/* Root thread (i.e. Linux/IDLE) */
+#define XNFPU     0x00020000	/* Thread uses FPU */
+#define XNSHADOW  0x00040000	/* Shadow thread */
+#define XNROOT    0x00080000	/* Root thread (i.e. Linux/IDLE) */
 
 /* Must follow the above bits declaration order. */
 #define XNTHREAD_SLABEL_INIT \
 { "ssp", "pnd", "dly", "rdy", "dor", \
   "zom", "rst", "sta", "rlx", "tmo", \
-  "rmi", "brk", "bst", "lck", "rrb", \
-  "asd", "fpu", "usr", "idl" }
+  "rmi", "brk", "sig", "bst", "lck", \
+  "rrb", "asd", "fpu", "usr", "idl" }
 
 #define XNTHREAD_BLOCK_BITS   (XNSUSP|XNPEND|XNDELAY|XNDORMANT|XNRELAX)
 #define XNTHREAD_MODE_BITS    (XNLOCK|XNRRB|XNASDI)

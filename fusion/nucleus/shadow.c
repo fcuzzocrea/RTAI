@@ -167,6 +167,18 @@ static inline void set_linux_task_priority (struct task_struct *task, int prio)
     adeos_propagate_irq(nicevirq);
 }
 
+static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *regs)
+
+{
+    if (testbits(thread->status,XNKICKED))
+	{
+	__xn_error_return(regs,-ERESTARTSYS);
+	clrbits(thread->status,XNKICKED);
+	}
+
+    xnshadow_relax();
+}
+
 static void engage_local_irq_shield (unsigned local_cpu)
 
 {
@@ -1048,9 +1060,15 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 
 	    delay = xnshadow_ts2ticks(&t);
 	    expire += delay;
+	    __xn_success_return(regs,-1);
 
 	    if (delay > 0)
+		{
 		xnpod_delay(delay);
+
+		if (signal_pending(curr))
+		    request_syscall_restart(thread,regs);
+		}
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
 	    if (!testbits(nkpod->status,XNTMPER))
@@ -1068,19 +1086,13 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg2(regs),sizeof(t)))
 			{
 			__xn_error_return(regs,-EFAULT);
-			goto done;
+			return 1;
 			}
 
 		    xnshadow_ticks2ts(now - expire,&t);
 		    __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&t,sizeof(t));
 		    }
-
-		__xn_success_return(regs,-1);
 		}
-
-done:
-	    if (!testbits(thread->status,XNRELAX) && signal_pending(curr))
-		xnshadow_relax();
 
 	    return 1;
 	    }
@@ -1431,7 +1443,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
     __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(task,regs));
 
     if (xnpod_shadow_p() && signal_pending(task))
-	xnshadow_relax();
+	request_syscall_restart(thread,regs);
 }
 
 static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
@@ -1517,7 +1529,7 @@ static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
     __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(current,regs));
 
     if (xnpod_shadow_p() && signal_pending(current))
-	xnshadow_relax();
+	request_syscall_restart(thread,regs);
 }
 
 static void xnshadow_linux_taskexit (adevinfo_t *evinfo)
@@ -1648,10 +1660,14 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
 	xnshadow_start(thread,0,NULL,NULL,0);
     else
 	{
-	xnpod_unblock_thread(thread);
+	if (xnpod_unblock_thread(thread))
+	    __setbits(thread->status,XNKICKED);
 
 	if (testbits(thread->status,XNSUSP))
+	    {
 	    xnpod_resume_thread(thread,XNSUSP);
+	    __setbits(thread->status,XNKICKED);
+	    }
 	}
 
     xnlock_put_irqrestore(&nklock,s);

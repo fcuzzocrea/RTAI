@@ -1,5 +1,8 @@
 2004-10-04  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c: Ask Linux to restart interrupted Xenomai
+	syscalls.
+
 	* testsuite/latency/latency.c (cleanup_upon_sig): Forcibly exit
 	upon signal so that the sampler does not enter a tight error loop
 	in RTAI mode after the time has been stopped.

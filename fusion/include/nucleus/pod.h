@@ -405,7 +405,7 @@ void xnpod_suspend_thread(xnthread_t *thread,
 void xnpod_resume_thread(xnthread_t *thread,
 			 xnflags_t mask);
 
-void xnpod_unblock_thread(xnthread_t *thread);
+int xnpod_unblock_thread(xnthread_t *thread);
 
 void xnpod_renice_thread(xnthread_t *thread,
 			 int prio);

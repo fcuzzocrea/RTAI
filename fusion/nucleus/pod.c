@@ -1397,15 +1397,19 @@ unlock_and_exit:
  * unblocked thread's status mask. Unblocking a non-blocked thread is
  * perfectly harmless.
  *
+ * @return non-zero is returned if the thread was actually unblocked
+ * from a pending wait state, 0 otherwise.
+
  * Side-effect: This service does not call the rescheduling procedure
  * but may affect the ready queue.
  *
  * Context: This routine can be called on behalf of a thread or ISR.
  */
 
-void xnpod_unblock_thread (xnthread_t *thread)
+int xnpod_unblock_thread (xnthread_t *thread)
 
 {
+    int ret = 1;
     spl_t s;
 
     /* Attempt to abort an undergoing wait for the given thread.  If
@@ -1422,10 +1426,18 @@ void xnpod_unblock_thread (xnthread_t *thread)
         xnpod_resume_thread(thread,XNDELAY);
     else if (testbits(thread->status,XNPEND))
         xnpod_resume_thread(thread,XNPEND);
-    
+    else
+	ret = 0;
+
+    /* We should not clear a previous break state if this service is
+       called more than once before the target thread actually
+       resumes, so we only set the bit here and never clear it. */
+
     __setbits(thread->status,XNBREAK);
 
     xnlock_put_irqrestore(&nklock,s);
+
+    return ret;
 }
 
 /*!

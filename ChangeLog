@@ -1,3 +1,11 @@
+2004-11-22  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/rtai-core/sched/rtai/sched_lxrt.c: warn hard kthreads
+	have gone, changed deletion of kthreads in resorvoir.
+
+        * rtai-core/ipc/sem/sem.c: ensured that tasks freed upon sem
+	delation are run immediately
+
 2004-11-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/ipc/msg/msg.c: fixed a missing resume time assignanement

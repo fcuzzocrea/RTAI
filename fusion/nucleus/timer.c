@@ -138,35 +138,28 @@ static inline void xntimer_dequeue (xntimer_t *timer)
 
 #if XNARCH_HAVE_APERIODIC_TIMER
 
-static inline int xntimer_next_shot (void)
+static inline void xntimer_next_shot (void)
 
 {
     xnholder_t *holder = getheadq(&nkpod->timerwheel[0]);
-    xnticks_t now, delay;
+    xnticks_t now, delay, xdate;
     xntimer_t *timer;
 
     if (!holder)
-	return 0; /* No pending timer. */
+	return; /* No pending timer. */
 
     timer = link2timer(holder);
     now = xnarch_get_cpu_tsc();
+    xdate = now + nkschedlat;
 
-    if (now + nktimerlat >= timer->date)
-	{
-	timer->shot = now;
-	return -1; /* Cannot wait: trigger immediately. */
-	}
-
-    if (now + nkschedlat + nktimerlat >= timer->date)
+    if (xdate + nktimerlat >= timer->date)
 	delay = nktimerlat;
     else
-	delay = timer->date - now - nkschedlat;
+	delay = timer->date - xdate;
 
     timer->shot = now + delay;
 
     xnarch_program_timer_shot(delay);
-
-    return 0;
 }
 
 static inline int xntimer_heading_p (xntimer_t *timer)
@@ -218,11 +211,13 @@ int xntimer_start (xntimer_t *timer,
 #if XNARCH_HAVE_APERIODIC_TIMER
 	if (xntimer_heading_p(timer))
 	    {
-	    if (xntimer_next_shot() < 0)
+	    if (timer->date <= xnarch_get_cpu_tsc())
 		{ /* Too late for this one. */
 		xntimer_dequeue(timer);
 		err = -EAGAIN;
 		}
+	    else
+		xntimer_next_shot();
 	    }
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
 	}
@@ -325,7 +320,7 @@ void xntimer_do_timers (void)
     xnticks_t now;
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.timer_entry = xnarch_get_cpu_tsc();
+    nkpod->timestamps.timer_top = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
     initq(&reschedq);
@@ -342,9 +337,6 @@ void xntimer_do_timers (void)
 	{
 	/* Only use slot #0 in aperiodic mode. */
 	timerq = &nkpod->timerwheel[0];
-#if XNARCH_HAVE_APERIODIC_TIMER
- restart:
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 	now = xnarch_get_cpu_tsc();
 	}
 
@@ -366,10 +358,6 @@ void xntimer_do_timers (void)
 	    continue;
 	    }
 
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-	nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
 	if (timer == &nkpod->htimer)
 	    /* By postponing the propagation of the low-priority host
 	       tick to the interrupt epilogue (see
@@ -377,8 +365,20 @@ void xntimer_do_timers (void)
 	       translates into precious microsecs. */
 	    setbits(sched->status,XNHTICK);
 	else
+	  {
 	    /* Otherwise, we'd better have a valid handler... */
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+	    nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
+	    nkpod->timestamps.timer_entry = nkpod->timestamps.timer_top;
+	    nkpod->timestamps.timer_drift = (xnsticks_t)now - (xnsticks_t)timer->date;
+	    nkpod->timestamps.timer_drift2 = (xnsticks_t)now - (xnsticks_t)timer->shot;
+	    nkpod->timestamps.timer_anticipation = (xnsticks_t)timer->date - (xnsticks_t)timer->shot;
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 	    timer->handler(timer->cookie);
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+	    nkpod->timestamps.timer_handled = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+	  }
 
 	/* Restart the timer for the next period if a valid interval
 	   has been given. The status is checked in order to prevent
@@ -413,16 +413,8 @@ void xntimer_do_timers (void)
 	}
 
 #if XNARCH_HAVE_APERIODIC_TIMER
-
     if (!testbits(nkpod->status,XNTMPER))
-	{
-	if (xntimer_next_shot() < 0)
-	    /* Oops, overdue timer: rescan. */
-	    goto restart;
-
-	/* Otherwise, no more active timers. */
-	}
-
+	xntimer_next_shot();
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS

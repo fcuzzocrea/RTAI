@@ -1,3 +1,10 @@
+2004-10-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_suspend_thread): Convert any pending
+	XNKICKED state into the XNBREAK condition when attempting to
+	suspend a runnable shadow thread which has received a Linux
+	signal.
+
 2004-10-10  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.6

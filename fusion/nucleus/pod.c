@@ -1106,6 +1106,11 @@ void xnpod_delete_thread (xnthread_t *thread)
  * used internally by the synchronization object implementation code
  * to specify on which object the suspended thread pends.
  *
+ * @note If the target thread is a shadow which has received a
+ * Linux-originated signal, then this service immediately exits
+ * without suspending the thread, but raises the XNBREAK condition in
+ * its status.
+ *
  * Side-effect: A rescheduling immediately occurs if the caller
  * self-suspends, in which case true is always returned.
  *

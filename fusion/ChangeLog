@@ -1,5 +1,20 @@
 2004-12-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/alarm.c (rt_alarm_inquire): Add count of expiries.
+
+2004-12-03  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
+
+	* doc/docbook/xenomai/xenomai.xml: Fix typos and other spelling
+	mistakes.
+
+2004-12-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/types.h: Change xnsigmask_t to the natural
+	integer type available on the platform, so that we can map it
+	properly over some data carried by siginfo_t. In any case, it does
+	not make any sense to allow different sig numbers across platforms
+	depending on the size of their respective natural long type.
+
 	* skins/rtai/syscall.c: Fix "self" task determination code to
 	encompass the case where the caller is a relaxed shadow.
 

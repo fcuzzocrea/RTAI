@@ -49,7 +49,7 @@
 #include <linux/errno.h>
 #include <nucleus/asm/system.h>
 
-typedef unsigned long xnsigmask_t;
+typedef int xnsigmask_t;
 
 typedef unsigned long long xnticks_t;
 

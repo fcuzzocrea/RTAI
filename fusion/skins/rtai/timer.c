@@ -43,8 +43,7 @@
  * @param ns The count of nanoseconds to convert.
  *
  * @return The corresponding value expressed in internal clock ticks
- * (see note). If the system timer is inactive or operating in oneshot
- * mode, this routine returns @a ns unmodified.
+ * (see note).
  *
  * Environments:
  *
@@ -60,8 +59,8 @@
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed as CPU ticks (e.g. TSC
- * value).
+ * oneshot mode or if the system timer has not been started, clock
+ * ticks are expressed as CPU ticks (e.g. TSC value).
  */
 
 SRTIME rt_timer_ns2ticks (SRTIME ns)
@@ -100,9 +99,9 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed as CPU ticks (e.g. TSC
- * value).
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode or if the system timer has not been started, clock
+ * ticks are interpreted as CPU ticks (e.g. TSC value).
  */
 
 SRTIME rt_timer_ticks2ns (SRTIME ticks)
@@ -193,7 +192,7 @@ int rt_timer_inquire (RT_TIMER_INFO *info)
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * oneshot mode, clock ticks are expressed as nanoseconds.
  */
 
 RTIME rt_timer_read (void)

@@ -576,8 +576,8 @@ int rt_task_yield (void)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 int rt_task_set_periodic (RT_TASK *task,
@@ -767,8 +767,8 @@ int rt_task_set_priority (RT_TASK *task,
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 int rt_task_sleep (RTIME delay)
@@ -824,8 +824,8 @@ int rt_task_sleep (RTIME delay)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 int rt_task_sleep_until (RTIME date)
@@ -1385,8 +1385,8 @@ RT_TASK *rt_task_self (void)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
- * quantumic mode, clock ticks are expressed as quantumic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 int rt_task_slice (RT_TASK *task, RTIME quantum)

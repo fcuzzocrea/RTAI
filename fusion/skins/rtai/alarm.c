@@ -25,7 +25,12 @@
  * \ingroup native
  * \defgroup alarm Alarm services.
  *
- * 
+ * Alarms are general watchdog timers. Any RTAI task may create any
+ * number of alarms and use them to run a user-defined handler, after
+ * a specified initial delay has elapsed. Alarms can be either one
+ * shot or periodic; in the latter case, the real-time kernel
+ * automatically reprograms the alarm for the next shot according to a
+ * user-defined interval value.
  *
  *@{*/
 
@@ -49,6 +54,7 @@ static void __alarm_trampoline (void *cookie)
 
 {
     RT_ALARM *alarm = (RT_ALARM *)cookie;
+    ++alarm->nexpiries;
     alarm->handler(alarm,alarm->cookie);
 }
 
@@ -69,7 +75,7 @@ static void __alarm_trampoline (void *cookie)
  * permanent memory.
  *
  * @param handler The address of the routine to call when the alarm
- * triggers. This routine will be passed the address of the current
+ * expiries. This routine will be passed the address of the current
  * alarm descriptor, and the opaque @a cookie.
  *
  * @param cookie A user-defined opaque cookie the real-time kernel
@@ -108,6 +114,7 @@ int rt_alarm_create (RT_ALARM *alarm,
     xntimer_init(&alarm->timer_base,&__alarm_trampoline,alarm);
     alarm->handle = 0;  /* i.e. (still) unregistered alarm. */
     alarm->magic = RTAI_ALARM_MAGIC;
+    alarm->nexpiries = 0;
     alarm->handler = handler;
     alarm->cookie = cookie;
     xnobject_copy_name(alarm->name,name);
@@ -206,6 +213,9 @@ int rt_alarm_delete (RT_ALARM *alarm)
  * handlers are restricted to the set of services available on behalf
  * of any ISR.
  *
+ * This service overrides any previous setup of the expiry date and
+ * reload interval for the given alarm.
+ *
  * @param alarm The descriptor address of the affected alarm.
  *
  * @param value The relative date of the initial alarm shot, expressed
@@ -233,9 +243,8 @@ int rt_alarm_delete (RT_ALARM *alarm)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed as CPU ticks (e.g. TSC
- * value).
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 int rt_alarm_start (RT_ALARM *alarm,
@@ -375,6 +384,7 @@ int rt_alarm_inquire (RT_ALARM *alarm,
     
     strcpy(info->name,alarm->name);
     info->expiration = xntimer_get_timeout(&alarm->timer_base);
+    info->nexpiries = alarm->nexpiries;
 
  unlock_and_exit:
 

@@ -56,6 +56,8 @@ typedef struct rt_alarm_info {
 
     RTIME expiration;		/* !< Expiration date. */
 
+    unsigned long nexpiries;	/* !< Number of expiries. */
+
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 } RT_ALARM_INFO;
@@ -79,6 +81,8 @@ typedef struct rt_alarm {
     rt_alarm_t handler;		/* !< Alarm handler. */
     
     void *cookie;		/* !< Opaque cookie. */
+
+    unsigned long nexpiries;	/* !< Number of expiries. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 

@@ -1176,8 +1176,8 @@ void xnpod_delete_thread (xnthread_t *thread)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 void xnpod_suspend_thread (xnthread_t *thread,
@@ -3080,8 +3080,8 @@ int xnpod_announce_tick (xnintr_t *intr)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 int xnpod_set_thread_periodic (xnthread_t *thread,

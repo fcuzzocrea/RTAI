@@ -319,8 +319,8 @@ int rt_pipe_close (RT_PIPE *pipe)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 ssize_t rt_pipe_read (RT_PIPE *pipe,

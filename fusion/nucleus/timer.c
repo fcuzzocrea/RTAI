@@ -278,8 +278,8 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 int xntimer_start (xntimer_t *timer,
@@ -405,10 +405,11 @@ void xntimer_stop (xntimer_t *timer)
  * - User-space task
  *
  * Rescheduling: never.
+ *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * oneshot mode, clock ticks are expressed as nanoseconds.
  */
 
 xnticks_t xntimer_get_date (xntimer_t *timer)
@@ -455,7 +456,7 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode, clock ticks are expressed in nanoseconds.
+ * oneshot mode, clock ticks are expressed as nanoseconds.
  */
 
 xnticks_t xntimer_get_timeout (xntimer_t *timer)

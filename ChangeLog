@@ -1,3 +1,7 @@
+2004-06-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Add back SUBDIRS= in KBUILD_CMD.
+
 2004-06-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-testsuite/kern: Pass RTAI_FP_CFLAGS when compiling 2.6

@@ -85,7 +85,7 @@ struct klist_t wake_up_srq;
 
 /* +++++++++++++++ END OF WHAT MUST BE AVAILABLE EVERYWHERE +++++++++++++++++ */
 
-static struct { volatile int locked, rqsted; } rt_scheduling[NR_RT_CPUS];
+extern struct { volatile int locked, rqsted; } rt_scheduling[];
 
 static int rt_smp_linux_cr0[NR_RT_CPUS];
 
@@ -938,6 +938,16 @@ void rt_sched_unlock(void)
 	}
 	rtai_restore_flags(flags);
 }
+
+
+#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+void rtai_handle_isched_lock (int cpuid) /* Called with interrupts off */
+{
+	sched_get_global_lock(cpuid);
+	rt_schedule();
+	sched_release_global_lock(cpuid);
+}
+#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 
 int clr_rtext(RT_TASK *task)

@@ -1278,6 +1278,7 @@ void *rt_get_adr_cnt(unsigned long name)
 	return get_adr_cnt(name);
 }
 
+#if 0
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 void rtai_handle_isched_lock (int nesting) /* Called with interrupts off */
 
@@ -1288,6 +1289,7 @@ void rtai_handle_isched_lock (int nesting) /* Called with interrupts off */
 	rt_sched_lock();	/* Entering interrupt context */
 }
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+#endif
 
 #include <rtai_lxrt.h>
 

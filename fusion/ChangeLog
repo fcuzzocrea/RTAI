@@ -1,5 +1,7 @@
 2004-08-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc, include/nucleus/asm-ppc: Add PowerPC base.
+
 	* include/nucleus/asm-i386/system.h: MODULE_LICENSE is always
 	defined in 2.6: remove default definition.
 

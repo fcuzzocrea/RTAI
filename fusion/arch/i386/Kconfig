@@ -70,7 +70,7 @@ source "skins/Kconfig"
 
 menu "Drivers"
 
-source "drivers/16550A/Kconfig"
+source "drivers/Kconfig"
 
 endmenu
 

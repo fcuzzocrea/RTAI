@@ -25,7 +25,7 @@
 #if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
 /* Number of outstanding timers (hint only) -- must be ^2 */
-#define XNTIMER_WHEELSIZE 128
+#define XNTIMER_WHEELSIZE 64
 #define XNTIMER_WHEELMASK (XNTIMER_WHEELSIZE - 1)
 
 #define XNTIMER_ENABLED   0x00000001

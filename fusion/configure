@@ -21559,6 +21559,83 @@ echo $ECHO_N "checking for kernel module extension... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: $RTAI_MODULE_EXT" >&5
 echo "${ECHO_T}$RTAI_MODULE_EXT" >&6
 
+echo "$as_me:$LINENO: checking for specific GCC switches" >&5
+echo $ECHO_N "checking for specific GCC switches... $ECHO_C" >&6
+if test "${ac_cv_gcc_wnoalias+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+save_CFLAGS="$CFLAGS"
+CFLAGS="-Wno-strict-aliasing -Werror"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_gcc_wnoalias=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_gcc_wnoalias=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+CFLAGS="$save_CFLAGS"
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+
+if [ $ac_cv_gcc_wnoalias = no ]; then
+  gcc_w_noalias=
+else
+  gcc_w_noalias="-Wno-strict-aliasing"
+fi
+echo "$as_me:$LINENO: result: done" >&5
+echo "${ECHO_T}done" >&6
+
 echo "$as_me:$LINENO: checking for RTAI target architecture" >&5
 echo $ECHO_N "checking for RTAI target architecture... $ECHO_C" >&6
 
@@ -21568,7 +21645,7 @@ RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS $RTAI_ARCH_FLAGS"
 case $RTAI_TARGET_ARCH in
  i386)
 	RTAI_TARGET_SUBARCH=
-	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe -fstrict-aliasing -Wno-strict-aliasing"
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe -fstrict-aliasing $gcc_w_noalias"
 	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
         ;;
  ppc)

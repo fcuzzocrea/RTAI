@@ -1099,6 +1099,25 @@ RTAI_KBUILD_DISTCLEAN='rm -Rf .tmp_versions'
 AC_MSG_CHECKING([for kernel module extension])
 AC_MSG_RESULT([$RTAI_MODULE_EXT])
 
+AC_MSG_CHECKING([for specific GCC switches])
+AC_CACHE_VAL(ac_cv_gcc_wnoalias,
+AC_LANG_SAVE
+AC_LANG_C
+save_CFLAGS="$CFLAGS"
+CFLAGS="-Wno-strict-aliasing -Werror"
+[AC_TRY_COMPILE([],
+[return 0;],
+[ac_cv_gcc_wnoalias=yes],
+[ac_cv_gcc_wnoalias=no])]
+CFLAGS="$save_CFLAGS"
+AC_LANG_RESTORE)
+if [[ $ac_cv_gcc_wnoalias = no ]]; then
+  gcc_w_noalias=
+else
+  gcc_w_noalias="-Wno-strict-aliasing"
+fi
+AC_MSG_RESULT([done])
+
 AC_MSG_CHECKING([for RTAI target architecture])
 
 RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include -D_GNU_SOURCE -D_REENTRANT"
@@ -1107,7 +1126,7 @@ RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS $RTAI_ARCH_FLAGS"
 case $RTAI_TARGET_ARCH in
  i386)
 	RTAI_TARGET_SUBARCH=
-	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe -fstrict-aliasing -Wno-strict-aliasing"
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe -fstrict-aliasing $gcc_w_noalias"
 	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
         ;;
  ppc)

@@ -1,3 +1,7 @@
+2005-03-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: (Re-)enable compilation w/ 2.95.x.
+
 2005-03-06  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* configure.in: Let CC variable take precedence over

@@ -112,11 +112,13 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
 {
     int err = rt_sem_delete(&display_sem);
 
-    if(err)
+    if (err)
         fprintf(stderr, "Warning: could not delete semaphore: %s.\n",
                 strerror(-err));
 
     rt_timer_stop();
+
+    exit(0);
 }
 
 int main (int argc, char **argv)

@@ -1,3 +1,9 @@
+2004-10-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/latency/latency.c (cleanup_upon_sig): Forcibly exit
+	upon signal so that the sampler does not enter a tight error loop
+	in RTAI mode after the time has been stopped.
+
 2004-10-03  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-ppc/syscall.h (XENOMAI_DO_SYSCALL): Revert

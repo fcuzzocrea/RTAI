@@ -4,8 +4,8 @@
 
 2004-12-03  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
 
-	* doc/docbook/xenomai/xenomai.xml: Fix typos and other spelling
-	mistakes.
+	* doc/docbook/xenomai/xenomai.xml: Fix typos and other
+	spelling/grammar mistakes.
 
 2004-12-03  Philippe Gerum  <rpm@xenomai.org>
 

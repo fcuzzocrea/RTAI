@@ -1,3 +1,10 @@
+2004-02-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/ipc/mq/mq.c: cleaned of unused stuff and revised for some
+	  added efficiency, no more searches for free node/slotc.
+	* base/include/rtai_mq.h: cleaned and revised to support changes in
+	  mq.c.
+
 2004-02-18  Michael Neuhauser  <mike@firmix.at>
 
 	* base/include/asm-arm/rtai_hal.*: added alternative names for

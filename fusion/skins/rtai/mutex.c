@@ -34,8 +34,8 @@
  * A mutex has two possible states: unlocked (not owned by any task),
  * and locked (owned by one task). A mutex can never be owned by two
  * different tasks simultaneously. A task attempting to lock a mutex
- * that is already locked by another task is blocked until the owning
- * task unlocks the mutex first.
+ * that is already locked by another task is blocked until the latter
+ * unlocks the mutex first.
  *
  *@{*/
 

@@ -1526,6 +1526,9 @@ static void linux_schedule_head (adevinfo_t *evinfo)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	return;
 
+    if (!thread && !xnshadow_thread(prev))
+	return;	/* Nop: take the fast exit path here. */
+
     adeos_load_cpuid();	/* Linux is running in a migration-safe
 			   portion of code. */
 

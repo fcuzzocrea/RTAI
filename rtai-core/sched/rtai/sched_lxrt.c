@@ -1736,7 +1736,9 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	enq_soft_ready_task(rt_task);
 	rt_smp_current[cpuid] = rt_task;
 	funarg = (void *)rt_task->fun_args;
+	rt_global_sti();
 	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
+	rt_global_cli();
 	rt_task->priority = priority;
 	rt_task->state = 0;
 	(rt_task->rprev)->rnext = rt_task->rnext;

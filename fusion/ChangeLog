@@ -1,5 +1,16 @@
 2004-10-17  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.6.1
+
+2004-10-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* README.INSTALL: Clarify Adeos-related issues.
+	
+	* arch/*/patches: Use vanilla Adeos file names.
+	
+	* nucleus/pod.c (xnpod_suspend_thread): Conservatively clear the
+	wait channel upon signal aborted wait.
+
 	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c5.
 
 2004-10-16  Philippe Gerum  <rpm@xenomai.org>

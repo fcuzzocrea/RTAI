@@ -56,7 +56,12 @@ void latency (void *cookie)
 	    err = rt_task_wait_period();
 
 	    if (err)
+		{
+		if (err != -ETIMEDOUT)
+		    rt_task_delete(NULL); /* Timer stopped. */
+
 		overrun++;
+		}
 	    else
 		{
 		dt = (long)(rt_timer_tsc() - expected);
@@ -71,8 +76,6 @@ void latency (void *cookie)
 	avgjitter = sumj / SAMPLE_COUNT;
 	rt_sem_v(&display_sem);
 	}
-
-    rt_timer_stop();
 }
 
 void display (void *cookie)
@@ -97,7 +100,7 @@ void display (void *cookie)
 	    if (err != -EIDRM)
 		printf("latency: failed to pend on semaphore, code %d\n",err);
 
-	    return;
+	    rt_task_delete(NULL);
 	    }
 
 	printf("min = %Ld ns, max = %Ld ns, avg = %Ld ns, overrun = %ld\n",
@@ -111,14 +114,8 @@ void display (void *cookie)
 void cleanup_upon_sig(int sig __attribute__((unused)))
 
 {
-    int err = rt_sem_delete(&display_sem);
-
-    if (err)
-        fprintf(stderr, "Warning: could not delete semaphore: %s.\n",
-                strerror(-err));
-
+    rt_sem_delete(&display_sem);
     rt_timer_stop();
-
     exit(0);
 }
 

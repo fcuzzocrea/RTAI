@@ -1474,7 +1474,7 @@ int rtai_proc_lxrt_register(void)
 	struct proc_dir_entry *proc_lxrt_ent;
 
 
-	proc_lxrt_ent = create_proc_entry("RTAI names", S_IFREG|S_IRUGO|S_IWUSR, rtai_proc_root);
+	proc_lxrt_ent = create_proc_entry("names", S_IFREG|S_IRUGO|S_IWUSR, rtai_proc_root);
 	if (!proc_lxrt_ent) {
 		printk("Unable to initialize /proc/rtai/lxrt\n");
 		return(-1);
@@ -1486,7 +1486,7 @@ int rtai_proc_lxrt_register(void)
 
 void rtai_proc_lxrt_unregister(void)
 {
-	remove_proc_entry("RTAI names", rtai_proc_root);
+	remove_proc_entry("names", rtai_proc_root);
 }  /* End function - rtai_proc_lxrt_unregister */
 
 /* ------------------< end of proc filesystem section >------------------*/

@@ -102,8 +102,8 @@ extern int rt_smp_oneshot_timer[];
 #define RPCINC 0x00010000
 
 #define DECLARE_RT_CURRENT int cpuid; RT_TASK *rt_current
-#define ASSIGN_RT_CURRENT rt_current = rt_smp_current[cpuid = hard_cpu_id()]
-#define RT_CURRENT rt_smp_current[hard_cpu_id()]
+#define ASSIGN_RT_CURRENT rt_current = rt_smp_current[cpuid = rtai_cpuid()]
+#define RT_CURRENT rt_smp_current[rtai_cpuid()]
 
 #define MAX_LINUX_RTPRIO  99
 #define MIN_LINUX_RTPRIO   1
@@ -113,8 +113,8 @@ void rtai_handle_isched_lock(int nesting);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 #ifdef CONFIG_SMP
-#define rt_time_h (rt_smp_time_h[cpuid & sqilter])
-#define oneshot_timer (rt_smp_oneshot_timer[cpuid & sqilter])
+#define rt_time_h (rt_smp_time_h[cpuid])
+#define oneshot_timer (rt_smp_oneshot_timer[cpuid])
 #define rt_linux_task (rt_smp_linux_task[cpuid])
 #else
 #define rt_time_h (rt_smp_time_h[0])
@@ -124,34 +124,20 @@ void rtai_handle_isched_lock(int nesting);
 
 #ifdef CONFIG_SMP
 
-extern unsigned long sqilter;
-
 static inline void send_sched_ipi(unsigned long dest)
 {
-        unsigned long flags;
-	rtai_hw_lock(flags);
 	_send_sched_ipi(dest);
-	rtai_hw_unlock(flags);
 }
 
 #define RT_SCHEDULE_MAP(schedmap) \
-do { \
-	if (sqilter) { \
-		if (schedmap) send_sched_ipi(schedmap); \
-	} else { \
-		rt_schedule(); \
-	} \
-} while (0)
+	do { if (schedmap) send_sched_ipi(schedmap); } while (0)
 
 #define RT_SCHEDULE_MAP_BOTH(schedmap) \
-do { \
-	if (sqilter && schedmap) send_sched_ipi(schedmap); \
-	rt_schedule(); \
-} while (0)
+	do { if (schedmap) send_sched_ipi(schedmap); rt_schedule(); } while (0)
 
 #define RT_SCHEDULE(task, cpuid) \
 	do { \
-		if (((task)->runnable_on_cpus != (cpuid)) && sqilter) { \
+		if ((task)->runnable_on_cpus != (cpuid)) { \
 			send_sched_ipi(1 << (task)->runnable_on_cpus); \
 		} else { \
 			rt_schedule(); \
@@ -160,7 +146,7 @@ do { \
 
 #define RT_SCHEDULE_BOTH(task, cpuid) \
 	{ \
-		if (((task)->runnable_on_cpus != (cpuid)) && sqilter) { \
+		if ((task)->runnable_on_cpus != (cpuid)) { \
 			send_sched_ipi(1 << (task)->runnable_on_cpus); \
 		} \
 		rt_schedule(); \
@@ -188,7 +174,7 @@ static inline void enq_ready_edf_task(RT_TASK *ready_task)
 {
 	RT_TASK *task;
 #ifdef CONFIG_SMP
-	task = rt_smp_linux_task[ready_task->runnable_on_cpus & sqilter].rnext;
+	task = rt_smp_linux_task[ready_task->runnable_on_cpus].rnext;
 #else
 	task = rt_smp_linux_task[0].rnext;
 #endif
@@ -209,7 +195,7 @@ static inline void enq_ready_task(RT_TASK *ready_task)
 	RT_TASK *task;
 	if (ready_task->is_hard) {
 #ifdef CONFIG_SMP
-		task = rt_smp_linux_task[ready_task->runnable_on_cpus & sqilter].rnext;
+		task = rt_smp_linux_task[ready_task->runnable_on_cpus].rnext;
 #else
 		task = rt_smp_linux_task[0].rnext;
 #endif
@@ -276,7 +262,7 @@ static inline void enq_timed_task(RT_TASK *timed_task)
 {
 	RT_TASK *task;
 #ifdef CONFIG_SMP
-	task = rt_smp_linux_task[timed_task->runnable_on_cpus & sqilter].tnext;
+	task = rt_smp_linux_task[timed_task->runnable_on_cpus].tnext;
 #else
 	task = rt_smp_linux_task[0].tnext;
 #endif
@@ -291,7 +277,7 @@ static inline void wake_up_timed_tasks(int cpuid)
 {
 	RT_TASK *task;
 #ifdef CONFIG_SMP
-	task = rt_smp_linux_task[cpuid = cpuid & sqilter].tnext;
+	task = rt_smp_linux_task[cpuid = cpuid].tnext;
 #else
 	task = rt_smp_linux_task[0].tnext;
 #endif
@@ -327,14 +313,10 @@ static inline void rem_timed_task(RT_TASK *task)
 static inline RTIME get_time(void)
 {
 #ifdef CONFIG_SMP
-	if (sqilter) {
-		int cpuid;
-		return rt_smp_oneshot_timer[cpuid = hard_cpu_id()] ? rdtsc() : rt_smp_times[cpuid].tick_time;
-	} else {
-		return rt_smp_oneshot_timer[0] ? rdtsc(): rt_times.tick_time;
-	}
+	int cpuid;
+	return rt_smp_oneshot_timer[cpuid = rtai_cpuid()] ? rdtsc() : rt_smp_times[cpuid].tick_time;
 #else
-	return oneshot_timer ? rdtsc(): rt_times.tick_time;
+	return rt_smp_oneshot_timer[0] ? rdtsc() : rt_smp_times[0].tick_time;
 #endif
 }
 #endif

@@ -1323,13 +1323,17 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 //1)	adeos_restore_pipeline_nosync(adp_root, lflags, cpuid);
 
 	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &lflags)) {
-//1)	if (!adeos_test_pipeline_from(adp_root) && !IN_ATOMIC()) {
-		rtai_sti();
+//1)	if (test_and_clear_bit(cpuid, &adeos_pended) && !adeos_test_pipeline_from(adp_root)) {
+//		rtai_sti();
 		if (irq == __adeos_tick_irq) {
 			__adeos_tick_regs.eflags = regs->eflags;
 			__adeos_tick_regs.eip    = regs->eip;
 			__adeos_tick_regs.xcs    = regs->xcs;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9) && defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
+		        __adeos_tick_regs.ebp = regs.ebp;
+#endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 		}
+
 		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}

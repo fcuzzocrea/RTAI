@@ -1,5 +1,9 @@
 2004-11-04  Philippe Gerum  <rpm@xenomai.org>
 
+	* configure.in: Get rid of annnoying Kbuild warnings about undef'd
+	symbols by moving vmlinux and Module.symvers out of the way (Idea
+	brought by Jan Kiszka).
+
 	* skins/rtai/registry.c (rt_registry_remove): Make sure we
 	properly process XNBREAK.
 

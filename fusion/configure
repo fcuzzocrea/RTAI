@@ -9618,10 +9618,18 @@ fi
 
 RTAI_MODULE_EXT=.ko
 RTAI_KBUILD_ENV='src2obj = $(patsubst %.$(1),%.o,$(filter %.$(1),$(call notdir,$(2))))'
+# if test -e $RTAI_LINUX_DIR/Module.symvers; then
+#     mv $RTAI_LINUX_DIR/Module.symvers \
+#         $RTAI_LINUX_DIR/Module.symvers.let_modpost_be_quiet
+#fi
 RTAI_KBUILD_CMD="@for src in \$(filter-out FORCE, \$^); do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
+                    if test -e $RTAI_LINUX_DIR/Module.symvers; then mv -f $RTAI_LINUX_DIR/Module.symvers $RTAI_LINUX_DIR/__Module.symvers; fi; \
+                    if test -e $RTAI_LINUX_DIR/vmlinux; then mv -f $RTAI_LINUX_DIR/vmlinux $RTAI_LINUX_DIR/__vmlinux; fi; \
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=@RTAI_TARGET_ARCH@ \
 		    M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
-		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
+		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@); \
+                    if test -e $RTAI_LINUX_DIR/__Module.symvers; then mv -f $RTAI_LINUX_DIR/__Module.symvers $RTAI_LINUX_DIR/Module.symvers; fi; \
+                    if test -e $RTAI_LINUX_DIR/__vmlinux; then mv -f $RTAI_LINUX_DIR/__vmlinux $RTAI_LINUX_DIR/vmlinux; fi"
 
 RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
 RTAI_KBUILD_DISTCLEAN='rm -Rf .tmp_versions'
@@ -9679,6 +9687,15 @@ else
    echo "$as_me:$LINENO: result: $RTAI_TARGET_ARCH ($RTAI_TARGET_SUBARCH)" >&5
 echo "${ECHO_T}$RTAI_TARGET_ARCH ($RTAI_TARGET_SUBARCH)" >&6
 fi
+
+# if test -e $RTAI_LINUX_DIR/Module.symvers; then
+#     mv $RTAI_LINUX_DIR/Module.symvers \
+#         $RTAI_LINUX_DIR/Module.symvers.let_modpost_be_quiet
+#fi
+#if test -e $RTAI_LINUX_DIR/vmlinux; then
+#     mv $RTAI_LINUX_DIR/vmlinux \
+#         $RTAI_LINUX_DIR/vmlinux.let_modpost_be_quiet
+#fi
 
           ac_config_links="$ac_config_links arch/$RTAI_TARGET_ARCH/hal/Makefile:arch/$RTAI_TARGET_ARCH/hal/Makefile.kbuild"
 

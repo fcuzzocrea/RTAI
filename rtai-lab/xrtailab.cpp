@@ -762,6 +762,7 @@ void rlg_batch_update_parameters_cb(Fl_Widget *o, void *v)
 	}
 	if (Parameters_Manager->batch_counter() > 0 && n == Parameters_Manager->batch_counter()) {
 		RT_RPC(Target_Interface_Task, BATCH_DOWNLOAD, 0);
+		Parameters_Manager->batch_counter( 0);
 	}
 }
 

@@ -277,8 +277,8 @@ config RTAI_OPT_NATIVE_MUTEX
 
 config RTAI_OPT_NATIVE_COND
 	bool "Condition variable support"
-	depends on RTAI_SKIN_NATIVE && RTAI_OPT_NATIVE_MUTEX
-	default y
+	depends on RTAI_SKIN_NATIVE
+	enable RTAI_OPT_NATIVE_MUTEX
 	help
 	
 	Condition variable support.

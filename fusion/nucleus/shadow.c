@@ -74,7 +74,7 @@ static struct __schedback {
 	int type;
 	struct task_struct *task;
 	int arg;
-#define SB_MAX_REQUESTS 16 /* Must be a ^2 */
+#define SB_MAX_REQUESTS 32 /* Must be a ^2 */
     } req[SB_MAX_REQUESTS];
 
 } schedback[XNARCH_NR_CPUS];
@@ -299,7 +299,7 @@ static void gatekeeper_thread (void *data)
 
     sigfillset(&this_task->blocked);
     set_cpus_allowed(this_task, cpumask_of_cpu(cpu));
-    schedule_linux_call(SB_RENICE_REQ,this_task,MAX_USER_RT_PRIO - 1);
+    rthal_set_linux_task_priority(this_task,SCHED_FIFO,MAX_USER_RT_PRIO - 1);
 
     init_waitqueue_head(&gk->waitq);
     add_wait_queue_exclusive(&gk->waitq,&wait);
@@ -735,7 +735,7 @@ void xnshadow_map (xnthread_t *thread,
     current->cap_effective |= CAP_TO_MASK(CAP_IPC_LOCK)|CAP_TO_MASK(CAP_SYS_RAWIO)|CAP_TO_MASK(CAP_SYS_NICE);
 
     xnarch_init_shadow_tcb(xnthread_archtcb(thread),thread,xnthread_name(thread));
-    schedule_linux_call(SB_RENICE_REQ,current,xnthread_base_priority(thread));
+    rthal_set_linux_task_priority(current,SCHED_FIFO,xnthread_base_priority(thread));
     xnshadow_ptd(current) = thread;
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
 

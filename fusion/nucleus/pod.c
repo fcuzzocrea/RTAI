@@ -3068,9 +3068,9 @@ int xnpod_announce_tick (xnintr_t *intr)
 	    xnpod_suspend_thread(xnpod_current_thread(),XNDORMANT,XN_INFINITE,NULL);
 	} else {
 	    xnpod_reset_watchdog();
-	    nkpod->watchdog_armed = !xnpod_root_p();
 	}
     }
+    nkpod->watchdog_armed = !xnpod_root_p();
 #endif /* CONFIG_RTAI_OPT_WATCHDOG */
 
     xntimer_do_timers(); /* Fire the timeouts, if any. */

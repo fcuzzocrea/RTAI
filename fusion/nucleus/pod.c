@@ -507,6 +507,11 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
     if (testbits(threadin->status,XNROOT))
         xnarch_enter_root(xnthread_archtcb(threadin));
 
+     /* FIXME: Catch 22 here, whether we choose to run on an invalid
+        stack (cleanup then hooks), or to access the TCB space shortly
+        after it has been freed while non-preemptible (hooks then
+        cleanup)... Option #2 is current. */
+
     xnthread_cleanup_tcb(threadout);
 
     xnarch_finalize_and_switch(xnthread_archtcb(threadout),
@@ -1100,11 +1105,7 @@ void xnpod_delete_thread (xnthread_t *thread)
             xnpod_fire_callouts(&nkpod->tdeleteq,thread);
 
         /* Note: the thread control block must remain available until
-           the user hooks have been called. FIXME: Catch 22 here,
-           whether we choose to run on an invalid stack (cleanup then
-           hooks), or to access the TCB space shortly after it has
-           been freed while non-preemptible (hooks then
-           cleanup)... Option #2 is current. */
+           the user hooks have been called. */
 
         xnthread_cleanup_tcb(thread);
 

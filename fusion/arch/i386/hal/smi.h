@@ -28,29 +28,29 @@
 extern "C" {
 #endif
 
-#if !CONFIG_RTAI_HW_SMI_DETECT_DISABLE && CONFIG_RTAI_HW_SMI_WORKAROUND
+#if CONFIG_RTAI_HW_SMI_DETECT && CONFIG_RTAI_HW_SMI_WORKAROUND
 
 void rthal_smi_disable(void);
 
 void rthal_smi_restore(void);
 
-#else /* CONFIG_RTAI_HW_SMI_DETECT_DISABLE || !CONFIG_RTAI_HW_SMI_WORKAROUND */
+#else /* !CONFIG_RTAI_HW_SMI_DETECT || !CONFIG_RTAI_HW_SMI_WORKAROUND */
 
 #define rthal_smi_disable()
 
 #define rthal_smi_restore()
 
-#endif /* CONFIG_RTAI_HW_SMI_DETECT_DISABLE || !CONFIG_RTAI_HW_SMI_WORKAROUND */
+#endif /* !CONFIG_RTAI_HW_SMI_DETECT || !CONFIG_RTAI_HW_SMI_WORKAROUND */
 
-#if !CONFIG_RTAI_HW_SMI_DETECT_DISABLE
+#if CONFIG_RTAI_HW_SMI_DETECT
 
 void rthal_smi_init(void);
 
-#else /* CONFIG_RTAI_HW_SMI_DETECT_DISABLE */
+#else /* !CONFIG_RTAI_HW_SMI_DETECT */
 
 #define rthal_smi_init()
 
-#endif /* !CONFIG_RTAI_HW_SMI_DETECT_DISABLE */
+#endif /* !CONFIG_RTAI_HW_SMI_DETECT */
 
 #ifdef __cplusplus
 }

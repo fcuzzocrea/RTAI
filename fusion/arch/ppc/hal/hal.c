@@ -205,6 +205,13 @@ void rthal_critical_exit (unsigned long flags)
     adeos_critical_exit(flags);
 }
 
+static void rthal_irq_trampoline (unsigned irq)
+
+{
+    rthal_realtime_irq[irq].hits[adeos_processor_id()]++;
+    rthal_realtime_irq[irq].handler(irq,rthal_realtime_irq[irq].cookie);
+}
+
 int rthal_request_irq (unsigned irq,
 		       void (*handler)(unsigned irq, void *cookie),
 		       void *cookie)
@@ -223,8 +230,16 @@ int rthal_request_irq (unsigned irq,
 	goto unlock_and_exit;
 	}
 
-    rthal_realtime_irq[irq].handler = handler;
-    rthal_realtime_irq[irq].cookie = cookie;
+    err = adeos_virtualize_irq_from(&rthal_domain,
+				    irq,
+				    &rthal_irq_trampoline,
+				    NULL,
+				    IPIPE_DYNAMIC_MASK);
+    if (!err)
+	{
+	rthal_realtime_irq[irq].handler = handler;
+	rthal_realtime_irq[irq].cookie = cookie;
+	}
 
  unlock_and_exit:
 
@@ -238,6 +253,12 @@ int rthal_release_irq (unsigned irq)
 {
     if (irq >= IPIPE_NR_IRQS)
 	return -EINVAL;
+
+    adeos_virtualize_irq(&rthal_domain,
+			 irq,
+			 NULL,
+			 NULL,
+			 IPIPE_PASS_MASK);
 
     xchg(&rthal_realtime_irq[irq].handler,NULL);
 
@@ -508,18 +529,6 @@ rthal_trap_handler_t rthal_set_trap_handler (rthal_trap_handler_t handler) {
     return (rthal_trap_handler_t)xchg(&rthal_trap_handler,handler);
 }
 
-static void rthal_irq_trampoline (unsigned irq)
-
-{
-    if (rthal_realtime_irq[irq].handler)
-	{
-	rthal_realtime_irq[irq].hits[adeos_processor_id()]++;
-	rthal_realtime_irq[irq].handler(irq,rthal_realtime_irq[irq].cookie);
-	}
-    else
-	adeos_propagate_irq(irq);
-}
-
 static void rthal_trap_fault (adevinfo_t *evinfo)
 
 {
@@ -593,23 +602,12 @@ void rthal_set_linux_task_priority (struct task_struct *task, int policy, int pr
 static void rthal_domain_entry (int iflag)
 
 {
-    unsigned irq, trapnr;
+    unsigned trapnr;
 
 #if !defined(CONFIG_ADEOS_NOTHREADS)
     if (!iflag)
 	goto spin;
 #endif /* !CONFIG_ADEOS_NOTHREADS */
-
-    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	adeos_virtualize_irq(irq,
-			     &rthal_irq_trampoline,
-			     NULL,
-			     IPIPE_DYNAMIC_MASK);
-
-    adeos_virtualize_irq(RTHAL_TIMER_IRQ,
-			 &rthal_irq_trampoline,
-			 NULL,
-			 IPIPE_DYNAMIC_MASK);
 
     /* Trap all faults. */
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)

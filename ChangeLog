@@ -1,3 +1,10 @@
+2004-06-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/sched_rtai/sched_lxrt.c: set a barrier() after context 
+	  switching, no need for lxrt_context_switch return, fast_schedule
+	  uses internal enq_soft_ready_task so that stealing from Linux can 
+	  can be semplified.
+
 2004-06-16  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-addons/comedi/rtai_comedi.h: added the patch from

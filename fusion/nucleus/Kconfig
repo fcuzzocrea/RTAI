@@ -74,10 +74,10 @@ config RTAI_OPT_WATCHDOG
 	the timer has been started.
 
 menu "LTT tracepoints filtering"
+	depends on RTAI_OPT_EXPERT
 
 config RTAI_OPT_FILTER_EVIRQ
 	bool "Disable IRQ-related tracepoints"
-	depends on RTAI_OPT_EXPERT
 	default y if RTAI_OPT_FILTER_EVALL=y
 	help
 	
@@ -86,7 +86,6 @@ config RTAI_OPT_FILTER_EVIRQ
 
 config RTAI_OPT_FILTER_EVTHR
 	bool "Disable thread-related tracepoints"
-	depends on RTAI_OPT_EXPERT
 	default y if RTAI_OPT_FILTER_EVALL=y
 	help
 	
@@ -95,7 +94,6 @@ config RTAI_OPT_FILTER_EVTHR
 
 config RTAI_OPT_FILTER_EVSYS
 	bool "Disable syscall-related tracepoints"
-	depends on RTAI_OPT_EXPERT
 	default y if RTAI_OPT_FILTER_EVALL=y
 	help
 	
@@ -104,7 +102,6 @@ config RTAI_OPT_FILTER_EVSYS
 
 config RTAI_OPT_FILTER_EVALL
 	bool "Disable all tracepoints"
-	depends on RTAI_OPT_EXPERT
 	default y if RTAI_OPT_FILTER_EVALL=y
 	help
 	

@@ -276,21 +276,21 @@ int __xeno_main_init (void)
 		err = xnfusion_init();
 
 		if (!err)
-		    xnprintf("RTAI: RTOS nucleus loaded.\n");
+		    xnloginfo("Nucleus loaded.\n");
 		else
-		    xnprintf("RTAI: Fusion layer initialization failed, code %d.\n",err);
+		    xnlogerr("Fusion init failed, code %d.\n",err);
 		}
 	    else
-		xnprintf("RTAI: Dbridge initialization failed, code %d.\n",err);
+		xnlogerr("DBridge init failed, code %d.\n",err);
 	    }
 	else
-	    xnprintf("RTAI: Autocalibration procedure failed, code %d.\n",err);
+	    xnlogerr("Autocalibration failed, code %d.\n",err);
 	}
 #else /* !__KERNEL__ */
-	xnprintf("RTAI: Virtual machine started.\n");
+	xnloginfo("Virtual Machine started.\n");
 #endif /* __KERNEL__ */
     else
-	xnprintf("RTAI: RTOS nucleus initialization failed, code %d.\n",err);
+	xnlogerr("Architecture init failed, code %d.\n",err);
 
     return err;
 }
@@ -308,9 +308,9 @@ void __xeno_main_exit (void)
 #endif /* CONFIG_PROC_FS */
     xnfusion_exit();
     xnbridge_exit();
-    xnprintf("RTAI: RTOS nucleus unloaded.\n");
+    xnloginfo("Nucleus unloaded.\n");
 #else /* !__KERNEL__ */
-    xnprintf("RTAI: Virtual machine stopped.\n");
+    xnloginfo("Virtual Machine stopped.\n");
 #endif /* __KERNEL__ */
 }
 

@@ -868,8 +868,8 @@ int xnbridge_init (void)
 
     if (register_chrdev(XNBRIDGE_MAJOR,"xnbridge",&xnbridge_fops))
 	{
-	printk(KERN_ERR "RTAI[nucleus]: Unable to reserve major #%d for dbridge.\n",
-	       XNBRIDGE_MAJOR);
+	xnlogerr("Unable to reserve major #%d for dbridge.\n",
+		 XNBRIDGE_MAJOR);
 	return -EIO;
 	}
 

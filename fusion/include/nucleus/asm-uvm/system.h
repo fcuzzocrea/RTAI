@@ -107,8 +107,13 @@ typedef unsigned long xnlock_t;
 #define XNARCH_THREAD_STACKSZ 0 /* Use the default POSIX value. */
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
 
-#define xnarch_printf              printf
-#define printk                     printf
+#define XNARCH_PROMPT "RTAI[nucleus/UVM]"
+#define xnarch_loginfo(fmt,args...)  fprintf(stdout, XNARCH_PROMPT fmt, ##args)
+#define xnarch_logwarn(fmt,args...)  fprintf(stderr, XNARCH_PROMPT fmt, ##args)
+#define xnarch_logerr(fmt,args...)   fprintf(stderr, XNARCH_PROMPT fmt, ##args)
+#define xnarch_printf(fmt,args...)   fprintf(stdout, fmt, ##args)
+#define printk(fmt,args...)          xnarch_loginfo(fmt, ##args)
+
 #define xnarch_llimd(ll,m,d)       ((int)(ll) * (int)(m) / (int)(d))
 #define xnarch_imuldiv(i,m,d)      ((int)(i) * (int)(m) / (int)(d))
 #define xnarch_ullmod(ull,uld,rem) ((*rem) = ((ull) % (uld)))
@@ -428,8 +433,8 @@ static void *xnarch_timer_thread (void *cookie)
     return NULL;
 }
 
-static inline void xnarch_start_timer (unsigned long nstick,
-				       void (*tickhandler)(void))
+static inline int xnarch_start_timer (unsigned long nstick,
+				      void (*tickhandler)(void))
 {
     struct xnarch_tick_parms parms;
     struct sched_param param;
@@ -469,6 +474,8 @@ static inline void xnarch_start_timer (unsigned long nstick,
     pthread_create(&thid,&thattr,&xnarch_timer_thread,&parms);
     pthread_sync_rt(&parms.syncflag);
     pthread_start_rt(vml_timer_handle);
+
+    return 0;
 }
 
 static inline void xnarch_leave_root(xnarchtcb_t *rootcb) {

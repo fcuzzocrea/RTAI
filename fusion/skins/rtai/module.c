@@ -84,12 +84,6 @@ int __xeno_skin_init (void)
 {
     int err;
 
-#ifdef __KERNEL__
-#if 0 // DEBUG
-    adeos_set_printk_sync(&rthal_domain);
-#endif
-#endif /* __KERNEL__ */
-
     /* The RTAI skin is stacked over the fusion framework. */
     err = xnfusion_load();
 

@@ -83,6 +83,7 @@ static struct {
 
     void (*handler)(unsigned irq, void *cookie);
     void *cookie;
+    unsigned long hits[RTHAL_NR_CPUS];
 
 } rthal_realtime_irq[IPIPE_NR_XIRQS];
 
@@ -393,7 +394,7 @@ unsigned long rthal_critical_enter (void (*synch)(void))
     if (atomic_dec_and_test(&rthal_sync_count))
 	rthal_sync_op = 0;
     else if (synch != NULL)
-	printk(KERN_WARNING "RTAI[hal]: nested sync will fail.\n");
+	printk(KERN_WARNING "RTAI[hal]: Nested sync will fail.\n");
 
     return flags;
 }
@@ -817,7 +818,10 @@ static void rthal_irq_trampoline (unsigned irq)
 
 {
     if (rthal_realtime_irq[irq].handler)
+	{
+	rthal_realtime_irq[irq].hits[adeos_processor_id()]++;
 	rthal_realtime_irq[irq].handler(irq,rthal_realtime_irq[irq].cookie);
+	}
     else
 	adeos_propagate_irq(irq);
 }
@@ -962,7 +966,7 @@ void rthal_set_linux_task_priority (struct task_struct *task, int policy, int pr
     set_fs(old_fs);
 
     if (rc)
-	printk(KERN_ERR "RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n",
+	printk(KERN_ERR "RTAI[hal]: setscheduler(policy=%d,prio=%d)=%d (%s -- pid=%d)\n",
 	       policy,
 	       prio,
 	       rc,
@@ -1007,52 +1011,59 @@ static int rthal_read_proc (char *page,
 			    int *eof,
 			    void *data)
 {
-    PROC_PRINT_VARS;
-    int i, none;
+    int len = 0, cpuid, irq, nirqs;
+    char *p = page;
 
-    PROC_PRINT("\n** RTAI/x86:\n\n");
+    p += sprintf(p,"\nRTAI/hal over Adeos %s\n",ADEOS_VERSION_STRING);
+    p += sprintf(p,"System compiler: %s\n",CONFIG_RTAI_COMPILER);
+    p += sprintf(p,"Registered real-time interrupts:");
 
-    none = 1;
+    for (irq = nirqs = 0; irq < IPIPE_NR_XIRQS; irq++)
+	if (rthal_realtime_irq[irq].handler != NULL)
+	    nirqs++;
 
-    PROC_PRINT("\n** Real-time IRQs used by RTAI: ");
-
-    for (i = 0; i < IPIPE_NR_XIRQS; i++)
+    if (nirqs == 0)
 	{
-	if (rthal_realtime_irq[i].handler)
-	    {
-	    if (none)
-		{
-		PROC_PRINT("\n");
-		none = 0;
-		}
+	p += sprintf(p,"none.");
+	goto out;
+	}
 
-	    PROC_PRINT("\n    #%d at %p", i, rthal_realtime_irq[i].handler);
-	    }
-        }
+    p += sprintf(p,"\n");
 
-    if (none)
-	PROC_PRINT("none");
+    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	p += sprintf(p,"       CPU%d",cpuid);
 
-    PROC_PRINT("\n\n");
-
-    none = 1;
-    PROC_PRINT("** RTAI SYSREQs in use: ");
-
-    for (i = 0; i < RTHAL_NR_SRQS; i++)
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 	{
-	if (rthal_sysreq_table[i].handler)
-	    {
-	    PROC_PRINT("#%d ", i);
-	    none = 0;
-	    }
-        }
+	if (rthal_realtime_irq[irq].handler == NULL)
+	    continue;
 
-    if (none)
-	PROC_PRINT("none");
+	p += sprintf(p,"\n%3d:",irq);
 
-    PROC_PRINT("\n\n");
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	    p += sprintf(p,"    %12lu",rthal_realtime_irq[irq].hits[cpuid]);
+	}
 
-    PROC_PRINT_DONE;
+ out:
+
+    p += sprintf(p,"\n");
+
+    len = p - page;
+
+    if (len <= off + count)
+	*eof = 1;
+
+    *start = page + off;
+
+    len -= off;
+
+    if (len > count)
+	len = count;
+
+    if (len < 0)
+	len = 0;
+
+    return len;
 }
 
 static int rthal_proc_register (void)

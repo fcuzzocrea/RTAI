@@ -170,7 +170,12 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define XNARCH_THREAD_STACKSZ 4096
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
 
-#define xnarch_printf                printk
+#define XNARCH_PROMPT "RTAI[nucleus]"
+#define xnarch_loginfo(fmt,args...)  printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
+#define xnarch_logwarn(fmt,args...)  printk(KERN_WARNING XNARCH_PROMPT fmt, ##args)
+#define xnarch_logerr(fmt,args...)   printk(KERN_ERR XNARCH_PROMPT fmt, ##args)
+#define xnarch_printf(fmt,args...)   printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
+
 #define xnarch_ullmod(ull,uld,rem)   ({ xnarch_ulldiv(ull,uld,rem); (*rem); })
 #define xnarch_ulldiv                rthal_ulldiv
 #define xnarch_imuldiv               rthal_imuldiv

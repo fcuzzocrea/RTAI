@@ -1186,9 +1186,9 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	       callback routine before returning to user-space. */
 	    goto propagate_syscall;
 
-	printk(KERN_WARNING "RTAI[nucleus]: Bad syscall %ld/%ld -- no skin loaded.\n",
-	       __xn_mux_id(regs),
-	       __xn_mux_op(regs));
+	xnlogwarn("Bad syscall %ld/%ld -- no skin loaded.\n",
+		  __xn_mux_id(regs),
+		  __xn_mux_op(regs));
 
 	__xn_reg_rval(regs) = -ENOSYS;
 	}

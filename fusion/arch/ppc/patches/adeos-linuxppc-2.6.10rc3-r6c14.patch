@@ -1447,8 +1447,8 @@ diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/Makefile linuxppc-2.6.10rc3-adeos/
 +obj-$(CONFIG_ADEOS_CORE)	+= adeos.o
 diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/adeos.c linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/adeos.c
 --- linuxppc-2.6.10rc3/arch/ppc/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/adeos.c	2005-02-15 23:42:56.000000000 +0100
-@@ -0,0 +1,659 @@
++++ linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/adeos.c	2005-02-26 22:38:18.000000000 +0100
+@@ -0,0 +1,665 @@
 +/*
 + *   linux/arch/ppc/kernel/adeos.c
 + *
@@ -1702,16 +1702,18 @@ diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/adeos.c linuxppc-2.6.10rc3-adeos/a
 +void __adeos_sync_stage (unsigned long syncmask)
 +
 +{
++    struct adcpudata *_cpudata, *cpudata;
 +    unsigned long mask, submask;
-+    struct adcpudata *cpudata;
++    int level, rank, sync;
 +    adeos_declare_cpuid;
-+    int level, rank;
 +    adomain_t *adp;
 +    unsigned irq;
 +
 +    adeos_load_cpuid();
 +    adp = adp_cpu_current[cpuid];
-+    cpudata = &adp->cpudata[cpuid];
++    _cpudata = cpudata = &adp->cpudata[cpuid];
++
++    sync = __test_and_set_bit(IPIPE_SYNC_FLAG,&cpudata->status);
 +
 +    do
 +	{
@@ -1775,6 +1777,9 @@ diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/adeos.c linuxppc-2.6.10rc3-adeos/a
 +	    }
 +	}
 +    while ((cpudata->irq_pending_hi & syncmask) != 0);
++
++    if (!sync)
++	__clear_bit(IPIPE_SYNC_FLAG,&_cpudata->status);
 +}
 +
 +int __adeos_ack_irq (unsigned irq)
@@ -1840,6 +1845,7 @@ diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/adeos.c linuxppc-2.6.10rc3-adeos/a
 +		adeos_load_cpuid(); /* Processor might have changed. */
 +
 +		if (!test_bit(IPIPE_STALL_FLAG,&this_domain->cpudata[cpuid].status) &&
++		    !test_bit(IPIPE_SYNC_FLAG,&this_domain->cpudata[cpuid].status) &&
 +		    this_domain->cpudata[cpuid].irq_pending_hi != 0)
 +		    __adeos_sync_stage(IPIPE_IRQMASK_ANY);
 +		}
@@ -2110,7 +2116,7 @@ diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/adeos.c linuxppc-2.6.10rc3-adeos/a
 +EXPORT_SYMBOL(adeos_trigger_irq);
 diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/entry.S linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/entry.S
 --- linuxppc-2.6.10rc3/arch/ppc/kernel/entry.S	2004-12-06 17:17:20.000000000 +0100
-+++ linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/entry.S	2005-02-14 11:44:01.000000000 +0100
++++ linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/entry.S	2005-02-26 23:39:00.000000000 +0100
 @@ -143,8 +143,23 @@ END_FTR_SECTION_IFSET(CPU_FTR_CAN_NAP)
  	.globl transfer_to_handler_cont
  transfer_to_handler_cont:
@@ -2144,8 +2150,6 @@ diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/entry.S linuxppc-2.6.10rc3-adeos/a
 +	bl	__adeos_enter_syscall
 +	cmpwi	r3,0
 +	lwz	r3,GPR3(r1)
-+	bgt	.adeos_end_syscall
-+	blt	ret_from_syscall
 +	lwz	r0,GPR0(r1)
 +	lwz	r4,GPR4(r1)
 +	lwz	r5,GPR5(r1)
@@ -2153,6 +2157,8 @@ diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/entry.S linuxppc-2.6.10rc3-adeos/a
 +	lwz	r7,GPR7(r1)
 +	lwz	r8,GPR8(r1)
 +	lwz	r9,GPR9(r1)
++	bgt	.adeos_end_syscall
++	blt	ret_from_syscall
 +#endif /* CONFIG_ADEOS_CORE */
  #ifdef SHOW_SYSCALLS
  	bl	do_show_syscall
@@ -2568,76 +2574,187 @@ diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/ppc_ksyms.c linuxppc-2.6.10rc3-ade
 +#endif /* CONFIG_ADEOS_CORE */
 diff -uNrp linuxppc-2.6.10rc3/arch/ppc/kernel/traps.c linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/traps.c
 --- linuxppc-2.6.10rc3/arch/ppc/kernel/traps.c	2004-12-06 17:15:14.000000000 +0100
-+++ linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/traps.c	2005-01-01 18:19:37.000000000 +0100
-@@ -509,6 +509,12 @@ void ProgramCheckException(struct pt_reg
- 		int code = 0;
- 		u32 fpscr;
++++ linuxppc-2.6.10rc3-adeos/arch/ppc/kernel/traps.c	2005-02-27 14:50:14.000000000 +0100
+@@ -199,10 +199,22 @@ static inline int check_io_access(struct
+ #define clear_single_step(regs)	((regs)->msr &= ~MSR_SE)
+ #endif
  
 +#ifdef CONFIG_ADEOS_CORE
-+		if (__adeos_event_monitors[ADEOS_FPU_TRAP] > 0 &&
-+		    __adeos_handle_event(ADEOS_FPU_TRAP,regs) != 0)
-+		    return;
++static inline int __adeos_pipeline_trap(int trap, struct pt_regs *regs)
++{
++    return __adeos_event_monitors[trap] > 0 ? __adeos_handle_event(trap,regs) : 0;
++}
 +#endif /* CONFIG_ADEOS_CORE */
 +
- 		/* We must make sure the FP state is consistent with
- 		 * our MSR_FP in regs
- 		 */
-@@ -581,6 +587,13 @@ void AlignmentException(struct pt_regs *
- 		regs->nip += 4;	/* skip over emulated instruction */
- 		return;
- 	}
-+
+ void MachineCheckException(struct pt_regs *regs)
+ {
+ 	unsigned long reason = get_mc_reason(regs);
+ 
 +#ifdef CONFIG_ADEOS_CORE
-+	if (__adeos_event_monitors[ADEOS_ALIGNMENT_TRAP] > 0 &&
-+	    __adeos_handle_event(ADEOS_ALIGNMENT_TRAP,regs) != 0)
++	if (__adeos_pipeline_trap(ADEOS_MCE_TRAP,regs))
 +	    return;
 +#endif /* CONFIG_ADEOS_CORE */
 +
+ 	if (user_mode(regs)) {
+ 		regs->msr |= MSR_RI;
+ 		_exception(SIGBUS, regs, BUS_ADRERR, regs->nip);
+@@ -338,6 +350,10 @@ void SMIException(struct pt_regs *regs)
+ 
+ void UnknownException(struct pt_regs *regs)
+ {
++#ifdef CONFIG_ADEOS_CORE
++       if (__adeos_pipeline_trap(ADEOS_UNKNOWN_TRAP,regs))
++	   return;
++#endif /* CONFIG_ADEOS_CORE */
+ 	printk("Bad trap at PC: %lx, MSR: %lx, vector=%lx    %s\n",
+ 	       regs->nip, regs->msr, regs->trap, print_tainted());
+ 	_exception(SIGTRAP, regs, 0, 0);
+@@ -347,11 +363,19 @@ void InstructionBreakpoint(struct pt_reg
+ {
+ 	if (debugger_iabr_match(regs))
+ 		return;
++#ifdef CONFIG_ADEOS_CORE
++	if (__adeos_pipeline_trap(ADEOS_IABR_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
+ 	_exception(SIGTRAP, regs, TRAP_BRKPT, 0);
+ }
+ 
+ void RunModeException(struct pt_regs *regs)
+ {
++#ifdef CONFIG_ADEOS_CORE
++        if (__adeos_pipeline_trap(ADEOS_RM_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
+ 	_exception(SIGTRAP, regs, 0, 0);
+ }
+ 
+@@ -490,6 +514,11 @@ void ProgramCheckException(struct pt_reg
+ 	unsigned int reason = get_reason(regs);
+ 	extern int do_mathemu(struct pt_regs *regs);
+ 
++#ifdef CONFIG_ADEOS_CORE
++	if (__adeos_pipeline_trap(ADEOS_PCE_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
++
+ #ifdef CONFIG_MATH_EMULATION
+ 	/* (reason & REASON_ILLEGAL) would be the obvious thing here,
+ 	 * but there seems to be a hardware bug on the 405GP (RevD)
+@@ -566,6 +595,10 @@ void ProgramCheckException(struct pt_reg
+ 
+ void SingleStepException(struct pt_regs *regs)
+ {
++#ifdef CONFIG_ADEOS_CORE
++	if (__adeos_pipeline_trap(ADEOS_SSTEP_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
+ 	regs->msr &= ~MSR_SE;  /* Turn off 'trace' bit */
+ 	if (debugger_sstep(regs))
+ 		return;
+@@ -581,6 +614,12 @@ void AlignmentException(struct pt_regs *
+ 		regs->nip += 4;	/* skip over emulated instruction */
+ 		return;
+ 	}
++#ifdef CONFIG_ADEOS_CORE
++	/* Assume that fixing alignment can always be done regardless
++	   of the current domain. */
++	if (__adeos_pipeline_trap(ADEOS_ALIGNMENT_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
  	if (fixed == -EFAULT) {
  		/* fixed == -EFAULT means the operand address was bad */
  		if (user_mode(regs))
-@@ -680,6 +693,12 @@ void AltivecUnavailException(struct pt_r
+@@ -603,6 +642,10 @@ void StackOverflow(struct pt_regs *regs)
+ 
+ void nonrecoverable_exception(struct pt_regs *regs)
+ {
++#ifdef CONFIG_ADEOS_CORE
++	if (__adeos_pipeline_trap(ADEOS_NREC_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
+ 	printk(KERN_ERR "Non-recoverable exception at PC=%lx MSR=%lx\n",
+ 	       regs->nip, regs->msr);
+ 	debugger(regs);
+@@ -623,6 +666,11 @@ void SoftwareEmulation(struct pt_regs *r
+ 	extern int Soft_emulate_8xx(struct pt_regs *);
+ 	int errcode;
+ 
++#ifdef CONFIG_ADEOS_CORE
++	if (__adeos_pipeline_trap(ADEOS_SOFTEMU_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
++
+ 	CHECK_FULL_REGS(regs);
+ 
+ 	if (!user_mode(regs)) {
+@@ -651,6 +699,10 @@ void SoftwareEmulation(struct pt_regs *r
+ 
+ void DebugException(struct pt_regs *regs, unsigned long debug_status)
+ {
++#ifdef CONFIG_ADEOS_CORE
++        if (__adeos_pipeline_trap(ADEOS_DEBUG_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
+ 	if (debug_status & DBSR_IC) {	/* instruction completion */
+ 		regs->msr &= ~MSR_DE;
+ 		if (user_mode(regs)) {
+@@ -680,6 +732,11 @@ void AltivecUnavailException(struct pt_r
  {
  	static int kernel_altivec_count;
  
 +#ifdef CONFIG_ADEOS_CORE
-+	if (__adeos_event_monitors[ADEOS_NOALTIVEC_TRAP] > 0 &&
-+	    __adeos_handle_event(ADEOS_NOALTIVEC_TRAP,regs) != 0)
++	if (__adeos_pipeline_trap(ADEOS_ALTUNAVAIL_TRAP,regs))
 +	    return;
 +#endif /* CONFIG_ADEOS_CORE */
 +
  #ifndef CONFIG_ALTIVEC
  	if (user_mode(regs)) {
  		/* A user program has executed an altivec instruction,
-diff -uNrp linuxppc-2.6.10rc3/arch/ppc/mm/fault.c linuxppc-2.6.10rc3-adeos/arch/ppc/mm/fault.c
---- linuxppc-2.6.10rc3/arch/ppc/mm/fault.c	2004-12-06 17:15:20.000000000 +0100
-+++ linuxppc-2.6.10rc3-adeos/arch/ppc/mm/fault.c	2005-01-01 18:19:37.000000000 +0100
-@@ -332,6 +332,21 @@ bad_page_fault(struct pt_regs *regs, uns
- 		return;
- 	}
+@@ -701,6 +758,11 @@ void AltivecAssistException(struct pt_re
+ {
+ 	int err;
  
 +#ifdef CONFIG_ADEOS_CORE
-+	/* On PPC, we only fire the Adeos trap handler when no fixup
-+	   is available and the trap is endangering the kernel; IOW,
-+	   it's only there to implement last chance / panic
-+	   handling. */
-+	if (__adeos_event_monitors[ADEOS_ACCESS_TRAP] > 0 &&
-+	    __adeos_handle_event(ADEOS_ACCESS_TRAP,regs) != 0)
++	if (__adeos_pipeline_trap(ADEOS_ALTASSIST_TRAP,regs))
 +	    return;
-+
-+	/* Ok, since we are about to jump out of the window, make sure
-+	   we'll get synchronous printk() service regardless of the
-+	   current domain from now on... */
-+	adeos_set_printk_sync(adp_current);
 +#endif /* CONFIG_ADEOS_CORE */
 +
- 	/* kernel has accessed a bad area */
+ 	preempt_disable();
+ 	if (regs->msr & MSR_VEC)
+ 		giveup_altivec(current);
+@@ -747,6 +809,11 @@ void SPEFloatingPointException(struct pt
+ 	int fpexc_mode;
+ 	int code = 0;
+ 
++#ifdef CONFIG_ADEOS_CORE
++	if (__adeos_pipeline_trap(ADEOS_SPE_TRAP,regs))
++	    return;
++#endif /* CONFIG_ADEOS_CORE */
++
+ 	spefscr = current->thread.spefscr;
+ 	fpexc_mode = current->thread.fpexc_mode;
+ 
+diff -uNrp linuxppc-2.6.10rc3/arch/ppc/mm/fault.c linuxppc-2.6.10rc3-adeos/arch/ppc/mm/fault.c
+--- linuxppc-2.6.10rc3/arch/ppc/mm/fault.c	2004-12-06 17:15:20.000000000 +0100
++++ linuxppc-2.6.10rc3-adeos/arch/ppc/mm/fault.c	2005-02-27 12:05:44.000000000 +0100
+@@ -116,6 +116,12 @@ int do_page_fault(struct pt_regs *regs, 
+ 		is_write = error_code & 0x02000000;
+ #endif /* CONFIG_4xx || CONFIG_BOOKE */
+ 
++#ifdef CONFIG_ADEOS_CORE
++	if (__adeos_event_monitors[ADEOS_ACCESS_TRAP] > 0 &&
++	    __adeos_handle_event(ADEOS_ACCESS_TRAP,regs) != 0)
++	    return 0;
++#endif /* CONFIG_ADEOS_CORE */
++
  #if defined(CONFIG_XMON) || defined(CONFIG_KGDB)
- 	if (debugger_kernel_faults)
+ 	if (debugger_fault_handler && TRAP(regs) == 0x300) {
+ 		debugger_fault_handler(regs);
 diff -uNrp linuxppc-2.6.10rc3/include/asm-ppc/adeos.h linuxppc-2.6.10rc3-adeos/include/asm-ppc/adeos.h
 --- linuxppc-2.6.10rc3/include/asm-ppc/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linuxppc-2.6.10rc3-adeos/include/asm-ppc/adeos.h	2005-02-21 14:19:01.000000000 +0100
-@@ -0,0 +1,445 @@
++++ linuxppc-2.6.10rc3-adeos/include/asm-ppc/adeos.h	2005-02-27 14:56:39.000000000 +0100
+@@ -0,0 +1,455 @@
 +/*
 + *   include/asm-ppc/adeos.h
 + *
@@ -2677,9 +2794,9 @@ diff -uNrp linuxppc-2.6.10rc3/include/asm-ppc/adeos.h linuxppc-2.6.10rc3-adeos/i
 +#include <linux/cpumask.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r6c12/ppc"
++#define ADEOS_ARCH_STRING     "r6c14/ppc"
 +#define ADEOS_MAJOR_NUMBER    6
-+#define ADEOS_MINOR_NUMBER    13
++#define ADEOS_MINOR_NUMBER    14
 +
 +#define ADEOS_IRQ_ACKED		0x1000
 +#define ADEOS_IRQ_ACKED_MASK	(ADEOS_IRQ_ACKED - 1)
@@ -2722,11 +2839,21 @@ diff -uNrp linuxppc-2.6.10rc3/include/asm-ppc/adeos.h linuxppc-2.6.10rc3-adeos/i
 +#endif /* CONFIG_SMP */
 +
 + /* PPC traps */
-+#define ADEOS_ACCESS_TRAP     0
-+#define ADEOS_ALIGNMENT_TRAP  1
-+#define ADEOS_NOALTIVEC_TRAP  2
-+#define ADEOS_FPU_TRAP        3
-+#define ADEOS_NR_FAULTS       4
++#define ADEOS_ACCESS_TRAP     0	/* Data or instruction access exception */
++#define ADEOS_ALIGNMENT_TRAP  1	/* Alignment exception */
++#define ADEOS_ALTUNAVAIL_TRAP 2	/* Altivec unavailable */
++#define ADEOS_PCE_TRAP        3	/* Program check exception */
++#define ADEOS_MCE_TRAP        4	/* Machine check exception */
++#define ADEOS_UNKNOWN_TRAP    5	/* Unknown exception */
++#define ADEOS_IABR_TRAP       6	/* Instruction breakpoint */
++#define ADEOS_RM_TRAP         7	/* Run mode exception */
++#define ADEOS_SSTEP_TRAP      8	/* Single-step exception  */
++#define ADEOS_NREC_TRAP       9	/* Non-recoverable exception  */
++#define ADEOS_SOFTEMU_TRAP    10 /* Software emulation  */
++#define ADEOS_DEBUG_TRAP      11 /* Debug exception  */
++#define ADEOS_SPE_TRAP        12 /* SPE exception  */
++#define ADEOS_ALTASSIST_TRAP  13 /* Altivec assist exception */
++#define ADEOS_NR_FAULTS       14
 +/* Pseudo-vectors used for kernel events */
 +#define ADEOS_FIRST_KEVENT      ADEOS_NR_FAULTS
 +#define ADEOS_SYSCALL_PROLOGUE  (ADEOS_FIRST_KEVENT)
@@ -3152,8 +3279,8 @@ diff -uNrp linuxppc-2.6.10rc3/include/asm-ppc/smp.h linuxppc-2.6.10rc3-adeos/inc
  
 diff -uNrp linuxppc-2.6.10rc3/include/linux/adeos.h linuxppc-2.6.10rc3-adeos/include/linux/adeos.h
 --- linuxppc-2.6.10rc3/include/linux/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linuxppc-2.6.10rc3-adeos/include/linux/adeos.h	2005-02-14 18:05:00.000000000 +0100
-@@ -0,0 +1,515 @@
++++ linuxppc-2.6.10rc3-adeos/include/linux/adeos.h	2005-02-25 22:56:20.000000000 +0100
+@@ -0,0 +1,517 @@
 +/*
 + *   include/linux/adeos.h
 + *
@@ -3212,7 +3339,8 @@ diff -uNrp linuxppc-2.6.10rc3/include/linux/adeos.h linuxppc-2.6.10rc3-adeos/inc
 +#define IPIPE_SYSTEM_FLAG    5
 +#define IPIPE_LOCK_FLAG      6
 +#define IPIPE_SHARED_FLAG    7
-+#define IPIPE_CALLASM_FLAG   8	/* Arch-dependent -- might be unused. */
++#define IPIPE_SYNC_FLAG      8
++#define IPIPE_CALLASM_FLAG   9	/* Arch-dependent -- might be unused. */
 +
 +#define IPIPE_HANDLE_MASK    (1 << IPIPE_HANDLE_FLAG)
 +#define IPIPE_PASS_MASK      (1 << IPIPE_PASS_FLAG)
@@ -3223,6 +3351,7 @@ diff -uNrp linuxppc-2.6.10rc3/include/linux/adeos.h linuxppc-2.6.10rc3-adeos/inc
 +#define IPIPE_SYSTEM_MASK    (1 << IPIPE_SYSTEM_FLAG)
 +#define IPIPE_LOCK_MASK      (1 << IPIPE_LOCK_FLAG)
 +#define IPIPE_SHARED_MASK    (1 << IPIPE_SHARED_FLAG)
++#define IPIPE_SYNC_MASK      (1 << IPIPE_SYNC_FLAG)
 +#define IPIPE_CALLASM_MASK   (1 << IPIPE_CALLASM_FLAG)
 +
 +#define IPIPE_DEFAULT_MASK  (IPIPE_HANDLE_MASK|IPIPE_PASS_MASK)
@@ -3865,8 +3994,8 @@ diff -uNrp linuxppc-2.6.10rc3/kernel/Makefile linuxppc-2.6.10rc3-adeos/kernel/Ma
  obj-$(CONFIG_SMP) += cpu.o spinlock.o
 diff -uNrp linuxppc-2.6.10rc3/kernel/adeos.c linuxppc-2.6.10rc3-adeos/kernel/adeos.c
 --- linuxppc-2.6.10rc3/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linuxppc-2.6.10rc3-adeos/kernel/adeos.c	2005-02-12 23:10:01.000000000 +0100
-@@ -0,0 +1,800 @@
++++ linuxppc-2.6.10rc3-adeos/kernel/adeos.c	2005-02-27 19:03:28.000000000 +0100
+@@ -0,0 +1,801 @@
 +/*
 + *   linux/kernel/adeos.c
 + *
@@ -4258,6 +4387,7 @@ diff -uNrp linuxppc-2.6.10rc3/kernel/adeos.c linuxppc-2.6.10rc3-adeos/kernel/ade
 +		adeos_load_cpuid(); /* Processor might have changed. */
 +
 +		if (!test_bit(IPIPE_STALL_FLAG,&this_domain->cpudata[cpuid].status) &&
++		    !test_bit(IPIPE_SYNC_FLAG,&this_domain->cpudata[cpuid].status) &&
 +		    this_domain->cpudata[cpuid].irq_pending_hi != 0)
 +		    __adeos_sync_stage(IPIPE_IRQMASK_ANY);
 +		}

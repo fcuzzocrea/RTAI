@@ -1,5 +1,7 @@
 2005-02-27  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r6c14.
+
 	* configure.in: Add back -fstrict-aliasing, but prevent warnings
 	caused by Linux headers using -Wno-strict-aliasing.
 

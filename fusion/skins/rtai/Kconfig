@@ -27,12 +27,12 @@ config RTAI_OPT_NATIVE_REGISTRY_NRSLOTS
 	registry can handle.
 
 config RTAI_OPT_NATIVE_PIPE
-	bool "Pipe support"
+	bool "Message pipes"
 	depends on RTAI_OPT_PIPE && RTAI_SKIN_NATIVE
 	default y
 	help
 	
-	Inter-domain pipes are bi-directional FIFO communication
+	Message pipes are bi-directional FIFO communication
 	channels allowing data exchange between real-time tasks
 	and regular user-space processes. Pipes natively preserve
 	message boundaries, but can also be used in byte stream mode
@@ -48,58 +48,70 @@ config RTAI_OPT_NATIVE_PIPE_BUFSZ
 	default 4096
 	help
 	
-	This option sets the memory size available for buffering when
-	the pipe is used in byte stream mode.
+	This option sets the memory size available for per-pipe
+	buffering when message pipes are used in byte stream mode.
 
 config RTAI_OPT_NATIVE_SEM
-	bool "Counting semaphore support"
+	bool "Counting semaphores"
 	depends on RTAI_SKIN_NATIVE
 	default y
 	help
 	
-	Counting semaphore support.
+	Counting semaphore are synchronization objects granting RTAI
+	tasks a concurrent access to a given number of resources
+	maintained in an internal counter variable.
 
 config RTAI_OPT_NATIVE_EVENT
-	bool "Event flag support"
+	bool "Event flags"
 	depends on RTAI_SKIN_NATIVE
 	default y
 	help
 	
-	Event flag support.
+	Event flag groups are synchronization objects represented by a
+	long-word structure; every available bit in such word can be used
+	to map a user-defined event flag RTAI tasks can wait for.
 
 config RTAI_OPT_NATIVE_MUTEX
-	bool "Mutex support"
+	bool "Mutexes"
 	depends on RTAI_SKIN_NATIVE
 	default y if RTAI_OPT_NATIVE_COND=y
 	help
 	
-	Mutex support.
+	Mutexes are MUTual EXclusion objects, useful for protecting
+	shared data structures from concurrent modifications, and
+	implementing critical sections and monitors.
 
 config RTAI_OPT_NATIVE_COND
-	bool "Condition variable support"
+	bool "Condition variables"
 	depends on RTAI_SKIN_NATIVE
 	enable RTAI_OPT_NATIVE_MUTEX
 	help
 	
-	Condition variable support.
+	Condition variables are synchronization objects which
+	allows RTAI tasks to suspend execution until some predicate on
+	shared data is satisfied. 
 
 config RTAI_OPT_NATIVE_QUEUE
-	bool "Message queue support"
+	bool "Message queues"
 	depends on RTAI_SKIN_NATIVE
 	help
 	
-	Message queue support.
+	Message queueing is a method by which real-time tasks can
+	exchange or pass data through a RTAI-managed queue of
+	messages. Messages can vary in length and be assigned
+	different types or usages.
 
 config RTAI_OPT_NATIVE_HEAP
-	bool "Memory heap support"
+	bool "Memory heaps"
 	depends on RTAI_SKIN_NATIVE
 	help
-	
-	Memory heap support.
+
+	Memory heaps are regions of memory used for dynamic memory
+	allocation in a time-bounded fashion.
 
 config RTAI_OPT_NATIVE_ALARM
-	bool "Alarm support"
+	bool "Alarms"
 	depends on RTAI_SKIN_NATIVE
 	help
 	
-	Alarm support.
+	Alarms are general watchdog timers.

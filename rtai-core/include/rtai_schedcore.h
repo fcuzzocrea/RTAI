@@ -224,7 +224,7 @@ static inline void enq_ready_task(RT_TASK *ready_task)
 		task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task;
 		ready_task->rnext = task;
 	} else {
-		ready_task->state = 0;
+		ready_task->state |= RT_SCHED_SFTRDY;
 		wake_up_srq.task[wake_up_srq.in] = ready_task->lnxtsk;
 		wake_up_srq.in = (wake_up_srq.in + 1) & (MAX_WAKEUP_SRQ - 1);
 		rt_pend_linux_srq(wake_up_srq.srq);

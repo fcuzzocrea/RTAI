@@ -40,7 +40,9 @@ static inline unsigned long xnarch_get_sched_latency (void)
    the 8254 PIT. The following is still grossly experimental and needs
    work (i.e. more specific cases), but the approach is definitely
    saner than previous attempts to guess such value dynamically. */
-#define __sched_latency (__bogomips < 200 ? 20500 : 13200)
+#define __sched_latency (__bogomips < 200 ? 20500 : \
+                         __bogomips < 2000 ? 14100 : \
+			 7300)
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 #endif /* CONFIG_RTAI_HW_SCHED_LATENCY */

@@ -1,4 +1,4 @@
-2004-02-18  Michael Neuhauser  <mike@firmix.at>
+2004-02-21  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/hal/mach-pxa/pxa-timer.c (rt_request_timer): fixed
 	return and argument type

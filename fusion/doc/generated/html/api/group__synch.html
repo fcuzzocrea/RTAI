@@ -24,15 +24,15 @@ Thread synchronization services.
 <tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__synch.html#a0">xnsynch_init</a> (xnsynch_t *synch, xnflags_t flags)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initialize a synchronization object. </em> <a href="#a0"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__synch.html#a2">xnsynch_sleep_on</a> (xnsynch_t *synch, xnticks_t timeout, xnmutex_t *imutex)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__synch.html#a2">xnsynch_sleep_on</a> (xnsynch_t *synch, xnticks_t timeout)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Sleep on a synchronization object. </em> <a href="#a2"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__synch.html#a3">xnsynch_clear_boost</a> (xnsynch_t *synch, xnthread_t *lastowner)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Clear the priority boost - INTERNAL. </em> <a href="#a3"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Clear the priority boost. </em> <a href="#a3"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__synch.html#a4">xnsynch_renice_sleeper</a> (xnthread_t *thread)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Change a sleeper's priority - INTERNAL. </em> <a href="#a4"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Change a sleeper's priority. </em> <a href="#a4"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>xnthread_t *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__synch.html#a5">xnsynch_wakeup_one_sleeper</a> (xnsynch_t *synch)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Give the resource ownership to the next waiting thread. </em> <a href="#a5"></a><em><br><br></td></tr>
@@ -44,10 +44,10 @@ Thread synchronization services.
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unblock all waiters pending on a resource. </em> <a href="#a7"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__synch.html#a8">xnsynch_forget_sleeper</a> (xnthread_t *thread)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Abort a wait for a resource - INTERNAL. </em> <a href="#a8"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Abort a wait for a resource. </em> <a href="#a8"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__synch.html#a9">xnsynch_release_all_ownerships</a> (xnthread_t *thread)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Release all ownerships - INTERNAL. </em> <a href="#a9"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Release all ownerships. </em> <a href="#a9"></a><em><br><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
 <a class="anchor" name="a3" doxytag="synch.c::xnsynch_clear_boost" ></a><p>
@@ -85,7 +85,9 @@ Thread synchronization services.
     <td>
 
 <p>
-Clear the priority boost - INTERNAL. 
+Clear the priority boost. 
+<p>
+<p><b>For internal use only.</b></p>
 <p>
 This service is called internally whenever a synchronization object is not claimed anymore by sleepers to reset the object owner's priority to its initial level.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
@@ -94,6 +96,7 @@ This service is called internally whenever a synchronization object is not claim
     <tr><td valign=top><em>owner</em>&nbsp;</td><td>The descriptor address of the thread which currently owns the synchronization object. </td></tr>
   </table>
 </dl>
+</p>
     </td>
   </tr>
 </table>
@@ -143,12 +146,12 @@ This service should be called by upper interfaces under circumstances requiring 
   </table>
 </dl>
 <ul>
-<li>XNRMID should be set to indicate that the synchronization object is about to be destroyed (see <a class="el" href="group__pod.html#a19">xnpod_resume_thread()</a>).</li></ul>
+<li>XNRMID should be set to indicate that the synchronization object is about to be destroyed (see <a class="el" href="group__pod.html#a18">xnpod_resume_thread()</a>).</li></ul>
 <p>
 <ul>
-<li>XNBREAK should be set to indicate that the wait has been forcibly interrupted (see <a class="el" href="group__pod.html#a20">xnpod_unblock_thread()</a>).</li></ul>
+<li>XNBREAK should be set to indicate that the wait has been forcibly interrupted (see <a class="el" href="group__pod.html#a19">xnpod_unblock_thread()</a>).</li></ul>
 <p>
-<dl compact><dt><b>Returns:</b></dt><dd>XNSYNCH_RESCHED is returned if at least one thread is unblocked, which means the caller should invoke <a class="el" href="group__pod.html#a30">xnpod_schedule()</a> for applying the new scheduling state. Otherwise, XNSYNCH_DONE is returned.</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>XNSYNCH_RESCHED is returned if at least one thread is unblocked, which means the caller should invoke <a class="el" href="group__pod.html#a27">xnpod_schedule()</a> for applying the new scheduling state. Otherwise, XNSYNCH_DONE is returned.</dd></dl>
 Side-effects:<p>
 <ul>
 <li>The effective priority of the previous resource owner might be lowered to its base priority value as a consequence of the priority inheritance boost being cleared.</li></ul>
@@ -159,7 +162,7 @@ Side-effects:<p>
 <ul>
 <li>This routine does not call the rescheduling procedure.</li></ul>
 <p>
-Context: This routine must be called on behalf of a thread or IST context.     </td>
+Context: This routine can be called on behalf of a thread or ISR.     </td>
   </tr>
 </table>
 <a class="anchor" name="a8" doxytag="synch.c::xnsynch_forget_sleeper" ></a><p>
@@ -188,7 +191,9 @@ Context: This routine must be called on behalf of a thread or IST context.     <
     <td>
 
 <p>
-Abort a wait for a resource - INTERNAL. 
+Abort a wait for a resource. 
+<p>
+<p><b>For internal use only.</b></p>
 <p>
 Performs all the necessary housekeeping chores to stop a thread from waiting on a given synchronization object.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
@@ -196,7 +201,8 @@ Performs all the necessary housekeeping chores to stop a thread from waiting on 
     <tr><td valign=top><em>thread</em>&nbsp;</td><td>The descriptor address of the affected thread.</td></tr>
   </table>
 </dl>
-When the trace support is enabled (i.e. MVM), the idle state is posted to the synchronization object's state diagram (if any) whenever no thread remains blocked on it. The real-time interfaces must ensure that such condition (i.e. EMPTY/IDLE) is mapped to state #0.     </td>
+When the trace support is enabled (i.e. MVM), the idle state is posted to the synchronization object's state diagram (if any) whenever no thread remains blocked on it. The real-time interfaces must ensure that such condition (i.e. EMPTY/IDLE) is mapped to state #0. </p>
+    </td>
   </tr>
 </table>
 <a class="anchor" name="a0" doxytag="synch.c::xnsynch_init" ></a><p>
@@ -251,7 +257,7 @@ This object has built-in support for priority inheritance.<p>
 <li>XNSYNCH_PIP causes the priority inheritance mechanism to be automatically activated when a priority inversion is detected among threads using this object. Otherwise, no priority inheritance takes place upon priority inversion (XNSYNCH_NOPIP).</li></ul>
 <p>
 Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread context.     </td>
+Context: This routine must be called on behalf of a thread.     </td>
   </tr>
 </table>
 <a class="anchor" name="a9" doxytag="synch.c::xnsynch_release_all_ownerships" ></a><p>
@@ -280,7 +286,9 @@ Context: This routine must be called on behalf of a thread context.     </td>
     <td>
 
 <p>
-Release all ownerships - INTERNAL. 
+Release all ownerships. 
+<p>
+<p><b>For internal use only.</b></p>
 <p>
 This call is used internally to release all the ownerships obtained by a thread on synchronization objects. This routine must be entered interrupts off.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
@@ -288,6 +296,7 @@ This call is used internally to release all the ownerships obtained by a thread 
     <tr><td valign=top><em>thread</em>&nbsp;</td><td>The descriptor address of the affected thread. </td></tr>
   </table>
 </dl>
+</p>
     </td>
   </tr>
 </table>
@@ -317,7 +326,9 @@ This call is used internally to release all the ownerships obtained by a thread 
     <td>
 
 <p>
-Change a sleeper's priority - INTERNAL. 
+Change a sleeper's priority. 
+<p>
+<p><b>For internal use only.</b></p>
 <p>
 This service is used by the PIP code to update the pending priority of a sleeping thread.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
@@ -325,6 +336,7 @@ This service is used by the PIP code to update the pending priority of a sleepin
     <tr><td valign=top><em>thread</em>&nbsp;</td><td>The descriptor address of the affected thread. </td></tr>
   </table>
 </dl>
+</p>
     </td>
   </tr>
 </table>
@@ -343,13 +355,7 @@ This service is used by the PIP code to update the pending priority of a sleepin
           <td></td>
           <td></td>
           <td class="md" nowrap>xnticks_t&nbsp;</td>
-          <td class="mdname" nowrap> <em>timeout</em>, </td>
-        </tr>
-        <tr>
-          <td></td>
-          <td></td>
-          <td class="md" nowrap>xnmutex_t *&nbsp;</td>
-          <td class="mdname" nowrap> <em>imutex</em></td>
+          <td class="mdname" nowrap> <em>timeout</em></td>
         </tr>
         <tr>
           <td></td>
@@ -376,12 +382,13 @@ This service should be called by upper interfaces wanting the current thread to 
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>synch</em>&nbsp;</td><td>The descriptor address of the synchronization object to sleep on.</td></tr>
-    <tr><td valign=top><em>timeout</em>&nbsp;</td><td>The timeout which may be used to limit the time the thread pends on the resource. This value is a count of ticks. Passing XN_INFINITE specifies an unbounded wait. All other values are used to initialize a nanokernel watchdog timer.</td></tr>
-    <tr><td valign=top><em>imutex</em>&nbsp;</td><td>The address of an interface mutex currently held by the caller which will be subject to a lock-breaking preemption before the current thread is actually switched out. The corresponding kernel mutex will be automatically reacquired by the nanokernel when the suspended thread is eventually resumed, before <a class="el" href="group__synch.html#a2">xnsynch_sleep_on()</a> returns to its caller. Passing NULL when no lock breaking is required is valid. See <a class="el" href="group__pod.html#a30">xnpod_schedule()</a> for more on lock-breaking preemption.</td></tr>
+    <tr><td valign=top><em>timeout</em>&nbsp;</td><td>The timeout which may be used to limit the time the thread pends on the resource. This value is a count of ticks (see note). Passing XN_INFINITE specifies an unbounded wait. All other values are used to initialize a nanokernel watchdog timer.</td></tr>
   </table>
 </dl>
 Side-effect: This routine always calls the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread context.     </td>
+Context: This routine must be called on behalf of a thread.<p>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#a35">xnpod_start_timer()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
+    </td>
   </tr>
 </table>
 <a class="anchor" name="a5" doxytag="synch.c::xnsynch_wakeup_one_sleeper" ></a><p>
@@ -430,7 +437,7 @@ Side-effects:<p>
 <ul>
 <li>This routine does not call the rescheduling procedure.</li></ul>
 <p>
-Context: This routine must be called on behalf of a thread or IST context.     </td>
+Context: This routine can be called on behalf of a thread or ISR.     </td>
   </tr>
 </table>
 <a class="anchor" name="a6" doxytag="synch.c::xnsynch_wakeup_this_sleeper" ></a><p>
@@ -489,10 +496,10 @@ Side-effects:<p>
 <ul>
 <li>This routine does not call the rescheduling procedure.</li></ul>
 <p>
-Context: This routine must be called on behalf of a thread or IST context.     </td>
+Context: This routine can be called on behalf of a thread or ISR.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon May 24 22:14:38 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 17:10:18 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -1527,10 +1527,14 @@ static inline long long rtai_usrq_trampoline (unsigned srq, unsigned label)
     return r;
 }
 
+#include <asm/rtai_usi.h>
 long long (*rtai_lxrt_invoke_entry)(unsigned long, unsigned long);
 
-asmlinkage int rtai_syscall_entry (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq)
+asmlinkage int rtai_syscall_entry (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq, long ds, long es, long orig_eax, long eip, long cs, unsigned long eflags)
 {
+#ifdef USI_SRQ_MASK
+	IF_IS_A_USI_SRQ_CALL_IT();
+#endif
 	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_invoke_entry(ax_srq, cx_args) : rtai_usrq_trampoline(ax_srq, cx_args);
 	if (in_hrt_mode(rtai_cpuid())) {
 		return 1;

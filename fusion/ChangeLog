@@ -1,3 +1,8 @@
+2004-10-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-ppc/syscall.h (XENOMAI_DO_SYSCALL): Revert
+	retval negation upon error.
+
 2004-10-02  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c2.

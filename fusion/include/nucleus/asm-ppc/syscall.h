@@ -135,7 +135,7 @@ extern int nkgkptd;
 		: ASM_INPUT_##nr				\
 		: "cr0", "ctr", "memory",			\
 		  "r8", "r9", "r10","r11", "r12");		\
-	__sc_3;							\
+	(int)((__sc_0 & 0x1000) ? -__sc_3 : __sc_3);		\
   })
 
 #define LOADARGS_0(muxcode, dummy...)				\

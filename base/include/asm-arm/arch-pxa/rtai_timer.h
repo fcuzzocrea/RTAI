@@ -1,11 +1,11 @@
 /* 020222 asm-arm/arch-pxa/timer.h - ARM/PXA255 specific timer
 Don't include directly - it's included through asm-arm/rtai.h
 
+Copyright (c) 2005 Luca Pizzi, (lucapizzi@hotmail.com)
+Copyright (c) 2005 Stefano Gafforelli, (stefano.gafforelli@tiscali.it)
 COPYRIGHT (C) 2002 Guennadi Liakhovetski, DSA GmbH (gl@dsa-ac.de)
 COPYRIGHT (C) 2002 Wolfgang Müller (wolfgang.mueller@dsa-ac.de)
 Copyright (c) 2001 Alex Züpke, SYSGO RTS GmbH (azu@sysgo.de)
-Copyright (c) 2005 Luca Pizzi, (lucapizzi@hotmail.it)
-Copyright (c) 2005 Stefano Gafforelli, (Stefano.Gafforelli@tiscali.it)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of version 2 of the GNU General Public License as

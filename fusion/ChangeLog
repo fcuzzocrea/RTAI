@@ -1,3 +1,8 @@
+2005-03-06  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* configure.in: Let CC variable take precedence over
+	CROSS_COMPILE, replace --with-CC with --with-cc.
+
 2005-03-05  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pipe.c (xnpipe_open): Clean USER_CONN bit when open

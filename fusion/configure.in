@@ -18,9 +18,8 @@ AC_PROG_INSTALL
 dnl Quick hack to remember CROSS_COMPILE value over configure invocations.
 CROSS_COMPILE=${CROSS_COMPILE-`echo @CROSS_COMPILE@ | \
                 ./config.status --file=-:- 2> /dev/null`}
-CC=${CROSS_COMPILE}gcc
 
-AC_ARG_WITH(CC,
+AC_ARG_WITH(cc,
     AS_HELP_STRING([--with-cc=compiler],[use specific C compiler]),
     [
 	case "$withval" in
@@ -30,6 +29,7 @@ AC_ARG_WITH(CC,
 	esac
 	CC="$withval"
     ])
+CC=${CC-${CROSS_COMPILE}gcc}
 AC_PROG_CC
 CFLAGS=""
 

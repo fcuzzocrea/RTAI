@@ -62,7 +62,7 @@
 #include <nucleus/asm/atomic.h>
 #include <nucleus/shadow.h>
 
-#ifdef ADEOS_RELEASE_NUMBER < 0x02060801
+#if ADEOS_RELEASE_NUMBER < 0x02060801
 #error "Adeos 2.6r8c1 or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/i386/"
 #endif /* ADEOS_RELEASE_NUMBER < 0x02060801 */

@@ -126,16 +126,11 @@ void rtai_handle_isched_lock(int nesting);
 
 extern unsigned long sqilter;
 
-#define SCHED_IPI     RTAI_APIC1_IPI
-#define SCHED_VECTOR  RTAI_APIC1_VECTOR
-
 static inline void send_sched_ipi(unsigned long dest)
 {
         unsigned long flags;
 	rtai_hw_lock(flags);
-	apic_wait_icr_idle();
-	apic_write_around(APIC_ICR2, SET_APIC_DEST_FIELD(dest));
-	apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR);
+	_send_sched_ipi(dest);
 	rtai_hw_unlock(flags);
 }
 

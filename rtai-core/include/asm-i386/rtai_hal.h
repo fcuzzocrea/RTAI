@@ -310,6 +310,16 @@ irqreturn_t rtai_broadcast_to_local_timers(int irq,
 
 #ifdef CONFIG_SMP
 
+#define SCHED_VECTOR  RTAI_SMP_NOTIFY_VECTOR
+#define SCHED_IPI     RTAI_SMP_NOTIFY_IPI
+
+#define _send_sched_ipi(dest) \
+do { \
+        apic_wait_icr_idle(); \
+        apic_write_around(APIC_ICR2, SET_APIC_DEST_FIELD(dest)); \
+        apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
+} while (0)
+
 #ifdef CONFIG_PREEMPT
 #define rt_spin_lock(lock)    _raw_spin_lock(lock)
 #define rt_spin_unlock(lock)  _raw_spin_unlock(lock)
@@ -492,6 +502,8 @@ static inline void rt_global_restore_flags(unsigned long flags) {
 }
 
 #else /* !CONFIG_SMP */
+
+#define _send_sched_ipi(dest)
 
 #define rt_spin_lock(lock)
 #define rt_spin_unlock(lock)

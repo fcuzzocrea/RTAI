@@ -120,15 +120,15 @@ ______________________________________________________________________
 
 
 Q: I have no SMI in the picture, but I'm still seeing high latency
-spots.  What's next?
+   spots.  What's next?
 
 A1: Do you have some legacy USB switch at BIOS configuration level? If
-yes, switch it off, it is known to induce such latencies.
+    yes, switch it off, it is known to induce such latencies.
 
 A2: If no legacy USB switch appears in your BIOS configuration panel,
-this does not necessarily mean that there is no support for it, thus
-no potential for high latencies; this support might just be forcibly
-enabled at boot time.
+    this does not necessarily mean that there is no support for it,
+    thus no potential for high latencies; this support might just be
+    forcibly enabled at boot time.
 
 To solve this, in case your machine has some USB controller hardware,
 make sure to enable the corresponding host controller driver support
@@ -137,6 +137,36 @@ needs CONFIG_USB_UHCI_HCD.  As part of its init chores, the driver
 should reset the host controller properly, kicking out the BIOS off
 the concerned hardware, and deactivate the USB legacy mode if set in
 the same move.
+
+______________________________________________________________________
+
+Q: Insmod'ing rtai_hal.ko fails with error: -1 no such device
+
+A: Dumping the kernel message log using "dmesg" will likely give you
+the reason.
+
+______________________________________________________________________
+
+Q: Upon insmod'ing rtai_hal.ko, the kernel message log says:
+   "RTAI[hal]: local APIC absent or disabled!
+    Disable APIC support or pass "lapic" as bootparam."
+
+A: RTAI/fusion sends this message if the kernel configuration RTAI was
+   compiled against enables the local APIC support
+   (CONFIG_X86_LOCAL_APIC), but the processor status gathered at boot
+   time by the kernel says that no local APIC support is available.
+   There are two options for fixing this issue:
+
+   o either your CPU really has _no_ local APIC hw, then you need to
+     rebuild a kernel with LAPIC support disabled, before rebuilding
+     fusion against the latter;
+
+   o or it has a local APIC but the kernel boot parameters did not
+     specify to activate it using the "lapic" option. The latter is
+     required since 2.6.9-rc4 for boxen which APIC hardware is
+     disabled by default by the BIOS. You may want to look at
+     the file Documentation/kernel-parameters.txt from the Linux
+     source tree, for more information about this parameter.
 
 ======================================================================
 

@@ -1,3 +1,8 @@
+2004-09-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Hold back hal7c1-2.6.8.1 until we
+	are sure that the patch is safe.
+
 2004-09-09  Evgeny Sinelnikov <linux4sin@mail.ru>
 
 	* configure.in, makefile, rtai-core/scripts/rtai-config.in:

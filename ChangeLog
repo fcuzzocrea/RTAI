@@ -1,4 +1,12 @@
-2004-02-252  Roberto Bucher  <roberto.bucher@supsi.ch>
+2004-02-22  Michael Neuhauser  <mike@firmix.at>
+
+	* base/arch/arm/patches/README: info about patches (what boards are
+	supported & what they are based on)
+	* base/arch/arm/patches/pxa255_2.6.7-rmk1-karo.patch: renamed to
+	base/arch/arm/patches/pxa255_2.6.7-bk6-karo.patch to better reflect
+	patch chain
+
+2004-02-22  Roberto Bucher  <roberto.bucher@supsi.ch>
 
 	* rtai-lab/*: Scicos block icon + version change
 

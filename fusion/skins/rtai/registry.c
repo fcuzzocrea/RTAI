@@ -165,8 +165,14 @@ void __registry_pkg_cleanup (void)
 	    spin_lock(&rthal_proc_lock);
 
 	    if (ecurr->object && ecurr->object->pnode)
+		{
 		remove_proc_entry(ecurr->object->key,
 				  ecurr->object->pnode->dir);
+
+		if (--ecurr->object->pnode->entries <= 0)
+		    remove_proc_entry(ecurr->object->pnode->type,
+				      registry_proc_root);
+		}
 
 	    spin_unlock(&rthal_proc_lock);
 #endif /* CONFIG_PROC_FS && __KERNEL__ */

@@ -23,10 +23,10 @@
 
 #ifndef __KERNEL__
 
-static inline long long rtai_srq(int srq, unsigned int whatever)
+static inline long long rtai_srq(int srq, unsigned long args)
 {
 	long long retval;
-	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, whatever);
+	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, args);
 	return retval;
 }
 

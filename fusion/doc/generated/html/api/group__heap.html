@@ -17,17 +17,11 @@ HEAP { block_buckets[] extent_queue -------+ } | V EXTENT #1 { {static header} p
 <p>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
-<tr><td colspan="2"><br><h2>Files</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">file &nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="heap_8c.html">heap.c</a></td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Dynamic memory allocation services. <br></td></tr>
-
-<p>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__heap.html#ga2">xnheap_init</a> (xnheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initialize a memory heap.  <a href="#ga2"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__heap.html#ga3">xnheap_destroy</a> (xnheap_t *heap, void(*flushfn)(void *extaddr, u_long extsize))</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__heap.html#ga3">xnheap_destroy</a> (xnheap_t *heap, void(*flushfn)(xnheap_t *heap, void *extaddr, u_long extsize, void *cookie), void *cookie)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Destroys a memory heap.  <a href="#ga3"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">void *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__heap.html#ga5">xnheap_alloc</a> (xnheap_t *heap, u_long size)</td></tr>
@@ -85,8 +79,12 @@ Allocates a contiguous region of memory from an active memory heap. Such allocat
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>The address of the allocated region upon success, or NULL if no memory is available from the specified heap.</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine can be called on behalf of any context.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga3" doxytag="heap.c::xnheap_destroy"></a><p>
@@ -103,8 +101,14 @@ Context: This routine can be called on behalf of any context.     </td>
         <tr>
           <td class="md" nowrap align="right"></td>
           <td class="md"></td>
-          <td class="md" nowrap>void(*)(void *extaddr, u_long extsize)&nbsp;</td>
-          <td class="mdname" nowrap> <em>flushfn</em></td>
+          <td class="md" nowrap>void(*)(xnheap_t *heap, void *extaddr, u_long extsize, void *cookie)&nbsp;</td>
+          <td class="mdname" nowrap> <em>flushfn</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>void *&nbsp;</td>
+          <td class="mdname" nowrap> <em>cookie</em></td>
         </tr>
         <tr>
           <td class="md"></td>
@@ -130,10 +134,16 @@ Destroys a memory heap.<p>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>heap</em>&nbsp;</td><td>The descriptor address of the destroyed heap.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>flushfn</em>&nbsp;</td><td>If non-NULL, the address of a flush routine which will be called for each extent attached to the heap. This routine can be used by the calling code to further release the heap memory.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>cookie</em>&nbsp;</td><td>If <em>flushfn</em> is non-NULL, <em>cookie</em> is an opaque pointer which will be passed unmodified to <em>flushfn</em>.</td></tr>
   </table>
 </dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.     </td>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is returned on success, or -EBUSY if external mappings are still pending on the heap memory.</dd></dl>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga7" doxytag="heap.c::xnheap_extend"></a><p>
@@ -187,8 +197,12 @@ Add a new extent to an existing memory heap.<p>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success, or -EINVAL is returned if <em>extsize</em> differs from the initial extent's size.</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine can be called on behalf of any context.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga6" doxytag="heap.c::xnheap_free"></a><p>
@@ -235,8 +249,12 @@ Releases a memory region to the memory heap it was previously allocated from.<p>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success, or -EINVAL is returned whenever the block is not a valid region of the specified heap.</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine can be called on behalf of any context.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga2" doxytag="heap.c::xnheap_init"></a><p>
@@ -293,18 +311,22 @@ Initializes a memory heap suitable for time-bounded allocation requests of dynam
     <tr><td valign="top"></td><td valign="top"><em>heap</em>&nbsp;</td><td>The address of a heap descriptor which will be used to store the allocation data. This descriptor must always be valid while the heap is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>heapaddr</em>&nbsp;</td><td>The address of the heap storage area. All allocations will be made from the given area in time-bounded mode. Since additional extents can be added to a heap, this parameter is also known as the "initial extent".</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>heapsize</em>&nbsp;</td><td>The size in bytes of the initial extent pointed at by <em>heapaddr</em>. <em>heapsize</em> must be a multiple of pagesize and lower than 16 Mbytes. <em>heapsize</em> must be large enough to contain an internal header. The following formula gives the size of this header: hdrsize = (sizeof(xnextent_t) + ((heapsize - sizeof(xnextent_t))) / (pagesize + 1) + 15) &amp; ~15.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>pagesize</em>&nbsp;</td><td>The size in bytes of the fundamental memory page which will be used to subdivide the heap internally. Choosing the right page size is important regarding performance and memory fragmentation issues, so it might be a good idea to take a look at <a href="http://docs.FreeBSD.org/44doc/papers/kernmalloc.pdf">http://docs.FreeBSD.org/44doc/papers/kernmalloc.pdf</a> to pick the best one for your needs. In the current implementation, pagesize must be a power of two in the range [ 8 .. 32768] inclusive.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>pagesize</em>&nbsp;</td><td>The size in bytes of the fundamental memory page which will be used to subdivide the heap internally. Choosing the right page size is important regarding performance and memory fragmentation issues, so it might be a good idea to take a look at <a href="http://docs.FreeBSD.org/44doc/papers/kernmalloc.pdf">http://docs.FreeBSD.org/44doc/papers/kernmalloc.pdf</a> to pick the best one for your needs. In the current implementation, pagesize must be a power of two in the range [ 8 .. 32768 ] inclusive.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success, or one of the following error codes:</dd></dl>
 <ul>
 <li>-EINVAL is returned whenever a parameter is invalid.</li></ul>
 <p>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine can be called on behalf of any context.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:56 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

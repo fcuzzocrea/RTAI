@@ -76,7 +76,7 @@ A mutex has two possible states: unlocked (not owned by any task), and locked (o
 <p>
 Create a mutex. 
 <p>
-Create a mutual exclusion object that allows multiple threads to synchronize access to a shared resource. A mutex is left in an unlocked state after creation.<p>
+Create a mutual exclusion object that allows multiple tasks to synchronize access to a shared resource. A mutex is left in an unlocked state after creation.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>mutex</em>&nbsp;</td><td>The address of a mutex descriptor RTAI will use to store the mutex-related data. This descriptor must always be valid while the mutex is active therefore it must be allocated in permanent memory.</td></tr>
@@ -87,7 +87,12 @@ Create a mutual exclusion object that allows multiple threads to synchronize acc
 <ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga3" doxytag="mutex.c::rt_mutex_delete"></a><p>
@@ -130,8 +135,12 @@ Destroy a mutex and release all the tasks currently pending on it. A mutex exist
 <ul>
 <li>-EIDRM is returned if <em>sem</em> is a deleted mutex descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if tasks have been woken up as a result of the deletion.<p>
-Context: This routine can always be called on behalf of a task, or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga6" doxytag="mutex.c::rt_mutex_inquire"></a><p>
@@ -184,7 +193,12 @@ Return various information about the status of a given mutex.<p>
 <ul>
 <li>-EIDRM is returned if <em>sem</em> is a deleted mutex descriptor.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga4" doxytag="mutex.c::rt_mutex_lock"></a><p>
@@ -232,8 +246,12 @@ Tasks pend on mutexes by priority order.<p>
 <ul>
 <li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before the mutex has become available.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure unless the mutex is immediately available. If the caller is blocked, the current owner priority might be temporarily raised as a consequence of the priority inheritance protocol.<p>
-Context: This routine must be called on behalf of a task.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless the request is immediately satisfied. If the caller is blocked, the current owner's priority might be temporarily raised as a consequence of the priority inheritance protocol.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga5" doxytag="mutex.c::rt_mutex_unlock"></a><p>
@@ -279,11 +297,15 @@ Release a mutex. If the mutex is pended, the first waiting task (by priority ord
 <ul>
 <li>-EACCES is returned if <em>mutex</em> is not owned by the current task.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if a task is woken up as a result of the operation.<p>
-Context: This routine can be called on behalf of a task or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:57 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

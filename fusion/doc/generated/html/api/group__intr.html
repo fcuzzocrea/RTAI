@@ -136,8 +136,12 @@ Attach an interrupt object previously initialized by <a class="el" href="group__
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned on success. Otherwise, -EINVAL is returned if a low-level error occurred while attaching the interrupt. -EBUSY is specifically returned if the interrupt object was already attached.</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga3" doxytag="intr.c::xnintr_destroy"></a><p>
@@ -174,8 +178,12 @@ Destroys an interrupt object previously initialized by <a class="el" href="group
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned on success. Otherwise, -EBUSY is returned if an error occurred while detaching the interrupt (see <a class="el" href="group__intr.html#ga5">xnintr_detach()</a>).</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga5" doxytag="intr.c::xnintr_detach"></a><p>
@@ -212,8 +220,12 @@ Detach an interrupt object previously attached by <a class="el" href="group__int
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned on success. Otherwise, -EINVAL is returned if a low-level error occurred while detaching the interrupt. Detaching a non-attached interrupt object leads to a null-effect and returns 0.</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga7" doxytag="intr.c::xnintr_disable"></a><p>
@@ -250,8 +262,12 @@ Disables the hardware interrupt line associated with an interrupt object. This o
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned on success. Otherwise, -EINVAL is returned if a low-level error occurred while disabling the interrupt.</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga6" doxytag="intr.c::xnintr_enable"></a><p>
@@ -288,8 +304,12 @@ Enables the hardware interrupt line associated with an interrupt object. Over re
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned on success. Otherwise, -EINVAL is returned if a low-level error occurred while enabling the interrupt.</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga2" doxytag="intr.c::xnintr_init"></a><p>
@@ -358,11 +378,15 @@ Upon receipt of an IRQ, the ISR is immediately called on behalf of the interrupt
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>No error condition being defined, 0 is always returned.</dd></dl>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:56 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

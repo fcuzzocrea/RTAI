@@ -4,7 +4,7 @@ rect $thread_8h-source.html 76,308 196,332
 rect $task_8h.html 226,382 306,406
 rect $include_2nucleus_2timer_8h-source.html 77,233 189,257
 rect $skins_2rtai_2timer_8h.html 220,308 305,332
-rect $queue_8h-source.html 181,158 301,182
+rect $include_2nucleus_2queue_8h-source.html 181,158 301,182
 rect $synch_8h-source.html 213,233 330,257
 rect $include_2nucleus_2types_8h-source.html 184,84 298,108
 rect $intr_8h-source.html 8,158 109,182

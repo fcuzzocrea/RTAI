@@ -106,34 +106,48 @@
 00096 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_signal        43</span>
 00097 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_broadcast     44</span>
 00098 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_inquire       45</span>
-00099 <span class="preprocessor"></span>
-00100 <span class="keyword">struct </span>rt_arg_bulk {
-00101 
-00102     u_long a1;
-00103     u_long a2;
-00104     u_long a3;
-00105     u_long a4;
-00106     u_long a5;
-00107 };
-00108 
-00109 <span class="preprocessor">#ifdef __KERNEL__</span>
-00110 <span class="preprocessor"></span>
-00111 <span class="preprocessor">#ifdef __cplusplus</span>
-00112 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00113 <span class="preprocessor">#endif</span>
-00114 <span class="preprocessor"></span>
-00115 <span class="keywordtype">int</span> __syscall_pkg_init(<span class="keywordtype">void</span>);
-00116 
-00117 <span class="keywordtype">void</span> __syscall_pkg_cleanup(<span class="keywordtype">void</span>);
-00118 
-00119 <span class="preprocessor">#ifdef __cplusplus</span>
-00120 <span class="preprocessor"></span>}
-00121 <span class="preprocessor">#endif</span>
-00122 <span class="preprocessor"></span>
-00123 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00124 
-00125 <span class="preprocessor">#endif </span><span class="comment">/* _RTAI_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:56 2004 for RTAI API by&nbsp;
+00099 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_create       46</span>
+00100 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_bind         47</span>
+00101 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_delete       48</span>
+00102 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_alloc        49</span>
+00103 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_free         50</span>
+00104 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_send         51</span>
+00105 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_recv         52</span>
+00106 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_inquire      53</span>
+00107 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_create        54</span>
+00108 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_bind          55</span>
+00109 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_delete        56</span>
+00110 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_alloc         57</span>
+00111 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_free          58</span>
+00112 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_inquire       59</span>
+00113 <span class="preprocessor"></span>
+00114 <span class="keyword">struct </span>rt_arg_bulk {
+00115 
+00116     u_long a1;
+00117     u_long a2;
+00118     u_long a3;
+00119     u_long a4;
+00120     u_long a5;
+00121 };
+00122 
+00123 <span class="preprocessor">#ifdef __KERNEL__</span>
+00124 <span class="preprocessor"></span>
+00125 <span class="preprocessor">#ifdef __cplusplus</span>
+00126 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00127 <span class="preprocessor">#endif</span>
+00128 <span class="preprocessor"></span>
+00129 <span class="keywordtype">int</span> __syscall_pkg_init(<span class="keywordtype">void</span>);
+00130 
+00131 <span class="keywordtype">void</span> __syscall_pkg_cleanup(<span class="keywordtype">void</span>);
+00132 
+00133 <span class="preprocessor">#ifdef __cplusplus</span>
+00134 <span class="preprocessor"></span>}
+00135 <span class="preprocessor">#endif</span>
+00136 <span class="preprocessor"></span>
+00137 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00138 
+00139 <span class="preprocessor">#endif </span><span class="comment">/* _RTAI_SYSCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:40 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

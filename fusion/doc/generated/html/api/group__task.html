@@ -63,6 +63,15 @@ Task management services.
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga17">rt_task_add_hook</a> (int type, void(*routine)(void *cookie))</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Install a task hook.  <a href="#ga17"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga18">rt_task_remove_hook</a> (int type, void(*routine)(void *cookie))</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Remove a task hook.  <a href="#ga18"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga19">rt_task_catch</a> (void(*handler)(rt_sigset_t))</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Install a signal handler.  <a href="#ga19"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga20">rt_task_notify</a> (RT_TASK *task, rt_sigset_t signals)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Send signals to a task.  <a href="#ga20"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
 <a class="anchor" name="ga17" doxytag="task.c::rt_task_add_hook"></a><p>
@@ -129,7 +138,54 @@ The scheduling is locked while a hook is executing.<p>
 <ul>
 <li>-ENOMEM is returned if not enough memory is available from the system heap to add the new hook.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li></ul>
+<p>
+Rescheduling: never.     </td>
+  </tr>
+</table>
+<a class="anchor" name="ga19" doxytag="task.c::rt_task_catch"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int rt_task_catch           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">void(*)(rt_sigset_t)&nbsp;</td>
+          <td class="mdname1" valign="top" nowrap> <em>handler</em>          </td>
+          <td class="md" valign="top">&nbsp;)&nbsp;</td>
+          <td class="md" nowrap></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Install a signal handler. 
+<p>
+This service installs a signal handler for the current task. Signals are discrete events tasks can receive each time they resume execution. When signals are pending upon resumption, <em>handler</em> is fired to process them. Signals can be sent using <a class="el" href="group__task.html#ga20">rt_task_notify()</a>.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>handler</em>&nbsp;</td><td>The address of the user-supplied routine to fire when signals are pending for the task. This handler is passed the set of pending signals as its first and only argument.</td></tr>
+  </table>
+</dl>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is always returned.</dd></dl>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga4" doxytag="task.c::rt_task_create"></a><p>
@@ -214,7 +270,12 @@ Passing T_FPU|T_CPU(1) in the <em>mode</em> parameter thus creates a task with F
 <ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga8" doxytag="task.c::rt_task_delete"></a><p>
@@ -258,8 +319,15 @@ The DELETE hooks are called on behalf of the calling context (if any). The infor
 <ul>
 <li>-EIDRM is returned if <em>task</em> is a deleted task descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if the current task self-deletes.<p>
-Context: This routine can always be called on behalf of a task. It can also be called on behalf of the initialization code provided <em>task</em> is non-NULL.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code only if  is non-NULL.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: always if @ task is NULL.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga16" doxytag="task.c::rt_task_inquire"></a><p>
@@ -311,7 +379,141 @@ Return various information about the status of a given task.<p>
 <p>
 <ul>
 <li>-EIDRM is returned if <em>task</em> is a deleted task descriptor.</li></ul>
-Context: This routine can always be called on behalf of a task. It can also be called on behalf of an interrupt context or from the initialization code provided <em>task</em> is non-NULL.     </td>
+<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>task</em> is non-NULL.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
+  </tr>
+</table>
+<a class="anchor" name="ga20" doxytag="task.c::rt_task_notify"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int rt_task_notify           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">RT_TASK *&nbsp;</td>
+          <td class="mdname" nowrap> <em>task</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>rt_sigset_t&nbsp;</td>
+          <td class="mdname" nowrap> <em>signals</em></td>
+        </tr>
+        <tr>
+          <td class="md"></td>
+          <td class="md">)&nbsp;</td>
+          <td class="md" colspan="2"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Send signals to a task. 
+<p>
+This service sends a set of signals to a given task. A task can install a signal handler using the <a class="el" href="group__task.html#ga19">rt_task_catch()</a> service to process them.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>signals</em>&nbsp;</td><td>The set of signals to make pending for the task. This set is OR'ed with the current set of pending signals for the task; there is no count of occurence maintained for each available signal, which is either pending or cleared.</td></tr>
+  </table>
+</dl>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
+<ul>
+<li>-EINVAL is returned if <em>task</em> is not a task descriptor, or if <em>task</em> is NULL but not called from a task context.</li></ul>
+<p>
+<ul>
+<li>-EIDRM is returned if <em>task</em> is a deleted task descriptor.</li></ul>
+<p>
+<ul>
+<li>-ESRCH is returned if <em>task</em> has not set any signal handler.</li></ul>
+<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>task</em> is non-NULL.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
+  </tr>
+</table>
+<a class="anchor" name="ga18" doxytag="task.c::rt_task_remove_hook"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int rt_task_remove_hook           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">int&nbsp;</td>
+          <td class="mdname" nowrap> <em>type</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>void(*)(void *cookie)&nbsp;</td>
+          <td class="mdname" nowrap> <em>routine</em></td>
+        </tr>
+        <tr>
+          <td class="md"></td>
+          <td class="md">)&nbsp;</td>
+          <td class="md" colspan="2"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Remove a task hook. 
+<p>
+This service allows to remove a task hook previously registered using <a class="el" href="group__task.html#ga17">rt_task_add_hook()</a>.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>type</em>&nbsp;</td><td>Defines the kind of hook to uninstall. Possible values are:</td></tr>
+  </table>
+</dl>
+<ul>
+<li>RT_HOOK_TSTART</li><li>RT_HOOK_TDELETE</li><li>RT_HOOK_TSWITCH</li></ul>
+<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>routine</em>&nbsp;</td><td>The address of the user-supplied routine to remove from the hook list.</td></tr>
+  </table>
+</dl>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise, one of the following error codes indicates the cause of the failure:</dd></dl>
+<ul>
+<li>-EINVAL is returned if <em>type</em> is incorrect.</li></ul>
+<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga7" doxytag="task.c::rt_task_resume"></a><p>
@@ -355,8 +557,12 @@ The suspension nesting count is decremented so that <a class="el" href="group__t
 <ul>
 <li>-EIDRM is returned if <em>task</em> is a deleted task descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if the suspension nesting level falls down to zero as a result of the current invocation.<p>
-Context: This routine can be called on behalf of a task, interrupt context, or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible if the suspension nesting level falls down to zero as a result of the current invocation.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga10" doxytag="task.c::rt_task_set_periodic"></a><p>
@@ -422,8 +628,15 @@ Make a task periodic by programing its first release point and its period in the
 <ul>
 <li>-EWOULDBLOCK is returned if the system timer has not been started using <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a>.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if the operation affects the current task and <em>idate</em> has not elapsed yet.<p>
-Context: This routine can always be called on behalf of a task. It can also be called on behalf of the initialization code provided <em>task</em> is non-NULL.<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code only if  is non-NULL.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always if the operation affects the current task and <em>idate</em> has not elapsed yet.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
@@ -485,7 +698,15 @@ Side-effects:<p>
 <ul>
 <li>Assigning the same priority to a running or ready task moves it to the end of its priority group, thus causing a manual round-robin.</li></ul>
 <p>
-Context: This routine can always be called on behalf of a task. It can also be called on behalf of an interrupt context or from the initialization code provided <em>task</em> is non-NULL.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if  is non-NULL.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible if  is the current one.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga13" doxytag="task.c::rt_task_sleep"></a><p>
@@ -528,8 +749,12 @@ Delay the execution of the calling task for a number of internal clock ticks.<p>
 <ul>
 <li>-EWOULDBLOCK is returned if the system timer is inactive.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure unless a null delay is given.<p>
-Context: This routine can be called on behalf of a task.<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless a null delay is given.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
@@ -577,8 +802,12 @@ Delay the execution of the calling task until a given date is reached.<p>
 <ul>
 <li>-EWOULDBLOCK is returned if the system timer is inactive.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure unless an already elapsed date is given.<p>
-Context: This routine can be called on behalf of a task.<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless a date in the past is given.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
@@ -644,8 +873,12 @@ The START hooks are called on behalf of the calling context (if any, see <a clas
 <ul>
 <li>-EBUSY is returned if <em>task</em> is already started.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure.<p>
-Context: This routine can be called on behalf of a task context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga6" doxytag="task.c::rt_task_suspend"></a><p>
@@ -689,8 +922,15 @@ A nesting count is maintained so that <a class="el" href="group__task.html#ga6">
 <ul>
 <li>-EIDRM is returned if <em>task</em> is a deleted task descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if the current task suspends itself.<p>
-Context: This routine can always be called on behalf of a task. It can also be called on behalf of an interrupt context or from the initialization code provided <em>task</em> is non-NULL.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if  is non-NULL.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always if @ task is NULL.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga15" doxytag="task.c::rt_task_unblock"></a><p>
@@ -733,8 +973,12 @@ Break the task out of any wait it is currently in. This call clears all delay an
 <ul>
 <li>-EIDRM is returned if <em>task</em> is a deleted task descriptor.</li></ul>
 <p>
-Side-effects: This service calls the rescheduling procedure.<p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga11" doxytag="task.c::rt_task_wait_period"></a><p>
@@ -775,8 +1019,12 @@ Make the current task wait for the next periodic release point in the processor 
 <ul>
 <li>-ETIMEDOUT is returned if a timer overrun occurred, which indicates that a previous release point has been missed by the calling task.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure unless an overrun has been detected. In the latter case, the current task immediately returns from this service without being delayed.<p>
-Context: This routine can be called on behalf of a task.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless an overrun has been detected. In the latter case, the current task immediately returns from this service without being delayed.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga9" doxytag="task.c::rt_task_yield"></a><p>
@@ -807,11 +1055,15 @@ Context: This routine can be called on behalf of a task.     </td>
 Manual round-robin. 
 <p>
 Move the current task to the end of its priority group, so that the next equal-priority task in ready state is switched in.<p>
-Side-effect: This routine calls the rescheduling procedure.<p>
-Context: This routine can be called on behalf of a task.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:57 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

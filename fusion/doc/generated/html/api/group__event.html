@@ -106,7 +106,12 @@ Tasks can wait for a conjunctive (AND) or disjunctive (OR) set of events to occu
 <ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga3" doxytag="event.c::rt_event_delete"></a><p>
@@ -149,8 +154,12 @@ Destroy an event group and release all the tasks currently pending on it. An eve
 <ul>
 <li>-EIDRM is returned if <em>event</em> is a deleted event group descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if tasks have been woken up as a result of the deletion.<p>
-Context: This routine can always be called on behalf of a task, or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga6" doxytag="event.c::rt_event_inquire"></a><p>
@@ -203,7 +212,12 @@ Return various information about the status of a specified event group.<p>
 <ul>
 <li>-EIDRM is returned if <em>event</em> is a deleted event group descriptor.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga5" doxytag="event.c::rt_event_pend"></a><p>
@@ -297,8 +311,15 @@ If the specified set of bits is not set, the calling task is blocked. The task i
 <ul>
 <li>-ETIMEDOUT is returned if the request has not been satisfied within the specified amount of time.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation.<p>
-Context: This routine can be called on behalf of a task. It can also be called on behalf of an interrupt context or from the initialization code provided <em>timeout</em> is equal to RT_TIME_NONBLOCK.<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if  is equal to RT_TIME_NONBLOCK.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
@@ -353,11 +374,15 @@ Post a set of bits to the event mask. All tasks having their wait request fulfil
 <ul>
 <li>-EIDRM is returned if <em>event</em> is a deleted event group descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if a task is woken up as a result of the operation.<p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:57 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

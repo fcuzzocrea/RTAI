@@ -16,7 +16,7 @@ Real-time pipes are an improved replacement for the legacy RT-FIFOS. A pipe is a
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 <tr><td colspan="2"><br><h2>Files</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">file &nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="pipe_8c.html">pipe.c</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">file &nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="skins_2rtai_2pipe_8c.html">pipe.c</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">This file is part of the RTAI project. <br></td></tr>
 
@@ -31,7 +31,7 @@ Real-time pipes are an improved replacement for the legacy RT-FIFOS. A pipe is a
 <tr><td class="memItemLeft" nowrap align="right" valign="top">ssize_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pipe.html#ga11">rt_pipe_read</a> (RT_PIPE *pipe, RT_PIPE_MSG **msgp, RTIME timeout)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Read a message from a pipe.  <a href="#ga11"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">ssize_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pipe.html#ga12">rt_pipe_write</a> (RT_PIPE *pipe, RT_PIPE_MSG *msg, size_t size, int flags)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">ssize_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pipe.html#ga12">rt_pipe_write</a> (RT_PIPE *pipe, RT_PIPE_MSG *msg, size_t size, int mode)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Write a message to a pipe.  <a href="#ga12"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">ssize_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pipe.html#ga13">rt_pipe_stream</a> (RT_PIPE *pipe, const void *buf, size_t size)</td></tr>
@@ -42,10 +42,10 @@ Real-time pipes are an improved replacement for the legacy RT-FIFOS. A pipe is a
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Flush the pipe.  <a href="#ga14"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">RT_PIPE_MSG *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pipe.html#ga15">rt_pipe_alloc</a> (size_t size)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a message buffer.  <a href="#ga15"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a message pipe buffer.  <a href="#ga15"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pipe.html#ga16">rt_pipe_free</a> (RT_PIPE_MSG *msg)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a message buffer.  <a href="#ga16"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a message pipe buffer.  <a href="#ga16"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
 <a class="anchor" name="ga15" doxytag="pipe.c::rt_pipe_alloc"></a><p>
@@ -73,16 +73,21 @@ Real-time pipes are an improved replacement for the legacy RT-FIFOS. A pipe is a
     <td>
 
 <p>
-Allocate a message buffer. 
+Allocate a message pipe buffer. 
 <p>
-This service allocates a message buffer from the system heap which can be subsequently filled then passed to <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a> for sending. The beginning of the available data area of <em>size</em> contiguous bytes is accessible from RT_PIPE_MSGPTR(msg).<p>
+This service allocates a message buffer from the system heap which can be subsequently filled by the caller then passed to <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a> for sending. The beginning of the available data area of <em>size</em> contiguous bytes is accessible from P_MSGPTR(msg).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>size</em>&nbsp;</td><td>The requested size in bytes of the buffer. This value should represent the size of the payload data.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>The address of the allocated message buffer upon success, or NULL if the allocation fails.</dd></dl>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga10" doxytag="pipe.c::rt_pipe_close"></a><p>
@@ -128,7 +133,12 @@ This service closes a pipe previously opened by <a class="el" href="group__pipe.
 <ul>
 <li>-ENODEV or -EBADF can be returned if <em>pipe</em> is scrambled.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga14" doxytag="pipe.c::rt_pipe_flush"></a><p>
@@ -177,7 +187,12 @@ This service flushes any pending data buffered by <a class="el" href="group__pip
 <ul>
 <li>-ENODEV or -EBADF are returned if <em>pipe</em> is scrambled.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga16" doxytag="pipe.c::rt_pipe_free"></a><p>
@@ -205,7 +220,7 @@ Context: This routine can be called on behalf of a task, interrupt context or fr
     <td>
 
 <p>
-Free a message buffer. 
+Free a message pipe buffer. 
 <p>
 This service releases a message buffer returned by <a class="el" href="group__pipe.html#ga11">rt_pipe_read()</a> to the system heap.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
@@ -214,7 +229,12 @@ This service releases a message buffer returned by <a class="el" href="group__pi
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success, or -EINVAL if <em>msg</em> is not a valid message buffer previously allocated by the <a class="el" href="group__pipe.html#ga15">rt_pipe_alloc()</a> service.</dd></dl>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga9" doxytag="pipe.c::rt_pipe_open"></a><p>
@@ -267,7 +287,12 @@ This service opens a bi-directional communication channel allowing data exchange
 <ul>
 <li>-EBUSY is returned if <em>minor</em> is already open.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga11" doxytag="pipe.c::rt_pipe_read"></a><p>
@@ -317,11 +342,11 @@ Unless otherwise specified, the caller is blocked for a given amount of time if 
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>pipe</em>&nbsp;</td><td>The descriptor address of the pipe to read from.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>msgp</em>&nbsp;</td><td>A pointer to a memory location which will be written upon success with the address of the received message. Once consumed, the message space should be freed using <a class="el" href="group__pipe.html#ga16">rt_pipe_free()</a>. The application code can retrieve the actual data and size carried by the message by respectively using the RT_PIPE_MSGPTR() and RT_PIPE_MSGSIZE() macros.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>msgp</em>&nbsp;</td><td>A pointer to a memory location which will be written upon success with the address of the received message. Once consumed, the message space should be freed using <a class="el" href="group__pipe.html#ga16">rt_pipe_free()</a>. The application code can retrieve the actual data and size carried by the message by respectively using the P_MSGPTR() and P_MSGSIZE() macros.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The number of clock ticks to wait for some message to arrive (see note). Passing RT_TIME_INFINITE causes the caller to block indefinitely until some data is eventually available. Passing RT_TIME_NONBLOCK causes the service to return immediately without waiting if no data is available on entry.</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>The number of read bytes available from the received message is returned upon success; this value will be equal to RT_PIPE_MSGSIZE(*msgp). Otherwise:</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>The number of read bytes available from the received message is returned upon success; this value will be equal to P_MSGSIZE(*msgp). Otherwise:</dd></dl>
 <ul>
 <li>-EINVAL is returned if <em>pipe</em> is not a pipe descriptor.</li></ul>
 <p>
@@ -340,8 +365,15 @@ Unless otherwise specified, the caller is blocked for a given amount of time if 
 <ul>
 <li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before any data was available.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if no data is available on entry and <em>timeout</em> is different from RT_TIME_NONBLOCK.<p>
-Context: This routine can be called on behalf of a task. It can also be called on behalf of an interrupt context or from the initialization code provided <em>timeout</em> is equal to RT_TIME_NONBLOCK.<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if  is equal to RT_TIME_NONBLOCK.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
@@ -389,7 +421,7 @@ Context: This routine can be called on behalf of a task. It can also be called o
 Stream bytes to a pipe. 
 <p>
 This service writes a sequence of bytes to be received by the user-space side of the pipe. Unlike <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a>, this service does not preserve message boundaries. Instead, an internal buffer is filled on the fly with the data. The actual sending may be delayed until the internal buffer is full, or the Linux kernel is re-entered after the real-time system enters a quiescent state.<p>
-Data buffers sent by the <a class="el" href="group__pipe.html#ga13">rt_pipe_stream()</a> service are always transmitted in FIFO order (i.e. RT_PIPE_NORMAL mode).<p>
+Data buffers sent by the <a class="el" href="group__pipe.html#ga13">rt_pipe_stream()</a> service are always transmitted in FIFO order (i.e. P_NORMAL mode).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>pipe</em>&nbsp;</td><td>The descriptor address of the pipe to write to.</td></tr>
@@ -413,7 +445,12 @@ Data buffers sent by the <a class="el" href="group__pipe.html#ga13">rt_pipe_stre
 <ul>
 <li>-ENOSYS is returned if the byte streaming mode has been disabled at configuration time by nullifying the size of the pipe buffer (see CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ).</li></ul>
 <p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga12" doxytag="pipe.c::rt_pipe_write"></a><p>
@@ -443,7 +480,7 @@ Context: This routine can be called on behalf of a task, interrupt context or fr
           <td class="md" nowrap align="right"></td>
           <td class="md"></td>
           <td class="md" nowrap>int&nbsp;</td>
-          <td class="mdname" nowrap> <em>flags</em></td>
+          <td class="mdname" nowrap> <em>mode</em></td>
         </tr>
         <tr>
           <td class="md"></td>
@@ -470,14 +507,19 @@ This service writes a complete message to be received by the user-space side of 
     <tr><td valign="top"></td><td valign="top"><em>pipe</em>&nbsp;</td><td>The descriptor address of the pipe to write to.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>msg</em>&nbsp;</td><td>The address of the message to be sent. The message space must have been allocated using the <a class="el" href="group__pipe.html#ga15">rt_pipe_alloc()</a> service. Once passed to <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a>, the memory pointed to by <em>msg</em> is no more under the control of the application code and thus should not be referenced by it anymore; deallocation of this memory will be automatically handled as needed.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>size</em>&nbsp;</td><td>The size in bytes of the message (payload data only). Zero is a valid value, in which case the service returns immediately without sending any message.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>flags</em>&nbsp;</td><td>A set of flags affecting the operation:</td></tr>
+  </table>
+</dl>
+Additionally, <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a> causes any data buffered by <a class="el" href="group__pipe.html#ga13">rt_pipe_stream()</a> to be flushed prior to sending the message. For this reason, <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a> can return a non-zero byte count to the caller if some pending data has been flushed, even if <em>size</em> was zero on entry.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>A set of flags affecting the operation:</td></tr>
   </table>
 </dl>
 <ul>
-<li>RT_PIPE_URGENT causes the message to be prepended to the output queue, ensuring a LIFO ordering.</li></ul>
+<li>P_URGENT causes the message to be prepended to the output queue, ensuring a LIFO ordering.</li></ul>
 <p>
 <ul>
-<li>RT_PIPE_NORMAL causes the message to be appended to the output queue, ensuring a FIFO ordering.</li></ul>
+<li>P_NORMAL causes the message to be appended to the output queue, ensuring a FIFO ordering.</li></ul>
 <p>
 <dl compact><dt><b>Returns:</b></dt><dd>Upon success, this service returns <em>size</em> if the latter is non-zero, or the number of bytes flushed otherwise. Upon error, one of the following error codes is returned:</dd></dl>
 <ul>
@@ -492,11 +534,15 @@ This service writes a complete message to be received by the user-space side of 
 <ul>
 <li>-ENODEV or -EBADF are returned if <em>pipe</em> is scrambled.</li></ul>
 <p>
-Side-effect: <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a> causes any data buffered by <a class="el" href="group__pipe.html#ga13">rt_pipe_stream()</a> to be flushed prior to sending the message. For this reason, <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a> can return a non-zero byte count to the caller if some pending data has been flushed, even if <em>size</em> was zero on entry.<p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:57 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -157,10 +157,12 @@ Side-effects:<p>
 <ul>
 <li>The synchronization object is no more owned by any thread.</li></ul>
 <p>
+Environments:<p>
+This service can be called from:<p>
 <ul>
-<li>This routine does not call the rescheduling procedure.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
-Context: This routine can be called on behalf of a thread or ISR.     </td>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga8" doxytag="synch.c::xnsynch_forget_sleeper"></a><p>
@@ -252,8 +254,12 @@ This object has built-in support for priority inheritance.<p>
 <ul>
 <li>XNSYNCH_PIP causes the priority inheritance mechanism to be automatically activated when a priority inversion is detected among threads using this object. Otherwise, no priority inheritance takes place upon priority inversion (XNSYNCH_NOPIP).</li></ul>
 <p>
-Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga9" doxytag="synch.c::xnsynch_release_all_ownerships"></a><p>
@@ -378,8 +384,12 @@ This service should be called by upper interfaces wanting the current thread to 
     <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The timeout which may be used to limit the time the thread pends on the resource. This value is a count of ticks (see note). Passing XN_INFINITE specifies an unbounded wait. All other values are used to initialize a nucleus watchdog timer.</td></tr>
   </table>
 </dl>
-Side-effect: This routine always calls the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a thread.<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: alway.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga21">xnpod_start_timer()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
@@ -426,10 +436,12 @@ Side-effects:<p>
 <ul>
 <li>The synchronization object ownership is transfered to the unblocked thread.</li></ul>
 <p>
+Environments:<p>
+This service can be called from:<p>
 <ul>
-<li>This routine does not call the rescheduling procedure.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
-Context: This routine can be called on behalf of a thread or ISR.     </td>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga6" doxytag="synch.c::xnsynch_wakeup_this_sleeper"></a><p>
@@ -484,13 +496,15 @@ Side-effects:<p>
 <ul>
 <li>The synchronization object ownership is transfered to the unblocked thread.</li></ul>
 <p>
+Environments:<p>
+This service can be called from:<p>
 <ul>
-<li>This routine does not call the rescheduling procedure.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
-Context: This routine can be called on behalf of a thread or ISR.     </td>
+Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:56 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -82,8 +82,12 @@ If the condition variable is pended, all tasks currently waiting on it are immed
 <ul>
 <li>-EIDRM is returned if <em>cond</em> is a deleted condition variable descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if one or more tasks are woken up as a result of the operation.<p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga2" doxytag="cond.c::rt_cond_create"></a><p>
@@ -133,7 +137,12 @@ Create a synchronization object that allows tasks to suspend execution until som
 <ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga3" doxytag="cond.c::rt_cond_delete"></a><p>
@@ -176,8 +185,12 @@ Destroy a condition variable and release all the tasks currently pending on it. 
 <ul>
 <li>-EIDRM is returned if <em>cond</em> is a deleted condition variable descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if tasks have been woken up as a result of the deletion.<p>
-Context: This routine can always be called on behalf of a task, or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga7" doxytag="cond.c::rt_cond_inquire"></a><p>
@@ -230,7 +243,12 @@ Return various information about the status of a given condition variable.<p>
 <ul>
 <li>-EIDRM is returned if <em>cond</em> is a deleted condition variable descriptor.</li></ul>
 <p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga4" doxytag="cond.c::rt_cond_signal"></a><p>
@@ -273,8 +291,12 @@ If the condition variable is pended, the first waiting task (by queuing priority
 <ul>
 <li>-EIDRM is returned if <em>cond</em> is a deleted condition variable descriptor.</li></ul>
 <p>
-Side-effect: This routine calls the rescheduling procedure if a task is woken up as a result of the operation.<p>
-Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga6" doxytag="cond.c::rt_cond_wait"></a><p>
@@ -341,13 +363,17 @@ Tasks pend on condition variables by priority order.<p>
 <ul>
 <li>-EWOULDBLOCK is returned if <em>timeout</em> equals RT_TIME_NONBLOCK.</li></ul>
 <p>
-Side-effect: This routine always calls the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a task.<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:56 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

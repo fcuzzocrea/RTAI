@@ -73,7 +73,7 @@ void xnmod_alloc_glinks (xnqueue_t *freehq)
 	}
 }
 
-#ifdef CONFIG_PROC_FS
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
 #include <linux/proc_fs.h>
 #include <linux/ctype.h>

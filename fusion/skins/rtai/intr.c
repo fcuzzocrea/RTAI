@@ -32,7 +32,7 @@
 #include <rtai/registry.h>
 #include <rtai/intr.h>
 
-DECLARE_XNQUEUE(__rtai_intr_q);
+static DECLARE_XNQUEUE(__rtai_intr_q);
 
 int __intr_pkg_init (void)
 

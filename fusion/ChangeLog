@@ -1,5 +1,8 @@
 2005-02-27  Philippe Gerum  <rpm@xenomai.org>
 
+	* configure.in: Add back -fstrict-aliasing, but prevent warnings
+	caused by Linux headers using -Wno-strict-aliasing.
+
 	* arch/ppc/hal/hal.c (faults_read_proc):  Add proc entry to
 	display faults occurring in real-time mode.
 

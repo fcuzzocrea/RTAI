@@ -21636,7 +21636,7 @@ RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include -D_GNU_SOURCE -D_REENTRANT"
 case $RTAI_TARGET_ARCH in
  i386)
 	RTAI_TARGET_SUBARCH=
-	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe -fno-strict-aliasing"
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe -fstrict-aliasing -Wno-strict-aliasing"
 	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
         ;;
  ppc)

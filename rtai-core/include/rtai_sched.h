@@ -80,7 +80,7 @@ typedef struct rt_ExitHandler {
     int   arg2;
 } XHDL;
 
-struct rt_heap_t { void *hkadr, *huadr; int hsize; };
+struct rt_heap_t { void *heap, *kadr, *uadr; };
 
 typedef struct rt_task_struct {
 

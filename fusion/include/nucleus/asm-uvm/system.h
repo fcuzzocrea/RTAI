@@ -77,7 +77,7 @@ typedef int spl_t;
 typedef unsigned long cpumask_t;
 
 #ifdef CONFIG_SMP
-#error "SMP not supported yet"
+#error "SMP not supported for UVM yet"
 #endif /* CONFIG_SMP */
 
 extern int vml_irqlock;

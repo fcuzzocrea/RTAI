@@ -221,12 +221,7 @@ case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
 #else /* CONFIG_X86_LOCAL_APIC */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
 #endif /* CONFIG_X86_LOCAL_APIC */
-/* Using 3/4 of the average jitter is some constant obtained from
-   experimentation that proved to fit on tested x86 platforms with
-   respect to auto-calibration. In any case, a more accurate
-   scheduling latency can still be fixed by setting
-   CONFIG_RTAI_HW_SCHED_LATENCY properly. */
-#define xnarch_adjust_calibration(x) ((x) * 3 / 4)
+#define xnarch_adjust_calibration(x) (x)
 
 #define XNARCH_THREAD_STACKSZ 4096
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */

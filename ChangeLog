@@ -1,3 +1,21 @@
+2004-08-19  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/include/asm/rtai_lxrt.h: redefinition of the arch
+	dependent lxrt_context_switch into _lxrt_context_switch, to be 
+	used in the static, non inlined, general lxrt_context_switch in 
+	sched_lxrt.c.
+
+        * rtai-core/include/asm/rtai_hal.h: just some cleanup.
+
+        * rtai-core/include/asm/rtai_vectores.h: wrapped RTAI_DO_TRAP 
+	macro with a do { } while (0).
+
+        * rtai-core/sched/rtai/sched_lxrt.c: 
+	- got rid of STAGGER, use CPU_RELAX directly;
+	- staticalised lxrt_context_switch, using the arch dependent 
+	_lxrt_context_switch; no inline to avoid weird gcc optimisation 
+	problems.
+
 2004-08-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/include/asm/rtai_lxrt.h: "switch_to" Linux release 

@@ -1764,8 +1764,21 @@ void xnpod_welcome_thread (xnthread_t *thread)
         /* Actually grab the scheduler lock. */
         xnpod_lock_sched();
 
-    if (testbits(thread->status,XNFPU))
+#ifdef CONFIG_RTAI_HW_FPU
+   if (testbits(thread->status,XNFPU))
+       {
+       xnsched_t *sched = thread->sched;
+
+        if (sched->fpuholder != NULL &&
+	    xnarch_fpu_ptr(xnthread_archtcb(sched->fpuholder)) !=
+	    xnarch_fpu_ptr(xnthread_archtcb(thread)))
+            xnarch_save_fpu(xnthread_archtcb(sched->fpuholder));
+
         xnarch_init_fpu(xnthread_archtcb(thread));
+
+        sched->fpuholder = thread;
+        }
+#endif /* CONFIG_RTAI_HW_FPU */
 
     clrbits(thread->status,XNRESTART);
 

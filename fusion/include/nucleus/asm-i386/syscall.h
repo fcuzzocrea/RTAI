@@ -43,8 +43,8 @@
  * notice.
  */
 
-#ifndef _RTAI_ASM_I386_XNCALL_H
-#define _RTAI_ASM_I386_XNCALL_H
+#ifndef _RTAI_ASM_I386_SYSCALL_H
+#define _RTAI_ASM_I386_SYSCALL_H
 
 #include <asm/ptrace.h>
 
@@ -255,4 +255,4 @@ typedef struct xninquiry {
 
 struct task_struct;
 
-#endif /* !_RTAI_ASM_I386_XNCALL_H */
+#endif /* !_RTAI_ASM_I386_SYSCALL_H */

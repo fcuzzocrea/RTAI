@@ -1,3 +1,7 @@
+2004-06-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/event.c: Add documentation.
+
 2004-06-10  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/event.c: Fully implement the event flag group.

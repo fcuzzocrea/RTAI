@@ -1,0 +1,15 @@
+base referer
+rect $rtai__mbx_8h.html 253,233 338,257
+rect $rtai__netrpc_8h-source.html 217,158 313,182
+rect $rtai__schedcore_8h-source.html 300,83 420,107
+rect $rtai__mq_8h-source.html 362,233 440,257
+rect $rtai__rwl_8h-source.html 440,158 514,182
+rect $rtai__spl_8h-source.html 570,158 645,182
+rect $mbx_8c.html 330,9 389,33
+rect $ipc_2msg_2msg_8c.html 413,9 472,33
+rect $sem_8c.html 578,9 637,33
+rect $shm_8c.html 496,9 554,33
+rect $common_8c.html 8,9 90,33
+rect $sched__up_8c.html 114,9 205,33
+rect $tasklets_8c.html 229,9 306,33
+rect $rtai__posix_8h-source.html 514,233 605,257

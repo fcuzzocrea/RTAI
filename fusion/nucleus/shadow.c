@@ -1,4 +1,3 @@
-
 /*!\file shadow.c
  * \brief Real-time shadow services.
  * \author Philippe Gerum
@@ -77,58 +76,63 @@ static int traceme = 0;
 
 static adomain_t irq_shield;
 
-static struct task_struct *gatekeeper;
+#if CONFIG_SMP
+static unsigned long shield_requests, shield_state;
+#else /* !CONFIG_SMP */
+static unsigned long shield_state;
+#endif /* CONFIG_SMP */
+
+static struct task_struct *gatekeeper[XNARCH_NR_CPUS];
 
 static struct semaphore gksync;
 
-static struct semaphore gkreq;
+static struct semaphore gkreq[XNARCH_NR_CPUS];
 
 static int gkstop;
 
-static unsigned gkvirq;
+static unsigned gkvirq, sigvirq, nicevirq;
 
-static unsigned sigvirq;
+static int gk_enter_in[XNARCH_NR_CPUS],
+           gk_enter_out[XNARCH_NR_CPUS];
 
-static unsigned nicevirq;
+static xnthread_t *gk_enter_wheel[XNARCH_NR_CPUS][XNSHADOW_MAXRQ];
 
-static int gk_enter_in,
-           gk_enter_out;
+static int gk_leave_in[XNARCH_NR_CPUS],
+           gk_leave_out[XNARCH_NR_CPUS];
 
-static xnthread_t *gk_enter_wheel[XNSHADOW_MAXRQ];
+static struct task_struct *gk_leave_wheel[XNARCH_NR_CPUS][XNSHADOW_MAXRQ];
 
-static int gk_leave_in,
-           gk_leave_out;
-
-static struct task_struct *gk_leave_wheel[XNSHADOW_MAXRQ];
-
-static int gk_signal_in,
-           gk_signal_out;
+static int gk_signal_in[XNARCH_NR_CPUS],
+           gk_signal_out[XNARCH_NR_CPUS];
 
 static struct {
 
     struct task_struct *task;
     int sig;
 
-} gk_signal_wheel[XNSHADOW_MAXRQ];
+} gk_signal_wheel[XNARCH_NR_CPUS][XNSHADOW_MAXRQ];
 
-static int gk_renice_in,
-           gk_renice_out;
+static int gk_renice_in[XNARCH_NR_CPUS],
+           gk_renice_out[XNARCH_NR_CPUS];
 
 static struct {
 
     struct task_struct *task;
     int prio;
 
-} gk_renice_wheel[XNSHADOW_MAXRQ];
+} gk_renice_wheel[XNARCH_NR_CPUS][XNSHADOW_MAXRQ];
 
 static inline struct task_struct *get_calling_task (adevinfo_t *evinfo) {
 
-    return xnpod_shadow_p() ? current : rthal_get_root_current(0);
+    return (xnpod_shadow_p()
+            ? current
+            : rthal_get_root_current(xnarch_current_cpu()));
 }
 
 static inline void set_linux_task_priority (struct task_struct *task, int prio)
 
 {
+    adeos_declare_cpuid;
     spl_t s;
 
     /* Can be called on behalf of RTAI -- The priority of the
@@ -142,19 +146,18 @@ static inline void set_linux_task_priority (struct task_struct *task, int prio)
 	}
 
     splhigh(s);
-    gk_renice_wheel[gk_renice_in].task = task;
-    gk_renice_wheel[gk_renice_in].prio = prio;
-    gk_renice_in = (gk_renice_in + 1) & (XNSHADOW_MAXRQ - 1);
+    adeos_load_cpuid();
+    gk_renice_wheel[cpuid][gk_renice_in[cpuid]].task = task;
+    gk_renice_wheel[cpuid][gk_renice_in[cpuid]].prio = prio;
+    gk_renice_in[cpuid] = (gk_renice_in[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
     splexit(s);
-    
+
     adeos_propagate_irq(nicevirq);
 }
 
-static void engage_irq_shield (void)
+static void engage_local_irq_shield (unsigned local_cpu)
 
 {
-    adeos_declare_cpuid;
-    unsigned long flags;
     unsigned irq;
 
     /* Since the interrupt shield does not handle the virtual IRQs we
@@ -166,43 +169,115 @@ static void engage_irq_shield (void)
 
     adeos_stall_pipeline_from(&irq_shield);
 
-    adeos_lock_cpu(flags);
-
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	__adeos_lock_irq(adp_root,cpuid,irq);
+#ifdef CONFIG_SMP
+        if (irq != ADEOS_CRITICAL_IPI &&
+            irq != ADEOS_SERVICE_IPI1 &&
+            irq != gkvirq &&
+            irq != sigvirq &&
+            irq != nicevirq)
+#endif /* CONFIG_SMP */
+	    __adeos_lock_irq(adp_root,local_cpu,irq);
 
-    adeos_unlock_cpu(flags);
+    adeos_unstall_pipeline_from(&irq_shield);
 }
 
-static void disengage_irq_shield (void)
+static void disengage_local_irq_shield (unsigned local_cpu __attribute__((unused)))
 
 {
     unsigned long flags;
     unsigned irq;
 
-    rthal_hw_lock(flags);
+    if (!testbits(shield_state, ~0))
+        {
+        rthal_hw_lock(flags);
 
-    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	__adeos_unlock_irq(adp_root,irq);
-
-    rthal_hw_unlock(flags);
-
-    adeos_unstall_pipeline_from(&irq_shield);
+        for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+#ifdef CONFIG_SMP
+            if (irq != ADEOS_CRITICAL_IPI &&
+                irq != ADEOS_SERVICE_IPI1 &&
+                irq != gkvirq &&
+                irq != sigvirq &&
+                irq != nicevirq)
+#endif /* CONFIG_SMP */
+                __adeos_unlock_irq(adp_root,irq);
+    
+        rthal_hw_unlock(flags);
+        }
 }
+
+#ifdef CONFIG_SMP
+
+static void local_irq_shield (unsigned local_cpu)
+     
+{
+    if (testbits(shield_requests, ~0))
+        {
+        if (!test_and_set_bit(local_cpu, &shield_state))
+            engage_local_irq_shield(local_cpu);
+        }
+    else if (test_and_clear_bit(local_cpu, &shield_state))
+            disengage_local_irq_shield(local_cpu);
+}
+
+void irq_shield_ipi_handler (void)
+     
+{
+    adeos_declare_cpuid;
+    unsigned flags;
+
+    adeos_lock_cpu(flags);
+    local_irq_shield(cpuid);
+    adeos_unlock_cpu(flags);
+}
+
+static void engage_irq_shield (unsigned local_cpu)
+     
+{
+    if (!testbits(shield_requests, ~0)
+        && !test_and_set_bit(local_cpu, &shield_requests))
+        {
+        local_irq_shield(local_cpu);
+
+        adeos_send_ipi(ADEOS_SERVICE_IPI1, ~(1 << local_cpu));
+        }
+}
+
+static void disengage_irq_shield (unsigned local_cpu)
+     
+{
+    if (test_and_clear_bit(local_cpu,&shield_requests) &&
+	!testbits(shield_requests, ~0))
+        {
+        local_irq_shield(local_cpu);
+        adeos_send_ipi(ADEOS_SERVICE_IPI1, ~(1 << local_cpu));
+        }
+}
+
+#else  /* !CONFIG_SMP */
+
+#define engage_irq_shield(cpuid)    engage_local_irq_shield(cpuid)
+#define disengage_irq_shield(cpuid) disengage_local_irq_shield(cpuid)
+
+#endif /*  CONFIG_SMP */
 
 static void xnshadow_renice_handler (unsigned virq)
 
 {
+    adeos_declare_cpuid;
+
     /* Unstall the root stage first since the renice operation might
        sleep.  */
+    __adeos_unstall_root();
 
-    splnone();
+    adeos_load_cpuid();
 
-    while (gk_renice_out != gk_renice_in)
+    while (gk_renice_out[cpuid] != gk_renice_in[cpuid])
 	{
-	struct task_struct *task = gk_renice_wheel[gk_renice_out].task;
-	int prio = gk_renice_wheel[gk_renice_out].prio;
-	gk_renice_out = (gk_renice_out + 1) & (XNSHADOW_MAXRQ - 1);
+	struct task_struct *task = gk_renice_wheel[cpuid][gk_renice_out[cpuid]].task;
+	int prio = gk_renice_wheel[cpuid][gk_renice_out[cpuid]].prio;
+	gk_renice_out[cpuid] = (gk_renice_out[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
+
 	rthal_set_linux_task_priority(task,SCHED_FIFO,prio);
 	}
 }
@@ -210,16 +285,19 @@ static void xnshadow_renice_handler (unsigned virq)
 static void xnshadow_wakeup_handler (unsigned virq)
 
 {
+    adeos_declare_cpuid;
     int shield_on = 0;
 
-    while (gk_leave_out != gk_leave_in)
+    adeos_load_cpuid();
+
+    while (gk_leave_out[cpuid] != gk_leave_in[cpuid])
 	{
-	struct task_struct *task = gk_leave_wheel[gk_leave_out];
-	gk_leave_out = (gk_leave_out + 1) & (XNSHADOW_MAXRQ - 1);
+	struct task_struct *task = gk_leave_wheel[cpuid][gk_leave_out[cpuid]];
+	gk_leave_out[cpuid] = (gk_leave_out[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
 
 	if (xnshadow_thread(task) && !shield_on)
 	    {
-	    engage_irq_shield();
+	    engage_irq_shield(cpuid);
 	    shield_on = 1;
 	    }
 
@@ -230,11 +308,15 @@ static void xnshadow_wakeup_handler (unsigned virq)
 static void xnshadow_signal_handler (unsigned virq)
 
 {
-    while (gk_signal_out != gk_signal_in)
+    adeos_declare_cpuid;
+
+    adeos_load_cpuid();
+
+    while (gk_signal_out[cpuid] != gk_signal_in[cpuid])
 	{
-	struct task_struct *task = gk_signal_wheel[gk_signal_out].task;
-	int sig = gk_signal_wheel[gk_signal_out].sig;
-	gk_signal_out = (gk_signal_out + 1) & (XNSHADOW_MAXRQ - 1);
+	struct task_struct *task = gk_signal_wheel[cpuid][gk_signal_out[cpuid]].task;
+	int sig = gk_signal_wheel[cpuid][gk_signal_out[cpuid]].sig;
+	gk_signal_out[cpuid] = (gk_signal_out[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
 	send_sig(sig,task,1);
 	}
 }
@@ -242,11 +324,13 @@ static void xnshadow_signal_handler (unsigned virq)
 static inline void xnshadow_sched_wakeup (struct task_struct *task)
 
 {
+    adeos_declare_cpuid;
     spl_t s;
 
     splhigh(s);
-    gk_leave_wheel[gk_leave_in] = task;
-    gk_leave_in = (gk_leave_in + 1) & (XNSHADOW_MAXRQ - 1);
+    adeos_load_cpuid();
+    gk_leave_wheel[cpuid][gk_leave_in[cpuid]] = task;
+    gk_leave_in[cpuid] = (gk_leave_in[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
     splexit(s);
 
     /* Do _not_ use adeos_propagate_irq() here since we might need to
@@ -262,12 +346,14 @@ static inline void xnshadow_sched_wakeup (struct task_struct *task)
 static inline void xnshadow_sched_signal (struct task_struct *task, int sig)
 
 {
+    adeos_declare_cpuid;
     spl_t s;
 
     splhigh(s);
-    gk_signal_wheel[gk_signal_in].task = task;
-    gk_signal_wheel[gk_signal_in].sig = sig;
-    gk_signal_in = (gk_signal_in + 1) & (XNSHADOW_MAXRQ - 1);
+    adeos_load_cpuid();
+    gk_signal_wheel[cpuid][gk_signal_in[cpuid]].task = task;
+    gk_signal_wheel[cpuid][gk_signal_in[cpuid]].sig = sig;
+    gk_signal_in[cpuid] = (gk_signal_in[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
     splexit(s);
 
     adeos_propagate_irq(sigvirq);
@@ -280,37 +366,56 @@ static void xnshadow_itimer_handler (void *cookie)
     xnshadow_sched_signal(xnthread_archtcb(thread)->user_task,SIGALRM);
 }
 
-static void gatekeeper_thread (void)
+static void gatekeeper_thread (void *data)
 
 {
-    gatekeeper = current;
+    unsigned cpu = (unsigned)(unsigned long)data;
+    char name[16] = "gatekeeper";
+#ifdef CONFIG_SMP
+    spl_t s;
+#endif /* CONFIG_SMP */
+    
+    gatekeeper[cpu] = current;
 
-    daemonize("gatekeeper");
+    set_cpus_allowed(current, cpumask_of_cpu(cpu));
+
+#ifdef CONFIG_SMP
+    sprintf(name,"gatekeeper/%u",cpu);
+#endif /* CONFIG_SMP */
+    daemonize(name);
 
     sigfillset(&current->blocked);
 
     up(&gksync);
 
     for (;;)
-	{
+        {
 	set_linux_task_priority(current,1);
 
-	down_interruptible(&gkreq);
+	down_interruptible(&gkreq[cpu]);
 
 	if (gkstop)
 	    break;
 
-	while (gk_enter_out != gk_enter_in)
+	while (gk_enter_out[cpu] != gk_enter_in[cpu])
 	    {
-	    xnthread_t *thread = gk_enter_wheel[gk_enter_out];
-	    gk_enter_out = (gk_enter_out + 1) & (XNSHADOW_MAXRQ - 1);
+	    xnthread_t *thread = gk_enter_wheel[cpu][gk_enter_out[cpu]];
+	    gk_enter_out[cpu] = (gk_enter_out[cpu] + 1) & (XNSHADOW_MAXRQ - 1);
 #if 1
 	    if (traceme)
-		printk("__GK__ %s (ipipe=%lu)\n",
-		       thread->name,
-		       adeos_test_pipeline_from(&rthal_domain));
+		printk("__GK__[%u] %s (ipipe=%lu)\n",
+		       cpu,thread->name,adeos_test_pipeline_from(&rthal_domain));
 #endif
+#ifdef CONFIG_SMP
+            /* Changing the "sched" pointer of a suspended thread is
+               harmless. */
+            xnlock_get_irqsave(&nklock, s);
+            thread->sched = xnpod_sched_slot(cpu);
 	    xnpod_resume_thread(thread,XNRELAX);
+            xnlock_put_irqrestore(&nklock, s);
+#else /* !CONFIG_SMP */
+	    xnpod_resume_thread(thread,XNRELAX);
+#endif /* CONFIG_SMP */
 	    }
 
 	xnpod_renice_root(XNPOD_ROOT_PRIO_BASE);
@@ -389,6 +494,7 @@ void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)
 void xnshadow_harden (void)
 
 {
+    adeos_declare_cpuid;
     spl_t s;
 
 #if 1
@@ -405,18 +511,22 @@ void xnshadow_harden (void)
        using the register state of the Linux task. */
 
     splhigh(s);
-    gk_enter_wheel[gk_enter_in] = xnshadow_thread(current);
-    gk_enter_in = (gk_enter_in + 1) & (XNSHADOW_MAXRQ - 1);
-    engage_irq_shield();
+    adeos_load_cpuid();
+
+    gk_enter_wheel[cpuid][gk_enter_in[cpuid]] = xnshadow_thread(current);
+    gk_enter_in[cpuid] = (gk_enter_in[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
+
+    engage_irq_shield(cpuid);
+
     splexit(s);
 
-    if (xnshadow_thread(current)->cprio > gatekeeper->rt_priority)
-	set_linux_task_priority(gatekeeper,xnshadow_thread(current)->cprio);
+    if (xnshadow_thread(current)->cprio > gatekeeper[cpuid]->rt_priority)
+	set_linux_task_priority(gatekeeper[cpuid],xnshadow_thread(current)->cprio);
 
     set_current_state(TASK_INTERRUPTIBLE);
 
     /* Wake up the gatekeeper which will perform the transition. */
-    up(&gkreq);
+    up(&gkreq[cpuid]);
 
     schedule();
 
@@ -424,7 +534,7 @@ void xnshadow_harden (void)
     xnpod_switch_fpu();
 #endif /* CONFIG_RTAI_HW_FPU */
 
-    splnone();
+    xnlock_clear_irqon(&nklock);
 
     /* "current" is now running into the RTAI domain. */
 
@@ -477,10 +587,10 @@ void xnshadow_relax (void)
 
     xnshadow_sched_wakeup(xnthread_archtcb(thread)->user_task);
     xnpod_renice_root(thread->cprio);
-    splhigh(s);
+    xnlock_get_irqsave(&nklock, s);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
     __adeos_schedule_back_root(current);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock, s);
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */
@@ -620,6 +730,9 @@ void xnshadow_map (xnthread_t *thread,
 		   int *u_syncp) /* user-space pointer */
 {
     int autostart = !(syncpid && u_syncp);
+
+    /* Prevent Linux from migrating us from now on. */
+    set_cpus_allowed(current, cpumask_of_cpu(smp_processor_id()));
 
     current->cap_effective |= CAP_TO_MASK(CAP_IPC_LOCK)|CAP_TO_MASK(CAP_SYS_RAWIO)|CAP_TO_MASK(CAP_SYS_NICE);
 
@@ -1163,13 +1276,13 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	    return;
 
 #if CONFIG_TRACE
-	case 100:
+	case 20:
 
 	    TRACE_PROCESS(TRACE_EV_PROCESS_SIGNAL, -888, adp_root->cpudata[0].irq_pending_lo[0]);
 	    __xn_reg_rval(regs) = 0;
 	    return;
 
-	case 101:
+	case 21:
 
 	    TRACE_PROCESS(TRACE_EV_PROCESS_SIGNAL, -999, 0);
 	    __xn_reg_rval(regs) = 0;
@@ -1376,32 +1489,50 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
     if (xnshadow_thread(next))
 	{
 	rootprio = xnshadow_thread(next)->cprio;
-	engage_irq_shield();
-	}
-    else if (next != gatekeeper)
-	{
-	rootprio = XNPOD_ROOT_PRIO_BASE;
-	disengage_irq_shield();
+	engage_irq_shield(adeos_processor_id());
 	}
     else
-	return;
+        {
+        adeos_declare_cpuid;
+        adeos_load_cpuid();
+
+        if (next != gatekeeper[cpuid])
+	    {
+	    rootprio = XNPOD_ROOT_PRIO_BASE;
+	    disengage_irq_shield(cpuid);
+	    }
+        else
+	    return;
+        }
 
     /* Current Xenomai thread must be the root one in this context, so
        we can safely renice Xenomai's runthread (i.e. as returned by
        xnpod_current_thread()). */
 
     if (xnpod_current_thread()->cprio != rootprio)
-	xnpod_renice_root(rootprio);
+        {
+#if 1
+        if (traceme)
+            printk("RESET ROOT PRIO (old prio %d) TO %s's (prio %d), cpu %d\n",
+                   xnpod_current_thread()->cprio,
+                   xnshadow_thread(next)->name,
+                   rootprio,
+                   adeos_processor_id());
+#endif
+        xnpod_renice_root(rootprio);
+        }
 }
 
 static void xnshadow_schedule_tail (adevinfo_t *evinfo)
 
 {
     if (evinfo->domid == RTHAL_DOMAIN_ID)
+        {
 	/* About to resume in xnshadow_harden() after the gatekeeper
 	   switched us back. Do _not_ propagate this event so that
 	   Linux's tail scheduling won't be performed. */
 	return;
+	}
 
     adeos_propagate_event(evinfo);
 }
@@ -1611,10 +1742,12 @@ static void xnshadow_shield (int iflag)
 	adeos_suspend_domain();
 }
 
+
 int xnshadow_init (void)
 
 {
     adattr_t attr;
+    unsigned cpu;
 
     adeos_init_attr(&attr);
     attr.name = "IShield";
@@ -1634,10 +1767,15 @@ int xnshadow_init (void)
     adeos_virtualize_irq(nicevirq,&xnshadow_renice_handler,NULL,IPIPE_HANDLE_MASK);
 
     init_MUTEX_LOCKED(&gksync);
-    init_MUTEX_LOCKED(&gkreq);
 
-    kernel_thread((void *)&gatekeeper_thread,NULL,0);
-    down(&gksync);
+    for (cpu = 0; cpu < num_online_cpus(); ++cpu)
+        {
+        init_MUTEX_LOCKED(&gkreq[cpu]);
+        kernel_thread((void *)&gatekeeper_thread, (void *)(unsigned long) cpu,0);
+        }
+
+    for (cpu = 0; cpu < num_online_cpus(); ++cpu)
+        down(&gksync);
 
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&xnshadow_linux_sysentry);
     adeos_catch_event(ADEOS_EXIT_PROCESS,&xnshadow_linux_taskexit);
@@ -1648,20 +1786,30 @@ int xnshadow_init (void)
     adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,&xnshadow_realtime_sysentry);
     adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,&xnshadow_renice_process);
 
+#ifdef CONFIG_SMP
+    adeos_virtualize_irq_from(&irq_shield,
+                              ADEOS_SERVICE_IPI1,
+                              (void (*)(unsigned))&irq_shield_ipi_handler,
+                              NULL,
+                              IPIPE_HANDLE_MASK);
+#endif /* CONFIG_SMP */
+
     return 0;
 }
 
 void xnshadow_cleanup (void)
 
 {
+    unsigned cpu;
     gkstop = 1;
-    up(&gkreq);
-    down(&gksync);
 
-    adeos_free_irq(gkvirq);
-    adeos_free_irq(sigvirq);
-    adeos_free_irq(nicevirq);
-    adeos_free_ptdkey(nkgkptd);
+#ifdef CONFIG_SMP
+    adeos_virtualize_irq_from(&irq_shield,
+                              ADEOS_SERVICE_IPI1,
+                              NULL,
+                              NULL,
+                              IPIPE_PASS_MASK);
+#endif /* CONFIG_SMP */
 
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
     adeos_catch_event(ADEOS_EXIT_PROCESS,NULL);
@@ -1671,6 +1819,17 @@ void xnshadow_cleanup (void)
     adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,NULL);
     adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,NULL);
     adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,NULL);
+
+    for (cpu = 0; cpu < num_online_cpus(); ++cpu)
+        up(&gkreq[cpu]);
+    
+    for (cpu = 0; cpu < num_online_cpus(); ++cpu)
+        down(&gksync);
+
+    adeos_free_irq(gkvirq);
+    adeos_free_irq(sigvirq);
+    adeos_free_irq(nicevirq);
+    adeos_free_ptdkey(nkgkptd);
 
     adeos_unregister_domain(&irq_shield);
 }

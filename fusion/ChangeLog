@@ -1,5 +1,7 @@
 2004-06-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c: Import SMP-related changes.
+
 	* skins/rtai/pipe.c (rt_pipe_open): Set magic number.
 
 2004-06-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

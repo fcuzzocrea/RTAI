@@ -511,7 +511,7 @@ Initializes a new pod which can subsequently be used to start real-time activiti
   </table>
 </dl>
 minpri might be numerically higher than maxpri if the upper real-time interface exhibits a reverse priority scheme. For instance, some APIs may define a range like minpri=255, maxpri=0 specifying that thread priorities increase as the priority level decreases numerically.<p>
-Context: This routine must be called on behalf of a context allowing immediate memory allocation requests (e.g. an <a class="el" href="ppc_2hal_2rtai_8c.html#a111">init_module()</a> routine).     </td>
+Context: This routine must be called on behalf of a context allowing immediate memory allocation requests (e.g. an <a class="el" href="legacy_8c.html#a111">init_module()</a> routine).     </td>
   </tr>
 </table>
 <a class="anchor" name="a20" doxytag="pod.h::xnpod_init_thread" ></a><p>
@@ -1139,7 +1139,7 @@ Forcibly shutdowns the active pod. All existing nanokernel threads (but the root
   </table>
 </dl>
 The nanokernel will not call this routine directly but rather use the routine pointed at by the pod.svctable.shutdown member in the service table. This allows upper interfaces to interpose their own shutdown handlers so that they have their word before any action is taken. Usually, the interface-defined handlers should end up calling <a class="el" href="group__pod.html#a19">xnpod_shutdown()</a> after their own housekeeping chores have been carried out.<p>
-Context: This routine must be called on behalf of the root thread (e.g. a <a class="el" href="ppc_2hal_2rtai_8c.html#a112">cleanup_module()</a> routine).     </td>
+Context: This routine must be called on behalf of the root thread (e.g. a <a class="el" href="legacy_8c.html#a112">cleanup_module()</a> routine).     </td>
   </tr>
 </table>
 <a class="anchor" name="a21" doxytag="pod.h::xnpod_start_thread" ></a><p>
@@ -1284,7 +1284,7 @@ The time interval that elapses between two consecutive invocations of the handle
 <li>XNERR_NOSYS is returned if the underlying architecture does not support the requested aperiodic timing, or if no active pod exists.</li></ul>
 <p>
 Side-effect: A host timing service is started in order to relay the canonical periodical tick to the underlying architecture, regardless of the frequency used for Xenomai's system tick. This routine does not call the rescheduling procedure.<p>
-Context: This routine must be called on behalf of a context allowing immediate memory allocation requests (e.g. an <a class="el" href="ppc_2hal_2rtai_8c.html#a111">init_module()</a> routine).     </td>
+Context: This routine must be called on behalf of a context allowing immediate memory allocation requests (e.g. an <a class="el" href="legacy_8c.html#a111">init_module()</a> routine).     </td>
   </tr>
 </table>
 <a class="anchor" name="a18" doxytag="pod.h::xnpod_stop_timer" ></a><p>
@@ -1511,7 +1511,7 @@ Thread prologue - INTERNAL.
 This internal routine is called on behalf of a (re)starting thread's prologue before the user entry point is invoked. This call is reserved for internal housekeeping chores and cannot be inlined.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 19:51:30 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jul 24 19:36:22 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

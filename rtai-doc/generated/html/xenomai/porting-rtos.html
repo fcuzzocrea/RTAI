@@ -5,7 +5,7 @@
 <title>1.2. Porting traditional RTOS-based applications to GNU/Linux</title>
 <link rel="stylesheet" href="../css/rtai.css" type="text/css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
-<link rel="home" href="index.html" title="The XENOMAI project Implementing a RTOS emulation framework
+<link rel="home" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux">
 <link rel="up" href="whitepaper.html" title="1. White paper">
 <link rel="previous" href="introduction.html" title="1.1. Introduction">
@@ -31,16 +31,7 @@
 <a name="porting-rtos"></a>1.2. Porting traditional RTOS-based applications to GNU/Linux</h3></div></div>
 <div></div>
 </div>
-<p>The idea of using GNU/Linux </p>
-<div class="note" style="margin-left: 0.5in; margin-right: 0.5in;"><table border="0" summary="Note">
-<tr>
-<td rowspan="2" align="center" valign="top" width="25"><img alt="[Note]" src="../pictures/note.png"></td>
-<th align="left">Note</th>
-</tr>
-<tr><td colspan="2" align="left" valign="top"><p> Ceci est une
-      petite note sur GNU/Linux</p></td></tr>
-</table></div>
-<p> as an embedded system
+<p>The idea of using GNU/Linux as an embedded system
       with real-time capabilities is not novel. The reader can refer
       to Jerry Epplin's article in the October 97 issue of Embedded
       Systems Programming for a discussion about GNU/Linux potential
@@ -48,7 +39,7 @@
 <p>Throughout this document, we will use the expression
       <span class="emphasis"><em>source RTOS</em></span> to indicate the traditional
       real-time operating from which the application is to be ported,
-      and<span class="emphasis"><em>target OS</em></span>to indicate GNU/Linux or any
+      and <span class="emphasis"><em>target OS</em></span> to indicate GNU/Linux or any
       other free operating system to which the application could be
       ported.</p>
 <div class="sect3" lang="en">
@@ -66,43 +57,8 @@
 	have the closest possible equivalence between the source and
 	destination RTOS programming interfaces, as far as both the
 	syntax and the semantics are concerned.</p>
-<p>For instance, if the application needs dynamic memory
-	allocation with success guarantee for its real-time threads
-	(which is different from a real-time guarantee), porting it to
-	a GNU/Linux hard real-time extension (such as RTAI or RTLinux)
-	raises the following issues:
-
-	</p>
-<div class="itemizedlist"><ul type="disc">
-<li><p>Linux kernel's
-	      <span class="emphasis"><em>kmalloc()/kfree()</em></span> services should
-	      ne be called on behalf of a real-time thread, since
-	      these services are not reentrant.  Consequently, the
-	      needed memory has to be pre-allocated statically or
-	      during the application startup, on behalf of the Linux
-	      kernel context.</p></li>
-<li><p>A dynamic allocator callable from a real-time
-	      context is provided by RTAI
-	      (i.e. <span class="emphasis"><em>rt_mem_mgr</em></span>), but its services
-	      are based on an algorithm
-	      <span class="emphasis"><em>anticipating</em></span>the memory starvations
-	      using an asynchronous pre-allocation technique, but
-	      <span class="emphasis"><em>not guaranteeing</em></span>that no failure
-	      could occur. To give a reasonable guarantee of success
-	      in allocating memory blocks, i.e. to be sure that valid
-	      memory will always be returned to the real-time thread
-	      as soon as it is available from the Linux kernel, the
-	      calling thread should be put in a wait state until the
-	      memory it has requested is available.</p></li>
-</ul></div>
-<p>
-
-	</p>
-<p>In both cases, it may be necessary to adapt the memory
-	management strategy according to these constraints, which
-	could be quite difficult and error-prone task.</p>
-<p>Another example can be taken from the support of a
-	priority inheritance protocol [3] by the mutual exclusion
+<p>An illustration of this can be taken from the support of
+	a priority inheritance protocol [3] by the mutual exclusion
 	services. These services allow concurrent threads to protect
 	themselves from race conditions that could occur into critical
 	sections of code. The purpose of this discussion is not to
@@ -118,17 +74,17 @@
 <div class="sect3" lang="en">
 <div class="titlepage">
 <div><div><h4 class="title">
-<a name="rtos-compat"></a>1.2.2. RTOS behavioral compatibility</h4></div></div>
+<a name="rtos-compat"></a>1.2.2. RTOS behavioural compatibility</h4></div></div>
 <div></div>
 </div>
 <p>During the past years, major embedded RTOS, such as
 	VRTX, VxWorks, pSOS+ and a few others, have implemented a
-	real-time kernel behavior which has become a de facto
+	real-time kernel behaviour which has become a de facto
 	standard, notably for thread scheduling, inter-thread
 	synchronization, and asynchronous event management. To
 	illustrate this, let us talk about a specific concern in the
 	interrupt service management.</p>
-<p>A well-known behavior of such RTOS is to lock the
+<p>A well-known behaviour of such RTOS is to lock the
 	rescheduling procedure until the outer interrupt service
 	routine (or ISR) - called first upon possibly nested
 	interrupts - has exited, after which a global rescheduling is
@@ -161,9 +117,9 @@
 	real-time tasks seamlessly aside of the hosting GNU/Linux
 	system [4]. The 'regular' Linux kernel is eventually seen as a
 	low-priority, background of the small real-time executive. The
-	<a href="http://www.rtai.org" target="_top">RTAI</a> and <a href="http://www.rtlinux.org" target="_top">RTLinux</a>projects are
-	representative of this technical path. However, this approach
-	has a major drawback when it comes to port complex
+	<a href="http://www.rtlinux.org" target="_top">RTLinux</a> project
+	is representative of this technical path. However, this
+	approach has a major drawback when it comes to port complex
 	applications from a foreign software platform: since the
 	real-time tasks run outside the Linux kernel control, the
 	GNU/Linux programming model cannot be preserved when porting
@@ -233,53 +189,51 @@
 </div>
 <p>
 <span class="emphasis"><em>Real-time enabling GNU/Linux using
-	  RTAI.</em></span>Strictly speaking Linux/RTAI [7] is not a
+	  RTAI.</em></span> Strictly speaking Linux/RTAI [7] is not a
 	  real-time operating system but rather a real-time Linux
 	  kernel extension, which allows running real-time tasks
 	  seamlessly aside of the hosting GNU/Linux system. The RTAI
-	  co-kernel is hooked to the hosting GNU/Linux through an
-	  hardware abstraction layer (HAL) which redirects external
-	  events to it, thus ensuring low interrupt latencies. RTAI
-	  provides a fixed-priority driver scheduler to run concurrent
-	  real-time activities loaded from dynamic kernel
-	  modules. Globally-scoped scheduling decisions are made by
-	  the co-kernel which always considers the host Linux kernel
-	  as its lowest-priority thread of activity. In other words,
-	  RTAI considers the Linux kernel as a background task that
-	  should run when no real-time activity occurs, a kind of idle
-	  task for common RTOS. RTAI provides a wealth of other useful
-	  services, including counting semaphores, POSIX 1003.1-1996
-	  facilities such as pthreads, mutexes and condition
-	  variables, also adding remote procedure call facility,
-	  mailboxes, and precision timers.</p>
-<p>Moreover, RTAI provides a mean to execute hard
-	  real-time tasks in user-space context, but still outside the
-	  Linux kernel control, which is best described as running
-	  'user-space kernel modules'. This feature, namely LXRT, is a
-	  major step toward a simpler migration path from traditional
-	  RTOS, since programming errors occuring within real-time
-	  tasks don't jeopardize the overall GNU/Linux system sanity,
-	  at the expense of a few microseconds more latency.</p>
+	  co-kernel shares hardware interrupts and system-originated
+	  events like traps and faults with the Linux kernel using the
+	  <a href="http://www.adeos.org/" target="_top">Adeos</a>
+	  virtualization layer, which in turn ensures RTAI low
+	  interrupt latencies. The native RTAI API provides the
+	  applications a wealth of useful services, including counting
+	  semaphores, POSIX 1003.1-1996 facilities such as pthreads,
+	  mutexes and condition variables, also adding remote
+	  procedure call facility, mailboxes, and precision
+	  timers. Most services are symmetrically available from
+	  kernel module and user-space programs.</p>
+<p>RTAI 2.x and 3.x provide a mean to execute hard
+	  real-time tasks in user-space context (x86 only), but still
+	  outside the Linux kernel control, which is best described as
+	  running 'user-space kernel modules'. This feature, namely
+	  LXRT, is a major step toward a simpler migration path from
+	  traditional RTOS, since programming errors occuring within
+	  real-time tasks don't jeopardize the overall GNU/Linux
+	  system sanity, at the expense of a few microseconds more
+	  latency.</p>
 <p>
-<span class="emphasis"><em>Ad hoc serices emulation.</em></span>A first
+<span class="emphasis"><em>Ad hoc services emulation.</em></span> A first
 	  approach consists in emulating each real-time facility
 	  needed by the application using a combination of the RTAI
 	  services. An ad hoc wrapping interface has to be written to
 	  support the needed function calls. The benefit of the
 	  wrapping approach lies in the limited modifications made to
-	  the original code. However, some RTAI behaviors may not be
+	  the original code. However, some RTAI behaviours may not be
 	  compliant with the source operating system's. For the very
 	  same reason, conflicts between the emulated and native RTAI
 	  services may occur in some way.</p>
 <p>
-<span class="emphasis"><em>Complete port to RTAI.</em></span>A second
-	  approach consists in fully porting the application natively
-	  to RTAI. In such a case, RTAI facilities are globally
-	  substituted from the facilities from the source RTOS. This
-	  solution brings improved consistency at the expense of a
-	  possible large-scale rewriting of the application, due to
-	  some fundamental behavioral differences that may exist
-	  between the traditional RTOS and RTAI.</p>
+<span class="emphasis"><em>Complete port to RTAI.</em></span> A second
+	  approach consists in fully porting the application over the
+	  native RTAI API. In such a case, RTAI facilities are
+	  globally substituted from the facilities from the source
+	  RTOS. This solution brings improved consistency at the
+	  expense of a possible large-scale rewriting of the
+	  application, due to some fundamental behavioural differences
+	  that may exist between the traditional RTOS and the native
+	  RTAI interface.</p>
 </div>
 <div class="sect4" lang="en">
 <div class="titlepage">
@@ -292,16 +246,18 @@
 	  GNU/Linux POSIX 1003.1-1996 layer, and allow to emulate the
 	  source RTOS API in a user-space execution context, under the
 	  control of the Linux kernel.</p>
-<p>One of the most proeminent effort in this area is the
-	  Legacy2linux project [8]. This project, sponsored by
-	  Montavista Software, aims at providing [<span class="citation">&quot;a series
-	  of Linux-resident emulators for various legacy RTOS
-	  kernels.&quot;</span>]Just like Xenomai, [<span class="citation">these
-	  emulators are designed to ease the task of porting legacy
-	  RTOS code to an embedded Linux environment&quot;.</span>]Two
-	  emulators are currenlty available from this project,
-	  respectively mimicking the APIs of WindRiver's pSOS+ and
-	  VxWorks real-time operating systems.</p>
+<p>Once one of the most proeminent effort in this area
+	  used to be the Legacy2linux project [8]. This project,
+	  sponsored by Montavista Software, aimed at providing
+	  [<span class="citation">&quot;a series of Linux-resident emulators for various
+	  legacy RTOS kernels.&quot;</span>] Just like Xenomai,
+	  [<span class="citation">these emulators are designed to ease the task of
+	  porting legacy RTOS code to an embedded Linux
+	  environment&quot;.</span>] Two emulators have been made
+	  available by this project, respectively mimicking the APIs
+	  of WindRiver's pSOS+ and VxWorks real-time operating
+	  systems. However, this project has stalled due to a lack of
+	  maintenance and contribution. </p>
 <p>The benefits of this approach is mainly to keep the
 	  development process in the GNU/Linux user-space environment,
 	  instead of moving to a rather 'hostile' kernel/supervisor
@@ -326,22 +282,20 @@
 		incomplete for an easy port from the source RTOS. In
 		other words, only a limited syntactic compatibility is
 		available.</p></li>
-<li><p>Second, the exact behavior of the source RTOS is
+<li><p>Second, the exact behaviour of the source RTOS is
 		not reproduced for all the functional areas. In other
 		words, the semantic compatibility might not be
 		guaranteed.</p></li>
 <li><p>These emulators don't share any common code base
-		for implementing the fundamental real-time behaviors,
+		for implementing the fundamental real-time behaviours,
 		even so both pSOS+ and VxWorks share most of them. The
 		resulting situation leads to redundant implementation
 		efforts, without any benefit one can see in code
 		mutualization.</p></li>
-<li><p>And finally, even combined to existing Linux
-		kernel patches providing fixed-priority scheduling
-		(Montavista's RTSched) and fine-grain kernel
-		preemption (Ingo Molnar's Linux kernel patches for
-		improved preemptability), these emulators cannot
-		deliver hard real-time performance.</p></li>
+<li><p>And finally, even combined to the latest Linux
+		2.6 features like fine-grain kernel preemption and low
+		latency efforts, these emulators cannot deliver
+		deterministic real-time performance.</p></li>
 </ul></div>
 <p>
 	</p>

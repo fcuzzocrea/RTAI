@@ -37,82 +37,76 @@
 
 <p>
 <tr><td colspan=2><br><h2>Defines</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a63">rtai_kmalloc</a>(name, size)&nbsp;&nbsp;&nbsp;rt_shm_alloc(name, size, USE_VMALLOC)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a60">rtai_kmalloc</a>(name, size)&nbsp;&nbsp;&nbsp;rt_shm_alloc(name, size, USE_VMALLOC)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a63"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a64">rtai_kfree</a>(name)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a60"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a61">rtai_kfree</a>(name)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="#a64"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a68">rtai_malloc</a>(name, size)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(0, name, size, USE_VMALLOC, 0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="#a61"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a65">rtai_malloc</a>(name, size)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(0, name, size, USE_VMALLOC, 0)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a65"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a66">rt_shm_alloc_adr</a>(start_address, name, size, suprt)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(start_address, name, size, suprt, 0)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a66"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a68">rtai_malloc_adr</a>(start_address, name, size)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(start_address, name, size, USE_VMALLOC, 0)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a68"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a69">rt_shm_alloc_adr</a>(start_address, name, size, suprt)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(start_address, name, size, suprt, 0)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a69">rtai_free</a>(name, adr)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a69"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a71">rtai_malloc_adr</a>(start_address, name, size)&nbsp;&nbsp;&nbsp;_rt_shm_alloc(start_address, name, size, USE_VMALLOC, 0)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="#a69"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a70">rt_heap_close</a>(name, adr)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a71"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a72">rtai_free</a>(name, adr)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Close a real time group heap being shared inter-intra kernel modules and Linux processes. </em> <a href="#a70"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a80">rt_global_heap_open</a>()&nbsp;&nbsp;&nbsp;rt_heap_open(GLOBAL_HEAP_ID, 0, 0)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="#a72"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a73">rt_heap_close</a>(name, adr)&nbsp;&nbsp;&nbsp;rt_shm_free(name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Open the global real time heap to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a80"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a81">rt_global_heap_close</a>()&nbsp;&nbsp;&nbsp;rt_heap_close(GLOBAL_HEAP_ID, 0)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Close a real time group heap being shared inter-intra kernel modules and Linux processes. </em> <a href="#a73"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a83">rt_global_heap_open</a>()&nbsp;&nbsp;&nbsp;rt_heap_open(GLOBAL_HEAP_ID, 0, 0)</td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Open the global real time heap to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a83"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a84">rt_global_heap_close</a>()&nbsp;&nbsp;&nbsp;rt_heap_close(GLOBAL_HEAP_ID, 0)</td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Close the global real time heap being shared inter-intra kernel modules and Linux processes. </em> <a href="#a84"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Close the global real time heap being shared inter-intra kernel modules and Linux processes. </em> <a href="#a81"></a><em><br><br></td></tr>
 <tr><td colspan=2><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a10">rt_shm_free</a> (unsigned long name)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a9">rt_shm_free</a> (unsigned long name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="#a10"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a11">rt_halloc</a> (int size)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of shared memory being shared inter-intra kernel modules and Linux processes. </em> <a href="#a9"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a10">rt_halloc</a> (int size)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of a group real time heap in kernel/user space. </em> <a href="#a11"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a12">rt_hfree</a> (void *addr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of a group real time heap in kernel/user space. </em> <a href="#a10"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a11">rt_hfree</a> (void *addr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of a group real time heap. </em> <a href="#a12"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a13">rt_named_halloc</a> (unsigned long name, int size)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of a group real time heap. </em> <a href="#a11"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a12">rt_named_halloc</a> (unsigned long name, int size)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of a group real time heap in kernel/user space. </em> <a href="#a13"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a14">rt_named_hfree</a> (void *addr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of a group real time heap in kernel/user space. </em> <a href="#a12"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a13">rt_named_hfree</a> (void *addr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of a group real time heap. </em> <a href="#a14"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a15">rt_malloc_new</a> (int size)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of a group real time heap. </em> <a href="#a13"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a16">rt_named_malloc</a> (unsigned long name, int size)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of the global real time heap in kernel/user space. </em> <a href="#a15"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a16">rt_free_new</a> (void *addr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of the global real time heap in kernel/user space. </em> <a href="#a16"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a17">rt_named_free</a> (void *addr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a chunk of the global real time heap. </em> <a href="#a16"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a17">rt_named_malloc</a> (unsigned long name, int size)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a named chunk of the global real time heap. </em> <a href="#a17"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a21">rt_shm_alloc</a> (unsigned long name, int size, int suprt)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of the global real time heap in kernel/user space. </em> <a href="#a17"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a18">rt_named_free</a> (void *addr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a21"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a39">rt_heap_open</a> (unsigned long name, int size, int suprt)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a named chunk of the global real time heap. </em> <a href="#a18"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a22">rt_shm_alloc</a> (unsigned long name, int size, int suprt)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Open/create a named group real time heap to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a39"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a48">rtheap_init</a> (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a chunk of memory to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a22"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a41">rt_heap_open</a> (unsigned long name, int size, int suprt)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initialize a memory heap. </em> <a href="#a48"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a49">rtheap_destroy</a> (rtheap_t *heap)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Open/create a named group real time heap to be shared inter-intra kernel modules and Linux processes. </em> <a href="#a41"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a51">rtheap_init</a> (rtheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Destroys a memory heap. </em> <a href="#a49"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a51">rtheap_alloc</a> (rtheap_t *heap, u_long size, int mode)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initialize a memory heap. </em> <a href="#a51"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a52">rtheap_destroy</a> (rtheap_t *heap)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a memory block from a memory heap. </em> <a href="#a51"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a52">rtheap_free</a> (rtheap_t *heap, void *block)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Destroys a memory heap. </em> <a href="#a52"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a54">rtheap_alloc</a> (rtheap_t *heap, u_long size, int mode)</td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a memory block from a memory heap. </em> <a href="#a54"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__shm.html#a55">rtheap_free</a> (rtheap_t *heap, void *block)</td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Release a memory block to a memory heap. </em> <a href="#a55"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Release a memory block to a memory heap. </em> <a href="#a52"></a><em><br><br></td></tr>
 </table>
 <hr><h2>Define Documentation</h2>
-<a class="anchor" name="a84" doxytag="rtai_shm.h::rt_global_heap_close" ></a><p>
+<a class="anchor" name="a81" doxytag="rtai_shm.h::rt_global_heap_close" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -145,7 +139,7 @@ Closing a global heap in user space has just the effect of deregistering its use
     </td>
   </tr>
 </table>
-<a class="anchor" name="a83" doxytag="rtai_shm.h::rt_global_heap_open" ></a><p>
+<a class="anchor" name="a80" doxytag="rtai_shm.h::rt_global_heap_open" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -178,7 +172,7 @@ The global heap is created by the shared memory module and its opening is needed
     </td>
   </tr>
 </table>
-<a class="anchor" name="a73" doxytag="rtai_shm.h::rt_heap_close" ></a><p>
+<a class="anchor" name="a70" doxytag="rtai_shm.h::rt_heap_close" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -222,7 +216,7 @@ Analogously to what done by any allocation function this group real time heap cl
     </td>
   </tr>
 </table>
-<a class="anchor" name="a69" doxytag="rtai_shm.h::rt_shm_alloc_adr" ></a><p>
+<a class="anchor" name="a66" doxytag="rtai_shm.h::rt_shm_alloc_adr" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -271,12 +265,12 @@ rt_shm_alloc_adr is used to allocate in user space.<p>
 Since <code>name</code> can be a clumsy identifier, services are provided to convert 6 characters identifiers to unsigned long, and vice versa.<p>
 <dl compact><dt><b>See also:</b></dt><dd>the functions <a class="el" href="rtai__nam2num_8h.html#a0">nam2num()</a> and <a class="el" href="rtai__nam2num_8h.html#a1">num2nam()</a>.</dd></dl>
 It must be remarked that only the very first call does a real allocation, any subsequent call to allocate with the same name from anywhere will just increase the usage count and map the area to user space, or return the related pointer to the already allocated space in kernel space. The function returns a pointer to the allocated memory, appropriately mapped to the memory space in use. So if one is really sure that the named shared memory has been allocated already parameters size and suprt are not used and can be assigned any value.<p>
-<dl compact><dt><b>Note:</b></dt><dd>If the same process calls rtai_malloc_adr and <a class="el" href="group__shm.html#a68">rtai_malloc()</a> twice in the same process it get a zero return value on the second call.</dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>If the same process calls rtai_malloc_adr and <a class="el" href="group__shm.html#a65">rtai_malloc()</a> twice in the same process it get a zero return value on the second call.</dd></dl>
 <dl compact><dt><b>Returns:</b></dt><dd>a valid address on succes, 0 on failure. </dd></dl>
     </td>
   </tr>
 </table>
-<a class="anchor" name="a72" doxytag="rtai_shm.h::rtai_free" ></a><p>
+<a class="anchor" name="a69" doxytag="rtai_shm.h::rtai_free" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -317,7 +311,7 @@ rtai_free is a legacy helper macro, the real job is carried out by a call to rt_
     </td>
   </tr>
 </table>
-<a class="anchor" name="a64" doxytag="rtai_shm.h::rtai_kfree" ></a><p>
+<a class="anchor" name="a61" doxytag="rtai_shm.h::rtai_kfree" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -354,7 +348,7 @@ rtai_kfree is a legacy helper macro, the real job is carried out by a call to rt
     </td>
   </tr>
 </table>
-<a class="anchor" name="a63" doxytag="rtai_shm.h::rtai_kmalloc" ></a><p>
+<a class="anchor" name="a60" doxytag="rtai_shm.h::rtai_kmalloc" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -392,13 +386,13 @@ rtai_kalloc is used to allocate shared memory from kernel space.<p>
     <tr><td valign=top><em>size</em>&nbsp;</td><td>is the amount of required shared memory;</td></tr>
   </table>
 </dl>
-rtai_kmalloc is a legacy helper macro, the real job is carried out by a call to <a class="el" href="group__shm.html#a22">rt_shm_alloc()</a> with the same name, size and with vmalloc support. This function should not be used in newly developed applications. See rt_shm_alloc for more details.<p>
+rtai_kmalloc is a legacy helper macro, the real job is carried out by a call to <a class="el" href="group__shm.html#a21">rt_shm_alloc()</a> with the same name, size and with vmalloc support. This function should not be used in newly developed applications. See rt_shm_alloc for more details.<p>
 <dl compact><dt><b>Returns:</b></dt><dd>a valid address on succes, 0 on failure. </dd></dl>
 </p>
     </td>
   </tr>
 </table>
-<a class="anchor" name="a68" doxytag="rtai_shm.h::rtai_malloc" ></a><p>
+<a class="anchor" name="a65" doxytag="rtai_shm.h::rtai_malloc" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -436,13 +430,13 @@ rtai_malloc is used to allocate shared memory from user space.<p>
     <tr><td valign=top><em>size</em>&nbsp;</td><td>is the amount of required shared memory;</td></tr>
   </table>
 </dl>
-rtai_malloc is a legacy helper macro, the real job is carried out by a call to <a class="el" href="group__shm.html#a22">rt_shm_alloc()</a> with the same name, size and with vmalloc support. This function should not be used in newly developed applications. See rt_shm_alloc fro more details.<p>
+rtai_malloc is a legacy helper macro, the real job is carried out by a call to <a class="el" href="group__shm.html#a21">rt_shm_alloc()</a> with the same name, size and with vmalloc support. This function should not be used in newly developed applications. See rt_shm_alloc fro more details.<p>
 <dl compact><dt><b>Returns:</b></dt><dd>a valid address on succes, 0 on failure. </dd></dl>
 </p>
     </td>
   </tr>
 </table>
-<a class="anchor" name="a71" doxytag="rtai_shm.h::rtai_malloc_adr" ></a><p>
+<a class="anchor" name="a68" doxytag="rtai_shm.h::rtai_malloc_adr" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -479,59 +473,19 @@ Allocate a chunk of memory to be shared inter-intra kernel modules and Linux pro
 rtai_malloc_adr is used to allocate shared memory from user space.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>start_address</em>&nbsp;</td><td>is the amount of required shared memory.</td></tr>
+    <tr><td valign=top><em>start_address</em>&nbsp;</td><td>is the adr were the shared memory should be mapped.</td></tr>
     <tr><td valign=top><em>name</em>&nbsp;</td><td>is an unsigned long identifier;</td></tr>
     <tr><td valign=top><em>size</em>&nbsp;</td><td>is the amount of required shared memory;</td></tr>
   </table>
 </dl>
-rtai_malloc_adr is a legacy helper macro, the real job is carried out by a call to <a class="el" href="group__shm.html#a69">rt_shm_alloc_adr()</a> with the same name, size and with vmalloc support. This function should not be used in newly developed applications. See rt_shm_alloc_adr for more details.<p>
+rtai_malloc_adr is a legacy helper macro, the real job is carried out by a call to <a class="el" href="group__shm.html#a66">rt_shm_alloc_adr()</a> with the same name, size and with vmalloc support. This function should not be used in newly developed applications. See rt_shm_alloc_adr for more details.<p>
 <dl compact><dt><b>Returns:</b></dt><dd>a valid address on succes, 0 on failure. </dd></dl>
 </p>
     </td>
   </tr>
 </table>
 <hr><h2>Function Documentation</h2>
-<a class="anchor" name="a16" doxytag="rtai_shm.h::rt_free_new" ></a><p>
-<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
-  <tr>
-    <td class="mdRow">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td class="md" nowrap valign="top"> void rt_free_new </td>
-          <td class="md" valign="top">(&nbsp;</td>
-          <td class="md" nowrap valign="top">void *&nbsp;</td>
-          <td class="mdname1" valign="top" nowrap> <em>addr</em>          </td>
-          <td class="md" valign="top">&nbsp;)&nbsp;</td>
-          <td class="md" nowrap><code> [inline]</code></td>
-        </tr>
-
-      </table>
-    </td>
-  </tr>
-</table>
-<table cellspacing=5 cellpadding=0 border=0>
-  <tr>
-    <td>
-      &nbsp;
-    </td>
-    <td>
-
-<p>
-Free a chunk of the global real time heap. 
-<p>
-<p><b>For internal use only.</b></p>
-<p>
-rt_free is used to free a previously allocated chunck of the global real time heap.<p>
-<dl compact><dt><b>Parameters:</b></dt><dd>
-  <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>addr</em>&nbsp;</td><td>is the addr of the memory to be freed. </td></tr>
-  </table>
-</dl>
-</p>
-    </td>
-  </tr>
-</table>
-<a class="anchor" name="a11" doxytag="rtai_shm.h::rt_halloc" ></a><p>
+<a class="anchor" name="a10" doxytag="rtai_shm.h::rt_halloc" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -573,7 +527,7 @@ A process/task must have opened the real time group heap to use and can use just
     </td>
   </tr>
 </table>
-<a class="anchor" name="a41" doxytag="shm.c::rt_heap_open" ></a><p>
+<a class="anchor" name="a39" doxytag="shm.c::rt_heap_open" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -636,7 +590,7 @@ It must be remarked that only the very first open does a real allocation, any su
     </td>
   </tr>
 </table>
-<a class="anchor" name="a12" doxytag="rtai_shm.h::rt_hfree" ></a><p>
+<a class="anchor" name="a11" doxytag="rtai_shm.h::rt_hfree" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -676,48 +630,7 @@ rt_hfree is used to free a previously allocated chunck of a group real time heap
     </td>
   </tr>
 </table>
-<a class="anchor" name="a15" doxytag="rtai_shm.h::rt_malloc_new" ></a><p>
-<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
-  <tr>
-    <td class="mdRow">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td class="md" nowrap valign="top"> void * rt_malloc_new </td>
-          <td class="md" valign="top">(&nbsp;</td>
-          <td class="md" nowrap valign="top">int&nbsp;</td>
-          <td class="mdname1" valign="top" nowrap> <em>size</em>          </td>
-          <td class="md" valign="top">&nbsp;)&nbsp;</td>
-          <td class="md" nowrap><code> [inline]</code></td>
-        </tr>
-
-      </table>
-    </td>
-  </tr>
-</table>
-<table cellspacing=5 cellpadding=0 border=0>
-  <tr>
-    <td>
-      &nbsp;
-    </td>
-    <td>
-
-<p>
-Allocate a chunk of the global real time heap in kernel/user space. 
-<p>
-Since it is not named there is no chance of retrieving and sharing it elsewhere.<p><b>For internal use only.</b></p>
-<p>
-rt_malloc is used to allocate a non sharable piece of the global real time heap.<p>
-<dl compact><dt><b>Parameters:</b></dt><dd>
-  <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>size</em>&nbsp;</td><td>is the size of the requested memory in bytes;</td></tr>
-  </table>
-</dl>
-<dl compact><dt><b>Returns:</b></dt><dd>the pointer to the allocated memory, 0 on failure. </dd></dl>
-</p>
-    </td>
-  </tr>
-</table>
-<a class="anchor" name="a18" doxytag="rtai_shm.h::rt_named_free" ></a><p>
+<a class="anchor" name="a17" doxytag="rtai_shm.h::rt_named_free" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -757,7 +670,7 @@ Analogously to what done by all the named allocation functions the freeing calls
     </td>
   </tr>
 </table>
-<a class="anchor" name="a13" doxytag="rtai_shm.h::rt_named_halloc" ></a><p>
+<a class="anchor" name="a12" doxytag="rtai_shm.h::rt_named_halloc" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -811,7 +724,7 @@ A process/task must have opened the real time group heap to use and can use just
     </td>
   </tr>
 </table>
-<a class="anchor" name="a14" doxytag="rtai_shm.h::rt_named_hfree" ></a><p>
+<a class="anchor" name="a13" doxytag="rtai_shm.h::rt_named_hfree" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -851,7 +764,7 @@ Analogously to what done by all the named allocation functions the freeing calls
     </td>
   </tr>
 </table>
-<a class="anchor" name="a17" doxytag="rtai_shm.h::rt_named_malloc" ></a><p>
+<a class="anchor" name="a16" doxytag="rtai_shm.h::rt_named_malloc" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -905,7 +818,7 @@ It must be remarked that only the very first call does a real allocation, any su
     </td>
   </tr>
 </table>
-<a class="anchor" name="a22" doxytag="shm.c::rt_shm_alloc" ></a><p>
+<a class="anchor" name="a21" doxytag="shm.c::rt_shm_alloc" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -968,7 +881,7 @@ It must be remarked that only the very first call does a real allocation, any fo
     </td>
   </tr>
 </table>
-<a class="anchor" name="a10" doxytag="rtai_shm.h::rt_shm_free" ></a><p>
+<a class="anchor" name="a9" doxytag="rtai_shm.h::rt_shm_free" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1010,7 +923,7 @@ Analogously to what done by all the named allocation functions the freeing calls
     </td>
   </tr>
 </table>
-<a class="anchor" name="a54" doxytag="malloc.c::rtheap_alloc" ></a><p>
+<a class="anchor" name="a51" doxytag="malloc.c::rtheap_alloc" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1053,7 +966,7 @@ Analogously to what done by all the named allocation functions the freeing calls
 <p>
 Allocate a memory block from a memory heap. 
 <p>
-Allocates a contiguous region of memory from an active memory heap. Such allocation is guaranteed to be time-bounded if the heap is non-extendable (see <a class="el" href="group__shm.html#a51">rtheap_init()</a>). Otherwise, it might trigger a dynamic extension of the storage area through an internal request to the Linux allocation service (kmalloc/vmalloc).<p>
+Allocates a contiguous region of memory from an active memory heap. Such allocation is guaranteed to be time-bounded if the heap is non-extendable (see <a class="el" href="group__shm.html#a48">rtheap_init()</a>). Otherwise, it might trigger a dynamic extension of the storage area through an internal request to the Linux allocation service (kmalloc/vmalloc).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>heap</em>&nbsp;</td><td>The descriptor address of the heap to get memory from.</td></tr>
@@ -1063,10 +976,10 @@ Allocates a contiguous region of memory from an active memory heap. Such allocat
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>The address of the allocated region upon success, or NULL if no memory is available from the specified non-extendable heap, or no memory can be obtained from Linux to extend the heap.</dd></dl>
 Side-effect: This routine does not call the rescheduling procedure.<p>
-Context: This routine can always be called on behalf of a thread context. It can also be called on behalf of an IST context if the heap storage area has been statically-defined at initialization time (see <a class="el" href="group__shm.html#a51">rtheap_init()</a>).     </td>
+Context: This routine can always be called on behalf of a thread context. It can also be called on behalf of an IST context if the heap storage area has been statically-defined at initialization time (see <a class="el" href="group__shm.html#a48">rtheap_init()</a>).     </td>
   </tr>
 </table>
-<a class="anchor" name="a52" doxytag="malloc.c::rtheap_destroy" ></a><p>
+<a class="anchor" name="a49" doxytag="malloc.c::rtheap_destroy" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1104,7 +1017,7 @@ Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine must be called on behalf of a thread context.     </td>
   </tr>
 </table>
-<a class="anchor" name="a55" doxytag="malloc.c::rtheap_free" ></a><p>
+<a class="anchor" name="a52" doxytag="malloc.c::rtheap_free" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1145,7 +1058,7 @@ Releases a memory region to the memory heap it was previously allocated from.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>heap</em>&nbsp;</td><td>The descriptor address of the heap to release memory to.</td></tr>
-    <tr><td valign=top><em>block</em>&nbsp;</td><td>The address of the region to release returned by a previous call to <a class="el" href="group__shm.html#a54">rtheap_alloc()</a>.</td></tr>
+    <tr><td valign=top><em>block</em>&nbsp;</td><td>The address of the region to release returned by a previous call to <a class="el" href="group__shm.html#a51">rtheap_alloc()</a>.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success, or RTHEAP_PARAM is returned whenever the block is not a valid region of the specified heap.</dd></dl>
@@ -1153,7 +1066,7 @@ Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine can be called on behalf of a thread or IST context     </td>
   </tr>
 </table>
-<a class="anchor" name="a51" doxytag="malloc.c::rtheap_init" ></a><p>
+<a class="anchor" name="a48" doxytag="malloc.c::rtheap_init" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1218,7 +1131,7 @@ Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine must be called on behalf of a thread context.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 19:51:30 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jul 24 19:36:21 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

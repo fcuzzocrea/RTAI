@@ -651,7 +651,10 @@ void xntimer_do_timers (void)
 	       dispatching loop is over. */
 	    appendq(&reschedq,&timer->link);
 
-	now = xnarch_get_cpu_tsc();
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+	if (aperiodic)
+	    now = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	}
 
     /* Reschedule elapsed interval timers for the next shot. */

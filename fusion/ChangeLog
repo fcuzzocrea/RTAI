@@ -1,3 +1,10 @@
+2004-10-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* README.QUICKINSTALL: Add Pierre Ficheux's quick install note.
+
+	* nucleus/shadow.c (xnshadow_substitute_syscall): Make sure to
+	call request_syscall_restart() on behalf of a shadow only.
+
 2004-10-24  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/system.h (__switch_threads): Fix %ebp

@@ -1749,7 +1749,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	}
 
 	rt_global_cli();
-	rt_task->state |= RT_SCHED_READY;
+	rt_task->state = (rt_task->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;
 	while (rt_task->state != RT_SCHED_READY) {
 		current->state = TASK_HARDREALTIME;
 		rt_global_sti();
@@ -2267,13 +2267,14 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 					t = 1000UL*(unsigned long)llimd(task->exectime[0], 10, tuned.cpu_freq)/den;
 				}				
 			}
-			PROC_PRINT("%-10d %-11lu %-4s %-4s 0x%-4x %-4d %-4d   %-4d %-4d  %p   %-lu\n",
+			PROC_PRINT("%-10d %-11lu %-4s %-3s 0x%-3x  %1lu:%1lu   %-4d   %-4d %-4d  %p   %-lu\n",
                                task->priority,
                                (unsigned long)count2nano_cpuid(task->period, task->runnable_on_cpus),
                                task->uses_fpu ? "Yes" : "No",
                                task->signal ? "Yes" : "No",
                                task->state,
-                               cpuid,
+			       task->runnable_on_cpus, // cpuid,
+			       CPUMASK((task->lnxtsk)->cpus_allowed),
                                i,
 			       task->is_hard,
 			       task->lnxtsk ? task->lnxtsk->pid : 0,

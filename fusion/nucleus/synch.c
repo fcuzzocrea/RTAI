@@ -451,8 +451,8 @@ xnpholder_t *xnsynch_wakeup_this_sleeper (xnsynch_t *synch,
  * whose ownership is changed.
  *
  * @param reason Some flags to set in the status mask of every
- * unblocked thread. The following bits are pre-defined by the
- * nucleus:
+ * unblocked thread. Zero is an acceptable value. The following bits
+ * are pre-defined by the nucleus:
  *
  * - XNRMID should be set to indicate that the synchronization object
  * is about to be destroyed (see xnpod_resume_thread()).

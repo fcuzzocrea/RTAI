@@ -282,13 +282,15 @@ static inline void xnpod_renice_root (int prio)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-static inline void xnpod_cancellation_point (void)
+static inline void xnpod_cancellation_point (xnthread_t *thread)
 
 {
+    void xnpod_delete_thread(xnthread_t *thread);
+
     if (testbits(thread->status,XNKILLED))
         {
         __clrbits(thread->status,XNKILLED);
-        xnpod_delete_self();
+	xnpod_delete_thread(thread);
         }
 }
 

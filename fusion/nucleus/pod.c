@@ -1530,7 +1530,7 @@ int xnpod_migrate_thread (int cpu)
        would not be detected, since the sched pointer would point on
        the destination scheduler, not the local. */ 
 
-    xnpod_cancellation_point();
+    xnpod_cancellation_point(thread);
 
     if (xnpod_locked_p())
         {
@@ -1744,7 +1744,7 @@ static void xnpod_dispatch_signals (void)
     xnasr_t asr;
 
     /* Process internal signals first. */
-    xnpod_cancellation_point();
+    xnpod_cancellation_point(thread);
 
     /* Then process user-defined signals if the ASR is enabled for
        this thread. */
@@ -2007,7 +2007,7 @@ void xnpod_schedule (void)
            contexts. */
         goto signal_unlock_and_exit;
 
-    xnpod_cancellation_point();
+    xnpod_cancellation_point(runthread);
 
     /* Clear the rescheduling bit */
     xnsched_clr_resched(sched);
@@ -2145,7 +2145,7 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
     xnsched_t *sched = thread->sched;
     xnthread_t *runthread = sched->runthread, *threadin;
 
-    xnpod_cancellation_point();
+    xnpod_cancellation_point(runthread);
 
     if (thread != runthread)
         {

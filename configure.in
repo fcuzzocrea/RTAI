@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
 
-AC_INIT(rtai,3.1-test3,rtai@rtai.org)
+AC_INIT(rtai,3.1-test4,rtai@rtai.org)
 
 CONFIG_RTAI_VERSION_MAJOR=3
 CONFIG_RTAI_VERSION_MINOR=0

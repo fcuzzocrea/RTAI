@@ -172,7 +172,7 @@ int rt_uart_open (RT_UART *uart,
     if (!xnpod_root_p())
 	return -EACCES;
 
-    if (!request_region(config->port.base,8,"RTAI-based 16550A driver"))
+    if (!request_region(config->port.base,8,"RTAI 16550A"))
 	return -EBUSY;
 
     /* Set default RTS watermarks if unspecified. */
@@ -236,7 +236,7 @@ int rt_uart_open (RT_UART *uart,
     outb(IER_RX|IER_STAT|IER_MODEM,IER(uart));
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    uart->source = RT_KAPI_SOURCE;
+    uart->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY

@@ -184,7 +184,7 @@ typedef struct rt_uart {
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    int source;			/* !< Opener's space. */
+    int cpid;			/* !< Opener's pid. */
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 } RT_UART;

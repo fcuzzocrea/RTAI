@@ -56,7 +56,7 @@ int __rt_uart_open (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
-	uart->source = RT_UAPI_SOURCE;
+	uart->cpid = curr->pid;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = uart->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -90,7 +90,7 @@ int __rt_uart_close (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_uart_close(uart);
 
-    if (!err && uart->source == RT_UAPI_SOURCE)
+    if (!err && uart->cpid)
 	xnfree(uart);
 
     return err;

@@ -66,7 +66,7 @@ install-data-local: .rtai_config
 	$(INSTALL_DATA) .rtai_config $(DESTDIR)$(pkgdatadir)/config-$(PACKAGE)-$(VERSION)
 	rm -f $(DESTDIR)$(prefix)/build
 	$(LN_S) @abs_top_builddir@ $(DESTDIR)$(prefix)/build
-	rm -f $(prefix)/source
+	rm -f $(DESTDIR)$(prefix)/source
 	$(LN_S) @abs_srcdir@ $(DESTDIR)$(prefix)/source
 
 install-exec-local: devices

@@ -992,6 +992,16 @@ int __rthal_init (void)
 	return 1;
 	}
 
+#ifdef CONFIG_X86_LOCAL_APIC
+    if (!test_bit(X86_FEATURE_APIC,boot_cpu_data.x86_capability))
+	{
+	printk("RTAI[hal]: Local APIC absent or disabled!\n"
+	       "Disable APIC support or pass \"lapic\" in bootparam.");
+	return 1;
+	}
+
+#endif /* CONFIG_X86_LOCAL_APIC */
+
 #ifdef CONFIG_SMP
     /* The nucleus also sets the same CPU affinity so that both
        modules keep their execution sequence on SMP boxen. */

@@ -1,5 +1,7 @@
 2004-11-01  Philippe Gerum  <rpm@xenomai.org>
 
+	* configure.in: Fix CONFIG_RTAI_LINUXDIR mess.
+
 	* nucleus/heap.c: Finalize shared heap support.
 
 	* include/nucleus/queue.h (DECLARE_XNQUEUE): Add global queue

@@ -29,7 +29,7 @@ ACKNOWLEDGMENTS:
 #define USE_RTAI_TASKS  0
 #define ALLOW_RR        1
 #define ONE_SHOT        0
-#define NO_KTHREAD_B    0
+#define NO_KTHREAD_B    1
 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -618,6 +618,16 @@ void rt_do_force_soft(RT_TASK *rt_task)
 	rt_global_sti();
 }
 
+#define enq_soft_ready_task(ready_task) \
+do { \
+	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \
+	while (ready_task->priority >= task->priority) { \
+		if ((task = task->rnext)->priority < 0) break; \
+	} \
+	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task; \
+	ready_task->rnext = task; \
+} while (0)
+
 static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
 {
         void rt_schedule(void);
@@ -632,19 +642,17 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
         rt_current->is_hard = 0;
 	rt_global_sti();
         __adeos_schedule_back_root(rt_current->lnxtsk);
+// now make it as if it was scheduled soft, the tail is cared in sys_lxrt.c
 	rt_global_cli();
-        if (rt_current->state) {
-        	rt_current->state |= RT_SCHED_READY;
-		LOCK_LINUX(cpuid);
+	LOCK_LINUX(cpuid);
+        rt_current->state |= RT_SCHED_READY;
+	rt_smp_current[cpuid] = rt_current;
+        if (rt_current->state != RT_SCHED_READY) {
         	(rt_current->lnxtsk)->state = TASK_HARDREALTIME;
-		rt_smp_current[cpuid] = rt_current;
 		rt_schedule();
-		rt_current->state &= ~RT_SCHED_READY;
-		(rt_current->rprev)->rnext = rt_current->rnext;
-		(rt_current->rnext)->rprev = rt_current->rprev;
-		rt_smp_current[cpuid] = &rt_linux_task;
-		UNLOCK_LINUX(cpuid);
-        }
+	} else {
+		enq_soft_ready_task(rt_current);
+	}
 }
 
 static inline RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cpuid)
@@ -767,16 +775,6 @@ sched_exit:
         rtai_hw_unlock(flags);
 }
 #endif
-
-#define enq_soft_ready_task(ready_task) \
-do { \
-	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \
-	while (ready_task->priority >= task->priority) { \
-		if ((task = task->rnext)->priority < 0) break; \
-	} \
-	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task; \
-	ready_task->rnext = task; \
-} while (0)
 
 void rt_schedule(void)
 {
@@ -1614,6 +1612,21 @@ static void init_fpu(struct task_struct *tsk) { }
 
 struct fun_args { int a0; int a1; int a2; int a3; int a4; int a5; int a6; int a7; int a8; int a9; long long (*fun)(int, ...); };
 
+static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
+{
+        rt_global_cli();
+        rt_task->state &= ~(RT_SCHED_READY | RT_SCHED_SFTRDY);
+        (rt_task->rprev)->rnext = rt_task->rnext;
+        (rt_task->rnext)->rprev = rt_task->rprev;
+        rt_smp_current[cpuid] = &rt_linux_task;
+        rt_schedule();
+        UNLOCK_LINUX(cpuid);
+        rt_global_sti();
+#ifdef USE_LINUX_SYSCALL_FOR_LXRT
+        rtai_linux_sti();
+#endif
+}
+
 void rt_schedule_soft(RT_TASK *rt_task)
 {
 	struct fun_args *funarg;
@@ -1649,17 +1662,12 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	rt_smp_current[cpuid] = rt_task;
 	rt_global_sti();
 	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
-	rt_global_cli();
-	rt_task->state &= ~(RT_SCHED_READY | RT_SCHED_SFTRDY);
-	(rt_task->rprev)->rnext = rt_task->rnext;
-       	(rt_task->rnext)->rprev = rt_task->rprev;
-	rt_smp_current[cpuid] = &rt_linux_task;
-	rt_schedule();
-	UNLOCK_LINUX(cpuid);
-	rt_global_sti();
-#ifdef USE_LINUX_SYSCALL_FOR_LXRT
-        rtai_linux_sti();
-#endif
+	_rt_schedule_soft_tail(rt_task, cpuid);
+}
+
+void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
+{
+	_rt_schedule_soft_tail(rt_task, cpuid);
 }
 
 static inline void fast_schedule(RT_TASK *new_task, void *lnxtsk, int cpuid)
@@ -1987,19 +1995,6 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 	return 0;
 }
 
-static int lxrt_handle_signal(struct task_struct *lnxtsk, int sig)
-{
-        RT_TASK *task = (RT_TASK *)lnxtsk->this_rt_task[0];
-        if ((task->force_soft = task->is_hard == 1)) {
-		rt_do_force_soft(task);
-                return 0;
-        }
-        if (task->state) {
-                lnxtsk->state = TASK_INTERRUPTIBLE;
-	}
-        return 1;
-}
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
 static struct mmreq {
@@ -2098,14 +2093,31 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 static void lxrt_intercept_signal (adevinfo_t *evinfo)
 {
 	struct { struct task_struct *task; int sig; } *evdata = (__typeof(evdata))evinfo->evdata;
-	struct task_struct *task = evdata->task;
-	if (task->ptd[0]) {
-		if (!lxrt_handle_signal(task, evdata->sig))
-		/* Don't propagate so that Linux won't 
-		   further process the signal. */
-		return;
+	struct task_struct *lnxtsk = evdata->task;
+	RT_TASK *task = lnxtsk->this_rt_task[0];
+	if (task) {
+                if ((task->force_soft = task->is_hard == 1)) {
+                        rt_do_force_soft(task);
+                        return;
+                }
+                if (task->state) {
+                        lnxtsk->state = TASK_INTERRUPTIBLE;
+                }
 	}
 	adeos_propagate_event(evinfo);
+}
+
+static void lxrt_intercept_exit (adevinfo_t *evinfo)
+{
+        extern void linux_process_termination(void);
+        RT_TASK *task = current->this_rt_task[0];
+        if (task) {
+                if (task->is_hard == 1) {
+                        give_back_to_linux(task);
+                }
+                linux_process_termination();
+        }
+        adeos_propagate_event(evinfo);
 }
 
 static void lxrt_intercept_syscall(adevinfo_t *evinfo)
@@ -2359,6 +2371,8 @@ static int lxrt_init(void)
     adeos_catch_event(ADEOS_SCHEDULE_TAIL,&lxrt_intercept_schedule_tail);
     adeos_catch_event(ADEOS_SIGNAL_PROCESS,&lxrt_intercept_signal);
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&lxrt_intercept_syscall);
+    adeos_catch_event(ADEOS_EXIT_PROCESS,&lxrt_intercept_exit);
+    adeos_catch_event(ADEOS_KICK_PROCESS, &lxrt_intercept_signal);
 
     return 0;
 }
@@ -2428,6 +2442,8 @@ static void lxrt_exit(void)
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_TAIL,NULL);
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
+    adeos_catch_event(ADEOS_EXIT_PROCESS, NULL);
+    adeos_catch_event(ADEOS_KICK_PROCESS, NULL);
     
     flags = rtai_critical_enter(NULL);
 

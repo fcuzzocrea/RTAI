@@ -110,7 +110,7 @@ uninstall-local:
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig snippets
+EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig snippets API.CHANGES
 
 if CONFIG_RTAI_OPT_FUSION
 SUBDIRS = lib

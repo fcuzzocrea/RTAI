@@ -999,13 +999,18 @@ int xnarch_calibrate_sched (void)
 static inline int xnarch_init (void)
 
 {
-    int err = 0;
+    int err;
 
 #ifdef CONFIG_SMP
     /* The HAL layer also sets the same CPU affinity so that both
        modules keep their execution sequence on SMP boxen. */
     set_cpus_allowed(current,cpumask_of_cpu(0));
 #endif /* CONFIG_SMP */
+
+    err = xnarch_calibrate_sched();
+
+    if (err)
+	return err;
 
     xnarch_escalation_virq = adeos_alloc_irq();
 
@@ -1025,9 +1030,10 @@ static inline int xnarch_init (void)
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
     if (err)
+	{
+	rthal_set_trap_handler(xnarch_old_trap_handler);
         adeos_free_irq(xnarch_escalation_virq);
-    else
-	err = xnarch_calibrate_sched();
+	}
 
     return err;
 }

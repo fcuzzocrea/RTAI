@@ -754,9 +754,10 @@ static int faults_read_proc (char *page,
 	p += sprintf(p,"\n%3d:",trap);
 
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	    p += sprintf(p," %12d   (%s)",
-			 rthal_realtime_faults[cpuid][trap],
-			 fault_labels[trap]);
+	    p += sprintf(p," %12d",
+			 rthal_realtime_faults[cpuid][trap]);
+
+	p += sprintf(p,"   (%s)",fault_labels[trap]);
 	}
 
     p += sprintf(p,"\n");

@@ -99,7 +99,7 @@ void rt_typed_sem_init(SEM *sem, int value, int type)
 {
 	sem->magic = RT_SEM_MAGIC;
 	sem->count = value;
-	sem->qtype = type != RES_SEM && (type & FIFO_Q) ? 1 : 0;
+	sem->qtype = (type & FIFO_Q) ? 1 : 0;
 	type = (type & 3) - 2;
 	if ((sem->type = type) < 0 && value > 1) {
 		sem->count = 1;
@@ -370,8 +370,6 @@ int rt_sem_broadcast(SEM *sem)
 			enq_ready_task(task);
 			set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 		}
-		flags = rt_global_save_flags_and_cli();
-		rt_global_restore_flags(flags);
 	}
 	sem->count = 0;
 	if (schedmap) {

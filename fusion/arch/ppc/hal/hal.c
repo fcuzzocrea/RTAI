@@ -178,34 +178,11 @@ void rthal_release_timer (void)
     rthal_critical_exit(flags);
 }
 
-#ifdef CONFIG_40x
 unsigned long rthal_calibrate_timer (void) {
+    /* On PowerPC systems, the cost of setting the decrementer or the
+       PIT does not induce significant latency. */
     return 0;
 }
-#else /* !CONFIG_40x */
-unsigned long rthal_calibrate_timer (void)
-
-{
-    unsigned long flags;
-    rthal_time_t t, dt;
-    int i;
-
-    flags = rthal_critical_enter(NULL);
-
-    t = rthal_rdtsc();
-
-    for (i = 0; i < 1000; i++)
-	set_dec(tb_ticks_per_jiffy);
-
-    dt = rthal_rdtsc() - t;
-
-    set_dec(tb_ticks_per_jiffy); /* FIXME: we've just lost the current
-				    tick here... */
-    rthal_critical_exit(flags);
-
-    return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
-}
-#endif /* CONFIG_40x */
 
 unsigned long rthal_critical_enter (void (*synch)(void))
 

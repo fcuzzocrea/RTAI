@@ -22,6 +22,7 @@
 #include <memory.h>
 #include <errno.h>
 #include <unistd.h>
+#include <nucleus/asm/hal.h>            /* For rthal_llimd. */
 #include <nucleus/fusion.h>
 
 static int __fusion_muxid;
@@ -142,6 +143,32 @@ int pthread_ns2ticks_rt (nanostime_t ns, nanostime_t *pticks) {
 int pthread_ticks2ns_rt (nanostime_t ticks, nanostime_t *pns) {
 
     return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_ticks2ns,&ticks,pns);
+}
+
+int pthread_ns2tsc_rt(nanostime_t ns, nanostime_t *ptsc)
+
+{
+    if (__fusion_muxid == 0)
+	return -ENOSYS;
+
+    *ptsc = ( ns >= 0
+              ? rthal_llimd(ns, __fusion_info.cpufreq, 1000000000)
+              : -rthal_llimd(-ns, __fusion_info.cpufreq, 1000000000) );
+
+    return 0;
+}
+
+int pthread_tsc2ns_rt(nanostime_t tsc, nanostime_t *pns)
+
+{
+    if (__fusion_muxid == 0)
+	return -ENOSYS;
+
+    *pns = ( tsc >= 0
+             ? rthal_llimd(tsc, 1000000000, __fusion_info.cpufreq)
+             : -rthal_llimd(-tsc, 1000000000, __fusion_info.cpufreq) );
+
+    return 0;
 }
 
 int pthread_inquire_rt (xninquiry_t *buf) {

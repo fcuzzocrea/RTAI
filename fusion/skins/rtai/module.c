@@ -168,7 +168,7 @@ int __xeno_skin_init (void)
     __mutex_pkg_cleanup();
 
  cleanup_event:
-#endif /* CONFIG_RTAI_OPT_NATIVE_COND */
+#endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
 #if CONFIG_RTAI_OPT_NATIVE_EVENT
     __event_pkg_cleanup();

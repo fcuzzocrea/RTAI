@@ -1,3 +1,18 @@
+2004-10-25  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/shadow.c (xnshadow_linux_sysentry): replace direct
+	assignment to __xn_reg_rval by xn_status_return for xn_sys_attach
+	and xn_sys_detach syscalls.
+
+	* nucleus/fusion.c (__pthread_ns2ticks_rt, __pthread_ticks2nsr_rt)
+	  nucleus/lib/fusion.c (pthread_ns2tsc_rt, pthread_tsc2ns_rt), 
+	  include/nucleus/fusion.h:
+	Separate conversion between nanoseconds and tscs from conversion
+	between nanoseconds and scheduler ticks counts.
+
+	* include/nucleus/asm-i386/system.h, nucleus/trace.c: move
+	architecture dependent part of the trace module to system.h.
+
 2004-10-25  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_schedule): Escalate all requests to the

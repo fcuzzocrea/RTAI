@@ -184,11 +184,11 @@
 00210 
 00211 <span class="preprocessor">#define rthal_cli()                     adeos_stall_pipeline_from(&amp;rthal_domain)</span>
 00212 <span class="preprocessor"></span><span class="preprocessor">#define rthal_sti()                     adeos_unstall_pipeline_from(&amp;rthal_domain)</span>
-00213 <span class="preprocessor"></span><span class="preprocessor">#define rthal_sync_irqs()               adeos_sync_pipeline()</span>
-00214 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_save(x)         ((x) = !!adeos_test_and_stall_pipeline_from(&amp;rthal_domain))</span>
-00215 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_restore(x)      adeos_restore_pipeline_from(&amp;rthal_domain,(x))</span>
-00216 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_flags(x)        ((x) = !!adeos_test_pipeline_from(&amp;rthal_domain))</span>
-00217 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_test()          (!!adeos_test_pipeline_from(&amp;rthal_domain))</span>
+00213 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_save(x)         ((x) = !!adeos_test_and_stall_pipeline_from(&amp;rthal_domain))</span>
+00214 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_restore(x)      adeos_restore_pipeline_from(&amp;rthal_domain,(x))</span>
+00215 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_flags(x)        ((x) = !!adeos_test_pipeline_from(&amp;rthal_domain))</span>
+00216 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_test()          (!!adeos_test_pipeline_from(&amp;rthal_domain))</span>
+00217 <span class="preprocessor"></span><span class="preprocessor">#define rthal_local_irq_sync(x)         ((x) = !!adeos_test_and_unstall_pipeline_from(&amp;rthal_domain))</span>
 00218 <span class="preprocessor"></span>
 00219 <span class="preprocessor">#define rthal_hw_lock(flags)            adeos_hw_local_irq_save(flags)</span>
 00220 <span class="preprocessor"></span><span class="preprocessor">#define rthal_hw_unlock(flags)          adeos_hw_local_irq_restore(flags)</span>
@@ -355,7 +355,7 @@
 00388 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00389 
 00392 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Oct 19 10:57:58 2004 for RTAI API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -62,7 +62,7 @@ Migrate a Linux task to the RTAI domain.
 <p><b>For internal use only.</b></p>
 <p>
 This service causes the transition of "current" from the Linux domain to RTAI. This is obtained by asking the gatekeeper to resume the shadow mated with "current" then triggering the rescheduling procedure in the RTAI domain. The shadow will resume in the RTAI domain as returning from schedule().<p>
-Side-effect: This routine indirectly triggers the rescheduling procedure (see __xn_sys_sched service).<p>
+Side-effect: This routine indirectly triggers the rescheduling procedure.<p>
 Context: This routine must be called on behalf of a user-space task from the Linux domain. </p>
     </td>
   </tr>
@@ -165,7 +165,7 @@ Note: "current" is valid here since the shadow runs with the properties of the L
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 19 10:58:00 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:56 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -18,12 +18,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * \ingroup timer
+ * \ingroup native_timer
  */
 
 /*!
  * \ingroup native
- * \defgroup timer Timer management services.
+ * \defgroup native_timer Timer management services.
  *
  * Timer management services.
  *

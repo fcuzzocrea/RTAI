@@ -134,6 +134,12 @@ int pthread_ns2ticks_rt(nanostime_t ns,
 int pthread_ticks2ns_rt(nanostime_t ticks,
 			nanostime_t *pns);
 
+int pthread_ns2tsc_rt(nanostime_t ns,
+                      nanostime_t *ptsc);
+
+int pthread_tsc2ns_rt(nanostime_t tsc,
+                      nanostime_t *pns);
+
 int pthread_sleep_rt(nanotime_t ticks);
 
 int pthread_inquire_rt(xninquiry_t *infop);

@@ -342,7 +342,7 @@ Unless otherwise specified, the caller is blocked for a given amount of time if 
 <p>
 Side-effect: This routine calls the rescheduling procedure if no data is available on entry and <em>timeout</em> is different from RT_TIME_NONBLOCK.<p>
 Context: This routine can be called on behalf of a task. It can also be called on behalf of an interrupt context or from the initialization code provided <em>timeout</em> is equal to RT_TIME_NONBLOCK.<p>
-<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__timer.html#ga16">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
@@ -496,7 +496,7 @@ Side-effect: <a class="el" href="group__pipe.html#ga12">rt_pipe_write()</a> caus
 Context: This routine can be called on behalf of a task, interrupt context or from the initialization code.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 19 10:58:00 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Tue Oct 26 00:09:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

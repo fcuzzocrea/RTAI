@@ -1450,15 +1450,17 @@ static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
 
 	case __xn_sys_attach:
 
-	    __xn_reg_rval(regs) = xnshadow_attach_skin(current,
-						       __xn_reg_arg1(regs),
-						       __xn_reg_arg2(regs));
+	    __xn_status_return(regs,
+                               xnshadow_attach_skin(current,
+                                                    __xn_reg_arg1(regs),
+                                                    __xn_reg_arg2(regs)));
 	    return;
 		
 	case __xn_sys_detach:
 	    
-	    __xn_reg_rval(regs) = xnshadow_detach_skin(current,
-						       __xn_reg_arg1(regs));
+	    __xn_status_return(regs,
+                               xnshadow_detach_skin(current,
+                                                    __xn_reg_arg1(regs)));
 	    return;
 	}
 

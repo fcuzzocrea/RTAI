@@ -255,12 +255,7 @@ static int __pthread_ns2ticks_rt (struct task_struct *curr, struct pt_regs *regs
 
     __xn_copy_from_user(curr,&ns,(void *)__xn_reg_arg1(regs),sizeof(ns));
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-	ticks = ns >= 0 ? xnarch_ns_to_tsc(ns) : -xnarch_ns_to_tsc(-ns);
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	ticks = ns >= 0 ? xnpod_ns2ticks(ns) : -xnpod_ns2ticks(-ns);
+    ticks = ns >= 0 ? xnpod_ns2ticks(ns) : -xnpod_ns2ticks(-ns);
     
     __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&ticks,sizeof(ticks));
 
@@ -280,12 +275,7 @@ static int __pthread_ticks2ns_rt (struct task_struct *curr, struct pt_regs *regs
 
     __xn_copy_from_user(curr,&ticks,(void *)__xn_reg_arg1(regs),sizeof(ticks));
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-	ns = ticks >= 0 ? xnarch_tsc_to_ns(ticks) : -xnarch_tsc_to_ns(-ticks);
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	ns = ticks >= 0 ? xnpod_ticks2ns(ticks) : -xnpod_ticks2ns(-ticks);
+    ns = ticks >= 0 ? xnpod_ticks2ns(ticks) : -xnpod_ticks2ns(-ticks);
 
     __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&ns,sizeof(ns));
 

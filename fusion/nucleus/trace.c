@@ -1,18 +1,31 @@
-#include <asm/timex.h>          /* For cpu_khz */
-#include <linux/kernel_stat.h>  /* For kstat_irqs */
+/*
+ * Copyright (C) 2004 Gilles Chanteperdrix <gilles.chanteperdrix@laposte.net>
+ *
+ * Xenomai is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Xenomai is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Xenomai; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+#define XENO_TRACES_MODULE
 
 #include <nucleus/queue.h>
 #include <nucleus/heap.h>
 #include <nucleus/module.h>
 #include <nucleus/pod.h>
-
 #include <nucleus/trace.h>
 
-static xnheap_t rtai_trace_heap;
-static xnqueue_t rtai_trace_queue;
-static char rtai_trace_heap_mem[32768];
-static spinlock_t rtai_trace_lock = SPIN_LOCK_UNLOCKED;
-static unsigned long long rtai_trace_start;
+#define RTAI_TRACE_HEAPSIZE 32768
+#define RTAI_TRACE_PAGESIZE 256
 
 /* TODO :
    - configurable "log full" behaviour: stop or override (stops, for the moment);
@@ -51,6 +64,21 @@ MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_DESCRIPTION("RTAI tracing facility");
 MODULE_LICENSE("GPL");
 
+static xnheap_t rtai_trace_heap;
+static xnqueue_t rtai_trace_queue;
+static char rtai_trace_heap_mem[RTAI_TRACE_HEAPSIZE];
+static spinlock_t rtai_trace_lock = SPIN_LOCK_UNLOCKED;
+static unsigned long long rtai_trace_start;
+
+static adomain_t rtai_trace_watchdog_domain;
+
+static const char *rtai_trace_thr_type2str[] = {
+    [RTAI_TRACE_THR_KRT]     = "RT Kernel",
+    [RTAI_TRACE_THR_SHADOW]  = "RT User",
+    [RTAI_TRACE_THR_RELAXED] = "RT Relax",
+    [RTAI_TRACE_THR_LINUX]   = "Linux",
+};
+
 static inline const char *rtai_trace_basename(const char *filename)
 {
     const char *base = filename;
@@ -76,146 +104,6 @@ static inline const char *rtai_trace_basename(const char *filename)
             }
         ++filename;
         }
-}
-
-static const char *rtai_trace_thr_type2str[] = {
-    [RTAI_TRACE_THR_KRT]     = "RT Kernel",
-    [RTAI_TRACE_THR_SHADOW]  = "RT User",
-    [RTAI_TRACE_THR_RELAXED] = "RT Relax",
-    [RTAI_TRACE_THR_LINUX]   = "Linux",
-};
-
-void rtai_trace_dump(void)
-{
-    xnholder_t *holder;
-    unsigned count, i;
-
-    count = countq(&rtai_trace_queue);
-    printk("Traces: %u events\n", count);
-    for(holder = getheadq(&rtai_trace_queue), i = 0; holder && i < count;
-        holder = nextq(&rtai_trace_queue, holder), ++i) {
-        rtai_trace_t *trace = link2trace(holder);
-        unsigned long hrs, mins, secs, nsecs;
-        unsigned long long diff_nsecs;
-
-        diff_nsecs = xnarch_tsc_to_ns(trace->stamp - rtai_trace_start);
-        secs = (unsigned long) xnarch_ulldiv(diff_nsecs, 1000000000, &nsecs);
-        mins = secs / 60;
-        hrs = mins / 60;
-        secs %= 60;
-        mins %= 60;
-
-        printk("#%u/%u %02lu:%02lu:%02lu.%09lu CPU#%d %s(%s, pid=%d) %s: %d: %s:"
-               " %s\n",
-               i+1,
-               count,
-               hrs, mins, secs, nsecs,
-               trace->cpu,
-               trace->thr_name,
-               rtai_trace_thr_type2str[trace->thr_type],
-               trace->thr_pid,
-               rtai_trace_basename(trace->file),
-               trace->line,
-               trace->function,
-               trace->msg);
-    }
-}
-
-
-static void rtai_trace_thr_name_cpy(rtai_trace_t *trace, const char *threadname)
-{
-    char *last_dest = trace->thr_name+sizeof(trace->thr_name)-1;
-    const char *src = threadname;
-    char *dest = trace->thr_name;
-
-    while ((*dest++ = *src++) != '\0')
-        if (dest == last_dest)
-            {
-            *dest = '\0';
-            break;
-            }
-}
-
-static void rtai_trace_thr_fill(rtai_trace_t *trace)
-{
-    struct task_struct *task = NULL;
-    xnthread_t *thread = NULL;
-    char *threadname;
-
-    if(!nkpod || testbits(nkpod->status, XNPIDLE) || xnpod_root_p())
-        {
-        task = current;
-        trace->thr_type = RTAI_TRACE_THR_LINUX;
-            
-        if (nkpod && !testbits(nkpod->status, XNPIDLE))
-            {
-            thread = xnshadow_thread(task);
-            
-            if (thread)
-                trace->thr_type = RTAI_TRACE_THR_RELAXED;
-            }
-        else
-            thread = NULL;
-        }
-    else if (xnpod_shadow_p())
-        {
-        thread = xnpod_current_sched()->runthread;
-        task = xnthread_archtcb(thread)->user_task;
-
-        trace->thr_type = RTAI_TRACE_THR_SHADOW;
-        }
-    else 
-        {
-        thread = xnpod_current_thread();            
-        trace->thr_type = RTAI_TRACE_THR_KRT;
-        }
-            
-    threadname = ( thread ? xnthread_name(thread)
-                   : ( task ? task->comm : "(null)" ));
-
-    rtai_trace_thr_name_cpy(trace, threadname);
-    trace->thr_pid = task ? task->pid : -1;
-}
-
-static void rtai_trace(const char *f, int l, const char *fn, const char *fmt, ...)
-{
-    char trace_buffer[64];
-    rtai_trace_t *trace;
-    size_t size = 0;
-    va_list args;
-    spl_t s;
-
-    va_start(args, fmt);
-    size = vsnprintf(trace_buffer, sizeof(trace_buffer), fmt, args);
-    va_end(args);
-
-    adeos_spin_lock_irqsave(&rtai_trace_lock, s);
-    trace = (rtai_trace_t *) xnheap_alloc(&rtai_trace_heap,
-                                          size+1+sizeof(rtai_trace_t));
-    adeos_spin_unlock_irqrestore(&rtai_trace_lock, s);
-    if(!trace)
-        return;
-
-    rtai_trace_thr_fill(trace);
-    trace->file = f;
-    trace->function = fn;
-    trace->line = l;
-    adeos_hw_tsc(trace->stamp);
-    inith(&trace->link);
-
-    if(size < sizeof(trace_buffer))
-        memcpy(trace->msg, trace_buffer, size+1);
-    else
-        {
-        va_start(args, fmt);
-        vsnprintf(trace->msg, size+1, fmt, args);
-        va_end(args);
-        }
-
-    adeos_spin_lock_irqsave(&rtai_trace_lock, s);
-    trace->cpu = xnarch_current_cpu();
-    appendq(&rtai_trace_queue, &trace->link);
-    adeos_spin_unlock_irqrestore(&rtai_trace_lock, s);
 }
 
 #if defined(CONFIG_PROC_FS)
@@ -330,25 +218,137 @@ void rtai_trace_delete_proc (void) {
 }
 #endif  /* CONFIG_PROC_FS */
 
-#if CONFIG_X86
-#  if CONFIG_X86_LOCAL_APIC
-#    define RTAI_TRACE_TIMER_IRQ          RTHAL_APIC_TIMER_IPI
-#    define linux_timer_irq_count(cpu) (irq_stat[(cpu)].apic_timer_irqs)
-#  else /* !CONFIG_X86_LOCAL_APIC */
-#    define RTAI_TRACE_TIMER_IRQ          RTHAL_8254_IRQ
-#    define linux_timer_irq_count(cpu) (kstat_cpu(cpu).irqs[RTHAL_8254_IRQ])
-#  endif /* CONFIG_X86_LOCAL_APIC */
-#  define tsc2ms(timestamp)            rthal_ulldiv((timestamp), cpu_khz, NULL)
-#endif /* CONFIG_X86 */
+void rtai_trace_dump(void)
+{
+    xnholder_t *holder;
+    unsigned count, i;
 
-#if CONFIG_IA64
-#  define RTAI_TRACE_TIMER_IRQ            RTHAL_TIMER_IRQ
-#  define linux_timer_irq_count(cpu)   (kstat_cpu(cpu).irqs[RTHAL_TIMER_IRQ])
-#  define tsc2ms(timestamp)            rthal_llimd((timestamp), 1000, \
-                                                   local_cpu_data->itc_freq)
-#endif /* CONFIG_IA64 */
+    count = countq(&rtai_trace_queue);
+    printk("Traces: %u events\n", count);
+    for(holder = getheadq(&rtai_trace_queue), i = 0; holder && i < count;
+        holder = nextq(&rtai_trace_queue, holder), ++i) {
+        rtai_trace_t *trace = link2trace(holder);
+        unsigned long hrs, mins, secs, nsecs;
+        unsigned long long diff_nsecs;
 
-static adomain_t rtai_trace_watchdog_domain;
+        diff_nsecs = xnarch_tsc_to_ns(trace->stamp - rtai_trace_start);
+        secs = (unsigned long) xnarch_ulldiv(diff_nsecs, 1000000000, &nsecs);
+        mins = secs / 60;
+        hrs = mins / 60;
+        secs %= 60;
+        mins %= 60;
+
+        printk("#%u/%u %02lu:%02lu:%02lu.%09lu CPU#%d %s(%s, pid=%d) %s: %d: %s:"
+               " %s\n",
+               i+1,
+               count,
+               hrs, mins, secs, nsecs,
+               trace->cpu,
+               trace->thr_name,
+               rtai_trace_thr_type2str[trace->thr_type],
+               trace->thr_pid,
+               rtai_trace_basename(trace->file),
+               trace->line,
+               trace->function,
+               trace->msg);
+    }
+}
+
+static void rtai_trace_thr_name_cpy(rtai_trace_t *trace, const char *threadname)
+{
+    char *last_dest = trace->thr_name+sizeof(trace->thr_name)-1;
+    const char *src = threadname;
+    char *dest = trace->thr_name;
+
+    while ((*dest++ = *src++) != '\0')
+        if (dest == last_dest)
+            {
+            *dest = '\0';
+            break;
+            }
+}
+
+static void rtai_trace_thr_fill(rtai_trace_t *trace)
+{
+    struct task_struct *task = NULL;
+    xnthread_t *thread = NULL;
+    char *threadname;
+
+    if(!nkpod || testbits(nkpod->status, XNPIDLE) || xnpod_root_p())
+        {
+        task = current;
+        trace->thr_type = RTAI_TRACE_THR_LINUX;
+            
+        if (nkpod && !testbits(nkpod->status, XNPIDLE))
+            {
+            thread = xnshadow_thread(task);
+            
+            if (thread)
+                trace->thr_type = RTAI_TRACE_THR_RELAXED;
+            }
+        else
+            thread = NULL;
+        }
+    else if (xnpod_shadow_p())
+        {
+        thread = xnpod_current_sched()->runthread;
+        task = xnthread_archtcb(thread)->user_task;
+
+        trace->thr_type = RTAI_TRACE_THR_SHADOW;
+        }
+    else 
+        {
+        thread = xnpod_current_thread();            
+        trace->thr_type = RTAI_TRACE_THR_KRT;
+        }
+            
+    threadname = ( thread ? xnthread_name(thread)
+                   : ( task ? task->comm : "(null)" ));
+
+    rtai_trace_thr_name_cpy(trace, threadname);
+    trace->thr_pid = task ? task->pid : -1;
+}
+
+static void rtai_trace(const char *f, int l, const char *fn, const char *fmt, ...)
+{
+    char trace_buffer[64];
+    rtai_trace_t *trace;
+    size_t size = 0;
+    va_list args;
+    spl_t s;
+
+    va_start(args, fmt);
+    size = vsnprintf(trace_buffer, sizeof(trace_buffer), fmt, args);
+    va_end(args);
+
+    adeos_spin_lock_irqsave(&rtai_trace_lock, s);
+    trace = (rtai_trace_t *) xnheap_alloc(&rtai_trace_heap,
+                                          size+1+sizeof(rtai_trace_t));
+    adeos_spin_unlock_irqrestore(&rtai_trace_lock, s);
+    if(!trace)
+        return;
+
+    rtai_trace_thr_fill(trace);
+    trace->file = f;
+    trace->function = fn;
+    trace->line = l;
+    trace->stamp = xnarch_get_cpu_tsc();
+    inith(&trace->link);
+
+    if(size < sizeof(trace_buffer))
+        memcpy(trace->msg, trace_buffer, size+1);
+    else
+        {
+        va_start(args, fmt);
+        vsnprintf(trace->msg, size+1, fmt, args);
+        va_end(args);
+        }
+
+    adeos_spin_lock_irqsave(&rtai_trace_lock, s);
+    trace->cpu = xnarch_current_cpu();
+    appendq(&rtai_trace_queue, &trace->link);
+    adeos_spin_unlock_irqrestore(&rtai_trace_lock, s);
+}
 
 static void rtai_trace_watchdog (unsigned irq)
 
@@ -372,7 +372,7 @@ static void rtai_trace_watchdog (unsigned irq)
         goto propagate;
         }
 
-    adeos_hw_tsc(timestamp);
+    timestamp = xnarch_get_cpu_tsc();
 
     if (!is_stalled[cpuid])
         {
@@ -427,7 +427,7 @@ int rtai_trace_watchdog_init(void)
     
     adeos_init_attr(&attr);
     attr.name = "Watchdog";
-    attr.domid = *(int *) "GDTW";
+    attr.domid = 0x57544447;
     attr.entry = &rtai_trace_watchdog_domain_entry;
     attr.priority = ADEOS_ROOT_PRI + 150;
 
@@ -451,10 +451,10 @@ int rtai_trace_init(void)
         return rc;
 
     /* Avoid page faults while in RTAI domain. */
-    memset(&rtai_trace_heap_mem[0], '\0', sizeof(rtai_trace_heap_mem));
+    memset(&rtai_trace_heap_mem[0], '\0', RTAI_TRACE_HEAPSIZE);
     
     rc = xnheap_init(&rtai_trace_heap, &rtai_trace_heap_mem,
-                     sizeof(rtai_trace_heap_mem), 256);
+                     RTAI_TRACE_HEAPSIZE, RTAI_TRACE_PAGESIZE);
     if(rc)
         return rc;
     
@@ -464,7 +464,7 @@ int rtai_trace_init(void)
     rtai_trace_init_proc();
 #endif /* CONFIG_PROC_FS */
 
-    adeos_hw_tsc(rtai_trace_start);
+    rtai_trace_start = xnarch_get_cpu_tsc();
     
     rtai_trace_callback = &rtai_trace;
 

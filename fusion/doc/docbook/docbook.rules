@@ -1,4 +1,6 @@
 # -*- makefile -*-
+SHELL=bash
+
 dbx_docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
 dbx_top_distdir=$(doc_top_distdir)

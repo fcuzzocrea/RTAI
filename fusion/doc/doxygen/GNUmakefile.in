@@ -418,14 +418,13 @@ install-htmldocs: $(HTML_DOCS:%=$(HTML_DOCSDIR)%)
 	    dest=$(DESTDIR)$(docdir)/html/`basename $$dir`; \
 	    $(mkinstalldirs) $$dest; \
 	    abs_dest=`cd $$dest && pwd` ; \
-            pushd $$dir; \
+            cd $$dir && { \
 	    for f in * ; do \
 	        case $$f in \
 		    *~|CVS|[mM]akefile*|GNUmakefile*);; \
 		    *) $(INSTALL_DATA) $$f $$abs_dest/$$f;; \
 	        esac; \
-	    done; \
-	    popd; \
+	    done; cd ..; } \
 	done
 
 install-pdfdocs: $(PDF_DOCS:%=$(PDF_DOCSDIR)%)
@@ -449,14 +448,13 @@ dist-htmldocs: $(HTML_DOCS:%=$(HTML_DOCSDIR)%)
 	for dir in $$docs; do \
 	    dest=$(GEN_DOC_DIST_ROOT)/html/`basename $$dir`; \
 	    $(mkinstalldirs) $$dest && abs_dest=`cd $$dest && pwd` && \
-            pushd $$dir && \
+            cd $$dir && { \
 	    for f in * ; do \
 		case $$f in \
 		    *~|CVS|[mM]akefile*|GNUmakefile*);; \
 		    *) $(INSTALL_DATA) $$f $$abs_dest/$$f;; \
 	        esac; \
-	    done; \
-	    popd ; \
+	    done; cd ..; } \
 	done
 
 dist-pdfdocs: $(PDF_DOCS:%=$(PDF_DOCSDIR)%)

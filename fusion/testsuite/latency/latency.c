@@ -3,13 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
+#include <getopt.h>
 #include <rtai/task.h>
 #include <rtai/timer.h>
 #include <rtai/sem.h>
-
-#define TASK_PERIOD_NS XNARCH_CALIBRATION_PERIOD
-
-#define SAMPLE_COUNT (1000000000 / TASK_PERIOD_NS)
 
 RT_TASK latency_task, display_task;
 
@@ -19,6 +16,10 @@ long minjitter = 10000000,
      maxjitter = -10000000,
      avgjitter = 0,
      overrun = 0;
+
+RTIME period = 0;
+
+#define SAMPLE_COUNT (1000000000 / period)
 
 #define HISTOGRAM_CELLS 100
 
@@ -48,10 +49,10 @@ void latency (void *cookie)
 	return;
 	}
 
-    period = rt_timer_ns2ticks(TASK_PERIOD_NS);
-    itime = rt_timer_read() + TASK_PERIOD_NS * 5;
+    period = rt_timer_ns2ticks(period);
+    itime = rt_timer_read() + period * 5;
     expected = rt_timer_ns2ticks(itime);
-    err = rt_task_set_periodic(NULL,itime,TASK_PERIOD_NS);
+    err = rt_task_set_periodic(NULL,itime,period);
 
     if (err)
 	{
@@ -157,16 +158,35 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
 int main (int argc, char **argv)
 
 {
-    int err;
+    int err, c;
 
-    if (argc > 1 && strncmp(argv[1],"--h",3) == 0)
-	/* ./latency --h[istogram] */
-	do_histogram = 1;
+    while ((c = getopt(argc,argv,"hp:")) != EOF)
+	switch (c)
+	    {
+	    case 'h':
+		/* ./latency --h[istogram] */
+		do_histogram = 1;
+		break;
+
+	    case 'p':
+
+		period = (RTIME)atoi(optarg);
+		break;
+
+	    default:
+		
+		fprintf(stderr,"usage: latency [-h][-p <period_ns>]\n");
+		exit(2);
+	    }
+
+    if (period == 0)
+	period = XNARCH_CALIBRATION_PERIOD;
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
 
     setvbuf(stdout, (char *)NULL, _IOLBF, 0);
+    printf("== Sampling period: %llu ns\n",period);
 
     err = rt_task_create(&display_task,"display",0,2,0);
 

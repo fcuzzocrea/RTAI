@@ -1,3 +1,8 @@
+2004-11-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/latency/latency.c (main): Allow for setting the
+	sampling period.
+
 2004-11-25  Philippe Gerum  <rpm@xenomai.org>
 
 	* fusion: Pass RTAI_KMOD_CFLAGS as needed.

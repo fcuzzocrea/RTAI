@@ -291,39 +291,6 @@ static inline int rtModifyIParam(int i, int param)
     return -1;
 }
 
-static inline int rtModifyUParam(int i, double param)
-{
-  int strindex, parindex;
- 
-    if (i >= 0 && i < NUPAR1) {
-      strindex=i / 5;
-      parindex=i%5;
-      if(strindex<N_SENS) {
-	inpDevStr[strindex].dParam[parindex]=param;
-	if (verbose) {
-	  printf("%s [inp port %d] -> p%d : %le.\n", inpDevStr[strindex].IOName,
-		 strindex,
-		 parindex,
-		 inpDevStr[strindex].dParam[parindex]);
-	}
-	return 0;
-      }
-      else{
-	strindex-=N_SENS;
-	outDevStr[strindex].dParam[parindex]=param;
-	if (verbose) {
-	  printf("%s [inp port %d] -> p%d : %le.\n", outDevStr[strindex].IOName,
-		 strindex,
-		 parindex,
-		 outDevStr[strindex].dParam[parindex]);
-	}
-	return 0;
-
-      }
-    }
-    return -1;
-}
-
 static void *rt_BaseRate(void *args)
 {
     char name[7];
@@ -374,10 +341,8 @@ static inline void modify_any_param(int index, double param)
 {
     if (index < NTOTRPAR1) {
 	rtModifyRParam(index, &param);
-    } else if (index < (NTOTRPAR1 + NTOTIPAR1)) {
-	rtModifyIParam(index -= NTOTRPAR1, (int)param);
     } else {
-	rtModifyUParam(index -= (NTOTRPAR1 + NTOTIPAR1), param);
+	rtModifyIParam(index -= NTOTRPAR1, (int)param);
     }
 }
 
@@ -397,8 +362,6 @@ static void *rt_HostInterface(void *args)
 
     sem_post(&err_sem);
 
-    NUPAR1=5*(N_ACT+N_SENS);
-
     while (!endInterface) {
 	task = rt_receive(0, &Request);
 	if (endInterface) break;
@@ -414,7 +377,7 @@ static void *rt_HostInterface(void *args)
    	        rtParam.nRows = 1;
 		rtParam.nCols = 1;
 		
-		rt_return(task, (isRunning << 16) | ((NTOTRPAR1 + NTOTIPAR1 + NUPAR1) & 0xFFFF));
+		rt_return(task, (isRunning << 16) | ((NTOTRPAR1 + NTOTIPAR1) & 0xFFFF));
 		rt_receivex(task, &Request, 1, &len);
 	        rt_returnx(task, &rtParam, sizeof(rtParam));
 
@@ -441,24 +404,6 @@ static void *rt_HostInterface(void *args)
 		  }
 		}
 
-		for (i = 0; i < N_SENS; i++) {
-		  sprintf(rtParam.blockName,"%s/%s [inp port %d]",rtParam.modelName,inpDevStr[i].IOName,i+1);
-		  for(j=0;j<5;j++) {
-		    rt_receivex(task, &Request, 1, &len);
-		    sprintf(rtParam.paramName,"p%d",j+1);
-		    rtParam.dataValue[0] = inpDevStr[i].dParam[j];
-		    rt_returnx(task, &rtParam, sizeof(rtParam));
-		  }
-		}
-		for (i = 0; i < N_ACT; i++) {
-		  sprintf(rtParam.blockName,"%s/%s [out port %d]",rtParam.modelName,outDevStr[i].IOName,i+1);
-		  for(j=0;j<5;j++) {
-		    rt_receivex(task, &Request, 1, &len);
-		    sprintf(rtParam.paramName,"p%d",j+1);
-		    rtParam.dataValue[0] = outDevStr[i].dParam[j];
-		    rt_returnx(task, &rtParam, sizeof(rtParam));
-		  }
-		}
 		while (1) {
 		    rt_receivex(task, &Idx, sizeof(int), &len);
 		    if (Idx < 0) {
@@ -561,8 +506,6 @@ static void *rt_HostInterface(void *args)
 		  else     Idx += lenRPAR1[i-1];
 		  for(j=0;j<lenRPAR1[i];j++) {
 		    rt_receivex(task, &Request, 1, &len);
-/* 		    if(i==0) Idx = 0; */
-/* 		    else     Idx = lenRPAR1[i-1]; */
 		    sprintf(rtParam.paramName, "Value[%d]",j);
 		    rtParam.dataValue[0] = RPAR1[Idx+j];
 		    rt_returnx(task, &rtParam, sizeof(rtParam));
@@ -580,24 +523,6 @@ static void *rt_HostInterface(void *args)
 		  }
 		}
 
-		for (i = 0; i < N_SENS; i++) {
-		  sprintf(rtParam.blockName,"%s/%s [inp port %d]",rtParam.modelName,inpDevStr[i].IOName,i);
-		  for(j=0;j<5;j++) {
-		    rt_receivex(task, &Request, 1, &len);
-		    sprintf(rtParam.paramName,"p%d",j+1);
-		    rtParam.dataValue[0] = inpDevStr[i].dParam[j];
-		    rt_returnx(task, &rtParam, sizeof(rtParam));
-		  }
-		}
-		for (i = 0; i < N_ACT; i++) {
-		  sprintf(rtParam.blockName,"%s/%s [out port %d]",rtParam.modelName,outDevStr[i].IOName,i);
-		  for(j=0;j<5;j++) {
-		    rt_receivex(task, &Request, 1, &len);
-		    sprintf(rtParam.paramName,"p%d",j+1);
-		    rtParam.dataValue[0] = outDevStr[i].dParam[j];
-		    rt_returnx(task, &rtParam, sizeof(rtParam));
-		  }
-		}
 		break;
 	    }
 	    case 'd': {

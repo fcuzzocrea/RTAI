@@ -610,6 +610,7 @@ void xnshadow_unmap (xnthread_t *thread) /* Must be called by the task deletion 
 
 {
     struct task_struct *task = xnthread_archtcb(thread)->user_task;
+    unsigned muxid, magic;
 
     if (!task)
 	return;
@@ -624,6 +625,20 @@ void xnshadow_unmap (xnthread_t *thread) /* Must be called by the task deletion 
 	       adp_current->name,
 	       task->state);
 #endif
+
+    magic = xnthread_get_magic(thread);
+
+    for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
+	{
+	if (muxtable[muxid].magic == magic)
+            {
+            if(xnarch_atomic_dec_and_test(&muxtable[muxid].refcnt))
+                /* We were the last thread, decrement the counter, since it was
+                   incremented by the first "attach" operation. */
+                xnarch_atomic_dec(&muxtable[muxid].refcnt);
+            break;
+            }
+        }
 
     xnshadow_ptd(task) = NULL;
 
@@ -730,9 +745,22 @@ void xnshadow_map (xnthread_t *thread,
 		   int *u_syncp) /* user-space pointer */
 {
     int autostart = !(syncpid && u_syncp);
+    unsigned muxid, magic;
 
     /* Prevent Linux from migrating us from now on. */
     set_cpus_allowed(current, cpumask_of_cpu(smp_processor_id()));
+
+    /* Increment the interface reference count. */
+    magic = xnthread_get_magic(thread);
+
+    for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
+	{
+	if (muxtable[muxid].magic == magic)
+            {
+            xnarch_atomic_inc(&muxtable[muxid].refcnt);
+            break;
+            }
+        }
 
     current->cap_effective |= CAP_TO_MASK(CAP_IPC_LOCK)|CAP_TO_MASK(CAP_SYS_RAWIO)|CAP_TO_MASK(CAP_SYS_NICE);
 
@@ -849,10 +877,12 @@ static int xnshadow_attach_skin (struct task_struct *curr,
 	{
 	if (muxtable[muxid].magic == magic)
 	    {
-	    /* Increment the reference count now, so that the
-	       interface cannot be removed under our feet. */
+	    /* Increment the reference count now (actually, only the first call
+	       to xnshadow_attach_skin really increments the counter), so that
+	       the interface cannot be removed under our feet. */
 
-	    xnarch_atomic_inc(&muxtable[muxid].refcnt);
+            if (!xnarch_atomic_inc_and_test(&muxtable[muxid].refcnt))
+                xnarch_atomic_dec(&muxtable[muxid].refcnt);
 
 	    xnlock_put_irqrestore(&nklock,s);
 
@@ -914,8 +944,6 @@ static int xnshadow_detach_skin (struct task_struct *curr, int muxid)
 	   it until the event callback had a chance to run, possibly
 	   releasing the current critical section internally. */
 	muxtable[muxid].eventcb(XNSHADOW_CLIENT_DETACH);
-
-    xnarch_atomic_dec(&muxtable[muxid].refcnt);
 
     /* Find all active shadow threads belonging to the detached skin
        and delete them. Sidenote: there can only be one active primary
@@ -1677,7 +1705,7 @@ int xnshadow_register_skin (const char *name,
 	    muxtable[muxid].systab = systab;
 	    muxtable[muxid].nrcalls = nrcalls;
 	    muxtable[muxid].magic = magic;
-	    xnarch_atomic_set(&muxtable[muxid].refcnt,0);
+	    xnarch_atomic_set(&muxtable[muxid].refcnt,-1);
 	    muxtable[muxid].eventcb = eventcb;
 
 	    xnlock_put_irqrestore(&nklock,s);
@@ -1708,7 +1736,7 @@ int xnshadow_unregister_skin (int muxid)
 
     xnlock_get_irqsave(&nklock,s);
 
-    if (xnarch_atomic_get(&muxtable[muxid].refcnt) == 0)
+    if (xnarch_atomic_get(&muxtable[muxid].refcnt) == -1)
 	{
 	muxtable[muxid].systab = NULL;
 	muxtable[muxid].nrcalls = 0;
@@ -1789,7 +1817,7 @@ int xnshadow_init (void)
 #ifdef CONFIG_SMP
     adeos_virtualize_irq_from(&irq_shield,
                               ADEOS_SERVICE_IPI1,
-                              (void (*)(unsigned))&irq_shield_ipi_handler,
+                              (void (*)(unsigned)) &irq_shield_ipi_handler,
                               NULL,
                               IPIPE_HANDLE_MASK);
 #endif /* CONFIG_SMP */

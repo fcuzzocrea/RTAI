@@ -164,7 +164,9 @@ int main (int argc, char **argv)
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
-    
+
+    setvbuf(stdout, (char *)NULL, _IOLBF, 0);
+
     err = rt_task_create(&display_task,"display",0,2,0);
 
     if (err)

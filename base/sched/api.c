@@ -312,6 +312,7 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 	flags = rt_global_save_flags_and_cli();
 	if (!task->owndres) {
 		if (!task->suspdepth) {
+			int cpuid = rtai_cpuid();
 			if ((task->resume_time = time) > rt_time_h) {
 				task->suspdepth++;
 				rem_ready_task(task);

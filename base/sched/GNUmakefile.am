@@ -28,7 +28,7 @@ endif
 if CONFIG_RTAI_SCHED_UP
 libsched_up_a_SOURCES = sched.c sys.c api.c
 
-rtai_up_extradef = -DUSE_RTAI_TASK=1
+rtai_up_extradef = -DUSE_RTAI_TASKS=1
 
 if CONFIG_KBUILD
 rtai_up.ko: @RTAI_KBUILD_ENV@
@@ -46,7 +46,7 @@ rtai_up.o: libsched_up.a $(builtins_objlist)
 
 libsched_up_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
-	-DUSE_RTAI_TASK=1 \
+	-DUSE_RTAI_TASKS=1 \
 	-I$(top_srcdir)/base/include \
 	-I../include
 endif
@@ -57,7 +57,7 @@ endif
 if CONFIG_RTAI_SCHED_MUP
 libsched_mup_a_SOURCES = sched.c sys.c api.c
 
-rtai_mup_extradef = -DUSE_RTAI_TASK=1
+rtai_mup_extradef = -DUSE_RTAI_TASKS=1
 
 if CONFIG_KBUILD
 rtai_mup.ko: @RTAI_KBUILD_ENV@
@@ -75,7 +75,7 @@ rtai_mup.o: libsched_mup.a $(builtins_objlist)
 
 libsched_mup_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
-	-DUSE_RTAI_TASK=1 \
+	-DUSE_RTAI_TASKS=1 \
 	-I$(top_srcdir)/base/include \
 	-I../include
 
@@ -107,7 +107,7 @@ rtai_mup-noapic.o: libsched_mup-noapic.a $(builtins_objlist)
 
 libsched_mup_noapic_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
-	-DUSE_RTAI_TASK=1 \
+	-DUSE_RTAI_TASKS=1 \
 	-I$(top_srcdir)/base/include \
 	-I../include
 endif
@@ -121,7 +121,7 @@ endif
 if CONFIG_RTAI_SCHED_SMP
 libsched_smp_a_SOURCES = sched.c sys.c api.c
 
-rtai_smp_extradef = -DUSE_RTAI_TASK=1
+rtai_smp_extradef = -DUSE_RTAI_TASKS=1
 
 if CONFIG_KBUILD
 rtai_smp.ko: @RTAI_KBUILD_ENV@
@@ -139,7 +139,7 @@ rtai_smp.o: libsched_smp.a $(builtins_objlist)
 
 libsched_smp_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
-	-DUSE_RTAI_TASK=1 \
+	-DUSE_RTAI_TASKS=1 \
 	-I$(top_srcdir)/base/include \
 	-I../include
 
@@ -170,7 +170,7 @@ rtai_smp-noapic.o: libsched_smp-noapic.a $(builtins_objlist)
 
 libsched_smp_noapic_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
-	-DUSE_RTAI_TASK=1 \
+	-DUSE_RTAI_TASKS=1 \
 	-I$(top_srcdir)/base/include \
 	-I../include
 endif
@@ -184,7 +184,7 @@ endif
 if CONFIG_RTAI_SCHED_LXRT
 libsched_lxrt_a_SOURCES = sched.c sys.c api.c
 
-rtai_lxrt_extradef = -D__RTAI_LXRT__
+rtai_lxrt_extradef = -D__RTAI_LXRT__ -DUSE_RTAI_TASKS=0
 
 if CONFIG_KBUILD
 rtai_lxrt.ko: @RTAI_KBUILD_ENV@
@@ -202,6 +202,7 @@ rtai_lxrt.o: libsched_lxrt.a $(builtins_objlist)
 
 libsched_lxrt_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
+	-DUSE_RTAI_TASKS=0 \
 	-I$(top_srcdir)/base/include \
 	-I../include
 
@@ -215,7 +216,7 @@ if CONFIG_SMP
 if CONFIG_X86
 libsched_lxrt_noapic_a_SOURCES = sched.c sys.c api.c
 
-rtai_lxrt_noapic_extradef = -D__RTAI_LXRT__
+rtai_lxrt_noapic_extradef = -D__RTAI_LXRT__ -DUSE_RTAI_TASKS=0
 
 rtai_lxrt_extradef += -D__USE_APIC__
 
@@ -235,6 +236,7 @@ rtai_lxrt-noapic.o: libsched_lxrt-noapic.a $(builtins_objlist)
 
 libsched_lxrt_noapic_a_CPPFLAGS = \
 	@RTAI_KMOD_CFLAGS@ \
+	-DUSE_RTAI_TASKS=0 \
 	-I$(top_srcdir)/base/include \
 	-I../include
 

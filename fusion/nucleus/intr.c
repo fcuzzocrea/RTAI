@@ -34,6 +34,7 @@
 
 #include <nucleus/pod.h>
 #include <nucleus/intr.h>
+#include <nucleus/ltt.h>
 
 xnintr_t nkclock;
 
@@ -347,6 +348,8 @@ static void xnintr_irq_handler (unsigned irq, void *cookie)
 
     xnarch_memory_barrier();
 
+    xnltt_log_event(rtai_ev_ienter,irq);
+
     ++sched->inesting;
     s = intr->isr(intr);
     --sched->inesting;
@@ -370,6 +373,8 @@ static void xnintr_irq_handler (unsigned irq, void *cookie)
 	__clrbits(sched->status,XNHTICK);
 	xnarch_relay_tick();
 	}
+
+    xnltt_log_event(rtai_ev_iexit,irq);
 }
 
 /*@}*/

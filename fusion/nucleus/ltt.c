@@ -21,34 +21,53 @@
 
 #include <linux/config.h>
 #include <linux/init.h>
-#include <linux/ltt-core.h>
+#include <linux/module.h>
 #include <stdarg.h>
-
-static int ltt_event;
+#include <nucleus/ltt.h>
 
 int __init xnltt_mount (void)
 
 {
-    /* Temporary */
-    ltt_event = ltt_create_event("FUSION",
-				 "%s:%d",
-				 LTT_CUSTOM_EV_FORMAT_TYPE_STR,
-				 NULL);
+    int ev, evid;
+
+    /* Create all custom LTT events we need. */
+
+    for (ev = 0; xnltt_evtable[ev].ltt_label != NULL; ev++)
+        {
+	evid = ltt_create_event(xnltt_evtable[ev].ltt_label,
+				xnltt_evtable[ev].ltt_format,
+				LTT_CUSTOM_EV_FORMAT_TYPE_STR,
+				NULL);
+	if (evid < 0)
+	    {
+	    while (--ev >= 0)
+	        {
+		xnltt_evtable[ev].ltt_evid = -1;
+		ltt_destroy_event(xnltt_evtable[ev].ltt_evid);
+		}
+
+	    return evid;
+	    }
+
+	xnltt_evtable[ev].ltt_evid = evid;
+	}
+
     return 0;
 }
 
 void __exit xnltt_umount (void)
 
 {
-    ltt_destroy_event(ltt_event);
+    int ev;
+
+    for (ev = 0; xnltt_evtable[ev].ltt_evid != -1; ev++)
+	ltt_destroy_event(xnltt_evtable[ev].ltt_evid);
 }
 
-void xnltt_log_mark (int mark)
+struct xnltt_evmap xnltt_evtable[] = {
 
-{
-}
+    [rtai_ev_ienter] = { "RTAI i-enter", "IRQ=%d", -1 },
+    [rtai_ev_iexit] = { "RTAI i-exit", "IRQ=%d", -1 },
+};
 
-void xnltt_log_info (const char *fmt, ...)
-
-{
-}
+EXPORT_SYMBOL(xnltt_evtable);

@@ -25,22 +25,32 @@
 
 #if defined(__KERNEL__) && defined(CONFIG_LTT)
 
-#define log_mark(m) xnltt_log_event(m)
-#define log_info(args...) xnltt_log_info( #args )
+#include <linux/ltt-core.h>
+
+struct xnltt_evmap {
+
+    char *ltt_label;	/* !< Event label (creation time). */
+    char *ltt_format;	/* !< Event format (creation time). */
+    int ltt_evid;	/* !< LTT custom event id. */
+};
+
+#define rtai_ev_ienter  0
+#define rtai_ev_iexit   1
+
+#define XNLTT_MAX_EVENTS 64
+
+#define xnltt_log_event(ev, args...) \
+ltt_log_std_formatted_event(xnltt_evtable[ev].ltt_evid, ##args)
 
 int xnltt_mount(void);
 
 void xnltt_umount(void);
 
-void xnltt_log_mark(int mark);
-
-void xnltt_log_info(const char *fmt,
-		    ...);
+extern struct xnltt_evmap xnltt_evtable[];
 
 #else /* !(__KERNEL__ && CONFIG_LTT) */
 
-#define log_mark(m);
-#define log_info(args...);
+#define xnltt_log_event(ev, args...); /* Eat the semi-colon. */
 
 #endif /* __KERNEL__ && CONFIG_LTT */
 

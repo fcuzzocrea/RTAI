@@ -1,3 +1,11 @@
+2004-11-19  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: fusion-0.6.4
+
+2004-11-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8 final.
+
 2004-11-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/mutex.h: Fix forward declaration of RT_TASK.

@@ -1,0 +1,5 @@
+sed s/xxx/$1/ template.c > $1.c
+cat devices.h devtmpl.h > dev.h
+sed s/xxx/$1/ dev.h > devices.h
+rm dev.h
+

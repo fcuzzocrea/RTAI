@@ -23,20 +23,30 @@ if test "x$1" = x--verbose; then
   shift
 fi
 
-qual_target=$1
-target_dir=`echo $qual_target|cut -d: -f1`
-target_name=`echo $qual_target|cut -s -d: -f2`
-if test "x$target_dir" = x; then
-   target_dir=`pwd`
+if test "x$1" = x--; then
+  target_dir=`pwd`
+  target_name=default
+else
+  qual_target=$1
+  shift
+  target_dir=`echo $qual_target|cut -d: -f1`
+  target_name=`echo $qual_target|cut -s -d: -f2`
+  if test "x$target_dir" = x; then
+     target_dir=`pwd`
+  fi
+  if test "x$target_name" = x; then
+     if `echo $target_dir | grep -q /`; then
+        target_name=default
+     else
+        target_name=$target_dir
+        target_dir=.
+     fi
+  fi
 fi
-if test "x$target_name" = x; then
-   if `echo $target_dir | grep -q /`; then
-      target_name=default
-   else
-      target_name=$target_dir
-      target_dir=.
-   fi
+if test "x$1" = x--; then
+   shift
 fi
+cmdargs=$*
 
 run_info_file=$target_dir/.runinfo
 
@@ -224,11 +234,11 @@ while test -n "$target_info" ; do
 	e=`echo $* | sed -e "s,\\(.*\\)&[$spc]*$,\\1,"`
         test "$e" = "$*" && waitflag=1 || waitflag=0
 	set -- $e
-	test $verbose = 1 && echo "+ spawning command ($*)"
+	test $verbose = 1 && echo "+ spawning command ($* $cmdargs)"
 	if test $waitflag = 1; then
-           $suflag $*
+           $suflag $* $cmdargs
         else
-           $suflag $* &
+           $suflag $* $cmdargs &
 	   children_pids="$! $children_pids"
 	fi
 	;;

@@ -77,7 +77,7 @@ void dump_histogram (void)
 	long hits = histogram[n];
 
 	if (hits)
-	    printf("%d.%d - %d.%d%%: %ld\n",n / 10,n % 10,(n + 1) / 10,(n + 1) % 10,hits);
+	    fprintf(stderr,"%d.%d - %d.%d%%: %ld\n",n / 10,n % 10,(n + 1) / 10,(n + 1) % 10,hits);
 	}
 }
 

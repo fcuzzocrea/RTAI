@@ -137,7 +137,7 @@ void dump_histogram (void)
 	long hits = histogram[n];
 
 	if (hits)
-	    printf("%d - %d us: %ld\n",n,n + 1,hits);
+	    fprintf(stderr,"%d - %d us: %ld\n",n,n + 1,hits);
 	}
 }
 

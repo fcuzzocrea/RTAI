@@ -2599,11 +2599,12 @@ static void __shadow_delete_hook (xnthread_t *thread)
 int __syscall_pkg_init (void)
 
 {
-    __muxid = xnshadow_register_skin("native",
-				     RTAI_SKIN_MAGIC,
-				     sizeof(__systab) / sizeof(__systab[0]),
-				     __systab,
-				     NULL);
+    __muxid =
+	xnshadow_register_interface("native",
+				    RTAI_SKIN_MAGIC,
+				    sizeof(__systab) / sizeof(__systab[0]),
+				    __systab,
+				    NULL);
     if (__muxid < 0)
 	return -ENOSYS;
 
@@ -2616,5 +2617,5 @@ void __syscall_pkg_cleanup (void)
 
 {
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,&__shadow_delete_hook);
-    xnshadow_unregister_skin(__muxid);
+    xnshadow_unregister_interface(__muxid);
 }

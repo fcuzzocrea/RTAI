@@ -25,8 +25,6 @@
 
 #define XENOMAI_MUX_NR 16
 
-#define XNSHADOW_MAXRQ 16
-
 /* Events sent to the interface callback */
 #define XNSHADOW_CLIENT_ATTACH  0
 #define XNSHADOW_CLIENT_DETACH  1
@@ -81,13 +79,13 @@ void xnshadow_sync_post(pid_t syncpid,
 
 void xnshadow_exit(void);
 
-int xnshadow_register_skin(const char *name,
-			   unsigned magic,
-			   int nrcalls,
-			   xnsysent_t *systab,
-			   int (*eventcb)(int event));
+int xnshadow_register_interface(const char *name,
+				unsigned magic,
+				int nrcalls,
+				xnsysent_t *systab,
+				int (*eventcb)(int event));
 
-int xnshadow_unregister_skin(int muxid);
+int xnshadow_unregister_interface(int muxid);
 
 unsigned long long xnshadow_ts2ticks(const struct timespec *v);
 

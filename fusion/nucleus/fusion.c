@@ -562,11 +562,12 @@ static int xnfusion_event_cb (int event)
 int xnfusion_mount (void)
 
 {
-    __fusion_muxid = xnshadow_register_skin("fusion",
-					    FUSION_SKIN_MAGIC,
-					    sizeof(__systab) / sizeof(__systab[0]),
-					    __systab,
-					    &xnfusion_event_cb);
+    __fusion_muxid =
+	xnshadow_register_interface("fusion",
+				    FUSION_SKIN_MAGIC,
+				    sizeof(__systab) / sizeof(__systab[0]),
+				    __systab,
+				    &xnfusion_event_cb);
     if (__fusion_muxid < 0)
 	{
 	xnpod_shutdown(XNPOD_NORMAL_EXIT);
@@ -591,7 +592,7 @@ int xnfusion_umount (void)
 
     xnpod_shutdown(XNPOD_NORMAL_EXIT);
 
-    xnshadow_unregister_skin(__fusion_muxid);
+    xnshadow_unregister_interface(__fusion_muxid);
 
     return 0;
 }

@@ -115,10 +115,11 @@
 #include <asm/uaccess.h>
 
 /* Our own set of copy-to/from-user macros which must bypass
-   might_sleep() checks. The caller cannot fault so we don't care of
-   the result. The apparently preposterous do-while bracketing just
-   helps silencing GCC's "warn_unused_result" attribute on the related
-   kernel macros. */
+   might_sleep() checks. The caller cannot fault and is expected to
+   have checked for bad range before using the copy macros, so we
+   should not have to care about the result. The apparently
+   preposterous do-while bracketing just helps silencing GCC's
+   "warn_unused_result" attribute on the related kernel macros. */
 #define __xn_copy_from_user(task,dstP,srcP,n)  \
 do { \
     if (__copy_from_user_inatomic(dstP,srcP,n)) \

@@ -84,8 +84,6 @@ int pthread_init_rt (const char *name,
     if (__fusion_muxid == 0 && __init_skin() < 0)
 	return -ENOSYS;
 
-    XENOMAI_SYSCALL1(__xn_sys_migrate,FUSION_LINUX_DOMAIN);
-
     mlockall(MCL_CURRENT|MCL_FUTURE);
     memset(stack,0,sizeof(stack));
 
@@ -139,7 +137,6 @@ int pthread_start_rt (void *khandle)
 int pthread_sync_rt (int *syncp)
 
 {
-    XENOMAI_SYSCALL1(__xn_sys_migrate,FUSION_LINUX_DOMAIN);
     return XENOMAI_SYSCALL1(__xn_sys_sync,syncp);
 }
 

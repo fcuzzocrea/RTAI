@@ -1,3 +1,10 @@
+2004-01-07  Michael Neuhauser <mike@firmix.at>
+
+	* testsuite/user/switches.c: set stack size of the threads herd to
+	  a reasonable size, to allow execution with relatively small RAM
+	  availability (Paolo Mantegazza added a copy using of RTAI proper
+	  user psace threads).
+
 2004-01-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c, base/include/asm-i38/rtai_lxrt.h: modified

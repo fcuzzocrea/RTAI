@@ -6,7 +6,7 @@ CROSS_COMPILE = @CROSS_COMPILE@
 
 libhal_SRC = hal.c 
 
-if CONFIG_RTAI_HW_SMI_WORKAROUND
+if CONFIG_RTAI_HW_SMI_DETECT
 libhal_SRC += smi.c
 endif
 

@@ -8,7 +8,7 @@
 #include <pthread.h>
 #include <nucleus/fusion.h>
 
-#define SAMPLING_PERIOD_US 1000	/* 1Khz sampling period. */
+#define SAMPLING_PERIOD_US 500	/* 2Khz sampling period. */
 
 static sem_t semX, semA, semB;
 

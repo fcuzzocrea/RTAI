@@ -102,7 +102,7 @@ static int rn_destroy_internal (psosrn_t *rn)
 
     removeq(&psosrnq,&rn->link);
     rc = xnsynch_destroy(&rn->synchbase);
-    xnheap_destroy(&rn->heapbase,NULL);
+    xnheap_destroy(&rn->heapbase,NULL,NULL);
     psos_mark_deleted(rn);
 
     xnlock_put_irqrestore(&nklock,s);

@@ -243,8 +243,11 @@ int xnheap_init (xnheap_t *heap,
 
 /*! 
  * \fn void xnheap_destroy(xnheap_t *heap,
-		           void (*flushfn)(void *extaddr,
-				           u_long extsize));
+		           void (*flushfn)(xnheap_t *heap,
+			                   void *extaddr,
+				           u_long extsize,
+					   void *cookie),
+					   void *cookie);
  * \brief Destroys a memory heap.
  *
  * Destroys a memory heap.
@@ -255,13 +258,17 @@ int xnheap_init (xnheap_t *heap,
  * will be called for each extent attached to the heap. This routine
  * can be used by the calling code to further release the heap memory.
  *
+ * @param cookie If @a flushfn is non-NULL, @a cookie is an opaque
+ * pointer which will be passed unmodified to @a flushfn.
+
  * Side-effect: This routine does not call the rescheduling procedure.
  *
  * Context: This routine must be called on behalf of a thread.
  */
 
 void xnheap_destroy (xnheap_t *heap,
-		     void (*flushfn)(void *extaddr,
+		     void (*flushfn)(xnheap_t *heap,
+				     void *extaddr,
 				     u_long extsize,
 				     void *cookie),
 		     void *cookie)

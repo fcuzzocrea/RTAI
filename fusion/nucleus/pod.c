@@ -390,6 +390,14 @@ fail:
     return 0;
 }
 
+static void xnpod_flush_heap (xnheap_t *heap,
+			      void *extaddr,
+			      u_long extsize,
+			      void *cookie)
+{
+    xnarch_sysfree(extaddr,extsize);
+}
+
 /*! 
  * \fn void xnpod_shutdown(int xtype)
  * \brief Default shutdown handler.
@@ -456,7 +464,7 @@ void xnpod_shutdown (int xtype)
 
     xnlock_get_irqsave(&nklock,s);
 
-    xnheap_destroy(&kheap,&xnarch_sysfree);
+    xnheap_destroy(&kheap,&xnpod_flush_heap,NULL);
 
     nkpod = NULL;
 

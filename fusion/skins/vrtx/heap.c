@@ -104,7 +104,7 @@ static void heap_destroy_internal (vrtxheap_t *heap)
     removeq(&vrtxheapq,&heap->link);
     vrtx_mark_deleted(heap);
     xnlock_put_irqrestore(&nklock,s);
-    xnheap_destroy(&heap->sysheap,NULL);
+    xnheap_destroy(&heap->sysheap,NULL,NULL);
 }
 
 

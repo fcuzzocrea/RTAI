@@ -137,7 +137,8 @@ int xnheap_init(xnheap_t *heap,
 		u_long pagesize);
 
 void xnheap_destroy(xnheap_t *heap,
-		    void (*flushfn)(void *extaddr,
+		    void (*flushfn)(xnheap_t *heap,
+				    void *extaddr,
 				    u_long extsize,
 				    void *cookie),
 		    void *cookie);

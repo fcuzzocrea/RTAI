@@ -600,7 +600,7 @@
 	  interrupts).</para>
 
 	  <para><emphasis>Priority.</emphasis> ISRs are always
-	  considered as prioritary over thread execution. Interrupt
+	  considered as priority over thread execution. Interrupt
 	  prioritization is left to the underlying
 	  hardware.</para>
 

@@ -2094,7 +2094,7 @@ void xnpod_switch_fpu (xnsched_t *sched)
  * \fn void xnpod_preempt_current_thread(xnsched_t *sched);
  * \brief Preempts the current thread.
  *
- * Preempts the running thread (because a more prioritary thread has
+ * Preempts the running thread (because a higher priority thread has
  * just been readied).  The thread is re-inserted to the front of its
  * priority group in the ready thread queue. Must must be called
  * with nklock locked, interrupts off.
@@ -2135,7 +2135,7 @@ static inline void xnpod_preempt_current_thread (xnsched_t *sched)
  * needed. xnpod_schedule() actually switches threads if:
  *
  * - the running thread has been blocked or deleted.
- * - or, the running thread has become less prioritary than the first
+ * - or, the running thread has become less priority than the first
  *   ready to run thread.
  * - or, the running thread does not lead no more the ready threads
  * (round-robin).
@@ -2150,7 +2150,7 @@ static inline void xnpod_preempt_current_thread (xnsched_t *sched)
  * can be done in a row, waking threads up, blocking others, without
  * being immediately translated into the corresponding context
  * switches, like it would be necessary would it appear that a more
- * prioritary thread than the current one became runnable for
+ * priority thread than the current one became runnable for
  * instance. When all changes have been applied, the rescheduling
  * procedure is then called to consider those changes, and possibly
  * replace the current thread by another.
@@ -2364,7 +2364,7 @@ void xnpod_schedule (void)
  *
  * This internal routine should NEVER be used directly by the upper
  * interfaces. It reinserts the given thread into the ready queue then
- * switches to the most prioritary runnable thread. It must be called
+ * switches to the highest priority runnable thread. It must be called
  * with nklock locked, interrupts off.
  *
  * @param thread The descriptor address of the thread to reinsert into
@@ -3108,7 +3108,7 @@ int xnpod_announce_tick (xnintr_t *intr)
             {
             /* The thread can be preempted and undergoes a round-robin
                scheduling. Round-robin time credit is only consumed by a
-               running thread. Thus, if a more prioritary thread outside
+               running thread. Thus, if a higher priority thread outside
                the priority group which started the time slicing grabs the
                processor, the current time credit of the preempted thread
                is kept unchanged, and will not be reset when this thread

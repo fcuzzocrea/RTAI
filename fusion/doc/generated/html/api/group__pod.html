@@ -706,7 +706,7 @@ Preempts the current thread.
 <p>
 <p><b>For internal use only.</b></p>
 <p>
-Preempts the running thread (because a more prioritary thread has just been readied). The thread is re-inserted to the front of its priority group in the ready thread queue. Must must be called with nklock locked, interrupts off. </p>
+Preempts the running thread (because a higher priority thread has just been readied). The thread is re-inserted to the front of its priority group in the ready thread queue. Must must be called with nklock locked, interrupts off. </p>
     </td>
   </tr>
 </table>
@@ -1046,7 +1046,7 @@ Hidden rescheduling procedure.
 <p>
 <p><b>For internal use only.</b></p>
 <p>
-This internal routine should NEVER be used directly by the upper interfaces. It reinserts the given thread into the ready queue then switches to the most prioritary runnable thread. It must be called with nklock locked, interrupts off.<p>
+This internal routine should NEVER be used directly by the upper interfaces. It reinserts the given thread into the ready queue then switches to the highest priority runnable thread. It must be called with nklock locked, interrupts off.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>thread</em>&nbsp;</td><td>The descriptor address of the thread to reinsert into the ready queue.</td></tr>

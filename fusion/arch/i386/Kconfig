@@ -70,12 +70,7 @@ source "skins/Kconfig"
 
 menu "Drivers"
 
-config RTAI_DRIVERS_16550A
-	depends on RTAI_SKIN_NATIVE
-	bool "16650A UART driver"
-	default n
-	help
-	16650A UART driver.
+source "drivers/16550A/Kconfig"
 
 endmenu
 

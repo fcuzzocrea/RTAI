@@ -1,5 +1,9 @@
 2005-01-08  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-*/system.h (xnarch_init): Fix the error
+	return path to prevent bad system lockup if the calibration
+	happens to fail.
+
 	* drivers/16550A: Preliminary version of a simple 16550A UART
 	driver based on the native interface.
 

@@ -1,0 +1,8 @@
+config RTAI_DRIVERS_16550A
+	depends on RTAI_SKIN_NATIVE
+	enable RTAI_OPT_NATIVE_SEM
+	enable RTAI_OPT_NATIVE_INTR
+	bool "16550A UART driver"
+	default n
+	help
+	16550A UART driver.

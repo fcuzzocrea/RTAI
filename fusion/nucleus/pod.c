@@ -1476,7 +1476,7 @@ unlock_and_exit:
 }
 
 /*!
- * \fn void xnpod_unblock_thread(xnthread_t *thread)
+ * \fn int xnpod_unblock_thread(xnthread_t *thread)
  * \brief Unblock a thread.
  *
  * Breaks the thread out of any wait it is currently in.  This call

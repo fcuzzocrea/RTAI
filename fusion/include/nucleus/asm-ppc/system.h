@@ -383,10 +383,12 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 
     in_tcb->active_task = inproc ?: outproc;
 
-    if (inproc && inproc != outproc)
+    if (inproc && inproc != outproc) /* User-space thread switch? */
 	{
 	struct mm_struct *prev = outproc->active_mm;
 	struct mm_struct *next = inproc->active_mm;
+
+	/* Switch the mm context.*/
 
 	inproc->thread.pgdir = next->pgd;
 
@@ -398,6 +400,9 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 
 	if (!inproc->mm)
 	    enter_lazy_tlb(prev,inproc);
+
+	/* The following has been lifted from
+	   arch/ppc/kernel/process.c. */
 
 #ifdef CONFIG_SMP
 	if (outproc->thread.regs && (outproc->thread.regs->msr & MSR_FP))
@@ -423,6 +428,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	_switch(&outproc->thread,&inproc->thread);
 	}
     else
+	/* Kernel-to-kernel context switch. */
         rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
 }
 

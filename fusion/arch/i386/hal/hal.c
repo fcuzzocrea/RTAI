@@ -61,7 +61,6 @@ v * @defgroup hal Hardware abstraction layer.
 #endif /* CONFIG_X86_IO_APIC */
 #include <asm/apic.h>
 #endif /* CONFIG_X86_LOCAL_APIC */
-#define __RTAI_HAL__
 #include <nucleus/asm/hal.h>
 #ifdef CONFIG_PROC_FS
 #include <nucleus/procfs.h>

@@ -133,6 +133,8 @@ static inline void __xn_success_return(struct pt_regs *regs, int v) {
 }
 
 static inline void __xn_error_return(struct pt_regs *regs, int v) {
+    /* We currently never set the SO bit for marking errors, even if
+     * we always test it upon syscall return. */
     __xn_reg_rval(regs) = v;
 }
 

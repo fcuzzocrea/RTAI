@@ -184,6 +184,7 @@ int main (int argc, char **argv)
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
+    signal(SIGUP, cleanup_upon_sig);
 
     setlinebuf(stdout);
 

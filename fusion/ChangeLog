@@ -1,3 +1,8 @@
+2005-01-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/latency/latency.c, testsuite/cruncher/cruncher.c: Trap
+	SIGHUP.
+
 2005-01-15  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c (__rt_bind_helper): Issue non-blocking

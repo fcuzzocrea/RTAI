@@ -261,6 +261,7 @@ int main (int ac, char **av)
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
+    signal(SIGHUP, cleanup_upon_sig);
 
     if (mlockall(MCL_CURRENT|MCL_FUTURE))
 	perror("mlockall");

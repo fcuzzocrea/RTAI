@@ -57,10 +57,9 @@ int main (int argc, char **argv)
 	    printf("    PERIODIC: wakeup = %d, epilogue = %d\n",
 		   s.periodic_wakeup,
 		   s.periodic_epilogue);
-	    printf("    TICK: overall = %d, drift = %d, drift2 = %d\n",
+	    printf("    TICK: overall = %d, drift = %d\n",
 		   s.tick_overall,
-		   s.timer_drift,
-		   s.timer_drift2);
+		   s.timer_drift);
 	    }
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 	}

@@ -37,7 +37,7 @@ static inline void add_histogram (long addval)
 void latency (void *cookie)
 
 {
-    long minj, maxj = -10000000, dt, sumj;
+    long minj = 10000000, maxj = -10000000, dt, sumj;
     int err, count, nsamples;
     RTIME expected, period;
 
@@ -62,8 +62,6 @@ void latency (void *cookie)
 
     for (;;)
 	{
-	minj = 10000000;
-
 	for (count = sumj = 0; count < nsamples; count++)
 	    {
 	    expected += period;

@@ -19,7 +19,6 @@ typedef struct rtai_latency_stat {
     int timer_overall;
     int timer_epilogue;
     int timer_drift;
-    int timer_drift2;
     int timer_anticipation;
     int resume_time;
     int switch_time;

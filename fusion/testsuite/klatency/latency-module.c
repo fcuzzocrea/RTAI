@@ -24,7 +24,7 @@ long minjitter = 10000000,
 void latency (void *cookie)
 
 {
-    long minj, maxj = -10000000, dt, sumj;
+    long minj = 10000000, maxj = -10000000, dt, sumj;
     struct rtai_latency_stat *s;
     RTIME expected, period;
     int  err, count;
@@ -54,8 +54,6 @@ void latency (void *cookie)
 
     for (;;)
 	{
-	minj = 10000000;
-
 	for (count = sumj = 0; count < SAMPLE_COUNT; count++)
 	    {
 	    expected += period;
@@ -108,7 +106,6 @@ void latency (void *cookie)
 	    s->timer_overall = rt_timer_ticks2ns(ts.timer_exit - ts.timer_entry);
 	    s->timer_epilogue = rt_timer_ticks2ns(ts.intr_resched - ts.timer_exit);
 	    s->timer_drift = rt_timer_ticks2ns(ts.timer_drift);
-	    s->timer_drift2 = rt_timer_ticks2ns(ts.timer_drift2);
 	    s->resume_time = rt_timer_ticks2ns(ts.resume_exit - ts.resume_entry);
 	    s->switch_time = rt_timer_ticks2ns(ts.switch_in - ts.switch_out);
 	    s->periodic_wakeup = rt_timer_ticks2ns(ts.periodic_wakeup - ts.switch_in);

@@ -1,5 +1,7 @@
 2005-02-09  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/sem.c (rt_sem_broadcast): Zero the resource count.
+
 	* skins/rtai/task.h (thread2rtask): Convert to inline function to
 	prevent spurious evaluation side-effects due to multiple macro arg
 	expansion. Such bug affected condvar and mutex supports.

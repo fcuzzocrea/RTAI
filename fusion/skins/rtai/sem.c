@@ -457,7 +457,7 @@ int rt_sem_v (RT_SEM *sem)
  *
  * Unblock all tasks waiting on a semaphore. Awaken tasks return from
  * rt_sem_p() as if the semaphore has been signaled. The semaphore
- * count is not affected by the operation.
+ * count is zeroed as a result of the operation.
  *
  * @param sem The descriptor address of the affected semaphore.
  *
@@ -497,6 +497,8 @@ int rt_sem_broadcast (RT_SEM *sem)
 
     if (xnsynch_flush(&sem->synch_base,0) == XNSYNCH_RESCHED)
 	xnpod_schedule();
+
+    sem->count = 0;
 
  unlock_and_exit:
 

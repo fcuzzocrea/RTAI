@@ -469,14 +469,6 @@ static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb) {
 	mvm_finalize_thread(dead_tcb->vmthread);
 }
 
-static inline void xnarch_save_fpu(xnarchtcb_t *tcb) {
-    /* Nop */
-}
-
-static inline void xnarch_restore_fpu(xnarchtcb_t *tcb) {
-    /* Nop */
-}
-
 static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 					 struct xnthread *thread,
 					 const char *name) {
@@ -510,6 +502,14 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 }
 
 static inline void xnarch_init_fpu(xnarchtcb_t *tcb) {
+    /* Nop */
+}
+
+static inline void xnarch_save_fpu(xnarchtcb_t *tcb) {
+    /* Nop */
+}
+
+static inline void xnarch_restore_fpu(xnarchtcb_t *tcb) {
     /* Nop */
 }
 

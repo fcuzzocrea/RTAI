@@ -361,7 +361,7 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes) {
 do { \
     adeos_set_printk_sync(adp_current); \
     xnarch_logerr("fatal: %s\n",emsg); \
-    /*show_stack(NULL,NULL);*/			\
+    show_stack(NULL,NULL);			\
     for (;;) safe_halt();			\
 } while(0)
 
@@ -591,56 +591,6 @@ static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb) {
     /* Empty */
 }
 
-static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
-
-{
-#ifdef CONFIG_RTAI_HW_FPU
-
-    if (!tcb->user_task) /* __switch_to() will take care otherwise. */
-	{
-        clts();
-
-	if (cpu_has_fxsr)
-	    __asm__ __volatile__ ("fxsave %0; fnclex" : "=m" (*tcb->fpup));
-	else
-	    __asm__ __volatile__ ("fnsave %0; fwait" : "=m" (*tcb->fpup));
-	}
-
-#endif /* CONFIG_RTAI_HW_FPU */
-}
-
-static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
-
-{
-#ifdef CONFIG_RTAI_HW_FPU
-    struct task_struct *task = tcb->user_task;
-
-    if (task)
-	{
-	if (!task->used_math)
-            {
-            stts();
-	    return;	/* Uninit fpu area -- do not restore. */
-            }
-
-	/* Tell Linux that this task has altered the state of the FPU
-	   hardware. */
-	task->thread_info->status |= TS_USEDFPU;
-	}
-
-    /* Restore the FPU hardware with valid fp registers from a
-       user-space or kernel thread. */
-
-    clts();
-
-    if (cpu_has_fxsr)
-	__asm__ __volatile__ ("fxrstor %0": /* no output */ : "m" (*tcb->fpup));
-    else
-	__asm__ __volatile__ ("frstor %0": /* no output */ : "m" (*tcb->fpup));
-
-#endif /* CONFIG_RTAI_HW_FPU */
-}
-
 static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 					 struct xnthread *thread,
 					 const char *name)
@@ -713,10 +663,62 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 	}
 }
 
+static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
+
+{
+    if (!tcb->user_task) /* __switch_to() will take care otherwise. */
+	{
+        clts();
+
+	if (cpu_has_fxsr)
+	    __asm__ __volatile__ ("fxsave %0; fnclex" : "=m" (*tcb->fpup));
+	else
+	    __asm__ __volatile__ ("fnsave %0; fwait" : "=m" (*tcb->fpup));
+	}
+}
+
+static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
+
+{
+    struct task_struct *task = tcb->user_task;
+
+    if (task)
+	{
+	if (!task->used_math)
+            {
+            stts();
+	    return;	/* Uninit fpu area -- do not restore. */
+            }
+
+	/* Tell Linux that this task has altered the state of the FPU
+	   hardware. */
+	task->thread_info->status |= TS_USEDFPU;
+	}
+
+    /* Restore the FPU hardware with valid fp registers from a
+       user-space or kernel thread. */
+
+    clts();
+
+    if (cpu_has_fxsr)
+	__asm__ __volatile__ ("fxrstor %0": /* no output */ : "m" (*tcb->fpup));
+    else
+	__asm__ __volatile__ ("frstor %0": /* no output */ : "m" (*tcb->fpup));
+}
+
 #else /* !CONFIG_RTAI_HW_FPU */
 
-static inline void xnarch_init_fpu (xnarchtcb_t *tcb) {
-}
+static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
+
+{}
+
+static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
+
+{}
+
+static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
+
+{}
 
 #endif /* CONFIG_RTAI_HW_FPU */
 

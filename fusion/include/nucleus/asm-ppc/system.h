@@ -503,46 +503,6 @@ static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb) {
     /* Empty */
 }
 
-static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
-
-{
-#ifdef CONFIG_RTAI_HW_FPU
-
-    struct task_struct *task = tcb->user_task;
-
-    if (task)
-	{
-	if (task->thread.regs && (task->thread.regs->msr & MSR_FP))
-	    giveup_fpu(task);
-
-	return;
-	}
-
-    /* Save the fp regs of the kernel thread owning the FPU. */
-
-    rthal_save_fpu(tcb->fpup);
-
-#endif /* CONFIG_RTAI_HW_FPU */
-}
-
-static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
-
-{
-#ifdef CONFIG_RTAI_HW_FPU
-
-    if (tcb->user_task)
-	/* On PowerpPC, we let the unavailability exception happen for
-	   the incoming user-space task if it happens to use the FPU,
-	   instead of eagerly reloading the fp regs upon switch. */
-	return;
-
-    /* Restore the fp regs of the incoming kernel thread. */
-
-    rthal_restore_fpu(tcb->fpup);
-
-#endif /* CONFIG_RTAI_HW_FPU */
-}
-
 static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 					 struct xnthread *thread,
 					 const char *name)
@@ -614,6 +574,46 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
        must be run on behalf of the emerging thread. */
     memset(&tcb->fpuenv,0,sizeof(tcb->fpuenv));
     rthal_init_fpu(&tcb->fpuenv);
+#endif /* CONFIG_RTAI_HW_FPU */
+}
+
+static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
+
+{
+#ifdef CONFIG_RTAI_HW_FPU
+
+    struct task_struct *task = tcb->user_task;
+
+    if (task)
+	{
+	if (task->thread.regs && (task->thread.regs->msr & MSR_FP))
+	    giveup_fpu(task);
+
+	return;
+	}
+
+    /* Save the fp regs of the kernel thread owning the FPU. */
+
+    rthal_save_fpu(tcb->fpup);
+
+#endif /* CONFIG_RTAI_HW_FPU */
+}
+
+static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
+
+{
+#ifdef CONFIG_RTAI_HW_FPU
+
+    if (tcb->user_task)
+	/* On PowerpPC, we let the unavailability exception happen for
+	   the incoming user-space task if it happens to use the FPU,
+	   instead of eagerly reloading the fp regs upon switch. */
+	return;
+
+    /* Restore the fp regs of the incoming kernel thread. */
+
+    rthal_restore_fpu(tcb->fpup);
+
 #endif /* CONFIG_RTAI_HW_FPU */
 }
 

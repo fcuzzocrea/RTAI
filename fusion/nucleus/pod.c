@@ -1965,10 +1965,7 @@ void xnpod_welcome_thread (xnthread_t *thread)
 
 #ifdef CONFIG_RTAI_HW_FPU
 
-/* xnpod_switch_fpu() -- Switches to the current thread's FPU
-   context, saving the previous one as needed. */
-
-void xnpod_switch_fpu (xnsched_t *sched)
+static inline void __xnpod_switch_fpu (xnsched_t *sched)
 
 {
     xnthread_t *runthread = sched->runthread;
@@ -1987,6 +1984,15 @@ void xnpod_switch_fpu (xnsched_t *sched)
 
         sched->fpuholder = runthread;
         }
+}
+
+/* xnpod_switch_fpu() -- Switches to the current thread's FPU context,
+   saving the previous one as needed. */
+
+void xnpod_switch_fpu (xnsched_t *sched)
+
+{
+    __xnpod_switch_fpu(sched);
 }
 
 #endif /* CONFIG_RTAI_HW_FPU */
@@ -2223,7 +2229,7 @@ void xnpod_schedule (void)
     runthread = sched->runthread;
 
 #ifdef CONFIG_RTAI_HW_FPU
-    xnpod_switch_fpu(sched);
+    __xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
 #if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
@@ -2375,7 +2381,7 @@ maybe_switch:
                      xnthread_archtcb(threadin));
 
 #ifdef CONFIG_RTAI_HW_FPU
-    xnpod_switch_fpu(sched);
+    __xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
 #ifdef __RTAI_SIM__

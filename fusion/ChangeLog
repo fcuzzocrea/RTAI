@@ -2,6 +2,7 @@
 
 	* nucleus/pod.c: Compile out the scheduler hook unless we are
 	actually building the simulator.
+	(xnpod_switch_fpu): Inline calls on the fast path.
 
 	* skins/rtai/lib/task.c (rt_task_set_mode, rt_task_notify): Export
 	to user-space.

@@ -681,6 +681,7 @@ static inline struct task_struct *lxrt_context_switch (struct task_struct *prev,
 						       struct task_struct *next,
 						       int cpuid)
 {
+    struct task_struct *svprev = prev;
     struct mm_struct *oldmm = prev->active_mm;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
@@ -698,7 +699,7 @@ static inline struct task_struct *lxrt_context_switch (struct task_struct *prev,
 
     lxrt_switch_to(prev,next,prev);
 
-    return prev;
+    return svprev;
 }
 
 static inline void make_current_soft(RT_TASK *rt_current)
@@ -837,7 +838,7 @@ schedlnxtsk:
 }
 #endif
 
-#if 0
+#if 1
 #define enq_soft_ready_task(ready_task) \
 do { \
 	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \

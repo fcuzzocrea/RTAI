@@ -80,10 +80,19 @@ void __sem_pkg_cleanup (void) {
  *
  * - S_PRIO makes tasks pend in priority order on the semaphore.
  *
+ * - S_PULSE causes the semaphore to behave in "pulse" mode. In this
+ * mode, the V (signal) operation attempts to release a single waiter
+ * each time it is called, but without incrementing the semaphore
+ * count if no waiter is pending. For this reason, the semaphore count
+ * in pulse mode remains zero.
+ *
  * @return 0 is returned upon success. Otherwise:
  *
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
+ *
+ * - -EINVAL is returned if the @a icount is non-zero and @a mode
+ * specifies a pulse semaphore.
  *
  * Environments:
  *
@@ -105,8 +114,12 @@ int rt_sem_create (RT_SEM *sem,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
+    if ((mode & S_PULSE) && icount > 0)
+	return -EINVAL;
+
     xnsynch_init(&sem->synch_base,mode & S_PRIO);
     sem->count = icount;
+    sem->mode = mode;
     sem->handle = 0;    /* i.e. (still) unregistered semaphore. */
     sem->magic = RTAI_SEM_MAGIC;
     xnobject_copy_name(sem->name,name);
@@ -352,7 +365,7 @@ int rt_sem_v (RT_SEM *sem)
     
     if (xnsynch_wakeup_one_sleeper(&sem->synch_base) != NULL)
         xnpod_schedule();
-    else
+    else if (!(sem->mode & S_PULSE))
         sem->count++;
 
  unlock_and_exit:

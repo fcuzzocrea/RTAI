@@ -28,6 +28,7 @@
 /* Creation flags. */
 #define S_PRIO  XNSYNCH_PRIO	/* Pend by task priority order. */
 #define S_FIFO  XNSYNCH_FIFO	/* Pend by FIFO order. */
+#define S_PULSE 0x100		/* Apply pulse mode. */
 
 typedef struct rt_sem_info {
 
@@ -54,6 +55,8 @@ typedef struct rt_sem {
     xnsynch_t synch_base; /* !< Base synchronization object. */
 
     unsigned long count; /* !< Current semaphore value. */
+
+    int mode;		/* !< Creation mode. */
 
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 

@@ -1,3 +1,7 @@
+2005-01-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/sem.c (rt_sem_v): Add pulse mode.
+
 2005-01-06  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-ppc/hal.h : rework 64 bits arithmetic

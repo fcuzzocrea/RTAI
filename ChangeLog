@@ -1,3 +1,8 @@
+2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/xrtailab.cpp: Fixed problem with the counter by parameter
+	batch download.
+	
 2004-01-23  Michael Neuhauser <mike@firmix.at>
 
 	* base/arch/arm, base/include/asm-arm: RTAI/ARM over Adeos rewrite,

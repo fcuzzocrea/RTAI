@@ -3,6 +3,16 @@
 	* rtai-core/sched/rtai/sched_lxrt.c (enq_soft_ready_task): Attempt
 	a quick fix to prevent the enqueuing from entering an infinite
 	loop. Needs to be confirmed by Paolo.
+	(rt_schedule): Re-instate the use of rtai_get_current() to fetch
+	the current Linux task for safety.
+
+2004-06-13  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
+
+	* rtai-core/include/rtai_posix.h (pthread_rwlock_open_rt): Make depend on
+	-D__USE_UNIX98.
+
+	* rtai-core/include/rtai_posix.h: Include <malloc.h> in user-space
+	to satisfy references to malloc()/free().
 
 2004-06-11  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

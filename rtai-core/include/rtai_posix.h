@@ -534,6 +534,7 @@ static inline int nanosleep_rt(const struct timespec *rqtp, struct timespec *rmt
 #include <sys/stat.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <malloc.h>
 
 struct task_struct;
 
@@ -1042,6 +1043,7 @@ RTAI_PROTO(int, pthread_barrier_wait_rt,(pthread_barrier_t *barrier))
 }
 #endif
 
+#ifdef __USE_UNIX98
 RTAI_PROTO(pthread_rwlock_t *, pthread_rwlock_open_rt,(const char *name))
 {
 	int hs, fd;
@@ -1066,6 +1068,7 @@ RTAI_PROTO(pthread_rwlock_t *, pthread_rwlock_open_rt,(const char *name))
 	MAKE_HARD(hs);
 	return rwlock;
 }
+#endif /* __USE_UNIX98 */
 
 RTAI_PROTO(int, pthread_rwlock_init_rt,(pthread_rwlock_t *rwlock, pthread_rwlockattr_t *attr))
 {

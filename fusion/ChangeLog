@@ -1,3 +1,11 @@
+2005-03-07  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* configure.in: Remove the CROSS_COMPILE hack.
+
+	* makefile (config.status): Pass CROSS_COMPILE (and other
+	variables) value using configure command line instead of its
+	environment, so that config.status keeps this value.
+
 2005-03-07  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/atomic.h (__builtin_expect): Provide

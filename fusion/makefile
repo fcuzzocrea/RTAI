@@ -53,6 +53,7 @@ config.status: .rtai_config
 	eval `grep ^CONFIG_RTAI_INSTALLDIR $<`; \
 	eval `grep ^CONFIG_RTAI_MAINT $<`; \
 	test x$$CONFIG_RTAI_MAINT_AUTOTOOLS = xy && confopts=--enable-maintainer-mode; \
+	$(srctree)/configure \
 	CROSS_COMPILE=$(CROSS_COMPILE) \
 	CC=$(CROSS_COMPILE)$(CC) \
 	CXX=$(CROSS_COMPILE)$(CXX) \
@@ -61,7 +62,6 @@ config.status: .rtai_config
 	RANLIB=$(CROSS_COMPILE)ranlib \
 	STRIP=$(CROSS_COMPILE)strip \
 	NM=$(CROSS_COMPILE)nm \
-	$(srctree)/configure \
 	--build=$(build_alias) \
 	--host=$(host_alias) \
 	--with-kconfig-file=$< \

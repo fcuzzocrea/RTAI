@@ -1,3 +1,12 @@
+2004-09-30  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_init): Handle the XNPIDLE bit, to prevent
+	several instances or xnpod_shutdown from interleaving.
+
+	* include/nucleus/asm-i386/system.h (xnarch_notify_shutdown):
+	Better implementation, waiting for all the cpus to switch to the
+	Linux domain.
+
 2004-09-30  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c: Rearrange critical sections so that

@@ -251,11 +251,13 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
 
     if (nkpod != NULL)
         {
-	/* In case a pod is already active, ask for removal via a call
-	   to the unload hook if any. Otherwise, the operation has
-	   failed. */
+        /* Avoid trying to shutdown the pod when it is not valid. */
+        if (!testbits(pod->status, XNPIDLE) ||
 
-        if (!nkpod->svctable.unload || nkpod->svctable.unload() <= 0)
+            /* In case a pod is already active, ask for removal via a call
+               to the unload hook if any. Otherwise, the operation has
+               failed. */
+            !nkpod->svctable.unload || nkpod->svctable.unload() <= 0)
             {
             xnlock_put_irqrestore(&nklock, s);
             return -EBUSY;

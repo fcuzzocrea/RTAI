@@ -692,13 +692,38 @@ static inline int xnarch_release_ipi (void)
                                      IPIPE_PASS_MASK);
 }
 
-static inline void xnarch_notify_shutdown(void)
+static struct semaphore xnarch_finalize_sync;
 
+static void xnarch_finalize_cpu(unsigned irq)
 {
-    /* FIXME: This implementation is not quite correct, since it does not
-       guarantee us that no real-time activity will take place after that. */
-    unsigned long flags = adeos_critical_enter(NULL);
-    adeos_critical_exit(flags);
+    up(&xnarch_finalize_sync);
+}
+
+static inline void xnarch_notify_shutdown(void)
+    
+{
+    unsigned cpu, nr_cpus = num_online_cpus();
+    cpumask_t other_cpus = cpu_online_map;
+    unsigned long flags;
+    adeos_declare_cpuid;
+
+    init_MUTEX_LOCKED(&xnarch_finalize_sync);
+
+    /* Here adp_current is in fact root, since xnarch_notify_shutdown is called
+       from xnpod_shutdown, itself called from Linux context. */
+    adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2,
+                              xnarch_finalize_cpu, NULL, IPIPE_HANDLE_MASK);
+
+    adeos_lock_cpu(flags);
+    cpu_clear(cpuid, other_cpus);
+    adeos_send_ipi(ADEOS_SERVICE_IPI2, other_cpus);
+    adeos_unlock_cpu(flags);
+
+    for(cpu=0; cpu < nr_cpus-1; ++cpu)
+        down(&xnarch_finalize_sync);
+    
+    adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2, NULL, NULL,
+                              IPIPE_PASS_MASK);
 }
 
 #else /* !CONFIG_SMP */

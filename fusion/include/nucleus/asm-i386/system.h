@@ -661,7 +661,11 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
     if (task)
 	{
+#ifdef tsk_used_math
+	if (!tsk_used_math(task))
+#else /* !tsk_used_math -- < 2.6.11 */
 	if (!task->used_math)
+#endif /* tsk_used_math */
             {
             stts();
 	    return;	/* Uninit fpu area -- do not restore. */

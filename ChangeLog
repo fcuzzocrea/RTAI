@@ -1,3 +1,12 @@
+2004-01-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.c: do not load RTAI support if the local
+	  APIC has been configured in Linux but is not available.
+	* base/sched/sched.immed: inserted a macro call to enable hard 
+	  interrupts in all ADEOS events intercept functions; the macro is
+	  arch dependent and must be defined in the arch specific 
+	  rtai_lxrt.h.
+
 2004-12-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_hal.h, rtai_lxrt.h: got rid of 

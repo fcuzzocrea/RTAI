@@ -60,9 +60,9 @@ config RTAI_HW_SCHED_LATENCY
 	help
 	Scheduling latency is the time between the termination of an
 	interrupt handler and the execution of the first instruction
-	of the real-time thread this handler resumes. A
-	default value of 0 (recommended) will cause this value to be
-	estimated by the nucleus at startup.
+	of the real-time thread this handler resumes. A default value
+	of 0 (recommended) will cause this value to be estimated by
+	the nucleus at startup.
 
 menu "SMI workaround"
 

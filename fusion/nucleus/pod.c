@@ -1698,10 +1698,12 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
 }
 
 /** 
- * Migrate to another CPU.
+ * \fn int xnpod_migrate_thread (int cpu)
  *
- * This call makes the current thread migrate to another CPU if its affinity
- * allows it.
+ * \brief Migrate the current thread.
+ *
+ * This call makes the current thread migrate to another CPU if its
+ * affinity allows it.
  * 
  * @param cpu The destination CPU.
  * 

@@ -106,18 +106,10 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
     adeos_load_cpuid();
 
     if (!test_and_set_bit(cpuid,lock))
+	{
 	while (test_and_set_bit(BITS_PER_LONG - 1,lock))
-	    {
-            if (!flags)
-                {
-                clear_bit(cpuid, lock);
-                rthal_sync_irqs();
-                adeos_load_cpuid(); /* Could have been migrated by interrupts. */
-                set_bit(cpuid, lock);
-                }
-            else
-                rthal_cpu_relax(cpuid); /* FIXME: is this really needed ? */
-            }
+	    rthal_cpu_relax(cpuid);
+	}
     else
         flags |= 2;
 

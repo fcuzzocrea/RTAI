@@ -90,7 +90,7 @@ int rt_queue_create (RT_QUEUE *q,
 			    name,
 			    poolsize,
 			    qlimit,
-			    mode);
+			    mode|Q_SHARED);
 
     return err ?: __map_queue_memory(q,&ph);
 }

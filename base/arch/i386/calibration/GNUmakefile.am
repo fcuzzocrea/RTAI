@@ -58,7 +58,7 @@ all-local: calibrate_rt$(modext)
 
 install-exec-local: calibrate_rt$(modext)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
-	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)/rtai_calibrate.ko
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)

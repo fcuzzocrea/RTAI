@@ -53,11 +53,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <efltk/fl_ask.h>
 #include <efltk/Fl_Text_Editor.h>
 
-// #define KEEP_STATIC_INLINE
-// #include <rtai_lxrt_user.h>
-// #include <rtai_lxrt.h>
-// #include <net_rpc.h>
-
 #include <rtai_netrpc.h>
 #include <rtai_msg.h>
 #include <rtai_mbx.h>

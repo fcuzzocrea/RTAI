@@ -1,3 +1,15 @@
+2004-10-11  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* rtai-core/arch/i386/hal/hal.c eliminate useless process exit
+	intercept and moved it appropriately to sched_lxrt.c
+
+	* rtai-core/sched/rtai/sched_lxrt.c: improved async make soft,
+	added process exit intercept, modified signal intercept so that
+	it works.
+
+	* rtai-core/sched/rtai/sys_lxrt.c: takes care of async make soft,
+	got rid of a useless callback.
+
 2004-10-09  Ivan Raikov <raikov@cc.gatech.edu>
 
 	* rtai-core/scripts/rtai-load.in: Add support for user-defined

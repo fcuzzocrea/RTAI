@@ -1,3 +1,8 @@
+2004-11-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/ipc/msg/msg.c: fixed a missing resume time assignanement
+        in rt_rpc_until.
+
 2004-11-14  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI: Modified Scicos library and

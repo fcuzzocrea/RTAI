@@ -45,7 +45,8 @@ void __queue_pkg_cleanup (void)
 {
 }
 
-static void __queue_flush_pool (void *poolmem,
+static void __queue_flush_pool (xnheap_t *heap,
+				void *poolmem,
 				u_long poolsize,
 				void *cookie)
 {
@@ -107,7 +108,7 @@ int rt_queue_create (RT_QUEUE *q,
 		      PAGE_SIZE); /* Use natural page size */
     if (err)
 	{
-	__queue_flush_pool(poolmem,poolsize,q);
+	__queue_flush_pool(&q->bufpool,poolmem,poolsize,q);
 	return err;
 	}
 

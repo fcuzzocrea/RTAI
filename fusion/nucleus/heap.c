@@ -225,7 +225,7 @@ int xnheap_init (xnheap_t *heap,
     heap->ubytes = 0;
     heap->maxcont = heap->npages * pagesize;
     initq(&heap->extents);
-    xnlock_init(&heap->lock);
+    xnlock_init(&heap->archdep.lock);
 
     for (n = 0; n < XNHEAP_NBUCKETS; n++)
 	heap->buckets[n] = NULL;
@@ -279,16 +279,16 @@ void xnheap_destroy (xnheap_t *heap,
     if (!flushfn)
 	return;
 
-    xnlock_get_irqsave(&heap->lock,s);
+    xnlock_get_irqsave(&heap->archdep.lock,s);
 
     while ((holder = getq(&heap->extents)) != NULL)
 	{
-	xnlock_put_irqrestore(&heap->lock,s);
+	xnlock_put_irqrestore(&heap->archdep.lock,s);
 	flushfn(heap,link2extent(holder),heap->extentsize,cookie);
-	xnlock_get_irqsave(&heap->lock,s);
+	xnlock_get_irqsave(&heap->archdep.lock,s);
 	}
 
-    xnlock_put_irqrestore(&heap->lock,s);
+    xnlock_put_irqrestore(&heap->archdep.lock,s);
 }
 
 /*
@@ -459,7 +459,7 @@ void *xnheap_alloc (xnheap_t *heap, u_long size)
 	     bsize < size; bsize <<= 1, log2size++)
 	    ; /* Loop */
 
-	xnlock_get_irqsave(&heap->lock,s);
+	xnlock_get_irqsave(&heap->archdep.lock,s);
 
 	block = heap->buckets[log2size - XNHEAP_MINLOG2];
 
@@ -479,7 +479,7 @@ void *xnheap_alloc (xnheap_t *heap, u_long size)
         if (size > heap->maxcont)
             return NULL;
 
-	xnlock_get_irqsave(&heap->lock,s);
+	xnlock_get_irqsave(&heap->archdep.lock,s);
 
 	/* Directly request a free page range. */
 	block = get_free_range(heap,size,0);
@@ -490,7 +490,7 @@ void *xnheap_alloc (xnheap_t *heap, u_long size)
 
 release_and_exit:
 
-    xnlock_put_irqrestore(&heap->lock,s);
+    xnlock_put_irqrestore(&heap->archdep.lock,s);
 
     return block;
 }
@@ -525,7 +525,7 @@ int xnheap_free (xnheap_t *heap, void *block)
     xnholder_t *holder;
     spl_t s;
 
-    xnlock_get_irqsave(&heap->lock,s);
+    xnlock_get_irqsave(&heap->archdep.lock,s);
 
     /* Find the extent from which the returned block is
        originating. */
@@ -554,7 +554,7 @@ int xnheap_free (xnheap_t *heap, void *block)
 
 unlock_and_fail:
 
-	    xnlock_put_irqrestore(&heap->lock,s);
+	    xnlock_put_irqrestore(&heap->archdep.lock,s);
 	    return -EINVAL;
 
 	case XNHEAP_PLIST:
@@ -614,7 +614,7 @@ unlock_and_fail:
 
     heap->ubytes -= bsize;
 
-    xnlock_put_irqrestore(&heap->lock,s);
+    xnlock_put_irqrestore(&heap->archdep.lock,s);
 
     return 0;
 }
@@ -652,11 +652,11 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
 
     init_extent(heap,extent);
 
-    xnlock_get_irqsave(&heap->lock,s);
+    xnlock_get_irqsave(&heap->archdep.lock,s);
 
     appendq(&heap->extents,&extent->link);
 
-    xnlock_put_irqrestore(&heap->lock,s);
+    xnlock_put_irqrestore(&heap->archdep.lock,s);
 
     return 0;
 }

@@ -83,6 +83,7 @@ typedef unsigned long spl_t;
 #define splsync(x)  rthal_local_irq_sync(x)
 
 typedef struct {
+
     volatile unsigned long lock;
 #if CONFIG_RTAI_OPT_DEBUG
     const char *file;
@@ -101,7 +102,7 @@ typedef struct {
         0,                                      \
         -1                                      \
         }
-#endif    
+#endif /* !CONFIG_RTAI_OPT_DEBUG */
 
 #ifdef CONFIG_SMP
 
@@ -295,6 +296,14 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_trap(fi)  ((fi)->vector)
 #define xnarch_fault_code(fi)  ((fi)->errcode)
 #define xnarch_fault_pc(fi)    ((fi)->regs->eip)
+
+typedef struct xnarch_heapcb {
+
+#ifdef CONFIG_SMP
+    xnlock_t lock;
+#endif /* CONFIG_SMP */
+
+} xnarch_heapcb_t;
 
 #ifdef __cplusplus
 extern "C" {

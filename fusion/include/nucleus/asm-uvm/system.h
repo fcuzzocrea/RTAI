@@ -180,6 +180,14 @@ typedef void *xnarch_fltinfo_t;	/* Unused but required */
 #define xnarch_fault_code(fi)  (0)
 #define xnarch_fault_pc(fi)    (0L)
 
+typedef struct xnarch_heapcb {
+
+#ifdef CONFIG_SMP
+    xnlock_t lock;
+#endif /* CONFIG_SMP */
+
+} xnarch_heapcb_t;
+
 static inline int __attribute__ ((unused))
 xnarch_read_environ (const char *name, const char **ptype, void *pvar)
 

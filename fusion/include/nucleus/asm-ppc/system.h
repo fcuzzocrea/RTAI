@@ -243,6 +243,14 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_code(fi)  ((fi)->regs->dar)
 #define xnarch_fault_pc(fi)    ((fi)->regs->nip)
 
+typedef struct xnarch_heapcb {
+
+#ifdef CONFIG_SMP
+    xnlock_t lock;
+#endif /* CONFIG_SMP */
+
+} xnarch_heapcb_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

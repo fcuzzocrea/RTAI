@@ -138,6 +138,14 @@ typedef unsigned long atomic_flags_t;
 #define xnarch_atomic_set_mask(pflags,mask)    (*(pflags) |= (mask))
 #define xnarch_atomic_clear_mask(pflags,mask)  (*(pflags) &= ~(mask))
 
+typedef struct xnarch_heapcb {
+
+#ifdef CONFIG_SMP
+    xnlock_t lock;
+#endif /* CONFIG_SMP */
+
+} xnarch_heapcb_t;
+
 #define __mvm_breakable(f) f ## $kdoor$
 
 static inline int __attribute__ ((unused))

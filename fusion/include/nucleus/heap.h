@@ -98,10 +98,6 @@ typedef struct xnextent {
 
 typedef struct xnheap {
 
-#ifdef CONFIG_SMP
-    xnlock_t lock;
-#endif /* CONFIG_SMP */
-
     u_long extentsize,
            pagesize,
            pageshift,
@@ -113,6 +109,8 @@ typedef struct xnheap {
     xnqueue_t extents;
 
     caddr_t buckets[XNHEAP_NBUCKETS];
+
+    xnarch_heapcb_t archdep;
 
     XNARCH_DECL_DISPLAY_CONTEXT();
 

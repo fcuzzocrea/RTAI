@@ -78,12 +78,8 @@ CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 COMEDI_DIR = @COMEDI_DIR@
-CONFIG_ARCH_CLPS711X_FALSE = @CONFIG_ARCH_CLPS711X_FALSE@
-CONFIG_ARCH_CLPS711X_TRUE = @CONFIG_ARCH_CLPS711X_TRUE@
-CONFIG_ARCH_PXA_FALSE = @CONFIG_ARCH_PXA_FALSE@
-CONFIG_ARCH_PXA_TRUE = @CONFIG_ARCH_PXA_TRUE@
-CONFIG_ARCH_SA1100_FALSE = @CONFIG_ARCH_SA1100_FALSE@
-CONFIG_ARCH_SA1100_TRUE = @CONFIG_ARCH_SA1100_TRUE@
+CONFIG_ARCH_EP9301_FALSE = @CONFIG_ARCH_EP9301_FALSE@
+CONFIG_ARCH_EP9301_TRUE = @CONFIG_ARCH_EP9301_TRUE@
 CONFIG_ARM_FALSE = @CONFIG_ARM_FALSE@
 CONFIG_ARM_TRUE = @CONFIG_ARM_TRUE@
 CONFIG_KBUILD_FALSE = @CONFIG_KBUILD_FALSE@
@@ -334,21 +330,15 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 nobase_include_HEADERS = \
-		arch-clps711x/rtai_arch.h \
-		arch-clps711x/rtai_exports.h \
-		arch-clps711x/rtai_timer.h \
-		arch-pxa/rtai_arch.h \
-		arch-pxa/rtai_exports.h \
-		arch-pxa/rtai_timer.h \
-		arch-sa1100/rtai_arch.h \
-		arch-sa1100/rtai_exports.h \
-		arch-sa1100/rtai_timer.h \
-		rtai.h \
+		arch-ep9301/rtai_arch.h \
+		arch-ep9301/rtai_exports.h \
+		arch-ep9301/rtai_timer.h \
 		rtai_atomic.h \
-		rtai_debug.h \
 		rtai_fpu.h \
-		rtai_irqops.h \
+		rtai.h \
+		rtai_hal.h \
 		rtai_lxrt.h \
+		rtai_oldnames.h \
 		rtai_sched.h \
 		rtai_shm.h \
 		rtai_srq.h \
@@ -465,7 +455,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/arch-clps711x $(distdir)/arch-pxa $(distdir)/arch-sa1100
+	$(mkdir_p) $(distdir)/arch-ep9301
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

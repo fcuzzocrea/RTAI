@@ -1,23 +1,64 @@
 /*
- * include/asm-arm/fpu.h
+ * FPU support.
  *
- * Just a dummy for RTAI now, because our ARM has no FPU
- * If you have an ARM-processor with FPU, add the necessary code to up_task_sw ...
+ * Original RTAI/x86 layer implementation:
+ *   Copyright (c) 2000 Paolo Mantegazza (mantegazza@aero.polimi.it)
+ *   Copyright (c) 2000 Steve Papacharalambous (stevep@zentropix.com)
+ *   Copyright (c) 2000 Stuart Hughes
+ *   and others.
+ *
+ * RTAI/x86 rewrite over Adeos:
+ *   Copyright (c) 2002 Philippe Gerum (rpm@xenomai.org)
+ *
+ * Original RTAI/ARM RTHAL implementation:
+ *   Copyright (c) 2000 Pierre Cloutier (pcloutier@poseidoncontrols.com)
+ *   Copyright (c) 2001 Alex Züpke, SYSGO RTS GmbH (azu@sysgo.de)
+ *   Copyright (c) 2002 Guennadi Liakhovetski DSA GmbH (gl@dsa-ac.de)
+ *   Copyright (c) 2002 Steve Papacharalambous (stevep@zentropix.com)
+ *   Copyright (c) 2002 Wolfgang Müller (wolfgang.mueller@dsa-ac.de)
+ *   Copyright (c) 2003 Bernard Haible, Marconi Communications
+ *   Copyright (c) 2003 Thomas Gleixner (tglx@linutronix.de)
+ *   Copyright (c) 2003 Philippe Gerum (rpm@xenomai.org)
+ *
+ * RTAI/ARM over Adeos rewrite:
+ *   Copyright (c) 2004-2005 Michael Neuhauser, Firmix Software GmbH (mike@firmix.at)
+ *
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge MA 02139, USA; either version 2 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place - Suite 330, Boston, MA 02111-1307, USA.
  */
-
-#ifndef RTAI_FPU_ASM_H
-#define RTAI_FPU_ASM_H
+#ifndef _RTAI_ASM_ARM_FPU_H
+#define _RTAI_ASM_ARM_FPU_H
 
 #ifdef CONFIG_RTAI_FPU_SUPPORT
+#error "Sorry, there is no FPU support in RTAI for ARM (you don't need it for soft-float or FPU-emulation)"
+#endif
 
-extern void save_fpenv(long *fpu_reg);
-extern void restore_fpenv(long *fpu_reg);
+/* All the work is done by the soft-float library or the kernel FPU emulator. */
 
-#else /* notdef CONFIG_RTAI_FPU_SUPPORT */
+#define init_fpu(tsk)		do { /* nop */ } while (0)
+#define restore_fpu(tsk)	do { /* nop */ } while (0)
+#define save_cr0_and_clts(x)	do { /* nop */ } while (0)
+#define restore_cr0(x)		do { /* nop */ } while (0)
+#define enable_fpu()		do { /* nop */ } while (0)
+#define load_mxcsr(val)		do { /* nop */ } while (0)
+#define init_xfpu()		do { /* nop */ } while (0)
+#define save_fpenv(x)		do { /* nop */ } while (0)
+#define restore_fpenv(x)	do { /* nop */ } while (0)
+#define restore_task_fpenv(t)	do { /* nop */ } while (0)
+#define restore_fpenv_lxrt(t)	do { /* nop */ } while (0)
 
-#define save_fpenv(x)
-#define restore_fpenv(x)
+typedef struct arm_fpu_env { unsigned long fpu_reg[1]; } FPU_ENV;
 
-#endif /* CONFIG_RTAI_FPU_SUPPORT */
-
-#endif /* RTAI_FPU_ASM_H */
+#endif /* _RTAI_ASM_ARM_FPU_H */

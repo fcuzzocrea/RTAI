@@ -1,3 +1,10 @@
+2004-01-23  Michael Neuhauser <mike@firmix.at>
+
+	* base/arch/arm, base/include/asm-arm: RTAI/ARM over Adeos rewrite,
+	supports kernel and user-space. Only sub-architecture supported is
+	EP9301 (ARM920T, ARMv5). Old stuff was tagged with
+	"before_arm_over_adeos".
+
 2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
 
 	* rtai-lab/matlab/ptinfo.tlc: new <matlab7>rtw/c/tlc/mw/ptinfo.tlc

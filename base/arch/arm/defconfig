@@ -2,7 +2,7 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_MODULES=y
-CONFIG_RTAI_VERSION="3.1-test1 (vesuvio)"
+CONFIG_RTAI_VERSION="3.2 (magma)"
 
 #
 # General
@@ -14,9 +14,17 @@ CONFIG_RTAI_LINUXDIR="/usr/src/linux"
 # RTAI Documentation
 #
 # CONFIG_RTAI_DOX_DOC is not set
+# CONFIG_RTAI_DOC_LATEX_NONSTOP is not set
 # CONFIG_RTAI_DBX_DOC is not set
+CONFIG_RTAI_TESTSUITE=y
 # CONFIG_RTAI_COMPAT is not set
-# CONFIG_RTAI_EXTENDED is not set
+CONFIG_RTAI_EXTENDED=y
+CONFIG_RTAI_KMOD_DEBUG=y
+CONFIG_RTAI_USER_DEBUG=y
+# CONFIG_RTAI_MAINTAINER is not set
+CONFIG_RTAI_LXRT_EXTERN_INLINE=y
+# CONFIG_RTAI_LXRT_STATIC_INLINE is not set
+# CONFIG_RTAI_LXRT_NO_INLINE is not set
 
 #
 # Machine (ARM)
@@ -25,20 +33,18 @@ CONFIG_RTAI_LINUXDIR="/usr/src/linux"
 CONFIG_RTAI_CPUS="1"
 
 #
-# Core system
-#
-
-#
-# Schedulers
+# Base system
 #
 CONFIG_RTAI_SCHED_UP=y
 # CONFIG_RTAI_SCHED_SMP is not set
 # CONFIG_RTAI_SCHED_MUP is not set
-# CONFIG_RTAI_SCHED_LXRT is not set
+CONFIG_RTAI_SCHED_LXRT=y
 
 #
-# Basic features
+# Scheduler options
 #
+# CONFIG_RTAI_SCHED_ISR_LOCK is not set
+CONFIG_RTAI_SCHED_LXRT_NUMSLOTS="100"
 
 #
 # IPC support
@@ -54,23 +60,18 @@ CONFIG_RTAI_TBX=m
 CONFIG_RTAI_MQ=m
 
 #
-# Misc
+# Other features
 #
-CONFIG_RTAI_MATH=m
-# CONFIG_RTAI_MATH_C99 is not set
 CONFIG_RTAI_MALLOC=y
+# CONFIG_RTAI_MALLOC_VMALLOC is not set
+CONFIG_RTAI_MALLOC_HEAPSZ="128"
 CONFIG_RTAI_TASKLETS=m
 # CONFIG_RTAI_TRACE is not set
 CONFIG_RTAI_USI=m
-CONFIG_RTAI_WD=m
+# CONFIG_RTAI_WD is not set
 
 #
 # Add-ons
 #
 # CONFIG_RTAI_CPLUSPLUS is not set
 # CONFIG_RTAI_SERIAL is not set
-
-#
-# Testing
-#
-CONFIG_RTAI_TESTSUITE=y

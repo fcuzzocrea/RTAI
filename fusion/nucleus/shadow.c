@@ -865,9 +865,9 @@ void xnshadow_renice (xnthread_t *thread)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-static int attach_interface (struct task_struct *curr,
-			     unsigned magic,
-			     u_long infarg)
+static int attach_to_interface (struct task_struct *curr,
+				unsigned magic,
+				u_long infarg)
 {
     xnsysinfo_t info;
     int muxid;
@@ -880,9 +880,9 @@ static int attach_interface (struct task_struct *curr,
 	if (muxtable[muxid].magic == magic)
 	    {
 	    /* Increment the reference count now (actually, only the
-	       first call to attach_interface() really increments the
-	       counter), so that the interface cannot be removed under
-	       our feet. */
+	       first call to attach_to_interface() really increments
+	       the counter), so that the interface cannot be removed
+	       under our feet. */
 
             if (!xnarch_atomic_inc_and_test(&muxtable[muxid].refcnt))
                 xnarch_atomic_dec(&muxtable[muxid].refcnt);
@@ -926,7 +926,7 @@ static int attach_interface (struct task_struct *curr,
     return -ESRCH;
 }
 
-static int detach_interface (struct task_struct *curr, int muxid)
+static int detach_from_interface (struct task_struct *curr, int muxid)
 
 {
     xnholder_t *holder, *nholder;
@@ -1470,16 +1470,16 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	case __xn_sys_attach:
 
 	    __xn_status_return(regs,
-                               attach_interface(current,
-						__xn_reg_arg1(regs),
-						__xn_reg_arg2(regs)));
+                               attach_to_interface(current,
+						   __xn_reg_arg1(regs),
+						   __xn_reg_arg2(regs)));
 	    return;
 		
 	case __xn_sys_detach:
 	    
 	    __xn_status_return(regs,
-                               detach_interface(current,
-						__xn_reg_arg1(regs)));
+                               detach_from_interface(current,
+						     __xn_reg_arg1(regs)));
 	    return;
 	}
 

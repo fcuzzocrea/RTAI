@@ -1,0 +1,73 @@
+calibrationdir = $(prefix)/calibration
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h
+
+if CONFIG_KBUILD
+calibrate_rt.ko: @RTAI_KBUILD_ENV@
+calibrate_rt.ko: $(libcalibrate_rt_a_SOURCES)
+	@RTAI_KBUILD_CMD@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+else
+noinst_LIBRARIES = libcalibrate_rt.a
+
+libcalibrate_rt_a_AR = $(CROSS_COMPILE)ar cru
+
+libcalibrate_rt_a_CPPFLAGS = \
+	@RTAI_KMOD_CFLAGS@ \
+	-I$(top_srcdir)/rtai-core/include \
+	-I../../../include
+
+calibrate_rt.o: libcalibrate_rt.a
+	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+endif
+
+calibration_PROGRAMS = calibrate
+
+if CONFIG_RTAI_SCHED_LXRT
+calibration_PROGRAMS += _calibrate
+endif
+
+calibrate_SOURCES = calibrate.c calibrate.h
+
+calibrate_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-DKERNEL_HELPER_PATH="\"$(calibrationdir)/calibrate_rt$(modext)\"" \
+	-DUSER_HELPER_PATH="\"$(calibrationdir)/_calibrate\"" \
+	-I$(top_srcdir)/rtai-core/include \
+	-I../../../include
+
+if CONFIG_RTAI_SCHED_LXRT
+_calibrate_SOURCES = _calibrate.c
+
+_calibrate_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-I$(top_srcdir)/rtai-core/include \
+	-I../../../include
+
+_calibrate_LDADD = \
+	../../../sched/rtai/liblxrt/liblxrt.la \
+	-lpthread
+endif
+
+all-local: calibrate_rt$(modext)
+
+install-exec-local: calibrate_rt$(modext)
+	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)
+	$(INSTALL_DATA) $^ $(DESTDIR)$(calibrationdir)
+
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)
+	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
+	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load" > $(DESTDIR)$(calibrationdir)/run
+	@chmod +x $(DESTDIR)$(calibrationdir)/run
+
+run: all
+	@$(top_srcdir)/rtai-scripts/rtai-load --verbose
+
+EXTRA_DIST = runinfo README.SMI Makefile.kbuild

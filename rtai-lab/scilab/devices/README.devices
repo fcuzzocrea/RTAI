@@ -1,0 +1,19 @@
+Writing new devices for Scilab/Scicos
+=====================================
+
+Use the utility "gen_dev" to create a skeleton of the file for your
+new device. The needed procedures are added to the include file "devices.h" too.
+
+Example:
+gen_dev rtai_comedi_data
+
+This command creates a file "rtai_comedi_data.c" and fill the
+procedures into "device.h"
+
+Now simply add the code to the generated file in order to fit your need.
+
+Start "Makefile" to generate the library "ulibsci.a" and "make
+install" to copy this library into the rtai-scilab path (default: /usr/local/scicos").
+ 
+Roberto Bucher roberto.bucher@die.supsi.ch
+Oct 4 2003

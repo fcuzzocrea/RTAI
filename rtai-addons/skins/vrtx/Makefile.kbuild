@@ -1,0 +1,9 @@
+EXTRA_CFLAGS += -I$(rtai_srctree)/rtai-core/include \
+		-I$(rtai_srcdir)/.. \
+		-I$(src)/../../../rtai-core/include \
+		-I$(src)/../../.. \
+		-D__IN_RTAI__
+
+obj-m += rtai_vrtx.o
+
+rtai_vrtx-objs := $(rtai_objs)

@@ -1,0 +1,1 @@
+calibrate:ksched+fifos:./calibrate -i;popall:control_c

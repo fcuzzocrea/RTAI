@@ -1,0 +1,4 @@
+SUBDIRS=docbook doxygen latex
+
+EXTRA_DIST=maintainers \
+	User-Manual.txt

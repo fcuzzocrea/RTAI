@@ -1,0 +1,86 @@
+Overview
+========
+
+The PSE51 emulation module on top of Xenomai aims at providing an (almost) POSIX
+compatible API. In order to help porting applications from other PSE51
+compatible APIS (like RTLinux) it will contain some non portable extensions to
+the POSIX specification.
+
+This layer already contains most basic features :
+- threads,
+- mutexes,
+- semaphores,
+- condition variables,
+- basic support for old-fashioned signals (not realtime ones),
+- cancellation, cancellation handlers
+- thread specific data.
+
+
+
+Known variations from the POSIX specification.
+===============================================
+
+Using the Xenomai PSE51 skin, you may observe some variations from the
+interfaces and behaviours described in the POSIX specification. Here are the 
+known ones :
+
+- the skin header file does not define the _POSIX* compile-time constants ;
+ 
+- nor does it defines the objects static initializers
+  (PTHREAD_MUTEX_INITIALIZER, etc...) except for pthread_once_t ;
+
+- manually setting the thread stack address in thread attributes is not
+  supported ;
+
+- thread attributes contain two non portable extensions : pthread_attr_set/getfp
+  to control whether the thread to be created will use the FPU,
+  pthread_attr_set/getname to choose the name of threads ;
+
+- priority ceiling protocol is not supported, use priority inheritance instead ;
+
+- reusing the same pointer as the parameter to several functions *_init should
+  always return EBUSY instead of overwriting some memory area.
+
+- simultaneous calls to pthread_join() specifying the same target thread simply
+  locks all the callers until the target thread exits, is canceled or killed.
+
+- thanks to xenomai kernel mutexes, most functions should be asynchronous signal
+  safe.
+
+
+Undefined behaviour.
+=====================
+
+Some special cases are not covered by the POSIX specification or described as
+being "undefined", but some implementation decisions had to be made :
+
+- trying to post a semaphore whose count is already SEM_VALUE_MAX returns
+  EINVAL ;
+
+- pthread_equal simply compares the two pthread_t, which are pointers, no
+  attempts is made to verify whether the corresponding threads exist.
+
+
+
+TODO List
+==========
+
+The PSE51 skin is still a work in progress, it lacks some features which will be 
+added gradually :
+- RTLinux non portable extensions ;
+- CLOCK_REALTIME support (the only clock supported is CLOCK_MONOTONIC for now,
+  which does not make any difference as long as clock_gettime does not get 
+  called);
+- rwlocks/barriers/message queues ;
+- realtime signals ;
+- timers.
+
+
+
+Module parameters
+=================
+
+The following parameters can be passed at startup to the PSE51
+API emulation module:
+
+- "tick_hz_arg", clock tick period. Defaults to 100 Hz.

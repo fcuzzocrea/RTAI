@@ -1,0 +1,346 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
+<title>1.3. A common emulation framework</title>
+<link rel="stylesheet" href="../css/rtai.css" type="text/css">
+<meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
+<link rel="home" href="index.html" title="The XENOMAI project Implementing a RTOS emulation framework
+      on GNU/Linux">
+<link rel="up" href="whitepaper.html" title="1. White paper">
+<link rel="previous" href="porting-rtos.html" title="1.2. Porting traditional RTOS-based applications to GNU/Linux">
+<link rel="next" href="xeno-approach.html" title="1.4. The Xenomai approach">
+</head>
+<body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
+<div class="navheader">
+<table width="100%" summary="Navigation header">
+<tr><th colspan="3" align="center">1.3. A common emulation framework</th></tr>
+<tr>
+<td width="20%" align="left">
+<a accesskey="p" href="porting-rtos.html"><img src="../pictures/prev.gif" alt="Prev"></a> </td>
+<th width="60%" align="center">1. White paper</th>
+<td width="20%" align="right"> <a accesskey="n" href="xeno-approach.html"><img src="../pictures/next.gif" alt="Next"></a>
+</td>
+</tr>
+</table>
+<hr>
+</div>
+<div class="sect2" lang="en">
+<div class="titlepage">
+<div><div><h3 class="title">
+<a name="common-framework"></a>1.3. A common emulation framework</h3></div></div>
+<div></div>
+</div>
+<div class="sect3" lang="en">
+<div class="titlepage">
+<div><div><h4 class="title">
+<a name="rtos-behaviors"></a>1.3.1. Common traditional RTOS behaviors</h4></div></div>
+<div></div>
+</div>
+<p>In order to build a generic and versatile framework for
+	emulating traditional RTOS, we chose to concentrate on a set
+	of common behaviors they all exhibit. A limited set of
+	specific RTOS features which are not so common, but would be
+	more efficiently implemented into the nanokernel than into the
+	emulators, has also been retained. The basic behaviors
+	selected cover four distinct fields:</p>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="multi-threading"></a>1.3.1.1. Multi-threading</h5></div></div>
+<div></div>
+</div>
+<p>Multi-threading provides the fundamental mechanism for
+	  an application to control and react to multiple, discrete
+	  external events. The nanokernel should provide the basic
+	  multi-threading environment.</p>
+<p>
+<span class="emphasis"><em>Thread states.</em></span> The nanokernel has
+	  to maintain the current state of each thread in the
+	  system. A state transition from one state to another may
+	  occur as the result of specific nanokernel services called
+	  by the RTOS emulator. The fundamental thread states that
+	  should be defined are:</p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>WAITING and SUSPENDED states are cumulative,
+		meaning that the newly created thread will still
+		remain in a suspended state after being resumed from
+		the WAITING state.</p></li>
+<li><p>PENDING and SUSPENDED states are cumulative too,
+		meaning that a thread can be forcibly suspended by
+		another thread or service routine while pending on a
+		synchronization resource (e.g. semaphore, message
+		queue). In such a case, the resource is dispatched to
+		it, but it remains suspended until explicitely resumed
+		by the proper nanokernel service.</p></li>
+<li><p>PENDING and DELAYED states may be combined to
+		express a timed wait on a resource. In such a case,
+		the time the thread can be blocked is bound to a limit
+		enforced by a watchdog.</p></li>
+</ul></div>
+<p>
+	</p>
+<p> <span class="emphasis"><em>Scheduling policies</em></span>. By default,
+	  threads are scheduled according to a fixed priority value,
+	  using a preemptive algorithm. There must also be a support
+	  for round-robin scheduling among a group of threads having
+	  the same priority, allowing them to run during a given time
+	  slice, in rotation. Moreover, each thread undergoing the
+	  round-robin scheduling should be given an individual time
+	  quantum.</p>
+<p>
+<span class="emphasis"><em>Priority management.</em></span> It should be
+	  possible to use whether an increasing or decreasing thread
+	  priority ordering, depending on an initial configuration. In
+	  other words, numerically highest priority values could
+	  whether represent highest or lowest scheduling priorities
+	  depending on the configuration choosen. This feature is
+	  motivated by the existence of this two possible ordering
+	  among traditional RTOS. For instance, VxWorks, VRTX, ThreadX
+	  and Chorus O/S use a reversed priority management scheme,
+	  where the highest the value, the lowest the priority. pSOS+
+	  instead uses the opposite ordering, in which the highest the
+	  value, the highest the priority.</p>
+<p>
+<span class="emphasis"><em>Running thread.</em></span> At any given
+	  time, the highest priority thread which has been ready to
+	  run for the longuest time among the currently runnable
+	  threads (i.e. not currently blocked by any delay or resource
+	  wait) should be elected to run by the scheduler.</p>
+<p>
+<span class="emphasis"><em>Preemption.</em></span> When preempted by a
+	  more prioritary thread, the running thread should be put at
+	  front of the ready thread queue waiting for the processor
+	  resource, provided it has not been suspended or blocked in
+	  any way. Thus it is expected to regain the processor
+	  resource as soon as no other prioritary activity (i.e. a
+	  thread having a higher priority level, or an interrupt
+	  service routine) is eligible for running.</p>
+<p>Manual round-robin.<span class="emphasis"><em></em></span> As a
+	  side-effect of attempting to resume an already runnable
+	  thread or the running thread itself, this thread should be
+	  moved at the end of its priority group in the ready thread
+	  queue. This operation should be functionally equivalent to a
+	  manual round-robin scheduling.</p>
+<p>Even if they are not as widespread as those above in
+	  traditional RTOS, the following features are also retained
+	  for the sake of efficiency in the implementation of some
+	  emulators:</p>
+<p>
+<span class="emphasis"><em>Priority inversion.</em></span> In order to
+	  provide support for preventing priority inversion when using
+	  inter-thread synchronization services, the priority
+	  inheritance protocol should be implemented.</p>
+<p>
+<span class="emphasis"><em>Signaling.</em></span> A support for sending
+	  signals to threads and running asynchronous service routines
+	  to process them should be implemented. The asynchronous
+	  service routine should run on behalf of the signaled thread
+	  context the next time it returns from the nanokernel level
+	  of execution, as soon as one or more signals are
+	  pending.</p>
+<p>
+<span class="emphasis"><em>Disjunctive wait.</em></span> A thread should
+	  be able to wait in a disjunctive manner on multiple
+	  resources. The nanokernel should unblock the thread when at
+	  least one among the pended resources is available.</p>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="thread-synchro"></a>1.3.1.2. Thread synchronization</h5></div></div>
+<div></div>
+</div>
+<p>Traditional RTOS provide a large spectrum of
+	  inter-thread communication facilities involving thread
+	  synchronization, such as semaphores, message queues, event
+	  flags or mailboxes. Looking at them closely, we can
+	  define the characteristics of a basic mecanism which will be
+	  usable in turn to build these facilities.</p>
+<p>
+<span class="emphasis"><em>Pending mode.</em></span> The thread
+	  synchronization facility should provide a mean for threads
+	  to pend either by priority or FIFO ordering. Multiple
+	  threads should be able to pend on a single resource.</p>
+<p>
+<span class="emphasis"><em>Priority inheritance protocol.</em></span> In
+	  order to prevent priority inversion problems, the thread
+	  synchronization facility should implement a priority
+	  inheritance protocol in conjunction with the thread
+	  scheduler. The implementation should allow for supporting
+	  the priority ceiling protocol as a derivative of the
+	  priority inheritance protocol.</p>
+<p>
+<span class="emphasis"><em>Time-bounded wait.</em></span> The thread
+	  synchronization facility should provide a mean to limit the
+	  time a thread waits for a given resource using a
+	  watchdog.</p>
+<p>
+<span class="emphasis"><em>Forcible deletion.</em></span> It should be
+	  legal to destroy a resource while threads are pending on
+	  it. This action should resume all waiters atomically.</p>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="it-management"></a>1.3.1.3. Interrupt management</h5></div></div>
+<div></div>
+</div>
+<p>Since the handling of interrupts is one of the least
+	  well defined areas in RTOS design, we will focus on
+	  providing a generalized mechanism with sufficient hooks for
+	  specific implementations to be built onto according to the
+	  emulated RTOS flavour.</p>
+<p>
+<span class="emphasis"><em>Nesting.</em></span> Interrupt management
+	  code should be reentrant in order to support interrupt
+	  nesting safely.</p>
+<p>
+<span class="emphasis"><em>Atomicity.</em></span> Interrupts need to be
+	  associated with dedicated service routines called ISRs. In
+	  order for these routines not to be preempted by thread
+	  execution, the rescheduling procedure should be locked until
+	  the outer ISR has exited (i.e. in case of nested
+	  interrupts).</p>
+<p>
+<span class="emphasis"><em>Priority.</em></span> ISRs should always be
+	  considered as prioritary over thread execution. Interrupt
+	  prioritization should be left to the underlying
+	  architecture.</p>
+</div>
+<div class="sect4" lang="en">
+<div class="titlepage">
+<div><div><h5 class="title">
+<a name="time-management"></a>1.3.1.4. Time management</h5></div></div>
+<div></div>
+</div>
+<p>Traditional RTOS usually represent time in units of
+	  ticks. These are clock-specific time units and are usually
+	  the period of the hardware timer interrupt, or a multiple
+	  thereof.</p>
+<p>
+<span class="emphasis"><em>Software timer support.</em></span> A
+	  watchdog facility is needed to manage time-bound operations
+	  by the nanokernel.</p>
+<p>
+<span class="emphasis"><em>Absolute and relative clock.</em></span> The
+	  nanokernel should keep a global clock value which can be set
+	  by the RTOS emulator as being the system-defined
+	  epoch.</p>
+<p>Some RTOS like pSOS+ also provide support for
+	  date-based timing, but conversion of ticks into conventional
+	  time and date units is an uncommon need that should be taken
+	  in charge by the RTOS emulator itself. </p>
+</div>
+</div>
+<div class="sect3" lang="en">
+<div class="titlepage">
+<div><div><h4 class="title">
+<a name="abstraction-layer"></a>1.3.2. An architecture-neutral abstraction layer</h4></div></div>
+<div></div>
+</div>
+<p>After having selected the basic behaviors shared by
+	traditional RTOS, we can implement them in a nanokernel
+	exporting a few service classes. These generic services will
+	then serve as a founding layer for developing each emulated
+	RTOS API, according to their own flavour and semantics.</p>
+<p>In order for this layer to be architecture neutral, the
+	needed support for hardware control and real-time capabilities
+	will be obtained from an underlying host software
+	architecture, through a rather simple standardized
+	interface. Thus, porting the nanokernel to a new real-time
+	architecture will solely consist in implementing this
+	low-level interface for the target platform.</p>
+</div>
+<div class="sect3" lang="en">
+<div class="titlepage">
+<div><div><h4 class="title">
+<a name="rt-capabilities"></a>1.3.3. Real-time capabilities</h4></div></div>
+<div></div>
+</div>
+<p>The host software architecture is expected to provide
+	the primary real-time capabilities to the RTOS abstraction
+	layer. Basically, the host real-time layer must handle at
+	least the following tasks: </p>
+<div class="itemizedlist"><ul type="disc">
+<li><p>Start/stop dispatching on request the external
+	      interrupts to an abstraction layer's specialized handler
+	      ;</p></li>
+<li><p>Provide a mean to mask and unmask interrupts ;
+	      </p></li>
+<li><p>Provide a mean to create new threads of control in
+	      their simplest form ; </p></li>
+<li><p>Provide support for a periodic interrupt source
+	      used in timer management ; </p></li>
+<li><p>Provide support for allocating chunks of
+	      non-pageable memory.</p></li>
+</ul></div>
+<p>
+	</p>
+<p>When the host software architecture has no direct access
+	to the underlying hardware, such as in a soft real-time
+	user-space execution environment, interrupts may be simulated
+	by POSIX signals, and hard real-time constraints imposed to
+	the services above may be relaxed (e.g. memory can be
+	pageable). </p>
+</div>
+<div class="sect3" lang="en">
+<div class="titlepage">
+<div><div><h4 class="title">
+<a name="benefits"></a>1.3.4. Benefits</h4></div></div>
+<div></div>
+</div>
+<p>The project described herein aims at helping application
+	designers relying on traditional RTOS to move as smoothly as
+	possible to a GNU/Linux-based execution environment, without
+	having to rewrite their applications entirely. Aside of the
+	advantages of using GNU/Linux as an embedded system, the
+	benefits expected from the described approach are:</p>
+<p>
+<span class="emphasis"><em>Reduced complexity in designing new RTOS
+	emulations.</em></span> The architecture-neutral abstraction
+	layer provides the foundation for developing accurate
+	emulations of traditional RTOS API, saving the burden of
+	implementing each time their fundamental real-time
+	behaviors. Since the abstraction layer also favours code
+	sharing and mutualization, we can expect the RTOS emulations
+	to take advantage of them in terms of code stability and
+	reliability.</p>
+<p>
+<span class="emphasis"><em>Generic support for RTOS-aware
+	tools.</em></span> One of the most potential show-stopper for a
+	broader use of GNU/Linux in the real-time space is probably
+	the lack of powerful and user-friendly debugging and
+	monitoring tools for real-time applications. However, this gap
+	is about to be filled by the maturation of tools like the
+	Linux Trace Toolkit (LTT) [9] which now offers unprecedented
+	capabilities for inspecting the dynamics of a running
+	GNU/Linux system. Since a version of LTT is available for the
+	'regular' Linux kernel and Linux/RTAI, the next step will be
+	to take advantage of this toolkit, implementing the proper
+	hooks to support it into the nanokernel internals and
+	interface, in order to provide RTOS-aware tools as soon as
+	possible.</p>
+</div>
+</div>
+<hr>
+<p class="copyright">© 2004 RTAI Project</p>
+<a href="http://validator.w3.org/check/referer" title="Markup validation for this page"><img src="../pictures/w3_xhtml11.png" alt="Standard-compliant XHTML" width="80" height="15"></a><a href="http://jigsaw.w3.org/css-validator/check/referer" title="Style Sheet validation for this page"><img src="../pictures/w3_css2.png" alt="Standard-compliant CSS 2" width="80" height="15"></a><div class="navfooter">
+<hr>
+<table width="100%" summary="Navigation footer">
+<tr>
+<td width="40%" align="left">
+<a accesskey="p" href="porting-rtos.html"><img src="../pictures/prev.gif" alt="Prev"></a> </td>
+<td width="20%" align="center"><a accesskey="u" href="whitepaper.html"><img src="../pictures/up.gif" alt="Up"></a></td>
+<td width="40%" align="right"> <a accesskey="n" href="xeno-approach.html"><img src="../pictures/next.gif" alt="Next"></a>
+</td>
+</tr>
+<tr>
+<td width="40%" align="left" valign="top">1.2. Porting traditional RTOS-based applications to GNU/Linux </td>
+<td width="20%" align="center"><a accesskey="h" href="index.html"><img src="../pictures/home.gif" alt="Home"></a></td>
+<td width="40%" align="right" valign="top"> 1.4. The Xenomai approach</td>
+</tr>
+</table>
+</div>
+</body>
+</html>

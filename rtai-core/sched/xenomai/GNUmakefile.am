@@ -1,0 +1,80 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_a_SOURCES = \
+			heap.c \
+			intr.c \
+			module.c \
+			mutex.c \
+			pod.c \
+			shadow.c \
+			synch.c \
+			thread.c \
+			timer.c
+
+if CONFIG_KBUILD
+rtai_xeno.ko: @RTAI_KBUILD_ENV@
+rtai_xeno.ko: $(libmodule_a_SOURCES)
+	@RTAI_KBUILD_CMD@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+else
+noinst_LIBRARIES = libmodule.a
+
+libmodule_a_CPPFLAGS = \
+	@RTAI_KMOD_CFLAGS@ \
+	-I$(top_srcdir)/rtai-core/include \
+	-I../../include
+
+libmodule_a_AR = $(CROSS_COMPILE)ar cru
+
+rtai_xeno.o: libmodule.a
+	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+endif
+
+all-local: rtai_xeno$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_xeno$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+OPTDIRS =
+
+if CONFIG_RTAI_XENOMAI_VMLIB
+
+lib_LIBRARIES = libxenomai.a
+
+nodist_libxenomai_a_SOURCES = \
+			heap.c \
+			intr.c \
+			module.c \
+			mutex.c \
+			pod.c \
+			synch.c \
+			thread.c \
+			timer.c
+
+libxenomai_a_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-D_GNU_SOURCE -D_REENTRANT \
+	-I$(srcdir)/.. \
+	-I$(srcdir)/../../include/xenomai/vm \
+	-I$(srcdir)/../../include \
+	-I../../include \
+	-I@RTAI_LINUX_DIR@/include
+
+libxenomai_a_AR = $(CROSS_COMPILE)ar cru
+
+endif
+
+SUBDIRS = fusion $(OPTDIRS)
+
+EXTRA_DIST = Makefile.kbuild

@@ -1,0 +1,1496 @@
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/config-shared.in linux-2.4.22/arch/mips/config-shared.in
+--- linux-2.4.22.orig/arch/mips/config-shared.in	2003-08-27 16:14:26.000000000 -0700
++++ linux-2.4.22/arch/mips/config-shared.in	2003-08-20 09:45:44.000000000 -0700
+@@ -534,6 +534,7 @@
+    define_bool CONFIG_NONCOHERENT_IO y
+    define_bool CONFIG_DUMMY_KEYB y
+    define_bool CONFIG_SCSI n
++   define_bool CONFIG_ISA y #steve
+ fi
+ if [ "$CONFIG_NEC_EAGLE" = "y" ]; then
+    define_bool CONFIG_IRQ_CPU y
+@@ -772,6 +773,7 @@
+ else
+    define_bool CONFIG_CPU_HAS_SYNC y
+ fi
++bool 'Real-Time Hardware Abstraction Layer (RTAI)' CONFIG_RTHAL
+ endmenu
+ 
+ #
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/kernel/entry.S linux-2.4.22/arch/mips/kernel/entry.S
+--- linux-2.4.22.orig/arch/mips/kernel/entry.S	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/kernel/entry.S	2003-08-27 13:20:36.000000000 -0700
+@@ -6,7 +6,10 @@
+  * Copyright (C) 1994 - 2000, 2001 by Ralf Baechle
+  * Copyright (C) 1999, 2000 Silicon Graphics, Inc.
+  * Copyright (C) 2001 MIPS Technologies, Inc.
++ *
++ * rthal mods by Steven Seeger (sseeger@stellartec.com) 16Apr03
+  */
++ 
+ #include <linux/config.h>
+ #include <linux/init.h>
+ #include <linux/sys.h>
+@@ -26,7 +29,6 @@
+ #include <asm/unistd.h>
+ #include <asm/isadep.h>
+ 
+-
+ 		.text
+ 		.align	5
+ 		.set	push
+@@ -36,19 +38,40 @@
+ 		lw	t0, PT_STATUS(sp)	# returning to kernel mode?
+ 		andi	t0, t0, KU_USER
+ 		beqz	t0, restore_all
+-
++		nop
+ FEXPORT(ret_from_sys_call)		# here to prevent code duplication
+ ret_from_schedule:
++#ifndef CONFIG_RTHAL
+ 		mfc0	t0, CP0_STATUS	# need_resched and signals atomic test
+ 		ori	t0, t0, 1
+ 		xori	t0, t0, 1
+ 		mtc0	t0, CP0_STATUS
+ 		SSNOP; SSNOP; SSNOP
+-
++#else
++		mfc0    t0, CP0_STATUS
++		ori	t0, t0, 1
++		mtc0	t0, CP0_STATUS
++		nop
++		nop
++		nop
++
++     		lw	t0, (rthal + 16) //cli
++		nop
++		jalr	t0
++		nop
++#endif
+ 		lw	v0, TASK_NEED_RESCHED($28)
+ 		lw	v1, TASK_SIGPENDING($28)
+ 		bnez	v0, reschedule
+ 		bnez	v1, signal_return
++
++#ifdef CONFIG_RTHAL
++     	    	lw 	t0, (rthal + 20) /* sti */
++		nop
++		jalr	t0
++		nop
++#endif		
++
+ restore_all:	.set	noat
+ 		RESTORE_ALL_AND_RET
+ 		.set	at
+@@ -56,20 +79,27 @@
+ /* Put this behind restore_all for the sake of the branch prediction.  */
+ signal_return:
+ 		.type	signal_return, @function
+-
++#ifndef CONFIG_RTHAL
+ 		mfc0	t0, CP0_STATUS
+ 		ori	t0, t0, 1
+ 		mtc0	t0, CP0_STATUS
++#else
++     		lw	t0, (rthal+20) //sti
++		nop
++		jalr	t0
++		nop
++#endif
+ 
+ 		move	a0, zero
+ 		move	a1, sp
+ 		jal	do_signal
+ 		b	restore_all
++		nop
+ 
+ reschedule:
+ 		jal	schedule
+ 		b	ret_from_schedule
+-
++		nop
+ /*
+  * Common spurious interrupt handler.
+  */
+@@ -173,14 +203,14 @@
+  */
+ #define __BUILD_clear_none(exception)
+ #define __BUILD_clear_sti(exception)                                    \
+-		STI
++	        STI
+ #define __BUILD_clear_cli(exception)                                    \
+-		CLI
++	        CLI
+ #define __BUILD_clear_fpe(exception)                                    \
+ 		cfc1	a1,fcr31;                                       \
+ 		li	a2,~(0x3f<<12);                                 \
+ 		and	a2,a1;                                          \
+-		ctc1	a2,fcr31;                                       \
++		ctc1	a2,fcr31;                                       
+ 		STI
+ #define __BUILD_clear_ade(exception)                                    \
+ 		.set	reorder;					\
+@@ -227,7 +257,7 @@
+ 		BUILD_HANDLER(ibe,be,cli,silent)		/* #6  */
+ 		BUILD_HANDLER(dbe,be,cli,silent)		/* #7  */
+ 		BUILD_HANDLER(bp,bp,sti,silent)			/* #9  */
+-		BUILD_HANDLER(ri,ri,sti,silent)			/* #10 */
++		BUILD_HANDLER(ri,ri,sti,silent)	    		/* #10 */
+ 		BUILD_HANDLER(cpu,cpu,sti,silent)		/* #11 */
+ 		BUILD_HANDLER(ov,ov,sti,silent)			/* #12 */
+ 		BUILD_HANDLER(tr,tr,sti,silent)			/* #13 */
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/kernel/head.S linux-2.4.22/arch/mips/kernel/head.S
+--- linux-2.4.22.orig/arch/mips/kernel/head.S	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/kernel/head.S	2003-08-11 12:20:29.000000000 -0700
+@@ -151,11 +151,12 @@
+ 		.set    mips0
+ 		END(nmi_handler)
+ 
+-		__INIT
++//		__INIT //move kernel entry up so my bootloader doesn't barf steve s.
+ 
+ 		/*
+ 		 * Kernel entry point
+ 		 */
++
+ 		NESTED(kernel_entry, 16, sp)
+ 		.set	noreorder
+ 
+@@ -184,7 +185,7 @@
+ 		 nop
+ 		END(kernel_entry)
+ 
+-
++		__INIT
+ #ifdef CONFIG_SMP
+ 
+ /*
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/kernel/irq.c linux-2.4.22/arch/mips/kernel/irq.c
+--- linux-2.4.22.orig/arch/mips/kernel/irq.c	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/kernel/irq.c	2003-08-27 09:44:18.000000000 -0700
+@@ -7,6 +7,8 @@
+  *
+  * Copyright (C) 1992 Linus Torvalds
+  * Copyright (C) 1994 - 2000 Ralf Baechle
++ * 
++ * rthal mods by Steven Seeger (sseeger@stellartec.com) 16Apr03
+  */
+ #include <linux/config.h>
+ #include <linux/kernel.h>
+@@ -412,7 +414,14 @@
+  * SMP cross-CPU interrupts have their own specific
+  * handlers).
+  */
+-asmlinkage unsigned int do_IRQ(int irq, struct pt_regs *regs)
++
++asmlinkage unsigned int 
++#ifdef CONFIG_RTHAL
++  _do_IRQ
++#else
++  do_IRQ
++#endif  
++  (int irq, struct pt_regs *regs)
+ {
+ 	/*
+ 	 * We ack quickly, we don't want the irq controller
+@@ -493,6 +502,22 @@
+ 	return 1;
+ }
+ 
++#ifdef CONFIG_RTHAL
++
++/* Ok here is where the fun begins. Since I'm trying to be nice to all boards,
++ * I'm going to put the RTHAL stuff here. Our do_IRQ function will handle
++ * the RTHAL gate. However, I am using only a VR4181 for MIPS right now
++ * and I know this will work. If other boards' specific interrupt handlers
++ * go to functions other than this do_IRQ, they'll have to fiddle with their
++ * interrupt handlers. */
++
++asmlinkage unsigned int do_IRQ(int irq, struct pt_regs *regs)
++{
++   return rthal.mips_interrupt(irq, regs);
++}
++
++#endif //CONFIG_RTHAL
++
+ /**
+  *	request_irq - allocate an interrupt line
+  *	@irq: Interrupt line to allocate
+@@ -1063,3 +1088,76 @@
+ 	for (i = 0; i < NR_IRQS; i++)
+ 		register_irq_proc(i);
+ }
++
++#ifdef CONFIG_RTHAL
++
++static void linux_cli(void)
++{                          
++   hard_cli();
++}
++
++static void linux_sti(void)
++{  
++   hard_sti();  
++}
++
++static unsigned long linux_save_flags(void)
++{
++   unsigned long flags;
++   
++   hard_save_flags(flags);
++   
++   return flags;
++}
++
++static void linux_restore_flags(unsigned long flags)
++{
++   hard_restore_flags(flags);
++}
++
++static unsigned long linux_save_flags_and_cli(void)
++{
++   unsigned long flags;
++   
++   hard_save_flags_and_cli(flags);
++   return flags;
++}
++
++static unsigned long linux_save_flags_and_sti(void)
++{
++   unsigned long flags;
++   
++   hard_save_flags_and_sti(flags);
++   return flags;
++}
++
++static asmlinkage long long rtai_srq_interrupt(unsigned int srq, unsigned int args)
++{
++   return 1;
++}
++
++extern void *ret_from_irq;
++extern void linux_mips_timer_intr(int irq, void *dev_id, struct pt_regs *);
++extern void linux_soft_mips_timer_intr(int irq, void *dev_id, struct pt_regs *);
++
++asmlinkage struct rt_hal rthal =
++{
++   ret_from_intr: &ret_from_irq,
++   mips_interrupt: _do_IRQ,
++     mips_timer_interrupt: 0, //not used anymore
++     rtai_srq_interrupt: rtai_srq_interrupt,
++     disint: linux_cli,
++     enint: linux_sti,
++     rtai_active: 0,
++     getflags: linux_save_flags,
++     setflags: linux_restore_flags,
++     getflags_and_cli: linux_save_flags_and_cli,
++     irq_desc: irq_desc,
++     tsc: {tsc: 0LL},
++     linux_mips_timer_intr: linux_mips_timer_intr,
++     linux_soft_mips_timer_intr: linux_soft_mips_timer_intr,
++     getflags_and_sti: linux_save_flags_and_sti,
++     soft_enint: linux_sti
++};
++
++#endif //CONFIG_RTHAL
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/kernel/mips_ksyms.c linux-2.4.22/arch/mips/kernel/mips_ksyms.c
+--- linux-2.4.22.orig/arch/mips/kernel/mips_ksyms.c	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/kernel/mips_ksyms.c	2003-08-26 07:48:36.000000000 -0700
+@@ -6,7 +6,10 @@
+  * for more details.
+  *
+  * Copyright (C) 1996, 1997, 1998, 2000, 2001 by Ralf Baechle
++ * 
++ * rthal mods by Steven Seeger (sseeger@stellartec.com) 16Apr03
+  */
++
+ #include <linux/config.h>
+ #include <linux/module.h>
+ #include <linux/string.h>
+@@ -40,6 +43,23 @@
+ extern long __strnlen_user_nocheck_asm(const char *s);
+ extern long __strnlen_user_asm(const char *s);
+ 
++//extern void flush_dcache_page(struct page *page);
++//EXPORT_SYMBOL(flush_dcache_page);
++
++extern unsigned long cycles_per_jiffy;
++EXPORT_SYMBOL(cycles_per_jiffy);
++
++#ifdef CONFIG_RTHAL
++/*
++ * RTHAL exports
++ */
++extern struct rt_hal rthal;
++EXPORT_SYMBOL(rthal);
++extern unsigned int mips_hpt_frequency;
++EXPORT_SYMBOL(mips_hpt_frequency);
++#include <linux/console.h>
++EXPORT_SYMBOL(console_drivers);
++#endif
+ EXPORT_SYMBOL(mips_machtype);
+ #ifdef CONFIG_EISA
+ EXPORT_SYMBOL(EISA_bus);
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/kernel/proc.c linux-2.4.22/arch/mips/kernel/proc.c
+--- linux-2.4.22.orig/arch/mips/kernel/proc.c	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/kernel/proc.c	2003-08-11 12:20:29.000000000 -0700
+@@ -115,6 +115,10 @@
+ 	seq_printf(m, fmt, 'D', vced_count);
+ 	seq_printf(m, fmt, 'I', vcei_count);
+ 
++//#ifndef CONFIG_CPU_HAS_LLSC
++//	seq_printf(m, "ll emulations\t\t: %lu\n", ll_ops);
++//	seq_printf(m, "sc emulations\t\t: %lu\n", sc_ops);
++//#endif
+ 	return 0;
+ }
+ 
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/kernel/r4k_switch.S linux-2.4.22/arch/mips/kernel/r4k_switch.S
+--- linux-2.4.22.orig/arch/mips/kernel/r4k_switch.S	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/kernel/r4k_switch.S	2003-08-12 14:38:02.000000000 -0700
+@@ -47,8 +47,8 @@
+ #ifndef CONFIG_CPU_HAS_LLSC
+ 	sw      zero, ll_bit
+ #endif
+-	mfc0	t1, CP0_STATUS
+-	sw	t1, THREAD_STATUS(a0)
++//	mfc0	t1, CP0_STATUS
++//	sw	t1, THREAD_STATUS(a0)
+ 	CPU_SAVE_NONSCRATCH(a0)
+ 	sw	ra, THREAD_REG31(a0)
+ 
+@@ -95,14 +95,14 @@
+ #else
+ 	sw	t0, kernelsp
+ #endif
+-	mfc0	t1, CP0_STATUS		/* Do we really need this? */
+-	li	a3, 0xff00
+-	and	t1, a3
+-	lw	a2, THREAD_STATUS($28)
+-	nor	a3, $0, a3
+-	and	a2, a3
+-	or	a2, t1
+-	mtc0	a2, CP0_STATUS
++//	mfc0	t1, CP0_STATUS		/* Do we really need this? */
++//	li	a3, 0xff00
++//	and	t1, a3
++//	lw	a2, THREAD_STATUS($28)
++//	nor	a3, $0, a3
++//	and	a2, a3
++//	or	a2, t1
++//	mtc0	a2, CP0_STATUS
+ 	jr	ra
+ 	 move	v0, a0
+ 	END(resume)
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/kernel/scall_o32.S linux-2.4.22/arch/mips/kernel/scall_o32.S
+--- linux-2.4.22.orig/arch/mips/kernel/scall_o32.S	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/kernel/scall_o32.S	2003-08-26 09:55:56.000000000 -0700
+@@ -5,7 +5,10 @@
+  *
+  * Copyright (C) 1997, 1998, 1999, 2000, 2001 by Ralf Baechle
+  * Copyright (C) 2001 MIPS Technologies, Inc.
++ *
++ * rthal modifications by Steven Seeger (sseeger@stellartec.com) 16Apr03
+  */
++ 
+ #include <linux/config.h>
+ #include <linux/errno.h>
+ #include <asm/asm.h>
+@@ -28,11 +31,30 @@
+ 	.set	at
+ 
+ 	lw	t1, PT_EPC(sp)		# skip syscall on return
++	addiu	t1, 4			# skip to next instruction
++	sw	t1, PT_EPC(sp)
++
++#ifdef CONFIG_RTHAL
++	move	t0, v0
++	li	t2, 0xfe000000		#rtai syscalls start at 0xfe000000
++	nop
++	and	t2, t0
++	beqz	t2, lnx_scall
++	nop
++	lw 	t2, (rthal + 12)	#rtai_srq_interrupt	
++	nop
++	jalr	t2  	     		#through the rthal gate
++	nop
++	
++	sw 	v0, PT_R2(sp)		#result
++	sw	v1, PT_R3(sp)
++	j	fast_ret_from_sys_call
++	nop
+ 
++lnx_scall:
++#endif //CONFIG_RTHAL
+ 	sltiu	t0, v0, MAX_SYSCALL_NO + 1 # check syscall number
+-	addiu	t1, 4			# skip to next instruction
+ 	beqz	t0, illegal_syscall
+-	sw	t1, PT_EPC(sp)
+ 
+ 	/* XXX Put both in one cacheline, should save a bit. */
+ 	sll	t0, v0, 2
+@@ -63,16 +85,28 @@
+ 
+ fast_ret_from_sys_call:
+ ret_from_schedule:
++#ifndef CONFIG_RTHAL
+ 	mfc0	t0, CP0_STATUS		# need_resched and signals atomic test
+ 	ori	t0, t0, 1
+ 	xori	t0, t0, 1
+ 	mtc0	t0, CP0_STATUS
+ 	SSNOP; SSNOP; SSNOP
+-
++#else
++     	lw	t0, (rthal + 16) //cli
++	nop
++	jalr	t0
++	nop
++#endif
+ 	lw	t2, TASK_NEED_RESCHED($28)
+ 	lw	v0, TASK_SIGPENDING($28)
+ 	bnez	t2, reschedule
+ 	bnez	v0, signal_return
++#ifdef CONFIG_RTHAL
++       lw	t0, (rthal+20) //sti
++       nop
++       jalr	t0
++       nop
++#endif
+ restore_all:
+ 	RESTORE_SOME
+ 	RESTORE_SP_AND_RET
+@@ -99,11 +133,16 @@
+ /* Put this behind restore_all for the sake of the branch prediction.  */
+ signal_return:
+ 	.type	signal_return, @function
+-
++#ifndef CONFIG_RTHAL
+ 	mfc0	t0, CP0_STATUS
+ 	ori	t0, t0, 1
+ 	mtc0	t0, CP0_STATUS
+-
++#else
++  	lw	t0, (rthal + 20) //sti
++	nop
++	jalr	t0
++	nop
++#endif	
+ 	SAVE_STATIC
+ 	move	a0, zero
+ 	move	a1, sp
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/kernel/time.c linux-2.4.22/arch/mips/kernel/time.c
+--- linux-2.4.22.orig/arch/mips/kernel/time.c	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/kernel/time.c	2003-08-27 10:25:49.000000000 -0700
+@@ -30,6 +30,7 @@
+ #include <asm/time.h>
+ #include <asm/hardirq.h>
+ #include <asm/div64.h>
++#include <asm/mipsregs.h>
+ 
+ /*
+  * The integer part of the number of usecs per jiffy is taken from tick,
+@@ -71,13 +72,9 @@
+ int (*rtc_set_time)(unsigned long) = null_rtc_set_time;
+ int (*rtc_set_mmss)(unsigned long);
+ 
+-
+ /* usecs per counter cycle, shifted to left by 32 bits */
+ static unsigned int sll32_usecs_per_cycle;
+ 
+-/* how many counter cycles in a jiffy */
+-static unsigned long cycles_per_jiffy;
+-
+ /* Cycle counter value at the previous timer interrupt.. */
+ static unsigned int timerhi, timerlo;
+ 
+@@ -90,6 +87,10 @@
+  */
+ static void null_timer_ack(void) { /* nothing */ }
+ 
++#ifdef CONFIG_RTHAL
++static volatile unsigned long rtai_count;
++#endif
++
+ /*
+  * Null high precision timer functions for systems lacking one.
+  */
+@@ -100,23 +101,43 @@
+ 
+ static void null_hpt_init(unsigned int count) { /* nothing */ }
+ 
++/* how many counter cycles in a jiffy */
++unsigned long cycles_per_jiffy=0;
+ 
+ /*
+  * Timer ack for an R4k-compatible timer of a known frequency.
+  */
+ static void c0_timer_ack(void)
+ {
+-	unsigned int count;
+-
++#ifndef CONFIG_RTHAL
++   unsigned int count;
++#endif   
+ 	/* Ack this timer interrupt and set the next one.  */
+ 	expirelo += cycles_per_jiffy;
+ 	write_c0_compare(expirelo);
+ 
+ 	/* Check to see if we have missed any timer interrupts.  */
+-	count = read_c0_count();
+-	if ((count - expirelo) < 0x7fffffff) {
++#ifdef CONFIG_RTHAL
++   rtai_count=
++#else
++     count=
++#endif     
++	read_c0_count();
++	if ((
++#ifdef CONFIG_RTHAL
++	     rtai_count
++#else
++	     count
++#endif
++	     - expirelo) < 0x7fffffff) {
+ 		/* missed_timer_count++; */
+-		expirelo = count + cycles_per_jiffy;
++		expirelo = 
++#ifdef CONFIG_RTHAL
++	     rtai_count
++#else
++	     count
++#endif	     
++	     + cycles_per_jiffy;
+ 		write_c0_compare(expirelo);
+ 	}
+ }
+@@ -132,17 +153,28 @@
+ /* For use solely as a high precision timer.  */
+ static void c0_hpt_init(unsigned int count)
+ {
++#ifdef CONFIG_RTHAL
++   extern struct rt_hal rthal;
++   
++   if (!rthal.rtai_active)
++#endif
++   
+ 	write_c0_count(read_c0_count() - count);
+ }
+ 
+ /* For use both as a high precision timer and an interrupt source.  */
+ static void c0_hpt_timer_init(unsigned int count)
+ {
+-	count = read_c0_count() - count;
+-	expirelo = (count / cycles_per_jiffy + 1) * cycles_per_jiffy;
+-	write_c0_count(expirelo - cycles_per_jiffy);
+-	write_c0_compare(expirelo);
+-	write_c0_count(count);
++#ifdef CONFIG_RTHAL
++   extern struct rt_hal rthal;
++
++   if (rthal.rtai_active) return; //do nothing
++#endif
++   count = read_c0_count() - count;
++   expirelo = (count / cycles_per_jiffy + 1) * cycles_per_jiffy;
++   write_c0_count(expirelo - cycles_per_jiffy);
++   write_c0_compare(expirelo);
++   write_c0_count(count);
+ }
+ 
+ int (*mips_timer_state)(void);
+@@ -202,7 +234,10 @@
+ 	time_maxerror = NTP_PHASE_LIMIT;
+ 	time_esterror = NTP_PHASE_LIMIT;
+ 
+-	write_unlock_irq(&xtime_lock);
++   //steve here
++   rtc_set_time(xtime.tv_sec);
++   
++	write_unlock_irq (&xtime_lock);
+ }
+ 
+ 
+@@ -223,6 +258,17 @@
+ 	return 0;
+ }
+ 
++/* usecs per counter cycle, shifted to left by 32 bits */
++static unsigned int sll32_usecs_per_cycle;
++
++/* Cycle counter value at the previous timer interrupt.. */
++static unsigned int timerhi, timerlo;
++
++/* expirelo is the count value for next CPU timer interrupt */
++static unsigned int expirelo;
++
++/* last time when xtime and rtc are sync'ed up */
++static long last_rtc_update;
+ 
+ /* The function pointer to one of the gettimeoffset funcs.  */
+ unsigned long (*do_gettimeoffset)(void) = null_gettimeoffset;
+@@ -405,47 +451,63 @@
+ #endif
+ }
+ 
++static inline int 
++bit64_compare(unsigned hi1, unsigned lo1, unsigned hi2, unsigned lo2)
++{
++	if (hi1 == hi2) 
++		return lo1 - lo2;
++	else
++		return hi1 - hi2;
++}
++
+ /*
+  * High-level timer interrupt service routines.  This function
+  * is set as irqaction->handler and is invoked through do_IRQ.
+  */
+ void timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+ {
+-	unsigned long j;
+-	unsigned int count;
+-
+-	count = mips_hpt_read();
+-	mips_timer_ack();
+-
+-	/* Update timerhi/timerlo for intra-jiffy calibration. */
+-	timerhi += count < timerlo;			/* Wrap around */
+-	timerlo = count;
+-
+-	/*
+-	 * call the generic timer interrupt handling
+-	 */
+-	do_timer(regs);
+-
+-	/*
+-	 * If we have an externally synchronized Linux clock, then update
+-	 * CMOS clock accordingly every ~11 minutes. rtc_set_time() has to be
+-	 * called as close as possible to 500 ms before the new second starts.
+-	 */
+-	read_lock(&xtime_lock);
+-	if ((time_status & STA_UNSYNC) == 0 &&
+-	    xtime.tv_sec > last_rtc_update + 660 &&
+-	    xtime.tv_usec >= 500000 - ((unsigned) tick) / 2 &&
+-	    xtime.tv_usec <= 500000 + ((unsigned) tick) / 2) {
+-		if (rtc_set_mmss(xtime.tv_sec) == 0) {
+-			last_rtc_update = xtime.tv_sec;
+-		} else {
+-			/* do it again in 60 s */
+-			last_rtc_update = xtime.tv_sec - 600;
+-		}
+-	}
+-	read_unlock(&xtime_lock);
+-
+-	/*
++   unsigned long j;
++   unsigned int count = mips_hpt_read();
++#ifdef CONFIG_RTHAL
++   extern struct rt_hal rthal;
++   
++   if(!rthal.rtai_active)
++#endif     
++   mips_timer_ack();
++   
++   /* Update timerhi/timerlo for intra-jiffy calibration. */
++   timerhi += count < timerlo;                     /* Wrap around */
++   timerlo = count;
++   
++   /*
++    * call the generic timer interrupt handling
++    */
++   do_timer(regs);
++   
++   /*
++    * If we have an externally synchronized Linux clock, then update
++    * CMOS clock accordingly every ~11 minutes. rtc_set_time() has to be
++    * called as close as possible to 500 ms before the new second starts.
++    */
++   read_lock(&xtime_lock);
++   if ((time_status & STA_UNSYNC) == 0 &&
++       xtime.tv_sec > last_rtc_update + 660 &&
++       xtime.tv_usec >= 500000 - ((unsigned) tick) / 2 &&
++       xtime.tv_usec <= 500000 + ((unsigned) tick) / 2) 
++     {	
++	if (rtc_set_mmss(xtime.tv_sec) == 0) 
++	  {	     
++	     last_rtc_update = xtime.tv_sec;
++	  }
++	else 
++	  {	     
++	     /* do it again in 60 s */
++	     last_rtc_update = xtime.tv_sec - 600;
++	  }	
++     }   
++   read_unlock(&xtime_lock);
++   
++         /*
+ 	 * If jiffies has overflown in this timer_interrupt, we must
+ 	 * update the timer[hi]/[lo] to make fast gettimeoffset funcs
+ 	 * quotient calc still valid. -arca
+@@ -486,46 +548,33 @@
+ 		}
+ 	}
+ 
++
+ #if !defined(CONFIG_SMP)
++   /*
++    * In UP mode, we call local_timer_interrupt() to do profiling
++    * and process accouting.
++    *
++    * In SMP mode, local_timer_interrupt() is invoked by appropriate
++    * low-level local timer interrupt handler.
++    */
++   local_timer_interrupt(irq, dev_id, regs);
++   
++#else   /* CONFIG_SMP */
++   
++   if (emulate_local_timer_interrupt) 
++     {	
+ 	/*
+-	 * In UP mode, we call local_timer_interrupt() to do profiling
++	 * this is the place where we send out inter-process
++	 * interrupts and let each CPU do its own profiling
+ 	 * and process accouting.
+ 	 *
+-	 * In SMP mode, local_timer_interrupt() is invoked by appropriate
+-	 * low-level local timer interrupt handler.
++	 * Obviously we need to call local_timer_interrupt() for
++	 * the current CPU too.
+ 	 */
+-	local_timer_interrupt(irq, dev_id, regs);
+-
+-#else	/* CONFIG_SMP */
+-
+-	if (emulate_local_timer_interrupt) {
+-		/*
+-		 * this is the place where we send out inter-process
+-		 * interrupts and let each CPU do its own profiling
+-		 * and process accouting.
+-		 *
+-		 * Obviously we need to call local_timer_interrupt() for
+-		 * the current CPU too.
+-		 */
+-		panic("Not implemented yet!!!");
+-	}
+-#endif	/* CONFIG_SMP */
+-}
+-
+-asmlinkage void ll_timer_interrupt(int irq, struct pt_regs *regs)
+-{
+-	int cpu = smp_processor_id();
+-
+-	irq_enter(cpu, irq);
+-	kstat.irqs[cpu][irq]++;
+-
+-	/* we keep interrupt disabled all the time */
+-	timer_interrupt(irq, NULL, regs);
+-
+-	irq_exit(cpu, irq);
+-
+-	if (softirq_pending(cpu))
+-		do_softirq();
++	panic("Not implemented yet!!!");
++     }
++   
++#endif  /* CONFIG_SMP */   
+ }
+ 
+ asmlinkage void ll_local_timer_interrupt(int irq, struct pt_regs *regs)
+@@ -620,9 +669,6 @@
+ 	if (board_time_init)
+ 		board_time_init();
+ 
+-	if (!rtc_set_mmss)
+-		rtc_set_mmss = rtc_set_time;
+-
+ 	xtime.tv_sec = rtc_get_time();
+ 	xtime.tv_usec = 0;
+ 
+@@ -673,8 +719,7 @@
+ 		do_gettimeoffset = fixed_rate_gettimeoffset;
+ 
+ 		/* Calculate cache parameters.  */
+-		cycles_per_jiffy = (mips_hpt_frequency + HZ / 2) / HZ;
+-
++	   cycles_per_jiffy = (mips_hpt_frequency + HZ / 2) / HZ;
+ 		/* sll32_usecs_per_cycle = 10^6 * 2^32 / mips_counter_freq  */
+ 		do_div64_32(sll32_usecs_per_cycle,
+ 			    1000000, mips_hpt_frequency / 2,
+@@ -755,6 +800,44 @@
+ }
+ 
+ EXPORT_SYMBOL(rtc_lock);
++
++#ifdef CONFIG_RTHAL
++
++void linux_mips_timer_intr(int irq, void *dev_id, struct pt_regs *regs)
++{   
++   extern struct rt_hal rthal;
++   
++   long flags;
++
++   save_and_cli(flags);
++   mips_timer_ack();
++   rthal.tsc.hltsc[1] += (rtai_count < rthal.tsc.hltsc[0]);
++   rthal.tsc.hltsc[0] = rtai_count;   
++   restore_flags(flags);
++   timer_interrupt(irq, dev_id, regs);
++}
++
++void linux_soft_mips_timer_intr(int irq, void *dev_id, struct pt_regs *regs)
++{   
++   extern struct rt_hal rthal;
++   unsigned long count;
++   long flags;
++
++   hard_save_flags_and_cli(flags);
++   expirelo += cycles_per_jiffy;
++   count = read_c0_count();
++
++   if ((count - expirelo) < 0x7fffffff) {
++      expirelo = count + cycles_per_jiffy;
++   }
++   
++   rthal.tsc.hltsc[1] += (count < rthal.tsc.hltsc[0]);
++   rthal.tsc.hltsc[0] = count;
++   hard_restore_flags(flags);
++   timer_interrupt(irq, dev_id, regs);
++}
++#endif //CONFIG_RTHAL
++
+ EXPORT_SYMBOL(to_tm);
+ EXPORT_SYMBOL(rtc_set_time);
+ EXPORT_SYMBOL(rtc_get_time);
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/mm/pg-r4k.S linux-2.4.22/arch/mips/mm/pg-r4k.S
+--- linux-2.4.22.orig/arch/mips/mm/pg-r4k.S	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/mm/pg-r4k.S	2003-08-27 09:20:32.000000000 -0700
+@@ -166,6 +166,7 @@
+ 
+ LEAF(r4k_clear_page_r4600_v2)
+ 	.set	mips3
++#ifndef CONFIG_RTHAL
+ 	mfc0	a1, CP0_STATUS
+ 	ori	AT, a1, 1
+ 	xori	AT, 1
+@@ -173,7 +174,13 @@
+ 	nop
+ 	nop
+ 	nop
+-
++#else
++     	lw	a1, (rthal + 36) //cli
++	nop
++	jalr	a1
++	nop
++	move	a1, v0
++#endif
+ 	.set	volatile
+ 	la	AT, KSEG1
+ 	lw	zero, (AT)
+@@ -193,6 +200,7 @@
+ 	sd	zero, -8(a0)
+ 	bne	AT, a0, 1b
+ 
++#ifndef CONFIG_RTHAL
+ 	mfc0	AT, CP0_STATUS			# __restore_flags
+ 	andi	a1, 1
+ 	ori	AT, 1
+@@ -202,7 +210,13 @@
+ 	nop
+ 	nop
+ 	nop
+-
++#else
++     	move	a0, a1
++	lw	a1, (rthal + 32) //setflags
++	nop
++	jalr	a1
++	nop
++#endif
+ 	jr	ra
+ 	END(r4k_clear_page_r4600_v2)
+ 
+@@ -469,6 +483,7 @@
+ 
+ LEAF(r4k_copy_page_r4600_v2)
+ 	.set	mips3
++#ifndef CONFIG_RTHAL
+ 	mfc0	v1, CP0_STATUS
+ 	ori	AT, v1, 1
+ 	xori	AT, 1
+@@ -477,7 +492,13 @@
+ 	nop
+ 	nop
+ 	nop
+-
++#else
++     	lw	a1, (rthal + 36) //cli
++	nop
++	jalr	a1
++	nop
++	move	v1, v0
++#endif
+ 	addiu	AT, a0, _PAGE_SIZE
+ 1:	nop
+ 	nop
+@@ -525,6 +546,7 @@
+ 	sw	a2, -4(a0)
+ 	bne	AT, a0, 1b
+ 
++#ifndef CONFIG_RTHAL
+ 	mfc0	AT, CP0_STATUS			# __restore_flags
+ 	andi	v1, 1
+ 	ori	AT, 1
+@@ -534,6 +556,13 @@
+ 	nop
+ 	nop
+ 	nop
++#else
++     	move	a0, v1
++	lw	a1, (rthal + 32) //setflags
++	nop
++	jalr	a1
++	nop     	
++#endif
+ 	jr	ra
+ 	END(r4k_copy_page_r4600_v2)
+ 
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/arch/mips/mm/tlb-r4k.c linux-2.4.22/arch/mips/mm/tlb-r4k.c
+--- linux-2.4.22.orig/arch/mips/mm/tlb-r4k.c	2003-08-27 16:14:29.000000000 -0700
++++ linux-2.4.22/arch/mips/mm/tlb-r4k.c	2003-08-27 07:24:03.000000000 -0700
+@@ -24,6 +24,22 @@
+ #include <asm/pgtable.h>
+ #include <asm/system.h>
+ 
++#ifdef CONFIG_RTHAL
++#if 1
++/*
++ * You may likely need this for your board...
++ * Sucks that this eats away at some RTAI performance, too. :(
++ * 
++ * (then again, it beats crashing) -- don't forget include/asm/mmu_context.h
++ */
++
++#undef local_irq_save
++#undef local_irq_restore
++#define IRQ_SAFE_TLB
++#define local_irq_save(x) hard_save_flags_and_cli(x)
++#define local_irq_restore(x) hard_restore_flags(x)
++#endif
++#endif
+ #undef DEBUG_TLB
+ #undef DEBUG_TLBUPDATE
+ 
+@@ -41,7 +57,7 @@
+ 	int entry;
+ 
+ #ifdef DEBUG_TLB
+-	printk("[tlball]");
++	printk("[tlball]\n");
+ #endif
+ 
+ 	local_irq_save(flags);
+@@ -77,7 +93,7 @@
+ 
+ 	if (cpu_context(cpu, mm) != 0) {
+ #ifdef DEBUG_TLB
+-		printk("[tlbmm<%d>]", cpu_context(cpu, mm));
++		printk("[tlbmm<%d>]\n", cpu_context(cpu, mm));
+ #endif
+ 		drop_mmu_context(mm,cpu);
+ 	}
+@@ -93,9 +109,10 @@
+ 		int size;
+ 
+ #ifdef DEBUG_TLB
+-		printk("[tlbrange<%02x,%08lx,%08lx>]",
++		printk("[tlbrange<%02x,%08lx,%08lx>]\n",
+ 		       cpu_asid(cpu, mm), start, end);
+ #endif
++
+ 		local_irq_save(flags);
+ 		size = (end - start + (PAGE_SIZE - 1)) >> PAGE_SHIFT;
+ 		size = (size + 1) >> 1;
+@@ -127,7 +144,11 @@
+ 			}
+ 			write_c0_entryhi(oldpid);
+ 		} else {
+-			drop_mmu_context(mm, cpu);
++//#ifndef CONFIG_RTHAL		   
++		   drop_mmu_context(mm, cpu);
++//#else
++//		   ___drop_mmu_context(mm, cpu);
++//#endif		   
+ 		}
+ 		local_irq_restore(flags);
+ 	}
+@@ -142,11 +163,12 @@
+ 		int oldpid, newpid, idx;
+ 
+ #ifdef DEBUG_TLB
+-		printk("[tlbpage<%d,%08lx>]", cpu_context(cpu, vma->vm_mm),
++		printk("[tlbpage<%d,%08lx>]\n", cpu_context(cpu, vma->vm_mm),
+ 		       page);
+ #endif
+ 		newpid = cpu_asid(cpu, vma->vm_mm);
+ 		page &= (PAGE_MASK << 1);
++
+ 		local_irq_save(flags);
+ 		oldpid = (read_c0_entryhi() & 0xff);
+ 		write_c0_entryhi(page | newpid);
+@@ -191,11 +213,11 @@
+ 	pid = read_c0_entryhi() & ASID_MASK;
+ 
+ #ifdef DEBUG_TLB
+-	if ((pid != cpu_asid(cpu, vma->vm_mm)) ||
+-	    (cpu_context(vma->vm_mm) == 0)) {
+-		printk("update_mmu_cache: Wheee, bogus tlbpid mmpid=%d "
+-		       "tlbpid=%d\n", (int) (cpu_asid(cpu, vma->vm_mm)), pid);
+-	}
++//	if ((pid != cpu_asid(cpu, vma->vm_mm)) ||
++//	    (cpu_context(vma->vm_mm) == 0)) {
++//		printk("update_mmu_cache: Wheee, bogus tlbpid mmpid=%d "
++//		       "tlbpid=%d\n", (int) (cpu_asid(cpu, vma->vm_mm)), pid);
++//	}
+ #endif
+ 
+ 	local_irq_save(flags);
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/Documentation/Configure.help linux-2.4.22/Documentation/Configure.help
+--- linux-2.4.22.orig/Documentation/Configure.help	2003-08-27 16:14:19.000000000 -0700
++++ linux-2.4.22/Documentation/Configure.help	2003-08-26 07:24:53.000000000 -0700
+@@ -262,6 +262,13 @@
+ 
+   If you don't have this computer, you may safely say N.
+ 
++Real-Time Harware Abstraction
++CONFIG_RTHAL
++  The Real-Time Hardware Abstraction Layer (RTHAL) is used by
++  the Real-Time Application Interface (RTAI) to provide a
++  hard real-time environment as part of Linux.  This feature
++  cannot be turned off, so say Y.	
++
+ IO-APIC support on uniprocessors
+ CONFIG_X86_UP_IOAPIC
+   An IO-APIC (I/O Advanced Programmable Interrupt Controller) is an
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/include/asm-mips/mmu_context.h linux-2.4.22/include/asm-mips/mmu_context.h
+--- linux-2.4.22.orig/include/asm-mips/mmu_context.h	2003-08-27 16:16:18.000000000 -0700
++++ linux-2.4.22/include/asm-mips/mmu_context.h	2003-08-27 10:01:34.000000000 -0700
+@@ -15,6 +15,7 @@
+ #include <linux/slab.h>
+ #include <asm/pgalloc.h>
+ #include <asm/pgtable.h>
++#include <asm/system.h>
+ 
+ /*
+  * For the fast tlb miss handlers, we currently keep a per cpu array
+@@ -92,7 +93,6 @@
+ 	unsigned long flags;
+ 
+ 	local_irq_save(flags);
+-
+ 	/* Check if our ASID is of an older version and thus invalid */
+ 	if ((cpu_context(cpu, next) ^ asid_cache(cpu)) & ASID_VERSION_MASK)
+ 		get_new_mmu_context(next, cpu);
+@@ -106,7 +106,6 @@
+ 	 */
+ 	clear_bit(cpu, &prev->cpu_vm_mask);
+ 	set_bit(cpu, &next->cpu_vm_mask);
+-
+ 	local_irq_restore(flags);
+ }
+ 
+@@ -128,9 +127,9 @@
+ 	unsigned long flags;
+ 	int cpu = smp_processor_id();
+ 
+-	local_irq_save(flags);
++   local_irq_save(flags);
+ 
+-	/* Unconditionally get a new ASID.  */
++   /* Unconditionally get a new ASID.  */
+ 	get_new_mmu_context(next, cpu);
+ 
+ 	write_c0_entryhi(cpu_context(cpu, next));
+@@ -140,19 +139,40 @@
+ 	clear_bit(cpu, &prev->cpu_vm_mask);
+ 	set_bit(cpu, &next->cpu_vm_mask);
+ 
+-	local_irq_restore(flags);
++   local_irq_restore(flags);
+ }
+ 
+ /*
+  * If mm is currently active_mm, we can't really drop it.  Instead,
+  * we will get a new one for it.
+  */
++
++#ifdef CONFIG_RTHAL
++static inline void ___drop_mmu_context(struct mm_struct *mm, unsigned cpu)
++{
++   if (test_bit(cpu, &mm->cpu_vm_mask)) 
++     {
++	get_new_mmu_context(mm, cpu);
++	write_c0_entryhi(cpu_asid(cpu, mm));
++     }
++   else 
++     {   
++	cpu_context(cpu, mm) = 0;
++     }
++   
++}
++#endif
++
+ static inline void
+ drop_mmu_context(struct mm_struct *mm, unsigned cpu)
+ {
+ 	unsigned long flags;
+ 
+-	local_irq_save(flags);
++#ifndef CONFIG_RTHAL
++   local_irq_save(flags);
++#else
++   hard_save_flags_and_cli(flags);
++#endif   
+ 
+ 	if (test_bit(cpu, &mm->cpu_vm_mask))  {
+ 		get_new_mmu_context(mm, cpu);
+@@ -162,7 +182,11 @@
+ 		cpu_context(cpu, mm) = 0;
+ 	}
+ 
+-	local_irq_restore(flags);
++#ifndef CONFIG_RTHAL
++   local_irq_restore(flags);
++#else
++   hard_restore_flags(flags);
++#endif      
+ }
+ 
+ #endif /* _ASM_MMU_CONTEXT_H */
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/include/asm-mips/stackframe.h linux-2.4.22/include/asm-mips/stackframe.h
+--- linux-2.4.22.orig/include/asm-mips/stackframe.h	2003-08-27 16:16:18.000000000 -0700
++++ linux-2.4.22/include/asm-mips/stackframe.h	2003-08-27 10:04:42.000000000 -0700
+@@ -62,7 +62,6 @@
+ 		lui	k1, %hi(kernelsp);               \
+ 		lw	k1, %lo(kernelsp)(k1);
+ #endif
+-
+ #define SAVE_SOME                                        \
+ 		.set	push;                            \
+ 		.set	reorder;                         \
+@@ -137,7 +136,6 @@
+ 		lw	$30, PT_R30(sp)
+ 
+ #if defined(CONFIG_CPU_R3000) || defined(CONFIG_CPU_TX39XX)
+-
+ #define RESTORE_SOME                                     \
+ 		.set	push;                            \
+ 		.set	reorder;                         \
+diff -Nur -X dontdiff.dat linux-2.4.22.orig/include/asm-mips/system.h linux-2.4.22/include/asm-mips/system.h
+--- linux-2.4.22.orig/include/asm-mips/system.h	2003-08-27 16:16:18.000000000 -0700
++++ linux-2.4.22/include/asm-mips/system.h	2003-08-27 10:01:21.000000000 -0700
+@@ -12,6 +12,9 @@
+  *
+  * Kevin D. Kissell, kevink@mips.org and Carsten Langgaard, carstenl@mips.com
+  * Copyright (C) 2000 MIPS Technologies, Inc.
++ * 
++ * rthal modifications by: Steven Seeger (sseeger@stellartec.com) 16Apr03 (taxes done)
++ * 
+  */
+ #ifndef _ASM_SYSTEM_H
+ #define _ASM_SYSTEM_H
+@@ -25,7 +28,11 @@
+ #include <asm/ptrace.h>
+ 
+ __asm__ (
++#ifdef CONFIG_RTHAL       
++	".macro\t__hard_sti\n\t"
++#else
+ 	".macro\t__sti\n\t"
++#endif	 
+ 	".set\tpush\n\t"
+ 	".set\treorder\n\t"
+ 	".set\tnoat\n\t"
+@@ -37,10 +44,18 @@
+ 	".endm");
+ 
+ extern __inline__ void
+-__sti(void)
++#ifdef CONFIG_RTHAL
++  hard_sti(void)
++#else
++  __sti(void)
++#endif      
+ {
+ 	__asm__ __volatile__(
++#ifndef CONFIG_RTHAL
+ 		"__sti"
++#else
++		"__hard_sti"
++#endif			     
+ 		: /* no outputs */
+ 		: /* no inputs */
+ 		: "memory");
+@@ -54,7 +69,11 @@
+  * no nops at all.
+  */
+ __asm__ (
++#ifdef CONFIG_RTHAL	 
++	".macro\t__hard_cli\n\t"
++#else
+ 	".macro\t__cli\n\t"
++#endif	 
+ 	".set\tpush\n\t"
+ 	".set\tnoat\n\t"
+ 	"mfc0\t$1,$12\n\t"
+@@ -69,15 +88,24 @@
+ 	".endm");
+ 
+ extern __inline__ void
+-__cli(void)
++#ifdef CONFIG_RTHAL
++  hard_cli(void)
++#else
++    __cli(void)
++#endif      
+ {
+ 	__asm__ __volatile__(
++#ifndef CONFIG_RTHAL			     
+ 		"__cli"
++#else
++		"__hard_cli"
++#endif			     
+ 		: /* no outputs */
+ 		: /* no inputs */
+ 		: "memory");
+ }
+ 
++#ifndef CONFIG_RTHAL
+ __asm__ (
+ 	".macro\t__save_flags flags\n\t"
+ 	".set\tpush\n\t"
+@@ -104,7 +132,7 @@
+ 	"sll\t$0, $0, 1\t\t\t# nop\n\t"
+ 	"sll\t$0, $0, 1\t\t\t# nop\n\t"
+ 	"sll\t$0, $0, 1\t\t\t# nop\n\t"
+-	".set\tpop\n\t"
++        ".set\tpop\n\t"
+ 	".endm");
+ 
+ #define __save_and_cli(x)						\
+@@ -114,26 +142,96 @@
+ 	: /* no inputs */						\
+ 	: "memory")
+ 
+-__asm__ (
+-	".macro\t__save_and_sti result\n\t"
+-	".set\tpush\n\t"
+-	".set\treorder\n\t"
+-	".set\tnoat\n\t"
+-	"mfc0\t\\result, $12\n\t"
+-	"ori\t$1, \\result, 1\n\t"
+-	".set\tnoreorder\n\t"
+-	"mtc0\t$1, $12\n\t"
+-	".set\tpop\n\t"
++__asm__ (							
++	".macro\t__save_and_sti result\n\t"				
++	".set\tpush\n\t"						
++	".set\treorder\n\t"						
++	".set\tnoat\n\t"						
++	"mfc0\t\\result, $12\n\t"					
++	"ori\t$1, \\result, 1\n\t"					
++	".set\tnoreorder\n\t"						
++	"mtc0\t$1,$12\n\t"						
++	".set\tpop\n\t"							
+ 	".endm");
++#else //!CONFIG_RTHAL
++
++#define hard_save_flags(x) do { __hard_save_flags(&(x)); } while(0)  
++#define hard_save_flags_and_cli(x) do { __hard_save_flags_and_cli(&(x)); } while(0)
++
++extern __inline__ void __hard_save_flags(unsigned long *x)
++{
++   __asm__ __volatile__(
++			".set\tpush\n\t"
++			".set\treorder\n\t"
++			"mfc0\t%0,$12\n\t"
++			".set\tpop\n\t"
++			: "=r" (*x));
++}
++
++extern __inline__ void __hard_save_flags_and_cli(unsigned long *x)
++{
++   __asm__ __volatile__(
++			".set\tpush\n\t"
++			".set\treorder\n\t"
++			".set\tnoat\n\t"
++			"mfc0\t%0,$12\n\t"
++			"ori\t$1,%0,1\n\t"
++			"xori\t$1,1\n\t"
++			".set\tnoreorder\n\t"
++			"mtc0\t$1,$12\n\t"
++			"nop\n\t"
++			"nop\n\t"
++			"nop\n\t"
++			".set\tpop\n\t"
++			: "=r" (*x)
++			: /* no inputs */
++			: "$1", "memory");
++}
++
++extern __inline__ void __hard_save_flags_and_sti(unsigned long *x)
++{
++   __asm__ __volatile__(
++   	   ".set\tpush\n\t"
++	   ".set\treorder\n\t"
++	   ".set\tnoat\n\t"
++	   "mfc0\t%0,$12\n\t"
++	   "ori\t$1,%0,1\n\t"
++	   ".set\tnoreorder\n\t"
++	   "mtc0\t$1,$12\n\t"
++	   "nop\n\t"
++	   "nop\n\t"
++	   "nop\n\t"
++	   ".set\tpop\n\t"
++	   : "=r" (*x)
++	   : /* no inputs */
++	   : "$1", "memory");
++}
++
++#define hard_save_flags_and_sti(x) do { __hard_save_flags_and_sti(&(x)); } while(0)
+ 
++#endif //CONFIG_RTHAL
++
++#ifndef CONFIG_RTHAL
+ #define __save_and_sti(x)						\
+ __asm__ __volatile__(							\
+ 	"__save_and_sti\t%0"						\
+ 	: "=r" (x)							\
+ 	: /* no inputs */						\
+ 	: "memory")
++#else //!CONFIG_RTHAL
++#define __hard_save_and_sti(x)                                          \
++     __asm__ __volatile__(                                              \
++        "__hard_save_flags_and_sti\t%0"                                 \
++     : "=r" (x)                                                         \
++     : /* no inputs */                                                  \
++     : "memory")
++#endif 
+ 
++#ifndef CONFIG_RTHAL
+ __asm__(".macro\t__restore_flags flags\n\t"
++#else
++__asm__(".macro\t__hard_restore_flags flags\n\t"
++#endif	
+ 	".set\tnoreorder\n\t"
+ 	".set\tnoat\n\t"
+ 	"mfc0\t$1, $12\n\t"
+@@ -149,44 +247,95 @@
+ 	".set\treorder\n\t"
+ 	".endm");
+ 
+-#define __restore_flags(flags)						\
++#ifdef CONFIG_RTHAL
++#define hard_restore_flags(flags) \
+ do {									\
+ 	unsigned long __tmp1;						\
+ 									\
+ 	__asm__ __volatile__(						\
+-		"__restore_flags\t%0"					\
++		"__hard_restore_flags\t%0" \
+ 		: "=r" (__tmp1)						\
+ 		: "0" (flags)						\
+ 		: "memory");						\
+ } while(0)
+-
++#else //CONFIG_RTHAL
++#define __restore_flags(flags) \
++do {									\
++	unsigned long __tmp1;						\
++									\
++	__asm__ __volatile__(						\
++		"__restore_flags\t%0" \
++		: "=r" (__tmp1)						\
++		: "0" (flags)						\
++		: "memory");						\
++} while(0)	   
++#endif //CONFIG_RTHAL
++		
+ #ifdef CONFIG_SMP
+ 
++#ifdef CONFIG_RTHAL
++#error No RTHAL support for SMP systems. Give Steve S. an SMP system and he
++	will do it for you. :)
++#endif //CONFIG_RTHAL
++	
+ extern void __global_sti(void);
+ extern void __global_cli(void);
+ extern unsigned long __global_save_flags(void);
+ extern void __global_restore_flags(unsigned long);
+ #  define sti() __global_sti()
+ #  define cli() __global_cli()
+-#  define save_flags(x) do { x = __global_save_flags(); } while (0)
++#  define save_flags(x) do{    x = __global_save_flags();} while (0)
+ #  define restore_flags(x) __global_restore_flags(x)
+-#  define save_and_cli(x) do { save_flags(x); cli(); } while(0)
+-#  define save_and_sti(x) do { save_flags(x); sti(); } while(0)
++#  define save_and_cli(x) do{    save_flags(x); cli();} while(0)
++#  define save_and_sti(x) do{    save_flags(x); sti();} while(0)
+ 
+ #else /* Single processor */
+ 
+-#  define sti() __sti()
+-#  define cli() __cli()
+-#  define save_flags(x) __save_flags(x)
+-#  define save_and_cli(x) __save_and_cli(x)
+-#  define restore_flags(x) __restore_flags(x)
+-#  define save_and_sti(x) __save_and_sti(x)
++#ifdef CONFIG_RTHAL	
++/*
++* Standard rthal defintions.
++*/
++struct rt_hal {	   
++   void *ret_from_intr; //0
++   unsigned int (*mips_timer_interrupt)(int irq, struct pt_regs *regs); //4
++   unsigned int (*mips_interrupt)(int irq, struct pt_regs *regs); //8
++   long long (*rtai_srq_interrupt)(unsigned int srq, unsigned int args); //12
++   void (*disint)(void); //16
++   void (*enint)(void); //20
++   unsigned int rtai_active; //24
++   unsigned long (*getflags)(void); //28
++   void (*setflags)(unsigned long flags); //32
++   unsigned long (*getflags_and_cli)(void); //36
++   void *irq_desc; //40
++   union { unsigned long long tsc; unsigned long hltsc[2]; } tsc; //44
++   void (*linux_mips_timer_intr)(int irq, void *dev_id, struct pt_regs *regs); //52
++   void (*linux_soft_mips_timer_intr)(int irq, void *dev_id, struct pt_regs *regs); //56
++   unsigned long (*getflags_and_sti)(void); //60
++   void (*soft_enint)(void); //64
++};
++   
++extern struct rt_hal rthal;
++
++#define __sti() do { rthal.enint(); } while(0);
++#define __cli() do { rthal.disint(); } while(0);
++#define __save_flags(x) do { x = rthal.getflags(); } while(0);
++#define __save_and_cli(x) do { x = rthal.getflags_and_cli(); } while(0);
++#define __restore_flags(x) do { rthal.setflags(x); } while(0);
++#define __save_and_sti(x) do { rthal.getflags_and_cli(); } while(0);   
++
++#endif //CONFIG_RTHAL		     	    	     	     	     
++
++#define sti() __sti()
++#define cli() __cli()
++#define save_flags(x) __save_flags(x)
++#define save_and_cli(x) __save_and_cli(x)
++#define restore_flags(x) __restore_flags(x)
++#define save_and_sti(x) __save_and_sti(x)
+ 
+ #endif /* SMP */
+ 
+ /* For spinlocks etc */
+ #define local_irq_save(x)	__save_and_cli(x)
+-#define local_irq_set(x)	__save_and_sti(x)
+ #define local_irq_restore(x)	__restore_flags(x)
+ #define local_irq_disable()	__cli()
+ #define local_irq_enable()	__sti()
+ 

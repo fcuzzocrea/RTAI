@@ -1,0 +1,36 @@
+bin_PROGRAMS = genconf_io genconfig xgenconfig
+
+genconf_io_SOURCES = \
+	genconf_io.c
+
+genconfig_SOURCES = \
+	genconfig.c \
+	config_data.h
+
+xgenconfig_SOURCES = \
+	xgenconfig.cpp \
+	xgenconfig.h \
+	Fl_inputIO.cpp \
+	Fl_outputIO.cpp \
+	config_data.h \
+	def_const.h
+
+efltk_cflags = $(shell @EFLTK_DIR@/bin/efltk-config --cxxflags)
+efltk_ldflags = $(shell @EFLTK_DIR@/bin/efltk-config --ldflags)
+
+xgenconfig_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-g \
+	-I$(top_srcdir)/rtai-core/include \
+	$(efltk_cflags)
+
+xgenconfig_LDFLAGS = \
+        $(efltk_ldflags)
+
+
+install-exec-local:
+	$(mkinstalldirs) $(DESTDIR)$(bindir)
+	$(INSTALL_SCRIPT) $(srcdir)/gen_io $(DESTDIR)$(bindir)
+	$(INSTALL_SCRIPT) $(srcdir)/gen_dev $(DESTDIR)$(bindir)
+
+EXTRA_DIST = example_config gen_dev gen_io scilab-howto.pdf

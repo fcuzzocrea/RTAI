@@ -1,0 +1,124 @@
+\chapter{Interprocess Communication}
+
+\section{FIFOs}
+
+
+\subsection{Overview}
+
+In a well designed RTAI application you usually have a clear separation 
+between time critical and non-critical parts of the code. This means
+that you have to transport data from realtime land to userland and vice
+versa. 
+
+RTAI offers several interprocess communication mechanisms for this task.
+One of the easiest method is the use of FIFOs. After a FIFO was created
+you can simply "put" some data into it from one environment (e.\,g. from
+userland) and read it later --~in the same order~-- from the other
+envirionment (e.\,g. from kernel space). 
+
+
+\subsection{FIFO creation}
+
+To create a FIFO you can use this function: 
+
+%\include{`$SOMEPATH/myscript -f rtai-core/rpc/fifos/fifos.c --function rtf_create --signature`}
+
+%\inlinedoc{signature}{rtai-core/rpc/fifos/fifos.c}{rtf_create}
+
+% Resultat: 
+
+\begin{code}
+	rtf_create (unsigned int minor, int size)
+\end{code}
+
+% ----------
+
+%\include{`$SOMEPATH/myscript -f rtai-core/rpc/fifos/fifos.c --function rtf_create --complete`}
+
+%\inlinedoc{manpage}{rtai-core/rpc/fifos/fifos.c}{rtf_create}
+
+\textbf{NAME}
+
+	\textbf{rtf\_create (unsigned int minor, int size)}
+
+	minor: \& minor device number of the fifo
+	size: \& buffer size for fifo data; this can be resized later
+	with rtf\_resize()
+
+\textbf{RETURN VALUE}
+
+	0 on success
+	-ENODEV illegal fifo minor number 
+	-ENOMEM out of memory
+
+% ----------
+
+\subsection{Handlers}
+
+\subsection{Signal Interface}
+
+\subsection{Select/Poll and Blocking}
+
+\subsection{Named FIFOs}
+
+\subsection{API Reference}
+
+
+
+\subsection{Implementation}
+
+% ----------------------------------------------------------------------------
+
+\section{Semaphores}
+
+% These are now in FIFOs!
+\subsection{Overview}
+
+\subsection{API Reference}
+
+% ----------------------------------------------------------------------------
+
+\section{Shared Memory}
+
+\subsection{Overview}
+
+\subsection{Implementation}
+
+\subsection{Build and Insert Shared Memory}
+
+\subsection{Using Shared Memory in User Space}
+
+\subsection{Using Shared Memory in Kernel Space}
+
+\subsection{Proc}
+
+\subsection{API Reference}
+
+% ----------------------------------------------------------------------------
+
+\section{Mailboxes}
+
+\subsection{Overview}
+
+\subsection{Implementation}
+
+\subsection{API Reference}
+
+% ----------------------------------------------------------------------------
+\section{Extended Messages}
+
+% Documentation/README.EXTMSG
+
+\subsection{Overview}
+
+\subsection{API Reference}
+
+% ----------------------------------------------------------------------------
+
+\section{Remote Procedure Call}
+
+\subsection{Overview}
+
+\subsection{API Reference}
+
+

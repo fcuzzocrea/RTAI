@@ -3,6 +3,8 @@
  * \author Philippe Gerum
  *
  * Copyright (C) 2001,2002,2003 Philippe Gerum <rpm@xenomai.org>.
+ * Copyright (C) 2004 The RTAI project <http://www.rtai.org>
+ * Copyright (C) 2004 The HYADES project <http://www.hyades-itea.org>
  *
  * Xenomai is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by

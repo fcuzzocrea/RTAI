@@ -224,7 +224,8 @@
 
 2004-06-04  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
-	* fusion: SMP port.
+	* fusion: SMP port contributed by the HYADES project
+	(http://www.hyades-itea.org/).
 	
 2004-06-04  Philippe Gerum  <rpm@xenomai.org>
 

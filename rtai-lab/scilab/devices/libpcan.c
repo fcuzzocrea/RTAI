@@ -1,22 +1,22 @@
 //****************************************************************************
-// Copyright (C) 2001,2002  PEAK System-Technik GmbH
+// Copyright (C) 2001,2002,2003,2004  PEAK System-Technik GmbH
 //
 // linux@peak-system.com 
 // www.peak-system.com
 //
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2 of the License, or
-// (at your option) any later version.
+// This library is free software; you can redistribute it and/or
+// modify it under the terms of the GNU Lesser General Public
+// License as published by the Free Software Foundation; either
+// version 2.1 of the License, or (at your option) any later version.
 //
-// This program is distributed in the hope that it will be useful,
+// This library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software
-// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 //
 // Maintainer(s): Klaus Hitschler (klaus.hitschler@gmx.de)
 //****************************************************************************
@@ -25,44 +25,35 @@
 //
 // libpcan.c
 // the shared library to unify the interface to the devices
-// PCAN-ISA, PCAN-Dongle, PCAN-PCI, PCAN-PC104 via their drivers
+// PCAN-ISA, PCAN-Dongle, PCAN-PCI, PCAN-PC104, PCAN-USB via their drivers
 //
 // $Log: libpcan.c,v $
-// Revision 1.1  2004/06/06 14:15:31  rpm
-// Initial revision
+// Revision 1.2  2004/07/12 08:22:14  bucher
+// Updated to pcan-3.5
 //
-// Revision 1.1.1.1  2004/04/04 19:00:55  pgerum
-// Vesuvio baseline
+// Revision 1.23  2004/04/13 20:36:33  klaus
+// added LINUX_CAN_Read() to get the timestamp. Made libpcan.so.0.1.
 //
-// Revision 1.2  2004/03/17 08:16:24  bucher
-// Last kilauea version
+// Revision 1.21  2004/04/12 16:53:27  klaus
+// improved timer resolution for kernel 2.6
 //
-// Revision 1.3  2004/02/05 09:36:00  bucher
-// *** empty log message ***
+// Revision 1.20  2004/04/11 22:07:23  klaus
+// cosmetic changes
 //
-// Revision 1.1  2003/10/22 12:36:42  bucher
-// RTAI 3.0
+// Revision 1.19  2004/04/11 22:03:29  klaus
+// cosmetic changes
 //
-// Revision 1.1  2003/10/03 05:29:55  bucher
-// New for RTAI-Lab 2.x
+// Revision 1.18  2003/11/19 22:57:03  klaus
+// now USB devices are enumerated in system arranged order, removed previous enumeration scheme
 //
-// Revision 1.13  2002/08/20 20:06:24  klaus
-// Corrected BTR0BTR1 calculation and functions
+// Revision 1.17  2003/10/28 19:39:46  klaus
+// use pre-programmed device number for USB device distinction
 //
-// Revision 1.12  2002/02/21 21:39:47  klaus
-// Install problems with RedHat 7.2 removed
+// Revision 1.16  2003/07/26 17:55:18  klaus
+// changed from GPL license to LGPL licence
 //
-// Revision 1.11  2002/02/11 18:09:37  klaus
-// moved libpcan.h from include/libpcan.h
-//
-// Revision 1.10  2002/01/30 20:54:27  klaus
-// simple source file header change
-//
-// Revision 1.9  2002/01/13 18:25:56  klaus
-// first release
-//
-// Revision 1.8  2002/01/07 21:17:55  klaus
-// smoothed error handling via nGetLastError()
+// Revision 1.15  2003/03/02 11:03:26  klaus
+// added log info into header
 //
 //****************************************************************************
 
@@ -162,7 +153,12 @@ static int resolve(char *buffer, int *nType, unsigned long *dwPort, unsigned sho
           if (!strcmp(t, "sp"))
             *nType = HW_DONGLE_SJA;
 	        else
-		        *nType = -1;
+          {
+            if (!strcmp(t, "usb"))
+              *nType = HW_USB;
+            else
+              *nType = -1;
+          }
 	      }
 	    }
     }
@@ -255,6 +251,12 @@ HANDLE CAN_Open(WORD wHardwareType, ...)
       m_dwPort  = va_arg(args, int);
       va_end(args);
       break;
+
+    case HW_USB:
+      m_dwPort = va_arg(args, unsigned long);
+      m_wIrq   = (unsigned short)va_arg(args, unsigned long);
+      va_end(args);
+      break;
       
     default: 
       va_end(args);
@@ -293,6 +295,13 @@ HANDLE CAN_Open(WORD wHardwareType, ...)
             case HW_PCI:
               if (((m_dwPort - 1) == nMinor) || // enumerate 1..8 (not 0 .. 7)
 	                 (m_dwPort == 0))             // use 1st port as default
+	            {
+		            found = 1;
+                break;
+	            }
+            case HW_USB:
+              if (((m_dwPort + 31) == nMinor) || // enumerate 1..8 (not 32 .. 39)
+	                 (m_dwPort == 0))              // use 1st port as default
 	            {
 		            found = 1;
                 break;
@@ -402,6 +411,18 @@ DWORD CAN_Read(HANDLE hHandle, TPCANMsg* pMsgBuff)
       
     memcpy(pMsgBuff, &m.Msg, sizeof(* pMsgBuff));
   }
+  
+  return err;
+}
+
+DWORD LINUX_CAN_Read(HANDLE hHandle, TPCANRdMsg* pMsgBuff)
+{
+  PCAN_DESCRIPTOR *desc = (PCAN_DESCRIPTOR *)hHandle;
+  int err = EBADF;
+  
+  errno = err;  
+  if (desc)
+    err = ioctl(desc->nFileNo, PCAN_READ_MSG, pMsgBuff);
   
   return err;
 }

@@ -2,7 +2,7 @@
 #define __PCAN_H__
 
 //****************************************************************************
-// Copyright (C) 2001,2002,2003  PEAK System-Technik GmbH
+// Copyright (C) 2001,2002,2003,2004  PEAK System-Technik GmbH
 //
 // linux@peak-system.com 
 // www.peak-system.com
@@ -30,23 +30,14 @@
 // constants and definitions to access the drivers 
 //
 // $Log: pcan.h,v $
-// Revision 1.1  2004/06/06 14:15:32  rpm
-// Initial revision
+// Revision 1.2  2004/07/12 08:22:14  bucher
+// Updated to pcan-3.5
 //
-// Revision 1.1.1.1  2004/04/04 19:00:55  pgerum
-// Vesuvio baseline
+// Revision 1.7  2004/04/11 22:03:29  klaus
+// cosmetic changes
 //
-// Revision 1.2  2004/03/17 08:16:24  bucher
-// Last kilauea version
-//
-// Revision 1.3  2004/02/05 09:36:00  bucher
-// *** empty log message ***
-//
-// Revision 1.1  2003/10/22 12:36:42  bucher
-// RTAI 3.0
-//
-// Revision 1.1  2003/10/03 05:29:55  bucher
-// New for RTAI-Lab 2.x
+// Revision 1.6  2004/04/11 22:03:28  klaus
+// cosmetic changes
 //
 // Revision 1.5  2003/03/02 10:58:07  klaus
 // merged USB thread into main path

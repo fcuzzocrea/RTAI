@@ -136,11 +136,11 @@ typedef struct xnthread {
 
     struct xnsynch *wchan;	/* Resource the thread pends on */
 
-    xntimer_t timer;		/* Delay timer */
+    xntimer_t rtimer;		/* Resource timer */
 
     xntimer_t atimer;		/* Asynchronous timer (shadow only) */
 
-    xntimer_t ptimer;		/* Periodic timer (shadow only) */
+    xntimer_t ptimer;		/* Periodic timer */
 
     int poverrun;		/* Periodic timer overrun. */
 
@@ -202,7 +202,7 @@ typedef struct xnhook {
 #define xnthread_archtcb(thread)           (&((thread)->tcb))
 #define xnthread_asr_level(thread)         ((thread)->asrlevel)
 #define xnthread_pending_signals(thread)   ((thread)->signals)
-#define xnthread_timeout(thread)           xntimer_get_timeout(&(thread)->timer)
+#define xnthread_timeout(thread)           xntimer_get_timeout(&(thread)->rtimer)
 #define xnthread_stack_size(thread)        xnarch_stack_size(xnthread_archtcb(thread))
 #define xnthread_extended_info(thread)     ((thread)->extinfo)
 #define xnthread_set_magic(thread,m)       do { (thread)->magic = (m); } while(0)

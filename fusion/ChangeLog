@@ -1,3 +1,12 @@
+2004-06-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/thread.h: Rename thread::timer to thread::rtimer
+	for "resource timer" in order to comply with the other timer
+	names.
+
+	* nucleus/pod.c (xnpod_delete_thread): Stop the periodic timer
+	before deleting the thread.
+
 2004-06-15  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_realtime_sysentry): Properly return

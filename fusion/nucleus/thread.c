@@ -74,7 +74,7 @@ int xnthread_init (xnthread_t *thread,
 		   xnflags_t flags,
 		   unsigned stacksize)
 {
-    xntimer_init(&thread->timer,&xnthread_timeout_handler,thread);
+    xntimer_init(&thread->rtimer,&xnthread_timeout_handler,thread);
     xntimer_init(&thread->atimer,NULL,NULL);
     xntimer_init(&thread->ptimer,&xnthread_periodic_handler,thread);
     thread->poverrun = -1;

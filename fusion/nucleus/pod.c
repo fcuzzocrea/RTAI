@@ -589,8 +589,7 @@ static inline void xnpod_preempt_current_thread (void)
                               const char *name,
                               int prio,
                               xnflags_t flags,
-                              unsigned stacksize,
-                              unsigned magic)
+                              unsigned stacksize)
  * \brief Initialize a new thread.
  *
  * Initializes a new thread attached to the active pod. The thread is
@@ -633,9 +632,9 @@ static inline void xnpod_preempt_current_thread (void)
  *
  * After creation, the new thraed can be set a magic cookie by skins
  * using xnthread_set_magic() to unambiguously identify threads
- * created in their realm. This value will be copied as-is to the
- * "magic" field of the thread struct. 0 is a conventional value for
- * "no magic".
+ * created in their realm. This value will be copied as-is to the @a
+ * magic field of the thread struct. 0 is a conventional value for "no
+ * magic".
  *
  * @return 0 is returned on success. Otherwise, one of the following
  * error codes indicates the cause of the failure:
@@ -1051,13 +1050,14 @@ void xnpod_delete_thread (xnthread_t *thread)
     else
         {
         if (testbits(thread->status,XNDELAY))
-            xntimer_stop(&thread->timer);
+            xntimer_stop(&thread->rtimer);
 
         if (testbits(thread->status,XNTHREAD_BLOCK_BITS & ~XNDELAY))
             removeq(&nkpod->suspendq,&thread->slink);
         }
 
     xntimer_stop(&thread->atimer);
+    xntimer_stop(&thread->ptimer);
 
     /* Ensure the rescheduling can take place if the deleted thread is
        the running one. */
@@ -1230,7 +1230,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
         /* Don't start the timer for a thread indefinitely delayed by
            a call to xnpod_suspend_thread(thread,XNDELAY,0,NULL). */
         setbits(thread->status,XNDELAY);
-        xntimer_start(&thread->timer,timeout,XN_INFINITE);
+        xntimer_start(&thread->rtimer,timeout,XN_INFINITE);
         }
     
     if (nkpod->schedhook)
@@ -1311,7 +1311,7 @@ void xnpod_resume_thread (xnthread_t *thread,
                 /* Watchdog fired or break requested -- stop waiting
                    for the resource. */
 
-                xntimer_stop(&thread->timer);
+                xntimer_stop(&thread->rtimer);
 
                 mask = testbits(thread->status,XNPEND);
 
@@ -1340,7 +1340,7 @@ void xnpod_resume_thread (xnthread_t *thread,
                     /* The thread is woken up due to the availability
                        of the requested resource. Cancel the watchdog
                        timer. */
-                    xntimer_stop(&thread->timer);
+                    xntimer_stop(&thread->rtimer);
                     clrbits(thread->status,XNDELAY);
                     }
 
@@ -1367,7 +1367,7 @@ void xnpod_resume_thread (xnthread_t *thread,
                using xnpod_unblock_thread(), or because the specified
                delay has elapsed. In the latter case, stopping the
                timer is simply a no-op. */
-            xntimer_stop(&thread->timer);
+            xntimer_stop(&thread->rtimer);
 
         if ((mask & ~XNDELAY) != 0)
             {
@@ -1928,8 +1928,6 @@ void xnpod_schedule (void)
 
     if (!resched)
         goto unlock_and_exit;
-
-    xnsched_set_resched(local_sched);
     }
 #endif /* CONFIG_SMP */
 
@@ -1954,9 +1952,19 @@ void xnpod_schedule (void)
         goto unlock_and_exit;
         }
 
-    sched = runthread->sched;
-
     doswitch = 0;
+
+#ifndef CONFIG_SMP
+    sched = runthread->sched;
+#else
+    /* In the SMP case, and at this point of the function, the scheduler which
+       matters is necessarily the current, and runthread might be undergoing a
+       migration, in which case runthread->sched != xnpod_current_sched(). Since
+       in this same case, runthread has the "XNREADY" bit set, the switch will
+       occur, but xnpod_preempt_current_thread will not be called (calling it
+       would be a disaster, since runthread would be in two readyq). */
+    sched = xnpod_current_sched();
+#endif
 
     if (!testbits(runthread->status,XNTHREAD_BLOCK_BITS|XNZOMBIE))
         {
@@ -2139,6 +2147,8 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 
 maybe_switch:
 
+    xnsched_clr_resched(sched);
+
     if (flags & XNPOD_NOSWITCH)
         {
         if (testbits(runthread->status,XNREADY))
@@ -2149,8 +2159,6 @@ maybe_switch:
 
         return;
         }
-
-    xnsched_clr_resched(sched);
 
     threadin = link2thread(getpq(&sched->readyq),rlink);
 

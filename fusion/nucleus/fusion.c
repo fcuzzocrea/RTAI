@@ -536,7 +536,7 @@ int xnfusion_attach (void)
 	return 0;
 	}
 
-    if (xnpod_init(&__fusion_pod,FUSION_LOW_PRIO,FUSION_HIGH_PRIO,0) != 0)
+    if (xnpod_init(&__fusion_pod,FUSION_MIN_PRIO,FUSION_MAX_PRIO,0) != 0)
 	return -ENOSYS;
 
     __fusion_pod.svctable.unload = &xnfusion_unload_hook;

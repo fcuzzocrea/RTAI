@@ -1,3 +1,15 @@
+2004-09-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/hal.c (rthal_calibrate_timer): Fix the way we
+	calibrate the APIC programming time; the old way simply broke any
+	SMP setup.
+
+2004-09-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_calibrate_sched): Make the calibration
+	thread struct static, so that we can't get a TCB with a badly
+	aligned FPU area.
+
 2004-09-03  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-(i386|ppc)/system.h (__xnlock_get_irqsave):

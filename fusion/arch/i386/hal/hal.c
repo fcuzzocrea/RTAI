@@ -210,11 +210,10 @@ unsigned long rthal_calibrate_timer (void)
 
     for (i = 0; i < 10000; i++)
 	{ 
-	unsigned int v;
 	apic_read(APIC_LVTT);
-	apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
-	v = apic_read(APIC_TMICT);
-	apic_write_around(APIC_TMICT,v);
+        apic_write_around(APIC_LVTT,APIC_LVT_TIMER_PERIODIC|LOCAL_TIMER_VECTOR);
+        apic_read(APIC_TMICT);
+        apic_write_around(APIC_TMICT,RTHAL_APIC_ICOUNT);
 	}
 
     dt = rthal_rdtsc() - t;

@@ -1602,8 +1602,9 @@ int xnpod_unblock_thread (xnthread_t *thread)
  * Rescheduling: never.
  */
 
-void xnpod_renice_thread (xnthread_t *thread, int prio) {
+void xnpod_renice_thread (xnthread_t *thread, int prio)
 
+{
     xnpod_renice_thread_inner(thread,prio,1);
 }
 
@@ -1668,6 +1669,7 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
  * @retval -EPERM if the thread affinity forbids this migration ;
  * @retval -EBUSY if the scheduler is locked.
  */
+
 int xnpod_migrate_thread (int cpu)
 
 {

@@ -1,3 +1,7 @@
+2004-12-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* scripts/rtai-*.in: Force /bin/bash as interpreter.
+
 2004-12-05  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.6.6

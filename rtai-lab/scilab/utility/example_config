@@ -1,4 +1,0 @@
-rtai_scope out 1 2 IO 0 0 0 0 0 0
-square inp 1 0 0 0 1.0 10.0 5.0 0.0 0.0
-rtai_scope out 2 1 U 0 0 0 0 0 0
-end

@@ -1,2 +1,0 @@
-genconf_io $1 $2
-sed -f $1_conf $1_void_io.c > $1_io.c

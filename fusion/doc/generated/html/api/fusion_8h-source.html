@@ -130,67 +130,69 @@
 00120                       <span class="keywordtype">int</span> *syncp,
 00121                       <span class="keywordtype">void</span> **khandlep);
 00122 
-00123 <span class="keywordtype">int</span> pthread_start_rt(<span class="keywordtype">void</span> *khandle);
+00123 <span class="keywordtype">int</span> pthread_barrier_rt(<span class="keywordtype">void</span>);
 00124 
-00125 <span class="keywordtype">int</span> pthread_sync_rt(<span class="keywordtype">int</span> *syncp);
+00125 <span class="keywordtype">int</span> pthread_start_rt(<span class="keywordtype">void</span> *khandle);
 00126 
-00127 <span class="keywordtype">int</span> pthread_migrate_rt(<span class="keywordtype">int</span> domain);
+00127 <span class="keywordtype">int</span> pthread_sync_rt(<span class="keywordtype">int</span> *syncp);
 00128 
-00129 <span class="keywordtype">int</span> pthread_start_timer_rt(nanotime_t nstick);
+00129 <span class="keywordtype">int</span> pthread_migrate_rt(<span class="keywordtype">int</span> domain);
 00130 
-00131 <span class="keywordtype">int</span> pthread_stop_timer_rt(<span class="keywordtype">void</span>);
+00131 <span class="keywordtype">int</span> pthread_start_timer_rt(nanotime_t nstick);
 00132 
-00133 <span class="keywordtype">int</span> pthread_time_rt(nanotime_t *tp);
+00133 <span class="keywordtype">int</span> pthread_stop_timer_rt(<span class="keywordtype">void</span>);
 00134 
-00135 <span class="keywordtype">int</span> pthread_cputime_rt(nanotime_t *tp);
+00135 <span class="keywordtype">int</span> pthread_time_rt(nanotime_t *tp);
 00136 
-00137 <span class="keywordtype">int</span> pthread_ns2ticks_rt(nanostime_t ns,
-00138                         nanostime_t *pticks);
-00139 
-00140 <span class="keywordtype">int</span> pthread_ticks2ns_rt(nanostime_t ticks,
-00141                         nanostime_t *pns);
-00142 
-00143 <span class="keywordtype">int</span> pthread_ns2tsc_rt(nanostime_t ns,
-00144                       nanostime_t *ptsc);
-00145 
-00146 <span class="keywordtype">int</span> pthread_tsc2ns_rt(nanostime_t tsc,
-00147                       nanostime_t *pns);
-00148 
-00149 <span class="keywordtype">int</span> pthread_sleep_rt(nanotime_t ticks);
+00137 <span class="keywordtype">int</span> pthread_cputime_rt(nanotime_t *tp);
+00138 
+00139 <span class="keywordtype">int</span> pthread_ns2ticks_rt(nanostime_t ns,
+00140                         nanostime_t *pticks);
+00141 
+00142 <span class="keywordtype">int</span> pthread_ticks2ns_rt(nanostime_t ticks,
+00143                         nanostime_t *pns);
+00144 
+00145 <span class="keywordtype">int</span> pthread_ns2tsc_rt(nanostime_t ns,
+00146                       nanostime_t *ptsc);
+00147 
+00148 <span class="keywordtype">int</span> pthread_tsc2ns_rt(nanostime_t tsc,
+00149                       nanostime_t *pns);
 00150 
-00151 <span class="keywordtype">int</span> pthread_inquire_rt(xninquiry_t *infop);
+00151 <span class="keywordtype">int</span> pthread_sleep_rt(nanotime_t ticks);
 00152 
-00153 <span class="keywordtype">int</span> pthread_set_periodic_rt(nanotime_t idate,
-00154                             nanotime_t period);
-00155 
-00156 <span class="keywordtype">int</span> pthread_wait_period_rt(<span class="keywordtype">void</span>);
+00153 <span class="keywordtype">int</span> pthread_inquire_rt(xninquiry_t *infop);
+00154 
+00155 <span class="keywordtype">int</span> pthread_set_periodic_rt(nanotime_t idate,
+00156                             nanotime_t period);
 00157 
-00158     <span class="comment">/* The following routines are private to the RTAI/vm control layer</span>
-00159 <span class="comment">       based on the RTAI/fusion interface. Do not use them in</span>
-00160 <span class="comment">       applications. */</span>
-00161 
-00162 <span class="keywordtype">int</span> __pthread_idle_vm(<span class="keywordtype">int</span> *lockp);
+00158 <span class="keywordtype">int</span> pthread_wait_period_rt(<span class="keywordtype">void</span>);
+00159 
+00160     <span class="comment">/* The following routines are private to the RTAI/vm control layer</span>
+00161 <span class="comment">       based on the RTAI/fusion interface. Do not use them in</span>
+00162 <span class="comment">       applications. */</span>
 00163 
-00164 <span class="keywordtype">int</span> __pthread_cancel_vm(<span class="keywordtype">void</span> *deadhandle,
-00165                         <span class="keywordtype">void</span> *nexthandle);
-00166 
-00167 <span class="keywordtype">int</span> __pthread_activate_vm(<span class="keywordtype">void</span> *nexthandle,
-00168                           <span class="keywordtype">void</span> *prevhandle);
-00169 
-00170 <span class="keywordtype">int</span> __pthread_hold_vm(<span class="keywordtype">int</span> *pendp);
+00164 <span class="keywordtype">int</span> __pthread_idle_vm(<span class="keywordtype">int</span> *lockp);
+00165 
+00166 <span class="keywordtype">int</span> __pthread_cancel_vm(<span class="keywordtype">void</span> *deadhandle,
+00167                         <span class="keywordtype">void</span> *nexthandle);
+00168 
+00169 <span class="keywordtype">int</span> __pthread_activate_vm(<span class="keywordtype">void</span> *nexthandle,
+00170                           <span class="keywordtype">void</span> *prevhandle);
 00171 
-00172 <span class="keywordtype">int</span> __pthread_release_vm(<span class="keywordtype">int</span> *lockp);
+00172 <span class="keywordtype">int</span> __pthread_hold_vm(<span class="keywordtype">int</span> *pendp);
 00173 
-00174 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00174 <span class="keywordtype">int</span> __pthread_release_vm(<span class="keywordtype">int</span> *lockp);
 00175 
-00176 <span class="preprocessor">#ifdef __cplusplus</span>
-00177 <span class="preprocessor"></span>};
-00178 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00179 
-00180 <span class="preprocessor">#endif </span><span class="comment">/* !__RTAI_SIM__ */</span>
+00176 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00177 
+00178 <span class="preprocessor">#ifdef __cplusplus</span>
+00179 <span class="preprocessor"></span>};
+00180 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
 00181 
-00182 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_FUSION_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Dec 5 21:57:43 2004 for RTAI API by&nbsp;
+00182 <span class="preprocessor">#endif </span><span class="comment">/* !__RTAI_SIM__ */</span>
+00183 
+00184 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_FUSION_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Dec 13 09:43:10 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -1,3 +1,15 @@
+2004-01-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c, base/include/asm-i38/rtai_lxrt.h: modified
+	  support for usyng Linux syscalls to have it arch independent
+	  (specific remarks from Michael Neuhauser).
+	* base/include/rtai_lxrt.h: added inlines to create RTAI propper
+	  user space threads.
+	* base/tasklets/tasklets.c, base/include/rtai_tasklets.h: modified 
+	  to use RTAI propper user space threads.
+	* base/usi/usi.c, base/include/rtai_usi.h: modified to use native 
+	  user irq tasks (found in api.c).
+
 2004-01-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: modified support for TSC emulation on 486s,

@@ -277,7 +277,7 @@ static inline void wake_up_timed_tasks(int cpuid)
 {
 	RT_TASK *task;
 #ifdef CONFIG_SMP
-	task = rt_smp_linux_task[cpuid = cpuid].tnext;
+	task = rt_smp_linux_task[cpuid].tnext;
 #else
 	task = rt_smp_linux_task[0].tnext;
 #endif

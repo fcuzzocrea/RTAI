@@ -1,3 +1,8 @@
+2004-10-09  Edelhard Becker <ebecker@software-manufaktur.de>
+
+	* rtai-core/scripts/rtai-load.in: Add support for user-defined
+	module search directory.
+
 2004-10-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* rtai-core/sched/rtai/sched_lxrt.c: changed sched_lock/unlock to

@@ -2,7 +2,7 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_MODULES=y
-CONFIG_RTAI_VERSION="0.6.99 (fusion)"
+CONFIG_RTAI_VERSION="0.7 (fusion)"
 
 #
 # General

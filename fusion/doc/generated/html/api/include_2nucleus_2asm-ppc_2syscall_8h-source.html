@@ -143,45 +143,47 @@
 00133 }
 00134 
 00135 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_error_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
-00136     __xn_reg_rval(regs) = v;
-00137 }
-00138 
-00139 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_status_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
-00140     __xn_reg_rval(regs) = v;
-00141 }
-00142 
-00143 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> __xn_interrupted_p(<span class="keyword">struct</span> pt_regs *regs) {
-00144     <span class="keywordflow">return</span> __xn_reg_rval(regs) == -EINTR;
-00145 }
-00146 
-00147 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
+00136     <span class="comment">/* We currently never set the SO bit for marking errors, even if</span>
+00137 <span class="comment">     * we always test it upon syscall return. */</span>
+00138     __xn_reg_rval(regs) = v;
+00139 }
+00140 
+00141 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_status_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
+00142     __xn_reg_rval(regs) = v;
+00143 }
+00144 
+00145 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> __xn_interrupted_p(<span class="keyword">struct</span> pt_regs *regs) {
+00146     <span class="keywordflow">return</span> __xn_reg_rval(regs) == -EINTR;
+00147 }
 00148 
-00149 <span class="preprocessor">#define CONFIG_RTAI_HW_DIRECT_TSC 1</span>
-00150 <span class="preprocessor"></span>
-00151 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __xn_rdtsc (<span class="keywordtype">void</span>)
-00152 
-00153 {
-00154     <span class="keyword">union </span>{
-00155         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
-00156         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> v[2];
-00157     } u;
-00158     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __tbu;
-00159 
-00160     __asm__ __volatile__ (<span class="stringliteral">"1: mftbu %0\n"</span>
-00161                           <span class="stringliteral">"mftb %1\n"</span>
-00162                           <span class="stringliteral">"mftbu %2\n"</span>
-00163                           <span class="stringliteral">"cmpw %2,%0\n"</span>
-00164                           <span class="stringliteral">"bne- 1b\n"</span>
-00165                           :<span class="stringliteral">"=r"</span> (u.v[0]),
-00166                           <span class="stringliteral">"=r"</span> (u.v[1]),
-00167                           <span class="stringliteral">"=r"</span> (__tbu));
-00168     <span class="keywordflow">return</span> u.t;
-00169 }
-00170 
-00171 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00149 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
+00150 
+00151 <span class="preprocessor">#define CONFIG_RTAI_HW_DIRECT_TSC 1</span>
+00152 <span class="preprocessor"></span>
+00153 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __xn_rdtsc (<span class="keywordtype">void</span>)
+00154 
+00155 {
+00156     <span class="keyword">union </span>{
+00157         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
+00158         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> v[2];
+00159     } u;
+00160     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __tbu;
+00161 
+00162     __asm__ __volatile__ (<span class="stringliteral">"1: mftbu %0\n"</span>
+00163                           <span class="stringliteral">"mftb %1\n"</span>
+00164                           <span class="stringliteral">"mftbu %2\n"</span>
+00165                           <span class="stringliteral">"cmpw %2,%0\n"</span>
+00166                           <span class="stringliteral">"bne- 1b\n"</span>
+00167                           :<span class="stringliteral">"=r"</span> (u.v[0]),
+00168                           <span class="stringliteral">"=r"</span> (u.v[1]),
+00169                           <span class="stringliteral">"=r"</span> (__tbu));
+00170     <span class="keywordflow">return</span> u.t;
+00171 }
 00172 
-00173 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:17 2005 for RTAI API by&nbsp;
+00173 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00174 
+00175 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SYSCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

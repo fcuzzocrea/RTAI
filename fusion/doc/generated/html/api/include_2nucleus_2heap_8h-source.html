@@ -57,8 +57,8 @@
 00047 <span class="preprocessor">#define XNHEAP_MINLOG2    3</span>
 00048 <span class="preprocessor"></span><span class="preprocessor">#define XNHEAP_MAXLOG2    22</span>
 00049 <span class="preprocessor"></span><span class="preprocessor">#define XNHEAP_MINALLOCSZ (1 &lt;&lt; XNHEAP_MINLOG2)</span>
-00050 <span class="preprocessor"></span><span class="preprocessor">#define XNHEAP_MINALIGNSZ (1 &lt;&lt; (XNHEAP_MINLOG2 + 1))</span>
-00051 <span class="preprocessor"></span><span class="preprocessor">#define XNHEAP_NBUCKETS   (XNHEAP_MAXLOG2 - XNHEAP_MINLOG2 + 2)</span>
+00050 <span class="preprocessor"></span><span class="preprocessor">#define XNHEAP_MINALIGNSZ (1 &lt;&lt; 4) </span><span class="comment">/* i.e. 16 bytes */</span>
+00051 <span class="preprocessor">#define XNHEAP_NBUCKETS   (XNHEAP_MAXLOG2 - XNHEAP_MINLOG2 + 2)</span>
 00052 <span class="preprocessor"></span><span class="preprocessor">#define XNHEAP_MAXEXTSZ   (1 &lt;&lt; 24) </span><span class="comment">/* i.e. 16Mb */</span>
 00053 
 00054 <span class="preprocessor">#define XNHEAP_PFREE   0</span>
@@ -144,10 +144,10 @@
 00134 <span class="keywordtype">int</span> xnheap_destroy_shared(xnheap_t *heap);
 00135 
 00136 <span class="preprocessor">#define xnheap_shared_offset(heap,ptr) \</span>
-00137 <span class="preprocessor">(((caddr_t)(ptr)) - ((caddr_t)(heap)-&gt;archdep.shmbase))</span>
+00137 <span class="preprocessor">(((caddr_t)(ptr)) - ((caddr_t)(heap)-&gt;archdep.heapbase))</span>
 00138 <span class="preprocessor"></span>
 00139 <span class="preprocessor">#define xnheap_shared_address(heap,off) \</span>
-00140 <span class="preprocessor">(((caddr_t)(heap)-&gt;archdep.shmbase) + (off))</span>
+00140 <span class="preprocessor">(((caddr_t)(heap)-&gt;archdep.heapbase) + (off))</span>
 00141 <span class="preprocessor"></span>
 00142 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00143 
@@ -165,26 +165,30 @@
 00155                                    <span class="keywordtype">void</span> *cookie),
 00156                    <span class="keywordtype">void</span> *cookie);
 00157 
-00158 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga7">xnheap_extend</a>(xnheap_t *heap,
+00158 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga8">xnheap_extend</a>(xnheap_t *heap,
 00159                   <span class="keywordtype">void</span> *extaddr,
 00160                   u_long extsize);
 00161 
 00162 <span class="keywordtype">void</span> *<a class="code" href="group__heap.html#ga5">xnheap_alloc</a>(xnheap_t *heap,
 00163                    u_long size);
 00164 
-00165 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga6">xnheap_free</a>(xnheap_t *heap,
-00166                 <span class="keywordtype">void</span> *block);
-00167 
-00168 <span class="preprocessor">#ifdef __cplusplus</span>
-00169 <span class="preprocessor"></span>}
-00170 <span class="preprocessor">#endif</span>
-00171 <span class="preprocessor"></span>
-00172 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
-00173 
-00174 <span class="preprocessor">#define XNHEAP_DEV_NAME  "/dev/rtheap"</span>
+00165 <span class="keywordtype">int</span> xnheap_test_and_free(xnheap_t *heap,
+00166                          <span class="keywordtype">void</span> *block,
+00167                          <span class="keywordtype">int</span> (*ckfn)(<span class="keywordtype">void</span> *block));
+00168 
+00169 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga7">xnheap_free</a>(xnheap_t *heap,
+00170                 <span class="keywordtype">void</span> *block);
+00171 
+00172 <span class="preprocessor">#ifdef __cplusplus</span>
+00173 <span class="preprocessor"></span>}
+00174 <span class="preprocessor">#endif</span>
 00175 <span class="preprocessor"></span>
-00176 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_HEAP_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
+00176 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00177 
+00178 <span class="preprocessor">#define XNHEAP_DEV_NAME  "/dev/rtheap"</span>
+00179 <span class="preprocessor"></span>
+00180 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_HEAP_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

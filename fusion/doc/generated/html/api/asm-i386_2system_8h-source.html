@@ -293,814 +293,811 @@
 00283 
 00284     <span class="keywordtype">int</span> kmflags;        <span class="comment">/* Kernel memory flags (0 if vmalloc()). */</span>
 00285 
-00286     <span class="keywordtype">void</span> *heapbase;     <span class="comment">/* Shared heap memory base (possibly unaligned). */</span>
+00286     <span class="keywordtype">void</span> *heapbase;     <span class="comment">/* Shared heap memory base. */</span>
 00287 
-00288     <span class="keywordtype">void</span> *shmbase;      <span class="comment">/* Shared memory base (page-aligned). */</span>
+00288 } xnarch_heapcb_t;
 00289 
-00290 } xnarch_heapcb_t;
-00291 
-00292 <span class="preprocessor">#ifdef __cplusplus</span>
-00293 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00294 <span class="preprocessor">#endif</span>
-00295 <span class="preprocessor"></span>
-00296 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnarch_tsc_to_ns (<span class="keywordtype">long</span> <span class="keywordtype">long</span> ts) {
-00297     <span class="keywordflow">return</span> xnarch_llimd(ts,1000000000,RTHAL_CPU_FREQ);
-00298 }
-00299 
-00300 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnarch_ns_to_tsc (<span class="keywordtype">long</span> <span class="keywordtype">long</span> ns) {
-00301     <span class="keywordflow">return</span> xnarch_llimd(ns,RTHAL_CPU_FREQ,1000000000);
-00302 }
-00303 
-00304 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnarch_get_cpu_time (<span class="keywordtype">void</span>) {
-00305     <span class="keywordflow">return</span> xnarch_tsc_to_ns(xnarch_get_cpu_tsc());
-00306 }
-00307 
-00308 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnarch_get_cpu_freq (<span class="keywordtype">void</span>) {
-00309     <span class="keywordflow">return</span> RTHAL_CPU_FREQ;
-00310 }
-00311 
-00312 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> xnarch_current_cpu (<span class="keywordtype">void</span>) {
-00313     <span class="keywordflow">return</span> adeos_processor_id();
-00314 }
+00290 <span class="preprocessor">#ifdef __cplusplus</span>
+00291 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00292 <span class="preprocessor">#endif</span>
+00293 <span class="preprocessor"></span>
+00294 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnarch_tsc_to_ns (<span class="keywordtype">long</span> <span class="keywordtype">long</span> ts) {
+00295     <span class="keywordflow">return</span> xnarch_llimd(ts,1000000000,RTHAL_CPU_FREQ);
+00296 }
+00297 
+00298 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnarch_ns_to_tsc (<span class="keywordtype">long</span> <span class="keywordtype">long</span> ns) {
+00299     <span class="keywordflow">return</span> xnarch_llimd(ns,RTHAL_CPU_FREQ,1000000000);
+00300 }
+00301 
+00302 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnarch_get_cpu_time (<span class="keywordtype">void</span>) {
+00303     <span class="keywordflow">return</span> xnarch_tsc_to_ns(xnarch_get_cpu_tsc());
+00304 }
+00305 
+00306 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnarch_get_cpu_freq (<span class="keywordtype">void</span>) {
+00307     <span class="keywordflow">return</span> RTHAL_CPU_FREQ;
+00308 }
+00309 
+00310 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> xnarch_current_cpu (<span class="keywordtype">void</span>) {
+00311     <span class="keywordflow">return</span> adeos_processor_id();
+00312 }
+00313 
+00314 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> *xnarch_sysalloc (u_long bytes)
 00315 
-00316 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> *xnarch_sysalloc (u_long bytes)
-00317 
-00318 {
-00319     <span class="keywordflow">if</span> (bytes &gt;= 128*1024)
-00320         <span class="keywordflow">return</span> vmalloc(bytes);
-00321 
-00322     <span class="keywordflow">return</span> kmalloc(bytes,GFP_KERNEL);
-00323 }
+00316 {
+00317     <span class="keywordflow">if</span> (bytes &gt;= 128*1024)
+00318         <span class="keywordflow">return</span> vmalloc(bytes);
+00319 
+00320     <span class="keywordflow">return</span> kmalloc(bytes,GFP_KERNEL);
+00321 }
+00322 
+00323 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_sysfree (<span class="keywordtype">void</span> *chunk, u_long bytes)
 00324 
-00325 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_sysfree (<span class="keywordtype">void</span> *chunk, u_long bytes)
-00326 
-00327 {
-00328     <span class="keywordflow">if</span> (bytes &gt;= 128*1024)
-00329         vfree(chunk);
-00330     <span class="keywordflow">else</span>
-00331         kfree(chunk);
-00332 }
-00333 
-00334 <span class="preprocessor">#define xnarch_declare_cpuid  adeos_declare_cpuid</span>
-00335 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_get_cpu(flags) adeos_get_cpu(flags)</span>
-00336 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_put_cpu(flags) adeos_put_cpu(flags)</span>
-00337 <span class="preprocessor"></span>
-00338 <span class="preprocessor">#define xnarch_halt(emsg) \</span>
-00339 <span class="preprocessor">do { \</span>
-00340 <span class="preprocessor">    adeos_set_printk_sync(adp_current); \</span>
-00341 <span class="preprocessor">    xnarch_logerr("fatal: %s\n",emsg); \</span>
-00342 <span class="preprocessor">    show_stack(NULL,NULL);                      \</span>
-00343 <span class="preprocessor">    for (;;) safe_halt();                       \</span>
-00344 <span class="preprocessor">} while(0)</span>
-00345 <span class="preprocessor"></span>
-00346 <span class="preprocessor">#define xnarch_alloc_stack xnmalloc</span>
-00347 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_free_stack  xnfree</span>
-00348 <span class="preprocessor"></span>
-00349 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_setimask (<span class="keywordtype">int</span> imask)
-00350 
-00351 {
-00352     spl_t s;
-00353     splhigh(s);
-00354     splexit(!!imask);
-00355     <span class="keywordflow">return</span> !!s;
-00356 }
-00357 
-00358 <span class="preprocessor">#ifdef XENO_INTR_MODULE</span>
-00359 <span class="preprocessor"></span>
-00360 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_hook_irq (<span class="keywordtype">unsigned</span> irq,
-00361                                    <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq,
-00362                                                    <span class="keywordtype">void</span> *cookie),
-00363                                    <span class="keywordtype">void</span> *cookie)
-00364 {
-00365     <span class="keywordflow">return</span> rthal_request_irq(irq,handler,cookie);
-00366 }
+00325 {
+00326     <span class="keywordflow">if</span> (bytes &gt;= 128*1024)
+00327         vfree(chunk);
+00328     <span class="keywordflow">else</span>
+00329         kfree(chunk);
+00330 }
+00331 
+00332 <span class="preprocessor">#define xnarch_declare_cpuid  adeos_declare_cpuid</span>
+00333 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_get_cpu(flags) adeos_get_cpu(flags)</span>
+00334 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_put_cpu(flags) adeos_put_cpu(flags)</span>
+00335 <span class="preprocessor"></span>
+00336 <span class="preprocessor">#define xnarch_halt(emsg) \</span>
+00337 <span class="preprocessor">do { \</span>
+00338 <span class="preprocessor">    adeos_set_printk_sync(adp_current); \</span>
+00339 <span class="preprocessor">    xnarch_logerr("fatal: %s\n",emsg); \</span>
+00340 <span class="preprocessor">    show_stack(NULL,NULL);                      \</span>
+00341 <span class="preprocessor">    for (;;) safe_halt();                       \</span>
+00342 <span class="preprocessor">} while(0)</span>
+00343 <span class="preprocessor"></span>
+00344 <span class="preprocessor">#define xnarch_alloc_stack xnmalloc</span>
+00345 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_free_stack  xnfree</span>
+00346 <span class="preprocessor"></span>
+00347 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_setimask (<span class="keywordtype">int</span> imask)
+00348 
+00349 {
+00350     spl_t s;
+00351     splhigh(s);
+00352     splexit(!!imask);
+00353     <span class="keywordflow">return</span> !!s;
+00354 }
+00355 
+00356 <span class="preprocessor">#ifdef XENO_INTR_MODULE</span>
+00357 <span class="preprocessor"></span>
+00358 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_hook_irq (<span class="keywordtype">unsigned</span> irq,
+00359                                    <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq,
+00360                                                    <span class="keywordtype">void</span> *cookie),
+00361                                    <span class="keywordtype">void</span> *cookie)
+00362 {
+00363     <span class="keywordflow">return</span> rthal_request_irq(irq,handler,cookie);
+00364 }
+00365 
+00366 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_release_irq (<span class="keywordtype">unsigned</span> irq)
 00367 
-00368 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_release_irq (<span class="keywordtype">unsigned</span> irq)
-00369 
-00370 {
-00371     <span class="keywordflow">return</span> rthal_release_irq(irq);
-00372 }
+00368 {
+00369     <span class="keywordflow">return</span> rthal_release_irq(irq);
+00370 }
+00371 
+00372 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_enable_irq (<span class="keywordtype">unsigned</span> irq)
 00373 
-00374 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_enable_irq (<span class="keywordtype">unsigned</span> irq)
-00375 
-00376 {
-00377     <span class="keywordflow">return</span> <a class="code" href="group__hal__ppc.html#ga45">rthal_enable_irq</a>(irq);
-00378 }
+00374 {
+00375     <span class="keywordflow">return</span> <a class="code" href="group__hal__ppc.html#ga45">rthal_enable_irq</a>(irq);
+00376 }
+00377 
+00378 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_disable_irq (<span class="keywordtype">unsigned</span> irq)
 00379 
-00380 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_disable_irq (<span class="keywordtype">unsigned</span> irq)
-00381 
-00382 {
-00383     <span class="keywordflow">return</span> <a class="code" href="group__hal__ppc.html#ga46">rthal_disable_irq</a>(irq);
-00384 }
+00380 {
+00381     <span class="keywordflow">return</span> <a class="code" href="group__hal__ppc.html#ga46">rthal_disable_irq</a>(irq);
+00382 }
+00383 
+00384 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_chain_irq (<span class="keywordtype">unsigned</span> irq)
 00385 
-00386 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_chain_irq (<span class="keywordtype">unsigned</span> irq)
-00387 
-00388 {
-00389     <a class="code" href="group__hal__ppc.html#ga49">rthal_pend_linux_irq</a>(irq);
-00390 }
+00386 {
+00387     <a class="code" href="group__hal__ppc.html#ga49">rthal_pend_linux_irq</a>(irq);
+00388 }
+00389 
+00390 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_relay_tick (<span class="keywordtype">void</span>)
 00391 
-00392 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_relay_tick (<span class="keywordtype">void</span>)
-00393 
-00394 {
-00395     <a class="code" href="group__hal__ppc.html#ga49">rthal_pend_linux_irq</a>(RTHAL_8254_IRQ);
-00396 }
-00397 
-00398 <span class="keyword">static</span> <span class="keyword">inline</span> cpumask_t xnarch_set_irq_affinity (<span class="keywordtype">unsigned</span> irq,
-00399                                                  xnarch_cpumask_t affinity)
-00400 {
-00401     <span class="keywordflow">return</span> adeos_set_irq_affinity(irq,affinity);
-00402 }
+00392 {
+00393     <a class="code" href="group__hal__ppc.html#ga49">rthal_pend_linux_irq</a>(RTHAL_8254_IRQ);
+00394 }
+00395 
+00396 <span class="keyword">static</span> <span class="keyword">inline</span> cpumask_t xnarch_set_irq_affinity (<span class="keywordtype">unsigned</span> irq,
+00397                                                  xnarch_cpumask_t affinity)
+00398 {
+00399     <span class="keywordflow">return</span> adeos_set_irq_affinity(irq,affinity);
+00400 }
+00401 
+00402 <span class="preprocessor">#endif </span><span class="comment">/* XENO_INTR_MODULE */</span>
 00403 
-00404 <span class="preprocessor">#endif </span><span class="comment">/* XENO_INTR_MODULE */</span>
-00405 
-00406 <span class="preprocessor">#ifdef XENO_POD_MODULE</span>
-00407 <span class="preprocessor"></span>
-00408 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga62">xnpod_welcome_thread</a>(<span class="keyword">struct</span> xnthread *);
+00404 <span class="preprocessor">#ifdef XENO_POD_MODULE</span>
+00405 <span class="preprocessor"></span>
+00406 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga62">xnpod_welcome_thread</a>(<span class="keyword">struct</span> xnthread *);
+00407 
+00408 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga28">xnpod_delete_thread</a>(<span class="keyword">struct</span> xnthread *);
 00409 
-00410 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga28">xnpod_delete_thread</a>(<span class="keyword">struct</span> xnthread *);
-00411 
-00412 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_start_timer (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ns,
-00413                                       <span class="keywordtype">void</span> (*tickhandler)(<span class="keywordtype">void</span>)) {
-00414     <span class="keywordflow">return</span> rthal_request_timer(tickhandler,ns);
-00415 }
+00410 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_start_timer (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ns,
+00411                                       <span class="keywordtype">void</span> (*tickhandler)(<span class="keywordtype">void</span>)) {
+00412     <span class="keywordflow">return</span> rthal_request_timer(tickhandler,ns);
+00413 }
+00414 
+00415 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_leave_root (xnarchtcb_t *rootcb)
 00416 
-00417 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_leave_root (xnarchtcb_t *rootcb)
-00418 
-00419 {
-00420     adeos_declare_cpuid;
+00417 {
+00418     adeos_declare_cpuid;
+00419 
+00420     adeos_load_cpuid();
 00421 
-00422     adeos_load_cpuid();
-00423 
-00424     <span class="comment">/* rthal_cpu_realtime is only tested for the current processor,</span>
-00425 <span class="comment">       and always inside a critical section. */</span>
-00426     __set_bit(cpuid,&amp;rthal_cpu_realtime);
-00427     <span class="comment">/* Remember the preempted Linux task pointer. */</span>
-00428     rootcb-&gt;user_task = rootcb-&gt;active_task = rthal_get_current(cpuid);
-00429     <span class="comment">/* So that xnarch_save_fpu() will operate on the right FPU area. */</span>
-00430     rootcb-&gt;fpup = &amp;rootcb-&gt;user_task-&gt;thread.i387;
-00431 }
-00432 
-00433 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_enter_root (xnarchtcb_t *rootcb) {
-00434     __clear_bit(xnarch_current_cpu(),&amp;rthal_cpu_realtime);
-00435 }
-00436 
-00437 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __switch_threads(xnarchtcb_t *out_tcb,
-00438                                     xnarchtcb_t *in_tcb,
-00439                                     <span class="keyword">struct</span> task_struct *outproc,
-00440                                     <span class="keyword">struct</span> task_struct *inproc
-00441                                     )
-00442 {
-00443 <span class="preprocessor">#if __GNUC__ &lt; 3 || __GNUC__ == 3 &amp;&amp; __GNUC_MINOR__ &lt; 2</span>
-00444 <span class="preprocessor"></span>
-00445     __asm__ __volatile__( \
-00446         <span class="stringliteral">"pushl %%ebp\n\t"</span> \
-00447         <span class="stringliteral">"pushl %%ecx\n\t"</span> \
-00448         <span class="stringliteral">"pushl %%edi\n\t"</span> \
-00449         <span class="stringliteral">"movl %0,%%ecx\n\t"</span> \
-00450         <span class="stringliteral">"movl %%esp,(%%ecx)\n\t"</span> \
-00451         <span class="stringliteral">"movl %1,%%ecx\n\t"</span> \
-00452         <span class="stringliteral">"movl $1f,(%%ecx)\n\t"</span> \
-00453         <span class="stringliteral">"movl %2,%%ecx\n\t"</span> \
-00454         <span class="stringliteral">"movl %3,%%edi\n\t"</span> \
-00455         <span class="stringliteral">"movl (%%ecx),%%esp\n\t"</span> \
-00456         <span class="stringliteral">"pushl (%%edi)\n\t"</span> \
-00457         <span class="stringliteral">"testl %%edx,%%edx\n\t"</span> \
-00458         <span class="stringliteral">"jne  __switch_to\n\t"</span> \
-00459         <span class="stringliteral">"ret\n\t"</span> \
-00460 <span class="stringliteral">"1:      popl %%edi\n\t"</span> \
-00461         <span class="stringliteral">"popl %%ecx\n\t"</span> \
-00462         <span class="stringliteral">"popl %%ebp\n\t"</span> \
-00463       : <span class="comment">/* no output */</span> \
-00464       : <span class="stringliteral">"m"</span> (out_tcb-&gt;espp), \
-00465         <span class="stringliteral">"m"</span> (out_tcb-&gt;eipp), \
-00466         <span class="stringliteral">"m"</span> (in_tcb-&gt;espp), \
-00467         <span class="stringliteral">"m"</span> (in_tcb-&gt;eipp), \
-00468         <span class="stringliteral">"b"</span> (out_tcb), \
-00469         <span class="stringliteral">"S"</span> (in_tcb), \
-00470         <span class="stringliteral">"a"</span> (outproc), \
-00471         <span class="stringliteral">"d"</span> (inproc));
+00422     <span class="comment">/* rthal_cpu_realtime is only tested for the current processor,</span>
+00423 <span class="comment">       and always inside a critical section. */</span>
+00424     __set_bit(cpuid,&amp;rthal_cpu_realtime);
+00425     <span class="comment">/* Remember the preempted Linux task pointer. */</span>
+00426     rootcb-&gt;user_task = rootcb-&gt;active_task = rthal_get_current(cpuid);
+00427     <span class="comment">/* So that xnarch_save_fpu() will operate on the right FPU area. */</span>
+00428     rootcb-&gt;fpup = &amp;rootcb-&gt;user_task-&gt;thread.i387;
+00429 }
+00430 
+00431 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_enter_root (xnarchtcb_t *rootcb) {
+00432     __clear_bit(xnarch_current_cpu(),&amp;rthal_cpu_realtime);
+00433 }
+00434 
+00435 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __switch_threads(xnarchtcb_t *out_tcb,
+00436                                     xnarchtcb_t *in_tcb,
+00437                                     <span class="keyword">struct</span> task_struct *outproc,
+00438                                     <span class="keyword">struct</span> task_struct *inproc
+00439                                     )
+00440 {
+00441 <span class="preprocessor">#if __GNUC__ &lt; 3 || __GNUC__ == 3 &amp;&amp; __GNUC_MINOR__ &lt; 2</span>
+00442 <span class="preprocessor"></span>
+00443     __asm__ __volatile__( \
+00444         <span class="stringliteral">"pushl %%ebp\n\t"</span> \
+00445         <span class="stringliteral">"pushl %%ecx\n\t"</span> \
+00446         <span class="stringliteral">"pushl %%edi\n\t"</span> \
+00447         <span class="stringliteral">"movl %0,%%ecx\n\t"</span> \
+00448         <span class="stringliteral">"movl %%esp,(%%ecx)\n\t"</span> \
+00449         <span class="stringliteral">"movl %1,%%ecx\n\t"</span> \
+00450         <span class="stringliteral">"movl $1f,(%%ecx)\n\t"</span> \
+00451         <span class="stringliteral">"movl %2,%%ecx\n\t"</span> \
+00452         <span class="stringliteral">"movl %3,%%edi\n\t"</span> \
+00453         <span class="stringliteral">"movl (%%ecx),%%esp\n\t"</span> \
+00454         <span class="stringliteral">"pushl (%%edi)\n\t"</span> \
+00455         <span class="stringliteral">"testl %%edx,%%edx\n\t"</span> \
+00456         <span class="stringliteral">"jne  __switch_to\n\t"</span> \
+00457         <span class="stringliteral">"ret\n\t"</span> \
+00458 <span class="stringliteral">"1:      popl %%edi\n\t"</span> \
+00459         <span class="stringliteral">"popl %%ecx\n\t"</span> \
+00460         <span class="stringliteral">"popl %%ebp\n\t"</span> \
+00461       : <span class="comment">/* no output */</span> \
+00462       : <span class="stringliteral">"m"</span> (out_tcb-&gt;espp), \
+00463         <span class="stringliteral">"m"</span> (out_tcb-&gt;eipp), \
+00464         <span class="stringliteral">"m"</span> (in_tcb-&gt;espp), \
+00465         <span class="stringliteral">"m"</span> (in_tcb-&gt;eipp), \
+00466         <span class="stringliteral">"b"</span> (out_tcb), \
+00467         <span class="stringliteral">"S"</span> (in_tcb), \
+00468         <span class="stringliteral">"a"</span> (outproc), \
+00469         <span class="stringliteral">"d"</span> (inproc));
+00470 
+00471 <span class="preprocessor">#else </span><span class="comment">/* GCC version &gt;= 3.2 */</span>
 00472 
-00473 <span class="preprocessor">#else </span><span class="comment">/* GCC version &gt;= 3.2 */</span>
-00474 
-00475     <span class="keywordtype">long</span> ebx_out, ecx_out, edi_out, esi_out;
-00476     
-00477     __asm__ __volatile__( \
-00478         <span class="stringliteral">"pushl %%ebp\n\t"</span> \
-00479         <span class="stringliteral">"movl %6,%%ecx\n\t"</span> \
-00480         <span class="stringliteral">"movl %%esp,(%%ecx)\n\t"</span> \
-00481         <span class="stringliteral">"movl %7,%%ecx\n\t"</span> \
-00482         <span class="stringliteral">"movl $1f,(%%ecx)\n\t"</span> \
-00483         <span class="stringliteral">"movl %8,%%ecx\n\t"</span> \
-00484         <span class="stringliteral">"movl %9,%%edi\n\t"</span> \
-00485         <span class="stringliteral">"movl (%%ecx),%%esp\n\t"</span> \
-00486         <span class="stringliteral">"pushl (%%edi)\n\t"</span> \
-00487         <span class="stringliteral">"testl %%edx,%%edx\n\t"</span> \
-00488         <span class="stringliteral">"jne  __switch_to\n\t"</span> \
-00489         <span class="stringliteral">"ret\n\t"</span> \
-00490 <span class="stringliteral">"1:      popl %%ebp\n\t"</span> \
-00491       : <span class="stringliteral">"=b"</span> (ebx_out), \
-00492         <span class="stringliteral">"=&amp;c"</span> (ecx_out), \
-00493         <span class="stringliteral">"=S"</span> (esi_out), \
-00494         <span class="stringliteral">"=D"</span> (edi_out), \
-00495         <span class="stringliteral">"+a"</span> (outproc), \
-00496         <span class="stringliteral">"+d"</span> (inproc) \
-00497       : <span class="stringliteral">"m"</span> (out_tcb-&gt;espp), \
-00498         <span class="stringliteral">"m"</span> (out_tcb-&gt;eipp), \
-00499         <span class="stringliteral">"m"</span> (in_tcb-&gt;espp), \
-00500         <span class="stringliteral">"m"</span> (in_tcb-&gt;eipp));
-00501 
-00502 <span class="preprocessor">#endif </span><span class="comment">/* GCC version &lt; 3.2 */</span>
-00503 }
-00504 
-00505 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_switch_to (xnarchtcb_t *out_tcb,
-00506                                      xnarchtcb_t *in_tcb)
-00507 {
-00508     <span class="keyword">struct </span>task_struct *outproc = out_tcb-&gt;active_task;
-00509     <span class="keyword">struct </span>task_struct *inproc = in_tcb-&gt;user_task;
-00510 
-00511     <span class="keywordflow">if</span> (inproc &amp;&amp; outproc-&gt;thread_info-&gt;status &amp; TS_USEDFPU)        
-00512         <span class="comment">/* __switch_to will try and use __unlazy_fpu, so that the ts</span>
-00513 <span class="comment">           bit need to be cleared. */</span>
-00514         clts();
-00515     
-00516     in_tcb-&gt;active_task = inproc ?: outproc;
-00517 
-00518     <span class="keywordflow">if</span> (inproc &amp;&amp; inproc != outproc)
-00519         {
-00520         <span class="keyword">struct </span>mm_struct *oldmm = outproc-&gt;active_mm;
+00473     <span class="keywordtype">long</span> ebx_out, ecx_out, edi_out, esi_out;
+00474     
+00475     __asm__ __volatile__( \
+00476         <span class="stringliteral">"pushl %%ebp\n\t"</span> \
+00477         <span class="stringliteral">"movl %6,%%ecx\n\t"</span> \
+00478         <span class="stringliteral">"movl %%esp,(%%ecx)\n\t"</span> \
+00479         <span class="stringliteral">"movl %7,%%ecx\n\t"</span> \
+00480         <span class="stringliteral">"movl $1f,(%%ecx)\n\t"</span> \
+00481         <span class="stringliteral">"movl %8,%%ecx\n\t"</span> \
+00482         <span class="stringliteral">"movl %9,%%edi\n\t"</span> \
+00483         <span class="stringliteral">"movl (%%ecx),%%esp\n\t"</span> \
+00484         <span class="stringliteral">"pushl (%%edi)\n\t"</span> \
+00485         <span class="stringliteral">"testl %%edx,%%edx\n\t"</span> \
+00486         <span class="stringliteral">"jne  __switch_to\n\t"</span> \
+00487         <span class="stringliteral">"ret\n\t"</span> \
+00488 <span class="stringliteral">"1:      popl %%ebp\n\t"</span> \
+00489       : <span class="stringliteral">"=b"</span> (ebx_out), \
+00490         <span class="stringliteral">"=&amp;c"</span> (ecx_out), \
+00491         <span class="stringliteral">"=S"</span> (esi_out), \
+00492         <span class="stringliteral">"=D"</span> (edi_out), \
+00493         <span class="stringliteral">"+a"</span> (outproc), \
+00494         <span class="stringliteral">"+d"</span> (inproc) \
+00495       : <span class="stringliteral">"m"</span> (out_tcb-&gt;espp), \
+00496         <span class="stringliteral">"m"</span> (out_tcb-&gt;eipp), \
+00497         <span class="stringliteral">"m"</span> (in_tcb-&gt;espp), \
+00498         <span class="stringliteral">"m"</span> (in_tcb-&gt;eipp));
+00499 
+00500 <span class="preprocessor">#endif </span><span class="comment">/* GCC version &lt; 3.2 */</span>
+00501 }
+00502 
+00503 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_switch_to (xnarchtcb_t *out_tcb,
+00504                                      xnarchtcb_t *in_tcb)
+00505 {
+00506     <span class="keyword">struct </span>task_struct *outproc = out_tcb-&gt;active_task;
+00507     <span class="keyword">struct </span>task_struct *inproc = in_tcb-&gt;user_task;
+00508 
+00509     <span class="keywordflow">if</span> (inproc &amp;&amp; outproc-&gt;thread_info-&gt;status &amp; TS_USEDFPU)        
+00510         <span class="comment">/* __switch_to will try and use __unlazy_fpu, so we need to</span>
+00511 <span class="comment">           clear the ts bit. */</span>
+00512         clts();
+00513     
+00514     in_tcb-&gt;active_task = inproc ?: outproc;
+00515 
+00516     <span class="keywordflow">if</span> (inproc &amp;&amp; inproc != outproc)
+00517         {
+00518         <span class="keyword">struct </span>mm_struct *oldmm = outproc-&gt;active_mm;
+00519 
+00520         switch_mm(oldmm,inproc-&gt;active_mm,inproc);
 00521 
-00522         switch_mm(oldmm,inproc-&gt;active_mm,inproc);
-00523 
-00524         <span class="keywordflow">if</span> (!inproc-&gt;mm)
-00525             enter_lazy_tlb(oldmm,inproc);
-00526         }
+00522         <span class="keywordflow">if</span> (!inproc-&gt;mm)
+00523             enter_lazy_tlb(oldmm,inproc);
+00524         }
+00525 
+00526     __switch_threads(out_tcb,in_tcb,outproc,inproc);
 00527 
-00528     __switch_threads(out_tcb,in_tcb,outproc,inproc);
-00529 
-00530     stts();
-00531 }
-00532 
-00533 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
-00534                                                xnarchtcb_t *next_tcb) {
-00535     xnarch_switch_to(dead_tcb,next_tcb);
-00536 }
-00537 
-00538 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb) {
-00539     <span class="comment">/* Empty */</span>
-00540 }
-00541 
-00542 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_root_tcb (xnarchtcb_t *tcb,
-00543                                          <span class="keyword">struct</span> xnthread *thread,
-00544                                          <span class="keyword">const</span> <span class="keywordtype">char</span> *name)
-00545 {
-00546     tcb-&gt;user_task = current;
-00547     tcb-&gt;active_task = NULL;
-00548     tcb-&gt;esp = 0;
-00549     tcb-&gt;espp = &amp;tcb-&gt;esp;
-00550     tcb-&gt;eipp = &amp;tcb-&gt;eip;
-00551     tcb-&gt;fpup = NULL;
-00552 }
+00528     stts();
+00529 }
+00530 
+00531 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
+00532                                                xnarchtcb_t *next_tcb) {
+00533     xnarch_switch_to(dead_tcb,next_tcb);
+00534 }
+00535 
+00536 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb) {
+00537     <span class="comment">/* Empty */</span>
+00538 }
+00539 
+00540 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_root_tcb (xnarchtcb_t *tcb,
+00541                                          <span class="keyword">struct</span> xnthread *thread,
+00542                                          <span class="keyword">const</span> <span class="keywordtype">char</span> *name)
+00543 {
+00544     tcb-&gt;user_task = current;
+00545     tcb-&gt;active_task = NULL;
+00546     tcb-&gt;esp = 0;
+00547     tcb-&gt;espp = &amp;tcb-&gt;esp;
+00548     tcb-&gt;eipp = &amp;tcb-&gt;eip;
+00549     tcb-&gt;fpup = NULL;
+00550 }
+00551 
+00552 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_tcb (xnarchtcb_t *tcb) {
 00553 
-00554 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_tcb (xnarchtcb_t *tcb) {
-00555 
-00556     tcb-&gt;user_task = NULL;
-00557     tcb-&gt;active_task = NULL;
-00558     tcb-&gt;espp = &amp;tcb-&gt;esp;
-00559     tcb-&gt;eipp = &amp;tcb-&gt;eip;
-00560     tcb-&gt;fpup = &amp;tcb-&gt;fpuenv;
-00561     <span class="comment">/* Must be followed by xnarch_init_thread(). */</span>
-00562 }
-00563 
-00564 asmlinkage <span class="keyword">static</span> <span class="keywordtype">void</span> xnarch_thread_redirect (<span class="keyword">struct</span> xnthread *<span class="keyword">self</span>,
-00565                                                <span class="keywordtype">int</span> imask,
-00566                                                <span class="keywordtype">void</span>(*entry)(<span class="keywordtype">void</span> *),
-00567                                                <span class="keywordtype">void</span> *cookie)
-00568 {
-00569     <span class="comment">/* xnpod_welcome_thread() will do clts() if needed. */</span>
-00570     stts();
-00571     rthal_local_irq_restore(!!imask);
-00572     <a class="code" href="group__pod.html#ga62">xnpod_welcome_thread</a>(<span class="keyword">self</span>);
-00573     entry(cookie);
-00574     <a class="code" href="group__pod.html#ga28">xnpod_delete_thread</a>(<span class="keyword">self</span>);
-00575 }
-00576 
-00577 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_thread (xnarchtcb_t *tcb,
-00578                                        <span class="keywordtype">void</span> (*entry)(<span class="keywordtype">void</span> *),
-00579                                        <span class="keywordtype">void</span> *cookie,
-00580                                        <span class="keywordtype">int</span> imask,
-00581                                        <span class="keyword">struct</span> xnthread *thread,
-00582                                        <span class="keywordtype">char</span> *name)
-00583 {
-00584     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> **psp = (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> **)&amp;tcb-&gt;esp;
-00585 
-00586     tcb-&gt;eip = (<span class="keywordtype">unsigned</span> long)&amp;xnarch_thread_redirect;
-00587     tcb-&gt;esp = (<span class="keywordtype">unsigned</span> long)tcb-&gt;stackbase;
-00588     **psp = 0;  <span class="comment">/* Commit bottom stack memory */</span>
-00589     *psp = (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)(((<span class="keywordtype">unsigned</span> long)*psp + tcb-&gt;stacksize - 0x10) &amp; ~0xf);
-00590     *--(*psp) = (<span class="keywordtype">unsigned</span> long)cookie;
-00591     *--(*psp) = (<span class="keywordtype">unsigned</span> long)entry;
-00592     *--(*psp) = (<span class="keywordtype">unsigned</span> long)imask;
-00593     *--(*psp) = (<span class="keywordtype">unsigned</span> long)thread;
-00594     *--(*psp) = 0;
-00595 }
-00596 
-00597 <span class="preprocessor">#ifdef CONFIG_RTAI_HW_FPU</span>
-00598 <span class="preprocessor"></span>
-00599 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_fpu (xnarchtcb_t *tcb)
-00600 
-00601 {
-00602     <span class="comment">/* Initialize the FPU for an emerging kernel-based RT thread. This</span>
-00603 <span class="comment">       must be run on behalf of the emerging thread. */</span>
+00554     tcb-&gt;user_task = NULL;
+00555     tcb-&gt;active_task = NULL;
+00556     tcb-&gt;espp = &amp;tcb-&gt;esp;
+00557     tcb-&gt;eipp = &amp;tcb-&gt;eip;
+00558     tcb-&gt;fpup = &amp;tcb-&gt;fpuenv;
+00559     <span class="comment">/* Must be followed by xnarch_init_thread(). */</span>
+00560 }
+00561 
+00562 asmlinkage <span class="keyword">static</span> <span class="keywordtype">void</span> xnarch_thread_redirect (<span class="keyword">struct</span> xnthread *<span class="keyword">self</span>,
+00563                                                <span class="keywordtype">int</span> imask,
+00564                                                <span class="keywordtype">void</span>(*entry)(<span class="keywordtype">void</span> *),
+00565                                                <span class="keywordtype">void</span> *cookie)
+00566 {
+00567     <span class="comment">/* xnpod_welcome_thread() will do clts() if needed. */</span>
+00568     stts();
+00569     rthal_local_irq_restore(!!imask);
+00570     <a class="code" href="group__pod.html#ga62">xnpod_welcome_thread</a>(<span class="keyword">self</span>);
+00571     entry(cookie);
+00572     <a class="code" href="group__pod.html#ga28">xnpod_delete_thread</a>(<span class="keyword">self</span>);
+00573 }
+00574 
+00575 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_thread (xnarchtcb_t *tcb,
+00576                                        <span class="keywordtype">void</span> (*entry)(<span class="keywordtype">void</span> *),
+00577                                        <span class="keywordtype">void</span> *cookie,
+00578                                        <span class="keywordtype">int</span> imask,
+00579                                        <span class="keyword">struct</span> xnthread *thread,
+00580                                        <span class="keywordtype">char</span> *name)
+00581 {
+00582     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> **psp = (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> **)&amp;tcb-&gt;esp;
+00583 
+00584     tcb-&gt;eip = (<span class="keywordtype">unsigned</span> long)&amp;xnarch_thread_redirect;
+00585     tcb-&gt;esp = (<span class="keywordtype">unsigned</span> long)tcb-&gt;stackbase;
+00586     **psp = 0;  <span class="comment">/* Commit bottom stack memory */</span>
+00587     *psp = (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)(((<span class="keywordtype">unsigned</span> long)*psp + tcb-&gt;stacksize - 0x10) &amp; ~0xf);
+00588     *--(*psp) = (<span class="keywordtype">unsigned</span> long)cookie;
+00589     *--(*psp) = (<span class="keywordtype">unsigned</span> long)entry;
+00590     *--(*psp) = (<span class="keywordtype">unsigned</span> long)imask;
+00591     *--(*psp) = (<span class="keywordtype">unsigned</span> long)thread;
+00592     *--(*psp) = 0;
+00593 }
+00594 
+00595 <span class="preprocessor">#ifdef CONFIG_RTAI_HW_FPU</span>
+00596 <span class="preprocessor"></span>
+00597 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_fpu (xnarchtcb_t *tcb)
+00598 
+00599 {
+00600     <span class="comment">/* Initialize the FPU for an emerging kernel-based RT thread. This</span>
+00601 <span class="comment">       must be run on behalf of the emerging thread. */</span>
+00602 
+00603     __asm__ __volatile__ (<span class="stringliteral">"clts; fninit"</span>);
 00604 
-00605     __asm__ __volatile__ (<span class="stringliteral">"clts; fninit"</span>);
-00606 
-00607     <span class="keywordflow">if</span> (cpu_has_xmm)
-00608         {
-00609         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __mxcsr = 0x1f80UL &amp; 0xffbfUL;
-00610         __asm__ __volatile__ (<span class="stringliteral">"ldmxcsr %0"</span>: : <span class="stringliteral">"m"</span> (__mxcsr));
-00611         }
-00612 }
+00605     <span class="keywordflow">if</span> (cpu_has_xmm)
+00606         {
+00607         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __mxcsr = 0x1f80UL &amp; 0xffbfUL;
+00608         __asm__ __volatile__ (<span class="stringliteral">"ldmxcsr %0"</span>: : <span class="stringliteral">"m"</span> (__mxcsr));
+00609         }
+00610 }
+00611 
+00612 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_save_fpu (xnarchtcb_t *tcb)
 00613 
-00614 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_save_fpu (xnarchtcb_t *tcb)
-00615 
-00616 {
-00617     <span class="keywordflow">if</span> (!tcb-&gt;user_task) <span class="comment">/* __switch_to() will take care otherwise. */</span>
-00618         {
-00619         clts();
-00620 
-00621         <span class="keywordflow">if</span> (cpu_has_fxsr)
-00622             __asm__ __volatile__ (<span class="stringliteral">"fxsave %0; fnclex"</span> : <span class="stringliteral">"=m"</span> (*tcb-&gt;fpup));
-00623         <span class="keywordflow">else</span>
-00624             __asm__ __volatile__ (<span class="stringliteral">"fnsave %0; fwait"</span> : <span class="stringliteral">"=m"</span> (*tcb-&gt;fpup));
-00625         }
-00626 }
+00614 {
+00615     <span class="keywordflow">if</span> (!tcb-&gt;user_task) <span class="comment">/* __switch_to() will take care otherwise. */</span>
+00616         {
+00617         clts();
+00618 
+00619         <span class="keywordflow">if</span> (cpu_has_fxsr)
+00620             __asm__ __volatile__ (<span class="stringliteral">"fxsave %0; fnclex"</span> : <span class="stringliteral">"=m"</span> (*tcb-&gt;fpup));
+00621         <span class="keywordflow">else</span>
+00622             __asm__ __volatile__ (<span class="stringliteral">"fnsave %0; fwait"</span> : <span class="stringliteral">"=m"</span> (*tcb-&gt;fpup));
+00623         }
+00624 }
+00625 
+00626 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_restore_fpu (xnarchtcb_t *tcb)
 00627 
-00628 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_restore_fpu (xnarchtcb_t *tcb)
-00629 
-00630 {
-00631     <span class="keyword">struct </span>task_struct *task = tcb-&gt;user_task;
-00632 
-00633     <span class="keywordflow">if</span> (task)
-00634         {
-00635         <span class="keywordflow">if</span> (!task-&gt;used_math)
-00636             {
-00637             stts();
-00638             <span class="keywordflow">return</span>;     <span class="comment">/* Uninit fpu area -- do not restore. */</span>
-00639             }
-00640 
-00641         <span class="comment">/* Tell Linux that this task has altered the state of the FPU</span>
-00642 <span class="comment">           hardware. */</span>
-00643         task-&gt;thread_info-&gt;status |= TS_USEDFPU;
-00644         }
-00645 
-00646     <span class="comment">/* Restore the FPU hardware with valid fp registers from a</span>
-00647 <span class="comment">       user-space or kernel thread. */</span>
+00628 {
+00629     <span class="keyword">struct </span>task_struct *task = tcb-&gt;user_task;
+00630 
+00631     <span class="keywordflow">if</span> (task)
+00632         {
+00633         <span class="keywordflow">if</span> (!task-&gt;used_math)
+00634             {
+00635             stts();
+00636             <span class="keywordflow">return</span>;     <span class="comment">/* Uninit fpu area -- do not restore. */</span>
+00637             }
+00638 
+00639         <span class="comment">/* Tell Linux that this task has altered the state of the FPU</span>
+00640 <span class="comment">           hardware. */</span>
+00641         task-&gt;thread_info-&gt;status |= TS_USEDFPU;
+00642         }
+00643 
+00644     <span class="comment">/* Restore the FPU hardware with valid fp registers from a</span>
+00645 <span class="comment">       user-space or kernel thread. */</span>
+00646 
+00647     clts();
 00648 
-00649     clts();
-00650 
-00651     <span class="keywordflow">if</span> (cpu_has_fxsr)
-00652         __asm__ __volatile__ (<span class="stringliteral">"fxrstor %0"</span>: <span class="comment">/* no output */</span> : <span class="stringliteral">"m"</span> (*tcb-&gt;fpup));
-00653     <span class="keywordflow">else</span>
-00654         __asm__ __volatile__ (<span class="stringliteral">"frstor %0"</span>: <span class="comment">/* no output */</span> : <span class="stringliteral">"m"</span> (*tcb-&gt;fpup));
-00655 }
+00649     <span class="keywordflow">if</span> (cpu_has_fxsr)
+00650         __asm__ __volatile__ (<span class="stringliteral">"fxrstor %0"</span>: <span class="comment">/* no output */</span> : <span class="stringliteral">"m"</span> (*tcb-&gt;fpup));
+00651     <span class="keywordflow">else</span>
+00652         __asm__ __volatile__ (<span class="stringliteral">"frstor %0"</span>: <span class="comment">/* no output */</span> : <span class="stringliteral">"m"</span> (*tcb-&gt;fpup));
+00653 }
+00654 
+00655 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_RTAI_HW_FPU */</span>
 00656 
-00657 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_RTAI_HW_FPU */</span>
+00657 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_fpu (xnarchtcb_t *tcb)
 00658 
-00659 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_fpu (xnarchtcb_t *tcb)
+00659 {}
 00660 
-00661 {}
+00661 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_save_fpu (xnarchtcb_t *tcb)
 00662 
-00663 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_save_fpu (xnarchtcb_t *tcb)
+00663 {}
 00664 
-00665 {}
+00665 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_restore_fpu (xnarchtcb_t *tcb)
 00666 
-00667 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_restore_fpu (xnarchtcb_t *tcb)
+00667 {}
 00668 
-00669 {}
+00669 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_HW_FPU */</span>
 00670 
-00671 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_HW_FPU */</span>
-00672 
-00673 <span class="preprocessor">#ifdef CONFIG_SMP</span>
-00674 <span class="preprocessor"></span>
-00675 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_send_ipi (xnarch_cpumask_t cpumask) {
-00676 
-00677     <span class="keywordflow">return</span> adeos_send_ipi(ADEOS_SERVICE_IPI0, cpumask);
-00678 }
+00671 <span class="preprocessor">#ifdef CONFIG_SMP</span>
+00672 <span class="preprocessor"></span>
+00673 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_send_ipi (xnarch_cpumask_t cpumask) {
+00674 
+00675     <span class="keywordflow">return</span> adeos_send_ipi(ADEOS_SERVICE_IPI0, cpumask);
+00676 }
+00677 
+00678 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_hook_ipi (<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>))
 00679 
-00680 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_hook_ipi (<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>))
-00681 
-00682 {
-00683     <span class="keywordflow">return</span> adeos_virtualize_irq_from(&amp;rthal_domain,
-00684                                      ADEOS_SERVICE_IPI0,
-00685                                      (<span class="keywordtype">void</span> (*)(<span class="keywordtype">unsigned</span>)) handler,
-00686                                      NULL,
-00687                                      IPIPE_HANDLE_MASK);
-00688 }
+00680 {
+00681     <span class="keywordflow">return</span> adeos_virtualize_irq_from(&amp;rthal_domain,
+00682                                      ADEOS_SERVICE_IPI0,
+00683                                      (<span class="keywordtype">void</span> (*)(<span class="keywordtype">unsigned</span>)) handler,
+00684                                      NULL,
+00685                                      IPIPE_HANDLE_MASK);
+00686 }
+00687 
+00688 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_release_ipi (<span class="keywordtype">void</span>)
 00689 
-00690 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_release_ipi (<span class="keywordtype">void</span>)
-00691 
-00692 {
-00693     <span class="keywordflow">return</span> adeos_virtualize_irq_from(&amp;rthal_domain,
-00694                                      ADEOS_SERVICE_IPI0,
-00695                                      NULL,
-00696                                      NULL,
-00697                                      IPIPE_PASS_MASK);
-00698 }
+00690 {
+00691     <span class="keywordflow">return</span> adeos_virtualize_irq_from(&amp;rthal_domain,
+00692                                      ADEOS_SERVICE_IPI0,
+00693                                      NULL,
+00694                                      NULL,
+00695                                      IPIPE_PASS_MASK);
+00696 }
+00697 
+00698 <span class="keyword">static</span> <span class="keyword">struct </span>semaphore xnarch_finalize_sync;
 00699 
-00700 <span class="keyword">static</span> <span class="keyword">struct </span>semaphore xnarch_finalize_sync;
-00701 
-00702 <span class="keyword">static</span> <span class="keywordtype">void</span> xnarch_finalize_cpu(<span class="keywordtype">unsigned</span> irq)
-00703 {
-00704     up(&amp;xnarch_finalize_sync);
-00705 }
-00706 
-00707 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_notify_halt(<span class="keywordtype">void</span>)
-00708     
-00709 {
-00710     xnarch_cpumask_t other_cpus = cpu_online_map;
-00711     <span class="keywordtype">unsigned</span> cpu, nr_cpus = num_online_cpus();
-00712     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
-00713     adeos_declare_cpuid;
+00700 <span class="keyword">static</span> <span class="keywordtype">void</span> xnarch_finalize_cpu(<span class="keywordtype">unsigned</span> irq)
+00701 {
+00702     up(&amp;xnarch_finalize_sync);
+00703 }
+00704 
+00705 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_notify_halt(<span class="keywordtype">void</span>)
+00706     
+00707 {
+00708     xnarch_cpumask_t other_cpus = cpu_online_map;
+00709     <span class="keywordtype">unsigned</span> cpu, nr_cpus = num_online_cpus();
+00710     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
+00711     adeos_declare_cpuid;
+00712 
+00713     init_MUTEX_LOCKED(&amp;xnarch_finalize_sync);
 00714 
-00715     init_MUTEX_LOCKED(&amp;xnarch_finalize_sync);
-00716 
-00717     <span class="comment">/* Here adp_current is in fact root, since xnarch_notify_halt is</span>
-00718 <span class="comment">       called from xnpod_shutdown, itself called from Linux</span>
-00719 <span class="comment">       context. */</span>
-00720     adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2,
-00721                               xnarch_finalize_cpu, NULL, IPIPE_HANDLE_MASK);
-00722 
-00723     adeos_lock_cpu(flags);
-00724     cpu_clear(cpuid, other_cpus);
-00725     adeos_send_ipi(ADEOS_SERVICE_IPI2, other_cpus);
-00726     adeos_unlock_cpu(flags);
-00727 
-00728     <span class="keywordflow">for</span>(cpu=0; cpu &lt; nr_cpus-1; ++cpu)
-00729         down(&amp;xnarch_finalize_sync);
-00730     
-00731     adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2, NULL, NULL,
-00732                               IPIPE_PASS_MASK);
-00733 }
+00715     <span class="comment">/* Here adp_current is in fact root, since xnarch_notify_halt is</span>
+00716 <span class="comment">       called from xnpod_shutdown, itself called from Linux</span>
+00717 <span class="comment">       context. */</span>
+00718     adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2,
+00719                               xnarch_finalize_cpu, NULL, IPIPE_HANDLE_MASK);
+00720 
+00721     adeos_lock_cpu(flags);
+00722     cpu_clear(cpuid, other_cpus);
+00723     adeos_send_ipi(ADEOS_SERVICE_IPI2, other_cpus);
+00724     adeos_unlock_cpu(flags);
+00725 
+00726     <span class="keywordflow">for</span>(cpu=0; cpu &lt; nr_cpus-1; ++cpu)
+00727         down(&amp;xnarch_finalize_sync);
+00728     
+00729     adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2, NULL, NULL,
+00730                               IPIPE_PASS_MASK);
+00731 }
+00732 
+00733 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_SMP */</span>
 00734 
-00735 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_SMP */</span>
+00735 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_send_ipi (xnarch_cpumask_t cpumask) {
 00736 
-00737 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_send_ipi (xnarch_cpumask_t cpumask) {
-00738 
-00739     <span class="keywordflow">return</span> 0;
-00740 }
+00737     <span class="keywordflow">return</span> 0;
+00738 }
+00739 
+00740 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_hook_ipi (<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>)) {
 00741 
-00742 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_hook_ipi (<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>)) {
-00743 
-00744     <span class="keywordflow">return</span> 0;
-00745 }
+00742     <span class="keywordflow">return</span> 0;
+00743 }
+00744 
+00745 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_release_ipi (<span class="keywordtype">void</span>) {
 00746 
-00747 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_release_ipi (<span class="keywordtype">void</span>) {
-00748 
-00749     <span class="keywordflow">return</span> 0;
-00750 }
+00747     <span class="keywordflow">return</span> 0;
+00748 }
+00749 
+00750 <span class="preprocessor">#define xnarch_notify_halt() </span><span class="comment">/* Nullified */</span>
 00751 
-00752 <span class="preprocessor">#define xnarch_notify_halt() </span><span class="comment">/* Nullified */</span>
+00752 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
 00753 
-00754 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
+00754 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_notify_shutdown(<span class="keywordtype">void</span>)
 00755 
-00756 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_notify_shutdown(<span class="keywordtype">void</span>)
-00757 
-00758 {
-00759 <span class="preprocessor">#ifdef CONFIG_SMP</span>
-00760 <span class="preprocessor"></span>    <span class="comment">/* The HAL layer also sets the same CPU affinity so that both</span>
-00761 <span class="comment">       modules keep their execution sequence on SMP boxen. */</span>
-00762     set_cpus_allowed(current,cpumask_of_cpu(0));
-00763 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
-00764 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION</span>
-00765 <span class="preprocessor"></span>    xnshadow_release_events();
-00766 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
-00767     <span class="comment">/* Wait for the currently processed events to drain. */</span>
-00768     set_current_state(TASK_UNINTERRUPTIBLE);
-00769     schedule_timeout(50);
-00770     xnarch_release_ipi();
-00771 }
+00756 {
+00757 <span class="preprocessor">#ifdef CONFIG_SMP</span>
+00758 <span class="preprocessor"></span>    <span class="comment">/* The HAL layer also sets the same CPU affinity so that both</span>
+00759 <span class="comment">       modules keep their execution sequence on SMP boxen. */</span>
+00760     set_cpus_allowed(current,cpumask_of_cpu(0));
+00761 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
+00762 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION</span>
+00763 <span class="preprocessor"></span>    xnshadow_release_events();
+00764 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
+00765     <span class="comment">/* Wait for the currently processed events to drain. */</span>
+00766     set_current_state(TASK_UNINTERRUPTIBLE);
+00767     schedule_timeout(50);
+00768     xnarch_release_ipi();
+00769 }
+00770 
+00771 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_escalate (<span class="keywordtype">void</span>)
 00772 
-00773 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_escalate (<span class="keywordtype">void</span>)
-00774 
-00775 {
-00776     <span class="keyword">extern</span> <span class="keywordtype">int</span> xnarch_escalation_virq;
-00777 
-00778     <span class="keywordflow">if</span> (adp_current == adp_root)
-00779         {
-00780         spl_t s;
-00781         splsync(s);
-00782         adeos_trigger_irq(xnarch_escalation_virq);
-00783         splexit(s);
-00784         <span class="keywordflow">return</span> 1;
-00785         }
-00786 
-00787     <span class="keywordflow">return</span> 0;
-00788 }
+00773 {
+00774     <span class="keyword">extern</span> <span class="keywordtype">int</span> xnarch_escalation_virq;
+00775 
+00776     <span class="keywordflow">if</span> (adp_current == adp_root)
+00777         {
+00778         spl_t s;
+00779         splsync(s);
+00780         adeos_trigger_irq(xnarch_escalation_virq);
+00781         splexit(s);
+00782         <span class="keywordflow">return</span> 1;
+00783         }
+00784 
+00785     <span class="keywordflow">return</span> 0;
+00786 }
+00787 
+00788 <span class="keyword">static</span> <span class="keywordtype">void</span> xnarch_notify_ready (<span class="keywordtype">void</span>)
 00789 
-00790 <span class="keyword">static</span> <span class="keywordtype">void</span> xnarch_notify_ready (<span class="keywordtype">void</span>)
-00791 
-00792 {
-00793 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION    </span>
-00794 <span class="preprocessor"></span>    xnshadow_grab_events();
-00795 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
-00796 }
+00790 {
+00791 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION    </span>
+00792 <span class="preprocessor"></span>    xnshadow_grab_events();
+00793 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
+00794 }
+00795 
+00796 <span class="preprocessor">#endif </span><span class="comment">/* XENO_POD_MODULE */</span>
 00797 
-00798 <span class="preprocessor">#endif </span><span class="comment">/* XENO_POD_MODULE */</span>
-00799 
-00800 <span class="preprocessor">#ifdef XENO_SHADOW_MODULE</span>
-00801 <span class="preprocessor"></span>
-00802 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
-00803                                            <span class="keyword">struct</span> xnthread *thread,
-00804                                            <span class="keyword">const</span> <span class="keywordtype">char</span> *name)
-00805 {
-00806     <span class="keyword">struct </span>task_struct *task = current;
-00807 
-00808     tcb-&gt;user_task = task;
-00809     tcb-&gt;active_task = NULL;
-00810     tcb-&gt;esp = 0;
-00811     tcb-&gt;espp = &amp;task-&gt;thread.esp;
-00812     tcb-&gt;eipp = &amp;task-&gt;thread.eip;
-00813     tcb-&gt;fpup = &amp;task-&gt;thread.i387;
-00814 }
+00798 <span class="preprocessor">#ifdef XENO_SHADOW_MODULE</span>
+00799 <span class="preprocessor"></span>
+00800 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
+00801                                            <span class="keyword">struct</span> xnthread *thread,
+00802                                            <span class="keyword">const</span> <span class="keywordtype">char</span> *name)
+00803 {
+00804     <span class="keyword">struct </span>task_struct *task = current;
+00805 
+00806     tcb-&gt;user_task = task;
+00807     tcb-&gt;active_task = NULL;
+00808     tcb-&gt;esp = 0;
+00809     tcb-&gt;espp = &amp;task-&gt;thread.esp;
+00810     tcb-&gt;eipp = &amp;task-&gt;thread.eip;
+00811     tcb-&gt;fpup = &amp;task-&gt;thread.i387;
+00812 }
+00813 
+00814 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_grab_xirqs (<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq))
 00815 
-00816 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_grab_xirqs (<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq))
-00817 
-00818 {
-00819     <span class="keywordtype">unsigned</span> irq;
-00820 
-00821     <span class="keywordflow">for</span> (irq = 0; irq &lt; IPIPE_NR_XIRQS; irq++)
-00822         adeos_virtualize_irq(irq,
-00823                              handler,
-00824                              NULL,
-00825                              IPIPE_DYNAMIC_MASK);
-00826 }
+00816 {
+00817     <span class="keywordtype">unsigned</span> irq;
+00818 
+00819     <span class="keywordflow">for</span> (irq = 0; irq &lt; IPIPE_NR_XIRQS; irq++)
+00820         adeos_virtualize_irq(irq,
+00821                              handler,
+00822                              NULL,
+00823                              IPIPE_DYNAMIC_MASK);
+00824 }
+00825 
+00826 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_lock_xirqs (adomain_t *adp, <span class="keywordtype">int</span> cpuid)
 00827 
-00828 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_lock_xirqs (adomain_t *adp, <span class="keywordtype">int</span> cpuid)
-00829 
-00830 {
-00831     <span class="keywordtype">unsigned</span> irq;
-00832 
-00833     <span class="keywordflow">for</span> (irq = 0; irq &lt; IPIPE_NR_XIRQS; irq++)
-00834         {
-00835         <span class="keywordflow">switch</span> (irq)
-00836             {
-00837 <span class="preprocessor">#ifdef CONFIG_SMP</span>
-00838 <span class="preprocessor"></span>            <span class="keywordflow">case</span> ADEOS_CRITICAL_IPI:
-00839             <span class="keywordflow">case</span> INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
-00840             <span class="keywordflow">case</span> CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
-00841             <span class="keywordflow">case</span> RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
-00842 
-00843                 <span class="comment">/* Never lock out these ones. */</span>
-00844                 <span class="keywordflow">continue</span>;
-00845 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
+00828 {
+00829     <span class="keywordtype">unsigned</span> irq;
+00830 
+00831     <span class="keywordflow">for</span> (irq = 0; irq &lt; IPIPE_NR_XIRQS; irq++)
+00832         {
+00833         <span class="keywordflow">switch</span> (irq)
+00834             {
+00835 <span class="preprocessor">#ifdef CONFIG_SMP</span>
+00836 <span class="preprocessor"></span>            <span class="keywordflow">case</span> ADEOS_CRITICAL_IPI:
+00837             <span class="keywordflow">case</span> INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
+00838             <span class="keywordflow">case</span> CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
+00839             <span class="keywordflow">case</span> RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
+00840 
+00841                 <span class="comment">/* Never lock out these ones. */</span>
+00842                 <span class="keywordflow">continue</span>;
+00843 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
+00844 
+00845             <span class="keywordflow">default</span>:
 00846 
-00847             <span class="keywordflow">default</span>:
-00848 
-00849                 __adeos_lock_irq(adp,cpuid,irq);
-00850             }
-00851         }
-00852 }
+00847                 __adeos_lock_irq(adp,cpuid,irq);
+00848             }
+00849         }
+00850 }
+00851 
+00852 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_unlock_xirqs (adomain_t *adp, <span class="keywordtype">int</span> cpuid)
 00853 
-00854 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_unlock_xirqs (adomain_t *adp, <span class="keywordtype">int</span> cpuid)
-00855 
-00856 {
-00857     <span class="keywordtype">unsigned</span> irq;
-00858 
-00859     <span class="keywordflow">for</span> (irq = 0; irq &lt; IPIPE_NR_XIRQS; irq++)
-00860         {
-00861         <span class="keywordflow">switch</span> (irq)
-00862             {
-00863 <span class="preprocessor">#ifdef CONFIG_SMP</span>
-00864 <span class="preprocessor"></span>            <span class="keywordflow">case</span> ADEOS_CRITICAL_IPI:
-00865             <span class="keywordflow">case</span> INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
-00866             <span class="keywordflow">case</span> CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
-00867             <span class="keywordflow">case</span> RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
-00868 
-00869                 <span class="keywordflow">continue</span>;
-00870 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
+00854 {
+00855     <span class="keywordtype">unsigned</span> irq;
+00856 
+00857     <span class="keywordflow">for</span> (irq = 0; irq &lt; IPIPE_NR_XIRQS; irq++)
+00858         {
+00859         <span class="keywordflow">switch</span> (irq)
+00860             {
+00861 <span class="preprocessor">#ifdef CONFIG_SMP</span>
+00862 <span class="preprocessor"></span>            <span class="keywordflow">case</span> ADEOS_CRITICAL_IPI:
+00863             <span class="keywordflow">case</span> INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
+00864             <span class="keywordflow">case</span> CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
+00865             <span class="keywordflow">case</span> RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
+00866 
+00867                 <span class="keywordflow">continue</span>;
+00868 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
+00869 
+00870             <span class="keywordflow">default</span>:
 00871 
-00872             <span class="keywordflow">default</span>:
-00873 
-00874                 __adeos_unlock_irq(adp,irq);
-00875             }
-00876         }
-00877 }
+00872                 __adeos_unlock_irq(adp,irq);
+00873             }
+00874         }
+00875 }
+00876 
+00877 <span class="preprocessor">#endif </span><span class="comment">/* XENO_SHADOW_MODULE */</span>
 00878 
-00879 <span class="preprocessor">#endif </span><span class="comment">/* XENO_SHADOW_MODULE */</span>
-00880 
-00881 <span class="preprocessor">#ifdef XENO_TIMER_MODULE</span>
-00882 <span class="preprocessor"></span>
-00883 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_program_timer_shot (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> delay) {
-00884     <span class="comment">/* Even though some architectures may use a 64 bits delay here, we</span>
-00885 <span class="comment">       voluntarily limit to 32 bits, 4 billions ticks should be enough for</span>
-00886 <span class="comment">       now. If a timer need more, a spurious but harmless call to the tick</span>
-00887 <span class="comment">       handler will occur after 4 billions ticks. */</span>
-00888     rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
-00889 }
-00890 
-00891 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_stop_timer (<span class="keywordtype">void</span>) {
-00892     rthal_release_timer();
-00893 }
+00879 <span class="preprocessor">#ifdef XENO_TIMER_MODULE</span>
+00880 <span class="preprocessor"></span>
+00881 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_program_timer_shot (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> delay) {
+00882     <span class="comment">/* Even though some architectures may use a 64 bits delay here, we</span>
+00883 <span class="comment">       voluntarily limit to 32 bits, 4 billions ticks should be enough for</span>
+00884 <span class="comment">       now. If a timer need more, a spurious but harmless call to the tick</span>
+00885 <span class="comment">       handler will occur after 4 billions ticks. */</span>
+00886     rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
+00887 }
+00888 
+00889 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_stop_timer (<span class="keywordtype">void</span>) {
+00890     rthal_release_timer();
+00891 }
+00892 
+00893 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_send_timer_ipi (xnarch_cpumask_t mask)
 00894 
-00895 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_send_timer_ipi (xnarch_cpumask_t mask)
-00896 
-00897 {
-00898 <span class="preprocessor">#if CONFIG_SMP</span>
-00899 <span class="preprocessor"></span>    <span class="keywordflow">return</span> adeos_send_ipi(RTHAL_APIC_TIMER_IPI, mask);
-00900 <span class="preprocessor">#else </span><span class="comment">/* ! CONFIG_SMP */</span>
-00901     <span class="keywordflow">return</span> 0;
-00902 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
-00903 }
-00904 
-00905 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_read_timings (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> *shot,
-00906                                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> *delivery,
-00907                                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> defval)
-00908 {
-00909 <span class="preprocessor">#ifdef CONFIG_ADEOS_PROFILING</span>
-00910 <span class="preprocessor"></span>    <span class="keywordtype">int</span> cpuid = adeos_processor_id();
-00911     *shot = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_handled;
-00912     *delivery = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_synced;
-00913 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_ADEOS_PROFILING */</span>
-00914     *shot = defval;
-00915     *delivery = defval;
-00916 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_ADEOS_PROFILING */</span>
-00917 }
+00895 {
+00896 <span class="preprocessor">#if CONFIG_SMP</span>
+00897 <span class="preprocessor"></span>    <span class="keywordflow">return</span> adeos_send_ipi(RTHAL_APIC_TIMER_IPI, mask);
+00898 <span class="preprocessor">#else </span><span class="comment">/* ! CONFIG_SMP */</span>
+00899     <span class="keywordflow">return</span> 0;
+00900 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
+00901 }
+00902 
+00903 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_read_timings (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> *shot,
+00904                                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> *delivery,
+00905                                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> defval)
+00906 {
+00907 <span class="preprocessor">#ifdef CONFIG_ADEOS_PROFILING</span>
+00908 <span class="preprocessor"></span>    <span class="keywordtype">int</span> cpuid = adeos_processor_id();
+00909     *shot = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_handled;
+00910     *delivery = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_synced;
+00911 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_ADEOS_PROFILING */</span>
+00912     *shot = defval;
+00913     *delivery = defval;
+00914 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_ADEOS_PROFILING */</span>
+00915 }
+00916 
+00917 <span class="preprocessor">#endif </span><span class="comment">/* XENO_TIMER_MODULE */</span>
 00918 
-00919 <span class="preprocessor">#endif </span><span class="comment">/* XENO_TIMER_MODULE */</span>
-00920 
-00921 <span class="preprocessor">#ifdef XENO_HEAP_MODULE</span>
-00922 <span class="preprocessor"></span>
-00923 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_heapcb (xnarch_heapcb_t *hcb)
-00924 
-00925 {
-00926     atomic_set(&amp;hcb-&gt;numaps,0);
-00927     hcb-&gt;kmflags = 0;
-00928     hcb-&gt;heapbase = NULL;
-00929     hcb-&gt;shmbase = NULL;
-00930 }
-00931 
-00932 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_remap_page_range(<span class="keyword">struct</span> vm_area_struct *vma,
-00933                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> uvaddr,
-00934                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> paddr,
-00935                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> size,
-00936                                           pgprot_t prot)
-00937 {
-00938     <span class="keywordflow">return</span> remap_page_range(vma,uvaddr,paddr,size,prot);
-00939 }
-00940 
-00941 <span class="preprocessor">#endif </span><span class="comment">/* XENO_HEAP_MODULE */</span>
-00942 
-00943 <span class="preprocessor">#ifdef XENO_MAIN_MODULE</span>
-00944 <span class="preprocessor"></span>
-00945 <span class="preprocessor">#include &lt;nucleus/asm/calibration.h&gt;</span>
-00946 
-00947 <span class="keyword">extern</span> u_long nkschedlat;
-00948 
-00949 <span class="keyword">extern</span> u_long nktimerlat;
-00950 
-00951 <span class="keywordtype">int</span> xnarch_escalation_virq;
-00952 
-00953 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga65">xnpod_trap_fault</a>(xnarch_fltinfo_t *fltinfo);
-00954 
-00955 <span class="keywordtype">void</span> xnpod_schedule_handler(<span class="keywordtype">void</span>);
-00956 
-00957 <span class="keyword">static</span> rthal_trap_handler_t xnarch_old_trap_handler;
-00958 
-00959 <span class="keyword">static</span> <span class="keywordtype">int</span> xnarch_trap_fault (adevinfo_t *evinfo)
-00960 {
-00961     xnarch_fltinfo_t fltinfo;
-00962 
-00963     fltinfo.vector = evinfo-&gt;event;
-00964     fltinfo.errcode = ((<span class="keyword">struct </span>pt_regs *)evinfo-&gt;evdata)-&gt;orig_eax;
-00965     fltinfo.regs = (<span class="keyword">struct </span>pt_regs *)evinfo-&gt;evdata;
+00919 <span class="preprocessor">#ifdef XENO_HEAP_MODULE</span>
+00920 <span class="preprocessor"></span>
+00921 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_heapcb (xnarch_heapcb_t *hcb)
+00922 
+00923 {
+00924     atomic_set(&amp;hcb-&gt;numaps,0);
+00925     hcb-&gt;kmflags = 0;
+00926     hcb-&gt;heapbase = NULL;
+00927 }
+00928 
+00929 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_remap_page_range(<span class="keyword">struct</span> vm_area_struct *vma,
+00930                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> uvaddr,
+00931                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> paddr,
+00932                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> size,
+00933                                           pgprot_t prot)
+00934 {
+00935     <span class="keywordflow">return</span> remap_page_range(vma,uvaddr,paddr,size,prot);
+00936 }
+00937 
+00938 <span class="preprocessor">#endif </span><span class="comment">/* XENO_HEAP_MODULE */</span>
+00939 
+00940 <span class="preprocessor">#ifdef XENO_MAIN_MODULE</span>
+00941 <span class="preprocessor"></span>
+00942 <span class="preprocessor">#include &lt;nucleus/asm/calibration.h&gt;</span>
+00943 
+00944 <span class="keyword">extern</span> u_long nkschedlat;
+00945 
+00946 <span class="keyword">extern</span> u_long nktimerlat;
+00947 
+00948 <span class="keywordtype">int</span> xnarch_escalation_virq;
+00949 
+00950 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga65">xnpod_trap_fault</a>(xnarch_fltinfo_t *fltinfo);
+00951 
+00952 <span class="keywordtype">void</span> xnpod_schedule_handler(<span class="keywordtype">void</span>);
+00953 
+00954 <span class="keyword">static</span> rthal_trap_handler_t xnarch_old_trap_handler;
+00955 
+00956 <span class="keyword">static</span> <span class="keywordtype">int</span> xnarch_trap_fault (adevinfo_t *evinfo)
+00957 {
+00958     xnarch_fltinfo_t fltinfo;
+00959 
+00960     fltinfo.vector = evinfo-&gt;event;
+00961     fltinfo.errcode = ((<span class="keyword">struct </span>pt_regs *)evinfo-&gt;evdata)-&gt;orig_eax;
+00962     fltinfo.regs = (<span class="keyword">struct </span>pt_regs *)evinfo-&gt;evdata;
+00963 
+00964     <span class="keywordflow">return</span> <a class="code" href="group__pod.html#ga65">xnpod_trap_fault</a>(&amp;fltinfo);
+00965 }
 00966 
-00967     <span class="keywordflow">return</span> <a class="code" href="group__pod.html#ga65">xnpod_trap_fault</a>(&amp;fltinfo);
-00968 }
-00969 
-00970 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> xnarch_calibrate_timer (<span class="keywordtype">void</span>)
-00971 
-00972 {
-00973 <span class="preprocessor">#if CONFIG_RTAI_HW_TIMER_LATENCY != 0</span>
-00974 <span class="preprocessor"></span>    <span class="keywordflow">return</span> xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY) ?: 1;
-00975 <span class="preprocessor">#else </span><span class="comment">/* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */</span>
-00976     <span class="comment">/* Compute the time needed to program the PIT in aperiodic</span>
-00977 <span class="comment">       mode. The return value is expressed in CPU ticks. Depending on</span>
-00978 <span class="comment">       whether CONFIG_X86_LOCAL_APIC is enabled or not in the kernel</span>
-00979 <span class="comment">       configuration RTAI is compiled against,</span>
-00980 <span class="comment">       CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local</span>
-00981 <span class="comment">       APIC or 8254 timer latency value. */</span>
-00982     <span class="keywordflow">return</span> xnarch_ns_to_tsc(rthal_calibrate_timer()) ?: 1;
-00983 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */</span>
-00984 }
-00985 
-00986 <span class="keywordtype">int</span> xnarch_calibrate_sched (<span class="keywordtype">void</span>)
+00967 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> xnarch_calibrate_timer (<span class="keywordtype">void</span>)
+00968 
+00969 {
+00970 <span class="preprocessor">#if CONFIG_RTAI_HW_TIMER_LATENCY != 0</span>
+00971 <span class="preprocessor"></span>    <span class="keywordflow">return</span> xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY) ?: 1;
+00972 <span class="preprocessor">#else </span><span class="comment">/* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */</span>
+00973     <span class="comment">/* Compute the time needed to program the PIT in aperiodic</span>
+00974 <span class="comment">       mode. The return value is expressed in CPU ticks. Depending on</span>
+00975 <span class="comment">       whether CONFIG_X86_LOCAL_APIC is enabled or not in the kernel</span>
+00976 <span class="comment">       configuration RTAI is compiled against,</span>
+00977 <span class="comment">       CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local</span>
+00978 <span class="comment">       APIC or 8254 timer latency value. */</span>
+00979     <span class="keywordflow">return</span> xnarch_ns_to_tsc(rthal_calibrate_timer()) ?: 1;
+00980 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */</span>
+00981 }
+00982 
+00983 <span class="keywordtype">int</span> xnarch_calibrate_sched (<span class="keywordtype">void</span>)
+00984 
+00985 {
+00986     nktimerlat = xnarch_calibrate_timer();
 00987 
-00988 {
-00989     nktimerlat = xnarch_calibrate_timer();
+00988     <span class="keywordflow">if</span> (!nktimerlat)
+00989         <span class="keywordflow">return</span> -ENODEV;
 00990 
-00991     <span class="keywordflow">if</span> (!nktimerlat)
-00992         <span class="keywordflow">return</span> -ENODEV;
-00993 
-00994     nkschedlat = xnarch_ns_to_tsc(xnarch_get_sched_latency());
+00991     nkschedlat = xnarch_ns_to_tsc(xnarch_get_sched_latency());
+00992 
+00993     <span class="keywordflow">return</span> 0;
+00994 }
 00995 
-00996     <span class="keywordflow">return</span> 0;
-00997 }
-00998 
-00999 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_init (<span class="keywordtype">void</span>)
+00996 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_init (<span class="keywordtype">void</span>)
+00997 
+00998 {
+00999     <span class="keywordtype">int</span> err;
 01000 
-01001 {
-01002     <span class="keywordtype">int</span> err;
-01003 
-01004 <span class="preprocessor">#ifdef CONFIG_SMP</span>
-01005 <span class="preprocessor"></span>    <span class="comment">/* The HAL layer also sets the same CPU affinity so that both</span>
-01006 <span class="comment">       modules keep their execution sequence on SMP boxen. */</span>
-01007     set_cpus_allowed(current,cpumask_of_cpu(0));
-01008 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
-01009 
-01010     err = xnarch_calibrate_sched();
+01001 <span class="preprocessor">#ifdef CONFIG_SMP</span>
+01002 <span class="preprocessor"></span>    <span class="comment">/* The HAL layer also sets the same CPU affinity so that both</span>
+01003 <span class="comment">       modules keep their execution sequence on SMP boxen. */</span>
+01004     set_cpus_allowed(current,cpumask_of_cpu(0));
+01005 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
+01006 
+01007     err = xnarch_calibrate_sched();
+01008 
+01009     <span class="keywordflow">if</span> (err)
+01010         <span class="keywordflow">return</span> err;
 01011 
-01012     <span class="keywordflow">if</span> (err)
-01013         <span class="keywordflow">return</span> err;
-01014 
-01015     xnarch_escalation_virq = adeos_alloc_irq();
+01012     xnarch_escalation_virq = adeos_alloc_irq();
+01013 
+01014     <span class="keywordflow">if</span> (xnarch_escalation_virq == 0)
+01015         <span class="keywordflow">return</span> -ENOSYS;
 01016 
-01017     <span class="keywordflow">if</span> (xnarch_escalation_virq == 0)
-01018         <span class="keywordflow">return</span> -ENOSYS;
-01019 
-01020     adeos_virtualize_irq_from(&amp;rthal_domain,
-01021                               xnarch_escalation_virq,
-01022                               (<span class="keywordtype">void</span> (*)(<span class="keywordtype">unsigned</span>))&amp;xnpod_schedule_handler,
-01023                               NULL,
-01024                               IPIPE_HANDLE_MASK);
-01025 
-01026     xnarch_old_trap_handler = rthal_set_trap_handler(&amp;xnarch_trap_fault);
-01027 
-01028 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION</span>
-01029 <span class="preprocessor"></span>    err = xnshadow_mount();
-01030 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
-01031 
-01032     <span class="keywordflow">if</span> (err)
-01033         {
-01034         rthal_set_trap_handler(xnarch_old_trap_handler);
-01035         adeos_free_irq(xnarch_escalation_virq);
-01036         }
+01017     adeos_virtualize_irq_from(&amp;rthal_domain,
+01018                               xnarch_escalation_virq,
+01019                               (<span class="keywordtype">void</span> (*)(<span class="keywordtype">unsigned</span>))&amp;xnpod_schedule_handler,
+01020                               NULL,
+01021                               IPIPE_HANDLE_MASK);
+01022 
+01023     xnarch_old_trap_handler = rthal_set_trap_handler(&amp;xnarch_trap_fault);
+01024 
+01025 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION</span>
+01026 <span class="preprocessor"></span>    err = xnshadow_mount();
+01027 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
+01028 
+01029     <span class="keywordflow">if</span> (err)
+01030         {
+01031         rthal_set_trap_handler(xnarch_old_trap_handler);
+01032         adeos_free_irq(xnarch_escalation_virq);
+01033         }
+01034 
+01035     <span class="keywordflow">return</span> err;
+01036 }
 01037 
-01038     <span class="keywordflow">return</span> err;
-01039 }
-01040 
-01041 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_exit (<span class="keywordtype">void</span>)
-01042 
-01043 {
-01044 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION</span>
-01045 <span class="preprocessor"></span>    xnshadow_cleanup();
-01046 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
-01047     rthal_set_trap_handler(xnarch_old_trap_handler);
-01048     adeos_free_irq(xnarch_escalation_virq);
-01049 }
-01050 
-01051 <span class="preprocessor">#endif </span><span class="comment">/* XENO_MAIN_MODULE */</span>
-01052 
-01053 <span class="preprocessor">#ifdef XENO_TRACES_MODULE</span>
-01054 <span class="preprocessor"></span>
-01055 <span class="preprocessor">#include &lt;asm/timex.h&gt;</span>          <span class="comment">/* For cpu_khz */</span>
-01056 <span class="preprocessor">#include &lt;linux/kernel_stat.h&gt;</span>  <span class="comment">/* For kstat_irqs */</span>
-01057 
-01058 <span class="preprocessor">#if CONFIG_X86_LOCAL_APIC</span>
+01038 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_exit (<span class="keywordtype">void</span>)
+01039 
+01040 {
+01041 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION</span>
+01042 <span class="preprocessor"></span>    xnshadow_cleanup();
+01043 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
+01044     rthal_set_trap_handler(xnarch_old_trap_handler);
+01045     adeos_free_irq(xnarch_escalation_virq);
+01046 }
+01047 
+01048 <span class="preprocessor">#endif </span><span class="comment">/* XENO_MAIN_MODULE */</span>
+01049 
+01050 <span class="preprocessor">#ifdef XENO_TRACES_MODULE</span>
+01051 <span class="preprocessor"></span>
+01052 <span class="preprocessor">#include &lt;asm/timex.h&gt;</span>          <span class="comment">/* For cpu_khz */</span>
+01053 <span class="preprocessor">#include &lt;linux/kernel_stat.h&gt;</span>  <span class="comment">/* For kstat_irqs */</span>
+01054 
+01055 <span class="preprocessor">#if CONFIG_X86_LOCAL_APIC</span>
+01056 <span class="preprocessor"></span>
+01057 <span class="preprocessor">#define RTAI_TRACE_TIMER_IRQ       RTHAL_APIC_TIMER_IPI</span>
+01058 <span class="preprocessor"></span><span class="preprocessor">#define linux_timer_irq_count(cpu) (irq_stat[(cpu)].apic_timer_irqs)</span>
 01059 <span class="preprocessor"></span>
-01060 <span class="preprocessor">#define RTAI_TRACE_TIMER_IRQ       RTHAL_APIC_TIMER_IPI</span>
-01061 <span class="preprocessor"></span><span class="preprocessor">#define linux_timer_irq_count(cpu) (irq_stat[(cpu)].apic_timer_irqs)</span>
-01062 <span class="preprocessor"></span>
-01063 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_X86_LOCAL_APIC */</span>
-01064 
-01065 <span class="preprocessor">#define RTAI_TRACE_TIMER_IRQ       RTHAL_8254_IRQ</span>
-01066 <span class="preprocessor"></span><span class="preprocessor">#define linux_timer_irq_count(cpu) (kstat_cpu(cpu).irqs[RTHAL_8254_IRQ])</span>
-01067 <span class="preprocessor"></span>
-01068 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_X86_LOCAL_APIC */</span>
-01069 
-01070 <span class="preprocessor">#define tsc2ms(timestamp)          rthal_ulldiv((timestamp), cpu_khz, NULL)</span>
-01071 <span class="preprocessor"></span>
-01072 <span class="preprocessor">#endif </span><span class="comment">/* XENO_TRACES_MODULE */</span>
-01073 
-01074 <span class="preprocessor">#ifdef __cplusplus</span>
-01075 <span class="preprocessor"></span>}
-01076 <span class="preprocessor">#endif</span>
-01077 <span class="preprocessor"></span>
-01078 <span class="comment">/* Dashboard and graph control. */</span>
-01079 <span class="preprocessor">#define XNARCH_DECL_DISPLAY_CONTEXT();</span>
-01080 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_init_display_context(obj)</span>
-01081 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_create_display(obj,name,tag)</span>
-01082 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_delete_display(obj)</span>
-01083 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_post_graph(obj,state)</span>
-01084 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_post_graph_if(obj,state,cond)</span>
-01085 <span class="preprocessor"></span>
-01086 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
-01087 
-01088 <span class="preprocessor">#include &lt;nucleus/system.h&gt;</span>
-01089 
-01090 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-01091 
-01092 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_SYSTEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:17 2005 for RTAI API by&nbsp;
+01060 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_X86_LOCAL_APIC */</span>
+01061 
+01062 <span class="preprocessor">#define RTAI_TRACE_TIMER_IRQ       RTHAL_8254_IRQ</span>
+01063 <span class="preprocessor"></span><span class="preprocessor">#define linux_timer_irq_count(cpu) (kstat_cpu(cpu).irqs[RTHAL_8254_IRQ])</span>
+01064 <span class="preprocessor"></span>
+01065 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_X86_LOCAL_APIC */</span>
+01066 
+01067 <span class="preprocessor">#define tsc2ms(timestamp)          rthal_ulldiv((timestamp), cpu_khz, NULL)</span>
+01068 <span class="preprocessor"></span>
+01069 <span class="preprocessor">#endif </span><span class="comment">/* XENO_TRACES_MODULE */</span>
+01070 
+01071 <span class="preprocessor">#ifdef __cplusplus</span>
+01072 <span class="preprocessor"></span>}
+01073 <span class="preprocessor">#endif</span>
+01074 <span class="preprocessor"></span>
+01075 <span class="comment">/* Dashboard and graph control. */</span>
+01076 <span class="preprocessor">#define XNARCH_DECL_DISPLAY_CONTEXT();</span>
+01077 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_init_display_context(obj)</span>
+01078 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_create_display(obj,name,tag)</span>
+01079 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_delete_display(obj)</span>
+01080 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_post_graph(obj,state)</span>
+01081 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_post_graph_if(obj,state,cond)</span>
+01082 <span class="preprocessor"></span>
+01083 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
+01084 
+01085 <span class="preprocessor">#include &lt;nucleus/system.h&gt;</span>
+01086 
+01087 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+01088 
+01089 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_SYSTEM_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

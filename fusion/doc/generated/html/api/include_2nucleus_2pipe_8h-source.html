@@ -57,109 +57,112 @@
 00047 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnpipe_mh {
 00048 
 00049     xnholder_t link;
-00050 <span class="preprocessor">#define link2mh(laddr) \</span>
-00051 <span class="preprocessor">(laddr ? ((struct xnpipe_mh *)(((char *)laddr) - (int)(&amp;((struct xnpipe_mh *)0)-&gt;link))) : 0)</span>
-00052 <span class="preprocessor"></span>    <span class="keywordtype">unsigned</span> size;
-00053     
-00054 } xnpipe_mh_t;
-00055 
-00056 <span class="preprocessor">#ifdef __KERNEL__</span>
-00057 <span class="preprocessor"></span>
-00058 <span class="preprocessor">#include &lt;nucleus/synch.h&gt;</span>
-00059 <span class="preprocessor">#include &lt;nucleus/thread.h&gt;</span>
-00060 <span class="preprocessor">#include &lt;linux/types.h&gt;</span>
-00061 <span class="preprocessor">#include &lt;linux/poll.h&gt;</span>
-00062 
-00063 <span class="keyword">typedef</span> <span class="keywordtype">int</span> xnpipe_io_handler(<span class="keywordtype">int</span> minor,
-00064                                 <span class="keyword">struct</span> xnpipe_mh *mh,
-00065                                 <span class="keywordtype">int</span> onerror,
-00066                                 <span class="keywordtype">void</span> *cookie);
-00067 
-00068 <span class="keyword">typedef</span> <span class="keywordtype">int</span> xnpipe_session_handler(<span class="keywordtype">int</span> minor,
-00069                                      <span class="keywordtype">void</span> *cookie);
+00050     <span class="keywordtype">unsigned</span> size;
+00051     
+00052 } xnpipe_mh_t;
+00053 
+00054 <span class="keyword">static</span> <span class="keyword">inline</span> xnpipe_mh_t *link2mh (xnholder_t *laddr)
+00055 {
+00056     <span class="keywordflow">return</span> laddr ? ((xnpipe_mh_t *)(((<span class="keywordtype">char</span> *)laddr) - (int)(&amp;((xnpipe_mh_t *)0)-&gt;link))) : 0;
+00057 }
+00058 
+00059 <span class="preprocessor">#ifdef __KERNEL__</span>
+00060 <span class="preprocessor"></span>
+00061 <span class="preprocessor">#include &lt;nucleus/synch.h&gt;</span>
+00062 <span class="preprocessor">#include &lt;nucleus/thread.h&gt;</span>
+00063 <span class="preprocessor">#include &lt;linux/types.h&gt;</span>
+00064 <span class="preprocessor">#include &lt;linux/poll.h&gt;</span>
+00065 
+00066 <span class="keyword">typedef</span> <span class="keywordtype">int</span> xnpipe_io_handler(<span class="keywordtype">int</span> minor,
+00067                                 <span class="keyword">struct</span> xnpipe_mh *mh,
+00068                                 <span class="keywordtype">int</span> onerror,
+00069                                 <span class="keywordtype">void</span> *cookie);
 00070 
-00071 <span class="keyword">typedef</span> <span class="keywordtype">void</span> *xnpipe_alloc_handler(<span class="keywordtype">int</span> minor,
-00072                                      size_t size,
-00073                                      <span class="keywordtype">void</span> *cookie);
-00074 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnpipe_state {
-00075 
-00076     xnholder_t slink;   <span class="comment">/* Link on sleep queue */</span>
-00077     xnholder_t alink;   <span class="comment">/* Link on async queue */</span>
-00078 <span class="preprocessor">#define link2xnpipe(laddr,link) \</span>
-00079 <span class="preprocessor">((struct xnpipe_state *)(((char *)laddr) - (int)(&amp;((struct xnpipe_state *)0)-&gt;link)))</span>
-00080 <span class="preprocessor"></span>
-00081     xnqueue_t inq;      <span class="comment">/* From user-space to kernel */</span>
-00082     xnqueue_t outq;     <span class="comment">/* From kernel to user-space */</span>
-00083     xnpipe_io_handler *output_handler;
-00084     xnpipe_io_handler *input_handler;
-00085     xnpipe_alloc_handler *alloc_handler;
-00086     xnsynch_t synchbase;
-00087     <span class="keywordtype">void</span> *cookie;
-00088 
-00089     <span class="comment">/* Linux kernel part */</span>
-00090     xnflags_t status;
-00091     <span class="keyword">struct </span>semaphore open_sem;
-00092     <span class="keyword">struct </span>semaphore send_sem;
-00093     <span class="keyword">struct </span>semaphore *wchan;    <span class="comment">/* any sem */</span>
-00094     <span class="keyword">struct </span>fasync_struct *asyncq;
-00095     wait_queue_head_t pollq;
-00096 
-00097 } xnpipe_state_t;
-00098 
-00099 <span class="keyword">extern</span> xnpipe_state_t xnpipe_states[];
-00100 
-00101 <span class="preprocessor">#define xnminor_from_state(s) (s - xnpipe_states)</span>
-00102 <span class="preprocessor"></span>
-00103 <span class="preprocessor">#ifdef __cplusplus</span>
-00104 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00105 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00106 
-00107 <span class="keywordtype">int</span> xnpipe_mount(<span class="keywordtype">void</span>);
-00108 
-00109 <span class="keywordtype">void</span> xnpipe_umount(<span class="keywordtype">void</span>);
-00110 
-00111 <span class="comment">/* Entry points of the kernel interface. */</span>
-00112 
-00113 <span class="keywordtype">void</span> xnpipe_setup(xnpipe_session_handler *open_handler,
-00114                   xnpipe_session_handler *close_handler);
+00071 <span class="keyword">typedef</span> <span class="keywordtype">int</span> xnpipe_session_handler(<span class="keywordtype">int</span> minor,
+00072                                      <span class="keywordtype">void</span> *cookie);
+00073 
+00074 <span class="keyword">typedef</span> <span class="keywordtype">void</span> *xnpipe_alloc_handler(<span class="keywordtype">int</span> minor,
+00075                                      size_t size,
+00076                                      <span class="keywordtype">void</span> *cookie);
+00077 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnpipe_state {
+00078 
+00079     xnholder_t slink;   <span class="comment">/* Link on sleep queue */</span>
+00080     xnholder_t alink;   <span class="comment">/* Link on async queue */</span>
+00081 <span class="preprocessor">#define link2xnpipe(laddr,link) \</span>
+00082 <span class="preprocessor">((struct xnpipe_state *)(((char *)laddr) - (int)(&amp;((struct xnpipe_state *)0)-&gt;link)))</span>
+00083 <span class="preprocessor"></span>
+00084     xnqueue_t inq;      <span class="comment">/* From user-space to kernel */</span>
+00085     xnqueue_t outq;     <span class="comment">/* From kernel to user-space */</span>
+00086     xnpipe_io_handler *output_handler;
+00087     xnpipe_io_handler *input_handler;
+00088     xnpipe_alloc_handler *alloc_handler;
+00089     xnsynch_t synchbase;
+00090     <span class="keywordtype">void</span> *cookie;
+00091 
+00092     <span class="comment">/* Linux kernel part */</span>
+00093     xnflags_t status;
+00094     <span class="keyword">struct </span>semaphore open_sem;
+00095     <span class="keyword">struct </span>semaphore send_sem;
+00096     <span class="keyword">struct </span>semaphore *wchan;    <span class="comment">/* any sem */</span>
+00097     <span class="keyword">struct </span>fasync_struct *asyncq;
+00098     wait_queue_head_t pollq;
+00099 
+00100 } xnpipe_state_t;
+00101 
+00102 <span class="keyword">extern</span> xnpipe_state_t xnpipe_states[];
+00103 
+00104 <span class="preprocessor">#define xnminor_from_state(s) (s - xnpipe_states)</span>
+00105 <span class="preprocessor"></span>
+00106 <span class="preprocessor">#ifdef __cplusplus</span>
+00107 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00108 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00109 
+00110 <span class="keywordtype">int</span> xnpipe_mount(<span class="keywordtype">void</span>);
+00111 
+00112 <span class="keywordtype">void</span> xnpipe_umount(<span class="keywordtype">void</span>);
+00113 
+00114 <span class="comment">/* Entry points of the kernel interface. */</span>
 00115 
-00116 <span class="keywordtype">int</span> xnpipe_connect(<span class="keywordtype">int</span> minor,
-00117                    xnpipe_io_handler *output_handler,
-00118                    xnpipe_io_handler *input_handler,
-00119                    xnpipe_alloc_handler *alloc_handler,
-00120                    <span class="keywordtype">void</span> *cookie);
-00121 
-00122 <span class="keywordtype">int</span> xnpipe_disconnect(<span class="keywordtype">int</span> minor);
-00123 
-00124 ssize_t xnpipe_send(<span class="keywordtype">int</span> minor,
-00125                     <span class="keyword">struct</span> xnpipe_mh *mh,
-00126                     size_t size,
-00127                     <span class="keywordtype">int</span> flags);
-00128 
-00129 ssize_t xnpipe_recv(<span class="keywordtype">int</span> minor,
-00130                     <span class="keyword">struct</span> xnpipe_mh **pmh,
-00131                     xnticks_t timeout);
-00132 
-00133 <span class="keywordtype">int</span> xnpipe_inquire(<span class="keywordtype">int</span> minor);
-00134 
-00135 <span class="preprocessor">#ifdef __cplusplus</span>
-00136 <span class="preprocessor"></span>}
-00137 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00138 
-00139 <span class="keyword">static</span> <span class="keyword">inline</span> xnholder_t *xnpipe_m_link(xnpipe_mh_t *mh) {
-00140     <span class="keywordflow">return</span> &amp;mh-&gt;link;
-00141 }
-00142 
-00143 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00144 
-00145 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">char</span> *xnpipe_m_data(xnpipe_mh_t *mh) {
-00146     <span class="keywordflow">return</span> (<span class="keywordtype">char</span> *)(mh + 1);
-00147 }
-00148 
-00149 <span class="preprocessor">#define xnpipe_m_size(mh) ((mh)-&gt;size)</span>
-00150 <span class="preprocessor"></span>
-00151 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_PIPE_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
+00116 <span class="keywordtype">void</span> xnpipe_setup(xnpipe_session_handler *open_handler,
+00117                   xnpipe_session_handler *close_handler);
+00118 
+00119 <span class="keywordtype">int</span> xnpipe_connect(<span class="keywordtype">int</span> minor,
+00120                    xnpipe_io_handler *output_handler,
+00121                    xnpipe_io_handler *input_handler,
+00122                    xnpipe_alloc_handler *alloc_handler,
+00123                    <span class="keywordtype">void</span> *cookie);
+00124 
+00125 <span class="keywordtype">int</span> xnpipe_disconnect(<span class="keywordtype">int</span> minor);
+00126 
+00127 ssize_t xnpipe_send(<span class="keywordtype">int</span> minor,
+00128                     <span class="keyword">struct</span> xnpipe_mh *mh,
+00129                     size_t size,
+00130                     <span class="keywordtype">int</span> flags);
+00131 
+00132 ssize_t xnpipe_recv(<span class="keywordtype">int</span> minor,
+00133                     <span class="keyword">struct</span> xnpipe_mh **pmh,
+00134                     xnticks_t timeout);
+00135 
+00136 <span class="keywordtype">int</span> xnpipe_inquire(<span class="keywordtype">int</span> minor);
+00137 
+00138 <span class="preprocessor">#ifdef __cplusplus</span>
+00139 <span class="preprocessor"></span>}
+00140 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00141 
+00142 <span class="keyword">static</span> <span class="keyword">inline</span> xnholder_t *xnpipe_m_link(xnpipe_mh_t *mh) {
+00143     <span class="keywordflow">return</span> &amp;mh-&gt;link;
+00144 }
+00145 
+00146 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00147 
+00148 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">char</span> *xnpipe_m_data(xnpipe_mh_t *mh) {
+00149     <span class="keywordflow">return</span> (<span class="keywordtype">char</span> *)(mh + 1);
+00150 }
+00151 
+00152 <span class="preprocessor">#define xnpipe_m_size(mh) ((mh)-&gt;size)</span>
+00153 <span class="preprocessor"></span>
+00154 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_PIPE_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

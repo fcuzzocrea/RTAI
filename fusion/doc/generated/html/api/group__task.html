@@ -757,6 +757,9 @@ The following bits can be part of the bitmask:<p>
 <ul>
 <li>T_NOSIG disables the asynchronous signal delivery for the current task.</li></ul>
 <p>
+<ul>
+<li>T_SHIELD enables the interrupt shield for the current user-space task. When engaged, the interrupt shield protects the RTAI task running in secondary mode from any preemption by the regular Linux interrupt handlers, without delaying in any way the RTAI interrupt handling. The shield is operated on a per-task basis at each context switch, depending on the setting of this bit. This bit is set by default upon user-space task creation.</li></ul>
+<p>
 Normally, this service can only be called on behalf of a regular real-time task, either running in kernel or user-space. However, as a special exception, requests for setting/clearing the T_LOCK bit from asynchronous contexts are silently dropped, and the call returns successfully if no other mode bits have been specified. This is consistent with the fact that RTAI enforces a scheduler lock until the outer interrupt handler has returned.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -1407,7 +1410,7 @@ This service can be called from:<p>
 Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:19 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:27 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

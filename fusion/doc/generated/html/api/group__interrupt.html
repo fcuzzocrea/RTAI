@@ -541,7 +541,7 @@ Interrupt receipts are logged if they cannot be delivered immediately to some in
     <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The number of clock ticks to wait for an interrupt to occur (see note). Passing TM_INFINITE causes the caller to block indefinitely until an interrupt triggers. Passing TM_NONBLOCK is invalid.</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>a positive value is returned upon success, representing the number of pending interrupts to process. Otherwise:</dd></dl>
 <ul>
 <li>-ETIMEDOUT is returned if no interrupt occurred within the specified amount of time.</li></ul>
 <p>
@@ -564,7 +564,7 @@ Rescheduling: always, unless an interrupt is already pending on entry.<p>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:27 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -6,10 +6,10 @@ CROSS_COMPILE = @CROSS_COMPILE@
 
 abs_srcdir = @abs_srcdir@
 
-libhal_SRC = hal.c 
+libhal_SRC = hal.c
 
 if CONFIG_RTAI_HW_SMI_DETECT
-libhal_SRC += smi.c
+libhal_SRC += smi.c smi.h
 endif
 
 rtai_hal.ko: @RTAI_KBUILD_ENV@

@@ -1,3 +1,7 @@
+2005-02-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/GNUmakefile.am: Add smi.h to the source list.
+
 2005-02-15  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/queue.c (rt_queue_free): Make sure we don't fiddle
@@ -62,7 +66,7 @@
 	* nucleus/pod.c, nucleus/sync.c, nucleus/shadow.c: Rework the way
 	Linux priorities are updated on-the-fly when the nucleus changes
 	them for shadow threads. The new approach is based on a lazy
-	update upon return from xnshaow_relax(), since sending priority
+	update upon return from xnshadow_relax(), since sending priority
 	update requests to Linux makes no sense while the affected task is
 	running in primary mode.
 

@@ -1,0 +1,30 @@
+digraph G
+{
+  edge [fontname="Helvetica",fontsize=10,labelfontname="Helvetica",labelfontsize=10];
+  node [fontname="Helvetica",fontsize=10,shape=record];
+  Node1 [label="registry.h",height=0.2,width=0.4,color="white", fillcolor="black", style="filled" fontcolor="white"];
+  Node2 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node2 [label="alarm.c",height=0.2,width=0.4,color="black",URL="$alarm_8c.html"];
+  Node3 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node3 [label="cond.c",height=0.2,width=0.4,color="black",URL="$cond_8c.html"];
+  Node4 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node4 [label="event.c",height=0.2,width=0.4,color="black",URL="$event_8c.html"];
+  Node5 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node5 [label="heap.c",height=0.2,width=0.4,color="black",URL="$skins_2rtai_2heap_8c.html"];
+  Node6 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node6 [label="intr.c",height=0.2,width=0.4,color="black",URL="$skins_2rtai_2intr_8c.html"];
+  Node7 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node7 [label="module.c",height=0.2,width=0.4,color="black",URL="$skins_2rtai_2module_8c.html"];
+  Node8 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node8 [label="mutex.c",height=0.2,width=0.4,color="black",URL="$mutex_8c.html"];
+  Node9 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node9 [label="queue.c",height=0.2,width=0.4,color="black",URL="$queue_8c.html"];
+  Node10 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node10 [label="registry.c",height=0.2,width=0.4,color="black",URL="$registry_8c.html"];
+  Node11 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node11 [label="sem.c",height=0.2,width=0.4,color="black",URL="$sem_8c.html"];
+  Node12 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node12 [label="syscall.c",height=0.2,width=0.4,color="black",URL="$syscall_8c.html"];
+  Node13 -> Node1 [color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node13 [label="task.c",height=0.2,width=0.4,color="black",URL="$task_8c.html"];
+}

@@ -13,98 +13,96 @@
 00023 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_COND_H</span>
 00024 <span class="preprocessor"></span>
 00025 <span class="preprocessor">#include &lt;nucleus/synch.h&gt;</span>
-00026 <span class="preprocessor">#include &lt;<a class="code" href="skins_2rtai_2types_8h.html">rtai/types.h</a>&gt;</span>
+00026 <span class="preprocessor">#include &lt;<a class="code" href="mutex_8h.html">rtai/mutex.h</a>&gt;</span>
 00027 
-00028 <span class="keyword">struct </span>RT_MUTEX;
+00028 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_cond_info {
 00029 
-00030 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_cond_info {
+00030     <span class="keywordtype">int</span> nwaiters;       <span class="comment">/* !&lt; Number of pending tasks. */</span>
 00031 
-00032     <span class="keywordtype">int</span> nwaiters;       <span class="comment">/* !&lt; Number of pending tasks. */</span>
+00032     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
 00033 
-00034     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
+00034 } RT_COND_INFO;
 00035 
-00036 } RT_COND_INFO;
-00037 
-00038 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_cond_placeholder {
-00039     rt_handle_t opaque;
-00040 } RT_COND_PLACEHOLDER;
-00041 
-00042 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
+00036 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_cond_placeholder {
+00037     rt_handle_t opaque;
+00038 } RT_COND_PLACEHOLDER;
+00039 
+00040 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
+00041 <span class="preprocessor"></span>
+00042 <span class="preprocessor">#define RTAI_COND_MAGIC 0x55550606</span>
 00043 <span class="preprocessor"></span>
-00044 <span class="preprocessor">#define RTAI_COND_MAGIC 0x55550606</span>
-00045 <span class="preprocessor"></span>
-00046 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_cond {
+00044 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_cond {
+00045 
+00046     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
 00047 
-00048     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
+00048     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
 00049 
-00050     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
+00050     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
 00051 
-00052     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
+00052     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
 00053 
-00054     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
-00055 
-00056 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
-00057 <span class="preprocessor"></span>    pid_t cpid;                 <span class="comment">/* !&lt; Creator's pid. */</span>
-00058 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
+00054 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
+00055 <span class="preprocessor"></span>    pid_t cpid;                 <span class="comment">/* !&lt; Creator's pid. */</span>
+00056 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
+00057 
+00058 } RT_COND;
 00059 
-00060 } RT_COND;
-00061 
-00062 <span class="preprocessor">#ifdef __cplusplus</span>
-00063 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00064 <span class="preprocessor">#endif</span>
-00065 <span class="preprocessor"></span>
-00066 <span class="keywordtype">int</span> __cond_pkg_init(<span class="keywordtype">void</span>);
+00060 <span class="preprocessor">#ifdef __cplusplus</span>
+00061 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00062 <span class="preprocessor">#endif</span>
+00063 <span class="preprocessor"></span>
+00064 <span class="keywordtype">int</span> __cond_pkg_init(<span class="keywordtype">void</span>);
+00065 
+00066 <span class="keywordtype">void</span> __cond_pkg_cleanup(<span class="keywordtype">void</span>);
 00067 
-00068 <span class="keywordtype">void</span> __cond_pkg_cleanup(<span class="keywordtype">void</span>);
-00069 
-00070 <span class="preprocessor">#ifdef __cplusplus</span>
-00071 <span class="preprocessor"></span>}
-00072 <span class="preprocessor">#endif</span>
-00073 <span class="preprocessor"></span>
-00074 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00068 <span class="preprocessor">#ifdef __cplusplus</span>
+00069 <span class="preprocessor"></span>}
+00070 <span class="preprocessor">#endif</span>
+00071 <span class="preprocessor"></span>
+00072 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00073 
+00074 <span class="keyword">typedef</span> RT_COND_PLACEHOLDER RT_COND;
 00075 
-00076 <span class="keyword">typedef</span> RT_COND_PLACEHOLDER RT_COND;
-00077 
-00078 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga9">rt_cond_bind</a>(RT_COND *cond,
-00079                  <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
+00076 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga9">rt_cond_bind</a>(RT_COND *cond,
+00077                  <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
+00078 
+<a name="l00079"></a><a class="code" href="group__cond.html#ga10">00079</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga10">rt_cond_unbind</a> (RT_COND *cond)
 00080 
-<a name="l00081"></a><a class="code" href="group__cond.html#ga10">00081</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga10">rt_cond_unbind</a> (RT_COND *cond)
-00082 
-00083 {
-00084     cond-&gt;opaque = RT_HANDLE_INVALID;
-00085     <span class="keywordflow">return</span> 0;
-00086 }
+00081 {
+00082     cond-&gt;opaque = RT_HANDLE_INVALID;
+00083     <span class="keywordflow">return</span> 0;
+00084 }
+00085 
+00086 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
 00087 
-00088 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
-00089 
-00090 <span class="preprocessor">#ifdef __cplusplus</span>
-00091 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00092 <span class="preprocessor">#endif</span>
-00093 <span class="preprocessor"></span>
-00094 <span class="comment">/* Public interface. */</span>
-00095 
-00096 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga1">rt_cond_create</a>(RT_COND *cond,
-00097                    <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
+00088 <span class="preprocessor">#ifdef __cplusplus</span>
+00089 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00090 <span class="preprocessor">#endif</span>
+00091 <span class="preprocessor"></span>
+00092 <span class="comment">/* Public interface. */</span>
+00093 
+00094 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga1">rt_cond_create</a>(RT_COND *cond,
+00095                    <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
+00096 
+00097 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga2">rt_cond_delete</a>(RT_COND *cond);
 00098 
-00099 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga2">rt_cond_delete</a>(RT_COND *cond);
+00099 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga3">rt_cond_signal</a>(RT_COND *cond);
 00100 
-00101 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga3">rt_cond_signal</a>(RT_COND *cond);
+00101 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga4">rt_cond_broadcast</a>(RT_COND *cond);
 00102 
-00103 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga4">rt_cond_broadcast</a>(RT_COND *cond);
-00104 
-00105 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga5">rt_cond_wait</a>(RT_COND *cond,
-00106                  RT_MUTEX *mutex,
-00107                  RTIME timeout);
-00108 
-00109 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga6">rt_cond_inquire</a>(RT_COND *cond,
-00110                     RT_COND_INFO *info);
-00111 
-00112 <span class="preprocessor">#ifdef __cplusplus</span>
-00113 <span class="preprocessor"></span>}
-00114 <span class="preprocessor">#endif</span>
-00115 <span class="preprocessor"></span>
-00116 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_COND_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
+00103 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga5">rt_cond_wait</a>(RT_COND *cond,
+00104                  RT_MUTEX *mutex,
+00105                  RTIME timeout);
+00106 
+00107 <span class="keywordtype">int</span> <a class="code" href="group__cond.html#ga6">rt_cond_inquire</a>(RT_COND *cond,
+00108                     RT_COND_INFO *info);
+00109 
+00110 <span class="preprocessor">#ifdef __cplusplus</span>
+00111 <span class="preprocessor"></span>}
+00112 <span class="preprocessor">#endif</span>
+00113 <span class="preprocessor"></span>
+00114 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_COND_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

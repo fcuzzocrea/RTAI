@@ -51,113 +51,116 @@
 00041 <span class="preprocessor"></span><span class="preprocessor">#define FUSION_RTAI_DOMAIN     1</span>
 00042 <span class="preprocessor"></span>
 00043 <span class="preprocessor">#define __xn_fusion_init         0</span>
-00044 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_create       1</span>
-00045 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_start        2</span>
-00046 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_set_periodic 3</span>
-00047 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_wait_period  4</span>
-00048 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_time         5</span>
-00049 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_cputime      6</span>
-00050 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_start_timer  7</span>
-00051 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_stop_timer   8</span>
-00052 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_sleep        9</span>
-00053 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_inquire      10</span>
-00054 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_idle         11</span>
-00055 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_cancel       12</span>
-00056 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_activate     13</span>
-00057 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_hold         14</span>
-00058 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_release      15</span>
-00059 <span class="preprocessor"></span>
-00060 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> nanotime_t;
-00061 
-00062 <span class="keyword">typedef</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> nanostime_t;
-00063 
-00064 <span class="preprocessor">#ifdef __cplusplus</span>
-00065 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00066 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00067 
-00068 <span class="preprocessor">#ifdef __KERNEL__</span>
-00069 <span class="preprocessor"></span>
-00070 <span class="keywordtype">int</span> xnfusion_mount(<span class="keywordtype">void</span>);
-00071 
-00072 <span class="keywordtype">int</span> xnfusion_umount(<span class="keywordtype">void</span>);
-00073 
-00074 <span class="keywordtype">int</span> xnfusion_attach(<span class="keywordtype">void</span>);
-00075 
-00076 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
-00077 
-00078 <span class="preprocessor">#include &lt;sys/types.h&gt;</span>
-00079 <span class="preprocessor">#include &lt;pthread.h&gt;</span>
-00080 
-00081     <span class="comment">/* Public RTAI/fusion interface. */</span>
-00082 
-00083 <span class="keywordtype">int</span> pthread_info_rt(xnsysinfo_t *infop);
-00084 
-00085 <span class="keywordtype">int</span> pthread_init_rt(<span class="keyword">const</span> <span class="keywordtype">char</span> *name,
-00086                     <span class="keywordtype">void</span> *uhandle,
-00087                     <span class="keywordtype">void</span> **khandlep);
-00088 
-00089 <span class="keywordtype">int</span> pthread_create_rt(<span class="keyword">const</span> <span class="keywordtype">char</span> *name,
-00090                       <span class="keywordtype">void</span> *uhandle,
-00091                       pid_t syncpid,
-00092                       <span class="keywordtype">int</span> *syncp,
-00093                       <span class="keywordtype">void</span> **khandlep);
-00094 
-00095 <span class="keywordtype">int</span> pthread_barrier_rt(<span class="keywordtype">void</span>);
-00096 
-00097 <span class="keywordtype">int</span> pthread_start_rt(<span class="keywordtype">void</span> *khandle);
-00098 
-00099 <span class="keywordtype">int</span> pthread_sync_rt(<span class="keywordtype">int</span> *syncp);
-00100 
-00101 <span class="keywordtype">int</span> pthread_migrate_rt(<span class="keywordtype">int</span> domain);
-00102 
-00103 <span class="keywordtype">int</span> pthread_start_timer_rt(nanotime_t nstick);
-00104 
-00105 <span class="keywordtype">int</span> pthread_stop_timer_rt(<span class="keywordtype">void</span>);
-00106 
-00107 <span class="keywordtype">int</span> pthread_time_rt(nanotime_t *tp);
-00108 
-00109 <span class="keywordtype">int</span> pthread_cputime_rt(nanotime_t *tp);
-00110 
-00111 <span class="keywordtype">int</span> pthread_ns2tsc_rt(nanostime_t ns,
-00112                       nanostime_t *ptsc);
+00044 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_exit         1</span>
+00045 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_create       2</span>
+00046 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_start        3</span>
+00047 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_set_periodic 4</span>
+00048 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_wait_period  5</span>
+00049 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_time         6</span>
+00050 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_cputime      7</span>
+00051 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_start_timer  8</span>
+00052 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_stop_timer   9</span>
+00053 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_sleep        10</span>
+00054 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_inquire      11</span>
+00055 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_idle         12</span>
+00056 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_cancel       13</span>
+00057 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_activate     14</span>
+00058 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_hold         15</span>
+00059 <span class="preprocessor"></span><span class="preprocessor">#define __xn_fusion_release      16</span>
+00060 <span class="preprocessor"></span>
+00061 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> nanotime_t;
+00062 
+00063 <span class="keyword">typedef</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> nanostime_t;
+00064 
+00065 <span class="preprocessor">#ifdef __cplusplus</span>
+00066 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00067 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00068 
+00069 <span class="preprocessor">#ifdef __KERNEL__</span>
+00070 <span class="preprocessor"></span>
+00071 <span class="keywordtype">int</span> xnfusion_mount(<span class="keywordtype">void</span>);
+00072 
+00073 <span class="keywordtype">int</span> xnfusion_umount(<span class="keywordtype">void</span>);
+00074 
+00075 <span class="keywordtype">int</span> xnfusion_attach(<span class="keywordtype">void</span>);
+00076 
+00077 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
+00078 
+00079 <span class="preprocessor">#include &lt;sys/types.h&gt;</span>
+00080 <span class="preprocessor">#include &lt;pthread.h&gt;</span>
+00081 
+00082     <span class="comment">/* Public RTAI/fusion interface. */</span>
+00083 
+00084 <span class="keywordtype">int</span> pthread_info_rt(xnsysinfo_t *infop);
+00085 
+00086 <span class="keywordtype">int</span> pthread_init_rt(<span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00087                     <span class="keywordtype">void</span> *uhandle,
+00088                     <span class="keywordtype">void</span> **khandlep);
+00089 
+00090 <span class="keywordtype">int</span> pthread_exit_rt(<span class="keywordtype">void</span>);
+00091 
+00092 <span class="keywordtype">int</span> pthread_create_rt(<span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00093                       <span class="keywordtype">void</span> *uhandle,
+00094                       pid_t syncpid,
+00095                       <span class="keywordtype">int</span> *syncp,
+00096                       <span class="keywordtype">void</span> **khandlep);
+00097 
+00098 <span class="keywordtype">int</span> pthread_barrier_rt(<span class="keywordtype">void</span>);
+00099 
+00100 <span class="keywordtype">int</span> pthread_start_rt(<span class="keywordtype">void</span> *khandle);
+00101 
+00102 <span class="keywordtype">int</span> pthread_sync_rt(<span class="keywordtype">int</span> *syncp);
+00103 
+00104 <span class="keywordtype">int</span> pthread_migrate_rt(<span class="keywordtype">int</span> domain);
+00105 
+00106 <span class="keywordtype">int</span> pthread_start_timer_rt(nanotime_t nstick);
+00107 
+00108 <span class="keywordtype">int</span> pthread_stop_timer_rt(<span class="keywordtype">void</span>);
+00109 
+00110 <span class="keywordtype">int</span> pthread_time_rt(nanotime_t *tp);
+00111 
+00112 <span class="keywordtype">int</span> pthread_cputime_rt(nanotime_t *tp);
 00113 
-00114 <span class="keywordtype">int</span> pthread_tsc2ns_rt(nanostime_t tsc,
-00115                       nanostime_t *pns);
+00114 <span class="keywordtype">int</span> pthread_ns2tsc_rt(nanostime_t ns,
+00115                       nanostime_t *ptsc);
 00116 
-00117 <span class="keywordtype">int</span> pthread_sleep_rt(nanotime_t ticks);
-00118 
-00119 <span class="keywordtype">int</span> pthread_inquire_rt(xninquiry_t *infop);
-00120 
-00121 <span class="keywordtype">int</span> pthread_set_periodic_rt(nanotime_t idate,
-00122                             nanotime_t period);
+00117 <span class="keywordtype">int</span> pthread_tsc2ns_rt(nanostime_t tsc,
+00118                       nanostime_t *pns);
+00119 
+00120 <span class="keywordtype">int</span> pthread_sleep_rt(nanotime_t ticks);
+00121 
+00122 <span class="keywordtype">int</span> pthread_inquire_rt(xninquiry_t *infop);
 00123 
-00124 <span class="keywordtype">int</span> pthread_wait_period_rt(<span class="keywordtype">void</span>);
-00125 
-00126 <span class="comment">/* The following routines are private to the UVM control layer. Do not</span>
-00127 <span class="comment">   use them directly in applications. */</span>
+00124 <span class="keywordtype">int</span> pthread_set_periodic_rt(nanotime_t idate,
+00125                             nanotime_t period);
+00126 
+00127 <span class="keywordtype">int</span> pthread_wait_period_rt(<span class="keywordtype">void</span>);
 00128 
-00129 <span class="keywordtype">int</span> __pthread_idle_uvm(<span class="keywordtype">int</span> *lockp);
-00130 
-00131 <span class="keywordtype">int</span> __pthread_cancel_uvm(<span class="keywordtype">void</span> *deadhandle,
-00132                          <span class="keywordtype">void</span> *nexthandle);
+00129 <span class="comment">/* The following routines are private to the UVM control layer. Do not</span>
+00130 <span class="comment">   use them directly in applications. */</span>
+00131 
+00132 <span class="keywordtype">int</span> __pthread_idle_uvm(<span class="keywordtype">int</span> *lockp);
 00133 
-00134 <span class="keywordtype">int</span> __pthread_activate_uvm(<span class="keywordtype">void</span> *nexthandle,
-00135                            <span class="keywordtype">void</span> *prevhandle);
+00134 <span class="keywordtype">int</span> __pthread_cancel_uvm(<span class="keywordtype">void</span> *deadhandle,
+00135                          <span class="keywordtype">void</span> *nexthandle);
 00136 
-00137 <span class="keywordtype">int</span> __pthread_hold_uvm(<span class="keywordtype">int</span> *pendp);
-00138 
-00139 <span class="keywordtype">int</span> __pthread_release_uvm(<span class="keywordtype">int</span> *lockp);
-00140 
-00141 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00142 
-00143 <span class="preprocessor">#ifdef __cplusplus</span>
-00144 <span class="preprocessor"></span>};
-00145 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00146 
-00147 <span class="preprocessor">#endif </span><span class="comment">/* !__RTAI_SIM__ */</span>
-00148 
-00149 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_FUSION_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
+00137 <span class="keywordtype">int</span> __pthread_activate_uvm(<span class="keywordtype">void</span> *nexthandle,
+00138                            <span class="keywordtype">void</span> *prevhandle);
+00139 
+00140 <span class="keywordtype">int</span> __pthread_hold_uvm(<span class="keywordtype">int</span> *pendp);
+00141 
+00142 <span class="keywordtype">int</span> __pthread_release_uvm(<span class="keywordtype">int</span> *lockp);
+00143 
+00144 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00145 
+00146 <span class="preprocessor">#ifdef __cplusplus</span>
+00147 <span class="preprocessor"></span>};
+00148 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00149 
+00150 <span class="preprocessor">#endif </span><span class="comment">/* !__RTAI_SIM__ */</span>
+00151 
+00152 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_FUSION_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

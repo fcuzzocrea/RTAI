@@ -16,117 +16,115 @@
 00026 <span class="preprocessor">#include &lt;nucleus/heap.h&gt;</span>
 00027 <span class="preprocessor">#include &lt;<a class="code" href="skins_2rtai_2types_8h.html">rtai/types.h</a>&gt;</span>
 00028 
-00029 <span class="keyword">struct </span>RT_TASK;
-00030 
-00031 <span class="comment">/* Creation flags. */</span>
-00032 <span class="preprocessor">#define H_PRIO   XNSYNCH_PRIO   </span><span class="comment">/* Pend by task priority order. */</span>
-00033 <span class="preprocessor">#define H_FIFO   XNSYNCH_FIFO   </span><span class="comment">/* Pend by FIFO order. */</span>
-00034 <span class="preprocessor">#define H_DMA    0x100          </span><span class="comment">/* Use memory suitable for DMA. */</span>
-00035 <span class="preprocessor">#define H_SHARED 0x200          </span><span class="comment">/* Use mappable shared memory. */</span>
+00029 <span class="comment">/* Creation flags. */</span>
+00030 <span class="preprocessor">#define H_PRIO   XNSYNCH_PRIO   </span><span class="comment">/* Pend by task priority order. */</span>
+00031 <span class="preprocessor">#define H_FIFO   XNSYNCH_FIFO   </span><span class="comment">/* Pend by FIFO order. */</span>
+00032 <span class="preprocessor">#define H_DMA    0x100          </span><span class="comment">/* Use memory suitable for DMA. */</span>
+00033 <span class="preprocessor">#define H_SHARED 0x200          </span><span class="comment">/* Use mappable shared memory. */</span>
+00034 
+00035 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_heap_info {
 00036 
-00037 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_heap_info {
+00037     <span class="keywordtype">int</span> nwaiters;               <span class="comment">/* !&lt; Number of pending tasks. */</span>
 00038 
-00039     <span class="keywordtype">int</span> nwaiters;               <span class="comment">/* !&lt; Number of pending tasks. */</span>
+00039     <span class="keywordtype">int</span> mode;                   <span class="comment">/* !&lt; Creation mode. */</span>
 00040 
-00041     <span class="keywordtype">int</span> mode;                   <span class="comment">/* !&lt; Creation mode. */</span>
+00041     size_t heapsize;            <span class="comment">/* !&lt; Size of heap memory. */</span>
 00042 
-00043     size_t heapsize;            <span class="comment">/* !&lt; Size of heap memory. */</span>
+00043     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
 00044 
-00045     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
+00045 } RT_HEAP_INFO;
 00046 
-00047 } RT_HEAP_INFO;
+00047 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_heap_placeholder {
 00048 
-00049 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_heap_placeholder {
+00049     rt_handle_t opaque;
 00050 
-00051     rt_handle_t opaque;
+00051     <span class="keywordtype">void</span> *opaque2;
 00052 
-00053     <span class="keywordtype">void</span> *opaque2;
+00053     caddr_t mapbase;
 00054 
-00055     caddr_t mapbase;
+00055     size_t mapsize;
 00056 
-00057     size_t mapsize;
+00057 } RT_HEAP_PLACEHOLDER;
 00058 
-00059 } RT_HEAP_PLACEHOLDER;
-00060 
-00061 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
+00059 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
+00060 <span class="preprocessor"></span>
+00061 <span class="preprocessor">#define RTAI_HEAP_MAGIC 0x55550808</span>
 00062 <span class="preprocessor"></span>
-00063 <span class="preprocessor">#define RTAI_HEAP_MAGIC 0x55550808</span>
-00064 <span class="preprocessor"></span>
-00065 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_heap {
+00063 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_heap {
+00064 
+00065     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
 00066 
-00067     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
+00067     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
 00068 
-00069     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
+00069     xnheap_t heap_base; <span class="comment">/* !&lt; Internal heap object. */</span>
 00070 
-00071     xnheap_t heap_base; <span class="comment">/* !&lt; Internal heap object. */</span>
+00071     <span class="keywordtype">int</span> mode;           <span class="comment">/* !&lt; Creation mode. */</span>
 00072 
-00073     <span class="keywordtype">int</span> mode;           <span class="comment">/* !&lt; Creation mode. */</span>
+00073     <span class="keywordtype">void</span> *shm_block;    <span class="comment">/* !&lt; Single shared block (H_SHARED only) */</span>
 00074 
-00075     <span class="keywordtype">void</span> *shm_block;    <span class="comment">/* !&lt; Single shared block (H_SHARED only) */</span>
+00075     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
 00076 
-00077     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
+00077     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
 00078 
-00079     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
-00080 
-00081 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
-00082 <span class="preprocessor"></span>    pid_t cpid;                 <span class="comment">/* !&lt; Creator's pid. */</span>
-00083 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
+00079 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
+00080 <span class="preprocessor"></span>    pid_t cpid;                 <span class="comment">/* !&lt; Creator's pid. */</span>
+00081 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
+00082 
+00083 } RT_HEAP;
 00084 
-00085 } RT_HEAP;
-00086 
-00087 <span class="preprocessor">#ifdef __cplusplus</span>
-00088 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00089 <span class="preprocessor">#endif</span>
-00090 <span class="preprocessor"></span>
-00091 <span class="keywordtype">int</span> __heap_pkg_init(<span class="keywordtype">void</span>);
+00085 <span class="preprocessor">#ifdef __cplusplus</span>
+00086 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00087 <span class="preprocessor">#endif</span>
+00088 <span class="preprocessor"></span>
+00089 <span class="keywordtype">int</span> __heap_pkg_init(<span class="keywordtype">void</span>);
+00090 
+00091 <span class="keywordtype">void</span> __heap_pkg_cleanup(<span class="keywordtype">void</span>);
 00092 
-00093 <span class="keywordtype">void</span> __heap_pkg_cleanup(<span class="keywordtype">void</span>);
-00094 
-00095 <span class="preprocessor">#ifdef __cplusplus</span>
-00096 <span class="preprocessor"></span>}
-00097 <span class="preprocessor">#endif</span>
-00098 <span class="preprocessor"></span>
-00099 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00093 <span class="preprocessor">#ifdef __cplusplus</span>
+00094 <span class="preprocessor"></span>}
+00095 <span class="preprocessor">#endif</span>
+00096 <span class="preprocessor"></span>
+00097 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00098 
+00099 <span class="keyword">typedef</span> RT_HEAP_PLACEHOLDER RT_HEAP;
 00100 
-00101 <span class="keyword">typedef</span> RT_HEAP_PLACEHOLDER RT_HEAP;
-00102 
-00103 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga9">rt_heap_bind</a>(RT_HEAP *heap,
-00104                  <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
+00101 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga9">rt_heap_bind</a>(RT_HEAP *heap,
+00102                  <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
+00103 
+00104 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga10">rt_heap_unbind</a>(RT_HEAP *heap);
 00105 
-00106 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga10">rt_heap_unbind</a>(RT_HEAP *heap);
+00106 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
 00107 
-00108 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
-00109 
-00110 <span class="preprocessor">#ifdef __cplusplus</span>
-00111 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00112 <span class="preprocessor">#endif</span>
-00113 <span class="preprocessor"></span>
-00114 <span class="comment">/* Public interface. */</span>
-00115 
-00116 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga2">rt_heap_create</a>(RT_HEAP *heap,
-00117                    <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
-00118                    size_t heapsize,
-00119                    <span class="keywordtype">int</span> mode);
+00108 <span class="preprocessor">#ifdef __cplusplus</span>
+00109 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00110 <span class="preprocessor">#endif</span>
+00111 <span class="preprocessor"></span>
+00112 <span class="comment">/* Public interface. */</span>
+00113 
+00114 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga2">rt_heap_create</a>(RT_HEAP *heap,
+00115                    <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00116                    size_t heapsize,
+00117                    <span class="keywordtype">int</span> mode);
+00118 
+00119 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga3">rt_heap_delete</a>(RT_HEAP *heap);
 00120 
-00121 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga3">rt_heap_delete</a>(RT_HEAP *heap);
-00122 
-00123 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga4">rt_heap_alloc</a>(RT_HEAP *heap,
-00124                   size_t size,
-00125                   RTIME timeout,
-00126                   <span class="keywordtype">void</span> **blockp);
-00127 
-00128 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga5">rt_heap_free</a>(RT_HEAP *heap,
-00129                  <span class="keywordtype">void</span> *block);
-00130 
-00131 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga6">rt_heap_inquire</a>(RT_HEAP *heap,
-00132                     RT_HEAP_INFO *info);
-00133 
-00134 <span class="preprocessor">#ifdef __cplusplus</span>
-00135 <span class="preprocessor"></span>}
-00136 <span class="preprocessor">#endif</span>
-00137 <span class="preprocessor"></span>
-00138 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_HEAP_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
+00121 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga4">rt_heap_alloc</a>(RT_HEAP *heap,
+00122                   size_t size,
+00123                   RTIME timeout,
+00124                   <span class="keywordtype">void</span> **blockp);
+00125 
+00126 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga5">rt_heap_free</a>(RT_HEAP *heap,
+00127                  <span class="keywordtype">void</span> *block);
+00128 
+00129 <span class="keywordtype">int</span> <a class="code" href="group__native__heap.html#ga6">rt_heap_inquire</a>(RT_HEAP *heap,
+00130                     RT_HEAP_INFO *info);
+00131 
+00132 <span class="preprocessor">#ifdef __cplusplus</span>
+00133 <span class="preprocessor"></span>}
+00134 <span class="preprocessor">#endif</span>
+00135 <span class="preprocessor"></span>
+00136 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_HEAP_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Feb 17 10:44:26 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -1,0 +1,28 @@
+digraph G
+{
+  edge [fontname="Helvetica",fontsize=10,labelfontname="Helvetica",labelfontsize=10];
+  node [fontname="Helvetica",fontsize=10,shape=record];
+  Node1 [label="synch.c",height=0.2,width=0.4,color="white", fillcolor="black", style="filled" fontcolor="white"];
+  Node2 -> Node1 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node2 [label="stdarg.h",height=0.2,width=0.4,color="grey75"];
+  Node3 -> Node1 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node3 [label="nucleus/pod.h",height=0.2,width=0.4,color="black",URL="$pod_8h.html"];
+  Node4 -> Node3 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node4 [label="nucleus/thread.h",height=0.2,width=0.4,color="black",URL="$thread_8h-source.html"];
+  Node5 -> Node4 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node5 [label="nucleus/timer.h",height=0.2,width=0.4,color="black",URL="$include_2nucleus_2timer_8h-source.html"];
+  Node6 -> Node5 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node6 [label="nucleus/queue.h",height=0.2,width=0.4,color="black",URL="$include_2nucleus_2queue_8h-source.html"];
+  Node7 -> Node6 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node7 [label="nucleus/types.h",height=0.2,width=0.4,color="red",URL="$include_2nucleus_2types_8h-source.html"];
+  Node8 -> Node3 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node8 [label="nucleus/intr.h",height=0.2,width=0.4,color="black",URL="$include_2nucleus_2intr_8h-source.html"];
+  Node7 -> Node8 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node9 -> Node1 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node9 [label="nucleus/synch.h",height=0.2,width=0.4,color="black",URL="$synch_8h-source.html"];
+  Node6 -> Node9 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node4 -> Node1 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node10 -> Node1 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+  Node10 [label="nucleus/module.h",height=0.2,width=0.4,color="black",URL="$module_8h-source.html"];
+  Node6 -> Node10 [dir=back,color="midnightblue",fontsize=10,style="solid",fontname="Helvetica"];
+}

@@ -152,8 +152,8 @@ typedef struct xnsched {
 #define xnsched_clr_resched(__sched__) \
     xnarch_cpu_clear(xnsched_cpu(__sched__), xnsched_resched_mask())
 
-#define xnsched_clr_mask() \
-    xnarch_cpus_clear(xnsched_resched_mask())
+#define xnsched_clr_mask(__sched__) \
+    xnarch_cpus_clear((__sched__)->resched)
 
 struct xnsynch;
 struct xnintr;

@@ -336,6 +336,9 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
 #else /* !CONFIG_SMP */
         sprintf(root_name,"ROOT");
 #endif /* CONFIG_SMP */
+
+	xnsched_clr_mask(sched);
+
         /* Create the root thread -- it might be a placeholder for the
            current context or a real thread, it depends on the real-time
            layer. If the root thread needs to allocate stack memory, it
@@ -1980,7 +1983,7 @@ void xnpod_schedule (void)
     if (xnsched_resched_p())
         xnarch_send_ipi(xnsched_resched_mask());
 
-    xnsched_clr_mask();
+    xnsched_clr_mask(sched);
     runthread = sched->runthread;
 
     if (!need_resched)

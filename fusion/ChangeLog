@@ -3,6 +3,7 @@
 	* nucleus/pod.c (xnpod_calibrate_sched): Obtain the calibration
 	pod and thread memory from the system heap, not from the stack;
 	the latter could cause misaligned FPU ops.
+	(xnpod_init): Clear the rescheduling mask of all scheds at init.
 
 2004-09-06  Philippe Gerum  <rpm@xenomai.org>
 

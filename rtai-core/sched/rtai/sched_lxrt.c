@@ -230,7 +230,7 @@ do { \
 
 #endif /* CONFIG_SMP */
 
-#if defined(CONFIG_SMP)
+#if defined(CONFIG_SMP) && 0
 #define DECL_CPUS_ALLOWED  unsigned long cpus_allowed = 1;
 #define SAVE_CPUS_ALLOWED  do { cpus_allowed = prev->cpus_allowed; } while (0)
 #define SET_CPUS_ALLOWED   do { prev->cpus_allowed = 1 << cpuid;   } while (0)
@@ -522,7 +522,7 @@ void rt_set_runnable_on_cpus(RT_TASK *task, unsigned long run_on_cpus)
 
 	return;
 
-	run_on_cpus &= cpu_online_map;
+	run_on_cpus &= CPUMASK(cpu_online_map);
 	cpuid = get_min_tasks_cpuid();
 	if (!test_bit(cpuid, &run_on_cpus)) {
 		cpuid = ffnz(run_on_cpus);
@@ -1890,6 +1890,11 @@ static void thread_fun(int cpuid)
 	((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
 	rt_task_suspend(task);
 }
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7)
+static inline _syscall3(pid_t,waitpid,pid_t,pid,int *,wait_stat,int,options)
+#endif /* LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7) */
+
 
 static void kthread_m(int cpuid)
 {

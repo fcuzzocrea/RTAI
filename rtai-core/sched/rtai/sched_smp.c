@@ -196,7 +196,7 @@ asmlinkage static void rt_startup(void(*rt_thread)(int), int data)
 
 unsigned long sqilter = 0;
 
-#define cpu_present_map cpu_online_map
+#define cpu_present_map (CPUMASK(cpu_online_map))
 
 static inline void sched_get_global_lock(int cpuid)
 {

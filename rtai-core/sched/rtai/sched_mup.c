@@ -38,8 +38,6 @@ ACKNOWLEDGMENTS:
 #define LINUX_FPU       1
 #endif
 
-#define cpu_present_map cpu_online_map
-
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -368,7 +366,7 @@ void rt_set_runnable_on_cpus(RT_TASK *task, unsigned long run_on_cpus)
 {
 	int cpuid;
 
-	run_on_cpus &= cpu_present_map;
+	run_on_cpus &= CPUMASK(cpu_present_map);
 	cpuid = get_min_tasks_cpuid();
 	if (!test_bit(cpuid, &run_on_cpus)) {
 		cpuid = ffnz(run_on_cpus);

@@ -310,12 +310,11 @@ extern "C" {
 
 RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 {
-	void *sp;
 	struct { void *tasklet; int thread; } arg;
 
-	memset(sp = malloc(TASKLET_STACK_SIZE), 0, TASKLET_STACK_SIZE);
 	arg.tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
-	arg.thread = clone(support_tasklet, sp + TASKLET_STACK_SIZE - 1, CLONE_VM | CLONE_FS | CLONE_FILES, arg.tasklet);
+	arg.thread = rt_thread_create(support_tasklet, arg.tasklet, TASKLET_STACK_SIZE);
+//	arg.thread = clone(support_tasklet, sp + TASKLET_STACK_SIZE - 1, CLONE_VM | CLONE_FS | CLONE_FILES, arg.tasklet);
 	rtai_lxrt(TSKIDX, SIZARG, WAIT_IS_HARD, &arg);
 
 	return arg.tasklet;

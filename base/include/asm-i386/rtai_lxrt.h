@@ -27,6 +27,10 @@
 
 //#define USE_LINUX_SYSCALL
 
+#define SYSCALL_NR      orig_eax
+#define SYSCALL_ARGS    ecx
+#define SYSCALL_RETPNT  edx
+
 #define LOW  0
 #define HIGH 1
 

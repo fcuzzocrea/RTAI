@@ -114,7 +114,7 @@ void *cruncher_thread (void *arg)
 }
 
 #define IDEAL      10000
-#define MARGIN       500
+#define MARGIN      1000
 #define FIRST_DIM    300
 
 void *sampler_thread (void *arg)

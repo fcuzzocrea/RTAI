@@ -49,13 +49,13 @@
 #define SET_LXRT_RETVAL_IN_SYSCALL(retval) 	/* set long long syscall return value */ \
 	(*(long long)&r->r0 = (retval))
 
-#define LINUX_SYSCALL_NR      ARM_r0
-#define LINUX_SYSCALL_REG1    ARM_r1
-#define LINUX_SYSCALL_REG2    ARM_r2
-#define LINUX_SYSCALL_REG3    ARM_r3
-#define LINUX_SYSCALL_REG4    ARM_r4
-#define LINUX_SYSCALL_REG5    ARM_r5
-#define LINUX_SYSCALL_REG6    ARM_r6
+#define LINUX_SYSCALL_NR      ARM_ip
+#define LINUX_SYSCALL_REG1    ARM_r0
+#define LINUX_SYSCALL_REG2    ARM_r1
+#define LINUX_SYSCALL_REG3    ARM_r2
+#define LINUX_SYSCALL_REG4    ARM_r3
+#define LINUX_SYSCALL_REG5    ARM_r4
+#define LINUX_SYSCALL_REG6    ARM_r5
 #define LINUX_SYSCALL_RETREG  ARM_r0
 
 /* endianess */

@@ -1,5 +1,10 @@
 2004-02-14  Michael Neuhauser  <mike@firmix.at>
 
+	* base/include/asm-arm/rtai_lxrt.h: fixed LINUX_SYSCALL_* (a little,
+	will only work for syscalls with 4 or less arguments)
+
+2004-02-14  Michael Neuhauser  <mike@firmix.at>
+
 	* base/include/asm-arm/GNUmakefile.*: added rtai_usi.h
 	* base/arch/arm/hal/hal.*: include asm/rtai_usi.h
 	* base/arch/arm/hal/hal.*: re-added "retmode" to rtai_realtime_irq[]

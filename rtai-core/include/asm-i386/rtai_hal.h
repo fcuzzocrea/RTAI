@@ -642,7 +642,7 @@ do { \
 
 struct desc_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler);
 
-void rtai_reset_gate_vect(unsigned vector, struct desc_struct e);
+void rtai_reset_gate_vector (unsigned vector, struct desc_struct e);
 // end of machine dominance
 
 void rt_do_irq(unsigned irq);

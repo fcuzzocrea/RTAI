@@ -1526,8 +1526,9 @@ struct desc_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, voi
 
 void rtai_reset_gate_vector (unsigned vector, struct desc_struct e)
 {
-    idt_table[vector] = e;
+	idt_table[vector] = e;
 }
+
 static void rtai_install_archdep (void)
 
 {

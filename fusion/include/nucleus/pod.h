@@ -141,7 +141,7 @@ struct xnintr;
  * The source of all Xenomai magic.
  */
 
-typedef struct xnpod {
+struct xnpod {
 
     xnflags_t status;		/*!< Status bitmask. */
 
@@ -192,7 +192,9 @@ typedef struct xnpod {
 		      xnflags_t mask); /*!< Internal scheduling hook. */
 #endif /* __RTAI_SIM__ */
 
-} xnpod_t;
+};
+
+typedef struct xnpod xnpod_t;
 
 extern xnpod_t *nkpod;
 

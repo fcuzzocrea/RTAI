@@ -456,10 +456,11 @@ int __init __fusion_sys_init (void)
 
 #ifdef CONFIG_RTAI_OPT_PIPE
     xnpipe_umount();
-#endif /* CONFIG_RTAI_OPT_PIPE */
 
  cleanup_arch:
-    
+
+#endif /* CONFIG_RTAI_OPT_PIPE */
+
 #ifdef CONFIG_PROC_FS
     xnpod_delete_proc();
 #endif /* CONFIG_PROC_FS */

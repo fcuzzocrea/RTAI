@@ -497,7 +497,9 @@ release_and_exit:
 }
 
 /*! 
- * \fn int xnheap_test_and_free(xnheap_t *heap, void *block, int (*ckfn)(void *));
+ * \fn int xnheap_test_and_free(xnheap_t *heap,
+                                void *block,
+                                int (*ckfn)(void *block));
  * \brief Test and release a memory block to a memory heap.
  *
  * Releases a memory region to the memory heap it was previously

@@ -64,6 +64,24 @@ A2: If those modules are loaded but the error persists, check that
 your RTAI configuration enables the real-time support in user-space,
 in the top-level "Nucleus" menu.
 
+______________________________________________________________________
+
+Q: My user-space application unexpectedly reserves a lot of virtual
+memory, as reported by "top" or /proc/<pid>/maps. Sometimes OOM
+situations even appear during runtime on systems with limited memory,
+why?
+
+A: The RTAI tasks are underlaid by native POSIX threads, for which a
+huge default amount of stack space memory is reserved by the native
+POSIX support (usually 8Mb per thread). Unfortunately, this behaviour
+cannot be controlled by the "stacksize" parameter passed to the
+various thread creation routines, i.e. the latter is about limiting
+the addressable stack space on a per-thread basis, but does not affect
+the amount of stack memory initially reserved by the POSIX library.  A
+work-round consists of setting a lower user-limit for initial stack
+allocation, like calling "ulimit -s <initial-size-in-kbytes>" in your
+parent shell before running your application (defaults to 8192).
+
 ======================================================================
 
                              x86

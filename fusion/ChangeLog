@@ -1,3 +1,7 @@
+2004-09-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.8.1-i386-r7c1.
+
 2004-09-05  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_migrate_thread): Rename, export and use a

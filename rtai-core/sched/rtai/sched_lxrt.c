@@ -837,7 +837,7 @@ schedlnxtsk:
 }
 #endif
 
-
+#if 0
 #define enq_soft_ready_task(ready_task) \
 do { \
 	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \
@@ -847,6 +847,17 @@ do { \
 	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task; \
 	ready_task->rnext = task; \
 } while (0)
+#else
+#define enq_soft_ready_task(ready_task) \
+do { \
+	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \
+	while (task != &rt_smp_linux_task[cpuid] && ready_task->priority >= task->priority) { \
+		if ((task = task->rnext)->priority < 0) break; \
+	} \
+	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task; \
+	ready_task->rnext = task; \
+} while (0)
+#endif
 
 void rt_schedule(void)
 {
@@ -936,8 +947,11 @@ fire:			shot_fired = 1;
 schedlnxtsk:
 		rt_smp_current[cpuid] = new_task;
 		if (new_task->is_hard || rt_current->is_hard) {
-//			struct task_struct *prev = rtai_get_current(cpuid);
+#if 0
+			struct task_struct *prev = rtai_get_current(cpuid);
+#else
 			struct task_struct *prev = current;
+#endif
 			DECL_CPUS_ALLOWED;
 			SAVE_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {

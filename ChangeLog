@@ -1,3 +1,9 @@
+2004-06-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/rtai/sched_lxrt.c (enq_soft_ready_task): Attempt
+	a quick fix to prevent the enqueuing from entering an infinite
+	loop. Needs to be confirmed by Paolo.
+
 2004-06-11  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* rtai-core/include/asm-i386/rtai_lxrt.h: Set __USER_DS when

@@ -64,6 +64,7 @@
 #endif /* CONFIG_X86_LOCAL_APIC */
 #define __RTAI_HAL__
 #include <asm/rtai_hal.h>
+#include <asm/rtai_lxrt.h>
 #ifdef CONFIG_PROC_FS
 #include <linux/stat.h>
 #include <linux/proc_fs.h>
@@ -1486,9 +1487,9 @@ static void rtai_uvec_handler (void)
 	"pushl %ebx\n\t" \
         "pushl %edx\n\t" \
         "pushl %eax\n\t" \
-	"movl $" STR(__KERNEL_DS) ",%ebx\n\t" \
-        "mov %bx,%ds\n\t" \
-        "mov %bx,%es\n\t" \
+	__LXRT_GET_DATASEG(ebx) \
+        "movl %ebx,%ds\n\t" \
+        "movl %ebx,%es\n\t" \
         "call "SYMBOL_NAME_STR(rtai_usrq_trampoline)"\n\t" \
 	"addl $8,%esp\n\t" \
         "popl %ebx\n\t" \

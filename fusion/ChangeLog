@@ -1,3 +1,9 @@
+2005-03-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Do not set
+	ALTIVEC or SPE ownership bit to the next thread: leave it to lazy
+	handling.
+
 2005-03-20  Heikki Lindholm <holindho@cs.helsinki.fi>
 
 	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Make sure
@@ -39,8 +45,9 @@
 	mode after a fault.
 	(__xnpod_switch_fpu): Re-enable use of FPU when switching back to
 	the FPU owner.
-	asm/system.h (xnarch_enable_fpu): Add arch-dependent support
-	for previous item.
+	
+	* nucleus/include/asm-*/system.h (xnarch_enable_fpu): Add
+	arch-dependent support for previous item.
 
 2005-03-13  Philippe Gerum  <rpm@xenomai.org>
 

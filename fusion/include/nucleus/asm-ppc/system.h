@@ -423,16 +423,6 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	get_mmu_context(mm);
 	set_context(mm->context,mm->pgd);
 
-#ifdef CONFIG_ALTIVEC
-	if (next->thread.regs && last_task_used_altivec == next)
-	    next->thread.regs->msr |= MSR_VEC;
-#endif /* CONFIG_ALTIVEC */
-
-#ifdef CONFIG_SPE
-	if (next->thread.regs && last_task_used_spe == next)
-	    next->thread.regs->msr |= MSR_SPE;
-#endif /* CONFIG_SPE */
-
 	/* _switch expects a valid "current" (r2) for storing
 	 * ALTIVEC and SPE state. */
 	current = prev;

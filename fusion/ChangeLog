@@ -1,5 +1,8 @@
 2005-02-15  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* scripts/rtai-config.in: Add --cross-compile option and normal
+	exit for --help option.
+
 	* GNUmakefile.am (dev devices): Create $(DESTDIR)/dev if it does
 	not exist.
 
@@ -22,7 +25,7 @@
 
 	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Do not
 	enforce MSR FP state when switching context, create kernel
-	threads, with FP bit disabled, then let xnarch_init_thread set it
+	threads with FP bit disabled, then let xnarch_init_thread set it
 	and context switches preserve it.
 
 2005-02-14  Philippe Gerum  <rpm@xenomai.org>

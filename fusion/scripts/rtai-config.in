@@ -23,6 +23,7 @@ RTAI_FUSION_LDFLAGS="-L${staging}${libdir} -lfusion -lpthread"
 RTAI_UVM_CFLAGS="-I. -I${staging}${includedir} @RTAI_USER_APP_CFLAGS@ -D__RTAI_UVM__"
 RTAI_UVM_LDFLAGS="-u__fusion_skin_init -L${staging}${libdir} -lfusion -lnucleus -lpthread"
 RTAI_LIBRARY_DIR="${staging}${libdir}"
+CROSS_COMPILE="@CROSS_COMPILE@"
 
 unset prefix exec_prefix libdir datadir pkgdatadir includedir
 
@@ -34,6 +35,7 @@ Options :
         --help
         --version
         --cc
+        --cross-compile
         --arch
         --subarch
         --prefix
@@ -63,6 +65,9 @@ while test $# -gt 0; do
             ;;
         --cc)
             echo $RTAI_CC
+            ;;
+        --cross-compile)
+            echo $CROSS_COMPILE
             ;;
         --arch)
             echo $RTAI_TARGET_ARCH
@@ -102,6 +107,9 @@ while test $# -gt 0; do
             ;;
         --linux-ver*)
             echo $RTAI_LINUX_VERSION
+            ;;
+        --help)
+            usage 0 1>&2
             ;;
         *)
          usage 1 1>&2

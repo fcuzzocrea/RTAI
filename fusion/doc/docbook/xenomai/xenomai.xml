@@ -238,7 +238,7 @@
 	    <listitem>
 	      <para><emphasis>Programming model</emphasis></para>
 	      <para>What is the overall application complexity,
-	      provided taht the highest the complexity, the greatest
+	      provided that the higher the complexity, the greater
 	      the need for powerful debugging aid and monitoring
 	      tools.</para>
 	    </listitem>
@@ -292,7 +292,7 @@
 	  timers. Most services are symmetrically available from
 	  kernel module and user-space programs.</para>
 
-	  <para>RTAI 2.x and 3.x provide a mean to execute hard
+	  <para>RTAI 2.x and 3.x provide a means to execute hard
 	  real-time tasks in user-space context (x86 only), but still
 	  outside the Linux kernel control, which is best described as
 	  running 'user-space kernel modules'. This feature, namely
@@ -485,34 +485,34 @@
 	  quantum.</para>
 
 	  <para><emphasis>Priority management.</emphasis> It is
-	  possible to use whether an increasing or decreasing thread
+	  possible to use either an increasing or decreasing thread
 	  priority ordering, depending on an initial configuration. In
-	  other words, numerically highest priority values could
-	  whether represent highest or lowest scheduling priorities
-	  depending on the configuration choosen. This feature is
+	  other words, numerically higher priority values could
+	  either represent higher or lower scheduling priorities
+	  depending on the configuration chosen. This feature is
 	  motivated by the existence of this two possible ordering
 	  among traditional RTOS. For instance, VxWorks, VRTX, ThreadX
 	  and Chorus O/S use a reversed priority management scheme,
-	  where the highest the value, the lowest the priority. pSOS+
-	  instead uses the opposite ordering, in which the highest the
-	  value, the highest the priority.</para>
+	  where the higher the value, the lower the priority. pSOS+
+	  instead uses the opposite ordering, in which the higher the
+	  value, the higher the priority.</para>
 
 	  <para><emphasis>Running thread.</emphasis> At any given
 	  time, the highest priority thread which has been ready to
-	  run for the longuest time among the currently runnable
+	  run for the longest time among the currently runnable
 	  threads (i.e. not currently blocked by any delay or resource
 	  wait) is elected to run by the scheduler.</para>
 
 	  <para><emphasis>Preemption.</emphasis> When preempted by a
-	  more prioritary thread, the running thread is put at front
+	  higher priority thread, the running thread is put at the front
 	  of the ready thread queue waiting for the processor
 	  resource, provided it has not been suspended or blocked in
 	  any way. Thus it is expected to regain the processor
-	  resource as soon as no other prioritary activity (i.e. a
+	  resource as soon as no other higher priority activity (i.e. a
 	  thread having a higher priority level, or an interrupt
 	  service routine) is eligible for running.</para>
 
-	  <para>Manual round-robin.<emphasis></emphasis> As a
+	  <para><emphasis>Manual round-robin.</emphasis> As a
 	  side-effect of attempting to resume an already runnable
 	  thread or the running thread itself, this thread is moved at
 	  the end of its priority group in the ready thread
@@ -539,7 +539,7 @@
 	  <para><emphasis>Disjunctive wait.</emphasis> A thread is
 	  able to wait in a disjunctive manner on multiple
 	  resources. The nucleus unblocks the thread when at least one
-	  among the pended resources is available.</para>
+	  of the pending resources is available.</para>
 
 	</sect4>
 
@@ -556,7 +556,7 @@
 	  usable in turn to build these facilities.</para>
 
 	  <para><emphasis>Pending mode.</emphasis> The thread
-	  synchronization facility provides a mean for threads to pend
+	  synchronization facility provides a means for threads to pend
 	  either by priority or FIFO ordering. Multiple threads should
 	  be able to pend on a single resource.</para>
 
@@ -569,7 +569,7 @@
 	  protocol.</para>
 
 	  <para><emphasis>Time-bounded wait.</emphasis> The thread
-	  synchronization facility provides a mean to limit the time a
+	  synchronization facility provides a means to limit the time a
 	  thread waits for a given resource using a watchdog.</para>
 
 	  <para><emphasis>Forcible deletion.</emphasis> It is legal to
@@ -599,7 +599,7 @@
 	  outer ISR has exited (i.e. in case of nested
 	  interrupts).</para>
 
-	  <para><emphasis>Priority.</emphasis> ISRs is always
+	  <para><emphasis>Priority.</emphasis> ISRs are always
 	  considered as prioritary over thread execution. Interrupt
 	  prioritization is left to the underlying
 	  hardware.</para>
@@ -667,17 +667,17 @@
 	<para><itemizedlist>
 
 	    <listitem>
-	      <para>Start/stop dispatching on request the external
+	      <para>On request start/stop dispatching the external
 	      interrupts to a specialized handler ;</para>
 	    </listitem>
 
 	    <listitem>
-	      <para>Provide a mean to mask and unmask interrupts ;
+	      <para>Provide a means to mask and unmask interrupts ;
 	      </para>
 	    </listitem>
 
 	    <listitem>
-	      <para>Provide a mean to create new threads of control in
+	      <para>Provide a means to create new threads of control in
 	      their simplest form ; </para>
 	    </listitem>
 
@@ -709,7 +709,7 @@
 	complexity in designing new RTOS emulations. The
 	architecture-neutral abstraction layer provides the foundation
 	for developing accurate emulations of traditional RTOS API,
-	saving the burden of implementing each time their fundamental
+	saving the burden of repeatedly implementing their fundamental
 	real-time behaviours. Since the abstraction layer also favours
 	code sharing and mutualization, we can expect the RTOS
 	emulations to take advantage of them in terms of code
@@ -824,7 +824,7 @@
 
 	  <para>The nucleus needs a time source to provide the
 	  time-related services to the upper interfaces. The timer
-	  hardware so that a user-defined routine is called according
+	  hardware needs to be configured so that a user-defined routine is called according
 	  to a given frequency. On architectures that provide a
 	  oneshot-programmable time source, the system timer can
 	  operate either in aperiodic or periodic mode. Using the

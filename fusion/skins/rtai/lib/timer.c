@@ -113,3 +113,11 @@ RTIME rt_timer_ticks2ns (RTIME ticks)
 		      &ticks);
     return ns;
 }
+
+int rt_timer_inquire (RT_TIMER_INFO *info)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_timer_inquire,
+			     info);
+}

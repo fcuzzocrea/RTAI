@@ -181,4 +181,22 @@ int rt_task_sleep (RTIME delay)
     return XENOMAI_SKINCALL1(__rtai_muxid,
 			     __rtai_task_sleep,
 			     &delay);
+
+}
+
+int rt_task_inquire (RT_TASK *task,
+		     RT_TASK_INFO *info)
+{
+    RT_TASK ph;
+
+    if (!task)
+	{
+	ph.opaque = RT_REGISTRY_SELF;
+	task = &ph;
+	}
+
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_task_inquire,
+			     task,
+			     info);
 }

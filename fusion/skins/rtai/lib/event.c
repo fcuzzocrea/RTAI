@@ -19,7 +19,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <rtai/syscall.h>
-#include <rtai/sem.h>
+#include <rtai/event.h>
 
 extern int __rtai_muxid;
 
@@ -31,44 +31,51 @@ static inline int __init_skin (void)
 }
 
 
-int rt_sem_create (RT_SEM *sem,
-		   const char *name,
-		   unsigned long icount,
-		   int mode)
+int rt_event_create (RT_EVENT *event,
+		     const char *name,
+		     unsigned long ivalue,
+		     int mode)
 {
     if (__rtai_muxid < 0 && __init_skin() < 0)
 	return -ENOSYS;
 
     return XENOMAI_SKINCALL4(__rtai_muxid,
-			     __rtai_sem_create,
-			     sem,
+			     __rtai_event_create,
+			     event,
 			     name,
-			     icount,
+			     ivalue,
 			     mode);
 }
 
-int rt_sem_p (RT_SEM *sem,
-	      RTIME timeout)
+int rt_event_pend (RT_EVENT *event,
+                   unsigned long mask,
+                   unsigned long *mask_r,
+                   int mode,
+		   RTIME timeout)
 {
-    return XENOMAI_SKINCALL2(__rtai_muxid,
-			     __rtai_sem_p,
-			     sem,
+    return XENOMAI_SKINCALL5(__rtai_muxid,
+			     __rtai_event_pend,
+			     event,
+			     mask,
+			     mask_r,
+			     mode,
 			     &timeout);
 }
 
-int rt_sem_v (RT_SEM *sem)
-
-{
-    return XENOMAI_SKINCALL1(__rtai_muxid,
-			     __rtai_sem_v,
-			     sem);
-}
-
-int rt_sem_inquire (RT_SEM *sem,
-		    RT_SEM_INFO *info)
+int rt_event_post (RT_EVENT *event,
+		   unsigned long mask)
 {
     return XENOMAI_SKINCALL2(__rtai_muxid,
-			     __rtai_sem_inquire,
-			     sem,
+			     __rtai_event_post,
+			     event,
+			     mask);
+}
+
+int rt_event_inquire (RT_EVENT *event,
+		      RT_EVENT_INFO *info)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_event_inquire,
+			     event,
 			     info);
 }

@@ -3,6 +3,7 @@ lib_LIBRARIES = librtai.a
 librtai_a_AR = $(CROSS_COMPILE)ar cru
 
 librtai_a_SOURCES = \
+	event.c \
 	task.c \
 	timer.c \
 	sem.c

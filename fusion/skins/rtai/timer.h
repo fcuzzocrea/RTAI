@@ -54,6 +54,13 @@
 #define RT_TIMER_UNSET   XNPOD_NO_TICK
 #define RT_TIMER_ONESHOT XNPOD_APERIODIC_TICK
 
+typedef struct rt_timer_info {
+
+    RTIME period;	/* <! Current status (unset, aperiodic, period). */
+    RTIME date;		/* !< Current date. */
+
+} RT_TIMER_INFO;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -62,7 +69,7 @@ RTIME rt_timer_ns2ticks(RTIME ns);
 
 RTIME rt_timer_ticks2ns(RTIME ticks);
 
-RTIME rt_timer_inquire(void);
+int rt_timer_inquire(RT_TIMER_INFO *info);
 
 RTIME rt_timer_read(void);
 

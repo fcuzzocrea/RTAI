@@ -26,6 +26,7 @@
 #include <rtai/task.h>
 #include <rtai/timer.h>
 #include <rtai/sem.h>
+#include <rtai/event.h>
 
 /* This file implements the syscall wrappers. Unchecked uaccess is
    used since the syslib is trusted. */
@@ -229,6 +230,35 @@ static int __rt_task_sleep (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
+ * int __rt_task_inquire(RT_TASK_PLACEHOLDER *ph,
+ *                       RT_TASK_INFO *infop)
+ */
+
+static int __rt_task_inquire (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_TASK_PLACEHOLDER *ph;
+    RT_TASK_INFO info;
+    RT_TASK *task;
+    int err;
+
+    ph = (RT_TASK_PLACEHOLDER *)__xn_reg_arg1(regs);
+    task = (RT_TASK *)rt_registry_get(ph->opaque);
+
+    if (!task)
+	return -ENOENT;
+
+    err = rt_task_inquire(task,&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    rt_registry_put(ph->opaque);
+
+    return err;
+}
+
+/*
  * int __rt_timer_start(RTIME *tickvalp)
  */
 
@@ -319,6 +349,24 @@ static int __rt_timer_ticks2ns (struct task_struct *curr, struct pt_regs *regs)
     __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ns,sizeof(ns));
 
     return 0;
+}
+
+/*
+ * int __rt_timer_inquire (RT_TIMER_INFO *info)
+ */
+
+static int __rt_timer_inquire (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_TIMER_INFO info;
+    int err;
+
+    err = rt_timer_inquire(&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&info,sizeof(info));
+
+    return err;
 }
 
 /*
@@ -421,7 +469,7 @@ static int __rt_sem_p (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_sem_p (RT_SEM_PLACEHOLDER *ph)
+ * int __rt_sem_v (RT_SEM_PLACEHOLDER *ph)
  */
 
 static int __rt_sem_v (struct task_struct *curr, struct pt_regs *regs)
@@ -452,7 +500,189 @@ static int __rt_sem_v (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_sem_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 {
+    RT_SEM_PLACEHOLDER *ph;
+    RT_SEM_INFO info;
+    RT_SEM *sem;
+    int err;
+
+    ph = (RT_SEM_PLACEHOLDER *)__xn_reg_arg1(regs);
+    sem = (RT_SEM *)rt_registry_get(ph->opaque);
+
+    if (!sem)
+	return -ENOENT;
+
+    err = rt_sem_inquire(sem,&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    rt_registry_put(ph->opaque);
+
+    return err;
+}
+
+/*
+ * int __rt_event_create (RT_EVENT_PLACEHOLDER *ph,
+ *                        const char *name,
+ *                        unsigned ivalue,
+ *                        int mode)
+ */
+
+static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    char name[XNOBJECT_NAME_LEN];
+    RT_SEM_PLACEHOLDER *ph;
+    unsigned ivalue;
+    int err, mode;
+    RT_EVENT *event;
+
+    ph = (RT_SEM_PLACEHOLDER *)__xn_reg_arg1(regs);
+
+    if (__xn_reg_arg2(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,name,(const char *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	name[sizeof(name) - 1] = '\0';
+	}
+    else
+	*name = '\0';
+
+    /* Initial event mask value. */
+    ivalue = (unsigned)__xn_reg_arg3(regs);
+    /* Creation mode. */
+    mode = (int)__xn_reg_arg4(regs);
+
+    event = (RT_EVENT *)xnmalloc(sizeof(*event));
+
+    if (!event)
+	return -ENOMEM;
+
+    err = rt_event_create(event,name,ivalue,mode);
+
+    if (err == 0)
+	/* Copy back the registry handle to the ph struct. */
+	__xn_put_user(curr,event->handle,&ph->opaque);
+    else
+	xnfree(event);
+
+    return err;
+}
+
+/*
+ * int __rt_event_bind (RT_EVENT_PLACEHOLDER *ph,
+ *                      const char *name)
+ */
+
+static int __rt_event_bind (struct task_struct *curr, struct pt_regs *regs)
+
+{
     return 0;
+}
+
+/*
+ * int __rt_event_delete (RT_EVENT_PLACEHOLDER *ph)
+ */
+
+static int __rt_event_delete (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    return 0;
+}
+
+/*
+ * int __rt_event_pend (RT_EVENT_PLACEHOLDER *ph,
+                        unsigned long mask,
+                        unsigned long *mask_r,
+                        int mode,
+ *                      RTIME *timeoutp)
+ */
+
+static int __rt_event_pend (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    unsigned long mask, mask_r;
+    RT_EVENT_PLACEHOLDER *ph;
+    RT_EVENT *event;
+    RTIME timeout;
+    int mode, err;
+
+    ph = (RT_EVENT_PLACEHOLDER *)__xn_reg_arg1(regs);
+    event = (RT_EVENT *)rt_registry_get(ph->opaque);
+
+    if (!event)
+	return -ENOENT;
+
+    mask = (unsigned long)__xn_reg_arg2(regs);
+    mode = (int)__xn_reg_arg4(regs);
+    __xn_copy_from_user(curr,&timeout,(void *)__xn_reg_arg5(regs),sizeof(timeout));
+
+    err = rt_event_pend(event,mask,&mask_r,mode,timeout);
+
+    __xn_copy_to_user(curr,(void *)__xn_reg_arg3(regs),&mask_r,sizeof(mask_r));
+
+    rt_registry_put(ph->opaque);
+
+    return err;
+}
+
+/*
+ * int __rt_event_post (RT_EVENT_PLACEHOLDER *ph,
+                        unsigned long mask)
+ */
+
+static int __rt_event_post (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_EVENT_PLACEHOLDER *ph;
+    unsigned long mask;
+    RT_EVENT *event;
+    int err;
+
+    ph = (RT_EVENT_PLACEHOLDER *)__xn_reg_arg1(regs);
+    event = (RT_EVENT *)rt_registry_get(ph->opaque);
+
+    if (!event)
+	return -ENOENT;
+
+    mask = (unsigned long)__xn_reg_arg2(regs);
+
+    err = rt_event_post(event,mask);
+
+    rt_registry_put(ph->opaque);
+
+    return err;
+}
+
+/*
+ * int __rt_event_inquire (RT_EVENT_PLACEHOLDER *ph,
+ *                         RT_EVENT_INFO *infop)
+ */
+
+static int __rt_event_inquire (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_EVENT_PLACEHOLDER *ph;
+    RT_EVENT_INFO info;
+    RT_EVENT *event;
+    int err;
+
+    ph = (RT_EVENT_PLACEHOLDER *)__xn_reg_arg1(regs);
+    event = (RT_EVENT *)rt_registry_get(ph->opaque);
+
+    if (!event)
+	return -ENOENT;
+
+    err = rt_event_inquire(event,&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    rt_registry_put(ph->opaque);
+
+    return err;
 }
 
 static xnsysent_t __systab[] = {
@@ -462,18 +692,26 @@ static xnsysent_t __systab[] = {
     { &__rt_task_set_periodic, __xn_flag_regular },
     { &__rt_task_wait_period, __xn_flag_regular },
     { &__rt_task_sleep, __xn_flag_regular },
+    { &__rt_task_inquire, __xn_flag_anycall  },
     { &__rt_timer_start, __xn_flag_anycall  },
     { &__rt_timer_stop, __xn_flag_anycall  },
     { &__rt_timer_read, __xn_flag_anycall  },
     { &__rt_timer_tsc, __xn_flag_anycall  },
     { &__rt_timer_ns2ticks, __xn_flag_anycall  },
     { &__rt_timer_ticks2ns, __xn_flag_anycall  },
+    { &__rt_timer_inquire, __xn_flag_anycall  },
     { &__rt_sem_create, __xn_flag_anycall  },
     { &__rt_sem_bind, __xn_flag_regular },
     { &__rt_sem_delete, __xn_flag_anycall  },
     { &__rt_sem_p, __xn_flag_regular  },
     { &__rt_sem_v, __xn_flag_anycall  },
     { &__rt_sem_inquire, __xn_flag_anycall  },
+    { &__rt_event_create, __xn_flag_anycall  },
+    { &__rt_event_bind, __xn_flag_regular },
+    { &__rt_event_delete, __xn_flag_anycall  },
+    { &__rt_event_pend, __xn_flag_regular  },
+    { &__rt_event_post, __xn_flag_anycall  },
+    { &__rt_event_inquire, __xn_flag_anycall  },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

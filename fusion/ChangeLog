@@ -1,5 +1,7 @@
 2004-06-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c: Export event group interface.
+
 	* skins/rtai/event.c: Add documentation.
 
 2004-06-10  Philippe Gerum  <rpm@xenomai.org>

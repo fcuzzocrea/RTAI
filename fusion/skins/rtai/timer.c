@@ -83,12 +83,18 @@ RTIME rt_timer_ticks2ns (RTIME ticks)
 }
 
 /*!
- * @fn RTIME rt_timer_inquire(void)
+ * @fn int rt_timer_inquire(RT_TIMER_INFO *info)
  * @brief Inquire about the timer.
  *
- * Return the current settings of the system timer.
+ * Return various information about the status of the system timer.
  *
- * @return The timer status expressed as follows:
+ * @param info The address of a structure the timer information will
+ * be written to.
+ *
+ * @return This service always returns 0.
+ *
+ * The information block returns the period and the current system
+ * date. The period can have the following values:
  *
  * - RT_TIMER_UNSET is a special value indicating that the system
  * timer is inactive. A call to rt_timer_start() activates it.
@@ -96,26 +102,32 @@ RTIME rt_timer_ticks2ns (RTIME ticks)
  * - RT_TIMER_ONESHOT is a special value indicating that the timer has
  * been set up in oneshot mode.
  *
- * - Any other value indicates that the system timer is currently
- * running in periodic mode; it is a count of nanoseconds representing
- * the period of the timer, i.e. the duration of a periodic tick or
- * "jiffy".
+ * - Any other period value indicates that the system timer is
+ * currently running in periodic mode; it is a count of nanoseconds
+ * representing the period of the timer, i.e. the duration of a
+ * periodic tick or "jiffy".
  *
  * Context: This routine can be called on behalf of a task, interrupt
  * context or from the initialization code.
  *
  */
 
-RTIME rt_timer_inquire (void)
+int rt_timer_inquire (RT_TIMER_INFO *info)
 
 {
+    RTIME period;
+
     if (!testbits(nkpod->status,XNTIMED))
-	return RT_TIMER_UNSET;
+	period = RT_TIMER_UNSET;
+    else if (!testbits(nkpod->status,XNTMPER))
+	period = RT_TIMER_ONESHOT;
+    else
+	period = xnpod_get_tickval();
 
-    if (!testbits(nkpod->status,XNTMPER))
-	return RT_TIMER_ONESHOT;
+    info->period = period;
+    info->date = xnpod_get_time();
 
-    return xnpod_get_tickval();
+    return 0;
 }
 
 /*!

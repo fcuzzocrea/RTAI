@@ -425,17 +425,6 @@ xnarchtcb_t *uvm_root;
 
 xnarchtcb_t *uvm_current;
 
-/* NOTES:
-
-   o All in-kernel IRQ threads serving the VM have the same priority
-   level, except when they wait on a synchonization barrier.
-
-   o In theory, the IRQ synchronization mechanism might end up
-   causing interrupt loss, since we might be sleeping to much waiting
-   on the irqlock barrier until it is signaled. In practice, this
-   should not happen because interrupt-free sections are short.
-*/
-
 struct xnarch_tick_parms {
     time_t sec;
     long nsec;

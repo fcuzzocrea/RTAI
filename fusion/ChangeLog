@@ -1,3 +1,7 @@
+2004-09-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/dbridge.c: Always return -EPIPE instead of -EIO.
+
 2004-09-14  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c: Call __adeos_schedule_back_root() with the

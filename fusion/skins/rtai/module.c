@@ -148,37 +148,39 @@ int __xeno_skin_init (void)
     
     return 0;	/* SUCCESS. */
 
+#ifdef __KERNEL__
  cleanup_pipe:
+#endif /* __KERNEL__ */
 
 #if CONFIG_RTAI_OPT_NATIVE_PIPE
     __pipe_pkg_cleanup();
-#endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
 
  cleanup_cond:
+#endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
 
 #if CONFIG_RTAI_OPT_NATIVE_COND
     __cond_pkg_cleanup();
-#endif /* CONFIG_RTAI_OPT_NATIVE_COND */
 
  cleanup_mutex:
+#endif /* CONFIG_RTAI_OPT_NATIVE_COND */
 
 #if CONFIG_RTAI_OPT_NATIVE_MUTEX
     __mutex_pkg_cleanup();
-#endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
  cleanup_event:
+#endif /* CONFIG_RTAI_OPT_NATIVE_COND */
 
 #if CONFIG_RTAI_OPT_NATIVE_EVENT
     __event_pkg_cleanup();
-#endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
 
  cleanup_sem:
+#endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
 
 #if CONFIG_RTAI_OPT_NATIVE_SEM
     __sem_pkg_cleanup();
-#endif /* CONFIG_RTAI_OPT_NATIVE_SEM */
 
  cleanup_task:
+#endif /* CONFIG_RTAI_OPT_NATIVE_SEM */
 
     __task_pkg_cleanup();
 

@@ -1,58 +1,66 @@
-H1 {
-	text-align: center;
+BODY,H1,H2,H3,H4,H5,H6,P,CENTER,TD,TH,UL,DL,DIV {
 	font-family: Geneva, Arial, Helvetica, sans-serif;
 }
-H2 {
-	font-family: Geneva, Arial, Helvetica, sans-serif;
+H1 {
+	text-align: center;
 }
 CAPTION { font-weight: bold }
 DIV.qindex {
 	width: 100%;
 	background-color: #eeeeff;
-	border: 1px solid #B0B0B0;
+	border: 1px solid #b0b0b0;
 	text-align: center;
 	margin: 2px;
 	padding: 2px;
-	line-height: 120%;
+	line-height: 140%;
+}
+DIV.nav {
+	width: 100%;
+	background-color: #eeeeff;
+	border: 1px solid #b0b0b0;
+	text-align: center;
+	margin: 2px;
+	padding: 2px;
+	line-height: 140%;
 }
 A.qindex {
        text-decoration: none;
        font-weight: bold;
        color: #1A419D;
-       padding: 2px;
 }
 A.qindex:visited {
        text-decoration: none;
        font-weight: bold;
        color: #1A419D
-       padding: 2px;
 }
 A.qindex:hover {
 	text-decoration: none;
 	background-color: #ddddff;
-	padding: 2px;
 }
 A.qindexHL {
 	text-decoration: none;
 	font-weight: bold;
 	background-color: #6666cc;
 	color: #ffffff;
-	padding: 2px 6px;
 	border: 1px double #9295C2;
 }
 A.qindexHL:hover {
 	text-decoration: none;
 	background-color: #6666cc;
 	color: #ffffff;
-	padding: 2px 6px;
 }
 A.qindexHL:visited { text-decoration: none; background-color: #6666cc; color: #ffffff }
 A.el { text-decoration: none; font-weight: bold }
 A.elRef { font-weight: bold }
-A.code { text-decoration: none; font-weight: normal; color: #1A419D}
-A.codeRef { font-weight: normal; color: #1A419D}
+A.code:link { text-decoration: none; font-weight: normal; color: #0000FF}
+A.code:visited { text-decoration: none; font-weight: normal; color: #0000FF}
+A.codeRef:link { font-weight: normal; color: #0000FF}
+A.codeRef:visited { font-weight: normal; color: #0000FF}
 A:hover { text-decoration: none; background-color: #f2f2ff }
 DL.el { margin-left: -1cm }
+.fragment {
+       font-family: monospace
+}
 PRE.fragment {
 	border: 1px solid #CCCCCC;
 	background-color: #f5f5f5;
@@ -65,11 +73,6 @@ PRE.fragment {
 	padding-top: 4px;
 	padding-bottom: 4px;
 }
-DIV.fragment {
-	border: 1px solid #CCCCCC;
-	background-color: #f5f5f5;
-	padding: 6px;
-}
 DIV.ah { background-color: black; font-weight: bold; color: #ffffff; margin-bottom: 3px; margin-top: 3px }
 TD.md { background-color: #F4F4FB; font-weight: bold; }
 TD.mdname1 { background-color: #F4F4FB; font-weight: bold; color: #602020; }
@@ -79,7 +82,6 @@ DIV.groupHeader {
        margin-top: 12px;
        margin-bottom: 6px;
        font-weight: bold;
-	font-family: Geneva, Arial, Helvetica, sans-serif;
 }
 DIV.groupText { margin-left: 16px; font-style: italic; font-size: 14px }
 BODY {
@@ -172,7 +174,6 @@ SPAN.charliteral   { color: #008080 }
 	border-bottom-style: none;
 	border-left-style: none;
 	background-color: #FAFAFA;
-	font-family: Geneva, Arial, Helvetica, sans-serif;
 	font-size: 12px;
 }
 .memItemRight {
@@ -191,7 +192,6 @@ SPAN.charliteral   { color: #008080 }
 	border-bottom-style: none;
 	border-left-style: none;
 	background-color: #FAFAFA;
-	font-family: Geneva, Arial, Helvetica, sans-serif;
 	font-size: 13px;
 }
 .search     { color: #003399;

@@ -1,3 +1,8 @@
+2004-10-02  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/rtai/module.c (__xeno_skin_init): Remove warnings about
+	unused labels.
+
 2004-10-01  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/trace.c: Add tracing module.

@@ -419,21 +419,13 @@ static inline void rt_global_save_flags(unsigned long *flags)
  */
 static inline void rt_global_restore_flags(unsigned long flags)
 {
-	switch (flags & ((1 << RTAI_IFLAG) | 1)) {
-		case (1 << RTAI_IFLAG) | 1:
-			rt_release_global_lock();
-			rtai_sti();
-			break;
-		case (1 << RTAI_IFLAG) | 0:
-			rt_get_global_lock();
-			rtai_sti();
-			break;
-		case (0 << RTAI_IFLAG) | 1:
-			rt_release_global_lock();
-			break;
-		case (0 << RTAI_IFLAG) | 0:
-			rt_get_global_lock();
-			break;
+	if (test_and_clear_bit(0, &flags)) {
+		rt_release_global_lock();
+	} else {
+		rt_get_global_lock();
+	}
+	if (flags) {
+		rtai_sti();
 	}
 }
 

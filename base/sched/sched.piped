@@ -162,8 +162,8 @@ static struct {
 
 #define sched_get_global_lock(cpuid) \
 do { \
-	if (!test_and_set_bit(cpuid, locked_cpus)) { \
-		while (test_and_set_bit(31, locked_cpus)) { \
+	if (!test_and_set_bit(cpuid, &rtai_cpu_lock)) { \
+		while (test_and_set_bit(31, &rtai_cpu_lock)) { \
 			cpu_relax(); \
 		} \
 	} \
@@ -171,15 +171,15 @@ do { \
 
 #define sched_release_global_lock(cpuid) \
 do { \
-	if (test_and_clear_bit(cpuid, locked_cpus)) { \
-		test_and_clear_bit(31, locked_cpus); \
+	if (test_and_clear_bit(cpuid, &rtai_cpu_lock)) { \
+		test_and_clear_bit(31, &rtai_cpu_lock); \
 		cpu_relax(); \
 	} \
 } while (0)
 
 #else /* !CONFIG_SMP */
 
-#define rt_request_sched_ipi() 0
+#define rt_request_sched_ipi()  0
 
 #define rt_free_sched_ipi()
 
@@ -856,8 +856,7 @@ sched_soft:
 				adp_root->dswitch = schedule;
 				adeos_suspend_domain();
 				adp_root->dswitch = NULL;
-			} else
-			{
+			} else {
 				local_irq_enable();
 				schedule();
 			}
@@ -1026,10 +1025,10 @@ int rt_get_timer_cpu(void)
 }
 
 
-static int rt_timer_handler(void)
+static void rt_timer_handler(void)
 {
 	RT_TASK *rt_current, *task, *new_task;
-	int cpuid, prio, preempt, retval;
+	int cpuid, prio, preempt;
 
 	DO_TIMER_PROPER_OP();
 	rt_current = rt_smp_current[cpuid = rtai_cpuid()];
@@ -1045,12 +1044,8 @@ static int rt_timer_handler(void)
 	if (rt_times.tick_time >= rt_times.linux_time) {
 		rt_times.linux_time += rt_times.linux_tick;
 		update_linux_timer(cpuid);
-		retval = 0;
-	} else 
+	} 
 #endif
-	{
-		retval = 1;
-	}
 
 	sched_get_global_lock(cpuid);
 	wake_up_timed_tasks(cpuid);
@@ -1137,7 +1132,6 @@ static int rt_timer_handler(void)
         }
 sched_exit:
 	rtai_cli();
-	return retval;
 }
 
 
@@ -1934,7 +1928,7 @@ static void wake_up_srq_handler(void)
 	set_need_resched();
 }
 
-static int lxrtmodtrans;
+static unsigned long traptrans, systrans;
 
 static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dummy_data)
 {
@@ -1951,8 +1945,8 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 	}
 
 	if (rt_task->is_hard == 1) {
-		if (!lxrtmodtrans++) {
-			rt_printk("\nLXRT CHANGED MODE (TRAP), PID = %d\n", (rt_task->lnxtsk)->pid);
+		if (!traptrans++) {
+			rt_printk("\nLXRT CHANGED MODE (TRAP), PID = %d, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, vec, signo);
 		}
 		SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (TRAP), PID = %d, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, vec, signo););
 		give_back_to_linux(rt_task);
@@ -2102,8 +2096,10 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 #ifdef ECHO_SYSW
 			struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
 #endif
-			if (!lxrtmodtrans++) {
-				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d\n", (task->lnxtsk)->pid);
+			if (!systrans++) {
+				struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
+				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->orig_eax);
+
 			}
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->orig_eax););
 			give_back_to_linux(task);
@@ -2144,7 +2140,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 	PROC_PRINT("    Calibrated one shot setup time: %d ns\n\n",
                   imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 	PROC_PRINT("Number of RT CPUs in system: %d\n\n", NR_RT_CPUS);
-	PROC_PRINT("Number of forced hard/soft/hard transitions: %d\n\n", lxrtmodtrans);
+	PROC_PRINT("Number of forced hard/soft/hard transitions: traps %lu, syscalls %lu\n\n", traptrans, systrans);
 
 	PROC_PRINT("Priority  Period(ns)  FPU  Sig  State  CPU  Task  HD/SF  PID  RT_TASK *  TIME\n" );
 	PROC_PRINT("------------------------------------------------------------------------------\n" );
@@ -2536,9 +2532,9 @@ static int __rtai_lxrt_init(void)
 
 	register_reboot_notifier(&lxrt_notifier_reboot);
 
-	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (PIPED, KERNEL%s SPACE).\n", USE_RTAI_TASKS ? "" : "/USER");
-	printk(KERN_INFO "RTAI[sched_lxrt]: timer=%s (%s).\n",
-	       oneshot_timer ? "oneshot" : "periodic", TIMER_NAME);
+	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (PIPED, %sP, KERNEL%s SPACE).\n", CONFIG_SMP ? "SM" : "U", USE_RTAI_TASKS ? "" : "/USER");
+	printk(KERN_INFO "RTAI[sched_lxrt]: timer=%s (%s),.\n",
+	       OneShot ? "oneshot" : "periodic", TIMER_NAME);
 	printk(KERN_INFO "RTAI[sched_lxrt]: standard tick=%d hz, CPU freq=%lu hz.\n",
 	       HZ,
 	       (unsigned long)tuned.cpu_freq);
@@ -2601,7 +2597,7 @@ static void __rtai_lxrt_exit(void)
 	CLEAR_8254_TSC_EMULATION();
 #endif
 
-	printk(KERN_INFO "RTAI[sched_lxrt]: unloaded (forced hard/soft/hard transitions: %d).\n", lxrtmodtrans);
+	printk(KERN_INFO "RTAI[sched_lxrt]: unloaded (forced hard/soft/hard transitions: traps %lu, syscalls %lu).\n", traptrans, systrans);
 }
 
 module_init(__rtai_lxrt_init);

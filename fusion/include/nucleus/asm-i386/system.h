@@ -290,15 +290,6 @@ typedef struct xnarch_heapcb {
 
 } xnarch_heapcb_t;
 
-static inline void xnarch_init_heapcb (xnarch_heapcb_t *hcb)
-
-{
-    atomic_set(&hcb->numaps,0);
-    hcb->kmflags = 0;
-    hcb->heapbase = NULL;
-    hcb->shmbase = NULL;
-}
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -975,6 +966,28 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 }
 
 #endif /* XENO_TIMER_MODULE */
+
+#ifdef XENO_HEAP_MODULE
+
+static inline void xnarch_init_heapcb (xnarch_heapcb_t *hcb)
+
+{
+    atomic_set(&hcb->numaps,0);
+    hcb->kmflags = 0;
+    hcb->heapbase = NULL;
+    hcb->shmbase = NULL;
+}
+
+static inline int xnarch_remap_page_range(struct vm_area_struct *vma,
+					  unsigned long uvaddr,
+					  unsigned long paddr,
+					  unsigned long size,
+					  pgprot_t prot)
+{
+    return remap_page_range(vma,uvaddr,paddr,size,prot);
+}
+
+#endif /* XENO_HEAP_MODULE */
 
 #ifdef XENO_MAIN_MODULE
 

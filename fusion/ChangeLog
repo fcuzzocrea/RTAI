@@ -1,3 +1,7 @@
+2005-01-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/heap.c (xnheap_mmap): Fix PPC support.
+
 2004-12-31  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* testsuite/klatency/latency.c (main): make the output line

@@ -678,8 +678,10 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
 
+#include <asm/io.h>
 #include <linux/miscdevice.h>
 #include <linux/vmalloc.h>
+#include <linux/mm.h>
 
 static DECLARE_XNQUEUE(kheapq);	/* Shared heap queue. */
 
@@ -819,11 +821,11 @@ static int xnheap_mmap (struct file *file,
 
     if (heap->archdep.kmflags)
 	{
-	if (remap_page_range(vma,
-			     vma->vm_start,
-			     virt_to_phys((void *)vaddr),
-			     size,
-			     PAGE_SHARED))
+	if (xnarch_remap_page_range(vma,
+				    vma->vm_start,
+				    virt_to_phys((void *)vaddr),
+				    size,
+				    PAGE_SHARED))
 	    return -ENXIO;
 	}
     else
@@ -832,11 +834,11 @@ static int xnheap_mmap (struct file *file,
 
 	while (size > 0)
 	    {
-	    if (remap_page_range(vma,
-				 maddr,
-				 __pa(__va_to_kva(vaddr)),
-				 PAGE_SIZE,
-				 PAGE_SHARED))
+	    if (xnarch_remap_page_range(vma,
+					maddr,
+					__pa(__va_to_kva(vaddr)),
+					PAGE_SIZE,
+					PAGE_SHARED))
 		return -ENXIO;
 
 	    maddr += PAGE_SIZE;

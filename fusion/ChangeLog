@@ -1,3 +1,14 @@
+2004-11-13  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: fusion-0.6.3
+
+2004-11-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c7.
+
+	* nucleus/shadow.c (gatekeeper_thread): Lower spl when processing
+	requests.
+
 2004-11-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-i386/system.h (xnarch_restore_fpu): Restore
@@ -13,7 +24,7 @@
 	Kbuild make.
 
 	* arch/i386/hal/hal.c (__rthal_init): Use CLOCK_TICK_RATE as CPU
-	frequency when the kernel is configured withoug CONFIG_X86_TSC.
+	frequency when the kernel is configured without CONFIG_X86_TSC.
 
 2004-11-07  Philippe Gerum  <rpm@xenomai.org>
 
@@ -61,8 +72,9 @@
 
 2004-11-04  Philippe Gerum  <rpm@xenomai.org>
 
-	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c6 and
-	2.6.8rc1-ppc-r6c9.
+	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c6.
+
+	* arch/ppc/patches: Upgrade to Adeos 2.6.8rc1-ppc-r6c9.
 
 	* configure.in: Get rid of annnoying Kbuild warnings about undef'd
 	symbols by moving vmlinux and Module.symvers out of the way (Idea

@@ -1015,7 +1015,9 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		if (signal_pending(curr))
 		    {
 		    __xn_error_return(regs,-EINTR);
-		    request_syscall_restart(thread,regs);
+		    
+		    if (xnpod_shadow_p())
+			request_syscall_restart(thread,regs);
 		    }
 		}
 

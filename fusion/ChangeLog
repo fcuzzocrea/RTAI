@@ -1,4 +1,16 @@
+2005-01-16  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
+
+	* testsuite/klatency/latency-module.c: Make the task period user-
+	modifiable through a module parameter.
+	
 2005-01-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/registry.c (__registry_pkg_cleanup): Remove registry
+	class entries on-the-fly.
+
+	* fusion: Use more explicit naming for syscall exec bits:
+	__xn_flag_* => __xn_exec_*, __xn_flag_regular =>
+	__xn_exec_primary, __xn_flag_anycall => __xn_exec_any.
 
 	* testsuite/latency/latency.c, testsuite/cruncher/cruncher.c: Trap
 	SIGHUP.

@@ -12,6 +12,12 @@ MODULE_LICENSE("GPL");
 
 #define SAMPLE_COUNT (1000000000 / TASK_PERIOD_NS)
 
+int task_period_ns = TASK_PERIOD_NS;
+MODULE_PARM(task_period_ns, "i");
+MODULE_PARM_DESC(task_period_ns, "period in ns (default: 100000)");
+
+int sample_count;
+		  
 RT_TASK latency_task;
 
 RT_PIPE pipe;
@@ -42,9 +48,9 @@ void latency (void *cookie)
 	return;
 	}
 
-    period = rt_timer_ns2ticks(TASK_PERIOD_NS);
+    period = rt_timer_ns2ticks(task_period_ns);
     expected = rt_timer_tsc();
-    err = rt_task_set_periodic(NULL,TM_NOW,TASK_PERIOD_NS);
+    err = rt_task_set_periodic(NULL,TM_NOW,task_period_ns);
 
     if (err)
 	{
@@ -52,9 +58,11 @@ void latency (void *cookie)
 	return;
 	}
 
+	sample_count = (1000000000 / task_period_ns);
+
     for (;;)
 	{
-	for (count = sumj = 0; count < SAMPLE_COUNT; count++)
+	for (count = sumj = 0; count < sample_count; count++)
 	    {
 	    expected += period;
 	    err = rt_task_wait_period();
@@ -81,7 +89,7 @@ void latency (void *cookie)
 
 	minjitter = minj;
 	maxjitter = maxj;
-	avgjitter = sumj / SAMPLE_COUNT;
+	avgjitter = sumj / sample_count;
 
 	msg = rt_pipe_alloc(sizeof(struct rtai_latency_stat));
 

@@ -227,6 +227,7 @@ static int __pthread_sleep_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
     nanotime_t delay;
+    int err = 0;
 
     if (!testbits(nkpod->status,XNTIMED))
 	return -EWOULDBLOCK;
@@ -235,7 +236,10 @@ static int __pthread_sleep_rt (struct task_struct *curr, struct pt_regs *regs)
 
     xnpod_delay(delay);
 
-    return 0;
+    if (xnthread_test_flags(xnpod_current_thread(),XNBREAK))
+	err = -EINTR; /* Unblocked.*/
+
+    return err;
 }
 
 static int __pthread_ns2ticks_rt (struct task_struct *curr, struct pt_regs *regs)

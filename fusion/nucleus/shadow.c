@@ -70,13 +70,23 @@
 #include <linux/trace.h>
 #endif
 
+#ifndef __adeos_unlock_local_irq /* TEMPORARY */
+#define __adeos_unlock_local_irq(adp,cpuid,irq) \
+do { \
+    if (test_and_clear_bit(IPIPE_LOCK_FLAG,&(adp)->irqs[irq].control)) \
+         if ((adp)->cpudata[cpuid].irq_hits[irq] > 0) { \
+           __set_bit(irq & IPIPE_IRQ_IMASK,&(adp)->cpudata[cpuid].irq_pending_lo[irq >> IPI\
+PE_IRQ_ISHIFT]); \
+           __set_bit(irq >> IPIPE_IRQ_ISHIFT,&(adp)->cpudata[cpuid].irq_pending_hi); \
+         } \
+} while(0)
+#endif
+
 int nkgkptd;
 
 struct xnskentry muxtable[XENOMAI_MUX_NR];
 
 static int traceme = 0;
-
-static adomain_t irq_shield;
 
 static struct task_struct *gatekeeper[XNARCH_NR_CPUS];
 
@@ -86,7 +96,7 @@ static struct semaphore gkreq[XNARCH_NR_CPUS];
 
 static int gkstop;
 
-static unsigned gkvirq, sigvirq, nicevirq, shieldvirq;
+static unsigned gkvirq, sigvirq, nicevirq;
 
 static int gk_enter_in[XNARCH_NR_CPUS],
            gk_enter_out[XNARCH_NR_CPUS];
@@ -118,7 +128,7 @@ static struct {
 
 } gk_renice_wheel[XNARCH_NR_CPUS][XNSHADOW_MAXRQ];
 
-static cpumask_t shielded_cpus;
+static adomain_t irq_shield;
 
 #define get_switch_lock_owner() \
 switch_lock_owner[task_cpu(current)]
@@ -177,114 +187,120 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
     xnshadow_relax();
 }
 
-static inline void engage_irq_shield (int this_cpu) {
+static inline void engage_irq_shield (int this_cpu)
 
-    cpu_set(this_cpu,shielded_cpus);
+{
+#ifdef CONFIG_SMP
+
+    unsigned long flags;
+    unsigned irq;
+
+    if (cpu_test_and_set(this_cpu,shielded_cpus))
+	return;
+
+    rthal_hw_lock(flags);
+
+    cpu_clear(this_cpu,unshielded_cpus);
+
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+	{
+	switch (irq)
+	    {
+	    case ADEOS_CRITICAL_IPI:
+	    case ADEOS_SERVICE_IPI1:
+	    XNARCH_PASSTHROUGH_IRQS
+
+		/* Never lock out these ones. */
+		continue;
+
+	    default:
+
+		__adeos_lock_irq(&irq_shield,this_cpu,irq);
+	    }
+	}
+
+    rthal_hw_unlock(flags);
+
+#else /* !CONFIG_SMP */
+
+    adeos_stall_pipeline_from(&irq_shield);
+
+#endif /* CONFIG_SMP */
 }
 
 static void disengage_irq_shield (int this_cpu)
      
 {
+#ifdef CONFIG_SMP
+
     cpumask_t other_cpus;
+    unsigned long flags;
+    unsigned irq;
+
+    if (cpu_test_and_set(this_cpu,unshielded_cpus))
+	return;
+
+    rthal_hw_lock(flags);
 
     cpu_clear(this_cpu,shielded_cpus);
+
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+	{
+	switch (irq)
+	    {
+	    case ADEOS_CRITICAL_IPI:
+	    case ADEOS_SERVICE_IPI1:
+	    XNARCH_PASSTHROUGH_IRQS
+
+		/* These ones are never locked out. */
+		continue;
+
+	    default:
+
+		__adeos_unlock_local_irq(&irq_shield,this_cpu,irq);
+	    }
+	}
 
     other_cpus = shielded_cpus;
 
     if (cpus_empty(other_cpus))
-	{
-#ifdef CONFIG_SMP
         adeos_send_ipi(ADEOS_SERVICE_IPI1,other_cpus);
+
+    rthal_hw_unlock(flags);
+
+#else /* !CONFIG_SMP */
+
+    adeos_unstall_pipeline_from(&irq_shield);
+
 #endif /* CONFIG_SMP */
-	adeos_trigger_irq(shieldvirq);
-	}
 }
 
-#ifndef __adeos_unlock_local_irq /* TEMPORARY */
-#define __adeos_unlock_local_irq(adp,cpuid,irq) \
-do { \
-    if (test_and_clear_bit(IPIPE_LOCK_FLAG,&(adp)->irqs[irq].control)) \
-         if ((adp)->cpudata[cpuid].irq_hits[irq] > 0) { \
-           __set_bit(irq & IPIPE_IRQ_IMASK,&(adp)->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-           __set_bit(irq >> IPIPE_IRQ_ISHIFT,&(adp)->cpudata[cpuid].irq_pending_hi); \
-         } \
-} while(0)
-#endif
+#ifdef CONFIG_SMP
 
-static void xnshadow_shield_body (unsigned irq)
+static cpumask_t shielded_cpus = CPU_MASK_NONE,
+                 unshielded_cpus = CPU_MASK_ALL;
+
+static void xnshadow_shield_disengage_handler (unsigned virq)
 
 {
-    static unsigned long irq_lo[XNARCH_NR_CPUS][IPIPE_IRQ_IWORDS];
-    static unsigned long irq_hi[XNARCH_NR_CPUS];
-    adeos_declare_cpuid;
-    unsigned hi, lo;
+    disengage_irq_shield(adeos_processor_id());
+}
 
-    /* Adeos guarantees that hw interrupts are always off on entry of
-       IRQ handlers for non-root domains, so we can just load the
-       current cpuid with no special protection. */
-
-    adeos_load_cpuid();
-
-    if (cpus_empty(shielded_cpus))
-	{
-	while (irq_hi[cpuid] != 0)
-	    {
-	    hi = ffnz(irq_hi[cpuid]);
-	    __clear_bit(hi,&irq_hi[cpuid]);
-
-	    while (irq_lo[cpuid][hi] != 0)
-		{
-		unsigned _irq;
-		lo = ffnz(irq_lo[cpuid][hi]);
-		__clear_bit(lo,&irq_lo[cpuid][hi]);
-		_irq = (hi << IPIPE_IRQ_ISHIFT) + lo;
-		__adeos_unlock_local_irq(adp_root,cpuid,_irq);
-		}
-	    }
-
-	goto propagate;
-	}
-
-    switch (irq)
-	{
-#ifdef CONFIG_SMP
-	case ADEOS_CRITICAL_IPI:
-	case ADEOS_SERVICE_IPI1:
-	XNARCH_PASSTHROUGH_IRQS
-
-	    /* Never lock out these ones. */
-	    break;
 #endif /* CONFIG_SMP */
 
-	default:
+static void xnshadow_shield_trampoline (unsigned irq)
 
-	    {
-	    hi = irq >> IPIPE_IRQ_ISHIFT;
-	    lo = irq & IPIPE_IRQ_IMASK;
+{
+#ifdef CONFIG_SMP
+    adeos_declare_cpuid;
 
-	    /* By not testing the Adeos lock bit (IPIPE_LOCK_FLAG) but
-	       rather our local one, we accept that some Linux driver
-	       forcibly unlocks the interrupt path for the root domain
-	       by calling the ->enable() or ->startup() IRQ descriptor
-	       handlers. In such a case, our marker would tell us that
-	       the IRQ is already locked whilst it is actually not at
-	       the Adeos-level. We do this since eager IRQ enabling by
-	       Linux is usually not part of the usual operations, but
-	       rather part of a recovery mode where synchronous
-	       replies from the hardware are expected; i.e.
-	       interrupts on such channel _must_ flow then. The cost
-	       for us is real-time operations in the Linux domain
-	       being preemptable by non real-time interrupt handling
-	       for this source until the next time the shield gets
-	       reasserted, but the gain is box stability. */
+    adeos_load_cpuid();	/* hw IRQs are off here, so this is safe. */
 
-	    if (!__test_and_set_bit(hi,&irq_hi[cpuid]))
-		if (!__test_and_set_bit(lo,&irq_lo[cpuid][hi]))
-		    __adeos_lock_irq(adp_root,cpuid,irq);
-	    }
-	}
-
- propagate:
+    if (!cpus_empty(shielded_cpus) && !cpu_isset(cpuid,shielded_cpus))
+	/* Lazy shield engagement on SMP. This saves us a costly IPI
+	   in engage_irq_shield() for the very same benefits. */
+	engage_irq_shield(cpuid);
+#endif /* CONFIG_SMP */
 
     adeos_propagate_irq(irq);
 }
@@ -297,17 +313,11 @@ static void xnshadow_shield (int iflag)
     if (iflag)
 	for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 	    adeos_virtualize_irq(irq,
-				 &xnshadow_shield_body,
+				 &xnshadow_shield_trampoline,
 				 NULL,
 				 IPIPE_DYNAMIC_MASK);
     for (;;)
 	adeos_suspend_domain();
-}
-
-static void xnshadow_shield_handler (unsigned virq)
-
-{
-    /* nop */
 }
 
 static void xnshadow_renice_handler (unsigned virq)
@@ -351,7 +361,8 @@ static void xnshadow_wakeup_handler (unsigned virq)
            counter-part (migrating a suspended task is cheap) */
         if (!cpu_isset(cpuid, task->cpus_allowed))
             set_cpus_allowed(task, cpumask_of_cpu(cpuid));
-#endif
+#endif /* CONFIG_SMP */
+
 	wake_up_process(task);
 	}
 }
@@ -1079,7 +1090,10 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		xnpod_delay(delay);
 
 		if (signal_pending(curr))
+		    {
+		    __xn_error_return(regs,-EINTR);
 		    request_syscall_restart(thread,regs);
+		    }
 		}
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
@@ -1832,8 +1846,6 @@ int xnshadow_init (void)
     adeos_virtualize_irq(sigvirq,&xnshadow_signal_handler,NULL,IPIPE_HANDLE_MASK);
     nicevirq = adeos_alloc_irq();
     adeos_virtualize_irq(nicevirq,&xnshadow_renice_handler,NULL,IPIPE_HANDLE_MASK);
-    shieldvirq = adeos_alloc_irq();
-    adeos_virtualize_irq(shieldvirq,&xnshadow_shield_handler,NULL,IPIPE_HANDLE_MASK);
 
     init_MUTEX_LOCKED(&gksync);
 
@@ -1852,7 +1864,7 @@ int xnshadow_init (void)
 
 #ifdef CONFIG_SMP
     adeos_virtualize_irq(ADEOS_SERVICE_IPI1,
-			 (void (*)(unsigned))&xnshadow_shield_handler,
+			 (void (*)(unsigned))&xnshadow_shield_disengage_handler,
 			 NULL,
 			 IPIPE_HANDLE_MASK);
 #endif /* CONFIG_SMP */
@@ -1886,7 +1898,6 @@ void xnshadow_cleanup (void)
     adeos_free_irq(gkvirq);
     adeos_free_irq(sigvirq);
     adeos_free_irq(nicevirq);
-    adeos_free_irq(shieldvirq);
     adeos_free_ptdkey(nkgkptd);
 
     adeos_unregister_domain(&irq_shield);

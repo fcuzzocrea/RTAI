@@ -151,8 +151,10 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
         /* Put the faulting thread in dormant state since XNSUSP might
            be cleared as the application continues. */
 
-        xnpod_suspend_thread(xnpod_current_thread(),XNDORMANT,XN_INFINITE,NULL);
-
+        xnpod_suspend_thread(xnpod_current_thread(),
+			     XNDORMANT,
+			     XN_INFINITE,
+			     NULL);
         return 1;
         }
 

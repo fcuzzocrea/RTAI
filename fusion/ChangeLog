@@ -1,4 +1,15 @@
+2004-10-08  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c: Yet another IRQ shield implementation.
+
 2004-10-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_substitute_syscall): Make sure we
+	will attempt to restart the nanosleep() substitute if interrupted
+	by a signal.
+
+	* nucleus/fusion.c (__pthread_sleep_rt): Return -EINTR upon
+	interrupt.
 
 	* nucleus/pod.c (xnpod_add_hook, xnpod_remove_hook): Fix an
 	obscure SMP race that occurred when using job control on

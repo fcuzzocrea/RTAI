@@ -1,3 +1,16 @@
+2004-06-23  Philippe Gerum  <rpm@xenomai.org>
+
+        * rtai-core/include/asm-i386/rtai_lxrt.h: Make
+	lxrt_switch_context() mostly look like kilauea's version.
+
+	* rtai-core/sched/rtai: Force regparm(0) for all task trampolines so
+	that we are still safe if CONFIG_REGPARM is enabled.
+
+2004-06-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/rtai/sys_lxrt.c: Have prototypes using
+	asmlinkage in sync between definition and declaration.
+
 2004-06-22  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/sched_rtai/sched_lxrt.c: modified (UN)LOCK_LINUX to

@@ -588,7 +588,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 	return 0;
 }
 
-long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
+asmlinkage long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
 
 {
     long long retval;
@@ -604,7 +604,8 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
     return retval;
 }
 
-int rtai_lxrt_fastpath (void)
+asmlinkage int rtai_lxrt_fastpath (void)
+
 {
     /* Returns zero if we may process pending Linux work on our return
        path (i.e. long return path through reschedule), or non-zero if

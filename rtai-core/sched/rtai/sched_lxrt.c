@@ -383,6 +383,10 @@ int rt_kthread_init(RT_TASK *task, void (*rt_thread)(int), int data,
 #ifdef USE_RTAI_TASKS
 
 static void rt_startup(void(*rt_thread)(int), int data)
+/* Just in case CONFIG_REGPARM is enabled... */
+    __attribute__ ((regparm(0)));
+
+static void rt_startup(void(*rt_thread)(int), int data)
 {
 	extern int rt_task_delete(RT_TASK *);
 	rt_global_sti();
@@ -660,30 +664,6 @@ do { \
 #define KEXECTIME()
 #define UEXECTIME()
 #endif
-
-static inline void lxrt_context_switch (struct task_struct *prev,
-					 struct task_struct *next,
-					 int cpuid)
-{
-    struct mm_struct *oldmm = prev->active_mm;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-    switch_mm(oldmm,next->active_mm,next,cpuid);
-#else /* >= 2.6.0 */
-    switch_mm(oldmm,next->active_mm,next);
-#endif /* < 2.6.0 */
-
-    if (!next->mm)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	enter_lazy_tlb(oldmm,next,cpuid);
-#else /* >= 2.6.0 */
-        enter_lazy_tlb(oldmm,next);
-#endif /* < 2.6.0 */
-
-    lxrt_switch_to(prev,next,prev);
-    barrier();
-
-}
 
 static inline void make_current_soft(RT_TASK *rt_current)
 {

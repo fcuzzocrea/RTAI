@@ -166,6 +166,10 @@ static struct { int srq, in, out; void *mp[MAX_FRESTK_SRQ]; } frstk_srq;
 
 
 static void rt_startup(void(*rt_thread)(int), int data)
+/* Just in case CONFIG_REGPARM is enabled... */
+    __attribute__ ((regparm(0)));
+
+static void rt_startup(void(*rt_thread)(int), int data)
 {
 	hard_sti();
 	rt_current->exectime[1] = rdtsc();

@@ -1649,6 +1649,12 @@ static void rtai_domain_entry (int iflag)
 int __rtai_hal_init (void)
 
 {
+#ifdef CONFIG_X86_LOCAL_APIC
+        if (!test_bit(X86_FEATURE_APIC, boot_cpu_data.x86_capability)) {
+                printk("RTAI[hal]: ERROR, LOCAL APIC CONFIGURED BUT NOT AVAILABLE/ENABLED\n");
+                return -1;
+        }
+#endif
     unsigned long flags;
     int key0, key1;
     adattr_t attr;

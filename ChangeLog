@@ -1,3 +1,12 @@
+2004-03-01  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/ipc/tbx/tbx.c: totally rewritten as RTAI own messages queue,
+	  legacy tbx support comes through compatibility wrappers in 
+	  rtai_tbx.h.
+
+	* base/include/rtai_tbx.h: totally rewritten as said above, related
+	  header file chaged accordingly.
+
 2004-02-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.immed: optionally force alignement to resume time, 

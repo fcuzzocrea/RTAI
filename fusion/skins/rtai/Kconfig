@@ -1,0 +1,80 @@
+config RTAI_SKIN_NATIVE
+	bool "RTAI API"
+	default y
+	help
+
+	The native RTAI API.
+
+config RTAI_OPT_NATIVE_REGISTRY
+	bool "Registry support"
+	depends on RTAI_SKIN_NATIVE
+	default y
+	help
+	
+	The registry is used to bind real-time objects created by the
+	RTAI skin to a symbolic name, so that they can be further
+	retrieved and shared by real-time applications regardless of
+	their runtime space (i.e. kernel or user). Each named object
+	occupies a registry slot.
+
+config RTAI_OPT_NATIVE_REGISTRY_NRSLOTS
+	string "Number of registry slots"
+	depends on RTAI_OPT_NATIVE_REGISTRY
+	default 512
+	help
+	
+	This option sets the maximum number of real-time objects the
+	registry can handle.
+
+config RTAI_OPT_NATIVE_PIPE
+	bool "Inter-domain pipe support"
+	depends on RTAI_SKIN_NATIVE
+	default y
+	help
+	
+	Inter-domain pipes are bi-directional FIFO communication
+	channels allowing data exchange between real-time tasks
+	and regular user-space processes. Pipes natively preserve
+	message boundaries, but can also be used in byte stream mode
+	from kernel to user space.
+
+config RTAI_OPT_NATIVE_PIPE_BUFSZ
+	string "Bytes in buffer space"
+	depends on RTAI_OPT_NATIVE_PIPE
+	default 4096
+	help
+	
+	This option sets the memory size available for buffering when
+	the pipe is used in byte stream mode.
+
+config RTAI_OPT_NATIVE_SEM
+	bool "Counting semaphore support"
+	depends on RTAI_SKIN_NATIVE
+	default y
+	help
+	
+	Counting semaphore support.
+
+config RTAI_OPT_NATIVE_EVENT
+	bool "Event flag support"
+	depends on RTAI_SKIN_NATIVE
+	default y
+	help
+	
+	Event flag support.
+
+config RTAI_OPT_NATIVE_MUTEX
+	bool "Mutex support"
+	depends on RTAI_SKIN_NATIVE
+	default y if RTAI_OPT_NATIVE_COND=y
+	help
+	
+	Mutex support.
+
+config RTAI_OPT_NATIVE_COND
+	bool "Condition variable support"
+	depends on RTAI_SKIN_NATIVE
+	enable RTAI_OPT_NATIVE_MUTEX
+	help
+	
+	Condition variable support.

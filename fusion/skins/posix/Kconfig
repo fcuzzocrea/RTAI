@@ -1,0 +1,6 @@
+config RTAI_SKIN_POSIX
+	bool "POSIX API"
+	default y
+	help
+
+	A POSIX-compliant skin.

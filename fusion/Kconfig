@@ -1,0 +1,155 @@
+config MODULES
+	bool
+	default y
+
+config RTAI_VERSION
+	string
+	default "O.5 (fusion)"
+
+menu "General"
+
+config RTAI_INSTALLDIR
+	string "Installation directory"
+	default "/usr/realtime"
+
+	help
+	This option defines the directory where the various RTAI
+	files will be installed on your target system.
+
+	This directory may be changed if you double-click in the area
+	named "Value". The default installation directory is
+	/usr/realtime.
+
+config RTAI_LINUXDIR
+	string "Linux source tree"
+	default "/usr/src/linux"
+	help
+	This variable contains the directory of your previously
+	patched Linux kernel. As explained before, you can changed the
+	value of the Linux source tree which is fixed by default to
+	/usr/src/linux.
+
+menu "RTAI Documentation"
+
+config RTAI_DOC_DOX
+	bool "Build RTAI Doxygen documentation (HTML)"
+	default n
+	help
+	This option causes the Doxygen-based RTAI documentation to be
+	built. This option is intended for people actually writing
+	documentation and who want to update the pre-built manuals,
+	regular users can just use the latter directly. You will need
+	the Doxygen toolsuite for regenerating the documentation.
+
+config RTAI_DOC_LATEX_NONSTOP
+        bool "Enable LaTeX verbose output"
+        default n
+        help
+        By default, all documentation generated with LaTeX uses the 
+        silent (batchmode) of LaTeX. If this option is enabled, the 
+        verbose (nonstopmode) of LaTeX will be used instead. This 
+        option is mainly intended for people writing RTAI 
+        documentation.
+
+config RTAI_DOC_DBX
+	bool "Build DocBook XML documentation (HTML/PDF)"
+	default n
+	help
+	This option causes the DocBook XML based RTAI documentation to be
+	built. This option is intended for people actually writing
+	documentation and who want to update the pre-built manuals,
+	regular users can just use the latter directly.
+
+config RTAI_DBX_NET
+        bool "Let the DocBook XML tools use network"
+	depends on RTAI_DOC_DBX
+        default n
+        help
+        Let the DocBook tools use internet to fetch the DTD and XSL stylesheets.
+        If disabled, the documentation generation will fail if the necessary 
+        DTD(s) and XSL stylesheets can not be found on the local computer.
+
+config RTAI_DBX_ROOT
+        string "Docbook XML root"
+	depends on RTAI_DOC_DBX
+        default ""
+        help
+        Specify the DocBook XML root (that is, the directory where docbook.dtd
+        should be taken). Leave blank to let configure try the "well-known"
+        locations.
+
+config RTAI_DBX_XSL_ROOT
+        string "Docbook XML XSL stylesheet root"
+	depends on RTAI_DOC_DBX
+        default ""
+        help
+        Specify the DocBook XML XSL root. Leave blank to let configure try the
+        "well-known" locations.
+
+endmenu
+
+config RTAI_OPT_EXPERT
+	bool "Enable expert configuration mode"
+	default n
+	help
+	Enables expert configuration mode.
+
+config RTAI_OPT_KSYMS
+	bool "Enable debug symbols in modules"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+	This options adds the -g flag when compiling
+	kernel modules.
+
+config RTAI_OPT_USYMS
+	bool "Enable debug symbols in user-space programs"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+
+	This options adds the -g flag when compiling user-space
+	programs.
+
+config RTAI_OPT_DEBUG
+	bool "Enable debug support in nucleus"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+	
+	This option activates runtime checking of the Xenomai
+	nucleus state.
+
+config RTAI_MAINT
+	bool "Enable maintainer mode"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+
+	This option will activate the '--enable-maintainer-mode'
+	option in the configure scripts. For more information, refer
+	to the autoconf documentation:
+	http://sources.redhat.com/autobook/autobook/autobook_26.html#SEC26
+
+config RTAI_MAINT_AUTOTOOLS
+	bool "Enable Autoconf/Automake maintainer mode"
+	depends on RTAI_MAINT
+	default n
+
+choice
+	optional
+	prompt "Private maintainer profiles"
+	depends on RTAI_MAINT
+
+config RTAI_MAINT_NONE
+	bool "Use standard settings"
+
+config RTAI_MAINT_GCH
+	bool "Use settings from gilles.chanteperdrix()laposte!net"
+
+config RTAI_MAINT_PGM
+	bool "Use settings for rpm()xenomai!org"
+
+endchoice
+
+endmenu

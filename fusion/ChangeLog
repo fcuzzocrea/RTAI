@@ -1,3 +1,14 @@
+2004-10-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_add_hook, xnpod_remove_hook): Fix an
+	obscure SMP race that occurred when using job control on
+	testsuite/latency.
+
+	* nucleus/shadow.c (xnshadow_linux_sysentry): Reread the current
+	Xenomai thread pointer for calling request_syscall_restart();
+	it might have been NULL on entry then only set during the just
+	performed syscall as a result of the initial shadow mapping.
+
 2004-10-07  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* testsuite/cruncher/cruncher.c (cruncher_thread): Test the value

@@ -70,8 +70,10 @@
 #define XNTHREAD_SPARE3  0x80000000
 #define XNTHREAD_SPARES  0xf0000000
 
+#ifdef __RTAI_SIM__
 #define XNRUNNING  XNTHREAD_SPARE0	/* Pseudo-status (must not conflict with system bits) */
 #define XNDELETED  XNTHREAD_SPARE1	/* idem. */
+#endif /* __RTAI_SIM__ */
 
 #define XNTHREAD_INVALID_ASR  ((void (*)(xnsigmask_t))0)
 

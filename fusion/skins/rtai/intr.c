@@ -53,9 +53,11 @@ void __intr_pkg_cleanup (void)
  * \fn int rt_intr_create (RT_INTR *intr,
                            unsigned irq,
                            rt_isr_t isr)
- * \brief Create an interrupt object.
+ * \brief Create an interrupt object from kernel space.
  *
- * Initializes and associates an interrupt object with an IRQ line.
+ * Initializes and associates an interrupt object with an IRQ line. In
+ * kernel space, interrupts are immediately notified through a
+ * user-defined handler or ISR (interrupt service routine).
  *
  * When an interrupt occurs on the given @a irq line, the ISR is fired
  * in order to deal with the hardware event. The interrupt service
@@ -414,6 +416,53 @@ int rt_intr_inquire (RT_INTR *intr,
     return err;
 }
 
+/*! 
+ * \fn int rt_intr_create (RT_INTR *intr,
+                           unsigned irq,
+                           int mode)
+ * \brief Create an interrupt object from user-space.
+ *
+ * Initializes and associates an interrupt object with an IRQ line
+ * from a user-space application. 
+ *
+ * When an interrupt occurs on the given @a irq line, any task pending
+ * on the interrupt object through rt_intr_wait() is imediately awaken
+ * in order to deal with the hardware event. The interrupt service
+ * code may then call any RTAI service available from user-space.
+ *
+ * @param intr The address of a interrupt object descriptor RTAI will
+ * use to store the object-specific data.  This descriptor must always
+ * be valid while the object is active therefore it must be allocated
+ * in permanent memory.
+ *
+ * @param irq The hardware interrupt channel associated with the
+ * interrupt object. This value is architecture-dependent.
+ *
+ * @param The interrupt object creation mode. The following flag can
+ * be OR'ed into this bitmask:
+ *
+ * - I_AUTOENA asks RTAI to re-enable the IRQ line before awakening
+ * the interrupt server task. This flag is functionally equivalent as
+ * always returning RT_INTR_ENABLE from a kernel space interrupt
+ * handler.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EBUSY is returned if the interrupt line is already in use by
+ * another interrupt object. Only a single interrupt object can be
+ * associated to any given interrupt line using rt_intr_create() at
+ * any time, regardless of the caller's execution space (kernel or
+ * user).
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
 /**
  * @fn int rt_intr_wait(RT_INTR *intr, RTIME timeout)
  * @brief Wait for the next interrupt.
@@ -424,6 +473,11 @@ int rt_intr_inquire (RT_INTR *intr,
  * except those also undergoing an interrupt or alarm wait (see
  * rt_alarm_wait()) - so that it would preempt any of them under
  * normal circumstances (i.e. no scheduler lock).
+ *
+ * Interrupt receipts are logged if they cannot be delivered
+ * immediately to some interrupt server task, so that a call to
+ * rt_intr_wait() might return immediately if an IRQ is already
+ * pending on entry of the service.
  *
  * @param intr The descriptor address of the awaited interrupt.
  *
@@ -440,10 +494,6 @@ int rt_intr_inquire (RT_INTR *intr,
  * - -EINVAL is returned if @a intr is not an interrupt object
  * descriptor, or @a timeout is equal to TM_NONBLOCK.
  *
- * - -EPERM is returned if this service was called from a context
- * which cannot sleep (e.g. interrupt, non-realtime or scheduler
- * locked).
- *
  * - -EIDRM is returned if @a intr is a deleted interrupt object
  * descriptor, including if the deletion occurred while the caller was
  * waiting for its next interrupt.
@@ -457,7 +507,8 @@ int rt_intr_inquire (RT_INTR *intr,
  *
  * - User-space task
  *
- * Rescheduling: always.
+ * Rescheduling: always, unless an interrupt is already pending on
+ * entry.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In

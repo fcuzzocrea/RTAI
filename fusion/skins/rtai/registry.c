@@ -925,7 +925,7 @@ int rt_registry_remove_safe (rt_handle_t handle, RTIME timeout)
  *
  * @return The memory address of the object's descriptor is returned
  * on success. Otherwise, NULL is returned if @a handle does not
- * reference a registered object, or if @handle is equal to
+ * reference a registered object, or if @a handle is equal to
  * RT_REGISTRY_SELF but the current context is not a real-time task.
  *
  * Environments:
@@ -998,7 +998,7 @@ void *rt_registry_get (rt_handle_t handle)
  *
  * @return The decremented lock count is returned upon success. Zero
  * is also returned if @a handle does not reference a registered
- * object, or if @handle is equal to RT_REGISTRY_SELF but the current
+ * object, or if @a handle is equal to RT_REGISTRY_SELF but the current
  * context is not a real-time task.
  *
  * Environments:
@@ -1072,7 +1072,7 @@ u_long rt_registry_put (rt_handle_t handle)
  *
  * @return The memory address of the object's descriptor is returned
  * on success. Otherwise, NULL is returned if @a handle does not
- * reference a registered object, or if @handle is equal to
+ * reference a registered object, or if @a handle is equal to
  * RT_REGISTRY_SELF but the current context is not a real-time task.
  *
  * Environments:

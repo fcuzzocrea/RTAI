@@ -216,7 +216,9 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
 	
 static inline void xntimer_next_remote_shot (xnsched_t *sched)
 {
+#ifdef CONFIG_SMP
     xnarch_send_timer_ipi(xnarch_cpumask_of_cpu(xnsched_cpu(sched)));
+#endif /* CONFIG_SMP */
 }
 
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */

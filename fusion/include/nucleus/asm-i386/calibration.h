@@ -23,30 +23,32 @@
 #include <rtai_config.h>
 #include <asm/processor.h>
 
+#define __bogomips (current_cpu_data.loops_per_jiffy/(500000/HZ))
+
 static inline unsigned long xnarch_get_sched_latency (void)
 
 {
 #if CONFIG_RTAI_HW_SCHED_LATENCY != 0
-#define __sched_latency__ CONFIG_RTAI_HW_SCHED_LATENCY
+#define __sched_latency CONFIG_RTAI_HW_SCHED_LATENCY
 #else
 
 #if CONFIG_X86_LOCAL_APIC
-#define __sched_latency__ 6800
+#define __sched_latency 6800
 #else /* !CONFIG_X86_LOCAL_APIC */
 
 /* Use the bogomips formula to identify low-end x86 boards when using
    the 8254 PIT. The following is still grossly experimental and needs
    work (i.e. more specific cases), but the approach is definitely
    saner than previous attempts to guess such value dynamically. */
-#define __sched_latency__ \
-(current_cpu_data.loops_per_jiffy/(500000/HZ) < 200 ? 20500 : 13200)
+#define __sched_latency (__bogomips < 200 ? 20500 : 13200)
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 #endif /* CONFIG_RTAI_HW_SCHED_LATENCY */
 
-    return __sched_latency__;
+    return __sched_latency;
 }
 
-#undef __sched_latency__
+#undef __sched_latency
+#undef __bogomips
 
 #endif /* !_RTAI_ASM_I386_CALIBRATION_H */

@@ -21,21 +21,25 @@
 #define _RTAI_ASM_PPC_CALIBRATION_H
 
 #include <rtai_config.h>
+#include <asm/delay.h>
+
+#define __bogomips (loops_per_jiffy/(500000/HZ))
 
 static inline unsigned long xnarch_get_sched_latency (void)
 
 {
 #if CONFIG_RTAI_HW_SCHED_LATENCY != 0
-#define __sched_latency__ CONFIG_RTAI_HW_SCHED_LATENCY
+#define __sched_latency CONFIG_RTAI_HW_SCHED_LATENCY
 #else
 
-#define __sched_latency__ 4700
+#define __sched_latency 18500
 
 #endif /* CONFIG_RTAI_HW_SCHED_LATENCY */
 
-    return __sched_latency__;
+    return __sched_latency;
 }
 
-#undef __sched_latency__
+#undef __sched_latency
+#undef __bogomips
 
 #endif /* !_RTAI_ASM_PPC_CALIBRATION_H */

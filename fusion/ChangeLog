@@ -1,3 +1,8 @@
+2004-09-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h (xnarch_switch_to): Finally
+	unstaticalize cr0.
+
 2004-09-09  Evgeny Sinelnikov <linux4sin@mail.ru>
 
 	* configure.in, makefile, scripts/rtai-config.in: Correctly handle

@@ -473,7 +473,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 {
     struct task_struct *outproc = out_tcb->active_task;
     struct task_struct *inproc = in_tcb->user_task;
-    static int cr0;             /* FIXME: not SMP safe. */
+    int cr0;
 
     if (out_tcb->user_task)
 	{

@@ -24,8 +24,7 @@ void latency (void *cookie)
 {
     RTIME itime, expected, period;
     int minj, maxj = -10000000;
-    int dt, err, count;
-    long long sumj = 0;
+    int dt, err, count, sumj;
 
     err = rt_timer_start(RT_TIMER_ONESHOT);
 

@@ -660,7 +660,7 @@ static int irq_read_proc (char *page,
     int len = 0, cpuid, irq;
     char *p = page;
 
-    p += sprintf(p,"IRQ  ");
+    p += sprintf(p,"IRQ ");
 
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	p += sprintf(p,"        CPU%d",cpuid);
@@ -673,7 +673,7 @@ static int irq_read_proc (char *page,
 	p += sprintf(p,"\n%3d:",irq);
 
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	    p += sprintf(p,"  %12lu",rthal_realtime_irq[irq].hits[cpuid]);
+	    p += sprintf(p,"%12lu",rthal_realtime_irq[irq].hits[cpuid]);
 	}
 
     p += sprintf(p,"\n");

@@ -37,6 +37,9 @@
  * that is already locked by another task is blocked until the latter
  * unlocks the mutex first.
  *
+ * RTAI mutex services enforce a priority inheritance protocol in
+ * order to solve priority inversions.
+ *
  *@{*/
 
 #include <nucleus/pod.h>

@@ -1,7 +1,10 @@
 2005-03-23  Philippe Gerum  <rpm@xenomai.org>
 
-	* include/nucleus/asm-i386/system.h: Enclose all clts/stts related
-	ops inside CONFIG_RTAI_HW_FPU sections.
+	* nucleus/pod.c (xnpod_schedule, xnpod_schedule_runnable): Get rid
+	of the borked sanity check for NULL return upon pulling the next
+	thread from the readyq. It could not work (link2thread() would
+	garble the NULL pointer thus preventing the detection of such
+	value) and is now useless anyway.
 
 2005-03-22  Philippe Gerum  <rpm@xenomai.org>
 

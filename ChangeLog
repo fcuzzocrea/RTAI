@@ -1,6 +1,10 @@
-2004-11-02  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+2004-11-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-	* rtai-core/ipc/sem/sem.c: fixed mutex release in cond_wait functions.
+	* rtai-core/ipc/sem/sem.c: recurred acquisition of RES_SEMs can now be 
+	inferred from wait functions return
+
+	* rtai-core/sched/rtai/sched_lxrt.c: hardened kernel threads exit,
+	instead of just suspending themselves.
 
 2004-10-25  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

@@ -3,11 +3,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>1.2. Porting traditional RTOS-based applications to GNU/Linux</title>
 <link rel="stylesheet" href="../css/rtai.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
-<link rel="home" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
+<meta name="generator" content="DocBook XSL Stylesheets V1.66.1">
+<link rel="start" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux">
 <link rel="up" href="whitepaper.html" title="1. White paper">
-<link rel="previous" href="introduction.html" title="1.1. Introduction">
+<link rel="prev" href="introduction.html" title="1.1. Introduction">
 <link rel="next" href="common-framework.html" title="1.3. A common emulation framework">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -17,7 +17,7 @@
 <tr>
 <td width="20%" align="left">
 <a accesskey="p" href="introduction.html"><img src="../pictures/prev.gif" alt="Prev"></a> </td>
-<th width="60%" align="center">1. White paper</th>
+<th width="60%" align="center">1. <span class="level1">White paper</span></th>
 <td width="20%" align="right"> <a accesskey="n" href="common-framework.html"><img src="../pictures/next.gif" alt="Next"></a>
 </td>
 </tr>
@@ -25,11 +25,8 @@
 <hr>
 </div>
 <div class="sect2" lang="en">
-<div class="titlepage">
-<div><div><h3 class="title">
-<a name="porting-rtos"></a>1.2. Porting traditional RTOS-based applications to GNU/Linux</h3></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h3 class="title">
+<a name="porting-rtos"></a>1.2. Porting traditional RTOS-based applications to GNU/Linux</h3></div></div></div>
 <p>The idea of using GNU/Linux as an embedded system
       with real-time capabilities is not novel. The reader can refer
       to Jerry Epplin's article in the October 97 issue of Embedded
@@ -42,11 +39,8 @@
       other free operating system to which the application could be
       ported.</p>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="highlevel-code"></a>1.2.1. <span class="level3">Limited high-level code modification</span></h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="highlevel-code"></a>1.2.1. <span class="level3">Limited high-level code modification</span></h4></div></div></div>
 <p>Keeping the initial design and implementation of a hard
 	real-time application when attempting to port it to another
 	architecture is obviously of the greatest
@@ -71,11 +65,8 @@
 	exists.</p>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="rtos-compat"></a>1.2.2. RTOS behavioural compatibility</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="rtos-compat"></a>1.2.2. RTOS behavioural compatibility</h4></div></div></div>
 <p>During the past years, major embedded RTOS, such as
 	VRTX, VxWorks, pSOS+ and a few others, have implemented a
 	real-time kernel behaviour which has become a de facto
@@ -105,11 +96,8 @@
 	situations won't be identical.</p>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="reevalutation"></a>1.2.3. Reevaluation of the real-time constraints</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="reevalutation"></a>1.2.3. Reevaluation of the real-time constraints</h4></div></div></div>
 <p>Making GNU/Linux a hard real-time system is currently
 	achieved by using a co-kernel approach which takes control of
 	the hardware interrupt management, and allows running
@@ -167,11 +155,8 @@
 	</p>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="existing-solutions"></a>1.2.4. Some existing solutions</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="existing-solutions"></a>1.2.4. Some existing solutions</h4></div></div></div>
 <p>In order to get whether hard or soft real-time support,
 	several GNU/Linux-based solutions exist [5][6]. It is not the
 	purpose of this paper to present them all exhaustively. We
@@ -180,12 +165,9 @@
 	taskings, depending on the actual real-time constraints
 	imposed by the application.</p>
 <div class="sect4" lang="en">
-<div class="titlepage">
-<div><div><h5 class="title">
+<div class="titlepage"><div><div><h5 class="title">
 <a name="partial-rewriting"></a>1.2.4.1. Partial rewriting using a real-time GNU/Linux
-	  extension</h5></div></div>
-<div></div>
-</div>
+	  extension</h5></div></div></div>
 <p><span class="emphasis"><em>Real-time enabling GNU/Linux using
 	  RTAI.</em></span> Strictly speaking Linux/RTAI [7] is not a
 	  real-time operating system but rather a real-time Linux
@@ -232,11 +214,8 @@
 	  RTAI interface.</p>
 </div>
 <div class="sect4" lang="en">
-<div class="titlepage">
-<div><div><h5 class="title">
-<a name="uspace-emul"></a>1.2.4.2. Unconstrained user-space emulations</h5></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h5 class="title">
+<a name="uspace-emul"></a>1.2.4.2. Unconstrained user-space emulations</h5></div></div></div>
 <p>A few traditional RTOS emulators exists in the free
 	  software world. There are generally designed on top of the
 	  GNU/Linux POSIX 1003.1-1996 layer, and allow to emulate the
@@ -311,7 +290,7 @@
 </td>
 </tr>
 <tr>
-<td width="40%" align="left" valign="top">1.1. Introduction </td>
+<td width="40%" align="left" valign="top">1.1. <span class="level2">Introduction</span> </td>
 <td width="20%" align="center"><a accesskey="h" href="index.html"><img src="../pictures/home.gif" alt="Home"></a></td>
 <td width="40%" align="right" valign="top"> 1.3. A common emulation framework</td>
 </tr>

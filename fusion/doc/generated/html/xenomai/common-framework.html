@@ -3,11 +3,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>1.3. A common emulation framework</title>
 <link rel="stylesheet" href="../css/rtai.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
-<link rel="home" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
+<meta name="generator" content="DocBook XSL Stylesheets V1.66.1">
+<link rel="start" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux">
 <link rel="up" href="whitepaper.html" title="1. White paper">
-<link rel="previous" href="porting-rtos.html" title="1.2. Porting traditional RTOS-based applications to GNU/Linux">
+<link rel="prev" href="porting-rtos.html" title="1.2. Porting traditional RTOS-based applications to GNU/Linux">
 <link rel="next" href="nucleus.html" title="1.4. Nucleus description">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -17,7 +17,7 @@
 <tr>
 <td width="20%" align="left">
 <a accesskey="p" href="porting-rtos.html"><img src="../pictures/prev.gif" alt="Prev"></a> </td>
-<th width="60%" align="center">1. White paper</th>
+<th width="60%" align="center">1. <span class="level1">White paper</span></th>
 <td width="20%" align="right"> <a accesskey="n" href="nucleus.html"><img src="../pictures/next.gif" alt="Next"></a>
 </td>
 </tr>
@@ -25,17 +25,11 @@
 <hr>
 </div>
 <div class="sect2" lang="en">
-<div class="titlepage">
-<div><div><h3 class="title">
-<a name="common-framework"></a>1.3. A common emulation framework</h3></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h3 class="title">
+<a name="common-framework"></a>1.3. A common emulation framework</h3></div></div></div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="rtos-behaviours"></a>1.3.1. Common traditional RTOS behaviours</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="rtos-behaviours"></a>1.3.1. Common traditional RTOS behaviours</h4></div></div></div>
 <p>In order to build a generic and versatile framework for
 	emulating traditional RTOS, we chose to concentrate on a set
 	of common behaviours they all exhibit. A limited set of
@@ -44,11 +38,8 @@
 	emulators, has also been retained. The basic behaviours
 	selected cover four distinct fields:</p>
 <div class="sect4" lang="en">
-<div class="titlepage">
-<div><div><h5 class="title">
-<a name="multi-threading"></a>1.3.1.1. Multi-threading</h5></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h5 class="title">
+<a name="multi-threading"></a>1.3.1.1. Multi-threading</h5></div></div></div>
 <p>Multi-threading provides the fundamental mechanism for
 	  an application to control and react to multiple, discrete
 	  external events. The nucleus provides the basic
@@ -137,11 +128,8 @@
 	  among the pended resources is available.</p>
 </div>
 <div class="sect4" lang="en">
-<div class="titlepage">
-<div><div><h5 class="title">
-<a name="thread-synchro"></a>1.3.1.2. Thread synchronization</h5></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h5 class="title">
+<a name="thread-synchro"></a>1.3.1.2. Thread synchronization</h5></div></div></div>
 <p>Traditional RTOS provide a large spectrum of
 	  inter-thread communication facilities involving thread
 	  synchronization, such as semaphores, message queues, event
@@ -167,11 +155,8 @@
 	  action resumes all waiters atomically.</p>
 </div>
 <div class="sect4" lang="en">
-<div class="titlepage">
-<div><div><h5 class="title">
-<a name="it-management"></a>1.3.1.3. Interrupt management</h5></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h5 class="title">
+<a name="it-management"></a>1.3.1.3. Interrupt management</h5></div></div></div>
 <p>Since the handling of interrupts is one of the least
 	  well defined areas in RTOS design, the nucleus focuses on
 	  providing a simple mechanism with sufficient hooks for
@@ -192,11 +177,8 @@
 	  hardware.</p>
 </div>
 <div class="sect4" lang="en">
-<div class="titlepage">
-<div><div><h5 class="title">
-<a name="time-management"></a>1.3.1.4. Time management</h5></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h5 class="title">
+<a name="time-management"></a>1.3.1.4. Time management</h5></div></div></div>
 <p>Traditional RTOS usually represent time in units of
 	  ticks. These are clock-specific time units and are usually
 	  the period of the hardware timer interrupt, or a multiple
@@ -217,11 +199,8 @@
 </div>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="abstraction-layer"></a>1.3.2. An architecture-neutral abstraction layer</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="abstraction-layer"></a>1.3.2. An architecture-neutral abstraction layer</h4></div></div></div>
 <p>After having selected the basic behaviours shared by
 	traditional RTOS, we have implemented them in a nucleus
 	exporting a few service classes. These generic services will
@@ -236,11 +215,8 @@
 	low-level interface for the target platform.</p>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="rt-capabilities"></a>1.3.3. Real-time capabilities</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="rt-capabilities"></a>1.3.3. Real-time capabilities</h4></div></div></div>
 <p>The host software architecture is expected to provide
 	the primary real-time capabilities to the RTOS abstraction
 	layer. Basically, the host real-time layer must handle at
@@ -261,11 +237,8 @@
 	</p>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="benefits"></a>1.3.4. Benefits</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="benefits"></a>1.3.4. Benefits</h4></div></div></div>
 <p>Xenomai aims at helping application designers relying on
 	traditional RTOS to move as smoothly as possible to a
 	GNU/Linux-based execution environment, without having to

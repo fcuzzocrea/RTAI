@@ -3,11 +3,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>1.4. Nucleus description</title>
 <link rel="stylesheet" href="../css/rtai.css" type="text/css">
-<meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
-<link rel="home" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
+<meta name="generator" content="DocBook XSL Stylesheets V1.66.1">
+<link rel="start" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux">
 <link rel="up" href="whitepaper.html" title="1. White paper">
-<link rel="previous" href="common-framework.html" title="1.3. A common emulation framework">
+<link rel="prev" href="common-framework.html" title="1.3. A common emulation framework">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div class="navheader">
@@ -16,28 +16,22 @@
 <tr>
 <td width="20%" align="left">
 <a accesskey="p" href="common-framework.html"><img src="../pictures/prev.gif" alt="Prev"></a> </td>
-<th width="60%" align="center">1. White paper</th>
+<th width="60%" align="center">1. <span class="level1">White paper</span></th>
 <td width="20%" align="right"> </td>
 </tr>
 </table>
 <hr>
 </div>
 <div class="sect2" lang="en">
-<div class="titlepage">
-<div><div><h3 class="title">
-<a name="nucleus"></a>1.4. Nucleus description</h3></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h3 class="title">
+<a name="nucleus"></a>1.4. Nucleus description</h3></div></div></div>
 <p>RTOS emulations are software modules which connect to
 	the nucleus through the pod abstraction. The pod is
 	responsible for the critical housekeeping chores, and the
 	real-time scheduling of threads.</p>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="multi-threading-support"></a>1.4.1. Multi-threading support</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="multi-threading-support"></a>1.4.1. Multi-threading support</h4></div></div></div>
 <p> The nucleus provides thread object (xnthread) and
 	  pod (xnpod) abstractions which exhibit the following
 	  characteristics:</p>
@@ -70,11 +64,8 @@
 	</p>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="synchro-support"></a>1.4.2. Basic synchronization support</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="synchro-support"></a>1.4.2. Basic synchronization support</h4></div></div></div>
 <p>The nucleus provides a synchronization object
 	  abstraction <span class="emphasis"><em>(xnsynch)</em></span> aimed at
 	  implementing the common behaviour of RTOS resources, which
@@ -91,11 +82,8 @@
 	</p>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="timer-clock"></a>1.4.3. Timer and clock management</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="timer-clock"></a>1.4.3. Timer and clock management</h4></div></div></div>
 <p>The nucleus needs a time source to provide the
 	  time-related services to the upper interfaces. The timer
 	  hardware so that a user-defined routine is called according
@@ -119,11 +107,8 @@
 	  system for instance.</p>
 </div>
 <div class="sect3" lang="en">
-<div class="titlepage">
-<div><div><h4 class="title">
-<a name="memory-allocation"></a>1.4.4. Basic memory allocation</h4></div></div>
-<div></div>
-</div>
+<div class="titlepage"><div><div><h4 class="title">
+<a name="memory-allocation"></a>1.4.4. Basic memory allocation</h4></div></div></div>
 <p>Xenomai's nucleus provides dynamic memory allocation
 	  support with real-time guarantee, based on McKusick's and
 	  Karels' proposal for a general purpose memory

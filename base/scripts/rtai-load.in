@@ -56,10 +56,16 @@ fi
 stanza=`grep "^[$spc]*$target_name[$spc]*:" $run_info_file`
 
 if test "x$stanza" = x; then
-   echo "rtai-load: cannot find run info for target $target_name"
-   exit 2
+   have_user_command_option=`cut -d: -f1 .runinfo | grep user_command`
+   if test "x$have_user_command_option" = x; then
+       echo "passo di qui"
+       echo "rtai-load: cannot find run info for target $target_name"
+       exit 2
+   else
+       target_name=user_command
+       stanza=`grep "^[$spc]*$target_name[$spc]*:" $run_info_file`
+   fi
 fi
-
 
 rtai_moddir=`grep "^[$spc]*rtai_moddir[$spc]*=" $run_info_file`
 user_moddir=`grep "^[$spc]*user_moddir[$spc]*=" $run_info_file`
@@ -81,6 +87,11 @@ fi
 target_deps="${target_deps}trace+hal+malloc+`echo $stanza | cut -d: -f2`"
 target_info=`echo $stanza | cut -d: -f3`
 target_mesg=`echo $stanza | cut -s -d: -f4`
+
+if test "$target_name" = user_command; then
+    target_info=`echo $target_info | sed s/";"/" $*\;"/` 
+    shift $#
+fi
 
 test $verbose = 1 && echo "Running $target_name from $run_info_file"
 

@@ -690,6 +690,8 @@ int rt_free_linux_irq (unsigned irq, void *dev_id)
     return 0;
 }
 
+static unsigned long adeos_pended;
+
 #define adeos_pend_irq(irq) \
 do { \
 	unsigned long flags; \
@@ -1303,6 +1305,7 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 
 	CHECK_KERCTX();
 
+//	__clear_bit(cpuid, &adeos_pended);
 	lflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 //1)	lflags = adeos_test_and_stall_pipeline_from (adp_root);
 	adp_root->irqs[irq].acknowledge(irq);
@@ -1326,7 +1329,8 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 	adp_root->cpudata[cpuid].status = lflags;
 //1)	adeos_restore_pipeline_nosync(adp_root, lflags, cpuid);
 
-	if (!test_bit(IPIPE_STALL_FLAG, &lflags) && !IN_ATOMIC()) {
+//	if (!test_bit(IPIPE_STALL_FLAG, &lflags) && !IN_ATOMIC()) {
+	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &lflags)) {
 //1)	if (!adeos_test_pipeline_from(adp_root) && !IN_ATOMIC()) {
 		rtai_sti();
 		if (irq == __adeos_tick_irq) {

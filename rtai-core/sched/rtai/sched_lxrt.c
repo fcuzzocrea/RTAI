@@ -31,13 +31,9 @@ ACKNOWLEDGMENTS:
 #ifdef CONFIG_RTAI_MAINTAINER_PMA
 #define ALLOW_RR        1
 #define ONE_SHOT        0
-#define PREEMPT_ALWAYS  0
-#define LINUX_FPU       1
 #else /* STANDARD SETTINGS */
 #define ALLOW_RR        1
 #define ONE_SHOT        0
-#define PREEMPT_ALWAYS  0
-#define LINUX_FPU       1
 #endif
 
 #include <linux/module.h>
@@ -105,9 +101,7 @@ static int rt_smp_half_tick[NR_RT_CPUS];
 
 static int rt_smp_oneshot_running[NR_RT_CPUS];
 
-static int rt_smp_shot_fired[NR_RT_CPUS];
-
-static int rt_smp_preempt_always[NR_RT_CPUS];
+static volatile int rt_smp_shot_fired[NR_RT_CPUS];
 
 static struct rt_times *linux_times;
 
@@ -148,8 +142,6 @@ static int endkthread;
 
 #define shot_fired (rt_smp_shot_fired[cpuid])
 
-#define preempt_always (rt_smp_preempt_always[cpuid])
-
 #define rt_times (rt_smp_times[cpuid])
 
 #define linux_cr0 (rt_smp_linux_cr0[cpuid])
@@ -186,14 +178,11 @@ unsigned long sqilter = 0xFFFFFFFF;
 #define TIMER_LATENCY RTAI_LATENCY_8254
 #define TIMER_SETUP_TIME RTAI_SETUP_TIME_8254
 #define ONESHOT_SPAN (0x7FFF*(CPU_FREQ/TIMER_FREQ))
-
 #define update_linux_timer() rt_pend_linux_irq(TIMER_8254_IRQ)
 
 #endif /* __USE_APIC__ */
 
 #ifdef CONFIG_SMP
-
-#define BROADCAST_TO_LOCAL_TIMERS() rtai_broadcast_to_local_timers(0,NULL,NULL)
 
 #define rt_request_sched_ipi()  rt_request_cpu_own_irq(SCHED_IPI, rt_schedule_on_schedule_ipi)
 
@@ -217,8 +206,6 @@ do { \
 } while (0)
 
 #else /* !CONFIG_SMP */
-
-#define BROADCAST_TO_LOCAL_TIMERS()
 
 #define rt_request_sched_ipi() 0
 
@@ -569,43 +556,28 @@ if (rt_current->policy > 0) { \
 			} \
 		} \
 	} \
-}
+} 
 
 #define RR_SETYT() \
 	if (new_task->policy > 0) { \
 		new_task->yield_time = rt_time_h + new_task->rr_remaining; \
 	}
 
-#define RR_SPREMP() \
-	if (new_task->policy > 0) { \
-		preempt = 1; \
-		if (new_task->yield_time < intr_time) { \
-			intr_time = new_task->yield_time; \
-		} \
-	} else { \
-		preempt = 0; \
-	}
-
-#define RR_TPREMP() \
+#define RR_PREMP() \
 	if (new_task->policy > 0) { \
 		preempt = 1; \
 		if (new_task->yield_time < rt_times.intr_time) { \
 			rt_times.intr_time = new_task->yield_time; \
 		} \
 	} else { \
-	    preempt = (preempt_always || prio == RT_SCHED_LINUX_PRIORITY);	\
+		preempt = 0; \
 	}
-
 #else
 #define RR_YIELD()
 
 #define RR_SETYT()
 
-#define RR_SPREMP() \
-do { preempt = 0; } while (0)
-
-#define RR_TPREMP() \
-    do { preempt = (preempt_always || prio == RT_SCHED_LINUX_PRIORITY); } while (0)
+#define RR_PREMP()  do { preempt = 0; } while (0)
 #endif
 
 #define restore_fpu(tsk) \
@@ -614,8 +586,6 @@ do { preempt = 0; } while (0)
 #define LOCK_LINUX(cpuid)    do { rt_switch_to_real_time(cpuid); } while (0)
 
 #define UNLOCK_LINUX(cpuid)  do { if (rt_switch_to_linux(cpuid)) rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n"); } while (0)
-
-#define ANTICIPATE
 
 #define EXECTIME
 #ifdef EXECTIME
@@ -703,9 +673,8 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
 void rt_schedule_on_schedule_ipi(void)
 {
 	DECLARE_RT_CURRENT;
-	RTIME intr_time, now;
 	RT_TASK *task, *new_task;
-	int prio, delay, preempt;
+	int prio, preempt;
 	unsigned long flags;
 
         rtai_hw_lock(flags);
@@ -718,27 +687,24 @@ void rt_schedule_on_schedule_ipi(void)
 	sched_get_global_lock(cpuid);
 	RR_YIELD();
 	if (oneshot_running) {
-#ifdef ANTICIPATE
+
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
-#endif
 		TASK_TO_SCHEDULE();
 		RR_SETYT();
 
-		intr_time = shot_fired ? rt_times.intr_time : rt_times.intr_time + ONESHOT_SPAN;
-		RR_SPREMP();
+		RR_PREMP();
 		task = &rt_linux_task;
 		while ((task = task->tnext) != &rt_linux_task) {
-			if (task->priority <= prio && task->resume_time < intr_time) {
+			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
 				rt_times.intr_time = task->resume_time;
-				goto fire;
+				preempt = 1;
+				break;
 			}
 		}
-		if (preempt||(!shot_fired && prio == RT_SCHED_LINUX_PRIORITY)) {
-			if (preempt) {
-				rt_times.intr_time = intr_time;
-			}
-fire:			shot_fired = 1;
+		if (preempt) {
+			RTIME now;
+			int delay;
 			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
 				delay = imuldiv(delay, TIMER_FREQ, tuned.cpu_freq);
@@ -833,9 +799,8 @@ do { \
 void rt_schedule(void)
 {
 	DECLARE_RT_CURRENT;
-	RTIME intr_time, now;
 	RT_TASK *task, *new_task;
-	int prio, delay, preempt;
+	int prio, preempt;
 	unsigned long flags;
 
         rtai_hw_lock(flags);
@@ -847,27 +812,41 @@ void rt_schedule(void)
 
 	RR_YIELD();
 	if (oneshot_running) {
-#ifdef ANTICIPATE
+#ifndef __USE_APIC__
+		int islnx;
+#endif
+
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
-#endif
 		TASK_TO_SCHEDULE();
 		RR_SETYT();
 
-		intr_time = shot_fired ? rt_times.intr_time : rt_times.intr_time + ONESHOT_SPAN;
-		RR_SPREMP();
+		RR_PREMP();
 		task = &rt_linux_task;
 		while ((task = task->tnext) != &rt_linux_task) {
-			if (task->priority <= prio && task->resume_time < intr_time) {
+			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
 				rt_times.intr_time = task->resume_time;
-				goto fire;
+				preempt = 1;
+				break;
 			}
 		}
-		if (preempt||(!shot_fired && prio == RT_SCHED_LINUX_PRIORITY)) {
-			if (preempt) {
-				rt_times.intr_time = intr_time;
+#ifdef __USE_APIC__
+		if (preempt) {
+			RTIME now;
+			int delay;
+#else
+		if ((islnx = (prio == RT_SCHED_LINUX_PRIORITY)) || preempt) {
+			RTIME now;
+			int delay;
+			if (islnx && !shot_fired) {
+				RTIME linux_intr_time;
+				linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
+				if (linux_intr_time < rt_times.intr_time) {
+					rt_times.intr_time = linux_intr_time;
+					shot_fired = 1;
+				}
 			}
-fire:			shot_fired = 1;
+#endif
 			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
 				delay = imuldiv(delay, TIMER_FREQ, tuned.cpu_freq);
@@ -1131,9 +1110,8 @@ int rt_get_timer_cpu(void)
 static void rt_timer_handler(void)
 {
 	DECLARE_RT_CURRENT;
-	RTIME now;
 	RT_TASK *task, *new_task;
-	int prio, delay, preempt; 
+	int prio, preempt; 
 	unsigned long flags;
 
         rtai_hw_lock(flags);
@@ -1150,10 +1128,12 @@ static void rt_timer_handler(void)
 #endif
 	rt_times.tick_time = rt_times.intr_time;
 	rt_time_h = rt_times.tick_time + rt_half_tick;
+#ifndef __USE_APIC__
 	if (rt_times.tick_time >= rt_times.linux_time) {
 		rt_times.linux_time += rt_times.linux_tick;
 		update_linux_timer();
 	}
+#endif
 
 	sched_get_global_lock(cpuid);
 	wake_up_timed_tasks(cpuid);
@@ -1162,20 +1142,39 @@ static void rt_timer_handler(void)
 	RR_SETYT();
 
 	if (oneshot_timer) {
+#ifndef __USE_APIC__
+		int islnx;
+#endif
+		shot_fired = 0;
 		rt_times.intr_time = rt_times.tick_time + ONESHOT_SPAN;
-		RR_TPREMP();
+		RR_PREMP();
 
 		task = &rt_linux_task;
 		while ((task = task->tnext) != &rt_linux_task) {
 			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
 				rt_times.intr_time = task->resume_time;
-				shot_fired = 1;
-				goto fire;
+				preempt = 1;
+				break;
 			}
 		}
-		if ((shot_fired = preempt)) {
-			rt_times.intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + (rt_times.linux_tick >> 1);
-fire:			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
+#ifdef __USE_APIC__
+		if (preempt) {
+			RTIME now;
+			int delay;
+#else
+		if ((islnx = (prio == RT_SCHED_LINUX_PRIORITY)) || preempt) {
+			RTIME now;
+			int delay;
+			if (islnx) {
+				RTIME linux_intr_time;
+				linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
+				if (linux_intr_time < rt_times.intr_time) {
+					rt_times.intr_time = linux_intr_time;
+					shot_fired = 1;
+				}
+			}
+#endif
+			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
 				delay = imuldiv(delay, TIMER_FREQ, tuned.cpu_freq);
 			} else {
@@ -1257,17 +1256,18 @@ schedlnxtsk:
 }
 
 
+#ifndef __USE_APIC__
 static irqreturn_t recover_jiffies(int irq, void *dev_id, struct pt_regs *regs)
 {
 	rt_global_cli();
 	if (linux_times->tick_time >= linux_times->linux_time) {
 		linux_times->linux_time += linux_times->linux_tick;
-		rt_pend_linux_irq(TIMER_8254_IRQ);
+		update_linux_timer();
 	}
 	rt_global_sti();
-	BROADCAST_TO_LOCAL_TIMERS();
 	return RTAI_LINUX_IRQ_HANDLED;
 } 
+#endif
 
 
 int rt_is_hard_timer_running(void) 
@@ -1323,8 +1323,6 @@ void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int
 	}
 	linux_times = rt_smp_times + (rcvr_jiffies_cpuid < NR_RT_CPUS ? rcvr_jiffies_cpuid : 0);
 	rt_global_restore_flags(flags);
-	rt_free_linux_irq(TIMER_8254_IRQ, &rtai_broadcast_to_local_timers);
-	rt_request_linux_irq(TIMER_8254_IRQ, recover_jiffies, "rtai_jif_chk", recover_jiffies);
 }
 
 
@@ -1345,7 +1343,6 @@ void stop_rt_timer(void)
 {
 	unsigned long flags;
 	int cpuid;
-	rt_free_linux_irq(TIMER_8254_IRQ, recover_jiffies);
 	rt_free_apic_timers();
 	flags = rt_global_save_flags_and_cli();
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
@@ -1438,16 +1435,13 @@ int rt_sched_type(void)
 
 void rt_preempt_always(int yes_no)
 {
-	int cpuid;
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		rt_smp_preempt_always[cpuid] = yes_no ? 1 : 0;
-	}
+	return;
 }
 
 
 void rt_preempt_always_cpuid(int yes_no, unsigned int cpuid)
 {
-	rt_smp_preempt_always[cpuid] = yes_no ? 1 : 0;
+	return;
 }
 
 
@@ -1465,9 +1459,6 @@ RT_TRAP_HANDLER rt_set_task_trap_handler( RT_TASK *task, unsigned int vec, RT_TR
 
 static int OneShot = ONE_SHOT;
 MODULE_PARM(OneShot, "i");
-
-static int PreemptAlways = PREEMPT_ALWAYS;
-MODULE_PARM(PreemptAlways, "i");
 
 static int Latency = TIMER_LATENCY;
 MODULE_PARM(Latency, "i");
@@ -2574,7 +2565,6 @@ static int __rtai_lxrt_init(void)
 		rt_smp_fpu_task[cpuid] = &rt_linux_task;
 		oneshot_timer = OneShot ? 1 : 0;
 		oneshot_running = 0;
-		preempt_always = PreemptAlways ? 1 : 0;
 	}
 	tuned.latency = imuldiv(Latency, tuned.cpu_freq, 1000000000);
 	tuned.setup_time_TIMER_CPUNIT = imuldiv( SetupTimeTIMER, 

@@ -484,7 +484,7 @@ ER rot_rdq (PRI tskpri)
 	    return E_PAR;
 	}
     else if (xnpod_asynch_p())
-	tskpri = XNPOD_RUNPRI;
+	tskpri = XNPOD_RUNPRIO;
     else
 	tskpri = xnthread_current_priority(&ui_current_task()->threadbase);
 

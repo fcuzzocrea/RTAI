@@ -40,6 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 @CONFIG_RTAI_OPT_FUSION_TRUE@am__append_1 = shadow.c fusion.c
 @CONFIG_RTAI_OPT_PIPE_TRUE@am__append_2 = pipe.c
+@CONFIG_LTT_TRUE@am__append_3 = ltt.c
 subdir = nucleus
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in \
 	$(srcdir)/Makefile.kbuild COPYING
@@ -108,6 +109,8 @@ CCAS = @CCAS@
 CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CONFIG_LTT_FALSE = @CONFIG_LTT_FALSE@
+CONFIG_LTT_TRUE = @CONFIG_LTT_TRUE@
 CONFIG_PPC_FALSE = @CONFIG_PPC_FALSE@
 CONFIG_PPC_TRUE = @CONFIG_PPC_TRUE@
 CONFIG_RTAI_DOC_DOX_FALSE = @CONFIG_RTAI_DOC_DOX_FALSE@
@@ -150,8 +153,6 @@ CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
 CONFIG_RTAI_OPT_NATIVE_SEM_TRUE = @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@
 CONFIG_RTAI_OPT_PIPE_FALSE = @CONFIG_RTAI_OPT_PIPE_FALSE@
 CONFIG_RTAI_OPT_PIPE_TRUE = @CONFIG_RTAI_OPT_PIPE_TRUE@
-CONFIG_RTAI_OPT_TRACES_FALSE = @CONFIG_RTAI_OPT_TRACES_FALSE@
-CONFIG_RTAI_OPT_TRACES_TRUE = @CONFIG_RTAI_OPT_TRACES_TRUE@
 CONFIG_RTAI_OPT_VM_FALSE = @CONFIG_RTAI_OPT_VM_FALSE@
 CONFIG_RTAI_OPT_VM_TRUE = @CONFIG_RTAI_OPT_VM_TRUE@
 CONFIG_RTAI_SKIN_NATIVE_FALSE = @CONFIG_RTAI_SKIN_NATIVE_FALSE@
@@ -307,8 +308,7 @@ target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = heap.c intr.c module.c pod.c synch.c thread.c timer.c \
-	$(am__append_1) $(am__append_2)
-@CONFIG_RTAI_OPT_TRACES_TRUE@MAYBE_TRACE = rtai_trace$(modext)
+	$(am__append_1) $(am__append_2) $(am__append_3)
 @CONFIG_RTAI_OPT_VM_TRUE@lib_LIBRARIES = libnucleus.a
 @CONFIG_RTAI_OPT_VM_TRUE@nodist_libnucleus_a_SOURCES = \
 @CONFIG_RTAI_OPT_VM_TRUE@			heap.c \
@@ -325,7 +325,7 @@ libmodule_SRC = heap.c intr.c module.c pod.c synch.c thread.c timer.c \
 @CONFIG_RTAI_OPT_VM_TRUE@	-I../include
 
 @CONFIG_RTAI_OPT_VM_TRUE@libnucleus_a_AR = $(CROSS_COMPILE)ar cru
-EXTRA_DIST = $(libmodule_SRC) trace.c Makefile.kbuild Kconfig
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild Kconfig
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
 all: all-recursive
 
@@ -807,13 +807,7 @@ rtai_nucleus$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
 	@RTAI_KBUILD_BOTTOM@
 
-@CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): @RTAI_KBUILD_ENV@
-@CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): trace.c FORCE
-@CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
-@CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_BOTTOM@
-
-all-local: rtai_nucleus$(modext) $(MAYBE_TRACE)
+all-local: rtai_nucleus$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
@@ -823,12 +817,12 @@ clean-local:
 distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@
 
-install-exec-local: rtai_nucleus$(modext) $(MAYBE_TRACE)
+install-exec-local: rtai_nucleus$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
 
 uninstall-local: 
-	$(RM) $(moduledir)/rtai_nucleus$(modext) $(moduledir)/rtai_trace$(modext)
+	$(RM) $(moduledir)/rtai_nucleus$(modext)
 
 .PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

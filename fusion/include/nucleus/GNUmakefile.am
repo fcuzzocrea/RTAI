@@ -12,6 +12,7 @@ include_HEADERS = \
 		fusion.h \
 		heap.h \
 		intr.h \
+		ltt.h \
 		module.h \
 		pipe.h \
 		pod.h \
@@ -22,7 +23,6 @@ include_HEADERS = \
 		system.h \
 		thread.h \
 		timer.h \
-		trace.h \
 		types.h \
 		version.h \
 		xenomai.h

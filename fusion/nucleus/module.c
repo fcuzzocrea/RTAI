@@ -30,13 +30,13 @@
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
 #include <nucleus/version.h>
-#include <nucleus/trace.h>
 #ifdef CONFIG_RTAI_OPT_PIPE
 #include <nucleus/pipe.h>
 #endif /* CONFIG_RTAI_OPT_PIPE */
 #ifdef CONFIG_RTAI_OPT_FUSION
 #include <nucleus/fusion.h>
 #endif /* CONFIG_RTAI_OPT_FUSION */
+#include <nucleus/ltt.h>
 
 MODULE_DESCRIPTION("RTAI/fusion nucleus");
 MODULE_AUTHOR("rpm@xenomai.org");
@@ -396,18 +396,19 @@ void xnpod_discard_iface_proc (struct xnskentry *iface)
 int __fusion_sys_init (void)
 
 {
-    int err;
-
-    err = xnarch_init();
+    int err = xnarch_init();
 
     if (err)
 	goto fail;
 
 #ifdef __KERNEL__
-    {
 #ifdef CONFIG_PROC_FS
     xnpod_init_proc();
 #endif /* CONFIG_PROC_FS */
+
+#ifdef CONFIG_LTT
+    xnltt_mount();
+#endif /* CONFIG_LTT */
 
 #ifdef CONFIG_RTAI_OPT_PIPE
     err = xnpipe_mount();
@@ -427,7 +428,6 @@ int __fusion_sys_init (void)
     if (err)
 	goto cleanup_heap;
 #endif /* CONFIG_RTAI_OPT_FUSION */
-    }
 #endif /* __KERNEL__ */
 
     xnloginfo("RTAI/fusion v%s (%s) started.\n",
@@ -476,9 +476,6 @@ void __fusion_sys_exit (void)
     xnarch_exit();
 
 #ifdef __KERNEL__
-#ifdef CONFIG_PROC_FS
-    xnpod_delete_proc();
-#endif /* CONFIG_PROC_FS */
 #ifdef CONFIG_RTAI_OPT_FUSION
     xnfusion_umount();
     xnheap_umount();
@@ -486,17 +483,18 @@ void __fusion_sys_exit (void)
 #ifdef CONFIG_RTAI_OPT_PIPE
     xnpipe_umount();
 #endif /* CONFIG_RTAI_OPT_PIPE */
+#ifdef CONFIG_LTT
+    xnltt_umount();
+#endif /* CONFIG_LTT */
+#ifdef CONFIG_PROC_FS
+    xnpod_delete_proc();
+#endif /* CONFIG_PROC_FS */
 #endif /* __KERNEL__ */
     xnloginfo("RTAI/fusion stopped.\n");
 }
 
 EXPORT_SYMBOL(xnmod_glink_queue);
 EXPORT_SYMBOL(xnmod_alloc_glinks);
-
-#if defined(CONFIG_RTAI_OPT_TRACES) && __KERNEL__
-rtai_trace_callback_t *rtai_trace_callback = NULL;
-EXPORT_SYMBOL(rtai_trace_callback);
-#endif /* CONFIG_RTAI_OPT_TRACES && __KERNEL__ */
 
 module_init(__fusion_sys_init);
 module_exit(__fusion_sys_exit);

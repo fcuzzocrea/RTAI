@@ -39,6 +39,7 @@
 #include <nucleus/heap.h>
 #include <nucleus/intr.h>
 #include <nucleus/module.h>
+#include <nucleus/ltt.h>
 
 /* NOTE: We need to initialize the globals: remember that this code
    also runs over user-space VMs... */
@@ -1353,10 +1354,6 @@ void xnpod_resume_thread (xnthread_t *thread,
 
     xnlock_get_irqsave(&nklock,s);
 
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.resume_entry = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
     sched = thread->sched;
 
     if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Is thread blocked? */
@@ -1488,10 +1485,6 @@ void xnpod_resume_thread (xnthread_t *thread,
 unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
-
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.resume_exit = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 }
 
 /*!
@@ -2255,16 +2248,8 @@ void xnpod_schedule (void)
     else if (testbits(threadin->status,XNROOT))
         xnarch_enter_root(xnthread_archtcb(threadin));
 
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.switch_out = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
     xnarch_switch_to(xnthread_archtcb(threadout),
                      xnthread_archtcb(threadin));
-
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.switch_in = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
     runthread = sched->runthread;
 
@@ -3141,15 +3126,7 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
 
     thread->poverrun = -1;
 
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.periodic_wakeup = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
     xnlock_put_irqrestore(&nklock,s);
-
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.periodic_exit = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
     return err;
 }
@@ -3221,15 +3198,7 @@ int xnpod_wait_thread_period (void)
 
  unlock_and_exit:
 
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.periodic_wakeup = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
     xnlock_put_irqrestore(&nklock,s);
-
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.periodic_exit = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
     return err;
 }

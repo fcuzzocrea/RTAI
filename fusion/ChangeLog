@@ -1,3 +1,15 @@
+2005-02-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus: Add LTT support infrastructure.
+
+	* configure.in: Discard CONFIG_RTAI_OPT_TIMESTAMPS; it has been
+	superseded by CONFIG_RTAI_OPT_LTT bringing in full LTT support.
+
+2005-02-18  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* nucleus/synch.c (xnsynch_sleep_on): Fix reordering of the claim
+	queue in the PIP enforcement code.
+
 2005-02-17  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (rtai_sysentry): Make sure to properly run the

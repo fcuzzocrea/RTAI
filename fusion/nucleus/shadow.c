@@ -1387,27 +1387,6 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	    adeos_propagate_event(evinfo);
 	    return;
 
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-	case __xn_sys_timestamps:
-
-	    /* Send back the execution timestamps. */
-
-	    if (__xn_access_ok(task,
-			       VERIFY_WRITE,
-			       (void *)__xn_reg_arg1(regs),
-			       sizeof(xntimes_t)))
-		{
-		xntimes_t ts;
-		xnpod_get_timestamps(&ts);
-		__xn_copy_to_user(task,(void *)__xn_reg_arg1(regs),&ts,sizeof(ts));
-		__xn_success_return(regs,sizeof(ts));
-		}
-	    else
-		__xn_error_return(regs,-EFAULT);
-
-	    return;
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
 	default:
 
  bad_syscall:

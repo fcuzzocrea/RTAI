@@ -45,30 +45,6 @@ int main (int argc, char **argv)
 	       s.avgjitter,
 	       s.maxjitter,
 	       s.overrun);
-
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-	if (s.has_timestamps)
-	    {
-	    if (s.tick_propagation != 0)
-		printf(">>> TICK: pipeline propagation = %d\n",
-		       s.tick_propagation);
-	    printf(">>> TIMER: prologue = %d, exec = %d, epilogue = %d, overall = %d\n",
-		   s.timer_prologue,
-		   s.timer_exec,
-		   s.timer_epilogue,
-		   s.timer_overall);
-	    printf("    RESUME: exec = %d\n",
-		   s.resume_time);
-	    printf("    SWITCH: exec = %d\n",
-		   s.switch_time);
-	    printf("    PERIODIC: wakeup = %d, epilogue = %d\n",
-		   s.periodic_wakeup,
-		   s.periodic_epilogue);
-	    printf("    TICK: overall = %d, drift = %d\n",
-		   s.tick_overall,
-		   s.timer_drift);
-	    }
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 	}
 
     return 0;

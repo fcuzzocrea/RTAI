@@ -40,7 +40,7 @@
 #define XNBOOST   0x00002000	/* Undergoes regular PIP boost */
 
 /* Mode flags. */
-#define XNLOCK    0x00004000	/* Not preemptable */
+#define XNLOCK    0x00004000	/* Not preemptible */
 #define XNRRB     0x00008000	/* Undergoes a round-robin scheduling */
 #define XNASDI    0x00010000	/* ASR are disabled */
 #define XNSHIELD  0x00020000	/* IRQ shield is enabled (shadow only) */

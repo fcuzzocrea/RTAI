@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001,2002,2003,2004 Philippe Gerum.
+ * Copyright (C) 2001,2002,2003,2004 Philippe Gerum <rpm@xenomai.org>.
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
@@ -19,13 +19,10 @@
  */
 
 #include <linux/config.h>
-#include <linux/module.h>
-#include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
-#include <linux/miscdevice.h>
-#include <linux/fcntl.h>
 #include <linux/init.h>
+#include <linux/fcntl.h>
 #include <linux/poll.h>
 #include <linux/proc_fs.h>
 #include <linux/spinlock.h>

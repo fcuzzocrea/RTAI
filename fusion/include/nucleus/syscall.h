@@ -30,9 +30,6 @@
 #define __xn_sys_sync       2	/* xnshadow_sync(&syncflag) */
 #define __xn_sys_migrate    3	/* switched = xnshadow_relax/harden() */
 #define __xn_sys_barrier    4	/* started = xnshadow_wait_barrier(&entry,&cookie) */
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-#define __xn_sys_timestamps 5	/* xnpod_get_timestamps(&timestamps) */
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
 typedef struct xnsysinfo {
 

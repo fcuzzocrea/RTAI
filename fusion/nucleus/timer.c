@@ -597,13 +597,6 @@ void xntimer_do_timers (void)
         timerq = &sched->timerwheel[now & XNTIMER_WHEELMASK];
 	}
 
-#if CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.timer_entry = xnarch_get_cpu_tsc();
-    xnarch_read_timings(&nkpod->timestamps.tick_shot,
-			&nkpod->timestamps.tick_delivery,
-			nkpod->timestamps.timer_entry);
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
     initq(&reschedq);
 
     nextholder = getheadq(timerq);
@@ -634,17 +627,8 @@ void xntimer_do_timers (void)
 	       translates into precious microsecs on low-end hw. */
 	    __setbits(sched->status,XNHTICK);
 	else
-	    {
-#if CONFIG_RTAI_OPT_TIMESTAMPS
-	    nkpod->timestamps.timer_drift = (xnsticks_t)now - (xnsticks_t)timer->date;
-	    nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 	    /* Otherwise, we'd better have a valid handler... */
 	    timer->handler(timer->cookie);
-#if CONFIG_RTAI_OPT_TIMESTAMPS
-	    nkpod->timestamps.timer_handled = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-	    }
 
 	/* Restart the timer for the next period if a valid interval
 	   has been given. The status is checked in order to prevent
@@ -694,10 +678,6 @@ void xntimer_do_timers (void)
     if (aperiodic)
 	xntimer_next_local_shot(sched);
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-
-#if CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.timer_exit = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 }
 
 /*!

@@ -1,9 +1,6 @@
 #include <rtai/task.h>
 #include <rtai/timer.h>
 #include <rtai/pipe.h>
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-#include <nucleus/pod.h>
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 #include "latency.h"
 
 MODULE_LICENSE("GPL");
@@ -33,12 +30,8 @@ void latency (void *cookie)
     long minj = 10000000, maxj = -10000000, dt, sumj;
     struct rtai_latency_stat *s;
     RTIME expected, period;
-    int  err, count;
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    int tsflag = 0;
-    xntimes_t ts;
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
     RT_PIPE_MSG *msg;
+    int  err, count;
 
     err = rt_timer_start(TM_ONESHOT);
 
@@ -73,13 +66,7 @@ void latency (void *cookie)
 	    dt = (long)(rt_timer_tsc() - expected);
 
 	    if (dt > maxj)
-		{
 		maxj = dt;
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-		xnpod_get_timestamps(&ts);
-		tsflag = 1;
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-		}
 
 	    if (dt < minj)
 		minj = dt;
@@ -104,26 +91,6 @@ void latency (void *cookie)
 	s->maxjitter = rt_timer_ticks2ns(maxjitter);
 	s->avgjitter = rt_timer_ticks2ns(avgjitter);
 	s->overrun = overrun;
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-	if (tsflag)
-	    {
-	    s->has_timestamps = 1;
-	    s->tick_propagation = rt_timer_ticks2ns(ts.tick_delivery - ts.tick_shot);
-	    s->timer_prologue = rt_timer_ticks2ns(ts.timer_handler - ts.timer_entry);
-	    s->timer_exec = rt_timer_ticks2ns(ts.timer_handled - ts.timer_handler);
-	    s->timer_overall = rt_timer_ticks2ns(ts.timer_exit - ts.timer_entry);
-	    s->timer_epilogue = rt_timer_ticks2ns(ts.intr_resched - ts.timer_exit);
-	    s->timer_drift = rt_timer_ticks2ns(ts.timer_drift);
-	    s->resume_time = rt_timer_ticks2ns(ts.resume_exit - ts.resume_entry);
-	    s->switch_time = rt_timer_ticks2ns(ts.switch_in - ts.switch_out);
-	    s->periodic_wakeup = rt_timer_ticks2ns(ts.periodic_wakeup - ts.switch_in);
-	    s->periodic_epilogue = rt_timer_ticks2ns(ts.periodic_exit - ts.periodic_wakeup);
-	    s->tick_overall = rt_timer_ticks2ns(ts.periodic_exit - ts.timer_entry);
-	    tsflag = 0;
-	    }
-	else
-	    s->has_timestamps = 0;
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
 	/* Do not care if the user-space side of the pipe is not yet
 	   open; just enter the next sampling loop then retry. But in

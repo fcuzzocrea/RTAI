@@ -35,9 +35,9 @@
  * Purpose Memory Allocator for the 4.3BSD Unix Kernel" by Marshall
  * K. McKusick and Michael J. Karels.
  *
- * RTAI memory heaps are built over Xenomai's heap objects, which in
- * turn provide the needed support for sharing a memory area between
- * kernel and user-space using direct memory mapping.
+ * RTAI memory heaps are built over the nucleus's heap objects, which
+ * in turn provide the needed support for sharing a memory area
+ * between kernel and user-space using direct memory mapping.
  *
  *@{*/
 

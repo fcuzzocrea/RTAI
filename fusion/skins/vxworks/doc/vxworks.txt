@@ -1,8 +1,8 @@
 Overview
 ========
 
-The VxWorks (R) emulation module on top of Xenomai currently mimicks
-the following services:
+The VxWorks (R) emulation module on top of RTAI/fusion currently
+mimicks the following services:
 
 taskSpawn, taskInit, taskActivate, taskDelete, taskDeleteForce, taskSuspend, 
 taskResume, taskPrioritySet, taskPriorityGet, taskLock, taskUnlock, taskIdSelf,

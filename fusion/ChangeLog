@@ -1,3 +1,11 @@
+2004-12-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* sim: Fix a few glitches and update the necessary bits to run the
+	RTAI skin.
+
+	* GNUmakefile.am (install-data-local): Add "build" and "source"
+	symlinks in $prefix.
+
 2004-12-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/pod.h (xnpod_ticks2ns) : Remove useless llimd.

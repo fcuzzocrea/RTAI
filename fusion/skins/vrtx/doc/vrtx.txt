@@ -2,16 +2,16 @@
 Overview
 ========
 
-The VRTX (R) emulation module on top of Xenomai currently mimicks
+The VRTX (R) emulation module on top of RTAI/fusion currently mimicks
 the following services:
 
 Known variations from VRTX
 ==========================
 
-* Generally speaking, control blocks are always obtained from Xenomai's
-heap instead of VRTX workspace. However, VRTX workspace is still
-initialized and made available to the application code (See "Module
-parameters").
+* Generally speaking, control blocks are always obtained from the
+nucleus heap instead of VRTX workspace. However, VRTX workspace is
+still initialized and made available to the application code (See
+"Module parameters").
 
 * There is only a single stack per task instead of distinct
 supervisor/user mode stacks. The sum of the 'user' and 'sys'

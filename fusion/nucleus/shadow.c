@@ -6,19 +6,20 @@
  * Copyright (C) 2004 The RTAI project <http://www.rtai.org>
  * Copyright (C) 2004 The HYADES project <http://www.hyades-itea.org>
  *
- * Xenomai is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * RTAI/fusion is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation; either version 2 of the License,
+ * or (at your option) any later version.
  *
- * Xenomai is distributed in the hope that it will be useful, but
+ * RTAI/fusion is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Xenomai; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with RTAI/fusion; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA.
  *
  * \ingroup shadow
  */
@@ -1263,7 +1264,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
     if (xnshadow_substitute_syscall(task,regs,0))
 	/* This is a Linux syscall issued on behalf of a shadow thread
 	   running inside the RTAI domain. This call has just been
-	   intercepted by Xenomai and a RTAI replacement has been
+	   intercepted by the nucleus and a RTAI replacement has been
 	   substituted for it. */
 	return;
 
@@ -1605,9 +1606,9 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
         else
 	    return;
 
-    /* Current Xenomai thread must be the root one in this context, so
-       we can safely renice Xenomai's runthread (i.e. as returned by
-       xnpod_current_thread()). */
+    /* Current nucleus thread must be the root one in this context, so
+       we can safely renice the nucleus's runthread (i.e. as returned
+       by xnpod_current_thread()). */
 
     if (xnpod_current_thread()->cprio != rootprio)
         {

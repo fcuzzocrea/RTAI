@@ -1,20 +1,21 @@
 /*
  * Copyright (C) 2001,2002,2003,2004 Philippe Gerum.
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA 02139,
- * USA; either version 2 of the License, or (at your option) any later
- * version.
+ * RTAI/fusion is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
+ * 02139, USA; either version 2 of the License, or (at your option)
+ * any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * RTAI/fusion is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA.
  */
 
 #include <linux/config.h>
@@ -226,8 +227,8 @@ int xnpipe_connect (int minor,
 #endif
 	if (testbits(state->status,XNPIPE_USER_WOPEN|XNPIPE_USER_WPOLL))
 	    {
-	    /* Wake up the userland thread waiting for the
-	       Xenomai side to connect (open or poll). */
+	    /* Wake up the userland thread waiting for the nucleus
+	       side to connect (open or poll). */
 	    clrbits(state->status,XNPIPE_USER_WOPEN|XNPIPE_USER_WPOLL);
 #ifdef XNPIPE_DEBUG
 	    xnprintf("RTK: WOPEN|WPOLL, KICKING MINOR #%d\n",minor);

@@ -63,6 +63,10 @@ endif
 install-data-local: .rtai_config
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
 	$(INSTALL_DATA) .rtai_config $(DESTDIR)$(pkgdatadir)/config-$(PACKAGE)-$(VERSION)
+	rm -f $(DESTDIR)$(prefix)/build
+	$(LN_S) @abs_top_builddir@ $(DESTDIR)$(prefix)/build
+	rm -f $(prefix)/source
+	$(LN_S) @abs_srcdir@ $(DESTDIR)$(prefix)/source
 
 install-exec-local: devices
 

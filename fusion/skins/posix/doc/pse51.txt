@@ -1,10 +1,10 @@
 Overview
 ========
 
-The PSE51 emulation module on top of Xenomai aims at providing an (almost) POSIX
-compatible API. In order to help porting applications from other PSE51
-compatible APIS (like RTLinux) it will contain some non portable extensions to
-the POSIX specification.
+The PSE51 emulation module on top of RTAI/fusion aims at providing an
+(almost) POSIX compatible API. In order to help porting applications
+from other PSE51 compatible APIS (like RTLinux) it will contain some
+non portable extensions to the POSIX specification.
 
 This layer already contains most basic features :
 - threads,
@@ -19,9 +19,10 @@ This layer already contains most basic features :
 Known variations from the POSIX specification.
 ===============================================
 
-The Xenomai PSE51 skin was implemented following as closely as possible the
-single unix specification V3, which can hence serve as a documentation for its
-API. This specification can be accessed at the following URL :
+The RTAI/fusion PSE51 skin was implemented following as closely as
+possible the single unix specification V3, which can hence serve as a
+documentation for its API. This specification can be accessed at the
+following URL :
 
 http://www.unix.org/single_unix_specification
 

@@ -1,7 +1,7 @@
 Overview
 ========
 
-The pSOS+ emulation module on top of Xenomai currently mimicks the
+The pSOS+ emulation module on top of RTAI/fusion currently mimicks the
 following services:
 
 as_catch, as_send, as_return
@@ -28,12 +28,13 @@ i_return, k_fatal
 Known variations from pSOS+
 ===========================
 
-Generally speaking, control blocks are always obtained from Xenomai's
-heap instead of region #0. However, region #0 is still initialized and
-made available to the application code (See "Module parameters").
+Generally speaking, control blocks are always obtained from the
+nucleus heap instead of region #0. However, region #0 is still
+initialized and made available to the application code (See "Module
+parameters").
 
-* t_create() returns ERR_NOTCB upon memory allocation failure
-when trying to get a task control block from Xenomai's heap. There is
+* t_create() returns ERR_NOTCB upon memory allocation failure when
+trying to get a task control block from the nucleus heap. There is
 no control block limit for tasks.
 
 * as_return() is currently a macro-definition expanded as
@@ -44,17 +45,17 @@ ERR_NOTINASR status is unused.
 called in the ISR's outer frame.
 
 * sm_create() returns ERR_NOSCB upon dynamic allocation error from
-Xenomai's heap. There is no control block limit for semaphores.
+the nucleus heap. There is no control block limit for semaphores.
 
 * q_create() returns ERR_NOQCB upon dynamic allocation error from
-Xenomai's heap. There is no control block limit for queues.
+the nucleus heap. There is no control block limit for queues.
 
 * The use of private buffers is forced for variable-size message
 queues when the message size exceeds sizeof(u_long[4]), otherwise, the
 free buffers may be available from a local cache or obtained from a
 globally shared buffer cache, whether the Q_PRIBUF flag is set for
 q(v)create() or not. As a special exception, message buffers are
-obtained from Xenomai's heap on a per-message basis if the queue has
+obtained from the nucleus heap on a per-message basis if the queue has
 no size limit and the maximum message length exceeds sizeof(u_long[4]).
 
 * The minimum size of a partition block passed to pt_create() is
@@ -63,7 +64,7 @@ architecture-dependent value. Any lower value begets the ERR_BUFSIZE
 error status when given.
 
 * tm_evafter() may return ERR_NOSEG since dynamic memory is allocated
-for an internal timer from Xenomai's heap.
+for an internal timer from the nucleus heap.
 
 * rn_retseg() does not check for the ERR_SEGFREE condition.
 

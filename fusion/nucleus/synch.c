@@ -4,46 +4,20 @@
  *
  * Copyright (C) 2001,2002,2003 Philippe Gerum <rpm@xenomai.org>.
  *
- * Xenomai is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
+ * RTAI/fusion is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published
+ * by the Free Software Foundation; either version 2 of the License,
+ * or (at your option) any later version.
  *
- * Xenomai is distributed in the hope that it will be useful, but
+ * RTAI/fusion is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Xenomai; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
- *
- * As a special exception, the RTAI project gives permission
- * for additional uses of the text contained in its release of
- * Xenomai.
- *
- * The exception is that, if you link the Xenomai libraries with other
- * files to produce an executable, this does not by itself cause the
- * resulting executable to be covered by the GNU General Public License.
- * Your use of that executable is in no way restricted on account of
- * linking the Xenomai libraries code into it.
- *
- * This exception does not however invalidate any other reasons why
- * the executable file might be covered by the GNU General Public
- * License.
- *
- * This exception applies only to the code released by the
- * RTAI project under the name Xenomai.  If you copy code from other
- * RTAI project releases into a copy of Xenomai, as the General Public
- * License permits, the exception does not apply to the code that you
- * add in this way.  To avoid misleading anyone as to the status of
- * such modified files, you must delete this exception notice from
- * them.
- *
- * If you write modifications of your own for Xenomai, it is your
- * choice whether to permit this exception to apply to your
- * modifications. If you do not wish that, delete this exception
- * notice.
+ * along with RTAI/fusion; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA.
  *
  * \ingroup synch
  */
@@ -66,16 +40,16 @@
  * \fn void xnsynch_init(xnsynch_t *synch, xnflags_t flags);
  * \brief Initialize a synchronization object.
  *
- * Initializes a new specialized object which can subsequently be
- * used to synchronize real-time activities. Xenomai provides a basic
- * synchronization object which can be used to build higher resource
- * objects. Xenomai threads can wait for and signal such objects in
- * order to synchronize their activities.
+ * Initializes a new specialized object which can subsequently be used
+ * to synchronize real-time activities. The RTAI/fusion nucleus
+ * provides a basic synchronization object which can be used to build
+ * higher resource objects. Nucleus threads can wait for and signal
+ * such objects in order to synchronize their activities.
  *
  * This object has built-in support for priority inheritance.
  *
- * @param synch The address of a synchronization object descriptor
- * Xenomai will use to store the object-specific data.  This
+ * @param synch The address of a synchronization object descriptor the
+ * nucleus will use to store the object-specific data.  This
  * descriptor must always be valid while the object is active
  * therefore it must be allocated in permanent memory.
  *

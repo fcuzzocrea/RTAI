@@ -32,7 +32,7 @@
 /**
  * @defgroup hal_ppc HAL/ppc.
  *
- * Basic PowerPC-dependent services used by the Xenomai nucleus.
+ * Basic PowerPC-dependent services used by the real-time nucleus.
  *
  *@{*/
 

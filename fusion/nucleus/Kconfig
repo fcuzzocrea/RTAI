@@ -18,10 +18,10 @@ config RTAI_OPT_PIPE
 	help
 
 	Message pipes are bi-directional FIFO communication
-	channels allowing data exchange between Xenomai threads
-	and regular user-space processes. Pipes natively preserve
-	message boundaries, but can also be used in byte stream mode
-	from kernel to user space.
+	channels allowing data exchange between real-time kernel
+	threads and regular user-space processes. Pipes natively
+	preserve message boundaries, but can also be used in byte
+	stream mode from kernel to user space.
 
 config RTAI_OPT_PIPE_NRDEV
 	string "Number of pipe devices"
@@ -63,7 +63,7 @@ config RTAI_OPT_DEBUG
 	default n
 	help
 	
-	This option activates runtime checking of the Xenomai
+	This option activates runtime checking of the real-time
 	nucleus state.
 
 config RTAI_OPT_TIMESTAMPS

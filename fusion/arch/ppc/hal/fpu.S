@@ -45,7 +45,7 @@ _GLOBAL(rthal_save_fpu)
 /* r3 = &tcb->fpuenv */
 _GLOBAL(rthal_init_fpu)
 	mfmsr	r5
-	ori	r5,r5,MSR_FP|MSR_FE1	/* Xenomai kernel threads always operate in */
+	ori	r5,r5,MSR_FP|MSR_FE1	/* real-time kernel threads always operate in */
 	li	r4,MSR_FE0		/* imprecise non-recoverable exception mode. */
 	andc	r5,r5,r4
 	SYNC
@@ -56,7 +56,7 @@ _GLOBAL(rthal_init_fpu)
 /* r3 = &tcb->fpuenv */
 _GLOBAL(rthal_restore_fpu)
 	mfmsr	r5
-	ori	r5,r5,MSR_FP|MSR_FE1	/* Xenomai kernel threads always operate in */
+	ori	r5,r5,MSR_FP|MSR_FE1	/* real-time kernel threads always operate in */
 	andi.	r5,r5,MSR_FE0		/* imprecise non-recoverable exception mode. */
 #ifdef CONFIG_PPC64BRIDGE
 	clrldi	r5,r5,1			/* Turn off 64-bit mode. */

@@ -34,7 +34,7 @@
  * send and/or receive messages to the queue.
  *
  * This implementation is based on a zero-copy scheme for message
- * buffers. Message buffer pools are built over Xenomai's heap
+ * buffers. Message buffer pools are built over the nucleus's heap
  * objects, which in turn provide the needed support for exchanging
  * messages between kernel and user-space using direct memory mapping.
  *

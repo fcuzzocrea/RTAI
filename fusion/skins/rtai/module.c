@@ -49,9 +49,9 @@ MODULE_LICENSE("GPL");
 static void rtai_shutdown (int xtype)
 
 {
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     __syscall_pkg_cleanup();
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_HEAP
     __heap_pkg_cleanup();
@@ -95,11 +95,13 @@ int __xeno_skin_init (void)
 {
     int err;
 
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     /* The RTAI skin is stacked over the fusion framework. */
     err = xnfusion_attach();
 
     if (err)
 	goto fail;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     nkpod->svctable.shutdown = &rtai_shutdown;
 
@@ -164,18 +166,18 @@ int __xeno_skin_init (void)
 	goto cleanup_queue;
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
-#ifdef __KERNEL__
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     err = __syscall_pkg_init();
 
     if (err)
 	goto cleanup_heap;
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     
     return 0;	/* SUCCESS. */
 
-#ifdef __KERNEL__
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
  cleanup_heap:
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #ifdef CONFIG_RTAI_OPT_NATIVE_HEAP
     __heap_pkg_cleanup();

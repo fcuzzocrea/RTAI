@@ -7,10 +7,6 @@
 	* scripts/GNUmakefile.am (install-exec-local): Add post-install
 	hook.
 
-	* nucleus/shadow.c (linux_schedule_head): Following Dmitry's
-	suggestion, take the fast exit path if the current switch occurs
-	between two plain (i.e. non-shadowed) Linux threads.
-
 2005-03-16  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-*/system.h (xnarch_switch_to): Add membar

@@ -831,7 +831,7 @@ static unsigned long __va_to_kva (unsigned long va)
 	/* Page middle directory -- account for PAE. */
 	pmd = pmd_offset(pud_offset(pgd,va), va);
 #else
-	/* Page middle directory in 2-level pgtable. */
+	/* Page middle directory. */
 	pmd = pmd_offset(pgd, va);
 #endif
 

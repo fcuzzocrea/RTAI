@@ -29,11 +29,6 @@ ACKNOWLEDGMENTS:
 */
 
 
-// the "_new" in some of the functions below is temporary, to avoid
-// clashing with the very same functions in malloc.c, it will disappear
-// when shm.c will become the only real time memory management support
-// (using xnheap_alloc/free, in xenomai/heap.c).
-
 #ifndef _RTAI_SHM_H
 #define _RTAI_SHM_H
 
@@ -104,6 +99,8 @@ ACKNOWLEDGMENTS:
 #define mem_map_unreserve(p) ClearPageReserved(p)
 #endif /* < 2.6.0 */
 
+#include <rtai_malloc.h>
+
 #include <asm/rtai_shm.h>
 
 #ifdef __cplusplus
@@ -138,10 +135,6 @@ void *rt_named_halloc(unsigned long name,
 		      int size);
 
 void rt_named_hfree(void *addr);
-
-void *rt_malloc_new(int size);
-
-void rt_free_new(void *addr);
 
 void *rt_named_malloc(unsigned long name,
 		      int size);
@@ -196,7 +189,7 @@ static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int
 #else
 		if ((size = ioctl(hook, SHM_ALLOC, (unsigned long)(&arg)))) {
 #endif
-			if ((adr = mmap(start, size, PROT_WRITE | PROT_READ, MAP_SHARED | MAP_LOCKED | MAP_FILE, hook, 0)) == (void *)-1) {;
+			if ((adr = mmap(start, size, PROT_WRITE | PROT_READ, MAP_SHARED | MAP_LOCKED, hook, 0)) == (void *)-1) {;
 #ifdef SHM_USE_LXRT
 				rtai_lxrt(BIDX, sizeof(name), SHM_FREE, &name);
 #else
@@ -204,16 +197,6 @@ static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int
 #endif
 				adr = 0;
 			} 
-#if 0
-			  else {
-				int i;
-				volatile int k;
-				for (i = 0; i < size/sizeof(int); i++) {
-					k = ((int *)adr)[i];
-				}
-				mlockall(MCL_CURRENT | MCL_FUTURE);
-			}
-#endif
 			if (isheap) {
 				arg.arg = (unsigned long)adr;
 #ifdef SHM_USE_LXRT
@@ -314,7 +297,7 @@ static inline void *_rt_shm_alloc(void *start, unsigned long name, int size, int
  * 
  * rtai_malloc_adr is used to allocate shared memory from user space.
  *
- * @param start_address is the amount of required shared memory.
+ * @param start_address is the adr were the shared memory should be mapped.
  * 
  * @param name is an unsigned long identifier;
  * 
@@ -400,13 +383,13 @@ RTAI_PROTO(void, rt_named_hfree, (void *addr))
 	rtai_lxrt(BIDX, SIZARG, HEAP_NAMED_FREE, &arg);
 }
 
-RTAI_PROTO(void *, rt_malloc_new, (int size))
+RTAI_PROTO(void *, rt_malloc, (int size))
 {
 	struct { int size; } arg = { size };
 	return rtai_lxrt(BIDX, SIZARG, MALLOC, &arg).v[LOW];
 }
 
-RTAI_PROTO(void, rt_free_new, (void *addr))
+RTAI_PROTO(void, rt_free, (void *addr))
 {
 	struct { void *addr; } arg = { addr };
 	rtai_lxrt(BIDX, SIZARG, FREE, &arg);

@@ -1326,7 +1326,7 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 	adp_root->cpudata[cpuid].status = lflags;
 //1)	adeos_restore_pipeline_nosync(adp_root, lflags, cpuid);
 
-	if (!test_bit(IPIPE_STALL_FLAG, &lflags)) {
+	if (!test_bit(IPIPE_STALL_FLAG, &lflags) && !IN_ATOMIC()) {
 //1)	if (!adeos_test_pipeline_from(adp_root) && !IN_ATOMIC()) {
 		rtai_sti();
 		if (irq == __adeos_tick_irq) {

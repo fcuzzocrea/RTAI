@@ -822,12 +822,13 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 
 #ifdef XENO_TIMER_MODULE
 
-static inline void xnarch_program_timer_shot (unsigned long long delay) {
-    /* Delays are expressed in CPU ticks, so we need to keep a 64bit
-       value here, especially for 64bit arch ports using an interval
-       timer based on the internal cycle counter of the CPU. Since the
-       timebase value is used to express CPU ticks on the PowerPC
-       port, there is no need to rescale the delay value. */ 
+static inline void xnarch_program_timer_shot (unsigned long delay) {
+    /* Even though some architectures may use a 64 bits delay here, we
+       voluntarily limit to 32 bits, 4 billions ticks should be enough for
+       now. If a timer need more, a spurious but harmless call to the tick
+       handler will occur after 4 billions ticks. Since the timebase value is
+       used to express CPU ticks on the PowerPC port, there is no need to
+       rescale the delay value. */
     rthal_set_timer_shot(delay);
 }
 

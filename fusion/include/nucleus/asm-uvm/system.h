@@ -392,7 +392,7 @@ int main (int argc, char *argv[])
 
 void *uvm_timer_handle;
 
-static inline void xnarch_program_timer_shot (unsigned long long delay) {
+static inline void xnarch_program_timer_shot (unsigned long delay) {
     /* Empty -- not available */
 }
 

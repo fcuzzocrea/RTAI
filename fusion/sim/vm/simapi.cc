@@ -220,7 +220,7 @@ int mvm_start_timer (unsigned long nstick,
     return 0;
 }
 
-void mvm_program_timer (unsigned long long delay) {
+void mvm_program_timer (unsigned long delay) {
 
     if (mvmtimer)
 	mvmtimer->configure(CfEventTimer,

@@ -274,7 +274,7 @@ int mvm_get_irqmask(void);
 int mvm_start_timer(unsigned long nstick,
 		    void (*tickhandler)(void));
 
-void mvm_program_timer(unsigned long long delay);
+void mvm_program_timer(unsigned long delay);
 
 void mvm_stop_timer(void);
 
@@ -401,7 +401,7 @@ static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
 
 #ifdef XENO_TIMER_MODULE
 
-static inline void xnarch_program_timer_shot (unsigned long long delay) {
+static inline void xnarch_program_timer_shot (unsigned long delay) {
 
     /* 1 tsc unit of the virtual CPU == 1 ns. */
     mvm_program_timer(delay);

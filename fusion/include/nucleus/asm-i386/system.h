@@ -939,10 +939,10 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 #ifdef XENO_TIMER_MODULE
 
 static inline void xnarch_program_timer_shot (unsigned long delay) {
-    /* Even though some architectures may use a 64 bits delay here, we voluntary
-       limit to 32 bits, 4 billions ticks should be enough for now. If a
-       timer need more, a spurious but harmless call to the tick handler will
-       occur after 4 billions ticks. */
+    /* Even though some architectures may use a 64 bits delay here, we
+       voluntarily limit to 32 bits, 4 billions ticks should be enough for
+       now. If a timer need more, a spurious but harmless call to the tick
+       handler will occur after 4 billions ticks. */
     rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
 }
 

@@ -42,7 +42,7 @@ static int __map_queue_memory (RT_QUEUE *q, RT_QUEUE_PLACEHOLDER *php)
 
     /* Open the heap device to share the message pool memory with the
        in-kernel skin and bound clients. */
-    heapfd = open(XNHEAP_DEV_NAME,O_RDONLY);
+    heapfd = open(XNHEAP_DEV_NAME,O_RDWR);
 
     if (heapfd < 0)
 	return -ENOENT;
@@ -64,6 +64,8 @@ static int __map_queue_memory (RT_QUEUE *q, RT_QUEUE_PLACEHOLDER *php)
     if (php->mapbase != MAP_FAILED)
 	/* Copy back a complete placeholder only if all is ok. */
 	*q = *php;
+    else
+	err = -ENOMEM;
 
  close_and_exit:
 
@@ -91,8 +93,18 @@ int rt_queue_create (RT_QUEUE *q,
 			    poolsize,
 			    qlimit,
 			    mode|Q_SHARED);
+    if (err)
+	return err;
 
-    return err ?: __map_queue_memory(q,&ph);
+    err = __map_queue_memory(q,&ph);
+
+    if (err)
+	/* If the mapping fails, make sure we don't leave a dandling
+	   queue in kernel space -- remove it. */
+	XENOMAI_SKINCALL1(__rtai_muxid,
+			  __rtai_queue_delete,
+			  &ph);
+    return err;
 }
 
 int rt_queue_bind (RT_QUEUE *q,
@@ -112,20 +124,41 @@ int rt_queue_bind (RT_QUEUE *q,
     return err ?: __map_queue_memory(q,&ph);
 }
 
+int rt_queue_unbind (RT_QUEUE *q)
+
+{
+    int err = munmap(q->mapbase,q->mapsize);
+
+    q->opaque = RT_HANDLE_INVALID;
+    q->mapbase = NULL;
+    q->mapsize = 0;
+
+    return err;
+}
+
 int rt_queue_delete (RT_QUEUE *q)
 
 {
     int err;
 
-    err = XENOMAI_SKINCALL1(__rtai_muxid,
-			    __rtai_queue_delete,
-			    q);
-    if (err)
-	return err;
+    err = munmap(q->mapbase,q->mapsize);
 
-    munmap(q->mapbase,q->mapsize);
+    if (!err)
+	err = XENOMAI_SKINCALL1(__rtai_muxid,
+				__rtai_queue_delete,
+				q);
 
-    return 0;
+    /* If the deletion fails, there is likely something fishy about
+       this queue descriptor, so we'd better clean it up anyway so
+       that it could not be further used. */
+
+ cleanup_and_exit:
+
+    q->opaque = RT_HANDLE_INVALID;
+    q->mapbase = NULL;
+    q->mapsize = 0;
+
+    return err;
 }
 
 void *rt_queue_alloc (RT_QUEUE *q,

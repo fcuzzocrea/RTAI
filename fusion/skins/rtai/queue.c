@@ -150,9 +150,13 @@ int rt_queue_create (RT_QUEUE *q,
 
 #ifdef __KERNEL__
     if (mode & Q_SHARED)
+	{
 	err = xnheap_init_shared(&q->bufpool,
 				 poolsize,
 				 (mode & Q_DMA) ? GFP_DMA : 0);
+	if (err)
+	    return err;
+	}
     else
 #endif /* __KERNEL__ */
 	{
@@ -168,7 +172,7 @@ int rt_queue_create (RT_QUEUE *q,
 	if (err)
 	    {
 	    xnarch_sysfree(poolmem,poolsize);
-	    return -ENOMEM;
+	    return err;
 	    }
 	}
 

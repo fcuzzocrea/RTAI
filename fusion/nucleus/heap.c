@@ -676,13 +676,6 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
 
 static DECLARE_XNQUEUE(kheapq);	/* Shared heap queue. */
 
-static void xnheap_vmopen (struct vm_area_struct *vma)
-
-{
-    xnheap_t *heap = (xnheap_t *)vma->vm_private_data;
-    atomic_inc(&heap->archdep.numaps);
-}
-
 static void xnheap_vmclose (struct vm_area_struct *vma)
 
 {
@@ -691,7 +684,6 @@ static void xnheap_vmclose (struct vm_area_struct *vma)
 }
 
 static struct vm_operations_struct xnheap_vmops = {
-    open:  &xnheap_vmopen,
     close: &xnheap_vmclose
 };
 
@@ -746,12 +738,6 @@ static int xnheap_ioctl (struct inode *inode,
     if (!heap)
 	{
 	err = -EINVAL;
-	goto unlock_and_exit;
-	}
-
-    if (atomic_read(&heap->archdep.numaps) > 0)
-	{
-	err = -EBUSY;
 	goto unlock_and_exit;
 	}
 
@@ -851,6 +837,8 @@ static int xnheap_mmap (struct file *file,
 	    size -= PAGE_SIZE;
 	    }
 	}
+
+    atomic_inc(&heap->archdep.numaps);
 
     return 0;
 }

@@ -1,3 +1,23 @@
+2004-11-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c (__rt_queue_bind): Allow mapping DMA memory.
+
+	* skins/rtai/registry.c (rt_registry_remove): Semantics changed:
+	forcibly unregisters the object.
+	(rt_registry_remove_safe): Performs safe removal atomically when
+	the object is fully unlocked/idle.
+
+2004-11-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c: Revert change to deletion calls mode; they
+	should not switch to primary.
+
+	* skins/rtai/queue.c (rt_queue_create): Return -ENOMEM upon error
+	return from xnheap_init_shared().
+
+	* skins/rtai/lib/queue.c (rt_queue_create): Make sure we don't
+	leave a dandling queue in kernel space if the mapping fails.
+
 2004-11-04  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.6.2

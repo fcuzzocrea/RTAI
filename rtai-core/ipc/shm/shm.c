@@ -561,7 +561,8 @@ static void rt_set_heap(unsigned long name, void *adr)
 	int size;
 	RT_TASK *task;
 
-	hptr = ALIGN2PAGE(heap = rt_get_adr(name));
+	heap = rt_get_adr(name);
+	hptr = ALIGN2PAGE(heap);
 	size = ((abs(rt_get_type(name)) - sizeof(rtheap_t) - (hptr - heap)) & PAGE_MASK);
 	heap = hptr + size;
 	if (!atomic_cmpxchg((int *)hptr, 0, name)) {

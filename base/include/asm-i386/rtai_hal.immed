@@ -214,7 +214,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 /* The only Linux irq flags manipulation lacking in its system.h */
 #define local_irq_restore_nosync(flags, cpuid)  do { adp_root->cpudata[cpuid].status = flags; } while (0)
 
-#extern unsigned long adeos_pended;
+extern unsigned long adeos_pended;
 
 #define adeos_pend_uncond(irq, cpuid) \
 do { \

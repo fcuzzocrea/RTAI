@@ -37,6 +37,9 @@
 
 #ifdef __KERNEL__
 
+#include <asm/segment.h>
+#include <asm/mmu_context.h>
+
 #include <linux/interrupt.h>
 
 #define USE_LINUX_TIMER

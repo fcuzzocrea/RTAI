@@ -92,13 +92,13 @@ static inline int rt_request_global_irq_ext(unsigned irq,
 					    void (*handler)(void),
 					    unsigned long cookie) {
 
-    return rt_request_irq(irq,(void (*)(unsigned,void *))handler,(void *)cookie, 0);
+    return rt_request_irq(irq,(int (*)(unsigned,void *))handler,(void *)cookie, 0);
 }
 
 static inline int rt_request_global_irq(unsigned irq,
 					void (*handler)(void)) {
 
-    return rt_request_irq(irq,(void (*)(unsigned,void *))handler, 0, 0);
+    return rt_request_irq(irq,(int (*)(unsigned,void *))handler, 0, 0);
 }
 
 static inline void rt_set_global_irq_ext(unsigned irq,

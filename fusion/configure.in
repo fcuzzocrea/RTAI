@@ -552,7 +552,7 @@ fi
 
 AC_CHECK_PROG(DOXYGEN, doxygen, doxygen)
 
-if test x${CONFIG_RTAI_DOC} = xy -a x"$DOXYGEN" = x; then
+if test x${CONFIG_RTAI_DOC_DOX} = xy -a x"$DOXYGEN" = x; then
    AC_MSG_ERROR([Missing the Doxygen tools to generate the RTAI documentation.])
 fi
 

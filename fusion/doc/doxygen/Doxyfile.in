@@ -363,6 +363,7 @@ WARN_LOGFILE           =
 
 INPUT                  = \
         @top_srcdir@/nucleus \
+        @top_srcdir@/skins/rtai \
         @top_srcdir@/doc/doxygen
 
 # If the value of the INPUT tag contains directories, you can use the 
@@ -866,6 +867,7 @@ SEARCH_INCLUDES        = YES
 
 # Added top_buildir here for the definition of RTAI_PROTO in rtai_confg.h
 INCLUDE_PATH           = @top_srcdir@/include \
+@top_builddir@/include \
 @top_builddir@
 
 

@@ -246,12 +246,16 @@ static int latency_write_proc (struct file *file,
 			       unsigned long count,
 			       void *data)
 {
-    char *end, buf[sizeof("nnnnn\0")];
+    char *end, buf[sizeof("nnnnn\0") + 1];
     long ns;
+    int n;
 
-    if (copy_from_user(buf,buffer,count))
+    n = count > sizeof(buf) ? sizeof(buf) : count;
+
+    if (copy_from_user(buf,buffer,n))
 	return -EFAULT;
 
+    buf[n] = '\0';
     ns = simple_strtol(buf,&end,0);
 
     if ((*end != '\0' && !isspace(*end)) || ns < 0)
@@ -303,7 +307,7 @@ void xnpod_init_proc (void)
 	entry->write_proc = NULL;
 	}
 
-    entry = create_proc_entry("latency",0600,root_proc_entry);
+    entry = create_proc_entry("latency",0644,root_proc_entry);
 
     if (entry)
 	{

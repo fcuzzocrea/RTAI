@@ -1,5 +1,15 @@
 2005-02-21  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Upgrade to Adeos 2.6.9,10-i386-r9c4.
+
+	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r6c13.
+
+	* include/nucleus/asm-i386/system.h (xnarch_switch_to): Eagerly
+	reinstate the I/O bitmap of any incoming shadow thread which has
+	previously requested I/O permissions. This prevents lazy update
+	upon fault of the I/O bitmap for shadow threads that explicitely
+	told the kernel that they would need to perform raw I/O ops.
+
 	* TROUBLESHOOTING: Start troubleshooting guide.
 
 	* nucleus/shadow.c (xnshadow_relax): Engage interrupt shield when

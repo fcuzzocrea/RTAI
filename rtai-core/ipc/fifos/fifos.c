@@ -967,7 +967,7 @@ int rtf_resize(unsigned int minor, int size)
  * Multiple calls of this function are allowed, a counter is kept internally to
  * track their number, and avoid destroying/closing a fifo that is still used.
  *
- * @retval size on success
+ * @retval 0 on success
  * @retval ENODEV if fifo is greater than or equal to RTF_NO
  * @retval ENOMEM if the necessary size could not be allocated for the RT-FIFO.
  *

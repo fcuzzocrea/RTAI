@@ -1,3 +1,8 @@
+2004-10-20  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* rtai-core/ipc/fifos/fifos.c (rtf_create): Fix rtf_create
+	documentation.
+
 2004-10-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* rtai-core/arch/i386/hal/hal.c: changed to support a single entry

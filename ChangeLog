@@ -1,3 +1,29 @@
+2004-08-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/include/asm/rtai_lxrt.h: "switch_to" Linux release 
+	dependent, for 2.6.x the Linux one is used.
+
+        * rtai-core/sched/rtai/sys_lxrt.c: added a check to force a task to
+	soft before deleting its real time extension, just in case ...
+
+        * rtai-core/sched/rtai/sched_lxrt.c: 
+	- fixed force soft from another task, missed 
+	  __adeos_schedule_back_root.
+	- the current task to be switched off is specifically determined 
+	  according to it being soft/hard.
+	- traps and syscalls intercepts need no more to recall "current".
+	- restoring the fpu context immediately, to avoid the dev not 
+	  available trap, done for hard tasks only.
+	- added LxrtMode for managing syscalls done while in hard mode:
+		- 0  (single mode) makes the task soft and never returns 
+		  it to hard,
+		- !0 (dual mode) switches all tasks to soft/hard mode
+		  according to the API they want to use;
+	  can be set at insmod.
+
+        * rtai-core/ipc/netrpc/netrpc.c: force LxrtMode to zero, till
+	dual mode is tested for metrpc also.
+
 2004-08-15  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Upgrade to 2.4/hal14 and 2.6/hal6

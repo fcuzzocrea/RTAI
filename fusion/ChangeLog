@@ -1,3 +1,13 @@
+2004-11-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/event.c: Rename rt_event_post() -> rt_event_signal(),
+	rt_event_pend() -> rt_event_wait() for consistency purpose with
+	the condvar support.
+
+2004-11-28  Jan Kiszka <kiszka@rts.uni-hannover.de>
+
+	* skins/rtai/sem.c: Export sem_broadcast().
+
 2004-11-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-*/syscall.h: Provide support for direct

@@ -242,10 +242,10 @@ static void xnshadow_shield (int iflag)
     if (iflag)
 	xnarch_grab_xirqs(&xnshadow_shield_handler);
 
-#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)
+#if !defined(CONFIG_ADEOS_NOTHREADS)
     for (;;)
 	adeos_suspend_domain();
-#endif /* CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS */
+#endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
 static void xnshadow_renice_handler (unsigned virq)

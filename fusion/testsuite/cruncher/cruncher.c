@@ -41,7 +41,7 @@ static inline void get_time_us (suseconds_t *tp)
 	/* We need a better resolution than the one gettimeofday()
 	   provides here. */
 	nanotime_t t;
-	pthread_cputime_rt(&t);
+	pthread_time_rt(&t);
 	*tp = t / 1000;
 	}
     else
@@ -123,9 +123,9 @@ void *sampler_thread (void *arg)
     suseconds_t mint1 = 10000000, maxt1 = 0, sumt1 = 0;
     suseconds_t mint2 = 10000000, maxt2 = 0, sumt2 = 0;
     suseconds_t t, t0, t1, ideal;
+    int count, policy, pass = 0;
     struct sched_param param;
     struct timespec ts;
-    int count, policy;
 
     dim = FIRST_DIM;
     ref = compute();
@@ -161,8 +161,10 @@ void *sampler_thread (void *arg)
 
         ideal = (t1 - t0) / count;
 
-        if(dim == ndims || ((ideal > IDEAL - MARGIN) &&
-                            (ideal < IDEAL + MARGIN)))
+        if(++pass > 5 ||
+	   dim == ndims ||
+	   ((ideal > IDEAL - MARGIN) &&
+	    (ideal < IDEAL + MARGIN)))
             break;
 
         printf("%ld, ", ideal);
@@ -181,6 +183,8 @@ void *sampler_thread (void *arg)
 	   getpid(),
 	   policy == SCHED_FIFO ? "FIFO" : policy == SCHED_RR ? "RR" : "NORMAL",
 	   param.sched_priority);
+
+    sleep(1);
 
     for (count = 0; count < sample_count; count++)
 	{

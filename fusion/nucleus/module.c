@@ -105,11 +105,11 @@ static int sched_read_proc (char *page,
 			    int *eof,
 			    void *data)
 {
-    xnticks_t now;
     const unsigned nr_cpus = xnarch_num_online_cpus();
     xnthread_t *thread;
     xnholder_t *holder;
     char *p = page;
+    xnticks_t now;
     char buf[64];
     unsigned cpu;
     int len = 0;
@@ -154,6 +154,66 @@ static int sched_read_proc (char *page,
 			 thread->status,
 			 xnthread_symbolic_status(thread->status,
                                                   buf,sizeof(buf)));
+            }
+        }
+
+    xnlock_put_irqrestore(&nklock, s);
+
+ out:
+
+    len = p - page - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if (len > count) len = count;
+    if (len < 0) len = 0;
+
+    return len;
+}
+
+static int stat_read_proc (char *page,
+			   char **start,
+			   off_t off,
+			   int count,
+			   int *eof,
+			   void *data)
+{
+    const unsigned nr_cpus = xnarch_num_online_cpus();
+    xnthread_t *thread;
+    xnholder_t *holder;
+    char *p = page;
+    unsigned cpu;
+    int len = 0;
+    spl_t s;
+
+    if (!nkpod)
+	goto out;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    p += sprintf(p,"%-3s   %-6s %-12s %-16s\n",
+		 "CPU","PID","NAME","MODSW");
+
+    for (cpu = 0; cpu < nr_cpus; ++cpu)
+        {
+        xnsched_t *sched = xnpod_sched_slot(cpu);
+
+        holder = getheadq(&nkpod->threadq);
+
+        while (holder)
+	    {
+	    thread = link2thread(holder,glink);
+            holder = nextq(&nkpod->threadq,holder);
+
+            if (thread->sched != sched)
+                continue;
+
+	    p += sprintf(p,"%3u   %-6d %-12s %6lu/%-6lu\n",
+                         cpu,
+			 !testbits(thread->status,XNROOT) && xnthread_user_task(thread) ?
+			 xnthread_user_task(thread)->pid : 0,
+                         thread->name,
+			 thread->stat.psw,
+			 thread->stat.ssw);
             }
         }
 
@@ -313,6 +373,12 @@ void xnpod_init_proc (void)
 		  NULL,
 		  rthal_proc_root);
 
+    add_proc_leaf("stat",
+		  &stat_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
+
     add_proc_leaf("latency",
 		  &latency_read_proc,
 		  &latency_write_proc,
@@ -353,6 +419,7 @@ void xnpod_delete_proc (void)
     remove_proc_entry("timer",rthal_proc_root);
     remove_proc_entry("version",rthal_proc_root);
     remove_proc_entry("latency",rthal_proc_root);
+    remove_proc_entry("stat",rthal_proc_root);
     remove_proc_entry("sched",rthal_proc_root);
 }
 

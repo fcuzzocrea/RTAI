@@ -1516,6 +1516,7 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 {
     struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))evinfo->evdata;
     struct task_struct *next = evdata->next;
+    struct task_struct *prev = evdata->prev;
     xnthread_t *thread = xnshadow_thread(next);
     int oldrprio, newrprio;
     adeos_declare_cpuid;
@@ -1528,7 +1529,7 @@ static void linux_schedule_head (adevinfo_t *evinfo)
     adeos_load_cpuid();	/* Linux is running in a migration-safe
 			   portion of code. */
 
-    set_switch_lock_owner(current);
+    set_switch_lock_owner(prev);
 
     if (thread)
 	{

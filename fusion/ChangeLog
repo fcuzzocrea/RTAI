@@ -1,3 +1,8 @@
+2005-03-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/module.c (stat_read_proc): Add /proc/rtai/stat entry
+	aimed at giving various statistics about the schedulable objects.
+
 2005-03-15  Jim Cromie <jcromie@divsol.com>
 
 	* testsuite/klatency: Add test duration switch (-T).

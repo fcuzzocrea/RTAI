@@ -126,6 +126,14 @@ typedef struct xnthread {
 
     xnticks_t rrcredit;		/* Remaining round-robin time credit (ticks) */
 
+    struct {
+
+	unsigned long psw;	/* Primary mode switch count */
+
+	unsigned long ssw;	/* Secondary mode switch count */
+
+    } stat;
+
     xnasr_t asr;		/* Asynchronous service routine */
 
     xnflags_t asrmode;		/* Thread's mode for ASR */

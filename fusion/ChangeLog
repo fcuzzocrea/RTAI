@@ -1,3 +1,9 @@
+2005-02-14  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc/patches: Upgrade to Adeos 2.6.10rc3-ppc-r6c12. This
+	fixes the random lockup bug experienced while running user-space
+	threads.
+
 2005-02-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/thread.c (xnthread_init): Provide default thread name

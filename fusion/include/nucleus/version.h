@@ -32,4 +32,6 @@
 
 #define FUSION_VERSION_CODE  0x00000700
 
+#define FUSION_VERSION_NAME  "Crystal Planet"
+
 #endif /* _RTAI_NUCLEUS_VERSION_H */

@@ -430,7 +430,9 @@ int __fusion_sys_init (void)
     }
 #endif /* __KERNEL__ */
 
-    xnloginfo("RTAI/fusion v%s started.\n",PACKAGE_VERSION);
+    xnloginfo("RTAI/fusion v%s (%s) started.\n",
+	      PACKAGE_VERSION,
+	      FUSION_VERSION_NAME);
 
     return 0;
 

@@ -209,10 +209,7 @@ static int __pthread_start_timer_rt (struct task_struct *curr, struct pt_regs *r
 	xnpod_stop_timer();
 	}
 
-    if (xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER) != 0)
-	return -ETIME;
-
-    return 0;
+    return xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 }
 
 static int __pthread_stop_timer_rt (struct task_struct *curr, struct pt_regs *regs)

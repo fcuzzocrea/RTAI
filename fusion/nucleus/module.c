@@ -101,6 +101,17 @@ void xnmod_alloc_glinks (xnqueue_t *freehq)
 
 static struct proc_dir_entry *xenomai_proc_entry;
 
+static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
+
+{
+    if (!testbits(thread->status,XNDELAY))
+	return 0LL;
+
+    return testbits(thread->status,XNPEND) ?
+	xntimer_get_timeout(&thread->rtimer) :
+	xntimer_get_timeout(&thread->ptimer);
+}
+
 static int xnpod_read_proc (char *page,
 			    char **start,
 			    off_t off,
@@ -203,9 +214,7 @@ static int xnpod_read_proc (char *page,
                          cpu,
                          thread->name,
                          thread->cprio,
-                         (testbits(thread->status,XNDELAY)
-                          ? xnthread_timeout(thread)
-                          : 0LL ),
+			 __get_thread_timeout(thread),
                          thread->status,
 			 xnthread_symbolic_status(thread->status,
                                                   buf,sizeof(buf)));

@@ -1,0 +1,8 @@
+0.6.9 -> 0.7
+
+	o mlockall() is no longer implicitely issued by the
+	rt_task_create() service in user-space. Applications should 
+	make sure to lock the memory pages appropriately by
+	themselves.
+___________________________________________________________________
+

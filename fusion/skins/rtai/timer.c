@@ -301,8 +301,8 @@ void rt_timer_spin (RTIME ns)
  * @return 0 is returned on success. Otherwise:
  *
  * - -EBUSY is returned if the timer has already been set.
- * xnpod_stop_timer() must be issued before xnpod_start_timer() is
- * called again.
+ * rt_timer_stop() must be issued before rt_timer_start() is called
+ * again.
  *
  * - -ENOSYS is returned if the underlying architecture does not
  * support the requested oneshot timing.

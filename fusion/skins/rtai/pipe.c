@@ -27,9 +27,9 @@
  *
  * Pipe management services.
  *
- * Real-time pipes are an improved replacement for the legacy
- * RT-FIFOS. A pipe is a two-way communication channel between a
- * kernel-based real-time thread and a user-space process. Pipes can
+ * Message pipes are an improved replacement for the legacy
+ * RT-FIFOS. A message pipe is a two-way communication channel between
+ * a kernel-based real-time thread and a user-space process. Pipes can
  * be operated in a message-oriented fashion so that message
  * boundaries are preserved, and also in byte streaming mode from
  * kernel to user-space for optimal throughput.

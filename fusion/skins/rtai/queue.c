@@ -782,7 +782,7 @@ int rt_queue_inquire (RT_QUEUE *q,
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EFAULT is returned if @a heap or @a name is referencing invalid
+ * - -EFAULT is returned if @a q or @a name is referencing invalid
  * memory.
  *
  * - -EINTR is returned if rt_task_unblock() has been called for the

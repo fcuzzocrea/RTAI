@@ -50,7 +50,7 @@ void out_mbx_send_if_init(int port,int nch,char * sName,char * IP)
       Target_Port = 0;
     }
     else {
-      inet_aton(sName, &addr.sin_addr);
+      inet_aton(IP, &addr.sin_addr);
       Target_Node = addr.sin_addr.s_addr;
       while ((Target_Port = rt_request_port_id(Target_Node,nam2num(sName))) <= 0 && Target_Port != -EINVAL);
     }

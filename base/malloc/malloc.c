@@ -70,6 +70,9 @@ static void *alloc_extent (u_long size)
 	p = (caddr_t)kmalloc(size,GFP_KERNEL);
 	printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
 #endif /* CONFIG_RTAI_MALLOC_VMALLOC */
+	if (p) {
+		memset(p, 0, size);
+	}
 	return p;
 }
 

@@ -31,7 +31,7 @@ latency_CPPFLAGS = \
 	-I../../include
 
 latency_LDADD = \
-	-lpthread
+	-lpthread -lm
 
 all-local: latency_rt$(modext)
 if CONFIG_RTAI_OLD_FASHIONED_BUILD

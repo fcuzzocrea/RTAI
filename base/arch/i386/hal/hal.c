@@ -657,10 +657,11 @@ int rt_free_srq (unsigned srq)
  */
 void rt_pend_linux_srq (unsigned srq)
 {
+	int cpuid;
 	if (srq > 0 && srq < RTAI_NR_SRQS) {
 		set_bit(srq,&rtai_sysreq_pending);
 //		adeos_schedule_irq(rtai_sysreq_virq); 
-		int cpuid = rtai_cpuid();
+		cpuid = rtai_cpuid();
 		if (adp_cpu_current[cpuid] == &rtai_domain) {
 			adeos_propagate_irq(rtai_sysreq_virq);
 		} else {

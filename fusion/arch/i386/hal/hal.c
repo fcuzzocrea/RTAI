@@ -746,37 +746,18 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
     exiting thread, but unfortunately after the LDT itself has been
     dropped. Since the default LDT is only 5 entries long, any attempt
     to refer to an LDT-indexed descriptor above this value would cause
-    a GPF.  2) NMI is not pipelined by Adeos. */
+    a GPF.
+    2) NMI is not pipelined by Adeos. */
 
     adeos_load_cpuid();
 
     if (evinfo->domid == RTHAL_DOMAIN_ID)
 	{
-	struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
-
-	if (evinfo->event == 14)	/* Page fault. */
+	if (evinfo->event == 7)
 	    {
-	    unsigned long address;
-
-	    /* As of 2.6, we must handle RTAI-originated faults in
-	       kernel space caused by on-demand virtual memory
-	       mappings. We can specifically process this case through
-	       the Linux fault handler since we know that it is
-	       context-agnostic and does not wreck the
-	       determinism. Any other case would lead us to
-	       panicking. */
-
-	    __asm__("movl %%cr2,%0":"=r" (address));
-
-	    if (address >= TASK_SIZE && !(regs->orig_eax & 5)) /* i.e. trap error code. */
-		{
-		asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code);
-		do_page_fault(regs,regs->orig_eax);
-		goto endtrap;
-		}
-	    }
-        else if (evinfo->event == 7)
+	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
             print_symbol("Invalid use of FPU in RTAI context at %s\n",regs->eip);
+	    }
 
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&
@@ -867,9 +848,9 @@ static void rthal_domain_entry (int iflag)
 
     printk(KERN_INFO "RTAI[hal]: Loaded over Adeos %s.\n",ADEOS_VERSION_STRING);
 
+#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)
  spin:
 
-#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)
     for (;;)
 	adeos_suspend_domain();
 #endif /* CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS */

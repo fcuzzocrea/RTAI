@@ -2585,7 +2585,8 @@ int xnpod_remove_hook (int type, void (*routine)(xnthread_t *))
 	    goto bad_hook;
         }
 
-    for (holder = getheadq(hookq); holder; holder = nextq(hookq,holder))
+    for (holder = getheadq(hookq);
+	 holder != NULL; holder = nextq(hookq,holder))
         {
         hook = link2hook(holder);
 

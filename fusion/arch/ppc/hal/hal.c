@@ -617,9 +617,9 @@ static void rthal_domain_entry (int iflag)
 
     printk(KERN_INFO "RTAI[hal]: Loaded over Adeos %s.\n",ADEOS_VERSION_STRING);
 
+#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)
  spin:
 
-#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)
     for (;;)
 	adeos_suspend_domain();
 #endif /* CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS */

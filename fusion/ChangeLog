@@ -1,5 +1,8 @@
 2005-03-29  Philippe Gerum  <rpm@xenomai.org>
 
+	* testsuite/cruncher/cruncher.c (main): Switch the timer off upon
+	exit.
+
 	* nucleus/shadow.c (xnshadow_harden, xnshadow_relax): Increment
 	mode switch counters as expected.
 

@@ -246,6 +246,8 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
 {
     finished = 1;
 
+    pthread_stop_timer_rt();
+
     if (do_histogram)
 	dump_histogram();
 
@@ -322,6 +324,8 @@ int main (int ac, char **av)
     pthread_create(&sampler_thid,&thattr,&sampler_thread,NULL);
 
     sem_wait(&semX);
+
+    pthread_stop_timer_rt();
 
     return 0;
 }

@@ -48,7 +48,7 @@ int nkgkptd;
 
 struct xnskentry muxtable[XENOMAI_MUX_NR];
 
-static int traceme = 1;
+static int traceme = 0;
 
 static struct __gatekeeper {
 

@@ -103,7 +103,7 @@ struct xnltt_evmap xnltt_evtable[] = {
     [rtai_ev_fault] = { "RTAI fault", "thread=%s, location=%p, trap=%d", -1, rtai_evall },
     [rtai_ev_callout] = { "RTAI callout", "type=%s, thread=%s", -1, rtai_evall },
     [rtai_ev_finalize] = { "RTAI finalize", "%s -> %s", -1, rtai_evall },
-    [rtai_ev_thrinit] = { "RTAI thread init", "thread=%s", -1, rtai_evthr },
+    [rtai_ev_thrinit] = { "RTAI thread init", "thread=%s, flags=0x%x", -1, rtai_evthr },
     [rtai_ev_thrstart] = { "RTAI thread start", "thread=%s", -1, rtai_evthr },
     [rtai_ev_threstart] = { "RTAI thread restart", "thread=%s", -1, rtai_evthr },
     [rtai_ev_thrdelete] = { "RTAI thread delete", "thread=%s", -1, rtai_evthr },

@@ -1,3 +1,17 @@
+2004-02-06  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_use.h: reworked to use srq instead of LXRT for
+	  calling USI related services, so that they do not depend from the
+	  scheduler anymore.
+	* base/include/asm/rtai_use.h: added the new arch soecific USI 
+	  support, so that it should be easy to have USI on non x86 also.
+	* base/arch/i386/hal.*: user space syscall extended to support USI 
+	* base/tasklets.c: ensure interrupt are enabled at exiting the support
+	  tasklet thread.
+	* base/usi/README: updated to the new USI setup; this is the only
+	  file of interest; the rest of all the usi directory content is of
+	  no use anymore.
+
 2004-02-04  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/scripts/rtai_load.in: extended to allow to execute an 

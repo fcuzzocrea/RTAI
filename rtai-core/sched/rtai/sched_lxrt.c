@@ -251,15 +251,11 @@ static inline void sched_release_global_lock(int cpuid)
 
 static int tasks_per_cpu[NR_RT_CPUS] = { 0, };
 
-static inline struct task_struct *intr_get_current(int cpuid)
+static inline struct task_struct *intr_get_current(int cpuid, RT_TASK *rt_current)
 
 {
-    if (rtai_adeos_stack_p(cpuid) ||
-	RT_CURRENT->lnxtsk == NULL ||
-	RT_CURRENT == &rt_linux_task)
-	return rtai_get_root_current(cpuid);
-
-    return current;
+    return (rtai_adeos_stack_p(cpuid) || rt_current == &rt_linux_task) ? 
+	    rtai_get_root_current(cpuid) : current;
 }
 
 int get_min_tasks_cpuid(void)
@@ -769,7 +765,7 @@ fire:			shot_fired = 1;
 schedlnxtsk:
 		rt_smp_current[cpuid] = new_task;
 		if (new_task->is_hard || rt_current->is_hard) {
-			struct task_struct *prev = intr_get_current(cpuid);
+			struct task_struct *prev = intr_get_current(cpuid, rt_current);
 			DECL_CPUS_ALLOWED;
 			SAVE_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {
@@ -1217,7 +1213,7 @@ fire:			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
 		}
 schedlnxtsk:
 		if (new_task->is_hard || rt_current->is_hard) {
-			struct task_struct *prev = intr_get_current(cpuid);
+			struct task_struct *prev = intr_get_current(cpuid, rt_current);
 			DECL_CPUS_ALLOWED;
 			SAVE_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {
@@ -2036,7 +2032,7 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 	return 1;
 	}
 
-    tsk = intr_get_current(cpuid);
+    tsk = intr_get_current(cpuid, rt_current);
 
     if ((rt_task = tsk->this_rt_task[0]) && rt_task->is_hard > 0) {
         give_back_to_linux(rt_task);

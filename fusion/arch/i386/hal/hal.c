@@ -44,6 +44,7 @@ v * @defgroup hal Hardware abstraction layer.
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/console.h>
+#include <linux/kallsyms.h>
 #include <asm/system.h>
 #include <asm/hw_irq.h>
 #include <asm/irq.h>

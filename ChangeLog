@@ -1,3 +1,8 @@
+2004-09-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/Kconfig: Set default ELFTK and COMEDI dirs
+	to /usr/local.
+
 2004-09-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Hold back hal7c1-2.6.8.1 until we

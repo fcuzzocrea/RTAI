@@ -13571,7 +13571,7 @@ fi
 
 
 if test -d $srcdir/rtai-lab; then
-                                                     ac_config_files="$ac_config_files rtai-lab/GNUmakefile rtai-lab/matlab/GNUmakefile rtai-lab/scilab/GNUmakefile rtai-lab/scilab/utility/GNUmakefile rtai-lab/scilab/devices/GNUmakefile"
+                                           ac_config_files="$ac_config_files rtai-lab/GNUmakefile rtai-lab/matlab/GNUmakefile rtai-lab/scilab/GNUmakefile rtai-lab/scilab/devices/GNUmakefile"
 
 elif test \! x$CONFIG_RTAI_LAB = x; then
      { { echo "$as_me:$LINENO: error: rtai-lab package is missing" >&5
@@ -14722,7 +14722,6 @@ do
   "rtai-lab/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES rtai-lab/GNUmakefile" ;;
   "rtai-lab/matlab/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES rtai-lab/matlab/GNUmakefile" ;;
   "rtai-lab/scilab/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES rtai-lab/scilab/GNUmakefile" ;;
-  "rtai-lab/scilab/utility/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES rtai-lab/scilab/utility/GNUmakefile" ;;
   "rtai-lab/scilab/devices/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES rtai-lab/scilab/devices/GNUmakefile" ;;
   "rtai-testsuite/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES rtai-testsuite/GNUmakefile" ;;
   "rtai-testsuite/kern/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES rtai-testsuite/kern/GNUmakefile" ;;

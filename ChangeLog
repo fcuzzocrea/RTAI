@@ -1,7 +1,10 @@
-2004-02-21  Michael Neuhauser  <mike@firmix.at>
+2004-02-21  Luca Pizzi  <lucapizzi@hotmail.it>
+	    Stefano Gafforelli  <Stefano.Gafforelli@tiscali.it>
 
 	* base/arch/arm/hal/mach-pxa/pxa-timer.c (rt_request_timer): fixed
 	return and argument type
+	* base/arch/arm/patches/pxa255_2.6.7-rmk1-karo.patch: added
+	CONFIG_ADEOS_THREADS
 
 2004-02-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

@@ -217,8 +217,8 @@ diff -uNrp arm-linux/Makefile arm-linux-2.6.7-adeos/Makefile
  		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
 diff -uNrp arm-linux/adeos/Kconfig arm-linux-2.6.7-adeos/adeos/Kconfig
 --- arm-linux/adeos/Kconfig	Thu Jan  1 01:00:00 1970
-+++ arm-linux-2.6.7-adeos/adeos/Kconfig	Mon Oct 18 14:00:44 2004
-@@ -0,0 +1,15 @@
++++ arm-linux-2.6.7-adeos/adeos/Kconfig	Mon Feb 21 13:48:42 2005
+@@ -0,0 +1,20 @@
 +menu "Adeos support"
 +
 +config ADEOS
@@ -233,7 +233,12 @@ diff -uNrp arm-linux/adeos/Kconfig arm-linux-2.6.7-adeos/adeos/Kconfig
 +	depends on ADEOS
 +	default y
 +
++config ADEOS_THREADS
++	def_bool ADEOS_CORE
++
 +endmenu
++
++
 diff -uNrp arm-linux/adeos/Makefile arm-linux-2.6.7-adeos/adeos/Makefile
 --- arm-linux/adeos/Makefile	Thu Jan  1 01:00:00 1970
 +++ arm-linux-2.6.7-adeos/adeos/Makefile	Tue Oct 26 12:20:24 2004

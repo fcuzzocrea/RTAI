@@ -9234,11 +9234,6 @@ echo "$as_me: error: RTAI won't work on legacy i386 platforms (cmpxchg() is miss
 echo "$as_me: error: RTAI/Xenomai won't work on legacy i386 platforms (cannot rely on WP bit, need >= CONFIG_M486)" >&2;}
    { (exit 1); exit 1; }; }
   fi
-  if test x${CONFIG_FRAME_POINTER} = xy ; then
-     { { echo "$as_me:$LINENO: error: RTAI won't work properly if CONFIG_FRAME_POINTER is enabled in the kernel configuration" >&5
-echo "$as_me: error: RTAI won't work properly if CONFIG_FRAME_POINTER is enabled in the kernel configuration" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
 else
   # non-x86
   test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"

@@ -1,3 +1,7 @@
+2004-07-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Allow CONFIG_FRAME_POINTER in kernel.
+
 2004-07-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/hal/hal.c (rtai_trap_fault): Fix the

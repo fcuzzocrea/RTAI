@@ -575,9 +575,6 @@ if test "$CONFIG_X86" = y; then
   if test x$CONFIG_RTAI_XENOMAI = xy -a x$CONFIG_X86_WP_WORKS_OK = x; then
      AC_MSG_ERROR([RTAI/Xenomai won't work on legacy i386 platforms (cannot rely on WP bit, need >= CONFIG_M486)])
   fi
-  if test x${CONFIG_FRAME_POINTER} = xy ; then
-     AC_MSG_ERROR([RTAI won't work properly if CONFIG_FRAME_POINTER is enabled in the kernel configuration])
-  fi
 else
   # non-x86
   test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"

@@ -1,3 +1,9 @@
+2004-07-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Kludge:: Allow for configuration of 8254 and PIC
+	latency figures in non-x86 mode, since we need them for non-UP
+	scheds.
+
 2004-07-01  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/malloc/malloc.c (rtheap_destroy): Kludge:: make sure

@@ -9291,8 +9291,6 @@ fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_SCHED_ISR_LOCK:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_SCHED_ISR_LOCK:-no}" >&6
 
-if test "$CONFIG_X86" = y; then
-
 echo "$as_me:$LINENO: checking for 8254 tuning latency" >&5
 echo $ECHO_N "checking for 8254 tuning latency... $ECHO_C" >&6
 # Check whether --enable-sched-8254-latency or --disable-sched-8254-latency was given.
@@ -9330,8 +9328,6 @@ if test x$CONFIG_RTAI_SCHED_APIC_LATENCY = x ; then
 fi
 echo "$as_me:$LINENO: result: $CONFIG_RTAI_SCHED_APIC_LATENCY" >&5
 echo "${ECHO_T}$CONFIG_RTAI_SCHED_APIC_LATENCY" >&6
-
-fi
 
 echo "$as_me:$LINENO: checking for maximum number of LXRT slots" >&5
 echo $ECHO_N "checking for maximum number of LXRT slots... $ECHO_C" >&6

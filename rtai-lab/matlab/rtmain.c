@@ -90,7 +90,7 @@ extern void rt_ODEUpdateContinuousStates(RTWSolverInfo *si);
 extern RT_MODEL *MODEL(void);
 static RT_MODEL *rtM;
 
-#define RTAILAB_VERSION         "3.0.4"
+#define RTAILAB_VERSION         "3.0.5"
 #define MAX_NTARGETS		1000
 #define MAX_NAMES_SIZE		256
 #define RUN_FOREVER		-1.0
@@ -1082,6 +1082,11 @@ static void *rt_HostInterface(void *args)
 					}
 					{ int i;
 					  rtTargetParamInfo rtParameters;
+
+					  rt_receivex(task, &rtParameters, sizeof(char), &len);
+					  rt_GetParameterInfo(MMI, &rtParameters, 0);
+					  rt_returnx(task, &rtParameters, sizeof(rtParameters));
+					  
 					  for (i = 0; i < nBlockParams; i++) {
 						rt_receivex(task, &rtParameters, sizeof(char), &len);
 						rt_GetParameterInfo(MMI, &rtParameters, i);

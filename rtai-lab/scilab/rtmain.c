@@ -41,7 +41,7 @@
 #include <devstruct.h>
 #include <devices.h>
 
-#define RTAILAB_VERSION   "3.1.0"
+#define RTAILAB_VERSION   "3.1.1"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -415,6 +415,9 @@ static void *rt_HostInterface(void *args)
 		rtParam.nCols = 1;
 		
 		rt_return(task, (isRunning << 16) | ((NTOTRPAR1 + NTOTIPAR1 + NUPAR1) & 0xFFFF));
+		rt_receivex(task, &Request, 1, &len);
+	        rt_returnx(task, &rtParam, sizeof(rtParam));
+
 		for (i = 0; i < NRPAR1; i++) {
 		  sprintf(rtParam.blockName,"%s/%s",rtParam.modelName,strRPAR1[i]);
 		  if(i==0) Idx = 0;

@@ -1520,6 +1520,11 @@ static int get_parameters_info(long port, RT_TASK *task)
 	n_params = Is_Target_Running & 0xffff;
 	Is_Target_Running >>= 16;
 	if (n_params > 0) Tunable_Parameters = new Target_Parameters_T [n_params];
+	else               Tunable_Parameters = new Target_Parameters_T [1];
+
+	RT_rpcx(Target_Node, port, task, &c_req, &Tunable_Parameters[0], sizeof(char), sizeof(Target_Parameters_T));
+        RLG_Target_Name = strdup(Tunable_Parameters[0].model_name);
+
 	for (int n = 0; n < n_params; n++) {
 		RT_rpcx(Target_Node, port, task, &c_req, &Tunable_Parameters[n], sizeof(char), sizeof(Target_Parameters_T));
 		if (n > 0) {
@@ -1791,11 +1796,9 @@ static void rlg_update_after_connect(void)
 	RLG_Main_Menu_Table[4].activate();
 	RLG_Main_Menu_Table[5].deactivate();
 	for (int i = 9; i <= 14; i++) RLG_Main_Menu_Table[i].activate();
-        if(Num_Tunable_Parameters!=0){
+        if(Num_Tunable_Parameters!=0)
 	  RLG_Params_Mgr_Button->activate();
-	  sprintf(buf, "Target: %s.", Tunable_Parameters[0].model_name);
-	  RLG_Target_Name = strdup(Tunable_Parameters[0].model_name);
-	}
+	sprintf(buf, "Target: %s.", RLG_Target_Name);
 	RLG_Main_Status->label(buf);
 	RLG_Main_Menu->menu(RLG_Main_Menu_Table);
 	RLG_Main_Menu->redraw();
@@ -1924,7 +1927,7 @@ static void *rt_target_interface(void *args)
 				rlg_manager_window(Num_Meters, METERS_MANAGER, false, 530, 320, 320, 250);
 				rlg_manager_window(Num_Synchs, SYNCHS_MANAGER, false, 530, 320, 320, 250);
 				if (Verbose) {
-					printf("Target %s is correctly connected\n", Tunable_Parameters[0].model_name);
+					printf("Target %s is correctly connected\n", RLG_Target_Name);
 				}
 				if (Num_Scopes > 0) Get_Scope_Data_Thread = new pthread_t [Num_Scopes];
 				for (int n = 0; n < Num_Scopes; n++) {

@@ -1,3 +1,19 @@
+2004-08-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/include/asm/rtai_vectors.h: added "memory" clobbering
+	to RTAI_DO_TRAP, this allows using a single truly static inline
+	for calling LXRT fuctions.
+
+        * rtai-core/include/asm/rtai_lxrt.h: rtai_lxrt rewritten as a 
+	single static inline.
+
+        * rtai-core/ipc/netrpc/netrpc.c: added asmlinkage to kernel syscalls,
+	it allows using static inlines for _syscall?.
+
+        * rtai-core/sched/rtai/sched_lxrt.c: improved checking that making
+	hard is really done only after the task has left Linux; partial 
+	rewrite of fast_schedule, without change of functionality.
+
 2004-08-06  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/include/rtai_sched.h: added a specific status bit for
@@ -6,7 +22,7 @@
         * rtai-core/include/rtai_schedcore.h: use the above state bit when
 	enqueuing a ready soft task.
 
-        * rtai-core/sched/rtai/sched_lxrt.c: reworked: making hard to do it
+        * rtai-core/sched/rtai/sched_lxrt.c: reworked making hard, to do it
 	at the proper time, syscall trap handler, all scheduling functions
 	hard disable interrupts, eliminated schedule_soft hard disable of
 	interrupts, rt_schedule resumes a soft re-scheduled task 

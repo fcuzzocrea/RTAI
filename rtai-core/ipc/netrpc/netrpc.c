@@ -980,9 +980,9 @@ int soft_rt_recvfrom(int sock, void *msg, int msglen, unsigned int flags, struct
 
 static int errno;
 
-static inline _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
+static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
 
-static inline asmlinkage int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
+static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 {
 	int retval;
 	mm_segment_t svdfs = get_fs();
@@ -992,9 +992,9 @@ static inline asmlinkage int kpoll(struct pollfd *ufds, unsigned int nfds, int t
 	return retval;
 }
 
-static inline _syscall2(int, socketcall, int, call, void *, args)
+static _syscall2(int, socketcall, int, call, void *, args)
 
-static inline asmlinkage int ksocketcall(int call, void *args)
+static inline int ksocketcall(int call, void *args)
 {
 	int retval;
 	mm_segment_t svdfs = get_fs();

@@ -1653,12 +1653,12 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
             xnpod_resume_thread(thread,0);
         }
 
-    xnlock_put_irqrestore(&nklock,s);
-
 #if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    if (propagate && testbits(thread->status,XNSHADOW))
+    if (propagate && testbits(thread->status,XNRELAX))
         xnshadow_renice(thread);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 /** 

@@ -70,7 +70,6 @@ static struct __schedback {
     struct {
 #define SB_WAKEUP_REQ 1
 #define SB_SIGNAL_REQ 2
-#define SB_RENICE_REQ 3
 	int type;
 	struct task_struct *task;
 	int arg;
@@ -249,14 +248,6 @@ static void schedback_handler (unsigned virq)
 	    case SB_SIGNAL_REQ:
 
 		send_sig(sb->req[reqnum].arg,task,1);
-		break;
-
-	    case SB_RENICE_REQ:
-
-		/* Unstall the root stage since the following might sleep.  */
-		__adeos_unstall_root();
-		rthal_set_linux_task_priority(task,SCHED_FIFO,sb->req[reqnum].arg);
-		__adeos_stall_root();
 		break;
 	    }
 	}
@@ -554,6 +545,9 @@ void xnshadow_relax (void)
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
 
     __adeos_schedule_back_root(get_switch_lock_owner());
+
+    if (current->rt_priority != thread->cprio)
+      rthal_set_linux_task_priority(current,SCHED_FIFO,thread->cprio);
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */
@@ -862,19 +856,17 @@ void xnshadow_start (xnthread_t *thread,
 void xnshadow_renice (xnthread_t *thread)
 
 {
-    struct task_struct *task = xnthread_archtcb(thread)->user_task;
-    spl_t s;
+  /* Called with nklock locked, RTAI interrupts off. */
 
-    xnlock_get_irqsave(&nklock,s);
+  struct task_struct *task = xnthread_archtcb(thread)->user_task;
 
-    schedule_linux_call(SB_RENICE_REQ,task,thread->cprio);
-
-    if (xnpod_root_p() &&
-	testbits(thread->status,XNRELAX) &&
-	xnpod_priocompare(thread->cprio,xnpod_current_root()->cprio) > 0)
+  if (xnpod_root_p())
+    {
+      rthal_set_linux_task_priority(task,SCHED_FIFO,thread->cprio);
+      
+      if (current == task && thread->cprio != xnpod_current_root()->cprio)
 	xnpod_renice_root(thread->cprio);
-
-    xnlock_put_irqrestore(&nklock,s);
+    }
 }
 
 static int attach_to_interface (struct task_struct *curr,

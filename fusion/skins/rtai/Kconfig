@@ -88,7 +88,7 @@ config RTAI_OPT_NATIVE_COND
 	help
 	
 	Condition variables are synchronization objects which
-	allows RTAI tasks to suspend execution until some predicate on
+	allow RTAI tasks to suspend execution until some predicate on
 	shared data is satisfied. 
 
 config RTAI_OPT_NATIVE_QUEUE

@@ -1007,22 +1007,21 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
  *
  * @param type Defines the kind of hook to install:
  *
- * - RT_HOOK_TSTART: The user-defined routine will be called on behalf
+ * - T_HOOK_START: The user-defined routine will be called on behalf
  * of the starter task whenever a new task starts. An opaque cookie is
  * passed to the routine which can use it to retrieve the descriptor
- * address of the started task through the RT_HOOK_TASKPTR() macro.
+ * address of the started task through the T_HOOK_DESC() macro.
  *
- * - RT_HOOK_TDELETE: The user-defined routine will be called on
- * behalf of the deletor task whenever a task is deleted. An opaque
- * cookie is passed to the routine which can use it to retrieve the
- * descriptor address of the deleted task through the
- * RT_HOOK_TASKPTR() macro.
+ * - T_HOOK_DELETE: The user-defined routine will be called on behalf
+ * of the deletor task whenever a task is deleted. An opaque cookie is
+ * passed to the routine which can use it to retrieve the descriptor
+ * address of the deleted task through the T_HOOK_DESC() macro.
  *
- * - RT_HOOK_TSWITCH: The user-defined routine will be called on
- * behalf of the resuming task whenever a context switch takes
- * place. An opaque cookie is passed to the routine which can use it
- * to retrieve the descriptor address of the task which has been
- * switched in through the RT_HOOK_TASKPTR() macro.
+ * - T_HOOK_SWITCH: The user-defined routine will be called on behalf
+ * of the resuming task whenever a context switch takes place. An
+ * opaque cookie is passed to the routine which can use it to retrieve
+ * the descriptor address of the task which has been switched in
+ * through the T_HOOK_DESC() macro.
  *
  * @param routine The address of the user-supplied routine to call.
  *
@@ -1060,9 +1059,9 @@ int rt_task_add_hook (int type, void (*routine)(void *cookie)) {
  * @param type Defines the kind of hook to uninstall. Possible values
  * are:
  *
- * - RT_HOOK_TSTART
- * - RT_HOOK_TDELETE
- * - RT_HOOK_TSWITCH
+ * - T_HOOK_START
+ * - T_HOOK_DELETE
+ * - T_HOOK_SWITCH
  *
  * @param routine The address of the user-supplied routine to remove
  * from the hook list.
@@ -1225,7 +1224,7 @@ int rt_task_notify (RT_TASK *task,
 /**
  * @fn int rt_task_set_mode(int setmask,
                             int clrmask,
-			    int *oldmode)
+			    int *mode_r)
  * @brief Change task mode bits.
  *
  * Each RTAI task has a set of internal bits determining various
@@ -1269,10 +1268,10 @@ int rt_task_notify (RT_TASK *task,
  * @param setmask A bitmask of mode bits to set for the current
  * task. 0 is an acceptable value which leads to a no-op.
  *
- * @param oldmode If non-NULL, @a oldmode must be a pointer to a
- * memory location which will be written upon success with the
- * previous set of active mode bits. If NULL, the previous set of
- * active mode bits will not be returned.
+ * @param mode_r If non-NULL, @a mode_r must be a pointer to a memory
+ * location which will be written upon success with the previous set
+ * of active mode bits. If NULL, the previous set of active mode bits
+ * will not be returned.
  *
  * @return 0 is returned upon success, or -EINVAL if either @a setmask
  * or @a clrmask specifies invalid bits.

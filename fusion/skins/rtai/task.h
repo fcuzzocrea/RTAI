@@ -71,10 +71,10 @@
 #define T_NOSIG   XNASDI
 
 /* Task hook types. */
-#define RT_HOOK_TSTART  XNHOOK_THREAD_START
-#define RT_HOOK_TSWITCH XNHOOK_THREAD_SWITCH
-#define RT_HOOK_TDELETE XNHOOK_THREAD_DELETE
-#define RT_HOOK_TASKPTR(cookie) thread2rtask(cookie)
+#define T_HOOK_START  XNHOOK_THREAD_START
+#define T_HOOK_SWITCH XNHOOK_THREAD_SWITCH
+#define T_HOOK_DELETE XNHOOK_THREAD_DELETE
+#define T_HOOK_DESC(cookie) thread2rtask(cookie)
 
 /* Priority range (same bounds as fusion, but reversed). */
 #define T_HIPRIO  FUSION_LOW_PRI

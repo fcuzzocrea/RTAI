@@ -445,7 +445,8 @@ int rt_event_wait (RT_EVENT *event,
 
 /**
  * @fn int rt_event_clear(RT_EVENT *event,
-                          unsigned long mask)
+                          unsigned long mask,
+			  unsigned long *mask_r)
  * @brief Clear an event group.
  *
  * Clears a set of flags from an event mask.

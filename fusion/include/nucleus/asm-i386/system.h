@@ -63,9 +63,6 @@
 #include <nucleus/shadow.h>
 
 #define MODULE_PARM_VALUE(parm) (parm)
-#ifndef MODULE_LICENSE
-#define MODULE_LICENSE(s)
-#endif /* MODULE_LICENSE */
 
 typedef unsigned long spl_t;
 
@@ -613,7 +610,10 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
     __asm__ __volatile__ ("clts; fninit");
 
     if (cpu_has_xmm)
-	rthal_load_mxcsr(0x1f80);
+	{
+	unsigned long __mxcsr = 0x1f80UL & 0xffbfUL;
+	__asm__ __volatile__ ("ldmxcsr %0": : "m" (__mxcsr));
+	}
 }
 
 #else /* !CONFIG_RTAI_HW_FPU */

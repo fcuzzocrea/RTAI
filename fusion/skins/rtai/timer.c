@@ -340,8 +340,9 @@ int rt_timer_start (RTIME nstick) {
  * Rescheduling: never.
  */
 
-void rt_timer_stop (void) {
+void rt_timer_stop (void)
 
+{
     xnpod_stop_timer();
 }
 

@@ -46,7 +46,8 @@ typedef unsigned long long rthal_time_t;
 
 static inline unsigned long long rthal_ulldiv (unsigned long long ull,
 					       unsigned long uld,
-					       unsigned long *r) {
+					       unsigned long *r)
+{
     /*
      * Fixed by Marco Morandini <morandini@aero.polimi.it> to work
      * with the -fnostrict-aliasing and -O2 combination using GCC

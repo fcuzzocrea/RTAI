@@ -1,3 +1,16 @@
+2004-11-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/mutex.h: Fix forward declaration of RT_TASK.
+
+	* skins/rtai/task.c (rt_task_set_mode): Allow for changing the
+	mode bits of the current task.
+
+	* skins/rtai/sem.c (rt_sem_broadcast): Add broadcasting op.
+
+	* nucleus/pod.c (xnpod_set_thread_periodic): Allow passing a
+	special start date to indicate that no initial delay should take
+	place before entering the periodic mode.
+
 2004-11-17  Philippe Gerum  <rpm@xenomai.org>
 
 	* Kconfig: Move nucleus-related options to nucleus/Kconfig.

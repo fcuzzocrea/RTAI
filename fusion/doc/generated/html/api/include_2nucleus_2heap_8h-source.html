@@ -137,75 +137,79 @@
 00127 
 00128 <span class="keyword">extern</span> xnheap_t kheap;
 00129 
-00130 <span class="preprocessor">#define xnheap_page_size(heap)   ((heap)-&gt;pagesize)</span>
-00131 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_page_count(heap)  ((heap)-&gt;npages)</span>
-00132 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_used_mem(heap)    ((heap)-&gt;ubytes)</span>
-00133 <span class="preprocessor"></span>
-00134 <span class="preprocessor">#define xnmalloc(size)  xnheap_alloc(&amp;kheap,size)</span>
-00135 <span class="preprocessor"></span><span class="preprocessor">#define xnfree(ptr)     xnheap_free(&amp;kheap,ptr)</span>
-00136 <span class="preprocessor"></span>
-00137 <span class="preprocessor">#ifdef __cplusplus</span>
-00138 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00139 <span class="preprocessor">#endif</span>
+00130 <span class="preprocessor">#define xnheap_size(heap)        ((heap)-&gt;extentsize)</span>
+00131 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_page_size(heap)   ((heap)-&gt;pagesize)</span>
+00132 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_page_count(heap)  ((heap)-&gt;npages)</span>
+00133 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_used_mem(heap)    ((heap)-&gt;ubytes)</span>
+00134 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_overhead(hsize,psize) \</span>
+00135 <span class="preprocessor">((sizeof(xnextent_t) + (((hsize) - sizeof(xnextent_t)) / (psize)) + \</span>
+00136 <span class="preprocessor"> XNHEAP_MINALIGNSZ - 1) &amp; ~(XNHEAP_MINALIGNSZ - 1))</span>
+00137 <span class="preprocessor"></span>
+00138 <span class="preprocessor">#define xnmalloc(size)  xnheap_alloc(&amp;kheap,size)</span>
+00139 <span class="preprocessor"></span><span class="preprocessor">#define xnfree(ptr)     xnheap_free(&amp;kheap,ptr)</span>
 00140 <span class="preprocessor"></span>
-00141 <span class="comment">/* Private interface. */</span>
-00142 
-00143 <span class="preprocessor">#ifdef __KERNEL__</span>
+00141 <span class="preprocessor">#ifdef __cplusplus</span>
+00142 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00143 <span class="preprocessor">#endif</span>
 00144 <span class="preprocessor"></span>
-00145 <span class="preprocessor">#define XNHEAP_DEV_MINOR 254</span>
-00146 <span class="preprocessor"></span>
-00147 <span class="keywordtype">int</span> xnheap_mount(<span class="keywordtype">void</span>);
-00148 
-00149 <span class="keywordtype">void</span> xnheap_umount(<span class="keywordtype">void</span>);
-00150 
-00151 <span class="keywordtype">int</span> xnheap_init_shared(xnheap_t *heap,
-00152                        u_long heapsize,
-00153                        <span class="keywordtype">int</span> memflags);
+00145 <span class="comment">/* Private interface. */</span>
+00146 
+00147 <span class="preprocessor">#ifdef __KERNEL__</span>
+00148 <span class="preprocessor"></span>
+00149 <span class="preprocessor">#define XNHEAP_DEV_MINOR 254</span>
+00150 <span class="preprocessor"></span>
+00151 <span class="keywordtype">int</span> xnheap_mount(<span class="keywordtype">void</span>);
+00152 
+00153 <span class="keywordtype">void</span> xnheap_umount(<span class="keywordtype">void</span>);
 00154 
-00155 <span class="keywordtype">int</span> xnheap_destroy_shared(xnheap_t *heap);
-00156 
-00157 <span class="preprocessor">#define xnheap_shared_offset(heap,ptr) \</span>
-00158 <span class="preprocessor">(((caddr_t)(ptr)) - ((caddr_t)(heap)-&gt;archdep.shmbase))</span>
-00159 <span class="preprocessor"></span>
-00160 <span class="preprocessor">#define xnheap_shared_address(heap,off) \</span>
-00161 <span class="preprocessor">(((caddr_t)(heap)-&gt;archdep.shmbase) + (off))</span>
-00162 <span class="preprocessor"></span>
-00163 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00164 
-00165 <span class="comment">/* Public interface. */</span>
-00166 
-00167 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga2">xnheap_init</a>(xnheap_t *heap,
-00168                 <span class="keywordtype">void</span> *heapaddr,
-00169                 u_long heapsize,
-00170                 u_long pagesize);
-00171 
-00172 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga3">xnheap_destroy</a>(xnheap_t *heap,
-00173                    <span class="keywordtype">void</span> (*flushfn)(xnheap_t *heap,
-00174                                    <span class="keywordtype">void</span> *extaddr,
-00175                                    u_long extsize,
-00176                                    <span class="keywordtype">void</span> *cookie),
-00177                    <span class="keywordtype">void</span> *cookie);
-00178 
-00179 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga7">xnheap_extend</a>(xnheap_t *heap,
-00180                   <span class="keywordtype">void</span> *extaddr,
-00181                   u_long extsize);
+00155 <span class="keywordtype">int</span> xnheap_init_shared(xnheap_t *heap,
+00156                        u_long heapsize,
+00157                        <span class="keywordtype">int</span> memflags);
+00158 
+00159 <span class="keywordtype">int</span> xnheap_destroy_shared(xnheap_t *heap);
+00160 
+00161 <span class="preprocessor">#define xnheap_shared_offset(heap,ptr) \</span>
+00162 <span class="preprocessor">(((caddr_t)(ptr)) - ((caddr_t)(heap)-&gt;archdep.shmbase))</span>
+00163 <span class="preprocessor"></span>
+00164 <span class="preprocessor">#define xnheap_shared_address(heap,off) \</span>
+00165 <span class="preprocessor">(((caddr_t)(heap)-&gt;archdep.shmbase) + (off))</span>
+00166 <span class="preprocessor"></span>
+00167 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00168 
+00169 <span class="comment">/* Public interface. */</span>
+00170 
+00171 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga2">xnheap_init</a>(xnheap_t *heap,
+00172                 <span class="keywordtype">void</span> *heapaddr,
+00173                 u_long heapsize,
+00174                 u_long pagesize);
+00175 
+00176 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga3">xnheap_destroy</a>(xnheap_t *heap,
+00177                    <span class="keywordtype">void</span> (*flushfn)(xnheap_t *heap,
+00178                                    <span class="keywordtype">void</span> *extaddr,
+00179                                    u_long extsize,
+00180                                    <span class="keywordtype">void</span> *cookie),
+00181                    <span class="keywordtype">void</span> *cookie);
 00182 
-00183 <span class="keywordtype">void</span> *<a class="code" href="group__heap.html#ga5">xnheap_alloc</a>(xnheap_t *heap,
-00184                    u_long size);
-00185 
-00186 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga6">xnheap_free</a>(xnheap_t *heap,
-00187                 <span class="keywordtype">void</span> *block);
-00188 
-00189 <span class="preprocessor">#ifdef __cplusplus</span>
-00190 <span class="preprocessor"></span>}
-00191 <span class="preprocessor">#endif</span>
-00192 <span class="preprocessor"></span>
-00193 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
-00194 
-00195 <span class="preprocessor">#define XNHEAP_DEV_NAME  "/dev/rtheap"</span>
+00183 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga7">xnheap_extend</a>(xnheap_t *heap,
+00184                   <span class="keywordtype">void</span> *extaddr,
+00185                   u_long extsize);
+00186 
+00187 <span class="keywordtype">void</span> *<a class="code" href="group__heap.html#ga5">xnheap_alloc</a>(xnheap_t *heap,
+00188                    u_long size);
+00189 
+00190 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga6">xnheap_free</a>(xnheap_t *heap,
+00191                 <span class="keywordtype">void</span> *block);
+00192 
+00193 <span class="preprocessor">#ifdef __cplusplus</span>
+00194 <span class="preprocessor"></span>}
+00195 <span class="preprocessor">#endif</span>
 00196 <span class="preprocessor"></span>
-00197 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_HEAP_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 20:30:26 2004 for RTAI API by&nbsp;
+00197 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00198 
+00199 <span class="preprocessor">#define XNHEAP_DEV_NAME  "/dev/rtheap"</span>
+00200 <span class="preprocessor"></span>
+00201 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_HEAP_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Nov 18 00:00:36 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

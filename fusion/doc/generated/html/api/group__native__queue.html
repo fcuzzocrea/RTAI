@@ -156,7 +156,7 @@ Create a message queue object that allows multiple tasks to exchange data throug
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>q</em>&nbsp;</td><td>The address of a queue descriptor RTAI will use to store the queue-related data. This descriptor must always be valid while the message queue is active therefore it must be allocated in permanent memory.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the queue. When non-NULL and non-empty, this string is copied to a safe place into the descriptor, and passed to the registry package if enabled for indexing the created queue.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the queue. When non-NULL and non-empty, this string is copied to a safe place into the descriptor, and passed to the registry package if enabled for indexing the created queue. Shared queues must be given a valid name.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>poolsize</em>&nbsp;</td><td>The size (in bytes) of the message buffer pool which is going to be pre-allocated to the queue. Message buffers will be claimed and released to this pool. The buffer pool memory is not extensible, so this value must be compatible with the highest message pressure that could be expected.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>qlimit</em>&nbsp;</td><td>This parameter allows to limit the maximum number of messages which can be queued at any point in time. Sending to a full queue begets an error. The special value Q_UNLIMITED can be passed to specify an unlimited amount.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The queue creation mode. The following flags can be OR'ed into this bitmask, each of them affecting the new queue:</td></tr>
@@ -179,7 +179,7 @@ Create a message queue object that allows multiple tasks to exchange data throug
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
 <ul>
-<li>-EINVAL is returned if <em>poolsize</em> is null.</li></ul>
+<li>-EINVAL is returned if <em>poolsize</em> is null, greater than the system limit, or <em>name</em> is null or empty for a shared queue.</li></ul>
 <p>
 <ul>
 <li>-ENOMEM is returned if not enough system memory is available to create the queue. Additionally, and if Q_SHARED has been passed in <em>mode</em>, errors while mapping the buffer pool in the caller's address space might beget this return code too.</li></ul>
@@ -516,7 +516,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 20:30:26 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Thu Nov 18 00:00:36 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

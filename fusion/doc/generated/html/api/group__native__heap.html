@@ -25,13 +25,13 @@ RTAI memory heaps are built over Xenomai's heap objects, which in turn provide t
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__native__heap.html#ga3">rt_heap_create</a> (RT_HEAP *heap, const char *name, size_t heapsize, int mode)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a real-time memory heap.  <a href="#ga3"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a memory heap or a shared memory segment.  <a href="#ga3"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__native__heap.html#ga4">rt_heap_delete</a> (RT_HEAP *heap)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete a real-time heap.  <a href="#ga4"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__native__heap.html#ga5">rt_heap_alloc</a> (RT_HEAP *heap, size_t size, RTIME timeout, void **blockp)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a block.  <a href="#ga5"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a block or return the shared memory base.  <a href="#ga5"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__native__heap.html#ga6">rt_heap_free</a> (RT_HEAP *heap, void *block)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Free a block.  <a href="#ga6"></a><br></td></tr>
@@ -86,20 +86,20 @@ RTAI memory heaps are built over Xenomai's heap objects, which in turn provide t
     <td>
 
 <p>
-Allocate a block. 
+Allocate a block or return the shared memory base. 
 <p>
-This service allocates a block from the heap's internal pool.<p>
+This service allocates a block from the heap's internal pool, or return the address of the shared memory segment in the caller's address space if the heap is shared. Tasks may wait for some requested amount of memory to become available from local heaps.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>heap</em>&nbsp;</td><td>The descriptor address of the heap to allocate a block from.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>size</em>&nbsp;</td><td>The requested size in bytes of the block.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The number of clock ticks to wait for a block of sufficient size to be available (see note). Passing RT_TIME_INFINITE causes the caller to block indefinitely until some block is eventually available. Passing RT_TIME_NONBLOCK causes the service to return immediately without waiting if no block is available on entry.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>blockp</em>&nbsp;</td><td>A pointer to a memory location which will be written upon success with the address of the allocated block. The block should be freed using <a class="el" href="group__native__heap.html#ga6">rt_heap_free()</a>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>size</em>&nbsp;</td><td>The requested size in bytes of the block. If the heap is shared, this value can be either zero, or the same value given to <a class="el" href="group__native__heap.html#ga3">rt_heap_create()</a>. In any case, the same block covering the entire heap space will always be returned to all callers of this service.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The number of clock ticks to wait for a block of sufficient size to be available from a local heap (see note). Passing RT_TIME_INFINITE causes the caller to block indefinitely until some block is eventually available. Passing RT_TIME_NONBLOCK causes the service to return immediately without waiting if no block is available on entry. This parameter has no influence if the heap is shared since the entire shared memory space is always available.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>blockp</em>&nbsp;</td><td>A pointer to a memory location which will be written upon success with the address of the allocated block, or the start address of the shared memory segment. In the former case, the block should be freed using <a class="el" href="group__native__heap.html#ga6">rt_heap_free()</a>.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
 <ul>
-<li>-EINVAL is returned if <em>heap</em> is not a heap descriptor.</li></ul>
+<li>-EINVAL is returned if <em>heap</em> is not a heap descriptor, or <em>heap</em> is shared (i.e. H_SHARED mode) and <em>size</em> is non-zero but does not match the actual heap size passed to <a class="el" href="group__native__heap.html#ga3">rt_heap_create()</a>.</li></ul>
 <p>
 <ul>
 <li>-EIDRM is returned if <em>q</em> is a deleted heap descriptor.</li></ul>
@@ -116,12 +116,12 @@ This service allocates a block from the heap's internal pool.<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>timeout</em> is equal to RT_TIME_NONBLOCK.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>timeout</em> is equal to RT_TIME_NONBLOCK, or the heap is shared.</li></ul>
 <p>
 <ul>
 <li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
 <p>
-Rescheduling: always unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation.<p>
+Rescheduling: always unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation. Operations on shared heaps never start the rescheduling procedure.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
     </td>
   </tr>
@@ -172,13 +172,15 @@ Rescheduling: always unless the request is immediately satisfied or <em>timeout<
     <td>
 
 <p>
-Create a real-time memory heap. 
+Create a memory heap or a shared memory segment. 
 <p>
 Initializes a memory heap suitable for time-bounded allocation requests of dynamic memory. Memory heaps can be local to the kernel space, or shared between kernel and user-space.<p>
+In their simplest form, heaps are only accessible from kernel space, and are merely usable as regular memory allocators.<p>
+In the shared case, heaps are used as shared memory segments. All allocation requests made through <a class="el" href="group__native__heap.html#ga5">rt_heap_alloc()</a> will then return the same memory block, which will point at to the beginning of the heap memory, and cover the entire heap space. This operating mode is specified by passing the H_SHARED flag into the <em>mode</em> parameter. By the proper use of a common <em>name</em>, all tasks can bind themselves to the same heap and thus share the same memory space, which start address should be subsequently retrieved by a call to <a class="el" href="group__native__heap.html#ga5">rt_heap_alloc()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>heap</em>&nbsp;</td><td>The address of a heap descriptor RTAI will use to store the heap-related data. This descriptor must always be valid while the heap is active therefore it must be allocated in permanent memory.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the heap. When non-NULL and non-empty, this string is copied to a safe place into the descriptor, and passed to the registry package if enabled for indexing the created heap.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the heap. When non-NULL and non-empty, this string is copied to a safe place into the descriptor, and passed to the registry package if enabled for indexing the created heap. Shared heaps must be given a valid name.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>heapsize</em>&nbsp;</td><td>The size (in bytes) of the block pool which is going to be pre-allocated to the heap. Memory blocks will be claimed and released to this pool. The block pool is not extensible, so this value must be compatible with the highest memory pressure that could be expected.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The heap creation mode. The following flags can be OR'ed into this bitmask, each of them affecting the new heap:</td></tr>
   </table>
@@ -190,7 +192,7 @@ Initializes a memory heap suitable for time-bounded allocation requests of dynam
 <li>H_PRIO makes tasks pend in priority order on the heap when waiting for available blocks.</li></ul>
 <p>
 <ul>
-<li>H_SHARED causes the heap to be sharable between kernel and user-space tasks. Otherwise, the new heap is only available for kernel-based usage. This feature requires the real-time support in user-space to be configured in (CONFIG_OPT_RTAI_FUSION).</li></ul>
+<li>H_SHARED causes the heap to be sharable between kernel and user-space tasks, and make it usable as a shared memory segment. Otherwise, the new heap is only available for kernel-based usage. This feature requires the real-time support in user-space to be configured in (CONFIG_OPT_RTAI_FUSION).</li></ul>
 <p>
 <ul>
 <li>H_DMA causes the block pool associated to the heap to be allocated in physically contiguous memory, suitable for DMA operations with I/O devices. A 128Kb limit exists for <em>heapsize</em> when this flag is passed.</li></ul>
@@ -200,7 +202,7 @@ Initializes a memory heap suitable for time-bounded allocation requests of dynam
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
 <ul>
-<li>-EINVAL is returned if <em>heapsize</em> is null.</li></ul>
+<li>-EINVAL is returned if <em>heapsize</em> is null, greater than the system limit, or <em>name</em> is null or empty for a shared heap.</li></ul>
 <p>
 <ul>
 <li>-ENOMEM is returned if not enough system memory is available to create the heap. Additionally, and if H_SHARED has been passed in <em>mode</em>, errors while mapping the block pool in the caller's address space might beget this return code too.</li></ul>
@@ -301,6 +303,7 @@ Rescheduling: possible.     </td>
 Free a block. 
 <p>
 This service releases a block to the heap's internal pool. If some task is currently waiting for a block so that it's pending request could be satisfied as a result of the release, it is immediately resumed.<p>
+If the heap is shared (i.e. H_SHARED mode), this service leads to a null-effect and always returns successfully.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>heap</em>&nbsp;</td><td>The address of the heap descriptor to which the block <em>block</em> belong.</td></tr>
@@ -374,7 +377,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 20:30:26 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Thu Nov 18 00:00:36 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

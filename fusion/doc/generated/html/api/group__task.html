@@ -322,7 +322,7 @@ The DELETE hooks are called on behalf of the calling context (if any). The infor
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code only if  is non-NULL.</li></ul>
+<li>Kernel module initialization/cleanup code only if <em>task</em> is non-NULL.</li></ul>
 <p>
 <ul>
 <li>Kernel-based task</li><li>User-space task</li></ul>
@@ -430,6 +430,7 @@ Send signals to a task.
 This service sends a set of signals to a given task. A task can install a signal handler using the <a class="el" href="group__task.html#ga19">rt_task_catch()</a> service to process them.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>task</em>&nbsp;</td><td>The descriptor address of the affected task which must have been previously created by the <a class="el" href="group__task.html#ga4">rt_task_create()</a> service.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>signals</em>&nbsp;</td><td>The set of signals to make pending for the task. This set is OR'ed with the current set of pending signals for the task; there is no count of occurence maintained for each available signal, which is either pending or cleared.</td></tr>
   </table>
 </dl>
@@ -631,7 +632,7 @@ Make a task periodic by programing its first release point and its period in the
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code only if  is non-NULL.</li></ul>
+<li>Kernel module initialization/cleanup code only if <em>task</em> is non-NULL.</li></ul>
 <p>
 <ul>
 <li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
@@ -701,12 +702,12 @@ Side-effects:<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if  is non-NULL.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>task</em> is non-NULL.</li></ul>
 <p>
 <ul>
 <li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
-Rescheduling: possible if  is the current one.     </td>
+Rescheduling: possible if <em>task</em> is the current one.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga13" doxytag="task.c::rt_task_sleep"></a><p>
@@ -925,7 +926,7 @@ A nesting count is maintained so that <a class="el" href="group__task.html#ga6">
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if  is non-NULL.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>task</em> is non-NULL.</li></ul>
 <p>
 <ul>
 <li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
@@ -1063,7 +1064,7 @@ This service can be called from:<p>
 Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 23:03:29 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

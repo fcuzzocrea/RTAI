@@ -289,6 +289,8 @@ int rt_queue_delete (RT_QUEUE *q)
  * pool which can be subsequently filled by the caller then passed to
  * rt_queue_send() for sending.
  *
+ * @param q The descriptor address of the affected queue.
+ *
  * @param size The requested size in bytes of the buffer. Zero is an
  * acceptable value, meaning that the message will not carry any
  * payload data; the receiver will thus receive a zero-sized message.
@@ -347,6 +349,8 @@ void *rt_queue_alloc (RT_QUEUE *q,
  *
  * This service releases a message buffer returned by rt_queue_recv()
  * to the queue's internal pool.
+ *
+ * @param q The descriptor address of the affected queue.
  *
  * @param buf The address of the message buffer to free. Even
  * zero-sized messages carrying no payload data must be freed, since
@@ -594,7 +598,7 @@ int rt_queue_send (RT_QUEUE *q,
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to RT_TIME_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)

@@ -298,7 +298,7 @@ int rt_pipe_close (RT_PIPE *pipe)
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to RT_TIME_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)

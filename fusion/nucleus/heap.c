@@ -1,4 +1,4 @@
-/*!\file heap.c
+/*!\file
  * \brief Dynamic memory allocation services.
  * \author Philippe Gerum
  *

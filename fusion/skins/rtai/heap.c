@@ -311,7 +311,7 @@ int rt_heap_delete (RT_HEAP *heap)
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to RT_TIME_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
@@ -389,6 +389,9 @@ int rt_heap_alloc (RT_HEAP *heap,
  * task is currently waiting for a buffer so that it's pending request
  * could be satisfied as a result of the release, it is immediately
  * resumed.
+ *
+ * @param heap The address of the heap descriptor to which the buffer @a buf
+ * belong.
  *
  * @param buf The address of the buffer to free.
  *

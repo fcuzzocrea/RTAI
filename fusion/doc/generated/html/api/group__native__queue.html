@@ -85,6 +85,7 @@ Allocate a message queue buffer.
 This service allocates a message buffer from the queue's internal pool which can be subsequently filled by the caller then passed to <a class="el" href="group__native__queue.html#ga7">rt_queue_send()</a> for sending.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>q</em>&nbsp;</td><td>The descriptor address of the affected queue.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>size</em>&nbsp;</td><td>The requested size in bytes of the buffer. Zero is an acceptable value, meaning that the message will not carry any payload data; the receiver will thus receive a zero-sized message.</td></tr>
   </table>
 </dl>
@@ -278,6 +279,7 @@ Free a message queue buffer.
 This service releases a message buffer returned by <a class="el" href="group__native__queue.html#ga8">rt_queue_recv()</a> to the queue's internal pool.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>q</em>&nbsp;</td><td>The descriptor address of the affected queue.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>buf</em>&nbsp;</td><td>The address of the message buffer to free. Even zero-sized messages carrying no payload data must be freed, since they are assigned a valid memory space to store internal information.</td></tr>
   </table>
 </dl>
@@ -417,7 +419,7 @@ This service retrieves the next message available from the given queue. Unless o
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if  is equal to RT_TIME_NONBLOCK.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>timeout</em> is equal to RT_TIME_NONBLOCK.</li></ul>
 <p>
 <ul>
 <li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
@@ -511,7 +513,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 23:03:29 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

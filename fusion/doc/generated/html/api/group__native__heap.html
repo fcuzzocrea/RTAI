@@ -115,7 +115,7 @@ This service allocates a buffer from the heap's internal pool.<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if  is equal to RT_TIME_NONBLOCK.</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>timeout</em> is equal to RT_TIME_NONBLOCK.</li></ul>
 <p>
 <ul>
 <li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
@@ -299,6 +299,7 @@ Free a buffer.
 This service releases a buffer to the heap's internal pool. If some task is currently waiting for a buffer so that it's pending request could be satisfied as a result of the release, it is immediately resumed.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>heap</em>&nbsp;</td><td>The address of the heap descriptor to which the buffer <em>buf</em> belong.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>buf</em>&nbsp;</td><td>The address of the buffer to free.</td></tr>
   </table>
 </dl>
@@ -369,7 +370,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 22:39:56 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Nov 13 23:03:29 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

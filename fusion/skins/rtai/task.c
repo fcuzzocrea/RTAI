@@ -298,12 +298,12 @@ int rt_task_start (RT_TASK *task,
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @task is non-NULL.
+ *   only if @a task is non-NULL.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
  *
- * Rescheduling: always if @ task is NULL.
+ * Rescheduling: always if @a task is NULL.
  */
 
 int rt_task_suspend (RT_TASK *task)
@@ -431,12 +431,12 @@ int rt_task_resume (RT_TASK *task)
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- *   only if @task is non-NULL.
+ *   only if @a task is non-NULL.
  *
  * - Kernel-based task
  * - User-space task
  *
- * Rescheduling: always if @ task is NULL.
+ * Rescheduling: always if @a task is NULL.
  */
 
 int rt_task_delete (RT_TASK *task)
@@ -540,7 +540,7 @@ int rt_task_yield (void)
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- *   only if @task is non-NULL.
+ *   only if @a task is non-NULL.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
@@ -664,12 +664,12 @@ int rt_task_wait_period (void)
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @task is non-NULL.
+ *   only if @a task is non-NULL.
  *
  * - Kernel-based task
  * - User-space task
  *
- * Rescheduling: possible if @task is the current one.
+ * Rescheduling: possible if @a task is the current one.
  */
 
 int rt_task_set_priority (RT_TASK *task,
@@ -1115,6 +1115,9 @@ int rt_task_catch (void (*handler)(rt_sigset_t))
  * This service sends a set of signals to a given task.  A task can
  * install a signal handler using the rt_task_catch() service to
  * process them.
+ *
+ * @param task The descriptor address of the affected task which must
+ * have been previously created by the rt_task_create() service.
  *
  * @param signals The set of signals to make pending for the
  * task. This set is OR'ed with the current set of pending signals for

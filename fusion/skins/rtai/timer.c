@@ -312,8 +312,7 @@ void rt_timer_spin (RTIME ns)
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * - User-space task (switches to secondary mode)
  *
  * Rescheduling: never.
  */
@@ -337,8 +336,7 @@ int rt_timer_start (RTIME nstick)
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * - User-space task (switches to secondary mode)
  *
  * Rescheduling: never.
  */

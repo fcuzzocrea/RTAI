@@ -2837,8 +2837,7 @@ int xnpod_trap_fault (void *fltinfo)
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * - User-space task in secondary mode
  *
  * Rescheduling: never.
  */
@@ -2963,8 +2962,7 @@ unlock_and_exit:
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * - User-space task in secondary mode
  *
  * Rescheduling: never.
  */

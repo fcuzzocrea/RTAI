@@ -1,5 +1,9 @@
 2005-02-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* testsuite/klatency/latency-module.c (__latency_init): Move call
+	to rt_timer_start() out of the latency task, since this it might
+	sleep Linux-wise.
+
 	* arch/*/hal/hal.c (rthal_release_linux_irq): Call free_irq()
 	outside of the critical section.
 

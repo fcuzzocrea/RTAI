@@ -33,14 +33,6 @@ void latency (void *cookie)
     RT_PIPE_MSG *msg;
     int  err, count;
 
-    err = rt_timer_start(TM_ONESHOT);
-
-    if (err)
-	{
-	xnarch_logerr("latency: cannot start timer, code %d\n",err);
-	return;
-	}
-
     period = rt_timer_ns2ticks(task_period_ns);
     expected = rt_timer_tsc();
     err = rt_task_set_periodic(NULL,TM_NOW,task_period_ns);
@@ -51,7 +43,7 @@ void latency (void *cookie)
 	return;
 	}
 
-	sample_count = (1000000000 / task_period_ns);
+    sample_count = (1000000000 / task_period_ns);
 
     for (;;)
 	{
@@ -107,12 +99,20 @@ int __latency_init (void)
 {
     int err;
 
+    err = rt_timer_start(TM_ONESHOT);
+
+    if (err)
+	{
+	xnarch_logerr("latency: cannot start timer, code %d\n",err);
+	return 1;
+	}
+
     err = rt_task_create(&latency_task,"sampling",0,1,T_FPU);
 
     if (err)
 	{
 	xnarch_logerr("latency: failed to create latency task, code %d\n",err);
-	return 1;
+	return 2;
 	}
 
     err = rt_pipe_open(&pipe,0);
@@ -120,7 +120,7 @@ int __latency_init (void)
     if (err)
 	{
 	xnarch_logerr("latency: failed to open real-time pipe, code %d\n",err);
-	return 1;
+	return 3;
 	}
 
     err = rt_task_start(&latency_task,&latency,NULL);
@@ -128,7 +128,7 @@ int __latency_init (void)
     if (err)
 	{
 	xnarch_logerr("latency: failed to start latency task, code %d\n",err);
-	return 1;
+	return 4;
 	}
 
     return 0;

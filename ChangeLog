@@ -1,3 +1,21 @@
+2004-08-02  Lorenzo Dozio <dozio@aero.polimi.it>
+
+	* rtai-core/include/rtai_schedcore.h: Symplified the enq/dequeueing
+	of soft tasks using LXRT APIs, to me mated with changes
+	in sched_lxrt.c
+
+	* rtai-core/sched/rtai/sched_lxrt.c: Symplified the use of soft tasks
+	using LXRT APIs; added a specific scheduling on IPI support for SMP.
+
+2004-07-29  Lorenzo Dozio <dozio@aero.polimi.it>
+
+	* rtai-core/sched/rtai/sched_lxrt.c, rtai-core/sched/rtai/sched_up.c,
+	rtai-core/sched/rtai/sched_smp.c, rtai-core/sched/rtai/sched_mup.c:
+	Avoid changing sign for zero times in nano2count and count2nano.
+
+	* rtai-core/sched/rtai/sched_lxrt.c: Fixed missing dependencies from
+	ADEOS/RTHAL
+
 2004-07-24  Philippe Gerum  <rpm@xenomai.org>
 
 	* configure.in, rtai-core/arch/*/Kconfig: Make RTAI_USI depend on

@@ -115,11 +115,11 @@ const char *xnpod_fatal_helper (const char *format, ...)
 
     if (testbits(nkpod->status,XNTIMED))
         {
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
         if (!testbits(nkpod->status,XNTMPER))
             xnprintf("Aperiodic timer is running.\n");
 	else
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
             xnprintf("Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
                      xnpod_get_tickval() / 1000,
                      nkpod->jiffies);
@@ -2287,12 +2287,12 @@ void xnpod_set_time (xnticks_t newtime)
 xnticks_t xnpod_get_time (void)
 
 {
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	/* In aperiodic mode, our idea of time is the same as the
 	   CPU's. */
 	return xnpod_get_cpu_time(); /* Nanoseconds. */
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     return nkpod->wallclock;
 }
@@ -2548,7 +2548,9 @@ int xnpod_trap_fault (void *fltinfo)
  * a single host tick.
  *
  * - -ENODEV is returned if the underlying architecture does not
- * support the requested aperiodic timing, or if no active pod exists.
+ * support the requested aperiodic timing.
+ *
+ * - -ENOSYS is returned if no active pod exists.
  *
  * Side-effect: A host timing service is started in order to relay the
  * canonical periodical tick to the underlying architecture,
@@ -2567,10 +2569,10 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
     if (tickhandler == NULL)
         return -EINVAL;
 
-#if !XNARCH_HAVE_APERIODIC_TIMER
+#if !CONFIG_RTAI_HW_APERIODIC_TIMER
     if (nstick == XNPOD_APERIODIC_TICK)
         return -ENODEV; /* No aperiodic support */
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
         
     xnlock_get_irqsave(&nklock,s);
 
@@ -2586,7 +2588,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 	goto unlock_and_exit;
         }
 
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (nstick == XNPOD_APERIODIC_TICK) /* Aperiodic mode. */
         {
         clrbits(nkpod->status,XNTMPER);
@@ -2594,7 +2596,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
         nkpod->ticks2sec = 1000000000;
         }
     else /* Periodic setup. */
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
         {
         setbits(nkpod->status,XNTMPER);
         /* Pre-calculate the number of ticks per second. */
@@ -2717,11 +2719,11 @@ int xnpod_announce_tick (xnintr_t *intr)
 
     /* Do the round-robin processing. */
 
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
     /* Round-robin in aperiodic mode makes no sense. */
     if (!testbits(nkpod->status,XNTMPER))
 	goto unlock_and_exit;
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     nr_cpus = xnarch_num_online_cpus();
 
@@ -2754,7 +2756,9 @@ int xnpod_announce_tick (xnintr_t *intr)
             }
         }
 
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
  unlock_and_exit:
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 
     xnlock_put_irqrestore(&nklock,s);
 

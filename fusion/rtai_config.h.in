@@ -10,6 +10,9 @@
 #undef CONFIG_RTAI_HOST_STRING
 
 /* Kconfig */
+#undef CONFIG_RTAI_HW_APERIODIC_TIMER
+
+/* Kconfig */
 #undef CONFIG_RTAI_HW_FPU
 
 /* Kconfig */

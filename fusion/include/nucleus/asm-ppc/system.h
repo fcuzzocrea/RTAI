@@ -152,7 +152,6 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define XNARCH_IRQ_MAX               IPIPE_NR_XIRQS /* Do _not_ use NR_IRQS here. */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
 #define XNARCH_SCHED_LATENCY         CONFIG_RTAI_HW_SCHED_LATENCY
-#define XNARCH_HAVE_APERIODIC_TIMER  1
 #define XNARCH_CALIBRATION_PERIOD    200000 /* ns */
 
 #define XNARCH_THREAD_STACKSZ 4096

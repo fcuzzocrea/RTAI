@@ -152,11 +152,11 @@ static int xnpod_read_proc (char *page,
 
     if (nkpod != NULL && testbits(nkpod->status,XNTIMED))
 	{
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
 	    p += sprintf(p,"Aperiodic timer is running\n");
 	else
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	    p += sprintf(p,"Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
 			 xnpod_get_tickval() / 1000,
 			 nkpod->jiffies);

@@ -46,4 +46,8 @@ config RTAI_MVM_DEBUG
 	simulator state. Do not activate it unless you really intend
 	to debug the Minute Virtual Machine.
 
+config RTAI_HW_APERIODIC_TIMER
+	bool
+	default y
+
 endmenu

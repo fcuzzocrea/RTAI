@@ -140,6 +140,7 @@ int rthal_request_timer (void (*handler)(void),
 #ifdef CONFIG_40x
         mtspr(SPRN_TCR,mfspr(SPRN_TCR) & ~TCR_ARE); /* Auto-reload off. */
 #endif /* CONFIG_40x */
+	rthal_set_timer_shot(tb_ticks_per_jiffy);
 	}
 
     rthal_release_irq(RTHAL_TIMER_IRQ);

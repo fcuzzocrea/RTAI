@@ -1,3 +1,8 @@
+2004-08-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/timer.c (xntimer_enqueue): Completely dissociate
+	periodic from aperiodic timer enqueueing/dequeueing.
+
 2004-08-30  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* arch/ppc/hal/hal.c: Move the Doxygen documentation to a new

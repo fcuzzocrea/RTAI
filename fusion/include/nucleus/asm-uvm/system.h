@@ -103,7 +103,6 @@ typedef unsigned long xnlock_t;
 #define XNARCH_SIG_RESTART         SIGUSR1
 #define XNARCH_HOST_TICK           0	/* No host ticking service */
 #define XNARCH_SCHED_LATENCY       0 /* No scheduling latency */
-#undef XNARCH_HAVE_APERIODIC_TIMER /* No aperiodic timer support */
 
 #define XNARCH_THREAD_STACKSZ 0 /* Use the default POSIX value. */
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
@@ -441,7 +440,7 @@ static void *xnarch_timer_thread (void *cookie)
 	{
 	nanosleep(&ts,NULL);
 	xnarch_sync_irq();
-	tickhandler(); /* Should end up in xnpod_clock_irq() here. */
+	tickhandler(); /* Should end up in xnintr_clock_handler() here. */
 	}
 
     return NULL;
@@ -455,6 +454,10 @@ static inline int xnarch_start_timer (unsigned long nstick,
     unsigned long tickval;
     pthread_attr_t thattr;
     pthread_t thid;
+
+    if (nstick == 0)
+	/* Cannot do aperiodic timing in UVMs */
+	return -ENODEV;
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);

@@ -119,7 +119,7 @@ static inline void xntimer_dequeue_periodic (xntimer_t *timer)
     __setbits(timer->status,XNTIMER_DEQUEUED);
 }
 
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
 
 static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
 
@@ -177,7 +177,7 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
     return getheadq(&nkpod->timerwheel[0]) == &timer->link;
 }
 	
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 /*
  * xntimer_start() -- Arm a timer. If <interval> is != XN_INFINITE,
@@ -201,17 +201,17 @@ int xntimer_start (xntimer_t *timer,
 
     if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	{
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
 	    xntimer_dequeue_aperiodic(timer);
 	else
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	    xntimer_dequeue_periodic(timer);
 	}
 
     if (value != XN_INFINITE)
 	{
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
 	    {
 	    timer->date = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(value);
@@ -230,7 +230,7 @@ int xntimer_start (xntimer_t *timer,
 		}
 	    }
 	else
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	    {
 	    timer->date = nkpod->jiffies + value;
 	    timer->interval = interval;
@@ -262,7 +262,7 @@ void xntimer_stop (xntimer_t *timer)
 
     if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	{
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
 	    {
 	    int heading = xntimer_heading_p(timer);
@@ -272,7 +272,7 @@ void xntimer_stop (xntimer_t *timer)
 	    if (heading) xntimer_next_shot();
 	    }
 	else
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	    xntimer_dequeue_periodic(timer);
 	}
 
@@ -290,10 +290,10 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
     if (!xntimer_active_p(timer))
 	return XN_INFINITE;
 
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	return xnarch_tsc_to_ns(xntimer_date(timer));
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     return xntimer_date(timer);
 }
@@ -309,7 +309,7 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
     if (!xntimer_active_p(timer))
 	return XN_INFINITE;
 
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	{
         xnticks_t tsc = xnarch_get_cpu_tsc();
@@ -319,7 +319,7 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
 
 	return xnarch_tsc_to_ns(xntimer_date(timer) - tsc);
 	}
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     return xntimer_date(timer) - nkpod->jiffies;
 }
@@ -347,7 +347,7 @@ void xntimer_do_timers (void)
 
     initq(&reschedq);
 
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	{
 	/* Only use slot #0 in aperiodic mode. */
@@ -355,7 +355,7 @@ void xntimer_do_timers (void)
 	now = xnarch_get_cpu_tsc();
 	}
     else
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	{
 	/* Update the periodic clocks keeping the things strictly
 	   monotonous. */
@@ -373,13 +373,13 @@ void xntimer_do_timers (void)
 
 	if (timer->shot > now)
 	    {
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
 	    if (!testbits(nkpod->status,XNTMPER))
 		/* No need to continue in aperiodic mode since
 		   timeout dates are ordered by increasing
 		   values. */
 		break;
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 	    continue;
 	    }
@@ -392,13 +392,13 @@ void xntimer_do_timers (void)
 	    __setbits(sched->status,XNHTICK);
 	else
 	    {
-	    /* Otherwise, we'd better have a valid handler... */
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
 	    nkpod->timestamps.timer_entry = nkpod->timestamps.timer_top;
 	    nkpod->timestamps.timer_drift = (xnsticks_t)now - (xnsticks_t)timer->date;
 	    nkpod->timestamps.timer_drift2 = (xnsticks_t)now - (xnsticks_t)timer->shot;
 	    nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+	    /* Otherwise, we'd better have a valid handler... */
 	    timer->handler(timer->cookie);
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
 	    nkpod->timestamps.timer_handled = xnarch_get_cpu_tsc();
@@ -413,11 +413,11 @@ void xntimer_do_timers (void)
 
 	if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	    {
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
 	    if (!testbits(nkpod->status,XNTMPER))
 		xntimer_dequeue_aperiodic(timer);
 	    else
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 		xntimer_dequeue_periodic(timer);
 
 	    if (timer->interval != XN_INFINITE)
@@ -434,24 +434,24 @@ void xntimer_do_timers (void)
 	{
 	timer = link2timer(holder);
 
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
 	    {
 	    timer->date += timer->interval;
 	    xntimer_enqueue_aperiodic(timer);
 	    }
 	else
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	    {
 	    timer->date = nkpod->jiffies + timer->interval;
 	    xntimer_enqueue_periodic(timer);
 	    }
 	}
 
-#if XNARCH_HAVE_APERIODIC_TIMER
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	xntimer_next_shot();
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
     nkpod->timestamps.timer_exit = xnarch_get_cpu_tsc();

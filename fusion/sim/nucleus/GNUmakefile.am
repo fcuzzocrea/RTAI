@@ -1,4 +1,4 @@
-vpath %.c @MVM_RTAIDIR@/nucleus
+vpath %.c @RTAI_INSTALLDIR@/source/nucleus
 
 CC = $(top_builddir)/gcic/gcic
 
@@ -20,9 +20,10 @@ nodist_libnucleus_s_a_SOURCES = \
 			timer.c
 
 AM_CPPFLAGS = \
+	-D__IN_RTAI__ \
 	--gcic-backend=$(prefix)/libexec/gcic \
 	--kernel-code \
 	-I$(top_srcdir)/include \
-	-I@MVM_RTAIDIR@/include
+	-I@RTAI_INSTALLDIR@/source/include
 
 libnucleus_s_a_LIBADD = ../adapter/adapter.o

@@ -169,11 +169,11 @@ proc TimerManager:createTimer {context lbox toggles f} {
 
     if {$val != 0} {
 
-	# cannot set a timer to be fired at ZEROTIME --
-	# this does not make sense because the simulator *always*
-	# stops at this time value. Because of this specificity, this value is
-	# used as a special exception case by the MVMOS internals to
-	# identify an idle timer.
+	# cannot set a timer to be fired at ZEROTIME -- this does not
+	# make sense because the simulator *always* stops at this time
+	# value. Because of this specificity, this value is used as a
+	# special exception case by the MVM internals to identify an
+	# idle timer.
 
 	set unit [$f.unit cget -value]
 	set itime [TkRequest $context AddTimer [concat $val $unit] $type]

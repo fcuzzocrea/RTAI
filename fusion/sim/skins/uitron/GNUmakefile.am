@@ -1,16 +1,17 @@
-vpath %.c @MVM_RTAIDIR@/skins/uitron
+vpath %.c @RTAI_INSTALLDIR@/source/skins/uitron
 
 CC = $(top_builddir)/gcic/gcic
 
 override CFLAGS = -g
 
 AM_CPPFLAGS = \
+	-D__IN_RTAI__ \
 	--gcic-backend=$(prefix)/libexec/gcic \
 	--skin-code \
 	-I$(srcdir)/.. \
 	-I$(top_srcdir)/include \
-	-I@MVM_RTAIDIR@/skins \
-	-I@MVM_RTAIDIR@/include
+	-I@RTAI_INSTALLDIR@/source/skins \
+	-I@RTAI_INSTALLDIR@/source/include
 
 lib_LIBRARIES = libuitron_s.a
 

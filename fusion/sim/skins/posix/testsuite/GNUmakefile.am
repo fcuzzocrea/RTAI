@@ -1,11 +1,12 @@
 CC = ../../../gcic/gcic
 
 INCLUDES = \
+	-D__IN_RTAI__ \
 	--gcic-backend=$(prefix)/libexec/gcic \
 	-I$(srcdir)/.. \
-	-I@MVM_RTAIDIR@/skins \
-	-I@MVM_RTAIDIR@/skins/posix \
-	-I@MVM_RTAIDIR@/include \
+	-I@RTAI_INSTALLDIR@/source/include \
+	-I@RTAI_INSTALLDIR@/source/skins \
+	-I@RTAI_INSTALLDIR@/source/skins/posix \
 	-I$(top_srcdir)/include
 
 LDFLAGS = \

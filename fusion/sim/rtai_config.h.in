@@ -282,6 +282,9 @@
 /* Define as `fork' if `vfork' does not work. */
 #undef vfork
 
+#ifndef _RTAI_SIM_CONFIG_H
+#define  _RTAI_SIM_CONFIG_H 1
+
 #ifndef HAVE_INFINITY
 #define infinity() (HUGE_VAL)
 #endif /* !HAVE_INFINITY */
@@ -316,3 +319,5 @@ typedef unsigned long long int u_gnuquad_t;
 typedef quad_t gnuquad_t;
 typedef u_quad_t u_gnuquad_t;
 #endif /* !HAVE_GNU_QUAD_T */
+
+#endif /* !_RTAI_SIM_CONFIG_H */

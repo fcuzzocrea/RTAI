@@ -724,8 +724,8 @@ int main (int argc, char **argv)
 	{
 	if (isatty(1))
 	    {
-	    printf("C/C++ application instrumenter for RTAI's simulation engine %s.\n",MVM_VERSION_STRING);
-	    printf("RTAI/sim comes with absolutely no warranty.\n");
+	    printf("C/C++ application instrumenter for RTAI/fusion's simulation engine %s.\n",MVM_VERSION_STRING);
+	    printf("RTAI/fusion comes with absolutely no warranty.\n");
 	    printf("This is free software, and you are welcome to redistribute it\n");
 	    printf("under certain conditions; read the COPYING file for details.\n");
 #ifdef CXX_VERSION
@@ -824,15 +824,6 @@ int main (int argc, char **argv)
 	argStage0.append(new LString("-D__GCIC__"));
 	argStage0.append(new LString("-D__RTAI_SIM__"));
 
-	if (FlagKTag)
-	    argStage0.append(new LString("-D__RTAI_SIM__KERNEL_SCOPE__"));
-
-	if (FlagITag)
-	    argStage0.append(new LString("-D__RTAI_SIM__SKIN_SCOPE__"));
-
-	if (FlagATag)
-	    argStage0.append(new LString("-D__RTAI_SIM__USER_SCOPE__"));
-
 	// Automatically add Xenomai's system and MVM include
 	// directories.
 
@@ -887,7 +878,7 @@ int main (int argc, char **argv)
     if (cplusplusFileCount > 0 && !compatible_base_compiler)
 	{
 	fprintf(stderr,"gcic: cannot compile C++ applications from a GCC 3.x environment.\n");
-	fprintf(stderr,"      To do this, please downgrade to GCC 2.95.x and rebuild RTAI/sim.\n");
+	fprintf(stderr,"      To do this, please downgrade to GCC 2.95.x and rebuild RTAI/fusion.\n");
 	}
 
     // Do not run the CPP on the preprocessed input file again; as of

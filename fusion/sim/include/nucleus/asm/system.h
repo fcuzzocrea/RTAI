@@ -28,6 +28,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <limits.h>
+#include <unistd.h>
+#include <rtai_config.h>
 
 struct xnthread;
 struct xnsynch;
@@ -110,6 +112,7 @@ typedef unsigned long xnarch_cpumask_t;
                                         rthal_uldivrem(ull,uld,&_rem); _rem; })
 
 static inline int xnarch_imuldiv(int i, int mult, int div)
+
 {
     unsigned long long ull = (unsigned long long) (unsigned) i * (unsigned) mult;
     return ull / (unsigned) div;
@@ -117,8 +120,9 @@ static inline int xnarch_imuldiv(int i, int mult, int div)
 
 static inline unsigned long long __xnarch_ullimd(unsigned long long ull,
                                                  u_long m,
-                                                 u_long d) {
+                                                 u_long d)
 
+{
     unsigned long long mh, ml;
     u_long h, l, mlh, mll, qh, r, ql;
 
@@ -135,14 +139,18 @@ static inline unsigned long long __xnarch_ullimd(unsigned long long ull,
     return (((unsigned long long) qh) << 32) + ql;
 }
 
-static inline long long xnarch_llimd(long long ll, u_long m, u_long d) {
-    if(ll < 0)
+static inline long long xnarch_llimd(long long ll, u_long m, u_long d)
+
+{
+    if (ll < 0)
         return -__xnarch_ullimd(-ll, m, d);
+
     return __xnarch_ullimd(ll, m, d);
 }
 
 static inline unsigned long long xnarch_ullmul(unsigned long m1,
-                                               unsigned long m2) {
+                                               unsigned long m2)
+{
     return (unsigned long long) m1 * m2;
 }
 
@@ -401,6 +409,10 @@ static inline void xnarch_program_timer_shot (unsigned long long delay) {
 
 static inline void xnarch_stop_timer (void) {
     mvm_stop_timer();
+}
+
+static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
+    return -1;
 }
 
 static inline void xnarch_read_timings (unsigned long long *shot,
@@ -703,5 +715,13 @@ do \
 if (cond) \
 __mvm_breakable(mvm_post_graph)(&(obj)->__mvm_display_context,state); \
 while(0)
+
+#ifndef PAGE_SIZE
+#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+#endif /* !PAGE_SIZE */
+
+/* Pre-set config switches. */
+
+#define CONFIG_RTAI_HW_APERIODIC_TIMER 1
 
 #endif /* !_RTAI_NUCLEUS_SIM_SYSTEM_H */

@@ -7,4 +7,5 @@ INCLUDES = \
 	@MVM_CXXFLAGS@ \
 	-I$(srcdir)/../include \
 	-I$(srcdir)/.. \
-	-I@MVM_RTAIDIR@/include
+	-I@RTAI_INSTALLDIR@/include \
+	-I@RTAI_INSTALLDIR@/source/include

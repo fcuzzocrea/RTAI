@@ -4,7 +4,7 @@
 
 2004-10-10  Philippe Gerum  <rpm@xenomai.org>
 
-	* GNUMakefile.am: Fix distclean-local for old fashion build.
+	* GNUMakefile.am: Fix distclean-local for old fashioned build.
 
 2004-10-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 

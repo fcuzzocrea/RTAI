@@ -120,7 +120,7 @@ void __pipe_pkg_cleanup (void)
 
 {
     xnbridge_setup(NULL,NULL);
-    rthal_free_srq(__pipe_flush_virq);
+    rthal_release_srq(__pipe_flush_virq);
 }
 
 /**

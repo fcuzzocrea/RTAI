@@ -486,7 +486,7 @@ static int xnbridge_open (struct inode *inode,
     minor = MINOR(inode->i_rdev);
 
     if (minor >= XNBRIDGE_NDEVS)
-	return -ENOSYS; /* TssTss... stop playing with mknod() ;o) */
+	return -ENXIO; /* TssTss... stop playing with mknod() ;o) */
 
     state = &xnbridge_states[minor];
 
@@ -868,7 +868,8 @@ int xnbridge_init (void)
 
     if (register_chrdev(XNBRIDGE_MAJOR,"xnbridge",&xnbridge_fops))
 	{
-	printk(KERN_WARNING "RTAI: Unable to get major %d for domain bridge\n",XNBRIDGE_MAJOR);
+	printk(KERN_ERR "RTAI[nucleus]: Unable to reserve major #%d for dbridge.\n",
+	       XNBRIDGE_MAJOR);
 	return -EIO;
 	}
 
@@ -880,7 +881,7 @@ int xnbridge_init (void)
 void xnbridge_exit (void)
 
 {
-    rthal_free_srq(xnbridge_wakeup_srq);
+    rthal_release_srq(xnbridge_wakeup_srq);
     unregister_chrdev(XNBRIDGE_MAJOR,"xnbridge");
 }
 

@@ -1,3 +1,12 @@
+2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matlab/rtmain.c: new version compatible with Matlab7 and
+	Matlab 6.5.
+	* rtai-lab/scilab/rtmain.c: Better handling of Ctrl-C.
+	* rtai-lab/scilab/devices/*: Implemented new interface.
+	* rtai-lab/scilab/macros/RTAI/*: Implemented new interface.
+	
+
 2004-01-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.*: use gobal syncranisation to protect a possible

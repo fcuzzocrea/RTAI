@@ -1,5 +1,8 @@
 2004-11-14  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus, include/nucleus: Provide support for non-threaded Adeos
+	domains (i.e. single-stack Adeos model).
+
 	* fusion: Make the whole user-space support optional.
 
 	* nucleus/pipe.c: Make it optional.

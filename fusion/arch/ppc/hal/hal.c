@@ -596,8 +596,10 @@ static void rthal_domain_entry (int iflag)
 {
     unsigned irq, trapnr;
 
+#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)
     if (!iflag)
 	goto spin;
+#endif /* CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS */
 
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 	adeos_virtualize_irq(irq,
@@ -618,8 +620,10 @@ static void rthal_domain_entry (int iflag)
 
  spin:
 
+#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)
     for (;;)
 	adeos_suspend_domain();
+#endif /* CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS */
 }
 
 #ifdef CONFIG_PROC_FS

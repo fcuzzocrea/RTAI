@@ -1,3 +1,7 @@
+2005-03-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.9,10-i386-r9c5.
+	
 2005-02-24 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* skin/rtai: Make C++ friendly.

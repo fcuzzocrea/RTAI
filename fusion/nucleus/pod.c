@@ -402,11 +402,6 @@ fail:
     return 0;
 }
 
-static void xnpod_free_kmem (void *addr, u_long size) {
-
-    xnarch_sysfree(addr,size);
-}
-
 /*! 
  * \fn void xnpod_shutdown(int xtype)
  * \brief Default shutdown handler.
@@ -473,7 +468,7 @@ void xnpod_shutdown (int xtype)
 
     xnarch_hook_ipi(NULL);
 
-    xnheap_destroy(&kheap,&xnpod_free_kmem);
+    xnheap_destroy(&kheap,&xnarch_sysfree);
 
     xntimer_destroy(&nkpod->htimer);
 

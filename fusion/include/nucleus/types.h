@@ -95,13 +95,17 @@ static inline void xnobject_copy_name (char *dst,
 #define minval(a,b) ((a) < (b) ? (a) : (b))
 #define maxval(a,b) ((a) > (b) ? (a) : (b))
 
-#define XN_NBBY 8 /* Assume a byte is always 8 bits :o> */
+#define XN_NBBY 8
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 const char *xnpod_fatal_helper(const char *format, ...);
+
+int __fusion_user_init(void);
+
+void __fusion_user_exit(void);
 
 #ifdef __cplusplus
 }

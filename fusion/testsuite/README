@@ -60,4 +60,4 @@ user-space.
    Type ./run to start the test, and ^C to stop it.
 
    In order to run this test properly, make sure that the special
-   devices /dev/dbridge* exist, with major 150 and minors 0-31.
+   devices /dev/rtp* exist, with major 150 and minors 0-31.

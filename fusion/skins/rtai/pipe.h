@@ -49,7 +49,7 @@
 #ifndef _RTAI_PIPE_H
 #define _RTAI_PIPE_H
 
-#include <nucleus/dbridge.h>
+#include <nucleus/pipe.h>
 
 #ifdef __KERNEL__
 
@@ -57,13 +57,13 @@
 
 #define RTAI_PIPE_MAGIC 0x55550202
 
-typedef xnbridge_mh_t RT_PIPE_MSG;
+typedef xnpipe_mh_t RT_PIPE_MSG;
 
-#define RT_PIPE_NORMAL XNBRIDGE_NORMAL
-#define RT_PIPE_URGENT XNBRIDGE_URGENT
+#define RT_PIPE_NORMAL XNPIPE_NORMAL
+#define RT_PIPE_URGENT XNPIPE_URGENT
 
-#define RT_PIPE_MSGPTR(msg)  xnbridge_m_data(msg)
-#define RT_PIPE_MSGSIZE(msg) xnbridge_m_size(msg)
+#define RT_PIPE_MSGPTR(msg)  xnpipe_m_data(msg)
+#define RT_PIPE_MSGSIZE(msg) xnpipe_m_size(msg)
 
 typedef struct rt_pipe {
 

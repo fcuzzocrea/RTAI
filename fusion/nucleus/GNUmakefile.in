@@ -220,10 +220,10 @@ modext = @RTAI_MODULE_EXT@
 
 libmodule_SRC = \
 		fusion.c \
-		dbridge.c \
 		heap.c \
 		intr.c \
 		module.c \
+		pipe.c \
 		pod.c \
 		shadow.c \
 		synch.c \

@@ -57,7 +57,7 @@
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
 #include <nucleus/version.h>
-#include <nucleus/dbridge.h>
+#include <nucleus/pipe.h>
 #include <nucleus/fusion.h>
 #include <nucleus/trace.h>
 
@@ -276,7 +276,7 @@ int __xeno_main_init (void)
     if (err)
 	goto cleanup_arch;
 
-    err = xnbridge_init();
+    err = xnpipe_init();
 
     if (err)
 	goto cleanup_arch;
@@ -296,7 +296,7 @@ int __xeno_main_init (void)
 
  cleanup_bridge:
 
-    xnbridge_exit();
+    xnpipe_exit();
 
  cleanup_arch:
     
@@ -327,7 +327,7 @@ void __xeno_main_exit (void)
     xnpod_delete_proc();
 #endif /* CONFIG_PROC_FS */
     xnfusion_exit();
-    xnbridge_exit();
+    xnpipe_exit();
 #endif /* __KERNEL__ */
     xnloginfo("Xenomai core stopped.\n");
 }

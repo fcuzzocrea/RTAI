@@ -12,7 +12,7 @@ int main (int argc, char **argv)
     ssize_t sz;
     int fd;
     
-    fd = open("/dev/dbridge0",O_RDWR);
+    fd = open("/dev/rtp0",O_RDWR);
     
     if (fd < 0)
 	{

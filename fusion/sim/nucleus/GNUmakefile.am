@@ -6,9 +6,9 @@ override CFLAGS = -g
 
 lib_LIBRARIES = libnucleus_s.a
 
-# Shadow, dbridge and fusion supports make no sense compiling in
-# native simulation mode. Therefore, their respective files are not
-# included here.
+# Shadow, pipe and fusion supports make no sense compiling in native
+# simulation mode. Therefore, their respective files are not included
+# here.
 
 nodist_libnucleus_s_a_SOURCES = \
 			heap.c \

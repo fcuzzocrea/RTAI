@@ -220,11 +220,11 @@ target_alias = @target_alias@
 @CONFIG_PPC_TRUE@ARCHDIR = asm-ppc $(am__append_1)
 
 include_HEADERS = \
-		dbridge.h \
 		fusion.h \
 		heap.h \
 		intr.h \
 		module.h \
+		pipe.h \
 		pod.h \
 		queue.h \
 		shadow.h \

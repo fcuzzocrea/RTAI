@@ -51,7 +51,7 @@ static inline ssize_t __pipe_flush (RT_PIPE *pipe)
 {
     ssize_t nbytes;
 
-    nbytes = xnbridge_send(pipe->minor,pipe->buffer,pipe->fillsz + sizeof(RT_PIPE_MSG),RT_PIPE_NORMAL);
+    nbytes = xnpipe_send(pipe->minor,pipe->buffer,pipe->fillsz + sizeof(RT_PIPE_MSG),RT_PIPE_NORMAL);
     rt_pipe_free(pipe->buffer);
     pipe->buffer = NULL;
     pipe->fillsz = 0;
@@ -88,7 +88,7 @@ static void *__pipe_alloc_handler (int bminor,
 }
 
 static int __pipe_output_handler (int bminor,
-				  xnbridge_mh_t *mh,
+				  xnpipe_mh_t *mh,
 				  int onerror,
 				  void *cookie)
 {
@@ -113,7 +113,7 @@ int __pipe_pkg_init (void)
 void __pipe_pkg_cleanup (void)
 
 {
-    xnbridge_setup(NULL,NULL);
+    xnpipe_setup(NULL,NULL);
     rthal_release_srq(__pipe_flush_virq);
 }
 
@@ -157,7 +157,7 @@ int rt_pipe_open (RT_PIPE *pipe,
     pipe->flushable = 0;
     pipe->magic = 0;
 
-    err = xnbridge_connect(minor,
+    err = xnpipe_connect(minor,
 			   &__pipe_output_handler,
 			   NULL,
 			   &__pipe_alloc_handler,
@@ -216,7 +216,7 @@ int rt_pipe_close (RT_PIPE *pipe)
 	rt_pipe_free(pipe->buffer);
 	}
 
-    err = xnbridge_disconnect(pipe->minor);
+    err = xnpipe_disconnect(pipe->minor);
 
     rtai_mark_deleted(pipe);
 
@@ -313,7 +313,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
 	goto unlock_and_exit;
 	}
 
-    n = xnbridge_recv(pipe->minor,msgp,timeout);
+    n = xnpipe_recv(pipe->minor,msgp,timeout);
 
  unlock_and_exit:
 
@@ -409,7 +409,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
 
     if (size > 0)
 	/* We need to add the size of the message header here. */
-	n = xnbridge_send(pipe->minor,msg,size + sizeof(RT_PIPE_MSG),flags);
+	n = xnpipe_send(pipe->minor,msg,size + sizeof(RT_PIPE_MSG),flags);
 
  unlock_and_exit:
 

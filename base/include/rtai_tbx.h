@@ -40,6 +40,7 @@
 #define MSG_BROADCAST_IF     TBX_BROADCAST_IF
 #define MSG_BROADCAST_UNTIL  TBX_BROADCAST_UNTIL
 #define MSG_BROADCAST_TIMED  TBX_BROADCAST_TIMED
+#define MSG_EVDRP            TBX_URGENT
 
 #define TBX  RT_MSGQ
 
@@ -140,6 +141,12 @@ int _rt_msg_receive_timed(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, R
 static inline int rt_msg_receive_timed(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME delay)
 {
 	return _rt_msg_receive_timed(msgq, msg, msg_size, msgpri, delay, 1);
+}
+
+int _rt_msg_evdrp(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
+static inline int rt_msg_evdrp(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri)
+{
+	return _rt_msg_evdrp(msgq, msg, msg_size, msgpri, 1);
 }
 
 int _rt_msg_broadcast(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
@@ -255,6 +262,12 @@ RTAI_PROTO(int, rt_msg_receive_timed, (RT_MSGQ *msgq, void *msg, int msg_size, i
 {
 	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; RTIME delay; int space; } arg = { msgq, msg, msg_size, msgprio, delay, 0 };
 	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE_TIMED, &arg).i[LOW];
+}
+
+RTAI_PROTO(int, rt_msg_evdrp, (RT_MSGQ *msgq, void *msg, int msg_size, int *msgprio))
+{
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int *msgprio; int space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_EVDRP, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_msg_broadcast, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio))

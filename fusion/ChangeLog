@@ -1,5 +1,8 @@
 2005-01-08  Philippe Gerum  <rpm@xenomai.org>
 
+	* drivers/16550A: Preliminary version of a simple 16550A UART
+	driver based on the native interface.
+
 	* skins/rtai: Use DECLARE_XNQUEUE() where applicable.
 
 	* skins/rtai/intr.c (__intr_trampoline): Allow for immediate ISR

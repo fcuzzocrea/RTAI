@@ -2808,7 +2808,7 @@ static void __shadow_delete_hook (xnthread_t *thread)
 	xnshadow_unmap(thread);
 }
 
-int __syscall_pkg_init (void)
+int __rtai_syscall_init (void)
 
 {
     __muxid =
@@ -2825,7 +2825,7 @@ int __syscall_pkg_init (void)
     return 0;
 }
 
-void __syscall_pkg_cleanup (void)
+void __rtai_syscall_cleanup (void)
 
 {
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,&__shadow_delete_hook);

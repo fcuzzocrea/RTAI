@@ -554,6 +554,15 @@ AC_ARG_ENABLE(user-vm,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_VM:-no})
 
+AC_MSG_CHECKING(for 16550A UART support)
+AC_ARG_ENABLE(uart-16550A,
+	AS_HELP_STRING([--enable-uart-16550A], [Build 16550A UART driver]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_DRIVERS_16550A=y ;;
+	*) unset CONFIG_RTAI_DRIVERS_16550A ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_DRIVERS_16550A:-no})
+
 case $RTAI_TARGET_ARCH in
  i386)
 	if test "$CONFIG_X86_LOCAL_APIC" = y; then
@@ -802,6 +811,9 @@ AM_CONDITIONAL(CONFIG_RTAI_SKIN_VRTX,[test x$CONFIG_RTAI_SKIN_VRTX = xy])
 AM_CONDITIONAL(CONFIG_RTAI_SKIN_UITRON,[test x$CONFIG_RTAI_SKIN_UITRON = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_VM,[test x$CONFIG_RTAI_OPT_VM = xy])
 
+dnl Supported drivers
+AM_CONDITIONAL(CONFIG_RTAI_DRIVERS_16550A,[test x$CONFIG_RTAI_DRIVERS_16550A = xy])
+
 dnl Native skin options
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_REGISTRY,[test x$CONFIG_RTAI_OPT_NATIVE_REGISTRY = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_PIPE,[test x$CONFIG_RTAI_OPT_NATIVE_PIPE = xy])
@@ -897,6 +909,7 @@ AC_CONFIG_LINKS(skins/uitron/Makefile:skins/uitron/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/vrtx/Makefile:skins/vrtx/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/vxworks/Makefile:skins/vxworks/Makefile.kbuild)
 AC_CONFIG_LINKS(testsuite/klatency/Makefile:testsuite/klatency/Makefile.kbuild)
+AC_CONFIG_LINKS(drivers/16550A/Makefile:drivers/16550A/Makefile.kbuild)
 
 dnl
 dnl Build the Makefiles
@@ -961,6 +974,9 @@ AC_CONFIG_FILES([ \
        	skins/uitron/GNUmakefile \
        	skins/vrtx/GNUmakefile \
        	skins/vxworks/GNUmakefile \
+       	drivers/GNUmakefile \
+       	drivers/16550A/GNUmakefile \
+       	drivers/16550A/lib/GNUmakefile \
 	])
 
 if test \! x$RTAI_MAYBE_DOCDIR = x; then

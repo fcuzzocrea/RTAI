@@ -117,9 +117,9 @@ struct rt_arg_bulk {
 extern "C" {
 #endif
 
-int __syscall_pkg_init(void);
+int __rtai_syscall_init(void);
 
-void __syscall_pkg_cleanup(void);
+void __rtai_syscall_cleanup(void);
 
 #ifdef __cplusplus
 }

@@ -56,7 +56,7 @@ static void rtai_shutdown (int xtype)
 
 {
 #if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    __syscall_pkg_cleanup();
+    __rtai_syscall_cleanup();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_INTR
@@ -200,7 +200,7 @@ int __fusion_skin_init (void)
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    err = __syscall_pkg_init();
+    err = __rtai_syscall_init();
 
     if (err)
 	goto cleanup_intr;

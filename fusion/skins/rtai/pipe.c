@@ -135,6 +135,8 @@ void __pipe_pkg_cleanup (void)
 int rt_pipe_open (RT_PIPE *pipe,
 		  int minor)
 {
+    int err;
+
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
     pipe->minor = minor;

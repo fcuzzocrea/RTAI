@@ -1,5 +1,8 @@
 2004-11-26  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/pod.c: Compile out the scheduler hook unless we are
+	actually building the simulator.
+
 	* skins/rtai/lib/task.c (rt_task_set_mode, rt_task_notify): Export
 	to user-space.
 

@@ -300,7 +300,9 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->svctable.tickhandler = NULL;
     pod->svctable.faulthandler = &xnpod_fault_handler;
     pod->svctable.unload = NULL;
+#ifdef __RTAI_SIM__
     pod->schedhook = NULL;
+#endif /* __RTAI_SIM__ */
 
     initq(&pod->suspendq);
 
@@ -792,8 +794,10 @@ int xnpod_start_thread (xnthread_t *thread,
 
     xnpod_resume_thread(thread,XNDORMANT);
 
+#ifdef __RTAI_SIM__
     if (!(mode & XNSUSP) && nkpod->schedhook)
         nkpod->schedhook(thread,XNREADY);
+#endif /* __RTAI_SIM__ */
 
     if (countq(&nkpod->tstartq) > 0 &&
         !testbits(thread->status,XNTHREAD_SYSTEM_BITS))
@@ -1016,8 +1020,10 @@ void xnpod_delete_thread (xnthread_t *thread)
     if (testbits(thread->status,XNROOT))
         xnpod_fatal("attempt to delete the root thread");
 
+#ifdef __RTAI_SIM__
     if (nkpod->schedhook)
         nkpod->schedhook(thread,XNDELETED);
+#endif /* __RTAI_SIM__ */
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -1255,8 +1261,10 @@ void xnpod_suspend_thread (xnthread_t *thread,
 	    }
         }
     
+#ifdef __RTAI_SIM__
     if (nkpod->schedhook)
         nkpod->schedhook(thread,mask);
+#endif /* __RTAI_SIM__ */
 
     if (thread == sched->runthread)
         /* If "thread" is runnning on another CPU, xnpod_schedule will
@@ -1424,18 +1432,22 @@ void xnpod_resume_thread (xnthread_t *thread,
         {
         __setbits(thread->status,XNREADY);
 
+#ifdef __RTAI_SIM__
         if (nkpod->schedhook &&
             getheadpq(&sched->readyq) != &thread->rlink)
             /* The running thread does no longer lead the ready
                queue. */
             nkpod->schedhook(thread,XNREADY);
+#endif /* __RTAI_SIM__ */
         }
     else if (!testbits(thread->status,XNREADY))
         {
         __setbits(thread->status,XNREADY);
 
+#ifdef __RTAI_SIM__
         if (nkpod->schedhook)
             nkpod->schedhook(thread,XNREADY);
+#endif /* __RTAI_SIM__ */
         }
 
 unlock_and_exit:
@@ -1998,9 +2010,7 @@ static inline void xnpod_preempt_current_thread (xnsched_t *sched)
     insertpql(&sched->readyq,&thread->rlink,thread->cprio);
     __setbits(thread->status,XNREADY);
 
-    if (!nkpod->schedhook)
-        return;
-
+#ifdef __RTAI_SIM__
     if (getheadpq(&sched->readyq) != &thread->rlink)
         nkpod->schedhook(thread,XNREADY);
     else if (countpq(&sched->readyq) > 1)
@@ -2012,6 +2022,7 @@ static inline void xnpod_preempt_current_thread (xnsched_t *sched)
         thread = link2thread(thread->rlink.plink.next,rlink);
         nkpod->schedhook(thread,XNREADY);
         }
+#endif /* __RTAI_SIM__ */
 }
 
 /*! 
@@ -2229,8 +2240,10 @@ void xnpod_schedule (void)
         }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
+#ifdef __RTAI_SIM__
     if (nkpod->schedhook)
         nkpod->schedhook(runthread,XNRUNNING);
+#endif /* __RTAI_SIM__ */
     
     if (countq(&nkpod->tswitchq) > 0 &&
 	!testbits(runthread->status,XNTHREAD_SYSTEM_BITS))
@@ -2353,8 +2366,10 @@ maybe_switch:
     else if (testbits(threadin->status,XNROOT))
         xnarch_enter_root(xnthread_archtcb(threadin));
 
+#ifdef __RTAI_SIM__
     if (nkpod->schedhook)
         nkpod->schedhook(runthread,XNREADY);
+#endif /* __RTAI_SIM__ */
 
     xnarch_switch_to(xnthread_archtcb(runthread),
                      xnthread_archtcb(threadin));
@@ -2363,8 +2378,10 @@ maybe_switch:
     xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
+#ifdef __RTAI_SIM__
     if (nkpod->schedhook && runthread == sched->runthread)
         nkpod->schedhook(runthread,XNRUNNING);
+#endif /* __RTAI_SIM__ */
 }
 
 /*! 

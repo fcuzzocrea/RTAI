@@ -207,8 +207,10 @@ typedef struct xnpod {
 	int (*unload)(void);	/*!< Unloading hook. */
     } svctable;			/*!< Table of overridable service entry points. */
 
+#ifdef __RTAI_SIM__
     void (*schedhook)(xnthread_t *thread,
 		      xnflags_t mask); /*!< Internal scheduling hook. */
+#endif /* __RTAI_SIM__ */
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
     xntimes_t timestamps;

@@ -40,6 +40,7 @@ extern "C" {
 #ifdef __KERNEL__
 
 #include <asm/segment.h>
+#include <asm/mmu_context.h>
 
 #define RTAI_LXRT_HANDLER rtai_lxrt_handler
 
@@ -91,39 +92,85 @@ __asm__( \
 	"addl $4,%esp\n\t" \
 	"iret\n\t")
 
+#if 0
+
 #define lxrt_switch_to(prev, next, last) do {				\
 	__asm__ __volatile__(						\
 		 "pushfl \n\t"					        \
-"pushl %%es\n\t"  \
-"pushl %%ds\n\t"  \
-"pushl %%eax\n\t" \
-"pushl %%ebp\n\t" \
-"pushl %%edi\n\t" \
-"pushl %%esi\n\t" \
-"pushl %%edx\n\t" \
-"pushl %%ecx\n\t" \
-"pushl %%ebx\n\t" \
+		 "pushl %%es\n\t"					\
+		 "pushl %%ds\n\t"					\
+		 "pushl %%eax\n\t"					\
+		 "pushl %%ebp\n\t"					\
+		 "pushl %%edi\n\t"					\
+		 "pushl %%esi\n\t"					\
+		 "pushl %%edx\n\t"					\
+		 "pushl %%ecx\n\t"					\
+		 "pushl %%ebx\n\t"					\
 		 "movl %%esp,%0\n\t"	/* save ESP */		\
 		 "movl %3,%%esp\n\t"	/* restore ESP */		\
 		 "movl $1f,%1\n\t"	/* save EIP */		\
 		 "pushl %4\n\t"		/* restore EIP */		\
 		 "jmp "SYMBOL_NAME_STR(__switch_to)"\n\t"		\
 		 "1:\t"							\
-"popl %%ebx\n\t" \
-"popl %%ecx\n\t" \
-"popl %%edx\n\t" \
-"popl %%esi\n\t" \
-"popl %%edi\n\t" \
-"popl %%ebp\n\t" \
-"popl %%eax\n\t" \
-"popl %%ds\n\t"  \
-"popl %%es\n\t"  \
+		 "popl %%ebx\n\t"					\
+		 "popl %%ecx\n\t"					\
+		 "popl %%edx\n\t"					\
+		 "popl %%esi\n\t"					\
+		 "popl %%edi\n\t"					\
+		 "popl %%ebp\n\t"					\
+		 "popl %%eax\n\t"					\
+		 "popl %%ds\n\t"					\
+		 "popl %%es\n\t"					\
 		 "popfl \n\t"						\
 		 :"=m" (prev->thread.esp),"=m" (prev->thread.eip),	\
 		  "=b" (last)						\
 		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
 		  "a" (prev), "d" (next), "b" (prev));			\
     } while(0)
+
+#else
+
+static inline void lxrt_context_switch (struct task_struct *prev,
+					struct task_struct *next,
+					int cpuid)
+{
+    struct mm_struct *oldmm = prev->active_mm;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+    switch_mm(oldmm,next->active_mm,next,cpuid);
+#else /* >= 2.6.0 */
+    switch_mm(oldmm,next->active_mm,next);
+#endif /* < 2.6.0 */
+
+    if (!next->mm)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	enter_lazy_tlb(oldmm,next,cpuid);
+#else /* >= 2.6.0 */
+        enter_lazy_tlb(oldmm,next);
+#endif /* < 2.6.0 */
+	
+    __asm__ __volatile__(						\
+		 "pushl %%esi\n\t"				        \
+		 "pushl %%edi\n\t"					\
+		 "pushl %%ebp\n\t"					\
+		 "movl %%esp,%0\n\t"	/* save ESP */		\
+		 "movl %3,%%esp\n\t"	/* restore ESP */		\
+		 "movl $1f,%1\n\t"	/* save EIP */		\
+		 "pushl %4\n\t"		/* restore EIP */		\
+		 "jmp "SYMBOL_NAME_STR(__switch_to)"\n"			\
+		 "1:\t"							\
+		 "popl %%ebp\n\t"					\
+		 "popl %%edi\n\t"					\
+		 "popl %%esi\n\t"					\
+		 :"=m" (prev->thread.esp),"=m" (prev->thread.eip),	\
+		  "=b" (prev)						\
+		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
+		  "a" (prev), "d" (next),				\
+		  "b" (prev));						\
+    barrier();
+}
+
+#endif
 
 #endif /* __KERNEL__ */
 

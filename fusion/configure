@@ -19730,7 +19730,8 @@ always := display_archflags
 
 HOST_EXTRACFLAGS += -DRTAI_CFLAGS="\"\$(CFLAGS)\""
 EOF
-make -s -C $RTAI_LINUX_DIR M=$PWD/.rtai_display_archflags >& /dev/null
+make -s -C $RTAI_LINUX_DIR ARCH=$RTAI_TARGET_ARCH \
+        CROSS_COMPILE=$CROSS_COMPILE M=$PWD/.rtai_display_archflags >& /dev/null
 for flag in `.rtai_display_archflags/display_archflags`; do case $flag in
     -march*|-mcpu*|-mtune*)
         RTAI_ARCH_TUNE_FLAGS="$RTAI_ARCH_TUNE_FLAGS $flag";;

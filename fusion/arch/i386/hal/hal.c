@@ -957,7 +957,7 @@ static int rthal_proc_register (void)
 
     rthal_proc_root->owner = THIS_MODULE;
 
-    ent = create_proc_entry("rthal",S_IFREG|S_IRUGO|S_IWUSR,rthal_proc_root);
+    ent = create_proc_entry("hal",S_IFREG|S_IRUGO|S_IWUSR,rthal_proc_root);
 
     if (!ent)
 	{
@@ -973,7 +973,7 @@ static int rthal_proc_register (void)
 static void rthal_proc_unregister (void)
 
 {
-    remove_proc_entry("rthal",rthal_proc_root);
+    remove_proc_entry("hal",rthal_proc_root);
     remove_proc_entry("rtai",0);
 }
 

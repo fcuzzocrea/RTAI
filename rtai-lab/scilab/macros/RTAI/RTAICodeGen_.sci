@@ -1635,7 +1635,7 @@ nztotal=size(z,1);
   Code=[Code
 	'double* block_outtb = z+'+string(nztotal)+';'
 	'void **work;'
-	'work = z+'+string(nZ)+'; ']
+	'work = (void **) (z+'+string(nZ)+'); ']
   if size(z,1) <> 0 then
     for i=1:(length(zptr)-1) 
       

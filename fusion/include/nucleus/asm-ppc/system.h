@@ -358,7 +358,8 @@ void xnpod_welcome_thread(struct xnthread *);
 void xnpod_delete_thread(struct xnthread *);
 
 static inline int xnarch_start_timer (unsigned long ns,
-				      void (*tickhandler)(void)) {
+				      void (*tickhandler)(void))
+{
     return rthal_request_timer(tickhandler,ns);
 }
 
@@ -387,73 +388,71 @@ static inline void xnarch_enter_root (xnarchtcb_t *rootcb) {
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 				     xnarchtcb_t *in_tcb)
 {
-    struct task_struct *outproc = out_tcb->active_task;
-    struct task_struct *inproc = in_tcb->user_task;
-    unsigned long flags;
+    struct task_struct *prev = out_tcb->active_task;
+    struct task_struct *next = in_tcb->user_task;
 
-    rthal_hw_lock(flags);
+    in_tcb->active_task = next ?: prev;
 
-    in_tcb->active_task = inproc ?: outproc;
-
-    if (inproc && inproc != outproc) /* User-space thread switch? */
+    if (next && next != prev) /* Switch to new user-space thread? */
 	{
-	struct mm_struct *prev = outproc->active_mm;
-	struct mm_struct *next = inproc->active_mm;
+	struct mm_struct *mm = next->active_mm;
 
 	/* Switch the mm context.*/
 
-	inproc->thread.pgdir = next->pgd;
+#ifdef CONFIG_ALTIVEC
+	asm volatile (
+ BEGIN_FTR_SECTION
+	"dssall;\n"
+#ifndef CONFIG_POWER4
+	 "sync;\n" /* G4 needs a sync here, G5 apparently not */
+#endif
+ END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+	 : : );
+#endif /* CONFIG_ALTIVEC */
 
-	if (prev != next)
-	    {
-	    get_mmu_context(next);
-	    set_context(next->context, next->pgd);
-	    }
-
-	if (!inproc->mm)
-	    enter_lazy_tlb(prev,inproc);
-
-	/* The following has been lifted from
-	   arch/ppc/kernel/process.c. */
+	next->thread.pgdir = mm->pgd;
+	get_mmu_context(mm);
+	set_context(mm->context,mm->pgd);
 
 #ifdef CONFIG_SMP
-	if (outproc->thread.regs && (outproc->thread.regs->msr & MSR_FP))
-	    giveup_fpu(outproc);
+	if (prev->thread.regs && (prev->thread.regs->msr & MSR_FP))
+	    giveup_fpu(prev);
 #ifdef CONFIG_ALTIVEC
-	if ((outproc->thread.regs && (outproc->thread.regs->msr & MSR_VEC)))
-	    giveup_altivec(outproc);
+	if ((prev->thread.regs && (prev->thread.regs->msr & MSR_VEC)))
+	    giveup_altivec(prev);
 #endif /* CONFIG_ALTIVEC */
 #ifdef CONFIG_SPE
-	if ((outproc->thread.regs && (outproc->thread.regs->msr & MSR_SPE)))
-	    giveup_spe(outproc);
+	if ((prev->thread.regs && (prev->thread.regs->msr & MSR_SPE)))
+	    giveup_spe(prev);
 #endif /* CONFIG_SPE */
 #endif /* CONFIG_SMP */
 
 #ifdef CONFIG_ALTIVEC
-	if (inproc->thread.regs && last_task_used_altivec == inproc)
-	    inproc->thread.regs->msr |= MSR_VEC;
+	if (next->thread.regs && last_task_used_altivec == next)
+	    next->thread.regs->msr |= MSR_VEC;
 #endif /* CONFIG_ALTIVEC */
 
 #ifdef CONFIG_SPE
-	if (inproc->thread.regs && last_task_used_spe == inproc)
-	    inproc->thread.regs->msr |= MSR_SPE;
+	if (next->thread.regs && last_task_used_spe == next)
+	    next->thread.regs->msr |= MSR_SPE;
 #endif /* CONFIG_SPE */
 
-	_switch(&outproc->thread,&inproc->thread);
+	_switch(&prev->thread,&next->thread);
 	}
     else
 	/* Kernel-to-kernel context switch. */
         rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
-
-    rthal_hw_unlock(flags);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
-					       xnarchtcb_t *next_tcb) {
+					       xnarchtcb_t *next_tcb)
+{
     xnarch_switch_to(dead_tcb,next_tcb);
 }
 
-static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb) {
+static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb)
+
+{
     /* Empty */
 }
 

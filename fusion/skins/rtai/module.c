@@ -23,7 +23,8 @@
  * \defgroup native Native RTAI API.
  *
  * The native RTAI programming interface available to real-time
- * applications.
+ * applications. This API is built over the abstract RTOS core
+ * implemented by the RTAI/fusion nucleus.
  *
  */
 

@@ -5,7 +5,7 @@ rect $task_8h.html 178,230 293,254
 rect $skins_2rtai_2timer_8c.html 177,278 294,302
 rect $alarm_8c.html 349,392 471,416
 rect $cond_8c.html 351,440 469,464
-rect $event_8c.html 349,488 471,512
+rect $event_8c.html 350,488 470,512
 rect $skins_2rtai_2heap_8c.html 351,536 469,560
 rect $skins_2rtai_2intr_8c.html 357,104 463,128
 rect $mutex_8c.html 347,152 473,176

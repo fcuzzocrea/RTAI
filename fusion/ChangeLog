@@ -5,6 +5,8 @@
 
 2005-04-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Add Adeos support 2.6.9-r10c1.
+
 	* rtai/skin/lib/task.c (rt_task_delete): Use pthread_cancel()
 	internally to finalize RT tasks termination.
 

@@ -20,7 +20,7 @@
 /*!
  * \defgroup nucleus RTAI/fusion nucleus.
  *
- * A RTOS abstraction layer.
+ * An abstract RTOS core.
  */
 
 #define XENO_MAIN_MODULE 1

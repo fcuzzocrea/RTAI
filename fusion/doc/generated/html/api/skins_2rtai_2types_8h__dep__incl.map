@@ -8,11 +8,11 @@ rect $mutex_8h.html 179,169 305,193
 rect $skins_2rtai_2queue_8h.html 358,306 483,330
 rect $registry_8h.html 354,693 487,717
 rect $sem_8h.html 363,354 478,378
-rect $skins_2rtai_2timer_8h.html 182,587 302,611
+rect $skins_2rtai_2timer_8h.html 183,587 301,611
 rect $alarm_8c.html 541,549 663,573
 rect $skins_2rtai_2module_8c.html 535,261 669,285
 rect $syscall_8c.html 538,357 666,381
-rect $event_8c.html 541,597 663,621
+rect $event_8c.html 542,597 662,621
 rect $skins_2rtai_2heap_8c.html 543,645 661,669
 rect $skins_2rtai_2intr_8c.html 549,405 655,429
 rect $cond_8c.html 543,309 661,333

@@ -41,7 +41,7 @@
 #include <devstruct.h>
 #include <devices.h>
 
-#define RTAILAB_VERSION   "3.0.4"
+#define RTAILAB_VERSION   "3.1.0"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -329,6 +329,7 @@ static void *rt_BaseRate(void *args)
     char name[7];
     int i;
     static RTIME t0;
+    int nevprt = 1;
 
     for(i = 0; i < MAX_NTARGETS; i++) {
       sprintf(name,"BRT%d",i);
@@ -343,7 +344,7 @@ static void *rt_BaseRate(void *args)
 
     iopl(3);
     rt_task_use_fpu(rt_BaseRateTask, 1);
-    NAME(MODEL,_init)(z, &TIME, RPAR1, &NRPAR1, IPAR1, &NIPAR1);
+    NAME(MODEL,_init_blk)();
     grow_and_lock_stack(stackinc);
     if (UseHRT) {
 	rt_make_hard_real_time();
@@ -357,14 +358,14 @@ static void *rt_BaseRate(void *args)
 	if (endBaseRate) break;
 
 	TIME = (rt_get_cpu_time_ns() - t0)*1.0E-9;
-	set_nevprt(1);
-	NAME(MODEL,main1)(z, &TIME, RPAR1, &NRPAR1, IPAR1, &NIPAR1);
-	NAME(MODEL,main2)(z, &TIME, RPAR1, &NRPAR1, IPAR1, &NIPAR1);
+	set_nevprt(nevprt);
+	NAME(MODEL,main1)(NAME(block_,MODEL),z, &TIME);
+	NAME(MODEL,main2)(NAME(block_,MODEL),z, &TIME);
     }
     if (UseHRT) {
       rt_make_soft_real_time();
     }
-    NAME(MODEL,_end)(z, &TIME, RPAR1, &NRPAR1, IPAR1, &NIPAR1);
+    NAME(MODEL,_end)(NAME(block_,MODEL),z, &TIME);
     rt_task_delete(rt_BaseRateTask);
     return 0;
 }
@@ -373,12 +374,10 @@ static inline void modify_any_param(int index, double param)
 {
     if (index < NTOTRPAR1) {
 	rtModifyRParam(index, &param);
-	NAME(MODEL,_const_update)(z, &TIME, RPAR1, &NRPAR1, IPAR1, &NIPAR1);
     } else if (index < (NTOTRPAR1 + NTOTIPAR1)) {
 	rtModifyIParam(index -= NTOTRPAR1, (int)param);
     } else {
 	rtModifyUParam(index -= (NTOTRPAR1 + NTOTIPAR1), param);
-        NAME(MODEL,_upar_update)(index/5);
     }
 }
 
@@ -409,7 +408,7 @@ static void *rt_HostInterface(void *args)
 		rtTargetParamInfo rtParam;
 		float samplingTime;
 
-		strncpyz(rtParam.modelName, MODELNAME, MAX_NAME_SIZE);
+		strncpyz(rtParam.modelName, STR(MODEL), MAX_NAME_SIZE);
 		rtParam.dataType  = SS_DOUBLE;
 		rtParam.dataClass = rt_SCALAR;
    	        rtParam.nRows = 1;
@@ -709,7 +708,7 @@ static int rt_Main(int priority)
     }
 
     if (verbose) {
-	printf("Model : %s .\n", MODELNAME);
+	printf("Model : %s .\n", STR(MODEL));
 	printf("Executes on CPU map : %x.\n", CpuMap);
 	printf("Sampling time : %e (s).\n", get_tsamp());
     }

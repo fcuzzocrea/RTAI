@@ -137,9 +137,9 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
 
     adeos_load_cpuid();
 
-    if (!test_and_set_bit(cpuid,lock))
+    if (!test_and_set_bit(cpuid,&lock->lock))
 	{
-	while (test_and_set_bit(BITS_PER_LONG - 1,lock))
+	while (test_and_set_bit(BITS_PER_LONG - 1,&lock->lock))
             {
             rthal_cpu_relax(cpuid);
 
@@ -180,10 +180,10 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 
         adeos_load_cpuid();
 
-        if (test_bit(cpuid,lock))
+        if (test_bit(cpuid,&lock->lock))
             {
-            clear_bit(cpuid,lock);
-            clear_bit(BITS_PER_LONG - 1,lock);
+            clear_bit(cpuid,&lock->lock);
+            clear_bit(BITS_PER_LONG - 1,&lock->lock);
             rthal_cpu_relax(cpuid);
             }
         }

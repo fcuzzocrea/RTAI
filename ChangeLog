@@ -1,3 +1,8 @@
+2004-03-15  Jan Kiszka  <kiszka@rts.uni-hannover.de>
+
+	* base/include/asm-i386/rtai_oldnames: fixed legacy names macros
+	   related to interrupt flags handling.
+
 2004-03-21  Michael Neuhauser  <mike@firmix.at>
 
 	* base/include/asm-arm/rtai_hal.*: made rtai_hw_*() on ARM fully

@@ -102,7 +102,7 @@ config RTAI_OPT_FILTER_EVSYS
 
 config RTAI_OPT_FILTER_EVALL
 	bool "Disable all tracepoints"
-	default y if RTAI_OPT_FILTER_EVALL=y
+	default n
 	help
 	
 	This option disables all LTT tracepoints inside RTAI/fusion.

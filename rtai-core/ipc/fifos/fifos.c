@@ -333,7 +333,6 @@ static inline int mbx_sem_wait(F_SEM *sem)
 			if (!(sem->queue.next)->task) {
 				sem->free = 1;
 			}
-			rtf_restore_flags(flags);
 			if (!ret) {
 				ret = -1;
 			}
@@ -1368,9 +1367,7 @@ static ssize_t rtf_read(struct file *filp, char *buf, size_t count, loff_t* ppos
 		if ((handler_ret = ((int (*)(int, ...))(fifo[minor].handler))(minor, 'r')) < 0) {
 			return handler_ret;
 		}
-		return count;
 	}
-	return 0;
 
 	return count;
 }

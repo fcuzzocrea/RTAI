@@ -503,7 +503,7 @@ extern unsigned long io_apic_irqs;
 do { \
 	rtai_save_flags_and_cli(flags); \
 	cpuid = rtai_cpuid(); \
-	lflags = xchg(&adp_root->cpudata[cpuid].status, 1); \
+	lflags = xchg(&adp_root->cpudata[cpuid].status, 1 << IPIPE_STALL_FLAG); \
 	rtai_save_and_lock_preempt_count()
 
 #define END_PIC() \

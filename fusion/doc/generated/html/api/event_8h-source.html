@@ -104,15 +104,19 @@
 00141                   <span class="keywordtype">int</span> mode,
 00142                   RTIME timeout);
 00143 
-00144 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga6">rt_event_inquire</a>(RT_EVENT *event,
-00145                      RT_EVENT_INFO *info);
-00146 
-00147 <span class="preprocessor">#ifdef __cplusplus</span>
-00148 <span class="preprocessor"></span>}
-00149 <span class="preprocessor">#endif</span>
-00150 <span class="preprocessor"></span>
-00151 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_EVENT_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Nov 28 19:26:57 2004 for RTAI API by&nbsp;
+00144 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga6">rt_event_clear</a>(RT_EVENT *event,
+00145                    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> mask,
+00146                    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *mask_r);
+00147 
+00148 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga7">rt_event_inquire</a>(RT_EVENT *event,
+00149                      RT_EVENT_INFO *info);
+00150 
+00151 <span class="preprocessor">#ifdef __cplusplus</span>
+00152 <span class="preprocessor"></span>}
+00153 <span class="preprocessor">#endif</span>
+00154 <span class="preprocessor"></span>
+00155 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_EVENT_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Nov 29 12:14:06 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -73,7 +73,7 @@ The RTAI scheduler ensures that concurrent tasks are run according to one of the
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga20">rt_task_notify</a> (RT_TASK *task, rt_sigset_t signals)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Send signals to a task.  <a href="#ga20"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga21">rt_task_set_mode</a> (int clrmask, int setmask, int *oldmode)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga21">rt_task_set_mode</a> (int clrmask, int setmask, int *mode_r)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Change task mode bits.  <a href="#ga21"></a><br></td></tr>
 </table>
@@ -122,13 +122,13 @@ The scheduling is locked while a hook is executing.<p>
   </table>
 </dl>
 <ul>
-<li>RT_HOOK_TSTART: The user-defined routine will be called on behalf of the starter task whenever a new task starts. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the started task through the RT_HOOK_TASKPTR() macro.</li></ul>
+<li>T_HOOK_START: The user-defined routine will be called on behalf of the starter task whenever a new task starts. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the started task through the T_HOOK_DESC() macro.</li></ul>
 <p>
 <ul>
-<li>RT_HOOK_TDELETE: The user-defined routine will be called on behalf of the deletor task whenever a task is deleted. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the deleted task through the RT_HOOK_TASKPTR() macro.</li></ul>
+<li>T_HOOK_DELETE: The user-defined routine will be called on behalf of the deletor task whenever a task is deleted. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the deleted task through the T_HOOK_DESC() macro.</li></ul>
 <p>
 <ul>
-<li>RT_HOOK_TSWITCH: The user-defined routine will be called on behalf of the resuming task whenever a context switch takes place. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the task which has been switched in through the RT_HOOK_TASKPTR() macro.</li></ul>
+<li>T_HOOK_SWITCH: The user-defined routine will be called on behalf of the resuming task whenever a context switch takes place. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the task which has been switched in through the T_HOOK_DESC() macro.</li></ul>
 <p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -507,7 +507,7 @@ This service allows to remove a task hook previously registered using <a class="
   </table>
 </dl>
 <ul>
-<li>RT_HOOK_TSTART</li><li>RT_HOOK_TDELETE</li><li>RT_HOOK_TSWITCH</li></ul>
+<li>T_HOOK_START</li><li>T_HOOK_DELETE</li><li>T_HOOK_SWITCH</li></ul>
 <p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -596,7 +596,7 @@ Rescheduling: possible if the suspension nesting level falls down to zero as a r
           <td class="md" nowrap align="right"></td>
           <td class="md"></td>
           <td class="md" nowrap>int *&nbsp;</td>
-          <td class="mdname" nowrap> <em>oldmode</em></td>
+          <td class="mdname" nowrap> <em>mode_r</em></td>
         </tr>
         <tr>
           <td class="md"></td>
@@ -637,7 +637,7 @@ Normally, this service can only be called on behalf of a regular real-time task,
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>clrmask</em>&nbsp;</td><td>A bitmask of mode bits to clear for the current task, before <em>setmask</em> is applied. 0 is an acceptable value which leads to a no-op.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>setmask</em>&nbsp;</td><td>A bitmask of mode bits to set for the current task. 0 is an acceptable value which leads to a no-op.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>oldmode</em>&nbsp;</td><td>If non-NULL, <em>oldmode</em> must be a pointer to a memory location which will be written upon success with the previous set of active mode bits. If NULL, the previous set of active mode bits will not be returned.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>mode_r</em>&nbsp;</td><td>If non-NULL, <em>mode_r</em> must be a pointer to a memory location which will be written upon success with the previous set of active mode bits. If NULL, the previous set of active mode bits will not be returned.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success, or -EINVAL if either <em>setmask</em> or <em>clrmask</em> specifies invalid bits.</dd></dl>
@@ -1147,7 +1147,7 @@ This service can be called from:<p>
 Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 28 19:26:58 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Nov 29 12:14:07 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -124,37 +124,28 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static inline void engage_irq_shield (void)
 
 {
-    unsigned long flags;
     adeos_declare_cpuid;
 
-    adeos_lock_cpu(flags);
+    adeos_load_cpuid();
 
     if (cpu_test_and_set(cpuid,shielded_cpus))
-	goto unmask_and_exit;
+	return;
 
     adeos_read_lock(&shield_lock);
-
     cpu_clear(cpuid,unshielded_cpus);
-
     xnarch_lock_xirqs(&irq_shield,cpuid);
-
     adeos_read_unlock(&shield_lock);
-
- unmask_and_exit:
-    
-    adeos_unlock_cpu(flags);
 }
 
 static void disengage_irq_shield (void)
      
 {
-    unsigned long flags;
     adeos_declare_cpuid;
 
-    adeos_lock_cpu(flags);
+    adeos_load_cpuid();
 
     if (cpu_test_and_set(cpuid,unshielded_cpus))
-	goto unmask_and_exit;
+	return;
 
     adeos_write_lock(&shield_lock);
 
@@ -167,7 +158,7 @@ static void disengage_irq_shield (void)
     if (!cpus_empty(shielded_cpus))
 	{
 	adeos_write_unlock(&shield_lock);
-	goto unmask_and_exit;
+	return;
 	}
 
     /* At this point we know that we are the last CPU to disengage the
@@ -188,12 +179,7 @@ static void disengage_irq_shield (void)
 #endif /* CONFIG_SMP */
 
     adeos_write_unlock(&shield_lock);
-
     adeos_unstall_pipeline_from(&irq_shield);
-
- unmask_and_exit:
-
-    adeos_unlock_cpu(flags);
 }
 
 static void shield_handler (unsigned irq)
@@ -447,9 +433,7 @@ static int xnshadow_harden (void)
        shadows cannot be migrated by anyone but themselves, so the cpu
        number is constant in this context, despite the potential for
        preemption. */
-    int cpu = task_cpu(this_task);
-    struct __gatekeeper *gk = &gatekeeper[cpu];
-    spl_t s;
+    struct __gatekeeper *gk = &gatekeeper[task_cpu(this_task)];
 
     if (signal_pending(this_task) ||
 	down_interruptible(&gk->sync)) /* Grab the request token. */
@@ -467,12 +451,11 @@ static int xnshadow_harden (void)
 
     /* Set up the request to move "current" from the Linux domain to
        the RTAI domain. This will cause the shadow thread to resume
-       using the register state of the current Linux task. */
+       using the register state of the current Linux task. For this to
+       happen, we set up the migration data, prepare to suspend then
+       wake up the gatekeeper which will perform the actual
+       transition. */
 
-    splhigh(s);
-
-    /* Set up the migration data, prepare to suspend then wake up the
-       gatekeeper which will perform the transition. */
     gk->thread = xnshadow_thread(this_task);
     wake_up_interruptible_sync(&gk->waitq);
     set_current_state(TASK_INTERRUPTIBLE);
@@ -529,7 +512,6 @@ void xnshadow_relax (void)
 
 {
     xnthread_t *thread = xnpod_current_thread();
-    spl_t s;
 
     /* Enqueue the request to move the running shadow from the RTAI
        domain to the Linux domain.  This will cause the Linux task
@@ -553,11 +535,10 @@ void xnshadow_relax (void)
 
     schedule_linux_call(SB_WAKEUP_REQ,current,0);
 
-    splhigh(s);
     xnpod_renice_root(thread->cprio);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
+
     __adeos_schedule_back_root(get_switch_lock_owner());
-    splexit(s);
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */
@@ -1352,7 +1333,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
     if ((sysflags & __xn_flag_shadow) != 0 && !thread)
 	{
-	__xn_error_return(regs,-EACCES);
+	__xn_error_return(regs,-EPERM);
 	return;
 	}
 
@@ -1529,9 +1510,8 @@ static void linux_task_exit (adevinfo_t *evinfo)
     /* So that we won't attempt to further wakeup the exiting task in
        xnshadow_unmap(). */
 
-    xnthread_archtcb(thread)->user_task = NULL;
     xnshadow_ptd(current) = NULL;
-
+    xnthread_archtcb(thread)->user_task = NULL;
     xnpod_delete_thread(thread);
 
 #if 1
@@ -1553,7 +1533,8 @@ static void linux_schedule_head (adevinfo_t *evinfo)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	return;
 
-    adeos_load_cpuid();
+    adeos_load_cpuid();	/* Linux is running in a migration-safe
+			   portion of code. */
 
     set_switch_lock_owner(current);
 

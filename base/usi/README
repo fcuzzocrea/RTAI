@@ -1,0 +1,103 @@
+                     <*> USI (User Space Interrupts) <*>
+
+If you are deeply concerned about any computational overhead this is not for 
+you. Neither I would have used such a way of working on my favourite Z80.
+
+Instead if you are using any PC that kids use nowdays to play their favourite 
+video games it can be of some interest. On such machines task switching times 
+in user space are far less than the worst latency you'll encounter in getting 
+to the first line of code in your interrupt handler, even if it seats in kernel 
+space. If you do not believe it try examples/buslokchk for a few minutes under 
+intense peripheral activities with plain Linux. 
+So if your concern is on the worst case you might find it not so bad and what 
+found here might be usefull. In any case it can be a helper for preliminary
+development and easy proof of concept verifications of interrupt handlers code.
+
+RTAI already contains some examples hinting at managing interrupts in user
+space, e.g: resumefromintr in lxrt-net_rpc, pressa in lxrt, but all of them
+require installing a proper handler in kernel space to wake up a hard real 
+time LXRT/NEWLXRT task. USI does the same but adds something that permits you 
+to avoid writing anything in kernel space.
+
+In fact it contains a few support functions that allow you to write interrupt
+handlers directly in user space. The related APIs are much the same as those 
+available from RTAI for kernel space, so there is not much else to be said. 
+You should care of just getting ioperm, or iopl to have them all, in order to 
+access IO space.
+
+The only point worth clarifying is how you can write your handler. 
+
+1 - AS A THREAD
+You write your handler as a Linux pthread and make it hard real time. Your 
+handler must then sit in an never ending loop that does an rt_sem_wait on a 
+semaphore. The semaphore itself is your interrupt and when you are woken up 
+you must carry out your interrupt processing as needed. Notice that it must 
+be initialised with an initial count of zero.
+For that there is a change in rt_request_global_irq and its prototype in user
+space is:
+int rt_request_global_irq(unsigned int irq, void *sem, USI_SEM);
+As you see you do not pass a handler but a semaphore, rtai_usi installs a
+standard handler for you that does an rt_sem_signal at each interrupt.
+You can use both binary and counting semaphores. Nonetheless counting ones might
+be better as through their returned value you can check for possible overruns.
+You can think to this way of implementing a handler much the same as it is
+possible using IOTRANSFER in MODULA2. On old DOS machines with non protected 
+memory there were some compilers that allowed an easy writing of interrupt
+handlers using it. 
+Actually there are also helper functions:
+int rt_wait_intr(SEM *sem, int *irq);
+int rt_wait_intr_if(SEM *sem, int *irq);
+int rt_wait_intr_until(SEM *sem, RTIME until, int *irq);
+int rt_wait_intr_timed(SEM *sem, RTIME delay, int *irq);
+that can substitute "rt_sem_wait_..." and allows you to pass a pointer to an 
+integer in which you'll receive the interrupt number, its return value being 
+nothing but what returned by "rt_sem_wait_...", i.e. overruns in our case. 
+It can be usefull when you can use the same handler for different boards.
+Conditional and timed wait are instead provided to help both in debugging and
+in adding polling and timeout features to your handler if they can be of help.
+Naturally timed waits can be used only if you have the scheduler timer running 
+(start_rt_timer).
+
+Directory test contains a simple example using the above approach, i.e. 
+rt_process.c, to use it just do "make" and "./runp".
+
+2 - AS A TASKLET
+You write your handler using an RTAI tasklet in user space, naturally you must
+then remember to insmod the tasklets module before executing.
+The tasklet function is something that looks like:
+void handler_fun(unsigned long data);
+In such a case your handler looks more like a normal irq function that is 
+dispatched by a standard handler function installed when you call:
+int rt_request_global_irq(unsigned int irq, void *tasklet, USI_TASKLET);
+If you are interested in getting the same data made available by using 
+"rt_wait_intr" you must call a similar helper function:
+int rt_expand_handler_data(unsigned long data, int *irq);
+from within your tasklet. Its argument "data" is the one with wich your handler 
+function above is called by the standard handler installed by 
+"rt_request_global_irq", the return value is the numnber of overruns and.
+Notice that the above implementtion causes any "data" you'll assign at tasklet 
+creation to be forgotten.
+
+Directory test contains a simple example, i.e. rt_tasklet.c, to use it just do 
+"make" and "./runt".
+
+At the moment USI contains the essential functions for the interrupt handling 
+job, i.e. interrupt flags and PIC processing. Nothing forbid expanding it if 
+needed.
+
+USI makes available base locking primitives also. So it should now be possible
+to do quick protection of shared data by disabling/enabling interrupts and using
+spinlocks from user space. For somebody it might be a frightening possibility 
+but real time must not be slave to anything.
+
+All the available APIs can be easily understood if you master RTAI usage 
+already, in fact it makes little sense using them if you do not. So have a quick
+look at rtai_usi.h and, if it is not enough, at rtai_usi.c; they should be self
+explaining.
+
+Once more nothing new, there are other OSes that allows to do the same thing 
+and UML should allow it also under Linux. On the RTAI side there is the added 
+advantage of having it in hard real time.
+
+
+Paolo Mantegazza.

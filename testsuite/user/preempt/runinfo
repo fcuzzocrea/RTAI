@@ -1,0 +1,1 @@
+preempt:lxrt+fifos+sem:!./preempt &;sleep 1;./display;popall:control_c

@@ -1,0 +1,50 @@
+diff -purN rtai-3.0r2/rtai-core/arch/arm/hal/mach-clps711x/clps711x-timer.c rtai-3.0r2_mod/rtai-core/arch/arm/hal/mach-clps711x/clps711x-timer.c
+--- rtai-3.0r2/rtai-core/arch/arm/hal/mach-clps711x/clps711x-timer.c	2004-05-17 10:32:09.000000000 +0200
++++ rtai-3.0r2_mod/rtai-core/arch/arm/hal/mach-clps711x/clps711x-timer.c	2004-05-17 10:31:56.000000000 +0200
+@@ -64,7 +64,7 @@ void linux_timer_interrupt(int irq, void
+ *	the timer is requested by a realtime task and is invoked by
+ *	the scheduler when there is time to do it
+ */
+-void soft_timer_interrupt(rtai_irq_t irq, void *dev_id, struct pt_regs *regs)
++void soft_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
+ {
+ 	long flags;
+ 	
+diff -purN rtai-3.0r2/rtai-core/include/asm-arm/arch-clps711x/rtai_arch.h rtai-3.0r2_mod/rtai-core/include/asm-arm/arch-clps711x/rtai_arch.h
+--- rtai-3.0r2/rtai-core/include/asm-arm/arch-clps711x/rtai_arch.h	2004-05-17 10:32:09.000000000 +0200
++++ rtai-3.0r2_mod/rtai-core/include/asm-arm/arch-clps711x/rtai_arch.h	2004-05-17 10:31:56.000000000 +0200
+@@ -36,15 +36,21 @@ Acknowledgements
+ 
+ #define TIMER_8254_IRQ 9
+ 
++/* clps711x doesn't have multiplexed irq's */
++#define ARCH_MUX_IRQ NO_IRQ		
++
+ #define arch_mount_rtai()			\
+ {						\
+ 	extern unsigned long rtai_lasttsc;	\
+-	extern union rtai_tsc rtai_tsc;		\
++	extern volatile union rtai_tsc rtai_tsc;		\
+ 	/* setup our tsc compare register */	\
+ 	rtai_tsc.tsc = 0LL;			\
+ 	rtai_lasttsc = ( unsigned long) (clps_readl(TC1D) & 0xffff); \
+ }
+ 
++/* clps711x doesn't have multiplexed irq's */
++#define isdemuxirq(irq) 0  
++
+ #define arch_umount_rtai()	// nothing to do for umount
+ 
+ #define ARCH_EXPORTS EXPORT_SYMBOL(rtai_lasttsc); \
+diff -purN rtai-3.0r2/rtai-core/include/asm-arm/arch-clps711x/rtai_timer.h rtai-3.0r2_mod/rtai-core/include/asm-arm/arch-clps711x/rtai_timer.h
+--- rtai-3.0r2/rtai-core/include/asm-arm/arch-clps711x/rtai_timer.h	2004-05-17 10:32:09.000000000 +0200
++++ rtai-3.0r2_mod/rtai-core/include/asm-arm/arch-clps711x/rtai_timer.h	2004-05-17 10:31:56.000000000 +0200
+@@ -50,7 +50,7 @@ Acknowledgements
+ 
+ extern unsigned long rtai_lasttsc;
+ extern unsigned long rtai_TC2latch;
+-extern union rtai_tsc rtai_tsc;
++extern volatile union rtai_tsc rtai_tsc;
+ 
+ union rtai_tsc {
+ 	unsigned long long tsc;

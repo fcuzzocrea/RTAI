@@ -1061,6 +1061,7 @@ EXPORT_SYMBOL(xnheap_destroy_shared);
 EXPORT_SYMBOL(xnheap_alloc);
 EXPORT_SYMBOL(xnheap_destroy);
 EXPORT_SYMBOL(xnheap_extend);
+EXPORT_SYMBOL(xnheap_test_and_free);
 EXPORT_SYMBOL(xnheap_free);
 EXPORT_SYMBOL(xnheap_init);
 

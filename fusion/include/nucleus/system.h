@@ -49,17 +49,6 @@
 #ifdef __RTAI_UVM__
 #include <nucleus/asm-uvm/system.h>
 #else /* !__RTAI_UVM__ */
-#if 0
-#include <sys/time.h>
-#include <errno.h>
-#include <malloc.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
-#include <stdio.h>
-#include <setjmp.h>
-#endif
 #include <nucleus/asm/atomic.h>
 #include <nucleus/fusion.h>
 #endif /* __RTAI_UVM__ */

@@ -1,3 +1,7 @@
+2004-11-24  Marc Kleine-Budde <kleine-budde@gmx.de>
+
+	* configure.in: Fix various M4 quoting issues.
+
 2004-11-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/*/defconfig: Rebuild sound versions.

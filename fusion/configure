@@ -19807,8 +19807,8 @@ echo $ECHO_N "checking for maximum number of pipe devices... $ECHO_C" >&6
 if test "${enable_nucleus_pipe_nrdev+set}" = set; then
   enableval="$enable_nucleus_pipe_nrdev"
   case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_OPT_PIPE_NRDEV=$enableval ;;
- 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-nucleus-pipe-nrdev=<number>" >&5
+	[0-9]*) CONFIG_RTAI_OPT_PIPE_NRDEV=$enableval ;;
+	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-nucleus-pipe-nrdev=<number>" >&5
 echo "$as_me: error: Bad argument to option: --enable-nucleus-pipe-nrdev=<number>" >&2;}
    { (exit 1); exit 1; }; } ;;
 	esac
@@ -19871,9 +19871,9 @@ echo "${ECHO_T}${CONFIG_RTAI_HW_FPU:-no}" >&6
 
 echo "$as_me:$LINENO: checking for aperiodic timer support" >&5
 echo $ECHO_N "checking for aperiodic timer support... $ECHO_C" >&6
-# Check whether --enable-fpu or --disable-fpu was given.
-if test "${enable_fpu+set}" = set; then
-  enableval="$enable_fpu"
+# Check whether --enable-aperiodic-timer or --disable-aperiodic-timer was given.
+if test "${enable_aperiodic_timer+set}" = set; then
+  enableval="$enable_aperiodic_timer"
   case "$enableval" in
 	y | yes) CONFIG_RTAI_HW_APERIODIC_TIMER=y ;;
 	*) unset CONFIG_RTAI_HW_APERIODIC_TIMER ;;
@@ -19967,8 +19967,8 @@ echo $ECHO_N "checking for native registry slots... $ECHO_C" >&6
 if test "${enable_native_registry_slots+set}" = set; then
   enableval="$enable_native_registry_slots"
   case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS=$enableval ;;
- 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-native-registry-slots=<number>" >&5
+	[0-9]*) CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS=$enableval ;;
+	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-native-registry-slots=<number>" >&5
 echo "$as_me: error: Bad argument to option: --enable-native-registry-slots=<number>" >&2;}
    { (exit 1); exit 1; }; } ;;
 	esac
@@ -20001,8 +20001,8 @@ echo $ECHO_N "checking for size of native pipe fill space... $ECHO_C" >&6
 if test "${enable_native_pipe_bufsz+set}" = set; then
   enableval="$enable_native_pipe_bufsz"
   case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ=$enableval ;;
- 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-native-pipe-bufsz=<number>" >&5
+	[0-9]*) CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ=$enableval ;;
+	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-native-pipe-bufsz=<number>" >&5
 echo "$as_me: error: Bad argument to option: --enable-native-pipe-bufsz=<number>" >&2;}
    { (exit 1); exit 1; }; } ;;
 	esac
@@ -20177,8 +20177,8 @@ echo $ECHO_N "checking for $timer_type tuning latency... $ECHO_C" >&6
 if test "${enable_timer_latency+set}" = set; then
   enableval="$enable_timer_latency"
   case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_HW_TIMER_LATENCY=$enableval ;;
- 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-timer-latency=<nanoseconds>" >&5
+	[0-9]*) CONFIG_RTAI_HW_TIMER_LATENCY=$enableval ;;
+	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-timer-latency=<nanoseconds>" >&5
 echo "$as_me: error: Bad argument to option: --enable-timer-latency=<nanoseconds>" >&2;}
    { (exit 1); exit 1; }; } ;;
 	esac
@@ -20201,8 +20201,8 @@ echo $ECHO_N "checking for scheduling latency... $ECHO_C" >&6
 if test "${enable_sched_latency+set}" = set; then
   enableval="$enable_sched_latency"
   case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_HW_SCHED_LATENCY=$enableval ;;
- 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-sched-latency=<nanoseconds>" >&5
+	[0-9]*) CONFIG_RTAI_HW_SCHED_LATENCY=$enableval ;;
+	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-sched-latency=<nanoseconds>" >&5
 echo "$as_me: error: Bad argument to option: --enable-sched-latency=<nanoseconds>" >&2;}
    { (exit 1); exit 1; }; } ;;
 	esac

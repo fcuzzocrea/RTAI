@@ -281,9 +281,7 @@ AC_MSG_CHECKING(for maximum number of pipe devices)
 AC_ARG_ENABLE(nucleus-pipe-nrdev,
 	AS_HELP_STRING([--enable-nucleus-pipe-nrdev], [Set maximum number of pipe devices]),
 	[case "$enableval" in
- changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_OPT_PIPE_NRDEV=$enableval ;;
- changequote([,])dnl
+	[[0-9]]*) CONFIG_RTAI_OPT_PIPE_NRDEV=$enableval ;;
 	*) AC_MSG_ERROR([Bad argument to option: --enable-nucleus-pipe-nrdev=<number>]) ;;
 	esac])
 if test x$CONFIG_RTAI_OPT_PIPE_NRDEV = x ; then
@@ -328,7 +326,7 @@ AC_ARG_ENABLE(fpu,
 AC_MSG_RESULT(${CONFIG_RTAI_HW_FPU:-no})
 
 AC_MSG_CHECKING(for aperiodic timer support)
-AC_ARG_ENABLE(fpu,
+AC_ARG_ENABLE(aperiodic-timer,
 	AS_HELP_STRING([ --enable-aperiodic-timer], [Enable aperiodic timer support]),
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_HW_APERIODIC_TIMER=y ;;
@@ -395,9 +393,7 @@ AC_MSG_CHECKING(for native registry slots)
 AC_ARG_ENABLE(native-registry-slots,
 	AS_HELP_STRING([--enable-native-registry-slots], [Set maximum number of registry slots]),
 	[case "$enableval" in
- changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS=$enableval ;;
- changequote([,])dnl
+	[[0-9]]*) CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS=$enableval ;;
 	*) AC_MSG_ERROR([Bad argument to option: --enable-native-registry-slots=<number>]) ;;
 	esac])
 if test x$CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS = x ; then
@@ -421,9 +417,7 @@ AC_MSG_CHECKING(for size of native pipe fill space)
 AC_ARG_ENABLE(native-pipe-bufsz,
 	AS_HELP_STRING([--enable-native-pipe-bufsz], [Set size of pipe fill space]),
 	[case "$enableval" in
- changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ=$enableval ;;
- changequote([,])dnl
+	[[0-9]]*) CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ=$enableval ;;
 	*) AC_MSG_ERROR([Bad argument to option: --enable-native-pipe-bufsz=<number>]) ;;
 	esac])
 if test x$CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ = x ; then
@@ -549,9 +543,7 @@ AC_MSG_CHECKING(for $timer_type tuning latency)
 AC_ARG_ENABLE(timer-latency,
 	AS_HELP_STRING([--enable-timer-latency], [Set timer tuning latency]),
 	[case "$enableval" in
- changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_HW_TIMER_LATENCY=$enableval ;;
- changequote([,])dnl
+	[[0-9]]*) CONFIG_RTAI_HW_TIMER_LATENCY=$enableval ;;
 	*) AC_MSG_ERROR([Bad argument to option: --enable-timer-latency=<nanoseconds>]) ;;
 	esac])
 if test x$CONFIG_RTAI_HW_TIMER_LATENCY = x ; then
@@ -568,9 +560,7 @@ AC_MSG_CHECKING(for scheduling latency)
 AC_ARG_ENABLE(sched-latency,
 	AS_HELP_STRING([--enable-sched-latency], [Set scheduling latency]),
 	[case "$enableval" in
- changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_HW_SCHED_LATENCY=$enableval ;;
- changequote([,])dnl
+	[[0-9]]*) CONFIG_RTAI_HW_SCHED_LATENCY=$enableval ;;
 	*) AC_MSG_ERROR([Bad argument to option: --enable-sched-latency=<nanoseconds>]) ;;
 	esac])
 if test x$CONFIG_RTAI_HW_SCHED_LATENCY = x ; then

@@ -30,7 +30,7 @@ static xnsynch_t __fusion_vmsync;
 static xnpod_t __fusion_pod;
 
 /* This file implements the Fusion syscall wrappers. Unchecked uaccess
-   is used since the syslib is trusted. */
+   is used in the UVM code since the caller is trusted. */
 
 static inline xnthread_t *__pthread_find_by_handle (struct task_struct *curr, void *khandle)
 
@@ -139,7 +139,7 @@ static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread;
-    int err = 0;
+    int err;
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
@@ -318,9 +318,6 @@ static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
 {
     spl_t s;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(int)))
-	return -EFAULT;
-
     xnlock_get_irqsave(&nklock,s);
 
     __xn_put_user(curr,1,(int __user *)__xn_reg_arg1(regs)); /* Raise the pend flag */
@@ -336,9 +333,6 @@ static int __pthread_release_vm (struct task_struct *curr, struct pt_regs *regs)
 
 {
     spl_t s;
-
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(int)))
-	return -EFAULT;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -357,9 +351,6 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
 {
     xnthread_t *thread = xnpod_current_thread();
     spl_t s;
-
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(int)))
-	return -EFAULT;
 
     xnlock_get_irqsave(&nklock,s);
 

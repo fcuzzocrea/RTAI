@@ -2,6 +2,9 @@
 
         * rtai-core/include/asm/rtai_hal.h: disabled CPU_RELAX.
 
+        * rtai-core/ipc/sem/sem.c: fixed qtype assignement and inverted
+	global lock relaxation in broadcast. 
+
 2004-08-25  Ignacio García Pérez <iggarpe@terra.es>
 
 	* rtai-core/ipc/sem/sem.c: Dead code removal.

@@ -939,6 +939,18 @@ sched_soft:
 			rt_global_cli();
 			rt_current->state |= RT_SCHED_READY;
 			while (rt_current->state != RT_SCHED_READY) {
+			        if (adp_root != adp_current)
+				    {
+				    /* We must *never* call schedule()
+				       over the RTAI domain without
+				       encurring extreme prejudice for
+				       the box anyway, so let's abort
+				       in a somewhat controlled manner
+				       here. */
+				    adeos_set_printk_sync(adp_current);
+				    printk("RTAI: wrong sched_soft context (%s)\n",adp_current->name);
+				    BUG();
+				    }
 				(rt_current->lnxtsk)->state = TASK_HARDREALTIME;
 				rt_global_sti();
 				schedule();

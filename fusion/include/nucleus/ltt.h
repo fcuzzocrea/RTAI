@@ -118,6 +118,14 @@ void xnltt_umount(void);
 
 #define xnltt_log_event(ev, args...); /* Eat the semi-colon. */
 
+static inline void xnltt_set_filter (int mask)
+{
+}
+
+static inline void xnltt_stop_tracing (void)
+{
+}
+
 #endif /* __KERNEL__ && CONFIG_LTT */
 
 #endif /* !_RTAI_NUCLEUS_LTT_H_ */

@@ -114,7 +114,7 @@ void *cruncher_thread (void *arg)
 }
 
 #define IDEAL      10000
-#define MARGIN       100
+#define MARGIN       200
 #define FIRST_DIM    300
 
 void *sampler_thread (void *arg)
@@ -161,10 +161,11 @@ void *sampler_thread (void *arg)
 
         ideal = (t1 - t0) / count;
 
-        if(dim == ndims || (ideal > IDEAL - MARGIN) && (ideal < IDEAL + MARGIN))
+        if(dim == ndims || ((ideal > IDEAL - MARGIN) &&
+                            (ideal < IDEAL + MARGIN)))
             break;
 
-        printf("%d, ", ideal);
+        printf("%ld, ", ideal);
 
         dim = dim*IDEAL/ideal;
         if(dim > ndims)

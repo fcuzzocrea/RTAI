@@ -1,5 +1,9 @@
 2004-11-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* include/nucleus/asm-i386/system.h (xnarch_restore_fpu): Restore
+	the ts bit when switching to a user-space thread with
+	uninitialized FPU.
+
 	* testsuite/cruncher/cruncher.c (sampler_thread): Really calibrate
 	the cruncher for a 10 ms computation.
 

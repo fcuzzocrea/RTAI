@@ -68,8 +68,8 @@ dnl such link right away.
 
 if test -r $srcdir/../rtai_config.h.in; then
     RTAI_INSTALLDIR=`cd .. && pwd`
-    test -d ../source || ln -sf $srcdir/.. ../source
-    test -d ../build || ln -sf . ../build
+    test -d ../source || ln -sf `cd $srcdir/.. && pwd` ../source
+    test -d ../build || ln -sf `pwd` ../build
 elif -h $CONFIG_RTAI_MVM_INSTALLDIR/source; then
     RTAI_INSTALLDIR=${CONFIG_RTAI_MVM_INSTALLDIR}
 else

@@ -13,4 +13,4 @@ uninstall-local:
 	$(RM) $(DESTDIR)$(bindir)/rtai-load
 	$(RM) $(DESTDIR)$(bindir)/rtai-config
 
-EXTRA_DIST = rtai-info bootstrap postinstall.sh
+EXTRA_DIST = rtai-info bootstrap $(wildcard $(srcdir)/postinstall.sh)

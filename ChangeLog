@@ -1,3 +1,7 @@
+2004-08-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Upgrade to hal14 final.
+
 2004-08-05  Marius Groeger <mgroeger@sysgo.com>
 
 	* rtai-testsuite/kern/*/Makefile.am: $(CROSS_COMPILE)ld.

@@ -1017,6 +1017,7 @@ static int __rt_event_clear (struct task_struct *curr, struct pt_regs *regs)
     unsigned long mask, oldmask;
     RT_EVENT_PLACEHOLDER ph;
     RT_EVENT *event;
+    int err;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;

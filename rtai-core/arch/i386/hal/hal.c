@@ -187,8 +187,6 @@ volatile unsigned long rtai_cpu_realtime;
 
 volatile unsigned long rtai_cpu_lock;
 
-volatile unsigned long rtai_cpu_lxrt;
-
 int rtai_adeos_ptdbase = -1;
 
 unsigned long rtai_critical_enter (void (*synch)(void))
@@ -1413,7 +1411,7 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 #endif /* < 2.6.0 */
 
 	if (rtai_trap_handler != NULL &&
-	    (test_bit(cpuid,&rtai_cpu_realtime) || test_bit(cpuid,&rtai_cpu_lxrt)) &&
+	    test_bit(cpuid, &rtai_cpu_realtime) &&
 	    rtai_trap_handler(evinfo->event,
 			      trap2sig[evinfo->event],
 			      (struct pt_regs *)evinfo->evdata,
@@ -1900,7 +1898,6 @@ EXPORT_SYMBOL(rtai_proc_root);
 EXPORT_SYMBOL(rtai_tunables);
 EXPORT_SYMBOL(rtai_cpu_lock);
 EXPORT_SYMBOL(rtai_cpu_realtime);
-EXPORT_SYMBOL(rtai_cpu_lxrt);
 EXPORT_SYMBOL(set_rtai_callback);
 EXPORT_SYMBOL(remove_rtai_callback);
 EXPORT_SYMBOL(rt_times);

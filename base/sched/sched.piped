@@ -2531,6 +2531,7 @@ static int __rtai_lxrt_init(void)
 		rt_smp_fpu_task[cpuid] = &rt_linux_task;
 		oneshot_timer = OneShot ? 1 : 0;
 		oneshot_running = 0;
+		linux_cr0 = 0;
 	}
 	tuned.latency = imuldiv(Latency, tuned.cpu_freq, 1000000000);
 	tuned.setup_time_TIMER_CPUNIT = imuldiv( SetupTimeTIMER, 

@@ -41,7 +41,7 @@ static inline xnthread_t *__pthread_find_by_handle (struct task_struct *curr, vo
 
     thread = (xnthread_t *)khandle;
 
-    if (xnthread_magic(thread) != FUSION_SKIN_MAGIC)
+    if (xnthread_get_magic(thread) != FUSION_SKIN_MAGIC)
 	/* FIXME: We should kill all VM threads at once when a signal
 	   is caught for one of them. */
 	return NULL;
@@ -412,7 +412,7 @@ out:
 static void xnfusion_shadow_delete_hook (xnthread_t *thread)
 
 {
-    if (xnthread_magic(thread) == FUSION_SKIN_MAGIC)
+    if (xnthread_get_magic(thread) == FUSION_SKIN_MAGIC)
 	{
 	xnshadow_unmap(thread);
 	xnfree(thread);

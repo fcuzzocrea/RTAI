@@ -614,7 +614,7 @@ static void wind_task_delete_hook (xnthread_t *xnthread)
 {
     wind_task_t *task;
 
-    if (xnthread_magic(xnthread) != VXWORKS_SKIN_MAGIC)
+    if (xnthread_get_magic(xnthread) != VXWORKS_SKIN_MAGIC)
 	return;
 
     task = thread2wind_task(xnthread);

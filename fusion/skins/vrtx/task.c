@@ -65,7 +65,7 @@ static void vrtxtask_delete_hook (xnthread_t *thread)
     vrtxtask_t *task;
     spl_t s;
 
-    if (xnthread_magic(thread) != VRTX_SKIN_MAGIC)
+    if (xnthread_get_magic(thread) != VRTX_SKIN_MAGIC)
 	return;
 
     task = thread2vrtxtask(thread);

@@ -201,7 +201,7 @@ typedef struct xnhook {
 #define xnthread_timeout(thread)           xntimer_get_timeout(&(thread)->timer)
 #define xnthread_stack_size(thread)        xnarch_stack_size(xnthread_archtcb(thread))
 #define xnthread_extended_info(thread)     ((thread)->extinfo)
-#define xnthread_set_magic(thread,magic)   do { (thread)->magic = (magic); } while(0)
+#define xnthread_set_magic(thread,m)       do { (thread)->magic = (m); } while(0)
 #define xnthread_get_magic(thread)         ((thread)->magic)
 #define xnthread_signaled_p(thread)        ((thread)->signals != 0 ||   \
 					    testbits((thread)->status,XNKILLED))

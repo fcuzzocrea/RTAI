@@ -6,6 +6,8 @@
 	* nucleus/thread.c (xnthread_init): Discard magic parameter as a
 	consequence of the above change.
 
+	* configure.in: Pass ARCH in RTAI_KBUILD_CMD.
+
 2004-06-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/system.h (xnarch_switch_to): Integrate

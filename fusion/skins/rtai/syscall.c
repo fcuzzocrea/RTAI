@@ -479,7 +479,7 @@ static xnsysent_t __systab[] = {
 static void __shadow_delete_hook (xnthread_t *thread)
 
 {
-    if (xnthread_magic(thread) == RTAI_SKIN_MAGIC &&
+    if (xnthread_get_magic(thread) == RTAI_SKIN_MAGIC &&
 	testbits(thread->status,XNSHADOW))
 	xnshadow_unmap(thread);
 }

@@ -56,7 +56,7 @@ static void uitask_delete_hook (xnthread_t *thread)
 {
     uitask_t *task;
 
-    if (xnthread_magic(thread) != uITRON_SKIN_MAGIC)
+    if (xnthread_get_magic(thread) != uITRON_SKIN_MAGIC)
 	return;
 
     task = thread2uitask(thread);

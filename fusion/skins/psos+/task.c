@@ -57,7 +57,7 @@ static void psostask_delete_hook (xnthread_t *thread)
     psostask_t *task;
     psostm_t *tm;
 
-    if (xnthread_magic(thread) != PSOS_SKIN_MAGIC)
+    if (xnthread_get_magic(thread) != PSOS_SKIN_MAGIC)
 	return;
 
     task = thread2psostask(thread);

@@ -31,7 +31,7 @@ static void __task_delete_hook (xnthread_t *thread)
     /* The scheduler is locked while hooks are running. */
     RT_TASK *task;
 
-    if (xnthread_magic(thread) != RTAI_SKIN_MAGIC)
+    if (xnthread_get_magic(thread) != RTAI_SKIN_MAGIC)
 	return;
 
     task = thread2rtask(thread);

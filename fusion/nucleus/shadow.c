@@ -818,7 +818,7 @@ static int xnshadow_detach_skin (struct task_struct *curr, int muxid)
 	nholder = nextq(&nkpod->threadq,holder);
 	thread = link2thread(holder,glink);
 
-	if (xnthread_magic(thread) == muxtable[muxid].magic &&
+	if (xnthread_get_magic(thread) == muxtable[muxid].magic &&
 	    testbits(thread->status,XNSHADOW))
 	    xnpod_delete_thread(thread);
 	}

@@ -30,7 +30,7 @@ struct pse51_thread {
 
 #define thread2pthread(taddr)                                                   \
 ((taddr)                                                                        \
- ? ((xnthread_magic(taddr) == PSE51_SKIN_MAGIC)                                 \
+ ? ((xnthread_get_magic(taddr) == PSE51_SKIN_MAGIC)                                 \
     ? ((pthread_t)(((char *)taddr)-(int)(&((pthread_t) 0)->threadbase)))        \
     : NULL)                                                                     \
  : NULL)

@@ -95,6 +95,7 @@ void display (void *cookie)
 
 {
     int err;
+	int n = 0;
 
     err = rt_sem_create(&display_sem,"dispsem",0,S_FIFO);
 
@@ -116,10 +117,13 @@ void display (void *cookie)
 	    rt_task_delete(NULL);
 	    }
 
-	printf("min = %Ld ns, max = %Ld ns, avg = %Ld ns, overrun = %ld\n",
+		if ((n++ % 21)==0)
+			printf("RTH|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","overrun");
+
+		printf("RTD|%12Ld|%12Ld|%12Ld|%12ld\n",
 	       rt_timer_ticks2ns(minjitter),
-	       rt_timer_ticks2ns(maxjitter),
 	       rt_timer_ticks2ns(avgjitter),
+				rt_timer_ticks2ns(maxjitter),
 	       overrun);
 	}
 }
@@ -181,7 +185,8 @@ int main (int argc, char **argv)
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
 
-    setvbuf(stdout, (char *)NULL, _IOLBF, 0);
+    setlinebuf(stdout);
+
     printf("== Sampling period: %d us\n",sampling_period / 1000);
 
     err = rt_task_create(&display_task,"display",0,2,0);

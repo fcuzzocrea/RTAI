@@ -11,6 +11,9 @@ int main (int argc, char **argv)
     struct rtai_latency_stat s;
     ssize_t sz;
     int fd;
+	int n = 0;
+    
+	setlinebuf(stdout);
     
     fd = open("/dev/rtp0",O_RDWR);
     
@@ -35,10 +38,13 @@ int main (int argc, char **argv)
 	    exit(1);
 	    }
 
-	printf("min = %d ns, max = %d ns, avg = %d ns, overrun = %d\n",
+	if ((n++ % 21)==0)
+			printf("RTH|%12s|%12s|%12s|%12s\n", "jit min","jit avg","jit max","overrun");
+
+		printf("RTD|%12d|%12d|%12d|%12d\n",
 	       s.minjitter,
-	       s.maxjitter,
 	       s.avgjitter,
+	       s.maxjitter,
 	       s.overrun);
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS

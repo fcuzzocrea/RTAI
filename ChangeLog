@@ -1,3 +1,7 @@
+2004-09-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Upgrade to hal7c1-2.6.8.1.
+
 2004-03-09  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/include/rtai_schedcore.h: moved arch dependent part of 

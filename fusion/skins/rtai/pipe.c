@@ -27,6 +27,13 @@
  *
  * Pipe management services.
  *
+ * Real-time pipes are an improved replacement for the legacy
+ * RT-FIFOS. A pipe is a two-way communication channel between a
+ * kernel-based real-time thread and a user-space process. Pipes can
+ * be operated in a message-oriented fashion so that message
+ * boundaries are preserved, and also in byte streaming mode from
+ * kernel to user-space for optimal throughput.
+ *
  *@{*/
 
 #include <nucleus/pod.h>
@@ -223,7 +230,7 @@ int rt_pipe_close (RT_PIPE *pipe)
 /**
  * @fn int rt_pipe_read(RT_PIPE *pipe,
                         RT_PIPE_MSG **msgp,
-			   RTIME timeout)
+			RTIME timeout)
  *
  * @brief Read a message from a pipe.
  *
@@ -356,7 +363,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  *
  * - -EINVAL is returned if @a pipe is not a pipe descriptor.
  *
- * - -EIO is returned if the user-space side of the pipe is not yet
+ * - -EPIPE is returned if the user-space side of the pipe is not yet
  * open.
  *
  * - -EIDRM is returned if @a pipe is a closed pipe descriptor.
@@ -421,7 +428,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  * does not preserve message boundaries. Instead, an internal buffer
  * is filled on the fly with the data. The actual sending may be
  * delayed until the internal buffer is full, or the Linux kernel is
- * re-entered after the real-time kernel enters a quiescent state.
+ * re-entered after the real-time system enters a quiescent state.
  *
  * Data buffers sent by the rt_pipe_stream() service are always
  * transmitted in FIFO order (i.e. RT_PIPE_NORMAL mode).
@@ -429,7 +436,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  * @param pipe The descriptor address of the pipe to write to.
  *
  * @param buf The address of the first data byte to send. The
- * data will be copied to an internal buffer before emission.
+ * data will be copied to an internal buffer before transmission.
  *
  * @param size The size in bytes of the buffer. Zero is a valid value,
  * in which case the service returns immediately without buffering any
@@ -440,12 +447,16 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  *
  * - -EINVAL is returned if @a pipe is not a pipe descriptor.
  *
- * - -EIO is returned if the user-space side of the pipe is not yet
+ * - -EPIPE is returned if the user-space side of the pipe is not yet
  * open.
  *
  * - -EIDRM is returned if @a pipe is a closed pipe descriptor.
  *
  * - -ENODEV or -EBADF are returned if @a pipe is scrambled.
+ *
+ * - -ENOSYS is returned if the byte streaming mode has been disabled
+ * at configuration time by nullifying the size of the pipe buffer
+ * (see CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ).
  *
  * Context: This routine can be called on behalf of a task, interrupt
  * context or from the initialization code.
@@ -548,7 +559,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
  *
  * - -EINVAL is returned if @a pipe is not a pipe descriptor.
  *
- * - -EIO is returned if the user-space side of the pipe is not yet
+ * - -EPIPE is returned if the user-space side of the pipe is not yet
  * open.
  *
  * - -EIDRM is returned if @a pipe is a closed pipe descriptor.

@@ -126,6 +126,10 @@ void __task_pkg_cleanup (void)
  * - T_FPU allows the task to use the FPU whenever available on the
  * platform. This flag is forced for user-space tasks.
  *
+ * - T_SUSP causes the task to start in suspended mode. In such a
+ * case, the thread will have to be explicitely resumed using the
+ * rt_task_resume() service for its execution to actually begin.
+ *
  * - T_CPU(cpuid) makes the new task affine to CPU # @b cpuid. CPU
  * identifiers range from 0 to RTHAL_NR_CPUS - 1 (inclusive).
  *
@@ -158,13 +162,13 @@ int rt_task_create (RT_TASK *task,
 		    int prio,
 		    int mode)
 {
+    int err = 0, cpumask, cpu;
     xnflags_t bflags;
-    int err = 0;
     spl_t s;
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    bflags = mode & (XNFPU|XNSHADOW);
+    bflags = mode & (XNFPU|XNSHADOW|XNSUSP);
 
     if (xnpod_init_thread(&task->thread_base,
 			  name,
@@ -180,6 +184,13 @@ int rt_task_create (RT_TASK *task,
     task->suspend_depth = 0;
     task->overrun = -1;
     task->handle = 0;	/* i.e. (still) unregistered task. */
+
+    xnarch_cpus_clear(task->affinity);
+
+    for (cpu = 0, cpumask = (mode >> 24) & 0xff;
+	 cpumask != 0 && cpu < 8; cpu++, cpumask >>= 1)
+	if (cpumask & 1)
+	    xnarch_cpu_set(cpu,task->affinity);
 
     xnlock_get_irqsave(&nklock,s);
     task->magic = RTAI_TASK_MAGIC;
@@ -272,10 +283,10 @@ int rt_task_start (RT_TASK *task,
     xnpod_start_thread(&task->thread_base,
 		       0,
 		       0,
-		       XNPOD_ALL_CPUS,
+		       xnarch_cpus_empty(task->affinity) ?
+		       XNPOD_ALL_CPUS : task->affinity,
 		       entry,
 		       cookie);
-
  unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);

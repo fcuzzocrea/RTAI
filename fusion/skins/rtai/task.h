@@ -55,8 +55,9 @@
 
 /* Creation flags. */
 #define T_FPU     XNFPU
-/* <!> Low bits must conflict with XNFPU|XNSHADOW. */
-#define T_CPU(id) ((id) & 0xff)
+#define T_SUSP    XNSUSP
+/* <!> High bits must not conflict with XNFPU|XNSHADOW|XNSUSP. */
+#define T_CPU(cpu) (1 << (24 + cpu)) /* Up to 8 cpus [0-7] */
 
 /* Status flags. */
 #define T_BLOCKED XNPEND
@@ -129,6 +130,8 @@ typedef struct rt_task {
     int suspend_depth;
 
     int overrun;
+
+    xnarch_cpumask_t affinity;
 
     union { /* Saved args for current synch. wait operation. */
 

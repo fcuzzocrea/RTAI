@@ -24,7 +24,7 @@ include_HEADERS = \
 
 rtai_uitron$(modext): @RTAI_KBUILD_ENV@
 rtai_uitron$(modext): $(libmodule_SRC) FORCE
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ @RTAI_KBUILD_CMD@ @RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

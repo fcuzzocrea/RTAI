@@ -69,7 +69,7 @@ distfiles += heap.c heap.h
 
 rtai_native$(modext): @RTAI_KBUILD_ENV@
 rtai_native$(modext): $(libmodule_SRC) FORCE
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ @RTAI_KBUILD_CMD@ @RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

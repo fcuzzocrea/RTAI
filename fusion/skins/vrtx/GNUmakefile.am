@@ -33,7 +33,7 @@ noinst_HEADERS = \
 
 rtai_vrtx$(modext): @RTAI_KBUILD_ENV@
 rtai_vrtx$(modext): $(libmodule_SRC)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ @RTAI_KBUILD_CMD@ @RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

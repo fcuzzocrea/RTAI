@@ -620,7 +620,6 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 	if (!task->used_math)
             {
             stts();
-
 	    return;	/* Uninit fpu area -- do not restore. */
             }
 

@@ -1,3 +1,7 @@
+2004-11-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Add top and bottom sections to KBUILD_CMD.
+
 2004-11-16  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/hal/hal.c (__rthal_init): Setup the 8254 channel #2

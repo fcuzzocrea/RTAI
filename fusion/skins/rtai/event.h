@@ -55,9 +55,13 @@
 #define EV_PRIO  XNSYNCH_PRIO	/* Pend by task priority order. */
 #define EV_FIFO  XNSYNCH_FIFO	/* Pend by FIFO order. */
 
+/* Operation flags. */
+#define EV_ANY  0x1	/* Disjunctive wait. */
+#define EV_ALL  0x0	/* Conjunctive wait. */
+
 typedef struct rt_event_info {
 
-    unsigned value;	/* !< Current event group value. */
+    unsigned long value; /* !< Current event group value. */
 
     int nsleepers;	/* !< Number of pending tasks. */
 
@@ -75,11 +79,15 @@ typedef struct rt_event_placeholder {
 
 typedef struct rt_event {
 
-    xnholder_t link;
-#define link2event(laddr) \
-((RT_EVENT *)(((char *)laddr) - (int)(&((RT_EVENT *)0)->link)))
+    unsigned magic;   /* !< Magic code - must be first */
 
-    xnsynch_t base_synch; /* !< Base synchronization object. */
+    xnsynch_t synch_base; /* !< Base synchronization object. */
+
+    unsigned long value; /* !< Event group value. */
+
+    rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
+
+    char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 } RT_EVENT;
 
@@ -105,7 +113,9 @@ int rt_event_post(RT_EVENT *event,
 
 int rt_event_pend(RT_EVENT *event,
 		  unsigned long mask,
-		  int mode);
+		  unsigned long *mask_r,
+		  int mode,
+		  RTIME timeout);
 
 int rt_event_inquire(RT_EVENT *event,
 		     RT_EVENT_INFO *info);

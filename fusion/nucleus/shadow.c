@@ -307,6 +307,12 @@ static void xnshadow_wakeup_handler (unsigned virq)
 	    shield_on = 1;
 	    }
 
+#ifdef CONFIG_SMP
+        /* If the fusion task migrated while hardened, "migrate" its Linux
+           counter-part (migrating a suspended task is cheap) */
+        if (!cpu_isset(cpuid, task->cpus_allowed))
+            set_cpus_allowed(task, cpumask_of_cpu(cpuid));
+#endif
 	wake_up_process(task);
 	}
 }
@@ -413,8 +419,8 @@ static void gatekeeper_thread (void *data)
 		       cpu,thread->name,adeos_test_pipeline_from(&rthal_domain));
 #endif
 #ifdef CONFIG_SMP
-            /* Changing the "sched" pointer of a suspended thread is
-               harmless. */
+            /* If the fusion task migrated while run by Linux, migrate the
+               shadow too. */
             xnlock_get_irqsave(&nklock, s);
             thread->sched = xnpod_sched_slot(cpu);
 	    xnpod_resume_thread(thread,XNRELAX);
@@ -1527,6 +1533,10 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
     if (xnshadow_thread(next))
 	{
 	rootprio = xnshadow_thread(next)->cprio;
+        if(testbits(xnshadow_thread(next)->status,
+                    XNTHREAD_BLOCK_BITS & ~XNRELAX))
+            xnarch_halt("Scheduling a thread marked as blocked");
+
 	engage_irq_shield(adeos_processor_id());
 	}
     else
@@ -1640,6 +1650,8 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
 	xnlock_get_irqsave(&nklock,s);
 
 	setbits(thread->status,XNKILLED);
+        if(thread == thread->sched->runthread)
+            xnsched_set_resched(thread->sched);
 
 	if (!testbits(thread->status,XNSTARTED))
 	    xnshadow_start(thread,0,NULL,NULL,0);
@@ -1650,7 +1662,7 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
 	    if (testbits(thread->status,XNSUSP))
 		xnpod_resume_thread(thread,XNSUSP);
 	    }
- 
+
  	xnlock_put_irqrestore(&nklock,s);
 
 	xnshadow_schedule(); /* Schedule in the RTAI space. */
@@ -1779,7 +1791,6 @@ static void xnshadow_shield (int iflag)
     for (;;)
 	adeos_suspend_domain();
 }
-
 
 int xnshadow_init (void)
 

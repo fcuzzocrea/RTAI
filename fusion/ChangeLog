@@ -1,3 +1,37 @@
+2004-07-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_schedule, xnpod_schedule_runnable): Test 
+	the XNKILLED bit early in the scheduling functions, to avoid
+	inter-cpu races conditions where one CPU decides to kill one
+	thread, whereas the thread is currently	suspending itself on
+	another CPU.
+	(xnpod_dispatch_signals): clear the XNKILLED bit once tested.
+	(xnpod_shutdown): Remove a potentially harmful xnlock_init.
+							
+	* nucleus/shadow.c (xnshadow_wakeup_handler): Reflect shadow
+	inter-cpu migrations on its user-space mate.
+				
+2004-07-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i386/system.h (__switch_threads): Provide
+	a different version for gcc before version 3.2.
+		
+2004-07-17  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i386/system.h (__switch_threads): Mark the
+	eax and edx registers as input/output and ebx and esi as clobbered
+	in order to avoid Debian gcc 3.3.4 to generate code reusing ebx
+	after the context switch for a Xeon kernel with SMP and without
+	preemption enabled.
+
+	* nucleus/shadow.c (xnshadow_kick_process): Set the rescheduling
+	bit of the killed thread's scheduler when the killed thread is
+	running.
+
+	* nucleus/shadow.c (xnshadow_schedule_head): Test whether a thread
+	which is about to be scheduled is marked as blocked for the
+	nucleus.
+			
 2004-07-07  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pod.c (xnpod_schedule)

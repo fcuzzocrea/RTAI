@@ -206,7 +206,8 @@ static int xnpod_read_proc (char *page,
                           ? xnthread_timeout(thread)
                           : 0LL ),
                          thread->status,
-			 xnthread_symbolic_status(thread,buf,sizeof(buf)));
+			 xnthread_symbolic_status(thread->status,
+                                                  buf,sizeof(buf)));
             }
 
         xnlock_put_irqrestore(&nklock, s);

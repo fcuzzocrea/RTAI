@@ -1715,9 +1715,11 @@ static void xnpod_dispatch_signals (void)
     xnasr_t asr;
 
     /* Process internal signals first. */
-
     if (testbits(thread->status,XNKILLED))
+        {
+        clrbits(thread->status, XNKILLED);
         xnpod_delete_self();
+        }
 
     /* Then process user-defined signals if the ASR is enabled for
        this thread. */
@@ -1941,6 +1943,12 @@ void xnpod_schedule (void)
 
     doswitch = 0;
 
+    if (testbits(runthread->status, XNKILLED))
+        {
+        clrbits(runthread->status, XNKILLED);
+        xnpod_delete_self();
+        }
+
     if (!testbits(runthread->status,XNTHREAD_BLOCK_BITS|XNZOMBIE))
         {
         if (countpq(&sched->readyq) > 0)
@@ -2073,6 +2081,12 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 {
     xnsched_t *sched = thread->sched;
     xnthread_t *runthread = sched->runthread, *threadin;
+
+    if (testbits(thread->status,XNKILLED))
+        {
+        clrbits(thread->status, XNKILLED);
+        xnpod_delete_self();
+        }
 
     if (thread != runthread)
         {

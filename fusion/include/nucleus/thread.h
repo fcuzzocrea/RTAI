@@ -227,9 +227,7 @@ int xnthread_init(xnthread_t *thread,
 
 void xnthread_cleanup_tcb(xnthread_t *thread);
 
-char *xnthread_symbolic_status(xnthread_t *thread,
-			       char *buf,
-			       int size);
+char *xnthread_symbolic_status(xnflags_t status, char *buf, int size);
 
 #ifdef __cplusplus
 }

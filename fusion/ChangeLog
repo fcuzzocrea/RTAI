@@ -1,3 +1,13 @@
+2005-01-10  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
+
+	* testsuite/klatency/latency.c: Clarify error message upon failure
+	to open the message pipe.
+
+2005-01-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (schedback_handler): Properly restore root's
+	stall bit.
+
 2005-01-12  Max Krasnyansky <maxk@qualcomm.com>
 
 	* skins/rtai/lib/event.c (rt_event_clear): Add missing call.

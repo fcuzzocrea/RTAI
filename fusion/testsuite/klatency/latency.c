@@ -11,15 +11,16 @@ int main (int argc, char **argv)
     struct rtai_latency_stat s;
     ssize_t sz;
     int fd;
+	const char *communication_channel = "/dev/rtp0";
 	int n = 0;
     
 	setlinebuf(stdout);
     
-    fd = open("/dev/rtp0",O_RDWR);
+    fd = open(communication_channel, O_RDWR);
     
     if (fd < 0)
 	{
-	perror("open");
+	perror(communication_channel);
 	exit(1);
 	}
 

@@ -104,7 +104,8 @@ void display (void *cookie)
 	}
 }
 
-int sem_delete(int sig __attribute__((unused)))
+void cleanup_upon_sig(int sig __attribute__((unused)))
+
 {
     int err = rt_sem_delete(&display_sem);
 
@@ -118,7 +119,7 @@ int main (int argc, char **argv)
 {
     int err;
 
-    signal(SIGINT, sem_delete);
+    signal(SIGINT, cleanup_upon_sig);
     
     err = rt_task_create(&display_task,"display",0,2,0);
 

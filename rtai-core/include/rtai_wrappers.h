@@ -44,6 +44,9 @@
 
 #define set_need_resched() set_tsk_need_resched(current)
 
+#define LIST_POISON1 ((void *) 0x00100100)
+#define LIST_POISON2 ((void *) 0x00200200)
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,23) || __cplusplus
 typedef void irqreturn_t;
 #endif  /* LINUX_VERSION_CODE < KERNEL_VERSION(2,4,23) || __cplusplus */

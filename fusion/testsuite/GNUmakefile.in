@@ -36,7 +36,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@CONFIG_RTAI_SKIN_NATIVE_TRUE@am__append_1 = latency cruncher
+@CONFIG_RTAI_SKIN_NATIVE_TRUE@am__append_1 = latency cruncher klatency
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -225,7 +225,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	installdirs-recursive install-recursive uninstall-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = $(srcdir)/GNUmakefile.in GNUmakefile.am
-DIST_SUBDIRS = latency cruncher
+DIST_SUBDIRS = latency cruncher klatency
 all: all-recursive
 
 .SUFFIXES:

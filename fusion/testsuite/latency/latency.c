@@ -16,7 +16,7 @@ RT_SEM display_sem;
 
 int minjitter = 10000000,
     maxjitter = -10000000,
-    alljitter = 0,
+    avgjitter = 0,
     overrun = 0;
 
 void latency (void *cookie)
@@ -68,7 +68,7 @@ void latency (void *cookie)
 
 	minjitter = minj;
 	maxjitter = maxj;
-	alljitter = sumj / SAMPLE_COUNT;
+	avgjitter = sumj / SAMPLE_COUNT;
 	rt_sem_v(&display_sem);
 	}
 
@@ -103,7 +103,7 @@ void display (void *cookie)
 	printf("min = %Ld ns, max = %Ld ns, avg = %Ld ns, overrun = %d\n",
 	       rt_timer_ticks2ns(minjitter),
 	       rt_timer_ticks2ns(maxjitter),
-	       rt_timer_ticks2ns(alljitter),
+	       rt_timer_ticks2ns(avgjitter),
 	       overrun);
 	}
 }

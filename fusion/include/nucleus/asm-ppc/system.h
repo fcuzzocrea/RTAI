@@ -179,6 +179,7 @@ struct xnheap;
 struct task_struct;
 
 #define xnarch_stack_size(tcb)  ((tcb)->stacksize)
+#define xnarch_user_task(tcb)   ((tcb)->user_task)
 
 typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
 

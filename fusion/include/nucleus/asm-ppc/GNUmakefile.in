@@ -274,7 +274,8 @@ include_HEADERS = \
 		calibration.h \
 		hal.h \
 		system.h \
-		syscall.h
+		syscall.h \
+		uart.h
 
 all: all-am
 

@@ -36,7 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@CONFIG_RTAI_OPT_FUSION_TRUE@am__append_1 = syscall.c
+@CONFIG_RTAI_OPT_FUSION_TRUE@am__append_1 = syscall.c syscall.h
 subdir = drivers/16550A
 DIST_COMMON = $(include_HEADERS) $(srcdir)/GNUmakefile.am \
 	$(srcdir)/GNUmakefile.in $(srcdir)/Makefile.kbuild
@@ -281,8 +281,9 @@ moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = 16550A.c $(am__append_1)
 include_HEADERS = 16550A.h
-distfiles = $(libmodule_SRC)
+distfiles = $(libmodule_SRC) syscall.c syscall.h
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
+EXTRA_DIST = $(distfiles) Makefile.kbuild Kconfig
 all: all-recursive
 
 .SUFFIXES:

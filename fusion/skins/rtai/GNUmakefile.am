@@ -13,15 +13,15 @@ libmodule_SRC = \
 include_HEADERS = \
 		task.h \
 		timer.h \
-		types.h \
-		syscall.h
+		types.h
 
 distfiles = $(libmodule_SRC)
 
 if CONFIG_RTAI_OPT_FUSION
 libmodule_SRC += syscall.c
-include_HEADERS += misc.h
+include_HEADERS += syscall.h misc.h
 endif
+distfiles += syscall.c syscall.h misc.h
 
 if CONFIG_RTAI_OPT_NATIVE_REGISTRY
 libmodule_SRC += registry.c

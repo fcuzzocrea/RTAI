@@ -12,8 +12,9 @@ include_HEADERS = 16550A.h
 distfiles = $(libmodule_SRC)
 
 if CONFIG_RTAI_OPT_FUSION
-libmodule_SRC += syscall.c
+libmodule_SRC += syscall.c syscall.h
 endif
+distfiles += syscall.c syscall.h
 
 rtai_16550A$(modext): @RTAI_KBUILD_ENV@
 rtai_16550A$(modext): $(libmodule_SRC) FORCE
@@ -45,3 +46,5 @@ uninstall-local:
 if CONFIG_RTAI_OPT_FUSION
 SUBDIRS = lib
 endif
+
+EXTRA_DIST = $(distfiles) Makefile.kbuild Kconfig

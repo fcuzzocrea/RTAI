@@ -37,7 +37,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @CONFIG_RTAI_OPT_FUSION_TRUE@am__append_1 = syscall.c
-@CONFIG_RTAI_OPT_FUSION_TRUE@am__append_2 = misc.h
+@CONFIG_RTAI_OPT_FUSION_TRUE@am__append_2 = syscall.h misc.h
 @CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@am__append_3 = registry.c
 @CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@am__append_4 = registry.h
 @CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE@am__append_5 = pipe.c
@@ -308,14 +308,15 @@ libmodule_SRC = module.c task.c timer.c $(am__append_1) \
 	$(am__append_9) $(am__append_11) $(am__append_13) \
 	$(am__append_15) $(am__append_17) $(am__append_19) \
 	$(am__append_21)
-include_HEADERS = task.h timer.h types.h syscall.h $(am__append_2) \
+include_HEADERS = task.h timer.h types.h $(am__append_2) \
 	$(am__append_4) $(am__append_6) $(am__append_8) \
 	$(am__append_10) $(am__append_12) $(am__append_14) \
 	$(am__append_16) $(am__append_18) $(am__append_20) \
 	$(am__append_22)
-distfiles = $(libmodule_SRC) registry.c registry.h pipe.c pipe.h sem.c \
-	sem.h event.c event.h mutex.c mutex.h cond.c cond.h queue.c \
-	queue.h heap.c heap.h alarm.c alarm.h intr.c intr.h
+distfiles = $(libmodule_SRC) syscall.c syscall.h misc.h registry.c \
+	registry.h pipe.c pipe.h sem.c sem.h event.c event.h mutex.c \
+	mutex.h cond.c cond.h queue.c queue.h heap.c heap.h alarm.c \
+	alarm.h intr.c intr.h
 EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig snippets
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
 all: all-recursive

@@ -282,14 +282,14 @@ target_alias = @target_alias@
 testdir = $(prefix)/testsuite/switch
 switch_SOURCES = switch.c
 switch_CPPFLAGS = \
-       @RTAI_USER_CFLAGS@ \
-       -I$(top_srcdir)/include \
-       -I$(top_srcdir)/skins \
-       -I../../include
+	@RTAI_USER_CFLAGS@ \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/skins \
+	-I../../include
 
 switch_LDADD = \
-       ../../skins/rtai/lib/librtai.la \
-       -lpthread
+	../../skins/rtai/lib/librtai.la \
+	-lpthread
 
 EXTRA_DIST = runinfo
 all: all-am
@@ -582,16 +582,16 @@ uninstall-am: uninstall-info-am uninstall-local uninstall-testPROGRAMS
 
 
 install-data-local:
-       $(mkinstalldirs) $(DESTDIR)$(testdir)
-       $(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(testdir)/.runinfo
-       @echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" > $(DESTDIR)$(testdir)/run
-       @chmod +x $(DESTDIR)$(testdir)/run
+	$(mkinstalldirs) $(DESTDIR)$(testdir)
+	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(testdir)/.runinfo
+	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" > $(DESTDIR)$(testdir)/run
+	@chmod +x $(DESTDIR)$(testdir)/run
 
 uninstall-local:
-       $(RM) $(DESTDIR)$(testdir)/.runinfo $(DESTDIR)$(testdir)/run
+	$(RM) $(DESTDIR)$(testdir)/.runinfo $(DESTDIR)$(testdir)/run
 
 run: all
-       @$(top_srcdir)/scripts/rtai-load --verbose
+	@$(top_srcdir)/scripts/rtai-load --verbose
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

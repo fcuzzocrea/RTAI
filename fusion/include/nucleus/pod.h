@@ -68,7 +68,7 @@
 #define XNTMSET  0x00000008	/* Pod time has been set */
 #define XNTMPER  0x00000010	/* Periodic timing */
 #define XNFATAL  0x00000020	/* Pod encountered a fatal error */
-#define XNPINIT  0x00000040	/* Pod is initializing  */
+#define XNPIDLE  0x00000040	/* Pod is unavailable (initializing/shutting down) */
 
 /* Sched status flags */
 #define XNKCOUT      0x80000000	/* Sched callout context */
@@ -282,18 +282,6 @@ static inline void xnpod_renice_root (int prio)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-static inline void xnpod_cancellation_point (xnthread_t *thread)
-
-{
-    void xnpod_delete_thread(xnthread_t *thread);
-
-    if (testbits(thread->status,XNKILLED))
-        {
-        __clrbits(thread->status,XNKILLED);
-	xnpod_delete_thread(thread);
-        }
-}
-
     /* -- Beginning of the exported interface */
 
 #define xnpod_sched_slot(cpu) \
@@ -373,8 +361,7 @@ static inline xntime_t xnpod_ticks2ns (xnticks_t ticks) {
 }
 
 static inline xnticks_t xnpod_ns2ticks (xntime_t t) {
-    unsigned long r;
-    return xnarch_ulldiv(t,xnpod_get_tickval(),&r);
+    return xnarch_ulldiv(t,xnpod_get_tickval(),NULL);
 }
 
 int xnpod_init(xnpod_t *pod,

@@ -14,17 +14,17 @@ RT_TASK latency_task, display_task;
 
 RT_SEM display_sem;
 
-int minjitter = 10000000,
-    maxjitter = -10000000,
-    avgjitter = 0,
-    overrun = 0;
+long minjitter = 10000000,
+     maxjitter = -10000000,
+     avgjitter = 0,
+     overrun = 0;
 
 void latency (void *cookie)
 
 {
+    long minj, maxj = -10000000, dt, sumj;
     RTIME itime, expected, period;
-    int minj, maxj = -10000000;
-    int dt, err, count, sumj;
+    int err, count;
 
     err = rt_timer_start(RT_TIMER_ONESHOT);
 
@@ -58,7 +58,7 @@ void latency (void *cookie)
 		overrun++;
 	    else
 		{
-		dt = (int)(rt_timer_tsc() - expected);
+		dt = (long)(rt_timer_tsc() - expected);
 		if (dt > maxj) maxj = dt;
 		if (dt < minj) minj = dt;
 		sumj += dt;

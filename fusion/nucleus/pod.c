@@ -93,11 +93,10 @@ const char *xnpod_fatal_helper (const char *format, ...)
     vsprintf(buf,format,ap);
     va_end(ap);
 
-    if (!nkpod || testbits(nkpod->status,XNFATAL))
+    if (!nkpod || testbits(nkpod->status,XNFATAL|XNPIDLE))
         goto out;
 
     setbits(nkpod->status,XNFATAL);
-    xntimer_freeze();
 
     xnprintf("CPU  %-12s PRI   STATUS\n","NAME");
 
@@ -268,7 +267,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
         flags |= XNRPRIO;
 
     /* Flags must be set before xnpod_get_qdir() is called */
-    pod->status = (flags & (XNRPRIO|XNDREORD))|XNPINIT;
+    pod->status = (flags & (XNRPRIO|XNDREORD))|XNPIDLE;
 
     initq(&xnmod_glink_queue);
     initq(&pod->threadq);
@@ -384,7 +383,7 @@ fail:
 
     xnarch_memory_barrier();
     
-    clrbits(pod->status,XNPINIT);
+    clrbits(pod->status,XNPIDLE);
 
     xnarch_notify_ready();
 
@@ -421,15 +420,17 @@ void xnpod_shutdown (int xtype)
     xnthread_t *thread;
     spl_t s;
 
+    xnpod_stop_timer();
+
     xnlock_get_irqsave(&nklock,s);
 
-    if (!nkpod)
+    if (!nkpod || testbits(nkpod->status,XNPIDLE))
         {
         xnlock_put_irqrestore(&nklock,s);
 	return; /* No-op */
         }
 
-    xnpod_stop_timer();
+    xntimer_destroy(&nkpod->htimer);
 
     nholder = getheadq(&nkpod->threadq);
 
@@ -445,17 +446,21 @@ void xnpod_shutdown (int xtype)
 
     xnpod_schedule();
 
-    xnlock_put_irqrestore(&nklock,s);
+    setbits(nkpod->status,XNPIDLE);
 
-    xnarch_release_ipi();
+    xnlock_put_irqrestore(&nklock,s);
 
     xnarch_notify_shutdown();
 
+    xnarch_release_ipi();
+
+    xnlock_get_irqsave(&nklock,s);
+
     xnheap_destroy(&kheap,&xnarch_sysfree);
 
-    xntimer_destroy(&nkpod->htimer);
-
     nkpod = NULL;
+
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 static inline void xnpod_fire_callouts (xnqueue_t *hookq, xnthread_t *thread)
@@ -695,6 +700,7 @@ int xnpod_start_thread (xnthread_t *thread,
                         void *cookie)
 {
     spl_t s;
+    int err;
 
     if (!testbits(thread->status,XNDORMANT))
         return -EBUSY;
@@ -711,8 +717,8 @@ int xnpod_start_thread (xnthread_t *thread,
 
     if (testbits(thread->status,XNSTARTED))
         {
-        xnlock_put_irqrestore(&nklock,s);
-        return -EBUSY;
+        err = -EBUSY;
+	goto unlock_and_exit;
         }
 
     /* Setup the TCB and initial stack frame. */
@@ -743,7 +749,10 @@ int xnpod_start_thread (xnthread_t *thread,
     xnarch_cpus_and(thread->affinity, affinity, thread->affinity);
 
     if (xnarch_cpus_empty(thread->affinity))
-        return -EINVAL;
+	{
+        err = -EINVAL;
+	goto unlock_and_exit;
+	}
 
 #ifdef CONFIG_SMP
     if (!xnarch_cpu_isset(xnsched_cpu(thread->sched), thread->affinity))
@@ -768,9 +777,13 @@ int xnpod_start_thread (xnthread_t *thread,
     else
         xnpod_schedule();
 
+    err = 0;
+
+ unlock_and_exit:
+
     xnlock_put_irqrestore(&nklock,s);
 
-    return 0;
+    return err;
 }
 
 /*! 
@@ -1516,6 +1529,7 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
  * @retval -EBUSY if the scheduler is locked.
  */
 int xnpod_migrate_thread (int cpu)
+
 {
     xnthread_t *thread;
     int err;
@@ -1523,21 +1537,14 @@ int xnpod_migrate_thread (int cpu)
 
     xnlock_get_irqsave(&nklock, s);
 
-    thread = xnpod_current_thread();
-
-    /* Trying to migrate a killed thread would end up badly in
-       xnpod_delete_thread, since 'thread' would be the current but it
-       would not be detected, since the sched pointer would point on
-       the destination scheduler, not the local. */ 
-
-    xnpod_cancellation_point(thread);
-
     if (xnpod_locked_p())
         {
         err = -EBUSY;
 	goto unlock_and_exit;
         }
     
+    thread = xnpod_current_thread();
+
     if (!xnarch_cpu_isset(cpu, thread->affinity))
         {
         err = -EPERM;
@@ -1743,11 +1750,8 @@ static void xnpod_dispatch_signals (void)
     xnsigmask_t sigs;
     xnasr_t asr;
 
-    /* Process internal signals first. */
-    xnpod_cancellation_point(thread);
-
-    /* Then process user-defined signals if the ASR is enabled for
-       this thread. */
+    /* Process user-defined signals if the ASR is enabled for this
+       thread. */
 
     if (thread->signals == 0 ||
         testbits(thread->status,XNASDI) ||
@@ -2007,8 +2011,6 @@ void xnpod_schedule (void)
            contexts. */
         goto signal_unlock_and_exit;
 
-    xnpod_cancellation_point(runthread);
-
     /* Clear the rescheduling bit */
     xnsched_clr_resched(sched);
 
@@ -2144,8 +2146,6 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 {
     xnsched_t *sched = thread->sched;
     xnthread_t *runthread = sched->runthread, *threadin;
-
-    xnpod_cancellation_point(runthread);
 
     if (thread != runthread)
         {
@@ -2576,7 +2576,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
         
     xnlock_get_irqsave(&nklock,s);
 
-    if (!nkpod)
+    if (!nkpod || testbits(nkpod->status,XNPIDLE))
         {
         err = -ENOSYS;
 	goto unlock_and_exit;
@@ -2609,7 +2609,12 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
         /* Host tick needed but shorter than the timer precision;
            bad... */
         err = -EINVAL;
-	goto unlock_and_exit;
+
+unlock_and_exit:
+
+	xnlock_put_irqrestore(&nklock,s);
+
+	return err;
         }
 
     nkpod->svctable.tickhandler = tickhandler;
@@ -2622,6 +2627,10 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 
     xnintr_init(&nkclock,0,nkpod->svctable.tickhandler,0);
 
+    setbits(nkpod->status,XNTIMED);
+
+    xnlock_put_irqrestore(&nklock,s);
+
     /* The following service should return the remaining time before
        the next host jiffy elapses, expressed in internal clock
        ticks. Returning zero is always valid and means to use a full
@@ -2632,7 +2641,10 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
     delta = xnarch_start_timer(nstick,&xnintr_clock_handler);
 
     if (delta < 0)
-	return -ENODEV;
+	{
+	err = -ENODEV;
+	goto done;
+	}
 
     if (delta == 0)
 	delta = XNARCH_HOST_TICK / nkpod->tickvalue;
@@ -2647,12 +2659,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
     xntimer_start(&nkpod->htimer,
                   delta,
                   XNARCH_HOST_TICK / nkpod->tickvalue);
-
-    setbits(nkpod->status,XNTIMED);
-
- unlock_and_exit:
-
-    xnlock_put_irqrestore(&nklock,s);
+ done:
 
     return err;
 }
@@ -2674,16 +2681,15 @@ void xnpod_stop_timer (void)
 {
     spl_t s;
 
-    if (!nkpod)
-        return;
+    xntimer_freeze();
 
     xnlock_get_irqsave(&nklock,s);
 
+    if (!nkpod || testbits(nkpod->status,XNPIDLE))
+	goto unlock_and_exit;
+
     if (testbits(nkpod->status,XNTIMED))
         {
-        if (!testbits(nkpod->status,XNFATAL))
-            xntimer_freeze();
-
         clrbits(nkpod->status,XNTIMED|XNTMPER);
 
         /* NOTE: The nkclock interrupt object is not destroyed on
@@ -2691,6 +2697,8 @@ void xnpod_stop_timer (void)
            xnarch_stop_timer() called when freezing timers. In any
            case, no resource is associated with this object. */
         }
+
+ unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
 }
@@ -2863,7 +2871,7 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if xnpod_set_thread_periodic() has not
+ * - -EWOULDBLOCK is returned if xnpod_set_thread_periodic() has not
  * previously been called for the calling thread.
  *
  * - -EINTR is returned if xnpod_unblock_thread() has been called for
@@ -2894,7 +2902,7 @@ int xnpod_wait_thread_period (void)
 
     if (!xntimer_active_p(&thread->ptimer))
 	{
-	err = -EINVAL;
+	err = -EWOULDBLOCK;
 	goto unlock_and_exit;
 	}
 
@@ -2950,8 +2958,13 @@ int xnpod_calibrate_sched (void)
 static void xnpod_calibration_thread (void *cookie)
 
 {
-    int *flagp = (int *)cookie, count, jitter = 0;
+    int *flagp = (int *)cookie, count;
     xnticks_t expected, period, idate;
+    long jitter = 0;
+
+#if 1
+    printk("HWIRQ DISABLED? %d\n",adeos_hw_irqs_disabled());
+#endif
 
     period = xnarch_ns_to_tsc(XNARCH_CALIBRATION_PERIOD);
     idate = xnpod_get_time() + 2 * XNARCH_CALIBRATION_PERIOD;
@@ -2965,7 +2978,7 @@ static void xnpod_calibration_thread (void *cookie)
         {
         expected += period;
         xnpod_wait_thread_period();
-	jitter += (int)(xnarch_get_cpu_tsc() - expected);
+	jitter += (long)(xnarch_get_cpu_tsc() - expected);
         }
 
     nkschedlat = jitter < 0 ? 0 : (jitter / count);

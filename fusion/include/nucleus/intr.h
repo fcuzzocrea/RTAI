@@ -52,8 +52,6 @@
 #define XN_ISR_CHAINED   0x1
 #define XN_ISR_ENABLE    0x2
 
-#define XNINTR_ATTACHED  0x2
-
 struct xnintr;
 
 typedef int (*xnisr_t)(struct xnintr *intr);
@@ -65,8 +63,6 @@ typedef struct xnintr {
     unsigned irq;	/* !< IRQ number. */
 
     xnisr_t isr;	/* !< Interrupt service routine. */
-
-    xnarch_cpumask_t affinity;	/* !< Processor affinity. */
 
     void *cookie;	/* !< User-defined cookie value. */
 

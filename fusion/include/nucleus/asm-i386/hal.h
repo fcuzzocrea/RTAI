@@ -196,7 +196,6 @@ extern adomain_t rthal_domain;
 #define RTHAL_APIC_ICOUNT	   ((RTHAL_TIMER_FREQ + HZ/2)/HZ)
 #endif /* CONFIG_X86_LOCAL_APIC */
 
-
 #ifdef CONFIG_X86_TSC
 static inline unsigned long long rthal_rdtsc (void) {
     unsigned long long t;

@@ -936,7 +936,7 @@ static int xnshadow_attach_skin (struct task_struct *curr,
 		    }
 		}
 
-	    if (!nkpod)
+	    if (!nkpod || testbits(nkpod->status,XNPIDLE))
 		/* Ok mate, but you really ought to create some pod in
 		   a way or another if you want me to be of some
 		   help here... */
@@ -1068,7 +1068,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 		    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg2(regs),sizeof(t)))
 			{
 			__xn_error_return(regs,-EFAULT);
-			return 1;
+			goto done;
 			}
 
 		    xnshadow_ticks2ts(now - expire,&t);
@@ -1077,6 +1077,10 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 
 		__xn_success_return(regs,-1);
 		}
+
+done:
+	    if (!testbits(thread->status,XNRELAX) && signal_pending(curr))
+		xnshadow_relax();
 
 	    return 1;
 	    }
@@ -1197,7 +1201,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
     int muxid, muxop;
     u_long sysflags;
 
-    if (nkpod && !testbits(nkpod->status,XNPINIT))
+    if (nkpod && !testbits(nkpod->status,XNPIDLE))
 	goto skin_loaded;
 
     if (__xn_reg_mux_p(regs))
@@ -1425,6 +1429,9 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	}
 
     __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(task,regs));
+
+    if (xnpod_shadow_p() && signal_pending(task))
+	xnshadow_relax();
 }
 
 static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
@@ -1508,6 +1515,9 @@ static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
 	xnshadow_harden();
 
     __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(current,regs));
+
+    if (xnpod_shadow_p() && signal_pending(current))
+	xnshadow_relax();
 }
 
 static void xnshadow_linux_taskexit (adevinfo_t *evinfo)
@@ -1553,13 +1563,12 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
 {
     struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))evinfo->evdata;
     struct task_struct *next = evdata->next;
-    struct task_struct *prev = evdata->prev;
     adeos_declare_cpuid;
     int rootprio;
 
     adeos_propagate_event(evinfo);
 
-    if (!nkpod || testbits(nkpod->status,XNPINIT))
+    if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	return;
 
     adeos_load_cpuid();
@@ -1619,96 +1628,35 @@ static void xnshadow_schedule_tail (adevinfo_t *evinfo)
     adeos_propagate_event(evinfo);
 }
 
-static void xnshadow_signal_process (adevinfo_t *evinfo)
-
-{
-    struct { struct task_struct *task; int sig; } *evdata = (__typeof(evdata))evinfo->evdata;
-    xnthread_t *thread = xnshadow_thread(evdata->task);
-
-    if (thread && !testbits(thread->status,XNRELAX|XNROOT))
-	{
-	switch (evdata->sig)
-	    {
-	    case SIGTERM:
-	    case SIGKILL:
-	    case SIGQUIT:
-	    case SIGINT:
-
-		/* Let the kick handler process those signals, and let
-		   them propagate. */
-
-		break;
-
-	    default:
-
-		/* Instead of having the shadow threads being marked
-		   as uninterruptible when running into the RTAI
-		   domain, which somewhat breaks Linux's activity
-		   counters, we leave them in an interruptible state,
-		   but block the signal propagation here when such
-		   threads remain under the control of the Xenomai
-		   scheduler. */
-
-		return;
-	    }
-	}
-
-    adeos_propagate_event(evinfo);
-}
-
 static void xnshadow_kick_process (adevinfo_t *evinfo)
 
 {
     struct { struct task_struct *task; } *evdata = (__typeof(evdata))evinfo->evdata;
     struct task_struct *task = evdata->task;
     xnthread_t *thread = xnshadow_thread(task);
-    sigset_t sigpending;
     spl_t s;
 
     if (!thread || testbits(thread->status,XNRELAX|XNROOT))
 	return;
 
-    /* Some kernel-originated signals do not raise an
-       ADEOS_SIGNAL_PROCESS event and cannot be blocked in any way
-       (e.g. group exit signal). So we must interpose on the
-       ADEOS_KICK_PROCESS event in order to be given a chance to see
-       those at least, and unblock their real-time counterpart if they
-       happen to target a real-time shadow. This event is always
-       propagated and cannot be dismissed, but again, at least we have
-       been warned. */
+    xnlock_get_irqsave(&nklock,s);
 
-    /* Collect _all_ pending signals. */
+    if (thread == thread->sched->runthread)
+	xnsched_set_resched(thread->sched);
 
-    sigorsets(&sigpending,
-	      &task->pending.signal,
-	      &task->signal->shared_pending.signal);
-
-    if (sigismember(&sigpending,SIGTERM) ||
-	sigismember(&sigpending,SIGKILL) ||
-	sigismember(&sigpending,SIGQUIT) ||
-	sigismember(&sigpending,SIGINT))
+    if (!testbits(thread->status,XNSTARTED))
+	xnshadow_start(thread,0,NULL,NULL,0);
+    else
 	{
-	xnlock_get_irqsave(&nklock,s);
+	xnpod_unblock_thread(thread);
 
-	__setbits(thread->status,XNKILLED);
-
-        if (thread == thread->sched->runthread)
-            xnsched_set_resched(thread->sched);
-
-	if (!testbits(thread->status,XNSTARTED))
-	    xnshadow_start(thread,0,NULL,NULL,0);
-	else
-	    {
-	    xnpod_unblock_thread(thread);
-
-	    if (testbits(thread->status,XNSUSP))
-		xnpod_resume_thread(thread,XNSUSP);
-	    }
-
- 	xnlock_put_irqrestore(&nklock,s);
-
-	xnshadow_schedule(); /* Schedule in the RTAI space. */
+	if (testbits(thread->status,XNSUSP))
+	    xnpod_resume_thread(thread,XNSUSP);
 	}
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    xnshadow_schedule(); /* Schedule in the RTAI space. */
 }
 
 static void xnshadow_renice_process (adevinfo_t *evinfo)
@@ -1870,7 +1818,6 @@ int xnshadow_init (void)
 
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&xnshadow_linux_sysentry);
     adeos_catch_event(ADEOS_EXIT_PROCESS,&xnshadow_linux_taskexit);
-    adeos_catch_event(ADEOS_SIGNAL_PROCESS,&xnshadow_signal_process);
     adeos_catch_event(ADEOS_KICK_PROCESS,&xnshadow_kick_process);
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,&xnshadow_schedule_head);
     adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,&xnshadow_schedule_tail);
@@ -1904,7 +1851,6 @@ void xnshadow_cleanup (void)
 
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
     adeos_catch_event(ADEOS_EXIT_PROCESS,NULL);
-    adeos_catch_event(ADEOS_SIGNAL_PROCESS,NULL);
     adeos_catch_event(ADEOS_KICK_PROCESS,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
     adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,NULL);

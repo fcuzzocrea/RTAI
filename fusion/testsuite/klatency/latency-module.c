@@ -16,18 +16,18 @@ RT_TASK latency_task;
 
 RT_PIPE pipe;
 
-int minjitter = 10000000,
-    maxjitter = -10000000,
-    avgjitter,
-    overrun;
+long minjitter = 10000000,
+     maxjitter = -10000000,
+     avgjitter,
+     overrun;
 
 void latency (void *cookie)
 
 {
+    long minj, maxj = -10000000, dt, sumj;
     RTIME itime, expected, period;
     struct rtai_latency_stat *s;
-    int minj, maxj = -10000000;
-    int dt, err, count, sumj;
+    int  err, count;
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
     int tsflag = 0;
     xntimes_t ts;
@@ -66,7 +66,7 @@ void latency (void *cookie)
 		overrun++;
 	    else
 		{
-		dt = (int)(rt_timer_tsc() - expected);
+		dt = (long)(rt_timer_tsc() - expected);
 
 		if (dt > maxj)
 		    {

@@ -134,7 +134,6 @@ int xnintr_init (xnintr_t *intr,
     intr->isr = isr;
     intr->cookie = NULL;
     intr->status = 0;
-    intr->affinity = XNARCH_CPU_MASK_ALL;
 
     return 0;
 }
@@ -193,16 +192,8 @@ int xnintr_destroy (xnintr_t *intr) {
 int xnintr_attach (xnintr_t *intr,
 		   void *cookie)
 {
-    spl_t s;
-    int err;
-
-    xnlock_get_irqsave(&nklock,s);
     intr->cookie = cookie;
-    err = xnarch_hook_irq(intr->irq,&xnintr_irq_handler,intr);
-    __setbits(intr->status,XNINTR_ATTACHED);
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
+    return xnarch_hook_irq(intr->irq,&xnintr_irq_handler,intr);
 }
 
 /*! 
@@ -228,25 +219,9 @@ int xnintr_attach (xnintr_t *intr,
  * Context: This routine must be called on behalf of a thread.
  */
 
-int xnintr_detach (xnintr_t *intr)
+int xnintr_detach (xnintr_t *intr) {
 
-{
-    int err = 0;
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-
-    if (testbits(intr->status,XNINTR_ATTACHED))
-	{
-	err = xnarch_release_irq(intr->irq);
-
-	if (!err)
-	    __clrbits(intr->status,XNINTR_ATTACHED);
-	}
-
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
+    return xnarch_release_irq(intr->irq);
 }
 
 /*! 
@@ -269,17 +244,9 @@ int xnintr_detach (xnintr_t *intr)
  * Context: This routine must be called on behalf of a thread.
  */
 
-int xnintr_enable (xnintr_t *intr)
+int xnintr_enable (xnintr_t *intr) {
 
-{
-    spl_t s;
-    int err;
-
-    xnlock_get_irqsave(&nklock,s);
-    err = xnarch_enable_irq(intr->irq);
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
+    return xnarch_enable_irq(intr->irq);
 }
 
 /*! 
@@ -301,34 +268,14 @@ int xnintr_enable (xnintr_t *intr)
  * Context: This routine must be called on behalf of a thread.
  */
 
-int xnintr_disable (xnintr_t *intr)
+int xnintr_disable (xnintr_t *intr) {
 
-{
-    spl_t s;
-    int err;
-
-    xnlock_get_irqsave(&nklock,s);
-    err = xnarch_disable_irq(intr->irq);
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
+    return xnarch_disable_irq(intr->irq);
 }
-    
+
 xnarch_cpumask_t xnintr_affinity (xnintr_t *intr, xnarch_cpumask_t cpumask) {
 
-    xnarch_cpumask_t err;
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-
-    err = xnarch_set_irq_affinity(intr->irq,cpumask);
-
-    if (!xnarch_cpus_empty(err))
-	intr->affinity = cpumask;
-
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
+    return xnarch_set_irq_affinity(intr->irq,cpumask);
 }
 
 /* Low-level clock irq handler. */

@@ -1,3 +1,41 @@
+2004-09-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c: Rearrange critical sections so that
+	rthal_critical_enter() is not called while the nklock is held.
+
+	* nucleus/timer.c (xntimer_freeze): Do not hold the nklock while
+	stopping the hw timer.
+
+	* nucleus/pod.c (xnpod_start_timer): Fix error path.
+	(xnpod_start_timer): Do not hold the nklock while starting the hw
+	timer.
+
+	* nucleus/intr.c: Remove duplicate logic w/ HAL's own checks for
+	operation consistency.
+
+2004-09-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h: Check for Adeos version >=
+	2.6r8c1.
+
+	* nucleus/pod.c: Remove the cancellation points and the XNKILLED
+	bit handling which become useless due to the following change.
+
+	* nucleus/shadow.c: Always allow any signal to flow down to the
+	Linux context; just make sure the associated shadow is properly
+	awaken upon wakeup notification from the Linux kernel.
+
+	* nucleus/pod.c (xnpod_start_thread): Fix unlocking upon error case.
+
+2004-09-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_wait_thread_period): Fix error return when
+	the timer is not active.
+	(xnpod_calibration_thread): Use long integer to store the jitter
+	value.
+
+	* include/nucleus/pod.h (xnpod_ns2ticks): Discard remainder arg.
+
 2004-09-26  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_schedule_head): Rollback the previous

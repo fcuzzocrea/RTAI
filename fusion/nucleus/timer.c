@@ -465,9 +465,12 @@ void xntimer_freeze (void)
     spl_t s;
     int n;
 
+    xnarch_stop_timer();
+
     xnlock_get_irqsave(&nklock,s);
 
-    xnarch_stop_timer();
+    if (!nkpod || testbits(nkpod->status,XNPIDLE))
+	goto unlock_and_exit;
 
     for (n = 0; n < XNTIMER_WHEELSIZE; n++)
 	{
@@ -480,6 +483,8 @@ void xntimer_freeze (void)
 	    holder = popq(timerq,holder);
 	    }
 	}
+
+ unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
 }

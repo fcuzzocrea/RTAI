@@ -170,12 +170,6 @@ static int xnpod_read_proc (char *page,
 	goto out;
 	}
 
-    if (testbits(nkpod->status, XNPINIT))
-        {
-        p += sprintf(p, "Pod initializing\n");
-        goto out;
-        }
-
     xnlock_get_irqsave(&nklock, s);
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)

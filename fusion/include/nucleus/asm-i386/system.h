@@ -62,6 +62,10 @@
 #include <nucleus/asm/atomic.h>
 #include <nucleus/shadow.h>
 
+#ifdef ADEOS_RELEASE_NUMBER < 0x02060801
+#error "Adeos 2.6r8c1 or above is required to run this software. Please upgrade."
+#endif /* ADEOS_RELEASE_NUMBER < 0x02060801 */
+
 #define MODULE_PARM_VALUE(parm) (parm)
 
 typedef unsigned long spl_t;

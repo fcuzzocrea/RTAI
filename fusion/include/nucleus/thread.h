@@ -58,29 +58,27 @@
 #define XNRESTART 0x00000040	/* Restarting thread */
 #define XNSTARTED 0x00000080	/* Could be restarted */
 #define XNRELAX   0x00000100	/* Relaxed shadow thread (blocking bit) */
-#define XNKILLED  0x00000200	/* Shadow thread killed by a signal */
-#define XNKICKED  0x00000400	/* Shadow thread kicked by a signal */
 
-#define XNTIMEO   0x00000800	/* Woken up due to a timeout condition */
-#define XNRMID    0x00001000	/* Pending on a removed resource */
-#define XNBREAK   0x00002000	/* Forcibly woken up from a wait state */
-#define XNBOOST   0x00004000	/* Undergoes regular PIP boost */
+#define XNTIMEO   0x00000200	/* Woken up due to a timeout condition */
+#define XNRMID    0x00000400	/* Pending on a removed resource */
+#define XNBREAK   0x00000800	/* Forcibly woken up from a wait state */
+#define XNBOOST   0x00001000	/* Undergoes regular PIP boost */
 
 /* Mode flags. */
-#define XNLOCK    0x00008000	/* Not preemptable */
-#define XNRRB     0x00010000	/* Undergoes a round-robin scheduling */
-#define XNASDI    0x00020000	/* ASR are disabled */
+#define XNLOCK    0x00002000	/* Not preemptable */
+#define XNRRB     0x00004000	/* Undergoes a round-robin scheduling */
+#define XNASDI    0x00008000	/* ASR are disabled */
 
-#define XNFPU     0x00040000	/* Thread uses FPU */
-#define XNSHADOW  0x00080000	/* Shadow thread */
-#define XNROOT    0x00100000	/* Root thread (i.e. Linux/IDLE) */
+#define XNFPU     0x00010000	/* Thread uses FPU */
+#define XNSHADOW  0x00020000	/* Shadow thread */
+#define XNROOT    0x00040000	/* Root thread (i.e. Linux/IDLE) */
 
 /* Must follow the above bits declaration order. */
 #define XNTHREAD_SLABEL_INIT \
 { "ssp", "pnd", "dly", "rdy", "dor", \
-  "zom", "rst", "sta", "rlx", "kil", \
-  "kic", "tmo", "rmi", "brk", "bst", \
-  "lck", "rrb", "asd", "fpu", "usr", "idl" }
+  "zom", "rst", "sta", "rlx", "tmo", \
+  "rmi", "brk", "bst", "lck", "rrb", \
+  "asd", "fpu", "usr", "idl" }
 
 #define XNTHREAD_BLOCK_BITS   (XNSUSP|XNPEND|XNDELAY|XNDORMANT|XNRELAX)
 #define XNTHREAD_MODE_BITS    (XNLOCK|XNRRB|XNASDI)
@@ -214,8 +212,8 @@ typedef struct xnhook {
 #define xnthread_extended_info(thread)     ((thread)->extinfo)
 #define xnthread_set_magic(thread,m)       do { (thread)->magic = (m); } while(0)
 #define xnthread_get_magic(thread)         ((thread)->magic)
-#define xnthread_signaled_p(thread)        ((thread)->signals != 0 ||   \
-					    testbits((thread)->status,XNKILLED))
+#define xnthread_signaled_p(thread)        ((thread)->signals != 0)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -23,7 +23,7 @@ include_HEADERS = \
 	uitron.h
 
 rtai_uitron$(modext): @RTAI_KBUILD_ENV@
-rtai_uitron$(modext): $(libmodule_SRC)
+rtai_uitron$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -68,5 +68,7 @@ libuitron_a_CPPFLAGS = \
 libuitron_a_AR = $(CROSS_COMPILE)ar cru
 
 endif
+
+.PHONY: FORCE
 
 EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild Kconfig

@@ -35,7 +35,7 @@ noinst_HEADERS = \
 	tsd.h
 
 rtai_posix$(modext): @RTAI_KBUILD_ENV@
-rtai_posix$(modext): $(libmodule_SRC)
+rtai_posix$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -56,5 +56,7 @@ install-exec-local: rtai_posix$(modext)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_posix$(modext)
+
+.PHONY: FORCE
 
 EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild Kconfig

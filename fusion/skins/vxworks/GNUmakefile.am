@@ -26,7 +26,7 @@ noinst_HEADERS = \
 	defs.h
 
 rtai_vxworks$(modext): @RTAI_KBUILD_ENV@
-rtai_vxworks$(modext): $(libmodule_SRC)
+rtai_vxworks$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -77,5 +77,7 @@ libvxworks_a_CPPFLAGS = \
 libvxworks_a_AR = $(CROSS_COMPILE)ar cru
 
 endif
+
+.PHONY: FORCE
 
 EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild Kconfig

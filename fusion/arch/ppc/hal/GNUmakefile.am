@@ -11,7 +11,7 @@ libhal_SRC += fpu.S
 endif
 
 rtai_hal.ko: @RTAI_KBUILD_ENV@
-rtai_hal.ko: $(libhal_SRC)
+rtai_hal.ko: $(libhal_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -26,5 +26,7 @@ endif
 install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+
+.PHONY: FORCE
 
 EXTRA_DIST = $(libhal_SRC) fpu.S Makefile.kbuild

@@ -56,7 +56,7 @@ endif
 distfiles += cond.c cond.h
 
 rtai_native$(modext): @RTAI_KBUILD_ENV@
-rtai_native$(modext): $(libmodule_SRC)
+rtai_native$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -77,6 +77,8 @@ install-exec-local: rtai_native$(modext)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_native$(modext)
+
+.PHONY: FORCE
 
 EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig
 

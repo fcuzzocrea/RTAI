@@ -17,12 +17,12 @@ libmodule_SRC = \
 		timer.c
 
 rtai_nucleus$(modext): @RTAI_KBUILD_ENV@
-rtai_nucleus$(modext): $(libmodule_SRC)
+rtai_nucleus$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 if CONFIG_RTAI_OPT_TRACES
 rtai_trace$(modext): @RTAI_KBUILD_ENV@
-rtai_trace$(modext): trace.c
+rtai_trace$(modext): trace.c FORCE
 	@RTAI_KBUILD_CMD@
 
 MAYBE_TRACE = rtai_trace$(modext)
@@ -70,6 +70,8 @@ libnucleus_a_CPPFLAGS = \
 libnucleus_a_AR = $(CROSS_COMPILE)ar cru
 
 endif
+
+.PHONY: FORCE
 
 EXTRA_DIST = $(libmodule_SRC) trace.c Makefile.kbuild
 

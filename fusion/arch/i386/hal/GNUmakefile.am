@@ -7,7 +7,7 @@ CROSS_COMPILE = @CROSS_COMPILE@
 libhal_SRC = hal.c
 
 rtai_hal.ko: @RTAI_KBUILD_ENV@
-rtai_hal.ko: $(libhal_SRC)
+rtai_hal.ko: $(libhal_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -29,4 +29,7 @@ install-exec-local: rtai_hal$(modext)
 uninstall-local:
 	$(RM) $(moduledir)/rtai_hal$(modext)
 
+.PHONY: FORCE
+
 EXTRA_DIST = $(libhal_SRC) Makefile.kbuild
+

@@ -9,7 +9,7 @@ libmodule_SRC = latency-module.c
 noinst_HEADERS = latency.h
 
 latency_rt$(modext): @RTAI_KBUILD_ENV@
-latency_rt$(modext): $(libmodule_SRC)
+latency_rt$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -54,5 +54,7 @@ uninstall-local:
 
 run: all
 	@$(top_srcdir)/scripts/rtai-load --verbose
+
+.PHONY: FORCE
 
 EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild runinfo

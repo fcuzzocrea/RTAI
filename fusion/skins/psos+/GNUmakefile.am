@@ -31,7 +31,7 @@ noinst_HEADERS = \
 	sem.h
 
 rtai_psos$(modext): @RTAI_KBUILD_ENV@
-rtai_psos$(modext): $(libmodule_SRC)
+rtai_psos$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -79,5 +79,7 @@ libpsos_a_CPPFLAGS = \
 libpsos_a_AR = $(CROSS_COMPILE)ar cru
 
 endif
+
+.PHONY: FORCE
 
 EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild Kconfig

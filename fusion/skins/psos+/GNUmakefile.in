@@ -919,7 +919,7 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 
 
 rtai_psos$(modext): @RTAI_KBUILD_ENV@
-rtai_psos$(modext): $(libmodule_SRC)
+rtai_psos$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 clean-local:
@@ -938,6 +938,8 @@ install-exec-local: rtai_psos$(modext)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_psos$(modext)
+
+.PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

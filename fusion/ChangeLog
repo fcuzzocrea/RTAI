@@ -1,3 +1,8 @@
+2004-10-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* GNUmakefiles.am building kernel modules : Force build of kernel
+	and let Kbuild handle dependencies.
+
 2004-10-09  Ivan Raikov <raikov@cc.gatech.edu>
 
 	* scripts/rtai-load.in: Add support for user-defined module search

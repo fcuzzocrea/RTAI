@@ -909,11 +909,11 @@ uninstall-info: uninstall-info-recursive
 
 
 rtai_nucleus$(modext): @RTAI_KBUILD_ENV@
-rtai_nucleus$(modext): $(libmodule_SRC)
+rtai_nucleus$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@
 
 @CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): @RTAI_KBUILD_ENV@
-@CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): trace.c
+@CONFIG_RTAI_OPT_TRACES_TRUE@rtai_trace$(modext): trace.c FORCE
 @CONFIG_RTAI_OPT_TRACES_TRUE@	@RTAI_KBUILD_CMD@
 
 all-local: rtai_nucleus$(modext) $(MAYBE_TRACE)
@@ -932,6 +932,8 @@ install-exec-local: rtai_nucleus$(modext) $(MAYBE_TRACE)
 
 uninstall-local: 
 	$(RM) $(moduledir)/rtai_nucleus$(modext) $(moduledir)/rtai_trace$(modext)
+
+.PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

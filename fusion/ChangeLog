@@ -1,3 +1,8 @@
+2004-06-24  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* arch/i386/Kconfig, arch/i386/defconfig, configure.in: correctly
+	handle the configure-time number of cpus.
+
 2004-06-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/system.h (xnarch_thread_redirect): 

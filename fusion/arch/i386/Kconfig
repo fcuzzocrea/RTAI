@@ -163,7 +163,7 @@ config RTAI_HW_FPU
 	internet at the following URL:
 	http://www.intel.com/design/intarch/techinfo/Pentium/fpu.htm
 
-config RTAI_HW_CPUS
+config RTAI_HW_NRCPUS
 	string "Number of CPUs (SMP-only)"
 	default 2
 	help

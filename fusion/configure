@@ -8331,11 +8331,6 @@ echo "$as_me: error: Please activate the Adeos support in $RTAI_LINUX_DIR and re
 fi
 
 
-if test x$CONFIG_SMP = x; then
-    CONFIG_RTAI_HW_NRCPUS=1
-else
-    CONFIG_RTAI_HW_NRCPUS=2
-fi
 if test "$CONFIG_X86" = y; then
    if test x$CONFIG_X86_CMPXCHG = x; then
       { { echo "$as_me:$LINENO: error: RTAI won't work on legacy i386 platforms (cmpxchg() is missing, need >= CONFIG_M486)" >&5
@@ -8590,6 +8585,13 @@ echo "$as_me: error: Bad argument to option: --enable-cpus=<number-of-CPUs>" >&2
    { (exit 1); exit 1; }; } ;;
 	esac
 fi;
+if test x$CONFIG_RTAI_HW_NRCPUS = x; then
+    if test x$CONFIG_SMP = x; then
+        CONFIG_RTAI_HW_NRCPUS=1
+    else
+        CONFIG_RTAI_HW_NRCPUS=CONFIG_NR_CPUS
+    fi
+fi
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_HW_NRCPUS:-1}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_HW_NRCPUS:-1}" >&6
 

@@ -16,5 +16,9 @@ ___________________________________________________________________
 	scheduling class, i.e. 1 - 99 with 1 being the lowest
 	effective priority level (--rpm 2005-03-13).
 
+	o The default task stack size in user-space is now
+	PTHREAD_STACK_MIN * 4. A mininum size of PTHREAD_STACK_MIN
+	is enforced in rt_task_create().
+
 ___________________________________________________________________
 

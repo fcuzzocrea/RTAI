@@ -118,8 +118,6 @@ static int (*lxrt_signal_handler)(struct task_struct *task,
 
 static unsigned lxrt_migration_virq;
 
-static unsigned sched_virq;
-
 static int lxrt_notify_reboot(struct notifier_block *nb,
 			      unsigned long event,
 			      void *ptr);
@@ -817,12 +815,6 @@ void rt_schedule(void)
 	RT_TASK *task, *new_task;
 	int prio, delay, preempt;
 	unsigned long flags;
-
-	if (adp_current != &rtai_domain)
-	    {
-	    adeos_trigger_irq(sched_virq);
-	    return;
-	    }
 
 	ASSIGN_RT_CURRENT;
 
@@ -2363,14 +2355,6 @@ static int lxrt_init(void)
     /* We will start stealing Linux tasks as soon as the reservoir is
        instantiated, so create the migration service now. */
 
-    sched_virq = adeos_alloc_irq();
-
-    adeos_virtualize_irq_from(&rtai_domain,
-			      sched_virq,
-			      (void (*)(unsigned))&rt_schedule,
-			      NULL,
-			      IPIPE_HANDLE_MASK);
-
     lxrt_migration_virq = adeos_alloc_irq();
 
     adeos_virtualize_irq_from(&rtai_domain,
@@ -2482,11 +2466,6 @@ static void lxrt_exit(void)
 	adeos_free_irq(lxrt_migration_virq);
 	}
 
-    if (sched_virq)
-	{
-	adeos_virtualize_irq_from(&rtai_domain,sched_virq,NULL,NULL,0);
-	adeos_free_irq(sched_virq);
-	}
 
     /* Must be called on behalf of the Linux domain. */
     adeos_catch_event(ADEOS_SIGNAL_PROCESS,NULL);

@@ -26,10 +26,9 @@ ACKNOWLEDGMENTS:
 */
 
 
-#define USE_RTAI_TASKS  1
+#define USE_RTAI_TASKS  0
 #define ALLOW_RR        1
 #define ONE_SHOT        0
-#define NO_KTHREAD_B    1
 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -269,7 +268,6 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->magic = RT_TASK_MAGIC; 
 	task->policy = 0;
 	task->owndres = 0;
-	task->priority = task->base_priority = priority;
 	task->prio_passed_to = 0;
 	task->period = 0;
 	task->resume_time = RT_TIME_END;
@@ -294,11 +292,13 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->system_data_ptr = 0;
 	atomic_inc((atomic_t *)(tasks_per_cpu + cpuid));
 	if (relink) {
+		task->priority = task->base_priority = priority;
 		task->suspdepth = task->is_hard = 1;
 		task->state = RT_SCHED_READY | RT_SCHED_SUSPENDED;
 		relink->this_rt_task[0] = task;
 		task->lnxtsk = relink;
 	} else {
+		task->priority = task->base_priority = BASE_SOFT_PRIORITY + priority;
 		task->suspdepth = task->is_hard = 0;
 		task->state = RT_SCHED_READY;
 		current->this_rt_task[0] = task;
@@ -875,7 +875,14 @@ sched_soft:
 			UNLOCK_LINUX(cpuid);
 			rt_global_sti();
         		rtai_hw_unlock(flags);
-			schedule();
+			rtai_linux_sti();
+			if (adp_current != adp_root) {
+				adp_root->dswitch = schedule;
+				adeos_suspend_domain();
+				adp_root->dswitch = NULL;
+			} else {
+				schedule();
+			}
         		rtai_hw_lock(flags);
 			rt_global_cli();
 			rt_current->state = (rt_current->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;
@@ -1592,10 +1599,7 @@ void rt_deregister_watchdog(RT_TASK *wd, int cpuid)
 #define SYSW_DIAG_MSG(x)
 #endif
 
-int lxrtmode, lxrtmodechoed;
-
-int LxrtMode = 0;
-MODULE_PARM(LxrtMode, "i");
+int lxrtmodechoed;
 
 static RT_TRAP_HANDLER lxrt_old_trap_handler;
 
@@ -1629,23 +1633,6 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	struct fun_args *funarg;
 	int cpuid;
 
-	if (rt_task->priority < BASE_SOFT_PRIORITY) {
-		atomic_add(BASE_SOFT_PRIORITY, (atomic_t *)&rt_task->priority);
-	}
-	if (rt_task->base_priority < BASE_SOFT_PRIORITY) {
-		atomic_add(BASE_SOFT_PRIORITY, (atomic_t *)&rt_task->base_priority);
-	}
-	funarg = (void *)rt_task->fun_args;
-	if (lxrtmode) {
-		void steal_from_linux(RT_TASK *);
-		SYSW_DIAG_MSG(rt_printk("GOING HARD (LXRTMODE), PID = %d.\n", current->pid););
-
-		steal_from_linux(rt_task);
-		SYSW_DIAG_MSG(rt_printk("GONE TO HARD (LXRTMODE),  PID = %d.\n", current->pid););
-		rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
-		return;
-	}
-
 	rt_global_cli();
 	rt_task->state |= RT_SCHED_READY;
 	while (rt_task->state != RT_SCHED_READY) {
@@ -1658,6 +1645,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	enq_soft_ready_task(rt_task);
 	rt_smp_current[cpuid] = rt_task;
 	rt_global_sti();
+	funarg = (void *)rt_task->fun_args;
 	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
 	_rt_schedule_soft_tail(rt_task, cpuid);
 }
@@ -1850,27 +1838,24 @@ void steal_from_linux(RT_TASK *rt_task)
 	klistp->task[klistp->in] = rt_task;
 	klistp->in = (klistp->in + 1) & (MAX_WAKEUP_SRQ - 1);
 	rtai_sti();
-#if !NO_KTHREAD_B
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	wake_up_process(kthreadb[cpuid]);
 #else /* KERNEL_VERSION >= 2.6.0 */
 	default_wake_function(&kthreadb_q[cpuid], TASK_HARDREALTIME, 1, 0);
 #endif /* KERNEL_VERSION < 2.6.0 */
-#endif
 	current->state = TASK_HARDREALTIME;
 	schedule();
 	rt_task->is_hard = 1;
 	if (!rt_task->exectime[1]) {
 		rt_task->exectime[1] = rdtsc();
 	}
+	rtai_cli();
+	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
+		rt_task->base_priority -= BASE_SOFT_PRIORITY;
+		rt_task->priority      -= BASE_SOFT_PRIORITY;
+	}
 	if (current->used_math) {
 		restore_fpu(current);
-	}
-	if (rt_task->priority >= BASE_SOFT_PRIORITY) {
-		atomic_sub(BASE_SOFT_PRIORITY, (atomic_t *)&rt_task->priority);
-	}
-	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
-		atomic_sub(BASE_SOFT_PRIORITY, (atomic_t *)&rt_task->base_priority);
 	}
 	rtai_sti();
 }
@@ -1886,6 +1871,10 @@ void give_back_to_linux(RT_TASK *rt_task)
 	rt_pend_linux_srq(wake_up_srq.srq);
 	rt_schedule();
 	rt_task->is_hard = 0;
+	if (rt_task->base_priority < BASE_SOFT_PRIORITY) {
+		rt_task->base_priority += BASE_SOFT_PRIORITY;
+		rt_task->priority      += BASE_SOFT_PRIORITY;
+	}
 	rt_global_sti();
 	/* Perform Linux's scheduling tail now since we woke up
 	   outside the regular schedule() point. */
@@ -1980,12 +1969,11 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 	if (rt_task->is_hard == 1) {
 		if (!lxrtmodechoed) {
 			lxrtmodechoed = 1;
-			rt_printk("\nLXRT CHANGED MODE (TRAP, LxrtMode %d), PID = %d\n", LxrtMode, (rt_task->lnxtsk)->pid);
+			rt_printk("\nLXRT CHANGED MODE (TRAP), PID = %d\n", (rt_task->lnxtsk)->pid);
 		}
 		SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (TRAP), PID = %d.\n", (rt_task->lnxtsk)->pid););
-		lxrtmode = 2 & LxrtMode;
 	        give_back_to_linux(rt_task);
-		rt_task->is_hard = lxrtmode;
+		rt_task->is_hard = 2;
 		SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (TRAP),  PID = %d.\n", (rt_task->lnxtsk)->pid););
 	}
 
@@ -2042,23 +2030,6 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 	   _not_ propagate this event so that Linux's tail scheduling
 	   won't be performed. */
 	return;
-
-#if NO_KTHREAD_B
-	do {
-		int cpuid;
-		struct klist_t *klistp = &klistb[cpuid = smp_processor_id()];
-		RT_TASK *task;
-		task_to_make_hard[NR_RT_CPUS] = current;
-		preempt_disable();
-		while (klistp->out != klistp->in) {
-			task = klistp->task[klistp->out];
-			klistp->out = (klistp->out + 1) & (MAX_WAKEUP_SRQ - 1);
-    			task_to_make_hard[cpuid] = task;
-			adeos_trigger_irq(lxrt_migration_virq);
-		}
-		preempt_enable_no_resched();
-	} while (0);
-#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     {
@@ -2131,15 +2102,26 @@ static void lxrt_intercept_syscall(adevinfo_t *evinfo)
 		if (task->is_hard == 1) {
 			if (!lxrtmodechoed) {
 				lxrtmodechoed = 1;
-				rt_printk("\nLXRT CHANGED MODE (SYSCALL, LxrtMode %d), PID = %d\n", LxrtMode, (task->lnxtsk)->pid);
+				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d\n", (task->lnxtsk)->pid);
 			}
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d.\n", (task->lnxtsk)->pid););
-			lxrtmode = 2 & LxrtMode;
 			give_back_to_linux(task);
-			task->is_hard = lxrtmode;
+			task->is_hard = 2;
 			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL),  PID = %d.\n", (task->lnxtsk)->pid););
 		}
 	}
+}
+
+static void lxrt_intercept_syscall_epilogue(adevinfo_t *evinfo)
+{
+	RT_TASK *task;
+	if (current->this_rt_task[0] && (task = (RT_TASK *)current->this_rt_task[0])->is_hard > 1) {
+		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
+		steal_from_linux(task);
+		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
+		return;
+	}
+	adeos_propagate_event(evinfo);
 }
 
 /* ++++++++++++++++++++++++++ SCHEDULER PROC FILE +++++++++++++++++++++++++++ */
@@ -2306,7 +2288,6 @@ static int lxrt_init(void)
     int lxrt_init_archdep(void);
     int cpuid, err;
 
-    if (LxrtMode) LxrtMode = 2;
     err = lxrt_init_archdep();
 
     if (err)
@@ -2364,9 +2345,10 @@ static int lxrt_init(void)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,&lxrt_intercept_schedule_head);
 #endif  /* KERNEL_VERSION < 2.6.0 */
-    adeos_catch_event(ADEOS_SCHEDULE_TAIL,&lxrt_intercept_schedule_tail);
+    adeos_catch_event(ADEOS_SCHEDULE_TAIL, &lxrt_intercept_schedule_tail);
     adeos_catch_event(ADEOS_SIGNAL_PROCESS,&lxrt_intercept_signal);
-    adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&lxrt_intercept_syscall);
+    adeos_catch_event_from(&rtai_domain, ADEOS_SYSCALL_PROLOGUE, &lxrt_intercept_syscall);
+    adeos_catch_event(ADEOS_SYSCALL_EPILOGUE, &lxrt_intercept_syscall_epilogue);
     adeos_catch_event(ADEOS_EXIT_PROCESS,&lxrt_intercept_exit);
     adeos_catch_event(ADEOS_KICK_PROCESS, &lxrt_intercept_signal);
 	rtai_usrq_trampoline = xchg(&rtai_syscall_entry, lxrt_syscall);
@@ -2438,7 +2420,8 @@ static void lxrt_exit(void)
     adeos_catch_event(ADEOS_SIGNAL_PROCESS,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_TAIL,NULL);
-    adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
+    adeos_catch_event_from(&rtai_domain, ADEOS_SYSCALL_PROLOGUE, NULL);
+    adeos_catch_event(ADEOS_SYSCALL_EPILOGUE, NULL);
     adeos_catch_event(ADEOS_EXIT_PROCESS, NULL);
     adeos_catch_event(ADEOS_KICK_PROCESS, NULL);
 	xchg(&rtai_syscall_entry, rtai_usrq_trampoline);
@@ -2538,7 +2521,7 @@ static int __rtai_lxrt_init(void)
 
 	register_reboot_notifier(&lxrt_notifier_reboot);
 
-	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (LxrtMode %d).\n", LxrtMode);
+	printk(KERN_INFO "RTAI[sched_lxrt]: loaded.\n");
 	printk(KERN_INFO "RTAI[sched_lxrt]: timer=%s (%s).\n",
 	       oneshot_timer ? "oneshot" : "periodic",
 #ifdef __USE_APIC__
@@ -2609,7 +2592,6 @@ EXPORT_SYMBOL(clr_rtext);
 EXPORT_SYMBOL(set_rtext);
 EXPORT_SYMBOL(get_min_tasks_cpuid);
 EXPORT_SYMBOL(rt_schedule_soft);
-EXPORT_SYMBOL(LxrtMode);
 EXPORT_SYMBOL(rt_do_force_soft);
 
 #endif /* CONFIG_KBUILD */

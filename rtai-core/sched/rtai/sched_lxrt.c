@@ -128,6 +128,7 @@ static struct notifier_block lxrt_notifier_reboot = {
 static struct klist_t klistb[NR_RT_CPUS];
 
 static struct task_struct *kthreadb[NR_RT_CPUS];
+static wait_queue_t kthreadb_q[NR_RT_CPUS];
 
 static struct klist_t klistm[NR_RT_CPUS];
 
@@ -159,7 +160,11 @@ static struct {
     void *mp[MAX_FRESTK_SRQ];
 } frstk_srq;
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #define KTHREAD_B_PRIO MAX_LINUX_RTPRIO/2
+#else /* KERNEL_VERSION >= 2.6.0 */
+#define KTHREAD_B_PRIO MAX_LINUX_RTPRIO
+#endif /* KERNEL_VERSION < 2.6.0 */
 #define KTHREAD_M_PRIO MAX_LINUX_RTPRIO
 #define KTHREAD_F_PRIO MAX_LINUX_RTPRIO
 
@@ -1802,7 +1807,7 @@ static void kthread_b(int cpuid)
 
 	sprintf(current->comm, "RTAI_KTHRD_B:%d", cpuid);
 	put_current_on_cpu(cpuid);
-	kthreadb[cpuid] = current;
+	kthreadb_q[cpuid].task = kthreadb[cpuid] = current;
 	klistp = &klistb[hard_cpu_id()];
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_B_PRIO);
 	sigfillset(&current->blocked);
@@ -1814,7 +1819,10 @@ static void kthread_b(int cpuid)
     			task = klistp->task[klistp->out];
 			klistp->out = (klistp->out + 1) & (MAX_WAKEUP_SRQ - 1);
 		/* We must do this sync to be sure the task to be made 
-		   hard has gone from Linux for sure */
+		   hard has gone from Linux for sure. In 2.6.x it is not 
+		   needed because it is easily possible to force the syncing 
+		   with the default wake up function used with wait queues,
+		   but we keep it anyhow for paranoia cautiousness. */
 			while ((task->lnxtsk)->run_list.next != LIST_POISON1 || (task->lnxtsk)->run_list.prev != LIST_POISON2) {
 				current->state = TASK_UNINTERRUPTIBLE;
 				schedule_timeout(1);
@@ -1948,7 +1956,11 @@ void steal_from_linux(RT_TASK *rt_task)
 	klistp->task[klistp->in] = rt_task;
 	klistp->in = (klistp->in + 1) & (MAX_WAKEUP_SRQ - 1);
 	rtai_sti();
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	wake_up_process(kthreadb[cpuid]);
+#else /* KERNEL_VERSION >= 2.6.0 */
+	default_wake_function(&kthreadb_q[cpuid], TASK_HARDREALTIME, 1, 0);
+#endif /* KERNEL_VERSION < 2.6.0 */
 	current->state = TASK_HARDREALTIME;
 	schedule();
 	rt_task->is_hard = 1;

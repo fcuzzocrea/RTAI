@@ -90,17 +90,6 @@ static int __pipe_output_handler (int bminor,
     return 0;
 }
 
-static int __pipe_close_handler (int minor,
-				 void *cookie)
-{
-    RT_PIPE *pipe = (RT_PIPE *)cookie;
-
-    /* The user-space side is closing: shutdown the kernel side. */
-    xnbridge_disconnect(minor);
-
-    return rt_pipe_close(pipe);
-}
-
 int __pipe_pkg_init (void)
 
 {
@@ -110,8 +99,6 @@ int __pipe_pkg_init (void)
 
     if (__pipe_flush_virq <= 0)
 	return -EBUSY;
-
-    xnbridge_setup(NULL,&__pipe_close_handler);
 
     return 0;
 }

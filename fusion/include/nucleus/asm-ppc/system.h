@@ -356,7 +356,7 @@ unsigned long xnarch_calibrate_timer (void)
     return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY);
 #else /* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */
     /* Compute the time needed to program the decrementer in aperiodic
-       mode. The return value is expressed in CPU ticks. */
+       mode. The return value is expressed in timebase ticks. */
     return xnarch_ns_to_tsc(rthal_calibrate_timer());
 #endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
 }
@@ -683,10 +683,9 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 static inline void xnarch_program_timer_shot (unsigned long long delay) {
     /* Delays are expressed in CPU ticks, so we need to keep a 64bit
        value here, especially for 64bit arch ports using an interval
-       timer based on the internal cycle counter of the CPU. This PPC
-       port currently assumes that the decrementer frequency is
-       identical to the CPU frequency, so there is no need to rescale
-       the delay value. */ 
+       timer based on the internal cycle counter of the CPU. Since the
+       timebase value is used to express CPU ticks on the PowerPC
+       port, there is no need to rescale the delay value. */ 
     rthal_set_timer_shot(delay);
 }
 

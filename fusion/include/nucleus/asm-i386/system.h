@@ -85,6 +85,7 @@ typedef struct {
     volatile unsigned long lock;
 #if CONFIG_RTAI_OPT_DEBUG
     const char *file;
+    const char *function;
     unsigned line;
     int cpu;
 #endif /* CONFIG_RTAI_OPT_DEBUG */
@@ -107,7 +108,7 @@ typedef struct {
 #define xnlock_get_irqsave(lock,x)  ((x) = __xnlock_get_irqsave(lock))
 #else /* !CONFIG_RTAI_OPT_DEBUG */
 #define xnlock_get_irqsave(lock,x) \
-    ((x) = __xnlock_get_irqsave(lock, __FILE__, __LINE__))
+    ((x) = __xnlock_get_irqsave(lock, __FILE__, __LINE__,__FUNCTION__))
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 #define xnlock_clear_irqoff(lock)   xnlock_put_irqrestore(lock,1)
 #define xnlock_clear_irqon(lock)    xnlock_put_irqrestore(lock,0)
@@ -121,7 +122,7 @@ static inline void xnlock_init (xnlock_t *lock) {
 #define XNARCH_DEBUG_SPIN_LIMIT 3000000
 
 static inline spl_t
-__xnlock_get_irqsave (xnlock_t *lock, const char *file, unsigned line)
+__xnlock_get_irqsave (xnlock_t *lock, const char *file, unsigned line, const char *function)
 {
     unsigned spin_count = 0;
 #else /* !CONFIG_RTAI_OPT_DEBUG */
@@ -142,14 +143,15 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
             rthal_cpu_relax(cpuid);
 
 #if CONFIG_RTAI_OPT_DEBUG
-            if (++spin_count >= XNARCH_DEBUG_SPIN_LIMIT)
+            if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
                 {
                 adeos_set_printk_sync(adp_current);
                 printk(KERN_ERR
                        "RTAI: stuck on nucleus lock %p\n"
-		       "      waiter = %s:%u (CPU #%d)\n"
-                       "      owner  = %s:%u (CPU #%d)\n",
-                       lock,file,line,cpuid,lock->file,lock->line,lock->cpu);
+		       "      waiter = %s:%u (%s(), CPU #%d)\n"
+                       "      owner  = %s:%u (%s(), CPU #%d)\n",
+                       lock,file,line,function,cpuid,
+		       lock->file,lock->line,lock->function,lock->cpu);
                 show_stack(NULL,NULL);
                 for (;;)
                     safe_halt();
@@ -159,6 +161,7 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
 
 #if CONFIG_RTAI_OPT_DEBUG
 	lock->file = file;
+	lock->function = function;
 	lock->line = line;
 	lock->cpu = cpuid;
 #endif /* CONFIG_RTAI_OPT_DEBUG */
@@ -490,6 +493,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
     long ebx_out, ecx_out, edi_out, esi_out;
     
     __asm__ __volatile__( \
+        "pushl %%ebp\n\t" \
         "movl %6,%%ecx\n\t" \
 	"movl %%esp,(%%ecx)\n\t" \
 	"movl %7,%%ecx\n\t" \
@@ -501,7 +505,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
 	"testl %%edx,%%edx\n\t" \
 	"jne  __switch_to\n\t" \
 	"ret\n\t" \
-"1:      \n\t" \
+"1:      popl %%ebp\n\t" \
       : "=b" (ebx_out), \
         "=&c" (ecx_out), \
         "=S" (esi_out), \
@@ -511,8 +515,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
       : "m" (out_tcb->espp), \
         "m" (out_tcb->eipp), \
         "m" (in_tcb->espp), \
-        "m" (in_tcb->eipp) \
-      : "ebp");
+        "m" (in_tcb->eipp));
 
 #endif /* GCC version < 3.2 */
 }

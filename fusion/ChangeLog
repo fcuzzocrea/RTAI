@@ -1,5 +1,10 @@
 2005-01-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/patches: Upgrade to Adeos 2.6.10rc3-ppc-r6c11.
+
+	* include/nucleus/asm-*/system.h (xnarch_calibrate_timer): Guard
+	against zero return.
+
 	* drivers/16550A/16550A.h: Fix namespace clash with PPC's MSR
 	flags.
 

@@ -22,24 +22,27 @@
 #		source code changes if you do this!
 #		
 # File modes:
-#	IMMED	source file foo.x is same as foo.immed
-#	PIPED	source file foo.x is same as foo.piped
-#	DIRTY	source file foo.x is neither same as foo.piped
-#		nor same as foo.immed
+#	IMMED	source file foo.x is the same as foo.immed
+#	PIPED	source file foo.x is the same as foo.piped
+#	DIRTY	source file foo.x is neither the same as foo.piped
+#		nor the same as foo.immed
 #	
 # Overall modes:
 #	IMMED	all source files are the same as their .immed variant
-#	PIPEDD	all source files are the same as their .piped variant
+#	PIPED	all source files are the same as their .piped variant
 #	MIXED	some source files are the same as their .piped variant,
-#		some equal their .immed variant but none is DIRTY
+#		some equal their .immed variant but none are DIRTY
 #	DIRTY	at least one source file is DIRTY
 #
 #
-# This program is free software; you can redistribute it and/or modify it under * the terms of the GNU General Public License as published by the Free Software * Foundation, Inc., 675 Mass Ave, Cambridge MA 02139, USA; either version 2 of
-# the License, or (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, Inc., 675 Mass Ave, Cambridge MA 02139, USA; either
+# version 2 of the License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
 # details.
 #
 # You should have received a copy of the GNU General Public License along with

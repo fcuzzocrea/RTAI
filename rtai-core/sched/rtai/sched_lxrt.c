@@ -1769,7 +1769,9 @@ static void thread_fun(int cpuid)
 	task = (RT_TASK *)current->this_rt_task[0];
 	task->exectime[1] = rdtsc();
 	((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
-	rt_task_suspend(task);
+	give_back_to_linux(task);
+	rt_task_delete(task);
+//	rt_task_suspend(task);
 }
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7)

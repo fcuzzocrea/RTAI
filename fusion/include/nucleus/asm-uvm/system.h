@@ -74,6 +74,8 @@
 
 typedef int spl_t;
 
+typedef unsigned long cpumask_t;
+
 #ifdef CONFIG_SMP
 #error "SMP not supported yet"
 #endif /* CONFIG_SMP */

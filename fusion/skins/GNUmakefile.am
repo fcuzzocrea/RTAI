@@ -25,3 +25,5 @@ OPTDIRS += uitron
 endif
 
 SUBDIRS = $(OPTDIRS)
+
+EXTRA_DIST = Kconfig

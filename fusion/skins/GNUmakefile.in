@@ -217,6 +217,8 @@ target_alias = @target_alias@
 OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3) $(am__append_4) $(am__append_5) $(am__append_6)
 
 SUBDIRS = $(OPTDIRS)
+
+EXTRA_DIST = Kconfig
 subdir = skins
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs

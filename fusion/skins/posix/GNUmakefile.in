@@ -245,7 +245,7 @@ noinst_HEADERS = \
 	tsd.h
 
 
-EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild Kconfig
 subdir = skins/posix
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs

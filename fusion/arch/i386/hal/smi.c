@@ -34,36 +34,24 @@ static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0, PCI_ANY_ID, PCI_ANY_ID, },
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_0, PCI_ANY_ID, PCI_ANY_ID, },
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_10, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801E_0, PCI_ANY_ID, PCI_ANY_ID, },
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_12, PCI_ANY_ID, PCI_ANY_ID, },
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_0, PCI_ANY_ID, PCI_ANY_ID, },
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_12, PCI_ANY_ID, PCI_ANY_ID, },
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801EB_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_0, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_1, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_2, PCI_ANY_ID, PCI_ANY_ID, },
 { 0, },
 };
 
 /* FIXME: Probably crippled too, need to be checked :
 
-0x244c 82801BAM ISA Bridge (LPC)
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_10, PCI_ANY_ID, PCI_ANY_ID, },
- 
-0x2450 82801E ISA Bridge (LPC)
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801E_0, PCI_ANY_ID, PCI_ANY_ID, },
-
-0x248c 82801CAM ISA Bridge (LPC) (mentioned in Linux TCO watchdog driver)
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_12, PCI_ANY_ID, PCI_ANY_ID, },
-
-0x24dc 82801EB (ICH5) LPC Interface Bridge (not a really ID, but exists in the
+0x24dc 82801EB (ICH5) LPC Interface Bridge (not a real ID, but exists in the
 pci.ids database, ICH5-M ?)
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801EB_12, PCI_ANY_ID, PCI_ANY_ID, },
-
-0x2640 82801FB/FR (ICH6/ICH6R) LPC Interface Bridge:
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_0, PCI_ANY_ID, PCI_ANY_ID, },
-
-0x2641 82801FBM (ICH6M) LPC Interface Bridge:
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_1, PCI_ANY_ID, PCI_ANY_ID, },
-
-0x2642 82801FW/FRW (ICH6W/ICH6RW) LPC Interface Bridge:
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_2, PCI_ANY_ID, PCI_ANY_ID, },
 
 */
 
@@ -176,7 +164,7 @@ void __devinit rthal_smi_init(void)
      * Just register the used ports.
      */
     for(id = &rthal_smi_pci_tbl[0]; dev == NULL && id->vendor != 0; id++)
-        dev = pci_find_device(id->vendor, id->device, NULL);
+        dev = pci_get_device(id->vendor, id->device, NULL);
     
     if(dev == NULL || dev->bus->number || dev->devfn != DEVFN)
         return ;
@@ -202,7 +190,7 @@ void __devinit rthal_smi_init(void)
 
    pages 377, 386, 388, 389; Power management
        register GEN_PMCON1, bit SMI_LOCK, locks GLB_SMI_EN
-       bits PER_SMI_SEL, allow selection of the periodid SMI
+       bits PER_SMI_SEL, allow selection of the periodic SMI
        registers PM1_STS, PM1_EN, PM1_CNT bit SCI_EN, if cleared generates SMI
        for power management events.
 

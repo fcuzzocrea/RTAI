@@ -265,11 +265,9 @@ extern volatile unsigned long rtai_cpu_realtime;
 
 extern volatile unsigned long rtai_cpu_lock;
 
-extern volatile unsigned long rtai_cpu_lxrt;
-
 extern struct rtai_switch_data {
-    struct task_struct *oldtask;
-    unsigned long oldflags;
+    volatile unsigned long depth;
+    volatile unsigned long oldflags;
 } rtai_linux_context[RTAI_NR_CPUS];
 
 extern adomain_t rtai_domain;
@@ -494,35 +492,31 @@ static inline void rt_global_restore_flags(unsigned long flags) {
 	}
 }
 
-static inline void rt_switch_to_real_time(int cpuid) {
-
-    TRACE_RTAI_SWITCHTO_RT(cpuid);
-    rtai_linux_context[cpuid].oldtask = rtai_get_current(cpuid);
-    rtai_linux_local_irq_save(rtai_linux_context[cpuid].oldflags);
-    set_bit(cpuid,&rtai_cpu_realtime);
+static inline void rt_switch_to_real_time(int cpuid)
+{
+	TRACE_RTAI_SWITCHTO_RT(cpuid);
+	if (!rtai_linux_context[cpuid].depth++) {
+		rtai_linux_local_irq_save(rtai_linux_context[cpuid].oldflags);
+		set_bit(cpuid,&rtai_cpu_realtime);
+	}
 }
 
-static inline void rt_switch_to_linux(int cpuid) {
-
-    TRACE_RTAI_SWITCHTO_LINUX(cpuid);
-    clear_bit(cpuid,&rtai_cpu_realtime);
-    rtai_linux_local_irq_restore_nosync(rtai_linux_context[cpuid].oldflags,cpuid);
-    rtai_linux_context[cpuid].oldtask = NULL;
-}
-
-static inline struct task_struct *rt_whoislinux(int cpuid) {
-
-    return rtai_linux_context[cpuid].oldtask;
+static inline int rt_switch_to_linux(int cpuid)
+{
+	TRACE_RTAI_SWITCHTO_LINUX(cpuid);
+	if (rtai_linux_context[cpuid].depth) {
+		if (!--rtai_linux_context[cpuid].depth) {
+			clear_bit(cpuid,&rtai_cpu_realtime);
+			rtai_linux_local_irq_restore_nosync(rtai_linux_context[cpuid].oldflags, cpuid);
+		}
+		return 0;
+	}
+	return 1;
 }
 
 static inline int rt_is_linux (void) {
 
     return !test_bit(adeos_processor_id(),&rtai_cpu_realtime);
-}
-
-static inline int rt_is_lxrt (void) {
-
-    return test_bit(adeos_processor_id(),&rtai_cpu_lxrt);
 }
 
 static inline void rt_set_timer_delay (int delay) {

@@ -28,8 +28,14 @@
 // PCAN-ISA, PCAN-Dongle, PCAN-PCI, PCAN-PC104, PCAN-USB via their drivers
 //
 // $Log: libpcan.c,v $
-// Revision 1.2  2004/07/12 08:22:14  bucher
-// Updated to pcan-3.5
+// Revision 1.3  2004/10/20 06:28:40  bucher
+// Changed to peaks driver 3.9
+//
+// Revision 1.25  2004/08/15 09:46:18  klaus
+// added PCAN_GET_EXT_STATUS
+//
+// Revision 1.24  2004/07/24 09:46:20  klaus
+// LINUX_CAN_Read_Timeout() added
 //
 // Revision 1.23  2004/04/13 20:36:33  klaus
 // added LINUX_CAN_Read() to get the timestamp. Made libpcan.so.0.1.
@@ -474,11 +480,70 @@ DWORD CAN_VersionInfo(HANDLE hHandle, LPSTR szTextBuff)
   return err;
 }
 
+DWORD LINUX_CAN_Read_Timeout(HANDLE hHandle, TPCANRdMsg* pMsgBuff, int nMicroSeconds)
+{
+	int err = EBADF;
+	PCAN_DESCRIPTOR *desc;
+
+	if (nMicroSeconds < 0)
+		return LINUX_CAN_Read(hHandle, pMsgBuff);
+
+	desc = (PCAN_DESCRIPTOR *)hHandle;
+	if (desc)
+	{
+    fd_set fdRead;
+		struct timeval t;
+		
+		// calculate timeout values
+		t.tv_sec  = nMicroSeconds / 1000000L;
+		t.tv_usec = nMicroSeconds % 1000000L;
+		
+  	FD_ZERO(&fdRead);
+  	FD_SET(desc->nFileNo, &fdRead);
+		
+		// wait until timeout or a message is ready to read
+	  err = select(desc->nFileNo + 1, &fdRead, NULL, NULL, &t);	
+		
+		// the only one file descriptor is ready for read
+		if (err  > 0)
+			return LINUX_CAN_Read(hHandle, pMsgBuff);  
+		
+		// nothing is ready, timeout occured
+		if (err == 0)  
+			return CAN_ERR_QRCVEMPTY;
+	}
+	
+	// any else error	 
+	return err;
+}
+
+DWORD LINUX_CAN_Extended_Status(HANDLE hHandle, int *nPendingReads, int *nPendingWrites)
+{
+  PCAN_DESCRIPTOR *desc = (PCAN_DESCRIPTOR *)hHandle;
+  int err = EBADF;
+  
+  errno = err;  
+  if (desc)
+  {
+    TPEXTENDEDSTATUS status;
+    
+    if ((err = ioctl(desc->nFileNo, PCAN_GET_EXT_STATUS, &status)) < 0)
+      return err; 
+    else
+		{
+			*nPendingReads  = status.nPendingReads;
+			*nPendingWrites = status.nPendingWrites;
+      return status.wErrorFlag;
+	  }
+  }
+  
+  return err;
+}
+
 int nGetLastError(void)
 {
   return errno;
 }
-
 
 // end
 

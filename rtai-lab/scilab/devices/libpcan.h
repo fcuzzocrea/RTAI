@@ -31,8 +31,14 @@
 // originally created from Wilhelm Hoppe in pcan_pci.h
 //
 // $Log: libpcan.h,v $
-// Revision 1.2  2004/07/12 08:22:14  bucher
-// Updated to pcan-3.5
+// Revision 1.3  2004/10/20 06:28:40  bucher
+// Changed to peaks driver 3.9
+//
+// Revision 1.12  2004/08/15 09:45:52  klaus
+// added PCAN_GET_EXT_STATUS
+//
+// Revision 1.11  2004/07/24 09:46:12  klaus
+// LINUX_CAN_Read_Timeout() added
 //
 // Revision 1.10  2004/04/13 20:36:33  klaus
 // added LINUX_CAN_Read() to get the timestamp. Made libpcan.so.0.1.
@@ -176,6 +182,25 @@ DWORD CAN_Read(HANDLE hHandle, TPCANMsg* pMsgBuff);
 //  to read the current request blocks until either a new message arrives 
 //  or a error occures.
 DWORD LINUX_CAN_Read(HANDLE hHandle, TPCANRdMsg* pMsgBuff);
+
+//****************************************************************************
+//  LINUX_CAN_Read_Timeout()
+//  reads a message WITH TIMESTAMP from the CAN bus. If there is no message 
+//  to read the current request blocks until either a new message arrives 
+//  or a timeout or a error occures.
+//  nMicroSeconds  > 0 -> Timeout in microseconds
+//  nMicroSeconds == 0 -> polling
+//  nMicroSeconds  < 0 -> blocking, same as LINUX_CAN_Read()
+DWORD LINUX_CAN_Read_Timeout(HANDLE hHandle, TPCANRdMsg* pMsgBuff, int nMicroSeconds);
+
+//****************************************************************************
+//  LINUX_CAN_Extended_Status()
+//  get the same as CAN_Status() with additional informaton about pending reads or writes
+//
+//  There is a uncertainty of 1 message for "nPendingWrites" for a small amount 
+//  of time between the messages is put into the CAN sender and the telegram is
+//  successfuly sent or an error is thrown.
+DWORD LINUX_CAN_Extended_Status(HANDLE hHandle, int *nPendingReads, int *nPendingWrites);
 
 //****************************************************************************
 //  CAN_VersionInfo()

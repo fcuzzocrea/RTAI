@@ -30,8 +30,11 @@
 // constants and definitions to access the drivers 
 //
 // $Log: pcan.h,v $
-// Revision 1.2  2004/07/12 08:22:14  bucher
-// Updated to pcan-3.5
+// Revision 1.3  2004/10/20 06:28:40  bucher
+// Changed to peaks driver 3.9
+//
+// Revision 1.8  2004/08/15 09:45:26  klaus
+// added PCAN_GET_EXT_STATUS
 //
 // Revision 1.7  2004/04/11 22:03:29  klaus
 // cosmetic changes
@@ -178,6 +181,14 @@ typedef struct
 	WORD  wBTR0BTR1;       // out only: the result
 } TPBTR0BTR1;
 
+typedef struct 
+{
+  WORD  wErrorFlag;      // same as in TPDIAG, is cleared in driver after access
+  int   nLastError;      // is cleared in driver after access
+  int   nPendingReads;   // count of unread telegrams
+  int   nPendingWrites;  // count of unsent telegrams
+} TPEXTENDEDSTATUS;      // for PCAN_GET_ESTATUS
+
 //****************************************************************************
 // some predefines for ioctls
 #define PCAN_MAGIC_NUMBER  'z'
@@ -185,10 +196,12 @@ typedef struct
 
 //****************************************************************************
 // ioctls control codes
-#define PCAN_INIT       _IOWR(PCAN_MAGIC_NUMBER, MYSEQ_START,     TPCANInit)
-#define PCAN_WRITE_MSG  _IOW (PCAN_MAGIC_NUMBER, MYSEQ_START + 1, TPCANMsg)
-#define PCAN_READ_MSG   _IOR (PCAN_MAGIC_NUMBER, MYSEQ_START + 2, TPCANRdMsg)
-#define PCAN_GET_STATUS _IOR (PCAN_MAGIC_NUMBER, MYSEQ_START + 3, TPSTATUS)
-#define PCAN_DIAG       _IOR (PCAN_MAGIC_NUMBER, MYSEQ_START + 4, TPDIAG)
-#define PCAN_BTR0BTR1   _IOWR(PCAN_MAGIC_NUMBER, MYSEQ_START + 5, TPBTR0BTR1)
+#define PCAN_INIT           _IOWR(PCAN_MAGIC_NUMBER, MYSEQ_START,     TPCANInit)
+#define PCAN_WRITE_MSG      _IOW (PCAN_MAGIC_NUMBER, MYSEQ_START + 1, TPCANMsg)
+#define PCAN_READ_MSG       _IOR (PCAN_MAGIC_NUMBER, MYSEQ_START + 2, TPCANRdMsg)
+#define PCAN_GET_STATUS     _IOR (PCAN_MAGIC_NUMBER, MYSEQ_START + 3, TPSTATUS)
+#define PCAN_DIAG           _IOR (PCAN_MAGIC_NUMBER, MYSEQ_START + 4, TPDIAG)
+#define PCAN_BTR0BTR1       _IOWR(PCAN_MAGIC_NUMBER, MYSEQ_START + 5, TPBTR0BTR1)
+#define PCAN_GET_EXT_STATUS _IOR (PCAN_MAGIC_NUMBER, MYSEQ_START + 6, TPEXTENDEDSTATUS)
+
 #endif // __PCAN_H__

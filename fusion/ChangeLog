@@ -1,3 +1,7 @@
+2004-12-25  Philippe Gerum  <rpm@localhost>
+
+	* nucleus/fusion.c (__pthread_start_timer_rt): Fix return code.
+
 2004-12-24  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/types.h: Define ROOT_THREAD_INIT/EXIT for use in

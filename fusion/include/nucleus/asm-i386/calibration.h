@@ -31,7 +31,7 @@ static inline unsigned long xnarch_get_sched_latency (void)
 #else
 
 #if CONFIG_X86_LOCAL_APIC
-#define __sched_latency__ 3944
+#define __sched_latency__ 6800
 #else /* !CONFIG_X86_LOCAL_APIC */
 
 /* Use the bogomips formula to identify low-end x86 boards when using

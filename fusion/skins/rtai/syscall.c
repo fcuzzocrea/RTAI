@@ -1006,6 +1006,43 @@ static int __rt_event_signal (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
+ * int __rt_event_clear(RT_EVENT_PLACEHOLDER *ph,
+ *                      unsigned long *oldmask,
+ *                      unsigned long mask)
+ */
+
+static int __rt_event_clear (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    unsigned long mask, oldmask;
+    RT_EVENT_PLACEHOLDER ph;
+    RT_EVENT *event;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (__xn_reg_arg3(regs) &&
+	!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(oldmask)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    event = (RT_EVENT *)rt_registry_fetch(ph.opaque);
+
+    if (!event)
+	return -ENOENT;
+
+    mask = (unsigned long)__xn_reg_arg2(regs);
+
+    err = rt_event_clear(event,mask,&oldmask);
+
+    if (!err && __xn_reg_arg3(regs))
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&oldmask,sizeof(oldmask));
+
+    return err;
+}
+
+/*
  * int __rt_event_inquire(RT_EVENT_PLACEHOLDER *ph,
  *                        RT_EVENT_INFO *infop)
  */
@@ -1046,6 +1083,7 @@ static int __rt_event_inquire (struct task_struct *curr, struct pt_regs *regs)
 #define __rt_event_delete  __rt_call_not_available
 #define __rt_event_wait    __rt_call_not_available
 #define __rt_event_signal  __rt_call_not_available
+#define __rt_event_clear   __rt_call_not_available
 #define __rt_event_inquire __rt_call_not_available
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
@@ -2202,6 +2240,7 @@ static xnsysent_t __systab[] = {
     [__rtai_event_delete ] = { &__rt_event_delete, __xn_flag_anycall },
     [__rtai_event_wait ] = { &__rt_event_wait, __xn_flag_regular },
     [__rtai_event_signal ] = { &__rt_event_signal, __xn_flag_anycall },
+    [__rtai_event_clear ] = { &__rt_event_clear, __xn_flag_anycall },
     [__rtai_event_inquire ] = { &__rt_event_inquire, __xn_flag_anycall },
     [__rtai_mutex_create ] = { &__rt_mutex_create, __xn_flag_anycall },
     [__rtai_mutex_bind ] = { &__rt_mutex_bind, __xn_flag_regular },

@@ -141,6 +141,10 @@ int rt_event_wait(RT_EVENT *event,
 		  int mode,
 		  RTIME timeout);
 
+int rt_event_clear(RT_EVENT *event,
+		   unsigned long *oldmask,
+		   unsigned long mask);
+
 int rt_event_inquire(RT_EVENT *event,
 		     RT_EVENT_INFO *info);
 

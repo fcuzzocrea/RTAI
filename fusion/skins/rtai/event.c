@@ -444,6 +444,70 @@ int rt_event_wait (RT_EVENT *event,
 }
 
 /**
+ * @fn int rt_event_clear(RT_EVENT *event,
+                          unsigned long mask)
+ * @brief Clear an event group.
+ *
+ * Clears a set of flags from an event mask.
+ *
+ * @param event The descriptor address of the affected event.
+ *
+ * @param mask The set of events to be cleared.
+ *
+ * @param oldmask If non-NULL, @a oldmask is the address of a memory
+ * location which will be written upon success with the previous value
+ * of the event group before the flags are cleared.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a event is not an event group descriptor.
+ *
+ * - -EIDRM is returned if @a event is a deleted event group descriptor.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
+int rt_event_clear (RT_EVENT *event,
+		    unsigned long mask,
+		    unsigned long *oldmask)
+{
+    int err = 0;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    event = rtai_h2obj_validate(event,RTAI_EVENT_MAGIC,RT_EVENT);
+
+    if (!event)
+        {
+        err = rtai_handle_error(event,RTAI_EVENT_MAGIC,RT_EVENT);
+        goto unlock_and_exit;
+        }
+
+    if (oldmask)
+	*oldmask = event->value;
+    
+    /* Clear the flags. */
+
+    event->value &= ~mask;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/**
  * @fn int rt_event_inquire(RT_EVENT *event, RT_EVENT_INFO *info)
  * @brief Inquire about an event group.
  *
@@ -508,4 +572,5 @@ EXPORT_SYMBOL(rt_event_create);
 EXPORT_SYMBOL(rt_event_delete);
 EXPORT_SYMBOL(rt_event_signal);
 EXPORT_SYMBOL(rt_event_wait);
+EXPORT_SYMBOL(rt_event_clear);
 EXPORT_SYMBOL(rt_event_inquire);

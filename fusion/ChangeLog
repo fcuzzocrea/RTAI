@@ -1,3 +1,11 @@
+2004-11-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/event.c (rt_event_clear): Add service to clear a set
+	of flags from an event group.
+
+	* skins/rtai/timer.h: RT_TIMER_UNSET/ONESHOT -> TM_UNSET/ONESHOT
+	for consistency with other namings.
+
 2004-11-28  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.6.5

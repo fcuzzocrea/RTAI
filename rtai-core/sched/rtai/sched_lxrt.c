@@ -212,18 +212,6 @@ do { \
 
 #endif /* CONFIG_SMP */
 
-#if defined(CONFIG_SMP) && 0
-#define DECL_CPUS_ALLOWED  unsigned long cpus_allowed = 1;
-#define SAVE_CPUS_ALLOWED  do { cpus_allowed = prev->cpus_allowed; } while (0)
-#define SET_CPUS_ALLOWED   do { prev->cpus_allowed = 1 << cpuid;   } while (0)
-#define RST_CPUS_ALLOWED   do { prev->cpus_allowed = cpus_allowed; } while (0)
-#else /* !CONFIG_SMP */
-#define DECL_CPUS_ALLOWED
-#define SAVE_CPUS_ALLOWED
-#define SET_CPUS_ALLOWED
-#define RST_CPUS_ALLOWED
-#endif /* CONFIG_SMP */
-
 /* ++++++++++++++++++++++++++++++++ TASKS ++++++++++++++++++++++++++++++++++ */
 
 static int tasks_per_cpu[NR_RT_CPUS] = { 0, };
@@ -750,12 +738,9 @@ void rt_schedule_on_schedule_ipi(void)
 schedlnxtsk:
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
-			DECL_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {
 				LOCK_LINUX(cpuid);
 				rt_linux_task.lnxtsk = prev = rtai_get_root_current(cpuid);
-				SAVE_CPUS_ALLOWED;
-				SET_CPUS_ALLOWED;
 			} else {
 				prev = rt_current->lnxtsk;
 			}
@@ -767,7 +752,6 @@ schedlnxtsk:
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
-				RST_CPUS_ALLOWED;
 			} else {
 				if (prev->used_math) {
 					restore_fpu(prev);
@@ -893,12 +877,9 @@ schedlnxtsk:
 		rt_smp_current[cpuid] = new_task;
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
-			DECL_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {
 				LOCK_LINUX(cpuid);
 				rt_linux_task.lnxtsk = prev = adp_cpu_current[cpuid] != adp_root ? rtai_get_root_current(cpuid) : current;
-				SAVE_CPUS_ALLOWED;
-				SET_CPUS_ALLOWED;
 			} else {
 				prev = rt_current->lnxtsk;
 			}
@@ -909,7 +890,6 @@ schedlnxtsk:
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
-				RST_CPUS_ALLOWED;
 				if (rt_current->state != RT_SCHED_READY) {
 					goto sched_soft;
 				}
@@ -1220,12 +1200,9 @@ static void rt_timer_handler(void)
 schedlnxtsk:
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
-			DECL_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {
 				LOCK_LINUX(cpuid);
 				rt_linux_task.lnxtsk = prev = rtai_get_root_current(cpuid);
-				SAVE_CPUS_ALLOWED;
-				SET_CPUS_ALLOWED;
 			} else {
 				prev = rt_current->lnxtsk;
 			}
@@ -1237,7 +1214,6 @@ schedlnxtsk:
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
-				RST_CPUS_ALLOWED;
 			} else {
 				if (prev->used_math) {
 					restore_fpu(prev);

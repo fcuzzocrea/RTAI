@@ -117,21 +117,21 @@
 
 typedef struct xnsched {
 
-    xnflags_t status;           /*!< Scheduler specific status bitmask */
-
-    xnarch_cpumask_t resched;   /*!< Mask of CPUs needing rescheduling.*/
+    xnthread_t *runthread;	/*!< Current thread (service or user). */
 
     xnpqueue_t readyq;		/*!< Ready-to-run threads (prioritized). */
-
-    xnthread_t rootcb;		/*!< Root thread control block. */
-
-    xnthread_t *runthread;	/*!< Current thread (service or user). */
 
 #ifdef CONFIG_RTAI_HW_FPU
     xnthread_t *fpuholder;	/*!< Thread owning the current FPU context. */
 #endif /* CONFIG_RTAI_HW_FPU */
 
     volatile unsigned inesting;	/*!< Interrupt nesting level. */
+
+    xnflags_t status;           /*!< Scheduler specific status bitmask */
+
+    xnarch_cpumask_t resched;   /*!< Mask of CPUs needing rescheduling.*/
+
+    xnthread_t rootcb;		/*!< Root thread control block. */
 
 } xnsched_t;
 

@@ -81,7 +81,7 @@
 			 void *cookie)
  * \brief Initialize a timer object.
  *
- * Create a timer. When created, a timer is left disarmed; it must be
+ * Creates a timer. When created, a timer is left disarmed; it must be
  * started using xntimer_start() in order to be activated.
  *
  * @param timer The address of a timer descriptor Xenomai will use to
@@ -117,6 +117,20 @@ void xntimer_init (xntimer_t *timer,
 
     xnarch_init_display_context(timer);
 }
+
+/*! 
+ * \fn void xntimer_destroy(xntimer_t *timer)
+ *
+ * \brief Release a timer object.
+ *
+ * Destroys a timer. After it has been destroyed, all resources
+ * associated with the timer have been released. The timer is
+ * automatically deactivated before deletion if active on entry.
+ *
+ * @param timer The address of a valid timer descriptor.
+ *
+ * Context: This routine can be called on behalf of a thread or ISR.
+ */
 
 void xntimer_destroy (xntimer_t *timer)
 

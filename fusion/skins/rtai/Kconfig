@@ -8,6 +8,7 @@ config RTAI_SKIN_NATIVE
 config RTAI_OPT_NATIVE_REGISTRY
 	bool "Registry support"
 	depends on RTAI_SKIN_NATIVE
+	enable RTAI_OPT_FUSION
 	default y
 	help
 	
@@ -16,6 +17,9 @@ config RTAI_OPT_NATIVE_REGISTRY
 	retrieved and shared by real-time applications regardless of
 	their runtime space (i.e. kernel or user). Each named object
 	occupies a registry slot.
+
+	Using the registry implies the availability of the real-time
+	support in user-space (RTAI_OPT_FUSION).
 
 config RTAI_OPT_NATIVE_REGISTRY_NRSLOTS
 	string "Number of registry slots"

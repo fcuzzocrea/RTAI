@@ -43,12 +43,11 @@
 #include <nucleus/module.h>
 #include <nucleus/shadow.h>
 #include <nucleus/fusion.h>
+#include <nucleus/ltt.h>
 
 int nkgkptd;
 
 struct xnskentry muxtable[XENOMAI_MUX_NR];
-
-static int traceme = 0;
 
 static struct __gatekeeper {
 
@@ -227,6 +226,8 @@ static void schedback_handler (unsigned virq)
 	struct task_struct *task = sb->req[reqnum].task;
 	sb->out = (reqnum + 1) & (SB_MAX_REQUESTS - 1);
 
+	xnltt_log_event(rtai_ev_lohandler,reqnum,task->comm,task->pid);
+
 	switch (sb->req[reqnum].type)
 	    {
 	    case SB_WAKEUP_REQ:
@@ -317,13 +318,6 @@ static void gatekeeper_thread (void *data)
 
 	if (gkstop)
 	    break;
-
-#if 1
-	if (traceme)
-	    printk("__GK__[%u] %s (ipipe=%lu)\n",
-		   cpu,gk->thread->name,
-		   adeos_test_pipeline_from(&rthal_domain));
-#endif
 
 #ifdef CONFIG_SMP
 	{
@@ -445,15 +439,7 @@ static int xnshadow_harden (void)
 	down_interruptible(&gk->sync)) /* Grab the request token. */
 	return -EINTR;
 
-#if 1
-    if (traceme)
-	printk("_!HARDENING!_ %s, status 0x%lx, pid=%d (ipipe=%lu, domain=%s)\n",
-	       xnshadow_thread(current)->name,
-	       xnshadow_thread(current)->status,
-	       current->pid,
-	       adeos_test_pipeline_from(&rthal_domain),
-	       adp_current->name);
-#endif
+    xnltt_log_event(rtai_ev_primarysw,this_task->comm);
 
     /* Set up the request to move "current" from the Linux domain to
        the RTAI domain. This will cause the shadow thread to resume
@@ -476,17 +462,11 @@ static int xnshadow_harden (void)
     xnpod_switch_fpu(xnpod_current_sched());
 #endif /* CONFIG_RTAI_HW_FPU */
 
+    xnltt_log_event(rtai_ev_primary,xnpod_current_thread()->name);
+
     xnlock_clear_irqon(&nklock);
 
     /* "current" is now running into the RTAI domain. */
-
-#if 1
-    if (traceme)
-	printk("__RT__ %s, pid=%d (ipipe=%lu)\n",
-	       xnpod_current_thread()->name,
-	       current->pid,
-	       adeos_test_pipeline_from(&rthal_domain));
-#endif
 
     return 0;
 }
@@ -523,15 +503,7 @@ void xnshadow_relax (void)
        domain to the Linux domain.  This will cause the Linux task
        to resume using the register state of the shadow thread. */
 
-#if 1
-    if (traceme)
-	printk("_!RELAXING!_ %s, status 0x%lx, pid=%d (ipipe=%lu, domain=%s)\n",
-	       thread->name,
-	       thread->status,
-	       current->pid,
-	       adeos_test_pipeline_from(&rthal_domain),
-	       adp_current->name);
-#endif
+    xnltt_log_event(rtai_ev_secondarysw,thread->name);
 
     if (current->state & TASK_UNINTERRUPTIBLE)
 	/* Just to avoid wrecking Linux's accounting of non-
@@ -551,16 +523,8 @@ void xnshadow_relax (void)
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */
-#if 1
-    if (traceme)
-	printk("__RELAX__ %s (on %s, status 0x%lx), pid=%d (ipipe=%lu, domain=%s)\n",
-	       thread->name,
-	       xnpod_current_sched()->runthread->name,
-	       xnpod_current_sched()->runthread->status,
-	       current->pid,
-	       adeos_test_pipeline_from(&rthal_domain),
-	       adp_current->name);
-#endif
+
+    xnltt_log_event(rtai_ev_secondary,current->comm);
 }
 
 void xnshadow_sync_post (pid_t syncpid, int __user *u_syncp, int err)
@@ -682,24 +646,17 @@ void xnshadow_map (xnthread_t *thread,
             }
         }
 
+    xnltt_log_event(rtai_ev_shadowmap,
+		    thread->name,
+		    current->pid,
+		    xnthread_base_priority(thread));
+
     current->cap_effective |= CAP_TO_MASK(CAP_IPC_LOCK)|CAP_TO_MASK(CAP_SYS_RAWIO)|CAP_TO_MASK(CAP_SYS_NICE);
 
     xnarch_init_shadow_tcb(xnthread_archtcb(thread),thread,xnthread_name(thread));
     rthal_set_linux_task_priority(current,SCHED_FIFO,xnthread_base_priority(thread));
     xnshadow_ptd(current) = thread;
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
-
-#if 1
-    if (traceme)
-        printk("__MAP__ %s from %s, prio=%d, pid=%d, domain=%s, autostart=%d, pid=%d\n",
-               xnthread_name(thread),
-               xnpod_current_sched()->runthread->name,
-               xnthread_base_priority(thread),
-               current->pid,
-               adp_current->name,
-               autostart,
-               current->pid);
-#endif
 
    if (autostart)
        {
@@ -723,16 +680,9 @@ void xnshadow_unmap (xnthread_t *thread)
 
     task = xnthread_archtcb(thread)->user_task;
 
-#if 1
-    if (traceme)
-	printk("__UNMAP__: %s, pid=%d, task=%s (ipipe=%lu, domain=%s, taskstate=%ld)\n",
-	       thread->name,
-	       task ? task->pid : -1,
-	       task ? task->comm : "<null>",
-	       adeos_test_pipeline_from(&rthal_domain),
-	       adp_current->name,
-	       task ? task->state : -1);
-#endif
+    xnltt_log_event(rtai_ev_shadowunmap,
+		    thread->name,
+		    task->pid);
 
     magic = xnthread_get_magic(thread);
 
@@ -835,22 +785,13 @@ void xnshadow_start (xnthread_t *thread,
 
     task = xnthread_archtcb(thread)->user_task;
 
-#if 1
-    if (traceme)
-        printk("__START__ %s (status=0x%lx), prio=%d, pid=%d, domain=%s, entry=%p\n",
-               thread->name,
-               thread->status,
-               xnthread_base_priority(thread),
-               task->pid,
-               adp_current->name,
-               u_entry);
-#endif
+    xnltt_log_event(rtai_ev_shadowstart,thread->name);
 
-   xnlock_put_irqrestore(&nklock,s);
+    xnlock_put_irqrestore(&nklock,s);
 
-   if (task->state == TASK_INTERRUPTIBLE)
-       /* Wakeup the Linux mate waiting on the barrier. */
-       schedule_linux_call(SB_WAKEUP_REQ,task,0);
+    if (task->state == TASK_INTERRUPTIBLE)
+	/* Wakeup the Linux mate waiting on the barrier. */
+	schedule_linux_call(SB_WAKEUP_REQ,task,0);
 }
 
 void xnshadow_renice (xnthread_t *thread)
@@ -1262,19 +1203,6 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     /* From now on, we know that we have a valid shadow thread
        pointer. */
 
-#if 1
-    if (traceme)
-	printk("__SHADOW__ %s (sched=%s, linux=%s), call=%ld, pid=%d, ilock=%ld, task %p, origdomain 0x%x\n",
-	       xnpod_current_thread()->name,
-	       thread->name,
-	       task->comm,
-	       __xn_reg_mux(regs),
-	       task->pid,
-	       adeos_test_pipeline_from(&irq_shield),
-	       task,
-	       evinfo->domid);
-#endif
-
     if (substitute_linux_syscall(task,regs))
 	/* This is a Linux syscall issued on behalf of a shadow thread
 	   running inside the RTAI domain. This call has just been
@@ -1288,15 +1216,6 @@ static void rtai_sysentry (adevinfo_t *evinfo)
        let it go, ensure that our running thread has properly entered
        the Linux domain. */
 
-#if 1
-    if (traceme)
-	printk("__SYSIN__ %s, call=%ld, pid=%d, origin=%x\n",
-	       xnpod_current_thread()->name,
-	       __xn_reg_mux(regs),
-	       task->pid,
-	       evinfo->domid);
-#endif
-
     xnshadow_relax();
 
     goto propagate_syscall;
@@ -1306,15 +1225,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     muxid = __xn_mux_id(regs);
     muxop = __xn_mux_op(regs);
 
-#if 1
-    if (traceme)
-	printk("REQ {skin=%d, op=%d} on behalf of thread %s, pid=%d in domain %s\n",
-	       muxid,
-	       muxop,
-	       xnpod_current_thread()->name,
-	       task->pid,
-	       adp_current->name);
-#endif
+    xnltt_log_event(rtai_ev_syscall,thread->name,muxid,muxop);
 
     if (muxid != 0)
 	goto skin_syscall;
@@ -1483,15 +1394,10 @@ static void linux_sysentry (adevinfo_t *evinfo)
     muxid = __xn_mux_id(regs);
     muxop = __xn_mux_op(regs);
 
-#if 1
-    if (traceme)
-	printk("REQ {skin=%d, op=%d} on behalf of thread %s, pid=%d in domain %s\n",
-	       muxid,
-	       muxop,
-	       nkpod ? xnpod_current_thread()->name : "<system>",
-	       current->pid,
-	       adp_current->name);
-#endif
+    xnltt_log_event(rtai_ev_syscall,
+		    nkpod ? xnpod_current_thread()->name : "<system>",
+		    muxid,
+		    muxop);
 
     if (muxid != 0)
 	goto skin_syscall;
@@ -1534,16 +1440,6 @@ static void linux_task_exit (adevinfo_t *evinfo)
 	return;
 	}
 
-#if 1
-    if (traceme)
-	printk("LINUX EXIT [%s] on behalf of thread %s, pid=%d/%s, relaxed? %d\n",
-		xnpod_current_thread()->name,
-	       thread->name,
-	       current->pid,
-	       current->comm,
-	       !!testbits(thread->status,XNRELAX));
-#endif
-
     if (xnpod_shadow_p())
 	xnshadow_relax();
 
@@ -1554,10 +1450,7 @@ static void linux_task_exit (adevinfo_t *evinfo)
     xnthread_archtcb(thread)->user_task = NULL;
     xnpod_delete_thread(thread);
 
-#if 1
-    if (traceme)
-	printk("Cleaned up %s\n",thread->name);
-#endif
+    xnltt_log_event(rtai_ev_shadowexit,thread->name);
 }
 
 static inline void __xnshadow_reset_shield (xnthread_t *thread)
@@ -1626,14 +1519,6 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 
     if (oldrprio != newrprio)
         {
-#if 1
-        if (traceme)
-            printk("RESET ROOT PRIO (old prio %d) TO %s's (prio %d), cpu %d\n",
-                   oldrprio,
-                   thread->name,
-                   newrprio,
-                   adeos_processor_id());
-#endif
         xnpod_renice_root(newrprio);
 
 	if (xnpod_priocompare(newrprio,oldrprio) < 0)

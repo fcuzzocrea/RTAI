@@ -119,6 +119,11 @@ const char *xnpod_fatal_helper (const char *format, ...)
 static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 
 {
+    xnltt_log_event(rtai_ev_fault,
+		    xnpod_current_thread()->name,
+		    xnarch_fault_pc(fltinfo),
+		    xnarch_fault_trap(fltinfo));
+
     if (!xnpod_userspace_p())
         {
         xnprintf("RTAI: suspending kernel thread %p ('%s') at 0x%lx after exception #%u\n",
@@ -154,6 +159,7 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 void xnpod_schedule_handler (void)
 
 {
+    xnltt_log_event(rtai_ev_smpsched);
     xnsched_set_resched(xnpod_current_sched());
     xnpod_schedule();
 }
@@ -499,9 +505,14 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
     int shadow = testbits(threadout->status,XNSHADOW);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
+    xnltt_log_event(rtai_ev_finalize,threadout->name,threadin->name);
+
     if (countq(&nkpod->tdeleteq) > 0 &&
         !testbits(threadout->status,XNTHREAD_SYSTEM_BITS))
+        {
+	xnltt_log_event(rtai_ev_callout,"SELF-DELETE",threadout->name);
         xnpod_fire_callouts(&nkpod->tdeleteq,threadout);
+	}
 
     sched->runthread = threadin;
 
@@ -640,6 +651,8 @@ int xnpod_init_thread (xnthread_t *thread,
     if (err)
         return err;
 
+    xnltt_log_event(rtai_ev_thrinit,thread->name);
+
     xnlock_get_irqsave(&nklock,s);
     thread->sched = xnpod_current_sched();
     appendq(&nkpod->threadq,&thread->glink);
@@ -740,6 +753,7 @@ int xnpod_start_thread (xnthread_t *thread,
 #if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (testbits(thread->status,XNSHADOW))
         {
+	xnltt_log_event(rtai_ev_thrstart,thread->name);
         xnshadow_start(thread,entry,cookie);
 	xnpod_schedule();
         return 0;
@@ -792,6 +806,8 @@ int xnpod_start_thread (xnthread_t *thread,
         thread->sched = xnpod_sched_slot(xnarch_first_cpu(thread->affinity));
 #endif /* CONFIG_SMP */
 
+    xnltt_log_event(rtai_ev_thrstart,thread->name);
+
     xnpod_resume_thread(thread,XNDORMANT);
 
 #ifdef __RTAI_SIM__
@@ -801,7 +817,10 @@ int xnpod_start_thread (xnthread_t *thread,
 
     if (countq(&nkpod->tstartq) > 0 &&
         !testbits(thread->status,XNTHREAD_SYSTEM_BITS))
+        {
+	xnltt_log_event(rtai_ev_callout,"START",thread->name);
         xnpod_fire_callouts(&nkpod->tstartq,thread);
+	}
 
     xnpod_schedule();
 
@@ -854,6 +873,8 @@ void xnpod_restart_thread (xnthread_t *thread)
         xnpod_fatal("attempt to restart a user-space thread");
 
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_threstart,thread->name);
 
     /* Break the thread out of any wait it is currently in. */
     xnpod_unblock_thread(thread);
@@ -1045,6 +1066,8 @@ void xnpod_delete_thread (xnthread_t *thread)
 
     xnlock_get_irqsave(&nklock,s);
 
+    xnltt_log_event(rtai_ev_thrdelete,thread->name);
+
     sched = thread->sched;
 
     removeq(&nkpod->threadq,&thread->glink);
@@ -1103,7 +1126,10 @@ void xnpod_delete_thread (xnthread_t *thread)
         {
         if (countq(&nkpod->tdeleteq) > 0 &&
             !testbits(thread->status,XNTHREAD_SYSTEM_BITS))
+	    {
+	    xnltt_log_event(rtai_ev_callout,"DELETE",thread->name);
             xnpod_fire_callouts(&nkpod->tdeleteq,thread);
+	    }
 
         /* Note: the thread control block must remain available until
            the user hooks have been called. */
@@ -1199,9 +1225,9 @@ void xnpod_suspend_thread (xnthread_t *thread,
     if (thread->wchan && wchan)
         xnpod_fatal("thread %s attempts a conjunctive wait",thread->name);
 
-    /* This routine must be free from interrupt preemption. */
-
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_thrsuspend,thread->name,mask,timeout,wchan);
 
     sched = thread->sched;
 
@@ -1353,6 +1379,8 @@ void xnpod_resume_thread (xnthread_t *thread,
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_thresume,thread->name,mask);
 
     sched = thread->sched;
 
@@ -1537,6 +1565,8 @@ int xnpod_unblock_thread (xnthread_t *thread)
 
     xnlock_get_irqsave(&nklock,s);
 
+    xnltt_log_event(rtai_ev_thrunblock,thread->name,thread->status);
+
     if (testbits(thread->status,XNDELAY))
         xnpod_resume_thread(thread,XNDELAY);
     else if (testbits(thread->status,XNPEND))
@@ -1613,6 +1643,8 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_threnice,thread->name,prio);
 
     oldprio = thread->cprio;
 
@@ -1696,6 +1728,8 @@ int xnpod_migrate_thread (int cpu)
     if (cpu == xnarch_current_cpu())
         goto unlock_and_exit;
     
+    xnltt_log_event(rtai_ev_cpumigrate,thread->name,cpu);
+
 #ifdef CONFIG_RTAI_HW_FPU
     if (testbits(thread->status, XNFPU))
         {
@@ -1921,6 +1955,8 @@ static void xnpod_dispatch_signals (void)
         thread->asr == XNTHREAD_INVALID_ASR)
         return;
 
+    xnltt_log_event(rtai_ev_sigdispatch,thread->name,thread->signals);
+
     /* Start the asynchronous service routine */
     oldmode = testbits(thread->status,XNTHREAD_MODE_BITS);
     sigs = thread->signals;
@@ -1962,6 +1998,8 @@ void xnpod_welcome_thread (xnthread_t *thread)
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_thrboot,thread->name);
 
     if (xnthread_signaled_p(thread))
         xnpod_dispatch_signals();
@@ -2146,6 +2184,8 @@ void xnpod_schedule (void)
 
     if (xnarch_escalate())
 	return;
+
+    xnltt_log_event(rtai_ev_resched);
 #endif /* __KERNEL__ */
 
     /* No immediate rescheduling is possible if an ISR or callout
@@ -2234,6 +2274,8 @@ void xnpod_schedule (void)
         !testbits(threadout->status,XNRESTART))
         goto signal_unlock_and_exit;
 
+    xnltt_log_event(rtai_ev_switch,threadout->name,threadin->name);
+
 #if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     shadow = testbits(threadout->status,XNSHADOW);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
@@ -2278,7 +2320,10 @@ void xnpod_schedule (void)
     
     if (countq(&nkpod->tswitchq) > 0 &&
 	!testbits(runthread->status,XNTHREAD_SYSTEM_BITS))
+        {
+	xnltt_log_event(rtai_ev_callout,"SWITCH",runthread->name);
 	xnpod_fire_callouts(&nkpod->tswitchq,runthread);
+	}
 
  signal_unlock_and_exit:
 
@@ -2318,6 +2363,8 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 {
     xnsched_t *sched = thread->sched;
     xnthread_t *runthread = sched->runthread, *threadin;
+
+    xnltt_log_event(rtai_ev_fastsched);
 
     if (thread != runthread)
         {
@@ -2983,6 +3030,8 @@ int xnpod_announce_tick (xnintr_t *intr)
 #endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
 
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_tmtick,xnpod_current_thread()->name);
 
     xntimer_do_timers(); /* Fire the timeouts, if any. */
 

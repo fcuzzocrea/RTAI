@@ -34,8 +34,42 @@ struct xnltt_evmap {
     int ltt_evid;	/* !< LTT custom event id. */
 };
 
-#define rtai_ev_ienter  0
-#define rtai_ev_iexit   1
+#define rtai_ev_ienter      0
+#define rtai_ev_iexit       1
+#define rtai_ev_resched     2
+#define rtai_ev_smpsched    3
+#define rtai_ev_fastsched   4
+#define rtai_ev_switch      5
+#define rtai_ev_fault       6
+#define rtai_ev_callout     7
+#define rtai_ev_finalize    8
+#define rtai_ev_thrinit     9
+#define rtai_ev_thrstart    10
+#define rtai_ev_threstart   11
+#define rtai_ev_thrdelete   12
+#define rtai_ev_thrsuspend  13
+#define rtai_ev_thresume    14
+#define rtai_ev_thrunblock  15
+#define rtai_ev_threnice    16
+#define rtai_ev_cpumigrate  17
+#define rtai_ev_sigdispatch 18
+#define rtai_ev_thrboot     19
+#define rtai_ev_tmtick      20
+#define rtai_ev_sleepon     21
+#define rtai_ev_wakeup1     22
+#define rtai_ev_wakeupx     23
+#define rtai_ev_syncflush   24
+#define rtai_ev_syncforget  25
+#define rtai_ev_lohandler   26
+#define rtai_ev_primarysw   27
+#define rtai_ev_primary     28
+#define rtai_ev_secondarysw 29
+#define rtai_ev_secondary   30
+#define rtai_ev_shadowmap   31
+#define rtai_ev_shadowunmap 32
+#define rtai_ev_shadowstart 33
+#define rtai_ev_syscall     34
+#define rtai_ev_shadowexit  35
 
 #define XNLTT_MAX_EVENTS 64
 

@@ -35,6 +35,7 @@
 #include <nucleus/synch.h>
 #include <nucleus/thread.h>
 #include <nucleus/module.h>
+#include <nucleus/ltt.h>
 
 /*! 
  * \fn void xnsynch_init(xnsynch_t *synch, xnflags_t flags);
@@ -158,6 +159,8 @@ void xnsynch_sleep_on (xnsynch_t *synch,
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_sleepon,thread->name,synch);
 
     if (testbits(synch->status,XNSYNCH_PRIO))
 	{
@@ -319,6 +322,7 @@ xnthread_t *xnsynch_wakeup_one_sleeper (xnsynch_t *synch)
 	thread = link2thread(holder,plink);
 	thread->wchan = NULL;
 	synch->owner = thread;
+	xnltt_log_event(rtai_ev_wakeup1,thread->name,synch);
 	xnpod_resume_thread(thread,XNPEND);
 	}
     else
@@ -390,6 +394,7 @@ xnpholder_t *xnsynch_wakeup_this_sleeper (xnsynch_t *synch,
     thread = link2thread(holder,plink);
     thread->wchan = NULL;
     synch->owner = thread;
+    xnltt_log_event(rtai_ev_wakeupx,thread->name,synch);
     xnpod_resume_thread(thread,XNPEND);
 
     if (testbits(synch->status,XNSYNCH_CLAIMED))
@@ -460,6 +465,8 @@ int xnsynch_flush (xnsynch_t *synch, xnflags_t reason)
 
     xnlock_get_irqsave(&nklock,s);
 
+    xnltt_log_event(rtai_ev_syncflush,synch,reason);
+
     status = countpq(&synch->pendq) > 0 ? XNSYNCH_RESCHED : XNSYNCH_DONE;
 
     while ((holder = getpq(&synch->pendq)) != NULL)
@@ -506,6 +513,8 @@ void xnsynch_forget_sleeper (xnthread_t *thread)
 
 {
     xnsynch_t *synch = thread->wchan;
+
+    xnltt_log_event(rtai_ev_syncforget,thread->name,synch);
 
     clrbits(thread->status,XNPEND);
     thread->wchan = NULL;

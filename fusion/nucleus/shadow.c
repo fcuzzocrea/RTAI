@@ -124,28 +124,37 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static inline void engage_irq_shield (void)
 
 {
+    unsigned long flags;
     adeos_declare_cpuid;
 
-    adeos_load_cpuid();
+    adeos_lock_cpu(flags);
 
     if (cpu_test_and_set(cpuid,shielded_cpus))
-	return;
+	goto unmask_and_exit;
 
     adeos_read_lock(&shield_lock);
+
     cpu_clear(cpuid,unshielded_cpus);
+
     xnarch_lock_xirqs(&irq_shield,cpuid);
+
     adeos_read_unlock(&shield_lock);
+
+ unmask_and_exit:
+    
+    adeos_unlock_cpu(flags);
 }
 
 static void disengage_irq_shield (void)
      
 {
+    unsigned long flags;
     adeos_declare_cpuid;
 
-    adeos_load_cpuid();
+    adeos_lock_cpu(flags);
 
     if (cpu_test_and_set(cpuid,unshielded_cpus))
-	return;
+	goto unmask_and_exit;
 
     adeos_write_lock(&shield_lock);
 
@@ -158,7 +167,7 @@ static void disengage_irq_shield (void)
     if (!cpus_empty(shielded_cpus))
 	{
 	adeos_write_unlock(&shield_lock);
-	return;
+	goto unmask_and_exit;
 	}
 
     /* At this point we know that we are the last CPU to disengage the
@@ -179,7 +188,12 @@ static void disengage_irq_shield (void)
 #endif /* CONFIG_SMP */
 
     adeos_write_unlock(&shield_lock);
+
     adeos_unstall_pipeline_from(&irq_shield);
+
+ unmask_and_exit:
+
+    adeos_unlock_cpu(flags);
 }
 
 static void shield_handler (unsigned irq)

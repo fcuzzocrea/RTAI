@@ -1,5 +1,10 @@
 2005-01-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (engage_irq_shield, disengage_irq_shield): Add
+	back hw masking when operating the shield. This prevents a race
+	with the callback request code which may occur under high
+	mode migration rate. Oops.
+
 	* nucleus/fusion.c: Add pthread_exit_rt() to unmap a shadow thread
 	from a regular Linux task without destroying the latter.
 

@@ -37,6 +37,12 @@ typedef union i387_union FPU_ENV;
    
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 
+#define init_fpu(tsk) \
+	do { init_xfpu(); tsk->used_math = 1; set_tsk_used_fpu(tsk); } while(0)
+
+#define restore_fpu(tsk) \
+	do { restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk); } while (0)
+
 #define load_mxcsr(val) \
 	do { \
         	unsigned long __mxcsr = ((unsigned long)(val) & 0xffbf); \
@@ -52,10 +58,10 @@ typedef union i387_union FPU_ENV;
 	do { \
 		if (x & 8) { \
                        unsigned long flags; \
-                       rtai_hw_lock(flags); \
+                       rtai_hw_save_flags_and_cli(flags); \
 			__asm__ __volatile__ ("movl %%cr0, %0": "=r" (x)); \
 			__asm__ __volatile__ ("movl %0, %%cr0": :"r" (8 | x)); \
-                       rtai_hw_unlock(flags); \
+                       rtai_hw_restore_flags(flags); \
 		} \
 	} while (0)
 
@@ -100,6 +106,8 @@ typedef union i387_union FPU_ENV;
 
 #else /* !CONFIG_RTAI_FPU_SUPPORT */
 
+static void init_fpu(struct task_struct *tsk) { }
+#define restore_fpu(tsk)
 #define save_cr0_and_clts(x)
 #define restore_cr0(x)
 #define enable_fpu()

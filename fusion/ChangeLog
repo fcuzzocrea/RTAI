@@ -1,3 +1,8 @@
+2004-12-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/*/hal/hal.c (rthal_request_irq): Only virtualize requested
+	IRQs.
+
 2004-12-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* GNUmakefile.am (dev devices): Always enable even if DESTDIR is set.

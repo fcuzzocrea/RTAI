@@ -841,7 +841,8 @@ int __rthal_init (void)
 	{
 	adsysinfo_t sysinfo;
 	adeos_get_sysinfo(&sysinfo);
-	/* FIXME: 4Ghz barrier is close... */
+	/* The CPU frequency is expressed as the timebase frequency
+	   for this port. */
 	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
 	}
 

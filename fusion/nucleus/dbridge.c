@@ -130,17 +130,17 @@ static void xnbridge_wakeup_proc (void)
 	{
 	state = link2dbs(holder,alink);
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	if (testbits(state->status,XNBRIDGE_USER_SIGIO))
 	    {
 	    clrbits(state->status,XNBRIDGE_USER_SIGIO);
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    kill_fasync(&state->asyncq,xnbridge_asyncsig,POLL_IN);
 	    set_need_resched();
 	    }
 	else
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 
 	holder = nextq(&xnbridge_asyncq,holder);
 	}
@@ -152,19 +152,24 @@ static inline void xnbridge_enqueue_wait (xnbridge_state_t *state,
 					  struct semaphore *wchan,
 					  int flags)
 {
-    /* NOTE: Each caller _must_ ensure that this helper routine will
-       be safe from preemption, including from the real-time side. */
+    spl_t s;
 
+    xnlock_get_irqsave(&nklock,s);
     state->wchan = wchan;	/* may be NULL */
     setbits(state->status,flags|XNBRIDGE_USER_ONWAIT);
     appendq(&xnbridge_sleepq,&state->slink);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 static inline void xnbridge_dequeue_wait (xnbridge_state_t *state,
 					  int flags)
 {
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
     removeq(&xnbridge_sleepq,&state->slink);
     clrbits(state->status,flags|XNBRIDGE_USER_ONWAIT);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 static inline void xnbridge_schedule_request (void) {
@@ -172,8 +177,8 @@ static inline void xnbridge_schedule_request (void) {
 }
 
 /* Real-time entry points. Remember that we _must_ enforce critical
-   sections using splhigh/splexit since we might be competing with the
-   kernel-based Xenomai domain threads for data access. */
+   sections since we might be competing with the kernel-based Xenomai
+   domain threads for data access. */
 
 void xnbridge_setup (xnbridge_session_handler *open_handler,
 		     xnbridge_session_handler *close_handler)
@@ -196,17 +201,17 @@ int xnbridge_connect (int minor,
 
     state = &xnbridge_states[minor];
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (testbits(state->status,XNBRIDGE_KERN_CONN))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return -EBUSY;
 	}
 
     setbits(state->status,XNBRIDGE_KERN_CONN);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnsynch_init(&state->synchbase,XNSYNCH_FIFO);
     state->output_handler = output_handler;
@@ -255,17 +260,17 @@ int xnbridge_disconnect (int minor)
 
     state = &xnbridge_states[minor];
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (!testbits(state->status,XNBRIDGE_KERN_CONN))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return -EBADF;
 	}
 
     clrbits(state->status,XNBRIDGE_KERN_CONN);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     if (testbits(state->status,XNBRIDGE_USER_CONN))
 	{
@@ -277,12 +282,12 @@ int xnbridge_disconnect (int minor)
 		xnfree(link2mh(holder));
 	    }
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	if (xnsynch_destroy(&state->synchbase) == XNSYNCH_RESCHED)
 	    xnpod_schedule();
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 
 	if (testbits(state->status,XNBRIDGE_USER_WMASK))
 	    {
@@ -321,11 +326,11 @@ ssize_t xnbridge_send (int minor,
     if (!testbits(state->status,XNBRIDGE_USER_CONN))
 	return -EIO;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (!testbits(state->status,XNBRIDGE_KERN_CONN))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return -EBADF;
 	}
 
@@ -365,7 +370,7 @@ ssize_t xnbridge_send (int minor,
 	xnprintf("RTK: USR NOT CONNECTED ON MINOR #%d\n",minor);
 #endif
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return (ssize_t)size;
 }
@@ -377,6 +382,7 @@ ssize_t xnbridge_recv (int minor,
     xnbridge_state_t *state;
     xnholder_t *holder;
     xnticks_t stime;
+    ssize_t ret;
     spl_t s;
 
     if (minor < 0 || minor >= XNBRIDGE_NDEVS)
@@ -386,12 +392,12 @@ ssize_t xnbridge_recv (int minor,
 
     state = &xnbridge_states[minor];
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (!testbits(state->status,XNBRIDGE_KERN_CONN))
 	{
-	splexit(s);
-	return -EBADF;
+	ret = -EBADF;
+	goto unlock_and_exit;
 	}
 
     stime = xnpod_get_time();
@@ -400,8 +406,8 @@ ssize_t xnbridge_recv (int minor,
 	{
 	if (timeout == XN_NONBLOCK)
 	    {
-	    splexit(s);
-	    return -EWOULDBLOCK;
+	    ret = -EWOULDBLOCK;
+	    goto unlock_and_exit;
 	    }
 
 	if (timeout != XN_INFINITE)
@@ -413,8 +419,8 @@ ssize_t xnbridge_recv (int minor,
 
 	    if (stime + timeout >= now)
 		{
-		splexit(s);
-		return -ETIMEDOUT;
+		ret = -ETIMEDOUT;
+		goto unlock_and_exit;
 		}
 
 	    timeout -= (now - stime);
@@ -425,28 +431,32 @@ ssize_t xnbridge_recv (int minor,
 
 	if (xnthread_test_flags(xnpod_current_thread(),XNTIMEO))
 	    {
-	    splexit(s);
-	    return -ETIMEDOUT;
+	    ret = -ETIMEDOUT;
+	    goto unlock_and_exit;
 	    }
 
 	if (xnthread_test_flags(xnpod_current_thread(),XNBREAK))
 	    {
-	    splexit(s);
-	    return -EINTR;
+	    ret = -EINTR;
+	    goto unlock_and_exit;
 	    }
 
 	if (xnthread_test_flags(xnpod_current_thread(),XNRMID))
 	    {
-	    splexit(s);
-	    return -ESTALE;
+	    ret = -ESTALE;
+	    goto unlock_and_exit;
 	    }
 	}
 
-    splexit(s);
-
     *pmh = link2mh(holder);
 
-    return (ssize_t)xnbridge_m_size(*pmh);
+    ret = (ssize_t)xnbridge_m_size(*pmh);
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return ret;
 }
 
 int xnbridge_inquire (int minor)
@@ -490,7 +500,7 @@ static int xnbridge_open (struct inode *inode,
     if (testbits(state->status,XNBRIDGE_USER_CONN))
 	return -EBUSY;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     clrbits(state->status,XNBRIDGE_USER_WMASK|XNBRIDGE_USER_SIGIO|XNBRIDGE_USER_ONWAIT);
     setbits(state->status,XNBRIDGE_USER_CONN);
@@ -499,7 +509,7 @@ static int xnbridge_open (struct inode *inode,
 	{
 	if (xnbridge_open_handler)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 
 	    err = xnbridge_open_handler(xnminor_from_state(state),NULL);
 
@@ -512,18 +522,18 @@ static int xnbridge_open (struct inode *inode,
 	    if (testbits(state->status,XNBRIDGE_KERN_CONN))
 		return 0;
 
-	    splhigh(s);
+	    xnlock_get_irqsave(&nklock,s);
 	    }
 
 	if (testbits(file->f_flags,O_NONBLOCK))
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return -EWOULDBLOCK;
 	    }
 
 	xnbridge_enqueue_wait(state,&state->open_sem,XNBRIDGE_USER_WOPEN);
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 
 #ifdef XNBRIDGE_DEBUG
 	xnprintf("USR: WAITING FOR RT OPEN ON MINOR #%d\n",MINOR(inode->i_rdev));
@@ -531,9 +541,7 @@ static int xnbridge_open (struct inode *inode,
 
 	if (down_interruptible(&state->open_sem))
 	    {
-	    splhigh(s);
 	    xnbridge_dequeue_wait(state,XNBRIDGE_USER_WOPEN);
-	    splexit(s);
 	    return -ERESTARTSYS;
 	    }
 
@@ -543,7 +551,7 @@ static int xnbridge_open (struct inode *inode,
 	}
     else
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 
 	if (xnbridge_open_handler)
 	    err = xnbridge_open_handler(xnminor_from_state(state),state->cookie);
@@ -567,7 +575,7 @@ static int xnbridge_release (struct inode *inode,
 
     state = (xnbridge_state_t *)file->private_data;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (testbits(state->status,XNBRIDGE_USER_ONWAIT))
 	removeq(&xnbridge_sleepq,&state->slink);
@@ -584,13 +592,13 @@ static int xnbridge_release (struct inode *inode,
 		state->output_handler(minor,link2mh(holder),1,state->cookie);
 	    }
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 
 	if (xnbridge_close_handler != NULL)
 	    err = xnbridge_close_handler(minor,state->cookie);
 	}
-
-    splexit(s);
+    else
+	xnlock_put_irqrestore(&nklock,s);
 
     if (waitqueue_active(&state->pollq))
 	wake_up_interruptible(&state->pollq);
@@ -625,7 +633,7 @@ static ssize_t xnbridge_read (struct file *file,
     if (!testbits(state->status,XNBRIDGE_KERN_CONN))
 	return -EIO;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     /* Queue probe and proc enqueuing must be seen atomically,
        including from the real-time kernel side. */
@@ -637,13 +645,13 @@ static ssize_t xnbridge_read (struct file *file,
 	{
 	if (file->f_flags & O_NONBLOCK)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return -EAGAIN;
 	    }
 
 	xnbridge_enqueue_wait(state,&state->send_sem,XNBRIDGE_USER_WSEND);
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 
 #ifdef XNBRIDGE_DEBUG
 	xnprintf("USR: WAITING FOR RT SEND ON MINOR #%d\n",xnminor_from_state(state));
@@ -651,13 +659,11 @@ static ssize_t xnbridge_read (struct file *file,
 
 	if (down_interruptible(&state->send_sem))
 	    {
-	    splhigh(s);
 	    xnbridge_dequeue_wait(state,XNBRIDGE_USER_WSEND);
-	    splexit(s);
 	    return -ERESTARTSYS;
 	    }
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 #ifdef XNBRIDGE_DEBUG
 	xnprintf("USR: GOT INPUT DATA ON MINOR #%d\n",xnminor_from_state(state));
@@ -667,7 +673,7 @@ static ssize_t xnbridge_read (struct file *file,
 	mh = link2mh(holder);
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
 #ifdef XNBRIDGE_DEBUG
     xnprintf("USR: RT-INPUT #%d QUEUE HAS %d ELEMENTS, MH %p\n",
@@ -738,7 +744,7 @@ static ssize_t xnbridge_write (struct file *file,
 	}
     else
 	{
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	appendq(&state->inq,&mh->link);
 
@@ -756,7 +762,7 @@ static ssize_t xnbridge_write (struct file *file,
 	    xnpod_schedule();
 	    }
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	}
 
     return (ssize_t)count;
@@ -821,9 +827,7 @@ static unsigned xnbridge_poll (struct file *file,
 	   linked to the sleepers queue, and will be silently unlinked
 	   the next time the real-time kernel side kicks
 	   xnbridge_wakeup_proc. */
-	splhigh(s);
 	xnbridge_enqueue_wait(state,NULL,XNBRIDGE_USER_WPOLL);
-	splexit(s);
 	}
 
     return mask;

@@ -1,3 +1,7 @@
+2004-07-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/dbridge.c: Use SMP locking.
+
 2004-07-25  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.3

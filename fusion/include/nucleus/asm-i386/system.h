@@ -192,8 +192,8 @@ case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
 #ifdef CONFIG_X86_LOCAL_APIC
 /* When the local APIC is enabled, we do not need to relay the host
    tick since 8254 interrupts are already flowing normally to Linux
-   (i.e. the nucleus does not intercept it, but rather an APIC-based
-   timer interrupt instead. */
+   (i.e. the nucleus does not intercept it, but uses a dedicated
+   APIC-based timer interrupt instead, i.e. RTHAL_APIC_TIMER_IPI). */
 #define XNARCH_HOST_TICK             0
 #else /* CONFIG_X86_LOCAL_APIC */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
@@ -512,12 +512,10 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
     struct task_struct *outproc = out_tcb->active_task;
     struct task_struct *inproc = in_tcb->user_task;
 
-#ifdef CONFIG_RTAI_HW_FPU
     if (inproc && outproc->thread_info->status & TS_USEDFPU)        
         /* __switch_to will try and use __unlazy_fpu, so we need to
            clear the ts bit. */
         clts();
-#endif /* CONFIG_RTAI_HW_FPU */
     
     in_tcb->active_task = inproc ?: outproc;
 
@@ -564,9 +562,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	}
     }
 
-#ifdef CONFIG_RTAI_HW_FPU
     stts();
-#endif /* CONFIG_RTAI_HW_FPU */
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
@@ -597,10 +593,8 @@ asmlinkage static void xnarch_thread_redirect (struct xnthread *self,
 					       void(*entry)(void *),
 					       void *cookie)
 {
-#ifdef CONFIG_RTAI_HW_FPU
     /* xnpod_welcome_thread() will do clts() if needed. */
     stts();
-#endif /* CONFIG_RTAI_HW_FPU */
     rthal_local_irq_restore(!!imask);
     xnpod_welcome_thread(self);
     entry(cookie);

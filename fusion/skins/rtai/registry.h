@@ -26,11 +26,11 @@
 
 #define RT_REGISTRY_SELF  RT_HANDLE_INVALID
 
-#if __KERNEL__ && CONFIG_PROC_FS && CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#if defined(__KERNEL__) && defined(CONFIG_PROC_FS) && defined(CONFIG_RTAI_OPT_NATIVE_REGISTRY)
 #define CONFIG_RTAI_NATIVE_EXPORT_REGISTRY 1
 #endif /* __KERNEL__ && CONFIG_PROC_FS && CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
-#if __KERNEL__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #include <nucleus/synch.h>
 #include <nucleus/thread.h>
@@ -53,7 +53,7 @@ typedef struct rt_object {
 
     u_long cstamp;	/* !< Creation stamp. */
 
-#if CONFIG_PROC_FS && __KERNEL__
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
     struct rt_object_procnode *pnode; /* !< /proc information class. */
 
@@ -81,7 +81,7 @@ int __registry_pkg_init(void);
 
 void __registry_pkg_cleanup(void);
 
-#if CONFIG_PROC_FS && __KERNEL__
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
 #include <linux/proc_fs.h>
 

@@ -56,7 +56,7 @@ typedef struct rt_heap_placeholder {
 
 } RT_HEAP_PLACEHOLDER;
 
-#if __KERNEL__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #define RTAI_HEAP_MAGIC 0x55550808
 
@@ -76,7 +76,7 @@ typedef struct rt_heap {
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     pid_t cpid;			/* !< Creator's pid. */
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

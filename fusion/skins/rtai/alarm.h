@@ -40,7 +40,7 @@ typedef struct rt_alarm_placeholder {
     rt_handle_t opaque;
 } RT_ALARM_PLACEHOLDER;
 
-#if __KERNEL__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #define RTAI_ALARM_MAGIC 0x55550909
 
@@ -58,7 +58,7 @@ typedef struct rt_alarm {
 
     unsigned long expiries;	/* !< Number of expiries. */
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
 
     pid_t cpid;			/* !< Creator's pid. */
 

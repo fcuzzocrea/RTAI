@@ -22,7 +22,7 @@
 
 #include <nucleus/queue.h>
 
-#if __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
 /* Number of outstanding timers (hint only) -- must be ^2 */
 #define XNTIMER_WHEELSIZE 64
@@ -77,7 +77,7 @@ typedef struct xntimer {
 } xntimer_t;
 
 #define xntimer_date(t)           ((t)->date)
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 #define xntimer_sched(t)          ((t)->sched)
 #else /* !CONFIG_SMP */
 #define xntimer_sched(t)          xnpod_current_sched()
@@ -114,7 +114,7 @@ xnticks_t xntimer_get_date(xntimer_t *timer);
 
 xnticks_t xntimer_get_timeout(xntimer_t *timer);
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 int xntimer_set_sched(xntimer_t *timer, struct xnsched *sched);
 #else /* ! CONFIG_SMP */
 #define xntimer_set_sched(timer,sched)

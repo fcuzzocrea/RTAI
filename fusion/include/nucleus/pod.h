@@ -103,7 +103,7 @@ typedef struct xnsched {
 
     volatile unsigned inesting;	/*!< Interrupt nesting level. */
 
-#if CONFIG_RTAI_HW_FPU
+#ifdef CONFIG_RTAI_HW_FPU
     xnthread_t *fpuholder;	/*!< Thread owning the current FPU context. */
 #endif /* CONFIG_RTAI_HW_FPU */
 
@@ -181,13 +181,13 @@ struct xnpod {
 	int (*unload)(void);	/*!< Unloading hook. */
     } svctable;			/*!< Table of overridable service entry points. */
 
-#if CONFIG_RTAI_OPT_WATCHDOG
+#ifdef CONFIG_RTAI_OPT_WATCHDOG
     xnticks_t watchdog_trigger;	/* !< Watchdog trigger value. */
     xnticks_t watchdog_reload;	/* !< Watchdog reload value. */
     int watchdog_armed;		/* !< Watchdog state. */
 #endif /* CONFIG_RTAI_OPT_WATCHDOG */
 
-#if __RTAI_SIM__
+#ifdef __RTAI_SIM__
     void (*schedhook)(xnthread_t *thread,
 		      xnflags_t mask); /*!< Internal scheduling hook. */
 #endif /* __RTAI_SIM__ */
@@ -198,7 +198,7 @@ typedef struct xnpod xnpod_t;
 
 extern xnpod_t *nkpod;
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 extern xnlock_t nklock;
 #endif /* CONFIG_SMP */
 
@@ -222,11 +222,11 @@ void xnpod_renice_thread_inner(xnthread_t *thread,
 			       int prio,
 			       int propagate);
 
-#if CONFIG_RTAI_HW_FPU
+#ifdef CONFIG_RTAI_HW_FPU
 void xnpod_switch_fpu(xnsched_t *sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
-#if CONFIG_RTAI_OPT_WATCHDOG
+#ifdef CONFIG_RTAI_OPT_WATCHDOG
 static inline void xnpod_reset_watchdog (void)
 {
     nkpod->watchdog_trigger = xnarch_get_cpu_tsc() + nkpod->watchdog_reload;

@@ -28,7 +28,7 @@
  */
 
 #include <nucleus/pod.h>
-#if __KERNEL__
+#ifdef __KERNEL__
 #include <rtai/syscall.h>
 #endif /* __KERNEL__ */
 #include <rtai/task.h>
@@ -48,56 +48,56 @@ MODULE_DESCRIPTION("Native RTAI skin");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
-#if !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION)
+#if !defined(__KERNEL__) || !defined(CONFIG_RTAI_OPT_FUSION)
 static xnpod_t __rtai_pod;
-#endif /* !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
+#endif /* !__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
 
 static void rtai_shutdown (int xtype)
 
 {
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     __rtai_syscall_cleanup();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#if CONFIG_RTAI_OPT_NATIVE_INTR
+#ifdef CONFIG_RTAI_OPT_NATIVE_INTR
     __intr_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
 
-#if CONFIG_RTAI_OPT_NATIVE_ALARM
+#ifdef CONFIG_RTAI_OPT_NATIVE_ALARM
     __alarm_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_ALARM */
 
-#if CONFIG_RTAI_OPT_NATIVE_HEAP
+#ifdef CONFIG_RTAI_OPT_NATIVE_HEAP
     __heap_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
-#if CONFIG_RTAI_OPT_NATIVE_QUEUE
+#ifdef CONFIG_RTAI_OPT_NATIVE_QUEUE
     __queue_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_QUEUE */
 
-#if CONFIG_RTAI_OPT_NATIVE_PIPE
+#ifdef CONFIG_RTAI_OPT_NATIVE_PIPE
     __pipe_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
 
-#if CONFIG_RTAI_OPT_NATIVE_COND
+#ifdef CONFIG_RTAI_OPT_NATIVE_COND
     __cond_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_COND */
 
-#if CONFIG_RTAI_OPT_NATIVE_MUTEX
+#ifdef CONFIG_RTAI_OPT_NATIVE_MUTEX
     __mutex_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
-#if CONFIG_RTAI_OPT_NATIVE_EVENT
+#ifdef CONFIG_RTAI_OPT_NATIVE_EVENT
     __event_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
 
-#if CONFIG_RTAI_OPT_NATIVE_SEM
+#ifdef CONFIG_RTAI_OPT_NATIVE_SEM
     __sem_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_SEM */
 
     __task_pkg_cleanup();
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     __registry_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
@@ -109,7 +109,7 @@ int __fusion_skin_init (void)
 {
     int err;
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     /* The RTAI skin is stacked over the fusion framework. */
     err = xnfusion_attach();
 #else /* !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
@@ -124,7 +124,7 @@ int __fusion_skin_init (void)
 
     nkpod->svctable.shutdown = &rtai_shutdown;
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     err = __registry_pkg_init();
 
     if (err)
@@ -136,70 +136,70 @@ int __fusion_skin_init (void)
     if (err)
 	goto cleanup_registry;
 
-#if CONFIG_RTAI_OPT_NATIVE_SEM
+#ifdef CONFIG_RTAI_OPT_NATIVE_SEM
     err = __sem_pkg_init();
 
     if (err)
 	goto cleanup_task;
 #endif /* CONFIG_RTAI_OPT_NATIVE_SEM */
 
-#if CONFIG_RTAI_OPT_NATIVE_EVENT
+#ifdef CONFIG_RTAI_OPT_NATIVE_EVENT
     err = __event_pkg_init();
 
     if (err)
 	goto cleanup_sem;
 #endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
 
-#if CONFIG_RTAI_OPT_NATIVE_MUTEX
+#ifdef CONFIG_RTAI_OPT_NATIVE_MUTEX
     err = __mutex_pkg_init();
 
     if (err)
 	goto cleanup_event;
 #endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
-#if CONFIG_RTAI_OPT_NATIVE_COND
+#ifdef CONFIG_RTAI_OPT_NATIVE_COND
     err = __cond_pkg_init();
 
     if (err)
 	goto cleanup_mutex;
 #endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
-#if CONFIG_RTAI_OPT_NATIVE_PIPE
+#ifdef CONFIG_RTAI_OPT_NATIVE_PIPE
     err = __pipe_pkg_init();
 
     if (err)
 	goto cleanup_cond;
 #endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
 
-#if CONFIG_RTAI_OPT_NATIVE_QUEUE
+#ifdef CONFIG_RTAI_OPT_NATIVE_QUEUE
     err = __queue_pkg_init();
 
     if (err)
 	goto cleanup_pipe;
 #endif /* CONFIG_RTAI_OPT_NATIVE_QUEUE */
 
-#if CONFIG_RTAI_OPT_NATIVE_HEAP
+#ifdef CONFIG_RTAI_OPT_NATIVE_HEAP
     err = __heap_pkg_init();
 
     if (err)
 	goto cleanup_queue;
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
-#if CONFIG_RTAI_OPT_NATIVE_ALARM
+#ifdef CONFIG_RTAI_OPT_NATIVE_ALARM
     err = __alarm_pkg_init();
 
     if (err)
 	goto cleanup_heap;
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
-#if CONFIG_RTAI_OPT_NATIVE_INTR
+#ifdef CONFIG_RTAI_OPT_NATIVE_INTR
     err = __intr_pkg_init();
 
     if (err)
 	goto cleanup_alarm;
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     err = __rtai_syscall_init();
 
     if (err)
@@ -208,59 +208,59 @@ int __fusion_skin_init (void)
     
     return 0;	/* SUCCESS. */
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
  cleanup_intr:
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#if CONFIG_RTAI_OPT_NATIVE_INTR
+#ifdef CONFIG_RTAI_OPT_NATIVE_INTR
     __intr_pkg_cleanup();
 
  cleanup_alarm:
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
 
-#if CONFIG_RTAI_OPT_NATIVE_ALARM
+#ifdef CONFIG_RTAI_OPT_NATIVE_ALARM
     __alarm_pkg_cleanup();
 
  cleanup_heap:
 #endif /* CONFIG_RTAI_OPT_NATIVE_ALARM */
 
-#if CONFIG_RTAI_OPT_NATIVE_HEAP
+#ifdef CONFIG_RTAI_OPT_NATIVE_HEAP
     __heap_pkg_cleanup();
 
  cleanup_queue:
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
-#if CONFIG_RTAI_OPT_NATIVE_QUEUE
+#ifdef CONFIG_RTAI_OPT_NATIVE_QUEUE
     __queue_pkg_cleanup();
 
  cleanup_pipe:
 #endif /* CONFIG_RTAI_OPT_NATIVE_QUEUE */
 
-#if CONFIG_RTAI_OPT_NATIVE_PIPE
+#ifdef CONFIG_RTAI_OPT_NATIVE_PIPE
     __pipe_pkg_cleanup();
 
  cleanup_cond:
 #endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
 
-#if CONFIG_RTAI_OPT_NATIVE_COND
+#ifdef CONFIG_RTAI_OPT_NATIVE_COND
     __cond_pkg_cleanup();
 
  cleanup_mutex:
 #endif /* CONFIG_RTAI_OPT_NATIVE_COND */
 
-#if CONFIG_RTAI_OPT_NATIVE_MUTEX
+#ifdef CONFIG_RTAI_OPT_NATIVE_MUTEX
     __mutex_pkg_cleanup();
 
  cleanup_event:
 #endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
-#if CONFIG_RTAI_OPT_NATIVE_EVENT
+#ifdef CONFIG_RTAI_OPT_NATIVE_EVENT
     __event_pkg_cleanup();
 
  cleanup_sem:
 #endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
 
-#if CONFIG_RTAI_OPT_NATIVE_SEM
+#ifdef CONFIG_RTAI_OPT_NATIVE_SEM
     __sem_pkg_cleanup();
 
  cleanup_task:
@@ -270,7 +270,7 @@ int __fusion_skin_init (void)
 
  cleanup_registry:
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     __registry_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 

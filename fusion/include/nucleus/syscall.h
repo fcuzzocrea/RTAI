@@ -48,7 +48,7 @@ typedef struct xninquiry {
 
 } xninquiry_t;
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 struct task_struct;
 

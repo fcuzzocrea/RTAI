@@ -56,7 +56,7 @@ static void __task_delete_hook (xnthread_t *thread)
 
     task = thread2rtask(thread);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (task->handle)
 	rt_registry_remove(task->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
@@ -203,7 +203,7 @@ int rt_task_create (RT_TASK *task,
     appendq(&__rtai_task_q,&task->link);
     xnlock_put_irqrestore(&nklock,s);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */

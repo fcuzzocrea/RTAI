@@ -43,7 +43,7 @@ typedef struct rt_intr_placeholder {
     rt_handle_t opaque;
 } RT_INTR_PLACEHOLDER;
 
-#if __KERNEL__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #define RTAI_INTR_MAGIC 0x55550a0a
 
@@ -70,7 +70,7 @@ typedef struct rt_intr {
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
 
     int mode;		/* !< Interrupt control mode. */
 

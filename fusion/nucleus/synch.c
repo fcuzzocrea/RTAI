@@ -111,7 +111,7 @@ static inline void xnsynch_renice_thread (xnthread_t *thread, int prio)
 	   but the running one. */
 	xnpod_resume_thread(thread,0);
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (testbits(thread->status,XNRELAX))
 	xnshadow_renice(thread);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */

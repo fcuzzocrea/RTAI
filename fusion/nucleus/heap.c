@@ -733,7 +733,7 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
     return 0;
 }
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
 
 #include <asm/io.h>
 #include <linux/miscdevice.h>

@@ -179,7 +179,7 @@ static inline __attribute_const__ unsigned long ffnz (unsigned long word) {
 #include <nucleus/asm/atomic.h>
 #include <asm/processor.h>
 #include <io_ports.h>
-#if CONFIG_X86_LOCAL_APIC
+#ifdef CONFIG_X86_LOCAL_APIC
 #include <asm/fixmap.h>
 #include <asm/apic.h>
 #endif /* CONFIG_X86_LOCAL_APIC */
@@ -207,13 +207,13 @@ extern adomain_t rthal_domain;
 #define RTHAL_CPU_FREQ    (rthal_tunables.cpu_freq)
 #define RTHAL_8254_IRQ    0
 
-#if CONFIG_X86_LOCAL_APIC
+#ifdef CONFIG_X86_LOCAL_APIC
 #define RTHAL_APIC_TIMER_VECTOR    ADEOS_SERVICE_VECTOR3
 #define RTHAL_APIC_TIMER_IPI       ADEOS_SERVICE_IPI3
 #define RTHAL_APIC_ICOUNT	   ((RTHAL_TIMER_FREQ + HZ/2)/HZ)
 #endif /* CONFIG_X86_LOCAL_APIC */
 
-#if CONFIG_X86_TSC
+#ifdef CONFIG_X86_TSC
 static inline unsigned long long rthal_rdtsc (void) {
     unsigned long long t;
     __asm__ __volatile__( "rdtsc" : "=A" (t));
@@ -315,7 +315,7 @@ static inline void rthal_set_timer_shot (unsigned long delay) {
     if (delay) {
         unsigned long flags;
         rthal_hw_lock(flags);
-#if CONFIG_X86_LOCAL_APIC
+#ifdef CONFIG_X86_LOCAL_APIC
 	apic_read(APIC_LVTT);
 	apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
 	apic_read(APIC_TMICT);
@@ -342,7 +342,7 @@ void rthal_set_linux_task_priority(struct task_struct *task,
 
     /* Public interface */
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 #include <linux/kernel.h>
 

@@ -54,7 +54,7 @@ static inline xnpipe_mh_t *link2mh (xnholder_t *laddr)
     return laddr ? ((xnpipe_mh_t *)(((char *)laddr) - (int)(&((xnpipe_mh_t *)0)->link))) : 0;
 }
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 #include <nucleus/synch.h>
 #include <nucleus/thread.h>

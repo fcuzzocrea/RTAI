@@ -21,7 +21,7 @@
 #ifndef _RTAI_ASM_I386_SYSTEM_H
 #define _RTAI_ASM_I386_SYSTEM_H
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -48,7 +48,7 @@
 typedef unsigned long spl_t;
 
 #define splhigh(x)  rthal_local_irq_save(x)
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 #define splexit(x)  rthal_local_irq_restore((x) & 1)
 #else /* !CONFIG_SMP */
 #define splexit(x)  rthal_local_irq_restore(x)
@@ -61,7 +61,7 @@ typedef unsigned long spl_t;
 typedef struct {
 
     volatile unsigned long lock;
-#if CONFIG_RTAI_OPT_DEBUG
+#ifdef CONFIG_RTAI_OPT_DEBUG
     const char *file;
     const char *function;
     unsigned line;
@@ -69,7 +69,7 @@ typedef struct {
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 } xnlock_t;
 
-#if !CONFIG_RTAI_OPT_DEBUG
+#ifndef CONFIG_RTAI_OPT_DEBUG
 #define XNARCH_LOCK_UNLOCKED (xnlock_t) { 0 }
 #else
 #define XNARCH_LOCK_UNLOCKED (xnlock_t) {       \
@@ -80,9 +80,9 @@ typedef struct {
         }
 #endif /* !CONFIG_RTAI_OPT_DEBUG */
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 
-#if !CONFIG_RTAI_OPT_DEBUG
+#ifndef CONFIG_RTAI_OPT_DEBUG
 #define xnlock_get_irqsave(lock,x)  ((x) = __xnlock_get_irqsave(lock))
 #else /* !CONFIG_RTAI_OPT_DEBUG */
 #define xnlock_get_irqsave(lock,x) \
@@ -96,7 +96,7 @@ static inline void xnlock_init (xnlock_t *lock) {
     *lock = XNARCH_LOCK_UNLOCKED;
 }
 
-#if CONFIG_RTAI_OPT_DEBUG
+#ifdef CONFIG_RTAI_OPT_DEBUG
 #define XNARCH_DEBUG_SPIN_LIMIT 3000000
 
 static inline spl_t
@@ -123,7 +123,7 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
                 {
                 cpu_relax();
 
-#if CONFIG_RTAI_OPT_DEBUG
+#ifdef CONFIG_RTAI_OPT_DEBUG
                 if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
                     {
                     adeos_set_printk_sync(adp_current);
@@ -140,7 +140,7 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
 #endif /* CONFIG_RTAI_OPT_DEBUG */
                 }
 
-#if CONFIG_RTAI_OPT_DEBUG
+#ifdef CONFIG_RTAI_OPT_DEBUG
 	lock->file = file;
 	lock->function = function;
 	lock->line = line;
@@ -189,7 +189,7 @@ case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
 #define XNARCH_NR_CPUS               RTHAL_NR_CPUS
 
 #define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
-#if CONFIG_X86_LOCAL_APIC
+#ifdef CONFIG_X86_LOCAL_APIC
 /* When the local APIC is enabled, we do not need to relay the host
    tick since 8254 interrupts are already flowing normally to Linux
    (i.e. the nucleus does not intercept it, but rather an APIC-based
@@ -221,7 +221,7 @@ case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
 #define xnarch_get_cpu_tsc           rthal_rdtsc
 
 typedef cpumask_t xnarch_cpumask_t;
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 #define xnarch_cpu_online_map            cpu_online_map
 #else
 #define xnarch_cpu_online_map		 cpumask_of_cpu(0)
@@ -358,7 +358,7 @@ static inline int xnarch_setimask (int imask)
     return !!s;
 }
 
-#if XENO_INTR_MODULE
+#ifdef XENO_INTR_MODULE
 
 static inline int xnarch_hook_irq (unsigned irq,
 				   void (*handler)(unsigned irq,
@@ -406,7 +406,7 @@ static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
 
 #endif /* XENO_INTR_MODULE */
 
-#if XENO_POD_MODULE
+#ifdef XENO_POD_MODULE
 
 void xnpod_welcome_thread(struct xnthread *);
 
@@ -619,7 +619,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     *--(*psp) = 0;
 }
 
-#if CONFIG_RTAI_HW_FPU
+#ifdef CONFIG_RTAI_HW_FPU
 
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 
@@ -695,7 +695,7 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
 #endif /* CONFIG_RTAI_HW_FPU */
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 
 static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
 
@@ -781,12 +781,12 @@ static inline int xnarch_release_ipi (void) {
 static inline void xnarch_notify_shutdown(void)
 
 {
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
     /* The HAL layer also sets the same CPU affinity so that both
        modules keep their execution sequence on SMP boxen. */
     set_cpus_allowed(current,cpumask_of_cpu(0));
 #endif /* CONFIG_SMP */
-#if CONFIG_RTAI_OPT_FUSION
+#ifdef CONFIG_RTAI_OPT_FUSION
     xnshadow_release_events();
 #endif /* CONFIG_RTAI_OPT_FUSION */
     /* Wait for the currently processed events to drain. */
@@ -815,14 +815,14 @@ static inline int xnarch_escalate (void)
 static void xnarch_notify_ready (void)
 
 {
-#if CONFIG_RTAI_OPT_FUSION    
+#ifdef CONFIG_RTAI_OPT_FUSION    
     xnshadow_grab_events();
 #endif /* CONFIG_RTAI_OPT_FUSION */
 }
 
 #endif /* XENO_POD_MODULE */
 
-#if XENO_THREAD_MODULE
+#ifdef XENO_THREAD_MODULE
 
 static inline void xnarch_init_tcb (xnarchtcb_t *tcb)
 {
@@ -836,7 +836,7 @@ static inline void xnarch_init_tcb (xnarchtcb_t *tcb)
 
 #endif /* XENO_THREAD_MODULE */
 
-#if XENO_SHADOW_MODULE
+#ifdef XENO_SHADOW_MODULE
 
 static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 					   struct xnthread *thread,
@@ -873,7 +873,7 @@ static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
 	{
 	switch (irq)
 	    {
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 	    case ADEOS_CRITICAL_IPI:
 	    case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
 	    case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
@@ -899,7 +899,7 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 	{
 	switch (irq)
 	    {
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 	    case ADEOS_CRITICAL_IPI:
 	    case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
 	    case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
@@ -917,7 +917,7 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 
 #endif /* XENO_SHADOW_MODULE */
 
-#if XENO_TIMER_MODULE
+#ifdef XENO_TIMER_MODULE
 
 static inline void xnarch_program_timer_shot (unsigned long delay) {
     /* Even though some architectures may use a 64 bits delay here, we
@@ -934,7 +934,7 @@ static inline void xnarch_stop_timer (void) {
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask)
 
 {
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
     return adeos_send_ipi(RTHAL_APIC_TIMER_IPI, mask);
 #else /* ! CONFIG_SMP */
     return 0;
@@ -945,7 +945,7 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 					unsigned long long *delivery,
 					unsigned long long defval)
 {
-#if CONFIG_ADEOS_PROFILING
+#ifdef CONFIG_ADEOS_PROFILING
     int cpuid = adeos_processor_id();
     *shot = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_handled;
     *delivery = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_synced;
@@ -957,7 +957,7 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 
 #endif /* XENO_TIMER_MODULE */
 
-#if XENO_HEAP_MODULE
+#ifdef XENO_HEAP_MODULE
 
 static inline void xnarch_init_heapcb (xnarch_heapcb_t *hcb)
 
@@ -982,7 +982,7 @@ static inline int xnarch_remap_page_range(struct vm_area_struct *vma,
 
 #endif /* XENO_HEAP_MODULE */
 
-#if XENO_MAIN_MODULE
+#ifdef XENO_MAIN_MODULE
 
 #include <linux/init.h>
 #include <nucleus/asm/calibration.h>
@@ -1044,7 +1044,7 @@ static inline int xnarch_init (void)
 {
     int err;
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
     /* The HAL layer also sets the same CPU affinity so that both
        modules keep their execution sequence on SMP boxen. */
     set_cpus_allowed(current,cpumask_of_cpu(0));
@@ -1068,7 +1068,7 @@ static inline int xnarch_init (void)
 
     xnarch_old_trap_handler = rthal_set_trap_handler(&xnarch_trap_fault);
 
-#if CONFIG_RTAI_OPT_FUSION
+#ifdef CONFIG_RTAI_OPT_FUSION
     err = xnshadow_mount();
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
@@ -1084,7 +1084,7 @@ static inline int xnarch_init (void)
 static inline void xnarch_exit (void)
 
 {
-#if CONFIG_RTAI_OPT_FUSION
+#ifdef CONFIG_RTAI_OPT_FUSION
     xnshadow_cleanup();
 #endif /* CONFIG_RTAI_OPT_FUSION */
     rthal_set_trap_handler(xnarch_old_trap_handler);
@@ -1093,12 +1093,12 @@ static inline void xnarch_exit (void)
 
 #endif /* XENO_MAIN_MODULE */
 
-#if XENO_TRACES_MODULE
+#ifdef XENO_TRACES_MODULE
 
 #include <asm/timex.h>          /* For cpu_khz */
 #include <linux/kernel_stat.h>  /* For kstat_irqs */
 
-#if CONFIG_X86_LOCAL_APIC
+#ifdef CONFIG_X86_LOCAL_APIC
 
 #define RTAI_TRACE_TIMER_IRQ       RTHAL_APIC_TIMER_IPI
 #define linux_timer_irq_count(cpu) (irq_stat[(cpu)].apic_timer_irqs)

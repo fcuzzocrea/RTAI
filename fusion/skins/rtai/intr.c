@@ -130,7 +130,7 @@ int rt_intr_create (RT_INTR *intr,
 	return -EPERM;
 
     xnintr_init(&intr->intr_base,irq,isr,0);
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     xnsynch_init(&intr->synch_base,XNSYNCH_PRIO);
     intr->pending = 0;
     intr->cpid = 0;
@@ -145,7 +145,7 @@ int rt_intr_create (RT_INTR *intr,
 
     err = xnintr_attach(&intr->intr_base,intr);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
@@ -216,12 +216,12 @@ int rt_intr_delete (RT_INTR *intr)
         }
     
     removeq(&__rtai_intr_q,&intr->link);
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     rc = xnsynch_destroy(&intr->synch_base);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     xnintr_detach(&intr->intr_base);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (intr->handle)
         rt_registry_remove(intr->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */

@@ -718,7 +718,7 @@ static int __rt_timer_inquire (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
-#if CONFIG_RTAI_OPT_NATIVE_SEM
+#ifdef CONFIG_RTAI_OPT_NATIVE_SEM
 
 /*
  * int __rt_sem_create(RT_SEM_PLACEHOLDER *ph,
@@ -934,7 +934,7 @@ static int __rt_sem_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_SEM */
 
-#if CONFIG_RTAI_OPT_NATIVE_EVENT
+#ifdef CONFIG_RTAI_OPT_NATIVE_EVENT
 
 /*
  * int __rt_event_create(RT_EVENT_PLACEHOLDER *ph,
@@ -1181,7 +1181,7 @@ static int __rt_event_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
 
-#if CONFIG_RTAI_OPT_NATIVE_MUTEX
+#ifdef CONFIG_RTAI_OPT_NATIVE_MUTEX
 
 /*
  * int __rt_mutex_create(RT_MUTEX_PLACEHOLDER *ph,
@@ -1362,7 +1362,7 @@ static int __rt_mutex_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
-#if CONFIG_RTAI_OPT_NATIVE_COND
+#ifdef CONFIG_RTAI_OPT_NATIVE_COND
 
 /*
  * int __rt_cond_create(RT_COND_PLACEHOLDER *ph,
@@ -1579,7 +1579,7 @@ static int __rt_cond_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_COND */
 
-#if CONFIG_RTAI_OPT_NATIVE_QUEUE
+#ifdef CONFIG_RTAI_OPT_NATIVE_QUEUE
 
 /*
  * int __rt_queue_create(RT_QUEUE_PLACEHOLDER *ph,
@@ -2008,7 +2008,7 @@ static int __rt_queue_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_QUEUE */
 
-#if CONFIG_RTAI_OPT_NATIVE_HEAP
+#ifdef CONFIG_RTAI_OPT_NATIVE_HEAP
 
 /*
  * int __rt_heap_create(RT_HEAP_PLACEHOLDER *ph,
@@ -2319,7 +2319,7 @@ static int __rt_heap_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
-#if CONFIG_RTAI_OPT_NATIVE_ALARM
+#ifdef CONFIG_RTAI_OPT_NATIVE_ALARM
 
 static void __rt_alarm_handler (RT_ALARM *alarm, void *cookie)
 
@@ -2547,7 +2547,7 @@ static int __rt_alarm_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_ALARM */
 
-#if CONFIG_RTAI_OPT_NATIVE_INTR
+#ifdef CONFIG_RTAI_OPT_NATIVE_INTR
 
 static int __rt_intr_handler (xnintr_t *cookie)
 

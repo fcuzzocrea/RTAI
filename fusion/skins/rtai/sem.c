@@ -45,7 +45,7 @@
 #include <rtai/sem.h>
 #include <rtai/registry.h>
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __sem_read_proc (char *page,
 				char **start,
@@ -183,11 +183,11 @@ int rt_sem_create (RT_SEM *sem,
     sem->magic = RTAI_SEM_MAGIC;
     xnobject_copy_name(sem->name,name);
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     sem->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
@@ -256,7 +256,7 @@ int rt_sem_delete (RT_SEM *sem)
     
     rc = xnsynch_destroy(&sem->synch_base);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (sem->handle)
         rt_registry_remove(sem->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */

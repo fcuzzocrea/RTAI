@@ -105,7 +105,7 @@ void xntimer_init (xntimer_t *timer,
     timer->interval = 0;
     timer->date = XN_INFINITE;
     timer->prio = XNTIMER_STDPRIO;
-#if CONFIG_RTAI_OPT_PERCPU_TIMER
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     timer->sched = xnpod_current_sched();
 #else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
     timer->sched = xnpod_sched_slot(XNTIMER_KEEPER_ID);
@@ -163,7 +163,7 @@ static inline void xntimer_dequeue_periodic (xntimer_t *timer)
     __setbits(timer->status,XNTIMER_DEQUEUED);
 }
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 
 static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
 
@@ -279,7 +279,7 @@ int xntimer_start (xntimer_t *timer,
 
     if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	{
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
 	    xntimer_dequeue_aperiodic(timer);
 	else
@@ -289,7 +289,7 @@ int xntimer_start (xntimer_t *timer,
 
     if (value != XN_INFINITE)
 	{
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
 	    {
 	    timer->date = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(value);
@@ -355,7 +355,7 @@ void xntimer_stop (xntimer_t *timer)
 
     if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	{
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
 	    {
 	    int heading = xntimer_heading_p(timer);
@@ -374,7 +374,7 @@ void xntimer_stop (xntimer_t *timer)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 /**
  * Migrate a timer.
  *
@@ -394,7 +394,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 {
     int err = 0;
 
-#if CONFIG_RTAI_OPT_PERCPU_TIMER
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     int queued;
     spl_t s;
 
@@ -424,7 +424,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 
     if (queued)
         {
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (!testbits(nkpod->status,XNTMPER))
             {
             xntimer_enqueue_aperiodic(timer);
@@ -484,7 +484,7 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
     if (!xntimer_active_p(timer))
 	return XN_INFINITE;
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	return xnarch_tsc_to_ns(xntimer_date(timer));
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -531,7 +531,7 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
     if (!xntimer_active_p(timer))
 	return XN_INFINITE;
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	{
         xnticks_t tsc = xnarch_get_cpu_tsc();
@@ -575,7 +575,7 @@ void xntimer_do_timers (void)
     xnqueue_t *timerq, reschedq;
     xntimer_t *timer;
     xnticks_t now;
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     int aperiodic = !testbits(nkpod->status,XNTMPER);
 
     if (aperiodic)
@@ -591,7 +591,7 @@ void xntimer_do_timers (void)
            monotonous (when the per-cpu timer option is enabled,
            this routine is run on every cpu, so that only
            CPU XNTIMER_KEEPER_ID should do this). */
-#if CONFIG_RTAI_OPT_PERCPU_TIMER
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
         if (sched == xnpod_sched_slot(XNTIMER_KEEPER_ID))
 #endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
             {
@@ -611,7 +611,7 @@ void xntimer_do_timers (void)
 	nextholder = nextq(timerq,holder);
 	timer = link2timer(holder);
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)
 	    {
 	    if (timer->date - nkschedlat > now)
@@ -625,7 +625,7 @@ void xntimer_do_timers (void)
 	    if (timer->date > now)
 		continue;
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)
 	    xntimer_dequeue_aperiodic(timer);
 	else
@@ -655,7 +655,7 @@ void xntimer_do_timers (void)
 	       dispatching loop is over. */
 	    appendq(&reschedq,&timer->link);
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)
 	    now = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -667,7 +667,7 @@ void xntimer_do_timers (void)
 	{
 	timer = link2timer(holder);
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)
 	    {
 	    timer->date += timer->interval;
@@ -681,7 +681,7 @@ void xntimer_do_timers (void)
 	    }
 	}
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (aperiodic)
 	xntimer_next_local_shot(sched);
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -711,7 +711,7 @@ void xntimer_do_timers (void)
 void xntimer_freeze (void)
 
 {
-#if CONFIG_RTAI_OPT_PERCPU_TIMER
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     int nr_cpus;
 #endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
     int n, cpu;
@@ -724,7 +724,7 @@ void xntimer_freeze (void)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	goto unlock_and_exit;
 
-#if CONFIG_RTAI_OPT_PERCPU_TIMER
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     nr_cpus = xnarch_num_online_cpus();
     for (cpu = 0; cpu < nr_cpus; cpu++)
 #else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */

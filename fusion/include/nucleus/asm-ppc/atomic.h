@@ -22,7 +22,7 @@
 
 #include <asm/atomic.h>
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 #include <linux/bitops.h>
 #include <asm/system.h>
@@ -71,7 +71,7 @@ static inline unsigned long atomic_cmpxchg (volatile void *ptr,
 	PPC405_ERR77(0,%2) \
 "	stwcx.	%4,0,%2 \n\
 	bne-	1b\n"
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 "	sync\n"
 #endif /* CONFIG_SMP */
 "2:"
@@ -99,7 +99,7 @@ static inline unsigned long atomic_xchg (volatile void *ptr,
     return prev;
 }
 
-#if CONFIG_SMP
+#ifdef CONFIG_SMP
 #define SMP_SYNC  "sync"
 #define SMP_ISYNC "\n\tisync"
 #else /* !CONFIG_SMP */

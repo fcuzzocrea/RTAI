@@ -44,7 +44,7 @@ typedef struct rt_sem_placeholder {
     rt_handle_t opaque;
 } RT_SEM_PLACEHOLDER;
 
-#if __KERNEL__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #define RTAI_SEM_MAGIC 0x55550303
 
@@ -62,7 +62,7 @@ typedef struct rt_sem {
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     pid_t cpid;			/* !< Creator's pid. */
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

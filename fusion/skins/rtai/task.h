@@ -79,7 +79,7 @@ typedef struct rt_task_info {
 
 } RT_TASK_INFO;
 
-#if __KERNEL__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #define RTAI_TASK_MAGIC 0x55550101
 

@@ -47,7 +47,7 @@ typedef struct rt_event_placeholder {
     rt_handle_t opaque;
 } RT_EVENT_PLACEHOLDER;
 
-#if __KERNEL__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #define RTAI_EVENT_MAGIC 0x55550404
 

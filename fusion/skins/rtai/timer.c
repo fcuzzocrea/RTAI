@@ -66,7 +66,7 @@
 SRTIME rt_timer_ns2ticks (SRTIME ns)
 
 {
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	return xnarch_ns_to_tsc(ns);
     else
@@ -107,7 +107,7 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
 SRTIME rt_timer_ticks2ns (SRTIME ticks)
 
 {
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	return xnarch_tsc_to_ns(ticks);
     else

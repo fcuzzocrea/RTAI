@@ -19,7 +19,7 @@
 #ifndef _RTAI_SYSCALL_H
 #define _RTAI_SYSCALL_H
 
-#if !__RTAI_SIM__
+#ifndef __RTAI_SIM__
 #include <nucleus/syscall.h>
 #endif /* __RTAI_SIM__ */
 
@@ -114,7 +114,7 @@ struct rt_arg_bulk {
     u_long a5;
 };
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 #ifdef __cplusplus
 extern "C" {

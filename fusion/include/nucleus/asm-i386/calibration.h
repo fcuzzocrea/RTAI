@@ -32,7 +32,7 @@ static inline unsigned long xnarch_get_sched_latency (void)
 #define __sched_latency CONFIG_RTAI_HW_SCHED_LATENCY
 #else
 
-#if CONFIG_X86_LOCAL_APIC
+#ifdef CONFIG_X86_LOCAL_APIC
 #define __sched_latency 4800
 #else /* !CONFIG_X86_LOCAL_APIC */
 

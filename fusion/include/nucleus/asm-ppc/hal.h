@@ -277,7 +277,7 @@ void rthal_set_linux_task_priority(struct task_struct *task,
 void rthal_switch_context(unsigned long *out_kspp,
 			  unsigned long *in_kspp);
 
-#if CONFIG_RTAI_HW_FPU
+#ifdef CONFIG_RTAI_HW_FPU
 
 typedef struct rthal_fpenv {
     
@@ -298,7 +298,7 @@ void rthal_save_fpu(rthal_fpenv_t *fpuenv);
 
 void rthal_restore_fpu(rthal_fpenv_t *fpuenv);
 
-#if !CONFIG_SMP
+#ifndef CONFIG_SMP
 #define rthal_get_fpu_owner(cur) last_task_used_math
 #else /* CONFIG_SMP */
 #define rthal_get_fpu_owner(cur) ({                             \
@@ -323,7 +323,7 @@ void rthal_restore_fpu(rthal_fpenv_t *fpuenv);
 
     /* Public interface */
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 #include <linux/kernel.h>
 

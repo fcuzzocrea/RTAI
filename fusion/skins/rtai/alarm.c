@@ -123,12 +123,12 @@ int rt_alarm_create (RT_ALARM *alarm,
     alarm->cookie = cookie;
     xnobject_copy_name(alarm->name,name);
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     xnsynch_init(&alarm->synch_base,XNSYNCH_PRIO);
     alarm->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
@@ -200,7 +200,7 @@ int rt_alarm_delete (RT_ALARM *alarm)
     xnsynch_destroy(&alarm->synch_base);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (alarm->handle)
         rt_registry_remove(alarm->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */

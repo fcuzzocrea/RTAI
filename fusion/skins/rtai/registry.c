@@ -68,7 +68,7 @@ static int __rtai_hash_entries;
 
 static xnsynch_t __rtai_hash_synch;
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 #include <linux/workqueue.h>
 
@@ -104,7 +104,7 @@ int __registry_pkg_init (void)
 
     int n;
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
     registry_proc_virq = adeos_alloc_irq();
 
@@ -159,7 +159,7 @@ void __registry_pkg_cleanup (void)
 	    {
 	    enext = ecurr->next;
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 	    if (ecurr->object && ecurr->object->pnode)
 		{
@@ -181,7 +181,7 @@ void __registry_pkg_cleanup (void)
 
     xnsynch_destroy(&__rtai_hash_synch);
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
     adeos_free_irq(registry_proc_virq);
     flush_scheduled_work();
     remove_proc_entry("registry",rthal_proc_root);
@@ -200,7 +200,7 @@ static inline RT_OBJECT *__registry_validate (rt_handle_t handle)
     return NULL;
 }
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 /* The following stuff implements the mechanism for delegating
    export/unexport requests to/from the /proc interface from the RTAI
@@ -578,7 +578,7 @@ int rt_registry_enter (const char *key,
        rescheduling takes place. */
     *phandle = object - __rtai_obj_slots;
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
     if (pnode)
 	__registry_proc_export(object,pnode);
     else
@@ -780,7 +780,7 @@ int rt_registry_remove (rt_handle_t handle)
     object->objaddr = NULL;
     object->cstamp = 0;
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
     if (object->pnode)
 	__registry_proc_unexport(object);

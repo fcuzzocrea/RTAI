@@ -66,16 +66,16 @@ int __init xnltt_mount (void)
 	xnltt_evtable[ev].ltt_evid = evid;
 	}
 
-#if CONFIG_RTAI_OPT_FILTER_EVALL
+#ifdef CONFIG_RTAI_OPT_FILTER_EVALL
     xnltt_filter = ~rtai_evall;
 #else /* !CONFIG_RTAI_OPT_FILTER_EVALL */
-#if CONFIG_RTAI_OPT_FILTER_EVIRQ
+#ifdef CONFIG_RTAI_OPT_FILTER_EVIRQ
     xnltt_filter &= ~rtai_evirq;
 #endif /* CONFIG_RTAI_OPT_FILTER_EVIRQ */
-#if CONFIG_RTAI_OPT_FILTER_EVTHR
+#ifdef CONFIG_RTAI_OPT_FILTER_EVTHR
     xnltt_filter &= ~rtai_evthr;
 #endif /* CONFIG_RTAI_OPT_FILTER_EVTHR */
-#if CONFIG_RTAI_OPT_FILTER_EVSYS
+#ifdef CONFIG_RTAI_OPT_FILTER_EVSYS
     xnltt_filter &= ~rtai_evthr;
 #endif /* CONFIG_RTAI_OPT_FILTER_EVSYS */
 #endif /* CONFIG_RTAI_OPT_FILTER_EVALL */

@@ -61,7 +61,7 @@
 #define XNTHREAD_MODE_BITS    (XNLOCK|XNRRB|XNASDI|XNSHIELD)
 #define XNTHREAD_SYSTEM_BITS  (XNROOT)
 
-#if __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
 /* These flags are available to the real-time interfaces */
 #define XNTHREAD_SPARE0  0x10000000
@@ -70,7 +70,7 @@
 #define XNTHREAD_SPARE3  0x80000000
 #define XNTHREAD_SPARES  0xf0000000
 
-#if __RTAI_SIM__
+#ifdef __RTAI_SIM__
 #define XNRUNNING  XNTHREAD_SPARE0	/* Pseudo-status (must not conflict with system bits) */
 #define XNDELETED  XNTHREAD_SPARE1	/* idem. */
 #endif /* __RTAI_SIM__ */

@@ -31,7 +31,7 @@
 #define FUSION_MIN_PRIO     FUSION_LOW_PRIO
 #define FUSION_MAX_PRIO     FUSION_IRQ_PRIO
 
-#if !__RTAI_SIM__
+#ifndef __RTAI_SIM__
 
 #include <nucleus/syscall.h>
 
@@ -66,7 +66,7 @@ typedef long long nanostime_t;
 extern "C" {
 #endif /* __cplusplus */
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 int xnfusion_mount(void);
 

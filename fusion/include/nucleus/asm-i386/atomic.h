@@ -22,7 +22,7 @@
 
 #include <linux/bitops.h>
 
-#if __KERNEL__
+#ifdef __KERNEL__
 
 #include <asm/atomic.h>
 #include <asm/system.h>

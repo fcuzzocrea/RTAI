@@ -42,7 +42,7 @@
 #include <rtai/event.h>
 #include <rtai/registry.h>
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __event_read_proc (char *page,
 				char **start,
@@ -180,11 +180,11 @@ int rt_event_create (RT_EVENT *event,
     event->magic = RTAI_EVENT_MAGIC;
     xnobject_copy_name(event->name,name);
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     event->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
@@ -253,7 +253,7 @@ int rt_event_delete (RT_EVENT *event)
     
     rc = xnsynch_destroy(&event->synch_base);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (event->handle)
         rt_registry_remove(event->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */

@@ -45,7 +45,7 @@
 #include <rtai/cond.h>
 #include <rtai/registry.h>
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __cond_read_proc (char *page,
 				 char **start,
@@ -156,11 +156,11 @@ int rt_cond_create (RT_COND *cond,
     cond->magic = RTAI_COND_MAGIC;
     xnobject_copy_name(cond->name,name);
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     cond->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
@@ -232,7 +232,7 @@ int rt_cond_delete (RT_COND *cond)
     
     rc = xnsynch_destroy(&cond->synch_base);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (cond->handle)
         rt_registry_remove(cond->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */

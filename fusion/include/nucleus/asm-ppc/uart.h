@@ -28,7 +28,6 @@
 
 #define TTYS0  { 0xfe0003f8, 4 }
 #define TTYS1  { 0xfe0002f8, 3 }
-
 #else
 #error "UART configuration is undefined for this PowerPC platform"
 #endif

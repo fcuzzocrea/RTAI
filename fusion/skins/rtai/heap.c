@@ -46,7 +46,7 @@
 #include <rtai/heap.h>
 #include <rtai/registry.h>
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __heap_read_proc (char *page,
 				 char **start,
@@ -237,13 +237,13 @@ int rt_heap_create (RT_HEAP *heap,
     heapsize += xnheap_overhead(heapsize,PAGE_SIZE);
     heapsize = PAGE_ALIGN(heapsize);
 
-#if __KERNEL__
+#ifdef __KERNEL__
     if (mode & H_SHARED)
 	{
 	if (!name || !*name)
 	    return -EINVAL;
 
-#if CONFIG_RTAI_OPT_FUSION
+#ifdef CONFIG_RTAI_OPT_FUSION
 	err = xnheap_init_shared(&heap->heap_base,
 				 heapsize,
 				 (mode & H_DMA) ? GFP_DMA : 0);
@@ -281,7 +281,7 @@ int rt_heap_create (RT_HEAP *heap,
     heap->shm_block = NULL;
     xnobject_copy_name(heap->name,name);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
@@ -347,7 +347,7 @@ int rt_heap_delete (RT_HEAP *heap)
         goto unlock_and_exit;
         }
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (heap->mode & H_SHARED)
 	err = xnheap_destroy_shared(&heap->heap_base);
     else
@@ -359,7 +359,7 @@ int rt_heap_delete (RT_HEAP *heap)
 
     rc = xnsynch_destroy(&heap->synch_base);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (heap->handle)
         rt_registry_remove(heap->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */

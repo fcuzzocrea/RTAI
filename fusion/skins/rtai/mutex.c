@@ -44,7 +44,7 @@
 #include <rtai/mutex.h>
 #include <rtai/registry.h>
 
-#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __mutex_read_proc (char *page,
 				  char **start,
@@ -162,11 +162,11 @@ int rt_mutex_create (RT_MUTEX *mutex,
     mutex->lockcnt = 0;
     xnobject_copy_name(mutex->name,name);
 
-#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     mutex->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
@@ -235,7 +235,7 @@ int rt_mutex_delete (RT_MUTEX *mutex)
     
     rc = xnsynch_destroy(&mutex->synch_base);
 
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (mutex->handle)
         rt_registry_remove(mutex->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */

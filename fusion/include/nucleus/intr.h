@@ -26,7 +26,7 @@
 #define XN_ISR_CHAINED   0x1
 #define XN_ISR_ENABLE    0x2
 
-#if __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__
+#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
 struct xnintr;
 

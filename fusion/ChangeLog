@@ -1,3 +1,10 @@
+2005-02-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/hal.c (faults_read_proc): Add proc entry to
+	display faults occurring in real-time mode. This is an attempt to
+	provide more debugging info to chase spurious latencies induced by
+	fault recovery.
+
 2005-02-23  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* nucleus/timer.c (xntimer_set_sched): Remove superfluous check

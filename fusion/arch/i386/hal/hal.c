@@ -101,6 +101,8 @@ static struct {
 
 } rthal_sysreq_table[RTHAL_NR_SRQS];
 
+static int rthal_realtime_faults[RTHAL_NR_CPUS][ADEOS_NR_FAULTS];
+
 static int rthal_init_done;
 
 static unsigned rthal_sysreq_virq;
@@ -500,7 +502,8 @@ int rthal_enable_irq (unsigned irq)
  * Disable an IRQ source.
  *
  */
-int rthal_disable_irq (unsigned irq) {
+int rthal_disable_irq (unsigned irq)
+{
 
     if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
@@ -772,6 +775,8 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 
     if (evinfo->domid == RTHAL_DOMAIN_ID)
 	{
+	rthal_realtime_faults[cpuid][evinfo->event]++;
+
 	if (evinfo->event == 7)
 	    {
 	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
@@ -965,6 +970,64 @@ static int irq_read_proc (char *page,
     return len;
 }
 
+static int faults_read_proc (char *page,
+			     char **start,
+			     off_t off,
+			     int count,
+			     int *eof,
+			     void *data)
+{
+    static char *fault_labels[] = {
+	[0] = "Divide error",
+	[1] = "Debug",
+	[2] = "--",
+	[3] = "Int3",
+	[4] = "Overflow",
+	[5] = "Bounds",
+	[6] = "Invalid opcode",
+	[7] = "FPU not available",
+	[8] = "Double fault",
+	[9] = "FPU segment overrun",
+	[10] = "Invalid TSS",
+	[11] = "Segment not present",
+	[12] = "Stack segment",
+	[13] = "General protection",
+	[14] = "Page fault",
+	[15] = "Spurious interrupt",
+	[16] = "FPU error",
+	[17] = "Alignment check",
+	[18] = "Machine check",
+	[19] = "SIMD error",
+    };
+    int len = 0, cpuid, trap;
+    char *p = page;
+
+    p += sprintf(p,"TRAP ");
+
+    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	p += sprintf(p,"        CPU%d",cpuid);
+
+    for (trap = 0; trap < 20; trap++)
+	{
+	p += sprintf(p,"\n%3d:",trap);
+
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	    p += sprintf(p," %12d   (%s)",
+			 rthal_realtime_faults[cpuid][trap],
+			 fault_labels[trap]);
+	}
+
+    p += sprintf(p,"\n");
+
+    len = p - page - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if (len > count) len = count;
+    if (len < 0) len = 0;
+
+    return len;
+}
+
 static struct proc_dir_entry *add_proc_leaf (const char *name,
 					     read_proc_t rdproc,
 					     write_proc_t wrproc,
@@ -1018,6 +1081,12 @@ static int rthal_proc_register (void)
 		  NULL,
 		  NULL,
 		  rthal_proc_root);
+
+    add_proc_leaf("faults",
+		  &faults_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
     return 0;
 }
 
@@ -1027,6 +1096,7 @@ static void rthal_proc_unregister (void)
     remove_proc_entry("hal",rthal_proc_root);
     remove_proc_entry("compiler",rthal_proc_root);
     remove_proc_entry("irq",rthal_proc_root);
+    remove_proc_entry("faults",rthal_proc_root);
     remove_proc_entry("rtai",NULL);
 }
 

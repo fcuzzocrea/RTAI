@@ -1899,6 +1899,8 @@ static struct mmreq {
 static void lxrt_intercept_schedule_head (adevinfo_t *evinfo)
 
 {
+    INTERCEPT_IRQ_ENABLE();
+
     struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))evinfo->evdata;
     struct task_struct *prev = evdata->prev;
 
@@ -1932,6 +1934,8 @@ static void lxrt_intercept_schedule_head (adevinfo_t *evinfo)
 static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 
 {
+	INTERCEPT_IRQ_ENABLE();
+
 	int cpuid;
 	if (in_hrt_mode(cpuid = smp_processor_id())) {
 /* About to resume after the transition to hard LXRT mode.  Do
@@ -1987,6 +1991,8 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 
 static void lxrt_intercept_signal (adevinfo_t *evinfo)
 {
+	INTERCEPT_IRQ_ENABLE();
+
 	struct { struct task_struct *task; int sig; } *evdata = (__typeof(evdata))evinfo->evdata;
 	struct task_struct *lnxtsk = evdata->task;
 	RT_TASK *task = lnxtsk->rtai_tskext[0];
@@ -2004,6 +2010,8 @@ static void lxrt_intercept_signal (adevinfo_t *evinfo)
 
 static void lxrt_intercept_exit (adevinfo_t *evinfo)
 {
+	INTERCEPT_IRQ_ENABLE();
+
 	extern void linux_process_termination(void);
 	RT_TASK *task = current->rtai_tskext[0];
 	if (task) {
@@ -2019,6 +2027,8 @@ extern long long rtai_lxrt_invoke (unsigned long, void *);
 
 static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 {
+	INTERCEPT_IRQ_ENABLE();
+
 #ifdef USE_LINUX_SYSCALL
 	struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
 	unsigned long orig_eax;
@@ -2056,6 +2066,8 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 
 static void lxrt_intercept_syscall_epilogue(adevinfo_t *evinfo)
 {
+	INTERCEPT_IRQ_ENABLE();
+
 	RT_TASK *task;
 	if (current->rtai_tskext[0] && (task = (RT_TASK *)current->rtai_tskext[0])->is_hard > 1) {
 		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););

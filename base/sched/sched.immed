@@ -739,7 +739,7 @@ static int rt_schedule_on_schedule_ipi(void)
 	}
 sched_exit:
 	rtai_cli();
-	return 1;
+	return retval;
 }
 #endif
 

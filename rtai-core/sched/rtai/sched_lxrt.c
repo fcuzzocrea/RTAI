@@ -29,7 +29,7 @@ ACKNOWLEDGMENTS:
 #define USE_RTAI_TASKS  0
 #define ALLOW_RR        1
 #define ONE_SHOT        0
-#define NO_KTHREAD_B    1
+#define NO_KTHREAD_B    0
 
 #include <linux/module.h>
 #include <linux/kernel.h>

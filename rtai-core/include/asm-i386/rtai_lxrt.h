@@ -21,7 +21,7 @@
 #ifndef _RTAI_ASM_I386_LXRT_H
 #define _RTAI_ASM_I386_LXRT_H
 
-#define USE_LINUX_SYSCALL_FOR_LXRT
+//#define USE_LINUX_SYSCALL_FOR_LXRT
 
 #include <linux/version.h>
 

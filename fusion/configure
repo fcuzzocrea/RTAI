@@ -1120,7 +1120,7 @@ Optional Packages:
   --with-module-dir=<module-dir>
                           Installation directory for modules
   --with-linux-dir=<linux-dir>
-                          RTAI-enabled Linux kernel tree
+                          RTAI-enabled Linux kernel build tree
   --with-dbx-root         specify the Docbook XML root (that is, the directory
                           where docbookx.dtd should be found). Default is to
                           use well-known locations (or network if
@@ -20235,7 +20235,7 @@ if test "${enable_smi_detection+set}" = set; then
   echo "$enableval" >> /tmp/foo.log; case "$enableval" in
 	n | no) unset CONFIG_RTAI_HW_SMI_DETECT ;;
 	*) CONFIG_RTAI_HW_SMI_DETECT=y ;;
-	esac; echo "x$CONFIG_RTAI_HW_SMI_DETECT" >> /tmp/foo.log
+	esac;
 fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_HW_SMI_DETECT:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_HW_SMI_DETECT:-no}" >&6

@@ -1,5 +1,7 @@
 #include <unistd.h>
 #include <stdio.h>
+#include <string.h>
+#include <signal.h>
 #include <rtai/task.h>
 #include <rtai/timer.h>
 #include <rtai/sem.h>
@@ -80,7 +82,7 @@ void display (void *cookie)
 
     if (err)
 	{
-	printf("latency: cannot create semaphore, code %d\n",err);
+        printf("latency: cannot create semaphore: %s\n",strerror(-err));
 	return;
 	}
 
@@ -102,11 +104,22 @@ void display (void *cookie)
 	}
 }
 
+int sem_delete(int sig __attribute__((unused)))
+{
+    int err = rt_sem_delete(&display_sem);
+
+    if(err)
+        fprintf(stderr, "Warning: could not delete semaphore: %s.\n",
+                strerror(-err));
+}
+
 int main (int argc, char **argv)
 
 {
     int err;
 
+    signal(SIGINT, sem_delete);
+    
     err = rt_task_create(&display_task,"display",0,2,0);
 
     if (err)

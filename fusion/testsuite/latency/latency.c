@@ -20,6 +20,19 @@ long minjitter = 10000000,
      avgjitter = 0,
      overrun = 0;
 
+#define HISTOGRAM_CELLS 100
+
+unsigned long histogram[HISTOGRAM_CELLS];
+
+int do_histogram = 0;
+
+static inline void add_histogram (long addval)
+
+{
+    long inabs = (addval >= 0 ? addval : -addval) / 1000; /* us steps */
+    histogram[inabs < HISTOGRAM_CELLS ? inabs : HISTOGRAM_CELLS-1]++;
+}
+
 void latency (void *cookie)
 
 {
@@ -68,6 +81,9 @@ void latency (void *cookie)
 		if (dt > maxj) maxj = dt;
 		if (dt < minj) minj = dt;
 		sumj += dt;
+
+		if (do_histogram)
+		    add_histogram(dt);
 		}
 	    }
 
@@ -111,11 +127,29 @@ void display (void *cookie)
 	}
 }
 
+void dump_histogram (void)
+
+{
+    int n;
+  
+    for (n = 0; n < HISTOGRAM_CELLS; n++)
+	{
+	long hits = histogram[n];
+
+	if (hits)
+	    printf("< %d us: %ld\n",n + 1,hits);
+	}
+}
+
 void cleanup_upon_sig(int sig __attribute__((unused)))
 
 {
     rt_sem_delete(&display_sem);
     rt_timer_stop();
+
+    if (do_histogram)
+	dump_histogram();
+
     exit(0);
 }
 
@@ -123,6 +157,10 @@ int main (int argc, char **argv)
 
 {
     int err;
+
+    if (argc > 1 && strncmp(argv[1],"--h",3) == 0)
+	/* ./latency --h[istogram] */
+	do_histogram = 1;
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);

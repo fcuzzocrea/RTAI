@@ -595,7 +595,7 @@ install-exec-local: latency_rt$(modext)
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(testdir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(testdir)/.runinfo
-	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load" > $(DESTDIR)$(testdir)/run
+	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \\$*" > $(DESTDIR)$(testdir)/run
 	@chmod +x $(DESTDIR)$(testdir)/run
 
 uninstall-local:

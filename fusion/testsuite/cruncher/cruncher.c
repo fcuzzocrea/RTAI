@@ -2,6 +2,7 @@
 #include <sys/mman.h>
 #include <sys/param.h>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <semaphore.h>
@@ -15,6 +16,19 @@ static sem_t semX, semA, semB;
 static int sample_count;
 
 static int has_fusion;
+
+static int do_histogram = 0;
+
+#define HISTOGRAM_CELLS 100
+
+unsigned long histogram[HISTOGRAM_CELLS];
+
+static inline void add_histogram (long addval)
+
+{
+    long inabs = (addval >= 0 ? addval : -addval); /* percent steps */
+    histogram[inabs < HISTOGRAM_CELLS ? inabs : HISTOGRAM_CELLS-1]++;
+}
 
 static inline void get_time_us (suseconds_t *tp)
 
@@ -52,6 +66,20 @@ static inline double compute (void)
     return s;
 }
 
+void dump_histogram (void)
+
+{
+    int n;
+  
+    for (n = 0; n < HISTOGRAM_CELLS; n++)
+	{
+	long hits = histogram[n];
+
+	if (hits)
+	    printf("< %d%%: %ld\n",n + 1,hits);
+	}
+}
+
 void *cruncher_thread (void *arg)
 
 {
@@ -70,12 +98,14 @@ void *cruncher_thread (void *arg)
 	{
 	sem_wait(&semA);
         result = compute();
+
         if (result != ref)
             {
             fprintf(stderr, "Compute returned %f instead of %f, aborting.\n",
                     result, ref);
             exit(EXIT_FAILURE);
             }
+
 	sem_post(&semB);
 	}
 }
@@ -107,7 +137,6 @@ void *sampler_thread (void *arg)
     sleep(1);                   /* Let the cruncher compute the reference
                                    result, and the terminal display the previous
                                    message. */
-
     get_time_us(&t0);
 
     for (count = 0; count < 100; count++)
@@ -158,6 +187,9 @@ void *sampler_thread (void *arg)
 	if (t > maxt2) maxt2 = t;
 	if (t < mint2) mint2 = t;
 	sumt2 += t;
+
+	if (do_histogram)
+	    add_histogram((t - ideal) * 100 / ideal);
 	}
 
     printf("--------\nNanosleep jitter: min = %ld us, max = %ld us, avg = %ld us\n",
@@ -172,6 +204,9 @@ void *sampler_thread (void *arg)
 	   (maxt2 - ideal) * 100 / ideal,
 	   (sumt2 / sample_count) - ideal,
 	   ((sumt2 / sample_count) - ideal) * 100 / ideal);
+
+    if (do_histogram)
+	dump_histogram();
 
     sem_post(&semX);
 
@@ -189,7 +224,19 @@ int main (int ac, char **av)
 	perror("mlockall");
 
     if (ac > 1)
-	sample_count = atoi(av[1]);
+	{
+	/* ./cruncher --h[istogram] [sample_count] */
+
+	if (strncmp(av[1],"--h",3) == 0)
+	    {
+	    do_histogram = 1;
+
+	    if (ac > 2)
+		sample_count = atoi(av[2]);
+	    }
+	else
+	    sample_count = atoi(av[1]);
+	}
 
     if (sample_count == 0)
 	sample_count = 1000;

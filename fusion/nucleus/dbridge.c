@@ -821,13 +821,11 @@ static unsigned xnbridge_poll (struct file *file,
 	mask |= (POLLIN|POLLRDNORM);
 
     if (!mask && !testbits(state->status,XNBRIDGE_USER_WPOLL))
-	{
 	/* Procs which have issued a timed out poll req will remain
 	   linked to the sleepers queue, and will be silently unlinked
 	   the next time the real-time kernel side kicks
 	   xnbridge_wakeup_proc. */
 	xnbridge_enqueue_wait(state,NULL,XNBRIDGE_USER_WPOLL);
-	}
 
     return mask;
 }

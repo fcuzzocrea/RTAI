@@ -710,6 +710,14 @@ while(0)
 #define PAGE_SIZE sysconf(_SC_PAGESIZE)
 #endif /* !PAGE_SIZE */
 
+#ifndef PAGE_MASK
+#define PAGE_MASK (~(PAGE_SIZE-1))
+#endif /* !PAGE_MASK */
+
+#ifndef PAGE_ALIGN
+#define PAGE_ALIGN(addr)  (((addr)+PAGE_SIZE-1)&PAGE_MASK)
+#endif /* !PAGE_ALIGN */
+
 /* Pre-set config switches. */
 
 #define CONFIG_RTAI_HW_APERIODIC_TIMER 1

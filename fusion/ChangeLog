@@ -1,5 +1,9 @@
 2004-09-01  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.5
+
+2004-09-01  Philippe Gerum  <rpm@xenomai.org>
+
 	* fusion: Get rid of CONFIG_RTAI_HW_NRCPUS and use the
 	Linux-defined constant instead.
 

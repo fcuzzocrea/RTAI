@@ -124,16 +124,21 @@ static int xnpod_read_proc (char *page,
 			    void *data)
 {
     const unsigned nr_cpus = xnarch_num_online_cpus();
-    int len = 0, muxid, nrxfaces = 0;
     unsigned cpu, ready_threads = 0;
     xnthread_t *thread;
     xnholder_t *holder;
     char *p = page;
     char buf[64];
+    int len = 0;
     spl_t s;
 
     p += sprintf(p,"Xenomai nucleus v%s\n",PACKAGE_VERSION);
     p += sprintf(p,"Mounted over Adeos %s\n",ADEOS_VERSION_STRING);
+
+#ifdef CONFIG_RTAI_OPT_FUSION
+    {
+    int nrxfaces = 0, muxid;
+
     p += sprintf(p,"Registered interface(s): ");
 
     for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
@@ -149,6 +154,10 @@ static int xnpod_read_proc (char *page,
 
     if (nrxfaces == 0)
 	p += sprintf(p,"<none>");
+    }
+#else /* !CONFIG_RTAI_OPT_FUSION */
+    p += sprintf(p,"No user-space support");
+#endif /* CONFIG_RTAI_OPT_FUSION */
 
     p += sprintf(p,"\nLatencies: timer=%Lu ns, scheduling=%Lu ns\n",
 		 xnarch_tsc_to_ns(nktimerlat),
@@ -287,12 +296,12 @@ int __xeno_main_init (void)
 	goto cleanup_arch;
 #endif /* CONFIG_RTAI_OPT_PIPE */
 
+#ifdef CONFIG_RTAI_OPT_FUSION
     err = xnheap_mount();
 
     if (err)
 	goto cleanup_pipe;
 
-#ifdef CONFIG_RTAI_OPT_FUSION
     err = xnfusion_mount();
 
     if (err)
@@ -309,11 +318,12 @@ int __xeno_main_init (void)
 
 #ifdef CONFIG_RTAI_OPT_FUSION
  cleanup_heap:
-#endif /* CONFIG_RTAI_OPT_FUSION */
 
     xnheap_umount();
 
  cleanup_pipe:
+
+#endif /* CONFIG_RTAI_OPT_FUSION */
 
 #ifdef CONFIG_RTAI_OPT_PIPE
     xnpipe_umount();
@@ -349,8 +359,8 @@ void __xeno_main_exit (void)
 #endif /* CONFIG_PROC_FS */
 #ifdef CONFIG_RTAI_OPT_FUSION
     xnfusion_umount();
-#endif /* CONFIG_RTAI_OPT_FUSION */
     xnheap_umount();
+#endif /* CONFIG_RTAI_OPT_FUSION */
 #ifdef CONFIG_RTAI_OPT_PIPE
     xnpipe_umount();
 #endif /* CONFIG_RTAI_OPT_PIPE */

@@ -139,10 +139,10 @@ static inline void xnsynch_renice_thread (xnthread_t *thread, int prio)
 	    mated Linux task if we did not renice the former. */
 	return;
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (testbits(thread->status,XNSHADOW))
 	xnshadow_renice(thread);
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 }
 
 /*! 

@@ -158,7 +158,7 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
         return 1;
         }
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     /* If we experienced a trap on behalf of a shadow thread, just
        move the second to the Linux domain, so that the host O/S
        (e.g. Linux) can attempt to process the exception. This is
@@ -167,7 +167,7 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 
     if (xnpod_shadow_p())
         xnshadow_relax();
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     return 0;
 }
@@ -508,9 +508,9 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
 {
     /* Must be called with nklock locked, interrupts off. */
     xnsched_t *sched = xnpod_current_sched();
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     int shadow = testbits(threadout->status,XNSHADOW);
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     if (countq(&nkpod->tdeleteq) > 0 &&
         !testbits(threadout->status,XNTHREAD_SYSTEM_BITS))
@@ -526,14 +526,14 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
     xnarch_finalize_and_switch(xnthread_archtcb(threadout),
                                xnthread_archtcb(threadin));
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (shadow)
         /* Reap the user-space mate of a deleted real-time shadow.
            The Linux task has resumed into the Linux domain at the
            last code location executed by the shadow. Remember
            that both sides use the Linux task's stack. */
-	xnshadow_umount();
-#endif /* __KERNEL__ */
+	xnshadow_exit();
+#endif /* __KERNEL__  && CONFIG_RTAI_OPT_FUSION */
     
     xnpod_fatal("zombie thread %s (%p) would not die...",threadout->name,threadout);
 }
@@ -736,13 +736,13 @@ int xnpod_start_thread (xnthread_t *thread,
     if (!testbits(thread->status,XNDORMANT))
         return -EBUSY;
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (testbits(thread->status,XNSHADOW))
         {
         xnshadow_start(thread,0,entry,cookie,1);
         return 0;
         }
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -1608,10 +1608,10 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
 
     xnlock_put_irqrestore(&nklock,s);
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (propagate && testbits(thread->status,XNSHADOW))
         xnshadow_renice(thread);
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 }
 
 /** 
@@ -2090,7 +2090,9 @@ void xnpod_schedule (void)
     xnsched_t *sched;
     spl_t s;
 #ifdef __KERNEL__
+#ifdef CONFIG_RTAI_OPT_FUSION
     int shadow;
+#endif /* CONFIG_RTAI_OPT_FUSION */
 
     if (xnarch_escalate())
 	return;
@@ -2182,9 +2184,9 @@ void xnpod_schedule (void)
         !testbits(threadout->status,XNRESTART))
         goto signal_unlock_and_exit;
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     shadow = testbits(threadout->status,XNSHADOW);
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     if (testbits(threadout->status,XNZOMBIE))
         xnpod_switch_zombie(threadout, threadin);
@@ -2213,7 +2215,7 @@ void xnpod_schedule (void)
     xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     /* Shadow on entry and root without shadow extension on exit? 
        Mmmm... This must be the user-space mate of a deleted real-time
        shadow we've just rescheduled in the Linux domain to have it
@@ -2223,9 +2225,9 @@ void xnpod_schedule (void)
         xnshadow_ptd(current) == NULL)
         {
         xnlock_clear_irqon(&nklock);
-        xnshadow_umount();
+        xnshadow_exit();
         }
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     if (nkpod->schedhook)
         nkpod->schedhook(runthread,XNRUNNING);
@@ -3302,7 +3304,6 @@ EXPORT_SYMBOL(xnpod_wait_thread_period);
 EXPORT_SYMBOL(xnpod_welcome_thread);
 
 EXPORT_SYMBOL(nkclock);
-EXPORT_SYMBOL(nkgkptd);
 EXPORT_SYMBOL(nkpod);
 
 #ifdef CONFIG_SMP

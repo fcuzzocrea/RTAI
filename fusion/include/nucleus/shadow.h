@@ -107,7 +107,7 @@ void xnshadow_sync_post(pid_t syncpid,
 			int *u_syncp,
 			int err);
 
-void xnshadow_umount(void);
+void xnshadow_exit(void);
 
 int xnshadow_register_skin(const char *name,
 			   unsigned magic,

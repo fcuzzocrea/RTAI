@@ -820,7 +820,9 @@ static inline void xnarch_notify_shutdown(void)
        modules keep their execution sequence on SMP boxen. */
     set_cpus_allowed(current,cpumask_of_cpu(0));
 #endif /* CONFIG_SMP */
+#ifdef CONFIG_RTAI_OPT_FUSION
     xnshadow_release_events();
+#endif /* CONFIG_RTAI_OPT_FUSION */
     /* Wait for the currently processed events to drain. */
     set_current_state(TASK_UNINTERRUPTIBLE);
     schedule_timeout(50);
@@ -844,9 +846,12 @@ static inline int xnarch_escalate (void)
     return 0;
 }
 
-static void xnarch_notify_ready (void) {
-    
+static void xnarch_notify_ready (void)
+
+{
+#ifdef CONFIG_RTAI_OPT_FUSION    
     xnshadow_grab_events();
+#endif /* CONFIG_RTAI_OPT_FUSION */
 }
 
 #endif /* XENO_POD_MODULE */
@@ -971,7 +976,7 @@ static int xnarch_trap_fault (adevinfo_t *evinfo)
 static inline int xnarch_init (void)
 
 {
-    int err;
+    int err = 0;
 
 #ifdef CONFIG_SMP
     /* The HAL layer also sets the same CPU affinity so that both
@@ -992,7 +997,9 @@ static inline int xnarch_init (void)
 
     xnarch_old_trap_handler = rthal_set_trap_handler(&xnarch_trap_fault);
 
+#ifdef CONFIG_RTAI_OPT_FUSION
     err = xnshadow_mount();
+#endif /* CONFIG_RTAI_OPT_FUSION */
 
     if (err)
         adeos_free_irq(xnarch_escalation_virq);
@@ -1000,9 +1007,12 @@ static inline int xnarch_init (void)
     return err;
 }
 
-static inline void xnarch_exit (void) {
+static inline void xnarch_exit (void)
 
+{
+#ifdef CONFIG_RTAI_OPT_FUSION
     xnshadow_cleanup();
+#endif /* CONFIG_RTAI_OPT_FUSION */
     rthal_set_trap_handler(xnarch_old_trap_handler);
     adeos_free_irq(xnarch_escalation_virq);
 }

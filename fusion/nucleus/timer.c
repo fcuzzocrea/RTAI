@@ -260,10 +260,7 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
  * expressed in clock ticks (see note). If @a interval is equal to
  * XN_INFINITE, the timer will not be reloaded after it has expired.
  *
- * @return 0 is returned on success. Otherwise:
- *
- * - -EAGAIN is returned if the underlying time source is operating in
- * one-shot mode and @a value is anterior to the current date.
+ * @return 0 is always returned.
  *
  * Environments:
  *
@@ -310,15 +307,7 @@ int xntimer_start (xntimer_t *timer,
 	    xntimer_enqueue_aperiodic(timer);
 
 	    if (xntimer_heading_p(timer))
-		{
-		if (timer->date <= xnarch_get_cpu_tsc())
-		    { /* Too late for this one. */
-		    xntimer_dequeue_aperiodic(timer);
-		    err = -EAGAIN;
-		    }
-		else
-		    xntimer_next_shot();
-		}
+		xntimer_next_shot();
 	    }
 	else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */

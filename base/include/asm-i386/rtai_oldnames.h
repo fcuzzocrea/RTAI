@@ -81,40 +81,6 @@
 
 #define RTAI_NR_TRAPS         ADEOS_NR_FAULTS
 
-#ifdef CONFIG_X86_TSC
-
-#define DECLR_8254_TSC_EMULATION
-#define TICK_8254_TSC_EMULATION
-#define SETUP_8254_TSC_EMULATION
-#define CLEAR_8254_TSC_EMULATION
-
-#else /* !CONFIG_X86_TSC */
-
-/* Emulate a TSC */
-
-#define DECLR_8254_TSC_EMULATION \
-extern void *kd_mksound; \
-static void *linux_mksound; \
-static void rtai_mksound(void) { }
-
-#define TICK_8254_TSC_EMULATION  rdtsc()
-
-#define SETUP_8254_TSC_EMULATION \
-	do { \
-		linux_mksound = kd_mksound; \
-		kd_mksound = rtai_mksound; \
-		rt_setup_8254_tsc(); \
-	} while (0)
-
-#define CLEAR_8254_TSC_EMULATION \
-	do { \
-		if (linux_mksound) { \
-			kd_mksound = linux_mksound; \
-		} \
-	} while (0)
-
-#endif /* CONFIG_X86_TSC */
-
 #ifndef __cplusplus
 
 #include <linux/irq.h>

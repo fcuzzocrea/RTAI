@@ -18,12 +18,12 @@
  */
 
 
-//#define EMULATE_TSC
+//#define EMULATE_TSC  /* to force emulation even if CONFIG_X86_TSC */
 
 #ifndef _RTAI_ASM_EMULATE_TSC_H
 #define _RTAI_ASM_EMULATE_TSC_H
 
-#ifdef EMULATE_TSC
+#if defined(EMULATE_TSC) || !defined(CONFIG_X86_TSC)
 
 #undef RTAI_CPU_FREQ
 #undef RTAI_CALIBRATED_CPU_FREQ
@@ -42,19 +42,25 @@
 #define DECLR_8254_TSC_EMULATION \
 extern void *kd_mksound; \
 static void *linux_mksound; \
-static void rtai_mksound(void) { }
+static void rtai_mksound(void) { } \
+const int TSC_EMULATION_GUARD_FREQ = 20; \
+static struct timer_list timer;
 
 #define TICK_8254_TSC_EMULATION()  rd_8254_ts()
 
-#define SETUP_8254_TSC_EMULATION() \
+#define SETUP_8254_TSC_EMULATION \
 	do { \
 		linux_mksound = kd_mksound; \
 		kd_mksound = rtai_mksound; \
 		rt_setup_8254_tsc(); \
+		init_timer(&timer); \
+		timer.function = timer_fun; \
+		timer_fun(0); \
 	} while (0)
 
-#define CLEAR_8254_TSC_EMULATION() \
+#define CLEAR_8254_TSC_EMULATION \
 	do { \
+		del_timer(&timer); \
 		if (linux_mksound) { \
 			kd_mksound = linux_mksound; \
 		} \

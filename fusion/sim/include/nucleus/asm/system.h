@@ -593,13 +593,6 @@ static inline int xnarch_release_ipi (void) {
     return 0;
 }
 
-void xnarch_sleep_on (int *flagp)
-
-{
-    while (!*flagp)
-	mvm_sleep(1000);
-}
-
 static inline void xnarch_escalate (void) {
 
     void xnpod_schedule_handler(void);

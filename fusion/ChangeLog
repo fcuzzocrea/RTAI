@@ -1,3 +1,8 @@
+2005-01-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-*/system.h: Get rid of unused
+	xnarch_sleep_on().
+
 2005-01-02  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.6.8

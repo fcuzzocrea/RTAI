@@ -1,3 +1,15 @@
+
+2004-12-29  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/include/asm-i386/rtai_emulate.h: to help forcing TSC
+	  emulation on machines that have it.
+        * base/include/asm-i386/rtai_hal.h: modified rdtsc from inline
+	  to define to allow undefinition when TSC emulation is forced;
+	  added inclusion of "rtai_emulate_tsc.h".
+        * base/sched/sched.c: added the possibility of simulating non TSC 
+	  machines on TSC ones, it helps developping 486 embedded systems
+	  without having one available yet.
+
 2004-12-29  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* First big real commit with the structuring needed for a fully 

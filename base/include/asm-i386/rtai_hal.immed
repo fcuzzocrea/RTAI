@@ -219,6 +219,7 @@ do { \
         adp_root->cpudata[cpuid].irq_hits[irq]++; \
         __set_bit(irq & IPIPE_IRQ_IMASK, &adp_root->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
         __set_bit(irq >> IPIPE_IRQ_ISHIFT, &adp_root->cpudata[cpuid].irq_pending_hi); \
+        __set_bit(cpuid, &adeos_pended); \
 } while (0)
 
 #ifdef CONFIG_PREEMPT

@@ -1,3 +1,19 @@
+2005-01-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c: Handle the XNSHIELD bit on a per-shadow basis,
+	dynamically controlling whether the interrupt shield needs to be
+	enforced at context switch time or not.
+
+	* nucleus/pod.c (xnpod_set_thread_mode): Do not attempt to
+	lock/unlock the scheduler if the target thread is not current. Add
+	proper handling of the XNSHIELD bit.
+
+	* skins/rtai/task.c (rt_task_create, rt_task_set_mode): Handle the
+	XNSHIELD mode bit.
+
+	* skins/rtai/syscalls.c (__rt_task_create): Set the XNSHIELD mode
+	bit by default for newly created shadows.
+
 2005-01-25  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* arch/i386/hal: Add workaround for SMI.

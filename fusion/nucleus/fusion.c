@@ -93,7 +93,7 @@ static int __pthread_shadow_helper (struct task_struct *curr,
     if (xnpod_init_thread(thread,
 			  name,
 			  curr->policy == SCHED_FIFO ? curr->rt_priority : FUSION_LOW_PRIO,
-			  XNFPU|XNSHADOW,
+			  XNFPU|XNSHADOW|XNSHIELD,
 			  0) != 0)
 	{
 	/* Assume this is the only possible failure. */

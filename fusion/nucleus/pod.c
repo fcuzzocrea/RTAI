@@ -623,7 +623,7 @@ int xnpod_init_thread (xnthread_t *thread,
         /* Allow the caller to bypass parametrical checks... */
         return -ENOMEM;
 
-    if (flags & ~(XNFPU|XNSHADOW|XNSUSP))
+    if (flags & ~(XNFPU|XNSHADOW|XNSHIELD|XNSUSP))
         return -EINVAL;
 
     if (stacksize == 0)
@@ -933,6 +933,13 @@ void xnpod_restart_thread (xnthread_t *thread)
  * - XNASDI disables the asynchronous signal handling for this thread.
  * See xnpod_schedule() for more on this.
  *
+ * - XNSHIELD enables the interrupt shield for the current user-space
+ * task. When engaged, the interrupt shield protects the shadow task
+ * running in secondary mode from any preemption by the regular Linux
+ * interrupt handlers, without delaying in any way the RTAI interrupt
+ * handling. The shield is operated on a per-task basis at each
+ * context switch, depending on the setting of this bit.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -949,6 +956,7 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
                                  xnflags_t clrmask,
                                  xnflags_t setmask)
 {
+    xnthread_t *runthread = xnpod_current_thread();
     xnflags_t oldmode;
     spl_t s;
 
@@ -958,19 +966,29 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
     __clrbits(thread->status,clrmask & XNTHREAD_MODE_BITS);
     __setbits(thread->status,setmask & XNTHREAD_MODE_BITS);
 
-    if (!(oldmode & XNLOCK))
-        {
-        if (testbits(thread->status,XNLOCK))
-            /* Actually grab the scheduler lock. */
-            xnpod_lock_sched();
-        }
-    else if (!testbits(thread->status,XNLOCK))
-        xnarch_atomic_set(&nkpod->schedlck,0);
+    if (runthread == thread)
+	{
+	if (!(oldmode & XNLOCK))
+	    {
+	    if (testbits(thread->status,XNLOCK))
+		/* Actually grab the scheduler lock. */
+		xnpod_lock_sched();
+	    }
+	else if (!testbits(thread->status,XNLOCK))
+	    xnarch_atomic_set(&nkpod->schedlck,0);
+	}
 
     if (!(oldmode & XNRRB) && testbits(thread->status,XNRRB))
         thread->rrcredit = thread->rrperiod;
 
     xnlock_put_irqrestore(&nklock,s);
+
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    if (runthread == thread &&
+	testbits(thread->status,XNSHADOW) &&
+	((clrmask|setmask) & XNSHIELD) != 0)
+	xnshadow_reset_shield();
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     return oldmode;
 }

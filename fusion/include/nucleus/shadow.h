@@ -103,6 +103,8 @@ unsigned long long xnshadow_tv2ticks(const struct timeval *v);
 void xnshadow_ticks2tv(unsigned long long ticks,
 		       struct timeval *v);
 
+void xnshadow_reset_shield(void);
+
 extern struct xnskentry muxtable[];
 
 #ifdef __cplusplus

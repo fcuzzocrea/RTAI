@@ -29,10 +29,10 @@
 /* Creation flags. */
 #define T_FPU     XNFPU
 #define T_SUSP    XNSUSP
-/* <!> High bits must not conflict with XNFPU|XNSHADOW|XNSUSP. */
+/* <!> High bits must not conflict with XNFPU|XNSHADOW|XNSHIELD|XNSUSP. */
 #define T_CPU(cpu) (1 << (24 + (cpu & 0xff))) /* Up to 8 cpus [0-7] */
 
-/* Status flags. */
+/* Status/mode flags. */
 #define T_BLOCKED XNPEND
 #define T_DELAYED XNDELAY
 #define T_READY   XNREADY
@@ -42,6 +42,7 @@
 #define T_LOCK    XNLOCK
 #define T_RRB     XNRRB
 #define T_NOSIG   XNASDI
+#define T_SHIELD  XNSHIELD
 
 /* Task hook types. */
 #define T_HOOK_START  XNHOOK_THREAD_START

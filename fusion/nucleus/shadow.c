@@ -218,7 +218,8 @@ static void schedback_handler (unsigned virq)
 	    {
 	    case SB_WAKEUP_REQ:
 
-		if (xnshadow_thread(task))
+		if (xnshadow_thread(task) &&
+		    testbits(xnshadow_thread(task)->status,XNSHIELD))
 		    engage_irq_shield();
 
 #ifdef CONFIG_SMP
@@ -1520,11 +1521,32 @@ static void linux_task_exit (adevinfo_t *evinfo)
 #endif
 }
 
+static inline void __xnshadow_reset_shield (xnthread_t *thread)
+
+{
+    if (testbits(thread->status,XNSHIELD))
+	engage_irq_shield();
+    else
+	disengage_irq_shield();
+}
+
+void xnshadow_reset_shield (void)
+
+{
+    xnthread_t *thread = xnshadow_thread(current);
+
+    if (!thread)
+	return; /* uh?! */
+
+    __xnshadow_reset_shield(thread);
+}
+
 static void linux_schedule_head (adevinfo_t *evinfo)
 
 {
     struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))evinfo->evdata;
     struct task_struct *next = evdata->next;
+    xnthread_t *thread = xnshadow_thread(next);
     int oldrprio, newrprio;
     adeos_declare_cpuid;
 
@@ -1538,18 +1560,16 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 
     set_switch_lock_owner(current);
 
-    if (xnshadow_thread(next))
+    if (thread)
 	{
-	newrprio = xnshadow_thread(next)->cprio;
+	newrprio = thread->cprio;
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
-        if (testbits(xnshadow_thread(next)->status,
-		     XNTHREAD_BLOCK_BITS & ~XNRELAX))
-            xnpod_fatal("blocked thread %s rescheduled?!",
-			xnshadow_thread(next)->name);
+        if (testbits(thread->status,XNTHREAD_BLOCK_BITS & ~XNRELAX))
+            xnpod_fatal("blocked thread %s rescheduled?!",thread->name);
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
-	engage_irq_shield();
+	__xnshadow_reset_shield(thread);
 	}
     else if (next != gatekeeper[cpuid].server)
 	    {
@@ -1571,7 +1591,7 @@ static void linux_schedule_head (adevinfo_t *evinfo)
         if (traceme)
             printk("RESET ROOT PRIO (old prio %d) TO %s's (prio %d), cpu %d\n",
                    oldrprio,
-                   xnshadow_thread(next)->name,
+                   thread->name,
                    newrprio,
                    adeos_processor_id());
 #endif

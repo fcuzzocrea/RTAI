@@ -174,7 +174,7 @@ int rt_task_create (RT_TASK *task,
     if (xnpod_asynch_p())
 	return -EPERM;
 
-    bflags = mode & (XNFPU|XNSHADOW|XNSUSP);
+    bflags = mode & (XNFPU|XNSHADOW|XNSHIELD|XNSUSP);
 
     if (xnpod_init_thread(&task->thread_base,
 			  name,
@@ -1314,6 +1314,14 @@ int rt_task_notify (RT_TASK *task,
  *
  * - T_NOSIG disables the asynchronous signal delivery for the current
  * task.
+ *
+ * - T_SHIELD enables the interrupt shield for the current user-space
+ * task. When engaged, the interrupt shield protects the RTAI task
+ * running in secondary mode from any preemption by the regular Linux
+ * interrupt handlers, without delaying in any way the RTAI interrupt
+ * handling. The shield is operated on a per-task basis at each
+ * context switch, depending on the setting of this bit. This bit is
+ * set by default upon user-space task creation.
  *
  * Normally, this service can only be called on behalf of a regular
  * real-time task, either running in kernel or user-space. However, as

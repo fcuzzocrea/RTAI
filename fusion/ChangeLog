@@ -1,3 +1,8 @@
+2005-01-06  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-ppc/hal.h : rework 64 bits arithmetic
+	operations.
+
 2005-01-04  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/lib/init.c (__init_skin): Do not set the global

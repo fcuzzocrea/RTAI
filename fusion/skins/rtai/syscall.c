@@ -530,13 +530,13 @@ call_on_self:
 /*
  * int __rt_task_set_mode(int clrmask,
  *                        int setmask,
- *                        int *oldmode)
+ *                        int *mode_r)
  */
 
 static int __rt_task_set_mode (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    int err, setmask, clrmask, oldmode;
+    int err, setmask, clrmask, mode_r;
 
     if (!xnpod_regular_p())
 	return -ENOENT;
@@ -548,10 +548,10 @@ static int __rt_task_set_mode (struct task_struct *curr, struct pt_regs *regs)
     clrmask = __xn_reg_arg1(regs);
     setmask = __xn_reg_arg2(regs);
 
-    err = rt_task_set_mode(setmask,clrmask,&oldmode);
+    err = rt_task_set_mode(setmask,clrmask,&mode_r);
 
     if (!err && __xn_reg_arg3(regs))
-	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&oldmode,sizeof(oldmode));
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mode_r,sizeof(mode_r));
 
     return err;
 }
@@ -1007,14 +1007,14 @@ static int __rt_event_signal (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_event_clear(RT_EVENT_PLACEHOLDER *ph,
- *                      unsigned long *oldmask,
- *                      unsigned long mask)
+ *                      unsigned long mask,
+ *                      unsigned long *mask_r)
  */
 
 static int __rt_event_clear (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    unsigned long mask, oldmask;
+    unsigned long mask, mask_r;
     RT_EVENT_PLACEHOLDER ph;
     RT_EVENT *event;
     int err;
@@ -1023,7 +1023,7 @@ static int __rt_event_clear (struct task_struct *curr, struct pt_regs *regs)
 	return -EFAULT;
 
     if (__xn_reg_arg3(regs) &&
-	!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(oldmask)))
+	!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(mask_r)))
 	return -EFAULT;
 
     __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
@@ -1035,10 +1035,10 @@ static int __rt_event_clear (struct task_struct *curr, struct pt_regs *regs)
 
     mask = (unsigned long)__xn_reg_arg2(regs);
 
-    err = rt_event_clear(event,mask,&oldmask);
+    err = rt_event_clear(event,mask,&mask_r);
 
     if (!err && __xn_reg_arg3(regs))
-	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&oldmask,sizeof(oldmask));
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mask_r,sizeof(mask_r));
 
     return err;
 }

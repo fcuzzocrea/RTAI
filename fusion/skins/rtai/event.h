@@ -143,7 +143,7 @@ int rt_event_wait(RT_EVENT *event,
 
 int rt_event_clear(RT_EVENT *event,
 		   unsigned long mask,
-		   unsigned long *oldmask);
+		   unsigned long *mask_r);
 
 int rt_event_inquire(RT_EVENT *event,
 		     RT_EVENT_INFO *info);

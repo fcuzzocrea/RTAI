@@ -454,7 +454,7 @@ int rt_event_wait (RT_EVENT *event,
  *
  * @param mask The set of events to be cleared.
  *
- * @param oldmask If non-NULL, @a oldmask is the address of a memory
+ * @param mask_r If non-NULL, @a mask_r is the address of a memory
  * location which will be written upon success with the previous value
  * of the event group before the flags are cleared.
  *
@@ -478,7 +478,7 @@ int rt_event_wait (RT_EVENT *event,
 
 int rt_event_clear (RT_EVENT *event,
 		    unsigned long mask,
-		    unsigned long *oldmask)
+		    unsigned long *mask_r)
 {
     int err = 0;
     spl_t s;
@@ -493,8 +493,8 @@ int rt_event_clear (RT_EVENT *event,
         goto unlock_and_exit;
         }
 
-    if (oldmask)
-	*oldmask = event->value;
+    if (mask_r)
+	*mask_r = event->value;
     
     /* Clear the flags. */
 

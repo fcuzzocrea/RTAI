@@ -237,7 +237,7 @@ int rt_task_notify(RT_TASK *task,
 
 int rt_task_set_mode(int clrmask,
 		     int setmask,
-		     int *oldmode);
+		     int *mode_r);
 #ifdef __cplusplus
 }
 #endif

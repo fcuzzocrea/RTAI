@@ -1290,7 +1290,7 @@ int rt_task_notify (RT_TASK *task,
 
 int rt_task_set_mode (int clrmask,
 		      int setmask,
-		      int *oldmode)
+		      int *mode_r)
 {
     int mode;
 
@@ -1313,8 +1313,8 @@ int rt_task_set_mode (int clrmask,
     mode = xnpod_set_thread_mode(&rtai_current_task()->thread_base,
 				 clrmask,
 				 setmask);
-    if (oldmode)
-	*oldmode = mode;
+    if (mode_r)
+	*mode_r = mode;
 
     if ((clrmask & ~setmask) & T_LOCK)
 	/* Reschedule if the scheduler has been unlocked. */

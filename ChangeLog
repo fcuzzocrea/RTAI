@@ -1,3 +1,11 @@
+2004-02-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: cleaned up unused stuff and added 
+	  linux_syscall_server declaration in task_struct.
+	* base/sched/sched.c and sys.c: cleaning up following the above
+	  task_struct changes and using linux_syscall_server in place of 
+	  the provisional variable used for testing.
+
 2004-02-17  Luca Pizzi, (lucapizzi@hotmail.it) and
 	    Stefano Gafforelli, (Stefano.Gafforelli@tiscali.it)
 

@@ -23,33 +23,13 @@
 #include <unistd.h>
 #include <limits.h>
 #include <rtai/syscall.h>
-#include <rtai/registry.h>
 #include <rtai/task.h>
 
-static pthread_key_t __rtai_tskey;
+extern pthread_key_t __rtai_tskey;
 
-int __rtai_muxid = -1;
+extern int __rtai_muxid;
 
-static void __flush_tsd (void *tsd)
-
-{
-    /* Free the task descriptor allocated by rt_task_self(). */
-    free(tsd);
-}
-
-static inline int __init_skin (void)
-
-{
-    __rtai_muxid = XENOMAI_SYSCALL2(__xn_sys_attach,RTAI_SKIN_MAGIC,NULL);
-
-    /* Allocate a TSD key for indexing self task pointers. */
-
-    if (__rtai_muxid >= 0 &&
-	pthread_key_create(&__rtai_tskey,&__flush_tsd) != 0)
-	return -1;
-	
-    return __rtai_muxid;
-}
+int __init_skin(void);
 
 /* Public RTAI interface. */
 
@@ -292,7 +272,7 @@ RT_TASK *rt_task_self (void)
     RT_TASK *self;
 
     if (__rtai_muxid < 0 && __init_skin() < 0)
-	return NULL;
+	return NULL; /* Otherwise, __rtai_tskey must be valid. */
 
     self = (RT_TASK *)pthread_getspecific(__rtai_tskey);
 

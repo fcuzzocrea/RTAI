@@ -109,8 +109,9 @@ static void __queue_flush_private (xnheap_t *heap,
  *
  * - Q_SHARED causes the queue to be sharable between kernel and
  * user-space tasks. Otherwise, the new queue is only available for
- * kernel-based usage. This feature requires the real-time support in
- * user-space to be configured in (CONFIG_OPT_RTAI_FUSION).
+ * kernel-based usage. This flag is implicitely set when the caller is
+ * running in user-space. This feature requires the real-time support
+ * in user-space to be configured in (CONFIG_OPT_RTAI_FUSION).
  *
  * - Q_DMA causes the buffer pool associated to the queue to be
  * allocated in physically contiguous memory, suitable for DMA
@@ -180,6 +181,8 @@ int rt_queue_create (RT_QUEUE *q,
 				 (mode & Q_DMA) ? GFP_DMA : 0);
 	if (err)
 	    return err;
+
+	q->source = RT_KAPI_SOURCE;
 #else /* !CONFIG_RTAI_OPT_FUSION */
 	return -ENOSYS;
 #endif /* CONFIG_RTAI_OPT_FUSION */

@@ -168,6 +168,9 @@ int rt_task_create (RT_TASK *task,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
+    if (prio < T_HIPRIO || prio > T_LOPRIO)
+	return -EINVAL;
+
     bflags = mode & (XNFPU|XNSHADOW|XNSUSP);
 
     if (xnpod_init_thread(&task->thread_base,
@@ -672,7 +675,9 @@ int rt_task_wait_period (void)
 
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a task is not a task descriptor.
+ * - -EINVAL is returned if @a task is not a task descriptor, if @a
+ * task is NULL but not called from a task context, or @a prio is
+ * invalid.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *

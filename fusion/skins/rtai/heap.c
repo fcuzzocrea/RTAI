@@ -118,8 +118,9 @@ static void __heap_flush_private (xnheap_t *heap,
  * - H_SHARED causes the heap to be sharable between kernel and
  * user-space tasks, and make it usable as a shared memory
  * segment. Otherwise, the new heap is only available for kernel-based
- * usage. This feature requires the real-time support in user-space to
- * be configured in (CONFIG_OPT_RTAI_FUSION).
+ * usage. This flag is implicitely set when the caller is running in
+ * user-space. This feature requires the real-time support in
+ * user-space to be configured in (CONFIG_OPT_RTAI_FUSION).
  *
  * - H_DMA causes the block pool associated to the heap to be
  * allocated in physically contiguous memory, suitable for DMA
@@ -191,6 +192,8 @@ int rt_heap_create (RT_HEAP *heap,
 				 (mode & H_DMA) ? GFP_DMA : 0);
 	if (err)
 	    return err;
+
+	heap->source = RT_KAPI_SOURCE;
 #else /* !CONFIG_RTAI_OPT_FUSION */
 	return -ENOSYS;
 #endif /* CONFIG_RTAI_OPT_FUSION */

@@ -22,13 +22,7 @@
 
 extern int __rtai_muxid;
 
-static inline int __init_skin (void)
-
-{
-    __rtai_muxid = XENOMAI_SYSCALL2(__xn_sys_attach,RTAI_SKIN_MAGIC,NULL);
-    return __rtai_muxid;
-}
-
+int __init_skin(void);
 
 int rt_event_create (RT_EVENT *event,
 		     const char *name,

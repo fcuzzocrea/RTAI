@@ -102,6 +102,10 @@ int rt_cond_create (RT_COND *cond,
     cond->magic = RTAI_COND_MAGIC;
     xnobject_copy_name(cond->name,name);
 
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    cond->source = RT_KAPI_SOURCE;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to

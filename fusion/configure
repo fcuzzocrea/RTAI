@@ -1049,7 +1049,7 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-nucleus-fusion Enable real-time support in user-space
-  --enable-nucleus-pipe   Enable pipe support in nucleus
+  --enable-nucleus-pipe   Enable message pipe support in nucleus
   --enable-nucleus-pipe-nrdev
                           Set maximum number of pipe devices
   --enable-nucleus-debug  Enable debug support in nucleus
@@ -19788,8 +19788,8 @@ fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_OPT_FUSION:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_OPT_FUSION:-no}" >&6
 
-echo "$as_me:$LINENO: checking for inter-domain pipe support" >&5
-echo $ECHO_N "checking for inter-domain pipe support... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for message pipe support" >&5
+echo $ECHO_N "checking for message pipe support... $ECHO_C" >&6
 # Check whether --enable-nucleus-pipe or --disable-nucleus-pipe was given.
 if test "${enable_nucleus_pipe+set}" = set; then
   enableval="$enable_nucleus_pipe"
@@ -19982,8 +19982,8 @@ echo "$as_me:$LINENO: result: $CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS" >&5
 echo "${ECHO_T}$CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS" >&6
 fi
 
-echo "$as_me:$LINENO: checking for native pipe support" >&5
-echo $ECHO_N "checking for native pipe support... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for native message pipe support" >&5
+echo $ECHO_N "checking for native message pipe support... $ECHO_C" >&6
 # Check whether --enable-native-pipe or --disable-native-pipe was given.
 if test "${enable_native_pipe+set}" = set; then
   enableval="$enable_native_pipe"

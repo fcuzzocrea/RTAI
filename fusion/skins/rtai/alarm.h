@@ -50,6 +50,7 @@
 #define _RTAI_ALARM_H
 
 #include <nucleus/timer.h>
+#include <nucleus/synch.h>
 #include <rtai/types.h>
 
 typedef struct rt_alarm_info {
@@ -84,6 +85,14 @@ typedef struct rt_alarm {
 
     unsigned long nexpiries;	/* !< Number of expiries. */
 
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+
+    int source;			/* !< Creator's space. */
+
+    xnsynch_t synch_base;	/* !< Synch. base for user-space tasks. */
+
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 } RT_ALARM;
@@ -96,6 +105,11 @@ int __alarm_pkg_init(void);
 
 void __alarm_pkg_cleanup(void);
 
+int rt_alarm_create(RT_ALARM *alarm,
+		    const char *name,
+		    rt_alarm_t handler,
+		    void *cookie);
+
 #ifdef __cplusplus
 }
 #endif
@@ -104,15 +118,12 @@ void __alarm_pkg_cleanup(void);
 
 typedef RT_ALARM_PLACEHOLDER RT_ALARM;
 
-int rt_alarm_bind(RT_ALARM *alarm,
-		  const char *name);
+int rt_alarm_create(RT_ALARM *alarm,
+		    const char *name);
 
-static inline int rt_alarm_unbind (RT_ALARM *alarm)
+int rt_alarm_wait(RT_ALARM *alarm);
 
-{
-    alarm->opaque = RT_HANDLE_INVALID;
-    return 0;
-}
+/* No binding for alarms. */
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
@@ -121,11 +132,6 @@ extern "C" {
 #endif
 
 /* Public interface. */
-
-int rt_alarm_create(RT_ALARM *alarm,
-		    rt_alarm_t handler,
-		    void *cookie,
-		    const char *name);
 
 int rt_alarm_delete(RT_ALARM *alarm);
 

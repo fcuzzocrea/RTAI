@@ -108,7 +108,9 @@ int __xeno_skin_init (void)
     /* The RTAI skin is stacked over the fusion framework. */
     err = xnfusion_attach();
 #else /* !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
-    /* The RTAI skin is standalone. */
+    /* The RTAI skin is standalone, there is no priority level to
+       reserve for interrupt servers in user-space, since there is no
+       user-space support in the first place. */
     err = xnpod_init(&__rtai_pod,T_LOPRIO,T_HIPRIO,0);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

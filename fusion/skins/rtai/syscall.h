@@ -115,6 +115,12 @@
 #define __rtai_heap_alloc         62
 #define __rtai_heap_free          63
 #define __rtai_heap_inquire       64
+#define __rtai_alarm_create       65
+#define __rtai_alarm_delete       66
+#define __rtai_alarm_start        67
+#define __rtai_alarm_stop         68
+#define __rtai_alarm_wait         69
+#define __rtai_alarm_inquire      70
 
 struct rt_arg_bulk {
 

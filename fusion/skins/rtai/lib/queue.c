@@ -27,12 +27,7 @@
 
 extern int __rtai_muxid;
 
-static inline int __init_skin (void) /* FIXME: Hey, this is racy! */
-
-{
-    __rtai_muxid = XENOMAI_SYSCALL2(__xn_sys_attach,RTAI_SKIN_MAGIC,NULL);
-    return __rtai_muxid;
-}
+int __init_skin(void);
 
 static int __map_queue_memory (RT_QUEUE *q, RT_QUEUE_PLACEHOLDER *php)
 

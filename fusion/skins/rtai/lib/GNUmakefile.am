@@ -3,6 +3,7 @@ lib_LIBRARIES = librtai.a
 librtai_a_AR = $(CROSS_COMPILE)ar cru
 
 librtai_a_SOURCES = \
+	init.c \
 	task.c \
 	timer.c
 
@@ -28,6 +29,10 @@ endif
 
 if CONFIG_RTAI_OPT_NATIVE_HEAP
 librtai_a_SOURCES += heap.c
+endif
+
+if CONFIG_RTAI_OPT_NATIVE_ALARM
+librtai_a_SOURCES += alarm.c
 endif
 
 librtai_a_CPPFLAGS = \

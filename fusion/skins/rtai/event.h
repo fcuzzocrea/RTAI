@@ -90,6 +90,10 @@ typedef struct rt_event {
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    int source;		/* !< Creator's space. */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
 } RT_EVENT;
 
 #ifdef __cplusplus

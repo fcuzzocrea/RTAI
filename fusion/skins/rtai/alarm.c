@@ -60,9 +60,9 @@ static void __alarm_trampoline (void *cookie)
 
 /**
  * @fn int rt_alarm_create(RT_ALARM *alarm,
+                           const char *name,
                            rt_alarm_t handler,
-                           void *cookie,
-                           const char *name)
+                           void *cookie)
  * @brief Create an alarm object.
  *
  * Create an object calling an alarm routine at specified
@@ -74,17 +74,17 @@ static void __alarm_trampoline (void *cookie)
  * while the alarm is active therefore it must be allocated in
  * permanent memory.
  *
+ * @param name An ASCII string standing for the symbolic name of the
+ * alarm. When non-NULL and non-empty, this string is copied to a safe
+ * place into the descriptor, and passed to the registry package if
+ * enabled for indexing the created alarm.
+ *
  * @param handler The address of the routine to call when the alarm
  * expiries. This routine will be passed the address of the current
  * alarm descriptor, and the opaque @a cookie.
  *
  * @param cookie A user-defined opaque cookie the real-time kernel
  * will pass to the alarm handler as its second argument.
- *
- * @param name An ASCII string standing for the symbolic name of the
- * alarm. When non-NULL and non-empty, this string is copied to a safe
- * place into the descriptor, and passed to the registry package if
- * enabled for indexing the created alarm.
  *
  * @return 0 is returned upon success. Otherwise:
  *
@@ -103,9 +103,9 @@ static void __alarm_trampoline (void *cookie)
  */
 
 int rt_alarm_create (RT_ALARM *alarm,
+		     const char *name,
 		     rt_alarm_t handler,
-		     void *cookie,
-		     const char *name)
+		     void *cookie)
 {
     int err = 0;
 
@@ -118,6 +118,11 @@ int rt_alarm_create (RT_ALARM *alarm,
     alarm->handler = handler;
     alarm->cookie = cookie;
     xnobject_copy_name(alarm->name,name);
+
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    xnsynch_init(&alarm->synch_base,XNSYNCH_PRIO);
+    alarm->source = RT_KAPI_SOURCE;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
@@ -182,6 +187,10 @@ int rt_alarm_delete (RT_ALARM *alarm)
         }
     
     xntimer_destroy(&alarm->timer_base);
+
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    xnsynch_destroy(&alarm->synch_base);
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (alarm->handle)

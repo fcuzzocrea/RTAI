@@ -32,6 +32,7 @@
 #include <rtai/cond.h>
 #include <rtai/queue.h>
 #include <rtai/heap.h>
+#include <rtai/alarm.h>
 
 /* This file implements the RTAI syscall wrappers;
  *
@@ -320,7 +321,7 @@ static int __rt_task_delete (struct task_struct *curr, struct pt_regs *regs)
     if (!task)
 	return -ESRCH;
 
-    return rt_task_delete(task);
+    return rt_task_delete(task); /* TCB freed in delete hook. */
 }
 
 /*
@@ -774,6 +775,7 @@ static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
+	sem->source = RT_UAPI_SOURCE;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = sem->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -803,6 +805,7 @@ static int __rt_sem_delete (struct task_struct *curr, struct pt_regs *regs)
 {
     RT_SEM_PLACEHOLDER ph;
     RT_SEM *sem;
+    int err;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;
@@ -814,7 +817,12 @@ static int __rt_sem_delete (struct task_struct *curr, struct pt_regs *regs)
     if (!sem)
 	return -ESRCH;
 
-    return rt_sem_delete(sem);
+    err = rt_sem_delete(sem);
+
+    if (!err && sem->source == RT_UAPI_SOURCE)
+	xnfree(sem);
+
+    return err;
 }
 
 /*
@@ -958,6 +966,7 @@ static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
+	event->source = RT_UAPI_SOURCE;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = event->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -987,6 +996,7 @@ static int __rt_event_delete (struct task_struct *curr, struct pt_regs *regs)
 {
     RT_EVENT_PLACEHOLDER ph;
     RT_EVENT *event;
+    int err;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;
@@ -998,7 +1008,12 @@ static int __rt_event_delete (struct task_struct *curr, struct pt_regs *regs)
     if (!event)
 	return -ESRCH;
 
-    return rt_event_delete(event);
+    err = rt_event_delete(event);
+
+    if (!err && event->source == RT_UAPI_SOURCE)
+	xnfree(event);
+
+    return err;
 }
 
 /*
@@ -1188,6 +1203,7 @@ static int __rt_mutex_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
+	mutex->source = RT_UAPI_SOURCE;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = mutex->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -1217,6 +1233,7 @@ static int __rt_mutex_delete (struct task_struct *curr, struct pt_regs *regs)
 {
     RT_MUTEX_PLACEHOLDER ph;
     RT_MUTEX *mutex;
+    int err;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;
@@ -1228,7 +1245,12 @@ static int __rt_mutex_delete (struct task_struct *curr, struct pt_regs *regs)
     if (!mutex)
 	return -ESRCH;
 
-    return rt_mutex_delete(mutex);
+    err = rt_mutex_delete(mutex);
+
+    if (!err && mutex->source == RT_UAPI_SOURCE)
+	xnfree(mutex);
+
+    return err;
 }
 
 /*
@@ -1361,6 +1383,7 @@ static int __rt_cond_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
+	cond->source = RT_UAPI_SOURCE;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = cond->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -1390,6 +1413,7 @@ static int __rt_cond_delete (struct task_struct *curr, struct pt_regs *regs)
 {
     RT_COND_PLACEHOLDER ph;
     RT_COND *cond;
+    int err;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;
@@ -1401,7 +1425,12 @@ static int __rt_cond_delete (struct task_struct *curr, struct pt_regs *regs)
     if (!cond)
 	return -ESRCH;
 
-    return rt_cond_delete(cond);
+    err = rt_cond_delete(cond);
+
+    if (!err && cond->source = RT_UAPI_SOURCE)
+	xnfree(cond);
+
+    return err;
 }
 
 /*
@@ -1582,6 +1611,8 @@ static int __rt_queue_create (struct task_struct *curr, struct pt_regs *regs)
     if (err)
 	goto free_and_fail;
 
+    q->source = RT_UAPI_SOURCE;
+
     /* Copy back the registry handle to the ph struct. */
     ph.opaque = q->handle;
     ph.opaque2 = &q->bufpool;
@@ -1679,6 +1710,9 @@ static int __rt_queue_delete (struct task_struct *curr, struct pt_regs *regs)
 	}
 
     err = rt_queue_delete(q);
+
+    if (!err && q->source == RT_UAPI_SOURCE)
+	xnfree(q);
 
  unlock_and_exit:
 
@@ -1959,7 +1993,7 @@ static int __rt_queue_inquire (struct task_struct *curr, struct pt_regs *regs)
 #if CONFIG_RTAI_OPT_NATIVE_HEAP
 
 /*
- * int __rt_heap_create(RT_QUEUE_PLACEHOLDER *ph,
+ * int __rt_heap_create(RT_HEAP_PLACEHOLDER *ph,
  *                      const char *name,
  *                      size_t heapsize,
  *                      int mode)
@@ -1969,7 +2003,7 @@ static int __rt_heap_create (struct task_struct *curr, struct pt_regs *regs)
 
 {
     char name[XNOBJECT_NAME_LEN];
-    RT_QUEUE_PLACEHOLDER ph;
+    RT_HEAP_PLACEHOLDER ph;
     size_t heapsize;
     int err, mode;
     RT_HEAP *heap;
@@ -2002,6 +2036,8 @@ static int __rt_heap_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err)
 	goto free_and_fail;
+
+    heap->source = RT_UAPI_SOURCE;
 
     /* Copy back the registry handle to the ph struct. */
     ph.opaque = heap->handle;
@@ -2100,6 +2136,9 @@ static int __rt_heap_delete (struct task_struct *curr, struct pt_regs *regs)
 	}
 
     err = rt_heap_delete(heap);
+
+    if (!err && heap->source == RT_UAPI_SOURCE)
+	xnfree(heap);
 
  unlock_and_exit:
 
@@ -2262,6 +2301,230 @@ static int __rt_heap_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
+#if CONFIG_RTAI_OPT_NATIVE_ALARM
+
+static void __rt_alarm_handler (RT_ALARM *alarm, void *cookie)
+
+{
+    /* Wake up all tasks waiting for the alarm. */
+    xnsynch_flush(&alarm->synch_base,0);
+}
+
+/*
+ * int __rt_alarm_create(RT_ALARM_PLACEHOLDER *ph,
+ *                       const char *name)
+ */
+
+static int __rt_alarm_create (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    char name[XNOBJECT_NAME_LEN];
+    RT_ALARM_PLACEHOLDER ph;
+    RT_ALARM *alarm;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (__xn_reg_arg2(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	name[sizeof(name) - 1] = '\0';
+	}
+    else
+	*name = '\0';
+
+    alarm = (RT_ALARM *)xnmalloc(sizeof(*alarm));
+
+    if (!alarm)
+	return -ENOMEM;
+
+    err = rt_alarm_create(alarm,name,&__rt_alarm_handler,NULL);
+
+    if (err == 0)
+	{
+	alarm->source = RT_UAPI_SOURCE;
+	/* Copy back the registry handle to the ph struct. */
+	ph.opaque = alarm->handle;
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	}
+    else
+	xnfree(alarm);
+
+    return err;
+}
+
+/*
+ * int __rt_alarm_delete(RT_ALARM_PLACEHOLDER *ph)
+ */
+
+static int __rt_alarm_delete (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_ALARM_PLACEHOLDER ph;
+    RT_ALARM *alarm;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    alarm = (RT_ALARM *)rt_registry_fetch(ph.opaque);
+
+    if (!alarm)
+	return -ESRCH;
+
+    err = rt_alarm_delete(alarm);
+
+    if (!err && alarm->source == RT_UAPI_SOURCE)
+	xnfree(alarm);
+
+    return err;
+}
+
+/*
+ * int __rt_alarm_start(RT_ALARM_PLACEHOLDER *ph,
+ *			RTIME value,
+ *			RTIME interval)
+ */
+
+static int __rt_alarm_start (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_ALARM_PLACEHOLDER ph;
+    RTIME value, interval;
+    RT_ALARM *alarm;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    alarm = (RT_ALARM *)rt_registry_fetch(ph.opaque);
+
+    if (!alarm)
+	return -ESRCH;
+
+    __xn_copy_from_user(curr,&value,(void __user *)__xn_reg_arg2(regs),sizeof(value));
+    __xn_copy_from_user(curr,&interval,(void __user *)__xn_reg_arg3(regs),sizeof(interval));
+
+    return rt_alarm_start(alarm,value,interval);
+}
+
+/*
+ * int __rt_alarm_stop(RT_ALARM_PLACEHOLDER *ph)
+ */
+
+static int __rt_alarm_stop (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_ALARM_PLACEHOLDER ph;
+    RT_ALARM *alarm;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    alarm = (RT_ALARM *)rt_registry_fetch(ph.opaque);
+
+    if (!alarm)
+	return -ESRCH;
+
+    return rt_alarm_stop(alarm);
+}
+
+/*
+ * int __rt_alarm_wait(RT_ALARM_PLACEHOLDER *ph)
+ */
+
+static int __rt_alarm_wait (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_TASK *task = rtai_current_task();
+    RT_ALARM_PLACEHOLDER ph;
+    RT_ALARM *alarm;
+    int err = 0;
+    spl_t s;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    alarm = (RT_ALARM *)rt_registry_fetch(ph.opaque);
+
+    if (!alarm)
+	return -ESRCH;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (xnthread_base_priority(thread) != FUSION_IRQ_PRIO)
+	/* Renice the waiter above all regular tasks if needed. */
+	xnpod_renice_thread(&task->thread_base,
+			    FUSION_IRQ_PRIO);
+
+    xnsynch_sleep_on(&alarm->synch_base,XN_INFINITE);
+
+    if (xnthread_test_flags(&task->thread_base,XNRMID))
+	err = -EIDRM; /* Alarm deleted while pending. */
+    else if (xnthread_test_flags(&task->thread_base,XNBREAK))
+	err = -EINTR; /* Unblocked.*/
+    
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/*
+ * int __rt_alarm_inquire(RT_ALARM_PLACEHOLDER *ph,
+ *                        RT_ALARM_INFO *infop)
+ */
+
+static int __rt_alarm_inquire (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_ALARM_PLACEHOLDER ph;
+    RT_ALARM_INFO info;
+    RT_ALARM *alarm;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(info)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    alarm = (RT_ALARM *)rt_registry_fetch(ph.opaque);
+
+    if (!alarm)
+	return -ESRCH;
+
+    err = rt_alarm_inquire(alarm,&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    return err;
+}
+
+#else /* !CONFIG_RTAI_OPT_NATIVE_ALARM */
+
+#define __rt_alarm_create     __rt_call_not_available
+#define __rt_alarm_delete     __rt_call_not_available
+#define __rt_alarm_start      __rt_call_not_available
+#define __rt_alarm_stop       __rt_call_not_available
+#define __rt_alarm_wait       __rt_call_not_available
+#define __rt_alarm_inquire    __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_ALARM */
+
 static  __attribute__((unused))
 int __rt_call_not_available (struct task_struct *curr, struct pt_regs *regs) {
     return -ENOSYS;
@@ -2333,6 +2596,12 @@ static xnsysent_t __systab[] = {
     [__rtai_heap_alloc ] = { &__rt_heap_alloc, __xn_flag_regular },
     [__rtai_heap_free ] = { &__rt_heap_free, __xn_flag_anycall },
     [__rtai_heap_inquire ] = { &__rt_heap_inquire, __xn_flag_anycall },
+    [__rtai_alarm_create ] = { &__rt_alarm_create, __xn_flag_anycall },
+    [__rtai_alarm_delete ] = { &__rt_alarm_delete, __xn_flag_anycall },
+    [__rtai_alarm_start ] = { &__rt_alarm_start, __xn_flag_anycall },
+    [__rtai_alarm_stop ] = { &__rt_alarm_stop, __xn_flag_anycall },
+    [__rtai_alarm_wait ] = { &__rt_alarm_wait, __xn_flag_regular },
+    [__rtai_alarm_inquire ] = { &__rt_alarm_inquire, __xn_flag_anycall },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

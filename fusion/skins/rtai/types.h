@@ -77,6 +77,9 @@ typedef xnsticks_t SRTIME;
 #define rtai_test_magic(h,m) \
 ((h) && *((unsigned *)(h)) == (m))
 
+#define RT_KAPI_SOURCE  0x4b524e4c	/* Object created from kernel space. */
+#define RT_UAPI_SOURCE  0x55534552	/* Object created from user-space. */
+
 #else /* !(__KERNEL__ || __RTAI_SIM__) */
 
 typedef unsigned long long RTIME;

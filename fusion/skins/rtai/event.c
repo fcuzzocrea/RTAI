@@ -121,6 +121,10 @@ int rt_event_create (RT_EVENT *event,
     event->magic = RTAI_EVENT_MAGIC;
     xnobject_copy_name(event->name,name);
 
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    event->source = RT_KAPI_SOURCE;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to

@@ -1,3 +1,27 @@
+2004-12-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscalls.c: Fix generalized memory leak upon RT
+	object deletion.
+
+	* skins/rtai/syscall.c (rt_alarm_wait): Provide user-space support
+	for waiting for alarm shots.
+
+	* skins/rtai/task.c (rt_task_set_priority): Check priority
+	argument.
+
+2004-12-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/lib/task.c (__init_skin): Must be single instance.
+
+	* skins/rtai/alarm.c (rt_alarm_create): Fix position of name
+	parameter.
+
+	* skins/rtai/syscall.c (__rt_heap_create): Fix placeholder type
+	used.
+
+	* include/nucleus/fusion.h (FUSION_IRQ_PRIO): Add priority level
+	for interrupt servers in user-space.
+
 2004-12-03  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/alarm.c (rt_alarm_inquire): Add count of expiries.

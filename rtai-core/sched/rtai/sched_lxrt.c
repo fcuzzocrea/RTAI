@@ -191,8 +191,6 @@ unsigned long sqilter = 0xFFFFFFFF;
 
 #ifdef CONFIG_SMP
 
-#define STAGGER CPU_RELAX
-
 #define BROADCAST_TO_LOCAL_TIMERS() rtai_broadcast_to_local_timers(0,NULL,NULL)
 
 #define rt_request_sched_ipi()  rt_request_cpu_own_irq(SCHED_IPI, rt_schedule_on_schedule_ipi)
@@ -203,9 +201,7 @@ static inline void sched_get_global_lock(int cpuid)
 {
 	if (!test_and_set_bit(cpuid, locked_cpus)) {
 		while (test_and_set_bit(31, locked_cpus)) {
-#ifdef STAGGER
-			STAGGER(cpuid);
-#endif
+			CPU_RELAX(cpuid);
 		}
 	}
 }
@@ -214,9 +210,7 @@ static inline void sched_release_global_lock(int cpuid)
 {
 	if (test_and_clear_bit(cpuid, locked_cpus)) {
 		test_and_clear_bit(31, locked_cpus);
-#ifdef STAGGER
-			STAGGER(cpuid);
-#endif
+		CPU_RELAX(cpuid);
 	}
 }
 
@@ -647,6 +641,21 @@ do { \
 #define KEXECTIME()
 #define UEXECTIME()
 #endif
+
+/* 
+ * After innumerable tries this seems a safe mode to have gcc use 
+ * lxrt_context_switch without making weird reordered things, anywhere. 
+ * At least it is hoped so. In any case this seems a good way to safely
+ * use Linux-2.6.xx "switch_to", thus avoiding the 2.4.xx way, even if
+ * it works anyhow and seems more robust against gcc's black magic.
+ * It must be remarked also that the most critical point appears to be 
+ * at the the fast scheduling, in ADEOS virtual interrupt.
+ */
+ 
+static void lxrt_context_switch(struct task_struct *prev, struct task_struct *next, int cpuid)
+{
+	_lxrt_context_switch(prev, next, cpuid);
+}
 
 static inline void make_current_soft(RT_TASK *rt_current)
 {
@@ -2565,6 +2574,7 @@ static int __rtai_lxrt_init(void)
 		retval = frstk_srq.srq;
 		goto umount_rtai;
 	}
+
 	frstk_srq.in = frstk_srq.out = 0;
 	if ((retval = rt_request_sched_ipi()) != 0)
 		goto free_srq;

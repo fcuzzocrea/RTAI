@@ -285,19 +285,17 @@ static ssize_t version_read_proc (char *page,
     return len;
 }
 
-static struct proc_dir_entry *root_proc_entry;
+extern struct proc_dir_entry *rthal_proc_root;
 
 void xnpod_init_proc (void)
 
 {
     struct proc_dir_entry *entry;
 
-    root_proc_entry = proc_mkdir("rtai",NULL);
-
-    if (!root_proc_entry)
+    if (!rthal_proc_root)
 	return;
 
-    entry = create_proc_entry("system",0444,root_proc_entry);
+    entry = create_proc_entry("system",0444,rthal_proc_root);
 
     if (entry)
 	{
@@ -307,7 +305,7 @@ void xnpod_init_proc (void)
 	entry->write_proc = NULL;
 	}
 
-    entry = create_proc_entry("latency",0644,root_proc_entry);
+    entry = create_proc_entry("latency",0644,rthal_proc_root);
 
     if (entry)
 	{
@@ -317,7 +315,7 @@ void xnpod_init_proc (void)
 	entry->write_proc = &latency_write_proc;
 	}
 
-    entry = create_proc_entry("version",0444,root_proc_entry);
+    entry = create_proc_entry("version",0444,rthal_proc_root);
 
     if (entry)
 	{
@@ -334,7 +332,6 @@ void xnpod_delete_proc (void)
     remove_proc_entry("rtai/version",NULL);
     remove_proc_entry("rtai/latency",NULL);
     remove_proc_entry("rtai/system",NULL);
-    remove_proc_entry("rtai",NULL);
 }
 
 #endif /* CONFIG_PROC_FS */

@@ -703,7 +703,7 @@ static int rthal_proc_register (void)
 
     rthal_proc_root->owner = THIS_MODULE;
 
-    ent = create_proc_entry("rthal",S_IFREG|S_IRUGO|S_IWUSR,rthal_proc_root);
+    ent = create_proc_entry("hal",S_IFREG|S_IRUGO|S_IWUSR,rthal_proc_root);
 
     if (!ent)
 	{
@@ -719,7 +719,7 @@ static int rthal_proc_register (void)
 static void rthal_proc_unregister (void)
 
 {
-    remove_proc_entry("rthal",rthal_proc_root);
+    remove_proc_entry("hal",rthal_proc_root);
     remove_proc_entry("rtai",0);
 }
 
@@ -839,9 +839,11 @@ EXPORT_SYMBOL(rthal_set_linux_task_priority);
 EXPORT_SYMBOL(rthal_switch_context);
 
 EXPORT_SYMBOL(rthal_domain);
-EXPORT_SYMBOL(rthal_proc_root);
 EXPORT_SYMBOL(rthal_tunables);
 EXPORT_SYMBOL(rthal_cpu_realtime);
+#ifdef CONFIG_PROC_FS
+EXPORT_SYMBOL(rthal_proc_root);
+#endif /* CONFIG_PROC_FS */
 
 #ifdef CONFIG_RTAI_HW_FPU
 EXPORT_SYMBOL(rthal_init_fpu);

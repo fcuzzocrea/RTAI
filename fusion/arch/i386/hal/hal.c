@@ -1070,7 +1070,7 @@ void __rthal_exit (void)
 
 #ifdef CONFIG_PROC_FS
     rthal_proc_unregister();
-#endif
+#endif /* CONFIG_PROC_FS */
 
     if (rthal_sysreq_virq)
 	{
@@ -1114,6 +1114,8 @@ EXPORT_SYMBOL(rthal_critical_exit);
 EXPORT_SYMBOL(rthal_set_linux_task_priority);
 
 EXPORT_SYMBOL(rthal_domain);
-EXPORT_SYMBOL(rthal_proc_root);
 EXPORT_SYMBOL(rthal_tunables);
 EXPORT_SYMBOL(rthal_cpu_realtime);
+#ifdef CONFIG_PROC_FS
+EXPORT_SYMBOL(rthal_proc_root);
+#endif /* CONFIG_PROC_FS */

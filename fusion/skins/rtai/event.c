@@ -419,10 +419,8 @@ int rt_event_signal (RT_EVENT *event,
  *
  * This service can be called from:
  *
- * - Kernel module initialization/cleanup code
- * - Interrupt service routine
- *   only if @a timeout is equal to TM_NONBLOCK.
- *
+ * - Kernel module initialization/cleanup code or Interrupt service
+ * routine only if @a timeout is equal to TM_NONBLOCK.
  * - Kernel-based task
  * - User-space task (switches to primary mode)
  *

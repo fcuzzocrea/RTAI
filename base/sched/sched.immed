@@ -673,7 +673,7 @@ static void lxrt_context_switch(struct task_struct *prev, struct task_struct *ne
 static int rt_schedule_on_schedule_ipi(void)
 {
 	RT_TASK *rt_current, *task, *new_task;
-	int cpuid, prio, preempt, retval;
+	int cpuid, prio, preempt;
 
 	rt_current = rt_smp_current[cpuid = rtai_cpuid()];
 
@@ -712,7 +712,6 @@ static int rt_schedule_on_schedule_ipi(void)
 	sched_release_global_lock(cpuid);
 
 	if (new_task != rt_current) {
-		retval = 1;
 		rt_scheduling[cpuid].rqsted = 1;
 		if (rt_scheduling[cpuid].locked) {
 			goto sched_exit;
@@ -742,13 +741,10 @@ static int rt_schedule_on_schedule_ipi(void)
 				restore_fpu(prev);
 			}
 		}
-	} else {
-		retval = 0;
-		set_need_resched();
 	}
 sched_exit:
 	rtai_cli();
-	return retval;
+	return 0;
 }
 #endif
 
@@ -1021,7 +1017,7 @@ int rt_get_timer_cpu(void)
 static int rt_timer_handler(void)
 {
 	RT_TASK *rt_current, *task, *new_task;
-	int cpuid, prio, preempt, retval;
+	int cpuid, prio, preempt;
 
 	DO_TIMER_PROPER_OP();
 	rt_current = rt_smp_current[cpuid = rtai_cpuid()];
@@ -1037,12 +1033,8 @@ static int rt_timer_handler(void)
 	if (rt_times.tick_time >= rt_times.linux_time) {
 		rt_times.linux_time += rt_times.linux_tick;
 		update_linux_timer(cpuid);
-		retval = 0;
-	} else 
-#endif
-	{
-		retval = 1;
 	}
+#endif
 
 	sched_get_global_lock(cpuid);
 	wake_up_timed_tasks(cpuid);
@@ -1129,7 +1121,7 @@ static int rt_timer_handler(void)
         }
 sched_exit:
 	rtai_cli();
-	return retval;
+	return 0;
 }
 
 

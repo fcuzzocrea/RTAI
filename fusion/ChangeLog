@@ -1,9 +1,5 @@
 2004-10-04  Philippe Gerum  <rpm@xenomai.org>
 
- 	* RELEASE: fusion-0.6
-
-2004-10-04  Philippe Gerum  <rpm@xenomai.org>
-
 	* include/nucleus/asm-*/system.h (xnarch_notify_shutdown): 
 	* arch/*/hal/hal.c (__rthal_init): Force CPU affinity so that the
 	HAL and the nucleus always keep their execution sequence on SMP

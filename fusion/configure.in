@@ -195,6 +195,9 @@ fi
 RTAI_LINUX_VERSION="$linux_VERSION.$linux_PATCHLEVEL.$linux_SUBLEVEL"
 AC_MSG_RESULT([$RTAI_LINUX_DIR (kernel ${RTAI_LINUX_VERSION}${CONFIG_SMP:+-SMP})])
 
+AC_MSG_CHECKING([for Linux source tree])
+AC_MSG_RESULT([$RTAI_LINUX_SRCDIR])
+
 dnl
 dnl Check the kernel has been Adeos-enabled.
 dnl

@@ -195,7 +195,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define RTAI_IFLAG  9
 
 #define rtai_cpuid()  adeos_processor_id()
-#define rtai_tskext   ptd
+#define rtai_tskext(idx)   ptd[idx]
 
 extern adomain_t rtai_domain;
 

@@ -216,7 +216,7 @@ static void put_current_on_cpu(int cpuid)
 #else /* KERNEL_VERSION >= 2.6.0 */
 	if (set_cpus_allowed(current,cpumask_of_cpu(cpuid)))
 	    {
-	    ((RT_TASK *)(current->rtai_tskext[0]))->runnable_on_cpus = smp_processor_id();
+	    ((RT_TASK *)(current->rtai_tskext(0)))->runnable_on_cpus = smp_processor_id();
 	    set_cpus_allowed(current,cpumask_of_cpu(smp_processor_id()));
 	    }
 
@@ -272,14 +272,14 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 		task->priority = task->base_priority = priority;
 		task->suspdepth = task->is_hard = 1;
 		task->state = RT_SCHED_READY | RT_SCHED_SUSPENDED;
-		relink->rtai_tskext[0] = task;
+		relink->rtai_tskext(0) = task;
 		task->lnxtsk = relink;
 	} else {
 		task->priority = task->base_priority = BASE_SOFT_PRIORITY + priority;
 		task->suspdepth = task->is_hard = 0;
 		task->state = RT_SCHED_READY;
-		current->rtai_tskext[0] = task;
-		current->rtai_tskext[1] = task->lnxtsk = current;
+		current->rtai_tskext(0) = task;
+		current->rtai_tskext(1) = task->lnxtsk = current;
 		put_current_on_cpu(cpuid);
 	}
 	flags = rt_global_save_flags_and_cli();
@@ -1788,8 +1788,8 @@ static void thread_fun(int cpuid)
 	detach_kthread();
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_F_PRIO);
 	sprintf(current->comm, "F:HARD:%d:%d", cpuid, ++rsvr_cnt[cpuid]);
-	current->rtai_tskext[0] = task = &thread_task[cpuid];
-	current->rtai_tskext[1] = task->lnxtsk = current;
+	current->rtai_tskext(0) = task = &thread_task[cpuid];
+	current->rtai_tskext(1) = task->lnxtsk = current;
 	lxrt_sigfillset();
 	put_current_on_cpu(cpuid);
 	init_fpu(current);
@@ -1797,7 +1797,7 @@ static void thread_fun(int cpuid)
 	while (1) {
 		rt_task_suspend(task);
 		current->comm[0] = 'U';
-		task = current->rtai_tskext[0];
+		task = current->rtai_tskext(0);
 		task->exectime[1] = rdtsc();
 		((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
 #if 0
@@ -1844,7 +1844,7 @@ static void kthread_m(int cpuid)
 			flags = rt_global_save_flags_and_cli();
 			hard = (unsigned long)(lnxtsk = klistp->task[klistp->out]);
 			if (hard > 1) {
-				lnxtsk->rtai_tskext[0] = NULL;
+				lnxtsk->rtai_tskext(0) = NULL;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10)
 				lnxtsk->state = TASK_ZOMBIE;
 #endif
@@ -2108,7 +2108,7 @@ static void lxrt_intercept_signal (adevinfo_t *evinfo)
 {
 	struct { struct task_struct *task; int sig; } *evdata = (__typeof(evdata))evinfo->evdata;
 	struct task_struct *lnxtsk = evdata->task;
-	RT_TASK *task = lnxtsk->rtai_tskext[0];
+	RT_TASK *task = lnxtsk->rtai_tskext(0);
 	if (task) {
 		if ((task->force_soft = task->is_hard == 1)) {
 			rt_do_force_soft(task);
@@ -2124,7 +2124,7 @@ static void lxrt_intercept_signal (adevinfo_t *evinfo)
 static void lxrt_intercept_exit (adevinfo_t *evinfo)
 {
 	extern void linux_process_termination(void);
-	RT_TASK *task = current->rtai_tskext[0];
+	RT_TASK *task = current->rtai_tskext(0);
 	if (task) {
 		if (task->is_hard == 1) {
 			give_back_to_linux(task);
@@ -2191,7 +2191,7 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 static void lxrt_intercept_syscall_epilogue(adevinfo_t *evinfo)
 {
 	RT_TASK *task;
-	if (current->rtai_tskext[0] && (task = (RT_TASK *)current->rtai_tskext[0])->is_hard > 1) {
+	if (current->rtai_tskext(0) && (task = (RT_TASK *)current->rtai_tskext(0))->is_hard > 1) {
 		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 		steal_from_linux(task);
 		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););

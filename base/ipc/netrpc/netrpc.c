@@ -340,7 +340,7 @@ static int soft_kthread_delete(RT_TASK *task)
 		return -EFAULT;
 	} else {
 		struct task_struct *lnxtsk = task->lnxtsk;
-		lnxtsk->rtai_tskext[0] = lnxtsk->rtai_tskext[1] = 0;
+		lnxtsk->rtai_tskext(0) = lnxtsk->rtai_tskext(1) = 0;
 		sigemptyset(&lnxtsk->blocked);
 		lnxtsk->state = TASK_INTERRUPTIBLE;
 		kill_proc(lnxtsk->pid, SIGTERM, 0);

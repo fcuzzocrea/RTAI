@@ -291,7 +291,7 @@ static int __task_delete(RT_TASK *rt_task)
 	rt_free(rt_task->msg_buf[0]);
 	rt_free(rt_task);
 	if ((process = rt_task->lnxtsk)) {
-		process->rtai_tskext[0] = process->rtai_tskext[1] = 0;
+		process->rtai_tskext(0) = process->rtai_tskext(1) = 0;
 	}
 	return (!rt_drg_on_adr(rt_task)) ? -ENODEV : 0;
 }
@@ -327,7 +327,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 	int srq;
 	RT_TASK *task;
 
-	__force_soft(task = current->rtai_tskext[0]);
+	__force_soft(task = current->rtai_tskext(0));
 	srq = SRQ(lxsrq);
 	if (srq < MAX_LXRT_FUN) {
 		int idx;
@@ -484,7 +484,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 
 		case MAKE_HARD_RT: {
 #ifndef USE_LINUX_SYSCALL
-			if (!(task = current->rtai_tskext[0]) || task->is_hard == 1) {
+			if (!(task = current->rtai_tskext(0)) || task->is_hard == 1) {
 				 return 0;
 			}
 			steal_from_linux(task);
@@ -494,7 +494,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 
 		case MAKE_SOFT_RT: {
 #ifndef USE_LINUX_SYSCALL
-			if (!(task = current->rtai_tskext[0]) || task->is_hard <= 0) {
+			if (!(task = current->rtai_tskext(0)) || task->is_hard <= 0) {
 				return 0;
 			}
 			if (task->is_hard > 1) {
@@ -523,9 +523,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case RT_BUDDY: {
-			return current->rtai_tskext[0] && 
-			       current->rtai_tskext[1] == current ?
-			       (unsigned long)(current->rtai_tskext[0]) : 0;
+			return current->rtai_tskext(0) && 
+			       current->rtai_tskext(1) == current ?
+			       (unsigned long)(current->rtai_tskext(0)) : 0;
 		}
 
 		case HRT_USE_FPU: {
@@ -556,7 +556,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
                 }
 
                 case SET_USP_FLG_MSK: {
-                        (task = current->rtai_tskext[0])->usp_flags_mask = arg0.name;
+                        (task = current->rtai_tskext(0))->usp_flags_mask = arg0.name;
                         task->force_soft = (task->is_hard > 0) && (task->usp_flags & arg0.name & FORCE_SOFT);
                         return 0;
                 }
@@ -565,7 +565,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 			extern void rt_do_force_soft(RT_TASK *rt_task);
                         struct task_struct *ltsk;
                         if ((ltsk = find_task_by_pid(arg0.name)))  {
-                                if ((arg0.rt_task = ltsk->rtai_tskext[0])) {
+                                if ((arg0.rt_task = ltsk->rtai_tskext(0))) {
 					if ((arg0.rt_task->force_soft = (arg0.rt_task->is_hard > 0) && FORCE_SOFT)) {
 						rt_do_force_soft(arg0.rt_task);
 					}
@@ -688,13 +688,13 @@ void linux_process_termination(void)
 				break;
 		}
 	}
-	if ((task2delete = current->rtai_tskext[0])) {
+	if ((task2delete = current->rtai_tskext(0))) {
 		if (!clr_rtext(task2delete)) {
 			rt_drg_on_adr(task2delete); 
 			rt_printk("LXRT releases PID %d (ID: %s).\n", current->pid, current->comm);
 			rt_free(task2delete->msg_buf[0]);
 			rt_free(task2delete);
-			current->rtai_tskext[0] = current->rtai_tskext[1] = 0;
+			current->rtai_tskext(0) = current->rtai_tskext(1) = 0;
 		}
 	}
 }

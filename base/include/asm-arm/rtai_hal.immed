@@ -137,7 +137,7 @@ rtai_imuldiv(int i, int mult, int div)
 #define RTAI_IFLAG			(7)
 
 #define rtai_cpuid()			adeos_processor_id()
-#define rtai_tskext			ptd
+#define rtai_tskext(idx)   		ptd[idx]
 
 /* Use these in hard real time code to achieve UP-atomicity. */
 #define rtai_cli()			adeos_hw_cli()

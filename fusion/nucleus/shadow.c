@@ -1582,9 +1582,7 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
     else if (next != gatekeeper[cpuid])
 	    {
 	    rootprio = XNPOD_ROOT_PRIO_BASE;
-
-	    if (xnshadow_thread(prev))
-		disengage_irq_shield(cpuid);
+	    disengage_irq_shield(cpuid);
 	    }
         else
 	    return;

@@ -76,8 +76,7 @@ void xnmod_alloc_glinks (xnqueue_t *freehq)
 #if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
 #include <linux/proc_fs.h>
-
-static struct proc_dir_entry *xenomai_proc_entry;
+#include <linux/ctype.h>
 
 static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
 
@@ -89,12 +88,12 @@ static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
 	xntimer_get_timeout(&thread->ptimer);
 }
 
-static int xnpod_read_proc (char *page,
-			    char **start,
-			    off_t off,
-			    int count,
-			    int *eof,
-			    void *data)
+static int system_read_proc (char *page,
+			     char **start,
+			     off_t off,
+			     int count,
+			     int *eof,
+			     void *data)
 {
     const unsigned nr_cpus = xnarch_num_online_cpus();
     unsigned cpu, ready_threads = 0;
@@ -223,18 +222,115 @@ static int xnpod_read_proc (char *page,
     return len;
 }
 
-void xnpod_init_proc (void) {
+static ssize_t latency_read_proc (char *page,
+				  char **start,
+				  off_t off,
+				  int count,
+				  int *eof,
+				  void *data)
+{
+    int len;
 
-    xenomai_proc_entry = create_proc_read_entry("rtai/system",
-						0444,
-						NULL,
-						&xnpod_read_proc,
-						NULL);
+    len = sprintf(page,"%Lu\n",xnarch_tsc_to_ns(nkschedlat));
+    len -= off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
 }
 
-void xnpod_delete_proc (void) {
+static int latency_write_proc (struct file *file,
+			       const char __user *buffer,
+			       unsigned long count,
+			       void *data)
+{
+    char *end, buf[sizeof("nnnnn\0")];
+    long ns;
 
+    if (copy_from_user(buf,buffer,count))
+	return -EFAULT;
+
+    ns = simple_strtol(buf,&end,0);
+
+    if ((*end != '\0' && !isspace(*end)) || ns < 0)
+	return -EINVAL;
+
+    nkschedlat = xnarch_ns_to_tsc(ns);
+
+    return count;
+}
+
+static ssize_t version_read_proc (char *page,
+				  char **start,
+				  off_t off,
+				  int count,
+				  int *eof,
+				  void *data)
+{
+    int len;
+
+    len = sprintf(page,"%s\n",PACKAGE_VERSION);
+    len -= off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
+}
+
+static struct proc_dir_entry *root_proc_entry;
+
+void xnpod_init_proc (void)
+
+{
+    struct proc_dir_entry *entry;
+
+    root_proc_entry = proc_mkdir("rtai",NULL);
+
+    if (!root_proc_entry)
+	return;
+
+    entry = create_proc_entry("system",0444,root_proc_entry);
+
+    if (entry)
+	{
+	entry->nlink = 1;
+	entry->data = NULL;
+	entry->read_proc = system_read_proc;
+	entry->write_proc = NULL;
+	}
+
+    entry = create_proc_entry("latency",0600,root_proc_entry);
+
+    if (entry)
+	{
+	entry->nlink = 1;
+	entry->data = NULL;
+	entry->read_proc = &latency_read_proc;
+	entry->write_proc = &latency_write_proc;
+	}
+
+    entry = create_proc_entry("version",0444,root_proc_entry);
+
+    if (entry)
+	{
+	entry->nlink = 1;
+	entry->data = NULL;
+	entry->read_proc = &version_read_proc;
+	entry->write_proc = NULL;
+	}
+}
+
+void xnpod_delete_proc (void)
+
+{
+    remove_proc_entry("rtai/version",NULL);
+    remove_proc_entry("rtai/latency",NULL);
     remove_proc_entry("rtai/system",NULL);
+    remove_proc_entry("rtai",NULL);
 }
 
 #endif /* CONFIG_PROC_FS */

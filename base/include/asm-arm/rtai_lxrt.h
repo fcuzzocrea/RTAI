@@ -122,6 +122,8 @@ rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
     return retval;
 }
 
+#define rtai_iopl()  do { /* nop */ } while (0)
+
 #endif /* __KERNEL__ */
 
 #ifdef __cplusplus

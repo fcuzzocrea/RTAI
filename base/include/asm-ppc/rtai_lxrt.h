@@ -86,7 +86,7 @@ static inline union rtai_lxrt_t rtai_lxrt(short dynx, short lsize, unsigned long
     return retval;
 }
 
-static inline int iopl(int i) { return 0; }
+#define rtai_iopl()  do { /* nop */ } while (0)
 
 #endif /* !__KERNEL__ */
 

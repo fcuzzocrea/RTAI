@@ -606,7 +606,6 @@ RTAI_PROTO(unsigned long,rt_get_name,(void *adr))
 
 RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
 {
-	extern int iopl(int);
         struct sched_param mysched;
         struct { int name, priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, stack_size, max_msg_size, cpus_allowed };
 
@@ -617,7 +616,7 @@ RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size
         if (sched_setscheduler(0, policy, &mysched) < 0) {
                 return 0;
         }
-	iopl(3);
+	rtai_iopl();
 
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }

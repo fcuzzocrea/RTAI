@@ -1,3 +1,9 @@
+2004-10-01  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i386/system.h (xnarch_switch_to): clear the
+	ts bit when switching to a Linux task when the previous Linux task
+	had used the FPU.
+
 2004-09-30  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pod.c (xnpod_init): Handle the XNPIDLE bit, to prevent

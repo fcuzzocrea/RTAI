@@ -473,6 +473,8 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
 #endif /* GCC version < 3.2 */
 }
 
+extern int workaround_fpu_fault;
+
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 				     xnarchtcb_t *in_tcb)
 {
@@ -485,7 +487,11 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	__asm__ __volatile__ ("movl %%cr0,%0": "=r" (cr0));
 	clts();
 	}
-
+    else if (inproc && outproc->thread_info->status & TS_USEDFPU)        
+        /* __switch_to will try and use __unlazy_fpu, so that the ts bit need
+           to be cleared. */
+        clts();
+    
     in_tcb->active_task = inproc ?: outproc;
 
     if (inproc && inproc != outproc)

@@ -101,7 +101,7 @@ unsigned long long __rthal_ullimd (const unsigned long long op,
                                    const unsigned long d)
 {
     unsigned long long th, tl;
-    u_long oph, opl, tlh, tll, qh, rh, ql;
+    u_long oph, opl, tlh, tll, qh, rh;
 
     __rthal_u64tou32(op, oph, opl);
     tl = rthal_ullmul(opl, m);

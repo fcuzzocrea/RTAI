@@ -70,10 +70,10 @@
 MODULE_LICENSE("GPL");
 
 static unsigned long rthal_cpufreq_arg;
-MODULE_PARM(rthal_cpufreq_arg,"i");
+module_param_named(cpufreq,rthal_cpufreq_arg,ulong,0444);
 
 static unsigned long rthal_timerfreq_arg;
-MODULE_PARM(rthal_timerfreq_arg,"i");
+module_param_named(timerfreq,rthal_timerfreq_arg,ulong,0444);
 
 extern struct desc_struct idt_table[];
 
@@ -828,28 +828,6 @@ static inline _syscall3(int,
 			int,policy,
 			struct sched_param *,param)
 
-void rthal_set_linux_task_priority (struct task_struct *task, int policy, int prio)
-
-{
-    struct sched_param __user param;
-    mm_segment_t old_fs;
-    int rc;
-
-    param.sched_priority = prio >= MAX_USER_RT_PRIO ? MAX_USER_RT_PRIO - 1 : prio;
-    old_fs = get_fs();
-    set_fs(KERNEL_DS);
-    rc = sched_setscheduler(task->pid,policy,&param);
-    set_fs(old_fs);
-
-    if (rc)
-	printk(KERN_ERR "RTAI: setscheduler(policy=%d,prio=%d)=%d (%s -- pid=%d)\n",
-	       policy,
-	       prio,
-	       rc,
-	       task->comm,
-	       task->pid);
-}
-
 static void rthal_domain_entry (int iflag)
 
 {
@@ -980,7 +958,7 @@ static int faults_read_proc (char *page,
     static char *fault_labels[] = {
 	[0] = "Divide error",
 	[1] = "Debug",
-	[2] = "--",
+	[2] = NULL,	/* NMI is not pipelined. */
 	[3] = "Int3",
 	[4] = "Overflow",
 	[5] = "Bounds",
@@ -1009,10 +987,13 @@ static int faults_read_proc (char *page,
 
     for (trap = 0; trap < 20; trap++)
 	{
-	p += sprintf(p,"\n%3d:",trap);
+	if (!fault_labels[trap])
+	    continue;
+
+	p += sprintf(p,"\n%3d: ",trap);
 
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	    p += sprintf(p," %12d",
+	    p += sprintf(p,"%12d",
 			 rthal_realtime_faults[cpuid][trap]);
 
 	p += sprintf(p,"   (%s)",fault_labels[trap]);
@@ -1266,7 +1247,6 @@ EXPORT_SYMBOL(rthal_get_8254_tsc);
 
 EXPORT_SYMBOL(rthal_critical_enter);
 EXPORT_SYMBOL(rthal_critical_exit);
-EXPORT_SYMBOL(rthal_set_linux_task_priority);
 
 EXPORT_SYMBOL(rthal_domain);
 EXPORT_SYMBOL(rthal_tunables);

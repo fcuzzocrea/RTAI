@@ -59,12 +59,10 @@
 MODULE_LICENSE("GPL");
 
 static unsigned long rthal_cpufreq_arg;
-MODULE_PARM(rthal_cpufreq_arg,"i");
+module_param_named(cpufreq,rthal_cpufreq_arg,ulong,0444);
 
 static unsigned long rthal_timerfreq_arg;
-MODULE_PARM(rthal_timerfreq_arg,"i");
-
-extern struct desc_struct idt_table[];
+module_param_named(timerfreq,rthal_timerfreq_arg,ulong,0444);
 
 adomain_t rthal_domain;
 
@@ -577,28 +575,6 @@ static inline _syscall3(int,
 			int,policy,
 			struct sched_param *,param)
 
-void rthal_set_linux_task_priority (struct task_struct *task, int policy, int prio)
-
-{
-    struct sched_param __user param;
-    mm_segment_t old_fs;
-    int rc;
-
-    param.sched_priority = prio;
-    old_fs = get_fs();
-    set_fs(KERNEL_DS);
-    rc = sched_setscheduler(task->pid,policy,&param);
-    set_fs(old_fs);
-
-    if (rc)
-	printk(KERN_ERR "RTAI: setscheduler(policy=%d,prio=%d)=%d (%s -- pid=%d)\n",
-	       policy,
-	       prio,
-	       rc,
-	       task->comm,
-	       task->pid);
-}
-
 static void rthal_domain_entry (int iflag)
 
 {
@@ -752,10 +728,10 @@ static int faults_read_proc (char *page,
 
     for (trap = 0; trap < 14; trap++)
 	{
-	p += sprintf(p,"\n%3d:",trap);
+	p += sprintf(p,"\n%3d: ",trap);
 
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	    p += sprintf(p," %12d",
+	    p += sprintf(p,"%12d",
 			 rthal_realtime_faults[cpuid][trap]);
 
 	p += sprintf(p,"   (%s)",fault_labels[trap]);
@@ -977,7 +953,6 @@ EXPORT_SYMBOL(rthal_calibrate_timer);
 
 EXPORT_SYMBOL(rthal_critical_enter);
 EXPORT_SYMBOL(rthal_critical_exit);
-EXPORT_SYMBOL(rthal_set_linux_task_priority);
 EXPORT_SYMBOL(rthal_switch_context);
 
 EXPORT_SYMBOL(rthal_domain);

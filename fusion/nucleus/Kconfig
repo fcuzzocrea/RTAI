@@ -59,4 +59,43 @@ config RTAI_OPT_DEBUG
 	This option activates runtime checking of the real-time
 	nucleus state.
 
+menu "LTT tracepoints filtering"
+
+config RTAI_OPT_FILTER_EVIRQ
+	bool "Disable IRQ-related tracepoints"
+	depends on RTAI_OPT_EXPERT
+	default y if RTAI_OPT_FILTER_EVALL=y
+	help
+	
+	When LTT support is active, this option disables tracepoints
+	inside real-time interrupt handlers.
+
+config RTAI_OPT_FILTER_EVTHR
+	bool "Disable thread-related tracepoints"
+	depends on RTAI_OPT_EXPERT
+	default y if RTAI_OPT_FILTER_EVALL=y
+	help
+	
+	When LTT support is active, this option disables tracepoints
+	inside most thread-related services.
+
+config RTAI_OPT_FILTER_EVSYS
+	bool "Disable syscall-related tracepoints"
+	depends on RTAI_OPT_EXPERT
+	default y if RTAI_OPT_FILTER_EVALL=y
+	help
+	
+	When LTT support is active, this option disables tracepoints
+	inside the shadow syscall dispatcher.
+
+config RTAI_OPT_FILTER_EVALL
+	bool "Disable all tracepoints"
+	depends on RTAI_OPT_EXPERT
+	default y if RTAI_OPT_FILTER_EVALL=y
+	help
+	
+	This option disables all LTT tracepoints inside RTAI/fusion.
+
+endmenu
+
 endmenu

@@ -37,6 +37,7 @@
 #include <asm/signal.h>
 #include <linux/unistd.h>
 #include <linux/wait.h>
+#include <linux/init.h>
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
 #include <nucleus/synch.h>
@@ -1725,7 +1726,7 @@ void xnshadow_release_events (void)
     adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,NULL);
 }
 
-int xnshadow_mount (void)
+int __init xnshadow_mount (void)
 
 {
     adattr_t attr;
@@ -1763,7 +1764,7 @@ int xnshadow_mount (void)
     return 0;
 }
 
-void xnshadow_cleanup (void)
+void __exit xnshadow_cleanup (void)
 
 {
     unsigned cpu;

@@ -90,19 +90,29 @@ struct xnltt_evmap {
 
 #define XNLTT_MAX_EVENTS 64
 
+extern struct xnltt_evmap xnltt_evtable[];
+
+extern int xnltt_filter;
+
 #define xnltt_log_event(ev, args...) \
 do { \
   if (xnltt_evtable[ev].ltt_filter & xnltt_filter) \
     ltt_log_std_formatted_event(xnltt_evtable[ev].ltt_evid, ##args); \
 } while(0)
 
+static inline void xnltt_set_filter (int mask)
+{
+    xnltt_filter = mask;
+}
+
+static inline void xnltt_stop_tracing (void)
+{
+    xnltt_set_filter(0);
+}
+
 int xnltt_mount(void);
 
 void xnltt_umount(void);
-
-extern struct xnltt_evmap xnltt_evtable[];
-
-extern int xnltt_filter;
 
 #else /* !(__KERNEL__ && CONFIG_LTT) */
 

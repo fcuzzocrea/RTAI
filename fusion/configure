@@ -21163,6 +21163,26 @@ cat >>confdefs.h <<_ACEOF
 #define CONFIG_RTAI_OPT_PIPE_NRDEV $CONFIG_RTAI_OPT_PIPE_NRDEV
 _ACEOF
 
+test x$CONFIG_RTAI_OPT_FILTER_EVIRQ = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_FILTER_EVIRQ 1
+_ACEOF
+
+test x$CONFIG_RTAI_OPT_FILTER_EVTHR = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_FILTER_EVTHR 1
+_ACEOF
+
+test x$CONFIG_RTAI_OPT_FILTER_EVSYS = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_FILTER_EVSYS 1
+_ACEOF
+
+test x$CONFIG_RTAI_OPT_FILTER_EVALL = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_FILTER_EVALL 1
+_ACEOF
+
 
 test \! x$CONFIG_RTAI_OPT_NATIVE_REGISTRY = x &&
 cat >>confdefs.h <<\_ACEOF

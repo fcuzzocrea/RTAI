@@ -58,6 +58,18 @@
 #undef CONFIG_RTAI_OPT_DEBUG
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_FILTER_EVALL
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_FILTER_EVIRQ
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_FILTER_EVSYS
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_FILTER_EVTHR
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_FUSION
 
 /* Kconfig */

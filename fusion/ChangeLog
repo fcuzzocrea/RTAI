@@ -1,3 +1,7 @@
+2005-02-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/Kconfig: Add LTT filter configuration.
+
 2005-02-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.9-r9c3.

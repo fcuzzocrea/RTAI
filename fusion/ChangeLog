@@ -1,5 +1,7 @@
 2004-06-10  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/event.c: Fully implement the event flag group.
+
 	* nucleus/pod.c (xnpod_init_thread): Discard magic parameter. Use
 	xnthread_set_magic() after creation instead.
 

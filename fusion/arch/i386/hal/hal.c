@@ -1116,11 +1116,12 @@ int __rthal_init (void)
     
 #ifdef CONFIG_X86_LOCAL_APIC
     if (!test_bit(X86_FEATURE_APIC,boot_cpu_data.x86_capability))
-	{
-	printk("RTAI: Local APIC absent or disabled!\n"
-	       "      Disable APIC support or pass \"lapic\" as bootparam.\n");
-	return -ENODEV;
-	}
+    {
+        printk("RTAI: Local APIC absent or disabled!\n"
+	           "      Disable APIC support or pass \"lapic\" as bootparam.\n");
+        err = -ENODEV;
+        goto out_smi_restore;
+    }
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 
@@ -1135,15 +1136,21 @@ int __rthal_init (void)
     rthal_sysreq_virq = adeos_alloc_irq();
 
     if (!rthal_sysreq_virq)
-	{
-	printk(KERN_ERR "RTAI: No virtual interrupt available.\n");
-	return -EBUSY;
-	}
+    {
+        printk(KERN_ERR "RTAI: No virtual interrupt available.\n");
+	    err = -EBUSY;
+        goto out_smi_restore;
+    }
 
-    adeos_virtualize_irq(rthal_sysreq_virq,
+    err = adeos_virtualize_irq(rthal_sysreq_virq,
 			 &rthal_ssrq_trampoline,
 			 NULL,
 			 IPIPE_HANDLE_MASK);
+    if (err)
+    {
+        printk(KERN_ERR "RTAI: Failed to virtualize IRQ.\n");
+        goto out_free_irq;
+    }
 
     if (rthal_cpufreq_arg == 0)
 #ifdef CONFIG_X86_TSC
@@ -1183,7 +1190,26 @@ int __rthal_init (void)
     err = adeos_register_domain(&rthal_domain,&attr);
 
     if (!err)
-	rthal_init_done = 1;
+    	rthal_init_done = 1;
+    else 
+    {
+        printk(KERN_ERR "RTAI: Domain registration failed.\n");
+        goto out_proc_unregister;
+    }
+
+    return 0;
+
+out_proc_unregister:
+#ifdef CONFIG_PROC_FS
+    rthal_proc_unregister();
+#endif
+    adeos_virtualize_irq(rthal_sysreq_virq,NULL,NULL,0);
+   
+out_free_irq:
+    adeos_free_irq(rthal_sysreq_virq);
+
+out_smi_restore:
+    rthal_smi_restore();		
 
     return err;
 }

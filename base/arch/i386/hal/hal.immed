@@ -2067,4 +2067,5 @@ EXPORT_SYMBOL(rtai_set_gate_vector);
 EXPORT_SYMBOL(rtai_reset_gate_vector);
 
 EXPORT_SYMBOL(rtai_lxrt_invoke_entry);
+EXPORT_SYMBOL(adeos_pended);
 /*@}*/

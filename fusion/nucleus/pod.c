@@ -2775,7 +2775,7 @@ int xnpod_announce_tick (xnintr_t *intr)
                                      xnticks_t period)
  * \brief Make a thread periodic.
  *
- * Make a thread periodic by programing its first release point and
+ * Make a thread periodic by programming its first release point and
  * its period in the processor time line.  Subsequent calls to
  * xnpod_wait_thread_period() will delay the thread until the next
  * periodic release point in the processor timeline is reached.

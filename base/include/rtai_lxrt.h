@@ -631,7 +631,7 @@ RTAI_PROTO(int, rt_thread_create,(void *fun, void *args, int stack_size))
         if (pthread_attr_setstacksize(&attr, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN)) {
                 return -1;
         }
-	if (pthread_create(&thread, &attr, fun, args)) {
+	if (pthread_create(&thread, &attr, (void *(*)(void *))fun, args)) {
 		return -1;
 	}
 	return thread;

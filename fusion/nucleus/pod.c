@@ -2285,11 +2285,6 @@ void xnpod_schedule (void)
     threadout = runthread;
     threadin = link2thread(getpq(&sched->readyq),rlink);
 
-#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
-    if (!threadin)
-        xnpod_fatal("schedule: no thread to schedule?!");
-#endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
-
     __clrbits(threadin->status,XNREADY);
 
     if (threadout == threadin &&
@@ -2448,11 +2443,6 @@ maybe_switch:
     xnsched_clr_resched(sched);
 
     threadin = link2thread(getpq(&sched->readyq),rlink);
-
-#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
-    if (!threadin)
-        xnpod_fatal("schedule_runnable: no thread to schedule?!");
-#endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
 
     __clrbits(threadin->status,XNREADY);
 
@@ -3062,8 +3052,9 @@ int xnpod_announce_tick (xnintr_t *intr)
     cpu = xnarch_current_cpu();
 
 #ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
-    /* On SMP machines, the timers may tick on several CPUs, in which
-       case, only one must be used. */
+    /* On SMP machines using a single global timer list, the timers
+       may tick on several CPUs, in which case, only one must be
+       used. */
     if(cpu != XNTIMER_KEEPER_ID)
         return XN_ISR_HANDLED;
 #endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */

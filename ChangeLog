@@ -1,3 +1,23 @@
+2004-07-20  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Upgrade to hal13 final.
+	
+	* rtai-core/sched/rtai/sched_{up|smp|mup}.c: Always escalate the
+	rescheduling requests to the RTAI domain as needed; this closes a
+	long-standing race window where Linux interrupts might be served
+	on a non-Linux stack.
+
+	* rtai-core/sched/rtai/sched_lxrt.c (rt_schedule_soft,
+	give_back_to_linux, kthread_m): Rework interrupt masking and
+	critical sections.
+
+	* rtai-core/sched/rtai/sched_lxrt.c (rt_timer_handler,
+	rt_schedule): Mask interrupts at hardware-level during core
+	scheduling operations.
+
+	* rtai-core/sched/rtai/sched_lxrt.c (intr_get_current): Iron the
+	Adeos-aware code retrieving the current linux task.
+
 2004-06-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* configure.in, GNUmakefile.am: handle correctly the "all" and "dist"
@@ -6,8 +26,8 @@
 
 2004-06-13  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
 
-	* rtai-core/include/rtai_posix.h (pthread_rwlock_open_rt): Make depend on
-	-D__USE_UNIX98.
+	* rtai-core/include/rtai_posix.h (pthread_rwlock_open_rt): Make
+	depend on -D__USE_UNIX98.
 
 	* rtai-core/include/rtai_posix.h: Include <stdlib.h> in user-space
 	to satisfy references to malloc()/free().
@@ -46,6 +66,11 @@
 	* rtai-core/include/rtai_posix.h: Fix sem, mutex and rwlock not
 	being deleted.
 	
+2004-05-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/xenomai/shadow.c (xnshadow_linux_taskexit):
+	Always relax exiting shadows.
+
 2004-05-08  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* configure.in: Refuse to generate doxygen documentation with

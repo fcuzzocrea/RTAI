@@ -255,6 +255,18 @@ extern adomain_t arti_domain;
 
 extern int arti_adeos_ptdbase;
 
+static inline struct task_struct *arti_get_root_current (int cpuid) {
+    return (struct task_struct *)(((u_long)adp_root->esp[cpuid]) & (~8191UL));
+}
+
+static inline int arti_adeos_stack_p (int cpuid)
+
+{
+    int *esp;
+    __asm__ volatile("movl %%esp, %0" : "=r" (esp));
+    return (esp >= arti_domain.estackbase[cpuid] && esp < arti_domain.estackbase[cpuid] + 2048);
+}
+
 /* arti_get_current() is Adeos-specific. Since real-time interrupt
    handlers are called on behalf of the RTAI domain stack, we cannot
    infere the "current" Linux task address using %esp. We must use the
@@ -263,12 +275,8 @@ extern int arti_adeos_ptdbase;
 static inline struct task_struct *arti_get_current (int cpuid)
 
 {
-    int *esp;
-
-    __asm__ volatile("movl %%esp, %0" : "=r" (esp));
-
-    if (esp >= arti_domain.estackbase[cpuid] && esp < arti_domain.estackbase[cpuid] + 2048)
-	return (struct task_struct *)(((u_long)adp_root->esp[cpuid]) & (~8191UL));
+    if (arti_adeos_stack_p(cpuid))
+	return arti_get_root_current(cpuid);
 
     return get_current();
 }

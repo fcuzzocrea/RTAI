@@ -1272,7 +1272,7 @@ static void xnshadow_linux_taskexit (adevinfo_t *evinfo)
 		   current->pid);
 #endif
 
-	if (!testbits(thread->status,XNRELAX))
+	if (xnpod_shadow_p())
 	    xnshadow_relax();
 
 	/* So that we won't attempt to further wakeup the exiting task

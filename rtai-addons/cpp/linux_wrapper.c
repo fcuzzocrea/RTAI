@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework 
  *
- * File: $Id: linux_wrapper.c,v 1.1 2004/06/06 14:10:04 rpm Exp $
+ * File: $Id: linux_wrapper.c,v 1.2 2004/07/20 20:48:11 rpm Exp $
  *
  * Copyright: (C) 2001,2002 Erwin Rol <erwin@muffin.org>
  *
@@ -22,6 +22,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
  */
 
+#include <asm/system.h>
 #include <linux/smp.h>
 
 #include "linux_wrapper.h"

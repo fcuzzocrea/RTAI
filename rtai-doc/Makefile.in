@@ -311,9 +311,9 @@ EXTRA_DIST = \
 
 
 DOCS = html
+@CONFIG_RTAI_DOC_TRUE@DOCSDIR = .
 
 @CONFIG_RTAI_DOC_FALSE@DOCSDIR = $(srcdir)/generated
-@CONFIG_RTAI_DOC_TRUE@DOCSDIR = .
 subdir = rtai-doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) \

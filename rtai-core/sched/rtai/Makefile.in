@@ -323,9 +323,9 @@ noinst_LIBRARIES = $(am__append_1) $(am__append_3) $(am__append_6) $(am__append_
 
 builtins = @RTAI_BUILTIN_MODLIST@
 BUILTIN_OBJS = $(foreach obj,$(builtins),$(patsubst %,../../%/rtai_$(notdir $(obj)).o,$(obj)))
+@CONFIG_SMP_FALSE@default_ksched = rtai_up.o
 
 @CONFIG_SMP_TRUE@default_ksched = rtai_smp.o
-@CONFIG_SMP_FALSE@default_ksched = rtai_up.o
 
 @CONFIG_RTAI_SCHED_UP_TRUE@libsched_up_a_SOURCES = sched_up.c common.c
 

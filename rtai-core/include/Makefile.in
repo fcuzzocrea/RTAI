@@ -302,12 +302,12 @@ target_alias = @target_alias@
 
 @CONFIG_MIPS_TRUE@ARCHDIR = asm-mips
 
-@CONFIG_PPC_TRUE@ARCHDIR = asm-ppc
+@CONFIG_ARM_TRUE@ARCHDIR = asm-arm
 @CONFIG_X86_TRUE@ARCHDIR = asm-i386
 
-@CONFIG_CRIS_TRUE@ARCHDIR = asm-cris
+@CONFIG_PPC_TRUE@ARCHDIR = asm-ppc
 
-@CONFIG_ARM_TRUE@ARCHDIR = asm-arm
+@CONFIG_CRIS_TRUE@ARCHDIR = asm-cris
 
 nobase_include_HEADERS = \
 		rtai.h \
@@ -380,7 +380,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/Makefile.in \
 	Makefile.am
-DIST_SUBDIRS = asm-mips asm-ppc asm-i386 asm-cris asm-arm
+DIST_SUBDIRS = asm-mips asm-arm asm-i386 asm-ppc asm-cris
 all: all-recursive
 
 .SUFFIXES:

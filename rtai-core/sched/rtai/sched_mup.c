@@ -105,6 +105,10 @@ static struct rt_times *linux_times;
 
 static RT_TASK *wdog_task[NR_RT_CPUS];
 
+#ifdef CONFIG_RTAI_ADEOS
+static unsigned sched_virq;
+#endif /* CONFIG_RTAI_ADEOS */
+
 #define fpu_task (rt_smp_fpu_task[cpuid])
 
 //#define rt_linux_task (rt_smp_linux_task[cpuid])
@@ -214,6 +218,10 @@ static inline void sched_release_global_lock(int cpuid)
 	do { prio = (new_task = rt_linux_task.rnext)->priority; } while(0)
 
 static int tasks_per_cpu[NR_RT_CPUS] = { 0, };
+
+static void rt_startup(void(*rt_thread)(int), int data)
+/* Just in case -mregparm is used... */
+    __attribute__ ((regparm(0)));
 
 static void rt_startup(void(*rt_thread)(int), int data)
 {
@@ -490,6 +498,14 @@ void rt_schedule(void)
 	RTIME intr_time, now;
 	RT_TASK *task, *new_task;
 	int prio, delay, preempt;
+
+#ifdef CONFIG_RTAI_ADEOS
+	if (adp_current != &arti_domain)
+	    {
+	    adeos_trigger_irq(sched_virq);
+	    return;
+	    }
+#endif /* CONFIG_RTAI_ADEOS */
 
 	prio = RT_SCHED_LINUX_PRIORITY;
 	ASSIGN_RT_CURRENT;
@@ -1119,6 +1135,15 @@ int init_module(void)
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 	rt_set_ihook(&rtai_handle_isched_lock);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+#ifdef CONFIG_RTAI_ADEOS
+	sched_virq = adeos_alloc_irq();
+
+	adeos_virtualize_irq_from(&arti_domain,
+				  sched_virq,
+				  (void (*)(unsigned))&rt_schedule,
+				  NULL,
+				  IPIPE_HANDLE_MASK);
+#endif /* CONFIG_RTAI_ADEOS */
 	return rtai_init_features(); /* see rtai_schedcore.h */
 }
 
@@ -1136,6 +1161,13 @@ void cleanup_module(void)
 		}
 	}
 	krtai_objects_release();
+#ifdef CONFIG_RTAI_ADEOS
+	if (sched_virq)
+	    {
+	    adeos_virtualize_irq_from(&arti_domain,sched_virq,NULL,NULL,0);
+	    adeos_free_irq(sched_virq);
+	    }
+#endif /* CONFIG_RTAI_ADEOS */
 	rtai_cleanup_features();
 #ifdef CONFIG_PROC_FS
         rtai_proc_sched_unregister();

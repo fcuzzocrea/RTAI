@@ -352,9 +352,9 @@ int rt_heap_delete (RT_HEAP *heap)
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a heap is not a heap descriptor, or @heap
- * is shared (i.e. H_SHARED mode) and @a size is non-zero but does not
- * match the actual heap size passed to rt_heap_create().
+ * - -EINVAL is returned if @a heap is not a heap descriptor, or @a
+ * heap is shared (i.e. H_SHARED mode) and @a size is non-zero but
+ * does not match the actual heap size passed to rt_heap_create().
  *
  * - -EIDRM is returned if @a q is a deleted heap descriptor.
  *

@@ -2968,20 +2968,32 @@ static void xnpod_calibration_thread (void *cookie)
 int xnpod_calibrate_sched (void)
 
 {
-    static xnthread_t calibration_thread;
+    xnthread_t *thread;
     int flag = 0, err;
-    xnpod_t pod;
+    xnpod_t *pod;
 
     nktimerlat = xnarch_calibrate_timer();
 
     if (!nktimerlat)
 	return -EIO;
 
-    err = xnpod_init(&pod,1,1,0);
+    pod = (xnpod_t *)xnarch_sysalloc(sizeof(*pod));
+
+    if (!pod)
+	return -ENOMEM;
+
+    thread = (xnthread_t *)xnarch_sysalloc(sizeof(*thread));
+
+    if (!thread)
+	{
+	err = -ENOMEM;
+	goto free_pod;
+	}
+
+    err = xnpod_init(pod,1,1,0);
 
     if (err)
-        /* Huuho, things are going wild these days... */
-        return err;
+	goto free_thread;
 
     err = xnpod_start_timer(XNPOD_APERIODIC_TICK,
 			    XNPOD_DEFAULT_TICKHANDLER);
@@ -3009,6 +3021,14 @@ int xnpod_calibrate_sched (void)
  unload_and_exit:
 
     xnpod_shutdown(XNPOD_NORMAL_EXIT); /* This will stop the timer too. */
+
+ free_thread:
+
+    xnarch_sysfree(thread);
+
+ free_pod:
+
+    xnarch_sysfree(pod);
 
     return err;
 }

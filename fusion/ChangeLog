@@ -1,3 +1,9 @@
+2004-09-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_calibrate_sched): Obtain the calibration
+	pod and thread memory from the system heap, not from the stack;
+	the latter could cause misaligned FPU ops.
+
 2004-09-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.8.1-i386-r7c1.

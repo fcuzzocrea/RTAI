@@ -1,5 +1,10 @@
 2005-02-15  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/queue.c (rt_queue_recv): Transfer message ownership
+	by properly incrementing the refcount upon direct receive
+	(i.e. the receiver did not go through any sleep state through the
+	pendq).
+
 	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Update MSR
 	as required when switching in the last Altivec and/or SPE owner.
 	(xnarch_switch_to): Don't rely on FTR fixups when emitting

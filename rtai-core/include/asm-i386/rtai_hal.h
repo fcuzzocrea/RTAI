@@ -345,12 +345,7 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags,
 }
 
 #define CPU_RELAX(x) \
-do { \
-   int i = 0; \
-   do \
-     cpu_relax(); \
-   while (++i < x); \
-} while(0)
+	do { int i = 0; do cpu_relax(); while (++i < x); } while(0)
 
 static inline void rt_get_global_lock(void) {
 
@@ -553,11 +548,6 @@ static inline int rt_switch_to_linux(int cpuid)
 		return 0;
 	}
 	return 1;
-}
-
-static inline int rt_is_linux (void) {
-
-    return !test_bit(adeos_processor_id(),&rtai_cpu_realtime);
 }
 
 static inline void rt_set_timer_delay (int delay) {

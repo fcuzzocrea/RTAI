@@ -76,7 +76,6 @@
 #include <nucleus/thread.h>
 #include <nucleus/timer.h>
 
-
 /*! 
  * \fn void xntimer_init(xntimer_t *timer,
                          void (*handler)(void *cookie),

@@ -486,7 +486,7 @@ int rt_sem_inquire (RT_SEM *sem,
  * @param name A valid NULL-terminated name which identifies the
  * semaphore to bind to.
  *
- * @param task The address of a semaphore descriptor retrieved by the
+ * @param sem The address of a semaphore descriptor retrieved by the
  * operation. Contents of this memory is undefined upon failure.
  *
  * @return 0 is returned upon success. Otherwise:

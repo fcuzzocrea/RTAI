@@ -481,7 +481,7 @@ int rt_cond_inquire (RT_COND *cond,
  * @param name A valid NULL-terminated name which identifies the
  * condition variable to bind to.
  *
- * @param task The address of a condition variable descriptor
+ * @param cond The address of a condition variable descriptor
  * retrieved by the operation. Contents of this memory is undefined
  * upon failure.
  *

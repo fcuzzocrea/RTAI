@@ -421,7 +421,7 @@ int rt_mutex_inquire (RT_MUTEX *mutex,
  * @param name A valid NULL-terminated name which identifies the
  * mutex to bind to.
  *
- * @param task The address of a mutex descriptor retrieved by the
+ * @param mutex The address of a mutex descriptor retrieved by the
  * operation. Contents of this memory is undefined upon failure.
  *
  * @return 0 is returned upon success. Otherwise:

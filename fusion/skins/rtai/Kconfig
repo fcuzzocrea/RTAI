@@ -85,3 +85,10 @@ config RTAI_OPT_NATIVE_QUEUE
 	help
 	
 	Message queue support.
+
+config RTAI_OPT_NATIVE_HEAP
+	bool "Memory heap support (EXPERIMENTAL)"
+	depends on RTAI_SKIN_NATIVE
+	help
+	
+	Memory heap support.

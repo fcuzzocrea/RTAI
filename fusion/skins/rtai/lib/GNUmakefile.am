@@ -26,6 +26,10 @@ if CONFIG_RTAI_OPT_NATIVE_QUEUE
 librtai_a_SOURCES += queue.c
 endif
 
+if CONFIG_RTAI_OPT_NATIVE_HEAP
+librtai_a_SOURCES += heap.c
+endif
+
 librtai_a_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
 	-D_GNU_SOURCE -D_REENTRANT \

@@ -104,6 +104,12 @@
 #define __rtai_queue_send         51
 #define __rtai_queue_recv         52
 #define __rtai_queue_inquire      53
+#define __rtai_heap_create        54
+#define __rtai_heap_bind          55
+#define __rtai_heap_delete        56
+#define __rtai_heap_alloc         57
+#define __rtai_heap_free          58
+#define __rtai_heap_inquire       59
 
 struct rt_arg_bulk {
 

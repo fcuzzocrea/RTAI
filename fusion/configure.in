@@ -373,6 +373,15 @@ AC_ARG_ENABLE(native-queue,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_QUEUE:-no})
 
+AC_MSG_CHECKING(for native memory heap support)
+AC_ARG_ENABLE(native-heap,
+	[ --enable-native-heap	Enable memory heap support in native skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_NATIVE_HEAP=y ;;
+	*) unset CONFIG_RTAI_OPT_NATIVE_HEAP ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_HEAP:-no})
+
 AC_MSG_CHECKING(for pSOS+ skin)
 AC_ARG_ENABLE(psos-skin,
 	[ --enable-psos-skin	Build pSOS+ emulator],
@@ -674,6 +683,7 @@ test \! x$CONFIG_RTAI_OPT_NATIVE_EVENT = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_E
 test \! x$CONFIG_RTAI_OPT_NATIVE_MUTEX = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_MUTEX,1,[Kconfig])
 test \! x$CONFIG_RTAI_OPT_NATIVE_COND = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_COND,1,[Kconfig])
 test \! x$CONFIG_RTAI_OPT_NATIVE_QUEUE = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_QUEUE,1,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_NATIVE_HEAP = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_HEAP,1,[Kconfig])
 
 dnl CAUTION: We need to have the CONFIG_RTAI_XX symbols always defined when
 dnl the configuration header is read, but we want the Autoconf-produced
@@ -730,6 +740,7 @@ AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_EVENT,[test x$CONFIG_RTAI_OPT_NATIVE_EVENT
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_MUTEX,[test x$CONFIG_RTAI_OPT_NATIVE_MUTEX = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_COND,[test x$CONFIG_RTAI_OPT_NATIVE_COND = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_QUEUE,[test x$CONFIG_RTAI_OPT_NATIVE_QUEUE = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_HEAP,[test x$CONFIG_RTAI_OPT_NATIVE_HEAP = xy])
 
 dnl Documentation.
 AM_CONDITIONAL(CONFIG_RTAI_DOC_DOX,[test "$CONFIG_RTAI_DOC_DOX" = y])

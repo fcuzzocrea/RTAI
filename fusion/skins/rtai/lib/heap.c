@@ -23,7 +23,7 @@
 #include <unistd.h>
 #include <rtai/syscall.h>
 #include <rtai/task.h>
-#include <rtai/queue.h>
+#include <rtai/heap.h>
 
 extern int __rtai_muxid;
 
@@ -34,12 +34,12 @@ static inline int __init_skin (void) /* FIXME: Hey, this is racy! */
     return __rtai_muxid;
 }
 
-static int __map_queue_memory (RT_QUEUE *q, RT_QUEUE_PLACEHOLDER *php)
+static int __map_heap_memory (RT_HEAP *heap, RT_HEAP_PLACEHOLDER *php)
 
 {
     int err, heapfd;
 
-    /* Open the heap device to share the message pool memory with the
+    /* Open the heap device to share the heap memory with the
        in-kernel skin and bound clients. */
     heapfd = open(XNHEAP_DEV_NAME,O_RDWR);
 
@@ -62,7 +62,7 @@ static int __map_queue_memory (RT_QUEUE *q, RT_QUEUE_PLACEHOLDER *php)
 
     if (php->mapbase != MAP_FAILED)
 	/* Copy back a complete placeholder only if all is ok. */
-	*q = *php;
+	*heap = *php;
     else
 	err = -ENOMEM;
 
@@ -73,141 +73,116 @@ static int __map_queue_memory (RT_QUEUE *q, RT_QUEUE_PLACEHOLDER *php)
     return err;
 }
 
-int rt_queue_create (RT_QUEUE *q,
-		     const char *name,
-		     size_t poolsize,
-		     size_t qlimit,
-		     int mode)
+int rt_heap_create (RT_HEAP *heap,
+		    const char *name,
+		    size_t heapsize,
+		    int mode)
 {
-    RT_QUEUE_PLACEHOLDER ph;
+    RT_HEAP_PLACEHOLDER ph;
     int err;
 
     if (__rtai_muxid < 0 && __init_skin() < 0)
 	return -ENOSYS;
 
-    err = XENOMAI_SKINCALL5(__rtai_muxid,
-			    __rtai_queue_create,
+    err = XENOMAI_SKINCALL4(__rtai_muxid,
+			    __rtai_heap_create,
 			    &ph,
 			    name,
-			    poolsize,
-			    qlimit,
-			    mode|Q_SHARED);
+			    heapsize,
+			    mode|H_SHARED);
     if (err)
 	return err;
 
-    err = __map_queue_memory(q,&ph);
+    err = __map_heap_memory(heap,&ph);
 
     if (err)
 	/* If the mapping fails, make sure we don't leave a dandling
-	   queue in kernel space -- remove it. */
+	   heap in kernel space -- remove it. */
 	XENOMAI_SKINCALL1(__rtai_muxid,
-			  __rtai_queue_delete,
+			  __rtai_heap_delete,
 			  &ph);
     return err;
 }
 
-int rt_queue_bind (RT_QUEUE *q,
-		   const char *name)
+int rt_heap_bind (RT_HEAP *heap,
+		  const char *name)
 {
-    RT_QUEUE_PLACEHOLDER ph;
+    RT_HEAP_PLACEHOLDER ph;
     int err;
 
     if (__rtai_muxid < 0 && __init_skin() < 0)
 	return -ENOSYS;
 
     err = XENOMAI_SKINCALL2(__rtai_muxid,
-			    __rtai_queue_bind,
+			    __rtai_heap_bind,
 			    &ph,
 			    name);
 
-    return err ?: __map_queue_memory(q,&ph);
+    return err ?: __map_heap_memory(heap,&ph);
 }
 
-int rt_queue_unbind (RT_QUEUE *q)
+int rt_heap_unbind (RT_HEAP *heap)
 
 {
-    int err = munmap(q->mapbase,q->mapsize);
+    int err = munmap(heap->mapbase,heap->mapsize);
 
-    q->opaque = RT_HANDLE_INVALID;
-    q->mapbase = NULL;
-    q->mapsize = 0;
+    heap->opaque = RT_HANDLE_INVALID;
+    heap->mapbase = NULL;
+    heap->mapsize = 0;
 
     return err;
 }
 
-int rt_queue_delete (RT_QUEUE *q)
+int rt_heap_delete (RT_HEAP *heap)
 
 {
     int err;
 
-    err = munmap(q->mapbase,q->mapsize);
+    err = munmap(heap->mapbase,heap->mapsize);
 
     if (!err)
 	err = XENOMAI_SKINCALL1(__rtai_muxid,
-				__rtai_queue_delete,
-				q);
+				__rtai_heap_delete,
+				heap);
 
     /* If the deletion fails, there is likely something fishy about
-       this queue descriptor, so we'd better clean it up anyway so
+       this heap descriptor, so we'd better clean it up anyway so
        that it could not be further used. */
 
-    q->opaque = RT_HANDLE_INVALID;
-    q->mapbase = NULL;
-    q->mapsize = 0;
+    heap->opaque = RT_HANDLE_INVALID;
+    heap->mapbase = NULL;
+    heap->mapsize = 0;
 
     return err;
 }
 
-void *rt_queue_alloc (RT_QUEUE *q,
-		      size_t size)
+int rt_heap_alloc (RT_HEAP *heap,
+		   size_t size,
+		   RTIME timeout,
+		   void **bufp)
 {
-    void *buf;
-
-    return XENOMAI_SKINCALL3(__rtai_muxid,
-			     __rtai_queue_alloc,
-			     q,
+    return XENOMAI_SKINCALL4(__rtai_muxid,
+			     __rtai_heap_alloc,
+			     heap,
 			     size,
-			     &buf) ? NULL : buf;
+			     &timeout,
+			     bufp);
 }
 
-int rt_queue_free (RT_QUEUE *q,
-		   void *buf)
+int rt_heap_free (RT_HEAP *heap,
+		  void *buf)
 {
     return XENOMAI_SKINCALL2(__rtai_muxid,
-			     __rtai_queue_free,
-			     q,
+			     __rtai_heap_free,
+			     heap,
 			     buf);
 }
 
-int rt_queue_send (RT_QUEUE *q,
-		   void *buf,
-		   size_t size,
-		   int mode)
-{
-    return XENOMAI_SKINCALL4(__rtai_muxid,
-			     __rtai_queue_send,
-			     q,
-			     buf,
-			     size,
-			     mode);
-}
-
-int rt_queue_recv (RT_QUEUE *q,
-		   void **bufp,
-		   RTIME timeout)
-{
-    return XENOMAI_SKINCALL3(__rtai_muxid,
-			     __rtai_queue_recv,
-			     q,
-			     bufp,
-			     &timeout);
-}
-
-int rt_queue_inquire (RT_QUEUE *q,
-		      RT_QUEUE_INFO *info)
+int rt_heap_inquire (RT_HEAP *heap,
+		     RT_HEAP_INFO *info)
 {
     return XENOMAI_SKINCALL2(__rtai_muxid,
-			     __rtai_queue_inquire,
-			     q,
+			     __rtai_heap_inquire,
+			     heap,
 			     info);
 }

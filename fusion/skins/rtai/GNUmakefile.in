@@ -50,6 +50,8 @@ host_triplet = @host@
 @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@am__append_12 = cond.h
 @CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_13 = queue.c
 @CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_14 = queue.h
+@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_15 = heap.c
+@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_16 = heap.h
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -81,6 +83,8 @@ CONFIG_RTAI_OPT_NATIVE_COND_FALSE = @CONFIG_RTAI_OPT_NATIVE_COND_FALSE@
 CONFIG_RTAI_OPT_NATIVE_COND_TRUE = @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@
 CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE = @CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE@
 CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE = @CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@
+CONFIG_RTAI_OPT_NATIVE_HEAP_FALSE = @CONFIG_RTAI_OPT_NATIVE_HEAP_FALSE@
+CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE = @CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@
 CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE = @CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE@
 CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE = @CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@
 CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE = @CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE@
@@ -238,16 +242,16 @@ libmodule_SRC = \
 	syscall.c \
 	task.c \
 	timer.c\
-$(am__append_1) $(am__append_3) $(am__append_5) $(am__append_7) $(am__append_9) $(am__append_11) $(am__append_13)
+$(am__append_1) $(am__append_3) $(am__append_5) $(am__append_7) $(am__append_9) $(am__append_11) $(am__append_13) $(am__append_15)
 
 include_HEADERS = \
 		task.h \
 		timer.h \
 		types.h \
 		syscall.h\
-$(am__append_2) $(am__append_4) $(am__append_6) $(am__append_8) $(am__append_10) $(am__append_12) $(am__append_14)
+$(am__append_2) $(am__append_4) $(am__append_6) $(am__append_8) $(am__append_10) $(am__append_12) $(am__append_14) $(am__append_16)
 
-distfiles = $(libmodule_SRC) registry.c registry.h pipe.c pipe.h sem.c sem.h event.c event.h mutex.c mutex.h cond.c cond.h queue.c queue.h
+distfiles = $(libmodule_SRC) registry.c registry.h pipe.c pipe.h sem.c sem.h event.c event.h mutex.c mutex.h cond.c cond.h queue.c queue.h heap.c heap.h
 
 EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig
 

@@ -1,3 +1,7 @@
+2004-11-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai: Add shared heap (standalone) support.
+
 2004-11-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/queue.c (rt_queue_send): Pass message's payload size.

@@ -135,6 +135,11 @@ typedef struct rt_task {
 
 	struct rt_queue_msg *qmsg;
 
+	struct {
+	    size_t size;
+	    void *buf;
+	} heap;
+
     } wait_args;
 
 } RT_TASK;

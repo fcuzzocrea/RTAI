@@ -41,6 +41,7 @@ host_triplet = @host@
 @CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@am__append_3 = mutex.c
 @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@am__append_4 = cond.c
 @CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_5 = queue.c
+@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_6 = heap.c
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -72,6 +73,8 @@ CONFIG_RTAI_OPT_NATIVE_COND_FALSE = @CONFIG_RTAI_OPT_NATIVE_COND_FALSE@
 CONFIG_RTAI_OPT_NATIVE_COND_TRUE = @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@
 CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE = @CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE@
 CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE = @CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@
+CONFIG_RTAI_OPT_NATIVE_HEAP_FALSE = @CONFIG_RTAI_OPT_NATIVE_HEAP_FALSE@
+CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE = @CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@
 CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE = @CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE@
 CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE = @CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@
 CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE = @CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE@
@@ -226,7 +229,7 @@ librtai_a_AR = $(CROSS_COMPILE)ar cru
 librtai_a_SOURCES = \
 	task.c \
 	timer.c\
-$(am__append_1) $(am__append_2) $(am__append_3) $(am__append_4) $(am__append_5)
+$(am__append_1) $(am__append_2) $(am__append_3) $(am__append_4) $(am__append_5) $(am__append_6)
 
 librtai_a_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
@@ -244,7 +247,7 @@ LIBRARIES = $(lib_LIBRARIES)
 
 librtai_a_LIBADD =
 am__librtai_a_SOURCES_DIST = task.c timer.c sem.c event.c mutex.c cond.c \
-	queue.c
+	queue.c heap.c
 @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@am__objects_1 = librtai_a-sem.$(OBJEXT)
 @CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@am__objects_2 = \
 @CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@	librtai_a-event.$(OBJEXT)
@@ -254,9 +257,12 @@ am__librtai_a_SOURCES_DIST = task.c timer.c sem.c event.c mutex.c cond.c \
 @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@	librtai_a-cond.$(OBJEXT)
 @CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__objects_5 = \
 @CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@	librtai_a-queue.$(OBJEXT)
+@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__objects_6 = \
+@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@	librtai_a-heap.$(OBJEXT)
 am_librtai_a_OBJECTS = librtai_a-task.$(OBJEXT) \
 	librtai_a-timer.$(OBJEXT) $(am__objects_1) $(am__objects_2) \
-	$(am__objects_3) $(am__objects_4) $(am__objects_5)
+	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	$(am__objects_6)
 librtai_a_OBJECTS = $(am_librtai_a_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
@@ -264,6 +270,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/librtai_a-cond.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/librtai_a-event.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/librtai_a-heap.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/librtai_a-mutex.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/librtai_a-queue.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/librtai_a-sem.Po \
@@ -334,6 +341,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-cond.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-event.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-heap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-mutex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-queue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-sem.Po@am__quote@
@@ -603,6 +611,39 @@ librtai_a-queue.lo: queue.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/librtai_a-queue.Plo' tmpdepfile='$(DEPDIR)/librtai_a-queue.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_a-queue.lo `test -f 'queue.c' || echo '$(srcdir)/'`queue.c
+
+librtai_a-heap.o: heap.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtai_a-heap.o -MD -MP -MF "$(DEPDIR)/librtai_a-heap.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o librtai_a-heap.o `test -f 'heap.c' || echo '$(srcdir)/'`heap.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtai_a-heap.Tpo" "$(DEPDIR)/librtai_a-heap.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/librtai_a-heap.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='heap.c' object='librtai_a-heap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/librtai_a-heap.Po' tmpdepfile='$(DEPDIR)/librtai_a-heap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_a-heap.o `test -f 'heap.c' || echo '$(srcdir)/'`heap.c
+
+librtai_a-heap.obj: heap.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtai_a-heap.obj -MD -MP -MF "$(DEPDIR)/librtai_a-heap.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o librtai_a-heap.obj `if test -f 'heap.c'; then $(CYGPATH_W) 'heap.c'; else $(CYGPATH_W) '$(srcdir)/heap.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtai_a-heap.Tpo" "$(DEPDIR)/librtai_a-heap.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/librtai_a-heap.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='heap.c' object='librtai_a-heap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/librtai_a-heap.Po' tmpdepfile='$(DEPDIR)/librtai_a-heap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_a-heap.obj `if test -f 'heap.c'; then $(CYGPATH_W) 'heap.c'; else $(CYGPATH_W) '$(srcdir)/heap.c'; fi`
+
+librtai_a-heap.lo: heap.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtai_a-heap.lo -MD -MP -MF "$(DEPDIR)/librtai_a-heap.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o librtai_a-heap.lo `test -f 'heap.c' || echo '$(srcdir)/'`heap.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtai_a-heap.Tpo" "$(DEPDIR)/librtai_a-heap.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/librtai_a-heap.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='heap.c' object='librtai_a-heap.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/librtai_a-heap.Plo' tmpdepfile='$(DEPDIR)/librtai_a-heap.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_a-heap.lo `test -f 'heap.c' || echo '$(srcdir)/'`heap.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

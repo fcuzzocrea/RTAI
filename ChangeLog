@@ -1,3 +1,13 @@
+2004-02-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_wrappers.h: cancelled defines for testing if
+	  a process used the FPU, it depends on archs and has been brought 
+	  to arch specific asm rtai_fpu.h.
+	* base/include/asm-i386/rtai_fpu.h: included test of a process use 
+	  of the FPU since it depends on archs.
+	* base/sched/sys.c: included arch specific rtai_fpu.h.
+	* base/sched/sched.h: cancelled a useles include that annoying PXA.
+
 2004-02-16  Luca Pizzi, (lucapizzi@hotmail.it) and
 	    Stefano Gafforelli, (Stefano.Gafforelli@tiscali.it)
 

@@ -1,5 +1,14 @@
 2005-03-06  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/module.c (rtai_shutdown): Make sure to wipe out all
+	lazybones before trying to unregister the skin, otherwise the
+	operation might fail because some threads did not exit, and leave
+	a dandling pointer to our module into the global syscall
+	multiplexer table.
+
+	* nucleus/shadow.c (xnshadow_unmap): Fix regression wrt refcount
+	handling, damnit.
+
 	* configure.in: (Re-)enable compilation w/ 2.95.x.
 
 2005-03-06  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

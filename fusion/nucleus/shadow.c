@@ -697,13 +697,6 @@ void xnshadow_unmap (xnthread_t *thread)
 
     task = xnthread_archtcb(thread)->user_task;
 
-    if (!task)
-	return;
-
-    xnltt_log_event(rtai_ev_shadowunmap,
-		    thread->name,
-		    task->pid);
-
     magic = xnthread_get_magic(thread);
 
     for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
@@ -719,6 +712,12 @@ void xnshadow_unmap (xnthread_t *thread)
             break;
             }
         }
+
+    xnltt_log_event(rtai_ev_shadowunmap,
+		    thread->name,
+		    task ? task->pid : -1);
+    if (!task)
+	return;
 
     xnshadow_ptd(task) = NULL;
 

@@ -55,10 +55,6 @@ static xnpod_t __rtai_pod;
 static void rtai_shutdown (int xtype)
 
 {
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    __rtai_syscall_cleanup();
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
-
 #ifdef CONFIG_RTAI_OPT_NATIVE_INTR
     __intr_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
@@ -96,6 +92,10 @@ static void rtai_shutdown (int xtype)
 #endif /* CONFIG_RTAI_OPT_NATIVE_SEM */
 
     __task_pkg_cleanup();
+
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    __rtai_syscall_cleanup();
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     __registry_pkg_cleanup();
@@ -287,5 +287,3 @@ void __fusion_skin_exit (void)
 
 module_init(__fusion_skin_init);
 module_exit(__fusion_skin_exit);
-
-/* -Wno-unused-label */

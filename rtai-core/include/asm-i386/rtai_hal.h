@@ -304,8 +304,14 @@ static inline struct task_struct *rtai_get_current (int cpuid)
     return get_current();
 }
 
-#define rt_spin_lock(lock)    spin_lock(lock)
-#define rt_spin_unlock(lock)  spin_unlock(lock)
+irqreturn_t rtai_broadcast_to_local_timers(int irq,
+					   void *dev_id,
+					   struct pt_regs *regs);
+
+#ifdef CONFIG_SMP
+
+#define rt_spin_lock(lock)    _raw_spin_lock(lock)
+#define rt_spin_unlock(lock)  _raw_spin_unlock(lock)
 
 static inline void rt_spin_lock_irq(spinlock_t *lock) {
 
@@ -333,8 +339,6 @@ static inline void rt_spin_unlock_irqrestore(unsigned long flags,
     rtai_local_irq_restore(flags);
 }
 
-#ifdef CONFIG_SMP
-
 #define CPU_RELAX(x) \
 do { \
    int i = 0; \
@@ -342,13 +346,6 @@ do { \
      cpu_relax(); \
    while (++i < x); \
 } while(0)
-#else /* !CONFIG_SMP */
-#define CPU_RELAX(x)
-#endif /* CONFIG_SMP */
-
-irqreturn_t rtai_broadcast_to_local_timers(int irq,
-					   void *dev_id,
-					   struct pt_regs *regs);
 
 static inline void rt_get_global_lock(void) {
 
@@ -376,7 +373,7 @@ static inline void rt_release_global_lock(void) {
 #endif /* adeos_load_cpuid */
 
     if (test_and_clear_bit(cpuid,&rtai_cpu_lock)) {
-	clear_bit(31,&rtai_cpu_lock);
+	test_and_clear_bit(31,&rtai_cpu_lock);
 	CPU_RELAX(cpuid);
     }
 }
@@ -427,7 +424,6 @@ static inline int rt_global_save_flags_and_cli(void) {
 	{
 	while (test_and_set_bit(31,&rtai_cpu_lock))
 	    CPU_RELAX(cpuid);
-
 	return flags | 1;
 	}
 
@@ -496,12 +492,48 @@ static inline void rt_global_restore_flags(unsigned long flags) {
 	}
 }
 
+#else /* !CONFIG_SMP */
+
+#define rt_spin_lock(lock)
+#define rt_spin_unlock(lock)
+
+#define rt_spin_lock_irq(lock)    do { rtai_cli(); } while (0)
+#define rt_spin_unlock_irq(lock)  do { rtai_sti(); } while (0)
+
+static inline unsigned long rt_spin_lock_irqsave(spinlock_t *lock)
+{
+	unsigned long flags;
+	rtai_local_irq_save(flags);
+	return flags;
+}
+#define rt_spin_unlock_irqrestore(flags, lock)  do { rtai_local_irq_restore(flags); } while (0)
+
+#define rt_get_global_lock()      do { rtai_cli(); } while (0)
+#define rt_release_global_lock()
+
+#define rt_global_cli()  do { rtai_cli(); } while (0)
+#define rt_global_sti()  do { rtai_sti(); } while (0)
+
+static inline unsigned long rt_global_save_flags_and_cli(void)
+{
+	unsigned long flags;
+	rtai_local_irq_save(flags);
+	return flags;
+}
+#define rt_global_restore_flags(flags)  do { rtai_local_irq_restore(flags); } while (0)
+
+#define rt_global_save_flags(flags)     do { rtai_local_irq_flags(*flags); } while (0)
+
+#define CPU_RELAX(x)
+
+#endif
+
 static inline void rt_switch_to_real_time(int cpuid)
 {
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].depth++) {
 		rtai_linux_local_irq_save(rtai_linux_context[cpuid].oldflags);
-		set_bit(cpuid,&rtai_cpu_realtime);
+		test_and_set_bit(cpuid,&rtai_cpu_realtime);
 	}
 }
 
@@ -510,7 +542,7 @@ static inline int rt_switch_to_linux(int cpuid)
 	TRACE_RTAI_SWITCHTO_LINUX(cpuid);
 	if (rtai_linux_context[cpuid].depth) {
 		if (!--rtai_linux_context[cpuid].depth) {
-			clear_bit(cpuid,&rtai_cpu_realtime);
+			test_and_clear_bit(cpuid,&rtai_cpu_realtime);
 			rtai_linux_local_irq_restore_nosync(rtai_linux_context[cpuid].oldflags, cpuid);
 		}
 		return 0;

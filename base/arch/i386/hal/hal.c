@@ -691,6 +691,11 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq,
 
 #else
 
+irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_regs *regs)
+{
+	return RTAI_LINUX_IRQ_HANDLED;
+}
+
 #define REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS()  0
 
 #define FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();

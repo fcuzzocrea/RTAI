@@ -74,8 +74,6 @@ static xnsynch_t __rtai_hash_synch;
 
 extern struct proc_dir_entry *rthal_proc_root;
 
-extern spinlock_t rthal_proc_lock;
-
 static void __registry_proc_callback(void *cookie);
 
 static void __registry_proc_schedule(unsigned virq);
@@ -163,8 +161,6 @@ void __registry_pkg_cleanup (void)
 
 #if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
-	    spin_lock(&rthal_proc_lock);
-
 	    if (ecurr->object && ecurr->object->pnode)
 		{
 		remove_proc_entry(ecurr->object->key,
@@ -174,8 +170,6 @@ void __registry_pkg_cleanup (void)
 		    remove_proc_entry(ecurr->object->pnode->type,
 				      registry_proc_root);
 		}
-
-	    spin_unlock(&rthal_proc_lock);
 
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
@@ -263,19 +257,15 @@ static void __registry_proc_callback (void *cookie)
 	++pnode->entries;
 	object->proc = RT_OBJECT_PROC_RESERVED2;
 	appendq(&__rtai_obj_busyq,holder);
+	dir = pnode->dir;
 
 	xnlock_put_irqrestore(&nklock,s);
-
-	spin_lock(&rthal_proc_lock);
-
-	dir = pnode->dir;
 
 	if (!dir)
 	    {
 	    /* Create the class directory on the fly as needed. */
-	    dir = create_proc_entry(type,
-				    S_IFDIR,
-				    registry_proc_root);
+	    dir = create_proc_entry(type,S_IFDIR,registry_proc_root);
+
 	    if (!dir)
 		{
 		object->proc = NULL;
@@ -291,8 +281,6 @@ static void __registry_proc_callback (void *cookie)
 				     object->objaddr,
 				     dir);
  fail:
-	spin_unlock(&rthal_proc_lock);
-
 	xnlock_get_irqsave(&nklock,s);
 
 	if (!object->proc)

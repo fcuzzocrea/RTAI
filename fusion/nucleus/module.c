@@ -25,6 +25,7 @@
 
 #define XENO_MAIN_MODULE
 
+#include <linux/init.h>
 #include <rtai_config.h>
 #include <nucleus/module.h>
 #include <nucleus/pod.h>
@@ -79,8 +80,6 @@ void xnmod_alloc_glinks (xnqueue_t *freehq)
 #include <linux/ctype.h>
 
 extern struct proc_dir_entry *rthal_proc_root;
-
-extern spinlock_t rthal_proc_lock;
 
 #ifdef CONFIG_RTAI_OPT_FUSION
 static struct proc_dir_entry *iface_proc_root;
@@ -371,29 +370,25 @@ static ssize_t iface_read_proc (char *page,
 void xnpod_declare_iface_proc (struct xnskentry *iface)
 
 {
-    spin_lock(&rthal_proc_lock);
     iface->proc = add_proc_leaf(iface->name,
 				&iface_read_proc,
 				NULL,
 				iface,
 				iface_proc_root);
-    spin_unlock(&rthal_proc_lock);
 }
 
 void xnpod_discard_iface_proc (struct xnskentry *iface)
 
 {
-    spin_lock(&rthal_proc_lock);
     remove_proc_entry(iface->name,iface_proc_root);
     iface->proc = NULL;
-    spin_unlock(&rthal_proc_lock);
 }
 
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
 #endif /* CONFIG_PROC_FS && __KERNEL__ */
 
-int __fusion_sys_init (void)
+int __init __fusion_sys_init (void)
 
 {
     int err = xnarch_init();
@@ -468,7 +463,7 @@ int __fusion_sys_init (void)
     return err;
 }
 
-void __fusion_sys_exit (void)
+void __exit __fusion_sys_exit (void)
 
 {
     xnpod_shutdown(XNPOD_NORMAL_EXIT);

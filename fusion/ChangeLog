@@ -1,5 +1,8 @@
 2005-02-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/*/hal/hal.c: Discard useless and somewhat bugous
+	rthal_proc_lock.
+
 	* nucleus/Kconfig: Add LTT filter configuration.
 
 2005-02-18  Philippe Gerum  <rpm@xenomai.org>

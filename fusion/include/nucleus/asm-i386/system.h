@@ -971,7 +971,7 @@ static inline unsigned long xnarch_calibrate_timer (void)
 
 {
 #if CONFIG_RTAI_HW_TIMER_LATENCY != 0
-    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY);
+    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY) ?: 1;
 #else /* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */
     /* Compute the time needed to program the PIT in aperiodic
        mode. The return value is expressed in CPU ticks. Depending on
@@ -979,7 +979,7 @@ static inline unsigned long xnarch_calibrate_timer (void)
        configuration RTAI is compiled against,
        CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local
        APIC or 8254 timer latency value. */
-    return xnarch_ns_to_tsc(rthal_calibrate_timer());
+    return xnarch_ns_to_tsc(rthal_calibrate_timer()) ?: 1;
 #endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
 }
 

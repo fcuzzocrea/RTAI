@@ -21,8 +21,6 @@
 #ifndef _RTAI_ASM_I386_LXRT_H
 #define _RTAI_ASM_I386_LXRT_H
 
-//#define USE_LINUX_SYSCALL_FOR_LXRT
-
 #include <linux/version.h>
 
 #include <asm/rtai_vectors.h>
@@ -46,55 +44,11 @@ extern "C" {
 #include <asm/segment.h>
 #include <asm/mmu_context.h>
 
-#define RTAI_LXRT_HANDLER rtai_lxrt_handler
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #define __LXRT_GET_DATASEG(reg) "movl $" STR(__KERNEL_DS) ",%" #reg "\n\t"
 #else /* KERNEL_VERSION >= 2.6.0 */
 #define __LXRT_GET_DATASEG(reg) "movl $" STR(__USER_DS) ",%" #reg "\n\t"
 #endif  /* KERNEL_VERSION < 2.6.0 */
-
-#define DEFINE_LXRT_HANDLER() \
-asmlinkage long long rtai_lxrt_invoke(unsigned int lxsrq, void *arg); \
-asmlinkage int rtai_lxrt_fastpath(void); \
-asmlinkage void RTAI_LXRT_HANDLER(void); \
-__asm__( \
-	"\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_lxrt_handler) ":\n\t" \
-        "cld\n\t" \
-        "pushl $0\n\t" \
-	"pushl %es\n\t" \
-	"pushl %ds\n\t" \
-	"pushl %eax\n\t" \
-	"pushl %ebp\n\t" \
-	"pushl %edi\n\t" \
-	"pushl %esi\n\t" \
-	"pushl %edx\n\t" \
-	"pushl %ecx\n\t" \
-        "pushl %ebx\n\t" \
-	__LXRT_GET_DATASEG(ebx) \
-	"movl %ebx,%ds\t\n"  \
-	"movl %ebx,%es\t\n" \
-	"pushl %edx\n\t" \
-	"pushl %eax\n\t" \
-	"call "SYMBOL_NAME_STR(rtai_lxrt_invoke)"\n\t" \
-	"addl $8,%esp;\n\t" \
-	"movl %edx,8(%esp);\n\t" \
-	"movl %eax,24(%esp);\n\t" \
-	"call "SYMBOL_NAME_STR(rtai_lxrt_fastpath)"\n\t" \
-        "testl %eax,%eax;\n\t" \
-	"jz "SYMBOL_NAME_STR(ret_from_intr)"\n\t" \
-	"popl %ebx\n\t" \
-	"popl %ecx\n\t" \
-        "popl %edx\n\t" \
-	"popl %esi\n\t" \
-	"popl %edi\n\t" \
-	"popl %ebp\n\t" \
-        "popl %eax\n\t" \
-	"popl %ds\n\t" \
-	"popl %es\n\t" \
-	"addl $4,%esp\n\t" \
-	"iret\n\t")
 
 static inline void _lxrt_context_switch (struct task_struct *prev,
 					struct task_struct *next,
@@ -150,11 +104,7 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
-#ifdef USE_LINUX_SYSCALL_FOR_LXRT
-	RTAI_DO_LXRT_CALL(srq, arg, retval);
-#else
-	RTAI_DO_TRAP(RTAI_LXRT_VECTOR, retval, srq, arg);
-#endif
+	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
 	return retval;
 }
 

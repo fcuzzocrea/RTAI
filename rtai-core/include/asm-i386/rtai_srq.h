@@ -26,7 +26,7 @@
 static inline long long rtai_srq(int srq, unsigned int whatever)
 {
 	long long retval;
-	RTAI_DO_TRAP(RTAI_SYS_VECTOR,retval,srq,whatever);
+	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, whatever);
 	return retval;
 }
 

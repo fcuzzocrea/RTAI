@@ -53,10 +53,4 @@
 
 #define RTAI_DO_TRAP(v, r, a1, a2)  do { __asm__ __volatile__ ( __rtai_do_trap(v): "=A" (r): "a" (a1), "d" (a2): "memory"); } while (0)
 
-#include <asm/unistd.h>
-
-#define RTAI_DO_LXRT_CALL(srq, arg, retval) do { __asm__ __volatile__ ("int $0x80": : "a" (srq), "c" (arg), "d" (&retval): "memory"); } while(0)
-
-//#define RTAI_DO_SYSCALL(num, retval, srq, arg) do { __asm__ volatile ("int $0x80": : "a" (NR_syscalls + num), "b" (&retval), "c" (srq), "d" (arg)); } while(0)
-
 #endif /* !_RTAI_ASM_I386_VECTORS_H */

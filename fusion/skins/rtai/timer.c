@@ -58,10 +58,12 @@
 SRTIME rt_timer_ns2ticks (SRTIME ns)
 
 {
-    if (testbits(nkpod->status,XNTMPER))
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+	return ns >= 0 ? xnarch_ns_to_tsc(ns) : -xnarch_ns_to_tsc(-ns);
+    else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	return ns >= 0 ? xnpod_ns2ticks(ns) : -xnpod_ns2ticks(-ns);
-
-    return ns >= 0 ? xnarch_ns_to_tsc(ns) : -xnarch_ns_to_tsc(-ns);
 }
 
 /*!
@@ -89,10 +91,12 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
 SRTIME rt_timer_ticks2ns (SRTIME ticks)
 
 {
-    if (testbits(nkpod->status,XNTMPER))
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+	return ticks >= 0 ? xnarch_tsc_to_ns(ticks) : -xnarch_tsc_to_ns(-ticks);
+    else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	return ticks >= 0 ? xnpod_ticks2ns(ticks) : -xnpod_ticks2ns(-ticks);
-
-    return ticks >= 0 ? xnarch_tsc_to_ns(ticks) : -xnarch_tsc_to_ns(-ticks);
 }
 
 /*!

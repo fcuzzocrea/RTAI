@@ -1,9 +1,21 @@
+2004-02-14  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm-arm/rtai_use.h: added the new arch specific USI.
+	* base/arch/i386/hal.*: modified deferred scheduling in interrupt 
+	  handlers to avoid too many indirections, related variables
+	  declared here instead than in sched.c.
+	* base/arch/arm/hal.*: modified deferred scheduling in interrupt 
+	  handlers to avoid too many indirections, as in i386.
+	* base/sched/sched.*: sched locking variables from hal.c, added
+	  hook for deferred scheduling in isr.
+	* base/sched/api.c: removed hook for deferred scheduling in isr.
+
 2004-02-06  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_use.h: reworked to use srq instead of LXRT for
 	  calling USI related services, so that they do not depend from the
 	  scheduler anymore.
-	* base/include/asm/rtai_use.h: added the new arch soecific USI 
+	* base/include/asm/rtai_use.h: added the new arch specific USI 
 	  support, so that it should be easy to have USI on non x86 also.
 	* base/arch/i386/hal.*: user space syscall extended to support USI 
 	* base/tasklets.c: ensure interrupt are enabled at exiting the support

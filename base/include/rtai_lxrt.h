@@ -649,8 +649,12 @@ RTAI_PROTO(int, rt_thread_join, (int thread))
 RTAI_PROTO(int, rt_thread_create, (void *fun, void *args, int stack_size))
 {
 	void *sp;
-	memset(sp = malloc(stack_size), 0, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN);
-	return clone(fun, sp + stack_size - 1, CLONE_VM | CLONE_FS | CLONE_FILES, args);
+	if (stack_size < RT_THREAD_STACK_MIN) {
+		stack_size = RT_THREAD_STACK_MIN;
+	}
+	memset(sp = malloc(stack_size), 0, stack_size);
+	sp = (void *)(((unsigned long)sp + stack_size - 16) & ~0xF);
+	return clone(fun, sp, CLONE_VM | CLONE_FS | CLONE_FILES, args);
 }
 
 RTAI_PROTO(int, rt_thread_join, (int thread))

@@ -25,7 +25,6 @@
 
 #define XENO_MAIN_MODULE
 
-#include <linux/init.h>
 #include <rtai_config.h>
 #include <nucleus/module.h>
 #include <nucleus/pod.h>

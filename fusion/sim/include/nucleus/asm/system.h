@@ -237,6 +237,8 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
 #define EXPORT_SYMBOL(sym);
 #define module_init(sym);
 #define module_exit(sym);
+#define __init
+#define __exit
 
 #ifdef __cplusplus
 extern "C" {

@@ -977,6 +977,7 @@ static inline int xnarch_remap_page_range(struct vm_area_struct *vma,
 
 #ifdef XENO_MAIN_MODULE
 
+#include <linux/init.h>
 #include <nucleus/asm/calibration.h>
 
 extern u_long nkschedlat;

@@ -1,3 +1,13 @@
+2004-06-16  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-addons/comedi/rtai_comedi.h: added the patch from
+	Jonathan Bettencourt <jbetten@bu.edu>
+	* rtai-lab/xrtailab.cpp: Added support for modules without
+	parameters
+	* rtai-lab/xrtailab.h: Version changed
+	* rtai-lab/matlab/rtmain.c: Added support for modules without 
+	RTAI S-Functions	
+
 2004-06-15  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/sched/rtai/sched_lxrt.c (lxrt_switch_context):

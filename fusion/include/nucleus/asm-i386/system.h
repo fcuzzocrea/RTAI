@@ -69,6 +69,18 @@
 
 #define MODULE_PARM_VALUE(parm) (parm)
 
+typedef unsigned long spl_t;
+
+#define splhigh(x)  rthal_local_irq_save(x)
+#ifdef CONFIG_SMP
+#define splexit(x)  rthal_local_irq_restore((x) & 1)
+#else /* !CONFIG_SMP */
+#define splexit(x)  rthal_local_irq_restore(x)
+#endif /* CONFIG_SMP */
+#define splnone()   rthal_sti()
+#define spltest()   rthal_local_irq_test()
+#define splget(x)   rthal_local_irq_flags(x)
+
 typedef struct {
     unsigned long lock;
 #if CONFIG_RTAI_OPT_DEBUG
@@ -88,20 +100,6 @@ typedef struct {
         -1                                      \
         }
 #endif    
-
-#define splhigh(x)  rthal_local_irq_save(x)
-#ifdef CONFIG_SMP
-#define splexit(x)  rthal_local_irq_restore((x) & 1)
-#else /* !CONFIG_SMP */
-#define splexit(x)  rthal_local_irq_restore(x)
-#endif /* CONFIG_SMP */
-#define splnone()   rthal_sti()
-#define spltest()   rthal_local_irq_test()
-#define splget(x)   rthal_local_irq_flags(x)
-
-typedef unsigned long xnlock_t;
-
-#define XNARCH_LOCK_UNLOCKED 0
 
 #ifdef CONFIG_SMP
 

@@ -203,8 +203,8 @@ static RT_OBJECT *__registry_hash_find (const char *key)
 
 /**
  * @fn int rt_registry_enter(const char *key,
-		               void *objaddr,
-			        rt_handle_t *phandle)
+		             void *objaddr,
+			     rt_handle_t *phandle)
  * @brief Register a real-time object.
  *
  * This service allocates a new registry slot for an associated
@@ -306,8 +306,8 @@ int rt_registry_enter (const char *key,
  *
  * This service retrieves the registry handle of a given object
  * identified by its key. Unless otherwise specified, this service
- * will block the caller if the object is not indexed yet, waiting for
- * such indexing to occur.
+ * will block the caller if the object is not registered yet, waiting
+ * for such registration to occur.
  *
  * @param key A valid NULL-terminated string which identifies the
  * object to bind to.
@@ -433,13 +433,11 @@ int rt_registry_bind (const char *key,
 
 /**
  * @fn int rt_registry_remove(rt_handle_t handle)
- * @brief Unregister a real-time object.
+ * @brief Forcibly unregister a real-time object.
  *
- * This service removes an object from the registry. The caller might
- * sleep as a result of waiting for the target object to be unlocked
- * prior to the removal (see rt_registry_put()), unless it is called
- * on behalf of the root thread (e.g. the initialization code); in the
- * latter case, the removal is simply forced.
+ * This service forcibly removes an object from the registry. The
+ * removal is performed regardless of the current object's locking
+ * status.
  *
  * @param handle The generic handle of the object to remove.
  *
@@ -447,9 +445,6 @@ int rt_registry_bind (const char *key,
  *
  * - -ENOENT is returned if @a handle does not reference a registered
  * object.
- *
- * - -EINTR is returned if rt_task_unblock() has been called for the
- * calling task waiting for the object to be unlocked.
  *
  * Environments:
  *
@@ -459,11 +454,95 @@ int rt_registry_bind (const char *key,
  * - Kernel-based task
  * - User-space task
  *
- * Rescheduling: possible if the object to remove is currently locked
- * and the calling context can be suspended.
+ * Rescheduling: never.
  */
 
 int rt_registry_remove (rt_handle_t handle)
+
+{
+    RT_OBJECT *object;
+    int err = 0;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    object = __registry_validate(handle);
+
+    if (!object)
+	{
+	err = -ENOENT;
+	goto unlock_and_exit;
+	}
+
+    __registry_hash_remove(object);
+    object->objaddr = NULL;
+    object->cstamp = 0;
+    removeq(&__rtai_obj_busyq,&object->link);
+    appendq(&__rtai_obj_freeq,&object->link);
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/**
+ * @fn int rt_registry_remove_safe(rt_handle_t handle,
+                                   RTIME timeout)
+ * @brief Unregister an idle real-time object.
+ *
+ * This service removes an object from the registry. The caller might
+ * sleep as a result of waiting for the target object to be unlocked
+ * prior to the removal (see rt_registry_put()).
+ *
+ * @param handle The generic handle of the object to remove.
+ *
+ * @param timeout If the object is locked on entry, @a param gives the
+ * number of clock ticks to wait for the unlocking to occur (see
+ * note). Passing RT_TIME_INFINITE causes the caller to block
+ * indefinitely until the object is unlocked. Passing RT_TIME_NONBLOCK
+ * causes the service to return immediately without waiting if the
+ * object is locked on entry.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -ENOENT is returned if @a handle does not reference a registered
+ * object.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout is equal to
+ * RT_TIME_NONBLOCK and the object is locked on entry.
+ *
+ * - -EBUSY is returned if @a handle refers to a locked object and the
+ * caller could not sleep until it is unlocked.
+ *
+ * - -ETIMEDOUT is returned if the object cannot be removed within the
+ * specified amount of time.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * calling task waiting for the object to be unlocked.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ *   only if @timeout is equal to RT_TIME_NONBLOCK.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible if the object to remove is currently locked
+ * and the calling context can sleep.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
+ */
+
+int rt_registry_remove_safe (rt_handle_t handle, RTIME timeout)
 
 {
     RT_OBJECT *object;
@@ -479,6 +558,21 @@ int rt_registry_remove (rt_handle_t handle)
 	{
 	err = -ENOENT;
 	goto unlock_and_exit;
+	}
+
+    if (object->safelock > 0)
+	{
+	if (timeout == RT_TIME_NONBLOCK)
+	    {
+	    err = -EWOULDBLOCK;
+	    goto unlock_and_exit;
+	    }
+	
+	if (!xnpod_pendable_p())
+	    {
+	    err = -EBUSY;
+	    goto unlock_and_exit;
+	    }
 	}
 
     /*
@@ -499,27 +593,26 @@ int rt_registry_remove (rt_handle_t handle)
 
     cstamp = object->cstamp;
 
-    if (xnpod_pendable_p())
-	while (object->safelock > 0)
-	    {
-	    xnsynch_sleep_on(&object->safesynch,XN_INFINITE);
+    do
+	{
+	xnsynch_sleep_on(&object->safesynch,timeout);
 
-	    if (xnthread_test_flags(&rtai_current_task()->thread_base,XNBREAK))
-		{
-		err = -EINTR;
-		goto unlock_and_exit;
-		}
+	if (xnthread_test_flags(&rtai_current_task()->thread_base,XNBREAK))
+	    {
+	    err = -EINTR;
+	    goto unlock_and_exit;
 	    }
 
-    if (object->cstamp == cstamp)
-	{
-	/* The caller should proceed with actual deletion. */
-	__registry_hash_remove(object);
-	object->objaddr = NULL;
-	object->cstamp = 0;
-	removeq(&__rtai_obj_busyq,&object->link);
-	appendq(&__rtai_obj_freeq,&object->link);
+	if (xnthread_test_flags(&rtai_current_task()->thread_base,XNTIMEO))
+	    {
+	    err = -ETIMEDOUT;
+	    goto unlock_and_exit;
+	    }
 	}
+    while (object->safelock > 0);
+
+    if (object->cstamp == cstamp)
+	err = rt_registry_remove(handle);
     else
 	/* The caller should silently abort the deletion process. */
 	err = -ENOENT;
@@ -736,6 +829,7 @@ void *rt_registry_fetch (rt_handle_t handle)
 EXPORT_SYMBOL(rt_registry_enter);
 EXPORT_SYMBOL(rt_registry_bind);
 EXPORT_SYMBOL(rt_registry_remove);
+EXPORT_SYMBOL(rt_registry_remove_safe);
 EXPORT_SYMBOL(rt_registry_get);
 EXPORT_SYMBOL(rt_registry_fetch);
 EXPORT_SYMBOL(rt_registry_put);

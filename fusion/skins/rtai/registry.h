@@ -106,7 +106,10 @@ int rt_registry_bind(const char *key,
 		     RTIME timeout,
 		     rt_handle_t *phandle);
 
-int rt_registry_remove(rt_handle_t);
+int rt_registry_remove(rt_handle_t handle);
+
+int rt_registry_remove_safe(rt_handle_t handle,
+			    RTIME timeout);
 
 void *rt_registry_get(rt_handle_t handle);
 

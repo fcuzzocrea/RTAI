@@ -158,7 +158,6 @@ void __pipe_pkg_cleanup (void)
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: never.
  */
@@ -216,7 +215,6 @@ int rt_pipe_open (RT_PIPE *pipe,
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -322,7 +320,6 @@ int rt_pipe_close (RT_PIPE *pipe)
  *   only if @a timeout is equal to TM_NONBLOCK.
  *
  * - Kernel-based task
- * - User-space task (switches to primary mode)
  *
  * Rescheduling: always unless the request is immediately satisfied or
  * @a timeout specifies a non-blocking operation.
@@ -423,7 +420,6 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -513,7 +509,6 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -629,7 +624,6 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -686,7 +680,6 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: never.
  */
@@ -726,13 +719,12 @@ RT_PIPE_MSG *rt_pipe_alloc (size_t size)
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: never.
  */
 
-int rt_pipe_free (RT_PIPE_MSG *msg) {
-
+int rt_pipe_free (RT_PIPE_MSG *msg)
+{
     return xnheap_free(__pipe_heap,msg);
 }
 

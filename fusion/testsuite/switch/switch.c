@@ -59,13 +59,13 @@ void event(void *cookie)
 
        err = rt_timer_start(TM_ONESHOT);
        if (err) {
-               printf("switch: cannot start timer, code %d\n", err);
+               fprintf(stderr,"switch: cannot start timer, code %d\n", err);
                return;
        }
 
        err = rt_task_set_periodic(NULL, TM_NOW, sampling_period);
        if (err) {
-               printf("switch: failed to set periodic, code %d\n", err);
+               fprintf(stderr,"switch: failed to set periodic, code %d\n", err);
                return;
        }
 
@@ -93,7 +93,7 @@ void worker(void *cookie)
 
        err = rt_sem_create(&switch_sem, "dispsem", 0, S_FIFO);
        if (err) {
-               printf("switch: cannot create semaphore: %s\n",
+               fprintf(stderr,"switch: cannot create semaphore: %s\n",
                       strerror(-err));
                return;
        }
@@ -102,7 +102,7 @@ void worker(void *cookie)
                err = rt_sem_p(&switch_sem, TM_INFINITE);
                if (err) {
                        if (err != -EIDRM)
-                               printf("switch: failed to pend on semaphore, code %d\n", err);
+                               fprintf(stderr,"switch: failed to pend on semaphore, code %d\n", err);
 
                        rt_task_delete(NULL);
                }
@@ -198,26 +198,26 @@ int main(int argc, char **argv)
 
        err = rt_task_create(&worker_task, "worker", 0, 2, T_FPU);
        if (err) {
-               printf("switch: failed to create worker task, code %d\n", err);
-               return 0;
+               fprintf(stderr,"switch: failed to create worker task, code %d\n", err);
+               return 1;
        }
 
        err = rt_task_start(&worker_task, &worker, NULL);
        if (err) {
-               printf("switch: failed to start worker task, code %d\n", err);
-               return 0;
+               fprintf(stderr,"switch: failed to start worker task, code %d\n", err);
+               return 1;
        }
 
        err = rt_task_create(&event_task, "event", 0, 1, 0);
        if (err) {
-               printf("switch: failed to create event task, code %d\n", err);
-               return 0;
+               fprintf(stderr,"switch: failed to create event task, code %d\n", err);
+               return 1;
        }
 
        err = rt_task_start(&event_task, &event, NULL);
        if (err) {
-               printf("switch: failed to start event task, code %d\n", err);
-               return 0;
+               fprintf(stderr,"switch: failed to start event task, code %d\n", err);
+               return 1;
        }
 
        pause();

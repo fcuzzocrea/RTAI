@@ -418,7 +418,7 @@ static inline void xnarch_relay_tick (void) {
 }
 
 static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
-                                                 cpumask_t affinity) {
+                                                 xnarch_cpumask_t affinity) {
     return adeos_set_irq_affinity(irq,affinity);
 }
 
@@ -727,7 +727,7 @@ int xnarch_sleep_on (int *flagp) {
 
 #ifdef CONFIG_SMP
 
-static inline int xnarch_send_ipi (cpumask_t cpumask) {
+static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
 
     return adeos_send_ipi(ADEOS_SERVICE_IPI0, cpumask);
 }
@@ -762,8 +762,8 @@ static void xnarch_finalize_cpu(unsigned irq)
 static inline void xnarch_notify_halt(void)
     
 {
+    xnarch_cpumask_t other_cpus = cpu_online_map;
     unsigned cpu, nr_cpus = num_online_cpus();
-    cpumask_t other_cpus = cpu_online_map;
     unsigned long flags;
     adeos_declare_cpuid;
 
@@ -789,7 +789,7 @@ static inline void xnarch_notify_halt(void)
 
 #else /* !CONFIG_SMP */
 
-static inline int xnarch_send_ipi (cpumask_t cpumask) {
+static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
 
     return 0;
 }
@@ -947,7 +947,7 @@ static inline void xnarch_stop_timer (void) {
     rthal_release_timer();
 }
 
-static inline int xnarch_send_timer_ipi (cpumask_t mask) {
+static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
 
 #if CONFIG_SMP
     return adeos_send_ipi(RTHAL_APIC_TIMER_IPI, mask);

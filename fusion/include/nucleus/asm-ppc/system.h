@@ -369,7 +369,7 @@ static inline void xnarch_relay_tick (void) {
 }
 
 static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
-						 cpumask_t affinity) {
+						 xnarch_cpumask_t affinity) {
     return adeos_set_irq_affinity(irq,affinity);
 }
 
@@ -626,7 +626,7 @@ int xnarch_sleep_on (int *flagp) {
 
 #ifdef CONFIG_SMP
 
-static inline int xnarch_send_ipi (cpumask_t cpumask) {
+static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
 
     return adeos_send_ipi(ADEOS_SERVICE_IPI0, cpumask);
 }
@@ -660,7 +660,7 @@ static inline void xnarch_notify_halt(void)
 
 #else /* !CONFIG_SMP */
 
-static inline int xnarch_send_ipi (cpumask_t cpumask) {
+static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
 
     return 0;
 }
@@ -833,7 +833,7 @@ static inline void xnarch_stop_timer (void) {
 }
 
 #if CONFIG_SMP
-static inline int xnarch_send_timer_ipi (cpumask_t mask) {
+static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
     return -1;			/* FIXME */
 }
 #endif /* CONFIG_SMP */

@@ -1,7 +1,7 @@
 dnl AC_PATH_XREQUIRED() requires X libs. This frag has been
 dnl lifted nearly "as is" from Postgresql's configure.in script.
 
-AC_DEFUN(AC_PATH_XREQUIRED,
+AC_DEFUN([AC_PATH_XREQUIRED],
 [
 	save_LIBS="$LIBS"
 	save_CFLAGS="$CFLAGS"
@@ -42,7 +42,7 @@ dnl AC_POSIX_SIGHANDLER() determines whether
 dnl signal handlers are posix compliant. This frag
 dnl has been adapted from readline's aclocal.m4.
 
-AC_DEFUN(AC_POSIX_SIGHANDLER,
+AC_DEFUN([AC_POSIX_SIGHANDLER],
 [AC_MSG_CHECKING([if signal handlers are posix compliant])
 AC_CACHE_VAL(ac_cv_posix_sighandler,
 [AC_TRY_COMPILE([#include <sys/types.h>
@@ -80,7 +80,7 @@ fi
 #				the tclConfig.sh file
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PATH_TCLCONFIG, [
+AC_DEFUN([SC_PATH_TCLCONFIG], [
     #
     # Ok, lets find the tcl configuration
     # First, look for one uninstalled.
@@ -173,7 +173,7 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 #				the tkConfig.sh file
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PATH_TKCONFIG, [
+AC_DEFUN([SC_PATH_TKCONFIG], [
     #
     # Ok, lets find the tk configuration
     # First, look for one uninstalled.
@@ -265,7 +265,7 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 #
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_LOAD_TCLCONFIG, [
+AC_DEFUN([SC_LOAD_TCLCONFIG], [
     AC_MSG_CHECKING([for existence of $TCL_BIN_DIR/tclConfig.sh])
 
     if test -f "$TCL_BIN_DIR/tclConfig.sh" ; then
@@ -310,7 +310,7 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 #		TK_BIN_DIR
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_LOAD_TKCONFIG, [
+AC_DEFUN([SC_LOAD_TKCONFIG], [
     AC_MSG_CHECKING([for existence of $TK_BIN_DIR/tkConfig.sh])
 
     if test -f "$TK_BIN_DIR/tkConfig.sh" ; then
@@ -343,7 +343,7 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 #		TIX_LIB_SPEC
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PATH_TIX, [
+AC_DEFUN([SC_PATH_TIX], [
     AC_MSG_CHECKING(for Tix's Tcl library)
 
     AC_ARG_WITH(tixlibrary, [  --with-tixlibrary      directory containing the Tix library files.], with_tixlibrary=${withval})
@@ -398,7 +398,7 @@ AC_DEFUN(SC_PATH_TIX, [
 #		${basename}_LIB_SPEC	The computed linker flags.
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_LIB_SPEC, [
+AC_DEFUN([SC_LIB_SPEC], [
     AC_MSG_CHECKING(for $1 library)
     eval "sc_lib_name_dir=${libdir}"
     for i in \
@@ -458,7 +458,7 @@ AC_DEFUN(SC_LIB_SPEC, [
 #		TCL_INCLUDES
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PUBLIC_TCL_HEADERS, [
+AC_DEFUN([SC_PUBLIC_TCL_HEADERS], [
     AC_MSG_CHECKING(for Tcl public headers)
 
     AC_ARG_WITH(tclinclude, [  --with-tclinclude      directory containing the public Tcl header files.], with_tclinclude=${withval})
@@ -527,7 +527,7 @@ AC_DEFUN(SC_PUBLIC_TCL_HEADERS, [
 #		TK_INCLUDES
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PUBLIC_TK_HEADERS, [
+AC_DEFUN([SC_PUBLIC_TK_HEADERS], [
     AC_MSG_CHECKING(for Tk public headers)
 
     AC_ARG_WITH(tkinclude, [  --with-tkinclude      directory containing the public Tk header files.], with_tkinclude=${withval})

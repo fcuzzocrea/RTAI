@@ -1666,6 +1666,9 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	rt_schedule();
 	UNLOCK_LINUX(cpuid);
 	rt_global_sti();
+#ifdef USE_LINUX_SYSCALL_FOR_LXRT
+        rtai_linux_sti();
+#endif
 }
 
 static inline void fast_schedule(RT_TASK *new_task, void *lnxtsk, int cpuid)

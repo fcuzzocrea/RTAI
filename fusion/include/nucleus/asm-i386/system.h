@@ -251,7 +251,7 @@ static inline unsigned xnarch_current_cpu (void) {
 #define xnarch_halt(emsg) \
 do { \
     adeos_set_printk_sync(adp_current); \
-    xnarch_printf(KERN_ERR "RTAI[nucleus]: fatal: %s\n",emsg); \
+    xnarch_logerr("fatal: %s\n",emsg); \
     show_stack(NULL,NULL);			\
     for (;;) safe_halt();			\
 } while(0)
@@ -320,9 +320,7 @@ static inline void xnarch_isr_enable_irq (unsigned irq) {
 
 static inline void xnarch_relay_tick (void) {
 
-#ifndef CONFIG_X86_LOCAL_APIC
     rthal_pend_linux_irq(RTHAL_8254_IRQ);
-#endif /* CONFIG_X86_LOCAL_APIC */
 }
 
 static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
@@ -413,7 +411,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
         "a" (outproc), \
         "d" (inproc));
 
-#else /* Gcc version >= 3.2 */
+#else /* GCC version >= 3.2 */
 
     long ebx_out, ecx_out, edi_out, esi_out;
     
@@ -442,7 +440,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
         "m" (in_tcb->eipp) \
       : "ebp");
 
-#endif /* Gcc version < 3.2 */
+#endif /* GCC version < 3.2 */
 }
 
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,

@@ -4,6 +4,9 @@
 	and threads are properly relayed to the user-defined fault
 	handler.
 
+	* nucleus/pod.c (xnpod_announce_tick): Move the test for the timer
+	mode away from the inner loop.
+
 2004-08-03  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.7-i386-r6c6. This is

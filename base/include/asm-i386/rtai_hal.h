@@ -275,12 +275,16 @@ extern adomain_t rtai_domain;
 
 extern int rtai_adeos_ptdbase;
 
+#if !defined(CONFIG_ADEOS_NOTHREADS)
+
 /* rtai_get_current() is Adeos-specific. Since real-time interrupt
    handlers are called on behalf of the RTAI domain stack, we cannot
    infere the "current" Linux task address using %esp. We must use the
    suspended Linux domain's stack pointer instead. */
 
-static inline struct task_struct *rtai_get_root_current (int cpuid) {
+static inline struct task_struct *rtai_get_root_current (int cpuid)
+
+{
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     return (struct task_struct *)(((u_long)adp_root->esp[cpuid]) & (~8191UL));
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
@@ -304,6 +308,22 @@ static inline struct task_struct *rtai_get_current (int cpuid)
 
     return get_current();
 }
+
+#else /* CONFIG_ADEOS_NOTHREADS */
+
+static inline struct task_struct *rtai_get_root_current (int cpuid)
+
+{
+    return current;
+}
+
+static inline struct task_struct *rtai_get_current (int cpuid)
+
+{
+    return current;
+}
+
+#endif /* !CONFIG_ADEOS_NOTHREADS */
 
 irqreturn_t rtai_broadcast_to_local_timers(int irq,
 					   void *dev_id,

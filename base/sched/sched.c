@@ -2110,11 +2110,11 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 {
 #ifdef USE_LINUX_SYSCALL
 	struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-	unsigned long orig_eax;
-	if ((orig_eax = r->orig_eax) >= GT_NR_SYSCALLS) {
-		long long retval = rtai_lxrt_invoke(orig_eax, (void *)r->ecx);
-		if (r->edx) {
-			copy_to_user((void *)r->edx, &retval, sizeof(retval));
+	unsigned long syscall_nr;
+	if ((syscall_nr = r->SYSCALL_NR) >= GT_NR_SYSCALLS) {
+		long long retval = rtai_lxrt_invoke(syscall_nr, (void *)r->SYSCALL_ARGS);
+		if (r->SYSCALL_RETPNT) {
+			copy_to_user((void *)r->SYSCALL_RETPNT, &retval, sizeof(retval));
 		}
 		if (!in_hrt_mode(rtai_cpuid())) {
 			adeos_propagate_event(evinfo);
@@ -2137,7 +2137,7 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 #endif
 			if (!systrans++) {
 				struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->orig_eax);
+				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->SYSCALL_NR);
 
 			}
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->orig_eax););

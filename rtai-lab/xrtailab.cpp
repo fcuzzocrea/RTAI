@@ -1776,7 +1776,6 @@ static void rlg_update_after_connect(void)
 	Fl::lock();
 	RLG_Save_Profile_Button->activate();
 	RLG_Delete_Profile_Button->deactivate();
-	RLG_Params_Mgr_Button->activate();
 	RLG_Scopes_Mgr_Button->activate();
 	RLG_Logs_Mgr_Button->activate();
 	RLG_Leds_Mgr_Button->activate();
@@ -1792,8 +1791,11 @@ static void rlg_update_after_connect(void)
 	RLG_Main_Menu_Table[4].activate();
 	RLG_Main_Menu_Table[5].deactivate();
 	for (int i = 9; i <= 14; i++) RLG_Main_Menu_Table[i].activate();
-	sprintf(buf, "Target: %s.", Tunable_Parameters[0].model_name);
-	RLG_Target_Name = strdup(Tunable_Parameters[0].model_name);
+        if(Num_Tunable_Parameters!=0){
+	  RLG_Params_Mgr_Button->activate();
+	  sprintf(buf, "Target: %s.", Tunable_Parameters[0].model_name);
+	  RLG_Target_Name = strdup(Tunable_Parameters[0].model_name);
+	}
 	RLG_Main_Status->label(buf);
 	RLG_Main_Menu->menu(RLG_Main_Menu_Table);
 	RLG_Main_Menu->redraw();

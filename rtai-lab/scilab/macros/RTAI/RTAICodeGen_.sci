@@ -1252,7 +1252,9 @@ function ok=gen_ccode();
   ncap=size(cap,'*');
   if (nact+ncap)~=0 then
     created=fileinfo(rpat+'/'+rdnom+'_io.c')
+    reponse=1;
     if created~=[] then
+      reponse=1;
       reponse=x_message(['File: ""'+rdnom+'_io.c"" already exists,';'do you want to replace it ?'],['Yes','No']);
     end
     if reponse==1 |  reponse==[] then

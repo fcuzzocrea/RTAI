@@ -184,6 +184,7 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static void engage_local_irq_shield (unsigned local_cpu)
 
 {
+    unsigned long flags;
     unsigned irq;
 
     /* Since the interrupt shield does not handle the virtual IRQs we
@@ -195,15 +196,16 @@ static void engage_local_irq_shield (unsigned local_cpu)
 
     adeos_stall_pipeline_from(&irq_shield);
 
+    rthal_hw_lock(flags);
+
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 #ifdef CONFIG_SMP
         if (irq != ADEOS_CRITICAL_IPI &&
-            irq != ADEOS_SERVICE_IPI1 &&
-            irq != gkvirq &&
-            irq != sigvirq &&
-            irq != nicevirq)
+            irq != ADEOS_SERVICE_IPI1)
 #endif /* CONFIG_SMP */
 	    __adeos_lock_irq(&irq_shield,local_cpu,irq);
+
+    rthal_hw_unlock(flags);
 
     adeos_unstall_pipeline_from(&irq_shield);
 }
@@ -221,10 +223,7 @@ static void disengage_local_irq_shield (unsigned local_cpu __attribute__((unused
         for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 #ifdef CONFIG_SMP
             if (irq != ADEOS_CRITICAL_IPI &&
-                irq != ADEOS_SERVICE_IPI1 &&
-                irq != gkvirq &&
-                irq != sigvirq &&
-                irq != nicevirq)
+                irq != ADEOS_SERVICE_IPI1)
 #endif /* CONFIG_SMP */
                 __adeos_unlock_irq(&irq_shield,irq);
     
@@ -1554,6 +1553,8 @@ static void xnshadow_linux_taskexit (adevinfo_t *evinfo)
 	       current->comm,
 	       !!testbits(thread->status,XNRELAX));
 #endif
+
+    disengage_irq_shield(smp_processor_id());
 
     if (xnpod_shadow_p())
 	xnshadow_relax();

@@ -1,3 +1,13 @@
+2004-10-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_linux_taskexit): Disengage the
+	interrupt shield so that synchronous IPIs that might be used in
+	the task cleanup code could flow to Linux freely.
+	(engage_local_irq_shield): Lock hw interrupts.
+	(engage_local_irq_shield):
+	(disengage_local_irq_shield): Remove superfluous check for virtual
+	IRQs.
+
 2004-10-04  Edelhard Becker <ebecker@software-manufaktur.de>
 
 	* configure.in: Detect CONFIG_X86_EMU486 when testing for

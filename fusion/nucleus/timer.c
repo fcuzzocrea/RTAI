@@ -326,10 +326,6 @@ void xntimer_do_timers (void)
 
     initq(&reschedq);
 
-#if XNARCH_HAVE_APERIODIC_TIMER
- restart:
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
-
     if (testbits(nkpod->status,XNTMPER))
 	{
 	/* Update the periodic clocks keeping the things strictly
@@ -342,6 +338,9 @@ void xntimer_do_timers (void)
 	{
 	/* Only use slot #0 in aperiodic mode. */
 	timerq = &nkpod->timerwheel[0];
+#if XNARCH_HAVE_APERIODIC_TIMER
+ restart:
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 	now = xnarch_get_cpu_tsc();
 	}
 

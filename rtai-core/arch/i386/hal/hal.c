@@ -1892,5 +1892,8 @@ EXPORT_SYMBOL(rtai_cpu_realtime);
 EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 
+EXPORT_SYMBOL(rtai_set_gate_vector);
+EXPORT_SYMBOL(rtai_reset_gate_vector);
+
 EXPORT_SYMBOL(rtai_syscall_entry);
 /*@}*/

@@ -38,6 +38,7 @@
 #include <rtai/mutex.h>
 #include <rtai/cond.h>
 #include <rtai/pipe.h>
+#include <rtai/queue.h>
 
 MODULE_DESCRIPTION("RTAI skin");
 MODULE_AUTHOR("rpm@xenomai.org");
@@ -49,6 +50,10 @@ static void rtai_shutdown (int xtype)
 #ifdef __KERNEL__
     __syscall_pkg_cleanup();
 #endif /* __KERNEL__ */
+
+#if CONFIG_RTAI_OPT_NATIVE_QUEUE
+    __queue_pkg_cleanup();
+#endif /* CONFIG_RTAI_OPT_NATIVE_QUEUE */
 
 #if CONFIG_RTAI_OPT_NATIVE_PIPE
     __pipe_pkg_cleanup();
@@ -139,18 +144,31 @@ int __xeno_skin_init (void)
 	goto cleanup_cond;
 #endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
 
+#if CONFIG_RTAI_OPT_NATIVE_QUEUE
+    err = __queue_pkg_init();
+
+    if (err)
+	goto cleanup_pipe;
+#endif /* CONFIG_RTAI_OPT_NATIVE_QUEUE */
+
 #ifdef __KERNEL__
     err = __syscall_pkg_init();
 
     if (err)
-	goto cleanup_pipe;
+	goto cleanup_queue;
 #endif /* __KERNEL__ */
     
     return 0;	/* SUCCESS. */
 
 #ifdef __KERNEL__
- cleanup_pipe:
+ cleanup_queue:
 #endif /* __KERNEL__ */
+
+#ifdef CONFIG_RTAI_OPT_NATIVE_QUEUE
+    __queue_pkg_cleanup();
+
+ cleanup_pipe:
+#endif /* CONFIG_RTAI_OPT_NATIVE_QUEUE */
 
 #if CONFIG_RTAI_OPT_NATIVE_PIPE
     __pipe_pkg_cleanup();

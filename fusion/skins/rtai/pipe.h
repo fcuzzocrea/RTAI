@@ -59,11 +59,11 @@
 
 typedef xnpipe_mh_t RT_PIPE_MSG;
 
-#define RT_PIPE_NORMAL XNPIPE_NORMAL
-#define RT_PIPE_URGENT XNPIPE_URGENT
+#define P_NORMAL  XNPIPE_NORMAL
+#define P_URGENT  XNPIPE_URGENT
 
-#define RT_PIPE_MSGPTR(msg)  xnpipe_m_data(msg)
-#define RT_PIPE_MSGSIZE(msg) xnpipe_m_size(msg)
+#define P_MSGPTR(msg)  xnpipe_m_data(msg)
+#define P_MSGSIZE(msg) xnpipe_m_size(msg)
 
 typedef struct rt_pipe {
 
@@ -71,7 +71,7 @@ typedef struct rt_pipe {
 
     xnholder_t link;		/* !< Link in flush queue. */
 
-#define link2pipe(laddr) \
+#define link2rtpipe(laddr) \
 ((RT_PIPE *)(((char *)laddr) - (int)(&((RT_PIPE *)0)->link)))
 
     int minor;			/* !< Device minor number.  */

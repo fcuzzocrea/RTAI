@@ -48,6 +48,8 @@ host_triplet = @host@
 @CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@am__append_10 = mutex.h
 @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@am__append_11 = cond.c
 @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@am__append_12 = cond.h
+@CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_13 = queue.c
+@CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_14 = queue.h
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -84,6 +86,8 @@ CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE = @CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE@
 CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE = @CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@
 CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE = @CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE@
 CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE = @CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE@
+CONFIG_RTAI_OPT_NATIVE_QUEUE_FALSE = @CONFIG_RTAI_OPT_NATIVE_QUEUE_FALSE@
+CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE = @CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@
 CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE@
 CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@
 CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
@@ -235,16 +239,16 @@ libmodule_SRC = \
 	syscall.c \
 	task.c \
 	timer.c\
-$(am__append_1) $(am__append_3) $(am__append_5) $(am__append_7) $(am__append_9) $(am__append_11)
+$(am__append_1) $(am__append_3) $(am__append_5) $(am__append_7) $(am__append_9) $(am__append_11) $(am__append_13)
 
 include_HEADERS = \
 		task.h \
 		timer.h \
 		types.h \
 		syscall.h\
-$(am__append_2) $(am__append_4) $(am__append_6) $(am__append_8) $(am__append_10) $(am__append_12)
+$(am__append_2) $(am__append_4) $(am__append_6) $(am__append_8) $(am__append_10) $(am__append_12) $(am__append_14)
 
-distfiles = $(libmodule_SRC) registry.c registry.h pipe.c pipe.h sem.c sem.h event.c event.h mutex.c mutex.h cond.c cond.h
+distfiles = $(libmodule_SRC) registry.c registry.h pipe.c pipe.h sem.c sem.h event.c event.h mutex.c mutex.h cond.c cond.h queue.c queue.h
 
 EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig
 

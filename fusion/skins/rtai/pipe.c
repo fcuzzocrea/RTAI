@@ -51,7 +51,7 @@ static inline ssize_t __pipe_flush (RT_PIPE *pipe)
 {
     ssize_t nbytes;
 
-    nbytes = xnpipe_send(pipe->minor,pipe->buffer,pipe->fillsz + sizeof(RT_PIPE_MSG),RT_PIPE_NORMAL);
+    nbytes = xnpipe_send(pipe->minor,pipe->buffer,pipe->fillsz + sizeof(RT_PIPE_MSG),P_NORMAL);
     rt_pipe_free(pipe->buffer);
     pipe->buffer = NULL;
     pipe->fillsz = 0;
@@ -71,7 +71,7 @@ static void __pipe_flush_handler (void)
 
     while ((holder = getq(&__pipe_flush_q)) != NULL)
 	{
-	RT_PIPE *pipe = link2pipe(holder);
+	RT_PIPE *pipe = link2rtpipe(holder);
 	__pipe_flush(pipe);	/* Cannot do anything upon error here. */
 	__clear_bit(0,&pipe->flushable);
 	}
@@ -249,8 +249,8 @@ int rt_pipe_close (RT_PIPE *pipe)
  * upon success with the address of the received message. Once
  * consumed, the message space should be freed using rt_pipe_free().
  * The application code can retrieve the actual data and size carried
- * by the message by respectively using the RT_PIPE_MSGPTR() and
- * RT_PIPE_MSGSIZE() macros.
+ * by the message by respectively using the P_MSGPTR() and P_MSGSIZE()
+ * macros.
  *
  * @param timeout The number of clock ticks to wait for some message
  * to arrive (see note). Passing RT_TIME_INFINITE causes the caller to
@@ -260,7 +260,7 @@ int rt_pipe_close (RT_PIPE *pipe)
  *
  * @return The number of read bytes available from the received
  * message is returned upon success; this value will be equal to
- * RT_PIPE_MSGSIZE(*msgp). Otherwise:
+ * P_MSGSIZE(*msgp). Otherwise:
  *
  * - -EINVAL is returned if @a pipe is not a pipe descriptor.
  *
@@ -351,10 +351,10 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  *
  * @param flags A set of flags affecting the operation:
  *
- * - RT_PIPE_URGENT causes the message to be prepended to the output
+ * - P_URGENT causes the message to be prepended to the output
  * queue, ensuring a LIFO ordering.
  *
- * - RT_PIPE_NORMAL causes the message to be appended to the output
+ * - P_NORMAL causes the message to be appended to the output
  * queue, ensuring a FIFO ordering.
  *
  * @return Upon success, this service returns @a size if the latter is
@@ -431,7 +431,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  * re-entered after the real-time system enters a quiescent state.
  *
  * Data buffers sent by the rt_pipe_stream() service are always
- * transmitted in FIFO order (i.e. RT_PIPE_NORMAL mode).
+ * transmitted in FIFO order (i.e. P_NORMAL mode).
  *
  * @param pipe The descriptor address of the pipe to write to.
  *
@@ -518,7 +518,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
 		}
 	    }
 
-	memcpy(RT_PIPE_MSGPTR(pipe->buffer) + pipe->fillsz,(caddr_t)buf + outbytes,n);
+	memcpy(P_MSGPTR(pipe->buffer) + pipe->fillsz,(caddr_t)buf + outbytes,n);
 	pipe->fillsz += n;
 	outbytes += n;
 	size -= n;
@@ -607,7 +607,7 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
  * This service allocates a message buffer from the system heap which
  * can be subsequently filled then passed to rt_pipe_write() for
  * sending. The beginning of the available data area of @a size
- * contiguous bytes is accessible from RT_PIPE_MSGPTR(msg).
+ * contiguous bytes is accessible from P_MSGPTR(msg).
  *
  * @param size The requested size in bytes of the buffer. This value
  * should represent the size of the payload data.
@@ -653,7 +653,7 @@ RT_PIPE_MSG *rt_pipe_alloc (size_t size)
 
 int rt_pipe_free (RT_PIPE_MSG *msg) {
 
-    return xnheap_free(__pipe_heap,msg) == 0 ? 0 : -EINVAL;
+    return xnheap_free(__pipe_heap,msg);
 }
 
 /*@}*/

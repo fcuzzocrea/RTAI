@@ -87,6 +87,8 @@ typedef struct rt_task_placeholder {
 #define RT_TASK_STATUS_MASK \
 (T_FPU|T_BLOCKED|T_DELAYED|T_READY|T_DORMANT|T_STARTED|T_BOOST|T_LOCK|T_RRB)
 
+struct rt_queue_msg;
+
 typedef struct rt_task_info {
 
     int bprio;			/* !< Base priority. */
@@ -130,6 +132,8 @@ typedef struct rt_task {
 	    int mode;
 	    unsigned long mask;
 	} event;
+
+	struct rt_queue_msg *qmsg;
 
     } wait_args;
 

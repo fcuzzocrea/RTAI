@@ -78,3 +78,11 @@ config RTAI_OPT_NATIVE_COND
 	help
 	
 	Condition variable support.
+
+config RTAI_OPT_NATIVE_QUEUE
+	bool "Message queue support"
+	depends on RTAI_SKIN_NATIVE
+	enable RTAI_OPT_NATIVE_QUEUE
+	help
+	
+	Message queue support.

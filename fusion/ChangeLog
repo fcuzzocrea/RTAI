@@ -1,5 +1,7 @@
 2004-09-01  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/patches: Update Adeos support to 2.6.8rc1-r6c5.
+
 	* include/nucleus/asm-ppc/atomic.h: Fix register notations in
 	inline assembly.
 

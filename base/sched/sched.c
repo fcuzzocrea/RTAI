@@ -659,12 +659,11 @@ static inline RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task,
 {
 	if (rt_current->lnxtsk) {
 		if (adp_current == adp_root) {
-#if 0
 			rtai_domain.dswitch = rt_schedule;
+#warning "Broken and non-portable Adeos-wise"
 			__adeos_switch_to(&rtai_domain, cpuid);
 			rtai_domain.dswitch = NULL;
 			return NULL;
-#endif
 		}
 		LOCK_LINUX(cpuid);
 		rt_linux_task.prevp = rt_current;
@@ -715,7 +714,6 @@ void rt_schedule_on_schedule_ipi(void)
         rtai_hw_lock(flags);
 
 	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
-	sched_rqsted[cpuid] = 1;
 
 	sched_get_global_lock(cpuid);
 	RR_YIELD();
@@ -751,7 +749,7 @@ void rt_schedule_on_schedule_ipi(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (!sched_locked[cpuid] && new_task != rt_current) {
+	if ((sched_rqsted[cpuid] = new_task != rt_current) && !sched_locked[cpuid]) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;
@@ -793,7 +791,6 @@ void rt_schedule(void)
         rtai_hw_lock(flags);
 
 	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
-	sched_rqsted[cpuid] = 1;
 
 	RR_YIELD();
 	if (oneshot_running) {
@@ -845,7 +842,7 @@ void rt_schedule(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (!sched_locked[cpuid] && new_task != rt_current) {
+	if ((sched_rqsted[cpuid] = new_task != rt_current) && !sched_locked[cpuid]) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;
@@ -985,7 +982,7 @@ int clr_rtext(RT_TASK *task)
 	if (!(task->owndres & SEMHLF) || task == rt_current || rt_current->priority == RT_SCHED_LINUX_PRIORITY) {
 		call_exit_handlers(task);
 		rem_timed_task(task);
-		if (task->blocked_on) {
+		if (task->blocked_on && (task->state & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN))) {
 			(task->queue.prev)->next = task->queue.next;
 			(task->queue.next)->prev = task->queue.prev;
 			if (task->state & RT_SCHED_SEMAPHORE) {
@@ -1065,7 +1062,6 @@ static void rt_timer_handler(void)
         rtai_hw_lock(flags);
 
 	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
-	sched_rqsted[cpuid] = 1;
 
 #ifdef CONFIG_X86_REMOTE_DEBUG
 	if (oneshot_timer) {    // Resync after possibly hitting a breakpoint
@@ -1133,7 +1129,7 @@ static void rt_timer_handler(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (!sched_locked[cpuid] && new_task != rt_current) {
+	if ((sched_rqsted[cpuid] = new_task != rt_current) && !sched_locked[cpuid]) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;
@@ -1773,6 +1769,7 @@ static void thread_fun(int cpuid)
 	((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
 	give_back_to_linux(task);
 	rt_task_delete(task);
+	current->comm[0] = 'D';
 //	rt_task_suspend(task);
 }
 
@@ -1804,10 +1801,10 @@ static void kthread_m(int cpuid)
 			flags = rt_global_save_flags_and_cli();
 			hard = (unsigned long)(lnxtsk = klistp->task[klistp->out]);
 			if (hard > 1) {
+				lnxtsk->this_rt_task[0] = NULL;
 				lnxtsk->state = TASK_ZOMBIE;
-				lnxtsk->exit_signal = SIGCHLD;
 				rt_global_sti();
-				waitpid(lnxtsk->pid, 0, 0);
+				force_sig(SIGKILL, lnxtsk);
 				rt_global_cli();
 			} else {
 				if (taskidx[cpuid] < Reservoir) {

@@ -128,7 +128,7 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
 	int *wmsg_adr, *w2msg_adr;
 	struct fun_args *funarg;
 
-	memcpy(funarg = (void *)rt_task->fun_args, arg, narg*sizeof(int));
+	memcpy(funarg = (void *)rt_task->fun_args, arg, narg);
 	funarg->fun = fun;
 	if (net_rpc) {
 		memcpy((void *)(rt_task->fun_args[4] = (int)(funarg + 1)), (void *)arg[4], arg[5]);
@@ -701,4 +701,6 @@ int lxrt_init_archdep (void)
 
 void lxrt_exit_archdep (void) { }
 
+#ifdef CONFIG_KBUILD
 EXPORT_SYMBOL(linux_process_termination);
+#endif /* CONFIG_KBUILD */

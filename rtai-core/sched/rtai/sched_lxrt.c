@@ -382,11 +382,7 @@ int rt_kthread_init(RT_TASK *task, void (*rt_thread)(int), int data,
 
 #ifdef USE_RTAI_TASKS
 
-static void rt_startup(void(*rt_thread)(int), int data)
-/* Just in case CONFIG_REGPARM is enabled... */
-    __attribute__ ((regparm(0)));
-
-static void rt_startup(void(*rt_thread)(int), int data)
+asmlinkage static void rt_startup(void(*rt_thread)(int), int data)
 {
 	extern int rt_task_delete(RT_TASK *);
 	rt_global_sti();

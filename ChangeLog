@@ -7,8 +7,9 @@
         * rtai-core/include/asm-i386/rtai_lxrt.h: Make
 	lxrt_switch_context() mostly look like kilauea's version.
 
-	* rtai-core/sched/rtai: Force regparm(0) for all task trampolines so
-	that we are still safe if CONFIG_REGPARM is enabled.
+	* rtai-core/sched/rtai: Force regparm(0) for all task trampolines
+	so that we are still safe if CONFIG_REGPARM is enabled. Need same
+	fix from Adeos >= 2.6r6c1.
 
 2004-06-22  Philippe Gerum  <rpm@xenomai.org>
 

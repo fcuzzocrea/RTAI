@@ -195,11 +195,7 @@ static inline void sched_release_global_lock(int cpuid)
 
 static int tasks_per_cpu[NR_RT_CPUS] = { 0, };
 
-static void rt_startup(void(*rt_thread)(int), int data)
-/* Just in case CONFIG_REGPARM is enabled... */
-    __attribute__ ((regparm(0)));
-
-static void rt_startup(void(*rt_thread)(int), int data)
+asmlinkage static void rt_startup(void(*rt_thread)(int), int data)
 {
 	extern int rt_task_delete(RT_TASK *);
 	rt_global_sti();

@@ -1,5 +1,17 @@
 2005-02-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/*/hal/hal.c (rthal_release_linux_irq): Call free_irq()
+	outside of the critical section.
+
+	* arch/*/hal/hal.c (rthal_request_linux_irq,
+	rthal_request_linux_irq): Use spinlock_irq form.
+
+	* skins/rtai/syscall.c, nucleus/fusion.c: Mark start/stop timer
+	services as "lostage".
+
+	* arch/i386/hal/hal.c (rthal_request_timer): Exit the critical
+	section before calling rthal_request_linux_irq().
+
 	* arch/*/hal/hal.c: Discard useless and somewhat bugous
 	rthal_proc_lock.
 

@@ -463,8 +463,8 @@ static xnsysent_t __systab[] = {
     [__xn_fusion_wait_period] = { &__pthread_wait_period_rt, __xn_exec_primary },
     [__xn_fusion_time] = { &__pthread_time_rt, __xn_exec_any  },
     [__xn_fusion_cputime] = { &__pthread_cputime_rt, __xn_exec_any  },
-    [__xn_fusion_start_timer] = { &__pthread_start_timer_rt, __xn_exec_any  },
-    [__xn_fusion_stop_timer] = { &__pthread_stop_timer_rt, __xn_exec_any  },
+    [__xn_fusion_start_timer] = { &__pthread_start_timer_rt, __xn_exec_lostage  },
+    [__xn_fusion_stop_timer] = { &__pthread_stop_timer_rt, __xn_exec_lostage  },
     [__xn_fusion_sleep] = { &__pthread_sleep_rt, __xn_exec_primary  },
     [__xn_fusion_inquire] = { &__pthread_inquire_rt, __xn_exec_shadow },
     /* Internal UVM calls. */

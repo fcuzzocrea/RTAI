@@ -41,21 +41,23 @@ static spinlock_t *usi_lock_pool, **usi_lock_pool_p;
 static spinlock_t usi_lock = SPIN_LOCK_UNLOCKED;
 static volatile int usip;
 
-static SEM *irqsem[NR_IRQS];
-static struct rt_tasklet_struct *irqtasklet[NR_IRQS];
-
 static RT_TASK *rt_base_linux_task;
+
+extern adomain_t rtai_domain;
 
 static void sem_handler(int irq)
 {
-	irqsem[irq]->owndby = (void *)irq;
-	rt_sem_signal(irqsem[irq]);
+	SEM *sem;
+	(sem = (void *)rtai_domain.irqs[irq].acknowledge)->owndby = (void *)irq;
+	rt_sem_signal(sem);
 } 
 
 static void tasklet_handler(int irq)
 {
-	irqtasklet[irq]->data = ((-((irqtasklet[irq]->task)->suspdepth - 1)) << 16) | irq;
-	rt_exec_tasklet(irqtasklet[irq]);
+	struct rt_tasklet_struct *tasklet;
+	tasklet = (void *)rtai_domain.irqs[irq].acknowledge;
+	tasklet->data = ((-((tasklet->task)->suspdepth - 1)) << 16) | irq;
+	rt_exec_tasklet(tasklet);
 } 
 
 static int usi_wait_intr(SEM *sem, unsigned long *irq)
@@ -95,14 +97,12 @@ static int usi_request_global_irq(unsigned int irq, void *hook, int hooktype)
 	if (hook) {
 		int retval;
 		if (hooktype == USI_SEM) {
-			if (!(retval = rt_request_global_irq(irq, (void *)sem_handler))) {
-				irqsem[irq] = hook;
+			if (!(retval = rt_request_irq(irq, (void *)sem_handler, (void *)hook, 0))) {
 			}
 			return retval;
 		}
 		if (hooktype == USI_TASKLET) {
-			if (!(retval = rt_request_global_irq(irq, (void *)tasklet_handler))) {
-				irqtasklet[irq] = hook;
+			if (!(retval = rt_request_irq(irq, (void *)tasklet_handler, (void *)hook, 0))) {
 			}
 			return retval;
 		}
@@ -200,31 +200,31 @@ static void usi_global_restore_flags(unsigned long flags)
 
 static void usi_cli(void)
 {
-	hard_cli();
+	rtai_cli();
 }
 
 static void usi_sti(void)
 {
-	hard_sti();
+	rtai_sti();
 }
 
 static unsigned long usi_save_flags_and_cli(void)
 {
 	unsigned long flags;
-	hard_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 	return flags;
 }
 
 static unsigned long usi_save_flags(void)
 {
 	unsigned long flags;
-	hard_save_flags(flags);
+	rtai_save_flags(flags);
 	return flags;
 }
 
 static void usi_restore_flags(unsigned long flags)
 {
-	hard_restore_flags(flags);
+	rtai_restore_flags(flags);
 }
 
 static struct rt_fun_entry rtai_usi_fun[] = {

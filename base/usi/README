@@ -5,19 +5,19 @@ you. Neither I would have used such a way of working on my favourite Z80.
 
 Instead if you are using any PC that kids use nowdays to play their favourite 
 video games it can be of some interest. On such machines task switching times 
-in user space are far less than the worst latency you'll encounter in getting 
-to the first line of code in your interrupt handler, even if it seats in kernel 
-space. If you do not believe it try examples/buslokchk for a few minutes under 
-intense peripheral activities with plain Linux. 
+are far less than the worst latency you'll encounter in getting to the first 
+line of code in your interrupt handler, even if it seats in kernel space. 
+If you do not believe it try the related calibration item for a few minutes i
+under intense peripheral activities with plain Linux. 
 So if your concern is on the worst case you might find it not so bad and what 
 found here might be usefull. In any case it can be a helper for preliminary
 development and easy proof of concept verifications of interrupt handlers code.
 
 RTAI already contains some examples hinting at managing interrupts in user
-space, e.g: resumefromintr in lxrt-net_rpc, pressa in lxrt, but all of them
+tasks, e.g: resumefromintr in lxrt-net_rpc, steelworks in lxrt, but all of them
 require installing a proper handler in kernel space to wake up a hard real 
-time LXRT/NEWLXRT task. USI does the same but adds something that permits you 
-to avoid writing anything in kernel space.
+time task. USI does the same but adds something that permits you to avoid 
+writing anything in kernel space.
 
 In fact it contains a few support functions that allow you to write interrupt
 handlers directly in user space. The related APIs are much the same as those 

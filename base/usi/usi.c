@@ -22,6 +22,8 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 
+#if 0
+
 #include <rtai.h>
 #include <rtai_sched.h>
 #include <rtai_malloc.h>
@@ -198,6 +200,19 @@ int __rtai_usi_init(void)
 void __rtai_usi_exit(void)
 {
 	unregister_lxrt_usi_support();
+	printk(KERN_INFO "RTAI[usi]: unloaded.\n");
+}
+
+#endif
+
+int __rtai_usi_init(void)
+{
+	printk(KERN_INFO "RTAI[usi]: loaded.\n");
+	return 0;
+}
+
+void __rtai_usi_exit(void)
+{
 	printk(KERN_INFO "RTAI[usi]: unloaded.\n");
 }
 

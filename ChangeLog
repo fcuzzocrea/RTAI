@@ -1,3 +1,8 @@
+2004-07-07  Wolfgang Grandegger  <wolfgang.grandegger@bluewin.ch>
+
+	* rtai-core: A first version of RTAI over ADEOS on PowerPC
+	has been added. The legacy RTAI (RTHAL) is still available.
+
 2004-07-07  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/scripts/rtai-load.in: Use "ls" instead of "file" to

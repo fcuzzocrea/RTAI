@@ -58,6 +58,14 @@ ACKNOWLEDGMENTS:
 #include <asm/uaccess.h>
 #include <asm/mmu_context.h>
 
+#ifdef CONFIG_PREEMPT
+#define ENTER_LXRT_IRQ_HANDLER()  do { adeos_hw_cli(); } while (0)
+#define EXIT_LXRT_IRQ_HANDLER()   do { adeos_stall_pipeline_from(&rtai_domain); adeos_hw_sti(); } while (0)
+#else
+#define ENTER_LXRT_IRQ_HANDLER()
+#define EXIT_LXRT_IRQ_HANDLER()   do { hard_cli(); } while (0)
+#endif
+
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
 static int errno;
@@ -712,6 +720,7 @@ void rt_schedule_on_schedule_ipi(void)
 	RT_TASK *task, *new_task;
 	int prio, delay, preempt;
 
+	ENTER_LXRT_IRQ_HANDLER();
 	ASSIGN_RT_CURRENT;
 
 	sched_rqsted[cpuid] = 1;
@@ -787,7 +796,7 @@ fire:			shot_fired = 1;
 			if (rt_current->signal) {
 				(*rt_current->signal)();
 			}
-			hard_cli();
+			EXIT_LXRT_IRQ_HANDLER();
 			return;
 		}
 schedlnxtsk:
@@ -817,7 +826,7 @@ schedlnxtsk:
 			}
 		}
 	}
-	hard_cli();
+	EXIT_LXRT_IRQ_HANDLER();
 	return;
 }
 #endif
@@ -1136,6 +1145,7 @@ static void rt_timer_handler(void)
 	RT_TASK *task, *new_task;
 	int prio, delay, preempt; 
 
+	ENTER_LXRT_IRQ_HANDLER();
 	ASSIGN_RT_CURRENT;
 
 	sched_rqsted[cpuid] = 1;
@@ -1219,7 +1229,7 @@ fire:			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
 			if (rt_current->signal) {
 				(*rt_current->signal)();
 			}	
-			hard_cli();
+			EXIT_LXRT_IRQ_HANDLER();
 			return;
 		}
 schedlnxtsk:
@@ -1249,7 +1259,7 @@ schedlnxtsk:
 			}
 		}
         }
-	hard_cli();
+	EXIT_LXRT_IRQ_HANDLER();
 	return;
 }
 

@@ -1,3 +1,7 @@
+2005-02-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/switch/switch.c (main): Add missing mlockall().
+
 2005-02-25  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* TROUBLESHOOTING (SMI): Add a section for SMI workaround.

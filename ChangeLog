@@ -1,3 +1,8 @@
+2004-08-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Upgrade the x86 patch to
+	2.6.7r6c5.
+
 2004-07-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/include/asm-i386/rtai_hal.h: optimised interrupt

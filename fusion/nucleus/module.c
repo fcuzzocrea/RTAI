@@ -190,7 +190,7 @@ static int stat_read_proc (char *page,
 
     xnlock_get_irqsave(&nklock, s);
 
-    p += sprintf(p,"%-3s   %-6s %-12s %-16s\n",
+    p += sprintf(p,"%-3s   %-6s %-12s     %-12s\n",
 		 "CPU","PID","NAME","MODSW");
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)

@@ -140,6 +140,10 @@ typedef struct xnthread {
 
     xntimer_t atimer;		/* Asynchronous timer (shadow only) */
 
+    xntimer_t ptimer;		/* Periodic timer (shadow only) */
+
+    int poverrun;		/* Periodic timer overrun. */
+
     xnsigmask_t signals;	/* Pending signals */
 
     xnasr_t asr;		/* Asynchronous service routine */

@@ -35,10 +35,10 @@ static inline void get_time_us (suseconds_t *tp)
 	}
 }
 
-static inline void compute (void)
+static inline double compute (void)
 
 {
-#define ndims 10000
+#define ndims 5000
 #define ival  (3.14 * 10000)
     static double a[ndims] = { [ 0 ... ndims - 1 ] = ival },
 	          b[ndims] = { [ 0 ... ndims - 1] = ival };
@@ -48,12 +48,15 @@ static inline void compute (void)
     for (j = 0; j < 1000; j++)
 	for (k = ndims - 1, s = 0.0; k >= 0; k--)
 	    s += a[k] * b[k];
+
+    return s;
 }
 
 void *cruncher_thread (void *arg)
 
 {
     struct sched_param param;
+    double result, ref = compute();
 
     param.sched_priority = 99;
 
@@ -66,7 +69,13 @@ void *cruncher_thread (void *arg)
     for (;;)
 	{
 	sem_wait(&semA);
-	compute();
+        result = compute();
+        if (result != ref)
+            {
+            fprintf(stderr, "Compute returned %f instead of %f, aborting.\n",
+                    result, ref);
+            exit(EXIT_FAILURE);
+            }
 	sem_post(&semB);
 	}
 }
@@ -95,6 +104,9 @@ void *sampler_thread (void *arg)
 
     printf("Calibrating cruncher...");
     fflush(stdout);
+    sleep(1);                   /* Let the cruncher compute the reference
+                                   result, and the terminal display the previous
+                                   message. */
 
     get_time_us(&t0);
 

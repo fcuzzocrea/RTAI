@@ -1,3 +1,15 @@
+2004-10-07  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* testsuite/cruncher/cruncher.c (cruncher_thread): Test the value
+	returned by the computation loop and compile with the correct
+	optimization flags.
+
+	* configure.in: Add check for the architecture tuning flags used
+	by the kbuild.
+
+	* include/nucleus/asm-i386/system.h (xnarch_switch_to): Remove
+	useless restoration of the ts bit.
+
 2004-10-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c: Rewrite the interrupt shield management.

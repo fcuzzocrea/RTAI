@@ -5,10 +5,15 @@ test_PROGRAMS = cruncher
 cruncher_SOURCES = cruncher.c
 
 cruncher_CPPFLAGS = \
-	@RTAI_USER_CFLAGS@ \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/skins \
-	-I../../include
+	-I../../include \
+	-D_REENTRANT -D_GNU_SOURCE
+
+cruncher_CFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	@RTAI_ARCH_TUNE_FLAGS@ \
+	-funroll-loops
 
 cruncher_LDADD = \
 	../../nucleus/lib/libfusion.a \

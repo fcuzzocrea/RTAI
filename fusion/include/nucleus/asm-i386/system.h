@@ -483,14 +483,8 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 {
     struct task_struct *outproc = out_tcb->active_task;
     struct task_struct *inproc = in_tcb->user_task;
-    int cr0 = 0;
 
-    if (out_tcb->user_task)
-	{
-	__asm__ __volatile__ ("movl %%cr0,%0": "=r" (cr0));
-	clts();
-	}
-    else if (inproc && outproc->thread_info->status & TS_USEDFPU)        
+    if (inproc && outproc->thread_info->status & TS_USEDFPU)        
         /* __switch_to will try and use __unlazy_fpu, so that the ts
            bit need to be cleared. */
         clts();
@@ -509,25 +503,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 
     __switch_threads(out_tcb,in_tcb,outproc,inproc);
 
-    if (out_tcb->user_task)
-        {
-        /* If TS was set for the restored user-space thread, set it
-           back. */
-
-        if ((cr0 & 0x8) != 0)
-            {
-            /* Braces needed around stts(). */
-            stts();
-            }
-        else
-            clts();
-        }
-    else
-        {
-        /* When switching to a kernel thread unconditionnaly set the
-	   TS bit. */
-        stts();
-        }
+    stts();
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,

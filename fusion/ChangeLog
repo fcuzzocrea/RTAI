@@ -1,5 +1,9 @@
 2005-03-27  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r6 final.
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.10,11-i386-r9 final.
+
 	* include/nucleus/types.h: typedef unsigned long xnsigmask_t, so
 	we can use atomic ops on this data type seamlessly.
 

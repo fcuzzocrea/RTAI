@@ -976,7 +976,6 @@ MvmTclFindElement(
     int inQuotes = 0;
     int size = 0;		/* lint. */
     int numChars;
-    const char *p2;
     
     /*
      * Skim off leading white space and check for an opening brace or

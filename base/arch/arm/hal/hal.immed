@@ -611,8 +611,9 @@ rtai_irq_trampoline(int irq, struct pt_regs *regs)
 
     adp_root->irqs[irq].acknowledge(irq);
 
+    root_status = adp_root->cpudata[cpuid].status;
     if (rtai_realtime_irq[irq].handler) {
-	root_status = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+	adp_root->cpudata[cpuid].status = (1 << IPIPE_STALL_FLAG);
 	RTAI_SCHED_ISR_LOCK();
 	rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 	rtai_cli();
@@ -620,7 +621,6 @@ rtai_irq_trampoline(int irq, struct pt_regs *regs)
 	adp_root->cpudata[cpuid].status = root_status;
     } else {
 	__adeos_pend_uncond(irq, cpuid);
-	root_status = adp_root->cpudata[cpuid].status;
     }
 
     if (!test_bit(IPIPE_STALL_FLAG, &root_status) && !IN_ATOMIC()) {

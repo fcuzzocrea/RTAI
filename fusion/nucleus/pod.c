@@ -510,7 +510,7 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
 	xnshadow_exit();
 #endif /* __KERNEL__ */
     
-    xnpod_fatal("zombie thread %s (%p) will not die...",threadout->name,threadout);
+    xnpod_fatal("zombie thread %s (%p) would not die...",threadout->name,threadout);
 }
  
 /*! 
@@ -1499,11 +1499,12 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
  * 
  * @retval 0 if the thread could migrate ;
  * @retval -EPERM if the thread affinity forbids this migration ;
- * @retval -EINVAL if the scheduler is locked.
+ * @retval -EBUSY if the scheduler is locked.
  */
-int xnpod_migrate(int cpu)
+int xnpod_migrate_thread (int cpu)
 {
     xnthread_t *thread;
+    int err;
     spl_t s;
 
     xnlock_get_irqsave(&nklock, s);
@@ -1511,9 +1512,9 @@ int xnpod_migrate(int cpu)
     thread = xnpod_current_thread();
 
     /* Trying to migrate a killed thread would end up badly in
-       xnpod_delete_thread, since 'thread' would be the current but it would
-       not be detected, since the sched pointer would point on the destination
-       scheduler, not the local. */ 
+       xnpod_delete_thread, since 'thread' would be the current but it
+       would not be detected, since the sched pointer would point on
+       the destination scheduler, not the local. */ 
     if (testbits(thread->status, XNKILLED))
         {
         __clrbits(thread->status, XNKILLED);
@@ -1522,18 +1523,20 @@ int xnpod_migrate(int cpu)
 
     if (xnpod_locked_p())
         {
-        xnlock_put_irqrestore(&nklock, s);
-        return -EINVAL;
+        err = -EBUSY;
+	goto unlock_and_exit;
         }
     
     if (!xnarch_cpu_isset(cpu, thread->affinity))
         {
-        xnlock_put_irqrestore(&nklock, s);
-        return -EPERM;
+        err = -EPERM;
+	goto unlock_and_exit;
         }
 
+    err = 0;
+
     if (cpu == xnarch_current_cpu())
-        goto normal_exit;
+        goto unlock_and_exit;
     
 #ifdef CONFIG_RTAI_HW_FPU
     if (testbits(thread->status, XNFPU))
@@ -1562,10 +1565,11 @@ int xnpod_migrate(int cpu)
 
     xnpod_schedule();
 
-normal_exit:    
+unlock_and_exit:
+
     xnlock_put_irqrestore(&nklock, s);
 
-    return 0;
+    return err;
 }
 
 /*!
@@ -3025,6 +3029,7 @@ EXPORT_SYMBOL(xnpod_fatal_helper);
 EXPORT_SYMBOL(xnpod_get_time);
 EXPORT_SYMBOL(xnpod_init);
 EXPORT_SYMBOL(xnpod_init_thread);
+EXPORT_SYMBOL(xnpod_migrate_thread);
 EXPORT_SYMBOL(xnpod_remove_hook);
 EXPORT_SYMBOL(xnpod_renice_thread);
 EXPORT_SYMBOL(xnpod_restart_thread);
@@ -3033,16 +3038,16 @@ EXPORT_SYMBOL(xnpod_rotate_readyq);
 EXPORT_SYMBOL(xnpod_schedule);
 EXPORT_SYMBOL(xnpod_schedule_runnable);
 EXPORT_SYMBOL(xnpod_set_thread_mode);
+EXPORT_SYMBOL(xnpod_set_thread_periodic);
 EXPORT_SYMBOL(xnpod_set_time);
 EXPORT_SYMBOL(xnpod_shutdown);
 EXPORT_SYMBOL(xnpod_start_thread);
 EXPORT_SYMBOL(xnpod_start_timer);
 EXPORT_SYMBOL(xnpod_stop_timer);
 EXPORT_SYMBOL(xnpod_suspend_thread);
-EXPORT_SYMBOL(xnpod_set_thread_periodic);
-EXPORT_SYMBOL(xnpod_wait_thread_period);
 EXPORT_SYMBOL(xnpod_trap_fault);
 EXPORT_SYMBOL(xnpod_unblock_thread);
+EXPORT_SYMBOL(xnpod_wait_thread_period);
 EXPORT_SYMBOL(xnpod_welcome_thread);
 
 EXPORT_SYMBOL(nkclock);

@@ -411,7 +411,7 @@ void xnpod_unblock_thread(xnthread_t *thread);
 void xnpod_renice_thread(xnthread_t *thread,
 			 int prio);
 
-int xnpod_migrate(int cpu);
+int xnpod_migrate_thread(int cpu);
 
 void xnpod_rotate_readyq(int prio);
 

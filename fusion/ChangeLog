@@ -1,5 +1,8 @@
 2004-09-05  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/pod.c (xnpod_migrate_thread): Rename, export and use a
+	single exit path.
+
 	* nucleus/shadow.c (xnshadow_substitute_syscall): Do not
 	substitute timing calls if the system timer has not been started.
 

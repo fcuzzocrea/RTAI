@@ -51,7 +51,7 @@ extern "C" {
 
 #define DEFINE_LXRT_HANDLER() \
 asmlinkage long long rtai_lxrt_invoke(unsigned int lxsrq, void *arg); \
-asmlinkage int rtai_lxrt_fastpath(struct pt_regs); \
+asmlinkage int rtai_lxrt_fastpath(void); \
 asmlinkage void RTAI_LXRT_HANDLER(void); \
 __asm__( \
 	"\n" __ALIGN_STR"\n\t" \

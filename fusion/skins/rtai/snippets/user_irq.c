@@ -1,0 +1,54 @@
+#include <rtai/task.h>
+#include <rtai/intr.h>
+
+#define IRQ_NUMBER 7 /* Intercept interrupt #7 */
+#define TASK_PRIO  0 /* Highest RT priority */
+#define TASK_MODE  0 /* No flags */
+#define TASK_STKSZ 0 /* Stack size (unused in user-space) */
+
+RT_INTR intr_desc;
+
+RT_TASK server_desc;
+
+void irq_server (void *cookie)
+
+{
+    for (;;) {
+
+       /* Wait for the next interrupt on channel #7. */
+       err = rt_intr_wait(&intr_desc,TM_INFINITE);
+
+       if (!err) {
+           /* Process interrupt. */
+       }
+    }
+}
+
+int main (int argc, char *argv[])
+
+{
+    int err;
+
+    /* ... */
+
+    err = rt_intr_create(&intr_desc,IRQ_NUMBER,I_AUTOENA);
+
+    /* ... */
+
+    err = rt_task_create(&server_desc,
+			 "MyIrqServer",
+			 TASK_STKSZ,
+			 TASK_PRIO,
+			 TASK_MODE);
+    if (!err)
+	rt_task_start(&server_desc,&irq_server,NULL);
+
+    /* ... */
+}
+
+void cleanup (void)
+
+{
+    rt_intr_delete(&intr_desc);
+    rt_task_delete(&server_desc);
+}

@@ -660,6 +660,7 @@ static inline RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task,
 	if (rt_current->lnxtsk) {
 		if (adp_current == adp_root) {
 			rtai_domain.dswitch = rt_schedule;
+#warning "Broken and non-portable Adeos-wise"
 			__adeos_switch_to(&rtai_domain, cpuid);
 			rtai_domain.dswitch = NULL;
 			return NULL;

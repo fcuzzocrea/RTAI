@@ -210,9 +210,9 @@ diff -uNrp linux-2.6.7/Makefile linux-2.6.7-adeos/Makefile
  		     $(net-y) $(net-m) $(libs-y) $(libs-m)))
 diff -uNrp linux-2.6.7/adeos/Kconfig linux-2.6.7-adeos/adeos/Kconfig
 --- linux-2.6.7/adeos/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.7-adeos/adeos/Kconfig	2004-07-12 16:20:36.000000000 +0200
-@@ -0,0 +1,15 @@
-+menu "Adeos support"
++++ linux-2.6.7-adeos/adeos/Kconfig	2004-11-15 15:57:17.000000000 +0100
+@@ -0,0 +1,22 @@
++menu "Adeos"
 +
 +config ADEOS
 +	tristate "Adeos support"
@@ -222,9 +222,16 @@ diff -uNrp linux-2.6.7/adeos/Kconfig linux-2.6.7-adeos/adeos/Kconfig
 +	  compiled in.
 +
 +config ADEOS_CORE
-+	bool
++	def_bool ADEOS
++
++config ADEOS_PROFILING
++	bool "Pipeline profiling"
 +	depends on ADEOS
-+	default y
++	default n
++	---help---
++	  This option activates the profiling code which collects the
++	  timestamps needed to measure the propagation time of
++	  interrupts through the pipeline. Say N if unsure.
 +
 +endmenu
 diff -uNrp linux-2.6.7/adeos/Makefile linux-2.6.7-adeos/adeos/Makefile
@@ -246,8 +253,8 @@ diff -uNrp linux-2.6.7/adeos/Makefile linux-2.6.7-adeos/adeos/Makefile
 +adeos-$(CONFIG_PPC)	+= ppc.o
 diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 --- linux-2.6.7/adeos/generic.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.7-adeos/adeos/generic.c	2004-08-09 16:24:20.000000000 +0200
-@@ -0,0 +1,721 @@
++++ linux-2.6.7-adeos/adeos/generic.c	2004-11-07 22:31:35.000000000 +0100
+@@ -0,0 +1,701 @@
 +/*
 + *   linux/adeos/generic.c
 + *
@@ -281,10 +288,6 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +MODULE_DESCRIPTION("Adeos nanokernel");
 +MODULE_AUTHOR("Philippe Gerum");
 +MODULE_LICENSE("GPL");
-+
-+extern spinlock_t __adeos_pipelock;
-+
-+extern struct list_head __adeos_pipeline;
 +
 +/* adeos_register_domain() -- Add a new domain to the system. All
 +   client domains must call this routine to register themselves to
@@ -328,7 +331,7 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +
 +    for (n = 0; n < ADEOS_NR_CPUS; n++)
 +	{
-+	set_bit(IPIPE_SLEEP_FLAG,&adp->cpudata[n].status);
++	__set_bit(IPIPE_SLEEP_FLAG,&adp->cpudata[n].status);
 +
 +	if (attr->entry == NULL)
 +	    adp->estackbase[n] = 0;
@@ -423,7 +426,7 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +
 +    for (event = 0; event < ADEOS_NR_EVENTS; event++)
 +	/* Need this to update the monitor count. */
-+	adeos_catch_event(event,NULL);
++	adeos_catch_event_from(adp,event,NULL);
 +
 +#ifdef CONFIG_SMP
 +    {
@@ -555,7 +558,28 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +    adeos_unlock_cpu(lflags);
 +}
 +
-+int __adeos_schedule_irq (unsigned irq, struct list_head *head)
++/* adeos_propagate_irq() -- Force a given IRQ propagation on behalf of
++   a running interrupt handler to the next domain down the pipeline.
++   Returns non-zero if a domain has received the interrupt
++   notification, zero otherwise.
++   This call is useful for handling shared interrupts among domains.
++   e.g. pipeline = [domain-A]---[domain-B]...
++   Both domains share IRQ #X.
++   - domain-A handles IRQ #X but does not pass it down (i.e. Terminate
++   or Dynamic interrupt control mode)
++   - domain-B handles IRQ #X (i.e. Terminate or Accept interrupt
++   control modes).
++   When IRQ #X is raised, domain-A's handler determines whether it
++   should process the interrupt by identifying its source. If not,
++   adeos_propagate_irq() is called so that the next domain down the
++   pipeline which handles IRQ #X is given a chance to process it. This
++   process can be repeated until the end of the pipeline is
++   reached. */
++
++/* adeos_schedule_irq() -- Almost the same as adeos_propagate_irq(),
++   but attempts to pend the interrupt for the current domain first. */
++
++int fastcall __adeos_schedule_irq (unsigned irq, struct list_head *head)
 +
 +{
 +    struct list_head *ln;
@@ -590,37 +614,6 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +    return 0;
 +}
 +
-+/* adeos_propagate_irq() -- Force a given IRQ propagation on behalf of
-+   a running interrupt handler to the next domain down the pipeline.
-+   Returns non-zero if a domain has received the interrupt
-+   notification, zero otherwise.
-+   This call is useful for handling shared interrupts among domains.
-+   e.g. pipeline = [domain-A]---[domain-B]...
-+   Both domains share IRQ #X.
-+   - domain-A handles IRQ #X but does not pass it down (i.e. Terminate
-+   or Dynamic interrupt control mode)
-+   - domain-B handles IRQ #X (i.e. Terminate or Accept interrupt
-+   control modes).
-+   When IRQ #X is raised, domain-A's handler determines whether it
-+   should process the interrupt by identifying its source. If not,
-+   adeos_propagate_irq() is called so that the next domain down the
-+   pipeline which handles IRQ #X is given a chance to process it. This
-+   process can be repeated until the end of the pipeline is
-+   reached. */
-+
-+int fastcall adeos_propagate_irq (unsigned irq) {
-+
-+    return __adeos_schedule_irq(irq,adp_current->p_link.next);
-+}
-+
-+/* adeos_schedule_irq() -- Almost the same as adeos_propagate_irq(),
-+   but attempts to pend the interrupt for the current domain first. */
-+
-+int fastcall adeos_schedule_irq (unsigned irq) {
-+
-+    return __adeos_schedule_irq(irq,&adp_current->p_link);
-+}
-+
 +/* adeos_free_irq() -- Return a previously allocated virtual/soft
 +   pipelined interrupt to the pool of allocatable interrupts. */
 +
@@ -635,20 +628,20 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +    return 0;
 +}
 +
-+unsigned long adeos_set_irq_affinity (unsigned irq, unsigned long cpumask)
++cpumask_t adeos_set_irq_affinity (unsigned irq, cpumask_t cpumask)
 +
 +{
 +#ifdef CONFIG_SMP
 +     if (irq >= IPIPE_NR_XIRQS)
 +	 /* Allow changing affinity of external IRQs only. */
-+	 return 0;
++	 return CPU_MASK_NONE;
 +
 +     if (num_online_cpus() > 1)
 +	 /* Allow changing affinity of external IRQs only. */
 +	 return __adeos_set_irq_affinity(irq,cpumask);
 +#endif /* CONFIG_SMP */
 +
-+    return 0;
++    return CPU_MASK_NONE;
 +}
 +
 +/* adeos_catch_event_from() -- Interpose an event handler starting
@@ -669,11 +662,6 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +	__adeos_event_monitors[event]--;
 +
 +    return 0;
-+}
-+
-+void (*adeos_hook_dswitch(void (*handler)(void))) (void) {
-+
-+    return (void (*)(void))xchg(&adp_current->dswitch,handler);
 +}
 +
 +void adeos_init_attr (adattr_t *attr)
@@ -817,7 +805,7 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +    adeos_declare_cpuid;
 +    adomain_t *adp;
 +
-+    if (unlikely(!adp_pipelined))
++    if (!adp_pipelined)
 +	{
 +	adeos_hw_local_irq_save(hwflags);
 +	flags = !adeos_hw_test_iflag(hwflags);
@@ -829,7 +817,7 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +
 +    adp = adp_cpu_current[cpuid];
 +
-+    flags = test_and_set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++    flags = __test_and_set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
 +
 +    /* Two cases to handle here on SMP systems, only one for UP:
 +       1) in case of a conflicting access from a prioritary domain
@@ -871,7 +859,7 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +    adeos_declare_cpuid;
 +    adomain_t *adp;
 +
-+    if (unlikely(!adp_pipelined))
++    if (!adp_pipelined)
 +	{
 +	adeos_spin_unlock(&mutex->lock);
 +
@@ -892,7 +880,7 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +	
 +    adeos_lock_cpu(hwflags);
 +
-+    if (unlikely(mutex->sleepq != NULL))
++    if (mutex->sleepq != NULL)
 +	{
 +	__adeos_signal_mutex(mutex,cpuid); /* Wake up one sleeper. */
 +	adeos_load_cpuid();
@@ -906,10 +894,10 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +    adp = adp_cpu_current[cpuid];
 +
 +    if (flags)
-+	set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++	__set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
 +    else
 +	{
-+	clear_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++	__clear_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
 +	
 +	if (adp->cpudata[cpuid].irq_pending_hi != 0)
 +	    __adeos_sync_stage(IPIPE_IRQMASK_ANY);
@@ -952,11 +940,10 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +EXPORT_SYMBOL(adeos_virtualize_irq_from);
 +EXPORT_SYMBOL(adeos_control_irq);
 +EXPORT_SYMBOL(adeos_propagate_irq);
-+EXPORT_SYMBOL(adeos_schedule_irq);
++EXPORT_SYMBOL(__adeos_schedule_irq);
 +EXPORT_SYMBOL(adeos_free_irq);
 +EXPORT_SYMBOL(adeos_send_ipi);
 +EXPORT_SYMBOL(adeos_catch_event_from);
-+EXPORT_SYMBOL(adeos_hook_dswitch);
 +EXPORT_SYMBOL(adeos_init_attr);
 +EXPORT_SYMBOL(adeos_get_sysinfo);
 +EXPORT_SYMBOL(adeos_tune_timer);
@@ -971,8 +958,8 @@ diff -uNrp linux-2.6.7/adeos/generic.c linux-2.6.7-adeos/adeos/generic.c
 +EXPORT_SYMBOL(adeos_unlock_mutex);
 diff -uNrp linux-2.6.7/adeos/x86.c linux-2.6.7-adeos/adeos/x86.c
 --- linux-2.6.7/adeos/x86.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.7-adeos/adeos/x86.c	2004-08-11 11:40:36.000000000 +0200
-@@ -0,0 +1,924 @@
++++ linux-2.6.7-adeos/adeos/x86.c	2004-11-13 16:56:13.000000000 +0100
+@@ -0,0 +1,921 @@
 +/*
 + *   linux/adeos/x86.c
 + *
@@ -1016,6 +1003,7 @@ diff -uNrp linux-2.6.7/adeos/x86.c linux-2.6.7-adeos/adeos/x86.c
 +#include <asm/io_apic.h>
 +#endif /* CONFIG_X86_IO_APIC */
 +#include <asm/apic.h>
++#include <mach_ipi.h>
 +#endif /* CONFIG_X86_LOCAL_APIC */
 +
 +extern struct desc_struct idt_table[];
@@ -1080,7 +1068,7 @@ diff -uNrp linux-2.6.7/adeos/x86.c linux-2.6.7-adeos/adeos/x86.c
 +	"movl %esp,%eax\n\t" \
 +        "pushl %eax\n\t" \
 +	"pushl $"#trapnr"\n\t" \
-+        "call " SYMBOL_NAME_STR(__adeos_handle_trap) "\n\t" \
++        "call " SYMBOL_NAME_STR(__adeos_handle_event) "\n\t" \
 +	"addl $8,%esp\n\t" \
 +	"testl %eax,%eax\n\t" \
 +"1:      popl %ebx\n\t" \
@@ -1127,7 +1115,7 @@ diff -uNrp linux-2.6.7/adeos/x86.c linux-2.6.7-adeos/adeos/x86.c
 +	"movl %esp,%eax\n\t" \
 +        "pushl %eax\n\t" \
 +	"pushl $"#trapnr"\n\t" \
-+        "call " SYMBOL_NAME_STR(__adeos_handle_trap) "\n\t" \
++        "call " SYMBOL_NAME_STR(__adeos_handle_event) "\n\t" \
 +	"addl $8,%esp\n\t" \
 +	"testl %eax,%eax\n\t" \
 +"1:      popl %ebx\n\t" \
@@ -1299,7 +1287,7 @@ diff -uNrp linux-2.6.7/adeos/x86.c linux-2.6.7-adeos/adeos/x86.c
 +    adeos_unlock_cpu(hwflags);
 +}
 +
-+static void __adeos_override_irq_affinity (unsigned irq, unsigned long mask)
++static void __adeos_override_irq_affinity (unsigned irq, cpumask_t mask)
 +
 +{
 +    unsigned long adflags, hwflags;
@@ -1806,21 +1794,17 @@ diff -uNrp linux-2.6.7/adeos/x86.c linux-2.6.7-adeos/adeos/x86.c
 +	}
 +}
 +
-+asmlinkage int __adeos_handle_trap (unsigned event, struct pt_regs *regs)
-+
-+{
-+    if (adp_current == adp_root && adeos_test_pipeline())
-+	regs->eflags &= ~0x200;
-+
-+    return __adeos_handle_event(event,regs);
-+}
-+
 +int adeos_get_sysinfo (adsysinfo_t *info)
 +
 +{
 +    info->ncpus = num_online_cpus();
 +    info->cpufreq = adeos_cpu_freq();
 +    info->archdep.tmirq = __adeos_tick_irq;
++#ifdef CONFIG_X86_TSC
++    info->archdep.tmfreq = adeos_cpu_freq();
++#else /* !CONFIG_X86_TSC */
++    info->archdep.tmfreq = CLOCK_TICK_RATE;
++#endif /* CONFIG_X86_TSC */
 +
 +    return 0;
 +}
@@ -1886,7 +1870,7 @@ diff -uNrp linux-2.6.7/adeos/x86.c linux-2.6.7-adeos/adeos/x86.c
 +    cpu_clear(cpuid,cpumask);
 +
 +    if (!cpus_empty(cpumask))
-+	__adeos_send_IPI_mask(cpumask,ipi + FIRST_EXTERNAL_VECTOR);
++	send_IPI_mask(cpumask,ipi + FIRST_EXTERNAL_VECTOR);
 +
 +    if (self)
 +	adeos_trigger_irq(ipi);
@@ -1921,8 +1905,8 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/Makefile linux-2.6.7-adeos/arch/i386/ker
  obj-$(CONFIG_MCA)		+= mca.o
 diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kernel/adeos.c
 --- linux-2.6.7/arch/i386/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.7-adeos/arch/i386/kernel/adeos.c	2004-08-12 19:27:31.000000000 +0200
-@@ -0,0 +1,614 @@
++++ linux-2.6.7-adeos/arch/i386/kernel/adeos.c	2004-11-13 16:57:25.000000000 +0100
+@@ -0,0 +1,703 @@
 +/*
 + *   linux/arch/i386/kernel/adeos.c
 + *
@@ -1951,6 +1935,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +#include <linux/module.h>
 +#include <linux/smp.h>
 +#include <linux/sched.h>
++#include <linux/interrupt.h>
 +#include <linux/irq.h>
 +#include <linux/slab.h>
 +#include <asm/system.h>
@@ -1967,6 +1952,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +#include <asm/io_apic.h>
 +#endif /* CONFIG_X86_IO_APIC */
 +#include <asm/apic.h>
++#include <mach_ipi.h>
 +#endif /* CONFIG_X86_LOCAL_APIC */
 +
 +extern spinlock_t __adeos_pipelock;
@@ -1979,16 +1965,16 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +/* Ugly hack allowing 1) to run portions of early kernel init code
 +   which make use of smp_processor_id(), 2) to run SMP kernels on UP
 +   boxen without APIC. See asm-i386/adeos.h */
-+int __adeos_apic_mapped = 0;
++int __adeos_apic_mapped;
 +#endif /* CONFIG_X86_LOCAL_APIC */
 +
 +#ifdef CONFIG_SMP
 +
 +volatile u8 __adeos_apicid_2_cpuid[MAX_APICID];
 +
-+static volatile unsigned long __adeos_cpu_sync_map;
++static cpumask_t __adeos_cpu_sync_map;
 +
-+static volatile unsigned long __adeos_cpu_lock_map;
++static cpumask_t __adeos_cpu_lock_map;
 +
 +static spinlock_t __adeos_cpu_barrier = SPIN_LOCK_UNLOCKED;
 +
@@ -2075,7 +2061,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +
 +    adeos_lock_cpu(flags);
 +
-+    set_bit(cpuid,&__adeos_cpu_sync_map);
++    cpu_set(cpuid,__adeos_cpu_sync_map);
 +
 +    /* Now we are in sync with the lock requestor running on another
 +       CPU. Enter a spinning wait until he releases the global
@@ -2090,9 +2076,25 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +
 +    adeos_spin_unlock(&__adeos_cpu_barrier);
 +
-+    clear_bit(cpuid,&__adeos_cpu_sync_map);
++    cpu_clear(cpuid,__adeos_cpu_sync_map);
 +
 +    adeos_unlock_cpu(flags);
++}
++
++int __adeos_hw_cpuid (void)
++
++{
++    unsigned long flags;
++    int cpuid;
++
++    if (!__adeos_apic_mapped)
++	return 0;
++    
++    adeos_hw_local_irq_save(flags);
++    cpuid = __adeos_apicid_2_cpuid[adeos_smp_apic_id()];
++    adeos_hw_local_irq_restore(flags);
++
++    return cpuid;
 +}
 +
 +#endif /* CONFIG_SMP */
@@ -2114,12 +2116,13 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +    if (num_online_cpus() > 1) /* We might be running a SMP-kernel on a UP box... */
 +	{
 +	adeos_declare_cpuid;
++	cpumask_t lock_map;
 +
 +	adeos_load_cpuid();
 +
-+	if (!test_and_set_bit(cpuid,&__adeos_cpu_lock_map))
++	if (!cpu_test_and_set(cpuid,__adeos_cpu_lock_map))
 +	    {
-+	    while (test_and_set_bit(BITS_PER_LONG - 1,&__adeos_cpu_lock_map))
++	    while (cpu_test_and_set(BITS_PER_LONG - 1,__adeos_cpu_lock_map))
 +		{
 +		/* Refer to the explanations found in
 +		   linux/arch/asm-i386/irq.c about
@@ -2134,9 +2137,19 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +	    __adeos_cpu_sync = syncfn;
 +
 +	    /* Send the sync IPI to all processors but the current one. */
-+	    __adeos_send_IPI_allbutself(ADEOS_CRITICAL_VECTOR);
++	    send_IPI_allbutself(ADEOS_CRITICAL_VECTOR);
 +
-+	    while (__adeos_cpu_sync_map != (cpu_online_map & ~__adeos_cpu_lock_map))
++#ifdef cpus_andnot
++	    cpus_andnot(lock_map,cpu_online_map,__adeos_cpu_lock_map);
++#else /* !cpus_andnot */
++	    {
++	    cpumask_t not_lock_map = __adeos_cpu_lock_map;
++	    cpus_complement(not_lock_map);
++	    cpus_and(lock_map,cpu_online_map,not_lock_map);
++	    }
++#endif /* cpus_andnot */
++
++	    while (!cpus_equal(__adeos_cpu_sync_map,lock_map))
 +		cpu_relax();
 +	    }
 +
@@ -2163,11 +2176,11 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +	    {
 +	    adeos_spin_unlock(&__adeos_cpu_barrier);
 +
-+	    while (__adeos_cpu_sync_map != 0)
++	    while (!cpus_empty(__adeos_cpu_sync_map))
 +		cpu_relax();
 +
-+	    clear_bit(cpuid,&__adeos_cpu_lock_map);
-+	    clear_bit(BITS_PER_LONG - 1,&__adeos_cpu_lock_map);
++	    cpu_clear(cpuid,__adeos_cpu_lock_map);
++	    cpu_clear(BITS_PER_LONG - 1,__adeos_cpu_lock_map);
 +	    }
 +	}
 +#endif /* CONFIG_SMP */
@@ -2234,7 +2247,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +
 +    do
 +	{
-+	if (unlikely(test_and_set_bit(IPIPE_SYNC_FLAG,&cpudata->status)))
++	if (__test_and_set_bit(IPIPE_SYNC_FLAG,&cpudata->status))
 +	    goto release_cpu_and_exit;
 +
 +	/* The policy here is to keep the dispatching code
@@ -2250,21 +2263,21 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +	    /* Give a slight priority advantage to high-numbered IRQs
 +	       like the virtual ones. */
 +	    level = flnz(mask);
-+	    clear_bit(level,&cpudata->irq_pending_hi);
++	    __clear_bit(level,&cpudata->irq_pending_hi);
 +
 +	    while ((submask = cpudata->irq_pending_lo[level]) != 0)
 +		{
 +		rank = flnz(submask);
 +		irq = (level << IPIPE_IRQ_ISHIFT) + rank;
 +
-+		if (unlikely(test_bit(IPIPE_LOCK_FLAG,&adp->irqs[irq].control)))
++		if (test_bit(IPIPE_LOCK_FLAG,&adp->irqs[irq].control))
 +		    {
-+		    clear_bit(rank,&cpudata->irq_pending_lo[level]);
++		    __clear_bit(rank,&cpudata->irq_pending_lo[level]);
 +		    continue;
 +		    }
 +
-+		if (likely(--cpudata->irq_hits[irq] == 0))
-+		    clear_bit(rank,&cpudata->irq_pending_lo[level]);
++		if (--cpudata->irq_hits[irq] == 0)
++		    __clear_bit(rank,&cpudata->irq_pending_lo[level]);
 +
 +		/* Allow the sync routine to be reentered on behalf of
 +		   the IRQ handler and any execution context switched
@@ -2273,21 +2286,29 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +		   safe even if the sync routine has been reentered in
 +		   the meantime. */
 +
-+		set_bit(IPIPE_STALL_FLAG,&cpudata->status);
++		__set_bit(IPIPE_STALL_FLAG,&cpudata->status);
 +
-+		clear_bit(IPIPE_SYNC_FLAG,&cpudata->status);
++		__clear_bit(IPIPE_SYNC_FLAG,&cpudata->status);
++
++#ifdef CONFIG_ADEOS_PROFILING
++		__adeos_profile_data[cpuid].irqs[irq].n_synced++;
++		adeos_hw_tsc(__adeos_profile_data[cpuid].irqs[irq].t_synced);
++#endif /* CONFIG_ADEOS_PROFILING */
 +
 +		if (adp == adp_root)
 +		    {
-+		    adeos_hw_sti();
-+
-+		    if (likely(test_bit(IPIPE_CALLASM_FLAG,&adp->irqs[irq].control)))
++		    if (test_bit(IPIPE_CALLASM_FLAG,&adp->irqs[irq].control))
++			{
++			/* CALLASM implies that we are calling some
++			   original Linux-defined handler; so we must
++			   re-enable hw interrupts to reduce latencies
++			   induced by Adeos-unaware vanilla code. */
++			adeos_hw_sti();
 +			__adeos_call_asm_irq_handler(adp,irq);
++			}
 +		    else
 +			__adeos_call_c_root_irq_handler(adp,irq);
 +		    }
-+		else if (unlikely(test_bit(IPIPE_CALLASM_FLAG,&adp->irqs[irq].control)))
-+		    __adeos_call_asm_irq_handler(adp,irq);
 +		else
 +		    __adeos_call_c_irq_handler(adp,irq);
 +
@@ -2298,14 +2319,14 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +		cpudata = &adp->cpudata[cpuid];
 +#endif /* CONFIG_SMP */
 +
-+		clear_bit(IPIPE_STALL_FLAG,&cpudata->status);
++		__clear_bit(IPIPE_STALL_FLAG,&cpudata->status);
 +
-+		if (test_and_set_bit(IPIPE_SYNC_FLAG,&cpudata->status))
++		if (__test_and_set_bit(IPIPE_SYNC_FLAG,&cpudata->status))
 +		    goto release_cpu_and_exit;
 +		}
 +	    }
 +
-+	clear_bit(IPIPE_SYNC_FLAG,&cpudata->status);
++	__clear_bit(IPIPE_SYNC_FLAG,&cpudata->status);
 +	}
 +    while ((cpudata->irq_pending_hi & syncmask) != 0);
 +
@@ -2372,9 +2393,14 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +
 +    adeos_load_cpuid();
 +
++#ifdef CONFIG_ADEOS_PROFILING
++    __adeos_profile_data[cpuid].irqs[irq].n_handled++;
++    adeos_hw_tsc(__adeos_profile_data[cpuid].irqs[irq].t_handled);
++#endif /* CONFIG_ADEOS_PROFILING */
++
 +    s_ack = m_ack;
 +
-+    if (unlikely(test_bit(IPIPE_STICKY_FLAG,&adp_cpu_current[cpuid]->irqs[irq].control)))
++    if (test_bit(IPIPE_STICKY_FLAG,&adp_cpu_current[cpuid]->irqs[irq].control))
 +	head = &adp_cpu_current[cpuid]->p_link;
 +    else
 +	head = __adeos_pipeline.next;
@@ -2419,7 +2445,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +	pos = _adp->p_link.next;
 +	}
 +
-+    if (likely(irq == __adeos_tick_irq))
++    if (irq == __adeos_tick_irq)
 +	{
 +	__adeos_tick_regs.eflags = regs.eflags;
 +	__adeos_tick_regs.eip = regs.eip;
@@ -2477,17 +2503,63 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +    return 1;
 +}
 +
-+asmlinkage int __adeos_enter_syscall (struct pt_regs regs) {
++static inline void __fixup_if (struct pt_regs *regs)
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_SYSCALL_PROLOGUE] > 0))
-+	return __adeos_handle_event(ADEOS_SYSCALL_PROLOGUE,&regs);
++{
++    adeos_declare_cpuid;
++    unsigned long flags;
++
++    adeos_get_cpu(flags);
++
++    /* Have the saved hw state look like the domain stall bit, so that
++       __adeos_unstall_iret_root() restores the proper pipeline state
++       for the root stage upon exit. */
++
++    if (test_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status))
++	regs->eflags &= ~0x200;
++    else
++	regs->eflags |= 0x200;
++
++    adeos_put_cpu(flags);
++}
++
++asmlinkage void __adeos_if_fixup_root (struct pt_regs regs)
++
++{
++    if (adp_pipelined)
++	__fixup_if(&regs);
++}
++
++asmlinkage int __adeos_enter_syscall (struct pt_regs regs)
++
++{
++    /* By convention, this routine should either return:
++       0 -- if the syscall is to be passed to Linux;
++       1 -- if the syscall should not be passed to Linux, and no
++       tail work should be performed;
++       -1 -- if the syscall should not be passed to Linux but the
++       tail work has to be performed. */
++
++    if (__adeos_event_monitors[ADEOS_SYSCALL_PROLOGUE] > 0 &&
++	__adeos_handle_event(ADEOS_SYSCALL_PROLOGUE,&regs) > 0)
++	{
++	/* We might enter here over a non-root domain and exit over
++	   the root one as a result of the issued syscall (i.e. by
++	   recycling the register set of the current context across
++	   the migration), so we need to fixup the interrupt flag upon
++	   return too, so that __adeos_unstall_iret_root() resets the
++	   correct stall bit on exit. */
++	__fixup_if(&regs);
++	return adp_current == adp_root && !in_atomic() ? -1 : 1;
++	}
 +
 +    return 0;
 +}
 +
-+asmlinkage int __adeos_exit_syscall (void) {
++asmlinkage int __adeos_exit_syscall (void)
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_SYSCALL_EPILOGUE] > 0))
++{
++    if (__adeos_event_monitors[ADEOS_SYSCALL_EPILOGUE] > 0)
 +	return __adeos_handle_event(ADEOS_SYSCALL_EPILOGUE,NULL);
 +
 +    return 0;
@@ -2497,23 +2569,26 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +
 +{
 +    adeos_declare_cpuid;
-+    unsigned long flags;
 +
-+    if (unlikely(!adp_pipelined))
++    if (!adp_pipelined)
 +	return;
 +
-+    adeos_get_cpu(flags);
++    /* Emulate a software IRET. */
 +
-+    /* Have the domain stall bit look like the hw state on entry. */
++    adeos_hw_cli();
++
++    adeos_load_cpuid();
++
++    /* Restore the software state as it used to be on kernel entry. */
 +
 +    if (!(regs.eflags & 0x200))
 +	{
-+	set_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
++	__set_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
 +	regs.eflags |= 0x200;
 +	}
 +    else
 +	{
-+	clear_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
++	__clear_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
 +
 +	/* Only sync virtual IRQs here, so that we don't recurse
 +	   indefinitely in case of an external interrupt flood. */
@@ -2521,19 +2596,17 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/adeos.c linux-2.6.7-adeos/arch/i386/kern
 +	if ((adp_root->cpudata[cpuid].irq_pending_hi & IPIPE_IRQMASK_VIRT) != 0)
 +	    __adeos_sync_stage(IPIPE_IRQMASK_VIRT);
 +	}
-+
-+    adeos_put_cpu(flags);
 +}
 +
 +EXPORT_SYMBOL(__adeos_init_stage);
 +EXPORT_SYMBOL(__adeos_sync_stage);
 +EXPORT_SYMBOL(__adeos_ack_system_irq);
 +EXPORT_SYMBOL(__adeos_handle_irq);
++#ifdef CONFIG_SMP
++EXPORT_SYMBOL(__adeos_hw_cpuid);
++#endif /* CONFIG_SMP */
 +EXPORT_SYMBOL(__adeos_tick_regs);
 +EXPORT_SYMBOL(__adeos_tick_irq);
-+#ifdef CONFIG_X86_LOCAL_APIC
-+EXPORT_SYMBOL(__adeos_apic_mapped);
-+#endif /* CONFIG_X86_LOCAL_APIC */
 +EXPORT_SYMBOL(adeos_critical_enter);
 +EXPORT_SYMBOL(adeos_critical_exit);
 +EXPORT_SYMBOL(adeos_trigger_irq);
@@ -2607,7 +2680,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/cpu/mcheck/p4.c linux-2.6.7-adeos/arch/i
  	if (time_after(next[cpu], jiffies))
 diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kernel/entry.S
 --- linux-2.6.7/arch/i386/kernel/entry.S	2004-06-17 23:47:36.000000000 +0200
-+++ linux-2.6.7-adeos/arch/i386/kernel/entry.S	2004-07-12 16:20:36.000000000 +0200
++++ linux-2.6.7-adeos/arch/i386/kernel/entry.S	2004-11-05 10:01:54.000000000 +0100
 @@ -81,6 +81,11 @@ VM_MASK		= 0x00020000
  #define resume_kernel		restore_all
  #endif
@@ -2629,46 +2702,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  	movl $(__USER_DS), %edx; \
  	movl %edx, %ds; \
  	movl %edx, %es; \
-@@ -146,6 +151,11 @@ ENTRY(lcall7)
- 				# gates, which has to be cleaned up later..
- 	pushl %eax
- 	SAVE_ALL
-+#ifdef CONFIG_ADEOS_CORE
-+	call __adeos_enter_syscall
-+	testl %eax,%eax
-+	jne   .adeos_restore_all
-+#endif /* CONFIG_ADEOS_CORE */
- 	movl %esp, %ebp
- 	pushl %ebp
- 	pushl $0x7
-@@ -160,7 +170,14 @@ do_lcall:
- 	movl TI_exec_domain(%ebp), %edx	# Get the execution domain
- 	call *EXEC_DOMAIN_handler(%edx)	# Call the handler for the domain
- 	addl $4, %esp
-+#ifdef CONFIG_ADEOS_CORE
-+	call __adeos_exit_syscall
-+	testl %eax,%eax
-+	popl %eax
-+	jne   .adeos_restore_all
-+#else /* !CONFIG_ADEOS_CORE */
- 	popl %eax
-+#endif /* CONFIG_ADEOS_CORE */
- 	jmp resume_userspace
- 
- ENTRY(lcall27)
-@@ -168,6 +185,11 @@ ENTRY(lcall27)
- 				# gates, which has to be cleaned up later..
- 	pushl %eax
- 	SAVE_ALL
-+#ifdef CONFIG_ADEOS_CORE
-+	call __adeos_enter_syscall
-+	testl %eax,%eax
-+	jne   .adeos_restore_all
-+#endif /* CONFIG_ADEOS_CORE */
- 	movl %esp, %ebp
- 	pushl %ebp
- 	pushl $0x27
-@@ -192,14 +214,18 @@ ENTRY(ret_from_fork)
+@@ -192,14 +197,18 @@ ENTRY(ret_from_fork)
  	ALIGN
  ret_from_exception:
  	preempt_stop
@@ -2688,7 +2722,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  					# setting need_resched or sigpending
  					# between sampling and the iret
  	movl TI_flags(%ebp), %ecx
-@@ -219,7 +245,11 @@ need_resched:
+@@ -219,7 +228,11 @@ need_resched:
  	testl $IF_MASK,EFLAGS(%esp)     # interrupts off (exception path) ?
  	jz restore_all
  	movl $PREEMPT_ACTIVE,TI_preempt_count(%ebp)
@@ -2701,7 +2735,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  	call schedule
  	movl $0,TI_preempt_count(%ebp)
  	cli
-@@ -233,7 +263,7 @@ need_resched:
+@@ -233,7 +246,7 @@ need_resched:
  ENTRY(sysenter_entry)
  	movl TSS_sysenter_esp0(%esp),%esp
  sysenter_past_esp:
@@ -2710,27 +2744,30 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  	pushl $(__USER_DS)
  	pushl %ebp
  	pushfl
-@@ -254,6 +284,12 @@ sysenter_past_esp:
- 
+@@ -255,6 +268,14 @@ sysenter_past_esp:
  	pushl %eax
  	SAVE_ALL
+ 	GET_THREAD_INFO(%ebp)
 +#ifdef CONFIG_ADEOS_CORE
++	call __adeos_if_fixup_root
 +	call __adeos_enter_syscall
-+	testl %eax,%eax
-+	jne   .adeos_restore_all
++	testl  %eax,%eax
++	js    .adeos_syswork
++	jne   .adeos_sysdone
 +	movl ORIG_EAX(%esp),%eax
 +#endif /* CONFIG_ADEOS_CORE */
- 	GET_THREAD_INFO(%ebp)
  	cmpl $(nr_syscalls), %eax
  	jae syscall_badsys
-@@ -262,14 +298,26 @@ sysenter_past_esp:
+ 
+@@ -262,11 +283,22 @@ sysenter_past_esp:
  	jnz syscall_trace_entry
  	call *sys_call_table(,%eax,4)
  	movl %eax,EAX(%esp)
 +#ifdef CONFIG_ADEOS_CORE
 +	call __adeos_exit_syscall
 + 	testl %eax,%eax
-+ 	jne   .adeos_restore_all
++ 	jne   .adeos_sysdone
++.adeos_syswork:	
 +#endif /* CONFIG_ADEOS_CORE */
  	cli
  	movl TI_flags(%ebp), %ecx
@@ -2738,32 +2775,29 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  	jne syscall_exit_work
  /* if something modifies registers it must also disable sysexit */
 +#ifdef CONFIG_ADEOS_CORE
-+	call __adeos_unstall_root
++	call __adeos_unstall_iret_root
++.adeos_sysdone:
 + 	movl EAX(%esp),%eax
-+ 	movl EIP(%esp), %edx
-+ 	movl OLDESP(%esp), %ecx
-+#else /* !CONFIG_ADEOS_CORE */
++#endif /* CONFIG_ADEOS_CORE */
  	movl EIP(%esp), %edx
  	movl OLDESP(%esp), %ecx
  	sti
-+#endif /* CONFIG_ADEOS_CORE */
- 	sysexit
- 
- 
-@@ -277,6 +325,12 @@ sysenter_past_esp:
- ENTRY(system_call)
+@@ -278,6 +310,14 @@ ENTRY(system_call)
  	pushl %eax			# save orig_eax
  	SAVE_ALL
+ 	GET_THREAD_INFO(%ebp)
 +#ifdef CONFIG_ADEOS_CORE
++	call __adeos_if_fixup_root
 +	call __adeos_enter_syscall
 +	testl %eax,%eax
++	js    syscall_exit
 +	jne   .adeos_restore_all
 +	movl ORIG_EAX(%esp),%eax
 +#endif /* CONFIG_ADEOS_CORE */
- 	GET_THREAD_INFO(%ebp)
  	cmpl $(nr_syscalls), %eax
  	jae syscall_badsys
-@@ -286,6 +340,11 @@ ENTRY(system_call)
+ 					# system call tracing in operation
+@@ -286,6 +326,11 @@ ENTRY(system_call)
  syscall_call:
  	call *sys_call_table(,%eax,4)
  	movl %eax,EAX(%esp)		# store the return value
@@ -2775,7 +2809,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  syscall_exit:
  	cli				# make sure we don't miss an interrupt
  					# setting need_resched or sigpending
-@@ -293,7 +352,13 @@ syscall_exit:
+@@ -293,7 +338,13 @@ syscall_exit:
  	movl TI_flags(%ebp), %ecx
  	testw $_TIF_ALLWORK_MASK, %cx	# current->work
  	jne syscall_exit_work
@@ -2789,7 +2823,17 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  	RESTORE_ALL
  
  	# perform work that needs to be done immediately before resumption
-@@ -350,7 +415,11 @@ syscall_trace_entry:
+@@ -302,6 +353,9 @@ work_pending:
+ 	testb $_TIF_NEED_RESCHED, %cl
+ 	jz work_notifysig
+ work_resched:
++#ifdef CONFIG_ADEOS_CORE
++ 	call __adeos_unstall_root
++#endif /* CONFIG_ADEOS_CORE */
+ 	call schedule
+ 	cli				# make sure we don't miss an interrupt
+ 					# setting need_resched or sigpending
+@@ -350,7 +404,11 @@ syscall_trace_entry:
  syscall_exit_work:
  	testb $(_TIF_SYSCALL_TRACE|_TIF_SYSCALL_AUDIT), %cl
  	jz work_pending
@@ -2801,7 +2845,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  					# schedule() instead
  	movl %esp, %eax
  	movl $1, %edx
-@@ -380,7 +449,11 @@ ENTRY(interrupt)
+@@ -380,7 +438,11 @@ ENTRY(interrupt)
  
  vector=0
  ENTRY(irq_entries_start)
@@ -2813,7 +2857,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  	ALIGN
  1:	pushl $vector-256
  	jmp common_interrupt
-@@ -406,6 +479,44 @@ ENTRY(name)				\
+@@ -406,6 +468,44 @@ ENTRY(name)				\
  /* The include is where all of the SMP etc. interrupts come from */
  #include "entry_arch.h"
  
@@ -2858,26 +2902,45 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/entry.S linux-2.6.7-adeos/arch/i386/kern
  ENTRY(divide_error)
  	pushl $0			# no error code
  	pushl $do_divide_error
+@@ -435,6 +535,9 @@ error_code:
+ 	movl %edx, %es
+ 	call *%edi
+ 	addl $8, %esp
++#ifdef CONFIG_ADEOS_CORE
++	call __adeos_if_fixup_root
++#endif /* CONFIG_ADEOS_CORE */
+ 	jmp ret_from_exception
+ 
+ ENTRY(coprocessor_error)
+@@ -450,6 +553,9 @@ ENTRY(simd_coprocessor_error)
+ ENTRY(device_not_available)
+ 	pushl $-1			# mark this as an int
+ 	SAVE_ALL
++#ifdef CONFIG_ADEOS_CORE
++	call __adeos_if_fixup_root
++#endif /* CONFIG_ADEOS_CORE */
+ 	movl %cr0, %eax
+ 	testl $0x4, %eax		# EM (math emulation bit)
+ 	jne device_not_available_emulate
 diff -uNrp linux-2.6.7/arch/i386/kernel/i386_ksyms.c linux-2.6.7-adeos/arch/i386/kernel/i386_ksyms.c
 --- linux-2.6.7/arch/i386/kernel/i386_ksyms.c	2004-06-13 12:28:27.000000000 +0200
-+++ linux-2.6.7-adeos/arch/i386/kernel/i386_ksyms.c	2004-07-12 16:20:36.000000000 +0200
-@@ -37,6 +37,53 @@
++++ linux-2.6.7-adeos/arch/i386/kernel/i386_ksyms.c	2004-11-19 19:15:19.000000000 +0100
+@@ -37,6 +37,52 @@
  extern void dump_thread(struct pt_regs *, struct user *);
  extern spinlock_t rtc_lock;
  
 +#ifdef CONFIG_ADEOS_CORE
 +extern int __adeos_irq_trampolines;
 +EXPORT_SYMBOL(__adeos_irq_trampolines);
-+#ifdef CONFIG_SMP
-+EXPORT_SYMBOL(__adeos_apicid_2_cpuid);
-+EXPORT_SYMBOL(__adeos_send_IPI_mask);
-+EXPORT_SYMBOL(__adeos_send_IPI_allbutself);
-+EXPORT_SYMBOL(__adeos_set_irq_affinity);
-+#endif /* CONFIG_SMP */
 +#ifdef CONFIG_ADEOS_MODULE
 +#ifdef CONFIG_X86_LOCAL_APIC
 +extern int using_apic_timer;
 +EXPORT_SYMBOL(using_apic_timer);
++#ifdef CONFIG_SMP
++EXPORT_SYMBOL(__adeos_set_irq_affinity);
++#include <mach_ipi.h>
++EXPORT_SYMBOL(send_IPI_mask_bitmask);
++#endif /* CONFIG_SMP */
 +#endif /* CONFIG_X86_LOCAL_APIC */
 +#endif /* CONFIG_ADEOS_MODULE */
 +/* The following are per-platform convenience exports which are needed
@@ -3081,7 +3144,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/io_apic.c linux-2.6.7-adeos/arch/i386/ke
  {
 diff -uNrp linux-2.6.7/arch/i386/kernel/irq.c linux-2.6.7-adeos/arch/i386/kernel/irq.c
 --- linux-2.6.7/arch/i386/kernel/irq.c	2004-06-17 23:47:36.000000000 +0200
-+++ linux-2.6.7-adeos/arch/i386/kernel/irq.c	2004-07-12 16:20:36.000000000 +0200
++++ linux-2.6.7-adeos/arch/i386/kernel/irq.c	2004-11-07 17:26:34.000000000 +0100
 @@ -449,6 +449,9 @@ asmlinkage unsigned int do_IRQ(struct pt
  #endif
  	kstat_this_cpu.irqs[irq]++;
@@ -3105,7 +3168,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/irq.c linux-2.6.7-adeos/arch/i386/kernel
 +		   always kernel-originated - frame, so that we don't
 +		   wreck the profiling code. */
 +
-+		if (unlikely(!adp_pipelined || __adeos_tick_irq != irq))
++		if (!adp_pipelined || __adeos_tick_irq != irq)
 +		    _regs = &regs;
 +
 +		if (curctx == irqctx)
@@ -3155,7 +3218,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/irq.c linux-2.6.7-adeos/arch/i386/kernel
 +		   always kernel-originated - frame, so that we don't
 +		   wreck the profiling code. */
 +
-+		if (likely(adp_pipelined && __adeos_tick_irq == irq))
++		if (adp_pipelined && __adeos_tick_irq == irq)
 +		    action_ret = handle_IRQ_event(irq,&__adeos_tick_regs,action);
 +		else
 +#endif /* CONFIG_ADEOS_CORE */
@@ -3197,8 +3260,18 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/irq.c linux-2.6.7-adeos/arch/i386/kernel
  static int prof_cpu_mask_read_proc (char *page, char **start, off_t off,
 diff -uNrp linux-2.6.7/arch/i386/kernel/nmi.c linux-2.6.7-adeos/arch/i386/kernel/nmi.c
 --- linux-2.6.7/arch/i386/kernel/nmi.c	2004-06-17 23:47:36.000000000 +0200
-+++ linux-2.6.7-adeos/arch/i386/kernel/nmi.c	2004-07-12 16:20:36.000000000 +0200
-@@ -486,6 +486,9 @@ void nmi_watchdog_tick (struct pt_regs *
++++ linux-2.6.7-adeos/arch/i386/kernel/nmi.c	2004-10-06 22:51:05.000000000 +0200
+@@ -478,6 +478,9 @@ void nmi_watchdog_tick (struct pt_regs *
+ 		 */
+ 		alert_counter[cpu]++;
+ 		if (alert_counter[cpu] == 5*nmi_hz) {
++#ifdef CONFIG_ADEOS_CORE
++			adeos_set_printk_sync(adp_current);
++#endif /* CONFIG_ADEOS_CORE */
+ 			spin_lock(&nmi_print_lock);
+ 			/*
+ 			 * We are in trouble anyway, lets at least try
+@@ -486,6 +489,9 @@ void nmi_watchdog_tick (struct pt_regs *
  			bust_spinlocks(1);
  			printk("NMI Watchdog detected LOCKUP on CPU%d, eip %08lx, registers:\n", cpu, regs->eip);
  			show_registers(regs);
@@ -3247,7 +3320,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/signal.c linux-2.6.7-adeos/arch/i386/ker
  }	
 diff -uNrp linux-2.6.7/arch/i386/kernel/smp.c linux-2.6.7-adeos/arch/i386/kernel/smp.c
 --- linux-2.6.7/arch/i386/kernel/smp.c	2004-06-17 23:47:36.000000000 +0200
-+++ linux-2.6.7-adeos/arch/i386/kernel/smp.c	2004-07-12 16:20:36.000000000 +0200
++++ linux-2.6.7-adeos/arch/i386/kernel/smp.c	2004-11-07 23:08:35.000000000 +0100
 @@ -134,6 +134,11 @@ inline void __send_IPI_shortcut(unsigned
  	 */
  	unsigned int cfg;
@@ -3319,7 +3392,18 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/smp.c linux-2.6.7-adeos/arch/i386/kernel
  }
  
  /*
-@@ -334,6 +359,9 @@ asmlinkage void smp_invalidate_interrupt
+@@ -311,6 +336,10 @@ static inline void leave_mm (unsigned lo
+ asmlinkage void smp_invalidate_interrupt (void)
+ {
+ 	unsigned long cpu;
++#ifdef CONFIG_ADEOS_CORE
++	unsigned long flags;
++	adeos_hw_local_irq_save(flags);
++#endif /* CONFIG_ADEOS_CORE */
+ 
+ 	cpu = get_cpu();
+ 
+@@ -334,12 +363,18 @@ asmlinkage void smp_invalidate_interrupt
  		} else
  			leave_mm(cpu);
  	}
@@ -3329,7 +3413,59 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/smp.c linux-2.6.7-adeos/arch/i386/kernel
  	ack_APIC_irq();
  	smp_mb__before_clear_bit();
  	cpu_clear(cpu, flush_cpumask);
-@@ -581,6 +609,9 @@ void smp_send_stop(void)
+ 	smp_mb__after_clear_bit();
+ out:
+ 	put_cpu_no_resched();
++#ifdef CONFIG_ADEOS_CORE
++	adeos_hw_local_irq_restore(flags);
++#endif /* CONFIG_ADEOS_CORE */
+ }
+ 
+ static void flush_tlb_others(cpumask_t cpumask, struct mm_struct *mm,
+@@ -400,6 +435,10 @@ void flush_tlb_current_task(void)
+ {
+ 	struct mm_struct *mm = current->mm;
+ 	cpumask_t cpu_mask;
++#ifdef CONFIG_ADEOS_CORE
++	unsigned long flags;
++	adeos_hw_local_irq_save(flags);
++#endif /* CONFIG_ADEOS_CORE */
+ 
+ 	preempt_disable();
+ 	cpu_mask = mm->cpu_vm_mask;
+@@ -408,6 +447,9 @@ void flush_tlb_current_task(void)
+ 	local_flush_tlb();
+ 	if (!cpus_empty(cpu_mask))
+ 		flush_tlb_others(cpu_mask, mm, FLUSH_ALL);
++#ifdef CONFIG_ADEOS_CORE
++	adeos_hw_local_irq_restore(flags);
++#endif /* CONFIG_ADEOS_CORE */
+ 	preempt_enable();
+ }
+ 
+@@ -435,6 +477,10 @@ void flush_tlb_page(struct vm_area_struc
+ {
+ 	struct mm_struct *mm = vma->vm_mm;
+ 	cpumask_t cpu_mask;
++#ifdef CONFIG_ADEOS_CORE
++	unsigned long flags;
++	adeos_hw_local_irq_save(flags);
++#endif /* CONFIG_ADEOS_CORE */
+ 
+ 	preempt_disable();
+ 	cpu_mask = mm->cpu_vm_mask;
+@@ -447,6 +493,10 @@ void flush_tlb_page(struct vm_area_struc
+ 		 	leave_mm(smp_processor_id());
+ 	}
+ 
++#ifdef CONFIG_ADEOS_CORE
++	adeos_hw_local_irq_restore(flags);
++#endif /* CONFIG_ADEOS_CORE */
++
+ 	if (!cpus_empty(cpu_mask))
+ 		flush_tlb_others(cpu_mask, mm, va);
+ 
+@@ -581,6 +631,9 @@ void smp_send_stop(void)
   */
  asmlinkage void smp_reschedule_interrupt(void)
  {
@@ -3339,7 +3475,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/smp.c linux-2.6.7-adeos/arch/i386/kernel
  	ack_APIC_irq();
  }
  
-@@ -590,6 +621,9 @@ asmlinkage void smp_call_function_interr
+@@ -590,6 +643,9 @@ asmlinkage void smp_call_function_interr
  	void *info = call_data->info;
  	int wait = call_data->wait;
  
@@ -3349,21 +3485,11 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/smp.c linux-2.6.7-adeos/arch/i386/kernel
  	ack_APIC_irq();
  	/*
  	 * Notify initiating CPU that I've grabbed the data and am
-@@ -610,3 +644,14 @@ asmlinkage void smp_call_function_interr
+@@ -609,4 +665,3 @@ asmlinkage void smp_call_function_interr
+ 		atomic_inc(&call_data->finished);
  	}
  }
- 
-+#ifdef CONFIG_ADEOS_CORE
-+
-+void __adeos_send_IPI_mask (cpumask_t mask, int vector) {
-+    send_IPI_mask(mask,vector);
-+}
-+
-+void __adeos_send_IPI_allbutself (int vector) {
-+    send_IPI_allbutself(vector);
-+}
-+
-+#endif /* CONFIG_ADEOS_CORE */
+-
 diff -uNrp linux-2.6.7/arch/i386/kernel/smpboot.c linux-2.6.7-adeos/arch/i386/kernel/smpboot.c
 --- linux-2.6.7/arch/i386/kernel/smpboot.c	2004-06-17 23:47:36.000000000 +0200
 +++ linux-2.6.7-adeos/arch/i386/kernel/smpboot.c	2004-07-12 16:20:36.000000000 +0200
@@ -3414,23 +3540,41 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/time.c linux-2.6.7-adeos/arch/i386/kerne
  	}
  #endif
  
+diff -uNrp linux-2.6.7/arch/i386/kernel/timers/timer_pit.c linux-2.6.7-adeos/arch/i386/kernel/timers/timer_pit.c
+--- linux-2.6.7/arch/i386/kernel/timers/timer_pit.c	2004-06-13 12:28:26.000000000 +0200
++++ linux-2.6.7-adeos/arch/i386/kernel/timers/timer_pit.c	2004-11-19 17:35:06.000000000 +0100
+@@ -89,6 +89,9 @@ static void delay_pit(unsigned long loop
+ static unsigned long get_offset_pit(void)
+ {
+ 	int count;
++#ifdef CONFIG_ADEOS_CORE
++	count = 0;
++#else /* !CONFIG_ADEOS_CORE */
+ 	unsigned long flags;
+ 	static unsigned long jiffies_p = 0;
+ 
+@@ -142,6 +145,7 @@ static unsigned long get_offset_pit(void
+ 
+ 	count = ((LATCH-1) - count) * TICK_SIZE;
+ 	count = (count + LATCH/2) / LATCH;
++#endif /* CONFIG_ADEOS_CORE */
+ 
+ 	return count;
+ }
 diff -uNrp linux-2.6.7/arch/i386/kernel/timers/timer_tsc.c linux-2.6.7-adeos/arch/i386/kernel/timers/timer_tsc.c
 --- linux-2.6.7/arch/i386/kernel/timers/timer_tsc.c	2004-06-17 23:47:36.000000000 +0200
-+++ linux-2.6.7-adeos/arch/i386/kernel/timers/timer_tsc.c	2004-07-12 16:20:36.000000000 +0200
-@@ -155,6 +155,12 @@ unsigned long long sched_clock(void)
++++ linux-2.6.7-adeos/arch/i386/kernel/timers/timer_tsc.c	2004-11-19 17:34:51.000000000 +0100
+@@ -155,6 +155,9 @@ unsigned long long sched_clock(void)
  
  static void mark_offset_tsc(void)
  {
 +#ifdef CONFIG_ADEOS_CORE
-+	/* FIXME: we need to be smarter than this and at the very
-+	   least check whether some domain actually asked for
-+	   disabling the compensation or not. */
 +	rdtsc(last_tsc_low, last_tsc_high);
 +#else /* !CONFIG_ADEOS_CORE */
  	unsigned long lost,delay;
  	unsigned long delta = last_tsc_low;
  	int count;
-@@ -162,7 +168,7 @@ static void mark_offset_tsc(void)
+@@ -162,7 +165,7 @@ static void mark_offset_tsc(void)
  	static int count1 = 0;
  	unsigned long long this_offset, last_offset;
  	static int lost_count = 0;
@@ -3439,7 +3583,7 @@ diff -uNrp linux-2.6.7/arch/i386/kernel/timers/timer_tsc.c linux-2.6.7-adeos/arc
  	write_seqlock(&monotonic_lock);
  	last_offset = ((unsigned long long)last_tsc_high<<32)|last_tsc_low;
  	/*
-@@ -263,6 +269,7 @@ static void mark_offset_tsc(void)
+@@ -263,6 +266,7 @@ static void mark_offset_tsc(void)
  	 */
  	if (lost && abs(delay - delay_at_last_interrupt) > (900000/HZ))
  		jiffies_64++;
@@ -3524,8 +3668,8 @@ diff -uNrp linux-2.6.7/arch/i386/mm/fault.c linux-2.6.7-adeos/arch/i386/mm/fault
  
 diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i386/adeos.h
 --- linux-2.6.7/include/asm-i386/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.7-adeos/include/asm-i386/adeos.h	2004-08-15 15:19:41.000000000 +0200
-@@ -0,0 +1,443 @@
++++ linux-2.6.7-adeos/include/asm-i386/adeos.h	2004-11-19 17:38:54.000000000 +0100
+@@ -0,0 +1,492 @@
 +/*
 + *   include/asm-i386/adeos.h
 + *
@@ -3551,14 +3695,14 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +#define __I386_ADEOS_H
 +
 +#include <irq_vectors.h>
-+#include <asm/siginfo.h>
 +#include <asm/ptrace.h>
-+#include <asm/cpumask.h>
++#include <linux/cpumask.h>
 +#include <linux/list.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING      "/x86"
-+#define ADEOS_CANDIDATE_NUMBER 0xff
++#define ADEOS_ARCH_STRING     "r8/x86"
++#define ADEOS_MAJOR_NUMBER     8
++#define ADEOS_MINOR_NUMBER     255
 +
 +extern int adp_pipelined;
 +
@@ -3575,8 +3719,11 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +    return GET_APIC_ID(*(unsigned long *)(APIC_BASE+APIC_ID));
 +}
 +
-+extern volatile u8 __adeos_apicid_2_cpuid[]; /* Check MAX_APICID for type range */
-+#define adeos_processor_id()   (__adeos_apic_mapped?__adeos_apicid_2_cpuid[adeos_smp_apic_id()]:0)
++extern volatile u8 __adeos_apicid_2_cpuid[];
++
++int __adeos_hw_cpuid(void);
++
++#define adeos_processor_id()   __adeos_hw_cpuid()
 +
 +#define adeos_declare_cpuid    int cpuid
 +#define adeos_load_cpuid()     do { \
@@ -3589,12 +3736,8 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +#define adeos_unlock_cpu(flags) adeos_hw_local_irq_restore(flags)
 +#define adeos_get_cpu(flags)    adeos_lock_cpu(flags)
 +#define adeos_put_cpu(flags)    adeos_unlock_cpu(flags)
-+#define adp_current            ({ adomain_t *__adp; \
-+				unsigned long flags; \
-+				adeos_hw_local_irq_save(flags); \
-+				__adp = adp_cpu_current[adeos_processor_id()]; \
-+				adeos_hw_local_irq_restore(flags); \
-+				__adp; })
++#define adp_current             (adp_cpu_current[adeos_processor_id()])
++
 +#else  /* !CONFIG_SMP */
 +
 +#define ADEOS_NR_CPUS          1
@@ -3642,12 +3785,13 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +
 +    int ncpus;			/* Number of CPUs on board */
 +
-+    unsigned long long cpufreq;	/* CPU frequency (in Hz) */
++    u64 cpufreq;		/* CPU frequency (in Hz) */
 +
 +    /* Arch-dependent block */
 +
 +    struct {
 +	unsigned tmirq;		/* Timer tick IRQ */
++	u64 tmfreq;		/* Timer frequency */
 +    } archdep;
 +
 +} adsysinfo_t;
@@ -3732,9 +3876,6 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +
 +} adomain_t;
 +
-+#define __clear_bit(nr,addr) clear_bit(nr,addr)
-+#define __test_bit(nr,addr)  test_bit(nr,addr)
-+
 +/* The following macros must be used hw interrupts off. */
 +
 +#define __adeos_set_irq_bit(adp,cpuid,irq) \
@@ -3748,7 +3889,7 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +#define __adeos_clear_pend(adp,cpuid,irq) \
 +do { \
 +    __clear_bit(irq & IPIPE_IRQ_IMASK,&(adp)->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-+    if (&(adp)->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT] == 0) \
++    if ((adp)->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT] == 0) \
 +        __clear_bit(irq >> IPIPE_IRQ_ISHIFT,&(adp)->cpudata[cpuid].irq_pending_hi); \
 +} while(0)
 +
@@ -3760,13 +3901,14 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +
 +#define __adeos_unlock_irq(adp,irq) \
 +do { \
-+    int __cpuid, __nr_cpus = num_online_cpus();			       \
-+    if (test_and_clear_bit(IPIPE_LOCK_FLAG,&(adp)->irqs[irq].control)) \
++    if (test_and_clear_bit(IPIPE_LOCK_FLAG,&(adp)->irqs[irq].control)) { \
++        int __cpuid, __nr_cpus = num_online_cpus();	      \
 +	for (__cpuid = 0; __cpuid < __nr_cpus; __cpuid++)      \
-+         if ((adp)->cpudata[__cpuid].irq_hits[irq] > 0) { \
++         if ((adp)->cpudata[__cpuid].irq_hits[irq] > 0) { /* We need atomic ops next. */ \
 +           set_bit(irq & IPIPE_IRQ_IMASK,&(adp)->cpudata[__cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
 +           set_bit(irq >> IPIPE_IRQ_ISHIFT,&(adp)->cpudata[__cpuid].irq_pending_hi); \
-+         } \
++        } \
++    } \
 +} while(0)
 +
 +#define __adeos_clear_irq(adp,irq) \
@@ -3800,19 +3942,72 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +#define adeos_cpu_freq() ({ unsigned long long __freq = cpu_has_tsc?(1000LL * cpu_khz):CLOCK_TICK_RATE; __freq; })
 +
 +#ifdef CONFIG_PREEMPT
-+#define adeos_spin_lock(x)    _raw_spin_lock(x)
-+#define adeos_spin_unlock(x)  _raw_spin_unlock(x)
-+#define adeos_spin_trylock(x) _raw_spin_trylock(x)
++#define adeos_spin_lock(x)     _raw_spin_lock(x)
++#define adeos_spin_unlock(x)   _raw_spin_unlock(x)
++#define adeos_spin_trylock(x)  _raw_spin_trylock(x)
++#define adeos_write_lock(x)    _raw_write_lock(x)
++#define adeos_write_unlock(x)  _raw_write_unlock(x)
++#define adeos_write_trylock(x) _raw_write_trylock(x)
++#define adeos_read_lock(x)     _raw_read_lock(x)
++#define adeos_read_unlock(x)   _raw_read_unlock(x)
 +#else /* !CONFIG_PREEMPT */
-+#define adeos_spin_lock(x)    spin_lock(x)
-+#define adeos_spin_unlock(x)  spin_unlock(x)
-+#define adeos_spin_trylock(x) spin_trylock(x)
++#define adeos_spin_lock(x)     spin_lock(x)
++#define adeos_spin_unlock(x)   spin_unlock(x)
++#define adeos_spin_trylock(x)  spin_trylock(x)
++#define adeos_write_lock(x)    write_lock(x)
++#define adeos_write_unlock(x)  write_unlock(x)
++#define adeos_write_trylock(x) write_trylock(x)
++#define adeos_read_lock(x)     read_lock(x)
++#define adeos_read_unlock(x)   read_unlock(x)
 +#endif /* CONFIG_PREEMPT */
 +
-+#define adeos_spin_lock_irqsave(x,flags)       do { adeos_hw_local_irq_save(flags); adeos_spin_lock(x); } while (0)
-+#define adeos_spin_unlock_irqrestore(x,flags)  do { adeos_spin_unlock(x); adeos_hw_local_irq_restore(flags); } while (0)
-+#define adeos_spin_lock_disable(x)             do { adeos_hw_cli(); adeos_spin_lock(x); } while (0)
-+#define adeos_spin_unlock_enable(x)            do { adeos_spin_unlock(x); adeos_hw_sti(); } while (0)
++#define adeos_spin_lock_irqsave(x,flags)  \
++do { \
++   adeos_hw_local_irq_save(flags); \
++   adeos_spin_lock(x); \
++} while (0)
++
++#define adeos_spin_unlock_irqrestore(x,flags)  \
++do { \
++   adeos_spin_unlock(x); \
++   adeos_hw_local_irq_restore(flags); \
++} while (0)
++
++#define adeos_spin_lock_disable(x)  \
++do { \
++   adeos_hw_cli(); \
++   adeos_spin_lock(x); \
++} while (0)
++
++#define adeos_spin_unlock_enable(x)  \
++do { \
++   adeos_spin_unlock(x); \
++   adeos_hw_sti(); \
++} while (0)
++
++#define adeos_read_lock_irqsave(lock, flags) \
++do { \
++   adeos_hw_local_irq_save(flags); \
++   adeos_read_lock(lock); \
++} while (0)
++
++#define adeos_read_unlock_irqrestore(lock, flags) \
++do { \
++   adeos_read_unlock(lock); \
++   adeos_hw_local_irq_restore(flags); \
++} while (0)
++
++#define adeos_write_lock_irqsave(lock, flags) \
++do { \
++   adeos_hw_local_irq_save(flags); \
++   adeos_write_lock(lock); \
++} while (0)
++
++#define adeos_write_unlock_irqrestore(lock, flags) \
++do { \
++   adeos_write_unlock(lock); \
++   adeos_hw_local_irq_restore(flags); \
++} while (0)
 +
 +#ifndef STR
 +#define __STR(x) #x
@@ -3899,8 +4094,8 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +	: "a" (cpuid), "d" (adp));
 +}
 +
-+unsigned long __adeos_set_irq_affinity(unsigned irq,
-+				       unsigned long cpumask);
++cpumask_t __adeos_set_irq_affinity(unsigned irq,
++				   cpumask_t cpumask);
 +
 +#else /* !CONFIG_SMP */
 +
@@ -3957,8 +4152,6 @@ diff -uNrp linux-2.6.7/include/asm-i386/adeos.h linux-2.6.7-adeos/include/asm-i3
 +int __adeos_ack_system_irq(unsigned irq);
 +
 +int __adeos_handle_irq(struct pt_regs regs);
-+
-+extern struct list_head __adeos_pipeline;
 +
 +extern struct pt_regs __adeos_tick_regs;
 +
@@ -4127,7 +4320,7 @@ diff -uNrp linux-2.6.7/include/asm-i386/smp.h linux-2.6.7-adeos/include/asm-i386
  #define cpu_possible_map cpu_callout_map
 diff -uNrp linux-2.6.7/include/asm-i386/system.h linux-2.6.7-adeos/include/asm-i386/system.h
 --- linux-2.6.7/include/asm-i386/system.h	2004-06-13 12:28:16.000000000 +0200
-+++ linux-2.6.7-adeos/include/asm-i386/system.h	2004-07-12 16:20:36.000000000 +0200
++++ linux-2.6.7-adeos/include/asm-i386/system.h	2004-11-07 11:18:38.000000000 +0100
 @@ -441,6 +441,33 @@ struct alt_instr { 
  #define set_wmb(var, value) do { var = value; wmb(); } while (0)
  
@@ -4136,13 +4329,13 @@ diff -uNrp linux-2.6.7/include/asm-i386/system.h linux-2.6.7-adeos/include/asm-i
 +
 +#include <linux/linkage.h>
 +
-+extern inline void __adeos_stall_root(void);
++void __adeos_stall_root(void);
 +
-+extern inline void __adeos_unstall_root(void);
++void __adeos_unstall_root(void);
 +
-+extern inline unsigned long __adeos_test_root(void);
++unsigned long __adeos_test_root(void);
 +
-+extern unsigned long __adeos_test_and_stall_root(void);
++unsigned long __adeos_test_and_stall_root(void);
 +
 +void fastcall __adeos_restore_root(unsigned long flags);
 +
@@ -4173,8 +4366,8 @@ diff -uNrp linux-2.6.7/include/asm-i386/system.h linux-2.6.7-adeos/include/asm-i
   */
 diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/adeos.h
 --- linux-2.6.7/include/linux/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.7-adeos/include/linux/adeos.h	2004-08-12 19:26:20.000000000 +0200
-@@ -0,0 +1,351 @@
++++ linux-2.6.7-adeos/include/linux/adeos.h	2004-11-11 23:46:50.000000000 +0100
+@@ -0,0 +1,437 @@
 +/*
 + *   include/linux/adeos.h
 + *
@@ -4202,9 +4395,9 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +#include <asm/adeos.h>
 +#include <linux/spinlock.h>
 +
-+#define ADEOS_VERSION_PREFIX  "2.6r6"
++#define ADEOS_VERSION_PREFIX  "2.6"
 +#define ADEOS_VERSION_STRING  (ADEOS_VERSION_PREFIX ADEOS_ARCH_STRING)
-+#define ADEOS_RELEASE_NUMBER  (0x02060600|(ADEOS_CANDIDATE_NUMBER&0xff))
++#define ADEOS_RELEASE_NUMBER  (0x02060000|((ADEOS_MAJOR_NUMBER&0xff)<<8)|(ADEOS_MINOR_NUMBER&0xff))
 +
 +#define ADEOS_ROOT_PRI       100
 +#define ADEOS_ROOT_ID        0
@@ -4217,7 +4410,9 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +#define ADEOS_SPRINTK_FLAG 0	/* Synchronous printk() allowed */
 +#define ADEOS_PPRINTK_FLAG 1	/* Asynchronous printk() request pending */
 +
-+/* Per-cpu pipeline flags */
++/* Per-cpu pipeline flags.
++   WARNING: some implementation might refer to those flags
++   non-symbolically in assembly portions (e.g. x86). */
 +#define IPIPE_STALL_FLAG   0	/* Stalls a pipeline stage */
 +#define IPIPE_SYNC_FLAG    1	/* IRQ sync is undergoing */
 +#define IPIPE_XPEND_FLAG   2	/* Exception notification is pending */
@@ -4225,18 +4420,17 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +#define IPIPE_HANDLE_FLAG    0
 +#define IPIPE_PASS_FLAG      1
-+#define IPIPE_CALLASM_FLAG   2
-+#define IPIPE_ENABLE_FLAG    3
++#define IPIPE_ENABLE_FLAG    2
 +#define IPIPE_DYNAMIC_FLAG   IPIPE_HANDLE_FLAG
-+#define IPIPE_EXCLUSIVE_FLAG 4
-+#define IPIPE_STICKY_FLAG    5
-+#define IPIPE_SYSTEM_FLAG    6
-+#define IPIPE_LOCK_FLAG      7
-+#define IPIPE_SHARED_FLAG    8
++#define IPIPE_EXCLUSIVE_FLAG 3
++#define IPIPE_STICKY_FLAG    4
++#define IPIPE_SYSTEM_FLAG    5
++#define IPIPE_LOCK_FLAG      6
++#define IPIPE_SHARED_FLAG    7
++#define IPIPE_CALLASM_FLAG   8	/* Arch-dependent -- might be unused. */
 +
 +#define IPIPE_HANDLE_MASK    (1 << IPIPE_HANDLE_FLAG)
 +#define IPIPE_PASS_MASK      (1 << IPIPE_PASS_FLAG)
-+#define IPIPE_CALLASM_MASK   (1 << IPIPE_CALLASM_FLAG)
 +#define IPIPE_ENABLE_MASK    (1 << IPIPE_ENABLE_FLAG)
 +#define IPIPE_DYNAMIC_MASK   IPIPE_HANDLE_MASK
 +#define IPIPE_EXCLUSIVE_MASK (1 << IPIPE_EXCLUSIVE_FLAG)
@@ -4244,6 +4438,7 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +#define IPIPE_SYSTEM_MASK    (1 << IPIPE_SYSTEM_FLAG)
 +#define IPIPE_LOCK_MASK      (1 << IPIPE_LOCK_FLAG)
 +#define IPIPE_SHARED_MASK    (1 << IPIPE_SHARED_FLAG)
++#define IPIPE_CALLASM_MASK   (1 << IPIPE_CALLASM_FLAG)
 +
 +#define IPIPE_DEFAULT_MASK  (IPIPE_HANDLE_MASK|IPIPE_PASS_MASK)
 +
@@ -4287,6 +4482,27 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +extern unsigned long __adeos_virtual_irq_map;
 +
++extern struct list_head __adeos_pipeline;
++
++extern spinlock_t __adeos_pipelock;
++
++#ifdef CONFIG_ADEOS_PROFILING
++
++typedef struct adprofdata {
++
++    struct {
++	unsigned long long t_handled;
++	unsigned long long t_synced;
++	unsigned long n_handled;
++	unsigned long n_synced;
++    } irqs[IPIPE_NR_IRQS];
++
++} adprofdata_t;
++
++extern adprofdata_t __adeos_profile_data[ADEOS_NR_CPUS];
++
++#endif /* CONFIG_ADEOS_PROFILING */
++
 +/* Private interface */
 +
 +#ifdef CONFIG_PROC_FS
@@ -4304,13 +4520,13 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +static inline void __adeos_schedule_head(void *evdata) {
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_SCHEDULE_HEAD] > 0))
++    if (__adeos_event_monitors[ADEOS_SCHEDULE_HEAD] > 0)
 +	__adeos_handle_event(ADEOS_SCHEDULE_HEAD,evdata);
 +}
 +
 +static inline int __adeos_schedule_tail(void *evdata) {
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_SCHEDULE_TAIL] > 0))
++    if (__adeos_event_monitors[ADEOS_SCHEDULE_TAIL] > 0)
 +	return __adeos_handle_event(ADEOS_SCHEDULE_TAIL,evdata);
 +
 +    return 0;
@@ -4318,19 +4534,19 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +static inline void __adeos_enter_process(void) {
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_ENTER_PROCESS] > 0))
++    if (__adeos_event_monitors[ADEOS_ENTER_PROCESS] > 0)
 +	__adeos_handle_event(ADEOS_ENTER_PROCESS,NULL);
 +}
 +
 +static inline void __adeos_exit_process(void *evdata) {
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_EXIT_PROCESS] > 0))
++    if (__adeos_event_monitors[ADEOS_EXIT_PROCESS] > 0)
 +	__adeos_handle_event(ADEOS_EXIT_PROCESS,evdata);
 +}
 +
 +static inline int __adeos_signal_process(void *evdata) {
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_SIGNAL_PROCESS] > 0))
++    if (__adeos_event_monitors[ADEOS_SIGNAL_PROCESS] > 0)
 +	return __adeos_handle_event(ADEOS_SIGNAL_PROCESS,evdata);
 +
 +    return 0;
@@ -4338,13 +4554,13 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +static inline void __adeos_kick_process(void *evdata) {
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_KICK_PROCESS] > 0))
++    if (__adeos_event_monitors[ADEOS_KICK_PROCESS] > 0)
 +	__adeos_handle_event(ADEOS_KICK_PROCESS,evdata);
 +}
 +
 +static inline int __adeos_renice_process(void *evdata) {
 +
-+    if (unlikely(__adeos_event_monitors[ADEOS_RENICE_PROCESS] > 0))
++    if (__adeos_event_monitors[ADEOS_RENICE_PROCESS] > 0)
 +	return __adeos_handle_event(ADEOS_RENICE_PROCESS,evdata);
 +
 +    return 0;
@@ -4362,6 +4578,11 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +void __adeos_schedule_back_root(struct task_struct *prev);
 +
++int fastcall __adeos_schedule_irq(unsigned irq,
++				  struct list_head *head);
++
++#define adeos_pipeline_head_p(adp) (&(adp)->p_link == __adeos_pipeline.next)
++
 +/* Public interface */
 +
 +int adeos_register_domain(adomain_t *adp,
@@ -4369,7 +4590,7 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +int adeos_unregister_domain(adomain_t *adp);
 +
-+void adeos_renice_domain(int newpri);
++void adeos_renice_domain(int newpri); /* OBSOLETE */
 +
 +void adeos_suspend_domain(void);
 +
@@ -4395,8 +4616,8 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +		      unsigned clrmask,
 +		      unsigned setmask);
 +
-+unsigned long adeos_set_irq_affinity(unsigned irq,
-+				     unsigned long cpumask);
++cpumask_t adeos_set_irq_affinity(unsigned irq,
++				 cpumask_t cpumask);
 +
 +static inline int adeos_share_irq (unsigned irq, int (*acknowledge)(unsigned irq)) {
 +
@@ -4412,35 +4633,92 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +int fastcall adeos_trigger_irq(unsigned irq);
 +
-+int fastcall adeos_propagate_irq(unsigned irq);
++static inline int adeos_propagate_irq(unsigned irq) {
 +
-+int fastcall adeos_schedule_irq(unsigned irq);
++    return __adeos_schedule_irq(irq,adp_current->p_link.next);
++}
++
++static inline int adeos_schedule_irq(unsigned irq) {
++
++    return __adeos_schedule_irq(irq,&adp_current->p_link);
++}
 +
 +int fastcall adeos_send_ipi(unsigned ipi,
 +			    cpumask_t cpumask);
 +
-+void fastcall adeos_stall_pipeline_from(adomain_t *adp);
++static inline void adeos_stall_pipeline_from (adomain_t *adp)
 +
-+static inline void adeos_stall_pipeline (void) {
++{
++    adeos_declare_cpuid;
++    unsigned long flags;
 +
-+    adeos_stall_pipeline_from(adp_current);
++    adeos_lock_cpu(flags);
++
++    __set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++
++    if (!adeos_pipeline_head_p(adp))
++	adeos_unlock_cpu(flags);
++}
++
++static inline unsigned long adeos_test_pipeline_from (adomain_t *adp)
++
++{
++    unsigned long flags, s;
++    adeos_declare_cpuid;
++    
++    adeos_get_cpu(flags);
++    s = test_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++    adeos_put_cpu(flags);
++
++    return s;
++}
++
++static inline unsigned long adeos_test_and_stall_pipeline_from (adomain_t *adp)
++
++{
++    unsigned long flags, s;
++    adeos_declare_cpuid;
++    
++    adeos_lock_cpu(flags);
++
++    s = __test_and_set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++
++    if (!adeos_pipeline_head_p(adp))
++	adeos_unlock_cpu(flags);
++
++    return s;
 +}
 +
 +void fastcall adeos_unstall_pipeline_from(adomain_t *adp);
++
++static inline unsigned long adeos_test_and_unstall_pipeline_from(adomain_t *adp)
++
++{
++    unsigned long flags, s;
++    adeos_declare_cpuid;
++    
++    adeos_lock_cpu(flags);
++    s = test_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++    adeos_unstall_pipeline_from(adp);
++    adeos_unlock_cpu(flags);
++
++    return s;
++}
 +
 +static inline void adeos_unstall_pipeline(void) {
 +
 +    adeos_unstall_pipeline_from(adp_current);
 +}
 +
-+unsigned long fastcall adeos_test_pipeline_from(adomain_t *adp);
++static inline unsigned long adeos_test_and_unstall_pipeline(void) {
++
++    return adeos_test_and_unstall_pipeline_from(adp_current);
++}
 +
 +static inline unsigned long adeos_test_pipeline (void) {
 +
 +    return adeos_test_pipeline_from(adp_current);
 +}
-+
-+unsigned long fastcall adeos_test_and_stall_pipeline_from(adomain_t *adp);
 +
 +static inline unsigned long adeos_test_and_stall_pipeline (void) {
 +    
@@ -4455,6 +4733,11 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +	adeos_unstall_pipeline_from(adp);
 +}
 +
++static inline void adeos_stall_pipeline (void) {
++
++    adeos_stall_pipeline_from(adp_current);
++}
++
 +static inline void adeos_restore_pipeline (unsigned long flags) {
 +
 +    adeos_restore_pipeline_from(adp_current,flags);
@@ -4466,12 +4749,10 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +       (adeos_get_cpu/adeos_hw_local_irq_save/adeos_hw_cli). */
 +
 +    if (flags)
-+	set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++	__set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
 +    else
-+	clear_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++	__clear_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
 +}
-+
-+void adeos_sync_pipeline(void);
 +
 +int adeos_catch_event_from(adomain_t *adp,
 +			   unsigned event,
@@ -4485,8 +4766,6 @@ diff -uNrp linux-2.6.7/include/linux/adeos.h linux-2.6.7-adeos/include/linux/ade
 +
 +    evinfo->propagate = 1;
 +}
-+
-+void (*adeos_hook_dswitch(void (*handler)(void)))(void);
 +
 +void adeos_init_attr(adattr_t *attr);
 +
@@ -4722,8 +5001,8 @@ diff -uNrp linux-2.6.7/kernel/Makefile linux-2.6.7-adeos/kernel/Makefile
  obj-$(CONFIG_SMP) += cpu.o
 diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 --- linux-2.6.7/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.7-adeos/kernel/adeos.c	2004-08-12 19:28:10.000000000 +0200
-@@ -0,0 +1,745 @@
++++ linux-2.6.7-adeos/kernel/adeos.c	2004-11-07 17:12:11.000000000 +0100
+@@ -0,0 +1,651 @@
 +/*
 + *   linux/kernel/adeos.c
 + *
@@ -4768,8 +5047,6 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +/* The pipeline data structure. Enqueues adomain_t objects by priority. */
 +struct list_head __adeos_pipeline;
 +
-+#define adeos_pipeline_head_p(adp) (&(adp)->p_link == __adeos_pipeline.next)
-+
 +/* A global flag telling whether Adeos pipelining is engaged. */
 +int adp_pipelined;
 +
@@ -4781,6 +5058,10 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +
 +/* A VIRQ to kick printk() output out when the root domain is in control. */
 +unsigned __adeos_printk_virq;
++
++#ifdef CONFIG_ADEOS_PROFILING
++adprofdata_t __adeos_profile_data[ADEOS_NR_CPUS];
++#endif /* CONFIG_ADEOS_PROFILING */
 +
 +static void __adeos_set_root_ptd (int key, void *value) {
 +
@@ -4831,7 +5112,7 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +    adp->irqs[__adeos_printk_virq].acknowledge = NULL; 
 +    adp->irqs[__adeos_printk_virq].control = IPIPE_HANDLE_MASK; 
 +
-+    printk(KERN_WARNING "Adeos %s: Root domain %s registered.\n",
++    printk(KERN_INFO "Adeos %s: Root domain %s registered.\n",
 +	   ADEOS_VERSION_STRING,
 +	   adp->name);
 +}
@@ -4878,7 +5159,7 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +	    adp->cpudata[cpuid].event_info.event = event;
 +	    adp->cpudata[cpuid].event_info.evdata = evdata;
 +	    adp->cpudata[cpuid].event_info.propagate = 0;
-+	    set_bit(IPIPE_XPEND_FLAG,&adp->cpudata[cpuid].status);
++	    __set_bit(IPIPE_XPEND_FLAG,&adp->cpudata[cpuid].status);
 +
 +	    /* Let the prioritary domain process the event. */
 +	    __adeos_switch_to(adp,cpuid);
@@ -4906,48 +5187,42 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +void __adeos_stall_root (void)
 +
 +{
-+    if (likely(adp_pipelined))
++    if (adp_pipelined)
 +	{
 +	adeos_declare_cpuid;
 +	unsigned long flags;
 +
-+	adeos_get_cpu(flags);
-+
-+	set_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
-+
-+	if (!adeos_pipeline_head_p(adp_root))
-+	    {
-+	    adeos_put_cpu(flags);
-+	    return;
-+	    }
++	adeos_lock_cpu(flags);
++	__set_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
++	adeos_unlock_cpu(flags);
 +	}
-+
-+    adeos_hw_cli();
++    else
++	adeos_hw_cli();
 +}
 +
 +void __adeos_unstall_root (void)
 +
 +{
-+    if (likely(adp_pipelined))
++    if (adp_pipelined)
 +	{
 +	adeos_declare_cpuid;
 +	unsigned long flags;
 +
 +	adeos_lock_cpu(flags);
 +
-+	clear_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
++	__clear_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
 +
 +	if (adp_root->cpudata[cpuid].irq_pending_hi != 0)
 +	    __adeos_sync_stage(IPIPE_IRQMASK_ANY);
 +	}
 +
-+    adeos_hw_sti();	/* Absolutely needed. */
++    adeos_hw_sti();	/* Needed in both cases. */
 +}
 +
 +unsigned long __adeos_test_root (void)
 +
 +{
-+    if (likely(adp_pipelined))
++    if (adp_pipelined)
 +	{
 +	unsigned long flags, s;
 +	adeos_declare_cpuid;
@@ -4967,19 +5242,14 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +{
 +    unsigned long flags;
 +
-+    if (likely(adp_pipelined))
++    if (adp_pipelined)
 +	{
 +	adeos_declare_cpuid;
 +	unsigned long s;
 +
-+	adeos_get_cpu(flags);
-+
-+	s = test_and_set_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
-+
-+	if (adeos_pipeline_head_p(adp_root))
-+	    adeos_hw_cli();
-+	else
-+	    adeos_put_cpu(flags);
++	adeos_lock_cpu(flags);
++	s = __test_and_set_bit(IPIPE_STALL_FLAG,&adp_root->cpudata[cpuid].status);
++	adeos_unlock_cpu(flags);
 +
 +	return s;
 +	}
@@ -4998,22 +5268,6 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +	__adeos_unstall_root();
 +}
 +
-+void fastcall adeos_stall_pipeline_from (adomain_t *adp)
-+
-+{
-+    adeos_declare_cpuid;
-+    unsigned long flags;
-+
-+    adeos_get_cpu(flags);
-+
-+    set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
-+
-+    if (adeos_pipeline_head_p(adp))
-+	adeos_hw_cli();
-+    else
-+	adeos_put_cpu(flags);
-+}
-+
 +/* adeos_unstall_pipeline_from() -- Unstall the interrupt pipeline and
 +   synchronize pending events from a given domain. */
 +
@@ -5024,9 +5278,9 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +    unsigned long flags;
 +    adeos_declare_cpuid;
 +
-+    adeos_get_cpu(flags);
++    adeos_lock_cpu(flags);
 +
-+    clear_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
++    __clear_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
 +
 +    if (adp == adp_cpu_current[cpuid])
 +	{
@@ -5080,74 +5334,7 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +    if (adeos_pipeline_head_p(adp))
 +	adeos_hw_sti();
 +    else
-+	adeos_put_cpu(flags);
-+}
-+
-+unsigned long fastcall adeos_test_pipeline_from (adomain_t *adp)
-+
-+{
-+    unsigned long flags, s;
-+    adeos_declare_cpuid;
-+    
-+    adeos_get_cpu(flags);
-+    s = test_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
-+    adeos_put_cpu(flags);
-+
-+    return s;
-+}
-+
-+unsigned long fastcall adeos_test_and_stall_pipeline_from (adomain_t *adp)
-+
-+{
-+    unsigned long flags, s;
-+    adeos_declare_cpuid;
-+    
-+    adeos_get_cpu(flags);
-+
-+    s = test_and_set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
-+
-+    if (adeos_pipeline_head_p(adp))
-+	adeos_hw_cli();
-+    else
-+	adeos_put_cpu(flags);
-+
-+    return s;
-+}
-+
-+void adeos_sync_pipeline (void)
-+
-+{
-+    unsigned long flags;
-+    adeos_declare_cpuid;
-+    adomain_t *adp;
-+
-+    if (unlikely(!adp_pipelined))
-+	return;
-+
-+    adeos_get_cpu(flags);
-+
-+    adp = adp_cpu_current[cpuid];
-+
-+    if (unlikely(adp->cpudata[cpuid].irq_pending_hi != 0))
-+	{
-+	if (test_and_clear_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status))
-+	    {
-+	    if (adeos_pipeline_head_p(adp))
-+		{
-+		unsigned long _flags;
-+		adeos_hw_save_flags_and_sti(_flags);
-+		adeos_hw_local_irq_restore(_flags);
-+		}
-+	    
-+	    __adeos_sync_stage(IPIPE_IRQMASK_ANY);
-+
-+	    adeos_load_cpuid();
-+
-+	    set_bit(IPIPE_STALL_FLAG,&adp->cpudata[cpuid].status);
-+	    }
-+	}
-+
-+    adeos_put_cpu(flags);
++	adeos_unlock_cpu(flags);
 +}
 +
 +/* adeos_suspend_domain() -- tell the ADEOS layer that the current
@@ -5164,7 +5351,7 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +	adeos_load_cpuid(); \
 +	cpudata = &adp->cpudata[cpuid]; \
 +	} \
-+    if (test_and_clear_bit(IPIPE_XPEND_FLAG,&cpudata->status)) \
++    if (__test_and_clear_bit(IPIPE_XPEND_FLAG,&cpudata->status)) \
 +	adp->events[cpudata->event_info.event].handler(&cpudata->event_info); \
 +} while(0)
 +
@@ -5182,7 +5369,7 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +    cpudata = &adp->cpudata[cpuid];
 +
 +    /* A suspending domain implicitely unstalls the pipeline. */
-+    clear_bit(IPIPE_STALL_FLAG,&cpudata->status);
++    __clear_bit(IPIPE_STALL_FLAG,&cpudata->status);
 +
 +    /* Make sure that no event remains stuck in the pipeline. This
 +       could happen with emerging SMP instances, or domains which
@@ -5210,13 +5397,13 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +	}
 +
 +    /* Mark the outgoing domain as aslept (i.e. not preempted). */
-+    set_bit(IPIPE_SLEEP_FLAG,&cpudata->status);
++    __set_bit(IPIPE_SLEEP_FLAG,&cpudata->status);
 +
 +    /* Suspend the calling domain, switching to the next one. */
 +    __adeos_switch_to(nadp,cpuid);
 +
 +    /* Clear the sleep bit for the incoming domain (on the initial processor). */
-+    clear_bit(IPIPE_SLEEP_FLAG,&cpudata->status);
++    __clear_bit(IPIPE_SLEEP_FLAG,&cpudata->status);
 +
 +#ifdef CONFIG_SMP
 +    adeos_load_cpuid();	/* Processor might have changed. */
@@ -5314,7 +5501,7 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +
 +	    if (irq >= IPIPE_NR_XIRQS && !adeos_virtual_irq_p(irq))
 +		{
-+		/* There maybe a hole between the last external IRQ
++		/* There might be a hole between the last external IRQ
 +		   and the first virtual one; skip it. */
 +		irq++;
 +		continue;
@@ -5335,7 +5522,8 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +	    while (++_irq < IPIPE_NR_IRQS)
 +		{
 +		if (adeos_virtual_irq_p(_irq) != adeos_virtual_irq_p(irq) ||
-+		    (adeos_virtual_irq_p(_irq) && !test_bit(_irq - IPIPE_VIRQ_BASE,&__adeos_virtual_irq_map)) ||
++		    (adeos_virtual_irq_p(_irq) &&
++		     !test_bit(_irq - IPIPE_VIRQ_BASE,&__adeos_virtual_irq_map)) ||
 +		    ctlbits != (adp->irqs[_irq].control & (IPIPE_HANDLE_MASK|IPIPE_PASS_MASK|IPIPE_STICKY_MASK)))
 +		    break;
 +		}
@@ -5459,15 +5647,12 @@ diff -uNrp linux-2.6.7/kernel/adeos.c linux-2.6.7-adeos/kernel/adeos.c
 +EXPORT_SYMBOL(__adeos_pipelock);
 +EXPORT_SYMBOL(__adeos_virtual_irq_map);
 +EXPORT_SYMBOL(__adeos_event_monitors);
-+EXPORT_SYMBOL(adeos_stall_pipeline_from);
 +EXPORT_SYMBOL(adeos_unstall_pipeline_from);
-+EXPORT_SYMBOL(adeos_test_pipeline_from);
-+EXPORT_SYMBOL(adeos_test_and_stall_pipeline_from);
-+EXPORT_SYMBOL(adeos_sync_pipeline);
++#ifdef CONFIG_ADEOS_PROFILING
++EXPORT_SYMBOL(__adeos_profile_data);
++#endif /* CONFIG_ADEOS_PROFILING */
 +/* The following are convenience exports which are needed by some
 +   Adeos domains loaded as kernel modules. */
-+EXPORT_SYMBOL(__mmdrop);
-+EXPORT_SYMBOL(do_fork);
 +EXPORT_SYMBOL(do_exit);
 diff -uNrp linux-2.6.7/kernel/exit.c linux-2.6.7-adeos/kernel/exit.c
 --- linux-2.6.7/kernel/exit.c	2004-06-17 23:48:32.000000000 +0200
@@ -5502,17 +5687,17 @@ diff -uNrp linux-2.6.7/kernel/fork.c linux-2.6.7-adeos/kernel/fork.c
  fork_out:
 diff -uNrp linux-2.6.7/kernel/panic.c linux-2.6.7-adeos/kernel/panic.c
 --- linux-2.6.7/kernel/panic.c	2004-06-13 12:30:04.000000000 +0200
-+++ linux-2.6.7-adeos/kernel/panic.c	2004-07-12 16:20:36.000000000 +0200
-@@ -66,6 +66,9 @@ NORET_TYPE void panic(const char * fmt, 
- 		printk(KERN_EMERG "In idle task - not syncing\n");
++++ linux-2.6.7-adeos/kernel/panic.c	2004-09-02 15:45:01.000000000 +0200
+@@ -67,6 +67,9 @@ NORET_TYPE void panic(const char * fmt, 
  	else
  		sys_sync();
+ 	bust_spinlocks(0);
 +#ifdef CONFIG_ADEOS_CORE
 +	__adeos_dump_state();
 +#endif /* CONFIG_ADEOS_CORE */
- 	bust_spinlocks(0);
  
  #ifdef CONFIG_SMP
+ 	smp_send_stop();
 diff -uNrp linux-2.6.7/kernel/printk.c linux-2.6.7-adeos/kernel/printk.c
 --- linux-2.6.7/kernel/printk.c	2004-06-17 23:48:32.000000000 +0200
 +++ linux-2.6.7-adeos/kernel/printk.c	2004-07-18 20:28:39.000000000 +0200
@@ -5621,7 +5806,7 @@ diff -uNrp linux-2.6.7/kernel/printk.c linux-2.6.7-adeos/kernel/printk.c
   * If the console code is currently allowed to sleep, and
 diff -uNrp linux-2.6.7/kernel/sched.c linux-2.6.7-adeos/kernel/sched.c
 --- linux-2.6.7/kernel/sched.c	2004-06-17 23:48:32.000000000 +0200
-+++ linux-2.6.7-adeos/kernel/sched.c	2004-07-12 16:20:36.000000000 +0200
++++ linux-2.6.7-adeos/kernel/sched.c	2004-11-07 17:18:56.000000000 +0100
 @@ -248,7 +248,16 @@ static DEFINE_PER_CPU(struct runqueue, r
   * Default context-switch locking:
   */
@@ -5676,7 +5861,7 @@ diff -uNrp linux-2.6.7/kernel/sched.c linux-2.6.7-adeos/kernel/sched.c
  		barrier();
  
 +#ifdef CONFIG_ADEOS_CORE
-+		if (likely(adp_pipelined))
++		if (adp_pipelined)
 +		    adeos_hw_sti();
 +
 +		if (__adeos_schedule_tail(prev) > 0)

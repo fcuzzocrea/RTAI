@@ -1565,6 +1565,9 @@ static void rtai_uninstall_archdep (void) {
     flags = rtai_critical_enter(NULL);
     idt_table[RTAI_SYS_VECTOR] = rtai_sysvec;
     rtai_critical_exit(flags);
+#ifndef CONFIG_X86_TSC
+    rt_setup_8254_tsc();
+#endif /* !CONFIG_X86_TSC */
 }
 
 int rtai_calibrate_8254 (void)
@@ -1769,8 +1772,10 @@ static void rtai_domain_entry (int iflag)
 	printk(KERN_INFO "RTAI[hal]: compiled with %s.\n",CONFIG_RTAI_COMPILER);
 	}
 
+#if !defined(CONFIG_ADEOS_NOTHREADS)
     for (;;)
 	adeos_suspend_domain();
+#endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
 int __rtai_hal_init (void)

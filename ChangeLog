@@ -1,3 +1,12 @@
+2004-11-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Upgrade to 2.6/hal8.
+
+	* rtai-core/arch/i386/hal/hal.c: Prepare for handling
+	CONFIG_ADEOS_NOTHREADS. It still remains to get rid of any use of
+	the private Adeos interface (e.g. __adeos_switch_to()) for being
+	able to run over the r9 series.
+
 2004-11-24  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/ipc/shm/shm.c: rt_shm_size did not return the mapped 

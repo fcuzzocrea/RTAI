@@ -185,6 +185,9 @@ compiled, and the final installation directory where RTAI programs can
 be run eventually. In any case, you should only rely on the
 installation directory contents to run RTAI programs.
 
+NOTE: Do not pay attention to the "*** Warning" messages appearing on
+module compilation output. They are harmless and will be fixed later.
+
 1.4 Compiling parts of the tree
 -------------------------------
 

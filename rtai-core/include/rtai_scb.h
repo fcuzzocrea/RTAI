@@ -66,6 +66,8 @@ struct task_struct;
  * - USE_GFP_KERNEL, use kmalloc with GFP_KERNEL;
  * - USE_GFP_ATOMIC, use kmalloc with GFP_ATOMIC;
  * - USE_GFP_DMA, use kmalloc with GFP_DMA.
+ * - for use in kernel only applications the user can use "suprt" to pass 
+ *   the address of any memory area (s)he has allocated on her/his own.
  *
  * Since @a name can be a clumsy identifier, services are provided to
  * convert 6 characters identifiers to unsigned long, and vice versa.
@@ -85,10 +87,11 @@ struct task_struct;
  *
  */
 
-RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, int suprt))
+RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long suprt))
 {	
 	void *scb;
-	if ((scb = rt_shm_alloc(name, size + HDRSIZ + 1, suprt)) && !atomic_cmpxchg((int *)scb, 0, name)) {
+	scb = suprt > 1000 ? (void *)suprt : rt_shm_alloc(name, size + HDRSIZ + 1, suprt);
+	if (scb && !atomic_cmpxchg((int *)scb, 0, name)) {
 		((int *)scb)[1] = ((int *)scb)[2] = 0;
 		((int *)scb)[0] = size + 1;
 	} else {
@@ -114,6 +117,9 @@ RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, int suprt))
  * one the really frees any allocated memory.
  *
  * @returns the size of the succesfully freed buffer, 0 on failure.
+ *
+ * Do not call this function if you provided your own memory to the circular
+ * buffer. 
  *
  */
 

@@ -1,6 +1,6 @@
 install-data-local:
 
-SUBDIRS = devices
+SUBDIRS = devices utility
 
 EXTRA_DIST = rtmain.c README examples macros
 

@@ -334,7 +334,7 @@ void xnpod_init_proc (void)
 	{
 	for (n = 0; n < XENOMAI_MUX_NR; n++)
 	    {
-	    if (muxtable[muxid].magic != 0)
+	    if (muxtable[n].magic != 0)
 		continue;
 
 	    entry = create_proc_entry(muxtable[n].name,0444,ifdir);

@@ -1723,7 +1723,7 @@ void rt_deregister_watchdog(RT_TASK *wd, int cpuid)
 
 /* +++++++++++++++ SUPPORT FOR LINUX TASKS AND KERNEL THREADS +++++++++++++++ */
 
-#define ECHO_SYSW
+//#define ECHO_SYSW
 #ifdef ECHO_SYSW
 #define SYSW_DIAG_MSG(x) x
 #else

@@ -382,6 +382,8 @@ static void gatekeeper_thread (void *data)
 
 	down_interruptible(&gkreq[cpu]);
 
+	splnone();
+
 	if (gkstop)
 	    break;
 

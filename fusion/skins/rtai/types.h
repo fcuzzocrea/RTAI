@@ -60,6 +60,8 @@
 
 typedef xnticks_t RTIME;
 
+typedef xnsticks_t SRTIME;
+
 #define rtai_h2obj_validate(h,m,t) \
 ((h) && ((t *)(h))->magic == (m) ? ((t *)(h)) : NULL)
 
@@ -77,6 +79,8 @@ typedef xnticks_t RTIME;
 #else /* !(__KERNEL__ || __RTAI_SIM__) */
 
 typedef unsigned long long RTIME;
+
+typedef long long SRTIME;
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 

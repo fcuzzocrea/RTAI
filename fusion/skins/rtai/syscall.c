@@ -538,13 +538,13 @@ static int __rt_timer_tsc (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_timer_ns2ticks(RTIME *ticksp, RTIME *nsp)
+ * int __rt_timer_ns2ticks(SRTIME *ticksp, SRTIME *nsp)
  */
 
 static int __rt_timer_ns2ticks (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    RTIME ns, ticks;
+    SRTIME ns, ticks;
 
     __xn_copy_from_user(curr,&ns,(void *)__xn_reg_arg2(regs),sizeof(ns));
     ticks = rt_timer_ns2ticks(ns);
@@ -554,13 +554,13 @@ static int __rt_timer_ns2ticks (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_timer_ticks2ns(RTIME *nsp, RTIME *ticksp)
+ * int __rt_timer_ticks2ns(SRTIME *nsp, SRTIME *ticksp)
  */
 
 static int __rt_timer_ticks2ns (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    RTIME ticks, ns;
+    SRTIME ticks, ns;
 
     __xn_copy_from_user(curr,&ticks,(void *)__xn_reg_arg2(regs),sizeof(ticks));
     ns = rt_timer_ticks2ns(ticks);

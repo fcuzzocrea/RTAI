@@ -66,9 +66,9 @@ typedef struct rt_timer_info {
 extern "C" {
 #endif
 
-RTIME rt_timer_ns2ticks(RTIME ns);
+SRTIME rt_timer_ns2ticks(SRTIME ns);
 
-RTIME rt_timer_ticks2ns(RTIME ticks);
+SRTIME rt_timer_ticks2ns(SRTIME ticks);
 
 int rt_timer_inquire(RT_TIMER_INFO *info);
 

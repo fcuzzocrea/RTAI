@@ -33,10 +33,11 @@
 #include <rtai/timer.h>
 
 /**
- * @fn RTIME rt_timer_ns2ticks(RTIME ns)
+ * @fn SRTIME rt_timer_ns2ticks(SRTIME ns)
  * @brief Convert nanoseconds to internal clock ticks.
  *
  * Convert a count of nanoseconds to internal clock ticks.
+ * This routine opearates on signed nanosecond values.
  *
  * @param ns The count of nanoseconds to convert.
  *
@@ -54,20 +55,21 @@
  * value).
  */
 
-RTIME rt_timer_ns2ticks (RTIME ns)
+SRTIME rt_timer_ns2ticks (SRTIME ns)
 
 {
     if (testbits(nkpod->status,XNTMPER))
-	return xnpod_ns2ticks(ns);
+	return ns >= 0 ? xnpod_ns2ticks(ns) : -xnpod_ns2ticks(-ns);
 
-    return xnarch_ns_to_tsc(ns);
+    return ns >= 0 ? xnarch_ns_to_tsc(ns) : -xnarch_ns_to_tsc(-ns);
 }
 
 /*!
- * @fn int rt_timer_ticks2ns(RTIME ticks)
+ * @fn SRTIME rt_timer_ticks2ns(SRTIME ticks)
  * @brief Convert internal clock ticks to nanoseconds.
  *
  * Convert a count of internal clock ticks to nanoseconds.
+ * This routine opearates on signed tick values.
  *
  * @param ticks The count of internal clock ticks to convert (see
  * note).
@@ -84,13 +86,13 @@ RTIME rt_timer_ns2ticks (RTIME ns)
  * value).
  */
 
-RTIME rt_timer_ticks2ns (RTIME ticks)
+SRTIME rt_timer_ticks2ns (SRTIME ticks)
 
 {
     if (testbits(nkpod->status,XNTMPER))
-	return xnpod_ticks2ns(ticks);
+	return ticks >= 0 ? xnpod_ticks2ns(ticks) : -xnpod_ticks2ns(-ticks);
 
-    return xnarch_tsc_to_ns(ticks);
+    return ticks >= 0 ? xnarch_tsc_to_ns(ticks) : -xnarch_tsc_to_ns(-ticks);
 }
 
 /*!

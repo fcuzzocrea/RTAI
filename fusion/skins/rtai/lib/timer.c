@@ -84,7 +84,7 @@ RTIME rt_timer_tsc (void)
     return tsc;
 }
 
-RTIME rt_timer_ns2ticks (RTIME ns)
+SRTIME rt_timer_ns2ticks (SRTIME ns)
 
 {
     RTIME ticks;
@@ -99,10 +99,10 @@ RTIME rt_timer_ns2ticks (RTIME ns)
     return ticks;
 }
 
-RTIME rt_timer_ticks2ns (RTIME ticks)
+SRTIME rt_timer_ticks2ns (SRTIME ticks)
 
 {
-    RTIME ns;
+    SRTIME ns;
 
     if (__rtai_muxid < 0 && __init_skin() < 0)
 	return 0;

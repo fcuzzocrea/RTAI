@@ -1,7 +1,3 @@
-2004-10-04  Philippe Gerum  <rpm@xenomai.org>
-
- 	* RELEASE: fusion-0.6
-
 2004-10-04  Edelhard Becker <ebecker@software-manufaktur.de>
 
 	* configure.in: Detect CONFIG_X86_EMU486 when testing for

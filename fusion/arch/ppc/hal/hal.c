@@ -675,7 +675,7 @@ static int irq_read_proc (char *page,
     int len = 0, cpuid, irq;
     char *p = page;
 
-    p += sprintf(p,"IRQ");
+    p += sprintf(p,"IRQ  ");
 
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	p += sprintf(p,"        CPU%d",cpuid);

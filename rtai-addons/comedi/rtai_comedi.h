@@ -376,13 +376,13 @@ RTAI_PROTO(comedi_cmd *, rt_comedi_alloc_cmd,(unsigned int **chanlist, unsigned 
 {
 	unsigned long ofst[2], name;
 	comedi_cmd *cmd;
-	void *p;
+	comedi_cmd *p;
 
 	struct { unsigned int chanlist_len, data_len; unsigned long *ofst; } arg = { chanlist_len, data_len, ofst };
 	name = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_ALLOC_CMD, &arg).i[LOW];
-	cmd = p = rtai_malloc(name, 1);
-        *chanlist = cmd->chanlist = (void *)((char *)p + ofst[0]);
-        *data = cmd->data = (void *)((char *)p + ofst[1]);
+	cmd = p = (comedi_cmd *)rtai_malloc(name, 1);
+        *chanlist = cmd->chanlist = (unsigned int *)((char *)p + ofst[0]);
+        *data = cmd->data = (sampl_t *)((char *)p + ofst[1]);
 	return cmd;
 }
 

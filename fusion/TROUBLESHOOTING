@@ -50,8 +50,7 @@ RTAI domain can preempt any activity from the Linux domain, including
 disk drivers. When enabling DMA for disks, be prepared for interrupt
 latencies of around 80 micro-seconds.
 
-______________________________________________________________________
-
+======================================================================
 
                              x86
 
@@ -105,6 +104,27 @@ your high latency.
 ______________________________________________________________________
 
 
+Q: I have no SMI in the picture, but I'm still seeing high latency
+spots.  What's next?
+
+A1: Do you have some legacy USB switch at BIOS configuration level? If
+yes, switch it off, it is known to induce such latencies.
+
+A2: If no legacy USB switch appears in your BIOS configuration panel,
+this does not necessarily mean that there is no support for it, thus
+no potential for high latencies; this support might just be forcibly
+enabled at boot time.
+
+To solve this, in case your machine has some USB controller hardware,
+make sure to enable the corresponding host controller driver support
+in your kernel configuration.  For instance, UHCI-compliant hardware
+needs CONFIG_USB_UHCI_HCD.  As part of its init chores, the driver
+should reset the host controller properly, kicking out the BIOS off
+the concerned hardware, and deactivate the USB legacy mode if set in
+the same move.
+
+======================================================================
+
                            PowerPC
 
 ======================================================================
@@ -112,4 +132,4 @@ ______________________________________________________________________
 
 ======================================================================
 
-Last Updated: Mon Feb 21 14:55:30 CET 2005
+Last Updated: Sat Feb 26 11:04:46 CET 2005

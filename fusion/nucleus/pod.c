@@ -175,12 +175,8 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 void xnpod_schedule_handler (void)
 
 {
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
     xnsched_set_resched(xnpod_current_sched());
     xnpod_schedule();
-    xnlock_put_irqrestore(&nklock,s);
 }
 
 /*! 
@@ -2144,10 +2140,10 @@ void xnpod_schedule (void)
 
  signal_unlock_and_exit:
 
-    xnlock_put_irqrestore(&nklock,s);
-
     if (xnthread_signaled_p(runthread))
         xnpod_dispatch_signals();
+
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 /*! 

@@ -1803,6 +1803,7 @@ int xnshadow_init (void)
     for (cpu = 0; cpu < num_online_cpus(); ++cpu)
         {
         init_MUTEX_LOCKED(&gkreq[cpu]);
+	xnarch_memory_barrier();
         kernel_thread((void *)&gatekeeper_thread, (void *)(unsigned long) cpu,0);
         }
 

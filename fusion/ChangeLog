@@ -1,3 +1,28 @@
+2004-10-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h: Make lock variable volatile.
+
+2004-10-20  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/asm-i386/system.h: Add debug infrastructure for
+	spinlocks.
+	
+2004-10-20  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_schedule_handler): Don't grab the nklock
+	uselessly.
+	(xnpod_schedule): Keep on holding the lock while dispatching
+	signals.
+
+	* include/nucleus/asm-i386/system.h (xnlock_put_irqrestore):
+	Discard useless cpu_relax() and fold unlocking into a single
+	test and clear op.
+
+2004-10-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_init): Add memory barrier after
+	gksync init.
+
 2004-10-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_harden): Fix stupid uninit cpuid bug

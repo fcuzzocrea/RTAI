@@ -82,7 +82,7 @@ typedef unsigned long spl_t;
 #define splget(x)   rthal_local_irq_flags(x)
 
 typedef struct {
-    unsigned long lock;
+    volatile unsigned long lock;
 #if CONFIG_RTAI_OPT_DEBUG
     const char *file;
     unsigned line;
@@ -142,28 +142,30 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
             rthal_cpu_relax(cpuid);
 
 #if CONFIG_RTAI_OPT_DEBUG
-            if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
+            if (++spin_count >= XNARCH_DEBUG_SPIN_LIMIT)
                 {
                 adeos_set_printk_sync(adp_current);
                 printk(KERN_ERR
-                       "RTAI[Spinlock]: %p spinned at\n%s:%u on CPU %d for too"
-                       " long,\ncurrently owned by CPU %d, at %s:%u\n",
-                       lock,file,line,cpuid,lock->cpu,lock->file,lock->line);
+                       "RTAI: stuck on nucleus lock %p\n"
+		       "      waiter = %s:%u (CPU #%d)\n"
+                       "      owner  = %s:%u (CPU #%d)\n",
+                       lock,file,line,cpuid,lock->file,lock->line,lock->cpu);
                 show_stack(NULL,NULL);
                 for (;;)
                     safe_halt();
                 }
 #endif /* CONFIG_RTAI_OPT_DEBUG */
             }
+
+#if CONFIG_RTAI_OPT_DEBUG
+	lock->file = file;
+	lock->line = line;
+	lock->cpu = cpuid;
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 	}
     else
         flags |= 2;
 
-#if CONFIG_RTAI_OPT_DEBUG
-    lock->file = file;
-    lock->line = line;
-    lock->cpu = cpuid;
-#endif /* CONFIG_RTAI_OPT_DEBUG */
     return flags;
 }
 
@@ -178,12 +180,8 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 
         adeos_load_cpuid();
 
-        if (test_bit(cpuid,&lock->lock))
-            {
-            clear_bit(cpuid,&lock->lock);
+        if (test_and_clear_bit(cpuid,&lock->lock))
             clear_bit(BITS_PER_LONG - 1,&lock->lock);
-            rthal_cpu_relax(cpuid);
-            }
         }
 
     rthal_local_irq_restore(flags & 1);

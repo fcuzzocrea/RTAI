@@ -1287,6 +1287,12 @@ void rt_setup_8254_tsc (void)
 #define CHECK_KERCTX();
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#define IN_ATOMIC()  (in_atomic())
+#else
+#define IN_ATOMIC()  (0)
+#endif
+
 static int rtai_irq_trampoline (struct pt_regs *regs)
 {
 	unsigned long lflags;
@@ -1321,23 +1327,18 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 //1)	adeos_restore_pipeline_nosync(adp_root, lflags, cpuid);
 
 	if (!test_bit(IPIPE_STALL_FLAG, &lflags)) {
-//1)	if (!adeos_test_pipeline_from(adp_root)) {
+//1)	if (!adeos_test_pipeline_from(adp_root) && !IN_ATOMIC()) {
 		rtai_sti();
 		if (irq == __adeos_tick_irq) {
 			__adeos_tick_regs.eflags = regs->eflags;
 			__adeos_tick_regs.eip    = regs->eip;
 			__adeos_tick_regs.xcs    = regs->xcs;
 		}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-		if (!in_atomic())
-#endif
-		{
-			if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
-				__adeos_sync_stage(IPIPE_IRQMASK_ANY);
-			}
-//3)			adeos_unstall_pipeline_from(adp_root);
-			return 1;
+		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
+			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
+//3)		adeos_unstall_pipeline_from(adp_root);
+		return 1;
         }
        	return 0;
 

@@ -721,6 +721,8 @@ int rt_task_set_priority (RT_TASK *task,
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * sleeping task before the sleep time has elapsed.
  *
+ * - -EWOULDBLOCK is returned if the system timer is inactive.
+ *
  * Side-effect: This routine calls the rescheduling procedure unless a
  * null delay is given.
  *
@@ -739,6 +741,9 @@ int rt_task_sleep (RTIME delay)
 
     if (delay == 0)
 	return 0;
+
+    if (!testbits(nkpod->status,XNTIMED))
+	return -EWOULDBLOCK;
 
     /* Calling the suspension service on behalf of the current task
        implicitely calls the rescheduling procedure. */
@@ -769,6 +774,8 @@ int rt_task_sleep (RTIME delay)
  *
  * - -ETIMEDOUT is returned if @a date has already elapsed.
  *
+ * - -EWOULDBLOCK is returned if the system timer is inactive.
+ *
  * Side-effect: This routine calls the rescheduling procedure unless
  * an already elapsed date is given.
  *
@@ -788,6 +795,9 @@ int rt_task_sleep_until (RTIME date)
     spl_t s;
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
+
+    if (!testbits(nkpod->status,XNTIMED))
+	return -EWOULDBLOCK;
 
     splhigh(s);
 

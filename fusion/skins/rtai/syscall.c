@@ -28,8 +28,8 @@
 #include <rtai/sem.h>
 #include <rtai/event.h>
 
-/* This file implements the syscall wrappers. Unchecked uaccess is
-   used since the syslib is trusted. */
+/* This file implements the RTAI syscall wrappers. Unchecked uaccess
+   is used since the syslib is trusted. */
 
 static int __muxid;
 

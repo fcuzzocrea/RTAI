@@ -336,19 +336,19 @@ target_alias = @target_alias@
 # -*- makefile -*-
 dbx_docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
-dbx_top_distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)
+dbx_top_distdir = $(doc_top_distdir)
 DBX_SRC_ROOT = $(top_srcdir)/$(DBX_DOC_ROOT)
 DBX_BUILD_ROOT = $(top_builddir)/$(DBX_DOC_ROOT)
 DBX_DIST_ROOT = $(dbx_top_distdir)/$(DBX_GEN_DOC_ROOT)
 
 DBX_XSLTPROC_FLAGS = --catalogs --xinclude $(DBX_MAYBE_NONET)
-@DBX_DOC_TRUE@DBX_HTML_TRANSFORM = sed "s,\(src\|href\)=\"$(esc_html_srcroot),\1=\"..,g"
 
 @DBX_DOC_FALSE@DBX_HTML_TRANSFORM = cat
-@DBX_DOC_TRUE@HTML_DOCSDIR = ./
+@DBX_DOC_TRUE@DBX_HTML_TRANSFORM = sed "s,\(src\|href\)=\"$(esc_html_srcroot),\1=\"..,g"
 @DBX_DOC_FALSE@HTML_DOCSDIR = $(top_srcdir)/$(DBX_GEN_DOC_ROOT)/html/
-@DBX_DOC_TRUE@PDF_DOCSDIR = ./
+@DBX_DOC_TRUE@HTML_DOCSDIR = ./
 @DBX_DOC_FALSE@PDF_DOCSDIR = $(top_srcdir)/$(DBX_GEN_DOC_ROOT)/pdf/
+@DBX_DOC_TRUE@PDF_DOCSDIR = ./
 @DBX_ABS_SRCDIR_FALSE@@DBX_DOC_TRUE@html_srcroot = ../$(DBX_SRC_ROOT)
 
 # How to find the Docbook XML source root from an HTML subdir depends on whether
@@ -371,8 +371,8 @@ DBX_ALL_HTML = $(DBX_HTML_DOCS) $(DBX_HTML_EXTRA)
 PDF_DOCS = $(DBX_PDF_DOCS)
 
 docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
-
 doc_top_distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)
+
 GEN_DOC_DIST_ROOT = $(doc_top_distdir)/rtai-doc/generated
 
 EXTRA_DIST = rtai-titlepage.spec.xml

@@ -1,3 +1,13 @@
+2004-06-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* rtai-core/scripts/generate-doc-and-commit (abs_srcdir): Add a
+	script to generate documentation and update the generated doc in
+	the cvs repository.
+
+	* rtai-doc/GNUmakefile.am (generate-doc-and-commit): Add a
+	makefile rule to run the forementioned script with correct
+	arguments.
+
 2004-06-13  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Upgrade the x86 patches to 2.6r5

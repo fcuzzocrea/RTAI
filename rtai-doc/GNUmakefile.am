@@ -2,3 +2,6 @@ SUBDIRS=docbook doxygen latex
 
 EXTRA_DIST=maintainers \
 	User-Manual.txt
+
+generate-doc-and-commit:
+	srcdir=$(srcdir) $(top_srcdir)/rtai-core/scripts/generate-doc-and-commit

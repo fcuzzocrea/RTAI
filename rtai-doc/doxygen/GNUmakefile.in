@@ -341,13 +341,13 @@ EXTRA_DIST = \
 	lxrt_faq.dox \
 	schedulers_overview.dox
 
-
-@CONFIG_RTAI_DOX_DOC_FALSE@HTML_DOCSDIR = $(srcdir)/../generated/html/
 @CONFIG_RTAI_DOX_DOC_TRUE@HTML_DOCSDIR = ./
 
-docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
+@CONFIG_RTAI_DOX_DOC_FALSE@HTML_DOCSDIR = $(srcdir)/../generated/html/
 
+docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 doc_top_distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)
+
 GEN_DOC_DIST_ROOT = $(doc_top_distdir)/rtai-doc/generated
 subdir = rtai-doc/doxygen
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4

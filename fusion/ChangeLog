@@ -1,5 +1,7 @@
 2005-02-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/ltt.c (xnltt_log_mark): Add custom mark logger.
+
 	* testsuite/klatency/latency-module.c (__latency_init): Move call
 	to rt_timer_start() out of the latency task, since this it might
 	sleep Linux-wise.

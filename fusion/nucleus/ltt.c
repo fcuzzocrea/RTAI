@@ -25,6 +25,20 @@
 #include <stdarg.h>
 #include <nucleus/ltt.h>
 
+void xnltt_log_mark (const char *fmt, ...)
+
+{
+    char markbuf[64];	/* Don't eat too much stack space. */
+    va_list ap;
+
+    if (xnltt_evtable[rtai_ev_mark].ltt_filter & xnltt_filter) {
+	va_start(ap,fmt);
+	vsnprintf(markbuf,sizeof(markbuf),fmt,ap);
+	va_end(ap);
+	ltt_log_std_formatted_event(xnltt_evtable[rtai_ev_mark].ltt_evid,markbuf);
+    }
+}
+
 int __init xnltt_mount (void)
 
 {
@@ -127,6 +141,7 @@ struct xnltt_evmap xnltt_evtable[] = {
     [rtai_ev_thrwait] = { "RTAI thread wait periodic", "thread=%s", -1, rtai_evthr },
     [rtai_ev_tmstart] = { "RTAI start timer", "tick=%u ns", -1, rtai_evall },
     [rtai_ev_tmstop] = { "RTAI stop timer", NULL, -1, rtai_evall },
+    [rtai_ev_mark] = { "RTAI **mark**", "%s", -1, rtai_evall },
 };
 
 int xnltt_filter = rtai_evall;

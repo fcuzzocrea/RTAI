@@ -82,6 +82,7 @@ struct xnltt_evmap {
 #define rtai_ev_thrwait      44
 #define rtai_ev_tmstart      45
 #define rtai_ev_tmstop       46
+#define rtai_ev_mark         47
 
 #define rtai_evthr  0x1
 #define rtai_evirq  0x2
@@ -110,6 +111,9 @@ static inline void xnltt_stop_tracing (void)
     xnltt_set_filter(0);
 }
 
+void xnltt_log_mark(const char *fmt,
+		    ...);
+
 int xnltt_mount(void);
 
 void xnltt_umount(void);
@@ -117,6 +121,10 @@ void xnltt_umount(void);
 #else /* !(__KERNEL__ && CONFIG_LTT) */
 
 #define xnltt_log_event(ev, args...); /* Eat the semi-colon. */
+
+static inline void xnltt_log_mark (const char *fmt, ...)
+{
+}
 
 static inline void xnltt_set_filter (int mask)
 {

@@ -102,17 +102,16 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     switch_mm(oldmm,next->active_mm,next,cpuid);
-#else /* >= 2.6.0 */
-    switch_mm(oldmm,next->active_mm,next);
-#endif /* < 2.6.0 */
 
     if (!next->mm)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	enter_lazy_tlb(oldmm,next,cpuid);
 #else /* >= 2.6.0 */
+    switch_mm(oldmm,next->active_mm,next);
+
+    if (!next->mm)
         enter_lazy_tlb(oldmm,next);
 #endif /* < 2.6.0 */
-	
+
 /* NOTE: Do not use switch_to() directly: this is a compiler
    compatibility issue. */
 
@@ -138,7 +137,7 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 		  "a" (prev), "d" (next),				\
 		  "b" (prev));						
 
-	barrier();
+    barrier();
 }
 
 #endif /* __KERNEL__ */

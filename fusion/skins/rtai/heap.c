@@ -436,6 +436,9 @@ int rt_heap_delete (RT_HEAP *heap)
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before any block was available.
  *
+ * - -EACCES is returned if the request should block but has not been
+ * issued from a task context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -518,6 +521,12 @@ int rt_heap_alloc (RT_HEAP *heap,
     if (timeout == TM_NONBLOCK)
 	{
 	err = -EWOULDBLOCK;
+	goto unlock_and_exit;
+	}
+
+    if (xnpod_asynch_p() || xnpod_root_p())
+	{
+	err = -EACCES;
 	goto unlock_and_exit;
 	}
 

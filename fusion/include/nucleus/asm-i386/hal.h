@@ -65,25 +65,30 @@ rthal_ullmul(unsigned long m1, unsigned long m2) {
 /* const helper for rthal_uldivrem, so that the compiler will eliminate
    multiple calls with same arguments, at no additionnal cost. */
 static inline __attribute_const__ unsigned long long
-__rthal_uldivrem(unsigned long long ull, unsigned long d) {
+__rthal_uldivrem(const unsigned long long ull, const unsigned long d) {
 
-    __asm__ ("divl %1" : "=A,A"(ull) : "r,?m"(d), "A,A"(ull));
+    unsigned long long ret;
+    __asm__ ("divl %1" : "=A,A"(ret) : "r,?m"(d), "A,A"(ull));
     /* Exception if quotient does not fit on unsigned long. */
-    return ull;
+    return ret;
 }
 
-static inline __attribute_const__ int rthal_imuldiv (int i, int mult, int div) {
+static inline __attribute_const__ int rthal_imuldiv (const int i,
+                                                     const int mult,
+                                                     const int div) {
 
     /* Returns (unsigned)i =
                (unsigned long long)i*(unsigned)(mult)/(unsigned)div. */
-    unsigned long ui = (unsigned long) i, um = (unsigned long) mult;
-    return __rthal_uldivrem((unsigned long long) ui * um, div);
+    const unsigned long ui = (const unsigned long) i;
+    const unsigned long um = (const unsigned long) mult;
+    return __rthal_uldivrem((const unsigned long long) ui * um, div);
 }
 
 /* Fast long long division: when the quotient and remainder fit on 32 bits.
    Recent compilers remove redundant calls to this function. */
-static inline unsigned long
-rthal_uldivrem(unsigned long long ull, unsigned long d, unsigned long *rp) {
+static inline unsigned long rthal_uldivrem(unsigned long long ull,
+                                           const unsigned long d,
+                                           unsigned long *const rp) {
 
     unsigned long q, r;
     ull = __rthal_uldivrem(ull, d);
@@ -96,16 +101,15 @@ rthal_uldivrem(unsigned long long ull, unsigned long d, unsigned long *rp) {
 
 /* Division of an unsigned 96 bits ((h << 32) + l) by an unsigned 32 bits.
    Common building block for ulldiv and llimd. */
-static inline unsigned long long __rthal_div96by32 (unsigned long long h,
-                                                    unsigned long l,
-                                                    unsigned long d,
-                                                    unsigned long *rp) {
-    unsigned long long t;
-    u_long qh, rh, ql;
+static inline unsigned long long __rthal_div96by32 (const unsigned long long h,
+                                                    const unsigned long l,
+                                                    const unsigned long d,
+                                                    unsigned long *const rp) {
 
-    qh = rthal_uldivrem(h, d, &rh);
-    t = __rthal_u64fromu32(rh, l);
-    ql = rthal_uldivrem(t, d, rp);
+    u_long rh;
+    const u_long qh = rthal_uldivrem(h, d, &rh);
+    const unsigned long long t = __rthal_u64fromu32(rh, l);
+    const u_long ql = rthal_uldivrem(t, d, rp);
 
     return __rthal_u64fromu32(qh, ql);
 }
@@ -113,9 +117,9 @@ static inline unsigned long long __rthal_div96by32 (unsigned long long h,
 
 /* Slow long long division. Uses rthal_uldivrem, hence has the same property:
    the compiler removes redundant calls. */
-static inline unsigned long long rthal_ulldiv (unsigned long long ull,
-                                               unsigned long d,
-                                               unsigned long *rp) {
+static inline unsigned long long rthal_ulldiv (const unsigned long long ull,
+                                               const unsigned long d,
+                                               unsigned long *const rp) {
 
     unsigned long h, l;
     __rthal_u64tou32(ull, h, l);
@@ -125,9 +129,10 @@ static inline unsigned long long rthal_ulldiv (unsigned long long ull,
 /* Replaced the helper with rthal_ulldiv. */
 #define rthal_u64div32c rthal_ulldiv
 
-static inline unsigned long long __rthal_ullimd (unsigned long long op,
-                                                 unsigned long m,
-                                                 unsigned long d) {
+static inline __attribute_const__
+unsigned long long __rthal_ullimd (const unsigned long long op,
+                                   const unsigned long m,
+                                   const unsigned long d) {
 
     unsigned long long th, tl;
     u_long oph, opl, tlh, tll;
@@ -147,9 +152,9 @@ static inline unsigned long long __rthal_ullimd (unsigned long long op,
     return __rthal_div96by32(th, tll, d, NULL);
 }
 
-static inline long long rthal_llimd (long long op,
-                                     unsigned long m,
-                                     unsigned long d) {
+static inline __attribute_const__ long long rthal_llimd (const long long op,
+                                                         const unsigned long m,
+                                                         const unsigned long d) {
 
     if(op < 0LL)
         return -__rthal_ullimd(-op, m, d);

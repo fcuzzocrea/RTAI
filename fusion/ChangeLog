@@ -1,5 +1,11 @@
 2004-12-20  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* include/nucleus/asm-i386/hal.h: Mark arithmetic routines
+	arguments const, to allow better compiler optimization.
+
+	* nucleus/shadow.c (xnshadow_ticks2*): Really roll-back slow
+	implementations.
+
 	* nucleus/shadow.c (xnshadow_substitute_syscall): Only pass
 	positive arguments to xnshadow_ticks2ts.
 

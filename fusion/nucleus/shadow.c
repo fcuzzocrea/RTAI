@@ -423,7 +423,8 @@ unsigned long long xnshadow_ts2ticks (const struct timespec *v)
     u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
 
     /* save a division: we add to nsec the worst remainder of the division
-       of sec by tickval. nsec may not fit on 32 bits if v is not normalized. */
+       of sec * 1e9 by tickval. nsec may not fit on 32 bits if v is not
+       normalized. */
     nsec += tickval - 1;
     /* tickval is 100000 or so in the worst case, the result is hence expected
        to fit on 32 bits, and we can use uldiv instead of ulldiv. */
@@ -434,8 +435,10 @@ unsigned long long xnshadow_ts2ticks (const struct timespec *v)
 void xnshadow_ticks2ts (unsigned long long ticks, struct timespec *v)
 
 {
-    unsigned long long nsecs = xnpod_ticks2ns(ticks);
-    v->tv_sec = xnarch_uldivrem(nsecs, 1000000000UL, &v->tv_nsec);
+    u_long rem_ticks, tickval = xnpod_get_tickval();
+    u_long hz = xnpod_get_ticks2sec();
+    v->tv_sec = xnarch_uldivrem(ticks, hz, &rem_ticks);
+    v->tv_nsec = rem_ticks * tickval;
 }
 
 unsigned long long xnshadow_tv2ticks (const struct timeval *v)
@@ -453,8 +456,10 @@ unsigned long long xnshadow_tv2ticks (const struct timeval *v)
 void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)
 
 {
-    unsigned long long nsecs = xnpod_ticks2ns(ticks);
-    v->tv_sec = xnarch_uldivrem(nsecs, 1000000UL, &v->tv_usec);
+    u_long rem_ticks, tickval = xnpod_get_tickval();
+    u_long hz = xnpod_get_ticks2sec();
+    v->tv_sec = xnarch_uldivrem(ticks, hz, &rem_ticks);
+    v->tv_usec = rem_ticks * (tickval / 1000UL);
 }
 
 /*! 

@@ -1,5 +1,8 @@
 2005-03-29  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (xnshadow_harden, xnshadow_relax): Increment
+	mode switch counters as expected.
+
 	* nucleus/module.c (__get_thread_timeout): Fix signedness issue.
 
  	* RELEASE: fusion-0.7

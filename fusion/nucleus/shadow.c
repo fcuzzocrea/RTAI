@@ -456,6 +456,7 @@ static int xnshadow_harden (void)
        number is constant in this context, despite the potential for
        preemption. */
     struct __gatekeeper *gk = &gatekeeper[task_cpu(this_task)];
+    xnthread_t *thread;
 
     if (signal_pending(this_task) ||
 	down_interruptible(&gk->sync)) /* Grab the request token. */
@@ -484,7 +485,11 @@ static int xnshadow_harden (void)
     xnpod_switch_fpu(xnpod_current_sched());
 #endif /* CONFIG_RTAI_HW_FPU */
 
-    xnltt_log_event(rtai_ev_primary,xnpod_current_thread()->name);
+    thread = xnpod_current_thread();
+
+    ++thread->stat.psw;	/* Account for primary mode switch. */
+
+    xnltt_log_event(rtai_ev_primary,thread->name);
 
     xnlock_clear_irqon(&nklock);
 
@@ -546,6 +551,8 @@ void xnshadow_relax (void)
     xnpod_renice_root(thread->cprio);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
     __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,thread->cprio);
+
+    ++thread->stat.ssw;	/* Account for secondary mode switch. */
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */

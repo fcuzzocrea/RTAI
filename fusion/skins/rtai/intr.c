@@ -92,7 +92,6 @@ int rt_intr_create (RT_INTR *intr,
 	return -EINVAL;
 
     xnintr_init(&intr->intr_base,irq,&__intr_trampoline,0);
-
     xnsynch_init(&intr->synch_base,XNSYNCH_PRIO);
     intr->isr = isr;
     intr->mode = mode;

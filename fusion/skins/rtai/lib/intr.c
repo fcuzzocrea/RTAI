@@ -34,7 +34,7 @@ int rt_intr_create (RT_INTR *intr,
 	return -ENOSYS;
 
     if (isr)
-	/* Interrupts are only available in DSR mode from
+	/* Interrupts are only available in sync wait mode from
 	   user-space. */
 	return -EINVAL;
 

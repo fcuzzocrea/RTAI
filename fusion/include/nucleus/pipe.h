@@ -47,11 +47,14 @@
 typedef struct xnpipe_mh {
 
     xnholder_t link;
-#define link2mh(laddr) \
-(laddr ? ((struct xnpipe_mh *)(((char *)laddr) - (int)(&((struct xnpipe_mh *)0)->link))) : 0)
     unsigned size;
     
 } xnpipe_mh_t;
+
+static inline xnpipe_mh_t *link2mh (xnholder_t *laddr)
+{
+    return laddr ? ((xnpipe_mh_t *)(((char *)laddr) - (int)(&((xnpipe_mh_t *)0)->link))) : 0;
+}
 
 #ifdef __KERNEL__
 

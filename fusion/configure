@@ -19634,6 +19634,8 @@ fi
 if test "x" = "x$RTAI_MODULE_DIR"
 then
    RTAI_MODULE_DIR='${exec_prefix}/modules'
+else
+   RTAI_MODULE_DIR="`/bin/bash -c \"echo $RTAI_MODULE_DIR\"`"
 fi
 
 echo "$as_me:$LINENO: result: $RTAI_MODULE_DIR" >&5
@@ -19682,6 +19684,8 @@ if test x${RTAI_LINUX_DIR} = x; then
 echo "$as_me: error: Linux kernel tree not specified -- use --with-linux-dir" >&2;}
    { (exit 1); exit 1; }; }
    fi
+else
+	RTAI_LINUX_DIR="`/bin/bash -c \"echo $RTAI_LINUX_DIR\"`"
 fi
 
 if test \! -r ${RTAI_LINUX_DIR}/Makefile; then

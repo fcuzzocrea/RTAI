@@ -115,6 +115,8 @@ dnl Set a default module dir if unspecified
 if test "x" = "x$RTAI_MODULE_DIR"
 then
    RTAI_MODULE_DIR='${exec_prefix}/modules'
+else
+   RTAI_MODULE_DIR="`/bin/bash -c \"echo $RTAI_MODULE_DIR\"`"
 fi
 
 AC_MSG_RESULT([$RTAI_MODULE_DIR])
@@ -158,6 +160,8 @@ if test x${RTAI_LINUX_DIR} = x; then
         echo
         AC_MSG_ERROR([Linux kernel tree not specified -- use --with-linux-dir])
    fi
+else
+	RTAI_LINUX_DIR="`/bin/bash -c \"echo $RTAI_LINUX_DIR\"`"
 fi
 
 if test \! -r ${RTAI_LINUX_DIR}/Makefile; then

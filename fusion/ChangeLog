@@ -1,5 +1,8 @@
 2005-02-24  Philippe Gerum  <rpm@xenomai.org>
 
+	* configure.in: Make sure we can use ~luser when specifying
+	linux-dir or --module-dir.
+
 	* arch/i386/hal/hal.c (faults_read_proc): Add proc entry to
 	display faults occurring in real-time mode. This is an attempt to
 	provide more debugging info to chase spurious latencies induced by

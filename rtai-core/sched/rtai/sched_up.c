@@ -489,7 +489,7 @@ if (rt_current->policy > 0) { \
 
 #define RR_SETYT() \
 	if (new_task->policy > 0) { \
-		new_task->yield_time = rt_time_h + new_task->rr_remaining; \
+		new_task->yield_time = rt_times.tick_time + new_task->rr_remaining; \
 	}
 
 #define RR_SPREMP() \

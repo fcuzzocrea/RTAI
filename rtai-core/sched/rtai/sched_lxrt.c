@@ -542,7 +542,7 @@ if (ALLOW_RR && rt_current->policy > 0) { \
 do { \
 	prio = (new_task = rt_linux_task.rnext)->priority; \
 	if (ALLOW_RR && new_task->policy > 0) { \
-		new_task->yield_time = rt_time_h + new_task->rr_remaining; \
+		new_task->yield_time = rt_times.tick_time + new_task->rr_remaining; \
 	} \
 } while (0)
 

@@ -1,3 +1,8 @@
+2004-11-12  Michael Neuhauser <mike@firmix.at>
+
+	* rtai-core/sched/rtai/all_schedulers: fixed setting of RR yield
+	time.
+
 2004-11-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* rtai-core/ipc/sem/sem.c: recurred acquisition of RES_SEMs can now be 

@@ -653,26 +653,48 @@ int rthal_set_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
 
 #ifndef CONFIG_X86_TSC
 
-static rthal_time_t rthal_ts_8254;
+static rthal_time_t rthal_tsc_8254;
 
 static int rthal_last_8254_counter2;
 
 /* TSC emulation using PIT channel #2. */
+
+void rthal_setup_8254_tsc (void)
+
+{
+    unsigned long flags;
+    int count;
+
+    rthal_hw_lock(flags);
+
+    outb_p(0x00,0x43);
+    count = inb_p(0x40);
+    count |= inb_p(0x40) << 8;
+    outb_p(0xb4,0x43);
+    outb_p(RTHAL_8254_COUNT2LATCH & 0xff,0x42);
+    outb_p(RTHAL_8254_COUNT2LATCH >> 8,0x42);
+    rthal_tsc_8254 = count + LATCH * jiffies;
+    rthal_last_8254_counter2 = 0; 
+    outb_p((inb_p(0x61)&0xfd)|1,0x61);
+
+    rthal_hw_unlock(flags);
+}
 
 rthal_time_t rthal_get_8254_tsc (void)
 
 {
     unsigned long flags;
     rthal_time_t t;
-    int inc, c2;
+    int inc, count;
 
-    rthal_hw_lock(flags); /* Local hw masking is required here. */
+    rthal_hw_lock(flags);
 
     outb(0xd8,PIT_MODE);
-    c2 = inb(PIT_CH2);
-    inc = rthal_last_8254_counter2 - (c2 |= (inb(PIT_CH2) << 8));
-    rthal_last_8254_counter2 = c2;
-    t = (rthal_ts_8254 += (inc > 0 ? inc : inc + RTHAL_8254_COUNT2LATCH));
+    count = inb(PIT_CH2);
+    inc = rthal_last_8254_counter2 - (count |= (inb(PIT_CH2) << 8));
+    rthal_last_8254_counter2 = count;
+    rthal_tsc_8254 += (inc > 0 ? inc : inc + RTHAL_8254_COUNT2LATCH);
+    t = rthal_tsc_8254;
 
     rthal_hw_unlock(flags);
 
@@ -989,16 +1011,17 @@ int __rthal_init (void)
 			 IPIPE_HANDLE_MASK);
 
     if (rthal_cpufreq_arg == 0)
-	{
 #ifdef CONFIG_X86_TSC
+	{
 	adsysinfo_t sysinfo;
 	adeos_get_sysinfo(&sysinfo);
 	/* FIXME: 4Ghz barrier is close... */
 	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
-#else /* ! CONFIG_X86_TSC */
-        rthal_cpufreq_arg = CLOCK_TICK_RATE;
-#endif /* CONFIG_X86_TSC */
 	}
+#else /* ! CONFIG_X86_TSC */
+    rthal_cpufreq_arg = CLOCK_TICK_RATE;
+    rthal_setup_8254_tsc();
+#endif /* CONFIG_X86_TSC */
 
     rthal_tunables.cpu_freq = rthal_cpufreq_arg;
 

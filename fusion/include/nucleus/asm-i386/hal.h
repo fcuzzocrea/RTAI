@@ -204,6 +204,7 @@ static inline unsigned long long rthal_rdtsc (void) {
 }
 #else  /* !CONFIG_X86_TSC */
 #define RTHAL_8254_COUNT2LATCH  0xfffe
+void rthal_setup_8254_tsc(void);
 rthal_time_t rthal_get_8254_tsc(void);
 #define rthal_rdtsc() rthal_get_8254_tsc()
 #endif /* CONFIG_X86_TSC */

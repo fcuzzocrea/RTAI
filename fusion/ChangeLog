@@ -1,3 +1,8 @@
+2004-11-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/hal.c (__rthal_init): Setup the 8254 channel #2
+	for TSC emulation.
+
 2004-11-15  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/heap.c (rt_heap_create):

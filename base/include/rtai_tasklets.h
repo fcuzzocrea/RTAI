@@ -328,7 +328,7 @@ RTAI_PROTO(void, rt_delete_tasklet,(struct rt_tasklet_struct *tasklet))
 	int thread;
 	struct { struct rt_tasklet_struct *tasklet; } arg = { tasklet };
 	if ((thread = rtai_lxrt(TSKIDX, SIZARG, DELETE, &arg).i[LOW])) {
-		waitpid(thread, NULL, 0);
+		rt_thread_join(thread);
 	}
 }
 

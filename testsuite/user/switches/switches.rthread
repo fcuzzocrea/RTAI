@@ -23,7 +23,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/mman.h>
-#include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -168,7 +167,7 @@ int main(void)
 	rt_sem_delete(sem);
 	rt_task_delete(mainbuddy);
 	for (i = 0; i < NR_RT_TASKS; i++) {
-		waitpid(thread[i], 0, 0);
+		rt_thread_join(thread[i]);
 	}
 	
 	return 0;

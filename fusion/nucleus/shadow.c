@@ -910,10 +910,6 @@ static int attach_interface (struct task_struct *curr,
 		   help here... */
 		return -ENOSYS;
 
-#ifdef CONFIG_PROC_FS
-	    xnpod_declare_iface_proc(muxtable + muxid);
-#endif /* CONFIG_PROC_FS */
-
 	    if (infarg)
 		{
 		info.cpufreq = xnarch_get_cpu_freq();
@@ -953,12 +949,7 @@ static int detach_interface (struct task_struct *curr, int muxid)
 	muxtable[muxid].eventcb(XNSHADOW_CLIENT_DETACH);
 
     /* Find all active shadow threads belonging to the detached skin
-       and delete them. Sidenote: there can only be one active primary
-       interface (i.e. skin) declaring a real-time pod at a time, but
-       additionally, there might be native nucleus threads
-       (e.g. debugger) and/or threads belonging to secondary/helper
-       interfaces which do not declare any pod, so we need to check
-       their magic before attempting to delete them. */
+       and delete them. */
 
     nholder = getheadq(&nkpod->threadq);
 
@@ -967,14 +958,9 @@ static int detach_interface (struct task_struct *curr, int muxid)
 	nholder = nextq(&nkpod->threadq,holder);
 	thread = link2thread(holder,glink);
 
-	if (xnthread_get_magic(thread) == muxtable[muxid].magic &&
-	    testbits(thread->status,XNSHADOW))
+	if (xnthread_get_magic(thread) == muxtable[muxid].magic)
 	    xnpod_delete_thread(thread);
 	}
-
-#ifdef CONFIG_PROC_FS
-    xnpod_discard_iface_proc(muxtable + muxid);
-#endif /* CONFIG_PROC_FS */
 
     xnlock_put_irqrestore(&nklock,s);
 
@@ -1736,6 +1722,10 @@ int xnshadow_register_interface (const char *name,
 
 	    xnlock_put_irqrestore(&nklock,s);
 
+#ifdef CONFIG_PROC_FS
+	    xnpod_declare_iface_proc(muxtable + muxid);
+#endif /* CONFIG_PROC_FS */
+
 	    return muxid + 1;
 	    }
 	}
@@ -1767,6 +1757,9 @@ int xnshadow_unregister_interface (int muxid)
 	muxtable[muxid].systab = NULL;
 	muxtable[muxid].nrcalls = 0;
 	muxtable[muxid].magic = 0;
+#ifdef CONFIG_PROC_FS
+	xnpod_discard_iface_proc(muxtable + muxid);
+#endif /* CONFIG_PROC_FS */
 	}
     else
 	err = -EBUSY;

@@ -92,71 +92,30 @@ static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
 	xntimer_get_timeout(&thread->ptimer);
 }
 
-static int system_read_proc (char *page,
-			     char **start,
-			     off_t off,
-			     int count,
-			     int *eof,
-			     void *data)
+static int sched_read_proc (char *page,
+			    char **start,
+			    off_t off,
+			    int count,
+			    int *eof,
+			    void *data)
 {
     const unsigned nr_cpus = xnarch_num_online_cpus();
-    unsigned cpu, ready_threads = 0;
     xnthread_t *thread;
     xnholder_t *holder;
     char *p = page;
     char buf[64];
+    unsigned cpu;
     int len = 0;
     spl_t s;
 
-    p += sprintf(p,"RTAI/fusion nucleus v%s\n",PACKAGE_VERSION);
-    p += sprintf(p,"Mounted over Adeos %s\n",ADEOS_VERSION_STRING);
-
-    p += sprintf(p,"\nLatencies: timer=%Lu ns\n",
-		 xnarch_tsc_to_ns(nktimerlat));
-
     xnlock_get_irqsave(&nklock, s);
 
-    if (nkpod != NULL)
-	{
-	if (testbits(nkpod->status,XNTIMED))
-	    {
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
-	    if (!testbits(nkpod->status,XNTMPER))
-		p += sprintf(p,"Aperiodic timer is running\n");
-	    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-		p += sprintf(p,"Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
-			     xnpod_get_tickval() / 1000,
-			     nkpod->jiffies);
-	    }
-	else
-	    p += sprintf(p,"No system timer\n");
-	}
-    else
-	{
-	p += sprintf(p,"No active pod\n");
-	goto unlock_and_exit;
-	}
+    p += sprintf(p,"\n%-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
+		 "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
         xnsched_t *sched = xnpod_sched_slot(cpu);
-        ready_threads += sched->readyq.pqueue.elems;
-        }
-
-    p += sprintf(p,"Scheduler status: %d threads, %d ready, %d blocked\n",
-                 nkpod->threadq.elems,
-                 ready_threads,
-                 nkpod->suspendq.elems);
-    
-    p += sprintf(p,"\n%-3s   %-12s %-4s  %-5s  %-8s\n","CPU", "NAME","PRI",
-		 "TIMEOUT", "STATUS");
-
-    for (cpu = 0; cpu < nr_cpus; ++cpu)
-        {
-        xnsched_t *sched = xnpod_sched_slot(cpu);
-
-        p += sprintf(p,"------------------------------------------\n");
 
         holder = getheadq(&nkpod->threadq);
 
@@ -168,35 +127,26 @@ static int system_read_proc (char *page,
             if (thread->sched != sched)
                 continue;
 
-	    p += sprintf(p,"%3u   %-12s %-4d  %-5Lu  0x%.8lx - %s\n",
+	    p += sprintf(p,"%3u   %-6d %-12s %-4d  %-8Lu  0x%.8lx - %s\n",
                          cpu,
+			 !testbits(thread->status,XNROOT) && xnthread_user_task(thread) ?
+			 xnthread_user_task(thread)->pid : 0,
                          thread->name,
-                         thread->cprio,
+			 thread->cprio,
 			 __get_thread_timeout(thread),
-                         thread->status,
+			 thread->status,
 			 xnthread_symbolic_status(thread->status,
                                                   buf,sizeof(buf)));
             }
         }
 
- unlock_and_exit:
-
     xnlock_put_irqrestore(&nklock, s);
 
-    len = p - page;
-
-    if (len <= off + count)
-	*eof = 1;
-
+    len = p - page - off;
+    if (len <= off + count) *eof = 1;
     *start = page + off;
-
-    len -= off;
-
-    if (len > count)
-	len = count;
-
-    if (len < 0)
-	len = 0;
+    if (len > count) len = count;
+    if (len < 0) len = 0;
 
     return len;
 }
@@ -264,6 +214,52 @@ static ssize_t version_read_proc (char *page,
     return len;
 }
 
+static ssize_t timer_read_proc (char *page,
+				char **start,
+				off_t off,
+				int count,
+				int *eof,
+				void *data)
+{
+    xnticks_t jiffies = 0, tickval = 0;
+    const char *status = "off";
+    int len;
+
+    if (nkpod && testbits(nkpod->status,XNTIMED))
+	{
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+	if (!testbits(nkpod->status,XNTMPER))
+	    {
+	    status = "oneshot";
+	    tickval = 1;
+	    jiffies = xnarch_get_cpu_tsc();
+	    }
+	else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+	    {
+	    status = "periodic";
+	    tickval = xnpod_get_tickval();
+	    jiffies = nkpod->jiffies;
+	    }
+	}
+
+    len = sprintf(page,
+		  "STAT      SETUP  TICKVAL     JIFFIES\n"
+		  "%-8s\t%-5Lu\t%-10Lu\t%Lu\n",
+		  status,
+		  xnarch_tsc_to_ns(nktimerlat),
+		  tickval,
+		  jiffies);
+
+    len -= off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
+}
+
 static ssize_t iface_read_proc (char *page,
 				char **start,
 				off_t off,
@@ -313,8 +309,8 @@ void xnpod_init_proc (void)
     if (!rthal_proc_root)
 	return;
 
-    add_proc_leaf("system",
-		  &system_read_proc,
+    add_proc_leaf("sched",
+		  &sched_read_proc,
 		  NULL,
 		  NULL,
 		  rthal_proc_root);
@@ -331,6 +327,12 @@ void xnpod_init_proc (void)
 		  NULL,
 		  rthal_proc_root);
 
+    add_proc_leaf("timer",
+		  &timer_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
+
 #ifdef CONFIG_RTAI_OPT_FUSION
     iface_proc_root = create_proc_entry("interfaces",
 					S_IFDIR,
@@ -342,11 +344,18 @@ void xnpod_delete_proc (void)
 
 {
 #ifdef CONFIG_RTAI_OPT_FUSION
-    remove_proc_entry("rtai/interfaces",NULL);
+    int muxid;
+
+    for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
+	if (muxtable[muxid].proc)
+	    remove_proc_entry(muxtable[muxid].name,iface_proc_root);
+
+    remove_proc_entry("interfaces",rthal_proc_root);
 #endif /* CONFIG_RTAI_OPT_FUSION */
-    remove_proc_entry("rtai/version",NULL);
-    remove_proc_entry("rtai/latency",NULL);
-    remove_proc_entry("rtai/system",NULL);
+    remove_proc_entry("timer",rthal_proc_root);
+    remove_proc_entry("version",rthal_proc_root);
+    remove_proc_entry("latency",rthal_proc_root);
+    remove_proc_entry("sched",rthal_proc_root);
 }
 
 #ifdef CONFIG_RTAI_OPT_FUSION
@@ -364,7 +373,7 @@ void xnpod_declare_iface_proc (struct xnskentry *iface)
 void xnpod_discard_iface_proc (struct xnskentry *iface)
 
 {
-    remove_proc_entry(iface->name,NULL); /* <= FIXME: this is bugous */
+    remove_proc_entry(iface->name,iface_proc_root);
     iface->proc = NULL;
 }
 

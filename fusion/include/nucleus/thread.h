@@ -188,6 +188,7 @@ typedef struct xnhook {
 #define xnthread_set_magic(thread,m)       do { (thread)->magic = (m); } while(0)
 #define xnthread_get_magic(thread)         ((thread)->magic)
 #define xnthread_signaled_p(thread)        ((thread)->signals != 0)
+#define xnthread_user_task(thread)         xnarch_user_task(xnthread_archtcb(thread))
 
 #ifdef __cplusplus
 extern "C" {

@@ -879,32 +879,57 @@ static void rthal_domain_entry (int iflag)
 
 #ifdef CONFIG_PROC_FS
 
-struct proc_dir_entry *rthal_proc_root = NULL;
+struct proc_dir_entry *rthal_proc_root;
 
-static int rthal_read_proc (char *page,
-			    char **start,
-			    off_t off,
-			    int count,
-			    int *eof,
-			    void *data)
+static ssize_t hal_read_proc (char *page,
+			      char **start,
+			      off_t off,
+			      int count,
+			      int *eof,
+			      void *data)
 {
-    int len = 0, cpuid, irq, nirqs;
+    int len;
+
+    len = sprintf(page,"%s\n",ADEOS_VERSION_STRING);
+    len -= off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
+}
+
+static ssize_t compiler_read_proc (char *page,
+				   char **start,
+				   off_t off,
+				   int count,
+				   int *eof,
+				   void *data)
+{
+    int len;
+
+    len = sprintf(page,"%s\n",CONFIG_RTAI_COMPILER);
+    len -= off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
+}
+
+static int irq_read_proc (char *page,
+			  char **start,
+			  off_t off,
+			  int count,
+			  int *eof,
+			  void *data)
+{
+    int len = 0, cpuid, irq;
     char *p = page;
 
-    p += sprintf(p,"RTAI/hal over Adeos %s\n",ADEOS_VERSION_STRING);
-    p += sprintf(p,"Compiled with: %s\n",CONFIG_RTAI_COMPILER);
-
-    for (irq = nirqs = 0; irq < IPIPE_NR_IRQS; irq++)
-	if (rthal_realtime_irq[irq].handler != NULL)
-	    nirqs++;
-
-    if (nirqs == 0)
-	{
-	p += sprintf(p,"No real-time interrupt registered");
-	goto out;
-	}
-
-    p += sprintf(p,"\nRT-IRQ");
+    p += sprintf(p,"IRQ");
 
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	p += sprintf(p,"        CPU%d",cpuid);
@@ -920,33 +945,43 @@ static int rthal_read_proc (char *page,
 	    p += sprintf(p,"  %12lu",rthal_realtime_irq[irq].hits[cpuid]);
 	}
 
- out:
-
     p += sprintf(p,"\n");
 
-    len = p - page;
-
-    if (len <= off + count)
-	*eof = 1;
-
+    len = p - page - off;
+    if (len <= off + count) *eof = 1;
     *start = page + off;
-
-    len -= off;
-
-    if (len > count)
-	len = count;
-
-    if (len < 0)
-	len = 0;
+    if (len > count) len = count;
+    if (len < 0) len = 0;
 
     return len;
+}
+
+static struct proc_dir_entry *add_proc_leaf (const char *name,
+					     read_proc_t rdproc,
+					     write_proc_t wrproc,
+					     void *data,
+					     struct proc_dir_entry *parent)
+{
+    int mode = wrproc ? 0644 : 0444;
+    struct proc_dir_entry *entry;
+
+    entry = create_proc_entry(name,mode,parent);
+
+    if (entry)
+	{
+	entry->nlink = 1;
+	entry->data = data;
+	entry->read_proc = rdproc;
+	entry->write_proc = wrproc;
+	entry->owner = THIS_MODULE;
+	}
+
+    return entry;
 }
 
 static int rthal_proc_register (void)
 
 {
-    struct proc_dir_entry *ent;
-
     rthal_proc_root = create_proc_entry("rtai",S_IFDIR, 0);
 
     if (!rthal_proc_root)
@@ -957,16 +992,23 @@ static int rthal_proc_register (void)
 
     rthal_proc_root->owner = THIS_MODULE;
 
-    ent = create_proc_entry("hal",S_IFREG|S_IRUGO|S_IWUSR,rthal_proc_root);
+    add_proc_leaf("hal",
+		  &hal_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
 
-    if (!ent)
-	{
-	printk(KERN_ERR "RTAI[hal]: Unable to initialize /proc/rtai/rthal.\n");
-	return -1;
-        }
+    add_proc_leaf("compiler",
+		  &compiler_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
 
-    ent->read_proc = rthal_read_proc;
-
+    add_proc_leaf("irq",
+		  &irq_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
     return 0;
 }
 
@@ -974,7 +1016,9 @@ static void rthal_proc_unregister (void)
 
 {
     remove_proc_entry("hal",rthal_proc_root);
-    remove_proc_entry("rtai",0);
+    remove_proc_entry("compiler",rthal_proc_root);
+    remove_proc_entry("irq",rthal_proc_root);
+    remove_proc_entry("rtai",NULL);
 }
 
 #endif /* CONFIG_PROC_FS */

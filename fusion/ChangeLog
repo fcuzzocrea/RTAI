@@ -2,7 +2,8 @@
 
 	* nucleus/module.c: Rework /proc interface. Provide
 	/proc/rtai/latency to dynamically read/update the scheduling
-	latency value.
+	latency value. Scatter old interface sections from rtai/rthal and
+	rtai/system to per-topic individual entries.
 
 	* nucleus/pod.c (xnpod_set_thread_periodic): Passing XN_INFINITE
 	as the period just stops any undergoing timing.

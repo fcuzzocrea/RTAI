@@ -19782,7 +19782,7 @@ include Makefile
 
 rtai-arch:
 	@for flag in \$(CFLAGS); do case \$\$flag in \
-	-march*|-mcpu*|-mtune*) echo \$\$flag;; \
+	-march*|-mcpu*|-mtune*) echo -n \$\$flag;; \
 	*);; \
 	esac; done
 EOF

@@ -1115,7 +1115,7 @@ int __rthal_init (void)
     if (!test_bit(X86_FEATURE_APIC,boot_cpu_data.x86_capability))
 	{
 	printk("RTAI: Local APIC absent or disabled!\n"
-	       "Disable APIC support or pass \"lapic\" as bootparam.\n");
+	       "      Disable APIC support or pass \"lapic\" as bootparam.\n");
 	return -ENODEV;
 	}
 

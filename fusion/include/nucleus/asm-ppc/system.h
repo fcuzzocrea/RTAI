@@ -836,11 +836,15 @@ static inline void xnarch_stop_timer (void) {
     rthal_release_timer();
 }
 
+static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask)
+
+{
 #if CONFIG_SMP
-static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
-    return -1;			/* FIXME */
-}
+    return -1;		/* FIXME */
+#else /* ! CONFIG_SMP */
+    return 0;
 #endif /* CONFIG_SMP */
+}
 
 static inline void xnarch_read_timings (unsigned long long *shot,
 					unsigned long long *delivery,

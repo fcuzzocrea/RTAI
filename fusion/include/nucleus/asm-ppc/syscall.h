@@ -151,7 +151,10 @@ static inline int __xn_interrupted_p(struct pt_regs *regs) {
 static inline unsigned long long __xn_rdtsc (void)
 
 {
-    unsigned long long t;
+    union {
+	unsigned long long t;
+	unsigned long v[2];
+    } u;
     unsigned long __tbu;
 
     __asm__ __volatile__ ("1: mftbu %0\n"
@@ -159,10 +162,10 @@ static inline unsigned long long __xn_rdtsc (void)
 			  "mftbu %2\n"
 			  "cmpw %2,%0\n"
 			  "bne- 1b\n"
-			  :"=r" (((unsigned long *)&t)[0]),
-			  "=r" (((unsigned long *)&t)[1]),
+			  :"=r" (u.v[0]),
+			  "=r" (u.v[1]),
 			  "=r" (__tbu));
-    return t;
+    return u.t;
 }
 
 #endif /* __KERNEL__ */

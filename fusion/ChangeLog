@@ -1,3 +1,14 @@
+2004-12-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-ppc/syscall.h (__xn_rdtsc): Fix case with
+	strict aliasing rules.
+
+	* include/nucleus/asm-ppc/system.h (xnarch_send_timer_ipi):
+	Provide for an empty definition in UP mode.
+
+	* arch/ppc/hal/hal.c (rthal_release_irq): Fix call to
+	adeos_virtualize_irq_from().
+
 2004-12-29  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-*/hal.h : got rid of rthal_cpu_relax.

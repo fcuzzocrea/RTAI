@@ -3,6 +3,9 @@
 	* rtai-core/arch/i386/patches: Upgrade the x86 patches to 2.6r5
 	final. Add support for 2.6.6.
 
+	* rtai-core/scripts/rtai-load.in: Use modprobe instead of insmod
+	for modules from /lib/modules.
+
 	* rtai-core/ipc/mq: Kludge to resolve conflicts with 2.6.6. This
 	component is deprecated.
 

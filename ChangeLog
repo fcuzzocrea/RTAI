@@ -1,3 +1,10 @@
+2004-03-15  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm-ppc/rtai_usi.h: added the copy from ARM, just to
+	  avoid complaints for the moment. In any case it should be the 
+	  closest to PPC.
+	* base/arch/ppc/hal.c: made to compile in full.
+
 2004-03-15  Jan Kiszka  <kiszka@rts.uni-hannover.de>
 
 	* base/include/asm-i386: fixed a conditional compilation depending

@@ -1,2 +1,2 @@
-calibrate_irq:ksched+fifos+calibrate_rt:./calibrate -i;popall:control_c
-calibrate_user:lxrt+fifos+calibrate_rt:./calibrate -u;popall:control_c
+calibrate_irq:ksched+fifos+calibrate:./calibrate -i;popall:control_c
+calibrate_user:lxrt+fifos+calibrate:./calibrate -u;popall:control_c

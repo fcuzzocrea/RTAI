@@ -30,7 +30,7 @@
 #define LOW  0
 #define HIGH 1
 
-#ifdef __USE_APIC__
+#ifdef CONFIG_X86_LOCAL_APIC
 
 #define TIMER_NAME "APIC"
 #define FAST_TO_READ_TSC
@@ -40,7 +40,7 @@
 #define ONESHOT_SPAN (0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
 #define update_linux_timer(cpuid)
 
-#else /* !__USE_APIC__ */
+#else /* !CONFIG_X86_LOCAL_APIC */
 
 #define USE_LINUX_TIMER
 #define TIMER_NAME "8254-PIT"
@@ -50,7 +50,7 @@
 #define ONESHOT_SPAN (0x7FFF*(CPU_FREQ/TIMER_FREQ))
 #define update_linux_timer(cpuid) adeos_pend_uncond(TIMER_8254_IRQ, cpuid)
 
-#endif /* __USE_APIC__ */
+#endif /* CONFIG_X86_LOCAL_APIC */
 
 union rtai_lxrt_t {
 

@@ -35,8 +35,6 @@
  *@{*/
 
 
-//#define __USE_APIC__
-
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
@@ -166,10 +164,10 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #include <asm/io.h>
 #include <asm/rtai_atomic.h>
 #include <asm/rtai_fpu.h>
-#ifdef __USE_APIC__
+#ifdef CONFIG_X86_LOCAL_APIC
 #include <asm/fixmap.h>
 #include <asm/apic.h>
-#endif /* __USE_APIC__ */
+#endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
 #define RTAI_DOMAIN_ID  0x52544149
@@ -507,13 +505,13 @@ static inline void rt_set_timer_delay (int delay) {
     if (delay) {
         unsigned long flags;
         rtai_hw_save_flags_and_cli(flags);
-#ifdef __USE_APIC__
+#ifdef CONFIG_X86_LOCAL_APIC
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT, delay);
-#else /* !__USE_APIC__ */
+#else /* !CONFIG_X86_LOCAL_APIC */
 	outb(delay & 0xff,0x40);
 	outb(delay >> 8,0x40);
-#endif /* __USE_APIC__ */
+#endif /* CONFIG_X86_LOCAL_APIC */
         rtai_hw_restore_flags(flags);
     }
 }

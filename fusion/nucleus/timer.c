@@ -179,15 +179,37 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
 	
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
-/*
- * xntimer_start() -- Arm a timer. If <interval> is != XN_INFINITE,
- * the timeout handler will be fired periodically according to the
- * given interval value. Otherwise, the timer is one-shot. This
- * configuration must not be confused with the underlying system timer
- * periodic/aperiodic mode, which is rather used to control the
- * hardware time source.  In aperiodic mode, the current date could be
- * posterior to the timeout value; in such a case, -EAGAIN is returned
- * and the timer remains unarmed.
+/*! 
+ * \fn int xntimer_start(xntimer_t *timer,
+ 		   xnticks_t value,
+		   xnticks_t interval)
+ * \brief Arm a timer.
+ *
+ * Starts a timer. The associated timeout handler will be fired after
+ * each elapse time. A timer can be either periodic or single-shot,
+ * depending on the reload value passed to this routine. The given
+ * timer must have been previously initialized by a call to
+ * xntimer_init().
+ *
+ * @param timer The address of a valid timer descriptor.
+ *
+ * @param value The relative date of the initial timer shot, expressed
+ * in clock ticks (see note).
+ *
+ * @param interval The reload value of the timer. It is a periodic
+ * interval value to be used for reprogramming the next timer shot,
+ * expressed in clock ticks (see note). If @a interval is equal to
+ * XN_INFINITE, the timer will not be reloaded when it elapses.
+ *
+ * @return 0 is returned on success. Otherwise:
+ *
+ * - -EAGAIN is returned if the underlying time source is operating in
+ * one-shot mode and @a value is anterior to the current date.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the xnpod_start_timer() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
  */
 
 int xntimer_start (xntimer_t *timer,

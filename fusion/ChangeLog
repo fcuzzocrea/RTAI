@@ -1,3 +1,7 @@
+2004-10-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c5.
+
 2004-10-16  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-*/system.h (__xnlock_get_irqsave): Get

@@ -140,8 +140,15 @@ void __pipe_pkg_cleanup (void)
  *
  * - -EBUSY is returned if @a minor is already open.
  *
- * Context: This routine can be called on behalf of a task or from the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int rt_pipe_open (RT_PIPE *pipe,
@@ -187,8 +194,15 @@ int rt_pipe_open (RT_PIPE *pipe,
  *
  * - -ENODEV or -EBADF can be returned if @a pipe is scrambled.
  *
- * Context: This routine can be called on behalf of a task or from the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_pipe_close (RT_PIPE *pipe)
@@ -278,14 +292,19 @@ int rt_pipe_close (RT_PIPE *pipe)
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before any data was available.
  *
- * Side-effect: This routine calls the rescheduling procedure if no
- * data is available on entry and @a timeout is different from
- * RT_TIME_NONBLOCK.
-
- * Context: This routine can be called on behalf of a task.  It can
- * also be called on behalf of an interrupt context or from the
- * initialization code provided @a timeout is equal to
- * RT_TIME_NONBLOCK.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ *   only if @timeout is equal to RT_TIME_NONBLOCK.
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -349,6 +368,12 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  * only). Zero is a valid value, in which case the service returns
  * immediately without sending any message.
  *
+ * Additionally, rt_pipe_write() causes any data buffered by
+ * rt_pipe_stream() to be flushed prior to sending the message. For
+ * this reason, rt_pipe_write() can return a non-zero byte count to
+ * the caller if some pending data has been flushed, even if @a size
+ * was zero on entry.
+ *
  * @param flags A set of flags affecting the operation:
  *
  * - P_URGENT causes the message to be prepended to the output
@@ -370,14 +395,16 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  *
  * - -ENODEV or -EBADF are returned if @a pipe is scrambled.
  *
- * Side-effect: rt_pipe_write() causes any data buffered by
- * rt_pipe_stream() to be flushed prior to sending the message. For
- * this reason, rt_pipe_write() can return a non-zero byte count to
- * the caller if some pending data has been flushed, even if @a size
- * was zero on entry.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 ssize_t rt_pipe_write (RT_PIPE *pipe,
@@ -458,8 +485,16 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  * at configuration time by nullifying the size of the pipe buffer
  * (see CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ).
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 ssize_t rt_pipe_stream (RT_PIPE *pipe,
@@ -566,8 +601,16 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
  *
  * - -ENODEV or -EBADF are returned if @a pipe is scrambled.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 ssize_t rt_pipe_flush (RT_PIPE *pipe)
@@ -615,8 +658,16 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
  * @return The address of the allocated message buffer upon success,
  * or NULL if the allocation fails.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 RT_PIPE_MSG *rt_pipe_alloc (size_t size)
@@ -647,8 +698,16 @@ RT_PIPE_MSG *rt_pipe_alloc (size_t size)
  * valid message buffer previously allocated by the rt_pipe_alloc()
  * service.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int rt_pipe_free (RT_PIPE_MSG *msg) {

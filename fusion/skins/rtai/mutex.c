@@ -60,7 +60,7 @@ void __mutex_pkg_cleanup (void)
                            const char *name)
  * @brief Create a mutex.
  *
- * Create a mutual exclusion object that allows multiple threads to
+ * Create a mutual exclusion object that allows multiple tasks to
  * synchronize access to a shared resource. A mutex is left in an
  * unlocked state after creation.
  *
@@ -79,8 +79,15 @@ void __mutex_pkg_cleanup (void)
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
- * Context: This routine can be called on behalf of a task or from the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_mutex_create (RT_MUTEX *mutex,
@@ -131,11 +138,15 @@ int rt_mutex_create (RT_MUTEX *mutex,
  *
  * - -EIDRM is returned if @a sem is a deleted mutex descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if tasks
- * have been woken up as a result of the deletion.
+ * Environments:
  *
- * Context: This routine can always be called on behalf of a task, or
- * from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_mutex_delete (RT_MUTEX *mutex)
@@ -205,12 +216,17 @@ int rt_mutex_delete (RT_MUTEX *mutex)
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the mutex has become available.
  *
- * Side-effect: This routine calls the rescheduling procedure unless
- * the mutex is immediately available. If the caller is blocked, the
- * current owner priority might be temporarily raised as a consequence
- * of the priority inheritance protocol.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a task.
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied.
+ * If the caller is blocked, the current owner's priority might be
+ * temporarily raised as a consequence of the priority inheritance
+ * protocol.
  */
 
 int rt_mutex_lock (RT_MUTEX *mutex)
@@ -281,11 +297,15 @@ int rt_mutex_lock (RT_MUTEX *mutex)
  *
  * - -EACCES is returned if @a mutex is not owned by the current task.
  *
- * Side-effect: This routine calls the rescheduling procedure if a
- * task is woken up as a result of the operation.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task or from the
- * initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_mutex_unlock (RT_MUTEX *mutex)
@@ -345,8 +365,16 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
  *
  * - -EIDRM is returned if @a sem is a deleted mutex descriptor.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int rt_mutex_inquire (RT_MUTEX *mutex,

@@ -1,3 +1,15 @@
+2004-11-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/registry.c (rt_registry_remove): Make sure we
+	properly process XNBREAK.
+
+	* skins/rtai/syscall.c: Make all deletion calls switch to primary
+	mode before operating since rt_registry_remove() could wait.
+
+	* skins/rtai: Provide exhaustive calling environment information.
+	
+	* skins/rtai/task.c: Add rt_task_remove_hook().
+
 2004-11-01  Philippe Gerum  <rpm@xenomai.org>
 
 	* configure.in, scripts/rtai-config.in: Fix CONFIG_RTAI_LINUXDIR

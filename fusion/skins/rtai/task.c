@@ -129,8 +129,15 @@ void __task_pkg_cleanup (void)
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
- * Context: This routine can be called on behalf of a task or from the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_task_create (RT_TASK *task,
@@ -214,10 +221,15 @@ int rt_task_create (RT_TASK *task,
  *
  * - -EBUSY is returned if @a task is already started.
  *
- * Side-effect: This routine calls the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task context or
- * from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_task_start (RT_TASK *task,
@@ -280,12 +292,18 @@ int rt_task_start (RT_TASK *task,
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * current task suspends itself.
+ * Environments:
  *
- * Context: This routine can always be called on behalf of a task. It
- * can also be called on behalf of an interrupt context or from the
- * initialization code provided @a task is non-NULL.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ *   only if @task is non-NULL.
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always if @ task is NULL.
  */
 
 int rt_task_suspend (RT_TASK *task)
@@ -343,12 +361,17 @@ int rt_task_suspend (RT_TASK *task)
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * suspension nesting level falls down to zero as a result of the
- * current invocation.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context, or from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible if the suspension nesting level falls down
+ * to zero as a result of the current invocation.
  */
 
 int rt_task_resume (RT_TASK *task)
@@ -403,12 +426,17 @@ int rt_task_resume (RT_TASK *task)
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * current task self-deletes.
+ * Environments:
  *
- * Context: This routine can always be called on behalf of a task. It
- * can also be called on behalf of the initialization code provided @a
- * task is non-NULL.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ *   only if @task is non-NULL.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: always if @ task is NULL.
  */
 
 int rt_task_delete (RT_TASK *task)
@@ -454,9 +482,15 @@ int rt_task_delete (RT_TASK *task)
  * Move the current task to the end of its priority group, so that the
  * next equal-priority task in ready state is switched in.
  *
- * Side-effect: This routine calls the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task.
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: always if a next equal-priority task is ready to run,
+ * otherwise, this service leads to a no-op.
  */
 
 int rt_task_yield (void)
@@ -501,13 +535,18 @@ int rt_task_yield (void)
  * - -EWOULDBLOCK is returned if the system timer has not been started
  * using rt_timer_start().
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * operation affects the current task and @a idate has not elapsed
- * yet.
+ * Environments:
  *
- * Context: This routine can always be called on behalf of a task. It
- * can also be called on behalf of the initialization code provided
- * @a task is non-NULL.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ *   only if @task is non-NULL.
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always if the operation affects the current task and
+ * @a idate has not elapsed yet.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -572,11 +611,16 @@ int rt_task_set_periodic (RT_TASK *task,
  * - -ETIMEDOUT is returned if a timer overrun occurred, which indicates
  * that a previous release point has been missed by the calling task.
  *
- * Side-effect: This routine calls the rescheduling procedure unless
- * an overrun has been detected.  In the latter case, the current task
- * immediately returns from this service without being delayed.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task.
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless an overrun has been detected.  In the
+ * latter case, the current task immediately returns from this service
+ * without being delayed.
  */
 
 int rt_task_wait_period (void)
@@ -614,9 +658,18 @@ int rt_task_wait_period (void)
  * to the end of its priority group, thus causing a manual
  * round-robin.
  *
- * Context: This routine can always be called on behalf of a task. It
- * can also be called on behalf of an interrupt context or from the
- * initialization code provided @a task is non-NULL.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ *   only if @task is non-NULL.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible if @task is the current one.
  */
 
 int rt_task_set_priority (RT_TASK *task,
@@ -677,10 +730,14 @@ int rt_task_set_priority (RT_TASK *task,
  *
  * - -EWOULDBLOCK is returned if the system timer is inactive.
  *
- * Side-effect: This routine calls the rescheduling procedure unless a
- * null delay is given.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task.
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless a null delay is given.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -730,10 +787,14 @@ int rt_task_sleep (RTIME delay)
  *
  * - -EWOULDBLOCK is returned if the system timer is inactive.
  *
- * Side-effect: This routine calls the rescheduling procedure unless
- * an already elapsed date is given.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task.
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless a date in the past is given.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -797,10 +858,16 @@ int rt_task_sleep_until (RTIME date)
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
- * Side-effects: This service calls the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_task_unblock (RT_TASK *task)
@@ -849,11 +916,19 @@ int rt_task_unblock (RT_TASK *task)
  * task is NULL but not called from a task context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
- * .
  *
- * Context: This routine can always be called on behalf of a task. It
- * can also be called on behalf of an interrupt context or from the
- * initialization code provided @a task is non-NULL.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * only if @a task is non-NULL.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
@@ -935,13 +1010,58 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
  *         - -ENOMEM is returned if not enough memory is available
  *         from the system heap to add the new hook.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ *
+ * Rescheduling: never.
  */
 
 int rt_task_add_hook (int type, void (*routine)(void *cookie)) {
 
     return xnpod_add_hook(type,(void (*)(xnthread_t *))routine);
+}
+
+/**
+ * @fn int rt_task_remove_hook(int type, void (*routine)(void *cookie));
+ * @brief Remove a task hook.
+ *
+ * This service allows to remove a task hook previously registered
+ * using rt_task_add_hook().
+ *
+ * @param type Defines the kind of hook to uninstall. Possible values
+ * are:
+ *
+ *        - RT_HOOK_TSTART
+ *        - RT_HOOK_TDELETE
+ *        - RT_HOOK_TSWITCH
+ *
+ * @param routine The address of the user-supplied routine to remove
+ * from the hook list.
+ *
+ * @return 0 is returned upon success. Otherwise, one of the following
+ * error codes indicates the cause of the failure:
+ *
+ *         - -EINVAL is returned if @a type is incorrect.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ *
+ * Rescheduling: never.
+ */
+
+int rt_task_remove_hook (int type, void (*routine)(void *cookie)) {
+
+    return xnpod_remove_hook(type,(void (*)(xnthread_t *))routine);
 }
 
 /*@}*/
@@ -960,3 +1080,4 @@ EXPORT_SYMBOL(rt_task_sleep_until);
 EXPORT_SYMBOL(rt_task_unblock);
 EXPORT_SYMBOL(rt_task_inquire);
 EXPORT_SYMBOL(rt_task_add_hook);
+EXPORT_SYMBOL(rt_task_remove_hook);

@@ -232,11 +232,15 @@ static RT_OBJECT *__registry_hash_find (const char *key)
  *
  * - -EEXIST is returned if the @a key is already in use.
  *
- * Side-effect: This routine calls the rescheduling procedure if some
- * task is currently waiting for a registration to occur.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task or from the
- * initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_registry_enter (const char *key,
@@ -296,8 +300,8 @@ int rt_registry_enter (const char *key,
 
 /**
  * @fn int rt_registry_bind(const char *key,
-		              RTIME timeout,
-			       rt_handle_t *phandle)
+                            RTIME timeout,
+			    rt_handle_t *phandle)
  * @brief Bind to a real-time object.
  *
  * This service retrieves the registry handle of a given object
@@ -334,11 +338,19 @@ int rt_registry_enter (const char *key,
  * - -ETIMEDOUT is returned if the object cannot be retrieved within
  * the specified amount of time.
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * searched object is not registered on entry and @a timeout is
- * different from RT_TIME_NONBLOCK.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ *   only if @timeout is equal to RT_TIME_NONBLOCK.
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -436,11 +448,19 @@ int rt_registry_bind (const char *key,
  * - -ENOENT is returned if @a handle does not reference a registered
  * object.
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * object to remove is currently locked.
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * calling task waiting for the object to be unlocked.
  *
- * Context: This routine can be called on behalf of a task or the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible if the object to remove is currently locked
+ * and the calling context can be suspended.
  */
 
 int rt_registry_remove (rt_handle_t handle)
@@ -479,12 +499,17 @@ int rt_registry_remove (rt_handle_t handle)
 
     cstamp = object->cstamp;
 
-    /* This wait state _must_ be unbreakable unless the count actually
-       fell down to zero, hence the loop. */
-
     if (xnpod_pendable_p())
 	while (object->safelock > 0)
+	    {
 	    xnsynch_sleep_on(&object->safesynch,XN_INFINITE);
+
+	    if (xnthread_test_flags(&rtai_current_task()->thread_base,XNBREAK))
+		{
+		err = -EINTR;
+		goto unlock_and_exit;
+		}
+	    }
 
     if (object->cstamp == cstamp)
 	{
@@ -521,10 +546,18 @@ int rt_registry_remove (rt_handle_t handle)
  * on success. Otherwise, NULL is returned if @a handle does not
  * reference a registered object.
  *
- * Context: This routine can be called on behalf of a task. It can
- * also be called on behalf of an interrupt context, or from the
- * initialization code, provided @a handle is different from
- * RT_REGISTRY_SELF.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * only if @a handle is different from RT_REGISTRY_SELF.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void *rt_registry_get (rt_handle_t handle)
@@ -581,14 +614,19 @@ void *rt_registry_get (rt_handle_t handle)
  * is also returned if @a handle does not reference a registered
  * object.
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * lock count falls down to zero and some task is currently waiting
- * for the object to be unlocked.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task. It can
- * also be called on behalf of an interrupt context, or from the
- * initialization code, provided @a handle is different from
- * RT_REGISTRY_SELF.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * only if @a handle is different from RT_REGISTRY_SELF.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible if the lock count falls down to zero and
+ * some task is currently waiting for the object to be unlocked.
  */
 
 u_long rt_registry_put (rt_handle_t handle)
@@ -645,10 +683,18 @@ u_long rt_registry_put (rt_handle_t handle)
  * on success. Otherwise, NULL is returned if @a handle does not
  * reference a registered object.
  *
- * Context: This routine can be called on behalf of a task. It can
- * also be called on behalf of an interrupt context, or from the
- * initialization code, provided @a handle is different from
- * RT_REGISTRY_SELF.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * only if @a handle is different from RT_REGISTRY_SELF.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void *rt_registry_fetch (rt_handle_t handle)

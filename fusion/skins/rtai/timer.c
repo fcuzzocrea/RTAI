@@ -45,8 +45,16 @@
  * (see note). If the system timer is inactive or operating in oneshot
  * mode, this routine returns @a ns unmodified.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -78,8 +86,16 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
  *
  * @return The corresponding value expressed in nanoseconds.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -124,9 +140,16 @@ SRTIME rt_timer_ticks2ns (SRTIME ticks)
  * representing the period of the timer, i.e. the duration of a
  * periodic tick or "jiffy".
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
  *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int rt_timer_inquire (RT_TIMER_INFO *info)
@@ -155,9 +178,16 @@ int rt_timer_inquire (RT_TIMER_INFO *info)
  *
  * @return The current time expressed in clock ticks (see note).
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
  *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
@@ -178,8 +208,16 @@ RTIME rt_timer_read (void) {
  *
  * @return The current value of the TSC.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 RTIME rt_timer_tsc (void) {
@@ -201,8 +239,16 @@ RTIME rt_timer_tsc (void) {
  *
  * @param ns The time to wait expressed in nanoseconds.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void rt_timer_spin (RTIME ns)
@@ -258,8 +304,15 @@ void rt_timer_spin (RTIME ns)
  * - -ENOSYS is returned if the underlying architecture does not
  * support the requested oneshot timing.
  *
- * Context: This routine can be called on behalf of a task or the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int rt_timer_start (RTIME nstick) {
@@ -275,8 +328,15 @@ int rt_timer_start (RTIME nstick) {
  * rt_timer_start(). Calling rt_timer_stop() whilst the system timer
  * has not been started leads to a null-effect.
  *
- * Context: This routine can be called on behalf of a task or the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void rt_timer_stop (void) {

@@ -23,9 +23,18 @@
 
 /*!
  * \ingroup native
- * \defgroup queue Queue services.
+ * \defgroup queue Message queue services.
  *
  * Queue services.
+ *
+ * Message queueing is a method by which real-time tasks can exchange
+ * or pass data through a RTAI-managed queue of messages. Messages can
+ * vary in length and be assigned different types or usages. A message
+ * queue can be created by one task and used by multiple tasks that
+ * read and/or write messages to the queue.
+ *
+ * This implementation is based on a zero-copy scheme for message
+ * buffers.
  *
  *@{*/
 
@@ -52,6 +61,79 @@ static void __queue_flush_private (xnheap_t *heap,
 {
     xnarch_sysfree(poolmem,poolsize);
 }
+
+/**
+ * @fn int rt_queue_create(RT_QUEUE *q,
+                           const char *name,
+			   size_t poolsize,
+			   size_t qlimit,
+			   int mode)
+ * @brief Create a message queue.
+ *
+ * Create a message queue object that allows multiple tasks to
+ * exchange data through the use of variable-sized messages. A message
+ * queue is created empty.
+ *
+ * @param q The address of a queue descriptor RTAI will use to store
+ * the queue-related data.  This descriptor must always be valid while
+ * the message queue is active therefore it must be allocated in
+ * permanent memory.
+ *
+ * @param name An ASCII string standing for the symbolic name of the
+ * queue. When non-NULL and non-empty, this string is copied to a safe
+ * place into the descriptor, and passed to the registry package if
+ * enabled for indexing the created queue.
+ *
+ * @param poolsize The size (in bytes) of the message buffer pool
+ * which is going to be pre-allocated to the queue. Message buffers
+ * will be claimed and released to this pool.  The buffer pool memory
+ * is not extensible, so this value must be compatible with the
+ * highest message pressure that could be expected.
+ *
+ * @param qlimit This parameter allows to limit the maximum number of
+ * messages which can be queued at any point in time. Sending to a
+ * full queue begets an error. The special value Q_UNLIMITED can be
+ * passed to specify an unlimited amount.
+ *
+ * @param mode The queue creation mode. The following flags can be
+ * OR'ed into this bitmask, each of them affecting the new queue:
+ *
+ * - Q_FIFO makes tasks pend in FIFO order on the queue for consuming
+ * messages.
+ *
+ * - Q_PRIO makes tasks pend in priority order on the queue.
+ *
+ * - Q_SHARED causes the queue to be sharable between kernel and
+ * user-space tasks. Otherwise, the new queue is only available to
+ * kernel-based usage.
+ *
+ * - Q_DMA causes the buffer pool associated to the queue to be
+ * allocated in physically contiguous memory, suitable for DMA
+ * operations with I/O devices. A 128Kb limit exists for @a poolsize
+ * when this flag is passed.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EEXIST is returned if the @a name is already in use by some
+ * registered object.
+ *
+ * - -EINVAL is returned if @a poolsize is null.
+ *
+ * - -ENOMEM is returned if not enough system memory is available to
+ * create the queue. Additionally, and if Q_SHARED has been passed in
+ * @a mode, errors while mapping the buffer pool in the caller's
+ * address space might beget this return code too.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
 
 int rt_queue_create (RT_QUEUE *q,
 		     const char *name,

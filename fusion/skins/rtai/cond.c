@@ -79,8 +79,15 @@ void __cond_pkg_cleanup (void)
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
- * Context: This routine can be called on behalf of a task or from the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_cond_create (RT_COND *cond,
@@ -132,11 +139,15 @@ int rt_cond_create (RT_COND *cond,
  * - -EIDRM is returned if @a cond is a deleted condition variable
  * descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if tasks
- * have been woken up as a result of the deletion.
+ * Environments:
  *
- * Context: This routine can always be called on behalf of a task, or
- * from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_cond_delete (RT_COND *cond)
@@ -196,11 +207,16 @@ int rt_cond_delete (RT_COND *cond)
  * - -EIDRM is returned if @a cond is a deleted condition variable
  * descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if a
- * task is woken up as a result of the operation.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_cond_signal (RT_COND *cond)
@@ -250,11 +266,16 @@ int rt_cond_signal (RT_COND *cond)
  * - -EIDRM is returned if @a cond is a deleted condition variable
  * descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if one
- * or more tasks are woken up as a result of the operation.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_cond_broadcast (RT_COND *cond)
@@ -321,9 +342,15 @@ int rt_cond_broadcast (RT_COND *cond)
  *
  * - -EWOULDBLOCK is returned if @a timeout equals RT_TIME_NONBLOCK.
  *
- * Side-effect: This routine always calls the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a task.
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -399,8 +426,16 @@ int rt_cond_wait (RT_COND *cond,
  * - -EIDRM is returned if @a cond is a deleted condition variable
  * descriptor.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int rt_cond_inquire (RT_COND *cond,

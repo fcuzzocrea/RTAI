@@ -87,8 +87,15 @@ void __event_pkg_cleanup (void)
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
- * Context: This routine can be called on behalf of a task or from the
- * initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_event_create (RT_EVENT *event,
@@ -140,11 +147,15 @@ int rt_event_create (RT_EVENT *event,
  *
  * - -EIDRM is returned if @a event is a deleted event group descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if tasks
- * have been woken up as a result of the deletion.
+ * Environments:
  *
- * Context: This routine can always be called on behalf of a task, or
- * from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_event_delete (RT_EVENT *event)
@@ -206,11 +217,16 @@ int rt_event_delete (RT_EVENT *event)
  *
  * - -EIDRM is returned if @a event is a deleted event group descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if
- * a task is woken up as a result of the operation.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int rt_event_post (RT_EVENT *event,
@@ -324,14 +340,19 @@ int rt_event_post (RT_EVENT *event,
  * - -ETIMEDOUT is returned if the request has not been satisfied
  * within the specified amount of time.
  *
- * Side-effect: This routine calls the rescheduling procedure unless
- * the request is immediately satisfied or @a timeout specifies a
- * non-blocking operation.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a task.  It can
- * also be called on behalf of an interrupt context or from the
- * initialization code provided @a timeout is equal to
- * RT_TIME_NONBLOCK.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ *   only if @timeout is equal to RT_TIME_NONBLOCK.
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
@@ -434,8 +455,16 @@ int rt_event_pend (RT_EVENT *event,
  * - -EIDRM is returned if @a event is a deleted event group
  * descriptor.
  *
- * Context: This routine can be called on behalf of a task, interrupt
- * context or from the initialization code.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int rt_event_inquire (RT_EVENT *event,

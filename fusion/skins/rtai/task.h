@@ -154,6 +154,9 @@ void __task_pkg_cleanup(void);
 int rt_task_add_hook(int type,
 		     void (*routine)(void *cookie));
 
+int rt_task_remove_hook(int type,
+			void (*routine)(void *cookie));
+
 #ifdef __cplusplus
 }
 #endif

@@ -441,8 +441,8 @@ int rt_intr_inquire (RT_INTR *intr,
  * @param irq The hardware interrupt channel associated with the
  * interrupt object. This value is architecture-dependent.
  *
- * @param The interrupt object creation mode. The following flag can
- * be OR'ed into this bitmask:
+ * @param mode The interrupt object creation mode. The following flag
+ * can be OR'ed into this bitmask:
  *
  * - I_AUTOENA asks RTAI to re-enable the IRQ line before awakening
  * the interrupt server task. This flag is functionally equivalent as

@@ -1,5 +1,7 @@
 2004-10-02  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c2.
+
 	* include/nucleus/asm-*/system.h (xnarch_init): 
 	* arch/*/hal/hal.c (__rthal_init): Force CPU affinity so that the
 	HAL and the nucleus always keep their execution sequence on SMP

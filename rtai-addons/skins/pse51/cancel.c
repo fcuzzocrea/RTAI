@@ -183,7 +183,7 @@ void pthread_testcancel(void)
 
     xnmutex_lock(&__imutex);
     thread_cancellation_point(pse51_current_thread(), &__imutex);
-    xnmutex_lock(&__imutex);
+    xnmutex_unlock(&__imutex);
 }
 
 

@@ -87,15 +87,17 @@ static struct proc_dir_entry *iface_proc_root;
 static inline xnticks_t __get_thread_timeout (xnthread_t *thread, xnticks_t now)
 
 {
-    xnticks_t diff;
+    xnticks_t timeout;
 
     if (!testbits(thread->status,XNDELAY))
 	return 0LL;
 
-    diff = (xntimer_get_date(&thread->rtimer) ? : xntimer_get_date(&thread->ptimer));
-    diff -= now;
+    timeout = (xntimer_get_date(&thread->rtimer) ? : xntimer_get_date(&thread->ptimer));
 
-    return (diff <= 0) ? 1 : diff;
+    if (timeout <= now)
+	return 1;
+
+    return timeout - now;
 }
 
 static int sched_read_proc (char *page,

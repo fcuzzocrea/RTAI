@@ -1,5 +1,7 @@
 2005-03-29  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/module.c (__get_thread_timeout): Fix signedness issue.
+
  	* RELEASE: fusion-0.7
 
 2005-03-28  Philippe Gerum  <rpm@xenomai.org>

@@ -26,7 +26,7 @@ function  RTAICodeGen_()
     enablemenus()
     if ok then 
       scs_m.objs(k)=XX
-      edited=%f;
+//      edited=%f;
       needcompile=4
       Cmenu='Replot';
     else
@@ -1312,7 +1312,8 @@ function Makename=gen_make(name,files,libs,Makename)
      ascii(9)+"cp $< ."
      ""
      name+": $(OBJSSTAN) $(ULIBRARY)"
-      ascii(9)+"gcc -static -o $@  $(OBJSSTAN) $(SCILIBS) $(ULIBRARY) -lpthread -lm"];
+      ascii(9)+"gcc -static -o $@  $(OBJSSTAN) $(SCILIBS) $(ULIBRARY) -lpthread -lm"
+      ascii(9)+"@echo ""### Created executable: $(MODEL) ###"""];
   mputl(T,Makename)
 endfunction
 

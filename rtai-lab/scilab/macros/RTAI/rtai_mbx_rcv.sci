@@ -122,7 +122,7 @@ if tt==[] then
   textmp($+1)='   '+funam+"_bloc_init(block,flag);"
   textmp($+1)='   break;'; 
     l1 = '  inp_mbx_receive_init(' + string(port) + ',' + string(nout) + ',';
-    l2 = '""' + name + '"",""' + ipaddr + '"",0,0,0,0,0';
+    l2 = '""' + name + '"",""' + ipaddr + '""';
     ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
 	   '{';
 	   '#ifdef MODEL'

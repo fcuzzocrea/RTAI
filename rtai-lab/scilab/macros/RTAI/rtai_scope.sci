@@ -121,7 +121,7 @@ if tt==[] then
   textmp($+1)='   '+funam+"_bloc_init(block,flag);"
   textmp($+1)='   break;'; 
     l1 = '  out_rtai_scope_init(' + string(port) + ',' + string(nin) + ',';
-    l2 = '""' + name + '"","""",0,0,0,0,0';
+    l2 = '""' + name + '""';
     ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
 	   '{';
 	   '#ifdef MODEL'
@@ -130,7 +130,7 @@ if tt==[] then
 	   '  return 0;';
            '}'];
   textmp($+1)=' '
-
+ 
   textmp($+1)='  case 2:'
   textmp($+1)='   set_block_error('+funam+"_bloc_outputs(block,flag));"
   textmp($+1)='   break;'; 

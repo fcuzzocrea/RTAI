@@ -121,7 +121,7 @@ if tt==[] then
   textmp($+1)='   '+funam+"_bloc_init(block,flag);"
   textmp($+1)='   break;'; 
     l1 = '  out_rtai_led_init(' + string(port) + ',' + string(nin) + ',';
-    l2 = '""' + name + '"","""",0,0,0,0,0';
+    l2 = '""' + name + '""';
     ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
 	   '{';
 	   '#ifdef MODEL'

@@ -117,7 +117,7 @@ if tt==[] then
   	 textmp($+1)='   '+funam+"_bloc_init(block,flag);"
   	 textmp($+1)='   break;';
     	 l1 = '  inp_rtai_comedi_data_init(' + string(port) + ',' + string(ch) + ',';
-    	 l2 = '""' + name + '"","""",' + string(com_range) + ',' + string(aref) + ',0,0,0';
+    	 l2 = '""' + name + '"",' + string(com_range) + ',' + string(aref);
     	 ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
          '{';
          '#ifdef MODEL'

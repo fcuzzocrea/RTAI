@@ -119,8 +119,8 @@ if tt==[] then
   	 textmp($+1)='   '+funam+"_bloc_init(block,flag);"
   	 textmp($+1)='   break;';
     	 l1 = '  inp_cioquad4_init(' + string(port) + ','+ string(modul) +',';
-    	 l2 = '""' + cioquad4_addr + '"","""",' + string(res) + ',' + string(prec) + ',';
-	 l3 = string(rot) + ',' + string(rest) +',0';
+    	 l2 = '""' + cioquad4_addr + '"",' + string(res) + ',' + string(prec) + ',';
+	 l3 = string(rot) + ',' + string(rest);
     	 ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
          '{';
          '#ifdef MODEL'

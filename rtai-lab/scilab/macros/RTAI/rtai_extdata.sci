@@ -115,7 +115,7 @@ if tt==[] then
   	 textmp($+1)='   '+funam+"_bloc_init(block,flag);"
   	 textmp($+1)='   break;';
     	 l1 = '  inp_extdata_init(' + string(port) + ',' + string(npts) + ',';
-    	 l2 = '""' + filename + '"","""",0,0,0,0,0';
+    	 l2 = '""' + filename + '""';
     	 ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
          '{';
          '#ifdef MODEL'

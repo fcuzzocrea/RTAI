@@ -88,8 +88,6 @@ CONFIG_RTAI_FIFOS_FALSE = @CONFIG_RTAI_FIFOS_FALSE@
 CONFIG_RTAI_FIFOS_TRUE = @CONFIG_RTAI_FIFOS_TRUE@
 CONFIG_RTAI_LAB_FALSE = @CONFIG_RTAI_LAB_FALSE@
 CONFIG_RTAI_LAB_TRUE = @CONFIG_RTAI_LAB_TRUE@
-CONFIG_RTAI_LATEX_DOC_FALSE = @CONFIG_RTAI_LATEX_DOC_FALSE@
-CONFIG_RTAI_LATEX_DOC_TRUE = @CONFIG_RTAI_LATEX_DOC_TRUE@
 CONFIG_RTAI_LEDS_BUILTIN_FALSE = @CONFIG_RTAI_LEDS_BUILTIN_FALSE@
 CONFIG_RTAI_LEDS_BUILTIN_TRUE = @CONFIG_RTAI_LEDS_BUILTIN_TRUE@
 CONFIG_RTAI_LEDS_FALSE = @CONFIG_RTAI_LEDS_FALSE@
@@ -319,15 +317,10 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-bin_PROGRAMS = genconf_io genconfig xgenconfig
+bin_PROGRAMS = genconf_io xgenconfig
 
 genconf_io_SOURCES = \
 	genconf_io.c
-
-
-genconfig_SOURCES = \
-	genconfig.c \
-	config_data.h
 
 
 xgenconfig_SOURCES = \
@@ -360,8 +353,7 @@ mkinstalldirs = $(SHELL) \
 	$(top_srcdir)/rtai-core/config/autoconf/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/rtai_config.h
 CONFIG_CLEAN_FILES =
-bin_PROGRAMS = genconf_io$(EXEEXT) genconfig$(EXEEXT) \
-	xgenconfig$(EXEEXT)
+bin_PROGRAMS = genconf_io$(EXEEXT) xgenconfig$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS)
 
 am_genconf_io_OBJECTS = genconf_io.$(OBJEXT)
@@ -369,11 +361,6 @@ genconf_io_OBJECTS = $(am_genconf_io_OBJECTS)
 genconf_io_LDADD = $(LDADD)
 genconf_io_DEPENDENCIES =
 genconf_io_LDFLAGS =
-am_genconfig_OBJECTS = genconfig.$(OBJEXT)
-genconfig_OBJECTS = $(am_genconfig_OBJECTS)
-genconfig_LDADD = $(LDADD)
-genconfig_DEPENDENCIES =
-genconfig_LDFLAGS =
 am_xgenconfig_OBJECTS = xgenconfig-xgenconfig.$(OBJEXT) \
 	xgenconfig-Fl_inputIO.$(OBJEXT) \
 	xgenconfig-Fl_outputIO.$(OBJEXT)
@@ -385,7 +372,6 @@ DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/rtai-core/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/genconf_io.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/genconfig.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/xgenconfig-Fl_inputIO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/xgenconfig-Fl_outputIO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/xgenconfig-xgenconfig.Po
@@ -404,10 +390,9 @@ LTCXXCOMPILE = $(LIBTOOL) --mode=compile $(CXX) $(DEFS) \
 CXXLD = $(CXX)
 CXXLINK = $(LIBTOOL) --mode=link $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(genconf_io_SOURCES) $(genconfig_SOURCES) \
-	$(xgenconfig_SOURCES)
+DIST_SOURCES = $(genconf_io_SOURCES) $(xgenconfig_SOURCES)
 DIST_COMMON = $(srcdir)/GNUmakefile.in GNUmakefile.am
-SOURCES = $(genconf_io_SOURCES) $(genconfig_SOURCES) $(xgenconfig_SOURCES)
+SOURCES = $(genconf_io_SOURCES) $(xgenconfig_SOURCES)
 
 all: all-am
 
@@ -450,9 +435,6 @@ clean-binPROGRAMS:
 genconf_io$(EXEEXT): $(genconf_io_OBJECTS) $(genconf_io_DEPENDENCIES) 
 	@rm -f genconf_io$(EXEEXT)
 	$(LINK) $(genconf_io_LDFLAGS) $(genconf_io_OBJECTS) $(genconf_io_LDADD) $(LIBS)
-genconfig$(EXEEXT): $(genconfig_OBJECTS) $(genconfig_DEPENDENCIES) 
-	@rm -f genconfig$(EXEEXT)
-	$(LINK) $(genconfig_LDFLAGS) $(genconfig_OBJECTS) $(genconfig_LDADD) $(LIBS)
 xgenconfig$(EXEEXT): $(xgenconfig_OBJECTS) $(xgenconfig_DEPENDENCIES) 
 	@rm -f xgenconfig$(EXEEXT)
 	$(CXXLINK) $(xgenconfig_LDFLAGS) $(xgenconfig_OBJECTS) $(xgenconfig_LDADD) $(LIBS)
@@ -464,7 +446,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genconf_io.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/genconfig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xgenconfig-Fl_inputIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xgenconfig-Fl_outputIO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xgenconfig-xgenconfig.Po@am__quote@
@@ -746,7 +727,7 @@ install-am: all-am
 installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
-	  INSTALL_STRIP_FLAG=-s \
+	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:

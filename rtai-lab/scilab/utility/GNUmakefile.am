@@ -1,4 +1,4 @@
-bin_PROGRAMS = genconf_io genconfig xgenconfig
+bin_PROGRAMS = genconf_io xgenconfig
 
 genconf_io_SOURCES = \
 	genconf_io.c

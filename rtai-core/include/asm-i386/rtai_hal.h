@@ -561,6 +561,8 @@ static inline int rt_switch_to_linux(int cpuid)
 	return 1;
 }
 
+#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
+
 static inline void rt_set_timer_delay (int delay) {
 
     if (delay) {
@@ -631,6 +633,17 @@ void rt_unmask_irq(unsigned irq);
 
 void rt_ack_irq(unsigned irq);
 /*@}*/
+
+// this is machine dominance and must stay in our hands
+#define rtai_do_x86int(irq, handler) \
+do { \
+        __asm__ __volatile__ ( "pushfl; push %%cs; call *%1": : "a" (irq), "m" (handler)); \
+} while (0)
+
+struct desc_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler);
+
+void rtai_reset_gate_vect(unsigned vector, struct desc_struct e);
+// end of machine dominance
 
 void rt_do_irq(unsigned irq);
 

@@ -267,12 +267,6 @@ static void xnshadow_renice_handler (unsigned virq)
 	}
 }
 
-static void xnshadow_resched_handler (unsigned virq)
-
-{
-   xnpod_schedule();
-}
-
 static void xnshadow_wakeup_handler (unsigned virq)
 
 {

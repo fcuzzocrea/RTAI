@@ -24,11 +24,6 @@
  */
 
 
-// the "_new" in some of the functions below is temporary, to avoid
-// clashing with the very same functions in malloc.c, it will disappear 
-// when shm.c will become the only real time memory management support
-// (using xnheap_alloc/free, in xenomai/heap.c).
-
 /**
  * @defgroup shm Unified RTAI real-time memory management.
  * 
@@ -234,7 +229,7 @@ static int rtai_shm_f_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	unsigned long name;
 	int size;
-	if(!vma->vm_ops) {
+	if (!vma->vm_ops) {
 		vma->vm_ops = &rtai_shm_vm_ops;
 		vma->vm_flags |= VM_LOCKED;
 		name = (unsigned long)(vma->vm_private_data = ((current->mm)->mmap)->vm_private_data);
@@ -252,74 +247,20 @@ static struct file_operations rtai_shm_fops = {
 static struct miscdevice rtai_shm_dev = 
 	{ RTAI_SHM_MISC_MINOR, "RTAI_SHM", &rtai_shm_fops };
 
-/*
- * core functions taken from RTAI malloc.c, restyled a bit
- */
-
-#define MINSIZE   16
-#define OVERHEAD  (sizeof(struct chkhdr) + sizeof(struct blkhdr))
-
-struct chkhdr {
-	void *chk_addr;
-	struct chkhdr *next_chk;
-	struct blkhdr *free_list;
-	int chk_limit;
-	char data[0];
-};
-
-struct blkhdr {
-	void *chk_addr;
-	struct chkhdr *just2algn;
-	struct blkhdr *next_free;
-	int free_size;
-	char data[0];
-};
-
-static inline void *alloc_heap_chunk(struct chkhdr *chk, int size)
-{
-	struct blkhdr *cur, *next, *prev = NULL;
-
-	for (cur = chk->free_list; cur; prev = cur, cur = cur->next_free) {
-		if(cur->free_size >= size) {
-			if ((cur->free_size - size) >= (sizeof(struct blkhdr) + MINSIZE)) {
-				next = (struct blkhdr *)(cur->data + size);
-				next->chk_addr  = chk->chk_addr;
-				next->next_free = cur->next_free;
-				next->free_size = cur->free_size - (size + sizeof(struct blkhdr));
-			} else {
-				next = cur->next_free;
-			}
-			if (!prev) {
-				chk->free_list  = next;
-			} else {
-				prev->next_free = next;
-			}
-			cur->next_free = cur;
-			cur->free_size = size;
-			return cur->data;
-		}
-	}
-	return NULL;
-}
-
 static inline void *_rt_halloc(int size, struct rt_heap_t *heap)
 {
 	void *mem_ptr = NULL;
 
-	if ((mem_ptr = rtheap_alloc((void *)heap->hkadr + heap->hsize, size, 0))) {
-		mem_ptr = heap->huadr + (mem_ptr - heap->hkadr);
+	if ((mem_ptr = rtheap_alloc(heap->heap, size, 0))) {
+		mem_ptr = heap->uadr + (mem_ptr - heap->kadr);
 	}
 	return mem_ptr;
 }
 
 static inline void _rt_hfree(void *addr, struct rt_heap_t *heap)
 {
-	rtheap_free(heap->hkadr + heap->hsize, heap->hkadr + (addr - heap->huadr));
+	rtheap_free(heap->heap, heap->kadr + (addr - heap->uadr));
 }
-
-/*
- * end of core functions taken from RTAI malloc.c
- */
 
 #define GLOBAL    0
 #define SPECIFIC  1
@@ -339,11 +280,6 @@ static inline void _rt_hfree(void *addr, struct rt_heap_t *heap)
  *
  */
 
-void *rt_malloc_new(int size)
-{
-	return _rt_halloc(size, &rt_smp_linux_task->heap[GLOBAL]);
-}
-
 /**
  * Free a chunk of the global real time heap.
  *
@@ -355,11 +291,6 @@ void *rt_malloc_new(int size)
  * @param addr is the addr of the memory to be freed.
  *
  */
-
-void rt_free_new(void *addr)
-{
-	_rt_hfree(addr, &rt_smp_linux_task->heap[GLOBAL]);
-}
 
 /**
  * Allocate a chunk of the global real time heap in kernel/user space. Since 
@@ -471,10 +402,10 @@ static inline void *rt_named_halloc_typed(unsigned long name, int size, int htyp
 
 	RTAI_TASK(return NULL);
 	if ((mem_ptr = rt_get_adr_cnt(name))) {
-		return task->heap[htype].huadr + (mem_ptr - task->heap[htype].hkadr);
+		return task->heap[htype].uadr + (mem_ptr - task->heap[htype].kadr);
 	}
 	if ((mem_ptr = _rt_halloc(size, &task->heap[htype]))) {
-		if (rt_register(name, task->heap[htype].hkadr + (mem_ptr - task->heap[htype].huadr), IS_HPCK, 0)) {
+		if (rt_register(name, task->heap[htype].kadr + (mem_ptr - task->heap[htype].uadr), IS_HPCK, 0)) {
                         return mem_ptr;
                 }
 		_rt_hfree(mem_ptr, &task->heap[htype]);
@@ -488,7 +419,7 @@ static inline void rt_named_hfree_typed(void *adr, int htype)
 	unsigned long name;
 
 	RTAI_TASK(return);
-	name = rt_get_name(task->heap[htype].hkadr + (adr - task->heap[htype].huadr));
+	name = rt_get_name(task->heap[htype].kadr + (adr - task->heap[htype].uadr));
 	if (!rt_drg_on_name_cnt(name)) {
 		_rt_hfree(adr, &task->heap[htype]);
 	}
@@ -596,47 +527,56 @@ void rt_named_hfree(void *adr)
 	rt_named_hfree_typed(adr, SPECIFIC);
 }
 
-static void *rt_malloc_new_usp(int size)
+extern rtheap_t  rtai_global_heap;
+extern void     *rtai_global_heap_adr;
+extern int       rtai_global_heap_size;
+
+static void *rt_malloc_usp(int size)
 {
-	return rt_halloc_typed(size, GLOBAL);
+	return rtai_global_heap_adr ? rt_halloc_typed(size, GLOBAL) : NULL;
 }
 
-static void rt_free_new_usp(void *adr)
+static void rt_free_usp(void *adr)
 {
-	rt_hfree_typed(adr, GLOBAL);
+	if (rtai_global_heap_adr) {
+		rt_hfree_typed(adr, GLOBAL);
+	}
 }
 
 static void *rt_named_malloc_usp(unsigned long name, int size)
 {
-	return rt_named_halloc_typed(name, size, GLOBAL);
+	return rtai_global_heap_adr ? rt_named_halloc_typed(name, size, GLOBAL) : NULL;
 }
 
 static void rt_named_free_usp(void *adr)
 {
-	rt_named_hfree_typed(adr, GLOBAL);
+	if (rtai_global_heap_adr) {
+		rt_named_hfree_typed(adr, GLOBAL);
+	}
 }
 
 static void rt_set_heap(unsigned long name, void *adr)
 {
-	int size, htype;
-	void *hptr;
+	void *heap, *hptr;
+	int size;
 	RT_TASK *task;
 
-	hptr = ALIGN2PAGE(rt_get_adr(name));
-	size = ((abs(rt_get_type(name)) - sizeof(rtheap_t) - 1) & PAGE_MASK);
+	hptr = ALIGN2PAGE(heap = rt_get_adr(name));
+	size = ((abs(rt_get_type(name)) - sizeof(rtheap_t) - (hptr - heap)) & PAGE_MASK);
+	heap = hptr + size;
 	if (!atomic_cmpxchg((int *)hptr, 0, name)) {
-		rtheap_init(hptr + size, hptr, size, PAGE_SIZE);
-		if (name == GLOBAL_HEAP_ID) {
-			rt_smp_linux_task->heap[GLOBAL].hkadr = (void *)hptr;
-			rt_smp_linux_task->heap[GLOBAL].huadr = adr;
-			rt_smp_linux_task->heap[GLOBAL].hsize = size;
-		}
+		rtheap_init(heap, hptr, size, PAGE_SIZE);
 	}
 	RTAI_TASK(return);
-	htype = name == GLOBAL_HEAP_ID ? GLOBAL : SPECIFIC;
-	task->heap[htype].hkadr = (void *)hptr;
-	task->heap[htype].huadr = adr;
-	task->heap[htype].hsize = size;
+	if (name == GLOBAL_HEAP_ID) {
+		task->heap[GLOBAL].heap = &rtai_global_heap;
+		task->heap[GLOBAL].kadr = rtai_global_heap_adr;
+		task->heap[GLOBAL].uadr = adr;
+	} else {
+		task->heap[SPECIFIC].heap = heap;
+		task->heap[SPECIFIC].kadr = hptr;
+		task->heap[SPECIFIC].uadr = adr;
+	}
 }
 
 /**
@@ -693,8 +633,8 @@ struct rt_native_fun_entry rt_shm_entries[] = {
         { { 0, rt_hfree },			HEAP_FREE },
         { { 0, rt_named_halloc },		HEAP_NAMED_ALLOC },
         { { 0, rt_named_hfree },		HEAP_NAMED_FREE },
-        { { 0, rt_malloc_new_usp },		MALLOC },
-        { { 0, rt_free_new_usp },		FREE },
+        { { 0, rt_malloc_usp },			MALLOC },
+        { { 0, rt_free_usp },			FREE },
         { { 0, rt_named_malloc_usp },		NAMED_MALLOC },
         { { 0, rt_named_free_usp },		NAMED_FREE },
         { { 0, 0 },				000 }
@@ -703,29 +643,21 @@ struct rt_native_fun_entry rt_shm_entries[] = {
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
-#define GLOBAL_HEAP_SIZE  PAGE_SIZE*31;  // just to have something at the moment
-static int GlobalHeapSize = GLOBAL_HEAP_SIZE;
-MODULE_PARM(GlobalHeapSize, "i");
-
-static void *global_heap;
-
 int __rtai_shm_init (void)
 {
 	if (misc_register(&rtai_shm_dev) < 0) {
 		printk("***** UNABLE TO REGISTER THE SHARED MEMORY DEVICE (miscdev minor: %d) *****\n", RTAI_SHM_MISC_MINOR);
 		return -EBUSY;
 	}
-	if (!(global_heap = rt_heap_open(GLOBAL_HEAP_ID, GlobalHeapSize, 
-#ifdef CONFIG_RTAI_MALLOC_VMALLOC
-USE_VMALLOC
-#else 
-USE_GFP_KERNEL
-#endif
-))) {
-		misc_deregister(&rtai_shm_dev);
-		printk("***** UNABLE TO CREATE THE GLOBAL REAL TIME HEAP (size: %d) *****\n", GlobalHeapSize);
-		return -ENOMEM;
+
+	if (!rtai_global_heap_adr) {
+		printk("***** WARNING: GLOBAL HEAP NEITHER SHARABLE NOR USABLE FROM USER SPACE (use the vmalloc option for RTAI malloc) *****\n");
 	}
+	rt_register(GLOBAL_HEAP_ID, rtai_global_heap_adr, rtai_global_heap_size, 0);
+	rt_smp_linux_task->heap[GLOBAL].heap = &rtai_global_heap;
+	rt_smp_linux_task->heap[GLOBAL].kadr =
+	rt_smp_linux_task->heap[GLOBAL].uadr = rtai_global_heap_adr;
+
 	return set_rt_fun_entries(rt_shm_entries);
 }
 
@@ -734,7 +666,7 @@ void __rtai_shm_exit (void)
         int slot;
         struct rt_registry_entry_struct entry;
 
-	rt_heap_close(GLOBAL_HEAP_ID, global_heap);
+	rt_drg_on_name_cnt(GLOBAL_HEAP_ID);
 	for (slot = 1; slot <= MAX_SLOTS; slot++) {
 		if (rt_get_registry_slot(slot, &entry) && entry.adr) {
 			if (abs(entry.type) >= PAGE_SIZE) {
@@ -760,8 +692,6 @@ module_exit(__rtai_shm_exit);
 #ifdef CONFIG_KBUILD
 EXPORT_SYMBOL(rt_shm_alloc);
 EXPORT_SYMBOL(rt_shm_free);
-EXPORT_SYMBOL(rt_malloc_new);
-EXPORT_SYMBOL(rt_free_new);
 EXPORT_SYMBOL(rt_named_malloc);
 EXPORT_SYMBOL(rt_named_free);
 EXPORT_SYMBOL(rt_halloc);

@@ -5,6 +5,9 @@
 
 2004-09-01  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/hal/hal.c: Use standard PIT_xx defines instead of
+	immediate port values.
+
  	* RELEASE: fusion-0.5
 
 2004-09-01  Philippe Gerum  <rpm@xenomai.org>

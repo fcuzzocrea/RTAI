@@ -43,6 +43,22 @@ MODULE_LICENSE("GPL");
 
 /* +++++++++++++++++++++++++++++ ASYNC SENDS ++++++++++++++++++++++++++++++++ */
 
+static inline int recover_task_prio(RT_TASK *task)
+{
+	if (task->owndres & RPCHLF) {
+		task->owndres -= RPCINC;
+	}
+	if (!task->owndres) {
+		return renq_current(task, task->base_priority);
+	} else if (!(task->owndres & SEMHLF)) {
+		int priority;
+		return renq_ready_task(task, task->base_priority > (priority = ((task->msg_queue.next)->task)->priority) ? priority : task->base_priority);
+	} else {
+		return 0;
+	}
+}
+
+
 /**
  * @ingroup msg
  * @anchor rt_send
@@ -99,6 +115,8 @@ RT_TASK *rt_send(RT_TASK *task, unsigned int msg)
 		rt_current->msg_queue.task = task;
 		enqueue_blocked(rt_current, &task->msg_queue, 0);
 		rt_current->state |= RT_SCHED_SEND;
+		task->owndres += RPCINC;
+		pass_prio(task, rt_current);
 		rem_ready_current(rt_current);
 		rt_schedule();
 	}
@@ -237,6 +255,8 @@ RT_TASK *rt_send_until(RT_TASK *task, unsigned int msg, RTIME time)
 			rt_current->msg = msg;
 			enqueue_blocked(rt_current, &task->msg_queue, 0);
 			rt_current->state |= (RT_SCHED_SEND | RT_SCHED_DELAYED);
+			task->owndres += RPCINC;
+			pass_prio(task, rt_current);
 			rem_ready_current(rt_current);
 			enq_timed_task(rt_current);
 			rt_schedule();
@@ -246,6 +266,7 @@ RT_TASK *rt_send_until(RT_TASK *task, unsigned int msg, RTIME time)
 	}
 	if (rt_current->msg_queue.task != rt_current) {
 		dequeue_blocked(rt_current);
+		recover_task_prio(task);
 		rt_current->msg_queue.task = rt_current;
 		task = (RT_TASK *)0;
 	}
@@ -549,6 +570,7 @@ RT_TASK *rt_rpc_until(RT_TASK *task, unsigned int to_do, unsigned int *result, R
 		*result = rt_current->msg;
 	} else {
 		dequeue_blocked(rt_current);
+		recover_task_prio(task);
 		rt_current->msg_queue.task = rt_current;
 		task = (RT_TASK *)0;
 	}
@@ -632,6 +654,22 @@ int rt_isrpc(RT_TASK *task)
 }
 
 
+static inline int recover_current_prio(RT_TASK *rt_current)
+{
+	if (rt_current->owndres & RPCHLF) {
+		rt_current->owndres -= RPCINC;
+	}
+	if (!rt_current->owndres) {
+		return renq_current(rt_current, rt_current->base_priority);
+	} else if (!(rt_current->owndres & SEMHLF)) {
+		int priority;
+		return renq_current(rt_current, rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority);
+	} else {
+		return 0;
+	}
+}
+
+
 /**
  * @ingroup rpc
  * @anchor rt_return
@@ -681,17 +719,7 @@ RT_TASK *rt_return(RT_TASK *task, unsigned int result)
 	if ((task->state & RT_SCHED_RETURN) && task->msg_queue.task == rt_current) {
 		int sched;
 		dequeue_blocked(task);
-		if (rt_current->owndres & RPCHLF) {
-			rt_current->owndres -= RPCINC;
-		}
-		if (!rt_current->owndres) {
-			sched = renq_current(rt_current, rt_current->base_priority);
-		} else if (!(rt_current->owndres & SEMHLF)) {
-			int priority;
-			sched = renq_current(rt_current, rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority);
-		} else {
-			sched = 0;
-		}
+		sched = recover_current_prio(rt_current);
 		task->msg = result;
 		task->msg_queue.task = task;
 		rem_timed_task(task);
@@ -814,10 +842,17 @@ RT_TASK *rt_receive(RT_TASK *task, unsigned int *msg)
 		*msg = task->msg;
 		rt_current->msg_queue.task = task;
 		if (task->state & RT_SCHED_SEND) {
+			int sched;
 			task->msg_queue.task = task;
+			dequeue_blocked(task);
+			sched = recover_current_prio(rt_current);
 			if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEND | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(task);
-				RT_SCHEDULE(task, cpuid);
+				if (sched) {
+					RT_SCHEDULE_BOTH(task, cpuid);
+				} else {
+					RT_SCHEDULE(task, cpuid);
+				}
 			}
 		} else if (task->state & RT_SCHED_RPC) {
                         enqueue_blocked(task, &rt_current->ret_queue, 0);
@@ -985,10 +1020,17 @@ RT_TASK *rt_receive_until(RT_TASK *task, unsigned int *msg, RTIME time)
 		*msg = task->msg;
 		rt_current->msg_queue.task = task;
 		if (task->state & RT_SCHED_SEND) {
+			int sched;
 			task->msg_queue.task = task;
+			dequeue_blocked(task);
+			sched = recover_current_prio(rt_current);
 			if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEND | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(task);
-				RT_SCHEDULE(task, cpuid);
+				if (sched) {
+					RT_SCHEDULE_BOTH(task, cpuid);
+				} else {
+					RT_SCHEDULE(task, cpuid);
+				}
 			}
 		} else if (task->state & RT_SCHED_RPC) {
 			enqueue_blocked(task, &rt_current->ret_queue, 0);

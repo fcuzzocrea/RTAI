@@ -1,6 +1,8 @@
 2004-10-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c: Rewrite the interrupt shield management.
+	(xnshadow_linux_taskexit): No more need to disable the interrupt
+	shield upon task exit.
 
 	* testsuite/latency/latency.c: Rearrange cleanup actions so that
 	we don't get caught in a tight sampling loop when the timer is

@@ -1552,8 +1552,6 @@ static void xnshadow_linux_taskexit (adevinfo_t *evinfo)
 	       !!testbits(thread->status,XNRELAX));
 #endif
 
-    disengage_irq_shield(smp_processor_id());
-
     if (xnpod_shadow_p())
 	xnshadow_relax();
 

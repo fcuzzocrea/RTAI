@@ -620,7 +620,10 @@ static ssize_t xnpipe_read (struct file *file,
 	ret = (ssize_t)xnpipe_m_size(mh); /* Cannot be zero */
 
 	if (ret <= count)
-	    __copy_to_user(buf,xnpipe_m_data(mh),ret);
+	    {
+	    if (__copy_to_user(buf,xnpipe_m_data(mh),ret))
+		ret = -EFAULT;
+	    }
 	else
 	    /* Return buffer is too small - message is lost. */
 	    ret = -ENOSPC;

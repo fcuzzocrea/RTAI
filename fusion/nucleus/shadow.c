@@ -511,7 +511,8 @@ void xnshadow_relax (void)
 
     xnltt_log_event(rtai_ev_secondarysw,thread->name);
 
-    engage_irq_shield();
+    if (testbits(thread->status,XNSHIELD))
+	engage_irq_shield();
 
     if (current->state & TASK_UNINTERRUPTIBLE)
 	/* Just to avoid wrecking Linux's accounting of non-

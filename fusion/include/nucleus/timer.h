@@ -114,7 +114,11 @@ xnticks_t xntimer_get_date(xntimer_t *timer);
 
 xnticks_t xntimer_get_timeout(xntimer_t *timer);
 
+#if CONFIG_SMP
 int xntimer_set_sched(xntimer_t *timer, struct xnsched *sched);
+#else /* ! CONFIG_SMP */
+#define xntimer_set_sched(timer,sched)
+#endif /* CONFIG_SMP */
 
 #ifdef __cplusplus
 }

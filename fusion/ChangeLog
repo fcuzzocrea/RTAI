@@ -1,3 +1,8 @@
+2004-12-27  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/timer.c, include/nucleus/timer.h (xntimer_set_sched):
+	Only define xntimer_set_sched for SMP.
+
 2004-12-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-uvm/system.h (xnarch_read_environ): Fix

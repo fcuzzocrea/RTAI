@@ -367,6 +367,7 @@ void xntimer_stop (xntimer_t *timer)
     xnlock_put_irqrestore(&nklock,s);
 }
 
+#if CONFIG_SMP
 /**
  * Migrate a timer.
  *
@@ -438,6 +439,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 
     return err;
 }
+#endif /* CONFIG_SMP */
 
 /*!
  * \fn xnticks_t xntimer_get_date(xntimer_t *timer)

@@ -433,8 +433,7 @@ xnarchtcb_t *vml_current;
    o In theory, the IRQ synchronization mechanism might end up
    causing interrupt loss, since we might be sleeping to much waiting
    on the irqlock barrier until it is signaled. In practice, this
-   should not happen because interrupt-free sections are short thanks
-   to the mutex scheme.
+   should not happen because interrupt-free sections are short.
 */
 
 struct xnarch_tick_parms {
@@ -453,7 +452,7 @@ static void *xnarch_timer_thread (void *cookie)
     struct timespec ts;
 
     pthread_create_rt("vmtimer",NULL,p->ppid,&p->syncflag,&vml_timer_handle);
-    pthread_migrate_rt(FUSION_RTAI_DOMAIN);
+    pthread_barrier_rt();
 
     ts.tv_sec = p->sec;
     ts.tv_nsec = p->nsec;
@@ -556,7 +555,6 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 	}
 
     pthread_init_rt("vmroot",tcb,&tcb->khandle);
-    pthread_migrate_rt(FUSION_RTAI_DOMAIN);
 
     tcb->name = name;
     vml_root = vml_current = tcb;
@@ -574,9 +572,8 @@ static void *xnarch_thread_trampoline (void *cookie)
 
     if (!setjmp(tcb->rstenv))
 	{
-	/* After this, we are controlled by the in-kernel nucleus. */
 	pthread_create_rt(tcb->name,tcb,tcb->ppid,&tcb->syncflag,&tcb->khandle);
-	pthread_migrate_rt(FUSION_RTAI_DOMAIN);
+	pthread_barrier_rt();	/* Wait for start. */
 	}
 
     xnarch_setimask(tcb->imask);
@@ -620,6 +617,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
 
     pthread_sync_rt(&tcb->syncflag);
+    pthread_start_rt(&tcb->khandle);
 }
 
 static inline void xnarch_init_fpu(xnarchtcb_t *tcb) {

@@ -750,7 +750,8 @@ int xnpod_start_thread (xnthread_t *thread,
 #if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (testbits(thread->status,XNSHADOW))
         {
-        xnshadow_start(thread,0,entry,cookie,1);
+        xnshadow_start(thread,entry,cookie);
+	xnpod_schedule();
         return 0;
         }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
@@ -3233,11 +3234,14 @@ static void xnpod_calibration_thread (void *cookie)
     long jitter = 0;
 
     period = xnarch_ns_to_tsc(XNARCH_CALIBRATION_PERIOD);
-    expected = xnarch_get_cpu_tsc();
+
+    xnpod_delay(XNARCH_CALIBRATION_PERIOD * 5);
 
     xnpod_set_thread_periodic(xnpod_current_thread(),
 			      XN_INFINITE,
 			      XNARCH_CALIBRATION_PERIOD);
+
+    expected = xnarch_get_cpu_tsc();
 
     for (count = 0; count < 300000000 / XNARCH_CALIBRATION_PERIOD; count++)
         {

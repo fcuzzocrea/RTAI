@@ -45,10 +45,10 @@ static void *rt_task_trampoline (void *cookie)
 
 {
     struct rt_task_iargs *iargs = (struct rt_task_iargs *)cookie;
+    char stack[PTHREAD_STACK_MIN];
     void (*entry)(void *cookie);
     struct sched_param param;
     struct rt_arg_bulk bulk;
-    char stack[32678];
     int err;
 
     /* Ok, this looks like weird, but we need this. */
@@ -67,16 +67,23 @@ static void *rt_task_trampoline (void *cookie)
 			    &bulk,
 			    iargs->ppid,
 			    iargs->syncp);
-    if (!err)
-	{
-	/* current is suspended until rt_task_start() is issued. When
-	   it resumes, a1 and a2 will have been respectively filled
-	   with entry and cookie values as passed to
-	   rt_task_start(). */
-	entry = (void (*)(void *))bulk.a1;
-	cookie = (void *)bulk.a2;
-	entry(cookie);
-	}
+    if (err)
+	goto fail;
+
+    /* Wait on the barrier for the task to be started. The barrier
+       could be released in order to process Linux signals while the
+       RTAI shadow is still dormant; in such a case, resume wait. */
+
+    do
+	err = XENOMAI_SYSCALL2(__xn_sys_barrier,&entry,&cookie);
+    while (err == -EINTR);
+
+    if (err)
+	goto fail;
+
+    entry(cookie);
+
+ fail:
 
     return NULL;
 }
@@ -116,8 +123,8 @@ int rt_task_create (RT_TASK *task,
 
     if (stksize > 0)
 	{
-	if (stksize < PTHREAD_STACK_MIN)
-	    stksize = PTHREAD_STACK_MIN;
+	if (stksize < PTHREAD_STACK_MIN * 2)
+	    stksize = PTHREAD_STACK_MIN * 2;
 
 	pthread_attr_setstacksize(&thattr,stksize);
 	}

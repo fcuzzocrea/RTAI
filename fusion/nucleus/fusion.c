@@ -24,7 +24,7 @@
 
 static int __fusion_muxid;
 
-static xnsynch_t __fusion_barrier;
+static xnsynch_t __fusion_vmsync;
 
 static xnpod_t __fusion_pod;
 
@@ -104,9 +104,7 @@ static int __pthread_shadow_helper (struct task_struct *curr,
        user-space threads are being synchronized on it, so enter a
        critical section. Do *not* take the big lock here: this is
        useless since deleting a thread through an inter-CPU request
-       requires the target CPU to accept IPIs, and this is bugous
-       since xnshadow_map() would block "current" with the superlock
-       held. */
+       requires the target CPU to accept IPIs. */
 
     splhigh(s);
 
@@ -152,7 +150,7 @@ static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
 
     if (!testbits(thread->status,XNSTARTED))
 	{
-	xnshadow_start(thread,0,NULL,NULL,0);
+	xnshadow_start(thread,NULL,NULL);
 	xnpod_schedule();
 	err = 0;
 	}
@@ -333,7 +331,7 @@ static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
 
     __xn_put_user(curr,1,(int __user *)__xn_reg_arg1(regs)); /* Raise the pend flag */
 
-    xnsynch_sleep_on(&__fusion_barrier,XN_INFINITE);
+    xnsynch_sleep_on(&__fusion_vmsync,XN_INFINITE);
 
     xnlock_put_irqrestore(&nklock, s);
 
@@ -352,7 +350,7 @@ static int __pthread_release_vm (struct task_struct *curr, struct pt_regs *regs)
 
     __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the lock flag */
 
-    if (xnsynch_flush(&__fusion_barrier,XNBREAK) == XNSYNCH_RESCHED)
+    if (xnsynch_flush(&__fusion_vmsync,XNBREAK) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
     xnlock_put_irqrestore(&nklock, s);
@@ -375,8 +373,8 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
 
     xnpod_renice_thread(thread,xnthread_initial_priority(thread));
 
-    if (xnsynch_nsleepers(&__fusion_barrier) > 0)
-	xnsynch_flush(&__fusion_barrier,XNBREAK);
+    if (xnsynch_nsleepers(&__fusion_vmsync) > 0)
+	xnsynch_flush(&__fusion_vmsync,XNBREAK);
 
     xnpod_suspend_thread(thread,XNSUSP,XN_INFINITE,NULL);
 
@@ -407,7 +405,7 @@ static int __pthread_activate_vm (struct task_struct *curr, struct pt_regs *regs
     xnpod_renice_thread(next,xnthread_initial_priority(next) + 1);
 
     if (!testbits(next->status,XNSTARTED))
-	xnshadow_start(next,0,NULL,NULL,0);
+	xnshadow_start(next,NULL,NULL);
     else if (testbits(next->status,XNSUSP))
 	xnpod_resume_thread(next,XNSUSP);
 
@@ -456,7 +454,7 @@ static int __pthread_cancel_vm (struct task_struct *curr, struct pt_regs *regs)
 	xnpod_renice_thread(next,xnthread_initial_priority(next) + 1);
 
 	if (testbits(next->status,XNSTARTED))
-	    xnshadow_start(next,0,NULL,NULL,0);
+	    xnshadow_start(next,NULL,NULL);
 	else if (testbits(next->status,XNSUSP))
 	    xnpod_resume_thread(next,XNSUSP);
 	}
@@ -483,9 +481,7 @@ static void xnfusion_shadow_delete_hook (xnthread_t *thread)
 }
 
 /* User-space skin services -- The declaration order must be in sync
-   with the opcodes defined in nucleus/fusion.h. Services marked by
-   the __xn_flag_suspensive bit must be propagated to the caller's
-   domain. */
+   with the opcodes defined in nucleus/fusion.h. */
 
 static xnsysent_t __systab[] = {
     [__xn_fusion_init] = { &__pthread_init_rt, __xn_flag_init },
@@ -541,7 +537,7 @@ int xnfusion_attach (void)
 
     __fusion_pod.svctable.unload = &xnfusion_unload_hook;
     xnpod_add_hook(XNHOOK_THREAD_DELETE,&xnfusion_shadow_delete_hook);
-    xnsynch_init(&__fusion_barrier,XNSYNCH_FIFO);
+    xnsynch_init(&__fusion_vmsync,XNSYNCH_FIFO);
 
     return 0;
 }
@@ -590,7 +586,7 @@ int xnfusion_umount (void)
 
     xnpod_stop_timer();
 
-    if (xnsynch_destroy(&__fusion_barrier) == XNSYNCH_RESCHED)
+    if (xnsynch_destroy(&__fusion_vmsync) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,&xnfusion_shadow_delete_hook);

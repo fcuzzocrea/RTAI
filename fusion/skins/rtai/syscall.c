@@ -171,33 +171,17 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 	   two user-space threads are being synchronized on it, so
 	   enter a critical section. Do *not* take the big lock here:
 	   this is useless since deleting a thread through an
-	   inter-CPU request requires the target CPU to accept IPIs,
-	   and this is bugous since xnshadow_map() would block
-	   "current" with the superlock held. */
+	   inter-CPU request requires the target CPU to accept
+	   IPIs. */
 
 	splhigh(s);
 
-	/* Copy back the registry handle to the ph struct
-	   _before_ current is suspended in xnshadow_map(). */
-
+	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = task->handle;
 	__xn_copy_to_user(curr,(void __user *)bulk.a1,&ph,sizeof(ph));
-
-	/* The following service blocks until rt_task_start() is
-	   issued. */
-
-	xnshadow_map(&task->thread_base,
-		     syncpid,
-		     u_syncp);
+	xnshadow_map(&task->thread_base,syncpid,u_syncp);
 
 	splexit(s);
-
-	/* Pass back the entry and the cookie pointers obtained from
-	   rt_task_start(). */
-
-	bulk.a1 = (u_long)task->thread_base.entry;
-	bulk.a2 = (u_long)task->thread_base.cookie;
-	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&bulk,sizeof(bulk));
 	}
     else
 	{

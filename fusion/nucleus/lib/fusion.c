@@ -22,6 +22,7 @@
 #include <memory.h>
 #include <errno.h>
 #include <unistd.h>
+#include <limits.h>
 #include <nucleus/asm/hal.h>            /* For rthal_llimd. */
 #include <nucleus/fusion.h>
 
@@ -49,10 +50,11 @@ int pthread_info_rt (xnsysinfo_t *infop)
     return 0;
 }
 
-int pthread_init_rt (const char *name, void *uhandle, void **khandlep)
-
+int pthread_init_rt (const char *name,
+		     void *uhandle,
+		     void **khandlep)
 {
-    char stack[32768];
+    char stack[PTHREAD_STACK_MIN * 2];
 
     if (__fusion_muxid == 0 && __init_skin() < 0)
 	return -ENOSYS;
@@ -72,7 +74,7 @@ int pthread_create_rt (const char *name,
 		       int *syncp,
 		       void **khandlep)
 {
-    char stack[32768];
+    char stack[PTHREAD_STACK_MIN * 2];
 
     if (__fusion_muxid == 0 && __init_skin() < 0)
 	return -ENOSYS;
@@ -86,8 +88,26 @@ int pthread_create_rt (const char *name,
     return XENOMAI_SKINCALL5(__fusion_muxid,__xn_fusion_create,name,khandlep,uhandle,syncpid,syncp);
 }
 
-int pthread_start_rt (void *khandle) {
+int pthread_barrier_rt (void)
 
+{
+    void (*entry)(void *), *cookie;
+    int err;
+
+    /* Wait on the barrier for the thread to be started. The barrier
+       could be released in order to process Linux signals while the
+       fusion shadow is still dormant; in such a case, resume wait. */
+
+    do
+	err = XENOMAI_SYSCALL2(__xn_sys_barrier,&entry,&cookie);
+    while (err == -EINTR);
+
+    return err;
+}
+
+int pthread_start_rt (void *khandle)
+
+{
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_start,khandle);
 }
 

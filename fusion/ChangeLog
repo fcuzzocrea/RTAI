@@ -1,4 +1,27 @@
+2004-12-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-uvm/system.h: Enforce start barrier and fix
+	shadow mapping protocol.
+
+	* skins/rtai/lib/task.c (rt_task_trampoline): Enforce start
+	barrier.
+
+	* nucleus/shadow.c (xnshadow_kick_process): Remove the shadow
+	start call which was bugous wrt ptracing interaction, and has been
+	deprecated by the start barrier mechanism.
+
+	* nucleus/shadow.c: Fix ptracing support for shadow threads using
+	a start barrier which allows to keep processing signals
+	(e.g. SIGSTOP) for unstarted (i.e. dormant) threads.
+
 2004-12-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/lib/task.c (rt_task_trampoline): Commit stack memory
+	up to PTHREAD_STACK_MIN.
+	(rt_task_create): Raise minimum stack to PTHREAD_STACK_MIN * 2.
+
+	* nucleus/pod.c (xnpod_calibration_thread): Sleep a while to reach
+	a quiescent state before starting to sample.
 
 	* skins/rtai/event.c (rt_event_signal): Do not auto-clear matched
 	bits; this makes no sense with multiple waiters.

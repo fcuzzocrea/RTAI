@@ -40,9 +40,6 @@
 #include <nucleus/module.h>
 #include <nucleus/shadow.h>
 #include <nucleus/fusion.h>
-#if CONFIG_TRACE
-#include <linux/trace.h>
-#endif
 
 int nkgkptd;
 
@@ -327,10 +324,6 @@ static inline void xnshadow_sched_wakeup (struct task_struct *task)
        schedule a wakeup on behalf of the Linux domain. */
 
     adeos_schedule_irq(gkvirq);
-
-#if CONFIG_TRACE
-    TRACE_PROCESS(TRACE_EV_PROCESS_SIGNAL, -111, task->pid);
-#endif
 }
 
 static inline void xnshadow_sched_signal (struct task_struct *task, int sig)
@@ -745,8 +738,8 @@ void xnshadow_exit (void)
  */
 
 void xnshadow_map (xnthread_t *thread,
-		   pid_t syncpid,
-		   int __user *u_syncp)
+                   pid_t syncpid,
+                   int __user *u_syncp)
 {
     int autostart = !(syncpid && u_syncp);
     unsigned muxid, magic;
@@ -758,8 +751,8 @@ void xnshadow_map (xnthread_t *thread,
     magic = xnthread_get_magic(thread);
 
     for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
-	{
-	if (muxtable[muxid].magic == magic)
+        {
+        if (muxtable[muxid].magic == magic)
             {
             xnarch_atomic_inc(&muxtable[muxid].refcnt);
             break;
@@ -770,82 +763,115 @@ void xnshadow_map (xnthread_t *thread,
 
     xnarch_init_shadow_tcb(xnthread_archtcb(thread),thread,xnthread_name(thread));
 
-    xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
-
     set_linux_task_priority(current,xnthread_base_priority(thread));
 
-    if (autostart)
-        xnpod_resume_thread(thread,XNDORMANT);
-    else
-	/* Wake up the initiating Linux task. */
-	xnshadow_sync_post(syncpid,u_syncp,0);
-    
     xnshadow_ptd(current) = thread;
+
+    xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
 
 #if 1
     if (traceme)
-	printk("__MAP__ %s from %s, prio=%d, pid=%d, domain=%s\n",
-	       xnthread_name(thread),
-	       xnpod_current_sched()->runthread->name,
-	       xnthread_base_priority(thread),
-	       xnthread_archtcb(thread)->user_task->pid,
-	       adp_current->name);
+        printk("__MAP__ %s from %s, prio=%d, pid=%d, domain=%s, autostart=%d, pid=%d\n",
+               xnthread_name(thread),
+               xnpod_current_sched()->runthread->name,
+               xnthread_base_priority(thread),
+               xnthread_archtcb(thread)->user_task->pid,
+               adp_current->name,
+               autostart,
+               current->pid);
 #endif
 
-    /* If not autostarting, the shadow will be left suspended in
-       dormant state. */
+   if (autostart)
+       {
+       xnshadow_start(thread,NULL,NULL);
+       xnshadow_harden();
+       }
+   else
+       xnshadow_sync_post(syncpid,u_syncp,0);
+}
+
+int xnshadow_wait_barrier (struct pt_regs *regs)
+
+{
+    xnthread_t *thread = xnshadow_thread(current);
+    spl_t s;
+
+    splhigh(s);
+
+    if (testbits(thread->status,XNSTARTED))
+	{
+	/* Already done -- no op. */
+	splexit(s);
+	goto release_task;
+	}
+
+    /* We must enter this call on behalf of the Linux domain. */
+    set_current_state(TASK_INTERRUPTIBLE);
+    splexit(s);
+    schedule();
+
+    if (!testbits(thread->status,XNSTARTED))
+	return -EINTR;
+
+ release_task:
+
+    __xn_copy_to_user(task,
+		      (void __user *)__xn_reg_arg1(regs),
+		      &thread->entry,
+		      sizeof(thread->entry));
+
+    __xn_copy_to_user(task,
+		      (void __user *)__xn_reg_arg2(regs),
+		      &thread->cookie,
+		      sizeof(thread->cookie));
+
     xnshadow_harden();
 
-    if (autostart)
-	/* Immediately join the RTAI realm on behalf of the current
-	   Linux task. */
-	xnshadow_start(thread,0,NULL,NULL,1);
-    else if (xnshadow_ptd(current) == NULL)
-	    /* Whoops, this shadow was unmapped while in dormant state
-	       (i.e. before xnshadow_start() has been called on
-	       it). Ask Linux to reap it. */
-	xnshadow_exit();
+    return 0;
 }
 
 void xnshadow_start (xnthread_t *thread,
-		     u_long mode,
-		     void (*u_entry)(void *cookie),
-		     void *u_cookie,
-		     int resched)
+                     void (*u_entry)(void *cookie),
+                     void *u_cookie)
 {
+    struct task_struct *task;
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
 
-    __setbits(thread->status,(mode & (XNTHREAD_MODE_BITS|XNSUSP))|XNSTARTED);
+    __setbits(thread->status,XNSTARTED);
     thread->imask = 0;
-    thread->imode = (mode & XNTHREAD_MODE_BITS);
-    thread->entry = u_entry;	/* user-space pointer -- do not deref. */
-    thread->cookie = u_cookie;	/* ditto. */
+    thread->imode = 0;
+    thread->entry = u_entry;    /* user-space pointer -- do not deref. */
+    thread->cookie = u_cookie;  /* ditto. */
     thread->stime = xnarch_get_cpu_time();
+    thread->affinity = xnarch_cpumask_of_cpu(smp_processor_id());
 
     if (testbits(thread->status,XNRRB))
-	thread->rrcredit = thread->rrperiod;
+        thread->rrcredit = thread->rrperiod;
 
     xntimer_init(&thread->atimer,&xnshadow_itimer_handler,thread);
 
     xnpod_resume_thread(thread,XNDORMANT);
 
+    task = xnthread_archtcb(thread)->user_task;
+
 #if 1
     if (traceme)
-	printk("__START__ %s (status=0x%lx), prio=%d, pid=%d, domain=%s (sched? %d)\n",
-	       thread->name,
-	       thread->status,
-	       xnthread_base_priority(thread),
-	       xnthread_archtcb(thread)->user_task->pid,
-	       adp_current->name,
-	       resched);
+        printk("__START__ %s (status=0x%lx), prio=%d, pid=%d, domain=%s, entry=%p\n",
+               thread->name,
+               thread->status,
+               xnthread_base_priority(thread),
+               task->pid,
+               adp_current->name,
+               u_entry);
 #endif
 
-    xnlock_put_irqrestore(&nklock,s);
+   xnlock_put_irqrestore(&nklock,s);
 
-    if (resched)
-	xnpod_schedule();
+   if (task->state == TASK_INTERRUPTIBLE)
+       /* Wakeup the Linux mate waiting on the barrier. */
+       xnshadow_sched_wakeup(task);
 }
 
 void xnshadow_renice (xnthread_t *thread)
@@ -1309,6 +1335,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	case __xn_sys_attach:
 	case __xn_sys_detach:
 	case __xn_sys_sync:
+	case __xn_sys_barrier:
 
  propagate_syscall:
 
@@ -1460,6 +1487,11 @@ static void xnshadow_linux_sysentry (adevinfo_t *evinfo)
 
 	    __xn_success_return(regs,1);
 	    xnshadow_harden();
+	    return;
+
+	case __xn_sys_barrier:
+
+	    __xn_status_return(regs,xnshadow_wait_barrier(regs));
 	    return;
 
 	case __xn_sys_attach:
@@ -1614,18 +1646,13 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
     if (thread == thread->sched->runthread)
 	xnsched_set_resched(thread->sched);
 
-    if (!testbits(thread->status,XNSTARTED))
-	xnshadow_start(thread,0,NULL,NULL,0);
-    else
-	{
-	if (xnpod_unblock_thread(thread))
-	    __setbits(thread->status,XNKICKED);
+    if (xnpod_unblock_thread(thread))
+	__setbits(thread->status,XNKICKED);
 
-	if (testbits(thread->status,XNSUSP))
-	    {
-	    xnpod_resume_thread(thread,XNSUSP);
-	    __setbits(thread->status,XNKICKED);
-	    }
+    if (testbits(thread->status,XNSUSP))
+	{
+	xnpod_resume_thread(thread,XNSUSP);
+	__setbits(thread->status,XNKICKED);
 	}
 
     xnlock_put_irqrestore(&nklock,s);
@@ -1829,6 +1856,7 @@ void xnshadow_cleanup (void)
 
 EXPORT_SYMBOL(xnshadow_harden);
 EXPORT_SYMBOL(xnshadow_map);
+EXPORT_SYMBOL(xnshadow_wait_barrier);
 EXPORT_SYMBOL(xnshadow_register_skin);
 EXPORT_SYMBOL(xnshadow_relax);
 EXPORT_SYMBOL(xnshadow_start);

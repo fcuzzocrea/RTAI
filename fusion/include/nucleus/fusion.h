@@ -120,6 +120,8 @@ int pthread_create_rt(const char *name,
 		      int *syncp,
 		      void **khandlep);
 
+int pthread_barrier_rt(void);
+
 int pthread_start_rt(void *khandle);
 
 int pthread_sync_rt(int *syncp);

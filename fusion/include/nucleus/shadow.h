@@ -97,11 +97,11 @@ void xnshadow_harden(void);
 
 void xnshadow_renice(struct xnthread *thread);
 
+int xnshadow_wait_barrier(struct pt_regs *regs);
+
 void xnshadow_start(struct xnthread *thread,
-		    u_long mode,
 		    void (*uentry)(void *cookie),
-		    void *ucookie,
-		    int resched);
+		    void *ucookie);
 
 void xnshadow_sync_post(pid_t syncpid,
 			int *u_syncp,

@@ -84,14 +84,14 @@ config RTAI_OPT_NATIVE_COND
 	Condition variable support.
 
 config RTAI_OPT_NATIVE_QUEUE
-	bool "Message queue support (EXPERIMENTAL)"
+	bool "Message queue support"
 	depends on RTAI_SKIN_NATIVE
 	help
 	
 	Message queue support.
 
 config RTAI_OPT_NATIVE_HEAP
-	bool "Memory heap support (EXPERIMENTAL)"
+	bool "Memory heap support"
 	depends on RTAI_SKIN_NATIVE
 	help
 	

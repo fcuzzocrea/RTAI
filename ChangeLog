@@ -1,3 +1,16 @@
+2004-03-22  Michael Neuhauser  <mike@firmix.at>
+
+	* testsuite/kern/latency/{latency-module.c, latency.c,
+	  preempt-module.c, preempt.c}: use larger DEFAULT_PERIOD/TICK_TIME
+	  for ARM systems (assumption: ARM => low-end system)
+	* testsuite/kern/switches/switches-module.c: set stack-size to 4096 to
+	  minimize waste and check if task creation has worked (both changes
+	  were done to make this test work smoother on low-memory systems)
+	* testsuite/user/latency/{display.c, switches.c, switches.pthread,
+	  switches.rthread}: replaced select() with poll() as some
+	  glibc-versions on ARM have a serious problem with syscalls that
+	  have more than 4 arguments (and poll() is nicer anyway).
+
 2004-03-15  Jan Kiszka  <kiszka@rts.uni-hannover.de>
 
 	* base/include/asm-i386/rtai_oldnames: fixed legacy names macros
@@ -6,7 +19,7 @@
 2004-03-21  Michael Neuhauser  <mike@firmix.at>
 
 	* base/include/asm-arm/rtai_hal.*: made rtai_hw_*() on ARM fully
-	compatible to x86 names (i.e. added rtai_hw_cli() and rtai_hw_sti())
+	  compatible to x86 names (i.e. added rtai_hw_cli() and rtai_hw_sti())
 
 2004-03-19  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
@@ -68,10 +81,10 @@
 2004-02-22  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/patches/README: info about patches (what boards are
-	supported & what they are based on)
+	  supported & what they are based on)
 	* base/arch/arm/patches/pxa255_2.6.7-rmk1-karo.patch: renamed to
-	base/arch/arm/patches/pxa255_2.6.7-bk6-karo.patch to better reflect
-	patch chain
+	  base/arch/arm/patches/pxa255_2.6.7-bk6-karo.patch to better reflect
+	  patch chain
 
 2004-02-22  Roberto Bucher  <roberto.bucher@supsi.ch>
 
@@ -95,7 +108,7 @@
 2004-02-18  Michael Neuhauser  <mike@firmix.at>
 
 	* base/include/asm-arm/rtai_hal.*: added alternative names for
-	rtai_hw_*() (compatibility to x86)
+	  rtai_hw_*() (compatibility to x86)
 
 2004-02-18  Luca Pizzi  <lucapizzi@hotmail.it>
 	    Stefano Gafforelli  <Stefano.Gafforelli@tiscali.it>
@@ -151,14 +164,14 @@
 2004-02-14  Michael Neuhauser  <mike@firmix.at>
 
 	* base/include/asm-arm/rtai_lxrt.h: fixed LINUX_SYSCALL_* (a little,
-	will only work for syscalls with 4 or less arguments)
+	  will only work for syscalls with 4 or less arguments)
 
 2004-02-14  Michael Neuhauser  <mike@firmix.at>
 
 	* base/include/asm-arm/GNUmakefile.*: added rtai_usi.h
 	* base/arch/arm/hal/hal.*: include asm/rtai_usi.h
 	* base/arch/arm/hal/hal.*: re-added "retmode" to rtai_realtime_irq[]
-	(sched/api.c has extern decl with retmode, so we need it here)
+	  (sched/api.c has extern decl with retmode, so we need it here)
 
 2004-02-15  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
@@ -178,7 +191,7 @@
 2004-02-14  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/hal/hal.*: define rt_scheduling[] unconditionally,
-	i.e. not depending on CONFIG_RTAI_SCHED_ISR_LOCK
+	  i.e. not depending on CONFIG_RTAI_SCHED_ISR_LOCK
 	* base/arch/arm/hal/hal.* (rtai_syscall_trampoline): added USI SRQ call
 	* base/include/asm-arm/rtai_hal.*: added RTAI_IFLAG
 
@@ -216,15 +229,15 @@
 2004-01-31  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/patches/ep9301_hal17_2.4.21-rmk1-crus1.4.2.patch:
-	new Adeos patch, replaces ep9301_hal16_2.4.21-rmk1-crus1.4.2.patch;
-	see ep9301_hal17_2.4.21-rmk1-crus1.4.2.ChangeLog for changes (short
-	summary: the new version (r17c1) is a lot better than the previous
-	version (r16c255))
+	  new Adeos patch, replaces ep9301_hal16_2.4.21-rmk1-crus1.4.2.patch;
+	  see ep9301_hal17_2.4.21-rmk1-crus1.4.2.ChangeLog for changes (short
+	  summary: the new version (r17c1) is a lot better than the previous
+	  version (r16c255))
 	* base/arch/arm/hal/hal.{c,immed,piped}: align rtai_realtime_irq[]
-	on L1_CACHE_BYTES; removed "hard irq in trap handler" warning (this
-	can't happen, hw-irqs are now enabled for all event handlers)
+	  on L1_CACHE_BYTES; removed "hard irq in trap handler" warning (this
+	  can't happen, hw-irqs are now enabled for all event handlers)
 	* base/include/asm-arm/rtai_lxrt.h (_lxrt_context_switch): use Linux
-	switch_to() (which is no longer changed by Adeos patch)
+	  switch_to() (which is no longer changed by Adeos patch)
 
 2004-01-25  Roberto Bucher  <roberto.bucher@supsi.ch>
 
@@ -236,8 +249,8 @@
 2004-01-24  Michael Neuhauser  <mike@firmix.at>
 
 	* configure.in: allow CONFIG_RTAI_SCHED_LXRT to be enabled for ARM,
-	removed old ARM sub-architectures (SA1110, CLPS711X, PXA), added new
-	ARM sub-architecture (EP9301)
+	  removed old ARM sub-architectures (SA1110, CLPS711X, PXA), added new
+	  ARM sub-architecture (EP9301)
 	* configure, all GNUmakefile.in: regenerated because of above change
 
 2004-01-24  Roberto Bucher  <roberto.bucher@supsi.ch>
@@ -248,9 +261,9 @@
 2004-01-23  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm, base/include/asm-arm: RTAI/ARM over Adeos rewrite,
-	supports kernel and user-space. Only sub-architecture supported is
-	EP9301 (ARM920T, ARMv5). Old stuff was tagged with
-	"before_arm_over_adeos".
+	  supports kernel and user-space. Only sub-architecture supported is
+	  EP9301 (ARM920T, ARMv5). Old stuff was tagged with
+	  "before_arm_over_adeos".
 
 2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
 

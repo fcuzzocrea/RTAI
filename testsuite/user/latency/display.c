@@ -19,6 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/poll.h>
 #include <rtai_mbx.h>
 #include <rtai_msg.h>
 
@@ -26,13 +27,9 @@ static RT_TASK *task;
 
 int main(void)
 {
-	fd_set input;
-	struct timeval tv;
-	unsigned int msg, ch;
+	unsigned int msg;
 	MBX *mbx;
 	struct sample { long long min; long long max; int index; } samp;
-
-	tv.tv_sec = 0;
 
  	if (!(task = rt_task_init(nam2num("LATCHK"), 20, 0, 0))) {
 		printf("CANNOT INIT MASTER TASK\n");
@@ -45,15 +42,11 @@ int main(void)
 	}
 
 	while (1) {
+		struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 		rt_mbx_receive(mbx, &samp, sizeof(samp));
 		printf("*** min: %d, max: %d average: %d  <Hit [RETURN] to stop> ***\n", (int) samp.min, (int) samp.max, samp.index);
-		FD_ZERO(&input);
-		FD_SET(0, &input);
-		tv.tv_usec = 20000;
-	        if (select(1, &input, NULL, NULL, &tv)) {
-			ch = getchar();
-			break;
-		}
+		if (poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN|POLLERR|POLLHUP)) != 0)
+		    break;
 	}
 
 	rt_rpc(rt_get_adr(nam2num("LATCAL")), msg, &msg);

@@ -39,7 +39,7 @@ MODULE_LICENSE("GPL");
 
 #define SLOWMUL  24
 
-#ifdef CONFIG_UCLINUX
+#if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
 #define TICK_TIME 1000000
 #else
 #define TICK_TIME 100000

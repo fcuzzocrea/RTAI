@@ -278,7 +278,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data,
 	task->prev = rt_linux_task.prev;
 	rt_linux_task.prev = task;
 	cpuid = hard_cpu_id();
-	init_fp_env();
+	init_fp_env(rt_linux_task.fpu_reg);
 	rt_global_restore_flags(flags);
 
 	return 0;

@@ -321,7 +321,7 @@ int rt_task_init(RT_TASK *task, void (*rt_thread)(int), int data,
 	flags = rt_global_save_flags_and_cli();
 	cpuid = hard_cpu_id();
 #define fpu_task (&rt_linux_task)  // needed just by the very next line of code
-	init_fp_env();
+	init_fp_env(rt_linux_task.fpu_reg);
 	task->next = 0;
 	read_lock(&task_list_lock);
 	rt_base_linux_task.prev->next = task;

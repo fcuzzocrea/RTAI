@@ -307,7 +307,7 @@ int rt_task_init(RT_TASK *task, void (*rt_thread)(int), int data,
 	init_arch_stack();
 
 	hard_save_flags_and_cli(flags);
-	init_fp_env();
+	init_fp_env(rt_linux_task.fpu_reg);
 	rt_linux_task.prev->next = task;
 	task->prev = rt_linux_task.prev;
 	task->next = 0;

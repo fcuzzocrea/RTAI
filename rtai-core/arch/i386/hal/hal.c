@@ -1439,10 +1439,10 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 			      (struct pt_regs *)evinfo->evdata,
 			      NULL) != 0)
 	    goto endtrap;
-	}
 #endif /* ADEOS_RELEASE_NUMBER >= 0x02060601 */
 
 #endif /* < 2.6.0 */
+	}
 
     adeos_propagate_event(evinfo);
 

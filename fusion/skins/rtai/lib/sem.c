@@ -30,7 +30,6 @@ static inline int __init_skin (void)
     return __rtai_muxid;
 }
 
-
 int rt_sem_create (RT_SEM *sem,
 		   const char *name,
 		   unsigned long icount,

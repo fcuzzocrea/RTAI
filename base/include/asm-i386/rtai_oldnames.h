@@ -41,7 +41,6 @@
 #define hard_restore_flags(x)        rtai_local_irq_restore(x)
 #define hard_save_flags(x)           rtai_local_irq_flags(x)
 #define hard_cpu_id                  adeos_processor_id
-#define this_rt_task                 ptd
 
 #endif /* __KERNEL__ */
 
@@ -141,7 +140,7 @@ static inline void rt_reset_full_intr_vect(unsigned vector,
 
 static inline int rt_request_cpu_own_irq (unsigned irq, void (*handler)(void)) {
 
-    return rt_request_irq(irq,(rt_irq_handler_t)handler,NULL);
+    return rt_request_irq(irq, (rt_irq_handler_t)handler, NULL, 0);
 }
 
 static inline int rt_free_cpu_own_irq (unsigned irq) {

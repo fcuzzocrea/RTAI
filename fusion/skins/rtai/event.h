@@ -107,6 +107,9 @@ void __event_pkg_cleanup(void);
 
 typedef RT_EVENT_PLACEHOLDER RT_EVENT;
 
+int rt_event_bind(RT_EVENT *event,
+		  const char *name);
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus

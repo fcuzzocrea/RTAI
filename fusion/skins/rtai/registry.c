@@ -506,8 +506,8 @@ int rt_registry_remove (rt_handle_t handle)
  * @param handle The generic handle of the object to find and lock. If
  * RT_REGISTRY_SELF is passed, the object is the calling RTAI task.
  *
- * @return The incremented lock count is returned on
- * success. Otherwise, zero is returned if @a handle does not
+ * @return The memory address of the object's descriptor is returned
+ * on success. Otherwise, NULL is returned if @a handle does not
  * reference a registered object.
  *
  * Context: This routine can be called on behalf of a task. It can
@@ -530,7 +530,10 @@ void *rt_registry_get (rt_handle_t handle)
 	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
 	if (xnpod_current_thread()->magic == RTAI_SKIN_MAGIC)
-	    handle = rtai_current_task()->handle;
+	    {
+	    objaddr = rtai_current_task();
+	    goto unlock_and_exit;
+	    }
 	}
 
     object = __registry_validate(handle);
@@ -542,6 +545,8 @@ void *rt_registry_get (rt_handle_t handle)
 	}
     else
 	objaddr = NULL;
+
+ unlock_and_exit:
 
     splexit(s);
 
@@ -613,4 +618,58 @@ u_long rt_registry_put (rt_handle_t handle)
     splexit(s);
 
     return newlock;
+}
+
+/**
+ * @fn u_long rt_registry_fetch(rt_handle_t handle)
+ * @brief Find a real-time object into the registry.
+ *
+ * This service retrieves an object from its handle into the registry
+ * and returns the memory address of its descriptor.
+ *
+ * @param handle The generic handle of the object to fetch. If
+ * RT_REGISTRY_SELF is passed, the object is the calling RTAI task.
+ *
+ * @return The memory address of the object's descriptor is returned
+ * on success. Otherwise, NULL is returned if @a handle does not
+ * reference a registered object.
+ *
+ * Context: This routine can be called on behalf of a task. It can
+ * also be called on behalf of an interrupt context, or from the
+ * initialization code, provided @a handle is different from
+ * RT_REGISTRY_SELF.
+ */
+
+void *rt_registry_fetch (rt_handle_t handle)
+
+{
+    RT_OBJECT *object;
+    void *objaddr;
+    spl_t s;
+
+    splhigh(s);
+
+    if (handle == RT_REGISTRY_SELF)
+	{
+	xnpod_check_context(XNPOD_THREAD_CONTEXT);
+
+	if (xnpod_current_thread()->magic == RTAI_SKIN_MAGIC)
+	    {
+	    objaddr = rtai_current_task();
+	    goto unlock_and_exit;
+	    }
+	}
+
+    object = __registry_validate(handle);
+
+    if (object)
+	objaddr = object->objaddr;
+    else
+	objaddr = NULL;
+
+ unlock_and_exit:
+
+    splexit(s);
+
+    return objaddr;
 }

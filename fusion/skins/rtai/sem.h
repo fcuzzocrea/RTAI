@@ -103,6 +103,9 @@ void __sem_pkg_cleanup(void);
 
 typedef RT_SEM_PLACEHOLDER RT_SEM;
 
+int rt_sem_bind(RT_SEM *sem,
+		const char *name);
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus

@@ -47,6 +47,23 @@ int rt_event_create (RT_EVENT *event,
 			     mode);
 }
 
+int rt_event_bind (RT_EVENT *event,
+		   const char *name)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_event_bind,
+			     event,
+			     name);
+}
+
+int rt_event_delete (RT_EVENT *event)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_event_delete,
+			     event);
+}
+
 int rt_event_pend (RT_EVENT *event,
                    unsigned long mask,
                    unsigned long *mask_r,

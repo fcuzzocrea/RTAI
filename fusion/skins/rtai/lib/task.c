@@ -148,19 +148,51 @@ int rt_task_start (RT_TASK *task,
 			     cookie);
 }
 
+int rt_task_bind (RT_TASK *task,
+		  const char *name)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_task_bind,
+			     task,
+			     name);
+}
+
+int rt_task_suspend (RT_TASK *task)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_task_suspend,
+			     task);
+}
+
+int rt_task_resume (RT_TASK *task)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_task_resume,
+			     task);
+}
+
+int rt_task_delete (RT_TASK *task)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_task_delete,
+			     task);
+}
+
+int rt_task_yield (void)
+
+{
+    return XENOMAI_SKINCALL0(__rtai_muxid,
+			     __rtai_task_yield);
+}
+
 int rt_task_set_periodic (RT_TASK *task,
 			  RTIME idate,
 			  RTIME period)
 
 {
-    RT_TASK ph;
-
-    if (!task)
-	{
-	ph.opaque = RT_REGISTRY_SELF;
-	task = &ph;
-	}
-
     return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_task_set_periodic,
 			     task,
@@ -175,6 +207,15 @@ int rt_task_wait_period (void)
 			     __rtai_task_wait_period);
 }
 
+int rt_task_set_priority (RT_TASK *task,
+			  int prio)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_task_set_priority,
+			     task,
+			     prio);
+}
+
 int rt_task_sleep (RTIME delay)
 
 {
@@ -184,17 +225,26 @@ int rt_task_sleep (RTIME delay)
 
 }
 
+int rt_task_sleep_until (RTIME date)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_task_sleep_until,
+			     &date);
+
+}
+
+int rt_task_unblock (RT_TASK *task)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_task_unblock,
+			     task);
+}
+
 int rt_task_inquire (RT_TASK *task,
 		     RT_TASK_INFO *info)
 {
-    RT_TASK ph;
-
-    if (!task)
-	{
-	ph.opaque = RT_REGISTRY_SELF;
-	task = &ph;
-	}
-
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_task_inquire,
 			     task,

@@ -157,6 +157,9 @@ int rt_task_add_hook(int type,
 
 typedef RT_TASK_PLACEHOLDER RT_TASK;
 
+int rt_task_bind(RT_TASK *task,
+		 const char *name);
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus
@@ -181,7 +184,7 @@ int rt_task_resume(RT_TASK *task);
 
 int rt_task_delete(RT_TASK *task);
 
-void rt_task_yield(void);
+int rt_task_yield(void);
 
 int rt_task_set_periodic(RT_TASK *task,
 			 RTIME idate,

@@ -258,7 +258,7 @@ int rt_mutex_lock (RT_MUTEX *mutex)
  *
  * - -EIDRM is returned if @a mutex is a deleted mutex descriptor.
  *
- * - -EPERM is returned if @a mutex is not owned by the current task.
+ * - -EACCESS is returned if @a mutex is not owned by the current task.
  *
  * Side-effect: This routine calls the rescheduling procedure if a
  * task is woken up as a result of the operation.
@@ -287,7 +287,7 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
 
     if (rtai_current_task() != mutex->owner)
 	{
-	err = -EPERM;
+	err = -EACCES;
 	goto unlock_and_exit;
 	}
 

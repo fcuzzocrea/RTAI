@@ -109,6 +109,8 @@ int rt_registry_remove(rt_handle_t);
 
 void *rt_registry_get(rt_handle_t handle);
 
+void *rt_registry_fetch(rt_handle_t handle);
+
 u_long rt_registry_put(rt_handle_t handle);
 
 #ifdef __cplusplus

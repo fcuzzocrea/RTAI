@@ -306,7 +306,6 @@ int rt_task_suspend (RT_TASK *task)
 			     XNSUSP,
 			     XN_INFINITE,
 			     NULL);
-
  unlock_and_exit:
 
     splexit(s);
@@ -449,11 +448,13 @@ int rt_task_delete (RT_TASK *task)
  * Context: This routine can be called on behalf of a task.
  */
 
-void rt_task_yield (void)
+int rt_task_yield (void)
 
 {
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
     xnpod_yield();
+
+    return 0;
 }
 
 /**

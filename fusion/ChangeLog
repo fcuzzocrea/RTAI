@@ -1,3 +1,10 @@
+2004-12-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/alarm.c: Add alarm support.
+
+	* include/nucleus/asm-*/system.h (xnarch_sysalloc,
+	xnarch_sysfree): Use vmalloc support for sizes >= 128Kb.
+
 2004-11-30  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_set_thread_periodic): Fix start mode with

@@ -272,6 +272,7 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
  * - User-space task
  *
  * Rescheduling: never.
+ *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
@@ -447,6 +448,7 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
  * - User-space task
  *
  * Rescheduling: never.
+ *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
@@ -574,8 +576,9 @@ void xntimer_do_timers (void)
 	/* Restart the timer for the next period if a valid interval
 	   has been given. The status is checked in order to prevent
 	   rescheduling a timer which has been destroyed, or already
-	   rescheduled on behalf of its timeout handler (the latter
-	   being a rather inefficient way of managing timers btw). */
+	   rescheduled on behalf of its timeout handler. A killed
+	   timer has already been dequeued, so there is no need to
+	   specifically check for the XNTIMER_KILLED status here. */
 
 	if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	    {

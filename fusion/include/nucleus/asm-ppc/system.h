@@ -53,6 +53,7 @@
 #include <linux/slab.h>
 #include <linux/errno.h>
 #include <linux/adeos.h>
+#include <linux/vmalloc.h>
 #include <asm/uaccess.h>
 #include <asm/param.h>
 #include <asm/mmu_context.h>
@@ -289,14 +290,22 @@ static inline unsigned xnarch_current_cpu (void) {
     return adeos_processor_id();
 }
 
-static inline void *xnarch_sysalloc (u_long bytes) {
+static inline void *xnarch_sysalloc (u_long bytes)
 
-    return kmalloc(bytes,GFP_ATOMIC);
+{
+    if (bytes >= 128*1024)
+	return vmalloc(bytes);
+
+    return kmalloc(bytes,GFP_KERNEL);
 }
 
-static inline void xnarch_sysfree (void *chunk, u_long bytes) {
+static inline void xnarch_sysfree (void *chunk, u_long bytes)
 
-    kfree(chunk);
+{
+    if (bytes >= 128*1024)
+	vfree(chunk);
+    else
+	kfree(chunk);
 }
 
 #define xnarch_declare_cpuid  adeos_declare_cpuid

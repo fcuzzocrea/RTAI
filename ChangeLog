@@ -1,3 +1,7 @@
+2004-08-30  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: rtai-3.1 test #5
+
 2004-08-29  Malte Cornils <mcornils@fzi.de>
 
 	* rtai-addons/cpp/rtai_cpp.h: Export missing declarations.

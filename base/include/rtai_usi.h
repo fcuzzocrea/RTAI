@@ -140,12 +140,6 @@ RTAI_PROTO(void, rt_unmask_irq,(unsigned int irq))
         rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _UNMASK_IRQ, &arg);
 }
  
-RTAI_PROTO(void, rt_pend_linux_irq,(unsigned int irq))
-{
-        struct { unsigned int irq; } arg = { irq };
-        rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _PEND_LINUX_IRQ, &arg);
-}
- 
 RTAI_PROTO(void *, rt_spin_lock_init,(void))
 {
         struct { int dummy; } arg = { 0 };

@@ -122,7 +122,7 @@ int main (int argc, char **argv)
 	    time_t now, dt;
 	    time(&now);
 	    dt = now - start;
-	    printf("RTH|%12s|%12s|%12s|%12s|  %.2ldh%.2ldm%.2lds\n",
+	    printf("RTH|%12s|%12s|%12s|%12s|     %.2ld:%.2ld:%.2ld\n",
 		   "lat min","lat avg","lat max","overrun",
 		   dt / 3600,(dt / 60) % 60,dt % 60);
 	    }

@@ -113,9 +113,6 @@ static struct rt_times *linux_times;
 
 static RT_TASK *lxrt_wdog_task[NR_RT_CPUS];
 
-static int (*lxrt_signal_handler)(struct task_struct *task,
-				  int sig);
-
 static unsigned lxrt_migration_virq;
 
 static int lxrt_notify_reboot(struct notifier_block *nb,
@@ -657,11 +654,22 @@ static void lxrt_context_switch(struct task_struct *prev, struct task_struct *ne
 	_lxrt_context_switch(prev, next, cpuid);
 }
 
-static inline void make_current_soft(RT_TASK *rt_current)
+void rt_do_force_soft(RT_TASK *rt_task)
+{
+	rt_global_cli();
+	if (rt_task->state != RT_SCHED_READY) {
+		rt_task->state &= ~RT_SCHED_READY;
+            	enq_ready_task(rt_task);
+		RT_SCHEDULE(rt_task, hard_cpu_id());
+	}
+	rt_global_sti();
+}
+
+static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
 {
         void rt_schedule(void);
-        rt_current->state &= ~RT_SCHED_READY;
         rt_current->force_soft = 0;
+	rt_current->state &= ~RT_SCHED_READY;;
         wake_up_srq.task[wake_up_srq.in] = rt_current->lnxtsk;
         wake_up_srq.in = (wake_up_srq.in + 1) & (MAX_WAKEUP_SRQ - 1);
         rt_pend_linux_srq(wake_up_srq.srq);
@@ -672,9 +680,17 @@ static inline void make_current_soft(RT_TASK *rt_current)
 	rt_global_sti();
         __adeos_schedule_back_root(rt_current->lnxtsk);
 	rt_global_cli();
-        if ((rt_current->state |= RT_SCHED_READY) != RT_SCHED_READY) {
-        	current->state = TASK_HARDREALTIME;
+        if (rt_current->state) {
+        	rt_current->state |= RT_SCHED_READY;
+		LOCK_LINUX(cpuid);
+        	(rt_current->lnxtsk)->state = TASK_HARDREALTIME;
+		rt_smp_current[cpuid] = rt_current;
 		rt_schedule();
+		rt_current->state &= ~RT_SCHED_READY;
+		(rt_current->rprev)->rnext = rt_current->rnext;
+		(rt_current->rnext)->rprev = rt_current->rprev;
+		rt_smp_current[cpuid] = &rt_linux_task;
+		UNLOCK_LINUX(cpuid);
         }
 }
 
@@ -790,9 +806,6 @@ schedlnxtsk:
 				if (prev->used_math) {
 					restore_fpu(prev);
 				}
-				if (rt_current->force_soft) {
-					make_current_soft(rt_current);
-				}	
 			}
 		}
 	}
@@ -926,7 +939,7 @@ schedlnxtsk:
 					restore_fpu(prev);
 				}
 				if (rt_current->force_soft) {
-					make_current_soft(rt_current);
+					make_current_soft(rt_current, cpuid);
 				}	
 			}
 		} else {
@@ -1230,9 +1243,6 @@ schedlnxtsk:
 				if (prev->used_math) {
 					restore_fpu(prev);
 				}
-				if (rt_current->force_soft) {
-					make_current_soft(rt_current);
-				}	
 			}
 		}
         }
@@ -1747,7 +1757,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	rt_global_sti();
 	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
 	rt_global_cli();
-	rt_task->state = 0;
+	rt_task->state &= ~RT_SCHED_READY;
 	(rt_task->rprev)->rnext = rt_task->rnext;
        	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_smp_current[cpuid] = &rt_linux_task;
@@ -2074,13 +2084,7 @@ static int lxrt_handle_signal(struct task_struct *lnxtsk, int sig)
 {
         RT_TASK *task = (RT_TASK *)lnxtsk->this_rt_task[0];
         if ((task->force_soft = task->is_hard == 1)) {
-                rt_global_cli();
-                if (task->state != RT_SCHED_READY) {
-                	task->state &= ~RT_SCHED_READY;
-                        enq_ready_task(task);
-                	RT_SCHEDULE(task, hard_cpu_id());
-                }
-                rt_global_sti();
+		rt_do_force_soft(task);
                 return 0;
         }
         if (task->state) {
@@ -2169,15 +2173,13 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 
 static void lxrt_intercept_signal (adevinfo_t *evinfo)
 {
-	if (lxrt_signal_handler) {
-		struct { struct task_struct *task; int sig; } *evdata = (__typeof(evdata))evinfo->evdata;
-		struct task_struct *task = evdata->task;
-		if (task->ptd[0]) {
-			if (!lxrt_signal_handler(task, evdata->sig))
-			/* Don't propagate so that Linux won't 
-			   further process the signal. */
-			return;
-		}
+	struct { struct task_struct *task; int sig; } *evdata = (__typeof(evdata))evinfo->evdata;
+	struct task_struct *task = evdata->task;
+	if (task->ptd[0]) {
+		if (!lxrt_handle_signal(task, evdata->sig))
+		/* Don't propagate so that Linux won't 
+		   further process the signal. */
+		return;
 	}
 	adeos_propagate_event(evinfo);
 }
@@ -2193,7 +2195,7 @@ static void lxrt_intercept_syscall(adevinfo_t *evinfo)
 		if (task->is_hard == 1) {
 			if (!lxrtmodechoed) {
 				lxrtmodechoed = 1;
-				rt_printk("\nLXRT CHANGED MODE (TRAP, LxrtMode %d), PID = %d\n", LxrtMode, (task->lnxtsk)->pid);
+				rt_printk("\nLXRT CHANGED MODE (SYSCALL, LxrtMode %d), PID = %d\n", LxrtMode, (task->lnxtsk)->pid);
 			}
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d.\n", (task->lnxtsk)->pid););
 			lxrtmode = 2 & LxrtMode;
@@ -2407,7 +2409,6 @@ static int lxrt_init(void)
     set_rt_fun_entries(rt_sched_entries);
 
     lxrt_old_trap_handler = rt_set_rtai_trap_handler(lxrt_handle_trap);
-    lxrt_signal_handler = lxrt_handle_signal;
 
 #ifdef CONFIG_PROC_FS
     rtai_proc_lxrt_register();
@@ -2471,8 +2472,6 @@ static void lxrt_exit(void)
 
 	kfree(taskav[cpuid]);
 	}
-
-    lxrt_signal_handler = NULL;
 
     rt_set_rtai_trap_handler(lxrt_old_trap_handler);
 
@@ -2660,5 +2659,6 @@ EXPORT_SYMBOL(set_rtext);
 EXPORT_SYMBOL(get_min_tasks_cpuid);
 EXPORT_SYMBOL(rt_schedule_soft);
 EXPORT_SYMBOL(LxrtMode);
+EXPORT_SYMBOL(rt_do_force_soft);
 
 #endif /* CONFIG_KBUILD */

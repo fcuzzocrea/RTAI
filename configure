@@ -12086,10 +12086,11 @@ echo "$as_me: error: simulator is missing." >&2;}
 echo "${ECHO_T}not present" >&6
 else
     if test x$CONFIG_RTAI_MVM = xy; then
-	RTAI_MAYBE_SIMDIR=rtai-sim
 	export CONFIG_RTAI_XENOMAI_DEBUG
 	export CONFIG_RTAI_MVM_DEBUG
     	export CONFIG_RTAI_MVM_GCC_TARBALL
+    else
+	RTAI_MAYBE_SIMDIR=rtai-sim
     fi
     echo "$as_me:$LINENO: result: ${CONFIG_RTAI_MVM:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_MVM:-no}" >&6

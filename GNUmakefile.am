@@ -18,18 +18,18 @@ if CONFIG_RTAI_LAB
 OPTDIRS += rtai-lab
 endif
 
-SUBDIRS = rtai-core @RTAI_MAYBE_DOCDIR@ $(OPTDIRS) @RTAI_MAYBE_SIMDIR@
+SUBDIRS = rtai-core @RTAI_MAYBE_DOCDIR@ $(OPTDIRS) $(subdirs)
 
 DIST_SUBDIRS = \
 	@RTAI_MAYBE_DOCDIR@ \
-	@RTAI_MAYBE_SIMDIR@ \
+	$(subdirs) \
 	rtai-core \
 	rtai-testsuite \
 	rtai-compat \
 	rtai-addons \
 	rtai-lab
 
-EXTRA_DIST = makefile README.INSTALL
+EXTRA_DIST = makefile README.INSTALL @RTAI_MAYBE_SIMDIR@
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged
 
@@ -84,6 +84,7 @@ dist-hook:
 	$(MAKE) -C $(distdir)/rtai-core/config/kconfig \
 	-f Makefile.kconfig distclean srctree=$(distdir)
 	rm -fr `find $(distdir) -name CVS`
+	test -e $(srcdir)/rtai-doc || rm -fr $(distdir)/rtai-doc
 
 dev devices:
 	@if test x$(DESTDIR) = x; then \

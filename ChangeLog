@@ -1,3 +1,9 @@
+2004-06-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* configure.in, GNUmakefile.am: handle correctly the "all" and "dist"
+	targets, whether or not the doc and sim directories are present in
+	the source tree.
+
 2004-06-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Add support for 2.6.7.

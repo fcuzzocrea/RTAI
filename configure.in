@@ -1007,10 +1007,11 @@ if test \! -d $srcdir/rtai-sim; then
     AC_MSG_RESULT([not present])
 else
     if test x$CONFIG_RTAI_MVM = xy; then
-	RTAI_MAYBE_SIMDIR=rtai-sim
 	export CONFIG_RTAI_XENOMAI_DEBUG
 	export CONFIG_RTAI_MVM_DEBUG
     	export CONFIG_RTAI_MVM_GCC_TARBALL
+    else
+	RTAI_MAYBE_SIMDIR=rtai-sim
     fi
     AC_MSG_RESULT(${CONFIG_RTAI_MVM:-no})
 fi

@@ -17,13 +17,14 @@ case 'set' then
   label=graphics.exprs;
   oldlb=label(1)
   while %t do
-    [ok,port,pcan_id,kp,ki,lab]=..
+    [ok,port,pcan_id,kp,ki,typ,lab]=..
         getvalue('Set PCAN data block parameters',..
         ['Port';
         'CAN Id';
 	'Proportional Gain';
-        'Integral Gain'],..
-         list('vec',1,'str',1,'vec',1,'vec',1'),label(1))
+        'Integral Gain';
+	'Typ'],...
+         list('vec',1,'str',1,'vec',1,'vec',1','str',1),label(1))
 
     if ~ok then break,end
     label(1)=lab
@@ -38,6 +39,15 @@ case 'set' then
     depu=%t;
     dept=%f;
     dep_ut=[depu dept];
+    ntyp=0;
+
+    if grep(typ,'EPP') | grep(typ,'epp') then
+      ntyp=1;
+    elseif grep(typ,'ISA') | grep(typ,'isa') then
+      ntyp=2;
+    else
+      ntyp=0;
+    end
 
     tt=label(2);
     if find(oldlb <> label(1)) <> [] then
@@ -72,6 +82,8 @@ case 'define' then
   rt_par=[kp,ki,0,0,0]
   rpar=rt_par(:)
   pcan_id='0x601'
+  typ='EPP';
+  ntyp=1;
 
   model=scicos_model()
   model.sim=list(' ',2004)
@@ -88,7 +100,7 @@ case 'define' then
   model.dep_ut=[%t %f]
   model.nzcross=0
 
-  label=list([sci2exp(port),pcan_id,sci2exp(kp),sci2exp(ki)],[])
+  label=list([sci2exp(port),pcan_id,sci2exp(kp),sci2exp(ki),typ],[])
 
   gr_i=['xstringb(orig(1),orig(2),''PCAN IN'',sz(1),sz(2),''fill'');']
   x=standard_define([2 2],model,label,gr_i)
@@ -116,7 +128,7 @@ if tt==[] then
   	 textmp($+1)='   '+funam+"_bloc_init(block,flag);"
   	 textmp($+1)='   break;';
     	 l1 = '  inp_pcan_init(' + string(port) + ',0,';
-    	 l2 = '""' + pcan_id + '"","""",' + string(kp) + ',' + string(ki) + ',0,0,0';
+    	 l2 = '""' + pcan_id + '"","""",' + string(kp) + ',' + string(ki) + ',' + string(ntyp) + ',0,0';
     	 ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
          '{';
          '#ifdef MODEL'

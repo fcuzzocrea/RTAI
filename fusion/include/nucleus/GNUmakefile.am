@@ -9,7 +9,7 @@ ARCHDIR = asm-ppc
 endif
 
 if CONFIG_RTAI_OPT_VM
-ARCHDIR += asm-uvm
+ARCHDIR = asm-uvm
 endif
 
 include_HEADERS = \

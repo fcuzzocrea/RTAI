@@ -1,11 +1,26 @@
+2004-11-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Use pretty printing for help strings
+	(AS_HELP_STRING).
+
+	* nucleus: Fix various undefined symbols with fusion-less builds.
+
+	* nucleus/timer.c (xntimer_start): Do not check for preposterous
+	dates: the start value is a duration and not an absolute date, and
+	dates in the past are caught when programming the next shot
+	anyway.
+
 2004-11-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* fusion: Upgrade to autoconf 2.59 and friends.
 
 	* nucleus/lib/fusion.c: 
 	* skins/rtai/syscall.c: Qualify __user pointers to have them
 	"sparse"-friendly.
 
-	* config/autoconf/acinclude.m4: Fix new pedantic autoconf whim:
-	quote all macro names in definitions.
+	* config/autoconf/acinclude.m4:
+	* sim/acinclude.m4: Fix new pedantic autoconf whim: quote all
+	macro names in definitions.
 
 2004-11-19  Philippe Gerum  <rpm@xenomai.org>
 

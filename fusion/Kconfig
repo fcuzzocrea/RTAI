@@ -4,7 +4,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "O.6.4 (fusion)"
+	default "O.6.5 (fusion)"
 
 menu "General"
 

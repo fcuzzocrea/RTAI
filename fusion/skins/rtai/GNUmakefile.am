@@ -7,7 +7,6 @@ CROSS_COMPILE = @CROSS_COMPILE@
 
 libmodule_SRC = \
 	module.c \
-	syscall.c \
 	task.c \
 	timer.c
 
@@ -18,6 +17,10 @@ include_HEADERS = \
 		syscall.h
 
 distfiles = $(libmodule_SRC)
+
+if CONFIG_RTAI_OPT_FUSION
+libmodule_SRC += syscall.c
+endif
 
 if CONFIG_RTAI_OPT_NATIVE_REGISTRY
 libmodule_SRC += registry.c

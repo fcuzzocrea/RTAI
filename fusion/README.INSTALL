@@ -179,10 +179,10 @@ If you have to change some template files used by any of the autotools
 (i.e. Makefile.am, configure.in, acinclude.m4), then you will need the
 following pack to rebuild the derived files:
 
-o autoconf 2.57
-o automake 1.7.8
-o aclocal 1.7.8
-o libtool 1.4.3
+o autoconf 2.59
+o automake 1.9.2
+o aclocal 1.9.2
+o libtool 1.5.8
 
 Note: the above is _not_ needed unless you want to change fusion's
 internal build directives, which you don't for normal use.

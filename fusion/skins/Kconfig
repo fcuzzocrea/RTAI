@@ -15,7 +15,7 @@ source "skins/vxworks/Kconfig"
 config RTAI_OPT_VM
 	bool "User-space VM support"
 	depends on RTAI_OPT_FUSION
-	default y
+	default n
 	help
 
 	This feature allows applications based on legacy RTOS

@@ -221,8 +221,9 @@ RTIME rt_timer_read (void) {
  * Rescheduling: never.
  */
 
-RTIME rt_timer_tsc (void) {
+RTIME rt_timer_tsc (void)
 
+{
     return xnarch_get_cpu_tsc();
 }
 

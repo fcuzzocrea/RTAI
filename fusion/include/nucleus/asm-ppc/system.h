@@ -358,18 +358,6 @@ void xnpod_welcome_thread(struct xnthread *);
 
 void xnpod_delete_thread(struct xnthread *);
 
-unsigned long xnarch_calibrate_timer (void)
-
-{
-#if  CONFIG_RTAI_HW_TIMER_LATENCY != 0
-    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY) ?: 1;
-#else /* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */
-    /* Compute the time needed to program the decrementer in aperiodic
-       mode. The return value is expressed in timebase ticks. */
-    return xnarch_ns_to_tsc(rthal_calibrate_timer()) ?: 1;
-#endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
-}
-
 static inline int xnarch_start_timer (unsigned long ns,
 				      void (*tickhandler)(void)) {
     return rthal_request_timer(tickhandler,ns);
@@ -867,19 +855,15 @@ static int xnarch_trap_fault (adevinfo_t *evinfo)
     return xnpod_trap_fault(&fltinfo);
 }
 
-static inline unsigned long xnarch_calibrate_timer (void)
+unsigned long xnarch_calibrate_timer (void)
 
 {
-#if CONFIG_RTAI_HW_TIMER_LATENCY != 0
-    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY);
+#if  CONFIG_RTAI_HW_TIMER_LATENCY != 0
+    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY) ?: 1;
 #else /* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */
-    /* Compute the time needed to program the PIT in aperiodic
-       mode. The return value is expressed in CPU ticks. Depending on
-       whether CONFIG_X86_LOCAL_APIC is enabled or not in the kernel
-       configuration RTAI is compiled against,
-       CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local
-       APIC or 8254 timer latency value. */
-    return xnarch_ns_to_tsc(rthal_calibrate_timer());
+    /* Compute the time needed to program the decrementer in aperiodic
+       mode. The return value is expressed in timebase ticks. */
+    return xnarch_ns_to_tsc(rthal_calibrate_timer()) ?: 1;
 #endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
 }
 

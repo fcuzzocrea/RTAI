@@ -324,7 +324,7 @@ ssize_t xnbridge_send (int minor,
     state = &xnbridge_states[minor];
 
     if (!testbits(state->status,XNBRIDGE_USER_CONN))
-	return -EIO;
+	return -EPIPE;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -631,7 +631,7 @@ static ssize_t xnbridge_read (struct file *file,
 	return -EFAULT;
 
     if (!testbits(state->status,XNBRIDGE_KERN_CONN))
-	return -EIO;
+	return -EPIPE;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -712,7 +712,7 @@ static ssize_t xnbridge_write (struct file *file,
     spl_t s;
 
     if (!testbits(state->status,XNBRIDGE_KERN_CONN))
-	return -EIO;
+	return -EPIPE;
 
     if (count == 0)
 	return -EINVAL;
@@ -870,7 +870,7 @@ int xnbridge_init (void)
 	{
 	xnlogerr("Unable to reserve major #%d for dbridge.\n",
 		 XNBRIDGE_MAJOR);
-	return -EIO;
+	return -EPIPE;
 	}
 
     xnbridge_wakeup_srq = rthal_request_srq(0,&xnbridge_wakeup_proc);

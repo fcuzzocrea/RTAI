@@ -46,8 +46,6 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #define MAX_FUN_EXT  16
 static struct rt_fun_entry *rt_fun_ext[MAX_FUN_EXT];
 
-static struct desc_struct sidt;
-
 /*
  * WATCH OUT for the max expected size of messages and arguments of rtai funs;
  */
@@ -63,8 +61,6 @@ void trace_true_lxrt_rtai_syscall_entry(void);
 void trace_true_lxrt_rtai_syscall_exit(void);
 /****************************************************************************/
 #endif /* CONFIG_RTAI_TRACE */
-
-DEFINE_LXRT_HANDLER();
 
 int get_min_tasks_cpuid(void);
 
@@ -615,22 +611,6 @@ asmlinkage long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
     return retval;
 }
 
-asmlinkage int rtai_lxrt_fastpath (void)
-
-{
-    /* Returns zero if we may process pending Linux work on our return
-       path (i.e. long return path through reschedule), or non-zero if
-       we may not (fast return path). In the former case, also unstall
-       the Linux stage into the Adeos pipeline so that interrupts can
-       flow anew. */
-
-	if (test_bit(hard_cpu_id(), &rtai_cpu_realtime)) {
-		return 1;
-	}
-	rtai_linux_sti();
-	return 0;
-}
-
 int set_rt_fun_ext_index(struct rt_fun_entry *fun, int idx)
 {
 	if (idx > 0 && idx < MAX_FUN_EXT && !rt_fun_ext[idx]) {
@@ -709,12 +689,8 @@ void linux_process_termination(void)
 }
 
 int lxrt_init_archdep (void)
-
 {
     RT_TASK *rt_linux_tasks[NR_RT_CPUS];
-
-    sidt = rt_set_full_intr_vect(RTAI_LXRT_VECTOR, 15, 3, (void *)&RTAI_LXRT_HANDLER);
-
     rt_fun_ext[0] = rt_fun_lxrt;
     rt_get_base_linux_task(rt_linux_tasks);
     rt_linux_tasks[0]->task_trap_handler[0] = (void *)set_rt_fun_ext_index;
@@ -723,10 +699,6 @@ int lxrt_init_archdep (void)
     return 0;
 }
 
-void lxrt_exit_archdep (void)
-
-{
-    rt_reset_full_intr_vect(RTAI_LXRT_VECTOR, sidt);
-}
+void lxrt_exit_archdep (void) { }
 
 EXPORT_SYMBOL(linux_process_termination);

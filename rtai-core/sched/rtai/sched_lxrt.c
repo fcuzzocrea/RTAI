@@ -1622,9 +1622,6 @@ static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
         rt_schedule();
         UNLOCK_LINUX(cpuid);
         rt_global_sti();
-#ifdef USE_LINUX_SYSCALL_FOR_LXRT
-        rtai_linux_sti();
-#endif
 }
 
 void rt_schedule_soft(RT_TASK *rt_task)
@@ -2124,16 +2121,6 @@ static void lxrt_intercept_syscall(adevinfo_t *evinfo)
 {
 	adeos_declare_cpuid;
 
-#ifdef USE_LINUX_SYSCALL_FOR_LXRT
-	extern asmlinkage long long rtai_lxrt_invoke (unsigned int, void *);
-	struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-	if (r->orig_eax >= NR_syscalls) {
-		long long retval = rtai_lxrt_invoke(r->eax, (void *)r->ecx);
-		copy_to_user((void *)r->edx, &retval, sizeof(retval));
-		return;
-	}
-#endif
-
 	adeos_propagate_event(evinfo);
     	if (evinfo->domid != RTAI_DOMAIN_ID) {
 		return;
@@ -2304,6 +2291,15 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, 0 },			            000 }
 };
 
+static long long (*rtai_usrq_trampoline)(unsigned long, void *);
+extern long long (*rtai_syscall_entry)(unsigned long, void *);
+extern long long rtai_lxrt_invoke (unsigned long, void *);
+
+static long long lxrt_syscall(unsigned long srq, void *args)
+{
+	return srq > RTAI_NR_SRQS ? rtai_lxrt_invoke(srq, args) : rtai_usrq_trampoline(srq, args);
+}
+
 static int lxrt_init(void)
 
 {
@@ -2373,6 +2369,7 @@ static int lxrt_init(void)
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&lxrt_intercept_syscall);
     adeos_catch_event(ADEOS_EXIT_PROCESS,&lxrt_intercept_exit);
     adeos_catch_event(ADEOS_KICK_PROCESS, &lxrt_intercept_signal);
+	rtai_usrq_trampoline = xchg(&rtai_syscall_entry, lxrt_syscall);
 
     return 0;
 }
@@ -2444,6 +2441,7 @@ static void lxrt_exit(void)
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
     adeos_catch_event(ADEOS_EXIT_PROCESS, NULL);
     adeos_catch_event(ADEOS_KICK_PROCESS, NULL);
+	xchg(&rtai_syscall_entry, rtai_usrq_trampoline);
     
     flags = rtai_critical_enter(NULL);
 

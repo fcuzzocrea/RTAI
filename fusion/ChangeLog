@@ -13,6 +13,12 @@
 	* arch/ppc/hal.c (__rthal_init): Handle the possible failure of
 	adeos_virtualize_irq() and adeos_register_domain(). Perform the 
 	necessary cleanups on all failures in this function.
+
+	* arch/i386/hal.c (rthal_request_linux_irq): Handle the possible 
+	failure of the Linux interrupt handler registration.
+	
+	* arch/ppc/hal.c (rthal_request_linux_irq): Handle the possible 
+	failure of the Linux interrupt handler registration.
 	
 2005-03-06  Philippe Gerum  <rpm@xenomai.org>
 

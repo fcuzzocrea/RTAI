@@ -345,6 +345,7 @@ int rthal_request_linux_irq (unsigned irq,
 			     void *dev_id)
 {
     unsigned long flags;
+    int err = 0;
 
     if (irq >= IPIPE_NR_XIRQS || !handler)
 	return -EINVAL;
@@ -359,9 +360,9 @@ int rthal_request_linux_irq (unsigned irq,
 
     rthal_spin_unlock_irqrestore(flags,&irq_desc[irq].lock);
 
-    request_irq(irq,handler,SA_SHIRQ,name,dev_id);
+    err = request_irq(irq,handler,SA_SHIRQ,name,dev_id);
 
-    return 0;
+    return err;
 }
 
 /**

@@ -107,6 +107,8 @@ static int xnpod_read_proc (char *page,
     xnholder_t *holder;
     char *p = page;
     spl_t s;
+    const unsigned nr_cpus=xnarch_num_online_cpus();
+    unsigned cpu, ready_threads = 0;
 
     p += sprintf(p,"Registered interface(s): ");
 
@@ -142,32 +144,59 @@ static int xnpod_read_proc (char *page,
 	goto out;
 	}
 
-#if 0 /* FIXME */
-    p += sprintf(p,"Scheduler status: %d threads, %d ready, %d blocked\n",
-		 nkpod->threadq.elems,
-		 nkpod->sched.readyq.pqueue.elems,
-		 nkpod->sched.suspendq.elems);
-#endif
+    if (testbits(nkpod->status, XNPINIT))
+        {
+        p += sprintf(p, "Pod initializing.\n");
+        goto out;
+        }
 
-    p += sprintf(p,"\n%-12s %-4s  %-5s  %-8s\n","NAME","PRI","TIMEOUT","STATUS");
-    p += sprintf(p,"----------------------------------\n");
+    xnlock_get_irqsave(&nklock, s);
 
-    splhigh(s);
+    for (cpu = 0; cpu < nr_cpus; ++cpu)
+        {
+        xnsched_t *sched = xnpod_sched_slot(cpu);
+        ready_threads += sched->readyq.pqueue.elems;
+        }
 
-    holder = getheadq(&nkpod->threadq);
+    xnlock_put_irqrestore(&nklock, s);
 
-    while (holder)
-	{
-	thread = link2thread(holder,glink);
-	p += sprintf(p,"%-12s %-4d  %-5Lu  0x%.8lx\n",
-		     thread->name,
-		     thread->cprio,
-		     testbits(thread->status,XNDELAY) ? xnthread_timeout(thread) : 0LL,
-		     thread->status);
-	holder = nextq(&nkpod->threadq,holder);
-	}
+    p += sprintf(p,"\nScheduler status: %d threads, %d ready, %d blocked\n",
+                 nkpod->threadq.elems,
+                 ready_threads,
+                 nkpod->suspendq.elems);
+    
+    p += sprintf(p,"\n%-3s   %-12s %-4s  %-5s  %-8s\n","CPU", "NAME","PRI",
+                     "TIMEOUT", "STATUS");
+    for (cpu = 0; cpu < nr_cpus; ++cpu)
+        {
+        xnsched_t *sched = xnpod_sched_slot(cpu);
 
-    splexit(s);
+        p += sprintf(p,"-----------------------------------------\n");
+
+        xnlock_get_irqsave(&nklock, s);
+
+        holder = getheadq(&nkpod->threadq);
+
+        while (holder)
+	    {
+	    thread = link2thread(holder,glink);
+            holder = nextq(&nkpod->threadq,holder);
+
+            if (thread->sched != sched)
+                continue;
+
+	    p += sprintf(p,"%3u   %-12s %-4d  %-5Lu  0x%.8lx\n",
+                         cpu,
+                         thread->name,
+                         thread->cprio,
+                         (testbits(thread->status,XNDELAY)
+                          ? xnthread_timeout(thread)
+                          : 0LL ),
+                         thread->status);
+            }
+
+        xnlock_put_irqrestore(&nklock, s);
+        }
 
  out:
 

@@ -1,3 +1,8 @@
+2004-11-14  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/macros/RTAI: Modified Scicos library and
+	modules for Peaks CAN interface.
+
 2004-11-12  Michael Neuhauser <mike@firmix.at>
 
 	* rtai-core/sched/rtai/all_schedulers: fixed setting of RR yield

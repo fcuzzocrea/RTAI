@@ -34,7 +34,7 @@
 
 #define RESET		 	1
 #define RESIZE		 	2
-#define SUSPEND_TIMED	 	3
+#define RTF_SUSPEND_TIMED	3
 #define OPEN_SIZED	 	4
 #define READ_ALL_AT_ONCE 	5
 #define READ_TIMED	 	6
@@ -458,7 +458,7 @@ RTAI_PROTO(int, rtf_resize,(int fd, int size))
  */
 RTAI_PROTO(int, rtf_suspend_timed,(int fd, int ms_delay))
 {
-	int ret = ioctl(fd, SUSPEND_TIMED, ms_delay);
+	int ret = ioctl(fd, RTF_SUSPEND_TIMED, ms_delay);
 	return ret < 0 ? -errno : ret;
 }
 

@@ -121,7 +121,7 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
                bit_spin_lock. */
             while (test_bit(BITS_PER_LONG - 1,&lock->lock))
                 {
-                rthal_cpu_relax(cpuid);
+                cpu_relax(cpuid);
 
 #if CONFIG_RTAI_OPT_DEBUG
                 if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)

@@ -211,16 +211,6 @@ static inline void rthal_spin_unlock_irqrestore(unsigned long flags,
     rthal_local_irq_restore(flags);
 }
 
-#ifdef CONFIG_SMP
-#define rthal_cpu_relax(x) \
-do { \
-   int i = 0; \
-   do \
-     cpu_relax(); \
-   while (++i < x); \
-} while(0)
-#endif /* CONFIG_SMP */
-
 #if !defined(CONFIG_ADEOS_NOTHREADS)
 
 /* Since real-time interrupt handlers are called on behalf of the RTAI

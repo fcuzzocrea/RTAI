@@ -45,7 +45,13 @@ void atomic_set_mask(unsigned long mask, /* from arch/ppc/kernel/misc.S */
 
 #else /* !__KERNEL__ */
 
-#include <asm/ppc_asm.h>
+#include <linux/config.h>
+
+#ifdef CONFIG_IBM405_ERR77
+#define PPC405_ERR77(ra,rb)	"dcbt " #ra "," #rb ";"
+#else
+#define PPC405_ERR77(ra,rb)
+#endif
 
 /*
  * Shamelessly lifted from <linux/asm-ppc/system.h>

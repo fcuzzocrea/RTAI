@@ -1,3 +1,10 @@
+2004-12-29  Philippe Gerum  <rpm@localhost>
+
+	* nucleus/fusion.c: Add missing checks for XNBREAK and return
+	-EINTR appropriately.
+
+	* nucleus/shadow.c (xnshadow_wait_barrier): Use spinlock.
+
 2004-12-28  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/syscall.h: Gather all arch-independent

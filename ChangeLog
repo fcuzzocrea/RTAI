@@ -1,6 +1,13 @@
+2004-03-09  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/include/rtai_schedcore.h: moved arch dependent part of 
+	the scheduling IPI to asm-i386/rtai_hal.h
+        * rtai-core/include/asm-i386/rtai_hal.h: added a macro for the
+        arch dependent part of the scheduling IPI.
+
 2004-31-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-        * rtai-core/include/asm/rtai_wrappers.h: added macros to support 
+        * rtai-core/include/rtai_wrappers.h: added macros to support 
 	Linux cpumask_t, without changing RTAI API.
 
         * rtai-core/arch/i386/hal/hal.c: adapted to use Linux cpumask_t

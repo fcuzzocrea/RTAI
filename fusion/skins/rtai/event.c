@@ -74,18 +74,7 @@ static ssize_t __event_read_proc (char *page,
 	    RT_TASK *task = thread2rtask(sleeper);
 	    const char *mode = (task->wait_args.event.mode & EV_ANY) ? "any" : "all";
 	    unsigned long mask = task->wait_args.event.mask;
-
-	    if (*xnthread_name(sleeper))
-		p += sprintf(p,"+%s (mask=0x%lx, %s)\n",
-			     xnthread_name(sleeper),
-			     mask,
-			     mode);
-	    else
-		p += sprintf(p,"+%p\n (mask=0x%lx, %s)\n",
-			     sleeper,
-			     mask,
-			     mode);
-
+	    p += sprintf(p,"+%s (mask=0x%lx, %s)\n",xnthread_name(sleeper),mask,mode);
 	    holder = nextpq(xnsynch_wait_queue(&event->synch_base),holder);
 	    }
 	}

@@ -78,12 +78,7 @@ static ssize_t __queue_read_proc (char *page,
 	while (holder)
 	    {
 	    xnthread_t *sleeper = link2thread(holder,plink);
-
-	    if (*xnthread_name(sleeper))
-		p += sprintf(p,"+%s\n",xnthread_name(sleeper));
-	    else
-		p += sprintf(p,"+%p\n",sleeper);
-
+	    p += sprintf(p,"+%s\n",xnthread_name(sleeper));
 	    holder = nextpq(xnsynch_wait_queue(&q->synch_base),holder);
 	    }
 	}

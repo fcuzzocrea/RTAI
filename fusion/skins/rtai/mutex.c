@@ -69,23 +69,13 @@ static ssize_t __mutex_read_proc (char *page,
 	xnpholder_t *holder;
 	
 	/* Pended mutex -- dump owner and waiters. */
-
-	if (*xnthread_name(owner))
-	    p += sprintf(p,"=locked by %s depth=%d\n",xnthread_name(owner),mutex->lockcnt);
-	else
-	    p += sprintf(p,"=locked by %p depth=%d\n",owner,mutex->lockcnt);
-
+	p += sprintf(p,"=locked by %s depth=%d\n",xnthread_name(owner),mutex->lockcnt);
 	holder = getheadpq(xnsynch_wait_queue(&mutex->synch_base));
 
 	while (holder)
 	    {
 	    xnthread_t *sleeper = link2thread(holder,plink);
-
-	    if (*xnthread_name(sleeper))
-		p += sprintf(p,"+%s\n",xnthread_name(sleeper));
-	    else
-		p += sprintf(p,"+%p\n",sleeper);
-
+	    p += sprintf(p,"+%s\n",xnthread_name(sleeper));
 	    holder = nextpq(xnsynch_wait_queue(&mutex->synch_base),holder);
 	    }
 	}

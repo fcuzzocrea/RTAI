@@ -80,16 +80,7 @@ static ssize_t __heap_read_proc (char *page,
 	    xnthread_t *sleeper = link2thread(holder,plink);
 	    RT_TASK *task = thread2rtask(sleeper);
 	    size_t size = task->wait_args.heap.size;
-
-	    if (*xnthread_name(sleeper))
-		p += sprintf(p,"+%s (size=%d)\n",
-			     xnthread_name(sleeper),
-			     size);
-	    else
-		p += sprintf(p,"+%p (size=%d)\n",
-			     sleeper,
-			     size);
-
+	    p += sprintf(p,"+%s (size=%d)\n",xnthread_name(sleeper),size);
 	    holder = nextpq(xnsynch_wait_queue(&heap->synch_base),holder);
 	    }
 	}

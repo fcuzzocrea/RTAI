@@ -520,6 +520,10 @@ RT_TASK *rt_rpc_until(RT_TASK *task, unsigned int to_do, unsigned int *result, R
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
+	if ((rt_current->resume_time = time) <= rt_time_h) {
+		rt_global_restore_flags(flags);
+		return (RT_TASK *)0;
+	}
 	if ((task->state & RT_SCHED_RECEIVE) &&
 	    (!task->msg_queue.task || task->msg_queue.task == rt_current)) {
 		rt_current->msg = task->msg = to_do;
@@ -529,17 +533,12 @@ RT_TASK *rt_rpc_until(RT_TASK *task, unsigned int to_do, unsigned int *result, R
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_RECEIVE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 		}
-		enqueue_blocked(rt_current, &task->ret_queue, 0);
 		rt_current->state |= (RT_SCHED_RETURN | RT_SCHED_DELAYED);
 	} else {
-		if ((rt_current->resume_time = time) <= rt_time_h) {
-			rt_global_restore_flags(flags);
-			return (RT_TASK *)0;
-		}
 		rt_current->msg = to_do;
-		enqueue_blocked(rt_current, &task->msg_queue, 0);
 		rt_current->state |= (RT_SCHED_RPC | RT_SCHED_DELAYED);
 	}
+	enqueue_blocked(rt_current, &task->ret_queue, 0);
 	task->owndres += RPCINC;
 	pass_prio(task, rt_current);
 	rem_ready_current(rt_current);

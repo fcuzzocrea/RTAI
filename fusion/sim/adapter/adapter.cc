@@ -26,6 +26,8 @@
 #include "vm/interrupt.h"
 #include "vm/display.h"
 
+#define sim_current_cpu() 0	// This code must not be instrumented!
+
 extern void (*gcic_dinsn)(int);
 
 extern void (*gcic_dframe)(int);
@@ -112,7 +114,7 @@ void mvm_finalize_init (void)
 {
     nkpod->schedhook = &kdoor(mvm_trace_sched);
     xnarchtcb_t *tcb = (xnarchtcb_t *)MvmManager::This->getRootThread()->getTcbArg();
-    tcb->kthread = &nkpod->sched[xnarch_current_cpu()].rootcb;
+    tcb->kthread = &nkpod->sched[sim_current_cpu()].rootcb;
     MvmManager::This->setFlags(MVM_SIMREADY);
 }
 
@@ -130,7 +132,7 @@ int mvm_test_predicate (int pred)
 	{
 	case MVM_ON_CALLOUT:
 
-	    return !!(nkpod->status & XNKCOUT);
+	    return !!(nkpod->sched[sim_current_cpu()].status & XNKCOUT);
 
 	case MVM_ON_IHANDLER:
 

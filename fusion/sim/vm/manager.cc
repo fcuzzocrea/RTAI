@@ -817,7 +817,7 @@ MvmContext MvmManager::getContext ()
 	ctx.type = XIdleContext;
     else
 	{
-	ctx.type = XThreadContext; // Includes interrupt svc threads
+	ctx.type = XThreadContext;
 	ctx.internalID = getRunningThread()->getOid();
 	}
 
@@ -847,7 +847,7 @@ const char *MvmManager::getContextString ()
 
 	    XenoThread::contextString.format("idle 0 %d %llu",
 					     MVM_CR_IMASK,
-					     MvmManager::jiffies());
+					     jiffies());
 	    break;
 
 	case XCalloutContext:

@@ -38,7 +38,7 @@
 #define _RTAI_ASM_PPC_HAL_H
 
 #include <rtai_config.h>
-#include <linux/asm/div64.h>
+#include <asm/div64.h>
 
 #define RTHAL_NR_CPUS  ADEOS_NR_CPUS
 

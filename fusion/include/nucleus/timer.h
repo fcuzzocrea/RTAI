@@ -80,7 +80,9 @@ typedef struct xntimer {
 
     xnflags_t status;
 
-    xnticks_t date;		/* Timeout date (in ticks) */
+    xnticks_t date;		/* Absolute timeout date (in ticks) */
+
+    xnticks_t shot;		/* Anticipated shot time (in ticks) */
 
     xnticks_t interval;		/* Periodic interval (in ticks, 0 == one shot) */
 

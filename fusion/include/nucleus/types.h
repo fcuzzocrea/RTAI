@@ -53,7 +53,11 @@ typedef unsigned long xnsigmask_t;
 
 typedef unsigned long long xnticks_t;
 
+typedef long long xnsticks_t;
+
 typedef unsigned long long xntime_t; /* ns */
+
+typedef long long xnstime_t;
 
 #define XN_INFINITE   (0)
 #define XN_NONBLOCK   ((xnticks_t)-1)

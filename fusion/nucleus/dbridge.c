@@ -811,7 +811,6 @@ static unsigned xnbridge_poll (struct file *file,
 {
     xnbridge_state_t *state = (xnbridge_state_t *)file->private_data;
     unsigned mask = 0;
-    spl_t s;
 
     poll_wait(file,&state->pollq,pt);
 

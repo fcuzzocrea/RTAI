@@ -88,6 +88,7 @@ void xntimer_init (xntimer_t *timer,
     timer->cookie = cookie;
     timer->interval = 0;
     timer->date = XN_INFINITE;
+    timer->shot = XN_INFINITE;
 
     xnarch_init_display_context(timer);
 }
@@ -123,6 +124,7 @@ static inline void xntimer_enqueue (xntimer_t *timer)
 	insertq(q,p->next,&timer->link);
 	}
 
+    timer->shot = timer->date;
     clrbits(timer->status,XNTIMER_DEQUEUED);
 }
 
@@ -136,30 +138,40 @@ static inline void xntimer_dequeue (xntimer_t *timer)
 
 #if XNARCH_HAVE_APERIODIC_TIMER
 
-static inline xnticks_t xntimer_next_shot (void)
+static inline int xntimer_next_shot (void)
 
 {
     xnholder_t *holder = getheadq(&nkpod->timerwheel[0]);
-    unsigned long long tsc;
+    xnticks_t now, delay;
     xntimer_t *timer;
-    xnticks_t delay;
 
     if (!holder)
-	return XN_INFINITE;
+	return 0; /* No pending timer. */
 
     timer = link2timer(holder);
-    tsc = xnarch_get_cpu_tsc();
+    now = xnarch_get_cpu_tsc();
 
-    if (timer->date <= tsc + nkschedlat)
-	return XN_NONBLOCK;
+    if (now + nktimerlat >= timer->date)
+	{
+	timer->shot = now;
+	return -1; /* Cannot wait: trigger immediately. */
+	}
 
-    delay = timer->date - tsc - nkschedlat;
+    if (now + nktimerlat + nkschedlat >= timer->date)
+	delay = nktimerlat;
+    else
+	{
+	delay = timer->date - now - nkschedlat - nktimerlat;
 
-    /* If the delay value is lower than the time needed to program
-       the timer, increase it to a sane minimum so that we don't
-       lose a tick. */
+	if (delay < nktimerlat)
+	    delay = nktimerlat;
+	}
 
-    return delay < nktimerlat ? nktimerlat : delay;
+    timer->shot = now + delay;
+
+    xnarch_program_timer_shot(delay);
+
+    return 0;
 }
 
 static inline int xntimer_heading_p (xntimer_t *timer)
@@ -211,16 +223,11 @@ int xntimer_start (xntimer_t *timer,
 #if XNARCH_HAVE_APERIODIC_TIMER
 	if (xntimer_heading_p(timer))
 	    {
-	    xnticks_t delay = xntimer_next_shot();
-
-	    if (delay == XN_NONBLOCK)	/* Too late for this one. */
-		{
+	    if (xntimer_next_shot() < 0)
+		{ /* Too late for this one. */
 		xntimer_dequeue(timer);
 		err = -EAGAIN;
 		}
-	    else if (delay != XN_INFINITE)
-		/* Program the hardware for the next shot. */
-		xnarch_program_timer_shot(delay);
 	    }
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
 	}
@@ -257,12 +264,7 @@ void xntimer_stop (xntimer_t *timer)
 	/* If we removed the heading timer, reprogram the next shot,
 	   unless the latter is too close or inexistent. */
 	if (heading)
-	    {
-	    xnticks_t delay = xntimer_next_shot();
-
-	    if (delay != XN_INFINITE)
-		xnarch_program_timer_shot(delay);
-	    }
+	    xntimer_next_shot();
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
 	}
 
@@ -355,7 +357,7 @@ void xntimer_do_timers (void)
 	nextholder = nextq(timerq,holder);
 	timer = link2timer(holder);
 
-	if (timer->date > now)
+	if (timer->shot > now)
 	    {
 	    if (!testbits(nkpod->status,XNTMPER))
 		/* No need to continue in aperiodic mode since
@@ -412,13 +414,9 @@ void xntimer_do_timers (void)
 
     if (!testbits(nkpod->status,XNTMPER))
 	{
-	xnticks_t delay = xntimer_next_shot();
-
-	if (delay == XN_NONBLOCK) /* Oops, overdue timer: rescan. */
+	if (xntimer_next_shot() < 0)
+	    /* Oops, overdue timer: rescan. */
 	    goto restart;
-
-	if (delay != XN_INFINITE) /* Program the hardware for the next shot. */
-	    xnarch_program_timer_shot(delay);
 
 	/* Otherwise, no more active timers. */
 	}

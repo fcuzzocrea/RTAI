@@ -535,7 +535,8 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
  *
  * Preempts the running thread (because a more prioritary thread has
  * just been readied).  The thread is re-inserted to the front of its
- * priority group in the ready thread queue.
+ * priority group in the ready thread queue. Must must be called
+ * with nklock locked, interrupts off.
  */
 
 static inline void xnpod_preempt_current_thread (void)
@@ -543,14 +544,11 @@ static inline void xnpod_preempt_current_thread (void)
 {
     xnthread_t *thread;
     xnsched_t *sched;
-    spl_t s;
 
-    xnlock_get_irqsave(&nklock,s);
     sched = xnpod_current_sched();
     thread = sched->runthread;
     insertpql(&sched->readyq,&thread->rlink,thread->cprio);
     setbits(thread->status,XNREADY);
-    xnlock_put_irqrestore(&nklock,s);
 
     if (!nkpod->schedhook)
         return;
@@ -1310,17 +1308,11 @@ void xnpod_resume_thread (xnthread_t *thread,
                         xnsynch_forget_sleeper(thread);
 
                     if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Still blocked? */
-                        {
-                        xnlock_put_irqrestore(&nklock,s);
-                        return;
-                        }
+                        goto unlock_and_exit;
                     }
                 else
-                    {
                     /* The thread is still suspended (XNSUSP) */
-                    xnlock_put_irqrestore(&nklock,s);
-                    return;
-                    }
+		    goto unlock_and_exit;
                 }
             else if (testbits(thread->status,XNDELAY))
                 {
@@ -1334,10 +1326,7 @@ void xnpod_resume_thread (xnthread_t *thread,
                     }
 
                 if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Still blocked? */
-                    {
-                    xnlock_put_irqrestore(&nklock,s);
-                    return;
-                    }
+		    goto unlock_and_exit;
                 }
             else
                 {
@@ -1347,8 +1336,7 @@ void xnpod_resume_thread (xnthread_t *thread,
                 if ((mask & XNPEND) != 0 && thread->wchan)
                     xnsynch_forget_sleeper(thread);
 
-                xnlock_put_irqrestore(&nklock,s);
-                return;
+		goto unlock_and_exit;
                 }
             }
         else if ((mask & XNDELAY) != 0)
@@ -1391,26 +1379,21 @@ void xnpod_resume_thread (xnthread_t *thread,
 
         if (nkpod->schedhook &&
             getheadpq(&sched->readyq) != &thread->rlink)
-            {
-            xnlock_put_irqrestore(&nklock,s);
             /* The running thread does no longer lead the ready
                queue. */
             nkpod->schedhook(thread,XNREADY);
-            }
-        else
-            xnlock_put_irqrestore(&nklock,s);
         }
     else if (!testbits(thread->status,XNREADY))
         {
         setbits(thread->status,XNREADY);
 
-        xnlock_put_irqrestore(&nklock,s);
-
         if (nkpod->schedhook)
             nkpod->schedhook(thread,XNREADY);
         }
-    else
-        xnlock_put_irqrestore(&nklock,s);
+
+unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 /*!
@@ -1591,10 +1574,7 @@ void xnpod_rotate_readyq (int prio)
     sched = xnpod_current_sched();
 
     if (countpq(&sched->readyq) == 0)
-        {
-        xnlock_put_irqrestore(&nklock, s);
-        return; /* Nobody is ready. */
-        }
+        goto unlock_and_exit; /* Nobody is ready. */
 
     /* There is _always_ a regular thread, ultimately the root
        one. Use the base priority, not the priority boost. */
@@ -1610,6 +1590,8 @@ void xnpod_rotate_readyq (int prio)
             /* This call performs the actual rotation. */
             xnpod_resume_thread(link2thread(pholder,rlink),0);
         }
+
+ unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
 }
@@ -2040,8 +2022,8 @@ void xnpod_schedule (void)
         nkpod->schedhook(runthread,XNRUNNING);
     
     if (countq(&nkpod->tswitchq) > 0 &&
-        !testbits(runthread->status,XNTHREAD_SYSTEM_BITS))
-        xnpod_fire_callouts(&nkpod->tswitchq,runthread);
+	!testbits(runthread->status,XNTHREAD_SYSTEM_BITS))
+	xnpod_fire_callouts(&nkpod->tswitchq,runthread);
 
  signal_unlock_and_exit:
 
@@ -2883,12 +2865,12 @@ static void xnpod_calibration_thread (void *cookie)
                              XNDELAY,
                              XN_INFINITE,
                              NULL);
-        jitter += (int)(xnarch_get_cpu_tsc() - expected);
+	jitter += (int)(xnarch_get_cpu_tsc() - expected);
         }
 
     xntimer_destroy(&timer);
 
-    nkschedlat = jitter < 0 ? 0 : jitter / count;
+    nkschedlat = jitter < 0 ? 0 : (jitter / count) + nktimerlat;
 
     *flagp = 1;
 

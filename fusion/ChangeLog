@@ -1,5 +1,9 @@
 2004-12-05  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.6.6
+
+2004-12-05  Philippe Gerum  <rpm@xenomai.org>
+
 	* include/nucleus/asm-i386/system.h (xnarch_adjust_calibration):
 	No adjustment needed anymore here.
 

@@ -529,7 +529,12 @@ static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
 #ifdef CONFIG_RTAI_HW_FPU
 
     if(tcb->fpup)
+        {
         rthal_save_fpu(tcb->fpup);
+
+        if(tcb->user_fpu_owner && tcb->user_fpu_owner->thread.regs)
+            tcb->user_fpu_owner->thread.regs->msr &= ~MSR_FP;
+        }   
 
 #endif /* CONFIG_RTAI_HW_FPU */
 }
@@ -540,7 +545,12 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 #ifdef CONFIG_RTAI_HW_FPU
 
     if(tcb->fpup)
+        {
         rthal_restore_fpu(tcb->fpup);
+
+        if(tcb->user_fpu_owner && tcb->user_fpu_owner->thread.regs)
+            tcb->user_fpu_owner->thread.regs->msr |= MSR_FP;
+        }   
 
     /* FIXME: We restore FPU "as it was" when RTAI preempted Linux, whereas we
        could be much lazier. */

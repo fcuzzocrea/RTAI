@@ -66,6 +66,7 @@ void cleanup (void)
 
 {
     /* We need to unbind explicitely from the queue in order to
-       properly release the underlying memory mapping. */
+       properly release the underlying memory mapping. Exiting the
+       process unbinds all mappings automatically. */
     rt_queue_unbind(&q_desc);
 }

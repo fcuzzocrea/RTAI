@@ -77,6 +77,14 @@ int rt_sem_v (RT_SEM *sem)
 			     sem);
 }
 
+int rt_sem_broadcast (RT_SEM *sem)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_sem_broadcast,
+			     sem);
+}
+
 int rt_sem_inquire (RT_SEM *sem,
 		    RT_SEM_INFO *info)
 {

@@ -56,6 +56,7 @@ static int __rt_bind_helper (struct task_struct *curr,
 {
     char name[XNOBJECT_NAME_LEN];
     RT_TASK_PLACEHOLDER ph;
+    RTIME timeout;
     void *objaddr;
     spl_t s;
     int err;
@@ -67,7 +68,8 @@ static int __rt_bind_helper (struct task_struct *curr,
     __xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
     name[sizeof(name) - 1] = '\0';
 
-    err = rt_registry_bind(name,TM_INFINITE,&ph.opaque);
+    timeout = xnpod_unblockable_p() ? TM_NONBLOCK : TM_INFINITE;
+    err = rt_registry_bind(name,timeout,&ph.opaque);
 
     if (!err)
 	{
@@ -198,8 +200,9 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
  *                    const char *name)
  */
 
-static int __rt_task_bind (struct task_struct *curr, struct pt_regs *regs) {
+static int __rt_task_bind (struct task_struct *curr, struct pt_regs *regs)
 
+{
     return __rt_bind_helper(curr,regs,RTAI_TASK_MAGIC,NULL);
 }
 
@@ -776,8 +779,9 @@ static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
  *                   const char *name)
  */
 
-static int __rt_sem_bind (struct task_struct *curr, struct pt_regs *regs) {
+static int __rt_sem_bind (struct task_struct *curr, struct pt_regs *regs)
 
+{
     return __rt_bind_helper(curr,regs,RTAI_SEM_MAGIC,NULL);
 }
 
@@ -861,6 +865,29 @@ static int __rt_sem_v (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
+ * int __rt_sem_broadcast(RT_SEM_PLACEHOLDER *ph)
+ */
+
+static int __rt_sem_broadcast (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_SEM_PLACEHOLDER ph;
+    RT_SEM *sem;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    sem = (RT_SEM *)rt_registry_fetch(ph.opaque);
+
+    if (!sem)
+	return -ESRCH;
+
+    return rt_sem_broadcast(sem);
+}
+
+/*
  * int __rt_sem_inquire(RT_SEM_PLACEHOLDER *ph,
  *                      RT_SEM_INFO *infop)
  */
@@ -896,12 +923,13 @@ static int __rt_sem_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #else /* !CONFIG_RTAI_OPT_NATIVE_SEM */
 
-#define __rt_sem_create  __rt_call_not_available
-#define __rt_sem_bind    __rt_call_not_available
-#define __rt_sem_delete  __rt_call_not_available
-#define __rt_sem_p       __rt_call_not_available
-#define __rt_sem_v       __rt_call_not_available
-#define __rt_sem_inquire __rt_call_not_available
+#define __rt_sem_create    __rt_call_not_available
+#define __rt_sem_bind      __rt_call_not_available
+#define __rt_sem_delete    __rt_call_not_available
+#define __rt_sem_p         __rt_call_not_available
+#define __rt_sem_v         __rt_call_not_available
+#define __rt_sem_broadcast __rt_call_not_available
+#define __rt_sem_inquire   __rt_call_not_available
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_SEM */
 
@@ -967,7 +995,9 @@ static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
  *                     const char *name)
  */
 
-static int __rt_event_bind (struct task_struct *curr, struct pt_regs *regs) {
+static int __rt_event_bind (struct task_struct *curr, struct pt_regs *regs)
+
+{
 
     return __rt_bind_helper(curr,regs,RTAI_EVENT_MAGIC,NULL);
 }
@@ -1204,8 +1234,9 @@ static int __rt_mutex_create (struct task_struct *curr, struct pt_regs *regs)
  *                     const char *name)
  */
 
-static int __rt_mutex_bind (struct task_struct *curr, struct pt_regs *regs) {
+static int __rt_mutex_bind (struct task_struct *curr, struct pt_regs *regs)
 
+{
     return __rt_bind_helper(curr,regs,RTAI_MUTEX_MAGIC,NULL);
 }
 
@@ -1384,8 +1415,9 @@ static int __rt_cond_create (struct task_struct *curr, struct pt_regs *regs)
  *                   const char *name)
  */
 
-static int __rt_cond_bind (struct task_struct *curr, struct pt_regs *regs) {
+static int __rt_cond_bind (struct task_struct *curr, struct pt_regs *regs)
 
+{
     return __rt_bind_helper(curr,regs,RTAI_COND_MAGIC,NULL);
 }
 
@@ -2780,7 +2812,7 @@ int __rt_call_not_available (struct task_struct *curr, struct pt_regs *regs) {
 
 static xnsysent_t __systab[] = {
     [__rtai_task_create ] = { &__rt_task_create, __xn_flag_init },
-    [__rtai_task_bind ] = { &__rt_task_bind, __xn_flag_init },
+    [__rtai_task_bind ] = { &__rt_task_bind, __xn_flag_regular },
     [__rtai_task_start ] = { &__rt_task_start, __xn_flag_anycall },
     [__rtai_task_suspend ] = { &__rt_task_suspend, __xn_flag_regular },
     [__rtai_task_resume ] = { &__rt_task_resume, __xn_flag_anycall },
@@ -2809,6 +2841,7 @@ static xnsysent_t __systab[] = {
     [__rtai_sem_delete ] = { &__rt_sem_delete, __xn_flag_anycall },
     [__rtai_sem_p ] = { &__rt_sem_p, __xn_flag_regular },
     [__rtai_sem_v ] = { &__rt_sem_v, __xn_flag_anycall },
+    [__rtai_sem_broadcast ] = { &__rt_sem_broadcast, __xn_flag_anycall },
     [__rtai_sem_inquire ] = { &__rt_sem_inquire, __xn_flag_anycall },
     [__rtai_event_create ] = { &__rt_event_create, __xn_flag_anycall },
     [__rtai_event_bind ] = { &__rt_event_bind, __xn_flag_regular },

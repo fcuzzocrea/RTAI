@@ -1,4 +1,27 @@
+2005-01-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c (__rt_bind_helper): Issue non-blocking
+	request when running inside the Linux domain.
+
+2005-01-15  Max Krasnyansky <maxk@qualcomm.com>
+
+	* skins/rtai/syscalls.c: Export rt_sem_broadcast().
+	
+2005-01-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_relax, xnshadow_harden): Do not stall
+	the high stage when transitioning; this is definitely useless and
+	might induce additional jittery under high vm pressure
+	(e.g. __adeos_schedule_back_root() running unpreemptible).
+
+	* nucleus/shadow.c (engage_irq_shield, disengage_irq_shield): Do
+	not lock hw IRQs when operating; this is useless too, and might
+	induce jittery when unstalling the shield stage.
+
 2005-01-14  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (rtai_sysentry): Return -EPERM upon calling
+	context error.
 
 	* skin/rtai: Fix the mess in the context-checking code: normalize
 	error returns to -EPERM (instead of -EACCES), and stop using

@@ -1,3 +1,7 @@
+2004-06-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/pipe.c (rt_pipe_open): Set magic number.
+
 2004-06-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/psos+, skins/rtai, skins/uitron, skins/vrtx: adaptation to SMP.

@@ -135,20 +135,23 @@ void __pipe_pkg_cleanup (void)
 int rt_pipe_open (RT_PIPE *pipe,
 		  int minor)
 {
-    int err;
-
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
     pipe->minor = minor;
     pipe->buffer = NULL;
     pipe->fillsz = 0;
     pipe->flushable = 0;
+    pipe->magic = 0;
 
     err = xnbridge_mconnect(minor,
 			    &__pipe_output_handler,
 			    NULL,
 			    &__pipe_alloc_handler,
 			    pipe);
+
+    if (!err)
+	pipe->magic = RTAI_PIPE_MAGIC;
+
     return err;
 }
 

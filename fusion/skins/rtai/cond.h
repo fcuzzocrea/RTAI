@@ -97,6 +97,9 @@ void __cond_pkg_cleanup(void);
 
 typedef RT_COND_PLACEHOLDER RT_COND;
 
+int rt_cond_bind(RT_COND *cond,
+		 const char *name);
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus

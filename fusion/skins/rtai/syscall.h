@@ -83,6 +83,19 @@
 #define __rtai_event_pend         30
 #define __rtai_event_post         31
 #define __rtai_event_inquire      32
+#define __rtai_mutex_create       33
+#define __rtai_mutex_bind         34
+#define __rtai_mutex_delete       35
+#define __rtai_mutex_lock         36
+#define __rtai_mutex_unlock       37
+#define __rtai_mutex_inquire      38
+#define __rtai_cond_create        39
+#define __rtai_cond_bind          40
+#define __rtai_cond_delete        41
+#define __rtai_cond_wait          42
+#define __rtai_cond_signal        43
+#define __rtai_cond_broadcast     44
+#define __rtai_cond_inquire       45
 
 struct rt_arg_bulk {
 

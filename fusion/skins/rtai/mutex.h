@@ -103,6 +103,9 @@ void __mutex_pkg_cleanup(void);
 
 typedef RT_MUTEX_PLACEHOLDER RT_MUTEX;
 
+int rt_mutex_bind(RT_MUTEX *mutex,
+		  const char *name);
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus

@@ -3,15 +3,28 @@ lib_LIBRARIES = librtai.a
 librtai_a_AR = $(CROSS_COMPILE)ar cru
 
 librtai_a_SOURCES = \
-	event.c \
 	task.c \
-	timer.c \
-	sem.c
+	timer.c
+
+if CONFIG_RTAI_OPT_NATIVE_SEM
+librtai_a_SOURCES += sem.c
+endif
+
+if CONFIG_RTAI_OPT_NATIVE_EVENT
+librtai_a_SOURCES += event.c
+endif
+
+if CONFIG_RTAI_OPT_NATIVE_MUTEX
+librtai_a_SOURCES += mutex.c
+endif
+
+if CONFIG_RTAI_OPT_NATIVE_COND
+librtai_a_SOURCES += cond.c
+endif
 
 librtai_a_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
 	-D_GNU_SOURCE -D_REENTRANT \
-	-I$(srcdir)/../../../include/nucleus/vm \
 	-I../../../include \
 	-I$(top_srcdir)/include \
 	-I$(srcdir)/../..

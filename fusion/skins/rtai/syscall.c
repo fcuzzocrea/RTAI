@@ -27,6 +27,8 @@
 #include <rtai/timer.h>
 #include <rtai/sem.h>
 #include <rtai/event.h>
+#include <rtai/mutex.h>
+#include <rtai/cond.h>
 
 /* This file implements the RTAI syscall wrappers;
  *
@@ -496,7 +498,7 @@ static int __rt_timer_start (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_timer_stop (void)
+ * int __rt_timer_stop(void)
  */
 
 static int __rt_timer_stop (struct task_struct *curr, struct pt_regs *regs)
@@ -507,7 +509,7 @@ static int __rt_timer_stop (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_timer_read (RTIME *timep)
+ * int __rt_timer_read(RTIME *timep)
  */
 
 static int __rt_timer_read (struct task_struct *curr, struct pt_regs *regs)
@@ -519,7 +521,7 @@ static int __rt_timer_read (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_timer_tsc (RTIME *tscp)
+ * int __rt_timer_tsc(RTIME *tscp)
  */
 
 static int __rt_timer_tsc (struct task_struct *curr, struct pt_regs *regs)
@@ -531,7 +533,7 @@ static int __rt_timer_tsc (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_timer_ns2ticks (RTIME *ticksp, RTIME *nsp)
+ * int __rt_timer_ns2ticks(RTIME *ticksp, RTIME *nsp)
  */
 
 static int __rt_timer_ns2ticks (struct task_struct *curr, struct pt_regs *regs)
@@ -547,7 +549,7 @@ static int __rt_timer_ns2ticks (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_timer_ticks2ns (RTIME *nsp, RTIME *ticksp)
+ * int __rt_timer_ticks2ns(RTIME *nsp, RTIME *ticksp)
  */
 
 static int __rt_timer_ticks2ns (struct task_struct *curr, struct pt_regs *regs)
@@ -563,7 +565,7 @@ static int __rt_timer_ticks2ns (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_timer_inquire (RT_TIMER_INFO *info)
+ * int __rt_timer_inquire(RT_TIMER_INFO *info)
  */
 
 static int __rt_timer_inquire (struct task_struct *curr, struct pt_regs *regs)
@@ -580,11 +582,13 @@ static int __rt_timer_inquire (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
+#if CONFIG_RTAI_OPT_NATIVE_SEM
+
 /*
- * int __rt_sem_create (RT_SEM_PLACEHOLDER *ph,
- *                      const char *name,
- *                      unsigned icount,
- *                      int mode)
+ * int __rt_sem_create(RT_SEM_PLACEHOLDER *ph,
+ *                     const char *name,
+ *                     unsigned icount,
+ *                     int mode)
  */
 
 static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
@@ -635,8 +639,8 @@ static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_sem_bind (RT_SEM_PLACEHOLDER *ph,
- *                    const char *name)
+ * int __rt_sem_bind(RT_SEM_PLACEHOLDER *ph,
+ *                   const char *name)
  */
 
 static int __rt_sem_bind (struct task_struct *curr, struct pt_regs *regs) {
@@ -645,7 +649,7 @@ static int __rt_sem_bind (struct task_struct *curr, struct pt_regs *regs) {
 }
 
 /*
- * int __rt_sem_delete (RT_SEM_PLACEHOLDER *ph)
+ * int __rt_sem_delete(RT_SEM_PLACEHOLDER *ph)
  */
 
 static int __rt_sem_delete (struct task_struct *curr, struct pt_regs *regs)
@@ -668,8 +672,8 @@ static int __rt_sem_delete (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_sem_p (RT_SEM_PLACEHOLDER *ph,
- *                 RTIME *timeoutp)
+ * int __rt_sem_p(RT_SEM_PLACEHOLDER *ph,
+ *                RTIME *timeoutp)
  */
 
 static int __rt_sem_p (struct task_struct *curr, struct pt_regs *regs)
@@ -695,7 +699,7 @@ static int __rt_sem_p (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_sem_v (RT_SEM_PLACEHOLDER *ph)
+ * int __rt_sem_v(RT_SEM_PLACEHOLDER *ph)
  */
 
 static int __rt_sem_v (struct task_struct *curr, struct pt_regs *regs)
@@ -718,8 +722,8 @@ static int __rt_sem_v (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_sem_inquire (RT_SEM_PLACEHOLDER *ph,
- *                       RT_SEM_INFO *infop)
+ * int __rt_sem_inquire(RT_SEM_PLACEHOLDER *ph,
+ *                      RT_SEM_INFO *infop)
  */
 
 static int __rt_sem_inquire (struct task_struct *curr, struct pt_regs *regs)
@@ -748,11 +752,24 @@ static int __rt_sem_inquire (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
+#else /* !CONFIG_RTAI_OPT_NATIVE_SEM */
+
+#define __rt_sem_create  __rt_call_not_available
+#define __rt_sem_bind    __rt_call_not_available
+#define __rt_sem_delete  __rt_call_not_available
+#define __rt_sem_p       __rt_call_not_available
+#define __rt_sem_v       __rt_call_not_available
+#define __rt_sem_inquire __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_SEM */
+
+#if CONFIG_RTAI_OPT_NATIVE_EVENT
+
 /*
- * int __rt_event_create (RT_EVENT_PLACEHOLDER *ph,
- *                        const char *name,
- *                        unsigned ivalue,
- *                        int mode)
+ * int __rt_event_create(RT_EVENT_PLACEHOLDER *ph,
+ *                       const char *name,
+ *                       unsigned ivalue,
+ *                       int mode)
  */
 
 static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
@@ -803,8 +820,8 @@ static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_event_bind (RT_EVENT_PLACEHOLDER *ph,
- *                      const char *name)
+ * int __rt_event_bind(RT_EVENT_PLACEHOLDER *ph,
+ *                     const char *name)
  */
 
 static int __rt_event_bind (struct task_struct *curr, struct pt_regs *regs) {
@@ -813,7 +830,7 @@ static int __rt_event_bind (struct task_struct *curr, struct pt_regs *regs) {
 }
 
 /*
- * int __rt_event_delete (RT_EVENT_PLACEHOLDER *ph)
+ * int __rt_event_delete(RT_EVENT_PLACEHOLDER *ph)
  */
 
 static int __rt_event_delete (struct task_struct *curr, struct pt_regs *regs)
@@ -836,11 +853,11 @@ static int __rt_event_delete (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_event_pend (RT_EVENT_PLACEHOLDER *ph,
-                        unsigned long mask,
-                        unsigned long *mask_r,
-                        int mode,
- *                      RTIME *timeoutp)
+ * int __rt_event_pend(RT_EVENT_PLACEHOLDER *ph,
+                       unsigned long mask,
+                       unsigned long *mask_r,
+                       int mode,
+ *                     RTIME *timeoutp)
  */
 
 static int __rt_event_pend (struct task_struct *curr, struct pt_regs *regs)
@@ -874,8 +891,8 @@ static int __rt_event_pend (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_event_post (RT_EVENT_PLACEHOLDER *ph,
-                        unsigned long mask)
+ * int __rt_event_post(RT_EVENT_PLACEHOLDER *ph,
+ *                     unsigned long mask)
  */
 
 static int __rt_event_post (struct task_struct *curr, struct pt_regs *regs)
@@ -901,8 +918,8 @@ static int __rt_event_post (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_event_inquire (RT_EVENT_PLACEHOLDER *ph,
- *                         RT_EVENT_INFO *infop)
+ * int __rt_event_inquire(RT_EVENT_PLACEHOLDER *ph,
+ *                        RT_EVENT_INFO *infop)
  */
 
 static int __rt_event_inquire (struct task_struct *curr, struct pt_regs *regs)
@@ -931,6 +948,398 @@ static int __rt_event_inquire (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
+#else /* !CONFIG_RTAI_OPT_NATIVE_EVENT */
+
+#define __rt_event_create  __rt_call_not_available
+#define __rt_event_bind    __rt_call_not_available
+#define __rt_event_delete  __rt_call_not_available
+#define __rt_event_pend    __rt_call_not_available
+#define __rt_event_post    __rt_call_not_available
+#define __rt_event_inquire __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
+
+#if CONFIG_RTAI_OPT_NATIVE_MUTEX
+
+/*
+ * int __rt_mutex_create(RT_MUTEX_PLACEHOLDER *ph,
+ *                       const char *name)
+ */
+
+static int __rt_mutex_create (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    char name[XNOBJECT_NAME_LEN];
+    RT_MUTEX_PLACEHOLDER ph;
+    RT_MUTEX *mutex;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (__xn_reg_arg2(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,name,(const char *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	name[sizeof(name) - 1] = '\0';
+	}
+    else
+	*name = '\0';
+
+    mutex = (RT_MUTEX *)xnmalloc(sizeof(*mutex));
+
+    if (!mutex)
+	return -ENOMEM;
+
+    err = rt_mutex_create(mutex,name);
+
+    if (err == 0)
+	{
+	/* Copy back the registry handle to the ph struct. */
+	ph.opaque = mutex->handle;
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	}
+    else
+	xnfree(mutex);
+
+    return err;
+}
+
+/*
+ * int __rt_mutex_bind(RT_MUTEX_PLACEHOLDER *ph,
+ *                     const char *name)
+ */
+
+static int __rt_mutex_bind (struct task_struct *curr, struct pt_regs *regs) {
+
+    return __rt_bind_helper(curr,regs,RTAI_MUTEX_MAGIC);
+}
+
+/*
+ * int __rt_mutex_delete(RT_MUTEX_PLACEHOLDER *ph)
+ */
+
+static int __rt_mutex_delete (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_MUTEX_PLACEHOLDER ph;
+    RT_MUTEX *mutex;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
+
+    if (!mutex)
+	return -ENOENT;
+
+    return rt_mutex_delete(mutex);
+}
+
+/*
+ * int __rt_mutex_lock(RT_MUTEX_PLACEHOLDER *ph)
+ *
+ */
+
+static int __rt_mutex_lock (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_MUTEX_PLACEHOLDER ph;
+    RT_MUTEX *mutex;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
+
+    if (!mutex)
+	return -ENOENT;
+
+    return rt_mutex_lock(mutex);
+}
+
+/*
+ * int __rt_mutex_unlock(RT_MUTEX_PLACEHOLDER *ph)
+ */
+
+static int __rt_mutex_unlock (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_MUTEX_PLACEHOLDER ph;
+    RT_MUTEX *mutex;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
+
+    if (!mutex)
+	return -ENOENT;
+
+    return rt_mutex_unlock(mutex);
+}
+
+/*
+ * int __rt_mutex_inquire(RT_MUTEX_PLACEHOLDER *ph,
+ *                        RT_MUTEX_INFO *infop)
+ */
+
+static int __rt_mutex_inquire (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_MUTEX_PLACEHOLDER ph;
+    RT_MUTEX_INFO info;
+    RT_MUTEX *mutex;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
+
+    if (!mutex)
+	return -ENOENT;
+
+    err = rt_mutex_inquire(mutex,&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    return err;
+}
+
+#else /* !CONFIG_RTAI_OPT_NATIVE_MUTEX */
+
+#define __rt_mutex_create  __rt_call_not_available
+#define __rt_mutex_bind    __rt_call_not_available
+#define __rt_mutex_delete  __rt_call_not_available
+#define __rt_mutex_lock    __rt_call_not_available
+#define __rt_mutex_unlock  __rt_call_not_available
+#define __rt_mutex_inquire __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
+
+#if CONFIG_RTAI_OPT_NATIVE_COND
+
+/*
+ * int __rt_cond_create(RT_COND_PLACEHOLDER *ph,
+ *                      const char *name)
+ */
+
+static int __rt_cond_create (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    char name[XNOBJECT_NAME_LEN];
+    RT_COND_PLACEHOLDER ph;
+    RT_COND *cond;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (__xn_reg_arg2(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,name,(const char *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	name[sizeof(name) - 1] = '\0';
+	}
+    else
+	*name = '\0';
+
+    cond = (RT_COND *)xnmalloc(sizeof(*cond));
+
+    if (!cond)
+	return -ENOMEM;
+
+    err = rt_cond_create(cond,name);
+
+    if (err == 0)
+	{
+	/* Copy back the registry handle to the ph struct. */
+	ph.opaque = cond->handle;
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	}
+    else
+	xnfree(cond);
+
+    return err;
+}
+
+/*
+ * int __rt_cond_bind(RT_COND_PLACEHOLDER *ph,
+ *                   const char *name)
+ */
+
+static int __rt_cond_bind (struct task_struct *curr, struct pt_regs *regs) {
+
+    return __rt_bind_helper(curr,regs,RTAI_COND_MAGIC);
+}
+
+/*
+ * int __rt_cond_delete(RT_COND_PLACEHOLDER *ph)
+ */
+
+static int __rt_cond_delete (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_COND_PLACEHOLDER ph;
+    RT_COND *cond;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    cond = (RT_COND *)rt_registry_fetch(ph.opaque);
+
+    if (!cond)
+	return -ENOENT;
+
+    return rt_cond_delete(cond);
+}
+
+/*
+ * int __rt_cond_wait(RT_COND_PLACEHOLDER *cph,
+ *                    RT_MUTEX_PLACEHOLDER *mph,
+ *                    RTIME *timeoutp)
+ */
+
+static int __rt_cond_wait (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_COND_PLACEHOLDER cph, mph;
+    RT_MUTEX *mutex;
+    RT_COND *cond;
+    RTIME timeout;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(cph)) ||
+	!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(mph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&cph,(void *)__xn_reg_arg1(regs),sizeof(cph));
+    __xn_copy_from_user(curr,&mph,(void *)__xn_reg_arg2(regs),sizeof(mph));
+
+    cond = (RT_COND *)rt_registry_fetch(cph.opaque);
+
+    if (!cond)
+	return -ENOENT;
+
+    mutex = (RT_MUTEX *)rt_registry_fetch(mph.opaque);
+
+    if (!mutex)
+	return -ENOENT;
+
+    __xn_copy_from_user(curr,&timeout,(void *)__xn_reg_arg3(regs),sizeof(timeout));
+
+    return rt_cond_wait(cond,mutex,timeout);
+}
+
+/*
+ * int __rt_cond_signal(RT_COND_PLACEHOLDER *ph)
+ */
+
+static int __rt_cond_signal (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_COND_PLACEHOLDER ph;
+    RT_COND *cond;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    cond = (RT_COND *)rt_registry_fetch(ph.opaque);
+
+    if (!cond)
+	return -ENOENT;
+
+    return rt_cond_signal(cond);
+}
+
+/*
+ * int __rt_cond_broadcast(RT_COND_PLACEHOLDER *ph)
+ */
+
+static int __rt_cond_broadcast (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_COND_PLACEHOLDER ph;
+    RT_COND *cond;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    cond = (RT_COND *)rt_registry_fetch(ph.opaque);
+
+    if (!cond)
+	return -ENOENT;
+
+    return rt_cond_broadcast(cond);
+}
+
+/*
+ * int __rt_cond_inquire(RT_COND_PLACEHOLDER *ph,
+ *                       RT_COND_INFO *infop)
+ */
+
+static int __rt_cond_inquire (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_COND_PLACEHOLDER ph;
+    RT_COND_INFO info;
+    RT_COND *cond;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    cond = (RT_COND *)rt_registry_fetch(ph.opaque);
+
+    if (!cond)
+	return -ENOENT;
+
+    err = rt_cond_inquire(cond,&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    return err;
+}
+
+#else /* !CONFIG_RTAI_OPT_NATIVE_COND */
+
+#define __rt_cond_create    __rt_call_not_available
+#define __rt_cond_bind      __rt_call_not_available
+#define __rt_cond_delete    __rt_call_not_available
+#define __rt_cond_wait      __rt_call_not_available
+#define __rt_cond_signal    __rt_call_not_available
+#define __rt_cond_broadcast __rt_call_not_available
+#define __rt_cond_inquire   __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_COND */
+
+static  __attribute__((unused))
+int __rt_call_not_available (struct task_struct *curr, struct pt_regs *regs) {
+    return -ENOSYS;
+}
+
 static xnsysent_t __systab[] = {
     { &__rt_task_create, __xn_flag_init },
     { &__rt_task_bind, __xn_flag_init },
@@ -945,26 +1354,39 @@ static xnsysent_t __systab[] = {
     { &__rt_task_sleep, __xn_flag_regular },
     { &__rt_task_sleep_until, __xn_flag_regular },
     { &__rt_task_unblock, __xn_flag_anycall },
-    { &__rt_task_inquire, __xn_flag_anycall  },
-    { &__rt_timer_start, __xn_flag_anycall  },
-    { &__rt_timer_stop, __xn_flag_anycall  },
-    { &__rt_timer_read, __xn_flag_anycall  },
-    { &__rt_timer_tsc, __xn_flag_anycall  },
-    { &__rt_timer_ns2ticks, __xn_flag_anycall  },
-    { &__rt_timer_ticks2ns, __xn_flag_anycall  },
-    { &__rt_timer_inquire, __xn_flag_anycall  },
-    { &__rt_sem_create, __xn_flag_anycall  },
+    { &__rt_task_inquire, __xn_flag_anycall },
+    { &__rt_timer_start, __xn_flag_anycall },
+    { &__rt_timer_stop, __xn_flag_anycall },
+    { &__rt_timer_read, __xn_flag_anycall },
+    { &__rt_timer_tsc, __xn_flag_anycall },
+    { &__rt_timer_ns2ticks, __xn_flag_anycall },
+    { &__rt_timer_ticks2ns, __xn_flag_anycall },
+    { &__rt_timer_inquire, __xn_flag_anycall },
+    { &__rt_sem_create, __xn_flag_anycall },
     { &__rt_sem_bind, __xn_flag_regular },
-    { &__rt_sem_delete, __xn_flag_anycall  },
-    { &__rt_sem_p, __xn_flag_regular  },
-    { &__rt_sem_v, __xn_flag_anycall  },
-    { &__rt_sem_inquire, __xn_flag_anycall  },
-    { &__rt_event_create, __xn_flag_anycall  },
+    { &__rt_sem_delete, __xn_flag_anycall },
+    { &__rt_sem_p, __xn_flag_regular },
+    { &__rt_sem_v, __xn_flag_anycall },
+    { &__rt_sem_inquire, __xn_flag_anycall },
+    { &__rt_event_create, __xn_flag_anycall },
     { &__rt_event_bind, __xn_flag_regular },
-    { &__rt_event_delete, __xn_flag_anycall  },
-    { &__rt_event_pend, __xn_flag_regular  },
-    { &__rt_event_post, __xn_flag_anycall  },
-    { &__rt_event_inquire, __xn_flag_anycall  },
+    { &__rt_event_delete, __xn_flag_anycall },
+    { &__rt_event_pend, __xn_flag_regular },
+    { &__rt_event_post, __xn_flag_anycall },
+    { &__rt_event_inquire, __xn_flag_anycall },
+    { &__rt_mutex_create, __xn_flag_anycall },
+    { &__rt_mutex_bind, __xn_flag_regular },
+    { &__rt_mutex_delete, __xn_flag_anycall },
+    { &__rt_mutex_lock, __xn_flag_regular },
+    { &__rt_mutex_unlock, __xn_flag_shadow },
+    { &__rt_mutex_inquire, __xn_flag_anycall },
+    { &__rt_cond_create, __xn_flag_anycall },
+    { &__rt_cond_bind, __xn_flag_regular },
+    { &__rt_cond_delete, __xn_flag_anycall },
+    { &__rt_cond_wait, __xn_flag_regular },
+    { &__rt_cond_signal, __xn_flag_anycall },
+    { &__rt_cond_broadcast, __xn_flag_anycall },
+    { &__rt_cond_inquire, __xn_flag_anycall },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

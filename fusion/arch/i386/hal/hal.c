@@ -667,15 +667,16 @@ void rthal_setup_8254_tsc (void)
 
     rthal_hw_lock(flags);
 
-    outb_p(0x00,0x43);
-    count = inb_p(0x40);
-    count |= inb_p(0x40) << 8;
-    outb_p(0xb4,0x43);
-    outb_p(RTHAL_8254_COUNT2LATCH & 0xff,0x42);
-    outb_p(RTHAL_8254_COUNT2LATCH >> 8,0x42);
+    outb_p(0x0,PIT_MODE);
+    count = inb_p(PIT_CH0);
+    count |= inb_p(PIT_CH0) << 8;
+    outb_p(0xb4,PIT_MODE);
+    outb_p(RTHAL_8254_COUNT2LATCH & 0xff,PIT_CH2);
+    outb_p(RTHAL_8254_COUNT2LATCH >> 8,PIT_CH2);
     rthal_tsc_8254 = count + LATCH * jiffies;
     rthal_last_8254_counter2 = 0; 
-    outb_p((inb_p(0x61)&0xfd)|1,0x61);
+    /* Gate high, disable speaker */
+    outb_p((inb_p(0x61)&~0x2)|1,0x61);
 
     rthal_hw_unlock(flags);
 }
@@ -684,16 +685,16 @@ rthal_time_t rthal_get_8254_tsc (void)
 
 {
     unsigned long flags;
+    int delta, count;
     rthal_time_t t;
-    int inc, count;
 
     rthal_hw_lock(flags);
 
     outb(0xd8,PIT_MODE);
     count = inb(PIT_CH2);
-    inc = rthal_last_8254_counter2 - (count |= (inb(PIT_CH2) << 8));
+    delta = rthal_last_8254_counter2 - (count |= (inb(PIT_CH2) << 8));
     rthal_last_8254_counter2 = count;
-    rthal_tsc_8254 += (inc > 0 ? inc : inc + RTHAL_8254_COUNT2LATCH);
+    rthal_tsc_8254 += (delta > 0 ? delta : delta + RTHAL_8254_COUNT2LATCH);
     t = rthal_tsc_8254;
 
     rthal_hw_unlock(flags);

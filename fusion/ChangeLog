@@ -1,5 +1,9 @@
 2004-12-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* include/nucleus/asm-uvm/system.h: Add pure C implementation of
+	the new macros, as well as for imuldiv and llimd (only unsigned
+	for now).
+
 	* include/nucleus/asm-*/system.h : Add new macros for 64 bit
 	calculus, defined in hal.h.
 

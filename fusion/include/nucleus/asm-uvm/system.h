@@ -113,10 +113,6 @@ typedef unsigned long xnlock_t;
 #define xnarch_printf(fmt,args...)   fprintf(stdout, fmt, ##args)
 #define printk(fmt,args...)          xnarch_loginfo(fmt, ##args)
 
-#define xnarch_llimd(ll,m,d)       ((int)(ll) * (int)(m) / (int)(d))
-#define xnarch_imuldiv(i,m,d)      ((int)(i) * (int)(m) / (int)(d))
-#define xnarch_ullmod(ull,uld,rem) ((*rem) = ((ull) % (uld)))
-
 typedef unsigned long xnarch_cpumask_t;
 #define xnarch_num_online_cpus()         XNARCH_NR_CPUS
 #define xnarch_cpu_online_map            ((1<<xnarch_num_online_cpus()) - 1)
@@ -130,6 +126,42 @@ typedef unsigned long xnarch_cpumask_t;
 #define xnarch_cpumask_of_cpu(cpu)       (1 << (cpu))
 #define xnarch_first_cpu(mask)           (ffnz(mask))
 #define XNARCH_CPU_MASK_ALL              (~0UL)
+
+#define xnarch_ullmod(ull,uld,rem)   ((*rem) = ((ull) % (uld)))
+#define xnarch_uldivrem(ull,uld,rem) ((u_long)xnarch_ulldiv((ull),(uld),(rem)))
+#define xnarch_uldiv(ull, d)         xnarch_uldivrem(ull, d, NULL)
+#define xnarch_ulmod(ull, d)         ({ u_long _rem;                    \
+                                        rthal_uldivrem(ull,uld,&_rem); _rem; })
+
+static inline int xnarch_imuldiv(int i, int mult, int div)
+{
+    unsigned long long ull = (unsigned long long) (unsigned) i * (unsigned) mult;
+    return ull / (unsigned) div;
+}
+
+static inline long long xnarch_llimd(long long ll, u_long m, u_long d) {
+
+    unsigned long long h, l, ull = (unsigned long long) ll;
+    u_long qh, rh, ql;
+
+    h = (ull >> 32) * m;
+    l = (ull & 0xffffffff) * m;
+    h += l >> 32;
+    l &= 0xffffffff;
+
+    qh = h / d;
+    rh = h % d;
+    l += ((unsigned long long) rh) << 32;
+
+    ql = l / d;
+    ull = (((unsigned long long) qh) << 32) + ql;
+    return (long long) ull;
+}
+
+static inline unsigned long long xnarch_ullmul(unsigned long m1,
+                                               unsigned long m2) {
+    return (unsigned long long) m1 * m2;
+}
 
 static inline unsigned long long xnarch_ulldiv (unsigned long long ull,
 						unsigned long uld,

@@ -271,7 +271,7 @@ void *rt_queue_alloc (RT_QUEUE *q,
     if (msg)
 	{
 	inith(&msg->link);
-	msg->size = size;
+	msg->size = size;	/* Zero is ok. */
 	msg->refcount = 1;
 	++msg;
 	}
@@ -326,6 +326,7 @@ int rt_queue_free (RT_QUEUE *q,
 
 int rt_queue_send (RT_QUEUE *q,
 		   void *buf,
+		   size_t size,
 		   int mode)
 {
     xnthread_t *sleeper;
@@ -357,6 +358,7 @@ int rt_queue_send (RT_QUEUE *q,
        the receiver here; so we need to update the reference count
        appropriately. */
     msg->refcount--;
+    msg->size = size;
 
     do
 	{

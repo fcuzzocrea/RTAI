@@ -152,8 +152,6 @@ int rt_queue_delete (RT_QUEUE *q)
        this queue descriptor, so we'd better clean it up anyway so
        that it could not be further used. */
 
- cleanup_and_exit:
-
     q->opaque = RT_HANDLE_INVALID;
     q->mapbase = NULL;
     q->mapsize = 0;
@@ -184,12 +182,14 @@ int rt_queue_free (RT_QUEUE *q,
 
 int rt_queue_send (RT_QUEUE *q,
 		   void *buf,
+		   size_t size,
 		   int mode)
 {
-    return XENOMAI_SKINCALL3(__rtai_muxid,
+    return XENOMAI_SKINCALL4(__rtai_muxid,
 			     __rtai_queue_send,
 			     q,
 			     buf,
+			     size,
 			     mode);
 }
 

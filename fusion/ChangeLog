@@ -1,5 +1,7 @@
 2004-11-06  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/queue.c (rt_queue_send): Pass message's payload size.
+
 	* skins/rtai/syscall.c: Check for writability of the return buffer
 	for all inquiry services.
 	

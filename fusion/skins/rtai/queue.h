@@ -64,6 +64,7 @@ struct RT_TASK;
 #define Q_UNLIMITED 0		/* No size limit. */
 
 /* Operation flags. */
+#define Q_NORMAL     0x0
 #define Q_URGENT     0x1
 #define Q_BROADCAST  0x2
 
@@ -177,6 +178,7 @@ int rt_queue_free(RT_QUEUE *q,
 
 int rt_queue_send(RT_QUEUE *q,
 		  void *buf,
+		  size_t size,
 		  int mode);
 
 ssize_t rt_queue_recv(RT_QUEUE *q,

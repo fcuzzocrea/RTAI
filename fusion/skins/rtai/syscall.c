@@ -1629,6 +1629,7 @@ static int __rt_queue_free (struct task_struct *curr, struct pt_regs *regs)
 /*
  * int __rt_queue_send(RT_QUEUE_PLACEHOLDER *ph,
  *                     void *buf,
+ *                     size_t size,
  *                     int mode)
  */
 
@@ -1638,6 +1639,7 @@ static int __rt_queue_send (struct task_struct *curr, struct pt_regs *regs)
     RT_QUEUE_PLACEHOLDER ph;
     int err, mode;
     RT_QUEUE *q;
+    size_t size;
     void *buf;
     spl_t s;
 
@@ -1649,8 +1651,11 @@ static int __rt_queue_send (struct task_struct *curr, struct pt_regs *regs)
     /* Buffer to send. */
     buf = (void *)__xn_reg_arg2(regs);
 
+    /* Message's payload size. */
+    size = (size_t)__xn_reg_arg3(regs);
+
     /* Sending mode. */
-    mode = (int)__xn_reg_arg3(regs);
+    mode = (int)__xn_reg_arg4(regs);
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -1668,7 +1673,7 @@ static int __rt_queue_send (struct task_struct *curr, struct pt_regs *regs)
     if (buf)
 	{
 	buf = xnheap_shared_address(&q->bufpool,(caddr_t)buf - ph.mapbase);
-	err = rt_queue_send(q,buf,mode);
+	err = rt_queue_send(q,buf,size,mode);
 	}
     else
 	err = -EINVAL;

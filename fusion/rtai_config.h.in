@@ -10,12 +10,6 @@
 #undef CONFIG_RTAI_HOST_STRING
 
 /* Kconfig */
-#undef CONFIG_RTAI_HW_8254_LATENCY
-
-/* Kconfig */
-#undef CONFIG_RTAI_HW_APIC_LATENCY
-
-/* Kconfig */
 #undef CONFIG_RTAI_HW_FPU
 
 /* Kconfig */
@@ -23,6 +17,9 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_HW_SCHED_LATENCY
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_TIMER_LATENCY
 
 /* Kconfig */
 #undef CONFIG_RTAI_OPT_DEBUG

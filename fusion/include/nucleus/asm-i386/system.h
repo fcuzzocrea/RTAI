@@ -153,7 +153,7 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define XNARCH_NR_CPUS               RTHAL_NR_CPUS
 
 #define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
-#define XNARCH_IRQ_MAX               NR_IRQS
+#define XNARCH_IRQ_MAX               IPIPE_NR_XIRQS /* Do _not_ use NR_IRQS here. */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
 #define XNARCH_SCHED_LATENCY         CONFIG_RTAI_HW_SCHED_LATENCY
 #define XNARCH_HAVE_APERIODIC_TIMER  1
@@ -238,7 +238,7 @@ static inline unsigned xnarch_current_cpu (void) {
 #define xnarch_halt(emsg) \
 do { \
     adeos_set_printk_sync(adp_current); \
-    xnarch_printf("Xenomai: fatal: %s\n",emsg); \
+    xnarch_printf(KERN_ERR "RTAI[nucleus]: fatal: %s\n",emsg); \
     show_stack(NULL,NULL);			\
     for (;;) safe_halt();			\
 } while(0)
@@ -307,7 +307,14 @@ static inline void xnarch_isr_enable_irq (unsigned irq) {
 
 static inline void xnarch_relay_tick (void) {
 
+    /* On x86 with local APIC enabled, we do not relay the host tick
+       here since 8254 interrupts are already flowing normally to
+       Linux (i.e. the nucleus intercepts the APIC-based local timer
+       interrupt instead. */
+
+#ifndef CONFIG_X86_LOCAL_APIC
     rthal_pend_linux_irq(RTHAL_8254_IRQ);
+#endif /* CONFIG_X86_LOCAL_APIC */
 }
 
 static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
@@ -323,27 +330,25 @@ void xnpod_welcome_thread(struct xnthread *);
 
 void xnpod_delete_thread(struct xnthread *);
 
-unsigned long xnarch_calibrate_timer (void) {
-
-#if  CONFIG_RTAI_HW_8254_LATENCY != 0
-    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_8254_LATENCY);
-#else /* CONFIG_RTAI_HW_8254_LATENCY unspecified. */
-    /* Compute the time needed to program the 8254 PIT in aperiodic
-       mode. The return value is expressed in CPU ticks. */
-    return xnarch_ns_to_tsc(rthal_calibrate_8254());
-#endif /* CONFIG_RTAI_HW_8254_LATENCY != 0 */
-}
-
-static inline void xnarch_start_timer (int ns, void (*tickhandler)(void))
+unsigned long xnarch_calibrate_timer (void)
 
 {
-    if (ns > 0)	/* Periodic setup. */
-	{
-	unsigned period = (unsigned)xnarch_llimd(ns,RTHAL_8254_FREQ,1000000000);
-	rthal_request_timer(tickhandler,period > LATCH ? LATCH : period,0);
-	}
-    else  /* Aperiodic setup. */
-	rthal_request_timer(tickhandler,0,0);
+#if  CONFIG_RTAI_HW_TIMER_LATENCY != 0
+    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY);
+#else /* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */
+    /* Compute the time needed to program the PIT in aperiodic
+       mode. The return value is expressed in CPU ticks. Depending on
+       whether CONFIG_X86_LOCAL_APIC is enabled or not in the kernel
+       configuration RTAI is compiled against,
+       CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local
+       APIC or 8254 timer latency value. */
+    return xnarch_ns_to_tsc(rthal_calibrate_timer());
+#endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
+}
+
+static inline int xnarch_start_timer (unsigned long ns,
+				      void (*tickhandler)(void)) {
+    return rthal_request_timer(tickhandler,ns);
 }
 
 static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
@@ -697,11 +702,11 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 
 static void xnarch_program_timer_shot (unsigned long long delay) /* <= in CPU ticks */ {
 
-    rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_8254_FREQ,RTHAL_CPU_FREQ));
+    rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
 }
 
 static inline void xnarch_stop_timer (void) {
-    rthal_free_timer();
+    rthal_release_timer();
 }
 
 #endif /* XENO_TIMER_MODULE */

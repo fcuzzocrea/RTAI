@@ -2472,7 +2472,7 @@ int xnpod_trap_fault (void *fltinfo)
  * passed, or if the timer precision cannot represent the duration of
  * a single host tick.
  *
- * - -ENOSYS is returned if the underlying architecture does not
+ * - -ENODEV is returned if the underlying architecture does not
  * support the requested aperiodic timing, or if no active pod exists.
  *
  * Side-effect: A host timing service is started in order to relay the
@@ -2494,7 +2494,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 
 #if !XNARCH_HAVE_APERIODIC_TIMER
     if (nstick == XNPOD_APERIODIC_TICK)
-        return -ENOSYS; /* No aperiodic support */
+        return -ENODEV; /* No aperiodic support */
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
         
     xnlock_get_irqsave(&nklock,s);
@@ -2545,7 +2545,8 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 
     xnintr_init(&nkclock,0,nkpod->svctable.tickhandler,0);
 
-    xnarch_start_timer(nstick,&xnintr_clock_handler);
+    if (xnarch_start_timer(nstick,&xnintr_clock_handler) < 0)
+	return -ENODEV;
 
     /* When no host ticking service is active for the underlying arch,
        the host timer exists but simply never ticks since
@@ -2870,7 +2871,7 @@ static void xnpod_calibration_thread (void *cookie)
 
     xntimer_destroy(&timer);
 
-    nkschedlat = jitter < 0 ? 0 : (jitter / count) + nktimerlat;
+    nkschedlat = jitter < 0 ? 0 : (jitter / count);
 
     *flagp = 1;
 

@@ -208,8 +208,8 @@ int mvm_get_irqmask (void) {
     return MVM_CR_IMASK;
 }
 
-void mvm_start_timer (unsigned long nstick,
-		      void (*tickhandler)(void))
+int mvm_start_timer (unsigned long nstick,
+		     void (*tickhandler)(void))
 {
     mvmtimer = new MvmIrq(1,(void (*)(int,void *))tickhandler,NULL,"MvmTimer");
 
@@ -217,6 +217,7 @@ void mvm_start_timer (unsigned long nstick,
 	/* Periodic time source, arm it now. */
 	mvmtimer->configure(CfEventPeriodical,
 			    CString().format("%f usc",(double)nstick / 1000.0));
+    return 0;
 }
 
 void mvm_program_timer (unsigned long long delay) {

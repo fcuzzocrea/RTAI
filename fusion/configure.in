@@ -436,42 +436,33 @@ AC_MSG_RESULT(${CONFIG_RTAI_OPT_USYMS:-no})
 
 if test "$CONFIG_X86" = y; then
 
-AC_MSG_CHECKING(for 8254 tuning latency)
-AC_ARG_ENABLE(8254-latency,
-	[ --enable-8254-latency	Set 8254 tuning latency],
-	[case "$enableval" in
- changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_HW_8254_LATENCY=$enableval ;;
- changequote([,])dnl
-	*) AC_MSG_ERROR([Bad argument to option: --enable-8254-latency=<nanoseconds>]) ;;
-	esac])
-if test x$CONFIG_RTAI_HW_8254_LATENCY = x ; then
-  # Use a reasonable default if unset
-  CONFIG_RTAI_HW_8254_LATENCY=4700
-fi
-if test $CONFIG_RTAI_HW_8254_LATENCY = 0; then
-   AC_MSG_RESULT(autocalibration)
+if test "$CONFIG_X86_LOCAL_APIC" = y; then
+   timer_type=APIC
 else
-   AC_MSG_RESULT($CONFIG_RTAI_HW_8254_LATENCY)
+   timer_type=8254
 fi
 
-AC_MSG_CHECKING(for APIC tuning latency)
-AC_ARG_ENABLE(apic-latency,
-	[ --enable-apic-latency	Set APIC tuning latency],
+AC_MSG_CHECKING(for $timer_type timer tuning latency)
+AC_ARG_ENABLE(timer-latency,
+	[ --enable-timer-latency	Set timer tuning latency],
 	[case "$enableval" in
  changequote(,)dnl
-	[0-9]*) CONFIG_RTAI_HW_APIC_LATENCY=$enableval ;;
+	[0-9]*) CONFIG_RTAI_HW_TIMER_LATENCY=$enableval ;;
  changequote([,])dnl
-	*) AC_MSG_ERROR([Bad argument to option: --enable-apic-latency=<nanoseconds>]) ;;
+	*) AC_MSG_ERROR([Bad argument to option: --enable-timer-latency=<nanoseconds>]) ;;
 	esac])
-if test x$CONFIG_RTAI_HW_APIC_LATENCY = x ; then
+if test x$CONFIG_RTAI_HW_TIMER_LATENCY = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_HW_APIC_LATENCY=3944
+  if test "$CONFIG_X86_LOCAL_APIC" = y; then
+    CONFIG_RTAI_HW_TIMER_LATENCY=2100
+  else
+    CONFIG_RTAI_HW_TIMER_LATENCY=2400
+  fi
 fi
-if test $CONFIG_RTAI_HW_APIC_LATENCY = 0; then
+if test $CONFIG_RTAI_HW_TIMER_LATENCY = 0; then
    AC_MSG_RESULT(autocalibration)
 else
-   AC_MSG_RESULT($CONFIG_RTAI_HW_APIC_LATENCY)
+   AC_MSG_RESULT($CONFIG_RTAI_HW_TIMER_LATENCY ns)
 fi
 
 fi
@@ -492,7 +483,7 @@ fi
 if test $CONFIG_RTAI_HW_SCHED_LATENCY = 0; then
    AC_MSG_RESULT(autocalibration)
 else
-   AC_MSG_RESULT($CONFIG_RTAI_HW_SCHED_LATENCY)
+   AC_MSG_RESULT($CONFIG_RTAI_HW_SCHED_LATENCY ns)
 fi
 
 dnl Catch sub-package flags
@@ -619,8 +610,7 @@ AC_DEFINE_UNQUOTED(CONFIG_RTAI_VERSION_MINOR,$CONFIG_RTAI_VERSION_MINOR,[Kconfig
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_REVISION_LEVEL,$CONFIG_RTAI_REVISION_LEVEL,[Kconfig])
 
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_NRCPUS,$CONFIG_RTAI_HW_NRCPUS,[Kconfig])
-AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_8254_LATENCY,$CONFIG_RTAI_HW_8254_LATENCY,[Kconfig])
-AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_APIC_LATENCY,$CONFIG_RTAI_HW_APIC_LATENCY,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_TIMER_LATENCY,$CONFIG_RTAI_HW_TIMER_LATENCY,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_SCHED_LATENCY,$CONFIG_RTAI_HW_SCHED_LATENCY,[Kconfig])
 test \! x$CONFIG_RTAI_HW_FPU = x && AC_DEFINE(CONFIG_RTAI_HW_FPU,1,[Kconfig])
 

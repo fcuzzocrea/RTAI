@@ -195,8 +195,8 @@ int mvm_set_irqmask(int level);
 
 int mvm_get_irqmask(void);
 
-void mvm_start_timer(unsigned long nstick,
-		     void (*tickhandler)(void));
+int mvm_start_timer(unsigned long nstick,
+		    void (*tickhandler)(void));
 
 void mvm_program_timer(unsigned long long delay);
 
@@ -411,9 +411,9 @@ int main (int argc, char *argv[])
 
 #ifdef XENO_POD_MODULE
 
-static inline void xnarch_start_timer (unsigned long nstick,
-				       void (*tickhandler)(void)) {
-    mvm_start_timer(nstick,tickhandler);
+static inline int xnarch_start_timer (unsigned long nstick,
+				      void (*tickhandler)(void)) {
+    return mvm_start_timer(nstick,tickhandler);
 }
 
 static inline void xnarch_leave_root(xnarchtcb_t *rootcb) {

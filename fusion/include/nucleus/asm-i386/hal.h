@@ -11,7 +11,9 @@
  *   and others.
  *
  *   RTAI/x86 rewrite over Adeos: \n
- *   Copyright &copy 2002,2003,2004 Philippe Gerum.
+ *   Copyright &copy 2002,2003 Philippe Gerum.
+ *   Major refactoring for RTAI/fusion: \n
+ *   Copyright &copy 2004 Philippe Gerum.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -160,13 +162,14 @@ static inline unsigned long ffnz (unsigned long word) {
 #include <linux/interrupt.h>
 #include <asm/system.h>
 #include <asm/io.h>
+#include <asm/timex.h>
 #include <nucleus/asm/atomic.h>
 #include <nucleus/asm/fpu.h>
 #include <asm/processor.h>
-#ifdef __USE_APIC__
+#ifdef CONFIG_X86_LOCAL_APIC
 #include <asm/fixmap.h>
 #include <asm/apic.h>
-#endif /* __USE_APIC__ */
+#endif /* CONFIG_X86_LOCAL_APIC */
 
 typedef void (*rthal_irq_handler_t)(unsigned irq,
 				    void *cookie);
@@ -174,13 +177,7 @@ typedef void (*rthal_irq_handler_t)(unsigned irq,
 struct rthal_calibration_data {
 
     unsigned long cpu_freq;
-    unsigned long apic_freq;
-};
-
-struct rthal_apic_data {
-
-    int mode;
-    int count;
+    unsigned long timer_freq;
 };
 
 extern struct rthal_calibration_data rthal_tunables;
@@ -198,32 +195,27 @@ extern adomain_t rthal_domain;
 
 #define RTHAL_NR_SRQS    32
 
-#define RTHAL_SMP_NOTIFY_VECTOR    0xe1
-#define RTHAL_SMP_NOTIFY_IPI       193
-#define RTHAL_APIC_TIMER_VECTOR    0xe9
-#define RTHAL_APIC_TIMER_IPI       201
+#define RTHAL_TIMER_FREQ  (rthal_tunables.timer_freq)
+#define RTHAL_CPU_FREQ    (rthal_tunables.cpu_freq)
+#define RTHAL_8254_IRQ    0
 
-#define RTHAL_8254_IRQ             0
-#define RTHAL_8254_FREQ            1193180
-#define RTHAL_COUNT2LATCH          0xfffe
+#ifdef CONFIG_X86_LOCAL_APIC
+#define RTHAL_APIC_TIMER_VECTOR    ADEOS_SERVICE_VECTOR3
+#define RTHAL_APIC_TIMER_IPI       ADEOS_SERVICE_IPI3
+#define RTHAL_APIC_ICOUNT	   ((RTHAL_TIMER_FREQ + HZ/2)/HZ)
+#endif /* CONFIG_X86_LOCAL_APIC */
 
-#define RTHAL_APIC_CALIBRATED_FREQ 0
-#define RTHAL_APIC_FREQ            (rthal_tunables.apic_freq)
-#define RTHAL_APIC_ICOUNT	   ((RTHAL_APIC_FREQ + HZ/2)/HZ)
 
 #ifdef CONFIG_X86_TSC
-#define RTHAL_CPU_CALIBRATED_FREQ  0
-#define RTHAL_CPU_FREQ             (rthal_tunables.cpu_freq)
-
 static inline unsigned long long rthal_rdtsc (void) {
     unsigned long long t;
     __asm__ __volatile__( "rdtsc" : "=A" (t));
     return t;
 }
 #else  /* !CONFIG_X86_TSC */
-#define RTHAL_CPU_FREQ             RTHAL_8254_FREQ
-#define RTHAL_CPU_CALIBRATED_FREQ  RTHAL_8254_FREQ
-#define rthal_rdtsc()              rthal_get_8254_tsc()
+#define RTHAL_8254_COUNT2LATCH  0xfffe
+rthal_time_t rthal_get_8254_tsc(void);
+#define rthal_rdtsc() rthal_get_8254_tsc()
 #endif /* CONFIG_X86_TSC */
 
 #define rthal_cli()                     adeos_stall_pipeline_from(&rthal_domain)
@@ -325,13 +317,13 @@ static inline void rthal_set_timer_shot (unsigned long delay) {
     if (delay) {
         unsigned long flags;
         rthal_hw_lock(flags);
-#ifdef __USE_APIC__
+#ifdef CONFIG_X86_LOCAL_APIC
 	apic_read(APIC_TMICT);
 	apic_write(APIC_TMICT,delay);
-#else /* !__USE_APIC__ */
+#else /* !CONFIG_X86_LOCAL_APIC */
 	outb(delay & 0xff,0x40);
 	outb(delay >> 8,0x40);
-#endif /* __USE_APIC__ */
+#endif /* CONFIG_X86_LOCAL_APIC */
         rthal_hw_unlock(flags);
     }
 }
@@ -361,8 +353,6 @@ typedef int (*rthal_trap_handler_t)(int trapnr,
 
 #define rthal_printk    printk /* This is safe over Adeos */
 
-#define RTHAL_USE_APIC  0x1	/* Passed to rthal_request_timer() */
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -377,15 +367,11 @@ int rthal_release_irq(unsigned irq);
  * @name Programmable Interrupt Controllers (PIC) management functions.
  *
  *@{*/
-int rthal_startup_irq(unsigned irq);
-
-int rthal_shutdown_irq(unsigned irq);
 
 int rthal_enable_irq(unsigned irq);
 
 int rthal_disable_irq(unsigned irq);
 
-int rthal_unmask_irq(unsigned irq);
 /*@}*/
 
 int rthal_request_linux_irq(unsigned irq,
@@ -395,8 +381,8 @@ int rthal_request_linux_irq(unsigned irq,
 			    char *name,
 			    void *dev_id);
 
-int rthal_free_linux_irq(unsigned irq,
-			 void *dev_id);
+int rthal_release_linux_irq(unsigned irq,
+			    void *dev_id);
 
 int rthal_pend_linux_irq(unsigned irq);
 
@@ -405,35 +391,21 @@ int rthal_pend_linux_srq(unsigned srq);
 int rthal_request_srq(unsigned label,
 		      void (*handler)(void));
 
-int rthal_free_srq(unsigned srq);
+int rthal_release_srq(unsigned srq);
 
 int rthal_set_irq_affinity(unsigned irq,
 			   unsigned long cpumask);
 
 int rthal_reset_irq_affinity(unsigned irq);
 
-void rthal_request_timer_cpuid(void (*handler)(void),
-			       unsigned tick,
-			       int cpuid);
-
-void rthal_request_apic_timers(void (*handler)(void),
-			       struct rthal_apic_data *tmdata);
-
-void rthal_free_apic_timers(void);
-
 int rthal_request_timer(void (*handler)(void),
-			unsigned tick,
-			int flags);
+			unsigned long nstick);
 
-void rthal_free_timer(void);
+void rthal_release_timer(void);
 
 rthal_trap_handler_t rthal_set_trap_handler(rthal_trap_handler_t handler);
 
-unsigned long rthal_calibrate_8254(void);
-
-rthal_time_t rthal_get_8254_tsc(void);
-
-void rthal_set_8254_tsc(void);
+unsigned long rthal_calibrate_timer(void);
 
 #ifdef __cplusplus
 }

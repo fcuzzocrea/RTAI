@@ -173,15 +173,21 @@ config RTAI_HW_NRCPUS
 
 	PAY ATTENTION: the default value is 2.
 
-config RTAI_HW_8254_LATENCY
+config RTAI_HW_TIMER_LATENCY
 	depends on RTAI_OPT_EXPERT
-	string "8254 tuning latency (ns)"
+	string "Timer tuning latency (ns)"
 	default 0
-
-config RTAI_HW_APIC_LATENCY
-	depends on RTAI_OPT_EXPERT
-	string "APIC tuning latency (ns)"
-	default 0
+	help
+	This parameter accounts for the time (in nanoseconds) needed
+	to program the underlying time source in one-shot timing mode.
+	This value will be used to reduce the scheduling jitter induced
+	by the time needed to setup the timer for its next shot. A
+	default value of 0 (recommended) will cause this value to be
+	estimated by the nucleus at startup.
+	Depending on whether CONFIG_X86_LOCAL_APIC is enabled or not
+	in the kernel configuration RTAI is compiled
+	against, CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the
+	local APIC or 8254 timer latency value.
 
 config RTAI_HW_SCHED_LATENCY
 	depends on RTAI_OPT_EXPERT

@@ -1041,8 +1041,7 @@ Optional Features:
  --enable-fpu		Enable FPU support
  --enable-module-debug	Enable debug information in kernel modules
  --enable-user-debug	Enable debug information in user-space programs
- --enable-8254-latency	Set 8254 tuning latency
- --enable-apic-latency	Set APIC tuning latency
+ --enable-timer-latency	Set timer tuning latency
  --enable-sched-latency	Set scheduling latency
  --enable-sim		Build RTAI simulator (MVM)
  --enable-dox-doc	Build Doxygen documentation
@@ -4701,7 +4700,7 @@ test "x$enable_libtool_lock" != xno && enable_libtool_lock=yes
 case $host in
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4704 "configure"' > conftest.$ac_ext
+  echo '#line 4703 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5230,7 +5229,7 @@ chmod -w .
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -o out/conftest2.$ac_objext"
 compiler_c_o=no
-if { (eval echo configure:5233: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
+if { (eval echo configure:5232: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
   # The compiler can only warn and ignore the option if not recognized
   # So say no if there are warnings
   if test -s out/conftest.err; then
@@ -7062,7 +7061,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7065 "configure"
+#line 7064 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -7160,7 +7159,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7163 "configure"
+#line 7162 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8636,52 +8635,38 @@ echo "${ECHO_T}${CONFIG_RTAI_OPT_USYMS:-no}" >&6
 
 if test "$CONFIG_X86" = y; then
 
-echo "$as_me:$LINENO: checking for 8254 tuning latency" >&5
-echo $ECHO_N "checking for 8254 tuning latency... $ECHO_C" >&6
-# Check whether --enable-8254-latency or --disable-8254-latency was given.
-if test "${enable_8254_latency+set}" = set; then
-  enableval="$enable_8254_latency"
-  case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_HW_8254_LATENCY=$enableval ;;
- 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-8254-latency=<nanoseconds>" >&5
-echo "$as_me: error: Bad argument to option: --enable-8254-latency=<nanoseconds>" >&2;}
-   { (exit 1); exit 1; }; } ;;
-	esac
-fi;
-if test x$CONFIG_RTAI_HW_8254_LATENCY = x ; then
-  # Use a reasonable default if unset
-  CONFIG_RTAI_HW_8254_LATENCY=4700
-fi
-if test $CONFIG_RTAI_HW_8254_LATENCY = 0; then
-   echo "$as_me:$LINENO: result: autocalibration" >&5
-echo "${ECHO_T}autocalibration" >&6
+if test "$CONFIG_X86_LOCAL_APIC" = y; then
+   timer_type=APIC
 else
-   echo "$as_me:$LINENO: result: $CONFIG_RTAI_HW_8254_LATENCY" >&5
-echo "${ECHO_T}$CONFIG_RTAI_HW_8254_LATENCY" >&6
+   timer_type=8254
 fi
 
-echo "$as_me:$LINENO: checking for APIC tuning latency" >&5
-echo $ECHO_N "checking for APIC tuning latency... $ECHO_C" >&6
-# Check whether --enable-apic-latency or --disable-apic-latency was given.
-if test "${enable_apic_latency+set}" = set; then
-  enableval="$enable_apic_latency"
+echo "$as_me:$LINENO: checking for $timer_type timer tuning latency" >&5
+echo $ECHO_N "checking for $timer_type timer tuning latency... $ECHO_C" >&6
+# Check whether --enable-timer-latency or --disable-timer-latency was given.
+if test "${enable_timer_latency+set}" = set; then
+  enableval="$enable_timer_latency"
   case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_HW_APIC_LATENCY=$enableval ;;
- 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-apic-latency=<nanoseconds>" >&5
-echo "$as_me: error: Bad argument to option: --enable-apic-latency=<nanoseconds>" >&2;}
+ 	[0-9]*) CONFIG_RTAI_HW_TIMER_LATENCY=$enableval ;;
+ 	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-timer-latency=<nanoseconds>" >&5
+echo "$as_me: error: Bad argument to option: --enable-timer-latency=<nanoseconds>" >&2;}
    { (exit 1); exit 1; }; } ;;
 	esac
 fi;
-if test x$CONFIG_RTAI_HW_APIC_LATENCY = x ; then
+if test x$CONFIG_RTAI_HW_TIMER_LATENCY = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_HW_APIC_LATENCY=3944
+  if test "$CONFIG_X86_LOCAL_APIC" = y; then
+    CONFIG_RTAI_HW_TIMER_LATENCY=2100
+  else
+    CONFIG_RTAI_HW_TIMER_LATENCY=2400
+  fi
 fi
-if test $CONFIG_RTAI_HW_APIC_LATENCY = 0; then
+if test $CONFIG_RTAI_HW_TIMER_LATENCY = 0; then
    echo "$as_me:$LINENO: result: autocalibration" >&5
 echo "${ECHO_T}autocalibration" >&6
 else
-   echo "$as_me:$LINENO: result: $CONFIG_RTAI_HW_APIC_LATENCY" >&5
-echo "${ECHO_T}$CONFIG_RTAI_HW_APIC_LATENCY" >&6
+   echo "$as_me:$LINENO: result: $CONFIG_RTAI_HW_TIMER_LATENCY" >&5
+echo "${ECHO_T}$CONFIG_RTAI_HW_TIMER_LATENCY" >&6
 fi
 
 fi
@@ -9234,12 +9219,7 @@ _ACEOF
 
 
 cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_HW_8254_LATENCY $CONFIG_RTAI_HW_8254_LATENCY
-_ACEOF
-
-
-cat >>confdefs.h <<_ACEOF
-#define CONFIG_RTAI_HW_APIC_LATENCY $CONFIG_RTAI_HW_APIC_LATENCY
+#define CONFIG_RTAI_HW_TIMER_LATENCY $CONFIG_RTAI_HW_TIMER_LATENCY
 _ACEOF
 
 

@@ -30,7 +30,7 @@
  */
 
 /**
- * @defgroup hal Hardware abstraction layer.
+v * @defgroup hal Hardware abstraction layer.
  *
  * Basic architecture-dependent services used by the real-time
  * nucleus.
@@ -69,17 +69,72 @@
 
 MODULE_LICENSE("GPL");
 
-static unsigned long rthal_cpufreq_arg = RTHAL_CPU_CALIBRATED_FREQ;
+static unsigned long rthal_cpufreq_arg;
 MODULE_PARM(rthal_cpufreq_arg,"i");
 
-#ifdef CONFIG_X86_LOCAL_APIC
-static unsigned long rthal_apicfreq_arg = RTHAL_APIC_CALIBRATED_FREQ;
+static unsigned long rthal_timerfreq_arg;
+MODULE_PARM(rthal_timerfreq_arg,"i");
 
-MODULE_PARM(rthal_apicfreq_arg,"i");
+extern struct desc_struct idt_table[];
+
+adomain_t rthal_domain;
+
+static struct {
+
+    void (*handler)(unsigned irq, void *cookie);
+    void *cookie;
+
+} rthal_realtime_irq[IPIPE_NR_XIRQS];
+
+static struct {
+
+    unsigned long flags;
+    int count;
+
+} rthal_linux_irq[IPIPE_NR_XIRQS];
+
+static struct {
+
+    void (*handler)(void);
+    unsigned label;
+
+} rthal_sysreq_table[RTHAL_NR_SRQS];
+
+static int rthal_init_done;
+
+static unsigned rthal_sysreq_virq;
+
+static unsigned long rthal_sysreq_map = 1; /* #0 is invalid. */
+
+static unsigned long rthal_sysreq_pending;
+
+static unsigned long rthal_sysreq_running;
+
+static spinlock_t rthal_ssrq_lock = SPIN_LOCK_UNLOCKED;
+
+static volatile int rthal_sync_level;
+
+static atomic_t rthal_sync_count = ATOMIC_INIT(1);
+
+static rthal_trap_handler_t rthal_trap_handler;
+
+struct rthal_switch_info rthal_linux_context[RTHAL_NR_CPUS];
+
+struct rthal_calibration_data rthal_tunables;
+
+volatile unsigned long rthal_cpu_realtime;
+
+#ifdef CONFIG_X86_LOCAL_APIC
 
 static long long rthal_timers_sync_time;
 
 static struct rthal_apic_data rthal_timer_mode[RTHAL_NR_CPUS];
+
+struct rthal_apic_data {
+
+    int mode;
+    unsigned long count;
+};
 
 static inline void rthal_setup_periodic_apic (unsigned count,
 					      unsigned vector)
@@ -99,73 +154,252 @@ static inline void rthal_setup_oneshot_apic (unsigned count,
     apic_write(APIC_TMICT,count);
 }
 
+static void rthal_critical_sync (void)
+
+{
+    struct rthal_apic_data *p;
+
+    switch (rthal_sync_level)
+	{
+	case 1:
+
+	    p = &rthal_timer_mode[adeos_processor_id()];
+	    
+	    while (rthal_rdtsc() < rthal_timers_sync_time)
+		;
+
+	    if (p->mode)
+		rthal_setup_periodic_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
+	    else
+		rthal_setup_oneshot_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
+
+	    break;
+
+	case 2:
+
+	    rthal_setup_oneshot_apic(0,RTHAL_APIC_TIMER_VECTOR);
+	    break;
+
+	case 3:
+
+	    rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
+	    break;
+	}
+}
+
+irqreturn_t rthal_broadcast_to_local_timers (int irq,
+					     void *dev_id,
+					     struct pt_regs *regs)
+{
+    unsigned long flags;
+
+    rthal_hw_lock(flags);
+    apic_wait_icr_idle();
+    apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
+    rthal_hw_unlock(flags);
+
+    return IRQ_HANDLED;
+} 
+
+unsigned long rthal_calibrate_timer (void)
+
+{
+    unsigned long flags;
+    rthal_time_t t, dt;
+    int i;
+
+    flags = rthal_critical_enter(NULL);
+
+    t = rthal_rdtsc();
+
+    for (i = 0; i < 10000; i++)
+	{ 
+	unsigned int v = apic_read(APIC_TMICT);
+	apic_write(APIC_TMICT,v);
+	}
+
+    dt = rthal_rdtsc() - t;
+
+    rthal_critical_exit(flags);
+
+    return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
+}
+
+int rthal_request_timer (void (*handler)(void),
+			 unsigned long nstick)
+{
+    struct rthal_apic_data *p;
+    unsigned long flags;
+    int cpuid;
+
+    /* This code works both for UP+LAPIC and SMP configurations. */
+
+    /* Try releasing the LAPIC-bound IRQ now so that any attempt to
+       run a LAPIC-enabled RTAI over a plain 8254-only/UP kernel will
+       beget an error immediately. */
+
+    if (rthal_release_irq(RTHAL_APIC_TIMER_IPI) < 0)
+	return -EINVAL;
+
+    flags = rthal_critical_enter(rthal_critical_sync);
+
+    rthal_sync_level = 1;
+
+    rthal_timers_sync_time = rthal_rdtsc() + rthal_imuldiv(LATCH,
+							   rthal_tunables.cpu_freq,
+							   CLOCK_TICK_RATE);
+
+    /* We keep the setup data array just to be able to expose it to
+       the visible interface if it happens to be really needed at some
+       point in time. */
+    
+    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	{
+	p = &rthal_timer_mode[cpuid];
+	p->mode = !!nstick;
+	p->count = nstick;
+
+	if (p->mode)
+	    p->count = rthal_imuldiv(p->count,RTHAL_TIMER_FREQ,1000000000);
+	else
+	    p->count = RTHAL_APIC_ICOUNT;
+	}
+
+    p = &rthal_timer_mode[adeos_processor_id()];
+
+    while (rthal_rdtsc() < rthal_timers_sync_time)
+	;
+
+    if (p->mode)
+	rthal_setup_periodic_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
+    else
+	rthal_setup_oneshot_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
+
+    rthal_request_irq(RTHAL_APIC_TIMER_IPI,
+		      (rthal_irq_handler_t)handler,
+		      NULL);
+
+    rthal_request_linux_irq(RTHAL_8254_IRQ,
+			    &rthal_broadcast_to_local_timers,
+			    "rthal_broadcast_timer",
+			    &rthal_broadcast_to_local_timers);
+
+    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	{
+	p = &rthal_timer_mode[cpuid];
+
+	if (p->mode)
+	    p->count = rthal_imuldiv(p->count,
+				     RTHAL_TIMER_FREQ,
+				     1000000000);
+	else
+	    p->count = rthal_imuldiv(p->count,
+				     RTHAL_CPU_FREQ,
+				     1000000000);
+	}
+
+    rthal_critical_exit(flags);
+
+    return 0;
+}
+
+void rthal_release_timer (void)
+
+{
+    unsigned long flags;
+
+    rthal_release_linux_irq(RTHAL_8254_IRQ,
+			    &rthal_broadcast_to_local_timers);
+
+    flags = rthal_critical_enter(&rthal_critical_sync);
+
+    rthal_sync_level = 3;
+    rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
+    rthal_release_irq(RTHAL_APIC_TIMER_IPI);
+
+    rthal_critical_exit(flags);
+}
+
 #else /* !CONFIG_X86_LOCAL_APIC */
 
-#define rthal_setup_periodic_apic(count,vector);
+unsigned long rthal_calibrate_timer (void)
 
-#define rthal_setup_oneshot_apic(count,vector);
+{
+    unsigned long flags;
+    rthal_time_t t, dt;
+    int i;
+
+    flags = rthal_critical_enter(NULL);
+
+    outb(0x34,0x43);
+
+    t = rthal_rdtsc();
+
+    for (i = 0; i < 10000; i++)
+	{ 
+	outb(LATCH & 0xff,0x40);
+	outb(LATCH >> 8,0x40);
+	}
+
+    dt = rthal_rdtsc() - t;
+
+    rthal_critical_exit(flags);
+
+    return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
+}
+
+int rthal_request_timer (void (*handler)(void),
+			 unsigned long nstick)
+{
+    unsigned long flags;
+    int err;
+
+    flags = rthal_critical_enter(NULL);
+
+    if (nstick > 0)
+	{
+	/* Periodic setup for 8254 channel #0. */
+	unsigned period;
+	period = (unsigned)rthal_llimd(nstick,RTHAL_TIMER_FREQ,1000000000);
+	if (period > LATCH) period = LATCH;
+	outb(0x34,0x43);
+	outb(period & 0xff,0x40);
+	outb(period >> 8,0x40);
+	}
+    else
+	{
+	/* Oneshot setup for 8254 channel #0. */
+	outb(0x30,0x43);
+	outb(LATCH & 0xff,0x40);
+	outb(LATCH >> 8,0x40);
+	}
+
+    rthal_release_irq(RTHAL_8254_IRQ);
+
+    err = rthal_request_irq(RTHAL_8254_IRQ,
+			    (rthal_irq_handler_t)handler,
+			    NULL);
+
+    rthal_critical_exit(flags);
+
+    return err;
+}
+
+void rthal_release_timer (void)
+
+{
+    unsigned long flags;
+
+    flags = rthal_critical_enter(NULL);
+    outb(0x34,0x43);
+    outb(LATCH & 0xff,0x40);
+    outb(LATCH >> 8,0x40);
+    rthal_release_irq(RTHAL_8254_IRQ);
+
+    rthal_critical_exit(flags);
+}
 
 #endif /* CONFIG_X86_LOCAL_APIC */
-
-#ifdef CONFIG_SMP
-static unsigned long rthal_old_irq_affinity[NR_IRQS],
-                     rthal_current_irq_affinity[NR_IRQS];
-
-static spinlock_t rthal_iset_lock = SPIN_LOCK_UNLOCKED;
-#endif /* CONFIG_SMP */
-
-extern struct desc_struct idt_table[];
-
-adomain_t rthal_domain;
-
-static struct {
-
-    void (*handler)(unsigned irq, void *cookie);
-    void *cookie;
-
-} rthal_realtime_irq[NR_IRQS];
-
-static struct {
-
-    unsigned long flags;
-    int count;
-
-} rthal_linux_irq[NR_IRQS];
-
-static struct {
-
-    void (*handler)(void);
-    unsigned label;
-
-} rthal_sysreq_table[RTHAL_NR_SRQS];
-
-static unsigned rthal_sysreq_virq;
-
-static int rthal_using_apic;
-
-static unsigned long rthal_sysreq_map = 1; /* #0 is invalid. */
-
-static unsigned long rthal_sysreq_pending;
-
-static unsigned long rthal_sysreq_running;
-
-static spinlock_t rthal_ssrq_lock = SPIN_LOCK_UNLOCKED;
-
-static volatile int rthal_sync_level;
-
-static atomic_t rthal_sync_count = ATOMIC_INIT(1);
-
-static int rthal_last_8254_counter2;
-
-static rthal_time_t rthal_ts_8254;
-
-static rthal_trap_handler_t rthal_trap_handler;
-
-struct rthal_switch_info rthal_linux_context[RTHAL_NR_CPUS];
-
-struct rthal_calibration_data rthal_tunables;
-
-volatile unsigned long rthal_cpu_realtime;
 
 unsigned long rthal_critical_enter (void (*synch)(void))
 
@@ -175,7 +409,7 @@ unsigned long rthal_critical_enter (void (*synch)(void))
     if (atomic_dec_and_test(&rthal_sync_count))
 	rthal_sync_level = 0;
     else if (synch != NULL)
-	printk("RTAI/hal: warning: nested sync will fail.\n");
+	printk(KERN_WARNING "RTAI[hal]: nested sync will fail.\n");
 
     return flags;
 }
@@ -192,30 +426,33 @@ int rthal_request_irq (unsigned irq,
 		       void *cookie)
 {
     unsigned long flags;
+    int err = 0;
 
-    if (handler == NULL || irq >= NR_IRQS)
+    if (handler == NULL || irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
     flags = rthal_critical_enter(NULL);
 
     if (rthal_realtime_irq[irq].handler != NULL)
 	{
-	rthal_critical_exit(flags);
-	return -EBUSY;
+	err = -EBUSY;
+	goto unlock_and_exit;
 	}
 
     rthal_realtime_irq[irq].handler = handler;
     rthal_realtime_irq[irq].cookie = cookie;
 
+ unlock_and_exit:
+
     rthal_critical_exit(flags);
 
-    return 0;
+    return err;
 }
 
 int rthal_release_irq (unsigned irq)
 
 {
-    if (irq >= NR_IRQS)
+    if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
     xchg(&rthal_realtime_irq[irq].handler,NULL);
@@ -224,40 +461,13 @@ int rthal_release_irq (unsigned irq)
 }
 
 /**
- * start and initialize the PIC to accept interrupt request irq.
- *
- */
-int rthal_startup_irq (unsigned irq) {
-
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq))
-	return -EINVAL;
-
-    return (int)irq_desc[irq].handler->startup(irq);
-}
-
-/**
- * Shut down an IRQ source.
- *
- * No further interrupt request irq can be accepted.
- *
- */
-int rthal_shutdown_irq (unsigned irq) {
-
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq))
-	return -EINVAL;
-
-    irq_desc[irq].handler->shutdown(irq);
-
-    return 0;
-}
-
-/**
  * Enable an IRQ source.
  *
  */
-int rthal_enable_irq (unsigned irq) {
+int rthal_enable_irq (unsigned irq)
 
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq))
+{
+    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq))
 	return -EINVAL;
 
     irq_desc[irq].handler->enable(irq);
@@ -271,28 +481,10 @@ int rthal_enable_irq (unsigned irq) {
  */
 int rthal_disable_irq (unsigned irq) {
 
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq))
+    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq))
 	return -EINVAL;
 
     irq_desc[irq].handler->disable(irq);
-
-    return 0;
-}
-
-/**
- * Unmask and IRQ source.
- *
- * The related request can then interrupt the CPU again, provided it has also
- * been acknowledged.
- *
- */
-int rthal_unmask_irq (unsigned irq)
-
-{
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq))
-	return -EINVAL;
-
-    irq_desc[irq].handler->end(irq);
 
     return 0;
 }
@@ -318,7 +510,7 @@ int rthal_unmask_irq (unsigned irq)
  * standard Linux irq request call.
  *
  * The interrupt service routine can be uninstalled using
- * rthal_free_linux_irq().
+ * rthal_release_linux_irq().
  *
  * @retval 0 on success.
  * @retval -EINVAL if @a irq is not a valid external IRQ number or handler
@@ -333,7 +525,7 @@ int rthal_request_linux_irq (unsigned irq,
 {
     unsigned long flags;
 
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq) || !handler)
+    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq) || !handler)
 	return -EINVAL;
 
     rthal_local_irq_save(flags);
@@ -366,12 +558,14 @@ int rthal_request_linux_irq (unsigned irq,
  * @retval 0 on success.
  * @retval -EINVAL if @a irq is not a valid external IRQ number.
  */
-int rthal_free_linux_irq (unsigned irq, void *dev_id)
+int rthal_release_linux_irq (unsigned irq, void *dev_id)
 
 {
     unsigned long flags;
 
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq) || rthal_linux_irq[irq].count == 0)
+    if (irq >= IPIPE_NR_XIRQS ||
+	adeos_virtual_irq_p(irq) ||
+	rthal_linux_irq[irq].count == 0)
 	return -EINVAL;
 
     rthal_local_irq_save(flags);
@@ -396,9 +590,10 @@ int rthal_free_linux_irq (unsigned irq, void *dev_id)
  * rthal_pend_linux_irq appends a Linux interrupt irq for processing in Linux IRQ
  * mode, i.e. with hardware interrupts fully enabled.
  */
-int rthal_pend_linux_irq (unsigned irq) {
+int rthal_pend_linux_irq (unsigned irq)
 
-    if (irq >= NR_IRQS)
+{
+    if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
     return adeos_propagate_irq(irq);
@@ -448,12 +643,12 @@ int rthal_request_srq (unsigned label,
 /**
  * Uninstall a system request handler
  *
- * rthal_free_srq uninstalls the specified system call @a srq, returned by
+ * rthal_release_srq uninstalls the specified system call @a srq, returned by
  * installing the related handler with a previous call to rthal_request_srq().
  *
  * @retval EINVAL if @a srq is invalid.
  */
-int rthal_free_srq (unsigned srq)
+int rthal_release_srq (unsigned srq)
 
 {
     if (srq < 1 ||
@@ -491,182 +686,10 @@ int rthal_pend_linux_srq (unsigned srq)
 
 #ifdef CONFIG_SMP
 
-static void rthal_critical_sync (void)
+static unsigned long rthal_old_irq_affinity[IPIPE_NR_XIRQS],
+                     rthal_current_irq_affinity[IPIPE_NR_XIRQS];
 
-{
-    struct rthal_apic_data *p;
-
-    switch (rthal_sync_level)
-	{
-	case 1:
-
-	    p = &rthal_timer_mode[adeos_processor_id()];
-	    
-	    while (rthal_rdtsc() < rthal_timers_sync_time)
-		;
-
-	    if (p->mode)
-		rthal_setup_periodic_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
-	    else
-		rthal_setup_oneshot_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
-
-	    break;
-
-	case 2:
-
-	    rthal_setup_oneshot_apic(0,RTHAL_APIC_TIMER_VECTOR);
-	    break;
-
-	case 3:
-
-	    rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
-	    break;
-	}
-}
-
-irqreturn_t rthal_broadcast_to_local_timers (int irq,
-					     void *dev_id,
-					     struct pt_regs *regs)
-{
-    unsigned long flags;
-
-    rthal_hw_lock(flags);
-    apic_wait_icr_idle();
-    apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
-    rthal_hw_unlock(flags);
-
-    return IRQ_HANDLED;
-} 
-
-#else /* !CONFIG_SMP */
-
-#define rthal_critical_sync NULL
-
-irqreturn_t rthal_broadcast_to_local_timers (int irq,
-					     void *dev_id,
-					     struct pt_regs *regs) {
-    return IRQ_HANDLED;
-} 
-
-#endif /* CONFIG_SMP */
-
-#ifdef CONFIG_X86_LOCAL_APIC
-
-/**
- * Install a local APICs timer interrupt handler
- *
- * rthal_request_apic_timers requests local APICs timers and defines the mode and
- * count to be used for each local APIC timer. Modes and counts can be chosen
- * arbitrarily for each local APIC timer.
- *
- * @param apic_timer_data is a pointer to a vector of structures
- * @code struct rthal_apic_data { int mode, count; }
- * @endcode sized with the number of CPUs available.
- *
- * Such a structure defines:
- * - mode: 0 for a oneshot timing, 1 for a periodic timing.
- * - count: is the period in nanoseconds you want to use on the corresponding
- * timer, not used for oneshot timers.  It is in nanoseconds to ease its
- * programming when different values are used by each timer, so that you do not
- * have to care converting it from the CPU on which you are calling this
- * function.
- *
- * The start of the timing should be reasonably synchronized.   You should call
- * this function with due care and only when you want to manage the related
- * interrupts in your own handler.   For using local APIC timers in pacing real
- * time tasks use the usual rt_start_timer(), which under the MUP scheduler sets
- * the same timer policy on all the local APIC timers, or start_rt_apic_timers()
- * that allows you to use @c struct @c rthal_apic_data directly.
- */
-void rthal_request_apic_timers (void (*handler)(void),
-				struct rthal_apic_data *tmdata)
-{
-    struct rthal_apic_data *p;
-    unsigned long flags;
-    int cpuid;
-
-    flags = rthal_critical_enter(rthal_critical_sync);
-
-    rthal_sync_level = 1;
-
-    rthal_timers_sync_time = rthal_rdtsc() + rthal_imuldiv(LATCH,
-							   rthal_tunables.cpu_freq,
-							   RTHAL_8254_FREQ);
-    for (cpuid = 0; cpuid < RTHAL_NR_CPUS; cpuid++)
-	{
-	p = &rthal_timer_mode[cpuid];
-	*p = tmdata[cpuid];
-
-	if (p->mode)
-	    p->count = rthal_imuldiv(p->count,RTHAL_APIC_FREQ,1000000000);
-	else
-	    p->count = RTHAL_APIC_ICOUNT;
-	}
-
-    p = &rthal_timer_mode[adeos_processor_id()];
-
-    while (rthal_rdtsc() < rthal_timers_sync_time)
-	;
-
-    if (p->mode)
-	rthal_setup_periodic_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
-    else
-	rthal_setup_oneshot_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
-
-    rthal_release_irq(RTHAL_APIC_TIMER_IPI);
-
-    rthal_request_irq(RTHAL_APIC_TIMER_IPI,(rthal_irq_handler_t)handler,NULL);
-
-    rthal_request_linux_irq(RTHAL_8254_IRQ,
-			 &rthal_broadcast_to_local_timers,
-			 "broadcast",
-			 &rthal_broadcast_to_local_timers);
-
-    for (cpuid = 0; cpuid < RTHAL_NR_CPUS; cpuid++)
-	{
-	p = &tmdata[cpuid];
-
-	if (p->mode)
-	    p->count = rthal_imuldiv(p->count,RTHAL_APIC_FREQ,1000000000);
-	else
-	    p->count = rthal_imuldiv(p->count,rthal_tunables.cpu_freq,1000000000);
-	}
-
-    rthal_critical_exit(flags);
-}
-
-/**
- * Uninstall a local APICs timer interrupt handler
- */
-void rthal_free_apic_timers(void)
-
-{
-    unsigned long flags;
-
-    rthal_free_linux_irq(RTHAL_8254_IRQ,&rthal_broadcast_to_local_timers);
-
-    flags = rthal_critical_enter(rthal_critical_sync);
-
-    rthal_sync_level = 3;
-    rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
-    rthal_release_irq(RTHAL_APIC_TIMER_IPI);
-
-    rthal_critical_exit(flags);
-}
-
-#else /* !CONFIG_X86_LOCAL_APIC */
-
-void rthal_request_apic_timers (void (*handler)(void),
-				struct rthal_apic_data *tmdata) {
-}
-
-void rthal_free_apic_timers(void) {
-    rthal_free_timer();
-}
-
-#endif /* CONFIG_X86_LOCAL_APIC */
-
-#ifdef CONFIG_SMP
+static spinlock_t rthal_iset_lock = SPIN_LOCK_UNLOCKED;
 
 /**
  * Set IRQ->CPU assignment
@@ -684,7 +707,7 @@ int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask)
 {
     unsigned long oldmask, flags;
 
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq))
+    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq))
 	return -EINVAL;
 
     rthal_local_irq_save(flags);
@@ -727,7 +750,7 @@ int rthal_reset_irq_affinity (unsigned irq)
 {
     unsigned long oldmask, flags;
 
-    if (irq >= NR_IRQS || adeos_virtual_irq_p(irq))
+    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq))
 	return -EINVAL;
 
     rthal_local_irq_save(flags);
@@ -757,59 +780,7 @@ int rthal_reset_irq_affinity (unsigned irq)
     return 0;
 }
 
-void rthal_request_timer_cpuid (void (*handler)(void),
-				unsigned tick,
-				int cpuid)
-{
-    unsigned long flags;
-    int count;
-
-    rthal_using_apic = 1;
-    rthal_timers_sync_time = 0;
-
-    for (count = 0; count < RTHAL_NR_CPUS; count++)
-	rthal_timer_mode[count].mode = rthal_timer_mode[count].count = 0;
-
-    flags = rthal_critical_enter(rthal_critical_sync);
-
-    rthal_sync_level = 1;
-
-    if (tick > 0)
-	{
-	if (cpuid == adeos_processor_id())
-	    rthal_setup_periodic_apic(tick,RTHAL_APIC_TIMER_VECTOR);
-	else
-	    {
-	    rthal_timer_mode[cpuid].mode = 1;
-	    rthal_timer_mode[cpuid].count = tick;
-	    rthal_setup_oneshot_apic(0,RTHAL_APIC_TIMER_VECTOR);
-	    }
-	}
-    else
-	{
-	if (cpuid == adeos_processor_id())
-	    rthal_setup_oneshot_apic(RTHAL_APIC_ICOUNT,RTHAL_APIC_TIMER_VECTOR);
-	else
-	    {
-	    rthal_timer_mode[cpuid].mode = 0;
-	    rthal_timer_mode[cpuid].count = RTHAL_APIC_ICOUNT;
-	    rthal_setup_oneshot_apic(0,RTHAL_APIC_TIMER_VECTOR);
-	    }
-	}
-
-    rthal_release_irq(RTHAL_APIC_TIMER_IPI);
-
-    rthal_request_irq(RTHAL_APIC_TIMER_IPI,(rthal_irq_handler_t)handler,NULL);
-
-    rthal_request_linux_irq(RTHAL_8254_IRQ,
-			 &rthal_broadcast_to_local_timers,
-			 "broadcast",
-			 &rthal_broadcast_to_local_timers);
-
-    rthal_critical_exit(flags);
-}
-
-#else  /* !CONFIG_SMP */
+#else /* !CONFIG_SMP */
 
 int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask) {
 
@@ -821,196 +792,41 @@ int rthal_reset_irq_affinity (unsigned irq) {
     return 0;
 }
 
-void rthal_request_timer_cpuid (void (*handler)(void),
-				unsigned tick,
-				int cpuid) {
-}
-
 #endif /* CONFIG_SMP */
 
-/**
- * Install a timer interrupt handler.
- *
- * rthal_request_timer requests a timer of period tick ticks, and installs the
- * routine @a handler as a real time interrupt service routine for the timer.
- *
- * Set @a tick to 0 for oneshot mode (i.e. unused).  @a mod is a
- * platform-dependent bitmask affecting this service. For x86, the
- * only applicable flag is RTHAL_USE_APIC, which forces the use of the
- * local APIC timer when set.  If this flag is unset, timing will be
- * based on the 8254 PIT.
- *
- */
-int rthal_request_timer (void (*handler)(void),
-			 unsigned tick,
-			 int mod)
-{
-    unsigned long flags;
+#ifndef CONFIG_X86_TSC
 
-    rthal_using_apic = !!(mod & RTHAL_USE_APIC);
+static rthal_time_t rthal_ts_8254;
 
-    flags = rthal_critical_enter(rthal_critical_sync);
+static int rthal_last_8254_counter2;
 
-    if (tick > 0)
-	{
-	if (rthal_using_apic)
-	    {
-	    rthal_sync_level = 2;
-	    rthal_release_irq(RTHAL_APIC_TIMER_IPI);
-	    rthal_request_irq(RTHAL_APIC_TIMER_IPI,(rthal_irq_handler_t)handler,NULL);
-	    rthal_setup_periodic_apic(tick,RTHAL_APIC_TIMER_VECTOR);
-	    }
-	else
-	    {
-	    outb(0x34,0x43);
-	    outb(tick & 0xff,0x40);
-	    outb(tick >> 8,0x40);
-
-	    rthal_release_irq(RTHAL_8254_IRQ);
-
-	    if (rthal_request_irq(RTHAL_8254_IRQ,(rthal_irq_handler_t)handler,NULL) < 0)
-		{
-		rthal_critical_exit(flags);
-		return -EINVAL;
-		}
-	    }
-	}
-    else
-	{
-	if (rthal_using_apic)
-	    {
-	    rthal_sync_level = 2;
-	    rthal_release_irq(RTHAL_APIC_TIMER_IPI);
-	    rthal_request_irq(RTHAL_APIC_TIMER_IPI,(rthal_irq_handler_t)handler,NULL);
-	    rthal_setup_oneshot_apic(RTHAL_APIC_ICOUNT,RTHAL_APIC_TIMER_VECTOR);
-	    }
-	else
-	    {
-	    outb(0x30,0x43);
-	    outb(LATCH & 0xff,0x40);
-	    outb(LATCH >> 8,0x40);
-
-	    rthal_release_irq(RTHAL_8254_IRQ);
-
-	    if (rthal_request_irq(RTHAL_8254_IRQ,(rthal_irq_handler_t)handler,NULL) < 0)
-		{
-		rthal_critical_exit(flags);
-		return -EINVAL;
-		}
-	    }
-	}
-
-    rthal_critical_exit(flags);
-
-    return rthal_using_apic ? rthal_request_linux_irq(RTHAL_8254_IRQ,
-						      &rthal_broadcast_to_local_timers,
-						      "rthal_broadcast",
-						      &rthal_broadcast_to_local_timers) : 0;
-}
-
-/**
- * Uninstall a timer interrupt handler.
- *
- * rthal_free_timer uninstalls a timer previously set by rthal_request_timer().
- */
-void rthal_free_timer (void)
-
-{
-    unsigned long flags;
-
-    if (rthal_using_apic)
-	rthal_free_linux_irq(RTHAL_8254_IRQ,
-			     &rthal_broadcast_to_local_timers);
-
-    flags = rthal_critical_enter(rthal_critical_sync);
-
-    if (rthal_using_apic)
-	{
-	rthal_sync_level = 3;
-	rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
-	rthal_using_apic = 0;
-	}
-    else
-	{
-	outb(0x34,0x43);
-	outb(LATCH & 0xff,0x40);
-	outb(LATCH >> 8,0x40);
-	rthal_release_irq(RTHAL_8254_IRQ);
-	}
-
-    rthal_critical_exit(flags);
-}
-
-rthal_trap_handler_t rthal_set_trap_handler (rthal_trap_handler_t handler) {
-
-    return (rthal_trap_handler_t)xchg(&rthal_trap_handler,handler);
-}
+/* TSC emulation using PIT channel #2. */
 
 rthal_time_t rthal_get_8254_tsc (void)
 
 {
     unsigned long flags;
-    int inc, c2;
     rthal_time_t t;
+    int inc, c2;
 
     rthal_hw_lock(flags); /* Local hw masking is required here. */
 
-    outb(0xD8,0x43);
+    outb(0xd8,0x43);
     c2 = inb(0x42);
     inc = rthal_last_8254_counter2 - (c2 |= (inb(0x42) << 8));
     rthal_last_8254_counter2 = c2;
-    t = (rthal_ts_8254 += (inc > 0 ? inc : inc + RTHAL_COUNT2LATCH));
+    t = (rthal_ts_8254 += (inc > 0 ? inc : inc + RTHAL_8254_COUNT2LATCH));
 
     rthal_hw_unlock(flags);
 
     return t;
 }
 
-unsigned long rthal_calibrate_8254 (void)
+#endif /* !CONFIG_X86_TSC */
 
-{
-    unsigned long flags;
-    rthal_time_t t, dt;
-    int i;
+rthal_trap_handler_t rthal_set_trap_handler (rthal_trap_handler_t handler) {
 
-    flags = rthal_critical_enter(NULL);
-
-    outb(0x34,0x43);
-
-    t = rthal_rdtsc();
-
-    for (i = 0; i < 10000; i++)
-	{ 
-	outb(LATCH & 0xff,0x40);
-	outb(LATCH >> 8,0x40);
-	}
-
-    dt = rthal_rdtsc() - t;
-
-    rthal_critical_exit(flags);
-
-    return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
-}
-
-void rthal_set_8254_tsc (void)
-
-{
-    unsigned long flags;
-    int c;
-
-    flags = rthal_critical_enter(NULL);
-
-    outb_p(0x00,0x43);
-    c = inb_p(0x40);
-    c |= inb_p(0x40) << 8;
-    outb_p(0xB4, 0x43);
-    outb_p(RTHAL_COUNT2LATCH & 0xff, 0x42);
-    outb_p(RTHAL_COUNT2LATCH >> 8, 0x42);
-    rthal_ts_8254 = c + ((rthal_time_t)LATCH)*jiffies;
-    rthal_last_8254_counter2 = 0; 
-    outb_p((inb_p(0x61) & 0xFD) | 1, 0x61);
-
-    rthal_critical_exit(flags);
+    return (rthal_trap_handler_t)xchg(&rthal_trap_handler,handler);
 }
 
 static void rthal_irq_trampoline (unsigned irq)
@@ -1064,15 +880,14 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
     exception could be raised for an exiting process if a preemption
     occurs inside a short time window, after the process's LDT has
     been dropped, but before the kernel lock is taken.  The same goes
-    for LXRT switching back a Linux thread in non-RT mode which
+    for fusion switching back a Linux thread in non-RT mode which
     happens to have been preempted inside do_exit() after the MM
     context has been dropped (thus the LDT too). In such a case, %gs
     could be reloaded with what used to be the TLS descriptor of the
     exiting thread, but unfortunately after the LDT itself has been
     dropped. Since the default LDT is only 5 entries long, any attempt
     to refer to an LDT-indexed descriptor above this value would cause
-    a GPF.
-    2) NMI is not pipelined by Adeos. */
+    a GPF.  2) NMI is not pipelined by Adeos. */
 
     adeos_load_cpuid();
 
@@ -1083,11 +898,12 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
 	    unsigned long address;
 
-	    /* Handle RTAI-originated faults in kernel space caused by
-	       on-demand virtual memory mappings. We can specifically
-	       process this case through the Linux fault handler since
-	       we know that it is context-agnostic and does not wreck
-	       the determinism. Any other case would lead us to
+	    /* As of 2.6, we must handle RTAI-originated faults in
+	       kernel space caused by on-demand virtual memory
+	       mappings. We can specifically process this case through
+	       the Linux fault handler since we know that it is
+	       context-agnostic and does not wreck the
+	       determinism. Any other case would lead us to
 	       panicking. */
 
 	    __asm__("movl %%cr2,%0":"=r" (address));
@@ -1162,7 +978,7 @@ void rthal_set_linux_task_priority (struct task_struct *task, int policy, int pr
     set_fs(old_fs);
 
     if (rc)
-	printk("RTAI/hal: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n",
+	printk(KERN_ERR "RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n",
 	       policy,
 	       prio,
 	       rc,
@@ -1178,7 +994,7 @@ static void rthal_domain_entry (int iflag)
     if (!iflag)
 	goto spin;
 
-    for (irq = 0; irq < NR_IRQS; irq++)
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 	adeos_virtualize_irq(irq,
 			     &rthal_irq_trampoline,
 			     NULL,
@@ -1188,7 +1004,7 @@ static void rthal_domain_entry (int iflag)
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
 	adeos_catch_event(trapnr,&rthal_trap_fault);
 
-    printk("RTAI: HAL/x86 loaded.\n");
+    printk(KERN_INFO "RTAI[hal]: %s loaded.\n",PACKAGE_VERSION);
 
  spin:
 
@@ -1211,17 +1027,12 @@ static int rthal_read_proc (char *page,
     int i, none;
 
     PROC_PRINT("\n** RTAI/x86:\n\n");
-#ifdef __USE_APIC__
-    PROC_PRINT("    APIC Frequency: %lu\n",rthal_tunables.apic_freq);
-    PROC_PRINT("    APIC Latency: %d ns\n",RTHAL_APIC_LATENCY);
-    PROC_PRINT("    APIC Setup: %d ns\n",RTHAL_APIC_SETUP_TIME);
-#endif /* CONFIG_X86_LOCAL_APIC */
-    
+
     none = 1;
 
     PROC_PRINT("\n** Real-time IRQs used by RTAI: ");
 
-    for (i = 0; i < NR_IRQS; i++)
+    for (i = 0; i < IPIPE_NR_XIRQS; i++)
 	{
 	if (rthal_realtime_irq[i].handler)
 	    {
@@ -1269,7 +1080,7 @@ static int rthal_proc_register (void)
 
     if (!rthal_proc_root)
 	{
-	printk("Unable to initialize /proc/rtai.\n");
+	printk(KERN_ERR "RTAI[hal]: Unable to initialize /proc/rtai.\n");
 	return -1;
         }
 
@@ -1279,7 +1090,7 @@ static int rthal_proc_register (void)
 
     if (!ent)
 	{
-	printk("Unable to initialize /proc/rtai/rthal.\n");
+	printk(KERN_ERR "RTAI[hal]: Unable to initialize /proc/rtai/rthal.\n");
 	return -1;
         }
 
@@ -1301,6 +1112,14 @@ int __rthal_init (void)
 
 {
     adattr_t attr;
+    int err;
+
+    if (num_online_cpus() > RTHAL_NR_CPUS)
+	{
+	printk(KERN_ERR "RTAI[hal]: Too many processors found -- need RTHAL_NR_CPUS >= %d.\n",
+	       num_online_cpus());
+	return 1;
+	}
 
     /* Allocate a virtual interrupt to handle sysreqs within the Linux
        domain. */
@@ -1308,7 +1127,7 @@ int __rthal_init (void)
 
     if (!rthal_sysreq_virq)
 	{
-	printk("RTAI/hal: no virtual interrupt available.\n");
+	printk(KERN_ERR "RTAI[hal]: No virtual interrupt available.\n");
 	return 1;
 	}
 
@@ -1321,21 +1140,24 @@ int __rthal_init (void)
 	{
 	adsysinfo_t sysinfo;
 	adeos_get_sysinfo(&sysinfo);
-	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq; /* FIXME: 4Ghz barrier is close... */
+	/* FIXME: 4Ghz barrier is close... */
+	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
 	}
 
     rthal_tunables.cpu_freq = rthal_cpufreq_arg;
 
+    if (rthal_timerfreq_arg == 0)
 #ifdef CONFIG_X86_LOCAL_APIC
-    if (rthal_apicfreq_arg == 0)
-	rthal_apicfreq_arg = apic_read(APIC_TMICT) * HZ;
-
-    rthal_tunables.apic_freq = rthal_apicfreq_arg;
+	rthal_timerfreq_arg = apic_read(APIC_TMICT) * HZ;
+#else /* !CONFIG_X86_LOCAL_APIC */
+	rthal_timerfreq_arg = CLOCK_TICK_RATE;
 #endif /* CONFIG_X86_LOCAL_APIC */
+
+    rthal_tunables.timer_freq = rthal_timerfreq_arg;
 
 #ifdef CONFIG_PROC_FS
     rthal_proc_register();
-#endif
+#endif /* CONFIG_PROC_FS */
 
     /* Let Adeos do its magic for our real-time domain. */
     adeos_init_attr(&attr);
@@ -1344,7 +1166,12 @@ int __rthal_init (void)
     attr.entry = &rthal_domain_entry;
     attr.priority = ADEOS_ROOT_PRI + 100; /* Precede Linux in the pipeline */
 
-    return adeos_register_domain(&rthal_domain,&attr);
+    err = adeos_register_domain(&rthal_domain,&attr);
+
+    if (!err)
+	rthal_init_done = 1;
+
+    return err;
 }
 
 void __rthal_exit (void)
@@ -1354,10 +1181,16 @@ void __rthal_exit (void)
     rthal_proc_unregister();
 #endif
 
-    adeos_virtualize_irq(rthal_sysreq_virq,NULL,NULL,0);
-    adeos_free_irq(rthal_sysreq_virq);
-    adeos_unregister_domain(&rthal_domain);
-    printk(KERN_WARNING "RTAI: HAL/x86 unloaded.\n");
+    if (rthal_sysreq_virq)
+	{
+	adeos_virtualize_irq(rthal_sysreq_virq,NULL,NULL,0);
+	adeos_free_irq(rthal_sysreq_virq);
+	}
+
+    if (rthal_init_done)
+	adeos_unregister_domain(&rthal_domain);
+
+    printk(KERN_INFO "RTAI[hal]: Unloaded.\n");
 }
 
 /*@}*/
@@ -1367,27 +1200,25 @@ module_exit(__rthal_exit);
 
 EXPORT_SYMBOL(rthal_request_irq);
 EXPORT_SYMBOL(rthal_release_irq);
-EXPORT_SYMBOL(rthal_startup_irq);
-EXPORT_SYMBOL(rthal_shutdown_irq);
 EXPORT_SYMBOL(rthal_enable_irq);
 EXPORT_SYMBOL(rthal_disable_irq);
-EXPORT_SYMBOL(rthal_unmask_irq);
 EXPORT_SYMBOL(rthal_request_linux_irq);
-EXPORT_SYMBOL(rthal_free_linux_irq);
+EXPORT_SYMBOL(rthal_release_linux_irq);
 EXPORT_SYMBOL(rthal_pend_linux_irq);
 EXPORT_SYMBOL(rthal_request_srq);
-EXPORT_SYMBOL(rthal_free_srq);
+EXPORT_SYMBOL(rthal_release_srq);
 EXPORT_SYMBOL(rthal_pend_linux_srq);
 EXPORT_SYMBOL(rthal_set_irq_affinity);
 EXPORT_SYMBOL(rthal_reset_irq_affinity);
-EXPORT_SYMBOL(rthal_request_timer_cpuid);
-EXPORT_SYMBOL(rthal_request_apic_timers);
-EXPORT_SYMBOL(rthal_free_apic_timers);
 EXPORT_SYMBOL(rthal_request_timer);
-EXPORT_SYMBOL(rthal_free_timer);
+EXPORT_SYMBOL(rthal_release_timer);
 EXPORT_SYMBOL(rthal_set_trap_handler);
+EXPORT_SYMBOL(rthal_calibrate_timer);
 
-EXPORT_SYMBOL(rthal_broadcast_to_local_timers);
+#ifndef CONFIG_X86_TSC
+EXPORT_SYMBOL(rthal_get_8254_tsc);
+#endif /* !CONFIG_X86_TSC */
+
 EXPORT_SYMBOL(rthal_critical_enter);
 EXPORT_SYMBOL(rthal_critical_exit);
 EXPORT_SYMBOL(rthal_set_linux_task_priority);
@@ -1397,7 +1228,3 @@ EXPORT_SYMBOL(rthal_domain);
 EXPORT_SYMBOL(rthal_proc_root);
 EXPORT_SYMBOL(rthal_tunables);
 EXPORT_SYMBOL(rthal_cpu_realtime);
-
-EXPORT_SYMBOL(rthal_calibrate_8254);
-EXPORT_SYMBOL(rthal_get_8254_tsc);
-EXPORT_SYMBOL(rthal_set_8254_tsc);

@@ -197,8 +197,6 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define rtai_cpuid()  adeos_processor_id()
 #define rtai_tskext   ptd
 
-extern adomain_t rtai_domain;
-
 /* Use these to grant atomic protection when accessing the hardware */
 #define rtai_hw_cli()                  adeos_hw_cli()
 #define rtai_hw_sti()                  adeos_hw_sti()
@@ -206,15 +204,32 @@ extern adomain_t rtai_domain;
 #define rtai_hw_restore_flags(x)       adeos_hw_local_irq_restore(flags)
 #define rtai_hw_save_flags(x)          adeos_hw_local_irq_flags(flags)
 
-/* Use these to grant atomic protection in hard real time code. */
-#define rtai_cli()                  adeos_stall_pipeline_from(&rtai_domain)
-#define rtai_sti()                  adeos_unstall_pipeline_from(&rtai_domain)
-#define rtai_save_flags_and_cli(x)  ((x) = adeos_test_and_stall_pipeline_from(&rtai_domain))
-#define rtai_restore_flags(x)       adeos_restore_pipeline_from(&rtai_domain,(x))
-#define rtai_save_flags(x)          ((x) = adeos_test_pipeline_from(&rtai_domain))
+/* Use these to grant atomic protection in hard real time code */
+#define rtai_cli()                  adeos_hw_cli()
+#define rtai_sti()                  adeos_hw_sti()
+#define rtai_save_flags_and_cli(x)  adeos_hw_local_irq_save(flags)
+#define rtai_restore_flags(x)       adeos_hw_local_irq_restore(flags)
+#define rtai_save_flags(x)          adeos_hw_local_irq_flags(flags)
 
 /* The only Linux irq flags manipulation lacking in its system.h */
-#define local_irq_restore_nosync(flags, cpuid)  do { adeos_restore_pipeline_nosync(adp_root, flags, cpuid); } while (0)
+#define local_irq_restore_nosync(flags, cpuid)  do { adp_root->cpudata[cpuid].status = flags; } while (0)
+
+#define adeos_pend_uncond(irq, cpuid) \
+do { \
+        adp_root->cpudata[cpuid].irq_hits[irq]++; \
+        __set_bit(irq & IPIPE_IRQ_IMASK, &adp_root->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
+        __set_bit(irq >> IPIPE_IRQ_ISHIFT, &adp_root->cpudata[cpuid].irq_pending_hi); \
+} while (0)
+
+#ifdef CONFIG_PREEMPT
+#define rtai_save_and_lock_preempt_count() \
+	do { int *prcntp, prcnt; prcnt = xchg(prcntp = &preempt_count(), 1);
+#define rtai_restore_preempt_count() \
+	     *prcntp = prcnt; } while (0)
+#else
+#define rtai_save_and_lock_preempt_count();
+#define rtai_restore_preempt_count();
+#endif
 
 typedef int (*rt_irq_handler_t)(unsigned irq, void *cookie);
 
@@ -372,7 +387,18 @@ static inline void rt_global_sti(void)
     rtai_sti();
 }
 
-#define rtai_save_flags_irqbit_and_cli()  ((!adeos_test_and_stall_pipeline_from(&rtai_domain)) << RTAI_IFLAG)
+static volatile inline unsigned long rtai_save_flags_irqbit(void)
+{
+	unsigned long flags;
+	rtai_save_flags(flags);
+	return flags & (1 << RTAI_IFLAG);
+}
+static volatile inline unsigned long rtai_save_flags_irqbit_and_cli(void)
+{
+	unsigned long flags;
+	rtai_save_flags_and_cli(flags);
+	return flags & (1 << RTAI_IFLAG);
+}
 
 /**
  * Save CPU flags
@@ -473,13 +499,13 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 
 #endif
 
-#define rt_printk             printk /* This is safe over Adeos */
+int rt_printk(const char *format, ...);
 
 static inline void rt_switch_to_real_time(int cpuid)
 {
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].depth++) {
-		local_irq_save(rtai_linux_context[cpuid].oldflags);
+		rtai_linux_context[cpuid].oldflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 		test_and_set_bit(cpuid, &rtai_cpu_realtime);
 	}
 }
@@ -490,7 +516,7 @@ static inline void rt_switch_to_linux(int cpuid)
 	if (rtai_linux_context[cpuid].depth) {
 		if (!--rtai_linux_context[cpuid].depth) {
 			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
-			local_irq_restore_nosync(rtai_linux_context[cpuid].oldflags, cpuid);
+			adp_root->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 		}
 		return;
 	}
@@ -536,7 +562,9 @@ void rtai_set_linux_task_priority(struct task_struct *task,
 
 #include <linux/kernel.h>
 
-#define rtai_print_to_screen  printk
+#define rtai_print_to_screen  rt_printk
+
+void *ll2a(long long ll, char *s);
 
 #ifdef __cplusplus
 extern "C" {
@@ -597,8 +625,6 @@ int rt_free_linux_irq(unsigned irq,
 		      void *dev_id);
 
 void rt_pend_linux_irq(unsigned irq);
-
-#define adeos_pend_uncond(irq, cpuid)  rt_pend_linux_irq(irq)
 
 void rt_pend_linux_srq(unsigned srq);
 
@@ -663,26 +689,6 @@ static inline int rt_free_global_irq(unsigned irq)
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-
-#if !defined(CONFIG_ADEOS_NOTHREADS)
-
-static inline struct task_struct *rtai_get_root_current (int cpuid)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	return (struct task_struct *)(((u_long)adp_root->esp[cpuid]) & (~8191UL));
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-	return ((struct thread_info *)(((u_long)adp_root->esp[cpuid]) & (~((THREAD_SIZE)-1))))->task;
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
-}
-
-#else /* CONFIG_ADEOS_NOTHREADS */
-
-static inline struct task_struct *rtai_get_root_current (int cpuid)
-{
-	return current;
-}
-
-#endif /* !CONFIG_ADEOS_NOTHREADS */
 
 #endif /* __KERNEL__ */
 

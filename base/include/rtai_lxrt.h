@@ -618,12 +618,47 @@ RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }
 
+#define RT_THREAD_STACK_MIN 64*1024
+
+#if 0
+#include <pthread.h>
+
 RTAI_PROTO(int, rt_thread_create,(void *fun, void *args, int stack_size))
 {
+	pthread_t thread;
+	pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        if (pthread_attr_setstacksize(&attr, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN)) {
+                return -1;
+        }
+	if (pthread_create(&thread, &attr, fun, args)) {
+		return -1;
+	}
+	return thread;
+}
+
+RTAI_PROTO(int, rt_thread_join, (int thread))
+{
+	return pthread_join((pthread_t)thread, NULL);
+}
+
+#else
+
+#include <sys/wait.h>
+
+RTAI_PROTO(int, rt_thread_create, (void *fun, void *args, int stack_size))
+{
 	void *sp;
-	memset(sp = malloc(stack_size), 0, stack_size);
+	memset(sp = malloc(stack_size), 0, stack_size > RT_THREAD_STACK_MIN ? stack_size : RT_THREAD_STACK_MIN);
 	return clone(fun, sp + stack_size - 1, CLONE_VM | CLONE_FS | CLONE_FILES, args);
 }
+
+RTAI_PROTO(int, rt_thread_join, (int thread))
+{
+	return waitpid(thread, NULL, 0);
+}
+
+#endif
 
 RTAI_PROTO(RT_TASK *, rt_thread_init, (int name, int priority, int max_msg_size, int policy, int cpus_allowed))
 {

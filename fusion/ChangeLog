@@ -1,5 +1,11 @@
 2005-01-22  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/hal/fpu.S (rthal_restore_fpu): Fix code re-enabling the
+	FPU.
+
+	* arch/ppc/hal/fpu.S (rthal_save_fpu): Re-enable FPU before saving
+	current context.
+
 	* include/nucleus/asm-ppc/system.h (xnlock_put_irqrestore): Remove
 	useless cpu_relax().
 

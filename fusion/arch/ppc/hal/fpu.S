@@ -30,6 +30,14 @@
 
 /* r3 = &tcb->fpuenv */
 _GLOBAL(rthal_save_fpu)
+	mfmsr	r5
+	ori	r5,r5,MSR_FP		/* Re-enable use of FPU. */
+#ifdef CONFIG_PPC64BRIDGE
+	clrldi	r5,r5,1			/* Turn off 64-bit mode. */
+#endif /* CONFIG_PPC64BRIDGE */
+	SYNC
+	MTMSRD(r5)			/* Enable use of fpu. */
+	isync
 	RTHAL_FPSAVE32(0,r3)
 	mffs	fr0
 	stfd	fr0,8*32(r3)
@@ -45,19 +53,18 @@ _GLOBAL(rthal_save_fpu)
 /* r3 = &tcb->fpuenv */
 _GLOBAL(rthal_init_fpu)
 	mfmsr	r5
-	ori	r5,r5,MSR_FP|MSR_FE1	/* real-time kernel threads always operate in */
+	ori	r5,r5,MSR_FP|MSR_FE1	/* RT kernel threads always operate in */
 	li	r4,MSR_FE0		/* imprecise non-recoverable exception mode. */
 	andc	r5,r5,r4
 	SYNC
 	MTMSRD(r5)
 
-	/* fallback */
+	/* Fallback wanted. */
 	
 /* r3 = &tcb->fpuenv */
 _GLOBAL(rthal_restore_fpu)
 	mfmsr	r5
-	ori	r5,r5,MSR_FP|MSR_FE1	/* real-time kernel threads always operate in */
-	andi.	r5,r5,MSR_FE0		/* imprecise non-recoverable exception mode. */
+	ori	r5,r5,MSR_FP		/* Re-enable use of FPU. */
 #ifdef CONFIG_PPC64BRIDGE
 	clrldi	r5,r5,1			/* Turn off 64-bit mode. */
 #endif /* CONFIG_PPC64BRIDGE */

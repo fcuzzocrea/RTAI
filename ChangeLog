@@ -1,3 +1,8 @@
+2005-03-30  Michael Neuhauser  <mike@firmix.at>
+
+	* base/sched/sched.*: fixed an improper programming of the timer
+	  in oneshot mode, when Linux timer is used.
+
 2005-03-30  Roberto Bucher  <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/devices/mbx_receive_if: Corrected problem with remote

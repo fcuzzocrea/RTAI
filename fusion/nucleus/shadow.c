@@ -1084,7 +1084,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	case __NR_setitimer:
 
 	    {
-	    xnticks_t delay, interval, expire;
+	    xnticks_t delay, interval;
 	    struct itimerval itv;
 
 	    if (!testbits(nkpod->status,XNTIMED) ||
@@ -1109,17 +1109,11 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    delay = xnshadow_tv2ticks(&itv.it_value);
 	    interval = xnshadow_tv2ticks(&itv.it_interval);
 
-#if CONFIG_RTAI_HW_APERIODIC_TIMER
-	    if (!testbits(nkpod->status,XNTMPER))
-		expire = xnpod_get_cpu_time();
-	    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-		expire = nkpod->jiffies;
-
-	    expire += delay;
-
-	    if (delay > 0)
-		xntimer_start(&thread->atimer,delay,interval);
+	    if (delay > 0 && xntimer_start(&thread->atimer,delay,interval) < 0)
+		{
+		__xn_reg_rval(regs) = -ETIMEDOUT;
+		return 1;
+		}
 
 	    if (__xn_reg_arg3(regs))
 		{

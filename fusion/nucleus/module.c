@@ -282,23 +282,39 @@ int __xeno_main_init (void)
     err = xnpod_calibrate_sched();
 
     if (err)
-	goto fail;
+	goto cleanup_arch;
 
     err = xnbridge_init();
 
     if (err)
-	goto fail;
+	goto cleanup_arch;
 
     err = xnfusion_init();
 
     if (err)
-	goto fail;
+	goto cleanup_bridge;
     }
 #endif /* __KERNEL__ */
 
     xnloginfo("Xenomai core v%s started.\n",PACKAGE_VERSION);
 
     return 0;
+
+#ifdef __KERNEL__
+
+ cleanup_bridge:
+
+    xnbridge_exit();
+
+ cleanup_arch:
+    
+#ifdef CONFIG_PROC_FS
+    xnpod_delete_proc();
+#endif /* CONFIG_PROC_FS */
+
+    xnarch_exit();
+
+#endif /* __KERNEL__ */
 
  fail:
 

@@ -496,10 +496,7 @@ static int __rt_timer_start (struct task_struct *curr, struct pt_regs *regs)
 	xnpod_stop_timer();
 	}
 
-    if (xnpod_start_timer(tickval,XNPOD_DEFAULT_TICKHANDLER) != 0)
-	return -ETIME;
-
-    return 0;
+    return xnpod_start_timer(tickval,XNPOD_DEFAULT_TICKHANDLER);
 }
 
 /*

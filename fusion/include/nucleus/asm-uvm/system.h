@@ -102,7 +102,6 @@ typedef unsigned long xnlock_t;
 #define XNARCH_DEFAULT_TICK        1000000 /* ns, i.e. 1ms */
 #define XNARCH_SIG_RESTART         SIGUSR1
 #define XNARCH_HOST_TICK           0	/* No host ticking service */
-#define XNARCH_SCHED_LATENCY       0 /* No scheduling latency */
 
 #define XNARCH_THREAD_STACKSZ 0 /* Use the default POSIX value. */
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */

@@ -1,3 +1,12 @@
+2004-08-31  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_calibrate_sched): Straighten error path.
+	(xnpod_calibrate_sched): Disable autocalibration of the scheduling
+	latency for architectures that do not provide an aperiodic timing
+	source.
+
+	* nucleus/module.c (__xeno_main_init): Straighten error path.
+
 2004-08-30  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus: Define CONFIG_RTAI_HW_APERIODIC_TIMER.

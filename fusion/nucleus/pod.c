@@ -2918,7 +2918,7 @@ int xnpod_wait_thread_period (void)
 
 #ifdef __KERNEL__
 
-#if XNARCH_SCHED_LATENCY != 0
+#if CONFIG_RTAI_HW_SCHED_LATENCY != 0 || !CONFIG_RTAI_HW_APERIODIC_TIMER
 
 int xnpod_calibrate_sched (void)
 
@@ -2928,12 +2928,12 @@ int xnpod_calibrate_sched (void)
     if (!nktimerlat)
 	return -EIO;
 
-    nkschedlat = xnarch_ns_to_tsc(XNARCH_SCHED_LATENCY);
+    nkschedlat = xnarch_ns_to_tsc(CONFIG_RTAI_HW_SCHED_LATENCY);
 
     return 0;
 }
 
-#else /* XNARCH_SCHED_LATENCY unspecified. */
+#else /* CONFIG_RTAI_HW_SCHED_LATENCY unspecified. */
 
 static void xnpod_calibration_thread (void *cookie)
 
@@ -2981,11 +2981,13 @@ int xnpod_calibrate_sched (void)
         /* Huuho, things are going wild these days... */
         return err;
 
-    if (xnpod_start_timer(XNPOD_APERIODIC_TICK,
-			  XNPOD_DEFAULT_TICKHANDLER) < 0)
+    err = xnpod_start_timer(XNPOD_APERIODIC_TICK,
+			    XNPOD_DEFAULT_TICKHANDLER);
+
+    if (err)
         /* The architecture does not support aperiodic timing;
            autocalibration is not available. */
-        return 0;
+        goto unload_and_exit;
 
     xnpod_init_thread(&calibration_thread,
                       "calibration",
@@ -3002,12 +3004,14 @@ int xnpod_calibrate_sched (void)
 
     xnarch_sleep_on(&flag);
 
+ unload_and_exit:
+
     xnpod_shutdown(XNPOD_NORMAL_EXIT); /* This will stop the timer too. */
 
-    return 0;
+    return err;
 }
 
-#endif /* XNARCH_SCHED_LATENCY */
+#endif /* CONFIG_RTAI_HW_SCHED_LATENCY */
 
 #endif /* __KERNEL__ */
 

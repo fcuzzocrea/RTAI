@@ -21,6 +21,8 @@
 #ifndef _RTAI_ASM_I386_LXRT_H
 #define _RTAI_ASM_I386_LXRT_H
 
+#include <linux/version.h>
+
 #include <asm/rtai_vectors.h>
 
 #define LOW  0
@@ -111,7 +113,7 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
         enter_lazy_tlb(oldmm,next);
 #endif /* < 2.6.0 */
 	
-#if 1 // LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if 1 /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
     __asm__ __volatile__(						\
 		 "pushfl\n\t"				       		\
 		 "cli\n\t"				       		\
@@ -141,29 +143,30 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 
 #endif /* __KERNEL__ */
 
-#if 0
-static inline unsigned long long _rtai_lxrt(int srq, void *arg)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
-        unsigned long long retval;
-        RTAI_DO_TRAP(RTAI_LXRT_VECTOR, retval, srq, arg);
-        return retval;
+    union rtai_lxrt_t retval;
+    RTAI_DO_TRAP(RTAI_LXRT_VECTOR,retval,srq,arg);
+    return retval;
 }
 
 static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
 {
-        union rtai_lxrt_t retval;
-        retval.rt = _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
-	return retval;
+    return _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
 }
 
-#else
+#else /* >= 2.6.0 */
+
 static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
 	RTAI_DO_TRAP(RTAI_LXRT_VECTOR, retval.rt, (dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
 	return retval;
 }
-#endif
+
+#endif /* < 2.6.0 */
 
 #ifdef __cplusplus
 }

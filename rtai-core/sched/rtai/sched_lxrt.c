@@ -118,6 +118,8 @@ static int (*lxrt_signal_handler)(struct task_struct *task,
 
 static unsigned lxrt_migration_virq;
 
+static unsigned sched_virq;
+
 static int lxrt_notify_reboot(struct notifier_block *nb,
 			      unsigned long event,
 			      void *ptr);
@@ -235,7 +237,7 @@ static inline void sched_release_global_lock(int cpuid)
 
 #endif /* CONFIG_SMP */
 
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && 0	/* FIXME */
 #define DECL_CPUS_ALLOWED  unsigned long cpus_allowed
 #define SAVE_CPUS_ALLOWED  do { cpus_allowed = prev->cpus_allowed; } while (0)
 #define SET_CPUS_ALLOWED   do { prev->cpus_allowed = 1 << cpuid;   } while (0)
@@ -274,8 +276,6 @@ int get_min_tasks_cpuid(void)
 	return cpuid;
 }
 
-static inline _syscall3(int, sched_setaffinity, pid_t, pid, int, len, unsigned long *, mask)
-
 static void put_current_on_cpu(int cpuid)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
@@ -285,20 +285,12 @@ static void put_current_on_cpu(int cpuid)
 		schedule_timeout(1);
 	}
 #else /* KERNEL_VERSION >= 2.6.0 */
-	mm_segment_t old_fs;
-	unsigned long mask;
-	int retval;
+	if (set_cpus_allowed(current,cpumask_of_cpu(cpuid)))
+	    {
+	    ((RT_TASK *)(current->this_rt_task[0]))->runnable_on_cpus = smp_processor_id();
+	    set_cpus_allowed(current,cpumask_of_cpu(smp_processor_id()));
+	    }
 
-	mask = 1 << cpuid;
-	old_fs = get_fs();
-	set_fs(KERNEL_DS);
-	retval = sched_setaffinity(current->pid, sizeof(mask), &mask);
-	set_fs(old_fs);
-	if (retval < 0) {
-		((RT_TASK *)(current->this_rt_task[0]))->runnable_on_cpus = cpuid;
-		current->cpus_allowed = mask;
-		rt_printk("LXRT: Linux cannot move task %d (pid) to cpu %d (#), forced to stay only on the cpu (%d) where it is now.\n", current->pid, cpuid, hard_cpu_id());
-	}
 #endif  /* KERNEL_VERSION < 2.6.0 */
 }
 
@@ -825,6 +817,12 @@ void rt_schedule(void)
 	RT_TASK *task, *new_task;
 	int prio, delay, preempt;
 	unsigned long flags;
+
+	if (adp_current != &rtai_domain)
+	    {
+	    adeos_trigger_irq(sched_virq);
+	    return;
+	    }
 
 	ASSIGN_RT_CURRENT;
 
@@ -2339,6 +2337,14 @@ static int lxrt_init(void)
     /* We will start stealing Linux tasks as soon as the reservoir is
        instantiated, so create the migration service now. */
 
+    sched_virq = adeos_alloc_irq();
+
+    adeos_virtualize_irq_from(&rtai_domain,
+			      sched_virq,
+			      (void (*)(unsigned))&rt_schedule,
+			      NULL,
+			      IPIPE_HANDLE_MASK);
+
     lxrt_migration_virq = adeos_alloc_irq();
 
     adeos_virtualize_irq_from(&rtai_domain,
@@ -2448,6 +2454,12 @@ static void lxrt_exit(void)
 	{
 	adeos_virtualize_irq_from(&rtai_domain,lxrt_migration_virq,NULL,NULL,0);
 	adeos_free_irq(lxrt_migration_virq);
+	}
+
+    if (sched_virq)
+	{
+	adeos_virtualize_irq_from(&rtai_domain,sched_virq,NULL,NULL,0);
+	adeos_free_irq(sched_virq);
 	}
 
     /* Must be called on behalf of the Linux domain. */

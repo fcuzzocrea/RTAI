@@ -471,7 +471,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all sim"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE am__leading_dot DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT LN_S ECHO RANLIB ac_ct_RANLIB CPP EGREP LIBTOOL CCAS CCASFLAGS LEX LEXLIB LEX_OUTPUT_ROOT RTAI_MAYBE_SIMDIR RTAI_MAYBE_DOCDIR DOXYGEN DOXYGEN_HAVE_DOT DBX_DOC_ROOT DBX_DOC_TRUE DBX_DOC_FALSE DBX_GEN_DOC_ROOT DBX_LINT DBX_XSLTPROC DBX_FOP DBX_MAYBE_NONET DBX_ROOT DBX_XSL_ROOT DBX_ABS_SRCDIR_TRUE DBX_ABS_SRCDIR_FALSE CONFIG_X86_LOCAL_APIC_TRUE CONFIG_X86_LOCAL_APIC_FALSE CONFIG_X86_TRUE CONFIG_X86_FALSE CONFIG_SMP_TRUE CONFIG_SMP_FALSE CONFIG_RTAI_SKIN_POSIX_TRUE CONFIG_RTAI_SKIN_POSIX_FALSE CONFIG_RTAI_SKIN_NATIVE_TRUE CONFIG_RTAI_SKIN_NATIVE_FALSE CONFIG_RTAI_SKIN_PSOS_TRUE CONFIG_RTAI_SKIN_PSOS_FALSE CONFIG_RTAI_SKIN_VXWORKS_TRUE CONFIG_RTAI_SKIN_VXWORKS_FALSE CONFIG_RTAI_SKIN_VRTX_TRUE CONFIG_RTAI_SKIN_VRTX_FALSE CONFIG_RTAI_SKIN_UITRON_TRUE CONFIG_RTAI_SKIN_UITRON_FALSE CONFIG_RTAI_OPT_VM_TRUE CONFIG_RTAI_OPT_VM_FALSE CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE CONFIG_RTAI_OPT_NATIVE_SEM_TRUE CONFIG_RTAI_OPT_NATIVE_SEM_FALSE CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE CONFIG_RTAI_OPT_NATIVE_COND_TRUE CONFIG_RTAI_OPT_NATIVE_COND_FALSE CONFIG_RTAI_DOC_DOX_TRUE CONFIG_RTAI_DOC_DOX_FALSE CONFIG_RTAI_MAINT_TRUE CONFIG_RTAI_MAINT_FALSE CONFIG_RTAI_MAINT_PMA_TRUE CONFIG_RTAI_MAINT_PMA_FALSE CONFIG_RTAI_MAINT_PGM_TRUE CONFIG_RTAI_MAINT_PGM_FALSE CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE CROSS_COMPILE DOXYGEN_SHOW_INCLUDE_FILES LATEX_BATCHMODE LATEX_MODE RTAI_BUILD_STRING RTAI_HOST_STRING RTAI_TARGET_ARCH RTAI_TARGET_SUBARCH RTAI_KMOD_CFLAGS RTAI_USER_CFLAGS RTAI_KMOD_APP_CFLAGS RTAI_USER_APP_CFLAGS RTAI_FP_CFLAGS RTAI_LINUX_DIR RTAI_LINUX_VERSION RTAI_MODULE_DIR RTAI_MODULE_EXT RTAI_KBUILD_ENV RTAI_KBUILD_CMD RTAI_KBUILD_CLEAN subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM AWK SET_MAKE am__leading_dot DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT LN_S ECHO RANLIB ac_ct_RANLIB CPP EGREP LIBTOOL CCAS CCASFLAGS LEX LEXLIB LEX_OUTPUT_ROOT RTAI_MAYBE_SIMDIR RTAI_MAYBE_DOCDIR DOXYGEN DOXYGEN_HAVE_DOT DBX_DOC_ROOT DBX_DOC_TRUE DBX_DOC_FALSE DBX_GEN_DOC_ROOT DBX_LINT DBX_XSLTPROC DBX_FOP DBX_MAYBE_NONET DBX_ROOT DBX_XSL_ROOT DBX_ABS_SRCDIR_TRUE DBX_ABS_SRCDIR_FALSE CONFIG_X86_LOCAL_APIC_TRUE CONFIG_X86_LOCAL_APIC_FALSE CONFIG_X86_TRUE CONFIG_X86_FALSE CONFIG_PPC_TRUE CONFIG_PPC_FALSE CONFIG_SMP_TRUE CONFIG_SMP_FALSE CONFIG_RTAI_SKIN_POSIX_TRUE CONFIG_RTAI_SKIN_POSIX_FALSE CONFIG_RTAI_SKIN_NATIVE_TRUE CONFIG_RTAI_SKIN_NATIVE_FALSE CONFIG_RTAI_SKIN_PSOS_TRUE CONFIG_RTAI_SKIN_PSOS_FALSE CONFIG_RTAI_SKIN_VXWORKS_TRUE CONFIG_RTAI_SKIN_VXWORKS_FALSE CONFIG_RTAI_SKIN_VRTX_TRUE CONFIG_RTAI_SKIN_VRTX_FALSE CONFIG_RTAI_SKIN_UITRON_TRUE CONFIG_RTAI_SKIN_UITRON_FALSE CONFIG_RTAI_OPT_VM_TRUE CONFIG_RTAI_OPT_VM_FALSE CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE CONFIG_RTAI_OPT_NATIVE_SEM_TRUE CONFIG_RTAI_OPT_NATIVE_SEM_FALSE CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE CONFIG_RTAI_OPT_NATIVE_COND_TRUE CONFIG_RTAI_OPT_NATIVE_COND_FALSE CONFIG_RTAI_DOC_DOX_TRUE CONFIG_RTAI_DOC_DOX_FALSE CONFIG_RTAI_MAINT_TRUE CONFIG_RTAI_MAINT_FALSE CONFIG_RTAI_MAINT_PMA_TRUE CONFIG_RTAI_MAINT_PMA_FALSE CONFIG_RTAI_MAINT_PGM_TRUE CONFIG_RTAI_MAINT_PGM_FALSE CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE CROSS_COMPILE DOXYGEN_SHOW_INCLUDE_FILES LATEX_BATCHMODE LATEX_MODE RTAI_BUILD_STRING RTAI_HOST_STRING RTAI_TARGET_ARCH RTAI_TARGET_SUBARCH RTAI_KMOD_CFLAGS RTAI_USER_CFLAGS RTAI_KMOD_APP_CFLAGS RTAI_USER_APP_CFLAGS RTAI_FP_CFLAGS RTAI_LINUX_DIR RTAI_LINUX_VERSION RTAI_MODULE_DIR RTAI_MODULE_EXT RTAI_KBUILD_ENV RTAI_KBUILD_CMD RTAI_KBUILD_CLEAN subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -8148,6 +8148,11 @@ case "$host" in
 	wanted_kernel_arch=CONFIG_X86
 	arch_have_sim=y
         ;;
+ powerpc-*|ppc-*)
+	RTAI_TARGET_ARCH=ppc
+	wanted_kernel_arch=CONFIG_PPC
+	arch_have_sim=y
+        ;;
  *) echo ""
    echo "*******************************************"
    echo "Still unsupported host: $host -- Sorry."
@@ -8341,11 +8346,6 @@ echo "$as_me: error: RTAI won't work on legacy i386 platforms (cmpxchg() is miss
 echo "$as_me: error: RTAI won't work on legacy i386 platforms (cannot rely on WP bit, need >= CONFIG_M486)" >&2;}
    { (exit 1); exit 1; }; }
    fi
-fi
-if test x${CONFIG_FRAME_POINTER} = xy ; then
-   { { echo "$as_me:$LINENO: error: RTAI won't work properly if CONFIG_FRAME_POINTER is enabled in the kernel configuration" >&5
-echo "$as_me: error: RTAI won't work properly if CONFIG_FRAME_POINTER is enabled in the kernel configuration" >&2;}
-   { (exit 1); exit 1; }; }
 fi
 
 echo "$as_me:$LINENO: checking for POSIX skin" >&5
@@ -8633,16 +8633,21 @@ fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_OPT_USYMS:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_OPT_USYMS:-no}" >&6
 
-if test "$CONFIG_X86" = y; then
+case $RTAI_TARGET_ARCH in
+ i386)
+	if test "$CONFIG_X86_LOCAL_APIC" = y; then
+           timer_type="APIC timer"
+	else
+	   timer_type="8254 PIT"
+	fi
+        ;;
+ ppc)
+	timer_type=decrementer
+        ;;
+esac
 
-if test "$CONFIG_X86_LOCAL_APIC" = y; then
-   timer_type=APIC
-else
-   timer_type=8254
-fi
-
-echo "$as_me:$LINENO: checking for $timer_type timer tuning latency" >&5
-echo $ECHO_N "checking for $timer_type timer tuning latency... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for $timer_type tuning latency" >&5
+echo $ECHO_N "checking for $timer_type tuning latency... $ECHO_C" >&6
 # Check whether --enable-timer-latency or --disable-timer-latency was given.
 if test "${enable_timer_latency+set}" = set; then
   enableval="$enable_timer_latency"
@@ -8654,12 +8659,8 @@ echo "$as_me: error: Bad argument to option: --enable-timer-latency=<nanoseconds
 	esac
 fi;
 if test x$CONFIG_RTAI_HW_TIMER_LATENCY = x ; then
-  # Use a reasonable default if unset
-  if test "$CONFIG_X86_LOCAL_APIC" = y; then
-    CONFIG_RTAI_HW_TIMER_LATENCY=2100
-  else
-    CONFIG_RTAI_HW_TIMER_LATENCY=2400
-  fi
+    # Force auto-calibration
+    CONFIG_RTAI_HW_TIMER_LATENCY=0
 fi
 if test $CONFIG_RTAI_HW_TIMER_LATENCY = 0; then
    echo "$as_me:$LINENO: result: autocalibration" >&5
@@ -8667,8 +8668,6 @@ echo "${ECHO_T}autocalibration" >&6
 else
    echo "$as_me:$LINENO: result: $CONFIG_RTAI_HW_TIMER_LATENCY ns" >&5
 echo "${ECHO_T}$CONFIG_RTAI_HW_TIMER_LATENCY ns" >&6
-fi
-
 fi
 
 echo "$as_me:$LINENO: checking for scheduling latency" >&5
@@ -8684,8 +8683,8 @@ echo "$as_me: error: Bad argument to option: --enable-sched-latency=<nanoseconds
 	esac
 fi;
 if test x$CONFIG_RTAI_HW_SCHED_LATENCY = x ; then
-  # Use a reasonable default if unset
-  CONFIG_RTAI_HW_SCHED_LATENCY=5000
+  # Force auto-calibration
+  CONFIG_RTAI_HW_SCHED_LATENCY=0
 fi
 if test $CONFIG_RTAI_HW_SCHED_LATENCY = 0; then
    echo "$as_me:$LINENO: result: autocalibration" >&5
@@ -9303,6 +9302,16 @@ fi
 
 
 
+if test "$CONFIG_PPC" = y; then
+  CONFIG_PPC_TRUE=
+  CONFIG_PPC_FALSE='#'
+else
+  CONFIG_PPC_TRUE='#'
+  CONFIG_PPC_FALSE=
+fi
+
+
+
 if test "$CONFIG_SMP" = y; then
   CONFIG_SMP_TRUE=
   CONFIG_SMP_FALSE='#'
@@ -9502,7 +9511,7 @@ RTAI_KBUILD_ENV='src2obj = $(patsubst %.$(1),%.o,$(filter %.$(1),$(call notdir,$
 RTAI_KBUILD_CMD="@for src in \$^; do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=@RTAI_TARGET_ARCH@ \
 		    M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
-		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
+		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
 
 RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
 
@@ -9518,6 +9527,11 @@ RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include"
 
 case $RTAI_TARGET_ARCH in
  i386)
+	RTAI_TARGET_SUBARCH=
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
+	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+        ;;
+ ppc)
 	RTAI_TARGET_SUBARCH=
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
 	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
@@ -9597,7 +9611,7 @@ fi
 
 
 
-                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load testsuite/GNUmakefile testsuite/latency/GNUmakefile testsuite/cruncher/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile"
+                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile arch/ppc/GNUmakefile arch/ppc/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-ppc/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load testsuite/GNUmakefile testsuite/latency/GNUmakefile testsuite/cruncher/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile"
 
 
 if test \! x$RTAI_MAYBE_DOCDIR = x; then
@@ -9749,6 +9763,13 @@ if test -z "${CONFIG_X86_TRUE}" && test -z "${CONFIG_X86_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"CONFIG_X86\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"CONFIG_X86\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${CONFIG_PPC_TRUE}" && test -z "${CONFIG_PPC_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_PPC\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"CONFIG_PPC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -10336,9 +10357,12 @@ do
   "arch/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/GNUmakefile" ;;
   "arch/i386/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/i386/GNUmakefile" ;;
   "arch/i386/hal/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/i386/hal/GNUmakefile" ;;
+  "arch/ppc/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/ppc/GNUmakefile" ;;
+  "arch/ppc/hal/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/ppc/hal/GNUmakefile" ;;
   "include/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/GNUmakefile" ;;
   "include/nucleus/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/GNUmakefile" ;;
   "include/nucleus/asm-i386/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/asm-i386/GNUmakefile" ;;
+  "include/nucleus/asm-ppc/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/asm-ppc/GNUmakefile" ;;
   "include/nucleus/asm-uvm/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/asm-uvm/GNUmakefile" ;;
   "nucleus/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES nucleus/GNUmakefile" ;;
   "nucleus/lib/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES nucleus/lib/GNUmakefile" ;;
@@ -10544,6 +10568,8 @@ s,@CONFIG_X86_LOCAL_APIC_TRUE@,$CONFIG_X86_LOCAL_APIC_TRUE,;t t
 s,@CONFIG_X86_LOCAL_APIC_FALSE@,$CONFIG_X86_LOCAL_APIC_FALSE,;t t
 s,@CONFIG_X86_TRUE@,$CONFIG_X86_TRUE,;t t
 s,@CONFIG_X86_FALSE@,$CONFIG_X86_FALSE,;t t
+s,@CONFIG_PPC_TRUE@,$CONFIG_PPC_TRUE,;t t
+s,@CONFIG_PPC_FALSE@,$CONFIG_PPC_FALSE,;t t
 s,@CONFIG_SMP_TRUE@,$CONFIG_SMP_TRUE,;t t
 s,@CONFIG_SMP_FALSE@,$CONFIG_SMP_FALSE,;t t
 s,@CONFIG_RTAI_SKIN_POSIX_TRUE@,$CONFIG_RTAI_SKIN_POSIX_TRUE,;t t

@@ -1,3 +1,21 @@
+2004-08-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h: MODULE_LICENSE is always
+	defined in 2.6: remove default definition.
+
+2004-08-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/hal.h: Kill obsolete
+	rthal_switch_to_*() routines: system.h does this in an integrated
+	fashion already.
+
+	* include/nucleus/asm-i386/fpu.h: Kill fpu.h and integrate the
+	tiny useful bit it used to provide directly into system.h.
+
+2004-08-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Allow for assembly files in target modules.
+
 2004-08-05  Marc Kleine-Budde <kleine-budde@gmx.de>
 
 	* arch/i386/hal/hal.c (rthal_trap_fault): Remove legacy code from

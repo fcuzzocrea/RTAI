@@ -48,6 +48,11 @@ case "$host" in
 	wanted_kernel_arch=CONFIG_X86
 	arch_have_sim=y
         ;;
+ powerpc-*|ppc-*)
+	RTAI_TARGET_ARCH=ppc
+	wanted_kernel_arch=CONFIG_PPC
+	arch_have_sim=y
+        ;;
  *) echo ""
    echo "*******************************************"
    echo "Still unsupported host: $host -- Sorry."
@@ -224,9 +229,6 @@ if test "$CONFIG_X86" = y; then
    if test x$CONFIG_X86_WP_WORKS_OK = x; then
       AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cannot rely on WP bit, need >= CONFIG_M486)])
    fi
-fi
-if test x${CONFIG_FRAME_POINTER} = xy ; then
-   AC_MSG_ERROR([RTAI won't work properly if CONFIG_FRAME_POINTER is enabled in the kernel configuration])
 fi
 
 AC_MSG_CHECKING(for POSIX skin)
@@ -434,15 +436,20 @@ AC_ARG_ENABLE(user-debug,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_USYMS:-no})
 
-if test "$CONFIG_X86" = y; then
+case $RTAI_TARGET_ARCH in
+ i386)
+	if test "$CONFIG_X86_LOCAL_APIC" = y; then
+           timer_type="APIC timer"
+	else
+	   timer_type="8254 PIT"
+	fi
+        ;;
+ ppc)
+	timer_type=decrementer
+        ;;
+esac
 
-if test "$CONFIG_X86_LOCAL_APIC" = y; then
-   timer_type=APIC
-else
-   timer_type=8254
-fi
-
-AC_MSG_CHECKING(for $timer_type timer tuning latency)
+AC_MSG_CHECKING(for $timer_type tuning latency)
 AC_ARG_ENABLE(timer-latency,
 	[ --enable-timer-latency	Set timer tuning latency],
 	[case "$enableval" in
@@ -452,19 +459,13 @@ AC_ARG_ENABLE(timer-latency,
 	*) AC_MSG_ERROR([Bad argument to option: --enable-timer-latency=<nanoseconds>]) ;;
 	esac])
 if test x$CONFIG_RTAI_HW_TIMER_LATENCY = x ; then
-  # Use a reasonable default if unset
-  if test "$CONFIG_X86_LOCAL_APIC" = y; then
-    CONFIG_RTAI_HW_TIMER_LATENCY=2100
-  else
-    CONFIG_RTAI_HW_TIMER_LATENCY=2400
-  fi
+    # Force auto-calibration
+    CONFIG_RTAI_HW_TIMER_LATENCY=0
 fi
 if test $CONFIG_RTAI_HW_TIMER_LATENCY = 0; then
    AC_MSG_RESULT(autocalibration)
 else
    AC_MSG_RESULT($CONFIG_RTAI_HW_TIMER_LATENCY ns)
-fi
-
 fi
 
 AC_MSG_CHECKING(for scheduling latency)
@@ -477,8 +478,8 @@ AC_ARG_ENABLE(sched-latency,
 	*) AC_MSG_ERROR([Bad argument to option: --enable-sched-latency=<nanoseconds>]) ;;
 	esac])
 if test x$CONFIG_RTAI_HW_SCHED_LATENCY = x ; then
-  # Use a reasonable default if unset
-  CONFIG_RTAI_HW_SCHED_LATENCY=5000
+  # Force auto-calibration
+  CONFIG_RTAI_HW_SCHED_LATENCY=0
 fi
 if test $CONFIG_RTAI_HW_SCHED_LATENCY = 0; then
    AC_MSG_RESULT(autocalibration)
@@ -658,6 +659,7 @@ dnl
 
 dnl CPU architecture
 AM_CONDITIONAL(CONFIG_X86,[test "$CONFIG_X86" = y])
+AM_CONDITIONAL(CONFIG_PPC,[test "$CONFIG_PPC" = y])
 AM_CONDITIONAL(CONFIG_SMP,[test "$CONFIG_SMP" = y])
 
 dnl Supported skins
@@ -695,7 +697,7 @@ RTAI_KBUILD_ENV='src2obj = $(patsubst %.$(1),%.o,$(filter %.$(1),$(call notdir,$
 RTAI_KBUILD_CMD="@for src in \$^; do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=@RTAI_TARGET_ARCH@ \
 		    M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
-		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
+		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
 
 RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
 
@@ -708,6 +710,11 @@ RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include"
 
 case $RTAI_TARGET_ARCH in
  i386)
+	RTAI_TARGET_SUBARCH=
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
+	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+        ;;
+ ppc)
 	RTAI_TARGET_SUBARCH=
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
 	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
@@ -784,9 +791,12 @@ AC_CONFIG_FILES([ \
 	arch/GNUmakefile \
         arch/i386/GNUmakefile \
 	arch/i386/hal/GNUmakefile \
+        arch/ppc/GNUmakefile \
+	arch/ppc/hal/GNUmakefile \
 	include/GNUmakefile \
 	include/nucleus/GNUmakefile \
 	include/nucleus/asm-i386/GNUmakefile \
+	include/nucleus/asm-ppc/GNUmakefile \
 	include/nucleus/asm-uvm/GNUmakefile \
 	nucleus/GNUmakefile \
 	nucleus/lib/GNUmakefile \

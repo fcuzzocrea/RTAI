@@ -1,0 +1,26 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libhal_SRC = hal.c
+
+rtai_hal.ko: @RTAI_KBUILD_ENV@
+rtai_hal.ko: $(libhal_SRC)
+	@RTAI_KBUILD_CMD@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+all-local: rtai_hal$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_hal$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+EXTRA_DIST = $(libhal_SRC) Makefile.kbuild

@@ -50,6 +50,8 @@ CCAS = @CCAS@
 CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CONFIG_PPC_FALSE = @CONFIG_PPC_FALSE@
+CONFIG_PPC_TRUE = @CONFIG_PPC_TRUE@
 CONFIG_RTAI_DOC_DOX_FALSE = @CONFIG_RTAI_DOC_DOX_FALSE@
 CONFIG_RTAI_DOC_DOX_TRUE = @CONFIG_RTAI_DOC_DOX_TRUE@
 CONFIG_RTAI_MAINT_FALSE = @CONFIG_RTAI_MAINT_FALSE@
@@ -208,6 +210,8 @@ target_alias = @target_alias@
 
 @CONFIG_X86_TRUE@ARCHDIR = asm-i386 $(am__append_1)
 
+@CONFIG_PPC_TRUE@ARCHDIR = asm-ppc $(am__append_1)
+
 include_HEADERS = \
 		dbridge.h \
 		fusion.h \
@@ -246,7 +250,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = $(include_HEADERS) $(srcdir)/GNUmakefile.in \
 	GNUmakefile.am
-DIST_SUBDIRS = asm-i386 asm-uvm
+DIST_SUBDIRS = asm-i386 asm-uvm asm-ppc
 all: all-recursive
 
 .SUFFIXES:

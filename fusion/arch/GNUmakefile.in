@@ -49,6 +49,8 @@ CCAS = @CCAS@
 CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CONFIG_PPC_FALSE = @CONFIG_PPC_FALSE@
+CONFIG_PPC_TRUE = @CONFIG_PPC_TRUE@
 CONFIG_RTAI_DOC_DOX_FALSE = @CONFIG_RTAI_DOC_DOX_FALSE@
 CONFIG_RTAI_DOC_DOX_TRUE = @CONFIG_RTAI_DOC_DOX_TRUE@
 CONFIG_RTAI_MAINT_FALSE = @CONFIG_RTAI_MAINT_FALSE@
@@ -206,6 +208,8 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 @CONFIG_X86_TRUE@ARCHDIR = i386
 
+@CONFIG_PPC_TRUE@ARCHDIR = ppc
+
 SUBDIRS = $(ARCHDIR)
 subdir = arch
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -220,7 +224,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	installdirs-recursive install-recursive uninstall-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = $(srcdir)/GNUmakefile.in GNUmakefile.am
-DIST_SUBDIRS = i386
+DIST_SUBDIRS = i386 ppc
 all: all-recursive
 
 .SUFFIXES:

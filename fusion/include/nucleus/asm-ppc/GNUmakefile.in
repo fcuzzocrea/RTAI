@@ -20,7 +20,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../..
+top_builddir = ../../..
 
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
@@ -95,7 +95,6 @@ CONFIG_X86_LOCAL_APIC_TRUE = @CONFIG_X86_LOCAL_APIC_TRUE@
 CONFIG_X86_TRUE = @CONFIG_X86_TRUE@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
-
 CROSS_COMPILE = @CROSS_COMPILE@
 CYGPATH_W = @CYGPATH_W@
 DBX_ABS_SRCDIR_FALSE = @DBX_ABS_SRCDIR_FALSE@
@@ -192,7 +191,7 @@ host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
-includedir = $(prefix)/include/posix
+includedir = $(prefix)/include/nucleus/asm-ppc
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
@@ -207,59 +206,30 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-
-modext = @RTAI_MODULE_EXT@
-
-libmodule_SRC = \
-	module.c \
-	sched.c \
-	thread_attr.c \
-	thread.c \
-	mutex_attr.c \
-	mutex.c \
-	cond_attr.c \
-	cond.c \
-	sem.c \
-	cancel.c \
-	once.c \
-	signal.c \
-	tsd.c \
-	clock.c 
-
 
 include_HEADERS = \
-	posix.h
+		atomic.h \
+		fpu.h \
+		hal.h \
+		system.h \
+		syscall.h
 
-
-noinst_HEADERS = \
-	cancel.h \
-	cond.h \
-	internal.h \
-	mutex.h \
-	sem.h \
-	signal.h \
-	thread.h \
-	tsd.h
-
-
-EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild
-subdir = skins/posix
+subdir = include/nucleus/asm-ppc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/rtai_config.h
 CONFIG_CLEAN_FILES =
 DIST_SOURCES =
-HEADERS = $(include_HEADERS) $(noinst_HEADERS)
+HEADERS = $(include_HEADERS)
 
-DIST_COMMON = $(include_HEADERS) $(noinst_HEADERS) \
-	$(srcdir)/GNUmakefile.in GNUmakefile.am
+DIST_COMMON = $(include_HEADERS) $(srcdir)/GNUmakefile.in \
+	GNUmakefile.am
 all: all-am
 
 .SUFFIXES:
 $(srcdir)/GNUmakefile.in: @MAINTAINER_MODE_TRUE@ GNUmakefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  skins/posix/GNUmakefile
+	  $(AUTOMAKE) --foreign  include/nucleus/asm-ppc/GNUmakefile
 GNUmakefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/GNUmakefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
@@ -346,7 +316,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
-top_distdir = ../..
+top_distdir = ../../..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
@@ -378,7 +348,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: GNUmakefile $(HEADERS) all-local
+all-am: GNUmakefile $(HEADERS)
 
 installdirs:
 	$(mkinstalldirs) $(DESTDIR)$(includedir)
@@ -408,7 +378,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-local mostlyclean-am
+clean-am: clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
@@ -423,9 +393,9 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS
+install-data-am: install-data-local install-includeHEADERS
 
-install-exec-am: install-exec-local
+install-exec-am:
 
 install-info: install-info-am
 
@@ -451,11 +421,11 @@ ps-am:
 
 uninstall-am: uninstall-includeHEADERS uninstall-info-am
 
-.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-libtool clean-local ctags distclean \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-exec-local \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-libtool ctags distclean distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am info \
+	info-am install install-am install-data install-data-am \
+	install-data-local install-exec install-exec-am \
 	install-includeHEADERS install-info install-info-am install-man \
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
@@ -464,20 +434,10 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am
 	uninstall-info-am
 
 
-rtai_posix$(modext): @RTAI_KBUILD_ENV@
-rtai_posix$(modext): $(libmodule_SRC)
-	@RTAI_KBUILD_CMD@
-
-clean-local:
-	@RTAI_KBUILD_CLEAN@
-
-all-local: rtai_posix$(modext)
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
-
-install-exec-local: rtai_posix$(modext)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $< $(moduledir)
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)$(includedir)
+	rm -f $(DESTDIR)$(includedir)/../asm
+	$(LN_S) asm-ppc $(DESTDIR)$(includedir)/../asm
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

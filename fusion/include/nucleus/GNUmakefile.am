@@ -4,6 +4,10 @@ if CONFIG_X86
 ARCHDIR = asm-i386
 endif
 
+if CONFIG_PPC
+ARCHDIR = asm-ppc
+endif
+
 if CONFIG_RTAI_OPT_VM
 ARCHDIR += asm-uvm
 endif

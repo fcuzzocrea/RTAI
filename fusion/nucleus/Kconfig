@@ -33,4 +33,37 @@ config RTAI_OPT_PIPE_NRDEV
 	in the system. Pipe devices are named /dev/rtpN where N is a
 	device minor number ranging from 0 to RTAI_OPT_PIPE_NRDEV - 1.
 
+config RTAI_OPT_TRACES
+        bool "Trace support"
+	depends on RTAI_OPT_EXPERT
+        default n
+        help
+
+        When activating this option, a module named rtai_trace is compiled,
+        which offers a watchdog service (Adeos based, so that no particular
+        hardware support is needed) and allows to record trace events.
+
+        The traced events may then be seen through the /proc/rtai/traces
+        file, or when unloading the module, and are displayed when the watchdog
+        detects that a CPU is stuck.
+
+config RTAI_OPT_DEBUG
+	bool "Debug support"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+	
+	This option activates runtime checking of the Xenomai
+	nucleus state.
+
+config RTAI_OPT_TIMESTAMPS
+	bool "Execution timestamps"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+	
+	This option causes various timestamps to be taken during
+	the in-kernel execution. Those are likely to be used by
+	profiling code in order to chase excessive jitter.
+
 endmenu

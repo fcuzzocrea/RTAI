@@ -41,7 +41,8 @@ extern int (*set_rtc)(void);
 #include <asm-arm/arch-pxa/rtai_timer.h>
 #include <rtai_trace.h>
 
-
+volatile union rtai_tsc rtai_tsc;
+EXPORT_SYMBOL(rtai_tsc);
 extern volatile u32 soft_timer_match;
 extern void timer_tick(struct pt_regs *);
 static int		(*saved_adeos_timer_handler)(int irq, void *dev_id, struct pt_regs *regs);

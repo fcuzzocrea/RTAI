@@ -1,3 +1,14 @@
+2004-22-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/sched/rtai/sched_lxrt.c: 
+	- avoid using a useless function pointer in handling signals.
+	- added a support function for forcing a task soft from another task.
+	- improved forcing a task soft from another task.
+
+        * rtai-core/sched/rtai/sys_lxrt.c: 
+	- forcing a task soft from another task is done immediately using a
+	  forcing support function from sched_lxrt.c.
+
 2004-08-19  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/include/asm/rtai_lxrt.h: redefinition of the arch

@@ -2964,10 +2964,6 @@ static void xnpod_calibration_thread (void *cookie)
     xnticks_t expected, period, idate;
     long jitter = 0;
 
-#if 1
-    printk("HWIRQ DISABLED? %d\n",adeos_hw_irqs_disabled());
-#endif
-
     period = xnarch_ns_to_tsc(XNARCH_CALIBRATION_PERIOD);
     idate = xnpod_get_time() + 2 * XNARCH_CALIBRATION_PERIOD;
     expected = xnarch_ns_to_tsc(idate);

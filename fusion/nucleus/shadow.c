@@ -141,12 +141,12 @@ static inline void set_linux_task_priority (struct task_struct *task, int prio)
 	return;
 	}
 
-    xnlock_get_irqsave(&nklock,s);
+    splhigh(s);
     gk_renice_wheel[gk_renice_in].task = task;
     gk_renice_wheel[gk_renice_in].prio = prio;
     gk_renice_in = (gk_renice_in + 1) & (XNSHADOW_MAXRQ - 1);
-    xnlock_put_irqrestore(&nklock,s);
-
+    splexit(s);
+    
     adeos_propagate_irq(nicevirq);
 }
 
@@ -196,7 +196,7 @@ static void xnshadow_renice_handler (unsigned virq)
     /* Unstall the root stage first since the renice operation might
        sleep.  */
 
-    xnlock_clear_irqon(&nklock);
+    splnone();
 
     while (gk_renice_out != gk_renice_in)
 	{
@@ -244,10 +244,10 @@ static inline void xnshadow_sched_wakeup (struct task_struct *task)
 {
     spl_t s;
 
-    xnlock_get_irqsave(&nklock,s);
+    splhigh(s);
     gk_leave_wheel[gk_leave_in] = task;
     gk_leave_in = (gk_leave_in + 1) & (XNSHADOW_MAXRQ - 1);
-    xnlock_put_irqrestore(&nklock,s);
+    splexit(s);
 
     /* Do _not_ use adeos_propagate_irq() here since we might need to
        schedule a wakeup on behalf of the Linux domain. */
@@ -264,11 +264,11 @@ static inline void xnshadow_sched_signal (struct task_struct *task, int sig)
 {
     spl_t s;
 
-    xnlock_get_irqsave(&nklock,s);
+    splhigh(s);
     gk_signal_wheel[gk_signal_in].task = task;
     gk_signal_wheel[gk_signal_in].sig = sig;
     gk_signal_in = (gk_signal_in + 1) & (XNSHADOW_MAXRQ - 1);
-    xnlock_put_irqrestore(&nklock,s);
+    splexit(s);
 
     adeos_propagate_irq(sigvirq);
 }
@@ -404,14 +404,11 @@ void xnshadow_harden (void)
        the RTAI domain. This will cause the shadow thread to resume
        using the register state of the Linux task. */
 
-    xnlock_get_irqsave(&nklock,s);
-
+    splhigh(s);
     gk_enter_wheel[gk_enter_in] = xnshadow_thread(current);
     gk_enter_in = (gk_enter_in + 1) & (XNSHADOW_MAXRQ - 1);
-
     engage_irq_shield();
-
-    xnlock_put_irqrestore(&nklock,s);
+    splexit(s);
 
     if (xnshadow_thread(current)->cprio > gatekeeper->rt_priority)
 	set_linux_task_priority(gatekeeper,xnshadow_thread(current)->cprio);
@@ -480,10 +477,10 @@ void xnshadow_relax (void)
 
     xnshadow_sched_wakeup(xnthread_archtcb(thread)->user_task);
     xnpod_renice_root(thread->cprio);
-    xnlock_get_irqsave(&nklock,s);
+    splhigh(s);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
     __adeos_schedule_back_root(current);
-    xnlock_put_irqrestore(&nklock,s);
+    splexit(s);
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */

@@ -21349,7 +21349,7 @@ fi
 
 
 
-                                                                                                                                                                                                                                                                                                                                ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile arch/ppc/GNUmakefile arch/ppc/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-ppc/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load testsuite/GNUmakefile testsuite/latency/GNUmakefile testsuite/klatency/GNUmakefile testsuite/cruncher/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile drivers/GNUmakefile drivers/16550A/GNUmakefile drivers/16550A/lib/GNUmakefile"
+                                                                                                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile arch/ppc/GNUmakefile arch/ppc/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-ppc/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load testsuite/GNUmakefile testsuite/latency/GNUmakefile testsuite/klatency/GNUmakefile testsuite/cruncher/GNUmakefile testsuite/switch/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile drivers/GNUmakefile drivers/16550A/GNUmakefile drivers/16550A/lib/GNUmakefile"
 
 
 if test \! x$RTAI_MAYBE_DOCDIR = x; then
@@ -22182,6 +22182,7 @@ do
   "testsuite/latency/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/latency/GNUmakefile" ;;
   "testsuite/klatency/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/klatency/GNUmakefile" ;;
   "testsuite/cruncher/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/cruncher/GNUmakefile" ;;
+  "testsuite/switch/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/switch/GNUmakefile" ;;
   "skins/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/GNUmakefile" ;;
   "skins/posix/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/posix/GNUmakefile" ;;
   "skins/rtai/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/rtai/GNUmakefile" ;;

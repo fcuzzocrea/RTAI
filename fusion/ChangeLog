@@ -1,3 +1,18 @@
+2005-01-18  Max Krasnyansky <maxk@qualcomm.com>
+
+	* testsuite/switch: Add test measuring how long it takes to switch
+	between tasks and counting possibly missed switches.
+
+2005-01-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c: Add misc section, initially populated with
+	rt_misc_get_io_region() and rt_misc_put_io_region().
+
+2005-01-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/timer.c (xntimer_do_timers): Remove superfluous test in
+	the OPT_PERCPU_TIMER case (cpu == XNTIMER_KEEPER_ID).
+
 2005-01-16  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/registry.c (__registry_proc_callback): Make sure to

@@ -37,26 +37,27 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @CONFIG_RTAI_OPT_FUSION_TRUE@am__append_1 = syscall.c
-@CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@am__append_2 = registry.c
-@CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@am__append_3 = registry.h
-@CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE@am__append_4 = pipe.c
-@CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE@am__append_5 = pipe.h
-@CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@am__append_6 = sem.c
-@CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@am__append_7 = sem.h
-@CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@am__append_8 = event.c
-@CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@am__append_9 = event.h
-@CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@am__append_10 = mutex.c
-@CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@am__append_11 = mutex.h
-@CONFIG_RTAI_OPT_NATIVE_COND_TRUE@am__append_12 = cond.c
-@CONFIG_RTAI_OPT_NATIVE_COND_TRUE@am__append_13 = cond.h
-@CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_14 = queue.c
-@CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_15 = queue.h
-@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_16 = heap.c
-@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_17 = heap.h
-@CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__append_18 = alarm.c
-@CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__append_19 = alarm.h
-@CONFIG_RTAI_OPT_NATIVE_INTR_TRUE@am__append_20 = intr.c
-@CONFIG_RTAI_OPT_NATIVE_INTR_TRUE@am__append_21 = intr.h
+@CONFIG_RTAI_OPT_FUSION_TRUE@am__append_2 = misc.h
+@CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@am__append_3 = registry.c
+@CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@am__append_4 = registry.h
+@CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE@am__append_5 = pipe.c
+@CONFIG_RTAI_OPT_NATIVE_PIPE_TRUE@am__append_6 = pipe.h
+@CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@am__append_7 = sem.c
+@CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@am__append_8 = sem.h
+@CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@am__append_9 = event.c
+@CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@am__append_10 = event.h
+@CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@am__append_11 = mutex.c
+@CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@am__append_12 = mutex.h
+@CONFIG_RTAI_OPT_NATIVE_COND_TRUE@am__append_13 = cond.c
+@CONFIG_RTAI_OPT_NATIVE_COND_TRUE@am__append_14 = cond.h
+@CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_15 = queue.c
+@CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_16 = queue.h
+@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_17 = heap.c
+@CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_18 = heap.h
+@CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__append_19 = alarm.c
+@CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__append_20 = alarm.h
+@CONFIG_RTAI_OPT_NATIVE_INTR_TRUE@am__append_21 = intr.c
+@CONFIG_RTAI_OPT_NATIVE_INTR_TRUE@am__append_22 = intr.h
 subdir = skins/rtai
 DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/GNUmakefile.am \
 	$(srcdir)/GNUmakefile.in $(srcdir)/Makefile.kbuild COPYING
@@ -76,9 +77,9 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	install-recursive installcheck-recursive installdirs-recursive \
 	pdf-recursive ps-recursive uninstall-info-recursive \
 	uninstall-recursive
-am__include_HEADERS_DIST = task.h timer.h types.h syscall.h registry.h \
-	pipe.h sem.h event.h mutex.h cond.h queue.h heap.h alarm.h \
-	intr.h
+am__include_HEADERS_DIST = task.h timer.h types.h syscall.h misc.h \
+	registry.h pipe.h sem.h event.h mutex.h cond.h queue.h heap.h \
+	alarm.h intr.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -303,14 +304,15 @@ target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = module.c task.c timer.c $(am__append_1) \
-	$(am__append_2) $(am__append_4) $(am__append_6) \
-	$(am__append_8) $(am__append_10) $(am__append_12) \
-	$(am__append_14) $(am__append_16) $(am__append_18) \
-	$(am__append_20)
-include_HEADERS = task.h timer.h types.h syscall.h $(am__append_3) \
-	$(am__append_5) $(am__append_7) $(am__append_9) \
-	$(am__append_11) $(am__append_13) $(am__append_15) \
-	$(am__append_17) $(am__append_19) $(am__append_21)
+	$(am__append_3) $(am__append_5) $(am__append_7) \
+	$(am__append_9) $(am__append_11) $(am__append_13) \
+	$(am__append_15) $(am__append_17) $(am__append_19) \
+	$(am__append_21)
+include_HEADERS = task.h timer.h types.h syscall.h $(am__append_2) \
+	$(am__append_4) $(am__append_6) $(am__append_8) \
+	$(am__append_10) $(am__append_12) $(am__append_14) \
+	$(am__append_16) $(am__append_18) $(am__append_20) \
+	$(am__append_22)
 distfiles = $(libmodule_SRC) registry.c registry.h pipe.c pipe.h sem.c \
 	sem.h event.c event.h mutex.c mutex.h cond.c cond.h queue.c \
 	queue.h heap.c heap.h alarm.c alarm.h intr.c intr.h

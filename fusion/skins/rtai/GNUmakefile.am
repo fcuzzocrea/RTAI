@@ -20,6 +20,7 @@ distfiles = $(libmodule_SRC)
 
 if CONFIG_RTAI_OPT_FUSION
 libmodule_SRC += syscall.c
+include_HEADERS += misc.h
 endif
 
 if CONFIG_RTAI_OPT_NATIVE_REGISTRY

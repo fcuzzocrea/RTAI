@@ -19,6 +19,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#include <linux/ioport.h>
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
 #include <nucleus/shadow.h>
@@ -2805,6 +2806,47 @@ static int __rt_intr_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
 
+/*
+ * int __rt_misc_get_io_region(unsigned long start,
+ *                             unsigned long len,
+ *                             const char *label)
+ */
+
+static int __rt_misc_get_io_region (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    unsigned long start, len;
+    char label[64];
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(label)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,label,(const char __user *)__xn_reg_arg3(regs),sizeof(label) - 1);
+    label[sizeof(label) - 1] = '\0';
+
+    start = __xn_reg_arg1(regs);
+    len = __xn_reg_arg2(regs);
+
+    return request_region(start,len,label) ? 0 : -EBUSY;
+}
+
+/*
+ * int __rt_misc_put_io_region(unsigned long start,
+ *                             unsigned long len)
+ */
+
+static int __rt_misc_put_io_region (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    unsigned long start, len;
+
+    start = __xn_reg_arg1(regs);
+    len = __xn_reg_arg2(regs);
+    release_region(start,len);
+
+    return 0;
+}
+
 static  __attribute__((unused))
 int __rt_call_not_available (struct task_struct *curr, struct pt_regs *regs) {
     return -ENOSYS;
@@ -2890,6 +2932,8 @@ static xnsysent_t __systab[] = {
     [__rtai_intr_enable ] = { &__rt_intr_enable, __xn_exec_any },
     [__rtai_intr_disable ] = { &__rt_intr_disable, __xn_exec_any },
     [__rtai_intr_inquire ] = { &__rt_intr_inquire, __xn_exec_any },
+    [__rtai_misc_get_io_region ] = { &__rt_misc_get_io_region, __xn_exec_lostage },
+    [__rtai_misc_put_io_region ] = { &__rt_misc_put_io_region, __xn_exec_lostage },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

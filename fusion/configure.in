@@ -966,6 +966,7 @@ AC_CONFIG_FILES([ \
 	testsuite/latency/GNUmakefile \
 	testsuite/klatency/GNUmakefile \
 	testsuite/cruncher/GNUmakefile \
+        testsuite/switch/GNUmakefile \
 	skins/GNUmakefile \
        	skins/posix/GNUmakefile \
        	skins/rtai/GNUmakefile \

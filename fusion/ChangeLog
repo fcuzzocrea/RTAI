@@ -1,3 +1,10 @@
+2004-06-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_schedule_runnable): Fix XNSCHED handling,
+	so that we still leave this bit on if no thread switch is
+	performed.
+	(xnpod_schedule): Optimize and iron SMP case.
+
 2004-06-24  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* arch/i386/Kconfig, arch/i386/defconfig, configure.in: correctly
@@ -5,9 +12,12 @@
 
 2004-06-23  Philippe Gerum  <rpm@xenomai.org>
 
+	* configure.in: Do not pass SUBDIRS to the kernel builder anymore;
+	only rely on M=.
+
 	* include/nucleus/asm-i386/system.h (xnarch_thread_redirect): 
 	Force regparm(0) so that we are still safe if CONFIG_REGPARM is
-	enabled.
+	enabled (use "asmlinkage" for that).
 
 2004-06-21  Philippe Gerum  <rpm@xenomai.org>
 

@@ -554,7 +554,6 @@ static inline void xnpod_preempt_current_thread (void)
     thread = sched->runthread;
     insertpql(&sched->readyq,&thread->rlink,thread->cprio);
     setbits(thread->status,XNREADY);
-    xnsched_set_resched(sched);
     xnlock_put_irqrestore(&nklock,s);
 
     if (!nkpod->schedhook)
@@ -1898,40 +1897,53 @@ void xnpod_schedule (void)
     int shadow;
 #endif /* __KERNEL__ */
 
-    xnlock_get_irqsave(&nklock,s);
-
-#ifdef CONFIG_SMP
-    {
-    xnsched_t *local_sched;
-    int resched = 0;
-
-    local_sched = xnpod_current_sched();
-
-    while (xnsched_resched_p())
-        {
-        int cpu = xnsched_ffcpu();
-        sched = xnpod_sched_slot(cpu);
-
-        if (sched == local_sched)
-            resched = 1;
-        else
-            xnarch_trigger_ipi(cpu);
-
-        xnsched_clr_resched(sched);
-        }
-
-    if (!resched)
-        goto unlock_and_exit;
-    }
-#endif /* CONFIG_SMP */
-
     /* No immediate rescheduling is possible if an ISR or callout
        context is active. */
 
     if (xnpod_callout_p() || xnpod_interrupt_p())
+        return;
+
+    xnlock_get_irqsave(&nklock,s);
+
+#ifdef CONFIG_SMP
+    {
+    unsigned local_cpu = xnarch_current_cpu();
+    int resched = 0;
+
+    sched = xnpod_sched_slot(local_cpu);
+
+    while (xnsched_resched_p())
+        {
+        int cpu = xnsched_ffcpu();
+        xnsched_t *loop_sched = xnpod_sched_slot(cpu);
+
+	if (loop_sched == sched)
+            resched = 1;
+        else
+            xnarch_trigger_ipi(cpu);
+
+	xnsched_clr_resched(loop_sched);
+        }
+
+    runthread = sched->runthread;
+
+    if (!resched)
+        {
+        if (xnthread_signaled_p(runthread))
+            xnpod_dispatch_signals();
+
         goto unlock_and_exit;
+        }
+
+    xnsched_set_resched(sched);
+    }
+#else /*! CONFIG_SMP */
 
     runthread = xnpod_current_thread();
+
+    sched = runthread->sched;
+
+#endif /* CONFIG_SMP */
 
     if (testbits(runthread->status,XNLOCK))
         {
@@ -1948,24 +1960,12 @@ void xnpod_schedule (void)
 
     doswitch = 0;
 
-#ifndef CONFIG_SMP
-    sched = runthread->sched;
-#else
-    /* In the SMP case, and at this point of the function, the scheduler which
-       matters is necessarily the current, and runthread might be undergoing a
-       migration, in which case runthread->sched != xnpod_current_sched(). Since
-       in this same case, runthread has the "XNREADY" bit set, the switch will
-       occur, but xnpod_preempt_current_thread will not be called (calling it
-       would be a disaster, since runthread would be in two readyq). */
-    sched = xnpod_current_sched();
-#endif
-
     if (!testbits(runthread->status,XNTHREAD_BLOCK_BITS|XNZOMBIE))
         {
         if (countpq(&sched->readyq) > 0)
             {
             xnthread_t *head = link2thread(getheadpq(&sched->readyq),rlink);
-            
+
             if (head == runthread)
                 doswitch++;
             else if (xnpod_priocompare(head->cprio,runthread->cprio) > 0)
@@ -2141,10 +2141,10 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 
 maybe_switch:
 
-    xnsched_clr_resched(sched);
-
     if (flags & XNPOD_NOSWITCH)
         {
+        xnsched_set_resched(sched);
+
         if (testbits(runthread->status,XNREADY))
             {
             removepq(&sched->readyq,&runthread->rlink);
@@ -2153,6 +2153,8 @@ maybe_switch:
 
         return;
         }
+
+    xnsched_clr_resched(sched);
 
     threadin = link2thread(getpq(&sched->readyq),rlink);
 

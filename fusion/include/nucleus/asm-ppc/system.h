@@ -83,7 +83,6 @@ typedef unsigned long spl_t;
 typedef unsigned long xnlock_t;
 
 #define XNARCH_LOCK_UNLOCKED 0
-#define XNARCH_PASSTHROUGH_IRQS /*empty*/
 
 #ifdef CONFIG_SMP
 
@@ -146,6 +145,8 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 
     rthal_local_irq_restore(flags & 1);
 }
+
+#define XNARCH_PASSTHROUGH_IRQS /*empty*/
 
 #else /* !CONFIG_SMP */
 

@@ -160,8 +160,6 @@ case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
 #define xnlock_clear_irqoff(lock)      rthal_cli()
 #define xnlock_clear_irqon(lock)       rthal_sti()
 
-#define XNARCH_PASSTHROUGH_IRQS /*empty*/
-
 #endif /* CONFIG_SMP */
 
 #define XNARCH_NR_CPUS               RTHAL_NR_CPUS

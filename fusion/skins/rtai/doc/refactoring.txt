@@ -126,7 +126,7 @@ some compatibility interface based on the new native skin.
 
 * rt_set_oneshot_mode()
 
-  [ Functionally deprecated since rt_set_oneshot_mode() has been
+  [ Functionally deprecated since rt_set_periodic_mode() has been
   dropped. ]
 
 * rt_get_task_state()
@@ -188,6 +188,7 @@ some compatibility interface based on the new native skin.
 * count2nano_cpuid()
 * rt_get_time_cpuid()
 * rt_get_time_ns_cpuid()
+* start_rt_timer_cpuid()
 
   [ Timer support will remain uniform across CPUs, including with MUP
   configurations. Mode mixing is brain-damage for the user and for the
@@ -198,6 +199,14 @@ some compatibility interface based on the new native skin.
 
   [ Ad hoc manipulation of a dynamic task group... Cannot see a
   legitimate usage of this beast by an application developer. ]
+
+
+* start_rt_apic_timers()
+
+   [ APIC is x86 dependent, and the nucleus adapts to the existing
+   timer source on this platform, either using the 8254 or the APIC
+   when available, depending on the kernel settings. So this call is
+   basically useless and non-portable anyway. ]
 
 ========= SEMANTICS CHANGED =============
 
@@ -279,8 +288,3 @@ in timings -- which the oneshot mode is exactly designed for.
 * rt_task_delete()
 * rt_task_suspend()
 * rt_task_wait_period()
-
-======== STILL PENDING ==================
-
-* start_rt_apic_timers()
-* start_rt_timer_cpuid()

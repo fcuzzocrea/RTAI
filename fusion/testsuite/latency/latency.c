@@ -36,7 +36,7 @@ void latency (void *cookie)
 	}
 
     period = rt_timer_ns2ticks(TASK_PERIOD_NS);
-    itime = rt_timer_read() + TASK_PERIOD_NS * 10;
+    itime = rt_timer_read() + TASK_PERIOD_NS * 5;
     expected = rt_timer_ns2ticks(itime);
     err = rt_task_set_periodic(NULL,itime,TASK_PERIOD_NS);
 
@@ -57,7 +57,7 @@ void latency (void *cookie)
 		overrun++;
 	    else
 		{
-		dt =  (int)(rt_timer_tsc() - expected);
+		dt = (int)(rt_timer_tsc() - expected);
 		if (dt > maxj) maxj = dt;
 		if (dt < minj) minj = dt;
 		sumj += dt;
@@ -65,6 +65,7 @@ void latency (void *cookie)
 	    }
 
 	minjitter = minj;
+	minj = 10000000;
 	maxjitter = maxj;
 	alljitter = sumj / SAMPLE_COUNT;
 	rt_sem_v(&display_sem);

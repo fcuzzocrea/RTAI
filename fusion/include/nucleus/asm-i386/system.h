@@ -333,15 +333,19 @@ static inline void xnarch_start_timer (int ns, void (*tickhandler)(void))
 static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
 
 {
-    set_bit(0,&rthal_cpu_realtime);
+    adeos_declare_cpuid;
+
+    adeos_load_cpuid();
+
+    set_bit(cpuid,&rthal_cpu_realtime);
     /* Remember the preempted Linux task pointer. */
-    rootcb->user_task = rootcb->active_task = rthal_get_current(0);
+    rootcb->user_task = rootcb->active_task = rthal_get_current(cpuid);
     /* So that xnarch_save_fpu() will operate on the right FPU area. */
     rootcb->fpup = &rootcb->user_task->thread.i387;
 }
 
 static inline void xnarch_enter_root (xnarchtcb_t *rootcb) {
-    clear_bit(0,&rthal_cpu_realtime);
+    clear_bit(xnarch_current_cpu(),&rthal_cpu_realtime);
 }
 
 static inline void __switch_threads(xnarchtcb_t *out_tcb,

@@ -1,3 +1,8 @@
+2004-09-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/*/hal/hal.c (rthal_set_irq_affinity): Replace reset action
+	by returning the old cpumask.
+
 2004-08-31  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_calibrate_sched): Straighten error path.

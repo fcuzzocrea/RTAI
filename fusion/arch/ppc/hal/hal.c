@@ -481,108 +481,25 @@ int rthal_pend_linux_srq (unsigned srq)
 
 #ifdef CONFIG_SMP
 
-static unsigned long rthal_old_irq_affinity[IPIPE_NR_XIRQS],
-                     rthal_current_irq_affinity[IPIPE_NR_XIRQS];
-
-static spinlock_t rthal_iset_lock = SPIN_LOCK_UNLOCKED;
-
-/**
- * Set IRQ->CPU assignment
- *
- * rthal_set_irq_affinity forces the assignment of the external
- * interrupt @a irq to the CPUs listed in @a cpumask.
- *
- * @retval 0 on success.
- * @retval EINVAL if @a irq is not a valid external IRQ number.
- *
- * @note This function has effect only on multiprocessors systems.
- */
-int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask)
+int rthal_set_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
 
 {
-    unsigned long oldmask, flags;
+    cpumask_t _oldmask;
 
     if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
-    rthal_local_irq_save(flags);
+    _oldmask = adeos_set_irq_affinity(irq,cpumask);
 
-    rthal_spin_lock(&rthal_iset_lock);
+    if (oldmask)
+	*oldmask = _oldmask;
 
-    oldmask = adeos_set_irq_affinity(irq,cpumask);
-
-    if (oldmask == 0)
-	{
-	/* Oops... Something went wrong. */
-	rthal_spin_unlock(&rthal_iset_lock);
-	rthal_local_irq_restore(flags);
-	return -EINVAL;
-	}
-
-    rthal_old_irq_affinity[irq] = oldmask;
-    rthal_current_irq_affinity[irq] = cpumask;
-
-    rthal_spin_unlock(&rthal_iset_lock);
-
-    rthal_local_irq_restore(flags);
-
-    return 0;
-}
-
-/**
- * reset IRQ->CPU assignment
- *
- * rthal_reset_irq_affinity resets the interrupt irq to the previous
- * Linux setting.
- *
- * @retval 0 on success.
- * @retval -EINVAL if @a irq is not a valid external IRQ number.
- *
- * @note This function has effect only on multiprocessors systems.
- */
-int rthal_reset_irq_affinity (unsigned irq)
-
-{
-    unsigned long oldmask, flags;
-
-    if (irq >= IPIPE_NR_XIRQS)
-	return -EINVAL;
-
-    rthal_local_irq_save(flags);
-
-    rthal_spin_lock(&rthal_iset_lock);
-
-    if (rthal_old_irq_affinity[irq] == 0)
-	{
-	rthal_spin_unlock(&rthal_iset_lock);
-	rthal_local_irq_restore(flags);
-	return -EINVAL;
-	}
-
-    oldmask = adeos_set_irq_affinity(irq,0); /* Query -- no change. */
-
-    if (oldmask == rthal_current_irq_affinity[irq])
-	{
-	/* Ok, proceed since nobody changed it in the meantime. */
-	adeos_set_irq_affinity(irq,rthal_old_irq_affinity[irq]);
-	rthal_old_irq_affinity[irq] = 0;
-	}
-
-    rthal_spin_unlock(&rthal_iset_lock);
-
-    rthal_local_irq_restore(flags);
-
-    return 0;
+    return cpus_empty(_oldmask) ? -EINVAL : 0;
 }
 
 #else /* !CONFIG_SMP */
 
-int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask) {
-
-    return 0;
-}
-
-int rthal_reset_irq_affinity (unsigned irq) {
+int rthal_set_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask) {
 
     return 0;
 }
@@ -907,7 +824,6 @@ EXPORT_SYMBOL(rthal_request_srq);
 EXPORT_SYMBOL(rthal_release_srq);
 EXPORT_SYMBOL(rthal_pend_linux_srq);
 EXPORT_SYMBOL(rthal_set_irq_affinity);
-EXPORT_SYMBOL(rthal_reset_irq_affinity);
 EXPORT_SYMBOL(rthal_request_timer);
 EXPORT_SYMBOL(rthal_release_timer);
 EXPORT_SYMBOL(rthal_set_trap_handler);

@@ -341,9 +341,8 @@ int rthal_request_srq(unsigned label,
 int rthal_release_srq(unsigned srq);
 
 int rthal_set_irq_affinity(unsigned irq,
-			   unsigned long cpumask);
-
-int rthal_reset_irq_affinity(unsigned irq);
+			   cpumask_t cpumask,
+			   cpumask_t *oldmask);
 
 int rthal_request_timer(void (*handler)(void),
 			unsigned long nstick);

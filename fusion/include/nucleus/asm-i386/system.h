@@ -492,6 +492,13 @@ static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
     /* Must be followed by xnarch_init_thread(). */
 }
 
+static void xnarch_thread_redirect(struct xnthread *self,
+				   int imask,
+				   void(*entry)(void *),
+				   void *cookie)
+/* Just in case CONFIG_REGPARM is enabled... */
+    __attribute__ ((regparm(0)));
+
 static void xnarch_thread_redirect (struct xnthread *self,
 				    int imask,
 				    void(*entry)(void *),

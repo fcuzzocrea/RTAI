@@ -1185,9 +1185,6 @@ static void rthal_domain_entry (int iflag)
 {
     unsigned irq, trapnr;
 
-#if 1
-    adeos_set_printk_sync(adp_current);
-#endif
     if (!iflag)
 	goto spin;
 
@@ -1196,6 +1193,7 @@ static void rthal_domain_entry (int iflag)
 			     &rthal_irq_trampoline,
 			     NULL,
 			     IPIPE_DYNAMIC_MASK);
+
     /* Trap all faults. */
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
 	adeos_catch_event(trapnr,&rthal_trap_fault);

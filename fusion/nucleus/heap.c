@@ -225,7 +225,9 @@ int xnheap_init (xnheap_t *heap,
     heap->ubytes = 0;
     heap->maxcont = heap->npages * pagesize;
     initq(&heap->extents);
-    xnlock_init(&heap->archdep.lock);
+    xnlock_init(&heap->lock);
+
+    xnarch_init_heapcb(&heap->archdep);
 
     for (n = 0; n < XNHEAP_NBUCKETS; n++)
 	heap->buckets[n] = NULL;
@@ -279,16 +281,16 @@ void xnheap_destroy (xnheap_t *heap,
     if (!flushfn)
 	return;
 
-    xnlock_get_irqsave(&heap->archdep.lock,s);
+    xnlock_get_irqsave(&heap->lock,s);
 
     while ((holder = getq(&heap->extents)) != NULL)
 	{
-	xnlock_put_irqrestore(&heap->archdep.lock,s);
+	xnlock_put_irqrestore(&heap->lock,s);
 	flushfn(heap,link2extent(holder),heap->extentsize,cookie);
-	xnlock_get_irqsave(&heap->archdep.lock,s);
+	xnlock_get_irqsave(&heap->lock,s);
 	}
 
-    xnlock_put_irqrestore(&heap->archdep.lock,s);
+    xnlock_put_irqrestore(&heap->lock,s);
 }
 
 /*
@@ -459,7 +461,7 @@ void *xnheap_alloc (xnheap_t *heap, u_long size)
 	     bsize < size; bsize <<= 1, log2size++)
 	    ; /* Loop */
 
-	xnlock_get_irqsave(&heap->archdep.lock,s);
+	xnlock_get_irqsave(&heap->lock,s);
 
 	block = heap->buckets[log2size - XNHEAP_MINLOG2];
 
@@ -479,7 +481,7 @@ void *xnheap_alloc (xnheap_t *heap, u_long size)
         if (size > heap->maxcont)
             return NULL;
 
-	xnlock_get_irqsave(&heap->archdep.lock,s);
+	xnlock_get_irqsave(&heap->lock,s);
 
 	/* Directly request a free page range. */
 	block = get_free_range(heap,size,0);
@@ -490,7 +492,7 @@ void *xnheap_alloc (xnheap_t *heap, u_long size)
 
 release_and_exit:
 
-    xnlock_put_irqrestore(&heap->archdep.lock,s);
+    xnlock_put_irqrestore(&heap->lock,s);
 
     return block;
 }
@@ -525,7 +527,7 @@ int xnheap_free (xnheap_t *heap, void *block)
     xnholder_t *holder;
     spl_t s;
 
-    xnlock_get_irqsave(&heap->archdep.lock,s);
+    xnlock_get_irqsave(&heap->lock,s);
 
     /* Find the extent from which the returned block is
        originating. */
@@ -554,7 +556,7 @@ int xnheap_free (xnheap_t *heap, void *block)
 
 unlock_and_fail:
 
-	    xnlock_put_irqrestore(&heap->archdep.lock,s);
+	    xnlock_put_irqrestore(&heap->lock,s);
 	    return -EINVAL;
 
 	case XNHEAP_PLIST:
@@ -614,7 +616,7 @@ unlock_and_fail:
 
     heap->ubytes -= bsize;
 
-    xnlock_put_irqrestore(&heap->archdep.lock,s);
+    xnlock_put_irqrestore(&heap->lock,s);
 
     return 0;
 }
@@ -652,14 +654,82 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
 
     init_extent(heap,extent);
 
-    xnlock_get_irqsave(&heap->archdep.lock,s);
+    xnlock_get_irqsave(&heap->lock,s);
 
     appendq(&heap->extents,&extent->link);
 
-    xnlock_put_irqrestore(&heap->archdep.lock,s);
+    xnlock_put_irqrestore(&heap->lock,s);
 
     return 0;
 }
+
+#ifdef __KERNEL__
+
+#include <linux/miscdevice.h>
+
+static void xnheap_vmopen (struct vm_area_struct *vma)
+
+{
+    xnheap_t *heap = (xnheap_t *)vma->vm_private_data;
+}
+
+static void xnheap_vmclose (struct vm_area_struct *vma)
+
+{
+    xnheap_t *heap = (xnheap_t *)vma->vm_private_data;
+}
+
+static struct vm_operations_struct xnheap_vmops = {
+    open: &xnheap_vmopen,
+    close: &xnheap_vmclose
+};
+
+static int xnheap_ioctl (struct inode *inode,
+			 struct file *file,
+			 unsigned int cmd,
+			 unsigned long arg)
+{
+    return -ENOSYS;
+}
+
+static int xnheap_mmap (struct file *file,
+			struct vm_area_struct *vma)
+{
+    if (vma->vm_ops != NULL)
+	return -EFAULT;	/* Cannot map twice. */
+
+    vma->vm_ops = &xnheap_vmops;
+    vma->vm_flags |= VM_LOCKED;
+    vma->vm_private_data = file->private_data;
+
+    return -ENOSYS;
+}
+
+static struct file_operations xnheap_fops = {
+    ioctl: &xnheap_ioctl,
+    mmap:  &xnheap_mmap
+};
+
+static struct miscdevice xnheap_dev = {
+    XNHEAP_DEV_MINOR,"rtheap",&xnheap_fops
+};
+
+int xnheap_mount (void)
+
+{
+    if (misc_register(&xnheap_dev) < 0)
+	return -EBUSY;
+
+    return 0;
+}
+
+void xnheap_umount (void)
+
+{
+    misc_deregister(&xnheap_dev);
+}
+
+#endif /* __KERNEL__ */
 
 /*@}*/
 

@@ -512,19 +512,19 @@ static int xnfusion_unload_hook (void)
 {
     int rc = 0;
 
-    /* If nobody is attached to te fusion skin, then clean it up
+    /* If nobody is attached to the fusion skin, then clean it up
        now. */
 
     if (xnarch_atomic_get(&muxtable[__fusion_muxid - 1].refcnt) == -1)
 	{
-	xnfusion_exit();
+	xnfusion_umount();
 	rc = 1;
 	}
 
     return rc;
 }
 
-int xnfusion_load (void)
+int xnfusion_attach (void)
 
 {
     if (nkpod)
@@ -552,7 +552,7 @@ static int xnfusion_event_cb (int event)
 	{
 	case XNSHADOW_CLIENT_ATTACH:
 
-	    return xnfusion_load();
+	    return xnfusion_attach();
 
 	case XNSHADOW_CLIENT_DETACH:
 
@@ -564,7 +564,7 @@ static int xnfusion_event_cb (int event)
     return 0;
 }
 
-int xnfusion_init (void)
+int xnfusion_mount (void)
 
 {
     __fusion_muxid = xnshadow_register_skin("fusion",
@@ -581,7 +581,7 @@ int xnfusion_init (void)
     return 0;
 }
 
-int xnfusion_exit (void)
+int xnfusion_umount (void)
 
 {
     if (nkpod != &__fusion_pod)
@@ -601,4 +601,4 @@ int xnfusion_exit (void)
     return 0;
 }
 
-EXPORT_SYMBOL(xnfusion_load);
+EXPORT_SYMBOL(xnfusion_attach);

@@ -523,7 +523,7 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
            The Linux task has resumed into the Linux domain at the
            last code location executed by the shadow. Remember
            that both sides use the Linux task's stack. */
-	xnshadow_exit();
+	xnshadow_umount();
 #endif /* __KERNEL__ */
     
     xnpod_fatal("zombie thread %s (%p) would not die...",threadout->name,threadout);
@@ -2131,7 +2131,7 @@ void xnpod_schedule (void)
         xnshadow_ptd(current) == NULL)
         {
         xnlock_clear_irqon(&nklock);
-        xnshadow_exit();
+        xnshadow_umount();
         }
 #endif /* __KERNEL__ */
 

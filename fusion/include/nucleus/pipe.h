@@ -30,8 +30,8 @@
 #define XNPIPE_NORMAL 0x0
 #define XNPIPE_URGENT 0x1
 
-#define XNPIPE_NDEVS  32
-#define XNPIPE_MAJOR  150
+#define XNPIPE_NDEVS      32
+#define XNPIPE_DEV_MAJOR  150
 
 #define XNPIPE_KERN_CONN   0x1
 #define XNPIPE_USER_CONN   0x2
@@ -104,9 +104,9 @@ extern xnpipe_state_t xnpipe_states[];
 extern "C" {
 #endif /* __cplusplus */
 
-int xnpipe_init(void);
+int xnpipe_mount(void);
 
-void xnpipe_exit(void);
+void xnpipe_umount(void);
 
 /* Entry points of the kernel interface. */
 

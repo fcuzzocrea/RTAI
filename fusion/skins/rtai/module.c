@@ -90,7 +90,7 @@ int __xeno_skin_init (void)
     int err;
 
     /* The RTAI skin is stacked over the fusion framework. */
-    err = xnfusion_load();
+    err = xnfusion_attach();
 
     if (err)
 	goto fail;

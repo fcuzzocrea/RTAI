@@ -841,7 +841,7 @@ static struct file_operations xnpipe_fops = {
 	fasync:		xnpipe_fasync
 };
 
-int xnpipe_init (void)
+int xnpipe_mount (void)
 
 {
     xnpipe_state_t *state;
@@ -866,10 +866,10 @@ int xnpipe_init (void)
     spin_lock_init(&xnpipe_sqlock);
     spin_lock_init(&xnpipe_aqlock);
 
-    if (register_chrdev(XNPIPE_MAJOR,"rtpipe",&xnpipe_fops))
+    if (register_chrdev(XNPIPE_DEV_MAJOR,"rtpipe",&xnpipe_fops))
 	{
 	xnlogerr("Unable to reserve major #%d for real-time pipe service.\n",
-		 XNPIPE_MAJOR);
+		 XNPIPE_DEV_MAJOR);
 	return -EPIPE;
 	}
 
@@ -878,11 +878,11 @@ int xnpipe_init (void)
     return 0;
 }
 
-void xnpipe_exit (void)
+void xnpipe_umount (void)
 
 {
     rthal_release_srq(xnpipe_wakeup_srq);
-    unregister_chrdev(XNPIPE_MAJOR,"rtpipe");
+    unregister_chrdev(XNPIPE_DEV_MAJOR,"rtpipe");
 }
 
 EXPORT_SYMBOL(xnpipe_connect);

@@ -98,6 +98,10 @@ typedef struct xnextent {
 
 typedef struct xnheap {
 
+#ifdef CONFIG_SMP
+    xnlock_t lock;
+#endif /* CONFIG_SMP */
+
     u_long extentsize,
            pagesize,
            pageshift,
@@ -128,6 +132,20 @@ extern xnheap_t kheap;
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/* Private interface. */
+
+#ifdef __KERNEL__
+
+#define XNHEAP_DEV_MINOR 254
+
+int xnheap_mount(void);
+
+void xnheap_umount(void);
+
+#endif /* __KERNEL__ */
+
+/* Public interface. */
 
 int xnheap_init(xnheap_t *heap,
 		void *heapaddr,

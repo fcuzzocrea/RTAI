@@ -1,5 +1,8 @@
 2004-10-31  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/heap.c: Create the basic infrastructure for mapping
+	heap memory to user-space processes.
+
 	* include/nucleus/heap.h (xnheap_t): Add arch-dependent block.
 
 2004-10-30  Philippe Gerum  <rpm@xenomai.org>
@@ -67,7 +70,7 @@
 
 2004-10-19  Philippe Gerum  <rpm@xenomai.org>
 
-	* nucleus/shadow.c (xnshadow_init): Add memory barrier after
+	* nucleus/shadow.c (xnshadow_mount): Add memory barrier after
 	gksync init.
 
 2004-10-18  Philippe Gerum  <rpm@xenomai.org>
@@ -1167,7 +1170,7 @@
 
 2004-05-22  Philippe Gerum  <rpm@xenomai.org>
 
-	* nucleus/shadow.c (xnshadow_exit): Make sure to run the Linux
+	* nucleus/shadow.c (xnshadow_umount): Make sure to run the Linux
 	scheduling tail code before exiting a mapped task.
 
 2004-05-21  Philippe Gerum  <rpm@xenomai.org>

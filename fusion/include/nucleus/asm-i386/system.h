@@ -261,6 +261,7 @@ typedef cpumask_t xnarch_cpumask_t;
 #define XNARCH_CPU_MASK_ALL              CPU_MASK_ALL
 
 struct xnthread;
+struct xnheap;
 struct task_struct;
 
 #define xnarch_stack_size(tcb)  ((tcb)->stacksize)
@@ -299,11 +300,16 @@ typedef struct xnarch_fltinfo {
 
 typedef struct xnarch_heapcb {
 
-#ifdef CONFIG_SMP
-    xnlock_t lock;
-#endif /* CONFIG_SMP */
+#if (__GNUC__ <= 2)
+    int old_gcc_dislikes_emptiness;
+#endif
 
 } xnarch_heapcb_t;
+
+static inline void xnarch_init_heapcb (xnarch_heapcb_t *cb)
+
+{
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -975,7 +981,7 @@ static inline int xnarch_init (void)
 
     xnarch_old_trap_handler = rthal_set_trap_handler(&xnarch_trap_fault);
 
-    err = xnshadow_init();
+    err = xnshadow_mount();
 
     if (err)
         adeos_free_irq(xnarch_escalation_virq);

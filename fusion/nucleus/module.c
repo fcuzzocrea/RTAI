@@ -276,15 +276,20 @@ int __xeno_main_init (void)
     if (err)
 	goto cleanup_arch;
 
-    err = xnpipe_init();
+    err = xnpipe_mount();
 
     if (err)
 	goto cleanup_arch;
 
-    err = xnfusion_init();
+    err = xnheap_mount();
 
     if (err)
-	goto cleanup_bridge;
+	goto cleanup_pipe;
+
+    err = xnfusion_mount();
+
+    if (err)
+	goto cleanup_heap;
     }
 #endif /* __KERNEL__ */
 
@@ -294,9 +299,13 @@ int __xeno_main_init (void)
 
 #ifdef __KERNEL__
 
- cleanup_bridge:
+ cleanup_heap:
 
-    xnpipe_exit();
+    xnheap_umount();
+
+ cleanup_pipe:
+
+    xnpipe_umount();
 
  cleanup_arch:
     
@@ -326,8 +335,9 @@ void __xeno_main_exit (void)
 #ifdef CONFIG_PROC_FS
     xnpod_delete_proc();
 #endif /* CONFIG_PROC_FS */
-    xnfusion_exit();
-    xnpipe_exit();
+    xnfusion_umount();
+    xnheap_umount();
+    xnpipe_umount();
 #endif /* __KERNEL__ */
     xnloginfo("Xenomai core stopped.\n");
 }

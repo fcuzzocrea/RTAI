@@ -684,7 +684,7 @@ static int xnshadow_sync_wait (int *u_syncp)
     return syncflag == 0x7fffffff ? 0 : syncflag;
 }
 
-void xnshadow_exit (void)
+void xnshadow_umount (void)
 
 {
     __adeos_schedule_back_root(get_switch_lock_owner());
@@ -793,7 +793,7 @@ void xnshadow_map (xnthread_t *thread,
 	    /* Whoops, this shadow was unmapped while in dormant state
 	       (i.e. before xnshadow_start() has been called on
 	       it). Ask Linux to reap it. */
-	xnshadow_exit();
+	xnshadow_umount();
 }
 
 void xnshadow_start (xnthread_t *thread,
@@ -1745,7 +1745,7 @@ void xnshadow_release_events (void)
     adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,NULL);
 }
 
-int xnshadow_init (void)
+int xnshadow_mount (void)
 
 {
     adattr_t attr;

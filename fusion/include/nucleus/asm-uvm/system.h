@@ -182,11 +182,14 @@ typedef void *xnarch_fltinfo_t;	/* Unused but required */
 
 typedef struct xnarch_heapcb {
 
-#ifdef CONFIG_SMP
-    xnlock_t lock;
-#endif /* CONFIG_SMP */
+#if (__GNUC__ <= 2)
+    int old_gcc_dislikes_emptiness;
+#endif
 
 } xnarch_heapcb_t;
+
+static inline void xnarch_init_heapcb (xnarch_heapcb_t *cb) {
+}
 
 static inline int __attribute__ ((unused))
 xnarch_read_environ (const char *name, const char **ptype, void *pvar)

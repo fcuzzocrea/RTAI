@@ -77,7 +77,7 @@ struct xnskentry {
     xnsysent_t *systab;
 };
 
-int xnshadow_init(void);
+int xnshadow_mount(void);
 
 void xnshadow_cleanup(void);
 
@@ -107,7 +107,7 @@ void xnshadow_sync_post(pid_t syncpid,
 			int *u_syncp,
 			int err);
 
-void xnshadow_exit(void);
+void xnshadow_umount(void);
 
 int xnshadow_register_skin(const char *name,
 			   unsigned magic,

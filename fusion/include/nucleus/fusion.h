@@ -89,11 +89,11 @@ extern "C" {
 
 #ifdef __KERNEL__
 
-int xnfusion_init(void);
+int xnfusion_mount(void);
 
-int xnfusion_exit(void);
+int xnfusion_umount(void);
 
-int xnfusion_load(void);
+int xnfusion_attach(void);
 
 #else /* !__KERNEL__ */
 

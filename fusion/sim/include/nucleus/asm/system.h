@@ -140,11 +140,14 @@ typedef unsigned long atomic_flags_t;
 
 typedef struct xnarch_heapcb {
 
-#ifdef CONFIG_SMP
-    xnlock_t lock;
-#endif /* CONFIG_SMP */
+#if (__GNUC__ <= 2)
+    int old_gcc_dislikes_emptiness;
+#endif
 
 } xnarch_heapcb_t;
+
+static inline void xnarch_init_heapcb (xnarch_heapcb_t *cb) {
+}
 
 #define __mvm_breakable(f) f ## $kdoor$
 

@@ -1402,8 +1402,8 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 	    do_page_fault(regs,regs->orig_eax);
 	    goto endtrap;
 	    }
-	}
-	adeos_hw_sti();
+	 adeos_hw_sti();
+    }
 
 #endif /* ADEOS_RELEASE_NUMBER >= 0x02060601 */
 

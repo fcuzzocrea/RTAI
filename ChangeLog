@@ -1,3 +1,12 @@
+2004-08-04  Marius Groeger <mgroeger@sysgo.com>
+
+	* rtai-core/arch/arm/patches/updates/clps711x-init_irq_flush.patch:
+	Properly flush to Linux the pending IRQs that have been caught
+	while initializing RTAI.
+
+	* rtai-core/arch/arm/patches/updates/clps711x-compile.patch: Fix
+	compilation issues.
+
 2004-08-02  Lorenzo Dozio <dozio@aero.polimi.it>
 
 	* rtai-core/include/rtai_schedcore.h: Symplified the enq/dequeueing

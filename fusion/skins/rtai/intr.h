@@ -64,8 +64,6 @@ typedef struct rt_intr {
 
     xnintr_t intr_base;   /* !< Base interrupt object. */
 
-    int mode;		/* !< Interrupt control mode. */
-
     void *private_data;	/* !< Private user-defined data. */
 
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
@@ -73,6 +71,8 @@ typedef struct rt_intr {
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+
+    int mode;		/* !< Interrupt control mode. */
 
     int pending;	/* !< Pending hits to wait for. */
 
@@ -97,6 +97,10 @@ int __intr_pkg_init(void);
 
 void __intr_pkg_cleanup(void);
 
+int rt_intr_create(RT_INTR *intr,
+		   unsigned irq,
+		   rt_isr_t isr);
+
 #ifdef __cplusplus
 }
 #endif
@@ -104,6 +108,10 @@ void __intr_pkg_cleanup(void);
 #else /* !(__KERNEL__ || __RTAI_SIM__) */
 
 typedef RT_INTR_PLACEHOLDER RT_INTR;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int rt_intr_bind(RT_INTR *intr,
 		 unsigned irq);
@@ -115,8 +123,16 @@ static inline int rt_intr_unbind (RT_INTR *intr)
     return 0;
 }
 
+int rt_intr_create(RT_INTR *intr,
+		   unsigned irq,
+		   int mode);
+
 int rt_intr_wait(RT_INTR *intr,
 		 RTIME timeout);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
@@ -125,11 +141,6 @@ extern "C" {
 #endif
 
 /* Public interface. */
-
-int rt_intr_create(RT_INTR *intr,
-		   unsigned irq,
-		   rt_isr_t isr,
-		   int mode);
 
 int rt_intr_delete(RT_INTR *intr);
 

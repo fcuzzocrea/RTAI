@@ -1,5 +1,8 @@
 2005-01-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/lib/intr.c (rt_intr_create): Use specific prototype
+	for user-space.
+
 	* skins/rtai/intr.c (rt_intr_inquire): Do not provide the number
 	of currently pending waiters; track the count of interrupt hits
 	instead, using the information now available at the nucleus level.

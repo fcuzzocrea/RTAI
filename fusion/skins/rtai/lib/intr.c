@@ -27,16 +27,10 @@ int __init_skin(void);
 
 int rt_intr_create (RT_INTR *intr,
 		    unsigned irq,
-		    rt_isr_t isr,
 		    int mode)
 {
     if (__rtai_muxid < 0 && __init_skin() < 0)
 	return -ENOSYS;
-
-    if (isr)
-	/* Interrupts are only available in sync wait mode from
-	   user-space. */
-	return -EINVAL;
 
     return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_intr_create,

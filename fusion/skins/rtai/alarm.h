@@ -91,10 +91,18 @@ int rt_alarm_create(RT_ALARM *alarm,
 
 typedef RT_ALARM_PLACEHOLDER RT_ALARM;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rt_alarm_create(RT_ALARM *alarm,
 		    const char *name);
 
 int rt_alarm_wait(RT_ALARM *alarm);
+
+#ifdef __cplusplus
+}
+#endif
 
 /* No binding for alarms. */
 

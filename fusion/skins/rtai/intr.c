@@ -49,18 +49,72 @@ void __intr_pkg_cleanup (void)
 	rt_intr_delete(link2intr(holder));
 }
 
+/*! 
+ * \fn int rt_intr_create (RT_INTR *intr,
+                           unsigned irq,
+                           rt_isr_t isr)
+ * \brief Create an interrupt object.
+ *
+ * Initialize and associate an interrupt object with an IRQ line.
+ *
+ * When an interrupt occurs from the given @a irq line, the ISR is
+ * fired in order to deal with the hardware event. The interrupt
+ * service code may call any non-suspensive RTAI service.
+ *
+ * Upon receipt of an IRQ, the ISR is immediately called on behalf of
+ * the interrupted stack context. The status value returned by the ISR
+ * is then checked for the following bits:
+ *
+ * - RT_INTR_ENABLE asks RTAI to re-enable the IRQ line upon return of
+ * the interrupt service routine.
+ *
+ * - RT_INTR_CHAINED tells RTAI to propagate the interrupt down the
+ * Adeos interrupt pipeline to other Adeos domains, such as
+ * Linux. This is the regular way to share interrupts between RTAI and
+ * the Linux kernel.
+ *
+ * A count of interrupt receipts is tracked in the interrupt
+ * descriptor, and reset to zero each time the interrupt object is
+ * attached. Since this count could wrap around, it should be used as
+ * an indication of interrupt activity only.
+ *
+ * @param intr The address of a interrupt object descriptor RTAI will
+ * use to store the object-specific data.  This descriptor must always
+ * be valid while the object is active therefore it must be allocated
+ * in permanent memory.
+ *
+ * @param irq The hardware interrupt channel associated with the
+ * interrupt object. This value is architecture-dependent.
+ *
+ * @param isr The address of a valid low-level interrupt service
+ * routine. This handler will be called each time the corresponding
+ * IRQ is delivered on behalf of an interrupt context.  When called,
+ * the ISR is passed the descriptor address of the interrupt object.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EBUSY is returned if the interrupt line is already in use by
+ * another interrupt object.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
 int rt_intr_create (RT_INTR *intr,
 		    unsigned irq,
-		    rt_isr_t isr,
-		    int mode)
+		    rt_isr_t isr)
 {
     int err;
     spl_t s;
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
-    if (mode & ~I_AUTOENA)
-	return -EINVAL;
 
     xnintr_init(&intr->intr_base,irq,isr,0);
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
@@ -68,7 +122,6 @@ int rt_intr_create (RT_INTR *intr,
     intr->pending = -1;
     intr->source = RT_KAPI_SOURCE;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
-    intr->mode = mode;
     intr->magic = RTAI_INTR_MAGIC;
     intr->handle = 0;    /* i.e. (still) unregistered interrupt. */
     inith(&intr->link);

@@ -2553,15 +2553,19 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
     /* Interrupt control mode. */
     mode = (int)__xn_reg_arg3(regs);
 
+    if (mode & ~I_AUTOENA)
+	return -EINVAL;
+
     intr = (RT_INTR *)xnmalloc(sizeof(*intr));
 
     if (!intr)
 	return -ENOMEM;
 
-    err = rt_intr_create(intr,irq,&__rt_intr_handler,mode);
+    err = rt_intr_create(intr,irq,&__rt_intr_handler);
 
     if (err == 0)
 	{
+	intr->mode = mode;
 	intr->source = RT_UAPI_SOURCE;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = intr->handle;

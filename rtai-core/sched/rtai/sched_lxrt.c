@@ -658,6 +658,7 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
 static inline RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cpuid)
 {
 	if (rt_current->lnxtsk) {
+#if 0
 		if (adp_current == adp_root) {
 			rtai_domain.dswitch = rt_schedule;
 #warning "Broken and non-portable Adeos-wise"
@@ -665,6 +666,7 @@ static inline RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task,
 			rtai_domain.dswitch = NULL;
 			return NULL;
 		}
+#endif
 		LOCK_LINUX(cpuid);
 		rt_linux_task.prevp = rt_current;
 		save_cr0_and_clts(linux_cr0);

@@ -41,7 +41,7 @@ static inline void get_time_us (suseconds_t *tp)
 	/* We need a better resolution than the one gettimeofday()
 	   provides here. */
 	nanotime_t t;
-	pthread_time_rt(&t);
+	pthread_cputime_rt(&t);
 	*tp = t / 1000;
 	}
     else

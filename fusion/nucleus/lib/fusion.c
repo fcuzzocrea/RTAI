@@ -110,10 +110,15 @@ int pthread_time_rt (nanotime_t *tp)
 int pthread_cputime_rt (nanotime_t *tp)
 
 {
+#ifdef CONFIG_RTAI_HW_DIRECT_TSC
+    *tp = __xn_rdtsc();
+    return 0;
+#else /* !CONFIG_RTAI_HW_DIRECT_TSC */
     if (__fusion_muxid == 0 && __init_skin() < 0)
 	return -ENOSYS;
 
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_cputime,tp);
+#endif /* CONFIG_RTAI_HW_DIRECT_TSC */
 }
 
 int pthread_start_timer_rt (nanotime_t nstick)

@@ -42,6 +42,13 @@
  * Depending on the above mode, the timer object stores time values
  * either as count of periodic ticks, or as count of CPU ticks.
  *
+ * The current implementation assumes that the maximum number of
+ * outstanding timers in aperiodic mode is low (< 16?). Would this
+ * assumption prove false, we would need to go for an AVL of some
+ * sort, likely a RB tree. The periodic mode is already based on a
+ * timer wheel, so there should not be any problem here, unless your
+ * application is some ugly monster from the dark ages...
+ *
  *@{*/
 
 #define XENO_TIMER_MODULE

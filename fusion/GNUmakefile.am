@@ -51,7 +51,7 @@ endif
 
 install-data-local: .rtai_config
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
-	$(INSTALL_DATA) .rtai_config $(DESTDIR)$(pkgdatadir)/config-rtai-$(VERSION)
+	$(INSTALL_DATA) .rtai_config $(DESTDIR)$(pkgdatadir)/config-$(PACKAGE)-$(VERSION)
 
 install-exec-local: devices
 

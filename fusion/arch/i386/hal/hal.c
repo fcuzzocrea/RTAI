@@ -49,7 +49,6 @@
 #include <asm/irq.h>
 #include <asm/desc.h>
 #include <asm/io.h>
-#include <asm/mmu_context.h>
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #ifdef CONFIG_X86_LOCAL_APIC

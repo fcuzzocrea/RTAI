@@ -2995,14 +2995,17 @@ int xnpod_announce_tick (xnintr_t *intr)
  *
  * @param idate The initial (absolute) date of the first release
  * point, expressed in clock ticks (see note). The affected thread
- * will be delayed until this point is reached.
+ * will be delayed until this point is reached. If @a idate is equal
+ * to XN_INFINITE, the current system date is used, and no initial
+ * delay takes place.
 
  * @param period The period of the thread, expressed in clock ticks
  * (see note).
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -ETIMEDOUT is returned if @a idate has already elapsed.
+ * - -ETIMEDOUT is returned @a idate is different from XN_INFINITE and
+ * represents a date in the past.
  *
  * - -EWOULDBLOCK is returned if the system timer has not been
  * started using xnpod_start_timer().
@@ -3038,6 +3041,9 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
     xnlock_get_irqsave(&nklock,s);
 
     now = xnpod_get_time();
+
+    if (idate == XN_INFINITE)
+	idate = now + period;
 
     if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
 	xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);

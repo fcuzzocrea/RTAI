@@ -81,6 +81,8 @@
 
 typedef unsigned long long nanotime_t;
 
+typedef long long nanostime_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -126,11 +128,11 @@ int pthread_time_rt(nanotime_t *tp);
 
 int pthread_cputime_rt(nanotime_t *tp);
 
-int pthread_ns2ticks_rt(nanotime_t ns,
-			nanotime_t *pticks);
+int pthread_ns2ticks_rt(nanostime_t ns,
+			nanostime_t *pticks);
 
-int pthread_ticks2ns_rt(nanotime_t ticks,
-			nanotime_t *pns);
+int pthread_ticks2ns_rt(nanostime_t ticks,
+			nanostime_t *pns);
 
 int pthread_sleep_rt(nanotime_t ticks);
 

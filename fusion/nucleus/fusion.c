@@ -241,7 +241,7 @@ static int __pthread_sleep_rt (struct task_struct *curr, struct pt_regs *regs)
 static int __pthread_ns2ticks_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    nanotime_t ns, ticks;
+    nanostime_t ns, ticks;
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(ticks)))
 	return -EFAULT;
@@ -253,10 +253,10 @@ static int __pthread_ns2ticks_rt (struct task_struct *curr, struct pt_regs *regs
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
-	ticks = xnarch_ns_to_tsc(ns);
+	ticks = ns >= 0 ? xnarch_ns_to_tsc(ns) : -xnarch_ns_to_tsc(-ns);
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	ticks = xnpod_ns2ticks(ns);
+	ticks = ns >= 0 ? xnpod_ns2ticks(ns) : -xnpod_ns2ticks(-ns);
     
     __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&ticks,sizeof(ticks));
 
@@ -266,7 +266,7 @@ static int __pthread_ns2ticks_rt (struct task_struct *curr, struct pt_regs *regs
 static int __pthread_ticks2ns_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    nanotime_t ticks, ns;
+    nanostime_t ticks, ns;
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(ns)))
 	return -EFAULT;
@@ -278,10 +278,10 @@ static int __pthread_ticks2ns_rt (struct task_struct *curr, struct pt_regs *regs
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
-	ns = xnarch_tsc_to_ns(ticks);
+	ns = ticks >= 0 ? xnarch_tsc_to_ns(ticks) : -xnarch_tsc_to_ns(-ticks);
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	ns = xnpod_ticks2ns(ticks);
+	ns = ticks >= 0 ? xnpod_ticks2ns(ticks) : -xnpod_ticks2ns(-ticks);
 
     __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&ns,sizeof(ns));
 

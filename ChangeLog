@@ -1,3 +1,8 @@
+2004-01-15  Jan Kiszka <kiszka@rts.uni-hannover.de>
+
+	* rtai-core/include/asm-i386/rtai_oldnames.h: Do not refer to use
+	kbd_mksound in TSC emulation code if CONFIG_VT is disabled.
+
 2004-12-07  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/scripts/rtai-*.in: Force /bin/bash as interpreter.

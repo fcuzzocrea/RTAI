@@ -94,12 +94,14 @@
 
 /* Emulate a TSC */
 
+#define TICK_8254_TSC_EMULATION  rdtsc()
+
+#ifdef CONFIG_VT
+
 #define DECLR_8254_TSC_EMULATION \
 extern void *kd_mksound; \
 static void *linux_mksound; \
 static void rtai_mksound(void) { }
-
-#define TICK_8254_TSC_EMULATION  rdtsc()
 
 #define SETUP_8254_TSC_EMULATION \
 	do { \
@@ -114,6 +116,14 @@ static void rtai_mksound(void) { }
 			kd_mksound = linux_mksound; \
 		} \
 	} while (0)
+
+#else /* !CONFIG_VT */
+
+#define DECLR_8254_TSC_EMULATION
+#define SETUP_8254_TSC_EMULATION rt_setup_8254_tsc()
+#define CLEAR_8254_TSC_EMULATION
+
+#endif /* !CONFIG_VT */
 
 #endif /* CONFIG_X86_TSC */
 

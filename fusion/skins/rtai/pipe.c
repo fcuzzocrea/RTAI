@@ -44,7 +44,7 @@ static inline ssize_t __pipe_flush (RT_PIPE *pipe)
 {
     ssize_t nbytes;
 
-    nbytes = xnbridge_msend(pipe->minor,pipe->buffer,pipe->fillsz + sizeof(RT_PIPE_MSG),RT_PIPE_NORMAL);
+    nbytes = xnbridge_send(pipe->minor,pipe->buffer,pipe->fillsz + sizeof(RT_PIPE_MSG),RT_PIPE_NORMAL);
     rt_pipe_free(pipe->buffer);
     pipe->buffer = NULL;
     pipe->fillsz = 0;
@@ -90,18 +90,36 @@ static int __pipe_output_handler (int bminor,
     return 0;
 }
 
+static int __pipe_close_handler (int minor,
+				 void *cookie)
+{
+    RT_PIPE *pipe = (RT_PIPE *)cookie;
+
+    /* The user-space side is closing: shutdown the kernel side. */
+    xnbridge_disconnect(minor);
+
+    return rt_pipe_close(pipe);
+}
+
 int __pipe_pkg_init (void)
 
 {
     initq(&__pipe_flush_q);
+
     __pipe_flush_virq = rthal_request_srq(0,&__pipe_flush_handler);
 
-    return __pipe_flush_virq > 0 ? 0 : -EBUSY;
+    if (__pipe_flush_virq <= 0)
+	return -EBUSY;
+
+    xnbridge_setup(NULL,&__pipe_close_handler);
+
+    return 0;
 }
 
 void __pipe_pkg_cleanup (void)
 
 {
+    xnbridge_setup(NULL,NULL);
     rthal_free_srq(__pipe_flush_virq);
 }
 
@@ -145,11 +163,11 @@ int rt_pipe_open (RT_PIPE *pipe,
     pipe->flushable = 0;
     pipe->magic = 0;
 
-    err = xnbridge_mconnect(minor,
-			    &__pipe_output_handler,
-			    NULL,
-			    &__pipe_alloc_handler,
-			    pipe);
+    err = xnbridge_connect(minor,
+			   &__pipe_output_handler,
+			   NULL,
+			   &__pipe_alloc_handler,
+			   pipe);
 
     if (!err)
 	pipe->magic = RTAI_PIPE_MAGIC;
@@ -204,7 +222,7 @@ int rt_pipe_close (RT_PIPE *pipe)
 	rt_pipe_free(pipe->buffer);
 	}
 
-    err = xnbridge_mdisconnect(pipe->minor);
+    err = xnbridge_disconnect(pipe->minor);
 
     rtai_mark_deleted(pipe);
 
@@ -301,7 +319,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
 	goto unlock_and_exit;
 	}
 
-    n = xnbridge_mrecv(pipe->minor,msgp,timeout);
+    n = xnbridge_recv(pipe->minor,msgp,timeout);
 
  unlock_and_exit:
 
@@ -333,9 +351,9 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  * not be referenced by it anymore; deallocation of this memory will
  * be automatically handled as needed.
  *
- * @param size The size in bytes of the message. Zero is a valid
- * value, in which case the service returns immediately without
- * sending any message.
+ * @param size The size in bytes of the message (payload data
+ * only). Zero is a valid value, in which case the service returns
+ * immediately without sending any message.
  *
  * @param flags A set of flags affecting the operation:
  *
@@ -397,7 +415,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
 
     if (size > 0)
 	/* We need to add the size of the message header here. */
-	n = xnbridge_msend(pipe->minor,msg,size + sizeof(RT_PIPE_MSG),flags);
+	n = xnbridge_send(pipe->minor,msg,size + sizeof(RT_PIPE_MSG),flags);
 
  unlock_and_exit:
 
@@ -593,7 +611,8 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
  * sending. The beginning of the available data area of @a size
  * contiguous bytes is accessible from RT_PIPE_MSGPTR(msg).
  *
- * @param size The requested size in bytes of the buffer.
+ * @param size The requested size in bytes of the buffer. This value
+ * should represent the size of the payload data.
  *
  * @return The address of the allocated message buffer upon success,
  * or NULL if the allocation fails.
@@ -605,12 +624,12 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
 RT_PIPE_MSG *rt_pipe_alloc (size_t size)
 
 {
-    RT_PIPE_MSG *msg = (RT_PIPE_MSG *)xnheap_alloc(__pipe_heap,size);
+    RT_PIPE_MSG *msg = (RT_PIPE_MSG *)xnheap_alloc(__pipe_heap,size + sizeof(RT_PIPE_MSG));
 
     if (msg)
 	{
 	inith(&msg->link);
-	msg->size = 0;
+	msg->size = size;
 	}
 
     return msg;

@@ -1,3 +1,11 @@
+2004-07-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/pipe.c (rt_pipe_alloc): Fix allocation size to
+	encompass the header space.
+
+	* skins/rtai/pipe.c (__pipe_close_handler): Shutdown the kernel
+	side of the pipe upon closure of the user-space side.
+
 2004-07-22  Marc Kleine-Budde <kleine-budde@gmx.de>
 
 	* scripts/rtai-config: Fix output of --config.

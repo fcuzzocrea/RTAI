@@ -1,3 +1,8 @@
+2004-10-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_harden): Fix stupid uninit cpuid bug
+	in SMP case.
+
 2004-10-18  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pod.c (xnpod_announce_tick): prevent timer interrupt

@@ -301,6 +301,7 @@ static int __task_delete(RT_TASK *rt_task)
 #define SYSW_DIAG_MSG(x)
 #endif
 
+#if 1
 static inline void __force_soft(RT_TASK *task)
 {
 	if (task && task->force_soft) {
@@ -309,6 +310,9 @@ static inline void __force_soft(RT_TASK *task)
 		give_back_to_linux(task);
 	}
 }
+#else 
+static inline void __force_soft(RT_TASK *task) { }
+#endif
 
 static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 
@@ -534,7 +538,6 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
                 case GET_USP_FLAGS: {
                         return arg0.rt_task->usp_flags;
                 }
-
                 case SET_USP_FLAGS: {
                         struct arg { RT_TASK *task; unsigned long flags; };
                         arg0.rt_task->usp_flags = larg->flags;
@@ -552,14 +555,14 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
                         return 0;
                 }
 
-#ifndef  FORCE_TASK_SOFT
-#define  FORCE_TASK_SOFT 1023
-#endif
                 case FORCE_TASK_SOFT: {
+			extern void rt_do_force_soft(RT_TASK *rt_task);
                         struct task_struct *ltsk;
                         if ((ltsk = find_task_by_pid(arg0.name)))  {
                                 if ((arg0.rt_task = ltsk->this_rt_task[0])) {
-                                        arg0.rt_task->force_soft = ((int)arg0.rt_task->is_hard > 0) && FORCE_SOFT;
+					if ((arg0.rt_task->force_soft = ((int)arg0.rt_task->is_hard > 0) && FORCE_SOFT)) {
+						rt_do_force_soft(arg0.rt_task);
+					}
                                         return (unsigned long)arg0.rt_task;
                                 }
                         }

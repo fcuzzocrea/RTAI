@@ -102,6 +102,11 @@ typedef struct xnheap {
     xnlock_t lock;
 #endif /* CONFIG_SMP */
 
+    xnholder_t link;
+
+#define link2heap(laddr) \
+((xnheap_t *)(((char *)laddr) - (int)(&((xnheap_t *)0)->link)))
+
     u_long extentsize,
            pagesize,
            pageshift,
@@ -143,6 +148,18 @@ int xnheap_mount(void);
 
 void xnheap_umount(void);
 
+int xnheap_init_shared(xnheap_t *heap,
+		       u_long heapsize,
+		       int memflags);
+
+int xnheap_destroy_shared(xnheap_t *heap);
+
+#define xnheap_shared_offset(heap,ptr) \
+(((caddr_t)(ptr)) - ((caddr_t)(heap)->archdep.shmbase))
+
+#define xnheap_shared_address(heap,off) \
+(((caddr_t)(heap)->archdep.shmbase) + (off))
+
 #endif /* __KERNEL__ */
 
 /* Public interface. */
@@ -152,12 +169,12 @@ int xnheap_init(xnheap_t *heap,
 		u_long heapsize,
 		u_long pagesize);
 
-void xnheap_destroy(xnheap_t *heap,
-		    void (*flushfn)(xnheap_t *heap,
-				    void *extaddr,
-				    u_long extsize,
-				    void *cookie),
-		    void *cookie);
+int xnheap_destroy(xnheap_t *heap,
+		   void (*flushfn)(xnheap_t *heap,
+				   void *extaddr,
+				   u_long extsize,
+				   void *cookie),
+		   void *cookie);
 
 int xnheap_extend(xnheap_t *heap,
 		  void *extaddr,

@@ -92,7 +92,7 @@
 #include <nucleus/thread.h>
 #include <nucleus/heap.h>
 
-xnheap_t kheap;			/* System heap */
+xnheap_t kheap;	/* System heap */
 
 static void init_extent (xnheap_t *heap,
 			 xnextent_t *extent)
@@ -224,6 +224,7 @@ int xnheap_init (xnheap_t *heap,
     heap->npages = (heapsize - hdrsize) >> pageshift;
     heap->ubytes = 0;
     heap->maxcont = heap->npages * pagesize;
+    inith(&heap->link);
     initq(&heap->extents);
     xnlock_init(&heap->lock);
 
@@ -262,24 +263,27 @@ int xnheap_init (xnheap_t *heap,
  *
  * @param cookie If @a flushfn is non-NULL, @a cookie is an opaque
  * pointer which will be passed unmodified to @a flushfn.
-
+ *
+ * @return 0 is returned on success, or -EBUSY if external mappings
+ * are still pending on the heap memory.
+ *
  * Side-effect: This routine does not call the rescheduling procedure.
  *
  * Context: This routine must be called on behalf of a thread.
  */
 
-void xnheap_destroy (xnheap_t *heap,
-		     void (*flushfn)(xnheap_t *heap,
-				     void *extaddr,
-				     u_long extsize,
-				     void *cookie),
-		     void *cookie)
+int xnheap_destroy (xnheap_t *heap,
+		    void (*flushfn)(xnheap_t *heap,
+				    void *extaddr,
+				    u_long extsize,
+				    void *cookie),
+		    void *cookie)
 {
     xnholder_t *holder;
     spl_t s;
 
     if (!flushfn)
-	return;
+	return 0;
 
     xnlock_get_irqsave(&heap->lock,s);
 
@@ -291,6 +295,8 @@ void xnheap_destroy (xnheap_t *heap,
 	}
 
     xnlock_put_irqrestore(&heap->lock,s);
+
+    return 0;
 }
 
 /*
@@ -666,48 +672,195 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
 #ifdef __KERNEL__
 
 #include <linux/miscdevice.h>
+#include <linux/vmalloc.h>
+
+static DECLARE_XNQUEUE(kheapq);	/* Shared heap queue. */
 
 static void xnheap_vmopen (struct vm_area_struct *vma)
 
 {
     xnheap_t *heap = (xnheap_t *)vma->vm_private_data;
+    atomic_inc(&heap->archdep.numaps);
 }
 
 static void xnheap_vmclose (struct vm_area_struct *vma)
 
 {
     xnheap_t *heap = (xnheap_t *)vma->vm_private_data;
+    atomic_dec(&heap->archdep.numaps);
 }
 
 static struct vm_operations_struct xnheap_vmops = {
-    open: &xnheap_vmopen,
+    open:  &xnheap_vmopen,
     close: &xnheap_vmclose
 };
+
+static int xnheap_open (struct inode *inode,
+			struct file *file)
+{
+    file->private_data = NULL;
+    return 0;
+}
+
+static int xnheap_release (struct inode *inode,
+			   struct file *file)
+{
+    xnheap_t *heap = (xnheap_t *)file->private_data;
+
+    /* Careful: the ioctl() binding might have not been issued. */
+
+    if (heap != NULL)
+	atomic_dec(&heap->archdep.numaps);
+
+    return 0;
+}
+
+static inline xnheap_t *__validate_heap_addr (void *addr)
+
+{
+    xnholder_t *holder;
+
+    /* Not time critical and seldomly called, so O(N) is ok here. */
+
+    for (holder = getheadq(&kheapq);
+	 holder; holder = nextq(&kheapq,holder))
+	if (link2heap(holder) == (xnheap_t *)addr)
+	    return (xnheap_t *)addr;
+
+    return NULL;
+}
 
 static int xnheap_ioctl (struct inode *inode,
 			 struct file *file,
 			 unsigned int cmd,
 			 unsigned long arg)
 {
-    return -ENOSYS;
+    xnheap_t *heap;
+    int err = 0;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    heap = __validate_heap_addr((void *)arg);
+
+    if (!heap)
+	{
+	err = -EINVAL;
+	goto unlock_and_exit;
+	}
+
+    if (atomic_read(&heap->archdep.numaps) > 0)
+	{
+	err = -EBUSY;
+	goto unlock_and_exit;
+	}
+
+    atomic_inc(&heap->archdep.numaps); /* Paired with xnheap_release() */
+    file->private_data = heap;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+static unsigned long __va_to_kva (unsigned long va)
+
+{
+    pgd_t *pgd; pmd_t *pmd; pte_t *ptep, pte;
+    unsigned long kva = 0;
+	
+    pgd = pgd_offset_k(va); /* Page directory in kernel map. */
+
+    if (!pgd_none(*pgd))
+        {
+	pmd = pmd_offset(pgd, va); /* Page middle directory. */
+
+	if (!pmd_none(*pmd))
+	    {
+	    ptep = pte_offset_kernel(pmd, va);	/* Page table entry. */
+	    pte = *ptep;
+
+	    if (pte_present(pte)) /* Valid? */
+		{
+		kva = (unsigned long)page_address(pte_page(pte)); /* Page address. */
+		kva |= (va & (PAGE_SIZE - 1)); /* Add offset within page. */
+		}
+	    }
+	}
+
+    return kva;
 }
 
 static int xnheap_mmap (struct file *file,
 			struct vm_area_struct *vma)
 {
-    if (vma->vm_ops != NULL)
-	return -EFAULT;	/* Cannot map twice. */
+    unsigned long offset, size, vaddr;
+    xnheap_t *heap;
 
+    if (vma->vm_ops != NULL || file->private_data == NULL)
+	/* Caller should mmap() once for a given file instance, after
+	   the ioctl() binding has been issued. */
+	return -ENXIO;
+
+    if ((vma->vm_flags & VM_WRITE) && !(vma->vm_flags & VM_SHARED))
+	return -EINVAL;	/* COW unsupported. */
+
+    offset = vma->vm_pgoff << PAGE_SHIFT;
+
+    if (offset != 0)
+	return -ENXIO;	/* We must map the entire heap. */
+        
+    size = vma->vm_end - vma->vm_start;
+    heap = (xnheap_t *)file->private_data;
+
+    if (size != heap->extentsize)
+	return -ENXIO;	/* Doesn't match the heap size. */
+        
     vma->vm_ops = &xnheap_vmops;
-    vma->vm_flags |= VM_LOCKED;
+    vma->vm_flags |= VM_LOCKED;	/* Don't swap this out. */
     vma->vm_private_data = file->private_data;
 
-    return -ENOSYS;
+    vaddr = PAGE_ALIGN((unsigned long)heap->archdep.shmbase);
+
+    if (heap->archdep.kmflags)
+	{
+	if (remap_page_range(vma,
+			     vma->vm_start,
+			     virt_to_phys((void *)vaddr),
+			     size,
+			     PAGE_SHARED))
+	    return -ENXIO;
+	}
+    else
+	{
+	unsigned long maddr = vma->vm_start;
+
+	while (size > 0)
+	    {
+	    if (remap_page_range(vma,
+				 maddr,
+				 __pa(__va_to_kva(vaddr)),
+				 PAGE_SIZE,
+				 PAGE_SHARED))
+		return -ENXIO;
+
+	    maddr += PAGE_SIZE;
+	    vaddr += PAGE_SIZE;
+	    size -= PAGE_SIZE;
+	    }
+	}
+
+    return 0;
 }
 
 static struct file_operations xnheap_fops = {
-    ioctl: &xnheap_ioctl,
-    mmap:  &xnheap_mmap
+    owner:   THIS_MODULE,
+    open:    &xnheap_open,
+    release: &xnheap_release,
+    ioctl:   &xnheap_ioctl,
+    mmap:    &xnheap_mmap
 };
 
 static struct miscdevice xnheap_dev = {
@@ -728,6 +881,134 @@ void xnheap_umount (void)
 {
     misc_deregister(&xnheap_dev);
 }
+
+static inline void *__alloc_and_reserve_heap (size_t size, int kmflags)
+
+{
+    unsigned long vaddr, vabase;
+    void *ptr;
+
+    if (kmflags)
+	{
+	/* We need to align on a page when mapping, so let's get an
+	   additional page to be able to do so. */
+        ptr = kmalloc(size + PAGE_SIZE * 2,kmflags);
+
+	if (!ptr)
+	    return NULL;
+
+        vabase = PAGE_ALIGN((unsigned long)ptr);
+
+	for (vaddr = vabase; vaddr < vabase + size; vaddr += PAGE_SIZE)
+	    SetPageReserved(virt_to_page(vaddr));
+	}
+    else /* Otherwise, we have been asked for vmalloc() space. */
+	{
+	ptr = vmalloc(size + PAGE_SIZE * 2);
+
+	if (!ptr)
+	    return NULL;
+
+        vabase = PAGE_ALIGN((unsigned long)ptr);
+
+        for (vaddr = vabase; vaddr < vabase + size; vaddr += PAGE_SIZE)
+	    SetPageReserved(virt_to_page(__va_to_kva(vaddr)));
+	}
+
+    return ptr;
+}
+
+static inline void __unreserve_and_free_heap (void *ptr, size_t size, int kmflags)
+
+{
+    unsigned long vaddr, vabase;
+
+    size += PAGE_SIZE * 2;
+
+    if (kmflags)
+	{
+        vabase = PAGE_ALIGN((unsigned long)ptr);
+
+	for (vaddr = vabase; vaddr < vabase + size; vaddr += PAGE_SIZE)
+	    ClearPageReserved(virt_to_page(vaddr));
+
+	kfree(ptr);
+	}
+    else
+	{
+        vabase = PAGE_ALIGN((unsigned long)ptr);
+
+        for (vaddr = vabase; vaddr < vabase + size; vaddr += PAGE_SIZE)
+	    ClearPageReserved(virt_to_page(__va_to_kva(vaddr)));
+
+	vfree(ptr);
+	}
+}
+
+int xnheap_init_shared (xnheap_t *heap,
+			u_long heapsize,
+			int memflags)
+{
+    void *heapbase, *shmbase;
+    spl_t s;
+    int err;
+
+    heapsize = PAGE_ALIGN(heapsize);
+    heapbase = __alloc_and_reserve_heap(heapsize,memflags);
+
+    if (!heapbase)
+	return -ENOMEM;
+    
+    shmbase = (void *)PAGE_ALIGN((unsigned long)heapbase);
+
+    err = xnheap_init(heap,
+		      shmbase,
+		      heapsize,
+		      PAGE_SIZE);
+    if (err)
+	{
+	__unreserve_and_free_heap(heapbase,heapsize,memflags);
+	return err;
+	}
+
+    heap->archdep.kmflags = memflags;
+    heap->archdep.heapbase = heapbase;
+    heap->archdep.shmbase = shmbase;
+
+    xnlock_get_irqsave(&nklock,s);
+    appendq(&kheapq,&heap->link);
+    xnlock_put_irqrestore(&nklock,s);
+
+    return 0;
+}
+
+int xnheap_destroy_shared (xnheap_t *heap)
+
+{
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (atomic_read(&heap->archdep.numaps) > 0)
+	{
+	xnlock_put_irqrestore(&nklock,s);
+	return -EBUSY;
+	}
+    
+    removeq(&kheapq,&heap->link);
+    /* From now on, this heap cannot be mapped anymore. */
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    __unreserve_and_free_heap(heap->archdep.heapbase,
+			      heap->extentsize,
+			      heap->archdep.kmflags);
+
+    return 0;
+}
+
+EXPORT_SYMBOL(xnheap_init_shared);
+EXPORT_SYMBOL(xnheap_destroy_shared);
 
 #endif /* __KERNEL__ */
 

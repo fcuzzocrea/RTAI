@@ -89,6 +89,12 @@ typedef struct xnqueue {
 
 } xnqueue_t;
 
+#if defined(CONFIG_RTAI_OPT_DEBUG) && defined(CONFIG_SMP)
+#define DECLARE_XNQUEUE(q) xnqueue_t q = { { &(q).head, &(q).head }, 0, XNARCH_LOCK_UNLOCKED }
+#else /* !(CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP) */
+#define DECLARE_XNQUEUE(q) xnqueue_t q = { { &(q).head, &(q).head }, 0 }
+#endif /* CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP */
+
 static inline void initq (xnqueue_t *qslot) {
     inith(&qslot->head);
     qslot->elems = 0;

@@ -668,14 +668,6 @@ static inline void xnarch_escalate (void) {
     xnpod_schedule_handler();
 }
 
-static inline void *xnarch_sysalloc (u_long bytes) {
-    return malloc(bytes);
-}
-
-static inline void xnarch_sysfree (void *chunk, u_long bytes) {
-    free(chunk);
-}
-
 #define xnarch_notify_ready()  /* Nullified */
 #define xnarch_notify_shutdown() /* Nullified */
 #define xnarch_notify_halt() /* Nullified */
@@ -713,6 +705,14 @@ static inline void xnarch_halt (const char *emsg) {
     fflush(stderr);
     xnarch_exit_handler(SIGKILL);
     exit(99);
+}
+
+static inline void *xnarch_sysalloc (u_long bytes) {
+    return malloc(bytes);
+}
+
+static inline void xnarch_sysfree (void *chunk, u_long bytes) {
+    free(chunk);
 }
 
 #define xnarch_current_cpu()  0

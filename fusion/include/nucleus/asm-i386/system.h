@@ -300,15 +300,23 @@ typedef struct xnarch_fltinfo {
 
 typedef struct xnarch_heapcb {
 
-#if (__GNUC__ <= 2)
-    int old_gcc_dislikes_emptiness;
-#endif
+    atomic_t numaps;	/* # of active user-space mappings. */
+
+    int kmflags;	/* Kernel memory flags (0 if vmalloc()). */
+
+    void *heapbase;	/* Shared heap memory base (possibly unaligned). */
+
+    void *shmbase;	/* Shared memory base (page-aligned). */
 
 } xnarch_heapcb_t;
 
-static inline void xnarch_init_heapcb (xnarch_heapcb_t *cb)
+static inline void xnarch_init_heapcb (xnarch_heapcb_t *hcb)
 
 {
+    atomic_set(&hcb->numaps,0);
+    hcb->kmflags = 0;
+    hcb->heapbase = NULL;
+    hcb->shmbase = NULL;
 }
 
 #ifdef __cplusplus
@@ -333,6 +341,16 @@ static inline unsigned long long xnarch_get_cpu_freq (void) {
 
 static inline unsigned xnarch_current_cpu (void) {
     return adeos_processor_id();
+}
+
+static inline void *xnarch_sysalloc (u_long bytes) {
+
+    return kmalloc(bytes,GFP_ATOMIC);
+}
+
+static inline void xnarch_sysfree (void *chunk, u_long bytes) {
+
+    kfree(chunk);
 }
 
 #define xnarch_declare_cpuid  adeos_declare_cpuid
@@ -821,16 +839,6 @@ static inline int xnarch_escalate (void)
 	}
 
     return 0;
-}
-
-static inline void *xnarch_sysalloc (u_long bytes) {
-
-    return kmalloc(bytes,GFP_ATOMIC);
-}
-
-static inline void xnarch_sysfree (void *chunk, u_long bytes) {
-
-    kfree(chunk);
 }
 
 static void xnarch_notify_ready (void) {

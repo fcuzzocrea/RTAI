@@ -1,3 +1,10 @@
+2004-11-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/heap.c: Finalize shared heap support.
+
+	* include/nucleus/queue.h (DECLARE_XNQUEUE): Add global queue
+	declarator with built-in initializer.
+
 2004-10-31  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/heap.c: Create the basic infrastructure for mapping

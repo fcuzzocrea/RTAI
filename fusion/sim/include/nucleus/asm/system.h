@@ -545,14 +545,6 @@ static inline void xnarch_escalate (void) {
     xnpod_schedule_handler();
 }
 
-static inline void *xnarch_sysalloc (u_long bytes) {
-    return malloc(bytes);
-}
-
-static inline void xnarch_sysfree (void *chunk, u_long bytes) {
-    free(chunk);
-}
-
 #define xnarch_notify_ready()    mvm_finalize_init()
 #define xnarch_notify_halt()	/* Nullified */
 #define xnarch_notify_shutdown() /* Nullified */
@@ -581,6 +573,14 @@ static inline unsigned long xnarch_get_cpu_freq (void) {
 
 static inline void xnarch_halt (const char *emsg) {
     __mvm_breakable(mvm_fatal)("%s",emsg);
+}
+
+static inline void *xnarch_sysalloc (u_long bytes) {
+    return malloc(bytes);
+}
+
+static inline void xnarch_sysfree (void *chunk, u_long bytes) {
+    free(chunk);
 }
 
 #define xnarch_alloc_stack xnmalloc

@@ -45,21 +45,12 @@ void __queue_pkg_cleanup (void)
 {
 }
 
-static void __queue_flush_pool (xnheap_t *heap,
-				void *poolmem,
-				u_long poolsize,
-				void *cookie)
+static void __queue_flush_private (xnheap_t *heap,
+				   void *poolmem,
+				   u_long poolsize,
+				   void *cookie)
 {
-#ifdef __KERNEL__
-    RT_QUEUE *q = (RT_QUEUE *)cookie;
-
-    if (q->mode & Q_DMA)
-	kfree(poolmem);
-    else
-	vfree(poolmem);
-#else /* !__KERNEL__ */
-    xnarch_sysfree(poolmem);
-#endif /* __KERNEL__ */
+    xnarch_sysfree(poolmem,poolsize);
 }
 
 int rt_queue_create (RT_QUEUE *q,
@@ -68,7 +59,6 @@ int rt_queue_create (RT_QUEUE *q,
 		     size_t qlimit,
 		     int mode)
 {
-    void *poolmem;
     int err;
 
     xnpod_check_context(XNPOD_ROOT_CONTEXT);
@@ -77,20 +67,28 @@ int rt_queue_create (RT_QUEUE *q,
 	return -EINVAL;
 
 #ifdef __KERNEL__
-    poolsize = PAGE_ALIGN(poolsize);
-
-    if (mode & Q_DMA)
-	poolmem = kmalloc(poolsize,GFP_KERNEL|GFP_DMA);
+    if (mode & Q_SHARED)
+	err = xnheap_init_shared(&q->bufpool,
+				 poolsize,
+				 (mode & Q_DMA) ? GFP_DMA : 0);
     else
-	poolmem = vmalloc(poolsize);
-
-    q->numaps = 0;
-#else /* !__KERNEL__ */
-    poolmem = xnarch_sysalloc(poolsize);
 #endif /* __KERNEL__ */
+	{
+	void *poolmem = xnarch_sysalloc(poolsize);
 
-    if (poolmem == NULL)
-	return -ENOMEM;
+	if (!poolmem)
+	    return -ENOMEM;
+
+	err = xnheap_init(&q->bufpool,
+			  poolmem,
+			  poolsize,
+			  PAGE_SIZE); /* Use natural page size */
+	if (err)
+	    {
+	    xnarch_sysfree(poolmem,poolsize);
+	    return -ENOMEM;
+	    }
+	}
 
     xnsynch_init(&q->synch_base,mode & (Q_PRIO|Q_FIFO));
     initq(&q->pendq);
@@ -98,19 +96,7 @@ int rt_queue_create (RT_QUEUE *q,
     q->magic = RTAI_QUEUE_MAGIC;
     q->qlimit = qlimit;
     q->mode = mode;
-    q->poolmem = poolmem;
-    q->poolsize = poolsize;
     xnobject_copy_name(q->name,name);
-
-    err = xnheap_init(&q->bufpool,
-		      poolmem,
-		      poolsize,
-		      PAGE_SIZE); /* Use natural page size */
-    if (err)
-	{
-	__queue_flush_pool(&q->bufpool,poolmem,poolsize,q);
-	return err;
-	}
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
@@ -148,14 +134,14 @@ int rt_queue_delete (RT_QUEUE *q)
         }
 
 #ifdef __KERNEL__
-    if (q->numaps > 0)	/* Still mapped in user-space? */
-	{
-	err = -EBUSY;
-	goto unlock_and_exit;
-	}
+    if (q->mode & Q_SHARED)
+	err = xnheap_destroy_shared(&q->bufpool);
+    else
 #endif /* __KERNEL__ */
-    
-    xnheap_destroy(&q->bufpool,&__queue_flush_pool,q);
+	err = xnheap_destroy(&q->bufpool,&__queue_flush_private,NULL);
+
+    if (err)
+	goto unlock_and_exit;
 
     rc = xnsynch_destroy(&q->synch_base);
 
@@ -404,7 +390,6 @@ int rt_queue_inquire (RT_QUEUE *q,
     info->nwaiters = xnsynch_nsleepers(&q->synch_base);
     info->nmessages = countq(&q->pendq);
     info->qlimit = q->qlimit;
-    info->poolsize = q->poolsize;
     info->mode = q->mode;
 
  unlock_and_exit:

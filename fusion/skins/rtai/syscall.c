@@ -1351,27 +1351,6 @@ static int __rt_cond_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #if CONFIG_RTAI_OPT_NATIVE_QUEUE
 
-static caddr_t __map_queue_space (struct task_struct *curr,
-				  RT_QUEUE *q)
-{
-    caddr_t mapbase = NULL;
-
-#if 0
-    ++q->numaps;
-#endif
-
-    return mapbase;
-}
-
-static void __unmap_queue_space (struct task_struct *curr,
-				 RT_QUEUE *q,
-				 caddr_t mapbase)
-{
-#if 0
-    --q->numaps;
-#endif
-}
-
 /*
  * int __rt_queue_create(RT_QUEUE_PLACEHOLDER *ph,
  *                       const char *name,
@@ -1410,10 +1389,6 @@ static int __rt_queue_create (struct task_struct *curr, struct pt_regs *regs)
     /* Creation mode. */
     mode = (int)__xn_reg_arg5(regs);
 
-    if (mode & Q_DMA)
-	/* Cannot map DMA-capable memory to user-space. */
-	return -EINVAL;
-
     q = (RT_QUEUE *)xnmalloc(sizeof(*q));
 
     if (!q)
@@ -1424,25 +1399,12 @@ static int __rt_queue_create (struct task_struct *curr, struct pt_regs *regs)
     if (err)
 	goto free_and_fail;
 
-    /* Map the pool memory to the caller's address space. */
-    ph.mapbase = __map_queue_space(curr,q);
-
-    if (ph.mapbase == NULL)
-	{
-	err = -ENOMEM;
-	goto delete_and_fail;
-	}
-
     /* Copy back the registry handle to the ph struct. */
     ph.opaque = q->handle;
 
     __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
 
     return 0;
-
- delete_and_fail:
-
-    rt_queue_delete(q);
 
  free_and_fail:
 	
@@ -1499,14 +1461,6 @@ static int __rt_queue_bind (struct task_struct *curr, struct pt_regs *regs)
 	}
 
     ph.opaque = q->handle;
-    /* Map the pool memory to the caller's address space. */
-    ph.mapbase = __map_queue_space(curr,q);
-
-    if (!ph.mapbase)
-	{
-	err = -ENOMEM;
-	goto unlock_and_exit;
-	}
 
     __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
 
@@ -1544,11 +1498,7 @@ static int __rt_queue_delete (struct task_struct *curr, struct pt_regs *regs)
 	goto unlock_and_exit;
 	}
 
-    __unmap_queue_space(curr,q,ph.mapbase);
-
-    if (q->numaps == 0)
-	/* Last mapping removed. Try deleting the queue object. */
-	err = rt_queue_delete(q);
+    err = rt_queue_delete(q);
 
  unlock_and_exit:
 
@@ -1599,7 +1549,7 @@ static int __rt_queue_alloc (struct task_struct *curr, struct pt_regs *regs)
        into the caller's address space. */
 
     if (buf)
-	buf = ph.mapbase + ((caddr_t)buf - (caddr_t)q->poolmem);
+	buf = ph.mapbase + xnheap_shared_offset(&q->bufpool,buf);
     else
 	err = -ENOMEM;
 
@@ -1651,7 +1601,7 @@ static int __rt_queue_free (struct task_struct *curr, struct pt_regs *regs)
 
     if (buf)
 	{
-	buf = (caddr_t)q->poolmem + ((caddr_t)buf - ph.mapbase);
+	buf = xnheap_shared_address(&q->bufpool,(caddr_t)buf - ph.mapbase);
 	err = rt_queue_free(q,buf);
 	}
     else
@@ -1707,7 +1657,7 @@ static int __rt_queue_send (struct task_struct *curr, struct pt_regs *regs)
 
     if (buf)
 	{
-	buf = (caddr_t)q->poolmem + ((caddr_t)buf - ph.mapbase);
+	buf = xnheap_shared_address(&q->bufpool,(caddr_t)buf - ph.mapbase);
 	err = rt_queue_send(q,buf,mode);
 	}
     else
@@ -1766,7 +1716,9 @@ static int __rt_queue_recv (struct task_struct *curr, struct pt_regs *regs)
 
     if (err >= 0)
 	{
-	buf = ph.mapbase + ((caddr_t)buf - (caddr_t)q->poolmem);
+	/* Convert the kernel-based address of buf to the equivalent area
+	   into the caller's address space. */
+	buf = ph.mapbase + xnheap_shared_offset(&q->bufpool,buf);
 	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&buf,sizeof(buf));
 	}
 

@@ -56,9 +56,10 @@
 struct RT_TASK;
 
 /* Creation flags. */
-#define Q_PRIO  XNSYNCH_PRIO	/* Pend by task priority order. */
-#define Q_FIFO  XNSYNCH_FIFO	/* Pend by FIFO order. */
-#define Q_DMA   0x100		/* Use memory suitable for DMA. */
+#define Q_PRIO   XNSYNCH_PRIO	/* Pend by task priority order. */
+#define Q_FIFO   XNSYNCH_FIFO	/* Pend by FIFO order. */
+#define Q_DMA    0x100		/* Use memory suitable for DMA. */
+#define Q_SHARED 0x200		/* Use mappable shared memory. */
 
 #define Q_UNLIMITED 0		/* No size limit. */
 
@@ -104,21 +105,11 @@ typedef struct rt_queue {
 
     xnheap_t bufpool;	/* !< Message buffer pool. */
 
-    void *poolmem;	/* !< Start address of pool memory. */
-
-    size_t poolsize;	/* !< Size of pool memory. */
-
     int mode;		/* !< Creation mode. */
 
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 
     int qlimit;		/* !< Maximum queued elements. */
-
-#ifdef __KERNEL__
-
-    int numaps;		/* !< Number of user-space mappings. */
-
-#endif /* __KERNEL__ */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 

@@ -56,6 +56,6 @@ libnucleus_a_AR = $(CROSS_COMPILE)ar cru
 
 endif
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild
 
 SUBDIRS = lib

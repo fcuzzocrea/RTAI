@@ -208,11 +208,21 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 ACLOCAL_AMFLAGS = -I config/autoconf
 
-SUBDIRS = include nucleus arch skins testsuite scripts @RTAI_MAYBE_DOCDIR@ @RTAI_MAYBE_SIMDIR@ config
+SUBDIRS = \
+	include \
+	nucleus \
+	arch \
+	skins \
+	testsuite \
+	scripts \
+	@RTAI_MAYBE_DOCDIR@ \
+	@RTAI_MAYBE_SIMDIR@ \
+	config
 
-DIST_SUBDIRS = @RTAI_MAYBE_DOCDIR@ @RTAI_MAYBE_SIMDIR@ config
 
-EXTRA_DIST = makefile
+DIST_SUBDIRS = $(SUBDIRS)
+
+EXTRA_DIST = makefile README.INSTALL
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged
 subdir = .

@@ -8816,7 +8816,7 @@ echo "${ECHO_T}no" >&6
 fi
 
 
-if test x${CONFIG_RTAI_DOC} = xy -a x"$DOXYGEN" = x; then
+if test x${CONFIG_RTAI_DOC_DOX} = xy -a x"$DOXYGEN" = x; then
    { { echo "$as_me:$LINENO: error: Missing the Doxygen tools to generate the RTAI documentation." >&5
 echo "$as_me: error: Missing the Doxygen tools to generate the RTAI documentation." >&2;}
    { (exit 1); exit 1; }; }

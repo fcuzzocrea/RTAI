@@ -253,7 +253,7 @@ include_HEADERS = \
 
 @CONFIG_RTAI_OPT_VM_TRUE@libuitron_a_AR = $(CROSS_COMPILE)ar cru
 
-EXTRA_DIST = doc Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild
 subdir = skins/uitron
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs

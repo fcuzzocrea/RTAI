@@ -245,7 +245,7 @@ libmodule_SRC = \
 
 @CONFIG_RTAI_OPT_VM_TRUE@libnucleus_a_AR = $(CROSS_COMPILE)ar cru
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild
 
 SUBDIRS = lib
 subdir = nucleus

@@ -64,6 +64,6 @@ install-exec-local: rtai_native$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild
 
 SUBDIRS = lib

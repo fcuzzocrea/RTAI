@@ -213,7 +213,7 @@ modext = @RTAI_MODULE_EXT@
 
 libhal_SRC = hal.c
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = $(libhal_SRC) Makefile.kbuild
 subdir = arch/i386/hal
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs

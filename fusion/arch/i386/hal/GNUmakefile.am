@@ -23,4 +23,4 @@ install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = $(libhal_SRC) Makefile.kbuild

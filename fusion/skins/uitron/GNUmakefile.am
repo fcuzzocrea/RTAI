@@ -63,4 +63,4 @@ libuitron_a_AR = $(CROSS_COMPILE)ar cru
 
 endif
 
-EXTRA_DIST = doc Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild

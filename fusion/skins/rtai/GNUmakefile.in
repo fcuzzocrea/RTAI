@@ -237,7 +237,7 @@ include_HEADERS = \
 		syscall.h\
 $(am__append_2) $(am__append_4) $(am__append_6) $(am__append_8) $(am__append_10) $(am__append_12)
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild
 
 SUBDIRS = lib
 subdir = skins/rtai

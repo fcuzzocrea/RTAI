@@ -51,4 +51,4 @@ install-exec-local: rtai_posix$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
 
-EXTRA_DIST = doc Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild

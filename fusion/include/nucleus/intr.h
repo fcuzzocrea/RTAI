@@ -22,11 +22,11 @@
 
 #include <nucleus/types.h>
 
-#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
-
 #define XN_ISR_HANDLED   0x0
 #define XN_ISR_CHAINED   0x1
 #define XN_ISR_ENABLE    0x2
+
+#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
 struct xnintr;
 

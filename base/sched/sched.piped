@@ -2532,7 +2532,11 @@ static int __rtai_lxrt_init(void)
 
 	register_reboot_notifier(&lxrt_notifier_reboot);
 
-	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (PIPED, %sP, KERNEL%s SPACE).\n", CONFIG_SMP ? "SM" : "U", USE_RTAI_TASKS ? "" : "/USER");
+#ifdef CONFIG_SMP
+	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (PIPED, SMP, KERNEL%s SPACE).\n", USE_RTAI_TASKS ? "" : "/USER");
+#else
+	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (PIPED, UP, KERNEL%s SPACE).\n", USE_RTAI_TASKS ? "" : "/USER");
+#endif
 	printk(KERN_INFO "RTAI[sched_lxrt]: timer=%s (%s),.\n",
 	       OneShot ? "oneshot" : "periodic", TIMER_NAME);
 	printk(KERN_INFO "RTAI[sched_lxrt]: standard tick=%d hz, CPU freq=%lu hz.\n",

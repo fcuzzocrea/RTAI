@@ -147,6 +147,11 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
     rthal_local_irq_restore(flags & 1);
 }
 
+#define XNARCH_PASSTHROUGH_IRQS \
+case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR: \
+case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR: \
+case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
+
 #else /* !CONFIG_SMP */
 
 #define xnlock_init(lock)              do { } while(0)
@@ -154,6 +159,8 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define xnlock_put_irqrestore(lock,x)  rthal_local_irq_restore(x)
 #define xnlock_clear_irqoff(lock)      rthal_cli()
 #define xnlock_clear_irqon(lock)       rthal_sti()
+
+#define XNARCH_PASSTHROUGH_IRQS /*empty*/
 
 #endif /* CONFIG_SMP */
 

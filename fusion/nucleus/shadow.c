@@ -253,9 +253,7 @@ static void xnshadow_shield_trampoline (unsigned irq)
 #ifdef CONFIG_SMP
 	case ADEOS_CRITICAL_IPI:
 	case ADEOS_SERVICE_IPI1:
-	case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
-	case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
-	case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
+	XNARCH_PASSTHROUGH_IRQS
 
 	    /* Never lock out these ones. */
 	    break;

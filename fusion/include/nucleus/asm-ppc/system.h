@@ -83,6 +83,7 @@ typedef unsigned long spl_t;
 typedef unsigned long xnlock_t;
 
 #define XNARCH_LOCK_UNLOCKED 0
+#define XNARCH_PASSTHROUGH_IRQS /*empty*/
 
 #ifdef CONFIG_SMP
 

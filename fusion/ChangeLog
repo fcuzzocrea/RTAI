@@ -1,3 +1,8 @@
+2004-10-09  Ivan Raikov <raikov@cc.gatech.edu>
+
+	* scripts/rtai-load.in: Add support for user-defined module search
+	directory.
+
 2004-10-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c4 and

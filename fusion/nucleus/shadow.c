@@ -39,6 +39,7 @@
 #include <nucleus/synch.h>
 #include <nucleus/module.h>
 #include <nucleus/shadow.h>
+#include <nucleus/fusion.h>
 #if CONFIG_TRACE
 #include <linux/trace.h>
 #endif

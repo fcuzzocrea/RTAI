@@ -618,6 +618,17 @@ RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }
 
+RTAI_PROTO(int, rt_thread_create,(void *fun, void *args, int stack_size))
+{
+	void *sp;
+	memset(sp = malloc(stack_size), 0, stack_size);
+	return clone(fun, sp + stack_size - 1, CLONE_VM | CLONE_FS | CLONE_FILES, args);
+}
+
+RTAI_PROTO(RT_TASK *, rt_thread_init, (int name, int priority, int max_msg_size, int policy, int cpus_allowed))
+{
+	return rt_task_init_schmod(name, priority, 0, max_msg_size, policy, cpus_allowed);
+}
 
 /**
  * Create a new real time task in user space.

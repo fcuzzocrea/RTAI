@@ -843,12 +843,13 @@ int rt_task_unblock (RT_TASK *task)
  * written to.
 
  * @return 0 is returned and status information is written to the
- * structure pointed at by @info upon success. Otherwise:
+ * structure pointed at by @a info upon success. Otherwise:
  *
  * - -EINVAL is returned if @a task is not a task descriptor, or if @a
  * task is NULL but not called from a task context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
+ * .
  *
  * Context: This routine can always be called on behalf of a task. It
  * can also be called on behalf of an interrupt context or from the

@@ -8,7 +8,7 @@
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <h1>Real-time pod services.<br>
 <small>
-[<a class="el" href="group__xenomai.html">Xenomai scheduler.</a>]</small>
+[<a class="el" href="group__nucleus.html">Xenomai nucleus.</a>]</small>
 </h1><hr><a name="_details"></a><h2>Detailed Description</h2>
 Real-time pod services. 
 <p>
@@ -80,16 +80,16 @@ Real-time pod services.
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Hidden rescheduling procedure. </em> <a href="#a28"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__pod.html#a29">xnpod_set_time</a> (xnticks_t newtime)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set the nanokernel idea of time. </em> <a href="#a29"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set the nucleus idea of time. </em> <a href="#a29"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>xnticks_t&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__pod.html#a30">xnpod_get_time</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the nanokernel idea of time. </em> <a href="#a30"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the nucleus idea of time. </em> <a href="#a30"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__pod.html#a31">xnpod_add_hook</a> (int type, void(*routine)(xnthread_t *))</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Install a nanokernel hook. </em> <a href="#a31"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Install a nucleus hook. </em> <a href="#a31"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__pod.html#a32">xnpod_remove_hook</a> (int type, void(*routine)(xnthread_t *))</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Remove a nanokernel hook. </em> <a href="#a32"></a><em><br><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Remove a nucleus hook. </em> <a href="#a32"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__pod.html#a34">xnpod_trap_fault</a> (void *fltinfo)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Default fault handler. </em> <a href="#a34"></a><em><br><br></td></tr>
@@ -183,9 +183,9 @@ Context: This routine can be called on behalf of a thread or ISR.     </td>
     <td>
 
 <p>
-Install a nanokernel hook. 
+Install a nucleus hook. 
 <p>
-The nanokernel allows to register user-defined routines which get called whenever a specific scheduling event occurs. Multiple hooks can be chained for a single event type, and get called on a FIFO basis.<p>
+The nucleus allows to register user-defined routines which get called whenever a specific scheduling event occurs. Multiple hooks can be chained for a single event type, and get called on a FIFO basis.<p>
 The scheduling is locked while a hook is executing.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -245,13 +245,13 @@ Context: This routine must be called on behalf of a thread.     </td>
 <p>
 Announce a new clock tick. 
 <p>
-This is the default service routine for clock ticks which performs the necessary housekeeping chores for time-related services managed by the nanokernel. In a way or another, this routine must be called to announce each incoming clock tick to the nanokernel.<p>
+This is the default service routine for clock ticks which performs the necessary housekeeping chores for time-related services managed by the nucleus. In a way or another, this routine must be called to announce each incoming clock tick to the nucleus.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>intr</em>&nbsp;</td><td>The descriptor address of the interrupt object associated to the timer interrupt.</td></tr>
   </table>
 </dl>
-Side-effect: Since this routine manages the round-robin scheduling, the running thread (which has been preempted by the timer interrupt) can be switched out as a result of its time credit being exhausted. The nanokernel always calls the rescheduling procedure after the outer interrupt has been processed.<p>
+Side-effect: Since this routine manages the round-robin scheduling, the running thread (which has been preempted by the timer interrupt) can be switched out as a result of its time credit being exhausted. The nucleus always calls the rescheduling procedure after the outer interrupt has been processed.<p>
 <dl compact><dt><b>Returns:</b></dt><dd>XN_ISR_HANDLED is always returned.</dd></dl>
 Context: The caller can be a thread but is usually an ISR.     </td>
   </tr>
@@ -317,7 +317,7 @@ Context: This routine can be called on behalf of a thread or ISR.     </td>
 <p>
 Delete a thread. 
 <p>
-Terminates a thread and releases all the nanokernel resources it currently holds. A thread exists in the system since <a class="el" href="group__pod.html#a12">xnpod_init_thread()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
+Terminates a thread and releases all the nucleus resources it currently holds. A thread exists in the system since <a class="el" href="group__pod.html#a12">xnpod_init_thread()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>thread</em>&nbsp;</td><td>The descriptor address of the terminated thread.</td></tr>
@@ -389,10 +389,10 @@ This internal routine checks for the presence of asynchronous signals directed t
     <td>
 
 <p>
-Get the nanokernel idea of time. 
+Get the nucleus idea of time. 
 <p>
-This service gets the nanokernel (external) clock time.<p>
-<dl compact><dt><b>Returns:</b></dt><dd>The current nanokernel time (in ticks) if the underlying time source runs in periodic mode, or the system time (converted to nanoseconds) as maintained by the CPU if aperiodic mode is in effect, or no timer is running.</dd></dl>
+This service gets the nucleus (external) clock time.<p>
+<dl compact><dt><b>Returns:</b></dt><dd>The current nucleus time (in ticks) if the underlying time source runs in periodic mode, or the system time (converted to nanoseconds) as maintained by the CPU if aperiodic mode is in effect, or no timer is running.</dd></dl>
 Side-effect: This routine does not call the rescheduling procedure.<p>
 Context: This routine can be called on behalf of any context.     </td>
   </tr>
@@ -452,7 +452,7 @@ Initializes a new pod which can subsequently be used to start real-time activiti
     <tr><td valign=top><em>pod</em>&nbsp;</td><td>The address of a pod descriptor Xenomai will use to store the pod-specific data. This descriptor must always be valid while the pod is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign=top><em>minpri</em>&nbsp;</td><td>The value of the lowest priority level which is valid for threads created on behalf of this pod.</td></tr>
     <tr><td valign=top><em>maxpri</em>&nbsp;</td><td>The value of the highest priority level which is valid for threads created on behalf of this pod.</td></tr>
-    <tr><td valign=top><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. The only defined flag is XNDREORD (Disable REORDering), which tells the nanokernel that the (xnsynch_t) pend queue should not be reordered whenever the priority of a blocked thread it holds is changed. If this flag is not specified, changing the priority of a blocked thread using <a class="el" href="group__pod.html#a20">xnpod_renice_thread()</a> will cause the pended queue to be reordered according to the new priority level, provided the synchronization object makes the waiters wait by priority order on the awaited resource (XNSYNCH_PRIO).</td></tr>
+    <tr><td valign=top><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. The only defined flag is XNDREORD (Disable REORDering), which tells the nucleus that the (xnsynch_t) pend queue should not be reordered whenever the priority of a blocked thread it holds is changed. If this flag is not specified, changing the priority of a blocked thread using <a class="el" href="group__pod.html#a20">xnpod_renice_thread()</a> will cause the pended queue to be reordered according to the new priority level, provided the synchronization object makes the waiters wait by priority order on the awaited resource (XNSYNCH_PRIO).</td></tr>
   </table>
 </dl>
 minpri might be numerically higher than maxpri if the upper real-time interface exhibits a reverse priority scheme. For instance, some APIs may define a range like minpri=255, maxpri=0 specifying that thread priorities increase as the priority level decreases numerically.<p>
@@ -525,10 +525,10 @@ Initializes a new thread attached to the active pod. The thread is left in an in
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>thread</em>&nbsp;</td><td>The address of a thread descriptor Xenomai will use to store the thread-specific data. This descriptor must always be valid while the thread is active therefore it must be allocated in permanent memory.</td></tr>
-    <tr><td valign=top><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the thread. This name is copied to a safe place into the thread descriptor. This name might be used in various situations by the nanokernel for issuing human-readable diagnostic messages, so it is usually a good idea to provide a sensible value here. The simulator even uses this name intensively to identify threads in the debugging GUI it provides. However, passing NULL here is always legal and means "anonymous".</td></tr>
+    <tr><td valign=top><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the thread. This name is copied to a safe place into the thread descriptor. This name might be used in various situations by the nucleus for issuing human-readable diagnostic messages, so it is usually a good idea to provide a sensible value here. The simulator even uses this name intensively to identify threads in the debugging GUI it provides. However, passing NULL here is always legal and means "anonymous".</td></tr>
     <tr><td valign=top><em>prio</em>&nbsp;</td><td>The base priority of the new thread. This value must range from [minpri .. maxpri] (inclusive) as specified when calling the <a class="el" href="group__pod.html#a7">xnpod_init()</a> service.</td></tr>
-    <tr><td valign=top><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. The only defined flag available to the upper interfaces is XNFPU (enable FPU), which tells the nanokernel that the new thread will use the floating-point unit. In such a case, the nanokernel will handle the FPU context save/restore ops upon thread switches at the expense of a few additional cycles per context switch. By default, a thread is not expected to use the FPU. This flag is simply ignored when Xenomai runs on behalf of a userspace-based real-time control layer since the FPU management is always active if present.</td></tr>
-    <tr><td valign=top><em>stacksize</em>&nbsp;</td><td>The size of the stack (in bytes) for the new thread. If zero is passed, the nanokernel will use a reasonable pre-defined size depending on the underlying real-time control layer.</td></tr>
+    <tr><td valign=top><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. The only defined flag available to the upper interfaces is XNFPU (enable FPU), which tells the nucleus that the new thread will use the floating-point unit. In such a case, the nucleus will handle the FPU context save/restore ops upon thread switches at the expense of a few additional cycles per context switch. By default, a thread is not expected to use the FPU. This flag is simply ignored when Xenomai runs on behalf of a userspace-based real-time control layer since the FPU management is always active if present.</td></tr>
+    <tr><td valign=top><em>stacksize</em>&nbsp;</td><td>The size of the stack (in bytes) for the new thread. If zero is passed, the nucleus will use a reasonable pre-defined size depending on the underlying real-time control layer.</td></tr>
   </table>
 </dl>
 After creation, the new thraed can be set a magic cookie by skins using xnthread_set_magic() to unambiguously identify threads created in their realm. This value will be copied as-is to the <em>magic</em> field of the thread struct. 0 is a conventional value for "no magic".<p>
@@ -612,9 +612,9 @@ Preempts the running thread (because a more prioritary thread has just been read
     <td>
 
 <p>
-Remove a nanokernel hook. 
+Remove a nucleus hook. 
 <p>
-This service removes a nanokernel hook previously registered using <a class="el" href="group__pod.html#a31">xnpod_add_hook()</a>.<p>
+This service removes a nucleus hook previously registered using <a class="el" href="group__pod.html#a31">xnpod_add_hook()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>type</em>&nbsp;</td><td>Defines the kind of hook to remove among XNHOOK_THREAD_START, XNHOOK_THREAD_DELETE and XNHOOK_THREAD_SWITCH.</td></tr>
@@ -663,7 +663,7 @@ Context: This routine must be called on behalf of a thread.     </td>
 <p>
 Change the base priority of a thread. 
 <p>
-Changes the base priority of a thread. If the XNDREORD flag has not been passed to <a class="el" href="group__pod.html#a7">xnpod_init()</a> and the reniced thread is currently blocked waiting in priority-pending mode (XNSYNCH_PRIO) for a synchronization object to be signaled, the nanokernel will attempt to reorder the object's pend queue so that it reflects the new sleeper's priority.<p>
+Changes the base priority of a thread. If the XNDREORD flag has not been passed to <a class="el" href="group__pod.html#a7">xnpod_init()</a> and the reniced thread is currently blocked waiting in priority-pending mode (XNSYNCH_PRIO) for a synchronization object to be signaled, the nucleus will attempt to reorder the object's pend queue so that it reflects the new sleeper's priority.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>thread</em>&nbsp;</td><td>The descriptor address of the affected thread.</td></tr>
@@ -818,7 +818,7 @@ Context: This routine can be called on behalf of a thread or ISR.     </td>
 <p>
 Rotate a priority level in the ready queue. 
 <p>
-The thread at the head of the ready queue of the given priority level is moved to the end of this queue. Therefore, the execution of threads having the same priority is switched. Round-robin scheduling policies may be implemented by periodically issuing this call in a given period of time. It should be noted that the nanokernel already provides a built-in round-robin mode though (see <a class="el" href="group__pod.html#a23">xnpod_activate_rr()</a>).<p>
+The thread at the head of the ready queue of the given priority level is moved to the end of this queue. Therefore, the execution of threads having the same priority is switched. Round-robin scheduling policies may be implemented by periodically issuing this call in a given period of time. It should be noted that the nucleus already provides a built-in round-robin mode though (see <a class="el" href="group__pod.html#a23">xnpod_activate_rr()</a>).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>prio</em>&nbsp;</td><td>The priority level to rotate. if XNPOD_RUNPRI is given, the running thread priority is used to rotate the queue.</td></tr>
@@ -857,11 +857,11 @@ Context: This routine can be called on behalf of a thread or ISR.     </td>
 <p>
 Rescheduling procedure entry point. 
 <p>
-This is the central rescheduling routine which should be called to validate and apply changes which have previously been made to the nanokernel scheduling state, such as suspending, resuming or changing the priority of threads. This call first determines if a thread switch should take place, and performs it as needed. <a class="el" href="group__pod.html#a27">xnpod_schedule()</a> actually switches threads if:<p>
+This is the central rescheduling routine which should be called to validate and apply changes which have previously been made to the nucleus scheduling state, such as suspending, resuming or changing the priority of threads. This call first determines if a thread switch should take place, and performs it as needed. <a class="el" href="group__pod.html#a27">xnpod_schedule()</a> actually switches threads if:<p>
 <ul>
 <li>the running thread has been blocked or deleted.</li><li>or, the running thread has become less prioritary than the first ready to run thread.</li><li>or, the running thread does not lead no more the ready threads (round-robin).</li><li>or, a real-time thread became ready to run, ending the scheduler idle state (i.e. The root thread was running so far).</li></ul>
 <p>
-The nanokernel implements a lazy rescheduling scheme so that most of the services affecting the threads state MUST be followed by a call to the rescheduling procedure for the new scheduling state to be applied. In other words, multiple changes on the scheduler state can be done in a row, waking threads up, blocking others, without being immediately translated into the corresponding context switches, like it would be necessary would it appear that a more prioritary thread than the current one became runnable for instance. When all changes have been applied, the rescheduling procedure is then called to consider those changes, and possibly replace the current thread by another.<p>
+The nucleus implements a lazy rescheduling scheme so that most of the services affecting the threads state MUST be followed by a call to the rescheduling procedure for the new scheduling state to be applied. In other words, multiple changes on the scheduler state can be done in a row, waking threads up, blocking others, without being immediately translated into the corresponding context switches, like it would be necessary would it appear that a more prioritary thread than the current one became runnable for instance. When all changes have been applied, the rescheduling procedure is then called to consider those changes, and possibly replace the current thread by another.<p>
 As a notable exception to the previous principle however, every action which ends up suspending or deleting the current thread begets an immediate call to the rescheduling procedure on behalf of the service causing the state transition. For instance, self-suspension, self-destruction, or sleeping on a synchronization object automatically leads to a call to the rescheduling procedure, therefore the caller does not need to explicitely issue <a class="el" href="group__pod.html#a27">xnpod_schedule()</a> after such operations.<p>
 The rescheduling procedure always leads to a null-effect if the scheduler is locked (XNLOCK bit set in the status mask of the running thread), or if it is called on behalf of an ISR or callout.<p>
 Calling this procedure with no applicable context switch pending is harmless and simply leads to a null-effect.<p>
@@ -928,7 +928,7 @@ This internal routine should NEVER be used directly by the upper interfaces. It 
 <li>XNPOD_SCHEDLIFO causes the target thread to be inserted at front of its priority group in the ready queue. Otherwise, the FIFO ordering is applied.</li></ul>
 <p>
 <ul>
-<li>XNPOD_NOSWITCH reorders the ready queue without switching contexts. This feature is used by the nanokernel mutex code to preserve the atomicity of some operations. </li></ul>
+<li>XNPOD_NOSWITCH reorders the ready queue without switching contexts. This feature is used by the nucleus mutex code to preserve the atomicity of some operations. </li></ul>
 </p>
     </td>
   </tr>
@@ -976,12 +976,12 @@ This internal routine should NEVER be used directly by the upper interfaces. It 
 <p>
 Change a thread's control mode. 
 <p>
-Change the control mode of a given thread. The control mode affects the behaviour of the nanokernel regarding the specified thread.<p>
+Change the control mode of a given thread. The control mode affects the behaviour of the nucleus regarding the specified thread.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>thread</em>&nbsp;</td><td>The descriptor address of the affected thread.</td></tr>
     <tr><td valign=top><em>clrmask</em>&nbsp;</td><td>Clears the corresponding bits from the control field before setmask is applied. The scheduler lock held by the current thread can be forcibly released by passing the XNLOCK bit in this mask. In this case, the lock nesting count is also reset to zero.</td></tr>
-    <tr><td valign=top><em>setmask</em>&nbsp;</td><td>The new thread mode. The following flags can be part of this bitmask, each of them affecting the nanokernel behaviour regarding the thread:</td></tr>
+    <tr><td valign=top><em>setmask</em>&nbsp;</td><td>The new thread mode. The following flags can be part of this bitmask, each of them affecting the nucleus behaviour regarding the thread:</td></tr>
   </table>
 </dl>
 <ul>
@@ -1087,9 +1087,9 @@ Context: This routine can be called on behalf of a thread or from the initializa
     <td>
 
 <p>
-Set the nanokernel idea of time. 
+Set the nucleus idea of time. 
 <p>
-The nanokernel tracks the current time as a monotonously increasing count of ticks announced by the timer source since the epoch. The epoch is initially defined by the time the nanokernel has started. This service changes the epoch. Running timers use a different time base thus are not affected by this operation. The nanokernel time is only accounted when the system timer runs in periodic mode.<p>
+The nucleus tracks the current time as a monotonously increasing count of ticks announced by the timer source since the epoch. The epoch is initially defined by the time the nucleus has started. This service changes the epoch. Running timers use a different time base thus are not affected by this operation. The nucleus time is only accounted when the system timer runs in periodic mode.<p>
 Side-effect:<p>
 <ul>
 <li>This routine does not call the rescheduling procedure.</li></ul>
@@ -1125,13 +1125,13 @@ Context: This routine can be called on behalf of a thread or ISR.     </td>
 <p>
 Default shutdown handler. 
 <p>
-Forcibly shutdowns the active pod. All existing nanokernel threads (but the root one) are terminated, and the system heap is freed.<p>
+Forcibly shutdowns the active pod. All existing nucleus threads (but the root one) are terminated, and the system heap is freed.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign=top><em>xtype</em>&nbsp;</td><td>An exit code passed to the host environment who started the nanokernel. Zero is always interpreted as a successful return.</td></tr>
+    <tr><td valign=top><em>xtype</em>&nbsp;</td><td>An exit code passed to the host environment who started the nucleus. Zero is always interpreted as a successful return.</td></tr>
   </table>
 </dl>
-The nanokernel will not call this routine directly but rather use the routine pointed to at by the pod.svctable.shutdown member in the service table. This allows upper interfaces to interpose their own shutdown handlers so that they have their word before any action is taken. Usually, the interface-defined handlers should end up calling <a class="el" href="group__pod.html#a8">xnpod_shutdown()</a> after their own housekeeping chores have been carried out.<p>
+The nucleus will not call this routine directly but rather use the routine pointed to at by the pod.svctable.shutdown member in the service table. This allows upper interfaces to interpose their own shutdown handlers so that they have their word before any action is taken. Usually, the interface-defined handlers should end up calling <a class="el" href="group__pod.html#a8">xnpod_shutdown()</a> after their own housekeeping chores have been carried out.<p>
 Context: This routine must be called on behalf of the root thread (e.g. a cleanup_module() routine).     </td>
   </tr>
 </table>
@@ -1200,7 +1200,7 @@ Starts a (newly) created thread, scheduling it for the first time. This call rel
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>thread</em>&nbsp;</td><td>The descriptor address of the affected thread which must have been previously initialized by the <a class="el" href="group__pod.html#a12">xnpod_init_thread()</a> service.</td></tr>
-    <tr><td valign=top><em>mode</em>&nbsp;</td><td>The initial thread mode. The following flags can be part of this bitmask, each of them affecting the nanokernel behaviour regarding the started thread:</td></tr>
+    <tr><td valign=top><em>mode</em>&nbsp;</td><td>The initial thread mode. The following flags can be part of this bitmask, each of them affecting the nucleus behaviour regarding the started thread:</td></tr>
   </table>
 </dl>
 <ul>
@@ -1220,7 +1220,7 @@ Starts a (newly) created thread, scheduling it for the first time. This call rel
     <tr><td valign=top><em>imask</em>&nbsp;</td><td>The interrupt mask that should be asserted when the thread starts. The processor interrupt state will be set to the given value when the thread starts running. The interpretation of this value might be different across real-time layers, but a non-zero value should always mark an interrupt masking in effect (e.g. cli()). Conversely, a zero value should always mark a fully preemptible state regarding interrupts (i.e. sti()).</td></tr>
     <tr><td valign=top><em>affinity</em>&nbsp;</td><td>The processor affinity of this thread. Passing zero is a legitimate value meaning "any cpu".</td></tr>
     <tr><td valign=top><em>entry</em>&nbsp;</td><td>The address of the thread's body routine. In other words, it is the thread entry point.</td></tr>
-    <tr><td valign=top><em>cookie</em>&nbsp;</td><td>A user-defined opaque cookie the nanokernel will pass to the emerging thread as the sole argument of its entry point.</td></tr>
+    <tr><td valign=top><em>cookie</em>&nbsp;</td><td>A user-defined opaque cookie the nucleus will pass to the emerging thread as the sole argument of its entry point.</td></tr>
   </table>
 </dl>
 The START hooks are called on behalf of the calling context (if any).<p>
@@ -1272,12 +1272,12 @@ Context: This routine must be called on behalf of a thread.     </td>
 <p>
 Start the system timer. 
 <p>
-The nanokernel needs a time source to provide the time-related services to the upper interfaces. <a class="el" href="group__pod.html#a35">xnpod_start_timer()</a> tunes the timer hardware so that a user-defined routine is called according to a given frequency. On architectures that provide a oneshot-programmable time source, the system timer can operate either in aperiodic or periodic mode. Using the aperiodic mode still allows to run periodic nanokernel timers over it: the underlying hardware will simply be reprogrammed after each tick by the timer manager using the appropriate interval value (see <a class="el" href="nucleus_2timer_8c.html#a5">xntimer_start()</a>).<p>
+The nucleus needs a time source to provide the time-related services to the upper interfaces. <a class="el" href="group__pod.html#a35">xnpod_start_timer()</a> tunes the timer hardware so that a user-defined routine is called according to a given frequency. On architectures that provide a oneshot-programmable time source, the system timer can operate either in aperiodic or periodic mode. Using the aperiodic mode still allows to run periodic nucleus timers over it: the underlying hardware will simply be reprogrammed after each tick by the timer manager using the appropriate interval value (see <a class="el" href="nucleus_2timer_8c.html#a5">xntimer_start()</a>).<p>
 The time interval that elapses between two consecutive invocations of the handler is called a tick.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>nstick</em>&nbsp;</td><td>The timer period in nanoseconds. XNPOD_DEFAULT_TICK can be used to set this value according to the arch-dependent settings. If this parameter is equal to XNPOD_APERIODIC_TICK, the underlying hardware timer is set to operate in oneshot-programming mode. In this mode, timing accuracy is higher - since it is not rounded to a constant time slice - at the expense of a lesser efficicency when many timers are simultaneously active. The aperiodic mode gives better results in configuration involving a few threads requesting timing services over different time scales that cannot be easily expressed as multiples of a single base tick, or would lead to a waste of high frequency periodical ticks.</td></tr>
-    <tr><td valign=top><em>handler</em>&nbsp;</td><td>The address of the tick handler which will process each incoming tick. XNPOD_DEFAULT_TICKHANDLER can be passed to use the system-defined entry point (i.e. <a class="el" href="group__pod.html#a37">xnpod_announce_tick()</a>). In any case, a user-supplied handler should end up calling <a class="el" href="group__pod.html#a37">xnpod_announce_tick()</a> to inform the nanokernel of the incoming tick.</td></tr>
+    <tr><td valign=top><em>handler</em>&nbsp;</td><td>The address of the tick handler which will process each incoming tick. XNPOD_DEFAULT_TICKHANDLER can be passed to use the system-defined entry point (i.e. <a class="el" href="group__pod.html#a37">xnpod_announce_tick()</a>). In any case, a user-supplied handler should end up calling <a class="el" href="group__pod.html#a37">xnpod_announce_tick()</a> to inform the nucleus of the incoming tick.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned on success. Otherwise:</dd></dl>
@@ -1432,7 +1432,7 @@ Context: This routine can be called on behalf of a thread or ISR.<p>
 <p>
 Default fault handler. 
 <p>
-This is the default handler which is called whenever an uncontrolled exception or fault is caught. If the fault is caught on behalf of a real-time thread, the fault handler stored into the service table (svctable.faulthandler) is invoked and the fault is not propagated to the host system. Otherwise, the fault is unhandled by the nanokernel and simply propagated.<p>
+This is the default handler which is called whenever an uncontrolled exception or fault is caught. If the fault is caught on behalf of a real-time thread, the fault handler stored into the service table (svctable.faulthandler) is invoked and the fault is not propagated to the host system. Otherwise, the fault is unhandled by the nucleus and simply propagated.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign=top><em>fltinfo</em>&nbsp;</td><td>An opaque pointer to the arch-specific buffer describing the fault. The actual layout is defined by the xnarch_fltinfo_t type in each arch-dependent layer file. </td></tr>
@@ -1558,7 +1558,7 @@ This internal routine is called on behalf of a (re)starting thread's prologue be
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 17:10:18 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 22:31:08 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

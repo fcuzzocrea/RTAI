@@ -32,12 +32,12 @@
 : <a class="el" href="pipe_8c.html#a11">pipe.c</a><li>rt_pipe_stream()
 : <a class="el" href="pipe_8c.html#a13">pipe.c</a><li>rt_pipe_write()
 : <a class="el" href="pipe_8c.html#a12">pipe.c</a><li>rt_registry_bind()
-: <a class="el" href="registry_8c.html#a18">registry.c</a><li>rt_registry_enter()
-: <a class="el" href="registry_8c.html#a17">registry.c</a><li>rt_registry_fetch()
-: <a class="el" href="registry_8c.html#a22">registry.c</a><li>rt_registry_get()
-: <a class="el" href="registry_8c.html#a20">registry.c</a><li>rt_registry_put()
-: <a class="el" href="registry_8c.html#a21">registry.c</a><li>rt_registry_remove()
-: <a class="el" href="registry_8c.html#a19">registry.c</a><li>rt_sem_create()
+: <a class="el" href="registry_8c.html#a15">registry.c</a><li>rt_registry_enter()
+: <a class="el" href="registry_8c.html#a14">registry.c</a><li>rt_registry_fetch()
+: <a class="el" href="registry_8c.html#a19">registry.c</a><li>rt_registry_get()
+: <a class="el" href="registry_8c.html#a17">registry.c</a><li>rt_registry_put()
+: <a class="el" href="registry_8c.html#a18">registry.c</a><li>rt_registry_remove()
+: <a class="el" href="registry_8c.html#a16">registry.c</a><li>rt_sem_create()
 : <a class="el" href="sem_8h.html#a6">sem.h</a>, <a class="el" href="sem_8c.html#a2">sem.c</a><li>rt_sem_delete()
 : <a class="el" href="sem_8h.html#a7">sem.h</a>, <a class="el" href="sem_8c.html#a3">sem.c</a><li>rt_sem_inquire()
 : <a class="el" href="sem_8h.html#a10">sem.h</a>, <a class="el" href="sem_8c.html#a6">sem.c</a><li>rt_sem_p()
@@ -64,7 +64,20 @@
 : <a class="el" href="timer_8h.html#a9">timer.h</a>, <a class="el" href="skins_2rtai_2timer_8c.html#a6">timer.c</a><li>rt_timer_stop()
 : <a class="el" href="timer_8h.html#a10">timer.h</a>, <a class="el" href="skins_2rtai_2timer_8c.html#a7">timer.c</a><li>rt_timer_ticks2ns()
 : <a class="el" href="timer_8h.html#a4">timer.h</a>, <a class="el" href="skins_2rtai_2timer_8c.html#a1">timer.c</a><li>rt_timer_tsc()
-: <a class="el" href="timer_8h.html#a7">timer.h</a>, <a class="el" href="skins_2rtai_2timer_8c.html#a4">timer.c</a></ul>
+: <a class="el" href="timer_8h.html#a7">timer.h</a>, <a class="el" href="skins_2rtai_2timer_8c.html#a4">timer.c</a><li>rthal_disable_irq()
+: <a class="el" href="hal_8c.html#a37">hal.c</a><li>rthal_enable_irq()
+: <a class="el" href="hal_8c.html#a36">hal.c</a><li>rthal_free_linux_irq()
+: <a class="el" href="hal_8c.html#a40">hal.c</a><li>rthal_free_srq()
+: <a class="el" href="hal_8c.html#a43">hal.c</a><li>rthal_free_timer()
+: <a class="el" href="hal_8c.html#a52">hal.c</a><li>rthal_pend_linux_irq()
+: <a class="el" href="hal_8c.html#a41">hal.c</a><li>rthal_pend_linux_srq()
+: <a class="el" href="hal_8c.html#a44">hal.c</a><li>rthal_request_linux_irq()
+: <a class="el" href="hal_8c.html#a39">hal.c</a><li>rthal_request_srq()
+: <a class="el" href="hal_8c.html#a42">hal.c</a><li>rthal_request_timer()
+: <a class="el" href="hal_8c.html#a51">hal.c</a><li>rthal_shutdown_irq()
+: <a class="el" href="hal_8c.html#a35">hal.c</a><li>rthal_startup_irq()
+: <a class="el" href="hal_8c.html#a34">hal.c</a><li>rthal_unmask_irq()
+: <a class="el" href="hal_8c.html#a38">hal.c</a></ul>
 <h3><a class="anchor" name="index_x">- x -</a></h3><ul>
 <li>xnheap_alloc()
 : <a class="el" href="heap_8c.html#a5">heap.c</a><li>xnheap_destroy()
@@ -117,8 +130,9 @@
 : <a class="el" href="synch_8c.html#a4">synch.c</a><li>xnsynch_sleep_on()
 : <a class="el" href="synch_8c.html#a2">synch.c</a><li>xnsynch_wakeup_one_sleeper()
 : <a class="el" href="synch_8c.html#a5">synch.c</a><li>xnsynch_wakeup_this_sleeper()
-: <a class="el" href="synch_8c.html#a6">synch.c</a></ul>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 17:10:18 2004 for RTAI API by
+: <a class="el" href="synch_8c.html#a6">synch.c</a><li>xntimer_do_timers()
+: <a class="el" href="nucleus_2timer_8c.html#a9">timer.c</a></ul>
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 22:31:08 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -168,7 +168,7 @@ int rt_mutex_delete (RT_MUTEX *mutex)
 }
 
 /**
- * @fn int rt_mutex_lock(RT_MUTEX *lock)
+ * @fn int rt_mutex_lock(RT_MUTEX *mutex)
  * @brief Acquire a mutex.
  *
  * Attempt to lock a mutex. The calling task is blocked until the
@@ -329,7 +329,7 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
  * be written to.
 
  * @return 0 is returned and status information is written to the
- * structure pointed at by @info upon success. Otherwise:
+ * structure pointed at by @a info upon success. Otherwise:
  *
  * - -EINVAL is returned if @a sem is not a mutex descriptor.
  *

@@ -14,7 +14,6 @@ CONFIG_RTAI_LINUXDIR="/home/rpm/kbuild/linux-2.6.5-adeos"
 # RTAI Documentation
 #
 # CONFIG_RTAI_DOC_DOX is not set
-# CONFIG_RTAI_DOC_LATEX is not set
 # CONFIG_RTAI_DOC_DBX is not set
 CONFIG_RTAI_OPT_EXPERT=y
 # CONFIG_RTAI_OPT_KSYMS is not set

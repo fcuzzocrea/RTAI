@@ -5,7 +5,7 @@
 <title>1.1. Introduction</title>
 <link rel="stylesheet" href="../css/rtai.css" type="text/css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
-<link rel="home" href="index.html" title="The XENOMAI project Implementing a RTOS emulation framework
+<link rel="home" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux">
 <link rel="up" href="whitepaper.html" title="1. White paper">
 <link rel="previous" href="whitepaper.html" title="1. White paper">
@@ -40,23 +40,22 @@
       application designers relying on traditional RTOS to move as
       smoothly as possible to the GNU/</p>
 <p>There is a lack of common software framework for
-      developing these emulators, whereas the behavioral similarities
+      developing these emulators, whereas the behavioural similarities
       between the traditional RTOS are obvious.</p>
-<p>The Xenomai project aims at fulfilling this gap, by
+<p>The Xenomai technology aims at fulfilling this gap, by
       providing a consistent architecture-neutral and generic
       emulation layer taking advantage of these similarities. It is
       also committed to provide an increasing set of traditional RTOS
       emulators built on top of this layer.</p>
-<p>The Xenomai project relies on the common features and
-      behaviors found between many embedded traditional RTOS,
-      especially from the thread scheduling and synchronization
-      standpoints. These similarities are exploited to implement a
-      nanokernel exporting a set of generic services. These services
-      grouped in a high-level interface can be used in turn to
-      implement emulation modules of real-time application programming
-      interfaces, which mimic the corresponding real-time kernel
-      APIs.</p>
-<p>A similar approach was used for the <a href="http://freesoftware.fsf.org/projects/carbonkernel" target="_top">CarbonKernel</a>
+<p>Xenomai relies on the common features and behaviours found
+      between many embedded traditional RTOS, especially from the
+      thread scheduling and synchronization standpoints. These
+      similarities are exploited to implement a nucleus exporting a
+      set of generic services. These services grouped in a high-level
+      interface can be used in turn to implement emulation modules of
+      real-time application programming interfaces, which mimic the
+      corresponding real-time kernel APIs.</p>
+<p>A similar approach was used for the <a href="http://savannah.gnu.org/projects/carbonkernel/" target="_top">CarbonKernel</a>
       project [1] in the simulation field, in which RTOS simulation
       models are built on top of a generic virtual RTOS based on
       event-driven techniques. </p>

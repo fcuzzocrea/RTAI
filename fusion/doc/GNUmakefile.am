@@ -1,1 +1,4 @@
 SUBDIRS=docbook doxygen
+
+generate-doc-and-commit:
+	srcdir=$(srcdir) $(top_srcdir)/scripts/generate-doc-and-commit

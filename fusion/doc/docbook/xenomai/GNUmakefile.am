@@ -1,6 +1,6 @@
 include ../docbook.rules
 
-EXTRA_DIST=guide.xml intro.xml testsuite.xml xenomai.xml
+EXTRA_DIST=xenomai.xml
 
 DBX_HTML_DOCS=xenomai
 DBX_HTML_CSS=rtai.css

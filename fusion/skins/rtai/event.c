@@ -427,7 +427,7 @@ int rt_event_pend (RT_EVENT *event,
  * will be written to.
 
  * @return 0 is returned and status information is written to the
- * structure pointed at by @info upon success. Otherwise:
+ * structure pointed at by @a info upon success. Otherwise:
  *
  * - -EINVAL is returned if @a event is not a event group descriptor.
  *

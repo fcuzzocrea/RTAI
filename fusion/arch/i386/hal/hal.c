@@ -308,6 +308,8 @@ int rthal_unmask_irq (unsigned irq)
  * application can monitor Linux interrupts handling at its will. The
  * handler appears in /proc/interrupts.
  *
+ * @param irq is the IRQ level to which the handler will be associated.
+ *
  * @param handler pointer on the interrupt service routine to be installed.
  *
  * @param name is a name for /proc/interrupts.
@@ -318,8 +320,9 @@ int rthal_unmask_irq (unsigned irq)
  * The interrupt service routine can be uninstalled using
  * rthal_free_linux_irq().
  *
- * @retval 0 on success.  @retval -EINVAL if @a irq is not a valid
- * external IRQ number or handler is @c NULL.
+ * @retval 0 on success.
+ * @retval -EINVAL if @a irq is not a valid external IRQ number or handler
+ * is @c NULL.
  */
 int rthal_request_linux_irq (unsigned irq,
 			     irqreturn_t (*handler)(int irq,

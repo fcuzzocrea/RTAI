@@ -33,7 +33,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../..
+top_builddir = ../../..
 
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
@@ -64,8 +64,6 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CONFIG_RTAI_DOC_DOX_FALSE = @CONFIG_RTAI_DOC_DOX_FALSE@
 CONFIG_RTAI_DOC_DOX_TRUE = @CONFIG_RTAI_DOC_DOX_TRUE@
-CONFIG_RTAI_DOC_LATEX_FALSE = @CONFIG_RTAI_DOC_LATEX_FALSE@
-CONFIG_RTAI_DOC_LATEX_TRUE = @CONFIG_RTAI_DOC_LATEX_TRUE@
 CONFIG_RTAI_MAINT_FALSE = @CONFIG_RTAI_MAINT_FALSE@
 CONFIG_RTAI_MAINT_PGM_FALSE = @CONFIG_RTAI_MAINT_PGM_FALSE@
 CONFIG_RTAI_MAINT_PGM_TRUE = @CONFIG_RTAI_MAINT_PGM_TRUE@
@@ -219,54 +217,71 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-EXTRA_DIST = \
-	appendix \
-	development \
-	internals \
-	intro \
-	services
 
+# -*- makefile -*-
+dbx_docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
-PS_DOCS = RTAI-RefGuide.ps 
-PDF_DOCS = RTAI-RefGuide.pdf
-@CONFIG_RTAI_DOC_LATEX_TRUE@PS_DOCSDIR = ./
+dbx_top_distdir = $(doc_top_distdir)
+DBX_SRC_ROOT = $(top_srcdir)/$(DBX_DOC_ROOT)
+DBX_BUILD_ROOT = $(top_builddir)/$(DBX_DOC_ROOT)
+DBX_DIST_ROOT = $(dbx_top_distdir)/$(DBX_GEN_DOC_ROOT)
 
-@CONFIG_RTAI_DOC_LATEX_FALSE@PS_DOCSDIR = $(srcdir)/../generated/ps/
-@CONFIG_RTAI_DOC_LATEX_TRUE@PDF_DOCSDIR = ./
-@CONFIG_RTAI_DOC_LATEX_FALSE@PDF_DOCSDIR = $(srcdir)/../generated/pdf/
+DBX_XSLTPROC_FLAGS = --catalogs --xinclude $(DBX_MAYBE_NONET)
 
-# latex documentation
-@CONFIG_RTAI_DOC_LATEX_TRUE@TEX_SRCS = $(shell find $(srcdir) -name "*.tex")
+@DBX_DOC_FALSE@DBX_HTML_TRANSFORM = cat
+@DBX_DOC_TRUE@DBX_HTML_TRANSFORM = sed "s,\(src\|href\)=\"$(esc_html_srcroot),\1=\"..,g"
+@DBX_DOC_FALSE@HTML_DOCSDIR = $(top_srcdir)/$(DBX_GEN_DOC_ROOT)/html/
+@DBX_DOC_TRUE@HTML_DOCSDIR = ./
+@DBX_DOC_FALSE@PDF_DOCSDIR = $(top_srcdir)/$(DBX_GEN_DOC_ROOT)/pdf/
+@DBX_DOC_TRUE@PDF_DOCSDIR = ./
+@DBX_ABS_SRCDIR_FALSE@@DBX_DOC_TRUE@html_srcroot = ../$(DBX_SRC_ROOT)
 
-@CONFIG_RTAI_DOC_LATEX_TRUE@CLEANFILES = *.aux *.dvi *.log *.idx *.ilg *.ind *.toc *.out
-@CONFIG_RTAI_DOC_LATEX_TRUE@DISTCLEANFILES = *.pdf *.ps
+# How to find the Docbook XML source root from an HTML subdir depends on whether
+# $(top_srcdir) is an absolute or relative path, which is tested by configure
+# and exported in the automake conditional DBX_ABS_SRCDIR.
+@DBX_ABS_SRCDIR_TRUE@@DBX_DOC_TRUE@html_srcroot = $(DBX_SRC_ROOT)
 
-# rules for latex  documentation.
-@CONFIG_RTAI_DOC_LATEX_TRUE@RTAIDOC_TEXINPUTS = .:$(srcdir):$(TEXINPUTS)
-@CONFIG_RTAI_DOC_LATEX_TRUE@LATEX = TEXINPUTS=$(RTAIDOC_TEXINPUTS) latex --interaction @LATEX_MODE@
-@CONFIG_RTAI_DOC_LATEX_TRUE@PDFLATEX = TEXINPUTS=$(RTAIDOC_TEXINPUTS) pdflatex --interaction @LATEX_MODE@
+# So as to have HTML documents browseable in the build directory, they make
+# reference to pictures and CSS in the sources directory. But when installing,
+# pictures and CSS are installed too, so the HTML documents have to be
+# transformed in order to make reference to the installed picutures and
+# CSS. This is what the variable DBX_HTML_TRANSFORM is used for.
+@DBX_DOC_TRUE@esc_html_srcroot = $(subst .,\.,$(html_srcroot))
 
-@CONFIG_RTAI_DOC_LATEX_TRUE@SUFFIXES = pdf dvi tex
+@DBX_DOC_TRUE@DBX_SGML_CATALOG_FILES = $(DBX_BUILD_ROOT)/catalog
+
+DBX_ALL_HTML = $(DBX_HTML_DOCS) $(DBX_HTML_EXTRA)
+
+# installation and distribution of pdf files: use generic rules.
+PDF_DOCS = $(DBX_PDF_DOCS)
 
 docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
 doc_top_distdir = $(top_builddir)/$(PACKAGE)-$(VERSION)
 GEN_DOC_DIST_ROOT = $(doc_top_distdir)/doc/generated
-subdir = doc/latex
+
+EXTRA_DIST = xenomai.xml
+
+DBX_HTML_DOCS = xenomai
+DBX_HTML_CSS = rtai.css
+DBX_HTML_STYLESHEET = ../custom-stylesheets/xsl/html/chunk.xsl
+
+DBX_PDF_DOCS = xenomai.pdf
+DBX_FO_STYLESHEET = ../custom-stylesheets/xsl/fo/docbook.xsl
+subdir = doc/docbook/xenomai
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/rtai_config.h
 CONFIG_CLEAN_FILES =
 DIST_SOURCES =
-DIST_COMMON = $(srcdir)/../install-dist.rules $(srcdir)/GNUmakefile.in \
-	GNUmakefile.am
+DIST_COMMON = $(srcdir)/../docbook.rules $(srcdir)/GNUmakefile.in \
+	$(top_srcdir)/doc/install-dist.rules GNUmakefile.am
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .dvi .pdf .ps .tex
-$(srcdir)/GNUmakefile.in: @MAINTAINER_MODE_TRUE@ GNUmakefile.am $(srcdir)/../install-dist.rules $(top_srcdir)/configure.in $(ACLOCAL_M4)
+$(srcdir)/GNUmakefile.in: @MAINTAINER_MODE_TRUE@ GNUmakefile.am $(srcdir)/../docbook.rules $(top_srcdir)/doc/install-dist.rules $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  doc/latex/GNUmakefile
+	  $(AUTOMAKE) --foreign  doc/docbook/xenomai/GNUmakefile
 GNUmakefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/GNUmakefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
@@ -287,11 +302,11 @@ CTAGS:
 
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
-top_distdir = ../..
+top_distdir = ../../..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
-	$(mkinstalldirs) $(distdir)/./..
+	$(mkinstalldirs) $(distdir)/../../../doc $(distdir)/./..
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -343,18 +358,16 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
-	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool mostlyclean-am
+clean-am: clean-generic clean-libtool clean-local mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
@@ -397,40 +410,124 @@ ps-am:
 uninstall-am: uninstall-info-am uninstall-local
 
 .PHONY: all all-am all-local check check-am clean clean-generic \
-	clean-libtool distclean distclean-generic distclean-libtool \
-	distdir dvi dvi-am info info-am install install-am install-data \
-	install-data-am install-data-local install-exec install-exec-am \
-	install-info install-info-am install-man install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-info-am uninstall-local
+	clean-libtool clean-local distclean distclean-generic \
+	distclean-libtool distdir dvi dvi-am info info-am install \
+	install-am install-data install-data-am install-data-local \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
+	ps ps-am uninstall uninstall-am uninstall-info-am \
+	uninstall-local
 
 
-@CONFIG_RTAI_DOC_LATEX_TRUE@all-local: $(PS_DOCS) $(PDF_DOCS)
+# Document validation :
+# The main document has to be validated using xmllint that supports
+# Xinclude.
+@DBX_DOC_TRUE@%.xml.valid-stamp: %.xml
+@DBX_DOC_TRUE@	@echo Validating $@.
+@DBX_DOC_TRUE@	SGML_CATALOG_FILES=$(DBX_SGML_CATALOG_FILES) \
+@DBX_DOC_TRUE@	$(DBX_LINT) --catalogs --xinclude --noout --postvalid $< && \
+@DBX_DOC_TRUE@	echo timestamp > $@
 
-@CONFIG_RTAI_DOC_LATEX_TRUE@RTAI-RefGuide.dvi RTAI-RefGuide.pdf: $(TEX_SRCS)
+# Titlepage rule.
+@DBX_DOC_TRUE@%.xsl: %.spec.xml
+@DBX_DOC_TRUE@	SGML_CATALOG_FILES=$(DBX_SGML_CATALOG_FILES) \
+@DBX_DOC_TRUE@	$(DBX_XSLTPROC) $(DBX_XSLTPROC_FLAGS) $(XSLTPROC_FLAGS) --output $@ \
+@DBX_DOC_TRUE@ http://docbook.sourceforge.net/release/xsl/current/template/titlepage.xsl $<
 
-@CONFIG_RTAI_DOC_LATEX_TRUE@.tex.pdf:
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@$(PDFLATEX) $<
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@makeindex $*.idx
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@$(PDFLATEX) $<
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@while egrep -q 'Rerun (LaTeX|to get cross-references right)' $*.log; \
-@CONFIG_RTAI_DOC_LATEX_TRUE@	    do $(PDFLATEX) $< || exit 1; \
-@CONFIG_RTAI_DOC_LATEX_TRUE@	done;
+#
+# HTML
+#
+# We use xsltproc with a docbook-xsl stylesheet to generate the xhtml
+# output.
+# 
+# DBX_HTML_STYLESHEET is the relative path to the docbook-xsl stylesheet. Thanks
+#     to make's VPATH, it may be relative to the current build or sources
+#     directory.
+#
+# DBX_HTML_CSS is the name of the CSS. The css file must be in the directory
+#     $DBX_SRC_ROOT/css.
+#
+# The pictures use by the HTML document have to be in the $DBX_SRC_ROOT/pictures
+@DBX_DOC_TRUE@%: %.xml %.xml.valid-stamp $(DBX_HTML_STYLESHEET)
+@DBX_DOC_TRUE@	@echo Generating $@
+@DBX_DOC_TRUE@	$(mkinstalldirs) $@ && \
+@DBX_DOC_TRUE@	deps=($^) && SGML_CATALOG_FILES=$(DBX_SGML_CATALOG_FILES) \
+@DBX_DOC_TRUE@	$(DBX_XSLTPROC) $(DBX_XSLTPROC_FLAGS) $(XSLTPROC_FLAGS) \
+@DBX_DOC_TRUE@	    --stringparam html.stylesheet $(html_srcroot)/css/$(DBX_HTML_CSS) \
+@DBX_DOC_TRUE@	    --stringparam navig.graphics.path $(html_srcroot)/pictures/ \
+@DBX_DOC_TRUE@	    --stringparam admon.graphics.path $(html_srcroot)/pictures/ \
+@DBX_DOC_TRUE@	    --stringparam base.dir $@/ $${deps[2]} $${deps[0]}
 
-@CONFIG_RTAI_DOC_LATEX_TRUE@.tex.dvi:
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@$(LATEX) $<
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@makeindex $*.idx
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@$(LATEX) $<
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@while egrep -q 'Rerun (LaTeX|to get cross-references right)' $*.log; \
-@CONFIG_RTAI_DOC_LATEX_TRUE@	    do $(LATEX) $< || exit 1; \
-@CONFIG_RTAI_DOC_LATEX_TRUE@	done;
+#
+# PDF
+#
+# We use xsltproc with a docbook-xsl stylesheet to generate the output in the
+# .fo format, which is then converted to pdf by FOP.
+# 
+# DBX_HTML_STYLESHEET is the relative path to the docbook-xsl stylesheet. Thanks
+#     to make's VPATH, it may be relative to the current build or sources
+#     directory.
+#
+@DBX_DOC_TRUE@%.fo: %.xml %.xml.valid-stamp $(DBX_FO_STYLESHEET)
+@DBX_DOC_TRUE@	@echo Generating $@
+@DBX_DOC_TRUE@	deps=($^) && SGML_CATALOG_FILES=$(DBX_SGML_CATALOG_FILES) \
+@DBX_DOC_TRUE@	$(DBX_XSLTPROC) $(DBX_XSLTPROC_FLAGS) $(XSLTPROC_FLAGS) --output $@ \
+@DBX_DOC_TRUE@		 --stringparam admon.graphics.path $(DBX_SRC_ROOT)/pictures/ \
+@DBX_DOC_TRUE@		 $${deps[2]} $${deps[0]}
 
-@CONFIG_RTAI_DOC_LATEX_TRUE@.dvi.ps:
-@CONFIG_RTAI_DOC_LATEX_TRUE@	@dvips -o $@ $<
+@DBX_DOC_TRUE@%.pdf: %.fo
+@DBX_DOC_TRUE@	@echo Generating $@...
+@DBX_DOC_TRUE@	$(DBX_FOP) -fo $< -pdf $@
 
-@CONFIG_RTAI_DOC_LATEX_TRUE@.DELETE_ON_ERROR:
+@DBX_DOC_TRUE@clean-dbx-local:
+@DBX_DOC_TRUE@	$(RM) -r $(DBX_HTML_DOCS) $(DBX_PDF_DOCS) *.fo *.xml.valid-stamp
+
+@DBX_DOC_TRUE@clean-local: clean-dbx-local
+
+@DBX_DOC_TRUE@.SECONDARY:
+
+@DBX_DOC_TRUE@.DELETE_ON_ERROR:
+
+@DBX_DOC_TRUE@dbx-xsl-local: $(DBX_XSL_DOCS)
+@DBX_DOC_TRUE@dbx-pdf-local: $(DBX_PDF_DOCS)
+@DBX_DOC_TRUE@dbx-html-local: $(DBX_HTML_DOCS)
+
+@DBX_DOC_TRUE@all-local: dbx-xsl-local dbx-pdf-local dbx-html-local
+
+install-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
+	docs="$^"; \
+	for dir in $$docs; do \
+	    dest=$(DESTDIR)$(dbx_docdir)/html/`basename $$dir`; \
+	    $(mkinstalldirs) $$dest; \
+	    abs_dest=`cd $$dest && pwd` ; \
+            pushd $$dir; \
+	    for f in * ; do \
+	        case $$f in \
+		    *~|CVS|[mM]akefile*|GNUmakefile*);; \
+		    *.html|*.htm) $(DBX_HTML_TRANSFORM) $$f > $$abs_dest/$$f;; \
+		    *) $(INSTALL_DATA) $$f $$abs_dest/$$f;; \
+	        esac; \
+	    done; \
+	    popd; \
+	done
+
+dist-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
+	docs="$^"; \
+	for dir in $$docs; do \
+	    dest=$(DBX_DIST_ROOT)/html/`basename $$dir`; \
+	    $(mkinstalldirs) $$dest && abs_dest=`cd $$dest && pwd` && \
+            pushd $$dir && \
+	    for f in * ; do \
+		case $$f in \
+		    *~|CVS|[mM]akefile*|GNUmakefile*);; \
+		    *.html|*.htm) $(DBX_HTML_TRANSFORM) $$f > $$abs_dest/$$f;; \
+		    *) $(INSTALL_DATA) $$f $$abs_dest/$$f;; \
+	        esac; \
+	    done; \
+	    popd ; \
+	done
 
 install-htmldocs: $(HTML_DOCS:%=$(HTML_DOCSDIR)%)
 	docs="$^"; \
@@ -507,9 +604,9 @@ uninstall-docs:
 	    done; \
         fi
 
-install-data-local: install-docs-local
+install-data-local: install-dbx-htmldocs install-docs-local
 
-dist-hook: dist-docs-hook
+dist-hook: dist-dbx-htmldocs dist-docs-hook
 
 uninstall-local: uninstall-docs
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

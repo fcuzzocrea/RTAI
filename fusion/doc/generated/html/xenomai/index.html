@@ -2,32 +2,33 @@
 <html>
 <head>
 <meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
-<title>The XENOMAI project Implementing a RTOS emulation framework
+<title>Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux</title>
 <link rel="stylesheet" href="../css/rtai.css" type="text/css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
-<meta name="description" content="Xenomai is a GNU/Linux-based framework which aims at being
-      a foundation for a set of traditional RTOS API emulators
-      running on top of a host software architecture, such as RTAI
-      when hard real-time support is required. Generally speaking, this project aims at helping
-      application designers relying on traditional RTOS to move as
-      smoothly as possible to a GNU/Linux-based execution environment,
-      without having to rewrite their application entirely. This paper discusses the motivations for proposing this
+<meta name="description" content="Generally speaking, the Xenomai technology first aims at
+      helping application designers relying on traditional RTOS to
+      move as smoothly as possible to a GNU/Linux-based execution
+      environment, without having to rewrite their application
+      entirely. This paper discusses the motivations for proposing this
       framework, the general observations concerning the traditional
-      RTOS directing this project, and some in-depth details about its
-      undergoing implementation. The Xenomai project has been launched in August 2001. It
-      is hosted by the free
-      software foundation.  Linux is a registered trademark of Linus Torvalds. Other
+      RTOS directing this technology, and some in-depth details about
+      its implementation. The Xenomai project has been launched in August 2001.  It
+      has merged in 2003 with the RTAI project to
+      produce an industrial-grade real-time Free Software platform for
+      GNU/Linux. Xenomai's emulation technology will notably aim at
+      providing a comfortable migration path from proprietary RTOS to
+      RTAI.  Linux is a registered trademark of Linus Torvalds. Other
       trademarks cited in this paper are the property of their
       respective owner. © 2002">
-<link rel="home" href="index.html" title="The XENOMAI project Implementing a RTOS emulation framework
+<link rel="home" href="index.html" title="Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux">
 <link rel="next" href="whitepaper.html" title="1. White paper">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
 <div class="navheader">
 <table width="100%" summary="Navigation header">
-<tr><th colspan="3" align="center">The XENOMAI project Implementing a RTOS emulation framework
+<tr><th colspan="3" align="center">Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux</th></tr>
 <tr>
 <td width="20%" align="left"> </td>
@@ -42,33 +43,33 @@
 <div class="titlepage">
 <div>
 <div><h1 class="title">
-<a name="id2816161"></a>The XENOMAI project Implementing a RTOS emulation framework
+<a name="id2821045"></a>Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux</h1></div>
 <div><p class="releaseinfo">First Edition</p></div>
 <div><div class="author"><h3 class="author">
 <span class="firstname">Philippe</span> <span class="surname">Gerum</span>
 </h3></div></div>
 <div><p class="copyright">Copyright © 2004 </p></div>
-<div><p class="pubdate">January 2004</p></div>
-<div><a href="ln-id2821258.html">Legal Notice</a></div>
+<div><p class="pubdate">April 2004</p></div>
+<div><a href="ln-id2821234.html">Legal Notice</a></div>
 <div><h3 class="corpauthor">Company name</h3></div>
 <div><div class="abstract">
 <p class="title"><b>Abstract</b></p>
-<p>Xenomai is a GNU/Linux-based framework which aims at being
-      a foundation for a set of traditional RTOS API emulators
-      running on top of a host software architecture, such as RTAI
-      when hard real-time support is required.</p>
-<p>Generally speaking, this project aims at helping
-      application designers relying on traditional RTOS to move as
-      smoothly as possible to a GNU/Linux-based execution environment,
-      without having to rewrite their application entirely.</p>
+<p>Generally speaking, the Xenomai technology first aims at
+      helping application designers relying on traditional RTOS to
+      move as smoothly as possible to a GNU/Linux-based execution
+      environment, without having to rewrite their application
+      entirely.</p>
 <p>This paper discusses the motivations for proposing this
       framework, the general observations concerning the traditional
-      RTOS directing this project, and some in-depth details about its
-      undergoing implementation.</p>
-<p>The Xenomai project has been launched in August 2001. It
-      is hosted by the <a href="http://freesoftware.fsf.org/projects/xenomai/" target="_top">free
-      software foundation.</a> </p>
+      RTOS directing this technology, and some in-depth details about
+      its implementation.</p>
+<p>The Xenomai project has been launched in August 2001.  It
+      has merged in 2003 with the <a href="http://www.gna.org/projects/rtai/" target="_top">RTAI project</a> to
+      produce an industrial-grade real-time Free Software platform for
+      GNU/Linux. Xenomai's emulation technology will notably aim at
+      providing a comfortable migration path from proprietary RTOS to
+      RTAI. </p>
 <p>Linux is a registered trademark of Linus Torvalds. Other
       trademarks cited in this paper are the property of their
       respective owner.</p>
@@ -84,10 +85,8 @@
 <dt><span class="sect2"><a href="introduction.html">1.1. Introduction</a></span></dt>
 <dt><span class="sect2"><a href="porting-rtos.html">1.2. Porting traditional RTOS-based applications to GNU/Linux</a></span></dt>
 <dt><span class="sect2"><a href="common-framework.html">1.3. A common emulation framework</a></span></dt>
-<dt><span class="sect2"><a href="xeno-approach.html">1.4. The Xenomai approach</a></span></dt>
-<dt><span class="sect2"><a href="emulating-psos.html">1.5. Emulating pSOS+ on top of Xenomai</a></span></dt>
+<dt><span class="sect2"><a href="nucleus.html">1.4. Nucleus description</a></span></dt>
 </dl></dd>
-<dt><span class="sect1"><a href="autresection.html">2. Autre section</a></span></dt>
 </dl></div>
 </div>
 <hr>

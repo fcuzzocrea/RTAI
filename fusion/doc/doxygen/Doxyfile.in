@@ -363,6 +363,7 @@ WARN_LOGFILE           =
 
 INPUT                  = \
         @top_srcdir@/nucleus \
+        @top_srcdir@/arch \
         @top_srcdir@/skins/rtai \
         @top_srcdir@/doc/doxygen
 

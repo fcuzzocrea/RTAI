@@ -112,8 +112,7 @@
 	   GNU/Linux">
       <title>Porting traditional RTOS-based applications to GNU/Linux</title>
 
-      <para>The idea of using GNU/Linux <note> <para> Ceci est une
-      petite note sur GNU/Linux</para></note> as an embedded system
+      <para>The idea of using GNU/Linux as an embedded system
       with real-time capabilities is not novel. The reader can refer
       to Jerry Epplin's article in the October 97 issue of Embedded
       Systems Programming for a discussion about GNU/Linux potential

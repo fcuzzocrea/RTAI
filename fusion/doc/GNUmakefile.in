@@ -51,8 +51,6 @@ CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CONFIG_RTAI_DOC_DOX_FALSE = @CONFIG_RTAI_DOC_DOX_FALSE@
 CONFIG_RTAI_DOC_DOX_TRUE = @CONFIG_RTAI_DOC_DOX_TRUE@
-CONFIG_RTAI_DOC_LATEX_FALSE = @CONFIG_RTAI_DOC_LATEX_FALSE@
-CONFIG_RTAI_DOC_LATEX_TRUE = @CONFIG_RTAI_DOC_LATEX_TRUE@
 CONFIG_RTAI_MAINT_FALSE = @CONFIG_RTAI_MAINT_FALSE@
 CONFIG_RTAI_MAINT_PGM_FALSE = @CONFIG_RTAI_MAINT_PGM_FALSE@
 CONFIG_RTAI_MAINT_PGM_TRUE = @CONFIG_RTAI_MAINT_PGM_TRUE@
@@ -502,6 +500,9 @@ uninstall-info: uninstall-info-recursive
 	uninstall uninstall-am uninstall-info-am \
 	uninstall-info-recursive uninstall-recursive
 
+
+generate-doc-and-commit:
+	srcdir=$(srcdir) $(top_srcdir)/scripts/generate-doc-and-commit
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

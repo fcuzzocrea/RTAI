@@ -24,9 +24,9 @@ echo done
 
 echo 'Generating documentation in the build tree.'
 [ -d tmp-dist ] && rm -Rf tmp-dist
-mkdir -p tmp-dist/fusion-0.1
 make clean
-make doc_top_distdir=`pwd`/tmp-dist top_distdir=`pwd`/tmp-dist distdir
+mkdir tmp-dist
+make doc_top_distdir=`pwd`/tmp-dist distdir=./tmp-dist distdir
 
 if ! [ -d tmp-dist/doc/generated ]; then 
     die Something went wrong when generating the documentation.
@@ -82,4 +82,3 @@ echo -n 'Adding new files...'
     cvs add "${file[*]}"
 done
 echo `cat "$builddir/tmp-dist/added_files"` done.
-

@@ -30,7 +30,7 @@
  */
 
 /**
-v * @defgroup hal Hardware abstraction layer.
+ * @defgroup hal Hardware abstraction layer.
  *
  * Basic architecture-dependent services used by the real-time
  * nucleus.
@@ -316,14 +316,14 @@ unsigned long rthal_calibrate_timer (void)
 
     flags = rthal_critical_enter(NULL);
 
-    outb(0x34,0x43);
+    outb(0x34,PIT_MODE);
 
     t = rthal_rdtsc();
 
     for (i = 0; i < 10000; i++)
 	{ 
-	outb(LATCH & 0xff,0x40);
-	outb(LATCH >> 8,0x40);
+	outb(LATCH & 0xff,PIT_CH0);
+	outb(LATCH >> 8,PIT_CH0);
 	}
 
     dt = rthal_rdtsc() - t;
@@ -347,16 +347,16 @@ int rthal_request_timer (void (*handler)(void),
 	unsigned period;
 	period = (unsigned)rthal_llimd(nstick,RTHAL_TIMER_FREQ,1000000000);
 	if (period > LATCH) period = LATCH;
-	outb(0x34,0x43);
-	outb(period & 0xff,0x40);
-	outb(period >> 8,0x40);
+	outb(0x34,PIT_MODE);
+	outb(period & 0xff,PIT_CH0);
+	outb(period >> 8,PIT_CH0);
 	}
     else
 	{
 	/* Oneshot setup for 8254 channel #0. */
-	outb(0x30,0x43);
-	outb(LATCH & 0xff,0x40);
-	outb(LATCH >> 8,0x40);
+	outb(0x30,PIT_MODE);
+	outb(LATCH & 0xff,PIT_CH0);
+	outb(LATCH >> 8,PIT_CH0);
 	}
 
     rthal_release_irq(RTHAL_8254_IRQ);
@@ -376,9 +376,9 @@ void rthal_release_timer (void)
     unsigned long flags;
 
     flags = rthal_critical_enter(NULL);
-    outb(0x34,0x43);
-    outb(LATCH & 0xff,0x40);
-    outb(LATCH >> 8,0x40);
+    outb(0x34,PIT_MODE);
+    outb(LATCH & 0xff,PIT_CH0);
+    outb(LATCH >> 8,PIT_CH0);
     rthal_release_irq(RTHAL_8254_IRQ);
 
     rthal_critical_exit(flags);
@@ -712,9 +712,9 @@ rthal_time_t rthal_get_8254_tsc (void)
 
     rthal_hw_lock(flags); /* Local hw masking is required here. */
 
-    outb(0xd8,0x43);
-    c2 = inb(0x42);
-    inc = rthal_last_8254_counter2 - (c2 |= (inb(0x42) << 8));
+    outb(0xd8,PIT_MODE);
+    c2 = inb(PIT_CH2);
+    inc = rthal_last_8254_counter2 - (c2 |= (inb(PIT_CH2) << 8));
     rthal_last_8254_counter2 = c2;
     t = (rthal_ts_8254 += (inc > 0 ? inc : inc + RTHAL_8254_COUNT2LATCH));
 

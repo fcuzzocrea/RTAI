@@ -1,4 +1,5 @@
 /**
+ * @file
  * This file is part of the RTAI project.
  *
  * @note Copyright (C) 2004 Philippe Gerum <rpm@xenomai.org> 
@@ -170,7 +171,7 @@ RTIME rt_timer_tsc (void) {
     return xnarch_get_cpu_tsc();
 }
 
-/*!
+/**
  * @fn void rt_timer_spin(RTIME ns)
  * @brief Busy wait burning CPU cycles.
  *
@@ -245,9 +246,9 @@ void rt_timer_spin (RTIME ns)
  * initialization code.
  */
 
-int rt_timer_start (RTIME tickval) {
+int rt_timer_start (RTIME nstick) {
 
-    return xnpod_start_timer(tickval,XNPOD_DEFAULT_TICKHANDLER);
+    return xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 }
 
 /**

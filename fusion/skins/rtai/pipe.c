@@ -1,4 +1,5 @@
 /**
+ * @file
  * This file is part of the RTAI project.
  *
  * @note Copyright (C) 2004 Philippe Gerum <rpm@xenomai.org> 
@@ -95,8 +96,7 @@ void __pipe_pkg_cleanup (void)
 }
 
 /**
- * @fn int rt_pipe_open(RT_PIPE *pipe,
-		          int minor)
+ * @fn int rt_pipe_open(RT_PIPE *pipe, int minor)
  * @brief Open a pipe.
  *
  * This service opens a bi-directional communication channel allowing
@@ -108,6 +108,8 @@ void __pipe_pkg_cleanup (void)
  * the pipe-related data.  This descriptor must always be valid while
  * the pipe is active therefore it must be allocated in permanent
  * memory.
+ *
+ * @param minor The minor number of the device associated with the pipe.
  *
  * @return 0 is returned upon success. Otherwise:
  *
@@ -390,9 +392,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
 }
 
 /**
- * @fn int rt_pipe_stream(RT_PIPE *pipe,
-                          void *buf,
-			     size_t size)
+ * @fn int rt_pipe_stream(RT_PIPE *pipe, const void *buf, size_t size)
  *
  * @brief Stream bytes to a pipe.
  *
@@ -514,7 +514,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
 }
 
 /**
- * @fn int rt_pipe_flush(RT_PIPE_MSG *msg)
+ * @fn int rt_pipe_flush(RT_PIPE *pipe)
  *
  * @brief Flush the pipe.
  *

@@ -1,4 +1,5 @@
 /**
+ * @file
  * This file is part of the RTAI project.
  *
  * @note Copyright (C) 2004 Philippe Gerum <rpm@xenomai.org> 
@@ -77,7 +78,7 @@ RTIME rt_timer_tsc(void);
 
 void rt_timer_spin(RTIME ns);
 
-int rt_timer_start(RTIME tickval);
+int rt_timer_start(RTIME nstick);
 
 void rt_timer_stop(void);
 

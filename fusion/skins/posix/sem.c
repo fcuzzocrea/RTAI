@@ -84,7 +84,7 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
 
     cur = pse51_current_thread();
 
-    while (sem_trywait_internal(sem) == EAGAIN)
+    if (sem_trywait_internal(sem) == EAGAIN)
 	{
         xnsynch_sleep_on(&sem->synchbase,
                          to == XN_INFINITE ? to:to - xnpod_get_time());
@@ -147,19 +147,10 @@ int sem_post (sem_t *sem)
         goto error;
 	}
 
-    ++sem->value;
-
-    /* Increment before waking up, because :
-       1- if a thread calls sem_wait between this sem_post and xnsynch_sleep_on
-       returns in sem_timedwait_internal, then its priority is higher than the
-       one of the woken up thread, so it is legitimate for it to get the
-       semaphore ;
-       2- more importantly, since sem_wait is a cancellation point, a sem_post
-       could get lost if the woken up thread was canceled.
-    */
-
     if(xnsynch_wakeup_one_sleeper(&sem->synchbase) != NULL)
         xnpod_schedule();
+    else
+        ++sem->value;
 
     xnlock_put_irqrestore(&nklock, s);
 

@@ -1,4 +1,5 @@
 /**
+ * @file
  * This file is part of the RTAI project.
  *
  * @note Copyright (C) 2004 Philippe Gerum <rpm@xenomai.org> 
@@ -102,7 +103,7 @@ int rt_mutex_create (RT_MUTEX *mutex,
  * called to create it, so this service must be called in order to
  * destroy it afterwards.
  *
- * @param sem The descriptor address of the affected mutex.
+ * @param mutex The descriptor address of the affected mutex.
  *
  * @return 0 is returned upon success. Otherwise:
  *
@@ -307,8 +308,7 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
 }
 
 /**
- * @fn int rt_mutex_inquire(RT_MUTEX *mutex,
-                            RT_MUTEX_INFO *info)
+ * @fn int rt_mutex_inquire(RT_MUTEX *mutex, RT_MUTEX_INFO *info)
  * @brief Inquire about a mutex.
  *
  * Return various information about the status of a given mutex.

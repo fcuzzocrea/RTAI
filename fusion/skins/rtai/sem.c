@@ -1,4 +1,5 @@
 /**
+ * @file
  * This file is part of the RTAI project.
  *
  * @note Copyright (C) 2004 Philippe Gerum <rpm@xenomai.org> 
@@ -316,8 +317,7 @@ int rt_sem_v (RT_SEM *sem)
 }
 
 /**
- * @fn int rt_sem_inquire(RT_SEM *sem,
-                          RT_SEM_INFO *info)
+ * @fn int rt_sem_inquire(RT_SEM *sem, RT_SEM_INFO *info)
  * @brief Inquire about a semaphore.
  *
  * Return various information about the status of a given semaphore.

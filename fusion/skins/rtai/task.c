@@ -1,4 +1,5 @@
 /**
+ * @file
  * This file is part of the RTAI project.
  *
  * @note Copyright (C) 2004 Philippe Gerum <rpm@xenomai.org> 
@@ -706,7 +707,7 @@ int rt_task_sleep (RTIME delay)
  * Delay the execution of the calling task until a given date is
  * reached.
  *
- * @param delay The absolute date in clock ticks to wait before
+ * @param date The absolute date in clock ticks to wait before
  * resuming the task (see note). Passing an already elapsed date
  * causes the task to return immediately with no delay.
  *
@@ -820,8 +821,7 @@ int rt_task_unblock (RT_TASK *task)
 }
 
 /**
- * @fn int rt_task_inquire(RT_TASK *task,
-                           RT_TASK_INFO *info)
+ * @fn int rt_task_inquire(RT_TASK *task, RT_TASK_INFO *info)
  * @brief Inquire about a real-time task.
  *
  * Return various information about the status of a given task.
@@ -883,8 +883,7 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
 }
 
 /**
- * @fn int rt_task_add_hook(int type,
-                            void (*routine)(RT_TASK *));
+ * @fn int rt_task_add_hook(int type, void (*routine)(void *cookie));
  * @brief Install a task hook.
  *
  * The real-time kernel allows to register user-defined routines which

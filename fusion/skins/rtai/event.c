@@ -1,4 +1,5 @@
 /**
+ * @file
  * This file is part of the RTAI project.
  *
  * @note Copyright (C) 2004 Philippe Gerum <rpm@xenomai.org> 
@@ -187,6 +188,8 @@ int rt_event_delete (RT_EVENT *event)
  *
  * @param event The descriptor address of the affected event.
  *
+ * @param mask The set of events to be posted.
+ *
  * @return 0 is returned upon success. Otherwise:
  *
  * - -EINVAL is returned if @a event is not an event group descriptor.
@@ -254,7 +257,7 @@ int rt_event_post (RT_EVENT *event,
 }
 
 /**
- * @fn int rt_event_pend(RT_EVENT *sem,
+ * @fn int rt_event_pend(RT_EVENT *event,
                          unsigned long mask,
                          unsigned long *mask_r,
                          int mode,
@@ -402,8 +405,7 @@ int rt_event_pend (RT_EVENT *event,
 }
 
 /**
- * @fn int rt_event_inquire(RT_EVENT *event,
-                            RT_EVENT_INFO *info)
+ * @fn int rt_event_inquire(RT_EVENT *event, RT_EVENT_INFO *info)
  * @brief Inquire about an event group.
  *
  * Return various information about the status of a specified

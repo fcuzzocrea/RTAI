@@ -128,6 +128,8 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
     barrier();
 }
 
+#define INTERCEPT_IFLAG_RESET()  do { rtai_hw_sti(); } while (0)
+
 #else /* !__KERNEL__ */
 
 /* NOTE: Keep the following routines unfold: this is a compiler

@@ -23,40 +23,30 @@
 
 #define  FUN_USI_LXRT_INDX 3
 
-#define USI_SEM      0
-#define USI_TASKLET  1
-
-#define _REQ_GLB_IRQ 	 	 0
-#define _FREE_GLB_IRQ	 	 1
-#define _STARTUP_IRQ	 	 2
-#define _SHUTDOWN_IRQ	 	 3
-#define _ENABLE_IRQ	 	 4
-#define _DISABLE_IRQ	 	 5
-#define _MASK_AND_ACK_IRQ 	 6
-#define _ACK_IRQ 	  	 7
-#define _UNMASK_IRQ 		 8
-#define _PEND_LINUX_IRQ	 	 9
-#define _INIT_SPIN_LOCK		10
-#define _SPIN_LOCK		11
-#define _SPIN_UNLOCK		12
-#define _SPIN_LOCK_IRQ		13
-#define _SPIN_UNLOCK_IRQ	14
-#define _SPIN_LOCK_IRQSV	15
-#define _SPIN_UNLOCK_IRQRST	16
-#define _GLB_CLI		17
-#define _GLB_STI		18
-#define _GLB_SVFLAGS_CLI	19
-#define _GLB_SVFLAGS		20
-#define _GLB_RSTFLAGS		21
-#define _CLI			22
-#define _STI			23
-#define _SVFLAGS_CLI     	24
-#define _SVFLAGS 		25
-#define _RSTFLAGS		26
-#define _WAIT_INTR		27
-#define _WAIT_INTR_IF		28
-#define _WAIT_INTR_UNTIL	29
-#define _WAIT_INTR_TIMED	30
+#define _STARTUP_IRQ	 	 1
+#define _SHUTDOWN_IRQ	 	 2
+#define _ENABLE_IRQ	 	 3
+#define _DISABLE_IRQ	 	 4
+#define _MASK_AND_ACK_IRQ 	 5
+#define _ACK_IRQ 	  	 6
+#define _UNMASK_IRQ 		 7
+#define _INIT_SPIN_LOCK		 8
+#define _SPIN_LOCK		 9
+#define _SPIN_UNLOCK		10
+#define _SPIN_LOCK_IRQ		11
+#define _SPIN_UNLOCK_IRQ	12
+#define _SPIN_LOCK_IRQSV	13
+#define _SPIN_UNLOCK_IRQRST	14
+#define _GLB_CLI		15
+#define _GLB_STI		16
+#define _GLB_SVFLAGS_CLI	17
+#define _GLB_SVFLAGS		18
+#define _GLB_RSTFLAGS		19
+#define _CLI			20
+#define _STI			21
+#define _SVFLAGS_CLI     	22
+#define _SVFLAGS 		23
+#define _RSTFLAGS		24
 
 #ifdef __KERNEL__
 
@@ -80,23 +70,6 @@ void __rtai_usi_exit(void);
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_PROTO(int, rt_expand_handler_data,(unsigned long data, int *irq))
-{
-	*irq = data & 0xFFFF;
-	return (data & 0xFFFF0000) >> 16;
-}
-
-RTAI_PROTO(int, rt_request_global_irq,(unsigned int irq, void *hook, int hooktype))
-{
-        struct { unsigned int irq; void *hook; int hooktype; } arg = { irq, hook, hooktype };
-        return rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _REQ_GLB_IRQ, &arg).i[LOW];
-}
- 
-RTAI_PROTO(int, rt_free_global_irq,(unsigned int irq))
-{
-        struct { unsigned int irq; } arg = { irq };
-        return rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _FREE_GLB_IRQ, &arg).i[LOW];
-}
  
 RTAI_PROTO(int, rt_startup_irq,(unsigned int irq))
 {
@@ -213,83 +186,35 @@ RTAI_PROTO(void, rt_global_restore_flags,(unsigned long flags))
 	rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _GLB_RSTFLAGS, &arg);
 }
 
-RTAI_PROTO(void, hard_cli,(void))
+RTAI_PROTO(void, rtai_cli,(void))
 {
 	struct { int dummy; } arg = { 0 };
 	rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _CLI, &arg);
 }
 
-RTAI_PROTO(void, hard_sti,(void))
+RTAI_PROTO(void, rtai_sti,(void))
 {
 	struct { int dummy; } arg = { 0 };
 	rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _STI, &arg);
 }
 
-RTAI_PROTO(unsigned long, hard_save_flags_and_cli,(void))
+RTAI_PROTO(unsigned long, rtai_save_flags_and_cli,(void))
 {
 	struct { int dummy; } arg = { 0 };
 	return rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SVFLAGS_CLI, &arg).i[LOW];
 }
  
-RTAI_PROTO(unsigned long, hard_save_flags,(void))
+RTAI_PROTO(unsigned long, rtai_save_flags,(void))
 {
 	struct { int dummy; } arg = { 0 };
 	return rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _SVFLAGS, &arg).i[LOW];
 }
  
-RTAI_PROTO(void, hard_restore_flags,(unsigned long flags))
+RTAI_PROTO(void, rtai_restore_flags,(unsigned long flags))
 {
 	struct { unsigned long flags; } arg = { flags };
 	rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _RSTFLAGS, &arg);
 }
-
-RTAI_PROTO(int, rt_wait_intr,(void *sem, unsigned long *irq))
-{
-	unsigned long lirq;
-	int retval;
-        struct { void *sem; unsigned long *lirq; int size; } arg = { sem, &lirq, sizeof(unsigned long *) };
-	retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR, &arg).i[LOW];
-	if (irq) {
-		*irq = lirq;
-	}
-	return retval;
-}                                                                               
-
-RTAI_PROTO(int, rt_wait_intr_if,(void *sem, unsigned long *irq))
-{
-	unsigned long lirq;
-	int retval;
-        struct { void *sem; unsigned long *lirq; int size; } arg = { sem, &lirq, sizeof(unsigned long *) };
-	retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_IF, &arg).i[LOW];
-	if (irq) {
-		*irq = lirq;
-	}
-	return retval;
-}                                                                               
-
-RTAI_PROTO(int, rt_wait_intr_until,(void *sem, RTIME until, unsigned long *irq))
-{
-	unsigned long lirq;
-	int retval;
-        struct { void *sem; RTIME until; unsigned long *lirq; int size; } arg = { sem, until, &lirq, sizeof(unsigned long *) };
-	retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_UNTIL, &arg).i[LOW];
-	if (irq) {
-		*irq = lirq;
-	}
-	return retval;
-}                                                                               
-
-RTAI_PROTO(int, rt_wait_intr_timed,(void *sem, RTIME delay, unsigned long *irq))
-{
-	unsigned long lirq;
-	int retval;
-        struct { void *sem; RTIME delay; unsigned long *lirq; int size; } arg = { sem, delay, &lirq, sizeof(unsigned long *) };
-	retval = rtai_lxrt(FUN_USI_LXRT_INDX, SIZARG, _WAIT_INTR_TIMED, &arg).i[LOW];
-	if (irq) {
-		*irq = lirq;
-	}
-	return retval;
-}                                                                               
 
 #ifdef __cplusplus
 }

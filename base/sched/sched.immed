@@ -2008,6 +2008,10 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 #endif
 	} while (0);
 
+#ifdef CONFIG_PREEMPT
+	current->cpus_allowed = cpumask_of_cpu(smp_processor_id());
+#endif
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     {
     struct mmreq *p;

@@ -211,6 +211,7 @@ int sem_init (sem_t *sem, int pshared, unsigned int value)
 
     sem->magic = PSE51_SEM_MAGIC;
     inith(&sem->link);
+    appendq(&pse51_semq, &sem->link);    
     xnsynch_init(&sem->synchbase, XNSYNCH_PRIO);
     sem->value = value;
 

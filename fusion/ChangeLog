@@ -1,3 +1,8 @@
+2004-07-23  Marc Kleine-Budde <kleine-budde@gmx.de>
+
+	* skins/posix/sem.c (sem_init): Add newly created semaphores to
+	pse51_semq.
+
 2004-07-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/pipe.c (rt_pipe_alloc): Fix allocation size to

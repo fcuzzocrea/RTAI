@@ -1825,15 +1825,16 @@ static void rt_printk_srq_handler(void);
 
 int __rtai_hal_init (void)
 {
+	unsigned long flags;
+	int trapnr;
+	adattr_t attr;
+
 #ifdef CONFIG_X86_LOCAL_APIC
 	if (!test_bit(X86_FEATURE_APIC, boot_cpu_data.x86_capability)) {
 		printk("RTAI[hal]: ERROR, LOCAL APIC CONFIGURED BUT NOT AVAILABLE/ENABLED\n");
 		return -1;
 	}
 #endif
-	unsigned long flags;
-	int trapnr;
-	adattr_t attr;
 
 	 /* Allocate a virtual interrupt to handle sysreqs within the Linux
             domain. */

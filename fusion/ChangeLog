@@ -1,5 +1,13 @@
 2004-06-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Upgrade the x86 patch to 2.6.7r6c1. Discard
+	older r5 patches since critical fixes are brought by this one,
+	Linux-wise and Adeos-wise.
+
+	* arch/i386/hal/hal.c (rthal_trap_fault): Handle RTAI-originated
+	faults in kernel space caused by on-demand virtual memory
+	mappings.
+
 	* nucleus/shadow.c: Import SMP-related changes.
 
 	* skins/rtai/pipe.c (rt_pipe_open): Set magic number.

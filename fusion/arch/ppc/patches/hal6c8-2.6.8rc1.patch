@@ -237,7 +237,7 @@ diff -uNrp linuxppc-2.5/adeos/Makefile linuxppc-2.5-adeos/adeos/Makefile
 +adeos-$(CONFIG_PPC)	+= ppc.o
 diff -uNrp linuxppc-2.5/adeos/generic.c linuxppc-2.5-adeos/adeos/generic.c
 --- linuxppc-2.5/adeos/generic.c	1970-01-01 01:00:00.000000000 +0100
-+++ linuxppc-2.5-adeos/adeos/generic.c	2004-10-02 22:50:51.000000000 +0200
++++ linuxppc-2.5-adeos/adeos/generic.c	2004-10-04 19:32:59.000000000 +0200
 @@ -0,0 +1,706 @@
 +/*
 + *   linux/adeos/generic.c
@@ -322,7 +322,7 @@ diff -uNrp linuxppc-2.5/adeos/generic.c linuxppc-2.5-adeos/adeos/generic.c
 +	__set_bit(IPIPE_SLEEP_FLAG,&adp->cpudata[n].status);
 +
 +	if (attr->entry == NULL)
-+	    adp->estackbase[n] = NULL;
++	    adp->estackbase[n] = 0;
 +	}
 +
 +    adp->name = attr->name;
@@ -947,7 +947,7 @@ diff -uNrp linuxppc-2.5/adeos/generic.c linuxppc-2.5-adeos/adeos/generic.c
 +EXPORT_SYMBOL(__adeos_schedule_irq);
 diff -uNrp linuxppc-2.5/adeos/ppc.c linuxppc-2.5-adeos/adeos/ppc.c
 --- linuxppc-2.5/adeos/ppc.c	1970-01-01 01:00:00.000000000 +0100
-+++ linuxppc-2.5-adeos/adeos/ppc.c	2004-09-22 15:05:37.000000000 +0200
++++ linuxppc-2.5-adeos/adeos/ppc.c	2004-10-09 11:50:33.000000000 +0200
 @@ -0,0 +1,517 @@
 +/*
 + *   linux/adeos/ppc.c
@@ -1113,9 +1113,9 @@ diff -uNrp linuxppc-2.5/adeos/ppc.c linuxppc-2.5-adeos/adeos/ppc.c
 +			     IPIPE_HANDLE_MASK|IPIPE_PASS_MASK);
 +
 +    /* We use a virtual IRQ to handle the timer irq (decrementer trap)
-+       which has been allocated early in __adeos_init_stage(). */
++       which has been allocated early in __adeos_init_platform(). */
 +
-+    adeos_virtualize_irq(__adeos_timer_virq,
++    adeos_virtualize_irq(ADEOS_TIMER_VIRQ,
 +			 (void (*)(unsigned))&__adeos_do_timer,
 +			 NULL,
 +			 IPIPE_HANDLE_MASK|IPIPE_PASS_MASK);
@@ -1410,7 +1410,7 @@ diff -uNrp linuxppc-2.5/adeos/ppc.c linuxppc-2.5-adeos/adeos/ppc.c
 +{
 +    info->ncpus = num_online_cpus();
 +    info->cpufreq = adeos_cpu_freq();
-+    info->archdep.tmirq = __adeos_timer_virq;
++    info->archdep.tmirq = ADEOS_TIMER_VIRQ;
 +    info->archdep.tmfreq = info->cpufreq;
 +
 +    return 0;
@@ -1488,8 +1488,8 @@ diff -uNrp linuxppc-2.5/arch/ppc/kernel/Makefile linuxppc-2.5-adeos/arch/ppc/ker
 +obj-$(CONFIG_ADEOS_CORE)	+= adeos.o
 diff -uNrp linuxppc-2.5/arch/ppc/kernel/adeos.c linuxppc-2.5-adeos/arch/ppc/kernel/adeos.c
 --- linuxppc-2.5/arch/ppc/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linuxppc-2.5-adeos/arch/ppc/kernel/adeos.c	2004-10-04 18:33:31.000000000 +0200
-@@ -0,0 +1,647 @@
++++ linuxppc-2.5-adeos/arch/ppc/kernel/adeos.c	2004-10-09 11:49:45.000000000 +0200
+@@ -0,0 +1,652 @@
 +/*
 + *   linux/arch/ppc/kernel/adeos.c
 + *
@@ -1556,9 +1556,6 @@ diff -uNrp linuxppc-2.5/arch/ppc/kernel/adeos.c linuxppc-2.5-adeos/arch/ppc/kern
 +extern struct list_head __adeos_pipeline;
 +
 +struct pt_regs __adeos_irq_regs;
-+
-+/* Virtual IRQ associated to the decrementer. */
-+unsigned __adeos_timer_virq;
 +
 +/* Current reload value for the decrementer. */
 +unsigned long __adeos_decr_ticks;
@@ -1686,9 +1683,18 @@ diff -uNrp linuxppc-2.5/arch/ppc/kernel/adeos.c linuxppc-2.5-adeos/arch/ppc/kern
 +void __adeos_init_platform (void)
 +
 +{
++    unsigned timer_virq;
++
 +    /* Allocate a virtual IRQ for the decrementer trap early to get it
 +       mapped to IPIPE_VIRQ_BASE */
-+    __adeos_timer_virq = adeos_alloc_irq();
++
++    timer_virq = adeos_alloc_irq();
++
++    if (timer_virq != ADEOS_TIMER_VIRQ)
++	panic("Adeos: cannot reserve timer virq #%d (got #%d)",
++	      ADEOS_TIMER_VIRQ,
++	      timer_virq);
++
 +    __adeos_decr_ticks = tb_ticks_per_jiffy;
 +}
 +
@@ -2031,7 +2037,7 @@ diff -uNrp linuxppc-2.5/arch/ppc/kernel/adeos.c linuxppc-2.5-adeos/arch/ppc/kern
 +
 +    __adeos_irq_regs.msr = regs->msr; /* for do_timer() */
 +
-+    __adeos_handle_irq(__adeos_timer_virq,regs);
++    __adeos_handle_irq(ADEOS_TIMER_VIRQ,regs);
 +
 +    adeos_load_cpuid();
 +
@@ -2130,7 +2136,6 @@ diff -uNrp linuxppc-2.5/arch/ppc/kernel/adeos.c linuxppc-2.5-adeos/arch/ppc/kern
 +EXPORT_SYMBOL(__adeos_switch_domain);
 +EXPORT_SYMBOL(__adeos_do_IRQ);
 +EXPORT_SYMBOL(__adeos_do_timer);
-+EXPORT_SYMBOL(__adeos_timer_virq);
 +EXPORT_SYMBOL(__adeos_decr_ticks);
 +EXPORT_SYMBOL(__adeos_decr_next);
 +EXPORT_SYMBOL(__adeos_current_threadinfo);
@@ -2670,8 +2675,8 @@ diff -uNrp linuxppc-2.5/arch/ppc/mm/fault.c linuxppc-2.5-adeos/arch/ppc/mm/fault
  	if (debugger_kernel_faults)
 diff -uNrp linuxppc-2.5/include/asm-ppc/adeos.h linuxppc-2.5-adeos/include/asm-ppc/adeos.h
 --- linuxppc-2.5/include/asm-ppc/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linuxppc-2.5-adeos/include/asm-ppc/adeos.h	2004-10-04 18:35:30.000000000 +0200
-@@ -0,0 +1,380 @@
++++ linuxppc-2.5-adeos/include/asm-ppc/adeos.h	2004-10-09 11:48:00.000000000 +0200
+@@ -0,0 +1,435 @@
 +/*
 + *   include/asm-ppc/adeos.h
 + *
@@ -2712,9 +2717,9 @@ diff -uNrp linuxppc-2.5/include/asm-ppc/adeos.h linuxppc-2.5-adeos/include/asm-p
 +#include <linux/cpumask.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r6c7/ppc"
++#define ADEOS_ARCH_STRING     "r6c8/ppc"
 +#define ADEOS_MAJOR_NUMBER    6
-+#define ADEOS_MINOR_NUMBER    7
++#define ADEOS_MINOR_NUMBER    8
 +
 +#define ADEOS_IRQ_ACKED		0x1000
 +#define ADEOS_IRQ_ACKED_MASK	(ADEOS_IRQ_ACKED - 1)
@@ -2818,6 +2823,10 @@ diff -uNrp linuxppc-2.5/include/asm-ppc/adeos.h linuxppc-2.5-adeos/include/asm-p
 +#define IPIPE_IRQMASK_ANY   (~0L)
 +#define IPIPE_IRQMASK_VIRT  (IPIPE_IRQMASK_ANY << (IPIPE_VIRQ_BASE / BITS_PER_LONG))
 +
++/* The first virtual interrupt is reserved for the timer (see
++   __adeos_init_platform). */
++#define ADEOS_TIMER_VIRQ    IPIPE_VIRQ_BASE
++
 +typedef struct adomain {
 +
 +    /* -- Section: offset-based references are made on these fields
@@ -2894,9 +2903,9 @@ diff -uNrp linuxppc-2.5/include/asm-ppc/adeos.h linuxppc-2.5-adeos/include/asm-p
 +    int __cpuid, __nr_cpus = num_online_cpus();			       \
 +    if (test_and_clear_bit(IPIPE_LOCK_FLAG,&(adp)->irqs[irq].control)) \
 +	for (__cpuid = 0; __cpuid < __nr_cpus; __cpuid++)      \
-+         if ((adp)->cpudata[__cpuid].irq_hits[irq] > 0) { \
-+           __set_bit(irq & IPIPE_IRQ_IMASK,&(adp)->cpudata[__cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-+           __set_bit(irq >> IPIPE_IRQ_ISHIFT,&(adp)->cpudata[__cpuid].irq_pending_hi); \
++         if ((adp)->cpudata[__cpuid].irq_hits[irq] > 0) { /* We need atomic ops next. */ \
++           set_bit(irq & IPIPE_IRQ_IMASK,&(adp)->cpudata[__cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
++           set_bit(irq >> IPIPE_IRQ_ISHIFT,&(adp)->cpudata[__cpuid].irq_pending_hi); \
 +         } \
 +} while(0)
 +
@@ -2976,19 +2985,72 @@ diff -uNrp linuxppc-2.5/include/asm-ppc/adeos.h linuxppc-2.5-adeos/include/asm-p
 +#define adeos_cpu_freq() (HZ * tb_ticks_per_jiffy)
 +
 +#ifdef CONFIG_PREEMPT
-+#define adeos_spin_lock(x)    _raw_spin_lock(x)
-+#define adeos_spin_unlock(x)  _raw_spin_unlock(x)
-+#define adeos_spin_trylock(x) _raw_spin_trylock(x)
++#define adeos_spin_lock(x)     _raw_spin_lock(x)
++#define adeos_spin_unlock(x)   _raw_spin_unlock(x)
++#define adeos_spin_trylock(x)  _raw_spin_trylock(x)
++#define adeos_write_lock(x)    _raw_write_lock(x)
++#define adeos_write_unlock(x)  _raw_write_unlock(x)
++#define adeos_write_trylock(x) _raw_write_trylock(x)
++#define adeos_read_lock(x)     _raw_read_lock(x)
++#define adeos_read_unlock(x)   _raw_read_unlock(x)
 +#else /* !CONFIG_PREEMPT */
-+#define adeos_spin_lock(x)    spin_lock(x)
-+#define adeos_spin_unlock(x)  spin_unlock(x)
-+#define adeos_spin_trylock(x) spin_trylock(x)
++#define adeos_spin_lock(x)     spin_lock(x)
++#define adeos_spin_unlock(x)   spin_unlock(x)
++#define adeos_spin_trylock(x)  spin_trylock(x)
++#define adeos_write_lock(x)    write_lock(x)
++#define adeos_write_unlock(x)  write_unlock(x)
++#define adeos_write_trylock(x) write_trylock(x)
++#define adeos_read_lock(x)     read_lock(x)
++#define adeos_read_unlock(x)   read_unlock(x)
 +#endif /* CONFIG_PREEMPT */
 +
-+#define adeos_spin_lock_irqsave(x,flags)       do { adeos_hw_local_irq_save(flags); adeos_spin_lock(x); } while (0)
-+#define adeos_spin_unlock_irqrestore(x,flags)  do { adeos_spin_unlock(x); adeos_hw_local_irq_restore(flags); } while (0)
-+#define adeos_spin_lock_disable(x)             do { adeos_hw_cli(); adeos_spin_lock(x); } while (0)
-+#define adeos_spin_unlock_enable(x)            do { adeos_spin_unlock(x); adeos_hw_sti(); } while (0)
++#define adeos_spin_lock_irqsave(x,flags)  \
++do { \
++   adeos_hw_local_irq_save(flags); \
++   adeos_spin_lock(x); \
++} while (0)
++
++#define adeos_spin_unlock_irqrestore(x,flags)  \
++do { \
++   adeos_spin_unlock(x); \
++   adeos_hw_local_irq_restore(flags); \
++} while (0)
++
++#define adeos_spin_lock_disable(x)  \
++do { \
++   adeos_hw_cli(); \
++   adeos_spin_lock(x); \
++} while (0)
++
++#define adeos_spin_unlock_enable(x)  \
++do { \
++   adeos_spin_unlock(x); \
++   adeos_hw_sti(); \
++} while (0)
++
++#define adeos_read_lock_irqsave(lock, flags) \
++do { \
++   adeos_hw_local_irq_save(flags); \
++   adeos_read_lock(lock); \
++} while (0)
++
++#define adeos_read_unlock_irqrestore(lock, flags) \
++do { \
++   adeos_read_unlock(lock); \
++   adeos_hw_local_irq_restore(flags); \
++} while (0)
++
++#define adeos_write_lock_irqsave(lock, flags) \
++do { \
++   adeos_hw_local_irq_save(flags); \
++   adeos_write_lock(lock); \
++} while (0)
++
++#define adeos_write_unlock_irqrestore(lock, flags) \
++do { \
++   adeos_write_unlock(lock); \
++   adeos_hw_local_irq_restore(flags); \
++} while (0)
 +
 +/* Private interface -- Internal use only */
 +
@@ -3044,8 +3106,6 @@ diff -uNrp linuxppc-2.5/include/asm-ppc/adeos.h linuxppc-2.5-adeos/include/asm-p
 +extern struct pt_regs __adeos_irq_regs;
 +
 +extern unsigned long __adeos_virtual_irq_map;
-+
-+extern unsigned __adeos_timer_virq;
 +
 +extern unsigned long __adeos_decr_ticks;
 +

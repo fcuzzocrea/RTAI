@@ -255,8 +255,8 @@ static inline struct task_struct *intr_get_current(int cpuid, RT_TASK *rt_curren
 
 {
     if (rtai_adeos_stack_p(cpuid) ||
-	RT_CURRENT->lnxtsk == NULL ||
-	RT_CURRENT == &rt_linux_task)
+	rt_current->lnxtsk == NULL || 
+	rt_current == &rt_linux_task)
 	return rtai_get_root_current(cpuid);
 
     return current;

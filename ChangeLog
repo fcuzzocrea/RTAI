@@ -1,6 +1,11 @@
+2004-11-24  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/ipc/shm/shm.c: rt_shm_size did not return the mapped 
+	user space address along with the related size.
+
 2004-11-22  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-        * rtai-core/rtai-core/sched/rtai/sched_lxrt.c: warn hard kthreads
+        * rtai-core/sched/rtai/sched_lxrt.c: warn hard kthreads
 	have gone, changed deletion of kthreads in resorvoir.
 
         * rtai-core/ipc/sem/sem.c: ensured that tasks freed upon sem

@@ -1,3 +1,7 @@
+2004-07-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.7-r6c4.
+
 2004-07-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pod.c (xnpod_schedule, xnpod_schedule_runnable): Test 
@@ -32,6 +36,7 @@
 	which is about to be scheduled is marked as blocked for the
 	nucleus.
 			
+>>>>>>> 1.44
 2004-07-07  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pod.c (xnpod_schedule)

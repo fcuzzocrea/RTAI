@@ -23,7 +23,7 @@
 
 2005-03-15  Jim Cromie <jcromie@divsol.com>
 
-	* testsuite/klatency: Add test duration switch (-T).
+	* testsuite/latency: Add test duration switch (-T).
 
 	* fusion: Corrected some grammatics in comments.
 

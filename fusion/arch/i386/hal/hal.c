@@ -1078,38 +1078,6 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 
     if (evinfo->domid == RTHAL_DOMAIN_ID)
 	{
-	if (evinfo->event == 7)	/* (FPU) Device not available. */
-	    {
-	    /* Ok, this one is a bit insane: some RTAI apps use the
-	       FPU in real-time mode while the TS bit is on from a
-	       previous Linux switch, so this trap is raised. We just
-	       simulate a math_state_restore() using the proper
-	       "current" value from the Linux domain here to please
-	       everyone without impacting the existing code. */
-
-	    struct task_struct *linux_task = rthal_get_current(cpuid);
-
-#ifdef CONFIG_PREEMPT
-	    linux_task->thread_info->preempt_count++;
-#endif /* CONFIG_PREEMPT */
-
-	    if (linux_task->used_math)
-		rthal_restore_linux_fpenv(linux_task);	/* Does clts(). */
-	    else
-		{
-		rthal_init_xfpu();	/* Does clts(). */
-		linux_task->used_math = 1;
-		}
-
-	    linux_task->thread_info->status |= TS_USEDFPU;
-
-#ifdef CONFIG_PREEMPT
-	    linux_task->thread_info->preempt_count--;
-#endif /* CONFIG_PREEMPT */
-
-	    goto endtrap;
-	    }
-
 	if (evinfo->event == 14)	/* Page fault. */
 	    {
 	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;

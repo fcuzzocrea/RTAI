@@ -22,8 +22,8 @@ int minjitter = 10000000,
 void latency (void *cookie)
 
 {
-    int minj = 10000000, maxj = -10000000;
     RTIME itime, expected, period;
+    int minj, maxj = -10000000;
     int dt, err, count;
     long long sumj = 0;
 
@@ -48,6 +48,8 @@ void latency (void *cookie)
 
     for (;;)
 	{
+	minj = 10000000;
+
 	for (count = sumj = 0; count < SAMPLE_COUNT; count++)
 	    {
 	    expected += period;
@@ -65,7 +67,6 @@ void latency (void *cookie)
 	    }
 
 	minjitter = minj;
-	minj = 10000000;
 	maxjitter = maxj;
 	alljitter = sumj / SAMPLE_COUNT;
 	rt_sem_v(&display_sem);

@@ -52,6 +52,7 @@
 
 #define XENO_MAIN_MODULE
 
+#include <rtai_config.h>
 #include <nucleus/module.h>
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
@@ -256,41 +257,41 @@ int __xeno_main_init (void)
 
     err = xnarch_init();
 
-    if (!err)
+    if (err)
+	goto fail;
+
 #ifdef __KERNEL__
-	{
-	int xnpod_calibrate_sched(void);
+    {
+    int xnpod_calibrate_sched(void);
 
 #ifdef CONFIG_PROC_FS
-	xnpod_init_proc();
+    xnpod_init_proc();
 #endif /* CONFIG_PROC_FS */
 
-	err = xnpod_calibrate_sched();
+    err = xnpod_calibrate_sched();
 
-	if (!err)
-	    {
-	    err = xnbridge_init();
+    if (err)
+	goto fail;
 
-	    if (!err)
-		{
-		err = xnfusion_init();
+    err = xnbridge_init();
 
-		if (!err)
-		    xnloginfo("Services started.\n");
-		else
-		    xnlogerr("Fusion init failed, code %d.\n",err);
-		}
-	    else
-		xnlogerr("DBridge init failed, code %d.\n",err);
-	    }
-	else
-	    xnlogerr("Autocalibration failed, code %d.\n",err);
-	}
-#else /* !__KERNEL__ */
-	xnloginfo("Virtual Machine started.\n");
+    if (err)
+	goto fail;
+
+    err = xnfusion_init();
+
+    if (err)
+	goto fail;
+    }
 #endif /* __KERNEL__ */
-    else
-	xnlogerr("Architecture init failed, code %d.\n",err);
+
+    xnloginfo("Xenomai core v%s started.\n",PACKAGE_VERSION);
+
+    return 0;
+
+ fail:
+
+    xnlogerr("Xenomai core init failed, code %d.\n",err);
 
     return err;
 }
@@ -308,10 +309,8 @@ void __xeno_main_exit (void)
 #endif /* CONFIG_PROC_FS */
     xnfusion_exit();
     xnbridge_exit();
-    xnloginfo("Services stopped.\n");
-#else /* !__KERNEL__ */
-    xnloginfo("Virtual Machine stopped.\n");
 #endif /* __KERNEL__ */
+    xnloginfo("Xenomai core stopped.\n");
 }
 
 EXPORT_SYMBOL(xnmod_glink_queue);

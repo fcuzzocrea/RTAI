@@ -943,7 +943,8 @@ void xnpod_restart_thread (xnthread_t *thread)
  * - Kernel-based task
  * - User-space task
  *
- * Rescheduling: never.
+ * Rescheduling: never, therefore, the caller should reschedule if
+ * XNLOCK has been passed into @a clrmask.
  */
 
 xnflags_t xnpod_set_thread_mode (xnthread_t *thread,

@@ -37,7 +37,7 @@
  * @brief Convert nanoseconds to internal clock ticks.
  *
  * Convert a count of nanoseconds to internal clock ticks.
- * This routine opearates on signed nanosecond values.
+ * This routine operates on signed nanosecond values.
  *
  * @param ns The count of nanoseconds to convert.
  *
@@ -71,7 +71,7 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
  * @brief Convert internal clock ticks to nanoseconds.
  *
  * Convert a count of internal clock ticks to nanoseconds.
- * This routine opearates on signed tick values.
+ * This routine operates on signed tick values.
  *
  * @param ticks The count of internal clock ticks to convert (see
  * note).

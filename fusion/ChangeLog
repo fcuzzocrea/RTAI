@@ -1,3 +1,13 @@
+2005-04-03  Jim Cromie <jcromie@divsol.com>
+
+	* testsuite/[k]latency: Revamp the whole printout formatting; add
+	stddev and variance computations.
+
+2005-04-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai/skin/lib/task.c (rt_task_delete): Use pthread_cancel()
+	internally to finalize RT tasks termination.
+
 2005-04-02  Jim Cromie <jcromie@divsol.com>
 
 	* testsuite: Various updates including extended histogram support.

@@ -42,19 +42,18 @@ unsigned long *histogram_avg = NULL,
               *histogram_max = NULL,
               *histogram_min = NULL;
 
-int do_histogram = 0, finished = 0;
+int do_histogram = 0, do_stats = 0, finished = 0;
 int bucketsize = 1000;	/* default = 1000ns, -B <size> to override */
 
 static inline void add_histogram (long *histogram, long addval)
 {
-    /* us steps */
+    /* bucketsize steps */
     long inabs = rt_timer_ticks2ns(addval >= 0 ? addval : -addval) / bucketsize;
     histogram[inabs < histogram_size ? inabs : histogram_size-1]++;
 }
 
 void latency (void *cookie)
 {
-    long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
     int err, count, nsamples;
     RTIME expected, period;
 
@@ -80,6 +79,7 @@ void latency (void *cookie)
 
     for (;;)
       {
+	long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
  	test_loops++;
 
 	for (count = sumj = 0; count < nsamples; count++)
@@ -100,17 +100,14 @@ void latency (void *cookie)
 	    if (dt < minj) minj = dt;
 	    sumj += dt;
 
-	    if (do_histogram && !finished)
-	      add_histogram(histogram_avg, dt);
+	    if (!finished && (do_histogram || do_stats))
+	        add_histogram(histogram_avg, dt);
 	  }
 	
-	if (do_histogram && !finished)
+	if (!finished && (do_histogram || do_stats))
 	  {
 	    add_histogram(histogram_max, maxj);
 	    add_histogram(histogram_min, minj);
-	    minj = TEN_MILLION;
-	    maxj = -TEN_MILLION;
-	    overrun = 0;
 	  }
     
 	minjitter = rt_timer_ticks2ns(minj);
@@ -150,25 +147,6 @@ void display (void *cookie)
 	    rt_task_delete(NULL);
 	    }
 
-	if (!quiet)
-	    {
-	    if (data_lines && (n++ % data_lines)==0)
-	        {
-		time_t now, dt;
-		time(&now);
-		dt = now - start;
-		printf("RTH|%12s|%12s|%12s|%12s|     %.2ld:%.2ld:%.2ld\n",
-		       "lat min","lat avg","lat max","overrun",
-		       dt / 3600,(dt / 60) % 60,dt % 60);
-	        }
-	    
-	    printf("RTD|%12ld|%12ld|%12ld|%12ld\n",
-		   minjitter,
-		   avgjitter,
-		   maxjitter,
-		   overrun);
-	    }
-
 	/* update global jitters */
 	if (minjitter < gminjitter) gminjitter = minjitter;
 	if (maxjitter > gmaxjitter) gmaxjitter = maxjitter;
@@ -177,52 +155,92 @@ void display (void *cookie)
 	    goverrun += overrun;
 	else
 	    goverrun = overrun;
+
+	if (!quiet)
+	    {
+	    if (data_lines && (n++ % data_lines)==0)
+	        {
+		time_t now, dt;
+		time(&now);
+		dt = now - start;
+		printf("RTT|  %.2ld:%.2ld:%.2ld\n",
+		       dt / 3600,(dt / 60) % 60,dt % 60);
+		printf("RTH|%12s|%12s|%12s|%8s|%12s|%12s\n",
+		       "-----lat min","-----lat avg","-----lat max","-overrun",
+		       "----lat best","---lat worst");
+	        }
+	    
+	    printf("RTD|%12ld|%12ld|%12ld|%8ld|%12ld|%12ld\n",
+		   minjitter,
+		   avgjitter,
+		   maxjitter,
+		   overrun,
+		   gminjitter,
+		   gmaxjitter);
+	    }
 	}
 }
 
-void dump_histogram (long *histogram, char* kind)
+double dump_histogram (long *histogram, char* kind)
 {
     int n, total_hits = 0;
-    long avg = 0;		/* used to sum hits 1st */
-    double variance = 0;
+    double avg = 0;		/* used to sum hits 1st */
 
-    fprintf(stderr,"\nHSH-%s| latency range (usecs) | number of samples\n", kind);
-
-    for (n = 0; n < histogram_size; n++)
-        {
-	long hits = histogram[n];
-
-	if (hits) {
-	    fprintf(stderr,"HSD-%s|%3d-%3d|%ld\n",kind, n, n+1, hits);
-	    total_hits += hits;
-	    avg += n * hits;
-	}
-    }
-
-    avg /= total_hits;	/* compute avg, reuse variable */
+    if (do_histogram)
+        fprintf(stderr,"---|--param|----range-|--samples\n");
 
     for (n = 0; n < histogram_size; n++)
       {
 	long hits = histogram[n];
-	if (hits)
+	if (hits) {
+	    total_hits += hits;
+	    avg += n * hits;
+	    if (do_histogram)
+	        fprintf(stderr,"HSD|    %s| %3d -%3d | %8ld\n",kind, n, n+1, hits);
+	}
+      }
+
+    avg /= total_hits;	/* compute avg, reuse variable */
+
+    return avg;
+}
+
+void dump_stats (long *histogram, char* kind, double avg)
+{
+    int n, total_hits = 0;
+    double variance = 0;
+
+    for (n = 0; n < histogram_size; n++)
+      {
+	long hits = histogram[n];
+	if (hits) {
+  	    total_hits += hits;
 	    variance += hits * (n-avg) * (n-avg);
+	}
       }
 
     /* compute std-deviation (unbiased form) */
     variance /= total_hits - 1;
-    // variance = sqrt(variance);
+    variance = sqrt(variance);
 
-    fprintf(stderr,"HSH-%s-Samples:\t%d\n", kind, total_hits);
-    fprintf(stderr,"HSH-%s-Average:\t%ld\n", kind, avg);
-    // fprintf(stderr,"HSH-%s-StdDev:\t%f\n", kind, variance);
-    fprintf(stderr,"HSH-%s-Variance:\t%f\n", kind, variance);
+    fprintf(stderr,"HSS|    %s| %9d| %10.3f| %10.3f\n",
+	    kind, total_hits, avg, variance);
 }
 
-void dump_histograms (void)
+void dump_hist_stats (void)
 {
-  dump_histogram (histogram_min, "min");
-  dump_histogram (histogram_avg, "avg");
-  dump_histogram (histogram_max, "max");
+    double minavg, maxavg, avgavg;
+
+    /* max is last, where its visible w/o scrolling */
+    minavg = dump_histogram (histogram_min, "min");
+    avgavg = dump_histogram (histogram_avg, "avg");
+    maxavg = dump_histogram (histogram_max, "max");
+
+    fprintf(stderr,"HSH|--param|--samples-|--average--|---stddev--\n");
+
+    dump_stats (histogram_min, "min", minavg);
+    dump_stats (histogram_avg, "avg", avgavg);
+    dump_stats (histogram_max, "max", maxavg);
 }
 
 void cleanup_upon_sig(int sig __attribute__((unused)))
@@ -236,23 +254,22 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
     rt_timer_stop();
     rt_sem_delete(&display_sem);
 
-    if (do_histogram)
-	dump_histograms();
+    if (do_histogram || do_stats)
+	dump_hist_stats();
 
     time(&test_end);
     actual_duration = test_end - test_start;
     if (!test_duration) test_duration = actual_duration;
     gavgjitter /= (test_loops ?: 2)-1;
 
-    printf("---|------------|------------|------------|------------|     %.2ld:%.2ld:%.2ld/%.2d:%.2d:%.2d\n",
-	   actual_duration / 3600,(actual_duration / 60) % 60,actual_duration % 60,
-	   test_duration / 3600,(test_duration / 60) % 60,test_duration % 60);
-
-    printf("RTS|%12ld|%12ld|%12ld|%12ld\n",
+    printf("---|------------|------------|------------|--------|-------------------------\n"
+	   "RTS|%12ld|%12ld|%12ld|%8ld|    %.2ld:%.2ld:%.2ld/%.2d:%.2d:%.2d\n",
 	   gminjitter,
 	   gavgjitter,
 	   gmaxjitter,
-	   goverrun);
+	   goverrun,
+	   actual_duration / 3600,(actual_duration / 60) % 60,actual_duration % 60,
+	   test_duration / 3600,(test_duration / 60) % 60,test_duration % 60);
 
     if (histogram_avg)	free(histogram_avg);
     if (histogram_max)	free(histogram_max);
@@ -265,12 +282,17 @@ int main (int argc, char **argv)
 {
     int c, err;
 
-    while ((c = getopt(argc,argv,"hp:l:T:qH:B:")) != EOF)
+    while ((c = getopt(argc,argv,"hp:l:T:qH:B:s")) != EOF)
 	switch (c)
 	    {
 	    case 'h':
-		/* ./latency --h[istogram] */
+
 		do_histogram = 1;
+		break;
+
+	    case 's':
+
+		do_stats = 1;
 		break;
 
 	    case 'H':
@@ -307,7 +329,8 @@ int main (int argc, char **argv)
 	    default:
 		
 		fprintf(stderr, "usage: latency [options]\n"
-			"  [-h]				# print histogram of scheduling latency\n"
+			"  [-h]				# print histograms of min, avg, max latencies\n"
+			"  [-s]				# print statistics of min, avg, max latencies\n"
 			"  [-H <histogram-size>]	# default = 200, increase if your last bucket is full\n"
 			"  [-B <bucket-size>]		# default = 1000ns, decrease for more resolution\n"
 			"  [-p <period_us>]		# sampling period\n"

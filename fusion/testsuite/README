@@ -48,7 +48,8 @@ user-space.
 	./run -- -T 300		# run for 5 minutes
 
    usage: latency [options]
-     [-h]                          # print histogram of scheduling latency
+     [-h]                          # print histograms of min, avg, max latencies
+     [-s]                          # print statistics of min, avg, max latencies
      [-H <histogram-size>]         # default = 200, increase if your last bucket is full
      [-B <bucket-size>]            # default = 1000ns, decrease for more resolution
      [-p <period_us>]              # sampling period
@@ -79,12 +80,70 @@ user-space.
    devices /dev/rtp* exist, with major 150 and minors 0-31.
 
    usage: klatency [options]
-     [-h]                          # prints histogram of latencies
+     [-h]                          # print histograms of min, avg, max latencies
+     [-s]                          # print statistics of min, avg, max latencies
      [-H <histogram-size>]	   # default = 200, increase if your last bucket is full
      [-B <bucket-size>]            # default = 1000ns, decrease for more resolution
      [-l <data-lines per header>]  # default = 21, 0 supresses header
      [-T <seconds_to_test>]        # default = 0, so ^C to end
      [-q]                          # supresses RTD, RTH lines if -T is used
+
+   Example output:
+
+     $> ./run -- -T 10 -h -l 5
+     *
+     *
+     * Type ^C to stop this application.
+     *
+     *
+     RTT|    00:00:00
+     RTH|-----lat min|-----lat avg|-----lat max| overrun|----lat best|---lat worst
+     RTD|        3378|       12761|       38997|       0|        3378|       38997
+     RTD|        3326|        8475|       31310|       0|        3326|       38997
+     RTD|        3348|        8422|       26993|       0|        3326|       38997
+     RTD|        3108|        8235|       29757|       0|        3108|       38997
+     RTD|        3003|        8839|       31868|       0|        3003|       38997
+     RTT|    00:00:05
+     RTH|-----lat min|-----lat avg|-----lat max| overrun|----lat best|---lat worst
+     RTD|        3176|        8880|       26299|       0|        3003|       38997
+     RTD|        3315|        8602|       28823|       0|        3003|       38997
+     RTD|        3431|        8434|       25077|       0|        3003|       38997
+     RTD|        3041|        8224|       29798|       0|        3003|       38997
+     RTD|        2985|        8599|       27169|       0|        2985|       38997
+     HSH|--param|----range-|--samples
+     HSD|    min|   2 -  3 |        1
+     HSD|    min|   3 -  4 |        9
+     HSH|--param|----range-|--samples
+     HSD|    avg|   8 -  9 |        9
+     HSD|    avg|  12 - 13 |        1
+     HSH|--param|----range-|--samples
+     HSD|    max|  25 - 26 |        1
+     HSD|    max|  26 - 27 |        2
+     HSD|    max|  27 - 28 |        1
+     HSD|    max|  28 - 29 |        1
+     HSD|    max|  29 - 30 |        2
+     HSD|    max|  31 - 32 |        2
+     HSD|    max|  38 - 39 |        1
+     HSH|--param|--samples-|--average--|---stddev--
+     HSS|    min|        10|      2.900|      0.316
+     HSS|    avg|        10|      8.400|      1.265
+     HSS|    max|        10|     29.000|      3.771
+     ---|------------|------------|------------|------------|     00:00:10/00:00:10
+     RTS|        2985|        8947|       38997|           0
+     
+     
+   The output above shows 3 types of information:
+     
+   RTD & RTH lines show min, avg, max latency sampled 10,000 times in
+   each 1 second interval, and shows the best and worst cases seen during
+   the run.  When running batchmode, -q will supress these lines, which
+   is handy for 1-hr tests.
+     
+   HSD & HSH lines show histogram data, if -h option is given.
+     
+   HSS & HSH lines show the statistics of each of 3 interval
+   measurements, when either -s or -h options are given.
+
 
 Notes:
 
@@ -92,3 +151,5 @@ Notes:
    ex: cd $instdir/testsuite/latency; ./run
 
    As ever, invoke them with a bogus option (ex -?) to see current list
+
+   The output for latency & klatency is identical in format.

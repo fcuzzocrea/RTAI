@@ -39,9 +39,9 @@
 #define MODULE_DESCRIPTION(s);
 #define MODULE_LICENSE(s);
 #define MODULE_AUTHOR(s);
-#define MODULE_PARM(var,type)      static const char *vartype(var) = type
+#define MODULE_PARM(var,type)    static const char *vartype(var) = type
 #define MODULE_PARM_DESC(var,desc);
-#define MODULE_PARM_VALUE(var)     (xnarch_read_environ(#var,&vartype(var),&var),var)
+#define MODULE_PARM_VALUE(var)   ({ xnarch_read_environ(#var,&vartype(var),&var); var; )}
 
 /* Nullify other kernel macros */
 #define EXPORT_SYMBOL(sym);
@@ -214,8 +214,6 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
     if (*ptype == NULL)
 	return 0;	/* Already read in */
 
-    *ptype = NULL;
-
     value = getenv(name);
 
     if (!value)
@@ -225,6 +223,8 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
 	*((char **)pvar) = value;
     else
 	*((int *)pvar) = atoi(value);
+
+    *ptype = NULL;
 
     return 1;
 }
@@ -345,7 +345,7 @@ int main (int argc, char *argv[])
 
     if (geteuid() !=0)
 	{
-        fprintf(stderr,"This program must be run with root privileges\n");
+        fprintf(stderr,"This program must be run with root privileges.\n");
 	exit(1);
 	}
 
@@ -353,7 +353,7 @@ int main (int argc, char *argv[])
 
     if (err)
 	{
-        fprintf(stderr,"sys_init() failed, err=%x\n",err);
+        fprintf(stderr,"sys_init() failed: %s\n",strerror(err));
         exit(2);
 	}
 
@@ -361,7 +361,7 @@ int main (int argc, char *argv[])
 
     if (err)
 	{
-        fprintf(stderr,"skin_init() failed, err=%x\n",err);
+        fprintf(stderr,"skin_init() failed: %s\n",strerror(err));
         exit(3);
 	}
 
@@ -369,7 +369,7 @@ int main (int argc, char *argv[])
 
     if (err)
 	{
-        fprintf(stderr,"user_init() failed, err=%x\n",err);
+        fprintf(stderr,"user_init() failed: %s\n",strerror(err));
         exit(4);
 	}
 
@@ -462,9 +462,6 @@ static void *xnarch_timer_thread (void *cookie)
     pthread_create_rt("vmtimer",NULL,p->ppid,&p->syncflag,&vml_timer_handle);
     pthread_barrier_rt();
 
-    printf("TICK: %d sec, %d ns at %p\n",ts.tv_sec,ts.tv_nsec,tickhandler);
-    fflush(stdout);
-
     for (;;)
 	{
 	nanosleep(&ts,NULL);
@@ -545,18 +542,19 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 					 const char *name)
 {
     struct sched_param param;
+    int err;
 
     param.sched_priority = sched_get_priority_min(SCHED_FIFO);
+    sched_setscheduler(0,SCHED_FIFO,&param);
+    err = pthread_info_rt(&vml_info);
 
-    if (sched_setscheduler(0,SCHED_FIFO,&param) < 0 ||
-	pthread_info_rt(&vml_info) < 0)
+    if (err)
 	{
-	perror("UVM");
+        fprintf(stderr,"UVM init failed: %s\n",strerror(err));
 	exit(1);
 	}
 
     pthread_init_rt("vmroot",tcb,&tcb->khandle);
-
     tcb->name = name;
     vml_root = vml_current = tcb;
 }
@@ -712,7 +710,7 @@ static inline unsigned long long xnarch_get_cpu_freq (void) {
 }
 
 static inline void xnarch_halt (const char *emsg) {
-    fprintf(stderr,"UVM: fatal: %s\n",emsg);
+    fprintf(stderr,"UVM fatal: %s\n",emsg);
     fflush(stderr);
     exit(99);
 }

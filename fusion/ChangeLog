@@ -1,5 +1,8 @@
 2004-12-27  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-uvm/system.h (xnarch_read_environ): Fix
+	crash.
+	
 	* nucleus/shadow.c: Rewrite the whole hardening migration
 	path. This solves the long-suffered "bad: scheduling while atomic"
 	issue, both in UP and SMP configs. For this, we basically use a

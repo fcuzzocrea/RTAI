@@ -209,8 +209,6 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
     if (*ptype == NULL)
 	return 0;	/* Already read in */
 
-    *ptype = NULL;
-
     value = getenv(name);
 
     if (!value)
@@ -220,6 +218,8 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
 	*((char **)pvar) = value;
     else
 	*((int *)pvar) = atoi(value);
+
+    *ptype = NULL;
 
     return 1;
 }
@@ -231,7 +231,7 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
 #define MODULE_AUTHOR(s);
 #define MODULE_PARM(var,type)      static const char *vartype(var) = type
 #define MODULE_PARM_DESC(var,desc);
-#define MODULE_PARM_VALUE(var)     (xnarch_read_environ(#var,&vartype(var),&var),var)
+#define MODULE_PARM_VALUE(var)   ({ xnarch_read_environ(#var,&vartype(var),&var); var; )}
 
 /* Nullify other kernel macros */
 #define EXPORT_SYMBOL(sym);

@@ -82,7 +82,7 @@ int xnthread_init (xnthread_t *thread,
     thread->rrperiod = XN_INFINITE;
     thread->rrcredit = XN_INFINITE;
     thread->wchan = NULL;
-    thread->magic = 0;	/* Default value means "from nucleus" */
+    thread->magic = 0;
 
     /* These will be filled by xnpod_start_thread() */
     thread->imask = 0;
@@ -91,7 +91,11 @@ int xnthread_init (xnthread_t *thread,
     thread->cookie = 0;
     thread->stime = 0;
     thread->extinfo = NULL;
-    xnobject_copy_name(thread->name,name);
+
+    if (name)
+	xnobject_copy_name(thread->name,name);
+    else
+	snprintf(thread->name,sizeof(thread->name),"%p",thread);
 
     inith(&thread->glink);
     inith(&thread->slink);

@@ -1,5 +1,9 @@
 2005-01-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/lib/fusion.c (pthread_ticks2ns_t, pthread_ns2ticks_rt):
+	Discard useless and confusing routines using nanoseconds as
+	input/output values in oneshot mode.
+
 	* skins/rtai/intr.c: Add interrupt management API.
 
 	* include/nucleus/asm-*/system.h (xnarch_isr_*): Remove

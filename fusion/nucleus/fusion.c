@@ -236,46 +236,6 @@ static int __pthread_sleep_rt (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
-static int __pthread_ns2ticks_rt (struct task_struct *curr, struct pt_regs *regs)
-
-{
-    nanostime_t ns, ticks;
-
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(ticks)))
-	return -EFAULT;
-
-    if (!testbits(nkpod->status,XNTIMED))
-	return -EWOULDBLOCK;
-
-    __xn_copy_from_user(curr,&ns,(void __user *)__xn_reg_arg1(regs),sizeof(ns));
-
-    ticks = ns >= 0 ? xnpod_ns2ticks(ns) : -xnpod_ns2ticks(-ns);
-    
-    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),&ticks,sizeof(ticks));
-
-    return 0;
-}
-
-static int __pthread_ticks2ns_rt (struct task_struct *curr, struct pt_regs *regs)
-
-{
-    nanostime_t ticks, ns;
-
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(ns)))
-	return -EFAULT;
-
-    if (!testbits(nkpod->status,XNTIMED))
-	return -EWOULDBLOCK;
-
-    __xn_copy_from_user(curr,&ticks,(void __user *)__xn_reg_arg1(regs),sizeof(ticks));
-
-    ns = ticks >= 0 ? xnpod_ticks2ns(ticks) : -xnpod_ticks2ns(-ticks);
-
-    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),&ns,sizeof(ns));
-
-    return 0;
-}
-
 static int __pthread_inquire_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -494,8 +454,6 @@ static xnsysent_t __systab[] = {
     [__xn_fusion_start_timer] = { &__pthread_start_timer_rt, __xn_flag_anycall  },
     [__xn_fusion_stop_timer] = { &__pthread_stop_timer_rt, __xn_flag_anycall  },
     [__xn_fusion_sleep] = { &__pthread_sleep_rt, __xn_flag_regular  },
-    [__xn_fusion_ns2ticks] = { &__pthread_ns2ticks_rt, __xn_flag_anycall  },
-    [__xn_fusion_ticks2ns] = { &__pthread_ticks2ns_rt, __xn_flag_anycall  },
     [__xn_fusion_inquire] = { &__pthread_inquire_rt, __xn_flag_shadow },
     /* Internal UVM calls. */
     [__xn_fusion_idle] = { &__pthread_idle_uvm, __xn_flag_regular },

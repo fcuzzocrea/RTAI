@@ -50,14 +50,12 @@
 #define __xn_fusion_start_timer  7
 #define __xn_fusion_stop_timer   8
 #define __xn_fusion_sleep        9
-#define __xn_fusion_ns2ticks     10
-#define __xn_fusion_ticks2ns     11
-#define __xn_fusion_inquire      12
-#define __xn_fusion_idle         13
-#define __xn_fusion_cancel       14
-#define __xn_fusion_activate     15
-#define __xn_fusion_hold         16
-#define __xn_fusion_release      17
+#define __xn_fusion_inquire      10
+#define __xn_fusion_idle         11
+#define __xn_fusion_cancel       12
+#define __xn_fusion_activate     13
+#define __xn_fusion_hold         14
+#define __xn_fusion_release      15
 
 typedef unsigned long long nanotime_t;
 
@@ -109,12 +107,6 @@ int pthread_stop_timer_rt(void);
 int pthread_time_rt(nanotime_t *tp);
 
 int pthread_cputime_rt(nanotime_t *tp);
-
-int pthread_ns2ticks_rt(nanostime_t ns,
-			nanostime_t *pticks);
-
-int pthread_ticks2ns_rt(nanostime_t ticks,
-			nanostime_t *pns);
 
 int pthread_ns2tsc_rt(nanostime_t ns,
                       nanostime_t *ptsc);

@@ -186,16 +186,6 @@ int pthread_sleep_rt (nanotime_t delay) {
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_sleep,&delay);
 }
 
-int pthread_ns2ticks_rt (nanostime_t ns, nanostime_t *pticks) {
-
-    return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_ns2ticks,&ns,pticks);
-}
-
-int pthread_ticks2ns_rt (nanostime_t ticks, nanostime_t *pns) {
-
-    return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_ticks2ns,&ticks,pns);
-}
-
 int pthread_ns2tsc_rt(nanostime_t ns, nanostime_t *ptsc)
 
 {

@@ -1,3 +1,18 @@
+2004-10-22  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* rtai-core/include/asm-i386/rtai_sched.h: macro init_fp_env 
+	parametrised with a support fpu env, not necessarely the fpu
+	task.
+
+	* rtai-core/sched/rtai/all_schedulers.c: forced using the Linux real 
+	time extension to support init_fp_env.
+
+	* rtai-core/ipc/shm/shm.c: makes sure none frees the gloabl heap
+	too soon, it must remain in schedulers hands.
+
+	* rtai-core/malloc/malloc.c: release the memory allocated to the
+	global heap. It was forgotten completely before.
+
 2004-10-20  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* rtai-core/ipc/fifos/fifos.c (rtf_create): Fix rtf_create

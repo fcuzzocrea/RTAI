@@ -1,5 +1,8 @@
 2004-06-18  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Upgrade the x86 patches to 2.6r5 final. Add
+	support for 2.6.7.
+
 	* skins/rtai/syscall.c: Do not compile in unselected optional
 	support.
 	

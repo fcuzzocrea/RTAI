@@ -85,6 +85,10 @@ void __event_pkg_cleanup(void);
 
 typedef RT_EVENT_PLACEHOLDER RT_EVENT;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rt_event_bind(RT_EVENT *event,
 		  const char *name);
 
@@ -94,6 +98,10 @@ static inline int rt_event_unbind (RT_EVENT *event)
     event->opaque = RT_HANDLE_INVALID;
     return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 

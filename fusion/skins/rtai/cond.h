@@ -73,6 +73,10 @@ void __cond_pkg_cleanup(void);
 
 typedef RT_COND_PLACEHOLDER RT_COND;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rt_cond_bind(RT_COND *cond,
 		 const char *name);
 
@@ -82,6 +86,10 @@ static inline int rt_cond_unbind (RT_COND *cond)
     cond->opaque = RT_HANDLE_INVALID;
     return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 

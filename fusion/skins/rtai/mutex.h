@@ -81,6 +81,10 @@ void __mutex_pkg_cleanup(void);
 
 typedef RT_MUTEX_PLACEHOLDER RT_MUTEX;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rt_mutex_bind(RT_MUTEX *mutex,
 		  const char *name);
 
@@ -90,6 +94,10 @@ static inline int rt_mutex_unbind (RT_MUTEX *mutex)
     mutex->opaque = RT_HANDLE_INVALID;
     return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 

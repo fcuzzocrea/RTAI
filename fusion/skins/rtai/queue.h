@@ -26,8 +26,6 @@
 #include <nucleus/heap.h>
 #include <rtai/types.h>
 
-struct RT_TASK;
-
 /* Creation flags. */
 #define Q_PRIO   XNSYNCH_PRIO	/* Pend by task priority order. */
 #define Q_FIFO   XNSYNCH_FIFO	/* Pend by FIFO order. */
@@ -126,10 +124,18 @@ void __queue_pkg_cleanup(void);
 
 typedef RT_QUEUE_PLACEHOLDER RT_QUEUE;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rt_queue_bind(RT_QUEUE *q,
 		  const char *name);
 
 int rt_queue_unbind(RT_QUEUE *q);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 

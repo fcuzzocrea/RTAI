@@ -1,3 +1,7 @@
+2005-02-24 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* skin/rtai: Make C++ friendly.
+
 2005-02-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* configure.in: Add e500 board specific option to "Architecture

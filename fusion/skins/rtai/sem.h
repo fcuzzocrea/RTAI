@@ -84,6 +84,10 @@ void __sem_pkg_cleanup(void);
 
 typedef RT_SEM_PLACEHOLDER RT_SEM;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rt_sem_bind(RT_SEM *sem,
 		const char *name);
 
@@ -93,6 +97,10 @@ static inline int rt_sem_unbind (RT_SEM *sem)
     sem->opaque = RT_HANDLE_INVALID;
     return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 

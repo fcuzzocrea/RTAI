@@ -98,10 +98,18 @@ void __heap_pkg_cleanup(void);
 
 typedef RT_HEAP_PLACEHOLDER RT_HEAP;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rt_heap_bind(RT_HEAP *heap,
 		 const char *name);
 
 int rt_heap_unbind(RT_HEAP *heap);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 

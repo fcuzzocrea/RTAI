@@ -157,6 +157,10 @@ int rt_task_remove_hook(int type,
 
 typedef RT_TASK_PLACEHOLDER RT_TASK;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int rt_task_bind(RT_TASK *task,
 		 const char *name);
 
@@ -166,6 +170,10 @@ static inline int rt_task_unbind (RT_TASK *task)
     task->opaque = RT_HANDLE_INVALID;
     return 0;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 

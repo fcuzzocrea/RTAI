@@ -1,3 +1,9 @@
+2004-06-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h (xnarch_setimask): Inline it.
+
+	* nucleus/module.c: Export missing symbols.
+
 2004-06-29  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/shadow.c (xnshado_map, xnshadow_attach_skin,

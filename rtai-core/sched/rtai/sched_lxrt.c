@@ -881,12 +881,12 @@ sched_soft:
 			UNLOCK_LINUX(cpuid);
 			rt_global_sti();
         		rtai_hw_unlock(flags);
-			rtai_linux_sti();
 			if (adp_current != adp_root) {
 				adp_root->dswitch = schedule;
 				adeos_suspend_domain();
 				adp_root->dswitch = NULL;
 			} else {
+				rtai_linux_sti();
 				schedule();
 			}
         		rtai_hw_lock(flags);
@@ -1835,6 +1835,7 @@ static void kthread_m(int cpuid)
 	kthreadm[cpuid] = 0;
 }
 
+
 void steal_from_linux(RT_TASK *rt_task)
 {
 	int cpuid;
@@ -1973,10 +1974,14 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 	}
 
 	if (rt_task->is_hard == 1) {
-		SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (TRAP), PID = %d.\n", (rt_task->lnxtsk)->pid););
-	        give_back_to_linux(rt_task);
-		rt_task->is_hard = 2;
-		SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (TRAP),  PID = %d.\n", (rt_task->lnxtsk)->pid););
+		if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
+			give_back_to_linux(rt_task);
+		} else {
+			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (TRAP), PID = %d.\n", (rt_task->lnxtsk)->pid););
+			give_back_to_linux(rt_task);
+			rt_task->is_hard = 2;
+			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (TRAP),  PID = %d.\n", (rt_task->lnxtsk)->pid););
+		}
 	}
 
 	return 0;
@@ -2102,10 +2107,14 @@ static void lxrt_intercept_syscall(adevinfo_t *evinfo)
 	if (test_bit(cpuid, &rtai_cpu_realtime)) {
 		RT_TASK *task = rt_smp_current[cpuid];
 		if (task->is_hard == 1) {
-			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d.\n", (task->lnxtsk)->pid););
-			give_back_to_linux(task);
-			task->is_hard = 2;
-			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL),  PID = %d.\n", (task->lnxtsk)->pid););
+			if (task->base_priority >= BASE_SOFT_PRIORITY) {
+				give_back_to_linux(task);
+			} else {
+				SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d.\n", (task->lnxtsk)->pid););
+				give_back_to_linux(task);
+				task->is_hard = 2;
+				SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL),  PID = %d.\n", (task->lnxtsk)->pid););
+			}
 		}
 	}
 }

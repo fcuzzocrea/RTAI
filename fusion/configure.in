@@ -639,7 +639,7 @@ CONFIG_RTAI_HW_SMI_DETECT=y
 AC_MSG_CHECKING(for SMI detection)
 AC_ARG_ENABLE(smi-detection,
         AS_HELP_STRING([--disable-smi-detection], [Disable SMI detection]),
-	[echo "$enableval" >> /tmp/foo.log; case "$enableval" in
+	[case "$enableval" in
 	n | no) unset CONFIG_RTAI_HW_SMI_DETECT ;;
 	*) CONFIG_RTAI_HW_SMI_DETECT=y ;;
 	esac;])

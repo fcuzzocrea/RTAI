@@ -20238,7 +20238,7 @@ echo $ECHO_N "checking for SMI detection... $ECHO_C" >&6
 # Check whether --enable-smi-detection or --disable-smi-detection was given.
 if test "${enable_smi_detection+set}" = set; then
   enableval="$enable_smi_detection"
-  echo "$enableval" >> /tmp/foo.log; case "$enableval" in
+  case "$enableval" in
 	n | no) unset CONFIG_RTAI_HW_SMI_DETECT ;;
 	*) CONFIG_RTAI_HW_SMI_DETECT=y ;;
 	esac;

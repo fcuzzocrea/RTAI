@@ -1,3 +1,14 @@
+2004-06-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* rtai-core/malloc/malloc.c: renamed global heap variable and added
+	a few lines to allow integrating shared memory.
+
+	* rtai-core/rtai_core/ipc/shm.c: cleanup and changes to integrate 
+	with malloc.
+
+	* rtai-core/rtai_core/include/rtai_shm.h: cleanup and changes to 
+	integrate with malloc.
+
 2004-06-25  Philippe Gerum  <rpm@xenomai.org>
 
 	* configure.in: Add back SUBDIRS= in KBUILD_CMD.

@@ -42,7 +42,7 @@
  * choice whether to permit this exception to apply to your
  * modifications. If you do not wish that, delete this exception
  * notice.
-v */
+ */
 
 #define XENO_TIMER_MODULE
 

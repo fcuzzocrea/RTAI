@@ -144,6 +144,9 @@ void __task_pkg_cleanup (void)
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -165,10 +168,11 @@ int rt_task_create (RT_TASK *task,
     xnflags_t bflags;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
     if (prio < T_HIPRIO || prio > T_LOPRIO)
 	return -EINVAL;
+
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     bflags = mode & (XNFPU|XNSHADOW|XNSUSP);
 
@@ -248,6 +252,9 @@ int rt_task_create (RT_TASK *task,
  *
  * - -EBUSY is returned if @a task is already started.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -266,7 +273,8 @@ int rt_task_start (RT_TASK *task,
     int err = 0;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -316,8 +324,9 @@ int rt_task_start (RT_TASK *task,
  *
  * - -EINVAL is returned if @a task is not a task descriptor.
  *
- * - -EACCES is returned if @a task is NULL but not called from a task
- * context.
+ * - -EPERM is returned if @a task is NULL but not called from a task
+ * context, or this service was called from a context which cannot
+ * sleep (e.g. interrupt, non-realtime or scheduler locked).
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
@@ -343,8 +352,8 @@ int rt_task_suspend (RT_TASK *task)
 
     if (!task)
 	{
-	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EACCES;
+	if (!xnpod_primary_p())
+	    return -EPERM;
 
 	task = rtai_current_task();
 	}
@@ -356,6 +365,12 @@ int rt_task_suspend (RT_TASK *task)
     if (!task)
 	{
 	err = rtai_handle_error(task,RTAI_TASK_MAGIC,RT_TASK);
+	goto unlock_and_exit;
+	}
+
+    if (xnpod_unblockable_p())
+	{
+	err = -EPERM;
 	goto unlock_and_exit;
 	}
 
@@ -452,8 +467,8 @@ int rt_task_resume (RT_TASK *task)
  *
  * - -EINVAL is returned if @a task is not a task descriptor.
  *
- * - -EACCES is returned if @a task is NULL but not called from a task
- * context.
+ * - -EPERM is returned if @a task is NULL but not called from a task
+ * context, or this service was called from an asynchronous context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
@@ -476,15 +491,15 @@ int rt_task_delete (RT_TASK *task)
     int err = 0;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
     if (!task)
 	{
-	if (xnpod_root_p())
-	    return -EACCES;
+	if (!xnpod_primary_p())
+	    return -EPERM;
 
 	task = rtai_current_task();
 	}
+    else if (xnpod_asynch_p())
+	    return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -513,6 +528,12 @@ int rt_task_delete (RT_TASK *task)
  * Move the current task to the end of its priority group, so that the
  * next equal-priority task in ready state is switched in.
  *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EPERM is returned if this service was called from a context
+ * which cannot sleep (e.g. interrupt, non-realtime or scheduler
+ * locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -527,7 +548,9 @@ int rt_task_delete (RT_TASK *task)
 int rt_task_yield (void)
 
 {
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_unblockable_p())
+	return -EPERM;
+
     xnpod_yield();
 
     return 0;
@@ -571,12 +594,15 @@ int rt_task_yield (void)
  * - -EWOULDBLOCK is returned if the system timer has not been started
  * using rt_timer_start().
  *
+ * - -EPERM is returned if @a task is NULL but not called from a task
+ * context.
+
  * Environments:
  *
  * This service can be called from:
  *
- * - Kernel module initialization/cleanup code
- *   only if @a task is non-NULL.
+ * - Kernel module initialization/cleanup code or interrupt only if @a
+ * task is non-NULL.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
@@ -597,12 +623,10 @@ int rt_task_set_periodic (RT_TASK *task,
     int err;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
     if (!task)
 	{
-	if (xnpod_root_p())
-	    return -EINVAL;
+	if (!xnpod_primary_p())
+	    return -EPERM;
 
 	task = rtai_current_task();
 	}
@@ -647,6 +671,10 @@ int rt_task_set_periodic (RT_TASK *task,
  * - -ETIMEDOUT is returned if a timer overrun occurred, which indicates
  * that a previous release point has been missed by the calling task.
  *
+ * - -EPERM is returned if this service was called from a context
+ * which cannot sleep (e.g. interrupt, non-realtime or scheduler
+ * locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -662,7 +690,9 @@ int rt_task_set_periodic (RT_TASK *task,
 int rt_task_wait_period (void)
 
 {
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_unblockable_p())
+	return -EPERM;
+
     return xnpod_wait_thread_period();
 }
 
@@ -685,7 +715,7 @@ int rt_task_wait_period (void)
  * - -EINVAL is returned if @a task is not a task descriptor, or if @a
  * prio is invalid.
  *
- * - -EACCES is returned if @a task is NULL but not called from a task
+ * - -EPERM is returned if @a task is NULL but not called from a task
  * context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
@@ -723,8 +753,8 @@ int rt_task_set_priority (RT_TASK *task,
 
     if (!task)
 	{
-	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EACCES;
+	if (!xnpod_primary_p())
+	    return -EPERM;
 
 	task = rtai_current_task();
 	}
@@ -770,6 +800,10 @@ int rt_task_set_priority (RT_TASK *task,
  *
  * - -EWOULDBLOCK is returned if the system timer is inactive.
  *
+ * - -EPERM is returned if this service was called from a context
+ * which cannot sleep (e.g. interrupt, non-realtime or scheduler
+ * locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -788,7 +822,8 @@ int rt_task_set_priority (RT_TASK *task,
 int rt_task_sleep (RTIME delay)
 
 {
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_unblockable_p())
+	return -EPERM;
 
     if (delay == 0)
 	return 0;
@@ -827,6 +862,10 @@ int rt_task_sleep (RTIME delay)
  *
  * - -EWOULDBLOCK is returned if the system timer is inactive.
  *
+ * - -EPERM is returned if this service was called from a context
+ * which cannot sleep (e.g. interrupt, non-realtime or scheduler
+ * locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -849,7 +888,8 @@ int rt_task_sleep_until (RTIME date)
     RTIME now;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_unblockable_p())
+	return -EPERM;
 
     if (!testbits(nkpod->status,XNTIMED))
 	return -EWOULDBLOCK;
@@ -954,7 +994,7 @@ int rt_task_unblock (RT_TASK *task)
  *
  * - -EINVAL is returned if @a task is not a task descriptor.
  *
- * - -EACCES is returned if @a task is NULL but not called from a task
+ * - -EPERM is returned if @a task is NULL but not called from a task
  * context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
@@ -981,8 +1021,8 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
 
     if (!task)
 	{
-	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EACCES;
+	if (!xnpod_primary_p())
+	    return -EPERM;
 
 	task = rtai_current_task();
 	}
@@ -1121,7 +1161,10 @@ int rt_task_remove_hook (int type, void (*routine)(void *cookie)) {
  * when signals are pending for the task. This handler is passed the
  * set of pending signals as its first and only argument.
  *
- * @return 0 is always returned.
+ * @return 0 upon success, or:
+ *
+ * - -EPERM is returned if this service was not called from a
+ * real-time task context.
  *
  * Environments:
  *
@@ -1138,7 +1181,8 @@ int rt_task_catch (void (*handler)(rt_sigset_t))
 {
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (!xnpod_primary_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
     rtai_current_task()->thread_base.asr = (xnasr_t)handler;
@@ -1173,8 +1217,8 @@ int rt_task_catch (void (*handler)(rt_sigset_t))
  *
  * - -EINVAL is returned if @a task is not a task descriptor.
  *
- * - -EACCES is returned if @a task is NULL but not called from a task
- * context.
+ * - -EPERM is returned if @a task is NULL but not called from a
+ * real-time task context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
@@ -1202,8 +1246,8 @@ int rt_task_notify (RT_TASK *task,
 
     if (!task)
 	{
-	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EACCES;
+	if (!xnpod_primary_p())
+	    return -EPERM;
 
 	task = rtai_current_task();
 	}
@@ -1291,8 +1335,13 @@ int rt_task_notify (RT_TASK *task,
  * of active mode bits. If NULL, the previous set of active mode bits
  * will not be returned.
  *
- * @return 0 is returned upon success, or -EINVAL if either @a setmask
- * or @a clrmask specifies invalid bits.
+ * @return 0 is returned upon success, or:
+ *
+ * - -EINVAL if either @a setmask or @a clrmask specifies invalid
+ * bits.
+ *
+ * - -EPERM is returned if this service was not called from a
+ * real-time task context.
  *
  * Environments:
  *
@@ -1311,19 +1360,20 @@ int rt_task_set_mode (int clrmask,
 {
     int mode;
 
-    if (!xnpod_regular_p())
+    if (xnpod_asynch_p())
 	{
 	clrmask &= ~T_LOCK;
 	setmask &= ~T_LOCK;
 
 	if (!clrmask && !setmask)
 	    return 0;
-
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 	}
 
     if (((clrmask|setmask) & ~(T_LOCK|T_RRB|T_NOSIG)) != 0)
 	return -EINVAL;
+
+    if (!xnpod_primary_p())
+	return -EPERM;
 
     mode = xnpod_set_thread_mode(&rtai_current_task()->thread_base,
 				 clrmask,
@@ -1387,7 +1437,7 @@ RT_TASK *rt_task_self (void)
  * - -EINVAL is returned if @a task is not a task descriptor, or if @a
  * quantum is zero.
  *
- * - -EACCES is returned if @a task is NULL but not called from a task
+ * - -EPERM is returned if @a task is NULL but not called from a task
  * context.
  *
  * Environments:
@@ -1420,8 +1470,8 @@ int rt_task_slice (RT_TASK *task, RTIME quantum)
 
     if (!task)
 	{
-	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EACCES;
+	if (!xnpod_primary_p())
+	    return -EPERM;
 
 	task = rtai_current_task();
 	}

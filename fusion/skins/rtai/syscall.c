@@ -2656,8 +2656,6 @@ static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
 
     if (intr->pending < 0)
 	{
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
 	task = rtai_current_task();
 
 	if (xnthread_base_priority(&task->thread_base) != FUSION_IRQ_PRIO)

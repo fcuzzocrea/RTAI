@@ -455,7 +455,8 @@ static RT_OBJECT *__registry_hash_find (const char *key)
 /**
  * @fn int rt_registry_enter(const char *key,
 		             void *objaddr,
-			     rt_handle_t *phandle)
+			     rt_handle_t *phandle,
+			     RT_OBJECT_PROCNODE *pnode)
  * @brief Register a real-time object.
  *
  * This service allocates a new registry slot for an associated
@@ -472,6 +473,13 @@ static RT_OBJECT *__registry_hash_find (const char *key)
  * @param phandle A pointer to a generic handle defined by the
  * registry which will uniquely identify the indexed object, until the
  * latter is unregistered using the rt_registry_remove() service.
+ *
+ * @param pnode A pointer to an optional /proc node class
+ * descriptor. This structure provides the information needed to
+ * export all objects from the given class through the /proc
+ * filesystem, under the /proc/rtai/registry entry. Passing NULL
+ * indicates that no /proc support is available for the newly
+ * registered object.
  *
  * @return 0 is returned upon success. Otherwise:
  *
@@ -600,6 +608,10 @@ int rt_registry_enter (const char *key,
  * - -ETIMEDOUT is returned if the object cannot be retrieved within
  * the specified amount of time.
  *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -630,11 +642,11 @@ int rt_registry_bind (const char *key,
     int err = 0;
     spl_t s;
 
-    if (timeout != TM_NONBLOCK)
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
     if (!key)
 	return -EINVAL;
+
+    if (timeout != TM_NONBLOCK && xnpod_unblockable_p())
+	return -EPERM;
 
     task = rtai_current_task();
 
@@ -844,7 +856,7 @@ int rt_registry_remove_safe (rt_handle_t handle, RTIME timeout)
 	    goto unlock_and_exit;
 	    }
 	
-	if (!xnpod_pendable_p())
+	if (xnpod_unblockable_p())
 	    {
 	    err = -EBUSY;
 	    goto unlock_and_exit;
@@ -913,7 +925,8 @@ int rt_registry_remove_safe (rt_handle_t handle, RTIME timeout)
  *
  * @return The memory address of the object's descriptor is returned
  * on success. Otherwise, NULL is returned if @a handle does not
- * reference a registered object.
+ * reference a registered object, or if @handle is equal to
+ * RT_REGISTRY_SELF but the current context is not a real-time task.
  *
  * Environments:
  *
@@ -940,7 +953,11 @@ void *rt_registry_get (rt_handle_t handle)
 
     if (handle == RT_REGISTRY_SELF)
 	{
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
+	if (!xnpod_primary_p())
+	    {
+	    objaddr = NULL;
+	    goto unlock_and_exit;
+	    }
 
 	if (xnpod_current_thread()->magic == RTAI_SKIN_MAGIC)
 	    {
@@ -981,7 +998,8 @@ void *rt_registry_get (rt_handle_t handle)
  *
  * @return The decremented lock count is returned upon success. Zero
  * is also returned if @a handle does not reference a registered
- * object.
+ * object, or if @handle is equal to RT_REGISTRY_SELF but the current
+ * context is not a real-time task.
  *
  * Environments:
  *
@@ -1009,7 +1027,11 @@ u_long rt_registry_put (rt_handle_t handle)
 
     if (handle == RT_REGISTRY_SELF)
 	{
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
+	if (!xnpod_primary_p())
+	    {
+	    newlock = 0;
+	    goto unlock_and_exit;
+	    }
 
 	if (xnpod_current_thread()->magic == RTAI_SKIN_MAGIC)
 	    handle = rtai_current_task()->handle;
@@ -1050,7 +1072,8 @@ u_long rt_registry_put (rt_handle_t handle)
  *
  * @return The memory address of the object's descriptor is returned
  * on success. Otherwise, NULL is returned if @a handle does not
- * reference a registered object.
+ * reference a registered object, or if @handle is equal to
+ * RT_REGISTRY_SELF but the current context is not a real-time task.
  *
  * Environments:
  *
@@ -1077,7 +1100,11 @@ void *rt_registry_fetch (rt_handle_t handle)
 
     if (handle == RT_REGISTRY_SELF)
 	{
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
+	if (!xnpod_primary_p())
+	    {
+	    objaddr = NULL;
+	    goto unlock_and_exit;
+	    }
 
 	if (xnpod_current_thread()->magic == RTAI_SKIN_MAGIC)
 	    {

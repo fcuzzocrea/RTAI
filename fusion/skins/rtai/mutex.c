@@ -137,6 +137,9 @@ static RT_OBJECT_PROCNODE __mutex_pnode = {
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -153,7 +156,8 @@ int rt_mutex_create (RT_MUTEX *mutex,
 {
     int err = 0;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnsynch_init(&mutex->synch_base,XNSYNCH_PRIO|XNSYNCH_PIP);
     mutex->handle = 0;  /* i.e. (still) unregistered mutex. */
@@ -200,6 +204,9 @@ int rt_mutex_create (RT_MUTEX *mutex,
  *
  * - -EIDRM is returned if @a mutex is a deleted mutex descriptor.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -217,7 +224,8 @@ int rt_mutex_delete (RT_MUTEX *mutex)
     int err = 0, rc;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -278,6 +286,10 @@ int rt_mutex_delete (RT_MUTEX *mutex)
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the mutex has become available.
  *
+ * - -EPERM is returned if this service was called from a context
+ * which cannot sleep (e.g. interrupt, non-realtime or scheduler
+ * locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -298,7 +310,8 @@ int rt_mutex_lock (RT_MUTEX *mutex)
     int err = 0;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_unblockable_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -357,7 +370,9 @@ int rt_mutex_lock (RT_MUTEX *mutex)
  *
  * - -EIDRM is returned if @a mutex is a deleted mutex descriptor.
  *
- * - -EACCES is returned if @a mutex is not owned by the current task.
+ * - -EPERM is returned if @a mutex is not owned by the current task,
+ * or if this service was called from a context which cannot sleep
+ * (e.g. interrupt, non-realtime or scheduler locked).
  *
  * Environments:
  *
@@ -376,7 +391,8 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
     int err = 0;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_unblockable_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -390,7 +406,7 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
 
     if (rtai_current_task() != mutex->owner)
 	{
-	err = -EACCES;
+	err = -EPERM;
 	goto unlock_and_exit;
 	}
 

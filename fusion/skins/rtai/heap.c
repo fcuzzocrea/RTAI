@@ -324,6 +324,9 @@ int rt_heap_create (RT_HEAP *heap,
  *
  * - -EIDRM is returned if @a heap is a deleted heap descriptor.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -340,7 +343,8 @@ int rt_heap_delete (RT_HEAP *heap)
     int err = 0, rc;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -437,8 +441,9 @@ int rt_heap_delete (RT_HEAP *heap)
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before any block was available.
  *
- * - -EACCES is returned if the request should block but has not been
- * issued from a task context.
+ * - -EPERM is returned if this service should block but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
  *
  * Environments:
  *
@@ -525,9 +530,9 @@ int rt_heap_alloc (RT_HEAP *heap,
 	goto unlock_and_exit;
 	}
 
-    if (xnpod_asynch_p() || xnpod_root_p())
+    if (xnpod_unblockable_p())
 	{
-	err = -EACCES;
+	err = -EPERM;
 	goto unlock_and_exit;
 	}
 

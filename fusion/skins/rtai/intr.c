@@ -103,6 +103,9 @@ void __intr_pkg_cleanup (void)
  * associated to any given interrupt line using rt_intr_create() at
  * any time.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -121,7 +124,8 @@ int rt_intr_create (RT_INTR *intr,
     int err;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnintr_init(&intr->intr_base,irq,isr,0);
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
@@ -176,6 +180,9 @@ int rt_intr_create (RT_INTR *intr,
  * - -EIDRM is returned if @a intr is a deleted interrupt object
  * descriptor.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -193,7 +200,8 @@ int rt_intr_delete (RT_INTR *intr)
     int err = 0, rc;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -432,8 +440,9 @@ int rt_intr_inquire (RT_INTR *intr,
  * - -EINVAL is returned if @a intr is not an interrupt object
  * descriptor, or @a timeout is equal to TM_NONBLOCK.
  *
- * - -EACCES is returned if this service was not called from a task
- * context.
+ * - -EPERM is returned if this service was called from a context
+ * which cannot sleep (e.g. interrupt, non-realtime or scheduler
+ * locked).
  *
  * - -EIDRM is returned if @a intr is a deleted interrupt object
  * descriptor, including if the deletion occurred while the caller was
@@ -454,6 +463,62 @@ int rt_intr_inquire (RT_INTR *intr,
  * the system timer, as defined by the rt_timer_start() service. In
  * periodic mode, clock ticks are interpreted as periodic jiffies. In
  * oneshot mode, clock ticks are interpreted as nanoseconds.
+ */
+
+/**
+ * @fn int rt_intr_bind(RT_INTR *intr,
+		        unsigned irq)
+ * @brief Bind to an interrupt object.
+ *
+ * This user-space only service retrieves the uniform descriptor of a
+ * given RTAI interrupt object identified by its IRQ number. If the
+ * object does not exist on entry, this service blocks the caller
+ * until an interrupt object of the given number is created.
+ *
+ * @param irq The hardware interrupt channel associated with the
+ * interrupt object to search for. This value is
+ * architecture-dependent.
+ *
+ * @param intr The address of an interrupt object descriptor retrieved
+ * by the operation. Contents of this memory is undefined upon
+ * failure.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EFAULT is returned if @a intr is referencing invalid memory.
+ *
+ * - -EINVAL is returned if @a irq is invalid.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before the retrieval has completed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: always unless the request is immediately satisfied.
+ */
+
+/**
+ * @fn int rt_intr_unbind(RT_INTR *intr)
+ *
+ * @brief Unbind from an interrupt object.
+ *
+ * This user-space only service unbinds the calling task from the
+ * interrupt object previously retrieved by a call to rt_intr_bind().
+ *
+ * @param intr The address of a interrupt object descriptor to unbind
+ * from.
+ *
+ * @return 0 is always returned.
+ *
+ * This service can be called from:
+ *
+ * - User-space task.
+ *
+ * Rescheduling: never.
  */
 
 /*@}*/

@@ -309,6 +309,9 @@ int rt_queue_create (RT_QUEUE *q,
  *
  * - -EIDRM is returned if @a q is a deleted queue descriptor.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -325,7 +328,8 @@ int rt_queue_delete (RT_QUEUE *q)
     int err = 0, rc;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -681,6 +685,10 @@ int rt_queue_send (RT_QUEUE *q,
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before any data was available.
  *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -733,7 +741,11 @@ ssize_t rt_queue_recv (RT_QUEUE *q,
 	    goto unlock_and_exit;
 	    }
 
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
+	if (xnpod_unblockable_p())
+	    {
+	    err = -EPERM;
+	    goto unlock_and_exit;
+	    }
 
 	xnsynch_sleep_on(&q->synch_base,timeout);
 

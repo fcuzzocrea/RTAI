@@ -154,6 +154,9 @@ static RT_OBJECT_PROCNODE __sem_pnode = {
  * - -EINVAL is returned if the @a icount is non-zero and @a mode
  * specifies a pulse semaphore.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -172,7 +175,8 @@ int rt_sem_create (RT_SEM *sem,
 {
     int err = 0;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     if ((mode & S_PULSE) && icount > 0)
 	return -EINVAL;
@@ -222,6 +226,9 @@ int rt_sem_create (RT_SEM *sem,
  *
  * - -EIDRM is returned if @a sem is a deleted semaphore descriptor.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -239,7 +246,8 @@ int rt_sem_delete (RT_SEM *sem)
     int err = 0, rc;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -308,6 +316,10 @@ int rt_sem_delete (RT_SEM *sem)
  * - -ETIMEDOUT is returned if no unit is available within the
  * specified amount of time.
  *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -354,7 +366,11 @@ int rt_sem_p (RT_SEM *sem,
         goto unlock_and_exit;
         }
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_unblockable_p())
+	{
+	err = -EPERM;
+	goto unlock_and_exit;
+	}
 
     if (sem->count > 0)
         --sem->count;

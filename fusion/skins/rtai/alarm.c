@@ -91,6 +91,9 @@ static void __alarm_trampoline (void *cookie)
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -99,7 +102,7 @@ static void __alarm_trampoline (void *cookie)
  * - Kernel-based task
  * - User-space task
  *
- * Rescheduling: never.
+ * Rescheduling: possible.
  */
 
 int rt_alarm_create (RT_ALARM *alarm,
@@ -109,7 +112,8 @@ int rt_alarm_create (RT_ALARM *alarm,
 {
     int err = 0;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xntimer_init(&alarm->timer_base,&__alarm_trampoline,alarm);
     alarm->handle = 0;  /* i.e. (still) unregistered alarm. */
@@ -157,6 +161,9 @@ int rt_alarm_create (RT_ALARM *alarm,
  *
  * - -EIDRM is returned if @a alarm is a deleted alarm descriptor.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -174,7 +181,8 @@ int rt_alarm_delete (RT_ALARM *alarm)
     int err = 0;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -263,8 +271,6 @@ int rt_alarm_start (RT_ALARM *alarm,
     int err = 0;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
     xnlock_get_irqsave(&nklock,s);
 
     alarm = rtai_h2obj_validate(alarm,RTAI_ALARM_MAGIC,RT_ALARM);
@@ -316,8 +322,6 @@ int rt_alarm_stop (RT_ALARM *alarm)
 {
     int err = 0;
     spl_t s;
-
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -419,8 +423,9 @@ int rt_alarm_inquire (RT_ALARM *alarm,
  *
  * - -EINVAL is returned if @a alarm is not an alarm descriptor.
  *
- * - -EACCES is returned if this service was not called from a task
- * context.
+ * - -EPERM is returned if this service was called from a context
+ * which cannot sleep (e.g. interrupt, non-realtime or scheduler
+ * locked).
  *
  * - -EIDRM is returned if @a alarm is a deleted alarm descriptor,
  * including if the deletion occurred while the caller was waiting for

@@ -161,6 +161,9 @@ static RT_OBJECT_PROCNODE __event_pnode = {
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -179,7 +182,8 @@ int rt_event_create (RT_EVENT *event,
 {
     int err = 0;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnsynch_init(&event->synch_base,mode & EV_PRIO);
     event->value = ivalue;
@@ -225,6 +229,9 @@ int rt_event_create (RT_EVENT *event,
  *
  * - -EIDRM is returned if @a event is a deleted event group descriptor.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -242,7 +249,8 @@ int rt_event_delete (RT_EVENT *event)
     int err = 0, rc;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -414,6 +422,10 @@ int rt_event_signal (RT_EVENT *event,
  * - -ETIMEDOUT is returned if the request has not been satisfied
  * within the specified amount of time.
  *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -485,7 +497,11 @@ int rt_event_wait (RT_EVENT *event,
         goto unlock_and_exit;
         }
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_unblockable_p())
+	{
+	err = -EPERM;
+	goto unlock_and_exit;
+	}
 
     task = rtai_current_task();
     task->wait_args.event.mode = mode;

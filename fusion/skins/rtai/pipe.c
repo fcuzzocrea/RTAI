@@ -149,6 +149,9 @@ void __pipe_pkg_cleanup (void)
  *
  * - -EBUSY is returned if @a minor is already open.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -165,7 +168,8 @@ int rt_pipe_open (RT_PIPE *pipe,
 {
     int err;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     pipe->minor = minor;
     pipe->buffer = NULL;
@@ -203,6 +207,9 @@ int rt_pipe_open (RT_PIPE *pipe,
  *
  * - -ENODEV or -EBADF can be returned if @a pipe is scrambled.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -220,7 +227,8 @@ int rt_pipe_close (RT_PIPE *pipe)
     int err;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -301,6 +309,10 @@ int rt_pipe_close (RT_PIPE *pipe)
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before any data was available.
  *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
  * Environments:
  *
  * This service can be called from:
@@ -328,8 +340,8 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
     ssize_t n;
     spl_t s;
 
-    if (timeout != TM_NONBLOCK)
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (timeout != TM_NONBLOCK && xnpod_unblockable_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 

@@ -1,3 +1,13 @@
+2005-01-14  Philippe Gerum  <rpm@xenomai.org>
+
+	* skin/rtai: Fix the mess in the context-checking code: normalize
+	error returns to -EPERM (instead of -EACCES), and stop using
+	xnpod_check_context().
+
+	* include/nucleus/pod.h (xnpod_unblockable_p): Replace
+	xnpod_pendable_p() with an opposite test encompassing the root
+	thread.
+
 2005-01-13  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/heap.c (rt_heap_alloc): Fix shared memory case, and

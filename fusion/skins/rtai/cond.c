@@ -134,6 +134,9 @@ static RT_OBJECT_PROCNODE __cond_pnode = {
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -150,7 +153,8 @@ int rt_cond_create (RT_COND *cond,
 {
     int err = 0;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnsynch_init(&cond->synch_base,XNSYNCH_PRIO);
     cond->handle = 0;  /* i.e. (still) unregistered cond. */
@@ -198,6 +202,9 @@ int rt_cond_create (RT_COND *cond,
  * - -EIDRM is returned if @a cond is a deleted condition variable
  * descriptor.
  *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -215,7 +222,8 @@ int rt_cond_delete (RT_COND *cond)
     int err = 0, rc;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);
 

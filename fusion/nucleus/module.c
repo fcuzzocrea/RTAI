@@ -123,8 +123,8 @@ static int xnpod_read_proc (char *page,
 	if (muxtable[muxid].magic != 0)
 	    {
 	    p += sprintf(p,"%s%s (%d)",nrxfaces > 0 ? ", " : "",
-			    muxtable[muxid].name, 
-			    xnarch_atomic_get(&muxtable[muxid].refcnt));
+			 muxtable[muxid].name, 
+			 xnarch_atomic_get(&muxtable[muxid].refcnt));
 	    nrxfaces++;
 	    }
 

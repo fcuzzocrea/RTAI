@@ -68,7 +68,6 @@ typedef struct xntimes {
     xnticks_t timer_handled;
     xnticks_t timer_exit;
     xnsticks_t timer_drift;
-    xnsticks_t timer_drift2;
     xnticks_t intr_resched;
     xnticks_t resume_entry;
     xnticks_t resume_exit;

@@ -123,7 +123,6 @@ void xntimer_init (xntimer_t *timer,
     timer->cookie = cookie;
     timer->interval = 0;
     timer->date = XN_INFINITE;
-    timer->shot = XN_INFINITE;
     timer->prio = XNTIMER_STDPRIO;
 
     xnarch_init_display_context(timer);
@@ -166,7 +165,6 @@ static inline void xntimer_enqueue_periodic (xntimer_t *timer)
 {
     /* Just prepend the new timer to the proper slot. */
     prependq(&nkpod->timerwheel[timer->date & XNTIMER_WHEELMASK],&timer->link);
-    timer->shot = timer->date;
     __clrbits(timer->status,XNTIMER_DEQUEUED);
 }
 
@@ -198,7 +196,6 @@ static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
 	    break;
 	
     insertq(q,p->next,&timer->link);
-    timer->shot = timer->date;
     __clrbits(timer->status,XNTIMER_DEQUEUED);
 }
 
@@ -227,8 +224,6 @@ static inline void xntimer_next_shot (void)
 	delay = nktimerlat;
     else
 	delay = timer->date - xdate;
-
-    timer->shot = now + delay;
 
     xnarch_program_timer_shot(delay);
 }
@@ -506,14 +501,17 @@ void xntimer_do_timers (void)
     xnsched_t *sched = xnpod_current_sched();
     xnholder_t *nextholder, *holder;
     xnqueue_t *timerq, reschedq;
-    xnticks_t now = 0; /* Silence preposterous warning. */
     xntimer_t *timer;
+    xnticks_t now;
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
     int aperiodic = !testbits(nkpod->status,XNTMPER);
 
     if (aperiodic)
+	{
+	now = xnarch_get_cpu_tsc();
 	/* Only use slot #0 in aperiodic mode. */
 	timerq = &nkpod->timerwheel[0];
+	}
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	{
@@ -543,9 +541,7 @@ void xntimer_do_timers (void)
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)
 	    {
-	    now = xnarch_get_cpu_tsc();
-
-	    if (timer->shot > now)
+	    if (timer->date - nkschedlat > now)
 		/* No need to continue in aperiodic mode since
 		   timeout dates are ordered by increasing
 		   values. */
@@ -553,20 +549,19 @@ void xntimer_do_timers (void)
 	    }
 	else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    if (timer->shot > now)
+	    if (timer->date > now)
 		continue;
 
 	if (timer == &nkpod->htimer)
 	    /* By postponing the propagation of the low-priority host
 	       tick to the interrupt epilogue (see
 	       xnintr_irq_handler()), we save some I-cache, which
-	       translates into precious microsecs. */
+	       translates into precious microsecs on low-end hw. */
 	    __setbits(sched->status,XNHTICK);
 	else
 	    {
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
 	    nkpod->timestamps.timer_drift = (xnsticks_t)now - (xnsticks_t)timer->date;
-	    nkpod->timestamps.timer_drift2 = (xnsticks_t)now - (xnsticks_t)timer->shot;
 	    nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 	    /* Otherwise, we'd better have a valid handler... */

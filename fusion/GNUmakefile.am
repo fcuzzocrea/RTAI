@@ -74,17 +74,15 @@ dist-hook:
 	test -e $(srcdir)/doc || rm -rf $(distdir)/doc
 
 dev devices:
-	@if test x$(DESTDIR) = x; then \
-	    if test \! "x`type -t sudo`" = x; then sudo=sudo; else sudo=; fi; \
-	    for n in `seq 0 @RTAI_PIPE_NRDEV@`; do \
-	       f="$(DESTDIR)/dev/rtp$$n"; \
-	       if test \! -c $$f; then \
-	          $$sudo mknod -m 666 $$f c 150 $$n; \
-	       fi; \
-	    done ; \
-	    if test \! -c /dev/rtheap; then \
-	       $$sudo mknod -m 666 /dev/rtheap c 10 254; \
-	    fi; \
+	if test \! "x`type -t sudo`" = x; then sudo=sudo; else sudo=; fi; \
+	for n in `seq 0 @RTAI_PIPE_NRDEV@`; do \
+	   f="$(DESTDIR)/dev/rtp$$n"; \
+	   if test \! -c $$f; then \
+	      $$sudo mknod -m 666 $$f c 150 $$n; \
+	   fi; \
+	done ; \
+	if test \! -c /dev/rtheap; then \
+	  $$sudo mknod -m 666 /dev/rtheap c 10 254; \
 	fi
 
 uninstall-local:

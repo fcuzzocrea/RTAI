@@ -86,8 +86,6 @@ typedef struct xntimer {
 
     xnticks_t date;		/* !< Absolute timeout date (in ticks). */
 
-    xnticks_t shot;		/* !< Anticipated shot time (in ticks). */
-
     xnticks_t interval;		/* !< Periodic interval (in ticks, 0 == one shot). */
 
     int prio;			/* !< Internal priority. */

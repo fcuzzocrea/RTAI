@@ -62,6 +62,8 @@
 #define ONESHOT_SPAN \
     (((long long)RTAI_TIMER_MAXVAL * RTAI_TSC_FREQ) / RTAI_TIMER_FREQ)
 #define update_linux_timer(cpuid)	__adeos_pend_uncond(RTAI_TIMER_IRQ, cpuid)
+/* Adeos/ARM calls all event handlers with hw-interrupts enabled (both in threaded
+ * and unthreaded mode), so there is no need for RTAI to do it again. */
 #define IN_INTERCEPT_IRQ_ENABLE()	do { /* nop */ } while (0)
 
 union rtai_lxrt_t {
@@ -86,6 +88,8 @@ _lxrt_context_switch(struct task_struct *prev, struct task_struct *next, int cpu
 {
     struct mm_struct *oldmm = prev->active_mm;
 
+    ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled());
+    ADEOS_PARANOIA_ASSERT(next->active_mm);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     switch_mm(oldmm, next->active_mm, next, cpuid);
     if (!next->mm)
@@ -95,9 +99,7 @@ _lxrt_context_switch(struct task_struct *prev, struct task_struct *next, int cpu
     if (!next->mm)
         enter_lazy_tlb(oldmm, next);
 #endif /* < 2.6.0 */
-    ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled());
-    /* don't use switch_to() here, it enables hw-irqs unconditionally! */
-    switch_to_orig(prev, next, prev);
+    switch_to(prev, next, prev);
     ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled());
 }
 

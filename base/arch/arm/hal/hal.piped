@@ -65,7 +65,8 @@ typedef void (*isr_hook_t)(int);
 struct {
     rt_irq_handler_t handler;
     void *cookie;
-}			rtai_realtime_irq[NR_IRQS];
+}			rtai_realtime_irq[NR_IRQS]
+			__attribute__((__aligned__(L1_CACHE_BYTES)));
 adomain_t		rtai_domain;
 struct rt_times		rt_times;
 struct rt_times		rt_smp_times[RTAI_NR_CPUS] = { { 0 } };
@@ -477,28 +478,10 @@ rtai_irq_trampoline(unsigned irq)
     TRACE_RTAI_GLOBAL_IRQ_EXIT();
 }
 
-//#define HINT_DIAG_ECHO
-//#define HINT_DIAG_TRAPS
-
-#ifdef HINT_DIAG_ECHO
-#define HINT_DIAG_MSG(x) x
-#else
-#define HINT_DIAG_MSG(x)
-#endif
-
 static void
 rtai_trap_fault(adevinfo_t *evinfo)
 {
     adeos_declare_cpuid;
-
-#ifdef HINT_DIAG_TRAPS
-    static unsigned long traps_in_hard_intr = 0;
-    do {
-	if (adeos_hw_irqs_disabled()
-	    && !test_and_set_bit(evinfo->event, &traps_in_hard_intr))
-	    HINT_DIAG_MSG(rt_printk("TRAP %d HAS INTERRUPT DISABLED (TRAPS PICTURE %lx).\n", evinfo->event, traps_in_hard_intr););
-    } while (0);
-#endif
 
     TRACE_RTAI_TRAP_ENTRY(evinfo->event, 0);
 
@@ -507,8 +490,10 @@ rtai_trap_fault(adevinfo_t *evinfo)
 
     adeos_load_cpuid();
 
-    /* We don't treat SIGILL as "FPU usage" as there is no FPU support in RTAI
-     * for ARM. */
+    /* We don't treat SIGILL as "FPU usage" as there is no FPU support in RTAI for ARM.
+     * *FIXME* The whole FPU kernel emulation issue has to be sorted out (is it
+     * reentrentant, do we need to save the emulated registers, can it be used
+     * in kernel space, etc.). */
 
     if (rtai_trap_handler != NULL
 	&& rtai_trap_handler(evinfo->event, evinfo->event, (struct pt_regs *)evinfo->evdata,

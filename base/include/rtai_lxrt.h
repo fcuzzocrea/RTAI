@@ -555,7 +555,6 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 #else /* !__KERNEL__ */
 
 #include <sys/types.h>
-#include <sys/io.h>
 #include <sched.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -607,6 +606,7 @@ RTAI_PROTO(unsigned long,rt_get_name,(void *adr))
 
 RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
 {
+	extern int iopl(int);
         struct sched_param mysched;
         struct { int name, priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, stack_size, max_msg_size, cpus_allowed };
 

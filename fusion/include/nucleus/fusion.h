@@ -77,6 +77,7 @@ int xnfusion_attach(void);
 #else /* !__KERNEL__ */
 
 #include <sys/types.h>
+#include <sys/mman.h>
 #include <pthread.h>
 
     /* Public RTAI/fusion interface. */

@@ -18,7 +18,7 @@ case 'set' then
   oldlb=label(1)
   while %t do
     [ok,port,op,name,ipaddr,lab]=..
-        getvalue('Set RTAI-mbx_rcv_if block parameters',..
+        getvalue('Set RTAI-mbx_rcv block parameters',..
         ['Port nr';
         'output ports';
 	'MBX Name';
@@ -27,7 +27,7 @@ case 'set' then
 
     if ~ok then break,end
     label(1)=lab
-    funam='i_comedi_data_' + string(port);
+    funam='i_mbx_rcv_' + string(port);
     xx=[];ng=[];z=0;
     nx=0;nz=0;
     o=[];
@@ -137,12 +137,13 @@ if tt==[] then
   	 textmp($+1)='   break;';
   	 ttext=[ttext;'int '+funam+"_bloc_outputs(scicos_block *block,int flag)";
          "{";
-         "  double y[1];";
+	 "int i;";
+         "  double y[" + string(nout) + "];";
          "  double t = get_scicos_time();";
          '#ifdef MODEL'
          "  inp_mbx_receive_input(" + string(port) + ",y,t);";
          '#endif'
-         "  block->outptr[0][0]=y[0];";
+	 "  for (i=0;i<" + string(nout) + ";i++) block->outptr[i][0] = y[i];";
          "  return 0;";
          "}"];
  	 textmp($+1)='  case 5: '

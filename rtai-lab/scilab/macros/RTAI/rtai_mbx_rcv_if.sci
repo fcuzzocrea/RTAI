@@ -137,12 +137,13 @@ if tt==[] then
   	 textmp($+1)='   break;';
   	 ttext=[ttext;'int '+funam+"_bloc_outputs(scicos_block *block,int flag)";
          "{";
-         "  double y[1];";
+	 "int i;";
+         "  double y[" + string(nout) + "];";
          "  double t = get_scicos_time();";
          '#ifdef MODEL'
          "  inp_mbx_receive_if_input(" + string(port) + ",y,t);";
          '#endif'
-         "  block->outptr[0][0]=y[0];";
+	 "  for (i=0;i<" + string(nout) + ";i++) block->outptr[i][0] = y[i];";
          "  return 0;";
          "}"];
  	 textmp($+1)='  case 5: '

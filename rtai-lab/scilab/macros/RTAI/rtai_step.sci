@@ -18,7 +18,7 @@ case 'set' then
   oldlb=label(1)
   while %t do
     [ok,port,A,delay,lab]=..
-        getvalue('Set RTAI-square block parameters',..
+        getvalue('Set RTAI STEP block parameters',..
         ['Port nr';
 	'Amplitude';
 	'Delay'],..

@@ -1,3 +1,12 @@
+2004-07-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/include/asm-i386/rtai_hal.h: optimised interrupt
+	disabling/enabling and related flags management for UP. 
+
+        * rtai-core/sched/rtai/sched_up.c, rtai-core/sched/rtai/sched_mup.c
+	rtai-core/sched/rtai/sched_smp.c, rtai-core/sched/rtai/sched_lxrt.c:
+	avoid changing sign to zero in time conversions.
+
 2004-07-25  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: rtai-3.1 test #4

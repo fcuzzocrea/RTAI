@@ -209,6 +209,8 @@ int rt_event_pend (RT_EVENT *event,
     task->wait_args.event.mode = mode;
     task->wait_args.event.mask = mask;
     xnsynch_sleep_on(&event->synch_base,timeout);
+    /* The returned mask is only significant if the operation has
+       succeeded, but do always write it back anyway. */
     *mask_r = task->wait_args.event.mask;
 
     if (xnthread_test_flags(&task->thread_base,XNRMID))

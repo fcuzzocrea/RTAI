@@ -1365,9 +1365,10 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	       is executed from there. */
 	    goto propagate_syscall;
 	}
-    else if ((sysflags & __xn_exec_histage) != 0)
+    else if ((sysflags & (__xn_exec_histage|__xn_exec_current)) != 0)
 	{
-	/* Syscall must run into the RTAI domain. */
+	/* Syscall must be processed either by RTAI, or by the calling
+	   domain. */
 
 	if (evinfo->domid != RTHAL_DOMAIN_ID)
 	    /* Request originates from the Linux domain: propagate the
@@ -1449,7 +1450,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
 
 	switched = 1;
 	}
-    else
+    else /* We want to run the syscall in the Linux domain.  */
 	switched = 0;
 
     __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(current,regs));

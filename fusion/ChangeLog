@@ -1,3 +1,8 @@
+2005-03-08  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/syscall.h (__xn_exec_current): Add mode bit to
+	run syscall in the caller's domain.
+
 2005-03-07  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* configure.in: Remove the CROSS_COMPILE hack.

@@ -214,20 +214,26 @@ SUBDIRS = \
 	testsuite \
 	scripts \
 	@RTAI_MAYBE_DOCDIR@ \
-	@RTAI_MAYBE_SIMDIR@ \
+	$(subdirs) \
 	config
 
 
-DIST_SUBDIRS = $(SUBDIRS)
-
-EXTRA_DIST = makefile README.INSTALL
+EXTRA_DIST = makefile README.INSTALL @RTAI_MAYBE_SIMDIR@
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs
 CONFIG_HEADER = rtai_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = doc/GNUmakefile doc/doxygen/GNUmakefile \
+	doc/doxygen/Doxyfile doc/docbook/GNUmakefile \
+	doc/docbook/catalog doc/docbook/custom-stylesheets/GNUmakefile \
+	doc/docbook/custom-stylesheets/xsl/GNUmakefile \
+	doc/docbook/custom-stylesheets/xsl/common/GNUmakefile \
+	doc/docbook/custom-stylesheets/xsl/fo/GNUmakefile \
+	doc/docbook/custom-stylesheets/xsl/html/GNUmakefile \
+	doc/docbook/custom-stylesheets/xsl/html/chunk.xsl \
+	doc/docbook/xenomai/GNUmakefile
 DIST_SOURCES =
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
@@ -243,6 +249,7 @@ DIST_COMMON = $(srcdir)/GNUmakefile.in $(srcdir)/configure ChangeLog \
 	config/autoconf/ltmain.sh config/autoconf/missing \
 	config/autoconf/mkinstalldirs configure configure.in \
 	rtai_config.h.in
+DIST_SUBDIRS = $(SUBDIRS)
 all: rtai_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -280,6 +287,30 @@ $(srcdir)/rtai_config.h.in: @MAINTAINER_MODE_TRUE@ $(top_srcdir)/configure.in $(
 
 distclean-hdr:
 	-rm -f rtai_config.h stamp-h1
+doc/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/doxygen/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/doxygen/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/doxygen/Doxyfile: $(top_builddir)/config.status $(top_srcdir)/doc/doxygen/Doxyfile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/catalog: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/catalog.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/custom-stylesheets/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/custom-stylesheets/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/custom-stylesheets/xsl/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/custom-stylesheets/xsl/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/custom-stylesheets/xsl/common/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/custom-stylesheets/xsl/common/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/custom-stylesheets/xsl/fo/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/custom-stylesheets/xsl/fo/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/custom-stylesheets/xsl/html/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/custom-stylesheets/xsl/html/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/custom-stylesheets/xsl/html/chunk.xsl: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/custom-stylesheets/xsl/html/chunk.xsl.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+doc/docbook/xenomai/GNUmakefile: $(top_builddir)/config.status $(top_srcdir)/doc/docbook/xenomai/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -431,7 +462,7 @@ distcleancheck_listfiles = find . -type f -print
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkinstalldirs) $(distdir)/config/autoconf $(distdir)/doc/docbook $(distdir)/doc/docbook/custom-stylesheets/xsl/html $(distdir)/doc/doxygen $(distdir)/scripts
+	$(mkinstalldirs) $(distdir)/config/autoconf $(distdir)/doc $(distdir)/doc/docbook $(distdir)/doc/docbook/custom-stylesheets $(distdir)/doc/docbook/custom-stylesheets/xsl $(distdir)/doc/docbook/custom-stylesheets/xsl/common $(distdir)/doc/docbook/custom-stylesheets/xsl/fo $(distdir)/doc/docbook/custom-stylesheets/xsl/html $(distdir)/doc/docbook/xenomai $(distdir)/doc/doxygen $(distdir)/scripts
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -458,7 +489,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \
@@ -698,6 +729,7 @@ dist-hook:
 	$(MAKE) -C $(distdir)/config/kconfig \
 	-f Makefile.kconfig distclean srctree=$(distdir)
 	rm -fr `find $(distdir) -name CVS`
+	test -e $(srcdir)/doc || rm -rf $(distdir)/doc
 
 dev devices:
 	@if test x$(DESTDIR) = x; then \

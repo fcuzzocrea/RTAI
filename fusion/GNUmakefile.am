@@ -8,12 +8,10 @@ SUBDIRS = \
 	testsuite \
 	scripts \
 	@RTAI_MAYBE_DOCDIR@ \
-	@RTAI_MAYBE_SIMDIR@ \
+	$(subdirs) \
 	config
 
-DIST_SUBDIRS = $(SUBDIRS)
-
-EXTRA_DIST = makefile README.INSTALL
+EXTRA_DIST = makefile README.INSTALL @RTAI_MAYBE_SIMDIR@
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged
 
@@ -68,6 +66,7 @@ dist-hook:
 	$(MAKE) -C $(distdir)/config/kconfig \
 	-f Makefile.kconfig distclean srctree=$(distdir)
 	rm -fr `find $(distdir) -name CVS`
+	test -e $(srcdir)/doc || rm -rf $(distdir)/doc
 
 dev devices:
 	@if test x$(DESTDIR) = x; then \

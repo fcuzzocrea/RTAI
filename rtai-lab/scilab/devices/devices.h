@@ -51,22 +51,6 @@ void inp_extdata_input(int port, double * y, double t);
 void inp_extdata_update(void);
 void inp_extdata_end(int port);
 
-void inp_cioquad4_init(int port,int modul ,char * Addr,int reso, int prec, int Rot, int Reset);
-void inp_cioquad4_input(int port, double * y, double t);
-void inp_cioquad4_update(void);
-void inp_cioquad4_end(int port);
-
-void inp_pcan_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5);
-void inp_pcan_input(int port, double * y, double t);
-void inp_pcan_update();
-void inp_pcan_end(int port);
-
-void out_pcan_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5);
-void out_pcan_output(int port, double * u,double t);
-void out_pcan_end(int port);
-
 void out_mbx_ovrwr_send_init(int port,int nch,char * sName,char * IP);
 void out_mbx_ovrwr_send_output(int port, double * u,double t);
 void out_mbx_ovrwr_send_end(int port);
@@ -104,3 +88,37 @@ void inp_rtai_sem_end(int port);
 void out_rtai_sem_init(int port,char * sNam,char * IPe);
 void out_rtai_sem_output(int port, double * u,double t);
 void out_rtai_sem_end(int port);
+
+void inp_cioquad4_init(int port,int modul ,char * Addr,int reso, int prec, int Rot, int Reset);
+void inp_cioquad4_input(int port, double * y, double t);
+void inp_cioquad4_update(void);
+void inp_cioquad4_end(int port);
+
+void inp_pcan_init(int port,int nch,char * sName,char * sParam,double p1,
+                  double p2, double p3, double p4, double p5);
+void inp_pcan_input(int port, double * y, double t);
+void inp_pcan_update();
+void inp_pcan_end(int port);
+
+void out_pcan_init(int port,int nch,char * sName,char * sParam,double p1,
+                  double p2, double p3, double p4, double p5);
+void out_pcan_output(int port, double * u,double t);
+void out_pcan_end(int port);
+
+void inp_rtai_epp_init(int port,int nch);
+void inp_rtai_epp_input(int port, double * y, double t);
+void inp_rtai_epp_update(void);
+void inp_rtai_epp_end(int port);
+void out_rtai_epp_init(int port,int nch);
+void out_rtai_epp_output(int port, double * u,double t);
+void out_rtai_epp_end(int port);
+void rtai_epp_outb(unsigned char val, int port);
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-function [x,y,typ]=rtai_pcan_in(job,arg1,arg2)
+function [x,y,typ]=rtai_sem_wait(job,arg1,arg2)
 //
 // Copyright roberto.bucher@supsi.ch
 x=[];y=[];typ=[];
@@ -17,37 +17,27 @@ case 'set' then
   label=graphics.exprs;
   oldlb=label(1)
   while %t do
-    [ok,port,pcan_id,kp,ki,typ,lab]=..
-        getvalue('Set PCAN data block parameters',..
-        ['Port';
-        'CAN Id';
-	'Proportional Gain';
-        'Integral Gain';
-	'Typ'],...
-         list('vec',1,'str',1,'vec',1,'vec',1','str',1),label(1))
+    [ok,port,name,ipaddr,lab]=..
+        getvalue('Set RTAI-sem wait block parameters',..
+        ['Port nr';
+	'Semaphore name'
+	'IP addr'],..
+         list('vec',1,'str',1,'str',1),label(1))
 
     if ~ok then break,end
     label(1)=lab
-    funam='i_pcan_in_' + string(port);
+    funam='i_sem_' + string(port);
     xx=[];ng=[];z=0;
     nx=0;nz=0;
+    o=[1];
     i=[];
-    o=1;nout=1;
+    o=int(o(:));nout=size(o,1);
     ci=1;nevin=1;
     co=[];nevout=0;
     funtyp=2004;
     depu=%t;
     dept=%f;
     dep_ut=[depu dept];
-    ntyp=0;
-
-    if grep(typ,'EPP') | grep(typ,'epp') then
-      ntyp=1;
-    elseif grep(typ,'ISA') | grep(typ,'isa') then
-      ntyp=2;
-    else
-      ntyp=0;
-    end
 
     tt=label(2);
     if find(oldlb <> label(1)) <> [] then
@@ -78,17 +68,17 @@ case 'set' then
     end
   end
 case 'define' then
-  port=1;kp=8000;ki=4000; 
-  rt_par=[kp,ki,0,0,0]
-  rpar=rt_par(:)
-  pcan_id='0x601'
-  typ='EPP';
-  ntyp=1;
+  out=1
+  outsz = 1
+  port = 1
+  name = 'SEM'
+  ipaddr = '127.0.0.1'
+  rparam = [0,0,0,0,0]
 
   model=scicos_model()
   model.sim=list(' ',2004)
   model.in=[]
-  model.out=1
+  model.out=outsz
   model.evtin=1
   model.evtout=[]
   model.state=[]
@@ -100,9 +90,9 @@ case 'define' then
   model.dep_ut=[%t %f]
   model.nzcross=0
 
-  label=list([sci2exp(port),pcan_id,sci2exp(kp),sci2exp(ki),typ],[])
+  label=list([sci2exp(port),name,ipaddr],[])
 
-  gr_i=['xstringb(orig(1),orig(2),''PCAN IN'',sz(1),sz(2),''fill'');']
+  gr_i=['xstringb(orig(1),orig(2),''SEM wait'',sz(1),sz(2),''fill'');']
   x=standard_define([2 2],model,label,gr_i)
 
 end
@@ -123,20 +113,20 @@ if tt==[] then
   	 ttext=[];
   	 textmp($+1)='{'
   
-  	 textmp($+1)='  switch(flag) {'
-  	 textmp($+1)='  case 4:'
-  	 textmp($+1)='   '+funam+"_bloc_init(block,flag);"
-  	 textmp($+1)='   break;';
-    	 l1 = '  inp_pcan_init(' + string(port) + ',0,';
-    	 l2 = '""' + pcan_id + '"","""",' + string(kp) + ',' + string(ki) + ',' + string(ntyp) + ',0,0';
-    	 ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
-         '{';
-         '#ifdef MODEL'
-         l1 + l2 + ');';
-         '#endif'
-         '  return 0;';
-         '}'];
-  	 textmp($+1)=' '
+  textmp($+1)='  switch(flag) {'
+  textmp($+1)='  case 4:'
+  textmp($+1)='   '+funam+"_bloc_init(block,flag);"
+  textmp($+1)='   break;'; 
+    l1 = '  inp_rtai_sem_init(' + string(port) + ',';
+    l2 = '""' + name + '"",""' + ipaddr + '""';
+    ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
+	   '{';
+	   '#ifdef MODEL'
+	   l1 + l2 + ');';
+	   '#endif'
+	   '  return 0;';
+           '}'];
+  textmp($+1)=' '
 
   	 textmp($+1)='  case 1:'
    	 textmp($+1)='   set_block_error('+funam+"_bloc_outputs(block,flag));"
@@ -146,7 +136,7 @@ if tt==[] then
          "  double y[1];";
          "  double t = get_scicos_time();";
          '#ifdef MODEL'
-         "  inp_pcan_input(" + string(port) + ",y,t);";
+         "  inp_rtai_sem_input(" + string(port) + ",y,t);";
          '#endif'
          "  block->outptr[0][0]=y[0];";
          "  return 0;";
@@ -157,7 +147,7 @@ if tt==[] then
          ttext=[ttext;'int '+funam+"_bloc_ending(scicos_block *block,int flag)";
          "{";
          '#ifdef MODEL'
-         "  inp_pcan_end(" + string(port) + ");";
+         "  inp_rtai_sem_end(" + string(port) + ");";
          '#endif'
          "  return 0;";
          "}"];

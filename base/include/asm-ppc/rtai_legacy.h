@@ -425,10 +425,12 @@ static inline void set_dec_4xx(unsigned int val)
 }
 #endif
 
+#if 0
 #define DECLR_8254_TSC_EMULATION
 #define TICK_8254_TSC_EMULATION
 #define SETUP_8254_TSC_EMULATION
 #define CLEAR_8254_TSC_EMULATION
+#endif
 
 static inline unsigned long long rdtsc(void)
 {

@@ -92,13 +92,13 @@ static inline int rt_request_global_irq_ext(unsigned irq,
 					    void (*handler)(void),
 					    unsigned long cookie) {
 
-    return rt_request_irq(irq,(void (*)(unsigned,void *))handler,(void *)cookie);
+    return rt_request_irq(irq,(int (*)(unsigned,void *))handler,(void *)cookie, 0);
 }
 
 static inline int rt_request_global_irq(unsigned irq,
 					void (*handler)(void)) {
 
-    return rt_request_irq(irq,(void (*)(unsigned,void *))handler,0);
+    return rt_request_irq(irq,(int (*)(unsigned,void *))handler, 0, 0);
 }
 
 static inline void rt_set_global_irq_ext(unsigned irq,
@@ -128,10 +128,12 @@ static inline int rt_free_global_irq(unsigned irq) {
 
 #define RTAI_NR_TRAPS         ADEOS_NR_FAULTS
 
+#if 0
 #define DECLR_8254_TSC_EMULATION
 #define TICK_8254_TSC_EMULATION
 #define SETUP_8254_TSC_EMULATION
 #define CLEAR_8254_TSC_EMULATION
+#endif
 
 #ifndef __cplusplus
 

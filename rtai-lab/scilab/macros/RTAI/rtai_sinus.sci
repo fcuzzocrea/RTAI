@@ -93,7 +93,7 @@ case 'define' then
 
   label=list([sci2exp(port), sci2exp(A), sci2exp(frq), sci2exp(phase), sci2exp(bias), sci2exp(delay)],[])
 
-  gr_i=['xstringb(orig(1),orig(2),''RTAI sinus'',sz(1),sz(2),''fill'');']
+  gr_i=['xstringb(orig(1),orig(2),''Sine'',sz(1),sz(2),''fill'');']
   x=standard_define([2 2],model,label,gr_i)
 
 end

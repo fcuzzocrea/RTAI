@@ -34,9 +34,9 @@ static inline long long rtai_srq(unsigned long srq, unsigned long whatever)
 		: "=&r" (__sc_3), "=&r" (__sc_4)
 		: "0"   (__sc_3), "1"   (__sc_4),
 	          "r"   (__sc_0)
-		: "r0", "r3", "r4" );
-	((unsigned long *)&retval)[0] = __sc_3;
-	((unsigned long *)&retval)[1] = __sc_4;
+		/*: "r0", "r3", "r4"*/ );
+	((unsigned long *)(void *)&retval)[0] = __sc_3;
+	((unsigned long *)(void *)&retval)[1] = __sc_4;
 	return retval;
 }
 

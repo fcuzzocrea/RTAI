@@ -1,9 +1,6 @@
 includedir = $(prefix)/include/asm-arm
 
 nobase_include_HEADERS = \
-		arch-ep9301/rtai_arch.h \
-		arch-ep9301/rtai_exports.h \
-		arch-ep9301/rtai_timer.h \
 		rtai_atomic.h \
 		rtai_fpu.h \
 		rtai.h \
@@ -13,7 +10,20 @@ nobase_include_HEADERS = \
 		rtai_sched.h \
 		rtai_shm.h \
 		rtai_srq.h \
+		rtai_usi.h \
 		rtai_vectors.h
+if CONFIG_ARCH_PXA
+nobase_include_HEADERS += \
+		arch-pxa/rtai_arch.h \
+		arch-pxa/rtai_exports.h \
+		arch-pxa/rtai_timer.h
+endif
+if CONFIG_ARCH_EP9301
+nobase_include_HEADERS += \
+		arch-ep9301/rtai_arch.h \
+		arch-ep9301/rtai_exports.h \
+		arch-ep9301/rtai_timer.h
+endif
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(includedir)

@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework 
  *
- * File: $Id: mbx.h,v 1.2 2005/03/18 09:10:26 rpm Exp $
+ * File: $Id: mbx.h,v 1.3 2005/03/18 09:29:59 rpm Exp $
  *
  * Copyright: (C) 2001,2002 Erwin Rol <erwin@muffin.org>
  *

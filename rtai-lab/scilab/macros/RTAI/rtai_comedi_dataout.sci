@@ -91,7 +91,7 @@ case 'define' then
 
   label=list([sci2exp(port),sci2exp(ch),name,sci2exp(com_range),sci2exp(aref)],[])
 
-  gr_i=['xstringb(orig(1),orig(2),''COMEDI DATAOUT'',sz(1),sz(2),''fill'');']
+  gr_i=['xstringb(orig(1),orig(2),[''COMEDI'';''D/A''],sz(1),sz(2),''fill'');']
   x=standard_define([2 2],model,label,gr_i)
 
 end

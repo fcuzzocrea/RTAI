@@ -1,7 +1,5 @@
 /*
- * Copyright (C) 2001  G.M. Bertani <gmbertani@yahoo.it>
- * Copyright (C) 2002  P. Mantegazza <mantegazza@aero.polimi.it>
- *		         (LXRT extensions).
+ * Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,138 +14,164 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
  */
 
-#ifndef _RTAI_TBX_H
-#define _RTAI_TBX_H
 
-#include <rtai_types.h>
+#ifndef _RTAI_RT_MSGQ_H
+#define _RTAI_RT_MSGQ_H
 
-/* TYPED MAILBOXES */
+#include <linux/version.h>
+#include <rtai_sem.h>
 
-#define RT_TBX_MAGIC 0x6e93ad4b
+#define MSGQ_INIT            TBX_INIT
+#define MSGQ_DELETE          TBX_DELETE
+#define NAMED_MSGQ_INIT      NAMED_TBX_INIT
+#define NAMED_MSGQ_DELETE    NAMED_TBX_DELETE
+#define MSG_SEND             TBX_SEND
+#define MSG_SEND_IF          TBX_SEND_IF
+#define MSG_SEND_UNTIL       TBX_SEND_UNTIL
+#define MSG_SEND_TIMED       TBX_SEND_TIMED
+#define MSG_RECEIVE          TBX_RECEIVE
+#define MSG_RECEIVE_IF       TBX_RECEIVE_IF
+#define MSG_RECEIVE_UNTIL    TBX_RECEIVE_UNTIL
+#define MSG_RECEIVE_TIMED    TBX_RECEIVE_TIMED
+#define MSG_BROADCAST        TBX_BROADCAST
+#define MSG_BROADCAST_IF     TBX_BROADCAST_IF
+#define MSG_BROADCAST_UNTIL  TBX_BROADCAST_UNTIL
+#define MSG_BROADCAST_TIMED  TBX_BROADCAST_TIMED
+#define MSG_EVDRP            TBX_URGENT
 
-#define TYPE_NONE      0x00
-#define TYPE_NORMAL    0x01
-#define TYPE_BROADCAST 0x02
-#define TYPE_URGENT    0x04
+#define TBX  RT_MSGQ
 
 #ifdef __KERNEL__
 
-struct rt_typed_mailbox;
+typedef struct rt_msgh {
+	void *malloc;
+	int broadcast;
+	int size;
+	int priority;
+	void *next;	
+} RT_MSGH;
 
-#ifndef __cplusplus
+#define RT_MSGH_SIZE  (sizeof(RT_MSGH))
 
-#include <rtai_sem.h>
+typedef struct rt_msg {
+	RT_MSGH hdr;
+	char msg[];
+} RT_MSG;
 
-typedef struct rt_typed_mailbox {
+typedef struct rt_msgq {
+	int nmsg;
+	int fastsize;
+	int slot;
+	void **slots;
+	void *firstmsg;
+	SEM receivers, senders;
+	SEM received, freslots;
+	SEM broadcast;
+	spinlock_t lock;
+} RT_MSGQ;
 
-    int magic;
-    int waiting_nr;   /* number of tasks waiting for a broadcast */
-    SEM sndsmx, rcvsmx;
-    SEM bcbsmx;       /* binary sem needed to wakeup the sleeping tasks 
-                      when the broadcasting of a message is terminated */
-    RT_TASK *waiting_task;
-    char *bufadr;     /* mailbox buffer */
-    char *bcbadr;     /* broadcasting buffer */
-    int size;         /* mailbox size */
-    int fbyte;        /* circular buffer read pointer */
-    int avbs;         /* bytes occupied */
-    int frbs;         /* bytes free */
-    spinlock_t buflock;
+#include <linux/types.h>
 
-} TBX;
-
-#else /* __cplusplus */
+#ifdef __cplusplus
 extern "C" {
 #endif /* !__cplusplus */
 
-int __rtai_tbx_init(void);
+int __rtai_msg_queue_init(void);
 
-void __rtai_tbx_exit(void);
+void __rtai_msg_queue_exit(void);
 
-/*
- * send_wp and receive_wp are not implemented because 
- * the packed message must be sent/received atomically
- */ 
+int rt_msgq_init(RT_MSGQ *msgq, int nmsg, int msg_size);
 
-int rt_tbx_init(struct rt_typed_mailbox *tbx,
-		int size,
-		int flags);
+int rt_msgq_delete(RT_MSGQ *msgq);
 
-int rt_tbx_delete(struct rt_typed_mailbox *tbx);
+RT_MSGQ *_rt_named_msgq_init(unsigned long msgq_name, int nmsg, int size);
+static inline RT_MSGQ *rt_named_msgq_init(const char *msgq_name, int nmsg, int size)
+{
+	return _rt_named_msgq_init(nam2num(msgq_name), nmsg, size);
+}
 
-int rt_tbx_send(struct rt_typed_mailbox *tbx,
-		void *msg,
-		int msg_size);
+int rt_named_msgq_delete(RT_MSGQ *msgq);
 
-int rt_tbx_send_if(struct rt_typed_mailbox *tbx,
-		   void *msg,
-		   int msg_size);
+int _rt_msg_send(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
+static inline int rt_msg_send(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri)
+{
+	return _rt_msg_send(msgq, msg, msg_size, msgpri, 1);
+}
 
-int rt_tbx_send_until(struct rt_typed_mailbox *tbx,
-		      void *msg,
-		      int msg_size,
-		      RTIME time);
+int _rt_msg_send_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
+static inline int rt_msg_send_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri)
+{
+	return _rt_msg_send_if(msgq, msg, msg_size, msgpri, 1);
+}
 
-int rt_tbx_send_timed(struct rt_typed_mailbox *tbx,
-		      void *msg,
-		      int msg_size,
-		      RTIME delay);
+int _rt_msg_send_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until, int space);
+static inline int rt_msg_send_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until)
+{
+	return _rt_msg_send_until(msgq, msg, msg_size, msgpri, until, 1);
+}
 
-int rt_tbx_receive(struct rt_typed_mailbox *tbx,
-		   void *msg,
-		   int msg_size);
+int _rt_msg_send_timed(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay, int space);
+static inline int rt_msg_send_timed(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay)
+{
+	return _rt_msg_send_timed(msgq, msg, msg_size, msgpri, delay, 1);
+}
 
-int rt_tbx_receive_if(struct rt_typed_mailbox *tbx,
-		      void *msg,
-		      int msg_size);
+int _rt_msg_receive(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
+static inline int rt_msg_receive(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri)
+{
+	return _rt_msg_receive(msgq, msg, msg_size, msgpri, 1);
+}
 
-int rt_tbx_receive_until(struct rt_typed_mailbox *tbx,
-			 void *msg,
-			 int msg_size,
-			 RTIME time);
+int _rt_msg_receive_if(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
+static inline int rt_msg_receive_if(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri)
+{
+	return _rt_msg_receive_if(msgq, msg, msg_size, msgpri, 1);
+}
 
-int rt_tbx_receive_timed(struct rt_typed_mailbox *tbx,
-			 void *msg,
-			 int msg_size,
-			 RTIME delay);
+int _rt_msg_receive_until(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME until, int space);
+static inline int rt_msg_receive_until(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME until)
+{
+	return _rt_msg_receive_until(msgq, msg, msg_size, msgpri, until, 1);
+}
 
-int rt_tbx_broadcast(struct rt_typed_mailbox *tbx,
-		     void *msg,
-		     int msg_size);
+int _rt_msg_receive_timed(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME delay, int space);
+static inline int rt_msg_receive_timed(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, RTIME delay)
+{
+	return _rt_msg_receive_timed(msgq, msg, msg_size, msgpri, delay, 1);
+}
 
-int rt_tbx_broadcast_if(struct rt_typed_mailbox *tbx,
-			void *msg,
-			int msg_size);
+int _rt_msg_evdrp(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri, int space);
+static inline int rt_msg_evdrp(RT_MSGQ *msgq, void *msg, int msg_size, int *msgpri)
+{
+	return _rt_msg_evdrp(msgq, msg, msg_size, msgpri, 1);
+}
 
-int rt_tbx_broadcast_until(struct rt_typed_mailbox *tbx,
-			   void *msg,
-			   int msg_size,
-			   RTIME time);
+int _rt_msg_broadcast(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
+static inline int rt_msg_broadcast(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri)
+{
+	return _rt_msg_broadcast(msgq, msg, msg_size, msgpri, 1);
+}
 
-int rt_tbx_broadcast_timed(struct rt_typed_mailbox *tbx,
-			   void *msg,
-			   int msg_size,
-			   RTIME delay);
+int _rt_msg_broadcast_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, int space);
+static inline int rt_msg_broadcast_if(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri)
+{
+	return _rt_msg_broadcast_if(msgq, msg, msg_size, msgpri, 1);
+}
 
-int rt_tbx_urgent(struct rt_typed_mailbox *tbx,
-		  void *msg,
-		  int msg_size);
+int _rt_msg_broadcast_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until, int space);
+static inline int rt_msg_broadcast_until(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME until)
+{
+	return _rt_msg_broadcast_until(msgq, msg, msg_size, msgpri, until, 1);
+}
 
-int rt_tbx_urgent_if(struct rt_typed_mailbox *tbx,
-		     void *msg,
-		     int msg_size);
-
-int rt_tbx_urgent_until(struct rt_typed_mailbox *tbx,
-			void *msg,
-			int msg_size,
-			RTIME time);
-
-int rt_tbx_urgent_timed(struct rt_typed_mailbox *tbx,
-			void *msg,
-			int msg_size,
-			RTIME delay);
+int _rt_msg_broadcast_timed(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay, int space);
+static inline int rt_msg_broadcast_delay(RT_MSGQ *msgq, void *msg, int msg_size, int msgpri, RTIME delay)
+{
+	return _rt_msg_broadcast_until(msgq, msg, msg_size, msgpri, delay, 1);
+}
 
 #ifdef __cplusplus
 }
@@ -155,120 +179,119 @@ int rt_tbx_urgent_timed(struct rt_typed_mailbox *tbx,
 
 #else /* !__KERNEL__ */
 
+#include <signal.h>
 #include <rtai_lxrt.h>
 
-#define TBXIDX 0
+struct rt_msgh;
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_PROTO(struct rt_typed_mailbox *, rt_tbx_init,(unsigned long name, int size, int flags))
+typedef struct rt_msgq {
+	int dummy;
+} RT_MSGQ;
+
+RTAI_PROTO(RT_MSGQ *, rt_msgq_init, (unsigned long msgq, int nmsg, int msg_size))
 {
-	struct { unsigned long name; int size; int flags; } arg = { name, size, flags };
-	return (struct rt_typed_mailbox *)rtai_lxrt(TBXIDX, SIZARG, TBX_INIT, &arg).v[LOW];
+	struct { unsigned long msgq; int nmsg; int msg_size; } arg = { msgq, nmsg, msg_size };
+	return rtai_lxrt(BIDX, SIZARG, NAMED_MSGQ_INIT, &arg).v[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_delete,(struct rt_typed_mailbox *tbx))
+RTAI_PROTO(int, rt_msgq_delete, (RT_MSGQ *msgq))
 {
-	struct { struct rt_typed_mailbox *tbx; } arg = { tbx };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_DELETE, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; } arg = { msgq };
+	return rtai_lxrt(BIDX, SIZARG, NAMED_MSGQ_DELETE, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_send,(struct rt_typed_mailbox *tbx, void *msg, int msg_size))
+RTAI_PROTO(RT_MSGQ *, rt_named_msgq_init,(const char *name, int nmsg, int size))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; } arg = { tbx, msg, msg_size };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_SEND, &arg).i[LOW];
+	struct { unsigned long name; int nmsg, size; } arg = { nam2num(name), nmsg, size };
+	return rtai_lxrt(BIDX, SIZARG, NAMED_MSGQ_INIT, &arg).v[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_send_if,(struct rt_typed_mailbox *tbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_named_msgq_delete, (RT_MSGQ *msgq))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; } arg = { tbx, msg, msg_size };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_SEND_IF, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; } arg = { msgq };
+	return rtai_lxrt(BIDX, SIZARG, NAMED_MSGQ_DELETE, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_send_until,(struct rt_typed_mailbox *tbx, void *msg, int msg_size, RTIME time))
+RTAI_PROTO(int, rt_msg_send, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; RTIME time; } arg = { tbx, msg, msg_size, time };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_SEND_UNTIL, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; int space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_SEND, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_send_timed,(struct rt_typed_mailbox *tbx, void *msg, int msg_size, RTIME delay))
+RTAI_PROTO(int, rt_msg_send_if, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; RTIME delay; } arg = { tbx, msg, msg_size, delay };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_SEND_TIMED, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; int space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_SEND_IF, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_receive,(struct rt_typed_mailbox *tbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_msg_send_until, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio, RTIME until))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; } arg = { tbx, msg, msg_size };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_RECEIVE, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; RTIME until; int space; } arg = { msgq, msg, msg_size, msgprio, until, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_SEND_UNTIL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_receive_if,(struct rt_typed_mailbox *tbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_msg_send_timed, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio, RTIME delay))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; } arg = { tbx, msg, msg_size };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_RECEIVE_IF, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; RTIME delay; int space; } arg = { msgq, msg, msg_size, msgprio, delay, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_SEND_TIMED, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_receive_until,(struct rt_typed_mailbox *tbx, void *msg, int msg_size, RTIME time))
+RTAI_PROTO(int, rt_msg_receive, (RT_MSGQ *msgq, void *msg, int msg_size, int *msgprio))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; RTIME time; } arg = { tbx, msg, msg_size, time };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_RECEIVE_UNTIL, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int *msgprio; int space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_receive_timed,(struct rt_typed_mailbox *tbx, void *msg, int msg_size, RTIME delay))
+RTAI_PROTO(int, rt_msg_receive_if, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; RTIME delay; } arg = { tbx, msg, msg_size, delay };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_RECEIVE_TIMED, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; int space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE_IF, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_broadcast,(struct rt_typed_mailbox *tbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_msg_receive_until, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio, RTIME until))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; } arg = { tbx, msg, msg_size };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_BROADCAST, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; RTIME until; int space; } arg = { msgq, msg, msg_size, msgprio, until, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE_UNTIL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_broadcast_if,(struct rt_typed_mailbox *tbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_msg_receive_timed, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio, RTIME delay))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; } arg = { tbx, msg, msg_size };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_BROADCAST_IF, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; RTIME delay; int space; } arg = { msgq, msg, msg_size, msgprio, delay, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE_TIMED, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_broadcast_until,(struct rt_typed_mailbox *tbx, void *msg, int msg_size, RTIME time))
+RTAI_PROTO(int, rt_msg_evdrp, (RT_MSGQ *msgq, void *msg, int msg_size, int *msgprio))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; RTIME time; } arg = { tbx, msg, msg_size, time };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_BROADCAST_UNTIL, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int *msgprio; int space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_EVDRP, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_broadcast_timed,(struct rt_typed_mailbox *tbx, void *msg, int msg_size, RTIME delay))
+RTAI_PROTO(int, rt_msg_broadcast, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; RTIME delay; } arg = { tbx, msg, msg_size, delay };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_BROADCAST_TIMED, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; int space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_BROADCAST, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_urgent,(struct rt_typed_mailbox *tbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_msg_broadcast_if, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; } arg = { tbx, msg, msg_size };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_URGENT, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; int space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_BROADCAST_IF, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_urgent_if,(struct rt_typed_mailbox *tbx, void *msg, int msg_size))
+RTAI_PROTO(int, rt_msg_broadcast_until, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio, RTIME until))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; } arg = { tbx, msg, msg_size };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_URGENT_IF, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; RTIME until; int space; } arg = { msgq, msg, msg_size, msgprio, until, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_BROADCAST_UNTIL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_tbx_urgent_until,(struct rt_typed_mailbox *tbx, void *msg, int msg_size, RTIME time))
+RTAI_PROTO(int, rt_msg_broadcast_timed, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio, RTIME delay))
 {
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; RTIME time; } arg = { tbx, msg, msg_size, time };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_URGENT_UNTIL, &arg).i[LOW];
-}
-
-RTAI_PROTO(int, rt_tbx_urgent_timed,(struct rt_typed_mailbox *tbx, void *msg, int msg_size, RTIME delay))
-{
-	struct { struct rt_typed_mailbox *tbx; void *msg; int msg_size; RTIME delay; } arg = { tbx, msg, msg_size, delay };
-	return rtai_lxrt(TBXIDX, SIZARG, TBX_URGENT_TIMED, &arg).i[LOW];
+	struct { RT_MSGQ *msgq; void *msg; int msg_size; int msgprio; RTIME delay; int space; } arg = { msgq, msg, msg_size, msgprio, delay, 0 };
+	return rtai_lxrt(BIDX, SIZARG, MSG_BROADCAST_TIMED, &arg).i[LOW];
 }
 
 #ifdef __cplusplus
@@ -277,12 +300,27 @@ RTAI_PROTO(int, rt_tbx_urgent_timed,(struct rt_typed_mailbox *tbx, void *msg, in
 
 #endif /* __KERNEL__ */
 
-#if !defined(__KERNEL__) || defined(__cplusplus)
+#define rt_tbx_init(tbx, size, flags)  rt_msgq_init(tbx, size, 0)
+#define rt_tbx_delete(tbx)             rt_msgq_delete(tbx)
 
-typedef struct rt_typed_mailbox {
-    int opaque;
-} TBX;
+#define rt_tbx_send(tbx, msg, msg_size)               rt_msg_send(tbx, msg, msg_size, 1)
+#define rt_tbx_send_if(tbx, msg, msg_size)            rt_msg_send_if(tbx, msg, msg_size, 1)
+#define rt_tbx_send_until(tbx, msg, msg_size, until)  rt_msg_send_until(tbx, msg, msg_size, 1, until)
+#define rt_tbx_send_timed(tbx, msg, msg_size, delay)  rt_msg_send_timed(tbx, msg, msg_size, 1, delay)
 
-#endif /* !__KERNEL__ || __cplusplus */
+#define rt_tbx_receive(tbx, msg, msg_size)               rt_msg_receive(tbx, msg, msg_size, 0)
+#define rt_tbx_receive_if(tbx, msg, msg_size)            rt_msg_receive_if(tbx, msg, msg_size, 0)
+#define rt_tbx_receive_until(tbx, msg, msg_size, until)  rt_msg_receive_until(tbx, msg, msg_size, 0, until)
+#define rt_tbx_receive_timed(tbx, msg, msg_size, delay)  rt_msg_receive_timed(tbx, msg, msg_size, 0, delay)
 
-#endif /* !_RTAI_TBX_H */
+#define rt_tbx_broadcast(tbx, msg, msg_size)               rt_msg_broadcast(tbx, msg, msg_size, 0)
+#define rt_tbx_broadcast_if(tbx, msg, msg_size)            rt_msg_broadcast_if(tbx, msg, msg_size, 0)
+#define rt_tbx_broadcast_until(tbx, msg, msg_size, until)  rt_msg_broadcast_until(tbx, msg, msg_size, 0, until)
+#define rt_tbx_broadcast_timed(tbx, msg, msg_size, delay)  rt_msg_broadcast_timed(tbx, msg, msg_size, 0, delay)
+
+#define rt_tbx_urgent(tbx, msg, msg_size)               rt_msg_send(tbx, msg, msg_size, 0)
+#define rt_tbx_urgent_if(tbx, msg, msg_size)            rt_msg_send_if(tbx, msg, msg_size, 0)
+#define rt_tbx_urgent_until(tbx, msg, msg_size, until)  rt_msg_send_until(tbx, msg, msg_size, 0, until)
+#define rt_tbx_urgent_timed(tbx, msg, msg_size, delay)  rt_msg_send_timed(tbx, msg, msg_size, 0, delay)
+
+#endif  /* !_RTAI_RT_MSGQ_H */

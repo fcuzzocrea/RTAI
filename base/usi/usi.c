@@ -22,6 +22,10 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 
+MODULE_LICENSE("GPL");
+
+#if 0
+
 #include <rtai.h>
 #include <rtai_sched.h>
 #include <rtai_malloc.h>
@@ -29,8 +33,6 @@
 #include <rtai_tasklets.h>
 #include <rtai_usi.h>
 #include <rtai_sem.h>
-
-MODULE_LICENSE("GPL");
 
 #define MODULE_NAME "RTAI_USI"
 
@@ -198,6 +200,19 @@ int __rtai_usi_init(void)
 void __rtai_usi_exit(void)
 {
 	unregister_lxrt_usi_support();
+	printk(KERN_INFO "RTAI[usi]: unloaded.\n");
+}
+
+#endif
+
+int __rtai_usi_init(void)
+{
+	printk(KERN_INFO "RTAI[usi]: loaded.\n");
+	return 0;
+}
+
+void __rtai_usi_exit(void)
+{
 	printk(KERN_INFO "RTAI[usi]: unloaded.\n");
 }
 

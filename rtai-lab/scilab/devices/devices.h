@@ -95,3 +95,12 @@ void out_rtai_fifo_init(int port,int nch,char * sName,char * sParam,double p1,
                   double p2, double p3, double p4, double p5);
 void out_rtai_fifo_output(int port, double * u,double t);
 void out_rtai_fifo_end(int port);
+
+void inp_rtai_sem_init(int port,char * sName,char * IP);
+void inp_rtai_sem_input(int port, double * y, double t);
+void inp_rtai_sem_update(void);
+void inp_rtai_sem_end(int port);
+
+void out_rtai_sem_init(int port,char * sNam,char * IPe);
+void out_rtai_sem_output(int port, double * u,double t);
+void out_rtai_sem_end(int port);

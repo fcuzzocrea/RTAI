@@ -96,7 +96,7 @@ case 'define' then
 
   label=list([sci2exp(port),sci2exp(out),name,ipaddr],[])
 
-  gr_i=['xstringb(orig(1),orig(2),''RTAI Mbx_rcv'',sz(1),sz(2),''fill'');']
+  gr_i=['xstringb(orig(1),orig(2),[''Mbx rcv'';''blocking''],sz(1),sz(2),''fill'');']
   x=standard_define([2 2],model,label,gr_i)
 
 end

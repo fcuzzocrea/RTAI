@@ -1,3 +1,22 @@
+2004-02-16  Michael Neuhauser  <mike@firmix.at>
+
+	* New version:
+		Adeos version:	r17c2/arm-ep9301
+		Adeos major:	17
+		Adeos minor:	2
+
+2004-02-16  Michael Neuhauser  <mike@firmix.at>
+
+	* arch/arm/kernel/adeos.c (__adeos_sync_stage): fix for general Adeos
+	bug, re-enable hw interrupts also when handling virtual Linux irqs
+	* arch/arm/kernel/adeos.c (__adeos_walk_pipeline): force inlining (is
+	only called once)
+
+2004-01-31  Michael Neuhauser  <mike@firmix.at>
+
+	* arch/arm/kernel/traps.c (verify_stack): only define if
+	CONFIG_FRAME_POINTER is defined (to fix warning)
+
 2004-01-31  Michael Neuhauser  <mike@firmix.at>
 
 	* New version:

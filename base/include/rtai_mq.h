@@ -20,6 +20,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * 2005, cleaned and revised Paolo Mantegazza <mantegazza@aero.polimi.it>.
+ *
  */
 
 #ifndef _RTAI_MQ_H
@@ -34,26 +37,12 @@
 #define	MQ_NONBLOCK	1	/* Flag to set queue into non-blocking mode */
 #define MQ_NAME_MAX	80	/* Maximum length of a queue name string */
 
-#define MQ_MIN_MSG_PRIORITY 0		/* Lowest priority message */
-#define MQ_MAX_MSG_PRIORITY MQ_PRIO_MAX /* Highest priority message */
+#define MQ_MIN_MSG_PRIORITY 0			/* Lowest priority message */
+#define MQ_MAX_MSG_PRIORITY MQ_PRIO_MAX		/* Highest priority message */
 
 #define MAX_PQUEUES     4       /* Maximum number of message queues in module */
 #define MAX_MSGSIZE     50      /* Maximum message size per queue (bytes) */
 #define MAX_MSGS        10      /* Maximum number of messages per queue */
-#define MAX_BLOCKED_TASKS 10    /* Maximum number of tasks blocked on a */
-                                /* queue at any one time  */
-#define MSG_HDR_SIZE	16	/* Note that this is hard-coded (urgh!) ensure */
-				/*  it always matches pqueues sizeof(MSG_HDR) */ 
-				/*  or do it a better way! (sic) */
-typedef enum {
-    FIFO_BASED,
-    PRIORITY_BASED
-} QUEUEING_POLICY;
-
-typedef enum {
-    POSIX,
-    VxWORKS
-} QUEUE_TYPE;
 
 typedef struct mq_attr {
     long mq_maxmsg;		/* Maximum number of messages in queue */
@@ -82,13 +71,16 @@ typedef int mq_bool_t;
 #endif
 
 typedef struct msg_hdr {
-    mq_bool_t in_use;
     size_t size;		/* Actual message size */
     uint priority;		/* Usage priority (message/task) */
     void *next;			/* Pointer to next message on queue */
 } MSG_HDR;
 
+#define MSG_HDR_SIZE	(sizeof(MSG_HDR))
+
 typedef struct queue_control {
+    int nodind;
+    void **nodes;
     void *base;		/* Pointer to the base of the queue in memory */
     void *head;		/* Pointer to the element at the front of the queue */
     void *tail;		/* Pointer to the element at the back of the queue */
@@ -137,31 +129,6 @@ typedef enum {
     FOR_WRITE
 } Q_ACCESS;
 
-/*
- * a) A single Posix queue ( (MAX_MSGSIZE + sizeof(MSG_HDR) * MAX_MSGS) ) or 
- * b) A blocked tasks queue (MAX_BLOCKED_TASKS * sizeof(MSG_HDR) ) or
- * c) A Zentropix application data staging structure (sizeof(Z_APPS))
- * 
- * It is assumed that the first two are both bigger than a Z_APPS structure
- * and so the choice is made between a) and b).
- *
- * Note that one control mechanism is used to allocate memory 'chunks' for a
- * number of different application uses. This means that if the 'chunk' size
- * becomes large in relation to the amount of memory required by one or other
- * of these applications, memory usage becomes wasteful.
- *
- * Set of pointers to Application-Specific extensions to RTAI
- * such as POSIX Threads, POSIX Queues, VxWorks Compatibility Library, etc
- */
-
-typedef struct z_apps {
-    int in_use_count;	// Incremented whenever an application is initialised
-    void *pthreads;
-    void *pqueues;
-    void *vxtasks;
-			// anticipate... pclocks, psosTasks,
-} Z_APPS;
-
 #else /* __cplusplus */
 extern "C" {
 #endif /* !__cplusplus */
@@ -169,18 +136,6 @@ extern "C" {
 int __rtai_mq_init(void);
 
 void __rtai_mq_exit(void);
-
-QUEUEING_POLICY get_task_queueing_policy(void);
-
-QUEUEING_POLICY set_task_queuing_policy(QUEUEING_POLICY policy);
-
-QUEUE_TYPE get_queue_type(void);
-
-QUEUE_TYPE set_queue_type(QUEUE_TYPE type);
-
-void *init_z_apps(void *this_task);
-
-void free_z_apps(void *this_task);
 
 mqd_t mq_open(char *mq_name, int oflags, mode_t permissions, struct mq_attr *mq_attr);
 

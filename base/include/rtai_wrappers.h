@@ -51,10 +51,6 @@
 typedef void irqreturn_t;
 #endif  /* LINUX_VERSION_CODE < KERNEL_VERSION(2,4,23) || __cplusplus */
 
-#define set_tsk_used_fpu(t)  do { \
-    (t)->flags |= PF_USEDFPU; \
-} while(0)
-
 #define get_tsk_addr_limit(t) ((t)->addr_limit.seg)
 
 #define task_cpu(t) ((t)->processor)
@@ -71,10 +67,6 @@ typedef void irqreturn_t;
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 
 #define mm_remap_page_range(vma,from,to,size,prot) remap_page_range(vma,from,to,size,prot)
-
-#define set_tsk_used_fpu(t)  do { \
-    (t)->thread_info->status |= TS_USEDFPU; \
-} while(0)
 
 #define get_tsk_addr_limit(t) ((t)->thread_info->addr_limit.seg)
 

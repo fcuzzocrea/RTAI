@@ -19,15 +19,14 @@ MACROS= rtai_sinus.sci \
 	rtai_comedi_dataout.sci \
 	rtai_comedi_dioin.sci \
 	rtai_comedi_dioout.sci \
-	rtai_pcan_in.sci \
-	rtai_pcan_out.sci \
-	rtai_cioquad4.sci \
 	rtai_mbx_ovrwr_send.sci \
 	rtai_mbx_send_if.sci \
 	rtai_mbx_rcv_if.sci \
 	rtai_mbx_rcv.sci \
 	rtai_extdata.sci \
 	rtai_fifo.sci \
-	RTAICodeGen_.sci
+	rtai_sem_signal.sci \
+	rtai_sem_wait.sci \
+	RTAICodeGen_.sci 
 
 include ../Make.lib

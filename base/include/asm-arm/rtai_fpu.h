@@ -23,6 +23,9 @@
  * RTAI/ARM over Adeos rewrite:
  *   Copyright (c) 2004-2005 Michael Neuhauser, Firmix Software GmbH (mike@firmix.at)
  *
+ * RTAI/ARM over Adeos rewrite for PXA255_2.6.7:
+ *   Copyright (c) 2005 Stefano Gafforelli (stefano.gafforelli@tiscali.it)
+ *   Copyright (c) 2005 Luca Pizzi (lucapizzi@hotmail.com)
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -60,5 +63,13 @@
 #define restore_fpenv_lxrt(t)	do { /* nop */ } while (0)
 
 typedef struct arm_fpu_env { unsigned long fpu_reg[1]; } FPU_ENV;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define set_tsk_used_fpu(t) \
+    do { (t)->flags |= PF_USEDFPU; } while (0)
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+#define set_tsk_used_fpu(t) \
+    do { (t)->flags |= TIF_USED_FPU; } while (0)
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 
 #endif /* _RTAI_ASM_ARM_FPU_H */

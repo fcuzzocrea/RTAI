@@ -1,4 +1,4 @@
-function [x,y,typ]=rtai_sens(job,arg1,arg2)
+function [x,y,typ]=rtai_sem_signal(job,arg1,arg2)
 //
 // Copyright roberto.bucher@supsi.ch
 x=[];y=[];typ=[];
@@ -17,34 +17,27 @@ case 'set' then
   label=graphics.exprs;
   oldlb=label(1)
   while %t do
-    [ok,junction_name,o,ci,rtai_name,port,name1,name2,rpar,lab]=..
-        getvalue('Set RTAI-sensor block parameters',..
-        ['simulation function';
-        'output ports sizes';
-        'input event ports sizes';
-	'RTAI function';
-	'Port nr';
-	'name';
-	'sParam';
-        'Real parameters vector'],..
-         list('str',1,'vec',-1,'vec',1,'str',1,'vec',1','str',1,'str',1,'vec',5),label(1))
+    [ok,port,name,ipaddr,lab]=..
+        getvalue('Set RTAI sem_signal block parameters',..
+        ['Port nr';
+	'Semaphore name'
+	'IP addr'],..
+         list('vec',1,'str',1,'str',1),label(1))
 
     if ~ok then break,end
     label(1)=lab
-    funam=stripblanks(junction_name)
-    rpar=rpar(:);
+    funam='o_sem_' + string(port);
     xx=[];ng=[];z=0;
     nx=0;nz=0;
-    i=[];
-    o=int(o(:));nout=size(o,1);
+    o=[];
+    i=[1];
+    i=int(i(:));nin=size(i,1);
     ci=1;nevin=1;
     co=[];nevout=0;
     funtyp=2004;
     depu=%t;
     dept=%f;
     dep_ut=[depu dept];
-
-    if funam==' ' then break,end
 
     tt=label(2);
     if find(oldlb <> label(1)) <> [] then
@@ -56,13 +49,13 @@ case 'set' then
     [model,graphics,ok]=check_io(model,graphics,i,o,ci,co)
     if ok then
       model.sim=list(funam,funtyp)
-      model.in=[]
-      model.out=o
+      model.in=i
+      model.out=[]
       model.evtin=ci
       model.evtout=[]
       model.state=[]
       model.dstate=0
-      model.rpar=rpar
+      model.rpar=[]
       model.ipar=[]
       model.firing=[]
       model.dep_ut=dep_ut
@@ -75,33 +68,31 @@ case 'set' then
     end
   end
 case 'define' then
-  out=1
-  clkin=1
-  rpar=[0,0,0,0,0]
-  funam='rtai'
-  rtai_name='sensor'
+  in=1
+  insz = 1
   port = 1
-  name1 = ' '
-  name2 = ' '
+  name = 'SEM'
+  ipaddr = '127.0.0.1'
+  rparam = [0,0,0,0,0]
 
   model=scicos_model()
   model.sim=list(' ',2004)
-  model.in=[]
-  model.out=out
+  model.in=insz
+  model.out=[]
   model.evtin=1
   model.evtout=[]
   model.state=[]
   model.dstate=[]
-  model.rpar=rpar
+  model.rpar=[]
   model.ipar=[]
-  model.blocktype='c'
+  model.blocktype='d'
   model.firing=[]
   model.dep_ut=[%t %f]
   model.nzcross=0
 
-  label=list([funam,sci2exp(out),sci2exp(clkin),rtai_name,sci2exp(port),name1,name2,sci2exp(rpar)],[])
+  label=list([sci2exp(port),name,ipaddr],[])
 
-  gr_i=['xstringb(orig(1),orig(2),''RTAI sensor'',sz(1),sz(2),''fill'');']
+  gr_i=['xstringb(orig(1),orig(2),''SEM signal'',sz(1),sz(2),''fill'');']
   x=standard_define([2 2],model,label,gr_i)
 
 end
@@ -116,8 +107,8 @@ if tt==[] then
 	  '#include <math.h>';
 	  '#include <stdlib.h>';
 	  '#include <scicos/scicos_block.h>';
-	  '#endif';
-	  '';
+	  '#endif'
+          '';
 	  'void '+funam+'(scicos_block *block,int flag)';
 	 ];
   ttext=[];
@@ -126,43 +117,40 @@ if tt==[] then
   textmp($+1)='  switch(flag) {'
   textmp($+1)='  case 4:'
   textmp($+1)='   '+funam+"_bloc_init(block,flag);"
-  textmp($+1)='   break;';
-    l1 = '  inp_' + rtai_name + '_init(' + string(port) + ',' + string(nout) + ',';
-    l2 = '""' + name1 + '"",""' + name2 + '"",';
-    l3 = string(rpar(1)) + ',' + string(rpar(2)) + ',' + string(rpar(3)) + ',' + string(rpar(4)) + ',' + string(rpar(5));
+  textmp($+1)='   break;'; 
+    l1 = '  out_rtai_sem_init(' + string(port) + ',';
+    l2 = '""' + name + '"",""' + ipaddr + '""';
     ttext=[ttext;'int '+funam+"_bloc_init(scicos_block *block,int flag)";
 	   '{';
 	   '#ifdef MODEL'
-	   l1 + l2 + l3 + ');';
+	   l1 + l2 + ');';
 	   '#endif'
 	   '  return 0;';
            '}'];
   textmp($+1)=' '
-
-  if nout<>0 then 
-   textmp($+1)='  case 1:'
-    textmp($+1)='   set_block_error('+funam+"_bloc_outputs(block,flag));"
-    textmp($+1)='   break;';
-    ttext=[ttext;'int '+funam+"_bloc_outputs(scicos_block *block,int flag)";
-	   "{";
+ 
+  textmp($+1)='  case 2:'
+  textmp($+1)='   set_block_error('+funam+"_bloc_outputs(block,flag));"
+  textmp($+1)='   break;'; 
+  ttext=[ttext;'int '+funam+"_bloc_outputs(scicos_block *block,int flag)";
+	  "{";
            "  int i;";
-	   "  double y[" + string(nout) + "];";
+           "  double u[" + string(nin) + "];";
 	   "  double t = get_scicos_time();";
+           "  for (i=0;i<" + string(nin) + ";i++) u[i]=block->inptr[i][0];";
 	   '#ifdef MODEL'
-           "  inp_" + rtai_name + "_input(" + string(port) + ",y,t);";
+           "  out_rtai_sem_output(" + string(port) + ",u,t);";
 	   '#endif'
-	   "  for (i=0;i<" + string(nout) + ";i++) block->outptr[i][0]=y[i];";
 	   "  return 0;";
            "}"];
-  end
   
   textmp($+1)='  case 5: '
       textmp($+1)='     set_block_error('+funam+"_bloc_ending(block,flag));";
-      textmp($+1)='   break;';
+      textmp($+1)='   break;'; 
         ttext=[ttext;'int '+funam+"_bloc_ending(scicos_block *block,int flag)";
 	   "{";
 	   '#ifdef MODEL'
-	   "  inp_" + rtai_name + "_end(" + string(port) + ");";
+	   "  out_rtai_sem_end(" + string(port) + ");";
 	   '#endif'
 	   "  return 0;";
            "}"];

@@ -144,27 +144,20 @@ typedef struct rt_task_struct {
     unsigned long force_soft;
     volatile int is_hard;
 
-    /* Added to terminate qBlks. */
-    void *tick_queue;
-
-    /* Added to terminate re-entry of user space functions. */
-
-    void *trap_handler_data; 
-    int trap_signo;
+    void *trap_handler_data;
+    struct rt_task_struct *linux_syscall_server; 
 
     /* For use by watchdog. */
     int resync_frame;
 
     /* For use by exit handler functions. */
     XHDL *ExitHook;
-    int linux_signal;
-    int errno;
-    void (*linux_signal_handler)(int sig);
+
     RTIME exectime[2];
     struct mcb_t mcb;
 
-	/* Real time heaps. */
-	struct rt_heap_t heap[2];
+    /* Real time heaps. */
+    struct rt_heap_t heap[2];
 
 } RT_TASK __attribute__ ((__aligned__ (16)));
 
@@ -283,6 +276,12 @@ int rt_task_suspend_until(struct rt_task_struct *task, RTIME until);
 int rt_task_suspend_timed(struct rt_task_struct *task, RTIME delay);
 
 int rt_task_resume(struct rt_task_struct *task);
+
+void rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs);
+
+void rt_receive_linux_syscall(RT_TASK *task, void *regs);
+
+void rt_return_linux_syscall(RT_TASK *task, unsigned long retval);
 
 int rt_irq_wait(unsigned irq);
 

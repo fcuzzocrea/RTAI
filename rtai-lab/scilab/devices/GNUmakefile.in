@@ -69,9 +69,8 @@ ARFLAGS = cru
 libsciblk_a_LIBADD =
 am__libsciblk_a_SOURCES_DIST = rtai_scope.c rtai_led.c rtai_meter.c \
 	rtai_fifo.c extdata.c mbx_receive_if.c mbx_receive.c \
-	mbx_ovrwr_send.c mbx_send_if.c cioquad4.c maxon_can.c \
-	libpcan.c rtmain.h libpcan.h pcan.h rtai_comedi_data.c \
-	rtai_comedi_dio.c
+	mbx_ovrwr_send.c mbx_send_if.c rtmain.h rtai_sem.c \
+	rtai_comedi_data.c rtai_comedi_dio.c
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@am__objects_1 =  \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_data.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dio.$(OBJEXT)
@@ -79,8 +78,7 @@ am_libsciblk_a_OBJECTS = rtai_scope.$(OBJEXT) rtai_led.$(OBJEXT) \
 	rtai_meter.$(OBJEXT) rtai_fifo.$(OBJEXT) extdata.$(OBJEXT) \
 	mbx_receive_if.$(OBJEXT) mbx_receive.$(OBJEXT) \
 	mbx_ovrwr_send.$(OBJEXT) mbx_send_if.$(OBJEXT) \
-	cioquad4.$(OBJEXT) maxon_can.$(OBJEXT) libpcan.$(OBJEXT) \
-	$(am__objects_1)
+	rtai_sem.$(OBJEXT) $(am__objects_1)
 libsciblk_a_OBJECTS = $(am_libsciblk_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
@@ -117,6 +115,8 @@ CFLAGS = @CFLAGS@
 COMEDI_DIR = @COMEDI_DIR@
 CONFIG_ARCH_EP9301_FALSE = @CONFIG_ARCH_EP9301_FALSE@
 CONFIG_ARCH_EP9301_TRUE = @CONFIG_ARCH_EP9301_TRUE@
+CONFIG_ARCH_PXA_FALSE = @CONFIG_ARCH_PXA_FALSE@
+CONFIG_ARCH_PXA_TRUE = @CONFIG_ARCH_PXA_TRUE@
 CONFIG_ARM_FALSE = @CONFIG_ARM_FALSE@
 CONFIG_ARM_TRUE = @CONFIG_ARM_TRUE@
 CONFIG_KBUILD_FALSE = @CONFIG_KBUILD_FALSE@
@@ -370,8 +370,7 @@ moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 lib_LIBRARIES = libsciblk.a
 libsciblk_a_SOURCES = rtai_scope.c rtai_led.c rtai_meter.c rtai_fifo.c \
 	extdata.c mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c \
-	mbx_send_if.c cioquad4.c maxon_can.c libpcan.c rtmain.h \
-	libpcan.h pcan.h $(am__append_1)
+	mbx_send_if.c rtmain.h rtai_sem.c $(am__append_1)
 libsciblk_a_AR = $(CROSS_COMPILE)ar cru
 include_HEADERS = \
 	devices.h \
@@ -458,10 +457,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cioquad4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/extdata.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpcan.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/maxon_can.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_ovrwr_send.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive_if.Po@am__quote@
@@ -472,6 +468,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_led.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_meter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_scope.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_sem.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

@@ -27,14 +27,23 @@
 
 //#define USE_LINUX_SYSCALL
 
-#define SYSCALL_NR      orig_eax
-#define SYSCALL_ARGS    ecx
-#define SYSCALL_RETPNT  edx
+#define RTAI_SYSCALL_NR      orig_eax
+#define RTAI_SYSCALL_ARGS    ecx
+#define RTAI_SYSCALL_RETPNT  edx
+
+#define LINUX_SYSCALL_NR      orig_eax
+#define LINUX_SYSCALL_REG1    ebx
+#define LINUX_SYSCALL_REG2    ecx
+#define LINUX_SYSCALL_REG3    edx
+#define LINUX_SYSCALL_REG4    esi
+#define LINUX_SYSCALL_REG5    edi
+#define LINUX_SYSCALL_REG6    ebp
+#define LINUX_SYSCALL_RETREG  eax
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(retval) \
 	do { \
-                if (r->SYSCALL_RETPNT) { \
-			copy_to_user((void *)r->SYSCALL_RETPNT, &retval, sizeof(retval)); \
+                if (r->RTAI_SYSCALL_RETPNT) { \
+			copy_to_user((void *)r->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
 		} \
 	} while (0)
 
@@ -166,6 +175,8 @@ static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int s
 {
 	return _rtai_lxrt(ENCODE_LXRT_REQ(dynx, srq, lsize), arg);
 }
+
+#define rtai_iopl()  do { extern int iopl(int); iopl(3); } while (0)
 
 #endif /* __KERNEL__ */
 

@@ -23,7 +23,7 @@ display_CPPFLAGS = \
 	-I../../../rtai-core/include
 
 rt_process.o: librt_process.a
-	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+	$(CROSS_COMPILE)ld --whole-archive $< -r -o $@
 
 all-local: rt_process.o
 

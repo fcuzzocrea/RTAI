@@ -80,7 +80,9 @@ struct sample {
 	long long max;
 	int index;
 } samp;
+#ifdef CONFIG_RTAI_FPU_SUPPORT
 double dotres;
+#endif
 
 static int cpu_used[NR_RT_CPUS];
 
@@ -186,7 +188,9 @@ fun(int thread)
 		samp.index = average / loops;
 		rtf_put(DEBUG_FIFO, &samp, sizeof (samp));
 	}
+#ifdef CONFIG_RTAI_FPU_SUPPORT
 	rt_printk("\nDOT PRODUCT RESULT = %lu\n", (unsigned long)dotres);
+#endif
 }
 
 

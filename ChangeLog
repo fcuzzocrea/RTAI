@@ -1,3 +1,7 @@
+2004-08-05  Marius Groeger <mgroeger@sysgo.com>
+
+	* rtai-testsuite/kern/*/Makefile.am: $(CROSS_COMPILE)ld.
+
 2004-08-04  Marius Groeger <mgroeger@sysgo.com>
 
 	* rtai-core/arch/arm/patches/updates/clps711x-init_irq_flush.patch:

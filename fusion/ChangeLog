@@ -1,5 +1,8 @@
 2005-02-21  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-i386/system.h (xnarch_remap_page_range):
+	Stop using deprecated remap_page_range() for kernels >= 2.6.10.
+
 	* arch/i386/patches: Upgrade to Adeos 2.6.9,10-i386-r9c4.
 
 	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r6c13.

@@ -1269,7 +1269,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 
 	    if (!thread)	/* Not a shadow anyway. */
 		__xn_success_return(regs,0);
-	    else if (__xn_reg_arg1(regs)) /* Linux => RTAI */
+	    else if (__xn_reg_arg1(regs) == FUSION_RTAI_DOMAIN) /* Linux => RTAI */
 		{
 		if (!xnthread_test_flags(thread,XNRELAX))
 		    __xn_success_return(regs,0);
@@ -1279,7 +1279,7 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 		       the Linux-level handler. */
 		    adeos_propagate_event(evinfo);
 		}
-	    else	/* RTAI => Linux */
+	    else if (__xn_reg_arg1(regs) == FUSION_LINUX_DOMAIN) /* RTAI => Linux */
 		{
 		if (xnthread_test_flags(thread,XNRELAX))
 		    __xn_success_return(regs,0);
@@ -1289,6 +1289,8 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 		    xnshadow_relax();
 		    }
 		}
+	    else
+		__xn_error_return(regs,-EINVAL);
 
 	    return;
 

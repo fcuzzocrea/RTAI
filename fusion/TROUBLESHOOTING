@@ -73,14 +73,18 @@ why?
 
 A: The RTAI tasks are underlaid by native POSIX threads, for which a
 huge default amount of stack space memory is reserved by the native
-POSIX support (usually 8Mb per thread). Unfortunately, this behaviour
-cannot be controlled by the "stacksize" parameter passed to the
-various thread creation routines, i.e. the latter is about limiting
-the addressable stack space on a per-thread basis, but does not affect
-the amount of stack memory initially reserved by the POSIX library.  A
-work-round consists of setting a lower user-limit for initial stack
-allocation, like calling "ulimit -s <initial-size-in-kbytes>" in your
-parent shell before running your application (defaults to 8192).
+POSIX support, usually 8Mb per thread, so the overall allocated space
+is about 8Mb * nr_threads, which are likely to be locked using the
+mlockall() service, which in turn even commits such space to RAM (!).
+
+Unfortunately, this behaviour cannot be controlled by the "stacksize"
+parameter passed to the various thread creation routines, i.e. the
+latter is about limiting the addressable stack space on a per-thread
+basis, but does not affect the amount of stack memory initially
+reserved by the POSIX library.  A work-round consists of setting a
+lower user-limit for initial stack allocation, like calling
+"ulimit -s <initial-size-in-kbytes>" in your parent shell before
+running your application (defaults to 8192).
 
 ======================================================================
 

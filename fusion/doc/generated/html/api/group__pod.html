@@ -857,25 +857,7 @@ Context: This routine can be called on behalf of a thread or ISR.     </td>
 <p>
 Rescheduling procedure entry point. 
 <p>
-This is the central rescheduling routine which should be called to validate and apply changes which have previously been made to the nucleus scheduling state, such as suspending, resuming or changing the priority of threads. This call first determines if a thread switch should take place, and performs it as needed. <a class="el" href="group__pod.html#a27">xnpod_schedule()</a> actually switches threads if:<p>
-<ul>
-<li>the running thread has been blocked or deleted.</li><li>or, the running thread has become less prioritary than the first ready to run thread.</li><li>or, the running thread does not lead no more the ready threads (round-robin).</li><li>or, a real-time thread became ready to run, ending the scheduler idle state (i.e. The root thread was running so far).</li></ul>
-<p>
-The nucleus implements a lazy rescheduling scheme so that most of the services affecting the threads state MUST be followed by a call to the rescheduling procedure for the new scheduling state to be applied. In other words, multiple changes on the scheduler state can be done in a row, waking threads up, blocking others, without being immediately translated into the corresponding context switches, like it would be necessary would it appear that a more prioritary thread than the current one became runnable for instance. When all changes have been applied, the rescheduling procedure is then called to consider those changes, and possibly replace the current thread by another.<p>
-As a notable exception to the previous principle however, every action which ends up suspending or deleting the current thread begets an immediate call to the rescheduling procedure on behalf of the service causing the state transition. For instance, self-suspension, self-destruction, or sleeping on a synchronization object automatically leads to a call to the rescheduling procedure, therefore the caller does not need to explicitely issue <a class="el" href="group__pod.html#a27">xnpod_schedule()</a> after such operations.<p>
-The rescheduling procedure always leads to a null-effect if the scheduler is locked (XNLOCK bit set in the status mask of the running thread), or if it is called on behalf of an ISR or callout.<p>
-Calling this procedure with no applicable context switch pending is harmless and simply leads to a null-effect.<p>
-Side-effects:<p>
-<ul>
-<li>If an asynchronous service routine exists, the pending asynchronous signals are delivered to a resuming thread or on behalf of the caller before it returns from the procedure if no context switch has taken place. This behaviour can be disabled by setting the XNASDI flag in the thread's status mask by calling <a class="el" href="group__pod.html#a15">xnpod_set_thread_mode()</a>.</li></ul>
-<p>
-<ul>
-<li>The switch hooks are called on behalf of the resuming thread.</li></ul>
-<p>
-<ul>
-<li>This call may affect the ready queue and switch thread contexts.</li></ul>
-<p>
-Context: This routine must be called on behalf of a thread.     </td>
+CONFIG_SMP     </td>
   </tr>
 </table>
 <a class="anchor" name="a28" doxytag="pod.c::xnpod_schedule_runnable" ></a><p>
@@ -1558,7 +1540,7 @@ This internal routine is called on behalf of a (re)starting thread's prologue be
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 22:31:08 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jun 26 22:14:58 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

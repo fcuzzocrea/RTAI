@@ -258,6 +258,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     unsigned cpu, nr_cpus = xnarch_num_online_cpus();
     char root_name[16];
     xnsched_t *sched;
+    void *heapaddr;
     int rc, n;
     spl_t s;
 

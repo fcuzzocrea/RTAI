@@ -363,8 +363,7 @@ u_long rn_retseg (u_long rnid,
 	    psostask_t *sleeper = thread2psostask(link2thread(holder,plink));
 
 	    chunk = xnheap_alloc(&rn->heapbase,
-				 sleeper->waitargs.region.size,
-				 XNHEAP_NOWAIT);
+				 sleeper->waitargs.region.size);
 	    if (chunk)
 		{
 		nholder = xnsynch_wakeup_this_sleeper(synch,holder);

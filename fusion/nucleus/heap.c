@@ -242,14 +242,16 @@ int xnheap_init (xnheap_t *heap,
 }
 
 /*! 
- * \fn void xnheap_destroy(xnheap_t *heap);
+ * \fn void xnheap_destroy(xnheap_t *heap,
+		           void (*flushfn)(void *extaddr,
+				           u_long extsize));
  * \brief Destroys a memory heap.
  *
  * Destroys a memory heap.
  *
  * @param heap The descriptor address of the destroyed heap.
  *
- * @param flusfn If non-NULL, the address of a flush routine which
+ * @param flushfn If non-NULL, the address of a flush routine which
  * will be called for each extent attached to the heap. This routine
  * can be used by the calling code to further release the heap memory.
  *
@@ -609,7 +611,7 @@ unlock_and_fail:
 }
 
 /*! 
- * \fn int xnheap_extend(xnheap_t *heap, void *extaddr);
+ * \fn int xnheap_extend(xnheap_t *heap, void *extaddr, u_long extsize);
  * \brief Extend a memory heap.
  *
  * Add a new extent to an existing memory heap.
@@ -623,7 +625,7 @@ unlock_and_fail:
  * extent passed to xnheap_init().
  *
  * @return 0 is returned upon success, or -EINVAL is returned if
- * @extsize differs from the initial extent's size.
+ * @a extsize differs from the initial extent's size.
  *
  * Side-effect: This routine does not call the rescheduling procedure.
  *

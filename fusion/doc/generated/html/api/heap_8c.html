@@ -29,17 +29,20 @@ Include dependency graph for heap.c:<p><center><img src="heap_8c__incl.png" bord
 <tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__heap.html#a2">xnheap_init</a> (xnheap_t *heap, void *heapaddr, u_long heapsize, u_long pagesize)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initialize a memory heap. </em> <a href="group__heap.html#a2"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__heap.html#a3">xnheap_destroy</a> (xnheap_t *heap)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__heap.html#a3">xnheap_destroy</a> (xnheap_t *heap, void(*flushfn)(void *extaddr, u_long extsize))</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Destroys a memory heap. </em> <a href="group__heap.html#a3"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__heap.html#a5">xnheap_alloc</a> (xnheap_t *heap, u_long size, xnflags_t flags)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__heap.html#a5">xnheap_alloc</a> (xnheap_t *heap, u_long size)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allocate a memory block from a memory heap. </em> <a href="group__heap.html#a5"></a><em><br><br></td></tr>
 <tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__heap.html#a6">xnheap_free</a> (xnheap_t *heap, void *block)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Release a memory block to a memory heap. </em> <a href="group__heap.html#a6"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__heap.html#a7">xnheap_extend</a> (xnheap_t *heap, void *extaddr, u_long extsize)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Extend a memory heap. </em> <a href="group__heap.html#a7"></a><em><br><br></td></tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 22:31:00 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jun 26 22:14:50 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

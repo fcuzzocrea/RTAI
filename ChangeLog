@@ -1,10 +1,15 @@
+2005-03-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/include/asm-i386/rtai_hal.*: rt_restore_global_flags
+          rewritten.
+
 2005-03-30  Roberto Bucher  <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/devices/mbx_send_if: Corrected problem with remote
-	IP number
+	  IP number
 	* rtai-lab/scilab/devices/rtai_sem: Added support for scicos semaphores
-	* rtai-mab/scilab/macros/RTAI: Forced code regeneration for scicos blocks
-	(new version of the interface to the libsciblk.a library)
+	* rtai-mab/scilab/macros/RTAI: Forced code regeneration for scicos 
+	  blocks (new version of the interface to the libsciblk.a library)
 
 2005-03-30  Michael Neuhauser  <mike@firmix.at>
 

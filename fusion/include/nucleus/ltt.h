@@ -32,6 +32,7 @@ struct xnltt_evmap {
     char *ltt_label;	/* !< Event label (creation time). */
     char *ltt_format;	/* !< Event format (creation time). */
     int ltt_evid;	/* !< LTT custom event id. */
+    int ltt_filter;	/* !< Event filter. */
 };
 
 #define rtai_ev_ienter       0
@@ -82,16 +83,26 @@ struct xnltt_evmap {
 #define rtai_ev_tmstart      45
 #define rtai_ev_tmstop       46
 
+#define rtai_evthr  0x1
+#define rtai_evirq  0x2
+#define rtai_evsys  0x4
+#define rtai_evall  0x7
+
 #define XNLTT_MAX_EVENTS 64
 
 #define xnltt_log_event(ev, args...) \
-ltt_log_std_formatted_event(xnltt_evtable[ev].ltt_evid, ##args)
+do { \
+  if (xnltt_evtable[ev].ltt_filter & xnltt_filter) \
+    ltt_log_std_formatted_event(xnltt_evtable[ev].ltt_evid, ##args); \
+} while(0)
 
 int xnltt_mount(void);
 
 void xnltt_umount(void);
 
 extern struct xnltt_evmap xnltt_evtable[];
+
+extern int xnltt_filter;
 
 #else /* !(__KERNEL__ && CONFIG_LTT) */
 

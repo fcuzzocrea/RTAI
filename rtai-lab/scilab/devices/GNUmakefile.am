@@ -19,7 +19,8 @@ libsciblk_a_SOURCES = \
         libpcan.c \
 	rtmain.h \
 	libpcan.h \
-	pcan.h 
+	pcan.h \
+	rtai_sem.c
 
 if CONFIG_RTAI_COMEDI_LXRT
 libsciblk_a_SOURCES += \

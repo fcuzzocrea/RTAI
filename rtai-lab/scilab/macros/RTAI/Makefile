@@ -28,6 +28,8 @@ MACROS= rtai_sinus.sci \
 	rtai_mbx_rcv.sci \
 	rtai_extdata.sci \
 	rtai_fifo.sci \
-	RTAICodeGen_.sci
+	rtai_sem_signal.sci \
+	rtai_sem_wait.sci \
+	RTAICodeGen_.sci 
 
 include ../Make.lib

@@ -111,7 +111,6 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
             {
             clear_bit(cpuid,lock);
             clear_bit(BITS_PER_LONG - 1,lock);
-            cpu_relax(); /* FIXME: is this really needed ? */
             }
         }
 

@@ -4,7 +4,11 @@ CROSS_COMPILE = @CROSS_COMPILE@
 
 noinst_LIBRARIES = libhal.a
 
-libhal_a_SOURCES = rtai.c cswitch.S
+if CONFIG_RTAI_ADEOS
+libhal_a_SOURCES = hal.c cswitch.S
+else
+libhal_a_SOURCES = legacy.c cswitch.S
+endif
 
 libhal_a_AR = $(CROSS_COMPILE)ar cru
 

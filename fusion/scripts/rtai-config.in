@@ -59,7 +59,7 @@ fi
 while test $# -gt 0; do
     case "$1" in
         --version)
-            echo $RTAI_VERSION
+            echo ${RTAI_VERSION}-fusion
             ;;
         --cc)
             echo $RTAI_CC

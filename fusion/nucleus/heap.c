@@ -825,9 +825,15 @@ static unsigned long __va_to_kva (unsigned long va)
 	
     pgd = pgd_offset_k(va); /* Page directory in kernel map. */
 
-    if (!pgd_none(*pgd))
+    if (!pgd_none(*pgd) && !pgd_bad(*pgd))
         {
-	pmd = pmd_offset(pgd, va); /* Page middle directory. */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+	/* Page middle directory -- account for PAE. */
+	pmd = pmd_offset(pud_offset(pgd,va), va);
+#else
+	/* Page middle directory in 2-level pgtable. */
+	pmd = pmd_offset(pgd, va);
+#endif
 
 	if (!pmd_none(*pmd))
 	    {

@@ -1,0 +1,30 @@
+--- rtai-3.0r2/rtai-core/arch/arm/hal/rtai.c	2004-03-12 19:06:01.000000000 +0100
++++ rtai-3.0r2/rtai-core/arch/arm/hal/rtai.c.mod	2004-05-14 11:48:17.000000000 +0200
+@@ -789,19 +789,25 @@ void __rt_mount_rtai(void)
+ 	rthal.getflags_and_sti	= linux_save_flags_sti;
+ #endif
+ 
++	INIT_LIST_HEAD(&global.pending_linux_irq);
++
+ 	for (i = 0; i < NR_IRQS; i++) {
+ 		irq_desc[i].mask_ack	= linux_mask_ack;
+ 		irq_desc[i].mask	= ic_mask_irq[i];
+ 		irq_desc[i].unmask	= ic_unmask_irq[i];
+ 		linux_irqs[i].pend_count = 0;
++
++                if(irq_desc[i].pending) {
++                        rt_pend_linux_irq(i);
++                        irq_desc[i].pending = 0;
++                }
++
+ 	}
+ 
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,19)
+ 	rthal.c_do_IRQ = dispatch_irq;
+ #endif
+ 
+-	INIT_LIST_HEAD(&global.pending_linux_irq);
+-
+ 	arch_mount_rtai();
+ 
+ 	saved_timer_action_handler = irq_desc[TIMER_8254_IRQ].action->handler;

@@ -94,6 +94,11 @@
 #define __rtai_alarm_stop         68
 #define __rtai_alarm_wait         69
 #define __rtai_alarm_inquire      70
+#define __rtai_intr_create        71
+#define __rtai_intr_bind          72
+#define __rtai_intr_delete        73
+#define __rtai_intr_wait          74
+#define __rtai_intr_inquire       75
 
 struct rt_arg_bulk {
 

@@ -76,6 +76,12 @@ include_HEADERS += alarm.h
 endif
 distfiles += alarm.c alarm.h
 
+if CONFIG_RTAI_OPT_NATIVE_INTR
+libmodule_SRC += intr.c
+include_HEADERS += intr.h
+endif
+distfiles += intr.c intr.h
+
 rtai_native$(modext): @RTAI_KBUILD_ENV@
 rtai_native$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_TOP@ \

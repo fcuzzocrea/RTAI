@@ -45,6 +45,7 @@ host_triplet = @host@
 @CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_5 = queue.c
 @CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_6 = heap.c
 @CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__append_7 = alarm.c
+@CONFIG_RTAI_OPT_NATIVE_INTR_TRUE@am__append_8 = intr.c
 subdir = skins/rtai/lib
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in \
 	COPYING
@@ -67,7 +68,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 librtai_la_LIBADD =
 am__librtai_la_SOURCES_DIST = init.c task.c timer.c sem.c event.c \
-	mutex.c cond.c queue.c heap.c alarm.c
+	mutex.c cond.c queue.c heap.c alarm.c intr.c
 @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@am__objects_1 = librtai_la-sem.lo
 @CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@am__objects_2 =  \
 @CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@	librtai_la-event.lo
@@ -79,10 +80,11 @@ am__librtai_la_SOURCES_DIST = init.c task.c timer.c sem.c event.c \
 @CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__objects_6 = librtai_la-heap.lo
 @CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__objects_7 =  \
 @CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@	librtai_la-alarm.lo
+@CONFIG_RTAI_OPT_NATIVE_INTR_TRUE@am__objects_8 = librtai_la-intr.lo
 am_librtai_la_OBJECTS = librtai_la-init.lo librtai_la-task.lo \
 	librtai_la-timer.lo $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	$(am__objects_6) $(am__objects_7)
+	$(am__objects_6) $(am__objects_7) $(am__objects_8)
 librtai_la_OBJECTS = $(am_librtai_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
@@ -138,6 +140,8 @@ CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE = @CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE@
 CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE = @CONFIG_RTAI_OPT_NATIVE_EVENT_TRUE@
 CONFIG_RTAI_OPT_NATIVE_HEAP_FALSE = @CONFIG_RTAI_OPT_NATIVE_HEAP_FALSE@
 CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE = @CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@
+CONFIG_RTAI_OPT_NATIVE_INTR_FALSE = @CONFIG_RTAI_OPT_NATIVE_INTR_FALSE@
+CONFIG_RTAI_OPT_NATIVE_INTR_TRUE = @CONFIG_RTAI_OPT_NATIVE_INTR_TRUE@
 CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE = @CONFIG_RTAI_OPT_NATIVE_MUTEX_FALSE@
 CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE = @CONFIG_RTAI_OPT_NATIVE_MUTEX_TRUE@
 CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE = @CONFIG_RTAI_OPT_NATIVE_PIPE_FALSE@
@@ -308,7 +312,8 @@ lib_LTLIBRARIES = librtai.la
 librtai_la_LDFLAGS = -module -version-info 0:0:0
 librtai_la_SOURCES = init.c task.c timer.c $(am__append_1) \
 	$(am__append_2) $(am__append_3) $(am__append_4) \
-	$(am__append_5) $(am__append_6) $(am__append_7)
+	$(am__append_5) $(am__append_6) $(am__append_7) \
+	$(am__append_8)
 librtai_la_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
 	-I../../../include \
@@ -389,6 +394,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_la-event.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_la-heap.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_la-init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_la-intr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_la-mutex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_la-queue.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_la-sem.Plo@am__quote@
@@ -485,6 +491,13 @@ librtai_la-alarm.lo: alarm.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='alarm.c' object='librtai_la-alarm.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_la-alarm.lo `test -f 'alarm.c' || echo '$(srcdir)/'`alarm.c
+
+librtai_la-intr.lo: intr.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtai_la-intr.lo -MD -MP -MF "$(DEPDIR)/librtai_la-intr.Tpo" -c -o librtai_la-intr.lo `test -f 'intr.c' || echo '$(srcdir)/'`intr.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtai_la-intr.Tpo" "$(DEPDIR)/librtai_la-intr.Plo"; else rm -f "$(DEPDIR)/librtai_la-intr.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='intr.c' object='librtai_la-intr.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_la-intr.lo `test -f 'intr.c' || echo '$(srcdir)/'`intr.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

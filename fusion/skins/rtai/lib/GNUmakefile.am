@@ -35,6 +35,10 @@ if CONFIG_RTAI_OPT_NATIVE_ALARM
 librtai_la_SOURCES += alarm.c
 endif
 
+if CONFIG_RTAI_OPT_NATIVE_INTR
+librtai_la_SOURCES += intr.c
+endif
+
 librtai_la_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
 	-I../../../include \

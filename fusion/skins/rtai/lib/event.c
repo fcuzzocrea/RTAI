@@ -43,6 +43,9 @@ int rt_event_create (RT_EVENT *event,
 int rt_event_bind (RT_EVENT *event,
 		   const char *name)
 {
+    if (__rtai_muxid < 0 && __init_skin() < 0)
+	return -ENOSYS;
+
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_event_bind,
 			     event,

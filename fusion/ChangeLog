@@ -1,5 +1,7 @@
 2005-01-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/intr.c: Add interrupt management API.
+
 	* include/nucleus/asm-*/system.h (xnarch_isr_*): Remove
 	redundant calls.
 

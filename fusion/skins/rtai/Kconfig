@@ -94,6 +94,7 @@ config RTAI_OPT_NATIVE_COND
 config RTAI_OPT_NATIVE_QUEUE
 	bool "Message queues"
 	depends on RTAI_SKIN_NATIVE
+	default y
 	help
 	
 	Message queueing is a method by which real-time tasks can
@@ -104,6 +105,7 @@ config RTAI_OPT_NATIVE_QUEUE
 config RTAI_OPT_NATIVE_HEAP
 	bool "Memory heaps"
 	depends on RTAI_SKIN_NATIVE
+	default y
 	help
 
 	Memory heaps are regions of memory used for dynamic memory
@@ -112,7 +114,19 @@ config RTAI_OPT_NATIVE_HEAP
 config RTAI_OPT_NATIVE_ALARM
 	bool "Alarms"
 	depends on RTAI_SKIN_NATIVE
+	default y
 	help
 	
 	Alarms are general watchdog timers allowing to run
 	user-defined handlers after a specified delay has elapsed.
+
+config RTAI_OPT_NATIVE_INTR
+	bool "Interrupts"
+	depends on RTAI_SKIN_NATIVE
+	enable RTAI_OPT_NATIVE_REGISTRY
+	default y
+	help
+	
+	This option provides a simple API to deal with interrupts,
+	both in kernel and user-space contexts. Registry support is
+	required.

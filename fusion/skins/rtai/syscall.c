@@ -33,6 +33,7 @@
 #include <rtai/queue.h>
 #include <rtai/heap.h>
 #include <rtai/alarm.h>
+#include <rtai/intr.h>
 
 /* This file implements the RTAI syscall wrappers;
  *
@@ -2509,6 +2510,158 @@ static int __rt_alarm_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_ALARM */
 
+#if CONFIG_RTAI_OPT_NATIVE_INTR
+
+/*
+ * int __rt_intr_create(RT_INTR_PLACEHOLDER *ph,
+ *                      unsigned irq)
+ */
+
+static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_INTR_PLACEHOLDER ph;
+    RT_INTR *intr;
+    unsigned irq;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    /* Interrupt line number. */
+    irq = (unsigned)__xn_reg_arg2(regs);
+
+    intr = (RT_INTR *)xnmalloc(sizeof(*intr));
+
+    if (!intr)
+	return -ENOMEM;
+
+    err = rt_intr_create(intr,irq);
+
+    if (err == 0)
+	{
+	intr->source = RT_UAPI_SOURCE;
+	/* Copy back the registry handle to the ph struct. */
+	ph.opaque = intr->handle;
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	}
+    else
+	xnfree(intr);
+
+    return err;
+}
+
+/*
+ * int __rt_intr_bind(RT_INTR_PLACEHOLDER *ph,
+ *                    const char *name)
+ */
+
+static int __rt_intr_bind (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    return __rt_bind_helper(curr,regs,RTAI_INTR_MAGIC,NULL);
+}
+
+/*
+ * int __rt_intr_delete(RT_INTR_PLACEHOLDER *ph)
+ */
+
+static int __rt_intr_delete (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_INTR_PLACEHOLDER ph;
+    RT_INTR *intr;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    intr = (RT_INTR *)rt_registry_fetch(ph.opaque);
+
+    if (!intr)
+	return -ESRCH;
+
+    err = rt_intr_delete(intr);
+
+    if (!err && intr->source == RT_UAPI_SOURCE)
+	xnfree(intr);
+
+    return err;
+}
+
+/*
+ * int __rt_intr_wait(RT_INTR_PLACEHOLDER *ph,
+ *                    RTIME *timeoutp)
+ */
+
+static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_INTR_PLACEHOLDER ph;
+    RTIME timeout;
+    RT_INTR *intr;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    intr = (RT_INTR *)rt_registry_fetch(ph.opaque);
+
+    if (!intr)
+	return -ESRCH;
+
+    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg2(regs),sizeof(timeout));
+
+    return rt_intr_wait(intr,timeout);
+}
+
+/*
+ * int __rt_intr_inquire(RT_INTR_PLACEHOLDER *ph,
+ *                       RT_INTR_INFO *infop)
+ */
+
+static int __rt_intr_inquire (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_INTR_PLACEHOLDER ph;
+    RT_INTR_INFO info;
+    RT_INTR *intr;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(info)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    intr = (RT_INTR *)rt_registry_fetch(ph.opaque);
+
+    if (!intr)
+	return -ESRCH;
+
+    err = rt_intr_inquire(intr,&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    return err;
+}
+
+#else /* !CONFIG_RTAI_OPT_NATIVE_INTR */
+
+#define __rt_intr_create     __rt_call_not_available
+#define __rt_intr_bind       __rt_call_not_available
+#define __rt_intr_delete     __rt_call_not_available
+#define __rt_intr_wait       __rt_call_not_available
+#define __rt_intr_inquire    __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
+
 static  __attribute__((unused))
 int __rt_call_not_available (struct task_struct *curr, struct pt_regs *regs) {
     return -ENOSYS;
@@ -2586,6 +2739,11 @@ static xnsysent_t __systab[] = {
     [__rtai_alarm_stop ] = { &__rt_alarm_stop, __xn_flag_anycall },
     [__rtai_alarm_wait ] = { &__rt_alarm_wait, __xn_flag_regular },
     [__rtai_alarm_inquire ] = { &__rt_alarm_inquire, __xn_flag_anycall },
+    [__rtai_intr_create ] = { &__rt_intr_create, __xn_flag_anycall },
+    [__rtai_intr_bind ] = { &__rt_intr_bind, __xn_flag_regular },
+    [__rtai_intr_delete ] = { &__rt_intr_delete, __xn_flag_anycall },
+    [__rtai_intr_wait ] = { &__rt_intr_wait, __xn_flag_regular },
+    [__rtai_intr_inquire ] = { &__rt_intr_inquire, __xn_flag_anycall },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

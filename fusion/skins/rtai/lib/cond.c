@@ -40,6 +40,9 @@ int rt_cond_create (RT_COND *cond,
 int rt_cond_bind (RT_COND *cond,
 		  const char *name)
 {
+    if (__rtai_muxid < 0 && __init_skin() < 0)
+	return -ENOSYS;
+
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_cond_bind,
 			     cond,

@@ -153,6 +153,9 @@ int rt_task_start (RT_TASK *task,
 int rt_task_bind (RT_TASK *task,
 		  const char *name)
 {
+    if (__rtai_muxid < 0 && __init_skin() < 0)
+	return -ENOSYS;
+
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_task_bind,
 			     task,

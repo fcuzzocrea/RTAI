@@ -88,10 +88,10 @@ typedef struct rt_task {
 
     xnholder_t link;
 
-    xntimer_t timer;
-
 #define link2rtask(laddr) \
 ((RT_TASK *)(((char *)laddr) - (int)(&((RT_TASK *)0)->link)))
+
+    xntimer_t timer;
 
     xnthread_t thread_base;
 

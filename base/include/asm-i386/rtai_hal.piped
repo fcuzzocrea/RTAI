@@ -170,7 +170,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
-#define RTAI_DOMAIN_ID  0x52544149
+#define RTAI_DOMAIN_ID  0x9ac15d93  // nam2num("rtai_d")
 #define RTAI_NR_SRQS    32
 
 #define RTAI_SMP_NOTIFY_VECTOR    RTAI_APIC1_VECTOR

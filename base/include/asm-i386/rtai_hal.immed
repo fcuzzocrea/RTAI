@@ -170,7 +170,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
-#define RTAI_DOMAIN_ID  0x52544149
+#define RTAI_DOMAIN_ID  0x9ac15d93  // nam2num("rtai_d")
 #define RTAI_NR_SRQS    32
 
 #define RTAI_SMP_NOTIFY_VECTOR    RTAI_APIC1_VECTOR
@@ -210,9 +210,6 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define rtai_save_flags_and_cli(x)  adeos_hw_local_irq_save(flags)
 #define rtai_restore_flags(x)       adeos_hw_local_irq_restore(flags)
 #define rtai_save_flags(x)          adeos_hw_local_irq_flags(flags)
-
-/* The only Linux irq flags manipulation lacking in its system.h */
-#define local_irq_restore_nosync(flags, cpuid)  do { adp_root->cpudata[cpuid].status = flags; } while (0)
 
 extern unsigned long adeos_pended;
 

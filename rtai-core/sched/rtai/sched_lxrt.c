@@ -947,11 +947,7 @@ fire:			shot_fired = 1;
 schedlnxtsk:
 		rt_smp_current[cpuid] = new_task;
 		if (new_task->is_hard || rt_current->is_hard) {
-#if 1
 			struct task_struct *prev = rtai_get_current(cpuid);
-#else
-			struct task_struct *prev = current;
-#endif
 			DECL_CPUS_ALLOWED;
 			SAVE_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {

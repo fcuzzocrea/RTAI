@@ -652,6 +652,7 @@ int __rtai_shm_init (void)
 	}
 #ifndef CONFIG_RTAI_MALLOC_VMALLOC
 	printk("***** WARNING: GLOBAL HEAP NEITHER SHARABLE NOR USABLE FROM USER SPACE (use the vmalloc option for RTAI malloc) *****\n");
+#else
 	rt_register(GLOBAL_HEAP_ID, rtai_global_heap_adr, rtai_global_heap_size, 0);
 	rt_smp_linux_task->heap[GLOBAL].heap = &rtai_global_heap;
 	rt_smp_linux_task->heap[GLOBAL].kadr =

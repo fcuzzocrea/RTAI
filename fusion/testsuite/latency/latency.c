@@ -170,12 +170,12 @@ int main (int argc, char **argv)
 
 	    case 'p':
 
-		sampling_period = atoi(optarg);
+		sampling_period = atoi(optarg) * 1000;
 		break;
 
 	    default:
 		
-		fprintf(stderr,"usage: latency [-h][-p <period_ns>]\n");
+		fprintf(stderr,"usage: latency [-h][-p <period_us>]\n");
 		exit(2);
 	    }
 

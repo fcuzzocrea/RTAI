@@ -1,3 +1,9 @@
+2004-08-03  Marc Kleine-Budde <kleine-budde@gmx.de>
+
+	* nucleus/pod.c (xnpod_trap_fault): Ensure that faults over IRQs
+	and threads are properly relayed to the user-defined fault
+	handler.
+
 2004-08-03  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.7-i386-r6c6. This is

@@ -2422,7 +2422,7 @@ void xnpod_check_context (int mask)
 int xnpod_trap_fault (void *fltinfo)
 
 {
-    if (nkpod == NULL || xnpod_idle_p())
+    if (nkpod == NULL || (!xnpod_interrupt_p() && xnpod_idle_p()))
         return 0;
 
     return nkpod->svctable.faulthandler(fltinfo);

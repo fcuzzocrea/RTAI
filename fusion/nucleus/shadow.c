@@ -121,6 +121,8 @@ static adomain_t irq_shield;
 static cpumask_t shielded_cpus,
                  unshielded_cpus;
 
+static rwlock_t shield_lock = RW_LOCK_UNLOCKED;
+
 #define get_switch_lock_owner() \
 switch_lock_owner[task_cpu(current)]
 
@@ -184,7 +186,7 @@ static inline void engage_irq_shield (int this_cpu)
     unsigned long flags;
     unsigned irq;
 
-    rthal_hw_lock(flags);
+    adeos_read_lock_irqsave(&shield_lock,flags);
 
     if (cpu_test_and_set(this_cpu,shielded_cpus))
 	goto unlock_and_exit;
@@ -211,7 +213,7 @@ static inline void engage_irq_shield (int this_cpu)
 
  unlock_and_exit:
 
-    rthal_hw_unlock(flags);
+    adeos_read_unlock_irqrestore(&shield_lock,flags);
 }
 
 static void disengage_irq_shield (int this_cpu)
@@ -220,7 +222,7 @@ static void disengage_irq_shield (int this_cpu)
     unsigned long flags;
     unsigned irq;
 
-    rthal_hw_lock(flags);
+    adeos_write_lock_irqsave(&shield_lock,flags);
 
     if (cpu_test_and_set(this_cpu,unshielded_cpus))
 	goto unlock_and_exit;
@@ -271,7 +273,7 @@ static void disengage_irq_shield (int this_cpu)
 
  unlock_and_exit:
 
-    rthal_hw_unlock(flags);
+    adeos_write_unlock_irqrestore(&shield_lock,flags);
 }
 
 static void xnshadow_shield_handler (unsigned irq)

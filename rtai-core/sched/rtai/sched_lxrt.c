@@ -684,19 +684,19 @@ static inline struct task_struct *lxrt_context_switch (struct task_struct *prev,
     struct mm_struct *oldmm = prev->active_mm;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	switch_mm(oldmm,next->active_mm,next,cpuid);
+    switch_mm(oldmm,next->active_mm,next,cpuid);
 #else /* >= 2.6.0 */
-	switch_mm(oldmm,next->active_mm,next);
+    switch_mm(oldmm,next->active_mm,next);
 #endif /* < 2.6.0 */
 
-	if (!next->mm)
+    if (!next->mm)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	    enter_lazy_tlb(oldmm,next,cpuid);
+	enter_lazy_tlb(oldmm,next,cpuid);
 #else /* >= 2.6.0 */
-	    enter_lazy_tlb(oldmm,next);
+        enter_lazy_tlb(oldmm,next);
 #endif /* < 2.6.0 */
 
-    switch_to(prev,next,prev);
+    lxrt_switch_to(prev,next,prev);
 
     return prev;
 }

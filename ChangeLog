@@ -1,3 +1,8 @@
+2004-06-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/rtai/sched_lxrt.c (lxrt_switch_context):
+	Reinstate former assembly code for switching tasks.
+
 2004-06-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* rtai-core/scripts/generate-doc-and-commit (abs_srcdir): Add a

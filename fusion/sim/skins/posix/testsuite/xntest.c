@@ -34,7 +34,7 @@ typedef void (*xntimer_handler) (void *);
 
 
 static xnqueue_t marks_q;
-static xnmutex_t test_mutex;
+static xnlock_t test_lock = XNARCH_LOCK_UNLOCKED;
 static xntimer_t watchdog;
 static int test_failures;
 static int tests;
@@ -65,29 +65,30 @@ void xntest_start(void)
 {
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&test_lock, s);
     xntimer_init(&watchdog, interrupt_test, 0);
     xntimer_start(&watchdog, test_timeout, XN_INFINITE);
 
-    xnmutex_init(&test_mutex);
     initq(&marks_q);
     tests=0;
     test_failures=0;
-    splexit(s);
+    xnlock_put_irqrestore(&test_lock, s);
 }
 
 
 
 int xntest_assert(int status, char *assertion, char *file, int line)
 {
-    xnmutex_lock(&test_mutex);
+    spl_t s;
+
+    xnlock_get_irqsave(&test_lock, s);
     ++tests;
     if(!status) {
         ++test_failures;
         xnarch_printf("%s:%d: TEST %s failed.\n", file, line, assertion);
     } else
         xnarch_printf("%s:%d TEST passed.\n", file, line);
-    xnmutex_unlock(&test_mutex);
+    xnlock_put_irqrestore(&test_lock, s);
 
     return status;
 }
@@ -97,8 +98,9 @@ void xntest_mark(xnthread_t *thread)
     xnholder_t *holder;
     xntest_mark_t *mark;
     const char *threadname;
+    spl_t s;
 
-    xnmutex_lock(&test_mutex);
+    xnlock_get_irqsave(&test_lock, s);
     holder = gettailq(&marks_q);
     threadname = xnthread_name(thread);
 
@@ -117,23 +119,23 @@ void xntest_mark(xnthread_t *thread)
         appendq(&marks_q, &mark->link);
     } else
         mark->count++;
-    xnmutex_unlock(&test_mutex);
+    xnlock_put_irqrestore(&test_lock, s);
 }
 
 
 
 void xntest_check_seq(int next, ...)
 {
+    xntest_mark_t *mark;
+    xnholder_t *holder;
+    va_list args;
     char *name;
     int count;
-    va_list args;
-
-    xnholder_t *holder;
-    xntest_mark_t *mark;
+    spl_t s;
 
     va_start(args, next);
 
-    xnmutex_lock(&test_mutex);
+    xnlock_get_irqsave(&test_lock, s);
     holder = getheadq(&marks_q);
 
     while(next) {
@@ -159,7 +161,7 @@ void xntest_check_seq(int next, ...)
         }
         next = va_arg(args, int);
     }
-    xnmutex_unlock(&test_mutex);
+    xnlock_put_irqrestore(&test_lock, s);
     va_end(args);
 }
 
@@ -167,17 +169,18 @@ void xntest_check_seq(int next, ...)
 
 void xntest_finish(char *file, int line)
 {
-    xnholder_t *holder;
     xnholder_t *next_holder;
+    xnholder_t *holder;
+    spl_t s;
     
-    xnmutex_lock(&test_mutex);
+    xnlock_get_irqsave(&test_lock, s);
     for(holder = getheadq(&marks_q); holder ; holder=next_holder)
     {
         next_holder = nextq(&marks_q, holder);
         removeq(&marks_q, holder);
         xnfree(link2mark(holder));
     }
-    xnmutex_unlock(&test_mutex);
+    xnlock_put_irqrestore(&test_lock, s);
 
     xnarch_printf("%s:%d, test finished: %d failures/ %d tests\n",
                   file, line, test_failures, tests);

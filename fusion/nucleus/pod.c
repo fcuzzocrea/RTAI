@@ -400,9 +400,7 @@ fail:
 
     xnarch_init_all_cpus(&xnpod_init_rootcb);
 
-#ifdef CONFIG_SMP
     xnarch_hook_ipi(&xnpod_schedule_handler);
-#endif /* CONFIG_SMP */
 
     xnarch_memory_barrier();
     

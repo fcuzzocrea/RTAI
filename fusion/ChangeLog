@@ -1,5 +1,9 @@
 2004-08-02  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Upgrade to Adeos 2.6.7-i386-r6c5.
+
+2004-08-02  Philippe Gerum  <rpm@xenomai.org>
+
 	* include/nucleus/asm-i386/system.h (XNARCH_CALIBRATION_PERIOD):
 	Set to 100 us.
 
@@ -18,6 +22,17 @@
 
 	* skins/rtai/timer.c (rt_timer_ticks2ns, rt_timer_ns2ticks):
 	Operate on signed input/output values.
+
+2004-07-31  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_preempt_current_thread): Remove superfluous
+	locking; it must be in effect when entering the routine in any
+	case.
+
+2004-07-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_sync_wait): Use the right type for
+	storing a spl value.
 
 2004-07-26  Philippe Gerum  <rpm@xenomai.org>
 
@@ -51,7 +66,7 @@
 
 2004-07-21  Philippe Gerum  <rpm@xenomai.org>
 
-	* arch/i386/patches: Upgrade to Adeos 2.6.7-r6c4.
+	* arch/i386/patches: Upgrade to Adeos 2.6.7-i386-r6c4.
 
 2004-07-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 

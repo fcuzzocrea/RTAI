@@ -677,11 +677,10 @@ do { \
 #define UEXECTIME()
 #endif
 
-static inline struct task_struct *lxrt_context_switch (struct task_struct *prev,
-						       struct task_struct *next,
-						       int cpuid)
+static inline void lxrt_context_switch (struct task_struct *prev,
+					 struct task_struct *next,
+					 int cpuid)
 {
-    struct task_struct *svprev = prev;
     struct mm_struct *oldmm = prev->active_mm;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
@@ -698,8 +697,8 @@ static inline struct task_struct *lxrt_context_switch (struct task_struct *prev,
 #endif /* < 2.6.0 */
 
     lxrt_switch_to(prev,next,prev);
+    barrier();
 
-    return svprev;
 }
 
 static inline void make_current_soft(RT_TASK *rt_current)
@@ -818,7 +817,7 @@ schedlnxtsk:
 				SET_CPUS_ALLOWED;
 			}
 			UEXECTIME();
-			prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
+			lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
 			if (prev->used_math) {
 				restore_fpu(prev);
 			}
@@ -945,7 +944,7 @@ schedlnxtsk:
 				SET_CPUS_ALLOWED;
 			}
 			UEXECTIME();
-			prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
+			lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
 			if (prev->used_math) {
 				restore_fpu(prev);
 			}
@@ -1250,7 +1249,7 @@ schedlnxtsk:
 			}
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
-			prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
+			lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
 			if (prev->used_math) {
 				restore_fpu(prev);
 			}
@@ -1773,15 +1772,16 @@ static inline void fast_schedule(RT_TASK *new_task)
 	struct task_struct *prev;
 	int cpuid;
 	if (((new_task)->state |= RT_SCHED_READY) == RT_SCHED_READY) {
-		enq_ready_task(new_task);
+		cpuid = hard_cpu_id();
+		enq_soft_ready_task(new_task);
 		rt_release_global_lock();
-		LOCK_LINUX(cpuid = hard_cpu_id());
+		LOCK_LINUX(cpuid);
 		rt_linux_task.lnxtsk = prev = kthreadb[cpuid];
 #define rt_current (rt_smp_current[cpuid])
 		UEXECTIME();
 #undef rt_current
 		rt_smp_current[cpuid] = new_task;
-		prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
+		lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
 		if (prev->used_math) {
 			restore_fpu(prev);
 		}
@@ -1935,12 +1935,11 @@ void steal_from_linux(RT_TASK *rt_task)
 	klistp->task[klistp->in] = rt_task;
 	klistp->in = (klistp->in + 1) & (MAX_WAKEUP_SRQ - 1);
 	hard_sti();
-	current->state = TASK_HARDREALTIME | 0x80000000;
+	current->state = TASK_HARDREALTIME;
 	wake_up_process(kthreadb[cpuid]);
 	schedule();
 	rt_task->is_hard = 1;
 	rt_task->exectime[1] = rdtsc();
-	current->state = TASK_HARDREALTIME;
 	hard_sti();
 	if (current->used_math) {
 		restore_fpu(current);

@@ -135,7 +135,7 @@ int rt_intr_create (RT_INTR *intr,
     xnlock_get_irqsave(&nklock,s);
     appendq(&__rtai_intr_q,&intr->link);
     xnlock_put_irqrestore(&nklock,s);
-    snprintf(intr->name,sizeof(intr->name),"interrupt/%u",irq);
+    snprintf(intr->name,sizeof(intr->name),"interrupt@%u",irq);
 
     err = xnintr_attach(&intr->intr_base,intr);
 
@@ -145,7 +145,7 @@ int rt_intr_create (RT_INTR *intr,
        half-baked objects... */
 
     if (!err)
-	err = rt_registry_enter(intr->name,intr,&intr->handle);
+	err = rt_registry_enter(intr->name,intr,&intr->handle,NULL);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     if (err)

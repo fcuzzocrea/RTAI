@@ -45,16 +45,71 @@
 #include <rtai/cond.h>
 #include <rtai/registry.h>
 
-int __cond_pkg_init (void)
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
+static ssize_t __cond_read_proc (char *page,
+				 char **start,
+				 off_t off,
+				 int count,
+				 int *eof,
+				 void *data)
 {
-    return 0;
+    RT_COND *cond = (RT_COND *)data;
+    char *p = page;
+    int len;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (xnsynch_nsleepers(&cond->synch_base) > 0)
+	{
+	xnpholder_t *holder;
+	
+	/* Pended condvar -- dump waiters. */
+
+	holder = getheadpq(xnsynch_wait_queue(&cond->synch_base));
+
+	while (holder)
+	    {
+	    xnthread_t *sleeper = link2thread(holder,plink);
+
+	    if (*xnthread_name(sleeper))
+		p += sprintf(p,"+%s\n",xnthread_name(sleeper));
+	    else
+		p += sprintf(p,"+%p\n",sleeper);
+
+	    holder = nextpq(xnsynch_wait_queue(&cond->synch_base),holder);
+	    }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    len = (p - page) - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
 }
 
-void __cond_pkg_cleanup (void)
+static RT_OBJECT_PROCNODE __cond_pnode = {
 
-{
-}
+    .dir = NULL,
+    .type = "condvars",
+    .entries = 0,
+    .read_proc = &__cond_read_proc,
+    .write_proc = NULL
+};
+
+#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+
+static RT_OBJECT_PROCNODE __cond_pnode = {
+
+    .type = "condvars"
+};
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 /**
  * @fn int rt_cond_create(RT_COND *cond,
@@ -113,7 +168,7 @@ int rt_cond_create (RT_COND *cond,
 
     if (name && *name)
         {
-        err = rt_registry_enter(cond->name,cond,&cond->handle);
+        err = rt_registry_enter(cond->name,cond,&cond->handle,&__cond_pnode);
 
         if (err)
             rt_cond_delete(cond);
@@ -522,6 +577,17 @@ int rt_cond_inquire (RT_COND *cond,
  *
  * Rescheduling: never.
  */
+
+int __cond_pkg_init (void)
+
+{
+    return 0;
+}
+
+void __cond_pkg_cleanup (void)
+
+{
+}
 
 /*@}*/
 

@@ -46,16 +46,81 @@
 #include <rtai/heap.h>
 #include <rtai/registry.h>
 
-int __heap_pkg_init (void)
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
+static ssize_t __heap_read_proc (char *page,
+				 char **start,
+				 off_t off,
+				 int count,
+				 int *eof,
+				 void *data)
 {
-    return 0;
+    RT_HEAP *heap = (RT_HEAP *)data;
+    char *p = page;
+    int len;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    p += sprintf(p,"%lu/%lu bytes used.\n",
+		 xnheap_used_mem(&heap->heap_base),
+		 xnheap_size(&heap->heap_base));
+
+    if (xnsynch_nsleepers(&heap->synch_base) > 0)
+	{
+	xnpholder_t *holder;
+	
+	/* Pended heap -- dump waiters. */
+
+	holder = getheadpq(xnsynch_wait_queue(&heap->synch_base));
+
+	while (holder)
+	    {
+	    xnthread_t *sleeper = link2thread(holder,plink);
+	    RT_TASK *task = thread2rtask(sleeper);
+	    size_t size = task->wait_args.heap.size;
+
+	    if (*xnthread_name(sleeper))
+		p += sprintf(p,"+%s (size=%d)\n",
+			     xnthread_name(sleeper),
+			     size);
+	    else
+		p += sprintf(p,"+%p (size=%d)\n",
+			     sleeper,
+			     size);
+
+	    holder = nextpq(xnsynch_wait_queue(&heap->synch_base),holder);
+	    }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    len = (p - page) - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
 }
 
-void __heap_pkg_cleanup (void)
+static RT_OBJECT_PROCNODE __heap_pnode = {
 
-{
-}
+    .dir = NULL,
+    .type = "heaps",
+    .entries = 0,
+    .read_proc = &__heap_read_proc,
+    .write_proc = NULL
+};
+
+#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+
+static RT_OBJECT_PROCNODE __heap_pnode = {
+
+    .type = "heaps"
+};
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 static void __heap_flush_private (xnheap_t *heap,
 				  void *heapmem,
@@ -231,7 +296,7 @@ int rt_heap_create (RT_HEAP *heap,
 
     if (name && *name)
         {
-        err = rt_registry_enter(heap->name,heap,&heap->handle);
+        err = rt_registry_enter(heap->name,heap,&heap->handle,&__heap_pnode);
 
         if (err)
             rt_heap_delete(heap);
@@ -424,7 +489,7 @@ int rt_heap_alloc (RT_HEAP *heap,
 	if (!block)
 	    {
 	    /* It's ok to pass zero for size here, since the requested
-	       size is implictely the whole heap space; but if
+	       size is implicitely the whole heap space; but if
 	       non-zero is given, it must match the actual heap
 	       size. */
 
@@ -688,6 +753,19 @@ int rt_heap_inquire (RT_HEAP *heap,
  *
  * Rescheduling: never.
  */
+
+int __heap_pkg_init (void)
+
+{
+    return 0;
+}
+
+void __heap_pkg_cleanup (void)
+
+{
+}
+
+/*@}*/
 
 EXPORT_SYMBOL(rt_heap_create);
 EXPORT_SYMBOL(rt_heap_delete);

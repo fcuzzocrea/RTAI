@@ -44,16 +44,74 @@
 #include <rtai/mutex.h>
 #include <rtai/registry.h>
 
-int __mutex_pkg_init (void)
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
+static ssize_t __mutex_read_proc (char *page,
+				char **start,
+				off_t off,
+				int count,
+				int *eof,
+				void *data)
 {
-    return 0;
+    RT_MUTEX *mutex = (RT_MUTEX *)data;
+    char *p = page;
+    int len;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (xnsynch_nsleepers(&mutex->synch_base) == 0)
+	/* Mutex unlocked. */
+	p += sprintf(p,"=unlocked\n");
+    else
+	{
+	xnpholder_t *holder;
+	
+	/* Pended mutex -- dump waiters. */
+
+	holder = getheadpq(xnsynch_wait_queue(&mutex->synch_base));
+
+	while (holder)
+	    {
+	    xnthread_t *sleeper = link2thread(holder,plink);
+
+	    if (*xnthread_name(sleeper))
+		p += sprintf(p,"+%s\n",xnthread_name(sleeper));
+	    else
+		p += sprintf(p,"+%p\n",sleeper);
+
+	    holder = nextpq(xnsynch_wait_queue(&mutex->synch_base),holder);
+	    }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    len = (p - page) - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
 }
 
-void __mutex_pkg_cleanup (void)
+static RT_OBJECT_PROCNODE __mutex_pnode = {
 
-{
-}
+    .dir = NULL,
+    .type = "mutexes",
+    .entries = 0,
+    .read_proc = &__mutex_read_proc,
+    .write_proc = NULL
+};
+
+#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+
+static RT_OBJECT_PROCNODE __mutex_pnode = {
+
+    .type = "mutexes"
+};
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 /**
  * @fn int rt_mutex_create(RT_MUTEX *mutex,
@@ -115,7 +173,7 @@ int rt_mutex_create (RT_MUTEX *mutex,
 
     if (name && *name)
         {
-        err = rt_registry_enter(mutex->name,mutex,&mutex->handle);
+        err = rt_registry_enter(mutex->name,mutex,&mutex->handle,&__mutex_pnode);
 
         if (err)
             rt_mutex_delete(mutex);
@@ -459,6 +517,17 @@ int rt_mutex_inquire (RT_MUTEX *mutex,
  *
  * Rescheduling: never.
  */
+
+int __mutex_pkg_init (void)
+
+{
+    return 0;
+}
+
+void __mutex_pkg_cleanup (void)
+
+{
+}
 
 /*@}*/
 

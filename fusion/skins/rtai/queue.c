@@ -221,7 +221,7 @@ int rt_queue_create (RT_QUEUE *q,
 
     if (name && *name)
         {
-        err = rt_registry_enter(q->name,q,&q->handle);
+        err = rt_registry_enter(q->name,q,&q->handle,NULL);
 
         if (err)
             rt_queue_delete(q);

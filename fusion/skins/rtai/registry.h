@@ -33,6 +33,8 @@
 
 #define RT_REGISTRY_RECHECK   XNTHREAD_SPARE0
 
+struct rt_object_procnode;
+
 typedef struct rt_object {
 
     xnholder_t link;
@@ -48,6 +50,14 @@ typedef struct rt_object {
     u_long safelock;	 /* !< Safe lock count. */
 
     u_long cstamp;	/* !< Creation stamp. */
+
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+
+    struct rt_object_procnode *pnode; /* !< /proc information class. */
+
+    struct proc_dir_entry *proc; /* !< /proc entry. */
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 } RT_OBJECT;
 
@@ -69,11 +79,39 @@ int __registry_pkg_init(void);
 
 void __registry_pkg_cleanup(void);
 
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+
+#include <linux/proc_fs.h>
+
+#define RT_OBJECT_PROC_RESERVED1 ((struct proc_dir_entry *)1)
+#define RT_OBJECT_PROC_RESERVED2 ((struct proc_dir_entry *)2)
+
+typedef struct rt_object_procnode {
+
+    struct proc_dir_entry *dir;
+    const char *type;
+    int entries;
+    read_proc_t *read_proc;
+    write_proc_t *write_proc;
+
+} RT_OBJECT_PROCNODE;
+
+#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+
+typedef struct rt_object_procnode { /* Placeholder. */
+
+    const char *type;
+
+} RT_OBJECT_PROCNODE;
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
+
 /* Public interface. */
 
 int rt_registry_enter(const char *key,
 		      void *objaddr,
-		      rt_handle_t *phandle);
+		      rt_handle_t *phandle,
+		      RT_OBJECT_PROCNODE *pnode);
 
 int rt_registry_bind(const char *key,
 		     RTIME timeout,

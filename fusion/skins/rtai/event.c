@@ -42,16 +42,82 @@
 #include <rtai/event.h>
 #include <rtai/registry.h>
 
-int __event_pkg_init (void)
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
+static ssize_t __event_read_proc (char *page,
+				char **start,
+				off_t off,
+				int count,
+				int *eof,
+				void *data)
 {
-    return 0;
+    RT_EVENT *event = (RT_EVENT *)data;
+    char *p = page;
+    int len;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    p += sprintf(p,"=0x%lx\n",event->value);
+
+    if (xnsynch_nsleepers(&event->synch_base) > 0)
+	{
+	xnpholder_t *holder;
+
+	/* Pended event -- dump waiters. */
+
+	holder = getheadpq(xnsynch_wait_queue(&event->synch_base));
+
+	while (holder)
+	    {
+	    xnthread_t *sleeper = link2thread(holder,plink);
+	    RT_TASK *task = thread2rtask(sleeper);
+	    const char *mode = (task->wait_args.event.mode & EV_ANY) ? "any" : "all";
+	    unsigned long mask = task->wait_args.event.mask;
+
+	    if (*xnthread_name(sleeper))
+		p += sprintf(p,"+%s (mask=0x%lx, %s)\n",
+			     xnthread_name(sleeper),
+			     mask,
+			     mode);
+	    else
+		p += sprintf(p,"+%p\n (mask=0x%lx, %s)\n",
+			     sleeper,
+			     mask,
+			     mode);
+
+	    holder = nextpq(xnsynch_wait_queue(&event->synch_base),holder);
+	    }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    len = (p - page) - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
 }
 
-void __event_pkg_cleanup (void)
+static RT_OBJECT_PROCNODE __event_pnode = {
 
-{
-}
+    .dir = NULL,
+    .type = "events",
+    .entries = 0,
+    .read_proc = &__event_read_proc,
+    .write_proc = NULL
+};
+
+#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+
+static RT_OBJECT_PROCNODE __event_pnode = {
+
+    .type = "events"
+};
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 /**
  * @fn int rt_event_create(RT_EVENT *event,
@@ -132,7 +198,7 @@ int rt_event_create (RT_EVENT *event,
 
     if (name && *name)
         {
-        err = rt_registry_enter(event->name,event,&event->handle);
+        err = rt_registry_enter(event->name,event,&event->handle,&__event_pnode);
 
         if (err)
             rt_event_delete(event);
@@ -621,6 +687,17 @@ int rt_event_inquire (RT_EVENT *event,
  *
  * Rescheduling: never.
  */
+
+int __event_pkg_init (void)
+
+{
+    return 0;
+}
+
+void __event_pkg_cleanup (void)
+
+{
+}
 
 /*@}*/
 

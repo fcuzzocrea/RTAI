@@ -56,9 +56,9 @@
 
 static RT_OBJECT __rtai_obj_slots[CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS];
 
-static DECLARE_XNQUEUE(__rtai_obj_busyq);
+static DECLARE_XNQUEUE(__rtai_obj_freeq); /* Free objects. */
 
-static DECLARE_XNQUEUE(__rtai_obj_freeq);
+static DECLARE_XNQUEUE(__rtai_obj_busyq); /* Active and exported objects. */
 
 static u_long __rtai_obj_stamp;
 
@@ -67,6 +67,30 @@ static RT_HASH **__rtai_hash_table;
 static int __rtai_hash_entries;
 
 static xnsynch_t __rtai_hash_synch;
+
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+
+#include <linux/workqueue.h>
+
+extern struct proc_dir_entry *rthal_proc_root;
+
+extern spinlock_t rthal_proc_lock;
+
+static void __registry_proc_callback(void *cookie);
+
+static void __registry_proc_schedule(unsigned virq);
+
+static DECLARE_XNQUEUE(__rtai_obj_exportq); /* Objects waiting for /proc export. */
+
+static DECLARE_XNQUEUE(__rtai_obj_unexportq); /* Objects waiting for /proc unexport. */
+
+static DECLARE_WORK(__registry_proc_work,&__registry_proc_callback,NULL);
+
+static struct proc_dir_entry *registry_proc_root;
+
+static unsigned registry_proc_virq;
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 int __registry_pkg_init (void)
 
@@ -81,6 +105,29 @@ int __registry_pkg_init (void)
  (n) : sizeof(primes) / sizeof(u_long) - 1)
 
     int n;
+
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+
+    registry_proc_virq = adeos_alloc_irq();
+
+    if (!registry_proc_virq)
+	return -EBUSY;
+
+    registry_proc_root = create_proc_entry("registry",
+					   S_IFDIR,
+					   rthal_proc_root);
+    if (!registry_proc_root)
+	{
+	adeos_free_irq(registry_proc_virq);
+	return -ENOMEM;
+	}
+
+    adeos_virtualize_irq(registry_proc_virq,
+			 &__registry_proc_schedule,
+			 NULL,
+			 IPIPE_HANDLE_MASK);
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
     for (n = 0; n < CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS; n++)
 	{
@@ -113,6 +160,17 @@ void __registry_pkg_cleanup (void)
 	for (ecurr = __rtai_hash_table[n]; ecurr; ecurr = enext)
 	    {
 	    enext = ecurr->next;
+
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+	    spin_lock(&rthal_proc_lock);
+
+	    if (ecurr->object && ecurr->object->pnode)
+		remove_proc_entry(ecurr->object->key,
+				  ecurr->object->pnode->dir);
+
+	    spin_unlock(&rthal_proc_lock);
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
+
 	    xnfree(ecurr);
 	    }
 	}
@@ -120,6 +178,12 @@ void __registry_pkg_cleanup (void)
     xnfree(__rtai_hash_table);
 
     xnsynch_destroy(&__rtai_hash_synch);
+
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+    adeos_free_irq(registry_proc_virq);
+    flush_scheduled_work();
+    remove_proc_entry("registry",rthal_proc_root);
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 }
 
 static inline RT_OBJECT *__registry_validate (rt_handle_t handle)
@@ -133,6 +197,175 @@ static inline RT_OBJECT *__registry_validate (rt_handle_t handle)
 
     return NULL;
 }
+
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+
+/* The following stuff implements the mechanism for delegating
+   export/unexport requests to/from the /proc interface from the RTAI
+   domain to the Linux kernel (i.e. the "lower stage"). This ends up
+   being a bit complex due to the fact that such requests might lag
+   enough before being processed by the Linux kernel so that
+   subsequent requests might just contradict former ones before they
+   even had a chance to be applied (e.g. export -> unexport in the
+   RTAI domain for a short-lived RT object). This situation and the
+   like are hopefully properly handled due to a careful
+   synchronization of operations across domains. */
+
+static struct proc_dir_entry *add_proc_leaf (const char *name,
+					     read_proc_t rdproc,
+					     write_proc_t wrproc,
+					     void *data,
+					     struct proc_dir_entry *parent)
+{
+    int mode = wrproc ? 0644 : 0444;
+    struct proc_dir_entry *entry;
+
+    entry = create_proc_entry(name,mode,parent);
+
+    if (!entry)
+	return NULL;
+
+    entry->nlink = 1;
+    entry->data = data;
+    entry->read_proc = rdproc;
+    entry->write_proc = wrproc;
+    entry->owner = THIS_MODULE;
+
+    return entry;
+}
+
+static void __registry_proc_callback (void *cookie)
+
+{
+    struct proc_dir_entry *dir;
+    RT_OBJECT_PROCNODE *pnode;
+    xnholder_t *holder;
+    RT_OBJECT *object;
+    const char *type;
+    int entries;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    while ((holder = getq(&__rtai_obj_exportq)) != NULL)
+	{
+	object = link2rtobj(holder);
+	pnode = object->pnode;
+	type = pnode->type;
+	++pnode->entries;
+	object->proc = RT_OBJECT_PROC_RESERVED2;
+	appendq(&__rtai_obj_busyq,holder);
+
+	xnlock_put_irqrestore(&nklock,s);
+
+	spin_lock(&rthal_proc_lock);
+
+	dir = pnode->dir;
+
+	if (!dir)
+	    {
+	    /* Create the class directory on the fly as needed. */
+	    dir = create_proc_entry(type,
+				    S_IFDIR,
+				    registry_proc_root);
+	    if (!dir)
+		{
+		object->proc = NULL;
+		goto fail;
+		}
+
+	    pnode->dir = dir;
+	    }
+
+	object->proc = add_proc_leaf(object->key,
+				     pnode->read_proc,
+				     pnode->write_proc,
+				     object->objaddr,
+				     dir);
+ fail:
+	spin_unlock(&rthal_proc_lock);
+
+	xnlock_get_irqsave(&nklock,s);
+
+	if (!object->proc)
+	    {
+	    /* On error, pretend that the object has never been
+	       exported. */
+	    object->pnode = NULL;
+	    --pnode->entries;
+	    }
+	}
+
+    while ((holder = getq(&__rtai_obj_unexportq)) != NULL)
+	{
+	object = link2rtobj(holder);
+	pnode = object->pnode;
+	object->pnode = NULL;
+	dir = pnode->dir;
+	type = pnode->type;
+	entries = --pnode->entries;
+
+	if (object->objaddr)
+	    appendq(&__rtai_obj_busyq,holder);
+	else
+	    /* Trap the case where we are unexporting an already
+	       unregistered object. */
+	    appendq(&__rtai_obj_freeq,holder);
+
+	xnlock_put_irqrestore(&nklock,s);
+
+	remove_proc_entry(object->key,dir);
+
+	if (entries <= 0)
+	    remove_proc_entry(type,registry_proc_root);
+
+	xnlock_get_irqsave(&nklock,s);
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+}
+
+static void __registry_proc_schedule (unsigned virq)
+
+{
+    /* schedule_work() will check for us if the work has already been
+       scheduled, so just be lazy and submit blindly. */
+    schedule_work(&__registry_proc_work);
+}
+
+static inline void __registry_proc_export (RT_OBJECT *object,
+					   RT_OBJECT_PROCNODE *pnode)
+{
+    object->proc = RT_OBJECT_PROC_RESERVED1;
+    object->pnode = pnode;
+    removeq(&__rtai_obj_busyq,&object->link);
+    appendq(&__rtai_obj_exportq,&object->link);
+    adeos_trigger_irq(registry_proc_virq);
+}
+
+static inline void __registry_proc_unexport (RT_OBJECT *object)
+
+{
+    if (object->proc != RT_OBJECT_PROC_RESERVED1)
+	{
+	removeq(&__rtai_obj_busyq,&object->link);
+	appendq(&__rtai_obj_unexportq,&object->link);
+	adeos_trigger_irq(registry_proc_virq);
+	}
+    else
+	{
+	/* Unexporting before the lower stage has had a chance to
+	   export. Move back the object to the busyq just like if no
+	   export had been requested. */
+	removeq(&__rtai_obj_exportq,&object->link);
+	appendq(&__rtai_obj_busyq,&object->link);
+	object->pnode = NULL;
+	}
+
+    object->proc = NULL;
+}
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 static unsigned __registry_hash_crunch (const char *key)
 
@@ -242,7 +475,8 @@ static RT_OBJECT *__registry_hash_find (const char *key)
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a key or @a objaddr are NULL.
+ * - -EINVAL is returned if @a key or @a objaddr are NULL, or if @a
+ * key constains an invalid '/' character.
  *
  * - -ENOMEM is returned if the system fails to get enough dynamic
  * memory from the global real-time heap in order to register the
@@ -263,14 +497,15 @@ static RT_OBJECT *__registry_hash_find (const char *key)
 
 int rt_registry_enter (const char *key,
 		       void *objaddr,
-		       rt_handle_t *phandle)
+		       rt_handle_t *phandle,
+		       RT_OBJECT_PROCNODE *pnode)
 {
     xnholder_t *holder;
     RT_OBJECT *object;
     spl_t s;
     int err;
 
-    if (!key || !objaddr)
+    if (!key || !objaddr || strchr(key,'/'))
 	return -EINVAL;
 
     xnlock_get_irqsave(&nklock,s);
@@ -287,7 +522,7 @@ int rt_registry_enter (const char *key,
 
     err = __registry_hash_enter(key,object);
 
-    if (err != 0)
+    if (err)
 	{
 	appendq(&__rtai_obj_freeq,holder);
 	goto unlock_and_exit;
@@ -302,6 +537,16 @@ int rt_registry_enter (const char *key,
     /* <!> Make sure the handle is written back before the
        rescheduling takes place. */
     *phandle = object - __rtai_obj_slots;
+
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+    if (pnode)
+	__registry_proc_export(object,pnode);
+    else
+	{
+	object->proc = NULL;
+	object->pnode = NULL;
+	}
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
     if (xnsynch_nsleepers(&__rtai_hash_synch) > 0)
 	{
@@ -494,6 +739,20 @@ int rt_registry_remove (rt_handle_t handle)
     __registry_hash_remove(object);
     object->objaddr = NULL;
     object->cstamp = 0;
+
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+
+    if (object->pnode)
+	__registry_proc_unexport(object);
+
+    /* Leave the update of the object queues to the work callback if
+       it has been kicked. */
+
+    if (object->pnode || object->proc)
+	goto unlock_and_exit;
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
+
     removeq(&__rtai_obj_busyq,&object->link);
     appendq(&__rtai_obj_freeq,&object->link);
 

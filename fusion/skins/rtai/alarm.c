@@ -131,7 +131,7 @@ int rt_alarm_create (RT_ALARM *alarm,
 
     if (name && *name)
         {
-        err = rt_registry_enter(alarm->name,alarm,&alarm->handle);
+        err = rt_registry_enter(alarm->name,alarm,&alarm->handle,NULL);
 
         if (err)
             rt_alarm_delete(alarm);

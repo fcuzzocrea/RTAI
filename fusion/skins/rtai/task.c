@@ -206,8 +206,10 @@ int rt_task_create (RT_TASK *task,
 
     if (name && *name)
 	{
-	err = rt_registry_enter(xnthread_name(&task->thread_base),task,&task->handle);
-
+	err = rt_registry_enter(xnthread_name(&task->thread_base),
+				task,
+				&task->handle,
+				NULL);
 	if (err)
 	    rt_task_delete(task);
 	}
@@ -463,7 +465,7 @@ int rt_task_resume (RT_TASK *task)
  *   only if @a task is non-NULL.
  *
  * - Kernel-based task
- * - User-space task
+ * - User-space task (switches to primary mode)
  *
  * Rescheduling: always if @a task is NULL.
  */

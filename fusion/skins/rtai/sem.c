@@ -45,14 +45,74 @@
 #include <rtai/sem.h>
 #include <rtai/registry.h>
 
-int __sem_pkg_init (void) {
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
-    return 0;
+static ssize_t __sem_read_proc (char *page,
+				char **start,
+				off_t off,
+				int count,
+				int *eof,
+				void *data)
+{
+    RT_SEM *sem = (RT_SEM *)data;
+    char *p = page;
+    int len;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (xnsynch_nsleepers(&sem->synch_base) == 0)
+	/* Idle/posted semaphore -- dump count. */
+	p += sprintf(p,"=%lu\n",sem->count);
+    else
+	{
+	xnpholder_t *holder;
+	
+	/* Pended semaphore -- dump waiters. */
+
+	holder = getheadpq(xnsynch_wait_queue(&sem->synch_base));
+
+	while (holder)
+	    {
+	    xnthread_t *sleeper = link2thread(holder,plink);
+
+	    if (*xnthread_name(sleeper))
+		p += sprintf(p,"+%s\n",xnthread_name(sleeper));
+	    else
+		p += sprintf(p,"+%p\n",sleeper);
+
+	    holder = nextpq(xnsynch_wait_queue(&sem->synch_base),holder);
+	    }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    len = (p - page) - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
 }
 
-void __sem_pkg_cleanup (void) {
+static RT_OBJECT_PROCNODE __sem_pnode = {
 
-}
+    .dir = NULL,
+    .type = "semaphores",
+    .entries = 0,
+    .read_proc = &__sem_read_proc,
+    .write_proc = NULL
+};
+
+#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+
+static RT_OBJECT_PROCNODE __sem_pnode = {
+
+    .type = "semaphores"
+};
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 /**
  * @fn int rt_sem_create(RT_SEM *sem,
@@ -135,7 +195,7 @@ int rt_sem_create (RT_SEM *sem,
 
     if (name && *name)
         {
-        err = rt_registry_enter(sem->name,sem,&sem->handle);
+        err = rt_registry_enter(sem->name,sem,&sem->handle,&__sem_pnode);
 
         if (err)
             rt_sem_delete(sem);
@@ -537,6 +597,17 @@ int rt_sem_inquire (RT_SEM *sem,
  *
  * Rescheduling: never.
  */
+
+int __sem_pkg_init (void)
+
+{
+    return 0;
+}
+
+void __sem_pkg_cleanup (void)
+
+{
+}
 
 /*@}*/
 

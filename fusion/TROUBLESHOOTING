@@ -58,15 +58,13 @@ ______________________________________________________________________
 ======================================================================
 
 Q: When inserting rtai_hal.ko, I get a message in the console saying :
-"RTAI[hal]: Intel chipset found and SMI workaround not enabled, you 
-may encounter high interrupt latencies."
+"RTAI: Intel chipset found and SMI workaround not enabled, you may
+encounter high interrupt latencies." What should I do ?
 
-What should I do ?
-
-First you should run the latency test under some load and see if you
-experience any high latency ("high" meaning more than, say, 100 
+A: First you should run the latency test under some load and see if
+you experience any high latency ("high" meaning more than, say, 100
 micro-seconds). If you do not observe any such latency, then this
-warning is harmless, and if you find it annoying, you may disable "SMI 
+warning is harmless, and if you find it annoying, you may disable "SMI
 detection" in RTAI configuration menu. You can skip the rest of this
 section.
 
@@ -86,7 +84,7 @@ verify that your high latency disappeared but most importantly, verify
 that every peripheral you intend to use with RTAI is working properly. 
 If everything is working properly, then you are done with SMI.
 
-If some perihperal is not working properly, then it probably needs 
+If some peripheral is not working properly, then it probably needs 
 SMI, in which case you can not simply disable SMI globally, you will 
 need to disable all SMI sources on your system except the SMI needed 
 by your peripheral. This is a much less safe choice, since RTAI has 

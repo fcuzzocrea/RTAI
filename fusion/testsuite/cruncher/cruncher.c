@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <unistd.h>
 #include <semaphore.h>
 #include <pthread.h>
@@ -17,16 +18,16 @@ static int sample_count;
 
 static int has_fusion;
 
-static int do_histogram = 0;
+int do_histogram = 0, finished = 0;
 
-#define HISTOGRAM_CELLS 100
+#define HISTOGRAM_CELLS 1000
 
 unsigned long histogram[HISTOGRAM_CELLS];
 
 static inline void add_histogram (long addval)
 
 {
-    long inabs = (addval >= 0 ? addval : -addval); /* percent steps */
+    long inabs = (addval >= 0 ? addval : -addval); /* 0.1 percent steps */
     histogram[inabs < HISTOGRAM_CELLS ? inabs : HISTOGRAM_CELLS-1]++;
 }
 
@@ -76,7 +77,7 @@ void dump_histogram (void)
 	long hits = histogram[n];
 
 	if (hits)
-	    printf("< %d%%: %ld\n",n + 1,hits);
+	    printf("%d.%d - %d.%d%%: %ld\n",n / 10,n % 10,(n + 1) / 10,(n + 1) % 10,hits);
 	}
 }
 
@@ -188,8 +189,8 @@ void *sampler_thread (void *arg)
 	if (t < mint2) mint2 = t;
 	sumt2 += t;
 
-	if (do_histogram)
-	    add_histogram((t - ideal) * 100 / ideal);
+	if (do_histogram && !finished)
+	    add_histogram((t - ideal) * 1000 / ideal);
 	}
 
     printf("--------\nNanosleep jitter: min = %ld us, max = %ld us, avg = %ld us\n",
@@ -213,12 +214,26 @@ void *sampler_thread (void *arg)
     return NULL;
 }
 
+void cleanup_upon_sig(int sig __attribute__((unused)))
+
+{
+    finished = 1;
+
+    if (do_histogram)
+	dump_histogram();
+
+    exit(0);
+}
+
 int main (int ac, char **av)
 
 {
     pthread_t sampler_thid, cruncher_thid;
     pthread_attr_t thattr;
     xnsysinfo_t info;
+
+    signal(SIGINT, cleanup_upon_sig);
+    signal(SIGTERM, cleanup_upon_sig);
 
     if (mlockall(MCL_CURRENT|MCL_FUTURE))
 	perror("mlockall");

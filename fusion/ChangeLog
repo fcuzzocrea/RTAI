@@ -1,5 +1,8 @@
 2004-11-26  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/snippets: Add code snippets illustrating the use of
+	the API.
+
 	* nucleus/pod.c: Compile out the scheduler hook unless we are
 	actually building the simulator.
 	(xnpod_switch_fpu): Inline calls on the fast path.

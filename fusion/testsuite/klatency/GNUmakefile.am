@@ -1,0 +1,49 @@
+testdir = $(prefix)/testsuite/klatency
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_SRC = latency-module.c
+
+latency_rt$(modext): @RTAI_KBUILD_ENV@
+latency_rt$(modext): $(libmodule_SRC)
+	@RTAI_KBUILD_CMD@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+test_PROGRAMS = latency
+
+latency_SOURCES = latency.c
+
+latency_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/skins \
+	-I../../include
+
+latency_LDADD = \
+	../../skins/rtai/lib/librtai.a \
+	-lpthread
+
+all-local: latency_rt$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: latency_rt$(modext)
+	$(mkinstalldirs) $(DESTDIR)$(testdir)
+	$(INSTALL_DATA) $^ $(DESTDIR)$(testdir)
+
+install-data-local:
+	$(mkinstalldirs) $(DESTDIR)$(testdir)
+	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(testdir)/.runinfo
+	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load" > $(DESTDIR)$(testdir)/run
+	@chmod +x $(DESTDIR)$(testdir)/run
+
+run: all
+	@$(top_srcdir)/scripts/rtai-load --verbose
+
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild runinfo

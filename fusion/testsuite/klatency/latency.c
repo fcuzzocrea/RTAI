@@ -38,9 +38,9 @@ int main (int argc, char **argv)
 	    }
 
 	if ((n++ % 21)==0)
-			printf("RTH|%12s|%12s|%12s|%12s\n", "jit min","jit avg","jit max","overrun");
+	    printf("RTH|%12s|%12s|%12s|%12s\n", "jit min","jit avg","jit max","overrun");
 
-		printf("RTD|%12d|%12d|%12d|%12d\n",
+	printf("RTD|%12d|%12d|%12d|%12d\n",
 	       s.minjitter,
 	       s.avgjitter,
 	       s.maxjitter,

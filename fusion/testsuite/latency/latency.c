@@ -117,13 +117,13 @@ void display (void *cookie)
 	    rt_task_delete(NULL);
 	    }
 
-		if ((n++ % 21)==0)
-			printf("RTH|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","overrun");
+	if ((n++ % 21)==0)
+	    printf("RTH|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","overrun");
 
-		printf("RTD|%12Ld|%12Ld|%12Ld|%12ld\n",
+	printf("RTD|%12Ld|%12Ld|%12Ld|%12ld\n",
 	       rt_timer_ticks2ns(minjitter),
 	       rt_timer_ticks2ns(avgjitter),
-				rt_timer_ticks2ns(maxjitter),
+	       rt_timer_ticks2ns(maxjitter),
 	       overrun);
 	}
 }

@@ -40,6 +40,9 @@
 #undef CONFIG_RTAI_OPT_NATIVE_HEAP
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_INTR
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_NATIVE_MUTEX
 
 /* Kconfig */

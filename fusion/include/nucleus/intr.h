@@ -22,6 +22,8 @@
 
 #include <nucleus/types.h>
 
+#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
+
 #define XN_ISR_HANDLED   0x0
 #define XN_ISR_CHAINED   0x1
 #define XN_ISR_ENABLE    0x2
@@ -74,5 +76,7 @@ xnarch_cpumask_t xnintr_affinity(xnintr_t *intr,
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */
 
 #endif /* !_RTAI_NUCLEUS_INTR_H */

@@ -37,9 +37,10 @@ configuration switches can be listed by running ./configure
  --enable-native-event	Enable event flag support in native skin
  --enable-native-mutex	Enable mutex support in native skin
  --enable-native-cond	Enable condition variable support in native skin
- --enable-native-alarm	Enable heap support in native skin
- --enable-native-alarm	Enable queue support in native skin
+ --enable-native-heap	Enable heap support in native skin
+ --enable-native-queue	Enable queue support in native skin
  --enable-native-alarm	Enable alarm support in native skin
+ --enable-native-intr	Enable interrupt API in native skin
  --enable-psos-skin	Build pSOS+ emulator
  --enable-posix-skin	Build POSIX skin
  --enable-vxworks-skin	Build VxWorks emulator

@@ -4,10 +4,10 @@
 
 <article>
   <articleinfo>
-    <title>The XENOMAI project Implementing a RTOS emulation framework
+    <title>Xenomai - Implementing a RTOS emulation framework
       on GNU/Linux</title>
     <releaseinfo>First Edition</releaseinfo>
-    <pubdate>January 2004</pubdate>
+    <pubdate>April 2004</pubdate>
     <author>
       <firstname>Philippe</firstname>
       <surname>Gerum</surname>	
@@ -18,25 +18,24 @@
     </copyright>
     
     <abstract>
-      <para>Xenomai is a GNU/Linux-based framework which aims at being
-      a foundation for a set of traditional RTOS API emulators
-      running on top of a host software architecture, such as RTAI
-      when hard real-time support is required.</para>
-
-      <para>Generally speaking, this project aims at helping
-      application designers relying on traditional RTOS to move as
-      smoothly as possible to a GNU/Linux-based execution environment,
-      without having to rewrite their application entirely.</para>
+      <para>Generally speaking, the Xenomai technology first aims at
+      helping application designers relying on traditional RTOS to
+      move as smoothly as possible to a GNU/Linux-based execution
+      environment, without having to rewrite their application
+      entirely.</para>
 
       <para>This paper discusses the motivations for proposing this
       framework, the general observations concerning the traditional
-      RTOS directing this project, and some in-depth details about its
-      undergoing implementation.</para>
+      RTOS directing this technology, and some in-depth details about
+      its implementation.</para>
 
-      <para>The Xenomai project has been launched in August 2001. It
-      is hosted by the <ulink
-      url="http://freesoftware.fsf.org/projects/xenomai/">free
-      software foundation.</ulink> </para>
+      <para>The Xenomai project has been launched in August 2001.  It
+      has merged in 2003 with the <ulink
+      url="http://www.gna.org/projects/rtai/">RTAI project</ulink> to
+      produce an industrial-grade real-time Free Software platform for
+      GNU/Linux. Xenomai's emulation technology will notably aim at
+      providing a comfortable migration path from proprietary RTOS to
+      RTAI. </para>
 
       <para>Linux is a registered trademark of Linus Torvalds. Other
       trademarks cited in this paper are the property of their
@@ -78,27 +77,26 @@
       smoothly as possible to the GNU/</para>
 
       <para>There is a lack of common software framework for
-      developing these emulators, whereas the behavioral similarities
+      developing these emulators, whereas the behavioural similarities
       between the traditional RTOS are obvious.</para>
 
-      <para>The Xenomai project aims at fulfilling this gap, by
+      <para>The Xenomai technology aims at fulfilling this gap, by
       providing a consistent architecture-neutral and generic
       emulation layer taking advantage of these similarities. It is
       also committed to provide an increasing set of traditional RTOS
       emulators built on top of this layer.</para>
 
-      <para>The Xenomai project relies on the common features and
-      behaviors found between many embedded traditional RTOS,
-      especially from the thread scheduling and synchronization
-      standpoints. These similarities are exploited to implement a
-      nanokernel exporting a set of generic services. These services
-      grouped in a high-level interface can be used in turn to
-      implement emulation modules of real-time application programming
-      interfaces, which mimic the corresponding real-time kernel
-      APIs.</para>
+      <para>Xenomai relies on the common features and behaviours found
+      between many embedded traditional RTOS, especially from the
+      thread scheduling and synchronization standpoints. These
+      similarities are exploited to implement a nucleus exporting a
+      set of generic services. These services grouped in a high-level
+      interface can be used in turn to implement emulation modules of
+      real-time application programming interfaces, which mimic the
+      corresponding real-time kernel APIs.</para>
 
       <para>A similar approach was used for the <ulink
-      url="http://freesoftware.fsf.org/projects/carbonkernel">CarbonKernel</ulink>
+      url="http://savannah.gnu.org/projects/carbonkernel/">CarbonKernel</ulink>
       project [1] in the simulation field, in which RTOS simulation
       models are built on top of a generic virtual RTOS based on
       event-driven techniques. </para>
@@ -143,50 +141,8 @@
 	destination RTOS programming interfaces, as far as both the
 	syntax and the semantics are concerned.</para>
 
-	<para>For instance, if the application needs dynamic memory
-	allocation with success guarantee for its real-time threads
-	(which is different from a real-time guarantee), porting it to
-	a GNU/Linux hard real-time extension (such as RTAI or RTLinux)
-	raises the following issues:
-
-	<itemizedlist>
-
-	    <listitem>
-	      <para>Linux kernel's
-	      <emphasis>kmalloc()/kfree()</emphasis> services should
-	      ne be called on behalf of a real-time thread, since
-	      these services are not reentrant.  Consequently, the
-	      needed memory has to be pre-allocated statically or
-	      during the application startup, on behalf of the Linux
-	      kernel context.</para>
-	    </listitem>
-
-	    <listitem>
-	      <para>A dynamic allocator callable from a real-time
-	      context is provided by RTAI
-	      (i.e. <emphasis>rt_mem_mgr</emphasis>), but its services
-	      are based on an algorithm
-	      <emphasis>anticipating</emphasis>the memory starvations
-	      using an asynchronous pre-allocation technique, but
-	      <emphasis>not guaranteeing</emphasis>that no failure
-	      could occur. To give a reasonable guarantee of success
-	      in allocating memory blocks, i.e. to be sure that valid
-	      memory will always be returned to the real-time thread
-	      as soon as it is available from the Linux kernel, the
-	      calling thread should be put in a wait state until the
-	      memory it has requested is available.</para>
-	    </listitem>
-
-	  </itemizedlist>
-
-	</para>
-
-	<para>In both cases, it may be necessary to adapt the memory
-	management strategy according to these constraints, which
-	could be quite difficult and error-prone task.</para>
-
-	<para>Another example can be taken from the support of a
-	priority inheritance protocol [3] by the mutual exclusion
+	<para>An illustration of this can be taken from the support of
+	a priority inheritance protocol [3] by the mutual exclusion
 	services. These services allow concurrent threads to protect
 	themselves from race conditions that could occur into critical
 	sections of code. The purpose of this discussion is not to
@@ -201,20 +157,20 @@
 
       </sect3>
 
-      <!-- ===               RTOS behavioral compatibility                === -->
-      <sect3 id="rtos-compat" xreflabel="rtos behavioral
+      <!-- ===               RTOS behavioural compatibility                === -->
+      <sect3 id="rtos-compat" xreflabel="rtos behavioural
 	     compatibility">
-	<title>RTOS behavioral compatibility</title>
+	<title>RTOS behavioural compatibility</title>
 
 	<para>During the past years, major embedded RTOS, such as
 	VRTX, VxWorks, pSOS+ and a few others, have implemented a
-	real-time kernel behavior which has become a de facto
+	real-time kernel behaviour which has become a de facto
 	standard, notably for thread scheduling, inter-thread
 	synchronization, and asynchronous event management. To
 	illustrate this, let us talk about a specific concern in the
 	interrupt service management.</para>
 
-	<para>A well-known behavior of such RTOS is to lock the
+	<para>A well-known behaviour of such RTOS is to lock the
 	rescheduling procedure until the outer interrupt service
 	routine (or ISR) - called first upon possibly nested
 	interrupts - has exited, after which a global rescheduling is
@@ -249,10 +205,9 @@
 	real-time tasks seamlessly aside of the hosting GNU/Linux
 	system [4]. The 'regular' Linux kernel is eventually seen as a
 	low-priority, background of the small real-time executive. The
-	<ulink url="http://www.rtai.org">RTAI</ulink> and <ulink
-	url="http://www.rtlinux.org">RTLinux</ulink>projects are
-	representative of this technical path. However, this approach
-	has a major drawback when it comes to port complex
+	<ulink url="http://www.rtlinux.org">RTLinux</ulink>project
+	is representative of this technical path. However, this
+	approach has a major drawback when it comes to port complex
 	applications from a foreign software platform: since the
 	real-time tasks run outside the Linux kernel control, the
 	GNU/Linux programming model cannot be preserved when porting
@@ -326,50 +281,48 @@
 	  real-time operating system but rather a real-time Linux
 	  kernel extension, which allows running real-time tasks
 	  seamlessly aside of the hosting GNU/Linux system. The RTAI
-	  co-kernel is hooked to the hosting GNU/Linux through an
-	  hardware abstraction layer (HAL) which redirects external
-	  events to it, thus ensuring low interrupt latencies. RTAI
-	  provides a fixed-priority driver scheduler to run concurrent
-	  real-time activities loaded from dynamic kernel
-	  modules. Globally-scoped scheduling decisions are made by
-	  the co-kernel which always considers the host Linux kernel
-	  as its lowest-priority thread of activity. In other words,
-	  RTAI considers the Linux kernel as a background task that
-	  should run when no real-time activity occurs, a kind of idle
-	  task for common RTOS. RTAI provides a wealth of other useful
-	  services, including counting semaphores, POSIX 1003.1-1996
-	  facilities such as pthreads, mutexes and condition
-	  variables, also adding remote procedure call facility,
-	  mailboxes, and precision timers.</para>
+	  co-kernel shares hardware interrupts and system-originated
+	  events like traps and faults with the Linux kernel using the
+	  <ulink url="http://www.adeos.org/">Adeos</ulink>
+	  virtualization layer, which in turn ensures RTAI low
+	  interrupt latencies. The native RTAI API provides the
+	  applications a wealth of useful services, including counting
+	  semaphores, POSIX 1003.1-1996 facilities such as pthreads,
+	  mutexes and condition variables, also adding remote
+	  procedure call facility, mailboxes, and precision
+	  timers. Most services are symmetrically available from
+	  kernel module and user-space programs.</para>
 
-	  <para>Moreover, RTAI provides a mean to execute hard
-	  real-time tasks in user-space context, but still outside the
-	  Linux kernel control, which is best described as running
-	  'user-space kernel modules'. This feature, namely LXRT, is a
-	  major step toward a simpler migration path from traditional
-	  RTOS, since programming errors occuring within real-time
-	  tasks don't jeopardize the overall GNU/Linux system sanity,
-	  at the expense of a few microseconds more latency.</para>
+	  <para>RTAI 2.x and 3.x provide a mean to execute hard
+	  real-time tasks in user-space context (x86 only), but still
+	  outside the Linux kernel control, which is best described as
+	  running 'user-space kernel modules'. This feature, namely
+	  LXRT, is a major step toward a simpler migration path from
+	  traditional RTOS, since programming errors occuring within
+	  real-time tasks don't jeopardize the overall GNU/Linux
+	  system sanity, at the expense of a few microseconds more
+	  latency.</para>
 
-	  <para><emphasis>Ad hoc serices emulation.</emphasis>A first
+	  <para><emphasis>Ad hoc services emulation.</emphasis>A first
 	  approach consists in emulating each real-time facility
 	  needed by the application using a combination of the RTAI
 	  services. An ad hoc wrapping interface has to be written to
 	  support the needed function calls. The benefit of the
 	  wrapping approach lies in the limited modifications made to
-	  the original code. However, some RTAI behaviors may not be
+	  the original code. However, some RTAI behaviours may not be
 	  compliant with the source operating system's. For the very
 	  same reason, conflicts between the emulated and native RTAI
 	  services may occur in some way.</para>
 
 	  <para><emphasis>Complete port to RTAI.</emphasis>A second
-	  approach consists in fully porting the application natively
-	  to RTAI. In such a case, RTAI facilities are globally
-	  substituted from the facilities from the source RTOS. This
-	  solution brings improved consistency at the expense of a
-	  possible large-scale rewriting of the application, due to
-	  some fundamental behavioral differences that may exist
-	  between the traditional RTOS and RTAI.</para>
+	  approach consists in fully porting the application over the
+	  native RTAI API. In such a case, RTAI facilities are
+	  globally substituted from the facilities from the source
+	  RTOS. This solution brings improved consistency at the
+	  expense of a possible large-scale rewriting of the
+	  application, due to some fundamental behavioural differences
+	  that may exist between the traditional RTOS and the native
+	  RTAI interface.</para>
 
 	</sect4>
 
@@ -383,16 +336,18 @@
 	  source RTOS API in a user-space execution context, under the
 	  control of the Linux kernel.</para>
 
-	  <para>One of the most proeminent effort in this area is the
-	  Legacy2linux project [8]. This project, sponsored by
-	  Montavista Software, aims at providing <citation>"a series
-	  of Linux-resident emulators for various legacy RTOS
-	  kernels."</citation>Just like Xenomai, <citation>these
-	  emulators are designed to ease the task of porting legacy
-	  RTOS code to an embedded Linux environment".</citation>Two
-	  emulators are currenlty available from this project,
-	  respectively mimicking the APIs of WindRiver's pSOS+ and
-	  VxWorks real-time operating systems.</para>
+	  <para>Once one of the most proeminent effort in this area
+	  used to be the Legacy2linux project [8]. This project,
+	  sponsored by Montavista Software, aimed at providing
+	  <citation>"a series of Linux-resident emulators for various
+	  legacy RTOS kernels."</citation>Just like Xenomai,
+	  <citation>these emulators are designed to ease the task of
+	  porting legacy RTOS code to an embedded Linux
+	  environment".</citation>Two emulators have been made
+	  available by this project, respectively mimicking the APIs
+	  of WindRiver's pSOS+ and VxWorks real-time operating
+	  systems. However, this project has stalled due to a lack of
+	  maintenance and contribution. </para>
 
 	  <para>The benefits of this approach is mainly to keep the
 	  development process in the GNU/Linux user-space environment,
@@ -425,7 +380,7 @@
 	      </listitem>
 
 	      <listitem>
-		<para>Second, the exact behavior of the source RTOS is
+		<para>Second, the exact behaviour of the source RTOS is
 		not reproduced for all the functional areas. In other
 		words, the semantic compatibility might not be
 		guaranteed.</para>
@@ -433,7 +388,7 @@
 
 	      <listitem>
 		<para>These emulators don't share any common code base
-		for implementing the fundamental real-time behaviors,
+		for implementing the fundamental real-time behaviours,
 		even so both pSOS+ and VxWorks share most of them. The
 		resulting situation leads to redundant implementation
 		efforts, without any benefit one can see in code
@@ -441,12 +396,10 @@
 	      </listitem>
 
 	      <listitem>
-		<para>And finally, even combined to existing Linux
-		kernel patches providing fixed-priority scheduling
-		(Montavista's RTSched) and fine-grain kernel
-		preemption (Ingo Molnar's Linux kernel patches for
-		improved preemptability), these emulators cannot
-		deliver hard real-time performance.</para>
+		<para>And finally, even combined to the latest Linux
+		2.6 features like fine-grain kernel preemption and low
+		latency efforts, these emulators cannot deliver
+		deterministic real-time performance.</para>
 	      </listitem>
 
 	    </itemizedlist>
@@ -464,17 +417,17 @@
 	   emulation framework">
       <title>A common emulation framework</title>
 
-      <!-- ===             Common traditional RTOS behaviors              === -->
-      <sect3 id="rtos-behaviors"
-	     xreflabel="common traditional rtos behaviors">
-	<title>Common traditional RTOS behaviors</title>
+      <!-- ===             Common traditional RTOS behaviours              === -->
+      <sect3 id="rtos-bahaviours"
+	     xreflabel="common traditional rtos bahaviours">
+	<title>Common traditional RTOS bahaviours</title>
 
 	<para>In order to build a generic and versatile framework for
 	emulating traditional RTOS, we chose to concentrate on a set
-	of common behaviors they all exhibit. A limited set of
+	of common bahaviours they all exhibit. A limited set of
 	specific RTOS features which are not so common, but would be
-	more efficiently implemented into the nanokernel than into the
-	emulators, has also been retained. The basic behaviors
+	more efficiently implemented into the nucleus than into the
+	emulators, has also been retained. The basic bahaviours
 	selected cover four distinct fields:</para>
 
 
@@ -484,23 +437,23 @@
 
 	  <para>Multi-threading provides the fundamental mechanism for
 	  an application to control and react to multiple, discrete
-	  external events. The nanokernel should provide the basic
+	  external events. The nucleus provides the basic
 	  multi-threading environment.</para>
 
-	  <para><emphasis>Thread states.</emphasis> The nanokernel has
-	  to maintain the current state of each thread in the
-	  system. A state transition from one state to another may
-	  occur as the result of specific nanokernel services called
-	  by the RTOS emulator. The fundamental thread states that
-	  should be defined are:</para>
+	  <para><emphasis>Thread states.</emphasis> The nucleus has to
+	  maintain the current state of each thread in the system. A
+	  state transition from one state to another may occur as the
+	  result of specific nucleus services called by the RTOS
+	  emulator. The fundamental thread states defined by the
+	  nucleus are:</para>
 
 	  <para><itemizedlist>
 
 	      <listitem>
-		<para>WAITING and SUSPENDED states are cumulative,
+		<para>DORMANT and SUSPENDED states are cumulative,
 		meaning that the newly created thread will still
 		remain in a suspended state after being resumed from
-		the WAITING state.</para>
+		the DORMANT state.</para>
 	      </listitem>
 
 	      <listitem>
@@ -510,7 +463,7 @@
 		synchronization resource (e.g. semaphore, message
 		queue). In such a case, the resource is dispatched to
 		it, but it remains suspended until explicitely resumed
-		by the proper nanokernel service.</para>
+		by the proper nucleus service.</para>
 	      </listitem>
 
 	      <listitem>
@@ -525,14 +478,14 @@
 
 	  <para> <emphasis>Scheduling policies</emphasis>. By default,
 	  threads are scheduled according to a fixed priority value,
-	  using a preemptive algorithm. There must also be a support
-	  for round-robin scheduling among a group of threads having
-	  the same priority, allowing them to run during a given time
+	  using a preemptive algorithm. There is also a support for
+	  round-robin scheduling among a group of threads having the
+	  same priority, allowing them to run during a given time
 	  slice, in rotation. Moreover, each thread undergoing the
-	  round-robin scheduling should be given an individual time
+	  round-robin scheduling is given an individual time
 	  quantum.</para>
 
-	  <para><emphasis>Priority management.</emphasis> It should be
+	  <para><emphasis>Priority management.</emphasis> It is
 	  possible to use whether an increasing or decreasing thread
 	  priority ordering, depending on an initial configuration. In
 	  other words, numerically highest priority values could
@@ -549,11 +502,11 @@
 	  time, the highest priority thread which has been ready to
 	  run for the longuest time among the currently runnable
 	  threads (i.e. not currently blocked by any delay or resource
-	  wait) should be elected to run by the scheduler.</para>
+	  wait) is elected to run by the scheduler.</para>
 
 	  <para><emphasis>Preemption.</emphasis> When preempted by a
-	  more prioritary thread, the running thread should be put at
-	  front of the ready thread queue waiting for the processor
+	  more prioritary thread, the running thread is put at front
+	  of the ready thread queue waiting for the processor
 	  resource, provided it has not been suspended or blocked in
 	  any way. Thus it is expected to regain the processor
 	  resource as soon as no other prioritary activity (i.e. a
@@ -562,10 +515,10 @@
 
 	  <para>Manual round-robin.<emphasis></emphasis> As a
 	  side-effect of attempting to resume an already runnable
-	  thread or the running thread itself, this thread should be
-	  moved at the end of its priority group in the ready thread
-	  queue. This operation should be functionally equivalent to a
-	  manual round-robin scheduling.</para>
+	  thread or the running thread itself, this thread is moved at
+	  the end of its priority group in the ready thread
+	  queue. This operation is functionally equivalent to a manual
+	  round-robin scheduling.</para>
 
 	  <para>Even if they are not as widespread as those above in
 	  traditional RTOS, the following features are also retained
@@ -575,20 +528,19 @@
 	  <para><emphasis>Priority inversion.</emphasis> In order to
 	  provide support for preventing priority inversion when using
 	  inter-thread synchronization services, the priority
-	  inheritance protocol should be implemented.</para>
+	  inheritance protocol is supported.</para>
 
 	  <para><emphasis>Signaling.</emphasis> A support for sending
 	  signals to threads and running asynchronous service routines
-	  to process them should be implemented. The asynchronous
-	  service routine should run on behalf of the signaled thread
-	  context the next time it returns from the nanokernel level
-	  of execution, as soon as one or more signals are
-	  pending.</para>
+	  to process them is available. The asynchronous service
+	  routine is run on behalf of the signaled thread context the
+	  next time it returns from the nucleus level of execution, as
+	  soon as one or more signals are pending.</para>
 
-	  <para><emphasis>Disjunctive wait.</emphasis> A thread should
-	  be able to wait in a disjunctive manner on multiple
-	  resources. The nanokernel should unblock the thread when at
-	  least one among the pended resources is available.</para>
+	  <para><emphasis>Disjunctive wait.</emphasis> A thread is
+	  able to wait in a disjunctive manner on multiple
+	  resources. The nucleus unblocks the thread when at least one
+	  among the pended resources is available.</para>
 
 	</sect4>
 
@@ -600,31 +552,30 @@
 	  <para>Traditional RTOS provide a large spectrum of
 	  inter-thread communication facilities involving thread
 	  synchronization, such as semaphores, message queues, event
-	  flags or mailboxes. Looking at them closely, we can
-	  define the characteristics of a basic mecanism which will be
+	  flags or mailboxes. Looking at them closely, we can define
+	  the characteristics of a basic mechanism which will be
 	  usable in turn to build these facilities.</para>
 
 	  <para><emphasis>Pending mode.</emphasis> The thread
-	  synchronization facility should provide a mean for threads
-	  to pend either by priority or FIFO ordering. Multiple
-	  threads should be able to pend on a single resource.</para>
+	  synchronization facility provides a mean for threads to pend
+	  either by priority or FIFO ordering. Multiple threads should
+	  be able to pend on a single resource.</para>
 
 	  <para><emphasis>Priority inheritance protocol.</emphasis> In
 	  order to prevent priority inversion problems, the thread
-	  synchronization facility should implement a priority
-	  inheritance protocol in conjunction with the thread
-	  scheduler. The implementation should allow for supporting
-	  the priority ceiling protocol as a derivative of the
-	  priority inheritance protocol.</para>
+	  synchronization facility implements a priority inheritance
+	  protocol in conjunction with the thread scheduler. The
+	  implementation allows for supporting the priority ceiling
+	  protocol as a derivative of the priority inheritance
+	  protocol.</para>
 
 	  <para><emphasis>Time-bounded wait.</emphasis> The thread
-	  synchronization facility should provide a mean to limit the
-	  time a thread waits for a given resource using a
-	  watchdog.</para>
+	  synchronization facility provides a mean to limit the time a
+	  thread waits for a given resource using a watchdog.</para>
 
-	  <para><emphasis>Forcible deletion.</emphasis> It should be
-	  legal to destroy a resource while threads are pending on
-	  it. This action should resume all waiters atomically.</para>
+	  <para><emphasis>Forcible deletion.</emphasis> It is legal to
+	  destroy a resource while threads are pending on it. This
+	  action resumes all waiters atomically.</para>
 
 	</sect4>
 
@@ -633,30 +584,28 @@
 	  <title>Interrupt management</title>
 
 	  <para>Since the handling of interrupts is one of the least
-	  well defined areas in RTOS design, we will focus on
-	  providing a generalized mechanism with sufficient hooks for
+	  well defined areas in RTOS design, the nucleus focuses on
+	  providing a simple mechanism with sufficient hooks for
 	  specific implementations to be built onto according to the
 	  emulated RTOS flavour.</para>
 
 	  <para><emphasis>Nesting.</emphasis> Interrupt management
-	  code should be reentrant in order to support interrupt
-	  nesting safely.</para>
+	  code is reentrant in order to support interrupt nesting
+	  safely.</para>
 
-	  <para><emphasis>Atomicity.</emphasis> Interrupts need to be
+	  <para><emphasis>Atomicity.</emphasis> Interrupts are
 	  associated with dedicated service routines called ISRs. In
 	  order for these routines not to be preempted by thread
-	  execution, the rescheduling procedure should be locked until
-	  the outer ISR has exited (i.e. in case of nested
+	  execution, the rescheduling procedure is locked until the
+	  outer ISR has exited (i.e. in case of nested
 	  interrupts).</para>
 
-	  <para><emphasis>Priority.</emphasis> ISRs should always be
+	  <para><emphasis>Priority.</emphasis> ISRs is always
 	  considered as prioritary over thread execution. Interrupt
-	  prioritization should be left to the underlying
-	  architecture.</para>
+	  prioritization is left to the underlying
+	  hardware.</para>
 
 	</sect4>
-
-
 
 	<!-- Time management -->
 	<sect4 id="time-management" xreflabel="time management">
@@ -665,16 +614,18 @@
 	  <para>Traditional RTOS usually represent time in units of
 	  ticks. These are clock-specific time units and are usually
 	  the period of the hardware timer interrupt, or a multiple
-	  thereof.</para>
+	  thereof. Since it needs to support both periodic and
+	  aperiodic time sources, the nucleus transparently switches
+	  from periodic jiffies to time-stamp counter values depending
+	  on the current timer operating mode.</para>
 
 	  <para><emphasis>Software timer support.</emphasis> A
-	  watchdog facility is needed to manage time-bound operations
-	  by the nanokernel.</para>
+	  watchdog facility is provided to manage time-bound
+	  operations by the nucleus.</para>
 
 	  <para><emphasis>Absolute and relative clock.</emphasis> The
-	  nanokernel should keep a global clock value which can be set
-	  by the RTOS emulator as being the system-defined
-	  epoch.</para>
+	  nucleus keeps a global clock value which can be set by the
+	  RTOS emulator as being the system-defined epoch.</para>
 
 	  <para>Some RTOS like pSOS+ also provide support for
 	  date-based timing, but conversion of ticks into conventional
@@ -689,8 +640,8 @@
 	     architecture-neutral abstraction layer">
 	<title>An architecture-neutral abstraction layer</title>
 
-	<para>After having selected the basic behaviors shared by
-	traditional RTOS, we can implement them in a nanokernel
+	<para>After having selected the basic bahaviours shared by
+	traditional RTOS, we have implemented them in a nucleus
 	exporting a few service classes. These generic services will
 	then serve as a founding layer for developing each emulated
 	RTOS API, according to their own flavour and semantics.</para>
@@ -699,7 +650,7 @@
 	needed support for hardware control and real-time capabilities
 	will be obtained from an underlying host software
 	architecture, through a rather simple standardized
-	interface. Thus, porting the nanokernel to a new real-time
+	interface. Thus, porting the nucleus to a new real-time
 	architecture will solely consist in implementing this
 	low-level interface for the target platform.</para>
 
@@ -718,8 +669,7 @@
 
 	    <listitem>
 	      <para>Start/stop dispatching on request the external
-	      interrupts to an abstraction layer's specialized handler
-	      ;</para>
+	      interrupts to a specialized handler ;</para>
 	    </listitem>
 
 	    <listitem>
@@ -733,8 +683,8 @@
 	    </listitem>
 
 	    <listitem>
-	      <para>Provide support for a periodic interrupt source
-	      used in timer management ; </para>
+	      <para>Provide support for periodic and aperiodic
+	      interrupt sources used in timer management ; </para>
 	    </listitem>
 
 	    <listitem>
@@ -745,386 +695,44 @@
 	  </itemizedlist>
 	</para>
 
-	<para>When the host software architecture has no direct access
-	to the underlying hardware, such as in a soft real-time
-	user-space execution environment, interrupts may be simulated
-	by POSIX signals, and hard real-time constraints imposed to
-	the services above may be relaxed (e.g. memory can be
-	pageable). </para>
-
       </sect3>
 
       <!-- ===                           Benefits                         === -->
       <sect3 id="benefits" xreflabel="benefits">
 	<title>Benefits</title>
 
-	<para>The project described herein aims at helping application
-	designers relying on traditional RTOS to move as smoothly as
-	possible to a GNU/Linux-based execution environment, without
-	having to rewrite their applications entirely. Aside of the
-	advantages of using GNU/Linux as an embedded system, the
-	benefits expected from the described approach are:</para>
-
-	<para><emphasis>Reduced complexity in designing new RTOS
-	emulations.</emphasis> The architecture-neutral abstraction
-	layer provides the foundation for developing accurate
-	emulations of traditional RTOS API, saving the burden of
-	implementing each time their fundamental real-time
-	behaviors. Since the abstraction layer also favours code
-	sharing and mutualization, we can expect the RTOS emulations
-	to take advantage of them in terms of code stability and
-	reliability.</para>
-
-	<para><emphasis>Generic support for RTOS-aware
-	tools.</emphasis> One of the most potential show-stopper for a
-	broader use of GNU/Linux in the real-time space is probably
-	the lack of powerful and user-friendly debugging and
-	monitoring tools for real-time applications. However, this gap
-	is about to be filled by the maturation of tools like the
-	Linux Trace Toolkit (LTT) [9] which now offers unprecedented
-	capabilities for inspecting the dynamics of a running
-	GNU/Linux system. Since a version of LTT is available for the
-	'regular' Linux kernel and Linux/RTAI, the next step will be
-	to take advantage of this toolkit, implementing the proper
-	hooks to support it into the nanokernel internals and
-	interface, in order to provide RTOS-aware tools as soon as
-	possible.</para>
+	<para>Xenomai aims at helping application designers relying on
+	traditional RTOS to move as smoothly as possible to a
+	GNU/Linux-based execution environment, without having to
+	rewrite their applications entirely. Aside of the advantages
+	of using GNU/Linux as an embedded system, the benefits
+	expected from the described approach is mainly a reduced
+	complexity in designing new RTOS emulations. The
+	architecture-neutral abstraction layer provides the foundation
+	for developing accurate emulations of traditional RTOS API,
+	saving the burden of implementing each time their fundamental
+	real-time bahaviours. Since the abstraction layer also favours
+	code sharing and mutualization, we can expect the RTOS
+	emulations to take advantage of them in terms of code
+	stability and reliability.</para>
 
       </sect3>
     </sect2>
 
-    <!-- ================================================================= -->
-    <!-- ===                  The Xenomai approach                     === -->
-    <!-- ================================================================= -->
+      <!-- ===                   Nucleus description                   === -->
+      <sect3 id="nucleus" xreflabel="nucleus description">
+	<title>Nucleus description</title>
 
-    <sect2 id="xeno-approach" xreflabel="the xenomai approach">
-      <title>The Xenomai approach</title>
+	<para>RTOS emulations are software modules which connect to
+	the nucleus through the pod abstraction. The pod is
+	responsible for the critical housekeeping chores, and the
+	real-time scheduling of threads.</para>
 
-      <!-- ===                    Xenomai architecture                    === -->
-      <sect3 id="xeno-arch" xreflabel="xenomai architecture">
-	<title>Xenomai architecture</title>
-
-	<para>The common emulation framework precedently envisioned
-	translates in the Xenomai architecture as follows:</para>
-
-      </sect3>
-
-      <!-- ===                 Host software architecture                 === -->
-      <sect3 id="host-arch" xreflabel="host software
-	     architecture">
-	<title>Host software architecture</title>
-
-	<para>Xenomai's nanokernel relies on an host software
-	architecture to provide the needed hardware control and
-	real-time capabilities. </para>
-
-	<para>The nanokernel is connected to the host architecture
-	through a standardized interface. The following services
-	compose the nanokernel-to-real-time subsystem
-	interface:</para>
-
-	<informaltable>
-	  <tgroup cols="2">
-	    <tbody>
-
-	      <row>
-		<entry>xnarch_init</entry>
-		<entry>Mount the real-time subsystem</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_exit</entry>
-		<entry>Unmount the real-time subsystem</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_hook_irq</entry>
-		<entry>Attach a handler to an interrupt line</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_release_irq</entry>
-		<entry>Detach a handler from an interrupt</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_enable_irq</entry>
-		<entry>Enable dispatching of an interrupt</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_disable_irq</entry>
-		<entry>Disable dispatching of an interrupt</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_chain_irq</entry>
-		<entry>Pass the interrupt request to the handler</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_start_timer</entry>
-		<entry>Stop the periodic timer</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_stop_timer</entry>
-		<entry>Stop the periodic timer</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_enter_realtime</entry>
-		<entry>Switch current context to real-time</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_exit_realtime</entry>
-		<entry>Switch current context to non real-time</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_init_stack</entry>
-		<entry>Initialize a new thread's stack</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_save_fpu</entry>
-		<entry>Save FPU registers for an outgoing thread</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_restore_fpu</entry>
-		<entry>Restore FPU registers for an incoming thread</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_init_fpu</entry>
-		<entry>Initialize a thread's FPU context</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_set_imask</entry>
-		<entry>Set the global interrupt mask</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_sysalloc</entry>
-		<entry>Allocate non-pageable memory</entry>
-	      </row>
-
-	      <row>
-		<entry>xnarch_sysfree</entry>
-		<entry>Free memory obtained from xnarch_sysalloc()</entry>
-	      </row>
-
-	    </tbody>
-	  </tgroup>
-	</informaltable>
-
-	<para>Depending on the execution environment, some of the
-	above services may be emulated or simply stubbed as soon as
-	they are not needed. However, all of them are needed for
-	porting the nanokernel on top of RTAI. For instance, the
-	interrupt-related services can be emulated by the POSIX signal
-	feature when running a combination of the nanokernel, the RTOS
-	emulator and the (soft) real-time application as a user-space
-	GNU/Linux process. In the same spirit, the real-time context
-	switch routines have no purpose, thus can be empty in such
-	environment. </para>
-
-	<!-- Using RTAI as the host software architecture -->
-	<sect4 id="rtai-softarch" xreflabel="using rtai as the
-	       host software architecture">
-	  <title>Using RTAI as the host software architecture</title>
-
-	  <para>The Real-Time Application Interface (RTAI) is a
-	  real-time GNU/Linux extension, which allows running
-	  real-time tasks seamlessly aside of the hosting GNU/Linux
-	  system. The RTAI co-kernel is hooked to the hosting system
-	  through an hardware abstraction layer (HAL). RTAI considers
-	  the Linux kernel as a background task that should run when
-	  no real-time activity occurs. RTAI applications run in
-	  supervisor mode, in the Linux kernel address space.</para>
-
-	  <para>When running on top of RTAI, the Xenomai framework
-	  gains hard real-time capabilities, replacing the standard
-	  RTAI scheduler module (namely rtai_sched) in order to
-	  provide the real-time scheduling subsystem. RTOS emulation
-	  modules can then be loaded on top of Xenomai's nanokernel,
-	  followed by a client application module using the emulated
-	  API.</para>
-
-	  <para>RTAI port of Xenomai is based on the facilities
-	  provided by the core HAL module (namely rtai). The
-	  nanokernel-to-host software architecture interface is
-	  implemented using the real-time services exported by this
-	  module. For instance, let us look to the implementation of
-	  two critical functions, which respectively allow to enter
-	  and exit the RTAI context, thus preempting then reinstating
-	  the Linux kernel context.</para>
-
-	  <para>From the file
-	  <emphasis>xenomai/include/arch/rtai-386.h,</emphasis></para>
-
-	  <programlisting>
-		#define INTERFACE_TO_LINUX
-		#include "asm/rtai_sched.h"
-		#include "rtai.h"
-
-		DEFINE_LINUX_CR0
-
-		static inline void xnarch_enter_realtime () {
-			rt_switch_to_real_time(0);
-			save_cr0_and_clts(linux_cr0);
- 		}
-
-		static inline void xnarch_exit_realtime () {
-			rt_switch_to_linux(0);
-			restore_cr0(linux_cr0);
-		}
-	</programlisting>
-
-	</sect4>
-
-	<!-- Using the POSIX 1003.1-1996 layer as host software architecture -->
-	<sect4 id="posix-arch" xreflabel="using posix layer
-	       as the host software architecture">
-	  <title>Using the POSIX 1003.1-1996 layer as the software
-	  architecture</title>
-
-	  <para>The aftermaths of the real-time constraints
-	  reevaluation - that we suggest to conduct when considering a
-	  port of a real-time application to a GNU/Linux system - may
-	  lead to envision a user-space execution, since soft
-	  real-time capabilities may be sufficient to support the
-	  requirements.</para>
-
-	  <para>In such a case, implementing the nanokernel-to-host
-	  software architecture interface should be quite
-	  straightforward. For instance, the thread-related services
-	  can be mapped to the POSIX thread facility, and the periodic
-	  timer can be obtained from the POSIX virtual timer
-	  facility.</para>
-
-	  <para>Combined to existing Linux kernel patches providing
-	  fixed-priority scheduling and fine-grain kernel
-	  preemptability, Xenomai's user-space execution may well
-	  deliver the expected soft to firm real-time performance
-	  needed while preserving the standard GNU/Linux programming
-	  model.</para>
-
-	</sect4>
-
-	<!-- Using CarbonKernel to support Xenomai's Virtual Architecture -->
-	<sect4 id="carbonkernel" xreflabel="using carbonkernel to
-	support xenomai's va"> 
-	  <title>Using CarbonKernel to support Xenomai's Virtual
-	  Architecture</title>
-
-	  <para>CarbonKernel is a RTOS simulator based on event-driven
-	  simulation techniques. The main idea is to provide a
-	  consistent framework for building simulation models which
-	  mimic the behavior of real-time operating systems on a
-	  workstation. The simulated RTOS kernels are built on top of
-	  a generic virtual RTOS. CarbonKernel allows tracing the
-	  execution of embedded software at source code level, running
-	  in a single regular GNU/Linux process, with concurrent
-	  target debugging capabilities, dynamic control of kernel
-	  resources, UI simulation, and much more. In other words,
-	  Xenomai can be thought as CarbonKernel's companion project,
-	  the former providing support for emulating RTOS APIs on the
-	  real target, whereas the latter simulates the RTOS APIs on a
-	  GNU/Linux workstation.</para>
-
-	  <para>Since CarbonKernel is a powerful tool for
-	  understanding the dynamics of a real-time system, it is very
-	  well suited for helping in the nanokernel and RTOS emulators
-	  development. Moreover, it alleviates the burden of debugging
-	  a complex software in a rather 'hostile' kernel environment,
-	  especially in the first stages of its development. The idea
-	  is to implement a trivial CarbonKernel simulation model
-	  standing for a virtual architecture on top of which Xenomai
-	  can run. This way, Xenomai's internals could be debugged
-	  like mere application code running in a simulated
-	  environment. </para>
-
-	  <para>A RTOS simulation model (called a 'personality')
-	  stacked on top of CarbonKernel is able to run, debug and
-	  stress an embedded application using the RTOS' native
-	  API. Simulating the RTOS behavior in a host-based
-	  environment instead of emulating the machine code of the
-	  target platform has a lot of advantages: it's faster, does
-	  not require the cross-development tools, gives extended
-	  debugging, monitoring and tracing features and provides an
-	  easy way to stress the application under test with run-time
-	  situations otherwise barely conceivable on a real
-	  target. For instance, one can easily generate bursts of
-	  simulated interrupts at a very unreasonable rate while still
-	  being able to observe and analyze the resulting
-	  situation.</para>
-
-	  <para>Xenomai's Virtual Architecture (VA) is implemented as
-	  a CarbonKernel model exporting a limited set of services
-	  which provides a trivial thread management facility
-	  (i.e. basically: creation, deletion, suspension,
-	  resuming). The interrupt management is directly handled by
-	  the CarbonKernel built-in simulation facilities, whilst raw
-	  memory is obtained from the standard ANSI-C malloc
-	  routines.</para>
-
-	  <para>From the file
-	  <emphasis>xenomai/include/arch/va.h,</emphasis></para>
-
-	  <programlisting>
-	#include "va/va.h" /* Include the VA model interface file */ 
-
-	typedef struct xnarchtcb { /* Per-thread arch-dependent block */
-	ckhandle_t vahandle; /* The underlying VA thread handle */
-	void *cookie; /* XENO thread cookie passed on entry */ 
-	int imask; /* Initial interrupt mask */
-	 unsigned stacksize; /* Aligned size of stack (bytes) */
-	 int *sp; /* Saved stack pointer - unused */
-	 int *stackbase; /* Stack space - unused */
- 	} xnarchtcb_t ;
-
-	static inline void xnarch_switch_to (xnarchtcb_t *outtcb, xnarchtcb_t *intcb) {
-		va_thread_resume(intcb->vahandle);
-		va_thread_suspend(outtcb->vahandle);
-	}
-	</programlisting>
-
-	  <para>Here is a snapshot of a CarbonKernel debug session
-	  running the Xenomai's nanokernel on top of the Virtual
-	  Architecture:</para>
-
-	</sect4>
-      </sect3>
-
-      <!-- ===                   Nanokernel description                   === -->
-      <sect3 id="nanokernel" xreflabel="nanokernel description">
-	<title>Nanokernel description</title>
-
-	<para>Xenomai's Virtual Architecture (VA) is implemented as a
-	CarbonKernel model exporting a limited set of services which
-	provides a trivial thread management facility (i.e. basically:
-	Xenomai's nanokernel implements a set of generic services
-	aimed at being a foundation for a set of RTOS API emulators
-	running on top of a host software architecture. These services
-	exhibit common traditional RTOS behaviors.</para>
-
-	<para>RTOS emulations are software modules which connects to
-	the nanokernel through the pod abstraction. Only one pod can
-	be active at a given time on top of the host software
-	architecture. The pod is responsible for the critical
-	housekeeping chores, and the real-time scheduling of
-	threads.</para>
-
-	<!-- Using CarbonKernel to support Xenomai's Virtual Architecture -->
 	<sect4 id="multi-threading-support" xreflabel="multi-threading
 	       support">
 	  <title>Multi-threading support</title>
 
-	  <para> The nanokernel provides thread object (xnthread) and
+	  <para> The nucleus provides thread object (xnthread) and
 	  pod (xnpod) abstractions which exhibit the following
 	  characteristics:</para>
 
@@ -1179,78 +787,6 @@
 	    </itemizedlist>
 	</para>
 
-	  <informaltable>
-	    <tgroup cols="2">
-	      <tbody>
-		<row>
-		  <entry>xnpod_thread</entry>
-		  <entry>Create a new thread (left suspended)</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_delete_thread</entry>
-		  <entry>Delete a thread</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_start_thread</entry>
-		  <entry>Start a newly created thread</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_suspend_thread</entry>
-		  <entry>Make a thread enter a suspended state</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_resume_thread</entry>
-		  <entry>Resume a thread from a suspended state</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_unblock_thread</entry>
-		  <entry>Unblock a thread waiting for a resource</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_renice_thread</entry>
-		  <entry>Change a thread's base priority</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_boost_thread</entry>
-		  <entry>Boost a thread's current priority (inheritance)</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_lock_sched</entry>
-		  <entry>Disable the rescheduling procedure</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_unlock_sched</entry>
-		  <entry>Re-enable the rescheduling procedure</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_activate_rr</entry>
-		  <entry>Enable the round-robin scheduling</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_deactivate_rr</entry>
-		  <entry>Disable the undergoing round-scheduling</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_reschedule</entry>
-		  <entry>Start the rescheduling procedure</entry>
-		</row>
-
-	      </tbody>
-	    </tgroup>
-	  </informaltable>
-
 	</sect4>
 
 	<!-- Basic synchronization support-->
@@ -1258,9 +794,9 @@
 	       synchronization support">
 	  <title>Basic synchronization support</title>
 
-	  <para>The nanokernel provides a synchronization object
+	  <para>The nucleus provides a synchronization object
 	  abstraction <emphasis>(xnsynch)</emphasis> aimed at
-	  implementing the common behavior of RTOS resources, which
+	  implementing the common bahaviour of RTOS resources, which
 	  has the following characteristics:</para>
 
 	  <para><itemizedlist>
@@ -1280,96 +816,6 @@
 	    </itemizedlist>
 	</para>
 
-	  <informaltable>
-	    <tgroup cols="2">
-	      <tbody>
-
-		<row>
-		  <entry>xnsynch_init</entry>
-		  <entry>Initialize a synchronization object</entry>
-		</row>
-
-		<row>
-		  <entry>xnsynch_destroy</entry>
-		  <entry>Flush and destroy a synchronization object</entry>
-		</row>
-
-		<row>
-		  <entry>xnsynch_block_thread</entry>
-		  <entry>Make a thread pending on the resource</entry>
-		</row>
-
-		<row>
-		  <entry>xnsynch_unblock_thread</entry>
-		  <entry>Release a thread from pending on the resource</entry>
-		</row>
-
-		<row>
-		  <entry>xnsynch_flush</entry>
-		  <entry>Release all threads from pending on the resource</entry>
-		</row>
-
-		<row>
-		  <entry>xnsynch_enter_pip</entry>
-		  <entry>Make a thread own the resource</entry>
-		</row>
-
-		<row>
-		  <entry>xnsynch_apply_pip</entry>
-		  <entry>Prevent priority inversion (inheritance)</entry>
-		</row>
-
-		<row>
-		  <entry>xnsynch_exit_pip</entry>
-		  <entry>Release the ownership on the resource</entry>
-		</row>
-
-	      </tbody>
-	    </tgroup>
-	  </informaltable>
-
-	</sect4>
-
-	<!-- Interrupt management -->
-	<sect4 id="irq-management" xreflabel="interrupt management">
-	  <title>Interrupt management</title>
-
-	  <para> Xenomai's nanokernel exhibits a split interrupt
-	  handling scheme, in which interrupt handling is separated
-	  into two parts. The first part is known as the Interrupt
-	  Service Routine (ISR), the second being the Deferred Service
-	  Routine (DSR). When an interrupt occurs, the ISR may be run
-	  with interrupts disabled, thus it should run as quickly as
-	  possible. To reduce this unpreemptable delay, lengthy
-	  processing can be delegated by the ISR to an associated DSR
-	  which will run later, outside the interrupt context, as soon
-	  as all pending interrupts are processed. This scheme allows
-	  for the DSRs to be run with interrupts enabled, thus
-	  allowing other potentially higher priority interrupts to be
-	  taken and processed.</para>
-
-	  <para>This rather sophisticated scheme allows to easily
-	  emulate virtually all RTOS interrupt handling scheme on top
-	  of the nanokernel. Xenomai's interrupt-related services are
-	  the following:</para>
-
-	  <informaltable>
-	    <tgroup cols="2">
-	      <tbody>
-
-		<row>
-		  <entry>xnpod_enter_interrupt</entry>
-		  <entry>Signal an ISR entry to the scheduler</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_exit_interrupt</entry>
-		  <entry>xnpod_exit_interrupt</entry>
-		</row>
-
-	      </tbody>
-	    </tgroup>
-	  </informaltable>
 	</sect4>
 
 	<!-- Timer and clock management -->
@@ -1377,18 +823,22 @@
 	       and clock management">
 	  <title>Timer and clock management</title>
 
-	  <para>Xenomai's nanokernel measures time as a count of
-	  periodic clock ticks. The periodic source is usually an
-	  external interrupt controlled by the underlying host
-	  architecture. Under RTAI/x86 for instance, the 8254 chip can
-	  be programmed to generate a periodic interrupt which can be
-	  hooked to a user-defined handler through the
-	  <emphasis>rt_request_timer()</emphasis> service. Each
-	  incoming clock tick is announced to the timer manager which
-	  fires in turn the timeout handlers of elapsed timers. The
-	  scheduler itself uses per-thread watchdogs to wake up
-	  threads undergoing a bounded time wait, while waiting for a
-	  resource availability or being delayed.</para>
+	  <para>The nucleus needs a time source to provide the
+	  time-related services to the upper interfaces. The timer
+	  hardware so that a user-defined routine is called according
+	  to a given frequency. On architectures that provide a
+	  oneshot-programmable time source, the system timer can
+	  operate either in aperiodic or periodic mode. Using the
+	  aperiodic mode still allows to run periodic nucleus timers
+	  over it: the underlying hardware will simply be reprogrammed
+	  after each tick by the timer manager using the appropriate
+	  interval value.</para>
+
+	  <para>Each incoming clock tick is announced to the timer
+	  manager which fires in turn the timeout handlers of elapsed
+	  timers. The scheduler itself uses per-thread watchdogs to
+	  wake up threads undergoing a bounded time wait, while
+	  waiting for a resource availability or being delayed.</para>
 
 	  <para>A special care has been taken to offer bounded
 	  worst-case time for starting, stopping and maintaining
@@ -1397,69 +847,6 @@
 	  Varghese, which is implemented in the NetBSD operating
 	  system for instance.</para>
 
-	  <para>The nanokernel globally maintains three distinct time
-	  values, all expressed in clock ticks:</para>
-
-	  <itemizedlist>
-	    <listitem>
-	      <para>
-The absolute number of elapsed ticks announced
-	    since the nanokernel is running,</para></listitem>
-
-	    <listitem><para>The last date set by a call to
-	    xnpod_set_date(),</para></listitem>
-
-	    <listitem><para>The number of clock ticks announced since the
-	    last time the date was set.</para></listitem>
-	  </itemizedlist>
-
-	  <informaltable>
-	    <tgroup cols="2">
-	      <tbody>
-
-		<row>
-		  <entry>xnpod_tick_announce</entry>
-		  <entry>Announce a new clock tick to the scheduler</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_set_date</entry>
-		  <entry>Set the system date (in ticks)</entry>
-		</row>
-
-		<row>
-		  <entry>xnpod_get_date</entry>
-		  <entry>Get the system date (in ticks)</entry>
-		</row>
-
-		<row>
-		  <entry>xntimer_init</entry>
-		  <entry>Initialize a timer</entry>
-		</row>
-
-		<row>
-		  <entry>xntimer_destroy</entry>
-		  <entry>Stop and destroy a timer</entry>
-		</row>
-
-		<row>
-		  <entry>xntimer_start</entry>
-		  <entry>Start a timer</entry>
-		</row>
-
-		<row>
-		  <entry>xntimer_stop</entry>
-		  <entry>Stop a timer</entry>
-		</row>
-
-		<row>
-		  <entry>xntimer_do_tick</entry>
-		  <entry>Signal an incoming clock tick to the timer manager</entry>
-		</row>
-
-	      </tbody>
-	    </tgroup>
-	  </informaltable>
 	</sect4>
 
 	<!-- Basic memory allocation -->
@@ -1467,119 +854,16 @@ The absolute number of elapsed ticks announced
 	       memory allocation">
 	  <title>Basic memory allocation</title>
 
-	  <para>Xenomai's nanokernel provides dynamic memory
-	  allocation support with real-time guarantee, based on
-	  McKusick's and Karels' proposal for a general purpose memory
+	  <para>Xenomai's nucleus provides dynamic memory allocation
+	  support with real-time guarantee, based on McKusick's and
+	  Karels' proposal for a general purpose memory
 	  allocator[10]. Any number of memory heaps can be maintained
 	  dynamically by Xenomai, only limited by the actual amount of
 	  system memory.</para>
 
-	  <para>The memory chunks are obtained from the underlying
-	  software architecture. As far as RTAI is concerned, the
-	  memory pages composing the allocation heap are managed using
-	  the <emphasis>kmalloc()/kfree()</emphasis> Linux kernel
-	  routines. As soon as it is called on behalf of a real-time
-	  thread, the allocator transparently switches to the Linux
-	  kernel context using the RTAI-to-Linux service request
-	  feature when needed
-	  (i.e. <emphasis>rt_pend_linux_srq()</emphasis>). The
-	  proposed services are synchronous to the calling
-	  thread.</para>
-
-	  <para>Memory-related services are the following:</para>
-
-	  <informaltable>
-	    <tgroup cols="2">
-	      <tbody>
-		<row>
-		  <entry>xnheap_init</entry>
-		  <entry>Initialize a new memory heap</entry>
-		</row>
-
-		<row>
-		  <entry>xnheap_destroy</entry>
-		  <entry>Destroy a memory heap</entry>
-		</row>
-
-		<row>
-		  <entry>xnheap_alloc</entry>
-		  <entry>Allocate a variable-size block of memory</entry>
-		</row>
-
-		<row>
-		  <entry>xnheap_free</entry>
-		  <entry>Free a block of memory</entry>
-		</row>
-
-	      </tbody>
-	    </tgroup>
-	  </informaltable>
 	</sect4>
       </sect3>
     </sect2>
-
-<!-- ================================================================= -->
-<!-- ===            Emulating pSOS+ on top of Xenomai              === -->
-<!-- ================================================================= -->
-
-    <sect2 id="emulating-psos" xreflabel="emulating
-	   psos on top of xenomai">
-      <title>Emulating pSOS+ on top of Xenomai</title>
-
-      <para>As a practical example explaining how traditional RTOS
-      emulators can be built on top of Xenomai, let us have a brief
-      look to details of the undergoing implementation of a <ulink
-      url="http://freesoftware.fsf.org/projects/xenomai/emulators/psos4xeno/">pSOS+
-      emulator</ulink>. </para>
-
-      <para>Eight pSOS+ kernel call families are targeted:</para>
-
-      <itemizedlist>
-
-	<listitem>
-	  <para>Task management,</para>
-	</listitem>
-
-	<listitem>
-	  <para>Task signaling and synchronous service routines,</para>
-	</listitem>
-
-	<listitem>
-	  <para>Timer management,</para>
-	</listitem>
-
-	<listitem>
-	  <para>Counting semaphores,</para>
-	</listitem>
-
-	<listitem>
-	  <para>Event flags synchronization,</para>
-	</listitem>
-
-	<listitem>
-	  <para>Message queues,</para>
-	</listitem>
-
-	<listitem>
-	  <para>Memory partition (fixed-size memory block allocator),</para>
-	</listitem>
-
-	<listitem>
-	  <para>Memory region (variable-size memory block allocator).</para>
-	</listitem>
-
-      </itemizedlist>
-
-      <para>The following code fragment shows the implementation of
-      the t_create() service allowing to create a new pSOS+ task. One
-      can observe that a few nanokernel calls are sufficient to obtain
-      the basic support for the new task.</para>
-
-    </sect2>
   </sect1>
 
-  <sect1 id="autresection">
-    <title>Autre section</title>
-    <para>Mon petit paragraphe.</para>
-  </sect1>
 </article>

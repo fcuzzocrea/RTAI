@@ -3,10 +3,6 @@ bin_PROGRAMS = genconf_io genconfig xgenconfig
 genconf_io_SOURCES = \
 	genconf_io.c
 
-genconfig_SOURCES = \
-	genconfig.c \
-	config_data.h
-
 xgenconfig_SOURCES = \
 	xgenconfig.cpp \
 	xgenconfig.h \

@@ -2871,7 +2871,7 @@ unlock_and_exit:
        xntimer_start() only _after_ the hw timer has been set up
        through xnarch_start_timer(). */
 
-    xntimer_set_sched(&nkpod->htimer, XNTIMER_KEEPER_ID);
+    xntimer_set_sched(&nkpod->htimer, xnpod_sched_slot(XNTIMER_KEEPER_ID));
 
     xntimer_start(&nkpod->htimer,
                   delta,

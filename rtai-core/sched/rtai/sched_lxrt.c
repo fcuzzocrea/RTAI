@@ -235,6 +235,18 @@ static inline void sched_release_global_lock(int cpuid)
 
 #endif /* CONFIG_SMP */
 
+#ifdef CONFIG_SMP
+#define DECL_CPUS_ALLOWED  unsigned long cpus_allowed
+#define SAVE_CPUS_ALLOWED  do { cpus_allowed = prev->cpus_allowed; } while (0)
+#define SET_CPUS_ALLOWED   do { prev->cpus_allowed = 1 << cpuid;   } while (0)
+#define RST_CPUS_ALLOWED   do { prev->cpus_allowed = cpus_allowed; } while (0)
+#else /* !CONFIG_SMP */
+#define DECL_CPUS_ALLOWED
+#define SAVE_CPUS_ALLOWED
+#define SET_CPUS_ALLOWED
+#define RST_CPUS_ALLOWED
+#endif /* CONFIG_SMP */
+
 /* ++++++++++++++++++++++++++++++++ TASKS ++++++++++++++++++++++++++++++++++ */
 
 static int tasks_per_cpu[NR_RT_CPUS] = { 0, };
@@ -796,11 +808,13 @@ fire:			shot_fired = 1;
 schedlnxtsk:
 		rt_smp_current[cpuid] = new_task;
 		if (new_task->is_hard || rt_current->is_hard) {
-			struct task_struct *prev;
-			prev = rtai_get_current(cpuid);
+			struct task_struct *prev = rtai_get_current(cpuid);
+			DECL_CPUS_ALLOWED;
+			SAVE_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {
 				LOCK_LINUX(cpuid);
 				rt_linux_task.lnxtsk = prev;
+				SET_CPUS_ALLOWED;
 			}
 			UEXECTIME();
 			prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
@@ -812,6 +826,7 @@ schedlnxtsk:
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
+				RST_CPUS_ALLOWED;
 			} else if (rt_current->force_soft) {
 				make_current_soft(rt_current);
 			}
@@ -921,11 +936,14 @@ fire:			shot_fired = 1;
 schedlnxtsk:
 		rt_smp_current[cpuid] = new_task;
 		if (new_task->is_hard || rt_current->is_hard) {
-			struct task_struct *prev;
-			prev = rtai_get_current(cpuid);
+//			struct task_struct *prev = rtai_get_current(cpuid);
+			struct task_struct *prev = current;
+			DECL_CPUS_ALLOWED;
+			SAVE_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {
 				LOCK_LINUX(cpuid);
 				rt_linux_task.lnxtsk = prev;
+				SET_CPUS_ALLOWED;
 			}
 			UEXECTIME();
 			prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
@@ -937,6 +955,7 @@ schedlnxtsk:
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
+				RST_CPUS_ALLOWED;
 				if (rt_current->state != RT_SCHED_READY || (rt_current != &rt_linux_task && prev->state == TASK_HARDREALTIME)) {
 					goto sched_soft;
 				}
@@ -1222,11 +1241,13 @@ fire:			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
 		}
 schedlnxtsk:
 		if (new_task->is_hard || rt_current->is_hard) {
-			struct task_struct *prev;
-			prev = rtai_get_current(cpuid);
+			struct task_struct *prev = rtai_get_current(cpuid);
+			DECL_CPUS_ALLOWED;
+			SAVE_CPUS_ALLOWED;
 			if (!rt_current->is_hard) {
 				LOCK_LINUX(cpuid);
 				rt_linux_task.lnxtsk = prev;
+				SET_CPUS_ALLOWED;
 			}
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
@@ -1239,6 +1260,7 @@ schedlnxtsk:
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
+				RST_CPUS_ALLOWED;
 			} else if (rt_current->force_soft) {
 				make_current_soft(rt_current);
 			}

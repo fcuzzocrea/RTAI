@@ -30,6 +30,7 @@
 #include <rtai/event.h>
 #include <rtai/mutex.h>
 #include <rtai/cond.h>
+#include <rtai/queue.h>
 
 /* This file implements the RTAI syscall wrappers;
  *
@@ -47,11 +48,13 @@ static int __muxid;
 
 static int __rt_bind_helper (struct task_struct *curr,
 			     struct pt_regs *regs,
-			     unsigned magic)
+			     unsigned magic,
+			     void **objaddrp)
 {
     char name[XNOBJECT_NAME_LEN];
     RT_TASK_PLACEHOLDER ph;
     void *objaddr;
+    spl_t s;
     int err;
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)) ||
@@ -65,14 +68,23 @@ static int __rt_bind_helper (struct task_struct *curr,
 
     if (!err)
 	{
+	xnlock_get_irqsave(&nklock,s);
+
 	objaddr = rt_registry_fetch(ph.opaque);
 	
 	/* Also validate the type of the bound object. */
 
 	if (rtai_test_magic(objaddr,magic))
-	    __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	    {
+	    if (objaddrp)
+		*objaddrp = objaddr;
+	    else
+		__xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	    }
 	else
 	    err = -EACCES;
+
+	xnlock_put_irqrestore(&nklock,s);
 	}
 
     return err;
@@ -186,7 +198,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 
 static int __rt_task_bind (struct task_struct *curr, struct pt_regs *regs) {
 
-    return __rt_bind_helper(curr,regs,RTAI_TASK_MAGIC);
+    return __rt_bind_helper(curr,regs,RTAI_TASK_MAGIC,NULL);
 }
 
 /*
@@ -647,7 +659,7 @@ static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
 
 static int __rt_sem_bind (struct task_struct *curr, struct pt_regs *regs) {
 
-    return __rt_bind_helper(curr,regs,RTAI_SEM_MAGIC);
+    return __rt_bind_helper(curr,regs,RTAI_SEM_MAGIC,NULL);
 }
 
 /*
@@ -828,7 +840,7 @@ static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
 
 static int __rt_event_bind (struct task_struct *curr, struct pt_regs *regs) {
 
-    return __rt_bind_helper(curr,regs,RTAI_EVENT_MAGIC);
+    return __rt_bind_helper(curr,regs,RTAI_EVENT_MAGIC,NULL);
 }
 
 /*
@@ -1016,7 +1028,7 @@ static int __rt_mutex_create (struct task_struct *curr, struct pt_regs *regs)
 
 static int __rt_mutex_bind (struct task_struct *curr, struct pt_regs *regs) {
 
-    return __rt_bind_helper(curr,regs,RTAI_MUTEX_MAGIC);
+    return __rt_bind_helper(curr,regs,RTAI_MUTEX_MAGIC,NULL);
 }
 
 /*
@@ -1186,7 +1198,7 @@ static int __rt_cond_create (struct task_struct *curr, struct pt_regs *regs)
 
 static int __rt_cond_bind (struct task_struct *curr, struct pt_regs *regs) {
 
-    return __rt_bind_helper(curr,regs,RTAI_COND_MAGIC);
+    return __rt_bind_helper(curr,regs,RTAI_COND_MAGIC,NULL);
 }
 
 /*
@@ -1337,58 +1349,538 @@ static int __rt_cond_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_COND */
 
+#if CONFIG_RTAI_OPT_NATIVE_QUEUE
+
+static caddr_t __map_queue_space (struct task_struct *curr,
+				  RT_QUEUE *q)
+{
+    caddr_t mapbase = NULL;
+
+#if 0
+    ++q->numaps;
+#endif
+
+    return mapbase;
+}
+
+static void __unmap_queue_space (struct task_struct *curr,
+				 RT_QUEUE *q,
+				 caddr_t mapbase)
+{
+#if 0
+    --q->numaps;
+#endif
+}
+
+/*
+ * int __rt_queue_create(RT_QUEUE_PLACEHOLDER *ph,
+ *                       const char *name,
+ *                       size_t poolsize,
+ *                       size_t qlimit,
+ *                       int mode)
+ */
+
+static int __rt_queue_create (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    char name[XNOBJECT_NAME_LEN];
+    RT_QUEUE_PLACEHOLDER ph;
+    size_t poolsize, qlimit;
+    int err, mode;
+    RT_QUEUE *q;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (__xn_reg_arg2(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,name,(const char *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	name[sizeof(name) - 1] = '\0';
+	}
+    else
+	*name = '\0';
+
+    /* Size of memory pool. */
+    poolsize = (size_t)__xn_reg_arg3(regs);
+    /* Queue limit. */
+    qlimit = (size_t)__xn_reg_arg4(regs);
+    /* Creation mode. */
+    mode = (int)__xn_reg_arg5(regs);
+
+    if (mode & Q_DMA)
+	/* Cannot map DMA-capable memory to user-space. */
+	return -EINVAL;
+
+    q = (RT_QUEUE *)xnmalloc(sizeof(*q));
+
+    if (!q)
+	return -ENOMEM;
+
+    err = rt_queue_create(q,name,poolsize,qlimit,mode);
+
+    if (err)
+	goto free_and_fail;
+
+    /* Map the pool memory to the caller's address space. */
+    ph.mapbase = __map_queue_space(curr,q);
+
+    if (ph.mapbase == NULL)
+	{
+	err = -ENOMEM;
+	goto delete_and_fail;
+	}
+
+    /* Copy back the registry handle to the ph struct. */
+    ph.opaque = q->handle;
+
+    __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return 0;
+
+ delete_and_fail:
+
+    rt_queue_delete(q);
+
+ free_and_fail:
+	
+    xnfree(q);
+
+    return err;
+}
+
+/*
+ * int __rt_queue_bind(RT_QUEUE_PLACEHOLDER *ph,
+ *                     const char *name)
+ */
+
+static int __rt_queue_bind (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_QUEUE_PLACEHOLDER ph;
+    RT_QUEUE *q;
+    int err;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    /* First, wait for the queue to appear in the registry. */
+
+    err = __rt_bind_helper(curr,regs,RTAI_QUEUE_MAGIC,(void **)&q);
+
+    if (err)
+	goto unlock_and_exit;
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    /* We need to migrate to secondary mode now for mapping the pool
+       memory to user-space; we must have entered this syscall in
+       primary mode. */
+
+    xnshadow_relax();
+
+    xnlock_get_irqsave(&nklock,s);
+
+    /* Search for the queue again since we released the lock while
+       migrating. */
+
+    err = __rt_bind_helper(curr,regs,RTAI_QUEUE_MAGIC,(void **)&q);
+
+    if (err)
+	goto unlock_and_exit;
+
+    if (q->mode & Q_DMA)
+	{
+	/* Cannot map DMA-capable memory to user-space. */
+	err = -EINVAL;
+	goto unlock_and_exit;
+	}
+
+    ph.opaque = q->handle;
+    /* Map the pool memory to the caller's address space. */
+    ph.mapbase = __map_queue_space(curr,q);
+
+    if (!ph.mapbase)
+	{
+	err = -ENOMEM;
+	goto unlock_and_exit;
+	}
+
+    __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/*
+ * int __rt_queue_delete(RT_QUEUE_PLACEHOLDER *ph)
+ */
+
+static int __rt_queue_delete (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_QUEUE_PLACEHOLDER ph;
+    RT_QUEUE *q;
+    int err = 0;
+    spl_t s;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    xnlock_get_irqsave(&nklock,s);
+
+    q = (RT_QUEUE *)rt_registry_fetch(ph.opaque);
+
+    if (!q)
+	{
+	err = -ENOENT;
+	goto unlock_and_exit;
+	}
+
+    __unmap_queue_space(curr,q,ph.mapbase);
+
+    if (q->numaps == 0)
+	/* Last mapping removed. Try deleting the queue object. */
+	err = rt_queue_delete(q);
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/*
+ * int __rt_queue_alloc(RT_QUEUE_PLACEHOLDER *ph,
+ *                     size_t size,
+ *                     void **bufp)
+ */
+
+static int __rt_queue_alloc (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_QUEUE_PLACEHOLDER ph;
+    void *buf = NULL;
+    size_t size;
+    RT_QUEUE *q;
+    int err = 0;
+    spl_t s;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(buf)))
+	return -EFAULT;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    q = (RT_QUEUE *)rt_registry_fetch(ph.opaque);
+
+    if (!q)
+	{
+	err = -ENOENT;
+	goto unlock_and_exit;
+	}
+
+    size = (size_t)__xn_reg_arg2(regs);
+
+    buf = rt_queue_alloc(q,size);
+
+    /* Convert the kernel-based address of buf to the equivalent area
+       into the caller's address space. */
+
+    if (buf)
+	buf = ph.mapbase + ((caddr_t)buf - (caddr_t)q->poolmem);
+    else
+	err = -ENOMEM;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    __xn_copy_to_user(curr,(void *)__xn_reg_arg3(regs),&buf,sizeof(buf));
+
+    return err;
+}
+
+/*
+ * int __rt_queue_free(RT_QUEUE_PLACEHOLDER *ph,
+ *                     void *buf)
+ */
+
+static int __rt_queue_free (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_QUEUE_PLACEHOLDER ph;
+    RT_QUEUE *q;
+    void *buf;
+    int err;
+    spl_t s;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(buf)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&buf,(void *)__xn_reg_arg1(regs),sizeof(buf));
+
+    xnlock_get_irqsave(&nklock,s);
+
+    q = (RT_QUEUE *)rt_registry_fetch(ph.opaque);
+
+    if (!q)
+	{
+	err = -ENOENT;
+	goto unlock_and_exit;
+	}
+
+    /* Convert the caller-based address of buf to the equivalent area
+       into the kernel address space. */
+
+    if (buf)
+	{
+	buf = (caddr_t)q->poolmem + ((caddr_t)buf - ph.mapbase);
+	err = rt_queue_free(q,buf);
+	}
+    else
+	err = -EINVAL;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/*
+ * int __rt_queue_send(RT_QUEUE_PLACEHOLDER *ph,
+ *                     void *buf,
+ *                     int mode)
+ */
+
+static int __rt_queue_send (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_QUEUE_PLACEHOLDER ph;
+    int err, mode;
+    RT_QUEUE *q;
+    void *buf;
+    spl_t s;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(buf)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&buf,(void *)__xn_reg_arg2(regs),sizeof(buf));
+
+    /* Send mode. */
+    mode = (int)__xn_reg_arg3(regs);
+
+    xnlock_get_irqsave(&nklock,s);
+
+    q = (RT_QUEUE *)rt_registry_fetch(ph.opaque);
+
+    if (!q)
+	{
+	err = -ENOENT;
+	goto unlock_and_exit;
+	}
+
+    /* Convert the caller-based address of buf to the equivalent area
+       into the kernel address space. */
+
+    if (buf)
+	{
+	buf = (caddr_t)q->poolmem + ((caddr_t)buf - ph.mapbase);
+	err = rt_queue_send(q,buf,mode);
+	}
+    else
+	err = -EINVAL;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/*
+ * int __rt_queue_recv(RT_QUEUE_PLACEHOLDER *ph,
+ *                     void **bufp,
+ *                     RTIME *timeoutp)
+ */
+
+static int __rt_queue_recv (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_QUEUE_PLACEHOLDER ph;
+    RTIME timeout;
+    RT_QUEUE *q;
+    void *buf;
+    int err;
+    spl_t s;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(buf)))
+	return -EFAULT;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(timeout)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&timeout,(void *)__xn_reg_arg3(regs),sizeof(timeout));
+
+    xnlock_get_irqsave(&nklock,s);
+
+    q = (RT_QUEUE *)rt_registry_fetch(ph.opaque);
+
+    if (!q)
+	{
+	err = -ENOENT;
+	goto unlock_and_exit;
+	}
+
+    err = (int)rt_queue_recv(q,&buf,timeout);
+
+    /* Convert the caller-based address of buf to the equivalent area
+       into the kernel address space. */
+
+    if (err >= 0)
+	{
+	buf = ph.mapbase + ((caddr_t)buf - (caddr_t)q->poolmem);
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&buf,sizeof(buf));
+	}
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/*
+ * int __rt_queue_inquire(RT_QUEUE_PLACEHOLDER *ph,
+ *                        RT_QUEUE_INFO *infop)
+ */
+
+static int __rt_queue_inquire (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_QUEUE_PLACEHOLDER ph;
+    RT_QUEUE_INFO info;
+    RT_QUEUE *q;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void *)__xn_reg_arg1(regs),sizeof(ph));
+
+    q = (RT_QUEUE *)rt_registry_fetch(ph.opaque);
+
+    if (!q)
+	return -ENOENT;
+
+    err = rt_queue_inquire(q,&info);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    return err;
+}
+
+#else /* !CONFIG_RTAI_OPT_NATIVE_QUEUE */
+
+#define __rt_queue_create    __rt_call_not_available
+#define __rt_queue_bind      __rt_call_not_available
+#define __rt_queue_delete    __rt_call_not_available
+#define __rt_queue_alloc     __rt_call_not_available
+#define __rt_queue_free      __rt_call_not_available
+#define __rt_queue_send      __rt_call_not_available
+#define __rt_queue_recv      __rt_call_not_available
+#define __rt_queue_inquire   __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_QUEUE */
+
 static  __attribute__((unused))
 int __rt_call_not_available (struct task_struct *curr, struct pt_regs *regs) {
     return -ENOSYS;
 }
 
 static xnsysent_t __systab[] = {
-    { &__rt_task_create, __xn_flag_init },
-    { &__rt_task_bind, __xn_flag_init },
-    { &__rt_task_start, __xn_flag_anycall },
-    { &__rt_task_suspend, __xn_flag_anycall },
-    { &__rt_task_resume, __xn_flag_anycall },
-    { &__rt_task_delete, __xn_flag_anycall },
-    { &__rt_task_yield, __xn_flag_regular },
-    { &__rt_task_set_periodic, __xn_flag_regular },
-    { &__rt_task_wait_period, __xn_flag_regular },
-    { &__rt_task_set_priority, __xn_flag_anycall },
-    { &__rt_task_sleep, __xn_flag_regular },
-    { &__rt_task_sleep_until, __xn_flag_regular },
-    { &__rt_task_unblock, __xn_flag_anycall },
-    { &__rt_task_inquire, __xn_flag_anycall },
-    { &__rt_timer_start, __xn_flag_anycall },
-    { &__rt_timer_stop, __xn_flag_anycall },
-    { &__rt_timer_read, __xn_flag_anycall },
-    { &__rt_timer_tsc, __xn_flag_anycall },
-    { &__rt_timer_ns2ticks, __xn_flag_anycall },
-    { &__rt_timer_ticks2ns, __xn_flag_anycall },
-    { &__rt_timer_inquire, __xn_flag_anycall },
-    { &__rt_sem_create, __xn_flag_anycall },
-    { &__rt_sem_bind, __xn_flag_regular },
-    { &__rt_sem_delete, __xn_flag_anycall },
-    { &__rt_sem_p, __xn_flag_regular },
-    { &__rt_sem_v, __xn_flag_anycall },
-    { &__rt_sem_inquire, __xn_flag_anycall },
-    { &__rt_event_create, __xn_flag_anycall },
-    { &__rt_event_bind, __xn_flag_regular },
-    { &__rt_event_delete, __xn_flag_anycall },
-    { &__rt_event_pend, __xn_flag_regular },
-    { &__rt_event_post, __xn_flag_anycall },
-    { &__rt_event_inquire, __xn_flag_anycall },
-    { &__rt_mutex_create, __xn_flag_anycall },
-    { &__rt_mutex_bind, __xn_flag_regular },
-    { &__rt_mutex_delete, __xn_flag_anycall },
-    { &__rt_mutex_lock, __xn_flag_regular },
-    { &__rt_mutex_unlock, __xn_flag_shadow },
-    { &__rt_mutex_inquire, __xn_flag_anycall },
-    { &__rt_cond_create, __xn_flag_anycall },
-    { &__rt_cond_bind, __xn_flag_regular },
-    { &__rt_cond_delete, __xn_flag_anycall },
-    { &__rt_cond_wait, __xn_flag_regular },
-    { &__rt_cond_signal, __xn_flag_anycall },
-    { &__rt_cond_broadcast, __xn_flag_anycall },
-    { &__rt_cond_inquire, __xn_flag_anycall },
+    [__rtai_task_create ] = { &__rt_task_create, __xn_flag_init },
+    [__rtai_task_bind ] = { &__rt_task_bind, __xn_flag_init },
+    [__rtai_task_start ] = { &__rt_task_start, __xn_flag_anycall },
+    [__rtai_task_suspend ] = { &__rt_task_suspend, __xn_flag_anycall },
+    [__rtai_task_resume ] = { &__rt_task_resume, __xn_flag_anycall },
+    [__rtai_task_delete ] = { &__rt_task_delete, __xn_flag_anycall },
+    [__rtai_task_yield ] = { &__rt_task_yield, __xn_flag_regular },
+    [__rtai_task_set_periodic ] = { &__rt_task_set_periodic, __xn_flag_regular },
+    [__rtai_task_wait_period ] = { &__rt_task_wait_period, __xn_flag_regular },
+    [__rtai_task_set_priority ] = { &__rt_task_set_priority, __xn_flag_anycall },
+    [__rtai_task_sleep ] = { &__rt_task_sleep, __xn_flag_regular },
+    [__rtai_task_sleep_until ] = { &__rt_task_sleep_until, __xn_flag_regular },
+    [__rtai_task_unblock ] = { &__rt_task_unblock, __xn_flag_anycall },
+    [__rtai_task_inquire ] = { &__rt_task_inquire, __xn_flag_anycall },
+    [__rtai_timer_start ] = { &__rt_timer_start, __xn_flag_anycall },
+    [__rtai_timer_stop ] = { &__rt_timer_stop, __xn_flag_anycall },
+    [__rtai_timer_read ] = { &__rt_timer_read, __xn_flag_anycall },
+    [__rtai_timer_tsc ] = { &__rt_timer_tsc, __xn_flag_anycall },
+    [__rtai_timer_ns2ticks ] = { &__rt_timer_ns2ticks, __xn_flag_anycall },
+    [__rtai_timer_ticks2ns ] = { &__rt_timer_ticks2ns, __xn_flag_anycall },
+    [__rtai_timer_inquire ] = { &__rt_timer_inquire, __xn_flag_anycall },
+    [__rtai_sem_create ] = { &__rt_sem_create, __xn_flag_anycall },
+    [__rtai_sem_bind ] = { &__rt_sem_bind, __xn_flag_regular },
+    [__rtai_sem_delete ] = { &__rt_sem_delete, __xn_flag_anycall },
+    [__rtai_sem_p ] = { &__rt_sem_p, __xn_flag_regular },
+    [__rtai_sem_v ] = { &__rt_sem_v, __xn_flag_anycall },
+    [__rtai_sem_inquire ] = { &__rt_sem_inquire, __xn_flag_anycall },
+    [__rtai_event_create ] = { &__rt_event_create, __xn_flag_anycall },
+    [__rtai_event_bind ] = { &__rt_event_bind, __xn_flag_regular },
+    [__rtai_event_delete ] = { &__rt_event_delete, __xn_flag_anycall },
+    [__rtai_event_pend ] = { &__rt_event_pend, __xn_flag_regular },
+    [__rtai_event_post ] = { &__rt_event_post, __xn_flag_anycall },
+    [__rtai_event_inquire ] = { &__rt_event_inquire, __xn_flag_anycall },
+    [__rtai_mutex_create ] = { &__rt_mutex_create, __xn_flag_anycall },
+    [__rtai_mutex_bind ] = { &__rt_mutex_bind, __xn_flag_regular },
+    [__rtai_mutex_delete ] = { &__rt_mutex_delete, __xn_flag_anycall },
+    [__rtai_mutex_lock ] = { &__rt_mutex_lock, __xn_flag_regular },
+    [__rtai_mutex_unlock ] = { &__rt_mutex_unlock, __xn_flag_shadow },
+    [__rtai_mutex_inquire ] = { &__rt_mutex_inquire, __xn_flag_anycall },
+    [__rtai_cond_create ] = { &__rt_cond_create, __xn_flag_anycall },
+    [__rtai_cond_bind ] = { &__rt_cond_bind, __xn_flag_regular },
+    [__rtai_cond_delete ] = { &__rt_cond_delete, __xn_flag_anycall },
+    [__rtai_cond_wait ] = { &__rt_cond_wait, __xn_flag_regular },
+    [__rtai_cond_signal ] = { &__rt_cond_signal, __xn_flag_anycall },
+    [__rtai_cond_broadcast ] = { &__rt_cond_broadcast, __xn_flag_anycall },
+    [__rtai_cond_inquire ] = { &__rt_cond_inquire, __xn_flag_anycall },
+    [__rtai_queue_create ] = { &__rt_queue_create, __xn_flag_lostage },
+    [__rtai_queue_bind ] = { &__rt_queue_bind, __xn_flag_regular },
+    [__rtai_queue_delete ] = { &__rt_queue_delete, __xn_flag_lostage },
+    [__rtai_queue_alloc ] = { &__rt_queue_alloc, __xn_flag_anycall },
+    [__rtai_queue_free ] = { &__rt_queue_free, __xn_flag_anycall },
+    [__rtai_queue_send ] = { &__rt_queue_send, __xn_flag_anycall },
+    [__rtai_queue_recv ] = { &__rt_queue_recv, __xn_flag_regular },
+    [__rtai_queue_inquire ] = { &__rt_queue_inquire, __xn_flag_anycall },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

@@ -367,7 +367,7 @@ int rt_mutex_inquire (RT_MUTEX *mutex,
     
     strcpy(info->name,mutex->name);
     info->lockcnt = mutex->lockcnt;
-    info->nsleepers = xnsynch_nsleepers(&mutex->synch_base);
+    info->nwaiters = xnsynch_nsleepers(&mutex->synch_base);
 
  unlock_and_exit:
 

@@ -56,7 +56,7 @@ struct RT_MUTEX;
 
 typedef struct rt_cond_info {
 
-    int nsleepers;	/* !< Number of pending tasks. */
+    int nwaiters;	/* !< Number of pending tasks. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 

@@ -366,7 +366,7 @@ int rt_sem_inquire (RT_SEM *sem,
     
     strcpy(info->name,sem->name);
     info->count = sem->count;
-    info->nsleepers = xnsynch_nsleepers(&sem->synch_base);
+    info->nwaiters = xnsynch_nsleepers(&sem->synch_base);
 
  unlock_and_exit:
 

@@ -45,10 +45,26 @@ void __queue_pkg_cleanup (void)
 {
 }
 
+static void __queue_flush_pool (void *poolmem,
+				u_long poolsize,
+				void *cookie)
+{
+#ifdef __KERNEL__
+    RT_QUEUE *q = (RT_QUEUE *)cookie;
+
+    if (q->mode & Q_DMA)
+	kfree(poolmem);
+    else
+	vfree(poolmem);
+#else /* !__KERNEL__ */
+    xnarch_sysfree(poolmem);
+#endif /* __KERNEL__ */
+}
+
 int rt_queue_create (RT_QUEUE *q,
 		     const char *name,
 		     size_t poolsize,
-		     unsigned qmax,
+		     size_t qlimit,
 		     int mode)
 {
     void *poolmem;
@@ -56,13 +72,20 @@ int rt_queue_create (RT_QUEUE *q,
 
     xnpod_check_context(XNPOD_ROOT_CONTEXT);
 
+    if (poolsize == 0)
+	return -EINVAL;
+
 #ifdef __KERNEL__
+    poolsize = PAGE_ALIGN(poolsize);
+
     if (mode & Q_DMA)
 	poolmem = kmalloc(poolsize,GFP_KERNEL|GFP_DMA);
     else
 	poolmem = vmalloc(poolsize);
+
+    q->numaps = 0;
 #else /* !__KERNEL__ */
-	poolmem = xnarch_sysalloc(poolsize);
+    poolmem = xnarch_sysalloc(poolsize);
 #endif /* __KERNEL__ */
 
     if (poolmem == NULL)
@@ -72,8 +95,10 @@ int rt_queue_create (RT_QUEUE *q,
     initq(&q->pendq);
     q->handle = 0;  /* i.e. (still) unregistered queue. */
     q->magic = RTAI_QUEUE_MAGIC;
-    q->qmax = qmax;
+    q->qlimit = qlimit;
     q->mode = mode;
+    q->poolmem = poolmem;
+    q->poolsize = poolsize;
     xnobject_copy_name(q->name,name);
 
     err = xnheap_init(&q->bufpool,
@@ -82,14 +107,7 @@ int rt_queue_create (RT_QUEUE *q,
 		      PAGE_SIZE); /* Use natural page size */
     if (err)
 	{
-#ifdef __KERNEL__
-	if (mode & Q_DMA)
-	    kfree(poolmem);
-	else
-	    vfree(poolmem);
-#else /* !__KERNEL__ */
-	xnarch_sysfree(poolmem);
-#endif /* __KERNEL__ */
+	__queue_flush_pool(poolmem,poolsize,q);
 	return err;
 	}
 
@@ -110,22 +128,6 @@ int rt_queue_create (RT_QUEUE *q,
     return err;
 }
 
-static void __queue_flush_pool (void *poolmem,
-				u_long poolsize,
-				void *cookie)
-{
-#ifdef __KERNEL__
-    RT_QUEUE *q = (RT_QUEUE *)cookie;
-
-    if (q->mode & Q_DMA)
-	kfree(poolmem);
-    else
-	vfree(poolmem);
-#else /* !__KERNEL__ */
-    xnarch_sysfree(poolmem);
-#endif /* __KERNEL__ */
-}
-
 int rt_queue_delete (RT_QUEUE *q)
 
 {
@@ -143,6 +145,14 @@ int rt_queue_delete (RT_QUEUE *q)
         err = rtai_handle_error(q,RTAI_QUEUE_MAGIC,RT_QUEUE);
         goto unlock_and_exit;
         }
+
+#ifdef __KERNEL__
+    if (q->numaps > 0)	/* Still mapped in user-space? */
+	{
+	err = -EBUSY;
+	goto unlock_and_exit;
+	}
+#endif /* __KERNEL__ */
     
     xnheap_destroy(&q->bufpool,&__queue_flush_pool,q);
 
@@ -262,7 +272,7 @@ int rt_queue_send (RT_QUEUE *q,
         goto unlock_and_exit;
         }
 
-    if (q->qmax != Q_UNLIMITED && countq(&q->pendq) >= q->qmax)
+    if (q->qlimit != Q_UNLIMITED && countq(&q->pendq) >= q->qlimit)
 	{
 	err = -EBUSY;
 	goto unlock_and_exit;
@@ -372,3 +382,41 @@ ssize_t rt_queue_recv (RT_QUEUE *q,
 
     return err;
 }
+
+int rt_queue_inquire (RT_QUEUE *q,
+                      RT_QUEUE_INFO *info)
+{
+    int err = 0;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    q = rtai_h2obj_validate(q,RTAI_QUEUE_MAGIC,RT_QUEUE);
+
+    if (!q)
+        {
+        err = rtai_handle_error(q,RTAI_QUEUE_MAGIC,RT_QUEUE);
+        goto unlock_and_exit;
+        }
+    
+    strcpy(info->name,q->name);
+    info->nwaiters = xnsynch_nsleepers(&q->synch_base);
+    info->nmessages = countq(&q->pendq);
+    info->qlimit = q->qlimit;
+    info->poolsize = q->poolsize;
+    info->mode = q->mode;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+EXPORT_SYMBOL(rt_queue_create);
+EXPORT_SYMBOL(rt_queue_delete);
+EXPORT_SYMBOL(rt_queue_alloc);
+EXPORT_SYMBOL(rt_queue_free);
+EXPORT_SYMBOL(rt_queue_send);
+EXPORT_SYMBOL(rt_queue_recv);
+EXPORT_SYMBOL(rt_queue_inquire);

@@ -456,7 +456,7 @@ int rt_event_inquire (RT_EVENT *event,
     
     strcpy(info->name,event->name);
     info->value = event->value;
-    info->nsleepers = xnsynch_nsleepers(&event->synch_base);
+    info->nwaiters = xnsynch_nsleepers(&event->synch_base);
 
  unlock_and_exit:
 

@@ -89,6 +89,7 @@
 #define XNPOD_THREAD_CONTEXT     0x1 /* Regular thread */
 #define XNPOD_INTERRUPT_CONTEXT  0x2 /* Interrupt service thread */
 #define XNPOD_HOOK_CONTEXT       0x4 /* Nanokernel hook */
+#define XNPOD_ROOT_CONTEXT       0x8 /* Root thread */
 
 #define XNPOD_NORMAL_EXIT  0x0
 #define XNPOD_FATAL_EXIT   0x1

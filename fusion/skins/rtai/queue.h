@@ -68,13 +68,26 @@ struct RT_TASK;
 
 typedef struct rt_queue_info {
 
+    int nwaiters;		/* !< Number of pending tasks. */
+
+    int nmessages;		/* !< Number of queued messages. */
+
+    int mode;			/* !< Creation mode. */
+
+    size_t qlimit;		/* !< Queue limit. */
+
+    size_t poolsize;		/* !< Size of pool memory. */
+
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 } RT_QUEUE_INFO;
 
 typedef struct rt_queue_placeholder {
+
     rt_handle_t opaque;
+
     caddr_t mapbase;
+
 } RT_QUEUE_PLACEHOLDER;
 
 #if defined(__KERNEL__) || defined(__RTAI_SIM__)
@@ -89,13 +102,23 @@ typedef struct rt_queue {
 
     xnqueue_t pendq;	/* !< Pending message queue. */
 
-    xnheap_t bufpool;		/* !< Message buffer pool. */
+    xnheap_t bufpool;	/* !< Message buffer pool. */
 
-    int mode;			/* !< Creation mode. */
+    void *poolmem;	/* !< Start address of pool memory. */
+
+    size_t poolsize;	/* !< Size of pool memory. */
+
+    int mode;		/* !< Creation mode. */
 
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 
-    int qmax;		/* !< Maximum queued elements. */
+    int qlimit;		/* !< Maximum queued elements. */
+
+#ifdef __KERNEL__
+
+    int numaps;		/* !< Number of user-space mappings. */
+
+#endif /* __KERNEL__ */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
@@ -144,13 +167,16 @@ extern "C" {
 int rt_queue_create(RT_QUEUE *q,
 		    const char *name,
 		    size_t poolsize,
-		    unsigned qmax,
+		    size_t qlimit,
 		    int mode);
 
 int rt_queue_delete(RT_QUEUE *q);
 
-int rt_queue_inquire(RT_QUEUE *q,
-		     RT_QUEUE_INFO *info);
+void *rt_queue_alloc(RT_QUEUE *q,
+		     size_t size);
+
+int rt_queue_free(RT_QUEUE *q,
+		  void *buf);
 
 int rt_queue_send(RT_QUEUE *q,
 		  void *buf,
@@ -159,6 +185,9 @@ int rt_queue_send(RT_QUEUE *q,
 ssize_t rt_queue_recv(RT_QUEUE *q,
 		      void **bufp,
 		      RTIME timeout);
+
+int rt_queue_inquire(RT_QUEUE *q,
+		     RT_QUEUE_INFO *info);
 
 #ifdef __cplusplus
 }

@@ -96,6 +96,14 @@
 #define __rtai_cond_signal        43
 #define __rtai_cond_broadcast     44
 #define __rtai_cond_inquire       45
+#define __rtai_queue_create       46
+#define __rtai_queue_bind         47
+#define __rtai_queue_delete       48
+#define __rtai_queue_alloc        49
+#define __rtai_queue_free         50
+#define __rtai_queue_send         51
+#define __rtai_queue_recv         52
+#define __rtai_queue_inquire      53
 
 struct rt_arg_bulk {
 

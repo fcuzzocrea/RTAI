@@ -2492,6 +2492,9 @@ void xnpod_check_context (int mask)
 
     sched = xnpod_current_sched();
 
+    if ((mask & XNPOD_ROOT_CONTEXT) && xnpod_root_p())
+        goto unlock_and_exit;
+
     if ((mask & XNPOD_THREAD_CONTEXT) && !xnpod_asynch_p())
         goto unlock_and_exit;
 

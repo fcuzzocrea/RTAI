@@ -281,7 +281,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_SKIN_NATIVE:-no})
 
 AC_MSG_CHECKING(for native registry support)
 AC_ARG_ENABLE(native-registry,
-	[ --enable-native-registry	Enable registry support for native skin],
+	[ --enable-native-registry	Enable registry support in native skin],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_OPT_NATIVE_REGISTRY=y ;;
 	*) unset CONFIG_RTAI_OPT_NATIVE_REGISTRY ;;
@@ -307,7 +307,7 @@ fi
 
 AC_MSG_CHECKING(for native pipe support)
 AC_ARG_ENABLE(native-pipe,
-	[ --enable-native-pipe	Enable pipe support for native skin],
+	[ --enable-native-pipe	Enable pipe support in native skin],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_OPT_NATIVE_PIPE=y ;;
 	*) unset CONFIG_RTAI_OPT_NATIVE_PIPE ;;
@@ -333,7 +333,7 @@ fi
 
 AC_MSG_CHECKING(for native semaphore support)
 AC_ARG_ENABLE(native-sem,
-	[ --enable-native-sem	Enable semaphore support for native skin],
+	[ --enable-native-sem	Enable semaphore support in native skin],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_OPT_NATIVE_SEM=y ;;
 	*) unset CONFIG_RTAI_OPT_NATIVE_SEM ;;
@@ -342,7 +342,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_SEM:-no})
 
 AC_MSG_CHECKING(for native event flag support)
 AC_ARG_ENABLE(native-event,
-	[ --enable-native-event	Enable event flag support for native skin],
+	[ --enable-native-event	Enable event flag support in native skin],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_OPT_NATIVE_EVENT=y ;;
 	*) unset CONFIG_RTAI_OPT_NATIVE_EVENT ;;
@@ -351,7 +351,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_EVENT:-no})
 
 AC_MSG_CHECKING(for native mutex support)
 AC_ARG_ENABLE(native-mutex,
-	[ --enable-native-mutex	Enable mutex support for native skin],
+	[ --enable-native-mutex	Enable mutex support in native skin],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_OPT_NATIVE_MUTEX=y ;;
 	*) unset CONFIG_RTAI_OPT_NATIVE_MUTEX ;;
@@ -360,12 +360,21 @@ AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_MUTEX:-no})
 
 AC_MSG_CHECKING(for native condition variable support)
 AC_ARG_ENABLE(native-cond,
-	[ --enable-native-cond	Enable condition variable support for native skin],
+	[ --enable-native-cond	Enable condition variable support in native skin],
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_OPT_NATIVE_COND=y ;;
 	*) unset CONFIG_RTAI_OPT_NATIVE_COND ;;
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_COND:-no})
+
+AC_MSG_CHECKING(for native message queue support)
+AC_ARG_ENABLE(native-queue,
+	[ --enable-native-queue	Enable message queue support in native skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_NATIVE_QUEUE=y ;;
+	*) unset CONFIG_RTAI_OPT_NATIVE_QUEUE ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_QUEUE:-no})
 
 AC_MSG_CHECKING(for pSOS+ skin)
 AC_ARG_ENABLE(psos-skin,
@@ -667,6 +676,7 @@ test \! x$CONFIG_RTAI_OPT_NATIVE_SEM = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_SEM
 test \! x$CONFIG_RTAI_OPT_NATIVE_EVENT = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_EVENT,1,[Kconfig])
 test \! x$CONFIG_RTAI_OPT_NATIVE_MUTEX = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_MUTEX,1,[Kconfig])
 test \! x$CONFIG_RTAI_OPT_NATIVE_COND = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_COND,1,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_NATIVE_QUEUE = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_QUEUE,1,[Kconfig])
 
 dnl CAUTION: We need to have the CONFIG_RTAI_XX symbols always defined when
 dnl the configuration header is read, but we want the Autoconf-produced
@@ -722,6 +732,7 @@ AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_SEM,[test x$CONFIG_RTAI_OPT_NATIVE_SEM = x
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_EVENT,[test x$CONFIG_RTAI_OPT_NATIVE_EVENT = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_MUTEX,[test x$CONFIG_RTAI_OPT_NATIVE_MUTEX = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_COND,[test x$CONFIG_RTAI_OPT_NATIVE_COND = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_QUEUE,[test x$CONFIG_RTAI_OPT_NATIVE_QUEUE = xy])
 
 dnl Documentation.
 AM_CONDITIONAL(CONFIG_RTAI_DOC_DOX,[test "$CONFIG_RTAI_DOC_DOX" = y])

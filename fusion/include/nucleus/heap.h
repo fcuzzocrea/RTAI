@@ -138,7 +138,9 @@ int xnheap_init(xnheap_t *heap,
 
 void xnheap_destroy(xnheap_t *heap,
 		    void (*flushfn)(void *extaddr,
-				    u_long extsize));
+				    u_long extsize,
+				    void *cookie),
+		    void *cookie);
 
 int xnheap_extend(xnheap_t *heap,
 		  void *extaddr,

@@ -64,7 +64,7 @@ typedef struct rt_event_info {
 
     unsigned long value; /* !< Current event group value. */
 
-    int nsleepers;	/* !< Number of pending tasks. */
+    int nwaiters;	/* !< Number of pending tasks. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 

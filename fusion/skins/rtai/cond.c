@@ -420,7 +420,7 @@ int rt_cond_inquire (RT_COND *cond,
         }
     
     strcpy(info->name,cond->name);
-    info->nsleepers = xnsynch_nsleepers(&cond->synch_base);
+    info->nwaiters = xnsynch_nsleepers(&cond->synch_base);
 
  unlock_and_exit:
 

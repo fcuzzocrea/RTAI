@@ -40,6 +40,9 @@
 #undef CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_QUEUE
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_NATIVE_REGISTRY
 
 /* Kconfig */

@@ -1,5 +1,7 @@
 2004-10-30  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/queue.c: Add message queue support.
+
 	* nucleus/pipe.c: More appropriate than legacy "domain bridge"
 	name.
 

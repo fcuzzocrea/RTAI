@@ -96,7 +96,7 @@ void latency (void *cookie)
 	    continue;
 	    }
 
-	s = (struct rtai_latency_stat *)RT_PIPE_MSGPTR(msg);
+	s = (struct rtai_latency_stat *)P_MSGPTR(msg);
 	s->minjitter = rt_timer_ticks2ns(minjitter);
 	s->maxjitter = rt_timer_ticks2ns(maxjitter);
 	s->avgjitter = rt_timer_ticks2ns(avgjitter);

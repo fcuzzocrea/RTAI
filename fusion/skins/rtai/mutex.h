@@ -58,7 +58,7 @@ typedef struct rt_mutex_info {
 
     int lockcnt;	/* !< Lock nesting level (> 0 means "locked"). */
 
-    int nsleepers;	/* !< Number of pending tasks. */
+    int nwaiters;	/* !< Number of pending tasks. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 

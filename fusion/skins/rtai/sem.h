@@ -60,7 +60,7 @@ typedef struct rt_sem_info {
 
     unsigned long count; /* !< Current semaphore value. */
 
-    int nsleepers;	/* !< Number of pending tasks. */
+    int nwaiters;	/* !< Number of pending tasks. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 

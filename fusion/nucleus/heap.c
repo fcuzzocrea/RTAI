@@ -155,7 +155,7 @@ static void init_extent (xnheap_t *heap,
  * fragmentation issues, so it might be a good idea to take a look at
  * http://docs.FreeBSD.org/44doc/papers/kernmalloc.pdf to pick the
  * best one for your needs. In the current implementation, pagesize
- * must be a power of two in the range [ 8 .. 32768] inclusive.
+ * must be a power of two in the range [ 8 .. 32768 ] inclusive.
  *
  * @return 0 is returned upon success, or one of the following error
  * codes:
@@ -262,7 +262,9 @@ int xnheap_init (xnheap_t *heap,
 
 void xnheap_destroy (xnheap_t *heap,
 		     void (*flushfn)(void *extaddr,
-				     u_long extsize))
+				     u_long extsize,
+				     void *cookie),
+		     void *cookie)
 {
     xnholder_t *holder;
     spl_t s;
@@ -275,7 +277,7 @@ void xnheap_destroy (xnheap_t *heap,
     while ((holder = getq(&heap->extents)) != NULL)
 	{
 	xnlock_put_irqrestore(&heap->lock,s);
-	flushfn(link2extent(holder),heap->extentsize);
+	flushfn(heap,link2extent(holder),heap->extentsize,cookie);
 	xnlock_get_irqsave(&heap->lock,s);
 	}
 

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <getopt.h>
+#include <time.h>
 #include "latency.h"
 
 #define HISTOGRAM_CELLS 200
@@ -14,6 +15,15 @@ unsigned long *histogram_avg = 0, *histogram_max = 0, *histogram_min = 0;
 
 int do_histogram = 0, finished = 0;
 int bucketsize = 1000;		/* bucketsize */
+int test_duration = 0;		/* set with -T <sec> */
+time_t test_start, test_end;	/* report test duration */
+int test_loops = 0;
+
+#define TEN_MILLION    10000000
+long gminjitter = TEN_MILLION,
+     gmaxjitter = -TEN_MILLION,
+     gavgjitter = 0,
+     goverrun = 0;
 
 static inline void add_histogram (long *histogram, long addval)
 {
@@ -24,6 +34,8 @@ static inline void add_histogram (long *histogram, long addval)
 void dump_histogram (long *histogram, char* kind)
 {
     int n, total_hits = 0;
+    long avg = 0;		/* used to sum hits 1st */
+    double variance = 0;
   
     fprintf(stderr,"HSH-%s| latency (*%d ns) | num occurrences\n", kind, bucketsize); 
 
@@ -34,9 +46,26 @@ void dump_histogram (long *histogram, char* kind)
 	if (hits) {
 	    fprintf(stderr,"HSD-%s|%5d-%5d|%ld\n", kind, n, n+1, hits);
 	    total_hits += hits;
+	    avg += n * hits;
 	}
     }
-    fprintf(stderr,"HSTotal|%d\n",total_hits);
+    avg /= total_hits;	/* compute avg, reuse variable */
+
+    for (n = 0; n < histogram_size; n++)
+      {
+	long hits = histogram[n];
+	if (hits)
+	    variance += hits * (n-avg) * (n-avg);
+      }
+
+    /* compute std-deviation (unbiased form) */
+    variance /= total_hits - 1;
+    // variance = sqrt(variance);
+
+    fprintf(stderr,"HSH-%s-Samples:\t%d\n", kind, total_hits);
+    fprintf(stderr,"HSH-%s-Average:\t%d\n", kind, total_hits);
+    // fprintf(stderr,"HSH-%s-StdDev:\t%f\n", kind, variance);
+    fprintf(stderr,"HSH-%s-Variance:\t%f\n", kind, variance);
 }
 
 void dump_histograms (void)
@@ -53,11 +82,26 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
     if (do_histogram)
 	dump_histograms();
 
+    time(&test_end);
+    if (test_duration) {
+        fprintf(stderr,"RTSummary| requested test duration:\t%d\n", test_duration);
+
+	test_duration = test_end - test_start;
+    }
+    gavgjitter /= test_loops-1;
+
+    fprintf(stderr,"RTSummary| actual test duration:\t%d\n", test_duration);
+    fprintf(stderr,"RTSummary| minimum jitter:\t%ld\n", gminjitter);
+    fprintf(stderr,"RTSummary| average jitter:\t%ld\n", gavgjitter);
+    fprintf(stderr,"RTSummary| maximum jitter:\t%ld\n", gmaxjitter);
+    fprintf(stderr,"RTSummary| overruns:\t%ld\n", goverrun);
+
     if (histogram_avg)	free(histogram_avg);
     if (histogram_max)	free(histogram_max);
     if (histogram_min)	free(histogram_min);
 
     fflush(stdout);	/* finish histogram before unloading modules */
+    sleep(1);		/* flush isnt enough, RTAI kernelside trumps */
     exit(0);
 }
 
@@ -68,7 +112,7 @@ int main (int argc, char **argv)
     struct rtai_latency_stat s;
     time_t start;
     ssize_t sz;
-    int test_duration = 0, quiet = 0;
+    int quiet = 0;
 
     while ((c = getopt(argc,argv,"hl:T:qH:B:")) != EOF)
 	switch (c)
@@ -101,7 +145,7 @@ int main (int argc, char **argv)
 
 	    case 'q':
 
-		quiet = 1;
+	        quiet = 1;
 		break;
 		
 	    default:
@@ -117,10 +161,12 @@ int main (int argc, char **argv)
 	    }
 
     if (!test_duration && quiet)
-	{
-	fprintf(stderr, "klatency: -q only works if -T has been given.\n");
+        {
+	fprintf(stderr, "-q only works if -T is also used\n");
 	quiet = 0;
 	}
+
+    time(&test_start);
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
@@ -140,7 +186,7 @@ int main (int argc, char **argv)
     
     if (fd < 0)
         {
-        fprintf(stderr, "klatency: open(%s): %m\n", communication_channel);
+        fprintf(stderr, "open(%s): %m\n", communication_channel);
         exit(1);
         }
 
@@ -148,6 +194,7 @@ int main (int argc, char **argv)
 
     for (;;)
         {
+	test_loops++;
         sz = read(fd,&s,sizeof(s));
 
         if (!sz)
@@ -184,7 +231,14 @@ int main (int argc, char **argv)
 		   s.maxjitter,
 		   s.overrun);
 	    }
+
+	/* update global jitters */
+	if (s.minjitter < gminjitter) gminjitter = s.minjitter;
+	if (s.maxjitter > gmaxjitter) gmaxjitter = s.maxjitter;
+	gavgjitter += s.avgjitter;
+	goverrun += s.overrun;
 	}
+
     if ((err = close(fd))) {
 	perror("close");
 	exit(1);

@@ -2,10 +2,12 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
 #include <getopt.h>
+#include <time.h>
 #include <rtai/task.h>
 #include <rtai/timer.h>
 #include <rtai/sem.h>
@@ -18,11 +20,18 @@ RT_SEM display_sem;
 #define TEN_MILLION    10000000
 
 long minjitter, maxjitter, avgjitter, overrun;
+long gminjitter = TEN_MILLION,
+     gmaxjitter = -TEN_MILLION,
+     gavgjitter = 0,
+     goverrun = 0;
 
 int sampling_period = 0;
 int test_duration = 0;	/* sec of testing, via -T <sec>, 0 is inf */
 int data_lines = 21;	/* data lines per header line, -l <lines> to change */
 int quiet = 0;		/* suppress printing of RTH, RTD lines when -T given */
+
+time_t test_start, test_end;	/* report test duration */
+int test_loops = 0;		/* outer loop count */
 
 #define MEASURE_PERIOD ONE_BILLION
 #define SAMPLE_COUNT (MEASURE_PERIOD / sampling_period)
@@ -70,6 +79,8 @@ void latency (void *cookie)
 
     for (;;)
       {
+ 	test_loops++;
+
 	for (count = sumj = 0; count < nsamples; count++)
 	  {
 	    expected += period;
@@ -109,7 +120,6 @@ void latency (void *cookie)
 }
 
 void display (void *cookie)
-
 {
     int err, n = 0;
     time_t start;
@@ -157,14 +167,22 @@ void display (void *cookie)
 		   maxjitter,
 		   overrun);
 	    }
+
+	/* update global jitters */
+	if (minjitter < gminjitter) gminjitter = minjitter;
+	if (maxjitter > gmaxjitter) gmaxjitter = maxjitter;
+	gavgjitter += avgjitter;
+	goverrun += overrun;
 	}
 }
 
 void dump_histogram (long *histogram, char* kind)
 {
     int n, total_hits = 0;
-  
-    fprintf(stderr,"HSH-%s| latency range (usecs) | number of samples\n", kind);
+    long avg = 0;		/* used to sum hits 1st */
+    double variance = 0;
+
+    fprintf(stderr,"\nHSH-%s| latency range (usecs) | number of samples\n", kind);
 
     for (n = 0; n < histogram_size; n++)
         {
@@ -173,20 +191,37 @@ void dump_histogram (long *histogram, char* kind)
 	if (hits) {
 	    fprintf(stderr,"HSD-%s|%3d-%3d|%ld\n",kind, n, n+1, hits);
 	    total_hits += hits;
+	    avg += n * hits;
 	}
     }
-    fprintf(stderr,"HST|%d\n",total_hits);
+
+    avg /= total_hits;	/* compute avg, reuse variable */
+
+    for (n = 0; n < histogram_size; n++)
+      {
+	long hits = histogram[n];
+	if (hits)
+	    variance += hits * (n-avg) * (n-avg);
+      }
+
+    /* compute std-deviation (unbiased form) */
+    variance /= total_hits - 1;
+    // variance = sqrt(variance);
+
+    fprintf(stderr,"HSH-%s-Samples:\t%d\n", kind, total_hits);
+    fprintf(stderr,"HSH-%s-Average:\t%ld\n", kind, avg);
+    // fprintf(stderr,"HSH-%s-StdDev:\t%f\n", kind, variance);
+    fprintf(stderr,"HSH-%s-Variance:\t%f\n", kind, variance);
 }
 
 void dump_histograms (void)
 {
+  dump_histogram (histogram_min, "min");
   dump_histogram (histogram_avg, "avg");
   dump_histogram (histogram_max, "max");
-  dump_histogram (histogram_min, "min");
 }
 
 void cleanup_upon_sig(int sig __attribute__((unused)))
-
 {
     rt_timer_stop();
     rt_sem_delete(&display_sem);
@@ -195,17 +230,31 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
     if (do_histogram)
 	dump_histograms();
 
+    if (test_duration)
+        fprintf(stderr,"RTSummary| requested test duration:\t%d\n", test_duration);
+
+    time(&test_end);
+    test_duration = test_end - test_start;
+
+    gavgjitter /= test_loops-1;
+
+    fprintf(stderr,"RTSummary| actual test duration:\t%d\n", test_duration);
+    fprintf(stderr,"RTSummary| minimum jitter:\t%ld\n", gminjitter);
+    fprintf(stderr,"RTSummary| average jitter:\t%ld\n", gavgjitter);
+    fprintf(stderr,"RTSummary| maximum jitter:\t%ld\n", gmaxjitter);
+    fprintf(stderr,"RTSummary| overruns:\t%ld\n", goverrun);
+
     if (histogram_avg)	free(histogram_avg);
     if (histogram_max)	free(histogram_max);
     if (histogram_min)	free(histogram_min);
 
     fflush(stdout);
+    sleep(1);	// delay RTAI unload (which trumps flush)
 
     exit(0);
 }
 
 int main (int argc, char **argv)
-
 {
     int c, err;
 
@@ -245,7 +294,7 @@ int main (int argc, char **argv)
 
 	    case 'q':
 
-		quiet = 1;
+	        quiet = 1;
 		break;
 		
 	    default:
@@ -262,10 +311,12 @@ int main (int argc, char **argv)
 	    }
 
     if (!test_duration && quiet)
-	{
-	fprintf(stderr, "latency: -q only works if -T has been given.\n");
-	quiet = 0;
-	}
+       {
+       fprintf(stderr, "latency: -q only works if -T has been given.\n");
+       quiet = 0;
+       }
+
+    time(&test_start);
 
     histogram_avg = calloc(histogram_size, sizeof(long));
     histogram_max = calloc(histogram_size, sizeof(long));

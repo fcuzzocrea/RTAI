@@ -44,6 +44,7 @@ static inline void add_histogram (long *histogram, long addval)
 
 void latency (void *cookie)
 {
+    long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
     int err, count, nsamples;
     RTIME expected, period;
 
@@ -55,6 +56,7 @@ void latency (void *cookie)
 	return;
       }
 
+    overrun = 0;
     nsamples = ONE_BILLION / sampling_period;
     period = rt_timer_ns2ticks(sampling_period);
     expected = rt_timer_tsc();
@@ -68,9 +70,6 @@ void latency (void *cookie)
 
     for (;;)
       {
-	long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
-	overrun = 0;
-	
 	for (count = sumj = 0; count < nsamples; count++)
 	  {
 	    expected += period;
@@ -97,6 +96,9 @@ void latency (void *cookie)
 	  {
 	    add_histogram(histogram_max, maxj);
 	    add_histogram(histogram_min, minj);
+	    minj = TEN_MILLION;
+	    maxj = -TEN_MILLION;
+	    overrun = 0;
 	  }
     
 	minjitter = rt_timer_ticks2ns(minj);

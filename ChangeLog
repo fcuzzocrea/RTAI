@@ -1,4 +1,4 @@
-2004-10-09  Edelhard Becker <ebecker@software-manufaktur.de>
+2004-10-09  Ivan Raikov <raikov@cc.gatech.edu>
 
 	* rtai-core/scripts/rtai-load.in: Add support for user-defined
 	module search directory.

@@ -626,13 +626,21 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 #endif /* CONFIG_RTAI_HW_FPU */
 }
 
-void xnarch_sleep_on (int *flagp) {
+int xnarch_sleep_on (int *flagp) {
 
     while (!*flagp)
 	{
+#if !CONFIG_RTAI_OPT_DEBUG
 	set_current_state(TASK_UNINTERRUPTIBLE);
 	schedule_timeout(1);
+#else /* CONFIG_RTAI_OPT_DEBUG. */
+	set_current_state(TASK_INTERRUPTIBLE);
+	schedule_timeout(1);
+        if(signal_pending(current))
+            return -ERESTARTSYS;
+#endif /* !CONFIG_RTAI_OPT_DEBUG. */
 	}
+    return 0;
 }
 
 #ifdef CONFIG_SMP

@@ -3310,7 +3310,7 @@ int xnpod_calibrate_sched (void)
                        &flag);
 
     /* Wait for the calibration thread to finish. */
-    xnarch_sleep_on(&flag);
+    err = xnarch_sleep_on(&flag);
 
  unload_and_exit:
 

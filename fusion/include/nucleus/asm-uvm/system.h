@@ -656,7 +656,7 @@ static inline int xnarch_release_ipi (void) {
     return 0;
 }
 
-void xnarch_sleep_on (int *flagp)
+int xnarch_sleep_on (int *flagp)
 
 {
     while (!*flagp)
@@ -664,8 +664,14 @@ void xnarch_sleep_on (int *flagp)
 	struct timespec ts;
 	ts.tv_sec = 0;
 	ts.tv_nsec = 10000000;
+#if !CONFIG_RTAI_OPT_DEBUG
 	nanosleep(&ts,NULL);
+#else /* CONFIG_RTAI_OPT_DEBUG. */
+        if(nanosleep(&ts, NULL))
+            return -errno;
+#endif /* !CONFIG_RTAI_OPT_DEBUG. */
 	}
+    return 0;
 }
 
 static inline void xnarch_escalate (void) {

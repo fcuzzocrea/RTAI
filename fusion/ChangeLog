@@ -1,3 +1,30 @@
+2005-03-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r6c15.
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.9,10-i386-r9c6.
+
+	* skins/rtai: Use POSIXish priority range for tasks.
+
+2005-03-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* fusion: Use module_param[_named]() everywhere instead of the
+	deprecated MODULE_PARM() syntax so that we now have some
+	visibility upon the module parameters through sysfs.
+
+	* nucleus/shadow.c (xnshadow_renice): Fix call context.
+	(set_linux_task_priority): Use latest Adeos extension to change a
+	task priority instead of emulating an intra-kernel syscall to
+	sys_setscheduler.
+	(xnshadow_relax): Use the latest all-in-one Adeos extension to
+	reenter the root domain while updating the current task priority
+	if needed.
+
+2005-03-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/switch/switch.c (main): Fix error cases: send output
+	to stderr, return non-zero to the parent process.
+
 2005-03-08  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/syscall.h (__xn_exec_current): Add mode bit to

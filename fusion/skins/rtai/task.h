@@ -50,11 +50,9 @@
 #define T_HOOK_DELETE XNHOOK_THREAD_DELETE
 #define T_DESC(cookie) thread2rtask(cookie)
 
-/* Priority range (same bounds as fusion, but reversed). */
-#define T_HIPRIO  FUSION_LOW_PRIO
-#define T_LOPRIO  FUSION_HIGH_PRIO
-#define rtprio2xn(rtprio) (FUSION_HIGH_PRIO - (rtprio) + 1)
-#define xnprio2rt(xnprio) (T_LOPRIO + (xnprio) - 1)
+/* Priority range (POSIXish, same bounds as fusion). */
+#define T_LOPRIO  FUSION_LOW_PRIO
+#define T_HIPRIO  FUSION_HIGH_PRIO
 
 typedef struct rt_task_placeholder {
     rt_handle_t opaque;

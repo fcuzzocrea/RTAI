@@ -117,7 +117,8 @@ void __task_pkg_cleanup (void)
  * substituted. This parameter is ignored for user-space tasks.
  *
  * @param prio The base priority of the new thread. This value must
- * range from [1 .. 99] (inclusive) where 1 is the highest priority.
+ * range from [1 .. 99] (inclusive) where 1 is the lowest effective
+ * priority.
  *
  * @param mode The task creation mode. The following flags can be
  * OR'ed into this bitmask, each of them affecting the new task:
@@ -168,7 +169,7 @@ int rt_task_create (RT_TASK *task,
     xnflags_t bflags;
     spl_t s;
 
-    if (prio < T_HIPRIO || prio > T_LOPRIO)
+    if (prio < T_LOPRIO || prio > T_HIPRIO)
 	return -EINVAL;
 
     if (xnpod_asynch_p())
@@ -178,7 +179,7 @@ int rt_task_create (RT_TASK *task,
 
     if (xnpod_init_thread(&task->thread_base,
 			  name,
-			  rtprio2xn(prio),
+			  prio,
 			  bflags,
 			  stksize) != 0)
 	/* Assume this is the only possible failure. */
@@ -701,14 +702,14 @@ int rt_task_wait_period (void)
                                 int prio)
  * @brief Change the base priority of a real-time task.
  *
- * Changing the base priority does not affect the priority boost the
- * target task might have obtained as a consequence of a previous
- * priority inheritance.
+ * Changing the base priority of a task does not affect the priority
+ * boost the target task might have obtained as a consequence of a
+ * previous priority inheritance.
  *
  * @param task The descriptor address of the affected task.
  *
  * @param prio The new task priority. This value must range from [1
- * .. 99] (inclusive) where 1 is the highest priority.
+ * .. 99] (inclusive) where 1 is the lowest effective priority.
 
  * @return 0 is returned upon success. Otherwise:
  *
@@ -748,7 +749,7 @@ int rt_task_set_priority (RT_TASK *task,
     int oldprio;
     spl_t s;
 
-    if (prio < T_HIPRIO || prio > T_LOPRIO)
+    if (prio < T_LOPRIO || prio > T_HIPRIO)
 	return -EINVAL;
 
     if (!task)
@@ -769,9 +770,9 @@ int rt_task_set_priority (RT_TASK *task,
 	goto unlock_and_exit;
 	}
     
-    oldprio = xnprio2rt(xnthread_base_priority(&task->thread_base));
+    oldprio = xnthread_base_priority(&task->thread_base);
 
-    xnpod_renice_thread(&task->thread_base,rtprio2xn(prio));
+    xnpod_renice_thread(&task->thread_base,prio);
 
     xnpod_schedule();
 
@@ -1038,8 +1039,8 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
 	}
     
     strcpy(info->name,xnthread_name(&task->thread_base));
-    info->bprio = xnprio2rt(xnthread_base_priority(&task->thread_base));
-    info->cprio = xnprio2rt(xnthread_current_priority(&task->thread_base));
+    info->bprio = xnthread_base_priority(&task->thread_base);
+    info->cprio = xnthread_current_priority(&task->thread_base);
     info->status = xnthread_status_flags(&task->thread_base) & RT_TASK_STATUS_MASK;
     info->relpoint = xntimer_get_date(&task->timer);
 

@@ -266,10 +266,6 @@ unsigned long rthal_critical_enter(void (*synch)(void));
 
 void rthal_critical_exit(unsigned long flags);
 
-void rthal_set_linux_task_priority(struct task_struct *task,
-				   int policy,
-				   int prio);
-
 /* The following must be in sync w/ rthal_switch_context() in
    switch.S */
 #define RTHAL_SWITCH_FRAME_SIZE  108

@@ -1,9 +1,9 @@
 #include <rtai/task.h>
 #include <rtai/alarm.h>
 
-#define TASK_PRIO  0 /* Highest RT priority */
-#define TASK_MODE  0 /* No flags */
-#define TASK_STKSZ 0 /* Stack size (unused in user-space) */
+#define TASK_PRIO  99 /* Highest RT priority */
+#define TASK_MODE  0  /* No flags */
+#define TASK_STKSZ 0  /* Stack size (unused in user-space) */
 
 #define ALARM_VALUE    500000	/* First shot at now + 500 us */
 #define ALARM_INTERVAL 250000	/* Period is 250 us */

@@ -196,7 +196,7 @@ int main(int argc, char **argv)
        printf("== Sampling period: %llu us\n", sampling_period / 1000);
        printf("== Do not interrupt this program\n");
 
-       err = rt_task_create(&worker_task, "worker", 0, 2, T_FPU);
+       err = rt_task_create(&worker_task, "worker", 0, 98, T_FPU);
        if (err) {
                fprintf(stderr,"switch: failed to create worker task, code %d\n", err);
                return 1;
@@ -208,7 +208,7 @@ int main(int argc, char **argv)
                return 1;
        }
 
-       err = rt_task_create(&event_task, "event", 0, 1, 0);
+       err = rt_task_create(&event_task, "event", 0, 99, 0);
        if (err) {
                fprintf(stderr,"switch: failed to create event task, code %d\n", err);
                return 1;

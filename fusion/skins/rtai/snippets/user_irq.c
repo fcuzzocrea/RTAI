@@ -1,10 +1,10 @@
 #include <rtai/task.h>
 #include <rtai/intr.h>
 
-#define IRQ_NUMBER 7 /* Intercept interrupt #7 */
-#define TASK_PRIO  0 /* Highest RT priority */
-#define TASK_MODE  0 /* No flags */
-#define TASK_STKSZ 0 /* Stack size (unused in user-space) */
+#define IRQ_NUMBER 7  /* Intercept interrupt #7 */
+#define TASK_PRIO  99 /* Highest RT priority */
+#define TASK_MODE  0  /* No flags */
+#define TASK_STKSZ 0  /* Stack size (unused in user-space) */
 
 RT_INTR intr_desc;
 

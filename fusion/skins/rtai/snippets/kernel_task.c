@@ -1,6 +1,6 @@
 #include <rtai/task.h>
 
-#define TASK_PRIO  0               /* Highest RT priority */
+#define TASK_PRIO  99              /* Highest RT priority */
 #define TASK_MODE  T_FPU|T_CPU(0)  /* Uses FPU, bound to CPU #0 */
 #define TASK_STKSZ 4096            /* Stack size (in bytes) */
 

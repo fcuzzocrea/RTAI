@@ -1,8 +1,8 @@
 #include <rtai/task.h>
 
-#define TASK_PRIO  0 /* Highest RT priority */
-#define TASK_MODE  0 /* No flags */
-#define TASK_STKSZ 0 /* Stack size (unused in user-space) */
+#define TASK_PRIO  99 /* Highest RT priority */
+#define TASK_MODE  0  /* No flags */
+#define TASK_STKSZ 0  /* Stack size (unused in user-space) */
 
 RT_TASK task_desc;
 

@@ -334,10 +334,6 @@ unsigned long rthal_critical_enter(void (*synch)(void));
 
 void rthal_critical_exit(unsigned long flags);
 
-void rthal_set_linux_task_priority(struct task_struct *task,
-				   int policy,
-				   int prio);
-
 #endif /* __KERNEL__ && !__cplusplus */
 
     /* Public interface */

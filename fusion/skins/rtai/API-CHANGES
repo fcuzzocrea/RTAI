@@ -11,5 +11,10 @@ ___________________________________________________________________
 	make sure to lock the memory pages appropriately by
 	themselves (--rpm 2005-02-22).
 
+	o The RTAI skin now uses an increasing priority scale for
+	tasks which is the same as the Linux one for the SCHED_FIFO
+	scheduling class, i.e. 1 - 99 with 1 being the lowest
+	effective priority level (--rpm 2005-03-13).
+
 ___________________________________________________________________
 

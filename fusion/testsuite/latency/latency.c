@@ -193,7 +193,7 @@ int main (int argc, char **argv)
 
     mlockall(MCL_CURRENT|MCL_FUTURE);
 
-    err = rt_task_create(&display_task,"display",0,2,0);
+    err = rt_task_create(&display_task,"display",0,98,0);
 
     if (err)
 	{
@@ -209,7 +209,7 @@ int main (int argc, char **argv)
 	return 0;
 	}
 
-    err = rt_task_create(&latency_task,"sampling",0,1,T_FPU);
+    err = rt_task_create(&latency_task,"sampling",0,99,T_FPU);
 
     if (err)
 	{

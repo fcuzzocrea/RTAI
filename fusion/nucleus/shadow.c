@@ -593,11 +593,13 @@ void xnshadow_signal_completion (xncompletion_t __user *u_completion, int err)
     xnlock_put_irqrestore(&nklock,s);
 
     read_lock(&tasklist_lock);
+
     synctask = find_task_by_pid(pid);
-    read_unlock(&tasklist_lock);
 
     if (synctask)
 	wake_up_process(synctask);
+
+    read_unlock(&tasklist_lock);
 }
 
 static int xnshadow_wait_completion (xncompletion_t __user *u_completion)

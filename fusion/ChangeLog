@@ -3,7 +3,9 @@
 	* nucleus/shadow.c: Iron corner cases involving shadow termination
 	during transient states (e.g. wait on start barrier, primary mode
 	switch).
-	
+	(xnshadow_signal_completion): Keep the tasklist read locked across
+	the call to wake_up_process().
+
 	* nucleus/shadow.c (detach_from_interface): Remove unused
 	service. Global wipeout of all threads belonging to a skin should
 	be done at that skin's level.

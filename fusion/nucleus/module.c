@@ -272,9 +272,9 @@ static ssize_t iface_read_proc (char *page,
 				void *data)
 {
     struct xnskentry *iface = (struct xnskentry *)data;
-    int len;
+    int len, refcnt = xnarch_atomic_get(&iface->refcnt);
 
-    len = sprintf(page,"%d\n",xnarch_atomic_get(&iface->refcnt));
+    len = sprintf(page,"%d\n",refcnt < 0 ? 0 : refcnt);
     len -= off;
     if (len <= off + count) *eof = 1;
     *start = page + off;

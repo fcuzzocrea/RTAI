@@ -1516,26 +1516,6 @@ do { \
 	 "3" ((char *) (addr)),"2" (__KERNEL_CS << 16)); \
 } while (0)
 
-void rtai_linux_switch_mm (struct task_struct *prev,
-			   struct task_struct *next,
-			   int cpuid)
-{
-    struct mm_struct *oldmm = prev->active_mm;
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-    switch_mm(oldmm,next->active_mm,next,cpuid);
-#else /* >= 2.6.0 */
-    switch_mm(oldmm,next->active_mm,next);
-#endif /* < 2.6.0 */
-
-    if (!next->mm)
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	enter_lazy_tlb(oldmm,next,cpuid);
-#else /* >= 2.6.0 */
-	enter_lazy_tlb(oldmm,next);
-#endif /* < 2.6.0 */
-}
-
 static void rtai_install_archdep (void)
 
 {
@@ -1908,7 +1888,6 @@ EXPORT_SYMBOL(rt_set_ihook);
 EXPORT_SYMBOL(rt_mount);
 EXPORT_SYMBOL(rt_umount);
 
-EXPORT_SYMBOL(rtai_linux_switch_mm);
 EXPORT_SYMBOL(rtai_calibrate_8254);
 EXPORT_SYMBOL(rtai_broadcast_to_local_timers);
 EXPORT_SYMBOL(rtai_critical_enter);

@@ -543,10 +543,6 @@ static inline void rt_set_timer_delay (int delay) {
 
     /* Private interface -- Internal use only */
 
-void rtai_linux_switch_mm(struct task_struct *prev,
-			  struct task_struct *next,
-			  int cpuid);
-
 unsigned long rtai_critical_enter(void (*synch)(void));
 
 void rtai_critical_exit(unsigned long flags);

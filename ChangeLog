@@ -1,3 +1,13 @@
+2004-06-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/rtai/sched_lxrt.c (lxrt_context_switch): Use
+	arch-independent context switch routine.
+
+	* rtai-core/include/asm-i386/rtai_xeno.h (xnarch_switch_to):
+	Inline mm switch code.
+
+	* rtai-core/arch/i386/hal/hal.c: Discard rtai_linux_switch_mm().
+
 2004-06-07  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/sched/rtai/sched_lxrt.c: Intercept Linux syscalls

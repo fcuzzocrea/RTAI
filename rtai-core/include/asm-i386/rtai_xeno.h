@@ -299,7 +299,22 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
     in_tcb->active_task = inproc ?: outproc;
 
     if (inproc && inproc != outproc)
-	rtai_linux_switch_mm(outproc,inproc,0);
+	{
+	struct mm_struct *oldmm = outproc->active_mm;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	switch_mm(oldmm,inproc->active_mm,inproc,0);
+#else /* >= 2.6.0 */
+	switch_mm(oldmm,inproc->active_mm,inproc);
+#endif /* < 2.6.0 */
+
+	if (!inproc->mm)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	    enter_lazy_tlb(oldmm,inproc,0);
+#else /* >= 2.6.0 */
+	    enter_lazy_tlb(oldmm,inproc);
+#endif /* < 2.6.0 */
+	}
 
     __switch_threads(out_tcb,in_tcb,outproc,inproc);
 

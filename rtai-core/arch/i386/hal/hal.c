@@ -1409,8 +1409,6 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 	    goto endtrap;
 	    }
 
-#endif /* < 2.6.0 */
-
 #if ADEOS_RELEASE_NUMBER >= 0x02060601
 	if (evinfo->event == 14)	/* Page fault. */
 	    {
@@ -1443,6 +1441,8 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 	    goto endtrap;
 	}
 #endif /* ADEOS_RELEASE_NUMBER >= 0x02060601 */
+
+#endif /* < 2.6.0 */
 
     adeos_propagate_event(evinfo);
 

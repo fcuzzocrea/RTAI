@@ -263,7 +263,7 @@ int rt_uart_close (RT_UART *uart)
     /* Clear DTS/RTS. */
     outb(MCR_OP1|MCR_OP2,MCR(uart));
 
-    release_region(config->port.base,8);
+    release_region(uart->config.port.base,8);
 
     rt_sem_delete(&uart->o_pulse);
     rt_sem_delete(&uart->i_pulse);

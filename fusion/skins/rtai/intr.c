@@ -283,7 +283,7 @@ int rt_intr_inquire (RT_INTR *intr,
         goto unlock_and_exit;
         }
     
-    strcpy(info->name,sem->name);
+    strcpy(info->name,intr->name);
     info->nwaiters = xnsynch_nsleepers(&intr->synch_base);
     info->irq = intr->intr_base.irq;
 

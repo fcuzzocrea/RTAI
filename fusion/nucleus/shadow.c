@@ -172,7 +172,9 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 {
     if (testbits(thread->status,XNKICKED))
 	{
-	__xn_error_return(regs,-ERESTARTSYS);
+	if (__xn_interrupted_p(regs))
+	    __xn_error_return(regs,-ERESTARTSYS);
+
 	clrbits(thread->status,XNKICKED);
 	}
 

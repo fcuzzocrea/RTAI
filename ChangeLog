@@ -1,3 +1,7 @@
+2004-08-25  Ignacio García Pérez <iggarpe@terra.es>
+
+	* rtai-core/ipc/sem/sem.c: Dead code removal.
+
 2004-08-15  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Upgrade to hal14 final.

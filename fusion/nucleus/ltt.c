@@ -142,6 +142,7 @@ struct xnltt_evmap xnltt_evtable[] = {
     [rtai_ev_tmstart] = { "RTAI start timer", "tick=%u ns", -1, rtai_evall },
     [rtai_ev_tmstop] = { "RTAI stop timer", NULL, -1, rtai_evall },
     [rtai_ev_mark] = { "RTAI **mark**", "%s", -1, rtai_evall },
+    { NULL, NULL, -1, 0 },
 };
 
 int xnltt_filter = rtai_evall;

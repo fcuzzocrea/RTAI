@@ -50,6 +50,7 @@
 #define __RTAI_HAL__
 #include <asm/rtai_hal.h>
 #include <asm/rtai_lxrt.h>
+#include <asm/rtai_usi.h>
 #ifdef CONFIG_PROC_FS
 #include <linux/proc_fs.h>
 #include <rtai_proc_fs.h>
@@ -65,6 +66,7 @@ typedef void (*isr_hook_t)(int);
 struct {
     rt_irq_handler_t handler;
     void *cookie;
+    int retmode;
 }			rtai_realtime_irq[NR_IRQS]
 			__attribute__((__aligned__(L1_CACHE_BYTES)));
 adomain_t		rtai_domain;
@@ -464,13 +466,13 @@ rtai_irq_trampoline(unsigned irq)
 	adeos_declare_cpuid;
 	adeos_load_cpuid();
 	if (!rt_scheduling[cpuid].locked++)
-		rt_scheduling[cpuid].rqsted = 0;
+	    rt_scheduling[cpuid].rqsted = 0;
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 	rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 	if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked))
-		if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook)
-			rtai_isr_hook(cpuid);
+	    if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook)
+		rtai_isr_hook(cpuid);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 	}
     else

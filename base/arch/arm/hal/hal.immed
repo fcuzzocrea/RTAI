@@ -51,6 +51,7 @@
 #define __RTAI_HAL__
 #include <asm/rtai_hal.h>
 #include <asm/rtai_lxrt.h>
+#include <asm/rtai_usi.h>
 #ifdef CONFIG_PROC_FS
 #include <linux/proc_fs.h>
 #include <rtai_proc_fs.h>
@@ -66,6 +67,7 @@ typedef void (*isr_hook_t)(int);
 struct {
     rt_irq_handler_t handler;
     void *cookie;
+    int retmode;
 }			rtai_realtime_irq[NR_IRQS]
 			__attribute__((__aligned__(L1_CACHE_BYTES)));
 adomain_t		rtai_domain;
@@ -588,10 +590,16 @@ rt_set_trap_handler(RT_TRAP_HANDLER handler)
 #define RTAI_SCHED_ISR_UNLOCK() do { /* nop */ } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#define IN_ATOMIC()  (in_atomic())
+#else
+#define IN_ATOMIC()  (0)
+#endif
+
 static int
 rtai_irq_trampoline(int irq, struct pt_regs *regs)
 {
-    unsigned long lflags;
+    unsigned long root_status;
     int const cpuid = rtai_cpuid();
 
     ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled());
@@ -601,39 +609,36 @@ rtai_irq_trampoline(int irq, struct pt_regs *regs)
     if (!adeos_virtual_irq_p(irq))
 	irq = fixup_irq(irq);
 
-    lflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
     adp_root->irqs[irq].acknowledge(irq);
 
     if (rtai_realtime_irq[irq].handler) {
+	root_status = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 	RTAI_SCHED_ISR_LOCK();
 	rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 	rtai_cli();
 	RTAI_SCHED_ISR_UNLOCK();
+	adp_root->cpudata[cpuid].status = root_status;
     } else {
 	__adeos_pend_uncond(irq, cpuid);
+	root_status = adp_root->cpudata[cpuid].status;
     }
-    adp_root->cpudata[cpuid].status = lflags;
 
-    if (!test_bit(IPIPE_STALL_FLAG, &lflags)) {
+    if (!test_bit(IPIPE_STALL_FLAG, &root_status) && !IN_ATOMIC()) {
 	ADEOS_PARANOIA_ASSERT(adp_cpu_current[cpuid] == adp_root);
 	if (irq == RTAI_TIMER_IRQ) {
 	    __adeos_irq_regs.ARM_cpsr = regs->ARM_cpsr;
 	    __adeos_irq_regs.ARM_pc = regs->ARM_pc;
 	}
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-	if (!in_atomic())
-#endif
-	{
-	    if (adp_root->cpudata[cpuid].irq_pending_hi != 0)
-		__adeos_sync_stage(IPIPE_IRQMASK_ANY);
-	    TRACE_RTAI_GLOBAL_IRQ_EXIT();
-	    /* ipipe is unstalled, current domain is Linux -> do slow return from irq */
-	    return 1;
-	}
+	if (adp_root->cpudata[cpuid].irq_pending_hi != 0)
+	    __adeos_sync_stage(IPIPE_IRQMASK_ANY);
+	TRACE_RTAI_GLOBAL_IRQ_EXIT();
+	/* ipipe is unstalled, current domain is Linux and not in atomic
+	 * -> do slow return from irq */
+	return 1;
     }
 
     TRACE_RTAI_GLOBAL_IRQ_EXIT();
-    /* ipipe is stalled or stage was not synced -> do fast return from irq
+    /* ipipe is stalled or in atomic -> do fast return from irq
      * (current domain doesn't matter) */
     return 0;
 }

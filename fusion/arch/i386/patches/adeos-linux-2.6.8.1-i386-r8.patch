@@ -210,9 +210,9 @@ diff -uNrp linux-2.6.8.1/Makefile linux-2.6.8.1-adeos/Makefile
  		     $(net-y) $(net-m) $(libs-y) $(libs-m)))
 diff -uNrp linux-2.6.8.1/adeos/Kconfig linux-2.6.8.1-adeos/adeos/Kconfig
 --- linux-2.6.8.1/adeos/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.8.1-adeos/adeos/Kconfig	2004-10-17 18:36:13.000000000 +0200
-@@ -0,0 +1,24 @@
-+menu "Adeos support"
++++ linux-2.6.8.1-adeos/adeos/Kconfig	2004-11-15 15:57:17.000000000 +0100
+@@ -0,0 +1,22 @@
++menu "Adeos"
 +
 +config ADEOS
 +	tristate "Adeos support"
@@ -222,12 +222,10 @@ diff -uNrp linux-2.6.8.1/adeos/Kconfig linux-2.6.8.1-adeos/adeos/Kconfig
 +	  compiled in.
 +
 +config ADEOS_CORE
-+	bool
-+	depends on ADEOS
-+	default y
++	def_bool ADEOS
 +
 +config ADEOS_PROFILING
-+	bool "Adeos pipeline profiling"
++	bool "Pipeline profiling"
 +	depends on ADEOS
 +	default n
 +	---help---
@@ -2930,8 +2928,8 @@ diff -uNrp linux-2.6.8.1/arch/i386/kernel/entry.S linux-2.6.8.1-adeos/arch/i386/
  	jne device_not_available_emulate
 diff -uNrp linux-2.6.8.1/arch/i386/kernel/i386_ksyms.c linux-2.6.8.1-adeos/arch/i386/kernel/i386_ksyms.c
 --- linux-2.6.8.1/arch/i386/kernel/i386_ksyms.c	2004-08-14 12:56:23.000000000 +0200
-+++ linux-2.6.8.1-adeos/arch/i386/kernel/i386_ksyms.c	2004-11-13 16:34:12.000000000 +0100
-@@ -36,6 +36,50 @@
++++ linux-2.6.8.1-adeos/arch/i386/kernel/i386_ksyms.c	2004-11-19 19:07:25.000000000 +0100
+@@ -36,6 +36,52 @@
  extern void dump_thread(struct pt_regs *, struct user *);
  extern spinlock_t rtc_lock;
  
@@ -2940,6 +2938,8 @@ diff -uNrp linux-2.6.8.1/arch/i386/kernel/i386_ksyms.c linux-2.6.8.1-adeos/arch/
 +EXPORT_SYMBOL(__adeos_irq_trampolines);
 +#ifdef CONFIG_SMP
 +EXPORT_SYMBOL(__adeos_set_irq_affinity);
++#include <mach_ipi.h>
++EXPORT_SYMBOL(send_IPI_mask_bitmask);
 +#endif /* CONFIG_SMP */
 +#ifdef CONFIG_ADEOS_MODULE
 +#ifdef CONFIG_X86_LOCAL_APIC
@@ -3546,47 +3546,46 @@ diff -uNrp linux-2.6.8.1/arch/i386/kernel/time.c linux-2.6.8.1-adeos/arch/i386/k
  
 diff -uNrp linux-2.6.8.1/arch/i386/kernel/timers/timer_pit.c linux-2.6.8.1-adeos/arch/i386/kernel/timers/timer_pit.c
 --- linux-2.6.8.1/arch/i386/kernel/timers/timer_pit.c	2004-08-14 12:56:00.000000000 +0200
-+++ linux-2.6.8.1-adeos/arch/i386/kernel/timers/timer_pit.c	2004-09-03 15:03:12.000000000 +0200
-@@ -98,6 +98,10 @@ static unsigned long get_offset_pit(void
- 	unsigned long jiffies_t;
- 
- 	spin_lock_irqsave(&i8253_lock, flags);
++++ linux-2.6.8.1-adeos/arch/i386/kernel/timers/timer_pit.c	2004-11-19 17:37:20.000000000 +0100
+@@ -89,6 +89,9 @@ static void delay_pit(unsigned long loop
+ static unsigned long get_offset_pit(void)
+ {
+ 	int count;
 +#ifdef CONFIG_ADEOS_CORE
-+ 	jiffies_t = jiffies;
-+	count = LATCH - 1;
++	count = 0;
 +#else /* !CONFIG_ADEOS_CORE */
- 	/* timer count may underflow right here */
- 	outb_p(0x00, PIT_MODE);	/* latch the count ASAP */
+ 	unsigned long flags;
+ 	static unsigned long jiffies_p = 0;
  
-@@ -118,6 +122,7 @@ static unsigned long get_offset_pit(void
-                 outb(LATCH >> 8, PIT_CH0);
-                 count = LATCH - 1;
-         }
+@@ -142,6 +145,7 @@ static unsigned long get_offset_pit(void
+ 
+ 	count = ((LATCH-1) - count) * TICK_SIZE;
+ 	count = (count + LATCH/2) / LATCH;
 +#endif /* CONFIG_ADEOS_CORE */
- 	
- 	/*
- 	 * avoiding timer inconsistencies (they are rare, but they happen)...
+ 
+ 	return count;
+ }
 diff -uNrp linux-2.6.8.1/arch/i386/kernel/timers/timer_tsc.c linux-2.6.8.1-adeos/arch/i386/kernel/timers/timer_tsc.c
 --- linux-2.6.8.1/arch/i386/kernel/timers/timer_tsc.c	2004-08-14 12:55:47.000000000 +0200
-+++ linux-2.6.8.1-adeos/arch/i386/kernel/timers/timer_tsc.c	2004-09-03 15:03:46.000000000 +0200
-@@ -345,6 +345,9 @@ static void mark_offset_tsc(void)
++++ linux-2.6.8.1-adeos/arch/i386/kernel/timers/timer_tsc.c	2004-11-19 17:37:50.000000000 +0100
+@@ -319,6 +319,9 @@ static inline void cpufreq_delayed_get(v
  
- 	rdtsc(last_tsc_low, last_tsc_high);
- 
+ static void mark_offset_tsc(void)
+ {
 +#ifdef CONFIG_ADEOS_CORE
-+	count = LATCH - 1;
++	rdtsc(last_tsc_low, last_tsc_high);
 +#else /* !CONFIG_ADEOS_CORE */
- 	spin_lock(&i8253_lock);
- 	outb_p(0x00, PIT_MODE);     /* latch the count ASAP */
- 
-@@ -363,6 +366,7 @@ static void mark_offset_tsc(void)
- 	}
- 
- 	spin_unlock(&i8253_lock);
+ 	unsigned long lost,delay;
+ 	unsigned long delta = last_tsc_low;
+ 	int count;
+@@ -427,6 +430,7 @@ static void mark_offset_tsc(void)
+ 	 */
+ 	if (lost && abs(delay - delay_at_last_interrupt) > (900000/HZ))
+ 		jiffies_64++;
 +#endif /* CONFIG_ADEOS_CORE */
+ }
  
- 	if (pit_latch_buggy) {
- 		/* get center value of last 3 time lutch */
+ static int __init init_tsc(char* override)
 diff -uNrp linux-2.6.8.1/arch/i386/kernel/traps.c linux-2.6.8.1-adeos/arch/i386/kernel/traps.c
 --- linux-2.6.8.1/arch/i386/kernel/traps.c	2004-08-14 12:54:51.000000000 +0200
 +++ linux-2.6.8.1-adeos/arch/i386/kernel/traps.c	2004-08-15 12:41:47.000000000 +0200
@@ -3664,8 +3663,8 @@ diff -uNrp linux-2.6.8.1/arch/i386/mm/fault.c linux-2.6.8.1-adeos/arch/i386/mm/f
  
 diff -uNrp linux-2.6.8.1/include/asm-i386/adeos.h linux-2.6.8.1-adeos/include/asm-i386/adeos.h
 --- linux-2.6.8.1/include/asm-i386/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.8.1-adeos/include/asm-i386/adeos.h	2004-11-10 18:11:37.000000000 +0100
-@@ -0,0 +1,491 @@
++++ linux-2.6.8.1-adeos/include/asm-i386/adeos.h	2004-11-19 17:38:54.000000000 +0100
+@@ -0,0 +1,492 @@
 +/*
 + *   include/asm-i386/adeos.h
 + *
@@ -3696,9 +3695,9 @@ diff -uNrp linux-2.6.8.1/include/asm-i386/adeos.h linux-2.6.8.1-adeos/include/as
 +#include <linux/list.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r8c7/x86"
++#define ADEOS_ARCH_STRING     "r8/x86"
 +#define ADEOS_MAJOR_NUMBER     8
-+#define ADEOS_MINOR_NUMBER     7
++#define ADEOS_MINOR_NUMBER     255
 +
 +extern int adp_pipelined;
 +
@@ -3897,13 +3896,14 @@ diff -uNrp linux-2.6.8.1/include/asm-i386/adeos.h linux-2.6.8.1-adeos/include/as
 +
 +#define __adeos_unlock_irq(adp,irq) \
 +do { \
-+    int __cpuid, __nr_cpus = num_online_cpus();			       \
-+    if (test_and_clear_bit(IPIPE_LOCK_FLAG,&(adp)->irqs[irq].control)) \
++    if (test_and_clear_bit(IPIPE_LOCK_FLAG,&(adp)->irqs[irq].control)) { \
++        int __cpuid, __nr_cpus = num_online_cpus();	      \
 +	for (__cpuid = 0; __cpuid < __nr_cpus; __cpuid++)      \
 +         if ((adp)->cpudata[__cpuid].irq_hits[irq] > 0) { /* We need atomic ops next. */ \
 +           set_bit(irq & IPIPE_IRQ_IMASK,&(adp)->cpudata[__cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
 +           set_bit(irq >> IPIPE_IRQ_ISHIFT,&(adp)->cpudata[__cpuid].irq_pending_hi); \
-+         } \
++        } \
++    } \
 +} while(0)
 +
 +#define __adeos_clear_irq(adp,irq) \

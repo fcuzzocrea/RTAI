@@ -1263,7 +1263,7 @@ RTIME count2nano(RTIME counts)
 {
 	int sign;
 
-	if (counts > 0) {
+	if (counts >= 0) {
 		sign = 1;
 	} else {
 		sign = 0;
@@ -1303,7 +1303,7 @@ RTIME nano2count(RTIME ns)
 {
 	int sign;
 
-	if (ns > 0) {
+	if (ns >= 0) {
 		sign = 1;
 	} else {
 		sign = 0;

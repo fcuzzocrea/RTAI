@@ -858,14 +858,9 @@ void xnshadow_renice (xnthread_t *thread)
 {
   /* Called with nklock locked, RTAI interrupts off. */
 
-  struct task_struct *task = xnthread_archtcb(thread)->user_task;
-
-  if (xnpod_root_p())
-    {
-      rthal_set_linux_task_priority(task,SCHED_FIFO,thread->cprio);
-      
-      if (current == task && thread->cprio != xnpod_current_root()->cprio)
-	xnpod_renice_root(thread->cprio);
+    if (xnpod_root_p()) {
+	struct task_struct *task = xnthread_archtcb(thread)->user_task;
+	rthal_set_linux_task_priority(task,SCHED_FIFO,thread->cprio);
     }
 }
 
@@ -1686,7 +1681,11 @@ static void linux_kick_process (adevinfo_t *evinfo)
 static void linux_renice_process (adevinfo_t *evinfo)
 
 {
-    struct { struct task_struct *task; int policy; struct sched_param *param; } *evdata;
+    struct {
+	struct task_struct *task;
+	int policy;
+	struct sched_param *param;
+    } *evdata;
     xnthread_t *thread;
 
     evdata = (__typeof(evdata))evinfo->evdata;
@@ -1704,9 +1703,14 @@ static void linux_renice_process (adevinfo_t *evinfo)
 
     adeos_propagate_event(evinfo);
 
-    xnpod_renice_thread_inner(thread,evdata->param->sched_priority,0);
+    if (thread->cprio != evdata->param->sched_priority)
+	xnpod_renice_thread_inner(thread,evdata->param->sched_priority,0);
 
-    xnpod_schedule();
+    if (current == evdata->task && thread->cprio != xnpod_current_root()->cprio)
+	xnpod_renice_root(thread->cprio);
+
+    if (xnsched_resched_p())
+	xnpod_schedule();
 }
 
 /*

@@ -47,13 +47,65 @@ randomly. Of course, if your application only operates in primary mode
 during all of its time critical duties, it will not be adversely
 affected by DMA deactivation or IDE masking, since activities from the
 RTAI domain can preempt any activity from the Linux domain, including
-disk drivers.
+disk drivers. When enabling DMA for disks, be prepared for interrupt
+latencies of around 80 micro-seconds.
 
 ______________________________________________________________________
 
 
                              x86
+
 ======================================================================
+
+Q: When inserting rtai_hal.ko, I get a message in the console saying :
+"RTAI[hal]: Intel chipset found and SMI workaround not enabled, you 
+may encounter high interrupt latencies."
+
+What should I do ?
+
+First you should run the latency test under some load and see if you
+experience any high latency ("high" meaning more than, say, 100 
+micro-seconds). If you do not observe any such latency, then this
+warning is harmless, and if you find it annoying, you may disable "SMI 
+detection" in RTAI configuration menu. You can skip the rest of this
+section.
+
+If you observe any high latency then you have a problem with SMI, and
+this warning was intended for you. But the RTAI configuration menu 
+allow you to enable two workarounds which may help you. These 
+workarounds may be found in the Machine/SMI workaround sub-menu of 
+RTAI configuration menu.
+
+The first workaround which you should try is to disable all SMI 
+sources. In order to do this, in the RTAI configuration menu, select 
+the options "Enable SMI workaround" and "Globally disable SMI". This 
+option is the safest workaround, because when enabled, no SMI can 
+steal your precious CPU time behind your back and cause high latencies.
+Once this workaround enabled, you should run the latency test again, 
+verify that your high latency disappeared but most importantly, verify 
+that every peripheral you intend to use with RTAI is working properly. 
+If everything is working properly, then you are done with SMI.
+
+If some perihperal is not working properly, then it probably needs 
+SMI, in which case you can not simply disable SMI globally, you will 
+need to disable all SMI sources on your system except the SMI needed 
+by your peripheral. This is a much less safe choice, since RTAI has 
+to know all SMI sources to disable them, one by one. In order to 
+choose this second workaround, unselect the option "Globally disable 
+SMI", and select the option corresponding to your peripheral. For 
+example, if you need legacy USB emulation to get your USB mouse 
+working, select the option "Enable legacy USB emulation". You should 
+then run the latency test again and verify that you do not observe 
+any high latency and that all your peripherals are functioning 
+correctly. If you can not find your peripheral in the list proposed 
+by RTAI configuration menu, drop a mail to RTAI mailing list, we will 
+try and add an option for you. If when running latency again, your 
+peripheral is working properly and you still observe high latencies, 
+then you are out of luck, the peripheral you want is the cause of 
+your high latency.
+
+______________________________________________________________________
+
 
                            PowerPC
 

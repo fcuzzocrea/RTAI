@@ -1,3 +1,16 @@
+2005-03-24  Jim Cromie <jcromie@divsol.com>
+
+	* testsuite/klatency/latency.c, testsuite/latency/latency.c:
+	Various user-level improvements including histogram dump for
+	kernel space latency test.
+
+2005-03-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/heap.c (__va_to_kva): Provide support for PAE.
+
+	* include/nucleus/asm-i386/system.h (xnarch_restore_fpu): Use
+	tsk_used_math() macro when defined (2.6.11 and above).
+
 2005-03-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_schedule, xnpod_schedule_runnable): Get rid

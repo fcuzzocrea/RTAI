@@ -22,7 +22,8 @@ long minjitter = TEN_MILLION,
      overrun = 0;
 
 int sampling_period = 0;
-int test_duration = 0;		// sec of testing = 60 * -T <min>, 0 is inf
+int test_duration = 0;		/* sec of testing = 60 * -T <min>, 0 is inf */
+int data_lines = 21;		/* lines of data per header line */
 
 #define MEASURE_PERIOD ONE_BILLION
 #define SAMPLE_COUNT (MEASURE_PERIOD / sampling_period)
@@ -50,8 +51,8 @@ void latency (void *cookie)
     err = rt_timer_start(TM_ONESHOT);
 
     if (err)
-	{
-	printf("latency: cannot start timer, code %d\n",err);
+        {
+	fprintf(stderr,"latency: cannot start timer, code %d\n",err);
 	return;
 	}
 
@@ -62,7 +63,7 @@ void latency (void *cookie)
 
     if (err)
 	{
-	printf("latency: failed to set periodic, code %d\n",err);
+	fprintf(stderr,"latency: failed to set periodic, code %d\n",err);
 	return;
 	}
 
@@ -101,13 +102,13 @@ void display (void *cookie)
 
 {
     int err;
-	int n = 0;
+    int n = 0;
 
     err = rt_sem_create(&display_sem,"dispsem",0,S_FIFO);
 
     if (err)
 	{
-        printf("latency: cannot create semaphore: %s\n",strerror(-err));
+        fprintf(stderr,"latency: cannot create semaphore: %s\n",strerror(-err));
 	return;
 	}
 
@@ -118,12 +119,12 @@ void display (void *cookie)
 	if (err)
 	    {
 	    if (err != -EIDRM)
-		printf("latency: failed to pend on semaphore, code %d\n",err);
+		fprintf(stderr,"latency: failed to pend on semaphore, code %d\n",err);
 
 	    rt_task_delete(NULL);
 	    }
 
-	if ((n++ % 21)==0)
+	if (data_lines && (n++ % data_lines)==0)
 	    printf("RTH|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","overrun");
 
 	printf("RTD|%12ld|%12ld|%12ld|%12ld\n",
@@ -137,26 +138,31 @@ void display (void *cookie)
 void dump_histogram (void)
 
 {
-    int n;
+    int n, total_hits = 0;
   
     for (n = 0; n < HISTOGRAM_CELLS; n++)
-	{
+        {
 	long hits = histogram[n];
 
-	if (hits)
-	    fprintf(stderr,"%d - %d us: %ld\n",n,n + 1,hits);
+	if (hits) {
+	    fprintf(stderr,"HSD|%3d-%3d|%ld\n",n,n + 1,hits);
+	    total_hits += hits;
 	}
+    }
+    fprintf(stderr,"HST|%d\n",total_hits);
 }
 
 void cleanup_upon_sig(int sig __attribute__((unused)))
 
 {
     rt_timer_stop();
-    finished = 1;
     rt_sem_delete(&display_sem);
+    finished = 1;
 
     if (do_histogram)
 	dump_histogram();
+
+    fflush(stdout);
 
     exit(0);
 }
@@ -164,13 +170,12 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
 int main (int argc, char **argv)
 
 {
-    int err, c;
+    int c, err;
 
-    while ((c = getopt(argc,argv,"hHp:T:")) != EOF)
+    while ((c = getopt(argc,argv,"hp:l:T:")) != EOF)
 	switch (c)
 	    {
 	    case 'h':
-	    case 'H':
 		/* ./latency --h[istogram] */
 		do_histogram = 1;
 		break;
@@ -180,6 +185,11 @@ int main (int argc, char **argv)
 		sampling_period = atoi(optarg) * 1000;
 		break;
 
+	    case 'l':
+
+		data_lines = atoi(optarg);
+		break;
+		
 	    case 'T':
 
 		test_duration = atoi(optarg) * 60;
@@ -188,9 +198,11 @@ int main (int argc, char **argv)
 
 	    default:
 		
-		fprintf(stderr,"usage: latency [-h]"
-			" [-p <period_us>]"
-			" [-T <test_duration_minutes>]\n");
+		fprintf(stderr, "usage: latency [options]\n"
+			"  [-h]				# print histogram of scheduling latency\n"
+			"  [-p <period_us>]		# sampling period\n"
+			"  [-l <data-lines per header>]	# default=21, 0 to supress headers\n"
+			"  [-T <test_duration_minutes>]	# default=0, so ^C to end\n");
 		exit(2);
 	    }
 
@@ -212,7 +224,7 @@ int main (int argc, char **argv)
 
     if (err)
 	{
-	printf("latency: failed to create display task, code %d\n",err);
+	fprintf(stderr,"latency: failed to create display task, code %d\n",err);
 	return 0;
 	}
 
@@ -220,7 +232,7 @@ int main (int argc, char **argv)
 
     if (err)
 	{
-	printf("latency: failed to start display task, code %d\n",err);
+	fprintf(stderr,"latency: failed to start display task, code %d\n",err);
 	return 0;
 	}
 
@@ -228,7 +240,7 @@ int main (int argc, char **argv)
 
     if (err)
 	{
-	printf("latency: failed to create latency task, code %d\n",err);
+	fprintf(stderr,"latency: failed to create latency task, code %d\n",err);
 	return 0;
 	}
 
@@ -236,7 +248,7 @@ int main (int argc, char **argv)
 
     if (err)
 	{
-	printf("latency: failed to start latency task, code %d\n",err);
+	fprintf(stderr,"latency: failed to start latency task, code %d\n",err);
 	return 0;
 	}
 
@@ -244,3 +256,4 @@ int main (int argc, char **argv)
 
     return 0;
 }
+

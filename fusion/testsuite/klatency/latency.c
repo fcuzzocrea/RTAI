@@ -3,7 +3,49 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <signal.h>
+#include <getopt.h>
 #include "latency.h"
+
+#define HISTOGRAM_CELLS 200
+unsigned long histogram[HISTOGRAM_CELLS];
+
+int do_histogram = 0, finished = 0;
+
+static inline void add_histogram (long addval)
+{
+    /* us steps */
+    long inabs = (addval >= 0 ? addval : -addval) / 10;
+    histogram[inabs < HISTOGRAM_CELLS ? inabs : HISTOGRAM_CELLS-1]++;
+}
+
+void dump_histogram (void)
+{
+    int n, total_hits = 0;
+  
+    for (n = 0; n < HISTOGRAM_CELLS; n++) {
+
+	long hits = histogram[n];
+	
+	if (hits) {
+	    fprintf(stderr,"HSD|%3d-%3d|%ld\n",n,n + 1,hits);
+	    total_hits += hits;
+	}
+    }
+    fprintf(stderr,"HST|%d\n",total_hits);
+}
+
+
+void cleanup_upon_sig(int sig __attribute__((unused)))
+{
+    finished = 1;
+
+    if (do_histogram)
+	dump_histogram();
+
+    fflush(stdout);	/* finish histogram before unloading modules */
+    exit(0);
+}
 
 int main (int argc, char **argv)
 
@@ -12,8 +54,41 @@ int main (int argc, char **argv)
     struct rtai_latency_stat s;
     ssize_t sz;
     int n = 0;
-    int fd;
-    
+    int c, fd, err;
+    int data_lines = 21;
+
+    while ((c = getopt(argc,argv,"hl:T:")) != EOF)
+	switch (c)
+	    {
+	    case 'h':
+		/*./klatency --h[istogram] */
+		do_histogram = 1;
+		break;
+		
+	    case 'l':
+
+		data_lines = atoi(optarg);
+		break;
+		
+	    case 'T':
+
+		alarm(atoi(optarg) * 60);
+		break;
+		
+	    default:
+		
+		fprintf(stderr, "usage: klatency [options]\n"
+			"  [-h]				# prints histogram of latencies\n"
+			"  [-l <data-lines per header>]	# default=21, 0 supresses header\n"
+			"  [-T <minutes_to_test>]	# default=0, so ^C to end\n");
+		exit(2);
+	    }
+
+    signal(SIGINT, cleanup_upon_sig);
+    signal(SIGTERM, cleanup_upon_sig);
+    signal(SIGHUP, cleanup_upon_sig);
+    signal(SIGALRM, cleanup_upon_sig);
+
     setlinebuf(stdout);
     
     fd = open(communication_channel, O_RDWR);
@@ -37,7 +112,10 @@ int main (int argc, char **argv)
             exit(1);
             }
 
-        if ((n++ % 21)==0)
+	if (do_histogram && !finished)
+	    add_histogram(s.maxjitter);
+
+        if (data_lines && (n++ % data_lines)==0)
             printf("RTH|%12s|%12s|%12s|%12s\n", "jit min","jit avg","jit max","overrun");
 
         printf("RTD|%12d|%12d|%12d|%12d\n",
@@ -46,6 +124,10 @@ int main (int argc, char **argv)
                s.maxjitter,
                s.overrun);
         }
-
+    if ((err = close(fd))) {
+	perror("close");
+	exit(1);
+    }
     return 0;
 }
+

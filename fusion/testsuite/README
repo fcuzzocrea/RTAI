@@ -42,8 +42,11 @@ user-space.
    to perform every system call issued by RTAI-enabled Linux tasks
    from the proper execution context.
 
-   Type ./run to start the test, and ^C to stop it.
+   To run the test interactively, type ./run, and ^C to stop it. 
 
+   To run in batch mode, invoke it as follows:
+	./run -- -T 30	# run for 30 minutes
+	
 3. klatency/
 
    This test has the very same logic than the latency/ one, but runs
@@ -57,7 +60,17 @@ user-space.
    allowing real-time threads in kernel space to exchange messages or
    byte streams with regular Linux tasks.
 
-   Type ./run to start the test, and ^C to stop it.
+   To run the test interactively, type ./run, and ^C to stop it. 
+
+   To run in batch mode, invoke it as follows:
+	./run -- -T 30	# run for 30 minutes
 
    In order to run this test properly, make sure that the special
    devices /dev/rtp* exist, with major 150 and minors 0-31.
+
+Notes:
+
+   all tests are run from their respective directories,
+   ex: cd $instdir/testsuite/latency; ./run
+
+   As ever, invoke them with a bogus option (ex -?) to see current list

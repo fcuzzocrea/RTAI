@@ -86,6 +86,7 @@ struct klist_t wake_up_srq;
 
 /* +++++++++++++++ END OF WHAT MUST BE AVAILABLE EVERYWHERE +++++++++++++++++ */
 
+static int sched_locked[NR_RT_CPUS];
 static int sched_rqsted[NR_RT_CPUS];
 
 static int rt_smp_linux_cr0[NR_RT_CPUS];
@@ -734,7 +735,7 @@ void rt_schedule_on_schedule_ipi(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (new_task != rt_current) {
+	if (!sched_locked[cpuid] && new_task != rt_current) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;
@@ -838,7 +839,7 @@ void rt_schedule(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (new_task != rt_current) {
+	if (!sched_locked[cpuid] && new_task != rt_current) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;
@@ -930,16 +931,12 @@ ret:	task = &rt_linux_task;
 
 void rt_sched_lock(void)
 {
-	DECLARE_RT_CURRENT;
 	unsigned long flags;
+	int cpuid;
 
 	flags = rt_global_save_flags_and_cli();
-	ASSIGN_RT_CURRENT;
-	if (rt_current->priority >= 0) {
-		rt_current->sched_lock_priority = rt_current->priority;
-		sched_rqsted[cpuid] = rt_current->priority = -1;
-	} else {
-		rt_current->priority--;
+	if (!sched_locked[cpuid = hard_cpu_id()]++) {
+		sched_rqsted[cpuid] = 0;
 	}
 	rt_global_restore_flags(flags);
 }
@@ -947,21 +944,15 @@ void rt_sched_lock(void)
 
 void rt_sched_unlock(void)
 {
-	DECLARE_RT_CURRENT;
 	unsigned long flags;
+	int cpuid;
 
 	flags = rt_global_save_flags_and_cli();
-	ASSIGN_RT_CURRENT;
-	if (rt_current->priority < 0 && !(++rt_current->priority)) {
-		if ((rt_current->priority = rt_current->sched_lock_priority) != RT_SCHED_LINUX_PRIORITY) {
-			(rt_current->rprev)->rnext = rt_current->rnext;
-			(rt_current->rnext)->rprev = rt_current->rprev;
-			enq_ready_task(rt_current);
-		}
-		if (sched_rqsted[cpuid] > 0) {
-			rt_schedule();
-		}
-	}
+        if (sched_locked[cpuid = hard_cpu_id()] && !(--sched_locked[cpuid])) {
+                if (sched_rqsted[cpuid] > 0) {
+                        rt_schedule();
+                }
+        }
 	rt_global_restore_flags(flags);
 }
 
@@ -1129,7 +1120,7 @@ static void rt_timer_handler(void)
 	}
 	sched_release_global_lock(cpuid);
 
-	if (new_task != rt_current) {
+	if (!sched_locked[cpuid] && new_task != rt_current) {
 		if (USE_RTAI_TASKS && (!new_task->lnxtsk || !rt_current->lnxtsk)) {
 			if (!(new_task = switch_rtai_tasks(rt_current, new_task, cpuid))) {
 				goto sched_exit;

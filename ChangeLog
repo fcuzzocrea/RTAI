@@ -3,6 +3,9 @@
 	* rtai-core/malloc/malloc.c: fixed a memory leak when using kmalloc
 	with more than one extension.
 
+	* rtai-core/sched/rtai/sched_lxrt.c and rtai-core/netrpc/netrpc.c: 
+	reinstalled a single mode to treat syscalls in hard mode.
+
 2004-10-22  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* rtai-core/include/asm-i386/rtai_sched.h: macro init_fp_env 

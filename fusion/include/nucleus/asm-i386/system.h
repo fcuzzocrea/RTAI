@@ -473,8 +473,25 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
     /* If TS was set for the restored user-space thread, set it
        back. */
 
-    if (out_tcb->user_task && (cr0 & 0x8) != 0)
-	stts();
+    if (out_tcb->user_task)
+        {
+        /* If TS was set for the restored user-space thread, set it
+           back. */
+
+        if ((cr0 & 0x8) != 0)
+            {
+            /* Braces needed around stts(). */
+            stts();
+            }
+        else
+            clts();
+        }
+    else
+        {
+        /* When switching to a kernel thread unconditionnaly set the
+	   TS bit. */
+        stts();
+        }
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
@@ -493,6 +510,8 @@ static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
 
     if (!tcb->user_task) /* __switch_to() will take care otherwise. */
 	{
+        clts();
+
 	if (cpu_has_fxsr)
 	    __asm__ __volatile__ ("fxsave %0; fnclex" : "=m" (*tcb->fpup));
 	else
@@ -558,6 +577,10 @@ asmlinkage static void xnarch_thread_redirect (struct xnthread *self,
 					       void(*entry)(void *),
 					       void *cookie)
 {
+#ifdef CONFIG_RTAI_HW_FPU
+    /* xnpod_welcome_thread() will do clts() if needed. */
+    stts();
+#endif /* CONFIG_RTAI_HW_FPU */
     rthal_local_irq_restore(!!imask);
     xnpod_welcome_thread(self);
     entry(cookie);

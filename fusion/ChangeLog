@@ -1,3 +1,8 @@
+2004-08-04  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i386/system.h: Fix FPU support for
+	kernel-based threads.
+
 2004-08-03  Marc Kleine-Budde <kleine-budde@gmx.de>
 
 	* nucleus/pod.c (xnpod_trap_fault): Ensure that faults over IRQs

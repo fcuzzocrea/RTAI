@@ -37,7 +37,7 @@ void rt_set_sched_policy(RT_TASK *task, int policy, int rr_quantum_ns)
 		task->rr_quantum = nano2count_cpuid(rr_quantum_ns, task->runnable_on_cpus);
 		if ((task->rr_quantum & 0xF0000000) || !task->rr_quantum) {
 #ifdef CONFIG_SMP
-			task->rr_quantum = sqilter ? rt_smp_times[task->runnable_on_cpus].linux_tick : rt_times.linux_tick;
+			task->rr_quantum = rt_smp_times[task->runnable_on_cpus].linux_tick;
 #else
 			task->rr_quantum = rt_times.linux_tick;
 #endif
@@ -162,7 +162,7 @@ int rt_change_prio(RT_TASK *task, int priority)
 		} while ((task = task->prio_passed_to) && task->priority > priority);
 		if (schedmap) {
 #ifdef CONFIG_SMP
-			if (test_and_clear_bit(hard_cpu_id(), &schedmap)) {
+			if (test_and_clear_bit(rtai_cpuid(), &schedmap)) {
 				RT_SCHEDULE_MAP_BOTH(schedmap);
 			} else {
 				RT_SCHEDULE_MAP(schedmap);
@@ -264,15 +264,77 @@ int rt_task_suspend(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	if (!task->suspdepth++ && !task->owndres) {
-		rem_ready_task(task);
-		task->state |= RT_SCHED_SUSPENDED;
-		if (task == RT_CURRENT) {
-			rt_schedule();
+	if (!task->owndres) {
+		if (!task->suspdepth++) {
+			rem_ready_task(task);
+			task->state |= RT_SCHED_SUSPENDED;
+			if (task == RT_CURRENT) {
+				rt_schedule();
+			}
 		}
+	} else if (task->suspdepth < 0) {
+		task->suspdepth++;
 	}
 	rt_global_restore_flags(flags);
-	return 0;
+	return task->suspdepth;
+}
+
+
+int rt_task_suspend_if(RT_TASK *task)
+{
+	unsigned long flags;
+
+	if (!task) {
+		task = RT_CURRENT;
+	} else if (task->magic != RT_TASK_MAGIC) {
+		return -EINVAL;
+	}
+
+	flags = rt_global_save_flags_and_cli();
+	if (!task->owndres && task->suspdepth < 0) {
+		task->suspdepth++;
+	}
+	rt_global_restore_flags(flags);
+	return task->suspdepth;
+}
+
+
+int rt_task_suspend_until(RT_TASK *task, RTIME time)
+{
+	unsigned long flags;
+
+	if (!task) {
+		task = RT_CURRENT;
+	} else if (task->magic != RT_TASK_MAGIC) {
+		return -EINVAL;
+	}
+
+	flags = rt_global_save_flags_and_cli();
+	if (!task->owndres) {
+		if (!task->suspdepth) {
+			if ((task->resume_time = time) > rt_time_h) {
+				task->suspdepth++;
+				rem_ready_task(task);
+				enq_timed_task(task);
+				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+				if (task == RT_CURRENT) {
+					rt_schedule();
+				}
+			}
+		} else {
+			task->suspdepth++;
+		}
+	} else if (task->suspdepth < 0) {
+		task->suspdepth++;
+	}
+	rt_global_restore_flags(flags);
+	return task->suspdepth;
+}
+
+
+int rt_task_suspend_timed(RT_TASK *task, RTIME delay)
+{
+	return rt_task_suspend_until(task, get_time() + delay);
 }
 
 
@@ -306,9 +368,9 @@ int rt_task_resume(RT_TASK *task)
 	flags = rt_global_save_flags_and_cli();
 	if (!(--task->suspdepth)) {
 		rem_timed_task(task);
-		if (((task->state &= ~RT_SCHED_SUSPENDED) & ~RT_SCHED_DELAYED) == RT_SCHED_READY) {
+		if ((task->state &= ~(RT_SCHED_SUSPENDED | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
-			RT_SCHEDULE(task, hard_cpu_id());
+			RT_SCHEDULE(task, rtai_cpuid());
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -471,10 +533,10 @@ void rt_gettimeorig(RTIME time_orig[])
 {
 	unsigned long flags;
 	struct timeval tv;
-	hard_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 	do_gettimeofday(&tv);
 	time_orig[0] = rdtsc();
-	hard_restore_flags(flags);
+	rtai_restore_flags(flags);
 	time_orig[0] = tv.tv_sec*(long long)tuned.cpu_freq + llimd(tv.tv_usec, tuned.cpu_freq, 1000000) - time_orig[0];
 	time_orig[1] = llimd(time_orig[0], 1000000000, tuned.cpu_freq);
 }
@@ -530,7 +592,7 @@ int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME pe
 		task->state = (task->state & ~RT_SCHED_SUSPENDED) | RT_SCHED_DELAYED;
 		enq_timed_task(task);
 }
-	RT_SCHEDULE(task, hard_cpu_id());
+	RT_SCHEDULE(task, rtai_cpuid());
 	rt_global_restore_flags(flags);
 	return 0;
 }
@@ -585,7 +647,7 @@ int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
 		task->state = (task->state & ~RT_SCHED_SUSPENDED) | RT_SCHED_DELAYED;
 		enq_timed_task(task);
 	}
-	RT_SCHEDULE(task, hard_cpu_id());
+	RT_SCHEDULE(task, rtai_cpuid());
 	rt_global_restore_flags(flags);
 	return 0;
 }
@@ -614,7 +676,7 @@ void rt_task_wait_period(void)
 	if (rt_current->resync_frame) { // Request from watchdog
 	    	rt_current->resync_frame = 0;
 #ifdef CONFIG_SMP
-		rt_current->resume_time = oneshot_timer ? rdtsc() : sqilter ? rt_smp_times[cpuid].tick_time : rt_times.tick_time;
+		rt_current->resume_time = oneshot_timer ? rdtsc() : rt_smp_times[cpuid].tick_time;
 #else
 		rt_current->resume_time = oneshot_timer ? rdtsc() : rt_times.tick_time;
 #endif
@@ -681,9 +743,9 @@ int rt_set_period(RT_TASK *task, RTIME new_period)
 	if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
 	}
-	hard_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 	task->period = new_period;
-	hard_restore_flags(flags);
+	rtai_restore_flags(flags);
 	return 0;
 }
 
@@ -809,7 +871,7 @@ int rt_task_wakeup_sleeping(RT_TASK *task)
 	rem_timed_task(task);
 	if (task->state != RT_SCHED_READY && (task->state &= ~RT_SCHED_DELAYED) == RT_SCHED_READY) {
 		enq_ready_task(task);
-		RT_SCHEDULE(task, hard_cpu_id());
+		RT_SCHEDULE(task, rtai_cpuid());
 	}
 	rt_global_restore_flags(flags);
 	return 0;
@@ -867,7 +929,7 @@ void rt_enq_timed_task(RT_TASK *timed_task)
 void rt_wake_up_timed_tasks(int cpuid)
 {
 #ifdef CONFIG_SMP
-	wake_up_timed_tasks(cpuid & sqilter);
+	wake_up_timed_tasks(cpuid);
 #else
         wake_up_timed_tasks(0);
 #endif
@@ -1265,6 +1327,77 @@ void krtai_objects_release(void)
 	}
 }
 
+/* +++++++++++++++++++++++++ SUPPORT FOR IRQ TASKS ++++++++++++++++++++++++++ */
+
+#include <rtai_tasklets.h>
+
+extern struct {
+    int (*handler)(unsigned irq, void *cookie);
+    void *cookie;
+    int retmode;
+} rtai_realtime_irq[];
+
+int rt_irq_wait(unsigned irq)
+{	
+	int retval;
+	retval = rt_task_suspend(0);
+	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
+}
+
+int rt_irq_wait_if(unsigned irq)
+{
+	int retval;
+	retval = rt_task_suspend_if(0);
+	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
+}
+
+int rt_irq_wait_until(unsigned irq, RTIME time)
+{
+	int retval;
+	retval = rt_task_suspend_until(0, time);
+	return rtai_realtime_irq[irq].handler ? -retval : RT_IRQ_TASK_ERR;
+}
+
+int rt_irq_wait_timed(unsigned irq, RTIME delay)
+{
+	return rt_irq_wait_until(irq, get_time() + delay);
+}
+
+void rt_irq_signal(unsigned irq)
+{
+	if (rtai_realtime_irq[irq].handler) {
+		rt_task_resume((void *)rtai_realtime_irq[irq].cookie);
+	}
+}
+
+static int rt_irq_task_handler(unsigned irq, RT_TASK *irq_task)
+{
+	rt_task_resume(irq_task);
+	return 0;
+}
+
+int rt_request_irq_task (unsigned irq, void *handler, int type, int affine2task)
+{
+	RT_TASK *task;
+	task = type == RT_IRQ_TASKLET ? ((struct rt_tasklet_struct *)handler)->task : handler;
+	if (affine2task) {
+		rt_assign_irq_to_cpu(irq, (1 << task->runnable_on_cpus));
+	}
+	return rt_request_irq(irq, (void *)rt_irq_task_handler, task, 0);
+}
+
+int rt_release_irq_task (unsigned irq)
+{
+	int retval;
+	RT_TASK *task;
+	task = (void *)rtai_realtime_irq[irq].cookie;
+	if (!(retval = rt_release_irq(irq))) {
+		rt_task_resume(task);
+		rt_reset_irq_to_sym_mode(irq);
+	}
+	return retval;
+}
+
 /* ++++++++++++++++++++ END OF COMMON FUNCTIONALITIES +++++++++++++++++++++++ */
 
 #ifdef CONFIG_PROC_FS
@@ -1365,6 +1498,9 @@ EXPORT_SYMBOL(rt_change_prio);
 EXPORT_SYMBOL(rt_whoami);
 EXPORT_SYMBOL(rt_task_yield);
 EXPORT_SYMBOL(rt_task_suspend);
+EXPORT_SYMBOL(rt_task_suspend_if);
+EXPORT_SYMBOL(rt_task_suspend_until);
+EXPORT_SYMBOL(rt_task_suspend_timed);
 EXPORT_SYMBOL(rt_task_resume);
 EXPORT_SYMBOL(rt_get_task_state);
 EXPORT_SYMBOL(rt_linux_use_fpu);
@@ -1425,7 +1561,6 @@ EXPORT_SYMBOL(rt_set_oneshot_mode);
 EXPORT_SYMBOL(rt_get_timer_cpu);
 EXPORT_SYMBOL(start_rt_timer);
 EXPORT_SYMBOL(stop_rt_timer);
-EXPORT_SYMBOL(start_rt_timer_cpuid);
 EXPORT_SYMBOL(start_rt_apic_timers);
 EXPORT_SYMBOL(rt_sched_type);
 EXPORT_SYMBOL(rt_preempt_always);
@@ -1457,7 +1592,6 @@ EXPORT_SYMBOL(set_rt_fun_ext_index);
 EXPORT_SYMBOL(reset_rt_fun_ext_index);
 
 #ifdef CONFIG_SMP
-EXPORT_SYMBOL(sqilter);
 #endif /* CONFIG_SMP */
 
 #endif /* CONFIG_KBUILD */

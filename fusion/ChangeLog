@@ -1,5 +1,14 @@
 2004-10-04  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r8c3.
+
+2004-10-04  Edelhard Becker <ebecker@software-manufaktur.de>
+
+	* configure.in: Detect CONFIG_X86_EMU486 when testing for
+	cmpxchg() availability.
+
+2004-10-04  Philippe Gerum  <rpm@xenomai.org>
+
 	* include/nucleus/asm-*/system.h (xnarch_notify_shutdown): 
 	* arch/*/hal/hal.c (__rthal_init): Force CPU affinity so that the
 	HAL and the nucleus always keep their execution sequence on SMP

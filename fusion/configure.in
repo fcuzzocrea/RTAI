@@ -236,8 +236,8 @@ dnl discarding preposterous settings here, previous user selection
 dnl is kept as long as it is sane.
 
 if test "$CONFIG_X86" = y; then
-   if test x$CONFIG_X86_CMPXCHG = x; then
-      AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cmpxchg() is missing, need >= CONFIG_M486)])
+   if test x$CONFIG_X86_EMU486 = x -a x$CONFIG_X86_CMPXCHG = x; then
+       AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cmpxchg() is missing, need >= CONFIG_M486)])
    fi
    if test x$CONFIG_X86_WP_WORKS_OK = x; then
       AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cannot rely on WP bit, need >= CONFIG_M486)])

@@ -1,3 +1,8 @@
+2004-03-15  Jan Kiszka  <kiszka@rts.uni-hannover.de>
+
+	* base/include/asm-i386: fixed a conditional compilation depending
+	  upon the CONFIG_VT parameter.
+
 2004-03-15  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm-ppc: committed reworked header files for compiling

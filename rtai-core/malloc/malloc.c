@@ -56,12 +56,13 @@ rtheap_t rtai_global_heap;	/* Global system heap */
 static void *alloc_extent (u_long size)
 
 {
+    caddr_t p;
 #ifdef CONFIG_RTAI_MALLOC_VMALLOC
-    caddr_t _p, p;
+    caddr_t p;
 
     size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
     p = _p = (caddr_t)vmalloc(size);
-
+    printk("RTAI[malloc]: vmalloced extent %p, size %lu.\n", p, size);
     if (!p)
 	return NULL;
 
@@ -69,13 +70,14 @@ static void *alloc_extent (u_long size)
     for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE)
 	mem_map_reserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
 
-    return p;
 #else /* !CONFIG_RTAI_MALLOC_VMALLOC */
     if (size > KMALLOC_LIMIT)
 	printk("RTAI[malloc]: extent > 128Kb unavailable in kmalloc() mode\n");
 
-    return kmalloc(size,GFP_KERNEL);
+    p = kmalloc(size,GFP_KERNEL);
+    printk("RTAI[malloc]: kmalloced extent %p, size %lu.\n", p, size);
 #endif /* CONFIG_RTAI_MALLOC_VMALLOC */
+    return p;
 }
 
 static void free_extent (void *p, u_long size)
@@ -87,12 +89,13 @@ static void free_extent (void *p, u_long size)
     /* Unreserve the space before freeing it. */
 
     size = (size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-
+    printk("RTAI[malloc]: vfreed extent %p, size %lu.\n", p, size);
     for (; size > 0; size -= PAGE_SIZE, _p += PAGE_SIZE)
 	mem_map_unreserve(virt_to_page(__va(kvirt_to_pa((u_long)_p))));
 
     vfree(p);
 #else /* !CONFIG_RTAI_MALLOC_VMALLOC */
+    printk("RTAI[malloc]: kfreed extent %p, size %lu.\n", p, size);
     kfree(p);
 #endif /* CONFIG_RTAI_MALLOC_VMALLOC */
 }
@@ -313,7 +316,7 @@ int rtheap_init (rtheap_t *heap,
 void rtheap_destroy (rtheap_t *heap)
 
 {
-    struct list_head *holder;
+    struct list_head *holder, *nholder;
 
     if (!(heap->flags & RTHEAP_EXTENDABLE))
 	return;
@@ -321,8 +324,8 @@ void rtheap_destroy (rtheap_t *heap)
     /* If the heap is marked as extendable, we have to release each
        allocated extent back to the arch-dependent allocator. */
 
-    list_for_each(holder,&heap->extents) {
-        free_extent(list_entry(holder,rtextent_t,link),heap->extentsize);
+    list_for_each_safe(holder, nholder, &heap->extents) {
+        free_extent(list_entry(holder, rtextent_t, link), heap->extentsize);
     }
 }
 
@@ -688,9 +691,9 @@ int __rtai_heap_init (void)
 {
 
 #ifdef CONFIG_RTAI_MALLOC_VMALLOC
+	rtai_global_heap_size = (rtai_global_heap_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 	if (!(rtai_global_heap_adr = alloc_extent(rtai_global_heap_size))) {
-		printk(KERN_INFO "RTAI[malloc]: initial alloc_extent() failed (size=%d bytes).\n",
-		       rtai_global_heap_size);
+		printk(KERN_INFO "RTAI[malloc]: initial alloc_extent() failed (size=%d bytes).\n", rtai_global_heap_size);
 		return 1;
 	}
 #endif
@@ -715,6 +718,12 @@ int __rtai_heap_init (void)
 
 void __rtai_heap_exit (void) {
 
+
+#ifdef CONFIG_RTAI_MALLOC_VMALLOC
+        free_extent(rtai_global_heap_adr, rtai_global_heap_size);
+        return;
+#endif
+    rtai_global_heap.flags |= RTHEAP_EXTENDABLE;
     rtheap_destroy(&rtai_global_heap);
     printk("RTAI[malloc]: unloaded.\n");
 }

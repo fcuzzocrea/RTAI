@@ -195,7 +195,7 @@ unsigned long rthal_critical_enter (void (*synch)(void))
     if (atomic_dec_and_test(&rthal_sync_count))
 	rthal_sync_op = 0;
     else if (synch != NULL)
-	printk(KERN_WARNING "RTAI[hal]: Nested sync will fail.\n");
+	printk(KERN_WARNING "RTAI: Nested critical sync will fail.\n");
 
     return flags;
 }
@@ -584,7 +584,7 @@ void rthal_set_linux_task_priority (struct task_struct *task, int policy, int pr
     set_fs(old_fs);
 
     if (rc)
-	printk(KERN_ERR "RTAI[hal]: setscheduler(policy=%d,prio=%d)=%d (%s -- pid=%d)\n",
+	printk(KERN_ERR "RTAI: setscheduler(policy=%d,prio=%d)=%d (%s -- pid=%d)\n",
 	       policy,
 	       prio,
 	       rc,
@@ -606,7 +606,7 @@ static void rthal_domain_entry (int iflag)
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
 	adeos_catch_event(trapnr,&rthal_trap_fault);
 
-    printk(KERN_INFO "RTAI[hal]: Loaded over Adeos %s.\n",ADEOS_VERSION_STRING);
+    printk(KERN_INFO "RTAI: hal/ppc loaded.\n",ADEOS_VERSION_STRING);
 
 #if !defined(CONFIG_ADEOS_NOTHREADS)
  spin:
@@ -742,7 +742,7 @@ static int rthal_proc_register (void)
 
     if (!rthal_proc_root)
 	{
-	printk(KERN_ERR "RTAI[hal]: Unable to initialize /proc/rtai.\n");
+	printk(KERN_ERR "RTAI: Unable to initialize /proc/rtai.\n");
 	return -1;
         }
 
@@ -797,7 +797,7 @@ int __rthal_init (void)
 
     if (!rthal_sysreq_virq)
 	{
-	printk(KERN_ERR "RTAI[hal]: No virtual interrupt available.\n");
+	printk(KERN_ERR "RTAI: No virtual interrupt available.\n");
 	return -EBUSY;
 	}
 
@@ -863,7 +863,7 @@ void __rthal_exit (void)
     if (rthal_init_done)
 	adeos_unregister_domain(&rthal_domain);
 
-    printk(KERN_INFO "RTAI[hal]: Unloaded.\n");
+    printk(KERN_INFO "RTAI: hal/ppc unloaded.\n");
 }
 
 /*@}*/

@@ -84,7 +84,7 @@ typedef unsigned long xnlock_t;
 #define XNARCH_THREAD_STACKSZ 0 /* Let the simulator choose. */
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
 
-#define XNARCH_PROMPT "RTAI[nucleus/SIM]: "
+#define XNARCH_PROMPT "RTAI/sim: "
 #define xnarch_loginfo(fmt,args...)  fprintf(stdout, XNARCH_PROMPT fmt , ##args)
 #define xnarch_logwarn(fmt,args...)  fprintf(stderr, XNARCH_PROMPT fmt , ##args)
 #define xnarch_logerr(fmt,args...)   fprintf(stderr, XNARCH_PROMPT fmt , ##args)

@@ -202,7 +202,7 @@ case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
 #define XNARCH_THREAD_STACKSZ 4096
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
 
-#define XNARCH_PROMPT "RTAI[nucleus]: "
+#define XNARCH_PROMPT "RTAI: "
 #define xnarch_loginfo(fmt,args...)  printk(KERN_INFO XNARCH_PROMPT fmt , ##args)
 #define xnarch_logwarn(fmt,args...)  printk(KERN_WARNING XNARCH_PROMPT fmt , ##args)
 #define xnarch_logerr(fmt,args...)   printk(KERN_ERR XNARCH_PROMPT fmt , ##args)

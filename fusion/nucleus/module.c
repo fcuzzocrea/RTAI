@@ -425,7 +425,7 @@ int __init __fusion_sys_init (void)
 #endif /* CONFIG_RTAI_OPT_FUSION */
 #endif /* __KERNEL__ */
 
-    xnloginfo("RTAI/fusion v%s (%s) started.\n",
+    xnloginfo("fusion core v%s (%s) started.\n",
 	      PACKAGE_VERSION,
 	      FUSION_VERSION_NAME);
 
@@ -485,7 +485,7 @@ void __exit __fusion_sys_exit (void)
     xnpod_delete_proc();
 #endif /* CONFIG_PROC_FS */
 #endif /* __KERNEL__ */
-    xnloginfo("RTAI/fusion stopped.\n");
+    xnloginfo("fusion core stopped.\n");
 }
 
 EXPORT_SYMBOL(xnmod_glink_queue);

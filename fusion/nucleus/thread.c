@@ -55,6 +55,10 @@ int xnthread_init (xnthread_t *thread,
     xntimer_set_priority(&thread->ptimer,XNTIMER_HIPRIO);
     thread->poverrun = -1;
 
+    /* Setup the TCB. */
+
+    xnarch_init_tcb(xnthread_archtcb(thread));
+
     if (!(flags & XNSHADOW) && stacksize > 0)
 	{
 	/* Align stack on a word boundary */

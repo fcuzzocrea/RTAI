@@ -765,9 +765,7 @@ int xnpod_start_thread (xnthread_t *thread,
 	goto unlock_and_exit;
         }
 
-    /* Setup the TCB and initial stack frame. */
-
-    xnarch_init_tcb(xnthread_archtcb(thread));
+    /* Setup the initial stack frame. */
 
     xnarch_init_thread(xnthread_archtcb(thread),
                        entry,

@@ -433,7 +433,8 @@ static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
     rootcb->fpup = &rootcb->user_task->thread.i387;
 }
 
-static inline void xnarch_enter_root (xnarchtcb_t *rootcb) {
+static inline void xnarch_enter_root (xnarchtcb_t *rootcb)
+{
     __clear_bit(xnarch_current_cpu(),&rthal_cpu_realtime);
 }
 
@@ -563,11 +564,13 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
-					       xnarchtcb_t *next_tcb) {
+					       xnarchtcb_t *next_tcb)
+{
     xnarch_switch_to(dead_tcb,next_tcb);
 }
 
-static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb) {
+static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb)
+{
     /* Empty */
 }
 
@@ -583,8 +586,8 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
     tcb->fpup = NULL;
 }
 
-static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
-
+static inline void xnarch_init_tcb (xnarchtcb_t *tcb)
+{
     tcb->user_task = NULL;
     tcb->active_task = NULL;
     tcb->espp = &tcb->esp;

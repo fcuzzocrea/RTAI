@@ -186,7 +186,7 @@ int main (int argc, char **argv)
     signal(SIGTERM, cleanup_upon_sig);
 
     setvbuf(stdout, (char *)NULL, _IOLBF, 0);
-    printf("== Sampling period: %d ns\n",sampling_period);
+    printf("== Sampling period: %d us\n",sampling_period / 1000);
 
     err = rt_task_create(&display_task,"display",0,2,0);
 

@@ -1,3 +1,8 @@
+2005-02-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/hal.c (rthal_set_linux_task_priority): Limit
+	high priority value.
+
 2005-01-28  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (engage_irq_shield, disengage_irq_shield): Add

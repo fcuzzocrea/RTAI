@@ -839,7 +839,7 @@ void rthal_set_linux_task_priority (struct task_struct *task, int policy, int pr
     mm_segment_t old_fs;
     int rc;
 
-    param.sched_priority = prio;
+    param.sched_priority = prio >= MAX_USER_RT_PRIO ? MAX_USER_RT_PRIO - 1 : prio;
     old_fs = get_fs();
     set_fs(KERNEL_DS);
     rc = sched_setscheduler(task->pid,policy,&param);

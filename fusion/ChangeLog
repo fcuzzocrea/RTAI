@@ -1,3 +1,8 @@
+2004-11-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/timer.c: Read Adeos profile timings when available when
+	CONFIG_RTAI_OPT_TIMESTAMPS is enabled.
+
 2004-11-26  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/snippets: Add code snippets illustrating the use of

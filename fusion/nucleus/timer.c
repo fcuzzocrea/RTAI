@@ -521,6 +521,9 @@ void xntimer_do_timers (void)
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
     nkpod->timestamps.timer_entry = xnarch_get_cpu_tsc();
+    xnarch_read_timings(&nkpod->timestamps.tick_shot,
+			&nkpod->timestamps.tick_delivery,
+			nkpod->timestamps.timer_entry);
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
     initq(&reschedq);

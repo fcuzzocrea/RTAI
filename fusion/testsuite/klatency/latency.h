@@ -13,6 +13,7 @@ typedef struct rtai_latency_stat {
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
     int has_timestamps;
+    int tick_propagation;
     int timer_prologue;
     int timer_exec;
     int timer_overall;

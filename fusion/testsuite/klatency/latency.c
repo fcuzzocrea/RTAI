@@ -42,6 +42,9 @@ int main (int argc, char **argv)
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
 	if (s.has_timestamps)
 	    {
+	    if (s.tick_propagation != 0)
+		printf(">>> TICK: pipeline propagation = %d\n",
+		       s.tick_propagation);
 	    printf(">>> TIMER: prologue = %d, exec = %d, epilogue = %d, overall = %d\n",
 		   s.timer_prologue,
 		   s.timer_exec,

@@ -402,6 +402,14 @@ static inline void xnarch_stop_timer (void) {
     __pthread_cancel_vm(vml_timer_handle,NULL);
 }
 
+static inline void xnarch_read_timings (unsigned long long *shot,
+					unsigned long long *delivery,
+					unsigned long long defval)
+{
+    *shot = defval;
+    *delivery = defval;
+}
+
 #endif /* XENO_TIMER_MODULE */
 
 #ifdef XENO_POD_MODULE

@@ -105,6 +105,7 @@ void latency (void *cookie)
 	if (tsflag)
 	    {
 	    s->has_timestamps = 1;
+	    s->tick_propagation = rt_timer_ticks2ns(ts.tick_delivery - ts.tick_shot);
 	    s->timer_prologue = rt_timer_ticks2ns(ts.timer_handler - ts.timer_entry);
 	    s->timer_exec = rt_timer_ticks2ns(ts.timer_handled - ts.timer_handler);
 	    s->timer_overall = rt_timer_ticks2ns(ts.timer_exit - ts.timer_entry);

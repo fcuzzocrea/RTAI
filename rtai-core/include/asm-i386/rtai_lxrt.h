@@ -113,7 +113,9 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
         enter_lazy_tlb(oldmm,next);
 #endif /* < 2.6.0 */
 	
-#if 1 /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+/* NOTE: Do not use switch_to() directly: this is a compiler
+   compatibility issue. */
+
     __asm__ __volatile__(						\
 		 "pushfl\n\t"				       		\
 		 "cli\n\t"				       		\
@@ -135,15 +137,14 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
 		  "a" (prev), "d" (next),				\
 		  "b" (prev));						
-#else /* >= 2.6.0 */
-	switch_to(prev, next, prev);
-#endif /* < 2.6.0 */
+
 	barrier();
 }
 
 #endif /* __KERNEL__ */
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+/* NOTE: Keep the following routines unfold: this is a compiler
+   compatibility issue. */
 
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
@@ -156,17 +157,6 @@ static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int s
 {
     return _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
 }
-
-#else /* >= 2.6.0 */
-
-static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
-{
-	union rtai_lxrt_t retval;
-	RTAI_DO_TRAP(RTAI_LXRT_VECTOR, retval.rt, (dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
-	return retval;
-}
-
-#endif /* < 2.6.0 */
 
 #ifdef __cplusplus
 }

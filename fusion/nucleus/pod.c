@@ -1914,6 +1914,8 @@ void xnpod_schedule (void)
 
     if (xnsched_resched_p())
         xnarch_send_ipi(xnsched_resched_mask());
+
+    xnsched_clr_mask();
     
     runthread = sched->runthread;
 

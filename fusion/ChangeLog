@@ -1,3 +1,15 @@
+2004-07-07  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_schedule)
+	  include/nucleus/pod.h (xnsched_clr_mask): Do not forget to clear
+	the rescheduling bits after having sent the rescheduling IPIs.
+			
+2004-07-05  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+			
+	* nucleus/shadow.c (irq_shield): Manipulate the IRQ shield over
+	the IShield domain, instead of the Root domain. Do not send IPIs
+	to CPU which do not exist or are not online.
+						
 2004-07-04  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/thread.c (xnthread_symbolic_status): Add helper function

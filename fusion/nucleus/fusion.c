@@ -143,7 +143,7 @@ static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
     int err = -ESRCH;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     thread = __pthread_find_by_handle(curr,(void *)__xn_reg_arg1(regs));
 
@@ -161,7 +161,7 @@ static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
 
  out:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock, s);
 
     return err;
 }
@@ -330,13 +330,13 @@ static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(int)))
 	return -EFAULT;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     __xn_put_user(curr,1,(int *)__xn_reg_arg1(regs)); /* Raise the pend flag */
 
     xnsynch_sleep_on(&__fusion_barrier,XN_INFINITE);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock, s);
 
     return 0;
 }
@@ -349,14 +349,14 @@ static int __pthread_release_vm (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(int)))
 	return -EFAULT;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     __xn_put_user(curr,0,(int *)__xn_reg_arg1(regs)); /* Clear the lock flag */
 
     if (xnsynch_flush(&__fusion_barrier,XNBREAK) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock, s);
 
     return 0;
 }
@@ -370,7 +370,7 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(int)))
 	return -EFAULT;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     __xn_put_user(curr,0,(int *)__xn_reg_arg1(regs)); /* Clear the lock flag */
 
@@ -381,7 +381,7 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
 
     xnpod_suspend_thread(thread,XNSUSP,XN_INFINITE,NULL);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock, s);
 
     return 0;
 }
@@ -393,7 +393,7 @@ static int __pthread_activate_vm (struct task_struct *curr, struct pt_regs *regs
     int err = -ESRCH;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     next = __pthread_find_by_handle(curr,(void *)__xn_reg_arg1(regs));
 
@@ -423,7 +423,7 @@ static int __pthread_activate_vm (struct task_struct *curr, struct pt_regs *regs
 
  out:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock, s);
 
     return err;
 }
@@ -435,7 +435,7 @@ static int __pthread_cancel_vm (struct task_struct *curr, struct pt_regs *regs)
     int err = -ESRCH;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (__xn_reg_arg1(regs))
 	{
@@ -468,7 +468,7 @@ static int __pthread_cancel_vm (struct task_struct *curr, struct pt_regs *regs)
 
 out:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock, s);
 
     return err;
 }

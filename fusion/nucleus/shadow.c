@@ -179,7 +179,7 @@ static void engage_local_irq_shield (unsigned local_cpu)
             irq != sigvirq &&
             irq != nicevirq)
 #endif /* CONFIG_SMP */
-	    __adeos_lock_irq(adp_root,local_cpu,irq);
+	    __adeos_lock_irq(&irq_shield,local_cpu,irq);
 
     adeos_unstall_pipeline_from(&irq_shield);
 }
@@ -202,7 +202,7 @@ static void disengage_local_irq_shield (unsigned local_cpu __attribute__((unused
                 irq != sigvirq &&
                 irq != nicevirq)
 #endif /* CONFIG_SMP */
-                __adeos_unlock_irq(adp_root,irq);
+                __adeos_unlock_irq(&irq_shield,irq);
     
         rthal_hw_unlock(flags);
         }
@@ -240,8 +240,10 @@ static void engage_irq_shield (unsigned local_cpu)
         && !test_and_set_bit(local_cpu, &shield_requests))
         {
         local_irq_shield(local_cpu);
-
-        adeos_send_ipi(ADEOS_SERVICE_IPI1, ~(1 << local_cpu));
+        
+        adeos_send_ipi(ADEOS_SERVICE_IPI1,
+                       ((1 << xnarch_num_online_cpus()) - 1) &
+                       ~(1 << local_cpu));
         }
 }
 
@@ -252,7 +254,9 @@ static void disengage_irq_shield (unsigned local_cpu)
 	!testbits(shield_requests, ~0))
         {
         local_irq_shield(local_cpu);
-        adeos_send_ipi(ADEOS_SERVICE_IPI1, ~(1 << local_cpu));
+        adeos_send_ipi(ADEOS_SERVICE_IPI1,
+                       ((1 << xnarch_num_online_cpus()) - 1) &
+                       ~(1 << local_cpu));
         }
 }
 
@@ -1646,8 +1650,8 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
 	    if (testbits(thread->status,XNSUSP))
 		xnpod_resume_thread(thread,XNSUSP);
 	    }
-
-	xnlock_put_irqrestore(&nklock,s);
+ 
+ 	xnlock_put_irqrestore(&nklock,s);
 
 	xnshadow_schedule(); /* Schedule in the RTAI space. */
 	}

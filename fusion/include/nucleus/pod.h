@@ -140,11 +140,8 @@ typedef struct xnsched {
 #define xnsched_resched_mask() \
     (xnpod_current_sched()->status & XNSCHEDMASK)
 
-#define xnsched_resched_p() \
+#define xnsched_resched_p()                     \
     (!!xnsched_resched_mask())
-
-#define xnsched_ffcpu() \
-    ffnz(xnsched_resched_mask())
 
 #define xnsched_tst_resched(__sched__) \
     testbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
@@ -154,6 +151,9 @@ typedef struct xnsched {
 
 #define xnsched_clr_resched(__sched__) \
     clrbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
+
+#define xnsched_clr_mask() \
+    clrbits(xnpod_current_sched()->status, XNSCHEDMASK)
 
 struct xnsynch;
 struct xnintr;

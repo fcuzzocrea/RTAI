@@ -1,5 +1,8 @@
 2005-02-27  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-i386/calibration.h (__sched_latency): Reduce
+	the calibrated jitter by a half for most configs.
+
 	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r6c14.
 
 	* configure.in: Add back -fstrict-aliasing, but prevent warnings

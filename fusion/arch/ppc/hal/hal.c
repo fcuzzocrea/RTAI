@@ -796,6 +796,12 @@ int __rthal_init (void)
 void __rthal_exit (void)
 
 {
+#ifdef CONFIG_SMP
+    /* The nucleus also sets the same CPU affinity so that both
+       modules keep their execution sequence on SMP boxen. */
+    set_cpus_allowed(current,cpumask_of_cpu(0));
+#endif /* CONFIG_SMP */
+
 #ifdef CONFIG_PROC_FS
     rthal_proc_unregister();
 #endif

@@ -652,6 +652,11 @@ static inline int xnarch_release_ipi (void) {
 static inline void xnarch_notify_shutdown(void)
 
 {
+#ifdef CONFIG_SMP
+    /* The HAL layer also sets the same CPU affinity so that both
+       modules keep their execution sequence on SMP boxen. */
+    set_cpus_allowed(current,cpumask_of_cpu(0));
+#endif /* CONFIG_SMP */
     xnshadow_release_events();
     /* Wait for the currently processed events to drain. */
     set_current_state(TASK_UNINTERRUPTIBLE);

@@ -113,8 +113,9 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
+
+#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 static void (*rtai_isr_hook)(int cpuid);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 

@@ -192,4 +192,6 @@ int xnheap_free(xnheap_t *heap,
 
 #endif /* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */
 
+#define XNHEAP_DEV_NAME  "/dev/rtheap"
+
 #endif /* !_RTAI_NUCLEUS_HEAP_H */

@@ -31,7 +31,7 @@
  * or pass data through a RTAI-managed queue of messages. Messages can
  * vary in length and be assigned different types or usages. A message
  * queue can be created by one task and used by multiple tasks that
- * send and/or receive messages to the queue.
+ * read and/or write messages to the queue.
  *
  * This implementation is based on a zero-copy scheme for message
  * buffers. Message buffer pools are built over Xenomai's heap
@@ -208,7 +208,7 @@ int rt_queue_create (RT_QUEUE *q,
  * @brief Delete a message queue.
  *
  * Destroy a message queue and release all the tasks currently pending
- * on it.  A queue exists in the system since rt_queue_create() has
+ * on it.  A quueue exists in the system since rt_queue_create() has
  * been called to create it, so this service must be called in order
  * to destroy it afterwards.
  *

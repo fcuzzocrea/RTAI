@@ -620,7 +620,7 @@ RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size
 
 #define RT_THREAD_STACK_MIN 64*1024
 
-#if 0
+#if 1
 #include <pthread.h>
 
 RTAI_PROTO(int, rt_thread_create,(void *fun, void *args, int stack_size))

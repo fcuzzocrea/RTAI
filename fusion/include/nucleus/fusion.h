@@ -60,20 +60,27 @@
 #define FUSION_RTAI_DOMAIN     0
 #define FUSION_LINUX_DOMAIN    1
 
-#define __xn_fusion_init        0
-#define __xn_fusion_create      1
-#define __xn_fusion_start       2
-#define __xn_fusion_migrate     3
-#define __xn_fusion_time        4
-#define __xn_fusion_start_timer 5
-#define __xn_fusion_stop_timer  6
-#define __xn_fusion_sleep       7
-#define __xn_fusion_inquire     8
-#define __xn_fusion_idle        9
-#define __xn_fusion_cancel      10
-#define __xn_fusion_activate    11
-#define __xn_fusion_hold        12
-#define __xn_fusion_release     13
+#define __xn_fusion_init         0
+#define __xn_fusion_create       1
+#define __xn_fusion_start        2
+#define __xn_fusion_migrate      3
+#define __xn_fusion_set_periodic 4
+#define __xn_fusion_wait_period  5
+#define __xn_fusion_time         6
+#define __xn_fusion_cputime      7
+#define __xn_fusion_start_timer  8
+#define __xn_fusion_stop_timer   9
+#define __xn_fusion_sleep        10
+#define __xn_fusion_ns2ticks     11
+#define __xn_fusion_ticks2ns     12
+#define __xn_fusion_inquire      13
+#define __xn_fusion_idle         14
+#define __xn_fusion_cancel       15
+#define __xn_fusion_activate     16
+#define __xn_fusion_hold         17
+#define __xn_fusion_release      18
+
+typedef unsigned long long nanotime_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -112,15 +119,28 @@ int pthread_sync_rt(int *syncp);
 
 int pthread_migrate_rt(int domain);
 
-int pthread_start_timer_rt(unsigned long nstick);
+int pthread_start_timer_rt(nanotime_t nstick);
 
 int pthread_stop_timer_rt(void);
 
-int pthread_time_rt(unsigned long long *tp);
+int pthread_time_rt(nanotime_t *tp);
 
-int pthread_sleep_rt(unsigned long long ticks);
+int pthread_cputime_rt(nanotime_t *tp);
+
+int pthread_ns2ticks_rt(nanotime_t ns,
+			nanotime_t *pticks);
+
+int pthread_ticks2ns_rt(nanotime_t ticks,
+			nanotime_t *pns);
+
+int pthread_sleep_rt(nanotime_t ticks);
 
 int pthread_inquire_rt(xninquiry_t *infop);
+
+int pthread_set_periodic_rt(nanotime_t idate,
+			    nanotime_t period);
+
+int pthread_wait_period_rt(void);
 
     /* The following routines are private to the RTAI/vm control layer
        based on the RTAI/fusion interface. Do not use them in

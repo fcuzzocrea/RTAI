@@ -2667,9 +2667,9 @@ diff -uNrp linuxppc-2.6.8rc3/include/asm-ppc/adeos.h linuxppc-2.5-adeos/include/
 +#include <linux/cpumask.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r6c9/ppc"
++#define ADEOS_ARCH_STRING     "r6c10/ppc"
 +#define ADEOS_MAJOR_NUMBER    6
-+#define ADEOS_MINOR_NUMBER    9
++#define ADEOS_MINOR_NUMBER    10
 +
 +#define ADEOS_IRQ_ACKED		0x1000
 +#define ADEOS_IRQ_ACKED_MASK	(ADEOS_IRQ_ACKED - 1)

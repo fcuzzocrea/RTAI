@@ -183,144 +183,158 @@
 00207 <span class="preprocessor">} while(0)</span>
 00208 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
 00209 
-00210 <span class="comment">/* Since real-time interrupt handlers are called on behalf of the RTAI</span>
-00211 <span class="comment">   domain stack, we cannot infere the "current" Linux task address</span>
-00212 <span class="comment">   using %esp. We must use the suspended Linux domain's stack pointer</span>
-00213 <span class="comment">   instead. */</span>
-00214 
-00215 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rthal_get_root_current (<span class="keywordtype">int</span> cpuid) {
-00216     <span class="keywordflow">return</span> ((<span class="keyword">struct </span>thread_info *)(adp_root-&gt;esp[cpuid] &amp; (~8191UL)))-&gt;task;
-00217 }
-00218 
-00219 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rthal_get_current (<span class="keywordtype">int</span> cpuid)
+00210 <span class="preprocessor">#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)</span>
+00211 <span class="preprocessor"></span>
+00212 <span class="comment">/* Since real-time interrupt handlers are called on behalf of the RTAI</span>
+00213 <span class="comment">   domain stack, we cannot infere the "current" Linux task address</span>
+00214 <span class="comment">   using %esp. We must use the suspended Linux domain's stack pointer</span>
+00215 <span class="comment">   instead. */</span>
+00216 
+00217 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rthal_get_root_current (<span class="keywordtype">int</span> cpuid) {
+00218     <span class="keywordflow">return</span> ((<span class="keyword">struct </span>thread_info *)(adp_root-&gt;esp[cpuid] &amp; (~8191UL)))-&gt;task;
+00219 }
 00220 
-00221 {
-00222     <span class="keyword">register</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> esp <span class="keyword">asm</span> (<span class="stringliteral">"r1"</span>);
-00223     <span class="comment">/* FIXME: r2 should be ok or even __adeos_current_threadinfo() - offsetof(THREAD) */</span>
-00224     
-00225     <span class="keywordflow">if</span> (esp &gt;= rthal_domain.estackbase[cpuid] &amp;&amp; esp &lt; rthal_domain.estackbase[cpuid] + 8192)
-00226         <span class="keywordflow">return</span> rthal_get_root_current(cpuid);
-00227 
-00228     <span class="keywordflow">return</span> current;
-00229 }
-00230 
-00231 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rthal_set_timer_shot (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> delay) {
+00221 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rthal_get_current (<span class="keywordtype">int</span> cpuid)
+00222 
+00223 {
+00224     <span class="keyword">register</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> esp <span class="keyword">asm</span> (<span class="stringliteral">"r1"</span>);
+00225     <span class="comment">/* FIXME: r2 should be ok or even __adeos_current_threadinfo() - offsetof(THREAD) */</span>
+00226     
+00227     <span class="keywordflow">if</span> (esp &gt;= rthal_domain.estackbase[cpuid] &amp;&amp; esp &lt; rthal_domain.estackbase[cpuid] + 8192)
+00228         <span class="keywordflow">return</span> rthal_get_root_current(cpuid);
+00229 
+00230     <span class="keywordflow">return</span> current;
+00231 }
 00232 
-00233     <span class="keywordflow">if</span> (delay) {
-00234 <span class="preprocessor">#ifdef CONFIG_40x</span>
-00235 <span class="preprocessor"></span>        mtspr(SPRN_PIT,delay);
-00236 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_40x */</span>
-00237         set_dec(delay);
-00238 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_40x */</span>
-00239     }
-00240 }
-00241 
-00242     <span class="comment">/* Private interface -- Internal use only */</span>
-00243 
-00244 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rthal_critical_enter(<span class="keywordtype">void</span> (*synch)(<span class="keywordtype">void</span>));
-00245 
-00246 <span class="keywordtype">void</span> rthal_critical_exit(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags);
-00247 
-00248 <span class="keywordtype">void</span> rthal_set_linux_task_priority(<span class="keyword">struct</span> task_struct *task,
-00249                                    <span class="keywordtype">int</span> policy,
-00250                                    <span class="keywordtype">int</span> prio);
-00251 
-00252 <span class="comment">/* The following must be in sync w/ rthal_switch_context() in</span>
-00253 <span class="comment">   switch.S */</span>
-00254 <span class="preprocessor">#define RTHAL_SWITCH_FRAME_SIZE  108</span>
-00255 <span class="preprocessor"></span>
-00256 <span class="keywordtype">void</span> rthal_switch_context(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *out_kspp,
-00257                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *in_kspp);
-00258 
-00259 <span class="preprocessor">#ifdef CONFIG_RTAI_HW_FPU</span>
-00260 <span class="preprocessor"></span>
-00261 <span class="keyword">typedef</span> <span class="keyword">struct </span>rthal_fpenv {
-00262     
-00263     <span class="comment">/* This layout must follow exactely the definition of the FPU</span>
-00264 <span class="comment">       backup area in a PPC thread struct available from</span>
-00265 <span class="comment">       &lt;asm-ppc/processor.h&gt;. Specifically, fpr[] an fpscr words must</span>
-00266 <span class="comment">       be contiguous in memory (see arch/ppc/fpu.S). */</span>
-00267 
-00268     <span class="keywordtype">double</span> fpr[32];
-00269     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fpscr_pad;    <span class="comment">/* &lt;= Hi-word of the FPR used to */</span>
-00270     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fpscr;        <span class="comment">/* retrieve the FPSCR. */</span>
-00271 
-00272 } rthal_fpenv_t;
-00273 
-00274 <span class="keywordtype">void</span> rthal_init_fpu(rthal_fpenv_t *fpuenv);
-00275 
-00276 <span class="keywordtype">void</span> rthal_save_fpu(rthal_fpenv_t *fpuenv);
-00277 
-00278 <span class="keywordtype">void</span> rthal_restore_fpu(rthal_fpenv_t *fpuenv);
-00279 
-00280 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_HW_FPU */</span>
+00233 <span class="preprocessor">#else </span><span class="comment">/* !(CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS) */</span>
+00234 
+00235 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rthal_get_root_current (<span class="keywordtype">int</span> cpuid) {
+00236     <span class="keywordflow">return</span> current;
+00237 }
+00238 
+00239 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rthal_get_current (<span class="keywordtype">int</span> cpuid) {
+00240     <span class="keywordflow">return</span> current;
+00241 }
+00242 
+00243 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS */</span>
+00244 
+00245 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rthal_set_timer_shot (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> delay) {
+00246 
+00247     <span class="keywordflow">if</span> (delay) {
+00248 <span class="preprocessor">#ifdef CONFIG_40x</span>
+00249 <span class="preprocessor"></span>        mtspr(SPRN_PIT,delay);
+00250 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_40x */</span>
+00251         set_dec(delay);
+00252 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_40x */</span>
+00253     }
+00254 }
+00255 
+00256     <span class="comment">/* Private interface -- Internal use only */</span>
+00257 
+00258 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rthal_critical_enter(<span class="keywordtype">void</span> (*synch)(<span class="keywordtype">void</span>));
+00259 
+00260 <span class="keywordtype">void</span> rthal_critical_exit(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags);
+00261 
+00262 <span class="keywordtype">void</span> rthal_set_linux_task_priority(<span class="keyword">struct</span> task_struct *task,
+00263                                    <span class="keywordtype">int</span> policy,
+00264                                    <span class="keywordtype">int</span> prio);
+00265 
+00266 <span class="comment">/* The following must be in sync w/ rthal_switch_context() in</span>
+00267 <span class="comment">   switch.S */</span>
+00268 <span class="preprocessor">#define RTHAL_SWITCH_FRAME_SIZE  108</span>
+00269 <span class="preprocessor"></span>
+00270 <span class="keywordtype">void</span> rthal_switch_context(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *out_kspp,
+00271                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *in_kspp);
+00272 
+00273 <span class="preprocessor">#ifdef CONFIG_RTAI_HW_FPU</span>
+00274 <span class="preprocessor"></span>
+00275 <span class="keyword">typedef</span> <span class="keyword">struct </span>rthal_fpenv {
+00276     
+00277     <span class="comment">/* This layout must follow exactely the definition of the FPU</span>
+00278 <span class="comment">       backup area in a PPC thread struct available from</span>
+00279 <span class="comment">       &lt;asm-ppc/processor.h&gt;. Specifically, fpr[] an fpscr words must</span>
+00280 <span class="comment">       be contiguous in memory (see arch/ppc/fpu.S). */</span>
 00281 
-00282 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
-00283 
-00284     <span class="comment">/* Public interface */</span>
+00282     <span class="keywordtype">double</span> fpr[32];
+00283     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fpscr_pad;    <span class="comment">/* &lt;= Hi-word of the FPR used to */</span>
+00284     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fpscr;        <span class="comment">/* retrieve the FPSCR. */</span>
 00285 
-00286 <span class="preprocessor">#ifdef __KERNEL__</span>
-00287 <span class="preprocessor"></span>
-00288 <span class="preprocessor">#include &lt;linux/kernel.h&gt;</span>
+00286 } rthal_fpenv_t;
+00287 
+00288 <span class="keywordtype">void</span> rthal_init_fpu(rthal_fpenv_t *fpuenv);
 00289 
-00290 <span class="keyword">typedef</span> int (*rthal_trap_handler_t)(adevinfo_t *evinfo);
+00290 <span class="keywordtype">void</span> rthal_save_fpu(rthal_fpenv_t *fpuenv);
 00291 
-00292 <span class="preprocessor">#define rthal_printk    printk </span><span class="comment">/* This is safe over Adeos */</span>
+00292 <span class="keywordtype">void</span> rthal_restore_fpu(rthal_fpenv_t *fpuenv);
 00293 
-00294 <span class="preprocessor">#ifdef __cplusplus</span>
-00295 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00296 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00294 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_HW_FPU */</span>
+00295 
+00296 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
 00297 
-00298 <span class="keywordtype">int</span> rthal_request_irq(<span class="keywordtype">unsigned</span> irq,
-00299                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq, <span class="keywordtype">void</span> *cookie),
-00300                       <span class="keywordtype">void</span> *cookie);
-00301 
-00302 <span class="keywordtype">int</span> rthal_release_irq(<span class="keywordtype">unsigned</span> irq);
+00298     <span class="comment">/* Public interface */</span>
+00299 
+00300 <span class="preprocessor">#ifdef __KERNEL__</span>
+00301 <span class="preprocessor"></span>
+00302 <span class="preprocessor">#include &lt;linux/kernel.h&gt;</span>
 00303 
-00309 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga43">rthal_enable_irq</a>(<span class="keywordtype">unsigned</span> irq);
-00310 
-00311 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga44">rthal_disable_irq</a>(<span class="keywordtype">unsigned</span> irq);
-00312 
-00315 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga45">rthal_request_linux_irq</a>(<span class="keywordtype">unsigned</span> irq,
-00316                             irqreturn_t (*handler)(<span class="keywordtype">int</span> irq,
-00317                                                    <span class="keywordtype">void</span> *dev_id,
-00318                                                    <span class="keyword">struct</span> pt_regs *regs), 
-00319                             <span class="keywordtype">char</span> *name,
-00320                             <span class="keywordtype">void</span> *dev_id);
-00321 
-00322 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga46">rthal_release_linux_irq</a>(<span class="keywordtype">unsigned</span> irq,
-00323                             <span class="keywordtype">void</span> *dev_id);
+00304 <span class="keyword">typedef</span> int (*rthal_trap_handler_t)(adevinfo_t *evinfo);
+00305 
+00306 <span class="preprocessor">#define rthal_printk    printk </span><span class="comment">/* This is safe over Adeos */</span>
+00307 
+00308 <span class="preprocessor">#ifdef __cplusplus</span>
+00309 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00310 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00311 
+00312 <span class="keywordtype">int</span> rthal_request_irq(<span class="keywordtype">unsigned</span> irq,
+00313                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq, <span class="keywordtype">void</span> *cookie),
+00314                       <span class="keywordtype">void</span> *cookie);
+00315 
+00316 <span class="keywordtype">int</span> rthal_release_irq(<span class="keywordtype">unsigned</span> irq);
+00317 
+00323 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga43">rthal_enable_irq</a>(<span class="keywordtype">unsigned</span> irq);
 00324 
-00325 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga47">rthal_pend_linux_irq</a>(<span class="keywordtype">unsigned</span> irq);
+00325 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga44">rthal_disable_irq</a>(<span class="keywordtype">unsigned</span> irq);
 00326 
-00327 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga50">rthal_pend_linux_srq</a>(<span class="keywordtype">unsigned</span> srq);
-00328 
-00329 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga48">rthal_request_srq</a>(<span class="keywordtype">unsigned</span> label,
-00330                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>));
-00331 
-00332 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga49">rthal_release_srq</a>(<span class="keywordtype">unsigned</span> srq);
-00333 
-00334 <span class="keywordtype">int</span> rthal_set_irq_affinity(<span class="keywordtype">unsigned</span> irq,
-00335                            cpumask_t cpumask,
-00336                            cpumask_t *oldmask);
-00337 
-00338 <span class="keywordtype">int</span> rthal_request_timer(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
-00339                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> nstick);
+00329 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga45">rthal_request_linux_irq</a>(<span class="keywordtype">unsigned</span> irq,
+00330                             irqreturn_t (*handler)(<span class="keywordtype">int</span> irq,
+00331                                                    <span class="keywordtype">void</span> *dev_id,
+00332                                                    <span class="keyword">struct</span> pt_regs *regs), 
+00333                             <span class="keywordtype">char</span> *name,
+00334                             <span class="keywordtype">void</span> *dev_id);
+00335 
+00336 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga46">rthal_release_linux_irq</a>(<span class="keywordtype">unsigned</span> irq,
+00337                             <span class="keywordtype">void</span> *dev_id);
+00338 
+00339 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga47">rthal_pend_linux_irq</a>(<span class="keywordtype">unsigned</span> irq);
 00340 
-00341 <span class="keywordtype">void</span> rthal_release_timer(<span class="keywordtype">void</span>);
+00341 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga50">rthal_pend_linux_srq</a>(<span class="keywordtype">unsigned</span> srq);
 00342 
-00343 rthal_trap_handler_t rthal_set_trap_handler(rthal_trap_handler_t handler);
-00344 
-00345 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rthal_calibrate_timer(<span class="keywordtype">void</span>);
-00346 
-00347 <span class="preprocessor">#ifdef __cplusplus</span>
-00348 <span class="preprocessor"></span>}
-00349 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
-00350 
-00351 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00352 
-00355 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 19:31:57 2004 for RTAI API by&nbsp;
+00343 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga48">rthal_request_srq</a>(<span class="keywordtype">unsigned</span> label,
+00344                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>));
+00345 
+00346 <span class="keywordtype">int</span> <a class="code" href="group__hal__ppc.html#ga49">rthal_release_srq</a>(<span class="keywordtype">unsigned</span> srq);
+00347 
+00348 <span class="keywordtype">int</span> rthal_set_irq_affinity(<span class="keywordtype">unsigned</span> irq,
+00349                            cpumask_t cpumask,
+00350                            cpumask_t *oldmask);
+00351 
+00352 <span class="keywordtype">int</span> rthal_request_timer(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
+00353                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> nstick);
+00354 
+00355 <span class="keywordtype">void</span> rthal_release_timer(<span class="keywordtype">void</span>);
+00356 
+00357 rthal_trap_handler_t rthal_set_trap_handler(rthal_trap_handler_t handler);
+00358 
+00359 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rthal_calibrate_timer(<span class="keywordtype">void</span>);
+00360 
+00361 <span class="preprocessor">#ifdef __cplusplus</span>
+00362 <span class="preprocessor"></span>}
+00363 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00364 
+00365 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00366 
+00369 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_HAL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Nov 14 20:30:26 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

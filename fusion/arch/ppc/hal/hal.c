@@ -30,10 +30,9 @@
  */
 
 /**
- * @defgroup hal_ppc Hardware abstraction layer.
+ * @defgroup hal_ppc HAL/ppc.
  *
- * Basic architecture-dependent services used by the real-time
- * nucleus.
+ * Basic PowerPC-dependent services used by the Xenomai nucleus.
  *
  *@{*/
 

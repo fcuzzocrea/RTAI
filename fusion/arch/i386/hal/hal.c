@@ -30,10 +30,9 @@
  */
 
 /**
- * @defgroup hal Hardware abstraction layer.
+ * @defgroup hal HAL/x86.
  *
- * Basic architecture-dependent services used by the real-time
- * nucleus.
+ * Basic x86-dependent services used by the Xenomai nucleus.
  *
  *@{*/
 

@@ -48,7 +48,7 @@ distclean-local:
 	find . -name GNUmakefile -print0 | xargs -0 rm -f
         test -d $(top_builddir)/config/kconfig && \
 	$(MAKE) -C $(srcdir)/config/kconfig \
-	-f Makefile.kconfig distclean srctree=$(srcdir) || :
+	-f Makefile.kconfig distclean srctree=$(srcdir) || : ; \
 	find . -name autom4te.cache | xargs rm -fr
 else
 clean-local:

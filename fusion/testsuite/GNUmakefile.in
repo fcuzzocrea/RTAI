@@ -229,7 +229,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	all-recursive install-data-recursive install-exec-recursive \
 	installdirs-recursive install-recursive uninstall-recursive \
 	check-recursive installcheck-recursive
-DIST_COMMON = $(srcdir)/GNUmakefile.in GNUmakefile.am
+DIST_COMMON = README $(srcdir)/GNUmakefile.in GNUmakefile.am
 DIST_SUBDIRS = cruncher latency klatency
 all: all-recursive
 

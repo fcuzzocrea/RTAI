@@ -1,5 +1,11 @@
 2005-01-19  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.6.9
+
+2005-01-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/*/defconfig: Regenerate default configs.
+	
 	* arch/ppc/patches: Upgrade to Adeos 2.6.10rc3-ppc-r6c11.
 
 	* include/nucleus/asm-*/system.h (xnarch_calibrate_timer): Guard

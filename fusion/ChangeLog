@@ -1,3 +1,8 @@
+2005-03-14  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/klatency/latency-module.c (__latency_init): Remove fpu
+	support bit.
+
 2005-03-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pod.c (xnpod_fault_handler): Print a message in debug

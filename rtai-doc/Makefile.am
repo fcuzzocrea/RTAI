@@ -1,11 +1,8 @@
 docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
 EXTRA_DIST = \
-	development \
 	internals \
-	intro \
 	maintainers \
-	services \
 	Doxyfile.in \
 	fifos_overview.dox \
 	lxrt.dox \
@@ -19,9 +16,6 @@ DOCSDIR = $(srcdir)/generated
 else
 DOCSDIR = .
 
-
-DISTCLEANFILES = *.pdf *.ps
-
 # Doxygen documentation
 all-local: doxygen-api
 
@@ -32,6 +26,9 @@ distclean-local:
 	if test -d html ; then $(RM) -R html; fi
 
 .DELETE_ON_ERROR:
+
+generate-doc-and-commit:
+	srcdir=$(srcdir) $(top_srcdir)/rtai-core/scripts/generate-doc-and-commit
 
 endif
 

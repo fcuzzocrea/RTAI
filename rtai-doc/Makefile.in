@@ -302,11 +302,8 @@ target_alias = @target_alias@
 docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
 EXTRA_DIST = \
-	development \
 	internals \
-	intro \
 	maintainers \
-	services \
 	Doxyfile.in \
 	fifos_overview.dox \
 	lxrt.dox \
@@ -318,8 +315,6 @@ DOCS = html
 
 @CONFIG_RTAI_DOC_FALSE@DOCSDIR = $(srcdir)/generated
 @CONFIG_RTAI_DOC_TRUE@DOCSDIR = .
-
-@CONFIG_RTAI_DOC_TRUE@DISTCLEANFILES = *.pdf *.ps
 subdir = rtai-doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) \
@@ -414,7 +409,6 @@ clean-generic:
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
-	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -485,6 +479,9 @@ uninstall-am: uninstall-info-am
 @CONFIG_RTAI_DOC_TRUE@	if test -d html ; then $(RM) -R html; fi
 
 @CONFIG_RTAI_DOC_TRUE@.DELETE_ON_ERROR:
+
+@CONFIG_RTAI_DOC_TRUE@generate-doc-and-commit:
+@CONFIG_RTAI_DOC_TRUE@	srcdir=$(srcdir) $(top_srcdir)/rtai-core/scripts/generate-doc-and-commit
 
 install-data-local: all-local
 	$(mkinstalldirs) $(DESTDIR)$(docdir)

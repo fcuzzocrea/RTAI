@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework 
  *
- * File: $Id: rtai_wrapper.h,v 1.2 2004/08/05 16:56:54 rpm Exp $
+ * File: $Id: rtai_wrapper.h,v 1.3 2004/08/15 14:33:07 rpm Exp $
  *
  * Copyright: (C) 2001,2002 Erwin Rol <erwin@muffin.org>
  *
@@ -25,7 +25,7 @@
 #ifndef __RTAI_WRAPPER_H__
 #define __RTAI_WRAPPER_H__
 
-typedef struct rt_task_struct RT_TASK;
+#include <rtai_sched.h>
 
 /**
  * The aim of this file is to contain all RTAI functions that can by no

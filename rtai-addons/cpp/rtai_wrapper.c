@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework 
  *
- * File: $Id: rtai_wrapper.c,v 1.1 2004/06/06 14:13:42 rpm Exp $
+ * File: $Id: rtai_wrapper.c,v 1.2 2004/08/15 14:33:07 rpm Exp $
  *
  * Copyright: (C) 2001,2002 Erwin Rol <erwin@muffin.org>
  *
@@ -23,10 +23,7 @@
  */
 #include "rtai_wrapper.h"
 
-#undef RT_TASK
-
 #include <rtai.h>
-#include <rtai_sched.h>
 #include <rtai_malloc.h>
 #include "tld_key.h"
 

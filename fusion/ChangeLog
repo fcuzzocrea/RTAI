@@ -1,5 +1,7 @@
 2004-11-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Upgrade to Adeos 2.6.9-i386-r9c1.
+
 	* skins/rtai/task.c (rt_task_create): Allow for creation in
 	suspended state passing T_SUSP.
 	(rt_task_start): Apply CPU affinity.

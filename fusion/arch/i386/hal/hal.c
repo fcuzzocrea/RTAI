@@ -987,10 +987,14 @@ int __rthal_init (void)
 
     if (rthal_cpufreq_arg == 0)
 	{
+#ifdef CONFIG_X86_TSC
 	adsysinfo_t sysinfo;
 	adeos_get_sysinfo(&sysinfo);
 	/* FIXME: 4Ghz barrier is close... */
 	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
+#else /* ! CONFIG_X86_TSC */
+        rthal_cpufreq_arg = CLOCK_TICK_RATE;
+#endif /* CONFIG_X86_TSC */
 	}
 
     rthal_tunables.cpu_freq = rthal_cpufreq_arg;

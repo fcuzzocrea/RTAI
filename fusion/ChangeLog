@@ -1,3 +1,11 @@
+2004-11-07  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* configure.in (RTAI_KBUILD_CMD): Do return the same status as
+	Kbuild make.
+
+	* arch/i386/hal/hal.c (__rthal_init): Use CLOCK_TICK_RATE as CPU
+	frequency when the kernel is configured withoug CONFIG_X86_TSC.
+
 2004-11-07  Philippe Gerum  <rpm@xenomai.org>
 
 	* GNUMakefile.am (device): Create /dev/rtheap.

@@ -768,9 +768,9 @@ RTAI_KBUILD_CMD="@for src in \$(filter-out FORCE, \$^); do if test \\! -r \`base
                     if test -e $RTAI_LINUX_DIR/vmlinux; then mv -f $RTAI_LINUX_DIR/vmlinux $RTAI_LINUX_DIR/__vmlinux; fi; \
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=@RTAI_TARGET_ARCH@ \
 		    M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
-		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@); \
-                    if test -e $RTAI_LINUX_DIR/__Module.symvers; then mv -f $RTAI_LINUX_DIR/__Module.symvers $RTAI_LINUX_DIR/Module.symvers; fi; \
-                    if test -e $RTAI_LINUX_DIR/__vmlinux; then mv -f $RTAI_LINUX_DIR/__vmlinux $RTAI_LINUX_DIR/vmlinux; fi"
+		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@) \
+                    && if test -e $RTAI_LINUX_DIR/__Module.symvers; then mv -f $RTAI_LINUX_DIR/__Module.symvers $RTAI_LINUX_DIR/Module.symvers; fi \
+                    && if test -e $RTAI_LINUX_DIR/__vmlinux; then mv -f $RTAI_LINUX_DIR/__vmlinux $RTAI_LINUX_DIR/vmlinux; fi"
 
 RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
 RTAI_KBUILD_DISTCLEAN='rm -Rf .tmp_versions'

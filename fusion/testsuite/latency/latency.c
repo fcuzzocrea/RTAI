@@ -39,7 +39,7 @@ void latency (void *cookie)
 {
     long minj, maxj = -10000000, dt, sumj;
     RTIME itime, expected, period;
-    int err, count;
+    int err, count, nsamples;
 
     err = rt_timer_start(RT_TIMER_ONESHOT);
 
@@ -49,10 +49,11 @@ void latency (void *cookie)
 	return;
 	}
 
+    nsamples = 1000000000 / sampling_period;
     period = rt_timer_ns2ticks(sampling_period);
-    itime = rt_timer_read() + period * 5;
+    itime = rt_timer_read() + sampling_period * 5;
     expected = rt_timer_ns2ticks(itime);
-    err = rt_task_set_periodic(NULL,itime,period);
+    err = rt_task_set_periodic(NULL,itime,sampling_period);
 
     if (err)
 	{
@@ -64,7 +65,7 @@ void latency (void *cookie)
 	{
 	minj = 10000000;
 
-	for (count = sumj = 0; count < SAMPLE_COUNT; count++)
+	for (count = sumj = 0; count < nsamples; count++)
 	    {
 	    expected += period;
 	    err = rt_task_wait_period();
@@ -90,7 +91,7 @@ void latency (void *cookie)
 
 	minjitter = minj;
 	maxjitter = maxj;
-	avgjitter = sumj / SAMPLE_COUNT;
+	avgjitter = sumj / nsamples;
 	rt_sem_v(&display_sem);
 	}
 }

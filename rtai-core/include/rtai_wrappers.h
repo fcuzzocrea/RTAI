@@ -90,6 +90,14 @@ typedef void irqreturn_t;
 
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,7)
+#define CPUMASK_T(name) (name)
+#define CPUMASK(name)   (name)
+#else /* LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7) */
+#define CPUMASK_T(name)  ((cpumask_t){ { name } })
+#define CPUMASK(name)    (name.bits[0])
+#endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,7) */
+
 #endif /* __KERNEL__ */
 
 #endif /* !_RTAI_WRAPPERS_H */

@@ -413,10 +413,10 @@ int rt_mutex_inquire (RT_MUTEX *mutex,
 		         const char *name)
  * @brief Bind to a mutex.
  *
- * This user-space only service retrieves the ubiquitous descriptor of
- * a given RTAI mutex identified by its symbolic name. If the
- * mutex does not exist on entry, this service blocks the caller
- * until a mutex of the given name is created.
+ * This user-space only service retrieves the uniform descriptor of a
+ * given RTAI mutex identified by its symbolic name. If the mutex does
+ * not exist on entry, this service blocks the caller until a mutex of
+ * the given name is created.
  *
  * @param name A valid NULL-terminated name which identifies the
  * mutex to bind to.

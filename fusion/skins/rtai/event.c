@@ -572,10 +572,10 @@ int rt_event_inquire (RT_EVENT *event,
 			const char *name)
  * @brief Bind to an event flag group.
  *
- * This user-space only service retrieves the ubiquitous descriptor of
- * a given RTAI event flag group identified by its symbolic name. If
- * the event flag group does not exist on entry, this service blocks
- * the caller until a event flag group of the given name is created.
+ * This user-space only service retrieves the uniform descriptor of a
+ * given RTAI event flag group identified by its symbolic name. If the
+ * event flag group does not exist on entry, this service blocks the
+ * caller until a event flag group of the given name is created.
  *
  * @param name A valid NULL-terminated name which identifies the
  * event flag group to bind to.

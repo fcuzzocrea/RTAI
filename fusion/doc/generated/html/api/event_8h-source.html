@@ -9,119 +9,119 @@
 <div class="nav">
 <a class="el" href="dir_000009.html">skins</a>&nbsp;/&nbsp;<a class="el" href="dir_000010.html">rtai</a></div>
 <h1>event.h</h1><a href="event_8h.html">Go to the documentation of this file.</a><div class="fragment"><pre class="fragment">00001 
-00049 <span class="preprocessor">#ifndef _RTAI_EVENT_H</span>
-00050 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_EVENT_H</span>
+00022 <span class="preprocessor">#ifndef _RTAI_EVENT_H</span>
+00023 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_EVENT_H</span>
+00024 <span class="preprocessor"></span>
+00025 <span class="preprocessor">#include &lt;nucleus/synch.h&gt;</span>
+00026 <span class="preprocessor">#include &lt;<a class="code" href="skins_2rtai_2types_8h.html">rtai/types.h</a>&gt;</span>
+00027 
+00028 <span class="comment">/* Creation flags. */</span>
+00029 <span class="preprocessor">#define EV_PRIO  XNSYNCH_PRIO   </span><span class="comment">/* Pend by task priority order. */</span>
+00030 <span class="preprocessor">#define EV_FIFO  XNSYNCH_FIFO   </span><span class="comment">/* Pend by FIFO order. */</span>
+00031 
+00032 <span class="comment">/* Operation flags. */</span>
+00033 <span class="preprocessor">#define EV_ANY  0x1     </span><span class="comment">/* Disjunctive wait. */</span>
+00034 <span class="preprocessor">#define EV_ALL  0x0     </span><span class="comment">/* Conjunctive wait. */</span>
+00035 
+00036 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_event_info {
+00037 
+00038     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> value; <span class="comment">/* !&lt; Current event group value. */</span>
+00039 
+00040     <span class="keywordtype">int</span> nwaiters;       <span class="comment">/* !&lt; Number of pending tasks. */</span>
+00041 
+00042     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
+00043 
+00044 } RT_EVENT_INFO;
+00045 
+00046 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_event_placeholder {
+00047     rt_handle_t opaque;
+00048 } RT_EVENT_PLACEHOLDER;
+00049 
+00050 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
 00051 <span class="preprocessor"></span>
-00052 <span class="preprocessor">#include &lt;nucleus/synch.h&gt;</span>
-00053 <span class="preprocessor">#include &lt;<a class="code" href="skins_2rtai_2types_8h.html">rtai/types.h</a>&gt;</span>
-00054 
-00055 <span class="comment">/* Creation flags. */</span>
-00056 <span class="preprocessor">#define EV_PRIO  XNSYNCH_PRIO   </span><span class="comment">/* Pend by task priority order. */</span>
-00057 <span class="preprocessor">#define EV_FIFO  XNSYNCH_FIFO   </span><span class="comment">/* Pend by FIFO order. */</span>
-00058 
-00059 <span class="comment">/* Operation flags. */</span>
-00060 <span class="preprocessor">#define EV_ANY  0x1     </span><span class="comment">/* Disjunctive wait. */</span>
-00061 <span class="preprocessor">#define EV_ALL  0x0     </span><span class="comment">/* Conjunctive wait. */</span>
-00062 
-00063 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_event_info {
-00064 
-00065     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> value; <span class="comment">/* !&lt; Current event group value. */</span>
-00066 
-00067     <span class="keywordtype">int</span> nwaiters;       <span class="comment">/* !&lt; Number of pending tasks. */</span>
-00068 
-00069     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
-00070 
-00071 } RT_EVENT_INFO;
-00072 
-00073 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_event_placeholder {
-00074     rt_handle_t opaque;
-00075 } RT_EVENT_PLACEHOLDER;
-00076 
-00077 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
-00078 <span class="preprocessor"></span>
-00079 <span class="preprocessor">#define RTAI_EVENT_MAGIC 0x55550404</span>
-00080 <span class="preprocessor"></span>
-00081 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_event {
-00082 
-00083     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
-00084 
-00085     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
-00086 
-00087     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> value; <span class="comment">/* !&lt; Event group value. */</span>
-00088 
-00089     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
+00052 <span class="preprocessor">#define RTAI_EVENT_MAGIC 0x55550404</span>
+00053 <span class="preprocessor"></span>
+00054 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_event {
+00055 
+00056     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
+00057 
+00058     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
+00059 
+00060     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> value; <span class="comment">/* !&lt; Event group value. */</span>
+00061 
+00062     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
+00063 
+00064     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
+00065 
+00066 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
+00067 <span class="preprocessor"></span>    <span class="keywordtype">int</span> source;         <span class="comment">/* !&lt; Creator's space. */</span>
+00068 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
+00069 
+00070 } RT_EVENT;
+00071 
+00072 <span class="preprocessor">#ifdef __cplusplus</span>
+00073 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00074 <span class="preprocessor">#endif</span>
+00075 <span class="preprocessor"></span>
+00076 <span class="keywordtype">int</span> __event_pkg_init(<span class="keywordtype">void</span>);
+00077 
+00078 <span class="keywordtype">void</span> __event_pkg_cleanup(<span class="keywordtype">void</span>);
+00079 
+00080 <span class="preprocessor">#ifdef __cplusplus</span>
+00081 <span class="preprocessor"></span>}
+00082 <span class="preprocessor">#endif</span>
+00083 <span class="preprocessor"></span>
+00084 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00085 
+00086 <span class="keyword">typedef</span> RT_EVENT_PLACEHOLDER RT_EVENT;
+00087 
+00088 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga8">rt_event_bind</a>(RT_EVENT *event,
+00089                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
 00090 
-00091     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
+<a name="l00091"></a><a class="code" href="group__event.html#ga9">00091</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga9">rt_event_unbind</a> (RT_EVENT *event)
 00092 
-00093 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
-00094 <span class="preprocessor"></span>    <span class="keywordtype">int</span> source;         <span class="comment">/* !&lt; Creator's space. */</span>
-00095 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
-00096 
-00097 } RT_EVENT;
-00098 
-00099 <span class="preprocessor">#ifdef __cplusplus</span>
-00100 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00101 <span class="preprocessor">#endif</span>
-00102 <span class="preprocessor"></span>
-00103 <span class="keywordtype">int</span> __event_pkg_init(<span class="keywordtype">void</span>);
-00104 
-00105 <span class="keywordtype">void</span> __event_pkg_cleanup(<span class="keywordtype">void</span>);
-00106 
-00107 <span class="preprocessor">#ifdef __cplusplus</span>
-00108 <span class="preprocessor"></span>}
-00109 <span class="preprocessor">#endif</span>
-00110 <span class="preprocessor"></span>
-00111 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00093 {
+00094     event-&gt;opaque = RT_HANDLE_INVALID;
+00095     <span class="keywordflow">return</span> 0;
+00096 }
+00097 
+00098 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
+00099 
+00100 <span class="preprocessor">#ifdef __cplusplus</span>
+00101 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00102 <span class="preprocessor">#endif</span>
+00103 <span class="preprocessor"></span>
+00104 <span class="comment">/* Public interface. */</span>
+00105 
+00106 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga2">rt_event_create</a>(RT_EVENT *event,
+00107                     <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00108                     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ivalue,
+00109                     <span class="keywordtype">int</span> mode);
+00110 
+00111 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga3">rt_event_delete</a>(RT_EVENT *event);
 00112 
-00113 <span class="keyword">typedef</span> RT_EVENT_PLACEHOLDER RT_EVENT;
-00114 
-00115 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga8">rt_event_bind</a>(RT_EVENT *event,
-00116                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
-00117 
-<a name="l00118"></a><a class="code" href="group__event.html#ga9">00118</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga9">rt_event_unbind</a> (RT_EVENT *event)
-00119 
-00120 {
-00121     event-&gt;opaque = RT_HANDLE_INVALID;
-00122     <span class="keywordflow">return</span> 0;
-00123 }
-00124 
-00125 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
-00126 
-00127 <span class="preprocessor">#ifdef __cplusplus</span>
-00128 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00129 <span class="preprocessor">#endif</span>
-00130 <span class="preprocessor"></span>
-00131 <span class="comment">/* Public interface. */</span>
-00132 
-00133 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga2">rt_event_create</a>(RT_EVENT *event,
-00134                     <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
-00135                     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ivalue,
-00136                     <span class="keywordtype">int</span> mode);
-00137 
-00138 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga3">rt_event_delete</a>(RT_EVENT *event);
-00139 
-00140 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga4">rt_event_signal</a>(RT_EVENT *event,
-00141                     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> mask);
-00142 
-00143 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga5">rt_event_wait</a>(RT_EVENT *event,
-00144                   <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> mask,
-00145                   <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *mask_r,
-00146                   <span class="keywordtype">int</span> mode,
-00147                   RTIME timeout);
-00148 
-00149 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga6">rt_event_clear</a>(RT_EVENT *event,
-00150                    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> mask,
-00151                    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *mask_r);
-00152 
-00153 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga7">rt_event_inquire</a>(RT_EVENT *event,
-00154                      RT_EVENT_INFO *info);
-00155 
-00156 <span class="preprocessor">#ifdef __cplusplus</span>
-00157 <span class="preprocessor"></span>}
-00158 <span class="preprocessor">#endif</span>
-00159 <span class="preprocessor"></span>
-00160 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_EVENT_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Dec 13 09:43:10 2004 for RTAI API by&nbsp;
+00113 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga4">rt_event_signal</a>(RT_EVENT *event,
+00114                     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> mask);
+00115 
+00116 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga5">rt_event_wait</a>(RT_EVENT *event,
+00117                   <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> mask,
+00118                   <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *mask_r,
+00119                   <span class="keywordtype">int</span> mode,
+00120                   RTIME timeout);
+00121 
+00122 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga6">rt_event_clear</a>(RT_EVENT *event,
+00123                    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> mask,
+00124                    <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *mask_r);
+00125 
+00126 <span class="keywordtype">int</span> <a class="code" href="group__event.html#ga7">rt_event_inquire</a>(RT_EVENT *event,
+00127                      RT_EVENT_INFO *info);
+00128 
+00129 <span class="preprocessor">#ifdef __cplusplus</span>
+00130 <span class="preprocessor"></span>}
+00131 <span class="preprocessor">#endif</span>
+00132 <span class="preprocessor"></span>
+00133 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_EVENT_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

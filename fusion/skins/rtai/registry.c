@@ -38,7 +38,7 @@
  * real-time objects between kernel-based and user-space tasks, or
  * between tasks belonging to different user-space processes. Once the
  * binding has been done, an exported object can be controlled through
- * the regular API using the ubiquitous descriptor returned by the
+ * the regular API using the uniform descriptor returned by the
  * registry.
  *
  * All high-level real-time objects created by the RTAI skin can be

@@ -473,8 +473,8 @@ int rt_cond_inquire (RT_COND *cond,
 			const char *name)
  * @brief Bind to a condition variable.
  *
- * This user-space only service retrieves the ubiquitous descriptor of
- * a given RTAI condition variable identified by its symbolic name. If
+ * This user-space only service retrieves the uniform descriptor of a
+ * given RTAI condition variable identified by its symbolic name. If
  * the condition variable does not exist on entry, this service blocks
  * the caller until a condition variable of the given name is created.
  *

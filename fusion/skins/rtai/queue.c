@@ -769,10 +769,10 @@ int rt_queue_inquire (RT_QUEUE *q,
 			const char *name)
  * @brief Bind to a shared message queue.
  *
- * This user-space only service retrieves the ubiquitous descriptor of
- * a given shared RTAI message queue identified by its symbolic
- * name. If the queue does not exist on entry, this service blocks the
- * caller until a queue of the given name is created.
+ * This user-space only service retrieves the uniform descriptor of a
+ * given shared RTAI message queue identified by its symbolic name. If
+ * the queue does not exist on entry, this service blocks the caller
+ * until a queue of the given name is created.
  *
  * @param name A valid NULL-terminated name which identifies the
  * queue to bind to.

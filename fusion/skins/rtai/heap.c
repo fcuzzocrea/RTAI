@@ -638,10 +638,10 @@ int rt_heap_inquire (RT_HEAP *heap,
 			const char *name)
  * @brief Bind to a shared heap.
  *
- * This user-space only service retrieves the ubiquitous descriptor of
- * a given shared RTAI heap identified by its symbolic name. If the
- * heap does not exist on entry, this service blocks the caller until
- * a heap of the given name is created.
+ * This user-space only service retrieves the uniform descriptor of a
+ * given shared RTAI heap identified by its symbolic name. If the heap
+ * does not exist on entry, this service blocks the caller until a
+ * heap of the given name is created.
  *
  * @param name A valid NULL-terminated name which identifies the
  * heap to bind to.

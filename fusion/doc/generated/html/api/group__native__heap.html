@@ -12,7 +12,7 @@
 </h1><hr><a name="_details"></a><h2>Detailed Description</h2>
 Memory heaps are regions of memory used for dynamic memory allocation in a time-bounded fashion. Blocks of memory are allocated and freed in an arbitrary order and the pattern of allocation and size of blocks is not known until run time.<p>
 The implementation of the memory allocator follows the algorithm described in a USENIX 1988 paper called "Design of a General Purpose Memory Allocator for the 4.3BSD Unix Kernel" by Marshall K. McKusick and Michael J. Karels.<p>
-RTAI memory heaps are built over Xenomai's heap objects, which in turn provide the needed support for sharing a memory area between kernel and user-space using direct memory mapping. 
+RTAI memory heaps are built over the nucleus's heap objects, which in turn provide the needed support for sharing a memory area between kernel and user-space using direct memory mapping. 
 <p>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
@@ -168,7 +168,7 @@ Rescheduling: always unless the request is immediately satisfied or <em>timeout<
 <p>
 Bind to a shared heap. 
 <p>
-This user-space only service retrieves the ubiquitous descriptor of a given shared RTAI heap identified by its symbolic name. If the heap does not exist on entry, this service blocks the caller until a heap of the given name is created.<p>
+This user-space only service retrieves the uniform descriptor of a given shared RTAI heap identified by its symbolic name. If the heap does not exist on entry, this service blocks the caller until a heap of the given name is created.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>A valid NULL-terminated name which identifies the heap to bind to.</td></tr>
@@ -483,7 +483,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Dec 13 09:43:11 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

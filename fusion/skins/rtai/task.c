@@ -1448,8 +1448,8 @@ int rt_task_slice (RT_TASK *task, RTIME quantum)
 			const char *name)
  * @brief Bind to a real-time task.
  *
- * This user-space only service retrieves the ubiquitous descriptor of
- * a given RTAI task identified by its symbolic name. If the task does
+ * This user-space only service retrieves the uniform descriptor of a
+ * given RTAI task identified by its symbolic name. If the task does
  * not exist on entry, this service blocks the caller until a task of
  * the given name is created.
  *

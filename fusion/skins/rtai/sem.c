@@ -478,8 +478,8 @@ int rt_sem_inquire (RT_SEM *sem,
 		       const char *name)
  * @brief Bind to a semaphore.
  *
- * This user-space only service retrieves the ubiquitous descriptor of
- * a given RTAI semaphore identified by its symbolic name. If the
+ * This user-space only service retrieves the uniform descriptor of a
+ * given RTAI semaphore identified by its symbolic name. If the
  * semaphore does not exist on entry, this service blocks the caller
  * until a semaphore of the given name is created.
  *

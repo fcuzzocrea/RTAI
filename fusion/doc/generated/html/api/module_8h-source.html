@@ -11,70 +11,44 @@
 <h1>module.h</h1><div class="fragment"><pre class="fragment">00001 <span class="comment">/*</span>
 00002 <span class="comment"> * Copyright (C) 2001,2002,2003 Philippe Gerum &lt;rpm@xenomai.org&gt;.</span>
 00003 <span class="comment"> *</span>
-00004 <span class="comment"> * Xenomai is free software; you can redistribute it and/or modify it</span>
-00005 <span class="comment"> * under the terms of the GNU General Public License as published by</span>
-00006 <span class="comment"> * the Free Software Foundation; either version 2 of the License, or</span>
-00007 <span class="comment"> * (at your option) any later version.</span>
+00004 <span class="comment"> * RTAI/fusion is free software; you can redistribute it and/or modify</span>
+00005 <span class="comment"> * it under the terms of the GNU General Public License as published</span>
+00006 <span class="comment"> * by the Free Software Foundation; either version 2 of the License,</span>
+00007 <span class="comment"> * or (at your option) any later version.</span>
 00008 <span class="comment"> *</span>
-00009 <span class="comment"> * Xenomai is distributed in the hope that it will be useful, but</span>
+00009 <span class="comment"> * RTAI/fusion is distributed in the hope that it will be useful, but</span>
 00010 <span class="comment"> * WITHOUT ANY WARRANTY; without even the implied warranty of</span>
 00011 <span class="comment"> * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU</span>
 00012 <span class="comment"> * General Public License for more details.</span>
 00013 <span class="comment"> *</span>
 00014 <span class="comment"> * You should have received a copy of the GNU General Public License</span>
-00015 <span class="comment"> * along with Xenomai; if not, write to the Free Software Foundation,</span>
-00016 <span class="comment"> * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.</span>
-00017 <span class="comment"> *</span>
-00018 <span class="comment"> * As a special exception, the RTAI project gives permission</span>
-00019 <span class="comment"> * for additional uses of the text contained in its release of</span>
-00020 <span class="comment"> * Xenomai.</span>
-00021 <span class="comment"> *</span>
-00022 <span class="comment"> * The exception is that, if you link the Xenomai libraries with other</span>
-00023 <span class="comment"> * files to produce an executable, this does not by itself cause the</span>
-00024 <span class="comment"> * resulting executable to be covered by the GNU General Public License.</span>
-00025 <span class="comment"> * Your use of that executable is in no way restricted on account of</span>
-00026 <span class="comment"> * linking the Xenomai libraries code into it.</span>
-00027 <span class="comment"> *</span>
-00028 <span class="comment"> * This exception does not however invalidate any other reasons why</span>
-00029 <span class="comment"> * the executable file might be covered by the GNU General Public</span>
-00030 <span class="comment"> * License.</span>
-00031 <span class="comment"> *</span>
-00032 <span class="comment"> * This exception applies only to the code released by the</span>
-00033 <span class="comment"> * RTAI project under the name Xenomai.  If you copy code from other</span>
-00034 <span class="comment"> * RTAI project releases into a copy of Xenomai, as the General Public</span>
-00035 <span class="comment"> * License permits, the exception does not apply to the code that you</span>
-00036 <span class="comment"> * add in this way.  To avoid misleading anyone as to the status of</span>
-00037 <span class="comment"> * such modified files, you must delete this exception notice from</span>
-00038 <span class="comment"> * them.</span>
-00039 <span class="comment"> *</span>
-00040 <span class="comment"> * If you write modifications of your own for Xenomai, it is your</span>
-00041 <span class="comment"> * choice whether to permit this exception to apply to your</span>
-00042 <span class="comment"> * modifications. If you do not wish that, delete this exception</span>
-00043 <span class="comment"> * notice.</span>
-00044 <span class="comment"> */</span>
-00045 
-00046 <span class="preprocessor">#ifndef _RTAI_NUCLEUS_MODULE_H</span>
-00047 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_NUCLEUS_MODULE_H</span>
-00048 <span class="preprocessor"></span>
-00049 <span class="preprocessor">#include &lt;nucleus/queue.h&gt;</span>
-00050 
-00051 <span class="preprocessor">#define XNMOD_GHOLDER_REALLOC   128 </span><span class="comment">/* Realloc count */</span>
-00052 <span class="preprocessor">#define XNMOD_GHOLDER_THRESHOLD 64  </span><span class="comment">/* Safety threshold */</span>
-00053 
-00054 <span class="preprocessor">#ifdef __cplusplus</span>
-00055 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00056 <span class="preprocessor">#endif</span>
-00057 <span class="preprocessor"></span>
-00058 <span class="keywordtype">void</span> xnmod_alloc_glinks(xnqueue_t *freehq);
-00059 
-00060 <span class="preprocessor">#ifdef __cplusplus</span>
-00061 <span class="preprocessor"></span>}
-00062 <span class="preprocessor">#endif</span>
-00063 <span class="preprocessor"></span>
-00064 <span class="keyword">extern</span> xnqueue_t xnmod_glink_queue;
-00065 
-00066 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_MODULE_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Dec 13 09:43:10 2004 for RTAI API by&nbsp;
+00015 <span class="comment"> * along with RTAI/fusion; if not, write to the Free Software</span>
+00016 <span class="comment"> * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA</span>
+00017 <span class="comment"> * 02111-1307, USA.</span>
+00018 <span class="comment"> */</span>
+00019 
+00020 <span class="preprocessor">#ifndef _RTAI_NUCLEUS_MODULE_H</span>
+00021 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_NUCLEUS_MODULE_H</span>
+00022 <span class="preprocessor"></span>
+00023 <span class="preprocessor">#include &lt;nucleus/queue.h&gt;</span>
+00024 
+00025 <span class="preprocessor">#define XNMOD_GHOLDER_REALLOC   128 </span><span class="comment">/* Realloc count */</span>
+00026 <span class="preprocessor">#define XNMOD_GHOLDER_THRESHOLD 64  </span><span class="comment">/* Safety threshold */</span>
+00027 
+00028 <span class="preprocessor">#ifdef __cplusplus</span>
+00029 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00030 <span class="preprocessor">#endif</span>
+00031 <span class="preprocessor"></span>
+00032 <span class="keywordtype">void</span> xnmod_alloc_glinks(xnqueue_t *freehq);
+00033 
+00034 <span class="preprocessor">#ifdef __cplusplus</span>
+00035 <span class="preprocessor"></span>}
+00036 <span class="preprocessor">#endif</span>
+00037 <span class="preprocessor"></span>
+00038 <span class="keyword">extern</span> xnqueue_t xnmod_glink_queue;
+00039 
+00040 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_MODULE_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:27 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

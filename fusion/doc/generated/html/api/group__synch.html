@@ -8,7 +8,7 @@
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <h1>Thread synchronization services.<br>
 <small>
-[<a class="el" href="group__nucleus.html">Xenomai nucleus.</a>]</small>
+[<a class="el" href="group__nucleus.html">RTAI/fusion nucleus.</a>]</small>
 </h1><hr><a name="_details"></a><h2>Detailed Description</h2>
 Thread synchronization services. 
 <p>
@@ -240,11 +240,11 @@ When the trace support is enabled (i.e. MVM), the idle state is posted to the sy
 <p>
 Initialize a synchronization object. 
 <p>
-Initializes a new specialized object which can subsequently be used to synchronize real-time activities. Xenomai provides a basic synchronization object which can be used to build higher resource objects. Xenomai threads can wait for and signal such objects in order to synchronize their activities.<p>
+Initializes a new specialized object which can subsequently be used to synchronize real-time activities. The RTAI/fusion nucleus provides a basic synchronization object which can be used to build higher resource objects. Nucleus threads can wait for and signal such objects in order to synchronize their activities.<p>
 This object has built-in support for priority inheritance.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"></td><td valign="top"><em>synch</em>&nbsp;</td><td>The address of a synchronization object descriptor Xenomai will use to store the object-specific data. This descriptor must always be valid while the object is active therefore it must be allocated in permanent memory.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>synch</em>&nbsp;</td><td>The address of a synchronization object descriptor the nucleus will use to store the object-specific data. This descriptor must always be valid while the object is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. The valid flags are:</td></tr>
   </table>
 </dl>
@@ -504,7 +504,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Dec 13 09:43:11 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

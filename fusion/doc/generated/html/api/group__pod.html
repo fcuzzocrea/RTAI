@@ -8,7 +8,7 @@
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <h1>Real-time pod services.<br>
 <small>
-[<a class="el" href="group__nucleus.html">Xenomai nucleus.</a>]</small>
+[<a class="el" href="group__nucleus.html">RTAI/fusion nucleus.</a>]</small>
 </h1><hr><a name="_details"></a><h2>Detailed Description</h2>
 Real-time pod services. 
 <p>
@@ -515,7 +515,7 @@ Initialize a new pod.
 Initializes a new pod which can subsequently be used to start real-time activities. Once a pod is active, real-time APIs can be stacked over. There can only be a single pod active in the host environment. Such environment can be confined to a process though (e.g. simulator or VM layers), or expand to the whole system (e.g. Adeos or RTAI).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"></td><td valign="top"><em>pod</em>&nbsp;</td><td>The address of a pod descriptor Xenomai will use to store the pod-specific data. This descriptor must always be valid while the pod is active therefore it must be allocated in permanent memory.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>pod</em>&nbsp;</td><td>The address of a pod descriptor the nucleus will use to store the pod-specific data. This descriptor must always be valid while the pod is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>minpri</em>&nbsp;</td><td>The value of the lowest priority level which is valid for threads created on behalf of this pod.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>maxpri</em>&nbsp;</td><td>The value of the highest priority level which is valid for threads created on behalf of this pod.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. The only defined flag is XNDREORD (Disable REORDering), which tells the nucleus that the (xnsynch_t) pend queue should not be reordered whenever the priority of a blocked thread it holds is changed. If this flag is not specified, changing the priority of a blocked thread using <a class="el" href="group__pod.html#ga33">xnpod_renice_thread()</a> will cause the pended queue to be reordered according to the new priority level, provided the synchronization object makes the waiters wait by priority order on the awaited resource (XNSYNCH_PRIO).</td></tr>
@@ -595,7 +595,7 @@ Initialize a new thread.
 Initializes a new thread attached to the active pod. The thread is left in an innocuous state until it is actually started by <a class="el" href="group__pod.html#ga26">xnpod_start_thread()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"></td><td valign="top"><em>thread</em>&nbsp;</td><td>The address of a thread descriptor Xenomai will use to store the thread-specific data. This descriptor must always be valid while the thread is active therefore it must be allocated in permanent memory. </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>thread</em>&nbsp;</td><td>The address of a thread descriptor the nucleus will use to store the thread-specific data. This descriptor must always be valid while the thread is active therefore it must be allocated in permanent memory. </td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Warning:</b></dt><dd>Some architectures may require the descriptor to be properly aligned in memory; this is an additional reason for descriptors not to be laid in the program stack where alignement constraints might not always be satisfied.</dd></dl>
@@ -610,7 +610,7 @@ Initializes a new thread attached to the active pod. The thread is left in an in
 <li>XNSUSP creates the thread in a suspended state. In such a case, the thread will have to be explicitely resumed using the <a class="el" href="group__pod.html#ga31">xnpod_resume_thread()</a> service for its execution to actually begin, additionally to issuing <a class="el" href="group__pod.html#ga26">xnpod_start_thread()</a> for it. This flag can also be specified when invoking <a class="el" href="group__pod.html#ga26">xnpod_start_thread()</a> as a starting mode.</li></ul>
 <p>
 <ul>
-<li>XNFPU (enable FPU) tells the nucleus that the new thread will use the floating-point unit. In such a case, the nucleus will handle the FPU context save/restore ops upon thread switches at the expense of a few additional cycles per context switch. By default, a thread is not expected to use the FPU. This flag is simply ignored when Xenomai runs on behalf of a userspace-based real-time control layer since the FPU management is always active if present.</li></ul>
+<li>XNFPU (enable FPU) tells the nucleus that the new thread will use the floating-point unit. In such a case, the nucleus will handle the FPU context save/restore ops upon thread switches at the expense of a few additional cycles per context switch. By default, a thread is not expected to use the FPU. This flag is simply ignored when the nucleus runs on behalf of a userspace-based real-time control layer since the FPU management is always active if present.</li></ul>
 <p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -1413,11 +1413,11 @@ Rescheduling: possible.     </td>
 <p>
 Start the system timer. 
 <p>
-The nucleus needs a time source to provide the time-related services to the upper interfaces. <a class="el" href="group__pod.html#ga22">xnpod_start_timer()</a> tunes the timer hardware so that a user-defined routine is called according to a given frequency. On architectures that provide a oneshot-programmable time source, the system timer can operate either in aperiodic or periodic mode. Using the aperiodic mode still allows to run periodic nucleus timers over it: the underlying hardware will simply be reprogrammed after each tick by the timer manager using the appropriate interval value (see <a class="el" href="group__timer.html#ga8">xntimer_start()</a>).<p>
+The nucleus needs a time source to provide the time-related services to the upper interfaces. <a class="el" href="group__pod.html#ga22">xnpod_start_timer()</a> tunes the timer hardware so that a user-defined routine is called according to a given frequency. On architectures that provide a oneshot-programmable time source, the system timer can operate either in aperiodic or periodic mode. Using the aperiodic mode still allows to run periodic nucleus timers over it: the underlying hardware will simply be reprogrammed after each tick by the timer manager using the appropriate interval value (see <a class="el" href="group__timer.html#ga9">xntimer_start()</a>).<p>
 The time interval that elapses between two consecutive invocations of the handler is called a tick.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"></td><td valign="top"><em>nstick</em>&nbsp;</td><td>The timer period in nanoseconds. XNPOD_DEFAULT_TICK can be used to set this value according to the arch-dependent settings. If this parameter is equal to XNPOD_APERIODIC_TICK, the underlying hardware timer is set to operate in oneshot-programming mode. In this mode, timing accuracy is higher - since it is not rounded to a constant time slice - at the expense of a lesser efficicency when many timers are simultaneously active. The aperiodic mode gives better results in configuration involving a few threads requesting timing services over different time scales that cannot be easily expressed as multiples of a single base tick, or would lead to a waste of high frequency periodical ticks.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>nstick</em>&nbsp;</td><td>The timer period in nanoseconds. XNPOD_DEFAULT_TICK can be used to set this value according to the arch-dependent settings. If this parameter is equal to XN_APERIODIC_TICK, the underlying hardware timer is set to operate in oneshot-programming mode. In this mode, timing accuracy is higher - since it is not rounded to a constant time slice - at the expense of a lesser efficicency when many timers are simultaneously active. The aperiodic mode gives better results in configuration involving a few threads requesting timing services over different time scales that cannot be easily expressed as multiples of a single base tick, or would lead to a waste of high frequency periodical ticks.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>tickhandler</em>&nbsp;</td><td>The address of the tick handler which will process each incoming tick. XNPOD_DEFAULT_TICKHANDLER can be passed to use the system-defined entry point (i.e. <a class="el" href="group__pod.html#ga66">xnpod_announce_tick()</a>). In any case, a user-supplied handler should end up calling <a class="el" href="group__pod.html#ga66">xnpod_announce_tick()</a> to inform the nucleus of the incoming tick.</td></tr>
   </table>
 </dl>
@@ -1434,7 +1434,7 @@ The time interval that elapses between two consecutive invocations of the handle
 <ul>
 <li>-ENOSYS is returned if no active pod exists.</li></ul>
 <p>
-Side-effect: A host timing service is started in order to relay the canonical periodical tick to the underlying architecture, regardless of the frequency used for Xenomai's system tick. This routine does not call the rescheduling procedure.<p>
+Side-effect: A host timing service is started in order to relay the canonical periodical tick to the underlying architecture, regardless of the frequency used for RTAI/fusion's system tick. This routine does not call the rescheduling procedure.<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
@@ -1719,7 +1719,7 @@ This internal routine is called on behalf of a (re)starting thread's prologue be
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Dec 13 09:43:11 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

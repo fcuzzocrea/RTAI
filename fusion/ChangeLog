@@ -1,9 +1,14 @@
+2004-06-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h: Better split the SMP/UP code
+	so that the #ifdef hell is reduced.
+
 2004-06-26  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/heap.c: Remove the automatically extendable heap
 	feature: this proved to be useless and confusing. Provide
 	xnheap_extend() to manually extend any given heap instead.
-	Fix documentation accordingly.
+	Fix documentation and skins accordingly.
 
 2004-06-25  Philippe Gerum  <rpm@xenomai.org>
 

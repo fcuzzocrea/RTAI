@@ -585,12 +585,9 @@ static void xnarch_init_cpu (int irq)
     atomic_inc(&xnarch_initialized_cpus);
 }
 
-#endif /* CONFIG_SMP */
-
 static inline int xnarch_init_all_cpus (void (*handler)(void))
 
 {
-#ifdef CONFIG_SMP
     int nr_cpus = num_online_cpus(), rc;
 
     atomic_set(&xnarch_initialized_cpus, 0);
@@ -616,37 +613,28 @@ static inline int xnarch_init_all_cpus (void (*handler)(void))
 			 NULL,
 			 NULL,
 			 IPIPE_PASS_MASK);
-#endif /* CPUs */
-
     handler();
     
     return 0;
 }
 
-static inline int xnarch_trigger_ipi (int cpuid)
+static inline int xnarch_trigger_ipi (int cpuid) {
 
-{
-#ifdef CONFIG_SMP
     return adeos_trigger_ipi(cpuid);
-#else /* !CONFIG_SMP */
-    return 0;
-#endif /* CONFIG_SMP */
 }
 
 static void (*nucleus_ipi_handler) (void);
 
-static void xnarch_ipi_handler(unsigned irq)
+static inline void xnarch_ipi_handler(unsigned irq)
 
 {
     nucleus_ipi_handler();
-
     adeos_propagate_irq(irq);
 }
 
 static inline int xnarch_hook_ipi (void (*handler)(void))
 
 {
-#ifdef CONFIG_SMP
     nucleus_ipi_handler = handler;
     
     return adeos_virtualize_irq_from(&rthal_domain,
@@ -656,28 +644,7 @@ static inline int xnarch_hook_ipi (void (*handler)(void))
                                      (handler
                                       ? IPIPE_HANDLE_MASK
                                       : IPIPE_PASS_MASK));
-#else /* !CONFIG_SMP */
-    return 0;
-#endif /* CONFIG_SMP */
 }
-
-static inline void xnarch_escalate (void) {
-
-    extern int xnarch_escalation_virq;
-    adeos_trigger_irq(xnarch_escalation_virq);
-}
-
-static inline void *xnarch_sysalloc (u_long bytes) {
-
-    return kmalloc(bytes,GFP_ATOMIC);
-}
-
-static inline void xnarch_sysfree (void *chunk, u_long bytes) {
-
-    kfree(chunk);
-}
-
-#ifdef CONFIG_SMP
 
 static struct semaphore xnarch_finalize_sync;
 
@@ -706,11 +673,45 @@ static inline void xnarch_notify_shutdown(void)
     adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI, NULL, NULL,
                               IPIPE_PASS_MASK);
 }
+
 #else /* !CONFIG_SMP */
+
+static inline int xnarch_init_all_cpus (void (*handler)(void))
+
+{
+    handler();
+    return 0;
+}
+
+static inline int xnarch_trigger_ipi (int cpuid) {
+
+    return 0;
+}
+
+static inline int xnarch_hook_ipi (void (*handler)(void)) {
+
+    return 0;
+}
 
 #define xnarch_notify_shutdown() /* Nullified */
 
 #endif /* CONFIG_SMP */
+
+static inline void xnarch_escalate (void) {
+
+    extern int xnarch_escalation_virq;
+    adeos_trigger_irq(xnarch_escalation_virq);
+}
+
+static inline void *xnarch_sysalloc (u_long bytes) {
+
+    return kmalloc(bytes,GFP_ATOMIC);
+}
+
+static inline void xnarch_sysfree (void *chunk, u_long bytes) {
+
+    kfree(chunk);
+}
 
 #define xnarch_notify_ready() /* Nullified */
 

@@ -94,6 +94,9 @@
 #undef CONFIG_RTAI_MALLOC_BUILTIN
 
 /* Kconfig */
+#undef CONFIG_RTAI_MALLOC_HEAPSZ
+
+/* Kconfig */
 #undef CONFIG_RTAI_MALLOC_VMALLOC
 
 /* Kconfig */

@@ -689,7 +689,8 @@ int __rtai_heap_init (void)
 
 #ifdef CONFIG_RTAI_MALLOC_VMALLOC
 	if (!(rtai_global_heap_adr = alloc_extent(rtai_global_heap_size))) {
-		printk("RTAI[malloc]: failed to preallocate the vmalloced extent for the global heap (size=%d bytes).\n", rtai_global_heap_size);
+		printk("RTAI[malloc]: failed to preallocate the vmalloced extent for the global heap (size=%d bytes).\n",
+		       rtai_global_heap_size);
 		return 1;
 	}
 #endif

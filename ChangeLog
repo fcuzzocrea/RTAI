@@ -1,3 +1,8 @@
+2004-06-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in, rtai-core/arch/*/Kconfig: Make the global heap
+	size a configurable parameter.
+
 2004-06-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* rtai-core/malloc/malloc.c: renamed global heap variable and added

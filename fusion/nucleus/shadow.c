@@ -120,10 +120,6 @@ static struct {
 
 static cpumask_t shielded_cpus;
 
-static unsigned long irq_shield_hi[XNARCH_NR_CPUS];
-
-static unsigned long irq_shield_lo[XNARCH_NR_CPUS][IPIPE_IRQ_IWORDS];
-
 #define get_switch_lock_owner() \
 switch_lock_owner[task_cpu(current)]
 
@@ -181,9 +177,8 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
     xnshadow_relax();
 }
 
-static inline void engage_irq_shield (int this_cpu)
-     
-{
+static inline void engage_irq_shield (int this_cpu) {
+
     cpu_set(this_cpu,shielded_cpus);
 }
 
@@ -216,9 +211,11 @@ do { \
 } while(0)
 #endif
 
-static void xnshadow_shield_trampoline (unsigned irq)
+static void xnshadow_shield_body (unsigned irq)
 
 {
+    static unsigned long irq_lo[XNARCH_NR_CPUS][IPIPE_IRQ_IWORDS];
+    static unsigned long irq_hi[XNARCH_NR_CPUS];
     adeos_declare_cpuid;
     unsigned hi, lo;
 
@@ -230,16 +227,16 @@ static void xnshadow_shield_trampoline (unsigned irq)
 
     if (cpus_empty(shielded_cpus))
 	{
-	while (irq_shield_hi[cpuid] != 0)
+	while (irq_hi[cpuid] != 0)
 	    {
-	    hi = ffnz(irq_shield_hi[cpuid]);
-	    irq_shield_hi[cpuid] &= ~(1 << hi);
+	    hi = ffnz(irq_hi[cpuid]);
+	    __clear_bit(hi,&irq_hi[cpuid]);
 
-	    while (irq_shield_lo[cpuid][hi] != 0)
+	    while (irq_lo[cpuid][hi] != 0)
 		{
 		unsigned _irq;
-		lo = ffnz(irq_shield_lo[cpuid][hi]);
-		irq_shield_lo[cpuid][hi] &= ~(1 << lo);
+		lo = ffnz(irq_lo[cpuid][hi]);
+		__clear_bit(lo,&irq_lo[cpuid][hi]);
 		_irq = (hi << IPIPE_IRQ_ISHIFT) + lo;
 		__adeos_unlock_local_irq(adp_root,cpuid,_irq);
 		}
@@ -265,8 +262,24 @@ static void xnshadow_shield_trampoline (unsigned irq)
 	    hi = irq >> IPIPE_IRQ_ISHIFT;
 	    lo = irq & IPIPE_IRQ_IMASK;
 
-	    if (!test_and_set_bit(hi,&irq_shield_hi[cpuid]))
-		if (!test_and_set_bit(lo,&irq_shield_lo[cpuid][hi]))
+	    /* By not testing the Adeos lock bit (IPIPE_LOCK_FLAG) but
+	       rather our local one, we accept that some Linux driver
+	       forcibly unlocks the interrupt path for the root domain
+	       by calling the ->enable() or ->startup() IRQ descriptor
+	       handlers. In such a case, our marker would tell us that
+	       the IRQ is already locked whilst it is actually not at
+	       the Adeos-level. We do this since eager IRQ enabling by
+	       Linux is usually not part of the usual operations, but
+	       rather part of a recovery mode where synchronous
+	       replies from the hardware are expected; i.e.
+	       interrupts on such channel _must_ flow then. The cost
+	       for us is real-time operations in the Linux domain
+	       being preemptable by non real-time interrupt handling
+	       for this source until the next time the shield gets
+	       reasserted, but the gain is box stability. */
+
+	    if (!__test_and_set_bit(hi,&irq_hi[cpuid]))
+		if (!__test_and_set_bit(lo,&irq_lo[cpuid][hi]))
 		    __adeos_lock_irq(adp_root,cpuid,irq);
 	    }
 	}
@@ -284,7 +297,7 @@ static void xnshadow_shield (int iflag)
     if (iflag)
 	for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 	    adeos_virtualize_irq(irq,
-				 &xnshadow_shield_trampoline,
+				 &xnshadow_shield_body,
 				 NULL,
 				 IPIPE_DYNAMIC_MASK);
     for (;;)

@@ -1,3 +1,8 @@
+2004-07-20  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Upgrade the x86 patch to
+	2.6.7r6c4.
+
 2004-07-19  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/sched/rtai/sched_lxrt.c: Do not escalate the

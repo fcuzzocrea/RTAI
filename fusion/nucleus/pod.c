@@ -1167,6 +1167,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 	   and return immediately. */
 	if (testbits(thread->status,XNKICKED))
 	    {
+	    __clrbits(thread->status,XNRMID|XNTIMEO);
 	    __setbits(thread->status,XNBREAK);
 	    goto unlock_and_exit;
 	    }

@@ -176,6 +176,7 @@ RTAI_MAYBE_DOCDIR = @RTAI_MAYBE_DOCDIR@
 RTAI_MAYBE_SIMDIR = @RTAI_MAYBE_SIMDIR@
 RTAI_MODULE_DIR = @RTAI_MODULE_DIR@
 RTAI_MODULE_EXT = @RTAI_MODULE_EXT@
+RTAI_PIPE_NRDEV = @RTAI_PIPE_NRDEV@
 RTAI_TARGET_ARCH = @RTAI_TARGET_ARCH@
 RTAI_TARGET_SUBARCH = @RTAI_TARGET_SUBARCH@
 RTAI_USER_APP_CFLAGS = @RTAI_USER_APP_CFLAGS@
@@ -725,7 +726,7 @@ dist-hook:
 dev devices:
 	@if test x$(DESTDIR) = x; then \
 	    if test \! "x`type -t sudo`" = x; then sudo=sudo; else sudo=; fi; \
-	    for n in `seq 0 31`; do \
+	    for n in `seq 0 @RTAI_PIPE_NRDEV@`; do \
 	       f="$(DESTDIR)/dev/rtp$$n"; \
 	       if test \! -c $$f; then \
 	          $$sudo mknod -m 666 $$f c 150 $$n; \

@@ -1,3 +1,8 @@
+2004-11-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in, nucleus/Kconfig: Make the maximum number of pipes
+	configurable.
+
 2004-11-14  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus, include/nucleus: Provide support for non-threaded Adeos

@@ -61,6 +61,9 @@
 #undef CONFIG_RTAI_OPT_PIPE
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_PIPE_NRDEV
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_TIMESTAMPS
 
 /* Kconfig */

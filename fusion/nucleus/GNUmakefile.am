@@ -78,7 +78,7 @@ endif
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(libmodule_SRC) trace.c Makefile.kbuild
+EXTRA_DIST = $(libmodule_SRC) trace.c Makefile.kbuild Kconfig
 
 if CONFIG_RTAI_OPT_FUSION
 SUBDIRS = lib

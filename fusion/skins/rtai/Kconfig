@@ -38,6 +38,10 @@ config RTAI_OPT_NATIVE_PIPE
 	message boundaries, but can also be used in byte stream mode
 	from kernel to user space.
 
+	The maximum number of pipes available in the system can be
+	configured using the RTAI_OPT_PIPE_NRDEV option from the
+	Nucleus menu.
+
 config RTAI_OPT_NATIVE_PIPE_BUFSZ
 	string "Bytes in buffer space"
 	depends on RTAI_OPT_NATIVE_PIPE

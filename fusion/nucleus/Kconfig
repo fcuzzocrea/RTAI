@@ -23,4 +23,14 @@ config RTAI_OPT_PIPE
 	message boundaries, but can also be used in byte stream mode
 	from kernel to user space.
 
+config RTAI_OPT_PIPE_NRDEV
+	string "Number of pipe devices"
+	depends on RTAI_OPT_PIPE
+	default 32
+	help
+	
+	This option sets the maximum number of pipe devices supported
+	in the system. Pipe devices are named /dev/rtpN where N is a
+	device minor number ranging from 0 to RTAI_OPT_PIPE_NRDEV - 1.
+
 endmenu

@@ -78,7 +78,7 @@ dist-hook:
 dev devices:
 	@if test x$(DESTDIR) = x; then \
 	    if test \! "x`type -t sudo`" = x; then sudo=sudo; else sudo=; fi; \
-	    for n in `seq 0 31`; do \
+	    for n in `seq 0 @RTAI_PIPE_NRDEV@`; do \
 	       f="$(DESTDIR)/dev/rtp$$n"; \
 	       if test \! -c $$f; then \
 	          $$sudo mknod -m 666 $$f c 150 $$n; \

@@ -483,6 +483,7 @@ menu "Other features"
 
 config RTAI_MATH
 	bool "Math support"
+	depends on RTAI_FPU_SUPPORT
 	default y
 
 config RTAI_MATH_C99

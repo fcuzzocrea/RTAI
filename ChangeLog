@@ -1,3 +1,10 @@
+2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matlab/ptinfo.tlc: new <matlab7>rtw/c/tlc/mw/ptinfo.tlc
+	which correct problems with simulink block names in Matlab 7 (R14).
+	This new ptinfo.tlc file has been provided by Mathworks and fix the 
+	problem
+
 2005-01-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* doc: Fix generation and rebuild.

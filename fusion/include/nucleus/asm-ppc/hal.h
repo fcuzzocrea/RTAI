@@ -222,16 +222,16 @@ do { \
    instead. */
 
 static inline struct task_struct *rthal_get_root_current (int cpuid) {
-    return ((struct thread_info *)(((u_long)adp_root->esp[cpuid]) & (~8191UL)))->task;
+    return ((struct thread_info *)(adp_root->esp[cpuid] & (~8191UL)))->task;
 }
 
 static inline struct task_struct *rthal_get_current (int cpuid)
 
 {
-    register int *esp asm ("r1");
+    register unsigned long esp asm ("r1");
     /* FIXME: r2 should be ok or even __adeos_current_threadinfo() - offsetof(THREAD) */
     
-    if (esp >= rthal_domain.estackbase[cpuid] && esp < rthal_domain.estackbase[cpuid] + 2048)
+    if (esp >= rthal_domain.estackbase[cpuid] && esp < rthal_domain.estackbase[cpuid] + 8192)
 	return rthal_get_root_current(cpuid);
 
     return current;
@@ -257,6 +257,10 @@ void rthal_critical_exit(unsigned long flags);
 void rthal_set_linux_task_priority(struct task_struct *task,
 				   int policy,
 				   int prio);
+
+/* The following must be in sync w/ rthal_switch_context() in
+   switch.S */
+#define RTHAL_SWITCH_FRAME_SIZE  108
 
 void rthal_switch_context(unsigned long *out_kspp,
 			  unsigned long *in_kspp);

@@ -1,5 +1,8 @@
 2004-08-24  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/hal/switch.S (rthal_context_switch): Enforce standard
+	stack frame overhead.
+
 	* include/nucleus/asm-i386/system.h (xnarch_sleep_on): Properly
 	set the task state before sleeping on schedule_timeout().
 

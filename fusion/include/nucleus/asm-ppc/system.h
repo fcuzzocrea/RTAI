@@ -497,11 +497,12 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     adeos_hw_local_irq_flags(flags);
 
     *tcb->stackbase = 0;
-    tcb->ksp = (((unsigned long)tcb->stackbase + tcb->stacksize - 0x10) & ~0xf) - 108;
-    ksp = (unsigned long *)tcb->ksp;
+    ksp = (unsigned long *)((((unsigned long)tcb->stackbase + tcb->stacksize - 0x10) & ~0xf) - RTHAL_SWITCH_FRAME_SIZE);
+    tcb->ksp = (unsigned long)ksp - STACK_FRAME_OVERHEAD;
     ksp[3] = (unsigned long)tcb; /* r3 */
     ksp[25] = (unsigned long)&xnarch_thread_trampoline; /* lr */
     ksp[26] = flags & ~MSR_EE; /* msr */
+
     tcb->entry = entry;
     tcb->cookie = cookie;
     tcb->self = thread;

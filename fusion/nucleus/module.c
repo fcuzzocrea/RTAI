@@ -251,8 +251,7 @@ static ssize_t timer_read_proc (char *page,
 	}
 
     len = sprintf(page,
-		  "STAT      SETUP  TICKVAL     JIFFIES\n"
-		  "%-8s\t%-5Lu\t%-10Lu\t%Lu\n",
+		  "status=%s:setup=%Lu:tickval=%Lu:jiffies=%Lu\n",
 		  status,
 		  xnarch_tsc_to_ns(nktimerlat),
 		  tickval,

@@ -37,8 +37,8 @@
 #include <nucleus/asm/atomic.h>
 #include <nucleus/shadow.h>
 
-#if ADEOS_RELEASE_NUMBER < 0x02060609
-#error "Adeos 2.6r6c9/ppc or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x0206060a
+#error "Adeos 2.6r6c10/ppc or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/ppc/"
 #endif
 

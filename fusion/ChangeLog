@@ -1,5 +1,7 @@
 2005-01-01  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ppc/patches: Upgrade to Adeos 2.6.8rc3-r6c10.
+
 	* nucleus/heap.c (xnheap_mmap): Fix PPC support.
 
 2004-12-31  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

@@ -109,12 +109,14 @@ int rt_intr_create (RT_INTR *intr,
 
     err = xnintr_attach(&intr->intr_base,intr);
 
+#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
 
     if (!err)
 	err = rt_registry_enter(intr->name,intr,&intr->handle);
+#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     if (err)
 	rt_intr_delete(intr);
@@ -144,8 +146,10 @@ int rt_intr_delete (RT_INTR *intr)
     rc = xnsynch_destroy(&intr->synch_base);
     xnintr_detach(&intr->intr_base);
 
+#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (intr->handle)
         rt_registry_remove(intr->handle);
+#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     xnintr_destroy(&intr->intr_base);
 

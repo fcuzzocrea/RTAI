@@ -123,7 +123,6 @@ config RTAI_OPT_NATIVE_ALARM
 config RTAI_OPT_NATIVE_INTR
 	bool "Interrupts"
 	depends on RTAI_SKIN_NATIVE
-	enable RTAI_OPT_NATIVE_REGISTRY
 	default y
 	help
 	

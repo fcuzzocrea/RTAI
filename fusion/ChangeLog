@@ -1,3 +1,8 @@
+2005-01-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* drivers/16550A/16550A.c (rt_uart_close): Add missing
+	unregistration.
+
 2005-01-10  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
 
 	* testsuite: Provide normalized tabular format for printing

@@ -216,11 +216,13 @@ int rt_uart_open (RT_UART *uart,
     uart->source = RT_KAPI_SOURCE;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
+#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
 
     err = rt_registry_enter(uart->name,uart,&uart->handle);
+#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     if (err)
 	rt_uart_close(uart);
@@ -252,6 +254,11 @@ int rt_uart_close (RT_UART *uart)
         }
     
     rt_intr_delete(&uart->intr_desc);
+
+#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
+    if (uart->handle)
+        rt_registry_remove(uart->handle);
+#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     /* Mask all UART interrupts and clear pending ones. */
     outb(0,IER(uart));

@@ -182,8 +182,9 @@ unsigned long rthal_calibrate_timer (void) {
     /* On PowerPC systems, the cost of setting the decrementer or the
        PIT does not induce significant latency. In such a case, let's
        return the shortest possible delay for a one-shot setup. In any
-       case, always return a non-zero value here. */
-    return 1;
+       case, always return a non-zero value.  e.g. 1 decrementer tick
+       here. */
+    return rthal_llimd(1,1000000000,RTHAL_CPU_FREQ); /* Convert as ns. */
 }
 
 unsigned long rthal_critical_enter (void (*synch)(void))

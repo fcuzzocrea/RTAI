@@ -1,5 +1,10 @@
 2004-09-01  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-ppc/atomic.h: Fix register notations in
+	inline assembly.
+
+	* arch/*/defconfig: Rebuild sane defconfigs.
+
 	* nucleus/pod.c (xnpod_calibration_thread): Calibrate during 0.3s
 	regardless of the calibration period. Also provide for adjusting
 	the estimated average jitter on a per-architecture basis.

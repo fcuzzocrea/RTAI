@@ -540,11 +540,11 @@ void xnshadow_relax (void)
 	       adp_current->name);
 #endif
 
-    if (current->state == TASK_UNINTERRUPTIBLE)
+    if (current->state & TASK_UNINTERRUPTIBLE)
 	/* Just to avoid wrecking Linux's accounting of non-
 	   interruptible tasks, move back kicked tasks to
 	   interruptible state, like schedule() saw them initially. */
-	set_current_state(TASK_INTERRUPTIBLE);
+	set_current_state((current->state&~TASK_UNINTERRUPTIBLE)|TASK_INTERRUPTIBLE);
 
     schedule_linux_call(SB_WAKEUP_REQ,current,0);
 
@@ -1637,10 +1637,12 @@ static void linux_kick_process (adevinfo_t *evinfo)
        schedule in its mate under our feet as a result of performing
        signal_wake_up(). The RTAI scheduler must remain in control for
        now, until we explicitely relax the shadow thread to allow
-       processing the pending signals. */
+       processing the pending signals. Make sure we keep the
+       additional state flags unmodified so that we don't break
+       ptracing. */
 
-    if (task->state == TASK_INTERRUPTIBLE)
-	set_task_state(task,TASK_UNINTERRUPTIBLE);
+    if (task->state & TASK_INTERRUPTIBLE)
+	set_task_state(task,(task->state&~TASK_INTERRUPTIBLE)|TASK_UNINTERRUPTIBLE);
 
     xnpod_schedule();
 

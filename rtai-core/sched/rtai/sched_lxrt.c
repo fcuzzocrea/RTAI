@@ -628,25 +628,9 @@ do { preempt = 0; } while (0)
 
 static volatile int to_linux_depth[NR_RT_CPUS];
 
-#define LOCK_LINUX(cpuid) \
-do { \
-	if (!to_linux_depth[cpuid]++) { \
-		set_bit(cpuid, &rtai_cpu_lxrt); \
-		rt_switch_to_real_time(cpuid); \
-	} \
-} while (0)
+#define LOCK_LINUX(cpuid)    do { rt_switch_to_real_time(cpuid); } while (0)
 
-#define UNLOCK_LINUX(cpuid) \
-do { \
-	if (to_linux_depth[cpuid]) { \
-		if (!--to_linux_depth[cpuid]) { \
-			rt_switch_to_linux(cpuid); \
-			clear_bit(cpuid, &rtai_cpu_lxrt); \
-		} \
-	} else { \
-		rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n"); \
-	} \
-} while (0)
+#define UNLOCK_LINUX(cpuid)  do { if (rt_switch_to_linux(cpuid)) rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n"); } while (0)
 
 #define ANTICIPATE
 
@@ -954,7 +938,7 @@ schedlnxtsk:
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
 				RST_CPUS_ALLOWED;
-				if (rt_current->state != RT_SCHED_READY || (rt_current != &rt_linux_task && prev->state == TASK_HARDREALTIME)) {
+				if (rt_current->state != RT_SCHED_READY) {
 					goto sched_soft;
 				}
 			} else if (rt_current->force_soft) {
@@ -2181,7 +2165,7 @@ static void lxrt_intercept_syscall (adevinfo_t *evinfo)
 
     adeos_get_cpu(flags);
 
-    if (test_bit(cpuid,&rtai_cpu_lxrt))
+    if (test_bit(cpuid, &rtai_cpu_realtime))
 	{
 	struct task_struct *t = evinfo->domid == adp_current->domid ? current : rtai_get_root_current(cpuid);
 	RT_TASK *task = t->this_rt_task[0];

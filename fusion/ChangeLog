@@ -1,3 +1,7 @@
+2004-10-10  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: fusion-0.6
+
 2004-10-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* GNUmakefiles.am building kernel modules : Force build of kernel

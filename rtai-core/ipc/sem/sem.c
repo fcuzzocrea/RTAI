@@ -737,48 +737,39 @@ int rt_cond_signal(CND *cnd)
 	return 0;
 }
 
-static inline void rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
+static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
 {
+	int type;
 	RT_TASK *task;
 
-	if (mtx->type <= 1) {
-		if (++mtx->count > 1) {
-			mtx->count = 1;
-		}
-		if ((task = (mtx->queue.next)->task)) {
-			dequeue_blocked(task);
-			rem_timed_task(task);
-			if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-				enq_ready_task(task);
-			}
-		}
-		if (mtx->type > 0) {
-			mtx->owndby = 0;
-			if (rt_current->owndres & SEMHLF) {
-				--rt_current->owndres;
-			}
-			if (!rt_current->owndres) {
-				renq_current(rt_current, rt_current->base_priority);
-			} else if (!(rt_current->owndres & SEMHLF)) {
-				int priority;
-				renq_current(rt_current, rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority);
-			}
-			if (rt_current->suspdepth > 0) {
-				rt_current->state |= RT_SCHED_SUSPENDED;
-				rem_ready_current(rt_current);
-			} else if (rt_current->suspdepth < 0) {
-				rt_task_delete(rt_current);
-			}
+	type = mtx->type;
+	mtx->type = 1;
+	if (++mtx->count > 1) {
+		mtx->count = 1;
+	}
+	if ((task = (mtx->queue.next)->task)) {
+		dequeue_blocked(task);
+		rem_timed_task(task);
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			enq_ready_task(task);
 		}
 	} else {
 		task = 0;
-		mtx->type--;
 	}
- 	if (task) {
+	mtx->owndby = 0;
+	if (rt_current->owndres & SEMHLF) {
+		--rt_current->owndres;
+	}
+	if (!(rt_current->owndres & SEMHLF)) {
+		int priority;
+		rt_current->priority = rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority;
+	}
+	if (task) {
 		 RT_SCHEDULE_BOTH(task, hard_cpu_id());
 	} else {
 		rt_schedule();
 	}
+	return type;
 }
 
 /**
@@ -805,7 +796,7 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
 {
 	RT_TASK *rt_current;
 	unsigned long flags;
-	int retval;
+	int retval, type;
 
 	if (cnd->magic != RT_SEM_MAGIC || mtx->magic != RT_SEM_MAGIC) {
 		return SEM_ERR;
@@ -816,12 +807,13 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
 	rt_current->state |= RT_SCHED_SEMAPHORE;
 	rem_ready_current(rt_current);
 	enqueue_blocked(rt_current, &cnd->queue, cnd->qtype);
-	rt_cndmtx_signal(mtx, rt_current);
+	type = rt_cndmtx_signal(mtx, rt_current);
 	if (rt_current->blocked_on || cnd->magic != RT_SEM_MAGIC) {
 		retval = SEM_ERR;
 	}
 	rt_global_restore_flags(flags);
 	rt_sem_wait(mtx);
+	mtx->type = type;
 	return retval;
 }
 
@@ -853,7 +845,7 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
-	int retval;
+	int retval, type;
 
 	if (cnd->magic != RT_SEM_MAGIC && mtx->magic != RT_SEM_MAGIC) {
 		return SEM_ERR;
@@ -866,7 +858,7 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 		rem_ready_current(rt_current);
 		enqueue_blocked(rt_current, &cnd->queue, cnd->qtype);
 		enq_timed_task(rt_current);
-		rt_cndmtx_signal(mtx, rt_current);
+		type = rt_cndmtx_signal(mtx, rt_current);
 		if (cnd->magic != RT_SEM_MAGIC) {
 			retval = SEM_ERR;
 		} else {
@@ -882,6 +874,7 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 	}
 	rt_global_restore_flags(flags);
 	rt_sem_wait(mtx);
+	mtx->type = type;
 	return retval;
 }
 

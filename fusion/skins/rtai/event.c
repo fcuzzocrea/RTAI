@@ -122,7 +122,7 @@ int rt_event_create (RT_EVENT *event,
     xnobject_copy_name(event->name,name);
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    event->source = RT_KAPI_SOURCE;
+    event->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY

@@ -54,7 +54,7 @@ typedef struct rt_cond {
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    int source;		/* !< Creator's space. */
+    pid_t cpid;			/* !< Creator's pid. */
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 } RT_COND;

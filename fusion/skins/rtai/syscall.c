@@ -760,7 +760,7 @@ static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
-	sem->source = RT_UAPI_SOURCE;
+	sem->cpid = curr->pid;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = sem->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -804,7 +804,7 @@ static int __rt_sem_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_sem_delete(sem);
 
-    if (!err && sem->source == RT_UAPI_SOURCE)
+    if (!err && sem->cpid)
 	xnfree(sem);
 
     return err;
@@ -951,7 +951,7 @@ static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
-	event->source = RT_UAPI_SOURCE;
+	event->cpid = curr->pid;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = event->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -995,7 +995,7 @@ static int __rt_event_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_event_delete(event);
 
-    if (!err && event->source == RT_UAPI_SOURCE)
+    if (!err && event->cpid)
 	xnfree(event);
 
     return err;
@@ -1188,7 +1188,7 @@ static int __rt_mutex_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
-	mutex->source = RT_UAPI_SOURCE;
+	mutex->cpid = curr->pid;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = mutex->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -1232,7 +1232,7 @@ static int __rt_mutex_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_mutex_delete(mutex);
 
-    if (!err && mutex->source == RT_UAPI_SOURCE)
+    if (!err && mutex->cpid)
 	xnfree(mutex);
 
     return err;
@@ -1368,7 +1368,7 @@ static int __rt_cond_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
-	cond->source = RT_UAPI_SOURCE;
+	cond->cpid = curr->pid;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = cond->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -1412,7 +1412,7 @@ static int __rt_cond_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_cond_delete(cond);
 
-    if (!err && cond->source == RT_UAPI_SOURCE)
+    if (!err && cond->cpid)
 	xnfree(cond);
 
     return err;
@@ -1596,7 +1596,7 @@ static int __rt_queue_create (struct task_struct *curr, struct pt_regs *regs)
     if (err)
 	goto free_and_fail;
 
-    q->source = RT_UAPI_SOURCE;
+    q->cpid = curr->pid;
 
     /* Copy back the registry handle to the ph struct. */
     ph.opaque = q->handle;
@@ -1696,7 +1696,7 @@ static int __rt_queue_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_queue_delete(q);
 
-    if (!err && q->source == RT_UAPI_SOURCE)
+    if (!err && q->cpid)
 	xnfree(q);
 
  unlock_and_exit:
@@ -2022,7 +2022,7 @@ static int __rt_heap_create (struct task_struct *curr, struct pt_regs *regs)
     if (err)
 	goto free_and_fail;
 
-    heap->source = RT_UAPI_SOURCE;
+    heap->cpid = curr->pid;
 
     /* Copy back the registry handle to the ph struct. */
     ph.opaque = heap->handle;
@@ -2122,7 +2122,7 @@ static int __rt_heap_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_heap_delete(heap);
 
-    if (!err && heap->source == RT_UAPI_SOURCE)
+    if (!err && heap->cpid)
 	xnfree(heap);
 
  unlock_and_exit:
@@ -2331,7 +2331,7 @@ static int __rt_alarm_create (struct task_struct *curr, struct pt_regs *regs)
 
     if (err == 0)
 	{
-	alarm->source = RT_UAPI_SOURCE;
+	alarm->cpid = curr->pid;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = alarm->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -2365,7 +2365,7 @@ static int __rt_alarm_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_alarm_delete(alarm);
 
-    if (!err && alarm->source == RT_UAPI_SOURCE)
+    if (!err && alarm->cpid)
 	xnfree(alarm);
 
     return err;
@@ -2565,7 +2565,7 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
     if (err == 0)
 	{
 	intr->mode = mode;
-	intr->source = RT_UAPI_SOURCE;
+	intr->cpid = curr->pid;
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = intr->handle;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
@@ -2610,7 +2610,7 @@ static int __rt_intr_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_intr_delete(intr);
 
-    if (!err && intr->source == RT_UAPI_SOURCE)
+    if (!err && intr->cpid)
 	xnfree(intr);
 
     return err;

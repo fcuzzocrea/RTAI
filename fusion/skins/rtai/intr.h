@@ -78,7 +78,7 @@ typedef struct rt_intr {
 
     xnsynch_t synch_base; /* !< Base synchronization object. */
 
-    int source;		/* !< Creator's space. */
+    pid_t cpid;			/* !< Creator's pid. */
 
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

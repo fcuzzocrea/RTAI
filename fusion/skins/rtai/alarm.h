@@ -60,7 +60,7 @@ typedef struct rt_alarm {
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
 
-    int source;			/* !< Creator's space. */
+    pid_t cpid;			/* !< Creator's pid. */
 
     xnsynch_t synch_base;	/* !< Synch. base for user-space tasks. */
 

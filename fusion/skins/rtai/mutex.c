@@ -105,7 +105,7 @@ int rt_mutex_create (RT_MUTEX *mutex,
     xnobject_copy_name(mutex->name,name);
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    mutex->source = RT_KAPI_SOURCE;
+    mutex->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY

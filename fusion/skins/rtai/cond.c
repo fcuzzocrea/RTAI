@@ -103,7 +103,7 @@ int rt_cond_create (RT_COND *cond,
     xnobject_copy_name(cond->name,name);
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    cond->source = RT_KAPI_SOURCE;
+    cond->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY

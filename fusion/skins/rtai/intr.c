@@ -127,7 +127,7 @@ int rt_intr_create (RT_INTR *intr,
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     xnsynch_init(&intr->synch_base,XNSYNCH_PRIO);
     intr->pending = -1;
-    intr->source = RT_KAPI_SOURCE;
+    intr->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     intr->magic = RTAI_INTR_MAGIC;
     intr->handle = 0;    /* i.e. (still) unregistered interrupt. */

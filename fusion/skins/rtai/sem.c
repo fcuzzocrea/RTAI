@@ -125,7 +125,7 @@ int rt_sem_create (RT_SEM *sem,
     xnobject_copy_name(sem->name,name);
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    sem->source = RT_KAPI_SOURCE;
+    sem->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY

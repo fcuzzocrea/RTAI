@@ -193,7 +193,7 @@ int rt_heap_create (RT_HEAP *heap,
 	if (err)
 	    return err;
 
-	heap->source = RT_KAPI_SOURCE;
+	heap->cpid = 0;
 #else /* !CONFIG_RTAI_OPT_FUSION */
 	return -ENOSYS;
 #endif /* CONFIG_RTAI_OPT_FUSION */

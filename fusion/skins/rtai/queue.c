@@ -182,7 +182,7 @@ int rt_queue_create (RT_QUEUE *q,
 	if (err)
 	    return err;
 
-	q->source = RT_KAPI_SOURCE;
+	q->cpid = 0;
 #else /* !CONFIG_RTAI_OPT_FUSION */
 	return -ENOSYS;
 #endif /* CONFIG_RTAI_OPT_FUSION */

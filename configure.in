@@ -171,7 +171,14 @@ AC_ARG_WITH(linux-dir,
     [  --with-linux-dir=<linux-dir>      RTAI-enabled Linux kernel tree],
     [
 	case "$withval" in
-	"" | y | ye | yes | n | no)
+	"" )
+	    if test x${CONFIG_RTAI_LINUXDIR} = x; then
+		AC_MSG_ERROR([You must supply an argument to --with-linux-dir.])
+	    else
+		withval=${CONFIG_RTAI_LINUXDIR}
+	    fi
+	  ;;
+	y | ye | yes | n | no)
 	    AC_MSG_ERROR([You must supply an argument to --with-linux-dir.])
 	  ;;
 	esac
@@ -203,7 +210,9 @@ fi
 
 RTAI_LINUX_VERSION="$linux_VERSION.$linux_PATCHLEVEL.$linux_SUBLEVEL"
 AC_MSG_RESULT([$RTAI_LINUX_DIR (kernel ${RTAI_LINUX_VERSION}${CONFIG_SMP:+-SMP})])
-CONFIG_RTAI_LINUXDIR=$RTAI_LINUX_DIR
+if test x${CONFIG_RTAI_LINUXDIR} = x; then
+   CONFIG_RTAI_LINUXDIR=$RTAI_LINUX_DIR
+fi
 
 dnl
 dnl Identify the base technology used.
@@ -1566,6 +1575,8 @@ AC_SUBST(RTAI_MODULE_EXT)
 AC_SUBST(RTAI_KBUILD_ENV)
 AC_SUBST(RTAI_KBUILD_CMD)
 AC_SUBST(RTAI_KBUILD_CLEAN)
+
+AC_SUBST(CONFIG_RTAI_LINUXDIR)
 
 AC_CONFIG_FILES([ \
 	GNUmakefile \

@@ -1,3 +1,8 @@
+2004-09-09  Evgeny Sinelnikov <linux4sin@mail.ru>
+
+	* configure.in, makefile, rtai-core/scripts/rtai-config.in:
+	Correctly handle the --with-linux-dir configure option.
+
 2004-09-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/sched/rtai/sched_lxrt.c: revised oneshot timing, nomore

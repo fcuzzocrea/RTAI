@@ -2778,6 +2778,16 @@ int xnpod_announce_tick (xnintr_t *intr)
     unsigned cpu, nr_cpus;
     spl_t s;
 
+#if CONFIG_SMP
+    /* On SMP machines, the timers may tick on several CPUs, in which case, only
+       one must be used. */
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+    if(testbits(nkpod->status, XNTMPER))
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+        if(xnarch_current_cpu() != 0)
+            return XN_ISR_HANDLED;
+#endif /* CONFIG_SMP */
+
     xnlock_get_irqsave(&nklock,s);
 
     xntimer_do_timers(); /* Fire the timeouts, if any. */

@@ -1,3 +1,8 @@
+2004-10-18  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_announce_tick): prevent timer interrupt
+	from ticking on several CPUS.
+
 2004-10-17  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.6.1

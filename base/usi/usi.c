@@ -24,6 +24,7 @@
 
 #include <rtai.h>
 #include <rtai_sched.h>
+#include <rtai_malloc.h>
 #include <rtai_lxrt.h>
 #include <rtai_tasklets.h>
 #include <rtai_usi.h>
@@ -33,121 +34,31 @@ MODULE_LICENSE("GPL");
 
 #define MODULE_NAME "RTAI_USI"
 
-#define MAX_LOCKS  20
-static int MaxLocks = MAX_LOCKS;
-MODULE_PARM(MaxLocks, "i");
-
-static spinlock_t *usi_lock_pool, **usi_lock_pool_p;
-static spinlock_t usi_lock = SPIN_LOCK_UNLOCKED;
-static volatile int usip;
-
-static RT_TASK *rt_base_linux_task;
-
-extern adomain_t rtai_domain;
-
-static void sem_handler(int irq)
-{
-	SEM *sem;
-	(sem = (void *)rtai_domain.irqs[irq].acknowledge)->owndby = (void *)irq;
-	rt_sem_signal(sem);
-} 
-
-static void tasklet_handler(int irq)
-{
-	struct rt_tasklet_struct *tasklet;
-	tasklet = (void *)rtai_domain.irqs[irq].acknowledge;
-	tasklet->data = ((-((tasklet->task)->suspdepth - 1)) << 16) | irq;
-	rt_exec_tasklet(tasklet);
-} 
-
-static int usi_wait_intr(SEM *sem, unsigned long *irq)
-{
-	int retval;
-	retval = rt_sem_wait(sem);	
-	*irq = (unsigned long)sem->owndby; 
-	return retval;
-}
-
-static int usi_wait_intr_if(SEM *sem, unsigned long *irq)
-{
-	int retval;
-	retval = rt_sem_wait_if(sem);	
-	*irq = (unsigned long)sem->owndby; 
-	return retval;
-}
-
-static int usi_wait_intr_until(SEM *sem, RTIME until, unsigned long *irq)
-{
-	int retval;
-	retval = rt_sem_wait_until(sem, until);	
-	*irq = (unsigned long)sem->owndby; 
-	return retval;
-}
-
-static int usi_wait_intr_timed(SEM *sem, RTIME delay, unsigned long *irq)
-{
-	int retval;
-	retval = rt_sem_wait_timed(sem, delay);	
-	*irq = (unsigned long)sem->owndby; 
-	return retval;
-}
-
-static int usi_request_global_irq(unsigned int irq, void *hook, int hooktype)
-{
-	if (hook) {
-		int retval;
-		if (hooktype == USI_SEM) {
-			if (!(retval = rt_request_irq(irq, (void *)sem_handler, (void *)hook, 0))) {
-			}
-			return retval;
-		}
-		if (hooktype == USI_TASKLET) {
-			if (!(retval = rt_request_irq(irq, (void *)tasklet_handler, (void *)hook, 0))) {
-			}
-			return retval;
-		}
-	}
-	return -EINVAL;
-}
-
 static void *rt_spin_lock_init(void)
 {
-	unsigned long flags;
-	spinlock_t *p;
+	spinlock_t *lock;
  
-	flags = rt_spin_lock_irqsave(&usi_lock);
-	if (usip < MaxLocks) {
-		p = usi_lock_pool_p[usip++];
-		rt_spin_unlock_irqrestore(flags, &usi_lock);
-		spin_lock_init(p);
-		return p;
+	if ((lock = rt_malloc(sizeof(spinlock_t)))) {
+		spin_lock_init(lock);
+		return lock;
 	}
-	rt_spin_unlock_irqrestore(flags, &usi_lock);
 	return 0;
 }
 
 static inline int rt_spin_lock_delete(void *lock)
 {
-        unsigned long flags;
- 
-	flags = rt_spin_lock_irqsave(&usi_lock);
-	if (usip > MaxLocks) {
-		usi_lock_pool_p[--usip] = lock;
-		rt_spin_unlock_irqrestore(flags, &usi_lock);
-		return 0;
-	}
-	rt_spin_unlock_irqrestore(flags, &usi_lock);
-	return -EINVAL;
+	rt_free(lock);
+	return 0;
 }
                                                                                
 static void usi_spin_lock(spinlock_t *lock)          
 {
-	spin_lock(lock);
+	rt_spin_lock(lock);
 }
 
 static void usi_spin_unlock(spinlock_t *lock)          
 {
-	spin_unlock(lock);
+	rt_spin_unlock(lock);
 }
 
 static void usi_spin_lock_irq(spinlock_t *lock)          
@@ -197,7 +108,6 @@ static void usi_global_restore_flags(unsigned long flags)
 	rt_global_restore_flags(flags);
 }
 
-
 static void usi_cli(void)
 {
 	rtai_cli();
@@ -228,16 +138,13 @@ static void usi_restore_flags(unsigned long flags)
 }
 
 static struct rt_fun_entry rtai_usi_fun[] = {
-	[_REQ_GLB_IRQ]		= { 0, usi_request_global_irq},
-	[_FREE_GLB_IRQ]		= { 0, rt_free_global_irq},
 	[_STARTUP_IRQ]		= { 0, rt_startup_irq },
 	[_SHUTDOWN_IRQ]		= { 0, rt_shutdown_irq },
-	[ _ENABLE_IRQ]		= { 0, rt_enable_irq },
+	[_ENABLE_IRQ]		= { 0, rt_enable_irq },
 	[_DISABLE_IRQ]		= { 0, rt_disable_irq },
 	[_MASK_AND_ACK_IRQ]	= { 0, rt_mask_and_ack_irq },
 	[_ACK_IRQ]		= { 0, rt_ack_irq },
 	[_UNMASK_IRQ ]		= { 0, rt_unmask_irq },
-	[_PEND_LINUX_IRQ]	= { 0, rt_pend_linux_irq },
 	[_INIT_SPIN_LOCK]	= { 0, rt_spin_lock_init },
 	[_SPIN_LOCK]		= { 0, usi_spin_lock },
 	[_SPIN_UNLOCK]		= { 0, usi_spin_unlock },
@@ -254,12 +161,10 @@ static struct rt_fun_entry rtai_usi_fun[] = {
 	[_STI]			= { 0, usi_sti},
 	[_SVFLAGS_CLI]		= { 0, usi_save_flags_and_cli },
 	[_SVFLAGS]		= { 0, usi_save_flags },
-	[_RSTFLAGS]		= { 0, usi_restore_flags },
-	[_WAIT_INTR]		= { UW1(2, 3), usi_wait_intr },
-	[_WAIT_INTR_IF]		= { UW1(2, 3), usi_wait_intr_if },
-	[_WAIT_INTR_UNTIL]	= { UW1(4, 5), usi_wait_intr_until },
-	[_WAIT_INTR_TIMED]	= { UW1(4, 5), usi_wait_intr_timed }
+	[_RSTFLAGS]		= { 0, usi_restore_flags }
 };
+
+static RT_TASK *rt_base_linux_task;
 
 static int register_lxrt_usi_support(void)
 {
@@ -271,7 +176,7 @@ static int register_lxrt_usi_support(void)
 			return -EACCES;
 		}
 	}
-	return(0);
+	return 0;
 }
 
 static void unregister_lxrt_usi_support(void)
@@ -283,41 +188,17 @@ static void unregister_lxrt_usi_support(void)
 
 int __rtai_usi_init(void)
 {
-	int i;
-
-        usi_lock_pool = kmalloc(MaxLocks*sizeof(spinlock_t), GFP_KERNEL);
-
-	if (!usi_lock_pool)
-	    return -ENOMEM;
-	    
-	usi_lock_pool_p = kmalloc(MaxLocks*sizeof(spinlock_t *), GFP_KERNEL);
-
-	if (!usi_lock_pool_p)
-	    {
-	    kfree(usi_lock_pool);
-	    return -ENOMEM;
-	    }
-
-	for (i = MaxLocks - 1; i >= 0; i--) {
-		usi_lock_pool_p[i] = &usi_lock_pool[i];
+	if (!register_lxrt_usi_support()) {
+		printk(KERN_INFO "RTAI[usi]: loaded.\n");
+		return 0;
 	}
-
-	printk(KERN_INFO "RTAI[usi]: loaded.\n");
-
-	return register_lxrt_usi_support();
+	return -EACCES;
 }
 
 void __rtai_usi_exit(void)
 {
-    unregister_lxrt_usi_support();
-
-    if (usi_lock_pool)
-	kfree(usi_lock_pool);
-
-    if (usi_lock_pool_p)
-	kfree(usi_lock_pool_p);
-
-    printk(KERN_INFO "RTAI[usi]: unloaded.\n");
+	unregister_lxrt_usi_support();
+	printk(KERN_INFO "RTAI[usi]: unloaded.\n");
 }
 
 #ifndef CONFIG_RTAI_USI_BUILTIN

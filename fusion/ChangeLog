@@ -1,3 +1,8 @@
+2005-01-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c: Make rt_task_delete() a regular context
+	syscall.
+
 2005-01-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/hal/hal.c (rthal_calibrate_timer): Stop using

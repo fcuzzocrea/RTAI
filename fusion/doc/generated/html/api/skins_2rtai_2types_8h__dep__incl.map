@@ -7,7 +7,7 @@ rect $task_8h.html 550,84 609,108
 rect $skins_2rtai_2module_8c.html 278,9 353,33
 rect $event_8h.html 148,84 214,108
 rect $sem_8h.html 238,84 297,108
-rect $timer_8h.html 321,158 382,182
+rect $skins_2rtai_2timer_8h.html 321,158 382,182
 rect $syscall_8c.html 182,9 254,33
 rect $event_8c.html 462,9 526,33
 rect $mutex_8c.html 633,9 702,33

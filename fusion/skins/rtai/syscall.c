@@ -2514,16 +2514,17 @@ static int __rt_alarm_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_intr_create(RT_INTR_PLACEHOLDER *ph,
- *                      unsigned irq)
+ *                      unsigned irq,
+ *                      int mode)
  */
 
 static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_INTR_PLACEHOLDER ph;
+    int err, mode;
     RT_INTR *intr;
     unsigned irq;
-    int err;
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;
@@ -2531,12 +2532,15 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
     /* Interrupt line number. */
     irq = (unsigned)__xn_reg_arg2(regs);
 
+    /* Interrupt control mode. */
+    mode = (int)__xn_reg_arg3(regs);
+
     intr = (RT_INTR *)xnmalloc(sizeof(*intr));
 
     if (!intr)
 	return -ENOMEM;
 
-    err = rt_intr_create(intr,irq);
+    err = rt_intr_create(intr,irq,NULL,mode);
 
     if (err == 0)
 	{
@@ -2619,6 +2623,52 @@ static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
+ * int __rt_intr_enable(RT_INTR_PLACEHOLDER *ph)
+ */
+
+static int __rt_intr_enable (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_INTR_PLACEHOLDER ph;
+    RT_INTR *intr;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    intr = (RT_INTR *)rt_registry_fetch(ph.opaque);
+
+    if (!intr)
+	return -ESRCH;
+
+    return rt_intr_enable(intr);
+}
+
+/*
+ * int __rt_intr_disable(RT_INTR_PLACEHOLDER *ph)
+ */
+
+static int __rt_intr_disable (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_INTR_PLACEHOLDER ph;
+    RT_INTR *intr;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    intr = (RT_INTR *)rt_registry_fetch(ph.opaque);
+
+    if (!intr)
+	return -ESRCH;
+
+    return rt_intr_disable(intr);
+}
+
+/*
  * int __rt_intr_inquire(RT_INTR_PLACEHOLDER *ph,
  *                       RT_INTR_INFO *infop)
  */
@@ -2658,6 +2708,8 @@ static int __rt_intr_inquire (struct task_struct *curr, struct pt_regs *regs)
 #define __rt_intr_bind       __rt_call_not_available
 #define __rt_intr_delete     __rt_call_not_available
 #define __rt_intr_wait       __rt_call_not_available
+#define __rt_intr_enable     __rt_call_not_available
+#define __rt_intr_disable    __rt_call_not_available
 #define __rt_intr_inquire    __rt_call_not_available
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
@@ -2743,6 +2795,8 @@ static xnsysent_t __systab[] = {
     [__rtai_intr_bind ] = { &__rt_intr_bind, __xn_flag_regular },
     [__rtai_intr_delete ] = { &__rt_intr_delete, __xn_flag_anycall },
     [__rtai_intr_wait ] = { &__rt_intr_wait, __xn_flag_regular },
+    [__rtai_intr_enable ] = { &__rt_intr_enable, __xn_flag_anycall },
+    [__rtai_intr_disable ] = { &__rt_intr_disable, __xn_flag_anycall },
     [__rtai_intr_inquire ] = { &__rt_intr_inquire, __xn_flag_anycall },
 };
 

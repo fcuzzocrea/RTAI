@@ -98,7 +98,9 @@
 #define __rtai_intr_bind          72
 #define __rtai_intr_delete        73
 #define __rtai_intr_wait          74
-#define __rtai_intr_inquire       75
+#define __rtai_intr_enable        75
+#define __rtai_intr_disable       76
+#define __rtai_intr_inquire       77
 
 struct rt_arg_bulk {
 

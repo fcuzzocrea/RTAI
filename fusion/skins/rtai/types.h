@@ -74,4 +74,8 @@ struct rt_alarm;
 typedef void (*rt_alarm_t)(struct rt_alarm *alarm,
 			   void *cookie);
 
+struct rt_intr;
+
+typedef int (*rt_isr_t)(struct rt_intr *intr);
+
 #endif /* !_RTAI_TYPES_H */

@@ -32,12 +32,11 @@
 #include <rtai/registry.h>
 #include <rtai/intr.h>
 
-static xnqueue_t __rtai_intr_q;
+DECLARE_XNQUEUE(__rtai_intr_q);
 
 int __intr_pkg_init (void)
 
 {
-    initq(&__rtai_intr_q);
     return 0;
 }
 
@@ -46,34 +45,57 @@ void __intr_pkg_cleanup (void)
 {
     xnholder_t *holder;
 
-    /* Disable all interrupt lines managed at this package level. */
-
     while ((holder = getheadq(&__rtai_intr_q)) != NULL)
-	xnintr_disable(&link2intr(holder)->intr_base);
+	rt_intr_delete(link2intr(holder));
 }
 
 static int __intr_trampoline (xnintr_t *_intr)
 
 {
-    RT_INTR *intr = intr2rtintr(_intr);
+    RT_INTR *intr = (RT_INTR *)_intr->cookie;
+    int s;
 
-    ++intr->pending;
-    xnsynch_flush(&intr->synch_base,0);
+    /*
+     * Careful here:
+     * xnintr::isr == &__intr_trampoline()
+     * RT_INTR::isr == &user_defined_ISR()
+     */
 
-    return 0;
+    if (intr->isr)
+	s = intr->isr(intr);
+    else
+	{
+	++intr->pending;
+
+	if (xnsynch_nsleepers(&intr->synch_base) > 0)
+	    xnsynch_flush(&intr->synch_base,0);
+
+	/* Auto-enable when running in DSR mode. */
+	s = XN_ISR_HANDLED|(intr->mode & XN_ISR_ENABLE);
+	}
+
+    return s;
 }
 
 int rt_intr_create (RT_INTR *intr,
-		    unsigned irq)
+		    unsigned irq,
+		    int (*isr)(RT_INTR *intr),
+		    int mode)
 {
     char name[XNOBJECT_NAME_LEN];
-    int err = 0;
+    int err;
     spl_t s;
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
+    if (mode & ~I_AUTOENA)
+	return -EINVAL;
+
     xnintr_init(&intr->intr_base,irq,&__intr_trampoline,0);
+
     xnsynch_init(&intr->synch_base,XNSYNCH_PRIO);
+    intr->isr = isr;
+    intr->mode = mode;
     intr->pending = -1;
     intr->magic = RTAI_INTR_MAGIC;
     intr->handle = 0;    /* i.e. (still) unregistered interrupt. */
@@ -87,11 +109,14 @@ int rt_intr_create (RT_INTR *intr,
     intr->source = RT_KAPI_SOURCE;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
+    err = xnintr_attach(&intr->intr_base,intr);
+
     /* <!> Since rt_register_enter() may reschedule, only register
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
 
-    err = rt_registry_enter(name,intr,&intr->handle);
+    if (!err)
+	err = rt_registry_enter(name,intr,&intr->handle);
 
     if (err)
 	rt_intr_delete(intr);
@@ -119,12 +144,10 @@ int rt_intr_delete (RT_INTR *intr)
     
     removeq(&__rtai_intr_q,&intr->link);
     rc = xnsynch_destroy(&intr->synch_base);
+    xnintr_detach(&intr->intr_base);
 
     if (intr->handle)
-	{
-	xnintr_disable(&intr->intr_base);
         rt_registry_remove(intr->handle);
-	}
 
     xnintr_destroy(&intr->intr_base);
 
@@ -169,11 +192,6 @@ int rt_intr_wait (RT_INTR *intr,
 
 	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-	if (xnsynch_nsleepers(&intr->synch_base) == 0)
-	    /* Re-enable the interrupt line when the first waiter
-	       comes in. */
-	    xnintr_enable(&intr->intr_base);
-
 	task = rtai_current_task();
 
 	xnsynch_sleep_on(&intr->synch_base,timeout);
@@ -188,6 +206,56 @@ int rt_intr_wait (RT_INTR *intr,
     else
 	--intr->pending;
     
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+int rt_intr_enable (RT_INTR *intr)
+
+{
+    int err;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    intr = rtai_h2obj_validate(intr,RTAI_INTR_MAGIC,RT_INTR);
+
+    if (!intr)
+        {
+        err = rtai_handle_error(intr,RTAI_INTR_MAGIC,RT_INTR);
+        goto unlock_and_exit;
+        }
+    
+    err = xnintr_enable(&intr->intr_base);
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+int rt_intr_disable (RT_INTR *intr)
+
+{
+    int err;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    intr = rtai_h2obj_validate(intr,RTAI_INTR_MAGIC,RT_INTR);
+
+    if (!intr)
+        {
+        err = rtai_handle_error(intr,RTAI_INTR_MAGIC,RT_INTR);
+        goto unlock_and_exit;
+        }
+    
+    err = xnintr_disable(&intr->intr_base);
+
  unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
@@ -224,4 +292,6 @@ int rt_intr_inquire (RT_INTR *intr,
 EXPORT_SYMBOL(rt_intr_create);
 EXPORT_SYMBOL(rt_intr_delete);
 EXPORT_SYMBOL(rt_intr_wait);
+EXPORT_SYMBOL(rt_intr_enable);
+EXPORT_SYMBOL(rt_intr_disable);
 EXPORT_SYMBOL(rt_intr_inquire);

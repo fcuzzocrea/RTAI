@@ -26,6 +26,9 @@
 #include <nucleus/intr.h>
 #include <rtai/types.h>
 
+/* Creation flag. */
+#define I_AUTOENA  XN_ISR_ENABLE /* Auto-enable interrupt channel
+				    after each IRQ. */
 typedef struct rt_intr_info {
 
     unsigned irq;	/* !< Interrupt request number. */
@@ -42,6 +45,10 @@ typedef struct rt_intr_placeholder {
 
 #define RTAI_INTR_MAGIC 0x55550a0a
 
+#define RT_INTR_HANDLED XN_ISR_HANDLED
+#define RT_INTR_CHAINED XN_ISR_CHAINED
+#define RT_INTR_ENABLE  XN_ISR_ENABLE
+
 typedef struct rt_intr {
 
     unsigned magic;   /* !< Magic code - must be first */
@@ -53,20 +60,28 @@ typedef struct rt_intr {
 
     xnintr_t intr_base;   /* !< Base interrupt object. */
 
-#define intr2rtintr(iaddr) \
-((iaddr) ? ((RT_INTR *)(((char *)(iaddr)) - (int)(&((RT_INTR *)0)->intr_base))) : NULL)
-
     xnsynch_t synch_base; /* !< Base synchronization object. */
 
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 
     int pending;	/* !< Pending hits to wait for. */
 
+    rt_isr_t isr;	/* !< User-defined interrupt service routine. */
+
+    int mode;		/* !< Interrupt control mode. */
+
+    void *private_data;	/* !< Private user-defined data. */
+
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     int source;		/* !< Creator's space. */
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 } RT_INTR;
+
+#define rt_intr_save(x)    splhigh(x)
+#define rt_intr_restore(x) splexit(x)
+#define rt_intr_unmask()   splnone()
+#define rt_intr_flags(x)   splget(x)
 
 #ifdef __cplusplus
 extern "C" {
@@ -103,12 +118,18 @@ extern "C" {
 /* Public interface. */
 
 int rt_intr_create(RT_INTR *intr,
-		   unsigned irq);
+		   unsigned irq,
+		   rt_isr_t isr,
+		   int mode);
 
 int rt_intr_delete(RT_INTR *intr);
 
 int rt_intr_wait(RT_INTR *intr,
 		 RTIME timeout);
+
+int rt_intr_enable(RT_INTR *intr);
+
+int rt_intr_disable(RT_INTR *intr);
 
 int rt_intr_inquire(RT_INTR *intr,
 		    RT_INTR_INFO *info);

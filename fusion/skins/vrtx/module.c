@@ -88,7 +88,7 @@ int vrtx_alloc_id (void *refobject)
     int freeid;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     freeid = vrtxidfree;
 
@@ -98,7 +98,7 @@ int vrtx_alloc_id (void *refobject)
 	vrtxidfree = vrtxidgen[freeid];
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return freeid;
 }
@@ -108,11 +108,11 @@ void vrtx_release_id (int id)
 {
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     vrtxobjmap[id] = NULL;
     vrtxidgen[id] = vrtxidfree;
     vrtxidfree = id;
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 void *vrtx_find_object_by_id (int id)

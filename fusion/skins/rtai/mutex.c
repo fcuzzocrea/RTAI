@@ -146,7 +146,7 @@ int rt_mutex_delete (RT_MUTEX *mutex)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     mutex = rtai_h2obj_validate(mutex,RTAI_MUTEX_MAGIC,RT_MUTEX);
 
@@ -172,7 +172,7 @@ int rt_mutex_delete (RT_MUTEX *mutex)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -222,7 +222,7 @@ int rt_mutex_lock (RT_MUTEX *mutex)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     mutex = rtai_h2obj_validate(mutex,RTAI_MUTEX_MAGIC,RT_MUTEX);
 
@@ -257,7 +257,7 @@ int rt_mutex_lock (RT_MUTEX *mutex)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -296,7 +296,7 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     mutex = rtai_h2obj_validate(mutex,RTAI_MUTEX_MAGIC,RT_MUTEX);
 
@@ -322,7 +322,7 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
     
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -355,7 +355,7 @@ int rt_mutex_inquire (RT_MUTEX *mutex,
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     mutex = rtai_h2obj_validate(mutex,RTAI_MUTEX_MAGIC,RT_MUTEX);
 
@@ -371,7 +371,7 @@ int rt_mutex_inquire (RT_MUTEX *mutex,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

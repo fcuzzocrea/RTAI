@@ -74,7 +74,7 @@ char *sc_accept (char **mboxp, int *errp)
     char *msg;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     msg = *mboxp;
 
@@ -88,7 +88,7 @@ char *sc_accept (char **mboxp, int *errp)
 	*errp = RET_OK;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return msg;
 }
@@ -104,14 +104,14 @@ xnsynch_t * mb_get_synch_internal(char **mboxp)
     vrtxmsg_t *msg_slot;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     for (holder = getheadq(&vrtxmbq);
 	 holder != NULL; holder = nextq(&vrtxmbq, holder))
 	{
 	if ( ((vrtxmsg_t *)holder)->mboxp == mboxp)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return &((vrtxmsg_t *)holder)->synchbase;
 	    }
 	}
@@ -125,7 +125,7 @@ xnsynch_t * mb_get_synch_internal(char **mboxp)
 
     appendq(&vrtxmbq, &msg_slot->link);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return &msg_slot->synchbase;
 }
@@ -137,7 +137,7 @@ char *sc_pend (char **mboxp, long timeout, int *errp)
     vrtxtask_t *task;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     msg = *mboxp;
 
@@ -154,7 +154,7 @@ char *sc_pend (char **mboxp, long timeout, int *errp)
 
 	if (xnthread_test_flags(&task->threadbase,XNTIMEO))
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *errp = ER_TMO;
 	    return NULL; /* Timeout.*/
 	    }
@@ -165,7 +165,7 @@ char *sc_pend (char **mboxp, long timeout, int *errp)
 	*mboxp = 0;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
 
@@ -192,7 +192,7 @@ void sc_post (char **mboxp, char *msg, int *errp)
 
     *errp = RET_OK;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     synchbase = mb_get_synch_internal(mboxp);
 
@@ -207,5 +207,5 @@ void sc_post (char **mboxp, char *msg, int *errp)
     else
 	*mboxp = msg;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }

@@ -142,7 +142,7 @@ int rt_sem_delete (RT_SEM *sem)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
 
@@ -168,7 +168,7 @@ int rt_sem_delete (RT_SEM *sem)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -230,7 +230,7 @@ int rt_sem_p (RT_SEM *sem,
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
 
@@ -270,7 +270,7 @@ int rt_sem_p (RT_SEM *sem,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -304,7 +304,7 @@ int rt_sem_v (RT_SEM *sem)
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
 
@@ -321,7 +321,7 @@ int rt_sem_v (RT_SEM *sem)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -354,7 +354,7 @@ int rt_sem_inquire (RT_SEM *sem,
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
 
@@ -370,7 +370,7 @@ int rt_sem_inquire (RT_SEM *sem,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

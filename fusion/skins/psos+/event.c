@@ -70,7 +70,7 @@ u_long ev_receive (u_long events,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     evgroup = &psos_current_task()->evgroup;
 
@@ -119,7 +119,7 @@ u_long ev_receive (u_long events,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -132,7 +132,7 @@ u_long ev_send (u_long tid,
     psostask_t *task;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -165,7 +165,7 @@ u_long ev_send (u_long tid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

@@ -162,10 +162,10 @@ u_long t_create (char name[4],
 
     task->magic = PSOS_TASK_MAGIC;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&psostaskq,&task->link);
     *tid = (u_long)task;
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnarch_create_display(&task->threadbase,aname,psostask);
 
@@ -197,7 +197,7 @@ u_long t_start (u_long tid,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -229,7 +229,7 @@ u_long t_start (u_long tid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -244,7 +244,7 @@ u_long t_restart (u_long tid,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -267,7 +267,7 @@ u_long t_restart (u_long tid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -284,7 +284,7 @@ u_long t_delete (u_long tid)
     if (tid == 0)
 	xnpod_delete_self(); /* Never returns */
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -298,7 +298,7 @@ u_long t_delete (u_long tid)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -323,7 +323,7 @@ u_long t_ident (char name[4],
 	return SUCCESS;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     for (holder = getheadq(&psostaskq);
 	 holder; holder = nextq(&psostaskq,holder))
@@ -344,7 +344,7 @@ u_long t_ident (char name[4],
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -371,7 +371,7 @@ u_long t_getreg (u_long tid,
     psostask_t *task;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -391,7 +391,7 @@ u_long t_getreg (u_long tid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -403,7 +403,7 @@ u_long t_resume (u_long tid)
     psostask_t *task;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -424,7 +424,7 @@ u_long t_resume (u_long tid)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -444,7 +444,7 @@ u_long t_suspend (u_long tid)
 	return SUCCESS;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -467,7 +467,7 @@ u_long t_suspend (u_long tid)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -482,7 +482,7 @@ u_long t_setpri (u_long tid,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (tid == 0)
 	task = psos_current_task();
@@ -516,7 +516,7 @@ u_long t_setpri (u_long tid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -529,7 +529,7 @@ u_long t_setreg (u_long tid,
     psostask_t *task;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -549,7 +549,7 @@ u_long t_setreg (u_long tid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

@@ -75,17 +75,17 @@ ER cre_flg (ID flgid, T_CFLG *pk_cflg)
     if (flgid <= 0 || flgid > uITRON_MAX_FLAGID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (uiflagmap[flgid - 1] != NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
     uiflagmap[flgid - 1] = (uiflag_t *)1; /* Reserve slot */
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     flg = (uiflag_t *)xnmalloc(sizeof(*flg));
 
@@ -104,10 +104,10 @@ ER cre_flg (ID flgid, T_CFLG *pk_cflg)
     flg->flgvalue = pk_cflg->iflgptn;
     flg->magic = uITRON_FLAG_MAGIC;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     uiflagmap[flgid - 1] = flg;
     appendq(&uiflagq,&flg->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -124,13 +124,13 @@ ER del_flg (ID flgid)
     if (flgid <= 0 || flgid > uITRON_MAX_FLAGID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     flg = uiflagmap[flgid - 1];
 
     if (!flg)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -141,7 +141,7 @@ ER del_flg (ID flgid)
     if (xnsynch_destroy(&flg->synchbase) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnfree(flg);
 
@@ -164,13 +164,13 @@ ER set_flg (ID flgid, UINT setptn)
     if (setptn == 0)
 	return E_OK;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     flg = uiflagmap[flgid - 1];
 
     if (!flg)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -201,7 +201,7 @@ ER set_flg (ID flgid, UINT setptn)
 	xnpod_schedule();
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -218,19 +218,19 @@ ER clr_flg (ID flgid, UINT clrptn)
     if (flgid <= 0 || flgid > uITRON_MAX_FLAGID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     flg = uiflagmap[flgid - 1];
 
     if (!flg)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
     flg->flgvalue &= clrptn;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -265,13 +265,13 @@ static ER wai_flg_helper (UINT *p_flgptn,
     if (flgid <= 0 || flgid > uITRON_MAX_FLAGID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     flg = uiflagmap[flgid - 1];
 
     if (!flg)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -306,7 +306,7 @@ static ER wai_flg_helper (UINT *p_flgptn,
 	    *p_flgptn = task->wargs.flag.waiptn;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -349,13 +349,13 @@ ER ref_flg (T_RFLG *pk_rflg, ID flgid)
     if (flgid <= 0 || flgid > uITRON_MAX_FLAGID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     flg = uiflagmap[flgid - 1];
 
     if (!flg)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -364,7 +364,7 @@ ER ref_flg (T_RFLG *pk_rflg, ID flgid)
     pk_rflg->flgptn = flg->flgvalue;
     pk_rflg->wtsk = sleeper ? sleeper->tskid : FALSE;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }

@@ -71,11 +71,11 @@ static void vrtxpt_delete_internal (vrtxpt_t *pt)
 {
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     removeq(&vrtxptq,&pt->link);
     vrtxptmap[pt->pid] = NULL;
     vrtx_mark_deleted(pt);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 static int vrtxpt_add_extent (vrtxpt_t *pt,
@@ -124,9 +124,9 @@ static int vrtxpt_add_extent (vrtxpt_t *pt,
     for (n = bitmapsize / sizeof(u_long) - 1; n >= 0; n--)
 	ptext->bitmap[n] = 0;
  
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&pt->extq,&ptext->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return RET_OK;
 }
@@ -150,7 +150,7 @@ int sc_pcreate (int pid,
 	return -1;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (pid < 0)
 	{
@@ -162,14 +162,14 @@ int sc_pcreate (int pid,
 
 	if (pid >= VRTX_MAX_PID)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *perr = ER_PID;
 	    return -1;
 	    }
 	}
     else if (pid >= 0 && vrtxptmap[pid] != NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*perr = ER_PID;
 	return -1;
 	}
@@ -177,7 +177,7 @@ int sc_pcreate (int pid,
     /* Reserve slot while preemption is disabled */
     vrtxptmap[pid] = (vrtxpt_t *)1;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     pt = (vrtxpt_t *)paddr;
     inith(&pt->link);
@@ -196,10 +196,10 @@ int sc_pcreate (int pid,
 	}
     
     pt->magic = VRTX_PT_MAGIC;
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     vrtxptmap[pid] = pt;
     appendq(&vrtxptq,&pt->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return pid;
 }
@@ -224,13 +224,13 @@ void sc_pdelete (int pid, int opt, int *perr)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pt = vrtxptmap[pid];
 
     if (pt == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*perr = ER_PID;
 	return;
 	}
@@ -239,7 +239,7 @@ void sc_pdelete (int pid, int opt, int *perr)
 
     *perr = RET_OK;
     
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 char *sc_gblock (int pid, int *perr)
@@ -258,13 +258,13 @@ char *sc_gblock (int pid, int *perr)
 	return NULL;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pt = vrtxptmap[pid];
 
     if (pt == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*perr = ER_PID;
 	return NULL;
 	}
@@ -285,7 +285,7 @@ char *sc_gblock (int pid, int *perr)
 	    }
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *perr = (buf == NULL ? ER_MEM : RET_OK);
 
@@ -307,13 +307,13 @@ void sc_rblock (int pid, char *buf, int *perr)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pt = vrtxptmap[pid];
 
     if (pt == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*perr = ER_PID;
 	return;
 	}
@@ -350,7 +350,7 @@ void sc_rblock (int pid, char *buf, int *perr)
 		ptext->freelist = buf;
 		pt->ublks--;
 		pt->fblks++;
-		splexit(s);
+		xnlock_put_irqrestore(&nklock,s);
 		*perr = RET_OK;
 		return;
 		}
@@ -359,7 +359,7 @@ void sc_rblock (int pid, char *buf, int *perr)
 
 nmb:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *perr = ER_NMB;
 }
@@ -380,20 +380,20 @@ void sc_pextend (int pid,
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pt = vrtxptmap[pid];
 
     if (pt == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*perr = ER_PID;
 	return;
 	}
 
     *perr = vrtxpt_add_extent(pt,extaddr,extsize);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 void sc_pinquiry (unsigned long info[3], int pid, int *errp)
@@ -410,13 +410,13 @@ void sc_pinquiry (unsigned long info[3], int pid, int *errp)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pt = vrtxptmap[pid];
 
     if (pt == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_PID;
 	return;
 	}
@@ -425,7 +425,7 @@ void sc_pinquiry (unsigned long info[3], int pid, int *errp)
     info[1] = pt->fblks;
     info[2] = pt->bsize;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
 

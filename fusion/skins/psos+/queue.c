@@ -213,9 +213,9 @@ static u_long q_create_internal (char name[4],
 	{
 	if (bflags & Q_SHAREDINIT)
 	    {
-	    splhigh(s);
+	    xnlock_get_irqsave(&nklock,s);
 	    rc = feed_pool(&psoschunkq,&psosmbufq,maxnum,maxlen);
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    }
 	else
 	    rc = feed_pool(&queue->chunkq,&queue->freeq,maxnum,maxlen);
@@ -229,12 +229,12 @@ static u_long q_create_internal (char name[4],
 
 	if (bflags & Q_SHAREDINIT)
 	    {
-	    splhigh(s);
+	    xnlock_get_irqsave(&nklock,s);
 
 	    while (countq(&queue->freeq) < maxnum)
 		appendq(&queue->freeq,getq(&psosmbufq));
 
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    }
 	}
 
@@ -247,9 +247,9 @@ static u_long q_create_internal (char name[4],
     queue->name[3] = name[3];
     queue->name[4] = '\0';
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&psosqueueq,&queue->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *qid = (u_long)queue;
 
@@ -265,7 +265,7 @@ static u_long q_destroy_internal (psosqueue_t *queue)
     u_long err, flags;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     removeq(&psosqueueq,&queue->link);
 
@@ -280,7 +280,7 @@ static u_long q_destroy_internal (psosqueue_t *queue)
     psos_mark_deleted(queue);
     xnsynch_destroy(&queue->synchbase);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     if (testbits(flags,Q_NOCACHE))
 	{
@@ -298,7 +298,7 @@ static u_long q_destroy_internal (psosqueue_t *queue)
 	    {
 	    /* Buffers come from the global shared queue. */
 
-	    splhigh(s);
+	    xnlock_get_irqsave(&nklock,s);
 
 	    while ((holder = getq(&queue->inq)) != NULL)
 		appendq(&psosmbufq,holder);
@@ -306,7 +306,7 @@ static u_long q_destroy_internal (psosqueue_t *queue)
 	    while ((holder = getq(&queue->freeq)) != NULL)
 		appendq(&psosmbufq,holder);
 
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    }
 	else
 	    {
@@ -335,7 +335,7 @@ static u_long q_delete_internal (u_long qid,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = psos_h2obj_active(qid,PSOS_QUEUE_MAGIC,psosqueue_t);
 
@@ -367,7 +367,7 @@ static u_long q_delete_internal (u_long qid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -385,7 +385,7 @@ static u_long q_receive_internal (u_long qid,
     psosmbuf_t *mbuf;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = psos_h2obj_active(qid,PSOS_QUEUE_MAGIC,psosqueue_t);
 
@@ -472,7 +472,7 @@ again:
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -488,7 +488,7 @@ static u_long q_send_internal (u_long qid,
     psosmbuf_t *mbuf;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = psos_h2obj_active(qid,PSOS_QUEUE_MAGIC,psosqueue_t);
 
@@ -560,7 +560,7 @@ static u_long q_send_internal (u_long qid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -576,7 +576,7 @@ static u_long q_broadcast_internal (u_long qid,
     psosqueue_t *queue;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = psos_h2obj_active(qid,PSOS_QUEUE_MAGIC,psosqueue_t);
 
@@ -627,7 +627,7 @@ static u_long q_broadcast_internal (u_long qid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -650,7 +650,7 @@ static u_long q_ident_internal (char name[4],
     if (!name)
 	return ERR_OBJNF;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     for (holder = getheadq(&psosqueueq);
 	 holder; holder = nextq(&psosqueueq,holder))
@@ -677,7 +677,7 @@ static u_long q_ident_internal (char name[4],
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

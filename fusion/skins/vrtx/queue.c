@@ -107,7 +107,7 @@ int sc_qecreate (int qid, int qsize, int opt, int *errp)
 	return -1;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (qid == -1)
 	{
@@ -119,21 +119,21 @@ int sc_qecreate (int qid, int qsize, int opt, int *errp)
 
 	if (qid >= VRTX_MAX_QID)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *errp = ER_MEM;
 	    return -1;
 	    }
 	}
     else if (qid > 0 && vrtxqueuemap[qid] != NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QID;
 	return -1;
 	}
 
     vrtxqueuemap[qid] = (vrtxqueue_t *)1;	/* Reserve slot */
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     queue = (vrtxqueue_t *)xnmalloc(sizeof(*queue));
     if (queue == NULL)
@@ -183,20 +183,20 @@ void sc_qdelete (int qid, int opt, int *errp)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = vrtxqueuemap[qid];
 
     if (queue == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QID;
 	return;
 	}
 
     if (opt == 0 && xnsynch_nsleepers(&queue->synchbase) > 0) /* we look for pending task */
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_PND;
 	return;
 	}
@@ -215,7 +215,7 @@ void sc_qdelete (int qid, int opt, int *errp)
 	vrtxqueuemap[qid] = NULL;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
 }
@@ -227,13 +227,13 @@ static void sc_qpost_internal (int qid, char *msg, int *errp, int to_head)
     xnthread_t *waiter;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = vrtxqueuemap[qid];
 
     if (queue == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QID;
 	return;
 	}
@@ -245,7 +245,7 @@ static void sc_qpost_internal (int qid, char *msg, int *errp, int to_head)
 	{
 	thread2vrtxtask(waiter)->waitargs.qmsg = msg;
 	xnpod_schedule();
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return;
 	}
 
@@ -255,7 +255,7 @@ static void sc_qpost_internal (int qid, char *msg, int *errp, int to_head)
 /* optimized below : */
     if ( countq(&queue->messageq) >= queue->maxnum + to_head )
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QFL;
 	return;
 	}
@@ -264,7 +264,7 @@ static void sc_qpost_internal (int qid, char *msg, int *errp, int to_head)
 
     if (msg_slot == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QFL;
 	return;
 	}
@@ -280,7 +280,7 @@ static void sc_qpost_internal (int qid, char *msg, int *errp, int to_head)
 	prependq(&queue->messageq, &msg_slot->link);
 	}	
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 void sc_qpost (int qid, char *msg, int *errp)
@@ -304,13 +304,13 @@ char *sc_qpend (int qid, long timeout, int *errp)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = vrtxqueuemap[qid];
 
     if (queue == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QID;
 	return NULL;
 	}
@@ -330,14 +330,14 @@ char *sc_qpend (int qid, long timeout, int *errp)
 
 	if (xnthread_test_flags(&task->threadbase, XNRMID))
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *errp = ER_DEL;
 	    return NULL; /* Queue deleted while pending. */
 	    }
 	
 	if (xnthread_test_flags(&task->threadbase, XNTIMEO))
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *errp = ER_TMO;
 	    return NULL; /* Timeout.*/
 	    }
@@ -350,7 +350,7 @@ char *sc_qpend (int qid, long timeout, int *errp)
 	xnfree(qmsg);
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
 
@@ -365,13 +365,13 @@ char *sc_qaccept(int qid, int *errp)
     vrtxqmsg_t *qmsg;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = vrtxqueuemap[qid];
 
     if (queue == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QID;
 	return NULL;
 	}
@@ -379,7 +379,7 @@ char *sc_qaccept(int qid, int *errp)
     holder = getq(&queue->messageq);
     if (holder == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_NMP;
 	return NULL;
 	}
@@ -388,7 +388,7 @@ char *sc_qaccept(int qid, int *errp)
     msg = qmsg->message;
     xnfree(qmsg);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
 
@@ -401,13 +401,13 @@ void sc_qbrdcst(int qid, char *msg, int *errp)
     vrtxqueue_t *queue;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = vrtxqueuemap[qid];
 
     if (queue == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QID;
 	return;
 	}
@@ -417,7 +417,7 @@ void sc_qbrdcst(int qid, char *msg, int *errp)
 
     xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
 }
@@ -431,13 +431,13 @@ char *sc_qinquiry (int qid, int *countp, int *errp)
 
     *countp = 0;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     queue = vrtxqueuemap[qid];
 
     if (queue == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_QID;
 	return NULL;
 	}
@@ -449,7 +449,7 @@ char *sc_qinquiry (int qid, int *countp, int *errp)
 	msg = link2vrtxmsg(holder)->message;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
     

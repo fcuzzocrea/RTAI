@@ -60,7 +60,7 @@ void sc_gclock (struct timespec *timep, unsigned long *nsp, int *errp)
     xnticks_t now;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     *nsp = xnpod_get_tickval();
 
@@ -69,7 +69,7 @@ void sc_gclock (struct timespec *timep, unsigned long *nsp, int *errp)
     timep->seconds = xnarch_ulldiv(now, 1000000000, &remain);
     timep->nanoseconds = remain;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
 }
@@ -85,7 +85,7 @@ void sc_sclock (struct timespec time, unsigned long ns, int *errp)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if ( (ns != xnpod_get_tickval()) )
 	{
@@ -98,7 +98,7 @@ void sc_sclock (struct timespec time, unsigned long ns, int *errp)
 
     xnpod_set_time(time.seconds * TEN_POW_9 + time.nanoseconds);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
 }

@@ -93,7 +93,7 @@ int rt_cond_delete (RT_COND *cond)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     cond = rtai_h2obj_validate(cond,RTAI_COND_MAGIC,RT_COND);
 
@@ -119,7 +119,7 @@ int rt_cond_delete (RT_COND *cond)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -130,7 +130,7 @@ int rt_cond_signal (RT_COND *cond)
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     cond = rtai_h2obj_validate(cond,RTAI_COND_MAGIC,RT_COND);
 
@@ -148,7 +148,7 @@ int rt_cond_signal (RT_COND *cond)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -159,7 +159,7 @@ int rt_cond_broadcast (RT_COND *cond)
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     cond = rtai_h2obj_validate(cond,RTAI_COND_MAGIC,RT_COND);
 
@@ -174,7 +174,7 @@ int rt_cond_broadcast (RT_COND *cond)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -190,7 +190,7 @@ int rt_cond_wait (RT_COND *cond,
     if (timeout == RT_TIME_NONBLOCK)
 	return -EWOULDBLOCK;
     
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     cond = rtai_h2obj_validate(cond,RTAI_COND_MAGIC,RT_COND);
 
@@ -220,7 +220,7 @@ int rt_cond_wait (RT_COND *cond,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -231,7 +231,7 @@ int rt_cond_inquire (RT_COND *cond,
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     cond = rtai_h2obj_validate(cond,RTAI_COND_MAGIC,RT_COND);
 
@@ -246,7 +246,7 @@ int rt_cond_inquire (RT_COND *cond,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

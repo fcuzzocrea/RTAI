@@ -251,7 +251,7 @@ int rt_registry_enter (const char *key,
     if (!key || !objaddr)
 	return -EINVAL;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     holder = getq(&__rtai_obj_freeq);
 
@@ -289,7 +289,7 @@ int rt_registry_enter (const char *key,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -364,7 +364,7 @@ int rt_registry_bind (const char *key,
 
     task = rtai_current_task();
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     stime = xnpod_get_time();
 
@@ -414,7 +414,7 @@ int rt_registry_bind (const char *key,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -451,7 +451,7 @@ int rt_registry_remove (rt_handle_t handle)
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     object = __registry_validate(handle);
 
@@ -501,7 +501,7 @@ int rt_registry_remove (rt_handle_t handle)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -534,7 +534,7 @@ void *rt_registry_get (rt_handle_t handle)
     void *objaddr;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (handle == RT_REGISTRY_SELF)
 	{
@@ -559,7 +559,7 @@ void *rt_registry_get (rt_handle_t handle)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return objaddr;
 }
@@ -598,7 +598,7 @@ u_long rt_registry_put (rt_handle_t handle)
     u_long newlock;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (handle == RT_REGISTRY_SELF)
 	{
@@ -626,7 +626,7 @@ u_long rt_registry_put (rt_handle_t handle)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return newlock;
 }
@@ -658,7 +658,7 @@ void *rt_registry_fetch (rt_handle_t handle)
     void *objaddr;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (handle == RT_REGISTRY_SELF)
 	{
@@ -680,7 +680,7 @@ void *rt_registry_fetch (rt_handle_t handle)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return objaddr;
 }

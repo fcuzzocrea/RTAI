@@ -98,14 +98,14 @@ static int rn_destroy_internal (psosrn_t *rn)
     spl_t s;
     int rc;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     removeq(&psosrnq,&rn->link);
     rc = xnsynch_destroy(&rn->synchbase);
     xnheap_destroy(&rn->heapbase,NULL);
     psos_mark_deleted(rn);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return rc;
 }
@@ -162,9 +162,9 @@ u_long rn_create (char name[4],
 
     rn->magic = PSOS_RN_MAGIC;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&psosrnq,&rn->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *rnid = (u_long)rn;
     *allocsize = rn->rnsize;
@@ -184,7 +184,7 @@ u_long rn_delete (u_long rnid)
     if (rnid == 0)	/* May not delete region #0 */
 	return ERR_OBJID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     rn = psos_h2obj_active(rnid,PSOS_RN_MAGIC,psosrn_t);
 
@@ -199,7 +199,7 @@ u_long rn_delete (u_long rnid)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -218,7 +218,7 @@ u_long rn_getseg (u_long rnid,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (rnid == 0)
 	rn = psosrn0;
@@ -269,7 +269,7 @@ u_long rn_getseg (u_long rnid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -284,7 +284,7 @@ u_long rn_ident (char name[4],
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     for (holder = getheadq(&psosrnq);
 	 holder; holder = nextq(&psosrnq,holder))
@@ -305,7 +305,7 @@ u_long rn_ident (char name[4],
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -320,7 +320,7 @@ u_long rn_retseg (u_long rnid,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (rnid == 0)
 	rn = psosrn0;
@@ -378,7 +378,7 @@ u_long rn_retseg (u_long rnid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

@@ -71,12 +71,12 @@ static int sem_destroy_internal (vrtxsem_t *sem)
     spl_t s;
     int rc;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     removeq(&vrtxsemq,&sem->link);
     vrtx_release_id(sem->semid);
     rc = xnsynch_destroy(&sem->synchbase);
     vrtx_mark_deleted(sem);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnfree(sem);
 
@@ -125,9 +125,9 @@ int sc_screate (unsigned initval, int opt, int *perr)
     sem->magic = VRTX_SEM_MAGIC;
     sem->count = initval;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&vrtxsemq,&sem->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *perr = RET_OK;
 
@@ -145,12 +145,12 @@ void sc_sdelete(int semid, int opt, int *errp)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = (vrtxsem_t *)vrtx_find_object_by_id(semid);
     if (sem == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -159,7 +159,7 @@ void sc_sdelete(int semid, int opt, int *errp)
 
     if (opt == 0 && xnsynch_nsleepers(&sem->synchbase) > 0)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_PND;
 	return;
 	}
@@ -168,7 +168,7 @@ void sc_sdelete(int semid, int opt, int *errp)
     if (sem_destroy_internal(sem) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }    
 
 void sc_spend(int semid, long timeout, int *errp)
@@ -179,12 +179,12 @@ void sc_spend(int semid, long timeout, int *errp)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = (vrtxsem_t *)vrtx_find_object_by_id(semid);
     if (sem == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -206,7 +206,7 @@ void sc_spend(int semid, long timeout, int *errp)
 	    *errp = ER_TMO; /* Timeout.*/
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 void sc_saccept(int semid, int *errp)
@@ -214,12 +214,12 @@ void sc_saccept(int semid, int *errp)
     vrtxsem_t *sem;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = (vrtxsem_t *)vrtx_find_object_by_id(semid);
     if (sem == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -233,7 +233,7 @@ void sc_saccept(int semid, int *errp)
 	*errp = ER_NMP;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 void sc_spost(int semid, int *errp)
@@ -242,11 +242,11 @@ void sc_spost(int semid, int *errp)
     vrtxsem_t *sem;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     sem = (vrtxsem_t *)vrtx_find_object_by_id(semid);
     if (sem == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -271,7 +271,7 @@ void sc_spost(int semid, int *errp)
 	    }
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 int sc_sinquiry (int semid, int *errp)
@@ -280,7 +280,7 @@ int sc_sinquiry (int semid, int *errp)
     int count;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = (vrtxsem_t *)vrtx_find_object_by_id(semid);
     if (sem == NULL)
@@ -291,7 +291,7 @@ int sc_sinquiry (int semid, int *errp)
     else
 	count = sem->count;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
     

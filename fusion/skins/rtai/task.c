@@ -162,10 +162,10 @@ int rt_task_create (RT_TASK *task,
     task->overrun = -1;
     task->handle = 0;	/* i.e. (still) unregistered task. */
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     task->magic = RTAI_TASK_MAGIC;
     appendq(&__rtai_task_q,&task->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     /* <!> Since rt_register_enter() may reschedule, only register
@@ -229,7 +229,7 @@ int rt_task_start (RT_TASK *task,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
 
@@ -254,7 +254,7 @@ int rt_task_start (RT_TASK *task,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -302,7 +302,7 @@ int rt_task_suspend (RT_TASK *task)
 	task = rtai_current_task();
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
 
@@ -319,7 +319,7 @@ int rt_task_suspend (RT_TASK *task)
 			     NULL);
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -357,7 +357,7 @@ int rt_task_resume (RT_TASK *task)
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
 
@@ -375,7 +375,7 @@ int rt_task_resume (RT_TASK *task)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -427,7 +427,7 @@ int rt_task_delete (RT_TASK *task)
 	task = rtai_current_task();
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
 
@@ -442,7 +442,7 @@ int rt_task_delete (RT_TASK *task)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -532,7 +532,7 @@ int rt_task_set_periodic (RT_TASK *task,
 	task = rtai_current_task();
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
 
@@ -548,7 +548,7 @@ int rt_task_set_periodic (RT_TASK *task,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -636,7 +636,7 @@ int rt_task_set_priority (RT_TASK *task,
 	task = rtai_current_task();
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
 
@@ -654,7 +654,7 @@ int rt_task_set_priority (RT_TASK *task,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return oldprio;
 }
@@ -753,7 +753,7 @@ int rt_task_sleep_until (RTIME date)
     if (!testbits(nkpod->status,XNTIMED))
 	return -EWOULDBLOCK;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     /* Calling the suspension service on behalf of the current task
        implicitely calls the rescheduling procedure. */
@@ -773,7 +773,7 @@ int rt_task_sleep_until (RTIME date)
     else
 	err = -ETIMEDOUT;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -809,7 +809,7 @@ int rt_task_unblock (RT_TASK *task)
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
 
@@ -825,7 +825,7 @@ int rt_task_unblock (RT_TASK *task)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -870,7 +870,7 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
 	task = rtai_current_task();
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
 
@@ -888,7 +888,7 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

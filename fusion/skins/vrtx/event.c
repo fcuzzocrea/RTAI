@@ -111,9 +111,9 @@ int sc_fcreate (int *perr)
     event->magic = VRTX_EVENT_MAGIC;
     event->events = 0;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&vrtxeventq,&event->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *perr = RET_OK;
 
@@ -131,13 +131,13 @@ void sc_fdelete(int eventid, int opt, int *errp)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     event = (vrtxevent_t *)vrtx_find_object_by_id(eventid);
 
     if (event == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -147,7 +147,7 @@ void sc_fdelete(int eventid, int opt, int *errp)
     if (opt == 0 && /* we look for pending task */
 	xnsynch_nsleepers(&event->synchbase) > 0)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_PND;
 	return;
 	}
@@ -156,7 +156,7 @@ void sc_fdelete(int eventid, int opt, int *errp)
     if (event_destroy_internal(event) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 int sc_fpend (int group_id, long timeout, int mask, int opt, int *errp)
@@ -173,13 +173,13 @@ int sc_fpend (int group_id, long timeout, int mask, int opt, int *errp)
 	return 0;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     evgroup = (vrtxevent_t *)vrtx_find_object_by_id(group_id);
 
     if (evgroup == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return 0;
 	}
@@ -189,7 +189,7 @@ int sc_fpend (int group_id, long timeout, int mask, int opt, int *errp)
     if ( ( (opt == 0) && ( (mask & evgroup->events) != 0) ) ||
 	 ( (opt == 1) && ( (mask & evgroup->events) == mask) ) )
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return (mask & evgroup->events);
 	}
 
@@ -216,7 +216,7 @@ int sc_fpend (int group_id, long timeout, int mask, int opt, int *errp)
 	*errp = ER_TMO;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return mask;
 }
@@ -229,12 +229,12 @@ void sc_fpost (int group_id, int mask, int *errp)
     int tmask;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     evgroup = (vrtxevent_t *)vrtx_find_object_by_id(group_id);
     if (evgroup == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -269,7 +269,7 @@ void sc_fpost (int group_id, int mask, int *errp)
 
     xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 int sc_fclear (int group_id, int mask, int *errp)
@@ -278,7 +278,7 @@ int sc_fclear (int group_id, int mask, int *errp)
     int oldevents = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     evgroup = (vrtxevent_t *)vrtx_find_object_by_id(group_id);
 
@@ -291,7 +291,7 @@ int sc_fclear (int group_id, int mask, int *errp)
 	evgroup->events &= ~mask;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return oldevents;
 }
@@ -302,7 +302,7 @@ int sc_finquiry (int group_id, int *errp)
     int mask;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     evgroup = (vrtxevent_t *)vrtx_find_object_by_id(group_id);
 
@@ -317,7 +317,7 @@ int sc_finquiry (int group_id, int *errp)
 	mask = evgroup->events;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return mask;
 }

@@ -80,17 +80,17 @@ ER cre_sem (ID semid, T_CSEM *pk_csem)
     if (semid <= 0 || semid > uITRON_MAX_SEMID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (uisemmap[semid - 1] != NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
     uisemmap[semid - 1] = (uisem_t *)1; /* Reserve slot */
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     sem = (uisem_t *)xnmalloc(sizeof(*sem));
 
@@ -111,10 +111,10 @@ ER cre_sem (ID semid, T_CSEM *pk_csem)
     sem->maxsem = pk_csem->maxsem;
     sem->magic = uITRON_SEM_MAGIC;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     uisemmap[semid - 1] = sem;
     appendq(&uisemq,&sem->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -131,13 +131,13 @@ ER del_sem (ID semid)
     if (semid <= 0 || semid > uITRON_MAX_SEMID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = uisemmap[semid - 1];
 
     if (!sem)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -148,7 +148,7 @@ ER del_sem (ID semid)
     if (xnsynch_destroy(&sem->synchbase) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnfree(sem);
 
@@ -169,13 +169,13 @@ ER sig_sem (ID semid)
     if (semid <= 0 || semid > uITRON_MAX_SEMID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = uisemmap[semid - 1];
 
     if (!sem)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -184,7 +184,7 @@ ER sig_sem (ID semid)
     if (sleeper)
 	{
 	xnpod_schedule();
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OK;
 	}
 
@@ -196,7 +196,7 @@ ER sig_sem (ID semid)
 	err = E_QOVR;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -225,13 +225,13 @@ static ER wai_sem_helper (ID semid, TMO tmout)
     if (semid <= 0 || semid > uITRON_MAX_SEMID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = uisemmap[semid - 1];
 
     if (!sem)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -255,7 +255,7 @@ static ER wai_sem_helper (ID semid, TMO tmout)
 	    err = E_RLWAI; /* rel_wai() received while waiting.*/
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -285,13 +285,13 @@ ER ref_sem (T_RSEM *pk_rsem, ID semid)
     if (semid <= 0 || semid > uITRON_MAX_SEMID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = uisemmap[semid - 1];
 
     if (!sem)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -300,7 +300,7 @@ ER ref_sem (T_RSEM *pk_rsem, ID semid)
     pk_rsem->semcnt = sem->semcnt;
     pk_rsem->wtsk = sleeper ? sleeper->tskid : FALSE;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }

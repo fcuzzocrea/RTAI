@@ -126,9 +126,9 @@ u_long pt_create (char name[4],
     
     pt->magic = PSOS_PT_MAGIC;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&psosptq,&pt->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *nbuf = pt->nblks;
     *ptid = (u_long)pt;
@@ -145,7 +145,7 @@ u_long pt_delete (u_long ptid)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pt = psos_h2obj_active(ptid,PSOS_PT_MAGIC,psospt_t);
 
@@ -166,7 +166,7 @@ u_long pt_delete (u_long ptid)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -180,7 +180,7 @@ u_long pt_getbuf (u_long ptid,
     void *buf;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pt = psos_h2obj_active(ptid,PSOS_PT_MAGIC,psospt_t);
 
@@ -202,7 +202,7 @@ u_long pt_getbuf (u_long ptid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -214,7 +214,7 @@ u_long pt_retbuf (u_long ptid,
     psospt_t *pt;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pt = psos_h2obj_active(ptid,PSOS_PT_MAGIC,psospt_t);
 
@@ -247,7 +247,7 @@ u_long pt_retbuf (u_long ptid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -266,7 +266,7 @@ u_long pt_ident (char name[4],
     if (node > 1)
 	return ERR_NODENO;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     for (holder = getheadq(&psosptq);
 	 holder; holder = nextq(&psosptq,holder))
@@ -287,7 +287,7 @@ u_long pt_ident (char name[4],
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

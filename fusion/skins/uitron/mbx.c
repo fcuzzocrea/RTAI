@@ -82,17 +82,17 @@ ER cre_mbx (ID mbxid, T_CMBX *pk_cmbx)
     if (pk_cmbx->mbxatr & TA_MPRI)
 	return E_RSATR;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (uimbxmap[mbxid - 1] != NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
     uimbxmap[mbxid - 1] = (uimbx_t *)1; /* Reserve slot */
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     mbx = (uimbx_t *)xnmalloc(sizeof(*mbx));
 
@@ -124,10 +124,10 @@ ER cre_mbx (ID mbxid, T_CMBX *pk_cmbx)
     mbx->ring = ring;
     mbx->magic = uITRON_MBX_MAGIC;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     uimbxmap[mbxid - 1] = mbx;
     appendq(&uimbxq,&mbx->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -144,13 +144,13 @@ ER del_mbx (ID mbxid)
     if (mbxid <= 0 || mbxid > uITRON_MAX_MBXID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     mbx = uimbxmap[mbxid - 1];
 
     if (!mbx)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -161,7 +161,7 @@ ER del_mbx (ID mbxid)
     if (xnsynch_destroy(&mbx->synchbase) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnfree(mbx->ring);
     xnfree(mbx);
@@ -180,13 +180,13 @@ ER snd_msg (ID mbxid, T_MSG *pk_msg)
     if (mbxid <= 0 || mbxid > uITRON_MAX_MBXID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     mbx = uimbxmap[mbxid - 1];
 
     if (!mbx)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -196,7 +196,7 @@ ER snd_msg (ID mbxid, T_MSG *pk_msg)
 	{
 	sleeper->wargs.msg = pk_msg;
 	xnpod_schedule();
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OK;
 	}
 
@@ -212,7 +212,7 @@ ER snd_msg (ID mbxid, T_MSG *pk_msg)
 	mbx->mcount++;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -241,13 +241,13 @@ static ER rcv_msg_helper (T_MSG **ppk_msg, ID mbxid, TMO tmout)
     if (mbxid <= 0 || mbxid > uITRON_MAX_MBXID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     mbx = uimbxmap[mbxid - 1];
 
     if (!mbx)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -277,7 +277,7 @@ static ER rcv_msg_helper (T_MSG **ppk_msg, ID mbxid, TMO tmout)
 	    *ppk_msg = task->wargs.msg;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -310,13 +310,13 @@ ER ref_mbx (T_RMBX *pk_rmbx, ID mbxid)
     if (mbxid <= 0 || mbxid > uITRON_MAX_FLAGID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     mbx = uimbxmap[mbxid - 1];
 
     if (!mbx)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
@@ -325,7 +325,7 @@ ER ref_mbx (T_RMBX *pk_rmbx, ID mbxid)
     pk_rmbx->pk_msg = mbx->mcount > 0 ? mbx->ring[mbx->rdptr] : (T_MSG *)NADR;
     pk_rmbx->wtsk = sleeper ? sleeper->tskid : FALSE;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }

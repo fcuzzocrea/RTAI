@@ -109,17 +109,17 @@ ER cre_tsk (ID tskid, T_CTSK *pk_ctsk)
     if (tskid <= 0 || tskid > uITRON_MAX_TASKID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (uitaskmap[tskid - 1] != NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
     uitaskmap[tskid - 1] = (uitask_t *)1; /* Reserve slot */
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     task = (uitask_t *)xnmalloc(sizeof(*task));
 
@@ -154,10 +154,10 @@ ER cre_tsk (ID tskid, T_CTSK *pk_ctsk)
     task->waitinfo = 0;
     task->magic = uITRON_TASK_MAGIC;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     uitaskmap[tskid - 1] = task;
     appendq(&uitaskq,&task->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
 #if 0
     xnarch_create_display(&task->threadbase,aname,uitask);
@@ -178,19 +178,19 @@ ER del_tsk (ID tskid)
     if (tskid <= 0 || tskid > uITRON_MAX_TASKID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = uitaskmap[tskid - 1];
 
     if (!task)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
     if (!xnthread_test_flags(&task->threadbase,XNDORMANT))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
@@ -198,7 +198,7 @@ ER del_tsk (ID tskid)
 
     xnpod_delete_thread(&task->threadbase);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -224,19 +224,19 @@ ER sta_tsk (ID tskid, INT stacd)
     if (tskid <= 0 || tskid > uITRON_MAX_TASKID)
 	return E_ID;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = uitaskmap[tskid - 1];
 
     if (!task)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
     if (!xnthread_test_flags(&task->threadbase,XNDORMANT))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
@@ -245,7 +245,7 @@ ER sta_tsk (ID tskid, INT stacd)
     task->waitinfo = 0;
     task->stacd = stacd;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnpod_start_thread(&task->threadbase,
 		       0,
@@ -299,10 +299,10 @@ void exd_tsk (void)
 	}
 
     task = ui_current_task();
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     uitaskmap[task->tskid - 1] = NULL;
     xnpod_delete_thread(&task->threadbase);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 /* Helper routine for the task termination -- must be called
@@ -314,7 +314,7 @@ static void ter_tsk_helper (uitask_t *task)
 {
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     xnthread_clear_flags(&task->threadbase,uITRON_TERM_HOLD);
 
@@ -327,7 +327,7 @@ static void ter_tsk_helper (uitask_t *task)
 			 XNDORMANT,
 			 XN_INFINITE,
 			 NULL);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 ER ter_tsk (ID tskid)
@@ -345,19 +345,19 @@ ER ter_tsk (ID tskid)
     if (tskid == ui_current_task()->tskid)
 	return E_OBJ;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = uitaskmap[tskid - 1];
 
     if (!task)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
     if (xnthread_test_flags(&task->threadbase,XNDORMANT))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
@@ -367,14 +367,14 @@ ER ter_tsk (ID tskid)
 	   mark the target task as held for termination. The actual
 	   termination code will be applied by the task itself when it
 	   re-enables dispatching. */
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	xnthread_set_flags(&task->threadbase,uITRON_TERM_HOLD);
 	return E_OK;
 	}
 
     ter_tsk_helper(task);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -387,12 +387,12 @@ ER dis_dsp (void)
     if (xnpod_asynch_p() || uicpulck)
 	return E_CTX;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (!xnpod_locked_p())
 	xnpod_lock_sched();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -435,26 +435,26 @@ ER chg_pri (ID tskid, PRI tskpri)
 	    return E_ID;
 
 	task = ui_current_task();
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 	}
     else
 	{
 	if (tskid <= 0 || tskid > uITRON_MAX_TASKID)
 	    return E_ID;
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	task = uitaskmap[tskid - 1];
 
 	if (!task)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return E_NOEXS;
 	    }
 
 	if (xnthread_test_flags(&task->threadbase,XNDORMANT))
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return E_OBJ;
 	    }
 	}
@@ -468,7 +468,7 @@ ER chg_pri (ID tskid, PRI tskpri)
        manual round-robin. Cool! :o) */
     xnpod_renice_thread(&task->threadbase,tskpri);
     xnpod_schedule();
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -509,25 +509,25 @@ ER rel_wai (ID tskid)
     if (tskid == ui_current_task()->tskid)
 	return E_OBJ;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = uitaskmap[tskid - 1];
 
     if (!task)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
     if (xnthread_test_flags(&task->threadbase,XNDORMANT))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
     xnpod_unblock_thread(&task->threadbase);
     xnpod_schedule();
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -556,20 +556,20 @@ ER ref_tsk (T_RTSK *pk_rtsk, ID tskid)
 	    return E_ID;
 
 	task = ui_current_task();
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 	}
     else
 	{
 	if (tskid <= 0 || tskid > uITRON_MAX_TASKID)
 	    return E_ID;
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	task = uitaskmap[tskid - 1];
 
 	if (!task)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return E_NOEXS;
 	    }
 	}
@@ -600,7 +600,7 @@ ER ref_tsk (T_RTSK *pk_rtsk, ID tskid)
     pk_rtsk->itskpri = xnthread_initial_priority(&task->threadbase);
     pk_rtsk->stksz = (INT)xnthread_stack_size(&task->threadbase);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -620,25 +620,25 @@ ER sus_tsk (ID tskid)
     if (tskid == ui_current_task()->tskid)
 	return E_OBJ;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = uitaskmap[tskid - 1];
 
     if (!task)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
     if (xnthread_test_flags(&task->threadbase,XNDORMANT))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
     if (task->suspcnt >= 0x7fffffff)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_QOVR;
 	}
 
@@ -647,7 +647,7 @@ ER sus_tsk (ID tskid)
 			     XNSUSP,
 			     XN_INFINITE,
 			     NULL);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -667,20 +667,20 @@ static ER rsm_tsk_helper (ID tskid, int force)
     if (tskid == ui_current_task()->tskid)
 	return E_OBJ;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = uitaskmap[tskid - 1];
 
     if (!task)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
     if (task->suspcnt == 0 ||
 	xnthread_test_flags(&task->threadbase,XNDORMANT))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
@@ -691,7 +691,7 @@ static ER rsm_tsk_helper (ID tskid, int force)
 	xnpod_schedule();
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -715,12 +715,12 @@ ER slp_tsk (void)
 
     task = ui_current_task();
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (task->wkupcnt > 0)
 	{
 	task->wkupcnt--;
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OK;
 	}
 
@@ -733,7 +733,7 @@ ER slp_tsk (void)
 
     xnthread_clear_flags(&task->threadbase,uITRON_TASK_SLEEP);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     if (xnthread_test_flags(&task->threadbase,XNBREAK))
 	return E_RLWAI;
@@ -758,12 +758,12 @@ ER tslp_tsk (TMO tmout)
 
     task = ui_current_task();
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (task->wkupcnt > 0)
 	{
 	task->wkupcnt--;
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OK;
 	}
 
@@ -779,7 +779,7 @@ ER tslp_tsk (TMO tmout)
 
     xnthread_clear_flags(&task->threadbase,uITRON_TASK_SLEEP);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     if (xnthread_test_flags(&task->threadbase,XNBREAK))
 	return E_RLWAI;
@@ -805,19 +805,19 @@ ER wup_tsk (ID tskid)
     if (tskid == ui_current_task()->tskid)
 	return E_OBJ;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = uitaskmap[tskid - 1];
 
     if (!task)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_NOEXS;
 	}
 
     if (xnthread_test_flags(&task->threadbase,XNDORMANT))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	return E_OBJ;
 	}
 
@@ -825,7 +825,7 @@ ER wup_tsk (ID tskid)
 	{
 	if (task->wkupcnt >= 0x7fffffff)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return E_QOVR;
 	    }
 
@@ -837,7 +837,7 @@ ER wup_tsk (ID tskid)
 	xnpod_schedule();
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }
@@ -854,26 +854,26 @@ ER can_wup (INT *p_wupcnt, ID tskid)
 	    return E_ID;
 
 	task = ui_current_task();
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 	}
     else
 	{
 	if (tskid <= 0 || tskid > uITRON_MAX_TASKID)
 	    return E_ID;
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	task = uitaskmap[tskid - 1];
 
 	if (!task)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return E_NOEXS;
 	    }
 
 	if (xnthread_test_flags(&task->threadbase,XNDORMANT))
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    return E_OBJ;
 	    }
 	}
@@ -881,7 +881,7 @@ ER can_wup (INT *p_wupcnt, ID tskid)
     *p_wupcnt = task->wkupcnt;
     task->wkupcnt = 0;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return E_OK;
 }

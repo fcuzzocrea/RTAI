@@ -59,11 +59,11 @@ u_long as_catch (void (*routine)(void),
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     psos_current_task()->threadbase.asr = (xnasr_t)routine;
     psos_current_task()->threadbase.asrmode = psos_mode_to_xeno(mode);
     psos_current_task()->threadbase.asrimask = ((mode >> 8) & 0x7);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     /* The rescheduling procedure checks for pending signals. */
     xnpod_schedule();
@@ -78,7 +78,7 @@ u_long as_send (u_long tid,
     psostask_t *task;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     task = psos_h2obj_active(tid,PSOS_TASK_MAGIC,psostask_t);
 
@@ -104,7 +104,7 @@ u_long as_send (u_long tid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

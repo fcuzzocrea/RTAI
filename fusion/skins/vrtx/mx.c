@@ -81,11 +81,11 @@ int mx_destroy_internal (int indx)
     spl_t s;
     int rc;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     rc = xnsynch_destroy(&vrtxmxmap[indx].synchbase);
     appendq(&mx_free_q, &vrtxmxmap[indx].link);
     vrtxmxmap[indx].state = VRTXMX_FREE;
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return rc;
 }
@@ -115,12 +115,12 @@ int sc_mcreate (unsigned int opt, int *errp)
 	return 0;
     }
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     holder = getq(&mx_free_q);
     if (holder == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_NOCB;
 	return -1;
 	}
@@ -130,7 +130,7 @@ int sc_mcreate (unsigned int opt, int *errp)
 
     xnsynch_init(&vrtxmxmap[indx].synchbase, flags);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
     return indx;
@@ -144,12 +144,12 @@ void sc_mpost(int mid, int *errp)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if ( (mid < 0) || (mid >= VRTX_MAX_MXID)
 	 || (vrtxmxmap[mid].state == VRTXMX_FREE) )
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -163,7 +163,7 @@ void sc_mpost(int mid, int *errp)
 	vrtxmxmap[mid].state = VRTXMX_UNLOCKED;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *errp = RET_OK;
     return;
@@ -181,12 +181,12 @@ void sc_mdelete (int mid, int opt, int *errp)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if ( (mid < 0) || (mid >= VRTX_MAX_MXID)
 	 || (vrtxmxmap[mid].state == VRTXMX_FREE) )
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -195,7 +195,7 @@ void sc_mdelete (int mid, int opt, int *errp)
 	{
 	if ( (opt == 0) || (xnpod_current_thread() != vrtxmxmap[mid].owner) )
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *errp = ER_PND;
 	    return;
 	    }
@@ -206,7 +206,7 @@ void sc_mdelete (int mid, int opt, int *errp)
     if (mx_destroy_internal(mid) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 void sc_mpend (int mid, unsigned long timeout, int *errp)
@@ -214,12 +214,12 @@ void sc_mpend (int mid, unsigned long timeout, int *errp)
     vrtxtask_t *task;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if ( (mid < 0) || (mid >= VRTX_MAX_MXID)
 	 || (vrtxmxmap[mid].state == VRTXMX_FREE) )
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -244,19 +244,19 @@ void sc_mpend (int mid, unsigned long timeout, int *errp)
 	    *errp = ER_TMO; /* Timeout.*/
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 void sc_maccept (int mid, int *errp)
 {
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
    if ( (mid < 0) || (mid >= VRTX_MAX_MXID)
 	 || (vrtxmxmap[mid].state == VRTXMX_FREE) )
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -272,7 +272,7 @@ void sc_maccept (int mid, int *errp)
 	*errp = ER_PND;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 int sc_minquiry (int mid, int *errp)
@@ -280,19 +280,19 @@ int sc_minquiry (int mid, int *errp)
     spl_t s;
     int rc;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if ( (mid < 0) || (mid >= VRTX_MAX_MXID)
 	 || (vrtxmxmap[mid].state == VRTXMX_FREE) )
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return 0;
 	}
 
     rc = (vrtxmxmap[mid].state == VRTXMX_UNLOCKED);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return rc;
 }

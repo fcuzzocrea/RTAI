@@ -135,7 +135,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
        user-space threads are being synchronized on it, so enter a
        critical section. */
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     /* Force FPU support in user-space. This will lead to a no-op if
        the platform does not support it. */
@@ -170,7 +170,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 	xnshadow_sync_post(syncpid,u_syncp,err);
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

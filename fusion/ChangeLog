@@ -1,5 +1,7 @@
 2004-06-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* skins/psos+, skins/rtai, skins/uitron, skins/vrtx: adaptation to SMP.
+
 	* */asm*/system.h: same cleanup.
 
 	* include/nucleus/asm-i386/system.h: SMP code cleanup.

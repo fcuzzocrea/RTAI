@@ -70,9 +70,9 @@ static void vrtxtask_delete_hook (xnthread_t *thread)
 
     task = thread2vrtxtask(thread);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     removeq(&vrtxtaskq,&task->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     if (task->param != NULL && task->paramsz > 0)
 	xnfree(task->param);
@@ -153,7 +153,7 @@ int sc_tecreate (void (*entry)(void *),
 	paddr = _paddr;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (tid < 0)
 	{
@@ -165,21 +165,21 @@ int sc_tecreate (void (*entry)(void *),
 
 	if (tid >= VRTX_MAX_TID)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *perr = ER_TCB;
 	    return -1;
 	    }
 	}
     else if (tid > 0 && vrtxtaskmap[tid] != NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*perr = ER_TID;
 	return -1;
 	}
 
     vrtxtaskmap[tid] = (vrtxtask_t *)1;	/* Reserve slot */
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     task = xnmalloc(sizeof(*task));
     if (!task)
@@ -224,10 +224,10 @@ int sc_tecreate (void (*entry)(void *),
 
     *perr = RET_OK;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     vrtxtaskmap[tid] = task;	/* Tid 0 won't be searched anyway */
     appendq(&vrtxtaskq,&task->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnpod_start_thread(&task->threadbase,
 		       bmode,
@@ -285,7 +285,7 @@ void sc_tdelete (int tid, int opt, int *perr)
 	{
 	xnholder_t *holder, *nextholder;
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	nextholder = getheadq(&vrtxtaskq);
 
@@ -301,7 +301,7 @@ void sc_tdelete (int tid, int opt, int *perr)
 		vrtxtask_delete_internal(task);
 	    }
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 
 	*perr = RET_OK;
 
@@ -320,7 +320,7 @@ void sc_tdelete (int tid, int opt, int *perr)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (tid == 0)
 	task = vrtx_current_task();
@@ -330,7 +330,7 @@ void sc_tdelete (int tid, int opt, int *perr)
 
 	if (!task)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *perr = ER_TID;
 	    return;
 	    }
@@ -338,7 +338,7 @@ void sc_tdelete (int tid, int opt, int *perr)
 
     vrtxtask_delete_internal(task);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *perr = RET_OK;
 }
@@ -357,14 +357,14 @@ void sc_tpriority (int tid, int prio, int *perr)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (tid == 0)
 	task = vrtx_current_task();
     else if (tid < -1 || tid >= VRTX_MAX_TID ||
 	     (task = vrtxtaskmap[tid]) == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*perr = ER_TID;
 	return;
 	}
@@ -379,7 +379,7 @@ void sc_tpriority (int tid, int prio, int *perr)
     else
 	xnpod_renice_thread(&task->threadbase,prio);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
     
     *perr = RET_OK;
 
@@ -403,7 +403,7 @@ void sc_tresume (int tid, int opt, int *perr)
 	{
 	xnholder_t *holder, *nextholder;
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	nextholder = getheadq(&vrtxtaskq);
 
@@ -419,7 +419,7 @@ void sc_tresume (int tid, int opt, int *perr)
 		xnpod_resume_thread(&task->threadbase,XNSUSP);
 	    }
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 
 	*perr = RET_OK;
 
@@ -440,7 +440,7 @@ void sc_tresume (int tid, int opt, int *perr)
 	return;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (tid == 0)
 	task = vrtx_current_task();
@@ -449,14 +449,14 @@ void sc_tresume (int tid, int opt, int *perr)
 
     if (!task)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*perr = ER_TID;
 	return;
 	}
 
     xnpod_resume_thread(&task->threadbase,XNSUSP);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *perr = RET_OK;
 
@@ -483,7 +483,7 @@ void sc_tsuspend (int tid, int opt, int *perr)
 	{
 	xnholder_t *holder, *nextholder;
 
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	nextholder = getheadq(&vrtxtaskq);
 
@@ -506,7 +506,7 @@ void sc_tsuspend (int tid, int opt, int *perr)
 		}
 	    }
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 
 	*perr = RET_OK;
 
@@ -536,13 +536,13 @@ void sc_tsuspend (int tid, int opt, int *perr)
 	}
     else
 	{
-	splhigh(s);
+	xnlock_get_irqsave(&nklock,s);
 
 	task = vrtxtaskmap[tid];
 
 	if (!task)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *perr = ER_TID;
 	    return;
 	    }
@@ -556,7 +556,7 @@ void sc_tsuspend (int tid, int opt, int *perr)
 
 	*perr = RET_OK;
 
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	}
 }
 
@@ -596,7 +596,7 @@ TCB *sc_tinquiry (int *pinfo, int tid, int *perr)
 	return NULL;
 	}
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (tid == 0)
 	task = vrtx_current_task();
@@ -606,7 +606,7 @@ TCB *sc_tinquiry (int *pinfo, int tid, int *perr)
 
 	if (!task)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *perr = ER_TID;
 	    return NULL;
 	    }
@@ -636,7 +636,7 @@ TCB *sc_tinquiry (int *pinfo, int tid, int *perr)
 	pinfo[2] = tcb->TCBSTAT;
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *perr = RET_OK;
 

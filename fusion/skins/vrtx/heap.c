@@ -100,10 +100,10 @@ static void heap_destroy_internal (vrtxheap_t *heap)
 {
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     removeq(&vrtxheapq,&heap->link);
     vrtx_mark_deleted(heap);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
     xnheap_destroy(&heap->sysheap,NULL);
 }
 
@@ -166,10 +166,10 @@ int sc_hcreate(char *heapaddr,
     heap->allocated = 0;
     heap->released = 0;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     heapid = vrtx_alloc_id(heap);
     appendq(&vrtxheapq, &heap->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return heapid;
 }
@@ -179,7 +179,7 @@ void sc_hdelete (int hid, int opt, int *errp)
     vrtxheap_t *heap;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     heap = (vrtxheap_t *)vrtx_find_object_by_id(hid);
     
@@ -187,14 +187,14 @@ void sc_hdelete (int hid, int opt, int *errp)
 	{ /* delete heap only if no blocks are allocated */
 	if (heap->sysheap.ubytes > 0)
 	    {
-	    splexit(s);
+	    xnlock_put_irqrestore(&nklock,s);
 	    *errp = ER_PND;
 	    return;
 	    }
 	}
     else if (opt != 1)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_IIP;
 	return;
 	}
@@ -203,7 +203,7 @@ void sc_hdelete (int hid, int opt, int *errp)
 
     heap_destroy_internal(heap);
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 char *sc_halloc(int hid, unsigned long bsize, int *errp)
@@ -212,12 +212,12 @@ char *sc_halloc(int hid, unsigned long bsize, int *errp)
     char *blockp;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     heap = (vrtxheap_t *)vrtx_find_object_by_id(hid);
     if (heap == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return NULL;
 	}
@@ -233,7 +233,7 @@ char *sc_halloc(int hid, unsigned long bsize, int *errp)
 	}
     heap->allocated++;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return blockp;
 }    
@@ -243,20 +243,20 @@ void sc_hfree(int hid, char *blockp, int *errp)
     vrtxheap_t *heap;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     heap = (vrtxheap_t *)vrtx_find_object_by_id(hid);
 
     if (heap == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
 
     if (0 != xnheap_free(&heap->sysheap, blockp))
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_NMB;
 	return;
 	}
@@ -265,7 +265,7 @@ void sc_hfree(int hid, char *blockp, int *errp)
     heap->allocated--;
     heap->released++;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 void sc_hinquiry (int info[3], int hid, int *errp)
@@ -273,12 +273,12 @@ void sc_hinquiry (int info[3], int hid, int *errp)
     vrtxheap_t *heap;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     heap = (vrtxheap_t *)vrtx_find_object_by_id(hid);
     if (heap == NULL)
 	{
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	*errp = ER_ID;
 	return;
 	}
@@ -293,5 +293,5 @@ void sc_hinquiry (int info[3], int hid, int *errp)
 
     info[2] = heap->log2psize;
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }

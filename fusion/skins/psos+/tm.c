@@ -72,12 +72,12 @@ void tm_destroy_internal (psostm_t *tm)
 {
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     removegq(&tm->owner->alarmq,tm);
     xntimer_destroy(&tm->timerbase);
     psos_mark_deleted(tm);
     removeq(&psostimerq,&tm->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnfree(tm);
 }
@@ -114,10 +114,10 @@ static u_long tm_start_event_timer (u_long ticks,
     xntimer_init(&tm->timerbase,tm_evpost_handler,tm);
     tm->magic = PSOS_TM_MAGIC;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&psostimerq,&tm->link);
     appendgq(&tm->owner->alarmq,tm);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xntimer_start(&tm->timerbase,ticks,interval);
 
@@ -270,7 +270,7 @@ u_long tm_cancel (u_long tmid)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     tm = psos_h2obj_active(tmid,PSOS_TM_MAGIC,psostm_t);
 
@@ -284,7 +284,7 @@ u_long tm_cancel (u_long tmid)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

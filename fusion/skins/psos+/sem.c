@@ -92,9 +92,9 @@ u_long sm_create (char name[4],
     sem->name[3] = name[3];
     sem->name[4] = '\0';
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     appendq(&psossemq,&sem->link);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     *smid = (u_long)sem;
 
@@ -107,11 +107,11 @@ static int sm_destroy_internal (psossem_t *sem)
     spl_t s;
     int rc;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
     removeq(&psossemq,&sem->link);
     rc = xnsynch_destroy(&sem->synchbase);
     psos_mark_deleted(sem);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     xnfree(sem);
 
@@ -127,7 +127,7 @@ u_long sm_delete (u_long smid)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = psos_h2obj_active(smid,PSOS_SEM_MAGIC,psossem_t);
 
@@ -142,7 +142,7 @@ u_long sm_delete (u_long smid)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -161,7 +161,7 @@ u_long sm_ident (char name[4],
     if (node > 1)
 	return ERR_NODENO;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     for (holder = getheadq(&psossemq);
 	 holder; holder = nextq(&psossemq,holder))
@@ -182,7 +182,7 @@ u_long sm_ident (char name[4],
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -195,7 +195,7 @@ u_long sm_p (u_long smid,
     psossem_t *sem;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = psos_h2obj_active(smid,PSOS_SEM_MAGIC,psossem_t);
 
@@ -231,7 +231,7 @@ u_long sm_p (u_long smid,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -243,7 +243,7 @@ u_long sm_v (u_long smid)
     psossem_t *sem;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     sem = psos_h2obj_active(smid,PSOS_SEM_MAGIC,psossem_t);
 
@@ -260,7 +260,7 @@ u_long sm_v (u_long smid)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

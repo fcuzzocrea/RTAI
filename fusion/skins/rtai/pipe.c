@@ -58,7 +58,7 @@ static void __pipe_flush_handler (void)
     xnholder_t *holder;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     /* Flush all pipes with pending messages. */
 
@@ -69,7 +69,7 @@ static void __pipe_flush_handler (void)
 	clear_bit(0,&pipe->flushable);
 	}
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 static void *__pipe_alloc_handler (int bminor,
@@ -182,7 +182,7 @@ int rt_pipe_close (RT_PIPE *pipe)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pipe = rtai_h2obj_validate(pipe,RTAI_PIPE_MAGIC,RT_PIPE);
 
@@ -205,7 +205,7 @@ int rt_pipe_close (RT_PIPE *pipe)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -286,7 +286,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
     if (timeout != RT_TIME_NONBLOCK)
 	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pipe = rtai_h2obj_validate(pipe,RTAI_PIPE_MAGIC,RT_PIPE);
 
@@ -300,7 +300,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return n;
 }
@@ -371,7 +371,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
     ssize_t n = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pipe = rtai_h2obj_validate(pipe,RTAI_PIPE_MAGIC,RT_PIPE);
 
@@ -396,7 +396,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return n <= 0 ? n : n - sizeof(RT_PIPE_MSG);
 }
@@ -453,7 +453,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
     return -ENOSYS;
 #else /* CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ > 0 */
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pipe = rtai_h2obj_validate(pipe,RTAI_PIPE_MAGIC,RT_PIPE);
 
@@ -517,7 +517,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return outbytes;
 #endif /* CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ <= 0 */
@@ -555,7 +555,7 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
     ssize_t n = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     pipe = rtai_h2obj_validate(pipe,RTAI_PIPE_MAGIC,RT_PIPE);
 
@@ -573,7 +573,7 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return n <= 0 ? n : n - sizeof(RT_PIPE_MSG);
 }

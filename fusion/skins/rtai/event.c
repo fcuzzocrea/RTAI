@@ -155,7 +155,7 @@ int rt_event_delete (RT_EVENT *event)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     event = rtai_h2obj_validate(event,RTAI_EVENT_MAGIC,RT_EVENT);
 
@@ -181,7 +181,7 @@ int rt_event_delete (RT_EVENT *event)
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -220,7 +220,7 @@ int rt_event_post (RT_EVENT *event,
     int err = 0, resched = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     event = rtai_h2obj_validate(event,RTAI_EVENT_MAGIC,RT_EVENT);
 
@@ -261,7 +261,7 @@ int rt_event_post (RT_EVENT *event,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -349,7 +349,7 @@ int rt_event_pend (RT_EVENT *event,
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     event = rtai_h2obj_validate(event,RTAI_EVENT_MAGIC,RT_EVENT);
 
@@ -409,7 +409,7 @@ int rt_event_pend (RT_EVENT *event,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }
@@ -444,7 +444,7 @@ int rt_event_inquire (RT_EVENT *event,
     int err = 0;
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     event = rtai_h2obj_validate(event,RTAI_EVENT_MAGIC,RT_EVENT);
 
@@ -460,7 +460,7 @@ int rt_event_inquire (RT_EVENT *event,
 
  unlock_and_exit:
 
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
 
     return err;
 }

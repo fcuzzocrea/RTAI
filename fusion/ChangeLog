@@ -1,5 +1,13 @@
 2005-01-10  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (xnshadow_unregister_interface): Accept to
+	unregister the interface even if the refcount is zero, which
+	basically means that some non-shadow Linux task has attached the
+	interface but the latter does not own any existing thread. This is
+	sub-optimal since we loose the refcnt guarantee for interfaces
+	which do not create threads, but prevents dandling
+	/proc/rtai/interfaces entries to appear.
+
 	* skins/rtai/intr.c, drivers/16550A/16550A.c: Store the
 	registration key into the descriptor as required by
 	rt_registry_enter().

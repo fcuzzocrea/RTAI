@@ -1752,11 +1752,12 @@ int xnshadow_unregister_interface (int muxid)
 
     xnlock_get_irqsave(&nklock,s);
 
-    if (xnarch_atomic_get(&muxtable[muxid].refcnt) == -1)
+    if (xnarch_atomic_get(&muxtable[muxid].refcnt) <= 0)
 	{
 	muxtable[muxid].systab = NULL;
 	muxtable[muxid].nrcalls = 0;
 	muxtable[muxid].magic = 0;
+	xnarch_atomic_set(&muxtable[muxid].refcnt,-1);
 #ifdef CONFIG_PROC_FS
 	xnpod_discard_iface_proc(muxtable + muxid);
 #endif /* CONFIG_PROC_FS */

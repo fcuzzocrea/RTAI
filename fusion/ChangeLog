@@ -1,3 +1,8 @@
+2004-09-03  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-(i386|ppc)/system.h (__xnlock_get_irqsave):
+	Avoid to enable interrupts in nested critical sections.
+
 2004-09-01  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.5
@@ -40,6 +45,7 @@
 	* nucleus/timer.c (xntimer_enqueue): Completely dissociate
 	periodic from aperiodic timer enqueueing/dequeueing.
 
+>>>>>>> 1.88
 2004-08-30  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* arch/ppc/hal/hal.c: Move the Doxygen documentation to a new

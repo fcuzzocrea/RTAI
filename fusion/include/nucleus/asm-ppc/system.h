@@ -103,10 +103,15 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
     if (!test_and_set_bit(cpuid,lock))
 	while (test_and_set_bit(BITS_PER_LONG - 1,lock))
 	    {
-            clear_bit(cpuid, lock);
-            rthal_sync_irqs();
-            adeos_load_cpuid(); /* Could have been migrated by interrupts. */
-            set_bit(cpuid, lock);
+            if (!flags)
+                {
+                clear_bit(cpuid, lock);
+                rthal_sync_irqs();
+                adeos_load_cpuid(); /* Could have been migrated by interrupts. */
+                set_bit(cpuid, lock);
+                }
+            else
+                rthal_cpu_relax(cpuid); /* FIXME: is this really needed ? */
             }
     else
         flags |= 2;
@@ -129,7 +134,7 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
             {
             clear_bit(cpuid,lock);
             clear_bit(BITS_PER_LONG - 1,lock);
-            rthal_cpu_relax(cpuid);
+            rthal_cpu_relax(cpuid); /* FIXME: is this really needed ? */
             }
         }
 

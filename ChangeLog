@@ -6,6 +6,8 @@
 	* base/arch/arm/hal/mach_pxa/pxa-timer.c: PXA specific timer support
 	* base/arch/arm/patches/pxa255_2.6.7-rmk1-karo.patch: PXA specific
 	  patch for Linux-2.6.7
+	* NB: it is just the beginning, Luca and Stefano must agree changes
+	  to common files with Michael.
 
 2004-02-14  Michael Neuhauser  <mike@firmix.at>
 

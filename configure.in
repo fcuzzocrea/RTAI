@@ -568,10 +568,6 @@ else
   unset CONFIG_RTAI_SCHED_SMP
   test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
   unset CONFIG_RTAI_SCHED_MUP
-  if test "$CONFIG_ARM" != y; then
-    test x$CONFIG_RTAI_SCHED_LXRT = xy && lxrt_forced="(forced)"
-    unset CONFIG_RTAI_SCHED_LXRT
-  fi
   CONFIG_RTAI_CPUS=1
 fi
 

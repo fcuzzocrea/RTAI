@@ -41,8 +41,6 @@
  *
  *@{*/
 
-#define __KERNEL__
-
 #include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/errno.h>

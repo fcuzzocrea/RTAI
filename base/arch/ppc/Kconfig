@@ -226,8 +226,31 @@ config RTAI_SCHED_MUP
 	default n
 
 config RTAI_SCHED_LXRT
-	bool
-	default n
+	bool "LXRT scheduler (kernel and user-space tasks)"
+	default y
+	help
+
+	LXRT is a user-space interface providing a symmetric API that
+	may be used by both real-time RTAI tasks and linux
+	processes. The full range of Linux system calls is then
+	available and transitions between "soft" real-time and "hard"
+	real-time can be performed.
+
+	As far as scheduling is concerned, LXRT requires the use of
+	SCHED_FIFO scheduling policy with statically assigned process
+	priorities to achieve "soft" real-time performance whilst in
+	user-space. Since LXRT provides the faculty to switch an
+	application process to real-time, a real-time agent task is
+	created and executes the real-time services on behalf of the
+	LXRT process. 
+	
+	The NEWLXRT scheduler unifies U/MP and kernel/user space by
+	scheduling Linux tasks/kernel threads natively, along with
+	RTAI kernel tasks, all in one. In fact, NEWLXRT brings
+	something new: a linux hard real-time application interface
+	that is totally based on the scheduling of Linux tasks and
+	kernel threads only. The NEWLXRT implementation doesn't need
+	any RTAI proper task to be supported.
 
 menu "Scheduler options"
 

@@ -27,7 +27,6 @@ ACKNOWLEDGMENTS:
 
 
 #define USE_RTAI_TASKS  0
-
 #define ALLOW_RR        1
 #define ONE_SHOT        0
 
@@ -419,7 +418,6 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stac
 	cpuid = hard_cpu_id();
 	init_fp_env();
 	rt_global_restore_flags(flags);
-
 	return 0;
 }
 
@@ -516,12 +514,8 @@ int rt_check_current_stack(void)
 }
 
 
-#define TASK_TO_SCHEDULE() \
-	do { prio = (new_task = rt_linux_task.rnext)->priority; } while(0)
-
-#if ALLOW_RR
 #define RR_YIELD() \
-if (rt_current->policy > 0) { \
+if (ALLOW_RR && rt_current->policy > 0) { \
 	rt_current->rr_remaining = rt_current->yield_time - rt_times.tick_time; \
 	if (rt_current->rr_remaining <= 0) { \
 		rt_current->rr_remaining = rt_current->rr_quantum; \
@@ -541,27 +535,25 @@ if (rt_current->policy > 0) { \
 	} \
 } 
 
-#define RR_SETYT() \
-	if (new_task->policy > 0) { \
+#define TASK_TO_SCHEDULE() \
+do { \
+	prio = (new_task = rt_linux_task.rnext)->priority; \
+	if (ALLOW_RR && new_task->policy > 0) { \
 		new_task->yield_time = rt_time_h + new_task->rr_remaining; \
-	}
+	} \
+} while(0)
 
-#define RR_PREMP() \
-	if (new_task->policy > 0) { \
+#define RR_INTR_TIME() \
+do { \
+	if (ALLOW_RR && new_task->policy > 0) { \
 		preempt = 1; \
 		if (new_task->yield_time < rt_times.intr_time) { \
 			rt_times.intr_time = new_task->yield_time; \
 		} \
 	} else { \
 		preempt = 0; \
-	}
-#else
-#define RR_YIELD()
-
-#define RR_SETYT()
-
-#define RR_PREMP()  do { preempt = 0; } while (0)
-#endif
+	} \
+} while (0)
 
 #define restore_fpu(tsk) \
 	do { restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk); } while (0)
@@ -655,17 +647,14 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
 #ifdef CONFIG_SMP
 void rt_schedule_on_schedule_ipi(void)
 {
-	DECLARE_RT_CURRENT;
-	RT_TASK *task, *new_task;
-	int prio, preempt;
+	RT_TASK *rt_current, *task, *new_task;
+	int cpuid, prio, preempt;
 	unsigned long flags;
 
         rtai_hw_lock(flags);
-	ASSIGN_RT_CURRENT;
 
+	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
 	sched_rqsted[cpuid] = 1;
-	prio = RT_SCHED_LINUX_PRIORITY;
-	task = new_task = &rt_linux_task;
 
 	sched_get_global_lock(cpuid);
 	RR_YIELD();
@@ -674,9 +663,8 @@ void rt_schedule_on_schedule_ipi(void)
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
 		TASK_TO_SCHEDULE();
-		RR_SETYT();
 
-		RR_PREMP();
+		RR_INTR_TIME();
 		task = &rt_linux_task;
 		while ((task = task->tnext) != &rt_linux_task) {
 			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
@@ -699,7 +687,6 @@ void rt_schedule_on_schedule_ipi(void)
 		}
 	} else {
 		TASK_TO_SCHEDULE();
-		RR_SETYT();
 	}
 	sched_release_global_lock(cpuid);
 
@@ -777,17 +764,14 @@ do { \
 
 void rt_schedule(void)
 {
-	DECLARE_RT_CURRENT;
-	RT_TASK *task, *new_task;
-	int prio, preempt;
+	RT_TASK *rt_current, *task, *new_task;
+	int cpuid, prio, preempt;
 	unsigned long flags;
 
         rtai_hw_lock(flags);
-	ASSIGN_RT_CURRENT;
 
+	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
 	sched_rqsted[cpuid] = 1;
-	prio = RT_SCHED_LINUX_PRIORITY;
-	task = new_task = &rt_linux_task;
 
 	RR_YIELD();
 	if (oneshot_running) {
@@ -798,9 +782,8 @@ void rt_schedule(void)
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
 		TASK_TO_SCHEDULE();
-		RR_SETYT();
 
-		RR_PREMP();
+		RR_INTR_TIME();
 		task = &rt_linux_task;
 		while ((task = task->tnext) != &rt_linux_task) {
 			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
@@ -837,7 +820,6 @@ void rt_schedule(void)
 		}
 	} else {
 		TASK_TO_SCHEDULE();
-		RR_SETYT();
 	}
 	sched_release_global_lock(cpuid);
 
@@ -1084,17 +1066,14 @@ int rt_get_timer_cpu(void)
 
 static void rt_timer_handler(void)
 {
-	DECLARE_RT_CURRENT;
-	RT_TASK *task, *new_task;
-	int prio, preempt; 
+	RT_TASK *rt_current, *task, *new_task;
+	int cpuid, prio, preempt; 
 	unsigned long flags;
 
         rtai_hw_lock(flags);
-	ASSIGN_RT_CURRENT;
 
+	rt_current = rt_smp_current[cpuid = hard_cpu_id()];
 	sched_rqsted[cpuid] = 1;
-	prio = RT_SCHED_LINUX_PRIORITY;
-	task = new_task = &rt_linux_task;
 
 #ifdef CONFIG_X86_REMOTE_DEBUG
 	if (oneshot_timer) {    // Resync after possibly hitting a breakpoint
@@ -1114,7 +1093,6 @@ static void rt_timer_handler(void)
 	wake_up_timed_tasks(cpuid);
 	RR_YIELD();
 	TASK_TO_SCHEDULE();
-	RR_SETYT();
 
 	if (oneshot_timer) {
 #ifndef __USE_APIC__
@@ -1122,8 +1100,7 @@ static void rt_timer_handler(void)
 #endif
 		shot_fired = 0;
 		rt_times.intr_time = rt_times.tick_time + ONESHOT_SPAN;
-		RR_PREMP();
-
+		RR_INTR_TIME();
 		task = &rt_linux_task;
 		while ((task = task->tnext) != &rt_linux_task) {
 			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
@@ -2242,7 +2219,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
                                task->signal ? "Yes" : "No",
                                task->state,
 			       task->runnable_on_cpus, // cpuid,
-			       CPUMASK((task->lnxtsk)->cpus_allowed),
+			       task->lnxtsk ? CPUMASK((task->lnxtsk)->cpus_allowed) : (1 << task->runnable_on_cpus),
                                i,
 			       task->is_hard,
 			       task->lnxtsk ? task->lnxtsk->pid : 0,

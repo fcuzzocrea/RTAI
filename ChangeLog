@@ -1,3 +1,8 @@
+2004-07-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/malloc/malloc.c (rtheap_destroy): Kludge:: make sure
+	the global heap memory is properly released.
+
 2004-06-30  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/sched_rtai/sched_lxrt.c (lxrt_intercept_syscall): Fix

@@ -285,28 +285,6 @@ config RTAI_FIFOS
 	any scheduler to be installed.
 	The module will be called rtai_fifos.o.
 
-config RTAI_NETRPC
-	tristate "Net RPC"
-	depends on RTAI_MSG
-	default y if RTAI_MSG=y
-	default m if RTAI_MSG=m
-	help
-	RPC means Remote Procedure Call. The NetRPC implementation
-	corresponds to a synchronous intertask message passing which
-	is the old concept and the basis of microkernels, either
-	distributed or not.  Using NetRPC makes from RTAI a
-	distributed system, both for kernel and user space
-	applications.
-
-	NetRPC depends on the messaging support.
-
-	The NetRPC module will be called rtai_netrpc.o.
-
-config RTAI_NETRPC_RTNET
-	bool "Emulate RTNet"
-	depends on RTAI_NETRPC
-	default y
-
 config RTAI_SHM
 	tristate "Shared memory"
 	default m
@@ -512,7 +490,7 @@ config RTAI_USI
 	interrupts in user space, e.g: resumefromintr in lxrt-net_rpc,
 	pressa in lxrt, but all of them require installing a proper
 	handler in kernel space to wake up a hard real-time
-	LXRT/NEWLXRT task.
+	LXRT task.
 
 	The user space interrupt support does the same but adds
 	something that permits you to avoid writing anything in kernel

@@ -773,10 +773,6 @@ void rt_schedule(void)
 
 	RR_YIELD();
 	if (oneshot_running) {
-#ifdef USE_LINUX_TIMER
-		int islnx;
-#endif
-
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
 		TASK_TO_SCHEDULE();
@@ -790,24 +786,20 @@ void rt_schedule(void)
 				break;
 			}
 		}
-#ifndef USE_LINUX_TIMER
+#ifdef USE_LINUX_TIMER
+		if (prio == RT_SCHED_LINUX_PRIORITY && !shot_fired) {
+			RTIME linux_intr_time;
+			linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
+			if (linux_intr_time < rt_times.intr_time) {
+				rt_times.intr_time = linux_intr_time;
+				shot_fired = 1;
+				preempt = 1;
+			}
+		}
+#endif
 		if (preempt) {
 			RTIME now;
-			int delay;
-#else
-		if ((islnx = (prio == RT_SCHED_LINUX_PRIORITY)) || preempt) {
-			RTIME now;
-			int delay;
-			if (islnx && !shot_fired) {
-				RTIME linux_intr_time;
-				linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
-				if (linux_intr_time < rt_times.intr_time) {
-					rt_times.intr_time = linux_intr_time;
-					shot_fired = 1;
-				}
-			}
-#endif
-			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
+			int delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
 				delay = imuldiv(delay, TIMER_FREQ, tuned.cpu_freq);
 			} else {

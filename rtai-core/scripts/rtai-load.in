@@ -151,7 +151,7 @@ while test -n "$target_deps" ; do
 	   echo "ERROR: cannot load $rtai_moddir/rtai_$mod$modext"
 	   break
         fi
-     elif `$insmod -pq $mod >& /dev/null`; then
+     elif `$modprobe -n $mod >& /dev/null`; then
         test $verbose = 1 && echo "+ $insmod $mod"
         $sudo $insmod $mod
         inslist="$mod $inslist"

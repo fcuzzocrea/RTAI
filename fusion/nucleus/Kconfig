@@ -13,12 +13,12 @@ config RTAI_OPT_FUSION
 	kernel modules.
 
 config RTAI_OPT_PIPE
-	bool "Inter-domain pipe support"
+	bool "Message pipes"
 	default y
 	help
 
-	Inter-domain pipes are bi-directional FIFO communication
-	channels allowing data exchange between nucleus threads
+	Message pipes are bi-directional FIFO communication
+	channels allowing data exchange between Xenomai threads
 	and regular user-space processes. Pipes natively preserve
 	message boundaries, but can also be used in byte stream mode
 	from kernel to user space.

@@ -267,9 +267,9 @@ AC_ARG_ENABLE(nucleus-fusion,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_FUSION:-no})
 
-AC_MSG_CHECKING(for inter-domain pipe support)
+AC_MSG_CHECKING(for message pipe support)
 AC_ARG_ENABLE(nucleus-pipe,
-	AS_HELP_STRING([--enable-nucleus-pipe],	[Enable pipe support in nucleus]),
+	AS_HELP_STRING([--enable-nucleus-pipe],	[Enable message pipe support in nucleus]),
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_OPT_PIPE=y ;;
 	*) unset CONFIG_RTAI_OPT_PIPE ;;
@@ -403,7 +403,7 @@ fi
 AC_MSG_RESULT($CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS)
 fi
 
-AC_MSG_CHECKING(for native pipe support)
+AC_MSG_CHECKING(for native message pipe support)
 AC_ARG_ENABLE(native-pipe,
 	AS_HELP_STRING([--enable-native-pipe], [Enable pipe support in native skin]),
 	[case "$enableval" in

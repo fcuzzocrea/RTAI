@@ -27,10 +27,10 @@
  *
  * Condition variable services.
  *
- * A condition condition variable is a synchronization object that
- * allows tasks to suspend execution until some predicate on shared
- * data is satisfied. The basic operations on conditions are: signal
- * the condition (when the predicate becomes true), and wait for the
+ * A condition variable is a synchronization object which allows tasks
+ * to suspend execution until some predicate on shared data is
+ * satisfied. The basic operations on conditions are: signal the
+ * condition (when the predicate becomes true), and wait for the
  * condition, blocking the task execution until another task signals
  * the condition.  A condition variable must always be associated with
  * a mutex, to avoid a well-known race condition where a task prepares

@@ -114,4 +114,5 @@ config RTAI_OPT_NATIVE_ALARM
 	depends on RTAI_SKIN_NATIVE
 	help
 	
-	Alarms are general watchdog timers.
+	Alarms are general watchdog timers allowing to run
+	user-defined handlers after a specified delay has elapsed.

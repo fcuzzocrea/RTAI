@@ -22,33 +22,33 @@ A condition variable is a synchronization object which allows tasks to suspend e
 
 <p>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga2">rt_cond_create</a> (RT_COND *cond, const char *name)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga1">rt_cond_create</a> (RT_COND *cond, const char *name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a condition variable.  <a href="#ga2"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga3">rt_cond_delete</a> (RT_COND *cond)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a condition variable.  <a href="#ga1"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga2">rt_cond_delete</a> (RT_COND *cond)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete a condition variable.  <a href="#ga3"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga4">rt_cond_signal</a> (RT_COND *cond)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete a condition variable.  <a href="#ga2"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga3">rt_cond_signal</a> (RT_COND *cond)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Signal a condition variable.  <a href="#ga4"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga5">rt_cond_broadcast</a> (RT_COND *cond)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Signal a condition variable.  <a href="#ga3"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga4">rt_cond_broadcast</a> (RT_COND *cond)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Broadcast a condition variable.  <a href="#ga5"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga6">rt_cond_wait</a> (RT_COND *cond, RT_MUTEX *mutex, RTIME timeout)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Broadcast a condition variable.  <a href="#ga4"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga5">rt_cond_wait</a> (RT_COND *cond, RT_MUTEX *mutex, RTIME timeout)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Wait on a condition.  <a href="#ga6"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga7">rt_cond_inquire</a> (RT_COND *cond, RT_COND_INFO *info)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Wait on a condition.  <a href="#ga5"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga6">rt_cond_inquire</a> (RT_COND *cond, RT_COND_INFO *info)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Inquire about a condition variable.  <a href="#ga7"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga8">rt_cond_bind</a> (RT_COND *cond, const char *name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Inquire about a condition variable.  <a href="#ga6"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga9">rt_cond_bind</a> (RT_COND *cond, const char *name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a condition variable.  <a href="#ga8"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga9">rt_cond_unbind</a> (RT_COND *cond)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a condition variable.  <a href="#ga9"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__cond.html#ga10">rt_cond_unbind</a> (RT_COND *cond)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from a condition variable.  <a href="#ga9"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from a condition variable.  <a href="#ga10"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
-<a class="anchor" name="ga8" doxytag="cond.h::rt_cond_bind"></a><p>
+<a class="anchor" name="ga9" doxytag="cond.h::rt_cond_bind"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -106,7 +106,7 @@ This service can be called from:<p>
 Rescheduling: always unless the request is immediately satisfied.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga5" doxytag="cond.c::rt_cond_broadcast"></a><p>
+<a class="anchor" name="ga4" doxytag="cond.c::rt_cond_broadcast"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -154,7 +154,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga2" doxytag="cond.c::rt_cond_create"></a><p>
+<a class="anchor" name="ga1" doxytag="cond.c::rt_cond_create"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -201,6 +201,9 @@ Create a synchronization object that allows tasks to suspend execution until som
 <ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
+<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
@@ -209,7 +212,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga3" doxytag="cond.c::rt_cond_delete"></a><p>
+<a class="anchor" name="ga2" doxytag="cond.c::rt_cond_delete"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -236,7 +239,7 @@ Rescheduling: possible.     </td>
 <p>
 Delete a condition variable. 
 <p>
-Destroy a condition variable and release all the tasks currently pending on it. A condition variable exists in the system since <a class="el" href="group__cond.html#ga2">rt_cond_create()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
+Destroy a condition variable and release all the tasks currently pending on it. A condition variable exists in the system since <a class="el" href="group__cond.html#ga1">rt_cond_create()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>cond</em>&nbsp;</td><td>The descriptor address of the affected condition variable.</td></tr>
@@ -249,6 +252,9 @@ Destroy a condition variable and release all the tasks currently pending on it. 
 <ul>
 <li>-EIDRM is returned if <em>cond</em> is a deleted condition variable descriptor.</li></ul>
 <p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
+<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
@@ -257,7 +263,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga7" doxytag="cond.c::rt_cond_inquire"></a><p>
+<a class="anchor" name="ga6" doxytag="cond.c::rt_cond_inquire"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -315,7 +321,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga4" doxytag="cond.c::rt_cond_signal"></a><p>
+<a class="anchor" name="ga3" doxytag="cond.c::rt_cond_signal"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -363,7 +369,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga9" doxytag="cond.h::rt_cond_unbind"></a><p>
+<a class="anchor" name="ga10" doxytag="cond.h::rt_cond_unbind"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -390,7 +396,7 @@ Rescheduling: possible.     </td>
 <p>
 Unbind from a condition variable. 
 <p>
-This user-space only service unbinds the calling task from the condition variable object previously retrieved by a call to <a class="el" href="group__cond.html#ga8">rt_cond_bind()</a>.<p>
+This user-space only service unbinds the calling task from the condition variable object previously retrieved by a call to <a class="el" href="group__cond.html#ga9">rt_cond_bind()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>cond</em>&nbsp;</td><td>The address of a condition variable descriptor to unbind from.</td></tr>
@@ -404,7 +410,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga6" doxytag="cond.c::rt_cond_wait"></a><p>
+<a class="anchor" name="ga5" doxytag="cond.c::rt_cond_wait"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -478,7 +484,7 @@ Rescheduling: always unless the request is immediately satisfied or <em>timeout<
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:29 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

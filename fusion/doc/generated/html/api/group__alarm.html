@@ -102,12 +102,15 @@ Create an object calling an alarm routine at specified times. Alarms can be made
 <ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
+<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
 <li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
-Rescheduling: never.     </td>
+Rescheduling: possible.     </td>
   </tr>
 </table>
 <a class="anchor" name="ga4" doxytag="alarm.c::rt_alarm_delete"></a><p>
@@ -149,6 +152,9 @@ Destroy an alarm. An alarm exists in the system since rt_alarm_create() has been
 <p>
 <ul>
 <li>-EIDRM is returned if <em>alarm</em> is a deleted alarm descriptor.</li></ul>
+<p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -358,7 +364,7 @@ Rescheduling: never.     </td>
 <p>
 Wait for the next alarm shot. 
 <p>
-This user-space only call allows the current task to suspend execution until the specified alarm triggers. The priority of the current task is raised above all other RTAI tasks - except those also undergoing an alarm or interrupt wait (see <a class="el" href="group__interrupt.html#ga8">rt_intr_wait()</a>) - so that it would preempt any of them under normal circumstances (i.e. no scheduler lock).<p>
+This user-space only call allows the current task to suspend execution until the specified alarm triggers. The priority of the current task is raised above all other RTAI tasks - except those also undergoing an alarm or interrupt wait (see <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a>) - so that it would preempt any of them under normal circumstances (i.e. no scheduler lock).<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>alarm</em>&nbsp;</td><td>The descriptor address of the awaited alarm.</td></tr>
@@ -369,7 +375,7 @@ This user-space only call allows the current task to suspend execution until the
 <li>-EINVAL is returned if <em>alarm</em> is not an alarm descriptor.</li></ul>
 <p>
 <ul>
-<li>-EACCES is returned if this service was not called from a task context.</li></ul>
+<li>-EPERM is returned if this service was called from a context which cannot sleep (e.g. interrupt, non-realtime or scheduler locked).</li></ul>
 <p>
 <ul>
 <li>-EIDRM is returned if <em>alarm</em> is a deleted alarm descriptor, including if the deletion occurred while the caller was waiting for its next shot.</li></ul>
@@ -385,7 +391,7 @@ This service can be called from:<p>
 Rescheduling: always.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:29 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

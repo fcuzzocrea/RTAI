@@ -76,23 +76,23 @@
 00101 }
 00102 
 00103 <span class="keyword">static</span> <span class="keyword">inline</span> __attribute_const__
-00104 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __rthal_ullimd (<span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> op,
-00105                                    <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> m,
-00106                                    <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> d)
-00107 {
-00108     u_long oph, opl, tlh, tll, qh, rh, ql;
-00109     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> th, tl;
+00104 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __rthal_ullimd(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> ll,
+00105                                   <span class="keywordtype">int</span> mult,
+00106                                   <span class="keywordtype">int</span> div)
+00107 
+00108 {
+00109     <span class="comment">/* Returns (u_long long)ll = (u_long long)ll*(u_long)(mult)/(u_long)div. */</span>
 00110 
-00111     __rthal_u64tou32(op, oph, opl);
-00112     tl = rthal_ullmul(opl, m);
-00113     __rthal_u64tou32(tl, tlh, tll);
-00114     th = rthal_ullmul(oph, m);         <span class="comment">/* op * m == ((th + tlh) &lt;&lt; 32) + tll */</span>
-00115     th += tlh;                         <span class="comment">/* op * m == (th &lt;&lt; 32) + tll */</span>
-00116 
-00117     qh = rthal_uldivrem(th, d, &amp;rh);   <span class="comment">/* op * m == (qh * d + rh) &lt;&lt; 32 + tll */</span>
-00118     th = __rthal_u64fromu32(rh, tll);  <span class="comment">/* op * m == (qh * d) &lt;&lt; 32 + th */</span>
-00119     ql = rthal_uldivrem(th, d, NULL);  <span class="comment">/* op * m == (qh * d) &lt;&lt; 32 + ql * d + ?*/</span>
-00120     <span class="keywordflow">return</span> __rthal_u64fromu32(qh, ql); <span class="comment">/* (op * m) / d == qh &lt;&lt; 32 + ql */</span>
+00111     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> low;
+00112     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> q, r;
+00113     
+00114     low  = rthal_ullmul(((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;ll)[1], mult);       
+00115     q = rthal_ulldiv(rthal_ullmul(((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;ll)[0], mult) + 
+00116                      ((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;low)[0], div, (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;low);
+00117     low = rthal_ulldiv(low, div, &amp;r);
+00118     ((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *)&amp;low)[0] += q;
+00119     
+00120     <span class="keywordflow">return</span> low;
 00121 }
 00122 
 00123 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> rthal_llimd (<span class="keywordtype">long</span> <span class="keywordtype">long</span> op,
@@ -348,7 +348,7 @@
 00380 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00381 
 00384 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:28 2005 for RTAI API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:17 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

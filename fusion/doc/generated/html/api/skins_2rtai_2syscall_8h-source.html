@@ -63,82 +63,85 @@
 00053 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_sem_delete         27</span>
 00054 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_sem_p              28</span>
 00055 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_sem_v              29</span>
-00056 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_sem_inquire        30</span>
-00057 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_create       31</span>
-00058 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_bind         32</span>
-00059 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_delete       33</span>
-00060 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_wait         34</span>
-00061 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_signal       35</span>
-00062 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_clear        36</span>
-00063 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_inquire      37</span>
-00064 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_create       38</span>
-00065 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_bind         39</span>
-00066 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_delete       40</span>
-00067 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_lock         41</span>
-00068 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_unlock       42</span>
-00069 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_inquire      43</span>
-00070 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_create        44</span>
-00071 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_bind          45</span>
-00072 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_delete        46</span>
-00073 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_wait          47</span>
-00074 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_signal        48</span>
-00075 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_broadcast     49</span>
-00076 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_inquire       50</span>
-00077 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_create       51</span>
-00078 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_bind         52</span>
-00079 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_delete       53</span>
-00080 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_alloc        54</span>
-00081 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_free         55</span>
-00082 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_send         56</span>
-00083 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_recv         57</span>
-00084 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_inquire      58</span>
-00085 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_create        59</span>
-00086 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_bind          60</span>
-00087 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_delete        61</span>
-00088 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_alloc         62</span>
-00089 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_free          63</span>
-00090 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_inquire       64</span>
-00091 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_create       65</span>
-00092 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_delete       66</span>
-00093 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_start        67</span>
-00094 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_stop         68</span>
-00095 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_wait         69</span>
-00096 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_inquire      70</span>
-00097 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_create        71</span>
-00098 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_bind          72</span>
-00099 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_delete        73</span>
-00100 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_wait          74</span>
-00101 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_enable        75</span>
-00102 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_disable       76</span>
-00103 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_inquire       77</span>
-00104 <span class="preprocessor"></span>
-00105 <span class="keyword">struct </span>rt_arg_bulk {
-00106 
-00107     u_long a1;
-00108     u_long a2;
-00109     u_long a3;
-00110     u_long a4;
-00111     u_long a5;
-00112 };
-00113 
-00114 <span class="preprocessor">#ifdef __KERNEL__</span>
-00115 <span class="preprocessor"></span>
-00116 <span class="preprocessor">#ifdef __cplusplus</span>
-00117 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00118 <span class="preprocessor">#endif</span>
-00119 <span class="preprocessor"></span>
-00120 <span class="keywordtype">int</span> __rtai_syscall_init(<span class="keywordtype">void</span>);
-00121 
-00122 <span class="keywordtype">void</span> __rtai_syscall_cleanup(<span class="keywordtype">void</span>);
-00123 
-00124 <span class="preprocessor">#ifdef __cplusplus</span>
-00125 <span class="preprocessor"></span>}
-00126 <span class="preprocessor">#endif</span>
-00127 <span class="preprocessor"></span>
-00128 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00129 
-00130 <span class="preprocessor">#endif </span><span class="comment">/* _RTAI_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:28 2005 for RTAI API by&nbsp;
+00056 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_sem_broadcast      30</span>
+00057 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_sem_inquire        31</span>
+00058 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_create       32</span>
+00059 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_bind         33</span>
+00060 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_delete       34</span>
+00061 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_wait         35</span>
+00062 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_signal       36</span>
+00063 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_clear        37</span>
+00064 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_event_inquire      38</span>
+00065 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_create       39</span>
+00066 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_bind         40</span>
+00067 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_delete       41</span>
+00068 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_lock         42</span>
+00069 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_unlock       43</span>
+00070 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_mutex_inquire      44</span>
+00071 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_create        45</span>
+00072 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_bind          46</span>
+00073 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_delete        47</span>
+00074 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_wait          48</span>
+00075 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_signal        49</span>
+00076 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_broadcast     50</span>
+00077 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_cond_inquire       51</span>
+00078 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_create       52</span>
+00079 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_bind         53</span>
+00080 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_delete       54</span>
+00081 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_alloc        55</span>
+00082 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_free         56</span>
+00083 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_send         57</span>
+00084 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_recv         58</span>
+00085 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_queue_inquire      59</span>
+00086 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_create        60</span>
+00087 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_bind          61</span>
+00088 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_delete        62</span>
+00089 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_alloc         63</span>
+00090 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_free          64</span>
+00091 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_heap_inquire       65</span>
+00092 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_create       66</span>
+00093 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_delete       67</span>
+00094 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_start        68</span>
+00095 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_stop         69</span>
+00096 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_wait         70</span>
+00097 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_alarm_inquire      71</span>
+00098 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_create        72</span>
+00099 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_bind          73</span>
+00100 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_delete        74</span>
+00101 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_wait          75</span>
+00102 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_enable        76</span>
+00103 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_disable       77</span>
+00104 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_intr_inquire       78</span>
+00105 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_misc_get_io_region 79</span>
+00106 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_misc_put_io_region 80</span>
+00107 <span class="preprocessor"></span>
+00108 <span class="keyword">struct </span>rt_arg_bulk {
+00109 
+00110     u_long a1;
+00111     u_long a2;
+00112     u_long a3;
+00113     u_long a4;
+00114     u_long a5;
+00115 };
+00116 
+00117 <span class="preprocessor">#ifdef __KERNEL__</span>
+00118 <span class="preprocessor"></span>
+00119 <span class="preprocessor">#ifdef __cplusplus</span>
+00120 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00121 <span class="preprocessor">#endif</span>
+00122 <span class="preprocessor"></span>
+00123 <span class="keywordtype">int</span> __rtai_syscall_init(<span class="keywordtype">void</span>);
+00124 
+00125 <span class="keywordtype">void</span> __rtai_syscall_cleanup(<span class="keywordtype">void</span>);
+00126 
+00127 <span class="preprocessor">#ifdef __cplusplus</span>
+00128 <span class="preprocessor"></span>}
+00129 <span class="preprocessor">#endif</span>
+00130 <span class="preprocessor"></span>
+00131 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00132 
+00133 <span class="preprocessor">#endif </span><span class="comment">/* _RTAI_SYSCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:17 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

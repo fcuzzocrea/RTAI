@@ -23,30 +23,30 @@ A mutex has two possible states: unlocked (not owned by any task), and locked (o
 
 <p>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga2">rt_mutex_create</a> (RT_MUTEX *mutex, const char *name)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga1">rt_mutex_create</a> (RT_MUTEX *mutex, const char *name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a mutex.  <a href="#ga2"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga3">rt_mutex_delete</a> (RT_MUTEX *mutex)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a mutex.  <a href="#ga1"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga2">rt_mutex_delete</a> (RT_MUTEX *mutex)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete a mutex.  <a href="#ga3"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga4">rt_mutex_lock</a> (RT_MUTEX *mutex)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete a mutex.  <a href="#ga2"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga3">rt_mutex_lock</a> (RT_MUTEX *mutex)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Acquire a mutex.  <a href="#ga4"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga5">rt_mutex_unlock</a> (RT_MUTEX *mutex)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Acquire a mutex.  <a href="#ga3"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga4">rt_mutex_unlock</a> (RT_MUTEX *mutex)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unlock mutex.  <a href="#ga5"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga6">rt_mutex_inquire</a> (RT_MUTEX *mutex, RT_MUTEX_INFO *info)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unlock mutex.  <a href="#ga4"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga5">rt_mutex_inquire</a> (RT_MUTEX *mutex, RT_MUTEX_INFO *info)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Inquire about a mutex.  <a href="#ga6"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga7">rt_mutex_bind</a> (RT_MUTEX *mutex, const char *name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Inquire about a mutex.  <a href="#ga5"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga8">rt_mutex_bind</a> (RT_MUTEX *mutex, const char *name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a mutex.  <a href="#ga7"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga8">rt_mutex_unbind</a> (RT_MUTEX *mutex)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a mutex.  <a href="#ga8"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__mutex.html#ga9">rt_mutex_unbind</a> (RT_MUTEX *mutex)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from a mutex.  <a href="#ga8"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from a mutex.  <a href="#ga9"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
-<a class="anchor" name="ga7" doxytag="mutex.c::rt_mutex_bind"></a><p>
+<a class="anchor" name="ga8" doxytag="mutex.c::rt_mutex_bind"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -104,7 +104,7 @@ This service can be called from:<p>
 Rescheduling: always unless the request is immediately satisfied.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga2" doxytag="mutex.c::rt_mutex_create"></a><p>
+<a class="anchor" name="ga1" doxytag="mutex.c::rt_mutex_create"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -151,6 +151,9 @@ Create a mutual exclusion object that allows multiple tasks to synchronize acces
 <ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
+<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
@@ -159,7 +162,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga3" doxytag="mutex.c::rt_mutex_delete"></a><p>
+<a class="anchor" name="ga2" doxytag="mutex.c::rt_mutex_delete"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -186,7 +189,7 @@ Rescheduling: possible.     </td>
 <p>
 Delete a mutex. 
 <p>
-Destroy a mutex and release all the tasks currently pending on it. A mutex exists in the system since <a class="el" href="group__mutex.html#ga2">rt_mutex_create()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
+Destroy a mutex and release all the tasks currently pending on it. A mutex exists in the system since <a class="el" href="group__mutex.html#ga1">rt_mutex_create()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>mutex</em>&nbsp;</td><td>The descriptor address of the affected mutex.</td></tr>
@@ -199,6 +202,9 @@ Destroy a mutex and release all the tasks currently pending on it. A mutex exist
 <ul>
 <li>-EIDRM is returned if <em>mutex</em> is a deleted mutex descriptor.</li></ul>
 <p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
+<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
@@ -207,7 +213,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga6" doxytag="mutex.c::rt_mutex_inquire"></a><p>
+<a class="anchor" name="ga5" doxytag="mutex.c::rt_mutex_inquire"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -265,7 +271,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga4" doxytag="mutex.c::rt_mutex_lock"></a><p>
+<a class="anchor" name="ga3" doxytag="mutex.c::rt_mutex_lock"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -293,7 +299,7 @@ Rescheduling: never.     </td>
 Acquire a mutex. 
 <p>
 Attempt to lock a mutex. The calling task is blocked until the mutex is available, in which case it is locked again before this service returns. Mutexes have an ownership property, which means that their current owner is tracked. RTAI mutexes are implicitely recursive and implement the priority inheritance protocol.<p>
-Since a nested locking count is maintained for the current owner, <a class="el" href="group__mutex.html#ga4">rt_mutex_lock()</a> and <a class="el" href="group__mutex.html#ga5">rt_mutex_unlock()</a> must be used in pairs.<p>
+Since a nested locking count is maintained for the current owner, <a class="el" href="group__mutex.html#ga3">rt_mutex_lock()</a> and <a class="el" href="group__mutex.html#ga4">rt_mutex_unlock()</a> must be used in pairs.<p>
 Tasks pend on mutexes by priority order.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -310,6 +316,9 @@ Tasks pend on mutexes by priority order.<p>
 <ul>
 <li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before the mutex has become available.</li></ul>
 <p>
+<ul>
+<li>-EPERM is returned if this service was called from a context which cannot sleep (e.g. interrupt, non-realtime or scheduler locked).</li></ul>
+<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
@@ -318,7 +327,7 @@ This service can be called from:<p>
 Rescheduling: always unless the request is immediately satisfied. If the caller is blocked, the current owner's priority might be temporarily raised as a consequence of the priority inheritance protocol.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga8" doxytag="mutex.h::rt_mutex_unbind"></a><p>
+<a class="anchor" name="ga9" doxytag="mutex.h::rt_mutex_unbind"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -345,7 +354,7 @@ Rescheduling: always unless the request is immediately satisfied. If the caller 
 <p>
 Unbind from a mutex. 
 <p>
-This user-space only service unbinds the calling task from the mutex object previously retrieved by a call to <a class="el" href="group__mutex.html#ga7">rt_mutex_bind()</a>.<p>
+This user-space only service unbinds the calling task from the mutex object previously retrieved by a call to <a class="el" href="group__mutex.html#ga8">rt_mutex_bind()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>mutex</em>&nbsp;</td><td>The address of a mutex descriptor to unbind from.</td></tr>
@@ -359,7 +368,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga5" doxytag="mutex.c::rt_mutex_unlock"></a><p>
+<a class="anchor" name="ga4" doxytag="mutex.c::rt_mutex_unlock"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -400,7 +409,7 @@ Release a mutex. If the mutex is pended, the first waiting task (by priority ord
 <li>-EIDRM is returned if <em>mutex</em> is a deleted mutex descriptor.</li></ul>
 <p>
 <ul>
-<li>-EACCES is returned if <em>mutex</em> is not owned by the current task.</li></ul>
+<li>-EPERM is returned if <em>mutex</em> is not owned by the current task, or if this service was called from a context which cannot sleep (e.g. interrupt, non-realtime or scheduler locked).</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -410,7 +419,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:29 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -253,8 +253,8 @@
 00303 <span class="preprocessor">#define xnpod_locked_p() \</span>
 00304 <span class="preprocessor">    (!!testbits(xnpod_current_thread()-&gt;status,XNLOCK))</span>
 00305 <span class="preprocessor"></span>
-00306 <span class="preprocessor">#define xnpod_pendable_p() \</span>
-00307 <span class="preprocessor">    (!(xnpod_asynch_p() || testbits(xnpod_current_thread()-&gt;status,XNLOCK)))</span>
+00306 <span class="preprocessor">#define xnpod_unblockable_p() \</span>
+00307 <span class="preprocessor">    (xnpod_asynch_p() || testbits(xnpod_current_thread()-&gt;status,XNLOCK|XNROOT))</span>
 00308 <span class="preprocessor"></span>
 00309 <span class="preprocessor">#define xnpod_root_p() \</span>
 00310 <span class="preprocessor">    (!!testbits(xnpod_current_thread()-&gt;status,XNROOT))</span>
@@ -265,159 +265,162 @@
 00315 <span class="preprocessor">#define xnpod_userspace_p() \</span>
 00316 <span class="preprocessor">    (!!testbits(xnpod_current_thread()-&gt;status,XNROOT|XNSHADOW))</span>
 00317 <span class="preprocessor"></span>
-00318 <span class="preprocessor">#define xnpod_regular_p() \</span>
+00318 <span class="preprocessor">#define xnpod_primary_p() \</span>
 00319 <span class="preprocessor">    (!(xnpod_asynch_p() || xnpod_root_p()))</span>
 00320 <span class="preprocessor"></span>
-00321 <span class="preprocessor">#define xnpod_idle_p() xnpod_root_p()</span>
-00322 <span class="preprocessor"></span>
-00323 <span class="preprocessor">#define xnpod_timeset_p() \</span>
-00324 <span class="preprocessor">    (!!testbits(nkpod-&gt;status,XNTMSET))</span>
+00321 <span class="preprocessor">#define xnpod_secondary_p() \</span>
+00322 <span class="preprocessor">    (xnpod_root_p())</span>
+00323 <span class="preprocessor"></span>
+00324 <span class="preprocessor">#define xnpod_idle_p() xnpod_root_p()</span>
 00325 <span class="preprocessor"></span>
-00326 <span class="keyword">static</span> <span class="keyword">inline</span> u_long xnpod_get_ticks2sec (<span class="keywordtype">void</span>) {
-00327     <span class="keywordflow">return</span> nkpod-&gt;<a class="code" href="structxnpod.html#o15">ticks2sec</a>;
-00328 }
-00329 
-00330 <span class="keyword">static</span> <span class="keyword">inline</span> u_long xnpod_get_tickval (<span class="keywordtype">void</span>) {
-00331     <span class="comment">/* Returns the duration of a tick in nanoseconds */</span>
-00332     <span class="keywordflow">return</span> nkpod-&gt;<a class="code" href="structxnpod.html#o14">tickvalue</a>;
-00333 }
-00334 
-00335 <span class="keyword">static</span> <span class="keyword">inline</span> xntime_t xnpod_ticks2ns (xnticks_t ticks) {
-00336     <span class="comment">/* Convert a count of ticks in nanoseconds */</span>
-00337     <span class="keywordflow">return</span> ticks * xnpod_get_tickval();
-00338 }
-00339 
-00340 <span class="keyword">static</span> <span class="keyword">inline</span> xnticks_t xnpod_ns2ticks (xntime_t t) {
-00341     <span class="keywordflow">return</span> xnarch_ulldiv(t,xnpod_get_tickval(),NULL);
-00342 }
-00343 
-00344 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga21">xnpod_init</a>(<a class="code" href="structxnpod.html">xnpod_t</a> *pod,
-00345                <span class="keywordtype">int</span> minpri,
-00346                <span class="keywordtype">int</span> maxpri,
-00347                xnflags_t flags);
-00348 
-00349 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga22">xnpod_start_timer</a>(u_long nstick,
-00350                       xnisr_t tickhandler);
+00326 <span class="preprocessor">#define xnpod_timeset_p() \</span>
+00327 <span class="preprocessor">    (!!testbits(nkpod-&gt;status,XNTMSET))</span>
+00328 <span class="preprocessor"></span>
+00329 <span class="keyword">static</span> <span class="keyword">inline</span> u_long xnpod_get_ticks2sec (<span class="keywordtype">void</span>) {
+00330     <span class="keywordflow">return</span> nkpod-&gt;<a class="code" href="structxnpod.html#o15">ticks2sec</a>;
+00331 }
+00332 
+00333 <span class="keyword">static</span> <span class="keyword">inline</span> u_long xnpod_get_tickval (<span class="keywordtype">void</span>) {
+00334     <span class="comment">/* Returns the duration of a tick in nanoseconds */</span>
+00335     <span class="keywordflow">return</span> nkpod-&gt;<a class="code" href="structxnpod.html#o14">tickvalue</a>;
+00336 }
+00337 
+00338 <span class="keyword">static</span> <span class="keyword">inline</span> xntime_t xnpod_ticks2ns (xnticks_t ticks) {
+00339     <span class="comment">/* Convert a count of ticks in nanoseconds */</span>
+00340     <span class="keywordflow">return</span> ticks * xnpod_get_tickval();
+00341 }
+00342 
+00343 <span class="keyword">static</span> <span class="keyword">inline</span> xnticks_t xnpod_ns2ticks (xntime_t t) {
+00344     <span class="keywordflow">return</span> xnarch_ulldiv(t,xnpod_get_tickval(),NULL);
+00345 }
+00346 
+00347 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga21">xnpod_init</a>(<a class="code" href="structxnpod.html">xnpod_t</a> *pod,
+00348                <span class="keywordtype">int</span> minpri,
+00349                <span class="keywordtype">int</span> maxpri,
+00350                xnflags_t flags);
 00351 
-00352 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga23">xnpod_stop_timer</a>(<span class="keywordtype">void</span>);
-00353 
-00354 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga24">xnpod_shutdown</a>(<span class="keywordtype">int</span> xtype);
-00355 
-00356 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga25">xnpod_init_thread</a>(xnthread_t *thread,
-00357                       <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
-00358                       <span class="keywordtype">int</span> prio,
-00359                       xnflags_t flags,
-00360                       <span class="keywordtype">unsigned</span> stacksize);
-00361 
-00362 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga26">xnpod_start_thread</a>(xnthread_t *thread,
-00363                        xnflags_t mode,
-00364                        <span class="keywordtype">int</span> imask,
-00365                        xnarch_cpumask_t affinity,
-00366                        <span class="keywordtype">void</span> (*entry)(<span class="keywordtype">void</span> *cookie),
-00367                        <span class="keywordtype">void</span> *cookie);
-00368 
-00369 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga27">xnpod_restart_thread</a>(xnthread_t *thread);
-00370 
-00371 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga28">xnpod_delete_thread</a>(xnthread_t *thread);
-00372 
-00373 xnflags_t <a class="code" href="group__pod.html#ga29">xnpod_set_thread_mode</a>(xnthread_t *thread,
-00374                                 xnflags_t clrmask,
-00375                                 xnflags_t setmask);
-00376 
-00377 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga60">xnpod_suspend_thread</a>(xnthread_t *thread,
-00378                           xnflags_t mask,
-00379                           xnticks_t timeout,
-00380                           <span class="keyword">struct</span> xnsynch *resource);
-00381 
-00382 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga31">xnpod_resume_thread</a>(xnthread_t *thread,
-00383                          xnflags_t mask);
+00352 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga22">xnpod_start_timer</a>(u_long nstick,
+00353                       xnisr_t tickhandler);
+00354 
+00355 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga23">xnpod_stop_timer</a>(<span class="keywordtype">void</span>);
+00356 
+00357 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga24">xnpod_shutdown</a>(<span class="keywordtype">int</span> xtype);
+00358 
+00359 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga25">xnpod_init_thread</a>(xnthread_t *thread,
+00360                       <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00361                       <span class="keywordtype">int</span> prio,
+00362                       xnflags_t flags,
+00363                       <span class="keywordtype">unsigned</span> stacksize);
+00364 
+00365 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga26">xnpod_start_thread</a>(xnthread_t *thread,
+00366                        xnflags_t mode,
+00367                        <span class="keywordtype">int</span> imask,
+00368                        xnarch_cpumask_t affinity,
+00369                        <span class="keywordtype">void</span> (*entry)(<span class="keywordtype">void</span> *cookie),
+00370                        <span class="keywordtype">void</span> *cookie);
+00371 
+00372 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga27">xnpod_restart_thread</a>(xnthread_t *thread);
+00373 
+00374 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga28">xnpod_delete_thread</a>(xnthread_t *thread);
+00375 
+00376 xnflags_t <a class="code" href="group__pod.html#ga29">xnpod_set_thread_mode</a>(xnthread_t *thread,
+00377                                 xnflags_t clrmask,
+00378                                 xnflags_t setmask);
+00379 
+00380 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga60">xnpod_suspend_thread</a>(xnthread_t *thread,
+00381                           xnflags_t mask,
+00382                           xnticks_t timeout,
+00383                           <span class="keyword">struct</span> xnsynch *resource);
 00384 
-00385 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga32">xnpod_unblock_thread</a>(xnthread_t *thread);
-00386 
-00387 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga33">xnpod_renice_thread</a>(xnthread_t *thread,
-00388                          <span class="keywordtype">int</span> prio);
+00385 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga31">xnpod_resume_thread</a>(xnthread_t *thread,
+00386                          xnflags_t mask);
+00387 
+00388 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga32">xnpod_unblock_thread</a>(xnthread_t *thread);
 00389 
-00390 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga34">xnpod_migrate_thread</a>(<span class="keywordtype">int</span> cpu);
-00391 
-00392 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga35">xnpod_rotate_readyq</a>(<span class="keywordtype">int</span> prio);
-00393 
-00394 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga36">xnpod_schedule</a>(<span class="keywordtype">void</span>);
-00395 
-00396 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_lock_sched (<span class="keywordtype">void</span>) {
-00397 
-00398     <span class="comment">/* Don't swap these two lines... */</span>
-00399     xnarch_atomic_inc(&amp;nkpod-&gt;<a class="code" href="structxnpod.html#o7">schedlck</a>);
-00400     __setbits(xnpod_current_sched()-&gt;runthread-&gt;status,XNLOCK);
-00401 }
-00402 
-00403 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_unlock_sched (<span class="keywordtype">void</span>) {
-00404 
-00405     <span class="keywordflow">if</span> (xnarch_atomic_dec_and_test(&amp;nkpod-&gt;<a class="code" href="structxnpod.html#o7">schedlck</a>))
-00406         {
-00407         __clrbits(xnpod_current_sched()-&gt;runthread-&gt;status,XNLOCK);
-00408         <a class="code" href="group__pod.html#ga36">xnpod_schedule</a>();
-00409         }
-00410 }
-00411 
-00412 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga66">xnpod_announce_tick</a>(<span class="keyword">struct</span> xnintr *intr);
-00413 
-00414 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga40">xnpod_activate_rr</a>(xnticks_t quantum);
-00415 
-00416 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga41">xnpod_deactivate_rr</a>(<span class="keywordtype">void</span>);
-00417 
-00418 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga42">xnpod_set_time</a>(xnticks_t newtime);
-00419 
-00420 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga43">xnpod_set_thread_periodic</a>(xnthread_t *thread,
-00421                               xnticks_t idate,
-00422                               xnticks_t period);
-00423 
-00424 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga44">xnpod_wait_thread_period</a>(<span class="keywordtype">void</span>);
-00425 
-00426 xnticks_t <a class="code" href="group__pod.html#ga45">xnpod_get_time</a>(<span class="keywordtype">void</span>);
-00427 
-00428 <span class="keyword">static</span> <span class="keyword">inline</span> xntime_t xnpod_get_cpu_time(<span class="keywordtype">void</span>) {
-00429     <span class="keywordflow">return</span> xnarch_get_cpu_time();
-00430 }
-00431 
-00432 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga47">xnpod_add_hook</a>(<span class="keywordtype">int</span> type,
-00433                    <span class="keywordtype">void</span> (*routine)(xnthread_t *));
+00390 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga33">xnpod_renice_thread</a>(xnthread_t *thread,
+00391                          <span class="keywordtype">int</span> prio);
+00392 
+00393 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga34">xnpod_migrate_thread</a>(<span class="keywordtype">int</span> cpu);
+00394 
+00395 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga35">xnpod_rotate_readyq</a>(<span class="keywordtype">int</span> prio);
+00396 
+00397 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga36">xnpod_schedule</a>(<span class="keywordtype">void</span>);
+00398 
+00399 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_lock_sched (<span class="keywordtype">void</span>) {
+00400 
+00401     <span class="comment">/* Don't swap these two lines... */</span>
+00402     xnarch_atomic_inc(&amp;nkpod-&gt;<a class="code" href="structxnpod.html#o7">schedlck</a>);
+00403     __setbits(xnpod_current_sched()-&gt;runthread-&gt;status,XNLOCK);
+00404 }
+00405 
+00406 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_unlock_sched (<span class="keywordtype">void</span>) {
+00407 
+00408     <span class="keywordflow">if</span> (xnarch_atomic_dec_and_test(&amp;nkpod-&gt;<a class="code" href="structxnpod.html#o7">schedlck</a>))
+00409         {
+00410         __clrbits(xnpod_current_sched()-&gt;runthread-&gt;status,XNLOCK);
+00411         <a class="code" href="group__pod.html#ga36">xnpod_schedule</a>();
+00412         }
+00413 }
+00414 
+00415 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga66">xnpod_announce_tick</a>(<span class="keyword">struct</span> xnintr *intr);
+00416 
+00417 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga40">xnpod_activate_rr</a>(xnticks_t quantum);
+00418 
+00419 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga41">xnpod_deactivate_rr</a>(<span class="keywordtype">void</span>);
+00420 
+00421 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga42">xnpod_set_time</a>(xnticks_t newtime);
+00422 
+00423 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga43">xnpod_set_thread_periodic</a>(xnthread_t *thread,
+00424                               xnticks_t idate,
+00425                               xnticks_t period);
+00426 
+00427 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga44">xnpod_wait_thread_period</a>(<span class="keywordtype">void</span>);
+00428 
+00429 xnticks_t <a class="code" href="group__pod.html#ga45">xnpod_get_time</a>(<span class="keywordtype">void</span>);
+00430 
+00431 <span class="keyword">static</span> <span class="keyword">inline</span> xntime_t xnpod_get_cpu_time(<span class="keywordtype">void</span>) {
+00432     <span class="keywordflow">return</span> xnarch_get_cpu_time();
+00433 }
 00434 
-00435 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga48">xnpod_remove_hook</a>(<span class="keywordtype">int</span> type,
-00436                       <span class="keywordtype">void</span> (*routine)(xnthread_t *));
+00435 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga47">xnpod_add_hook</a>(<span class="keywordtype">int</span> type,
+00436                    <span class="keywordtype">void</span> (*routine)(xnthread_t *));
 00437 
-00438 <span class="keywordtype">void</span> xnpod_check_context(<span class="keywordtype">int</span> mask);
-00439 
-00440 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_yield (<span class="keywordtype">void</span>) {
-00441     <a class="code" href="group__pod.html#ga31">xnpod_resume_thread</a>(xnpod_current_thread(),0);
-00442     <a class="code" href="group__pod.html#ga36">xnpod_schedule</a>();
-00443 }
-00444 
-00445 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_delay (xnticks_t timeout) {
-00446     <a class="code" href="group__pod.html#ga60">xnpod_suspend_thread</a>(xnpod_current_thread(),XNDELAY,timeout,NULL);
-00447 }
-00448 
-00449 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_suspend_self (<span class="keywordtype">void</span>) {
-00450     <a class="code" href="group__pod.html#ga60">xnpod_suspend_thread</a>(xnpod_current_thread(),XNSUSP,XN_INFINITE,NULL);
-00451 }
-00452 
-00453 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_delete_self (<span class="keywordtype">void</span>) {
-00454     <a class="code" href="group__pod.html#ga28">xnpod_delete_thread</a>(xnpod_current_thread());
-00455 }
-00456 
-00457 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_TIMESTAMPS</span>
-00458 <span class="preprocessor"></span>
-00459 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_get_timestamps (<span class="keyword">struct</span> xntimes *ts) {
-00460     *ts = nkpod-&gt;timestamps;
-00461 }
-00462 
-00463 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_TIMESTAMPS */</span>
-00464 
-00465 <span class="preprocessor">#ifdef __cplusplus</span>
-00466 <span class="preprocessor"></span>}
-00467 <span class="preprocessor">#endif</span>
-00468 <span class="preprocessor"></span>
-00471 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_POD_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:28 2005 for RTAI API by&nbsp;
+00438 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga48">xnpod_remove_hook</a>(<span class="keywordtype">int</span> type,
+00439                       <span class="keywordtype">void</span> (*routine)(xnthread_t *));
+00440 
+00441 <span class="keywordtype">void</span> xnpod_check_context(<span class="keywordtype">int</span> mask);
+00442 
+00443 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_yield (<span class="keywordtype">void</span>) {
+00444     <a class="code" href="group__pod.html#ga31">xnpod_resume_thread</a>(xnpod_current_thread(),0);
+00445     <a class="code" href="group__pod.html#ga36">xnpod_schedule</a>();
+00446 }
+00447 
+00448 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_delay (xnticks_t timeout) {
+00449     <a class="code" href="group__pod.html#ga60">xnpod_suspend_thread</a>(xnpod_current_thread(),XNDELAY,timeout,NULL);
+00450 }
+00451 
+00452 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_suspend_self (<span class="keywordtype">void</span>) {
+00453     <a class="code" href="group__pod.html#ga60">xnpod_suspend_thread</a>(xnpod_current_thread(),XNSUSP,XN_INFINITE,NULL);
+00454 }
+00455 
+00456 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_delete_self (<span class="keywordtype">void</span>) {
+00457     <a class="code" href="group__pod.html#ga28">xnpod_delete_thread</a>(xnpod_current_thread());
+00458 }
+00459 
+00460 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_TIMESTAMPS</span>
+00461 <span class="preprocessor"></span>
+00462 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_get_timestamps (<span class="keyword">struct</span> xntimes *ts) {
+00463     *ts = nkpod-&gt;timestamps;
+00464 }
+00465 
+00466 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_TIMESTAMPS */</span>
+00467 
+00468 <span class="preprocessor">#ifdef __cplusplus</span>
+00469 <span class="preprocessor"></span>}
+00470 <span class="preprocessor">#endif</span>
+00471 <span class="preprocessor"></span>
+00474 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_POD_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

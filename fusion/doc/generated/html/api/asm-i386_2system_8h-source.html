@@ -453,9 +453,9 @@
 00443 <span class="preprocessor">#if __GNUC__ &lt; 3 || __GNUC__ == 3 &amp;&amp; __GNUC_MINOR__ &lt; 2</span>
 00444 <span class="preprocessor"></span>
 00445     __asm__ __volatile__( \
-00446         <span class="stringliteral">"pushl %%ecx\n\t"</span> \
-00447         <span class="stringliteral">"pushl %%edi\n\t"</span> \
-00448         <span class="stringliteral">"pushl %%ebp\n\t"</span> \
+00446         <span class="stringliteral">"pushl %%ebp\n\t"</span> \
+00447         <span class="stringliteral">"pushl %%ecx\n\t"</span> \
+00448         <span class="stringliteral">"pushl %%edi\n\t"</span> \
 00449         <span class="stringliteral">"movl %0,%%ecx\n\t"</span> \
 00450         <span class="stringliteral">"movl %%esp,(%%ecx)\n\t"</span> \
 00451         <span class="stringliteral">"movl %1,%%ecx\n\t"</span> \
@@ -467,9 +467,9 @@
 00457         <span class="stringliteral">"testl %%edx,%%edx\n\t"</span> \
 00458         <span class="stringliteral">"jne  __switch_to\n\t"</span> \
 00459         <span class="stringliteral">"ret\n\t"</span> \
-00460 <span class="stringliteral">"1:      popl %%ebp\n\t"</span> \
-00461         <span class="stringliteral">"popl %%edi\n\t"</span> \
-00462         <span class="stringliteral">"popl %%ecx\n\t"</span> \
+00460 <span class="stringliteral">"1:      popl %%edi\n\t"</span> \
+00461         <span class="stringliteral">"popl %%ecx\n\t"</span> \
+00462         <span class="stringliteral">"popl %%ebp\n\t"</span> \
 00463       : <span class="comment">/* no output */</span> \
 00464       : <span class="stringliteral">"m"</span> (out_tcb-&gt;espp), \
 00465         <span class="stringliteral">"m"</span> (out_tcb-&gt;eipp), \
@@ -981,7 +981,7 @@
 00971 
 00972 {
 00973 <span class="preprocessor">#if CONFIG_RTAI_HW_TIMER_LATENCY != 0</span>
-00974 <span class="preprocessor"></span>    <span class="keywordflow">return</span> xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY);
+00974 <span class="preprocessor"></span>    <span class="keywordflow">return</span> xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY) ?: 1;
 00975 <span class="preprocessor">#else </span><span class="comment">/* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */</span>
 00976     <span class="comment">/* Compute the time needed to program the PIT in aperiodic</span>
 00977 <span class="comment">       mode. The return value is expressed in CPU ticks. Depending on</span>
@@ -989,7 +989,7 @@
 00979 <span class="comment">       configuration RTAI is compiled against,</span>
 00980 <span class="comment">       CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local</span>
 00981 <span class="comment">       APIC or 8254 timer latency value. */</span>
-00982     <span class="keywordflow">return</span> xnarch_ns_to_tsc(rthal_calibrate_timer());
+00982     <span class="keywordflow">return</span> xnarch_ns_to_tsc(rthal_calibrate_timer()) ?: 1;
 00983 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */</span>
 00984 }
 00985 
@@ -1100,7 +1100,7 @@
 01090 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 01091 
 01092 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_SYSTEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:28 2005 for RTAI API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:17 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

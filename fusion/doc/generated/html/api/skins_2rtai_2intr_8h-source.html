@@ -68,7 +68,7 @@
 00078 
 00079     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
 00080 
-00081     <span class="keywordtype">int</span> source;         <span class="comment">/* !&lt; Creator's space. */</span>
+00081     pid_t cpid;                 <span class="comment">/* !&lt; Creator's pid. */</span>
 00082 
 00083 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
 00084 
@@ -87,7 +87,7 @@
 00097 
 00098 <span class="keywordtype">void</span> __intr_pkg_cleanup(<span class="keywordtype">void</span>);
 00099 
-00100 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga3">rt_intr_create</a>(RT_INTR *intr,
+00100 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga8">rt_intr_create</a>(RT_INTR *intr,
 00101                    <span class="keywordtype">unsigned</span> irq,
 00102                    rt_isr_t isr);
 00103 
@@ -103,21 +103,21 @@
 00113 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
 00114 <span class="preprocessor">#endif</span>
 00115 <span class="preprocessor"></span>
-00116 <span class="keywordtype">int</span> rt_intr_bind(RT_INTR *intr,
+00116 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga10">rt_intr_bind</a>(RT_INTR *intr,
 00117                  <span class="keywordtype">unsigned</span> irq);
 00118 
-00119 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_intr_unbind (RT_INTR *intr)
+<a name="l00119"></a><a class="code" href="group__interrupt.html#ga11">00119</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga11">rt_intr_unbind</a> (RT_INTR *intr)
 00120 
 00121 {
 00122     intr-&gt;opaque = RT_HANDLE_INVALID;
 00123     <span class="keywordflow">return</span> 0;
 00124 }
 00125 
-00126 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga3">rt_intr_create</a>(RT_INTR *intr,
+00126 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga8">rt_intr_create</a>(RT_INTR *intr,
 00127                    <span class="keywordtype">unsigned</span> irq,
 00128                    <span class="keywordtype">int</span> mode);
 00129 
-00130 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga8">rt_intr_wait</a>(RT_INTR *intr,
+00130 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga9">rt_intr_wait</a>(RT_INTR *intr,
 00131                  RTIME timeout);
 00132 
 00133 <span class="preprocessor">#ifdef __cplusplus</span>
@@ -146,7 +146,7 @@
 00156 <span class="preprocessor">#endif</span>
 00157 <span class="preprocessor"></span>
 00158 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_INTR_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:28 2005 for RTAI API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

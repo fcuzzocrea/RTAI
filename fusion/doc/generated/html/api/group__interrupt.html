@@ -22,7 +22,7 @@
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga3">rt_intr_create</a> (RT_INTR *intr, unsigned irq, rt_isr_t isr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an interrupt object.  <a href="#ga3"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an interrupt object from kernel space.  <a href="#ga3"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga4">rt_intr_delete</a> (RT_INTR *intr)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete an interrupt object.  <a href="#ga4"></a><br></td></tr>
@@ -35,11 +35,147 @@
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga7">rt_intr_inquire</a> (RT_INTR *intr, RT_INTR_INFO *info)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Inquire about an interrupt object.  <a href="#ga7"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga8">rt_intr_wait</a> (RT_INTR *intr, RTIME timeout)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga8">rt_intr_create</a> (RT_INTR *intr, unsigned irq, int mode)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Wait for the next interrupt.  <a href="#ga8"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an interrupt object from user-space.  <a href="#ga8"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga9">rt_intr_wait</a> (RT_INTR *intr, RTIME timeout)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Wait for the next interrupt.  <a href="#ga9"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga10">rt_intr_bind</a> (RT_INTR *intr, unsigned irq)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to an interrupt object.  <a href="#ga10"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga11">rt_intr_unbind</a> (RT_INTR *intr)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from an interrupt object.  <a href="#ga11"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
+<a class="anchor" name="ga10" doxytag="intr.h::rt_intr_bind"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int rt_intr_bind           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">RT_INTR *&nbsp;</td>
+          <td class="mdname" nowrap> <em>intr</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>unsigned&nbsp;</td>
+          <td class="mdname" nowrap> <em>irq</em></td>
+        </tr>
+        <tr>
+          <td class="md"></td>
+          <td class="md">)&nbsp;</td>
+          <td class="md" colspan="2"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Bind to an interrupt object. 
+<p>
+This user-space only service retrieves the uniform descriptor of a given RTAI interrupt object identified by its IRQ number. If the object does not exist on entry, this service blocks the caller until an interrupt object of the given number is created.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>irq</em>&nbsp;</td><td>The hardware interrupt channel associated with the interrupt object to search for. This value is architecture-dependent.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of an interrupt object descriptor retrieved by the operation. Contents of this memory is undefined upon failure.</td></tr>
+  </table>
+</dl>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
+<ul>
+<li>-EFAULT is returned if <em>intr</em> is referencing invalid memory.</li></ul>
+<p>
+<ul>
+<li>-EINVAL is returned if <em>irq</em> is invalid.</li></ul>
+<p>
+<ul>
+<li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before the retrieval has completed.</li></ul>
+<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless the request is immediately satisfied.     </td>
+  </tr>
+</table>
+<a class="anchor" name="ga8" doxytag="intr.h::rt_intr_create"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int rt_intr_create           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">RT_INTR *&nbsp;</td>
+          <td class="mdname" nowrap> <em>intr</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>unsigned&nbsp;</td>
+          <td class="mdname" nowrap> <em>irq</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>int&nbsp;</td>
+          <td class="mdname" nowrap> <em>mode</em></td>
+        </tr>
+        <tr>
+          <td class="md"></td>
+          <td class="md">)&nbsp;</td>
+          <td class="md" colspan="2"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Create an interrupt object from user-space. 
+<p>
+Initializes and associates an interrupt object with an IRQ line from a user-space application. In this mode, the basic principle is to define some interrupt server task which routinely waits for the next incoming IRQ event through the specialized <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a> syscall.<p>
+When an interrupt occurs on the given <em>irq</em> line, any task pending on the interrupt object through <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a> is imediately awaken in order to deal with the hardware event. The interrupt service code may then call any RTAI service available from user-space.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of a interrupt object descriptor RTAI will use to store the object-specific data. This descriptor must always be valid while the object is active therefore it must be allocated in permanent memory.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>irq</em>&nbsp;</td><td>The hardware interrupt channel associated with the interrupt object. This value is architecture-dependent.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The interrupt object creation mode. The following flag can be OR'ed into this bitmask:</td></tr>
+  </table>
+</dl>
+<ul>
+<li>I_AUTOENA asks RTAI to re-enable the IRQ line before awakening the interrupt server task. This flag is functionally equivalent as always returning RT_INTR_ENABLE from a kernel space interrupt handler.</li></ul>
+<p>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
+<ul>
+<li>-EBUSY is returned if the interrupt line is already in use by another interrupt object. Only a single interrupt object can be associated to any given interrupt line using <a class="el" href="group__interrupt.html#ga3">rt_intr_create()</a> at any time, regardless of the caller's execution space (kernel or user).</li></ul>
+<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>User-space task</li></ul>
+<p>
+Rescheduling: possible.     </td>
+  </tr>
+</table>
 <a class="anchor" name="ga3" doxytag="intr.c::rt_intr_create"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
@@ -80,9 +216,9 @@
     <td>
 
 <p>
-Create an interrupt object. 
+Create an interrupt object from kernel space. 
 <p>
-Initializes and associates an interrupt object with an IRQ line.<p>
+Initializes and associates an interrupt object with an IRQ line. In kernel space, interrupts are immediately notified through a user-defined handler or ISR (interrupt service routine).<p>
 When an interrupt occurs on the given <em>irq</em> line, the ISR is fired in order to deal with the hardware event. The interrupt service code may call any non-suspensive RTAI service.<p>
 Upon receipt of an IRQ, the ISR is immediately called on behalf of the interrupted stack context, the rescheduling procedure is locked, and the interrupt source is masked at hardware level. The status value returned by the ISR is then checked for the following bits:<p>
 <ul>
@@ -101,7 +237,10 @@ A count of interrupt receipts is tracked into the interrupt descriptor, and rese
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
 <ul>
-<li>-EBUSY is returned if the interrupt line is already in use by another interrupt object. Only a single interrupt object can be associated to any given interrupt line using rt_intr_create() at any time.</li></ul>
+<li>-EBUSY is returned if the interrupt line is already in use by another interrupt object. Only a single interrupt object can be associated to any given interrupt line using <a class="el" href="group__interrupt.html#ga3">rt_intr_create()</a> at any time.</li></ul>
+<p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -138,8 +277,8 @@ Rescheduling: possible.     </td>
 <p>
 Delete an interrupt object. 
 <p>
-Destroys an interrupt object. An interrupt exists in the system since rt_intr_create() has been called to create it, so this service must be called in order to destroy it afterwards.<p>
-Any user-space task which might be currently pending on the interrupt object through the <a class="el" href="group__interrupt.html#ga8">rt_intr_wait()</a> service will be awaken as a result of the deletion, and return with the -EIDRM status.<p>
+Destroys an interrupt object. An interrupt exists in the system since <a class="el" href="group__interrupt.html#ga3">rt_intr_create()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
+Any user-space task which might be currently pending on the interrupt object through the <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a> service will be awaken as a result of the deletion, and return with the -EIDRM status.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The descriptor address of the affected interrupt object.</td></tr>
@@ -151,6 +290,9 @@ Any user-space task which might be currently pending on the interrupt object thr
 <p>
 <ul>
 <li>-EIDRM is returned if <em>intr</em> is a deleted interrupt object descriptor.</li></ul>
+<p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -314,7 +456,48 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga8" doxytag="intr.h::rt_intr_wait"></a><p>
+<a class="anchor" name="ga11" doxytag="intr.h::rt_intr_unbind"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int rt_intr_unbind           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">RT_INTR *&nbsp;</td>
+          <td class="mdname1" valign="top" nowrap> <em>intr</em>          </td>
+          <td class="md" valign="top">&nbsp;)&nbsp;</td>
+          <td class="md" nowrap><code> [inline, static]</code></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Unbind from an interrupt object. 
+<p>
+This user-space only service unbinds the calling task from the interrupt object previously retrieved by a call to <a class="el" href="group__interrupt.html#ga10">rt_intr_bind()</a>.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of a interrupt object descriptor to unbind from.</td></tr>
+  </table>
+</dl>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is always returned.</dd></dl>
+This service can be called from:<p>
+<ul>
+<li>User-space task.</li></ul>
+<p>
+Rescheduling: never.     </td>
+  </tr>
+</table>
+<a class="anchor" name="ga9" doxytag="intr.h::rt_intr_wait"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -351,6 +534,7 @@ Rescheduling: never.     </td>
 Wait for the next interrupt. 
 <p>
 This user-space only call allows the current task to suspend execution until the associated interrupt event triggers. The priority of the current task is raised above all other RTAI tasks - except those also undergoing an interrupt or alarm wait (see <a class="el" href="group__alarm.html#ga8">rt_alarm_wait()</a>) - so that it would preempt any of them under normal circumstances (i.e. no scheduler lock).<p>
+Interrupt receipts are logged if they cannot be delivered immediately to some interrupt server task, so that a call to <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a> might return immediately if an IRQ is already pending on entry of the service.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The descriptor address of the awaited interrupt.</td></tr>
@@ -365,9 +549,6 @@ This user-space only call allows the current task to suspend execution until the
 <li>-EINVAL is returned if <em>intr</em> is not an interrupt object descriptor, or <em>timeout</em> is equal to TM_NONBLOCK.</li></ul>
 <p>
 <ul>
-<li>-EACCES is returned if this service was not called from a task context.</li></ul>
-<p>
-<ul>
 <li>-EIDRM is returned if <em>intr</em> is a deleted interrupt object descriptor, including if the deletion occurred while the caller was waiting for its next interrupt.</li></ul>
 <p>
 <ul>
@@ -378,12 +559,12 @@ This service can be called from:<p>
 <ul>
 <li>User-space task</li></ul>
 <p>
-Rescheduling: always.<p>
+Rescheduling: always, unless an interrupt is already pending on entry.<p>
 <dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are interpreted as periodic jiffies. In oneshot mode, clock ticks are interpreted as nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:29 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -53,7 +53,7 @@
 00063     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
 00064 
 00065 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
-00066 <span class="preprocessor"></span>    <span class="keywordtype">int</span> source;         <span class="comment">/* !&lt; Creator's space. */</span>
+00066 <span class="preprocessor"></span>    pid_t cpid;                 <span class="comment">/* !&lt; Creator's pid. */</span>
 00067 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
 00068 
 00069 } RT_SEM;
@@ -74,10 +74,10 @@
 00084 
 00085 <span class="keyword">typedef</span> RT_SEM_PLACEHOLDER RT_SEM;
 00086 
-00087 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga8">rt_sem_bind</a>(RT_SEM *sem,
+00087 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga9">rt_sem_bind</a>(RT_SEM *sem,
 00088                 <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
 00089 
-<a name="l00090"></a><a class="code" href="group__semaphore.html#ga9">00090</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga9">rt_sem_unbind</a> (RT_SEM *sem)
+<a name="l00090"></a><a class="code" href="group__semaphore.html#ga10">00090</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga10">rt_sem_unbind</a> (RT_SEM *sem)
 00091 
 00092 {
 00093     sem-&gt;opaque = RT_HANDLE_INVALID;
@@ -92,21 +92,21 @@
 00102 <span class="preprocessor"></span>
 00103 <span class="comment">/* Public interface. */</span>
 00104 
-00105 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga2">rt_sem_create</a>(RT_SEM *sem,
+00105 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga1">rt_sem_create</a>(RT_SEM *sem,
 00106                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
 00107                   <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> icount,
 00108                   <span class="keywordtype">int</span> mode);
 00109 
-00110 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga3">rt_sem_delete</a>(RT_SEM *sem);
+00110 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga2">rt_sem_delete</a>(RT_SEM *sem);
 00111 
-00112 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga4">rt_sem_p</a>(RT_SEM *sem,
+00112 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga3">rt_sem_p</a>(RT_SEM *sem,
 00113              RTIME timeout);
 00114 
-00115 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga5">rt_sem_v</a>(RT_SEM *sem);
+00115 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga4">rt_sem_v</a>(RT_SEM *sem);
 00116 
-00117 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga6">rt_sem_broadcast</a>(RT_SEM *sem);
+00117 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga5">rt_sem_broadcast</a>(RT_SEM *sem);
 00118 
-00119 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga7">rt_sem_inquire</a>(RT_SEM *sem,
+00119 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga6">rt_sem_inquire</a>(RT_SEM *sem,
 00120                    RT_SEM_INFO *info);
 00121 
 00122 <span class="preprocessor">#ifdef __cplusplus</span>
@@ -114,7 +114,7 @@
 00124 <span class="preprocessor">#endif</span>
 00125 <span class="preprocessor"></span>
 00126 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_SEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:28 2005 for RTAI API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jan 19 22:41:18 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

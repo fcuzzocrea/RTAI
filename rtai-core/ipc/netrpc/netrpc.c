@@ -1246,6 +1246,7 @@ void cleanup_softrtnet(void)
 
 #endif /* !CONFIG_RTAI_NETRPC_RTNET */
 
+extern int LxrtMode;
 /*
  * this is a thing to make available externally what it should not,
  * needed to check the working of a user message processing addon
@@ -1256,6 +1257,7 @@ int __rtai_netrpc_init(void)
 {
 	int i;
 
+	LxrtMode = 0;
 	for (i = 8*sizeof(unsigned long) - 1; !test_bit(i, &MaxStubs); i--);
 	if ((1 << i) != MaxStubs) {
 		printk("MAX_STUBS (%lu): must be a power of 2.\n", MaxStubs);

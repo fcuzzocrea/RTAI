@@ -71,6 +71,11 @@ static void xnintr_irq_handler(unsigned irq,
  * pipeline to other Adeos domains, such as Linux. This is the regular
  * way to share interrupts between the nucleus and the host system.
  *
+ * A count of interrupt receipts is tracked in the interrupt
+ * descriptor, and reset to zero each time the interrupt object is
+ * attached. Since this count could wrap around, it should be used as
+ * an indication of interrupt activity only.
+ *
  * @param intr The address of a interrupt object descriptor the
  * nucleus will use to store the object-specific data.  This
  * descriptor must always be valid while the object is active
@@ -114,6 +119,7 @@ int xnintr_init (xnintr_t *intr,
     intr->isr = isr;
     intr->cookie = NULL;
     intr->status = 0;
+    intr->hits = 0;
 
     return 0;
 }
@@ -180,11 +186,15 @@ int xnintr_destroy (xnintr_t *intr)
  * - User-space task
  *
  * Rescheduling: never.
+ *
+ * @note Attaching an interrupt resets the tracked number of receipts
+ * to zero.
  */
 
 int xnintr_attach (xnintr_t *intr,
 		   void *cookie)
 {
+    intr->hits = 0;
     intr->cookie = cookie;
     return xnarch_hook_irq(intr->irq,&xnintr_irq_handler,intr);
 }
@@ -335,9 +345,10 @@ static void xnintr_irq_handler (unsigned irq, void *cookie)
 
     xnarch_memory_barrier();
 
-    sched->inesting++;
+    ++sched->inesting;
     s = intr->isr(intr);
-    sched->inesting--;
+    --sched->inesting;
+    ++intr->hits;
 
     if (s & XN_ISR_ENABLE)
 	xnarch_enable_irq(irq);

@@ -38,6 +38,8 @@ typedef struct xnintr {
 
     xnisr_t isr;	/* !< Interrupt service routine. */
 
+    unsigned long hits;	/* !< Number of receipts (since attachment). */
+
     void *cookie;	/* !< User-defined cookie value. */
 
 } xnintr_t;

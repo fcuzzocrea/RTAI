@@ -30,7 +30,7 @@ typedef struct rt_alarm_info {
 
     RTIME expiration;		/* !< Expiration date. */
 
-    unsigned long nexpiries;	/* !< Number of expiries. */
+    unsigned long expiries;	/* !< Number of expiries. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
@@ -56,7 +56,7 @@ typedef struct rt_alarm {
     
     void *cookie;		/* !< Opaque cookie. */
 
-    unsigned long nexpiries;	/* !< Number of expiries. */
+    unsigned long expiries;	/* !< Number of expiries. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
 

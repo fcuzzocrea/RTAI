@@ -54,7 +54,7 @@ static void __alarm_trampoline (void *cookie)
 
 {
     RT_ALARM *alarm = (RT_ALARM *)cookie;
-    ++alarm->nexpiries;
+    ++alarm->expiries;
     alarm->handler(alarm,alarm->cookie);
 }
 
@@ -114,7 +114,7 @@ int rt_alarm_create (RT_ALARM *alarm,
     xntimer_init(&alarm->timer_base,&__alarm_trampoline,alarm);
     alarm->handle = 0;  /* i.e. (still) unregistered alarm. */
     alarm->magic = RTAI_ALARM_MAGIC;
-    alarm->nexpiries = 0;
+    alarm->expiries = 0;
     alarm->handler = handler;
     alarm->cookie = cookie;
     xnobject_copy_name(alarm->name,name);
@@ -393,7 +393,7 @@ int rt_alarm_inquire (RT_ALARM *alarm,
     
     strcpy(info->name,alarm->name);
     info->expiration = xntimer_get_timeout(&alarm->timer_base);
-    info->nexpiries = alarm->nexpiries;
+    info->expiries = alarm->expiries;
 
  unlock_and_exit:
 

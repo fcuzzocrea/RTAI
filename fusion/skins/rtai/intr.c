@@ -63,9 +63,12 @@ int rt_intr_create (RT_INTR *intr,
 	return -EINVAL;
 
     xnintr_init(&intr->intr_base,irq,isr,0);
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     xnsynch_init(&intr->synch_base,XNSYNCH_PRIO);
-    intr->mode = mode;
     intr->pending = -1;
+    intr->source = RT_KAPI_SOURCE;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+    intr->mode = mode;
     intr->magic = RTAI_INTR_MAGIC;
     intr->handle = 0;    /* i.e. (still) unregistered interrupt. */
     inith(&intr->link);
@@ -73,10 +76,6 @@ int rt_intr_create (RT_INTR *intr,
     appendq(&__rtai_intr_q,&intr->link);
     xnlock_put_irqrestore(&nklock,s);
     snprintf(intr->name,sizeof(intr->name),"interrupt/%u",irq);
-
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    intr->source = RT_KAPI_SOURCE;
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     err = xnintr_attach(&intr->intr_base,intr);
 
@@ -114,7 +113,9 @@ int rt_intr_delete (RT_INTR *intr)
         }
     
     removeq(&__rtai_intr_q,&intr->link);
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     rc = xnsynch_destroy(&intr->synch_base);
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     xnintr_detach(&intr->intr_base);
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
@@ -205,7 +206,7 @@ int rt_intr_inquire (RT_INTR *intr,
         }
     
     strcpy(info->name,intr->name);
-    info->nwaiters = xnsynch_nsleepers(&intr->synch_base);
+    info->hits = intr->intr_base.hits;
     info->irq = intr->intr_base.irq;
 
  unlock_and_exit:

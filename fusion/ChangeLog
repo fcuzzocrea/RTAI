@@ -1,10 +1,16 @@
 2005-01-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/intr.c (rt_intr_inquire): Do not provide the number
+	of currently pending waiters; track the count of interrupt hits
+	instead, using the information now available at the nucleus level.
+	
+	* include/nucleus/intr.h: Track number of interrupt hits.
+
 	* skins/rtai/task.h: T_HOOK_DESC() -> T_DESC() for naming
 	consistency with I_DESC().
 
-	* skins/rtai/intr.c: Make rt_intr_wait() a user-space only
-	service -- Fully align semantics with rt_alarm_wait().
+	* skins/rtai/intr.c (rt_intr_wait): Make this service a user-space
+	only service -- Fully align semantics with rt_alarm_wait().
 
 	* drivers/16550A/16550A.c (rt_uart_close): Add missing
 	unregistration.

@@ -33,7 +33,7 @@ typedef struct rt_intr_info {
 
     unsigned irq;	/* !< Interrupt request number. */
 
-    int nwaiters;	/* !< Number of pending tasks. */
+    unsigned long hits;	/* !< Number of receipts (since attachment). */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
@@ -64,10 +64,6 @@ typedef struct rt_intr {
 
     xnintr_t intr_base;   /* !< Base interrupt object. */
 
-    xnsynch_t synch_base; /* !< Base synchronization object. */
-
-    int pending;	/* !< Pending hits to wait for. */
-
     int mode;		/* !< Interrupt control mode. */
 
     void *private_data;	/* !< Private user-defined data. */
@@ -77,7 +73,13 @@ typedef struct rt_intr {
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+
+    int pending;	/* !< Pending hits to wait for. */
+
+    xnsynch_t synch_base; /* !< Base synchronization object. */
+
     int source;		/* !< Creator's space. */
+
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 } RT_INTR;

@@ -2,7 +2,7 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_MODULES=y
-CONFIG_RTAI_VERSION="0.6.99 (fusion)"
+CONFIG_RTAI_VERSION="0.7 (fusion)"
 
 #
 # General
@@ -17,9 +17,6 @@ CONFIG_RTAI_LINUXDIR="/lib/modules/`uname -r`/build"
 # CONFIG_RTAI_DOC_LATEX_NONSTOP is not set
 # CONFIG_RTAI_DOC_DBX is not set
 # CONFIG_RTAI_OPT_EXPERT is not set
-# CONFIG_RTAI_MAINT_NONE is not set
-# CONFIG_RTAI_MAINT_GCH is not set
-# CONFIG_RTAI_MAINT_PGM is not set
 
 #
 # Nucleus

@@ -312,7 +312,8 @@ int rt_event_post (RT_EVENT *event,
  * within the specified amount of time.
  *
  * Side-effect: This routine calls the rescheduling procedure unless
- * @a timeout specifies a non-blocking operation.
+ * the request is immediately satisfied or @a timeout specifies a
+ * non-blocking operation.
  *
  * Context: This routine can be called on behalf of a task.  It can
  * also be called on behalf of an interrupt context or from the

@@ -823,7 +823,7 @@ int rt_task_unblock (RT_TASK *task)
                            RT_TASK_INFO *info)
  * @brief Inquire about a real-time task.
  *
- * Return various information about the status of a specified task.
+ * Return various information about the status of a given task.
  *
  * @param task The descriptor address of the inquired task. If @a task
  * is NULL, the current task is inquired.

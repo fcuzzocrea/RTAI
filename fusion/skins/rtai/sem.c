@@ -198,8 +198,9 @@ int rt_sem_delete (RT_SEM *sem)
  * - -ETIMEDOUT is returned if no unit is available within the
  * specified amount of time.
  *
- * Side-effect: This routine calls the rescheduling procedure unless
- * @a timeout specifies a non-blocking operation.
+ * Side-effect: This routine calls the rescheduling procedure unless a
+ * semaphore unit is immediately available, or @a timeout specifies a
+ * non-blocking operation.
  *
  * Context: This routine can be called on behalf of a task.  It can
  * also be called on behalf of an interrupt context or from the
@@ -279,8 +280,8 @@ int rt_sem_p (RT_SEM *sem,
  *
  * - -EIDRM is returned if @a sem is a deleted semaphore descriptor.
  *
- * Side-effect: This routine calls the rescheduling procedure if
- * a task is woken up as a result of the operation.
+ * Side-effect: This routine calls the rescheduling procedure if a
+ * task is woken up as a result of the operation.
  *
  * Context: This routine can be called on behalf of a task, interrupt
  * context or from the initialization code.
@@ -319,8 +320,7 @@ int rt_sem_v (RT_SEM *sem)
                           RT_SEM_INFO *info)
  * @brief Inquire about a semaphore.
  *
- * Return various information about the status of a specified
- * semaphore.
+ * Return various information about the status of a given semaphore.
  *
  * @param sem The descriptor address of the inquired semaphore.
  *

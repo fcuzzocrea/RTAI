@@ -1,3 +1,10 @@
+2005-03-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_init_thread): Don't check the thread arg
+	for NULL value; this can be catched using the simulator, and such
+	test is way to limited to be efficient in the most annoying cases
+	anyway (e.g. stray pointers).
+
 2005-03-03  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/fusion.c (xnfusion_mount): Do not wreck the current

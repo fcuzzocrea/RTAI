@@ -607,9 +607,8 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
  *
  *         - -EINVAL is returned if @a flags has invalid bits set.
  *
- *         - -ENOMEM is returned if @a thread is NULL or not enough
- *         memory is available from the system heap to create the new
- *         thread's stack.
+ *         - -ENOMEM is returned if not enough memory is available
+ *         from the system heap to create the new thread's stack.
  *
  * Side-effect: This routine does not call the rescheduling procedure.
  *
@@ -632,10 +631,6 @@ int xnpod_init_thread (xnthread_t *thread,
 {
     spl_t s;
     int err;
-
-    if (!thread)
-        /* Allow the caller to bypass parametrical checks... */
-        return -ENOMEM;
 
     if (flags & ~(XNFPU|XNSHADOW|XNSHIELD|XNSUSP))
         return -EINVAL;

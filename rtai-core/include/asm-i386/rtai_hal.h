@@ -158,6 +158,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #if defined(__KERNEL__) && !defined(__cplusplus)
 #include <linux/sched.h>
 #include <linux/interrupt.h>
+#include <asm/desc.h>
 #include <asm/system.h>
 #include <asm/io.h>
 #include <asm/rtai_atomic.h>

@@ -246,7 +246,7 @@ int _rt_msg_receive_if(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int sp
 	if (rt_sem_wait_if(&mq->receivers) <= 0) {
 		return msg_size;
 	}
-	if (rt_sem_wait(&mq->received) <= 0) { ;
+	if (rt_sem_wait_if(&mq->received) <= 0) { ;
 		rt_sem_signal(&mq->receivers);
 		return msg_size;
 	}
@@ -268,6 +268,27 @@ int _rt_msg_receive_until(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, RTI
 int _rt_msg_receive_timed(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, RTIME delay, int space)
 {
 	return _rt_msg_receive_until(mq, msg, msg_size, msgpri, get_time() + delay, space);
+}
+
+int _rt_msg_evdrp(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int space)
+{
+	int size;
+	RT_MSG *msg_ptr;
+	void *p;
+
+	size = min((msg_ptr = mq->firstmsg)->hdr.size, msg_size);
+	if (space) {
+		memcpy(msg, (p = msg_ptr->hdr.malloc) ? p : msg_ptr->msg, size);
+		if (msgpri) {
+			*msgpri = msg_ptr->hdr.priority;
+		}
+	} else {
+		copy_to_user(msg, (p = msg_ptr->hdr.malloc) ? p : msg_ptr->msg, size);
+		if (msgpri) {
+			put_user(msg_ptr->hdr.priority, msgpri);
+		}
+	}
+	return 0;
 }
 
 static int _broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int broadcast, int space)
@@ -377,6 +398,7 @@ struct rt_native_fun_entry rt_msg_queue_entries[] = {
         { { 1, _rt_msg_broadcast_if },       	MSG_BROADCAST_IF },
         { { 1, _rt_msg_broadcast_until },	MSG_BROADCAST_UNTIL },
         { { 1, _rt_msg_broadcast_timed }, 	MSG_BROADCAST_TIMED },
+        { { 1, _rt_msg_evdrp }, 		MSG_EVDRP },
 	{ { 0, 0 },  		      		000 }
 };
 
@@ -417,4 +439,5 @@ EXPORT_SYMBOL(_rt_msg_broadcast);
 EXPORT_SYMBOL(_rt_msg_broadcast_if);
 EXPORT_SYMBOL(_rt_msg_broadcast_until);
 EXPORT_SYMBOL(_rt_msg_broadcast_timed);
+EXPORT_SYMBOL(_rt_msg_evdrp);
 #endif /* CONFIG_KBUILD */

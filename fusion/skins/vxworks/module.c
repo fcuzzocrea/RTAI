@@ -21,7 +21,7 @@
 #include "rtai_config.h"
 #include "vxworks/defs.h"
 
-MODULE_DESCRIPTION("XENOMAI-based VxWorks(R) API emulator");
+MODULE_DESCRIPTION("VxWorks(R) virtual machine");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
@@ -79,14 +79,14 @@ int __fusion_skin_init (void)
     
     pod.svctable.shutdown = &wind_shutdown;
 
-    xnprintf("VxWorks/VM: starting services.\n");
+    xnprintf("VxWorks/vm: Starting services.\n");
 
     return 0;
 }
 
 void __fusion_skin_exit (void)
 {
-    xnprintf("VxWorks/VM: stopping services.\n");
+    xnprintf("VxWorks/vm: Stopping services.\n");
     wind_shutdown(XNPOD_NORMAL_EXIT);
 }
 

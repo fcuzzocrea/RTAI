@@ -43,7 +43,7 @@
 #include <rtai/heap.h>
 #include <rtai/alarm.h>
 
-MODULE_DESCRIPTION("RTAI skin");
+MODULE_DESCRIPTION("Native RTAI skin");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 

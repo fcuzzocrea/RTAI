@@ -28,7 +28,7 @@
 #include "vrtx/pt.h"
 #include "vrtx/heap.h"
 
-MODULE_DESCRIPTION("XENOMAI-based VRTX(R) API emulator");
+MODULE_DESCRIPTION("VRTX(R) virtual machine");
 MODULE_AUTHOR("jpinon@idealx.com");
 MODULE_LICENSE("GPL");
 
@@ -161,14 +161,15 @@ int __fusion_skin_init (void)
 
     pod.svctable.shutdown = &vrtx_shutdown;
 
-    xnprintf("VRTX/VM: starting services.\n");
+    xnprintf("VRTX/vm: Starting services.\n");
 
     return 0;
 }
 
-void __fusion_skin_exit (void) {
+void __fusion_skin_exit (void)
 
-    xnprintf("VRTX/VM: stopping services.\n");
+{
+    xnprintf("VRTX/vm: Stopping services.\n");
     vrtx_shutdown(XNPOD_NORMAL_EXIT);
 }
 

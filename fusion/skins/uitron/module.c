@@ -22,7 +22,7 @@
 #include "uitron/flag.h"
 #include "uitron/mbx.h"
 
-MODULE_DESCRIPTION("XENOMAI-based uITRON API");
+MODULE_DESCRIPTION("uITRON interface");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
@@ -74,14 +74,15 @@ int __fusion_skin_init (void)
     uiflag_init();
     uimbx_init();
 
-    xnprintf("uitron/VM: starting services.\n");
+    xnprintf("uITRON: Starting services.\n");
 
     return 0;
 }
 
-void __fusion_skin_exit (void) {
+void __fusion_skin_exit (void)
 
-    xnprintf("uitron/VM: stopping services\n");
+{
+    xnprintf("uITRON: Stopping services\n");
     uitron_shutdown(XNPOD_NORMAL_EXIT);
 }
 

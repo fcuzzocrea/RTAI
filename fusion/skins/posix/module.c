@@ -25,7 +25,7 @@
 #include <posix/thread.h>
 #include <posix/tsd.h>
 
-MODULE_DESCRIPTION("XENOMAI-based PSE51 API.");
+MODULE_DESCRIPTION("POSIX/PSE51 interface");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
@@ -59,7 +59,7 @@ int __fusion_skin_init(void)
     u_long nstick;
     int err;
 
-    xnprintf("POSIX %s: Starting skin\n",PSE51_SKIN_VERSION_STRING);
+    xnprintf("POSIX: Starting services.\n");
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     /* The POSIX skin is stacked over the fusion framework. */
@@ -83,11 +83,11 @@ int __fusion_skin_init(void)
         {
         err = 0;
         if (testbits(nkpod->status, XNTIMED))
-            xnprintf("POSIX %s: Warning: aperiodic timer was already "
-                     "running.\n", PSE51_SKIN_VERSION_STRING);
+            xnprintf("POSIX: Warning: aperiodic timer was already "
+                     "running.\n");
         else
-            xnprintf("POSIX %s: Warning: periodic timer was already running "
-                     "(period %lu us).\n", PSE51_SKIN_VERSION_STRING,
+            xnprintf("POSIX: Warning: periodic timer was already running "
+                     "(period %lu us).\n",
                      xnpod_get_tickval() / 1000);
         }
 
@@ -112,7 +112,7 @@ int __fusion_skin_init(void)
 
 void __fusion_skin_exit(void)
 {
-    xnprintf("POSIX %s: Stopping skin\n",PSE51_SKIN_VERSION_STRING);
+    xnprintf("POSIX: Stopping services.\n");
     pse51_shutdown(XNPOD_NORMAL_EXIT);
 }
 

@@ -26,7 +26,7 @@
 #include "psos+/rn.h"
 #include "psos+/tm.h"
 
-MODULE_DESCRIPTION("XENOMAI-based pSOS+(R) API emulator");
+MODULE_DESCRIPTION("pSOS+(R) virtual machine");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
@@ -61,9 +61,10 @@ static void psos_shutdown (int xtype)
     xnpod_shutdown(xtype);
 }
 
-void k_fatal (u_long err_code, u_long flags) {
+void k_fatal (u_long err_code, u_long flags)
 
-    xnpod_fatal("pSOS/VM: fatal error, code 0x%x",err_code);
+{
+    xnpod_fatal("pSOS/vm: fatal error, code 0x%x",err_code);
 }
 
 int __fusion_skin_init (void)
@@ -100,14 +101,15 @@ int __fusion_skin_init (void)
 
     pod.svctable.shutdown = &psos_shutdown;
 
-    xnprintf("pSOS/VM: starting services.\n");
+    xnprintf("pSOS/vm: Starting services.\n");
 
     return err;
 }
 
-void __fusion_skin_exit (void) {
+void __fusion_skin_exit (void)
 
-    xnprintf("pSOS/VM: stopping services.\n");
+{
+    xnprintf("pSOS/vm: Stopping services.\n");
     psos_shutdown(XNPOD_NORMAL_EXIT);
 }
 

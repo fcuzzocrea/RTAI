@@ -139,7 +139,7 @@ static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread;
-    int err = -ESRCH;
+    int err = 0;
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
@@ -147,16 +147,12 @@ static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
     thread = __pthread_find_by_handle(curr,(void *)__xn_reg_arg1(regs));
 
     if (!thread)
-	goto out;
-
-    if (!testbits(thread->status,XNSTARTED))
 	{
-	xnshadow_start(thread,NULL,NULL);
-	xnpod_schedule();
-	err = 0;
+	err = -ESRCH;
+	goto out;
 	}
-    else
-	err = -EBUSY;
+
+    err = xnpod_start_thread(thread,0,0,XNPOD_ALL_CPUS,NULL,NULL);
 
  out:
 
@@ -403,8 +399,12 @@ static int __pthread_activate_vm (struct task_struct *curr, struct pt_regs *regs
     xnpod_renice_thread(next,xnthread_initial_priority(next) + 1);
 
     if (!testbits(next->status,XNSTARTED))
-	xnshadow_start(next,NULL,NULL);
-    else if (testbits(next->status,XNSUSP))
+	{
+	err = xnpod_start_thread(next,0,0,XNPOD_ALL_CPUS,NULL,NULL);
+	goto out;
+	}
+
+    if (testbits(next->status,XNSUSP))
 	xnpod_resume_thread(next,XNSUSP);
 
     xnpod_renice_thread(prev,xnthread_initial_priority(prev));
@@ -451,9 +451,7 @@ static int __pthread_cancel_vm (struct task_struct *curr, struct pt_regs *regs)
 
 	xnpod_renice_thread(next,xnthread_initial_priority(next) + 1);
 
-	if (testbits(next->status,XNSTARTED))
-	    xnshadow_start(next,NULL,NULL);
-	else if (testbits(next->status,XNSUSP))
+	if (testbits(next->status,XNSUSP))
 	    xnpod_resume_thread(next,XNSUSP);
 	}
 

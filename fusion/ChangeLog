@@ -1,3 +1,7 @@
+2004-12-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/fusion.c (__pthread_activate_vm): Fix startup protocol.
+
 2004-12-27  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/timer.c, include/nucleus/timer.h (xntimer_set_sched):

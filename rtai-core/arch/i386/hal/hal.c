@@ -1343,106 +1343,81 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
     a GPF.
     2) NMI is not pipelined by Adeos. */
 
+    if (evinfo->domid != RTAI_DOMAIN_ID)
+	goto propagate;
+
 #ifdef adeos_load_cpuid
     adeos_load_cpuid();
 #endif /* adeos_load_cpuid */
 
-    if (evinfo->domid == RTAI_DOMAIN_ID)
+    if (evinfo->event == 7)	/* (FPU) Device not available. */
 	{
-	if (evinfo->event == 7)	/* (FPU) Device not available. */
+	/* Ok, this one is a bit insane: some RTAI examples use the
+	   FPU in real-time mode while the TS bit is on from a
+	   previous Linux switch, so this trap is raised. We just
+	   simulate a math_state_restore() using the proper "current"
+	   value from the Linux domain here to please everyone without
+	   impacting the existing code. */
+
+	struct task_struct *linux_task = rtai_get_current(cpuid);
+
+#ifdef CONFIG_PREEMPT
+	/* See comment in math_state_restore() in arch/i386/traps.c
+	   from a kpreempt-enabled kernel for more on this. */
+	get_thread_ptr(linux_task)->preempt_count++;
+#endif /* CONFIG_PREEMPT */
+
+	if (linux_task->used_math)
+	    restore_task_fpenv(linux_task);	/* Does clts(). */
+	else
 	    {
-	    /* Ok, this one is a bit insane: some RTAI examples use
-	       the FPU in real-time mode while the TS bit is on from a
-	       previous Linux switch, so this trap is raised. We just
-	       simulate a math_state_restore() using the proper
-	       "current" value from the Linux domain here to please
-	       everyone without impacting the existing code. */
-
-	    struct task_struct *linux_task = rtai_get_current(cpuid);
-
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-
-#ifdef CONFIG_PREEMPT
-	    /* See comment in math_state_restore() in
-	       arch/i386/traps.c from a kpreempt-enabled kernel for
-	       more on this. */
-	    linux_task->preempt_count++;
-#endif /* CONFIG_PREEMPT */
-
-	    if (linux_task->used_math)
-		restore_task_fpenv(linux_task);	/* Does clts(). */
-	    else
-		{
-		init_xfpu();	/* Does clts(). */
-		linux_task->used_math = 1;
-		}
-
-	    linux_task->flags |= PF_USEDFPU;
-
-#ifdef CONFIG_PREEMPT
-	    linux_task->preempt_count--;
-#endif /* CONFIG_PREEMPT */
-
-	    goto endtrap;
+	    init_xfpu();	/* Does clts(). */
+	    linux_task->used_math = 1;
 	    }
 
-#else /* >= 2.6.0 */
+	set_tsk_used_fpu(linux_task);
 
 #ifdef CONFIG_PREEMPT
-	    linux_task->thread_info->preempt_count++;
+	get_thread_ptr(linux_task)->preempt_count--;
 #endif /* CONFIG_PREEMPT */
 
-	    if (linux_task->used_math)
-		restore_task_fpenv(linux_task);	/* Does clts(). */
-	    else
-		{
-		init_xfpu();	/* Does clts(). */
-		linux_task->used_math = 1;
-		}
-
-	    linux_task->thread_info->status |= TS_USEDFPU;
-
-#ifdef CONFIG_PREEMPT
-	    linux_task->thread_info->preempt_count--;
-#endif /* CONFIG_PREEMPT */
-
-	    goto endtrap;
-	    }
+	goto endtrap;
+	}
 
 #if ADEOS_RELEASE_NUMBER >= 0x02060601
-	if (evinfo->event == 14)	/* Page fault. */
+
+    if (evinfo->event == 14)	/* Page fault. */
+	{
+	struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
+	unsigned long address;
+
+	/* Handle RTAI-originated faults in kernel space caused by
+	   on-demand virtual memory mappings. We can specifically
+	   process this case through the Linux fault handler since we
+	   know that it is context-agnostic and does not wreck the
+	   determinism. Any other case would lead us to panicking. */
+
+	__asm__("movl %%cr2,%0":"=r" (address));
+
+	if (address >= TASK_SIZE && !(regs->orig_eax & 5)) /* i.e. trap error code. */
 	    {
-	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
-	    unsigned long address;
-
-	    /* Handle RTAI-originated faults in kernel space caused by
-	       on-demand virtual memory mappings. We can specifically
-	       process this case through the Linux fault handler since
-	       we know that it is context-agnostic and does not wreck
-	       the determinism. Any other case would lead us to
-	       panicking. */
-
-	    __asm__("movl %%cr2,%0":"=r" (address));
-
-	    if (address >= TASK_SIZE && !(regs->orig_eax & 5)) /* i.e. trap error code. */
-		{
-		asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code);
-		do_page_fault(regs,regs->orig_eax);
-		goto endtrap;
-		}
-	    }
-
-	if (rtai_trap_handler != NULL &&
-	    test_bit(cpuid, &rtai_cpu_realtime) &&
-	    rtai_trap_handler(evinfo->event,
-			      trap2sig[evinfo->event],
-			      (struct pt_regs *)evinfo->evdata,
-			      NULL) != 0)
+	    asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code);
+	    do_page_fault(regs,regs->orig_eax);
 	    goto endtrap;
+	    }
+	}
+
 #endif /* ADEOS_RELEASE_NUMBER >= 0x02060601 */
 
-#endif /* < 2.6.0 */
-	}
+    if (rtai_trap_handler != NULL &&
+	test_bit(cpuid, &rtai_cpu_realtime) &&
+	rtai_trap_handler(evinfo->event,
+			  trap2sig[evinfo->event],
+			  (struct pt_regs *)evinfo->evdata,
+			  NULL) != 0)
+	goto endtrap;
+
+propagate:
 
     adeos_propagate_event(evinfo);
 

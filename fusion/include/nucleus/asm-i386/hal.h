@@ -233,7 +233,7 @@ static inline unsigned long long rthal_rdtsc (void) {
 #define rthal_local_irq_restore(x)      adeos_restore_pipeline_from(&rthal_domain,(x))
 #define rthal_local_irq_flags(x)        ((x) = !!adeos_test_pipeline_from(&rthal_domain))
 #define rthal_local_irq_test()          (!!adeos_test_pipeline_from(&rthal_domain))
-/* Use these ones when fiddling with the (local A)PIC */
+
 #define rthal_hw_lock(flags)            adeos_hw_local_irq_save(flags)
 #define rthal_hw_unlock(flags)          adeos_hw_local_irq_restore(flags)
 #define rthal_hw_enable()               adeos_hw_sti()

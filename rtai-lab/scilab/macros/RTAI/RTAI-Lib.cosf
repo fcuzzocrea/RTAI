@@ -10,7 +10,7 @@ list([5,1],[4,1]),[0.8,0.8,0.8]),[],[],list())
 scs_m.objs(1)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[156.48148,238.7974],..
+              "gr_i","id","in_implicit","out_implicit"],[188.90795,241.62559],..
               [40,40],%t,list(["1","1","SCOPE"],[]),0,[],0,[],..
               list(..
               "xstringb(orig(1),orig(2),''RTAI Scope'',sz(1),sz(2),''fill'');",8),..
@@ -23,7 +23,7 @@ scs_m.objs(1)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(2)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[158.21759,183.78616],..
+              "gr_i","id","in_implicit","out_implicit"],[190.39631,170.94106],..
               [40,40],%t,list(["1","METER"],[]),0,[],0,[],..
               list(..
               "xstringb(orig(1),orig(2),''RTAI Meter'',sz(1),sz(2),''fill'');",8),..
@@ -36,7 +36,7 @@ scs_m.objs(2)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(3)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[158.7963,127.6168],..
+              "gr_i","id","in_implicit","out_implicit"],[189.65213,102.48868],..
               [40,40],%t,list(["1","1","LED"],[]),0,[],0,[],..
               list(..
               "xstringb(orig(1),orig(2),''RTAI Led'',sz(1),sz(2),''fill'');",8),..
@@ -49,7 +49,7 @@ scs_m.objs(3)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(4)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[233.44907,242.27179],..
+              "gr_i","id","in_implicit","out_implicit"],[92.924479,238.71897],..
               [40,40],%t,list(["1","1","1","0","0","0"],[]),[],0,0,[],..
               list(..
               "xstringb(orig(1),orig(2),''RTAI sinus'',sz(1),sz(2),''fill'');",8),..
@@ -62,7 +62,7 @@ scs_m.objs(4)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(5)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[232.29167,184.36523],..
+              "gr_i","id","in_implicit","out_implicit"],[92.924479,169.39958],..
               [40,40],%t,list(["1","1","4","2","0","0"],[]),[],0,0,[],..
               list(..
               "xstringb(orig(1),orig(2),''RTAI square'',sz(1),sz(2),''fill'');",..
@@ -75,7 +75,7 @@ scs_m.objs(5)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(6)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[234.60648,127.6168],..
+              "gr_i","id","in_implicit","out_implicit"],[91.435327,100.0802],..
               [40,40],%t,list(["1","1","0"],[]),[],0,0,[],..
               list(..
               "xstringb(orig(1),orig(2),''RTAI step'',sz(1),sz(2),''fill'');",8),..
@@ -88,7 +88,7 @@ scs_m.objs(6)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(7)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[311.57407,244.58805],..
+              "gr_i","id","in_implicit","out_implicit"],[387.60387,246.08987],..
               [60;40],%t,list(["1","0","comedi0","0","0"],[]),[],0,0,[],..
               list(..
               "xstringb(orig(1),orig(2),''COMEDI DATAIN'',sz(1),sz(2),''fill'');",..
@@ -101,7 +101,7 @@ scs_m.objs(7)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(8)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[315.0463,189.57682],..
+              "gr_i","id","in_implicit","out_implicit"],[387.60387,176.89344],..
               [60;40],%t,list(["1","0","comedi0","0","0"],[]),0,[],0,[],..
               list(..
               "xstringb(orig(1),orig(2),''COMEDI DATAOUT'',sz(1),sz(2),''fill'');",..
@@ -114,7 +114,7 @@ scs_m.objs(8)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(9)=mlist(["Block","graphics","model","gui","doc"],..
               mlist(..
               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-              "gr_i","id","in_implicit","out_implicit"],[315.0463,129.93306],..
+              "gr_i","id","in_implicit","out_implicit"],[388.34804,102.48868],..
               [60;40],%t,list(["1","0","comedi0"],[]),[],0,0,[],..
               list(..
               "xstringb(orig(1),orig(2),''COMEDI DIO_IN'',sz(1),sz(2),''fill'');",..
@@ -127,7 +127,7 @@ scs_m.objs(9)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(10)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[398.95833,245.74618],..
+               "gr_i","id","in_implicit","out_implicit"],[389.09222,32.548205],..
                [60;40],%t,list(["1","0","comedi0","1"],[]),0,[],0,[],..
                list(..
                "xstringb(orig(1),orig(2),''COMEDI DIOOUT'',sz(1),sz(2),''fill'');",..
@@ -140,7 +140,7 @@ scs_m.objs(10)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(11)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[400.69444,191.31402],..
+               "gr_i","id","in_implicit","out_implicit"],[503.69586,248.32201],..
                [40,40],%t,list(["1","0x601","8000","4000"],[]),[],0,0,[],..
                list(..
                "xstringb(orig(1),orig(2),''PCAN IN'',sz(1),sz(2),''fill'');",8),..
@@ -153,7 +153,7 @@ scs_m.objs(11)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(12)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[403.00926,133.98652],..
+               "gr_i","id","in_implicit","out_implicit"],[503.69586,179.12559],..
                [40,40],%t,list(["1","0x601","8000","4000"],[]),0,[],0,[],..
                list(..
                "xstringb(orig(1),orig(2),''PCAN OUT'',sz(1),sz(2),''fill'');",8),..
@@ -166,10 +166,10 @@ scs_m.objs(12)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(13)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[486.34259,248.06245],..
-               [50;40],%t,list(["1","1","MBX","127.0.0.1"],[]),0,[],0,[],..
+               "gr_i","id","in_implicit","out_implicit"],[283.41874,243.85773],..
+               [60;40],%t,list(["1","1","MBX","127.0.0.1"],[]),0,[],0,[],..
                list(..
-               "xstringb(orig(1),orig(2),''RTAI Mbx_Send'',sz(1),sz(2),''fill'');",..
+               "xstringb(orig(1),orig(2),''RTAI Mbx_O_Send'',sz(1),sz(2),''fill'');",..
                8),"","E",[]),..
                mlist(..
                ["model","sim","in","out","evtin","evtout","state","dstate","rpar",..
@@ -179,8 +179,8 @@ scs_m.objs(13)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(14)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[487.5,190.15588],..
-               [50;40],%t,list(["1","1","MBX","127.0.0.1"],[]),[],0,0,[],..
+               "gr_i","id","in_implicit","out_implicit"],[284.9071,175.40535],..
+               [60;40],%t,list(["1","1","MBX","127.0.0.1"],[]),[],0,0,[],..
                list(..
                "xstringb(orig(1),orig(2),''RTAI Mbx_Rcv_if'',sz(1),sz(2),''fill'');",..
                8),"",[],"E"),..
@@ -192,8 +192,8 @@ scs_m.objs(14)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(15)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[488.65741,135.14465],..
-               [50;40],%t,list(["1","1","MBX","127.0.0.1"],[]),[],0,0,[],..
+               "gr_i","id","in_implicit","out_implicit"],[281.93038,101.00059],..
+               [60;40],%t,list(["1","1","MBX","127.0.0.1"],[]),[],0,0,[],..
                list(..
                "xstringb(orig(1),orig(2),''RTAI Mbx_rcv'',sz(1),sz(2),''fill'');",..
                8),"",[],"E"),..
@@ -205,7 +205,7 @@ scs_m.objs(15)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(16)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[403.44124,75.535113],..
+               "gr_i","id","in_implicit","out_implicit"],[502.95168,103.97678],..
                [40,40],%t,list(["1","0x300","1","1000","4","1","1"],[]),[],0,0,..
                [],..
                list(..
@@ -219,7 +219,7 @@ scs_m.objs(16)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(17)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[235.13848,68.625592],..
+               "gr_i","id","in_implicit","out_implicit"],[91.420444,30.316062],..
                [40,40],%t,list(["1","test.dat","1000"],[]),[],0,0,[],..
                list(..
                "xstringb(orig(1),orig(2),''ext_data'',sz(1),sz(2),''fill'');",8),..
@@ -232,8 +232,8 @@ scs_m.objs(17)=mlist(["Block","graphics","model","gui","doc"],..
 scs_m.objs(18)=mlist(["Block","graphics","model","gui","doc"],..
                mlist(..
                ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[492.01717,77.719103],..
-               [40,40],%t,list(["1","1","MBX","127.0.0.1"],[]),0,[],0,[],..
+               "gr_i","id","in_implicit","out_implicit"],[285.65128,28.827967],..
+               [60;40],%t,list(["1","1","MBX","127.0.0.1"],[]),0,[],0,[],..
                list(..
                "xstringb(orig(1),orig(2),''RTAI Mbx_Send'',sz(1),sz(2),''fill'');",..
                8),"","E",[]),..
@@ -242,16 +242,3 @@ scs_m.objs(18)=mlist(["Block","graphics","model","gui","doc"],..
                "ipar","blocktype","firing","dep_ut","label","nzcross","nmode",..
                "equations"],list(" ",2004),1,[],1,[],[],[],[],[],"d",[],[%t,%f],..
                "",0,0,list()),"rtai_mbx_send_if",list())
-scs_m.objs(19)=mlist(["Block","graphics","model","gui","doc"],..
-               mlist(..
-               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
-               "gr_i","id","in_implicit","out_implicit"],[322.25386,72.501515],..
-               [40,40],%t,list(["1","1","0"],[]),0,[],0,[],..
-               list(..
-               "xstringb(orig(1),orig(2),''RTAI Fifo'',sz(1),sz(2),''fill'');",8),..
-               "","E",[]),..
-               mlist(..
-               ["model","sim","in","out","evtin","evtout","state","dstate","rpar",..
-               "ipar","blocktype","firing","dep_ut","label","nzcross","nmode",..
-               "equations"],list(" ",2004),1,[],1,[],[],[],[],[],"d",[],[%t,%f],..
-               "",0,0,list()),"rtai_fifo",list())

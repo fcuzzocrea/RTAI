@@ -1,3 +1,10 @@
+2005-02-24  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/timer.c (xntimer_do_timers): Check whether
+	xntimer_do_timers is run on CPU XNTIMER_KEEPER_ID in
+	the OPT_PERCPU_TIMER case before updating the pod wallclock
+	(revert the change made on 2005-01-17 and clarify comment).
+
 2005-02-24  Philippe Gerum  <rpm@xenomai.org>
 
 	* configure.in: Make sure we can use ~luser when specifying

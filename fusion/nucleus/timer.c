@@ -587,11 +587,17 @@ void xntimer_do_timers (void)
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	{
-	/* Update the periodic clocks keeping the things strictly
-	   monotonous (only CPU XNTIMER_KEEPER_ID runs this
-	   routine). */
-	++nkpod->jiffies;
-	++nkpod->wallclock;
+        /* Update the periodic clocks keeping the things strictly
+           monotonous (when the per-cpu timer option is enabled,
+           this routine is run on every cpu, so that only
+           CPU XNTIMER_KEEPER_ID should do this). */
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
+        if (sched == xnpod_sched_slot(XNTIMER_KEEPER_ID))
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+            {
+            ++nkpod->jiffies;
+            ++nkpod->wallclock;
+            }
         now = nkpod->jiffies;
         timerq = &sched->timerwheel[now & XNTIMER_WHEELMASK];
 	}

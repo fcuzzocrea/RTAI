@@ -43,7 +43,7 @@
 #error "See http://download.gna.org/adeos/patches/v2.6/i386/"
 #endif
 
-#define MODULE_PARM_VALUE(parm) (parm)
+#define module_param_value(parm) (parm)
 
 typedef unsigned long spl_t;
 

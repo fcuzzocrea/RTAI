@@ -30,12 +30,12 @@ MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
 static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK;
-MODULE_PARM(tick_hz_arg,"i");
-MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz), 0 for aperiodic mode");
+module_param_named(tick_hz,tick_hz_arg,ulong,0444);
+MODULE_PARM_DESC(tick_hz,"Clock tick frequency (Hz), 0 for aperiodic mode");
 
 static u_long time_slice_arg = 1; /* Default (round-robin) time slice */
-MODULE_PARM(time_slice_arg,"i");
-MODULE_PARM_DESC(time_slice_arg,"Default time slice (in ticks)");
+module_param_named(time_slice,time_slice_arg,ulong,0444);
+MODULE_PARM_DESC(time_slice,"Default time slice (in ticks)");
 
 #if !defined(__KERNEL__) || !defined(CONFIG_RTAI_OPT_FUSION)
 static xnpod_t pod;
@@ -72,8 +72,8 @@ int __fusion_skin_init(void)
     if (err != 0)
 	return err;
 
-    if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
-	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
+    if (module_param_value(tick_hz_arg) > 0)
+	nstick = 1000000000 / module_param_value(tick_hz_arg);
     else
         nstick = XN_APERIODIC_TICK;
 
@@ -103,7 +103,7 @@ int __fusion_skin_init(void)
     pse51_tsd_init();
     pse51_cond_obj_init();
 
-    pse51_thread_init(MODULE_PARM_VALUE(time_slice_arg));
+    pse51_thread_init(module_param_value(time_slice_arg));
 
     nkpod->svctable.shutdown = &pse51_shutdown;
 

@@ -31,16 +31,16 @@ MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
 static u_long rn0_size_arg = 32 * 1024; /* Default size of region #0 */
-MODULE_PARM(rn0_size_arg,"i");
-MODULE_PARM_DESC(rn0_size_arg,"Size of pSOS+ region #0 (in bytes)");
+module_param_named(rn0_size,rn0_size_arg,ulong,0444);
+MODULE_PARM_DESC(rn0_size,"Size of pSOS+ region #0 (in bytes)");
 
 static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK; /* Default tick period */
-MODULE_PARM(tick_hz_arg,"i");
-MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
+module_param_named(tick_hz,tick_hz_arg,ulong,0444);
+MODULE_PARM_DESC(tick_hz,"Clock tick frequency (Hz)");
 
 static u_long time_slice_arg = 10; /* Default (round-robin) time slice */
-MODULE_PARM(time_slice_arg,"i");
-MODULE_PARM_DESC(time_slice_arg,"Default time slice (in ticks)");
+module_param_named(time_slice,time_slice_arg,ulong,0444);
+MODULE_PARM_DESC(time_slice,"Default time slice (in ticks)");
 
 static xnpod_t pod;
 
@@ -78,13 +78,13 @@ int __fusion_skin_init (void)
     if (err != 0)
 	return err;
 
-    if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
-	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
+    if (module_param_value(tick_hz_arg) > 0)
+	nstick = 1000000000 / module_param_value(tick_hz_arg);
 
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 
     if (err == 0)
-	err = psosrn_init(MODULE_PARM_VALUE(rn0_size_arg));
+	err = psosrn_init(module_param_value(rn0_size_arg));
 
     if (err != 0)
         {
@@ -97,7 +97,7 @@ int __fusion_skin_init (void)
     psospt_init();
     psosasr_init();
     psostm_init();
-    psostask_init(MODULE_PARM_VALUE(time_slice_arg));
+    psostask_init(module_param_value(time_slice_arg));
 
     pod.svctable.shutdown = &psos_shutdown;
 

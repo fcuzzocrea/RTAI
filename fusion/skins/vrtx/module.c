@@ -33,16 +33,16 @@ MODULE_AUTHOR("jpinon@idealx.com");
 MODULE_LICENSE("GPL");
 
 static u_long workspace_size_arg = 32 * 1024; /* Default size of VRTX workspace */
-MODULE_PARM(workspace_size_arg,"i");
-MODULE_PARM_DESC(workspace_size_arg,"Size of VRTX workspace (in bytes)");
+module_param_named(workspace_size,workspace_size_arg,ulong,0444);
+MODULE_PARM_DESC(workspace_size,"Size of VRTX workspace (in bytes)");
 
 static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK; /* Default tick period */
-MODULE_PARM(tick_hz_arg,"i");
-MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
+module_param_named(tick_hz,tick_hz_arg,ulong,0444);
+MODULE_PARM_DESC(tick_hz,"Clock tick frequency (Hz)");
 
 static u_long task_stacksize_arg = 4096; /* Default size of VRTX tasks */
-MODULE_PARM(task_stacksize_arg,"i");
-MODULE_PARM_DESC(task_stacksize_arg,"Default size of VRTX task stack (in bytes)");
+module_param_named(task_stacksize,task_stacksize_arg,ulong,0444);
+MODULE_PARM_DESC(task_stacksize,"Default size of VRTX task stack (in bytes)");
 
 static xnpod_t pod;
 
@@ -126,8 +126,8 @@ int __fusion_skin_init (void)
     if (err != 0)
 	return err;
 
-    if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
-	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
+    if (module_param_value(tick_hz_arg) > 0)
+	nstick = 1000000000 / module_param_value(tick_hz_arg);
 
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 
@@ -147,7 +147,7 @@ int __fusion_skin_init (void)
      * We avoid a test by ensuring it is the first object in vrtxobjmap,
      * so vrtxheap_init must be called right now. 
      */
-    err = vrtxheap_init(MODULE_PARM_VALUE(workspace_size_arg));
+    err = vrtxheap_init(module_param_value(workspace_size_arg));
     if (err != 0)
 	return err;
 
@@ -157,7 +157,7 @@ int __fusion_skin_init (void)
     vrtxpt_init();
     vrtxmb_init();
     vrtxmx_init();
-    vrtxtask_init(MODULE_PARM_VALUE(task_stacksize_arg));
+    vrtxtask_init(module_param_value(task_stacksize_arg));
 
     pod.svctable.shutdown = &vrtx_shutdown;
 

@@ -27,8 +27,8 @@ MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
 static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK; /* Default tick period */
-MODULE_PARM(tick_hz_arg,"i");
-MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
+module_param_named(tick_hz,tick_hz_arg,ulong,0444);
+MODULE_PARM_DESC(tick_hz,"Clock tick frequency (Hz)");
 
 static xnpod_t pod;
 
@@ -56,8 +56,8 @@ int __fusion_skin_init (void)
     if (err != 0)
 	return err;
 
-    if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
-	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
+    if (module_param_value(tick_hz_arg) > 0)
+	nstick = 1000000000 / module_param_value(tick_hz_arg);
 
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 

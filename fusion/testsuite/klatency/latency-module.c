@@ -10,7 +10,7 @@ MODULE_LICENSE("GPL");
 #define SAMPLE_COUNT (1000000000 / TASK_PERIOD_NS)
 
 int task_period_ns = TASK_PERIOD_NS;
-MODULE_PARM(task_period_ns, "i");
+module_param(task_period_ns,int,0444);
 MODULE_PARM_DESC(task_period_ns, "period in ns (default: 100000)");
 
 int sample_count;

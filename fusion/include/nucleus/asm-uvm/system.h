@@ -39,9 +39,9 @@
 #define MODULE_DESCRIPTION(s);
 #define MODULE_LICENSE(s);
 #define MODULE_AUTHOR(s);
-#define MODULE_PARM(var,type)    static const char *vartype(var) = type
-#define MODULE_PARM_DESC(var,desc);
-#define MODULE_PARM_VALUE(var)   ({ xnarch_read_environ(#var,&vartype(var),&var); var; })
+#define MODULE_PARM_DESC(name,desc);
+#define module_param_named(name,var,type,perm)  static const char *vartype(var) = #type
+#define module_param_value(var)   ({ xnarch_read_environ(#var,&vartype(var),&var); var; })
 
 /* Nullify other kernel macros */
 #define EXPORT_SYMBOL(sym);
@@ -223,8 +223,10 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
 
     if (**ptype == 's')
 	*((char **)pvar) = value;
-    else
+    else if (strstr(*ptype,"int"))
 	*((int *)pvar) = atoi(value);
+    else if (strstr(*ptype,"long"))
+	*((u_long *)pvar) = (u_long)atol(value);
 
     *ptype = NULL;
 

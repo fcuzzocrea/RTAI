@@ -111,9 +111,10 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
         enter_lazy_tlb(oldmm,next);
 #endif /* < 2.6.0 */
 	
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if 1 // LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     __asm__ __volatile__(						\
 		 "pushfl\n\t"				       		\
+		 "cli\n\t"				       		\
 		 "pushl %%esi\n\t"				        \
 		 "pushl %%edi\n\t"					\
 		 "pushl %%ebp\n\t"					\

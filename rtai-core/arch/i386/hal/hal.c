@@ -1350,38 +1350,34 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
     adeos_load_cpuid();
 #endif /* adeos_load_cpuid */
 
-    if (evinfo->event == 7)	/* (FPU) Device not available. */
-	{
-	/* Ok, this one is a bit insane: some RTAI examples use the
-	   FPU in real-time mode while the TS bit is on from a
-	   previous Linux switch, so this trap is raised. We just
-	   simulate a math_state_restore() using the proper "current"
-	   value from the Linux domain here to please everyone without
-	   impacting the existing code. */
+	if (!test_bit(cpuid, &rtai_cpu_realtime)) {
+		goto propagate;
+	}
+	if (evinfo->event == 7)	{ /* (FPU) Device not available. */
+	/* A trap must come from a well estabilished Linux task context; from
+	   anywhere else it is a bug to fix and not a hal.c problem */
+		struct task_struct *linux_task = current;
 
-	struct task_struct *linux_task = rtai_get_current(cpuid);
-
-#ifdef CONFIG_PREEMPT
-	/* See comment in math_state_restore() in arch/i386/traps.c
-	   from a kpreempt-enabled kernel for more on this. */
-	get_thread_ptr(linux_task)->preempt_count++;
-#endif /* CONFIG_PREEMPT */
-
-	if (linux_task->used_math)
-	    restore_task_fpenv(linux_task);	/* Does clts(). */
-	else
-	    {
-	    init_xfpu();	/* Does clts(). */
-	    linux_task->used_math = 1;
-	    }
-
-	set_tsk_used_fpu(linux_task);
-
-#ifdef CONFIG_PREEMPT
-	get_thread_ptr(linux_task)->preempt_count--;
-#endif /* CONFIG_PREEMPT */
-
-	goto endtrap;
+	/* We need to keep this to avoid going through Linux in case users
+	   do not set the FPU, for hard real time operations, either by 
+	   calling the appropriate LXRT function or by doing any FP operation
+	   before going to hard mode. Notice that after proper initialization
+	   LXRT anticipate restoring the hard FP context at any task switch.
+	   So just the initialisation should be needed, but we do what Linux
+	   does in math_state_restore anyhow, to stay on the safe side. 
+	   In any case we inform the user. */
+		adeos_hw_cli();  /* in task context, so we can be preempted */
+		if (!linux_task->used_math) {
+			init_xfpu();	/* Does clts(). */
+			linux_task->used_math = 1;
+			rt_printk("\nUNEXPECTED FPU INITIALIZATION FROM PID = %d\n", linux_task->pid);
+		} else {	
+			rt_printk("\nUNEXPECTED FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
+		}
+		restore_task_fpenv(linux_task);	/* Does clts(). */
+		set_tsk_used_fpu(linux_task);
+		adeos_hw_sti();
+		goto endtrap;
 	}
 
 #if ADEOS_RELEASE_NUMBER >= 0x02060601
@@ -1397,6 +1393,7 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 	   know that it is context-agnostic and does not wreck the
 	   determinism. Any other case would lead us to panicking. */
 
+	adeos_hw_cli();
 	__asm__("movl %%cr2,%0":"=r" (address));
 
 	if (address >= TASK_SIZE && !(regs->orig_eax & 5)) /* i.e. trap error code. */
@@ -1406,15 +1403,15 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 	    goto endtrap;
 	    }
 	}
+	adeos_hw_sti();
 
 #endif /* ADEOS_RELEASE_NUMBER >= 0x02060601 */
 
     if (rtai_trap_handler != NULL &&
-	test_bit(cpuid, &rtai_cpu_realtime) &&
 	rtai_trap_handler(evinfo->event,
 			  trap2sig[evinfo->event],
 			  (struct pt_regs *)evinfo->evdata,
-			  NULL) != 0)
+			  (void *)cpuid) != 0)
 	goto endtrap;
 
 propagate:

@@ -1331,7 +1331,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
     sysflags = muxtable[muxid - 1].systab[muxop].flags;
 
-    if ((sysflags & __xn_flag_shadow) != 0 && !thread)
+    if ((sysflags & __xn_exec_shadow) != 0 && !thread)
 	{
 	__xn_error_return(regs,-EPERM);
 	return;
@@ -1348,7 +1348,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
      * domain.
      */
 
-    if ((sysflags & __xn_flag_lostage) != 0)
+    if ((sysflags & __xn_exec_lostage) != 0)
 	{
 	/* Syscall must run into the Linux domain. */
 
@@ -1362,7 +1362,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	       is executed from there. */
 	    goto propagate_syscall;
 	}
-    else if ((sysflags & __xn_flag_histage) != 0)
+    else if ((sysflags & __xn_exec_histage) != 0)
 	{
 	/* Syscall must run into the RTAI domain. */
 
@@ -1467,7 +1467,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
 
  skin_syscall:
 
-    if ((muxtable[muxid - 1].systab[muxop].flags & __xn_flag_histage) != 0)
+    if ((muxtable[muxid - 1].systab[muxop].flags & __xn_exec_histage) != 0)
 	/* This request originates from the Linux domain and must be
 	   run into the RTAI domain: harden the caller and execute the
 	   syscall. */

@@ -444,23 +444,23 @@ static void xnfusion_shadow_delete_hook (xnthread_t *thread)
 
 static xnsysent_t __systab[] = {
     /* Exported calls. */
-    [__xn_fusion_init] = { &__pthread_init_rt, __xn_flag_init },
-    [__xn_fusion_create] = { &__pthread_create_rt, __xn_flag_init },
-    [__xn_fusion_start] = { &__pthread_start_rt, __xn_flag_anycall },
-    [__xn_fusion_set_periodic] = { &__pthread_set_periodic_rt, __xn_flag_regular },
-    [__xn_fusion_wait_period] = { &__pthread_wait_period_rt, __xn_flag_regular },
-    [__xn_fusion_time] = { &__pthread_time_rt, __xn_flag_anycall  },
-    [__xn_fusion_cputime] = { &__pthread_cputime_rt, __xn_flag_anycall  },
-    [__xn_fusion_start_timer] = { &__pthread_start_timer_rt, __xn_flag_anycall  },
-    [__xn_fusion_stop_timer] = { &__pthread_stop_timer_rt, __xn_flag_anycall  },
-    [__xn_fusion_sleep] = { &__pthread_sleep_rt, __xn_flag_regular  },
-    [__xn_fusion_inquire] = { &__pthread_inquire_rt, __xn_flag_shadow },
+    [__xn_fusion_init] = { &__pthread_init_rt, __xn_exec_init },
+    [__xn_fusion_create] = { &__pthread_create_rt, __xn_exec_init },
+    [__xn_fusion_start] = { &__pthread_start_rt, __xn_exec_any },
+    [__xn_fusion_set_periodic] = { &__pthread_set_periodic_rt, __xn_exec_primary },
+    [__xn_fusion_wait_period] = { &__pthread_wait_period_rt, __xn_exec_primary },
+    [__xn_fusion_time] = { &__pthread_time_rt, __xn_exec_any  },
+    [__xn_fusion_cputime] = { &__pthread_cputime_rt, __xn_exec_any  },
+    [__xn_fusion_start_timer] = { &__pthread_start_timer_rt, __xn_exec_any  },
+    [__xn_fusion_stop_timer] = { &__pthread_stop_timer_rt, __xn_exec_any  },
+    [__xn_fusion_sleep] = { &__pthread_sleep_rt, __xn_exec_primary  },
+    [__xn_fusion_inquire] = { &__pthread_inquire_rt, __xn_exec_shadow },
     /* Internal UVM calls. */
-    [__xn_fusion_idle] = { &__pthread_idle_uvm, __xn_flag_regular },
-    [__xn_fusion_cancel] = { &__pthread_cancel_uvm, __xn_flag_regular },
-    [__xn_fusion_activate] = { &__pthread_activate_uvm, __xn_flag_regular },
-    [__xn_fusion_hold] = { &__pthread_hold_uvm, __xn_flag_regular },
-    [__xn_fusion_release] = { &__pthread_release_uvm, __xn_flag_anycall },
+    [__xn_fusion_idle] = { &__pthread_idle_uvm, __xn_exec_primary },
+    [__xn_fusion_cancel] = { &__pthread_cancel_uvm, __xn_exec_primary },
+    [__xn_fusion_activate] = { &__pthread_activate_uvm, __xn_exec_primary },
+    [__xn_fusion_hold] = { &__pthread_hold_uvm, __xn_exec_primary },
+    [__xn_fusion_release] = { &__pthread_release_uvm, __xn_exec_any },
 };
 
 static int xnfusion_unload_hook (void)

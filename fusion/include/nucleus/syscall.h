@@ -63,17 +63,17 @@ typedef struct _xnsysent {
 	       struct pt_regs *regs);
 
 /* Syscall must run into the Linux domain. */
-#define __xn_flag_lostage    0x1
+#define __xn_exec_lostage    0x1
 /* Syscall must run into the RTAI domain. */
-#define __xn_flag_histage    0x2
+#define __xn_exec_histage    0x2
 /* Shadow syscall; caller must be mapped. */
-#define __xn_flag_shadow     0x4
+#define __xn_exec_shadow     0x4
 /* Context-agnostic syscall. */
-#define __xn_flag_anycall    0x0
+#define __xn_exec_any        0x0
 /* Short-hand for shadow initializing syscall. */
-#define __xn_flag_init       __xn_flag_lostage
+#define __xn_exec_init       __xn_exec_lostage
 /* Short-hand for pure shadow syscall in RTAI space. */
-#define __xn_flag_regular   (__xn_flag_shadow|__xn_flag_histage)
+#define __xn_exec_primary   (__xn_exec_shadow|__xn_exec_histage)
 
     u_long flags;
 

@@ -209,11 +209,11 @@ int __rt_uart_control (struct task_struct *curr, struct pt_regs *regs)
 }
 
 static xnsysent_t __systab[] = {
-    [__rtai_uart_open ] = { &__rt_uart_open, __xn_flag_lostage },
-    [__rtai_uart_close ] = { &__rt_uart_close, __xn_flag_lostage },
-    [__rtai_uart_read ] = { &__rt_uart_read, __xn_flag_regular },
-    [__rtai_uart_write ] = { &__rt_uart_write, __xn_flag_regular },
-    [__rtai_uart_control ] = { &__rt_uart_control, __xn_flag_regular },
+    [__rtai_uart_open ] = { &__rt_uart_open, __xn_exec_lostage },
+    [__rtai_uart_close ] = { &__rt_uart_close, __xn_exec_lostage },
+    [__rtai_uart_read ] = { &__rt_uart_read, __xn_exec_primary },
+    [__rtai_uart_write ] = { &__rt_uart_write, __xn_exec_primary },
+    [__rtai_uart_control ] = { &__rt_uart_control, __xn_exec_primary },
 };
 
 int __uart_syscall_init (void)

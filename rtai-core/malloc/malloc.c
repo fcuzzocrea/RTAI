@@ -45,9 +45,11 @@
 #endif /* CONFIG_RTAI_MALLOC_VMALLOC */
 #include <rtai_malloc.h>
 
-MODULE_PARM(global_heap_size,"i");
+MODULE_PARM(rtai_global_heap_size,"i");
 
-int global_heap_size = RTHEAP_GLOBALSZ;
+int rtai_global_heap_size = RTHEAP_GLOBALSZ;
+
+void *rtai_global_heap_adr = NULL;
 
 rtheap_t rtai_global_heap;	/* Global system heap */
 
@@ -684,19 +686,27 @@ unlock_and_fail:
 int __rtai_heap_init (void)
 
 {
+
+#ifdef CONFIG_RTAI_MALLOC_VMALLOC
+	if (!(rtai_global_heap_adr = alloc_extent(rtai_global_heap_size))) {
+		printk("RTAI[malloc]: failed to preallocate the vmalloced extent for the global heap (size=%d bytes).\n", rtai_global_heap_size);
+		return 1;
+	}
+#endif
+
     /* The global heap is extendable once, only at init. */
 
-    if (rtheap_init(&rtai_global_heap,NULL,global_heap_size,PAGE_SIZE))
+    if (rtheap_init(&rtai_global_heap,rtai_global_heap_adr,rtai_global_heap_size,PAGE_SIZE))
 	{
 	printk("RTAI[malloc]: failed to initialize the global heap (size=%d bytes).\n",
-	       global_heap_size);
+	       rtai_global_heap_size);
 
 	return 1;
 	}
 
     rtai_global_heap.flags &= ~RTHEAP_EXTENDABLE;
 
-    printk("RTAI[malloc] loaded (global heap size=%d bytes).\n",global_heap_size);
+    printk("RTAI[malloc] loaded (global heap size=%d bytes).\n",rtai_global_heap_size);
 
     return 0;
 }
@@ -755,4 +765,6 @@ EXPORT_SYMBOL(rtheap_destroy);
 EXPORT_SYMBOL(rtheap_alloc);
 EXPORT_SYMBOL(rtheap_free);
 EXPORT_SYMBOL(rtai_global_heap);
+EXPORT_SYMBOL(rtai_global_heap_adr);
+EXPORT_SYMBOL(rtai_global_heap_size);
 #endif /* CONFIG_KBUILD */

@@ -1,3 +1,18 @@
+2004-08-05  Marc Kleine-Budde <kleine-budde@gmx.de>
+
+	* arch/i386/hal/hal.c (rthal_trap_fault): Remove legacy code from
+	pre-Adeos times.
+
+2004-08-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-uvm/system.h: Include missing
+	<rtai_config.h>.
+
+2004-08-05  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_welcome_thread): Fix FPU ownership on
+	thread entry.
+
 2004-08-04  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.4

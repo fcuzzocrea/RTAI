@@ -831,30 +831,6 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 {
     adeos_declare_cpuid;
 
-    static const int trap2sig[] = {
-    	SIGFPE,         //  0 - Divide error
-	SIGTRAP,        //  1 - Debug
-	SIGSEGV,        //  2 - NMI (but we ignore these)
-	SIGTRAP,        //  3 - Software breakpoint
-	SIGSEGV,        //  4 - Overflow
-	SIGSEGV,        //  5 - Bounds
-	SIGILL,         //  6 - Invalid opcode
-	SIGSEGV,        //  7 - Device not available
-	SIGSEGV,        //  8 - Double fault
-	SIGFPE,         //  9 - Coprocessor segment overrun
-	SIGSEGV,        // 10 - Invalid TSS
-	SIGBUS,         // 11 - Segment not present
-	SIGBUS,         // 12 - Stack segment
-	SIGSEGV,        // 13 - General protection fault
-	SIGSEGV,        // 14 - Page fault
-	0,              // 15 - Spurious interrupt
-	SIGFPE,         // 16 - Coprocessor error
-	SIGBUS,         // 17 - Alignment check
-	SIGSEGV,        // 18 - Reserved
-	SIGFPE,         // 19 - XMM fault
-	0,0,0,0,0,0,0,0,0,0,0,0
-    };
-
     /* Notes:
 
     1) GPF needs to be propagated downstream whichever domain caused
@@ -881,9 +857,16 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 
     if (evinfo->domid == RTHAL_DOMAIN_ID)
 	{
+	struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
+
+        if (evinfo->event == 7)
+	    {
+            print_symbol("Invalid use of FPU in RTAI context at %s\n",regs->eip);
+	    goto propagate;
+	    }
+
 	if (evinfo->event == 14)	/* Page fault. */
 	    {
-	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
 	    unsigned long address;
 
 	    /* As of 2.6, we must handle RTAI-originated faults in
@@ -906,16 +889,15 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&
-	    rthal_trap_handler(evinfo->event,
-			       trap2sig[evinfo->event],
-			       (struct pt_regs *)evinfo->evdata,
-			       NULL) != 0)
+	    rthal_trap_handler(evinfo) != 0)
 	    goto endtrap;
 	}
 
+ propagate:
+
     adeos_propagate_event(evinfo);
 
-endtrap:
+ endtrap:
 
     return;
 }

@@ -348,10 +348,7 @@ void rthal_set_linux_task_priority(struct task_struct *task,
 
 #include <linux/kernel.h>
 
-typedef int (*rthal_trap_handler_t)(int trapnr,
-				    int signr,
-				    struct pt_regs *regs,
-				    void *siginfo);
+typedef int (*rthal_trap_handler_t)(adevinfo_t *evinfo);
 
 #define rthal_printk    printk /* This is safe over Adeos */
 

@@ -752,16 +752,13 @@ void xnpod_schedule_handler(void);
 
 static rthal_trap_handler_t xnarch_old_trap_handler;
 
-static int xnarch_trap_fault (int vector,
-			      int signo,
-			      struct pt_regs *regs,
-			      void *dummy)
+static int xnarch_trap_fault (adevinfo_t *evinfo)
 {
     xnarch_fltinfo_t fltinfo;
 
-    fltinfo.vector = vector;
-    fltinfo.errcode = regs->orig_eax;
-    fltinfo.regs = regs;
+    fltinfo.vector = evinfo->event;
+    fltinfo.errcode = ((struct pt_regs *)evinfo->evdata)->orig_eax;
+    fltinfo.regs = (struct pt_regs *)evinfo->evdata;
 
     return xnpod_trap_fault(&fltinfo);
 }

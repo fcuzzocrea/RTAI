@@ -120,4 +120,14 @@ static void init_fpu(struct task_struct *tsk) { }
 
 #endif /* CONFIG_RTAI_FPU_SUPPORT */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define set_tsk_used_fpu(t)  do { \
+        (t)->flags |= PF_USEDFPU; \
+} while(0)
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+#define set_tsk_used_fpu(t)  do { \
+        (t)->thread_info->status |= TS_USEDFPU; \
+} while(0)
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+
 #endif /* !_RTAI_ASM_I386_FPU_H */

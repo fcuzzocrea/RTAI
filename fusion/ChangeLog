@@ -1,7 +1,6 @@
-2005-04-03  Jim Cromie <jcromie@divsol.com>
+2005-04-03  Philippe Gerum  <rpm@xenomai.org>
 
-	* testsuite/[k]latency: Revamp the whole printout formatting; add
-	stddev and variance computations.
+ 	* RELEASE: fusion-0.7.1
 
 2005-04-03  Philippe Gerum  <rpm@xenomai.org>
 
@@ -9,6 +8,11 @@
 
 	* rtai/skin/lib/task.c (rt_task_delete): Use pthread_cancel()
 	internally to finalize RT tasks termination.
+
+2005-04-03  Jim Cromie <jcromie@divsol.com>
+
+	* testsuite/[k]latency: Revamp the whole printout formatting; add
+	stddev and variance computations.
 
 2005-04-02  Jim Cromie <jcromie@divsol.com>
 
@@ -48,6 +52,10 @@
 
 2005-03-29  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.7
+
+2005-03-29  Philippe Gerum  <rpm@xenomai.org>
+
 	* testsuite/cruncher/cruncher.c (main): Switch the timer off upon
 	exit.
 
@@ -55,8 +63,6 @@
 	mode switch counters as expected.
 
 	* nucleus/module.c (__get_thread_timeout): Fix signedness issue.
-
- 	* RELEASE: fusion-0.7
 
 2005-03-28  Philippe Gerum  <rpm@xenomai.org>
 

@@ -1,3 +1,15 @@
+2004-10-04  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/include/rtai_lxrt.h: introduced encoding of LXRT calla
+	arguments to support usage of Linux syscall for LXRT also.
+
+        * rtai-core/include/asm/rtai_lxrt.h, rtai_vectors: added support 
+	for using Linux syscall for LXRT also.
+
+        * rtai-core/sched/rtai/sched_lxrt.c: added support for using Linux 
+	syscall for LXRT also and a new way for making a task hard directly,
+	i.e. without using the kthread_b(egin) support.
+
 2004-09-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/sched/rtai/sched_lxrt.c: revised RR related macros,

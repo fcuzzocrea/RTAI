@@ -1,3 +1,7 @@
+2004-02-22  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab: Added semaphores blocks
+
 2004-02-22  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/patches/README: info about patches (what boards are

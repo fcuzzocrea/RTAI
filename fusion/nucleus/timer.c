@@ -157,15 +157,10 @@ static inline int xntimer_next_shot (void)
 	return -1; /* Cannot wait: trigger immediately. */
 	}
 
-    if (now + nktimerlat + nkschedlat >= timer->date)
-	delay = nktimerlat * 3 / 2;
+    if (now + nkschedlat + nktimerlat >= timer->date)
+	delay = nktimerlat;
     else
-	{
-	delay = timer->date - now - nkschedlat - nktimerlat;
-
-	if (delay < nktimerlat)
-	    delay = nktimerlat * 3 / 2;
-	}
+	delay = timer->date - now - nkschedlat;
 
     timer->shot = now + delay;
 

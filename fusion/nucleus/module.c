@@ -85,8 +85,7 @@ static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
     if (!testbits(thread->status,XNDELAY))
 	return 0LL;
 
-    return testbits(thread->status,XNPEND) ?
-	xntimer_get_timeout(&thread->rtimer) :
+    return xntimer_get_timeout(&thread->rtimer) ?:
 	xntimer_get_timeout(&thread->ptimer);
 }
 

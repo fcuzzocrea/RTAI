@@ -285,6 +285,7 @@ include_HEADERS = \
 		queue.h \
 		shadow.h \
 		synch.h \
+		syscall.h \
 		system.h \
 		thread.h \
 		timer.h \

@@ -20,8 +20,8 @@
 #ifndef _RTAI_NUCLEUS_SHADOW_H
 #define _RTAI_NUCLEUS_SHADOW_H
 
-#include <nucleus/asm/syscall.h>
 #include <nucleus/asm/atomic.h>
+#include <nucleus/syscall.h>
 
 #define XENOMAI_MUX_NR 16
 

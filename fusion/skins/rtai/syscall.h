@@ -20,7 +20,7 @@
 #define _RTAI_SYSCALL_H
 
 #ifndef __RTAI_SIM__
-#include <nucleus/asm/syscall.h>
+#include <nucleus/syscall.h>
 #endif /* __RTAI_SIM__ */
 
 #define __rtai_task_create        0

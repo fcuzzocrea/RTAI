@@ -33,7 +33,7 @@
 
 #ifndef __RTAI_SIM__
 
-#include <nucleus/asm/syscall.h>
+#include <nucleus/syscall.h>
 
 #define FUSION_APERIODIC_TIMER 0
 

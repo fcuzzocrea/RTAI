@@ -1,5 +1,11 @@
 2004-12-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/syscall.h: Gather all arch-independent
+	definitions for syscall support in a single place.
+
+	* nucleus/module.c (__get_thread_timeout): Attempt to return
+	non-zero resource timeouts, even if XNPEND is not set.
+
 	* nucleus/fusion.c (__pthread_activate_vm): Fix startup protocol.
 
 2004-12-27  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

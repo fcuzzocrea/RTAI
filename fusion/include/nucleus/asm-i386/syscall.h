@@ -34,18 +34,6 @@
  * in kernel space.
  */
 
-/* RTAI/fusion multiplexer syscall. */
-#define __xn_sys_mux    555
-/* RTAI/fusion nucleus syscalls. */
-#define __xn_sys_attach     0	/* muxid = xnshadow_attach_skin(magic,infp) */
-#define __xn_sys_detach     1	/* xnshadow_detach_skin(muxid) */
-#define __xn_sys_sync       2	/* xnshadow_sync(&syncflag) */
-#define __xn_sys_migrate    3	/* switched = xnshadow_relax/harden() */
-#define __xn_sys_barrier    4	/* started = xnshadow_wait_barrier(&entry,&cookie) */
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-#define __xn_sys_timestamps 5	/* xnpod_get_timestamps(&timestamps) */
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
 asm (".L__X'%ebx = 1\n\t"
      ".L__X'%ecx = 2\n\t"
      ".L__X'%edx = 2\n\t"
@@ -163,25 +151,6 @@ asm (".L__X'%ebx = 1\n\t"
 #define XENOMAI_SKINCALL4(id,op,a1,a2,a3,a4)    XENOMAI_SKIN_MUX(4,id,op,a1,a2,a3,a4)
 #define XENOMAI_SKINCALL5(id,op,a1,a2,a3,a4,a5) XENOMAI_SKIN_MUX(5,id,op,a1,a2,a3,a4,a5)
 
-typedef struct xnsysinfo {
-
-    unsigned long long cpufreq;	/* CPU frequency */
-    unsigned long tickval;	/* Tick duration (ns) */
-
-} xnsysinfo_t;
-
-typedef struct xninquiry {
-
-    char name[32];
-    int prio;
-    unsigned long status;
-    void *khandle;
-    void *uhandle;
-
-} xninquiry_t;
-
-struct task_struct;
-
 #ifdef __KERNEL__
 
 #include <linux/errno.h>
@@ -202,35 +171,6 @@ struct task_struct;
 /* WP bit must work for using the shadow support, so we only need
    trivial range checking here. */
 #define __xn_access_ok(task,type,addr,size)    (__xn_range_ok(task,addr,size) == 0)
-
-#define XNARCH_MAX_SYSENT 255
-
-typedef struct _xnsysent {
-
-    int (*svc)(struct task_struct *task,
-	       struct pt_regs *regs);
-
-/* Syscall must run into the Linux domain. */
-#define __xn_flag_lostage    0x1
-/* Syscall must run into the RTAI domain. */
-#define __xn_flag_histage    0x2
-/* Shadow syscall; caller must be mapped. */
-#define __xn_flag_shadow     0x4
-/* Context-agnostic syscall. */
-#define __xn_flag_anycall    0x0
-/* Short-hand for shadow initializing syscall. */
-#define __xn_flag_init       __xn_flag_lostage
-/* Short-hand for pure shadow syscall in RTAI space. */
-#define __xn_flag_regular   (__xn_flag_shadow|__xn_flag_histage)
-
-    u_long flags;
-
-} xnsysent_t;
-
-extern int nkgkptd;
-
-#define xnshadow_ptd(t)    ((t)->ptd[nkgkptd])
-#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))
 
 /* Purposedly used inlines and not macros for the following routines
    so that we don't risk spurious side-effects on the value arg. */

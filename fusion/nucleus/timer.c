@@ -158,13 +158,13 @@ static inline int xntimer_next_shot (void)
 	}
 
     if (now + nktimerlat + nkschedlat >= timer->date)
-	delay = nktimerlat;
+	delay = nktimerlat * 3 / 2;
     else
 	{
 	delay = timer->date - now - nkschedlat - nktimerlat;
 
 	if (delay < nktimerlat)
-	    delay = nktimerlat;
+	    delay = nktimerlat * 3 / 2;
 	}
 
     timer->shot = now + delay;

@@ -318,8 +318,10 @@ static inline void rthal_set_timer_shot (unsigned long delay) {
         unsigned long flags;
         rthal_hw_lock(flags);
 #ifdef CONFIG_X86_LOCAL_APIC
+	apic_read(APIC_LVTT);
+	apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
 	apic_read(APIC_TMICT);
-	apic_write(APIC_TMICT,delay);
+	apic_write_around(APIC_TMICT,delay);
 #else /* !CONFIG_X86_LOCAL_APIC */
 	outb(delay & 0xff,0x40);
 	outb(delay >> 8,0x40);

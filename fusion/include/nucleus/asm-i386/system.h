@@ -154,7 +154,15 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 
 #define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
 #define XNARCH_IRQ_MAX               IPIPE_NR_XIRQS /* Do _not_ use NR_IRQS here. */
+#ifdef CONFIG_X86_LOCAL_APIC
+/* When the local APIC is enabled, we do not need to relay the host
+   tick since 8254 interrupts are already flowing normally to Linux
+   (i.e. the nucleus does not intercept it, but rather an APIC-based
+   timer interrupt instead. */
+#define XNARCH_HOST_TICK             0
+#else /* CONFIG_X86_LOCAL_APIC */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
+#endif /* CONFIG_X86_LOCAL_APIC */
 #define XNARCH_SCHED_LATENCY         CONFIG_RTAI_HW_SCHED_LATENCY
 #define XNARCH_HAVE_APERIODIC_TIMER  1
 #define XNARCH_CALIBRATION_PERIOD    100000 /* ns */
@@ -306,11 +314,6 @@ static inline void xnarch_isr_enable_irq (unsigned irq) {
 }
 
 static inline void xnarch_relay_tick (void) {
-
-    /* On x86 with local APIC enabled, we do not relay the host tick
-       here since 8254 interrupts are already flowing normally to
-       Linux (i.e. the nucleus intercepts the APIC-based local timer
-       interrupt instead. */
 
 #ifndef CONFIG_X86_LOCAL_APIC
     rthal_pend_linux_irq(RTHAL_8254_IRQ);
@@ -700,8 +703,10 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 
 #ifdef XENO_TIMER_MODULE
 
-static void xnarch_program_timer_shot (unsigned long long delay) /* <= in CPU ticks */ {
-
+static void xnarch_program_timer_shot (unsigned long long delay) {
+    /* Delays are expressed in CPU ticks, so we need to keep a 64bit
+       value here, especially for 64bit arch ports using an interval
+       timer based on the internal cycle counter of the CPU. */ 
     rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
 }
 

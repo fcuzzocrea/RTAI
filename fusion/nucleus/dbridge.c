@@ -64,7 +64,7 @@ static void xnbridge_wakeup_proc (void)
 {
     xnholder_t *holder, *nholder;
     xnbridge_state_t *state;
-    u_long slflags;
+    unsigned long slflags;
     spl_t s;
 
 #ifdef XNBRIDGE_DEBUG
@@ -781,8 +781,8 @@ static int xnbridge_fasync (int fd,
 			    int on)
 {
     xnbridge_state_t *state = (xnbridge_state_t *)file->private_data;
+    unsigned long slflags;
     int ret, queued;
-    u_long slflags;
 
     queued = (state->asyncq != NULL);
     ret = fasync_helper(fd,file,on,&state->asyncq);

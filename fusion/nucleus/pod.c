@@ -2548,8 +2548,8 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
     if (xnarch_start_timer(nstick,&xnintr_clock_handler) < 0)
 	return -ENODEV;
 
-    /* When no host ticking service is active for the underlying arch,
-       the host timer exists but simply never ticks since
+    /* When no host ticking service is required for the underlying
+       arch, the host timer exists but simply never ticks since
        xntimer_start() is passed a null interval value. CAUTION:
        kernel timers over aperiodic mode can be started by
        xntimer_start() only _after_ the hw timer has been set up
@@ -2828,48 +2828,26 @@ int xnpod_calibrate_sched (void)
 
 #else /* XNARCH_SCHED_LATENCY unspecified. */
 
-static void xnpod_calibration_handler (void *cookie)
-
-{
-    xnthread_t *thread = (xnthread_t *)cookie;
-    xnpod_resume_thread(thread,XNDELAY);
-}
-
 static void xnpod_calibration_thread (void *cookie)
 
 {
     int *flagp = (int *)cookie, count, jitter = 0;
-    xnticks_t expected, period;
-    xntimer_t timer;
+    xnticks_t expected, period, idate;
 
     period = xnarch_ns_to_tsc(XNARCH_CALIBRATION_PERIOD);
+    idate = xnpod_get_time() + 2 * XNARCH_CALIBRATION_PERIOD;
+    expected = xnarch_ns_to_tsc(idate);
 
-    xntimer_init(&timer,
-                 &xnpod_calibration_handler,
-                 xnpod_current_thread());
+    xnpod_set_thread_periodic(xnpod_current_thread(),
+			      idate,
+			      XNARCH_CALIBRATION_PERIOD);
 
-    xntimer_start(&timer,
-                  XNARCH_CALIBRATION_PERIOD * 2,
-                  XNARCH_CALIBRATION_PERIOD);
-
-    expected = xnarch_get_cpu_tsc() + period * 2;
-
-    xnpod_suspend_thread(xnpod_current_thread(),
-                         XNDELAY,
-                         XN_INFINITE,
-                         NULL);
-
-    for (count = 0; count < 1000; count++)
+    for (count = 0; count < 2000; count++)
         {
         expected += period;
-        xnpod_suspend_thread(xnpod_current_thread(),
-                             XNDELAY,
-                             XN_INFINITE,
-                             NULL);
+        xnpod_wait_thread_period();
 	jitter += (int)(xnarch_get_cpu_tsc() - expected);
         }
-
-    xntimer_destroy(&timer);
 
     nkschedlat = jitter < 0 ? 0 : (jitter / count);
 
@@ -2893,7 +2871,8 @@ int xnpod_calibrate_sched (void)
         /* Huuho, things are going wild these days... */
         return err;
 
-    if (xnpod_start_timer(XNPOD_APERIODIC_TICK,XNPOD_DEFAULT_TICKHANDLER) < 0)
+    if (xnpod_start_timer(XNPOD_APERIODIC_TICK,
+			  XNPOD_DEFAULT_TICKHANDLER) < 0)
         /* The architecture does not support aperiodic timing;
            autocalibration is not available. */
         return 0;

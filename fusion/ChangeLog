@@ -1,5 +1,12 @@
 2004-08-02  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/hal/hal.c: Refactor the timer support.  As a result of
+	the changes: 1) the code automatically adapts to the timer used by
+	the kernel configuration, and only for this one
+	(CONFIG_X86_LOCAL_APIC or not); 2) the UP+LAPIC configuration now
+	works properly; 3) the timer-related API exposed is much more
+	consistent.
+
 	* arch/i386/patches: Upgrade to Adeos 2.6.7-i386-r6c5.
 
 2004-08-02  Philippe Gerum  <rpm@xenomai.org>

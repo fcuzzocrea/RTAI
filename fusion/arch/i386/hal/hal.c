@@ -112,7 +112,7 @@ static unsigned long rthal_sysreq_running;
 
 static spinlock_t rthal_ssrq_lock = SPIN_LOCK_UNLOCKED;
 
-static volatile int rthal_sync_level;
+static volatile int rthal_sync_op;
 
 static atomic_t rthal_sync_count = ATOMIC_INIT(1);
 
@@ -140,18 +140,18 @@ static inline void rthal_setup_periodic_apic (unsigned count,
 					      unsigned vector)
 {
     apic_read(APIC_LVTT);
-    apic_write(APIC_LVTT,APIC_LVT_TIMER_PERIODIC|vector);
+    apic_write_around(APIC_LVTT,APIC_LVT_TIMER_PERIODIC|vector);
     apic_read(APIC_TMICT);
-    apic_write(APIC_TMICT,count);
+    apic_write_around(APIC_TMICT,count);
 }
 
 static inline void rthal_setup_oneshot_apic (unsigned count,
 					     unsigned vector)
 {
     apic_read(APIC_LVTT);
-    apic_write(APIC_LVTT,vector);
+    apic_write_around(APIC_LVTT,vector);
     apic_read(APIC_TMICT);
-    apic_write(APIC_TMICT,count);
+    apic_write_around(APIC_TMICT,count);
 }
 
 static void rthal_critical_sync (void)
@@ -159,7 +159,7 @@ static void rthal_critical_sync (void)
 {
     struct rthal_apic_data *p;
 
-    switch (rthal_sync_level)
+    switch (rthal_sync_op)
 	{
 	case 1:
 
@@ -176,11 +176,6 @@ static void rthal_critical_sync (void)
 	    break;
 
 	case 2:
-
-	    rthal_setup_oneshot_apic(0,RTHAL_APIC_TIMER_VECTOR);
-	    break;
-
-	case 3:
 
 	    rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
 	    break;
@@ -199,7 +194,7 @@ irqreturn_t rthal_broadcast_to_local_timers (int irq,
     rthal_hw_unlock(flags);
 
     return IRQ_HANDLED;
-} 
+}
 
 unsigned long rthal_calibrate_timer (void)
 
@@ -214,8 +209,11 @@ unsigned long rthal_calibrate_timer (void)
 
     for (i = 0; i < 10000; i++)
 	{ 
-	unsigned int v = apic_read(APIC_TMICT);
-	apic_write(APIC_TMICT,v);
+	unsigned int v;
+	apic_read(APIC_LVTT);
+	apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
+	v = apic_read(APIC_TMICT);
+	apic_write_around(APIC_TMICT,v);
 	}
 
     dt = rthal_rdtsc() - t;
@@ -243,10 +241,10 @@ int rthal_request_timer (void (*handler)(void),
 
     flags = rthal_critical_enter(rthal_critical_sync);
 
-    rthal_sync_level = 1;
+    rthal_sync_op = 1;
 
     rthal_timers_sync_time = rthal_rdtsc() + rthal_imuldiv(LATCH,
-							   rthal_tunables.cpu_freq,
+							   RTHAL_CPU_FREQ,
 							   CLOCK_TICK_RATE);
 
     /* We keep the setup data array just to be able to expose it to
@@ -256,7 +254,7 @@ int rthal_request_timer (void (*handler)(void),
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	{
 	p = &rthal_timer_mode[cpuid];
-	p->mode = !!nstick;
+	p->mode = !!nstick;	/* 0=oneshot, 1=periodic */
 	p->count = nstick;
 
 	if (p->mode)
@@ -284,20 +282,6 @@ int rthal_request_timer (void (*handler)(void),
 			    "rthal_broadcast_timer",
 			    &rthal_broadcast_to_local_timers);
 
-    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	{
-	p = &rthal_timer_mode[cpuid];
-
-	if (p->mode)
-	    p->count = rthal_imuldiv(p->count,
-				     RTHAL_TIMER_FREQ,
-				     1000000000);
-	else
-	    p->count = rthal_imuldiv(p->count,
-				     RTHAL_CPU_FREQ,
-				     1000000000);
-	}
-
     rthal_critical_exit(flags);
 
     return 0;
@@ -313,7 +297,7 @@ void rthal_release_timer (void)
 
     flags = rthal_critical_enter(&rthal_critical_sync);
 
-    rthal_sync_level = 3;
+    rthal_sync_op = 2;
     rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
     rthal_release_irq(RTHAL_APIC_TIMER_IPI);
 
@@ -407,7 +391,7 @@ unsigned long rthal_critical_enter (void (*synch)(void))
     unsigned long flags = adeos_critical_enter(synch);
 
     if (atomic_dec_and_test(&rthal_sync_count))
-	rthal_sync_level = 0;
+	rthal_sync_op = 0;
     else if (synch != NULL)
 	printk(KERN_WARNING "RTAI[hal]: nested sync will fail.\n");
 

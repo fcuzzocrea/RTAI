@@ -2844,6 +2844,10 @@ int xnpod_calibrate_sched (void)
 
 {
     nktimerlat = xnarch_calibrate_timer();
+
+    if (!nktimerlat)
+	return -EIO;
+
     nkschedlat = xnarch_ns_to_tsc(XNARCH_SCHED_LATENCY);
 
     return 0;
@@ -2887,6 +2891,9 @@ int xnpod_calibrate_sched (void)
     xnpod_t pod;
 
     nktimerlat = xnarch_calibrate_timer();
+
+    if (!nktimerlat)
+	return -EIO;
 
     err = xnpod_init(&pod,1,1,0);
 

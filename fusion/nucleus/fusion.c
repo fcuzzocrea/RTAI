@@ -316,6 +316,7 @@ int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs)
 static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
 
 {
+    int err = 0;
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
@@ -324,9 +325,12 @@ static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
 
     xnsynch_sleep_on(&__fusion_vmsync,XN_INFINITE);
 
+    if (xnthread_test_flags(xnpod_current_thread(),XNBREAK))
+	err = -EINTR; /* Unblocked.*/
+
     xnlock_put_irqrestore(&nklock, s);
 
-    return 0;
+    return err;
 }
 
 static int __pthread_release_vm (struct task_struct *curr, struct pt_regs *regs)
@@ -350,6 +354,7 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread = xnpod_current_thread();
+    int err = 0;
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
@@ -363,9 +368,12 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
 
     xnpod_suspend_thread(thread,XNSUSP,XN_INFINITE,NULL);
 
+    if (xnthread_test_flags(thread,XNBREAK))
+	err = -EINTR; /* Unblocked.*/
+
     xnlock_put_irqrestore(&nklock, s);
 
-    return 0;
+    return err;
 }
 
 static int __pthread_activate_vm (struct task_struct *curr, struct pt_regs *regs)
@@ -401,7 +409,12 @@ static int __pthread_activate_vm (struct task_struct *curr, struct pt_regs *regs
     xnpod_renice_thread(prev,xnthread_initial_priority(prev));
 
     if (!testbits(prev->status,XNSUSP))
+        {
 	xnpod_suspend_thread(prev,XNSUSP,XN_INFINITE,NULL);
+
+	if (xnthread_test_flags(prev,XNBREAK))
+	    err = -EINTR; /* Unblocked.*/
+	}
 
     xnpod_schedule();
 

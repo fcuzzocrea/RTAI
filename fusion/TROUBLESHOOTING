@@ -81,10 +81,10 @@ Unfortunately, this behaviour cannot be controlled by the "stacksize"
 parameter passed to the various thread creation routines, i.e. the
 latter is about limiting the addressable stack space on a per-thread
 basis, but does not affect the amount of stack memory initially
-reserved by the POSIX library.  A work-round consists of setting a
-lower user-limit for initial stack allocation, like calling
-"ulimit -s <initial-size-in-kbytes>" in your parent shell before
-running your application (defaults to 8192).
+reserved by the POSIX library.  A work-around consists of setting a
+lower user-limit for initial stack allocation, like calling "ulimit -s
+<initial-size-in-kbytes>" in your parent shell before running your
+application (defaults to 8192).
 
 ======================================================================
 

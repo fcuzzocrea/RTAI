@@ -307,11 +307,11 @@ ACLOCAL_AMFLAGS = -I rtai-core/config/autoconf
 
 OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3) $(am__append_4)
 
-SUBDIRS = rtai-core @RTAI_MAYBE_DOCDIR@ $(OPTDIRS) @RTAI_MAYBE_SIMDIR@
+SUBDIRS = rtai-core @RTAI_MAYBE_DOCDIR@ $(OPTDIRS) $(subdirs)
 
 DIST_SUBDIRS = \
 	@RTAI_MAYBE_DOCDIR@ \
-	@RTAI_MAYBE_SIMDIR@ \
+	$(subdirs) \
 	rtai-core \
 	rtai-testsuite \
 	rtai-compat \
@@ -319,7 +319,7 @@ DIST_SUBDIRS = \
 	rtai-lab
 
 
-EXTRA_DIST = makefile README.INSTALL
+EXTRA_DIST = makefile README.INSTALL @RTAI_MAYBE_SIMDIR@
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged
 subdir = .
@@ -327,7 +327,7 @@ ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) \
 	$(top_srcdir)/rtai-core/config/autoconf/mkinstalldirs
 CONFIG_HEADER = rtai_config.h
-CONFIG_CLEAN_FILES = rtai-doc/Makefile rtai-doc/Doxyfile
+CONFIG_CLEAN_FILES =
 DIST_SOURCES =
 
 RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
@@ -384,10 +384,6 @@ $(srcdir)/rtai_config.h.in: @MAINTAINER_MODE_TRUE@ $(top_srcdir)/configure.in $(
 
 distclean-hdr:
 	-rm -f rtai_config.h stamp-h1
-rtai-doc/Makefile: $(top_builddir)/config.status $(top_srcdir)/rtai-doc/Makefile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-rtai-doc/Doxyfile: $(top_builddir)/config.status $(top_srcdir)/rtai-doc/Doxyfile.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -806,6 +802,7 @@ dist-hook:
 	$(MAKE) -C $(distdir)/rtai-core/config/kconfig \
 	-f Makefile.kc distclean srctree=$(distdir)
 	rm -fr `find $(distdir) -name CVS`
+	test -e $(srcdir)/rtai-doc || rm -fr $(distdir)/rtai-doc
 
 dev devices:
 	@if test x$(DESTDIR) = x; then \

@@ -1,3 +1,9 @@
+2004-06-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* configure.in, GNUmakefile.am: handle correctly the "all" and "dist"
+	targets, whether or not the doc and sim directories are present in
+	the source tree.
+
 2004-06-13  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
 
 	* rtai-core/include/rtai_posix.h (pthread_rwlock_open_rt): Make depend on

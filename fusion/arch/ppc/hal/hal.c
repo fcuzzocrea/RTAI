@@ -48,7 +48,6 @@ v * @defgroup hal Hardware abstraction layer.
 #include <asm/system.h>
 #include <asm/hw_irq.h>
 #include <asm/irq.h>
-#include <asm/desc.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
@@ -890,3 +889,8 @@ EXPORT_SYMBOL(rthal_domain);
 EXPORT_SYMBOL(rthal_proc_root);
 EXPORT_SYMBOL(rthal_tunables);
 EXPORT_SYMBOL(rthal_cpu_realtime);
+
+#ifdef CONFIG_RTAI_HW_FPU
+EXPORT_SYMBOL(rthal_save_fpu);
+EXPORT_SYMBOL(rthal_restore_fpu);
+#endif /* CONFIG_RTAI_HW_FPU */

@@ -4,7 +4,11 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
-libhal_SRC = hal.c
+libhal_SRC = hal.c switch.S
+
+if CONFIG_RTAI_HW_FPU
+libhal_SRC += fpu.S
+endif
 
 rtai_hal.ko: @RTAI_KBUILD_ENV@
 rtai_hal.ko: $(libhal_SRC)

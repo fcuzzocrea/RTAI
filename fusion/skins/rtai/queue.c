@@ -273,11 +273,12 @@ void *rt_queue_alloc (RT_QUEUE *q,
 	inith(&msg->link);
 	msg->size = size;
 	msg->refcount = 1;
+	++msg;
 	}
 
     xnlock_put_irqrestore(&nklock,s);
 
-    return msg + 1;
+    return msg;
 }
 
 int rt_queue_free (RT_QUEUE *q,

@@ -1,5 +1,14 @@
 2004-11-06  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c: Check for writability of the return buffer
+	for all inquiry services.
+	
+	* skins/rtai/syscall.c (__rt_queue_free): General fix.
+
+	* skins/rtai/queue.c, skins/rtai/syscalls.c,
+	skins/rtai/lib/queue.c: Fix various issues for user-space use.
+	(rt_queue_alloc): Return NULL upon failure as expected.
+
 	* skins/rtai/syscall.c (__rt_queue_bind): Allow mapping DMA memory.
 
 	* skins/rtai/registry.c (rt_registry_remove): Semantics changed:

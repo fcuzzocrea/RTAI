@@ -2957,6 +2957,7 @@ static void xnpod_calibration_thread (void *cookie)
         }
 
     nkschedlat = jitter < 0 ? 0 : (jitter / count);
+    nkschedlat = xnarch_adjust_calibration(nkschedlat);
 
     *flagp = 1;
 

@@ -152,6 +152,12 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define XNARCH_IRQ_MAX               IPIPE_NR_XIRQS /* Do _not_ use NR_IRQS here. */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
 #define XNARCH_CALIBRATION_PERIOD    200000 /* ns */
+/* Using 2/3 of the average jitter is some constant obtained from
+   experimentation that proved to fit on tested PPC platforms with
+   respect to auto-calibration. In any case, a more accurate
+   scheduling latency can still be fixed by setting
+   CONFIG_RTAI_HW_SCHED_LATENCY properly. */
+#define xnarch_adjust_calibration(x) ((x) * 2 / 3)
 
 #define XNARCH_THREAD_STACKSZ 4096
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */

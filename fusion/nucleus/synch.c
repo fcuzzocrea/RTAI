@@ -154,13 +154,18 @@ static inline void xnsynch_renice_thread (xnthread_t *thread, int prio)
  * to sleep on.
  *
  * @param timeout The timeout which may be used to limit the time the
- * thread pends on the resource. This value is a count of ticks.
- * Passing XN_INFINITE specifies an unbounded wait. All other values
- * are used to initialize a nanokernel watchdog timer.
+ * thread pends on the resource. This value is a count of ticks (see
+ * note).  Passing XN_INFINITE specifies an unbounded wait. All other
+ * values are used to initialize a nanokernel watchdog timer.
  *
  * Side-effect: This routine always calls the rescheduling procedure.
  *
  * Context: This routine must be called on behalf of a thread.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the xnpod_start_timer() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
  */
 
 void xnsynch_sleep_on (xnsynch_t *synch,

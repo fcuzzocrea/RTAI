@@ -1,5 +1,16 @@
 2004-06-17  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/fusion.c (__pthread_set_periodic_rt,
+	__pthread_wait_period_rt): Use new nucleus's built-in support for
+	periodic timing.
+
+	* skins/rtai/task.c (rt_task_set_periodic, rt_task_wait_period):
+	Use new nucleus's built-in support for periodic timing.
+
+	* nucleus/pod.c (xnpod_set_thread_periodic,
+	xnpod_wait_thread_period): Add built-in support for periodic
+	timing.
+
 	* nucleus/shadow.c: Rollback some changes from the SMP port
 	reinstating proper protection around critical sections.
 

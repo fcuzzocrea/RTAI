@@ -36,8 +36,6 @@ static void __task_delete_hook (xnthread_t *thread)
 
     task = thread2rtask(thread);
 
-    xntimer_destroy(&task->timer);
-
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (task->handle)
 	rt_registry_remove(task->handle);
@@ -49,17 +47,6 @@ static void __task_delete_hook (xnthread_t *thread)
 
     if (xnthread_test_flags(&task->thread_base,XNSHADOW))
 	xnfree(task);
-}
-
-static void __task_periodic_handler (void *cookie)
-
-{
-    RT_TASK *task = (RT_TASK *)cookie;
-
-    task->overrun++;
-
-    if (xnthread_test_flags(&task->thread_base,XNDELAY))
-	xnpod_resume_thread(&task->thread_base,XNDELAY);
 }
 
 int __task_pkg_init (void)
@@ -163,7 +150,6 @@ int rt_task_create (RT_TASK *task,
     task->suspend_depth = 0;
     task->overrun = -1;
     task->handle = 0;	/* i.e. (still) unregistered task. */
-    xntimer_init(&task->timer,&__task_periodic_handler,task);
 
     splhigh(s);
     task->magic = RTAI_TASK_MAGIC;
@@ -500,12 +486,15 @@ void rt_task_yield (void)
  *
  * - -ETIMEDOUT is returned if @a idate has already elapsed.
  *
+ * - -EWOULDBLOCK is returned if the system timer has not been started
+ * using rt_timer_start().
+ *
  * Side-effect: This routine calls the rescheduling procedure if the
  * operation affects the current task and @a idate has not elapsed
  * yet.
  *
  * Context: This routine can always be called on behalf of a task. It
- * can also be called on behalf from the initialization code provided
+ * can also be called on behalf of the initialization code provided
  * @a task is non-NULL.
  *
  * @note This service is sensitive to the current operation mode of
@@ -518,8 +507,7 @@ int rt_task_set_periodic (RT_TASK *task,
 			  RTIME idate,
 			  RTIME period)
 {
-    int err = 0;
-    RTIME now;
+    int err;
     spl_t s;
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
@@ -543,17 +531,8 @@ int rt_task_set_periodic (RT_TASK *task,
 	}
 
     task->suspend_depth = 0;
-    now = xnpod_get_time();
 
-    if (idate > now && xntimer_start(&task->timer,idate - now,period) == 0)
-	xnpod_suspend_thread(&task->thread_base,
-			     XNDELAY,
-			     XN_INFINITE,
-			     NULL);
-    else
-	err = -ETIMEDOUT;
-
-    task->overrun = -1;
+    err = xnpod_set_thread_periodic(&task->thread_base,idate,period);
 
  unlock_and_exit:
 
@@ -591,45 +570,8 @@ int rt_task_set_periodic (RT_TASK *task,
 int rt_task_wait_period (void)
 
 {
-    RT_TASK *task;
-    int err = 0;
-    spl_t s;
-
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
-    splhigh(s);
-
-    task = rtai_current_task();
-
-    if (!xntimer_active_p(&task->timer))
-	{
-	err = -EINVAL;
-	goto unlock_and_exit;
-	}
-
-    if (task->overrun < 0)
-	{
-	xnpod_suspend_thread(&task->thread_base,
-			     XNDELAY,
-			     XN_INFINITE,
-			     NULL);
-
-	if (xnthread_test_flags(&task->thread_base,XNBREAK))
-	    {
-	    err = -EINTR;
-	    goto unlock_and_exit;
-	    }
-	}
-    else
-	err = -ETIMEDOUT;
-
-    task->overrun--;
-
- unlock_and_exit:
-
-    splexit(s);
-
-    return err;
+    return xnpod_wait_thread_period();
 }
 
 /**

@@ -1149,8 +1149,8 @@ void xnpod_delete_thread (xnthread_t *thread)
  *
  * @param timeout The timeout which may be used to limit the time the
  * thread pends for a resource. This value is a wait time given in
- * ticks.  Passing XN_INFINITE specifies an unbounded wait. All other
- * values are used to initialize a watchdog timer.
+ * ticks (see note).  Passing XN_INFINITE specifies an unbounded
+ * wait. All other values are used to initialize a watchdog timer.
  *
  * @param wchan The address of a pended resource. This parameter is
  * used internally by the synchronization object implementation code
@@ -1160,6 +1160,11 @@ void xnpod_delete_thread (xnthread_t *thread)
  * self-suspends, in which case true is always returned.
  *
  * Context: This routine can be called on behalf of a thread or ISR.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the xnpod_start_timer() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
  */
 
 void xnpod_suspend_thread (xnthread_t *thread,
@@ -2711,6 +2716,141 @@ int xnpod_announce_tick (xnintr_t *intr)
     return XN_ISR_HANDLED;
 }
 
+/*! 
+ * \fn int xnpod_set_thread_periodic(xnthread_t *thread,
+                                     xnticks_t idate,
+                                     xnticks_t period)
+ * \brief Make a thread periodic.
+ *
+ * Make a thread periodic by programing its first release point and
+ * its period in the processor time line.  Subsequent calls to
+ * xnpod_wait_thread_period() will delay the thread until the next
+ * periodic release point in the processor timeline is reached.
+ *
+ * @param thread The descriptor address of the affected thread. This
+ * thread is immediately delayed until the first periodic release
+ * point is reached.
+ *
+ * @param idate The initial (absolute) date of the first release
+ * point, expressed in clock ticks (see note). The affected thread
+ * will be delayed until this point is reached.
+
+ * @param period The period of the thread, expressed in clock ticks
+ * (see note).
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -ETIMEDOUT is returned if @a idate has already elapsed.
+ *
+ * - -EWOULDBLOCK is returned if the system timer has not been
+ * started using xnpod_start_timer().
+ *
+ * Side-effect: This routine calls the rescheduling procedure if the
+ * operation affects the current thread and @a idate has not elapsed
+ * yet.
+ *
+ * Context: This routine can be called on behalf of a thread or from
+ * the initialization code.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the xnpod_start_timer() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
+ */
+
+int xnpod_set_thread_periodic (xnthread_t *thread,
+			       xnticks_t idate,
+			       xnticks_t period)
+{
+    xnticks_t now;
+    int err = 0;
+    spl_t s;
+
+    if (!testbits(nkpod->status,XNTIMED))
+	return -EWOULDBLOCK;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    now = xnpod_get_time();
+
+    if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
+	xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
+    else
+	err = -ETIMEDOUT;
+
+    thread->poverrun = -1;
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+/**
+ * @fn int xnpod_wait_thread_period(void)
+ * @brief Wait for the next periodic release point.
+ *
+ * Make the current thread wait for the next periodic release point in
+ * the processor time line.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if xnpod_set_thread_periodic() has not
+ * previously been called for the calling thread.
+ *
+ * - -EINTR is returned if xnpod_unblock_thread() has been called for
+ * the waiting thread before the next periodic release point has been
+ * reached.
+ *
+ * - -ETIMEDOUT is returned if a timer overrun occurred, which
+ * indicates that a previous release point has been missed by the
+ * calling thread.
+ *
+ * Side-effect: This routine calls the rescheduling procedure unless
+ * an overrun has been detected.  In the latter case, the current
+ * thread immediately returns from this service without being delayed.
+ *
+ * Context: This routine must be called on behalf of a thread.
+ */
+
+int xnpod_wait_thread_period (void)
+
+{
+    xnthread_t *thread;
+    int err = 0;
+    spl_t s;
+
+    thread = xnpod_current_thread();
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (!xntimer_active_p(&thread->ptimer))
+	{
+	err = -EINVAL;
+	goto unlock_and_exit;
+	}
+
+    if (thread->poverrun < 0)
+	{
+	xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
+
+	if (xnthread_test_flags(thread,XNBREAK))
+	    {
+	    err = -EINTR;
+	    goto unlock_and_exit;
+	    }
+	}
+    else
+	err = -ETIMEDOUT;
+
+    thread->poverrun--;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
 #ifdef __KERNEL__
 
 #if XNARCH_SCHED_LATENCY != 0
@@ -2846,6 +2986,8 @@ EXPORT_SYMBOL(xnpod_start_thread);
 EXPORT_SYMBOL(xnpod_start_timer);
 EXPORT_SYMBOL(xnpod_stop_timer);
 EXPORT_SYMBOL(xnpod_suspend_thread);
+EXPORT_SYMBOL(xnpod_set_thread_periodic);
+EXPORT_SYMBOL(xnpod_wait_thread_period);
 EXPORT_SYMBOL(xnpod_trap_fault);
 EXPORT_SYMBOL(xnpod_unblock_thread);
 EXPORT_SYMBOL(xnpod_welcome_thread);

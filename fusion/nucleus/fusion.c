@@ -326,73 +326,16 @@ int __pthread_set_periodic_rt (struct task_struct *curr, struct pt_regs *regs)
 {
     xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
     nanotime_t idate, period;
-    nanotime_t now;
-    int err = 0;
-    spl_t s;
-
-    if (!testbits(nkpod->status,XNTIMED))
-	return -EWOULDBLOCK;
 
     __xn_copy_from_user(curr,&idate,(void *)__xn_reg_arg1(regs),sizeof(idate));
     __xn_copy_from_user(curr,&period,(void *)__xn_reg_arg2(regs),sizeof(period));
 
-    splhigh(s);
-
-    now = xnpod_get_time();
-
-    if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
-	xnpod_suspend_thread(thread,
-			     XNDELAY,
-			     XN_INFINITE,
-			     NULL);
-    else
-	err = -ETIMEDOUT;
-
-    thread->poverrun = -1;
-
-    splexit(s);
-
-    return err;
+    return xnpod_set_thread_periodic(thread,idate,period);
 }
 
-int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs)
+int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs) {
 
-{
-    xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
-    int err = 0;
-    spl_t s;
-
-    splhigh(s);
-
-    if (!xntimer_active_p(&thread->ptimer))
-	{
-	err = -EINVAL;
-	goto unlock_and_exit;
-	}
-
-    if (thread->poverrun < 0)
-	{
-	xnpod_suspend_thread(thread,
-			     XNDELAY,
-			     XN_INFINITE,
-			     NULL);
-
-	if (xnthread_test_flags(thread,XNBREAK))
-	    {
-	    err = -EINTR;
-	    goto unlock_and_exit;
-	    }
-	}
-    else
-	err = -ETIMEDOUT;
-
-    thread->poverrun--;
-
- unlock_and_exit:
-
-    splexit(s);
-
-    return err;
+    return xnpod_wait_thread_period();
 }
 
 static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)

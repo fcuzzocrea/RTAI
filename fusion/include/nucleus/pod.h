@@ -423,6 +423,12 @@ void xnpod_deactivate_rr(void);
 
 void xnpod_set_time(xnticks_t newtime);
 
+int xnpod_set_thread_periodic(xnthread_t *thread,
+			      xnticks_t idate,
+			      xnticks_t period);
+
+int xnpod_wait_thread_period(void);
+
 xnticks_t xnpod_get_time(void);
 
 static inline xntime_t xnpod_get_cpu_time(void) {

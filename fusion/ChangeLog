@@ -1,4 +1,13 @@
+2005-03-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-*/syscall.h (__xn_copy_to/from_user):
+	Silence GCC's "warn_unused_result" attribute and elaborate a bit
+	on those macros.
+
 2005-03-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pipe.c (xnpipe_read): Test return from copy_to_user()
+	properly.
 
 	* testsuite/[k]latency: Pass seconds to test duration switch (-T)
 	instead of minutes.

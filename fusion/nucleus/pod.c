@@ -115,12 +115,14 @@ const char *xnpod_fatal_helper (const char *format, ...)
 
     if (testbits(nkpod->status,XNTIMED))
         {
-        if (testbits(nkpod->status,XNTMPER))
+#if XNARCH_HAVE_APERIODIC_TIMER
+        if (!testbits(nkpod->status,XNTMPER))
+            xnprintf("Aperiodic timer is running.\n");
+	else
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
             xnprintf("Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
                      xnpod_get_tickval() / 1000,
                      nkpod->jiffies);
-        else
-            xnprintf("Aperiodic timer is running.\n");
         }
     else
         xnprintf("No system timer.\n");
@@ -2223,13 +2225,14 @@ void xnpod_set_time (xnticks_t newtime)
 xnticks_t xnpod_get_time (void)
 
 {
-    if (testbits(nkpod->status,XNTMPER))
-        return nkpod->wallclock;
+#if XNARCH_HAVE_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+	/* In aperiodic mode, our idea of time is the same as the
+	   CPU's. */
+	return xnpod_get_cpu_time(); /* Nanoseconds. */
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 
-    /* In aperiodic mode, our idea of time is the same as the
-       CPU's. */
-
-    return xnpod_get_cpu_time(); /* Nanoseconds. */
+    return nkpod->wallclock;
 }
 
 /*! 
@@ -2652,9 +2655,11 @@ int xnpod_announce_tick (xnintr_t *intr)
 
     /* Do the round-robin processing. */
 
+#if XNARCH_HAVE_APERIODIC_TIMER
     /* Round-robin in aperiodic mode makes no sense. */
     if (!testbits(nkpod->status,XNTMPER))
 	goto unlock_and_exit;
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 
     nr_cpus = xnarch_num_online_cpus();
 

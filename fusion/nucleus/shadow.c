@@ -1018,10 +1018,12 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    if (migrate) /* Shall we migrate to RTAI first? */
 		xnshadow_harden();
 
-	    if (testbits(nkpod->status,XNTMPER))
-		expire = nkpod->jiffies;
-	    else
+#if XNARCH_HAVE_APERIODIC_TIMER
+	    if (!testbits(nkpod->status,XNTMPER))
 		expire = xnpod_get_cpu_time();
+	    else
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+		expire = nkpod->jiffies;
 
 	    delay = xnshadow_ts2ticks(&t);
 	    expire += delay;
@@ -1029,10 +1031,12 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    if (delay > 0)
 		xnpod_delay(delay);
 
-	    if (testbits(nkpod->status,XNTMPER))
-		now = nkpod->jiffies;
-	    else
+#if XNARCH_HAVE_APERIODIC_TIMER
+	    if (!testbits(nkpod->status,XNTMPER))
 		now = xnpod_get_cpu_time();
+	    else
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+		now = nkpod->jiffies;
 
 	    if (now >= expire)
 		__xn_reg_rval(regs) = 0;
@@ -1083,10 +1087,12 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    delay = xnshadow_tv2ticks(&itv.it_value);
 	    interval = xnshadow_tv2ticks(&itv.it_interval);
 
-	    if (testbits(nkpod->status,XNTMPER))
-		expire = nkpod->jiffies;
-	    else
+#if XNARCH_HAVE_APERIODIC_TIMER
+	    if (!testbits(nkpod->status,XNTMPER))
 		expire = xnpod_get_cpu_time();
+	    else
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+		expire = nkpod->jiffies;
 
 	    expire += delay;
 

@@ -290,10 +290,12 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
     if (!xntimer_active_p(timer))
 	return XN_INFINITE;
 
-    if (testbits(nkpod->status,XNTMPER))
-	return xntimer_date(timer);
+#if XNARCH_HAVE_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+	return xnarch_tsc_to_ns(xntimer_date(timer));
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 
-    return xnarch_tsc_to_ns(xntimer_date(timer));
+    return xntimer_date(timer);
 }
 
 /*
@@ -309,15 +311,19 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
     if (!xntimer_active_p(timer))
 	return XN_INFINITE;
 
-    if (testbits(nkpod->status,XNTMPER))
-	return xntimer_date(timer) - nkpod->jiffies;
+#if XNARCH_HAVE_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+	{
+	tsc = xnarch_get_cpu_tsc();
 
-    tsc = xnarch_get_cpu_tsc();
+	if (xntimer_date(timer) < tsc)
+	    return 1; /* Will elapse shortly. */
 
-    if (xntimer_date(timer) < tsc)
-	return 1; /* Will elapse shortly. */
+	return xnarch_tsc_to_ns(xntimer_date(timer) - tsc);
+	}
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 
-    return xnarch_tsc_to_ns(xntimer_date(timer) - tsc);
+    return xntimer_date(timer) - nkpod->jiffies;
 }
 
 /**
@@ -343,19 +349,21 @@ void xntimer_do_timers (void)
 
     initq(&reschedq);
 
-    if (testbits(nkpod->status,XNTMPER))
+#if XNARCH_HAVE_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+	{
+	/* Only use slot #0 in aperiodic mode. */
+	timerq = &nkpod->timerwheel[0];
+	now = xnarch_get_cpu_tsc();
+	}
+    else
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 	{
 	/* Update the periodic clocks keeping the things strictly
 	   monotonous. */
 	now = ++nkpod->jiffies;
 	timerq = &nkpod->timerwheel[now & XNTIMER_WHEELMASK];
 	++nkpod->wallclock;
-	}
-    else
-	{
-	/* Only use slot #0 in aperiodic mode. */
-	timerq = &nkpod->timerwheel[0];
-	now = xnarch_get_cpu_tsc();
 	}
 
     nextholder = getheadq(timerq);
@@ -367,11 +375,13 @@ void xntimer_do_timers (void)
 
 	if (timer->shot > now)
 	    {
+#if XNARCH_HAVE_APERIODIC_TIMER
 	    if (!testbits(nkpod->status,XNTMPER))
 		/* No need to continue in aperiodic mode since
 		   timeout dates are ordered by increasing
 		   values. */
 		break;
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
 
 	    continue;
 	    }

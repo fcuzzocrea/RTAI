@@ -447,7 +447,8 @@ void *rt_queue_alloc (RT_QUEUE *q,
  *
  * @return 0 is returned upon success, or -EINVAL if @a buf is not a
  * valid message buffer previously allocated by the rt_queue_alloc()
- * service.
+ * service, or the caller did not get ownership of the message through
+ * a successful return from rt_queue_recv().
  *
  * Environments:
  *
@@ -596,8 +597,16 @@ int rt_queue_send (RT_QUEUE *q,
 	}
 
     msg = ((rt_queue_msg_t *)buf) - 1;
-    /* Message buffer ownership is being transfered from the sender to
-       the receiver here; so we need to update the reference count
+
+    if (msg->refcount == 0)
+	{
+	/* Cheap test: the sender cannot own the message. Bail out. */
+	err = -EINVAL;
+	goto unlock_and_exit;
+	}
+
+    /* Message buffer ownership is being transferred from the sender to
+       the receiver(s) here; so we need to update the reference count
        appropriately. */
     msg->refcount--;
     msg->size = size;
@@ -727,7 +736,10 @@ ssize_t rt_queue_recv (RT_QUEUE *q,
     holder = getq(&q->pendq);
 
     if (holder)
+        {
 	msg = link2rtmsg(holder);
+	msg->refcount++;
+	}
     else
 	{
 	if (timeout == TM_NONBLOCK)

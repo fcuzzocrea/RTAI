@@ -270,9 +270,17 @@ int xntimer_start (xntimer_t *timer,
     return err;
 }
 
-/*
- * xntimer_stop() -- Disarm a timer previously armed by
- * xntimer_start().
+/*!
+ * \fn int xntimer_stop(xntimer_t *timer)
+ *
+ * \brief Disarm a timer.
+ *
+ * This service deactivates a timer previously armed using
+ * xntimer_start(). Once disarmed, the timer can be subsequently
+ * re-armed using the latter service.
+ *
+ * @param timer The address of a valid timer descriptor.
+ *
  */
 
 void xntimer_stop (xntimer_t *timer)

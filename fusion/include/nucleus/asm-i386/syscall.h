@@ -46,6 +46,7 @@
 #ifndef _RTAI_ASM_I386_SYSCALL_H
 #define _RTAI_ASM_I386_SYSCALL_H
 
+#include <rtai_config.h>
 #include <asm/ptrace.h>
 
 /*
@@ -274,6 +275,22 @@ static inline void __xn_status_return(struct pt_regs *regs, int v) {
 static inline int __xn_interrupted_p(struct pt_regs *regs) {
     return __xn_reg_rval(regs) == -EINTR;
 }
+
+#else /* !__KERNEL__ */
+
+#ifdef CONFIG_X86_TSC
+
+#define CONFIG_RTAI_HW_DIRECT_TSC 1
+
+static inline unsigned long long __xn_rdtsc (void)
+
+{
+    unsigned long long t;
+    __asm__ __volatile__( "rdtsc" : "=A" (t));
+    return t;
+}
+
+#endif  /* CONFIG_X86_TSC */
 
 #endif /* __KERNEL__ */
 

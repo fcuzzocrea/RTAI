@@ -1,5 +1,8 @@
 2004-11-27  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-*/syscall.h: Provide support for direct
+	reading of the TSC in user-space when available.
+
 	* nucleus/timer.c: Read Adeos profile timings when available when
 	CONFIG_RTAI_OPT_TIMESTAMPS is enabled.
 

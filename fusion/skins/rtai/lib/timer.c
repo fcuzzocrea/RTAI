@@ -69,12 +69,17 @@ RTIME rt_timer_tsc (void)
 {
     RTIME tsc;
 
+#ifdef CONFIG_RTAI_HW_DIRECT_TSC
+    tsc = __xn_rdtsc();
+#else /* !CONFIG_RTAI_HW_DIRECT_TSC */
     if (__rtai_muxid < 0 && __init_skin() < 0)
 	return 0;
 
     XENOMAI_SKINCALL1(__rtai_muxid,
 		      __rtai_timer_tsc,
 		      &tsc);
+#endif /* CONFIG_RTAI_HW_DIRECT_TSC */
+
     return tsc;
 }
 

@@ -22,6 +22,8 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 
+MODULE_LICENSE("GPL");
+
 #if 0
 
 #include <rtai.h>
@@ -31,8 +33,6 @@
 #include <rtai_tasklets.h>
 #include <rtai_usi.h>
 #include <rtai_sem.h>
-
-MODULE_LICENSE("GPL");
 
 #define MODULE_NAME "RTAI_USI"
 

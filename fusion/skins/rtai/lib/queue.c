@@ -127,3 +127,55 @@ int rt_queue_delete (RT_QUEUE *q)
 
     return 0;
 }
+
+void *rt_queue_alloc (RT_QUEUE *q,
+		      size_t size)
+{
+    void *buf;
+
+    return XENOMAI_SKINCALL3(__rtai_muxid,
+			     __rtai_queue_alloc,
+			     q,
+			     size,
+			     &buf) ? NULL : buf;
+}
+
+int rt_queue_free (RT_QUEUE *q,
+		   void *buf)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_queue_free,
+			     q,
+			     buf);
+}
+
+int rt_queue_send (RT_QUEUE *q,
+		   void *buf,
+		   int mode)
+{
+    return XENOMAI_SKINCALL3(__rtai_muxid,
+			     __rtai_queue_send,
+			     q,
+			     buf,
+			     mode);
+}
+
+int rt_queue_recv (RT_QUEUE *q,
+		   void **bufp,
+		   RTIME timeout)
+{
+    return XENOMAI_SKINCALL3(__rtai_muxid,
+			     __rtai_queue_recv,
+			     q,
+			     bufp,
+			     &timeout);
+}
+
+int rt_queue_inquire (RT_QUEUE *q,
+		      RT_QUEUE_INFO *info)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_queue_inquire,
+			     q,
+			     info);
+}

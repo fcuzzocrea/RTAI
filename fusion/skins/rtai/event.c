@@ -31,3 +31,36 @@ void __event_pkg_cleanup (void)
 
 {
 }
+
+int rt_event_create (RT_EVENT *event,
+		     const char *name,
+		     unsigned long ivalue,
+		     int mode)
+{
+    return -ENOSYS;
+}
+
+int rt_event_delete (RT_EVENT *event)
+
+{
+    return -ENOSYS;
+}
+
+int rt_event_post (RT_EVENT *event,
+		   unsigned long mask)
+{
+    return -ENOSYS;
+}
+
+int rt_event_pend (RT_EVENT *event,
+		   unsigned long mask,
+		   int mode)
+{
+    return -ENOSYS;
+}
+
+int rt_event_inquire (RT_EVENT *event,
+		      RT_EVENT_INFO *info)
+{
+    return -ENOSYS;
+}

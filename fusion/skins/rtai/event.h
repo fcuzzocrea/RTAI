@@ -48,11 +48,30 @@
 #ifndef _RTAI_EVENT_H
 #define _RTAI_EVENT_H
 
+#include <nucleus/synch.h>
 #include <rtai/types.h>
 
-#ifdef __KERNEL__
+/* Creation flags. */
+#define EV_PRIO  XNSYNCH_PRIO	/* Pend by task priority order. */
+#define EV_FIFO  XNSYNCH_FIFO	/* Pend by FIFO order. */
 
-#include <nucleus/synch.h>
+typedef struct rt_event_info {
+
+    unsigned value;	/* !< Current event group value. */
+
+    int nsleepers;	/* !< Number of pending tasks. */
+
+    char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
+
+} RT_EVENT_INFO;
+
+typedef struct rt_event_placeholder {
+    rt_handle_t opaque;
+} RT_EVENT_PLACEHOLDER;
+
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
+
+#define RTAI_EVENT_MAGIC 0x55550404
 
 typedef struct rt_event {
 
@@ -74,10 +93,31 @@ void __event_pkg_cleanup(void);
 
 /* Public interface. */
 
+int rt_event_create(RT_EVENT *event,
+		    const char *name,
+		    unsigned long ivalue,
+		    int mode);
+
+int rt_event_delete(RT_EVENT *event);
+
+int rt_event_post(RT_EVENT *event,
+		  unsigned long mask);
+
+int rt_event_pend(RT_EVENT *event,
+		  unsigned long mask,
+		  int mode);
+
+int rt_event_inquire(RT_EVENT *event,
+		     RT_EVENT_INFO *info);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __KERNEL__ */
+#else /* !(__KERNEL__ || __RTAI_SIM__) */
+
+typedef RT_EVENT_PLACEHOLDER RT_EVENT;
+
+#endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #endif /* !_RTAI_EVENT_H */

@@ -176,7 +176,7 @@ int rt_sem_delete(SEM *sem)
 {
 	unsigned long flags;
 	RT_TASK *task;
-	unsigned long schedmap;
+	unsigned long schedmap, sched;
 	QUEUE *q;
 
 	if (sem->magic != RT_SEM_MAGIC) {
@@ -194,19 +194,17 @@ int rt_sem_delete(SEM *sem)
 			set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 		}
 	}
+	sched = schedmap;
 	clear_bit(hard_cpu_id(), &schedmap);
 	if ((task = sem->owndby) && sem->type > 0) {
-		int sched;
 		if (task->owndres & SEMHLF) {
 			--task->owndres;
 		}
 		if (!task->owndres) {
-			sched = renq_ready_task(task, task->base_priority);
+			sched |= renq_ready_task(task, task->base_priority);
 		} else if (!(task->owndres & SEMHLF)) {
 			int priority;
-                        sched = renq_ready_task(task, task->base_priority > (priority = ((task->msg_queue.next)->task)->priority) ? priority : task->base_priority);
-		} else {
-			sched = 0;
+                        sched |= renq_ready_task(task, task->base_priority > (priority = ((task->msg_queue.next)->task)->priority) ? priority : task->base_priority);
 		}
 		if (task->suspdepth) {
 			if (task->suspdepth > 0) {
@@ -217,15 +215,13 @@ int rt_sem_delete(SEM *sem)
 				rt_task_delete(task);
 			}
 		}
-		if (sched) {
-			if (schedmap) {
-				RT_SCHEDULE_MAP_BOTH(schedmap);
-			} else {
-				rt_schedule();
-			}
+	}
+	if (sched) {
+		if (schedmap) {
+			RT_SCHEDULE_MAP_BOTH(schedmap);
+		} else {
+			rt_schedule();
 		}
-	} else {
-		RT_SCHEDULE_MAP(schedmap);
 	}
 	rt_global_restore_flags(flags);
 	return 0;

@@ -35,7 +35,7 @@ void __sem_pkg_cleanup (void) {
 /**
  * @fn int rt_sem_create(RT_SEM *sem,
 		           const char *name,
-			    unsigned icount,
+			    unsigned long icount,
 			    int mode)
  * @brief Create a counting semaphore.
  *
@@ -69,7 +69,7 @@ void __sem_pkg_cleanup (void) {
 
 int rt_sem_create (RT_SEM *sem,
 		   const char *name,
-		   unsigned icount,
+		   unsigned long icount,
 		   int mode)
 {
     int err = 0;

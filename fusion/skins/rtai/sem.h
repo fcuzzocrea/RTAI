@@ -57,7 +57,7 @@
 
 typedef struct rt_sem_info {
 
-    unsigned count;	/* !< Current semaphore value. */
+    unsigned long count; /* !< Current semaphore value. */
 
     int nsleepers;	/* !< Number of pending tasks. */
 
@@ -79,7 +79,7 @@ typedef struct rt_sem {
 
     xnsynch_t synch_base; /* !< Base synchronization object. */
 
-    unsigned count;	/* !< Current semaphore value. */
+    unsigned long count; /* !< Current semaphore value. */
 
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 
@@ -113,7 +113,7 @@ extern "C" {
 
 int rt_sem_create(RT_SEM *sem,
 		  const char *name,
-		  unsigned icount,
+		  unsigned long icount,
 		  int mode);
 
 int rt_sem_delete(RT_SEM *sem);

@@ -33,7 +33,7 @@ static inline int __init_skin (void)
 
 int rt_sem_create (RT_SEM *sem,
 		   const char *name,
-		   unsigned icount,
+		   unsigned long icount,
 		   int mode)
 {
     if (__rtai_muxid < 0 && __init_skin() < 0)

@@ -160,7 +160,6 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #else /* CONFIG_X86_LOCAL_APIC */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
 #endif /* CONFIG_X86_LOCAL_APIC */
-#define XNARCH_CALIBRATION_PERIOD    100000 /* ns */
 /* Using 3/4 of the average jitter is some constant obtained from
    experimentation that proved to fit on tested x86 platforms with
    respect to auto-calibration. In any case, a more accurate
@@ -832,5 +831,7 @@ static inline void xnarch_exit (void) {
 #include <nucleus/system.h>
 
 #endif /* __KERNEL__ */
+
+#define XNARCH_CALIBRATION_PERIOD    100000 /* ns */
 
 #endif /* !_RTAI_ASM_I386_SYSTEM_H */

@@ -151,7 +151,6 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
 #define XNARCH_IRQ_MAX               IPIPE_NR_XIRQS /* Do _not_ use NR_IRQS here. */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
-#define XNARCH_CALIBRATION_PERIOD    200000 /* ns */
 /* Using 2/3 of the average jitter is some constant obtained from
    experimentation that proved to fit on tested PPC platforms with
    respect to auto-calibration. In any case, a more accurate
@@ -769,5 +768,7 @@ static inline void xnarch_exit (void) {
 #include <nucleus/system.h>
 
 #endif /* __KERNEL__ */
+
+#define XNARCH_CALIBRATION_PERIOD    200000 /* ns */
 
 #endif /* !_RTAI_ASM_PPC_SYSTEM_H */

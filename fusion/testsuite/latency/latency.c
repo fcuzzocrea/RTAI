@@ -109,7 +109,7 @@ void display (void *cookie)
 
     for (;;)
 	{
-	err = rt_sem_p(&display_sem,RT_TIME_INFINITE);
+	err = rt_sem_p(&display_sem,TM_INFINITE);
 
 	if (err)
 	    {

@@ -1,3 +1,9 @@
+2004-11-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/types.h: RT_TIME_INFINITE -> TM_INFINITE,
+	RT_TIME_NONBLOCK -> TM_NONBLOCK for consistency purpose with other
+	namings.
+
 2004-11-29  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/event.c (rt_event_clear): Add service to clear a set

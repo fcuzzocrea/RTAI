@@ -53,8 +53,8 @@
 
 #include <nucleus/types.h>
 
-#define RT_TIME_INFINITE XN_INFINITE
-#define RT_TIME_NONBLOCK XN_NONBLOCK
+#define TM_INFINITE XN_INFINITE
+#define TM_NONBLOCK XN_NONBLOCK
 
 #if defined(__KERNEL__) || defined(__RTAI_SIM__)
 

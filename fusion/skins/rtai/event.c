@@ -325,10 +325,10 @@ int rt_event_signal (RT_EVENT *event,
  * mask are set in the current event mask.
  *
  * @param timeout The number of clock ticks to wait for fulfilling the
- * request (see note). Passing RT_TIME_INFINITE causes the caller to
- * block indefinitely until the request is fulfilled. Passing
- * RT_TIME_NONBLOCK causes the service to return immediately without
- * waiting if the request cannot be satisfied immediately.
+ * request (see note). Passing TM_INFINITE causes the caller to block
+ * indefinitely until the request is fulfilled. Passing TM_NONBLOCK
+ * causes the service to return immediately without waiting if the
+ * request cannot be satisfied immediately.
  *
  * @return 0 is returned upon success. Otherwise:
  *
@@ -338,9 +338,8 @@ int rt_event_signal (RT_EVENT *event,
  * descriptor, including if the deletion occurred while the caller was
  * sleeping on it before the request has been satisfied.
  *
- * - -EWOULDBLOCK is returned if @a timeout is equal to
- * RT_TIME_NONBLOCK and the current event mask value does not satisfy
- * the request.
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and the current event mask value does not satisfy the request.
  *
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the request has been satisfied.
@@ -354,7 +353,7 @@ int rt_event_signal (RT_EVENT *event,
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @a timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to TM_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
@@ -394,7 +393,7 @@ int rt_event_wait (RT_EVENT *event,
 	goto unlock_and_exit;
 	}
     
-    if (timeout == RT_TIME_NONBLOCK)
+    if (timeout == TM_NONBLOCK)
         {
         unsigned long bits = (event->value & mask);
         event->value &= ~mask;

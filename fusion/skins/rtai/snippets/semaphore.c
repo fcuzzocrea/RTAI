@@ -18,7 +18,7 @@ int main (int argc, char *argv[])
 
     /* Now, wait for a semaphore unit, then release it: */
 
-    rt_sem_p(&sem_desc,RT_TIME_INFINITE);
+    rt_sem_p(&sem_desc,TM_INFINITE);
 
     /* ... */
 

@@ -28,7 +28,7 @@ void foo (void)
 			EVENT_WAIT_MASK,
 			&mask_ret,
 			EV_ANY,	/* Disjunctive wait */
-			RT_TIME_INFINITE);
+			TM_INFINITE);
     /* ... */
 }
 

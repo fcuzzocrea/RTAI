@@ -324,8 +324,8 @@ int rt_cond_broadcast (RT_COND *cond)
  * condition variable.
  *
  * @param timeout The number of clock ticks to wait for the condition
- * variable to be signaled (see note). Passing RT_TIME_INFINITE causes
- * the caller to block indefinitely until the condition variable is
+ * variable to be signaled (see note). Passing TM_INFINITE causes the
+ * caller to block indefinitely until the condition variable is
  * signaled.
  *
  * @return 0 is returned upon success. Otherwise:
@@ -340,7 +340,7 @@ int rt_cond_broadcast (RT_COND *cond)
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the condition variable has been signaled.
  *
- * - -EWOULDBLOCK is returned if @a timeout equals RT_TIME_NONBLOCK.
+ * - -EWOULDBLOCK is returned if @a timeout equals TM_NONBLOCK.
  *
  * Environments:
  *
@@ -366,7 +366,7 @@ int rt_cond_wait (RT_COND *cond,
     int err;
     spl_t s;
 
-    if (timeout == RT_TIME_NONBLOCK)
+    if (timeout == TM_NONBLOCK)
 	return -EWOULDBLOCK;
     
     xnlock_get_irqsave(&nklock,s);

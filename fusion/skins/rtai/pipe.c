@@ -278,9 +278,9 @@ int rt_pipe_close (RT_PIPE *pipe)
  * macros.
  *
  * @param timeout The number of clock ticks to wait for some message
- * to arrive (see note). Passing RT_TIME_INFINITE causes the caller to
+ * to arrive (see note). Passing TM_INFINITE causes the caller to
  * block indefinitely until some data is eventually available. Passing
- * RT_TIME_NONBLOCK causes the service to return immediately without
+ * TM_NONBLOCK causes the service to return immediately without
  * waiting if no data is available on entry.
  *
  * @return The number of read bytes available from the received
@@ -294,11 +294,11 @@ int rt_pipe_close (RT_PIPE *pipe)
  * - -ENODEV or -EBADF are returned if @a pipe is scrambled.
  *
  * - -ETIMEDOUT is returned if @a timeout is different from
- * RT_TIME_NONBLOCK and no data is available within the specified
- * amount of time.
+ * TM_NONBLOCK and no data is available within the specified amount of
+ * time.
  *
- * - -EWOULDBLOCK is returned if @a timeout is equal to
- * RT_TIME_NONBLOCK and no data is immediately available on entry.
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and no data is immediately available on entry.
  *
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before any data was available.
@@ -309,7 +309,7 @@ int rt_pipe_close (RT_PIPE *pipe)
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @a timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to TM_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
@@ -330,7 +330,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
     ssize_t n;
     spl_t s;
 
-    if (timeout != RT_TIME_NONBLOCK)
+    if (timeout != TM_NONBLOCK)
 	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
     xnlock_get_irqsave(&nklock,s);

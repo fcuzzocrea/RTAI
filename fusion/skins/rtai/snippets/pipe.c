@@ -72,7 +72,7 @@ int init_module (void)
     rt_pipe_write(&pipe_desc,msgout,len,P_NORMAL);
 
     /* Then wait for the reply string "World": */
-    rt_pipe_read(&pipe_desc,&msgin,RT_TIME_INFINITE);
+    rt_pipe_read(&pipe_desc,&msgin,TM_INFINITE);
     printf("received msg> %s, size=%d\n",P_MSGPTR(msg),P_MSGSIZE(msg));
     /* Free the received message buffer. */
     rt_pipe_free(&pipe_desc,msgin);

@@ -338,12 +338,12 @@ int rt_heap_delete (RT_HEAP *heap)
  *
  * @param timeout The number of clock ticks to wait for a block of
  * sufficient size to be available from a local heap (see
- * note). Passing RT_TIME_INFINITE causes the caller to block
- * indefinitely until some block is eventually available. Passing
- * RT_TIME_NONBLOCK causes the service to return immediately without
- * waiting if no block is available on entry. This parameter has no
- * influence if the heap is shared since the entire shared memory
- * space is always available.
+ * note). Passing TM_INFINITE causes the caller to block indefinitely
+ * until some block is eventually available. Passing TM_NONBLOCK
+ * causes the service to return immediately without waiting if no
+ * block is available on entry. This parameter has no influence if the
+ * heap is shared since the entire shared memory space is always
+ * available.
  *
  * @param blockp A pointer to a memory location which will be written
  * upon success with the address of the allocated block, or the start
@@ -359,11 +359,11 @@ int rt_heap_delete (RT_HEAP *heap)
  * - -EIDRM is returned if @a q is a deleted heap descriptor.
  *
  * - -ETIMEDOUT is returned if @a timeout is different from
- * RT_TIME_NONBLOCK and no block is available within the specified
- * amount of time.
+ * TM_NONBLOCK and no block is available within the specified amount
+ * of time.
  *
  * - -EWOULDBLOCK is returned if @a timeout is equal to
- * RT_TIME_NONBLOCK and no block is immediately available on entry.
+ * TM_NONBLOCK and no block is immediately available on entry.
  *
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before any block was available.
@@ -374,7 +374,7 @@ int rt_heap_delete (RT_HEAP *heap)
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @a timeout is equal to RT_TIME_NONBLOCK, or the heap is
+ *   only if @a timeout is equal to TM_NONBLOCK, or the heap is
  *   shared.
  *
  * - Kernel-based task
@@ -447,7 +447,7 @@ int rt_heap_alloc (RT_HEAP *heap,
     if (block)
 	goto unlock_and_exit;
 
-    if (timeout == RT_TIME_NONBLOCK)
+    if (timeout == TM_NONBLOCK)
 	{
 	err = -EWOULDBLOCK;
 	goto unlock_and_exit;

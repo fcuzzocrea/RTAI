@@ -594,9 +594,9 @@ int rt_queue_send (RT_QUEUE *q,
  * consumed, the message space should be freed using rt_queue_free().
  *
  * @param timeout The number of clock ticks to wait for some message
- * to arrive (see note). Passing RT_TIME_INFINITE causes the caller to
+ * to arrive (see note). Passing TM_INFINITE causes the caller to
  * block indefinitely until some message is eventually
- * available. Passing RT_TIME_NONBLOCK causes the service to return
+ * available. Passing TM_NONBLOCK causes the service to return
  * immediately without waiting if no message is available on entry.
  *
  * @return The number of bytes available from the received message is
@@ -608,11 +608,11 @@ int rt_queue_send (RT_QUEUE *q,
  * - -EIDRM is returned if @a q is a deleted queue descriptor.
  *
  * - -ETIMEDOUT is returned if @a timeout is different from
- * RT_TIME_NONBLOCK and no message is available within the specified
- * amount of time.
+ * TM_NONBLOCK and no message is available within the specified amount
+ * of time.
  *
- * - -EWOULDBLOCK is returned if @a timeout is equal to
- * RT_TIME_NONBLOCK and no message is immediately available on entry.
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and no message is immediately available on entry.
  *
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before any data was available.
@@ -623,7 +623,7 @@ int rt_queue_send (RT_QUEUE *q,
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @a timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to TM_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
@@ -663,7 +663,7 @@ ssize_t rt_queue_recv (RT_QUEUE *q,
 	msg = link2rtmsg(holder);
     else
 	{
-	if (timeout == RT_TIME_NONBLOCK)
+	if (timeout == TM_NONBLOCK)
 	    {
 	    err = -EWOULDBLOCK;;
 	    goto unlock_and_exit;

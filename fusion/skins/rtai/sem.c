@@ -209,9 +209,9 @@ int rt_sem_delete (RT_SEM *sem)
  * @param sem The descriptor address of the affected semaphore.
  *
  * @param timeout The number of clock ticks to wait for a semaphore
- * unit to be available (see note). Passing RT_TIME_INFINITE causes
- * the caller to block indefinitely until a unit is available. Passing
- * RT_TIME_NONBLOCK causes the service to return immediately without
+ * unit to be available (see note). Passing TM_INFINITE causes the
+ * caller to block indefinitely until a unit is available. Passing
+ * TM_NONBLOCK causes the service to return immediately without
  * waiting if no unit is available.
  *
  * @return 0 is returned upon success. Otherwise:
@@ -222,8 +222,8 @@ int rt_sem_delete (RT_SEM *sem)
  * including if the deletion occurred while the caller was sleeping on
  * it for a unit to become available.
  *
- * - -EWOULDBLOCK is returned if @a timeout is equal to
- * RT_TIME_NONBLOCK and the semaphore value is zero.
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and the semaphore value is zero.
  *
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before a semaphore unit has become available.
@@ -237,7 +237,7 @@ int rt_sem_delete (RT_SEM *sem)
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @a timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to TM_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
@@ -267,7 +267,7 @@ int rt_sem_p (RT_SEM *sem,
         goto unlock_and_exit;
         }
     
-    if (timeout == RT_TIME_NONBLOCK)
+    if (timeout == TM_NONBLOCK)
         {
         if (sem->count > 0)
             sem->count--;

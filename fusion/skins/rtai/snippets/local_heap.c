@@ -21,7 +21,7 @@ int init_module (void)
 
     /* Request a 16-bytes block, asking for a blocking call until the
        memory is available: */
-    err = rt_heap_alloc(&heap_desc,16,RT_TIME_INFINITE,&block);
+    err = rt_heap_alloc(&heap_desc,16,TM_INFINITE,&block);
 
     /* Free the block: */
     rt_heap_free(&heap_desc,block);

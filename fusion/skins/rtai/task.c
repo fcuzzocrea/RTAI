@@ -543,8 +543,8 @@ int rt_task_yield (void)
  * @param idate The initial (absolute) date of the first release
  * point, expressed in clock ticks (see note). The affected task will
  * be delayed until this point is reached. If @a idate is equal to
- * RT_TIME_INFINITE, the current system date is used, and no initial
- * delay takes place.
+ * TM_INFINITE, the current system date is used, and no initial delay
+ * takes place.
 
  * @param period The period of the task, expressed in clock ticks (see
  * note).
@@ -555,8 +555,8 @@ int rt_task_yield (void)
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
- * - -ETIMEDOUT is returned if @a idate is different from
- * RT_TIME_INFINITE and represents a date in the past.
+ * - -ETIMEDOUT is returned if @a idate is different from TM_INFINITE
+ * and represents a date in the past.
  *
  * - -EWOULDBLOCK is returned if the system timer has not been started
  * using rt_timer_start().

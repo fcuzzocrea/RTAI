@@ -333,9 +333,9 @@ int rt_registry_enter (const char *key,
  * object to bind to.
  *
  * @param timeout The number of clock ticks to wait for the
- * registration to occur (see note). Passing RT_TIME_INFINITE causes
- * the caller to block indefinitely until the object is
- * registered. Passing RT_TIME_NONBLOCK causes the service to return
+ * registration to occur (see note). Passing TM_INFINITE causes the
+ * caller to block indefinitely until the object is
+ * registered. Passing TM_NONBLOCK causes the service to return
  * immediately without waiting if the object is not registered on
  * entry.
  *
@@ -351,9 +351,8 @@ int rt_registry_enter (const char *key,
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the retrieval has completed.
  *
- * - -EWOULDBLOCK is returned if @a timeout is equal to
- * RT_TIME_NONBLOCK and the searched object is not registered on
- * entry.
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and the searched object is not registered on entry.
  *
  * - -ETIMEDOUT is returned if the object cannot be retrieved within
  * the specified amount of time.
@@ -364,7 +363,7 @@ int rt_registry_enter (const char *key,
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @a timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to TM_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task (switches to primary mode)
@@ -388,7 +387,7 @@ int rt_registry_bind (const char *key,
     int err = 0;
     spl_t s;
 
-    if (timeout != RT_TIME_NONBLOCK)
+    if (timeout != TM_NONBLOCK)
 	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
     if (!key)
@@ -410,7 +409,7 @@ int rt_registry_bind (const char *key,
 	    goto unlock_and_exit;
 	    }
 
-	if (timeout == RT_TIME_NONBLOCK)
+	if (timeout == TM_NONBLOCK)
 	    {
 	    err = -EWOULDBLOCK;
 	    goto unlock_and_exit;
@@ -418,7 +417,7 @@ int rt_registry_bind (const char *key,
 
 	xnthread_clear_flags(&task->thread_base,RT_REGISTRY_RECHECK);
 
-	if (timeout != RT_TIME_INFINITE)
+	if (timeout != TM_INFINITE)
 	    {
 	    xnticks_t now = xnpod_get_time();
 
@@ -520,8 +519,8 @@ int rt_registry_remove (rt_handle_t handle)
  *
  * @param timeout If the object is locked on entry, @a param gives the
  * number of clock ticks to wait for the unlocking to occur (see
- * note). Passing RT_TIME_INFINITE causes the caller to block
- * indefinitely until the object is unlocked. Passing RT_TIME_NONBLOCK
+ * note). Passing TM_INFINITE causes the caller to block
+ * indefinitely until the object is unlocked. Passing TM_NONBLOCK
  * causes the service to return immediately without waiting if the
  * object is locked on entry.
  *
@@ -531,7 +530,7 @@ int rt_registry_remove (rt_handle_t handle)
  * object.
  *
  * - -EWOULDBLOCK is returned if @a timeout is equal to
- * RT_TIME_NONBLOCK and the object is locked on entry.
+ * TM_NONBLOCK and the object is locked on entry.
  *
  * - -EBUSY is returned if @a handle refers to a locked object and the
  * caller could not sleep until it is unlocked.
@@ -548,7 +547,7 @@ int rt_registry_remove (rt_handle_t handle)
  *
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
- *   only if @a timeout is equal to RT_TIME_NONBLOCK.
+ *   only if @a timeout is equal to TM_NONBLOCK.
  *
  * - Kernel-based task
  * - User-space task
@@ -582,7 +581,7 @@ int rt_registry_remove_safe (rt_handle_t handle, RTIME timeout)
 
     if (object->safelock > 0)
 	{
-	if (timeout == RT_TIME_NONBLOCK)
+	if (timeout == TM_NONBLOCK)
 	    {
 	    err = -EWOULDBLOCK;
 	    goto unlock_and_exit;

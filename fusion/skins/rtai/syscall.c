@@ -65,7 +65,7 @@ static int __rt_bind_helper (struct task_struct *curr,
     __xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
     name[sizeof(name) - 1] = '\0';
 
-    err = rt_registry_bind(name,RT_TIME_INFINITE,&ph.opaque);
+    err = rt_registry_bind(name,TM_INFINITE,&ph.opaque);
 
     if (!err)
 	{

@@ -242,7 +242,7 @@
 00268 <span class="preprocessor">} while(0)</span>
 00269 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
 00270 
-00271 <span class="preprocessor">#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)</span>
+00271 <span class="preprocessor">#if !defined(CONFIG_ADEOS_NOTHREADS)</span>
 00272 <span class="preprocessor"></span>
 00273 <span class="comment">/* Since real-time interrupt handlers are called on behalf of the RTAI</span>
 00274 <span class="comment">   domain stack, we cannot infere the "current" Linux task address</span>
@@ -266,7 +266,7 @@
 00292     <span class="keywordflow">return</span> get_current();
 00293 }
 00294 
-00295 <span class="preprocessor">#else </span><span class="comment">/* !(CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS) */</span>
+00295 <span class="preprocessor">#else </span><span class="comment">/* CONFIG_ADEOS_NOTHREADS */</span>
 00296 
 00297 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rthal_get_root_current (<span class="keywordtype">int</span> cpuid) {
 00298     <span class="keywordflow">return</span> current;
@@ -276,7 +276,7 @@
 00302     <span class="keywordflow">return</span> current;
 00303 }
 00304 
-00305 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS */</span>
+00305 <span class="preprocessor">#endif </span><span class="comment">/* !CONFIG_ADEOS_NOTHREADS */</span>
 00306 
 00307 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rthal_set_timer_shot (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> delay) {
 00308 
@@ -371,7 +371,7 @@
 00404 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00405 
 00408 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Nov 19 18:53:35 2004 for RTAI API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Nov 28 19:26:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

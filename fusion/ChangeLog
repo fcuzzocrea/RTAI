@@ -1,5 +1,9 @@
 2004-11-28  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.6.5
+
+2004-11-28  Philippe Gerum  <rpm@xenomai.org>
+
 	* arch/i386/patches: Upgrade to Adeos 2.6.9-i386-r9c1.
 
 	* skins/rtai/task.c (rt_task_create): Allow for creation in

@@ -302,7 +302,7 @@ include_HEADERS = task.h timer.h types.h syscall.h $(am__append_3) \
 distfiles = $(libmodule_SRC) registry.c registry.h pipe.c pipe.h sem.c \
 	sem.h event.c event.h mutex.c mutex.h cond.c cond.h queue.c \
 	queue.h heap.c heap.h
-EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig
+EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig snippets
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
 all: all-recursive
 

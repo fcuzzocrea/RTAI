@@ -17,25 +17,50 @@ Scheduling information structure.
 <tr><td colspan="2"><br><h2>Data Fields</h2></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">xnflags_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o0">status</a></td></tr>
 
-<tr><td class="memItemLeft" nowrap align="right" valign="top">xnarch_cpumask_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o1">resched</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">xnthread_t *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o1">runthread</a></td></tr>
 
-<tr><td class="memItemLeft" nowrap align="right" valign="top">xnpqueue_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o2">readyq</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">xnarch_cpumask_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o2">resched</a></td></tr>
 
-<tr><td class="memItemLeft" nowrap align="right" valign="top">xnthread_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o3">rootcb</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">xnpqueue_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o3">readyq</a></td></tr>
 
-<tr><td class="memItemLeft" nowrap align="right" valign="top">xnthread_t *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o4">runthread</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">volatile unsigned&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o4">inesting</a></td></tr>
 
-<tr><td class="memItemLeft" nowrap align="right" valign="top">volatile unsigned&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o5">inesting</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">xnthread_t *&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o5">fpuholder</a></td></tr>
+
+<tr><td class="memItemLeft" nowrap align="right" valign="top">xnthread_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnsched.html#o6">rootcb</a></td></tr>
 
 </table>
 <hr><h2>Field Documentation</h2>
-<a class="anchor" name="o5" doxytag="xnsched::inesting"></a><p>
+<a class="anchor" name="o5" doxytag="xnsched::fpuholder"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">volatile unsigned <a class="el" href="structxnsched.html#o5">xnsched::inesting</a>          </td>
+          <td class="md" nowrap valign="top">xnthread_t* <a class="el" href="structxnsched.html#o5">xnsched::fpuholder</a>          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Thread owning the current FPU context.     </td>
+  </tr>
+</table>
+<a class="anchor" name="o4" doxytag="xnsched::inesting"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">volatile unsigned <a class="el" href="structxnsched.html#o4">xnsched::inesting</a>          </td>
         </tr>
       </table>
     </td>
@@ -52,13 +77,13 @@ Scheduling information structure.
 Interrupt nesting level.     </td>
   </tr>
 </table>
-<a class="anchor" name="o2" doxytag="xnsched::readyq"></a><p>
+<a class="anchor" name="o3" doxytag="xnsched::readyq"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">xnpqueue_t <a class="el" href="structxnsched.html#o2">xnsched::readyq</a>          </td>
+          <td class="md" nowrap valign="top">xnpqueue_t <a class="el" href="structxnsched.html#o3">xnsched::readyq</a>          </td>
         </tr>
       </table>
     </td>
@@ -75,13 +100,13 @@ Interrupt nesting level.     </td>
 Ready-to-run threads (prioritized).     </td>
   </tr>
 </table>
-<a class="anchor" name="o1" doxytag="xnsched::resched"></a><p>
+<a class="anchor" name="o2" doxytag="xnsched::resched"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">xnarch_cpumask_t <a class="el" href="structxnsched.html#o1">xnsched::resched</a>          </td>
+          <td class="md" nowrap valign="top">xnarch_cpumask_t <a class="el" href="structxnsched.html#o2">xnsched::resched</a>          </td>
         </tr>
       </table>
     </td>
@@ -98,13 +123,13 @@ Ready-to-run threads (prioritized).     </td>
 Mask of CPUs needing rescheduling.     </td>
   </tr>
 </table>
-<a class="anchor" name="o3" doxytag="xnsched::rootcb"></a><p>
+<a class="anchor" name="o6" doxytag="xnsched::rootcb"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">xnthread_t <a class="el" href="structxnsched.html#o3">xnsched::rootcb</a>          </td>
+          <td class="md" nowrap valign="top">xnthread_t <a class="el" href="structxnsched.html#o6">xnsched::rootcb</a>          </td>
         </tr>
       </table>
     </td>
@@ -121,13 +146,13 @@ Mask of CPUs needing rescheduling.     </td>
 Root thread control block.     </td>
   </tr>
 </table>
-<a class="anchor" name="o4" doxytag="xnsched::runthread"></a><p>
+<a class="anchor" name="o1" doxytag="xnsched::runthread"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">xnthread_t* <a class="el" href="structxnsched.html#o4">xnsched::runthread</a>          </td>
+          <td class="md" nowrap valign="top">xnthread_t* <a class="el" href="structxnsched.html#o1">xnsched::runthread</a>          </td>
         </tr>
       </table>
     </td>
@@ -169,7 +194,7 @@ Scheduler specific status bitmask     </td>
 </table>
 <hr>The documentation for this struct was generated from the following file:<ul>
 <li>include/nucleus/<a class="el" href="pod_8h-source.html">pod.h</a></ul>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Nov 19 18:53:36 2004 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 28 19:26:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -71,79 +71,80 @@
 00061 
 00062 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_TIMESTAMPS</span>
 00063 <span class="preprocessor"></span><span class="keyword">typedef</span> <span class="keyword">struct </span>xntimes {
-00064     xnticks_t timer_top;
-00065     xnticks_t timer_entry;
-00066     xnticks_t timer_handler;
-00067     xnticks_t timer_handled;
-00068     xnticks_t timer_exit;
-00069     xnsticks_t timer_drift;
-00070     xnsticks_t timer_drift2;
-00071     xnticks_t intr_resched;
-00072     xnticks_t resume_entry;
-00073     xnticks_t resume_exit;
-00074     xnticks_t switch_in;
-00075     xnticks_t switch_out;
-00076     xnticks_t periodic_wakeup;
-00077     xnticks_t periodic_exit;
-00078 } xntimes_t;
-00079 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_TIMESTAMPS */</span>
-00080 
-00081 <span class="preprocessor">#define XN_INFINITE   (0)</span>
-00082 <span class="preprocessor"></span><span class="preprocessor">#define XN_NONBLOCK   ((xnticks_t)-1)</span>
-00083 <span class="preprocessor"></span>
-00084 <span class="preprocessor">#define testbits(flags,mask) ((flags) &amp; (mask))</span>
-00085 <span class="preprocessor"></span><span class="preprocessor">#define setbits(flags,mask)  xnarch_atomic_set_mask(&amp;(flags),mask)</span>
-00086 <span class="preprocessor"></span><span class="preprocessor">#define clrbits(flags,mask)  xnarch_atomic_clear_mask(&amp;(flags),mask)</span>
-00087 <span class="preprocessor"></span><span class="preprocessor">#define __testbits(flags,mask) testbits(flags,mask)</span>
-00088 <span class="preprocessor"></span><span class="preprocessor">#define __setbits(flags,mask)  do { (flags) |= (mask); } while(0)</span>
-00089 <span class="preprocessor"></span><span class="preprocessor">#define __clrbits(flags,mask)  do { (flags) &amp;= ~(mask); } while(0)</span>
-00090 <span class="preprocessor"></span>
-00091 <span class="keyword">typedef</span> atomic_flags_t xnflags_t;
-00092 
-00093 <span class="preprocessor">#ifndef NULL</span>
-00094 <span class="preprocessor"></span><span class="preprocessor">#define NULL 0</span>
-00095 <span class="preprocessor"></span><span class="preprocessor">#endif</span>
-00096 <span class="preprocessor"></span>
-00097 <span class="preprocessor">#define XNOBJECT_NAME_LEN 32</span>
-00098 <span class="preprocessor"></span>
-00099 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnobject_copy_name (<span class="keywordtype">char</span> *dst,
-00100                                        <span class="keyword">const</span> <span class="keywordtype">char</span> *src)
-00101 {
-00102     <span class="keywordflow">if</span> (src)
-00103         {
-00104         <span class="keyword">const</span> <span class="keywordtype">char</span> *rp = src;
-00105         <span class="keywordtype">char</span> *wp = dst;
-00106         <span class="keywordflow">do</span>
-00107             *wp++ = *rp;
-00108         <span class="keywordflow">while</span> (*rp &amp;&amp; rp++ - src &lt; XNOBJECT_NAME_LEN);
-00109         }
-00110     <span class="keywordflow">else</span>
-00111         *dst = <span class="charliteral">'\0'</span>;
-00112 }
-00113 
-00114 <span class="preprocessor">#define minval(a,b) ((a) &lt; (b) ? (a) : (b))</span>
-00115 <span class="preprocessor"></span><span class="preprocessor">#define maxval(a,b) ((a) &gt; (b) ? (a) : (b))</span>
-00116 <span class="preprocessor"></span>
-00117 <span class="preprocessor">#define XN_NBBY 8 </span><span class="comment">/* Assume a byte is always 8 bits :o&gt; */</span>
-00118 
-00119 <span class="preprocessor">#ifdef __cplusplus</span>
-00120 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00121 <span class="preprocessor">#endif</span>
-00122 <span class="preprocessor"></span>
-00123 <span class="keyword">const</span> <span class="keywordtype">char</span> *xnpod_fatal_helper(<span class="keyword">const</span> <span class="keywordtype">char</span> *format, ...);
-00124 
-00125 <span class="preprocessor">#ifdef __cplusplus</span>
-00126 <span class="preprocessor"></span>}
-00127 <span class="preprocessor">#endif</span>
-00128 <span class="preprocessor"></span>
-00129 <span class="preprocessor">#define xnpod_fatal(format,args...) \</span>
-00130 <span class="preprocessor">do { \</span>
-00131 <span class="preprocessor">   const char *panic = xnpod_fatal_helper(format,##args); \</span>
-00132 <span class="preprocessor">   xnarch_halt(panic); \</span>
-00133 <span class="preprocessor">} while (0)</span>
-00134 <span class="preprocessor"></span>
-00135 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TYPES_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Nov 19 18:53:35 2004 for RTAI API by&nbsp;
+00064     xnticks_t tick_shot;
+00065     xnticks_t tick_delivery;
+00066     xnticks_t timer_entry;
+00067     xnticks_t timer_handler;
+00068     xnticks_t timer_handled;
+00069     xnticks_t timer_exit;
+00070     xnsticks_t timer_drift;
+00071     xnsticks_t timer_drift2;
+00072     xnticks_t intr_resched;
+00073     xnticks_t resume_entry;
+00074     xnticks_t resume_exit;
+00075     xnticks_t switch_in;
+00076     xnticks_t switch_out;
+00077     xnticks_t periodic_wakeup;
+00078     xnticks_t periodic_exit;
+00079 } xntimes_t;
+00080 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_TIMESTAMPS */</span>
+00081 
+00082 <span class="preprocessor">#define XN_INFINITE   (0)</span>
+00083 <span class="preprocessor"></span><span class="preprocessor">#define XN_NONBLOCK   ((xnticks_t)-1)</span>
+00084 <span class="preprocessor"></span>
+00085 <span class="preprocessor">#define testbits(flags,mask) ((flags) &amp; (mask))</span>
+00086 <span class="preprocessor"></span><span class="preprocessor">#define setbits(flags,mask)  xnarch_atomic_set_mask(&amp;(flags),mask)</span>
+00087 <span class="preprocessor"></span><span class="preprocessor">#define clrbits(flags,mask)  xnarch_atomic_clear_mask(&amp;(flags),mask)</span>
+00088 <span class="preprocessor"></span><span class="preprocessor">#define __testbits(flags,mask) testbits(flags,mask)</span>
+00089 <span class="preprocessor"></span><span class="preprocessor">#define __setbits(flags,mask)  do { (flags) |= (mask); } while(0)</span>
+00090 <span class="preprocessor"></span><span class="preprocessor">#define __clrbits(flags,mask)  do { (flags) &amp;= ~(mask); } while(0)</span>
+00091 <span class="preprocessor"></span>
+00092 <span class="keyword">typedef</span> atomic_flags_t xnflags_t;
+00093 
+00094 <span class="preprocessor">#ifndef NULL</span>
+00095 <span class="preprocessor"></span><span class="preprocessor">#define NULL 0</span>
+00096 <span class="preprocessor"></span><span class="preprocessor">#endif</span>
+00097 <span class="preprocessor"></span>
+00098 <span class="preprocessor">#define XNOBJECT_NAME_LEN 32</span>
+00099 <span class="preprocessor"></span>
+00100 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnobject_copy_name (<span class="keywordtype">char</span> *dst,
+00101                                        <span class="keyword">const</span> <span class="keywordtype">char</span> *src)
+00102 {
+00103     <span class="keywordflow">if</span> (src)
+00104         {
+00105         <span class="keyword">const</span> <span class="keywordtype">char</span> *rp = src;
+00106         <span class="keywordtype">char</span> *wp = dst;
+00107         <span class="keywordflow">do</span>
+00108             *wp++ = *rp;
+00109         <span class="keywordflow">while</span> (*rp &amp;&amp; rp++ - src &lt; XNOBJECT_NAME_LEN);
+00110         }
+00111     <span class="keywordflow">else</span>
+00112         *dst = <span class="charliteral">'\0'</span>;
+00113 }
+00114 
+00115 <span class="preprocessor">#define minval(a,b) ((a) &lt; (b) ? (a) : (b))</span>
+00116 <span class="preprocessor"></span><span class="preprocessor">#define maxval(a,b) ((a) &gt; (b) ? (a) : (b))</span>
+00117 <span class="preprocessor"></span>
+00118 <span class="preprocessor">#define XN_NBBY 8 </span><span class="comment">/* Assume a byte is always 8 bits :o&gt; */</span>
+00119 
+00120 <span class="preprocessor">#ifdef __cplusplus</span>
+00121 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00122 <span class="preprocessor">#endif</span>
+00123 <span class="preprocessor"></span>
+00124 <span class="keyword">const</span> <span class="keywordtype">char</span> *xnpod_fatal_helper(<span class="keyword">const</span> <span class="keywordtype">char</span> *format, ...);
+00125 
+00126 <span class="preprocessor">#ifdef __cplusplus</span>
+00127 <span class="preprocessor"></span>}
+00128 <span class="preprocessor">#endif</span>
+00129 <span class="preprocessor"></span>
+00130 <span class="preprocessor">#define xnpod_fatal(format,args...) \</span>
+00131 <span class="preprocessor">do { \</span>
+00132 <span class="preprocessor">   const char *panic = xnpod_fatal_helper(format,##args); \</span>
+00133 <span class="preprocessor">   xnarch_halt(panic); \</span>
+00134 <span class="preprocessor">} while (0)</span>
+00135 <span class="preprocessor"></span>
+00136 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TYPES_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Nov 28 19:26:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

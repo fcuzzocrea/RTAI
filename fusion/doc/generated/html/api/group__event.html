@@ -27,10 +27,10 @@ An event flag group is a synchronization object represented by a long-word struc
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__event.html#ga3">rt_event_delete</a> (RT_EVENT *event)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete an event group.  <a href="#ga3"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__event.html#ga4">rt_event_post</a> (RT_EVENT *event, unsigned long mask)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__event.html#ga4">rt_event_signal</a> (RT_EVENT *event, unsigned long mask)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Post an event group.  <a href="#ga4"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__event.html#ga5">rt_event_pend</a> (RT_EVENT *event, unsigned long mask, unsigned long *mask_r, int mode, RTIME timeout)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__event.html#ga5">rt_event_wait</a> (RT_EVENT *event, unsigned long mask, unsigned long *mask_r, int mode, RTIME timeout)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Pend on an event group.  <a href="#ga5"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__event.html#ga6">rt_event_inquire</a> (RT_EVENT *event, RT_EVENT_INFO *info)</td></tr>
@@ -220,117 +220,13 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga5" doxytag="event.c::rt_event_pend"></a><p>
+<a class="anchor" name="ga4" doxytag="event.c::rt_event_signal"></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">int rt_event_pend           </td>
-          <td class="md" valign="top">(&nbsp;</td>
-          <td class="md" nowrap valign="top">RT_EVENT *&nbsp;</td>
-          <td class="mdname" nowrap> <em>event</em>, </td>
-        </tr>
-        <tr>
-          <td class="md" nowrap align="right"></td>
-          <td class="md"></td>
-          <td class="md" nowrap>unsigned long&nbsp;</td>
-          <td class="mdname" nowrap> <em>mask</em>, </td>
-        </tr>
-        <tr>
-          <td class="md" nowrap align="right"></td>
-          <td class="md"></td>
-          <td class="md" nowrap>unsigned long *&nbsp;</td>
-          <td class="mdname" nowrap> <em>mask_r</em>, </td>
-        </tr>
-        <tr>
-          <td class="md" nowrap align="right"></td>
-          <td class="md"></td>
-          <td class="md" nowrap>int&nbsp;</td>
-          <td class="mdname" nowrap> <em>mode</em>, </td>
-        </tr>
-        <tr>
-          <td class="md" nowrap align="right"></td>
-          <td class="md"></td>
-          <td class="md" nowrap>RTIME&nbsp;</td>
-          <td class="mdname" nowrap> <em>timeout</em></td>
-        </tr>
-        <tr>
-          <td class="md"></td>
-          <td class="md">)&nbsp;</td>
-          <td class="md" colspan="2"></td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-<table cellspacing="5" cellpadding="0" border="0">
-  <tr>
-    <td>
-      &nbsp;
-    </td>
-    <td>
-
-<p>
-Pend on an event group. 
-<p>
-Pends for one or more events on the specified event group, either in conjunctive or disjunctive mode.<p>
-If the specified set of bits is not set, the calling task is blocked. The task is not resumed until the request is fulfilled.<p>
-<dl compact><dt><b>Parameters:</b></dt><dd>
-  <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"></td><td valign="top"><em>event</em>&nbsp;</td><td>The descriptor address of the affected event group.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>mask</em>&nbsp;</td><td>The set of bits to wait for. Passing zero causes this service to return immediately with a success value; the current value of the event mask is also copied to <em>mask_r</em>.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>mask_r</em>&nbsp;</td><td>The value of the event mask at the time the task was readied.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The pend mode. The following flags can be OR'ed into this bitmask, each of them affecting the operation:</td></tr>
-  </table>
-</dl>
-<ul>
-<li>EV_ANY makes the task pend in disjunctive mode (i.e. OR); this means that the request is fulfilled when at least one bit set into <em>mask</em> is set in the current event mask.</li></ul>
-<p>
-<ul>
-<li>EV_ALL makes the task pend in conjunctive mode (i.e. AND); this means that the request is fulfilled when at all bits set into <em>mask</em> are set in the current event mask.</li></ul>
-<p>
-<dl compact><dt><b>Parameters:</b></dt><dd>
-  <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The number of clock ticks to wait for fulfilling the request (see note). Passing RT_TIME_INFINITE causes the caller to block indefinitely until the request is fulfilled. Passing RT_TIME_NONBLOCK causes the service to return immediately without waiting if the request cannot be satisfied immediately.</td></tr>
-  </table>
-</dl>
-<dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
-<ul>
-<li>-EINVAL is returned if <em>event</em> is not a event group descriptor.</li></ul>
-<p>
-<ul>
-<li>-EIDRM is returned if <em>event</em> is a deleted event group descriptor, including if the deletion occurred while the caller was sleeping on it before the request has been satisfied.</li></ul>
-<p>
-<ul>
-<li>-EWOULDBLOCK is returned if <em>timeout</em> is equal to RT_TIME_NONBLOCK and the current event mask value does not satisfy the request.</li></ul>
-<p>
-<ul>
-<li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before the request has been satisfied.</li></ul>
-<p>
-<ul>
-<li>-ETIMEDOUT is returned if the request has not been satisfied within the specified amount of time.</li></ul>
-<p>
-Environments:<p>
-This service can be called from:<p>
-<ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>timeout</em> is equal to RT_TIME_NONBLOCK.</li></ul>
-<p>
-<ul>
-<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
-<p>
-Rescheduling: always unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation.<p>
-<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
-    </td>
-  </tr>
-</table>
-<a class="anchor" name="ga4" doxytag="event.c::rt_event_post"></a><p>
-<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
-  <tr>
-    <td class="mdRow">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td class="md" nowrap valign="top">int rt_event_post           </td>
+          <td class="md" nowrap valign="top">int rt_event_signal           </td>
           <td class="md" valign="top">(&nbsp;</td>
           <td class="md" nowrap valign="top">RT_EVENT *&nbsp;</td>
           <td class="mdname" nowrap> <em>event</em>, </td>
@@ -382,7 +278,111 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Fri Nov 19 18:53:36 2004 for RTAI API by&nbsp;
+<a class="anchor" name="ga5" doxytag="event.c::rt_event_wait"></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int rt_event_wait           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">RT_EVENT *&nbsp;</td>
+          <td class="mdname" nowrap> <em>event</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>unsigned long&nbsp;</td>
+          <td class="mdname" nowrap> <em>mask</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>unsigned long *&nbsp;</td>
+          <td class="mdname" nowrap> <em>mask_r</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>int&nbsp;</td>
+          <td class="mdname" nowrap> <em>mode</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>RTIME&nbsp;</td>
+          <td class="mdname" nowrap> <em>timeout</em></td>
+        </tr>
+        <tr>
+          <td class="md"></td>
+          <td class="md">)&nbsp;</td>
+          <td class="md" colspan="2"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Pend on an event group. 
+<p>
+Waits for one or more events on the specified event group, either in conjunctive or disjunctive mode.<p>
+If the specified set of bits is not set, the calling task is blocked. The task is not resumed until the request is fulfilled.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>event</em>&nbsp;</td><td>The descriptor address of the affected event group.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>mask</em>&nbsp;</td><td>The set of bits to wait for. Passing zero causes this service to return immediately with a success value; the current value of the event mask is also copied to <em>mask_r</em>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>mask_r</em>&nbsp;</td><td>The value of the event mask at the time the task was readied.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The pend mode. The following flags can be OR'ed into this bitmask, each of them affecting the operation:</td></tr>
+  </table>
+</dl>
+<ul>
+<li>EV_ANY makes the task pend in disjunctive mode (i.e. OR); this means that the request is fulfilled when at least one bit set into <em>mask</em> is set in the current event mask.</li></ul>
+<p>
+<ul>
+<li>EV_ALL makes the task pend in conjunctive mode (i.e. AND); this means that the request is fulfilled when at all bits set into <em>mask</em> are set in the current event mask.</li></ul>
+<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>timeout</em>&nbsp;</td><td>The number of clock ticks to wait for fulfilling the request (see note). Passing RT_TIME_INFINITE causes the caller to block indefinitely until the request is fulfilled. Passing RT_TIME_NONBLOCK causes the service to return immediately without waiting if the request cannot be satisfied immediately.</td></tr>
+  </table>
+</dl>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
+<ul>
+<li>-EINVAL is returned if <em>event</em> is not a event group descriptor.</li></ul>
+<p>
+<ul>
+<li>-EIDRM is returned if <em>event</em> is a deleted event group descriptor, including if the deletion occurred while the caller was sleeping on it before the request has been satisfied.</li></ul>
+<p>
+<ul>
+<li>-EWOULDBLOCK is returned if <em>timeout</em> is equal to RT_TIME_NONBLOCK and the current event mask value does not satisfy the request.</li></ul>
+<p>
+<ul>
+<li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before the request has been satisfied.</li></ul>
+<p>
+<ul>
+<li>-ETIMEDOUT is returned if the request has not been satisfied within the specified amount of time.</li></ul>
+<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine only if <em>timeout</em> is equal to RT_TIME_NONBLOCK.</li></ul>
+<p>
+<ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
+<p>
+Rescheduling: always unless the request is immediately satisfied or <em>timeout</em> specifies a non-blocking operation.<p>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed in nanoseconds. </dd></dl>
+    </td>
+  </tr>
+</table>
+<hr size="1"><address style="align: right;"><small>Generated on Sun Nov 28 19:26:57 2004 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

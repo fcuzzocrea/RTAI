@@ -1,3 +1,8 @@
+2004-12-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (linux_schedule_head): Fix a subtle
+	rescheduling hole after downgrading the root thread priority.
+
 2004-12-29  Philippe Gerum  <rpm@localhost>
 
 	* nucleus/fusion.c: Add missing checks for XNBREAK and return

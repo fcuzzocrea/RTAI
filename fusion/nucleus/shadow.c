@@ -1546,8 +1546,8 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 {
     struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))evinfo->evdata;
     struct task_struct *next = evdata->next;
+    int oldrprio, newrprio;
     adeos_declare_cpuid;
-    int rootprio;
 
     adeos_propagate_event(evinfo);
 
@@ -1560,7 +1560,7 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 
     if (xnshadow_thread(next))
 	{
-	rootprio = xnshadow_thread(next)->cprio;
+	newrprio = xnshadow_thread(next)->cprio;
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
         if (testbits(xnshadow_thread(next)->status,
@@ -1573,7 +1573,7 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 	}
     else if (next != gatekeeper[cpuid].server)
 	    {
-	    rootprio = XNPOD_ROOT_PRIO_BASE;
+	    newrprio = XNPOD_ROOT_PRIO_BASE;
 	    disengage_irq_shield();
 	    }
         else
@@ -1583,17 +1583,27 @@ static void linux_schedule_head (adevinfo_t *evinfo)
        we can safely renice the nucleus's runthread (i.e. as returned
        by xnpod_current_thread()). */
 
-    if (xnpod_current_thread()->cprio != rootprio)
+    oldrprio = xnpod_current_thread()->cprio;
+
+    if (oldrprio != newrprio)
         {
 #if 1
         if (traceme)
             printk("RESET ROOT PRIO (old prio %d) TO %s's (prio %d), cpu %d\n",
-                   xnpod_current_thread()->cprio,
+                   oldrprio,
                    xnshadow_thread(next)->name,
-                   rootprio,
+                   newrprio,
                    adeos_processor_id());
 #endif
-        xnpod_renice_root(rootprio);
+        xnpod_renice_root(newrprio);
+
+	if (xnpod_priocompare(newrprio,oldrprio) < 0)
+	    /* Subtle: by downgrading the root thread priority, some
+	       higher priority thread might well become eligible for
+	       execution instead of us. Since xnpod_renice_root() does
+	       not reschedule (and must _not_ in most of other cases),
+	       let's call the rescheduling procedure ourselves. */
+            xnpod_schedule();
         }
 }
 

@@ -1,5 +1,10 @@
 2004-07-24  Philippe Gerum  <rpm@xenomai.org>
 
+	* rtai-core/ipc/fifos/fifos.c (mbx_sem_wait): Remove spurious
+	rtf_restore_flags(); this bug used to wreck the preemption count
+	with a preemptible kernel, and forcibly release a non-held
+	spinlock in any case, which is always a bad idea...
+
 	* configure.in: Allow CONFIG_FRAME_POINTER in kernel.
 
 2004-07-23  Philippe Gerum  <rpm@xenomai.org>

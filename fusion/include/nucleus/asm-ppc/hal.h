@@ -100,21 +100,19 @@ unsigned long long __rthal_ullimd (const unsigned long long op,
                                    const unsigned long m,
                                    const unsigned long d)
 {
+    u_long oph, opl, tlh, tll, qh, rh, ql;
     unsigned long long th, tl;
-    u_long oph, opl, tlh, tll, qh, rh;
 
     __rthal_u64tou32(op, oph, opl);
     tl = rthal_ullmul(opl, m);
     __rthal_u64tou32(tl, tlh, tll);
-    th = rthal_ullmul(oph, m);
-    /* op * m == ((th + tlh) << 32) + tll */
-    th += tlh;
-    /* op * m == (th << 32) + tll */
+    th = rthal_ullmul(oph, m);         /* op * m == ((th + tlh) << 32) + tll */
+    th += tlh;                         /* op * m == (th << 32) + tll */
 
-    qh = rthal_uldivrem(th, d, &rh);
-    th = __rthal_u64fromu32(rh, tll);
-    ql = rthal_ulldiv(th, d, NULL);
-    return __rthal_u64fromu32(qh, ql);
+    qh = rthal_uldivrem(th, d, &rh);   /* op * m == (qh * d + rh) << 32 + tll */
+    th = __rthal_u64fromu32(rh, tll);  /* op * m == (qh * d) << 32 + th */
+    ql = rthal_uldivrem(th, d, NULL);  /* op * m == (qh * d) << 32 + ql * d + ?*/
+    return __rthal_u64fromu32(qh, ql); /* (op * m) / d == qh << 32 + ql */
 }
 
 

@@ -451,6 +451,39 @@ static RT_OBJECT *__registry_hash_find (const char *key)
     return NULL;
 }
 
+static unsigned __registry_wakeup_sleepers(const char *key)
+{
+    unsigned cnt = 0;
+    spl_t s;
+    
+    xnlock_get_irqsave(&nklock,s);
+    
+    if (xnsynch_nsleepers(&__rtai_hash_synch) > 0)
+        {
+        xnpholder_t *holder, *nholder;
+
+        nholder = getheadpq(xnsynch_wait_queue(&__rtai_hash_synch));
+					
+        while ((holder = nholder) != NULL)
+            {
+	    RT_TASK *sleeper = thread2rtask(link2thread(holder,plink));
+
+	    if (!strcmp(key, sleeper->wait_args.registry.key))
+		{
+		sleeper->wait_args.registry.key = NULL;
+		nholder = xnsynch_wakeup_this_sleeper(&__rtai_hash_synch,holder);
+		++cnt;
+		}
+	    else
+		nholder = nextpq(xnsynch_wait_queue(&__rtai_hash_synch),holder);
+            }
+        }
+													    
+    xnlock_put_irqrestore(&nklock,s);
+
+    return cnt;
+}
+
 /**
  * @fn int rt_registry_enter(const char *key,
 		             void *objaddr,
@@ -555,11 +588,8 @@ int rt_registry_enter (const char *key,
 	}
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
-    if (xnsynch_nsleepers(&__rtai_hash_synch) > 0)
-	{
-	xnsynch_flush(&__rtai_hash_synch,RT_REGISTRY_RECHECK);
+    if (__registry_wakeup_sleepers(key))
 	xnpod_schedule();
-	}
 
  unlock_and_exit:
 
@@ -669,8 +699,6 @@ int rt_registry_bind (const char *key,
 	    goto unlock_and_exit;
 	    }
 
-	xnthread_clear_flags(&task->thread_base,RT_REGISTRY_RECHECK);
-
 	if (timeout != TM_INFINITE)
 	    {
 	    xnticks_t now = xnpod_get_time();
@@ -682,6 +710,7 @@ int rt_registry_bind (const char *key,
 	    stime = now;
 	    }
 
+	task->wait_args.registry.key = key;
 	xnsynch_sleep_on(&__rtai_hash_synch,timeout);
 
 	if (xnthread_test_flags(&task->thread_base,XNTIMEO))

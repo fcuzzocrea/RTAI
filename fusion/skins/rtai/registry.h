@@ -37,8 +37,6 @@
 #include <nucleus/synch.h>
 #include <nucleus/thread.h>
 
-#define RT_REGISTRY_RECHECK   XNTHREAD_SPARE0
-
 struct rt_object_procnode;
 
 typedef struct rt_object {

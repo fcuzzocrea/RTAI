@@ -117,6 +117,10 @@ typedef struct rt_task {
 	    size_t size;
 	    void *block;
 	} heap;
+	
+	struct {
+	    char *key;
+	} registry;
 
     } wait_args;
 

@@ -1322,6 +1322,36 @@ int rt_task_set_mode (int clrmask,
     return 0;
 }
 
+/**
+ * @fn RT_TASK *rt_task_self(void)
+ * @brief Retrieve the current task.
+ *
+ * Return the current task descriptor address.
+ *
+ * @return The address of the caller's task descriptor is returned
+ * upon success, or NULL if the calling context is asynchronous
+ * (i.e. not a RTAI task).
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * Those will cause a NULL return.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
+RT_TASK *rt_task_self (void)
+
+{
+    return xnpod_asynch_p() ? NULL : rtai_current_task();
+}
+
 /*@}*/
 
 EXPORT_SYMBOL(rt_task_create);
@@ -1342,3 +1372,4 @@ EXPORT_SYMBOL(rt_task_remove_hook);
 EXPORT_SYMBOL(rt_task_catch);
 EXPORT_SYMBOL(rt_task_notify);
 EXPORT_SYMBOL(rt_task_set_mode);
+EXPORT_SYMBOL(rt_task_self);

@@ -77,9 +77,9 @@
 #define T_HOOK_DESC(cookie) thread2rtask(cookie)
 
 /* Priority range (same bounds as fusion, but reversed). */
-#define T_HIPRIO  FUSION_LOW_PRI
-#define T_LOPRIO  FUSION_HIGH_PRI
-#define rtprio2xn(rtprio) (FUSION_HIGH_PRI - (rtprio) + 1)
+#define T_HIPRIO  FUSION_LOW_PRIO
+#define T_LOPRIO  FUSION_HIGH_PRIO
+#define rtprio2xn(rtprio) (FUSION_HIGH_PRIO - (rtprio) + 1)
 #define xnprio2rt(xnprio) (T_LOPRIO + (xnprio) - 1)
 
 typedef struct rt_task_placeholder {
@@ -239,6 +239,9 @@ int rt_task_notify(RT_TASK *task,
 int rt_task_set_mode(int clrmask,
 		     int setmask,
 		     int *mode_r);
+
+RT_TASK *rt_task_self(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -660,7 +660,10 @@ void xnshadow_map (xnthread_t *thread,
 		    current->pid,
 		    xnthread_base_priority(thread));
 
-    current->cap_effective |= CAP_TO_MASK(CAP_IPC_LOCK)|CAP_TO_MASK(CAP_SYS_RAWIO)|CAP_TO_MASK(CAP_SYS_NICE);
+    current->cap_effective |= 
+	CAP_TO_MASK(CAP_IPC_LOCK)|
+	CAP_TO_MASK(CAP_SYS_RAWIO)|
+	CAP_TO_MASK(CAP_SYS_NICE);
 
     xnarch_init_shadow_tcb(xnthread_archtcb(thread),thread,xnthread_name(thread));
     rthal_set_linux_task_priority(current,SCHED_FIFO,xnthread_base_priority(thread));

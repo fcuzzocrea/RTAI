@@ -171,12 +171,12 @@ void __devinit rthal_smi_init(void)
 
 #if CONFIG_RTAI_HW_SMI_WORKAROUND
 
-    printk("RTAI[hal]: Intel chipset found, enabling SMI workaround.\n");
+    printk("RTAI: Intel chipset found, enabling SMI workaround.\n");
     rthal_smi_en_addr = get_smi_en_addr(dev);
 
 #else /* ! CONFIG_RTAI_HW_SMI_WORKAROUND */
 
-    printk("RTAI[hal]: Intel chipset found and SMI workaround not enabled,"
+    printk("RTAI: Intel chipset found and SMI workaround not enabled,"
            " you may encounter high interrupt latencies.\n");
 
 #endif /* ! CONFIG_RTAI_HW_SMI_WORKAROUND */    

@@ -1,45 +1,20 @@
 /*
  * Copyright (C) 2001,2002,2003,2004 Philippe Gerum <rpm@xenomai.org>.
  *
- * Xenomai is free software; you can redistribute it and/or modify it
+ * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * Xenomai is distributed in the hope that it will be useful, but
+ * RTAI/fusion is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Xenomai; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
- *
- * As a special exception, the RTAI project gives permission for
- * additional uses of the text contained in its release of Xenomai.
- *
- * The exception is that, if you link the Xenomai libraries with other
- * files to produce an executable, this does not by itself cause the
- * resulting executable to be covered by the GNU General Public License.
- * Your use of that executable is in no way restricted on account of
- * linking the Xenomai libraries code into it.
- *
- * This exception does not however invalidate any other reasons why
- * the executable file might be covered by the GNU General Public
- * License.
- *
- * This exception applies only to the code released by the
- * RTAI project under the name Xenomai.  If you copy code from other
- * RTAI project releases into a copy of Xenomai, as the General Public
- * License permits, the exception does not apply to the code that you
- * add in this way.  To avoid misleading anyone as to the status of
- * such modified files, you must delete this exception notice from
- * them.
- *
- * If you write modifications of your own for Xenomai, it is your
- * choice whether to permit this exception to apply to your
- * modifications. If you do not wish that, delete this exception
- * notice.
+ * along with RTAI/fusion; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA.
  */
 
 #ifndef _RTAI_ASM_PPC_SYSTEM_H
@@ -215,7 +190,7 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
 
 #ifdef CONFIG_RTAI_HW_FPU
     /* We only care for basic FPU handling in kernel-space; Altivec
-       and SPE are not available to kernel-based Xenomai threads. */
+       and SPE are not available to kernel-based nucleus threads. */
     rthal_fpenv_t fpuenv  __attribute__ ((aligned (16)));
     rthal_fpenv_t *fpup;	/* Pointer to the FPU backup area */
 #define xnarch_fpu_ptr(tcb)     ((tcb)->fpup)
@@ -856,6 +831,12 @@ static inline void xnarch_program_timer_shot (unsigned long long delay) {
 static inline void xnarch_stop_timer (void) {
     rthal_release_timer();
 }
+
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
+static inline int xnarch_send_timer_ipi (cpumask_t mask) {
+    return -1;			/* FIXME */
+}
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
 
 static inline void xnarch_read_timings (unsigned long long *shot,
 					unsigned long long *delivery,

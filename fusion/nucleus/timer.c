@@ -2,46 +2,20 @@
  * @file
  * @note Copyright (C) 2001,2002,2003 Philippe Gerum <rpm@xenomai.org>.
  *
- * Xenomai is free software; you can redistribute it and/or modify it
+ * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * Xenomai is distributed in the hope that it will be useful, but
+ * RTAI/fusion is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with Xenomai; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
- *
- * As a special exception, the RTAI project gives permission
- * for additional uses of the text contained in its release of
- * Xenomai.
- *
- * The exception is that, if you link the Xenomai libraries with other
- * files to produce an executable, this does not by itself cause the
- * resulting executable to be covered by the GNU General Public License.
- * Your use of that executable is in no way restricted on account of
- * linking the Xenomai libraries code into it.
- *
- * This exception does not however invalidate any other reasons why
- * the executable file might be covered by the GNU General Public
- * License.
- *
- * This exception applies only to the code released by the
- * RTAI project under the name Xenomai.  If you copy code from other
- * RTAI project releases into a copy of Xenomai, as the General Public
- * License permits, the exception does not apply to the code that you
- * add in this way.  To avoid misleading anyone as to the status of
- * such modified files, you must delete this exception notice from
- * them.
- *
- * If you write modifications of your own for Xenomai, it is your
- * choice whether to permit this exception to apply to your
- * modifications. If you do not wish that, delete this exception
- * notice.
+ * along with RTAI/fusion; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA.
  *
  * \ingroup timer
  */
@@ -50,13 +24,14 @@
  * \ingroup nucleus
  * \defgroup timer Timer services.
  *
- * The Xenomai timer facility behaves slightly differently depending
- * on the underlying system timer mode, i.e. periodic or aperiodic. In
- * periodic mode, the hardware timer ticks periodically without any
- * external programming (aside of the initial one which sets its
- * period). In such a case, a BSD timer wheel (see "Redesigning the
- * BSD Callout and Timer Facilities" by Adam M. Costello and George
- * Varghese) is used to its full addressing capabilities.
+ * The RTAI/fusion timer facility behaves slightly differently
+ * depending on the underlying system timer mode, i.e. periodic or
+ * aperiodic. In periodic mode, the hardware timer ticks periodically
+ * without any external programming (aside of the initial one which
+ * sets its period). In such a case, a BSD timer wheel (see
+ * "Redesigning the BSD Callout and Timer Facilities" by Adam
+ * M. Costello and George Varghese) is used to its full addressing
+ * capabilities.
  * 
  * If the underlying timer source is aperiodic, we need to reprogram
  * the next shot after each tick at hardware level, and we cannot
@@ -85,8 +60,8 @@
  * Creates a timer. When created, a timer is left disarmed; it must be
  * started using xntimer_start() in order to be activated.
  *
- * @param timer The address of a timer descriptor Xenomai will use to
- * store the object-specific data.  This descriptor must always be
+ * @param timer The address of a timer descriptor the nucleus will use
+ * to store the object-specific data.  This descriptor must always be
  * valid while the object is active therefore it must be allocated in
  * permanent memory.
  *
@@ -124,7 +99,7 @@ void xntimer_init (xntimer_t *timer,
     timer->interval = 0;
     timer->date = XN_INFINITE;
     timer->prio = XNTIMER_STDPRIO;
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
     timer->sched = xnpod_current_sched();
 #else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
     timer->sched = xnpod_sched_slot(XNTIMER_KEEPER_ID);
@@ -234,16 +209,20 @@ static inline void xntimer_next_local_shot (xnsched_t *this_sched)
     xnarch_program_timer_shot(delay <= ULONG_MAX ? delay : ULONG_MAX);
 }
 
-static inline void xntimer_next_remote_shot (xnsched_t *sched)
-{
-    xnarch_send_timer_ipi(xnarch_cpumask_of_cpu(xnsched_cpu(sched)));
-}
-
 static inline int xntimer_heading_p (xntimer_t *timer) {
 
     return getheadq(&timer->sched->timerwheel[0]) == &timer->link;
 }
 	
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
+
+static inline void xntimer_next_remote_shot (xnsched_t *sched)
+{
+    xnarch_send_timer_ipi(xnarch_cpumask_of_cpu(xnsched_cpu(sched)));
+}
+
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 /*! 
@@ -317,10 +296,12 @@ int xntimer_start (xntimer_t *timer,
 
 	    if (xntimer_heading_p(timer))
                 {
-                if(xntimer_sched(timer) == xnpod_current_sched())
-                    xntimer_next_local_shot(xntimer_sched(timer));
-                else
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
+                if(xntimer_sched(timer) != xnpod_current_sched())
                     xntimer_next_remote_shot(xntimer_sched(timer));
+                else
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+                    xntimer_next_local_shot(xntimer_sched(timer));
                 }
 	    }
 	else
@@ -412,7 +393,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 {
     int err = 0;
 
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
     int queued;
     spl_t s;
 
@@ -443,12 +424,13 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 	if (!testbits(nkpod->status,XNTMPER))
             {
             xntimer_enqueue_aperiodic(timer);
+
             if (xntimer_heading_p(timer))
                 {
-                if (sched == xnpod_current_sched())
-                    xntimer_next_local_shot(sched);
-                else
+                if (sched != xnpod_current_sched())
                     xntimer_next_remote_shot(sched);
+                else
+                    xntimer_next_local_shot(sched);
                 }
             }
         else
@@ -606,7 +588,7 @@ void xntimer_do_timers (void)
 	{
 	/* Update the periodic clocks keeping the things strictly
 	   monotonous (only CPU XNTIMER_KEEPER_ID does this). */
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
         if (sched == xnpod_sched_slot(XNTIMER_KEEPER_ID))
 #endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
             {
@@ -617,7 +599,7 @@ void xntimer_do_timers (void)
         timerq = &sched->timerwheel[now & XNTIMER_WHEELMASK];
 	}
 
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+#if CONFIG_RTAI_OPT_TIMESTAMPS
     nkpod->timestamps.timer_entry = xnarch_get_cpu_tsc();
     xnarch_read_timings(&nkpod->timestamps.tick_shot,
 			&nkpod->timestamps.tick_delivery,
@@ -655,13 +637,13 @@ void xntimer_do_timers (void)
 	    __setbits(sched->status,XNHTICK);
 	else
 	    {
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+#if CONFIG_RTAI_OPT_TIMESTAMPS
 	    nkpod->timestamps.timer_drift = (xnsticks_t)now - (xnsticks_t)timer->date;
 	    nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 	    /* Otherwise, we'd better have a valid handler... */
 	    timer->handler(timer->cookie);
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+#if CONFIG_RTAI_OPT_TIMESTAMPS
 	    nkpod->timestamps.timer_handled = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 	    }
@@ -715,7 +697,7 @@ void xntimer_do_timers (void)
 	xntimer_next_local_shot(sched);
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+#if CONFIG_RTAI_OPT_TIMESTAMPS
     nkpod->timestamps.timer_exit = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 }
@@ -744,7 +726,7 @@ void xntimer_do_timers (void)
 void xntimer_freeze (void)
 
 {
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
     int nr_cpus;
 #endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
     int n, cpu;
@@ -757,7 +739,7 @@ void xntimer_freeze (void)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	goto unlock_and_exit;
 
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
     nr_cpus = xnarch_num_online_cpus();
     for (cpu = 0; cpu < nr_cpus; cpu++)
 #else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */

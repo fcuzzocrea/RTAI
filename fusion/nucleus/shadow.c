@@ -48,7 +48,7 @@ int nkgkptd;
 
 struct xnskentry muxtable[XENOMAI_MUX_NR];
 
-static int traceme = 0;
+static int traceme = 1;
 
 static struct __gatekeeper {
 
@@ -766,18 +766,19 @@ int xnshadow_wait_barrier (struct pt_regs *regs)
     xnthread_t *thread = xnshadow_thread(current);
     spl_t s;
 
-    splhigh(s);
+    xnlock_get_irqsave(&nklock,s);
 
     if (testbits(thread->status,XNSTARTED))
 	{
 	/* Already done -- no op. */
-	splexit(s);
+	xnlock_put_irqrestore(&nklock,s);
 	goto release_task;
 	}
 
     /* We must enter this call on behalf of the Linux domain. */
     set_current_state(TASK_INTERRUPTIBLE);
-    splexit(s);
+    xnlock_put_irqrestore(&nklock,s);
+
     schedule();
 
     if (!testbits(thread->status,XNSTARTED))

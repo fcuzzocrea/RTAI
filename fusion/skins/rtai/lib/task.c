@@ -301,7 +301,7 @@ RT_TASK *rt_task_self (void)
 
     self = (RT_TASK *)malloc(sizeof(*self));
 
-    if (!self || XENOMAI_SYSCALL1(__rtai_muxid,__rtai_task_self,self) != 0)
+    if (!self || XENOMAI_SKINCALL1(__rtai_muxid,__rtai_task_self,self) != 0)
 	return NULL;
 
     pthread_setspecific(__rtai_tskey,self);

@@ -219,7 +219,7 @@ __latency_init(void)
 			    &thread,	/* poiter to our RT_TASK             */
 			    fun,	/* implementation of the task        */
 			    0,		/* we could transfer data -> task    */
-			    3000,	/* stack size                        */
+			    5000,	/* stack size                        */
 			    0,		/* priority                          */
 			    use_fpu,	/* do we use the FPU?                */
 			    0		/* signal? XXX                       */

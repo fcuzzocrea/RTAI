@@ -31,8 +31,8 @@
 // originally created from Wilhelm Hoppe in pcan_pci.h
 //
 // $Log: libpcan.h,v $
-// Revision 1.1  2005/03/18 08:57:26  rpm
-// 3.2 testing baseline
+// Revision 1.2  2005/03/18 09:10:27  rpm
+// Sync -test2
 //
 // Revision 1.2  2005/01/18 11:59:32  bucher
 // New block interface

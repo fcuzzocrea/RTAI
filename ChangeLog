@@ -1,3 +1,49 @@
+2004-01-31  Michael Neuhauser  <mike@firmix.at>
+
+	* base/arch/arm/patches/ep9301_hal17_2.4.21-rmk1-crus1.4.2.patch:
+	new Adeos patch, replaces ep9301_hal16_2.4.21-rmk1-crus1.4.2.patch;
+	see ep9301_hal17_2.4.21-rmk1-crus1.4.2.ChangeLog for changes (short
+	summary: the new version (r17c1) is a lot better than the previous
+	version (r16c255))
+	* base/arch/arm/hal/hal.{c,immed,piped}: align rtai_realtime_irq[]
+	on L1_CACHE_BYTES; removed "hard irq in trap handler" warning (this
+	can't happen, hw-irqs are now enabled for all event handlers)
+	* base/include/asm-arm/rtai_lxrt.h (_lxrt_context_switch): use Linux
+	switch_to() (which is no longer changed by Adeos patch)
+
+2004-01-25  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/xrtailab.cpp: Fixed problem with rt_VECTOR type in
+	matlab7
+	* rtai-lab/matlab/rtmain.c: Fixed problem with rt_VECTOR type in
+	matlab7
+	
+2004-01-24  Michael Neuhauser  <mike@firmix.at>
+
+	* configure.in: allow CONFIG_RTAI_SCHED_LXRT to be enabled for ARM,
+	removed old ARM sub-architectures (SA1110, CLPS711X, PXA), added new
+	ARM sub-architecture (EP9301)
+	* configure, all GNUmakefile.in: regenerated because of above change
+
+2004-01-24  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/xrtailab.cpp: Fixed problem with the counter by parameter
+	batch download.
+	
+2004-01-23  Michael Neuhauser  <mike@firmix.at>
+
+	* base/arch/arm, base/include/asm-arm: RTAI/ARM over Adeos rewrite,
+	supports kernel and user-space. Only sub-architecture supported is
+	EP9301 (ARM920T, ARMv5). Old stuff was tagged with
+	"before_arm_over_adeos".
+
+2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matlab/ptinfo.tlc: new <matlab7>rtw/c/tlc/mw/ptinfo.tlc
+	which correct problems with simulink block names in Matlab 7 (R14).
+	This new ptinfo.tlc file has been provided by Mathworks and fix the 
+	problem
+
 2005-01-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* doc: Fix generation and rebuild.
@@ -18,7 +64,7 @@
 	* base/arch/i386/hal/hal.*: reallow use of frame pointers in kernel
 	configuration (hacking section);
 
-2004-01-07  Michael Neuhauser <mike@firmix.at>
+2004-01-07  Michael Neuhauser  <mike@firmix.at>
 
 	* testsuite/user/switches.c: set stack size of the threads herd to
 	  a reasonable size, to allow execution with relatively small RAM
@@ -43,7 +89,7 @@
 	  to avoid clashes against non x86 archs (specific remarks from 
 	  Michael Neuhauser)
 
-2004-01-05  Michael Neuhauser <mike@firmix.at>
+2004-01-05  Michael Neuhauser  <mike@firmix.at>
 
 	* base/sched/sched.c: minidemonisation of LXRT support kernel threads,
 	  some code reordering in RR_YIELD.

@@ -931,15 +931,17 @@ void rt_sched_unlock(void)
 	unsigned long flags;
 	int cpuid;
 
-	flags = rt_global_save_flags_and_cli();
+	rtai_save_flags_and_cli(flags);
 	if (rt_scheduling[cpuid = rtai_cpuid()].locked && !(--rt_scheduling[cpuid].locked)) {
 		if (rt_scheduling[cpuid].rqsted > 0) {
+			sched_get_global_lock(cpuid);
 			rt_schedule();
+			sched_release_global_lock(cpuid);
 		}
 	} else {
 //		rt_printk("*** TOO MANY SCHED_UNLOCK ***\n");
 	}
-	rt_global_restore_flags(flags);
+	rtai_restore_flags(flags);
 }
 
 

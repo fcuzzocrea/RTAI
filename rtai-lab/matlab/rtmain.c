@@ -220,8 +220,8 @@ static inline void set_double(double *to, double *from)
 				case rt_VECTOR: \
 					param[matIdx] = ((double *) _newVal)[0]; \
 					if (Verbose) { \
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) { \
-							printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]); \
+						for (colIdx = 0; colIdx < nCols; colIdx++) { \
+							printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx]); \
 						} \
 					} \
 					break; \
@@ -298,8 +298,8 @@ int_T rt_ModifyParameterValue(void *mpi, int i, int matIdx, void *_newVal)
 					rtpi->dataValue[0] = *param; \
 					break; \
 				case rt_VECTOR: \
-					for (rowIdx = 0; rowIdx < nRows; rowIdx++) { \
-						rtpi->dataValue[rowIdx] = param[rowIdx]; \
+					for (colIdx = 0; colIdx < nCols; colIdx++) { \
+						rtpi->dataValue[colIdx] = param[colIdx]; \
 					} \
 					break; \
 				case rt_MATRIX_ROW_MAJOR: \

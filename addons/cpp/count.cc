@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework
  *
- * File: $Id: count.cc,v 1.1 2005/03/18 08:57:24 rpm Exp $
+ * File: $Id: count.cc,v 1.2 2005/03/18 09:10:26 rpm Exp $
  *
  * Copyright: (C) 2001,2002 Erwin Rol <erwin@muffin.org>
  *

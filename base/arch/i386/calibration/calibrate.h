@@ -12,7 +12,7 @@
 #define PARPORT       0x370
 
 #define MAXARGS       4
-#define STACKSIZE     2000
+#define STACKSIZE     5000
 #define FIFOBUFSIZE   1000
 #define INILOOPS      100
 

@@ -320,8 +320,14 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 				rem_ready_task(task);
 				enq_timed_task(task);
 				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+				task->blocked_on = (void *)task;
 				if (task == RT_CURRENT) {
 					rt_schedule();
+					if (task->blocked_on) {
+						task->suspdepth--;
+						rt_global_restore_flags(flags);
+						return SEM_TIMOUT;
+					}
 				}
 			}
 		} else {
@@ -372,6 +378,7 @@ int rt_task_resume(RT_TASK *task)
 	if (!(--task->suspdepth)) {
 		rem_timed_task(task);
 		if ((task->state &= ~(RT_SCHED_SUSPENDED | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			task->blocked_on = NOTHING;
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
 		}

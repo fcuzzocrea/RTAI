@@ -762,6 +762,7 @@ void rlg_batch_update_parameters_cb(Fl_Widget *o, void *v)
 	}
 	if (Parameters_Manager->batch_counter() > 0 && n == Parameters_Manager->batch_counter()) {
 		RT_RPC(Target_Interface_Task, BATCH_DOWNLOAD, 0);
+		Parameters_Manager->batch_counter( 0);
 	}
 }
 
@@ -1466,8 +1467,8 @@ double get_parameter(Target_Parameters_T p, int nr, int nc, int *val_idx)
 			*val_idx = 0;
 			return (p.data_value[0]);
 		case rt_VECTOR:
-			*val_idx = nr;
-			return (p.data_value[nr]);
+			*val_idx = nc;
+			return (p.data_value[nc]);
 		case rt_MATRIX_ROW_MAJOR:
 			*val_idx = nr*p.n_cols+nc;
 			return (p.data_value[nr*p.n_cols+nc]);

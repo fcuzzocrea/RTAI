@@ -39,13 +39,17 @@ static void __flush_tsd (void *tsd)
 int __init_skin (void)
 
 {
-    __rtai_muxid = XENOMAI_SYSCALL2(__xn_sys_attach,RTAI_SKIN_MAGIC,NULL); /* atomic */
+    int muxid;
+
+    muxid = XENOMAI_SYSCALL2(__xn_sys_attach,RTAI_SKIN_MAGIC,NULL); /* atomic */
 
     /* Allocate a TSD key for indexing self task pointers. */
 
-    if (__rtai_muxid >= 0 &&
+    if (muxid >= 0 &&
 	pthread_key_create(&__rtai_tskey,&__flush_tsd) != 0)
 	return -1;
 
-    return __rtai_muxid;
+    __rtai_muxid = muxid;
+
+    return muxid;
 }

@@ -1,3 +1,8 @@
+2005-01-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/lib/init.c (__init_skin): Do not set the global
+	interface identifier variable with random error codes.
+
 2005-01-03  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/module.c: Rework /proc interface. Provide

@@ -17,6 +17,10 @@ user-space.
    respect to execution determinism. To this end, this test program
    also measures the computation jitter of a number crunching loop.
 
+   Both features bring additional determinism to the standard POSIX
+   API when used by Linux tasks running under the control of
+   RTAI/fusion.
+
    This test can run with or without RTAI/fusion, thus allowing to
    compare results with vanilla Linux. Type ./run to start a
    RTAI-enabled test, or simply launch ./cruncher as a sudoer to only

@@ -582,7 +582,10 @@ static inline void xnpod_preempt_current_thread (void)
  * @param thread The address of a thread descriptor Xenomai will use
  * to store the thread-specific data.  This descriptor must always be
  * valid while the thread is active therefore it must be allocated in
- * permanent memory.
+ * permanent memory. @warning Some architectures may require the
+ * descriptor to be properly aligned in memory; this is an additional
+ * reason for descriptors not to be laid in the program stack where
+ * alignement constraints might not always be satisfied.
  *
  * @param name An ASCII string standing for the symbolic name of the
  * thread. This name is copied to a safe place into the thread

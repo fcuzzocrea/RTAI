@@ -509,8 +509,8 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
     struct task_struct *inproc = in_tcb->user_task;
 
     if (inproc && outproc->thread_info->status & TS_USEDFPU)        
-        /* __switch_to will try and use __unlazy_fpu, so that the ts
-           bit need to be cleared. */
+        /* __switch_to will try and use __unlazy_fpu, so we need to
+           clear the ts bit. */
         clts();
     
     in_tcb->active_task = inproc ?: outproc;

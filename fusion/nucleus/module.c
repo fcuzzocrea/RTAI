@@ -150,35 +150,35 @@ static int xnpod_read_proc (char *page,
 		 xnarch_tsc_to_ns(nktimerlat),
 		 xnarch_tsc_to_ns(nkschedlat));
 
-    if (nkpod != NULL && testbits(nkpod->status,XNTIMED))
+    xnlock_get_irqsave(&nklock, s);
+
+    if (nkpod != NULL)
 	{
+	if (testbits(nkpod->status,XNTIMED))
+	    {
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
-	    p += sprintf(p,"Aperiodic timer is running\n");
-	else
+	    if (!testbits(nkpod->status,XNTMPER))
+		p += sprintf(p,"Aperiodic timer is running\n");
+	    else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    p += sprintf(p,"Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
-			 xnpod_get_tickval() / 1000,
-			 nkpod->jiffies);
+		p += sprintf(p,"Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
+			     xnpod_get_tickval() / 1000,
+			     nkpod->jiffies);
+	    }
+	else
+	    p += sprintf(p,"No system timer\n");
 	}
     else
-	p += sprintf(p,"No system timer\n");
-
-    if (!nkpod)
 	{
 	p += sprintf(p,"No active pod\n");
-	goto out;
+	goto unlock_and_exit;
 	}
-
-    xnlock_get_irqsave(&nklock, s);
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
         xnsched_t *sched = xnpod_sched_slot(cpu);
         ready_threads += sched->readyq.pqueue.elems;
         }
-
-    xnlock_put_irqrestore(&nklock, s);
 
     p += sprintf(p,"Scheduler status: %d threads, %d ready, %d blocked\n",
                  nkpod->threadq.elems,
@@ -193,8 +193,6 @@ static int xnpod_read_proc (char *page,
         xnsched_t *sched = xnpod_sched_slot(cpu);
 
         p += sprintf(p,"------------------------------------------\n");
-
-        xnlock_get_irqsave(&nklock, s);
 
         holder = getheadq(&nkpod->threadq);
 
@@ -215,11 +213,11 @@ static int xnpod_read_proc (char *page,
 			 xnthread_symbolic_status(thread->status,
                                                   buf,sizeof(buf)));
             }
-
-        xnlock_put_irqrestore(&nklock, s);
         }
 
- out:
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock, s);
 
     len = p - page;
 

@@ -1782,6 +1782,26 @@ static void xnshadow_shield (int iflag)
 	adeos_suspend_domain();
 }
 
+void xnshadow_grab_events (void)
+
+{
+    adeos_catch_event(ADEOS_EXIT_PROCESS,&xnshadow_linux_taskexit);
+    adeos_catch_event(ADEOS_KICK_PROCESS,&xnshadow_kick_process);
+    adeos_catch_event(ADEOS_SCHEDULE_HEAD,&xnshadow_schedule_head);
+    adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,&xnshadow_schedule_tail);
+    adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,&xnshadow_renice_process);
+}
+
+void xnshadow_release_events (void)
+
+{
+    adeos_catch_event(ADEOS_EXIT_PROCESS,NULL);
+    adeos_catch_event(ADEOS_KICK_PROCESS,NULL);
+    adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
+    adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,NULL);
+    adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,NULL);
+}
+
 int xnshadow_init (void)
 
 {
@@ -1816,13 +1836,9 @@ int xnshadow_init (void)
     for (cpu = 0; cpu < num_online_cpus(); ++cpu)
         down(&gksync);
 
+    /* We need to grab these ones right now. */
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&xnshadow_linux_sysentry);
-    adeos_catch_event(ADEOS_EXIT_PROCESS,&xnshadow_linux_taskexit);
-    adeos_catch_event(ADEOS_KICK_PROCESS,&xnshadow_kick_process);
-    adeos_catch_event(ADEOS_SCHEDULE_HEAD,&xnshadow_schedule_head);
-    adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,&xnshadow_schedule_tail);
     adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,&xnshadow_realtime_sysentry);
-    adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,&xnshadow_renice_process);
 
 #ifdef CONFIG_SMP
     adeos_virtualize_irq_from(&irq_shield,
@@ -1839,6 +1855,7 @@ void xnshadow_cleanup (void)
 
 {
     unsigned cpu;
+
     gkstop = 1;
 
 #ifdef CONFIG_SMP
@@ -1850,12 +1867,7 @@ void xnshadow_cleanup (void)
 #endif /* CONFIG_SMP */
 
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
-    adeos_catch_event(ADEOS_EXIT_PROCESS,NULL);
-    adeos_catch_event(ADEOS_KICK_PROCESS,NULL);
-    adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
-    adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,NULL);
     adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,NULL);
-    adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,NULL);
 
     for (cpu = 0; cpu < num_online_cpus(); ++cpu)
         up(&gkreq[cpu]);

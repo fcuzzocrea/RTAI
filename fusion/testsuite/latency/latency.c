@@ -99,7 +99,7 @@ void display (void *cookie)
 	    return;
 	    }
 
-	printf("min = %Ld ns, max = %Ld ns, avg = %Ld ns, overrun = %d\n",
+	printf("min = %Ld ns, max = %Ld ns, avg = %Ld ns, overrun = %ld\n",
 	       rt_timer_ticks2ns(minjitter),
 	       rt_timer_ticks2ns(maxjitter),
 	       rt_timer_ticks2ns(avgjitter),

@@ -1,3 +1,16 @@
+2004-10-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_shutdown): Split the cleanup work into two
+	distinct phases delimited by calls to xnarch_notify_shutdown() and
+	xnarch_notify_halt(), so that per-arch actions can be performed at
+	different times during the shutdown process.
+	
+	* nucleus/shadow.c: Define xnshadow_grab_events() and
+	xnshadow_release_events() to request/release kernel event
+	interception independently of the module loadup/cleanup phases.
+	
+	* nucleus/module.c (xnpod_read_proc): Fix race w/ shutdown.
+
 2004-10-01  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-i386/system.h (xnarch_switch_to): clear the

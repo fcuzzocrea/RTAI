@@ -424,6 +424,8 @@ void xnpod_shutdown (int xtype)
 
     xnpod_stop_timer();
 
+    xnarch_notify_shutdown();
+
     xnlock_get_irqsave(&nklock,s);
 
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
@@ -452,9 +454,7 @@ void xnpod_shutdown (int xtype)
 
     xnlock_put_irqrestore(&nklock,s);
 
-    xnarch_notify_shutdown();
-
-    xnarch_release_ipi();
+    xnarch_notify_halt();
 
     xnlock_get_irqsave(&nklock,s);
 

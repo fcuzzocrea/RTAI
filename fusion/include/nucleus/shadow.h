@@ -81,6 +81,10 @@ int xnshadow_init(void);
 
 void xnshadow_cleanup(void);
 
+void xnshadow_grab_events(void);
+
+void xnshadow_release_events(void);
+
 void xnshadow_map(struct xnthread *thread,
 		  pid_t syncpid,
 		  int *u_syncp);

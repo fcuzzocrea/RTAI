@@ -473,8 +473,6 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
 #endif /* GCC version < 3.2 */
 }
 
-extern int workaround_fpu_fault;
-
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 				     xnarchtcb_t *in_tcb)
 {
@@ -488,8 +486,8 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	clts();
 	}
     else if (inproc && outproc->thread_info->status & TS_USEDFPU)        
-        /* __switch_to will try and use __unlazy_fpu, so that the ts bit need
-           to be cleared. */
+        /* __switch_to will try and use __unlazy_fpu, so that the ts
+           bit need to be cleared. */
         clts();
     
     in_tcb->active_task = inproc ?: outproc;
@@ -705,7 +703,7 @@ static void xnarch_finalize_cpu(unsigned irq)
     up(&xnarch_finalize_sync);
 }
 
-static inline void xnarch_notify_shutdown(void)
+static inline void xnarch_notify_halt(void)
     
 {
     unsigned cpu, nr_cpus = num_online_cpus();
@@ -715,8 +713,9 @@ static inline void xnarch_notify_shutdown(void)
 
     init_MUTEX_LOCKED(&xnarch_finalize_sync);
 
-    /* Here adp_current is in fact root, since xnarch_notify_shutdown is called
-       from xnpod_shutdown, itself called from Linux context. */
+    /* Here adp_current is in fact root, since xnarch_notify_halt is
+       called from xnpod_shutdown, itself called from Linux
+       context. */
     adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2,
                               xnarch_finalize_cpu, NULL, IPIPE_HANDLE_MASK);
 
@@ -749,9 +748,19 @@ static inline int xnarch_release_ipi (void) {
     return 0;
 }
 
-#define xnarch_notify_shutdown() /* Nullified */
+#define xnarch_notify_halt() /* Nullified */
 
 #endif /* CONFIG_SMP */
+
+static inline void xnarch_notify_shutdown(void)
+
+{
+    xnshadow_release_events();
+    /* Wait for the currently processed events to drain. */
+    set_current_state(TASK_UNINTERRUPTIBLE);
+    schedule_timeout(50);
+    xnarch_release_ipi();
+}
 
 static inline void xnarch_escalate (void) {
 
@@ -769,7 +778,10 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes) {
     kfree(chunk);
 }
 
-#define xnarch_notify_ready() /* Nullified */
+static void xnarch_notify_ready (void) {
+    
+    xnshadow_grab_events();
+}
 
 #endif /* XENO_POD_MODULE */
 

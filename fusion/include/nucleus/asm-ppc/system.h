@@ -621,7 +621,7 @@ static inline int xnarch_release_ipi (void)
                                      IPIPE_PASS_MASK);
 }
 
-static inline void xnarch_notify_shutdown(void)
+static inline void xnarch_notify_halt(void)
 
 {
     unsigned long flags = adeos_critical_enter(NULL);
@@ -645,9 +645,19 @@ static inline int xnarch_release_ipi (void) {
     return 0;
 }
 
-#define xnarch_notify_shutdown() /* Nullified */
+#define xnarch_notify_halt() /* Nullified */
 
 #endif /* CONFIG_SMP */
+
+static inline void xnarch_notify_shutdown(void)
+
+{
+    xnshadow_release_events();
+    /* Wait for the currently processed events to drain. */
+    set_current_state(TASK_UNINTERRUPTIBLE);
+    schedule_timeout(50);
+    xnarch_release_ipi();
+}
 
 static inline void xnarch_escalate (void) {
 
@@ -665,7 +675,10 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes) {
     kfree(chunk);
 }
 
-#define xnarch_notify_ready() /* Nullified */
+static void xnarch_notify_ready (void) {
+    
+    xnshadow_grab_events();
+}
 
 #endif /* XENO_POD_MODULE */
 

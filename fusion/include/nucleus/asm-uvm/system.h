@@ -667,6 +667,7 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes) {
 
 #define xnarch_notify_ready()  /* Nullified */
 #define xnarch_notify_shutdown() /* Nullified */
+#define xnarch_notify_halt() /* Nullified */
 
 #endif /* XENO_POD_MODULE */
 

@@ -114,8 +114,8 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 #endif /* CONFIG_X86_LOCAL_APIC */
 
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-static int rtai_isr_nesting[RTAI_NR_CPUS];
-static void (*rtai_isr_hook)(int nesting);
+struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
+static void (*rtai_isr_hook)(int cpuid);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 extern struct desc_struct idt_table[];
@@ -1257,21 +1257,22 @@ void rt_setup_8254_tsc (void)
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 #define RTAI_SCHED_ISR_LOCK() \
 	do { \
-		if (rtai_isr_nesting[cpuid]++ == 0 && rtai_isr_hook) { \
-			rtai_isr_hook(rtai_isr_nesting[cpuid]); \
-			rtai_cli(); \
+		if (!rt_scheduling[cpuid].locked++) { \
+			rt_scheduling[cpuid].rqsted = 0; \
 		} \
 	} while (0)
 #define RTAI_SCHED_ISR_UNLOCK() \
 	do { \
-		if (--rtai_isr_nesting[cpuid] == 0 && rtai_isr_hook) { \
-			rtai_isr_hook(rtai_isr_nesting[cpuid]); \
-			rtai_cli(); \
+		rtai_cli(); \
+		if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
+			if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook) { \
+				rtai_isr_hook(cpuid); \
+        		} \
 		} \
 	} while (0)
 #else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
 #define RTAI_SCHED_ISR_LOCK() \
-	do {                 } while (0)
+	do {             } while (0)
 #define RTAI_SCHED_ISR_UNLOCK() \
 	do { rtai_cli(); } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
@@ -1301,20 +1302,18 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 
 	lflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 //1)	lflags = adeos_test_and_stall_pipeline_from (adp_root);
-	adp_root->irqs[irq].acknowledge(irq);
+	adp_root->irqs[irq].acknowledge(irq); mb();
 	if (rtai_realtime_irq[irq].handler) {
 		RTAI_SCHED_ISR_LOCK();
                 if (rtai_realtime_irq[irq].retmode && ((int (*)(int, void *))rtai_realtime_irq[irq].handler)(irq, rtai_realtime_irq[irq].cookie)) {
-			rtai_cli();
+			RTAI_SCHED_ISR_UNLOCK();
 			adp_root->cpudata[cpuid].status = lflags;
 //1)			adeos_restore_pipeline_nosync(adp_root, lflags, cpuid);
-			RTAI_SCHED_ISR_UNLOCK();
 			return 0;
                 } else {
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
+			RTAI_SCHED_ISR_UNLOCK();
 		}
-		rtai_cli();
-		RTAI_SCHED_ISR_UNLOCK();
 	} else {
 		adeos_pend_uncond(irq, cpuid);
 //1)		adeos_schedule_irq(irq);
@@ -2067,5 +2066,5 @@ EXPORT_SYMBOL(rtai_set_gate_vector);
 EXPORT_SYMBOL(rtai_reset_gate_vector);
 
 EXPORT_SYMBOL(rtai_lxrt_invoke_entry);
-EXPORT_SYMBOL(adeos_pended);
+EXPORT_SYMBOL(rt_scheduling);
 /*@}*/

@@ -104,7 +104,7 @@ static int		(*saved_adeos_syscall_handler)(struct pt_regs *regs);
 static int		(*saved_adeos_irq_handler)(int irq, struct pt_regs *regs);
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 // *TODO* enable in config, do tests
-static int		rtai_isr_nesting[RTAI_NR_CPUS];
+struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
 static isr_hook_t	rtai_isr_hook;
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
@@ -571,16 +571,16 @@ rt_set_trap_handler(RT_TRAP_HANDLER handler)
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 #define RTAI_SCHED_ISR_LOCK() \
     do { \
-	if (rtai_isr_nesting[cpuid]++ == 0 && rtai_isr_hook) { \
-	    rtai_isr_hook(rtai_isr_nesting[cpuid]); \
-	    rtai_cli(); \
+	if (!rt_scheduling[cpuid].locked++) { \
+            rt_scheduling[cpuid].rqsted = 0; \
 	} \
     } while (0)
 #define RTAI_SCHED_ISR_UNLOCK() \
     do { \
-	if (--rtai_isr_nesting[cpuid] == 0 && rtai_isr_hook) { \
-	    rtai_isr_hook(rtai_isr_nesting[cpuid]); \
-	    rtai_cli(); \
+	if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
+	    if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook) { \
+             	rtai_isr_hook(cpuid); \
+	    } \
 	} \
     } while (0)
 #else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
@@ -1075,3 +1075,4 @@ EXPORT_SYMBOL(rt_smp_times);
 EXPORT_SYMBOL(rtai_lxrt_invoke_entry);
 EXPORT_SYMBOL(rtai_realtime_irq);
 EXPORT_SYMBOL(rt_printk);
+EXPORT_SYMBOL(rt_scheduling);

@@ -102,7 +102,7 @@ static RT_TRAP_HANDLER	rtai_trap_handler;
 static int		(*saved_adeos_syscall_handler)(struct pt_regs *regs);
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 // *TODO* enable in config, do tests
-static int		rtai_isr_nesting[RTAI_NR_CPUS];
+struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
 static isr_hook_t	rtai_isr_hook;
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
@@ -463,13 +463,14 @@ rtai_irq_trampoline(unsigned irq)
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 	adeos_declare_cpuid;
 	adeos_load_cpuid();
-	if (rtai_isr_nesting[cpuid]++ == 0 && rtai_isr_hook)
-	    rtai_isr_hook(rtai_isr_nesting[cpuid]);
+	if (!rt_scheduling[cpuid].locked++)
+		rt_scheduling[cpuid].rqsted = 0;
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 	rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-	if (--rtai_isr_nesting[cpuid] == 0 && rtai_isr_hook)
-	    rtai_isr_hook(rtai_isr_nesting[cpuid]);
+	if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked))
+		if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook)
+			rtai_isr_hook(cpuid);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 	}
     else
@@ -841,3 +842,4 @@ EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 EXPORT_SYMBOL(rtai_lxrt_invoke_entry);
 EXPORT_SYMBOL(rtai_realtime_irq);
+EXPORT_SYMBOL(rt_scheduling);

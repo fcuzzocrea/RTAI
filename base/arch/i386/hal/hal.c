@@ -114,8 +114,8 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 #endif /* CONFIG_X86_LOCAL_APIC */
 
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-static int rtai_isr_nesting[RTAI_NR_CPUS];
-static void (*rtai_isr_hook)(int nesting);
+struct { volatile int locked, rqsted; } rt_scheduling[RTAI_NR_CPUS];
+static void (*rtai_isr_hook)(int cpuid);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 extern struct desc_struct idt_table[];
@@ -1155,14 +1155,16 @@ static void rtai_irq_trampoline (unsigned irq)
 		#ifdef adeos_load_cpuid
 		adeos_load_cpuid();
 		#endif
-		if (rtai_isr_nesting[cpuid]++ == 0 && rtai_isr_hook) {
-			rtai_isr_hook(rtai_isr_nesting[cpuid]);
+		if (!rt_scheduling[cpuid].locked++) { 
+			rt_scheduling[cpuid].rqsted = 0;
 		}
 #endif
 		rtai_realtime_irq[irq].handler(irq,rtai_realtime_irq[irq].cookie);
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-		if (--rtai_isr_nesting[cpuid] == 0 && rtai_isr_hook) {
-			rtai_isr_hook(rtai_isr_nesting[cpuid]);
+		if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) {
+			if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook) {
+                                rtai_isr_hook(cpuid);
+			}
 		}
 #endif
 	} else {
@@ -1784,4 +1786,5 @@ EXPORT_SYMBOL(rtai_set_gate_vector);
 EXPORT_SYMBOL(rtai_reset_gate_vector);
 
 EXPORT_SYMBOL(rtai_lxrt_invoke_entry);
+EXPORT_SYMBOL(rt_scheduling);
 /*@}*/

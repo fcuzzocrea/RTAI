@@ -1601,11 +1601,11 @@ static int rtai_proc_register (void)
 
     rtai_proc_root->owner = THIS_MODULE;
 
-    ent = create_proc_entry("rtai",S_IFREG|S_IRUGO|S_IWUSR,rtai_proc_root);
+    ent = create_proc_entry("hal",S_IFREG|S_IRUGO|S_IWUSR,rtai_proc_root);
 
     if (!ent)
 	{
-	printk(KERN_ERR "Unable to initialize /proc/rtai/rtai.\n");
+	printk(KERN_ERR "Unable to initialize /proc/rtai/hal.\n");
 	return -1;
         }
 
@@ -1617,7 +1617,7 @@ static int rtai_proc_register (void)
 static void rtai_proc_unregister (void)
 
 {
-    remove_proc_entry("rtai",rtai_proc_root);
+    remove_proc_entry("hal",rtai_proc_root);
     remove_proc_entry("rtai",0);
 }
 

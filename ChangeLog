@@ -1,3 +1,9 @@
+2004-07-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/rtai/sched_lxrt.c (rt_schedule_soft,
+	give_back_to_linux, lxrt_migration_handler, kthread_m): Rework
+	interrupt masking and critical sections.
+
 2004-07-17  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/sched/rtai/sched_mup.c: Fix compilation.

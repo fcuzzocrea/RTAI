@@ -1721,13 +1721,18 @@ struct fun_args { int a0; int a1; int a2; int a3; int a4; int a5; int a6; int a7
 
 void rt_schedule_soft(RT_TASK *rt_task)
 {
+	unsigned long flags, hwflags;
 	struct fun_args *funarg;
 	int cpuid, priority;
+
+	rtai_hw_lock(hwflags);
+
+	flags = rt_global_save_flags_and_cli();
 
 	if ((priority = rt_task->priority) < BASE_SOFT_PRIORITY) {
 		rt_task->priority += BASE_SOFT_PRIORITY;
 	}
-	rt_global_cli();
+
 	rt_task->state |= RT_SCHED_READY;
 	while (rt_task->state != RT_SCHED_READY) {
 		current->state = TASK_HARDREALTIME;
@@ -1738,10 +1743,8 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	LOCK_LINUX(cpuid = hard_cpu_id());
 	enq_soft_ready_task(rt_task);
 	rt_smp_current[cpuid] = rt_task;
-	rt_global_sti();
 	funarg = (void *)rt_task->fun_args;
 	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
-	rt_global_cli();
 	rt_task->priority = priority;
 	rt_task->state = 0;
 	(rt_task->rprev)->rnext = rt_task->rnext;
@@ -1751,6 +1754,10 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	UNLOCK_LINUX(cpuid);
 	rt_global_sti();
 	schedule();
+
+	rt_global_restore_flags(flags);
+
+	rtai_hw_unlock(hwflags);
 }
 
 static inline void fast_schedule(RT_TASK *new_task)
@@ -1779,16 +1786,19 @@ static void lxrt_migration_handler (unsigned virq)
 
 {
     struct klist_t *klistp = &klistb[hard_cpu_id()];
+    unsigned long flags;
     RT_TASK *rt_task;
+
+    flags = rt_global_save_flags_and_cli();
 
     while (klistp->out != klistp->in)
 	{
 	rt_task = klistp->task[klistp->out];
 	klistp->out = (klistp->out + 1) & (MAX_WAKEUP_SRQ - 1);
-	rt_global_cli();
 	fast_schedule(rt_task);
-	rt_global_sti();
 	}
+
+    rt_global_restore_flags(flags);
 }
 
 static void kthread_b(int cpuid)
@@ -1875,19 +1885,19 @@ static void kthread_m(int cpuid)
 		current->state = TASK_UNINTERRUPTIBLE;
 		schedule();
 		while (klistp->out != klistp->in) {
-			unsigned long hard;
-			rt_global_cli();
-			rt_global_sti();
+			unsigned long hard, flags;
+			flags = rt_global_save_flags_and_cli();
 			hard = (unsigned long)(lnxtsk = klistp->task[klistp->out]);
 			if (hard > 1) {
 				lnxtsk->state = TASK_ZOMBIE;
 				lnxtsk->exit_signal = SIGCHLD;
+				rt_global_sti();
 				waitpid(lnxtsk->pid, 0, 0);
-			} else {
 				rt_global_cli();
+			} else {
 				if (taskidx[cpuid] < Reservoir) {
-					rt_global_sti();
 					task->suspdepth = task->state = 0;
+					rt_global_sti();
 					kernel_thread((void *)thread_fun, (void *)cpuid, 0);
 					while (task->state != (RT_SCHED_READY | RT_SCHED_SUSPENDED)) {
 						current->state = TASK_INTERRUPTIBLE;
@@ -1896,15 +1906,17 @@ static void kthread_m(int cpuid)
 					rt_global_cli();
 					taskav[cpuid][taskidx[cpuid]++] = (void *)task->lnxtsk;
 				}
-				rt_global_sti();
 				klistp->out = (klistp->out + 1) & (MAX_WAKEUP_SRQ - 1);
 				if (hard) {
 					rt_task_resume((void *)klistp->task[klistp->out]);
 				} else {
+					rt_global_sti();
 					up(&resem[cpuid]);
+					rt_global_cli();
 				}
 			}
 			klistp->out = (klistp->out + 1) & (MAX_WAKEUP_SRQ - 1);
+			rt_global_restore_flags(flags);
 		}
 	}
 	kthreadm[cpuid] = 0;
@@ -1934,7 +1946,9 @@ void steal_from_linux(RT_TASK *rt_task)
 
 void give_back_to_linux(RT_TASK *rt_task)
 {
-	rt_global_cli();
+        unsigned long flags;
+
+	flags = rt_global_save_flags_and_cli();
 	wake_up_srq.task[wake_up_srq.in] = rt_task->lnxtsk;
 	wake_up_srq.in = (wake_up_srq.in + 1) & (MAX_WAKEUP_SRQ - 1);
 	rt_pend_linux_srq(wake_up_srq.srq);
@@ -1945,8 +1959,8 @@ void give_back_to_linux(RT_TASK *rt_task)
 	/* Perform Linux's scheduling tail now since we woke up
 	   outside the regular schedule() point. */
 	__adeos_schedule_back_root(rt_task->lnxtsk);
-	rt_global_sti();
 	rt_task->is_hard = 0;
+	rt_global_restore_flags(flags);
 }
 
 static struct task_struct *get_kthread(int get, int cpuid, void *lnxtsk)

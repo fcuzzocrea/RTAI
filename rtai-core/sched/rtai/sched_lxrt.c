@@ -56,6 +56,7 @@ ACKNOWLEDGMENTS:
 #include <asm/segment.h>
 #include <asm/hw_irq.h>
 #include <asm/uaccess.h>
+#include <asm/mmu_context.h>
 
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
@@ -463,7 +464,7 @@ int rt_task_init(RT_TASK *task, void (*rt_thread)(int), int data,
 				 uses_fpu, signal, get_min_tasks_cpuid());
 }
 
-#else
+#else /* !USE_RTAI_TASKS */
 
 int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stack_size, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid)
 {
@@ -475,7 +476,7 @@ int rt_task_init(RT_TASK *task, void (*rt_thread)(int), int data, int stack_size
 	return rt_kthread_init(task, rt_thread, data, stack_size, priority, uses_fpu, signal);
 }
 
-#endif
+#endif /* USE_RTAI_TASKS */
 
 void rt_set_runnable_on_cpuid(RT_TASK *task, unsigned int cpuid)
 {
@@ -664,6 +665,30 @@ do { \
 #define UEXECTIME()
 #endif
 
+static inline struct task_struct *lxrt_context_switch (struct task_struct *prev,
+						       struct task_struct *next,
+						       int cpuid)
+{
+    struct mm_struct *oldmm = prev->active_mm;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	switch_mm(oldmm,next->active_mm,next,cpuid);
+#else /* >= 2.6.0 */
+	switch_mm(oldmm,next->active_mm,next);
+#endif /* < 2.6.0 */
+
+	if (!next->mm)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	    enter_lazy_tlb(oldmm,next,cpuid);
+#else /* >= 2.6.0 */
+	    enter_lazy_tlb(oldmm,next);
+#endif /* < 2.6.0 */
+
+    switch_to(prev,next,prev);
+
+    return prev;
+}
+
 static inline void make_current_soft(RT_TASK *rt_current)
 {
         void rt_schedule(void);
@@ -778,7 +803,7 @@ schedlnxtsk:
 				rt_linux_task.lnxtsk = prev;
 			}
 			UEXECTIME();
-			RTAI_LXRT_TASK_SWITCH(prev, new_task->lnxtsk, cpuid);
+			prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
 			if (prev->used_math) {
 				restore_fpu(prev);
 			}
@@ -903,7 +928,7 @@ schedlnxtsk:
 				rt_linux_task.lnxtsk = prev;
 			}
 			UEXECTIME();
-			RTAI_LXRT_TASK_SWITCH(prev, new_task->lnxtsk, cpuid);
+			prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
 			if (prev->used_math) {
 				restore_fpu(prev);
 			}
@@ -1205,7 +1230,7 @@ schedlnxtsk:
 			}
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
-			RTAI_LXRT_TASK_SWITCH(prev, new_task->lnxtsk, cpuid);
+			prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
 			if (prev->used_math) {
 				restore_fpu(prev);
 			}
@@ -1735,7 +1760,7 @@ static inline void fast_schedule(RT_TASK *new_task)
 		UEXECTIME();
 #undef rt_current
 		rt_smp_current[cpuid] = new_task;
-		RTAI_LXRT_TASK_SWITCH(prev, new_task->lnxtsk, cpuid);
+		prev = lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
 		if (prev->used_math) {
 			restore_fpu(prev);
 		}

@@ -40,36 +40,6 @@ extern "C" {
 
 #ifdef __KERNEL__
 
-void rtai_linux_switch_mm(struct task_struct *prev,
-			  struct task_struct *next,
-			  int cpuid);
-
-static inline void RTAI_LXRT_TASK_SWITCH (struct task_struct *prev,
-					  struct task_struct *next,
-					  int cpuid)
-{
-    rtai_linux_switch_mm(prev,next,cpuid);
-
-    __asm__ __volatile__(						\
-		 "pushl %%esi\n\t"				        \
-		 "pushl %%edi\n\t"					\
-		 "pushl %%ebp\n\t"					\
-		 "movl %%esp,%0\n\t"	/* save ESP */		\
-		 "movl %3,%%esp\n\t"	/* restore ESP */		\
-		 "movl $1f,%1\n\t"	/* save EIP */		\
-		 "pushl %4\n\t"		/* restore EIP */		\
-		 "jmp "SYMBOL_NAME_STR(__switch_to)"\n\t"		\
-		 "1:\t"							\
-		 "popl %%ebp\n\t"					\
-		 "popl %%edi\n\t"					\
-		 "popl %%esi\n\t"					\
-		 :"=m" (prev->thread.esp),"=m" (prev->thread.eip),	\
-		  "=b" (prev)						\
-		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
-		  "a" (prev), "d" (next),				\
-		  "b" (prev));						\
-}
-
 #define RTAI_LXRT_HANDLER rtai_lxrt_handler
 
 #define DEFINE_LXRT_HANDLER() \
@@ -118,14 +88,14 @@ __asm__( \
 
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
-	union rtai_lxrt_t retval;
-	RTAI_DO_TRAP(RTAI_LXRT_VECTOR,retval,srq,arg);
-	return retval;
+    union rtai_lxrt_t retval;
+    RTAI_DO_TRAP(RTAI_LXRT_VECTOR,retval,srq,arg);
+    return retval;
 }
 
 static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
 {
-	return _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
+    return _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
 }
 
 #ifdef __cplusplus

@@ -60,10 +60,21 @@ AC_ARG_WITH(rtai-dir,
     ])
 AC_MSG_RESULT(${CONFIG_RTAI_MVM_INSTALLDIR})
 
-if test \! -h $CONFIG_RTAI_MVM_INSTALLDIR/source; then
+dnl If a sign of a complete fusion source tree is found in the parent
+dnl directory, we assume that the $installdir/source link will be
+dnl properly installed thus do not check for it here. Otherwise, it's likely
+dnl an incremental build of the simulator alone, and we need to find
+dnl such link right away.
+
+if test -r $srcdir/../rtai_config.h.in; then
+    RTAI_INSTALLDIR=`cd .. && pwd`
+    ln -sf $RTAI_INSTALLDIR ../source
+    ln -sf . ../build
+elif -h $CONFIG_RTAI_MVM_INSTALLDIR/source; then
+    RTAI_INSTALLDIR=${CONFIG_RTAI_MVM_INSTALLDIR}
+else
     AC_MSG_ERROR([Cannot infere sources location from installation directory])
 fi
-RTAI_INSTALLDIR=${CONFIG_RTAI_MVM_INSTALLDIR}
 
 AC_MSG_CHECKING(for MVM debug support)
 AC_ARG_ENABLE(mvm-debug,

@@ -593,9 +593,6 @@ int rthal_release_linux_irq (unsigned irq, void *dev_id)
 int rthal_pend_linux_irq (unsigned irq)
 
 {
-    if (irq >= IPIPE_NR_IRQS)
-	return -EINVAL;
-
     return adeos_propagate_irq(irq);
 }
 

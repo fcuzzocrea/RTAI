@@ -25,6 +25,12 @@
 	* arch/ppc/hal.c (rthal_request_linux_irq): Handle the possible 
 	failure of the Linux interrupt handler registration.
 	
+	* arch/i386/hal.c (rthal_pend_linux_irq): Remove redundant parameter
+	check.
+	
+	* arch/ppc/hal.c (rthal_pend_linux_irq): Remove redundant parameter
+	check.
+	
 2005-03-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/module.c (rtai_shutdown): Make sure to wipe out all

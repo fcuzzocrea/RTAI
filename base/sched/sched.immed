@@ -1673,6 +1673,8 @@ static int rsvr_cnt[NR_RT_CPUS];
 #endif
 static int Reservoir = RESERVOIR;
 MODULE_PARM(Reservoir, "i");
+static int SpareKthreads = 20;
+MODULE_PARM(SpareKthreads, "i");
 
 static int taskidx[NR_RT_CPUS];
 static struct task_struct **taskav[NR_RT_CPUS];
@@ -1739,18 +1741,25 @@ static void thread_fun(int cpuid)
 	put_current_on_cpu(cpuid);
 	init_fpu(current);
 	steal_from_linux(task);
-	rt_task_suspend(task);
-	current->comm[0] = 'U';
-	task = current->rtai_tskext[0];
-	task->exectime[1] = rdtsc();
-	((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
+	while(1) {
+		rt_task_suspend(task);
+		current->comm[0] = 'U';
+		task = current->rtai_tskext[0];
+		task->exectime[1] = rdtsc();
+		((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
 #if 0
-	give_back_to_linux(task);
-	rt_task_delete(task);
-	current->comm[0] = 'D';
+		give_back_to_linux(task);
+		rt_task_delete(task);
+		current->comm[0] = 'D';
 #else
-	rt_task_suspend(task);
+		current->comm[0] = 'F';
+		rtai_cli();
+		if (taskidx[cpuid] < SpareKthreads) {;
+			taskav[cpuid][taskidx[cpuid]++] = task->lnxtsk;
+		}	
+		rtai_sti();
 #endif
+	}
 }
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7)
@@ -1764,6 +1773,7 @@ static void kthread_m(int cpuid)
 	struct klist_t *klistp;
 	RT_TASK *task;
 
+	
 	detach_kthread();
 	(task = &thread_task[cpuid])->magic = RT_TASK_MAGIC;
 	task->runnable_on_cpus = cpuid;
@@ -2356,7 +2366,7 @@ static int lxrt_init(void)
 
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	{
-	taskav[cpuid] = (void *)kmalloc(Reservoir*sizeof(void *), GFP_KERNEL);
+	taskav[cpuid] = (void *)kmalloc(SpareKthreads*sizeof(void *), GFP_KERNEL);
 	init_MUTEX_LOCKED(&resem[cpuid]);
 	kernel_thread((void *)kthread_m, (void *)cpuid, 0);
 	down(&resem[cpuid]);

@@ -1,3 +1,8 @@
+2004-10-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* rtai-core/sched/rtai/sched_lxrt.c: changed sched_lock/unlock to
+	avoid playing with tasks priorities.
+
 2004-10-04  Edelhard Becker <ebecker@software-manufaktur.de>
 
 	* configure.in: Detect CONFIG_X86_EMU486 when testing for

@@ -1,4 +1,5 @@
 #include <sys/mman.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -101,8 +102,8 @@ void latency (void *cookie)
 void display (void *cookie)
 
 {
-    int err;
-    int n = 0;
+    int err, n = 0;
+    time_t start;
 
     err = rt_sem_create(&display_sem,"dispsem",0,S_FIFO);
 
@@ -111,6 +112,8 @@ void display (void *cookie)
         fprintf(stderr,"latency: cannot create semaphore: %s\n",strerror(-err));
 	return;
 	}
+
+    time(&start);
 
     for (;;)
 	{
@@ -125,7 +128,14 @@ void display (void *cookie)
 	    }
 
 	if (data_lines && (n++ % data_lines)==0)
-	    printf("RTH|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","overrun");
+	    {
+	    time_t now, dt;
+	    time(&now);
+	    dt = now - start;
+	    printf("RTH|%12s|%12s|%12s|%12s|  %.2ldh%.2ldm%.2lds\n",
+		   "lat min","lat avg","lat max","overrun",
+		   dt / 3600,(dt / 60) % 60,dt % 60);
+	    }
 
 	printf("RTD|%12ld|%12ld|%12ld|%12ld\n",
 	       minjitter,

@@ -1,4 +1,5 @@
 #include <sys/types.h>
+#include <sys/time.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -51,11 +52,10 @@ int main (int argc, char **argv)
 
 {
     const char *const communication_channel = "/dev/rtp0";
+    int n = 0, c, fd, err, data_lines = 21;
     struct rtai_latency_stat s;
+    time_t start;
     ssize_t sz;
-    int n = 0;
-    int c, fd, err;
-    int data_lines = 21;
 
     while ((c = getopt(argc,argv,"hl:T:")) != EOF)
 	switch (c)
@@ -99,6 +99,8 @@ int main (int argc, char **argv)
         exit(1);
         }
 
+    time(&start);
+
     for (;;)
         {
         sz = read(fd,&s,sizeof(s));
@@ -116,7 +118,14 @@ int main (int argc, char **argv)
 	    add_histogram(s.maxjitter);
 
         if (data_lines && (n++ % data_lines)==0)
-            printf("RTH|%12s|%12s|%12s|%12s\n", "jit min","jit avg","jit max","overrun");
+	    {
+	    time_t now, dt;
+	    time(&now);
+	    dt = now - start;
+	    printf("RTH|%12s|%12s|%12s|%12s|  %.2ldh%.2ldm%.2lds\n",
+		   "lat min","lat avg","lat max","overrun",
+		   dt / 3600,(dt / 60) % 60,dt % 60);
+	    }
 
         printf("RTD|%12d|%12d|%12d|%12d\n",
                s.minjitter,

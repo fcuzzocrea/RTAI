@@ -169,10 +169,17 @@ if test \! -r ${RTAI_LINUX_DIR}/Makefile; then
    AC_MSG_ERROR([No Linux kernel tree in ${RTAI_LINUX_DIR}])
 fi
 
-eval linux_`grep '^EXTRAVERSION =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
-eval linux_`grep '^PATCHLEVEL =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
-eval linux_`grep '^SUBLEVEL =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
-eval linux_`grep '^VERSION =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
+dnl RTAI_LINUX_DIR contains the Linux kernel build tree, try to deduce the
+dnl kernel source tree from the build directory top Makefile from the variable
+dnl KERNELSRC defined there. If this variable is not defined, we suppose that
+dnl the kernel was built in its source tree.
+RTAI_LINUX_SRCDIR=`sed -e 's,KERNELSRC *:= *\(.*\)$,\1,;t;d' \
+        "${RTAI_LINUX_DIR}/Makefile"`
+test -z "$RTAI_LINUX_SRCDIR" && RTAI_LINUX_SRCDIR="${RTAI_LINUX_DIR}"
+eval linux_`grep '^EXTRAVERSION =' $RTAI_LINUX_SRCDIR/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^PATCHLEVEL =' $RTAI_LINUX_SRCDIR/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^SUBLEVEL =' $RTAI_LINUX_SRCDIR/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^VERSION =' $RTAI_LINUX_SRCDIR/Makefile | sed -e 's, ,,g'`
 
 dnl Load Linux kernel configuration now, before config symbols are tested.
 if test \! -r ${RTAI_LINUX_DIR}/.config; then
@@ -191,7 +198,7 @@ dnl
 
 AC_MSG_CHECKING([for Adeos support])
 
-if test -r $RTAI_LINUX_DIR/include/linux/adeos.h; then
+if test -r $RTAI_LINUX_SRCDIR/include/linux/adeos.h; then
    AC_MSG_RESULT([ok])
    CONFIG_RTAI_ADEOS=y
 else

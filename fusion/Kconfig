@@ -21,14 +21,15 @@ config RTAI_INSTALLDIR
 	/usr/realtime.
 
 config RTAI_LINUXDIR
-	string "Linux source tree"
+	string "Linux build tree"
 	default "/lib/modules/`uname -r`/build"
 	help
-	This variable contains the directory of your previously
-	patched Linux kernel. As explained before, you can change the
-	value of the Linux source tree which is fixed by default to
-	/lib/modules/`uname -r`/build
-        i.e. the build directory of the running Linux kernel .
+	This variable contains the directory where was built your 
+        previously patched Linux kernel. This directory may be distinct 
+        from the patched Linux kernel source tree. As explained before, 
+        you can change the value of the Linux build tree which is fixed 
+        by default to /lib/modules/`uname -r`/build
+        i.e. the build directory of the running Linux kernel.
 
 menu "Documentation"
 

@@ -904,7 +904,7 @@ schedlnxtsk:
 				SET_CPUS_ALLOWED;
 			}
 			UEXECTIME();
-			lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
+			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
 			if (prev->used_math) {
 				restore_fpu(prev);
 			}
@@ -1672,7 +1672,7 @@ void rt_deregister_watchdog(RT_TASK *wd, int cpuid)
 
 /* +++++++++++++++ SUPPORT FOR LINUX TASKS AND KERNEL THREADS +++++++++++++++ */
 
-#define ECHO_SYSW
+//#define ECHO_SYSW
 #ifdef ECHO_SYSW
 #define SYSW_DIAG_MSG(x) x
 #else
@@ -1729,25 +1729,21 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	schedule();
 }
 
-static inline void fast_schedule(RT_TASK *new_task)
+static inline void fast_schedule(RT_TASK *new_task, int cpuid)
 {
 	unsigned long flags;
-	struct task_struct *prev;
-	int cpuid;
 	rtai_hw_lock(flags);
-	if (((new_task)->state |= RT_SCHED_READY) == RT_SCHED_READY) {
-		cpuid = hard_cpu_id();
-		enq_soft_ready_task(new_task);
-		sched_release_global_lock(cpuid);
-		LOCK_LINUX(cpuid);
-		rt_linux_task.lnxtsk = prev = kthreadb[cpuid];
+	new_task->state |= RT_SCHED_READY;
+	enq_soft_ready_task(new_task);
+	sched_release_global_lock(cpuid);
+	LOCK_LINUX(cpuid);
+	rt_linux_task.lnxtsk = kthreadb[cpuid];
 #define rt_current (rt_smp_current[cpuid])
-		UEXECTIME();
+	UEXECTIME();
 #undef rt_current
-		rt_smp_current[cpuid] = new_task;
-		lxrt_context_switch(prev, new_task->lnxtsk,cpuid);
-		UNLOCK_LINUX(cpuid);
-	}
+	rt_smp_current[cpuid] = new_task;
+	lxrt_context_switch(kthreadb[cpuid], new_task->lnxtsk, cpuid);
+	UNLOCK_LINUX(cpuid);
 	rtai_cli();
 	rtai_hw_unlock(flags);
 }
@@ -1756,10 +1752,12 @@ static void *task_to_make_hard[NR_RT_CPUS];
 static void lxrt_migration_handler (unsigned virq)
 {
 	unsigned long flags;
+	int cpuid;
 	flags = rt_global_save_flags_and_cli();
-	fast_schedule(task_to_make_hard[hard_cpu_id()]);
+	cpuid = hard_cpu_id();
+	fast_schedule(task_to_make_hard[cpuid], cpuid);
 	rt_global_restore_flags(flags);
-	task_to_make_hard[hard_cpu_id()] = NULL;
+	task_to_make_hard[cpuid] = NULL;
 }
 
 static void kthread_b(int cpuid)
@@ -1780,19 +1778,18 @@ static void kthread_b(int cpuid)
 		while (klistp->out != klistp->in) {
     			task = klistp->task[klistp->out];
 			klistp->out = (klistp->out + 1) & (MAX_WAKEUP_SRQ - 1);
-			/* till a Linux function is not found to do the same
-			   we must do this sync to be (almost) sure the task 
-			   to be made hard has gone from Linux for sure */
-			while (!task->pstate) {
-				current->state = TASK_INTERRUPTIBLE;
-				schedule_timeout(HZ/100);
+			/* We must do this sync to be sure the task to be made 
+			   hard has gone from Linux for sure */
+			while ((task->lnxtsk)->run_list.next != LIST_POISON1 || (task->lnxtsk)->run_list.prev != LIST_POISON2) {
+				current->state = TASK_UNINTERRUPTIBLE;
+				schedule_timeout(1);
 			}
 			/* end of sync comment */
 			/* Escalate the request to the RTAI domain */
     			task_to_make_hard[cpuid] = task;
+			adeos_trigger_irq(lxrt_migration_virq);
 			while (task_to_make_hard[cpuid]) {
-				adeos_trigger_irq(lxrt_migration_virq);
-				current->state = TASK_INTERRUPTIBLE;
+				current->state = TASK_UNINTERRUPTIBLE;
 				schedule_timeout(1);
 			}
 		}
@@ -1908,6 +1905,9 @@ void steal_from_linux(RT_TASK *rt_task)
 {
 	int cpuid;
 	struct klist_t *klistp;
+	if (hard_cpu_id() != rt_task->runnable_on_cpus) {
+		SYSW_DIAG_MSG(rt_printk("\nSTEALING FROM UNEXPECTED CPU: %d-%lu\n", hard_cpu_id(), rt_task->runnable_on_cpus););
+	}
 	cpuid = rt_task->runnable_on_cpus;
 	put_current_on_cpu(cpuid);
 	klistp = &klistb[cpuid];
@@ -1915,9 +1915,8 @@ void steal_from_linux(RT_TASK *rt_task)
 	klistp->task[klistp->in] = rt_task;
 	klistp->in = (klistp->in + 1) & (MAX_WAKEUP_SRQ - 1);
 	rtai_sti();
-	rt_task->pstate = 0;
 	wake_up_process(kthreadb[cpuid]);
-	rt_task->pstate = current->state = TASK_HARDREALTIME;
+	current->state = TASK_HARDREALTIME;
 	schedule();
 	rt_task->is_hard = 1;
 	rt_task->exectime[1] = rdtsc();

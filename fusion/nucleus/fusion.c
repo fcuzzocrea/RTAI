@@ -89,13 +89,14 @@ static int __pthread_shadow_helper (struct task_struct *curr,
 			  name,
 			  curr->policy == SCHED_FIFO ? curr->rt_priority : FUSION_LOW_PRI,
 			  XNFPU|XNSHADOW,
-			  0,
-			  FUSION_SKIN_MAGIC) != 0)
+			  0) != 0)
 	{
 	/* Assume this is the only possible failure. */
 	xnfree(thread);
 	return -ENOMEM;
 	}
+
+    xnthread_set_magic(thread,FUSION_SKIN_MAGIC);
 
     if (__xn_reg_arg2(regs))
 	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&thread,sizeof(thread));

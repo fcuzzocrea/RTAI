@@ -1,3 +1,11 @@
+2004-06-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_init_thread): Discard magic parameter. Use
+	xnthread_set_magic() after creation instead.
+
+	* nucleus/thread.c (xnthread_init): Discard magic parameter as a
+	consequence of the above change.
+
 2004-06-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/system.h (xnarch_switch_to): Integrate

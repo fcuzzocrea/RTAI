@@ -61,8 +61,7 @@ int xnthread_init (xnthread_t *thread,
 		   const char *name,
 		   int prio,
 		   xnflags_t flags,
-		   unsigned stacksize,
-		   unsigned magic)
+		   unsigned stacksize)
 {
     xntimer_init(&thread->timer,&xnthread_timeout_handler,thread);
 
@@ -95,7 +94,7 @@ int xnthread_init (xnthread_t *thread,
     thread->rrperiod = XN_INFINITE;
     thread->rrcredit = XN_INFINITE;
     thread->wchan = NULL;
-    thread->magic = magic;
+    thread->magic = 0;	/* Default value means "from nucleus" */
 
     /* These will be filled by xnpod_start_thread() */
     thread->imask = 0;

@@ -365,8 +365,7 @@ int xnpod_init_thread(xnthread_t *thread,
 		      const char *name,
 		      int prio,
 		      xnflags_t flags,
-		      unsigned stacksize,
-		      unsigned magic);
+		      unsigned stacksize);
 
 int xnpod_start_thread(xnthread_t *thread,
 		       xnflags_t mode,

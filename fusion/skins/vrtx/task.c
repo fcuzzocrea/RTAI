@@ -195,14 +195,15 @@ int sc_tecreate (void (*entry)(void *),
 			  name,
 			  prio,
 			  !(mode & 0x8) ? XNFPU : 0,
-			  user + sys,
-			  VRTX_SKIN_MAGIC) != 0)
+			  user + sys) != 0)
 	{
 	vrtxtaskmap[tid] = NULL;
 	xnfree(task);
 	*perr = ER_MEM;
 	return -1;
 	}
+
+    xnthread_set_magic(&task->threadbase,VRTX_SKIN_MAGIC);
 
     inith(&task->link);
     task->tid = tid;

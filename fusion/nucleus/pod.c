@@ -379,8 +379,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
                            |XNFPU
 #endif /* CONFIG_RTAI_HW_FPU */
                            ,
-                           XNARCH_ROOT_STACKSZ,
-                           0);
+                           XNARCH_ROOT_STACKSZ);
 
         if (rc)
             {
@@ -632,10 +631,11 @@ static inline void xnpod_preempt_current_thread (void)
  * pre-defined size depending on the underlying real-time control
  * layer.
  *
- * @param magic A magic cookie each skin can define to unambiguously
- * identify threads created in their realm. This value is copied as-is
- * to the "magic" field of the thread struct. 0 is a conventional
- * value for "no magic".
+ * After creation, the new thraed can be set a magic cookie by skins
+ * using xnthread_set_magic() to unambiguously identify threads
+ * created in their realm. This value will be copied as-is to the
+ * "magic" field of the thread struct. 0 is a conventional value for
+ * "no magic".
  *
  * @return 0 is returned on success. Otherwise, one of the following
  * error codes indicates the cause of the failure:
@@ -655,8 +655,7 @@ int xnpod_init_thread (xnthread_t *thread,
                        const char *name,
                        int prio,
                        xnflags_t flags,
-                       unsigned stacksize,
-                       unsigned magic)
+                       unsigned stacksize)
 {
     spl_t s;
     int err;
@@ -671,7 +670,7 @@ int xnpod_init_thread (xnthread_t *thread,
     if (stacksize == 0)
         stacksize = XNARCH_THREAD_STACKSZ;
 
-    err = xnthread_init(thread,name,prio,flags,stacksize,magic);
+    err = xnthread_init(thread,name,prio,flags,stacksize);
 
     if (err)
         return err;
@@ -2790,7 +2789,6 @@ int xnpod_calibrate_sched (void)
     xnpod_init_thread(&calibration_thread,
                       "calibration",
                       1,
-                      0,
                       0,
                       0);
 

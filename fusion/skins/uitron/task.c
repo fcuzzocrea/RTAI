@@ -135,13 +135,14 @@ ER cre_tsk (ID tskid, T_CTSK *pk_ctsk)
 			  aname,
 			  pk_ctsk->itskpri,
 			  XNFPU,
-			  pk_ctsk->stksz,
-			  uITRON_SKIN_MAGIC) != 0)
+			  pk_ctsk->stksz) != 0)
 	{
 	uitaskmap[tskid - 1] = NULL;
 	xnfree(task);
 	return E_NOMEM;
 	}
+
+    xnthread_set_magic(&task->threadbase,uITRON_SKIN_MAGIC);
 
     inith(&task->link);
     task->tskid = tskid;

@@ -138,14 +138,14 @@ u_long t_create (char name[4],
 			      aname,
 			      prio,
 			      bflags,
-			      ustack,
-			      PSOS_SKIN_MAGIC) != 0)
+			      ustack) != 0)
 	    {
 	    xnfree(task);
 	    return ERR_NOSTK; /* Assume this is the only possible failure */
 	    }
 	}
 
+    xnthread_set_magic(&task->threadbase,PSOS_SKIN_MAGIC);
     xnthread_time_slice(&task->threadbase) = psos_time_slice;
 
     ev_init(&task->evgroup);

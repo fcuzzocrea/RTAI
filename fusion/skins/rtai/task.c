@@ -153,10 +153,11 @@ int rt_task_create (RT_TASK *task,
 			  name,
 			  rtprio2xn(prio),
 			  bflags,
-			  stksize,
-			  RTAI_SKIN_MAGIC) != 0)
+			  stksize) != 0)
 	/* Assume this is the only possible failure. */
 	return -ENOMEM;
+
+    xnthread_set_magic(&task->thread_base,RTAI_SKIN_MAGIC);
 
     inith(&task->link);
     task->suspend_depth = 0;

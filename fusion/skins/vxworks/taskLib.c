@@ -145,9 +145,10 @@ STATUS taskInit(WIND_TCB * handle,
     }
         
     if ( xnpod_init_thread(&handle->threadbase,name,prio,bflags,
-                           (unsigned) stacksize,VXWORKS_SKIN_MAGIC) != 0 )
+                           (unsigned) stacksize) != 0 )
         return ERROR;
 
+    xnthread_set_magic(&handle->threadbase,VXWORKS_SKIN_MAGIC);
     
     /* finally set the Tcb after error conditions checking */
     handle->magic = WIND_TASK_MAGIC;

@@ -139,12 +139,13 @@ int pthread_create (pthread_t *tid,
 			  name,
 			  prio,
 			  flags,
-                          stacksize,
-			  PSE51_SKIN_MAGIC) != 0)
+                          stacksize) != 0)
 	{
 	xnfree(thread);
 	return EAGAIN;
 	}
+
+    xnthread_set_magic(&thread->threadbase,PSE51_SKIN_MAGIC);
     
     thread->attr.name = xnthread_name(&thread->threadbase);
     

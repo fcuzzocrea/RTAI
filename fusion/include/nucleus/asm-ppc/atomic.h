@@ -200,10 +200,10 @@ static __inline__ void atomic_set_mask(unsigned long mask,
 				       unsigned long *ptr)
 {
     __asm__ __volatile__ ("\n\
-1:	lwarx	r5,0,%0 \n\
-	or	r5,r5,%1\n"
+1:	lwarx	5,0,%0 \n\
+	or	5,5,%1\n"
 	PPC405_ERR77(0,%0) \
-"	stwcx.	r5,0,%0 \n\
+"	stwcx.	5,0,%0 \n\
 	bne-	1b"
 	: /*no output*/
 	: "r" (ptr), "r" (mask)
@@ -214,10 +214,10 @@ static __inline__ void atomic_clear_mask(unsigned long mask,
 					 unsigned long *ptr)
 {
     __asm__ __volatile__ ("\n\
-1:	lwarx	r5,0,%0 \n\
-	andc	r5,r5,%1\n"
+1:	lwarx	5,0,%0 \n\
+	andc	5,5,%1\n"
 	PPC405_ERR77(0,%0) \
-"	stwcx.	r5,0,%0 \n\
+"	stwcx.	5,0,%0 \n\
 	bne-	1b"
 	: /*no output*/
 	: "r" (ptr), "r" (mask)

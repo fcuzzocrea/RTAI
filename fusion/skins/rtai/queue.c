@@ -432,7 +432,7 @@ void *rt_queue_alloc (RT_QUEUE *q,
 static int __queue_check_msg (void *p)
 
 {
-    rt_queue_msg_t *msg = ((rt_queue_msg_t *)p) - 1;
+    rt_queue_msg_t *msg = ((rt_queue_msg_t *)p);
 
     if (msg->refcount == 0)
 	return -EINVAL;

@@ -131,21 +131,20 @@ int pthread_set_periodic_rt(nanotime_t idate,
 
 int pthread_wait_period_rt(void);
 
-    /* The following routines are private to the RTAI/vm control layer
-       based on the RTAI/fusion interface. Do not use them in
-       applications. */
+/* The following routines are private to the UVM control layer. Do not
+   use them directly in applications. */
 
-int __pthread_idle_vm(int *lockp);
+int __pthread_idle_uvm(int *lockp);
 
-int __pthread_cancel_vm(void *deadhandle,
-			void *nexthandle);
+int __pthread_cancel_uvm(void *deadhandle,
+			 void *nexthandle);
 
-int __pthread_activate_vm(void *nexthandle,
-			  void *prevhandle);
+int __pthread_activate_uvm(void *nexthandle,
+			   void *prevhandle);
 
-int __pthread_hold_vm(int *pendp);
+int __pthread_hold_uvm(int *pendp);
 
-int __pthread_release_vm(int *lockp);
+int __pthread_release_uvm(int *lockp);
 
 #endif /* __KERNEL__ */
 

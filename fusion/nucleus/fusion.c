@@ -25,12 +25,14 @@
 
 static int __fusion_muxid;
 
-static xnsynch_t __fusion_vmsync;
-
 static xnpod_t __fusion_pod;
 
-/* This file implements the Fusion syscall wrappers. Unchecked uaccess
-   is used in the UVM code since the caller is trusted. */
+/* This file implements the basic fusion skin which enables the tight
+   coupling between Linux POSIX threads and RTAI. This interface also
+   provides the internal calls needed to implement the real-time
+   virtual machines in user-space. Unchecked uaccess is used in the
+   UVM code since the caller (i.e. include/nucleus/asm-uvm/system.h)
+   is always trusted. */
 
 static inline xnthread_t *__pthread_find_by_handle (struct task_struct *curr, void *khandle)
 
@@ -313,7 +315,13 @@ int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs)
     return xnpod_wait_thread_period();
 }
 
-static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
+/*
+ * UVM support -- hidden interface.
+ */
+
+static xnsynch_t __fusion_uvm_irqsync;
+
+static int __pthread_hold_uvm (struct task_struct *curr, struct pt_regs *regs)
 
 {
     int err = 0;
@@ -323,17 +331,19 @@ static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
 
     __xn_put_user(curr,1,(int __user *)__xn_reg_arg1(regs)); /* Raise the pend flag */
 
-    xnsynch_sleep_on(&__fusion_vmsync,XN_INFINITE);
+    xnsynch_sleep_on(&__fusion_uvm_irqsync,XN_INFINITE);
 
     if (xnthread_test_flags(xnpod_current_thread(),XNBREAK))
 	err = -EINTR; /* Unblocked.*/
+    else if (xnthread_test_flags(xnpod_current_thread(),XNRMID))
+	err = -EIDRM; /* Sync deleted.*/
 
     xnlock_put_irqrestore(&nklock, s);
 
     return err;
 }
 
-static int __pthread_release_vm (struct task_struct *curr, struct pt_regs *regs)
+static int __pthread_release_uvm (struct task_struct *curr, struct pt_regs *regs)
 
 {
     spl_t s;
@@ -342,7 +352,7 @@ static int __pthread_release_vm (struct task_struct *curr, struct pt_regs *regs)
 
     __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the lock flag */
 
-    if (xnsynch_flush(&__fusion_vmsync,XNBREAK) == XNSYNCH_RESCHED)
+    if (xnsynch_flush(&__fusion_uvm_irqsync,XNBREAK) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
     xnlock_put_irqrestore(&nklock, s);
@@ -350,7 +360,7 @@ static int __pthread_release_vm (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
-static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
+static int __pthread_idle_uvm (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread = xnpod_current_thread();
@@ -363,8 +373,8 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
 
     xnpod_renice_thread(thread,xnthread_initial_priority(thread));
 
-    if (xnsynch_nsleepers(&__fusion_vmsync) > 0)
-	xnsynch_flush(&__fusion_vmsync,XNBREAK);
+    if (xnsynch_nsleepers(&__fusion_uvm_irqsync) > 0)
+	xnsynch_flush(&__fusion_uvm_irqsync,XNBREAK);
 
     xnpod_suspend_thread(thread,XNSUSP,XN_INFINITE,NULL);
 
@@ -376,7 +386,7 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
-static int __pthread_activate_vm (struct task_struct *curr, struct pt_regs *regs)
+static int __pthread_activate_uvm (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *prev, *next;
@@ -427,7 +437,7 @@ static int __pthread_activate_vm (struct task_struct *curr, struct pt_regs *regs
     return err;
 }
 
-static int __pthread_cancel_vm (struct task_struct *curr, struct pt_regs *regs)
+static int __pthread_cancel_uvm (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *dead, *next;
@@ -480,10 +490,8 @@ static void xnfusion_shadow_delete_hook (xnthread_t *thread)
 	}
 }
 
-/* User-space skin services -- The declaration order must be in sync
-   with the opcodes defined in nucleus/fusion.h. */
-
 static xnsysent_t __systab[] = {
+    /* Exported calls. */
     [__xn_fusion_init] = { &__pthread_init_rt, __xn_flag_init },
     [__xn_fusion_create] = { &__pthread_create_rt, __xn_flag_init },
     [__xn_fusion_start] = { &__pthread_start_rt, __xn_flag_anycall },
@@ -497,11 +505,12 @@ static xnsysent_t __systab[] = {
     [__xn_fusion_ns2ticks] = { &__pthread_ns2ticks_rt, __xn_flag_anycall  },
     [__xn_fusion_ticks2ns] = { &__pthread_ticks2ns_rt, __xn_flag_anycall  },
     [__xn_fusion_inquire] = { &__pthread_inquire_rt, __xn_flag_shadow },
-    [__xn_fusion_idle] = { &__pthread_idle_vm, __xn_flag_regular },
-    [__xn_fusion_cancel] = { &__pthread_cancel_vm, __xn_flag_regular },
-    [__xn_fusion_activate] = { &__pthread_activate_vm, __xn_flag_shadow },
-    [__xn_fusion_hold] = { &__pthread_hold_vm, __xn_flag_regular },
-    [__xn_fusion_release] = { &__pthread_release_vm, __xn_flag_shadow },
+    /* Internal UVM calls. */
+    [__xn_fusion_idle] = { &__pthread_idle_uvm, __xn_flag_regular },
+    [__xn_fusion_cancel] = { &__pthread_cancel_uvm, __xn_flag_regular },
+    [__xn_fusion_activate] = { &__pthread_activate_uvm, __xn_flag_regular },
+    [__xn_fusion_hold] = { &__pthread_hold_uvm, __xn_flag_regular },
+    [__xn_fusion_release] = { &__pthread_release_uvm, __xn_flag_anycall },
 };
 
 static int xnfusion_unload_hook (void)
@@ -537,7 +546,7 @@ int xnfusion_attach (void)
 
     __fusion_pod.svctable.unload = &xnfusion_unload_hook;
     xnpod_add_hook(XNHOOK_THREAD_DELETE,&xnfusion_shadow_delete_hook);
-    xnsynch_init(&__fusion_vmsync,XNSYNCH_FIFO);
+    xnsynch_init(&__fusion_uvm_irqsync,XNSYNCH_FIFO);
 
     return 0;
 }
@@ -587,7 +596,7 @@ int xnfusion_umount (void)
 
     xnpod_stop_timer();
 
-    if (xnsynch_destroy(&__fusion_vmsync) == XNSYNCH_RESCHED)
+    if (xnsynch_destroy(&__fusion_uvm_irqsync) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,&xnfusion_shadow_delete_hook);

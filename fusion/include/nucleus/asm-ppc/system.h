@@ -407,19 +407,31 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	/* Switch the mm context.*/
 
 #ifdef CONFIG_ALTIVEC
-	asm volatile (
- BEGIN_FTR_SECTION
-	"dssall;\n"
+	/* Don't rely on FTR fixups --
+	   they don't work properly in our context. */
+	if (cur_cpu_spec[0]->cpu_features & CPU_FTR_ALTIVEC) {
+	    asm volatile (
+		"dssall;\n"
 #ifndef CONFIG_POWER4
-	 "sync;\n" /* G4 needs a sync here, G5 apparently not */
+		"sync;\n"
 #endif
- END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
-	 : : );
+		: : );
+	}
 #endif /* CONFIG_ALTIVEC */
 
 	next->thread.pgdir = mm->pgd;
 	get_mmu_context(mm);
 	set_context(mm->context,mm->pgd);
+
+#ifdef CONFIG_ALTIVEC
+	if (next->thread.regs && last_task_used_altivec == next)
+	    next->thread.regs->msr |= MSR_VEC;
+#endif /* CONFIG_ALTIVEC */
+
+#ifdef CONFIG_SPE
+	if (next->thread.regs && last_task_used_spe == next)
+	    next->thread.regs->msr |= MSR_SPE;
+#endif /* CONFIG_SPE */
 
         _switch(&prev->thread, &next->thread);
 	}

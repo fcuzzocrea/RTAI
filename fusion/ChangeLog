@@ -1,3 +1,10 @@
+2005-02-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Update MSR
+	as required when switching in the last Altivec and/or SPE owner.
+	(xnarch_switch_to): Don't rely on FTR fixups when emitting
+	Altivec's dssall insn; they don't work properly in this context.
+
 2005-02-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* configure.in: Prevent invalid SMI workaround configurations

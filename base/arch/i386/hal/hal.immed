@@ -1289,12 +1289,6 @@ void rt_setup_8254_tsc (void)
 #define CHECK_KERCTX();
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-#define IN_ATOMIC()  (in_atomic())
-#else
-#define IN_ATOMIC()  (0)
-#endif
-
 static int rtai_irq_trampoline (struct pt_regs *regs)
 {
 	unsigned long lflags;
@@ -1305,7 +1299,6 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 
 	CHECK_KERCTX();
 
-//	__clear_bit(cpuid, &adeos_pended);
 	lflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 //1)	lflags = adeos_test_and_stall_pipeline_from (adp_root);
 	adp_root->irqs[irq].acknowledge(irq);
@@ -1329,7 +1322,6 @@ TRACE_RTAI_GLOBAL_IRQ_ENTRY(irq,0);
 	adp_root->cpudata[cpuid].status = lflags;
 //1)	adeos_restore_pipeline_nosync(adp_root, lflags, cpuid);
 
-//	if (!test_bit(IPIPE_STALL_FLAG, &lflags) && !IN_ATOMIC()) {
 	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &lflags)) {
 //1)	if (!adeos_test_pipeline_from(adp_root) && !IN_ATOMIC()) {
 		rtai_sti();

@@ -39,7 +39,7 @@ static inline unsigned long xnarch_get_sched_latency (void)
    work (i.e. more specific cases), but the approach is definitely
    saner than previous attempts to guess such value dynamically. */
 #define __sched_latency__ \
-(current_cpu_data.loops_per_jiffy/(500000/HZ) < 200 ? 20500 : 4700)
+(current_cpu_data.loops_per_jiffy/(500000/HZ) < 200 ? 20500 : 13200)
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 #endif /* CONFIG_RTAI_HW_SCHED_LATENCY */

@@ -9,7 +9,7 @@ libswitches_rt_a_SOURCES = switches-module.c
 if CONFIG_KBUILD
 switches_rt.ko: @RTAI_KBUILD_ENV@
 switches_rt.ko: $(libswitches_rt_a_SOURCES)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_FP_CFLAGS@"
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

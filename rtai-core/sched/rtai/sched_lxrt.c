@@ -659,6 +659,33 @@ do { \
 #define UEXECTIME()
 #endif
 
+#if 0
+static inline void lxrt_context_switch (struct task_struct *prev,
+					struct task_struct *next,
+					int cpuid)
+{
+    struct mm_struct *oldmm = prev->active_mm;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+    switch_mm(oldmm,next->active_mm,next,cpuid);
+#else /* >= 2.6.0 */
+    switch_mm(oldmm,next->active_mm,next);
+#endif /* < 2.6.0 */
+
+    if (!next->mm)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	enter_lazy_tlb(oldmm,next,cpuid);
+#else /* >= 2.6.0 */
+        enter_lazy_tlb(oldmm,next);
+#endif /* < 2.6.0 */
+	
+    lxrt_switch_to(prev,next,prev);
+
+    barrier();
+}
+
+#endif
+
 static inline void make_current_soft(RT_TASK *rt_current)
 {
         void rt_schedule(void);

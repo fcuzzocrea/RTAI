@@ -1,3 +1,11 @@
+2004-06-23  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-testsuite/kern: Pass RTAI_FP_CFLAGS when compiling 2.6
+	modules.
+
+	* configure.in: Do not pass SUBDIRS to the kernel builder anymore;
+	only rely on M=.
+
 2004-06-23  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* rtai-core/arch/i386/hal.c: use USER_DS in trapping Linux traps.

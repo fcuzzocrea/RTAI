@@ -525,10 +525,9 @@ void xnshadow_harden (void)
        the RTAI domain. This will cause the shadow thread to resume
        using the register state of the Linux task. */
 
-    engage_irq_shield(cpuid);
-
     splhigh(s);
     adeos_load_cpuid();
+    engage_irq_shield(cpuid);
     gk_enter_wheel[cpuid][gk_enter_in[cpuid]] = xnshadow_thread(current);
     gk_enter_in[cpuid] = (gk_enter_in[cpuid] + 1) & (XNSHADOW_MAXRQ - 1);
     splexit(s);

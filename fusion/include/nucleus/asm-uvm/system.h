@@ -273,35 +273,36 @@ void xnarch_sync_irq (void)
 static inline int xnarch_hook_irq (unsigned irq,
 				   void (*handler)(unsigned irq,
 						   void *cookie),
-				   void *cookie) {
-    if (irq == 0)
-	return -EINVAL;	/* Reserved for the timer thread. */
-
+				   void *cookie)
+{
     return -ENOSYS;
 }
 
-static inline int xnarch_release_irq (unsigned irq) {
+static inline int xnarch_release_irq (unsigned irq)
+
+{
     return -ENOSYS;
 }
 
-static inline int xnarch_enable_irq (unsigned irq) {
+static inline int xnarch_enable_irq (unsigned irq)
+
+{
     return -ENOSYS;
 }
 
-static inline int xnarch_disable_irq (unsigned irq) {
+static inline int xnarch_disable_irq (unsigned irq)
+
+{
     return -ENOSYS;
 }
 
-static inline void xnarch_isr_chain_irq (unsigned irq) {
-    /* Nop */
-}
+static inline void xnarch_chain_irq (unsigned irq)
 
-static inline void xnarch_isr_enable_irq (unsigned irq) {
-    /* Nop */
-}
+{ /* Nop */ }
 
 static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
-						     unsigned long affinity) {
+						     unsigned long affinity)
+{
     return 0;
 }
 

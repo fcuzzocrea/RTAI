@@ -133,7 +133,6 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define XNARCH_NR_CPUS               RTHAL_NR_CPUS
 
 #define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
-#define XNARCH_IRQ_MAX               IPIPE_NR_XIRQS /* Do _not_ use NR_IRQS here. */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
 
 #define XNARCH_THREAD_STACKSZ 4096
@@ -312,12 +311,7 @@ static inline int xnarch_hook_irq (unsigned irq,
 						   void *cookie),
 				   void *cookie)
 {
-    int err = rthal_request_irq(irq,handler,cookie);
-
-    if (!err)
-	rthal_enable_irq(irq);
-
-    return err;
+    return rthal_request_irq(irq,handler,cookie);
 }
 
 static inline int xnarch_release_irq (unsigned irq) {
@@ -328,40 +322,30 @@ static inline int xnarch_release_irq (unsigned irq) {
 static inline int xnarch_enable_irq (unsigned irq)
 
 {
-    if (irq >= XNARCH_IRQ_MAX)
-	return -EINVAL;
-
-    rthal_enable_irq(irq);
-
-    return 0;
+    return rthal_enable_irq(irq);
 }
 
 static inline int xnarch_disable_irq (unsigned irq)
 
 {
-    if (irq >= XNARCH_IRQ_MAX)
-	return -EINVAL;
-
-    rthal_disable_irq(irq);
-
-    return 0;
+    return rthal_disable_irq(irq);
 }
 
-static inline void xnarch_isr_chain_irq (unsigned irq) {
+static inline void xnarch_chain_irq (unsigned irq)
+
+{
     rthal_pend_linux_irq(irq);
 }
 
-static inline void xnarch_isr_enable_irq (unsigned irq) {
-    rthal_enable_irq(irq);
-}
+static inline void xnarch_relay_tick (void)
 
-static inline void xnarch_relay_tick (void) {
-
+{
     rthal_pend_linux_irq(ADEOS_TIMER_VIRQ);
 }
 
 static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
-						 xnarch_cpumask_t affinity) {
+						 xnarch_cpumask_t affinity)
+{
     return adeos_set_irq_affinity(irq,affinity);
 }
 

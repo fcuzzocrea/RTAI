@@ -1,5 +1,11 @@
 2005-01-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-*/system.h (xnarch_isr_*): Remove
+	redundant calls.
+
+	* include/nucleus/asm-*/system.h (xnarch_hook_irq): Do not enable
+	upon attachment.
+
 	* include/nucleus/asm-*/system.h: Get rid of unused
 	xnarch_sleep_on().
 

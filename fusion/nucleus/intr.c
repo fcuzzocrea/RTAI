@@ -35,16 +35,16 @@
 #include <nucleus/pod.h>
 #include <nucleus/intr.h>
 
+xnintr_t nkclock;
+
 static void xnintr_irq_handler(unsigned irq,
 			       void *cookie);
-
-xnintr_t nkclock;
 
 /*! 
  * \fn int xnintr_init (xnintr_t *intr,
                         unsigned irq,
                         xnisr_t isr,
-  			   xnflags_t flags);
+			xnflags_t flags)
  * \brief Initialize an interrupt object.
  *
  * Associates an interrupt object with an IRQ line.
@@ -119,7 +119,7 @@ int xnintr_init (xnintr_t *intr,
 }
 
 /*! 
- * \fn int xnintr_destroy (xnintr_t *intr);
+ * \fn int xnintr_destroy (xnintr_t *intr)
  * \brief Destroy an interrupt object.
  *
  * Destroys an interrupt object previously initialized by
@@ -145,8 +145,9 @@ int xnintr_init (xnintr_t *intr,
  * Rescheduling: never.
  */
 
-int xnintr_destroy (xnintr_t *intr) {
+int xnintr_destroy (xnintr_t *intr)
 
+{
     return xnintr_detach(intr);
 }
 
@@ -189,7 +190,7 @@ int xnintr_attach (xnintr_t *intr,
 }
 
 /*! 
- * \fn int xnintr_detach (xnintr_t *intr);
+ * \fn int xnintr_detach (xnintr_t *intr)
  * \brief Detach an interrupt object.
  *
  * Detach an interrupt object previously attached by
@@ -217,13 +218,14 @@ int xnintr_attach (xnintr_t *intr,
  * Rescheduling: never.
  */
 
-int xnintr_detach (xnintr_t *intr) {
+int xnintr_detach (xnintr_t *intr)
 
+{
     return xnarch_release_irq(intr->irq);
 }
 
 /*! 
- * \fn int xnintr_enable (xnintr_t *intr);
+ * \fn int xnintr_enable (xnintr_t *intr)
  * \brief Enable an interrupt object.
  *
  * Enables the hardware interrupt line associated with an interrupt
@@ -248,13 +250,14 @@ int xnintr_detach (xnintr_t *intr) {
  * Rescheduling: never.
  */
 
-int xnintr_enable (xnintr_t *intr) {
+int xnintr_enable (xnintr_t *intr)
 
+{
     return xnarch_enable_irq(intr->irq);
 }
 
 /*! 
- * \fn int xnintr_disable (xnintr_t *intr);
+ * \fn int xnintr_disable (xnintr_t *intr)
  * \brief Disable an interrupt object.
  *
  * Disables the hardware interrupt line associated with an interrupt
@@ -278,36 +281,43 @@ int xnintr_enable (xnintr_t *intr) {
  * Rescheduling: never.
  */
 
-int xnintr_disable (xnintr_t *intr) {
+int xnintr_disable (xnintr_t *intr)
 
+{
     return xnarch_disable_irq(intr->irq);
 }
 
-/**
- * Set processor affinity.
+/*! 
+ * xnarch_cpumask_t xnintr_affinity (xnintr_t *intr,
+                                     xnarch_cpumask_t cpumask)
+ * \brief Set interrupt's processor affinity.
  *
- * Causes the IRQ associated with the interrupt object @a intr to be received
- * only on processors which bits are set in @a cpumask.
+ * Causes the IRQ associated with the interrupt object @a intr to be
+ * received only on processors which bits are set in @a cpumask.
  *
- * @note Depending on architectures, setting more than one bit in @a cpumask can
- * be meaningless.
+ * @param intr The descriptor address of the interrupt object which
+ * affinity is to be changed.
  *
- * @param intr The descriptor address of the interrupt object which affinity is
- * to be changed.
+ * @param cpumask The new processor affinity of the interrupt object.
  *
- * @param cpumask is the new processor affinity of the interrupt object.
+ * @return the previous cpumask on success, or an empty mask on
+ * failure.
  *
- * @return the previous cpumask on success, or an empty mask on failure.
+ * @note Depending on architectures, setting more than one bit in @a
+ * cpumask could be meaningless.
  */
-xnarch_cpumask_t xnintr_affinity (xnintr_t *intr, xnarch_cpumask_t cpumask) {
 
+xnarch_cpumask_t xnintr_affinity (xnintr_t *intr, xnarch_cpumask_t cpumask)
+
+{
     return xnarch_set_irq_affinity(intr->irq,cpumask);
 }
 
 /* Low-level clock irq handler. */
 
-void xnintr_clock_handler (void) {
+void xnintr_clock_handler (void)
 
+{
     xnintr_irq_handler(nkclock.irq,&nkclock);
 }
 
@@ -330,10 +340,10 @@ static void xnintr_irq_handler (unsigned irq, void *cookie)
     sched->inesting--;
 
     if (s & XN_ISR_ENABLE)
-	xnarch_isr_enable_irq(irq);
+	xnarch_enable_irq(irq);
 
     if (s & XN_ISR_CHAINED)
-	xnarch_isr_chain_irq(irq);
+	xnarch_chain_irq(irq);
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
     nkpod->timestamps.intr_resched = xnarch_get_cpu_tsc();

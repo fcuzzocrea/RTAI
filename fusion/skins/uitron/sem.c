@@ -183,7 +183,7 @@ static ER wai_sem_helper (ID semid, TMO tmout)
     int err;
     spl_t s;
     
-    if (!xnpod_pendable_p())
+    if (xnpod_unblockable_p())
 	return E_CTX;
 
     if (tmout == TMO_FEVR)

@@ -220,7 +220,7 @@ static ER wai_flg_helper (UINT *p_flgptn,
     int err;
     spl_t s;
 
-    if (!xnpod_pendable_p())
+    if (xnpod_unblockable_p())
 	return E_CTX;
 
     if (waiptn == 0)

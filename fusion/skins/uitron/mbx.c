@@ -199,7 +199,7 @@ static ER rcv_msg_helper (T_MSG **ppk_msg, ID mbxid, TMO tmout)
     int err;
     spl_t s;
 
-    if (!xnpod_pendable_p())
+    if (xnpod_unblockable_p())
 	return E_CTX;
 
     if (tmout == TMO_FEVR)

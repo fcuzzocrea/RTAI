@@ -683,7 +683,7 @@ ER slp_tsk (void)
     uitask_t *task;
     spl_t s;
 
-    if (!xnpod_pendable_p())
+    if (xnpod_unblockable_p())
 	return E_CTX;
 
     task = ui_current_task();
@@ -720,7 +720,7 @@ ER tslp_tsk (TMO tmout)
     uitask_t *task;
     spl_t s;
 
-    if (!xnpod_pendable_p())
+    if (xnpod_unblockable_p())
 	return E_CTX;
 
     if (tmout == 0)

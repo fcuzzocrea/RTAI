@@ -41,7 +41,7 @@ void latency (void *cookie)
     RTIME itime, expected, period;
     int err, count, nsamples;
 
-    err = rt_timer_start(RT_TIMER_ONESHOT);
+    err = rt_timer_start(TM_ONESHOT);
 
     if (err)
 	{

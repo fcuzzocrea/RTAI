@@ -34,7 +34,7 @@ void latency (void *cookie)
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
     RT_PIPE_MSG *msg;
 
-    err = rt_timer_start(RT_TIMER_ONESHOT);
+    err = rt_timer_start(TM_ONESHOT);
 
     if (err)
 	{

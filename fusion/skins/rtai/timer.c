@@ -130,11 +130,11 @@ SRTIME rt_timer_ticks2ns (SRTIME ticks)
  * The information block returns the period and the current system
  * date. The period can have the following values:
  *
- * - RT_TIMER_UNSET is a special value indicating that the system
- * timer is inactive. A call to rt_timer_start() activates it.
+ * - TM_UNSET is a special value indicating that the system timer is
+ * inactive. A call to rt_timer_start() activates it.
  *
- * - RT_TIMER_ONESHOT is a special value indicating that the timer has
- * been set up in oneshot mode.
+ * - TM_ONESHOT is a special value indicating that the timer has been
+ * set up in oneshot mode.
  *
  * - Any other period value indicates that the system timer is
  * currently running in periodic mode; it is a count of nanoseconds
@@ -159,9 +159,9 @@ int rt_timer_inquire (RT_TIMER_INFO *info)
     RTIME period;
 
     if (!testbits(nkpod->status,XNTIMED))
-	period = RT_TIMER_UNSET;
+	period = TM_UNSET;
     else if (!testbits(nkpod->status,XNTMPER))
-	period = RT_TIMER_ONESHOT;
+	period = TM_ONESHOT;
     else
 	period = xnpod_get_tickval();
 
@@ -287,7 +287,7 @@ void rt_timer_spin (RTIME ns)
  * nanoseconds.
  *
  * @param nstick The timer period in nanoseconds. If this parameter is
- * equal to RT_TIMER_ONESHOT, the underlying hardware timer is set to
+ * equal to TM_ONESHOT, the underlying hardware timer is set to
  * operate in oneshot-programmable mode. In this mode, timing accuracy
  * is higher - since it is not rounded to a constant time slice - at
  * the expense of a lesser efficicency when many timers are

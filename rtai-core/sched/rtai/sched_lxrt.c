@@ -249,12 +249,12 @@ int get_min_tasks_cpuid(void)
 
 #ifdef CONFIG_RTAI_ADEOS
 
-static inline struct task_struct *intr_get_current(int cpuid)
+static inline struct task_struct *intr_get_current(int cpuid, RT_TASK *rt_current)
 
 {
     if (arti_adeos_stack_p(cpuid) ||
-	RT_CURRENT->lnxtsk == NULL ||
-	RT_CURRENT == &rt_linux_task)
+	rt_current->lnxtsk == NULL || 
+	rt_current == &rt_linux_task)
 	return arti_get_root_current(cpuid);
 
     return current;
@@ -1087,7 +1087,7 @@ schedlnxtsk:
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
 #ifdef CONFIG_RTAI_ADEOS
-			prev = intr_get_current(cpuid);
+			prev = intr_get_current(cpuid,rt_current);
 #else /* !CONFIG_RTAI_ADEOS */
 			prev = current;
 #endif /* CONFIG_RTAI_ADEOS */
@@ -2083,7 +2083,7 @@ int rtai_trap_handler(int vec, int signo, struct pt_regs *regs, void *dummy_data
 	return 1;
 	}
 #ifdef CONFIG_RTAI_ADEOS
-    tsk = intr_get_current(cpuid);
+    tsk = intr_get_current(cpuid,rt_current);
 #else /* !CONFIG_RTAI_ADEOS */
     tsk = current;
     if (vec == 7) {

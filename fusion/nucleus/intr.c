@@ -49,14 +49,15 @@ static void xnintr_irq_handler(unsigned irq,
  *
  * Associates an interrupt object with an IRQ line.
  *
- * When an interrupt occurs from the given @a irq line, the ISR is
- * fired in order to deal with the hardware event. The interrupt
- * service code may call any non-suspensive service from the
- * nucleus.
+ * When an interrupt occurs on the given @a irq line, the ISR is fired
+ * in order to deal with the hardware event. The interrupt service
+ * code may call any non-suspensive service from the nucleus.
  *
  * Upon receipt of an IRQ, the ISR is immediately called on behalf of
- * the interrupted stack context. The status value returned by the ISR
- * is then checked for the following bits:
+ * the interrupted stack context, the rescheduling procedure is
+ * locked, and the interrupt source is masked at hardware level. The
+ * status value returned by the ISR is then checked for the following
+ * bits:
  *
  * - XN_ISR_ENABLE asks the nucleus to re-enable the IRQ line. Over
  * some real-time control layers which mask and acknowledge IRQs, this
@@ -69,9 +70,11 @@ static void xnintr_irq_handler(unsigned irq,
  * layer to forward the IRQ. For instance, this would cause the Adeos
  * control layer to propagate the interrupt down the interrupt
  * pipeline to other Adeos domains, such as Linux. This is the regular
- * way to share interrupts between the nucleus and the host system.
+ * way to share interrupts between the nucleus and the host system. At
+ * the opposite, RT_INTR_HANDLED can be used instead to indicate that
+ * the interrupt request has been fulfilled.
  *
- * A count of interrupt receipts is tracked in the interrupt
+ * A count of interrupt receipts is tracked into the interrupt
  * descriptor, and reset to zero each time the interrupt object is
  * attached. Since this count could wrap around, it should be used as
  * an indication of interrupt activity only.

@@ -2453,8 +2453,7 @@ static int __rt_alarm_wait (struct task_struct *curr, struct pt_regs *regs)
 
     if (xnthread_base_priority(&task->thread_base) != FUSION_IRQ_PRIO)
 	/* Renice the waiter above all regular tasks if needed. */
-	xnpod_renice_thread(&task->thread_base,
-			    FUSION_IRQ_PRIO);
+	xnpod_renice_thread(&task->thread_base,FUSION_IRQ_PRIO);
 
     xnsynch_sleep_on(&alarm->synch_base,XN_INFINITE);
 
@@ -2632,12 +2631,18 @@ static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
     int err = 0;
     spl_t s;
 
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(timeout)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg2(regs),sizeof(timeout));
+
+    if (timeout == TM_NONBLOCK)
+	return -EINVAL;
+
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;
 
     __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
-
-    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg2(regs),sizeof(timeout));
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -2651,15 +2656,13 @@ static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
 
     if (intr->pending < 0)
 	{
-	if (timeout == TM_NONBLOCK)
-	    {
-            err = -EWOULDBLOCK;
-	    goto unlock_and_exit;
-	    }
-
 	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
 	task = rtai_current_task();
+
+	if (xnthread_base_priority(&task->thread_base) != FUSION_IRQ_PRIO)
+	    /* Renice the waiter above all regular tasks if needed. */
+	    xnpod_renice_thread(&task->thread_base,FUSION_IRQ_PRIO);
 
 	xnsynch_sleep_on(&intr->synch_base,timeout);
         

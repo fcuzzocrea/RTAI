@@ -332,6 +332,7 @@ libsciblk_a_SOURCES = \
 	rtai_scope.c \
 	rtai_led.c \
 	rtai_meter.c \
+	rtai_fifo.c \
 	memory.c \
 	inp_square.c \
 	inp_step.c \
@@ -377,19 +378,19 @@ LIBRARIES = $(lib_LIBRARIES)
 
 libsciblk_a_LIBADD =
 am__libsciblk_a_SOURCES_DIST = rtai_scope.c rtai_led.c rtai_meter.c \
-	memory.c inp_square.c inp_step.c inp_sinus.c extdata.c \
-	mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c mbx_send_if.c \
-	cioquad4.c peak.c pcan.c libpcan.c rtmain.h libpcan.h pcan.h \
-	peak.h rtai_comedi_data.c rtai_comedi_dio.c
+	rtai_fifo.c memory.c inp_square.c inp_step.c inp_sinus.c \
+	extdata.c mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c \
+	mbx_send_if.c cioquad4.c peak.c pcan.c libpcan.c rtmain.h \
+	libpcan.h pcan.h peak.h rtai_comedi_data.c rtai_comedi_dio.c
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@am__objects_1 = rtai_comedi_data.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dio.$(OBJEXT)
 am_libsciblk_a_OBJECTS = rtai_scope.$(OBJEXT) rtai_led.$(OBJEXT) \
-	rtai_meter.$(OBJEXT) memory.$(OBJEXT) inp_square.$(OBJEXT) \
-	inp_step.$(OBJEXT) inp_sinus.$(OBJEXT) extdata.$(OBJEXT) \
-	mbx_receive_if.$(OBJEXT) mbx_receive.$(OBJEXT) \
-	mbx_ovrwr_send.$(OBJEXT) mbx_send_if.$(OBJEXT) \
-	cioquad4.$(OBJEXT) peak.$(OBJEXT) pcan.$(OBJEXT) \
-	libpcan.$(OBJEXT) $(am__objects_1)
+	rtai_meter.$(OBJEXT) rtai_fifo.$(OBJEXT) memory.$(OBJEXT) \
+	inp_square.$(OBJEXT) inp_step.$(OBJEXT) inp_sinus.$(OBJEXT) \
+	extdata.$(OBJEXT) mbx_receive_if.$(OBJEXT) \
+	mbx_receive.$(OBJEXT) mbx_ovrwr_send.$(OBJEXT) \
+	mbx_send_if.$(OBJEXT) cioquad4.$(OBJEXT) peak.$(OBJEXT) \
+	pcan.$(OBJEXT) libpcan.$(OBJEXT) $(am__objects_1)
 libsciblk_a_OBJECTS = $(am_libsciblk_a_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
@@ -405,8 +406,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/pcan.Po ./$(DEPDIR)/peak.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rtai_comedi_data.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rtai_comedi_dio.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rtai_led.Po ./$(DEPDIR)/rtai_meter.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rtai_scope.Po
+@AMDEP_TRUE@	./$(DEPDIR)/rtai_fifo.Po ./$(DEPDIR)/rtai_led.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/rtai_meter.Po ./$(DEPDIR)/rtai_scope.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) \
@@ -488,6 +489,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/peak.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_data.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_dio.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_fifo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_led.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_meter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_scope.Po@am__quote@
@@ -655,7 +657,7 @@ install-am: all-am
 installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
-	  INSTALL_STRIP_FLAG=-s \
+	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:

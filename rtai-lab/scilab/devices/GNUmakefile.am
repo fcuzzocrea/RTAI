@@ -8,6 +8,7 @@ libsciblk_a_SOURCES = \
 	rtai_scope.c \
 	rtai_led.c \
 	rtai_meter.c \
+	rtai_fifo.c \
 	memory.c \
 	inp_square.c \
 	inp_step.c \

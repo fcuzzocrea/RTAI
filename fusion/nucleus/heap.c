@@ -702,7 +702,7 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
     return 0;
 }
 
-#ifdef __KERNEL__
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
 
 #include <linux/miscdevice.h>
 #include <linux/vmalloc.h>
@@ -1031,7 +1031,7 @@ int xnheap_destroy_shared (xnheap_t *heap)
 EXPORT_SYMBOL(xnheap_init_shared);
 EXPORT_SYMBOL(xnheap_destroy_shared);
 
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 /*@}*/
 

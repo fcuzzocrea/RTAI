@@ -29,7 +29,6 @@ latency_CPPFLAGS = \
 	-I../../include
 
 latency_LDADD = \
-	../../skins/rtai/lib/librtai.a \
 	-lpthread
 
 all-local: latency_rt$(modext)

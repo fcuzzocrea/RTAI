@@ -200,7 +200,7 @@ int rt_task_create (RT_TASK *task,
  * Start a (newly) created task, scheduling it for the first
  * time. This call releases the target task from the dormant state.
  *
- * The START hooks are called on behalf of the calling context (if
+ * The TSTART hooks are called on behalf of the calling context (if
  * any, see rt_task_add_hook()).
  *
  * @param task The descriptor address of the affected task which must

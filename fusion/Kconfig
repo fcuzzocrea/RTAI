@@ -4,7 +4,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "O.6.3 (fusion)"
+	default "O.6.4 (fusion)"
 
 menu "General"
 
@@ -30,10 +30,10 @@ config RTAI_LINUXDIR
 	/lib/modules/`uname -r`/build
         i.e. the build directory of the running Linux kernel .
 
-menu "RTAI Documentation"
+menu "Documentation"
 
 config RTAI_DOC_DOX
-	bool "Build RTAI Doxygen documentation (HTML)"
+	bool "Build Doxygen-based documentation (HTML)"
 	default n
 	help
 	This option causes the Doxygen-based RTAI documentation to be
@@ -53,22 +53,23 @@ config RTAI_DOC_LATEX_NONSTOP
         documentation.
 
 config RTAI_DOC_DBX
-	bool "Build DocBook XML documentation (HTML/PDF)"
+	bool "Build DocBook XML-based documentation (HTML/PDF)"
 	default n
 	help
-	This option causes the DocBook XML based RTAI documentation to be
+	This option causes the DocBook XML-based RTAI documentation to be
 	built. This option is intended for people actually writing
 	documentation and who want to update the pre-built manuals,
 	regular users can just use the latter directly.
 
 config RTAI_DBX_NET
-        bool "Let the DocBook XML tools use network"
+        bool "Let the DocBook XML tools use the network"
 	depends on RTAI_DOC_DBX
         default n
         help
-        Let the DocBook tools use internet to fetch the DTD and XSL stylesheets.
-        If disabled, the documentation generation will fail if the necessary 
-        DTD(s) and XSL stylesheets can not be found on the local computer.
+        Let the DocBook tools use the Internet to fetch the DTD and
+        XSL stylesheets. If disabled, the documentation generation will
+	fail if the necessary DTD(s) and XSL stylesheets can not be found
+	on the local computer.
 
 config RTAI_DBX_ROOT
         string "Docbook XML root"

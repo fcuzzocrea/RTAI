@@ -27,8 +27,8 @@ config RTAI_OPT_NATIVE_REGISTRY_NRSLOTS
 	registry can handle.
 
 config RTAI_OPT_NATIVE_PIPE
-	bool "Inter-domain pipe support"
-	depends on RTAI_SKIN_NATIVE
+	bool "Pipe support"
+	depends on RTAI_OPT_PIPE && RTAI_SKIN_NATIVE
 	default y
 	help
 	

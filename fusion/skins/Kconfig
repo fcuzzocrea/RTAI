@@ -1,4 +1,4 @@
-menu "Skin support"
+menu "APIs"
 
 source "skins/rtai/Kconfig"
 
@@ -14,14 +14,15 @@ source "skins/vxworks/Kconfig"
 
 config RTAI_OPT_VM
 	bool "User-space VM support"
+	depends on RTAI_OPT_FUSION
 	default y
 	help
 
-	RTAI/vm technology allows applications based on legacy RTOS
+	This feature allows applications based on legacy RTOS
 	APIs to run inside virtual machines in user-space
 	with hard real-time capabilities.
 	If activated, this option will cause in-kernel emulators
 	which have been selected in the current menu to be
-	compiled as process-embeddable virtual machines too.
+	compiled as process-embeddable virtual machines.
 
 endmenu

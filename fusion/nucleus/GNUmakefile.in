@@ -36,6 +36,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
+@CONFIG_RTAI_OPT_FUSION_TRUE@am__append_1 = shadow.c fusion.c
+@CONFIG_RTAI_OPT_PIPE_TRUE@am__append_2 = pipe.c
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
@@ -63,6 +65,8 @@ CONFIG_RTAI_MAINT_PGM_TRUE = @CONFIG_RTAI_MAINT_PGM_TRUE@
 CONFIG_RTAI_MAINT_TRUE = @CONFIG_RTAI_MAINT_TRUE@
 CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE = @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@
 CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE = @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@
+CONFIG_RTAI_OPT_FUSION_FALSE = @CONFIG_RTAI_OPT_FUSION_FALSE@
+CONFIG_RTAI_OPT_FUSION_TRUE = @CONFIG_RTAI_OPT_FUSION_TRUE@
 CONFIG_RTAI_OPT_NATIVE_COND_FALSE = @CONFIG_RTAI_OPT_NATIVE_COND_FALSE@
 CONFIG_RTAI_OPT_NATIVE_COND_TRUE = @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@
 CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE = @CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE@
@@ -79,6 +83,8 @@ CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_FALSE@
 CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE = @CONFIG_RTAI_OPT_NATIVE_REGISTRY_TRUE@
 CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
 CONFIG_RTAI_OPT_NATIVE_SEM_TRUE = @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@
+CONFIG_RTAI_OPT_PIPE_FALSE = @CONFIG_RTAI_OPT_PIPE_FALSE@
+CONFIG_RTAI_OPT_PIPE_TRUE = @CONFIG_RTAI_OPT_PIPE_TRUE@
 CONFIG_RTAI_OPT_TRACES_FALSE = @CONFIG_RTAI_OPT_TRACES_FALSE@
 CONFIG_RTAI_OPT_TRACES_TRUE = @CONFIG_RTAI_OPT_TRACES_TRUE@
 CONFIG_RTAI_OPT_VM_FALSE = @CONFIG_RTAI_OPT_VM_FALSE@
@@ -222,17 +228,14 @@ moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 
 libmodule_SRC = \
-		fusion.c \
 		heap.c \
 		intr.c \
 		module.c \
-		pipe.c \
 		pod.c \
-		shadow.c \
 		synch.c \
 		thread.c \
-		timer.c
-
+		timer.c\
+$(am__append_1) $(am__append_2)
 
 @CONFIG_RTAI_OPT_TRACES_TRUE@MAYBE_TRACE = rtai_trace$(modext)
 
@@ -259,7 +262,7 @@ libmodule_SRC = \
 
 EXTRA_DIST = $(libmodule_SRC) trace.c Makefile.kbuild
 
-SUBDIRS = lib
+@CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
 subdir = nucleus
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs
@@ -303,7 +306,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	installdirs-recursive install-recursive uninstall-recursive \
 	check-recursive installcheck-recursive
 DIST_COMMON = $(srcdir)/GNUmakefile.in GNUmakefile.am
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = lib
 SOURCES = $(nodist_libnucleus_a_SOURCES)
 
 all: all-recursive
@@ -795,7 +798,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \

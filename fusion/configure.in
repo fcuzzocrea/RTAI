@@ -1,11 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.57)
 
-AC_INIT(fusion,0.6.3,rpm@xenomai.org)
+AC_INIT(fusion,0.6.4,rpm@xenomai.org)
 
 CONFIG_RTAI_VERSION_MAJOR=0
 CONFIG_RTAI_VERSION_MINOR=6
-CONFIG_RTAI_REVISION_LEVEL=3
+CONFIG_RTAI_REVISION_LEVEL=4
 
 AC_CONFIG_HEADERS(rtai_config.h)
 AC_CONFIG_AUX_DIR(config/autoconf)
@@ -258,6 +258,87 @@ RTAI_ARCH_TUNE_FLAGS=`make -s -C $RTAI_LINUX_DIR -f $rtai_mf rtai-arch`
 rm $rtai_mf
 AC_MSG_RESULT($RTAI_ARCH_TUNE_FLAGS)
 
+AC_MSG_CHECKING(for real-time support in user-space)
+AC_ARG_ENABLE(nucleus-fusion,
+	[ --enable-nucleus-fusion	Enable real-time support in user-space],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_FUSION=y ;;
+	*) unset CONFIG_RTAI_OPT_FUSION ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_FUSION:-no})
+
+AC_MSG_CHECKING(for inter-domain pipe support)
+AC_ARG_ENABLE(nucleus-pipe,
+	[ --enable-nucleus-pipe	Enable pipe support in nucleus],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_PIPE=y ;;
+	*) unset CONFIG_RTAI_OPT_PIPE ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_PIPE:-no})
+
+AC_MSG_CHECKING(for debug support in nucleus)
+AC_ARG_ENABLE(nucleus-debug,
+	[ --enable-nucleus-debug	Enable debug support in nucleus],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_DEBUG=y ;;
+	*) unset CONFIG_RTAI_OPT_DEBUG ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_DEBUG:-no})
+
+AC_MSG_CHECKING(for execution timestamps in nucleus)
+AC_ARG_ENABLE(nucleus-timestamps,
+	[ --enable-nucleus-timestamps	Enable execution timestamps in nucleus],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_TIMESTAMPS=y ;;
+	*) unset CONFIG_RTAI_OPT_TIMESTAMPS ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_TIMESTAMPS:-no})
+
+AC_MSG_CHECKING(for FPU support)
+AC_ARG_ENABLE(fpu,
+	[ --enable-fpu		Enable FPU support],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_FPU=y ;;
+	*) unset CONFIG_RTAI_HW_FPU ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_FPU:-no})
+
+AC_MSG_CHECKING(for aperiodic timer support)
+AC_ARG_ENABLE(fpu,
+	[ --enable-aperiodic-timer		Enable aperiodic timer support],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_APERIODIC_TIMER=y ;;
+	*) unset CONFIG_RTAI_HW_APERIODIC_TIMER ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_HW_APERIODIC_TIMER:-no})
+
+AC_MSG_CHECKING(for debug symbols in kernel modules)
+AC_ARG_ENABLE(module-debug,
+	[ --enable-module-debug	Enable debug information in kernel modules],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_KSYMS=y ;;
+	*) unset CONFIG_RTAI_OPT_KSYMS ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_KSYMS:-no})
+
+AC_MSG_CHECKING(for debug symbols in user-space programs)
+AC_ARG_ENABLE(user-debug,
+	[ --enable-user-debug	Enable debug information in user-space programs],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_USYMS=y ;;
+	*) unset CONFIG_RTAI_OPT_USYMS ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_USYMS:-no})
+
+AC_MSG_CHECKING(for trace module)
+AC_ARG_ENABLE(traces,
+        [ --enable-traces       Enable trace module],
+        [case "$enableval" in
+        y | yes) CONFIG_RTAI_OPT_TRACES=y ;;
+        *) unset CONFIG_RTAI_OPT_TRACES ;;
+        esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_TRACES:-no})
+
 AC_MSG_CHECKING(for POSIX skin)
 AC_ARG_ENABLE(posix-skin,
 	[ --enable-posix-skin	Build POSIX skin],
@@ -426,69 +507,6 @@ AC_ARG_ENABLE(user-vm,
 	*) unset CONFIG_RTAI_OPT_VM ;;
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_VM:-no})
-
-AC_MSG_CHECKING(for debug support in nucleus)
-AC_ARG_ENABLE(nucleus-debug,
-	[ --enable-nucleus-debug	Enable debug support in nucleus],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_OPT_DEBUG=y ;;
-	*) unset CONFIG_RTAI_OPT_DEBUG ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_OPT_DEBUG:-no})
-
-AC_MSG_CHECKING(for execution timestamps in nucleus)
-AC_ARG_ENABLE(nucleus-timestamps,
-	[ --enable-nucleus-timestamps	Enable execution timestamps in nucleus],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_OPT_TIMESTAMPS=y ;;
-	*) unset CONFIG_RTAI_OPT_TIMESTAMPS ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_OPT_TIMESTAMPS:-no})
-
-AC_MSG_CHECKING(for FPU support)
-AC_ARG_ENABLE(fpu,
-	[ --enable-fpu		Enable FPU support],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_HW_FPU=y ;;
-	*) unset CONFIG_RTAI_HW_FPU ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_HW_FPU:-no})
-
-AC_MSG_CHECKING(for aperiodic timer support)
-AC_ARG_ENABLE(fpu,
-	[ --enable-aperiodic-timer		Enable aperiodic timer support],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_HW_APERIODIC_TIMER=y ;;
-	*) unset CONFIG_RTAI_HW_APERIODIC_TIMER ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_HW_APERIODIC_TIMER:-no})
-
-AC_MSG_CHECKING(for debug symbols in kernel modules)
-AC_ARG_ENABLE(module-debug,
-	[ --enable-module-debug	Enable debug information in kernel modules],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_OPT_KSYMS=y ;;
-	*) unset CONFIG_RTAI_OPT_KSYMS ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_OPT_KSYMS:-no})
-
-AC_MSG_CHECKING(for debug symbols in user-space programs)
-AC_ARG_ENABLE(user-debug,
-	[ --enable-user-debug	Enable debug information in user-space programs],
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_OPT_USYMS=y ;;
-	*) unset CONFIG_RTAI_OPT_USYMS ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_OPT_USYMS:-no})
-
-AC_MSG_CHECKING(for trace module)
-AC_ARG_ENABLE(traces,
-        [ --enable-traces       Enable trace module],
-        [case "$enableval" in
-        y | yes) CONFIG_RTAI_OPT_TRACES=y ;;
-        *) unset CONFIG_RTAI_OPT_TRACES ;;
-        esac])
-AC_MSG_RESULT(${CONFIG_RTAI_OPT_TRACES:-no})
 
 case $RTAI_TARGET_ARCH in
  i386)
@@ -669,6 +687,8 @@ AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_SCHED_LATENCY,$CONFIG_RTAI_HW_SCHED_LATENCY,[K
 test \! x$CONFIG_RTAI_HW_FPU = x && AC_DEFINE(CONFIG_RTAI_HW_FPU,1,[Kconfig])
 test \! x$CONFIG_RTAI_HW_APERIODIC_TIMER = x && AC_DEFINE(CONFIG_RTAI_HW_APERIODIC_TIMER,1,[Kconfig])
 
+test x$CONFIG_RTAI_OPT_FUSION = xy && AC_DEFINE(CONFIG_RTAI_OPT_FUSION,1,[Kconfig])
+test x$CONFIG_RTAI_OPT_PIPE = xy && AC_DEFINE(CONFIG_RTAI_OPT_PIPE,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_DEBUG = xy && AC_DEFINE(CONFIG_RTAI_OPT_DEBUG,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_TIMESTAMPS = xy && AC_DEFINE(CONFIG_RTAI_OPT_TIMESTAMPS,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_TRACES = xy && AC_DEFINE(CONFIG_RTAI_OPT_TRACES,1,[Kconfig])
@@ -722,6 +742,10 @@ AM_CONDITIONAL(CONFIG_SMP,[test "$CONFIG_SMP" = y])
 
 dnl Hardware specifics
 AM_CONDITIONAL(CONFIG_RTAI_HW_FPU,[test "$CONFIG_RTAI_HW_FPU" = y])
+
+dnl Nucleus options
+AM_CONDITIONAL(CONFIG_RTAI_OPT_FUSION,[test x$CONFIG_RTAI_OPT_FUSION = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_PIPE,[test x$CONFIG_RTAI_OPT_PIPE = xy])
 
 dnl Supported skins
 AM_CONDITIONAL(CONFIG_RTAI_SKIN_POSIX,[test x$CONFIG_RTAI_SKIN_POSIX = xy])

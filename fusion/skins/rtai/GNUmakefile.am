@@ -94,4 +94,6 @@ uninstall-local:
 
 EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig
 
+if CONFIG_RTAI_OPT_FUSION
 SUBDIRS = lib
+endif

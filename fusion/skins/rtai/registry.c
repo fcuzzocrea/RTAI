@@ -25,7 +25,27 @@
  * \ingroup native
  * \defgroup registry Registry services.
  *
- * Registry services.
+ * The registry provides a mean to index real-time object descriptors
+ * created by the RTAI skin on unique alphanumeric keys. When labeled
+ * this way, a real-time object is globally exported; it can be
+ * searched for, and its descriptor returned to the caller for further
+ * use; the latter operation is called a "binding". When no object has
+ * been registered under the given name yet, the registry can be asked
+ * to set up a rendez-vous, blocking the caller until the object is
+ * eventually registered.
+ *
+ * The registry is a simple yet powerful mechanism for sharing
+ * real-time objects between kernel-based and user-space tasks, or
+ * between tasks belonging to different user-space processes. Once the
+ * binding has been done, an exported object can be controlled through
+ * the regular API using the ubiquitous descriptor returned by the
+ * registry.
+ *
+ * All high-level real-time objects created by the RTAI skin can be
+ * registered. The name parameter passed to the various object
+ * creation routines is used to have the new object indexed by the
+ * RTAI registry. Such registration is always optional though, and can
+ * be avoided by passing a null or empty name string.
  *
  *@{*/
 

@@ -57,9 +57,13 @@
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
 #include <nucleus/version.h>
-#include <nucleus/pipe.h>
-#include <nucleus/fusion.h>
 #include <nucleus/trace.h>
+#ifdef CONFIG_RTAI_OPT_PIPE
+#include <nucleus/pipe.h>
+#endif /* CONFIG_RTAI_OPT_PIPE */
+#ifdef CONFIG_RTAI_OPT_FUSION
+#include <nucleus/fusion.h>
+#endif /* CONFIG_RTAI_OPT_FUSION */
 
 MODULE_DESCRIPTION("Xenomai nucleus");
 MODULE_AUTHOR("rpm@xenomai.org");
@@ -128,7 +132,7 @@ static int xnpod_read_proc (char *page,
     char buf[64];
     spl_t s;
 
-    p += sprintf(p,"RTAI/fusion nucleus v%s\n",PACKAGE_VERSION);
+    p += sprintf(p,"Xenomai nucleus v%s\n",PACKAGE_VERSION);
     p += sprintf(p,"Mounted over Adeos %s\n",ADEOS_VERSION_STRING);
     p += sprintf(p,"Registered interface(s): ");
 
@@ -276,20 +280,24 @@ int __xeno_main_init (void)
     if (err)
 	goto cleanup_arch;
 
+#ifdef CONFIG_RTAI_OPT_PIPE
     err = xnpipe_mount();
 
     if (err)
 	goto cleanup_arch;
+#endif /* CONFIG_RTAI_OPT_PIPE */
 
     err = xnheap_mount();
 
     if (err)
 	goto cleanup_pipe;
 
+#ifdef CONFIG_RTAI_OPT_FUSION
     err = xnfusion_mount();
 
     if (err)
 	goto cleanup_heap;
+#endif /* CONFIG_RTAI_OPT_FUSION */
     }
 #endif /* __KERNEL__ */
 
@@ -299,13 +307,17 @@ int __xeno_main_init (void)
 
 #ifdef __KERNEL__
 
+#ifdef CONFIG_RTAI_OPT_FUSION
  cleanup_heap:
+#endif /* CONFIG_RTAI_OPT_FUSION */
 
     xnheap_umount();
 
  cleanup_pipe:
 
+#ifdef CONFIG_RTAI_OPT_PIPE
     xnpipe_umount();
+#endif /* CONFIG_RTAI_OPT_PIPE */
 
  cleanup_arch:
     
@@ -335,9 +347,13 @@ void __xeno_main_exit (void)
 #ifdef CONFIG_PROC_FS
     xnpod_delete_proc();
 #endif /* CONFIG_PROC_FS */
+#ifdef CONFIG_RTAI_OPT_FUSION
     xnfusion_umount();
+#endif /* CONFIG_RTAI_OPT_FUSION */
     xnheap_umount();
+#ifdef CONFIG_RTAI_OPT_PIPE
     xnpipe_umount();
+#endif /* CONFIG_RTAI_OPT_PIPE */
 #endif /* __KERNEL__ */
     xnloginfo("Xenomai core stopped.\n");
 }

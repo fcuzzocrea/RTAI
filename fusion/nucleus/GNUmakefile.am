@@ -5,16 +5,21 @@ modext = @RTAI_MODULE_EXT@
 CROSS_COMPILE = @CROSS_COMPILE@
 
 libmodule_SRC = \
-		fusion.c \
 		heap.c \
 		intr.c \
 		module.c \
-		pipe.c \
 		pod.c \
-		shadow.c \
 		synch.c \
 		thread.c \
 		timer.c
+
+if CONFIG_RTAI_OPT_FUSION
+libmodule_SRC += shadow.c fusion.c
+endif
+
+if CONFIG_RTAI_OPT_PIPE
+libmodule_SRC += pipe.c
+endif
 
 rtai_nucleus$(modext): @RTAI_KBUILD_ENV@
 rtai_nucleus$(modext): $(libmodule_SRC) FORCE
@@ -75,4 +80,6 @@ endif
 
 EXTRA_DIST = $(libmodule_SRC) trace.c Makefile.kbuild
 
+if CONFIG_RTAI_OPT_FUSION
 SUBDIRS = lib
+endif

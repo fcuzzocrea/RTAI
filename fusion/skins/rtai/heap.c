@@ -95,7 +95,8 @@ static void __heap_flush_private (xnheap_t *heap,
  *
  * - H_SHARED causes the heap to be sharable between kernel and
  * user-space tasks. Otherwise, the new heap is only available for
- * kernel-based usage.
+ * kernel-based usage. This feature requires the real-time support in
+ * user-space to be configured in (CONFIG_OPT_RTAI_FUSION).
  *
  * - H_DMA causes the buffer pool associated to the heap to be
  * allocated in physically contiguous memory, suitable for DMA
@@ -113,6 +114,9 @@ static void __heap_flush_private (xnheap_t *heap,
  * create the heap. Additionally, and if H_SHARED has been passed in
  * @a mode, errors while mapping the buffer pool in the caller's
  * address space might beget this return code too.
+ *
+ * - -ENOSYS is returned if @a mode specifies H_SHARED, but the
+ * real-time support in user-space is unavailable.
  *
  * Environments:
  *
@@ -139,11 +143,15 @@ int rt_heap_create (RT_HEAP *heap,
 #ifdef __KERNEL__
     if (mode & H_SHARED)
 	{
+#ifdef CONFIG_RTAI_OPT_FUSION
 	err = xnheap_init_shared(&heap->heap_base,
 				 heapsize,
 				 (mode & H_DMA) ? GFP_DMA : 0);
 	if (err)
 	    return err;
+#else /* !CONFIG_RTAI_OPT_FUSION */
+	return -ENOSYS;
+#endif /* CONFIG_RTAI_OPT_FUSION */
 	}
     else
 #endif /* __KERNEL__ */
@@ -232,11 +240,11 @@ int rt_heap_delete (RT_HEAP *heap)
         goto unlock_and_exit;
         }
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (heap->mode & H_SHARED)
 	err = xnheap_destroy_shared(&heap->heap_base);
     else
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 	err = xnheap_destroy(&heap->heap_base,&__heap_flush_private,NULL);
 
     if (err)

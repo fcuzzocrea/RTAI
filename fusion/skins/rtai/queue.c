@@ -108,7 +108,8 @@ static void __queue_flush_private (xnheap_t *heap,
  *
  * - Q_SHARED causes the queue to be sharable between kernel and
  * user-space tasks. Otherwise, the new queue is only available for
- * kernel-based usage.
+ * kernel-based usage. This feature requires the real-time support in
+ * user-space to be configured in (CONFIG_OPT_RTAI_FUSION).
  *
  * - Q_DMA causes the buffer pool associated to the queue to be
  * allocated in physically contiguous memory, suitable for DMA
@@ -126,6 +127,9 @@ static void __queue_flush_private (xnheap_t *heap,
  * create the queue. Additionally, and if Q_SHARED has been passed in
  * @a mode, errors while mapping the buffer pool in the caller's
  * address space might beget this return code too.
+ *
+ * - -ENOSYS is returned if @a mode specifies Q_SHARED, but the
+ * real-time support in user-space is unavailable.
  *
  * Environments:
  *
@@ -153,11 +157,15 @@ int rt_queue_create (RT_QUEUE *q,
 #ifdef __KERNEL__
     if (mode & Q_SHARED)
 	{
+#ifdef CONFIG_RTAI_OPT_FUSION
 	err = xnheap_init_shared(&q->bufpool,
 				 poolsize,
 				 (mode & Q_DMA) ? GFP_DMA : 0);
 	if (err)
 	    return err;
+#else /* !CONFIG_RTAI_OPT_FUSION */
+	return -ENOSYS;
+#endif /* CONFIG_RTAI_OPT_FUSION */
 	}
     else
 #endif /* __KERNEL__ */
@@ -248,11 +256,11 @@ int rt_queue_delete (RT_QUEUE *q)
         goto unlock_and_exit;
         }
 
-#ifdef __KERNEL__
+#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (q->mode & Q_SHARED)
 	err = xnheap_destroy_shared(&q->bufpool);
     else
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 	err = xnheap_destroy(&q->bufpool,&__queue_flush_private,NULL);
 
     if (err)

@@ -28,38 +28,13 @@
 #define VMALLOC_VMADDR(x) ((unsigned long)(x))
 #endif /* >= 2.6.0 */
 
-#define __SHM_USE_VECTOR 1
-
 #ifndef __KERNEL__
 
-#ifdef __SHM_USE_VECTOR
-static inline long long rtai_shmrq(int srq, unsigned int whatever)
+static inline long long rtai_shmrq(int srq, unsigned long args)
 {
 	long long retval;
-	RTAI_DO_TRAP(RTAI_SHM_VECTOR,retval,srq,whatever);
+	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, args);
 	return retval;
-}
-#endif /* __SHM_USE_VECTOR */
-
-#else /* __KERNEL__ */
-
-#define RTAI_SHM_HANDLER rtai_shm_handler
-
-#define __STR(x) #x
-#define STR(x) __STR(x)
-
-#define DEFINE_SHM_HANDLER \
-static void rtai_shm_handler(void) \
-{ \
-	__asm__ __volatile__ (" \
-	cld; pushl %es; pushl %ds; pushl %ebp;\n\t \
-	pushl %edi; pushl %esi; pushl %ecx;\n\t \
-	pushl %ebx; pushl %edx; pushl %eax;\n\t \
-	movl $" STR(__KERNEL_DS) ",%ebx; mov %bx,%ds; mov %bx,%es"); \
-	__asm__ __volatile__ ("call "SYMBOL_NAME_STR(shm_handler)); \
-	__asm__ __volatile__ (" \
-	addl $8,%esp; popl %ebx; popl %ecx; popl %esi;\n\t \
-	popl %edi; popl %ebp; popl %ds; popl %es; iret"); \
 }
 
 #endif /* __KERNEL__ */

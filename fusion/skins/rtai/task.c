@@ -1394,7 +1394,7 @@ int rt_task_slice (RT_TASK *task, RTIME period)
     int err = 0;
     spl_t s;
 
-    if (!ticks)
+    if (!period)
 	return -EINVAL;
 
     if (!task)

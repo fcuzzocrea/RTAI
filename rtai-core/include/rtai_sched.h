@@ -44,6 +44,7 @@
 #define RT_SCHED_RPC         64
 #define RT_SCHED_RETURN     128
 #define RT_SCHED_MBXSUSP    256
+#define RT_SCHED_SFTRDY     512
 
 struct rt_task_struct;
 

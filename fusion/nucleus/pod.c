@@ -3024,11 +3024,11 @@ int xnpod_calibrate_sched (void)
 
  free_thread:
 
-    xnarch_sysfree(thread);
+    xnarch_sysfree(thread,sizeof(*thread));
 
  free_pod:
 
-    xnarch_sysfree(pod);
+    xnarch_sysfree(pod,sizeof(*pod));
 
     return err;
 }

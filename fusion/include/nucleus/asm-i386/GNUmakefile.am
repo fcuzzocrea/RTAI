@@ -2,6 +2,7 @@ includedir = $(prefix)/include/nucleus/asm-i386
 
 include_HEADERS = \
 		atomic.h \
+		calibration.h \
 		hal.h \
 		system.h \
 		syscall.h

@@ -135,12 +135,6 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
 #define XNARCH_IRQ_MAX               IPIPE_NR_XIRQS /* Do _not_ use NR_IRQS here. */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
-/* Using 2/3 of the average jitter is some constant obtained from
-   experimentation that proved to fit on tested PPC platforms with
-   respect to auto-calibration. In any case, a more accurate
-   scheduling latency can still be fixed by setting
-   CONFIG_RTAI_HW_SCHED_LATENCY properly. */
-#define xnarch_adjust_calibration(x) ((x) * 2 / 3)
 
 #define XNARCH_THREAD_STACKSZ 4096
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
@@ -879,6 +873,12 @@ static inline int xnarch_remap_page_range(struct vm_area_struct *vma,
 
 #ifdef XENO_MAIN_MODULE
 
+#include <nucleus/asm/calibration.h>
+
+extern u_long nkschedlat;
+
+extern u_long nktimerlat;
+
 int xnarch_escalation_virq;
 
 int xnpod_trap_fault(xnarch_fltinfo_t *fltinfo);
@@ -893,6 +893,35 @@ static int xnarch_trap_fault (adevinfo_t *evinfo)
     xnarch_fltinfo_t fltinfo;
     fltinfo.regs = (struct pt_regs *)evinfo->evdata;
     return xnpod_trap_fault(&fltinfo);
+}
+
+static inline unsigned long xnarch_calibrate_timer (void)
+
+{
+#if CONFIG_RTAI_HW_TIMER_LATENCY != 0
+    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY);
+#else /* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */
+    /* Compute the time needed to program the PIT in aperiodic
+       mode. The return value is expressed in CPU ticks. Depending on
+       whether CONFIG_X86_LOCAL_APIC is enabled or not in the kernel
+       configuration RTAI is compiled against,
+       CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local
+       APIC or 8254 timer latency value. */
+    return xnarch_ns_to_tsc(rthal_calibrate_timer());
+#endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
+}
+
+int xnarch_calibrate_sched (void)
+
+{
+    nktimerlat = xnarch_calibrate_timer();
+
+    if (!nktimerlat)
+	return -ENODEV;
+
+    nkschedlat = xnarch_ns_to_tsc(xnarch_get_sched_latency());
+
+    return 0;
 }
 
 static inline int xnarch_init (void)
@@ -925,6 +954,8 @@ static inline int xnarch_init (void)
 
     if (err)
         adeos_free_irq(xnarch_escalation_virq);
+    else
+	err = xnarch_calibrate_sched();
 
     return err;
 }
@@ -958,7 +989,5 @@ static inline void xnarch_exit (void)
 #include <nucleus/system.h>
 
 #endif /* __KERNEL__ */
-
-#define XNARCH_CALIBRATION_PERIOD    1000000 /* ns */
 
 #endif /* !_RTAI_ASM_PPC_SYSTEM_H */

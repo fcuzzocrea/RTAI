@@ -1,3 +1,8 @@
+2005-01-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-*/calibration.h: Add per-arch calibration
+	data.
+
 2005-01-01  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/patches: Upgrade to Adeos 2.6.8rc3-r6c10.

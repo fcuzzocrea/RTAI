@@ -251,16 +251,9 @@ int __fusion_sys_init (void)
 
 #ifdef __KERNEL__
     {
-    int xnpod_calibrate_sched(void);
-
 #ifdef CONFIG_PROC_FS
     xnpod_init_proc();
 #endif /* CONFIG_PROC_FS */
-
-    err = xnpod_calibrate_sched();
-
-    if (err)
-	goto cleanup_arch;
 
 #ifdef CONFIG_RTAI_OPT_PIPE
     err = xnpipe_mount();

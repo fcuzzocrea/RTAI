@@ -199,7 +199,6 @@ case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
 #else /* CONFIG_X86_LOCAL_APIC */
 #define XNARCH_HOST_TICK             (1000000000UL/HZ)
 #endif /* CONFIG_X86_LOCAL_APIC */
-#define xnarch_adjust_calibration(x) (x)
 
 #define XNARCH_THREAD_STACKSZ 4096
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
@@ -423,22 +422,6 @@ static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
 void xnpod_welcome_thread(struct xnthread *);
 
 void xnpod_delete_thread(struct xnthread *);
-
-unsigned long xnarch_calibrate_timer (void)
-
-{
-#if  CONFIG_RTAI_HW_TIMER_LATENCY != 0
-    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY);
-#else /* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */
-    /* Compute the time needed to program the PIT in aperiodic
-       mode. The return value is expressed in CPU ticks. Depending on
-       whether CONFIG_X86_LOCAL_APIC is enabled or not in the kernel
-       configuration RTAI is compiled against,
-       CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local
-       APIC or 8254 timer latency value. */
-    return xnarch_ns_to_tsc(rthal_calibrate_timer());
-#endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
-}
 
 static inline int xnarch_start_timer (unsigned long ns,
 				      void (*tickhandler)(void)) {
@@ -991,6 +974,12 @@ static inline int xnarch_remap_page_range(struct vm_area_struct *vma,
 
 #ifdef XENO_MAIN_MODULE
 
+#include <nucleus/asm/calibration.h>
+
+extern u_long nkschedlat;
+
+extern u_long nktimerlat;
+
 int xnarch_escalation_virq;
 
 int xnpod_trap_fault(xnarch_fltinfo_t *fltinfo);
@@ -1008,6 +997,35 @@ static int xnarch_trap_fault (adevinfo_t *evinfo)
     fltinfo.regs = (struct pt_regs *)evinfo->evdata;
 
     return xnpod_trap_fault(&fltinfo);
+}
+
+static inline unsigned long xnarch_calibrate_timer (void)
+
+{
+#if CONFIG_RTAI_HW_TIMER_LATENCY != 0
+    return xnarch_ns_to_tsc(CONFIG_RTAI_HW_TIMER_LATENCY);
+#else /* CONFIG_RTAI_HW_TIMER_LATENCY unspecified. */
+    /* Compute the time needed to program the PIT in aperiodic
+       mode. The return value is expressed in CPU ticks. Depending on
+       whether CONFIG_X86_LOCAL_APIC is enabled or not in the kernel
+       configuration RTAI is compiled against,
+       CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local
+       APIC or 8254 timer latency value. */
+    return xnarch_ns_to_tsc(rthal_calibrate_timer());
+#endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
+}
+
+int xnarch_calibrate_sched (void)
+
+{
+    nktimerlat = xnarch_calibrate_timer();
+
+    if (!nktimerlat)
+	return -ENODEV;
+
+    nkschedlat = xnarch_ns_to_tsc(xnarch_get_sched_latency());
+
+    return 0;
 }
 
 static inline int xnarch_init (void)
@@ -1040,6 +1058,8 @@ static inline int xnarch_init (void)
 
     if (err)
         adeos_free_irq(xnarch_escalation_virq);
+    else
+	err = xnarch_calibrate_sched();
 
     return err;
 }
@@ -1094,7 +1114,5 @@ static inline void xnarch_exit (void)
 #include <nucleus/system.h>
 
 #endif /* __KERNEL__ */
-
-#define XNARCH_CALIBRATION_PERIOD    100000 /* ns */
 
 #endif /* !_RTAI_ASM_I386_SYSTEM_H */

@@ -176,7 +176,7 @@ int main (int argc, char **argv)
 	    }
 
     if (sampling_period == 0)
-	sampling_period = XNARCH_CALIBRATION_PERIOD;
+	sampling_period = 100000; /* ns */
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);

@@ -507,7 +507,7 @@ int rt_registry_remove (rt_handle_t handle)
 }
 
 /**
- * @fn u_long rt_registry_get(rt_handle_t handle)
+ * @fn void *rt_registry_get(rt_handle_t handle)
  * @brief Find and lock a real-time object into the registry.
  *
  * This service retrieves an object from its handle into the registry

@@ -60,11 +60,12 @@ static ssize_t __heap_read_proc (char *page,
     int len;
     spl_t s;
 
-    xnlock_get_irqsave(&nklock,s);
-
-    p += sprintf(p,"%lu/%lu bytes used.\n",
+    p += sprintf(p,"type=%s:size=%lu:used=%lu\n",
+		 heap->mode & H_SHARED ? "shared" : "local",
 		 xnheap_used_mem(&heap->heap_base),
 		 xnheap_size(&heap->heap_base));
+
+    xnlock_get_irqsave(&nklock,s);
 
     if (xnsynch_nsleepers(&heap->synch_base) > 0)
 	{

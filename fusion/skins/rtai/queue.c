@@ -45,16 +45,77 @@
 #include <rtai/queue.h>
 #include <rtai/registry.h>
 
-int __queue_pkg_init (void)
+#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
 
+static ssize_t __queue_read_proc (char *page,
+				  char **start,
+				  off_t off,
+				  int count,
+				  int *eof,
+				  void *data)
 {
-    return 0;
+    RT_QUEUE *q = (RT_QUEUE *)data;
+    char *p = page;
+    int len;
+    spl_t s;
+
+    p += sprintf(p,"type=%s:poolsz=%lu:limit=%d:mcount=%d\n",
+		 q->mode & Q_SHARED ? "shared" : "local",
+		 xnheap_size(&q->bufpool),
+		 q->qlimit,
+		 countq(&q->pendq));
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (xnsynch_nsleepers(&q->synch_base) > 0)
+	{
+	xnpholder_t *holder;
+	
+	/* Pended queue -- dump waiters. */
+
+	holder = getheadpq(xnsynch_wait_queue(&q->synch_base));
+
+	while (holder)
+	    {
+	    xnthread_t *sleeper = link2thread(holder,plink);
+
+	    if (*xnthread_name(sleeper))
+		p += sprintf(p,"+%s\n",xnthread_name(sleeper));
+	    else
+		p += sprintf(p,"+%p\n",sleeper);
+
+	    holder = nextpq(xnsynch_wait_queue(&q->synch_base),holder);
+	    }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    len = (p - page) - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
 }
 
-void __queue_pkg_cleanup (void)
+static RT_OBJECT_PROCNODE __queue_pnode = {
 
-{
-}
+    .dir = NULL,
+    .type = "queues",
+    .entries = 0,
+    .read_proc = &__queue_read_proc,
+    .write_proc = NULL
+};
+
+#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+
+static RT_OBJECT_PROCNODE __queue_pnode = {
+
+    .type = "queues"
+};
+
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 static void __queue_flush_private (xnheap_t *heap,
 				   void *poolmem,
@@ -221,7 +282,7 @@ int rt_queue_create (RT_QUEUE *q,
 
     if (name && *name)
         {
-        err = rt_registry_enter(q->name,q,&q->handle,NULL);
+        err = rt_registry_enter(q->name,q,&q->handle,&__queue_pnode);
 
         if (err)
             rt_queue_delete(q);
@@ -821,6 +882,19 @@ int rt_queue_inquire (RT_QUEUE *q,
  *
  * Rescheduling: never.
  */
+
+int __queue_pkg_init (void)
+
+{
+    return 0;
+}
+
+void __queue_pkg_cleanup (void)
+
+{
+}
+
+/*@}*/
 
 EXPORT_SYMBOL(rt_queue_create);
 EXPORT_SYMBOL(rt_queue_delete);

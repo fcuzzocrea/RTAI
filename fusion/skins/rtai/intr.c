@@ -199,7 +199,7 @@ int rt_intr_create (RT_INTR *intr,
 int rt_intr_delete (RT_INTR *intr)
 
 {
-    int err = 0, rc;
+    int err = 0, rc = XNSYNCH_DONE;
     spl_t s;
 
     if (xnpod_asynch_p())

@@ -46,7 +46,7 @@
 #include <rtai/heap.h>
 #include <rtai/registry.h>
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __heap_read_proc (char *page,
 				 char **start,
@@ -114,14 +114,14 @@ static RT_OBJECT_PROCNODE __heap_pnode = {
     .write_proc = NULL
 };
 
-#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+#elif CONFIG_RTAI_OPT_NATIVE_REGISTRY
 
 static RT_OBJECT_PROCNODE __heap_pnode = {
 
     .type = "heaps"
 };
 
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 static void __heap_flush_private (xnheap_t *heap,
 				  void *heapmem,

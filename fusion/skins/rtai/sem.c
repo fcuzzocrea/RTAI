@@ -45,7 +45,7 @@
 #include <rtai/sem.h>
 #include <rtai/registry.h>
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __sem_read_proc (char *page,
 				char **start,
@@ -105,14 +105,14 @@ static RT_OBJECT_PROCNODE __sem_pnode = {
     .write_proc = NULL
 };
 
-#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+#elif CONFIG_RTAI_OPT_NATIVE_REGISTRY
 
 static RT_OBJECT_PROCNODE __sem_pnode = {
 
     .type = "semaphores"
 };
 
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 /**
  * @fn int rt_sem_create(RT_SEM *sem,

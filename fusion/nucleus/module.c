@@ -82,7 +82,9 @@ extern struct proc_dir_entry *rthal_proc_root;
 
 extern spinlock_t rthal_proc_lock;
 
+#ifdef CONFIG_RTAI_OPT_FUSION
 static struct proc_dir_entry *iface_proc_root;
+#endif /* CONFIG_RTAI_OPT_FUSION */
 
 static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
 
@@ -266,26 +268,6 @@ static ssize_t timer_read_proc (char *page,
     return len;
 }
 
-static ssize_t iface_read_proc (char *page,
-				char **start,
-				off_t off,
-				int count,
-				int *eof,
-				void *data)
-{
-    struct xnskentry *iface = (struct xnskentry *)data;
-    int len, refcnt = xnarch_atomic_get(&iface->refcnt);
-
-    len = sprintf(page,"%d\n",refcnt < 0 ? 0 : refcnt);
-    len -= off;
-    if (len <= off + count) *eof = 1;
-    *start = page + off;
-    if(len > count) len = count;
-    if(len < 0) len = 0;
-
-    return len;
-}
-
 static struct proc_dir_entry *add_proc_leaf (const char *name,
 					     read_proc_t rdproc,
 					     write_proc_t wrproc,
@@ -365,6 +347,26 @@ void xnpod_delete_proc (void)
 }
 
 #ifdef CONFIG_RTAI_OPT_FUSION
+
+static ssize_t iface_read_proc (char *page,
+				char **start,
+				off_t off,
+				int count,
+				int *eof,
+				void *data)
+{
+    struct xnskentry *iface = (struct xnskentry *)data;
+    int len, refcnt = xnarch_atomic_get(&iface->refcnt);
+
+    len = sprintf(page,"%d\n",refcnt < 0 ? 0 : refcnt);
+    len -= off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
+}
 
 void xnpod_declare_iface_proc (struct xnskentry *iface)
 

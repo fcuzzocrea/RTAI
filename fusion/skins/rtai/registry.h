@@ -26,6 +26,12 @@
 
 #define RT_REGISTRY_SELF  RT_HANDLE_INVALID
 
+#if defined(__KERNEL__) && \
+    defined(CONFIG_PROC_FS) && \
+    defined(CONFIG_RTAI_OPT_NATIVE_REGISTRY)
+#define CONFIG_RTAI_NATIVE_EXPORT_REGISTRY 1
+#endif /* __KERNEL__ && CONFIG_PROC_FS && CONFIG_RTAI_OPT_NATIVE_REGISTRY */
+
 #if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #include <nucleus/synch.h>

@@ -68,7 +68,7 @@ static int __rtai_hash_entries;
 
 static xnsynch_t __rtai_hash_synch;
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 #include <linux/workqueue.h>
 
@@ -90,7 +90,7 @@ static struct proc_dir_entry *registry_proc_root;
 
 static unsigned registry_proc_virq;
 
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 int __registry_pkg_init (void)
 
@@ -106,7 +106,7 @@ int __registry_pkg_init (void)
 
     int n;
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
     registry_proc_virq = adeos_alloc_irq();
 
@@ -127,7 +127,7 @@ int __registry_pkg_init (void)
 			 NULL,
 			 IPIPE_HANDLE_MASK);
 
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
     for (n = 0; n < CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS; n++)
 	{
@@ -161,7 +161,8 @@ void __registry_pkg_cleanup (void)
 	    {
 	    enext = ecurr->next;
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+
 	    spin_lock(&rthal_proc_lock);
 
 	    if (ecurr->object && ecurr->object->pnode)
@@ -175,7 +176,8 @@ void __registry_pkg_cleanup (void)
 		}
 
 	    spin_unlock(&rthal_proc_lock);
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 	    xnfree(ecurr);
 	    }
@@ -185,11 +187,11 @@ void __registry_pkg_cleanup (void)
 
     xnsynch_destroy(&__rtai_hash_synch);
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
     adeos_free_irq(registry_proc_virq);
     flush_scheduled_work();
     remove_proc_entry("registry",rthal_proc_root);
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 }
 
 static inline RT_OBJECT *__registry_validate (rt_handle_t handle)
@@ -204,7 +206,7 @@ static inline RT_OBJECT *__registry_validate (rt_handle_t handle)
     return NULL;
 }
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 /* The following stuff implements the mechanism for delegating
    export/unexport requests to/from the /proc interface from the RTAI
@@ -374,7 +376,7 @@ static inline void __registry_proc_unexport (RT_OBJECT *object)
     object->proc = NULL;
 }
 
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 static unsigned __registry_hash_crunch (const char *key)
 
@@ -555,7 +557,7 @@ int rt_registry_enter (const char *key,
        rescheduling takes place. */
     *phandle = object - __rtai_obj_slots;
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
     if (pnode)
 	__registry_proc_export(object,pnode);
     else
@@ -563,7 +565,7 @@ int rt_registry_enter (const char *key,
 	object->proc = NULL;
 	object->pnode = NULL;
 	}
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
     if (xnsynch_nsleepers(&__rtai_hash_synch) > 0)
 	{
@@ -761,7 +763,7 @@ int rt_registry_remove (rt_handle_t handle)
     object->objaddr = NULL;
     object->cstamp = 0;
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
     if (object->pnode)
 	__registry_proc_unexport(object);
@@ -772,7 +774,7 @@ int rt_registry_remove (rt_handle_t handle)
     if (object->pnode || object->proc)
 	goto unlock_and_exit;
 
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
     removeq(&__rtai_obj_busyq,&object->link);
     appendq(&__rtai_obj_freeq,&object->link);

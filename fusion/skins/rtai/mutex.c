@@ -44,7 +44,7 @@
 #include <rtai/mutex.h>
 #include <rtai/registry.h>
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __mutex_read_proc (char *page,
 				char **start,
@@ -104,14 +104,14 @@ static RT_OBJECT_PROCNODE __mutex_pnode = {
     .write_proc = NULL
 };
 
-#else /* !(CONFIG_PROC_FS && __KERNEL__) */
+#elif CONFIG_RTAI_OPT_NATIVE_REGISTRY
 
 static RT_OBJECT_PROCNODE __mutex_pnode = {
 
     .type = "mutexes"
 };
 
-#endif /* CONFIG_PROC_FS && __KERNEL__ */
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 /**
  * @fn int rt_mutex_create(RT_MUTEX *mutex,

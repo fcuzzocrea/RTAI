@@ -362,7 +362,7 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT                  = \
-        @top_srcdir@/core \
+        @top_srcdir@/base \
         @top_srcdir@/doc/doxygen \
 
 # If the value of the INPUT tag contains directories, you can use the 

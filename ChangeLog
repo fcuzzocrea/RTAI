@@ -1,3 +1,7 @@
+2005-01-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* doc: Fix generation and rebuild.
+
 2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
 
 	* rtai-lab/matlab/rtmain.c: new version compatible with Matlab7 and

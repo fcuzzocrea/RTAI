@@ -22519,10 +22519,10 @@ echo "${ECHO_T}${dox_version:-not installed}" >&6
 if test x${CONFIG_RTAI_DOX_DOC} = xy
 then
    dox_version_number=`echo $dox_version | sed 'y,., ,' | {
-        read dox_major dox_minor dox_patch
-        expr $dox_major \* 10000 + $dox_minor \* 100 + $dox_patch
+        read dox_major dox_minor dox_rev dox_patch
+        expr $dox_major \* 10000 + $dox_minor \* 100 + $dox_rev
    }`
-   if test $dox_version_number \< 10304
+   if test $dox_version_number -lt 10304
    then
         { { echo "$as_me:$LINENO: error: Doxygen version 1.3.4 or higher is needed." >&5
 echo "$as_me: error: Doxygen version 1.3.4 or higher is needed." >&2;}

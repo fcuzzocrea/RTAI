@@ -27,6 +27,24 @@
 
 #define RTAI_UART_MAGIC 0x55558000
 
+typedef struct rt_uart_placeholder {
+    rt_handle_t opaque;
+} RT_UART_PLACEHOLDER;
+
+typedef struct rt_uart_config {
+
+    struct __uart_port { /* TTYS0 - TTYSx */
+	int base;
+	int irq;
+    } port;
+
+    int fifo_depth;
+#define RT_UART_DEPTH1  0x0
+#define RT_UART_DEPTH4  0x40
+#define RT_UART_DEPTH8  0x80
+#define RT_UART_DEPTH14 0xc0
+
+    int speed;
 #define RT_UART_50     2304
 #define RT_UART_75     1536
 #define RT_UART_110    1047
@@ -45,39 +63,28 @@
 #define RT_UART_56K    2
 #define RT_UART_115K   1
 
+    int parity;
 #define RT_UART_NOPARITY 0x0
 #define RT_UART_ODDP     0x1
 #define RT_UART_EVENP    0x3
 
-#define RT_UART_STOPB1 0x0
-#define RT_UART_STOPB2 0x1
-
+    int data_bits;
 #define RT_UART_CHR5  0x0
 #define RT_UART_CHR6  0x1
 #define RT_UART_CHR7  0x2
 #define RT_UART_CHR8  0x3
 
-#define RT_UART_DEPTH1  0x0
-#define RT_UART_DEPTH4  0x40
-#define RT_UART_DEPTH8  0x80
-#define RT_UART_DEPTH14 0xc0
-
-typedef struct rt_uart_placeholder {
-    rt_handle_t opaque;
-} RT_UART_PLACEHOLDER;
-
-typedef struct rt_uart_config {
-
-    struct __uart_port {
-	int base;
-	int irq;
-    } port;
-
-    int fifo_depth;
-    int speed;
-    int parity;
-    int data_bits;
     int stop_bits;
+#define RT_UART_STOPB1 0x0
+#define RT_UART_STOPB2 0x1
+
+    int handshake;
+#define RT_UART_NOHAND  0x0
+#define RT_UART_RTSCTS  0x1
+
+    int rts_hiwm; /* High watermark on RX for clearing RTS */
+    int rts_lowm; /* Low watermark on RX for raising RTS */
+#define RT_UART_RTSWM_DEFAULT { 0, 0 }
 
 } RT_UART_CONFIG;
 
@@ -170,6 +177,7 @@ typedef struct rt_uart {
     unsigned char o_buf[RT_UART_BUFSZ]; /* !< Output store buffer. */
 
     int status;			/* !< UART status information. */
+    int modem;			/* !< UART modem flags. */
 
     rt_handle_t handle;		/* !< Handle in registry -- zero if unregistered. */
 

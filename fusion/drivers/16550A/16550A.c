@@ -45,7 +45,10 @@ static inline int __do_stat (RT_UART *uart)
 static inline void __do_modem (RT_UART *uart)
 
 {
-    inb(MSR(uart)); /* Reset bits. */
+    /* Collect the CTS bits into the modem flags -- Fortunately, the
+       CTS bit value coming from the MSR does not clash with MCR bit
+       ones. Okay, it's not that elegant... */
+    uart->modem |= (inb(MSR(uart) & MSR_CTS));
 }
 
 static inline void __do_rx (RT_UART *uart)
@@ -77,6 +80,18 @@ static inline void __do_rx (RT_UART *uart)
 	}
     else if (uart->i_nwait > 0)
 	uart->i_nwait -= rbytes;
+
+    /* If we are enforcing the RTSCTS control flow and the input
+       buffer is busy above the specified high watermark, clear
+       RTS. */
+
+    if (uart->i_count >= uart->config.rts_hiwm &&
+	(uart->config.handshake & RT_UART_RTSCTS) != 0 &&
+	(uart->modem & MCR_RTS) != 0)
+	{
+	uart->modem &= ~MCR_RTS;
+	outb(uart->modem,MCR(uart));
+	}
 }
 
 static inline void __do_tx (RT_UART *uart)
@@ -84,16 +99,19 @@ static inline void __do_tx (RT_UART *uart)
 {
     int c, count;
 
-    /* Output until the FIFO is full or all buffered bytes have been
-       written out. */
+    /* If we are clear to send, output the buffered bytes until the
+       FIFO is full or all of them have been written out. */
 
-    for (count = uart->config.fifo_depth;
-	 count > 0 && uart->o_count > 0;
-	 count--, uart->o_count--)
+    if (uart->modem & MSR_CTS)
 	{
-	c = uart->o_buf[uart->o_head++];
-	outb(c,THR(uart));
-	uart->o_head &= (sizeof(uart->o_buf) - 1);
+	for (count = uart->config.fifo_depth;
+	     count > 0 && uart->o_count > 0;
+	     count--, uart->o_count--)
+	    {
+	    c = uart->o_buf[uart->o_head++];
+	    outb(c,THR(uart));
+	    uart->o_head &= (sizeof(uart->o_buf) - 1);
+	    }
 	}
 
     if (uart->o_count == 0)
@@ -157,6 +175,14 @@ int rt_uart_open (RT_UART *uart,
     if (!request_region(config->port.base,8,"RTAI-based 16550A driver"))
 	return -EBUSY;
 
+    /* Set default RTS watermarks if unspecified. */
+
+    if (config->rts_hiwm <= 0)
+	config->rts_hiwm = sizeof(uart->i_buf) * 9 / 10; /* 90% RX buf full */
+
+    if (config->rts_lowm <= 0)
+	config->rts_lowm = sizeof(uart->i_buf) / 10; /* 10% RX buf full */
+
     xnlock_get_irqsave(&nklock,s);
 
     err = rt_intr_create(&uart->intr_desc,
@@ -206,9 +232,6 @@ int rt_uart_open (RT_UART *uart,
     outb(FCR_FIFO|FCR_RESET,FCR(uart));
     outb(FCR_FIFO|config->fifo_depth,FCR(uart));
 
-    /* Set modem control information. */
-    outb(MCR_DTR|MCR_RTS|MCR_OP1|MCR_OP2,MCR(uart));
-
     /* Enable UART interrupts (except TX). */
     outb(IER_RX|IER_STAT|IER_MODEM,IER(uart));
 
@@ -222,10 +245,17 @@ int rt_uart_open (RT_UART *uart,
        half-baked objects... */
 
     err = rt_registry_enter(uart->name,uart,&uart->handle);
-#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     if (err)
+	{
 	rt_uart_close(uart);
+	goto unlock_and_exit;
+	}
+#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
+
+    /* Ready to receive. */
+    uart->modem = MCR_DTR|MCR_RTS|MCR_OP1|MCR_OP2;
+    outb(uart->modem,MCR(uart));
 
  unlock_and_exit:
 
@@ -267,7 +297,7 @@ int rt_uart_close (RT_UART *uart)
     inb(RHR(uart));
     inb(MSR(uart));
 
-    /* Clear DTS/RTS. */
+    /* Port closed: clear RTS/DTR. */
     outb(MCR_OP1|MCR_OP2,MCR(uart));
 
     release_region(uart->config.port.base,8);
@@ -322,7 +352,7 @@ ssize_t rt_uart_read (RT_UART *uart,
 	if (timeout == TM_NONBLOCK)
 	    {
 	    ret = -EWOULDBLOCK;
-	    goto unlock_and_exit;
+	    goto do_handshake;
 	    }
 
 	rt_sem_p(&uart->i_lock,TM_INFINITE);
@@ -331,7 +361,7 @@ ssize_t rt_uart_read (RT_UART *uart,
 	rt_sem_v(&uart->i_lock);
 
         if (ret)
-	    goto unlock_and_exit;
+	    goto do_handshake;
 	}
 
     if (uart->status == 0)
@@ -346,6 +376,20 @@ ssize_t rt_uart_read (RT_UART *uart,
 	    ret = -EIO;	/*  Framing and Parity errors. */
 
 	uart->status = 0;
+	}
+
+ do_handshake:
+
+    /* If we are enforcing the RTSCTS control flow and the input
+       buffer dropped below the specified low watermark, reassert
+       RTS. */
+
+    if ((uart->modem & MCR_RTS) == 0 &&
+	(uart->config.handshake & RT_UART_RTSCTS) != 0 &&
+	uart->i_count <= uart->config.rts_lowm)
+	{
+	uart->modem |= MCR_RTS;
+	outb(uart->modem,MCR(uart));
 	}
 
  unlock_and_exit:

@@ -1,3 +1,8 @@
+2005-02-23  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* nucleus/timer.c (xntimer_set_sched): Remove superfluous check
+	for timer remoteness.
+	
 2005-02-24  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/timer.c (xntimer_do_timers): Dequeue an elapsed timer

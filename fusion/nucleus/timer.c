@@ -409,14 +409,16 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
        for the current date on the timer source CPU, whereas we are trying to
        migrate it to a CPU where the timer interrupt already occured. This would
        not be a problem in aperiodic mode. */
-    if (queued && timer->sched != xnpod_current_sched())
-        {
-        err = -EINVAL;
-        goto unlock_and_exit;
-        }
 
-    if (queued)
+    if (queued) {
+
+	if (timer->sched != xnpod_current_sched()) {
+	    err = -EINVAL;
+	    goto unlock_and_exit;
+	}
+
         xntimer_stop(timer);
+    }
 
     timer->sched = sched;
 
@@ -428,12 +430,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
             xntimer_enqueue_aperiodic(timer);
 
             if (xntimer_heading_p(timer))
-                {
-                if (sched != xnpod_current_sched())
-                    xntimer_next_remote_shot(sched);
-                else
-                    xntimer_next_local_shot(sched);
-                }
+		xntimer_next_remote_shot(sched);
             }
         else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -441,6 +438,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
         }
 
  unlock_and_exit:
+
     xnlock_put_irqrestore(&nklock, s);
 
 #endif  /* CONFIG_RTAI_OPT_PERCPU_TIMER */

@@ -108,9 +108,12 @@ static int sched_read_proc (char *page,
     int len = 0;
     spl_t s;
 
+    if (!nkpod)
+	goto out;
+
     xnlock_get_irqsave(&nklock, s);
 
-    p += sprintf(p,"\n%-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
+    p += sprintf(p,"%-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
 		 "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
@@ -141,6 +144,8 @@ static int sched_read_proc (char *page,
         }
 
     xnlock_put_irqrestore(&nklock, s);
+
+ out:
 
     len = p - page - off;
     if (len <= off + count) *eof = 1;

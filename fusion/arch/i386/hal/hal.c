@@ -888,9 +888,26 @@ static ssize_t hal_read_proc (char *page,
 			      int *eof,
 			      void *data)
 {
-    int len;
+    int len, major, minor, patchlevel;
 
-    len = sprintf(page,"%s\n",ADEOS_VERSION_STRING);
+    /* Canonicalize the Adeos relno-candidate information to some
+       major.minor.patchlevel format to be parser-friendly. */
+
+    major = ADEOS_MAJOR_NUMBER;
+
+    if (ADEOS_MINOR_NUMBER < 255)
+	{
+	--major;
+	minor = 99;
+	patchlevel = ADEOS_MINOR_NUMBER;
+	}
+    else
+	{
+	minor = 0;
+	patchlevel = 0;
+	}
+
+    len = sprintf(page,"%d.%d.%d\n",major,minor,patchlevel);
     len -= off;
     if (len <= off + count) *eof = 1;
     *start = page + off;

@@ -493,7 +493,7 @@ void rtai_trace_exit(void)
         rtai_trace_t *trace = link2trace(holder);
         xnheap_free(&rtai_trace_heap, trace);
     }
-    xnheap_destroy(&rtai_trace_heap, NULL);
+    xnheap_destroy(&rtai_trace_heap, NULL, NULL);
     adeos_spin_unlock_irqrestore(&rtai_trace_lock, s);
 }
 

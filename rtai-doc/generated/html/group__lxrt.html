@@ -39,132 +39,135 @@ Note also that, as already done for the shared memory services in user space, th
 <tr><td class="memItemLeft" nowrap align=right valign=top>file &nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="rtai__sem_8h.html">rtai_sem.h</a></td></tr>
 
 <tr><td colspan=2><br><h2>Defines</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a346">rt_mbx_init</a>(name, size)&nbsp;&nbsp;&nbsp;rt_typed_mbx_init(name, size, FIFO_Q)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a348">rt_mbx_init</a>(name, size)&nbsp;&nbsp;&nbsp;rt_typed_mbx_init(name, size, FIFO_Q)</td></tr>
 
-<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a347">rt_sem_init</a>(name, value)&nbsp;&nbsp;&nbsp;rt_typed_sem_init(name, value, CNT_SEM)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>#define&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a349">rt_sem_init</a>(name, value)&nbsp;&nbsp;&nbsp;rt_typed_sem_init(name, value, CNT_SEM)</td></tr>
 
 <tr><td colspan=2><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a0">rt_get_adr</a> (unsigned long name)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a0">rt_lxrt_loaded</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get an object address by its name. </em> <a href="#a0"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>unsigned long&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a1">rt_get_name</a> (void *adr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Check if LXRT is loaded in the Linux kernel. </em> <a href="#a0"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a1">rt_get_adr</a> (unsigned long name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get an object name by its address. </em> <a href="#a1"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RT_TASK *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a3">rt_task_init</a> (int name, int priority, int stack_size, int max_msg_size)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get an object address by its name. </em> <a href="#a1"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>unsigned long&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a2">rt_get_name</a> (void *adr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a new real time task in user space. </em> <a href="#a3"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a5">rt_change_prio</a> (RT_TASK *task, int priority)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get an object name by its address. </em> <a href="#a2"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RT_TASK *&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a4">rt_task_init</a> (int name, int priority, int stack_size, int max_msg_size)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Change a task priority. </em> <a href="#a5"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a6">rt_make_soft_real_time</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a new real time task in user space. </em> <a href="#a4"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a6">rt_change_prio</a> (RT_TASK *task, int priority)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Return a hard real time Linux process, or pthread to the standard Linux behavior. </em> <a href="#a6"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a7">rt_task_delete</a> (RT_TASK *task)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Change a task priority. </em> <a href="#a6"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a7">rt_make_soft_real_time</a> (void)</td></tr>
 
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a8">rt_task_yield</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Return a hard real time Linux process, or pthread to the standard Linux behavior. </em> <a href="#a7"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a8">rt_task_delete</a> (RT_TASK *task)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Yield the current task. </em> <a href="#a8"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a9">rt_task_suspend</a> (RT_TASK *task)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a9">rt_task_yield</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">rt_task_suspend suspends execution of the task task. </em> <a href="#a9"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a10">rt_task_resume</a> (RT_TASK *task)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Yield the current task. </em> <a href="#a9"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a10">rt_task_suspend</a> (RT_TASK *task)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Resume a task. </em> <a href="#a10"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a11">rt_task_make_periodic</a> (RT_TASK *task, RTIME start_time, RTIME period)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">rt_task_suspend suspends execution of the task task. </em> <a href="#a10"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a11">rt_task_resume</a> (RT_TASK *task)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Make a task run periodically. </em> <a href="#a11"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a12">rt_task_make_periodic_relative_ns</a> (RT_TASK *task, RTIME start_delay, RTIME period)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Resume a task. </em> <a href="#a11"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a12">rt_task_make_periodic</a> (RT_TASK *task, RTIME start_time, RTIME period)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Make a task run periodically. </em> <a href="#a12"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a13">rt_task_wait_period</a> (void)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a13">rt_task_make_periodic_relative_ns</a> (RT_TASK *task, RTIME start_delay, RTIME period)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Wait till next period. </em> <a href="#a13"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a14">rt_sleep</a> (RTIME delay)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Make a task run periodically. </em> <a href="#a13"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a14">rt_task_wait_period</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delay/suspend execution for a while. </em> <a href="#a14"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a15">rt_sleep_until</a> (RTIME time)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Wait till next period. </em> <a href="#a14"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a15">rt_sleep</a> (RTIME delay)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delay/suspend execution for a while. </em> <a href="#a15"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a17">start_rt_timer</a> (int period)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a16">rt_sleep_until</a> (RTIME time)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Start timer. </em> <a href="#a17"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a18">stop_rt_timer</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delay/suspend execution for a while. </em> <a href="#a16"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a18">start_rt_timer</a> (int period)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Stop timer. </em> <a href="#a18"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a19">rt_get_time</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Start timer. </em> <a href="#a18"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a19">stop_rt_timer</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a19"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a20">count2nano</a> (RTIME count)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Stop timer. </em> <a href="#a19"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a20">rt_get_time</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Convert internal count units to nanoseconds. </em> <a href="#a20"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a21">nano2count</a> (RTIME nanos)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a20"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a21">count2nano</a> (RTIME count)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Convert nanoseconds to internal count units. </em> <a href="#a21"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a22">rt_busy_sleep</a> (int ns)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Convert internal count units to nanoseconds. </em> <a href="#a21"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a22">nano2count</a> (RTIME nanos)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delay/suspend execution for a while. </em> <a href="#a22"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a23">rt_set_periodic_mode</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Convert nanoseconds to internal count units. </em> <a href="#a22"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a23">rt_busy_sleep</a> (int ns)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set timer mode. </em> <a href="#a23"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a24">rt_set_oneshot_mode</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delay/suspend execution for a while. </em> <a href="#a23"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a24">rt_set_periodic_mode</a> (void)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set timer mode. </em> <a href="#a24"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a25">rt_task_signal_handler</a> (RT_TASK *task, void(*handler)(void))</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a25">rt_set_oneshot_mode</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set the signal handler of a task. </em> <a href="#a25"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a26">rt_task_use_fpu</a> (RT_TASK *task, int use_fpu_flag)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set timer mode. </em> <a href="#a25"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a26">rt_task_signal_handler</a> (RT_TASK *task, void(*handler)(void))</td></tr>
 
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a28">rt_linux_use_fpu</a> (int use_fpu_flag)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set the signal handler of a task. </em> <a href="#a26"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a27">rt_task_use_fpu</a> (RT_TASK *task, int use_fpu_flag)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set indication of FPU usage. </em> <a href="#a28"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a29">rt_preempt_always</a> (int yes_no)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a29">rt_linux_use_fpu</a> (int use_fpu_flag)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Enable hard preemption. </em> <a href="#a29"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a30">rt_get_time_ns</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set indication of FPU usage. </em> <a href="#a29"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a30">rt_preempt_always</a> (int yes_no)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a30"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a31">rt_get_cpu_time_ns</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Enable hard preemption. </em> <a href="#a30"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a31">rt_get_time_ns</a> (void)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a31"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a32">rt_set_runnable_on_cpus</a> (RT_TASK *task, unsigned int cpu_mask)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a32">rt_get_cpu_time_ns</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Assign CPUs to a task. </em> <a href="#a32"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a33">rt_set_runnable_on_cpuid</a> (RT_TASK *task, unsigned int cpuid)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a32"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a33">rt_set_runnable_on_cpus</a> (RT_TASK *task, unsigned int cpu_mask)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Assign CPUs to a task. </em> <a href="#a33"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a35">start_rt_apic_timers</a> (struct apic_timer_setup_data *setup_mode, unsigned int rcvr_jiffies_cpuid)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a34">rt_set_runnable_on_cpuid</a> (RT_TASK *task, unsigned int cpuid)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Start local apic timer. </em> <a href="#a35"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a36">rt_preempt_always_cpuid</a> (int yes_no, unsigned int cpuid)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Assign CPUs to a task. </em> <a href="#a34"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a36">start_rt_apic_timers</a> (struct apic_timer_setup_data *setup_mode, unsigned int rcvr_jiffies_cpuid)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Enable hard preemption. </em> <a href="#a36"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a37">count2nano_cpuid</a> (RTIME count, unsigned int cpuid)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Start local apic timer. </em> <a href="#a36"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a37">rt_preempt_always_cpuid</a> (int yes_no, unsigned int cpuid)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Convert internal count units to nanoseconds. </em> <a href="#a37"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a38">nano2count_cpuid</a> (RTIME nanos, unsigned int cpuid)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Enable hard preemption. </em> <a href="#a37"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a38">count2nano_cpuid</a> (RTIME count, unsigned int cpuid)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Convert nanoseconds to internal count units. </em> <a href="#a38"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a39">rt_get_time_cpuid</a> (unsigned int cpuid)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Convert internal count units to nanoseconds. </em> <a href="#a38"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a39">nano2count_cpuid</a> (RTIME nanos, unsigned int cpuid)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a39"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a40">rt_get_time_ns_cpuid</a> (unsigned int cpuid)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Convert nanoseconds to internal count units. </em> <a href="#a39"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a40">rt_get_time_cpuid</a> (unsigned int cpuid)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a40"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a57">rt_make_hard_real_time</a> (void)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>RTIME&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a41">rt_get_time_ns_cpuid</a> (unsigned int cpuid)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Give a Linux process, or pthread, hard real time execution capabilities allowing full kernel preemption. </em> <a href="#a57"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a58">rt_allow_nonroot_hrt</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Get the current time. </em> <a href="#a41"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a58">rt_make_hard_real_time</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allows a non root user to use the Linux POSIX soft real time process management and memory lock functions, and allows it to do any input-output operation from user space. </em> <a href="#a58"></a><em><br><br></td></tr>
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a67">rt_register</a> (unsigned long nam, void *adr, int typ, struct task_struct *tsk)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Give a Linux process, or pthread, hard real time execution capabilities allowing full kernel preemption. </em> <a href="#a58"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>void&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a59">rt_allow_nonroot_hrt</a> (void)</td></tr>
 
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a68">rt_drg_on_name</a> (unsigned long name)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Allows a non root user to use the Linux POSIX soft real time process management and memory lock functions, and allows it to do any input-output operation from user space. </em> <a href="#a59"></a><em><br><br></td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a68">rt_register</a> (unsigned long nam, void *adr, int typ, struct task_struct *tsk)</td></tr>
 
-<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a69">rt_drg_on_adr</a> (void *adr)</td></tr>
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a69">rt_drg_on_name</a> (unsigned long name)</td></tr>
+
+<tr><td class="memItemLeft" nowrap align=right valign=top>int&nbsp;</td><td class="memItemRight" valign=bottom><a class="el" href="group__lxrt.html#a70">rt_drg_on_adr</a> (void *adr)</td></tr>
 
 </table>
 <hr><h2>Define Documentation</h2>
-<a class="anchor" name="a346" doxytag="rtai_mbx.h::rt_mbx_init" ></a><p>
+<a class="anchor" name="a348" doxytag="rtai_mbx.h::rt_mbx_init" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -199,7 +202,7 @@ A 0 value is returned if it was not possible to setup the semaphore or something
     </td>
   </tr>
 </table>
-<a class="anchor" name="a347" doxytag="rtai_sem.h::rt_sem_init" ></a><p>
+<a class="anchor" name="a349" doxytag="rtai_sem.h::rt_sem_init" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -240,7 +243,7 @@ It is important to remark that the returned task pointer cannot be used directly
   </tr>
 </table>
 <hr><h2>Function Documentation</h2>
-<a class="anchor" name="a20" doxytag="rtai_lxrt.h::count2nano" ></a><p>
+<a class="anchor" name="a21" doxytag="rtai_lxrt.h::count2nano" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -279,7 +282,7 @@ This function converts the time of timercounts internal count units into nanosec
     </td>
   </tr>
 </table>
-<a class="anchor" name="a37" doxytag="rtai_lxrt.h::count2nano_cpuid" ></a><p>
+<a class="anchor" name="a38" doxytag="rtai_lxrt.h::count2nano_cpuid" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -328,7 +331,7 @@ This function converts the time of timercounts internal count units into nanosec
     </td>
   </tr>
 </table>
-<a class="anchor" name="a21" doxytag="rtai_lxrt.h::nano2count" ></a><p>
+<a class="anchor" name="a22" doxytag="rtai_lxrt.h::nano2count" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -368,7 +371,7 @@ The versions ending with_cpuid are to be used with the MUP scheduler since with 
     </td>
   </tr>
 </table>
-<a class="anchor" name="a38" doxytag="rtai_lxrt.h::nano2count_cpuid" ></a><p>
+<a class="anchor" name="a39" doxytag="rtai_lxrt.h::nano2count_cpuid" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -418,7 +421,7 @@ This function is to be used with the MUP scheduler since with such a scheduler i
     </td>
   </tr>
 </table>
-<a class="anchor" name="a58" doxytag="rtai_lxrt.h::rt_allow_nonroot_hrt" ></a><p>
+<a class="anchor" name="a59" doxytag="rtai_lxrt.h::rt_allow_nonroot_hrt" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -449,7 +452,7 @@ Allows a non root user to use the Linux POSIX soft real time process management 
 Only the process itself can use this functions, it is not possible to impose the related transition from another process.     </td>
   </tr>
 </table>
-<a class="anchor" name="a22" doxytag="rtai_lxrt.h::rt_busy_sleep" ></a><p>
+<a class="anchor" name="a23" doxytag="rtai_lxrt.h::rt_busy_sleep" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -489,7 +492,7 @@ See also: <a class="el" href="rtai__lxrt_8h.html#rt_sleep">rt_sleep</a>(), <a cl
     </td>
   </tr>
 </table>
-<a class="anchor" name="a5" doxytag="rtai_lxrt.h::rt_change_prio" ></a><p>
+<a class="anchor" name="a6" doxytag="rtai_lxrt.h::rt_change_prio" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -540,7 +543,7 @@ Recall that a task has a base native priority, assigned at its birth or by <a cl
     </td>
   </tr>
 </table>
-<a class="anchor" name="a69" doxytag="rtai_registry.h::rt_drg_on_adr" ></a><p>
+<a class="anchor" name="a70" doxytag="rtai_registry.h::rt_drg_on_adr" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -572,7 +575,7 @@ rt_drg_on_adr deregisters the object identified by its <em>adr</em>.<p>
     </td>
   </tr>
 </table>
-<a class="anchor" name="a68" doxytag="rtai_registry.h::rt_drg_on_name" ></a><p>
+<a class="anchor" name="a69" doxytag="rtai_registry.h::rt_drg_on_name" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -604,7 +607,7 @@ rt_drg_on_name deregisters the object identified by its <em>name</em>.<p>
     </td>
   </tr>
 </table>
-<a class="anchor" name="a0" doxytag="rtai_lxrt.h::rt_get_adr" ></a><p>
+<a class="anchor" name="a1" doxytag="rtai_lxrt.h::rt_get_adr" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -637,7 +640,7 @@ rt_get_adr returns the address associated to <em>name</em>.<p>
     </td>
   </tr>
 </table>
-<a class="anchor" name="a31" doxytag="rtai_lxrt.h::rt_get_cpu_time_ns" ></a><p>
+<a class="anchor" name="a32" doxytag="rtai_lxrt.h::rt_get_cpu_time_ns" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -671,7 +674,7 @@ rt_get_cpu_time_ns always returns the CPU time in nanoseconds whatever timer is 
     </td>
   </tr>
 </table>
-<a class="anchor" name="a1" doxytag="rtai_lxrt.h::rt_get_name" ></a><p>
+<a class="anchor" name="a2" doxytag="rtai_lxrt.h::rt_get_name" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -704,7 +707,7 @@ rt_get_name returns the name pointed by the address <em>adr</em>.<p>
     </td>
   </tr>
 </table>
-<a class="anchor" name="a19" doxytag="rtai_lxrt.h::rt_get_time" ></a><p>
+<a class="anchor" name="a20" doxytag="rtai_lxrt.h::rt_get_time" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -738,7 +741,7 @@ rt_get_time returns the time, in internal count units, since start_rt_timer was 
     </td>
   </tr>
 </table>
-<a class="anchor" name="a39" doxytag="rtai_lxrt.h::rt_get_time_cpuid" ></a><p>
+<a class="anchor" name="a40" doxytag="rtai_lxrt.h::rt_get_time_cpuid" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -777,7 +780,7 @@ rt_get_time_cpuid returns the time, in internal count units, since start_rt_time
     </td>
   </tr>
 </table>
-<a class="anchor" name="a30" doxytag="rtai_lxrt.h::rt_get_time_ns" ></a><p>
+<a class="anchor" name="a31" doxytag="rtai_lxrt.h::rt_get_time_ns" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -811,7 +814,7 @@ rt_get_time_ns is the same as <a class="el" href="sched__lxrt_8c.html#rt_get_tim
     </td>
   </tr>
 </table>
-<a class="anchor" name="a40" doxytag="rtai_lxrt.h::rt_get_time_ns_cpuid" ></a><p>
+<a class="anchor" name="a41" doxytag="rtai_lxrt.h::rt_get_time_ns_cpuid" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -850,7 +853,7 @@ rt_get_time_ns is the same as rt_get_time but the returned time is converted to 
     </td>
   </tr>
 </table>
-<a class="anchor" name="a28" doxytag="rtai_lxrt.h::rt_linux_use_fpu" ></a><p>
+<a class="anchor" name="a29" doxytag="rtai_lxrt.h::rt_linux_use_fpu" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -891,7 +894,44 @@ rt_linux_use_fpu informs the scheduler that floating point arithmetic operations
 See also: <a class="el" href="rtai__lxrt_8h.html#rt_linux_use_fpu">rt_linux_use_fpu</a>().     </td>
   </tr>
 </table>
-<a class="anchor" name="a57" doxytag="rtai_lxrt.h::rt_make_hard_real_time" ></a><p>
+<a class="anchor" name="a0" doxytag="rtai_lxrt.h::rt_lxrt_loaded" ></a><p>
+<table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top"> int rt_lxrt_loaded </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">void&nbsp;</td>
+          <td class="mdname1" valign="top" nowrap>          </td>
+          <td class="md" valign="top">&nbsp;)&nbsp;</td>
+          <td class="md" nowrap><code> [inline]</code></td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing=5 cellpadding=0 border=0>
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Check if LXRT is loaded in the Linux kernel. 
+<p>
+<dl compact><dt><b>Return values:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign=top><em>0</em>&nbsp;</td><td>on success, </td></tr>
+    <tr><td valign=top><em>-1</em>&nbsp;</td><td>on failure. </td></tr>
+  </table>
+</dl>
+    </td>
+  </tr>
+</table>
+<a class="anchor" name="a58" doxytag="rtai_lxrt.h::rt_make_hard_real_time" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -925,7 +965,7 @@ Note that processes made hard real time should avoid making any Linux System cal
 After all it is pure nonsense to use a non hard real time Operating System, i.e. Linux, from within hard real time processes.     </td>
   </tr>
 </table>
-<a class="anchor" name="a6" doxytag="rtai_lxrt.h::rt_make_soft_real_time" ></a><p>
+<a class="anchor" name="a7" doxytag="rtai_lxrt.h::rt_make_soft_real_time" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -957,7 +997,7 @@ rt_make_soft_real_time returns to soft Linux POSIX real time a process, from whi
 Only the process itself can use this functions, it is not possible to impose the related transition from another process.     </td>
   </tr>
 </table>
-<a class="anchor" name="a29" doxytag="rtai_lxrt.h::rt_preempt_always" ></a><p>
+<a class="anchor" name="a30" doxytag="rtai_lxrt.h::rt_preempt_always" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -991,7 +1031,7 @@ In the oneshot mode the next timer expiration is programmed after a timer shot b
     </td>
   </tr>
 </table>
-<a class="anchor" name="a36" doxytag="rtai_lxrt.h::rt_preempt_always_cpuid" ></a><p>
+<a class="anchor" name="a37" doxytag="rtai_lxrt.h::rt_preempt_always_cpuid" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1034,7 +1074,7 @@ In the oneshot mode the next timer expiration is programmed after a timer shot b
     </td>
   </tr>
 </table>
-<a class="anchor" name="a67" doxytag="rtai_registry.h::rt_register" ></a><p>
+<a class="anchor" name="a68" doxytag="rtai_registry.h::rt_register" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1087,7 +1127,7 @@ rt_register registers the object to be identified with <em>name</em>, which is p
     </td>
   </tr>
 </table>
-<a class="anchor" name="a24" doxytag="rtai_lxrt.h::rt_set_oneshot_mode" ></a><p>
+<a class="anchor" name="a25" doxytag="rtai_lxrt.h::rt_set_oneshot_mode" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1121,7 +1161,7 @@ rt_set_periodic_mode sets the periodic mode for the timer. It consists of a fixe
     </td>
   </tr>
 </table>
-<a class="anchor" name="a23" doxytag="rtai_lxrt.h::rt_set_periodic_mode" ></a><p>
+<a class="anchor" name="a24" doxytag="rtai_lxrt.h::rt_set_periodic_mode" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1155,7 +1195,7 @@ rt_set_periodic_mode sets the periodic mode for the timer. It consists of a fixe
     </td>
   </tr>
 </table>
-<a class="anchor" name="a33" doxytag="rtai_lxrt.h::rt_set_runnable_on_cpuid" ></a><p>
+<a class="anchor" name="a34" doxytag="rtai_lxrt.h::rt_set_runnable_on_cpuid" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1199,7 +1239,7 @@ rt_set_runnable_on_cpuid assigns a task to a single specific CPU. If no CPU, as 
 See also: <a class="el" href="sched__lxrt_8c.html#rt_set_runnable_on_cpus">rt_set_runnable_on_cpus</a>().     </td>
   </tr>
 </table>
-<a class="anchor" name="a32" doxytag="rtai_lxrt.h::rt_set_runnable_on_cpus" ></a><p>
+<a class="anchor" name="a33" doxytag="rtai_lxrt.h::rt_set_runnable_on_cpus" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1242,7 +1282,7 @@ rt_set_runnable_on_cpus selects one or more CPUs which are allowed to run task <
 See also: <a class="el" href="sched__lxrt_8c.html#rt_set_runnable_on_cpuid">rt_set_runnable_on_cpuid</a>().     </td>
   </tr>
 </table>
-<a class="anchor" name="a14" doxytag="rtai_lxrt.h::rt_sleep" ></a><p>
+<a class="anchor" name="a15" doxytag="rtai_lxrt.h::rt_sleep" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1282,7 +1322,7 @@ See also: <a class="el" href="rtai__lxrt_8h.html#rt_busy_sleep">rt_busy_sleep</a
     </td>
   </tr>
 </table>
-<a class="anchor" name="a15" doxytag="rtai_lxrt.h::rt_sleep_until" ></a><p>
+<a class="anchor" name="a16" doxytag="rtai_lxrt.h::rt_sleep_until" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1322,7 +1362,7 @@ See also: <a class="el" href="rtai__lxrt_8h.html#rt_busy_sleep">rt_busy_sleep</a
     </td>
   </tr>
 </table>
-<a class="anchor" name="a7" doxytag="rtai_lxrt.h::rt_task_delete" ></a><p>
+<a class="anchor" name="a8" doxytag="rtai_lxrt.h::rt_task_delete" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1361,7 +1401,7 @@ rt_task_delete deletes a real time task previously created by <a class="el" href
     </td>
   </tr>
 </table>
-<a class="anchor" name="a3" doxytag="rtai_lxrt.h::rt_task_init" ></a><p>
+<a class="anchor" name="a4" doxytag="rtai_lxrt.h::rt_task_init" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1427,7 +1467,7 @@ On failure a 0 value is returned if it was not possible to setup the buddy task 
     </td>
   </tr>
 </table>
-<a class="anchor" name="a11" doxytag="rtai_lxrt.h::rt_task_make_periodic" ></a><p>
+<a class="anchor" name="a12" doxytag="rtai_lxrt.h::rt_task_make_periodic" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1489,7 +1529,7 @@ The time of first execution is defined through <em>start_time</em> or <em>start_
 See also: <a class="el" href="rtai__lxrt_8h.html#rt_task_make_periodic_relative_ns">rt_task_make_periodic_relative_ns</a>(). Recall that the term clock ticks depends on the mode in which the hard timer runs. So if the hard timer was set as periodic a clock tick will last as the period set in start_rt_timer, while if oneshot mode is used a clock tick will last as the inverse of the running frequency of the hard timer in use and irrespective of any period used in the call to start_rt_timer.     </td>
   </tr>
 </table>
-<a class="anchor" name="a12" doxytag="rtai_lxrt.h::rt_task_make_periodic_relative_ns" ></a><p>
+<a class="anchor" name="a13" doxytag="rtai_lxrt.h::rt_task_make_periodic_relative_ns" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1551,7 +1591,7 @@ The time of first execution is defined through <em>start_time</em> or <em>start_
 Recall that the term clock ticks depends on the mode in which the hard timer runs. So if the hard timer was set as periodic a clock tick will last as the period set in start_rt_timer, while if oneshot mode is used a clock tick will last as the inverse of the running frequency of the hard timer in use and irrespective of any period used in the call to start_rt_timer.     </td>
   </tr>
 </table>
-<a class="anchor" name="a10" doxytag="rtai_lxrt.h::rt_task_resume" ></a><p>
+<a class="anchor" name="a11" doxytag="rtai_lxrt.h::rt_task_resume" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1592,7 +1632,7 @@ Resume a task.
     </td>
   </tr>
 </table>
-<a class="anchor" name="a25" doxytag="rtai_lxrt.h::rt_task_signal_handler" ></a><p>
+<a class="anchor" name="a26" doxytag="rtai_lxrt.h::rt_task_signal_handler" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1644,7 +1684,7 @@ A signal handler function can be set also when the task is newly created with <a
     </td>
   </tr>
 </table>
-<a class="anchor" name="a9" doxytag="rtai_lxrt.h::rt_task_suspend" ></a><p>
+<a class="anchor" name="a10" doxytag="rtai_lxrt.h::rt_task_suspend" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1685,7 +1725,7 @@ rt_task_suspend suspends execution of the task task.
     </td>
   </tr>
 </table>
-<a class="anchor" name="a26" doxytag="rtai_lxrt.h::rt_task_use_fpu" ></a><p>
+<a class="anchor" name="a27" doxytag="rtai_lxrt.h::rt_task_use_fpu" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1734,7 +1774,7 @@ rt_task_use_fpu informs the scheduler that floating point arithmetic operations 
 See also: <a class="el" href="rtai__lxrt_8h.html#rt_linux_use_fpu">rt_linux_use_fpu</a>().     </td>
   </tr>
 </table>
-<a class="anchor" name="a13" doxytag="rtai_lxrt.h::rt_task_wait_period" ></a><p>
+<a class="anchor" name="a14" doxytag="rtai_lxrt.h::rt_task_wait_period" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1767,7 +1807,7 @@ Wait till next period.
     </td>
   </tr>
 </table>
-<a class="anchor" name="a8" doxytag="rtai_lxrt.h::rt_task_yield" ></a><p>
+<a class="anchor" name="a9" doxytag="rtai_lxrt.h::rt_task_yield" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1799,7 +1839,7 @@ Yield the current task.
 Recall that RTAI schedulers allow only higher priority tasks to preempt the execution of lower priority ones. So equal priority tasks cannot preempt each other and <a class="el" href="rtai__lxrt_8h.html#rt_task_yield">rt_task_yield</a>() should be used if a user needs a cooperative time slicing among equal priority tasks. The implementation of the related policy is wholly in the hand of the user. It is believed that time slicing is too much an overhead for the most demanding real time applications, so it is left up to you.     </td>
   </tr>
 </table>
-<a class="anchor" name="a35" doxytag="rtai_lxrt.h::start_rt_apic_timers" ></a><p>
+<a class="anchor" name="a36" doxytag="rtai_lxrt.h::start_rt_apic_timers" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1849,7 +1889,7 @@ start_rt_apic_timers starts local APIC timers according to what is found in <em>
     </td>
   </tr>
 </table>
-<a class="anchor" name="a17" doxytag="rtai_lxrt.h::start_rt_timer" ></a><p>
+<a class="anchor" name="a18" doxytag="rtai_lxrt.h::start_rt_timer" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1883,7 +1923,7 @@ start_rt_timer starts the timer with a period <em>period</em>. The period is in 
     </td>
   </tr>
 </table>
-<a class="anchor" name="a18" doxytag="rtai_lxrt.h::stop_rt_timer" ></a><p>
+<a class="anchor" name="a19" doxytag="rtai_lxrt.h::stop_rt_timer" ></a><p>
 <table class="mdTable" width="100%" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1917,7 +1957,7 @@ stop_rt_timer stops the timer. The timer mode is set to periodic.<p>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Mar 21 16:47:55 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 18:14:48 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -181,7 +181,7 @@
 00300 
 00301         mlockall(MCL_CURRENT | MCL_FUTURE);
 00302 
-00303         <a class="code" href="group__lxrt.html#a57">rt_make_hard_real_time</a>();
+00303         <a class="code" href="group__lxrt.html#a58">rt_make_hard_real_time</a>();
 00304         <span class="keywordflow">while</span> (1) {
 00305                 <a class="code" href="common_8c.html#a10">rt_task_suspend</a>(task);
 00306                 <span class="keywordflow">if</span> ((upd.handler = (<span class="keywordtype">void</span>*)usptasklet.handler)) {
@@ -191,7 +191,7 @@
 00310                         <span class="keywordflow">break</span>;
 00311                 }
 00312         }
-00313         <a class="code" href="group__lxrt.html#a6">rt_make_soft_real_time</a>();
+00313         <a class="code" href="group__lxrt.html#a7">rt_make_soft_real_time</a>();
 00314 
 00315         <a class="code" href="sched__up_8c.html#a61">rt_task_delete</a>(task);
 00316         <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)0;
@@ -338,7 +338,7 @@
 00457 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00458 
 00461 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_TASKLETS_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Mar 21 16:47:43 2004 for RTAI API by
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 18:14:31 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

@@ -302,13 +302,11 @@ target_alias = @target_alias@
 docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
 EXTRA_DIST = \
-	appendix \
 	development \
 	internals \
 	intro \
 	maintainers \
 	services \
-	RTAI-RefGuide.tex \
 	Doxyfile.in \
 	fifos_overview.dox \
 	lxrt.dox \
@@ -316,25 +314,12 @@ EXTRA_DIST = \
 	schedulers_overview.dox
 
 
-DOCS = RTAI-RefGuide.ps RTAI-RefGuide.pdf html
-@CONFIG_RTAI_DOC_TRUE@DOCSDIR = .
+DOCS = html
 
 @CONFIG_RTAI_DOC_FALSE@DOCSDIR = $(srcdir)/generated
+@CONFIG_RTAI_DOC_TRUE@DOCSDIR = .
 
-# latex documentation
-@CONFIG_RTAI_DOC_TRUE@TEX_SRCS = $(shell find $(srcdir) -name "*.tex")
-
-@CONFIG_RTAI_DOC_TRUE@noinst_DATA = RTAI-RefGuide.ps RTAI-RefGuide.pdf
-
-@CONFIG_RTAI_DOC_TRUE@CLEANFILES = *.aux *.dvi *.log *.idx *.ilg *.ind *.toc *.out
 @CONFIG_RTAI_DOC_TRUE@DISTCLEANFILES = *.pdf *.ps
-
-# rules for latex  documentation.
-@CONFIG_RTAI_DOC_TRUE@RTAIDOC_TEXINPUTS = .:$(srcdir):$(TEXINPUTS)
-@CONFIG_RTAI_DOC_TRUE@LATEX = TEXINPUTS=$(RTAIDOC_TEXINPUTS) latex --interaction @LATEX_MODE@
-@CONFIG_RTAI_DOC_TRUE@PDFLATEX = TEXINPUTS=$(RTAIDOC_TEXINPUTS) pdflatex --interaction @LATEX_MODE@
-
-@CONFIG_RTAI_DOC_TRUE@SUFFIXES = pdf dvi tex
 subdir = rtai-doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) \
@@ -342,13 +327,10 @@ mkinstalldirs = $(SHELL) \
 CONFIG_HEADER = $(top_builddir)/rtai_config.h
 CONFIG_CLEAN_FILES = Doxyfile
 DIST_SOURCES =
-DATA = $(noinst_DATA)
-
 DIST_COMMON = $(srcdir)/Makefile.in Doxyfile.in Makefile.am
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .dvi .pdf .ps .tex
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.in $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  rtai-doc/Makefile
@@ -409,7 +391,7 @@ distdir: $(DISTFILES)
 	  dist-hook
 check-am: all-am
 check: check-am
-all-am: Makefile $(DATA) all-local
+all-am: Makefile all-local
 
 installdirs:
 install: install-am
@@ -429,7 +411,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -449,7 +430,7 @@ distclean-am: clean-am distclean-generic distclean-libtool \
 
 dvi: dvi-am
 
-dvi-am: dvi-local
+dvi-am:
 
 info: info-am
 
@@ -475,33 +456,24 @@ mostlyclean-am: mostlyclean-generic mostlyclean-libtool
 
 pdf: pdf-am
 
-pdf-am: pdf-local
+pdf-am:
 
 ps: ps-am
 
-ps-am: ps-local
+ps-am:
 
 uninstall-am: uninstall-info-am
 
 .PHONY: all all-am all-local check check-am clean clean-generic \
 	clean-libtool distclean distclean-generic distclean-libtool \
-	distclean-local distdir dvi dvi-am dvi-local info info-am \
-	install install-am install-data install-data-am \
-	install-data-local install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am pdf-local ps ps-am ps-local \
-	uninstall uninstall-am uninstall-info-am
+	distclean-local distdir dvi dvi-am info info-am install \
+	install-am install-data install-data-am install-data-local \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
+	ps ps-am uninstall uninstall-am uninstall-info-am
 
-
-@CONFIG_RTAI_DOC_TRUE@all-local: $(noinst_DATA)
-
-@CONFIG_RTAI_DOC_TRUE@dvi-local: RTAI-RefGuide.dvi
-@CONFIG_RTAI_DOC_TRUE@pdf-local: RTAI-RefGuide.pdf
-@CONFIG_RTAI_DOC_TRUE@ps-local: RTAI-RefGuide.ps
-
-@CONFIG_RTAI_DOC_TRUE@RTAI-RefGuide.dvi RTAI-RefGuide.pdf: $(TEX_SRCS)
 
 # Doxygen documentation
 @CONFIG_RTAI_DOC_TRUE@all-local: doxygen-api
@@ -511,25 +483,6 @@ uninstall-am: uninstall-info-am
 
 @CONFIG_RTAI_DOC_TRUE@distclean-local:
 @CONFIG_RTAI_DOC_TRUE@	if test -d html ; then $(RM) -R html; fi
-
-@CONFIG_RTAI_DOC_TRUE@.tex.pdf:
-@CONFIG_RTAI_DOC_TRUE@	@$(PDFLATEX) $<
-@CONFIG_RTAI_DOC_TRUE@	@makeindex $*.idx
-@CONFIG_RTAI_DOC_TRUE@	@$(PDFLATEX) $<
-@CONFIG_RTAI_DOC_TRUE@	@while egrep -q 'Rerun (LaTeX|to get cross-references right)' $*.log; \
-@CONFIG_RTAI_DOC_TRUE@	    do $(PDFLATEX) $< || exit 1; \
-@CONFIG_RTAI_DOC_TRUE@	done;
-
-@CONFIG_RTAI_DOC_TRUE@.tex.dvi:
-@CONFIG_RTAI_DOC_TRUE@	@$(LATEX) $<
-@CONFIG_RTAI_DOC_TRUE@	@makeindex $*.idx
-@CONFIG_RTAI_DOC_TRUE@	@$(LATEX) $<
-@CONFIG_RTAI_DOC_TRUE@	@while egrep -q 'Rerun (LaTeX|to get cross-references right)' $*.log; \
-@CONFIG_RTAI_DOC_TRUE@	    do $(LATEX) $< || exit 1; \
-@CONFIG_RTAI_DOC_TRUE@	done;
-
-@CONFIG_RTAI_DOC_TRUE@.dvi.ps:
-@CONFIG_RTAI_DOC_TRUE@	@dvips -o $@ $<
 
 @CONFIG_RTAI_DOC_TRUE@.DELETE_ON_ERROR:
 

@@ -212,9 +212,9 @@
 00204 
 00205 <span class="keywordtype">int</span> rt_is_hard_timer_running(<span class="keywordtype">void</span>);
 00206 
-00207 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a23">rt_set_periodic_mode</a>(<span class="keywordtype">void</span>);
+00207 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a24">rt_set_periodic_mode</a>(<span class="keywordtype">void</span>);
 00208 
-00209 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a24">rt_set_oneshot_mode</a>(<span class="keywordtype">void</span>);
+00209 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a25">rt_set_oneshot_mode</a>(<span class="keywordtype">void</span>);
 00210 
 00211 RTIME <a class="code" href="sched__up_8c.html#a68">start_rt_timer</a>(<span class="keywordtype">int</span> period);
 00212 
@@ -226,7 +226,7 @@
 00218 <span class="keywordtype">void</span> <a class="code" href="sched__up_8c.html#a70">start_rt_apic_timers</a>(<span class="keyword">struct</span> apic_timer_setup_data *setup_mode,
 00219                           <span class="keywordtype">unsigned</span> rcvr_jiffies_cpuid);
 00220 
-00221 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a18">stop_rt_timer</a>(<span class="keywordtype">void</span>);
+00221 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a19">stop_rt_timer</a>(<span class="keywordtype">void</span>);
 00222 
 00223 <span class="keyword">struct </span>rt_task_struct *<a class="code" href="common_8c.html#a8">rt_whoami</a>(<span class="keywordtype">void</span>);
 00224 
@@ -255,15 +255,15 @@
 00247 RTIME <a class="code" href="sched__up_8c.html#a93">nano2count_cpuid</a>(RTIME nanosecs,
 00248                        <span class="keywordtype">unsigned</span> cpuid);
 00249   
-00250 RTIME <a class="code" href="group__lxrt.html#a19">rt_get_time</a>(<span class="keywordtype">void</span>);
+00250 RTIME <a class="code" href="group__lxrt.html#a20">rt_get_time</a>(<span class="keywordtype">void</span>);
 00251 
 00252 RTIME <a class="code" href="sched__up_8c.html#a95">rt_get_time_cpuid</a>(<span class="keywordtype">unsigned</span> cpuid);
 00253 
-00254 RTIME <a class="code" href="group__lxrt.html#a30">rt_get_time_ns</a>(<span class="keywordtype">void</span>);
+00254 RTIME <a class="code" href="group__lxrt.html#a31">rt_get_time_ns</a>(<span class="keywordtype">void</span>);
 00255 
 00256 RTIME <a class="code" href="sched__up_8c.html#a97">rt_get_time_ns_cpuid</a>(<span class="keywordtype">unsigned</span> cpuid);
 00257 
-00258 RTIME <a class="code" href="group__lxrt.html#a31">rt_get_cpu_time_ns</a>(<span class="keywordtype">void</span>);
+00258 RTIME <a class="code" href="group__lxrt.html#a32">rt_get_cpu_time_ns</a>(<span class="keywordtype">void</span>);
 00259 
 00260 <span class="keywordtype">int</span> <a class="code" href="common_8c.html#a5">rt_get_prio</a>(<span class="keyword">struct</span> rt_task_struct *task);
 00261 
@@ -278,7 +278,7 @@
 00270 
 00271 <span class="keywordtype">void</span> <a class="code" href="group__tasks.html#a5">rt_sched_unlock</a>(<span class="keywordtype">void</span>);
 00272 
-00273 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a8">rt_task_yield</a>(<span class="keywordtype">void</span>);
+00273 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a9">rt_task_yield</a>(<span class="keywordtype">void</span>);
 00274 
 00275 <span class="keywordtype">int</span> <a class="code" href="common_8c.html#a10">rt_task_suspend</a>(<span class="keyword">struct</span> rt_task_struct *task);
 00276 
@@ -301,7 +301,7 @@
 00293 <span class="keywordtype">int</span> rt_set_period(<span class="keyword">struct</span> rt_task_struct *task,
 00294                   RTIME new_period);
 00295 
-00296 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a13">rt_task_wait_period</a>(<span class="keywordtype">void</span>);
+00296 <span class="keywordtype">void</span> <a class="code" href="group__lxrt.html#a14">rt_task_wait_period</a>(<span class="keywordtype">void</span>);
 00297 
 00298 <span class="keywordtype">void</span> rt_schedule(<span class="keywordtype">void</span>);
 00299 
@@ -423,7 +423,7 @@
 00415 <span class="preprocessor">#endif </span><span class="comment">/* !__KERNEL__ || __cplusplus */</span>
 00416 
 00417 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_SCHED_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Mar 21 16:47:42 2004 for RTAI API by
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 18:14:30 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

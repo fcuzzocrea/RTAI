@@ -72,13 +72,16 @@
 00064 <span class="preprocessor"></span>
 00065 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_ADEOS */</span>
 00066 
-00067 <span class="preprocessor">#define __rtai_stringify(x)  #x</span>
-00068 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_do_trap(v)    __rtai_stringify(int $ ## v)</span>
-00069 <span class="preprocessor"></span>
-00070 <span class="preprocessor">#define RTAI_DO_TRAP(v,r,a1,a2)  __asm__ __volatile__ ( __rtai_do_trap(v) \</span>
-00071 <span class="preprocessor">                                                       : "=A" (r) : "a" (a1), "d" (a2))</span>
-00072 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_VECTORS_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Mar 21 16:47:42 2004 for RTAI API by
+00067 <span class="preprocessor">#define __rtai_stringize0(_s_) #_s_</span>
+00068 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_stringize(_s_)  __rtai_stringize0(_s_)</span>
+00069 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_trap_call(_t_)  _t_</span>
+00070 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_do_trap0(_t_)   __rtai_stringize(int $ _t_)</span>
+00071 <span class="preprocessor"></span><span class="preprocessor">#define __rtai_do_trap(_t_)    __rtai_do_trap0(__rtai_trap_call(_t_))</span>
+00072 <span class="preprocessor"></span>
+00073 <span class="preprocessor">#define RTAI_DO_TRAP(v,r,a1,a2)  __asm__ __volatile__ ( __rtai_do_trap(v) \</span>
+00074 <span class="preprocessor">                                                       : "=A" (r) : "a" (a1), "d" (a2))</span>
+00075 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_VECTORS_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 18:14:30 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

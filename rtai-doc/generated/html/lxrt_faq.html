@@ -15,7 +15,7 @@ RTAI provides the standard services like resume, yield, suspend, make periodic, 
 . Blocking until the transaction occurs. . Returning immediately if the other end is not ready. . Blocking for the transaction until a timeout occurs.<p>
 How do I setup my Linux program for LXRT?<p>
 You call rt_task_init( name, ...). The call differs from the real time counterpart (there are a few exceptions to the symmetry rule) in that, among other things, you provide a name for your program. The name must be unique and is registered by LXRT. Thus, other programs, real time or not, can find the task pointer of your program and communicate with it.<p>
-LXRT creates a real time task who becomes the "angel" of your program. The angel's job is to execute the real time services for you. For example, if you call rt_sleep(...), LXRT will get your angel to execute the real <a class="el" href="group__lxrt.html#a14">rt_sleep()</a> function in the real time scheduler. Control will return to your program when the angel returns from <a class="el" href="group__lxrt.html#a14">rt_sleep()</a>.<p>
+LXRT creates a real time task who becomes the "angel" of your program. The angel's job is to execute the real time services for you. For example, if you call rt_sleep(...), LXRT will get your angel to execute the real <a class="el" href="group__lxrt.html#a15">rt_sleep()</a> function in the real time scheduler. Control will return to your program when the angel returns from <a class="el" href="group__lxrt.html#a15">rt_sleep()</a>.<p>
 With LXRT, can a Linux task send a message to a real time task?<p>
 Yes. You simply use the rt_send(...) primitive that you would normally use in the code of a kernel program. LXRT gets your angel to execute rt_send(...). Control returns to your program when the target task completes the corresponding rt_receive(...) call.<p>
 What happens when I send a message to another user space program?<p>
@@ -41,7 +41,7 @@ What about mail boxes?<p>
 The mail box IPC approach is connection less. In other words, it is not possible for a zombie real time task to detect that another task is MBX blocked specifically for a message from him. The solution here is to use the <a class="el" href="group__mbx.html#a22">rt_mbx_receive_timed()</a> with a timeout value and verify the return value to detect the error.<p>
 What about performance?<p>
 Intertask communications with LXRT are about 36% faster than with old FIFO's. Testing Linux ó Linux communications with int size msg and rep's on a P233 I got these numbers:<p>
-LXRT 12,000 cycles RTAI-0.9x :-) LXRT 13,000 cycles RTAI-0.8 Fifo 19,000 cycles RTAI-0.8 Fifo new 22,300 cycles RTAI-0.8 10% more cycles, a lot more utilities (that cause some overhead) SRR 14,200 cycles QNX 4 Send/Receive/Reply implemented with a Linux module without a real time executive. <hr size="1"><address style="align: right;"><small>Generated on Sun Mar 21 16:47:55 2004 for RTAI API by
+LXRT 12,000 cycles RTAI-0.9x :-) LXRT 13,000 cycles RTAI-0.8 Fifo 19,000 cycles RTAI-0.8 Fifo new 22,300 cycles RTAI-0.8 10% more cycles, a lot more utilities (that cause some overhead) SRR 14,200 cycles QNX 4 Send/Receive/Reply implemented with a Linux module without a real time executive. <hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 18:14:48 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

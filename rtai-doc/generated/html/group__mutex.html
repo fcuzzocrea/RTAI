@@ -11,6 +11,7 @@
 [<a class="el" href="group__xenomai.html">Xenomai scheduler.</a>]</small>
 </h1><hr><a name="_details"></a><h2>Detailed Description</h2>
 Nanokernel mutex services.<p>
+[WARNING] Mutex services are deprecated in newer versions of the Xenomai nucleus, basically due to design and performance issues. Do not use this facility if you plan to port to RTAI/fusion.<p>
 Mutexes are internal synchronization objects that do NOT rely on the standard nanokernel scheduling routines to operate. However, they share the same protocol inheritance scheme with the regular xnsynch objects for the sake of clarity and efficiency. In other words, code in <a class="el" href="mutex_8c.html">mutex.c</a> and <a class="el" href="synch_8c.html">synch.c</a> cooperate on the same logic and data structures for handling PIP both for kernel mutexes and regular resources.<p>
 One should keep in mind that a thread claiming a mutex is NOT actually suspended, but the current mutex owner is simply rescheduled before the "sleeper" instead. Priority inheritance allows to boost the current mutex owner so that it can release the lock as soon as possible.<p>
 Consequently, blocking or suspending a thread that holds a mutex is a BUG! However, the nanokernel provides for a special mechanism that releases a given interface mutex atomically when <a class="el" href="group__pod.html#a61">xnpod_suspend_thread()</a> is called for the current thread, reacquiring it on return of this routine. This mechanism should be understood as a lock-breaking preemption point atomically performed just before the current thread is switched out. <dl compact><dt><b>See also:</b></dt><dd><a class="el" href="group__pod.html#a64">xnpod_schedule()</a> for more on this. </dd></dl>
@@ -25,7 +26,7 @@ Consequently, blocking or suspending a thread that holds a mutex is a BUG! Howev
 
 <p>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Mar 21 16:47:56 2004 for RTAI API by
+<hr size="1"><address style="align: right;"><small>Generated on Fri Jun 18 18:14:49 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

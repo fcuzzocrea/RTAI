@@ -1,4 +1,12 @@
+2004-07-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/scripts/rtai-load.in: Use "ls" instead of "file" to
+	work around busybox's shortcomings.
+
 2004-07-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/Kconfig: Make RTAI_MATH depend on
+	RTAI_FPU_SUPPORT.
 
 	* configure.in: Kludge:: Allow for configuration of 8254 and PIC
 	latency figures in non-x86 mode, since we need them for non-UP

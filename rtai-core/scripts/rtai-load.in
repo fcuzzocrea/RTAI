@@ -134,7 +134,7 @@ while test -n "$target_deps" ; do
   if test -h $rtai_moddir/rtai_$mod$modext; then
      # Substitute the symlink with the target name since
      # new modutils (>= 2.5.48) will use the actual name.
-     mod=`file -b $rtai_moddir/rtai_$mod$modext|sed -e "s,.*rtai_\([a-z0-9A-Z]*\)$modext.*,\1,"`
+     mod=`ls -l $rtai_moddir/rtai_$mod$modext|sed -e "s,.* \-> .*rtai_\([a-z0-9A-Z]*\)$modext.*,\1,"`
   fi
   if `echo $loadlist | grep -vq "\\brtai_$mod\\b"`; then
      # If we cannot find the module in our install dir, try Linux's

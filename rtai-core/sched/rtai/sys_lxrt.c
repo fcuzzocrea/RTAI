@@ -588,7 +588,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 	return 0;
 }
 
-asmlinkage long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
+long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
 
 {
     long long retval;

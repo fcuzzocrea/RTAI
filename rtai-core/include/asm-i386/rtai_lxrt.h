@@ -114,46 +114,6 @@ __asm__( \
 	"addl $4,%esp\n\t" \
 	"iret\n\t")
 
-#define LXRT_LINUX_SYSCALL_TRAP lxrt_linux_syscall_handler
-
-#define DEFINE_LXRT_SYSCALL_HANDLER() \
-asmlinkage void LXRT_LINUX_SYSCALL_TRAP(void); \
-__asm__( \
-	"\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(lxrt_linux_syscall_handler) ":\n\t"	\
-	 "cld\n\t"				\
-	 "push $0\n\t"				\
-	 "pushl %es\n\t"			\
-	 "pushl %ds\n\t"			\
-	 "pushl %ebp\n\t"			\
-	 "pushl %edi\n\t"			\
-	 "pushl %esi\n\t"			\
-	 "pushl %ecx\n\t"			\
-	 "pushl %ebx\n\t"			\
-	 "pushl %edx\n\t"			\
-	 "pushl %eax\n\t"			\
-	 "movl $" STR(__KERNEL_DS) ",%ebx\n\t"	\
-	 "mov %bx,%ds\n\t"						\
-	 "mov %bx,%es\n\t"						\
-	 "movl " SYMBOL_NAME_STR(linux_syscall_handler) ",%ebx\n\t"	\
-	 "movl %ebx,36(%esp)\n\t"					\
-	 "call " SYMBOL_NAME_STR(lxrt_is_hard_p) "\n\t"			\
-	 "testl %eax,%eax\n\t"						\
-	 "popl %eax\n\t"						\
-	 "popl %edx\n\t"						\
-	 "popl %ebx\n\t"						\
-	 "popl %ecx\n\t"						\
-	 "popl %esi\n\t"						\
-	 "popl %edi\n\t"						\
-	 "popl %ebp\n\t"						\
-	 "popl %ds\n\t"							\
-	 "popl %es\n\t"							\
-	 "jz 1f\n\t"							\
-	 "addl $4,%esp\n\t"						\
-	 "movl $-38,%eax\n\t"	/* return -ENOSYS */			\
-	 "iret\n\t"							\
-      "1: ret\n\t")
-
 #endif /* __KERNEL__ */
 
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
@@ -167,43 +127,6 @@ static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int s
 {
 	return _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, arg);
 }
-
-#if 0
-static inline int my_cs(void)
-{
-	int reg; __asm__("movl %%cs,%%eax " : "=a" (reg) : ); return reg;
-}
-
-static inline void memxcpy(void *dst, int dseg, void *src, int sseg, int longs)
-{
-	// Generalised memxcpy
-        __asm__ __volatile__ (\
-        "cld; pushl %%ds; pushl %%es;\n\t"\
-        "movl %%edx,%%es; movl %%eax,%%ds; rep; movsl;\n\t"\
-        "popl %%es; popl %%ds;\n\t"\
-    :/*empty*/: "D" (dst),"S" (src),"c" (longs),"a" (sseg),"d" (dseg));
-}
-
-static inline void _memxcpy(void *dst, void *src, int srcseg, int longsize)
-{
-	__asm__ __volatile__ (\
-	"cld;pushl %%ds;movl %%eax,%%ds;rep;movsl;popl %%ds;\n\t"\
-    :/*empty*/: "D" (dst), "S" (src), "c" (longsize), "a" (srcseg));
-} // Choice of registers limited by liblxrt gcc -fPIC option.
-
-static inline union rtai_lxrt_t rtai_lxrt(short int dynx, short int lsize, int srq, void *arg)
-{
-	int __args[12]; void *pt;
-	lsize /= sizeof(int);
-	if(my_cs() == __KERNEL_CS) {
-		// With this we can reenter lxrt from a kernel space function.
-		_memxcpy( &__args, arg, __KERNEL_DS, lsize);
-		pt = &__args;
-	} else pt = arg;
-
-	return _rtai_lxrt((dynx << 28) | ((srq & 0xFFF) << 16) | lsize, pt);
-}
-#endif
 
 #ifdef __cplusplus
 }

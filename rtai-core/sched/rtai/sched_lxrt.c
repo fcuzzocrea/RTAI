@@ -117,8 +117,6 @@ static int (*lxrt_signal_handler)(struct task_struct *task,
 
 static unsigned lxrt_migration_virq;
 
-static void (*linux_syscall_handler)(void);
-
 static int lxrt_notify_reboot(struct notifier_block *nb,
 			      unsigned long event,
 			      void *ptr);
@@ -166,8 +164,6 @@ static struct {
 #define KTHREAD_B_PRIO MIN_LINUX_RTPRIO
 #define KTHREAD_M_PRIO MAX_LINUX_RTPRIO
 #define KTHREAD_F_PRIO MAX_LINUX_RTPRIO - 1
-
-DEFINE_LXRT_SYSCALL_HANDLER();
 
 #ifdef CONFIG_SMP
 unsigned long sqilter = 0xFFFFFFFF;
@@ -281,7 +277,6 @@ static void put_current_on_cpu(int cpuid)
 	}
 #endif  /* KERNEL_VERSION < 2.6.0 */
 }
-
 
 int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid, struct task_struct *relink)
 {
@@ -1923,17 +1918,6 @@ void give_back_to_linux(RT_TASK *rt_task)
 	rt_task->is_hard = 0;
 }
 
-int lxrt_is_hard_p(unsigned long eax)
-{
-	if (test_bit(hard_cpu_id(), &rtai_cpu_lxrt)) {
-		RT_TASK *task;
-		give_back_to_linux(task = current->this_rt_task[0]);
-		task->is_hard = 2;
-		SYSW_DIAG_MSG(rt_printk("FORCING IT SOFT, PID = %d, EIP = %lx.\n", current->pid, *(&eax - 1)););
-	}
-	return 0;
-}
-
 static struct task_struct *get_kthread(int get, int cpuid, void *lnxtsk)
 {
 	struct task_struct *kthread;
@@ -2144,6 +2128,28 @@ static void lxrt_intercept_signal (adevinfo_t *evinfo)
     adeos_propagate_event(evinfo);
 }
 
+static void lxrt_intercept_syscall (adevinfo_t *evinfo)
+
+{
+    adeos_declare_cpuid;
+    unsigned long flags;
+
+    adeos_get_cpu(flags);
+
+    if (test_bit(cpuid,&rtai_cpu_lxrt))
+	{
+	struct task_struct *t = evinfo->domid == adp_current->domid ? current : rtai_get_root_current(cpuid);
+	RT_TASK *task = t->this_rt_task[0];
+	give_back_to_linux(task);
+	task->is_hard = 2;
+	SYSW_DIAG_MSG(rt_printk("FORCING IT SOFT, PID = %d.\n", t->pid););
+	}
+
+    adeos_put_cpu(flags);
+
+    adeos_propagate_event(evinfo);
+}
+
 /* ++++++++++++++++++++++++++ SCHEDULER PROC FILE +++++++++++++++++++++++++++ */
 
 #ifdef CONFIG_PROC_FS
@@ -2342,7 +2348,6 @@ static int lxrt_init(void)
 	
     set_rt_fun_entries(rt_sched_entries);
 
-    linux_syscall_handler = rt_set_intr_handler(SYSCALL_VECTOR,(void *)&LXRT_LINUX_SYSCALL_TRAP);
     lxrt_old_trap_handler = rt_set_rtai_trap_handler(lxrt_handle_trap);
     lxrt_signal_handler = lxrt_handle_signal;
 
@@ -2356,6 +2361,7 @@ static int lxrt_init(void)
 #endif  /* KERNEL_VERSION < 2.6.0 */
     adeos_catch_event(ADEOS_SCHEDULE_TAIL,&lxrt_intercept_schedule_tail);
     adeos_catch_event(ADEOS_SIGNAL_PROCESS,&lxrt_intercept_signal);
+    adeos_catch_event_from(&rtai_domain,ADEOS_SYSCALL_PROLOGUE,&lxrt_intercept_syscall);
 
     return 0;
 }
@@ -2415,8 +2421,6 @@ static void lxrt_exit(void)
     if (rt_free_srq(wake_up_srq.srq) < 0)
 	printk("LXRT: wake_up_srq %d illegal or already free.\n", wake_up_srq.srq);
 
-    rt_reset_intr_handler(SYSCALL_VECTOR, linux_syscall_handler);
-
     if (lxrt_migration_virq)
 	{
 	adeos_virtualize_irq_from(&rtai_domain,lxrt_migration_virq,NULL,NULL,0);
@@ -2427,6 +2431,7 @@ static void lxrt_exit(void)
     adeos_catch_event(ADEOS_SIGNAL_PROCESS,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_TAIL,NULL);
+    adeos_catch_event_from(&rtai_domain,ADEOS_SYSCALL_PROLOGUE,NULL);
     
     flags = rtai_critical_enter(NULL);
 

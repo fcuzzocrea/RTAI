@@ -1,3 +1,16 @@
+2004-06-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/rtai/sched_lxrt.c: Intercept Linux syscalls
+	through the adeos_catch_event_facility() facility, so that this
+	works indifferently with both int80/sysenter ways of syscalling.
+
+	* rtai-core/include/asm-i386/rtai_lxrt.h: Discard deprecated LXRT
+	call stub.
+
+	* rtai-core/scripts/rtai-load.in: Use modprobe -n instead of
+	insmod -nq, so that we compatible with both insmod.modutils and
+	newer module-init-tools.
+
 2004-06-05  Philippe Gerum  <rpm@xenomai.org>
 
 	* Move to GNA (http://www.gna.org/projects/rtai/).

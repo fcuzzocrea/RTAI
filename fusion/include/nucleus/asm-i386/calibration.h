@@ -41,7 +41,7 @@ static inline unsigned long xnarch_get_sched_latency (void)
    work (i.e. more specific cases), but the approach is definitely
    saner than previous attempts to guess such value dynamically. */
 #define __sched_latency (__bogomips < 250 ? 23200 : \
-                         __bogomips < 2500 ? 8100 : \
+                         __bogomips < 2500 ? 10200 : \
 			 6700)
 
 #endif /* CONFIG_X86_LOCAL_APIC */

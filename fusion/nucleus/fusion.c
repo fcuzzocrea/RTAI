@@ -175,7 +175,7 @@ static int __pthread_cputime_rt (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(t)))
 	return -EFAULT;
 
-    t = xnarch_get_cpu_time();
+    t = xnarch_get_cpu_tsc();
     __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&t,sizeof(t));
 
     return 0;
@@ -566,8 +566,8 @@ static xnsysent_t __systab[] = {
     { &__pthread_create_rt, __xn_flag_init }, /* __xn_fusion_create */
     { &__pthread_start_rt, __xn_flag_anycall }, /* __xn_fusion_start */
     { &__pthread_migrate_rt, __xn_flag_shadow },   /* __xn_fusion_migrate */
-    { &__pthread_set_periodic_rt, __xn_flag_shadow },   /* __xn_fusion_set_periodic */
-    { &__pthread_wait_period_rt, __xn_flag_shadow },   /* __xn_fusion_wait_period */
+    { &__pthread_set_periodic_rt, __xn_flag_regular },   /* __xn_fusion_set_periodic */
+    { &__pthread_wait_period_rt, __xn_flag_regular },   /* __xn_fusion_wait_period */
     { &__pthread_time_rt, __xn_flag_anycall  },   /* __xn_fusion_time */
     { &__pthread_cputime_rt, __xn_flag_anycall  },   /* __xn_fusion_cputime */
     { &__pthread_start_timer_rt, __xn_flag_anycall  },   /* __xn_fusion_start_timer */

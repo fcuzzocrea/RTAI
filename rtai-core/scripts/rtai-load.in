@@ -152,8 +152,8 @@ while test -n "$target_deps" ; do
 	   break
         fi
      elif `$modprobe -n $mod >& /dev/null`; then
-        test $verbose = 1 && echo "+ $insmod $mod"
-        $sudo $insmod $mod
+        test $verbose = 1 && echo "+ $modprobe $mod"
+        $sudo $modprobe $mod
         inslist="$mod $inslist"
         loadlist="$loadlist $mod"
      fi

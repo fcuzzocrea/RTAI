@@ -257,27 +257,27 @@ int pthread_wait_period_rt (void)
 
 /* Private RTAI/vm interface. */
 
-int __pthread_idle_vm (int *lockp) {
+int __pthread_idle_uvm (int *lockp) {
 
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_idle,lockp);
 }
 
-int __pthread_cancel_vm (void *deadhandle, void *nexthandle) {
+int __pthread_cancel_uvm (void *deadhandle, void *nexthandle) {
 
     return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_cancel,deadhandle,nexthandle);
 }
 
-int __pthread_activate_vm (void *nexthandle, void *prevhandle) {
+int __pthread_activate_uvm (void *nexthandle, void *prevhandle) {
 
     return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_activate,nexthandle,prevhandle);
 }
 
-int __pthread_hold_vm (int *pendp) {
+int __pthread_hold_uvm (int *pendp) {
 
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_hold,pendp);
 }
 
-int __pthread_release_vm (int *lockp) {
+int __pthread_release_uvm (int *lockp) {
 
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_release,lockp);
 }

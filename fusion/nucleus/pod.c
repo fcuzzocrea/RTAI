@@ -2967,7 +2967,7 @@ static void xnpod_calibration_thread (void *cookie)
 int xnpod_calibrate_sched (void)
 
 {
-    xnthread_t calibration_thread;
+    static xnthread_t calibration_thread;
     int flag = 0, err;
     xnpod_t pod;
 

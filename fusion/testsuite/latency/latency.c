@@ -38,11 +38,12 @@ int test_loops = 0;		/* outer loop count */
 
 #define HISTOGRAM_CELLS 100
 int histogram_size = HISTOGRAM_CELLS;
-unsigned long *histogram_avg, *histogram_max, *histogram_min;
+unsigned long *histogram_avg = NULL,
+              *histogram_max = NULL,
+              *histogram_min = NULL;
 
 int do_histogram = 0, finished = 0;
 int bucketsize = 1000;	/* default = 1000ns, -B <size> to override */
-
 
 static inline void add_histogram (long *histogram, long addval)
 {
@@ -223,33 +224,36 @@ void dump_histograms (void)
 
 void cleanup_upon_sig(int sig __attribute__((unused)))
 {
+    time_t actual_duration;
+
+    if (finished)
+	return;
+
+    finished = 1;
     rt_timer_stop();
     rt_sem_delete(&display_sem);
-    finished = 1;
 
     if (do_histogram)
 	dump_histograms();
 
-    if (test_duration)
-        fprintf(stderr,"RTSummary| requested test duration:\t%d\n", test_duration);
-
     time(&test_end);
-    test_duration = test_end - test_start;
+    actual_duration = test_end - test_start;
+    if (!test_duration) test_duration = actual_duration;
+    gavgjitter /= (test_loops ?: 2)-1;
 
-    gavgjitter /= test_loops-1;
+    printf("---|------------|------------|------------|------------|     %.2ld:%.2ld:%.2ld/%.2d:%.2d:%.2d\n",
+	   actual_duration / 3600,(actual_duration / 60) % 60,actual_duration % 60,
+	   test_duration / 3600,(test_duration / 60) % 60,test_duration % 60);
 
-    fprintf(stderr,"RTSummary| actual test duration:\t%d\n", test_duration);
-    fprintf(stderr,"RTSummary| minimum jitter:\t%ld\n", gminjitter);
-    fprintf(stderr,"RTSummary| average jitter:\t%ld\n", gavgjitter);
-    fprintf(stderr,"RTSummary| maximum jitter:\t%ld\n", gmaxjitter);
-    fprintf(stderr,"RTSummary| overruns:\t%ld\n", goverrun);
+    printf("RTS|%12ld|%12ld|%12ld|%12ld\n",
+	   gminjitter,
+	   gavgjitter,
+	   gmaxjitter,
+	   goverrun);
 
     if (histogram_avg)	free(histogram_avg);
     if (histogram_max)	free(histogram_max);
     if (histogram_min)	free(histogram_min);
-
-    fflush(stdout);
-    sleep(1);	// delay RTAI unload (which trumps flush)
 
     exit(0);
 }

@@ -724,7 +724,7 @@ void xnshadow_unmap (xnthread_t *thread)
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
     if (!testbits(xnpod_current_sched()->status,XNKCOUT))
-	xnpod_fatal("xnshadow_map() called from invalid context");
+	xnpod_fatal("xnshadow_unmap() called from invalid context");
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
     task = xnthread_archtcb(thread)->user_task;

@@ -254,11 +254,11 @@ int rthal_release_irq (unsigned irq)
     if (irq >= IPIPE_NR_IRQS)
 	return -EINVAL;
 
-    adeos_virtualize_irq(&rthal_domain,
-			 irq,
-			 NULL,
-			 NULL,
-			 IPIPE_PASS_MASK);
+    adeos_virtualize_irq_from(&rthal_domain,
+			      irq,
+			      NULL,
+			      NULL,
+			      IPIPE_PASS_MASK);
 
     xchg(&rthal_realtime_irq[irq].handler,NULL);
 

@@ -1076,7 +1076,7 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 			return 1;
 			}
 
-		    xnshadow_ticks2ts(now - expire,&t);
+		    xnshadow_ticks2ts(expire - now,&t);
 		    __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&t,sizeof(t));
 		    }
 		}

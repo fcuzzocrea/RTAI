@@ -1,3 +1,8 @@
+2004-12-20  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/shadow.c (xnshadow_substitute_syscall): Only pass
+	positive arguments to xnshadow_ticks2ts.
+
 2004-12-19  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* Per-cpu timers implementation; pod and timer: Each CPU has a
@@ -24,7 +29,7 @@
 	* nucleus/shadow.c (xnshadow_*2ticks, xnshadow_ticks2*):
 	Roll-back slow implementations.
 	
-	* nucleus/lib/fusion.c: Provide a C-onliy implementation of llimd
+	* nucleus/lib/fusion.c: Provide a C-only implementation of llimd
 	to avoid inclusion of hal.h in user-space.
 
 	* include/nucleus/asm-uvm/system.h,

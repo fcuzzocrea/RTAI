@@ -184,7 +184,7 @@ unsigned long rthal_calibrate_timer (void)
        return the shortest possible delay for a one-shot setup. In any
        case, always return a non-zero value.  e.g. 1 decrementer tick
        here. */
-    return rthal_llimd(1,1000000000,RTHAL_CPU_FREQ); /* Convert as ns. */
+    return 1000000000 / RTHAL_CPU_FREQ;
 }
 
 unsigned long rthal_critical_enter (void (*synch)(void))

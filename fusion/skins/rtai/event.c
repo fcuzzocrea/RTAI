@@ -215,9 +215,7 @@ int rt_event_delete (RT_EVENT *event)
  * @brief Post an event group.
  *
  * Post a set of bits to the event mask. All tasks having their wait
- * request fulfilled by the posted events are resumed. In the same
- * move, the matched bits are automatically cleared from the event
- * mask by this service.
+ * request fulfilled by the posted events are resumed.
  *
  * @param event The descriptor address of the affected event.
  *
@@ -276,7 +274,6 @@ int rt_event_signal (RT_EVENT *event,
             (!(mode & EV_ANY) && ((bits & event->value) == bits)))
             {
             sleeper->wait_args.event.mask = (bits & event->value);
-            event->value &= ~bits;
             nholder = xnsynch_wakeup_this_sleeper(&event->synch_base,holder);
             resched = 1;
             }

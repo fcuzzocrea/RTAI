@@ -337,14 +337,6 @@ static void xnarch_restart_handler (int sig) {
     longjmp(vml_current->rstenv,1);
 }
 
-void xnarch_exit_handler (int sig)
-
-{
-    vml_done = 1;
-    __pthread_activate_vm(vml_root->khandle,vml_current->khandle);
-    exit(99);
-}
-
 int main (int argc, char *argv[])
 
 {
@@ -353,7 +345,7 @@ int main (int argc, char *argv[])
 
     if (geteuid() !=0)
 	{
-        fprintf(stderr,"This program must be run with root privileges");
+        fprintf(stderr,"This program must be run with root privileges\n");
 	exit(1);
 	}
 
@@ -385,12 +377,6 @@ int main (int argc, char *argv[])
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
     sigaction(XNARCH_SIG_RESTART,&sa,NULL);
-
-    sa.sa_handler = &xnarch_exit_handler;
-    sa.sa_flags = 0;
-    sigaction(SIGTERM,&sa,NULL);
-    sigaction(SIGHUP,&sa,NULL);
-    sigaction(SIGINT,&sa,NULL);
 
     while (!vml_done)
 	__pthread_idle_vm(&vml_irqlock);
@@ -443,9 +429,6 @@ xnarchtcb_t *vml_current;
 
 /* NOTES:
 
-   o IRQ threads have no TCB, since they are not known by the VM
-   abstraction.
-
    o All in-kernel IRQ threads serving the VM have the same priority
    level, except when they wait on a synchonization barrier.
 
@@ -467,20 +450,26 @@ static void *xnarch_timer_thread (void *cookie)
 
 {
     struct xnarch_tick_parms *p = (struct xnarch_tick_parms *)cookie;
-    void (*tickhandler)(void) = p->tickhandler;
+    void (*tickhandler)(void);
     struct timespec ts;
+
+    /* Copy the following values laid in our parent's stack before it
+       is unblocked from the sync barrier by pthread_create_rt(). */
+    ts.tv_sec = p->sec;
+    ts.tv_nsec = p->nsec;
+    tickhandler = p->tickhandler;
 
     pthread_create_rt("vmtimer",NULL,p->ppid,&p->syncflag,&vml_timer_handle);
     pthread_barrier_rt();
 
-    ts.tv_sec = p->sec;
-    ts.tv_nsec = p->nsec;
+    printf("TICK: %d sec, %d ns at %p\n",ts.tv_sec,ts.tv_nsec,tickhandler);
+    fflush(stdout);
 
     for (;;)
 	{
 	nanosleep(&ts,NULL);
 	xnarch_sync_irq();
-	tickhandler(); /* Should end up in xnintr_clock_handler() here. */
+	tickhandler();
 	}
 
     return NULL;
@@ -491,13 +480,9 @@ static inline int xnarch_start_timer (unsigned long nstick,
 {
     struct xnarch_tick_parms parms;
     struct sched_param param;
-    unsigned long tickval;
     pthread_attr_t thattr;
     pthread_t thid;
-
-    if (nstick == 0)
-	/* Cannot do aperiodic timing in UVMs */
-	return -ENODEV;
+    int err;
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
@@ -505,25 +490,22 @@ static inline int xnarch_start_timer (unsigned long nstick,
     param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 2;
     pthread_attr_setschedparam(&thattr,&param);
 
-    if (vml_info.tickval > nstick)
-	{
-	fprintf(stderr,"UVM: warning: VM tick freq > nucleus tick freq\n");
-	fprintf(stderr,"   : rounding VM tick to %lu us\n",vml_info.tickval / 1000);
-	tickval = vml_info.tickval;
-	}
-    else
-	{
-	tickval = ((nstick + vml_info.tickval - 1) / vml_info.tickval) * vml_info.tickval;
+    /* If oneshot timing is available, use it. Otherwise, ask for
+       plain periodic mode, hoping that the period given will be
+       compatible with Linux's own requirements wrt the jiffy-based
+       timer. */
 
-	if (tickval != nstick)
-	    {
-	    fprintf(stderr,"UVM: warning: VM tick not a multiple of nucleus tick\n");
-	    fprintf(stderr,"   : rounding VM tick to %lu us\n",tickval / 1000);
-	    }
-	}
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+    err = pthread_start_timer_rt(0);
+#else /* !CONFIG_RTAI_HW_APERIODIC_TIMER */
+    err = pthread_start_timer_rt(nstick);
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
-    parms.sec = tickval / 1000000000;
-    parms.nsec = tickval % 1000000000;
+    if (err)
+      return err;
+
+    parms.sec = nstick / 1000000000;
+    parms.nsec = nstick % 1000000000;
     parms.tickhandler = tickhandler;
     parms.syncflag = 0;
     parms.ppid = getpid();
@@ -707,8 +689,6 @@ static inline void xnarch_escalate (void) {
 
 extern xnsysinfo_t vml_info;
 
-void xnarch_exit_handler(int);
-
 static inline unsigned long long xnarch_tsc_to_ns (unsigned long long ts) {
     return ts;
 }
@@ -734,7 +714,6 @@ static inline unsigned long long xnarch_get_cpu_freq (void) {
 static inline void xnarch_halt (const char *emsg) {
     fprintf(stderr,"UVM: fatal: %s\n",emsg);
     fflush(stderr);
-    xnarch_exit_handler(SIGKILL);
     exit(99);
 }
 

@@ -116,14 +116,10 @@ int rt_task_create (RT_TASK *task,
 
     pthread_attr_init(&thattr);
 
-    if (stksize > 0)
-	{
-	if (stksize < PTHREAD_STACK_MIN * 2)
-	    stksize = PTHREAD_STACK_MIN * 2;
+    if (stksize < PTHREAD_STACK_MIN * 2)
+	stksize = PTHREAD_STACK_MIN * 2;
 
-	pthread_attr_setstacksize(&thattr,stksize);
-	}
-
+    pthread_attr_setstacksize(&thattr,stksize);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
     pthread_attr_setschedpolicy(&thattr,SCHED_FIFO);
     param.sched_priority = sched_get_priority_max(SCHED_FIFO);

@@ -423,7 +423,10 @@ int rt_intr_inquire (RT_INTR *intr,
  * \brief Create an interrupt object from user-space.
  *
  * Initializes and associates an interrupt object with an IRQ line
- * from a user-space application. 
+ * from a user-space application. In this mode, the basic principle is
+ * to define some interrupt server task which routinely waits for the
+ * next incoming IRQ event through the specialized rt_intr_wait()
+ * syscall.
  *
  * When an interrupt occurs on the given @a irq line, any task pending
  * on the interrupt object through rt_intr_wait() is imediately awaken

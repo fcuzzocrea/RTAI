@@ -1,5 +1,13 @@
 2004-08-26  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Integrate
+	various bits of user-space context switching in a single area.
+
+	* nucleus/timer.c (xntimer_do_timers): Optimize restart point.
+
+	* arch/ppc/hal/hal.c (rthal_calibration_timer): Return 1 instead
+	of zero. The latter is a special error value.
+
 	* testsuite/latency/latency.c (cleanup_upon_sig): Stop timer.
 
 	* nucleus/shadow.c (xnshadow_kick_process): Check shared pending

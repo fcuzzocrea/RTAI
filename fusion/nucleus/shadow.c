@@ -419,8 +419,8 @@ static void gatekeeper_thread (void *data)
 		       cpu,thread->name,adeos_test_pipeline_from(&rthal_domain));
 #endif
 #ifdef CONFIG_SMP
-            /* If the fusion task migrated while run by Linux, migrate the
-               shadow too. */
+            /* If the fusion task migrated while run by Linux, migrate
+               the shadow too. */
             xnlock_get_irqsave(&nklock, s);
             thread->sched = xnpod_sched_slot(cpu);
 	    xnpod_resume_thread(thread,XNRELAX);

@@ -225,11 +225,11 @@ static int latency_write_proc (struct file *file,
 			       unsigned long count,
 			       void *data)
 {
-    char *end, buf[sizeof("nnnnn\0") + 1];
+    char *end, buf[16];
     long ns;
     int n;
 
-    n = count > sizeof(buf) ? sizeof(buf) : count;
+    n = count > sizeof(buf) - 1 ? sizeof(buf) - 1 : count;
 
     if (copy_from_user(buf,buffer,n))
 	return -EFAULT;
@@ -284,49 +284,57 @@ static ssize_t iface_read_proc (char *page,
     return len;
 }
 
+static struct proc_dir_entry *add_proc_leaf (const char *name,
+					     read_proc_t rdproc,
+					     write_proc_t wrproc,
+					     void *data,
+					     struct proc_dir_entry *parent)
+{
+    int mode = wrproc ? 0644 : 0444;
+    struct proc_dir_entry *entry;
+
+    entry = create_proc_entry(name,mode,parent);
+
+    if (entry)
+	{
+	entry->nlink = 1;
+	entry->data = data;
+	entry->read_proc = rdproc;
+	entry->write_proc = wrproc;
+	entry->owner = THIS_MODULE;
+	}
+
+    return entry;
+}
+
 void xnpod_init_proc (void)
 
 {
-    struct proc_dir_entry *entry;
-
     if (!rthal_proc_root)
 	return;
 
-    entry = create_proc_entry("system",0444,rthal_proc_root);
+    add_proc_leaf("system",
+		  &system_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
 
-    if (entry)
-	{
-	entry->nlink = 1;
-	entry->data = NULL;
-	entry->read_proc = system_read_proc;
-	entry->write_proc = NULL;
-	entry->owner = THIS_MODULE;
-	}
+    add_proc_leaf("latency",
+		  &latency_read_proc,
+		  &latency_write_proc,
+		  NULL,
+		  rthal_proc_root);
 
-    entry = create_proc_entry("latency",0644,rthal_proc_root);
-
-    if (entry)
-	{
-	entry->nlink = 1;
-	entry->data = NULL;
-	entry->read_proc = &latency_read_proc;
-	entry->write_proc = &latency_write_proc;
-	entry->owner = THIS_MODULE;
-	}
-
-    entry = create_proc_entry("version",0444,rthal_proc_root);
-
-    if (entry)
-	{
-	entry->nlink = 1;
-	entry->data = NULL;
-	entry->read_proc = &version_read_proc;
-	entry->write_proc = NULL;
-	entry->owner = THIS_MODULE;
-	}
+    add_proc_leaf("version",
+		  &version_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
 
 #ifdef CONFIG_RTAI_OPT_FUSION
-    iface_proc_root = create_proc_entry("interfaces",S_IFDIR,rthal_proc_root);
+    iface_proc_root = create_proc_entry("interfaces",
+					S_IFDIR,
+					rthal_proc_root);
 #endif /* CONFIG_RTAI_OPT_FUSION */
 }
 
@@ -346,25 +354,17 @@ void xnpod_delete_proc (void)
 void xnpod_declare_iface_proc (struct xnskentry *iface)
 
 {
-    struct proc_dir_entry *entry;
-
-    entry = create_proc_entry(iface->name,0444,iface_proc_root);
-
-    if (!entry)
-	return;
-
-    entry->nlink = 1;
-    entry->data = iface;
-    entry->read_proc = &iface_read_proc;
-    entry->write_proc = NULL;
-    entry->owner = THIS_MODULE;
-    iface->proc = entry;
+    iface->proc = add_proc_leaf(iface->name,
+				&iface_read_proc,
+				NULL,
+				iface,
+				iface_proc_root);
 }
 
 void xnpod_discard_iface_proc (struct xnskentry *iface)
 
 {
-    remove_proc_entry(iface->name,NULL);
+    remove_proc_entry(iface->name,NULL); /* <= FIXME: this is bugous */
     iface->proc = NULL;
 }
 

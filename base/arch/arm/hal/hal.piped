@@ -562,12 +562,19 @@ rtai_syscall_trampoline(struct pt_regs *regs)
 {
     unsigned long srq = regs->ARM_r0;
     unsigned long arg = regs->ARM_r1;
-    long long r = srq > RTAI_NR_SRQS
-	? rtai_lxrt_invoke_entry != NULL
-	    ? rtai_lxrt_invoke_entry(srq, (void *)arg)
-	    : -ENODEV
-	: rtai_usrq_trampoline(srq, arg);
-    *(long long*)&regs->ARM_r0 = r;	/* return value of call is expected in saved r0/r1 */
+
+#ifdef USI_SRQ_MASK
+    IF_IS_A_USI_SRQ_CALL_IT();
+#endif
+
+    {
+	long long r = srq > RTAI_NR_SRQS
+	    ? rtai_lxrt_invoke_entry != NULL
+		? rtai_lxrt_invoke_entry(srq, (void *)arg)
+		: -ENODEV
+	    : rtai_usrq_trampoline(srq, arg);
+	*(long long*)&regs->ARM_r0 = r;	/* return value of call is expected in saved r0/r1 */
+    }
     if (in_hrt_mode(rtai_cpuid()))
 	    return 1;			/* hard real-time => fast return to user-space */
     local_irq_enable();

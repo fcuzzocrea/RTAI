@@ -2,6 +2,8 @@
 
 	* base/arch/arm/hal.*: define rt_scheduling[] unconditionally, i.e.
 	not depending on CONFIG_RTAI_SCHED_ISR_LOCK
+	* base/arch/arm/hal.* (rtai_syscall_trampoline): added USI SRQ call
+	* base/include/asm-arm/rtai_hal.*: added RTAI_IFLAG
 
 2004-02-14  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

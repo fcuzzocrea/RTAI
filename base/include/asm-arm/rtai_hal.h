@@ -130,6 +130,8 @@ rtai_imuldiv(int i, int mult, int div)
 
 #define RTAI_TIME_LIMIT		   	0x7FFFFFFFFFFFFFFFLL
 
+#define RTAI_IFLAG			(7)
+
 #define rtai_cpuid()			adeos_processor_id()
 #define rtai_tskext			ptd
 

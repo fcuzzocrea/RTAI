@@ -1,6 +1,6 @@
 config RTAI_SKIN_VXWORKS
 	bool "VxWorks emulator"
-	default y
+	default n
 	help
 
 	This API skin emulates WindRiver's VxWorks operating system.

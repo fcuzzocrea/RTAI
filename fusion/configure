@@ -19819,12 +19819,15 @@ if test x$CONFIG_RTAI_OPT_PIPE_NRDEV = x ; then
 fi
 echo "$as_me:$LINENO: result: $CONFIG_RTAI_OPT_PIPE_NRDEV" >&5
 echo "${ECHO_T}$CONFIG_RTAI_OPT_PIPE_NRDEV" >&6
-fi
 RTAI_PIPE_NRDEV=`expr $CONFIG_RTAI_OPT_PIPE_NRDEV - 1`
 if test x`expr $RTAI_PIPE_NRDEV \< 0` = x1; then
    { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-nucleus-pipe-nrdev=<number>" >&5
 echo "$as_me: error: Bad argument to option: --enable-nucleus-pipe-nrdev=<number>" >&2;}
    { (exit 1); exit 1; }; }
+fi
+else
+  # No pipe support
+  RTAI_PIPE_NRDEV=-1
 fi
 
 echo "$as_me:$LINENO: checking for debug support in nucleus" >&5

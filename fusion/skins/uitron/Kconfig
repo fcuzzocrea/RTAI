@@ -1,6 +1,6 @@
 config RTAI_SKIN_UITRON
 	bool "uITRON API"
-	default y
+	default n
 	help
 
 	This API skin emulates the uITRON API. 

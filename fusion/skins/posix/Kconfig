@@ -1,6 +1,6 @@
 config RTAI_SKIN_POSIX
 	bool "POSIX API"
-	default y
+	default n
 	help
 
-	A POSIX-compliant skin.
+	A POSIX-compliant skin in kernel space.

@@ -291,10 +291,13 @@ if test x$CONFIG_RTAI_OPT_PIPE_NRDEV = x ; then
   CONFIG_RTAI_OPT_PIPE_NRDEV=32
 fi
 AC_MSG_RESULT($CONFIG_RTAI_OPT_PIPE_NRDEV)
-fi
 RTAI_PIPE_NRDEV=`expr $CONFIG_RTAI_OPT_PIPE_NRDEV - 1`
 if test x`expr $RTAI_PIPE_NRDEV \< 0` = x1; then
    AC_MSG_ERROR([Bad argument to option: --enable-nucleus-pipe-nrdev=<number>])
+fi
+else
+  # No pipe support
+  RTAI_PIPE_NRDEV=-1
 fi
 
 AC_MSG_CHECKING(for debug support in nucleus)

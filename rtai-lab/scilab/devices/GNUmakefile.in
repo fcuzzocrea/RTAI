@@ -333,10 +333,6 @@ libsciblk_a_SOURCES = \
 	rtai_led.c \
 	rtai_meter.c \
 	rtai_fifo.c \
-	memory.c \
-	inp_square.c \
-	inp_step.c \
-	inp_sinus.c \
 	extdata.c \
 	mbx_receive_if.c \
 	mbx_receive.c \
@@ -378,33 +374,30 @@ LIBRARIES = $(lib_LIBRARIES)
 
 libsciblk_a_LIBADD =
 am__libsciblk_a_SOURCES_DIST = rtai_scope.c rtai_led.c rtai_meter.c \
-	rtai_fifo.c memory.c inp_square.c inp_step.c inp_sinus.c \
-	extdata.c mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c \
-	mbx_send_if.c cioquad4.c peak.c pcan.c libpcan.c rtmain.h \
-	libpcan.h pcan.h peak.h rtai_comedi_data.c rtai_comedi_dio.c
+	rtai_fifo.c extdata.c mbx_receive_if.c mbx_receive.c \
+	mbx_ovrwr_send.c mbx_send_if.c cioquad4.c peak.c pcan.c \
+	libpcan.c rtmain.h libpcan.h pcan.h peak.h rtai_comedi_data.c \
+	rtai_comedi_dio.c
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@am__objects_1 = rtai_comedi_data.$(OBJEXT) \
 @CONFIG_RTAI_COMEDI_LXRT_TRUE@	rtai_comedi_dio.$(OBJEXT)
 am_libsciblk_a_OBJECTS = rtai_scope.$(OBJEXT) rtai_led.$(OBJEXT) \
-	rtai_meter.$(OBJEXT) rtai_fifo.$(OBJEXT) memory.$(OBJEXT) \
-	inp_square.$(OBJEXT) inp_step.$(OBJEXT) inp_sinus.$(OBJEXT) \
-	extdata.$(OBJEXT) mbx_receive_if.$(OBJEXT) \
-	mbx_receive.$(OBJEXT) mbx_ovrwr_send.$(OBJEXT) \
-	mbx_send_if.$(OBJEXT) cioquad4.$(OBJEXT) peak.$(OBJEXT) \
-	pcan.$(OBJEXT) libpcan.$(OBJEXT) $(am__objects_1)
+	rtai_meter.$(OBJEXT) rtai_fifo.$(OBJEXT) extdata.$(OBJEXT) \
+	mbx_receive_if.$(OBJEXT) mbx_receive.$(OBJEXT) \
+	mbx_ovrwr_send.$(OBJEXT) mbx_send_if.$(OBJEXT) \
+	cioquad4.$(OBJEXT) peak.$(OBJEXT) pcan.$(OBJEXT) \
+	libpcan.$(OBJEXT) $(am__objects_1)
 libsciblk_a_OBJECTS = $(am_libsciblk_a_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/rtai-core/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/cioquad4.Po ./$(DEPDIR)/extdata.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/inp_sinus.Po ./$(DEPDIR)/inp_square.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/inp_step.Po ./$(DEPDIR)/libpcan.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libpcan.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mbx_ovrwr_send.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mbx_receive.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/mbx_receive_if.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mbx_send_if.Po ./$(DEPDIR)/memory.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/pcan.Po ./$(DEPDIR)/peak.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/rtai_comedi_data.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/mbx_send_if.Po ./$(DEPDIR)/pcan.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/peak.Po ./$(DEPDIR)/rtai_comedi_data.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rtai_comedi_dio.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rtai_fifo.Po ./$(DEPDIR)/rtai_led.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/rtai_meter.Po ./$(DEPDIR)/rtai_scope.Po
@@ -476,15 +469,11 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cioquad4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/extdata.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inp_sinus.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inp_square.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inp_step.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpcan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_ovrwr_send.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_receive_if.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbx_send_if.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/memory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/peak.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtai_comedi_data.Po@am__quote@
@@ -657,7 +646,7 @@ install-am: all-am
 installcheck: installcheck-am
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
-	  INSTALL_STRIP_FLAG=-s \
+	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
 	  `test -z '$(STRIP)' || \
 	    echo "INSTALL_PROGRAM_ENV=STRIPPROG='$(STRIP)'"` install
 mostlyclean-generic:

@@ -12,8 +12,8 @@ procedures into "device.h"
 
 Now simply add the code to the generated file in order to fit your need.
 
-Start "Makefile" to generate the library "ulibsci.a" and "make
-install" to copy this library into the rtai-scilab path (default: /usr/local/scicos").
+Start "Makefile" to generate the library "libsciblk.a" and "make
+install".
  
 Roberto Bucher roberto.bucher@die.supsi.ch
-Oct 4 2003
+Sep 18 2004

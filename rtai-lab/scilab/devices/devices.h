@@ -16,29 +16,6 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
-void inp_mem_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5);
-void inp_mem_input(int port, double * y, double t);
-void inp_mem_update(void);
-void inp_mem_end(int port);
-
-void out_mem_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5);
-void out_mem_output(int port, double * u,double t);
-void out_mem_end(int port);
-
-void inp_square_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5);
-void inp_square_input(int port, double * y, double t);
-void inp_square_update(void);
-void inp_square_end(int port);
-
-void inp_step_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5);
-void inp_step_input(int port, double * y, double t);
-void inp_step_update(void);
-void inp_step_end(int port);
-
 void out_rtai_scope_init(int port,int nch,char * sName,char * sParam,double p1,
                   double p2, double p3, double p4, double p5);
 void out_rtai_scope_output(int port, double * u,double t);
@@ -75,12 +52,6 @@ void out_rtai_meter_init(int port,int nch,char * sName,char * sParam,double p1,
                   double p2, double p3, double p4, double p5);
 void out_rtai_meter_output(int port, double * u,double t);
 void out_rtai_meter_end(int port);
-
-void inp_sinus_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5);
-void inp_sinus_input(int port, double * y, double t);
-void inp_sinus_update(void);
-void inp_sinus_end(int port);
 
 void inp_extdata_init(int port,int nch,char * sName,char * sParam,double p1,
                   double p2, double p3, double p4, double p5);

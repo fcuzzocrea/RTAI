@@ -9,10 +9,6 @@ libsciblk_a_SOURCES = \
 	rtai_led.c \
 	rtai_meter.c \
 	rtai_fifo.c \
-	memory.c \
-	inp_square.c \
-	inp_step.c \
-	inp_sinus.c \
 	extdata.c \
 	mbx_receive_if.c \
 	mbx_receive.c \

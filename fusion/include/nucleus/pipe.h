@@ -22,8 +22,6 @@
 
 #include <nucleus/queue.h>
 
-#undef XNPIPE_DEBUG
-
 #define XNPIPE_WAIT   0x0
 #define XNPIPE_NOWAIT 0x1
 
@@ -56,7 +54,7 @@ static inline xnpipe_mh_t *link2mh (xnholder_t *laddr)
     return laddr ? ((xnpipe_mh_t *)(((char *)laddr) - (int)(&((xnpipe_mh_t *)0)->link))) : 0;
 }
 
-#ifdef __KERNEL__
+#if __KERNEL__
 
 #include <nucleus/synch.h>
 #include <nucleus/thread.h>

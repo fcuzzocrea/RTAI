@@ -55,7 +55,7 @@ install-exec-local: rtai_psos$(modext)
 uninstall-local:
 	$(RM) $(moduledir)/rtai_psos$(modext)
 
-if CONFIG_RTAI_OPT_VM
+if CONFIG_RTAI_OPT_UVM
 
 lib_LIBRARIES = libpsos.a
 

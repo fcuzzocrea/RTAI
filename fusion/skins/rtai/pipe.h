@@ -24,7 +24,7 @@
 
 #include <nucleus/pipe.h>
 
-#ifdef __KERNEL__
+#if __KERNEL__
 
 #include <rtai/types.h>
 

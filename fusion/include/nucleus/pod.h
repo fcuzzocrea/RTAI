@@ -103,7 +103,7 @@ typedef struct xnsched {
 
     volatile unsigned inesting;	/*!< Interrupt nesting level. */
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     xnthread_t *fpuholder;	/*!< Thread owning the current FPU context. */
 #endif /* CONFIG_RTAI_HW_FPU */
 
@@ -187,7 +187,7 @@ struct xnpod {
     int watchdog_armed;		/* !< Watchdog state. */
 #endif /* CONFIG_RTAI_OPT_WATCHDOG */
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     void (*schedhook)(xnthread_t *thread,
 		      xnflags_t mask); /*!< Internal scheduling hook. */
 #endif /* __RTAI_SIM__ */
@@ -198,7 +198,7 @@ typedef struct xnpod xnpod_t;
 
 extern xnpod_t *nkpod;
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 extern xnlock_t nklock;
 #endif /* CONFIG_SMP */
 
@@ -222,7 +222,7 @@ void xnpod_renice_thread_inner(xnthread_t *thread,
 			       int prio,
 			       int propagate);
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
 void xnpod_switch_fpu(xnsched_t *sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 

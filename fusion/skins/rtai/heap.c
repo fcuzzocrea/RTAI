@@ -237,13 +237,13 @@ int rt_heap_create (RT_HEAP *heap,
     heapsize += xnheap_overhead(heapsize,PAGE_SIZE);
     heapsize = PAGE_ALIGN(heapsize);
 
-#ifdef __KERNEL__
+#if __KERNEL__
     if (mode & H_SHARED)
 	{
 	if (!name || !*name)
 	    return -EINVAL;
 
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
 	err = xnheap_init_shared(&heap->heap_base,
 				 heapsize,
 				 (mode & H_DMA) ? GFP_DMA : 0);
@@ -347,7 +347,7 @@ int rt_heap_delete (RT_HEAP *heap)
         goto unlock_and_exit;
         }
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     if (heap->mode & H_SHARED)
 	err = xnheap_destroy_shared(&heap->heap_base);
     else

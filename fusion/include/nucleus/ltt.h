@@ -23,7 +23,7 @@
 
 #include <linux/config.h>
 
-#if defined(__KERNEL__) && defined(CONFIG_LTT)
+#if __KERNEL__ && CONFIG_LTT
 
 #include <linux/ltt-core.h>
 

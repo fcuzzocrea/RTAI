@@ -22,7 +22,7 @@
 
 #include <nucleus/asm/atomic.h>
 #include <nucleus/syscall.h>
-#ifdef CONFIG_PROC_FS
+#if CONFIG_PROC_FS
 #include <linux/proc_fs.h>
 #endif /* CONFIG_PROC_FS */
 
@@ -50,7 +50,7 @@ struct xnskentry {
     atomic_counter_t refcnt;
     int (*eventcb)(int);
     xnsysent_t *systab;
-#ifdef CONFIG_PROC_FS
+#if CONFIG_PROC_FS
     struct proc_dir_entry *proc;
 #endif /* CONFIG_PROC_FS */
 };

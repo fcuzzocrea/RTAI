@@ -20,7 +20,7 @@
 #ifndef _RTAI_NUCLEUS_SYSTEM_H
 #define _RTAI_NUCLEUS_SYSTEM_H
 
-#ifdef __RTAI_UVM__
+#if __RTAI_UVM__
 #include <nucleus/asm-uvm/system.h>
 #else /* !__RTAI_UVM__ */
 #include <nucleus/asm/atomic.h>

@@ -22,7 +22,7 @@
 
 #include <nucleus/queue.h>
 
-#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
+#if __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__
 
 /* Number of outstanding timers (hint only) -- must be ^2 */
 #define XNTIMER_WHEELSIZE 64

@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#define XENO_THREAD_MODULE
+#define XENO_THREAD_MODULE 1
 
 #include <nucleus/pod.h>
 #include <nucleus/synch.h>

@@ -1,7 +1,7 @@
 2005-03-05  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pipe.c (xnpipe_open): Clean USER_CONN bit when open
-	fail.
+	fails.
 
 2005-03-04  Philippe Gerum  <rpm@xenomai.org>
 

@@ -2,7 +2,7 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_MODULES=y
-CONFIG_RTAI_VERSION="0.6.9 (fusion)"
+CONFIG_RTAI_VERSION="0.6.99 (fusion)"
 
 #
 # General
@@ -17,6 +17,9 @@ CONFIG_RTAI_LINUXDIR="/lib/modules/`uname -r`/build"
 # CONFIG_RTAI_DOC_LATEX_NONSTOP is not set
 # CONFIG_RTAI_DOC_DBX is not set
 # CONFIG_RTAI_OPT_EXPERT is not set
+# CONFIG_RTAI_MAINT_NONE is not set
+# CONFIG_RTAI_MAINT_GCH is not set
+# CONFIG_RTAI_MAINT_PGM is not set
 
 #
 # Nucleus
@@ -31,6 +34,12 @@ CONFIG_RTAI_OPT_PERCPU_TIMER=y
 #
 CONFIG_RTAI_HW_FPU=y
 CONFIG_RTAI_HW_APERIODIC_TIMER=y
+
+#
+# SMI workaround
+#
+CONFIG_RTAI_HW_SMI_DETECT=y
+# CONFIG_RTAI_HW_SMI_WORKAROUND is not set
 
 #
 # APIs
@@ -53,7 +62,7 @@ CONFIG_RTAI_OPT_NATIVE_INTR=y
 # CONFIG_RTAI_SKIN_UITRON is not set
 # CONFIG_RTAI_SKIN_VRTX is not set
 # CONFIG_RTAI_SKIN_VXWORKS is not set
-# CONFIG_RTAI_OPT_VM is not set
+# CONFIG_RTAI_OPT_UVM is not set
 
 #
 # Drivers

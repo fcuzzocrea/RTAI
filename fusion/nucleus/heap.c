@@ -60,7 +60,7 @@
  *                       }
  *@{*/
 
-#define XENO_HEAP_MODULE
+#define XENO_HEAP_MODULE 1
 
 #include <nucleus/pod.h>
 #include <nucleus/thread.h>
@@ -733,7 +733,7 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
     return 0;
 }
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
 
 #include <asm/io.h>
 #include <linux/miscdevice.h>

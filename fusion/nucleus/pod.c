@@ -31,7 +31,7 @@
  * Real-time pod services.
  *@{*/
 
-#define XENO_POD_MODULE
+#define XENO_POD_MODULE 1
 
 #include <stdarg.h>
 #include <nucleus/pod.h>
@@ -46,7 +46,7 @@
 
 xnpod_t *nkpod = NULL;
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 xnlock_t nklock = XNARCH_LOCK_UNLOCKED;
 #endif /* CONFIG_SMP */
 
@@ -137,7 +137,7 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
         return 1;
         }
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     /* If we experienced a trap on behalf of a shadow thread, just
        move the second to the Linux domain, so that the host O/S
        (e.g. Linux) can attempt to process the exception. This is
@@ -259,7 +259,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     initq(&pod->tswitchq);
     initq(&pod->tdeleteq);
 
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if CONFIG_RTAI_OPT_PERCPU_TIMER
     for (cpu = 0; cpu < xnarch_num_online_cpus(); cpu++)
 #else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
         cpu = XNTIMER_KEEPER_ID;
@@ -280,7 +280,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->svctable.tickhandler = NULL;
     pod->svctable.faulthandler = &xnpod_fault_handler;
     pod->svctable.unload = NULL;
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     pod->schedhook = NULL;
 #endif /* __RTAI_SIM__ */
 
@@ -339,7 +339,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
                            root_name,
                            XNPOD_ROOT_PRIO_BASE,
                            XNROOT|XNSTARTED
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
                            /* If the host environment has a FPU, the root
                               thread must care for the FPU context. */
                            |XNFPU
@@ -357,7 +357,7 @@ fail:
         appendq(&pod->threadq,&sched->rootcb.glink);
 
         sched->runthread = &sched->rootcb;
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
         sched->fpuholder = &sched->rootcb;
 #endif /* CONFIG_RTAI_HW_FPU */
 
@@ -496,7 +496,7 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
 {
     /* Must be called with nklock locked, interrupts off. */
     xnsched_t *sched = xnpod_current_sched();
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     int shadow = testbits(threadout->status,XNSHADOW);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
@@ -526,7 +526,7 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
     xnarch_finalize_and_switch(xnthread_archtcb(threadout),
                                xnthread_archtcb(threadin));
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     if (shadow)
         /* Reap the user-space mate of a deleted real-time shadow.
            The Linux task has resumed into the Linux domain at the
@@ -742,7 +742,7 @@ int xnpod_start_thread (xnthread_t *thread,
     if (!testbits(thread->status,XNDORMANT))
         return -EBUSY;
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     if (testbits(thread->status,XNSHADOW))
         {
 	xnltt_log_event(rtai_ev_thrstart,thread->name);
@@ -791,7 +791,7 @@ int xnpod_start_thread (xnthread_t *thread,
 	goto unlock_and_exit;
 	}
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
     if (!xnarch_cpu_isset(xnsched_cpu(thread->sched), thread->affinity))
         thread->sched = xnpod_sched_slot(xnarch_first_cpu(thread->affinity));
 #endif /* CONFIG_SMP */
@@ -800,7 +800,7 @@ int xnpod_start_thread (xnthread_t *thread,
 
     xnpod_resume_thread(thread,XNDORMANT);
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     if (!(mode & XNSUSP) && nkpod->schedhook)
         nkpod->schedhook(thread,XNREADY);
 #endif /* __RTAI_SIM__ */
@@ -859,7 +859,7 @@ void xnpod_restart_thread (xnthread_t *thread)
     if (!testbits(thread->status,XNSTARTED))
         return; /* Not started yet or not restartable. */
 
-#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
+#if CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__
     if (testbits(thread->status,XNROOT|XNSHADOW))
         xnpod_fatal("attempt to restart a user-space thread");
 #endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
@@ -1004,7 +1004,7 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
 
     xnlock_put_irqrestore(&nklock,s);
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     if (runthread == thread &&
 	testbits(thread->status,XNSHADOW) &&
 	((clrmask|setmask) & XNSHIELD) != 0)
@@ -1050,12 +1050,12 @@ void xnpod_delete_thread (xnthread_t *thread)
     xnsched_t *sched;
     spl_t s;
 
-#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
+#if CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__
     if (testbits(thread->status,XNROOT))
         xnpod_fatal("attempt to delete the root thread");
 #endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     if (nkpod->schedhook)
         nkpod->schedhook(thread,XNDELETED);
 #endif /* __RTAI_SIM__ */
@@ -1102,7 +1102,7 @@ void xnpod_delete_thread (xnthread_t *thread)
 
     xnsynch_release_all_ownerships(thread);
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     if (thread == sched->fpuholder)
         sched->fpuholder = NULL;
 #endif /* CONFIG_RTAI_HW_FPU */
@@ -1216,7 +1216,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
     xnsched_t *sched;
     spl_t s;
 
-#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
+#if CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__
     if (testbits(thread->status,XNTHREAD_SYSTEM_BITS))
         xnpod_fatal("attempt to suspend system thread %s",thread->name);
 
@@ -1232,7 +1232,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 
     if (thread == sched->runthread)
         {
-#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
+#if CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__
         if (sched == xnpod_current_sched() && xnpod_locked_p())
             xnpod_fatal("suspensive call issued while the scheduler was locked");
 #endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
@@ -1251,7 +1251,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 
     if (!testbits(thread->status,XNTHREAD_BLOCK_BITS))
         {
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
 	/* If attempting to suspend a runnable (shadow) thread which
 	   has received a Linux signal, just raise the break condition
 	   and return immediately. */
@@ -1303,7 +1303,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 	    }
         }
     
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     if (nkpod->schedhook)
         nkpod->schedhook(thread,mask);
 #endif /* __RTAI_SIM__ */
@@ -1493,7 +1493,7 @@ void xnpod_resume_thread (xnthread_t *thread,
         {
         __setbits(thread->status,XNREADY);
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
         if (nkpod->schedhook &&
             getheadpq(&sched->readyq) != &thread->rlink)
             /* The running thread does no longer lead the ready
@@ -1505,7 +1505,7 @@ void xnpod_resume_thread (xnthread_t *thread,
         {
         __setbits(thread->status,XNREADY);
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
         if (nkpod->schedhook)
             nkpod->schedhook(thread,XNREADY);
 #endif /* __RTAI_SIM__ */
@@ -1680,7 +1680,7 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
             xnpod_resume_thread(thread,0);
         }
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     if (propagate && testbits(thread->status,XNRELAX))
         xnshadow_renice(thread);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
@@ -1731,7 +1731,7 @@ int xnpod_migrate_thread (int cpu)
     
     xnltt_log_event(rtai_ev_cpumigrate,thread->name,cpu);
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     if (testbits(thread->status, XNFPU))
         {
         /* Force the FPU save, and nullify the sched->fpuholder pointer, to
@@ -2015,7 +2015,7 @@ void xnpod_welcome_thread (xnthread_t *thread)
         /* Actually grab the scheduler lock. */
         xnpod_lock_sched();
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
    if (testbits(thread->status,XNFPU))
        {
        xnsched_t *sched = thread->sched;
@@ -2041,7 +2041,7 @@ void xnpod_welcome_thread (xnthread_t *thread)
     splexit(s);
 }
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
 
 static inline void __xnpod_switch_fpu (xnsched_t *sched)
 
@@ -2094,7 +2094,7 @@ static inline void xnpod_preempt_current_thread (xnsched_t *sched)
     insertpql(&sched->readyq,&thread->rlink,thread->cprio);
     __setbits(thread->status,XNREADY);
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     if (getheadpq(&sched->readyq) != &thread->rlink)
         nkpod->schedhook(thread,XNREADY);
     else if (countpq(&sched->readyq) > 1)
@@ -2184,8 +2184,8 @@ void xnpod_schedule (void)
     xnthread_t *threadout, *threadin, *runthread;
     xnsched_t *sched;
     spl_t s;
-#ifdef __KERNEL__
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if __KERNEL__
+#if CONFIG_RTAI_OPT_FUSION
     int shadow;
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
@@ -2203,7 +2203,7 @@ void xnpod_schedule (void)
 
     xnlock_get_irqsave(&nklock,s);
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
     {
     int need_resched;
 
@@ -2269,7 +2269,7 @@ void xnpod_schedule (void)
     threadout = runthread;
     threadin = link2thread(getpq(&sched->readyq),rlink);
 
-#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
+#if CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__
     if (!threadin)
         xnpod_fatal("schedule: no thread to schedule?!");
 #endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
@@ -2283,7 +2283,7 @@ void xnpod_schedule (void)
 
     xnltt_log_event(rtai_ev_switch,threadout->name,threadin->name);
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     shadow = testbits(threadout->status,XNSHADOW);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
@@ -2304,11 +2304,11 @@ void xnpod_schedule (void)
 
     runthread = sched->runthread;
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     __xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     /* Shadow on entry and root without shadow extension on exit? 
        Mmmm... This must be the user-space mate of a deleted real-time
        shadow we've just rescheduled in the Linux domain to have it
@@ -2322,7 +2322,7 @@ void xnpod_schedule (void)
         }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     if (nkpod->schedhook)
         nkpod->schedhook(runthread,XNRUNNING);
 #endif /* __RTAI_SIM__ */
@@ -2433,7 +2433,7 @@ maybe_switch:
 
     threadin = link2thread(getpq(&sched->readyq),rlink);
 
-#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
+#if CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__
     if (!threadin)
         xnpod_fatal("schedule_runnable: no thread to schedule?!");
 #endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
@@ -2455,7 +2455,7 @@ maybe_switch:
         xnarch_enter_root(xnthread_archtcb(threadin));
     }
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     if (nkpod->schedhook)
         nkpod->schedhook(runthread,XNREADY);
 #endif /* __RTAI_SIM__ */
@@ -2463,11 +2463,11 @@ maybe_switch:
     xnarch_switch_to(xnthread_archtcb(runthread),
                      xnthread_archtcb(threadin));
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     __xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
-#ifdef __RTAI_SIM__
+#if __RTAI_SIM__
     if (nkpod->schedhook && runthread == sched->runthread)
         nkpod->schedhook(runthread,XNRUNNING);
 #endif /* __RTAI_SIM__ */
@@ -3037,7 +3037,7 @@ void xnpod_stop_timer (void)
 int xnpod_announce_tick (xnintr_t *intr)
 
 {
-#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if !CONFIG_RTAI_OPT_PERCPU_TIMER
     unsigned nr_cpus;
 #endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
     unsigned cpu;
@@ -3045,7 +3045,7 @@ int xnpod_announce_tick (xnintr_t *intr)
 
     cpu = xnarch_current_cpu();
 
-#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if !CONFIG_RTAI_OPT_PERCPU_TIMER
     /* On SMP machines, the timers may tick on several CPUs, in which case, only
        one must be used. */
     if(cpu != XNTIMER_KEEPER_ID)
@@ -3080,7 +3080,7 @@ int xnpod_announce_tick (xnintr_t *intr)
 	goto unlock_and_exit;
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
-#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
+#if !CONFIG_RTAI_OPT_PERCPU_TIMER
     nr_cpus = xnarch_num_online_cpus();
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
@@ -3329,6 +3329,6 @@ EXPORT_SYMBOL(xnpod_welcome_thread);
 EXPORT_SYMBOL(nkclock);
 EXPORT_SYMBOL(nkpod);
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 EXPORT_SYMBOL(nklock);
 #endif /* CONFIG_SMP */

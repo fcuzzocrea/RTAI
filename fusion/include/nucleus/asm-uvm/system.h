@@ -54,7 +54,7 @@ typedef int spl_t;
 
 typedef unsigned long cpumask_t;
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 #error "SMP not supported for UVM yet"
 #endif /* CONFIG_SMP */
 
@@ -259,7 +259,7 @@ extern "C" {
 
 void xnpod_welcome_thread(struct xnthread *);
 
-#ifdef XENO_INTR_MODULE
+#if XENO_INTR_MODULE
 
 int uvm_irqlock = 0;
 
@@ -312,7 +312,7 @@ static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
 
 #endif /* XENO_INTR_MODULE */
 
-#ifdef XENO_MAIN_MODULE
+#if XENO_MAIN_MODULE
 
 int __fusion_sys_init(void);
 
@@ -391,7 +391,7 @@ int main (int argc, char *argv[])
 
 #endif  /* !XENO_MAIN_MODULE */
 
-#ifdef XENO_TIMER_MODULE
+#if XENO_TIMER_MODULE
 
 void *uvm_timer_handle;
 
@@ -418,7 +418,7 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 
 #endif /* XENO_TIMER_MODULE */
 
-#ifdef XENO_POD_MODULE
+#if XENO_POD_MODULE
 
 extern void *uvm_timer_handle;
 
@@ -564,11 +564,6 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
     uvm_root = uvm_current = tcb;
 }
 
-static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
-
-    tcb->khandle = NULL;
-}
-
 static void *xnarch_thread_trampoline (void *cookie)
 
 {
@@ -663,6 +658,15 @@ static inline int xnarch_release_ipi (void) {
 #define xnarch_notify_halt() /* Nullified */
 
 #endif /* XENO_POD_MODULE */
+
+#if XENO_THREAD_MODULE
+
+static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
+
+    tcb->khandle = NULL;
+}
+
+#endif /* XENO_THREAD_MODULE */
 
 extern xnsysinfo_t uvm_info;
 

@@ -230,13 +230,13 @@ int rt_queue_create (RT_QUEUE *q,
     poolsize += xnheap_overhead(poolsize,PAGE_SIZE);
     poolsize = PAGE_ALIGN(poolsize);
 
-#ifdef __KERNEL__
+#if __KERNEL__
     if (mode & Q_SHARED)
 	{
 	if (!name || !*name)
 	    return -EINVAL;
 
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
 	err = xnheap_init_shared(&q->bufpool,
 				 poolsize,
 				 (mode & Q_DMA) ? GFP_DMA : 0);
@@ -341,7 +341,7 @@ int rt_queue_delete (RT_QUEUE *q)
         goto unlock_and_exit;
         }
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     if (q->mode & Q_SHARED)
 	err = xnheap_destroy_shared(&q->bufpool);
     else

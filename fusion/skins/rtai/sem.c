@@ -183,7 +183,7 @@ int rt_sem_create (RT_SEM *sem,
     sem->magic = RTAI_SEM_MAGIC;
     xnobject_copy_name(sem->name,name);
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     sem->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

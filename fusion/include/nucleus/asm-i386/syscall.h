@@ -151,7 +151,7 @@ asm (".L__X'%ebx = 1\n\t"
 #define XENOMAI_SKINCALL4(id,op,a1,a2,a3,a4)    XENOMAI_SKIN_MUX(4,id,op,a1,a2,a3,a4)
 #define XENOMAI_SKINCALL5(id,op,a1,a2,a3,a4,a5) XENOMAI_SKIN_MUX(5,id,op,a1,a2,a3,a4,a5)
 
-#ifdef __KERNEL__
+#if __KERNEL__
 
 #include <linux/errno.h>
 #include <asm/uaccess.h>
@@ -194,7 +194,7 @@ static inline int __xn_interrupted_p(struct pt_regs *regs) {
 
 #else /* !__KERNEL__ */
 
-#ifdef CONFIG_X86_TSC
+#if CONFIG_X86_TSC
 
 #define CONFIG_RTAI_HW_DIRECT_TSC 1
 

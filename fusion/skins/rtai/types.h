@@ -30,7 +30,7 @@
 #define TM_NONBLOCK XN_NONBLOCK
 #define TM_NOW      XN_INFINITE
 
-#if defined(__KERNEL__) || defined(__RTAI_SIM__)
+#if __KERNEL__ || __RTAI_SIM__
 
 typedef xnticks_t RTIME;
 

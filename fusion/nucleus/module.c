@@ -23,17 +23,17 @@
  * A RTOS abstraction layer.
  */
 
-#define XENO_MAIN_MODULE
+#define XENO_MAIN_MODULE 1
 
 #include <rtai_config.h>
 #include <nucleus/module.h>
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
 #include <nucleus/version.h>
-#ifdef CONFIG_RTAI_OPT_PIPE
+#if CONFIG_RTAI_OPT_PIPE
 #include <nucleus/pipe.h>
 #endif /* CONFIG_RTAI_OPT_PIPE */
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
 #include <nucleus/fusion.h>
 #endif /* CONFIG_RTAI_OPT_FUSION */
 #include <nucleus/ltt.h>
@@ -73,14 +73,14 @@ void xnmod_alloc_glinks (xnqueue_t *freehq)
 	}
 }
 
-#if defined(CONFIG_PROC_FS) && defined(__KERNEL__)
+#if CONFIG_PROC_FS && __KERNEL__
 
 #include <linux/proc_fs.h>
 #include <linux/ctype.h>
 
 extern struct proc_dir_entry *rthal_proc_root;
 
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
 static struct proc_dir_entry *iface_proc_root;
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
@@ -331,7 +331,7 @@ void xnpod_init_proc (void)
 		  NULL,
 		  rthal_proc_root);
 
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
     iface_proc_root = create_proc_entry("interfaces",
 					S_IFDIR,
 					rthal_proc_root);
@@ -341,7 +341,7 @@ void xnpod_init_proc (void)
 void xnpod_delete_proc (void)
 
 {
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
     int muxid;
 
     for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
@@ -356,7 +356,7 @@ void xnpod_delete_proc (void)
     remove_proc_entry("sched",rthal_proc_root);
 }
 
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
 
 static ssize_t iface_read_proc (char *page,
 				char **start,
@@ -407,23 +407,23 @@ int __init __fusion_sys_init (void)
     if (err)
 	goto fail;
 
-#ifdef __KERNEL__
-#ifdef CONFIG_PROC_FS
+#if __KERNEL__
+#if CONFIG_PROC_FS
     xnpod_init_proc();
 #endif /* CONFIG_PROC_FS */
 
-#ifdef CONFIG_LTT
+#if CONFIG_LTT
     xnltt_mount();
 #endif /* CONFIG_LTT */
 
-#ifdef CONFIG_RTAI_OPT_PIPE
+#if CONFIG_RTAI_OPT_PIPE
     err = xnpipe_mount();
 
     if (err)
 	goto cleanup_arch;
 #endif /* CONFIG_RTAI_OPT_PIPE */
 
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
     err = xnheap_mount();
 
     if (err)
@@ -442,9 +442,9 @@ int __init __fusion_sys_init (void)
 
     return 0;
 
-#ifdef __KERNEL__
+#if __KERNEL__
 
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
  cleanup_heap:
 
     xnheap_umount();
@@ -453,14 +453,14 @@ int __init __fusion_sys_init (void)
 
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
-#ifdef CONFIG_RTAI_OPT_PIPE
+#if CONFIG_RTAI_OPT_PIPE
     xnpipe_umount();
 
  cleanup_arch:
 
 #endif /* CONFIG_RTAI_OPT_PIPE */
 
-#ifdef CONFIG_PROC_FS
+#if CONFIG_PROC_FS
     xnpod_delete_proc();
 #endif /* CONFIG_PROC_FS */
 
@@ -482,18 +482,18 @@ void __exit __fusion_sys_exit (void)
 
     xnarch_exit();
 
-#ifdef __KERNEL__
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if __KERNEL__
+#if CONFIG_RTAI_OPT_FUSION
     xnfusion_umount();
     xnheap_umount();
 #endif /* CONFIG_RTAI_OPT_FUSION */
-#ifdef CONFIG_RTAI_OPT_PIPE
+#if CONFIG_RTAI_OPT_PIPE
     xnpipe_umount();
 #endif /* CONFIG_RTAI_OPT_PIPE */
-#ifdef CONFIG_LTT
+#if CONFIG_LTT
     xnltt_umount();
 #endif /* CONFIG_LTT */
-#ifdef CONFIG_PROC_FS
+#if CONFIG_PROC_FS
     xnpod_delete_proc();
 #endif /* CONFIG_PROC_FS */
 #endif /* __KERNEL__ */

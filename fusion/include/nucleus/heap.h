@@ -42,7 +42,7 @@
  * requests ranging from the maximum page size to twice this size.
  */
 
-#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
+#if __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__
 
 #define	XNHEAP_MINLOG2    3
 #define	XNHEAP_MAXLOG2    22
@@ -72,7 +72,7 @@ typedef struct xnextent {
 
 typedef struct xnheap {
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
     xnlock_t lock;
 #endif /* CONFIG_SMP */
 
@@ -119,7 +119,7 @@ extern "C" {
 
 /* Private interface. */
 
-#ifdef __KERNEL__
+#if __KERNEL__
 
 #define XNHEAP_DEV_MINOR 254
 

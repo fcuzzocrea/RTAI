@@ -65,11 +65,6 @@ static void xnpipe_wakeup_proc (void)
     unsigned long slflags;
     spl_t s;
 
-#ifdef XNPIPE_DEBUG
-    xnprintf("WAKEUP PROC ACTIVATED: SLEEPQ HAS %d ELEMENTS\n",
-	     countq(&xnpipe_sleepq));
-#endif
-
     spin_lock_irqsave(&xnpipe_sqlock,slflags);
 
     nholder = getheadq(&xnpipe_sleepq);
@@ -80,10 +75,6 @@ static void xnpipe_wakeup_proc (void)
 
 	/* Wake up the sleepers whose suspension flag disappeared. */
 
-#ifdef XNPIPE_DEBUG
-	xnprintf("MINOR #%d FOUND ON SLEEPQ\n",xnminor_from_state(state));
-#endif
-
 	if (!testbits(state->status,XNPIPE_USER_WMASK))
 	    {
 	    nholder = popq(&xnpipe_sleepq,holder);
@@ -93,19 +84,11 @@ static void xnpipe_wakeup_proc (void)
 
 	    if (state->wchan)
 		{
-#ifdef XNPIPE_DEBUG
-		xnprintf("AWAKENING MINOR #%d ON SEM\n",xnminor_from_state(state));
-#endif
 		up(state->wchan);
 		state->wchan = NULL;
 		}
 	    else if (waitqueue_active(&state->pollq))
-		{
-#ifdef XNPIPE_DEBUG
-		xnprintf("AWAKENING MINOR #%d ON POLLQ\n",xnminor_from_state(state));
-#endif
-		wake_up_interruptible(&state->pollq);
-		}
+		     wake_up_interruptible(&state->pollq);
 
 	    spin_lock_irqsave(&xnpipe_sqlock,slflags);
 
@@ -219,25 +202,16 @@ int xnpipe_connect (int minor,
 
     if (testbits(state->status,XNPIPE_USER_CONN))
 	{
-#ifdef XNPIPE_DEBUG
-	xnprintf("RTK: USR IS CONNECTED ON MINOR #%d\n",minor);
-#endif
 	if (testbits(state->status,XNPIPE_USER_WOPEN|XNPIPE_USER_WPOLL))
 	    {
 	    /* Wake up the userland thread waiting for the nucleus
 	       side to connect (open or poll). */
 	    clrbits(state->status,XNPIPE_USER_WOPEN|XNPIPE_USER_WPOLL);
-#ifdef XNPIPE_DEBUG
-	    xnprintf("RTK: WOPEN|WPOLL, KICKING MINOR #%d\n",minor);
-#endif
 	    xnpipe_schedule_request();
 	    }
 
 	if (state->asyncq) /* Schedule asynch sig. */
 	    {
-#ifdef XNPIPE_DEBUG
-	    xnprintf("RTK: SIGIO, KICKING MINOR #%d\n",minor);
-#endif
 	    setbits(state->status,XNPIPE_USER_SIGIO);
 	    xnpipe_schedule_request();
 	    }
@@ -347,15 +321,8 @@ ssize_t xnpipe_send (int minor,
 	    /* Wake up the userland thread waiting for input
 	       from the kernel side. */
 	    clrbits(state->status,XNPIPE_USER_WSEND);
-#ifdef XNPIPE_DEBUG
-	    xnprintf("RTK: WSEND, KICKING MINOR #%d\n",minor);
-#endif
 	    xnpipe_schedule_request();
 	    }
-#ifdef XNPIPE_DEBUG
-	else
-	    xnprintf("RTK: NO WSEND FOR MINOR #%d\n",minor);
-#endif
 
 	if (state->asyncq) /* Schedule asynch sig. */
 	    {
@@ -363,10 +330,6 @@ ssize_t xnpipe_send (int minor,
 	    xnpipe_schedule_request();
 	    }
 	}
-#ifdef XNPIPE_DEBUG
-    else
-	xnprintf("RTK: USR NOT CONNECTED ON MINOR #%d\n",minor);
-#endif
 
     xnlock_put_irqrestore(&nklock,s);
 
@@ -477,10 +440,6 @@ static int xnpipe_open (struct inode *inode,
     int minor, err = 0;
     spl_t s;
 
-#ifdef XNPIPE_DEBUG
-    xnprintf("USR: OPENING MINOR #%d\n",MINOR(inode->i_rdev));
-#endif
-
     minor = MINOR(inode->i_rdev);
 
     if (minor >= XNPIPE_NDEVS)
@@ -534,19 +493,11 @@ static int xnpipe_open (struct inode *inode,
 
 	xnlock_put_irqrestore(&nklock,s);
 
-#ifdef XNPIPE_DEBUG
-	xnprintf("USR: WAITING FOR RT OPEN ON MINOR #%d\n",MINOR(inode->i_rdev));
-#endif
-
 	if (down_interruptible(&state->open_sem))
 	    {
 	    xnpipe_dequeue_wait(state,XNPIPE_USER_WOPEN|XNPIPE_USER_CONN);
 	    return -ERESTARTSYS;
 	    }
-
-#ifdef XNPIPE_DEBUG
-	xnprintf("USR: GOT OPEN ON MINOR #%d\n",MINOR(inode->i_rdev));
-#endif
 	}
     else
 	{
@@ -570,10 +521,6 @@ static int xnpipe_release (struct inode *inode,
     xnholder_t *holder;
     int err = 0;
     spl_t s;
-
-#ifdef XNPIPE_DEBUG
-    xnprintf("USR: CLOSING MINOR #%d\n",MINOR(inode->i_rdev));
-#endif
 
     state = (xnpipe_state_t *)file->private_data;
 
@@ -655,10 +602,6 @@ static ssize_t xnpipe_read (struct file *file,
 
 	xnlock_put_irqrestore(&nklock,s);
 
-#ifdef XNPIPE_DEBUG
-	xnprintf("USR: WAITING FOR RT SEND ON MINOR #%d\n",xnminor_from_state(state));
-#endif
-
 	if (down_interruptible(&state->send_sem))
 	    {
 	    xnpipe_dequeue_wait(state,XNPIPE_USER_WSEND);
@@ -666,22 +609,11 @@ static ssize_t xnpipe_read (struct file *file,
 	    }
 
 	xnlock_get_irqsave(&nklock,s);
-
-#ifdef XNPIPE_DEBUG
-	xnprintf("USR: GOT INPUT DATA ON MINOR #%d\n",xnminor_from_state(state));
-#endif
-
 	holder = getq(&state->outq);
 	mh = link2mh(holder);
 	}
 
     xnlock_put_irqrestore(&nklock,s);
-
-#ifdef XNPIPE_DEBUG
-    xnprintf("USR: RT-INPUT #%d QUEUE HAS %d ELEMENTS, MH %p\n",
-	     xnminor_from_state(state),
-	     countq(&state->outq),mh);
-#endif
 
     if (mh)
 	{
@@ -756,11 +688,6 @@ static ssize_t xnpipe_write (struct file *file,
 	if (xnsynch_nsleepers(&state->synchbase) > 0)
 	    {
 	    sleeper = xnsynch_wakeup_one_sleeper(&state->synchbase);
-#ifdef XNPIPE_DEBUG
-	    xnprintf("USR: WAKING UP RT ON MINOR #%d (thread %s)\n",
-		     xnminor_from_state(state),
-		     xnthread_name(sleeper));
-#endif
 	    xnpod_schedule();
 	    }
 

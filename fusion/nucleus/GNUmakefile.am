@@ -50,7 +50,7 @@ install-exec-local: rtai_nucleus$(modext)
 uninstall-local: 
 	$(RM) $(moduledir)/rtai_nucleus$(modext)
 
-if CONFIG_RTAI_OPT_VM
+if CONFIG_RTAI_OPT_UVM
 
 lib_LIBRARIES = libnucleus.a
 

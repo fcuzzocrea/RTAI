@@ -109,7 +109,7 @@
 #define XENOMAI_SKINCALL4(id,op,a1,a2,a3,a4)    XENOMAI_DO_SYSCALL(4,id,op,a1,a2,a3,a4)
 #define XENOMAI_SKINCALL5(id,op,a1,a2,a3,a4,a5) XENOMAI_DO_SYSCALL(5,id,op,a1,a2,a3,a4,a5)
 
-#ifdef __KERNEL__
+#if __KERNEL__
 
 #include <linux/errno.h>
 #include <asm/uaccess.h>

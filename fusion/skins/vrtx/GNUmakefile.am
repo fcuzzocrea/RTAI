@@ -56,7 +56,7 @@ install-exec-local: rtai_vrtx$(modext)
 uninstall-local:
 	$(RM) $(moduledir)/rtai_vrtx$(modext)
 
-if CONFIG_RTAI_OPT_VM
+if CONFIG_RTAI_OPT_UVM
 
 lib_LIBRARIES = libvrtx.a
 

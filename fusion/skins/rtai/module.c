@@ -28,7 +28,7 @@
  */
 
 #include <nucleus/pod.h>
-#ifdef __KERNEL__
+#if __KERNEL__
 #include <rtai/syscall.h>
 #endif /* __KERNEL__ */
 #include <rtai/task.h>
@@ -48,14 +48,14 @@ MODULE_DESCRIPTION("Native RTAI skin");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
-#if !defined(__KERNEL__) || !defined(CONFIG_RTAI_OPT_FUSION)
+#if !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION)
 static xnpod_t __rtai_pod;
-#endif /* !defined(__KERNEL__) || !defined(CONFIG_RTAI_OPT_FUSION) */
+#endif /* !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
 
 static void rtai_shutdown (int xtype)
 
 {
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     __rtai_syscall_cleanup();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
@@ -109,7 +109,7 @@ int __fusion_skin_init (void)
 {
     int err;
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     /* The RTAI skin is stacked over the fusion framework. */
     err = xnfusion_attach();
 #else /* !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
@@ -199,7 +199,7 @@ int __fusion_skin_init (void)
 	goto cleanup_alarm;
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     err = __rtai_syscall_init();
 
     if (err)
@@ -208,7 +208,7 @@ int __fusion_skin_init (void)
     
     return 0;	/* SUCCESS. */
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
  cleanup_intr:
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
@@ -218,19 +218,19 @@ int __fusion_skin_init (void)
  cleanup_alarm:
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
 
-#ifdef CONFIG_RTAI_OPT_NATIVE_ALARM
+#if CONFIG_RTAI_OPT_NATIVE_ALARM
     __alarm_pkg_cleanup();
 
  cleanup_heap:
 #endif /* CONFIG_RTAI_OPT_NATIVE_ALARM */
 
-#ifdef CONFIG_RTAI_OPT_NATIVE_HEAP
+#if CONFIG_RTAI_OPT_NATIVE_HEAP
     __heap_pkg_cleanup();
 
  cleanup_queue:
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
-#ifdef CONFIG_RTAI_OPT_NATIVE_QUEUE
+#if CONFIG_RTAI_OPT_NATIVE_QUEUE
     __queue_pkg_cleanup();
 
  cleanup_pipe:

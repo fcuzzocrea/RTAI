@@ -29,7 +29,7 @@ include_HEADERS = \
 
 SUBDIRS = $(ARCHDIR)
 
-if CONFIG_RTAI_OPT_VM
+if CONFIG_RTAI_OPT_UVM
 SUBDIRS += asm-uvm
 endif
 

@@ -30,7 +30,7 @@
  *
  *@{*/
 
-#define XENO_INTR_MODULE
+#define XENO_INTR_MODULE 1
 
 #include <nucleus/pod.h>
 #include <nucleus/intr.h>

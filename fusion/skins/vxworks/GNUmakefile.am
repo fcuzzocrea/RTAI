@@ -50,7 +50,7 @@ install-exec-local: rtai_vxworks$(modext)
 uninstall-local:
 	$(RM) $(moduledir)/rtai_vxworks$(modext)
 
-if CONFIG_RTAI_OPT_VM
+if CONFIG_RTAI_OPT_UVM
 
 lib_LIBRARIES = libvxworks.a
 

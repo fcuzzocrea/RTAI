@@ -20,7 +20,7 @@
 #ifndef _RTAI_ASM_PPC_SYSTEM_H
 #define _RTAI_ASM_PPC_SYSTEM_H
 
-#ifdef __KERNEL__
+#if __KERNEL__
 
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -47,7 +47,7 @@
 typedef unsigned long spl_t;
 
 #define splhigh(x)  rthal_local_irq_save(x)
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 #define splexit(x)  rthal_local_irq_restore((x) & 1)
 #else /* !CONFIG_SMP */
 #define splexit(x)  rthal_local_irq_restore(x)
@@ -61,7 +61,7 @@ typedef unsigned long xnlock_t;
 
 #define XNARCH_LOCK_UNLOCKED 0
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 
 #define xnlock_get_irqsave(lock,x)  ((x) = __xnlock_get_irqsave(lock))
 #define xnlock_clear_irqoff(lock)   xnlock_put_irqrestore(lock,1)
@@ -156,7 +156,7 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define xnarch_get_cpu_tsc           rthal_rdtsc
 
 typedef cpumask_t xnarch_cpumask_t;
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 #define xnarch_cpu_online_map            cpu_online_map
 #else
 #define xnarch_cpu_online_map            cpumask_of_cpu(0)
@@ -184,7 +184,7 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
 
     /* Kernel mode side */
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     /* We only care for basic FPU handling in kernel-space; Altivec
        and SPE are not available to kernel-based nucleus threads. */
     rthal_fpenv_t fpuenv  __attribute__ ((aligned (16)));
@@ -308,7 +308,7 @@ static inline int xnarch_setimask (int imask)
     return !!s;
 }
 
-#ifdef XENO_INTR_MODULE
+#if XENO_INTR_MODULE
 
 static inline int xnarch_hook_irq (unsigned irq,
 				   void (*handler)(unsigned irq,
@@ -355,7 +355,7 @@ static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
 
 #endif /* XENO_INTR_MODULE */
 
-#ifdef XENO_POD_MODULE
+#if XENO_POD_MODULE
 
 void xnpod_welcome_thread(struct xnthread *);
 
@@ -379,7 +379,7 @@ static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
     __set_bit(cpuid,&rthal_cpu_realtime);
     /* Remember the preempted Linux task pointer. */
     rootcb->user_task = rootcb->active_task = rthal_get_current(cpuid);
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     rootcb->user_fpu_owner = rthal_get_fpu_owner(rootcb->user_task);
     /* So that xnarch_save_fpu() will operate on the right FPU area. */
     rootcb->fpup = (rootcb->user_fpu_owner
@@ -406,13 +406,13 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 
 	/* Switch the mm context.*/
 
-#ifdef CONFIG_ALTIVEC
+#if CONFIG_ALTIVEC
 	/* Don't rely on FTR fixups --
 	   they don't work properly in our context. */
 	if (cur_cpu_spec[0]->cpu_features & CPU_FTR_ALTIVEC) {
 	    asm volatile (
 		"dssall;\n"
-#ifndef CONFIG_POWER4
+#if !CONFIG_POWER4
 		"sync;\n"
 #endif
 		: : );
@@ -423,12 +423,12 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	get_mmu_context(mm);
 	set_context(mm->context,mm->pgd);
 
-#ifdef CONFIG_ALTIVEC
+#if CONFIG_ALTIVEC
 	if (next->thread.regs && last_task_used_altivec == next)
 	    next->thread.regs->msr |= MSR_VEC;
 #endif /* CONFIG_ALTIVEC */
 
-#ifdef CONFIG_SPE
+#if CONFIG_SPE
 	if (next->thread.regs && last_task_used_spe == next)
 	    next->thread.regs->msr |= MSR_SPE;
 #endif /* CONFIG_SPE */
@@ -460,7 +460,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
     tcb->active_task = NULL;
     tcb->ksp = 0;
     tcb->kspp = &tcb->ksp;
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     tcb->user_fpu_owner = NULL;
     tcb->fpup = NULL;
 #endif /* CONFIG_RTAI_HW_FPU */
@@ -508,7 +508,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 
 {
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     /* Initialize the FPU for an emerging kernel-based RT thread. This
        must be run on behalf of the emerging thread. */
     memset(&tcb->fpuenv,0,sizeof(tcb->fpuenv));
@@ -519,7 +519,7 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
 
 {
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
 
     if(tcb->fpup)
         {
@@ -535,7 +535,7 @@ static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
 static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
 {
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
 
     if(tcb->fpup)
         {
@@ -553,7 +553,7 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 #endif /* CONFIG_RTAI_HW_FPU */
 }
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 
 static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
 
@@ -614,12 +614,12 @@ static inline int xnarch_release_ipi (void)
 static inline void xnarch_notify_shutdown(void)
 
 {
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
     /* The HAL layer also sets the same CPU affinity so that both
        modules keep their execution sequence on SMP boxen. */
     set_cpus_allowed(current,cpumask_of_cpu(0));
 #endif /* CONFIG_SMP */
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
     xnshadow_release_events();
 #endif /* CONFIG_RTAI_OPT_FUSION */
     /* Wait for the currently processed events to drain. */
@@ -648,21 +648,21 @@ static inline int xnarch_escalate (void)
 static void xnarch_notify_ready (void)
 
 {
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
     xnshadow_grab_events();
 #endif /* CONFIG_RTAI_OPT_FUSION */
 }
 
 #endif /* XENO_POD_MODULE */
 
-#ifdef XENO_THREAD_MODULE
+#if XENO_THREAD_MODULE
 
 static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
 
     tcb->user_task = NULL;
     tcb->active_task = NULL;
     tcb->kspp = &tcb->ksp;
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     tcb->user_fpu_owner = NULL;
     tcb->fpup = &tcb->fpuenv;
 #endif /* CONFIG_RTAI_HW_FPU */
@@ -671,7 +671,7 @@ static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
 
 #endif /* XENO_THREAD_MODULE */
 
-#ifdef XENO_SHADOW_MODULE
+#if XENO_SHADOW_MODULE
 
 static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 					   struct xnthread *thread,
@@ -683,7 +683,7 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
     tcb->active_task = NULL;
     tcb->ksp = 0;
     tcb->kspp = &task->thread.ksp;
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     tcb->user_fpu_owner = task;
     tcb->fpup = (rthal_fpenv_t *)&task->thread.fpr[0];
 #endif /* CONFIG_RTAI_HW_FPU */
@@ -724,7 +724,7 @@ static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
 	{
 	switch (irq)
 	    {
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 	    case ADEOS_CRITICAL_IPI:
 
 		/* Never lock out this one. */
@@ -749,7 +749,7 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 	{
 	switch (irq)
 	    {
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 	    case ADEOS_CRITICAL_IPI:
 
 		continue;
@@ -766,7 +766,7 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 
 #endif /* XENO_SHADOW_MODULE */
 
-#ifdef XENO_TIMER_MODULE
+#if XENO_TIMER_MODULE
 
 static inline void xnarch_program_timer_shot (unsigned long delay) {
     /* Even though some architectures may use a 64 bits delay here, we
@@ -796,7 +796,7 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 					unsigned long long *delivery,
 					unsigned long long defval)
 {
-#ifdef CONFIG_ADEOS_PROFILING
+#if CONFIG_ADEOS_PROFILING
     int cpuid = adeos_processor_id();
     *shot = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_handled;
     *delivery = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_synced;
@@ -808,7 +808,7 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 
 #endif /* XENO_TIMER_MODULE */
 
-#ifdef XENO_HEAP_MODULE
+#if XENO_HEAP_MODULE
 
 #include <linux/mm.h>
 
@@ -831,7 +831,7 @@ static inline int xnarch_remap_page_range(struct vm_area_struct *vma,
 
 #endif /* XENO_HEAP_MODULE */
 
-#ifdef XENO_MAIN_MODULE
+#if XENO_MAIN_MODULE
 
 #include <linux/init.h>
 #include <nucleus/asm/calibration.h>
@@ -886,7 +886,7 @@ static inline int xnarch_init (void)
 {
     int err;
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
     /* The HAL layer also sets the same CPU affinity so that both
        modules keep their execution sequence on SMP boxen. */
     set_cpus_allowed(current,cpumask_of_cpu(0));
@@ -910,7 +910,7 @@ static inline int xnarch_init (void)
 
     xnarch_old_trap_handler = rthal_set_trap_handler(&xnarch_trap_fault);
 
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
     err = xnshadow_mount();
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
@@ -926,7 +926,7 @@ static inline int xnarch_init (void)
 static inline void xnarch_exit (void)
 
 {
-#ifdef CONFIG_RTAI_OPT_FUSION
+#if CONFIG_RTAI_OPT_FUSION
     xnshadow_cleanup();
 #endif /* CONFIG_RTAI_OPT_FUSION */
     rthal_set_trap_handler(xnarch_old_trap_handler);

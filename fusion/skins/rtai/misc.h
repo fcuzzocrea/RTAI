@@ -24,7 +24,7 @@
 
 #include <rtai/types.h>
 
-#if !defined(__KERNEL__)  && !defined(__RTAI_SIM__)
+#if !(__KERNEL__ || __RTAI_SIM__)
 
 #ifdef __cplusplus
 extern "C" {

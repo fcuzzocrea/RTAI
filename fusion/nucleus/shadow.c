@@ -32,7 +32,8 @@
  *
  *@{*/
 
-#define XENO_SHADOW_MODULE
+#define XENO_SHADOW_MODULE 1
+
 #include <stdarg.h>
 #include <asm/signal.h>
 #include <linux/unistd.h>
@@ -178,7 +179,7 @@ static void disengage_irq_shield (void)
 
     xnarch_unlock_xirqs(&irq_shield,cpuid);
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
     {
     cpumask_t other_cpus = xnarch_cpu_online_map;
     cpu_clear(cpuid,other_cpus);
@@ -198,7 +199,7 @@ static void disengage_irq_shield (void)
 static void shield_handler (unsigned irq)
 
 {
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
     if (irq != ADEOS_SERVICE_IPI1)
 #endif /* CONFIG_SMP */
     adeos_propagate_irq(irq);
@@ -210,7 +211,7 @@ static void shield_entry (int iflag)
     if (iflag)
 	xnarch_grab_xirqs(&shield_handler);
 
-#if !defined(CONFIG_ADEOS_NOTHREADS)
+#if !CONFIG_ADEOS_NOTHREADS
     for (;;)
 	adeos_suspend_domain();
 #endif /* !CONFIG_ADEOS_NOTHREADS */
@@ -237,7 +238,7 @@ static void schedback_handler (unsigned virq)
 		    testbits(xnshadow_thread(task)->status,XNSHIELD))
 		    engage_irq_shield();
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 		/* If the shadow thread changed its CPU while in primary mode,
                    change the CPU of its Linux counter-part (this is a cheap
                    operation, since the said Linux counter-part is suspended
@@ -305,7 +306,7 @@ static void gatekeeper_thread (void *data)
     init_waitqueue_head(&gk->waitq);
     add_wait_queue_exclusive(&gk->waitq,&wait);
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
     sprintf(name,"gatekeeper/%u",cpu);
 #endif /* CONFIG_SMP */
     daemonize(name);
@@ -322,7 +323,7 @@ static void gatekeeper_thread (void *data)
 	if (gkstop)
 	    break;
 
-#ifdef CONFIG_SMP
+#if CONFIG_SMP
 	{
 	spl_t s;
 	/* If the fusion task changed its CPU while in secondary mode,
@@ -458,12 +459,12 @@ static int xnshadow_harden (void)
     set_current_state(TASK_INTERRUPTIBLE);
     schedule();
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
     if (adp_current == adp_root)
 	xnpod_fatal("wake_up_interruptible_sync() not so synchronous?!");
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
-#ifdef CONFIG_RTAI_HW_FPU
+#if CONFIG_RTAI_HW_FPU
     xnpod_switch_fpu(xnpod_current_sched());
 #endif /* CONFIG_RTAI_HW_FPU */
 
@@ -504,7 +505,7 @@ void xnshadow_relax (void)
 {
     xnthread_t *thread = xnpod_current_thread();
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
     if (testbits(thread->status,XNROOT))
 	xnpod_fatal("xnshadow_relax() called from Linux domain");
 #endif /* CONFIG_RTAI_OPT_DEBUG */
@@ -689,7 +690,7 @@ void xnshadow_unmap (xnthread_t *thread)
     struct task_struct *task;
     unsigned muxid, magic;
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
     if (!testbits(xnpod_current_sched()->status,XNKCOUT))
 	xnpod_fatal("xnshadow_unmap() called from invalid context");
 #endif /* CONFIG_RTAI_OPT_DEBUG */
@@ -1527,7 +1528,7 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 	{
 	newrprio = thread->cprio;
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
         if (testbits(thread->status,XNTHREAD_BLOCK_BITS & ~XNRELAX))
             xnpod_fatal("blocked thread %s rescheduled?!",thread->name);
 #endif /* CONFIG_RTAI_OPT_DEBUG */
@@ -1688,7 +1689,7 @@ int xnshadow_register_interface (const char *name,
 
 	    xnlock_put_irqrestore(&nklock,s);
 
-#ifdef CONFIG_PROC_FS
+#if CONFIG_PROC_FS
 	    xnpod_declare_iface_proc(muxtable + muxid);
 #endif /* CONFIG_PROC_FS */
 
@@ -1724,7 +1725,7 @@ int xnshadow_unregister_interface (int muxid)
 	muxtable[muxid].nrcalls = 0;
 	muxtable[muxid].magic = 0;
 	xnarch_atomic_set(&muxtable[muxid].refcnt,-1);
-#ifdef CONFIG_PROC_FS
+#if CONFIG_PROC_FS
 	xnpod_discard_iface_proc(muxtable + muxid);
 #endif /* CONFIG_PROC_FS */
 	}

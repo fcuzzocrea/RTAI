@@ -28,7 +28,7 @@
 #define XNSYNCH_NOPIP   0x0
 #define XNSYNCH_PIP     0x2
 
-#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
+#if __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__
 
 #define XNSYNCH_CLAIMED 0x4	/* Claimed by other thread(s) w/ PIP */
 

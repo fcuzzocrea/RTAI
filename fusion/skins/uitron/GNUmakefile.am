@@ -47,7 +47,7 @@ install-exec-local: rtai_uitron$(modext)
 uninstall-local:
 	$(RM) $(moduledir)/rtai_uitron$(modext)
 
-if CONFIG_RTAI_OPT_VM
+if CONFIG_RTAI_OPT_UVM
 
 lib_LIBRARIES = libuitron.a
 

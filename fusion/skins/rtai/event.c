@@ -180,7 +180,7 @@ int rt_event_create (RT_EVENT *event,
     event->magic = RTAI_EVENT_MAGIC;
     xnobject_copy_name(event->name,name);
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     event->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

@@ -51,7 +51,7 @@
  *
  *@{*/
 
-#define XENO_TIMER_MODULE
+#define XENO_TIMER_MODULE 1
 
 #include <nucleus/pod.h>
 #include <nucleus/thread.h>

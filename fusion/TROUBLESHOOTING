@@ -50,6 +50,20 @@ masking, since it will remain in the RTAI domain, and activities from
 such domain can preempt any activity from the Linux domain, including
 disk drivers.
 
+______________________________________________________________________
+
+Q: Any RTAI syscall invoked by my user-space application fails with
+error code -38 (-ENOSYS).
+
+A1: Did you load the required modules?
+i.e. rtai_hal.ko + rtai_nucleus.ko + rtai_native.ko? Normally, you
+should be using a run script (see rtai-load) that does this for you;
+but if you don't, make sure to load this modules by hand before
+launching your application.
+A2: If those modules are loaded but the error persists, check that
+your RTAI configuration enables the real-time support in user-space,
+in the top-level "Nucleus" menu.
+
 ======================================================================
 
                              x86

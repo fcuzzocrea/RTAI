@@ -57,13 +57,13 @@ typedef struct xnqueue {
 
     xnholder_t head;
     int elems;
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_DEBUG) && defined(CONFIG_SMP)
+#if __KERNEL__ && CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP
     xnlock_t lock;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP */
 
 } xnqueue_t;
 
-#if defined(CONFIG_RTAI_OPT_DEBUG) && defined(CONFIG_SMP)
+#if CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP
 #define DECLARE_XNQUEUE(q) xnqueue_t q = { { &(q).head, &(q).head }, 0, XNARCH_LOCK_UNLOCKED }
 #else /* !(CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP) */
 #define DECLARE_XNQUEUE(q) xnqueue_t q = { { &(q).head, &(q).head }, 0 }
@@ -72,14 +72,14 @@ typedef struct xnqueue {
 static inline void initq (xnqueue_t *qslot) {
     inith(&qslot->head);
     qslot->elems = 0;
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_DEBUG) && defined(CONFIG_SMP)
+#if __KERNEL__ && CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP
     xnlock_init(&qslot->lock);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP */
 }
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
 
-#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
+#if __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__
 
 #define XENO_DEBUG_CHECK_QUEUE() \
 do { \
@@ -148,7 +148,7 @@ static inline int insertq (xnqueue_t *qslot,
 			   xnholder_t *head,
 			   xnholder_t *holder) {
     /* Insert the <holder> element before <head> */
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
     XENO_DEBUG_CHECK_QUEUE();
     XENO_DEBUG_INSERT_QUEUE();
 #endif /*CONFIG_RTAI_OPT_DEBUG */
@@ -159,7 +159,7 @@ static inline int insertq (xnqueue_t *qslot,
 static inline int prependq (xnqueue_t *qslot,
 			    xnholder_t *holder) {
     /* Prepend the element to the queue */
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
     XENO_DEBUG_CHECK_QUEUE();
     XENO_DEBUG_INSERT_QUEUE();
 #endif /* CONFIG_RTAI_OPT_DEBUG */
@@ -170,7 +170,7 @@ static inline int prependq (xnqueue_t *qslot,
 static inline int appendq (xnqueue_t *qslot,
 			   xnholder_t *holder) {
     /* Append the element to the queue */
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
     XENO_DEBUG_CHECK_QUEUE();
     XENO_DEBUG_INSERT_QUEUE();
 #endif /* CONFIG_RTAI_OPT_DEBUG */
@@ -180,7 +180,7 @@ static inline int appendq (xnqueue_t *qslot,
 
 static inline int removeq (xnqueue_t *qslot,
 			   xnholder_t *holder) {
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if CONFIG_RTAI_OPT_DEBUG
     XENO_DEBUG_CHECK_QUEUE();
     XENO_DEBUG_REMOVE_QUEUE();
 #endif /* CONFIG_RTAI_OPT_DEBUG */

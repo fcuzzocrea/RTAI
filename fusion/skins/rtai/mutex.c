@@ -162,7 +162,7 @@ int rt_mutex_create (RT_MUTEX *mutex,
     mutex->lockcnt = 0;
     xnobject_copy_name(mutex->name,name);
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     mutex->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

@@ -123,7 +123,7 @@ int rt_alarm_create (RT_ALARM *alarm,
     alarm->cookie = cookie;
     xnobject_copy_name(alarm->name,name);
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     xnsynch_init(&alarm->synch_base,XNSYNCH_PRIO);
     alarm->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */

@@ -67,7 +67,7 @@ typedef struct rt_queue_placeholder {
 
 } RT_QUEUE_PLACEHOLDER;
 
-#if defined(__KERNEL__) || defined(__RTAI_SIM__)
+#if __KERNEL__ || __RTAI_SIM__
 
 #define RTAI_QUEUE_MAGIC 0x55550707
 
@@ -89,7 +89,7 @@ typedef struct rt_queue {
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     pid_t cpid;			/* !< Creator's pid. */
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

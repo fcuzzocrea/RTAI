@@ -156,7 +156,7 @@ int rt_cond_create (RT_COND *cond,
     cond->magic = RTAI_COND_MAGIC;
     xnobject_copy_name(cond->name,name);
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     cond->cpid = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

@@ -41,7 +41,7 @@ typedef struct rt_mutex_placeholder {
     rt_handle_t opaque;
 } RT_MUTEX_PLACEHOLDER;
 
-#if defined(__KERNEL__) || defined(__RTAI_SIM__)
+#if __KERNEL__ || __RTAI_SIM__
 
 #define RTAI_MUTEX_MAGIC 0x55550505
 
@@ -59,7 +59,7 @@ typedef struct rt_mutex {
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if __KERNEL__ && CONFIG_RTAI_OPT_FUSION
     pid_t cpid;			/* !< Creator's pid. */
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 

@@ -1,3 +1,12 @@
+2004-08-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus: Add support for execution timestamps aimed at chasing
+	excessive jitter.
+
+	* skins/rtai/pipe.c (__pipe_close_handler): Leave the pipe struct
+	alive and wait for a subsequent call to rt_pipe_close() from the
+	application.
+
 2004-08-26  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/patches: Add 2.6.8rc1-r6c4.

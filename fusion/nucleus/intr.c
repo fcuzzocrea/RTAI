@@ -362,6 +362,10 @@ static void xnintr_irq_handler (unsigned irq, void *cookie)
     if (s & XN_ISR_CHAINED)
 	xnarch_isr_chain_irq(irq);
 
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+    nkpod->timestamps.intr_resched = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+
     if (sched->inesting == 0 && xnsched_resched_p())
 	xnpod_schedule();
 

@@ -209,6 +209,20 @@ typedef struct xnpod {
     void (*schedhook)(xnthread_t *thread,
 		      xnflags_t mask); /*!< Internal scheduling hook. */
 
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+    struct xntimes {
+	xnticks_t timer_entry;
+	xnticks_t timer_handler;
+	xnticks_t timer_exit;
+	xnticks_t intr_resched;
+	xnticks_t resume_entry;
+	xnticks_t resume_exit;
+	xnticks_t switch_in;
+	xnticks_t switch_out;
+	xnticks_t periodic_wakeup;
+    } timestamps;
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+
 } xnpod_t;
 
 extern xnpod_t *nkpod;
@@ -471,6 +485,14 @@ static inline void xnpod_suspend_self (void) {
 static inline void xnpod_delete_self (void) {
     xnpod_delete_thread(xnpod_current_thread());
 }
+
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+
+static inline void xnpod_get_timestamps (struct xntimes *ts) {
+    *ts = nkpod->timestamps;
+}
+
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
 #ifdef __cplusplus
 }

@@ -120,6 +120,16 @@ config RTAI_OPT_DEBUG
 	This option activates runtime checking of the Xenomai
 	nucleus state.
 
+config RTAI_OPT_TIMESTAMPS
+	bool "Enable execution timestamps in nucleus"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+	
+	This option causes various timestamps to be taken during
+	the in-kernel execution. Those are likely to be used by
+	profiling code in order to chase excessive jitter.
+
 config RTAI_MAINT
 	bool "Enable maintainer mode"
 	depends on RTAI_OPT_EXPERT

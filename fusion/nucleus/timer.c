@@ -324,6 +324,10 @@ void xntimer_do_timers (void)
     xntimer_t *timer;
     xnticks_t now;
 
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+    nkpod->timestamps.timer_entry = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+
     initq(&reschedq);
 
     if (testbits(nkpod->status,XNTMPER))
@@ -361,6 +365,10 @@ void xntimer_do_timers (void)
 
 	    continue;
 	    }
+
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+	nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
 	if (timer == &nkpod->htimer)
 	    /* By postponing the propagation of the low-priority host
@@ -416,6 +424,10 @@ void xntimer_do_timers (void)
 	}
 
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
+
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+    nkpod->timestamps.timer_exit = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 }
 
 void xntimer_freeze (void)

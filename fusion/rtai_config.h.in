@@ -49,6 +49,9 @@
 #undef CONFIG_RTAI_OPT_NATIVE_SEM
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_TIMESTAMPS
+
+/* Kconfig */
 #undef CONFIG_RTAI_REVISION_LEVEL
 
 /* Kconfig */

@@ -1320,19 +1320,26 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	    adeos_propagate_event(evinfo);
 	    return;
 
-#if CONFIG_TRACE
-	case 20:
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+	case __xn_sys_timestamps:
 
-	    TRACE_PROCESS(TRACE_EV_PROCESS_SIGNAL, -888, adp_root->cpudata[0].irq_pending_lo[0]);
-	    __xn_reg_rval(regs) = 0;
+	    /* Send back the execution timestamps. */
+
+	    if (__xn_access_ok(task,
+			       VERIFY_WRITE,
+			       (void *)__xn_reg_arg1(regs),
+			       sizeof(struct xntimes)))
+		{
+		struct xntimes ts;
+		xnpod_get_timestamps(&ts);
+		__xn_copy_to_user(task,(void *)__xn_reg_arg1(regs),&ts,sizeof(ts));
+		__xn_reg_rval(regs) = sizeof(ts);
+		}
+	    else
+		__xn_reg_rval(regs) = -EFAULT;
+
 	    return;
-
-	case 21:
-
-	    TRACE_PROCESS(TRACE_EV_PROCESS_SIGNAL, -999, 0);
-	    __xn_reg_rval(regs) = 0;
-	    return;
-#endif
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
 	default:
 

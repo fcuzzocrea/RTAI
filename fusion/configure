@@ -1036,7 +1036,8 @@ Optional Features:
  --enable-vrtx-skin	Build VRTX emulator
  --enable-uitron-skin	Build uITRON API skin
  --enable-user-vm	Build user-space VMs
- --enable-nucleus-debug	Enable RTAI nucleus debug
+ --enable-nucleus-debug	Enable debug support in nucleus
+ --enable-nucleus-timestamps	Enable execution timestamps in nucleus
  --enable-cpus		Enable CPUs
  --enable-fpu		Enable FPU support
  --enable-module-debug	Enable debug information in kernel modules
@@ -4700,7 +4701,7 @@ test "x$enable_libtool_lock" != xno && enable_libtool_lock=yes
 case $host in
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4703 "configure"' > conftest.$ac_ext
+  echo '#line 4704 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5229,7 +5230,7 @@ chmod -w .
 save_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS -o out/conftest2.$ac_objext"
 compiler_c_o=no
-if { (eval echo configure:5232: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
+if { (eval echo configure:5233: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>out/conftest.err; } && test -s out/conftest2.$ac_objext; then
   # The compiler can only warn and ignore the option if not recognized
   # So say no if there are warnings
   if test -s out/conftest.err; then
@@ -7061,7 +7062,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7064 "configure"
+#line 7065 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -7159,7 +7160,7 @@ else
     lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 7162 "configure"
+#line 7163 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8559,8 +8560,8 @@ fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_OPT_VM:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_OPT_VM:-no}" >&6
 
-echo "$as_me:$LINENO: checking for RTAI nucleus debug support" >&5
-echo $ECHO_N "checking for RTAI nucleus debug support... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking for debug support in nucleus" >&5
+echo $ECHO_N "checking for debug support in nucleus... $ECHO_C" >&6
 # Check whether --enable-nucleus-debug or --disable-nucleus-debug was given.
 if test "${enable_nucleus_debug+set}" = set; then
   enableval="$enable_nucleus_debug"
@@ -8571,6 +8572,19 @@ if test "${enable_nucleus_debug+set}" = set; then
 fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_OPT_DEBUG:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_OPT_DEBUG:-no}" >&6
+
+echo "$as_me:$LINENO: checking for execution timestamps in nucleus" >&5
+echo $ECHO_N "checking for execution timestamps in nucleus... $ECHO_C" >&6
+# Check whether --enable-nucleus-timestamps or --disable-nucleus-timestamps was given.
+if test "${enable_nucleus_timestamps+set}" = set; then
+  enableval="$enable_nucleus_timestamps"
+  case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_TIMESTAMPS=y ;;
+	*) unset CONFIG_RTAI_OPT_TIMESTAMPS ;;
+	esac
+fi;
+echo "$as_me:$LINENO: result: ${CONFIG_RTAI_OPT_TIMESTAMPS:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_OPT_TIMESTAMPS:-no}" >&6
 
 echo "$as_me:$LINENO: checking for number of CPUs (SMP-only)" >&5
 echo $ECHO_N "checking for number of CPUs (SMP-only)... $ECHO_C" >&6
@@ -9237,6 +9251,11 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_OPT_DEBUG 1
 _ACEOF
 
+test x$CONFIG_RTAI_OPT_TIMESTAMPS = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_TIMESTAMPS 1
+_ACEOF
+
 
 test \! x$CONFIG_RTAI_OPT_NATIVE_REGISTRY = x &&
 cat >>confdefs.h <<\_ACEOF
@@ -9596,6 +9615,7 @@ fi
 
           ac_config_links="$ac_config_links skins/vxworks/Makefile:skins/vxworks/Makefile.kbuild"
 
+          ac_config_links="$ac_config_links testsuite/klatency/Makefile:testsuite/klatency/Makefile.kbuild"
 
 
 
@@ -9622,7 +9642,8 @@ fi
 
 
 
-                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile arch/ppc/GNUmakefile arch/ppc/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-ppc/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load testsuite/GNUmakefile testsuite/latency/GNUmakefile testsuite/cruncher/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile"
+
+                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile arch/ppc/GNUmakefile arch/ppc/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-ppc/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load testsuite/GNUmakefile testsuite/latency/GNUmakefile testsuite/klatency/GNUmakefile testsuite/cruncher/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile"
 
 
 if test \! x$RTAI_MAYBE_DOCDIR = x; then
@@ -10389,6 +10410,7 @@ do
   "scripts/rtai-load" ) CONFIG_FILES="$CONFIG_FILES scripts/rtai-load" ;;
   "testsuite/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/GNUmakefile" ;;
   "testsuite/latency/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/latency/GNUmakefile" ;;
+  "testsuite/klatency/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/klatency/GNUmakefile" ;;
   "testsuite/cruncher/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES testsuite/cruncher/GNUmakefile" ;;
   "skins/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/GNUmakefile" ;;
   "skins/posix/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/posix/GNUmakefile" ;;
@@ -10420,6 +10442,7 @@ do
   "skins/uitron/Makefile" ) CONFIG_LINKS="$CONFIG_LINKS skins/uitron/Makefile:skins/uitron/Makefile.kbuild" ;;
   "skins/vrtx/Makefile" ) CONFIG_LINKS="$CONFIG_LINKS skins/vrtx/Makefile:skins/vrtx/Makefile.kbuild" ;;
   "skins/vxworks/Makefile" ) CONFIG_LINKS="$CONFIG_LINKS skins/vxworks/Makefile:skins/vxworks/Makefile.kbuild" ;;
+  "testsuite/klatency/Makefile" ) CONFIG_LINKS="$CONFIG_LINKS testsuite/klatency/Makefile:testsuite/klatency/Makefile.kbuild" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "rtai_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS rtai_config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

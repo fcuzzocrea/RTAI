@@ -1819,7 +1819,9 @@ static void kthread_m(int cpuid)
 			hard = (unsigned long)(lnxtsk = klistp->task[klistp->out]);
 			if (hard > 1) {
 				lnxtsk->rtai_tskext[0] = NULL;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10)
 				lnxtsk->state = TASK_ZOMBIE;
+#endif
 				rt_global_sti();
 				force_sig(SIGKILL, lnxtsk);
 				rt_global_cli();

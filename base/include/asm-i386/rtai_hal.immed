@@ -384,14 +384,19 @@ static inline void rt_get_global_lock(void)
 	barrier();
 }
 
+#include <asm/atomic.h>
 static inline void rt_release_global_lock(void)
 {
 	barrier();
 	rtai_cli();
+#if 1
+	atomic_clear_mask((0xFFFF0001 << adeos_processor_id()), (atomic_t *)&rtai_cpu_lock);
+#else
 	if (test_and_clear_bit(adeos_processor_id(), &rtai_cpu_lock)) {
 		test_and_clear_bit(31, &rtai_cpu_lock);
 		cpu_relax();
 	}
+#endif
 	barrier();
 }
 

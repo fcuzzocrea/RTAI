@@ -245,6 +245,8 @@ if test x${CONFIG_ADEOS_CORE} = x; then
    AC_MSG_ERROR([Please activate the Adeos support in $RTAI_LINUX_DIR and rebuild your kernel])
 fi
 
+CONFIG_RTAI_LINUXDIR=$RTAI_LINUX_DIR
+
 dnl Some sanity checks again. We are only rearranging defaults and
 dnl discarding preposterous settings here, previous user selection
 dnl is kept as long as it is sane.

@@ -19772,6 +19772,8 @@ echo "$as_me: error: Please activate the Adeos support in $RTAI_LINUX_DIR and re
    { (exit 1); exit 1; }; }
 fi
 
+CONFIG_RTAI_LINUXDIR=$RTAI_LINUX_DIR
+
 
 if test "$CONFIG_X86" = y; then
    if test x$CONFIG_X86_EMU486 = x -a x$CONFIG_X86_CMPXCHG = x; then

@@ -2578,7 +2578,7 @@ int xnpod_trap_fault (void *fltinfo)
 int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 
 {
-    int err = 0;
+    int err = 0, delta;
     spl_t s;
 
     if (tickhandler == NULL)
@@ -2637,8 +2637,20 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 
     xnintr_init(&nkclock,0,nkpod->svctable.tickhandler,0);
 
-    if (xnarch_start_timer(nstick,&xnintr_clock_handler) < 0)
+    /* The following service should return the remaining time before
+       the next host clock tick, expressed in internal clock
+       ticks. Returning zero is always valid and means to use a full
+       tick duration; in such a case, the elapsed portion of the
+       current tick would be lost, but this is not that critical.
+       Negative values are for errors. */
+
+    delta = xnarch_start_timer(nstick,&xnintr_clock_handler);
+
+    if (delta < 0)
 	return -ENODEV;
+
+    if (delta == 0)
+	delta = XNARCH_HOST_TICK / nkpod->tickvalue;
 
     /* When no host ticking service is required for the underlying
        arch, the host timer exists but simply never ticks since
@@ -2648,7 +2660,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
        through xnarch_start_timer(). */
 
     xntimer_start(&nkpod->htimer,
-                  XNARCH_HOST_TICK / nkpod->tickvalue,
+                  delta,
                   XNARCH_HOST_TICK / nkpod->tickvalue);
 
     setbits(nkpod->status,XNTIMED);

@@ -1,7 +1,6 @@
 docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
 EXTRA_DIST = \
-	internals \
 	maintainers \
 	Doxyfile.in \
 	fifos_overview.dox \

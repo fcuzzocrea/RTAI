@@ -258,7 +258,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-EXTRA_DIST = rtai-info bootstrap
+EXTRA_DIST = rtai-info bootstrap postinstall.sh
 all: all-am
 
 .SUFFIXES:
@@ -428,6 +428,10 @@ install-exec-local:
 	$(INSTALL_SCRIPT) rtai-config $(DESTDIR)$(bindir)
 	$(INSTALL_SCRIPT) rtai-load $(DESTDIR)$(bindir)
 	$(INSTALL_SCRIPT) $(srcdir)/rtai-info $(DESTDIR)$(bindir)
+	@if test -r $(srcdir)/postinstall.sh; then \
+	   echo "Running post-install script..." ;\
+	   $(srcdir)/postinstall.sh ; \
+	fi
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(bindir)/rtai-info

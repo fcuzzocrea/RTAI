@@ -47,11 +47,11 @@
 #if CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
 static ssize_t __mutex_read_proc (char *page,
-				char **start,
-				off_t off,
-				int count,
-				int *eof,
-				void *data)
+				  char **start,
+				  off_t off,
+				  int count,
+				  int *eof,
+				  void *data)
 {
     RT_MUTEX *mutex = (RT_MUTEX *)data;
     char *p = page;
@@ -65,9 +65,15 @@ static ssize_t __mutex_read_proc (char *page,
 	p += sprintf(p,"=unlocked\n");
     else
 	{
+	xnthread_t *owner = &mutex->owner->thread_base;
 	xnpholder_t *holder;
 	
-	/* Pended mutex -- dump waiters. */
+	/* Pended mutex -- dump owner and waiters. */
+
+	if (*xnthread_name(owner))
+	    p += sprintf(p,"=locked by %s depth=%d\n",xnthread_name(owner),mutex->lockcnt);
+	else
+	    p += sprintf(p,"=locked by %p depth=%d\n",owner,mutex->lockcnt);
 
 	holder = getheadpq(xnsynch_wait_queue(&mutex->synch_base));
 

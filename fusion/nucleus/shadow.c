@@ -70,18 +70,6 @@
 #include <linux/trace.h>
 #endif
 
-#ifndef __adeos_unlock_local_irq /* TEMPORARY */
-#define __adeos_unlock_local_irq(adp,cpuid,irq) \
-do { \
-    if (test_and_clear_bit(IPIPE_LOCK_FLAG,&(adp)->irqs[irq].control)) \
-         if ((adp)->cpudata[cpuid].irq_hits[irq] > 0) { \
-           __set_bit(irq & IPIPE_IRQ_IMASK,&(adp)->cpudata[cpuid].irq_pending_lo[irq >> IPI\
-PE_IRQ_ISHIFT]); \
-           __set_bit(irq >> IPIPE_IRQ_ISHIFT,&(adp)->cpudata[cpuid].irq_pending_hi); \
-         } \
-} while(0)
-#endif
-
 int nkgkptd;
 
 struct xnskentry muxtable[XENOMAI_MUX_NR];
@@ -129,6 +117,9 @@ static struct {
 } gk_renice_wheel[XNARCH_NR_CPUS][XNSHADOW_MAXRQ];
 
 static adomain_t irq_shield;
+
+static cpumask_t shielded_cpus,
+                 unshielded_cpus;
 
 #define get_switch_lock_owner() \
 switch_lock_owner[task_cpu(current)]
@@ -190,15 +181,13 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static inline void engage_irq_shield (int this_cpu)
 
 {
-#ifdef CONFIG_SMP
-
     unsigned long flags;
     unsigned irq;
 
-    if (cpu_test_and_set(this_cpu,shielded_cpus))
-	return;
-
     rthal_hw_lock(flags);
+
+    if (cpu_test_and_set(this_cpu,shielded_cpus))
+	goto unlock_and_exit;
 
     cpu_clear(this_cpu,unshielded_cpus);
 
@@ -206,12 +195,13 @@ static inline void engage_irq_shield (int this_cpu)
 	{
 	switch (irq)
 	    {
+#ifdef CONFIG_SMP
 	    case ADEOS_CRITICAL_IPI:
-	    case ADEOS_SERVICE_IPI1:
 	    XNARCH_PASSTHROUGH_IRQS
 
 		/* Never lock out these ones. */
 		continue;
+#endif /* CONFIG_SMP */
 
 	    default:
 
@@ -219,103 +209,94 @@ static inline void engage_irq_shield (int this_cpu)
 	    }
 	}
 
+ unlock_and_exit:
+
     rthal_hw_unlock(flags);
-
-#else /* !CONFIG_SMP */
-
-    adeos_stall_pipeline_from(&irq_shield);
-
-#endif /* CONFIG_SMP */
 }
 
 static void disengage_irq_shield (int this_cpu)
      
 {
-#ifdef CONFIG_SMP
-
-    cpumask_t other_cpus;
     unsigned long flags;
     unsigned irq;
 
-    if (cpu_test_and_set(this_cpu,unshielded_cpus))
-	return;
-
     rthal_hw_lock(flags);
 
+    if (cpu_test_and_set(this_cpu,unshielded_cpus))
+	goto unlock_and_exit;
+
     cpu_clear(this_cpu,shielded_cpus);
+
+    /* We want the shield to be either engaged on all CPUs (i.e. if at
+       least one CPU asked for shielding), or disengaged on all
+       (i.e. if no CPU asked for shielding). */
+
+    if (!cpus_empty(shielded_cpus))
+	goto unlock_and_exit;
+
+    /* At this point we know that we are the last CPU to disengage the
+       shield, so we just unlock the external IRQs for all CPUs, and
+       trigger an IPI on everyone but self to make sure that the
+       remote interrupt logs will be played. We also forcibly unstall
+       the shield stage on the local CPU in order to flush it the same
+       way. */
 
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 	{
 	switch (irq)
 	    {
+#ifdef CONFIG_SMP
 	    case ADEOS_CRITICAL_IPI:
-	    case ADEOS_SERVICE_IPI1:
 	    XNARCH_PASSTHROUGH_IRQS
 
 		/* These ones are never locked out. */
 		continue;
+#endif /* CONFIG_SMP */
 
 	    default:
 
-		__adeos_unlock_local_irq(&irq_shield,this_cpu,irq);
+		__adeos_unlock_irq(&irq_shield,irq);
 	    }
 	}
 
-    other_cpus = shielded_cpus;
-
-    if (cpus_empty(other_cpus))
-        adeos_send_ipi(ADEOS_SERVICE_IPI1,other_cpus);
-
-    rthal_hw_unlock(flags);
-
-#else /* !CONFIG_SMP */
+#ifdef CONFIG_SMP
+    {
+    cpumask_t other_cpus = cpu_online_map;
+    cpu_clear(this_cpu,other_cpus);
+    adeos_send_ipi(ADEOS_SERVICE_IPI1,other_cpus);
+    }
+#endif /* CONFIG_SMP */
 
     adeos_unstall_pipeline_from(&irq_shield);
 
-#endif /* CONFIG_SMP */
+ unlock_and_exit:
+
+    rthal_hw_unlock(flags);
 }
 
-#ifdef CONFIG_SMP
-
-static cpumask_t shielded_cpus = CPU_MASK_NONE,
-                 unshielded_cpus = CPU_MASK_ALL;
-
-static void xnshadow_shield_disengage_handler (unsigned virq)
-
-{
-    disengage_irq_shield(adeos_processor_id());
-}
-
-#endif /* CONFIG_SMP */
-
-static void xnshadow_shield_trampoline (unsigned irq)
+static void xnshadow_shield_handler (unsigned irq)
 
 {
 #ifdef CONFIG_SMP
-    adeos_declare_cpuid;
-
-    adeos_load_cpuid();	/* hw IRQs are off here, so this is safe. */
-
-    if (!cpus_empty(shielded_cpus) && !cpu_isset(cpuid,shielded_cpus))
-	/* Lazy shield engagement on SMP. This saves us a costly IPI
-	   in engage_irq_shield() for the very same benefits. */
-	engage_irq_shield(cpuid);
+    if (irq != ADEOS_SERVICE_IPI1)
 #endif /* CONFIG_SMP */
-
     adeos_propagate_irq(irq);
 }
 
 static void xnshadow_shield (int iflag)
 
 {
-    unsigned irq;
-
     if (iflag)
+	{
+	unsigned irq;
+
 	for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
 	    adeos_virtualize_irq(irq,
-				 &xnshadow_shield_trampoline,
+				 &xnshadow_shield_handler,
 				 NULL,
 				 IPIPE_DYNAMIC_MASK);
+	}
+
     for (;;)
 	adeos_suspend_domain();
 }
@@ -1839,6 +1820,9 @@ int xnshadow_init (void)
     if (adeos_register_domain(&irq_shield,&attr))
 	return -EBUSY;
 
+    shielded_cpus = CPU_MASK_NONE;
+    unshielded_cpus = cpu_online_map;
+
     nkgkptd = adeos_alloc_ptdkey();
     gkvirq = adeos_alloc_irq();
     adeos_virtualize_irq(gkvirq,&xnshadow_wakeup_handler,NULL,IPIPE_HANDLE_MASK);
@@ -1862,13 +1846,6 @@ int xnshadow_init (void)
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&xnshadow_linux_sysentry);
     adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,&xnshadow_realtime_sysentry);
 
-#ifdef CONFIG_SMP
-    adeos_virtualize_irq(ADEOS_SERVICE_IPI1,
-			 (void (*)(unsigned))&xnshadow_shield_disengage_handler,
-			 NULL,
-			 IPIPE_HANDLE_MASK);
-#endif /* CONFIG_SMP */
-
     return 0;
 }
 
@@ -1878,13 +1855,6 @@ void xnshadow_cleanup (void)
     unsigned cpu;
 
     gkstop = 1;
-
-#ifdef CONFIG_SMP
-    adeos_virtualize_irq(ADEOS_SERVICE_IPI1,
-			 NULL,
-			 NULL,
-			 IPIPE_PASS_MASK);
-#endif /* CONFIG_SMP */
 
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
     adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,NULL);

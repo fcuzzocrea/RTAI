@@ -88,7 +88,7 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
             /* Use a non-locking test in the inner loop, as Linux'es
                bit_spin_lock. */
             while (test_bit(BITS_PER_LONG - 1, lock))
-                cpu_relax(cpuid);
+                cpu_relax();
 	}
     else
         flags |= 2;
@@ -111,7 +111,7 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
             {
             clear_bit(cpuid,lock);
             clear_bit(BITS_PER_LONG - 1,lock);
-            cpu_relax(cpuid); /* FIXME: is this really needed ? */
+            cpu_relax(); /* FIXME: is this really needed ? */
             }
         }
 

@@ -36,6 +36,8 @@ configuration switches can be listed by running ./configure
  --enable-native-pipe-bufsz	Set size of pipe fill space
  --enable-native-sem	Enable semaphore support for native skin
  --enable-native-event	Enable event flag support for native skin
+ --enable-native-mutex	Enable mutex support for native skin
+ --enable-native-cond	Enable condition variable support for native skin
  --enable-psos-skin	Build pSOS+ emulator
  --enable-vxworks-skin	Build VxWorks emulator
  --enable-vrtx-skin	Build VRTX emulator
@@ -233,4 +235,4 @@ space.  Hit ^C to stop it.
 
 --
 <rpm@xenomai.org>
-06/07/2004
+06/18/2004

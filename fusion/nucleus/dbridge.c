@@ -867,7 +867,7 @@ int xnbridge_init (void)
 
     if (register_chrdev(XNBRIDGE_MAJOR,"xnbridge",&xnbridge_fops))
 	{
-	printk(KERN_WARNING "RTAI: unable to get major %d for domain bridge\n",XNBRIDGE_MAJOR);
+	printk(KERN_WARNING "RTAI: Unable to get major %d for domain bridge\n",XNBRIDGE_MAJOR);
 	return -EIO;
 	}
 

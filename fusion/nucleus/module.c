@@ -110,6 +110,8 @@ static int xnpod_read_proc (char *page,
     const unsigned nr_cpus=xnarch_num_online_cpus();
     unsigned cpu, ready_threads = 0;
 
+    p += sprintf(p,"\nRTAI/fusion system v%s\n",PACKAGE_VERSION);
+    p += sprintf(p,"Mounted over Adeos %s\n",ADEOS_VERSION_STRING);
     p += sprintf(p,"Registered interface(s): ");
 
     for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
@@ -122,7 +124,7 @@ static int xnpod_read_proc (char *page,
     if (nrxfaces == 0)
 	p += sprintf(p,"<none>");
 
-    p += sprintf(p,"\nTimer latency: %Lu ns\n",xnarch_tsc_to_ns(nktimerlat));
+    p += sprintf(p,"\n\nTimer latency: %Lu ns\n",xnarch_tsc_to_ns(nktimerlat));
 
     if (nkpod != NULL && testbits(nkpod->status,XNTIMED))
 	{
@@ -171,7 +173,7 @@ static int xnpod_read_proc (char *page,
         {
         xnsched_t *sched = xnpod_sched_slot(cpu);
 
-        p += sprintf(p,"-----------------------------------------\n");
+        p += sprintf(p,"------------------------------------------\n");
 
         xnlock_get_irqsave(&nklock, s);
 
@@ -261,21 +263,21 @@ int __xeno_main_init (void)
 		err = xnfusion_init();
 
 		if (!err)
-		    xnprintf("RTAI: Xenomai subsystem mounted.\n");
+		    xnprintf("RTAI: RTOS nucleus loaded.\n");
 		else
-		    xnprintf("RTAI: Fusion initialization failed, code %d.\n",err);
+		    xnprintf("RTAI: Fusion layer initialization failed, code %d.\n",err);
 		}
 	    else
-		xnprintf("RTAI: DBridge initialization failed, code %d.\n",err);
+		xnprintf("RTAI: Dbridge initialization failed, code %d.\n",err);
 	    }
 	else
 	    xnprintf("RTAI: Autocalibration procedure failed, code %d.\n",err);
 	}
 #else /* !__KERNEL__ */
-	xnprintf("RTAI: Xenomai virtual machine started.\n");
+	xnprintf("RTAI: Virtual machine started.\n");
 #endif /* __KERNEL__ */
     else
-	xnprintf("RTAI: Xenomai initialization failed, code %d.\n",err);
+	xnprintf("RTAI: RTOS nucleus initialization failed, code %d.\n",err);
 
     return err;
 }
@@ -293,9 +295,9 @@ void __xeno_main_exit (void)
 #endif /* CONFIG_PROC_FS */
     xnfusion_exit();
     xnbridge_exit();
-    xnprintf("RTAI: Xenomai subsystem unmounted.\n");
+    xnprintf("RTAI: RTOS nucleus unloaded.\n");
 #else /* !__KERNEL__ */
-    xnprintf("RTAI: Xenomai virtual machine stopped.\n");
+    xnprintf("RTAI: Virtual machine stopped.\n");
 #endif /* __KERNEL__ */
 }
 

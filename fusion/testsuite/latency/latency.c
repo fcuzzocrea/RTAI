@@ -107,8 +107,6 @@ int main (int argc, char **argv)
 {
     int err;
 
-    printf("Go for %Ld samples...\n",SAMPLE_COUNT);
-
     err = rt_task_create(&display_task,"display",0,2,0);
 
     if (err)

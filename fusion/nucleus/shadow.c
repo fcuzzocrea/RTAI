@@ -1617,7 +1617,7 @@ int xnshadow_init (void)
     adattr_t attr;
 
     adeos_init_attr(&attr);
-    attr.name = "IrqShield";
+    attr.name = "IShield";
     attr.domid = 0x53484c44;
     attr.entry = &xnshadow_shield;
     attr.priority = ADEOS_ROOT_PRI + 50;

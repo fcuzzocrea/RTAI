@@ -1197,9 +1197,8 @@ static void rthal_domain_entry (int iflag)
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
 	adeos_catch_event(trapnr,&rthal_trap_fault);
 
-    printk("RTAI/hal %s mounted over Adeos %s.\n",
-	   PACKAGE_VERSION,
-	   ADEOS_VERSION_STRING);
+    printk("RTAI: HAL/x86 loaded.\n");
+
  spin:
 
     for (;;)
@@ -1367,7 +1366,7 @@ void __rthal_exit (void)
     adeos_virtualize_irq(rthal_sysreq_virq,NULL,NULL,0);
     adeos_free_irq(rthal_sysreq_virq);
     adeos_unregister_domain(&rthal_domain);
-    printk("RTAI/hal unmounted.\n");
+    printk(KERN_WARNING "RTAI: HAL/x86 unloaded.\n");
 }
 
 module_init(__rthal_init);

@@ -525,8 +525,9 @@ static int xnpipe_open (struct inode *inode,
 
 	if (testbits(file->f_flags,O_NONBLOCK))
 	    {
+            clrbits(state->status,XNPIPE_USER_CONN);
 	    xnlock_put_irqrestore(&nklock,s);
-	    return -EWOULDBLOCK;
+            return -EWOULDBLOCK;
 	    }
 
 	xnpipe_enqueue_wait(state,&state->open_sem,XNPIPE_USER_WOPEN);
@@ -539,7 +540,7 @@ static int xnpipe_open (struct inode *inode,
 
 	if (down_interruptible(&state->open_sem))
 	    {
-	    xnpipe_dequeue_wait(state,XNPIPE_USER_WOPEN);
+	    xnpipe_dequeue_wait(state,XNPIPE_USER_WOPEN|XNPIPE_USER_CONN);
 	    return -ERESTARTSYS;
 	    }
 
@@ -555,6 +556,9 @@ static int xnpipe_open (struct inode *inode,
 	    err = xnpipe_open_handler(xnminor_from_state(state),state->cookie);
 	}
 
+    if(err)
+        clrbits(state->status,XNPIPE_USER_CONN);
+    
     return err;
 }
 

@@ -1,3 +1,8 @@
+2005-03-05  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pipe.c (xnpipe_open): Clean USER_CONN bit when open
+	fail.
+
 2005-03-04  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_init_thread): Don't check the thread arg

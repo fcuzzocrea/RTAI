@@ -11,3 +11,4 @@ rect $skins_2rtai_2pipe_8h.html 154,394 234,418
 rect $skins_2rtai_2queue_8h.html 147,442 241,466
 rect $skins_2rtai_2heap_8h.html 151,490 237,514
 rect $alarm_8h.html 150,538 238,562
+rect $skins_2rtai_2intr_8h.html 157,586 231,610

@@ -134,13 +134,13 @@ The scheduling is locked while a hook is executing.<p>
   </table>
 </dl>
 <ul>
-<li>T_HOOK_START: The user-defined routine will be called on behalf of the starter task whenever a new task starts. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the started task through the T_HOOK_DESC() macro.</li></ul>
+<li>T_HOOK_START: The user-defined routine will be called on behalf of the starter task whenever a new task starts. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the started task through the T_DESC() macro.</li></ul>
 <p>
 <ul>
-<li>T_HOOK_DELETE: The user-defined routine will be called on behalf of the deletor task whenever a task is deleted. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the deleted task through the T_HOOK_DESC() macro.</li></ul>
+<li>T_HOOK_DELETE: The user-defined routine will be called on behalf of the deletor task whenever a task is deleted. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the deleted task through the T_DESC() macro.</li></ul>
 <p>
 <ul>
-<li>T_HOOK_SWITCH: The user-defined routine will be called on behalf of the resuming task whenever a context switch takes place. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the task which has been switched in through the T_HOOK_DESC() macro.</li></ul>
+<li>T_HOOK_SWITCH: The user-defined routine will be called on behalf of the resuming task whenever a context switch takes place. An opaque cookie is passed to the routine which can use it to retrieve the descriptor address of the task which has been switched in through the T_DESC() macro.</li></ul>
 <p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -815,7 +815,7 @@ Make a task periodic by programing its first release point and its period in the
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>task</em>&nbsp;</td><td>The descriptor address of the affected task. This task is immediately delayed until the first periodic release point is reached. If <em>task</em> is NULL, the current task is set periodic.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>idate</em>&nbsp;</td><td>The initial (absolute) date of the first release point, expressed in clock ticks (see note). The affected task will be delayed until this point is reached. If <em>idate</em> is equal to TM_NOW, the current system date is used, and no initial delay takes place.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>period</em>&nbsp;</td><td>The period of the task, expressed in clock ticks (see note).</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>period</em>&nbsp;</td><td>The period of the task, expressed in clock ticks (see note). Passing TM_INFINITE attempts to stop the task's periodic timer; in the latter case, the routine always exits succesfully, regardless of the pervious state of this timer.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
@@ -1376,7 +1376,7 @@ This service can be called from:<p>
 Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:29 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -15,7 +15,7 @@ Interrupt management.
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 <tr><td colspan="2"><br><h2>Files</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">file &nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="intr_8c.html">intr.c</a></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">file &nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="nucleus_2intr_8c.html">intr.c</a></td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Interrupt management. <br></td></tr>
 
@@ -41,7 +41,7 @@ Interrupt management.
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Disable an interrupt object.  <a href="#ga7"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">xnarch_cpumask_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__intr.html#ga8">xnintr_affinity</a> (xnintr_t *intr, xnarch_cpumask_t cpumask)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set processor affinity.  <a href="#ga8"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set interrupt's processor affinity.  <a href="#ga8"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
 <a class="anchor" name="ga8" doxytag="intr.c::xnintr_affinity"></a><p>
@@ -78,17 +78,18 @@ Interrupt management.
     <td>
 
 <p>
-Set processor affinity. 
+Set interrupt's processor affinity. 
 <p>
+xnarch_cpumask_t xnintr_affinity (xnintr_t *intr, xnarch_cpumask_t cpumask) <p>
 Causes the IRQ associated with the interrupt object <em>intr</em> to be received only on processors which bits are set in <em>cpumask</em>.<p>
-<dl compact><dt><b>Note:</b></dt><dd>Depending on architectures, setting more than one bit in <em>cpumask</em> can be meaningless.</dd></dl>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The descriptor address of the interrupt object which affinity is to be changed.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>cpumask</em>&nbsp;</td><td>is the new processor affinity of the interrupt object.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>cpumask</em>&nbsp;</td><td>The new processor affinity of the interrupt object.</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>the previous cpumask on success, or an empty mask on failure. </dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>the previous cpumask on success, or an empty mask on failure.</dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>Depending on architectures, setting more than one bit in <em>cpumask</em> could be meaningless. </dd></dl>
     </td>
   </tr>
 </table>
@@ -141,7 +142,9 @@ This service can be called from:<p>
 <ul>
 <li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
-Rescheduling: never.     </td>
+Rescheduling: never.<p>
+<dl compact><dt><b>Note:</b></dt><dd>Attaching an interrupt resets the tracked number of receipts to zero. </dd></dl>
+    </td>
   </tr>
 </table>
 <a class="anchor" name="ga3" doxytag="intr.c::xnintr_destroy"></a><p>
@@ -361,14 +364,15 @@ Rescheduling: never.     </td>
 Initialize an interrupt object. 
 <p>
 Associates an interrupt object with an IRQ line.<p>
-When an interrupt occurs from the given <em>irq</em> line, the ISR is fired in order to deal with the hardware event. The interrupt service code may call any non-suspensive service from the nucleus.<p>
-Upon receipt of an IRQ, the ISR is immediately called on behalf of the interrupted stack context. The status value returned by the ISR is then checked for the following bits:<p>
+When an interrupt occurs on the given <em>irq</em> line, the ISR is fired in order to deal with the hardware event. The interrupt service code may call any non-suspensive service from the nucleus.<p>
+Upon receipt of an IRQ, the ISR is immediately called on behalf of the interrupted stack context, the rescheduling procedure is locked, and the interrupt source is masked at hardware level. The status value returned by the ISR is then checked for the following bits:<p>
 <ul>
 <li>XN_ISR_ENABLE asks the nucleus to re-enable the IRQ line. Over some real-time control layers which mask and acknowledge IRQs, this operation is necessary to revalidate the interrupt channel so that more interrupts can be notified. The presence of such bit in the ISR's return code causes the nucleus to ask the real-time control layer to re-enable the interrupt.</li></ul>
 <p>
 <ul>
-<li>XN_ISR_CHAINED tells the nucleus to require the real-time control layer to forward the IRQ. For instance, this would cause the Adeos control layer to propagate the interrupt down the interrupt pipeline to other Adeos domains, such as Linux. This is the regular way to share interrupts between the nucleus and the host system.</li></ul>
+<li>XN_ISR_CHAINED tells the nucleus to require the real-time control layer to forward the IRQ. For instance, this would cause the Adeos control layer to propagate the interrupt down the interrupt pipeline to other Adeos domains, such as Linux. This is the regular way to share interrupts between the nucleus and the host system. At the opposite, RT_INTR_HANDLED can be used instead to indicate that the interrupt request has been fulfilled.</li></ul>
 <p>
+A count of interrupt receipts is tracked into the interrupt descriptor, and reset to zero each time the interrupt object is attached. Since this count could wrap around, it should be used as an indication of interrupt activity only.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of a interrupt object descriptor the nucleus will use to store the object-specific data. This descriptor must always be valid while the object is active therefore it must be allocated in permanent memory.</td></tr>
@@ -386,7 +390,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:29 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

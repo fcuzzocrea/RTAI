@@ -20,7 +20,7 @@
 00030 
 00031     RTIME expiration;           <span class="comment">/* !&lt; Expiration date. */</span>
 00032 
-00033     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> nexpiries;    <span class="comment">/* !&lt; Number of expiries. */</span>
+00033     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> expiries;     <span class="comment">/* !&lt; Number of expiries. */</span>
 00034 
 00035     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
 00036 
@@ -46,7 +46,7 @@
 00056     
 00057     <span class="keywordtype">void</span> *cookie;               <span class="comment">/* !&lt; Opaque cookie. */</span>
 00058 
-00059     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> nexpiries;    <span class="comment">/* !&lt; Number of expiries. */</span>
+00059     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> expiries;     <span class="comment">/* !&lt; Number of expiries. */</span>
 00060 
 00061 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
 00062 <span class="preprocessor"></span>
@@ -81,38 +81,46 @@
 00091 
 00092 <span class="keyword">typedef</span> RT_ALARM_PLACEHOLDER RT_ALARM;
 00093 
-00094 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga3">rt_alarm_create</a>(RT_ALARM *alarm,
-00095                     <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
-00096 
-00097 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga8">rt_alarm_wait</a>(RT_ALARM *alarm);
-00098 
-00099 <span class="comment">/* No binding for alarms. */</span>
+00094 <span class="preprocessor">#ifdef __cplusplus</span>
+00095 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00096 <span class="preprocessor">#endif</span>
+00097 <span class="preprocessor"></span>
+00098 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga3">rt_alarm_create</a>(RT_ALARM *alarm,
+00099                     <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
 00100 
-00101 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
+00101 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga8">rt_alarm_wait</a>(RT_ALARM *alarm);
 00102 
 00103 <span class="preprocessor">#ifdef __cplusplus</span>
-00104 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00104 <span class="preprocessor"></span>}
 00105 <span class="preprocessor">#endif</span>
 00106 <span class="preprocessor"></span>
-00107 <span class="comment">/* Public interface. */</span>
+00107 <span class="comment">/* No binding for alarms. */</span>
 00108 
-00109 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga4">rt_alarm_delete</a>(RT_ALARM *alarm);
+00109 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
 00110 
-00111 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga5">rt_alarm_start</a>(RT_ALARM *alarm,
-00112                    RTIME value,
-00113                    RTIME interval);
-00114 
-00115 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga6">rt_alarm_stop</a>(RT_ALARM *alarm);
+00111 <span class="preprocessor">#ifdef __cplusplus</span>
+00112 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00113 <span class="preprocessor">#endif</span>
+00114 <span class="preprocessor"></span>
+00115 <span class="comment">/* Public interface. */</span>
 00116 
-00117 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga7">rt_alarm_inquire</a>(RT_ALARM *alarm,
-00118                      RT_ALARM_INFO *info);
-00119 
-00120 <span class="preprocessor">#ifdef __cplusplus</span>
-00121 <span class="preprocessor"></span>}
-00122 <span class="preprocessor">#endif</span>
-00123 <span class="preprocessor"></span>
-00124 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ALARM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
+00117 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga4">rt_alarm_delete</a>(RT_ALARM *alarm);
+00118 
+00119 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga5">rt_alarm_start</a>(RT_ALARM *alarm,
+00120                    RTIME value,
+00121                    RTIME interval);
+00122 
+00123 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga6">rt_alarm_stop</a>(RT_ALARM *alarm);
+00124 
+00125 <span class="keywordtype">int</span> <a class="code" href="group__alarm.html#ga7">rt_alarm_inquire</a>(RT_ALARM *alarm,
+00126                      RT_ALARM_INFO *info);
+00127 
+00128 <span class="preprocessor">#ifdef __cplusplus</span>
+00129 <span class="preprocessor"></span>}
+00130 <span class="preprocessor">#endif</span>
+00131 <span class="preprocessor"></span>
+00132 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ALARM_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:28 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

@@ -1,14 +1,5 @@
 base referer
 rect $skins_2rtai_2module_8c.html 8,9 82,33
-rect $task_8h.html 461,84 520,108
-rect $syscall_8c.html 906,9 978,33
-rect $alarm_8c.html 106,9 173,33
-rect $cond_8c.html 197,9 258,33
-rect $event_8c.html 282,9 346,33
-rect $skins_2rtai_2heap_8c.html 370,9 432,33
-rect $mutex_8c.html 456,9 525,33
-rect $queue_8c.html 549,9 618,33
-rect $registry_8c.html 642,9 720,33
-rect $sem_8c.html 744,9 802,33
-rect $task_8c.html 826,9 882,33
-rect $skins_2rtai_2timer_8c.html 594,84 656,108
+rect $task_8h.html 65,84 124,108
+rect $syscall_8c.html 116,9 188,33
+rect $skins_2rtai_2timer_8c.html 198,84 260,108

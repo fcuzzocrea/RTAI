@@ -216,9 +216,15 @@ Create a counting semaphore.
 <ul>
 <li>S_PRIO makes tasks pend in priority order on the semaphore.</li></ul>
 <p>
+<ul>
+<li>S_PULSE causes the semaphore to behave in "pulse" mode. In this mode, the V (signal) operation attempts to release a single waiter each time it is called, but without incrementing the semaphore count if no waiter is pending. For this reason, the semaphore count in pulse mode remains zero.</li></ul>
+<p>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
 <ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
+<p>
+<ul>
+<li>-EINVAL is returned if the <em>icount</em> is non-zero and <em>mode</em> specifies a pulse semaphore.</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -495,7 +501,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:29 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

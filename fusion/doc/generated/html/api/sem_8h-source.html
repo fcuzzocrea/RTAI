@@ -18,100 +18,103 @@
 00028 <span class="comment">/* Creation flags. */</span>
 00029 <span class="preprocessor">#define S_PRIO  XNSYNCH_PRIO    </span><span class="comment">/* Pend by task priority order. */</span>
 00030 <span class="preprocessor">#define S_FIFO  XNSYNCH_FIFO    </span><span class="comment">/* Pend by FIFO order. */</span>
-00031 
-00032 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_sem_info {
-00033 
-00034     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> count; <span class="comment">/* !&lt; Current semaphore value. */</span>
-00035 
-00036     <span class="keywordtype">int</span> nwaiters;       <span class="comment">/* !&lt; Number of pending tasks. */</span>
-00037 
-00038     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
-00039 
-00040 } RT_SEM_INFO;
-00041 
-00042 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_sem_placeholder {
-00043     rt_handle_t opaque;
-00044 } RT_SEM_PLACEHOLDER;
-00045 
-00046 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
-00047 <span class="preprocessor"></span>
-00048 <span class="preprocessor">#define RTAI_SEM_MAGIC 0x55550303</span>
-00049 <span class="preprocessor"></span>
-00050 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_sem {
-00051 
-00052     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
-00053 
-00054     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
-00055 
-00056     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> count; <span class="comment">/* !&lt; Current semaphore value. */</span>
-00057 
-00058     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
-00059 
-00060     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
-00061 
-00062 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
-00063 <span class="preprocessor"></span>    <span class="keywordtype">int</span> source;         <span class="comment">/* !&lt; Creator's space. */</span>
-00064 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
-00065 
-00066 } RT_SEM;
-00067 
-00068 <span class="preprocessor">#ifdef __cplusplus</span>
-00069 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00070 <span class="preprocessor">#endif</span>
-00071 <span class="preprocessor"></span>
-00072 <span class="keywordtype">int</span> __sem_pkg_init(<span class="keywordtype">void</span>);
-00073 
-00074 <span class="keywordtype">void</span> __sem_pkg_cleanup(<span class="keywordtype">void</span>);
-00075 
-00076 <span class="preprocessor">#ifdef __cplusplus</span>
-00077 <span class="preprocessor"></span>}
-00078 <span class="preprocessor">#endif</span>
-00079 <span class="preprocessor"></span>
-00080 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
-00081 
-00082 <span class="keyword">typedef</span> RT_SEM_PLACEHOLDER RT_SEM;
-00083 
-00084 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga8">rt_sem_bind</a>(RT_SEM *sem,
-00085                 <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
+00031 <span class="preprocessor">#define S_PULSE 0x100           </span><span class="comment">/* Apply pulse mode. */</span>
+00032 
+00033 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_sem_info {
+00034 
+00035     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> count; <span class="comment">/* !&lt; Current semaphore value. */</span>
+00036 
+00037     <span class="keywordtype">int</span> nwaiters;       <span class="comment">/* !&lt; Number of pending tasks. */</span>
+00038 
+00039     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
+00040 
+00041 } RT_SEM_INFO;
+00042 
+00043 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_sem_placeholder {
+00044     rt_handle_t opaque;
+00045 } RT_SEM_PLACEHOLDER;
+00046 
+00047 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_SIM__)</span>
+00048 <span class="preprocessor"></span>
+00049 <span class="preprocessor">#define RTAI_SEM_MAGIC 0x55550303</span>
+00050 <span class="preprocessor"></span>
+00051 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_sem {
+00052 
+00053     <span class="keywordtype">unsigned</span> magic;   <span class="comment">/* !&lt; Magic code - must be first */</span>
+00054 
+00055     xnsynch_t synch_base; <span class="comment">/* !&lt; Base synchronization object. */</span>
+00056 
+00057     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> count; <span class="comment">/* !&lt; Current semaphore value. */</span>
+00058 
+00059     <span class="keywordtype">int</span> mode;           <span class="comment">/* !&lt; Creation mode. */</span>
+00060 
+00061     rt_handle_t handle; <span class="comment">/* !&lt; Handle in registry -- zero if unregistered. */</span>
+00062 
+00063     <span class="keywordtype">char</span> name[XNOBJECT_NAME_LEN]; <span class="comment">/* !&lt; Symbolic name. */</span>
+00064 
+00065 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; defined(CONFIG_RTAI_OPT_FUSION)</span>
+00066 <span class="preprocessor"></span>    <span class="keywordtype">int</span> source;         <span class="comment">/* !&lt; Creator's space. */</span>
+00067 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; CONFIG_RTAI_OPT_FUSION */</span>
+00068 
+00069 } RT_SEM;
+00070 
+00071 <span class="preprocessor">#ifdef __cplusplus</span>
+00072 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00073 <span class="preprocessor">#endif</span>
+00074 <span class="preprocessor"></span>
+00075 <span class="keywordtype">int</span> __sem_pkg_init(<span class="keywordtype">void</span>);
+00076 
+00077 <span class="keywordtype">void</span> __sem_pkg_cleanup(<span class="keywordtype">void</span>);
+00078 
+00079 <span class="preprocessor">#ifdef __cplusplus</span>
+00080 <span class="preprocessor"></span>}
+00081 <span class="preprocessor">#endif</span>
+00082 <span class="preprocessor"></span>
+00083 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00084 
+00085 <span class="keyword">typedef</span> RT_SEM_PLACEHOLDER RT_SEM;
 00086 
-<a name="l00087"></a><a class="code" href="group__semaphore.html#ga9">00087</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga9">rt_sem_unbind</a> (RT_SEM *sem)
-00088 
-00089 {
-00090     sem-&gt;opaque = RT_HANDLE_INVALID;
-00091     <span class="keywordflow">return</span> 0;
-00092 }
-00093 
-00094 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
-00095 
-00096 <span class="preprocessor">#ifdef __cplusplus</span>
-00097 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00098 <span class="preprocessor">#endif</span>
-00099 <span class="preprocessor"></span>
-00100 <span class="comment">/* Public interface. */</span>
-00101 
-00102 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga2">rt_sem_create</a>(RT_SEM *sem,
-00103                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
-00104                   <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> icount,
-00105                   <span class="keywordtype">int</span> mode);
-00106 
-00107 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga3">rt_sem_delete</a>(RT_SEM *sem);
-00108 
-00109 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga4">rt_sem_p</a>(RT_SEM *sem,
-00110              RTIME timeout);
+00087 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga8">rt_sem_bind</a>(RT_SEM *sem,
+00088                 <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
+00089 
+<a name="l00090"></a><a class="code" href="group__semaphore.html#ga9">00090</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga9">rt_sem_unbind</a> (RT_SEM *sem)
+00091 
+00092 {
+00093     sem-&gt;opaque = RT_HANDLE_INVALID;
+00094     <span class="keywordflow">return</span> 0;
+00095 }
+00096 
+00097 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
+00098 
+00099 <span class="preprocessor">#ifdef __cplusplus</span>
+00100 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00101 <span class="preprocessor">#endif</span>
+00102 <span class="preprocessor"></span>
+00103 <span class="comment">/* Public interface. */</span>
+00104 
+00105 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga2">rt_sem_create</a>(RT_SEM *sem,
+00106                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00107                   <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> icount,
+00108                   <span class="keywordtype">int</span> mode);
+00109 
+00110 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga3">rt_sem_delete</a>(RT_SEM *sem);
 00111 
-00112 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga5">rt_sem_v</a>(RT_SEM *sem);
-00113 
-00114 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga6">rt_sem_broadcast</a>(RT_SEM *sem);
-00115 
-00116 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga7">rt_sem_inquire</a>(RT_SEM *sem,
-00117                    RT_SEM_INFO *info);
+00112 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga4">rt_sem_p</a>(RT_SEM *sem,
+00113              RTIME timeout);
+00114 
+00115 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga5">rt_sem_v</a>(RT_SEM *sem);
+00116 
+00117 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga6">rt_sem_broadcast</a>(RT_SEM *sem);
 00118 
-00119 <span class="preprocessor">#ifdef __cplusplus</span>
-00120 <span class="preprocessor"></span>}
-00121 <span class="preprocessor">#endif</span>
-00122 <span class="preprocessor"></span>
-00123 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_SEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jan 2 21:30:28 2005 for RTAI API by&nbsp;
+00119 <span class="keywordtype">int</span> <a class="code" href="group__semaphore.html#ga7">rt_sem_inquire</a>(RT_SEM *sem,
+00120                    RT_SEM_INFO *info);
+00121 
+00122 <span class="preprocessor">#ifdef __cplusplus</span>
+00123 <span class="preprocessor"></span>}
+00124 <span class="preprocessor">#endif</span>
+00125 <span class="preprocessor"></span>
+00126 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_SEM_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue Jan 11 22:19:28 2005 for RTAI API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.3.9.1 </small></address>
 </body>

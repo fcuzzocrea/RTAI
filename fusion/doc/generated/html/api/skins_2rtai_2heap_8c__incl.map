@@ -8,7 +8,7 @@ rect $include_2nucleus_2queue_8h-source.html 157,158 277,182
 rect $synch_8h-source.html 143,233 261,257
 rect $include_2nucleus_2heap_8h-source.html 7,233 119,257
 rect $include_2nucleus_2types_8h-source.html 271,84 386,108
-rect $intr_8h-source.html 855,158 957,182
+rect $include_2nucleus_2intr_8h-source.html 855,158 957,182
 rect $skins_2rtai_2types_8h.html 285,233 373,257
 rect $fusion_8h-source.html 622,308 739,332
 rect $include_2nucleus_2syscall_8h-source.html 746,233 869,257

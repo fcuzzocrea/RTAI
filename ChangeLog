@@ -6,6 +6,14 @@
 
 2004-06-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* rtai-core/arch/i386/patches: Upgrade the x86 patch to
+	2.6.7r6c1. Discard older r5 patches since critical fixes are
+	brought by this one, Linux-wise and Adeos-wise.
+
+	* rtai-core/arch/i386/hal/hal.c (rtai_trap_fault): Handle
+	RTAI-originated faults in kernel space caused by on-demand virtual
+	memory mappings.
+
 	* configure.in, rtai-core/arch/*/Kconfig: Make the global heap
 	size a configurable parameter.
 

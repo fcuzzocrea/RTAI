@@ -23,9 +23,7 @@
 #define _RTAI_COND_H
 
 #include <nucleus/synch.h>
-#include <rtai/types.h>
-
-struct RT_MUTEX;
+#include <rtai/mutex.h>
 
 typedef struct rt_cond_info {
 

@@ -26,8 +26,6 @@
 #include <nucleus/heap.h>
 #include <rtai/types.h>
 
-struct RT_TASK;
-
 /* Creation flags. */
 #define H_PRIO   XNSYNCH_PRIO	/* Pend by task priority order. */
 #define H_FIFO   XNSYNCH_FIFO	/* Pend by FIFO order. */

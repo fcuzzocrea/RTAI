@@ -1,5 +1,8 @@
 2005-02-09  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/cond.h, skins/rtai/heap.h: Remove bugous forward
+	declarations.
+
 	* skins/rtai/sem.c (rt_sem_broadcast): Zero the resource count.
 
 	* skins/rtai/task.h (thread2rtask): Convert to inline function to

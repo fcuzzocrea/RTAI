@@ -276,7 +276,7 @@ int __xeno_main_init (void)
 		err = xnfusion_init();
 
 		if (!err)
-		    xnloginfo("Nucleus loaded.\n");
+		    xnloginfo("Services started.\n");
 		else
 		    xnlogerr("Fusion init failed, code %d.\n",err);
 		}
@@ -308,7 +308,7 @@ void __xeno_main_exit (void)
 #endif /* CONFIG_PROC_FS */
     xnfusion_exit();
     xnbridge_exit();
-    xnloginfo("Nucleus unloaded.\n");
+    xnloginfo("Services stopped.\n");
 #else /* !__KERNEL__ */
     xnloginfo("Virtual Machine stopped.\n");
 #endif /* __KERNEL__ */

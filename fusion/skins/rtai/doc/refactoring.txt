@@ -166,7 +166,7 @@ some compatibility interface based on the new native skin.
 * rt_set_runnable_on_cpuid()
 * rt_set_runnable_on_cpus()
 
-  FIXME/MISSING--  [ Replaced by rt_task_set_affinity(). ]
+ [ Superseded by rt_task_create(). ]
 
 * rt_spv_RMS()
 
@@ -179,10 +179,10 @@ some compatibility interface based on the new native skin.
   ticks makes little sense since the epoch is variable in this case. ]
 
 * rt_set_sched_policy()
-* rt_sched_lock() => ?
-* rt_sched_unlock() => ?
+* rt_sched_lock()
+* rt_sched_unlock()
 
-  FIXME/MISSING--  [ Superseded by rt_task_...() ? ]
+  [ Superseded by rt_task_set_mode() ]
 
 * nano2count_cpuid()
 * count2nano_cpuid()

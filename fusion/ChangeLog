@@ -1,3 +1,8 @@
+2005-03-20  Heikki Lindholm <holindho@cs.helsinki.fi>
+
+	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Make sure
+	r2 references "current" before calling Linux's _switch() routine.
+
 2005-03-19  Philippe Gerum  <rpm@xenomai.org>
 
 	* TROUBLESHOOTING: Add entry for lapic issue.

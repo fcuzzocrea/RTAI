@@ -433,6 +433,9 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	    next->thread.regs->msr |= MSR_SPE;
 #endif /* CONFIG_SPE */
 
+	/* _switch expects a valid "current" (r2) for storing
+	 * ALTIVEC and SPE state. */
+	current = prev;
         _switch(&prev->thread, &next->thread);
 
 	barrier();

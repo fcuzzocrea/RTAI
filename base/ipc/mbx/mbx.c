@@ -97,8 +97,6 @@ res:	if (mbx->sndsem.type > 0) {
 	rt_global_restore_flags(flags);
 }
 
-#define RT_MBX_MAGIC 0x3ad46e9b
-
 static int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)
 {
 	unsigned long flags;

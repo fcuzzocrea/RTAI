@@ -87,7 +87,7 @@ extern int rt_smp_oneshot_timer[];
 #define set_exit_handler(task, fun, arg1, arg2)
 #endif /* CONFIG_RTAI_MALLOC */
 
-#define RT_SEM_MAGIC 0xaabcdeff
+#define RT_SEM_MAGIC 0x3f83ebb  // nam2num("rtsem")
 
 #define SEM_ERR (0xFfff)
 

@@ -28,7 +28,7 @@
 #include <rtai_nam2num.h>
 #include <rtai_sched.h>
 
-#define RT_SEM_MAGIC 0xaabcdeff
+#define RT_SEM_MAGIC 0x3f83ebb  // nam2num("rtsem")
 
 #define SEM_TIMOUT (0xFffe)
 

@@ -26,6 +26,8 @@
 
 #include <rtai_sem.h>
 
+#define RT_MBX_MAGIC 0x3f81aab  // nam2num("rtmbx")
+
 struct rt_task_struct;
 struct rt_mailbox;
 

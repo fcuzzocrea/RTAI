@@ -21,6 +21,8 @@
 
 #include <rtai_types.h>
 
+#define RT_BITS_MAGIC 0x9ac24448  // nam2num("rtbits")
+
 #define ALL_SET               0
 #define ANY_SET               1
 #define ALL_CLR               2

@@ -46,14 +46,15 @@
 typedef unsigned long long rthal_time_t;
 
 #define __rthal_u64tou32(ull, h, l) ({          \
-    (l) = ull & 0xffffffff;                     \
-    (h) = ull >> 32;                            \
+    unsigned long long _ull = (ull);            \
+    (l) = _ull & 0xffffffff;                    \
+    (h) = _ull >> 32;                           \
 })
 
 #define __rthal_u64fromu32(h, l) ({             \
-    unsigned long long ull;                     \
-    asm ( "": "=A"(ull) : "d"(h), "a"(l));      \
-    ull;                                        \
+    unsigned long long _ull;                    \
+    asm ( "": "=A"(_ull) : "d"(h), "a"(l));     \
+    _ull;                                       \
 })
 
 /* Fast longs multiplication. */

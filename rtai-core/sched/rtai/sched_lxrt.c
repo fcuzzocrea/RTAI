@@ -339,11 +339,12 @@ int rt_kthread_init(RT_TASK *task, void (*rt_thread)(int), int data,
 asmlinkage static void rt_startup(void(*rt_thread)(int), int data)
 {
 	extern int rt_task_delete(RT_TASK *);
+	RT_TASK *rt_current = rt_smp_current[hard_cpu_id()];
 	rt_global_sti();
-	RT_CURRENT->exectime[1] = rdtsc();
+	rt_current->exectime[1] = rdtsc();
 	rt_thread(data);
-	rt_task_delete(rt_smp_current[hard_cpu_id()]);
-	rt_printk("LXRT: task %p returned but could not be delated.\n", rt_smp_current[hard_cpu_id()]); 
+	rt_task_delete(rt_current);
+	rt_printk("LXRT: task %p returned but could not be delated.\n", rt_current); 
 }
 
 
@@ -541,7 +542,7 @@ do { \
 	if (ALLOW_RR && new_task->policy > 0) { \
 		new_task->yield_time = rt_time_h + new_task->rr_remaining; \
 	} \
-} while(0)
+} while (0)
 
 #define RR_INTR_TIME() \
 do { \
@@ -754,10 +755,8 @@ void rt_schedule_on_schedule_ipi(void)
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
-			} else {
-				if (prev->used_math) {
-					restore_fpu(prev);
-				}
+			} else if (prev->used_math) {
+				restore_fpu(prev);
 			}
 		}
 	}
@@ -1151,10 +1150,8 @@ static void rt_timer_handler(void)
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
-			} else {
-				if (prev->used_math) {
-					restore_fpu(prev);
-				}
+			} else if (prev->used_math) {
+				restore_fpu(prev);
 			}
 		}
         }

@@ -254,7 +254,12 @@ static int tasks_per_cpu[NR_RT_CPUS] = { 0, };
 static inline struct task_struct *intr_get_current(int cpuid, RT_TASK *rt_current)
 
 {
-    return (rtai_adeos_stack_p(cpuid) || !rt_current->lnxtsk || rt_current == &rt_linux_task) ?  rtai_get_root_current(cpuid) : current;
+    if (rtai_adeos_stack_p(cpuid) ||
+	RT_CURRENT->lnxtsk == NULL ||
+	RT_CURRENT == &rt_linux_task)
+	return rtai_get_root_current(cpuid);
+
+    return current;
 }
 
 int get_min_tasks_cpuid(void)
@@ -682,7 +687,6 @@ void rt_schedule_on_schedule_ipi(void)
 	int prio, delay, preempt;
 	unsigned long flags;
 
-	adeos_hw_cli();
 	ASSIGN_RT_CURRENT;
 
 	sched_rqsted[cpuid] = 1;
@@ -791,7 +795,6 @@ schedlnxtsk:
 	}
  sched_exit:
 	rtai_cli();
-	adeos_hw_sti();
 }
 #endif
 
@@ -1124,7 +1127,6 @@ static void rt_timer_handler(void)
 	int prio, delay, preempt; 
 	unsigned long flags;
 
-	adeos_hw_cli();
 	ASSIGN_RT_CURRENT;
 
 	sched_rqsted[cpuid] = 1;
@@ -1242,7 +1244,6 @@ schedlnxtsk:
         }
  sched_exit:
 	rtai_cli();
-	adeos_hw_sti();
 }
 
 
@@ -1712,14 +1713,18 @@ struct fun_args { int a0; int a1; int a2; int a3; int a4; int a5; int a6; int a7
 
 void rt_schedule_soft(RT_TASK *rt_task)
 {
+	unsigned long flags, hwflags;
 	struct fun_args *funarg;
 	int cpuid, priority;
+
+	rtai_hw_lock(hwflags);
+
+	flags = rt_global_save_flags_and_cli();
 
 	if ((priority = rt_task->priority) < BASE_SOFT_PRIORITY) {
 		rt_task->priority += BASE_SOFT_PRIORITY;
 	}
 
-	rt_global_cli();
 	rt_task->state |= RT_SCHED_READY;
 	while (rt_task->state != RT_SCHED_READY) {
 		current->state = TASK_HARDREALTIME;
@@ -1730,10 +1735,8 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	LOCK_LINUX(cpuid = hard_cpu_id());
 	enq_soft_ready_task(rt_task);
 	rt_smp_current[cpuid] = rt_task;
-	rt_global_sti();
 	funarg = (void *)rt_task->fun_args;
 	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
-	rt_global_cli();
 	rt_task->priority = priority;
 	rt_task->state = 0;
 	(rt_task->rprev)->rnext = rt_task->rnext;
@@ -1743,6 +1746,10 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	UNLOCK_LINUX(cpuid);
 	rt_global_sti();
 	schedule();
+
+	rt_global_restore_flags(flags);
+
+	rtai_hw_unlock(hwflags);
 }
 
 static inline void fast_schedule(RT_TASK *new_task)

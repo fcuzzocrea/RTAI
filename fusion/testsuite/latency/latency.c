@@ -84,9 +84,9 @@ void latency (void *cookie)
 		add_histogram(dt);
 	    }
 
-	minjitter = minj;
-	maxjitter = maxj;
-	avgjitter = sumj / nsamples;
+	minjitter = rt_timer_ticks2ns(minj);
+	maxjitter = rt_timer_ticks2ns(maxj);
+	avgjitter = rt_timer_ticks2ns(sumj / nsamples);
 	rt_sem_v(&display_sem);
 	}
 }
@@ -120,10 +120,10 @@ void display (void *cookie)
 	if ((n++ % 21)==0)
 	    printf("RTH|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","overrun");
 
-	printf("RTD|%12Ld|%12Ld|%12Ld|%12ld\n",
-	       rt_timer_ticks2ns(minjitter),
-	       rt_timer_ticks2ns(avgjitter),
-	       rt_timer_ticks2ns(maxjitter),
+	printf("RTD|%12ld|%12ld|%12ld|%12ld\n",
+	       minjitter,
+	       avgjitter,
+	       maxjitter,
 	       overrun);
 	}
 }

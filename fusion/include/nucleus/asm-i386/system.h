@@ -69,7 +69,25 @@
 
 #define MODULE_PARM_VALUE(parm) (parm)
 
-typedef unsigned long spl_t;
+typedef struct {
+    unsigned long lock;
+#if CONFIG_RTAI_OPT_DEBUG
+    const char *file;
+    unsigned line;
+    int cpu;
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+} xnlock_t;
+
+#ifndef CONFIG_RTAI_OPT_DEBUG
+#define XNARCH_LOCK_UNLOCKED (xnlock_t) { 0 }
+#else
+#define XNARCH_LOCK_UNLOCKED (xnlock_t) {       \
+        0,                                      \
+        NULL,                                   \
+        0,                                      \
+        -1                                      \
+        }
+#endif    
 
 #define splhigh(x)  rthal_local_irq_save(x)
 #ifdef CONFIG_SMP
@@ -87,7 +105,12 @@ typedef unsigned long xnlock_t;
 
 #ifdef CONFIG_SMP
 
+#ifndef CONFIG_RTAI_OPT_DEBUG
 #define xnlock_get_irqsave(lock,x)  ((x) = __xnlock_get_irqsave(lock))
+#else /* !CONFIG_RTAI_OPT_DEBUG */
+#define xnlock_get_irqsave(lock,x) \
+    ((x) = __xnlock_get_irqsave(lock, __FILE__, __LINE__))
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 #define xnlock_clear_irqoff(lock)   xnlock_put_irqrestore(lock,1)
 #define xnlock_clear_irqon(lock)    xnlock_put_irqrestore(lock,0)
 
@@ -96,9 +119,17 @@ static inline void xnlock_init (xnlock_t *lock) {
     *lock = XNARCH_LOCK_UNLOCKED;
 }
 
-static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
+#if CONFIG_RTAI_OPT_DEBUG
+#define XNARCH_DEBUG_SPIN_LIMIT 3000000
 
+static inline spl_t
+__xnlock_get_irqsave (xnlock_t *lock, const char *file, unsigned line)
 {
+    unsigned spin_count = 0;
+#else /* !CONFIG_RTAI_OPT_DEBUG */
+static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
+{
+#endif /* CONFIG_RTAI_OPT_DEBUG */
     adeos_declare_cpuid;
     unsigned long flags;
 
@@ -109,11 +140,32 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
     if (!test_and_set_bit(cpuid,lock))
 	{
 	while (test_and_set_bit(BITS_PER_LONG - 1,lock))
-	    rthal_cpu_relax(cpuid);
+            {
+            rthal_cpu_relax(cpuid);
+
+#if CONFIG_RTAI_OPT_DEBUG
+            if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
+                {
+                adeos_set_printk_sync(adp_current);
+                printk(KERN_ERR
+                       "RTAI[Spinlock]: %p spinned at\n%s:%u on CPU %d for too"
+                       " long,\ncurrently owned by CPU %d, at %s:%u\n",
+                       lock,file,line,cpuid,lock->cpu,lock->file,lock->line);
+                show_stack(NULL,NULL);
+                for (;;)
+                    safe_halt();
+                }
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+            }
 	}
     else
         flags |= 2;
 
+#if CONFIG_RTAI_OPT_DEBUG
+    lock->file = file;
+    lock->line = line;
+    lock->cpu = cpuid;
+#endif /* CONFIG_RTAI_OPT_DEBUG */
     return flags;
 }
 

@@ -125,7 +125,7 @@ static struct {
 } gk_renice_wheel[XNARCH_NR_CPUS][XNSHADOW_MAXRQ];
 
 #define get_switch_lock_owner() \
-switch_lock_owner[task_cpu(get_calling_task())]
+switch_lock_owner[task_cpu(current)]
 
 #define set_switch_lock_owner(t) \
 do { \
@@ -1553,12 +1553,16 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
 {
     struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))evinfo->evdata;
     struct task_struct *next = evdata->next;
+    struct task_struct *prev = evdata->prev;
+    adeos_declare_cpuid;
     int rootprio;
 
     adeos_propagate_event(evinfo);
 
     if (!nkpod || testbits(nkpod->status,XNPINIT))
 	return;
+
+    adeos_load_cpuid();
 
     set_switch_lock_owner(current);
 
@@ -1573,21 +1577,17 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
 			xnshadow_thread(next)->name);
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
-	engage_irq_shield(adeos_processor_id());
+	engage_irq_shield(cpuid);
 	}
-    else
-        {
-        adeos_declare_cpuid;
-        adeos_load_cpuid();
-
-        if (next != gatekeeper[cpuid])
+    else if (next != gatekeeper[cpuid])
 	    {
 	    rootprio = XNPOD_ROOT_PRIO_BASE;
-	    disengage_irq_shield(cpuid);
+
+	    if (xnshadow_thread(prev))
+		disengage_irq_shield(cpuid);
 	    }
         else
 	    return;
-        }
 
     /* Current Xenomai thread must be the root one in this context, so
        we can safely renice Xenomai's runthread (i.e. as returned by

@@ -53,7 +53,7 @@
 #include <asm/unistd.h>
 #include <nucleus/asm/hal.h>
 #ifdef CONFIG_PROC_FS
-#include <nucleus/procfs.h>
+#include <linux/proc_fs.h>
 #endif /* CONFIG_PROC_FS */
 #include <stdarg.h>
 

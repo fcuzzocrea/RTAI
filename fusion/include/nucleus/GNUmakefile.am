@@ -19,7 +19,6 @@ include_HEADERS = \
 		intr.h \
 		module.h \
 		pod.h \
-		procfs.h \
 		queue.h \
 		shadow.h \
 		synch.h \

@@ -1,3 +1,10 @@
+2004-09-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/procfs.h: Discard.
+
+	* nucleus/shadow.c (xnshadow_schedule_head): Only disengage the
+	shield if the outgoing task was a shadow; otherwise, it's useless.
+
 2004-09-21  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_substitute_syscall): No need to

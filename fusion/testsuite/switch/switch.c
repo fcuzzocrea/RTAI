@@ -191,6 +191,8 @@ int main(int argc, char **argv)
 
        setlinebuf(stdout);
 
+       mlockall(MCL_CURRENT|MCL_FUTURE);
+       
        printf("== Sampling period: %llu us\n", sampling_period / 1000);
        printf("== Do not interrupt this program\n");
 

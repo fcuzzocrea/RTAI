@@ -1,3 +1,9 @@
+2004-06-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* */asm*/system.h: same cleanup.
+
+	* include/nucleus/asm-i386/system.h: SMP code cleanup.
+
 2004-06-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/system.h: Better split the SMP/UP code

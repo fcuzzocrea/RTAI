@@ -491,7 +491,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
     tcb->esp = 0;
     tcb->espp = &tcb->esp;
     tcb->eipp = &tcb->eip;
-    tcb->fpup = &current->thread.i387;
+    tcb->fpup = NULL;
 }
 
 static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
@@ -573,122 +573,51 @@ void xnarch_sleep_on (int *flagp) {
 
 #ifdef CONFIG_SMP
 
-static void (*xnarch_init_ipi_handler)(void);
+static inline int xnarch_send_ipi (cpumask_t cpumask) {
 
-static atomic_t xnarch_initialized_cpus;
-
-static void xnarch_init_cpu (int irq)
-
-{
-    xnarch_memory_barrier();	/* To get init_ipi_handler correct. */
-    xnarch_init_ipi_handler();
-    atomic_inc(&xnarch_initialized_cpus);
-}
-
-static inline int xnarch_init_all_cpus (void (*handler)(void))
-
-{
-    int nr_cpus = num_online_cpus(), rc;
-
-    atomic_set(&xnarch_initialized_cpus, 0);
-
-    xnarch_init_ipi_handler = handler;
-
-    xnarch_memory_barrier();	/* So, that the other CPUs get
-				   init_ipi_handler correct. */
-
-    rc = adeos_virtualize_irq(ADEOS_SERVICE_IPI,
-                              (void (*)(unsigned))&xnarch_init_cpu,
-                              NULL,
-			      IPIPE_HANDLE_MASK);
-    if (rc)
-        return rc;
-
-    adeos_trigger_ipi(ADEOS_OTHER_CPUS);
-
-    while (atomic_read(&xnarch_initialized_cpus) < nr_cpus - 1)
-        rthal_cpu_relax(1);
-
-    adeos_virtualize_irq(ADEOS_SERVICE_IPI,
-			 NULL,
-			 NULL,
-			 IPIPE_PASS_MASK);
-    handler();
-    
-    return 0;
-}
-
-static inline int xnarch_trigger_ipi (int cpuid) {
-
-    return adeos_trigger_ipi(cpuid);
-}
-
-static void (*nucleus_ipi_handler) (void);
-
-static inline void xnarch_ipi_handler(unsigned irq)
-
-{
-    nucleus_ipi_handler();
-    adeos_propagate_irq(irq);
+    return adeos_send_ipi(ADEOS_SERVICE_IPI0, cpumask);
 }
 
 static inline int xnarch_hook_ipi (void (*handler)(void))
 
 {
-    nucleus_ipi_handler = handler;
-    
     return adeos_virtualize_irq_from(&rthal_domain,
-                                     ADEOS_SERVICE_IPI,
-                                     xnarch_ipi_handler,
+                                     ADEOS_SERVICE_IPI0,
+                                     (void (*)(unsigned)) handler,
                                      NULL,
-                                     (handler
-                                      ? IPIPE_HANDLE_MASK
-                                      : IPIPE_PASS_MASK));
+                                     IPIPE_HANDLE_MASK);
 }
 
-static struct semaphore xnarch_finalize_sync;
+static inline int xnarch_release_ipi (void)
 
-static void xnarch_finalize_cpu(unsigned irq)
 {
-    up(&xnarch_finalize_sync);
+    return adeos_virtualize_irq_from(&rthal_domain,
+                                     ADEOS_SERVICE_IPI0,
+                                     NULL,
+                                     NULL,
+                                     IPIPE_PASS_MASK);
 }
 
 static inline void xnarch_notify_shutdown(void)
 
 {
-    unsigned cpu, nr_cpus = xnarch_num_online_cpus();
-    
-    xnarch_hook_ipi(NULL);
-
-    init_MUTEX_LOCKED(&xnarch_finalize_sync);
-    
-    adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI,
-                              xnarch_finalize_cpu, NULL, IPIPE_HANDLE_MASK);
-
-    xnarch_trigger_ipi(ADEOS_OTHER_CPUS);
-
-    for(cpu=0; cpu < nr_cpus-1; ++cpu)
-        down(&xnarch_finalize_sync);
-    
-    adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI, NULL, NULL,
-                              IPIPE_PASS_MASK);
+    unsigned long flags = adeos_critical_enter(NULL);
+    adeos_critical_exit(flags);
 }
 
 #else /* !CONFIG_SMP */
 
-static inline int xnarch_init_all_cpus (void (*handler)(void))
-
-{
-    handler();
-    return 0;
-}
-
-static inline int xnarch_trigger_ipi (int cpuid) {
+static inline int xnarch_send_ipi (cpumask_t cpumask) {
 
     return 0;
 }
 
 static inline int xnarch_hook_ipi (void (*handler)(void)) {
+
+    return 0;
+}
+
+static inline int xnarch_release_ipi (void) {
 
     return 0;
 }

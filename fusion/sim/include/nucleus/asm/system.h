@@ -490,13 +490,17 @@ int xnarch_setimask (int imask) {
     return mvm_set_irqmask(imask);
 }
 
-static inline int xnarch_init_all_cpus (void (*handler)(void)) {
+static inline int xnarch_send_ipi (unsigned cpumask) {
 
-    handler();
     return 0;
 }
 
 static inline int xnarch_hook_ipi (void (*handler)(void)) {
+
+    return 0;
+}
+
+static inline int xnarch_release_ipi (void) {
 
     return 0;
 }

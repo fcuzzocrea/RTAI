@@ -169,22 +169,6 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
     return 0;
 }
 
-static void xnpod_init_rootcb (void)
-
-{
-    /* Called interrupts off. */
-
-    xnsched_t *sched = xnpod_current_sched();
-
-    xnarch_init_root_tcb(xnthread_archtcb(&sched->rootcb),
-                         &sched->rootcb,
-                         xnthread_name(&sched->rootcb));
-
-    sched->rootcb.sched = sched;
-
-    sched->rootcb.affinity = 1 << xnsched_cpu(sched);
-}
-
 void xnpod_schedule_handler (void)
 
 {
@@ -388,9 +372,16 @@ fail:
 #ifdef CONFIG_RTAI_HW_FPU
         sched->fpuholder = &sched->rootcb;
 #endif /* CONFIG_RTAI_HW_FPU */
-        }
 
-    xnarch_init_all_cpus(&xnpod_init_rootcb);
+        /* Initialize per-cpu rootcb */
+        xnarch_init_root_tcb(xnthread_archtcb(&sched->rootcb),
+                             &sched->rootcb,
+                             xnthread_name(&sched->rootcb));
+
+        sched->rootcb.sched = sched;
+        
+        sched->rootcb.affinity = 1 << cpu;
+        }
 
     xnarch_hook_ipi(&xnpod_schedule_handler);
 
@@ -465,9 +456,9 @@ void xnpod_shutdown (int xtype)
 
     xnlock_put_irqrestore(&nklock,s);
 
-    xnarch_notify_shutdown();
+    xnarch_release_ipi();
 
-    xnarch_hook_ipi(NULL);
+    xnarch_notify_shutdown();
 
     xnheap_destroy(&kheap,&xnarch_sysfree);
 
@@ -1910,33 +1901,22 @@ void xnpod_schedule (void)
 
 #ifdef CONFIG_SMP
     {
-    unsigned local_cpu = xnarch_current_cpu();
-    int resched = 0;
+    int need_resched;
 
-    sched = xnpod_sched_slot(local_cpu);
+    sched = xnpod_current_sched();
 
-    while (xnsched_resched_p())
-        {
-        int cpu = xnsched_ffcpu();
-        xnsched_t *loop_sched = xnpod_sched_slot(cpu);
+    need_resched = xnsched_tst_resched(sched);
 
-	if (loop_sched == sched)
-            resched = 1;
-        else
-            xnarch_trigger_ipi(cpu);
+    if (need_resched)
+        xnsched_clr_resched(sched);
 
-	xnsched_clr_resched(loop_sched);
-        }
-
+    if (xnsched_resched_p())
+        xnarch_send_ipi(xnsched_resched_mask());
+    
     runthread = sched->runthread;
 
-    if (!resched)
-        {
-        if (xnthread_signaled_p(runthread))
-            xnpod_dispatch_signals();
-
-        goto unlock_and_exit;
-        }
+    if (!need_resched)
+        goto signal_unlock_and_exit;
 
     xnsched_set_resched(sched);
     }
@@ -1949,17 +1929,11 @@ void xnpod_schedule (void)
 #endif /* CONFIG_SMP */
 
     if (testbits(runthread->status,XNLOCK))
-        {
         /* The running thread has locked the scheduler and is still
            ready to run. Just check for (self-posted) pending signals,
            then exit the procedure without actually switching
            contexts. */
-            
-        if (xnthread_signaled_p(runthread))
-            xnpod_dispatch_signals();
-
-        goto unlock_and_exit;
-        }
+        goto signal_unlock_and_exit;
 
     doswitch = 0;
 
@@ -1990,19 +1964,12 @@ void xnpod_schedule (void)
     xnsched_clr_resched(sched);
 
     if (!doswitch)
-        {
-noswitch:
         /* Check for signals (self-posted or posted from an interrupt
            context) in case the current thread keeps
            running. Interface mutex must be released while ASR is
            executed just in case the thread self-deletes from the
            routine. */
-
-        if (xnthread_signaled_p(runthread))
-            xnpod_dispatch_signals();
-
-        goto unlock_and_exit;
-        }
+        goto signal_unlock_and_exit;
 
     threadout = runthread;
     threadin = link2thread(getpq(&sched->readyq),rlink);
@@ -2017,7 +1984,7 @@ noswitch:
     if (threadout == threadin &&
         /* Note: the root thread never restarts. */
         !testbits(threadout->status,XNRESTART))
-        goto noswitch;
+        goto signal_unlock_and_exit;
 
 #ifdef __KERNEL__
     shadow = testbits(threadout->status,XNSHADOW);
@@ -2057,9 +2024,6 @@ noswitch:
         }
 #endif /* __KERNEL__ */
 
-    if (xnthread_signaled_p(runthread))
-        xnpod_dispatch_signals();
-
     if (nkpod->schedhook)
         nkpod->schedhook(runthread,XNRUNNING);
     
@@ -2067,9 +2031,12 @@ noswitch:
         !testbits(runthread->status,XNTHREAD_SYSTEM_BITS))
         xnpod_fire_callouts(&nkpod->tswitchq,runthread);
 
- unlock_and_exit:
+ signal_unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
+
+    if (xnthread_signaled_p(runthread))
+        xnpod_dispatch_signals();
 }
 
 /*! 

@@ -902,7 +902,7 @@ int main (int argc, char **argv)
 
     if (FlagLinking)
 	{
-	CCCmdString += " -u main -u __fusion_skin_init";
+	CCCmdString += " -u main -u __fusion_skin_init -u __fusion_user_init";
 
 	CString libDir(ExecPrefix);
 	libDir += "lib";

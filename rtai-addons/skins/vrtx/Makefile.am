@@ -1,0 +1,83 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+noinst_LIBRARIES = libmodule.a
+
+libmodule_a_SOURCES = \
+	event.c \
+	heap.c \
+	mb.c \
+	module.c \
+	mx.c \
+	pt.c \
+	queue.c \
+	sem.c \
+	task.c \
+	time.c
+
+libmodule_a_AR = $(CROSS_COMPILE)ar cru
+
+noinst_HEADERS = \
+	defs.h \
+	event.h \
+	heap.h \
+	mb.h \
+	mx.h \
+	pt.h \
+	queue.h \
+	sem.h \
+	task.h
+
+include_HEADERS = \
+	rtai_vrtx.h
+
+libmodule_a_CPPFLAGS = \
+	@RTAI_KMOD_CFLAGS@ \
+	-I$(top_srcdir)/rtai-core/include \
+	-I../../../rtai-core/include \
+	-I$(srcdir)/..
+
+rtai_vrtx.o: libmodule.a
+	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+
+all-local: rtai_vrtx.o
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_vrtx.o
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+if CONFIG_RTAI_XENOMAI_VMLIB
+
+lib_LIBRARIES = libvrtx.a
+
+nodist_libvrtx_a_SOURCES = \
+	event.c \
+	heap.c \
+	mb.c \
+	module.c \
+	mx.c \
+	pt.c \
+	queue.c \
+	sem.c \
+	task.c \
+	time.c
+
+libvrtx_a_CPPFLAGS = \
+	@RTAI_USER_CFLAGS@ \
+	-D_GNU_SOURCE -D_REENTRANT \
+	-I$(srcdir)/.. \
+	-I$(top_srcdir)/rtai-core/include/xenomai/vm \
+	-I$(top_srcdir)/rtai-core/include \
+	-I../../../rtai-core/include \
+	-I@RTAI_LINUX_DIR@/include
+
+libvrtx_a_AR = $(CROSS_COMPILE)ar cru
+
+endif
+
+EXTRA_DIST = doc

@@ -1,0 +1,174 @@
+This directory contains the support for modifing the Scilab/Scicos code 
+generation, so that it can be used within RTAI user space soft/hard real time
+and monitered with RTAI-Lab.
+
+To use it you have to download and install the full source Scilab release 
+from "www.scilab.org", it contains Scicos already and the
+CodeGeneration macro. 
+
+Then:
+- fully install Scilab;
+- go in the "macros" directory found here
+- edit "RTAICodeGen_.sci", to modify in the function "gen_make_unix" 
+  the lines: 
+       "RTAIDIR = <RTAI install dir>" (default is /usr/realtime)
+  to fit your installation.
+
+- modify in the file "Makefile" the line 
+	"SCILAB_DIR = /usr/lib/scilab-2.7"
+  to fit your SCILAB installation.
+
+- run "make install"
+ 
+At this point you are ready to generate code for RTAI, using the new menu 
+"RTAI->RTAICodeGen" in the scicos window.
+Scicos generated code is structured with names in the form "model_...", "model" 
+being the identifier of your model. 
+With RTAI you must make and use what generated as "model_standalone". 
+
+After generating the code, RTAICodeGen asks for creating a "config" file. This file 
+is used to modify the "<model>_void_io.c" file into the "<model>_io.c" file, which
+will contain the calls to the I/O blocks. A set of blocks is already implemented in 
+the "libsciblk,a" library.
+
+For more informations give a look at the "scilab-howto.pdf" document in the
+"utility" directory.
+
+Roberto Bucher (roberto.bucher@supsi.ch)
+28.01.2004
+
+========================================================
+
+The Scicos sensors/actuators template is very simple and completing it for a
+specific application at hand should be quite easy. The most usual case implies
+just writing and reading data to/from one or more DAQ cards. By using 
+kcomedi_lxrt support that will imply just setting up appropriate calls to 
+kcomedy at the points suggested by the template Scicos IO functions. 
+The sensors/actuators function can be readily useful also to implement what is 
+needed for distributed applications. 
+
+The RTAI specific Scicos code generation allows you to execute the generated
+code in soft/hard real time, monitor its execution and change parameters on 
+the fly, both locally and remotely. It shows the power and ease afforded by 
+RTAI in setting up a local/distributed processing, by using the "net_rpc"
+based "xrtailab".
+
+Many controllers can then be installed, either on a single local computer or 
+distributed on local/remote nodes. They all are supervised/monitored with 
+RTAI-Lab, thus allowing to manage multiple instance of both Scicos and RTW 
+applications. See the related README in RTAI-Lab specific directory.
+
+As mentioned Scicos based applications can be implemented also in a distributed
+way. No specific scheme is made available. It is preferred to let each user do 
+what he/she wants. As said anything should be easily carried out in the 
+sensors/actuators part of the code by using net_rpc support. In violation
+to the previous statement a general provision has been embedded for providing
+externally generated local/remote timing events. It will be explained further 
+on and can be used by way of example for other types of remote coordinations.
+
+It must be noticed that the change of a Scicos model parameters cannot be done
+in a too friendly way as no (human) parameter id is generated, at the moment, 
+by CodeGen. So you must know some Scicos internals to guess the position each 
+parameter occupies in the vectors RPAR1/IPAR1, found in your model, and be 
+sure it can be changed at each sampling time. 
+As a help to an easier understanding of where your parameters are placed 
+within RPAR1 it should be noticed that RTAI-Lab allows to look at and change 
+the parameters before beginning any actual execution. So by setting up fancy 
+numbers in the Scicos model, at its code generation, you can see them before 
+activating your controller, know where they are, set back their correct 
+values before execution and then change them during the controller execution 
+also. It is a bit silly operation but can help in guiding you to do what you 
+want, almost without knowing Scicos internals. A typical scheme used at DIAPM 
+for real parameters is to use practically nonsignificant digits as memos of the
+related variable. In such a way you know the parameters "who is who" without
+having to change them before beginning the controller execution. 
+Integer parameters might be more difficult in this respect but they are often 
+untouchable or require to be changed more rarely.
+
+A rough understanding of the Scilab/Scicos internals is nonetheless clearly 
+a good asset. The essential fact to be recalled is that any dynamic block will 
+end into RPAR1 as a standard discrete quadruple [A, B; C, D] other single 
+parameter blocks, e.g. constants and gains remaining standalone. A look at 
+model.cosf might be of help also.
+
+The same problem exists for the model input/output template function and it is
+up to you to take care of the way Scicos numbers your input/output, so that 
+you can code appropriately the sensor/actuator code in "model_io.c". Again no 
+parameter id is provided by user parameters and they must be recognised just 
+through their indices. Clearly in this case it is easier anyhow as the user 
+is doing it all directly.
+
+A clearer understanding of what is possible to do can be achieved by reading
+the explaination of the available execution parameters in the main README.
+
+As it has been said above the Scicos controller driver generator has a native
+way to implement the "drevent" option. To use such a feature a controller must 
+use the function:
+void WaitTimerEvent(unsigned long TimerEventArg). 
+In fact WaitTimerEvent is a pointer to such a function and TimerEventArg a 
+global variable. As hinted immediatly above they must be set up during 
+controller iniatialisation. The local/remote server must provide the conjugate 
+function to wake up the controller according to its timing, or any other 
+protocol agreed. The function:
+void SendTimerEvent(unsigned long TimerEventArg), 
+must also be provided by setting the related pointer within the controller. 
+Such a function is the very same function used by the local/remote server, 
+albeit in local mode. It is required to awake the controller to have it 
+smoothly ended asynchonously by the supervisor program.
+The default periodic execution comes through the pair: 
+rt_task_make_periodic - rt_task_wait_period. 
+It allows to have the controller ended by the supervisor without any specific 
+event, its termination coming at the next period anyhow.
+
+An helper application is provided to illustrate what explained above. It
+consists in a summed PID controller, with integrator controlled saturation as
+antiwindup, mated to a simple second order discrete dynamic system to have a
+realistic impression of what happens at parameters modifications. It features
+a single output, the signal to be tracked by the controllers, and two output,
+the input and tracked signals. Two more output are added that have nothing to
+do with the controller. They are there to show:
+- an example of how a switch can be operated by changing the value of its
+  constant input (RPAR1 # 25);
+- the change of an integer parameter to switch from a uniform to a Gausssion 
+  random signal (IPAR1 # 37);
+- piling up a few more signal to have more scopes activity, a total of 4 
+  signals are available for the scopes and there are "pid_io.c.2ch" and 
+  "pid_io.c.4ch" to watch them using either two two traces scopes or a single 
+  four traces one.
+
+The all system can be viewed in Scicos by loading pid.cosf. All the blocks
+visualised by Scicos can have their parameters modified during execution and 
+a look at the PID layout with Scicos is suggested to understand what parameters
+are in the game and have a reminder at their position in RPAR1 by looking at
+their values. 
+The signal tracked by the PID is generated in the sensors function "pid_io.c" 
+and its outputs are sent to RTAI-Lab through mailboxes, initialised and used 
+in the actuators part of "pid_io.c". 
+"pid_io.c" contains also the initialisation of five user parameters. The first 
+three are the amplitude, circular frequency and phase of a the generated sine 
+signal. The fourth is used for remote operation and the fifth is a spare.
+
+The function "pid_upar_update" is coded in "pid_io.c" to provide an example of
+a remote application by using a local task suspend and a remote task resume.
+A remote instance of the PID controller can synchronize its execution with
+that of a remote peer by executing a remote task resume at each sampling of
+its sensor input. It gets the node of the remote peer each time the fourth 
+user parameter is set to the dotted decimal notation (ddn) of its peer 
+computer. It stops executing the remote peer each time such a parameter is 
+reset to zero. The support for coding the dotted decimal notation is available 
+internally by setting the ddn into a double, in blocks of three decimal digits.
+So 127.0.0.1 must be given as 127000000001, 131.175.154.195 as 131175154195 
+and so on.
+More complex specific distributed policies implementations should come easy
+by appropriate usage of sensors/actuators/upar_update functions. Clearly
+if some form of true distributed real time is required the use of RTNet is
+compulsory.
+Notice also that distributed implementations can be embedded in Scicos models, 
+RTAI providing distributed activations signals to Scicos blocks through
+"model_io.c".
+
+Paolo Mantegazza (mantegazza@aero.polimi.it)
+Dec. 22th, 2002.
+
+
+

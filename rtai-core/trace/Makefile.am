@@ -1,0 +1,27 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+noinst_LIBRARIES = libtrace.a
+
+libtrace_a_SOURCES = trace.c
+
+libtrace_a_AR = $(CROSS_COMPILE)ar cru
+
+INCLUDES = \
+	@RTAI_KMOD_CFLAGS@ \
+	-I$(top_srcdir)/rtai-core/include \
+	-I../include
+
+rtai_trace.o: libtrace.a
+	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+
+all-local: rtai_trace.o
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_trace.o
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)

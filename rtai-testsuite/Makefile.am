@@ -1,0 +1,7 @@
+OPTDIRS =
+
+if CONFIG_RTAI_SCHED_LXRT
+OPTDIRS += user
+endif
+
+SUBDIRS = kern $(OPTDIRS)

@@ -1,0 +1,1 @@
+switches:ksched+sem:push rt_process;klog;popall:control_c

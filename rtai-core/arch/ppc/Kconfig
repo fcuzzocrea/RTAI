@@ -1,0 +1,258 @@
+mainmenu "RTAI/PPC configuration"
+
+config MODULES
+	bool
+	default y
+
+config RTAI_VERSION
+	string
+	default "3.0r5 (kilauea)"
+
+menu "General"
+
+config RTAI_INSTALLDIR
+	string "Installation directory"
+	default "/usr/realtime"
+
+	help
+	This option defines the directory where the various RTAI
+	files will be installed on your target system.
+
+	This directory may be changed if you double-click in the area
+	named "Value". The default installation directory is
+	/usr/realtime.
+
+config RTAI_LINUXDIR
+	string "Linux source tree"
+	default "/usr/src/linux"
+
+config RTAI_DOC
+	bool "Build RTAI documentation (PDF/HTML)"
+	default n
+	help
+	This option causes the Doxygen-based RTAI documentation to be
+	built. You will need the Doxygen toolsuite for this.
+
+config RTAI_DOC_LATEX_NONSTOP
+        bool "Enable LaTeX verbose output"
+	depends on RTAI_DOC
+        default n
+        help
+        By default, all documentation generated with LaTeX uses the 
+        silent (batchmode) of LaTeX. If this option is enabled, the 
+        verbose (nonstopmode) of LaTeX will be used instead. This 
+        option is mainly intended for people writing RTAI 
+        documentation.
+
+config RTAI_TESTSUITE
+	bool "Build RTAI testsuite"
+	default y
+	help
+	Once you are done with the building process of RTAI, it may be
+	safe to run the testsuite to make sure your RTAI system is
+	functional.
+
+config RTAI_COMPAT
+	bool "Enable source compatibility mode"
+	default y
+
+config RTAI_EXTENDED
+	bool "Enable extended configuration mode"
+	default n
+
+config RTAI_KMOD_DEBUG
+	bool "Enable debug symbols in modules"
+	depends on RTAI_EXTENDED
+	default n
+	help
+	This options adds the -g flag when compiling
+	kernel modules.
+
+config RTAI_USER_DEBUG
+	bool "Enable debug symbols in user-space programs"
+	depends on RTAI_EXTENDED
+	default n
+	help
+
+	This options adds the -g flag when compiling user-space
+	programs. LXRT inlining is also implicitely disabled.
+
+config RTAI_MAINTAINER
+	bool "Enable maintainer mode"
+	depends on RTAI_EXTENDED
+	default n
+
+config RTAI_MAINTAINER_AUTOTOOLS
+	bool "Enable Autoconf/Automake maintainer mode"
+	depends on RTAI_MAINTAINER
+	default n
+
+endmenu
+
+menu "Machine (PowerPC)"
+
+config RTAI_FPU_SUPPORT
+	bool "Enable FPU support"
+	default n
+	help
+	The FPU executes instructions from the processor's normal
+	instruction stream. It can handle the types of high-precision
+	floating-point processing operations commonly found in
+	scientific, engineering, and business applications. Enabling
+	FPU support on a platform providing this hardware component
+	may greatly improve performances. Be aware that there are
+	PowerPC processors without FPU, e.g. the MPC8xx or IBM405GP.
+
+config RTAI_CPUS
+	string
+	default 1
+
+endmenu
+
+menu "Core system"
+
+menu "Schedulers"
+
+config RTAI_SCHED_UP
+	bool "Scheduler for uniprocessor machine (kernel tasks only)"
+	default y
+
+config RTAI_SCHED_SMP
+	bool
+	default n
+
+config RTAI_SCHED_MUP
+	bool
+	default n
+
+config RTAI_SCHED_LXRT
+	bool
+	default n
+
+menu "Scheduler options"
+
+	depends on RTAI_EXTENDED
+
+config RTAI_SCHED_ISR_LOCK
+	bool "Disable rescheduling from ISRs"
+	default n
+
+endmenu
+
+endmenu
+
+menu "Basic features"
+
+menu "IPC support"
+
+config RTAI_BITS
+	tristate "Event flags"
+	default m
+
+config RTAI_FIFOS
+	tristate "Fifo"
+	default m
+
+config RTAI_NETRPC
+	tristate
+	default n
+
+config RTAI_NETRPC_RTNET
+	bool "Emulate RTNet"
+	depends on RTAI_NETRPC
+	default y
+
+config RTAI_SHM
+	tristate "Shared memory"
+	default m
+	help
+	This RTAI specific module allows sharing memory inter-intra
+	real-time tasks and Linux processes. In fact it can be an
+	alternative to the SYSTEM V shared memory. It may also be
+	noticed that the services are symmetrical, i.e. the same calls
+	can be used both in real-time tasks (within the kernel) and
+	Linux processes.
+	The module will be called rtai_shm.o.
+
+config RTAI_SEM
+	tristate "Semaphores"
+	default m
+
+config RTAI_MSG
+	tristate "Message"
+	default m
+
+config RTAI_MBX
+	tristate "Mailboxes"
+	depends on RTAI_SEM
+	default y if RTAI_SEM=y
+	default m if RTAI_SEM=m
+
+config RTAI_TBX
+	tristate "Typed mailboxes"
+	depends on RTAI_SEM
+	default y if RTAI_SEM=y
+	default m if RTAI_SEM=m
+
+config RTAI_MQ
+	tristate "POSIX-like message queues"
+	depends on RTAI_SEM
+	default y if RTAI_SEM=y
+	default m if RTAI_SEM=m
+
+endmenu
+
+menu "Misc"
+
+config RTAI_MATH
+	tristate "Math support"
+	depends on RTAI_FPU_SUPPORT
+	default m
+
+config RTAI_MATH_C99
+	bool "C99 standard support"
+	depends on RTAI_MATH
+	default n
+
+config RTAI_MALLOC
+	tristate "Real-time malloc support"
+	default y
+
+config RTAI_MALLOC_VMALLOC
+	bool "Use vmalloc() support"
+	depends on RTAI_EXTENDED && RTAI_MALLOC
+	default n
+
+config RTAI_TASKLETS
+	tristate "Tasklets"
+	default m
+
+config RTAI_TRACE
+	bool "LTT support"
+	default n
+
+config RTAI_USI
+	tristate "User-space interrupts"
+	default m
+
+config RTAI_WD
+	bool "Watchdog support"
+	default y
+
+endmenu
+
+endmenu
+
+endmenu
+
+menu "Add-ons"
+
+config RTAI_CPLUSPLUS
+	bool
+	default n
+
+config RTAI_SERIAL
+	bool
+	default n
+
+endmenu

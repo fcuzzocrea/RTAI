@@ -1,0 +1,7 @@
+OPTDIRS =
+
+if CONFIG_RTAI_XENOMAI
+OPTDIRS += xenomai
+endif
+
+SUBDIRS = rtai $(OPTDIRS)

@@ -1,0 +1,9 @@
+install-data-local:
+
+SUBDIRS = utility devices
+
+EXTRA_DIST = rtmain.c README examples macros
+
+install-exec-local: rtmain.c
+	$(mkinstalldirs) $(DESTDIR)/$(pkgdatadir)/scicos
+	$(INSTALL_DATA) $< $(DESTDIR)/$(pkgdatadir)/scicos

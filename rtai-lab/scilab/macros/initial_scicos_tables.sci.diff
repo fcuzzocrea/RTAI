@@ -1,0 +1,10 @@
+--- /usr/lib/scilab-2.7/macros/util/initial_scicos_tables.sci	2004-01-23 08:33:54.000000000 +0100
++++ initial_scicos_tables.sci	2004-01-23 08:32:54.000000000 +0100
+@@ -23,6 +23,7 @@
+ 	'Flip','Undo','Pal editor'],..
+ ['Simulate','Setup','Compile','Eval','Run'],..
+ ['Object','Open/Set','Resize','Icon','Icon Editor','Color','Label','Get Info','Identification','Documentation','Code Generation'],..
++['RTAI','RTAI CodeGen'],..
+ ['Misc','Background color','Default link colors','ID fonts','Aspect',..
+ 	'Add color','Shortcuts','Zoom in','Zoom out','Help','Calc']);
+ 

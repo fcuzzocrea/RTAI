@@ -1,0 +1,19 @@
+OPTDIRS =
+
+if CONFIG_RTAI_CPLUSPLUS
+OPTDIRS += cpp
+endif
+
+if CONFIG_RTAI_COMEDI_LXRT
+OPTDIRS += comedi
+endif
+
+if CONFIG_RTAI_SERIAL
+OPTDIRS += serial
+endif
+
+if CONFIG_RTAI_XENOMAI
+OPTDIRS += skins
+endif
+
+SUBDIRS = $(OPTDIRS)

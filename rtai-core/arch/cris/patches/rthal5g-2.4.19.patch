@@ -1,0 +1,477 @@
+diff -uNrp linux-2.4.19-cris/Documentation/Configure.help linux-2.4.19-cris-rthal/Documentation/Configure.help
+--- linux-2.4.19-cris/Documentation/Configure.help	2004-01-02 15:40:15.000000000 +0100
++++ linux-2.4.19-cris-rthal/Documentation/Configure.help	2004-01-02 12:36:12.000000000 +0100
+@@ -253,6 +253,23 @@ CONFIG_X86_UP_IOAPIC
+   If you have a system with several CPUs, you do not need to say Y
+   here: the IO-APIC will be used automatically.
+ 
++Real-Time Harware Abstraction
++CONFIG_RTHAL
++  The Real-Time Hardware Abstraction Layer (RTHAL) is used by
++  the Real-Time Application Interface (RTAI) to provide a
++  hard real-time environment as part of Linux.  This feature
++  cannot be turned off if you want to use RTAI, so say Y.
++  Note: When you intend to use RTAI it is recommended that the
++  watchdog is disabled (CONFIG_WATCHDOG).
++
++Using the timers in cascade-mode under RTAI
++CONFIG_ETRAX_DISABLE_CASCADED_TIMERS_IN_RTAI
++  When RTAI is loaded it uses both available timers in hardware
++  set to cascade-mode. This gives a significant performance
++  increase for the accuracy of the real-time scheduler. Set this
++  option to Y if you want to disable this feature. Then RTAI
++  only uses timer0, which is possible but not recommended.
++
+ Local APIC Support on Uniprocessors
+ CONFIG_X86_UP_APIC
+   A local APIC (Advanced Programmable Interrupt Controller) is an
+diff -uNrp linux-2.4.19-cris/Makefile linux-2.4.19-cris-rthal/Makefile
+--- linux-2.4.19-cris/Makefile	2004-01-02 15:40:15.000000000 +0100
++++ linux-2.4.19-cris-rthal/Makefile	2004-01-02 12:36:12.000000000 +0100
+@@ -1,7 +1,7 @@
+ VERSION = 2
+ PATCHLEVEL = 4
+ SUBLEVEL = 19
+-EXTRAVERSION =
++EXTRAVERSION = rthal
+ 
+ KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ 
+@@ -124,7 +124,11 @@ export SVGA_MODE = -DSVGA_MODE=NORMAL_VG
+ 
+ #export RAMDISK = -DRAMDISK=512
+ 
++ifdef CONFIG_RTHAL
++CORE_FILES      =kernel/kernel.o mm/mm.o fs/fs.o ipc/ipc.o rtai/rtai.o
++else
+ CORE_FILES	=kernel/kernel.o mm/mm.o fs/fs.o ipc/ipc.o
++endif
+ NETWORKS	=net/network.o
+ 
+ LIBS		=$(TOPDIR)/lib/lib.a
+diff -uNrp linux-2.4.19-cris/arch/cris/Makefile linux-2.4.19-cris-rthal/arch/cris/Makefile
+--- linux-2.4.19-cris/arch/cris/Makefile	2002-08-03 02:39:42.000000000 +0200
++++ linux-2.4.19-cris-rthal/arch/cris/Makefile	2004-01-02 14:26:12.000000000 +0100
+@@ -39,7 +39,7 @@ OBJCOPY := $(CROSS_COMPILE)objcopy -O bi
+ 
+ # -mlinux enables -march=v10, -fno-underscores, -D__linux__ among others
+ 
+-CFLAGS := $(CFLAGS) -mlinux -pipe
++CFLAGS := $(CFLAGS) -mlinux -pipe -Wa,--underscore
+ 
+ ifdef CONFIG_ETRAX_KGDB
+ CFLAGS := $(subst -fomit-frame-pointer,,$(CFLAGS)) -g
+diff -uNrp linux-2.4.19-cris/arch/cris/config.in linux-2.4.19-cris-rthal/arch/cris/config.in
+--- linux-2.4.19-cris/arch/cris/config.in	2004-01-02 15:40:15.000000000 +0100
++++ linux-2.4.19-cris-rthal/arch/cris/config.in	2004-01-02 12:36:12.000000000 +0100
+@@ -41,6 +41,12 @@ fi
+ 
+ bool 'Enable ETRAX fast timer API' CONFIG_ETRAX_FAST_TIMER
+ 
++comment 'CONFIG_RTHAL must be yes to use RTAI'
++bool 'Real-Time Hardware Abstraction Layer' CONFIG_RTHAL
++if [ "$CONFIG_RTHAL" = "y" ]; then
++	bool '  Disable cascaded-mode timers in RTAI' CONFIG_ETRAX_DISABLE_CASCADED_TIMERS_IN_RTAI
++fi
++
+ endmenu
+ 
+ mainmenu_option next_comment
+diff -uNrp linux-2.4.19-cris/arch/cris/defconfig linux-2.4.19-cris-rthal/arch/cris/defconfig
+--- linux-2.4.19-cris/arch/cris/defconfig	2002-08-03 02:39:42.000000000 +0200
++++ linux-2.4.19-cris-rthal/arch/cris/defconfig	2004-01-02 12:36:12.000000000 +0100
+@@ -11,6 +11,12 @@ CONFIG_RWSEM_GENERIC_SPINLOCK=y
+ CONFIG_EXPERIMENTAL=y
+ 
+ #
++# RTHAL
++#
++CONFIG_RTHAL=y
++# CONFIG_ETRAX_DISABLE_CASCADED_TIMERS_IN_RTAI is not set
++
++#
+ # General setup
+ #
+ CONFIG_NET=y
+diff -uNrp linux-2.4.19-cris/arch/cris/kernel/entry.S linux-2.4.19-cris-rthal/arch/cris/kernel/entry.S
+--- linux-2.4.19-cris/arch/cris/kernel/entry.S	2002-08-03 02:39:42.000000000 +0200
++++ linux-2.4.19-cris-rthal/arch/cris/kernel/entry.S	2004-01-02 12:36:12.000000000 +0100
+@@ -240,6 +240,10 @@ ret_from_intr:
+ 	btstq	8, $r0		; U-flag
+ 	bpl	_Rexit		; go back directly
+ 	nop
++#ifdef CONFIG_RTHAL
++	move.d  rthal, $r0
++	jsr	[$r0+32]     ; Long path in usermode, ei to reduce latency 
++#endif
+ 	ba	_ret_with_reschedule  ; go back but check schedule and signals first 
+ 	nop
+ 
+diff -uNrp linux-2.4.19-cris/arch/cris/kernel/irq.c linux-2.4.19-cris-rthal/arch/cris/kernel/irq.c
+--- linux-2.4.19-cris/arch/cris/kernel/irq.c	2002-02-25 20:37:52.000000000 +0100
++++ linux-2.4.19-cris-rthal/arch/cris/kernel/irq.c	2004-01-02 12:36:12.000000000 +0100
+@@ -55,6 +55,62 @@ unmask_irq(unsigned int irq_nr)
+ 	*R_VECT_MASK_SET = 1 << irq_nr;
+ }
+ 
++#ifdef CONFIG_RTHAL
++
++/*
++  RTAI
++  This is the most appropriate place to setup rthal.
++*/
++
++static void linux_cli(void)
++{
++	hard_cli();
++}
++
++static void linux_sti(void)
++{
++	hard_sti();
++}
++
++static unsigned long linux_save_flags(void)
++{
++	unsigned long flags;
++	hard_save_flags(flags);
++	return flags;
++}
++
++static unsigned long linux_save_flags_and_cli(void)
++{
++	unsigned long flags;
++	hard_save_flags_cli(flags);
++	return flags;
++}
++
++static void linux_restore_flags(unsigned long flags)
++{
++	hard_restore_flags(flags);
++}
++
++asmlinkage void do_IRQ(int, struct pt_regs*);
++
++static void do_nothing_void(void) { }
++static long long do_nothing(int what, unsigned long ever) { }
++
++struct rt_hal rthal = {
++	do_IRQ,                   /* rthal.do_IRQ (irq-dispatcher) */
++	do_IRQ,                   /* rthal.do_timer_IRQ (irq-dispatcher for timer) */
++	do_nothing,               /* rthal.do_SRQ (srq-dispatcher if rtai is mounted) */
++	linux_cli,                /* rthal.disint */
++	linux_sti,                /* rthal.enint */
++	linux_save_flags,         /* rthal.getflags */ 
++	linux_restore_flags,      /* rthal.setflags */
++	linux_save_flags_and_cli, /* rthal.getflags_and_cli */
++	do_nothing_void,          /* rthal.ei_if_rtai */
++	unmask_irq                /* rthal.unmask_if_not_rtai */
++};
++
++#endif  /* CONFIG_RTHAL */
++
+ void
+ disable_irq(unsigned int irq_nr)
+ {
+@@ -211,7 +267,32 @@ static void (*bad_interrupt[NR_IRQS])(vo
+ /*
+  * Initial irq handlers.
+  */
++#ifdef CONFIG_RTHAL
++struct irqaction *irq_action[NR_IRQS] = {
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL,
++	NULL, NULL, NULL, NULL
++};
++
++void startup_irq(int irq)
++{
++	irq_shortcuts[irq] = sinterrupt[irq];
++
++	etrax_irv->v[irq + 0x20] = (irqvectptr)interrupt[irq];
++}
++
++void shutdown_irq(int irq)
++{
++	irq_shortcuts[irq] = 0;
+ 
++	etrax_irv->v[irq + 0x20] = (irqvectptr)bad_interrupt[irq];
++}
++#else
+ static struct irqaction *irq_action[NR_IRQS] = {
+ 	NULL, NULL, NULL, NULL,
+ 	NULL, NULL, NULL, NULL,
+@@ -222,6 +303,7 @@ static struct irqaction *irq_action[NR_I
+ 	NULL, NULL, NULL, NULL,
+ 	NULL, NULL, NULL, NULL
+ };
++#endif
+ 
+ int get_irq_list(char *buf)
+ {
+diff -uNrp linux-2.4.19-cris/arch/cris/kernel/ksyms.c linux-2.4.19-cris-rthal/arch/cris/kernel/ksyms.c
+--- linux-2.4.19-cris/arch/cris/kernel/ksyms.c	2004-01-02 15:40:15.000000000 +0100
++++ linux-2.4.19-cris-rthal/arch/cris/kernel/ksyms.c	2004-01-02 12:36:12.000000000 +0100
+@@ -28,6 +28,25 @@ extern void __Umod(void);
+ extern void __ashrdi3(void);
+ extern void iounmap(void *addr);
+ 
++#ifdef CONFIG_RTHAL
++/* Added for RTHAL */
++EXPORT_SYMBOL(rthal);
++EXPORT_SYMBOL(startup_irq);
++EXPORT_SYMBOL(shutdown_irq);
++EXPORT_SYMBOL(irq_action);
++EXPORT_SYMBOL(r_timer_ctrl_shadow);
++extern void reset_watchdog(void);
++EXPORT_SYMBOL(reset_watchdog);
++extern void soft_timer_interrupt(int, void*, struct pt_regs*);
++EXPORT_SYMBOL(soft_timer_interrupt);
++extern void __udivdi3(void);
++EXPORT_SYMBOL_NOVERS(__udivdi3);
++extern void __negdi2(void);
++EXPORT_SYMBOL_NOVERS(__negdi2);
++extern void __Div(void);
++EXPORT_SYMBOL_NOVERS(__Div);
++#endif
++
+ /* Platform dependent support */
+ EXPORT_SYMBOL(dump_thread);
+ EXPORT_SYMBOL(enable_irq);
+diff -uNrp linux-2.4.19-cris/arch/cris/kernel/time.c linux-2.4.19-cris-rthal/arch/cris/kernel/time.c
+--- linux-2.4.19-cris/arch/cris/kernel/time.c	2004-01-02 15:40:15.000000000 +0100
++++ linux-2.4.19-cris-rthal/arch/cris/kernel/time.c	2004-01-02 12:36:12.000000000 +0100
+@@ -428,6 +428,35 @@ timer_interrupt(int irq, void *dev_id, s
+ 	}
+ }
+ 
++#ifdef CONFIG_RTHAL 
++/*
++ * Soft timer interrupt. Called instead of timer_interrupt
++ * from linux interrupt dispatcher when RTAI is mounted.
++ */
++void
++soft_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
++{
++	/* call the real timer interrupt handler */
++	
++	do_timer(regs);
++	
++	/*
++	 * If we have an externally synchronized Linux clock, then update
++	 * CMOS clock accordingly every ~11 minutes. Set_rtc_mmss() has to be
++	 * called as close as possible to 500 ms before the new second starts.
++	 */
++	if ((time_status & STA_UNSYNC) == 0 &&
++	    xtime.tv_sec > last_rtc_update + 660 &&
++	    xtime.tv_usec > 500000 - (tick >> 1) &&
++	    xtime.tv_usec < 500000 + (tick >> 1)) {
++		if (set_rtc_mmss(xtime.tv_sec) == 0)
++			last_rtc_update = xtime.tv_sec;
++		else
++			last_rtc_update = xtime.tv_sec - 600;
++	}
++}
++#endif /* CONFIG_RTHAL */
++
+ #if 0
+ /* some old debug code for testing the microsecond timing of packets */
+ static unsigned int lastjiff;
+diff -uNrp linux-2.4.19-cris/arch/cris/mm/fault.c linux-2.4.19-cris-rthal/arch/cris/mm/fault.c
+--- linux-2.4.19-cris/arch/cris/mm/fault.c	2004-01-02 15:40:15.000000000 +0100
++++ linux-2.4.19-cris-rthal/arch/cris/mm/fault.c	2004-01-02 12:36:12.000000000 +0100
+@@ -282,8 +282,12 @@ do_page_fault(unsigned long address, str
+ 	    !user_mode(regs))
+ 		goto vmalloc_fault;
+ 
+-	/* we can and should enable interrupts at this point */
++/* we can and should enable interrupts at this point */
++#ifdef CONFIG_RTHAL
++	hard_sti();
++#else	
+ 	sti();
++#endif
+ 
+ 	mm = tsk->mm;
+ 	writeaccess = error_code & 2;
+diff -uNrp linux-2.4.19-cris/include/asm-cris/irq.h linux-2.4.19-cris-rthal/include/asm-cris/irq.h
+--- linux-2.4.19-cris/include/asm-cris/irq.h	2002-02-25 20:38:11.000000000 +0100
++++ linux-2.4.19-cris-rthal/include/asm-cris/irq.h	2004-01-02 12:36:12.000000000 +0100
+@@ -92,6 +92,12 @@ extern struct etrax_interrupt_vector *et
+ void set_int_vector(int n, irqvectptr addr, irqvectptr saddr);
+ void set_break_vector(int n, irqvectptr addr);
+ 
++#ifdef CONFIG_RTHAL
++void startup_irq(int n);
++void shutdown_irq(int n);
++extern struct irqaction *irq_action[NR_IRQS];
++#endif
++
+ #define __STR(x) #x
+ #define STR(x) __STR(x)
+  
+@@ -131,6 +137,32 @@ void set_break_vector(int n, irqvectptr 
+    * will acknowledge the interrupt is run.
+    */
+ 
++#ifdef CONFIG_RTHAL
++#define BUILD_IRQ(nr,mask) \
++void IRQ_NAME(nr); \
++void sIRQ_NAME(nr); \
++void BAD_IRQ_NAME(nr); \
++__asm__ ( \
++      ".text\n\t" \
++      "IRQ" #nr "_interrupt:\n\t" \
++	  SAVE_ALL \
++	  "sIRQ" #nr "_interrupt:\n\t" /* shortcut for the multiple irq handler */ \
++	  BLOCK_IRQ(mask,nr) /* this must be done to prevent irq loops when we ei later */ \
++	  "moveq "#nr",$r10\n\t" \
++	  "move.d $sp,$r11\n\t" \
++	  "jsr [rthal]\n\t" /* irq.c, r10 and r11 are arguments */ \
++          "moveq "#nr",$r10\n\t" \
++	  "move.d rthal, $r0\n\t" \
++	  "jsr [$r0 + 36]\n\t" \
++	  "moveq 0,$r9\n\t" /* make ret_from_intr realise we came from an irq */ \
++	  "jump ret_from_intr\n\t" \
++          "bad_IRQ" #nr "_interrupt:\n\t" \
++	  "push $r0\n\t" \
++	  BLOCK_IRQ(mask,nr) \
++	  "pop $r0\n\t" \
++          "reti\n\t" \
++          "nop\n");
++#else
+ #define BUILD_IRQ(nr,mask) \
+ void IRQ_NAME(nr); \
+ void sIRQ_NAME(nr); \
+@@ -154,6 +186,8 @@ __asm__ ( \
+           "reti\n\t" \
+           "nop\n");
+ 
++#endif  /* RTHAL */
++
+ /* This is subtle. The timer interrupt is crucial and it should not be disabled for 
+  * too long. However, if it had been a normal interrupt as per BUILD_IRQ, it would
+  * have been BLOCK'ed, and then softirq's are run before we return here to UNBLOCK.
+@@ -169,6 +203,29 @@ __asm__ ( \
+  * be an sti() before the timer irq handler is run to acknowledge the interrupt.
+  */
+ 
++#ifdef CONFIG_RTHAL
++#define BUILD_TIMER_IRQ(nr,mask) \
++void IRQ_NAME(nr); \
++void sIRQ_NAME(nr); \
++void BAD_IRQ_NAME(nr); \
++__asm__ ( \
++          ".text\n\t" \
++          "IRQ" #nr "_interrupt:\n\t" \
++	  SAVE_ALL \
++	  "sIRQ" #nr "_interrupt:\n\t" /* shortcut for the multiple irq handler */ \
++	  "moveq "#nr",$r10\n\t" \
++	  "move.d $sp,$r11\n\t" \
++          "move.d rthal, $r0\n\t" \
++	  "jsr [$r0+4]\n\t" \
++          "moveq 0,$r9\n\t" /* make ret_from_intr realise we came from an irq */ \
++	  "jump ret_from_intr\n\t" \
++          "bad_IRQ" #nr "_interrupt:\n\t" \
++	  "push $r0\n\t" \
++	  BLOCK_IRQ(mask,nr) \
++	  "pop $r0\n\t" \
++          "reti\n\t" \
++          "nop\n");
++#else
+ #define BUILD_TIMER_IRQ(nr,mask) \
+ void IRQ_NAME(nr); \
+ void sIRQ_NAME(nr); \
+@@ -190,6 +247,8 @@ __asm__ ( \
+           "reti\n\t" \
+           "nop\n");
+ 
++#endif  /* CONFIG_RTHAL */
++
+ #endif  /* _ASM_IRQ_H */
+ 
+ 
+diff -uNrp linux-2.4.19-cris/include/asm-cris/system.h linux-2.4.19-cris-rthal/include/asm-cris/system.h
+--- linux-2.4.19-cris/include/asm-cris/system.h	2002-08-03 02:39:45.000000000 +0200
++++ linux-2.4.19-cris-rthal/include/asm-cris/system.h	2004-01-02 12:36:12.000000000 +0100
+@@ -54,6 +54,50 @@ static inline unsigned long _get_base(ch
+ struct __xchg_dummy { unsigned long a[100]; };
+ #define __xg(x) ((struct __xchg_dummy *)(x))
+ 
++#ifdef CONFIG_RTHAL
++
++/* includes pt_regs needed in rt_hal */
++#include <asm/ptrace.h>
++
++#define hard_save_flags(x) __asm__ __volatile__    ("move $ccr,%0" : "=rm" (x) :          : "memory");
++#define hard_restore_flags(x) __asm__ __volatile__ ("move %0,$ccr" :           : "rm" (x) : "memory");
++#define hard_cli() __asm__ __volatile__            ( "di"          :           :          : "memory");
++#define hard_sti() __asm__ __volatile__            ( "ei"          :           :          : "memory");
++#define hard_save_flags_cli(x) do { hard_save_flags(x); hard_cli(); } while (0) 
++
++#define cli() __cli()
++#define sti() __sti()
++#define save_flags(x) __save_flags(x)
++#define restore_flags(x) __restore_flags(x)
++#define save_and_cli(x) do { __save_flags(x); cli(); } while(0)
++struct rt_hal {
++	void (*do_IRQ) (int, struct pt_regs*);      /*  0 */
++	void (*do_timer_IRQ)(int, struct pt_regs*); /*  4 */
++	long long (*do_SRQ) (int, unsigned long);   /*  8 */
++	void (*disint)(void);                       /* 12 */
++	void (*enint)(void);                        /* 16 */
++	unsigned long (*getflags)(void);            /* 20 */
++	void (*setflags)(unsigned long);            /* 24 */
++	unsigned long (*getflags_and_cli)(void);    /* 28 */
++	void (*ei_if_rtai)(void);                   /* 32 */
++	void (*unmask_if_not_rtai)(unsigned int);   /* 36 */
++};
++
++extern struct rt_hal rthal;
++ 
++#define __cli()		(rthal.disint())
++#define __sti()		(rthal.enint())
++#define __save_flags(x)	((x) = rthal.getflags())
++#define __restore_flags(x)	(rthal.setflags(x))
++
++/* For spinlocks etc */
++#define local_irq_save(x)	((x) = rthal.getflags_and_cli())
++#define local_irq_restore(x)	(rthal.setflags(x))
++#define local_irq_disable()	(rthal.disint())
++#define local_irq_enable()	(rthal.enint())
++
++#else
++
+ #if 0
+ /* use these and an oscilloscope to see the fraction of time we're running with IRQ's disabled */
+ /* it assumes the LED's are on port 0x90000000 of course. */
+@@ -82,6 +126,8 @@ struct __xchg_dummy { unsigned long a[10
+ #define restore_flags(x) __restore_flags(x)
+ #define save_and_cli(x) do { __save_flags(x); cli(); } while(0)
+ 
++#endif  /* CONFIG_RTHAL */
++
+ static inline unsigned long __xchg(unsigned long x, void * ptr, int size)
+ {
+   /* since Etrax doesn't have any atomic xchg instructions, we need to disable
+diff -uNrp linux-2.4.19-cris/include/linux/timex.h linux-2.4.19-cris-rthal/include/linux/timex.h
+--- linux-2.4.19-cris/include/linux/timex.h	2001-11-22 20:46:18.000000000 +0100
++++ linux-2.4.19-cris-rthal/include/linux/timex.h	2004-01-02 15:03:03.000000000 +0100
+@@ -151,8 +151,12 @@
+  */
+ #include <asm/timex.h>
+ 
++#ifdef CONFIG_ETRAX_DISABLE_CASCADED_TIMERS_IN_RTAI
+ /* LATCH is used in the interval timer and ftape setup. */
+ #define LATCH  ((CLOCK_TICK_RATE + HZ/2) / HZ)	/* For divider */
++#else /* !CONFIG_ETRAX_DISABLE_CASCADED_TIMERS_IN_RTAI */
++#define LATCH 62500
++#endif /* CONFIG_ETRAX_DISABLE_CASCADED_TIMERS_IN_RTAI */
+ 
+ /*
+  * syscall interface - used (mainly by NTP daemon)

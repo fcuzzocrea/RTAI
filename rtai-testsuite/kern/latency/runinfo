@@ -1,0 +1,1 @@
+latency:ksched+fifos:push rt_process;./display;popall:control_c

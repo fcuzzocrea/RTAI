@@ -1,0 +1,114 @@
+Dynamic Memory Management for RTAI
+==================================
+
+Copyright (©) 2000 Pierre Cloutier (Poseidon Controls Inc.),
+                   Steve Papacharalambous (Zentropic Computing Inc.),
+                   All rights reserved
+
+Authors:           Pierre Cloutier (pcloutier@poseidoncontrols.com)
+                   Steve Papacharalambous (stevep@zentropix.com)
+
+Original date:     Sun 05 Mar 2000
+
+This library is free software; you can redistribute it and/or modify it
+under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation; either version 2 of the License, or (at your
+option) any later version.
+
+This library is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this library; if not, write to the Free Software Foundation,
+Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+
+
+Content
+-------
+
+This package contains an implementation of dynamic memory management for RTAI.
+This allows real time tasks to allocate and free memory safely whilst
+executing in the real time domain.
+
+
+Configuration Parameters
+------------------------
+
+Size of the memory chunks used for dynamic memory allocation can be changed
+to suit application requirements.  To change the default size, set to 64
+kBytes, modify the global variable "granularity" and re-compile the
+package.
+
+The default number of free chunks, set to 2, can be changed.  To change
+this mofify the global variable "low_chk_ref" and re-compile the package.
+
+The default low data mark, set to 512 bytes, which triggers the allocation
+of another free chunk can by changed by modification of the global variable
+"low_data_mark" and then re-compiling the package.
+
+
+Limitations
+-----------
+
+
+Installation
+------------
+
+This package can be installed as a stand alone kernel module, or as part of
+the RTAI distribution. When part of the RTAI distribution it will be
+configured and installed as part of the RTAI installation.
+
+To use the package as a stand alone kernel module follow these
+instructions:
+
+- Untar the archive:
+
+  tar zxvf rt_mem_mgr-<x.xx>.tar.gz
+
+  where x.xx is the package revision.
+
+- Change to the memory manager directory:
+
+  cd rt_mem_alloc
+
+- Edit the Makefile and uncomment the line:
+
+  # KFLAGS += -DMODULE
+
+- Build the package:
+
+  make clean
+  make
+
+- Install the kernel module:
+
+  insmod ./rt_mem_mgr.o
+
+NB: To install the kernel module you must be super user.
+
+
+Memory Manager API
+------------------
+
+The API calls for the memory menager are listed below:
+
+void *rt_malloc(unsigned int size);
+void rt_free(void *addr);
+
+NB: rt_malloc returns NULL if an error occured.
+
+
+TODO
+----
+
+
+Acknowledgements
+---------------- 
+
+- Paolo Mantegazza (mantegazza@aero.polimi.it) for the RTAI package, and
+  for his assistance and advice with this module.
+
+- Victor Yodaiken (yodaiken@fsmlabs.com) and Micheal Baranbanov (baraban@fsmlabs.com)
+  for the RTLinux project.

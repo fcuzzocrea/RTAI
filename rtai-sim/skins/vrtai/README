@@ -1,0 +1,20 @@
+Virtual RTAI
+============
+
+Virtual RTAI is the original rtai_sched and rt_mem_mgr modules that
+have been ported directly to the Xenomai's virtual machine.  Simply
+put, RTAI's RTHAL have been replaced by Xenomai's MVM layer, so the
+RTAI scheduler is fooled, thinking it runs on the real hardware.
+
+The MVM provides RTAI's UP-scheduler with the low-level resources it
+needs to schedule tasks, handle interrupts, manage memory and so on,
+so it eventually thinks it runs on real hardware.
+
+The main virtue of this port is to allow writing the
+hardware-independent part of a kernel-based RTAI application in
+userland, using the RTOS-aware Xenoscope GUI to debug it.
+
+RTAI's UP-scheduler port on top of the MVM is labeled with the
+original RTAI version followed by -sr<N> for "simulator revision",
+where N is the VRTAI release increment.
+The current label is 24.1.8-sr1.

@@ -1,0 +1,436 @@
+\chapter{Posix - RTAI/fusion}
+
+% ----------------------------------------------------------------------------
+
+\section{The New POSIX Approach}
+
+In older RTAI versions POSIX compatiblity has been achieved by writing 
+several modules which implemented the standard POSIX APIs in RTAI 
+modules. This approach has turned out to be problematic and difficult
+to maintain, so a new scheme has been invented. 
+
+Instead of rewriting a complete POSIX layer usable in a real-time
+context, a way has been found to move the existing user-space Linux
+support seamlessly into the RTAI realm. This basically allows to call
+regular Linux syscalls synchronously from RTAI tasks running in
+user-space, while keeping the scheduling priority of the caller
+unaffected by the domain migration.
+
+This approach offers a number of advantages:
+
+\begin{itemize}
+
+\item Conflicts (source-wise and execution-wise) between the RTAI-specific
+and native POSIX interfaces (Linuxthreads/NPTL) cannot occur, since
+there is no need for any RTAI-specific interface in the first place.
+
+\item Since user-space thread interfaces use kernel syscalls to perform
+thread synchronization and other management, interface upgrades should
+have very little impact on the RTAI POSIX support. Conversely, RTAI
+should benefit from POSIX interface upgrades at low or even no cost.
+
+\item All user-space services are now automatically RTAI-enabled,
+i.e. real-time compatible, provided they are thread-safe in the first
+place. Obviously, this does not mean that Linux services miraculously
+become time-bounded with this extension, but at least, they are now
+callable from any RTAI task context. It is still up to the user to
+evaluate the suitability of calling such code in a real-time context
+though.
+
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+
+\subsection{How it works}
+
+LXRT is able to migrate user-space tasks back and forth between the
+Linux and RTAI domains, depending on the requested operating mode.
+
+Hard real-time mode is obtained by stealing the current task from the
+Linux's scheduler runqueue and readying it for the LXRT
+scheduler. Since the latter also reinstates the MMU-context of any
+incoming task, the net result is that we have memory protected tasks
+solely scheduled by RTAI. After this transition, the migrated/stolen
+task left in \texttt{TASK\_UNINTERRUPTIBLE} state disappears from Linux's radar,
+just like any suspended task, assuming that some code somewhere will
+care for resuming it when it's due. At this point, the RTAI scheduler
+can pick this task and reinstate its MMU-context when it switches it
+back in.
+
+Migration from Linux to RTAI needs a helper task controlled by Linux
+(namely, \texttt{kthread\_b}) which is resumed by RTAI, and whose job is to move
+any given real-time task to RTAI's ready task queue, then trigger a
+fast real-time rescheduling to make such task resume into the RTAI
+domain immediately. The action of waking up this helper task after the
+migrating task has been suspended (state == \texttt{TASK\_UNINTERRUPTIBLE})
+conveniently ensures that the Linux runqueue correctly reflects the
+new situation.
+
+The following pseudo-code example shows how it works: 
+
+\begin{code}
+T1 runs in soft real-time mode...
+        T1 calls make_hard_realtime()
+                T1 Linux state is set TASK_UNINTERRUPTIBLE
+                kthread_b() kernel thread is woken up
+kthread_b() runs... (T1 is now out of Linux's runqueue)
+        kthread_b() fast schedules back T1
+T1 immediately resumes in hard real-time mode...
+\end{code}
+
+Migration from RTAI to Linux is somewhat simpler, only requiring a
+RTAI service request to be scheduled so that \texttt{wake\_up\_process()} is
+called on the migrating task as soon as the Linux kernel gets back in
+control.
+
+% ----------------------------------------------------------------------------
+
+\subsection{Side-effect of a soft-mode transition in LXRT}
+
+Soft-mode transition is caused by an explicit call to
+\texttt{make\_soft\_realtime()}, or implicitely done by LXRT when a Linux syscall
+is caught from a hard real-time task. LXRT also makes sure that such
+task goes back to hard real-time as soon as the Linux syscall has
+completed.
+
+The first effect of the soft-mode transition is to lower the calling
+task's priority down to the Linux placeholder task
+(i.e. \texttt{rt\_linux\_task}), representing the idle -- non real-time fallback
+context. This is an accepted side-effect that such lowering also
+affects the real-time priority handling, de facto excluding the soften
+task from the real-time realm.
+
+% ----------------------------------------------------------------------------
+
+\section{Issues and solutions}
+
+The following issues are raised when it comes to integrate the Linux
+General Purpose Operating System (GPOS) kernel within the execution 
+domain of a RTOS like RTAI:
+
+\begin{itemize}
+
+\item Linux internal design promotes fairness and throughput, at the
+expense of determinism. The net effect is that many code paths in the
+vanilla 2.4 Linux kernel are not preemptible for serving interrupts
+and/or rescheduling tasks.
+
+\end{itemize}
+
+By increasing the overall preemptibility of the Linux
+kernel, Montavista's "kpreempt" extension partly solves this
+issue, by limiting the non-preemptible sections to those
+protected by a spinlock, and calling the rescheduling
+procedure on exit of such sections if needed. Coupling Andrew
+Morton's low latency patch further reduces the length of such
+non-preemptible sections.
+
+\begin{itemize}
+
+\item Fine grained Linux kernel preemptibility does not help prioritizing
+the interrupt load from a real-time point of view, which means that low-priority
+bottom-halves can still preempt high-priority real-time Linux tasks
+(SCHED\_FIFO) under this model, thus introducing unbounded latencies.
+
+\end{itemize}
+
+By implementing a technique called "interrupt shielding"
+using ADEOS capabilities, we can control the interrupt flow
+so that Linux IRQ handlers are not fired while real-time
+RTAI tasks tread on Linux kernel code. This is obtained by
+inserting an intermediate ADEOS domain between RTAI and Linux,
+and stalling/unstalling this stage at the proper time. This
+way, whatever Linux actions are regarding its own interrupt
+state, ADEOS guarantees that the effective interrupt control
+for the GPOS kernel is left in the hands of the shielding
+domain above Linux in the pipeline.
+
+\begin{verbatim}
+i.e. IRQ -> [RTAI] -->-- [Shield] -->-- [Linux] (std mode)
+
+     IRQ -> [RTAI] -->-- [Shield] --/   [Linux] (rt mode)
+\end{verbatim}
+
+\begin{itemize}
+
+\item Interrupt shielding has one drawback: RTAI tasks which end up
+suspending themselves on a Linux kernel resource waiting for a Linux
+interrupt to occur (e.g. I/O or timing wait) will be woken up only
+after the shield is deactivated, i.e. when no other RTAI task is
+running into the Linux kernel domain. This fact is a source of
+priority inversions, since low priority RTAI tasks could prevent
+hi-priority ones to wake up until they relinquish the processor.
+Additionally, Linux's periodic timer resolution is not suitable for
+hi-frequency real-time processing.
+
+\end{itemize}
+
+Timing syscalls (\texttt{gettimer()}/\texttt{setitimer()} and \texttt{nanosleep()}) used by
+the POSIX layer are transparently intercepted by RTAI/fusion,
+and converted to their RTAI-based hard real-time
+counterparts. This conversion has two positive effects: RTAI's
+timer resolution is much higher, and timed RTAI tasks
+are suspended into the RTAI domain, thus cannot be shielded
+from timer interrupts by the intermediate domain.
+
+However, RTAI tasks waiting on I/O events only handled by the
+Linux kernel are still subject to priority inversions. For
+now, the best way to prevent this undesirable side-effect is
+to have those tasks handled by RTAI I/O drivers instead of
+relying on Linux drivers, since wakeups in the RTAI domain
+are performed immediately by the RTAI interrupt handler.
+
+\begin{itemize}
+
+\item RTAI currently provides determinism \emph{aside} of Linux by adding a
+preemptive and concurrent kernel. Services requests from RTAI to Linux
+then cause the requested services to run outside the real-time
+execution domain. RTAI tasks can only send asynchronous requests
+(i.e. srqs) to perform Linux services which will be processed when no
+real-time tasks are runnable.  Moreover, the service inherits the
+scheduling priority of the last Linux task which happened to have been
+preempted by RTAI. This situation currently prevents the Linux kernel
+code to be part of the real-time execution domain.
+
+\end{itemize}
+
+By tracking the priority of the RTAI task running the Linux
+kernel code and applying it dynamically to the Linux
+placeholder task controlled by the RTAI scheduler
+(i.e. rt\_linux\_task), the position of the RTAI task
+within the real-time priority hierarchy is kept unchanged,
+even when it executes into the Linux domain.
+
+Additionally, the priority of the Linux task coupled to the
+real-time RTAI task is set to a value preserving the overall
+RTAI priority scheme.  This way, we have two schedulers
+(i.e. RTAI and Linux) cooperating for the execution of
+real-time tasks inside a single priority scheme across both
+execution domains.
+
+Example: 
+\begin{verbatim}
+RTAI domain   -- RTAI (pseudo-)task "T0" scheduled by rtai_sched
+        (pri = 10)
+
+Linux domain  -- Linux task "foo" (mapped to T0) scheduled by Linux
+        (pri = sched_getpriority_max(SCHED_FIFO) + 1 + pri(T0))
+\end{verbatim}
+\begin{itemize}
+
+\item When migrating tasks from the RTAI execution domain to the Linux
+domain, a time-critical transition must occur, during which RTAI
+delegates the control of this task to the Linux scheduler. This phase
+must be fast and perfectly synchronized, to guarantee a safe
+reentrancy into the Linux kernel code. Additionally, since the only
+safe transition point is the Linux rescheduling procedure, the delay
+incurred to reach the next rescheduling point inside any preemptible
+portion of the Linux kernel must be bounded and as short as possible.
+
+\end{itemize}
+
+Transitions from RTAI to Linux are obtained by sending a
+virtual ADEOS interrupt from the RTAI domain to the Linux
+domain. The interrupt handler into the Linux kernel wakes up
+the process as requested.
+
+If the Linux kernel code was last preempted by RTAI outside
+of a critical section, a Linux rescheduling takes place
+immediately on the return path of the virtual
+interrupt. Otherwise, the preemptible kernel will ensure that
+a rescheduling takes place as soon as the critical section is
+exited. With the additional benefit of the low latency patch,
+those sections are kept as short as possible, enforcing
+lock-breaking preemption points as needed.
+
+% ----------------------------------------------------------------------------
+
+\section{Practical Assumptions, Limits and Guarantees}
+
+The new scheme has some practical assumptions and limits: 
+
+\begin{itemize}
+
+\item A vast majority of RTAI-based applications in user-space would rely
+on POSIX services mainly for thread synchronization and hi-resolution
+timing. Thread synchronization services would only pay the additional
+cost of RTAI/Linux migrations - needed to re-enter the Linux kernel
+from a RTAI task for performing the system call - when the access to
+some resource is effectively contended by more than a single POSIX
+thread. Provided this cost is at most a handful of microseconds, it is
+assumed that the advantages of RTAI-enabling the Linux system calls
+instead of rewriting specific APIs outweight this single drawback,
+especially since most of the Linux syscalls issued for synchronization
+by the native POSIX layer tend to put the caller to sleep. In any
+case, very time-critical services could still be substituted with a
+mere RTAI add-on if needed.
+
+\item "In the POSIX interface we trust". IOW, it is assumed that the
+standard POSIX interface used to program the real-time applications is
+efficient as far as thread concurrency is concerned. As a consequence
+of this, and aside of the kernel time consumed in executing syscalls
+for its threads, rewriting another dedicated RTAI-specific interface
+should not be significantly more efficient performance-wise.
+
+\item "In the Linux kernel we trust". IOW, the syscalls internally used by
+the standard POSIX interface for common operations are assumed to be
+efficiently written and would not charge unacceptable CPU cost to any
+application which currently targets user-space real-time support. The
+preemptible and low latency kernel patches are expected to provide for
+limited and bounded \_scheduling\_ latencies inside the Linux kernel.
+
+\item Running a RTAI task into the Linux domain with an effective
+real-time priority must not impact on the preemptability inside the
+RTAI domain. The following assertions remain true at any point in
+time:
+
+        \begin{itemize}
+        
+        \item Adeos's pipelined interrupt model ensures that any unmasked
+        interrupt is immediately dispatched to the RTAI domain if
+        unstalled, regardless of the currently running domain (RTAI,
+        shielding domain or Linux).
+
+        \item Interrupt shielding ensures that Linux targeted interrupts
+        are not propagated to the Linux handlers when a real-time
+        task executes into the Linux kernel.
+
+        \end{itemize}
+
+\item The Linux kernel provides for a \texttt{SCHED\_FIFO} scheduling policy
+enforcing static real-time priorities among the tasks it
+controls. This is especially important as Linux's scheduling decisions
+must not break the RTAI priority hierarchy when real-time tasks are
+operating into the Linux domain.
+
+\end{itemize}
+
+RTAI/fusion will be adapted for running on the Linux 2.6 kernel in
+the future, but as of now, please put on your 2.4 glasses when reading
+this document.
+
+% ----------------------------------------------------------------------------
+
+\section{Implementation}
+
+\subsection{Current Implementation}
+
+RTAI/fusion is built upon the implementation of a mutable priority
+scheme for the Linux placeholder task. As a remainder, this
+pseudo-task currently represents all the non real-time Linux tasks,
+and acts as a common fallback schedulable object to pick when no
+real-time RTAI tasks are ready to run.
+
+The test code is built upon the Xenomai nucleus. Xenomai provides the
+scheduling of kernel-based and user-space threads, using a technology
+derived from LXRT, and incorporating the implementation details listed
+below (see 7). This nucleus includes a real-time, FIFO-based, static
+priority scheduler.
+
+Like LXRT, the Xenomai scheduler defines a Linux placeholder called
+the "root" thread which gets scheduled as a fallback option when no
+other Xenomai threads are runnable into the RTAI domain. This causes
+the RTAI domain to suspend itself Adeos-wise, yielding control to the
+next domain down the pipeline.
+
+Each Xenomai thread capable of executing in user-space has one
+kernel-based TCB called a "shadow", along with its standard
+Linux-controlled task structure. Real-time scheduling of shadow
+threads is done using those TCBs, but the register state is
+exclusively saved into the Linux task structures by both Linux and
+Xenomai schedulers during context switching. In Xenomai's terminology,
+a shadow thread is the real-time control block of a Linux task also
+schedulable by Xenomai. Both schedulers control the task in a mutually
+exclusive manner.
+
+The priority of the root thread is mutable, and can be changed
+dynamically to reflect the position of the Linux kernel activity
+within the real-time priority hierarchy.
+
+A Linux-controlled gatekeeper task is in charge of resuming a Xenomai
+thread migrating from Linux to the RTAI domain. This thread is the
+equivalent of LXRT's kthread\_b() helper task.
+
+Mutable priority works like this:
+
+In a system defining T1(prio=1,domain=RTAI), T2(prio=2,domain=RTAI),
+and ROOT(prio=0,domain=Linux), we would have the following transition:
+
+\begin{code}
+T2 runs in domain RTAI...
+   T2 migrates to the Linux domain (for executing a syscall)
+       ROOT inherits priority(T2)
+                T2 executes the syscall on behalf of ROOT
+                (at this point, interrupts are no more propagated to
+                the Linux kernel)
+   T2 migrates back to the RTAI domain (after the syscall completes)
+        T2 resumes into the RTAI domain
+        ROOT priority is lowered back (to 0 if no other real-time
+        threads are runnable into the Linux domain, or inherited from the
+        next real-time thread to execute in this domain). As soon as the
+        root thread recovers its base priority (0), the interrupt flow is
+        restarted toward the Linux kernel.
+T2 suspends...
+T1 resumes...
+\end{code}
+
+As shown, T2 migration would not cause the preemption of the root
+thread by T1 despite its lower initial priority, since ROOT's priority
+would not allow it after it has been dynamically raised.
+
+In practice, T2 would not be forced to exit the Linux domain right
+after the syscall completes, but only when it issues a RTAI
+syscall. The migration back to RTAI has been described for
+illustration purposes.
+
+Obviously, ROOT never migrates to RTAI, and is always runnable.
+
+% ----------------------------------------------------------------------------
+
+\subsection{Implementation details with regard to priority mutation}
+
+When informed by Adeos that a new Linux task is about to be switched
+in (ADEOS\_SCHEDULE\_HEAD event), we check in the event handler whether
+a shadow thread is paired with the incoming task.  In such a case, the
+root thread priority is raised to the priority of the shadow,
+otherwise, this priority is set to the "idle" priority level
+(i.e. non-realtime priority).
+
+In the RTAI code controlling the migration of the current thread
+from RTAI to the Linux domain, the priority of the root thread is
+inherited from the migrating thread.
+
+In the RTAI code controlling the migration from the current Xenomai
+thread from Linux to the RTAI domain, the priority of the gatekeeper
+thread is inherited from the migrating thread.
+
+\section{Hardware/Software pre-requisites}
+
+The experimental RTAI/fusion subsystem currently runs on the following
+configuration:
+
+\begin{itemize}
+
+\item Linux 2.4.21/ia32
+\item ADEOS combo patch (Adeos + Kpreempt + Lolat)
+\item Xenomai nucleus from the RTAI magma branch.
+
+\end{itemize}
+
+A simple demo is available for download here:
+
+\centerline{http://savannah.gnu.org/download/xenomai/fusion/}
+
+% ----------------------------------------------------------------------------
+
+\section{Programming with POSIX API}
+\subsection{Threads}
+\subsection{...}
+\subsection{API Reference}
+
+\section{Interprocess Communication}
+\subsection{Overview}
+\subsection{Mutexes}
+\subsection{Conditional Variables}
+\subsection{Queues}
+\subsection{API Reference}

@@ -1,3 +1,8 @@
+2004-08-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc/hal/switch.S (rthal_context_switch): Fix register
+	offset mismatch.
+
 2004-08-24  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/hal/switch.S (rthal_context_switch): Enforce standard

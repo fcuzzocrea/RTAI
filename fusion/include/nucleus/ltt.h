@@ -25,20 +25,22 @@
 
 #if defined(__KERNEL__) && defined(CONFIG_LTT)
 
-#define log_event(args...) \
-xnltt_log_event(__FILE__, __LINE__ , #args)
+#define log_mark(m) xnltt_log_event(m)
+#define log_info(args...) xnltt_log_info( #args )
 
 int xnltt_mount(void);
 
 void xnltt_umount(void);
 
-int xnltt_log_event(const char *file,
-		    int line,
+void xnltt_log_mark(int mark);
+
+void xnltt_log_info(const char *fmt,
 		    ...);
 
 #else /* !(__KERNEL__ && CONFIG_LTT) */
 
-#define log_event(args...);
+#define log_mark(m);
+#define log_info(args...);
 
 #endif /* __KERNEL__ && CONFIG_LTT */
 

@@ -43,7 +43,12 @@ void __exit xnltt_umount (void)
     ltt_destroy_event(ltt_event);
 }
 
-void xnltt_log_event (const char *file, int line, ...)
+void xnltt_log_mark (int mark)
+
+{
+}
+
+void xnltt_log_info (const char *fmt, ...)
 
 {
 }

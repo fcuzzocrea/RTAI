@@ -2,13 +2,13 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_MODULES=y
-CONFIG_RTAI_VERSION="3.1 (vesuvio)"
+CONFIG_RTAI_VERSION="3.2 (magma)"
 
 #
 # General
 #
 CONFIG_RTAI_INSTALLDIR="/usr/realtime"
-CONFIG_RTAI_LINUXDIR="/home/rpm/kbuild/linux-2.6.9-adeos"
+CONFIG_RTAI_LINUXDIR="/usr/src//linux"
 
 #
 # RTAI Documentation

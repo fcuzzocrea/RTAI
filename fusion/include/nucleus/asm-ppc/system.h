@@ -64,7 +64,7 @@
 #if ADEOS_RELEASE_NUMBER < 0x02060608
 #error "Adeos 2.6r6c8/ppc or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/ppc/"
-#endif /* ADEOS_RELEASE_NUMBER < 0x02060801 */
+#endif
 
 #define MODULE_PARM_VALUE(parm) (parm)
 

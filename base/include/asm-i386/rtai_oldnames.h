@@ -78,7 +78,6 @@
 #define imuldiv(a,b,c)  rtai_imuldiv(a,b,c)
 #define llimd(a,b,c)    rtai_llimd(a,b,c)
 #define u64div32(a,b,c) rtai_u64div32c(a,b,c)
-#define locked_cpus     (&rtai_cpu_lock)
 
 #define RTAI_NR_TRAPS         ADEOS_NR_FAULTS
 

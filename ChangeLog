@@ -1,5 +1,11 @@
 2004-06-13  Philippe Gerum  <rpm@xenomai.org>
 
+	* rtai-core/arch/i386/patches: Upgrade the x86 patches to 2.6r5
+	final. Add support for 2.6.6.
+
+	* rtai-core/ipc/mq: Kludge to resolve conflicts with 2.6.6. This
+	component is deprecated.
+
 	* rtai-core/sched/rtai/sched_lxrt.c (enq_soft_ready_task): Attempt
 	a quick fix to prevent the enqueuing from entering an infinite
 	loop. Needs to be confirmed by Paolo.
@@ -11,7 +17,7 @@
 	* rtai-core/include/rtai_posix.h (pthread_rwlock_open_rt): Make depend on
 	-D__USE_UNIX98.
 
-	* rtai-core/include/rtai_posix.h: Include <malloc.h> in user-space
+	* rtai-core/include/rtai_posix.h: Include <stdlib.h> in user-space
 	to satisfy references to malloc()/free().
 
 2004-06-11  Paolo Mantegazza  <mantegazza@aero.polimi.it>

@@ -284,7 +284,7 @@ typedef struct rthal_fpenv {
     /* This layout must follow exactely the definition of the FPU
        backup area in a PPC thread struct available from
        <asm-ppc/processor.h>. Specifically, fpr[] an fpscr words must
-       be contiguous in memory (see arch/ppc/fpu.S). */
+       be contiguous in memory (see arch/ppc/hal/fpu.S). */
 
     double fpr[32];
     unsigned long fpscr_pad;	/* <= Hi-word of the FPR used to */

@@ -189,6 +189,12 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
        and SPE are not available to kernel-based nucleus threads. */
     rthal_fpenv_t fpuenv  __attribute__ ((aligned (16)));
     rthal_fpenv_t *fpup;	/* Pointer to the FPU backup area */
+    struct task_struct *user_fpu_owner;
+    /* Pointer the the FPU owner in userspace:
+       - NULL for RT K threads,
+       - last_task_used_math for Linux US threads (only current or NULL when MP)
+       - current for RT US threads.
+    */
 #define xnarch_fpu_ptr(tcb)     ((tcb)->fpup)
 #else /* !CONFIG_RTAI_HW_FPU */
 #define xnarch_fpu_ptr(tcb)     NULL
@@ -363,6 +369,25 @@ static inline int xnarch_start_timer (unsigned long ns,
     return rthal_request_timer(tickhandler,ns);
 }
 
+#ifndef CONFIG_SMP
+#define rthal_get_fpu_owner(cur) last_task_used_math
+#else
+#define rthal_get_fpu_owner(cur) ({                             \
+    struct task_struct * _cur = (cur);                          \
+    ((_cur->thread.regs && (_cur->thread.regs->msr & MSR_FP))   \
+     ? _cur : NULL);                                            \
+})
+#endif
+    
+#define rthal_disable_fpu() ({                          \
+    register long msr;                                  \
+    __asm__ __volatile__ ( "mfmsr %0" : "=r"(msr) );    \
+    __asm__ __volatile__ ( "mtmsr %0"                   \
+                           : /* no output */            \
+                           : "r"(msr & ~(MSR_FP))       \
+                           : "memory" );                \
+})    
+
 static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
 
 {
@@ -377,7 +402,10 @@ static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
     rootcb->user_task = rootcb->active_task = rthal_get_current(cpuid);
     /* So that xnarch_save_fpu() will operate on the right FPU area. */
 #ifdef CONFIG_RTAI_HW_FPU
-    rootcb->fpup = (rthal_fpenv_t *)&rootcb->user_task->thread.fpr[0];
+    rootcb->user_fpu_owner = rthal_get_fpu_owner(rootcb->user_task);
+    rootcb->fpup = (rootcb->user_fpu_owner
+                    ? (rthal_fpenv_t *)&rootcb->user_fpu_owner->thread.fpr[0]
+                    : NULL);
 #endif /* CONFIG_RTAI_HW_FPU */
 }
 
@@ -414,37 +442,16 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	get_mmu_context(mm);
 	set_context(mm->context,mm->pgd);
 
-	/* FIXME: the following should be preferably handled in the
-	   save/restore FPU sections. */
-
-#ifdef CONFIG_SMP
-	if (prev->thread.regs && (prev->thread.regs->msr & MSR_FP))
-	    giveup_fpu(prev);
-#ifdef CONFIG_ALTIVEC
-	if ((prev->thread.regs && (prev->thread.regs->msr & MSR_VEC)))
-	    giveup_altivec(prev);
-#endif /* CONFIG_ALTIVEC */
-#ifdef CONFIG_SPE
-	if ((prev->thread.regs && (prev->thread.regs->msr & MSR_SPE)))
-	    giveup_spe(prev);
-#endif /* CONFIG_SPE */
-#endif /* CONFIG_SMP */
-
-#ifdef CONFIG_ALTIVEC
-	if (next->thread.regs && last_task_used_altivec == next)
-	    next->thread.regs->msr |= MSR_VEC;
-#endif /* CONFIG_ALTIVEC */
-
-#ifdef CONFIG_SPE
-	if (next->thread.regs && last_task_used_spe == next)
-	    next->thread.regs->msr |= MSR_SPE;
-#endif /* CONFIG_SPE */
-
-	_switch(&prev->thread,&next->thread);
+        _switch(&prev->thread, &next->thread);
 	}
     else
-	/* Kernel-to-kernel context switch. */
+        {
+        /* Kernel-to-kernel context switch. */
         rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
+
+        /* FPU will be reenabled by xnarch_save_fpu when needed */
+        rthal_disable_fpu();
+        }
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
@@ -468,6 +475,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
     tcb->ksp = 0;
     tcb->kspp = &tcb->ksp;
 #ifdef CONFIG_RTAI_HW_FPU
+    tcb->user_fpu_owner = NULL;
     tcb->fpup = NULL;
 #endif /* CONFIG_RTAI_HW_FPU */
     tcb->entry = NULL;
@@ -483,6 +491,7 @@ static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
     tcb->active_task = NULL;
     tcb->kspp = &tcb->ksp;
 #ifdef CONFIG_RTAI_HW_FPU
+    tcb->user_fpu_owner = NULL;
     tcb->fpup = &tcb->fpuenv;
 #endif /* CONFIG_RTAI_HW_FPU */
     /* Must be followed by xnarch_init_thread(). */
@@ -533,22 +542,13 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 #endif /* CONFIG_RTAI_HW_FPU */
 }
 
-#define fph2task(faddr)                                 \
-    ((struct task_struct *)((char *) (faddr) -          \
-                            (size_t) &((struct task_struct *) 0)->thread.fpr[0]))
-
 static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
 
 {
 #ifdef CONFIG_RTAI_HW_FPU
 
-    struct task_struct *task = tcb->user_task;
-
-    if (task)
-	{
-	}
-    
-    rthal_save_fpu(tcb->fpup);
+    if(tcb->fpup)
+        rthal_save_fpu(tcb->fpup);
 
 #endif /* CONFIG_RTAI_HW_FPU */
 }
@@ -558,7 +558,16 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 {
 #ifdef CONFIG_RTAI_HW_FPU
 
-    rthal_restore_fpu(tcb->fpup);
+    if(tcb->fpup)
+        rthal_restore_fpu(tcb->fpup);
+
+    /* FIXME: We restore FPU "as it was" when RTAI preempted Linux, whereas we
+       could be much lazier. */
+    if(tcb->user_task && tcb->user_task != tcb->user_fpu_owner)
+        {
+        tcb->user_task->thread.regs->msr &= ~MSR_FP;
+        rthal_disable_fpu();
+        }
 
 #endif /* CONFIG_RTAI_HW_FPU */
 }
@@ -678,6 +687,7 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
     tcb->ksp = 0;
     tcb->kspp = &task->thread.ksp;
 #ifdef CONFIG_RTAI_HW_FPU
+    tcb->user_fpu_owner = task;
     tcb->fpup = (rthal_fpenv_t *)&task->thread.fpr[0];
 #endif /* CONFIG_RTAI_HW_FPU */
     tcb->entry = NULL;

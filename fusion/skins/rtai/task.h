@@ -119,7 +119,7 @@ typedef struct rt_task {
 	} heap;
 	
 	struct {
-	    char *key;
+	    const char *key;
 	} registry;
 
     } wait_args;

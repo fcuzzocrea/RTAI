@@ -1,6 +1,7 @@
 2004-09-17  Philippe Gerum  <rpm@xenomai.org>
 
-	* rtai-core/arch/i386/patches: Upgrade to 2.4/hal16 final.
+	* rtai-core/arch/i386/patches: Upgrade to 2.4/hal16 and 2.6/hal7
+	final.
 
 2004-09-13 Roberto Bucher  <roberto.bucher@supsi.ch>
 

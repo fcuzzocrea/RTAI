@@ -132,10 +132,28 @@ static inline void __restore_fpenv(FPU_ENV *env)
 }
 #endif
 
+#define restore_task_fpenv(t) \
+        do { \
+               restore_fpenv((t)->thread.i387.fsave); \
+        } while (0)
+
+#define restore_fpenv_lxrt(t) restore_task_fpenv(t)
+
+#define init_fpu(tsk) \
+        do { /*init_xfpu();*/ tsk->used_math = 1; set_tsk_used_fpu(tsk); } while(0)
+
+#define restore_fpu(tsk) \
+        do { restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk); } while (0)
+
+#define set_tsk_used_fpu(t)  do {  } while(0)
+
 #else
 
 #define save_fpenv(x)
 #define restore_fpenv(x)
+#define init_fpu(tsk)
+#define restore_fpu(tsk)
+#define set_tsk_used_fpu(t)
 
 #endif
 

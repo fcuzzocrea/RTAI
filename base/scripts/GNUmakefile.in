@@ -319,7 +319,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-EXTRA_DIST = rtai-info bootstrap
+EXTRA_DIST = rtai-info bootstrap mode-control
 all: all-am
 
 .SUFFIXES:

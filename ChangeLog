@@ -1,5 +1,11 @@
 2004-03-22  Michael Neuhauser  <mike@firmix.at>
 
+	* base/scripts/mode-control: new script to change and check the
+	  interrupt dispatching mode (immediate/piped)
+	* base/scripts/GNUmakefile.*: added mode-control to EXTRA_DIST
+
+2004-03-22  Michael Neuhauser  <mike@firmix.at>
+
 	* testsuite/kern/latency/{latency-module.c, latency.c,
 	  preempt-module.c, preempt.c}: use larger DEFAULT_PERIOD/TICK_TIME
 	  for ARM systems (assumption: ARM => low-end system)

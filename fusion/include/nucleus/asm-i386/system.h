@@ -448,7 +448,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 {
     struct task_struct *outproc = out_tcb->active_task;
     struct task_struct *inproc = in_tcb->user_task;
-    static int cr0;
+    static int cr0;             /* FIXME: not SMP safe. */
 
     if (out_tcb->user_task)
 	{
@@ -469,9 +469,6 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	}
 
     __switch_threads(out_tcb,in_tcb,outproc,inproc);
-
-    /* If TS was set for the restored user-space thread, set it
-       back. */
 
     if (out_tcb->user_task)
         {
@@ -577,10 +574,8 @@ asmlinkage static void xnarch_thread_redirect (struct xnthread *self,
 					       void(*entry)(void *),
 					       void *cookie)
 {
-#ifdef CONFIG_RTAI_HW_FPU
     /* xnpod_welcome_thread() will do clts() if needed. */
     stts();
-#endif /* CONFIG_RTAI_HW_FPU */
     rthal_local_irq_restore(!!imask);
     xnpod_welcome_thread(self);
     entry(cookie);

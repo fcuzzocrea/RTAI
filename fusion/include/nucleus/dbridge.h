@@ -87,7 +87,7 @@ typedef struct xnbridge_state {
     void *cookie;
 
     /* Linux kernel part */
-    int status;
+    xnflags_t status;
     struct semaphore open_sem;
     struct semaphore send_sem;
     struct semaphore *wchan;	/* any sem */

@@ -84,11 +84,11 @@ typedef unsigned long xnlock_t;
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
 
 #define XNARCH_PROMPT "RTAI[nucleus/SIM]: "
-#define xnarch_loginfo(fmt,args...)  fprintf(stdout, XNARCH_PROMPT fmt, ##args)
-#define xnarch_logwarn(fmt,args...)  fprintf(stderr, XNARCH_PROMPT fmt, ##args)
-#define xnarch_logerr(fmt,args...)   fprintf(stderr, XNARCH_PROMPT fmt, ##args)
-#define xnarch_printf(fmt,args...)   fprintf(stdout, fmt, ##args)
-#define printk(fmt,args...)          xnarch_loginfo(fmt, ##args)
+#define xnarch_loginfo(fmt,args...)  fprintf(stdout, XNARCH_PROMPT fmt , ##args)
+#define xnarch_logwarn(fmt,args...)  fprintf(stderr, XNARCH_PROMPT fmt , ##args)
+#define xnarch_logerr(fmt,args...)   fprintf(stderr, XNARCH_PROMPT fmt , ##args)
+#define xnarch_printf(fmt,args...)   fprintf(stdout, fmt , ##args)
+#define printk(fmt,args...)          xnarch_loginfo(fmt , ##args)
 
 #define xnarch_llimd(ll,m,d)       ((int)(ll) * (int)(m) / (int)(d))
 #define xnarch_imuldiv(i,m,d)      ((int)(i) * (int)(m) / (int)(d))

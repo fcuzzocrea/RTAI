@@ -1924,4 +1924,5 @@ EXPORT_SYMBOL(rtf_getfifobyname);
 EXPORT_SYMBOL(rtf_ovrwr_put);
 EXPORT_SYMBOL(rtf_put_if);
 EXPORT_SYMBOL(rtf_get_if);
+EXPORT_SYMBOL(rtf_named_create);
 #endif /* !CONFIG_RTAI_FIFOS_BUILTIN */

@@ -1,3 +1,7 @@
+2004-06-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/ipc/fifos/fifos.c: Export rtf_named_create().
+
 2004-06-05  Philippe Gerum  <rpm@xenomai.org>
 
 	* Move to GNA (http://www.gna.org/projects/rtai/).

@@ -414,6 +414,9 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	get_mmu_context(mm);
 	set_context(mm->context,mm->pgd);
 
+	/* FIXME: the following should be preferably handled in the
+	   save/restore FPU sections. */
+
 #ifdef CONFIG_SMP
 	if (prev->thread.regs && (prev->thread.regs->msr & MSR_FP))
 	    giveup_fpu(prev);
@@ -530,22 +533,14 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 #endif /* CONFIG_RTAI_HW_FPU */
 }
 
+#define fph2task(faddr)                                 \
+    ((struct task_struct *)((char *) (faddr) -          \
+                            (size_t) &((struct task_struct *) 0)->thread.fpr[0]))
+
 static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
 
 {
 #ifdef CONFIG_RTAI_HW_FPU
-
-    struct task_struct *task = tcb->user_task;
-
-    if (task)
-	{
-	if (task->thread.regs && (task->thread.regs->msr & MSR_FP))
-	    giveup_fpu(task);
-
-	return;
-	}
-
-    /* Save the fp regs of the kernel thread owning the FPU. */
 
     rthal_save_fpu(tcb->fpup);
 
@@ -556,14 +551,6 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
 {
 #ifdef CONFIG_RTAI_HW_FPU
-
-    if (tcb->user_task)
-	/* On PowerpPC, we let the unavailability exception happen for
-	   the incoming user-space task if it happens to use the FPU,
-	   instead of eagerly reloading the fp regs upon switch. */
-	return;
-
-    /* Restore the fp regs of the incoming kernel thread. */
 
     rthal_restore_fpu(tcb->fpup);
 
@@ -606,18 +593,21 @@ static inline void xnarch_notify_halt(void)
 
 #else /* !CONFIG_SMP */
 
-static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
+static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask)
 
+{
     return 0;
 }
 
-static inline int xnarch_hook_ipi (void (*handler)(void)) {
+static inline int xnarch_hook_ipi (void (*handler)(void))
 
+{
     return 0;
 }
 
-static inline int xnarch_release_ipi (void) {
+static inline int xnarch_release_ipi (void)
 
+{
     return 0;
 }
 

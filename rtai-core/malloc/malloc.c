@@ -631,6 +631,7 @@ int __rtai_heap_init (void)
 		printk(KERN_INFO "RTAI[malloc]: failed to initialize the global heap (size=%d bytes).\n", rtai_global_heap_size);
 		return 1;
 	}
+        rtai_global_heap_adr = rtai_global_heap.extents.next;
 	printk(KERN_INFO "RTAI[malloc]: loaded (global heap size=%d bytes).\n", rtai_global_heap_size);
 	return 0;
 }

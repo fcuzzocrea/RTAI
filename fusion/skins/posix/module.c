@@ -29,7 +29,7 @@ MODULE_DESCRIPTION("XENOMAI-based PSE51 API.");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
-static u_long tick_hz_arg = 100; /* Default tick period */
+static u_long tick_hz_arg = XNPOD_DEFAULT_TICK; /* Default tick period */
 MODULE_PARM(tick_hz_arg,"i");
 MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
 
@@ -41,7 +41,6 @@ static xnpod_t pod;
 
 static void pse51_shutdown(int xtype)
 {
-    xnpod_lock_sched();
     xnpod_stop_timer();
 
     pse51_thread_cleanup();
@@ -68,14 +67,20 @@ int __xeno_skin_init(void)
     if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
 	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
 
-    if ((err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER)) != 0)
+    err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
+    
+    if (err != 0)
+        {
+        xnpod_shutdown(err);    
 	return err;
+        }
 
     pse51_signal_init();
     pse51_mutex_obj_init();
     pse51_sem_obj_init();
     pse51_tsd_init();
     pse51_cond_obj_init();
+
     pse51_thread_init(MODULE_PARM_VALUE(time_slice_arg));
 
     pod.svctable.shutdown = &pse51_shutdown;

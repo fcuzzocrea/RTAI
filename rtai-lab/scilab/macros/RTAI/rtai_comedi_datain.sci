@@ -40,10 +40,10 @@ case 'set' then
     dept=%f;
     dep_ut=[depu dept];
 
-    tt=label(2);
-    if find(oldlb <> label(1)) <> [] then
+//    tt=label(2);
+//    if find(oldlb <> label(1)) <> [] then
       tt=[]
-    end
+//    end
 
     [ok,tt]=getCode(funam,tt)
     if ~ok then break,end
@@ -93,7 +93,6 @@ case 'define' then
 
   gr_i=['xstringb(orig(1),orig(2),[''COMEDI'';''A/D''],sz(1),sz(2),''fill'');']
   x=standard_define([2 2],model,label,gr_i)
-
 end
 endfunction
 

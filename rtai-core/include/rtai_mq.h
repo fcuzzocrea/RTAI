@@ -25,6 +25,7 @@
 #ifndef _RTAI_MQ_H
 #define _RTAI_MQ_H
 
+#include <linux/version.h>
 #include <rtai_sem.h>
 
 #define	MQ_OPEN_MAX	8	/* Maximum number of message queues per process */
@@ -61,11 +62,15 @@ typedef struct mq_attr {
     long mq_curmsgs;		/* Number of messages currently in queue */
 } MQ_ATTR;
 
-typedef unsigned long mqd_t;
-
 #define	INVALID_PQUEUE	0
 
 #ifdef __KERNEL__
+
+#include <linux/types.h>
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,6)
+typedef int mqd_t;
+#endif
 
 #ifndef __cplusplus
 
@@ -223,6 +228,8 @@ static inline int mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigne
 #include <rtai_lxrt.h>
 
 #define MQIDX  0
+
+typedef int mqd_t;
 
 #ifdef __cplusplus
 extern "C" {

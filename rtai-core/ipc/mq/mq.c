@@ -879,7 +879,7 @@ MSG_QUEUE *q;
 
     }  // End if - queue id is valid
 	
-    REPORT("invalid queue specifier %ld\n", mq);	
+    REPORT("invalid queue specifier %d\n", mq);	
     return -EBADF;
 
 }  // End function - mq_receive
@@ -899,7 +899,7 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 
 	//Check that the supplied queue id is valid
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
-		REPORT("invalid queue specifier %ld\n", mq);	
+		REPORT("invalid queue specifier %d\n", mq);	
 		return -EBADF;
 	}  // End if - queue id is valid
 
@@ -1093,7 +1093,7 @@ mq_bool_t q_was_empty = FALSE;
 
 	//Does any task require notification?
 	if(q_was_empty && rt_pqueue_descr[q_index].notify.task != NULL) {
-	    DBG("notifying about queue %ld\n", mq);
+	    DBG("notifying about queue %d\n", mq);
 
 	    //TODO: The bit that actually goes here!...........
 	    //Need to think about SIGNALS, and the content of struct sigevent
@@ -1111,7 +1111,7 @@ mq_bool_t q_was_empty = FALSE;
 
     }  // End if - queue id is valid
 
-    REPORT("invalid queue specifier %ld\n", mq);	
+    REPORT("invalid queue specifier %d\n", mq);	
     return -EBADF;
 
 }  // End function - mq_send
@@ -1131,7 +1131,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 
 	//Check that the supplied queue id is valid
 	if (q_index < 0 || q_index >= MAX_PQUEUES) { 
-		REPORT("invalid queue specifier %ld\n", mq);	
+		REPORT("invalid queue specifier %d\n", mq);	
 		return -EBADF;
 	}  // End if - queue id is valid
 	q = &rt_pqueue_descr[q_index];
@@ -1222,7 +1222,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 
 	//Does any task require notification?
 	if (q_was_empty && rt_pqueue_descr[q_index].notify.task != NULL) {
-		DBG("notifying about queue %ld\n", mq);
+		DBG("notifying about queue %d\n", mq);
 
 		//TODO: The bit that actually goes here!...........
 		//Need to think about SIGNALS and the content of struct sigevent
@@ -1302,7 +1302,7 @@ Z_APPS *zapps;
 	pthread_mutex_unlock(&pqueue_mutex);
         return OK;
     }
-    REPORT("invalid queue Id %ld\n", mq);	
+    REPORT("invalid queue Id %d\n", mq);	
     return -EINVAL;
 
 }  // End function - mq_close
@@ -1324,7 +1324,7 @@ int q_index = mq - 1;
         *attrbuf = rt_pqueue_descr[q_index].data.attrs;
 	return OK;
     }
-    REPORT("invalid queue specifier %ld\n", mq);	
+    REPORT("invalid queue specifier %d\n", mq);	
     return -EBADF;
 
 }  // End function - mq_getattr
@@ -1388,7 +1388,7 @@ Z_APPS *zapps;
 	pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	return OK;
     }
-    REPORT("invalid queue specifier %ld\n", mq);	
+    REPORT("invalid queue specifier %d\n", mq);	
     return -EBADF;
 
 }  // End function - mq_setattr
@@ -1433,7 +1433,7 @@ int rtn;
 	pthread_mutex_unlock(&rt_pqueue_descr[q_index].mutex);
 	return rtn;
     }
-    REPORT("invalid queue specifier %ld\n", mq);	
+    REPORT("invalid queue specifier %d\n", mq);	
     return -EBADF;
 
 }  // End function - mq_notify

@@ -107,33 +107,8 @@ static int system_read_proc (char *page,
     p += sprintf(p,"RTAI/fusion nucleus v%s\n",PACKAGE_VERSION);
     p += sprintf(p,"Mounted over Adeos %s\n",ADEOS_VERSION_STRING);
 
-#ifdef CONFIG_RTAI_OPT_FUSION
-    {
-    int nrxfaces = 0, muxid;
-
-    p += sprintf(p,"Registered interface(s): ");
-
-    for (muxid = 0; muxid < XENOMAI_MUX_NR; muxid++)
-	if (muxtable[muxid].magic != 0)
-	    {
-	    p += sprintf(p,"%s%s",nrxfaces > 0 ? ", " : "",muxtable[muxid].name);
-
-	    if (xnarch_atomic_get(&muxtable[muxid].refcnt) > 0)
-		p += sprintf(p,"[%d]",xnarch_atomic_get(&muxtable[muxid].refcnt));
-
-	    nrxfaces++;
-	    }
-
-    if (nrxfaces == 0)
-	p += sprintf(p,"<none>");
-    }
-#else /* !CONFIG_RTAI_OPT_FUSION */
-    p += sprintf(p,"No user-space support");
-#endif /* CONFIG_RTAI_OPT_FUSION */
-
-    p += sprintf(p,"\nLatencies: timer=%Lu ns, scheduling=%Lu ns\n",
-		 xnarch_tsc_to_ns(nktimerlat),
-		 xnarch_tsc_to_ns(nkschedlat));
+    p += sprintf(p,"\nLatencies: timer=%Lu ns\n",
+		 xnarch_tsc_to_ns(nktimerlat));
 
     xnlock_get_irqsave(&nklock, s);
 
@@ -285,6 +260,26 @@ static ssize_t version_read_proc (char *page,
     return len;
 }
 
+static ssize_t iface_read_proc (char *page,
+				char **start,
+				off_t off,
+				int count,
+				int *eof,
+				void *data)
+{
+    struct xnskentry *iface = (struct xnskentry *)data;
+    int len;
+
+    len = sprintf(page,"%d\n",xnarch_atomic_get(&iface->refcnt));
+    len -= off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
+}
+
 extern struct proc_dir_entry *rthal_proc_root;
 
 void xnpod_init_proc (void)
@@ -303,6 +298,7 @@ void xnpod_init_proc (void)
 	entry->data = NULL;
 	entry->read_proc = system_read_proc;
 	entry->write_proc = NULL;
+	entry->owner = THIS_MODULE;
 	}
 
     entry = create_proc_entry("latency",0644,rthal_proc_root);
@@ -313,6 +309,7 @@ void xnpod_init_proc (void)
 	entry->data = NULL;
 	entry->read_proc = &latency_read_proc;
 	entry->write_proc = &latency_write_proc;
+	entry->owner = THIS_MODULE;
 	}
 
     entry = create_proc_entry("version",0444,rthal_proc_root);
@@ -323,12 +320,41 @@ void xnpod_init_proc (void)
 	entry->data = NULL;
 	entry->read_proc = &version_read_proc;
 	entry->write_proc = NULL;
+	entry->owner = THIS_MODULE;
 	}
+
+#ifdef CONFIG_RTAI_OPT_FUSION
+    {
+    struct proc_dir_entry *ifdir, *ifent[XENOMAI_MUX_NR];
+    int n;
+
+    ifdir = create_proc_entry("interfaces",S_IFDIR,rthal_proc_root);
+
+    if (ifdir)
+	{
+	for (n = 0; n < XENOMAI_MUX_NR; n++)
+	    {
+	    entry = create_proc_entry(muxtable[n].name,0444,ifdir);
+
+	    if (!entry)
+		continue;
+
+	    ifent[n] = entry;
+	    entry->nlink = 1;
+	    entry->data = muxtable + n;
+	    entry->read_proc = &iface_read_proc;
+	    entry->write_proc = NULL;
+	    entry->owner = THIS_MODULE;
+	    }
+	}
+    }
+#endif /* CONFIG_RTAI_OPT_FUSION */
 }
 
 void xnpod_delete_proc (void)
 
 {
+    remove_proc_entry("rtai/interfaces",NULL);
     remove_proc_entry("rtai/version",NULL);
     remove_proc_entry("rtai/latency",NULL);
     remove_proc_entry("rtai/system",NULL);

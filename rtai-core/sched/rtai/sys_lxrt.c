@@ -219,6 +219,10 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
  */
 	if ((int)rt_task->is_hard > 0) {
 		rt_task->retval = ((long long (*)(int, ...))fun)(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
+		if (!rt_task->is_hard) {
+extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
+			rt_schedule_soft_tail(rt_task, hard_cpu_id());
+		}
 	} else {
 		rt_schedule_soft(rt_task);
 	}
@@ -643,7 +647,7 @@ void reset_rt_fun_ext_index( struct rt_fun_entry *fun, int idx)
 	}
 }
 
-static void linux_process_termination(void)
+void linux_process_termination(void)
 
 {
 	unsigned long num;
@@ -711,12 +715,6 @@ int lxrt_init_archdep (void)
 
     sidt = rt_set_full_intr_vect(RTAI_LXRT_VECTOR, 15, 3, (void *)&RTAI_LXRT_HANDLER);
 
-    if (set_rtai_callback(linux_process_termination))
-	{
-	printk("Could not setup rtai_callback\n");
-	return -ENODEV;
-	}
-
     rt_fun_ext[0] = rt_fun_lxrt;
     rt_get_base_linux_task(rt_linux_tasks);
     rt_linux_tasks[0]->task_trap_handler[0] = (void *)set_rt_fun_ext_index;
@@ -729,5 +727,6 @@ void lxrt_exit_archdep (void)
 
 {
     rt_reset_full_intr_vect(RTAI_LXRT_VECTOR, sidt);
-    remove_rtai_callback(linux_process_termination);
 }
+
+EXPORT_SYMBOL(linux_process_termination);

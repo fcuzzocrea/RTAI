@@ -1,5 +1,9 @@
 2004-06-17  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/cond.c: Add condition variable support.
+
+	* skins/rtai/mutex.c: Add mutex support.
+
 	* nucleus/fusion.c (__pthread_set_periodic_rt,
 	__pthread_wait_period_rt): Use new nucleus's built-in support for
 	periodic timing.

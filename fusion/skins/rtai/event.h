@@ -99,6 +99,20 @@ int __event_pkg_init(void);
 
 void __event_pkg_cleanup(void);
 
+#ifdef __cplusplus
+}
+#endif
+
+#else /* !(__KERNEL__ || __RTAI_SIM__) */
+
+typedef RT_EVENT_PLACEHOLDER RT_EVENT;
+
+#endif /* __KERNEL__ || __RTAI_SIM__ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Public interface. */
 
 int rt_event_create(RT_EVENT *event,
@@ -123,11 +137,5 @@ int rt_event_inquire(RT_EVENT *event,
 #ifdef __cplusplus
 }
 #endif
-
-#else /* !(__KERNEL__ || __RTAI_SIM__) */
-
-typedef RT_EVENT_PLACEHOLDER RT_EVENT;
-
-#endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #endif /* !_RTAI_EVENT_H */

@@ -27,6 +27,8 @@
 #include <rtai/registry.h>
 #include <rtai/sem.h>
 #include <rtai/event.h>
+#include <rtai/mutex.h>
+#include <rtai/cond.h>
 #include <rtai/pipe.h>
 
 MODULE_DESCRIPTION("RTAI skin");
@@ -43,6 +45,14 @@ static void rtai_shutdown (int xtype)
 #if CONFIG_RTAI_OPT_NATIVE_PIPE
     __pipe_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
+
+#if CONFIG_RTAI_OPT_NATIVE_COND
+    __cond_pkg_cleanup();
+#endif /* CONFIG_RTAI_OPT_NATIVE_COND */
+
+#if CONFIG_RTAI_OPT_NATIVE_MUTEX
+    __mutex_pkg_cleanup();
+#endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
 #if CONFIG_RTAI_OPT_NATIVE_EVENT
     __event_pkg_cleanup();
@@ -106,11 +116,25 @@ int __xeno_skin_init (void)
 	goto cleanup_sem;
 #endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
 
+#if CONFIG_RTAI_OPT_NATIVE_MUTEX
+    err = __mutex_pkg_init();
+
+    if (err)
+	goto cleanup_event;
+#endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
+
+#if CONFIG_RTAI_OPT_NATIVE_COND
+    err = __cond_pkg_init();
+
+    if (err)
+	goto cleanup_mutex;
+#endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
+
 #if CONFIG_RTAI_OPT_NATIVE_PIPE
     err = __pipe_pkg_init();
 
     if (err)
-	goto cleanup_event;
+	goto cleanup_cond;
 #endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
 
 #ifdef __KERNEL__
@@ -127,6 +151,18 @@ int __xeno_skin_init (void)
 #if CONFIG_RTAI_OPT_NATIVE_PIPE
     __pipe_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
+
+ cleanup_cond:
+
+#if CONFIG_RTAI_OPT_NATIVE_COND
+    __cond_pkg_cleanup();
+#endif /* CONFIG_RTAI_OPT_NATIVE_COND */
+
+ cleanup_mutex:
+
+#if CONFIG_RTAI_OPT_NATIVE_MUTEX
+    __mutex_pkg_cleanup();
+#endif /* CONFIG_RTAI_OPT_NATIVE_MUTEX */
 
  cleanup_event:
 
@@ -163,3 +199,5 @@ void __xeno_skin_exit (void)
 
 module_init(__xeno_skin_init);
 module_exit(__xeno_skin_exit);
+
+/* -Wno-unused-label */

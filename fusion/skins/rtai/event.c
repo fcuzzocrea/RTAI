@@ -91,7 +91,7 @@ int rt_event_create (RT_EVENT *event,
 
     xnsynch_init(&event->synch_base,mode & EV_PRIO);
     event->value = ivalue;
-    event->handle = 0;  /* i.e. (still) unregistered semaphore. */
+    event->handle = 0;  /* i.e. (still) unregistered event. */
     event->magic = RTAI_EVENT_MAGIC;
     xnobject_copy_name(event->name,name);
 

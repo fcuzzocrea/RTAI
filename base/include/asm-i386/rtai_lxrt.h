@@ -128,11 +128,16 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 		  "a" (prev), "d" (next),				\
 		  "b" (prev));						
 #endif
-
     barrier();
 }
 
-#define IN_INTERCEPT_IRQ_ENABLE()  do { rtai_hw_sti(); } while (0)
+#if 0
+#define IN_INTERCEPT_IRQ_ENABLE()   do { rtai_hw_sti(); } while (0)
+#define IN_INTERCEPT_IRQ_DISABLE()  do { rtai_hw_cli(); } while (0)
+#else
+#define IN_INTERCEPT_IRQ_ENABLE()   do { } while (0)
+#define IN_INTERCEPT_IRQ_DISABLE()  do { } while (0)
+#endif
 
 #else /* !__KERNEL__ */
 

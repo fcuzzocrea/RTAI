@@ -1,3 +1,11 @@
+2005-03-30  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/devices/mbx_send_if: Corrected problem with remote
+	IP number
+	* rtai-lab/scilab/devices/rtai_sem: Added support for scicos semaphores
+	* rtai-mab/scilab/macros/RTAI: Forced code regeneration for scicos blocks
+	(new version of the interface to the libsciblk.a library)
+
 2005-03-30  Michael Neuhauser  <mike@firmix.at>
 
 	* base/sched/sched.*: fixed an improper programming of the timer

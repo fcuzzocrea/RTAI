@@ -41,6 +41,7 @@
 #include "vm/timer.h"
 #include "vm/manager.h"
 #include "vm/monitor.h"
+#include "vm/interrupt.h"
 
 #ifdef HAVE_GLIBC2_MALLOC
 
@@ -1294,7 +1295,11 @@ void XenoThread::joinClientThreads ()
     // making the following loop resume from suspension.
 
     while (allJoinableThreads.getCount() > 1)
+    {
+	MVM_CR_IMASK = 0;
+	MvmIrqManager::This->dispatchIrq();
 	suspend();
+    }
 
     allClientJoiners.remove(this);
 }

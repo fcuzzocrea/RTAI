@@ -107,7 +107,7 @@ int __latency_init (void)
 	return 1;
 	}
 
-    err = rt_task_create(&latency_task,"ksampling",0,99,T_FPU);
+    err = rt_task_create(&latency_task,"ksampling",0,99,0);
 
     if (err)
 	{

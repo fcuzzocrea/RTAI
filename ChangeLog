@@ -1,3 +1,8 @@
+2004-02-14  Michael Neuhauser  <mike@firmix.at>
+
+	* base/arch/arm/hal.*: define rt_scheduling[] unconditionally, i.e.
+	not depending on CONFIG_RTAI_SCHED_ISR_LOCK
+
 2004-02-14  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm-arm/rtai_use.h: added the new arch specific USI.

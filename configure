@@ -12154,6 +12154,7 @@ echo "$as_me: error: --enable-mbx requires --enable-sem" >&2;}
    { (exit 1); exit 1; }; }
    fi
 fi
+
 if test x$CONFIG_RTAI_MBX = xy ; then
    if test x$CONFIG_RTAI_SEM = xm ; then
       { { echo "$as_me:$LINENO: error: --enable-mbx=y requires --enable-sem=y" >&5
@@ -12190,6 +12191,22 @@ if test x$CONFIG_RTAI_MQ = xy ; then
    if test x$CONFIG_RTAI_SEM = xm ; then
       { { echo "$as_me:$LINENO: error: --enable-mq=y requires --enable-sem=y" >&5
 echo "$as_me: error: --enable-mq=y requires --enable-sem=y" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
+
+if test x$CONFIG_RTAI_USI = xy -o x$CONFIG_RTAI_USI = xm ; then
+   if test x$CONFIG_RTAI_SEM = x -o x$CONFIG_RTAI_TASKLETS = x; then
+      { { echo "$as_me:$LINENO: error: --enable-usi requires --enable-sem and --enable-tasklets" >&5
+echo "$as_me: error: --enable-usi requires --enable-sem and --enable-tasklets" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+fi
+
+if test x$CONFIG_RTAI_USI = xy ; then
+   if test x$CONFIG_RTAI_SEM = xm -o x$CONFIG_RTAI_TASKLETS = xm; then
+      { { echo "$as_me:$LINENO: error: --enable-usi=y requires --enable-sem=y and --enable-tasklets=y" >&5
+echo "$as_me: error: --enable-usi=y requires --enable-sem=y and --enable-tasklets=y" >&2;}
    { (exit 1); exit 1; }; }
    fi
 fi

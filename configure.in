@@ -1057,6 +1057,7 @@ if test x$CONFIG_RTAI_MBX = xy -o x$CONFIG_RTAI_MBX = xm ; then
       AC_MSG_ERROR([--enable-mbx requires --enable-sem])
    fi
 fi
+
 if test x$CONFIG_RTAI_MBX = xy ; then
    if test x$CONFIG_RTAI_SEM = xm ; then
       AC_MSG_ERROR([--enable-mbx=y requires --enable-sem=y])
@@ -1084,6 +1085,18 @@ fi
 if test x$CONFIG_RTAI_MQ = xy ; then
    if test x$CONFIG_RTAI_SEM = xm ; then
       AC_MSG_ERROR([--enable-mq=y requires --enable-sem=y])
+   fi
+fi
+
+if test x$CONFIG_RTAI_USI = xy -o x$CONFIG_RTAI_USI = xm ; then
+   if test x$CONFIG_RTAI_SEM = x -o x$CONFIG_RTAI_TASKLETS = x; then
+      AC_MSG_ERROR([--enable-usi requires --enable-sem and --enable-tasklets])
+   fi
+fi
+
+if test x$CONFIG_RTAI_USI = xy ; then
+   if test x$CONFIG_RTAI_SEM = xm -o x$CONFIG_RTAI_TASKLETS = xm; then
+      AC_MSG_ERROR([--enable-usi=y requires --enable-sem=y and --enable-tasklets=y])
    fi
 fi
 

@@ -577,6 +577,9 @@ config RTAI_TRACE
 config RTAI_USI
 	tristate "User-space interrupts"
 	default m
+	depends on RTAI_SEM && RTAI_TASKLETS
+	default y if RTAI_SEM=y || RTAI_TASKLETS=y
+	default m if RTAI_SEM=m || RTAI_TASKLETS=m
 	help
 
 	RTAI already contains some examples hinting at managing

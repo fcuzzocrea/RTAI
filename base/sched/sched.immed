@@ -161,6 +161,16 @@ do { \
 	barrier(); \
 } while (0)
 
+#if 1
+#include <asm/atomic.h>
+#define sched_release_global_lock(cpuid) \
+do { \
+	barrier(); \
+	atomic_clear_mask((0xFFFF0001 << cpuid), (atomic_t *)&rtai_cpu_lock); \
+	cpu_relax(); \
+	barrier(); \
+} while (0)
+#else
 #define sched_release_global_lock(cpuid) \
 do { \
 	barrier(); \
@@ -170,6 +180,7 @@ do { \
 	} \
 	barrier(); \
 } while (0)
+#endif
 
 #else /* !CONFIG_SMP */
 

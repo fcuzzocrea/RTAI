@@ -1,3 +1,10 @@
+2005-02-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Do not
+	enforce MSR FP state when switching context, create kernel
+	threads, with FP bit disabled, then let xnarch_init_thread set it
+	and context switches preserve it.
+
 2005-02-14  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/patches: Upgrade to Adeos 2.6.10rc3-ppc-r6c12. This
@@ -33,6 +40,21 @@
 	* skins/rtai/task.h (thread2rtask): Convert to inline function to
 	prevent spurious evaluation side-effects due to multiple macro arg
 	expansion. Such bug affected condvar and mutex supports.
+
+2005-02-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* arch/i386/hal/smi.c : Add missing PCI ids to SMI detection code,
+	fix SMI options Kconfig help.
+
+2005-02-04  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-ppc/system.h : Enforce savd MSR_FP bit state
+	for user-space tasks.
+
+2005-02-03  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-ppc/system.h : Change FPU switch code to
+	handle user-space.
 
 2005-02-03  Max Krasnyansky <maxk@qualcomm.com>
 

@@ -1,7 +1,6 @@
 /* include/asm-arm/arch-pxa/rtai_exports.h
-
-Copyright (c) 2002 Guennadi Liakhovetski, DSA GmbH (gl@dsa-ac.de)
-Copyright (c) 2005 Luca Pizzi, Stefano Gafforelli, Paolo Mantegazza, \n
+Copyright (c) 2005 Luca Pizzi, (lucapizzi@hotmail.it)
+Copyright (c) 2005 Stefano Gafforelli, (Stefano.Gafforelli@tiscali.it)
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of version 2 of the GNU General Public License as

@@ -217,8 +217,8 @@ int main(int argc, char *argv[])
 				waitpid(pid, 0, 0);
 				if (kill(pid,0) < 0)
 				    {
-				    printf("\n*** Cannot execute calibration helper %s -- aborting\n",USER_HELPER_PATH);
-				    exit(1);
+//				    printf("\n*** Cannot execute calibration helper %s -- aborting\n",USER_HELPER_PATH);
+//				    exit(1);
 				    }
 				average /= (int)args[2];
 			        if (params.mp) {

@@ -1,3 +1,15 @@
+2005-02-23  Jan Kiszka <kiszka@rts.uni-hannover.de>
+
+	* nucleus/module.c (sched_read_proc): Fix shifted timeout reports
+	by using a stable time base.
+
+2005-02-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/lib/fusion.c, skins/rtai/lib/task.c: Remove implicit
+	mlockall() from task creation code.
+	
+	* testsuite: Add explicit mlockall() to user-space apps.
+
 2005-02-21  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/system.h (xnarch_remap_page_range):

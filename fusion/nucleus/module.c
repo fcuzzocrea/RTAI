@@ -85,14 +85,18 @@ extern struct proc_dir_entry *rthal_proc_root;
 static struct proc_dir_entry *iface_proc_root;
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
-static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
+static inline xnticks_t __get_thread_timeout (xnthread_t *thread, xnticks_t now)
 
 {
+    xnticks_t diff;
+
     if (!testbits(thread->status,XNDELAY))
 	return 0LL;
 
-    return xntimer_get_timeout(&thread->rtimer) ?:
-	xntimer_get_timeout(&thread->ptimer);
+    diff = (xntimer_get_date(&thread->rtimer) ? : xntimer_get_date(&thread->ptimer));
+    diff -= now;
+
+    return (diff <= 0) ? 1 : diff;
 }
 
 static int sched_read_proc (char *page,
@@ -102,6 +106,7 @@ static int sched_read_proc (char *page,
 			    int *eof,
 			    void *data)
 {
+    xnticks_t now;
     const unsigned nr_cpus = xnarch_num_online_cpus();
     xnthread_t *thread;
     xnholder_t *holder;
@@ -118,6 +123,13 @@ static int sched_read_proc (char *page,
 
     p += sprintf(p,"%-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
 		 "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
+
+#if CONFIG_RTAI_HW_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+        now = xnarch_get_cpu_time();
+    else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+        now = nkpod->jiffies;
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
@@ -139,7 +151,7 @@ static int sched_read_proc (char *page,
 			 xnthread_user_task(thread)->pid : 0,
                          thread->name,
 			 thread->cprio,
-			 __get_thread_timeout(thread),
+			 __get_thread_timeout(thread, now),
 			 thread->status,
 			 xnthread_symbolic_status(thread->status,
                                                   buf,sizeof(buf)));

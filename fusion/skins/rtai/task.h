@@ -56,6 +56,7 @@
 
 typedef struct rt_task_placeholder {
     rt_handle_t opaque;
+    unsigned long opaque2;
 } RT_TASK_PLACEHOLDER;
 
 #define RT_TASK_STATUS_MASK \

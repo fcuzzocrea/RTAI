@@ -178,6 +178,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = task->handle;
+	ph.opaque2 = bulk.a4;	/* hidden pthread_t identifier. */
 	__xn_copy_to_user(curr,(void __user *)bulk.a1,&ph,sizeof(ph));
 	err = xnshadow_map(&task->thread_base,u_completion);
 

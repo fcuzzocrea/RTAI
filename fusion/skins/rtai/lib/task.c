@@ -55,6 +55,7 @@ static void *rt_task_trampoline (void *cookie)
     bulk.a1 = (u_long)iargs->task;
     bulk.a2 = (u_long)iargs->name;
     bulk.a3 = (u_long)iargs->prio;
+    bulk.a4 = (u_long)pthread_self();
 
     err = XENOMAI_SKINCALL2(__rtai_muxid,
 			    __rtai_task_create,
@@ -172,9 +173,13 @@ int rt_task_resume (RT_TASK *task)
 int rt_task_delete (RT_TASK *task)
 
 {
-    return XENOMAI_SKINCALL1(__rtai_muxid,
-			     __rtai_task_delete,
-			     task);
+    int err = XENOMAI_SKINCALL1(__rtai_muxid,
+				__rtai_task_delete,
+				task);
+    if (!err)
+	pthread_cancel((pthread_t)task->opaque2);
+
+    return err;
 }
 
 int rt_task_yield (void)

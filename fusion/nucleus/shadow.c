@@ -788,7 +788,7 @@ void xnshadow_unmap (xnthread_t *thread)
 	   die. In the former case, the zombie Linux side returning to
 	   user-space will be trapped and exited inside the pod's
 	   rescheduling routines. */
-	schedule_linux_call(SB_SIGNAL_REQ,task,SIGKILL);
+	schedule_linux_call(SB_WAKEUP_REQ,task,0);
     else
 	/* Otherwise, if the shadow is being unmapped in secondary
 	   mode and running, we only detach the shadow thread from its

@@ -433,6 +433,15 @@ struct xnarch_tick_parms {
     int syncflag;
 };
 
+/*
+ * NOTE: System-level shadow priorities underlying the UVM threads are
+ * defined as follows:
+ *
+ * - uvm-root = prio_min(SCHED_FIFO)
+ * - uvm-<user> = prio_min(SCHED_FIFO) + 1(waiting) or 2(running)
+ * - uvm-timer = prio_min(SCHED_FIFO) + 3
+ */
+
 static void *xnarch_timer_thread (void *cookie)
 
 {
@@ -441,7 +450,7 @@ static void *xnarch_timer_thread (void *cookie)
     struct sched_param param;
     struct timespec ts;
 
-    param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 2;
+    param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 3;
     sched_setscheduler(0,SCHED_FIFO,&param);
 
     /* Copy the following values laid in our parent's stack before it
@@ -554,9 +563,12 @@ static void *xnarch_thread_trampoline (void *cookie)
 
 {
     xnarchtcb_t *tcb = (xnarchtcb_t *)cookie;
+    struct sched_param param;
 
     if (!setjmp(tcb->rstenv))
 	{
+	param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
+	sched_setscheduler(0,SCHED_FIFO,&param);
 	pthread_create_rt(tcb->name,tcb,tcb->ppid,&tcb->syncflag,&tcb->khandle);
 	pthread_barrier_rt();	/* Wait for start. */
 	}
@@ -577,7 +589,6 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 				       struct xnthread *thread,
 				       char *name)
 {
-    struct sched_param param;
     pthread_attr_t thattr;
 
     if (tcb->khandle)	/* Restarting thread */
@@ -596,9 +607,6 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
-    pthread_attr_setschedpolicy(&thattr,SCHED_FIFO);
-    param.sched_priority = sched_get_priority_min(SCHED_FIFO);
-    pthread_attr_setschedparam(&thattr,&param);
     pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
 
     pthread_sync_rt(&tcb->syncflag);
@@ -648,22 +656,32 @@ static inline int xnarch_release_ipi (void) {
 
 extern xnsysinfo_t uvm_info;
 
-static inline unsigned long long xnarch_tsc_to_ns (unsigned long long ts) {
-    return ts;
+static inline unsigned long long xnarch_tsc_to_ns (unsigned long long tsc) {
+
+    nanostime_t ns;
+    return pthread_tsc2ns_rt(tsc,&ns) ? 0 : ns;
 }
 
 static inline unsigned long long xnarch_ns_to_tsc (unsigned long long ns) {
-    return ns;
+
+    nanostime_t tsc;
+    return pthread_ns2tsc_rt(ns,&tsc) ? 0 : tsc;
 }
 
-static inline unsigned long long xnarch_get_cpu_time (void) {
-    unsigned long long t;
+static inline unsigned long long xnarch_get_cpu_time (void)
+
+{
+    nanotime_t t;
     pthread_time_rt(&t);
     return t;
 }
 
-static inline unsigned long long xnarch_get_cpu_tsc (void) {
-    return xnarch_get_cpu_time();
+static inline unsigned long long xnarch_get_cpu_tsc (void)
+
+{
+    nanotime_t t;
+    pthread_cputime_rt(&t);
+    return t;
 }
 
 static inline unsigned long long xnarch_get_cpu_freq (void) {

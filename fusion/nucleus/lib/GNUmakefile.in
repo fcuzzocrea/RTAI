@@ -213,7 +213,7 @@ libfusion_a_SOURCES = fusion.c
 libfusion_a_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
 	-I$(top_srcdir)/include \
-	-I../../include
+	-I../../include -D_GNU_SOURCE -D_REENTRANT
 
 subdir = nucleus/lib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4

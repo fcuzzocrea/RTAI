@@ -119,8 +119,6 @@ static atomic_t rthal_sync_count = ATOMIC_INIT(1);
 
 static rthal_trap_handler_t rthal_trap_handler;
 
-struct rthal_switch_info rthal_linux_context[RTHAL_NR_CPUS];
-
 struct rthal_calibration_data rthal_tunables;
 
 volatile unsigned long rthal_cpu_realtime;
@@ -1107,7 +1105,6 @@ EXPORT_SYMBOL(rthal_critical_enter);
 EXPORT_SYMBOL(rthal_critical_exit);
 EXPORT_SYMBOL(rthal_set_linux_task_priority);
 
-EXPORT_SYMBOL(rthal_linux_context);
 EXPORT_SYMBOL(rthal_domain);
 EXPORT_SYMBOL(rthal_proc_root);
 EXPORT_SYMBOL(rthal_tunables);

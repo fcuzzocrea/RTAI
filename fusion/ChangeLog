@@ -1,5 +1,8 @@
 2004-09-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/*/hal/hal.c: Discard obsolete rthal_linux_context[] which
+	is not used anymore.
+
 	* include/nucleus/asm-i386/system.h (xnarch_switch_to): Finally
 	unstaticalize cr0.
 

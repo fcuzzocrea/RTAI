@@ -133,11 +133,6 @@ extern struct rthal_calibration_data rthal_tunables;
 
 extern volatile unsigned long rthal_cpu_realtime;
 
-extern struct rthal_switch_info {
-    struct task_struct *oldtask;
-    unsigned long oldflags;
-} rthal_linux_context[RTHAL_NR_CPUS];
-
 extern adomain_t rthal_domain;
 
 #define RTHAL_DOMAIN_ID  0x52544149

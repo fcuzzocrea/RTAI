@@ -113,7 +113,8 @@ unsigned long long __rthal_ullimd (const unsigned long long op,
 
     qh = rthal_uldivrem(th, d, &rh);
     th = __rthal_u64fromu32(rh, tll);
-    return rthal_ulldiv(th, d, NULL);
+    ql = rthal_ulldiv(th, d, NULL);
+    return __rthal_u64fromu32(qh, ql);
 }
 
 

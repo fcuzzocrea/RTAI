@@ -201,7 +201,7 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
     /* We only care for basic FPU handling in kernel-space; Altivec
        and SPE are not available to kernel-based Xenomai threads. */
     rthal_fpenv_t fpuenv  __attribute__ ((aligned (16)));
-    rthal_fpenv_t *fpup;		/* Pointer to the FPU backup area */
+    rthal_fpenv_t *fpup;	/* Pointer to the FPU backup area */
 #define xnarch_fpu_ptr(tcb)     ((tcb)->fpup)
 #else /* !CONFIG_RTAI_HW_FPU */
 #define xnarch_fpu_ptr(tcb)     NULL
@@ -338,13 +338,9 @@ static inline void xnarch_relay_tick (void) {
     rthal_pend_linux_irq(__adeos_timer_virq);
 }
 
-static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
-						     unsigned long affinity)
-{
-    cpumask_t m; /* Hmm... please, FIXME... */
-    m.bits[0] = affinity;
-    m = adeos_set_irq_affinity(irq,m);
-    return m.bits[0];
+static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
+						 cpumask_t affinity) {
+    return adeos_set_irq_affinity(irq,affinity);
 }
 
 #endif /* XENO_INTR_MODULE */

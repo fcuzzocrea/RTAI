@@ -1,7 +1,9 @@
 2004-06-15  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/sched/rtai/sched_lxrt.c (lxrt_switch_context):
-	Reinstate former assembly code for switching tasks.
+	Reinstate former assembly code for switching tasks. Remove last
+	kludge on enq_soft_ready_task() since the latter change makes it
+	useless.
 
 2004-06-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 

@@ -838,7 +838,6 @@ schedlnxtsk:
 }
 #endif
 
-#if 1
 #define enq_soft_ready_task(ready_task) \
 do { \
 	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \
@@ -848,17 +847,6 @@ do { \
 	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task; \
 	ready_task->rnext = task; \
 } while (0)
-#else
-#define enq_soft_ready_task(ready_task) \
-do { \
-	RT_TASK *task = rt_smp_linux_task[cpuid].rnext; \
-	while (task != &rt_smp_linux_task[cpuid] && ready_task->priority >= task->priority) { \
-		if ((task = task->rnext)->priority < 0) break; \
-	} \
-	task->rprev = (ready_task->rprev = task->rprev)->rnext = ready_task; \
-	ready_task->rnext = task; \
-} while (0)
-#endif
 
 void rt_schedule(void)
 {

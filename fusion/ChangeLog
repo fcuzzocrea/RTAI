@@ -1,5 +1,9 @@
 2004-06-30  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.2
+
+2004-06-30  Philippe Gerum  <rpm@xenomai.org>
+
 	* testsuite/cruncher: Add a test measuring the nanosleep() and
 	execution time jitters w/ and w/o RTAI/fusion.
 

@@ -1,3 +1,8 @@
+2004-12-31  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* testsuite/klatency/latency.c (main): make the output line
+	buffered.
+
 2004-12-30  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-ppc/syscall.h (__xn_rdtsc): Fix case with

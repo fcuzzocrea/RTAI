@@ -17,7 +17,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/mman.h>
 #include <memory.h>
 #include <malloc.h>
 #include <unistd.h>
@@ -45,7 +44,6 @@ static void *rt_task_trampoline (void *cookie)
 
 {
     struct rt_task_iargs *iargs = (struct rt_task_iargs *)cookie;
-    char stack[PTHREAD_STACK_MIN];
     void (*entry)(void *cookie);
     struct sched_param param;
     struct rt_arg_bulk bulk;
@@ -54,9 +52,6 @@ static void *rt_task_trampoline (void *cookie)
     /* Ok, this looks like weird, but we need this. */
     param.sched_priority = sched_get_priority_max(SCHED_FIFO);
     pthread_setschedparam(pthread_self(),SCHED_FIFO,&param);
-
-    mlockall(MCL_CURRENT|MCL_FUTURE);
-    memset(stack,0,sizeof(stack));
 
     bulk.a1 = (u_long)iargs->task;
     bulk.a2 = (u_long)iargs->name;

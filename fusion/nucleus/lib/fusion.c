@@ -17,7 +17,6 @@
  */
 
 #include <sys/types.h>
-#include <sys/mman.h>
 #include <stdio.h>
 #include <memory.h>
 #include <errno.h>
@@ -79,13 +78,8 @@ int pthread_init_rt (const char *name,
 		     void *uhandle,
 		     void **khandlep)
 {
-    char stack[PTHREAD_STACK_MIN * 2];
-
     if (__fusion_muxid == 0 && __init_skin() < 0)
 	return -ENOSYS;
-
-    mlockall(MCL_CURRENT|MCL_FUTURE);
-    memset(stack,0,sizeof(stack));
 
     /* Move the current Linux task into the RTAI realm. */
     return XENOMAI_SKINCALL3(__fusion_muxid,__xn_fusion_init,name,khandlep,uhandle);
@@ -104,15 +98,10 @@ int pthread_create_rt (const char *name,
 		       int *syncp,
 		       void **khandlep)
 {
-    char stack[PTHREAD_STACK_MIN * 2];
-
     if (__fusion_muxid == 0 && __init_skin() < 0)
 	return -ENOSYS;
 
     XENOMAI_SYSCALL1(__xn_sys_migrate,FUSION_LINUX_DOMAIN);
-
-    mlockall(MCL_CURRENT|MCL_FUTURE);
-    memset(stack,0,sizeof(stack));
 
     /* Move the current Linux task into the RTAI realm, but do not
        start the mated shadow thread. Caller will need to wait on the

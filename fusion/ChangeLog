@@ -1,5 +1,7 @@
 2004-11-17  Philippe Gerum  <rpm@xenomai.org>
 
+	* Kconfig: Move nucleus-related options to nucleus/Kconfig.
+
 	* configure.in: Add top and bottom sections to KBUILD_CMD.
 
 2004-11-16  Philippe Gerum  <rpm@xenomai.org>

@@ -6,7 +6,7 @@ sections, depending on whether it is arch-specific or generic.
 ===================================================================
 
 Q: My user-space application has unexpected latencies which seem to
-appear between transitioning from primary (mere RTAI) to secondary
+appear when transitioning from primary (mere RTAI) to secondary
 (shielded Linux) real-time modes. Why?
 
 A: Such transition requires to wake up the Linux task underlying your
@@ -40,13 +40,14 @@ using the "hdparm" tool will help:
  ...
 
 Even if your application does not directly request disk I/O, remember
-that the kernel routinely performs housekeeping activities which do,
-like filesystem journal updates or VM commits to backing store, so
+that the kernel routinely performs housekeeping duties which do, like
+filesystem journal updates or VM commits to the backing store, so
 latencies due to improper disk settings may well trigger apparently
 randomly. Of course, if your application only operates in primary mode
-during all of its time critical duties, it will not be adversely
-affected by DMA deactivation or IDE masking, since activities from the
-RTAI domain can preempt any activity from the Linux domain, including
+during all of its time critical duties, i.e. never request Linux
+syscalls, it will not be adversely affected by DMA deactivation or IDE
+masking, since it will remain in the RTAI domain, and activities from
+such domain can preempt any activity from the Linux domain, including
 disk drivers.
 
 ======================================================================
@@ -72,33 +73,34 @@ allow you to enable two workarounds which may help you. These
 workarounds may be found in the Machine/SMI workaround sub-menu of 
 RTAI configuration menu.
 
-The first workaround which you should try is to disable all SMI 
-sources. In order to do this, in the RTAI configuration menu, select 
-the options "Enable SMI workaround" and "Globally disable SMI". This 
-option is the safest workaround, because when enabled, no SMI can 
-steal your precious CPU time behind your back and cause high latencies.
-Once this workaround enabled, you should run the latency test again, 
-verify that your high latency disappeared but most importantly, verify 
-that every peripheral you intend to use with RTAI is working properly. 
-If everything is working properly, then you are done with SMI.
+The first workaround which you should try is to disable all SMI
+sources. In order to do this, in the RTAI configuration menu, select
+the options "Enable SMI workaround" and "Globally disable SMI". This
+option is the safest workaround, because when enabled, no SMI can
+interfere with hardware interrupt management behind your back and
+cause high latencies.  Once this workaround enabled, you should run
+the latency test again, verify that your high latency disappeared but
+most importantly, verify that every peripheral you intend to use with
+RTAI is working properly. If everything is working properly, then you
+are done with SMI.
 
-If some peripheral is not working properly, then it probably needs 
-SMI, in which case you can not simply disable SMI globally, you will 
-need to disable all SMI sources on your system except the SMI needed 
-by your peripheral. This is a much less safe choice, since RTAI has 
-to know all SMI sources to disable them, one by one. In order to 
-choose this second workaround, unselect the option "Globally disable 
-SMI", and select the option corresponding to your peripheral. For 
-example, if you need legacy USB emulation to get your USB mouse 
-working, select the option "Enable legacy USB emulation". You should 
-then run the latency test again and verify that you do not observe 
-any high latency and that all your peripherals are functioning 
-correctly. If you can not find your peripheral in the list proposed 
-by RTAI configuration menu, drop a mail to RTAI mailing list, we will 
-try and add an option for you. If when running latency again, your 
-peripheral is working properly and you still observe high latencies, 
-then you are out of luck, the peripheral you want is the cause of 
-your high latency.
+If some peripheral is not working properly, then it probably needs
+SMI, in which case you can not simply disable SMI globally, you will
+need to disable all SMI sources on your system except the SMI needed
+by your peripheral. This is a much less safe choice, since RTAI has to
+know all SMI sources to disable them, one by one. In order to choose
+this second workaround, unselect the option "Globally disable SMI",
+and select the option corresponding to your peripheral. For example,
+if you need legacy USB emulation to get your USB mouse working, select
+the option "Enable legacy USB emulation". You should then run the
+latency test again and verify that you do not observe any high latency
+and that all your peripherals are functioning correctly. If you can
+not find your peripheral in the list proposed in the RTAI
+configuration menu, drop a mail to the RTAI mailing list, we will try
+and possibly add the proper option if needed. If when running the
+latency test again, your peripheral is working properly and you still
+observe high latencies, then you are out of luck, the peripheral you
+want is likely to be the cause of such latencies.
 
 ______________________________________________________________________
 
@@ -131,4 +133,4 @@ the same move.
 
 ======================================================================
 
-Last Updated: Sat Feb 26 11:04:46 CET 2005
+Last Updated: Fri Mar  4 19:05:13 CET 2005

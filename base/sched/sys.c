@@ -39,6 +39,7 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #include <rtai_rwl.h>
 #include <rtai_spl.h>
 
+#include <asm/rtai_fpu.h>
 #include <rtai_registry.h>
 #include <rtai_proxies.h>
 #include <rtai_msg.h>

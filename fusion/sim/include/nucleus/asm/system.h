@@ -515,7 +515,7 @@ static inline int xnarch_init_all_cpus (void (*handler)(void)) {
     return 0;
 }
 
-static inline int xnarch_hook_ipi (void (*handler)(unsigned irq)) {
+static inline int xnarch_hook_ipi (void (*handler)(void)) {
 
     return 0;
 }

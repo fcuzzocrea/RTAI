@@ -132,13 +132,8 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
                  xnarch_fault_pc(fltinfo),
                  xnarch_fault_trap(fltinfo));
 
-        /* Put the faulting thread in dormant state since XNSUSP might
-           be cleared as the application continues. */
+        xnpod_suspend_thread(xnpod_current_thread(),XNSUSP,XN_INFINITE,NULL);
 
-        xnpod_suspend_thread(xnpod_current_thread(),
-			     XNDORMANT,
-			     XN_INFINITE,
-			     NULL);
         return 1;
         }
 
@@ -3065,7 +3060,7 @@ int xnpod_announce_tick (xnintr_t *intr)
 	    xnltt_log_event(rtai_ev_watchdog,xnpod_current_thread()->name);
 	    xnprintf("RTAI: watchdog triggered -- suspending runaway thread '%s'\n",
 		     xnpod_current_thread()->name);
-	    xnpod_suspend_thread(xnpod_current_thread(),XNDORMANT,XN_INFINITE,NULL);
+	    xnpod_suspend_thread(xnpod_current_thread(),XNSUSP,XN_INFINITE,NULL);
 	} else {
 	    xnpod_reset_watchdog();
 	}

@@ -50,7 +50,7 @@ static void mbx_signal(MBX *mbx)
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			if (mbx->sndsem.type <= 0) {
-				RT_SCHEDULE(task, hard_cpu_id());
+				RT_SCHEDULE(task, rtai_cpuid());
 				rt_global_restore_flags(flags);
 				return;
 			}
@@ -135,7 +135,7 @@ static int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current
 	flags = rt_global_save_flags_and_cli();
 	if (!(*fravbs)) {
 		mbx->waiting_task = rt_current;
-		if ((rt_current->resume_time = time) > rt_smp_time_h[hard_cpu_id()]) {
+		if ((rt_current->resume_time = time) > rt_smp_time_h[rtai_cpuid()]) {
 			unsigned long schedmap;
 			if (mbx->sndsem.type > 0) {
 				schedmap = pass_prio(mbx->owndby, rt_current);

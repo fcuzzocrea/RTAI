@@ -2038,14 +2038,14 @@ pid_t rt_Trigger(pid_t pid)
 pid_t rt_Name_attach(const char *argname)
 {
 	RT_TASK *task;
-	task = current->this_rt_task[0] ? (RT_TASK *)current->this_rt_task[0] : _rt_whoami();
+	task = current->rtai_tskext[0] ? (RT_TASK *)current->rtai_tskext[0] : _rt_whoami();
 	if (current->comm[0] != 'U' && current->comm[1] != ':') {
 	    	strncpy_from_user(task->task_name, argname, MAX_NAME_LENGTH);
 	} else {
 	    	strncpy(task->task_name, argname, MAX_NAME_LENGTH);
 	}
     	task->task_name[MAX_NAME_LENGTH - 1] = 0;
-	return strnlen(task->task_name, MAX_NAME_LENGTH) > (MAX_NAME_LENGTH - 1) ? -EINVAL : task->lnxtsk ? ((struct task_struct *)current->this_rt_task[1])->pid : (pid_t)task;
+	return strnlen(task->task_name, MAX_NAME_LENGTH) > (MAX_NAME_LENGTH - 1) ? -EINVAL : task->lnxtsk ? ((struct task_struct *)current->rtai_tskext[1])->pid : (pid_t)task;
 }
 
 pid_t rt_Name_locate(const char *arghost, const char *argname)
@@ -2057,7 +2057,7 @@ pid_t rt_Name_locate(const char *arghost, const char *argname)
                 task = &rt_smp_linux_task[cpuid];
                 while ((task = task->next)) {
 			if (!strncmp(argname, task->task_name, MAX_NAME_LENGTH - 1)) {
-				return (struct task_struct *)(task->lnxtsk) ?  ((struct task_struct *)(task->lnxtsk)->this_rt_task[1])->pid : (pid_t)task;
+				return (struct task_struct *)(task->lnxtsk) ?  ((struct task_struct *)(task->lnxtsk)->rtai_tskext[1])->pid : (pid_t)task;
 
 			}
 		}
@@ -2068,10 +2068,10 @@ pid_t rt_Name_locate(const char *arghost, const char *argname)
 int rt_Name_detach(pid_t pid)
 {
 	if (pid <= PID_MAX_LIMIT) {
-	 	if (pid != ((struct task_struct *)current->this_rt_task[1])->pid ) {
+	 	if (pid != ((struct task_struct *)current->rtai_tskext[1])->pid ) {
 			return -EINVAL;
 		}
-	    	((RT_TASK *)current->this_rt_task[0])->task_name[0] = 0;
+	    	((RT_TASK *)current->rtai_tskext[0])->task_name[0] = 0;
 	} else {
 	    	((RT_TASK *)pid)->task_name[0] = 0;
 	}

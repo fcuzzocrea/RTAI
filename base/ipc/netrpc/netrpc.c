@@ -255,7 +255,7 @@ static inline int hash_rem(unsigned long long owner)
 	return k;
 }
 
-#define TIMER_FREQ 50
+#define NETRPC_TIMER_FREQ 50
 static struct timer_list timer;
 static SEM timer_sem;
 
@@ -263,7 +263,7 @@ static void timer_fun(unsigned long none)
 {
 	if (timer_sem.count < 0) {
 		rt_sem_signal(&timer_sem);
-		timer.expires = jiffies + (HZ + TIMER_FREQ/2 - 1)/TIMER_FREQ;
+		timer.expires = jiffies + (HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ;
 		add_timer(&timer);
 	}
 }
@@ -327,7 +327,7 @@ static int soft_kthread_init(RT_TASK *task, int fun, int arg, int priority)
 	if (kernel_thread((void *)thread_fun, task, 0) > 0) {
 		while (task->state != (RT_SCHED_READY | RT_SCHED_SUSPENDED)) {
 			current->state = TASK_INTERRUPTIBLE;
-			schedule_timeout((HZ + TIMER_FREQ/2 - 1)/TIMER_FREQ);
+			schedule_timeout((HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ);
 		}
 		return 0;
 	}
@@ -340,7 +340,7 @@ static int soft_kthread_delete(RT_TASK *task)
 		return -EFAULT;
 	} else {
 		struct task_struct *lnxtsk = task->lnxtsk;
-		lnxtsk->this_rt_task[0] = lnxtsk->this_rt_task[1] = 0;
+		lnxtsk->rtai_tskext[0] = lnxtsk->rtai_tskext[1] = 0;
 		sigemptyset(&lnxtsk->blocked);
 		lnxtsk->state = TASK_INTERRUPTIBLE;
 		kill_proc(lnxtsk->pid, SIGTERM, 0);
@@ -610,7 +610,7 @@ int rt_send_req_rel_port(unsigned long node, int op, unsigned long id, MBX *mbx,
 	msg.priority = task->base_priority;
 	trashmsg(portslot + msg.port, msg.hard);
 	msgsize = encode ? encode(&portslot[0], &msg, sizeof(msg), PRT_REQ) : sizeof(msg);
-	for (i = 0; i < TIMER_FREQ && !portslotp->sem.count; i++) {
+	for (i = 0; i < NETRPC_TIMER_FREQ && !portslotp->sem.count; i++) {
 		if (msg.hard) {
 			hard_rt_sendto(portslotp->socket[1], &msg, msgsize, 0, (void *)&portslotp->addr, ADRSZ);
 		} else {
@@ -893,7 +893,7 @@ static void cleanup_softrtnet(void);
 
 void do_mod_timer(void)
 {
-	mod_timer(&timer, jiffies + (HZ + TIMER_FREQ/2 - 1)/TIMER_FREQ);
+	mod_timer(&timer, jiffies + (HZ + NETRPC_TIMER_FREQ/2 - 1)/NETRPC_TIMER_FREQ);
 }
 
 #ifdef CONFIG_RTAI_NETRPC_RTNET

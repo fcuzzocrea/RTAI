@@ -195,7 +195,7 @@ int rt_sem_delete(SEM *sem)
 		}
 	}
 	sched = schedmap;
-	clear_bit(hard_cpu_id(), &schedmap);
+	clear_bit(rtai_cpuid(), &schedmap);
 	if ((task = sem->owndby) && sem->type > 0) {
 		if (task->owndres & SEMHLF) {
 			--task->owndres;
@@ -287,7 +287,7 @@ int rt_sem_signal(SEM *sem)
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			if (sem->type <= 0) {
-				RT_SCHEDULE(task, hard_cpu_id());
+				RT_SCHEDULE(task, rtai_cpuid());
 				rt_global_restore_flags(flags);
 				return 0;
 			}
@@ -375,7 +375,7 @@ int rt_sem_broadcast(SEM *sem)
 	}
 	sem->count = 0;
 	if (schedmap) {
-		if (test_and_clear_bit(hard_cpu_id(), &schedmap)) {
+		if (test_and_clear_bit(rtai_cpuid(), &schedmap)) {
 			RT_SCHEDULE_MAP_BOTH(schedmap);
 		} else {
 			RT_SCHEDULE_MAP(schedmap);
@@ -726,7 +726,7 @@ int rt_cond_signal(CND *cnd)
 		rem_timed_task(task);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
-			RT_SCHEDULE(task, hard_cpu_id());
+			RT_SCHEDULE(task, rtai_cpuid());
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -761,7 +761,7 @@ static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
 		rt_current->priority = rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority;
 	}
 	if (task) {
-		 RT_SCHEDULE_BOTH(task, hard_cpu_id());
+		 RT_SCHEDULE_BOTH(task, rtai_cpuid());
 	} else {
 		rt_schedule();
 	}
@@ -1322,7 +1322,7 @@ int rt_spl_lock(SPL *spl)
 	unsigned long flags;
 	RT_TASK *rt_current;
 
-	hard_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
@@ -1352,12 +1352,12 @@ int rt_spl_lock_if(SPL *spl)
 	unsigned long flags;
 	RT_TASK *rt_current;
 
-	hard_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
 		if (atomic_cmpxchg(&spl->owndby, 0, rt_current)) {
-			hard_restore_flags(flags);
+			rtai_restore_flags(flags);
 			return -1;
 		}
 		spl->flags = flags;
@@ -1391,7 +1391,7 @@ int rt_spl_lock_timed(SPL *spl, unsigned long ns)
 	unsigned long flags;
 	RT_TASK *rt_current;
 
-	hard_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
@@ -1400,7 +1400,7 @@ int rt_spl_lock_timed(SPL *spl, unsigned long ns)
 		end_time = rdtsc() + imuldiv(ns, tuned.cpu_freq, 1000000000);
 		while ((locked = atomic_cmpxchg(&spl->owndby, 0, rt_current)) && rdtsc() < end_time);
 		if (locked) {
-			hard_restore_flags(flags);
+			rtai_restore_flags(flags);
 			return -1;
 		}
 		spl->flags = flags;
@@ -1430,18 +1430,18 @@ int rt_spl_unlock(SPL *spl)
 	unsigned long flags;
 	RT_TASK *rt_current;
 
-	hard_save_flags_and_cli(flags);
+	rtai_save_flags_and_cli(flags);
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		if (spl->count) {
 			--spl->count;
 		} else {
 			spl->owndby = 0;
 			spl->count  = 0;
-			hard_restore_flags(spl->flags);
+			rtai_restore_flags(spl->flags);
 		}
 		return 0;
 	}
-	hard_restore_flags(flags);
+	rtai_restore_flags(flags);
 	return -1;
 }
 

@@ -51,7 +51,7 @@ static inline void tbx_smx_signal(TBX* tbx, SEM *smx)
 		rem_timed_task(task);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
-			RT_SCHEDULE(task, hard_cpu_id());
+			RT_SCHEDULE(task, rtai_cpuid());
 		}
 	} else {
 		smx->count = 1;

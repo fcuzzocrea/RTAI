@@ -793,6 +793,6 @@ static inline void xnarch_exit (void) {
 
 #endif /* __KERNEL__ */
 
-#define XNARCH_CALIBRATION_PERIOD    200000 /* ns */
+#define XNARCH_CALIBRATION_PERIOD    1000000 /* ns */
 
 #endif /* !_RTAI_ASM_PPC_SYSTEM_H */

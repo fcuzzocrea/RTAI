@@ -402,7 +402,7 @@ fail:
 
 #ifdef CONFIG_SMP
     xnarch_hook_ipi(&xnpod_schedule_handler);
-#endif
+#endif /* CONFIG_SMP */
 
     xnarch_memory_barrier();
     
@@ -830,11 +830,11 @@ int xnpod_start_thread (xnthread_t *thread,
         !testbits(thread->status,XNTHREAD_SYSTEM_BITS))
         xnpod_fire_callouts(&nkpod->tstartq,thread);
 
-    if (
 #ifdef CONFIG_SMP
-        xnpod_current_sched() == thread->sched &&
-#endif
-        xnpod_root_p())
+    if (xnpod_current_sched() == thread->sched && xnpod_root_p())
+#else /* !CONFIG_SMP */
+    if (xnpod_root_p())
+#endif /* CONFIG_SMP */
         xnarch_escalate();
     else
         xnpod_schedule();

@@ -1,5 +1,10 @@
 2004-06-06  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/system.h: Remove useless inclusions for plain
+	user-space mode.
+
+2004-06-06  Philippe Gerum  <rpm@xenomai.org>
+
 	* Move to GNA (http://www.gna.org/projects/rtai/).
 
 2004-06-06  Philippe Gerum  <rpm@xenomai.org>

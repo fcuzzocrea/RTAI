@@ -1,3 +1,14 @@
+2004-12-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/shadow.c (xnshadow_*2ticks, xnshadow_ticks2*):
+	Temporarily re-implement slow versions.
+
+	* include/nucleus/asm-i386/hal.h: Got rid of the broken
+	rthal_ulldiv, and minimize usage of inline assembly.
+
+	* include/nucleus/*/system.h: Allow interruption of
+	xnarch_sleep_on in debug mode.
+
 2004-12-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-uvm/system.h: Enforce start barrier and fix

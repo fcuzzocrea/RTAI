@@ -44,57 +44,97 @@
 
 typedef unsigned long long rthal_time_t;
 
+/* FIXME: temporary fix pasted from include/linux/compiler*.h, in order to have
+   nucleus/lib/fusion.c. The proper fix is to implement llimd in user-space,
+   since this is the only routine needed. */
+#ifndef __KERNEL__
+#if __GNUC__ == 2 && __GNUC_MINOR >= 96 || __GNUC__ >= 3
+#define __attribute_const__ __attribute__((__const__))
+#else
+#define __attribute_const__
+#endif
+#if __GNUC__ > 3 || __GNUC__ == 3 && __GNUC_MINOR__ >= 1
+# define inline         inline          __attribute__((always_inline))
+#endif
+#endif
+
+#define __rthal_u64tou32(ull, h, l) ({          \
+    (l) = ull & 0xffffffff;                     \
+    (h) = ull >> 32;                            \
+})
+
+#define __rthal_u64fromu32(h, l) ({                     \
+    union { unsigned long long _ull;                    \
+        struct { unsigned long _sl, _sh; } _s; } _tmp;  \
+    _tmp._s._sh=(h);                                    \
+    _tmp._s._sl=(l);                                    \
+    _tmp._ull;                                          \
+})
+
+/* Fast longs multiplication. */
+static inline __attribute_const__ unsigned long long
+rthal_ullmul(unsigned long m1, unsigned long m2) {
+    /* Gcc (at least for versions 2.95 and higher) optimises correctly here. */
+    return (unsigned long long) m1 * m2;
+}
+
+/* const helper for rthal_uldivrem, so that the compiler will eliminate
+   multiple calls with same arguments, at no additionnal cost. */
+static inline __attribute_const__ unsigned long long
+__rthal_uldivrem(unsigned long long ull, unsigned long d) {
+
+    __asm__ ("divl %1" : "=A,A"(ull) : "r,?m"(d), "A,A"(ull));
+    /* Exception if quotient does not fit on unsigned long. */
+    return ull;
+}
+
+/* Fast long long division: when the quotient and remainder fit on 32 bits.
+   Eg.: conversion between POSIX struct timespec and nanoseconds count.
+   Recent compilers remove redundant calls to this function. */
+static inline unsigned long
+rthal_uldivrem(unsigned long long ull, unsigned long d, unsigned long *rp) {
+
+    unsigned long q, r;
+    ull = __rthal_uldivrem(ull, d);
+    __asm__ ( "": "=d"(r), "=a"(q) : "A"(ull));
+    if(rp)
+        *rp = r;
+    return q;
+}
+
+/* Slow long long division. Uses rthal_uldivrem, hence has the same property:
+   compiler removes redundant calls. It seems to inline quite well too. */
 static inline unsigned long long rthal_ulldiv (unsigned long long ull,
-					       unsigned long uld,
-					       unsigned long *r)
-{
-    /*
-     * Fixed by Marco Morandini <morandini@aero.polimi.it> to work
-     * with the -fnostrict-aliasing and -O2 combination using GCC
-     * 3.x.
-     */
+                                               unsigned long d,
+                                               unsigned long *rp) {
 
-    unsigned long long qf, rf;
-    unsigned long tq, rh;
-    union { unsigned long long ull; unsigned long ul[2]; } p, q;
+    unsigned long h, l, qh, rh, ql;
+    __rthal_u64tou32(ull, h, l);
 
-    p.ull = ull;
-    q.ull = 0;
-    rf = 0x100000000ULL - (qf = 0xFFFFFFFFUL / uld) * uld;
+    qh = rthal_uldivrem(h, d, &rh);
+    __asm__ ( "": "=A"(ull) : "d"(rh), "a"(l));
+    ql = rthal_uldivrem(ull, d, rp);
 
-    while (p.ull >= uld) {
-    	q.ul[1] += (tq = p.ul[1] / uld);
-	rh = p.ul[1] - tq * uld;
-	q.ull  += rh * qf + (tq = p.ul[0] / uld);
-	p.ull   = rh * rf + (p.ul[0] - tq * uld);
-    }
-
-    if (r)
-	*r = p.ull;
-
-    return q.ull;
+    return __rthal_u64fromu32(qh, ql);
 }
 
-static inline int rthal_imuldiv (int i, int mult, int div) {
+/* Replaced the helper with rthal_ulldiv: rthal_ulldiv inlines better. */
+#define rthal_u64div32c rthal_ulldiv
 
-    /* Returns (int)i = (int)i*(int)(mult)/(int)div. */
-    
-    int dummy;
+static inline __attribute_const__ int rthal_imuldiv (int i, int mult, int div) {
 
-    __asm__ __volatile__ ( \
-	"mull %%edx\t\n" \
-	"div %%ecx\t\n" \
-	: "=a" (i), "=d" (dummy)
-       	: "a" (i), "d" (mult), "c" (div));
-
-    return i;
+    /* Returns (unsigned)i = (unsigned)i*(unsigned)(mult)/(unsigned)div. */
+    unsigned long ui = (unsigned long) i, um = (unsigned long) mult;
+    return __rthal_uldivrem((unsigned long long) ui * um, div);
 }
 
-static inline long long rthal_llimd(long long ll, int mult, int div) {
+static inline __attribute_const__ long long rthal_llimd(long long ll,
+                                                        int mult,
+                                                        int div) {
 
     /* Returns (long long)ll = (int)ll*(int)(mult)/(int)div. */
 
-    __asm__ __volatile ( \
+    __asm__  ( \
 	"movl %%edx,%%ecx\t\n" \
 	"mull %%esi\t\n" \
 	"movl %%eax,%%ebx\n\t" \
@@ -121,36 +161,12 @@ static inline long long rthal_llimd(long long ll, int mult, int div) {
     return ll;
 }
 
-/*
- *  u64div32c.c is a helper function provided, 2003-03-03, by:
- *  Copyright (C) 2003 Nils Hagge <hagge@rts.uni-hannover.de>
- */
 
-static inline unsigned long long rthal_u64div32c(unsigned long long a,
-						 unsigned long b,
-						 int *r) {
-    __asm__ __volatile(
-       "\n        movl    %%eax,%%ebx"
-       "\n        movl    %%edx,%%eax"
-       "\n        xorl    %%edx,%%edx"
-       "\n        divl    %%ecx"
-       "\n        xchgl   %%eax,%%ebx"
-       "\n        divl    %%ecx"
-       "\n        movl    %%edx,%%ecx"
-       "\n        movl    %%ebx,%%edx"
-       : "=a" (((unsigned long *)((void *)&a))[0]), "=d" (((unsigned long *)((void *)&a))[1])
-       : "a" (((unsigned long *)((void *)&a))[0]), "d" (((unsigned long *)((void *)&a))[1]), "c" (b)
-       : "%ebx"
-       );
-
-    return a;
-}
-
-static inline unsigned long ffnz (unsigned long word) {
+static inline __attribute_const__ unsigned long ffnz (unsigned long word) {
     /* Derived from bitops.h's ffs() */
     __asm__("bsfl %1, %0"
-	    : "=r" (word)
-	    : "r"  (word));
+	    : "=r,r" (word)
+	    : "r,?m"  (word));
     return word;
 }
 
@@ -284,7 +300,7 @@ static inline struct task_struct *rthal_get_current (int cpuid)
 {
     int *esp;
 
-    __asm__ volatile("movl %%esp, %0" : "=r" (esp));
+    __asm__ ("movl %%esp, %0" : "=r,?m" (esp));
 
     if (esp >= rthal_domain.estackbase[cpuid] && esp < rthal_domain.estackbase[cpuid] + 2048)
 	return rthal_get_root_current(cpuid);

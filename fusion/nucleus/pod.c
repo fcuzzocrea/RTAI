@@ -294,7 +294,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->jiffies = 0;
     pod->wallclock = 0;
     pod->tickvalue = XNARCH_DEFAULT_TICK;
-    pod->ticks2sec = xnarch_ulldiv(1000000000LL,XNARCH_DEFAULT_TICK,NULL);
+    pod->ticks2sec = 1000000000/ XNARCH_DEFAULT_TICK;
 
     pod->svctable.shutdown = &xnpod_shutdown;
     pod->svctable.settime = &xnpod_set_time;
@@ -2832,7 +2832,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
         setbits(nkpod->status,XNTMPER);
         /* Pre-calculate the number of ticks per second. */
         nkpod->tickvalue = nstick;
-        nkpod->ticks2sec = xnarch_ulldiv(1000000000LL,nstick,NULL);
+        nkpod->ticks2sec = 1000000000 / nstick;
         }
 
     if (XNARCH_HOST_TICK > 0 && XNARCH_HOST_TICK < nkpod->tickvalue)

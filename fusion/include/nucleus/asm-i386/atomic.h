@@ -21,10 +21,10 @@
 #define _RTAI_ASM_I386_ATOMIC_H
 
 #include <linux/bitops.h>
-#include <asm/atomic.h>
 
 #ifdef __KERNEL__
 
+#include <asm/atomic.h>
 #include <asm/system.h>
 
 #define atomic_xchg(ptr,v)       xchg(ptr,v)
@@ -32,6 +32,13 @@
 #define xnarch_memory_barrier()  smp_mb()
 
 #else /* !__KERNEL__ */
+
+#ifndef likely
+#define likely(x)	__builtin_expect(!!(x), 1)
+#define unlikely(x)	__builtin_expect(!!(x), 0)
+#endif /* !likely */
+
+#include <asm/atomic.h>
 
 struct __rtai_xchg_dummy { unsigned long a[100]; };
 #define __rtai_xg(x) ((struct __rtai_xchg_dummy *)(x))
@@ -61,9 +68,6 @@ static inline unsigned long atomic_cmpxchg (volatile void *ptr,
 }
 
 #define xnarch_memory_barrier()  __asm__ __volatile__("": : :"memory")
-
-#define likely(x)	__builtin_expect(!!(x), 1)
-#define unlikely(x)	__builtin_expect(!!(x), 0)
 
 /* Depollute the namespace a bit. */
 #undef ADDR

@@ -67,10 +67,10 @@ pci.ids database, ICH5-M ?)
 
 */
 
-#ifdef CONFIG_RTAI_HW_SMI_WORKAROUND
-    
 #define DEVFN        0xf8 /* device 31, function 0 */
 
+#ifdef CONFIG_RTAI_HW_SMI_WORKAROUND
+    
 #define PMBASE_B0    0x40
 #define PMBASE_B1    0x41
 

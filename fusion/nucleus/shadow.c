@@ -71,10 +71,11 @@ static struct __schedback {
     struct {
 #define SB_WAKEUP_REQ 1
 #define SB_SIGNAL_REQ 2
+#define SB_RENICE_REQ 3
 	int type;
 	struct task_struct *task;
 	int arg;
-#define SB_MAX_REQUESTS 32 /* Must be a ^2 */
+#define SB_MAX_REQUESTS 64 /* Must be a ^2 */
     } req[SB_MAX_REQUESTS];
 
 } schedback[XNARCH_NR_CPUS];
@@ -100,11 +101,11 @@ void xnpod_declare_iface_proc(struct xnskentry *iface);
 
 void xnpod_discard_iface_proc(struct xnskentry *iface);
 
-static inline struct task_struct *get_calling_task (adevinfo_t *evinfo) {
-
-    return (xnpod_shadow_p()
-            ? current
-            : rthal_get_root_current(xnarch_current_cpu()));
+static inline struct task_struct *get_calling_task (adevinfo_t *evinfo)
+{
+    return xnpod_shadow_p()
+	? current
+	: rthal_get_root_current(xnarch_current_cpu());
 }
 
 static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *regs)
@@ -119,6 +120,16 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 	}
 
     xnshadow_relax();
+}
+
+static inline void set_linux_task_priority (struct task_struct *task, int prio)
+
+{
+    if (prio < 0 || prio > MAX_USER_RT_PRIO-1)
+	/* FIXME: __adeos_setscheduler_root() should check this instead of us. */
+	printk(KERN_WARNING "RTAI: invalid Linux priority level: %d, task=%s\n",prio,task->comm);
+    else
+	__adeos_setscheduler_root(task,SCHED_FIFO,prio);
 }
 
 static inline void engage_irq_shield (void)
@@ -254,6 +265,11 @@ static void schedback_handler (unsigned virq)
 
 		send_sig(sb->req[reqnum].arg,task,1);
 		break;
+
+	    case SB_RENICE_REQ:
+
+		set_linux_task_priority(task,sb->req[reqnum].arg);
+		break;
 	    }
 	}
 }
@@ -301,7 +317,7 @@ static void gatekeeper_thread (void *data)
 
     sigfillset(&this_task->blocked);
     set_cpus_allowed(this_task, cpumask_of_cpu(cpu));
-    rthal_set_linux_task_priority(this_task,SCHED_FIFO,MAX_USER_RT_PRIO - 1);
+    set_linux_task_priority(this_task,MAX_USER_RT_PRIO - 1);
 
     init_waitqueue_head(&gk->waitq);
     add_wait_queue_exclusive(&gk->waitq,&wait);
@@ -529,11 +545,7 @@ void xnshadow_relax (void)
 
     xnpod_renice_root(thread->cprio);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
-
-    __adeos_schedule_back_root(get_switch_lock_owner());
-
-    if (current->rt_priority != thread->cprio)
-      rthal_set_linux_task_priority(current,SCHED_FIFO,thread->cprio);
+    __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,thread->cprio);
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */
@@ -589,7 +601,7 @@ static int xnshadow_sync_wait (int __user *u_syncp)
 void xnshadow_exit (void)
 
 {
-    __adeos_schedule_back_root(get_switch_lock_owner());
+    __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,current->rt_priority);
     do_exit(0);
 }
 
@@ -671,7 +683,7 @@ void xnshadow_map (xnthread_t *thread,
 	CAP_TO_MASK(CAP_SYS_NICE);
 
     xnarch_init_shadow_tcb(xnthread_archtcb(thread),thread,xnthread_name(thread));
-    rthal_set_linux_task_priority(current,SCHED_FIFO,xnthread_base_priority(thread));
+    set_linux_task_priority(current,xnthread_base_priority(thread));
     xnshadow_ptd(current) = thread;
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
 
@@ -814,15 +826,9 @@ void xnshadow_renice (xnthread_t *thread)
 
 {
   /* Called with nklock locked, RTAI interrupts off. */
-
-    if (xnpod_root_p()) {
-	struct task_struct *task = xnthread_archtcb(thread)->user_task;
-	int prio = thread->cprio;
-	spl_t s;
-	rthal_local_irq_sync(s);
-	rthal_set_linux_task_priority(task,SCHED_FIFO,prio);
-	rthal_local_irq_restore(s);
-    }
+    struct task_struct *task = xnthread_archtcb(thread)->user_task;
+    int prio = thread->cprio;
+    schedule_linux_call(SB_RENICE_REQ,task,prio);
 }
 
 static int attach_to_interface (struct task_struct *curr,
@@ -1165,7 +1171,7 @@ static void exec_nucleus_syscall (int muxop, struct pt_regs *regs)
 
 	default:
 
-	    printk(KERN_WARNING "RTAI[nucleus]: Unknown nucleus syscall #%d\n",muxop);
+	    printk(KERN_WARNING "RTAI: Unknown nucleus syscall #%d\n",muxop);
 	}
 }
 

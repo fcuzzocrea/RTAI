@@ -46,6 +46,10 @@
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
 
+#define RT_IRQ_TASK         0
+#define RT_IRQ_TASKLET      1
+#define RT_IRQ_TASK_ERR     0x7FFFFFFF
+
 struct rt_task_struct;
 
 #ifdef __KERNEL__
@@ -211,9 +215,6 @@ void rt_set_oneshot_mode(void);
 
 RTIME start_rt_timer(int period);
 
-RTIME start_rt_timer_cpuid(int period,
-			   int cpuid);
-
 #define start_rt_timer_ns(period) start_rt_timer(nano2count((period)))
 
 void start_rt_apic_timers(struct apic_timer_setup_data *setup_mode,
@@ -275,7 +276,27 @@ void rt_task_yield(void);
 
 int rt_task_suspend(struct rt_task_struct *task);
 
+int rt_task_suspend_if(struct rt_task_struct *task);
+
+int rt_task_suspend_until(struct rt_task_struct *task, RTIME until);
+
+int rt_task_suspend_timed(struct rt_task_struct *task, RTIME delay);
+
 int rt_task_resume(struct rt_task_struct *task);
+
+int rt_irq_wait(unsigned irq);
+
+int rt_irq_wait_if(unsigned irq);
+
+int rt_irq_wait_until(unsigned irq, RTIME until);
+
+int rt_irq_wait_timed(unsigned irq, RTIME delay);
+
+void rt_irq_signal(unsigned irq);
+
+int rt_request_irq_task (unsigned irq, void *handler, int type, int affine2task);
+
+int rt_release_irq_task (unsigned irq);
 
 int rt_task_make_periodic_relative_ns(struct rt_task_struct *task,
 				      RTIME start_delay,

@@ -39,6 +39,7 @@
 #include "rt_nonfinite.h"
 #include "mdl_info.h"
 #include "bio_sig.h"
+#include "simstruc.h"
 
 #include <rtai_netrpc.h>
 #include <rtai_msg.h>
@@ -89,7 +90,7 @@ extern void rt_ODEUpdateContinuousStates(RTWSolverInfo *si);
 extern RT_MODEL *MODEL(void);
 static RT_MODEL *rtM;
 
-#define RTAILAB_VERSION         "3.0.3"
+#define RTAILAB_VERSION         "3.0.4"
 #define MAX_NTARGETS		1000
 #define MAX_NAMES_SIZE		256
 #define RUN_FOREVER		-1.0

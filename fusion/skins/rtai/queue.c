@@ -133,6 +133,9 @@ static void __queue_flush_private (xnheap_t *heap,
  * queue is created empty. Message queues can be local to the kernel
  * space, or shared between kernel and user-space.
  *
+ * This service needs the special character device /dev/rtheap
+ * (10,254) when called from user-space tasks.
+ *
  * @param q The address of a queue descriptor RTAI will use to store
  * the queue-related data.  This descriptor must always be valid while
  * the message queue is active therefore it must be allocated in
@@ -190,6 +193,8 @@ static void __queue_flush_private (xnheap_t *heap,
  * - -ENOSYS is returned if @a mode specifies Q_SHARED, but the
  * real-time support in user-space is unavailable.
  *
+ * - -ENOENT is returned if /dev/rtheap can't be opened.
+ *   
  * Environments:
  *
  * This service can be called from:

@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.1 2004/06/06 14:14:47 rpm Exp $
+ * ID: @(#)$Id: wd.c,v 1.2 2004/07/24 17:01:24 rpm Exp $
  *
  *******************************************************************************/
 
@@ -137,7 +137,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.1 $";
+static char version[] = "$Revision: 1.2 $";
 static char ver[10];
 
 // User friendly policy names
@@ -739,8 +739,7 @@ int __rtai_wd_init(void)
     }
 
     // Log initial parameters
-    WDLOG( "\n==== RTAI Watchdog v%s(%s, %s) Loaded ====\n", 
-	   ver, __TIME__, __DATE__);
+    WDLOG( "loaded.\n");
     WDLOG( "%d Watchdog task%s running @ %dHz in %s mode\n", 
 	   num_wdogs, num_wdogs > 1 ? "s" : "",
 	   imuldiv(NSECS_PER_SEC, 1, TickPeriod), 
@@ -805,7 +804,7 @@ void __rtai_wd_exit(void)
     }
 
     // It's all over :(
-    WDLOG("==== RTAI Watchdog v%sUnloaded ====\n", ver);
+    WDLOG("unloaded.\n");
 }
 
 module_init(__rtai_wd_init);

@@ -2549,18 +2549,7 @@ static int __rtai_lxrt_init(void)
 		goto mem_end;
 	}
 #endif
-	printk("\n***** STARTING THE LXRT REAL TIME SCHEDULER *****");
-	printk("\n***<> LINUX TICK AT %d (HZ) <>***", HZ);
-	printk("\n***<> CALIBRATED CPU FREQUENCY %lu (HZ) <>***", tuned.cpu_freq);
-#ifdef __USE_APIC__
-	printk("\n***<> CALIBRATED APIC_INTERRUPT-TO-SCHEDULER LATENCY %d (ns) <>***", imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-	printk("\n***<> CALIBRATED ONE SHOT APIC SETUP TIME %d (ns) <>***\n\n", imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-#else
-	printk("\n***<> CALIBRATED 8254-TIMER-INTERRUPT-TO-SCHEDULER LATENCY %d (ns) <>***", imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000,
-tuned.cpu_freq));
-	printk("\n***<> CALIBRATED ONE SHOT SETUP TIME %d (ns) <>***", imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-#endif
-	printk("\n***<> COMPILER: %s <>***\n\n", CONFIG_RTAI_COMPILER);
+
 	rt_mount_rtai();
 // 0x7dd763ad == nam2num("MEMSRQ").
 	if ((frstk_srq.srq = rt_request_srq(0x7dd763ad, frstk_srq_handler, 0)) < 0) {
@@ -2580,6 +2569,22 @@ tuned.cpu_freq));
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 	register_reboot_notifier(&lxrt_notifier_reboot);
+
+	printk(KERN_INFO "RTAI[sched_lxrt]: loaded.\n");
+	printk(KERN_INFO "RTAI[sched_lxrt]: timer=%s (%s).\n",
+	       oneshot_timer ? "oneshot" : "periodic",
+#ifdef __USE_APIC__
+	       "APIC"
+#else /* __USE_APIC__ */
+	       "8254-PIT"
+#endif /* __USE_APIC__ */
+	       );
+	printk(KERN_INFO "RTAI[sched_lxrt]: standard tick=%d hz, CPU freq=%lu hz.\n",
+	       HZ,
+	       (unsigned long)tuned.cpu_freq);
+	printk(KERN_INFO "RTAI[sched_lxrt]: timer setup=%d ns, resched latency=%d ns.\n",
+	       imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq),
+	       imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 
 	retval = rtai_init_features(); /* see rtai_schedcore.h */
 exit:
@@ -2623,7 +2628,7 @@ static void __rtai_lxrt_exit(void)
 	rt_set_ihook(NULL);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 	rt_umount_rtai();
-	printk("\n***** THE LXRT REAL TIME SCHEDULER HAS BEEN REMOVED *****\n\n");
+	printk(KERN_INFO "RTAI[sched_lxrt]: unloaded.\n");
 }
 
 module_init(__rtai_lxrt_init);

@@ -1552,13 +1552,6 @@ int __rtai_smp_init(void)
 #ifdef CONFIG_PROC_FS
 	rtai_proc_sched_register();
 #endif
-	printk("\n***** STARTING THE SMP REAL TIME %s SCHEDULER WITH %sLINUX *****", TIMER_CHIP, LinuxFpu ? "": "NO ");
-	printk("\n***** FP SUPPORT AND READY FOR A %s TIMER *****", oneshot_timer ? "ONESHOT": "PERIODIC");
-	printk("\n***<> LINUX TICK AT %d (HZ) <>***", HZ);
-	printk("\n***<> CALIBRATED CPU FREQUENCY %lu (HZ) <>***", tuned.cpu_freq);
-	printk("\n***<> CALIBRATED %s_INTERRUPT-TO-SCHEDULER LATENCY %d (ns) <>***", TIMER_CHIP, imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-	printk("\n***<> CALIBRATED ONE SHOT %s SETUP TIME %d (ns) <>***", TIMER_CHIP, imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-	printk("\n***<> COMPILER: %s***\n\n", CONFIG_RTAI_COMPILER);
 	rt_mount_rtai();
 // 0x7dd763ad == nam2num("MEMSRQ").
 	if ((frstk_srq.srq = rt_request_srq(0x7dd763ad, frstk_srq_handler, 0)) < 0) {
@@ -1580,6 +1573,23 @@ int __rtai_smp_init(void)
 				  NULL,
 				  IPIPE_HANDLE_MASK);
 #endif /* CONFIG_RTAI_ADEOS */
+
+	printk(KERN_INFO "RTAI[sched_smp]: loaded.\n");
+	printk(KERN_INFO "RTAI[sched_smp]: fpu=%s, timer=%s (%s).\n",
+	       LinuxFpu ? "yes" : "no",
+	       oneshot_timer ? "oneshot" : "periodic",
+#ifdef __USE_APIC__
+	       "APIC"
+#else /* __USE_APIC__ */
+	       "8254-PIT"
+#endif /* __USE_APIC__ */
+	       );
+	printk(KERN_INFO "RTAI[sched_smp]: standard tick=%d hz, CPU freq=%lu hz.\n",
+	       HZ,
+	       (unsigned long)tuned.cpu_freq);
+	printk(KERN_INFO "RTAI[sched_smp]: timer setup=%d ns, resched latency=%d ns.\n",
+	       imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq),
+	       imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 
 	return rtai_init_features(); /* see rtai_schedcore.h */
 }
@@ -1618,7 +1628,7 @@ void __rtai_smp_exit(void)
 	rt_set_ihook(NULL);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 	rt_umount_rtai();
-	printk("\n***** THE SMP REAL TIME %s BASED SCHEDULER HAS BEEN REMOVED *****\n\n", TIMER_CHIP);
+	printk(KERN_INFO "RTAI[sched_smp]: unloaded.\n");
 }
 
 module_init(__rtai_smp_init);

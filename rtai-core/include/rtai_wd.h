@@ -28,7 +28,7 @@
 #define NSECS_PER_SEC 1000000000
 
 // For logging stuff
-#define WDLOG(fmt, args...) rt_printk("RTAI watchdog: " fmt, ##args)
+#define WDLOG(fmt, args...) rt_printk("RTAI[watchdog]: " fmt, ##args)
 
 // What should happen to misbehaving tasks
 typedef enum watchdog_policy { 

@@ -92,11 +92,13 @@ int __rtai_leds_init(void)
 {
 	rt_config_leds(1,NULL,0);
 
+	printk(KERN_INFO "RTAI[leds]: loaded.\n");
 	return(0);
 }
 
 void __rtai_leds_exit(void)
 {
+	printk(KERN_INFO "RTAI[leds]: unloaded.\n");
 }
 
 #ifndef CONFIG_RTAI_LEDS_BUILTIN

@@ -198,7 +198,7 @@ unsigned long rtai_critical_enter (void (*synch)(void))
     if (atomic_dec_and_test(&rtai_sync_count))
 	rtai_sync_level = 0;
     else if (synch != NULL)
-	printk("RTAI: warning: nested sync will fail.\n");
+	printk(KERN_INFO "RTAI[hal]: warning: nested sync will fail.\n");
 
     return flags;
 }
@@ -1642,7 +1642,7 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
     set_fs(old_fs);
 
     if (rc)
-	printk("RTAI: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n",
+	printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n",
 	       policy,
 	       prio,
 	       rc,
@@ -1774,7 +1774,8 @@ static void rtai_domain_entry (int iflag)
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
 	    adeos_catch_event(trapnr,&rtai_trap_fault);
 
-	printk("RTAI %s mounted over Adeos %s.\n",PACKAGE_VERSION,ADEOS_VERSION_STRING);
+	printk(KERN_INFO "RTAI[hal]: %s mounted over Adeos %s.\n",PACKAGE_VERSION,ADEOS_VERSION_STRING);
+	printk(KERN_INFO "RTAI[hal]: compiled with %s.\n",CONFIG_RTAI_COMPILER);
 	}
 
     for (;;)
@@ -1794,7 +1795,7 @@ int __rtai_hal_init (void)
 
     if (!rtai_sysreq_virq)
 	{
-	printk("RTAI: no virtual interrupt available.\n");
+	printk("RTAI[hal]: no virtual interrupt available.\n");
 	return 1;
 	}
 
@@ -1811,7 +1812,7 @@ int __rtai_hal_init (void)
 
     if (key0 != 0 && key1 != 1)
 	{
-	printk("RTAI: per-thread keys #0 and/or #1 are busy.\n");
+	printk("RTAI[hal]: per-thread keys #0 and/or #1 are busy.\n");
 	return 1;
 	}
 
@@ -1849,7 +1850,7 @@ void __rtai_hal_exit (void)
     adeos_free_ptdkey(rtai_adeos_ptdbase); /* #0 and #1 actually */
     adeos_free_ptdkey(rtai_adeos_ptdbase + 1);
     adeos_unregister_domain(&rtai_domain);
-    printk("RTAI unmounted.\n");
+    printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 }
 
 module_init(__rtai_hal_init);

@@ -1779,13 +1779,6 @@ static int __rtai_up_init(void)
 #ifdef CONFIG_PROC_FS
 	rtai_proc_sched_register();
 #endif
-	printk("\n***** STARTING THE UP REAL TIME SCHEDULER WITH %sLINUX *****", LinuxFpu ? "": "NO ");
-	printk("\n***** FP SUPPORT AND READY FOR A %s TIMER *****", oneshot_timer ? "ONESHOT": "PERIODIC");
-	printk("\n***<> LINUX TICK AT %d (HZ) <>***", HZ);
-	printk("\n***<> CALIBRATED CPU FREQUENCY %lu (HZ) <>***", (unsigned long)tuned.cpu_freq);
-	printk("\n***<> CALIBRATED TIMER-INTERRUPT-TO-SCHEDULER LATENCY %d (ns) <>***", imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-	printk("\n***<> CALIBRATED ONE SHOT SETUP TIME %d (ns) <>***", imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
-	printk("\n***<> COMPILER: %s***\n\n", CONFIG_RTAI_COMPILER);
 	rt_mount_rtai();
 // 0x7dd763ad == nam2num("MEMSRQ").
 	if ((frstk_srq.srq = rt_request_srq(0x7dd763ad, frstk_srq_handler, 0)) < 0) {
@@ -1807,6 +1800,17 @@ static int __rtai_up_init(void)
 				  NULL,
 				  IPIPE_HANDLE_MASK);
 #endif /* CONFIG_RTAI_ADEOS */
+
+	printk(KERN_INFO "RTAI[sched_up]: loaded.\n");
+	printk(KERN_INFO "RTAI[sched_up]: fpu=%s, timer=%s.\n",
+	       LinuxFpu ? "yes" : "no",
+	       oneshot_timer ? "oneshot" : "periodic");
+	printk(KERN_INFO "RTAI[sched_up]: standard tick=%d hz, CPU freq=%lu hz.\n",
+	       HZ,
+	       (unsigned long)tuned.cpu_freq);
+	printk(KERN_INFO "RTAI[sched_up]: timer setup=%d ns, resched latency=%d ns.\n",
+	       imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq),
+	       imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 
 	return rtai_init_features(); /* see rtai_schedcore.h */
 }
@@ -1844,7 +1848,7 @@ static void __rtai_up_exit(void)
 	rt_set_ihook(NULL);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 	rt_umount_rtai();
-	printk("\n***** THE UP REAL TIME SCHEDULER HAS BEEN REMOVED *****\n\n");
+	printk(KERN_INFO "RTAI[sched_up]: unloaded.\n");
 }
 
 module_init(__rtai_up_init);

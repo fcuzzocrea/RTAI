@@ -32,7 +32,7 @@ static int verbose = 1;
 int __rtai_math_init(void)
 {
 	if(verbose){
-		printk("RTAI libm init\n");
+		printk(KERN_INFO "RTAI[math]: loaded.\n");
 	}
 	return 0;
 }
@@ -40,7 +40,7 @@ int __rtai_math_init(void)
 void __rtai_math_exit(void)
 {
 	if(verbose){
-		printk("RTAI libm cleanup\n");
+		printk(KERN_INFO "RTAI[math]: unloaded.\n");
 	}
 }
 

@@ -302,6 +302,8 @@ int __rtai_usi_init(void)
 		usi_lock_pool_p[i] = &usi_lock_pool[i];
 	}
 
+	printk(KERN_INFO "RTAI[usi]: loaded.\n");
+
 	return register_lxrt_usi_support();
 }
 
@@ -314,6 +316,8 @@ void __rtai_usi_exit(void)
 
     if (usi_lock_pool_p)
 	kfree(usi_lock_pool_p);
+
+    printk(KERN_INFO "RTAI[usi]: unloaded.\n");
 }
 
 #ifndef CONFIG_RTAI_USI_BUILTIN

@@ -1,5 +1,8 @@
 2004-07-24  Philippe Gerum  <rpm@xenomai.org>
 
+	* configure.in, rtai-core/arch/*/Kconfig: Make RTAI_USI depend on
+	RTAI_SEM && RTAI_TASKLETS.
+	
 	* rtai-core/ipc/fifos/fifos.c (mbx_sem_wait): Remove spurious
 	rtf_restore_flags(); this bug used to wreck the preemption count
 	with a preemptible kernel, and forcibly release a non-held

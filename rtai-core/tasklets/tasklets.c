@@ -722,6 +722,7 @@ int __rtai_tasklets_init(void)
         }
 	rt_task_init(&timers_manager, rt_timers_manager, 0, tasklets_stacksize, RT_SCHED_LOWEST_PRIORITY, 0, 0);
 	rt_task_resume(&timers_manager);
+	printk(KERN_INFO "RTAI[tasklets]: loaded.\n");
 	return 0;
 }
 
@@ -731,6 +732,7 @@ void __rtai_tasklets_exit(void)
         if(rt_base_linux_task->task_trap_handler[1]) {
                 ((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rt_tasklet_fun, TSKIDX);
         }
+	printk(KERN_INFO "RTAI[tasklets]: unloaded.\n");
 }
 
 /*@}*/

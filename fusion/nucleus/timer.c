@@ -349,11 +349,8 @@ void xntimer_do_timers (void)
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
-	{
 	/* Only use slot #0 in aperiodic mode. */
 	timerq = &nkpod->timerwheel[0];
-	now = xnarch_get_cpu_tsc();
-	}
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 	{
@@ -371,18 +368,21 @@ void xntimer_do_timers (void)
 	nextholder = nextq(timerq,holder);
 	timer = link2timer(holder);
 
-	if (timer->shot > now)
-	    {
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
-	    if (!testbits(nkpod->status,XNTMPER))
+	if (!testbits(nkpod->status,XNTMPER))
+	    {
+	    now = xnarch_get_cpu_tsc();
+
+	    if (timer->shot > now)
 		/* No need to continue in aperiodic mode since
 		   timeout dates are ordered by increasing
 		   values. */
 		break;
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-
-	    continue;
 	    }
+	else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+	    if (timer->shot > now)
+		continue;
 
 	if (timer == &nkpod->htimer)
 	    /* By postponing the propagation of the low-priority host

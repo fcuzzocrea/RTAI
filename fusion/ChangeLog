@@ -1,5 +1,8 @@
 2004-09-01  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/timer.c (xntimer_do_timers): Refresh the tested clock
+	value in aperiodic mode after each timer processing loop.
+
 	* arch/*/hal/hal.c (rthal_set_irq_affinity): Replace reset action
 	by returning the old cpumask.
 

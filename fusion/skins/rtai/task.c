@@ -205,8 +205,8 @@ int rt_task_create (RT_TASK *task,
 
 /**
  * @fn int rt_task_start(RT_TASK *task,
-			    void (*entry)(void *cookie),
-			    void *cookie)
+                         void (*entry)(void *cookie),
+			 void *cookie)
  * @brief Start a real-time task.
  *
  * Start a (newly) created task, scheduling it for the first
@@ -531,7 +531,9 @@ int rt_task_yield (void)
  *
  * @param idate The initial (absolute) date of the first release
  * point, expressed in clock ticks (see note). The affected task will
- * be delayed until this point is reached.
+ * be delayed until this point is reached. If @a idate is equal to
+ * RT_TIME_INFINITE, the current system date is used, and no initial
+ * delay takes place.
 
  * @param period The period of the task, expressed in clock ticks (see
  * note).
@@ -542,7 +544,8 @@ int rt_task_yield (void)
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
- * - -ETIMEDOUT is returned if @a idate has already elapsed.
+ * - -ETIMEDOUT is returned if @a idate is different from
+ * RT_TIME_INFINITE and represents a date in the past.
  *
  * - -EWOULDBLOCK is returned if the system timer has not been started
  * using rt_timer_start().
@@ -1082,7 +1085,11 @@ int rt_task_remove_hook (int type, void (*routine)(void *cookie)) {
  * task. Signals are discrete events tasks can receive each time they
  * resume execution. When signals are pending upon resumption, @a
  * handler is fired to process them. Signals can be sent using
- * rt_task_notify().
+ * rt_task_notify(). A task can block the signal delivery by passing
+ * the T_NOSIG bit to rt_task_set_mode().
+ *
+ * Calling this service implicitely unblocks the signal delivery for
+ * the caller.
  *
  * @param handler The address of the user-supplied routine to fire
  * when signals are pending for the task. This handler is passed the
@@ -1204,6 +1211,86 @@ int rt_task_notify (RT_TASK *task,
     return err;
 }
 
+/**
+ * @fn int rt_task_set_mode(int setmask,
+                            int clrmask,
+			    int *oldmode)
+ * @brief Change task mode bits.
+ *
+ * Each RTAI task has a set of internal bits determining various
+ * operating conditions; the rt_task_set_mode() service allows to
+ * alter three of them, respectively controlling:
+ *
+ * - whether the task undergoes a round-robin scheduling;
+ * - whether the task blocks the delivery of signals;
+ * - whether the task locks the rescheduling procedure.
+ *
+ * To this end, rt_task_set_mode() takes a bitmask of mode bits to
+ * clear for disabling the corresponding modes, and another one to set
+ * for enabling them. The mode bits which were previously in effect
+ * can be returned upon request.
+ *
+ * Normally, this service can only be called on behalf of a regular
+ * real-time task, either running in kernel or user-space. However, as
+ * a special exception, requests for setting/clearing the T_LOCK bit
+ * from asynchronous contexts are silently dropped, and the call
+ * returns successfully if no other mode bits have been
+ * specified. This is consistent with the fact that RTAI enforces a
+ * scheduler lock until the outer interrupt handler has returned.
+ *
+ * @param clrmask A bitmask of mode bits to clear for the current
+ * task. 0 is an acceptable value which leads to a no-op.
+ *
+ * @param setmask A bitmask of mode bits to set for the current
+ * task. 0 is an acceptable value which leads to a no-op.
+ *
+ * @param oldmode If non-NULL, @a oldmode must be a pointer to a
+ * memory location which will be written upon success with the
+ * previous set of active mode bits. If NULL, the previous set of
+ * active mode bits will not be returned.
+ *
+ * @return 0 is returned upon success, or -EINVAL if either @a setmask
+ * or @a clrmask specifies invalid bits.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
+int rt_task_set_mode (int clrmask,
+		      int setmask,
+		      int *oldmode)
+{
+    int mode;
+
+    if (!xnpod_regular_p())
+	{
+	clrmask &= ~T_LOCK;
+	setmask &= ~T_LOCK;
+
+	if (!clrmask && !setmask)
+	    return 0;
+
+	xnpod_check_context(XNPOD_THREAD_CONTEXT);
+	}
+
+    if (((clrmask|setmask) & ~(T_LOCK|T_RRB|T_NOSIG)) != 0)
+	return -EINVAL;
+
+    mode = xnpod_set_thread_mode(&rtai_current_task()->thread_base,
+				 clrmask,
+				 setmask);
+    if (oldmode)
+	*oldmode = mode;
+
+    return 0;
+}
+
 /*@}*/
 
 EXPORT_SYMBOL(rt_task_create);
@@ -1223,3 +1310,4 @@ EXPORT_SYMBOL(rt_task_add_hook);
 EXPORT_SYMBOL(rt_task_remove_hook);
 EXPORT_SYMBOL(rt_task_catch);
 EXPORT_SYMBOL(rt_task_notify);
+EXPORT_SYMBOL(rt_task_set_mode);

@@ -67,6 +67,7 @@
 #define T_BOOST   XNBOOST
 #define T_LOCK    XNLOCK
 #define T_RRB     XNRRB
+#define T_NOSIG   XNASDI
 
 /* Task hook types. */
 #define RT_HOOK_TSTART  XNHOOK_THREAD_START
@@ -92,8 +93,11 @@ struct rt_queue_msg;
 typedef struct rt_task_info {
 
     int bprio;			/* !< Base priority. */
+
     int cprio;			/* !< Current priority. */
+
     unsigned status;		/* !< Status. */
+
     RTIME relpoint;		/* !< Periodic release point. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
@@ -220,14 +224,17 @@ int rt_task_sleep_until(RTIME date);
 
 int rt_task_unblock(RT_TASK *task);
 
-int rt_task_inquire (RT_TASK *task,
+int rt_task_inquire(RT_TASK *task,
 		     RT_TASK_INFO *info);
 
-int rt_task_catch (void (*handler)(rt_sigset_t));
+int rt_task_catch(void (*handler)(rt_sigset_t));
 
 int rt_task_notify(RT_TASK *task,
 		   rt_sigset_t signals);
 
+int rt_task_set_mode(int clrmask,
+		     int setmask,
+		     int *oldmode);
 #ifdef __cplusplus
 }
 #endif

@@ -31,6 +31,13 @@
 #define SYSCALL_ARGS    ecx
 #define SYSCALL_RETPNT  edx
 
+#define SET_LXRT_RETVAL_IN_SYSCALL(retval) \
+	do { \
+                if (r->SYSCALL_RETPNT) { \
+			copy_to_user((void *)r->SYSCALL_RETPNT, &retval, sizeof(retval)); \
+		} \
+	} while (0)
+
 #define LOW  0
 #define HIGH 1
 

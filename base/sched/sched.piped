@@ -2113,9 +2113,7 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 	unsigned long syscall_nr;
 	if ((syscall_nr = r->SYSCALL_NR) >= GT_NR_SYSCALLS) {
 		long long retval = rtai_lxrt_invoke(syscall_nr, (void *)r->SYSCALL_ARGS);
-		if (r->SYSCALL_RETPNT) {
-			copy_to_user((void *)r->SYSCALL_RETPNT, &retval, sizeof(retval));
-		}
+		SET_LXRT_RETVAL_IN_SYSCALL(retval);
 		if (!in_hrt_mode(rtai_cpuid())) {
 			adeos_propagate_event(evinfo);
 		}
@@ -2140,10 +2138,10 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->SYSCALL_NR);
 
 			}
-			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->orig_eax););
+			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->SYSCALL_NR););
 			give_back_to_linux(task);
 			task->is_hard = 2;
-			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->orig_eax););
+			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->SYSCALL_NR););
 		}
 	}
 }

@@ -1,3 +1,9 @@
+2004-08-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.7-i386-r6c6. This is
+	needed to have the APIC timing in uniprocessor mode properly
+	working.
+
 2004-08-02  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/hal/hal.c: Refactor the timer support.  As a result of

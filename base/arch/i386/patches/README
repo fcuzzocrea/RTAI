@@ -1,0 +1,4 @@
+Being it useless to duplicate ADEOS patches, easily found at ADEOS home site,
+they are no more in RTAI distributions.
+Here you'll find just the modified ADEOS versions needed to use RTAI immediate
+hard interrupts dispatching.

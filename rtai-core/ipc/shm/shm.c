@@ -177,7 +177,7 @@ static int rt_shm_size(unsigned long *arg)
 
 	size = abs(rt_get_type(*arg));
 	for (vma = (current->mm)->mmap; vma; vma = vma->vm_next) {
-		if (vma->vm_private_data == (void *)arg && (vma->vm_end - vma->vm_start) == size) {
+		if (vma->vm_private_data == (void *)*arg && (vma->vm_end - vma->vm_start) == size) {
 			*arg = vma->vm_start;
 			return size;
 		}

@@ -1,3 +1,13 @@
+2004-08-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/patches: Upgrade to 2.4/hal14 and 2.6/hal6
+	final.
+
+2004-08-14  Malte Cornils <mcornils@fzi.de>
+
+	* rtai-addons/cpp/rtai_wrapper.h: Fix conflicting declarations of
+	RT_TASK.
+	
 2004-08-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/include/asm/rtai_vectors.h: added "memory" clobbering

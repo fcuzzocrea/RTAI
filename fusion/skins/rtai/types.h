@@ -55,6 +55,7 @@
 
 #define TM_INFINITE XN_INFINITE
 #define TM_NONBLOCK XN_NONBLOCK
+#define TM_NOW      XN_INFINITE
 
 #if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
@@ -91,5 +92,10 @@ typedef u_long rt_handle_t;
 typedef xnsigmask_t rt_sigset_t;
 
 #define RT_HANDLER_NONE XNTHREAD_INVALID_ASR
+
+struct rt_alarm;
+
+typedef void (*rt_alarm_t)(struct rt_alarm *alarm,
+			   void *cookie);
 
 #endif /* !_RTAI_TYPES_H */

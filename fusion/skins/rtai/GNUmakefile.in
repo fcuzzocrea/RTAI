@@ -53,6 +53,8 @@ host_triplet = @host@
 @CONFIG_RTAI_OPT_NATIVE_QUEUE_TRUE@am__append_15 = queue.h
 @CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_16 = heap.c
 @CONFIG_RTAI_OPT_NATIVE_HEAP_TRUE@am__append_17 = heap.h
+@CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__append_18 = alarm.c
+@CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__append_19 = alarm.h
 subdir = skins/rtai
 DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/GNUmakefile.am \
 	$(srcdir)/GNUmakefile.in $(srcdir)/Makefile.kbuild
@@ -73,7 +75,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	pdf-recursive ps-recursive uninstall-info-recursive \
 	uninstall-recursive
 am__include_HEADERS_DIST = task.h timer.h types.h syscall.h registry.h \
-	pipe.h sem.h event.h mutex.h cond.h queue.h heap.h
+	pipe.h sem.h event.h mutex.h cond.h queue.h heap.h alarm.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -117,6 +119,8 @@ CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE = @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@
 CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE = @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@
 CONFIG_RTAI_OPT_FUSION_FALSE = @CONFIG_RTAI_OPT_FUSION_FALSE@
 CONFIG_RTAI_OPT_FUSION_TRUE = @CONFIG_RTAI_OPT_FUSION_TRUE@
+CONFIG_RTAI_OPT_NATIVE_ALARM_FALSE = @CONFIG_RTAI_OPT_NATIVE_ALARM_FALSE@
+CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE = @CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@
 CONFIG_RTAI_OPT_NATIVE_COND_FALSE = @CONFIG_RTAI_OPT_NATIVE_COND_FALSE@
 CONFIG_RTAI_OPT_NATIVE_COND_TRUE = @CONFIG_RTAI_OPT_NATIVE_COND_TRUE@
 CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE = @CONFIG_RTAI_OPT_NATIVE_EVENT_FALSE@
@@ -294,14 +298,14 @@ modext = @RTAI_MODULE_EXT@
 libmodule_SRC = module.c task.c timer.c $(am__append_1) \
 	$(am__append_2) $(am__append_4) $(am__append_6) \
 	$(am__append_8) $(am__append_10) $(am__append_12) \
-	$(am__append_14) $(am__append_16)
+	$(am__append_14) $(am__append_16) $(am__append_18)
 include_HEADERS = task.h timer.h types.h syscall.h $(am__append_3) \
 	$(am__append_5) $(am__append_7) $(am__append_9) \
 	$(am__append_11) $(am__append_13) $(am__append_15) \
-	$(am__append_17)
+	$(am__append_17) $(am__append_19)
 distfiles = $(libmodule_SRC) registry.c registry.h pipe.c pipe.h sem.c \
 	sem.h event.c event.h mutex.c mutex.h cond.c cond.h queue.c \
-	queue.h heap.c heap.h
+	queue.h heap.c heap.h alarm.c alarm.h
 EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig snippets
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
 all: all-recursive

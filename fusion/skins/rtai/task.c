@@ -543,8 +543,8 @@ int rt_task_yield (void)
  * @param idate The initial (absolute) date of the first release
  * point, expressed in clock ticks (see note). The affected task will
  * be delayed until this point is reached. If @a idate is equal to
- * TM_INFINITE, the current system date is used, and no initial delay
- * takes place.
+ * TM_NOW, the current system date is used, and no initial delay takes
+ * place.
 
  * @param period The period of the task, expressed in clock ticks (see
  * note).

@@ -96,3 +96,10 @@ config RTAI_OPT_NATIVE_HEAP
 	help
 	
 	Memory heap support.
+
+config RTAI_OPT_NATIVE_ALARM
+	bool "Alarm support"
+	depends on RTAI_SKIN_NATIVE
+	help
+	
+	Alarm support.

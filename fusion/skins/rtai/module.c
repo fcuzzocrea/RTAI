@@ -41,6 +41,7 @@
 #include <rtai/pipe.h>
 #include <rtai/queue.h>
 #include <rtai/heap.h>
+#include <rtai/alarm.h>
 
 MODULE_DESCRIPTION("RTAI skin");
 MODULE_AUTHOR("rpm@xenomai.org");
@@ -56,6 +57,10 @@ static void rtai_shutdown (int xtype)
 #if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     __syscall_pkg_cleanup();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
+#if CONFIG_RTAI_OPT_NATIVE_ALARM
+    __alarm_pkg_cleanup();
+#endif /* CONFIG_RTAI_OPT_NATIVE_ALARM */
 
 #if CONFIG_RTAI_OPT_NATIVE_HEAP
     __heap_pkg_cleanup();
@@ -173,18 +178,31 @@ int __xeno_skin_init (void)
 	goto cleanup_queue;
 #endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
 
+#if CONFIG_RTAI_OPT_NATIVE_ALARM
+    err = __alarm_pkg_init();
+
+    if (err)
+	goto cleanup_heap;
+#endif /* CONFIG_RTAI_OPT_NATIVE_HEAP */
+
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     err = __syscall_pkg_init();
 
     if (err)
-	goto cleanup_heap;
+	goto cleanup_alarm;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     
     return 0;	/* SUCCESS. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
- cleanup_heap:
+ cleanup_alarm:
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
+#ifdef CONFIG_RTAI_OPT_NATIVE_ALARM
+    __alarm_pkg_cleanup();
+
+ cleanup_heap:
+#endif /* CONFIG_RTAI_OPT_NATIVE_ALARM */
 
 #ifdef CONFIG_RTAI_OPT_NATIVE_HEAP
     __heap_pkg_cleanup();

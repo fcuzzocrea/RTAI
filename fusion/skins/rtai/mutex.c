@@ -134,9 +134,9 @@ int rt_mutex_create (RT_MUTEX *mutex,
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a sem is not a mutex descriptor.
+ * - -EINVAL is returned if @a mutex is not a mutex descriptor.
  *
- * - -EIDRM is returned if @a sem is a deleted mutex descriptor.
+ * - -EIDRM is returned if @a mutex is a deleted mutex descriptor.
  *
  * Environments:
  *
@@ -361,9 +361,9 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
  * @return 0 is returned and status information is written to the
  * structure pointed at by @a info upon success. Otherwise:
  *
- * - -EINVAL is returned if @a sem is not a mutex descriptor.
+ * - -EINVAL is returned if @a mutex is not a mutex descriptor.
  *
- * - -EIDRM is returned if @a sem is a deleted mutex descriptor.
+ * - -EIDRM is returned if @a mutex is a deleted mutex descriptor.
  *
  * Environments:
  *

@@ -46,59 +46,51 @@
  * notice.
  */
 
-#ifndef _RTAI_EVENT_H
-#define _RTAI_EVENT_H
+#ifndef _RTAI_ALARM_H
+#define _RTAI_ALARM_H
 
-#include <nucleus/synch.h>
+#include <nucleus/timer.h>
 #include <rtai/types.h>
 
-/* Creation flags. */
-#define EV_PRIO  XNSYNCH_PRIO	/* Pend by task priority order. */
-#define EV_FIFO  XNSYNCH_FIFO	/* Pend by FIFO order. */
+typedef struct rt_alarm_info {
 
-/* Operation flags. */
-#define EV_ANY  0x1	/* Disjunctive wait. */
-#define EV_ALL  0x0	/* Conjunctive wait. */
-
-typedef struct rt_event_info {
-
-    unsigned long value; /* !< Current event group value. */
-
-    int nwaiters;	/* !< Number of pending tasks. */
+    RTIME expiration;		/* !< Expiration date. */
 
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
-} RT_EVENT_INFO;
+} RT_ALARM_INFO;
 
-typedef struct rt_event_placeholder {
+typedef struct rt_alarm_placeholder {
     rt_handle_t opaque;
-} RT_EVENT_PLACEHOLDER;
+} RT_ALARM_PLACEHOLDER;
 
 #if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
-#define RTAI_EVENT_MAGIC 0x55550404
+#define RTAI_ALARM_MAGIC 0x55550909
 
-typedef struct rt_event {
+typedef struct rt_alarm {
 
     unsigned magic;   /* !< Magic code - must be first */
 
-    xnsynch_t synch_base; /* !< Base synchronization object. */
-
-    unsigned long value; /* !< Event group value. */
+    xntimer_t timer_base; /* !< Base timer object. */
 
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 
+    rt_alarm_t handler;		/* !< Alarm handler. */
+    
+    void *cookie;		/* !< Opaque cookie. */
+
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
-} RT_EVENT;
+} RT_ALARM;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int __event_pkg_init(void);
+int __alarm_pkg_init(void);
 
-void __event_pkg_cleanup(void);
+void __alarm_pkg_cleanup(void);
 
 #ifdef __cplusplus
 }
@@ -106,15 +98,15 @@ void __event_pkg_cleanup(void);
 
 #else /* !(__KERNEL__ || __RTAI_SIM__) */
 
-typedef RT_EVENT_PLACEHOLDER RT_EVENT;
+typedef RT_ALARM_PLACEHOLDER RT_ALARM;
 
-int rt_event_bind(RT_EVENT *event,
+int rt_alarm_bind(RT_ALARM *alarm,
 		  const char *name);
 
-static inline int rt_event_unbind (RT_EVENT *event)
+static inline int rt_alarm_unbind (RT_ALARM *alarm)
 
 {
-    event->opaque = RT_HANDLE_INVALID;
+    alarm->opaque = RT_HANDLE_INVALID;
     return 0;
 }
 
@@ -126,31 +118,24 @@ extern "C" {
 
 /* Public interface. */
 
-int rt_event_create(RT_EVENT *event,
-		    const char *name,
-		    unsigned long ivalue,
-		    int mode);
+int rt_alarm_create(RT_ALARM *alarm,
+		    rt_alarm_t handler,
+		    void *cookie,
+		    const char *name);
 
-int rt_event_delete(RT_EVENT *event);
+int rt_alarm_delete(RT_ALARM *alarm);
 
-int rt_event_signal(RT_EVENT *event,
-		    unsigned long mask);
+int rt_alarm_start(RT_ALARM *alarm,
+		   RTIME value,
+		   RTIME interval);
 
-int rt_event_wait(RT_EVENT *event,
-		  unsigned long mask,
-		  unsigned long *mask_r,
-		  int mode,
-		  RTIME timeout);
+int rt_alarm_stop(RT_ALARM *alarm);
 
-int rt_event_clear(RT_EVENT *event,
-		   unsigned long mask,
-		   unsigned long *mask_r);
-
-int rt_event_inquire(RT_EVENT *event,
-		     RT_EVENT_INFO *info);
+int rt_alarm_inquire(RT_ALARM *alarm,
+		     RT_ALARM_INFO *info);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* !_RTAI_EVENT_H */
+#endif /* !_RTAI_ALARM_H */

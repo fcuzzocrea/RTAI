@@ -180,8 +180,9 @@ typedef RT_TASK_PLACEHOLDER RT_TASK;
 int rt_task_bind(RT_TASK *task,
 		 const char *name);
 
-static inline int rt_task_unbind (RT_TASK *task) {
+static inline int rt_task_unbind (RT_TASK *task)
 
+{
     task->opaque = RT_HANDLE_INVALID;
     return 0;
 }

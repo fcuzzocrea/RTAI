@@ -72,7 +72,7 @@ int main (int argc, char **argv)
 		
 	    case 'T':
 
-		alarm(atoi(optarg) * 60);
+		alarm(atoi(optarg));
 		break;
 		
 	    default:
@@ -80,7 +80,7 @@ int main (int argc, char **argv)
 		fprintf(stderr, "usage: klatency [options]\n"
 			"  [-h]				# prints histogram of latencies\n"
 			"  [-l <data-lines per header>]	# default=21, 0 supresses header\n"
-			"  [-T <minutes_to_test>]	# default=0, so ^C to end\n");
+			"  [-T <seconds_to_test>]	# default=0, so ^C to end\n");
 		exit(2);
 	    }
 

@@ -192,7 +192,7 @@ int main (int argc, char **argv)
 		
 	    case 'T':
 
-		test_duration = atoi(optarg) * 60;
+		test_duration = atoi(optarg);
 		alarm(test_duration);
 		break;
 
@@ -202,7 +202,7 @@ int main (int argc, char **argv)
 			"  [-h]				# print histogram of scheduling latency\n"
 			"  [-p <period_us>]		# sampling period\n"
 			"  [-l <data-lines per header>]	# default=21, 0 to supress headers\n"
-			"  [-T <test_duration_minutes>]	# default=0, so ^C to end\n");
+			"  [-T <test_duration_seconds>]	# default=0, so ^C to end\n");
 		exit(2);
 	    }
 

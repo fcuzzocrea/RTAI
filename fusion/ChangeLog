@@ -1,3 +1,8 @@
+2005-03-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/[k]latency: Pass seconds to test duration switch (-T)
+	instead of minutes.
+
 2005-03-24  Jim Cromie <jcromie@divsol.com>
 
 	* testsuite/klatency/latency.c, testsuite/latency/latency.c:

@@ -55,6 +55,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <setjmp.h>
+#include <rtai_config.h>
 #include <nucleus/asm/atomic.h>
 #include <nucleus/fusion.h>
 

@@ -283,9 +283,7 @@ typedef struct xnarch_heapcb {
 
     int kmflags;	/* Kernel memory flags (0 if vmalloc()). */
 
-    void *heapbase;	/* Shared heap memory base (possibly unaligned). */
-
-    void *shmbase;	/* Shared memory base (page-aligned). */
+    void *heapbase;	/* Shared heap memory base. */
 
 } xnarch_heapcb_t;
 
@@ -926,7 +924,6 @@ static inline void xnarch_init_heapcb (xnarch_heapcb_t *hcb)
     atomic_set(&hcb->numaps,0);
     hcb->kmflags = 0;
     hcb->heapbase = NULL;
-    hcb->shmbase = NULL;
 }
 
 static inline int xnarch_remap_page_range(struct vm_area_struct *vma,

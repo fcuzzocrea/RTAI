@@ -134,10 +134,10 @@ int xnheap_init_shared(xnheap_t *heap,
 int xnheap_destroy_shared(xnheap_t *heap);
 
 #define xnheap_shared_offset(heap,ptr) \
-(((caddr_t)(ptr)) - ((caddr_t)(heap)->archdep.shmbase))
+(((caddr_t)(ptr)) - ((caddr_t)(heap)->archdep.heapbase))
 
 #define xnheap_shared_address(heap,off) \
-(((caddr_t)(heap)->archdep.shmbase) + (off))
+(((caddr_t)(heap)->archdep.heapbase) + (off))
 
 #endif /* __KERNEL__ */
 

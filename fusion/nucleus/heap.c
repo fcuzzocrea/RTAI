@@ -817,7 +817,7 @@ static int xnheap_mmap (struct file *file,
     vma->vm_flags |= VM_LOCKED;	/* Don't swap this out. */
     vma->vm_private_data = file->private_data;
 
-    vaddr = PAGE_ALIGN((unsigned long)heap->archdep.shmbase);
+    vaddr = (unsigned long)heap->archdep.heapbase;
 
     if (heap->archdep.kmflags)
 	{
@@ -885,28 +885,28 @@ static inline void *__alloc_and_reserve_heap (size_t size, int kmflags)
     unsigned long vaddr, vabase;
     void *ptr;
 
+    /* Size must be page-aligned. */
+
     if (kmflags)
 	{
-	/* We need to align on a page when mapping, so let's get an
-	   additional page to be able to do so. */
-        ptr = kmalloc(size + PAGE_SIZE * 2,kmflags);
+        ptr = kmalloc(size,kmflags);
 
 	if (!ptr)
 	    return NULL;
 
-        vabase = PAGE_ALIGN((unsigned long)ptr);
+        vabase = (unsigned long)ptr;
 
 	for (vaddr = vabase; vaddr < vabase + size; vaddr += PAGE_SIZE)
 	    SetPageReserved(virt_to_page(vaddr));
 	}
-    else /* Otherwise, we have been asked for vmalloc() space. */
+    else /* Otherwise, we have been asked for some vmalloc() space. */
 	{
-	ptr = vmalloc(size + PAGE_SIZE * 2);
+	ptr = vmalloc(size);
 
 	if (!ptr)
 	    return NULL;
 
-        vabase = PAGE_ALIGN((unsigned long)ptr);
+        vabase = (unsigned long)ptr;
 
         for (vaddr = vabase; vaddr < vabase + size; vaddr += PAGE_SIZE)
 	    SetPageReserved(virt_to_page(__va_to_kva(vaddr)));
@@ -920,12 +920,12 @@ static inline void __unreserve_and_free_heap (void *ptr, size_t size, int kmflag
 {
     unsigned long vaddr, vabase;
 
-    size += PAGE_SIZE * 2;
+    /* Size must be page-aligned. */
+
+    vabase = (unsigned long)ptr;
 
     if (kmflags)
 	{
-        vabase = PAGE_ALIGN((unsigned long)ptr);
-
 	for (vaddr = vabase; vaddr < vabase + size; vaddr += PAGE_SIZE)
 	    ClearPageReserved(virt_to_page(vaddr));
 
@@ -933,8 +933,6 @@ static inline void __unreserve_and_free_heap (void *ptr, size_t size, int kmflag
 	}
     else
 	{
-        vabase = PAGE_ALIGN((unsigned long)ptr);
-
         for (vaddr = vabase; vaddr < vabase + size; vaddr += PAGE_SIZE)
 	    ClearPageReserved(virt_to_page(__va_to_kva(vaddr)));
 
@@ -946,7 +944,7 @@ int xnheap_init_shared (xnheap_t *heap,
 			u_long heapsize,
 			int memflags)
 {
-    void *heapbase, *shmbase;
+    void *heapbase;
     spl_t s;
     int err;
 
@@ -956,12 +954,8 @@ int xnheap_init_shared (xnheap_t *heap,
     if (!heapbase)
 	return -ENOMEM;
     
-    shmbase = (void *)PAGE_ALIGN((unsigned long)heapbase);
+    err = xnheap_init(heap,heapbase,heapsize,PAGE_SIZE);
 
-    err = xnheap_init(heap,
-		      shmbase,
-		      heapsize,
-		      PAGE_SIZE);
     if (err)
 	{
 	__unreserve_and_free_heap(heapbase,heapsize,memflags);
@@ -970,7 +964,6 @@ int xnheap_init_shared (xnheap_t *heap,
 
     heap->archdep.kmflags = memflags;
     heap->archdep.heapbase = heapbase;
-    heap->archdep.shmbase = shmbase;
 
     xnlock_get_irqsave(&nklock,s);
     appendq(&kheapq,&heap->link);
@@ -1000,7 +993,6 @@ int xnheap_destroy_shared (xnheap_t *heap)
     __unreserve_and_free_heap(heap->archdep.heapbase,
 			      heap->extentsize,
 			      heap->archdep.kmflags);
-
     return 0;
 }
 

@@ -1,3 +1,8 @@
+2005-02-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/heap.c: Stop page-aligning virtual addresses of
+	shmbases; this is useless.
+
 2005-02-02  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c (__rt_intr_wait): Fix pending count

@@ -2,6 +2,7 @@
   COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
 		      Paolo Mantegazza (mantegazza@aero.polimi.it)
 		      Roberto Bucher (roberto.bucher@supsi.ch)
+		      Daniele Gasperini (daniele.gasperini@elet.polimi.it)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -90,7 +91,7 @@ extern void rt_ODEUpdateContinuousStates(RTWSolverInfo *si);
 extern RT_MODEL *MODEL(void);
 static RT_MODEL *rtM;
 
-#define RTAILAB_VERSION         "3.0.5"
+#define RTAILAB_VERSION         "3.1.0"
 #define MAX_NTARGETS		1000
 #define MAX_NAMES_SIZE		256
 #define RUN_FOREVER		-1.0
@@ -181,11 +182,19 @@ static unsigned long TimingEventArg;
 static void DummyWait(void) { }
 static void DummySend(void) { }
 
+#define XSTR(x)    #x
+#define STR(x)     XSTR(x)
+
 
 static inline void strncpyz(char *dest, const char *src, size_t n)
 {
-	strncpy(dest, src, n);
-	dest[n-1] = '\0';
+	if (src != NULL) {
+		strncpy(dest, src, n);
+		n = strlen(src);
+	} else
+		n = 0;
+		
+	dest[n] = '\0';
 }
 
 /* This function is hacked from /usr/src/linux/include/asm-i386/system.h */
@@ -196,6 +205,51 @@ static inline void set_double(double *to, double *from)
 	__asm__ __volatile__ (
 		"1: movl (%0), %%eax; movl 4(%0), %%edx; lock; cmpxchg8b (%0); jnz 1b" : : "D"(to), "b"(l), "c"(h) : "ax", "dx", "memory");
 }
+
+#define RT_MODIFY_PARAM_VALUE_IF(rtcase, rttype) \
+	case rtcase: \
+		for (paramIdx = 0; paramIdx < nParams; paramIdx++) { \
+			rttype *param = (rttype *)(pMap[mapOffset + paramIdx]); \
+			switch (ptinfoGetClass(ptRec)) { \
+				case rt_SCALAR: \
+					set_double(param, (double *)_newVal); \
+					if (Verbose) { \
+						printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), *param); \
+					} \
+					break; \
+				case rt_VECTOR: \
+					param[matIdx] = ((double *) _newVal)[0]; \
+					if (Verbose) { \
+						for (rowIdx = 0; rowIdx < nRows; rowIdx++) { \
+							printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]); \
+						} \
+					} \
+					break; \
+				case rt_MATRIX_ROW_MAJOR: \
+					param[matIdx] = ((double *) _newVal)[0]; \
+					if (Verbose) { \
+						for (rowIdx = 0; rowIdx < nRows; rowIdx++) { \
+							for(colIdx = 0; colIdx < nCols; colIdx++){ \
+								printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]); \
+							} \
+						} \
+					} \
+					break; \
+				case rt_MATRIX_COL_MAJOR: \
+					param[matIdx] = ((double *) _newVal)[0]; \
+					if (Verbose) { \
+						for (rowIdx = 0; rowIdx < nRows; rowIdx++) { \
+							for(colIdx = 0; colIdx < nCols; colIdx++) { \
+								printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]); \
+							} \
+						} \
+					} \
+					break; \
+				default: \
+					return(1); \
+			} \
+		} \
+		break;
 
 int_T rt_ModifyParameterValue(void *mpi, int i, int matIdx, void *_newVal)
 {
@@ -219,400 +273,54 @@ int_T rt_ModifyParameterValue(void *mpi, int i, int matIdx, void *_newVal)
 	mapOffset = ptinfoGetParametersOffset(ptRec);
 
 	switch (ptinfoGetDataTypeEnum(ptRec)) {
-		case SS_DOUBLE:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				real_T *param = (real_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						set_double(param, (double *)_newVal);
-//						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_SINGLE:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				real32_T *param = (real32_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %G\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_INT8:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				int8_T *param = (int8_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_UINT8:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				uint8_T *param = (uint8_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_INT16:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				int16_T *param = (int16_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_UINT16:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				uint16_T *param = (uint16_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_INT32:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				int32_T *param = (int32_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_UINT32:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				uint32_T *param = (uint32_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %u\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_BOOLEAN:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				boolean_T *param = (boolean_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						*param = ((double *) _newVal)[0];
-						if (Verbose) {
-							printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), *param);
-						}
-						break;
-					case rt_VECTOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx]);
-							}
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[rowIdx*nCols+colIdx]);
-								}
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						param[matIdx] = ((double *) _newVal)[0];
-						if (Verbose) {
-							for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-								for(colIdx = 0; colIdx < nCols; colIdx++){
-									printf("%s : %d\n", mmiGetBlockTuningBlockName(mmi,i), param[colIdx*nRows+rowIdx]);
-								}
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
+		RT_MODIFY_PARAM_VALUE_IF(SS_DOUBLE, real_T)
+		RT_MODIFY_PARAM_VALUE_IF(SS_SINGLE, real32_T)
+		RT_MODIFY_PARAM_VALUE_IF(SS_INT8, int8_T)
+		RT_MODIFY_PARAM_VALUE_IF(SS_UINT8, uint8_T)
+		RT_MODIFY_PARAM_VALUE_IF(SS_INT16, int16_T)
+		RT_MODIFY_PARAM_VALUE_IF(SS_UINT16, uint16_T)
+		RT_MODIFY_PARAM_VALUE_IF(SS_INT32, int32_T)
+		RT_MODIFY_PARAM_VALUE_IF(SS_UINT32, uint32_T)
+		RT_MODIFY_PARAM_VALUE_IF(SS_BOOLEAN, boolean_T)
 		default:
 			return(1);
 	}
 
 	return(0);
 }
+
+#define RT_GET_PARAM_INFO_IF(rtcase, rttype) \
+	case rtcase: \
+		for (paramIdx = 0; paramIdx < nParams; paramIdx++) { \
+			rttype *param = (rttype *)(pMap[mapOffset + paramIdx]); \
+			switch (ptinfoGetClass(ptRec)) { \
+				case rt_SCALAR: \
+					rtpi->dataValue[0] = *param; \
+					break; \
+				case rt_VECTOR: \
+					for (rowIdx = 0; rowIdx < nRows; rowIdx++) { \
+						rtpi->dataValue[rowIdx] = param[rowIdx]; \
+					} \
+					break; \
+				case rt_MATRIX_ROW_MAJOR: \
+					for (rowIdx = 0; rowIdx < nRows; rowIdx++) { \
+						for (colIdx = 0; colIdx < nCols; colIdx++) { \
+							rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx]; \
+						} \
+					} \
+					break; \
+				case rt_MATRIX_COL_MAJOR: \
+					for (rowIdx = 0; rowIdx < nRows; rowIdx++) { \
+						for (colIdx = 0; colIdx < nCols; colIdx++) { \
+							rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx]; \
+						} \
+					} \
+					break; \
+				default: \
+					return(1); \
+			} \
+		} \
+		break;
 
 int_T rt_GetParameterInfo(void *mpi, rtTargetParamInfo *rtpi, int i)
 {
@@ -630,6 +338,7 @@ int_T rt_GetParameterInfo(void *mpi, rtTargetParamInfo *rtpi, int i)
 	uint_T dataClass;
 
 	mmi   = (ModelMappingInfo *)mpi;
+	
 	ptRec = (ParameterTuning*)mmiGetBlockTuningParamInfo(mmi,i);
 	pMap  = mmiGetParametersMap(mmi);
 	nRows = ptinfoGetNumRows(ptRec);
@@ -639,7 +348,7 @@ int_T rt_GetParameterInfo(void *mpi, rtTargetParamInfo *rtpi, int i)
 	dataType  = ptinfoGetDataTypeEnum(ptRec);
 	dataClass = ptinfoGetClass(ptRec);
 
-	strncpyz(rtpi->modelName, rtmGetModelName(rtM), MAX_NAMES_SIZE);
+ 	strncpyz(rtpi->modelName, STR(MODEL), MAX_NAMES_SIZE);
 	strncpyz(rtpi->blockName, mmiGetBlockTuningBlockName(mmi,i), MAX_NAMES_SIZE);
 	strncpyz(rtpi->paramName, mmiGetBlockTuningParamName(mmi,i), MAX_NAMES_SIZE);
 	rtpi->dataType  = dataType;
@@ -648,285 +357,15 @@ int_T rt_GetParameterInfo(void *mpi, rtTargetParamInfo *rtpi, int i)
 	rtpi->nCols = nCols;
 
 	switch (ptinfoGetDataTypeEnum(ptRec)) {
-		case SS_DOUBLE:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				real_T *param = (real_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_SINGLE:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				real32_T *param = (real32_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_INT8:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				int8_T *param = (int8_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_UINT8:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				uint8_T *param = (uint8_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_INT16:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				int16_T *param = (int16_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_UINT16:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				uint16_T *param = (uint16_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_INT32:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				int32_T *param = (int32_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_UINT32:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				uint32_T *param = (uint32_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
-		case SS_BOOLEAN:
-			for (paramIdx = 0; paramIdx < nParams; paramIdx++) {
-				boolean_T *param = (boolean_T *)(pMap[mapOffset + paramIdx]);
-				switch (ptinfoGetClass(ptRec)) {
-					case rt_SCALAR:
-						rtpi->dataValue[0] = *param;
-						break;
-					case rt_VECTOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							rtpi->dataValue[rowIdx] = param[rowIdx];
-						}
-						break;
-					case rt_MATRIX_ROW_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[rowIdx*nCols+colIdx] = param[rowIdx*nCols+colIdx];
-							}
-						}
-						break;
-					case rt_MATRIX_COL_MAJOR:
-						for (rowIdx = 0; rowIdx < nRows; rowIdx++) {
-							for (colIdx = 0; colIdx < nCols; colIdx++) {
-								rtpi->dataValue[colIdx*nRows+rowIdx] = param[colIdx*nRows+rowIdx];
-							}
-						}
-						break;
-					default:
-						return(1);
-				}
-			}
-			break;
+		RT_GET_PARAM_INFO_IF(SS_DOUBLE, real_T)
+		RT_GET_PARAM_INFO_IF(SS_SINGLE, real32_T)
+		RT_GET_PARAM_INFO_IF(SS_INT8, int8_T)
+		RT_GET_PARAM_INFO_IF(SS_UINT8, uint8_T)
+		RT_GET_PARAM_INFO_IF(SS_INT16, int16_T)
+		RT_GET_PARAM_INFO_IF(SS_UINT16, uint16_T)
+		RT_GET_PARAM_INFO_IF(SS_INT32, int32_T)
+		RT_GET_PARAM_INFO_IF(SS_UINT32, uint32_T)
+		RT_GET_PARAM_INFO_IF(SS_BOOLEAN, boolean_T)
 		default:
 			return(1);
 	}
@@ -1067,6 +506,7 @@ static void *rt_HostInterface(void *args)
 	while (!endInterface) {
 		task = rt_receive(0, &IRequest);
 		Request = (char)(IRequest);
+		
 		if (endInterface) break;
 
 		switch (Request) {
@@ -1082,7 +522,6 @@ static void *rt_HostInterface(void *args)
 					}
 					{ int i;
 					  rtTargetParamInfo rtParameters;
-
 					  rt_receivex(task, &rtParameters, sizeof(char), &len);
 					  rt_GetParameterInfo(MMI, &rtParameters, 0);
 					  rt_returnx(task, &rtParameters, sizeof(rtParameters));
@@ -1407,7 +846,7 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 		} else {
 			rt_BaseRateTick = nano2count(rt_BaseTaskPeriod);
 			hard_timers_cnt = rt_get_adr(nam2num("HTMRCN"));
-			rt_sem_signal(hard_timers_cnt);
+			hard_timers_cnt = rt_sem_init(nam2num("HTMRCN"), 0);
 		}
 	} else {
 		WaitTimingEvent = (void *)DummyWait;
@@ -1418,7 +857,7 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 		int j;
 		printf("\nTarget info\n");
 		printf("===========\n");
-		printf("  Model name             : %s\n", rtmGetModelName(rtM));
+		printf("  Model name             : %s\n", STR(MODEL));
 		printf("  Base sample time       : %f [s]\n", rtmGetStepSize(rtM));
 		printf("  Number of sample times : %d\n", rtmGetNumSampleTimes(rtM));
 		for (j = 0; j < rtmGetNumSampleTimes(rtM); j++) {
@@ -1484,7 +923,7 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 			rt_sem_delete(hard_timers_cnt);
 		}
 	}
-
+	
 #ifdef MULTITASKING
 	free(rt_SubRateTasks);
 	free(rt_SubRateThreads);
@@ -1505,6 +944,8 @@ static void endme(int dummy)
 	signal(SIGINT, endme);
 	signal(SIGTERM, endme);
 	endex = 1;
+        endBaseRate = 1;
+	endInterface = 1;
 }
 
 struct option options[] = {

@@ -132,10 +132,10 @@ int rt_event_create(RT_EVENT *event,
 
 int rt_event_delete(RT_EVENT *event);
 
-int rt_event_post(RT_EVENT *event,
-		  unsigned long mask);
+int rt_event_signal(RT_EVENT *event,
+		    unsigned long mask);
 
-int rt_event_pend(RT_EVENT *event,
+int rt_event_wait(RT_EVENT *event,
 		  unsigned long mask,
 		  unsigned long *mask_r,
 		  int mode,

@@ -206,8 +206,8 @@ int rt_event_delete (RT_EVENT *event)
 }
 
 /**
- * @fn int rt_event_post(RT_EVENT *event,
-                         unsigned long mask)
+ * @fn int rt_event_signal(RT_EVENT *event,
+                           unsigned long mask)
  * @brief Post an event group.
  *
  * Post a set of bits to the event mask. All tasks having their wait
@@ -237,8 +237,8 @@ int rt_event_delete (RT_EVENT *event)
  * Rescheduling: possible.
  */
 
-int rt_event_post (RT_EVENT *event,
-                   unsigned long mask)
+int rt_event_signal (RT_EVENT *event,
+		     unsigned long mask)
 {
     xnpholder_t *holder, *nholder;
     int err = 0, resched = 0;
@@ -291,14 +291,14 @@ int rt_event_post (RT_EVENT *event,
 }
 
 /**
- * @fn int rt_event_pend(RT_EVENT *event,
+ * @fn int rt_event_wait(RT_EVENT *event,
                          unsigned long mask,
                          unsigned long *mask_r,
                          int mode,
                          RTIME timeout)
  * @brief Pend on an event group.
  *
- * Pends for one or more events on the specified event group, either
+ * Waits for one or more events on the specified event group, either
  * in conjunctive or disjunctive mode.
 
  * If the specified set of bits is not set, the calling task is
@@ -368,7 +368,7 @@ int rt_event_post (RT_EVENT *event,
  * oneshot mode, clock ticks are expressed in nanoseconds.
  */
 
-int rt_event_pend (RT_EVENT *event,
+int rt_event_wait (RT_EVENT *event,
                    unsigned long mask,
                    unsigned long *mask_r,
                    int mode,
@@ -506,6 +506,6 @@ int rt_event_inquire (RT_EVENT *event,
 
 EXPORT_SYMBOL(rt_event_create);
 EXPORT_SYMBOL(rt_event_delete);
-EXPORT_SYMBOL(rt_event_post);
-EXPORT_SYMBOL(rt_event_pend);
+EXPORT_SYMBOL(rt_event_signal);
+EXPORT_SYMBOL(rt_event_wait);
 EXPORT_SYMBOL(rt_event_inquire);

@@ -941,14 +941,14 @@ static int __rt_event_delete (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_event_pend(RT_EVENT_PLACEHOLDER *ph,
+ * int __rt_event_wait(RT_EVENT_PLACEHOLDER *ph,
                        unsigned long mask,
                        unsigned long *mask_r,
                        int mode,
  *                     RTIME *timeoutp)
  */
 
-static int __rt_event_pend (struct task_struct *curr, struct pt_regs *regs)
+static int __rt_event_wait (struct task_struct *curr, struct pt_regs *regs)
 
 {
     unsigned long mask, mask_r;
@@ -971,7 +971,7 @@ static int __rt_event_pend (struct task_struct *curr, struct pt_regs *regs)
     mode = (int)__xn_reg_arg4(regs);
     __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg5(regs),sizeof(timeout));
 
-    err = rt_event_pend(event,mask,&mask_r,mode,timeout);
+    err = rt_event_wait(event,mask,&mask_r,mode,timeout);
 
     __xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mask_r,sizeof(mask_r));
 
@@ -979,11 +979,11 @@ static int __rt_event_pend (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_event_post(RT_EVENT_PLACEHOLDER *ph,
- *                     unsigned long mask)
+ * int __rt_event_signal(RT_EVENT_PLACEHOLDER *ph,
+ *                       unsigned long mask)
  */
 
-static int __rt_event_post (struct task_struct *curr, struct pt_regs *regs)
+static int __rt_event_signal (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_EVENT_PLACEHOLDER ph;
@@ -1002,7 +1002,7 @@ static int __rt_event_post (struct task_struct *curr, struct pt_regs *regs)
 
     mask = (unsigned long)__xn_reg_arg2(regs);
 
-    return rt_event_post(event,mask);
+    return rt_event_signal(event,mask);
 }
 
 /*
@@ -1044,8 +1044,8 @@ static int __rt_event_inquire (struct task_struct *curr, struct pt_regs *regs)
 #define __rt_event_create  __rt_call_not_available
 #define __rt_event_bind    __rt_call_not_available
 #define __rt_event_delete  __rt_call_not_available
-#define __rt_event_pend    __rt_call_not_available
-#define __rt_event_post    __rt_call_not_available
+#define __rt_event_wait    __rt_call_not_available
+#define __rt_event_signal  __rt_call_not_available
 #define __rt_event_inquire __rt_call_not_available
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_EVENT */
@@ -2200,8 +2200,8 @@ static xnsysent_t __systab[] = {
     [__rtai_event_create ] = { &__rt_event_create, __xn_flag_anycall },
     [__rtai_event_bind ] = { &__rt_event_bind, __xn_flag_regular },
     [__rtai_event_delete ] = { &__rt_event_delete, __xn_flag_anycall },
-    [__rtai_event_pend ] = { &__rt_event_pend, __xn_flag_regular },
-    [__rtai_event_post ] = { &__rt_event_post, __xn_flag_anycall },
+    [__rtai_event_wait ] = { &__rt_event_wait, __xn_flag_regular },
+    [__rtai_event_signal ] = { &__rt_event_signal, __xn_flag_anycall },
     [__rtai_event_inquire ] = { &__rt_event_inquire, __xn_flag_anycall },
     [__rtai_mutex_create ] = { &__rt_mutex_create, __xn_flag_anycall },
     [__rtai_mutex_bind ] = { &__rt_mutex_bind, __xn_flag_regular },

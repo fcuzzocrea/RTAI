@@ -63,14 +63,14 @@ int rt_event_delete (RT_EVENT *event)
 			     event);
 }
 
-int rt_event_pend (RT_EVENT *event,
+int rt_event_wait (RT_EVENT *event,
                    unsigned long mask,
                    unsigned long *mask_r,
                    int mode,
 		   RTIME timeout)
 {
     return XENOMAI_SKINCALL5(__rtai_muxid,
-			     __rtai_event_pend,
+			     __rtai_event_wait,
 			     event,
 			     mask,
 			     mask_r,
@@ -78,11 +78,11 @@ int rt_event_pend (RT_EVENT *event,
 			     &timeout);
 }
 
-int rt_event_post (RT_EVENT *event,
-		   unsigned long mask)
+int rt_event_signal (RT_EVENT *event,
+		     unsigned long mask)
 {
     return XENOMAI_SKINCALL2(__rtai_muxid,
-			     __rtai_event_post,
+			     __rtai_event_signal,
 			     event,
 			     mask);
 }

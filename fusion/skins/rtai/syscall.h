@@ -82,8 +82,8 @@
 #define __rtai_event_create       29
 #define __rtai_event_bind         30
 #define __rtai_event_delete       31
-#define __rtai_event_pend         32
-#define __rtai_event_post         33
+#define __rtai_event_wait         32
+#define __rtai_event_signal       33
 #define __rtai_event_inquire      34
 #define __rtai_mutex_create       35
 #define __rtai_mutex_bind         36

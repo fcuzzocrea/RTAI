@@ -1,3 +1,9 @@
+2004-02-18  Luca Pizzi  <lucapizzi@hotmail.it>
+	    Stefano Gafforelli  <Stefano.Gafforelli@tiscali.it>
+
+	* base/include/asm-arm/rtai_fpu.h: set_tsk_used_fpu() was moved here
+	from base/include/rtai_wrappers.h (because it is arch specific)
+
 2004-02-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sched.h: cleaned up unused stuff and added 

@@ -859,7 +859,7 @@ static void rthal_domain_entry (int iflag)
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
 	adeos_catch_event(trapnr,&rthal_trap_fault);
 
-    printk(KERN_INFO "RTAI[hal]: Loaded over Adeos %s.\n",ADEOS_VERSION_STRING);
+    printk(KERN_INFO "RTAI: hal/x86 loaded.\n");
 
 #if !defined(CONFIG_ADEOS_NOTHREADS)
  spin:
@@ -1139,7 +1139,7 @@ void __rthal_exit (void)
 
     rthal_smi_restore();
     
-    printk(KERN_INFO "RTAI[hal]: Unloaded.\n");
+    printk(KERN_INFO "RTAI: hal/x86 unloaded.\n");
 }
 
 /*@}*/

@@ -1,3 +1,20 @@
+2004-08-06  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/include/rtai_sched.h: added a specific status bit for
+	readied soft tasks.
+
+        * rtai-core/include/rtai_schedcore.h: use the above state bit when
+	enqueuing a ready soft task.
+
+        * rtai-core/sched/rtai/sched_lxrt.c: reworked: making hard to do it
+	at the proper time, syscall trap handler, all scheduling functions
+	hard disable interrupts, eliminated schedule_soft hard disable of
+	interrupts, rt_schedule resumes a soft re-scheduled task 
+	unconditionally.
+
+        * rtai-core/sched/rtai/sys_lxrt.c: wrapped the restate to hard with
+	a double diagnostic message.
+
 2004-08-05  Marius Groeger <mgroeger@sysgo.com>
 
 	* rtai-testsuite/kern/*/Makefile.am: $(CROSS_COMPILE)ld.

@@ -61,4 +61,10 @@ endmenu
 
 source "skins/Kconfig"
 
+menu "Drivers"
+
+source "drivers/Kconfig"
+
+endmenu
+
 source "sim/Kconfig"

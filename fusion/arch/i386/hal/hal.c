@@ -529,17 +529,6 @@ int rthal_request_linux_irq (unsigned irq,
     return 0;
 }
 
-/**
- * Uninstall shared Linux interrupt handler.
- *
- * @param dev_id is to pass to the interrupt handler, in the same way as the
- * standard Linux irq request call.
- *
- * @param irq is the IRQ level of the interrupt handler to be freed.
- *
- * @retval 0 on success.
- * @retval -EINVAL if @a irq is not a valid external IRQ number.
- */
 int rthal_release_linux_irq (unsigned irq, void *dev_id)
 
 {
@@ -565,12 +554,6 @@ int rthal_release_linux_irq (unsigned irq, void *dev_id)
     return 0;
 }
 
-/**
- * Pend an IRQ to Linux.
- *
- * rthal_pend_linux_irq appends a Linux interrupt irq for processing in Linux IRQ
- * mode, i.e. with hardware interrupts fully enabled.
- */
 int rthal_pend_linux_irq (unsigned irq)
 
 {
@@ -580,21 +563,6 @@ int rthal_pend_linux_irq (unsigned irq)
     return adeos_propagate_irq(irq);
 }
 
-/**
- * Install a system request handler
- *
- * rthal_request_srq installs a RTAI system request (srq) by assigning
- * @a handler, the function to be called in kernel space following its
- * activation by a call to rthal_pend_linux_srq(). @a handler is in
- * practice used to request a service from the kernel. In fact Linux
- * system requests cannot be used safely from RTAI so you can setup a
- * handler that receives real time requests and safely executes them
- * when Linux is running.
- *
- * @return the number of the assigned system request on success.
- * @retval -EINVAL if @a handler is @c NULL.
- * @retval -EBUSY if no free srq slot is available.
- */
 int rthal_request_srq (unsigned label,
 		       void (*handler)(void))
 {
@@ -640,14 +608,6 @@ int rthal_release_srq (unsigned srq)
     return 0;
 }
 
-/**
- * Append a Linux IRQ.
- *
- * rthal_pend_linux_srq appends a system call request srq to be used as a service
- * request to the Linux kernel.
- *
- * @param srq is the value returned by rthal_request_srq.
- */
 int rthal_pend_linux_srq (unsigned srq)
 
 {

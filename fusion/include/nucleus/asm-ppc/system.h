@@ -85,7 +85,10 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
     if (!test_and_set_bit(cpuid,lock))
 	{
 	while (test_and_set_bit(BITS_PER_LONG - 1,lock))
-	    rthal_cpu_relax(cpuid);
+            /* Use a non-locking test in the inner loop, as Linux'es
+               bit_spin_lock. */
+            while (test_bit(BITS_PER_LONG - 1, lock))
+                rthal_cpu_relax(cpuid);
 	}
     else
         flags |= 2;

@@ -116,26 +116,29 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
 
     if (!test_and_set_bit(cpuid,&lock->lock))
 	{
-	while (test_and_set_bit(BITS_PER_LONG - 1,&lock->lock))
-            {
-            rthal_cpu_relax(cpuid);
+        while (test_and_set_bit(BITS_PER_LONG - 1,&lock->lock))
+            /* Use an non-locking test in the inner loop, as Linux'es
+               bit_spin_lock. */
+            while (test_bit(BITS_PER_LONG - 1,&lock->lock))
+                {
+                rthal_cpu_relax(cpuid);
 
 #if CONFIG_RTAI_OPT_DEBUG
-            if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
-                {
-                adeos_set_printk_sync(adp_current);
-                printk(KERN_ERR
-                       "RTAI: stuck on nucleus lock %p\n"
-		       "      waiter = %s:%u (%s(), CPU #%d)\n"
-                       "      owner  = %s:%u (%s(), CPU #%d)\n",
-                       lock,file,line,function,cpuid,
-		       lock->file,lock->line,lock->function,lock->cpu);
-                show_stack(NULL,NULL);
-                for (;;)
-                    safe_halt();
-                }
+                if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
+                    {
+                    adeos_set_printk_sync(adp_current);
+                    printk(KERN_ERR
+                           "RTAI: stuck on nucleus lock %p\n"
+                           "      waiter = %s:%u (%s(), CPU #%d)\n"
+                           "      owner  = %s:%u (%s(), CPU #%d)\n",
+                           lock,file,line,function,cpuid,
+                           lock->file,lock->line,lock->function,lock->cpu);
+                    show_stack(NULL,NULL);
+                    for (;;)
+                        safe_halt();
+                    }
 #endif /* CONFIG_RTAI_OPT_DEBUG */
-            }
+                }
 
 #if CONFIG_RTAI_OPT_DEBUG
 	lock->file = file;

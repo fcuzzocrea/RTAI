@@ -75,7 +75,7 @@ static struct {
     void *cookie;
     unsigned long hits[RTHAL_NR_CPUS];
 
-} rthal_realtime_irq[IPIPE_NR_XIRQS];
+} rthal_realtime_irq[IPIPE_NR_IRQS];
 
 static struct {
 
@@ -234,7 +234,7 @@ int rthal_request_irq (unsigned irq,
     unsigned long flags;
     int err = 0;
 
-    if (handler == NULL || irq >= IPIPE_NR_XIRQS)
+    if (handler == NULL || irq >= IPIPE_NR_IRQS)
 	return -EINVAL;
 
     flags = rthal_critical_enter(NULL);
@@ -258,7 +258,7 @@ int rthal_request_irq (unsigned irq,
 int rthal_release_irq (unsigned irq)
 
 {
-    if (irq >= IPIPE_NR_XIRQS)
+    if (irq >= IPIPE_NR_IRQS)
 	return -EINVAL;
 
     xchg(&rthal_realtime_irq[irq].handler,NULL);
@@ -273,7 +273,7 @@ int rthal_release_irq (unsigned irq)
 int rthal_enable_irq (unsigned irq)
 
 {
-    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq))
+    if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
     if (irq_desc[irq].handler == NULL ||
@@ -292,7 +292,7 @@ int rthal_enable_irq (unsigned irq)
 int rthal_disable_irq (unsigned irq)
 
 {
-    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq))
+    if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
     if (irq_desc[irq].handler == NULL ||
@@ -340,7 +340,7 @@ int rthal_request_linux_irq (unsigned irq,
 {
     unsigned long flags;
 
-    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq) || !handler)
+    if (irq >= IPIPE_NR_XIRQS || !handler)
 	return -EINVAL;
 
     rthal_local_irq_save(flags);
@@ -379,7 +379,6 @@ int rthal_release_linux_irq (unsigned irq, void *dev_id)
     unsigned long flags;
 
     if (irq >= IPIPE_NR_XIRQS ||
-	adeos_virtual_irq_p(irq) ||
 	rthal_linux_irq[irq].count == 0)
 	return -EINVAL;
 
@@ -408,7 +407,7 @@ int rthal_release_linux_irq (unsigned irq, void *dev_id)
 int rthal_pend_linux_irq (unsigned irq)
 
 {
-    if (irq >= IPIPE_NR_XIRQS)
+    if (irq >= IPIPE_NR_IRQS)
 	return -EINVAL;
 
     return adeos_propagate_irq(irq);
@@ -522,7 +521,7 @@ int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask)
 {
     unsigned long oldmask, flags;
 
-    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq))
+    if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
     rthal_local_irq_save(flags);
@@ -565,7 +564,7 @@ int rthal_reset_irq_affinity (unsigned irq)
 {
     unsigned long oldmask, flags;
 
-    if (irq >= IPIPE_NR_XIRQS || adeos_virtual_irq_p(irq))
+    if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
     rthal_local_irq_save(flags);
@@ -700,6 +699,11 @@ static void rthal_domain_entry (int iflag)
 			     NULL,
 			     IPIPE_DYNAMIC_MASK);
 
+    adeos_virtualize_irq(RTHAL_TIMER_IRQ,
+			 &rthal_irq_trampoline,
+			 NULL,
+			 IPIPE_DYNAMIC_MASK);
+
     /* Trap all faults. */
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
 	adeos_catch_event(trapnr,&rthal_trap_fault);
@@ -729,7 +733,7 @@ static int rthal_read_proc (char *page,
     p += sprintf(p,"RTAI/hal over Adeos %s\n",ADEOS_VERSION_STRING);
     p += sprintf(p,"Compiled with: %s\n",CONFIG_RTAI_COMPILER);
 
-    for (irq = nirqs = 0; irq < IPIPE_NR_XIRQS; irq++)
+    for (irq = nirqs = 0; irq < IPIPE_NR_IRQS; irq++)
 	if (rthal_realtime_irq[irq].handler != NULL)
 	    nirqs++;
 
@@ -744,7 +748,7 @@ static int rthal_read_proc (char *page,
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	p += sprintf(p,"        CPU%d",cpuid);
 
-    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+    for (irq = 0; irq < IPIPE_NR_IRQS; irq++)
 	{
 	if (rthal_realtime_irq[irq].handler == NULL)
 	    continue;
@@ -853,7 +857,7 @@ int __rthal_init (void)
     rthal_tunables.cpu_freq = rthal_cpufreq_arg;
 
     if (rthal_timerfreq_arg == 0)
-	rthal_timerfreq_arg = CLOCK_TICK_RATE;
+	rthal_timerfreq_arg = rthal_tunables.cpu_freq;
 
     rthal_tunables.timer_freq = rthal_timerfreq_arg;
 

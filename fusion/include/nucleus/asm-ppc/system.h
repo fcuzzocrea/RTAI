@@ -523,7 +523,10 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 void xnarch_sleep_on (int *flagp) {
 
     while (!*flagp)
+	{
+	set_current_state(TASK_UNINTERRUPTIBLE);
 	schedule_timeout(1);
+	}
 }
 
 #ifdef CONFIG_SMP
@@ -630,8 +633,11 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 static void xnarch_program_timer_shot (unsigned long long delay) {
     /* Delays are expressed in CPU ticks, so we need to keep a 64bit
        value here, especially for 64bit arch ports using an interval
-       timer based on the internal cycle counter of the CPU. */ 
-    rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
+       timer based on the internal cycle counter of the CPU. This PPC
+       port currently assumes that the decrementer frequency is
+       identical to the CPU frequency, so there is no need to rescale
+       the delay value. */ 
+    rthal_set_timer_shot(delay);
 }
 
 static inline void xnarch_stop_timer (void) {

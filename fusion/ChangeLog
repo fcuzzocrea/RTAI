@@ -1,3 +1,7 @@
+2005-03-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* TROUBLESHOOTING: Add entry for lapic issue.
+
 2005-03-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* scripts/GNUmakefile.am (install-exec-local): Add post-install

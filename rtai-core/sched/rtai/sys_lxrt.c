@@ -280,6 +280,9 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 static int __task_delete(RT_TASK *rt_task)
 {
 	struct task_struct *process;
+	if (current == rt_task->lnxtsk && rt_task->is_hard == 1) {
+		give_back_to_linux(rt_task);
+	}
 	if (clr_rtext(rt_task)) {
 		return -EFAULT;
 	}
@@ -341,10 +344,10 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		if ((type = funcm[srq].type)) {
 			int net_rpc;
 			if ((int)task->is_hard > 1) {
-				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD, PID = %d.\n", current->pid););
+				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 				task->is_hard = 0;
 				steal_from_linux(task);
-				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD,  PID = %d.\n", current->pid););
+				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
 			}
 			net_rpc = idx == 2 && !srq;
 			lxrt_resume(funcm[srq].fun, NARG(lxsrq), (int *)arg, net_rpc ? ((long long *)((int *)arg + 2))[0] : type, task, net_rpc);
@@ -474,7 +477,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case MAKE_HARD_RT: {
-			if (!(task = current->this_rt_task[0]) || (int)task->is_hard > 0) {
+			if (!(task = current->this_rt_task[0]) || (int)task->is_hard == 1) {
 				 return 0;
 			}
 			steal_from_linux(task);

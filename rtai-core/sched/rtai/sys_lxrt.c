@@ -701,4 +701,6 @@ int lxrt_init_archdep (void)
 
 void lxrt_exit_archdep (void) { }
 
+#ifdef CONFIG_KBUILD
 EXPORT_SYMBOL(linux_process_termination);
+#endif /* CONFIG_KBUILD */

@@ -560,6 +560,21 @@ void xntimer_do_timers (void)
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 }
 
+/*!
+ * @internal
+ * \fn void xntimer_freeze(void)
+ *
+ * \brief Freeze all timers.
+ *
+ * This routine deactivates all active timers atomically.
+ *
+ * Context: Called from ISR with nklock locked, interrupts off.
+ *
+ * @note Always make sure the nklock is free when stopping the
+ * underlying timing source by calling xnarch_stop_timer(), otherwise,
+ * deadlock situations would arise on some architectures.
+ */
+
 void xntimer_freeze (void)
 
 {

@@ -70,7 +70,7 @@ static int __intr_trampoline (xnintr_t *_intr)
 	if (xnsynch_nsleepers(&intr->synch_base) > 0)
 	    xnsynch_flush(&intr->synch_base,0);
 
-	/* Auto-enable when running in DSR mode. */
+	/* Auto-enable when running in sync mode. */
 	s = XN_ISR_HANDLED|(intr->mode & XN_ISR_ENABLE);
 	}
 
@@ -79,7 +79,7 @@ static int __intr_trampoline (xnintr_t *_intr)
 
 int rt_intr_create (RT_INTR *intr,
 		    unsigned irq,
-		    int (*isr)(RT_INTR *intr),
+		    rt_isr_t isr,
 		    int mode)
 {
     char name[XNOBJECT_NAME_LEN];
@@ -181,6 +181,12 @@ int rt_intr_wait (RT_INTR *intr,
         err = rtai_handle_error(intr,RTAI_INTR_MAGIC,RT_INTR);
         goto unlock_and_exit;
         }
+
+    if (intr->isr)
+	{
+	err = -EPERM;
+	goto unlock_and_exit;
+	}
     
     if (intr->pending < 0)
 	{

@@ -1,3 +1,8 @@
+2004-06-11  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * rtai-core/sched/rtai/sched_lxrt.c: forced keeping Linux tasks 
+	preempted by RTAI on the CPU they are. Affecting just SMP.
+
 2004-06-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/sched/rtai/sched_lxrt.c (lxrt_context_switch): Use

@@ -27,6 +27,16 @@
  *
  * Mutex services.
  *
+ * A mutex is a MUTual EXclusion object, and is useful for protecting
+ * shared data structures from concurrent modifications, and
+ * implementing critical sections and monitors.
+ *
+ * A mutex has two possible states: unlocked (not owned by any task),
+ * and locked (owned by one task). A mutex can never be owned by two
+ * different tasks simultaneously. A task attempting to lock a mutex
+ * that is already locked by another task is blocked until the owning
+ * task unlocks the mutex first.
+ *
  *@{*/
 
 #include <nucleus/pod.h>
@@ -51,7 +61,7 @@ void __mutex_pkg_cleanup (void)
  * @brief Create a mutex.
  *
  * Create a mutual exclusion object that allows multiple threads to
- * synchronise access to a shared resource. A mutex is left in an
+ * synchronize access to a shared resource. A mutex is left in an
  * unlocked state after creation.
  *
  * @param mutex The address of a mutex descriptor RTAI will use to

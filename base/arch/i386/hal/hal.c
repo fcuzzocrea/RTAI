@@ -81,6 +81,10 @@ static unsigned long rtai_cpufreq_arg = RTAI_CALIBRATED_CPU_FREQ;
 MODULE_PARM(rtai_cpufreq_arg,"i");
 
 #ifdef CONFIG_X86_LOCAL_APIC
+
+#undef  NR_IRQS
+#define NR_IRQS  IPIPE_NR_XIRQS
+
 static unsigned long rtai_apicfreq_arg = RTAI_CALIBRATED_APIC_FREQ;
 
 MODULE_PARM(rtai_apicfreq_arg,"i");
@@ -665,6 +669,34 @@ void rt_pend_linux_srq (unsigned srq)
 	}
 }
 
+#ifdef CONFIG_X86_LOCAL_APIC
+
+irqreturn_t rtai_broadcast_to_local_timers (int irq,
+					    void *dev_id,
+					    struct pt_regs *regs)
+{
+    unsigned long flags;
+
+    rtai_hw_save_flags_and_cli(flags);
+    apic_wait_icr_idle();
+    apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
+    rtai_hw_restore_flags(flags);
+
+    return RTAI_LINUX_IRQ_HANDLED;
+} 
+
+#define REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS()  rt_request_linux_irq(RTAI_TIMER_8254_IRQ, &rtai_broadcast_to_local_timers, "rtai_broadcast", &rtai_broadcast_to_local_timers)
+
+#define FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS()     rt_free_linux_irq(RTAI_TIMER_8254_IRQ, &rtai_broadcast_to_local_timers)
+
+#else
+
+#define REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS()  0
+
+#define FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
+
+#endif
+
 #ifdef CONFIG_SMP
 
 static unsigned long rtai_old_irq_affinity[NR_IRQS],
@@ -677,7 +709,6 @@ static long long rtai_timers_sync_time;
 static struct apic_timer_setup_data rtai_timer_mode[RTAI_NR_CPUS];
 
 static void rtai_critical_sync (void)
-
 {
     struct apic_timer_setup_data *p;
 
@@ -708,20 +739,6 @@ static void rtai_critical_sync (void)
 	    break;
 	}
 }
-
-irqreturn_t rtai_broadcast_to_local_timers (int irq,
-					    void *dev_id,
-					    struct pt_regs *regs)
-{
-    unsigned long flags;
-
-    rtai_hw_save_flags_and_cli(flags);
-    apic_wait_icr_idle();
-    apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
-    rtai_hw_restore_flags(flags);
-
-    return RTAI_LINUX_IRQ_HANDLED;
-} 
 
 /**
  * Install a local APICs timer interrupt handler
@@ -811,10 +828,7 @@ void rt_request_apic_timers (void (*handler)(void),
 
     rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
 
-    rt_request_linux_irq(RTAI_TIMER_8254_IRQ,
-			 &rtai_broadcast_to_local_timers,
-			 "broadcast",
-			 &rtai_broadcast_to_local_timers);
+    REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 
     for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++)
 	{
@@ -839,7 +853,7 @@ void rt_free_apic_timers(void)
 
     TRACE_RTAI_TIMER(TRACE_RTAI_EV_TIMER_APIC_FREE,0,0);
 
-    rt_free_linux_irq(RTAI_TIMER_8254_IRQ,&rtai_broadcast_to_local_timers);
+    FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 
     flags = rtai_critical_enter(rtai_critical_sync);
 
@@ -955,12 +969,6 @@ int rt_reset_irq_to_sym_mode (int irq)
 
 #define rtai_critical_sync NULL
 
-irqreturn_t rtai_broadcast_to_local_timers (int irq,
-					    void *dev_id,
-					    struct pt_regs *regs) {
-    return RTAI_LINUX_IRQ_HANDLED;
-} 
-
 void rt_request_apic_timers (void (*handler)(void),
 			     struct apic_timer_setup_data *tmdata) {
 }
@@ -1015,7 +1023,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			rt_release_irq(RTAI_APIC_TIMER_IPI);
 			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 1);
 			rtai_setup_periodic_apic(tick,RTAI_APIC_TIMER_VECTOR);
-    			retval = rt_request_linux_irq(RTAI_TIMER_8254_IRQ, &rtai_broadcast_to_local_timers, "rtai_broadcast", &rtai_broadcast_to_local_timers);
+			retval = REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		} else {
 			outb(0x34, 0x43);
 			outb(tick & 0xff, 0x40);
@@ -1033,7 +1041,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			rt_release_irq(RTAI_APIC_TIMER_IPI);
 			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 1);
 			rtai_setup_oneshot_apic(RTAI_APIC_ICOUNT,RTAI_APIC_TIMER_VECTOR);
-    			retval = rt_request_linux_irq(RTAI_TIMER_8254_IRQ, &rtai_broadcast_to_local_timers, "rtai_broadcast", &rtai_broadcast_to_local_timers);
+    			retval = REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		} else {
 			outb(0x30, 0x43);
 			outb(LATCH & 0xff, 0x40);
@@ -1059,7 +1067,8 @@ void rt_free_timer (void)
 
 	rtai_save_flags_and_cli(flags);
 	if (used_apic) {
-		rt_free_linux_irq(RTAI_TIMER_8254_IRQ, &rtai_broadcast_to_local_timers);
+
+		FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		rtai_setup_periodic_apic(RTAI_APIC_ICOUNT, LOCAL_TIMER_VECTOR);
 		used_apic = 0;
 	} else {

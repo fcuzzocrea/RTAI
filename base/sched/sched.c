@@ -496,11 +496,9 @@ int rt_check_current_stack(void)
 	}
 }
 
-
 #define RR_YIELD() \
 if (ALLOW_RR && rt_current->policy > 0) { \
-	rt_current->rr_remaining = rt_current->yield_time - rt_times.tick_time; \
-	if (rt_current->rr_remaining <= 0) { \
+	if (rt_current->yield_time <= rt_times.tick_time) { \
 		rt_current->rr_remaining = rt_current->rr_quantum; \
 		if (rt_current->state == RT_SCHED_READY) { \
 			RT_TASK *task; \
@@ -515,6 +513,8 @@ if (ALLOW_RR && rt_current->policy > 0) { \
 				rt_current->rnext = task; \
 			} \
 		} \
+	} else { \
+		rt_current->rr_remaining = rt_current->yield_time - rt_times.tick_time; \
 	} \
 } 
 
@@ -1654,17 +1654,50 @@ static void lxrt_migration_handler (unsigned virq)
 	rtai_sti();
 }
 
+
+/* detach the kernel thread from user space; not fully, only:
+   session, process-group, tty. */ 
+
+static inline void detach_kthread(void)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	current->session = 1;
+	current->pgrp    = 1;
+	current->tty     = NULL;
+#else
+	(current->signal)->session = 1;
+	(current->signal)->pgrp    = 1;
+	(current->signal)->tty     = NULL;
+#endif
+}
+
+static inline void lxrt_sigfillset(void)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	spin_lock_irq(&current->sigmask_lock);
+	sigfillset(&current->blocked);
+	recalc_sigpending(current);
+	spin_unlock_irq(&current->sigmask_lock);
+#else
+	spin_lock_irq(&(current->sighand)->siglock);
+	sigfillset(&current->blocked);
+	recalc_sigpending();
+	spin_unlock_irq(&(current->sighand)->siglock);
+#endif
+}
+
 static void kthread_b(int cpuid)
 {
 	struct klist_t *klistp;
 	RT_TASK *task;
 
+	detach_kthread();
 	sprintf(current->comm, "RTAI_KTHRD_B:%d", cpuid);
 	put_current_on_cpu(cpuid);
 	kthreadb_q[cpuid].task = kthreadb[cpuid] = current;
 	klistp = &klistb[rtai_cpuid()];
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_B_PRIO);
-	sigfillset(&current->blocked);
+	lxrt_sigfillset();
 	up(&resem[cpuid]);
 	while (!endkthread) {
 		current->state = TASK_UNINTERRUPTIBLE;
@@ -1727,11 +1760,12 @@ static void thread_fun(int cpuid)
 	void give_back_to_linux(RT_TASK *);
 	RT_TASK *task;
 
+	detach_kthread();
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_F_PRIO);
 	sprintf(current->comm, "F:HARD:%d:%d", cpuid, ++rsvr_cnt[cpuid]);
 	current->rtai_tskext[0] = task = &thread_task[cpuid];
 	current->rtai_tskext[1] = task->lnxtsk = current;
-	sigfillset(&current->blocked);
+	lxrt_sigfillset();
 	put_current_on_cpu(cpuid);
 	init_fpu(current);
 	steal_from_linux(task);
@@ -1760,6 +1794,7 @@ static void kthread_m(int cpuid)
 	struct klist_t *klistp;
 	RT_TASK *task;
 
+	detach_kthread();
 	(task = &thread_task[cpuid])->magic = RT_TASK_MAGIC;
 	task->runnable_on_cpus = cpuid;
 	sprintf(current->comm, "RTAI_KTHRD_M:%d", cpuid);
@@ -1767,7 +1802,7 @@ static void kthread_m(int cpuid)
 	kthreadm[cpuid] = current;
 	klistp = &klistm[cpuid];
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_M_PRIO);
-	sigfillset(&current->blocked);
+	lxrt_sigfillset();
 	up(&resem[cpuid]);
 	while (!endkthread) {
 		current->state = TASK_UNINTERRUPTIBLE;

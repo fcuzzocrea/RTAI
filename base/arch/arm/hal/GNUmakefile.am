@@ -54,4 +54,4 @@ install-exec-local: rtai_hal$(modext)
 	$(INSTALL_DATA) $< $(moduledir)
 
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild hal.immed hal.piped

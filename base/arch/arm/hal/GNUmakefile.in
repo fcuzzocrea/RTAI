@@ -356,7 +356,7 @@ libhal_a_SOURCES = hal.c $(am__append_1) $(am__append_2)
 @CONFIG_KBUILD_FALSE@	-I../../../include \
 @CONFIG_KBUILD_FALSE@	-I../../../..
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild hal.immed hal.piped
 all: all-am
 
 .SUFFIXES:

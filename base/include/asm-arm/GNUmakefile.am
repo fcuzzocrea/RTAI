@@ -29,3 +29,5 @@ install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(includedir)
 	$(LN_S) -f asm-arm $(DESTDIR)$(includedir)/../asm
 	$(LN_S) -f arch-@RTAI_TARGET_SUBARCH@ $(DESTDIR)$(includedir)/arch
+
+EXTRA_DIST = rtai_hal.immed rtai_hal.piped

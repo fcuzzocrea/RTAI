@@ -494,6 +494,7 @@ static void *rt_HostInterface(void *args)
 		int i, j, Idx;
 		rtTargetParamInfo rtParam;
 
+		strncpyz(rtParam.modelName, STR(MODEL), MAX_NAME_SIZE);
 		rtParam.dataType  = SS_DOUBLE;
 		rtParam.dataClass = rt_SCALAR;
    	        rtParam.nRows = 1;

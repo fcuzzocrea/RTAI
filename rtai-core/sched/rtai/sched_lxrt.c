@@ -1672,9 +1672,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 
 static inline void fast_schedule(RT_TASK *new_task, int cpuid)
 {
-	unsigned long flags;
 	RT_TASK *rt_current;
-	rtai_hw_lock(flags);
 	new_task->state |= RT_SCHED_READY;
 	enq_soft_ready_task(new_task);
 	sched_release_global_lock(cpuid);
@@ -1685,17 +1683,18 @@ static inline void fast_schedule(RT_TASK *new_task, int cpuid)
 	lxrt_context_switch(rt_current->lnxtsk, new_task->lnxtsk, cpuid);
 	UNLOCK_LINUX(cpuid);
 	rtai_cli();
-	rtai_hw_unlock(flags);
 }
 
 static void *task_to_make_hard[NR_RT_CPUS];
 static void lxrt_migration_handler (unsigned virq)
 {
 	int cpuid;
+	adeos_hw_cli();
 	rt_global_cli();
 	cpuid = hard_cpu_id();
 	fast_schedule(task_to_make_hard[cpuid], cpuid);
 	rt_global_sti();
+	adeos_hw_sti();
 	task_to_make_hard[cpuid] = NULL;
 }
 
@@ -1729,14 +1728,7 @@ static void kthread_b(int cpuid)
 		/* end of sync comment */
 			/* Escalate the request to the RTAI domain */
     			task_to_make_hard[cpuid] = task;
-			adeos_hw_cli();
 			adeos_trigger_irq(lxrt_migration_virq);
-			adeos_hw_sti();
-		/* let's use belt and laces */
-			while (task_to_make_hard[cpuid]) {
-				current->state = TASK_UNINTERRUPTIBLE;
-				schedule_timeout(2);
-			}
 		}
 	}
 	kthreadb[cpuid] = 0;

@@ -307,9 +307,12 @@ static void __registry_proc_callback (void *cookie)
 	object = link2rtobj(holder);
 	pnode = object->pnode;
 	object->pnode = NULL;
-	dir = pnode->dir;
 	type = pnode->type;
+	dir = pnode->dir;
 	entries = --pnode->entries;
+
+	if (entries <= 0)
+	    pnode->dir = NULL;
 
 	if (object->objaddr)
 	    appendq(&__rtai_obj_busyq,holder);

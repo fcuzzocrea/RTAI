@@ -1,3 +1,8 @@
+2005-01-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/registry.c (__registry_proc_callback): Make sure to
+	clear the directory pointer when removed from proc nodes.
+
 2005-01-16  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
 
 	* testsuite/klatency/latency-module.c: Make the task period user-

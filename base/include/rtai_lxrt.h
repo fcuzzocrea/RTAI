@@ -555,6 +555,7 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 #else /* !__KERNEL__ */
 
 #include <sys/types.h>
+#include <sys/io.h>
 #include <sched.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -616,6 +617,7 @@ RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size
         if (sched_setscheduler(0, policy, &mysched) < 0) {
                 return 0;
         }
+	iopl(3);
 
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }
@@ -775,8 +777,7 @@ RTAI_PROTO(RT_TASK *, rt_thread_init, (int name, int priority, int max_msg_size,
  */
 RTAI_PROTO(RT_TASK *,rt_task_init,(int name, int priority, int stack_size, int max_msg_size))
 {
-        struct { int name, priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, stack_size, max_msg_size, 0xFF };
-	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
+	return rt_task_init_schmod(name, priority, 0, max_msg_size, SCHED_FIFO, 0xFF);
 }
 
 RTAI_PROTO(void,rt_set_sched_policy,(RT_TASK *task, int policy, int rr_quantum_ns))

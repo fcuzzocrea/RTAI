@@ -512,10 +512,12 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
     struct task_struct *outproc = out_tcb->active_task;
     struct task_struct *inproc = in_tcb->user_task;
 
+#ifdef CONFIG_RTAI_HW_FPU
     if (inproc && outproc->thread_info->status & TS_USEDFPU)        
         /* __switch_to will try and use __unlazy_fpu, so we need to
            clear the ts bit. */
         clts();
+#endif /* CONFIG_RTAI_HW_FPU */
     
     in_tcb->active_task = inproc ?: outproc;
 
@@ -562,7 +564,9 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	}
     }
 
+#ifdef CONFIG_RTAI_HW_FPU
     stts();
+#endif /* CONFIG_RTAI_HW_FPU */
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
@@ -593,8 +597,10 @@ asmlinkage static void xnarch_thread_redirect (struct xnthread *self,
 					       void(*entry)(void *),
 					       void *cookie)
 {
+#ifdef CONFIG_RTAI_HW_FPU
     /* xnpod_welcome_thread() will do clts() if needed. */
     stts();
+#endif /* CONFIG_RTAI_HW_FPU */
     rthal_local_irq_restore(!!imask);
     xnpod_welcome_thread(self);
     entry(cookie);

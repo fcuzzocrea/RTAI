@@ -1,3 +1,8 @@
+2005-03-23  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h: Enclose all clts/stts related
+	ops inside CONFIG_RTAI_HW_FPU sections.
+
 2005-03-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Do not set

@@ -148,6 +148,18 @@ int rt_heap_create (RT_HEAP *heap,
     if (heapsize == 0)
 	return -EINVAL;
 
+    /* Make sure we won't hit trivial argument errors when calling
+       xnheap_init(). */
+
+    if (heapsize < 2 * PAGE_SIZE)
+	heapsize = 2 * PAGE_SIZE;
+
+    /* Account for the overhead so that the actual free space is large
+       enough to match the requested size. */
+
+    heapsize += xnheap_overhead(heapsize,PAGE_SIZE);
+    heapsize = PAGE_ALIGN(heapsize);
+
 #ifdef __KERNEL__
     if (mode & H_SHARED)
 	{

@@ -154,6 +154,18 @@ int rt_queue_create (RT_QUEUE *q,
     if (poolsize == 0)
 	return -EINVAL;
 
+    /* Make sure we won't hit trivial argument errors when calling
+       xnheap_init(). */
+
+    if (poolsize < 2 * PAGE_SIZE)
+	poolsize = 2 * PAGE_SIZE;
+
+    /* Account for the overhead so that the actual free space is large
+       enough to match the requested size. */
+
+    poolsize += xnheap_overhead(poolsize,PAGE_SIZE);
+    poolsize = PAGE_ALIGN(poolsize);
+
 #ifdef __KERNEL__
     if (mode & Q_SHARED)
 	{

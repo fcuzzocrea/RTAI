@@ -1,5 +1,10 @@
 2004-11-15  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/heap.c (rt_heap_create):
+	* skins/rtai/queue.c (rt_queue_create): Account for the overhead
+	so that the actual free space is large enough to match the
+	requested size.
+
 	* configure.in, nucleus/Kconfig: Make the maximum number of pipes
 	configurable.
 

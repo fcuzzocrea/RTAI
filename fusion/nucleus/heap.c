@@ -178,7 +178,7 @@ int xnheap_init (xnheap_t *heap,
 		 u_long heapsize,
 		 u_long pagesize)
 {
-    u_long hdrsize, pmapsize, shiftsize, pageshift;
+    u_long hdrsize, shiftsize, pageshift;
     xnextent_t *extent;
     int n;
 
@@ -206,12 +206,12 @@ int xnheap_init (xnheap_t *heap,
        size. We need to reserve a byte in a page map for each page
        which is addressable into this extent. The page map is itself
        stored in the extent space, right after the static part of its
-       header, and before the first allocatable page. */
-    pmapsize = ((heapsize - sizeof(xnextent_t)) * sizeof(u_char)) / (pagesize + sizeof(u_char));
+       header, and before the first allocatable page.
+       pmapsize = (heapsize - sizeof(xnextent_t)) / pagesize; */
 
     /* The overall header size is: static_part + page_map rounded to
        the minimum alignment size. */
-    hdrsize = (sizeof(xnextent_t) + pmapsize + XNHEAP_MINALIGNSZ - 1) & ~(XNHEAP_MINALIGNSZ - 1);
+    hdrsize = xnheap_overhead(heapsize,pagesize);
 
     /* An extent must contain at least two addressable pages to cope
        with allocation sizes between pagesize and 2 * pagesize. */

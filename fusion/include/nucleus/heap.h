@@ -130,6 +130,9 @@ extern xnheap_t kheap;
 #define xnheap_page_size(heap)   ((heap)->pagesize)
 #define xnheap_page_count(heap)  ((heap)->npages)
 #define xnheap_used_mem(heap)    ((heap)->ubytes)
+#define xnheap_overhead(hsize,psize) \
+((sizeof(xnextent_t) + (((hsize) - sizeof(xnextent_t)) / (psize)) + \
+ XNHEAP_MINALIGNSZ - 1) & ~(XNHEAP_MINALIGNSZ - 1))
 
 #define xnmalloc(size)  xnheap_alloc(&kheap,size)
 #define xnfree(ptr)     xnheap_free(&kheap,ptr)

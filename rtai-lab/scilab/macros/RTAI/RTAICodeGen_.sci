@@ -1248,10 +1248,22 @@ function ok=gen_ccode();
     end
   end
 
-  Code=['#include '"'+SCI+'/routines/machine.h'"';
-	make_actuator(%t);
-	make_sensor(%t)]
-  ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_io.c'')','errcatch')
+  nact=size(act,'*');
+  ncap=size(cap,'*');
+  if (nact+ncap)~=0 then
+    created=fileinfo(rpat+'/'+rdnom+'_io.c')
+    if created~=[] then
+      reponse=x_message(['File: ""'+rdnom+'_io.c"" already exists,';'do you want to replace it ?'],['Yes','No']);
+    end
+    if reponse==1 |  reponse==[] then
+      Code=['#include '"'+SCI+'/routines/machine.h'"';
+	    make_actuator(%t);
+	    make_sensor(%t)]
+      ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_io.c'')','errcatch')
+    end
+  else
+    ierr=execstr('mputl([],rpat+''/''+rdnom+''_io.c'')','errcatch')
+  end  
   if ierr<>0 then
     message(lasterror())
     ok=%f

@@ -100,24 +100,24 @@ static inline int rthal_imuldiv (int i, int mult, int div) {
     return rthal_uldivrem(ull, div, NULL);
 }
 
-static inline __attribute_const
-unsigned long long __rthal_ullimd(unsigned long long ll,
-                                  int mult,
-                                  int div)
-
+static inline __attribute_const__
+unsigned long long __rthal_ullimd (const unsigned long long op,
+                                   const unsigned long m,
+                                   const unsigned long d)
 {
-    /* Returns (u_long long)ll = (u_long long)ll*(u_long)(mult)/(u_long)div. */
+    u_long oph, opl, tlh, tll, qh, rh, ql;
+    unsigned long long th, tl;
 
-    unsigned long long low;
-    unsigned long q, r;
-    
-    low  = rthal_ullmul(((unsigned long *)&ll)[1], mult);	
-    q = rthal_ulldiv(rthal_ullmul(((unsigned long *)&ll)[0], mult) + 
-		     ((unsigned long *)&low)[0], div, (unsigned long *)&low);
-    low = rthal_ulldiv(low, div, &r);
-    ((unsigned long *)&low)[0] += q;
-    
-    return low;
+    __rthal_u64tou32(op, oph, opl);
+    tl = rthal_ullmul(opl, m);
+    __rthal_u64tou32(tl, tlh, tll);
+    th = rthal_ullmul(oph, m);         /* op * m == ((th + tlh) << 32) + tll */
+    th += tlh;                         /* op * m == (th << 32) + tll */
+
+    qh = rthal_uldivrem(th, d, &rh);   /* op * m == (qh * d + rh) << 32 + tll */
+    th = __rthal_u64fromu32(rh, tll);  /* op * m == (qh * d) << 32 + th */
+    ql = rthal_uldivrem(th, d, NULL);  /* op * m == (qh * d) << 32 + ql * d + ?*/
+    return __rthal_u64fromu32(qh, ql); /* (op * m) / d == qh << 32 + ql */
 }
 
 static inline long long rthal_llimd (long long op,

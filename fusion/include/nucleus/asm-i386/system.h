@@ -62,8 +62,8 @@
 #include <nucleus/asm/atomic.h>
 #include <nucleus/shadow.h>
 
-#if ADEOS_RELEASE_NUMBER < 0x02060803
-#error "Adeos 2.6r8c3/x86 or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x02060804
+#error "Adeos 2.6r8c4/x86 or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/i386/"
 #endif /* ADEOS_RELEASE_NUMBER < 0x02060801 */
 
@@ -299,7 +299,6 @@ static inline int xnarch_setimask (int imask)
     splexit(!!imask);
     return !!s;
 }
-
 
 #ifdef XENO_INTR_MODULE
 
@@ -785,6 +784,69 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
     tcb->espp = &task->thread.esp;
     tcb->eipp = &task->thread.eip;
     tcb->fpup = &task->thread.i387;
+}
+
+static inline void xnarch_grab_xirqs (void (*handler)(unsigned irq))
+
+{
+    unsigned irq;
+
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+	adeos_virtualize_irq(irq,
+			     handler,
+			     NULL,
+			     IPIPE_DYNAMIC_MASK);
+}
+
+static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
+
+{
+    unsigned irq;
+
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+	{
+	switch (irq)
+	    {
+#ifdef CONFIG_SMP
+	    case ADEOS_CRITICAL_IPI:
+	    case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
+	    case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
+	    case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
+
+		/* Never lock out these ones. */
+		continue;
+#endif /* CONFIG_SMP */
+
+	    default:
+
+		__adeos_lock_irq(adp,cpuid,irq);
+	    }
+	}
+}
+
+static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
+
+{
+    unsigned irq;
+
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+	{
+	switch (irq)
+	    {
+#ifdef CONFIG_SMP
+	    case ADEOS_CRITICAL_IPI:
+	    case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
+	    case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
+	    case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
+
+		continue;
+#endif /* CONFIG_SMP */
+
+	    default:
+
+		__adeos_unlock_irq(adp,irq);
+	    }
+	}
 }
 
 #endif /* XENO_SHADOW_MODULE */

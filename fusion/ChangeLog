@@ -1,3 +1,13 @@
+2004-10-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (engage_irq_shield, disengage_irq_shield):
+	Improve concurrency while testing the shielded/unshieded state
+	bits.
+
+	* include/nucleus/asm-*/system.h (xnarch_grab_xirqs,
+	xnarch_lock_xirqs, xnarch_unlock_xirqs): Move the arch-dependent
+	shield code to where it belongs.
+
 2004-10-08  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c: Yet another IRQ shield implementation.

@@ -184,48 +184,36 @@ static inline void engage_irq_shield (int this_cpu)
 
 {
     unsigned long flags;
-    unsigned irq;
 
-    adeos_read_lock_irqsave(&shield_lock,flags);
+    adeos_hw_local_irq_save(flags);
 
     if (cpu_test_and_set(this_cpu,shielded_cpus))
-	goto unlock_and_exit;
+	goto unmask_and_exit;
+
+    adeos_read_lock(&shield_lock);
 
     cpu_clear(this_cpu,unshielded_cpus);
 
-    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	{
-	switch (irq)
-	    {
-#ifdef CONFIG_SMP
-	    case ADEOS_CRITICAL_IPI:
-	    XNARCH_PASSTHROUGH_IRQS
+    xnarch_lock_xirqs(&irq_shield,this_cpu);
 
-		/* Never lock out these ones. */
-		continue;
-#endif /* CONFIG_SMP */
+    adeos_read_unlock(&shield_lock);
 
-	    default:
-
-		__adeos_lock_irq(&irq_shield,this_cpu,irq);
-	    }
-	}
-
- unlock_and_exit:
-
-    adeos_read_unlock_irqrestore(&shield_lock,flags);
+ unmask_and_exit:
+    
+    adeos_hw_local_irq_restore(flags);
 }
 
 static void disengage_irq_shield (int this_cpu)
      
 {
     unsigned long flags;
-    unsigned irq;
 
-    adeos_write_lock_irqsave(&shield_lock,flags);
+    adeos_hw_local_irq_save(flags);
 
     if (cpu_test_and_set(this_cpu,unshielded_cpus))
-	goto unlock_and_exit;
+	goto unmask_and_exit;
+
+    adeos_write_lock(&shield_lock);
 
     cpu_clear(this_cpu,shielded_cpus);
 
@@ -234,7 +222,10 @@ static void disengage_irq_shield (int this_cpu)
        (i.e. if no CPU asked for shielding). */
 
     if (!cpus_empty(shielded_cpus))
-	goto unlock_and_exit;
+	{
+	adeos_write_unlock(&shield_lock);
+	goto unmask_and_exit;
+	}
 
     /* At this point we know that we are the last CPU to disengage the
        shield, so we just unlock the external IRQs for all CPUs, and
@@ -243,23 +234,7 @@ static void disengage_irq_shield (int this_cpu)
        the shield stage on the local CPU in order to flush it the same
        way. */
 
-    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	{
-	switch (irq)
-	    {
-#ifdef CONFIG_SMP
-	    case ADEOS_CRITICAL_IPI:
-	    XNARCH_PASSTHROUGH_IRQS
-
-		/* These ones are never locked out. */
-		continue;
-#endif /* CONFIG_SMP */
-
-	    default:
-
-		__adeos_unlock_irq(&irq_shield,irq);
-	    }
-	}
+    xnarch_unlock_xirqs(&irq_shield,this_cpu);
 
 #ifdef CONFIG_SMP
     {
@@ -269,11 +244,13 @@ static void disengage_irq_shield (int this_cpu)
     }
 #endif /* CONFIG_SMP */
 
+    adeos_write_unlock(&shield_lock);
+
     adeos_unstall_pipeline_from(&irq_shield);
 
- unlock_and_exit:
+ unmask_and_exit:
 
-    adeos_write_unlock_irqrestore(&shield_lock,flags);
+    adeos_hw_local_irq_restore(flags);
 }
 
 static void xnshadow_shield_handler (unsigned irq)
@@ -289,15 +266,7 @@ static void xnshadow_shield (int iflag)
 
 {
     if (iflag)
-	{
-	unsigned irq;
-
-	for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	    adeos_virtualize_irq(irq,
-				 &xnshadow_shield_handler,
-				 NULL,
-				 IPIPE_DYNAMIC_MASK);
-	}
+	xnarch_grab_xirqs(&xnshadow_shield_handler);
 
     for (;;)
 	adeos_suspend_domain();

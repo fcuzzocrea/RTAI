@@ -61,8 +61,8 @@
 #include <nucleus/asm/atomic.h>
 #include <nucleus/shadow.h>
 
-#if ADEOS_RELEASE_NUMBER < 0x02060607
-#error "Adeos 2.6r6c7/ppc or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x02060608
+#error "Adeos 2.6r6c8/ppc or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/ppc/"
 #endif /* ADEOS_RELEASE_NUMBER < 0x02060801 */
 
@@ -350,7 +350,7 @@ static inline void xnarch_isr_enable_irq (unsigned irq) {
 
 static inline void xnarch_relay_tick (void) {
 
-    rthal_pend_linux_irq(__adeos_timer_virq);
+    rthal_pend_linux_irq(ADEOS_TIMER_VIRQ);
 }
 
 static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
@@ -714,6 +714,76 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
     tcb->self = thread;
     tcb->imask = 0;
     tcb->name = name;
+}
+
+static inline void xnarch_grab_xirqs (void (*handler)(unsigned irq))
+
+{
+    unsigned irq;
+
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+	adeos_virtualize_irq(irq,
+			     handler,
+			     NULL,
+			     IPIPE_DYNAMIC_MASK);
+
+    /* On this arch, the decrementer trap is not an external IRQ but
+       it is instead mapped to a virtual IRQ, so we must grab it
+       individually. */
+
+    adeos_virtualize_irq(ADEOS_TIMER_VIRQ,
+			 handler,
+			 NULL,
+			 IPIPE_DYNAMIC_MASK);
+}
+
+static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
+
+{
+    unsigned irq;
+
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+	{
+	switch (irq)
+	    {
+#ifdef CONFIG_SMP
+	    case ADEOS_CRITICAL_IPI:
+
+		/* Never lock out this one. */
+		continue;
+#endif /* CONFIG_SMP */
+
+	    default:
+
+		__adeos_lock_irq(adp,cpuid,irq);
+	    }
+	}
+
+    __adeos_lock_irq(adp,cpuid,ADEOS_TIMER_VIRQ);
+}
+
+static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
+
+{
+    unsigned irq;
+
+    for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
+	{
+	switch (irq)
+	    {
+#ifdef CONFIG_SMP
+	    case ADEOS_CRITICAL_IPI:
+
+		continue;
+#endif /* CONFIG_SMP */
+
+	    default:
+
+		__adeos_unlock_irq(adp,irq);
+	    }
+	}
+
+    __adeos_unlock_irq(adp,ADEOS_TIMER_VIRQ);
 }
 
 #endif /* XENO_SHADOW_MODULE */

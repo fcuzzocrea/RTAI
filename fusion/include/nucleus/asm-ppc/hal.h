@@ -139,7 +139,7 @@ extern adomain_t rthal_domain;
 
 #define RTHAL_NR_SRQS    32
 
-#define RTHAL_TIMER_IRQ   __adeos_timer_virq
+#define RTHAL_TIMER_IRQ   ADEOS_TIMER_VIRQ
 #define RTHAL_TIMER_FREQ  (rthal_tunables.timer_freq)
 #define RTHAL_CPU_FREQ    (rthal_tunables.cpu_freq)
 

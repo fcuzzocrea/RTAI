@@ -1411,6 +1411,28 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 
 #endif /* < 2.6.0 */
 
+	if (evinfo->event == 14)	/* Page fault. */
+	    {
+	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
+	    unsigned long address;
+
+	    /* Handle RTAI-originated faults in kernel space caused by
+	       on-demand virtual memory mappings. We can specifically
+	       process this case through the Linux fault handler since
+	       we know that it is context-agnostic and does not wreck
+	       the determinism. Any other case would lead us to
+	       panicking. */
+
+	    __asm__("movl %%cr2,%0":"=r" (address));
+
+	    if (address >= TASK_SIZE && !(regs->orig_eax & 5)) /* i.e. trap error code. */
+		{
+		asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code);
+		do_page_fault(regs,regs->orig_eax);
+		goto endtrap;
+		}
+	    }
+
 	if (rtai_trap_handler != NULL &&
 	    test_bit(cpuid, &rtai_cpu_realtime) &&
 	    rtai_trap_handler(evinfo->event,

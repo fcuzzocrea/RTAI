@@ -418,16 +418,16 @@
       <title>A common emulation framework</title>
 
       <!-- ===             Common traditional RTOS behaviours              === -->
-      <sect3 id="rtos-bahaviours"
-	     xreflabel="common traditional rtos bahaviours">
-	<title>Common traditional RTOS bahaviours</title>
+      <sect3 id="rtos-behaviours"
+	     xreflabel="common traditional rtos behaviours">
+	<title>Common traditional RTOS behaviours</title>
 
 	<para>In order to build a generic and versatile framework for
 	emulating traditional RTOS, we chose to concentrate on a set
-	of common bahaviours they all exhibit. A limited set of
+	of common behaviours they all exhibit. A limited set of
 	specific RTOS features which are not so common, but would be
 	more efficiently implemented into the nucleus than into the
-	emulators, has also been retained. The basic bahaviours
+	emulators, has also been retained. The basic behaviours
 	selected cover four distinct fields:</para>
 
 
@@ -640,7 +640,7 @@
 	     architecture-neutral abstraction layer">
 	<title>An architecture-neutral abstraction layer</title>
 
-	<para>After having selected the basic bahaviours shared by
+	<para>After having selected the basic behaviours shared by
 	traditional RTOS, we have implemented them in a nucleus
 	exporting a few service classes. These generic services will
 	then serve as a founding layer for developing each emulated
@@ -711,7 +711,7 @@
 	architecture-neutral abstraction layer provides the foundation
 	for developing accurate emulations of traditional RTOS API,
 	saving the burden of implementing each time their fundamental
-	real-time bahaviours. Since the abstraction layer also favours
+	real-time behaviours. Since the abstraction layer also favours
 	code sharing and mutualization, we can expect the RTOS
 	emulations to take advantage of them in terms of code
 	stability and reliability.</para>
@@ -720,7 +720,7 @@
     </sect2>
 
       <!-- ===                   Nucleus description                   === -->
-      <sect3 id="nucleus" xreflabel="nucleus description">
+      <sect2 id="nucleus" xreflabel="nucleus description">
 	<title>Nucleus description</title>
 
 	<para>RTOS emulations are software modules which connect to
@@ -728,7 +728,7 @@
 	responsible for the critical housekeeping chores, and the
 	real-time scheduling of threads.</para>
 
-	<sect4 id="multi-threading-support" xreflabel="multi-threading
+	<sect3 id="multi-threading-support" xreflabel="multi-threading
 	       support">
 	  <title>Multi-threading support</title>
 
@@ -787,16 +787,16 @@
 	    </itemizedlist>
 	</para>
 
-	</sect4>
+	</sect3>
 
 	<!-- Basic synchronization support-->
-	<sect4 id="synchro-support" xreflabel="basic
+	<sect3 id="synchro-support" xreflabel="basic
 	       synchronization support">
 	  <title>Basic synchronization support</title>
 
 	  <para>The nucleus provides a synchronization object
 	  abstraction <emphasis>(xnsynch)</emphasis> aimed at
-	  implementing the common bahaviour of RTOS resources, which
+	  implementing the common behaviour of RTOS resources, which
 	  has the following characteristics:</para>
 
 	  <para><itemizedlist>
@@ -816,10 +816,10 @@
 	    </itemizedlist>
 	</para>
 
-	</sect4>
+	</sect3>
 
 	<!-- Timer and clock management -->
-	<sect4 id="timer-clock" xreflabel="timer
+	<sect3 id="timer-clock" xreflabel="timer
 	       and clock management">
 	  <title>Timer and clock management</title>
 
@@ -847,10 +847,10 @@
 	  Varghese, which is implemented in the NetBSD operating
 	  system for instance.</para>
 
-	</sect4>
+	</sect3>
 
 	<!-- Basic memory allocation -->
-	<sect4 id="memory-allocation" xreflabel="basic
+	<sect3 id="memory-allocation" xreflabel="basic
 	       memory allocation">
 	  <title>Basic memory allocation</title>
 
@@ -861,7 +861,6 @@
 	  dynamically by Xenomai, only limited by the actual amount of
 	  system memory.</para>
 
-	</sect4>
       </sect3>
     </sect2>
   </sect1>

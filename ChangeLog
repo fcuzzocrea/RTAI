@@ -1,4 +1,8 @@
-2004-03-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+22004-03-23  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilam/macros*: Mailbox blocks with multiple output
+
+004-03-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm-ppc: a few updates here and there, at least it
           now makes itself.

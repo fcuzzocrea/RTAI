@@ -2161,7 +2161,7 @@ static xnsysent_t __systab[] = {
     [__rtai_heap_create ] = { &__rt_heap_create, __xn_flag_lostage },
     [__rtai_heap_bind ] = { &__rt_heap_bind, __xn_flag_regular },
     [__rtai_heap_delete ] = { &__rt_heap_delete, __xn_flag_anycall },
-    [__rtai_heap_alloc ] = { &__rt_heap_alloc, __xn_flag_anycall },
+    [__rtai_heap_alloc ] = { &__rt_heap_alloc, __xn_flag_regular },
     [__rtai_heap_free ] = { &__rt_heap_free, __xn_flag_anycall },
     [__rtai_heap_inquire ] = { &__rt_heap_inquire, __xn_flag_anycall },
 };

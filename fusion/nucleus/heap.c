@@ -167,7 +167,6 @@ static void init_extent (xnheap_t *heap,
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - Interrupt service routine
  * - Kernel-based task
  * - User-space task
  *

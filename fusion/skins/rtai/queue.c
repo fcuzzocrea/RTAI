@@ -18,12 +18,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * \ingroup queue
+ * \ingroup native_queue
  */
 
 /*!
  * \ingroup native
- * \defgroup queue Message queue services.
+ * \defgroup native_queue Message queue services.
  *
  * Queue services.
  *
@@ -74,7 +74,8 @@ static void __queue_flush_private (xnheap_t *heap,
  *
  * Create a message queue object that allows multiple tasks to
  * exchange data through the use of variable-sized messages. A message
- * queue is created empty.
+ * queue is created empty. Message queues can be local to the kernel
+ * space, or shared between kernel and user-space.
  *
  * @param q The address of a queue descriptor RTAI will use to store
  * the queue-related data.  This descriptor must always be valid while
@@ -106,7 +107,7 @@ static void __queue_flush_private (xnheap_t *heap,
  * - Q_PRIO makes tasks pend in priority order on the queue.
  *
  * - Q_SHARED causes the queue to be sharable between kernel and
- * user-space tasks. Otherwise, the new queue is only available to
+ * user-space tasks. Otherwise, the new queue is only available for
  * kernel-based usage.
  *
  * - Q_DMA causes the buffer pool associated to the queue to be
@@ -224,7 +225,6 @@ int rt_queue_create (RT_QUEUE *q,
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - Kernel-based task
  * - User-space task
  *
  * Rescheduling: possible.
@@ -576,7 +576,7 @@ int rt_queue_send (RT_QUEUE *q,
  *
  * - -EINVAL is returned if @a q is not a message queue descriptor.
  *
- * - -EIDRM is returned if @a q is a delete queue descriptor.
+ * - -EIDRM is returned if @a q is a deleted queue descriptor.
  *
  * - -ETIMEDOUT is returned if @a timeout is different from
  * RT_TIME_NONBLOCK and no message is available within the specified
@@ -673,7 +673,7 @@ ssize_t rt_queue_recv (RT_QUEUE *q,
 }
 
 /**
- * @fn int rt_queue_inquire(RT_QUEUE *queue, RT_QUEUE_INFO *info)
+ * @fn int rt_queue_inquire(RT_QUEUE *q, RT_QUEUE_INFO *info)
  * @brief Inquire about a message queue.
  *
  * Return various information about the status of a given queue.

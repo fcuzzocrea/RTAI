@@ -42,7 +42,7 @@
  * choice whether to permit this exception to apply to your
  * modifications. If you do not wish that, delete this exception
  * notice.
- */
+v */
 
 #define XENO_TIMER_MODULE
 
@@ -102,41 +102,51 @@ void xntimer_destroy (xntimer_t *timer)
     __setbits(timer->status,XNTIMER_KILLED);
 }
 
-static inline void xntimer_enqueue (xntimer_t *timer)
+static inline void xntimer_enqueue_periodic (xntimer_t *timer)
 
 {
-    if (testbits(nkpod->status,XNTMPER))
-	/* Just prepend the new timer to the proper slot. */
-	prependq(&nkpod->timerwheel[timer->date & XNTIMER_WHEELMASK],&timer->link);
-    else
-	{
-	/* Insert the new timer at the proper place in the single
-	   queue managed when running in aperiodic mode. O(N) here,
-	   but users of the aperiodic mode need to pay a price for
-	   the increased flexibility... */
-	xnqueue_t *q = &nkpod->timerwheel[0];
-	xnholder_t *p;
-
-	for (p = q->head.last; p != &q->head; p = p->last)
-	    if (timer->date >= link2timer(p)->date)
-		break;
-	
-	insertq(q,p->next,&timer->link);
-	}
-
+    /* Just prepend the new timer to the proper slot. */
+    prependq(&nkpod->timerwheel[timer->date & XNTIMER_WHEELMASK],&timer->link);
     timer->shot = timer->date;
     __clrbits(timer->status,XNTIMER_DEQUEUED);
 }
 
-static inline void xntimer_dequeue (xntimer_t *timer)
+static inline void xntimer_dequeue_periodic (xntimer_t *timer)
 
 {
-    int slot = testbits(nkpod->status,XNTMPER) ? (timer->date & XNTIMER_WHEELMASK) : 0;
+    unsigned slot = (timer->date & XNTIMER_WHEELMASK);
     removeq(&nkpod->timerwheel[slot],&timer->link);
     __setbits(timer->status,XNTIMER_DEQUEUED);
 }
 
 #if XNARCH_HAVE_APERIODIC_TIMER
+
+static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
+
+{
+    xnqueue_t *q = &nkpod->timerwheel[0];
+    xnholder_t *p;
+
+    /* Insert the new timer at the proper place in the single
+       queue managed when running in aperiodic mode. O(N) here,
+       but users of the aperiodic mode need to pay a price for
+       the increased flexibility... */
+
+    for (p = q->head.last; p != &q->head; p = p->last)
+	if (timer->date >= link2timer(p)->date)
+	    break;
+	
+    insertq(q,p->next,&timer->link);
+    timer->shot = timer->date;
+    __clrbits(timer->status,XNTIMER_DEQUEUED);
+}
+
+static inline void xntimer_dequeue_aperiodic (xntimer_t *timer)
+
+{
+    removeq(&nkpod->timerwheel[0],&timer->link);
+    __setbits(timer->status,XNTIMER_DEQUEUED);
+}
 
 static inline void xntimer_next_shot (void)
 
@@ -162,11 +172,9 @@ static inline void xntimer_next_shot (void)
     xnarch_program_timer_shot(delay);
 }
 
-static inline int xntimer_heading_p (xntimer_t *timer)
+static inline int xntimer_heading_p (xntimer_t *timer) {
 
-{
-    return (!testbits(nkpod->status,XNTMPER) &&
-	    getheadq(&nkpod->timerwheel[0]) == &timer->link);
+    return getheadq(&nkpod->timerwheel[0]) == &timer->link;
 }
 	
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
@@ -192,34 +200,42 @@ int xntimer_start (xntimer_t *timer,
     xnlock_get_irqsave(&nklock,s);
 
     if (!testbits(timer->status,XNTIMER_DEQUEUED))
-	xntimer_dequeue(timer);
+	{
+#if XNARCH_HAVE_APERIODIC_TIMER
+	if (!testbits(nkpod->status,XNTMPER))
+	    xntimer_dequeue_aperiodic(timer);
+	else
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+	    xntimer_dequeue_periodic(timer);
+	}
 
     if (value != XN_INFINITE)
 	{
-	if (testbits(nkpod->status,XNTMPER))
-	    timer->date = nkpod->jiffies + value;
-	else
-	    {
-	    interval = xnarch_ns_to_tsc(interval);
-	    timer->date = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(value);
-	    }
-
-	timer->interval = interval;
-
-	xntimer_enqueue(timer);
-
 #if XNARCH_HAVE_APERIODIC_TIMER
-	if (xntimer_heading_p(timer))
+	if (!testbits(nkpod->status,XNTMPER))
 	    {
-	    if (timer->date <= xnarch_get_cpu_tsc())
-		{ /* Too late for this one. */
-		xntimer_dequeue(timer);
-		err = -EAGAIN;
+	    timer->date = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(value);
+	    timer->interval = xnarch_ns_to_tsc(interval);
+	    xntimer_enqueue_aperiodic(timer);
+
+	    if (xntimer_heading_p(timer))
+		{
+		if (timer->date <= xnarch_get_cpu_tsc())
+		    { /* Too late for this one. */
+		    xntimer_dequeue(timer);
+		    err = -EAGAIN;
+		    }
+		else
+		    xntimer_next_shot();
 		}
-	    else
-		xntimer_next_shot();
 	    }
+	else
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
+	    {
+	    timer->date = nkpod->jiffies + value;
+	    timer->interval = interval;
+	    xntimer_enqueue_periodic(timer);
+	    }
 	}
     else
 	{
@@ -247,15 +263,17 @@ void xntimer_stop (xntimer_t *timer)
     if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	{
 #if XNARCH_HAVE_APERIODIC_TIMER
-	int heading = xntimer_heading_p(timer);
+	if (!testbits(nkpod->status,XNTMPER))
+	    {
+	    int heading = xntimer_heading_p(timer);
+	    xntimer_dequeue_aperiodic(timer);
+	    /* If we removed the heading timer, reprogram the next
+	       shot if any. */
+	    if (heading) xntimer_next_shot();
+	    }
+	else
 #endif /* XNARCH_HAVE_APERIODIC_TIMER */
-	xntimer_dequeue(timer);
-#if XNARCH_HAVE_APERIODIC_TIMER
-	/* If we removed the heading timer, reprogram the next shot,
-	   unless the latter is too close or inexistent. */
-	if (heading)
-	    xntimer_next_shot();
-#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+	    xntimer_dequeue_periodic(timer);
 	}
 
     xnlock_put_irqrestore(&nklock,s);
@@ -387,7 +405,12 @@ void xntimer_do_timers (void)
 
 	if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	    {
-	    xntimer_dequeue(timer);
+#if XNARCH_HAVE_APERIODIC_TIMER
+	    if (!testbits(nkpod->status,XNTMPER))
+		xntimer_dequeue_aperiodic(timer);
+	    else
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+		xntimer_dequeue_periodic(timer);
 
 	    if (timer->interval != XN_INFINITE)
 		/* Temporarily move the interval timer to the
@@ -403,12 +426,18 @@ void xntimer_do_timers (void)
 	{
 	timer = link2timer(holder);
 
-	if (testbits(nkpod->status,XNTMPER))
-	    timer->date = nkpod->jiffies + timer->interval;
-	else
+#if XNARCH_HAVE_APERIODIC_TIMER
+	if (!testbits(nkpod->status,XNTMPER))
+	    {
 	    timer->date += timer->interval;
-
-	xntimer_enqueue(timer);
+	    xntimer_enqueue_aperiodic(timer);
+	    }
+	else
+#endif /* XNARCH_HAVE_APERIODIC_TIMER */
+	    {
+	    timer->date = nkpod->jiffies + timer->interval;
+	    xntimer_enqueue_periodic(timer);
+	    }
 	}
 
 #if XNARCH_HAVE_APERIODIC_TIMER

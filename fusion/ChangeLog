@@ -1,5 +1,8 @@
 2005-01-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/pod.c (xnpod_set_thread_periodic): Passing XN_INFINITE
+	as the period just stops any undergoing timing.
+
 	* nucleus/lib/fusion.c (pthread_ticks2ns_t, pthread_ns2ticks_rt):
 	Discard useless and confusing routines using nanoseconds as
 	input/output values in oneshot mode.

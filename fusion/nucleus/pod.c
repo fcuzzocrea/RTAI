@@ -3054,7 +3054,9 @@ int xnpod_announce_tick (xnintr_t *intr)
  * delay takes place.
 
  * @param period The period of the thread, expressed in clock ticks
- * (see note).
+ * (see note). Passing XN_INFINITE attempts to stop the thread's
+ * periodic timer; in the latter case, the routine always exits
+ * succesfully, regardless of the pervious state of this timer.
  *
  * @return 0 is returned upon success. Otherwise:
  *
@@ -3094,7 +3096,16 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
 
     xnlock_get_irqsave(&nklock,s);
 
+    if (period == XN_INFINITE)
+	{
+	if (xntimer_active_p(&thread->ptimer))
+	    xntimer_stop(&thread->ptimer);
+
+	goto unlock_and_exit;
+	}
+
     xntimer_set_sched(&thread->ptimer, thread->sched);
+
     if (idate == XN_INFINITE)
 	xntimer_start(&thread->ptimer,period,period);
     else
@@ -3106,6 +3117,8 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
 	else
 	    err = -ETIMEDOUT;
 	}
+
+ unlock_and_exit:
 
     thread->poverrun = -1;
 

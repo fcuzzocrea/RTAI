@@ -238,8 +238,10 @@ static void schedback_handler (unsigned virq)
 		    engage_irq_shield();
 
 #ifdef CONFIG_SMP
-		/* If the fusion task migrated while hardened, "migrate" its Linux
-		   counter-part (migrating a suspended task is cheap) */
+		/* If the shadow thread changed its CPU while in primary mode,
+                   change the CPU of its Linux counter-part (this is a cheap
+                   operation, since the said Linux counter-part is suspended
+                   from Linux point of view). */
 		if (!cpu_isset(cpuid, task->cpus_allowed))
 		    set_cpus_allowed(task, cpumask_of_cpu(cpuid));
 #endif /* CONFIG_SMP */
@@ -323,8 +325,10 @@ static void gatekeeper_thread (void *data)
 #ifdef CONFIG_SMP
 	{
 	spl_t s;
-	/* If the fusion task migrated while run by Linux, migrate
-	   the shadow too. */
+	/* If the fusion task changed its CPU while in secondary mode,
+           change the shadow CPU too. We do not migrate the thread
+           timers here, it would not work. For a "full" migration
+           comprising timers, using xnpod_migrate is required. */
 	xnlock_get_irqsave(&nklock, s);
 	gk->thread->sched = xnpod_sched_slot(cpu);
 	xnpod_resume_thread(gk->thread,XNRELAX);

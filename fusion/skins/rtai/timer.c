@@ -189,14 +189,16 @@ int rt_timer_inquire (RT_TIMER_INFO *info)
  * - User-space task
  *
  * Rescheduling: never.
+ *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
  * oneshot mode, clock ticks are expressed in nanoseconds.
  */
 
-RTIME rt_timer_read (void) {
+RTIME rt_timer_read (void)
 
+{
     return xnpod_get_time();
 }
 
@@ -317,8 +319,9 @@ void rt_timer_spin (RTIME ns)
  * Rescheduling: never.
  */
 
-int rt_timer_start (RTIME nstick) {
+int rt_timer_start (RTIME nstick)
 
+{
     return xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 }
 

@@ -2460,8 +2460,8 @@ void xnpod_set_time (xnticks_t newtime)
  *
  * This service gets the nucleus (external) clock time.
  *
- * @return The current nucleus time (in ticks) if the underlying
- * time source runs in periodic mode, or the system time (converted to
+ * @return The current nucleus time (in ticks) if the underlying time
+ * source runs in periodic mode, or the system time (converted to
  * nanoseconds) as maintained by the CPU if aperiodic mode is in
  * effect, or no timer is running.
  *

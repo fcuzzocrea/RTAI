@@ -172,8 +172,6 @@ static struct desc_struct rtai_sysvec;
 
 static RT_TRAP_HANDLER rtai_trap_handler;
 
-static void (*rtai_exit_callback)(void);
-
 struct rt_times rt_times;
 
 struct rt_times rt_smp_times[RTAI_NR_CPUS];
@@ -1585,29 +1583,6 @@ void (*rt_set_ihook (void (*hookfn)(int)))(int) {
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 }
 
-void rtai_exit_trampoline (adevinfo_t *evinfo)
-
-{
-    struct task_struct *task = (struct task_struct *)evinfo->evdata;
-
-    if (task->ptd[0])
-	rtai_exit_callback();
-
-    adeos_propagate_event(evinfo);
-}
-
-int set_rtai_callback (void (*fun)(void))
-
-{
-    rtai_exit_callback = fun;
-    return adeos_catch_event(ADEOS_EXIT_PROCESS,&rtai_exit_trampoline);
-}
-
-void remove_rtai_callback (void (*fun)(void))
-{
-    adeos_catch_event(ADEOS_EXIT_PROCESS,0);
-}
-
 static int errno;
 
 static inline _syscall3(int,
@@ -1896,8 +1871,6 @@ EXPORT_SYMBOL(rtai_proc_root);
 EXPORT_SYMBOL(rtai_tunables);
 EXPORT_SYMBOL(rtai_cpu_lock);
 EXPORT_SYMBOL(rtai_cpu_realtime);
-EXPORT_SYMBOL(set_rtai_callback);
-EXPORT_SYMBOL(remove_rtai_callback);
 EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 

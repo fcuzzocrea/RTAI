@@ -285,8 +285,8 @@ int rt_cond_broadcast (RT_COND *cond)
 
 /**
  * @fn int rt_cond_wait(RT_COND *cond,
- *                      RT_MUTEX *mutex,
- *                      RTIME timeout)
+                        RT_MUTEX *mutex,
+                        RTIME timeout)
  * @brief Wait on a condition.
  *
  * This service atomically release the mutex and causes the calling
@@ -378,7 +378,7 @@ int rt_cond_wait (RT_COND *cond,
 }
 
 /**
- * @fn int rt_cond_inquire(RT_MUTEX *cond, RT_COND_INFO *info)
+ * @fn int rt_cond_inquire(RT_COND *cond, RT_COND_INFO *info)
  * @brief Inquire about a condition variable.
  *
  * Return various information about the status of a given condition

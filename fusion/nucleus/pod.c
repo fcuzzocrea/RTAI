@@ -866,8 +866,10 @@ void xnpod_restart_thread (xnthread_t *thread)
     if (!testbits(thread->status,XNSTARTED))
         return; /* Not started yet or not restartable. */
 
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
     if (testbits(thread->status,XNROOT|XNSHADOW))
         xnpod_fatal("attempt to restart a user-space thread");
+#endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -1055,8 +1057,10 @@ void xnpod_delete_thread (xnthread_t *thread)
     xnsched_t *sched;
     spl_t s;
 
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
     if (testbits(thread->status,XNROOT))
         xnpod_fatal("attempt to delete the root thread");
+#endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
 
 #ifdef __RTAI_SIM__
     if (nkpod->schedhook)
@@ -1219,11 +1223,13 @@ void xnpod_suspend_thread (xnthread_t *thread,
     xnsched_t *sched;
     spl_t s;
 
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
     if (testbits(thread->status,XNTHREAD_SYSTEM_BITS))
         xnpod_fatal("attempt to suspend system thread %s",thread->name);
 
     if (thread->wchan && wchan)
         xnpod_fatal("thread %s attempts a conjunctive wait",thread->name);
+#endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -1233,8 +1239,10 @@ void xnpod_suspend_thread (xnthread_t *thread,
 
     if (thread == sched->runthread)
         {
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
         if (sched == xnpod_current_sched() && xnpod_locked_p())
             xnpod_fatal("suspensive call issued while the scheduler was locked");
+#endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
 
         xnsched_set_resched(sched);
         }
@@ -2268,10 +2276,10 @@ void xnpod_schedule (void)
     threadout = runthread;
     threadin = link2thread(getpq(&sched->readyq),rlink);
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
     if (!threadin)
         xnpod_fatal("schedule: no thread to schedule?!");
-#endif /* CONFIG_RTAI_OPT_DEBUG */
+#endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
 
     __clrbits(threadin->status,XNREADY);
 
@@ -2432,10 +2440,10 @@ maybe_switch:
 
     threadin = link2thread(getpq(&sched->readyq),rlink);
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(__RTAI_SIM__)
     if (!threadin)
         xnpod_fatal("schedule_runnable: no thread to schedule?!");
-#endif /* CONFIG_RTAI_OPT_DEBUG */
+#endif /* CONFIG_RTAI_OPT_DEBUG || __RTAI_SIM__ */
 
     __clrbits(threadin->status,XNREADY);
 

@@ -106,18 +106,18 @@ int __xeno_skin_init (void)
     if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
 	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
 
+    xnprintf("timer: %lu ns.\n", nstick);
+
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 
     if (err == 0)
-	{
 	err = psosrn_init(MODULE_PARM_VALUE(rn0_size_arg));
 
-	if (err != 0)
-	    {
-	    xnpod_shutdown(XNPOD_FATAL_EXIT);
-	    return err;
-	    }
-	}
+    if (err != 0)
+        {
+        xnpod_shutdown(XNPOD_FATAL_EXIT);
+        return err;
+        }
 
     psossem_init();
     psosqueue_init();

@@ -29,9 +29,9 @@ MODULE_DESCRIPTION("XENOMAI-based PSE51 API.");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
-static u_long tick_hz_arg = XNPOD_DEFAULT_TICK; /* Default tick period */
+static u_long tick_hz_arg = 0;  /* Default: aperiodic. */
 MODULE_PARM(tick_hz_arg,"i");
-MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
+MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz), 0 for aperiodic mode");
 
 static u_long time_slice_arg = 1; /* Default (round-robin) time slice */
 MODULE_PARM(time_slice_arg,"i");
@@ -54,7 +54,7 @@ static void pse51_shutdown(int xtype)
 
 int __xeno_skin_init(void)
 {
-    u_long nstick = XNPOD_DEFAULT_TICK;
+    u_long nstick = XNPOD_APERIODIC_TICK;
     int err;
 
     xnprintf("POSIX %s: Starting skin\n",PSE51_SKIN_VERSION_STRING);
@@ -85,7 +85,7 @@ int __xeno_skin_init(void)
 
     pod.svctable.shutdown = &pse51_shutdown;
 
-    return 0;
+    return err;
 }
 
 void __xeno_skin_exit(void)
@@ -96,3 +96,4 @@ void __xeno_skin_exit(void)
 
 module_init(__xeno_skin_init);
 module_exit(__xeno_skin_exit);
+

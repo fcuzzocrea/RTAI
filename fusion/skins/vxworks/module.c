@@ -52,7 +52,7 @@ MODULE_DESCRIPTION("XENOMAI-based VxWorks(R) API emulator");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
-static u_long tick_hz_arg = 100; /* Default tick period */
+static u_long tick_hz_arg = 1000; /* Default tick period */
 MODULE_PARM(tick_hz_arg,"i");
 MODULE_PARM_DESC(tick_hz_arg,"Clock tick frequency (Hz)");
 
@@ -93,8 +93,11 @@ int __xeno_skin_init (void)
     err = wind_sysclk_init(nstick);
 
     if (err != 0)
+        {
+        xnpod_shutdown(err);    
         return err;
-    
+        }
+
     wind_wd_init();
     wind_task_hooks_init();
     wind_sem_init();

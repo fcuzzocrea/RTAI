@@ -159,7 +159,10 @@ int __xeno_skin_init (void)
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 
     if (err != 0)
+        {
+        xnpod_shutdown(err);    
 	return err;
+        }
 
     for (n = 0; n < VRTX_MAX_CB - 1; n++)
 	vrtxidgen[n] = n + 1;

@@ -88,6 +88,12 @@ int __xeno_skin_init (void)
 
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 
+    if(err != 0)
+        {
+        xnpod_shutdown(err);
+        return err;
+        }
+
     pod.svctable.shutdown = &uitron_shutdown;
 
     uitask_init();

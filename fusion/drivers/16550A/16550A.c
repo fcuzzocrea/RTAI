@@ -105,10 +105,10 @@ static inline void __do_tx (RT_UART *uart)
 	}
 }
 
-static int __uart_isr (RT_INTR *intr)
+static int __uart_isr (xnintr_t *cookie)
 
 {
-    RT_UART *uart = (RT_UART *)intr->private_data;
+    RT_UART *uart = (RT_UART *)I_DESC(cookie)->private_data;
     int iir, req = 0;
 
     while (((iir = inb(IIR(uart))) & IIR_PIRQ) == 0)

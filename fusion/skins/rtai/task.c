@@ -1024,18 +1024,18 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
  * - T_HOOK_START: The user-defined routine will be called on behalf
  * of the starter task whenever a new task starts. An opaque cookie is
  * passed to the routine which can use it to retrieve the descriptor
- * address of the started task through the T_HOOK_DESC() macro.
+ * address of the started task through the T_DESC() macro.
  *
  * - T_HOOK_DELETE: The user-defined routine will be called on behalf
  * of the deletor task whenever a task is deleted. An opaque cookie is
  * passed to the routine which can use it to retrieve the descriptor
- * address of the deleted task through the T_HOOK_DESC() macro.
+ * address of the deleted task through the T_DESC() macro.
  *
  * - T_HOOK_SWITCH: The user-defined routine will be called on behalf
  * of the resuming task whenever a context switch takes place. An
  * opaque cookie is passed to the routine which can use it to retrieve
  * the descriptor address of the task which has been switched in
- * through the T_HOOK_DESC() macro.
+ * through the T_DESC() macro.
  *
  * @param routine The address of the user-supplied routine to call.
  *

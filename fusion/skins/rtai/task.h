@@ -47,7 +47,7 @@
 #define T_HOOK_START  XNHOOK_THREAD_START
 #define T_HOOK_SWITCH XNHOOK_THREAD_SWITCH
 #define T_HOOK_DELETE XNHOOK_THREAD_DELETE
-#define T_HOOK_DESC(cookie) thread2rtask(cookie)
+#define T_DESC(cookie) thread2rtask(cookie)
 
 /* Priority range (same bounds as fusion, but reversed). */
 #define T_HIPRIO  FUSION_LOW_PRIO

@@ -1,7 +1,10 @@
 2005-01-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/task.h: T_HOOK_DESC() -> T_DESC() for naming
+	consistency with I_DESC().
+
 	* skins/rtai/intr.c: Make rt_intr_wait() a user-space only
-	service.
+	service -- Fully align semantics with rt_alarm_wait().
 
 	* drivers/16550A/16550A.c (rt_uart_close): Add missing
 	unregistration.

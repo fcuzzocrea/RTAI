@@ -1,3 +1,9 @@
+2004-09-13 Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab: Code generator for Scilab/Scicos supports now only
+	Scicos blocks from RTAI-Lib. Configure of other sensors and actuators
+	is possible only by hand. "xgenconfig" is no more supported.
+
 2004-09-13  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/Kconfig: Set default ELFTK and COMEDI dirs

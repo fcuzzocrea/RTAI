@@ -14,12 +14,7 @@ libsciblk_a_SOURCES = \
 	mbx_receive.c \
 	mbx_ovrwr_send.c \
 	mbx_send_if.c \
-	cioquad4.c \
-        maxon_can.c \
-        libpcan.c \
 	rtmain.h \
-	libpcan.h \
-	pcan.h \
 	rtai_sem.c
 
 if CONFIG_RTAI_COMEDI_LXRT

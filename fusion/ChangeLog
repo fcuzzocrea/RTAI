@@ -1,3 +1,20 @@
+2005-02-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c: Add support for switch back syscall mode,
+	resetting the original exec mode for the caller after a switch has
+	been made to process the syscall.
+
+	* nucleus/pod.c: Move consistency checks to (OPT_DEBUG || SIM)
+	sections.
+
+2005-02-23  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* skins/rtai/registry.c (rt_registry_enter): Prevent from
+	thundering herd effect while waking up several tasks which
+	concurrently undergo a binding wait. This is done by selectively
+	resuming them upon new object registration depending on the key
+	they currently sleep on.
+
 2005-02-23  Jan Kiszka <kiszka@rts.uni-hannover.de>
 
 	* nucleus/module.c (sched_read_proc): Fix shifted timeout reports

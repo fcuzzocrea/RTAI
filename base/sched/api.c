@@ -1410,6 +1410,91 @@ int rt_release_irq_task (unsigned irq)
 	return retval;
 }
 
+/* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
+
+void rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs)
+{
+	unsigned long flags;
+
+	flags = rt_global_save_flags_and_cli();
+	if ((task->state & RT_SCHED_RECEIVE) && task->msg_queue.task == rt_current) {
+		rt_current->msg = task->msg = (unsigned int)regs;
+		task->msg_queue.task = rt_current;
+		task->ret_queue.task = NOTHING;
+		task->state = RT_SCHED_READY;
+		enq_ready_task(task);
+		enqueue_blocked(rt_current, &task->ret_queue, 0);
+		rt_current->state |= RT_SCHED_RETURN;
+	} else {
+		rt_current->msg = (unsigned int)regs;
+                enqueue_blocked(rt_current, &task->msg_queue, 0);
+		rt_current->state |= RT_SCHED_RPC;
+	}
+	task->owndres = RPCINC;
+	pass_prio(task, rt_current);
+	rem_ready_current(rt_current);
+	rt_current->msg_queue.task = task;
+	rt_schedule();
+	if (rt_current->msg_queue.task != rt_current) {
+		rt_current->msg_queue.task = rt_current;
+	}
+	rt_global_restore_flags(flags);
+}
+
+#include <asm/uaccess.h>
+void rt_receive_linux_syscall(RT_TASK *task, void *regs)
+{
+	DECLARE_RT_CURRENT;
+	unsigned long flags;
+
+	flags = rt_global_save_flags_and_cli();
+	ASSIGN_RT_CURRENT;
+	if ((task->state & RT_SCHED_RPC) && task->msg_queue.task == rt_current) {
+		dequeue_blocked(task);
+		copy_to_user(regs, (void *)task->msg, sizeof(struct pt_regs));
+//		memcpy(regs, (void *)task->msg, sizeof(struct pt_regs));
+		rt_current->msg_queue.task = task;
+		enqueue_blocked(task, &rt_current->ret_queue, 0);
+		task->state = (task->state & ~RT_SCHED_RPC) | RT_SCHED_RETURN;
+	} else {
+		rt_current->ret_queue.task = SOMETHING;
+		rt_current->state |= RT_SCHED_RECEIVE;
+		rem_ready_current(rt_current);
+		rt_current->msg_queue.task = task != rt_current ? task : NULL;
+		rt_schedule();
+		copy_to_user(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
+//		memcpy(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
+	}
+	if (rt_current->ret_queue.task) {
+		rt_current->ret_queue.task = NOTHING;
+	}
+	rt_current->msg_queue.task = rt_current;
+	rt_global_restore_flags(flags);
+}
+
+void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
+{
+	DECLARE_RT_CURRENT;
+	unsigned long flags;
+
+	((struct pt_regs *)task->msg)->LINUX_SYSCALL_RETREG = retval;
+
+	flags = rt_global_save_flags_and_cli();
+	ASSIGN_RT_CURRENT;
+	if ((task->state & RT_SCHED_RETURN) && task->msg_queue.task == rt_current) {
+		dequeue_blocked(task);
+		rt_current->owndres = 0;
+		renq_current(rt_current, rt_current->base_priority);
+		task->msg = 0;
+		task->msg_queue.task = task;
+		if ((task->state &= ~RT_SCHED_RETURN) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			rt_schedule();
+		}
+	}
+	rt_global_restore_flags(flags);
+}
+
 /* ++++++++++++++++++++ END OF COMMON FUNCTIONALITIES +++++++++++++++++++++++ */
 
 #ifdef CONFIG_PROC_FS

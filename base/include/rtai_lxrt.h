@@ -312,8 +312,10 @@
 #define SCHED_LOCK		       209
 #define SCHED_UNLOCK		       210
 #define PEND_LINUX_IRQ		       211
+#define RECEIVE_LINUX_SYSCALL          212
+#define RETURN_LINUX_SYSCALL           213
 
-#define MAX_LXRT_FUN                   213
+#define MAX_LXRT_FUN                   215
 
 // not recovered yet 
 // Qblk's 
@@ -379,7 +381,7 @@
 #define GET_USP_FLG_MSK 	1017
 #define SET_USP_FLG_MSK 	1018
 #define IS_HARD         	1019
-#define LXRT_FORK		1020
+#define LINUX_SERVER_INIT	1020
 #define ALLOC_REGISTER 		1021
 #define DELETE_DEREGISTER	1022
 #define FORCE_TASK_SOFT  	1023
@@ -663,6 +665,55 @@ RTAI_PROTO(int, rt_thread_join, (int thread))
 }
 
 #endif
+
+#ifndef __SUPPORT_LINUX_SERVER__
+#define __SUPPORT_LINUX_SERVER__
+
+#include <asm/ptrace.h>
+#include <unistd.h>
+
+static inline void rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
+{
+	struct { RT_TASK *task; struct pt_regs *regs; } arg = { task, regs };
+	rtai_lxrt(BIDX, SIZARG, RECEIVE_LINUX_SYSCALL, &arg);
+}
+
+static inline void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
+{
+	struct { RT_TASK *task; unsigned long retval; } arg = { task, retval };
+	rtai_lxrt(BIDX, SIZARG, RETURN_LINUX_SYSCALL, &arg);
+}
+
+#include <rtai_msg.h>
+static void linux_syscall_server_fun(RT_TASK *task)
+{
+        struct pt_regs regs;
+	rtai_lxrt(BIDX, sizeof(RT_TASK *), LINUX_SERVER_INIT, &task);
+	rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &task);
+        for (;;) {
+#if 1
+                rt_receive_linux_syscall(task, &regs);
+		rt_return_linux_syscall(task, syscall(regs.LINUX_SYSCALL_NR, regs.LINUX_SYSCALL_REG1, regs.LINUX_SYSCALL_REG2, regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_REG4, regs.LINUX_SYSCALL_REG5, regs.LINUX_SYSCALL_REG6));
+#else
+		int retval;
+		rt_receivex(task, &regs, sizeof(struct pt_regs), &retval);
+		retval = syscall(regs.LINUX_SYSCALL_NR, regs.LINUX_SYSCALL_REG1, regs.LINUX_SYSCALL_REG2, regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_REG4, regs.LINUX_SYSCALL_REG5, regs.LINUX_SYSCALL_REG6);
+		rt_returnx(task, &retval, sizeof(retval));
+#endif
+        }
+}
+
+#endif /* __SUPPORT_LINUX_SERVER__ */
+
+RTAI_PROTO(int, rt_linux_syscall_server_create, (RT_TASK * task))
+{
+	if (rt_thread_create(linux_syscall_server_fun, task, 0) > 0) {
+		printf(" \b");
+		rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
+		return 0;
+	}
+	return -1;
+}
 
 RTAI_PROTO(RT_TASK *, rt_thread_init, (int name, int priority, int max_msg_size, int policy, int cpus_allowed))
 {
@@ -1090,12 +1141,6 @@ RTAI_PROTO(int,rt_set_linux_signal_handler,(RT_TASK *task, void (*handler)(int s
 {
     struct { RT_TASK *task; void (*handler)(int sig); } arg = { task, handler };
     return rtai_lxrt(BIDX, SIZARG, RT_SET_LINUX_SIGNAL_HANDLER, &arg).i[LOW];
-}
-
-RTAI_PROTO(int, rt_lxrt_fork,(int is_a_clone))
-{
-    struct { int is_a_clone; } arg = { is_a_clone };
-    return rtai_lxrt(BIDX, SIZARG, LXRT_FORK, &arg).i[LOW];
 }
 
 RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))

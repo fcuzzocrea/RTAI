@@ -592,10 +592,15 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
                         return 0;
 		}
 
-	        default:
+		case LINUX_SERVER_INIT: {
+			arg0.rt_task->trap_handler_data = __task_init((unsigned long)arg0.rt_task, arg0.rt_task->base_priority, 0, 0, 1 << arg0.rt_task->runnable_on_cpus);
+			return 0;
+		}
 
+	        default: {
 		    rt_printk("RTAI/LXRT: Unknown srq #%d\n", srq);
 		    return -ENOSYS;
+		}
 	}
 	return 0;
 }

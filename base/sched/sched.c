@@ -2125,8 +2125,8 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 #ifdef USE_LINUX_SYSCALL
 	struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
 	unsigned long syscall_nr;
-	if ((syscall_nr = r->SYSCALL_NR) >= GT_NR_SYSCALLS) {
-		long long retval = rtai_lxrt_invoke(syscall_nr, (void *)r->SYSCALL_ARGS);
+	if ((syscall_nr = r->RTAI_SYSCALL_NR) >= GT_NR_SYSCALLS) {
+		long long retval = rtai_lxrt_invoke(syscall_nr, (void *)r->RTAI_SYSCALL_ARGS);
 		SET_LXRT_RETVAL_IN_SYSCALL(retval);
 		if (!in_hrt_mode(rtai_cpuid())) {
 			adeos_propagate_event(evinfo);
@@ -2136,28 +2136,40 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 #endif
 	adeos_declare_cpuid;
 
-	adeos_propagate_event(evinfo);
     	if (evinfo->domid != RTAI_DOMAIN_ID) {
+		adeos_propagate_event(evinfo);
 		return;
 	}
 	adeos_load_cpuid();
 	if (in_hrt_mode(cpuid)) {
 		RT_TASK *task = rt_smp_current[cpuid];
 		if (task->is_hard == 1) {
+
+			if (task->trap_handler_data) {
+#if 1
+				rt_exec_linux_syscall(task, (void *)task->trap_handler_data, (struct pt_regs *)evinfo->evdata);
+#else
+				struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
+				((void (*)(void *, void *, void *, int, int))rt_fun_lxrt[RPCX].fun)((void *)task->trap_handler_data, r, &r->LINUX_SYSCALL_RETREG, sizeof(struct pt_regs), sizeof(long));
+#endif
+				return;
+			}
+
 #ifdef ECHO_SYSW
 			struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
 #endif
 			if (!systrans++) {
 				struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
-				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->SYSCALL_NR);
+				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR);
 
 			}
-			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->SYSCALL_NR););
+			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
 			give_back_to_linux(task);
 			task->is_hard = 2;
-			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->SYSCALL_NR););
+			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
 		}
 	}
+	adeos_propagate_event(evinfo);
 }
 
 static void lxrt_intercept_syscall_epilogue(adevinfo_t *evinfo)
@@ -2332,6 +2344,8 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_sched_lock },			    SCHED_LOCK },
 	{ { 0, rt_sched_unlock },		    SCHED_UNLOCK },
 	{ { 0, rt_pend_linux_irq },		    PEND_LINUX_IRQ },
+	{ { 1, rt_return_linux_syscall  },          RETURN_LINUX_SYSCALL  },
+	{ { 1, rt_receive_linux_syscall },          RECEIVE_LINUX_SYSCALL },
 	{ { 0, 0 },			            000 }
 };
 

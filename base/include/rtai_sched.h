@@ -284,6 +284,12 @@ int rt_task_suspend_timed(struct rt_task_struct *task, RTIME delay);
 
 int rt_task_resume(struct rt_task_struct *task);
 
+void rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs);
+
+void rt_receive_linux_syscall(RT_TASK *task, void *regs);
+
+void rt_return_linux_syscall(RT_TASK *task, unsigned long retval);
+
 int rt_irq_wait(unsigned irq);
 
 int rt_irq_wait_if(unsigned irq);

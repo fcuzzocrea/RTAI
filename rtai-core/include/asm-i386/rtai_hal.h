@@ -192,25 +192,6 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 
 #define RTAI_IFLAG  9
 
-#ifdef CONFIG_PREEMPT
-#define rtai_cli()                      adeos_hw_cli()
-#define rtai_sti()                      adeos_hw_sti()
-#define rtai_local_irq_save(flags)      adeos_hw_local_irq_save(flags)
-#define rtai_local_irq_restore(flags)   adeos_hw_local_irq_restore(flags)
-#define rtai_local_irq_flags(flags)     adeos_hw_local_irq_flags(flags)
-static volatile inline unsigned long rtai_local_irq_test(void)
-{
-	unsigned long flags;
-	adeos_hw_local_irq_flags(flags);
-	return flags & (1 << RTAI_IFLAG);
-}
-static volatile inline unsigned long rtai_get_iflag_and_cli(void)
-{
-	unsigned long flags;
-	adeos_hw_local_irq_save(flags);
-	return flags & (1 << RTAI_IFLAG);
-}
-#else /* STANDARD SETTINGS */
 #define rtai_cli()                     adeos_stall_pipeline_from(&rtai_domain)
 #define rtai_sti()                     adeos_unstall_pipeline_from(&rtai_domain)
 #define rtai_local_irq_save(x)         ((x) = adeos_test_and_stall_pipeline_from(&rtai_domain))
@@ -218,8 +199,6 @@ static volatile inline unsigned long rtai_get_iflag_and_cli(void)
 #define rtai_local_irq_flags(x)        ((x) = adeos_test_pipeline_from(&rtai_domain))
 #define rtai_local_irq_test()          adeos_test_pipeline_from(&rtai_domain)
 #define rtai_get_iflag_and_cli()       ((!adeos_test_and_stall_pipeline_from(&rtai_domain)) << RTAI_IFLAG)
-#endif
-
 /* Use these ones when fiddling with the (local A)PIC */
 #define rtai_hw_lock(flags)            adeos_hw_local_irq_save(flags)
 #define rtai_hw_unlock(flags)          adeos_hw_local_irq_restore(flags)
@@ -304,18 +283,22 @@ static inline struct task_struct *rtai_get_root_current (int cpuid) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     return (struct task_struct *)(((u_long)adp_root->esp[cpuid]) & (~8191UL));
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-    return ((struct thread_info *)(((u_long)adp_root->esp[cpuid]) & (~8191UL)))->task;
+    return ((struct thread_info *)(((u_long)adp_root->esp[cpuid]) & (~((THREAD_SIZE)-1))))->task;
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+}
+
+static inline int rtai_adeos_stack_p (int cpuid)
+
+{
+    int *esp;
+    __asm__ volatile("movl %%esp, %0" : "=r" (esp));
+    return (esp >= rtai_domain.estackbase[cpuid] && esp < rtai_domain.estackbase[cpuid] + 2048);
 }
 
 static inline struct task_struct *rtai_get_current (int cpuid)
 
 {
-    int *esp;
-
-    __asm__ volatile("movl %%esp, %0" : "=r" (esp));
-
-    if (esp >= rtai_domain.estackbase[cpuid] && esp < rtai_domain.estackbase[cpuid] + 2048)
+    if (rtai_adeos_stack_p(cpuid))
 	return rtai_get_root_current(cpuid);
 
     return get_current();

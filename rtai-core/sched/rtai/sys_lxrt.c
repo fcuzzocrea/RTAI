@@ -342,8 +342,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 			int net_rpc;
 			if ((int)task->is_hard > 1) {
 				task->is_hard = 1;
-				steal_from_linux(task);
 				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD, PID = %d.\n", current->pid););
+				steal_from_linux(task);
 			}
 			net_rpc = idx == 2 && !srq;
 			lxrt_resume(funcm[srq].fun, NARG(lxsrq), (int *)arg, net_rpc ? ((long long *)((int *)arg + 2))[0] : type, task, net_rpc);

@@ -92,44 +92,6 @@ __asm__( \
 	"addl $4,%esp\n\t" \
 	"iret\n\t")
 
-#if 0
-
-#define lxrt_switch_to(prev, next, last) do {				\
-	__asm__ __volatile__(						\
-		 "pushfl \n\t"					        \
-		 "pushl %%es\n\t"					\
-		 "pushl %%ds\n\t"					\
-		 "pushl %%eax\n\t"					\
-		 "pushl %%ebp\n\t"					\
-		 "pushl %%edi\n\t"					\
-		 "pushl %%esi\n\t"					\
-		 "pushl %%edx\n\t"					\
-		 "pushl %%ecx\n\t"					\
-		 "pushl %%ebx\n\t"					\
-		 "movl %%esp,%0\n\t"	/* save ESP */		\
-		 "movl %3,%%esp\n\t"	/* restore ESP */		\
-		 "movl $1f,%1\n\t"	/* save EIP */		\
-		 "pushl %4\n\t"		/* restore EIP */		\
-		 "jmp "SYMBOL_NAME_STR(__switch_to)"\n\t"		\
-		 "1:\t"							\
-		 "popl %%ebx\n\t"					\
-		 "popl %%ecx\n\t"					\
-		 "popl %%edx\n\t"					\
-		 "popl %%esi\n\t"					\
-		 "popl %%edi\n\t"					\
-		 "popl %%ebp\n\t"					\
-		 "popl %%eax\n\t"					\
-		 "popl %%ds\n\t"					\
-		 "popl %%es\n\t"					\
-		 "popfl \n\t"						\
-		 :"=m" (prev->thread.esp),"=m" (prev->thread.eip),	\
-		  "=b" (last)						\
-		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
-		  "a" (prev), "d" (next), "b" (prev));			\
-    } while(0)
-
-#else
-
 static inline void lxrt_context_switch (struct task_struct *prev,
 					struct task_struct *next,
 					int cpuid)
@@ -172,8 +134,6 @@ static inline void lxrt_context_switch (struct task_struct *prev,
 		  "b" (prev));						\
     barrier();
 }
-
-#endif
 
 #endif /* __KERNEL__ */
 

@@ -1,3 +1,12 @@
+2004-07-14  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/rtai/sched_lxrt.c (intr_get_current): Iron the
+	Adeos-aware code retrieving the current linux task.
+
+	* rtai-core/sched/rtai/sched_lxrt.c (rt_timer_handler,
+	rt_schedule, rt_schedule_on_schedule_ipi): Mask interrupts at
+	hardware-level during core scheduling operations.
+	
 2004-07-12  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/*: Directory files modified for Scilab-3.0

@@ -623,7 +623,6 @@ void rt_schedule(void)
 	}
 }
 
-
 void rt_spv_RMS(int cpuid)
 {
 	RT_TASK *task;
@@ -890,8 +889,6 @@ static void rt_timer_handler(void)
 			(*rt_current->signal)();
 		}
 	}
-
-	return;
 }
 
 

@@ -50,12 +50,12 @@ void latency (void *cookie)
 	    {
 	    expected += period;
 	    err = rt_task_wait_period();
-	    dt =  (int)(rt_timer_tsc() - expected);
 
 	    if (err)
 		overrun++;
 	    else
 		{
+		dt =  (int)(rt_timer_tsc() - expected);
 		if (dt > maxj) maxj = dt;
 		if (dt < minj) minj = dt;
 		sumj += dt;

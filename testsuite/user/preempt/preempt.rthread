@@ -17,7 +17,6 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 */
 
 #include <sys/mman.h>
-#include <sys/wait.h>
 #include <stdlib.h>
 #include <rtai_fifos.h>
 #include <rtai_sem.h>
@@ -182,9 +181,9 @@ int main(void)
 	rtf_sem_wait(fifo);
 	end = 1;
 	rt_sem_wait_barrier(barrier);
-	waitpid(latency_thread, 0, 0);
-	waitpid(fast_thread, 0, 0);
-	waitpid(slow_thread, 0, 0);
+	rt_thread_join(latency_thread);
+	rt_thread_join(fast_thread);
+	rt_thread_join(slow_thread);
 	stop_rt_timer();	
 	rtf_sem_destroy(fifo);
 	rtf_destroy(FIFO);

@@ -1169,6 +1169,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 	    {
 	    __clrbits(thread->status,XNRMID|XNTIMEO);
 	    __setbits(thread->status,XNBREAK);
+	    thread->wchan = NULL;
 	    goto unlock_and_exit;
 	    }
 #endif /* __KERNEL__ */

@@ -282,6 +282,16 @@ static inline void xnpod_renice_root (int prio)
     xnlock_put_irqrestore(&nklock,s);
 }
 
+static inline void xnpod_cancellation_point (void)
+
+{
+    if (testbits(thread->status,XNKILLED))
+        {
+        __clrbits(thread->status,XNKILLED);
+        xnpod_delete_self();
+        }
+}
+
     /* -- Beginning of the exported interface */
 
 #define xnpod_sched_slot(cpu) \

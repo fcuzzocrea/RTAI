@@ -56,30 +56,31 @@
 #define XNDORMANT 0x00000010	/* Not started yet or killed */
 #define XNZOMBIE  0x00000020	/* Self-deleting running thread */
 #define XNRESTART 0x00000040	/* Restarting thread */
-#define XNSTARTED 0x00000080	/* Can be restarted */
-#define XNRELAX   0x00000100	/* Relaxed scheduling mode (a blocking bit) */
-#define XNKILLED  0x00000200	/* Thread killed */
+#define XNSTARTED 0x00000080	/* Could be restarted */
+#define XNRELAX   0x00000100	/* Relaxed shadow thread (blocking bit) */
+#define XNKILLED  0x00000200	/* Shadow thread killed by a signal */
+#define XNKICKED  0x00000400	/* Shadow thread kicked by a signal */
 
-#define XNTIMEO   0x00000400	/* Woken up due to a timeout condition */
-#define XNRMID    0x00000800	/* Pending on a removed resource */
-#define XNBREAK   0x00001000	/* Forcibly woken up from a wait state */
-#define XNBOOST   0x00002000	/* Undergoes regular PIP boost */
+#define XNTIMEO   0x00000800	/* Woken up due to a timeout condition */
+#define XNRMID    0x00001000	/* Pending on a removed resource */
+#define XNBREAK   0x00002000	/* Forcibly woken up from a wait state */
+#define XNBOOST   0x00004000	/* Undergoes regular PIP boost */
 
 /* Mode flags. */
-#define XNLOCK    0x00004000	/* Not preemptable */
-#define XNRRB     0x00008000	/* Undergoes a round-robin scheduling */
-#define XNASDI    0x00010000	/* ASR are disabled */
+#define XNLOCK    0x00008000	/* Not preemptable */
+#define XNRRB     0x00010000	/* Undergoes a round-robin scheduling */
+#define XNASDI    0x00020000	/* ASR are disabled */
 
-#define XNFPU     0x00020000	/* Thread uses FPU */
-#define XNSHADOW  0x00040000	/* Shadow thread */
-#define XNROOT    0x00080000	/* Root thread (i.e. Linux/IDLE) */
+#define XNFPU     0x00040000	/* Thread uses FPU */
+#define XNSHADOW  0x00080000	/* Shadow thread */
+#define XNROOT    0x00100000	/* Root thread (i.e. Linux/IDLE) */
 
 /* Must follow the above bits declaration order. */
 #define XNTHREAD_SLABEL_INIT \
 { "ssp", "pnd", "dly", "rdy", "dor", \
   "zom", "rst", "sta", "rlx", "kil", \
-  "tmo", "rmi", "brk", "bst", "lck", \
-  "rrb", "asd", "fpu", "usr", "idl" }
+  "kic", "tmo", "rmi", "brk", "bst", \
+  "lck", "rrb", "asd", "fpu", "usr", "idl" }
 
 #define XNTHREAD_BLOCK_BITS   (XNSUSP|XNPEND|XNDELAY|XNDORMANT|XNRELAX)
 #define XNTHREAD_MODE_BITS    (XNLOCK|XNRRB|XNASDI)

@@ -1,3 +1,8 @@
+2004-09-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/pod.h (xnpod_cancellation_point): Define and use
+	a common cancellation handler to process the XNKILLED bit.
+
 2004-09-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_start_timer): Allow the arch-dependent code

@@ -1529,11 +1529,8 @@ int xnpod_migrate_thread (int cpu)
        xnpod_delete_thread, since 'thread' would be the current but it
        would not be detected, since the sched pointer would point on
        the destination scheduler, not the local. */ 
-    if (testbits(thread->status, XNKILLED))
-        {
-        __clrbits(thread->status, XNKILLED);
-        xnpod_delete_self();
-        }
+
+    xnpod_cancellation_point();
 
     if (xnpod_locked_p())
         {
@@ -1741,17 +1738,13 @@ static void xnpod_dispatch_signals (void)
 
 {
     xnthread_t *thread = xnpod_current_thread();
+    int asrimask, savedmask;
     xnflags_t oldmode;
     xnsigmask_t sigs;
-    int asrimask, savedmask;
     xnasr_t asr;
 
     /* Process internal signals first. */
-    if (testbits(thread->status,XNKILLED))
-        {
-        __clrbits(thread->status,XNKILLED);
-        xnpod_delete_self();
-        }
+    xnpod_cancellation_point();
 
     /* Then process user-defined signals if the ASR is enabled for
        this thread. */
@@ -2014,11 +2007,7 @@ void xnpod_schedule (void)
            contexts. */
         goto signal_unlock_and_exit;
 
-    if (testbits(runthread->status,XNKILLED))
-        {
-        __clrbits(runthread->status,XNKILLED);
-        xnpod_delete_self();
-        }
+    xnpod_cancellation_point();
 
     /* Clear the rescheduling bit */
     xnsched_clr_resched(sched);
@@ -2156,11 +2145,7 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
     xnsched_t *sched = thread->sched;
     xnthread_t *runthread = sched->runthread, *threadin;
 
-    if (testbits(thread->status,XNKILLED))
-        {
-        __clrbits(thread->status,XNKILLED);
-        xnpod_delete_self();
-        }
+    xnpod_cancellation_point();
 
     if (thread != runthread)
         {

@@ -1,0 +1,21 @@
+EXTRA_CFLAGS += -I$(rtai_srctree)/base/include \
+		-I$(src)/../include \
+		-I$(src)/../.. \
+		$(rtai_extradef) \
+		-D__IN_RTAI__
+
+obj-m += $(rtai_target).o
+
+rtai_up-objs := $(rtai_objs)
+
+rtai_mup-objs := $(rtai_objs)
+
+rtai_mup-noapic-objs := $(rtai_objs)
+
+rtai_smp-objs := $(rtai_objs)
+
+rtai_smp-noapic-objs := $(rtai_objs)
+
+rtai_lxrt-objs := $(rtai_objs)
+
+rtai_lxrt-noapic-objs := $(rtai_objs)

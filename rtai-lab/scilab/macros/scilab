@@ -1,0 +1,3 @@
+load('SCI/macros/RTAI/lib')
+%scicos_menu($+1)=['RTAI','RTAI CodeGen']
+scicos_pal($+1,:)=['RTAI-Lib','SCI/macros/RTAI/RTAI-Lib.cosf']

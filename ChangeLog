@@ -1,0 +1,108 @@
+2005-01-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* doc: Fix generation and rebuild.
+
+2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/matlab/rtmain.c: new version compatible with Matlab7 and
+	Matlab 6.5.
+	* rtai-lab/scilab/rtmain.c: Better handling of Ctrl-C.
+	* rtai-lab/scilab/devices/*: Implemented new interface.
+	* rtai-lab/scilab/macros/RTAI/*: Implemented new interface.
+	
+
+2004-01-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.*: use gobal syncranisation to protect a possible
+	scheduling.
+	* base/arch/i386/hal/hal.*: reallow use of frame pointers in kernel
+	configuration (hacking section);
+
+2004-01-07  Michael Neuhauser <mike@firmix.at>
+
+	* testsuite/user/switches.c: set stack size of the threads herd to
+	  a reasonable size, to allow execution with relatively small RAM
+	  availability (Paolo Mantegazza added a copy using of RTAI proper
+	  user space threads).
+
+2004-01-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c, base/include/asm-i38/rtai_lxrt.h: modified
+	  support for using Linux syscalls to have it arch independent
+	  (specific remarks from Michael Neuhauser).
+	* base/include/rtai_lxrt.h: added inlines to create RTAI proper
+	  user space threads.
+	* base/tasklets/tasklets.c, base/include/rtai_tasklets.h: modified 
+	  to use RTAI proper user space threads.
+	* base/usi/usi.c, base/include/rtai_usi.h: modified to use native 
+	  user irq tasks (found in api.c).
+
+2004-01-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: modified support for TSC emulation on 486s,
+	  to avoid clashes against non x86 archs (specific remarks from 
+	  Michael Neuhauser)
+
+2004-01-05  Michael Neuhauser <mike@firmix.at>
+
+	* base/sched/sched.c: minidemonisation of LXRT support kernel threads,
+	  some code reordering in RR_YIELD.
+
+2004-01-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.c: do not load RTAI support if the local
+	  APIC has been configured in Linux but is not available.
+	* base/sched/sched.immed: inserted a macro call to enable hard 
+	  interrupts in all ADEOS events intercept functions; the macro is
+	  arch dependent and must be defined in the arch specific 
+	  rtai_lxrt.h.
+
+2004-12-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_hal.h, rtai_lxrt.h: got rid of 
+	  __USE_APIC__, by referring to CONFIG_X86_LOCAL_APIC directly.
+	* base/arch/i386/hal.c: fixed definition of NR_IRQS for the 
+	 UP local APIC usage without IO-APIC.
+
+2004-12-29  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/include/asm-i386/rtai_emulate_tsc.h: to help forcing TSC
+	  emulation on machines that have it.
+        * base/include/asm-i386/rtai_hal.h: modified rdtsc from inline
+	  to define to allow undefinition when TSC emulation is forced;
+	  added inclusion of "rtai_emulate_tsc.h".
+        * base/sched/sched.c: added the possibility of simulating non TSC 
+	  machines on TSC ones, it helps developping 486 embedded systems
+	  without having one available yet.
+
+2004-12-29  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* First big real commit with the structuring needed for a fully 
+	LXRT based release. Changes to the starting baseline:
+	- The scheduler should have no x86 specific feature in it 
+          anymore, all the arch dependent parts should be in appropriate
+	  arch specific header files;
+	- Kernel space only operation maintained within LXRT;
+	- Use of the APIC timer, when enabled, with UP also;
+	- All RTAI ways from user to kernel space, i.e. srq and LXRT,
+	  unified in a single call; x86 verified, all other archs should
+	  follow suite;
+	- Possibility of using the standard Linux syscall for LXRT,
+	  arch independent hopefully;
+	- Restated automatic hard/soft/hard switches when a Linux
+	  syscall is made while RTAI is in hard real time mode, recovery
+	  to hard mode in the syscall return path also;
+	- IRQ specific tasks native within the scheduler, so the USI way
+	  is now simmetrically available in kernel/user space; USI is
+	  kept for compatibility only, its use should be avoided;
+	- The suspend API has been expanded in the standard RTAI way, i.e.:
+	  suspend/suspend_if/suspend_until/suspend_timed, to support RTAI
+	  IRQ tasks; available independently also;
+	- Prepared to have real time irqs either dispatched "immediately" 
+	  or "piped" ("immed"-"piped" mode); "piped" will be the default.
+	* Only a rough preliminary testing of the all stuff has been carried 
+	  out and, at the moment it is i386 only.
+
+2004-12-09  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* Started: baseline from 3.1r2.

@@ -647,7 +647,7 @@ void xnshadow_unmap (xnthread_t *thread) /* Must be called by the task deletion 
     xnshadow_sched_wakeup(task);
 }
 
-void xnshadow_sync_post (pid_t syncpid, int *u_syncp, int err)
+void xnshadow_sync_post (pid_t syncpid, int __user *u_syncp, int err)
 
 {
     struct task_struct *synctask;
@@ -665,7 +665,7 @@ void xnshadow_sync_post (pid_t syncpid, int *u_syncp, int err)
 	}
 }
 
-static int xnshadow_sync_wait (int *u_syncp)
+static int xnshadow_sync_wait (int __user *u_syncp)
 
 {
     int syncflag;
@@ -702,7 +702,7 @@ void xnshadow_umount (void)
 /*! 
  * \fn void xnshadow_map(xnthread_t *thread,
 			    pid_t syncpid,
-			    int *u_syncp);
+			    int __user *u_syncp);
  * @internal
  * \brief Create a shadow thread context.
  *
@@ -746,7 +746,7 @@ void xnshadow_umount (void)
 
 void xnshadow_map (xnthread_t *thread,
 		   pid_t syncpid,
-		   int *u_syncp) /* user-space pointer */
+		   int __user *u_syncp)
 {
     int autostart = !(syncpid && u_syncp);
     unsigned muxid, magic;

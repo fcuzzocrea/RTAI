@@ -53,7 +53,7 @@ static inline xnthread_t *__pthread_find_by_handle (struct task_struct *curr, vo
 static int __pthread_shadow_helper (struct task_struct *curr,
 				    struct pt_regs *regs,
 				    pid_t syncpid,
-				    int *u_syncp)
+				    int __user *u_syncp)
 {
     char name[XNOBJECT_NAME_LEN];
     xnthread_t *thread;
@@ -76,7 +76,7 @@ static int __pthread_shadow_helper (struct task_struct *curr,
 	    return -EFAULT;
 	    }
 
-	__xn_copy_from_user(curr,name,(const char *)__xn_reg_arg1(regs),sizeof(name) - 1);
+	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	strncpy(curr->comm,name,sizeof(curr->comm));
 	curr->comm[sizeof(curr->comm) - 1] = '\0';
@@ -111,7 +111,7 @@ static int __pthread_shadow_helper (struct task_struct *curr,
     splhigh(s);
 
     if (__xn_reg_arg2(regs))
-	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&thread,sizeof(thread));
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),&thread,sizeof(thread));
 
     xnthread_extended_info(thread) = (void *)__xn_reg_arg3(regs);
 
@@ -133,7 +133,7 @@ static int __pthread_create_rt (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg5(regs),sizeof(int)))
 	return -EFAULT;
 
-    return __pthread_shadow_helper(curr,regs,__xn_reg_arg4(regs),(int *)__xn_reg_arg5(regs));
+    return __pthread_shadow_helper(curr,regs,__xn_reg_arg4(regs),(int __user *)__xn_reg_arg5(regs));
 }
 
 static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
@@ -171,11 +171,11 @@ static int __pthread_time_rt (struct task_struct *curr, struct pt_regs *regs)
 {
     nanotime_t t;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(t)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(t)))
 	return -EFAULT;
 
     t = xnpod_get_time();
-    __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&t,sizeof(t));
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&t,sizeof(t));
 
     return 0;
 }
@@ -185,11 +185,11 @@ static int __pthread_cputime_rt (struct task_struct *curr, struct pt_regs *regs)
 {
     nanotime_t t;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(t)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(t)))
 	return -EFAULT;
 
     t = xnarch_get_cpu_tsc();
-    __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&t,sizeof(t));
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&t,sizeof(t));
 
     return 0;
 }
@@ -199,7 +199,7 @@ static int __pthread_start_timer_rt (struct task_struct *curr, struct pt_regs *r
 {
     nanotime_t nstick;
 
-    __xn_copy_from_user(curr,&nstick,(void *)__xn_reg_arg1(regs),sizeof(nstick));
+    __xn_copy_from_user(curr,&nstick,(void __user *)__xn_reg_arg1(regs),sizeof(nstick));
 
     if (testbits(nkpod->status,XNTIMED))
 	{
@@ -232,7 +232,7 @@ static int __pthread_sleep_rt (struct task_struct *curr, struct pt_regs *regs)
     if (!testbits(nkpod->status,XNTIMED))
 	return -EWOULDBLOCK;
 
-    __xn_copy_from_user(curr,&delay,(void *)__xn_reg_arg1(regs),sizeof(delay));
+    __xn_copy_from_user(curr,&delay,(void __user *)__xn_reg_arg1(regs),sizeof(delay));
 
     xnpod_delay(delay);
 
@@ -253,11 +253,11 @@ static int __pthread_ns2ticks_rt (struct task_struct *curr, struct pt_regs *regs
     if (!testbits(nkpod->status,XNTIMED))
 	return -EWOULDBLOCK;
 
-    __xn_copy_from_user(curr,&ns,(void *)__xn_reg_arg1(regs),sizeof(ns));
+    __xn_copy_from_user(curr,&ns,(void __user *)__xn_reg_arg1(regs),sizeof(ns));
 
     ticks = ns >= 0 ? xnpod_ns2ticks(ns) : -xnpod_ns2ticks(-ns);
     
-    __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&ticks,sizeof(ticks));
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),&ticks,sizeof(ticks));
 
     return 0;
 }
@@ -273,11 +273,11 @@ static int __pthread_ticks2ns_rt (struct task_struct *curr, struct pt_regs *regs
     if (!testbits(nkpod->status,XNTIMED))
 	return -EWOULDBLOCK;
 
-    __xn_copy_from_user(curr,&ticks,(void *)__xn_reg_arg1(regs),sizeof(ticks));
+    __xn_copy_from_user(curr,&ticks,(void __user *)__xn_reg_arg1(regs),sizeof(ticks));
 
     ns = ticks >= 0 ? xnpod_ticks2ns(ticks) : -xnpod_ticks2ns(-ticks);
 
-    __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&ns,sizeof(ns));
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),&ns,sizeof(ns));
 
     return 0;
 }
@@ -288,7 +288,7 @@ static int __pthread_inquire_rt (struct task_struct *curr, struct pt_regs *regs)
     xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
     xninquiry_t buf;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(buf)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(buf)))
 	return -EFAULT;
 
     strncpy(buf.name,xnthread_name(thread),sizeof(buf.name) - 1);
@@ -298,7 +298,7 @@ static int __pthread_inquire_rt (struct task_struct *curr, struct pt_regs *regs)
     buf.khandle = thread;
     buf.uhandle = xnthread_extended_info(thread);
 
-    __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&buf,sizeof(buf));
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&buf,sizeof(buf));
 
     return 0;
 }
@@ -309,14 +309,15 @@ int __pthread_set_periodic_rt (struct task_struct *curr, struct pt_regs *regs)
     xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
     nanotime_t idate, period;
 
-    __xn_copy_from_user(curr,&idate,(void *)__xn_reg_arg1(regs),sizeof(idate));
-    __xn_copy_from_user(curr,&period,(void *)__xn_reg_arg2(regs),sizeof(period));
+    __xn_copy_from_user(curr,&idate,(void __user *)__xn_reg_arg1(regs),sizeof(idate));
+    __xn_copy_from_user(curr,&period,(void __user *)__xn_reg_arg2(regs),sizeof(period));
 
     return xnpod_set_thread_periodic(thread,idate,period);
 }
 
-int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs) {
+int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs)
 
+{
     return xnpod_wait_thread_period();
 }
 
@@ -325,12 +326,12 @@ static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
 {
     spl_t s;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(int)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(int)))
 	return -EFAULT;
 
     xnlock_get_irqsave(&nklock,s);
 
-    __xn_put_user(curr,1,(int *)__xn_reg_arg1(regs)); /* Raise the pend flag */
+    __xn_put_user(curr,1,(int __user *)__xn_reg_arg1(regs)); /* Raise the pend flag */
 
     xnsynch_sleep_on(&__fusion_barrier,XN_INFINITE);
 
@@ -344,12 +345,12 @@ static int __pthread_release_vm (struct task_struct *curr, struct pt_regs *regs)
 {
     spl_t s;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(int)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(int)))
 	return -EFAULT;
 
     xnlock_get_irqsave(&nklock,s);
 
-    __xn_put_user(curr,0,(int *)__xn_reg_arg1(regs)); /* Clear the lock flag */
+    __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the lock flag */
 
     if (xnsynch_flush(&__fusion_barrier,XNBREAK) == XNSYNCH_RESCHED)
 	xnpod_schedule();
@@ -365,12 +366,12 @@ static int __pthread_idle_vm (struct task_struct *curr, struct pt_regs *regs)
     xnthread_t *thread = xnpod_current_thread();
     spl_t s;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(int)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(int)))
 	return -EFAULT;
 
     xnlock_get_irqsave(&nklock,s);
 
-    __xn_put_user(curr,0,(int *)__xn_reg_arg1(regs)); /* Clear the lock flag */
+    __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the lock flag */
 
     xnpod_renice_thread(thread,xnthread_initial_priority(thread));
 

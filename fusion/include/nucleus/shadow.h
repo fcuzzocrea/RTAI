@@ -87,7 +87,7 @@ void xnshadow_release_events(void);
 
 void xnshadow_map(struct xnthread *thread,
 		  pid_t syncpid,
-		  int *u_syncp);
+		  int __user *u_syncp);
 
 void xnshadow_unmap(struct xnthread *thread);
 

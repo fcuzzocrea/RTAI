@@ -1,3 +1,12 @@
+2004-11-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/lib/fusion.c: 
+	* skins/rtai/syscall.c: Qualify __user pointers to have them
+	"sparse"-friendly.
+
+	* config/autoconf/acinclude.m4: Fix new pedantic autoconf whim:
+	quote all macro names in definitions.
+
 2004-11-19  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.6.4

@@ -1,5 +1,11 @@
 2004-10-25  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/pod.c (xnpod_schedule): Escalate all requests to the
+	RTAI domain.
+
+	* nucleus/shadow.c: Get rid of __xn_sys_sched request. Rely on
+	xnpod_schedule() escalation handling.
+
 	* README.QUICKINSTALL: Add Pierre Ficheux's quick install note.
 
 	* nucleus/shadow.c (xnshadow_substitute_syscall): Make sure to

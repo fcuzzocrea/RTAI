@@ -30,7 +30,6 @@ long minjitter = TEN_MILLION,
 void latency (void *cookie)
 
 {
-    long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
     struct rtai_latency_stat *s;
     RTIME expected, period;
     RT_PIPE_MSG *msg;
@@ -50,22 +49,19 @@ void latency (void *cookie)
 
     for (;;)
 	{
+	long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
+
 	for (count = sumj = 0; count < sample_count; count++)
 	    {
 	    expected += period;
 	    err = rt_task_wait_period();
 
 	    if (err)
-		overrun++;
+	        overrun++;
 
 	    dt = (long)(rt_timer_tsc() - expected);
-
-	    if (dt > maxj)
-		maxj = dt;
-
-	    if (dt < minj)
-		minj = dt;
-
+	    if (dt > maxj)	maxj = dt;
+	    if (dt < minj)	minj = dt;
 	    sumj += dt;
 	    }
 

@@ -1,3 +1,7 @@
+2005-04-02  Jim Cromie <jcromie@divsol.com>
+
+	* testsuite: Various updates including extended histogram support.
+
 2005-04-02  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c: Iron corner cases involving shadow termination

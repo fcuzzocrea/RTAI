@@ -45,8 +45,18 @@ user-space.
    To run the test interactively, type ./run, and ^C to stop it. 
 
    To run in batch mode, invoke it as follows:
-	./run -- -T 30	# run for 30 minutes
-	
+	./run -- -T 300		# run for 5 minutes
+
+   usage: latency [options]
+     [-h]                          # print histogram of scheduling latency
+     [-H <histogram-size>]         # default = 200, increase if your last bucket is full
+     [-B <bucket-size>]            # default = 1000ns, decrease for more resolution
+     [-p <period_us>]              # sampling period
+     [-l <data-lines per header>]  # default=21, 0 to supress headers
+     [-T <test_duration_seconds>]  # default=0, so ^C to end
+     [-q]                          # supresses RTD, RTH lines if -T is used
+
+
 3. klatency/
 
    This test has the very same logic than the latency/ one, but runs
@@ -63,10 +73,18 @@ user-space.
    To run the test interactively, type ./run, and ^C to stop it. 
 
    To run in batch mode, invoke it as follows:
-	./run -- -T 30	# run for 30 minutes
+	./run -- -T 300		# run for 5 minutes
 
    In order to run this test properly, make sure that the special
    devices /dev/rtp* exist, with major 150 and minors 0-31.
+
+   usage: klatency [options]
+     [-h]                          # prints histogram of latencies
+     [-H <histogram-size>]	   # default = 200, increase if your last bucket is full
+     [-B <bucket-size>]            # default = 1000ns, decrease for more resolution
+     [-l <data-lines per header>]  # default = 21, 0 supresses header
+     [-T <seconds_to_test>]        # default = 0, so ^C to end
+     [-q]                          # supresses RTD, RTH lines if -T is used
 
 Notes:
 

@@ -92,7 +92,9 @@ void display (void *cookie)
 
 	if (err)
 	    {
-	    printf("latency: failed to pend on semaphore, code %d\n",err);
+	    if (err != -EIDRM)
+		printf("latency: failed to pend on semaphore, code %d\n",err);
+
 	    return;
 	    }
 

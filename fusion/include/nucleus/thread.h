@@ -74,9 +74,16 @@
 #define XNSHADOW  0x00040000	/* Shadow thread */
 #define XNROOT    0x00080000	/* Root thread (i.e. Linux/IDLE) */
 
-#define XNTHREAD_BLOCK_BITS  (XNSUSP|XNPEND|XNDELAY|XNDORMANT|XNRELAX)
-#define XNTHREAD_MODE_BITS   (XNLOCK|XNRRB|XNASDI)
-#define XNTHREAD_SYSTEM_BITS (XNROOT)
+/* Must follow the above bits declaration order. */
+#define XNTHREAD_SLABEL_INIT \
+{ "ssp", "pnd", "dly", "rdy", "dor", \
+  "zom", "rst", "sta", "rlx", "kil", \
+  "tmo", "rmi", "brk", "bst", "lck", \
+  "rrb", "asd", "fpu", "usr", "idl" }
+
+#define XNTHREAD_BLOCK_BITS   (XNSUSP|XNPEND|XNDELAY|XNDORMANT|XNRELAX)
+#define XNTHREAD_MODE_BITS    (XNLOCK|XNRRB|XNASDI)
+#define XNTHREAD_SYSTEM_BITS  (XNROOT)
 
 #if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
@@ -85,13 +92,12 @@
 #define XNTHREAD_SPARE1  0x20000000
 #define XNTHREAD_SPARE2  0x40000000
 #define XNTHREAD_SPARE3  0x80000000
+#define XNTHREAD_SPARES  0xf0000000
 
 #define XNRUNNING  XNTHREAD_SPARE0	/* Pseudo-status (must not conflict with system bits) */
 #define XNDELETED  XNTHREAD_SPARE1	/* idem. */
 
 #define XNTHREAD_INVALID_ASR  ((void (*)(xnsigmask_t))0)
-
-#define XNTHREAD_SHADOW_SIGKILL  0x1
 
 struct xnsched;
 struct xnsynch;
@@ -220,6 +226,10 @@ int xnthread_init(xnthread_t *thread,
 		  unsigned stacksize);
 
 void xnthread_cleanup_tcb(xnthread_t *thread);
+
+char *xnthread_symbolic_status(xnthread_t *thread,
+			       char *buf,
+			       int size);
 
 #ifdef __cplusplus
 }

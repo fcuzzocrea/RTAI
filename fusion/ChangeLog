@@ -1,3 +1,21 @@
+2004-07-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/thread.c (xnthread_symbolic_status): Add helper function
+	to convert a thread status word into its symbolic
+	(i.e. human-readable) representation.
+
+2004-07-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_relax): Do not hold the nucleus
+	superlock while performing the Linux scheduling tail; just lock
+	the local IRQs out.
+
+2004-06-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_kick_process): Do not hold the
+	nucleus superlock while sending the scheduling request to the high
+	stage.
+
 2004-06-30  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.2

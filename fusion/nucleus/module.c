@@ -107,13 +107,14 @@ static int xnpod_read_proc (char *page,
 			    int *eof,
 			    void *data)
 {
+    const unsigned nr_cpus = xnarch_num_online_cpus();
     int len = 0, muxid, nrxfaces = 0;
+    unsigned cpu, ready_threads = 0;
     xnthread_t *thread;
     xnholder_t *holder;
     char *p = page;
+    char buf[64];
     spl_t s;
-    const unsigned nr_cpus=xnarch_num_online_cpus();
-    unsigned cpu, ready_threads = 0;
 
     p += sprintf(p,"\nRTAI/fusion system v%s\n",PACKAGE_VERSION);
     p += sprintf(p,"Mounted over Adeos %s\n",ADEOS_VERSION_STRING);
@@ -177,7 +178,8 @@ static int xnpod_read_proc (char *page,
                  nkpod->suspendq.elems);
     
     p += sprintf(p,"\n%-3s   %-12s %-4s  %-5s  %-8s\n","CPU", "NAME","PRI",
-                     "TIMEOUT", "STATUS");
+		 "TIMEOUT", "STATUS");
+
     for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
         xnsched_t *sched = xnpod_sched_slot(cpu);
@@ -196,14 +198,15 @@ static int xnpod_read_proc (char *page,
             if (thread->sched != sched)
                 continue;
 
-	    p += sprintf(p,"%3u   %-12s %-4d  %-5Lu  0x%.8lx\n",
+	    p += sprintf(p,"%3u   %-12s %-4d  %-5Lu  0x%.8lx - %s\n",
                          cpu,
                          thread->name,
                          thread->cprio,
                          (testbits(thread->status,XNDELAY)
                           ? xnthread_timeout(thread)
                           : 0LL ),
-                         thread->status);
+                         thread->status,
+			 xnthread_symbolic_status(thread,buf,sizeof(buf)));
             }
 
         xnlock_put_irqrestore(&nklock, s);

@@ -140,3 +140,23 @@ void xnthread_cleanup_tcb (xnthread_t *thread)
 
     thread->magic = 0;
 }
+
+char *xnthread_symbolic_status (xnthread_t *thread,
+				char *buf,
+				int size)
+{
+    static const char *labels[] = XNTHREAD_SLABEL_INIT;
+    xnflags_t status;
+    char *wp;
+    int pos;
+
+    for (status = thread->status & ~(XNTHREAD_SPARES|XNROOT|XNSTARTED), pos = 0, wp = buf;
+	 status != 0 && wp - buf < size - 5; /* 3-letters label + SPC + \0 */
+	 status >>= 1, pos++)
+	if (status & 1)
+	    wp += sprintf(wp,"%s ",labels[pos]);
+
+    *wp = '\0';
+
+    return buf;
+}

@@ -29,6 +29,8 @@ int main (int argc, char *argv[])
 {
     int err;
 
+    mlockall(MCL_CURRENT|MCL_FUTURE);
+
     /* ... */
 
     err = rt_intr_create(&intr_desc,IRQ_NUMBER,I_AUTOENA);

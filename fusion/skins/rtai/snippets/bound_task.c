@@ -9,6 +9,8 @@ int main (int argc, char *argv[])
 {
     int err;
 
+    mlockall(MCL_CURRENT|MCL_FUTURE);
+
     /* Bind to a task which has been created elsewhere, either in
        kernel or user-space. The call will block us until such task is
        created with the expected name.  */

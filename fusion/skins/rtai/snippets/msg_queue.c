@@ -1,10 +1,17 @@
 #include <stdio.h>
 #include <string.h>
+#include <rtai/task.h>
 #include <rtai/queue.h>
+
+#define TASK_PRIO  0 /* Highest RT priority */
+#define TASK_MODE  0 /* No flags */
+#define TASK_STKSZ 0 /* Stack size (unused in user-space) */
 
 RT_QUEUE q_desc;
 
-int main (int argc, char *argv[])
+RT_TASK task_desc;
+
+void consumer (void *cookie)
 
 {
     ssize_t len;
@@ -33,6 +40,12 @@ int main (int argc, char *argv[])
 	rt_queue_free(&q_desc,msg);
 	}
 
+    /* We need to unbind explicitely from the queue in order to
+       properly release the underlying memory mapping. Exiting the
+       process unbinds all mappings automatically. */
+
+    rt_queue_unbind(&q_desc);
+
     if (len != -EIDRM)
 	/* We received some unexpected error notification. */
 	fail();
@@ -40,12 +53,24 @@ int main (int argc, char *argv[])
     /* ... */
 }
 
-void queuer (void)
+int main (int argc, char *argv[])
 
 {
     static char *messages[] = { "hello", "world", NULL };
     int n, len;
     void *msg;
+
+    mlockall(MCL_CURRENT|MCL_FUTURE);
+
+    err = rt_task_create(&task_desc,
+			 "MyTaskName",
+			 TASK_STKSZ,
+			 TASK_PRIO,
+			 TASK_MODE);
+    if (!err)
+	rt_task_start(&task_desc,&task_body,NULL);
+
+    /* ... */
 
     for (n = 0; messages[n] != NULL; n++)
 	{
@@ -60,13 +85,6 @@ void queuer (void)
 	strcpy(msg,messages[n]);
 	rt_queue_send(&q_desc,msg,len,Q_NORMAL);
 	}
-}
 
-void cleanup (void)
-
-{
-    /* We need to unbind explicitely from the queue in order to
-       properly release the underlying memory mapping. Exiting the
-       process unbinds all mappings automatically. */
-    rt_queue_unbind(&q_desc);
+    rt_task_delete(&task_desc);
 }

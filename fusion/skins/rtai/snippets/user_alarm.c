@@ -31,6 +31,8 @@ int main (int argc, char *argv[])
 {
     int err;
 
+    mlockall(MCL_CURRENT|MCL_FUTURE);
+
     err = rt_timer_start(TM_ONESHOT);
 
     /* ... */

@@ -19,6 +19,8 @@ int main (int argc, char *argv[])
 {
     int err;
 
+    mlockall(MCL_CURRENT|MCL_FUTURE);
+
     /* ... */
 
     err = rt_task_create(&task_desc,

@@ -151,6 +151,7 @@ static inline void lxrt_context_switch (struct task_struct *prev,
 	
     __asm__ __volatile__(						\
 		 "pushfl\n\t"				       		\
+		 "cli\n\t"				       		\
 		 "pushl %%esi\n\t"				        \
 		 "pushl %%edi\n\t"					\
 		 "pushl %%ebp\n\t"					\

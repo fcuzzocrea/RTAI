@@ -701,8 +701,8 @@ void xnshadow_exit (void)
 
 /*! 
  * \fn void xnshadow_map(xnthread_t *thread,
-			    pid_t syncpid,
-			    int __user *u_syncp);
+			 pid_t syncpid,
+			 int __user *u_syncp);
  * @internal
  * \brief Create a shadow thread context.
  *

@@ -25,8 +25,8 @@
 #include <nucleus/timer.h>
 #include <rtai/types.h>
 
-#define TM_UNSET   XNPOD_NO_TICK
-#define TM_ONESHOT XNPOD_APERIODIC_TICK
+#define TM_UNSET   XN_NO_TICK
+#define TM_ONESHOT XN_APERIODIC_TICK
 
 typedef struct rt_timer_info {
 

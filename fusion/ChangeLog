@@ -1,5 +1,8 @@
 2004-12-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/types.h: XNPOD_APERIODIC_TICK ->
+	XN_APERIODIC_TICK, XNPOD_NO_TICK -> XN_NO_TICK.
+
 	* nucleus/shadow.c (linux_schedule_head): Fix a subtle
 	rescheduling hole after downgrading the root thread priority.
 

@@ -75,7 +75,7 @@ int __fusion_skin_init(void)
     if (MODULE_PARM_VALUE(tick_hz_arg) > 0)
 	nstick = 1000000000 / MODULE_PARM_VALUE(tick_hz_arg);
     else
-        nstick = XNPOD_APERIODIC_TICK;
+        nstick = XN_APERIODIC_TICK;
 
     err = xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
     

@@ -2731,7 +2731,7 @@ int xnpod_trap_fault (void *fltinfo)
  *
  * @param nstick The timer period in nanoseconds. XNPOD_DEFAULT_TICK
  * can be used to set this value according to the arch-dependent
- * settings. If this parameter is equal to XNPOD_APERIODIC_TICK, the
+ * settings. If this parameter is equal to XN_APERIODIC_TICK, the
  * underlying hardware timer is set to operate in oneshot-programming
  * mode. In this mode, timing accuracy is higher - since it is not
  * rounded to a constant time slice - at the expense of a lesser
@@ -2789,7 +2789,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
         return -EINVAL;
 
 #if !CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (nstick == XNPOD_APERIODIC_TICK)
+    if (nstick == XN_APERIODIC_TICK)
         return -ENODEV; /* No aperiodic support */
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
         
@@ -2808,7 +2808,7 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
         }
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (nstick == XNPOD_APERIODIC_TICK) /* Aperiodic mode. */
+    if (nstick == XN_APERIODIC_TICK) /* Aperiodic mode. */
         {
         clrbits(nkpod->status,XNTMPER);
         nkpod->tickvalue = 1; /* Virtually the highest precision: 1ns */
@@ -3281,7 +3281,7 @@ int xnpod_calibrate_sched (void)
     if (err)
 	goto free_thread;
 
-    err = xnpod_start_timer(XNPOD_APERIODIC_TICK,
+    err = xnpod_start_timer(XN_APERIODIC_TICK,
 			    XNPOD_DEFAULT_TICKHANDLER);
 
     if (err)

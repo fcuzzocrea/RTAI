@@ -58,6 +58,7 @@ const char *xnpod_fatal_helper (const char *format, ...)
 {
     static char buf[256];
     xnholder_t *holder;
+    char sbuf[64];
     va_list ap;
     spl_t s;
 
@@ -72,17 +73,20 @@ const char *xnpod_fatal_helper (const char *format, ...)
 
     setbits(nkpod->status,XNFATAL);
 
-    xnprintf("CPU  %-12s PRI   STATUS\n","NAME");
+    xnprintf("CPU  %-12s  PRI  STATUS\n","NAME");
 
     holder = getheadq(&nkpod->threadq);
 
     while (holder)
         {
         xnthread_t *thread = link2thread(holder,glink);
-        xnprintf("%3d  %-12s %4d  0x%lx\n",
-		 (int) xnsched_cpu(xnthread_sched(thread)),
+        xnprintf("%3d  %-12s %4d  0x%.8lx -- %s\n",
+		 (int)xnsched_cpu(xnthread_sched(thread)),
                  thread->name,
-                 thread->cprio,thread->status);
+                 thread->cprio,
+		 thread->status,
+		 xnthread_symbolic_status(thread->status,
+					  sbuf,sizeof(sbuf)));
         holder = nextq(&nkpod->threadq,holder);
         }
 

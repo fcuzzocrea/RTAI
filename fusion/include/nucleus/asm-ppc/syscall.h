@@ -114,8 +114,8 @@
 #include <linux/errno.h>
 #include <asm/uaccess.h>
 
-#define __xn_copy_from_user(task,dstP,srcP,n)  __copy_from_user(dstP,srcP,n)
-#define __xn_copy_to_user(task,dstP,srcP,n)    __copy_to_user(dstP,srcP,n)
+#define __xn_copy_from_user(task,dstP,srcP,n)  __copy_from_user_inatomic(dstP,srcP,n)
+#define __xn_copy_to_user(task,dstP,srcP,n)    __copy_to_user_inatomic(dstP,srcP,n)
 #define __xn_put_user(task,src,dstP)           __put_user(src,dstP)
 #define __xn_get_user(task,dst,srcP)           __get_user(dst,srcP)
 

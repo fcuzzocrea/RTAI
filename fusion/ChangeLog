@@ -1,5 +1,11 @@
 2005-02-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-*/syscall.h: Use the *_inatomic forms of
+	copy to/from_user() macros to bypass might_sleep() checks: syscall
+	issuers cannot fault since all their memory is mlocked, and
+	might_sleep() might trigger randomly when executing in primary
+	mode.
+
 	* nucleus/ltt.c (xnltt_log_mark): Add custom mark logger.
 
 	* testsuite/klatency/latency-module.c (__latency_init): Move call

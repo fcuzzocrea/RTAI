@@ -30,10 +30,9 @@
  */
 
 /**
- * @defgroup hal RTAI services functions.
+ * @defgroup hal Real-time hardware absstraction layer.
  *
- * This module defines some functions that can be used by RTAI tasks, for
- * managing interrupts and communication services with Linux processes.
+ * Basic architecture-dependent services used by the nucleus.
  *
  *@{*/
 
@@ -1369,6 +1368,8 @@ void __rthal_exit (void)
     printk(KERN_WARNING "RTAI: HAL/x86 unloaded.\n");
 }
 
+/*@}*/
+
 module_init(__rthal_init);
 module_exit(__rthal_exit);
 
@@ -1408,5 +1409,3 @@ EXPORT_SYMBOL(rthal_cpu_realtime);
 EXPORT_SYMBOL(rthal_calibrate_8254);
 EXPORT_SYMBOL(rthal_get_8254_tsc);
 EXPORT_SYMBOL(rthal_set_8254_tsc);
-
-/*@}*/

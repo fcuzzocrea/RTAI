@@ -441,9 +441,9 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
 #if __GNUC__ < 3 || __GNUC__ == 3 && __GNUC_MINOR__ < 2
 
     __asm__ __volatile__( \
-        "pushl %%ebp\n\t" \
         "pushl %%ecx\n\t" \
         "pushl %%edi\n\t" \
+        "pushl %%ebp\n\t" \
         "movl %0,%%ecx\n\t" \
         "movl %%esp,(%%ecx)\n\t" \
         "movl %1,%%ecx\n\t" \
@@ -455,9 +455,9 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
         "testl %%edx,%%edx\n\t" \
         "jne  __switch_to\n\t" \
         "ret\n\t" \
-"1:      popl %%edi\n\t" \
-        "popl %%ecx\n\t" \
-	"popl %%ebp\n\t" \
+"1:      popl %%ebp\n\t" \
+        "popl %%edi\n\t" \
+	"popl %%ecx\n\t" \
       : /* no output */ \
       : "m" (out_tcb->espp), \
         "m" (out_tcb->eipp), \

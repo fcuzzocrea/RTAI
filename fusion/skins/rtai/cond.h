@@ -101,6 +101,12 @@ typedef RT_COND_PLACEHOLDER RT_COND;
 int rt_cond_bind(RT_COND *cond,
 		 const char *name);
 
+static inline int rt_cond_unbind (RT_COND *cond) {
+
+    cond->opaque = RT_HANDLE_INVALID;
+    return 0;
+}
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus

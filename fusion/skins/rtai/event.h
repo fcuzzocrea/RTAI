@@ -111,6 +111,12 @@ typedef RT_EVENT_PLACEHOLDER RT_EVENT;
 int rt_event_bind(RT_EVENT *event,
 		  const char *name);
 
+static inline int rt_event_unbind (RT_EVENT *event) {
+
+    event->opaque = RT_HANDLE_INVALID;
+    return 0;
+}
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus

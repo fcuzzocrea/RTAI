@@ -86,4 +86,6 @@ typedef long long SRTIME;
 
 typedef u_long rt_handle_t;
 
+#define RT_HANDLE_INVALID ((rt_handle_t)0)
+
 #endif /* !_RTAI_TYPES_H */

@@ -51,7 +51,7 @@
 
 #include <rtai/types.h>
 
-#define RT_REGISTRY_SELF      ((rt_handle_t)0)
+#define RT_REGISTRY_SELF  RT_HANDLE_INVALID
 
 #ifdef __KERNEL__
 

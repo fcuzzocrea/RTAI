@@ -151,6 +151,8 @@ typedef RT_QUEUE_PLACEHOLDER RT_QUEUE;
 int rt_queue_bind(RT_QUEUE *q,
 		  const char *name);
 
+int rt_queue_unbind(RT_QUEUE *q);
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus

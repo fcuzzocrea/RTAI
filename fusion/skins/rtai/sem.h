@@ -107,6 +107,12 @@ typedef RT_SEM_PLACEHOLDER RT_SEM;
 int rt_sem_bind(RT_SEM *sem,
 		const char *name);
 
+static inline int rt_sem_unbind (RT_SEM *sem) {
+
+    sem->opaque = RT_HANDLE_INVALID;
+    return 0;
+}
+
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #ifdef __cplusplus

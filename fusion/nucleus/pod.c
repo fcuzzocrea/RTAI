@@ -3231,7 +3231,7 @@ static void xnpod_calibration_thread (void *cookie)
     long jitter = 0;
 
     period = xnarch_ns_to_tsc(XNARCH_CALIBRATION_PERIOD);
-    expected = xnpod_get_time();
+    expected = xnarch_get_cpu_tsc();
 
     xnpod_set_thread_periodic(xnpod_current_thread(),
 			      XN_INFINITE,

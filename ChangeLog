@@ -1,8 +1,9 @@
-2004-01-10  Michael Neuhauser <mike@firmix.at>
+2004-01-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-	* base/sched/sched.c, base/include/asm-i38/rtai_lxrt.h: allow 
-	  freedom to define how to return the LXRT value using a Linux 
-	  syscall on a per architecture basis.
+	* base/sched/sched.*: use gobal syncranisation to protect a possible
+	scheduling.
+	* base/arch/i386/hal/hal.*: reallow use of frame pointers in kernel
+	configuration (hacking section);
 
 2004-01-07  Michael Neuhauser <mike@firmix.at>
 

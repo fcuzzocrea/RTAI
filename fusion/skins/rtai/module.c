@@ -46,6 +46,10 @@ MODULE_DESCRIPTION("RTAI skin");
 MODULE_AUTHOR("rpm@xenomai.org");
 MODULE_LICENSE("GPL");
 
+#if !defined(__KERNEL__) || !defined(CONFIG_RTAI_OPT_FUSION)
+static xnpod_t __rtai_pod;
+#endif /* !defined(__KERNEL__) || !defined(CONFIG_RTAI_OPT_FUSION) */
+
 static void rtai_shutdown (int xtype)
 
 {
@@ -95,13 +99,16 @@ int __xeno_skin_init (void)
 {
     int err;
 
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     /* The RTAI skin is stacked over the fusion framework. */
     err = xnfusion_attach();
+#else /* !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
+    /* The RTAI skin is standalone. */
+    err = xnpod_init(&__rtai_pod,T_LOPRIO,T_HIPRIO,0);
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     if (err)
 	goto fail;
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     nkpod->svctable.shutdown = &rtai_shutdown;
 

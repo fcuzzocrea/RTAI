@@ -75,7 +75,7 @@
 #define RT_HOOK_TDELETE XNHOOK_THREAD_DELETE
 #define RT_HOOK_TASKPTR(cookie) thread2rtask(cookie)
 
-/* Priority range. */
+/* Priority range (same bounds as fusion, but reversed). */
 #define T_HIPRIO  FUSION_LOW_PRI
 #define T_LOPRIO  FUSION_HIGH_PRI
 #define rtprio2xn(rtprio) (FUSION_HIGH_PRI - (rtprio) + 1)

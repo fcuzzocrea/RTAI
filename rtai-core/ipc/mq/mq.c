@@ -79,7 +79,7 @@ MODULE_LICENSE("GPL");
 ///////////////////////////////////////////////////////////////////////////////
 //      PACKAGE GLOBAL DATA
 ///////////////////////////////////////////////////////////////////////////////
-static char rtai_pqueue_version[] = "0.6";
+#define rtai_pqueue_version "0.6"
 
 static uint num_pqueues = 0;
 static struct _pqueue_descr_struct rt_pqueue_descr[MAX_PQUEUES] = {{0}};

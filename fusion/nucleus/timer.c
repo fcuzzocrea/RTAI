@@ -340,15 +340,10 @@ void xntimer_do_timers (void)
     xnqueue_t *timerq, reschedq;
     xntimer_t *timer;
     xnticks_t now;
-
-#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.timer_top = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
-    initq(&reschedq);
-
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
+    int aperiodic = !testbits(nkpod->status,XNTMPER);
+
+    if (aperiodic)
 	/* Only use slot #0 in aperiodic mode. */
 	timerq = &nkpod->timerwheel[0];
     else
@@ -361,6 +356,12 @@ void xntimer_do_timers (void)
 	++nkpod->wallclock;
 	}
 
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+    nkpod->timestamps.timer_top = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+
+    initq(&reschedq);
+
     nextholder = getheadq(timerq);
 
     while ((holder = nextholder) != NULL)
@@ -369,7 +370,7 @@ void xntimer_do_timers (void)
 	timer = link2timer(holder);
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
+	if (aperiodic)
 	    {
 	    now = xnarch_get_cpu_tsc();
 
@@ -414,7 +415,7 @@ void xntimer_do_timers (void)
 	if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	    {
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
-	    if (!testbits(nkpod->status,XNTMPER))
+	    if (aperiodic)
 		xntimer_dequeue_aperiodic(timer);
 	    else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -435,7 +436,7 @@ void xntimer_do_timers (void)
 	timer = link2timer(holder);
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
+	if (aperiodic)
 	    {
 	    timer->date += timer->interval;
 	    xntimer_enqueue_aperiodic(timer);
@@ -449,7 +450,7 @@ void xntimer_do_timers (void)
 	}
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
+    if (aperiodic)
 	xntimer_next_shot();
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 

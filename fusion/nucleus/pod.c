@@ -2949,7 +2949,7 @@ static void xnpod_calibration_thread (void *cookie)
 			      idate,
 			      XNARCH_CALIBRATION_PERIOD);
 
-    for (count = 0; count < 2000; count++)
+    for (count = 0; count < 300000000 / XNARCH_CALIBRATION_PERIOD; count++)
         {
         expected += period;
         xnpod_wait_thread_period();

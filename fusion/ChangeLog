@@ -1,5 +1,8 @@
 2004-09-01  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/pod.c (xnpod_calibration_thread): Calibrate during 0.3s
+	regardless of the calibration period.
+
 	* nucleus/timer.c (xntimer_do_timers): Refresh the tested clock
 	value in aperiodic mode after each timer processing loop.
 

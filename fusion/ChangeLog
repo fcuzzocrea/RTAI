@@ -1,5 +1,9 @@
 2004-08-04  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.4
+
+2004-08-04  Philippe Gerum  <rpm@xenomai.org>
+
 	* nucleus/timer.c (xntimer_next_shot): Anticipate the next timer
 	shot better.
 

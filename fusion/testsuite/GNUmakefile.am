@@ -3,7 +3,7 @@ OPTDIRS =
 if CONFIG_RTAI_OPT_FUSION
 OPTDIRS += cruncher
 if CONFIG_RTAI_SKIN_NATIVE
-OPTDIRS += latency
+OPTDIRS += latency switch
 endif
 endif
 

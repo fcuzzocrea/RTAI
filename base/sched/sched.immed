@@ -2438,6 +2438,12 @@ static void timer_fun(unsigned long none)
 static int __rtai_lxrt_init(void)
 {
 	int cpuid, retval;
+#ifdef CONFIG_REGPARM
+	if (!USE_RTAI_TASKS) {
+		printk(KERN_INFO "RTAI[sched_lxrt]: Linux kernel REGPARM configuration enabled, RTAI will not work in user space, disable it.\n");
+		return -EINVAL;
+	}
+#endif
 	sched_mem_init();
 
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {

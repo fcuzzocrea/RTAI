@@ -278,7 +278,9 @@ static void schedule_linux_call (int type,
 				 struct task_struct *task,
 				 int arg)
 {
-    int cpuid = smp_processor_id(), reqnum;
+    /* Do _not_ use smp_processor_id() here so we don't trigger Linux
+       preemption debug traps inadvertently (see lib/kernel_lock.c). */
+    int cpuid = adeos_processor_id(), reqnum;
     struct __schedback *sb = &schedback[cpuid];
     spl_t s;
 
@@ -664,8 +666,10 @@ void xnshadow_map (xnthread_t *thread,
     int autostart = !(syncpid && u_syncp);
     unsigned muxid, magic;
 
+    preempt_disable();
     /* Prevent Linux from migrating us from now on. */
     set_cpus_allowed(current, cpumask_of_cpu(smp_processor_id()));
+    preempt_enable();
 
     /* Increment the interface reference count. */
     magic = xnthread_get_magic(thread);
@@ -809,7 +813,9 @@ void xnshadow_start (xnthread_t *thread,
     thread->entry = u_entry;    /* user-space pointer -- do not deref. */
     thread->cookie = u_cookie;  /* ditto. */
     thread->stime = xnarch_get_cpu_time();
-    thread->affinity = xnarch_cpumask_of_cpu(smp_processor_id());
+    /* Do _not_ use smp_processor_id() here so we don't trigger Linux
+       preemption debug traps inadvertently (see lib/kernel_lock.c). */
+    thread->affinity = xnarch_cpumask_of_cpu(adeos_processor_id());
 
     if (testbits(thread->status,XNRRB))
         thread->rrcredit = thread->rrperiod;

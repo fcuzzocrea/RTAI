@@ -334,7 +334,7 @@ RTAI_PROTO(int, rt_sem_count,(SEM *sem))
  * @ingroup lxrt
  * Initialize a condition variable.
  *
- * Allocates and initializes a semaphore to be referred by @a name.
+ * Allocates and initializes a condition variable to be referred by @a name.
  *
  * @param name name of the condition variable.
  *

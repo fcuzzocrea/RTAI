@@ -21,7 +21,7 @@
 
 static pthread_t root_thread_tcb;
 
-int __xeno_user_init (void)
+int __fusion_user_init (void)
 {
     int rc;
     pthread_attr_t attr;
@@ -37,7 +37,7 @@ int __xeno_user_init (void)
     return rc;
 }
 
-void __xeno_user_exit (void)
+void __fusion_user_exit (void)
 {
     pthread_kill(root_thread_tcb, 30);
     pthread_join(root_thread_tcb, NULL);

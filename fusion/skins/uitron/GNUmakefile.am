@@ -59,8 +59,7 @@ nodist_libuitron_a_SOURCES = \
 	task.c
 
 libuitron_a_CPPFLAGS = \
-	@RTAI_USER_CFLAGS@ \
-	-D_GNU_SOURCE -D_REENTRANT -D__RTAI_UVM__ \
+	@RTAI_USER_CFLAGS@ -D__RTAI_UVM__ \
 	-I$(srcdir)/.. \
 	-I$(top_srcdir)/include/nucleus/vm \
 	-I$(top_srcdir)/include \

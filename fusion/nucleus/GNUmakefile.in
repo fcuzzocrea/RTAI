@@ -314,8 +314,7 @@ libmodule_SRC = heap.c intr.c module.c pod.c synch.c thread.c timer.c \
 @CONFIG_RTAI_OPT_VM_TRUE@			timer.c
 
 @CONFIG_RTAI_OPT_VM_TRUE@libnucleus_a_CPPFLAGS = \
-@CONFIG_RTAI_OPT_VM_TRUE@	@RTAI_USER_CFLAGS@ \
-@CONFIG_RTAI_OPT_VM_TRUE@	-D_GNU_SOURCE -D_REENTRANT -D__RTAI_UVM__ \
+@CONFIG_RTAI_OPT_VM_TRUE@	@RTAI_USER_CFLAGS@ -D__RTAI_UVM__ \
 @CONFIG_RTAI_OPT_VM_TRUE@	-I$(srcdir)/../include \
 @CONFIG_RTAI_OPT_VM_TRUE@	-I../include
 

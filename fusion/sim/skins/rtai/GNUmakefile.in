@@ -61,9 +61,10 @@ LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 librtai_s_a_AR = $(AR) $(ARFLAGS)
 librtai_s_a_LIBADD =
-nodist_librtai_s_a_OBJECTS = module.$(OBJEXT) task.$(OBJEXT) \
-	timer.$(OBJEXT) sem.$(OBJEXT) event.$(OBJEXT) mutex.$(OBJEXT) \
-	cond.$(OBJEXT) queue.$(OBJEXT) heap.$(OBJEXT) alarm.$(OBJEXT)
+nodist_librtai_s_a_OBJECTS = module.$(OBJEXT) registry.$(OBJEXT) \
+	task.$(OBJEXT) timer.$(OBJEXT) sem.$(OBJEXT) event.$(OBJEXT) \
+	mutex.$(OBJEXT) cond.$(OBJEXT) queue.$(OBJEXT) heap.$(OBJEXT) \
+	alarm.$(OBJEXT)
 librtai_s_a_OBJECTS = $(nodist_librtai_s_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/../config/autoconf/depcomp
@@ -250,6 +251,7 @@ AM_CPPFLAGS = \
 lib_LIBRARIES = librtai_s.a
 nodist_librtai_s_a_SOURCES = \
 	module.c \
+	registry.c \
 	task.c \
 	timer.c \
 	sem.c \
@@ -340,6 +342,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/module.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/queue.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/registry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/task.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timer.Po@am__quote@

@@ -42,7 +42,7 @@ host_triplet = @host@
 subdir = skins/vrtx
 DIST_COMMON = $(include_HEADERS) $(noinst_HEADERS) \
 	$(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in \
-	$(srcdir)/Makefile.kbuild
+	$(srcdir)/Makefile.kbuild COPYING
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/autoconf/docbook.m4 \
 	$(top_srcdir)/configure.in
@@ -338,8 +338,7 @@ noinst_HEADERS = \
 @CONFIG_RTAI_OPT_VM_TRUE@	time.c
 
 @CONFIG_RTAI_OPT_VM_TRUE@libvrtx_a_CPPFLAGS = \
-@CONFIG_RTAI_OPT_VM_TRUE@	@RTAI_USER_CFLAGS@ \
-@CONFIG_RTAI_OPT_VM_TRUE@	-D_GNU_SOURCE -D_REENTRANT -D__RTAI_UVM__ \
+@CONFIG_RTAI_OPT_VM_TRUE@	@RTAI_USER_CFLAGS@ -D__RTAI_UVM__ \
 @CONFIG_RTAI_OPT_VM_TRUE@	-I$(srcdir)/.. \
 @CONFIG_RTAI_OPT_VM_TRUE@	-I$(top_srcdir)/include \
 @CONFIG_RTAI_OPT_VM_TRUE@	-I../../include \

@@ -240,7 +240,7 @@ void xnpod_delete_proc (void) {
 
 #endif /* CONFIG_PROC_FS */
 
-int __xeno_main_init (void)
+int __fusion_sys_init (void)
 
 {
     int err;
@@ -320,7 +320,7 @@ int __xeno_main_init (void)
     return err;
 }
 
-void __xeno_main_exit (void)
+void __fusion_sys_exit (void)
 
 {
     xnpod_shutdown(XNPOD_NORMAL_EXIT);
@@ -350,5 +350,5 @@ rtai_trace_callback_t *rtai_trace_callback = NULL;
 EXPORT_SYMBOL(rtai_trace_callback);
 #endif /* CONFIG_RTAI_OPT_TRACES && __KERNEL__ */
 
-module_init(__xeno_main_init);
-module_exit(__xeno_main_exit);
+module_init(__fusion_sys_init);
+module_exit(__fusion_sys_exit);

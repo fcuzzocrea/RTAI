@@ -21198,7 +21198,7 @@ echo "${ECHO_T}$RTAI_MODULE_EXT" >&6
 echo "$as_me:$LINENO: checking for RTAI target architecture" >&5
 echo $ECHO_N "checking for RTAI target architecture... $ECHO_C" >&6
 
-RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include"
+RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include -D_GNU_SOURCE -D_REENTRANT"
 
 case $RTAI_TARGET_ARCH in
  i386)

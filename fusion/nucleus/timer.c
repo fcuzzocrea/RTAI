@@ -34,11 +34,10 @@
  * capabilities.
  * 
  * If the underlying timer source is aperiodic, we need to reprogram
- * the next shot after each tick at hardware level, and we cannot
- * count on a strictly periodic source. In such a case, the timer
- * manager only uses a single slot (#0) from the wheel as a plain
- * linked list, which is ordered by increasing timeout values of the
- * running timers.
+ * the next shot after each tick at hardware level, and we do not need
+ * any periodic source. In such a case, the timer manager only uses a
+ * single slot (#0) from the wheel as a plain linked list, which is
+ * ordered by increasing timeout values of the running timers.
  *
  * Depending on the above mode, the timer object stores time values
  * either as count of periodic ticks, or as count of CPU ticks.

@@ -48,7 +48,7 @@ DIST_COMMON = README $(am__configure_deps) \
 	../config/autoconf/config.guess ../config/autoconf/config.sub \
 	../config/autoconf/depcomp ../config/autoconf/install-sh \
 	../config/autoconf/ltmain.sh ../config/autoconf/missing \
-	../config/autoconf/mkinstalldirs ChangeLog
+	../config/autoconf/mkinstalldirs COPYING ChangeLog
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/acinclude.m4 \

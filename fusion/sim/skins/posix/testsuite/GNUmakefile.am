@@ -10,7 +10,7 @@ INCLUDES = \
 	-I$(top_srcdir)/include
 
 LDFLAGS = \
-	-u __xeno_user_init \
+	-u __fusion_user_init \
 	--gcic-backend=$(prefix)/libexec/gcic \
 	--cc=$(CXX) \
 	--no-mvm-libs \

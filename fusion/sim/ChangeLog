@@ -15,7 +15,7 @@
 	* vm/trigger.cc (body): Fix a bug causing the trigger to be lost
 	when it is reprogrammed on the fly to a regressing timeout date.
 
-	* gcic/gcic.cc (main): Drain __xeno_skin_init() instead of
+	* gcic/gcic.cc (main): Drain __fusion_skin_init() instead of
 	mvm_init_skin() at link time.
 
 2004-04-19  Philippe Gerum  <rpm@xenomai.org>

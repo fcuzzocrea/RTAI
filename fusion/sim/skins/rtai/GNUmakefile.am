@@ -17,6 +17,7 @@ lib_LIBRARIES = librtai_s.a
 
 nodist_librtai_s_a_SOURCES = \
 	module.c \
+	registry.c \
 	task.c \
 	timer.c \
 	sem.c \

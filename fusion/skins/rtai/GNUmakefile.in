@@ -57,7 +57,7 @@ host_triplet = @host@
 @CONFIG_RTAI_OPT_NATIVE_ALARM_TRUE@am__append_19 = alarm.h
 subdir = skins/rtai
 DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/GNUmakefile.am \
-	$(srcdir)/GNUmakefile.in $(srcdir)/Makefile.kbuild
+	$(srcdir)/GNUmakefile.in $(srcdir)/Makefile.kbuild COPYING
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/autoconf/docbook.m4 \
 	$(top_srcdir)/configure.in

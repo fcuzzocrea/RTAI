@@ -280,8 +280,7 @@ cruncher_SOURCES = cruncher.c
 cruncher_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/skins \
-	-I../../include \
-	-D_REENTRANT -D_GNU_SOURCE
+	-I../../include
 
 cruncher_CFLAGS = \
 	@RTAI_USER_CFLAGS@ \

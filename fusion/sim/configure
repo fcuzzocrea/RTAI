@@ -27048,6 +27048,52 @@ fi
 
 
 
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_REGISTRY 1
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS 1024
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_SEM 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_EVENT 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_MUTEX 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_COND 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_QUEUE 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_HEAP 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_ALARM 1
+_ACEOF
+
+
+
 
 
 

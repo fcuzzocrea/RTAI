@@ -427,17 +427,17 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 
 #ifdef XENO_MAIN_MODULE
 
-int __xeno_main_init(void);
+int __fusion_sys_init(void);
 
-void __xeno_main_exit(void);
+void __fusion_sys_exit(void);
 
-int __xeno_skin_init(void);
+int __fusion_skin_init(void);
 
-void __xeno_skin_exit(void);
+void __fusion_skin_exit(void);
 
-int __xeno_user_init(void);
+int __fusion_user_init(void);
 
-void __xeno_user_exit(void);
+void __fusion_user_exit(void);
 
 static inline int xnarch_init (void) {
     return 0;
@@ -451,12 +451,12 @@ void mvm_root (void *cookie)
 {
     int err;
 
-    err = __xeno_skin_init();
+    err = __fusion_skin_init();
 
     if (err)
 	__mvm_breakable(mvm_fatal)("skin_init() failed, err=%x\n",err);
 
-    err = __xeno_user_init();
+    err = __fusion_user_init();
 
     if (err)
 	__mvm_breakable(mvm_fatal)("user_init() failed, err=%x\n",err);
@@ -464,9 +464,9 @@ void mvm_root (void *cookie)
     /* Wait for all RT-threads to finish */
     __mvm_breakable(mvm_join_threads)();
 
-    __xeno_user_exit();
-    __xeno_skin_exit();
-    __xeno_main_exit();
+    __fusion_user_exit();
+    __fusion_skin_exit();
+    __fusion_sys_exit();
 
     __mvm_breakable(mvm_terminate)(0);
 }
@@ -477,10 +477,10 @@ int main (int argc, char *argv[])
     xnarchtcb_t tcb;
     int err;
 
-    err = __xeno_main_init();
+    err = __fusion_sys_init();
 
     if (err)
-	__mvm_breakable(mvm_fatal)("main_init() failed, err=%x\n",err);
+	__mvm_breakable(mvm_fatal)("sys_init() failed, err=%x\n",err);
 
     mvm_init(argc,argv);
 

@@ -8,10 +8,6 @@ if CONFIG_PPC
 ARCHDIR = asm-ppc
 endif
 
-if CONFIG_RTAI_OPT_VM
-ARCHDIR = asm-uvm
-endif
-
 include_HEADERS = \
 		fusion.h \
 		heap.h \
@@ -31,5 +27,9 @@ include_HEADERS = \
 		xenomai.h
 
 SUBDIRS = $(ARCHDIR)
+
+if CONFIG_RTAI_OPT_VM
+SUBDIRS += asm-uvm
+endif
 
 DISTCLEANFILES = asm

@@ -71,8 +71,7 @@ nodist_libnucleus_a_SOURCES = \
 			timer.c
 
 libnucleus_a_CPPFLAGS = \
-	@RTAI_USER_CFLAGS@ \
-	-D_GNU_SOURCE -D_REENTRANT -D__RTAI_UVM__ \
+	@RTAI_USER_CFLAGS@ -D__RTAI_UVM__ \
 	-I$(srcdir)/../include \
 	-I../include
 

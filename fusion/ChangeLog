@@ -1,3 +1,16 @@
+2004-12-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/types.h: Define ROOT_THREAD_INIT/EXIT for use in
+	context-agnostic (kernel/uvm) apps.
+
+	* fusion: __xeno_*_* -> __fusion_*_*.
+
+	* include/nucleus/GNUmakefile.am: Optionally recurse into asm-uvm/
+	during installation.
+
+	* configure.in: Add -D_GNU_SOURCE -D_REENTRANT to
+	RTAI_USER_CFLAGS.
+
 2004-12-22  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/Kconfig: Hide configuration of per-cpu timers. It is
@@ -287,7 +300,7 @@
 
 2004-11-24  Philippe Gerum  <rpm@xenomai.org>
 
-	* skins/rtai/module.c (__xeno_skin_init): Fix init without
+	* skins/rtai/module.c (__fusion_skin_init): Fix init without
 	user-space support.
 
 	* arch/i386/hal/hal.c (rthal_trap_fault): Remove lazy handling of
@@ -730,7 +743,7 @@
 
 2004-10-02  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
-	* skins/rtai/module.c (__xeno_skin_init): Remove warnings about
+	* skins/rtai/module.c (__fusion_skin_init): Remove warnings about
 	unused labels.
 
 2004-10-01  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
@@ -964,7 +977,7 @@
 	latency for architectures that do not provide an aperiodic timing
 	source.
 
-	* nucleus/module.c (__xeno_main_init): Straighten error path.
+	* nucleus/module.c (__fusion_sys_init): Straighten error path.
 
 2004-08-30  Philippe Gerum  <rpm@xenomai.org>
 
@@ -1705,7 +1718,7 @@
 
 2004-05-17  Philippe Gerum  <rpm@xenomai.org>
 
-	* skins/rtai/module.c (__xeno_skin_init): Set up init sequence.
+	* skins/rtai/module.c (__fusion_skin_init): Set up init sequence.
 
 	* skins/rtai/timer.c (rt_timer_start): Add call to start the
 	timer.

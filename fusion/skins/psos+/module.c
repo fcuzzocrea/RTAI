@@ -66,7 +66,7 @@ void k_fatal (u_long err_code, u_long flags) {
     xnpod_fatal("pSOS/VM: fatal error, code 0x%x",err_code);
 }
 
-int __xeno_skin_init (void)
+int __fusion_skin_init (void)
 
 {
     u_long nstick = XNPOD_DEFAULT_TICK;
@@ -105,14 +105,14 @@ int __xeno_skin_init (void)
     return err;
 }
 
-void __xeno_skin_exit (void) {
+void __fusion_skin_exit (void) {
 
     xnprintf("pSOS/VM: stopping services.\n");
     psos_shutdown(XNPOD_NORMAL_EXIT);
 }
 
-module_init(__xeno_skin_init);
-module_exit(__xeno_skin_exit);
+module_init(__fusion_skin_init);
+module_exit(__fusion_skin_exit);
 
 EXPORT_SYMBOL(as_catch);
 EXPORT_SYMBOL(as_send);

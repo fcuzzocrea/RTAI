@@ -26,7 +26,7 @@
 
 #define RT_REGISTRY_SELF  RT_HANDLE_INVALID
 
-#ifdef __KERNEL__
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
 #include <nucleus/synch.h>
 #include <nucleus/thread.h>
@@ -94,6 +94,6 @@ u_long rt_registry_put(rt_handle_t handle);
 }
 #endif
 
-#endif /* __KERNEL__ */
+#endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #endif /* !_RTAI_REGISTRY_H */

@@ -12,6 +12,33 @@
 /* Kconfig */
 #undef CONFIG_RTAI_OPT_DEBUG
 
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_ALARM
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_COND
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_EVENT
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_HEAP
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_MUTEX
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_QUEUE
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_REGISTRY
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_SEM
+
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP
    systems. This function is required for `alloca.c' support on those systems.
    */

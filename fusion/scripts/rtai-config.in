@@ -20,8 +20,8 @@ RTAI_KERNEL_CFLAGS="-I. -I${staging}${includedir} @RTAI_KMOD_APP_CFLAGS@ @RTAI_F
 RTAI_MODULE_DIR="${staging}@RTAI_MODULE_DIR@"
 RTAI_FUSION_CFLAGS="-I. -I${staging}${includedir} @RTAI_USER_APP_CFLAGS@"
 RTAI_FUSION_LDFLAGS="-L${staging}${libdir} -lfusion -lpthread"
-RTAI_UVM_CFLAGS="-I. -I${staging}${includedir} @RTAI_USER_APP_CFLAGS@"
-RTAI_UVM_LDFLAGS="-L${staging}${libdir} -lfusion -lnucleus -lpthread"
+RTAI_UVM_CFLAGS="-I. -I${staging}${includedir} @RTAI_USER_APP_CFLAGS@ -D__RTAI_UVM__"
+RTAI_UVM_LDFLAGS="-u__fusion_skin_init -L${staging}${libdir} -lfusion -lnucleus -lpthread"
 RTAI_LIBRARY_DIR="${staging}${libdir}"
 
 unset prefix exec_prefix libdir datadir pkgdatadir includedir

@@ -311,17 +311,17 @@ static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
 
 #ifdef XENO_MAIN_MODULE
 
-int __xeno_main_init(void);
+int __fusion_sys_init(void);
 
-void __xeno_main_exit(void);
+void __fusion_sys_exit(void);
 
-int __xeno_skin_init(void);
+int __fusion_skin_init(void);
 
-void __xeno_skin_exit(void);
+void __fusion_skin_exit(void);
 
-int __xeno_user_init(void);
+int __fusion_user_init(void);
 
-void __xeno_user_exit(void);
+void __fusion_user_exit(void);
 
 int vml_done = 0;
 
@@ -357,15 +357,15 @@ int main (int argc, char *argv[])
 	exit(1);
 	}
 
-    err = __xeno_main_init();
+    err = __fusion_sys_init();
 
     if (err)
 	{
-        fprintf(stderr,"main_init() failed, err=%x\n",err);
+        fprintf(stderr,"sys_init() failed, err=%x\n",err);
         exit(2);
 	}
 
-    err = __xeno_skin_init();
+    err = __fusion_skin_init();
 
     if (err)
 	{
@@ -373,7 +373,7 @@ int main (int argc, char *argv[])
         exit(3);
 	}
 
-    err = __xeno_user_init();
+    err = __fusion_user_init();
 
     if (err)
 	{
@@ -395,9 +395,9 @@ int main (int argc, char *argv[])
     while (!vml_done)
 	__pthread_idle_vm(&vml_irqlock);
 
-    __xeno_user_exit();
-    __xeno_skin_exit();
-    __xeno_main_exit();
+    __fusion_user_exit();
+    __fusion_skin_exit();
+    __fusion_sys_exit();
 
     exit(0);
 }

@@ -73,8 +73,7 @@ nodist_libvrtx_a_SOURCES = \
 	time.c
 
 libvrtx_a_CPPFLAGS = \
-	@RTAI_USER_CFLAGS@ \
-	-D_GNU_SOURCE -D_REENTRANT -D__RTAI_UVM__ \
+	@RTAI_USER_CFLAGS@ -D__RTAI_UVM__ \
 	-I$(srcdir)/.. \
 	-I$(top_srcdir)/include \
 	-I../../include \

@@ -37,7 +37,6 @@ endif
 
 librtai_a_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
-	-D_GNU_SOURCE -D_REENTRANT \
 	-I../../../include \
 	-I$(top_srcdir)/include \
 	-I$(srcdir)/../..

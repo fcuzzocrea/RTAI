@@ -36,9 +36,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@CONFIG_RTAI_OPT_VM_TRUE@am__append_1 = asm-uvm
 subdir = include/nucleus
 DIST_COMMON = $(include_HEADERS) $(srcdir)/GNUmakefile.am \
-	$(srcdir)/GNUmakefile.in
+	$(srcdir)/GNUmakefile.in COPYING
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/autoconf/docbook.m4 \
 	$(top_srcdir)/configure.in
@@ -66,7 +67,7 @@ includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = asm-ppc asm-uvm asm-i386
+DIST_SUBDIRS = asm-ppc asm-i386 asm-uvm
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -273,7 +274,6 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 @CONFIG_PPC_TRUE@ARCHDIR = asm-ppc
-@CONFIG_RTAI_OPT_VM_TRUE@ARCHDIR = asm-uvm
 @CONFIG_X86_TRUE@ARCHDIR = asm-i386
 include_HEADERS = \
 		fusion.h \
@@ -293,7 +293,7 @@ include_HEADERS = \
 		version.h \
 		xenomai.h
 
-SUBDIRS = $(ARCHDIR)
+SUBDIRS = $(ARCHDIR) $(am__append_1)
 DISTCLEANFILES = asm
 all: all-recursive
 

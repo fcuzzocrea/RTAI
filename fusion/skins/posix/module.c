@@ -54,7 +54,7 @@ static void pse51_shutdown(int xtype)
     xnpod_shutdown(xtype);
 }
 
-int __xeno_skin_init(void)
+int __fusion_skin_init(void)
 {
     u_long nstick;
     int err;
@@ -110,11 +110,11 @@ int __xeno_skin_init(void)
     return 0;
 }
 
-void __xeno_skin_exit(void)
+void __fusion_skin_exit(void)
 {
     xnprintf("POSIX %s: Stopping skin\n",PSE51_SKIN_VERSION_STRING);
     pse51_shutdown(XNPOD_NORMAL_EXIT);
 }
 
-module_init(__xeno_skin_init);
-module_exit(__xeno_skin_exit);
+module_init(__fusion_skin_init);
+module_exit(__fusion_skin_exit);

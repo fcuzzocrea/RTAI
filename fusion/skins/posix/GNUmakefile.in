@@ -39,7 +39,7 @@ host_triplet = @host@
 subdir = skins/posix
 DIST_COMMON = $(include_HEADERS) $(noinst_HEADERS) \
 	$(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in \
-	$(srcdir)/Makefile.kbuild
+	$(srcdir)/Makefile.kbuild COPYING
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/autoconf/docbook.m4 \
 	$(top_srcdir)/configure.in

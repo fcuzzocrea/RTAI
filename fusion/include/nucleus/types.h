@@ -106,4 +106,7 @@ do { \
    xnarch_halt(panic); \
 } while (0)
 
+#define ROOT_THREAD_INIT __fusion_user_init
+#define ROOT_THREAD_EXIT __fusion_user_exit
+
 #endif /* !_RTAI_NUCLEUS_TYPES_H */

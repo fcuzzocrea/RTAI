@@ -210,17 +210,7 @@ typedef struct xnpod {
 		      xnflags_t mask); /*!< Internal scheduling hook. */
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    struct xntimes {
-	xnticks_t timer_entry;
-	xnticks_t timer_handler;
-	xnticks_t timer_exit;
-	xnticks_t intr_resched;
-	xnticks_t resume_entry;
-	xnticks_t resume_exit;
-	xnticks_t switch_in;
-	xnticks_t switch_out;
-	xnticks_t periodic_wakeup;
-    } timestamps;
+    xntimes_t timestamps;
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
 } xnpod_t;

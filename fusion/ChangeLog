@@ -1,3 +1,8 @@
+2004-08-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/timer.c (xntimer_next_shot): Update timer shot
+	anticipation.
+
 2004-08-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus: Add support for execution timestamps aimed at chasing

@@ -59,6 +59,26 @@ typedef unsigned long long xntime_t; /* ns */
 
 typedef long long xnstime_t;
 
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+typedef struct xntimes {
+    xnticks_t timer_top;
+    xnticks_t timer_entry;
+    xnticks_t timer_handler;
+    xnticks_t timer_handled;
+    xnticks_t timer_exit;
+    xnsticks_t timer_drift;
+    xnsticks_t timer_drift2;
+    xnsticks_t timer_anticipation;
+    xnticks_t intr_resched;
+    xnticks_t resume_entry;
+    xnticks_t resume_exit;
+    xnticks_t switch_in;
+    xnticks_t switch_out;
+    xnticks_t periodic_wakeup;
+    xnticks_t periodic_exit;
+} xntimes_t;
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+
 #define XN_INFINITE   (0)
 #define XN_NONBLOCK   ((xnticks_t)-1)
 

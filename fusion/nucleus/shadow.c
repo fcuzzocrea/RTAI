@@ -1328,9 +1328,9 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	    if (__xn_access_ok(task,
 			       VERIFY_WRITE,
 			       (void *)__xn_reg_arg1(regs),
-			       sizeof(struct xntimes)))
+			       sizeof(xntimes_t)))
 		{
-		struct xntimes ts;
+		xntimes_t ts;
 		xnpod_get_timestamps(&ts);
 		__xn_copy_to_user(task,(void *)__xn_reg_arg1(regs),&ts,sizeof(ts));
 		__xn_reg_rval(regs) = sizeof(ts);

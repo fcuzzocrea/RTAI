@@ -1401,11 +1401,11 @@ void xnpod_resume_thread (xnthread_t *thread,
 
 unlock_and_exit:
 
+    xnlock_put_irqrestore(&nklock,s);
+
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
     nkpod->timestamps.resume_exit = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-
-    xnlock_put_irqrestore(&nklock,s);
 }
 
 /*!
@@ -2781,10 +2781,14 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
 
     thread->poverrun = -1;
 
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+    nkpod->timestamps.periodic_wakeup = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+
     xnlock_put_irqrestore(&nklock,s);
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.periodic_wakeup = xnarch_get_cpu_tsc();
+    nkpod->timestamps.periodic_exit = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
     return err;
@@ -2851,10 +2855,14 @@ int xnpod_wait_thread_period (void)
 
  unlock_and_exit:
 
+#ifdef CONFIG_RTAI_OPT_TIMESTAMPS
+    nkpod->timestamps.periodic_wakeup = xnarch_get_cpu_tsc();
+#endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
+
     xnlock_put_irqrestore(&nklock,s);
 
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-    nkpod->timestamps.periodic_wakeup = xnarch_get_cpu_tsc();
+    nkpod->timestamps.periodic_exit = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 
     return err;

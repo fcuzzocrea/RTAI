@@ -370,7 +370,7 @@ xrtailab_LDFLAGS = \
 
 SUBDIRS = scilab matlab
 
-EXTRA_DIST = icons
+EXTRA_DIST = icons INSTALL
 subdir = rtai-lab
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) \
@@ -436,7 +436,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive pdf-recursive \
 	all-recursive install-data-recursive install-exec-recursive \
 	installdirs-recursive install-recursive uninstall-recursive \
 	check-recursive installcheck-recursive
-DIST_COMMON = README $(srcdir)/GNUmakefile.in GNUmakefile.am
+DIST_COMMON = README $(srcdir)/GNUmakefile.in GNUmakefile.am INSTALL
 DIST_SUBDIRS = $(SUBDIRS)
 SOURCES = $(xrtailab_SOURCES)
 

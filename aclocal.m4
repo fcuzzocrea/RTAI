@@ -5270,7 +5270,7 @@ dnl Please note that as the ac_opengl macro and the toy example evolves,
 dnl the version number increases, so you may have to adjust the above
 dnl URL accordingly.
 dnl
-dnl @version 0.01 $Id: aclocal.m4,v 1.13 2004/07/24 16:59:16 rpm Exp $
+dnl @version 0.01 $Id: aclocal.m4,v 1.14 2004/07/25 15:21:21 rpm Exp $
 dnl @author Matthew D. Langston <langston@SLAC.Stanford.EDU>
 dnl
 dnl Patched by <rpm@xenomai.org> to suit RTAI's requirements.

@@ -48,4 +48,4 @@ xrtailab_LDFLAGS = \
 
 SUBDIRS = scilab matlab
 
-EXTRA_DIST = icons
+EXTRA_DIST = icons INSTALL

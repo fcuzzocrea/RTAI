@@ -17,9 +17,9 @@ long minjitter = 10000000,
      avgjitter = 0,
      overrun = 0;
 
-RTIME period = 0;
+int sampling_period = 0;
 
-#define SAMPLE_COUNT (1000000000 / period)
+#define SAMPLE_COUNT (1000000000 / sampling_period)
 
 #define HISTOGRAM_CELLS 100
 
@@ -49,7 +49,7 @@ void latency (void *cookie)
 	return;
 	}
 
-    period = rt_timer_ns2ticks(period);
+    period = rt_timer_ns2ticks(sampling_period);
     itime = rt_timer_read() + period * 5;
     expected = rt_timer_ns2ticks(itime);
     err = rt_task_set_periodic(NULL,itime,period);
@@ -170,7 +170,7 @@ int main (int argc, char **argv)
 
 	    case 'p':
 
-		period = (RTIME)atoi(optarg);
+		sampling_period = atoi(optarg);
 		break;
 
 	    default:
@@ -179,14 +179,14 @@ int main (int argc, char **argv)
 		exit(2);
 	    }
 
-    if (period == 0)
-	period = XNARCH_CALIBRATION_PERIOD;
+    if (sampling_period == 0)
+	sampling_period = XNARCH_CALIBRATION_PERIOD;
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
 
     setvbuf(stdout, (char *)NULL, _IOLBF, 0);
-    printf("== Sampling period: %llu ns\n",period);
+    printf("== Sampling period: %d ns\n",sampling_period);
 
     err = rt_task_create(&display_task,"display",0,2,0);
 

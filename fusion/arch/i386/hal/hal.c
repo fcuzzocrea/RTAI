@@ -860,12 +860,6 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 	{
 	struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
 
-        if (evinfo->event == 7)
-	    {
-            print_symbol("Invalid use of FPU in RTAI context at %s\n",regs->eip);
-	    goto propagate;
-	    }
-
 	if (evinfo->event == 14)	/* Page fault. */
 	    {
 	    unsigned long address;
@@ -887,14 +881,14 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 		goto endtrap;
 		}
 	    }
+        else if (evinfo->event == 7)
+            print_symbol("Invalid use of FPU in RTAI context at %s\n",regs->eip);
 
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&
 	    rthal_trap_handler(evinfo) != 0)
 	    goto endtrap;
 	}
-
- propagate:
 
     adeos_propagate_event(evinfo);
 

@@ -66,7 +66,7 @@ static void __pipe_flush_handler (void)
 	{
 	RT_PIPE *pipe = link2pipe(holder);
 	__pipe_flush(pipe);	/* Cannot do anything upon error here. */
-	clear_bit(0,&pipe->flushable);
+	__clear_bit(0,&pipe->flushable);
 	}
 
     xnlock_put_irqrestore(&nklock,s);

@@ -1304,8 +1304,6 @@ int rt_task_set_mode (int clrmask,
 	xnpod_check_context(XNPOD_THREAD_CONTEXT);
 	}
 
-    /* FIXME: RR quantum? */
-
     if (((clrmask|setmask) & ~(T_LOCK|T_RRB|T_NOSIG)) != 0)
 	return -EINVAL;
 
@@ -1352,6 +1350,81 @@ RT_TASK *rt_task_self (void)
     return xnpod_asynch_p() ? NULL : rtai_current_task();
 }
 
+/**
+ * @fn int rt_task_slice(RT_TASK *task, RTIME period)
+ * @brief Set a task's round-robin period.
+ *
+ * Set the time credit allotted to a task undergoing the round-robin
+ * scheduling.
+ *
+ * @param task The descriptor address of the affected task. If @a task
+ * is NULL, the current task is considered.
+ *
+ * @param period The round-robin period for the task expressed in
+ * clock ticks (see note).
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a task is not a task descriptor, if @a
+ * task is NULL but not called from a task context, or if @a period is
+ * zero.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * only if @a task is non-NULL.
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * oneshot mode, clock ticks are expressed in nanoseconds.
+ */
+
+int rt_task_slice (RT_TASK *task, RTIME period)
+
+{
+    int err = 0;
+    spl_t s;
+
+    if (!ticks)
+	return -EINVAL;
+
+    if (!task)
+	{
+	if (xnpod_asynch_p() || xnpod_root_p())
+	    return -EINVAL;
+
+	task = rtai_current_task();
+	}
+
+    xnlock_get_irqsave(&nklock,s);
+
+    task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
+
+    if (!task)
+	{
+	err = rtai_handle_error(task,RTAI_TASK_MAGIC,RT_TASK);
+	goto unlock_and_exit;
+	}
+    
+    xnthread_time_slice(&task->thread_base) = period;
+    xnthread_time_credit(&task->thread_base) = period;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
 /*@}*/
 
 EXPORT_SYMBOL(rt_task_create);
@@ -1373,3 +1446,4 @@ EXPORT_SYMBOL(rt_task_catch);
 EXPORT_SYMBOL(rt_task_notify);
 EXPORT_SYMBOL(rt_task_set_mode);
 EXPORT_SYMBOL(rt_task_self);
+EXPORT_SYMBOL(rt_task_slice);

@@ -1,6 +1,8 @@
 2004-12-02  Philippe Gerum  <rpm@xenomai.org>
 
-	* skins/rtai/task.c (rt_task_self): Add.
+	* skins/rtai/task.c (rt_task_self): Add self descriptor retrieval
+	function.
+	(rt_task_slice): Add routine to setup the round-robin credit.
 
 	* nucleus/timer.c (xntimer_enqueue_aperiodic): Enforce new
 	internal priority of timers.

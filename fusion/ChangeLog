@@ -1,3 +1,7 @@
+2005-02-03  Max Krasnyansky <maxk@qualcomm.com>
+
+	* configure.in: Fix GCC tuning flags determination script.
+
 2005-02-03  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/heap.c: Stop page-aligning virtual addresses of

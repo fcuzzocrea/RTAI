@@ -68,7 +68,7 @@ dnl such link right away.
 
 if test -r $srcdir/../rtai_config.h.in; then
     RTAI_INSTALLDIR=`cd .. && pwd`
-    ln -sf $RTAI_INSTALLDIR ../source
+    ln -sf $srcdir/.. ../source
     ln -sf . ../build
 elif -h $CONFIG_RTAI_MVM_INSTALLDIR/source; then
     RTAI_INSTALLDIR=${CONFIG_RTAI_MVM_INSTALLDIR}

@@ -52,7 +52,7 @@
 #include <nucleus/synch.h>
 #include <rtai/types.h>
 
-struct RT_TASK;
+struct rt_task;
 
 typedef struct rt_mutex_info {
 
@@ -80,7 +80,7 @@ typedef struct rt_mutex {
 
     rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
 
-    RT_TASK *owner;	/* !< Current mutex owner. */
+    struct rt_task *owner;	/* !< Current mutex owner. */
 
     int lockcnt;	/* !< Lock nesting level (> 0 means "locked"). */
 

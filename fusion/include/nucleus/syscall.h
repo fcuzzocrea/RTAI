@@ -65,6 +65,8 @@ typedef struct _xnsysent {
 #define __xn_exec_histage    0x2
 /* Shadow syscall; caller must be mapped. */
 #define __xn_exec_shadow     0x4
+/* Switch back toggle; caller must return to its original mode. */
+#define __xn_exec_switchback 0x8
 /* Context-agnostic syscall. */
 #define __xn_exec_any        0x0
 /* Short-hand for shadow init syscall. */

@@ -500,6 +500,11 @@ void xnshadow_relax (void)
 {
     xnthread_t *thread = xnpod_current_thread();
 
+#ifdef CONFIG_RTAI_OPT_DEBUG
+    if (testbits(thread->status,XNROOT))
+	xnpod_fatal("xnshadow_relax() called from Linux domain");
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+
     /* Enqueue the request to move the running shadow from the RTAI
        domain to the Linux domain.  This will cause the Linux task
        to resume using the register state of the shadow thread. */
@@ -1160,9 +1165,9 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
 {
     struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
+    int muxid, muxop, switched;
     struct task_struct *task;
     xnthread_t *thread;
-    int muxid, muxop;
     u_long sysflags;
 
     if (nkpod && !testbits(nkpod->status,XNPIDLE))
@@ -1333,6 +1338,8 @@ static void rtai_sysentry (adevinfo_t *evinfo)
      * domain.
      */
 
+    switched = 0;
+
     if ((sysflags & __xn_exec_lostage) != 0)
 	{
 	/* Syscall must run into the Linux domain. */
@@ -1340,7 +1347,10 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	if (evinfo->domid == RTHAL_DOMAIN_ID)
 	    /* Request originates from the RTAI domain: just relax the
 	       caller and execute the syscall immediately after. */
+	    {
 	    xnshadow_relax();
+	    switched = 1;
+	    }
 	else
 	    /* Request originates from the Linux domain: propagate the
 	       event to our Linux-based handler, so that the syscall
@@ -1366,6 +1376,8 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
     if (xnpod_shadow_p() && signal_pending(task))
 	request_syscall_restart(thread,regs);
+    else if ((sysflags & __xn_exec_switchback) != 0 && switched)
+	xnshadow_harden();
 }
 
 static void linux_sysentry (adevinfo_t *evinfo)
@@ -1373,7 +1385,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
 {
     struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
     xnthread_t *thread = xnshadow_thread(current);
-    int muxid, muxop;
+    int muxid, muxop, sysflags, switched;
 
     if (__xn_reg_mux_p(regs))
 	goto xenomai_syscall;
@@ -1414,7 +1426,9 @@ static void linux_sysentry (adevinfo_t *evinfo)
 
  skin_syscall:
 
-    if ((muxtable[muxid - 1].systab[muxop].flags & __xn_exec_histage) != 0)
+    sysflags = muxtable[muxid - 1].systab[muxop].flags;
+
+    if ((sysflags & __xn_exec_histage) != 0)
 	{
 	/* This request originates from the Linux domain and must be
 	   run into the RTAI domain: harden the caller and execute the
@@ -1424,12 +1438,18 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	    __xn_error_return(regs,-ERESTARTSYS);
 	    return;
 	    }
+
+	switched = 1;
 	}
+    else
+	switched = 0;
 
     __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(current,regs));
 
     if (xnpod_shadow_p() && signal_pending(current))
 	request_syscall_restart(xnshadow_thread(current),regs);
+    else if ((sysflags & __xn_exec_switchback) != 0 && switched)
+	xnshadow_relax();
 }
 
 static void linux_task_exit (adevinfo_t *evinfo)

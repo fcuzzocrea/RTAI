@@ -626,7 +626,10 @@ static inline void xnarch_init_fpu (xnarchtcb_t *tcb) {
 void xnarch_sleep_on (int *flagp) {
 
     while (!*flagp)
+	{
+	set_current_state(TASK_UNINTERRUPTIBLE);
 	schedule_timeout(1);
+	}
 }
 
 #ifdef CONFIG_SMP

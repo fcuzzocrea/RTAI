@@ -605,22 +605,18 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
 }
 
 int rtai_lxrt_fastpath (void)
-
 {
-    int lpath;
-
-    lpath = test_bit(hard_cpu_id(),&rtai_cpu_lxrt) || test_bit(hard_cpu_id(),&rtai_cpu_realtime);
-
     /* Returns zero if we may process pending Linux work on our return
        path (i.e. long return path through reschedule), or non-zero if
        we may not (fast return path). In the former case, also unstall
        the Linux stage into the Adeos pipeline so that interrupts can
        flow anew. */
 
-    if (!lpath)
+	if (test_bit(hard_cpu_id(), &rtai_cpu_realtime)) {
+		return 1;
+	}
 	rtai_linux_sti();
-
-    return lpath;
+	return 0;
 }
 
 int set_rt_fun_ext_index(struct rt_fun_entry *fun, int idx)

@@ -402,6 +402,41 @@ int rt_alarm_inquire (RT_ALARM *alarm,
     return err;
 }
 
+/**
+ * @fn int rt_alarm_wait(RT_ALARM *alarm)
+ * @brief Wait for the next alarm shot.
+ *
+ * This user-space only call allows the current task to suspend
+ * execution until the specified alarm triggers. The priority of the
+ * current task is raised above all other RTAI tasks - except those
+ * also undergoing an alarm wait - so that it would preempt any of
+ * them under normal circumstances (i.e. no scheduler lock).
+ *
+ * @param alarm The descriptor address of the awaited alarm.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a alarm is not an alarm descriptor.
+ *
+ * - -EACCES is returned if this service was not called from a task
+ * context.
+ *
+ * - -EIDRM is returned if @a alarm is a deleted alarm descriptor,
+ * including if the deletion occurred while the caller was waiting for
+ * its next shot.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * current task before the next alarm shot.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task
+ *
+ * Rescheduling: always.
+ */
+
 /*@}*/
 
 EXPORT_SYMBOL(rt_alarm_create);

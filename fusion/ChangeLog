@@ -1,5 +1,8 @@
 2004-12-05  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/task.c: Return -EACCES upon invalid non-task context
+	to remain consistent with the shadow manager.
+
 	* skins/rtai/syscalls.c: Fix generalized memory leak upon RT
 	object deletion.
 

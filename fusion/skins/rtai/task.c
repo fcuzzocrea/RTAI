@@ -313,8 +313,10 @@ int rt_task_start (RT_TASK *task,
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a task is not a task descriptor, or if @a
- * task is NULL but not called from a task context.
+ * - -EINVAL is returned if @a task is not a task descriptor.
+ *
+ * - -EACCES is returned if @a task is NULL but not called from a task
+ * context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
@@ -341,7 +343,7 @@ int rt_task_suspend (RT_TASK *task)
     if (!task)
 	{
 	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EINVAL;
+	    return -EACCES;
 
 	task = rtai_current_task();
 	}
@@ -447,8 +449,10 @@ int rt_task_resume (RT_TASK *task)
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a task is not a task descriptor, or if @a
- * task is NULL but not called from a task context.
+ * - -EINVAL is returned if @a task is not a task descriptor.
+ *
+ * - -EACCES is returned if @a task is NULL but not called from a task
+ * context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
@@ -476,7 +480,7 @@ int rt_task_delete (RT_TASK *task)
     if (!task)
 	{
 	if (xnpod_root_p())
-	    return -EINVAL;
+	    return -EACCES;
 
 	task = rtai_current_task();
 	}
@@ -675,9 +679,11 @@ int rt_task_wait_period (void)
 
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a task is not a task descriptor, if @a
- * task is NULL but not called from a task context, or @a prio is
- * invalid.
+ * - -EINVAL is returned if @a task is not a task descriptor, or if @a
+ * prio is invalid.
+ *
+ * - -EACCES is returned if @a task is NULL but not called from a task
+ * context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
@@ -715,7 +721,7 @@ int rt_task_set_priority (RT_TASK *task,
     if (!task)
 	{
 	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EINVAL;
+	    return -EACCES;
 
 	task = rtai_current_task();
 	}
@@ -943,8 +949,10 @@ int rt_task_unblock (RT_TASK *task)
  * @return 0 is returned and status information is written to the
  * structure pointed at by @a info upon success. Otherwise:
  *
- * - -EINVAL is returned if @a task is not a task descriptor, or if @a
- * task is NULL but not called from a task context.
+ * - -EINVAL is returned if @a task is not a task descriptor.
+ *
+ * - -EACCES is returned if @a task is NULL but not called from a task
+ * context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
@@ -971,7 +979,7 @@ int rt_task_inquire (RT_TASK *task, RT_TASK_INFO *info)
     if (!task)
 	{
 	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EINVAL;
+	    return -EACCES;
 
 	task = rtai_current_task();
 	}
@@ -1160,8 +1168,10 @@ int rt_task_catch (void (*handler)(rt_sigset_t))
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a task is not a task descriptor, or if @a
- * task is NULL but not called from a task context.
+ * - -EINVAL is returned if @a task is not a task descriptor.
+ *
+ * - -EACCES is returned if @a task is NULL but not called from a task
+ * context.
  *
  * - -EIDRM is returned if @a task is a deleted task descriptor.
  *
@@ -1190,7 +1200,7 @@ int rt_task_notify (RT_TASK *task,
     if (!task)
 	{
 	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EINVAL;
+	    return -EACCES;
 
 	task = rtai_current_task();
 	}
@@ -1371,9 +1381,11 @@ RT_TASK *rt_task_self (void)
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -EINVAL is returned if @a task is not a task descriptor, if @a
- * task is NULL but not called from a task context, or if @a quantum is
- * zero.
+ * - -EINVAL is returned if @a task is not a task descriptor, or if @a
+ * quantum is zero.
+ *
+ * - -EACCES is returned if @a task is NULL but not called from a task
+ * context.
  *
  * Environments:
  *
@@ -1406,7 +1418,7 @@ int rt_task_slice (RT_TASK *task, RTIME quantum)
     if (!task)
 	{
 	if (xnpod_asynch_p() || xnpod_root_p())
-	    return -EINVAL;
+	    return -EACCES;
 
 	task = rtai_current_task();
 	}

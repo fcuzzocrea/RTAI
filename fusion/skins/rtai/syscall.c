@@ -1427,7 +1427,7 @@ static int __rt_cond_delete (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_cond_delete(cond);
 
-    if (!err && cond->source = RT_UAPI_SOURCE)
+    if (!err && cond->source == RT_UAPI_SOURCE)
 	xnfree(cond);
 
     return err;
@@ -2463,7 +2463,7 @@ static int __rt_alarm_wait (struct task_struct *curr, struct pt_regs *regs)
 
     xnlock_get_irqsave(&nklock,s);
 
-    if (xnthread_base_priority(thread) != FUSION_IRQ_PRIO)
+    if (xnthread_base_priority(&task->thread_base) != FUSION_IRQ_PRIO)
 	/* Renice the waiter above all regular tasks if needed. */
 	xnpod_renice_thread(&task->thread_base,
 			    FUSION_IRQ_PRIO);

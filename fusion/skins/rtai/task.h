@@ -243,7 +243,7 @@ int rt_task_set_mode(int clrmask,
 RT_TASK *rt_task_self(void);
 
 int rt_task_slice(RT_TASK *task,
-		  RTIME period);
+		  RTIME quantum);
 
 #ifdef __cplusplus
 }

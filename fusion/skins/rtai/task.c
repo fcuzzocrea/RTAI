@@ -1351,22 +1351,23 @@ RT_TASK *rt_task_self (void)
 }
 
 /**
- * @fn int rt_task_slice(RT_TASK *task, RTIME period)
- * @brief Set a task's round-robin period.
+ * @fn int rt_task_slice(RT_TASK *task, RTIME quantum)
+ * @brief Set a task's round-robin quantum.
  *
  * Set the time credit allotted to a task undergoing the round-robin
- * scheduling.
+ * scheduling. As a side-effect, rt_task_slice() refills the current
+ * quantum of the target task.
  *
  * @param task The descriptor address of the affected task. If @a task
  * is NULL, the current task is considered.
  *
- * @param period The round-robin period for the task expressed in
+ * @param quantum The round-robin quantum for the task expressed in
  * clock ticks (see note).
  *
  * @return 0 is returned upon success. Otherwise:
  *
  * - -EINVAL is returned if @a task is not a task descriptor, if @a
- * task is NULL but not called from a task context, or if @a period is
+ * task is NULL but not called from a task context, or if @a quantum is
  * zero.
  *
  * Environments:
@@ -1384,17 +1385,17 @@ RT_TASK *rt_task_self (void)
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
+ * quantumic mode, clock ticks are expressed as quantumic jiffies. In
  * oneshot mode, clock ticks are expressed in nanoseconds.
  */
 
-int rt_task_slice (RT_TASK *task, RTIME period)
+int rt_task_slice (RT_TASK *task, RTIME quantum)
 
 {
     int err = 0;
     spl_t s;
 
-    if (!period)
+    if (!quantum)
 	return -EINVAL;
 
     if (!task)
@@ -1415,8 +1416,8 @@ int rt_task_slice (RT_TASK *task, RTIME period)
 	goto unlock_and_exit;
 	}
     
-    xnthread_time_slice(&task->thread_base) = period;
-    xnthread_time_credit(&task->thread_base) = period;
+    xnthread_time_slice(&task->thread_base) = quantum;
+    xnthread_time_credit(&task->thread_base) = quantum;
 
  unlock_and_exit:
 

@@ -24,15 +24,12 @@
  * RTAI/fusion version code is an hexadecimal value formatted as
  * follows:
  *
- * code = 00vvrrsi, where:
- * - "vv" is the major version number,
- * - "rr" is the minor release number,
- * - "si" is the snapshot iteration count.
- *   0xff stands for a stable release, lower values denote
- *   intermediate snapshots taken while working on the current
- *   release.
+ * code = 00mamirn, where:
+ * - "ma" is the major version number,
+ * - "mi" is the minor version number,
+ * - "rn" is the revision number.
  */
 
-#define FUSION_VERSION_CODE   0x00000608
+#define FUSION_VERSION_CODE  0x00000700
 
 #endif /* _RTAI_NUCLEUS_VERSION_H */

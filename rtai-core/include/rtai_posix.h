@@ -534,7 +534,7 @@ static inline int nanosleep_rt(const struct timespec *rqtp, struct timespec *rmt
 #include <sys/stat.h>
 #include <semaphore.h>
 #include <pthread.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 struct task_struct;
 

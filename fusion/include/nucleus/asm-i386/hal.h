@@ -164,7 +164,6 @@ static inline unsigned long ffnz (unsigned long word) {
 #include <asm/io.h>
 #include <asm/timex.h>
 #include <nucleus/asm/atomic.h>
-#include <nucleus/asm/fpu.h>
 #include <asm/processor.h>
 #ifdef CONFIG_X86_LOCAL_APIC
 #include <asm/fixmap.h>

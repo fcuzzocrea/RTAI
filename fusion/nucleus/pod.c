@@ -648,7 +648,7 @@ int xnpod_init_thread (xnthread_t *thread,
     if (err)
         return err;
 
-    xnltt_log_event(rtai_ev_thrinit,thread->name);
+    xnltt_log_event(rtai_ev_thrinit,thread->name,flags);
 
     xnlock_get_irqsave(&nklock,s);
     thread->sched = xnpod_current_sched();
@@ -1161,18 +1161,17 @@ void xnpod_delete_thread (xnthread_t *thread)
  * caller are:
  *
  * - XNSUSP. This flag forcibly suspends a thread, regardless of any
- * resource to wait for. The wchan parameter should not be significant
- * when using this suspension condition. A reverse call to
- * xnpod_resume_thread() specifying the XNSUSP bit must be issued to
- * remove this condition, which is cumulative with other suspension
- * bits.
+ * resource to wait for. A reverse call to xnpod_resume_thread()
+ * specifying the XNSUSP bit must be issued to remove this condition,
+ * which is cumulative with other suspension bits.@a wchan should be
+ * NULL when using this suspending mode.
  *
  * - XNDELAY. This flags denotes a counted delay wait (in ticks) which
  * duration is defined by the value of the timeout parameter.
  *
  * - XNPEND. This flag denotes a wait for a synchronization object to
  * be signaled. The wchan argument must points to this object. A
- * timeout value can be passed to bound the wait. This suspension mode
+ * timeout value can be passed to bound the wait. This suspending mode
  * should not be used directly by the upper interface, but rather
  * through the xnsynch_sleep_on() call.
  *
@@ -1186,7 +1185,9 @@ void xnpod_delete_thread (xnthread_t *thread)
  *
  * @param wchan The address of a pended resource. This parameter is
  * used internally by the synchronization object implementation code
- * to specify on which object the suspended thread pends.
+ * to specify on which object the suspended thread pends. NULL is a
+ * legitimate value when this parameter does not apply to the current
+ * suspending mode (e.g. XNSUSP).
  *
  * @note If the target thread is a shadow which has received a
  * Linux-originated signal, then this service immediately exits

@@ -1,3 +1,12 @@
+2004-03-15  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm-ppc: committed reworked header files for compiling
+	  PPC in magma.
+	* base/arch/ppc/hal.c: committed reworked HAL for compiling PPC 
+	  in magma.
+	* base/sched/sched.*: added busy wait, optional, to avoid anticipating
+	  scheduling resume time in oneshot mode.
+
 2004-03-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/ipc/tbx/tbx.c: fixed a misused sem_wait, sem_wait_if needed 

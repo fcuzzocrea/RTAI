@@ -1,3 +1,9 @@
+2004-01-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: modified support for TSC emulation on 486s,
+	  to avoid clashes against non x86 archs (specific remarks from 
+	  Michael Neuhauser)
+
 2004-01-05  Michael Neuhauser <mike@firmix.at>
 
 	* base/sched/sched.c: minidemonisation of LXRT support kernel threads,

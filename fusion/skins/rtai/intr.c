@@ -82,7 +82,6 @@ int rt_intr_create (RT_INTR *intr,
 		    rt_isr_t isr,
 		    int mode)
 {
-    char name[XNOBJECT_NAME_LEN];
     int err;
     spl_t s;
 
@@ -102,7 +101,7 @@ int rt_intr_create (RT_INTR *intr,
     xnlock_get_irqsave(&nklock,s);
     appendq(&__rtai_intr_q,&intr->link);
     xnlock_put_irqrestore(&nklock,s);
-    snprintf(name,sizeof(name),"interrupt/%u",irq);
+    snprintf(intr->name,sizeof(intr->name),"interrupt/%u",irq);
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     intr->source = RT_KAPI_SOURCE;
@@ -115,7 +114,7 @@ int rt_intr_create (RT_INTR *intr,
        half-baked objects... */
 
     if (!err)
-	err = rt_registry_enter(name,intr,&intr->handle);
+	err = rt_registry_enter(intr->name,intr,&intr->handle);
 
     if (err)
 	rt_intr_delete(intr);
@@ -284,6 +283,7 @@ int rt_intr_inquire (RT_INTR *intr,
         goto unlock_and_exit;
         }
     
+    strcpy(info->name,sem->name);
     info->nwaiters = xnsynch_nsleepers(&intr->synch_base);
     info->irq = intr->intr_base.irq;
 

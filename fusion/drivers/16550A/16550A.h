@@ -173,6 +173,8 @@ typedef struct rt_uart {
 
     rt_handle_t handle;		/* !< Handle in registry -- zero if unregistered. */
 
+    char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
+
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     int source;			/* !< Opener's space. */
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */

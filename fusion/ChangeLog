@@ -1,5 +1,9 @@
 2005-01-10  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/intr.c, drivers/16550A/16550A.c: Store the
+	registration key into the descriptor as required by
+	rt_registry_enter().
+
 	* skins/rtai/syscall.c: Make rt_task_delete() a regular context
 	syscall.
 

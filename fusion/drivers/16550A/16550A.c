@@ -148,7 +148,6 @@ static int __uart_isr (RT_INTR *intr)
 int rt_uart_open (RT_UART *uart,
 		  RT_UART_CONFIG *config)
 {
-    char name[XNOBJECT_NAME_LEN];
     int err;
     spl_t s;
 
@@ -170,7 +169,7 @@ int rt_uart_open (RT_UART *uart,
     uart->intr_desc.private_data = uart;
     uart->magic = RTAI_UART_MAGIC;
     uart->handle = 0;
-    snprintf(name,sizeof(name),"uart/%x",config->port.base);
+    snprintf(uart->name,sizeof(uart->name),"uart/%x",config->port.base);
 
     /* Mask all UART interrupts and clear pending ones. */
     outb(0,IER(uart));
@@ -221,7 +220,7 @@ int rt_uart_open (RT_UART *uart,
        complete objects, so that the registry cannot return handles to
        half-baked objects... */
 
-    err = rt_registry_enter(name,uart,&uart->handle);
+    err = rt_registry_enter(uart->name,uart,&uart->handle);
 
     if (err)
 	rt_uart_close(uart);

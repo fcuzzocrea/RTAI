@@ -35,6 +35,8 @@ typedef struct rt_intr_info {
 
     int nwaiters;	/* !< Number of pending tasks. */
 
+    char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
+
 } RT_INTR_INFO;
 
 typedef struct rt_intr_placeholder {
@@ -62,8 +64,6 @@ typedef struct rt_intr {
 
     xnsynch_t synch_base; /* !< Base synchronization object. */
 
-    rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
-
     int pending;	/* !< Pending hits to wait for. */
 
     rt_isr_t isr;	/* !< User-defined interrupt service routine. */
@@ -71,6 +71,10 @@ typedef struct rt_intr {
     int mode;		/* !< Interrupt control mode. */
 
     void *private_data;	/* !< Private user-defined data. */
+
+    rt_handle_t handle;	/* !< Handle in registry -- zero if unregistered. */
+
+    char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     int source;		/* !< Creator's space. */

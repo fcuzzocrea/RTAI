@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/bash
 # RTAI application loader script.
 # (Processes the .runinfo files)
 # April 2003, <rpm@xenomai.org>

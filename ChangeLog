@@ -1,3 +1,11 @@
+2004-12-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/scripts/rtai-*.in: Force /bin/bash as interpreter.
+
+2004-12-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-addons/serial/serial.c: Fix exports.
+
 2004-12-01  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/sched/rtai/sched_lxrt.c: mark a schedling request only 

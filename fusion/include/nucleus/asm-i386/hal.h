@@ -298,20 +298,6 @@ static inline struct task_struct *rthal_get_current (int cpuid)
     return get_current();
 }
 
-static inline void rthal_switch_to_real_time(int cpuid) {
-
-    rthal_linux_context[cpuid].oldtask = rthal_get_current(cpuid);
-    rthal_linux_local_irq_save(rthal_linux_context[cpuid].oldflags);
-    set_bit(cpuid,&rthal_cpu_realtime);
-}
-
-static inline void rthal_switch_to_linux(int cpuid) {
-
-    clear_bit(cpuid,&rthal_cpu_realtime);
-    rthal_linux_local_irq_restore_nosync(rthal_linux_context[cpuid].oldflags,cpuid);
-    rthal_linux_context[cpuid].oldtask = NULL;
-}
-
 static inline void rthal_set_timer_shot (unsigned long delay) {
 
     if (delay) {

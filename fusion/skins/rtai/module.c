@@ -22,7 +22,8 @@
 /*!
  * \defgroup native Native RTAI API.
  *
- * The native RTAI programming interface to real-time applications.
+ * The native RTAI programming interface available to real-time
+ * applications.
  *
  */
 

@@ -23,8 +23,6 @@ int main (int argc, char **argv)
 	exit(1);
 	}
 
-    setvbuf(stdout, (char *)NULL, _IOLBF, 0);
-
     for (;;)
 	{
 	sz = read(fd,&s,sizeof(s));

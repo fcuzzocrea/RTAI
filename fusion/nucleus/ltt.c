@@ -66,8 +66,8 @@ void __exit xnltt_umount (void)
 
 struct xnltt_evmap xnltt_evtable[] = {
 
-    [rtai_ev_ienter] = { "RTAI i-enter", "IRQ=%d", -1 },
-    [rtai_ev_iexit] = { "RTAI i-exit", "IRQ=%d", -1 },
+    [rtai_ev_ienter] = { "RTAI i-enter", "irq=%d", -1 },
+    [rtai_ev_iexit] = { "RTAI i-exit", "irq=%d", -1 },
     [rtai_ev_resched] = { "RTAI resched", NULL, -1 },
     [rtai_ev_smpsched] = { "RTAI smpsched", NULL, -1 },
     [rtai_ev_fastsched] = { "RTAI fastsched", NULL, -1 },
@@ -79,7 +79,7 @@ struct xnltt_evmap xnltt_evtable[] = {
     [rtai_ev_thrstart] = { "RTAI thread start", "thread=%s", -1 },
     [rtai_ev_threstart] = { "RTAI thread restart", "thread=%s", -1 },
     [rtai_ev_thrdelete] = { "RTAI thread delete", "thread=%s", -1 },
-    [rtai_ev_thrsuspend] = { "RTAI thread suspend", "thread=%s, mask=0x%x, timeout=%Ld, wchan=%p", -1 },
+    [rtai_ev_thrsuspend] = { "RTAI thread suspend", "thread=%s, mask=0x%x, timeout=%Lu, wchan=%p", -1 },
     [rtai_ev_thresume] = { "RTAI thread resume", "thread=%s, mask=0x%x", -1 },
     [rtai_ev_thrunblock] = { "RTAI thread unblock", "thread=%s, status=0x%x", -1 },
     [rtai_ev_threnice] = { "RTAI thread renice", "thread=%s, prio=%d", -1 },
@@ -102,6 +102,17 @@ struct xnltt_evmap xnltt_evtable[] = {
     [rtai_ev_shadowstart] = { "RTAI shadow start", "thread=%s", -1 },
     [rtai_ev_syscall] = { "RTAI syscall", "thread=%s, skin=%d, call=%d", -1 },
     [rtai_ev_shadowexit] = { "RTAI shadow exit", "thread=%s", -1 },
+    [rtai_ev_thrsetmode] = { "RTAI thread setmode", "thread=%s, clrmask=0x%x, setmask=0x%x", -1 },
+    [rtai_ev_rdrotate] = { "RTAI rotate readyq", "thread=%s, prio=%d", -1 },
+    [rtai_ev_rractivate] = { "RTAI activate RR", "quantum=%Lu", -1 },
+    [rtai_ev_rrdeactivate] = { "RTAI deactivate RR", NULL, -1 },
+    [rtai_ev_timeset] = { "RTAI set time", "newtime=%Lu", -1 },
+    [rtai_ev_addhook] = { "RTAI add hook", "type=%d, routine=%p", -1 },
+    [rtai_ev_remhook] = { "RTAI remove hook", "type=%d, routine=%p", -1 },
+    [rtai_ev_thrperiodic] = { "RTAI thread set periodic", "thread=%s, idate=%Lu, period=%Lu", -1 },
+    [rtai_ev_thrwait] = { "RTAI thread wait periodic", "thread=%s", -1 },
+    [rtai_ev_tmstart] = { "RTAI start timer", "tick=%u ns", -1 },
+    [rtai_ev_tmstop] = { "RTAI stop timer", NULL, -1 },
 };
 
 EXPORT_SYMBOL(xnltt_evtable);

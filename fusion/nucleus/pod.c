@@ -989,6 +989,8 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
 
     xnlock_get_irqsave(&nklock,s);
 
+    xnltt_log_event(rtai_ev_thrsetmode,thread->name,clrmask,setmask);
+
     oldmode = (thread->status & XNTHREAD_MODE_BITS);
     __clrbits(thread->status,clrmask & XNTHREAD_MODE_BITS);
     __setbits(thread->status,setmask & XNTHREAD_MODE_BITS);
@@ -1813,6 +1815,8 @@ void xnpod_rotate_readyq (int prio)
     if (countpq(&sched->readyq) == 0)
         goto unlock_and_exit; /* Nobody is ready. */
 
+    xnltt_log_event(rtai_ev_rdrotate,sched->runthread,prio);
+
     /* There is _always_ a regular thread, ultimately the root
        one. Use the base priority, not the priority boost. */
 
@@ -1867,6 +1871,8 @@ void xnpod_activate_rr (xnticks_t quantum)
 
     xnlock_get_irqsave(&nklock,s);
 
+    xnltt_log_event(rtai_ev_rractivate,quantum);
+
     holder = getheadq(&nkpod->threadq);
 
     while (holder)
@@ -1912,6 +1918,8 @@ void xnpod_deactivate_rr (void)
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_rrdeactivate);
 
     holder = getheadq(&nkpod->threadq);
 
@@ -2491,6 +2499,7 @@ void xnpod_set_time (xnticks_t newtime)
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
+    xnltt_log_event(rtai_ev_timeset,newtime);
     nkpod->wallclock = newtime;
     setbits(nkpod->status,XNTMSET);
     xnlock_put_irqrestore(&nklock,s);
@@ -2592,6 +2601,8 @@ int xnpod_add_hook (int type, void (*routine)(xnthread_t *))
 
     xnlock_get_irqsave(&nklock,s);
 
+    xnltt_log_event(rtai_ev_addhook,type,routine);
+
     switch (type)
         {
         case XNHOOK_THREAD_START:
@@ -2664,6 +2675,8 @@ int xnpod_remove_hook (int type, void (*routine)(xnthread_t *))
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
+
+    xnltt_log_event(rtai_ev_remhook,type,routine);
 
     switch (type)
         {
@@ -2887,6 +2900,8 @@ unlock_and_exit:
 	return err;
         }
 
+    xnltt_log_event(rtai_ev_tmstart,nstick);
+
     nkpod->svctable.tickhandler = tickhandler;
 
     /* The clock interrupt does not need to be attached since the
@@ -2965,6 +2980,8 @@ void xnpod_stop_timer (void)
 
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	goto unlock_and_exit;
+
+    xnltt_log_event(rtai_ev_tmstop);
 
     if (testbits(nkpod->status,XNTIMED))
         {
@@ -3149,6 +3166,8 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
 
     xnlock_get_irqsave(&nklock,s);
 
+    xnltt_log_event(rtai_ev_thrperiodic,thread->name,idate,period);
+
     if (period == XN_INFINITE)
 	{
 	if (xntimer_active_p(&thread->ptimer))
@@ -3229,6 +3248,8 @@ int xnpod_wait_thread_period (void)
 	err = -EWOULDBLOCK;
 	goto unlock_and_exit;
 	}
+
+    xnltt_log_event(rtai_ev_thrwait,thread->name);
 
     if (thread->poverrun < 0)
 	{

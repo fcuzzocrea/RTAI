@@ -1,4 +1,13 @@
+2004-09-20  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_relax): Feeds
+	__adeos_schedule_back_root() with the proper task pointer, which
+	must always be the current (Linux-managed) switch lock owner.
+
 2004-09-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/GNUmakefile.am (OPTDIRS): Leave the cruncher out of
+	the optional dirs.
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.*-i386-r7 final.
 

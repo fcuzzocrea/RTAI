@@ -124,6 +124,16 @@ static struct {
 
 } gk_renice_wheel[XNARCH_NR_CPUS][XNSHADOW_MAXRQ];
 
+#define get_switch_lock_owner() \
+switch_lock_owner[task_cpu(get_calling_task())]
+
+#define set_switch_lock_owner(t) \
+do { \
+   switch_lock_owner[task_cpu(t)] = t; \
+} while(0)
+
+static struct task_struct *switch_lock_owner[XNARCH_NR_CPUS];
+
 static inline struct task_struct *get_calling_task (adevinfo_t *evinfo) {
 
     return (xnpod_shadow_p()
@@ -567,7 +577,7 @@ void xnshadow_harden (void)
 /*! 
  * @internal
  * \fn void xnshadow_relax(void);
- * \brief Switch a shadow thread back to the Linux domain .
+ * \brief Switch a shadow thread back to the Linux domain.
  *
  * This service yields the control of the running shadow back to
  * Linux. This is obtained by suspending the shadow and scheduling a
@@ -580,6 +590,9 @@ void xnshadow_harden (void)
  *
  * Context: This routine must be called on behalf of a real-time
  * shadow inside the RTAI domain.
+
+ * Note: "current" is valid here since the shadow runs with the
+ * properties of the Linux task.
  */
 
 void xnshadow_relax (void)
@@ -606,10 +619,7 @@ void xnshadow_relax (void)
     xnpod_renice_root(thread->cprio);
     splhigh(s);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
-    /* Here, the previous Linux task is the last one which has been
-       preempted by a real-time thread since we are exiting from the
-       latter context, back on the root thread. */
-    __adeos_schedule_back_root(xnthread_archtcb(xnpod_current_root())->user_task);
+    __adeos_schedule_back_root(get_switch_lock_owner());
     splexit(s);
 
     /* "current" is now running into the Linux domain on behalf of the
@@ -719,13 +729,7 @@ static int xnshadow_sync_wait (int *u_syncp)
 void xnshadow_exit (void)
 
 {
-    /* Here, the previous Linux task is the last one which has been
-       preempted by a real-time thread since we must be exiting from
-       the latter context, back on the root thread. In this respect,
-       there is always a valid ->user_task member since the root
-       thread must have been preempted in the first place by the
-       real-time thread. */
-    __adeos_schedule_back_root(xnthread_archtcb(xnpod_current_root())->user_task);
+    __adeos_schedule_back_root(get_switch_lock_owner());
     do_exit(0);
 }
 
@@ -1561,6 +1565,8 @@ static void xnshadow_schedule_head (adevinfo_t *evinfo)
 
     if (!nkpod || testbits(nkpod->status,XNPINIT))
 	return;
+
+    set_switch_lock_owner(current);
 
     if (xnshadow_thread(next))
 	{

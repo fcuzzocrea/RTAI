@@ -3003,13 +3003,13 @@ int xnpod_calibrate_sched (void)
            autocalibration is not available. */
         goto unload_and_exit;
 
-    xnpod_init_thread(&calibration_thread,
+    xnpod_init_thread(thread,
                       "calibration",
                       1,
                       0,
                       0);
 
-    xnpod_start_thread(&calibration_thread,
+    xnpod_start_thread(thread,
                        0,
                        0,
                        XNPOD_ALL_CPUS,

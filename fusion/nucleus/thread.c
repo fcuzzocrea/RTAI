@@ -53,7 +53,7 @@ static void xnthread_timeout_handler (void *cookie)
 
 {
     xnthread_t *thread = (xnthread_t *)cookie;
-    setbits(thread->status,XNTIMEO);
+    __setbits(thread->status,XNTIMEO);
     xnpod_resume_thread(thread,XNDELAY);
 }
 

@@ -68,7 +68,6 @@ typedef struct xntimes {
     xnticks_t timer_exit;
     xnsticks_t timer_drift;
     xnsticks_t timer_drift2;
-    xnsticks_t timer_anticipation;
     xnticks_t intr_resched;
     xnticks_t resume_entry;
     xnticks_t resume_exit;
@@ -85,6 +84,9 @@ typedef struct xntimes {
 #define testbits(flags,mask) ((flags) & (mask))
 #define setbits(flags,mask)  xnarch_atomic_set_mask(&(flags),mask)
 #define clrbits(flags,mask)  xnarch_atomic_clear_mask(&(flags),mask)
+#define __testbits(flags,mask) testbits(flags,mask)
+#define __setbits(flags,mask)  do { (flags) |= (mask); } while(0)
+#define __clrbits(flags,mask)  do { (flags) &= ~(mask); } while(0)
 
 typedef atomic_flags_t xnflags_t;
 

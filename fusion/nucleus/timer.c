@@ -99,7 +99,7 @@ void xntimer_destroy (xntimer_t *timer)
     if (!testbits(timer->status,XNTIMER_DEQUEUED))
 	xntimer_stop(timer);
 
-    setbits(timer->status,XNTIMER_KILLED);
+    __setbits(timer->status,XNTIMER_KILLED);
 }
 
 static inline void xntimer_enqueue (xntimer_t *timer)
@@ -125,7 +125,7 @@ static inline void xntimer_enqueue (xntimer_t *timer)
 	}
 
     timer->shot = timer->date;
-    clrbits(timer->status,XNTIMER_DEQUEUED);
+    __clrbits(timer->status,XNTIMER_DEQUEUED);
 }
 
 static inline void xntimer_dequeue (xntimer_t *timer)
@@ -133,7 +133,7 @@ static inline void xntimer_dequeue (xntimer_t *timer)
 {
     int slot = testbits(nkpod->status,XNTMPER) ? (timer->date & XNTIMER_WHEELMASK) : 0;
     removeq(&nkpod->timerwheel[slot],&timer->link);
-    setbits(timer->status,XNTIMER_DEQUEUED);
+    __setbits(timer->status,XNTIMER_DEQUEUED);
 }
 
 #if XNARCH_HAVE_APERIODIC_TIMER
@@ -331,7 +331,7 @@ void xntimer_do_timers (void)
 	   monotonous. */
 	now = ++nkpod->jiffies;
 	timerq = &nkpod->timerwheel[now & XNTIMER_WHEELMASK];
-	nkpod->wallclock++;
+	++nkpod->wallclock;
 	}
     else
 	{
@@ -363,22 +363,21 @@ void xntimer_do_timers (void)
 	       tick to the interrupt epilogue (see
 	       xnintr_irq_handler()), we save some I-cache, which
 	       translates into precious microsecs. */
-	    setbits(sched->status,XNHTICK);
+	    __setbits(sched->status,XNHTICK);
 	else
-	  {
+	    {
 	    /* Otherwise, we'd better have a valid handler... */
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-	    nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
 	    nkpod->timestamps.timer_entry = nkpod->timestamps.timer_top;
 	    nkpod->timestamps.timer_drift = (xnsticks_t)now - (xnsticks_t)timer->date;
 	    nkpod->timestamps.timer_drift2 = (xnsticks_t)now - (xnsticks_t)timer->shot;
-	    nkpod->timestamps.timer_anticipation = (xnsticks_t)timer->date - (xnsticks_t)timer->shot;
+	    nkpod->timestamps.timer_handler = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
 	    timer->handler(timer->cookie);
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
 	    nkpod->timestamps.timer_handled = xnarch_get_cpu_tsc();
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-	  }
+	    }
 
 	/* Restart the timer for the next period if a valid interval
 	   has been given. The status is checked in order to prevent
@@ -439,7 +438,7 @@ void xntimer_freeze (void)
 
 	while (holder != NULL)
 	    {
-	    setbits(link2timer(holder)->status,XNTIMER_DEQUEUED);
+	    __setbits(link2timer(holder)->status,XNTIMER_DEQUEUED);
 	    holder = popq(timerq,holder);
 	    }
 	}

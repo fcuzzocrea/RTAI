@@ -1,3 +1,20 @@
+2004-08-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/pod.h (struct pod): Remove the usrthread member;
+	it became meaningless with the dismissal of the threaded interrupt
+	model.
+
+	* nucleus: Prefer non-atomic bitops when applicable.
+
+	* nucleus/pod.c (xnpod_schedule): Clarify the path to switch
+	decision a bit.
+
+2004-08-29  Marc Kleine-Budde <kleine-budde@gmx.de>
+
+	* include/nucleus/asm-ppc/system.h (xnarch_switch_to): Do not
+	fiddle with Altivec-related information if Altivec support is not
+	configured in.
+
 2004-08-28  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/timer.c (xntimer_next_shot): Update timer shot

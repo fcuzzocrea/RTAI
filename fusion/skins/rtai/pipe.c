@@ -202,7 +202,7 @@ int rt_pipe_close (RT_PIPE *pipe)
 	goto unlock_and_exit;
 	}
 
-    if (test_and_clear_bit(0,&pipe->flushable))
+    if (__test_and_clear_bit(0,&pipe->flushable))
 	{
 	/* Purge data waiting for flush. */
 	removeq(&__pipe_flush_q,&pipe->link);
@@ -391,7 +391,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
 	goto unlock_and_exit;
 	}
 
-    if (test_and_clear_bit(0,&pipe->flushable))
+    if (__test_and_clear_bit(0,&pipe->flushable))
 	{
 	removeq(&__pipe_flush_q,&pipe->link);
 	n = __pipe_flush(pipe);
@@ -484,7 +484,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
 	    {
 	    ssize_t err = __pipe_flush(pipe);
 
-	    if (test_and_clear_bit(0,&pipe->flushable))
+	    if (__test_and_clear_bit(0,&pipe->flushable))
 		removeq(&__pipe_flush_q,&pipe->link);
 
 	    if (err < 0)
@@ -519,7 +519,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
        pending if necessary since it could preempt a Linux-based
        caller, so... */
 
-    if (pipe->fillsz > 0 && !test_and_set_bit(0,&pipe->flushable))
+    if (pipe->fillsz > 0 && !__test_and_set_bit(0,&pipe->flushable))
 	{
 	appendq(&__pipe_flush_q,&pipe->link);
 	rthal_pend_linux_srq(__pipe_flush_virq);
@@ -575,7 +575,7 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
 	goto unlock_and_exit;
 	}
 
-    if (test_and_clear_bit(0,&pipe->flushable))
+    if (__test_and_clear_bit(0,&pipe->flushable))
 	{
 	removeq(&__pipe_flush_q,&pipe->link);
 	n = __pipe_flush(pipe);

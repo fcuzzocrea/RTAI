@@ -362,7 +362,9 @@ static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
 
     adeos_load_cpuid();
 
-    set_bit(cpuid,&rthal_cpu_realtime);
+    /* rthal_cpu_realtime is only tested for the current processor,
+       and always inside a critical section. */
+    __set_bit(cpuid,&rthal_cpu_realtime);
     /* Remember the preempted Linux task pointer. */
     rootcb->user_task = rootcb->active_task = rthal_get_current(cpuid);
     /* So that xnarch_save_fpu() will operate on the right FPU area. */
@@ -372,7 +374,7 @@ static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
 }
 
 static inline void xnarch_enter_root (xnarchtcb_t *rootcb) {
-    clear_bit(xnarch_current_cpu(),&rthal_cpu_realtime);
+    __clear_bit(xnarch_current_cpu(),&rthal_cpu_realtime);
 }
 
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
@@ -417,8 +419,10 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 #endif /* CONFIG_SPE */
 #endif /* CONFIG_SMP */
 
+#ifdef CONFIG_ALTIVEC
 	if (inproc->thread.regs && last_task_used_altivec == inproc)
 	    inproc->thread.regs->msr |= MSR_VEC;
+#endif /* CONFIG_ALTIVEC */
 
 #ifdef CONFIG_SPE
 	if (inproc->thread.regs && last_task_used_spe == inproc)

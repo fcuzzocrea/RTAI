@@ -315,7 +315,6 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
         sched->status = 0;
         sched->inesting = 0;
         sched->runthread = NULL;
-        sched->usrthread = NULL;
         }
 
     pod->root_prio_base = xnpod_get_minprio(pod,1);
@@ -371,7 +370,6 @@ fail:
         appendq(&pod->threadq,&sched->rootcb.glink);
 
         sched->runthread = &sched->rootcb;
-        sched->usrthread = &sched->rootcb;
 #ifdef CONFIG_RTAI_HW_FPU
         sched->fpuholder = &sched->rootcb;
 #endif /* CONFIG_RTAI_HW_FPU */
@@ -477,7 +475,7 @@ static inline void xnpod_fire_callouts (xnqueue_t *hookq, xnthread_t *thread)
     xnsched_t *sched = xnpod_current_sched();
     xnholder_t *holder, *nholder;
 
-    setbits(sched->status,XNKCOUT);
+    __setbits(sched->status,XNKCOUT);
 
     /* The callee is allowed to alter the hook queue when running */
 
@@ -490,7 +488,7 @@ static inline void xnpod_fire_callouts (xnqueue_t *hookq, xnthread_t *thread)
         hook->routine(thread);
         }
 
-    clrbits(sched->status,XNKCOUT);
+    __clrbits(sched->status,XNKCOUT);
 }
 
 static inline void xnpod_switch_zombie (xnthread_t *threadout,
@@ -507,7 +505,6 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
         xnpod_fire_callouts(&nkpod->tdeleteq,threadout);
 
     sched->runthread = threadin;
-    sched->usrthread = threadin;
 
     if (testbits(threadin->status,XNROOT))
         xnarch_enter_root(xnthread_archtcb(threadin));
@@ -529,44 +526,6 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
     xnpod_fatal("zombie thread %s (%p) will not die...",threadout->name,threadout);
 }
  
-/*! 
- * @internal
- * \fn void xnpod_preempt_current_thread(void);
- * \brief Preempts the current thread.
- *
- * Preempts the running thread (because a more prioritary thread has
- * just been readied).  The thread is re-inserted to the front of its
- * priority group in the ready thread queue. Must must be called
- * with nklock locked, interrupts off.
- */
-
-static inline void xnpod_preempt_current_thread (void)
-
-{
-    xnthread_t *thread;
-    xnsched_t *sched;
-
-    sched = xnpod_current_sched();
-    thread = sched->runthread;
-    insertpql(&sched->readyq,&thread->rlink,thread->cprio);
-    setbits(thread->status,XNREADY);
-
-    if (!nkpod->schedhook)
-        return;
-
-    if (getheadpq(&sched->readyq) != &thread->rlink)
-        nkpod->schedhook(thread,XNREADY);
-    else if (countpq(&sched->readyq) > 1)
-        {
-        /* The running thread is still heading the ready queue and
-           more than one thread is linked to this queue, so we may
-           refer to the following element as a thread object
-           (obviously distinct from the running thread) safely. */
-        thread = link2thread(thread->rlink.plink.next,rlink);
-        nkpod->schedhook(thread,XNREADY);
-        }
-}
-
 /*! 
  * \fn void xnpod_init_thread(xnthread_t *thread,
                               const char *name,
@@ -778,7 +737,7 @@ int xnpod_start_thread (xnthread_t *thread,
                        thread,
                        thread->name);
 
-    setbits(thread->status,(mode & (XNTHREAD_MODE_BITS|XNSUSP))|XNSTARTED);
+    __setbits(thread->status,(mode & (XNTHREAD_MODE_BITS|XNSUSP))|XNSTARTED);
     thread->imask = imask;
     thread->imode = (mode & XNTHREAD_MODE_BITS);
     thread->entry = entry;
@@ -873,8 +832,8 @@ void xnpod_restart_thread (xnthread_t *thread)
         xnpod_resume_thread(thread,XNSUSP);
 
     /* Reset modebits. */
-    clrbits(thread->status,XNTHREAD_MODE_BITS);
-    setbits(thread->status,thread->imode);
+    __clrbits(thread->status,XNTHREAD_MODE_BITS);
+    __setbits(thread->status,thread->imode);
 
     /* Reset task priority to the initial one. */
     thread->cprio = thread->iprio;
@@ -888,11 +847,11 @@ void xnpod_restart_thread (xnthread_t *thread)
         /* Clear all sched locks held by the restarted thread. */
         if (testbits(thread->status,XNLOCK))
             {
-            clrbits(thread->status,XNLOCK);
+            __clrbits(thread->status,XNLOCK);
             xnarch_atomic_set(&nkpod->schedlck,0);
             }
 
-        setbits(thread->status,XNRESTART);
+        __setbits(thread->status,XNRESTART);
         }
 
     /* Reset the initial stack frame. */
@@ -962,8 +921,8 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
     xnlock_get_irqsave(&nklock,s);
 
     oldmode = (thread->status & XNTHREAD_MODE_BITS);
-    clrbits(thread->status,clrmask & XNTHREAD_MODE_BITS);
-    setbits(thread->status,setmask & XNTHREAD_MODE_BITS);
+    __clrbits(thread->status,clrmask & XNTHREAD_MODE_BITS);
+    __setbits(thread->status,setmask & XNTHREAD_MODE_BITS);
 
     if (!(oldmode & XNLOCK))
         {
@@ -1030,7 +989,7 @@ void xnpod_delete_thread (xnthread_t *thread)
         if (testbits(thread->status,XNREADY))
             {
             removepq(&sched->readyq,&thread->rlink);
-            clrbits(thread->status,XNREADY);
+            __clrbits(thread->status,XNREADY);
             }
         }
     else
@@ -1050,7 +1009,7 @@ void xnpod_delete_thread (xnthread_t *thread)
 
     if (testbits(thread->status,XNLOCK))
         {
-        clrbits(thread->status,XNLOCK);
+        __clrbits(thread->status,XNLOCK);
         xnarch_atomic_set(&nkpod->schedlck,0);
         }
 
@@ -1064,7 +1023,7 @@ void xnpod_delete_thread (xnthread_t *thread)
         sched->fpuholder = NULL;
 #endif /* CONFIG_RTAI_HW_FPU */
 
-    setbits(thread->status,XNZOMBIE);
+    __setbits(thread->status,XNZOMBIE);
 
     if (sched->runthread == thread)
         {
@@ -1198,7 +1157,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
         if (testbits(thread->status,XNREADY))
             {
             removepq(&sched->readyq,&thread->rlink);
-            clrbits(thread->status,XNREADY);
+            __clrbits(thread->status,XNREADY);
             }
 
         if ((mask & ~XNDELAY) != 0)
@@ -1206,7 +1165,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
                delay condition, link it to suspension queue. */
             appendq(&nkpod->suspendq,&thread->slink);
 
-        clrbits(thread->status,XNRMID|XNTIMEO|XNBREAK);
+        __clrbits(thread->status,XNRMID|XNTIMEO|XNBREAK);
         }
     else if ((mask & ~XNDELAY) != 0 &&
              !testbits(thread->status,XNTHREAD_BLOCK_BITS & ~XNDELAY))
@@ -1214,13 +1173,13 @@ void xnpod_suspend_thread (xnthread_t *thread,
            simple delay condition, link it to suspension queue too. */
         appendq(&nkpod->suspendq,&thread->slink);
 
-    setbits(thread->status,mask);
+    __setbits(thread->status,mask);
 
     if (timeout != XN_INFINITE)
         {
         /* Don't start the timer for a thread indefinitely delayed by
            a call to xnpod_suspend_thread(thread,XNDELAY,0,NULL). */
-        setbits(thread->status,XNDELAY);
+        __setbits(thread->status,XNDELAY);
         xntimer_start(&thread->rtimer,timeout,XN_INFINITE);
         }
     
@@ -1297,7 +1256,7 @@ void xnpod_resume_thread (xnthread_t *thread,
 
     if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Is thread blocked? */
         {
-        clrbits(thread->status,mask); /* Remove suspensive condition(s) */
+        __clrbits(thread->status,mask); /* Remove suspensive condition(s) */
 
         if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* still blocked? */
             {
@@ -1330,7 +1289,7 @@ void xnpod_resume_thread (xnthread_t *thread,
                        of the requested resource. Cancel the watchdog
                        timer. */
                     xntimer_stop(&thread->rtimer);
-                    clrbits(thread->status,XNDELAY);
+                    __clrbits(thread->status,XNDELAY);
                     }
 
                 if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Still blocked? */
@@ -1371,7 +1330,7 @@ void xnpod_resume_thread (xnthread_t *thread,
     else if (testbits(thread->status,XNREADY))
         {
         removepq(&sched->readyq,&thread->rlink);
-        clrbits(thread->status,XNREADY);
+        __clrbits(thread->status,XNREADY);
         }
 
     /* The readied thread is always put to the end of its priority
@@ -1383,7 +1342,7 @@ void xnpod_resume_thread (xnthread_t *thread,
 
     if (thread == sched->runthread)
         {
-        setbits(thread->status,XNREADY);
+        __setbits(thread->status,XNREADY);
 
         if (nkpod->schedhook &&
             getheadpq(&sched->readyq) != &thread->rlink)
@@ -1393,7 +1352,7 @@ void xnpod_resume_thread (xnthread_t *thread,
         }
     else if (!testbits(thread->status,XNREADY))
         {
-        setbits(thread->status,XNREADY);
+        __setbits(thread->status,XNREADY);
 
         if (nkpod->schedhook)
             nkpod->schedhook(thread,XNREADY);
@@ -1453,7 +1412,7 @@ void xnpod_unblock_thread (xnthread_t *thread)
     else if (testbits(thread->status,XNPEND))
         xnpod_resume_thread(thread,XNPEND);
     
-    setbits(thread->status,XNBREAK);
+    __setbits(thread->status,XNBREAK);
 
     xnlock_put_irqrestore(&nklock,s);
 }
@@ -1592,8 +1551,8 @@ void xnpod_rotate_readyq (int prio)
        one. Use the base priority, not the priority boost. */
 
     if (prio == XNPOD_RUNPRI ||
-        prio == xnthread_base_priority(sched->usrthread))
-        xnpod_resume_thread(sched->usrthread,0);
+        prio == xnthread_base_priority(sched->runthread))
+        xnpod_resume_thread(sched->runthread,0);
     else
         {
         pholder = findpqh(&sched->readyq,prio);
@@ -1711,7 +1670,7 @@ static void xnpod_dispatch_signals (void)
     /* Process internal signals first. */
     if (testbits(thread->status,XNKILLED))
         {
-        clrbits(thread->status, XNKILLED);
+        __clrbits(thread->status,XNKILLED);
         xnpod_delete_self();
         }
 
@@ -1733,8 +1692,8 @@ static void xnpod_dispatch_signals (void)
     thread->signals = 0;
 
     /* Reset ASR mode bits */
-    clrbits(thread->status,XNTHREAD_MODE_BITS);
-    setbits(thread->status,thread->asrmode);
+    __clrbits(thread->status,XNTHREAD_MODE_BITS);
+    __setbits(thread->status,thread->asrmode);
     thread->asrlevel++;
 
     /* Setup ASR interrupt mask then fire it. */
@@ -1744,8 +1703,8 @@ static void xnpod_dispatch_signals (void)
 
     /* Reset the thread mode bits */
     thread->asrlevel--;
-    clrbits(thread->status,XNTHREAD_MODE_BITS);
-    setbits(thread->status,oldmode);
+    __clrbits(thread->status,XNTHREAD_MODE_BITS);
+    __setbits(thread->status,oldmode);
 }
 
 /*!
@@ -1788,7 +1747,7 @@ void xnpod_welcome_thread (xnthread_t *thread)
         }
 #endif /* CONFIG_RTAI_HW_FPU */
 
-    clrbits(thread->status,XNRESTART);
+    __clrbits(thread->status,XNRESTART);
 
     xnlock_clear_irqoff(&nklock);
 
@@ -1803,10 +1762,9 @@ void xnpod_welcome_thread (xnthread_t *thread)
 /* xnpod_switch_fpu() -- Switches to the current thread's FPU
    context, saving the previous one as needed. */
 
-void xnpod_switch_fpu (void)
+void xnpod_switch_fpu (xnsched_t *sched)
 
 {
-    xnsched_t *sched = xnpod_current_sched();
     xnthread_t *runthread = sched->runthread;
 
     if (testbits(runthread->status,XNFPU) && sched->fpuholder != runthread)
@@ -1826,6 +1784,41 @@ void xnpod_switch_fpu (void)
 }
 
 #endif /* CONFIG_RTAI_HW_FPU */
+
+/*! 
+ * @internal
+ * \fn void xnpod_preempt_current_thread(void);
+ * \brief Preempts the current thread.
+ *
+ * Preempts the running thread (because a more prioritary thread has
+ * just been readied).  The thread is re-inserted to the front of its
+ * priority group in the ready thread queue. Must must be called
+ * with nklock locked, interrupts off.
+ */
+
+static inline void xnpod_preempt_current_thread (xnsched_t *sched)
+
+{
+    xnthread_t *thread = sched->runthread;
+
+    insertpql(&sched->readyq,&thread->rlink,thread->cprio);
+    __setbits(thread->status,XNREADY);
+
+    if (!nkpod->schedhook)
+        return;
+
+    if (getheadpq(&sched->readyq) != &thread->rlink)
+        nkpod->schedhook(thread,XNREADY);
+    else if (countpq(&sched->readyq) > 1)
+        {
+        /* The running thread is still heading the ready queue and
+           more than one thread is linked to this queue, so we may
+           refer to the following element as a thread object
+           (obviously distinct from the running thread) safely. */
+        thread = link2thread(thread->rlink.plink.next,rlink);
+        nkpod->schedhook(thread,XNREADY);
+        }
+}
 
 /*! 
  * \fn void xnpod_schedule(void)
@@ -1896,7 +1889,6 @@ void xnpod_schedule (void)
 {
     xnthread_t *threadout, *threadin, *runthread;
     xnsched_t *sched;
-    int doswitch;
     spl_t s;
 #ifdef __KERNEL__
     int shadow;
@@ -1915,7 +1907,6 @@ void xnpod_schedule (void)
     int need_resched;
 
     sched = xnpod_current_sched();
-
     need_resched = xnsched_tst_resched(sched);
 
     if (need_resched)
@@ -1925,7 +1916,6 @@ void xnpod_schedule (void)
         xnarch_send_ipi(xnsched_resched_mask());
 
     xnsched_clr_mask();
-    
     runthread = sched->runthread;
 
     if (!need_resched)
@@ -1934,11 +1924,8 @@ void xnpod_schedule (void)
     xnsched_set_resched(sched);
     }
 #else /*! CONFIG_SMP */
-
     runthread = xnpod_current_thread();
-
     sched = runthread->sched;
-
 #endif /* CONFIG_SMP */
 
     if (testbits(runthread->status,XNLOCK))
@@ -1948,47 +1935,41 @@ void xnpod_schedule (void)
            contexts. */
         goto signal_unlock_and_exit;
 
-    doswitch = 0;
-
-    if (testbits(runthread->status, XNKILLED))
+    if (testbits(runthread->status,XNKILLED))
         {
-        clrbits(runthread->status, XNKILLED);
+        __clrbits(runthread->status,XNKILLED);
         xnpod_delete_self();
         }
-
-    if (!testbits(runthread->status,XNTHREAD_BLOCK_BITS|XNZOMBIE))
-        {
-        if (countpq(&sched->readyq) > 0)
-            {
-            xnthread_t *head = link2thread(getheadpq(&sched->readyq),rlink);
-
-            if (head == runthread)
-                doswitch++;
-            else if (xnpod_priocompare(head->cprio,runthread->cprio) > 0)
-                {
-                if (!testbits(runthread->status,XNREADY))
-                    /* Preempt the running thread */
-                    xnpod_preempt_current_thread();
-
-                doswitch++;
-                }
-            else if (testbits(runthread->status,XNREADY))
-                doswitch++;
-            }
-        }
-    else
-        doswitch++;
 
     /* Clear the rescheduling bit */
     xnsched_clr_resched(sched);
 
-    if (!doswitch)
-        /* Check for signals (self-posted or posted from an interrupt
-           context) in case the current thread keeps
-           running. Interface mutex must be released while ASR is
-           executed just in case the thread self-deletes from the
-           routine. */
+    if (!testbits(runthread->status,XNTHREAD_BLOCK_BITS|XNZOMBIE))
+        {
+	xnpholder_t *pholder = getheadpq(&sched->readyq);
+	  
+        if (pholder)
+            {
+            xnthread_t *head = link2thread(pholder,rlink);
+
+            if (head == runthread)
+                goto do_switch;
+            else if (xnpod_priocompare(head->cprio,runthread->cprio) > 0)
+                {
+                if (!testbits(runthread->status,XNREADY))
+                    /* Preempt the running thread */
+                    xnpod_preempt_current_thread(sched);
+
+                goto do_switch;
+                }
+            else if (testbits(runthread->status,XNREADY))
+                goto do_switch;
+            }
+
         goto signal_unlock_and_exit;
+        }
+
+ do_switch:
 
     threadout = runthread;
     threadin = link2thread(getpq(&sched->readyq),rlink);
@@ -1998,7 +1979,7 @@ void xnpod_schedule (void)
         xnpod_fatal("schedule: no thread to schedule?!");
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
-    clrbits(threadin->status,XNREADY);
+    __clrbits(threadin->status,XNREADY);
 
     if (threadout == threadin &&
         /* Note: the root thread never restarts. */
@@ -2013,7 +1994,6 @@ void xnpod_schedule (void)
         xnpod_switch_zombie(threadout, threadin);
 
     sched->runthread = threadin;
-    sched->usrthread = threadin;
 
     if (testbits(threadout->status,XNROOT))
         xnarch_leave_root(xnthread_archtcb(threadout));
@@ -2034,7 +2014,7 @@ void xnpod_schedule (void)
     runthread = sched->runthread;
 
 #ifdef CONFIG_RTAI_HW_FPU
-    xnpod_switch_fpu();
+    xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
 #ifdef __KERNEL__
@@ -2099,7 +2079,7 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 
     if (testbits(thread->status,XNKILLED))
         {
-        clrbits(thread->status, XNKILLED);
+        __clrbits(thread->status,XNKILLED);
         xnpod_delete_self();
         }
 
@@ -2125,7 +2105,7 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
             else
                 insertpql(&sched->readyq,&runthread->rlink,runthread->cprio);
 
-            setbits(runthread->status,XNREADY);
+            __setbits(runthread->status,XNREADY);
             }
         }
     else if (testbits(thread->status,XNTHREAD_BLOCK_BITS|XNZOMBIE))
@@ -2140,7 +2120,7 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
         /* Insert FIFO inside priority group */
         insertpqf(&sched->readyq,&thread->rlink,thread->cprio);
 
-    setbits(thread->status,XNREADY);
+    __setbits(thread->status,XNREADY);
 
 maybe_switch:
 
@@ -2151,7 +2131,7 @@ maybe_switch:
         if (testbits(runthread->status,XNREADY))
             {
             removepq(&sched->readyq,&runthread->rlink);
-            clrbits(runthread->status,XNREADY);
+            __clrbits(runthread->status,XNREADY);
             }
 
         return;
@@ -2166,7 +2146,7 @@ maybe_switch:
         xnpod_fatal("schedule_runnable: no thread to schedule?!");
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
-    clrbits(threadin->status,XNREADY);
+    __clrbits(threadin->status,XNREADY);
 
     if (threadin == runthread)
         return; /* No switch. */
@@ -2175,9 +2155,6 @@ maybe_switch:
         xnpod_switch_zombie(runthread, threadin);
 
     sched->runthread = threadin;
-
-    if (!testbits(threadin->status,XNTHREAD_SYSTEM_BITS))
-        sched->usrthread = threadin;
 
     if (testbits(runthread->status,XNROOT))
         xnarch_leave_root(xnthread_archtcb(runthread));
@@ -2191,7 +2168,7 @@ maybe_switch:
                      xnthread_archtcb(threadin));
 
 #ifdef CONFIG_RTAI_HW_FPU
-    xnpod_switch_fpu();
+    xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
     if (nkpod->schedhook && runthread == sched->runthread)
@@ -2681,13 +2658,13 @@ int xnpod_announce_tick (xnintr_t *intr)
 
     nr_cpus = xnarch_num_online_cpus();
 
-    for (cpu = 0 ; cpu < nr_cpus ;++cpu)
+    for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
-        xnthread_t *usrthread = xnpod_sched_slot(cpu)->usrthread;
+        xnthread_t *runthread = xnpod_sched_slot(cpu)->runthread;
 
-        if (testbits(usrthread->status,XNRRB) &&
-            usrthread->rrcredit != XN_INFINITE &&
-            !testbits(usrthread->status,XNLOCK))
+        if (testbits(runthread->status,XNRRB) &&
+            runthread->rrcredit != XN_INFINITE &&
+            !testbits(runthread->status,XNLOCK))
             {
             /* The thread can be preempted and undergoes a round-robin
                scheduling. Round-robin time credit is only consumed by a
@@ -2697,16 +2674,16 @@ int xnpod_announce_tick (xnintr_t *intr)
                is kept unchanged, and will not be reset when this thread
                resumes execution. */
 
-            if (usrthread->rrcredit <= 1)
+            if (runthread->rrcredit <= 1)
                 {
                 /* If the time slice is exhausted for the running thread,
                    put it back on the ready queue (in last position) and
                    reset its credit for the next run. */
-                usrthread->rrcredit = usrthread->rrperiod;
-                xnpod_resume_thread(usrthread,0);
+                runthread->rrcredit = runthread->rrperiod;
+                xnpod_resume_thread(runthread,0);
                 }
             else
-                usrthread->rrcredit--;
+                runthread->rrcredit--;
             }
         }
 

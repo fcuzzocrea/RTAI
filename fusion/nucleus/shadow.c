@@ -543,7 +543,7 @@ void xnshadow_harden (void)
     schedule();
 
 #ifdef CONFIG_RTAI_HW_FPU
-    xnpod_switch_fpu();
+    xnpod_switch_fpu(xnpod_current_sched());
 #endif /* CONFIG_RTAI_HW_FPU */
 
     xnlock_clear_irqon(&nklock);
@@ -830,7 +830,7 @@ void xnshadow_start (xnthread_t *thread,
 
     xnlock_get_irqsave(&nklock,s);
 
-    setbits(thread->status,(mode & (XNTHREAD_MODE_BITS|XNSUSP))|XNSTARTED);
+    __setbits(thread->status,(mode & (XNTHREAD_MODE_BITS|XNSUSP))|XNSTARTED);
     thread->imask = 0;
     thread->imode = (mode & XNTHREAD_MODE_BITS);
     thread->entry = u_entry;	/* user-space pointer -- do not deref. */
@@ -1668,7 +1668,7 @@ static void xnshadow_kick_process (adevinfo_t *evinfo)
 	{
 	xnlock_get_irqsave(&nklock,s);
 
-	setbits(thread->status,XNKILLED);
+	__setbits(thread->status,XNKILLED);
 
         if (thread == thread->sched->runthread)
             xnsched_set_resched(thread->sched);

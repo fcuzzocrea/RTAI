@@ -199,7 +199,7 @@ int xnintr_attach (xnintr_t *intr,
     xnlock_get_irqsave(&nklock,s);
     intr->cookie = cookie;
     err = xnarch_hook_irq(intr->irq,&xnintr_irq_handler,intr);
-    setbits(intr->status,XNINTR_ATTACHED);
+    __setbits(intr->status,XNINTR_ATTACHED);
     xnlock_put_irqrestore(&nklock,s);
 
     return err;
@@ -241,7 +241,7 @@ int xnintr_detach (xnintr_t *intr)
 	err = xnarch_release_irq(intr->irq);
 
 	if (!err)
-	    clrbits(intr->status,XNINTR_ATTACHED);
+	    __clrbits(intr->status,XNINTR_ATTACHED);
 	}
 
     xnlock_put_irqrestore(&nklock,s);
@@ -375,7 +375,7 @@ static void xnintr_irq_handler (unsigned irq, void *cookie)
 
     if (testbits(sched->status,XNHTICK))
 	{
-	clrbits(sched->status,XNHTICK);
+	__clrbits(sched->status,XNHTICK);
 	xnarch_relay_tick();
 	}
 }

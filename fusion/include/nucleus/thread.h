@@ -118,14 +118,6 @@ typedef struct xnthread {
 
     int cprio;			/* Current priority */
 
-    unsigned magic;		/* Skin magic. */
-
-    char name[XNOBJECT_NAME_LEN]; /* Symbolic name of thread */
-
-    xnticks_t rrperiod;		/* Allotted round-robin period (ticks) */
-
-    xnticks_t rrcredit;		/* Remaining round-robin time credit (ticks) */
-
     xnholder_t slink;		/* Thread holder in suspend queue */
 
     xnpholder_t rlink;		/* Thread holder in ready queue */
@@ -152,6 +144,10 @@ typedef struct xnthread {
 
     xnsigmask_t signals;	/* Pending signals */
 
+    xnticks_t rrperiod;		/* Allotted round-robin period (ticks) */
+
+    xnticks_t rrcredit;		/* Remaining round-robin time credit (ticks) */
+
     xnasr_t asr;		/* Asynchronous service routine */
 
     xnflags_t asrmode;		/* Thread's mode for ASR */
@@ -165,6 +161,10 @@ typedef struct xnthread {
     int imode;			/* Initial mode */
 
     int iprio;			/* Initial priority */
+
+    unsigned magic;		/* Skin magic. */
+
+    char name[XNOBJECT_NAME_LEN]; /* Symbolic name of thread */
 
     xnticks_t stime;		/* Start time */
 
@@ -198,8 +198,8 @@ typedef struct xnhook {
 #define xnthread_start_time(thread)        ((thread)->stime)
 #define xnthread_status_flags(thread)      ((thread)->status)
 #define xnthread_test_flags(thread,flags)  testbits((thread)->status,flags)
-#define xnthread_set_flags(thread,flags)   setbits((thread)->status,flags)
-#define xnthread_clear_flags(thread,flags) clrbits((thread)->status,flags)
+#define xnthread_set_flags(thread,flags)   __setbits((thread)->status,flags)
+#define xnthread_clear_flags(thread,flags) __clrbits((thread)->status,flags)
 #define xnthread_initial_priority(thread)  ((thread)->iprio)
 #define xnthread_base_priority(thread)     ((thread)->bprio)
 #define xnthread_current_priority(thread)  ((thread)->cprio)

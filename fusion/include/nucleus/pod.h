@@ -124,13 +124,11 @@ typedef struct xnsched {
 
     xnthread_t *runthread;	/*!< Current thread (service or user). */
 
-    xnthread_t *usrthread;	/*!< Last regular real-time thread scheduled. */
-
 #ifdef CONFIG_RTAI_HW_FPU
     xnthread_t *fpuholder;	/*!< Thread owning the current FPU context. */
 #endif /* CONFIG_RTAI_HW_FPU */
 
-    unsigned inesting;		/*!< Interrupt nesting level. */
+    volatile unsigned inesting;	/*!< Interrupt nesting level. */
 
 } xnsched_t;
 
@@ -147,13 +145,13 @@ typedef struct xnsched {
     testbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
 
 #define xnsched_set_resched(__sched__) \
-    setbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
+    __setbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
 
 #define xnsched_clr_resched(__sched__) \
-    clrbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
+    __clrbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
 
 #define xnsched_clr_mask() \
-    clrbits(xnpod_current_sched()->status, XNSCHEDMASK)
+    __clrbits(xnpod_current_sched()->status, XNSCHEDMASK)
 
 struct xnsynch;
 struct xnintr;
@@ -242,7 +240,7 @@ void xnpod_renice_thread_inner(xnthread_t *thread,
 			       int propagate);
 
 #ifdef CONFIG_RTAI_HW_FPU
-void xnpod_switch_fpu(void);
+void xnpod_switch_fpu(xnsched_t *sched);
 #endif /* CONFIG_RTAI_HW_FPU */
 
 static inline int xnpod_get_qdir (xnpod_t *pod) {
@@ -419,14 +417,14 @@ static inline void xnpod_lock_sched (void) {
 
     /* Don't swap these two lines... */
     xnarch_atomic_inc(&nkpod->schedlck);
-    setbits(xnpod_current_sched()->runthread->status,XNLOCK);
+    __setbits(xnpod_current_sched()->runthread->status,XNLOCK);
 }
 
 static inline void xnpod_unlock_sched (void) {
 
     if (xnarch_atomic_dec_and_test(&nkpod->schedlck))
 	{
-	clrbits(xnpod_current_sched()->runthread->status,XNLOCK);
+	__clrbits(xnpod_current_sched()->runthread->status,XNLOCK);
 	xnpod_schedule();
 	}
 }

@@ -238,7 +238,7 @@ static void disengage_irq_shield (int this_cpu)
 
 #ifdef CONFIG_SMP
     {
-    cpumask_t other_cpus = cpu_online_map;
+    cpumask_t other_cpus = xnarch_cpu_online_map;
     cpu_clear(this_cpu,other_cpus);
     adeos_send_ipi(ADEOS_SERVICE_IPI1,other_cpus);
     }
@@ -1792,7 +1792,7 @@ int xnshadow_init (void)
 	return -EBUSY;
 
     shielded_cpus = CPU_MASK_NONE;
-    unshielded_cpus = cpu_online_map;
+    unshielded_cpus = xnarch_cpu_online_map;
 
     nkgkptd = adeos_alloc_ptdkey();
     gkvirq = adeos_alloc_irq();

@@ -64,24 +64,22 @@ void latency (void *cookie)
 
 	    if (err)
 		overrun++;
-	    else
+
+	    dt = (long)(rt_timer_tsc() - expected);
+
+	    if (dt > maxj)
 		{
-		dt = (long)(rt_timer_tsc() - expected);
-
-		if (dt > maxj)
-		    {
-		    maxj = dt;
+		maxj = dt;
 #ifdef CONFIG_RTAI_OPT_TIMESTAMPS
-		    xnpod_get_timestamps(&ts);
-		    tsflag = 1;
+		xnpod_get_timestamps(&ts);
+		tsflag = 1;
 #endif /* CONFIG_RTAI_OPT_TIMESTAMPS */
-		    }
-
-		if (dt < minj)
-		    minj = dt;
-
-		sumj += dt;
 		}
+
+	    if (dt < minj)
+		minj = dt;
+
+	    sumj += dt;
 	    }
 
 	minjitter = minj;

@@ -77,16 +77,14 @@ void latency (void *cookie)
 
 		overrun++;
 		}
-	    else
-		{
-		dt = (long)(rt_timer_tsc() - expected);
-		if (dt > maxj) maxj = dt;
-		if (dt < minj) minj = dt;
-		sumj += dt;
 
-		if (do_histogram && !finished)
-		    add_histogram(dt);
-		}
+	    dt = (long)(rt_timer_tsc() - expected);
+	    if (dt > maxj) maxj = dt;
+	    if (dt < minj) minj = dt;
+	    sumj += dt;
+
+	    if (do_histogram && !finished)
+		add_histogram(dt);
 	    }
 
 	minjitter = minj;

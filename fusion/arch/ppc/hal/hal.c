@@ -605,6 +605,16 @@ static void rthal_irq_trampoline (unsigned irq)
 static void rthal_trap_fault (adevinfo_t *evinfo)
 
 {
+    adeos_declare_cpuid;
+
+    adeos_load_cpuid();
+
+    if (evinfo->domid == RTHAL_DOMAIN_ID &&
+	rthal_trap_handler != NULL &&
+	test_bit(cpuid,&rthal_cpu_realtime) &&
+	rthal_trap_handler(evinfo) != 0)
+	return;
+
     adeos_propagate_event(evinfo);
 }
 

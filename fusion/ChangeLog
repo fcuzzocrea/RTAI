@@ -4,6 +4,7 @@
 	systems, the cost of setting the decrementer or the PIT does not
 	induce significant latency; so just return zero from there without
 	further evaluation.
+	(rthal_trap_fault): Add simplistic handling.
 
 	* arch/ppc/hal/switch.S (rthal_context_switch): Fix register
 	offset mismatch.

@@ -504,7 +504,7 @@ static int xnfusion_unload_hook (void)
     /* If nobody is attached to te fusion skin, then clean it up
        now. */
 
-    if (xnarch_atomic_get(&muxtable[__fusion_muxid - 1].refcnt) == 0)
+    if (xnarch_atomic_get(&muxtable[__fusion_muxid - 1].refcnt) == -1)
 	{
 	xnfusion_exit();
 	rc = 1;

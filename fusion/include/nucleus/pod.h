@@ -292,7 +292,7 @@ static inline void xnpod_renice_root (int prio)
 #define xnpod_asynch_p() \
     (xnpod_interrupt_p() || xnpod_callout_p())
 
-#if defined(__GNUC__) && ( __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR > 95 )
+#if defined(__GNUC__) && ( __GNUC__ > 2 || __GNUC__ == 2 && __GNUC_MINOR__ > 95 )
 static inline xnthread_t *xnpod_current_thread (void) __attribute__((pure));
 #endif
 

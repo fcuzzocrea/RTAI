@@ -567,14 +567,6 @@ static void rthal_ssrq_trampoline (unsigned virq)
     rthal_spin_unlock(&rthal_ssrq_lock);
 }
 
-static int errno;
-
-static inline _syscall3(int,
-			sched_setscheduler,
-			pid_t,pid,
-			int,policy,
-			struct sched_param *,param)
-
 static void rthal_domain_entry (int iflag)
 
 {

@@ -1097,27 +1097,6 @@ static inline void xnarch_exit (void)
 
 #endif /* XENO_MAIN_MODULE */
 
-#ifdef XENO_TRACES_MODULE
-
-#include <asm/timex.h>          /* For cpu_khz */
-#include <linux/kernel_stat.h>  /* For kstat_irqs */
-
-#ifdef CONFIG_X86_LOCAL_APIC
-
-#define RTAI_TRACE_TIMER_IRQ       RTHAL_APIC_TIMER_IPI
-#define linux_timer_irq_count(cpu) (irq_stat[(cpu)].apic_timer_irqs)
-
-#else /* !CONFIG_X86_LOCAL_APIC */
-
-#define RTAI_TRACE_TIMER_IRQ       RTHAL_8254_IRQ
-#define linux_timer_irq_count(cpu) (kstat_cpu(cpu).irqs[RTHAL_8254_IRQ])
-
-#endif /* CONFIG_X86_LOCAL_APIC */
-
-#define tsc2ms(timestamp)          rthal_ulldiv((timestamp), cpu_khz, NULL)
-
-#endif /* XENO_TRACES_MODULE */
-
 #ifdef __cplusplus
 }
 #endif

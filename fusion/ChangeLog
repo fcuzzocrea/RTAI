@@ -1,3 +1,8 @@
+2004-09-09  Evgeny Sinelnikov <linux4sin@mail.ru>
+
+	* configure.in, makefile, scripts/rtai-config.in: Correctly handle
+	the --with-linux-dir configure option.
+
 2004-09-07  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_calibrate_sched): Obtain the calibration

@@ -225,7 +225,7 @@ static inline void sched_release_global_lock(int cpuid)
 
 #endif /* CONFIG_SMP */
 
-#if defined(CONFIG_SMP) && 0	/* FIXME */
+#if defined(CONFIG_SMP)
 #define DECL_CPUS_ALLOWED  unsigned long cpus_allowed = 1;
 #define SAVE_CPUS_ALLOWED  do { cpus_allowed = prev->cpus_allowed; } while (0)
 #define SET_CPUS_ALLOWED   do { prev->cpus_allowed = 1 << cpuid;   } while (0)
@@ -1703,7 +1703,7 @@ void rt_deregister_watchdog(RT_TASK *wd, int cpuid)
 
 int lxrtmode, lxrtmodechoed;
 
-static int LxrtMode = 0;
+int LxrtMode = 0;
 MODULE_PARM(LxrtMode, "i");
 
 static RT_TRAP_HANDLER lxrt_old_trap_handler;
@@ -2052,10 +2052,8 @@ static void wake_up_srq_handler(void)
 static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dummy_data)
 {
 	RT_TASK *rt_task;
-	adeos_declare_cpuid;
 
-	adeos_load_cpuid();
-	rt_task = rt_smp_current[cpuid];
+	rt_task = rt_smp_current[(int)dummy_data];
 	if (USE_RTAI_TASKS && !rt_task->lnxtsk) {
 		if (rt_task->task_trap_handler[vec]) {
 			return rt_task->task_trap_handler[vec](vec, signo, regs, rt_task);
@@ -2065,7 +2063,7 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 		return 1;
 	}
 
-	if (test_bit(cpuid, &rtai_cpu_realtime) && rt_task->is_hard == 1) {
+	if (rt_task->is_hard == 1) {
 		if (!lxrtmodechoed) {
 			lxrtmodechoed = 1;
 			rt_printk("\nLXRT CHANGED MODE (TRAP, LxrtMode %d), PID = %d\n", LxrtMode, (rt_task->lnxtsk)->pid);
@@ -2188,8 +2186,11 @@ static void lxrt_intercept_syscall(adevinfo_t *evinfo)
 {
 	adeos_declare_cpuid;
 
-	adeos_load_cpuid();
 	adeos_propagate_event(evinfo);
+    	if (evinfo->domid != RTAI_DOMAIN_ID) {
+		return;
+	}
+	adeos_load_cpuid();
 	if (test_bit(cpuid, &rtai_cpu_realtime)) {
 		RT_TASK *task = rt_smp_current[cpuid];
 		if (task->is_hard == 1) {

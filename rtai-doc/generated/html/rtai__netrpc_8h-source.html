@@ -196,7 +196,7 @@
 00188                 <span class="keyword">struct </span>{ <span class="keywordtype">int</span> cpuid; } arg = { cpuid };
 00189                 <span class="keywordflow">return</span> rt_net_rpc(PACKPORT(port, NET_RPC_EXT, GET_TIME_NS_CPUID, 0), 0LL, &amp;arg, SIZARG);
 00190         }
-00191         <span class="keywordflow">return</span> <a class="code" href="sched__up_8c.html#a97">rt_get_time_ns_cpuid</a>(cpuid);
+00191         <span class="keywordflow">return</span> <a class="code" href="sched__up_8c.html#a98">rt_get_time_ns_cpuid</a>(cpuid);
 00192 }
 00193 
 00194 <span class="keyword">static</span> <span class="keyword">inline</span> RTIME RT_get_cpu_time_ns(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port)
@@ -233,7 +233,7 @@
 00225                 rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SLEEP, 1), 0LL, &amp;arg, SIZARG);
 00226                 <span class="keywordflow">return</span>;
 00227         }
-00228         <a class="code" href="common_8c.html#a25">rt_sleep</a>(<a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00228         <a class="code" href="common_8c.html#a25">rt_sleep</a>(<a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00229 } 
 00230 
 00231 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> RT_sleep_until(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RTIME time)
@@ -243,7 +243,7 @@
 00235                 rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SLEEP_UNTIL, 1), 0LL, &amp;arg, SIZARG);
 00236                 <span class="keywordflow">return</span>;
 00237         }
-00238         <a class="code" href="common_8c.html#a26">rt_sleep_until</a>(<a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00238         <a class="code" href="common_8c.html#a26">rt_sleep_until</a>(<a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00239 } 
 00240 
 00241 <span class="preprocessor">#if CONFIG_RTAI_SEM</span>
@@ -308,7 +308,7 @@
 00300                 <span class="keyword">struct </span>{ SEM *sem; RTIME time; } arg = { sem, time };
 00301                 <span class="keywordflow">return</span> rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_WAIT_UNTIL, 2), 0LL, &amp;arg, SIZARG);
 00302         }
-00303         <span class="keywordflow">return</span> <a class="code" href="sem_8c.html#a10">rt_sem_wait_until</a>(sem, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00303         <span class="keywordflow">return</span> <a class="code" href="sem_8c.html#a10">rt_sem_wait_until</a>(sem, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00304 } 
 00305 
 00306 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_sem_wait_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, SEM *sem, RTIME delay)
@@ -317,7 +317,7 @@
 00309                 <span class="keyword">struct </span>{ SEM *sem; RTIME delay; } arg = { sem, delay };
 00310                 <span class="keywordflow">return</span> rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEM_WAIT_TIMED, 2), 0LL, &amp;arg, SIZARG);
 00311         }
-00312         <span class="keywordflow">return</span> <a class="code" href="sem_8c.html#a11">rt_sem_wait_timed</a>(sem, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00312         <span class="keywordflow">return</span> <a class="code" href="sem_8c.html#a11">rt_sem_wait_timed</a>(sem, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00313 } 
 00314 
 00315 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_SEM */</span>
@@ -348,7 +348,7 @@
 00340                 <span class="keyword">struct </span>{ RT_TASK *task; <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg; RTIME time; } arg = { task, msg, time };
 00341                 <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEND_UNTIL, 3), 0LL, &amp;arg, SIZARG);
 00342         }
-00343         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a2">rt_send_until</a>(task, msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00343         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a2">rt_send_until</a>(task, msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00344 }
 00345 
 00346 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_send_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg, RTIME delay)
@@ -357,7 +357,7 @@
 00349                 <span class="keyword">struct </span>{ RT_TASK *task; <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg; RTIME delay; } arg = { task, msg, delay };
 00350                 <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEND_TIMED, 3), 0LL, &amp;arg, SIZARG);
 00351         }
-00352         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a3">rt_send_timed</a>(task, msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00352         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a3">rt_send_timed</a>(task, msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00353 }
 00354 
 00355 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receive(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *msg)
@@ -379,17 +379,17 @@
 00371 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receive_until(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *msg, RTIME time)
 00372 {
 00373         <span class="keywordflow">if</span> (!task || !node) {
-00374                 <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a6">rt_receive_until</a>(task, msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00374                 <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a6">rt_receive_until</a>(task, msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00375         }
-00376         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a6">rt_receive_until</a>(rt_find_asgn_stub(OWNER(node, task), 1), msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time)) ? task : 0;
+00376         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a6">rt_receive_until</a>(rt_find_asgn_stub(OWNER(node, task), 1), msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time)) ? task : 0;
 00377 }
 00378 
 00379 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receive_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *msg, RTIME delay)
 00380 {
 00381         <span class="keywordflow">if</span> (!task || !node) {
-00382                 <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a7">rt_receive_timed</a>(task, msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00382                 <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a7">rt_receive_timed</a>(task, msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00383         }
-00384         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a7">rt_receive_timed</a>(rt_find_asgn_stub(OWNER(node, task), 1), msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay)) ? task : 0;
+00384         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a7">rt_receive_timed</a>(rt_find_asgn_stub(OWNER(node, task), 1), msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay)) ? task : 0;
 00385 }
 00386 
 00387 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_rpc(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *ret)
@@ -416,7 +416,7 @@
 00408                 <span class="keyword">struct </span>{ RT_TASK *task; <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg; <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *ret; RTIME time; } arg = { task, msg, ret, time };
 00409                 <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, RPC_UNTIL, 4), UW1(3, 0), &amp;arg, SIZARG);
 00410         }
-00411         <span class="keywordflow">return</span> <a class="code" href="group__rpc.html#a2">rt_rpc_until</a>(task, msg, ret, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00411         <span class="keywordflow">return</span> <a class="code" href="group__rpc.html#a2">rt_rpc_until</a>(task, msg, ret, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00412 }
 00413 
 00414 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_rpc_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *ret, RTIME delay)
@@ -425,7 +425,7 @@
 00417                 <span class="keyword">struct </span>{ RT_TASK *task; <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg; <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *ret; RTIME delay; } arg = { task, msg, ret, delay };
 00418                 <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, RPC_TIMED, 4), UW1(3, 0), &amp;arg, SIZARG);
 00419         }
-00420         <span class="keywordflow">return</span> <a class="code" href="group__rpc.html#a3">rt_rpc_timed</a>(task, msg, ret, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00420         <span class="keywordflow">return</span> <a class="code" href="group__rpc.html#a3">rt_rpc_timed</a>(task, msg, ret, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00421 }
 00422 
 00423 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_isrpc(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task)
@@ -477,7 +477,7 @@
 00469                 <span class="keyword">struct </span>{ RT_TASK *task; <span class="keywordtype">void</span> *smsg; <span class="keywordtype">void</span> *rmsg; <span class="keywordtype">int</span> ssize; <span class="keywordtype">int</span> rsize; RTIME time; } arg = { task, smsg, rmsg, ssize, rsize, time };
 00470                 <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, RPCX_UNTIL, 6), UR1(2, 4) | UW1(3, 5), &amp;arg, SIZARG);
 00471         }
-00472         <span class="keywordflow">return</span> rt_rpcx_until(task, smsg, rmsg, ssize, rsize, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00472         <span class="keywordflow">return</span> rt_rpcx_until(task, smsg, rmsg, ssize, rsize, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00473 }
 00474 
 00475 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_rpcx_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *smsg, <span class="keywordtype">void</span> *rmsg, <span class="keywordtype">int</span> ssize, <span class="keywordtype">int</span> rsize, RTIME delay)
@@ -486,7 +486,7 @@
 00478                 <span class="keyword">struct </span>{ RT_TASK *task; <span class="keywordtype">void</span> *smsg; <span class="keywordtype">void</span> *rmsg; <span class="keywordtype">int</span> ssize; <span class="keywordtype">int</span> rsize; RTIME delay; } arg = { task, smsg, rmsg, ssize, rsize, delay };
 00479                 <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, RPCX_TIMED, 6), UR1(2, 4) | UW1(3, 5), &amp;arg, SIZARG);
 00480         }
-00481         <span class="keywordflow">return</span> rt_rpcx_timed(task, smsg, rmsg, ssize, rsize, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00481         <span class="keywordflow">return</span> rt_rpcx_timed(task, smsg, rmsg, ssize, rsize, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00482 }
 00483 
 00484 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_sendx(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size)
@@ -513,7 +513,7 @@
 00505                 <span class="keyword">struct </span>{ RT_TASK *task; <span class="keywordtype">void</span> *msg; <span class="keywordtype">int</span> size; RTIME time; } arg = { task, msg, size, time };
 00506                 <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SENDX_UNTIL, 4), UR1(2, 3), &amp;arg, SIZARG);
 00507         }
-00508         <span class="keywordflow">return</span> rt_sendx_until(task, msg, size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00508         <span class="keywordflow">return</span> rt_sendx_until(task, msg, size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00509 }
 00510 
 00511 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_sendx_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size, RTIME delay)
@@ -522,7 +522,7 @@
 00514                 <span class="keyword">struct </span>{ RT_TASK *task; <span class="keywordtype">void</span> *msg; <span class="keywordtype">int</span> size; RTIME delay; } arg = { task, msg, size, delay };
 00515                 <span class="keywordflow">return</span> (<span class="keywordtype">void</span> *)(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span>)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SENDX_TIMED, 4), UR1(2, 3), &amp;arg, SIZARG);
 00516         }
-00517         <span class="keywordflow">return</span> rt_sendx_timed(task, msg, size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00517         <span class="keywordflow">return</span> rt_sendx_timed(task, msg, size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00518 }
 00519 
 00520 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_returnx(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size)
@@ -560,17 +560,17 @@
 00552 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receivex_until(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size, <span class="keywordtype">int</span> *len, RTIME time)
 00553 {
 00554         <span class="keywordflow">if</span> (!task || !node) {
-00555                 <span class="keywordflow">return</span> rt_receivex_until(task, msg, size, len, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00555                 <span class="keywordflow">return</span> rt_receivex_until(task, msg, size, len, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00556         }
-00557         <span class="keywordflow">return</span> rt_receivex_until(rt_find_asgn_stub(OWNER(node, task), 1), msg, size, len, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time)) ? task : 0;
+00557         <span class="keywordflow">return</span> rt_receivex_until(rt_find_asgn_stub(OWNER(node, task), 1), msg, size, len, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time)) ? task : 0;
 00558 }
 00559 
 00560 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receivex_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size, <span class="keywordtype">int</span> *len, RTIME delay)
 00561 {
 00562         <span class="keywordflow">if</span> (!task || !node) {
-00563                 <span class="keywordflow">return</span> rt_receivex_timed(task, msg, size, len, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00563                 <span class="keywordflow">return</span> rt_receivex_timed(task, msg, size, len, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00564         }
-00565         <span class="keywordflow">return</span> rt_receivex_timed(rt_find_asgn_stub(OWNER(node, task), 1), msg, size, len, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay)) ? task : 0;
+00565         <span class="keywordflow">return</span> rt_receivex_timed(rt_find_asgn_stub(OWNER(node, task), 1), msg, size, len, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay)) ? task : 0;
 00566 }
 00567 
 00568 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_MSG */</span>
@@ -637,7 +637,7 @@
 00629                 <span class="keyword">struct </span>{ MBX *mbx; <span class="keywordtype">void</span> *msg; <span class="keywordtype">int</span> msg_size; RTIME time; } arg = { mbx, msg, msg_size, time };
 00630                 <span class="keywordflow">return</span> rt_net_rpc(PACKPORT(port, NET_RPC_EXT, MBX_SEND_UNTIL, 4), UR1(2, 3), &amp;arg, SIZARG);
 00631         }
-00632         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a16">rt_mbx_send_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00632         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a16">rt_mbx_send_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00633 } 
 00634 
 00635 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_mbx_send_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, MBX *mbx, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> msg_size, RTIME delay)
@@ -646,7 +646,7 @@
 00638                 <span class="keyword">struct </span>{ MBX *mbx; <span class="keywordtype">void</span> *msg; <span class="keywordtype">int</span> msg_size; RTIME delay; } arg = { mbx, msg, msg_size, delay };
 00639                 <span class="keywordflow">return</span> rt_net_rpc(PACKPORT(port, NET_RPC_EXT, MBX_SEND_TIMED, 4), UR1(2, 3), &amp;arg, SIZARG);
 00640         }
-00641         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a17">rt_mbx_send_timed</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00641         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a17">rt_mbx_send_timed</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00642 } 
 00643 
 00644 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_mbx_evdrp(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, MBX *mbx, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> msg_size)
@@ -691,7 +691,7 @@
 00683                 <span class="keyword">struct </span>{ MBX *mbx; <span class="keywordtype">void</span> *msg; <span class="keywordtype">int</span> msg_size; RTIME time; } arg = { mbx, msg, msg_size, time };
 00684                 <span class="keywordflow">return</span> rt_net_rpc(PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_UNTIL, 4), UW1(2, 3), &amp;arg, SIZARG);
 00685         }
-00686         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a21">rt_mbx_receive_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00686         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a21">rt_mbx_receive_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00687 } 
 00688 
 00689 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_mbx_receive_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, MBX *mbx, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> msg_size, RTIME delay)
@@ -700,7 +700,7 @@
 00692                 <span class="keyword">struct </span>{ MBX *mbx; <span class="keywordtype">void</span> *msg; <span class="keywordtype">int</span> msg_size; RTIME delay; } arg = { mbx, msg, msg_size, delay };
 00693                 <span class="keywordflow">return</span> rt_net_rpc(PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_TIMED, 4), UW1(2, 3), &amp;arg, SIZARG);
 00694         }
-00695         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a22">rt_mbx_receive_timed</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00695         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a22">rt_mbx_receive_timed</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00696 } 
 00697 
 00698 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_MBX */</span>
@@ -790,7 +790,7 @@
 00782                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, GET_TIME_NS_CPUID, 0), 0LL, &amp;arg, SIZARG };
 00783                 <span class="keywordflow">return</span> rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).rt;
 00784         }
-00785         <span class="keywordflow">return</span> <a class="code" href="sched__up_8c.html#a97">rt_get_time_ns_cpuid</a>(cpuid);
+00785         <span class="keywordflow">return</span> <a class="code" href="sched__up_8c.html#a98">rt_get_time_ns_cpuid</a>(cpuid);
 00786 } 
 00787 
 00788 <span class="keyword">static</span> <span class="keyword">inline</span> RTIME RT_get_cpu_time_ns(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port)
@@ -833,7 +833,7 @@
 00825                 rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args);
 00826                 <span class="keywordflow">return</span>;
 00827         }
-00828         <a class="code" href="common_8c.html#a25">rt_sleep</a>(<a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00828         <a class="code" href="common_8c.html#a25">rt_sleep</a>(<a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00829 } 
 00830 
 00831 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> RT_sleep_until(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RTIME time)
@@ -844,7 +844,7 @@
 00836                 rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args);
 00837                 <span class="keywordflow">return</span>;
 00838         }
-00839         <a class="code" href="common_8c.html#a25">rt_sleep</a>(<a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00839         <a class="code" href="common_8c.html#a25">rt_sleep</a>(<a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00840 } 
 00841 
 00842 <span class="preprocessor">#if CONFIG_RTAI_SEM</span>
@@ -916,7 +916,7 @@
 00908                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT_UNTIL, 2), 0LL, &amp;arg, SIZARG };
 00909                 <span class="keywordflow">return</span> rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).i[LOW];
 00910         }
-00911         <span class="keywordflow">return</span> <a class="code" href="sem_8c.html#a10">rt_sem_wait_until</a>(sem, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00911         <span class="keywordflow">return</span> <a class="code" href="sem_8c.html#a10">rt_sem_wait_until</a>(sem, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00912 } 
 00913 
 00914 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_sem_wait_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, SEM *sem, RTIME delay)
@@ -926,7 +926,7 @@
 00918                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, SEM_WAIT_TIMED, 2), 0LL, &amp;arg, SIZARG };
 00919                 <span class="keywordflow">return</span> rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).i[LOW];
 00920         } 
-00921         <span class="keywordflow">return</span> <a class="code" href="sem_8c.html#a11">rt_sem_wait_timed</a>(sem, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00921         <span class="keywordflow">return</span> <a class="code" href="sem_8c.html#a11">rt_sem_wait_timed</a>(sem, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00922 } 
 00923 
 00924 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_SEM */</span>
@@ -960,7 +960,7 @@
 00952                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, SEND_UNTIL, 3), 0LL, &amp;arg, SIZARG };
 00953                 <span class="keywordflow">return</span> (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).v[LOW];
 00954         } 
-00955         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a2">rt_send_until</a>(task, msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00955         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a2">rt_send_until</a>(task, msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00956 } 
 00957 
 00958 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_send_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg, RTIME delay)
@@ -970,7 +970,7 @@
 00962                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, SEND_TIMED, 3), 0LL, &amp;arg, SIZARG };
 00963                 <span class="keywordflow">return</span> (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).v[LOW];
 00964         } 
-00965         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a3">rt_send_timed</a>(task, msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+00965         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a3">rt_send_timed</a>(task, msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 00966 } 
 00967 
 00968 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_evdrp(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *msg)
@@ -1000,17 +1000,17 @@
 00992 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receive_until(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *msg, RTIME time)
 00993 {
 00994         <span class="keywordflow">if</span> (!task || !node) {
-00995                 <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a6">rt_receive_until</a>(task, msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+00995                 <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a6">rt_receive_until</a>(task, msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 00996         } 
-00997         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a6">rt_receive_until</a>(rt_find_asgn_stub(OWNER(node, task), 1), msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time)) ? task : 0;
+00997         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a6">rt_receive_until</a>(rt_find_asgn_stub(OWNER(node, task), 1), msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time)) ? task : 0;
 00998 } 
 00999 
 01000 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receive_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *msg, RTIME delay)
 01001 {
 01002         <span class="keywordflow">if</span> (!task || !node) {
-01003                 <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a7">rt_receive_timed</a>(task, msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+01003                 <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a7">rt_receive_timed</a>(task, msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 01004         } 
-01005         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a7">rt_receive_timed</a>(rt_find_asgn_stub(OWNER(node, task), 1), msg, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay)) ? task : 0;
+01005         <span class="keywordflow">return</span> <a class="code" href="group__msg.html#a7">rt_receive_timed</a>(rt_find_asgn_stub(OWNER(node, task), 1), msg, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay)) ? task : 0;
 01006 } 
 01007 
 01008 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_rpc(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *ret)
@@ -1040,7 +1040,7 @@
 01032                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, RPC_UNTIL, 4), UW1(3, 0), &amp;arg, SIZARG };
 01033                 <span class="keywordflow">return</span> (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).v[LOW];
 01034         }
-01035         <span class="keywordflow">return</span> <a class="code" href="group__rpc.html#a2">rt_rpc_until</a>(task, msg, ret, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+01035         <span class="keywordflow">return</span> <a class="code" href="group__rpc.html#a2">rt_rpc_until</a>(task, msg, ret, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 01036 } 
 01037 
 01038 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_rpc_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> msg, <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> *ret, RTIME delay)
@@ -1050,7 +1050,7 @@
 01042                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, RPC_TIMED, 4), UW1(3, 0), &amp;arg, SIZARG };
 01043                 <span class="keywordflow">return</span> (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).v[LOW];
 01044         }
-01045         <span class="keywordflow">return</span> <a class="code" href="group__rpc.html#a3">rt_rpc_timed</a>(task, msg, ret, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+01045         <span class="keywordflow">return</span> <a class="code" href="group__rpc.html#a3">rt_rpc_timed</a>(task, msg, ret, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 01046 } 
 01047 
 01048 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_isrpc(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task)
@@ -1099,7 +1099,7 @@
 01091                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, RPCX_UNTIL, 6), UR1(2, 4) | UW1(3, 5), &amp;arg, SIZARG };
 01092                 <span class="keywordflow">return</span> (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).v[LOW];
 01093         }
-01094         <span class="keywordflow">return</span> rt_rpcx_until(task, smsg, rmsg, ssize, rsize, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+01094         <span class="keywordflow">return</span> rt_rpcx_until(task, smsg, rmsg, ssize, rsize, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 01095 } 
 01096 
 01097 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_rpcx_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *smsg, <span class="keywordtype">void</span> *rmsg, <span class="keywordtype">int</span> ssize, <span class="keywordtype">int</span> rsize, RTIME delay)
@@ -1109,7 +1109,7 @@
 01101                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, RPCX_TIMED, 6), UR1(2, 4) | UW1(3, 5), &amp;arg, SIZARG };
 01102                 <span class="keywordflow">return</span> (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).v[LOW];
 01103         }
-01104         <span class="keywordflow">return</span> rt_rpcx_timed(task, smsg, rmsg, ssize, rsize, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+01104         <span class="keywordflow">return</span> rt_rpcx_timed(task, smsg, rmsg, ssize, rsize, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 01105 } 
 01106 
 01107 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_sendx(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size)
@@ -1139,7 +1139,7 @@
 01131                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, SENDX_UNTIL, 4), UR1(2, 3), &amp;arg, SIZARG };
 01132                 <span class="keywordflow">return</span> (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).v[LOW];
 01133         }
-01134         <span class="keywordflow">return</span> rt_sendx_until(task, msg, size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+01134         <span class="keywordflow">return</span> rt_sendx_until(task, msg, size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 01135 } 
 01136 
 01137 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_sendx_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size, RTIME delay)
@@ -1149,7 +1149,7 @@
 01141                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, SENDX_TIMED, 4), UR1(2, 3), &amp;arg, SIZARG };
 01142                 <span class="keywordflow">return</span> (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).v[LOW];
 01143         }
-01144         <span class="keywordflow">return</span> rt_sendx_timed(task, msg, size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+01144         <span class="keywordflow">return</span> rt_sendx_timed(task, msg, size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 01145 } 
 01146 
 01147 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_returnx(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size)
@@ -1188,17 +1188,17 @@
 01180 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receivex_until(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size, <span class="keywordtype">int</span> *len, RTIME time)
 01181 {
 01182         <span class="keywordflow">if</span> (!task || !node) {
-01183                 <span class="keywordflow">return</span> rt_receivex_until(task, msg, size, len, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+01183                 <span class="keywordflow">return</span> rt_receivex_until(task, msg, size, len, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 01184         } 
-01185         <span class="keywordflow">return</span> rt_receivex_until(rt_find_asgn_stub(OWNER(node, task), 1), msg, size, len, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time)) ? task : 0;
+01185         <span class="keywordflow">return</span> rt_receivex_until(rt_find_asgn_stub(OWNER(node, task), 1), msg, size, len, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time)) ? task : 0;
 01186 } 
 01187 
 01188 <span class="keyword">static</span> <span class="keyword">inline</span> RT_TASK *RT_receivex_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, RT_TASK *task, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> size, <span class="keywordtype">int</span> *len, RTIME delay)
 01189 {
 01190         <span class="keywordflow">if</span> (!task || !node) {
-01191                 <span class="keywordflow">return</span> rt_receivex_timed(task, msg, size, len, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+01191                 <span class="keywordflow">return</span> rt_receivex_timed(task, msg, size, len, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 01192         } 
-01193         <span class="keywordflow">return</span> rt_receivex_timed(rt_find_asgn_stub(OWNER(node, task), 1), msg, size, len, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay)) ? task : 0;
+01193         <span class="keywordflow">return</span> rt_receivex_timed(rt_find_asgn_stub(OWNER(node, task), 1), msg, size, len, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay)) ? task : 0;
 01194 } 
 01195 
 01196 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_MSG */</span>
@@ -1272,7 +1272,7 @@
 01264                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_UNTIL, 4), UR1(2, 3), &amp;arg, SIZARG };
 01265                 <span class="keywordflow">return</span> rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).i[LOW];
 01266         } 
-01267         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a16">rt_mbx_send_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+01267         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a16">rt_mbx_send_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 01268 } 
 01269 
 01270 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_mbx_send_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, MBX *mbx, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> msg_size, RTIME delay)
@@ -1282,7 +1282,7 @@
 01274                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, MBX_SEND_TIMED, 4), UR1(2, 3), &amp;arg, SIZARG };
 01275                 <span class="keywordflow">return</span> rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).i[LOW];
 01276         } 
-01277         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a16">rt_mbx_send_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+01277         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a16">rt_mbx_send_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 01278 } 
 01279 
 01280 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_mbx_evdrp(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, MBX *mbx, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> msg_size)
@@ -1332,7 +1332,7 @@
 01324                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_UNTIL, 4), UW1(2, 3), &amp;arg, SIZARG };
 01325                 <span class="keywordflow">return</span> rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).i[LOW];
 01326         }
-01327         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a21">rt_mbx_receive_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(time));
+01327         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a21">rt_mbx_receive_until</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(time));
 01328 } 
 01329 
 01330 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> RT_mbx_receive_timed(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> node, <span class="keywordtype">int</span> port, MBX *mbx, <span class="keywordtype">void</span> *msg, <span class="keywordtype">int</span> msg_size, RTIME delay)
@@ -1342,7 +1342,7 @@
 01334                 <span class="keyword">struct </span>{ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> fun; <span class="keywordtype">long</span> <span class="keywordtype">long</span> type; <span class="keywordtype">void</span> *args; <span class="keywordtype">int</span> argsize; } args = { PACKPORT(port, NET_RPC_EXT, MBX_RECEIVE_TIMED, 4), UW1(2, 3), &amp;arg, SIZARG };
 01335                 <span class="keywordflow">return</span> rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &amp;args).i[LOW];
 01336         }
-01337         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a22">rt_mbx_receive_timed</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a91">nano2count</a>(delay));
+01337         <span class="keywordflow">return</span> <a class="code" href="group__mbx.html#a22">rt_mbx_receive_timed</a>(mbx, msg, msg_size, <a class="code" href="sched__up_8c.html#a92">nano2count</a>(delay));
 01338 } 
 01339 
 01340 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_get_net_rpc_ret(MBX *mbx, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> *retval, <span class="keywordtype">void</span> *msg1, <span class="keywordtype">int</span> *msglen1, <span class="keywordtype">void</span> *msg2, <span class="keywordtype">int</span> *msglen2, RTIME timeout, <span class="keywordtype">int</span> type)
@@ -1474,7 +1474,7 @@
 01466 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_INTERNAL_LXRT_SUPPORT */</span>
 01467 
 01468 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NETRPC_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 20:09:33 2004 for RTAI API by
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Jul 24 19:31:26 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

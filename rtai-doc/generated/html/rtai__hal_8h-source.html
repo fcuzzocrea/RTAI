@@ -228,344 +228,352 @@
 00255 
 00256 <span class="keyword">extern</span> <span class="keywordtype">int</span> arti_adeos_ptdbase;
 00257 
-00258 <span class="comment">/* arti_get_current() is Adeos-specific. Since real-time interrupt</span>
-00259 <span class="comment">   handlers are called on behalf of the RTAI domain stack, we cannot</span>
-00260 <span class="comment">   infere the "current" Linux task address using %esp. We must use the</span>
-00261 <span class="comment">   suspended Linux domain's stack pointer instead. */</span>
-00262 
-00263 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *arti_get_current (<span class="keywordtype">int</span> cpuid)
-00264 
-00265 {
-00266     <span class="keywordtype">int</span> *esp;
-00267 
-00268     __asm__ <span class="keyword">volatile</span>(<span class="stringliteral">"movl %%esp, %0"</span> : <span class="stringliteral">"=r"</span> (esp));
+00258 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *arti_get_root_current (<span class="keywordtype">int</span> cpuid) {
+00259     <span class="keywordflow">return</span> (<span class="keyword">struct </span>task_struct *)(((u_long)adp_root-&gt;esp[cpuid]) &amp; (~8191UL));
+00260 }
+00261 
+00262 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> arti_adeos_stack_p (<span class="keywordtype">int</span> cpuid)
+00263 
+00264 {
+00265     <span class="keywordtype">int</span> *esp;
+00266     __asm__ <span class="keyword">volatile</span>(<span class="stringliteral">"movl %%esp, %0"</span> : <span class="stringliteral">"=r"</span> (esp));
+00267     <span class="keywordflow">return</span> (esp &gt;= arti_domain.estackbase[cpuid] &amp;&amp; esp &lt; arti_domain.estackbase[cpuid] + 2048);
+00268 }
 00269 
-00270     <span class="keywordflow">if</span> (esp &gt;= arti_domain.estackbase[cpuid] &amp;&amp; esp &lt; arti_domain.estackbase[cpuid] + 2048)
-00271         <span class="keywordflow">return</span> (<span class="keyword">struct </span>task_struct *)(((u_long)adp_root-&gt;esp[cpuid]) &amp; (~8191UL));
-00272 
-00273     <span class="keywordflow">return</span> get_current();
-00274 }
-00275 
-00276 <span class="preprocessor">#define rt_spin_lock(lock)    spin_lock(lock)</span>
-00277 <span class="preprocessor"></span><span class="preprocessor">#define rt_spin_unlock(lock)  spin_unlock(lock)</span>
-00278 <span class="preprocessor"></span>
-00279 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_lock_irq(spinlock_t *lock) {
+00270 <span class="comment">/* arti_get_current() is Adeos-specific. Since real-time interrupt</span>
+00271 <span class="comment">   handlers are called on behalf of the RTAI domain stack, we cannot</span>
+00272 <span class="comment">   infere the "current" Linux task address using %esp. We must use the</span>
+00273 <span class="comment">   suspended Linux domain's stack pointer instead. */</span>
+00274 
+00275 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *arti_get_current (<span class="keywordtype">int</span> cpuid)
+00276 
+00277 {
+00278     <span class="keywordflow">if</span> (arti_adeos_stack_p(cpuid))
+00279         <span class="keywordflow">return</span> arti_get_root_current(cpuid);
 00280 
-00281     arti_cli();
-00282     rt_spin_lock(lock);
-00283 }
-00284 
-00285 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_unlock_irq(spinlock_t *lock) {
-00286 
-00287     rt_spin_unlock(lock);
-00288     arti_sti();
-00289 }
-00290 
-00291 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rt_spin_lock_irqsave(spinlock_t *lock) {
+00281     <span class="keywordflow">return</span> get_current();
+00282 }
+00283 
+00284 <span class="preprocessor">#define rt_spin_lock(lock)    spin_lock(lock)</span>
+00285 <span class="preprocessor"></span><span class="preprocessor">#define rt_spin_unlock(lock)  spin_unlock(lock)</span>
+00286 <span class="preprocessor"></span>
+00287 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_lock_irq(spinlock_t *lock) {
+00288 
+00289     arti_cli();
+00290     rt_spin_lock(lock);
+00291 }
 00292 
-00293     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
-00294     arti_local_irq_save(flags);
-00295     rt_spin_lock(lock);
-00296     <span class="keywordflow">return</span> flags;
+00293 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_unlock_irq(spinlock_t *lock) {
+00294 
+00295     rt_spin_unlock(lock);
+00296     arti_sti();
 00297 }
 00298 
-00299 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_unlock_irqrestore(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags,
-00300                                              spinlock_t *lock) {
-00301     rt_spin_unlock(lock);
-00302     arti_local_irq_restore(flags);
-00303 }
-00304 
-00305 <span class="preprocessor">#ifdef CONFIG_SMP</span>
-00306 <span class="preprocessor"></span>
-00307 <span class="preprocessor">#define CPU_RELAX(x) \</span>
-00308 <span class="preprocessor">do { \</span>
-00309 <span class="preprocessor">   int i = 0; \</span>
-00310 <span class="preprocessor">   do \</span>
-00311 <span class="preprocessor">     cpu_relax(); \</span>
-00312 <span class="preprocessor">   while (++i &lt; x); \</span>
-00313 <span class="preprocessor">} while(0)</span>
-00314 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* !CONFIG_SMP */</span>
-00315 <span class="preprocessor">#define CPU_RELAX(x)</span>
-00316 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
-00317 
-00318 <span class="keywordtype">void</span> arti_broadcast_to_timers(<span class="keywordtype">int</span> irq,
-00319                               <span class="keywordtype">void</span> *dev_id,
-00320                               <span class="keyword">struct</span> pt_regs *regs);
-00321 
-00322 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_get_global_lock(<span class="keywordtype">void</span>) {
-00323 
-00324     adeos_declare_cpuid;
+00299 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rt_spin_lock_irqsave(spinlock_t *lock) {
+00300 
+00301     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
+00302     arti_local_irq_save(flags);
+00303     rt_spin_lock(lock);
+00304     <span class="keywordflow">return</span> flags;
+00305 }
+00306 
+00307 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_spin_unlock_irqrestore(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags,
+00308                                              spinlock_t *lock) {
+00309     rt_spin_unlock(lock);
+00310     arti_local_irq_restore(flags);
+00311 }
+00312 
+00313 <span class="preprocessor">#ifdef CONFIG_SMP</span>
+00314 <span class="preprocessor"></span>
+00315 <span class="preprocessor">#define CPU_RELAX(x) \</span>
+00316 <span class="preprocessor">do { \</span>
+00317 <span class="preprocessor">   int i = 0; \</span>
+00318 <span class="preprocessor">   do \</span>
+00319 <span class="preprocessor">     cpu_relax(); \</span>
+00320 <span class="preprocessor">   while (++i &lt; x); \</span>
+00321 <span class="preprocessor">} while(0)</span>
+00322 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* !CONFIG_SMP */</span>
+00323 <span class="preprocessor">#define CPU_RELAX(x)</span>
+00324 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
 00325 
-00326     arti_cli();
-00327 
-00328 <span class="preprocessor">#ifdef adeos_load_cpuid</span>
-00329 <span class="preprocessor"></span>    adeos_load_cpuid();
-00330 <span class="preprocessor">#endif </span><span class="comment">/* adeos_load_cpuid */</span>
+00326 <span class="keywordtype">void</span> arti_broadcast_to_timers(<span class="keywordtype">int</span> irq,
+00327                               <span class="keywordtype">void</span> *dev_id,
+00328                               <span class="keyword">struct</span> pt_regs *regs);
+00329 
+00330 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_get_global_lock(<span class="keywordtype">void</span>) {
 00331 
-00332     <span class="keywordflow">if</span> (!test_and_set_bit(cpuid,&amp;arti_cpu_lock))
-00333         <span class="keywordflow">while</span> (test_and_set_bit(31,&amp;arti_cpu_lock))
-00334             CPU_RELAX(cpuid);
-00335 }
-00336 
-00337 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_release_global_lock(<span class="keywordtype">void</span>) {
-00338 
-00339     adeos_declare_cpuid;
-00340 
-00341     arti_cli();
-00342 
-00343 <span class="preprocessor">#ifdef adeos_load_cpuid</span>
-00344 <span class="preprocessor"></span>    adeos_load_cpuid();
-00345 <span class="preprocessor">#endif </span><span class="comment">/* adeos_load_cpuid */</span>
+00332     adeos_declare_cpuid;
+00333 
+00334     arti_cli();
+00335 
+00336 <span class="preprocessor">#ifdef adeos_load_cpuid</span>
+00337 <span class="preprocessor"></span>    adeos_load_cpuid();
+00338 <span class="preprocessor">#endif </span><span class="comment">/* adeos_load_cpuid */</span>
+00339 
+00340     <span class="keywordflow">if</span> (!test_and_set_bit(cpuid,&amp;arti_cpu_lock))
+00341         <span class="keywordflow">while</span> (test_and_set_bit(31,&amp;arti_cpu_lock))
+00342             CPU_RELAX(cpuid);
+00343 }
+00344 
+00345 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_release_global_lock(<span class="keywordtype">void</span>) {
 00346 
-00347     <span class="keywordflow">if</span> (test_and_clear_bit(cpuid,&amp;arti_cpu_lock)) {
-00348         clear_bit(31,&amp;arti_cpu_lock);
-00349         CPU_RELAX(cpuid);
-00350     }
-00351 }
-00352 
-00365 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_cli(<span class="keywordtype">void</span>) {
-00366     rt_get_global_lock();
-00367 }
-00368 
-00375 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_sti(<span class="keywordtype">void</span>) {
-00376     rt_release_global_lock();
-00377     arti_sti();
-00378 }
-00379 
-00386 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_global_save_flags_and_cli(<span class="keywordtype">void</span>) {
+00347     adeos_declare_cpuid;
+00348 
+00349     arti_cli();
+00350 
+00351 <span class="preprocessor">#ifdef adeos_load_cpuid</span>
+00352 <span class="preprocessor"></span>    adeos_load_cpuid();
+00353 <span class="preprocessor">#endif </span><span class="comment">/* adeos_load_cpuid */</span>
+00354 
+00355     <span class="keywordflow">if</span> (test_and_clear_bit(cpuid,&amp;arti_cpu_lock)) {
+00356         clear_bit(31,&amp;arti_cpu_lock);
+00357         CPU_RELAX(cpuid);
+00358     }
+00359 }
+00360 
+00373 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_cli(<span class="keywordtype">void</span>) {
+00374     rt_get_global_lock();
+00375 }
+00376 
+00383 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_sti(<span class="keywordtype">void</span>) {
+00384     rt_release_global_lock();
+00385     arti_sti();
+00386 }
 00387 
-00388     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags = arti_get_iflag_and_cli();
-00389     adeos_declare_cpuid;
-00390 
-00391 <span class="preprocessor">#ifdef adeos_load_cpuid</span>
-00392 <span class="preprocessor"></span>    adeos_load_cpuid();
-00393 <span class="preprocessor">#endif </span><span class="comment">/* adeos_load_cpuid */</span>
-00394 
-00395     <span class="keywordflow">if</span> (!test_and_set_bit(cpuid,&amp;arti_cpu_lock))
-00396         {
-00397         <span class="keywordflow">while</span> (test_and_set_bit(31,&amp;arti_cpu_lock))
-00398             CPU_RELAX(cpuid);
-00399 
-00400         <span class="keywordflow">return</span> flags | 1;
-00401         }
+00394 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_global_save_flags_and_cli(<span class="keywordtype">void</span>) {
+00395 
+00396     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags = arti_get_iflag_and_cli();
+00397     adeos_declare_cpuid;
+00398 
+00399 <span class="preprocessor">#ifdef adeos_load_cpuid</span>
+00400 <span class="preprocessor"></span>    adeos_load_cpuid();
+00401 <span class="preprocessor">#endif </span><span class="comment">/* adeos_load_cpuid */</span>
 00402 
-00403     <span class="keywordflow">return</span> flags;
-00404 }
-00405 
-00413 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_save_flags(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *flags) {
-00414 
-00415     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> hflags = arti_get_iflag_and_cli(), rflags;
-00416     adeos_declare_cpuid;
-00417 
-00418 <span class="preprocessor">#ifdef adeos_load_cpuid</span>
-00419 <span class="preprocessor"></span>    adeos_load_cpuid();
-00420 <span class="preprocessor">#endif </span><span class="comment">/* adeos_load_cpuid */</span>
-00421 
-00422     <span class="keywordflow">if</span> (test_bit(cpuid,&amp;arti_cpu_lock))
-00423         rflags = hflags;
-00424     <span class="keywordflow">else</span>
-00425         rflags = hflags | 1;
-00426 
-00427     <span class="keywordflow">if</span> (hflags)
-00428         arti_sti();
+00403     <span class="keywordflow">if</span> (!test_and_set_bit(cpuid,&amp;arti_cpu_lock))
+00404         {
+00405         <span class="keywordflow">while</span> (test_and_set_bit(31,&amp;arti_cpu_lock))
+00406             CPU_RELAX(cpuid);
+00407 
+00408         <span class="keywordflow">return</span> flags | 1;
+00409         }
+00410 
+00411     <span class="keywordflow">return</span> flags;
+00412 }
+00413 
+00421 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_save_flags(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *flags) {
+00422 
+00423     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> hflags = arti_get_iflag_and_cli(), rflags;
+00424     adeos_declare_cpuid;
+00425 
+00426 <span class="preprocessor">#ifdef adeos_load_cpuid</span>
+00427 <span class="preprocessor"></span>    adeos_load_cpuid();
+00428 <span class="preprocessor">#endif </span><span class="comment">/* adeos_load_cpuid */</span>
 00429 
-00430     *flags = rflags;
-00431 }
-00432 
-00440 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_restore_flags(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags) {
-00441 
-00442     <span class="keywordflow">switch</span> (flags)
-00443         {
-00444         <span class="keywordflow">case</span> (1 &lt;&lt; ARTI_IFLAG) | 1:
-00445 
-00446             rt_release_global_lock();
-00447             arti_sti();
-00448             <span class="keywordflow">break</span>;
+00430     <span class="keywordflow">if</span> (test_bit(cpuid,&amp;arti_cpu_lock))
+00431         rflags = hflags;
+00432     <span class="keywordflow">else</span>
+00433         rflags = hflags | 1;
+00434 
+00435     <span class="keywordflow">if</span> (hflags)
+00436         arti_sti();
+00437 
+00438     *flags = rflags;
+00439 }
+00440 
+00448 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_global_restore_flags(<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags) {
 00449 
-00450         <span class="keywordflow">case</span> (1 &lt;&lt; ARTI_IFLAG) | 0:
-00451 
-00452             rt_get_global_lock();
-00453             arti_sti();
-00454             <span class="keywordflow">break</span>;
-00455 
-00456         <span class="keywordflow">case</span> (0 &lt;&lt; ARTI_IFLAG) | 1:
+00450     <span class="keywordflow">switch</span> (flags)
+00451         {
+00452         <span class="keywordflow">case</span> (1 &lt;&lt; ARTI_IFLAG) | 1:
+00453 
+00454             rt_release_global_lock();
+00455             arti_sti();
+00456             <span class="keywordflow">break</span>;
 00457 
-00458             rt_release_global_lock();
-00459             <span class="keywordflow">break</span>;
-00460 
-00461         <span class="keywordflow">case</span> (0 &lt;&lt; ARTI_IFLAG) | 0:
-00462 
-00463             rt_get_global_lock();
-00464             <span class="keywordflow">break</span>;
-00465         }
-00466 }
-00467 
-00468 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_switch_to_real_time(<span class="keywordtype">int</span> cpuid) {
-00469 
-00470     TRACE_RTAI_SWITCHTO_RT(cpuid);
-00471     arti_linux_context[cpuid].oldtask = arti_get_current(cpuid);
-00472     arti_linux_context[cpuid].oldflags = arti_linux_save_flags_and_cli();
-00473     set_bit(cpuid,&amp;arti_cpu_realtime);
+00458         <span class="keywordflow">case</span> (1 &lt;&lt; ARTI_IFLAG) | 0:
+00459 
+00460             rt_get_global_lock();
+00461             arti_sti();
+00462             <span class="keywordflow">break</span>;
+00463 
+00464         <span class="keywordflow">case</span> (0 &lt;&lt; ARTI_IFLAG) | 1:
+00465 
+00466             rt_release_global_lock();
+00467             <span class="keywordflow">break</span>;
+00468 
+00469         <span class="keywordflow">case</span> (0 &lt;&lt; ARTI_IFLAG) | 0:
+00470 
+00471             rt_get_global_lock();
+00472             <span class="keywordflow">break</span>;
+00473         }
 00474 }
 00475 
-00476 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_switch_to_linux(<span class="keywordtype">int</span> cpuid) {
+00476 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_switch_to_real_time(<span class="keywordtype">int</span> cpuid) {
 00477 
-00478     TRACE_RTAI_SWITCHTO_LINUX(cpuid);
-00479     clear_bit(cpuid,&amp;arti_cpu_realtime);
-00480     arti_linux_restore_flags_nosync(arti_linux_context[cpuid].oldflags,cpuid);
-00481     arti_linux_context[cpuid].oldtask = NULL;
+00478     TRACE_RTAI_SWITCHTO_RT(cpuid);
+00479     arti_linux_context[cpuid].oldtask = arti_get_current(cpuid);
+00480     arti_linux_context[cpuid].oldflags = arti_linux_save_flags_and_cli();
+00481     set_bit(cpuid,&amp;arti_cpu_realtime);
 00482 }
 00483 
-00484 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rt_whoislinux(<span class="keywordtype">int</span> cpuid) {
+00484 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_switch_to_linux(<span class="keywordtype">int</span> cpuid) {
 00485 
-00486     <span class="keywordflow">return</span> arti_linux_context[cpuid].oldtask;
-00487 }
-00488 
-00489 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_is_linux (<span class="keywordtype">void</span>) {
-00490 
-00491     <span class="keywordflow">return</span> !test_bit(adeos_processor_id(),&amp;arti_cpu_realtime);
-00492 }
+00486     TRACE_RTAI_SWITCHTO_LINUX(cpuid);
+00487     clear_bit(cpuid,&amp;arti_cpu_realtime);
+00488     arti_linux_restore_flags_nosync(arti_linux_context[cpuid].oldflags,cpuid);
+00489     arti_linux_context[cpuid].oldtask = NULL;
+00490 }
+00491 
+00492 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keyword">struct </span>task_struct *rt_whoislinux(<span class="keywordtype">int</span> cpuid) {
 00493 
-00494 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_is_lxrt (<span class="keywordtype">void</span>) {
-00495 
-00496     <span class="keywordflow">return</span> test_bit(adeos_processor_id(),&amp;arti_cpu_lxrt);
-00497 }
+00494     <span class="keywordflow">return</span> arti_linux_context[cpuid].oldtask;
+00495 }
+00496 
+00497 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_is_linux (<span class="keywordtype">void</span>) {
 00498 
-00499 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_set_timer_delay (<span class="keywordtype">int</span> delay) {
-00500 
-00501     <span class="keywordflow">if</span> (delay) {
-00502         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
-00503         arti_hw_lock(flags);
-00504 <span class="preprocessor">#ifdef __USE_APIC__</span>
-00505 <span class="preprocessor"></span>        apic_read(APIC_TMICT);
-00506         apic_write(APIC_TMICT,delay);
-00507 <span class="preprocessor">#else </span><span class="comment">/* !__USE_APIC__ */</span>
-00508         outb(delay &amp; 0xff,0x40);
-00509         outb(delay &gt;&gt; 8,0x40);
-00510 <span class="preprocessor">#endif </span><span class="comment">/* __USE_APIC__ */</span>
-00511         arti_hw_unlock(flags);
-00512     }
-00513 }
-00514 
-00515     <span class="comment">/* Private interface -- Internal use only */</span>
-00516 
-00517 <span class="keywordtype">void</span> arti_attach_lxrt(<span class="keywordtype">void</span>);
-00518 
-00519 <span class="keywordtype">void</span> arti_detach_lxrt(<span class="keywordtype">void</span>);
-00520 
-00521 <span class="keywordtype">void</span> arti_switch_linux_mm(<span class="keyword">struct</span> task_struct *prev,
-00522                           <span class="keyword">struct</span> task_struct *next,
-00523                           <span class="keywordtype">int</span> cpuid);
+00499     <span class="keywordflow">return</span> !test_bit(adeos_processor_id(),&amp;arti_cpu_realtime);
+00500 }
+00501 
+00502 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_is_lxrt (<span class="keywordtype">void</span>) {
+00503 
+00504     <span class="keywordflow">return</span> test_bit(adeos_processor_id(),&amp;arti_cpu_lxrt);
+00505 }
+00506 
+00507 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rt_set_timer_delay (<span class="keywordtype">int</span> delay) {
+00508 
+00509     <span class="keywordflow">if</span> (delay) {
+00510         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
+00511         arti_hw_lock(flags);
+00512 <span class="preprocessor">#ifdef __USE_APIC__</span>
+00513 <span class="preprocessor"></span>        apic_read(APIC_TMICT);
+00514         apic_write(APIC_TMICT,delay);
+00515 <span class="preprocessor">#else </span><span class="comment">/* !__USE_APIC__ */</span>
+00516         outb(delay &amp; 0xff,0x40);
+00517         outb(delay &gt;&gt; 8,0x40);
+00518 <span class="preprocessor">#endif </span><span class="comment">/* __USE_APIC__ */</span>
+00519         arti_hw_unlock(flags);
+00520     }
+00521 }
+00522 
+00523     <span class="comment">/* Private interface -- Internal use only */</span>
 00524 
-00525 <span class="keywordtype">int</span> arti_calibrate_8254(<span class="keywordtype">void</span>);
+00525 <span class="keywordtype">void</span> arti_attach_lxrt(<span class="keywordtype">void</span>);
 00526 
-00527 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
+00527 <span class="keywordtype">void</span> arti_detach_lxrt(<span class="keywordtype">void</span>);
 00528 
-00529     <span class="comment">/* Public interface */</span>
-00530 
-00531 <span class="preprocessor">#ifdef __KERNEL__</span>
-00532 <span class="preprocessor"></span>
-00533 <span class="preprocessor">#include &lt;linux/kernel.h&gt;</span>
+00529 <span class="keywordtype">void</span> arti_switch_linux_mm(<span class="keyword">struct</span> task_struct *prev,
+00530                           <span class="keyword">struct</span> task_struct *next,
+00531                           <span class="keywordtype">int</span> cpuid);
+00532 
+00533 <span class="keywordtype">int</span> arti_calibrate_8254(<span class="keywordtype">void</span>);
 00534 
-00535 <span class="preprocessor">#ifdef __cplusplus</span>
-00536 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00537 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00535 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
+00536 
+00537     <span class="comment">/* Public interface */</span>
 00538 
-00539 <span class="keywordtype">int</span> rt_request_irq(<span class="keywordtype">unsigned</span> irq,
-00540                    <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq, <span class="keywordtype">void</span> *cookie),
-00541                    <span class="keywordtype">void</span> *cookie);
+00539 <span class="preprocessor">#ifdef __KERNEL__</span>
+00540 <span class="preprocessor"></span>
+00541 <span class="preprocessor">#include &lt;linux/kernel.h&gt;</span>
 00542 
-00543 <span class="keywordtype">int</span> rt_release_irq(<span class="keywordtype">unsigned</span> irq);
-00544 
-00545 <span class="keywordtype">void</span> rt_set_irq_cookie(<span class="keywordtype">unsigned</span> irq,
-00546                        <span class="keywordtype">void</span> *cookie);
-00547 
-00552 <span class="keywordtype">unsigned</span> rt_startup_irq(<span class="keywordtype">unsigned</span> irq);
-00553 
-00554 <span class="keywordtype">void</span> rt_shutdown_irq(<span class="keywordtype">unsigned</span> irq);
+00543 <span class="preprocessor">#ifdef __cplusplus</span>
+00544 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00545 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00546 
+00547 <span class="keywordtype">int</span> rt_request_irq(<span class="keywordtype">unsigned</span> irq,
+00548                    <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq, <span class="keywordtype">void</span> *cookie),
+00549                    <span class="keywordtype">void</span> *cookie);
+00550 
+00551 <span class="keywordtype">int</span> rt_release_irq(<span class="keywordtype">unsigned</span> irq);
+00552 
+00553 <span class="keywordtype">void</span> rt_set_irq_cookie(<span class="keywordtype">unsigned</span> irq,
+00554                        <span class="keywordtype">void</span> *cookie);
 00555 
-00556 <span class="keywordtype">void</span> rt_enable_irq(<span class="keywordtype">unsigned</span> irq);
-00557 
-00558 <span class="keywordtype">void</span> rt_disable_irq(<span class="keywordtype">unsigned</span> irq);
-00559 
-00560 <span class="keywordtype">void</span> rt_mask_and_ack_irq(<span class="keywordtype">unsigned</span> irq);
+00560 <span class="keywordtype">unsigned</span> rt_startup_irq(<span class="keywordtype">unsigned</span> irq);
 00561 
-00562 <span class="keywordtype">void</span> rt_unmask_irq(<span class="keywordtype">unsigned</span> irq);
+00562 <span class="keywordtype">void</span> rt_shutdown_irq(<span class="keywordtype">unsigned</span> irq);
 00563 
-00564 <span class="keywordtype">void</span> rt_ack_irq(<span class="keywordtype">unsigned</span> irq);
-00567 <span class="keywordtype">void</span> rt_do_irq(<span class="keywordtype">unsigned</span> irq);
-00568 
-00569 <span class="keywordtype">int</span> rt_request_linux_irq(<span class="keywordtype">unsigned</span> irq,
-00570                          <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">int</span> irq,
-00571                                          <span class="keywordtype">void</span> *dev_id,
-00572                                          <span class="keyword">struct</span> pt_regs *regs), 
-00573                          <span class="keywordtype">char</span> *name,
-00574                          <span class="keywordtype">void</span> *dev_id);
-00575 
-00576 <span class="keywordtype">int</span> rt_free_linux_irq(<span class="keywordtype">unsigned</span> irq,
-00577                       <span class="keywordtype">void</span> *dev_id);
-00578 
-00579 <span class="keywordtype">void</span> rt_pend_linux_irq(<span class="keywordtype">unsigned</span> irq);
-00580 
-00581 <span class="keywordtype">void</span> rt_pend_linux_srq(<span class="keywordtype">unsigned</span> srq);
-00582 
-00583 <span class="keywordtype">int</span> rt_request_srq(<span class="keywordtype">unsigned</span> label,
-00584                    <span class="keywordtype">void</span> (*k_handler)(<span class="keywordtype">void</span>),
-00585                    <span class="keywordtype">long</span> <span class="keywordtype">long</span> (*u_handler)(<span class="keywordtype">unsigned</span>));
+00564 <span class="keywordtype">void</span> rt_enable_irq(<span class="keywordtype">unsigned</span> irq);
+00565 
+00566 <span class="keywordtype">void</span> rt_disable_irq(<span class="keywordtype">unsigned</span> irq);
+00567 
+00568 <span class="keywordtype">void</span> rt_mask_and_ack_irq(<span class="keywordtype">unsigned</span> irq);
+00569 
+00570 <span class="keywordtype">void</span> rt_unmask_irq(<span class="keywordtype">unsigned</span> irq);
+00571 
+00572 <span class="keywordtype">void</span> rt_ack_irq(<span class="keywordtype">unsigned</span> irq);
+00575 <span class="keywordtype">void</span> rt_do_irq(<span class="keywordtype">unsigned</span> irq);
+00576 
+00577 <span class="keywordtype">int</span> rt_request_linux_irq(<span class="keywordtype">unsigned</span> irq,
+00578                          <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">int</span> irq,
+00579                                          <span class="keywordtype">void</span> *dev_id,
+00580                                          <span class="keyword">struct</span> pt_regs *regs), 
+00581                          <span class="keywordtype">char</span> *name,
+00582                          <span class="keywordtype">void</span> *dev_id);
+00583 
+00584 <span class="keywordtype">int</span> rt_free_linux_irq(<span class="keywordtype">unsigned</span> irq,
+00585                       <span class="keywordtype">void</span> *dev_id);
 00586 
-00587 <span class="keywordtype">int</span> rt_free_srq(<span class="keywordtype">unsigned</span> srq);
+00587 <span class="keywordtype">void</span> rt_pend_linux_irq(<span class="keywordtype">unsigned</span> irq);
 00588 
-00589 <span class="keywordtype">int</span> rt_assign_irq_to_cpu(<span class="keywordtype">int</span> irq,
-00590                          <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> cpus_mask);
-00591 
-00592 <span class="keywordtype">int</span> rt_reset_irq_to_sym_mode(<span class="keywordtype">int</span> irq);
-00593 
-00594 <span class="keywordtype">void</span> rt_request_timer_cpuid(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
-00595                             <span class="keywordtype">unsigned</span> tick,
-00596                             <span class="keywordtype">int</span> cpuid);
-00597 
-00598 <span class="keywordtype">void</span> rt_request_apic_timers(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
-00599                             <span class="keyword">struct</span> apic_timer_setup_data *tmdata);
-00600 
-00601 <span class="keywordtype">void</span> rt_free_apic_timers(<span class="keywordtype">void</span>);
-00602 
-00603 <span class="keywordtype">int</span> rt_request_timer(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
-00604                      <span class="keywordtype">unsigned</span> tick,
-00605                      <span class="keywordtype">int</span> use_apic);
-00606 
-00607 <span class="keywordtype">void</span> <a class="code" href="group__hal.html#a70">rt_free_timer</a>(<span class="keywordtype">void</span>);
+00589 <span class="keywordtype">void</span> rt_pend_linux_srq(<span class="keywordtype">unsigned</span> srq);
+00590 
+00591 <span class="keywordtype">int</span> rt_request_srq(<span class="keywordtype">unsigned</span> label,
+00592                    <span class="keywordtype">void</span> (*k_handler)(<span class="keywordtype">void</span>),
+00593                    <span class="keywordtype">long</span> <span class="keywordtype">long</span> (*u_handler)(<span class="keywordtype">unsigned</span>));
+00594 
+00595 <span class="keywordtype">int</span> rt_free_srq(<span class="keywordtype">unsigned</span> srq);
+00596 
+00597 <span class="keywordtype">int</span> rt_assign_irq_to_cpu(<span class="keywordtype">int</span> irq,
+00598                          <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> cpus_mask);
+00599 
+00600 <span class="keywordtype">int</span> rt_reset_irq_to_sym_mode(<span class="keywordtype">int</span> irq);
+00601 
+00602 <span class="keywordtype">void</span> rt_request_timer_cpuid(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
+00603                             <span class="keywordtype">unsigned</span> tick,
+00604                             <span class="keywordtype">int</span> cpuid);
+00605 
+00606 <span class="keywordtype">void</span> rt_request_apic_timers(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
+00607                             <span class="keyword">struct</span> apic_timer_setup_data *tmdata);
 00608 
-00609 RT_TRAP_HANDLER rt_set_trap_handler(RT_TRAP_HANDLER handler);
+00609 <span class="keywordtype">void</span> rt_free_apic_timers(<span class="keywordtype">void</span>);
 00610 
-00611 <span class="keywordtype">void</span> rt_mount(<span class="keywordtype">void</span>);
-00612 
-00613 <span class="keywordtype">void</span> rt_umount(<span class="keywordtype">void</span>);
+00611 <span class="keywordtype">int</span> rt_request_timer(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
+00612                      <span class="keywordtype">unsigned</span> tick,
+00613                      <span class="keywordtype">int</span> use_apic);
 00614 
-00615 RTIME rd_8254_ts(<span class="keywordtype">void</span>);
+00615 <span class="keywordtype">void</span> <a class="code" href="group__hal.html#a70">rt_free_timer</a>(<span class="keywordtype">void</span>);
 00616 
-00617 <span class="keywordtype">void</span> rt_setup_8254_tsc(<span class="keywordtype">void</span>);
+00617 RT_TRAP_HANDLER rt_set_trap_handler(RT_TRAP_HANDLER handler);
 00618 
-00619 void (*rt_set_ihook(<span class="keywordtype">void</span> (*hookfn)(<span class="keywordtype">int</span>)))(<span class="keywordtype">int</span>);
+00619 <span class="keywordtype">void</span> rt_mount(<span class="keywordtype">void</span>);
 00620 
-00621 <span class="preprocessor">#define rt_printk printk </span><span class="comment">/* This is safe over Adeos */</span>
+00621 <span class="keywordtype">void</span> rt_umount(<span class="keywordtype">void</span>);
 00622 
-00623 <span class="preprocessor">#ifdef __cplusplus</span>
-00624 <span class="preprocessor"></span>}
-00625 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00623 RTIME rd_8254_ts(<span class="keywordtype">void</span>);
+00624 
+00625 <span class="keywordtype">void</span> rt_setup_8254_tsc(<span class="keywordtype">void</span>);
 00626 
-00627 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00627 void (*rt_set_ihook(<span class="keywordtype">void</span> (*hookfn)(<span class="keywordtype">int</span>)))(<span class="keywordtype">int</span>);
 00628 
-00629 <span class="preprocessor">#include &lt;asm/rtai_oldnames.h&gt;</span>
+00629 <span class="preprocessor">#define rt_printk printk </span><span class="comment">/* This is safe over Adeos */</span>
 00630 
-00631 <span class="preprocessor">#define RTAI_DEFAULT_TICK    100000</span>
-00632 <span class="preprocessor"></span><span class="preprocessor">#ifdef CONFIG_RTAI_TRACE</span>
-00633 <span class="preprocessor"></span><span class="preprocessor">#define RTAI_DEFAULT_STACKSZ 8192</span>
-00634 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* !CONFIG_RTAI_TRACE */</span>
-00635 <span class="preprocessor">#define RTAI_DEFAULT_STACKSZ 1024</span>
-00636 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_TRACE */</span>
-00637 
-00640 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jun 20 20:09:32 2004 for RTAI API by
+00631 <span class="preprocessor">#ifdef __cplusplus</span>
+00632 <span class="preprocessor"></span>}
+00633 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
+00634 
+00635 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00636 
+00637 <span class="preprocessor">#include &lt;asm/rtai_oldnames.h&gt;</span>
+00638 
+00639 <span class="preprocessor">#define RTAI_DEFAULT_TICK    100000</span>
+00640 <span class="preprocessor"></span><span class="preprocessor">#ifdef CONFIG_RTAI_TRACE</span>
+00641 <span class="preprocessor"></span><span class="preprocessor">#define RTAI_DEFAULT_STACKSZ 8192</span>
+00642 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* !CONFIG_RTAI_TRACE */</span>
+00643 <span class="preprocessor">#define RTAI_DEFAULT_STACKSZ 1024</span>
+00644 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_TRACE */</span>
+00645 
+00648 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Jul 24 19:31:25 2004 for RTAI API by
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border=0 > 
 </a>1.3.4 </small></address>

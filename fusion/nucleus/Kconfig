@@ -1,0 +1,26 @@
+menu "Nucleus"
+
+config RTAI_OPT_FUSION
+	bool "Real-time support in user-space"
+	default y
+	help
+
+	Enable all real-time features for user-space Linux
+	processes, which is the default operating mode for
+	RTAI/fusion. Switching this option out only leaves the
+	minimal support needed for running in-kernel
+	applications, which directly call the real-time APIs from
+	kernel modules.
+
+config RTAI_OPT_PIPE
+	bool "Inter-domain pipe support"
+	default y
+	help
+
+	Inter-domain pipes are bi-directional FIFO communication
+	channels allowing data exchange between nucleus threads
+	and regular user-space processes. Pipes natively preserve
+	message boundaries, but can also be used in byte stream mode
+	from kernel to user space.
+
+endmenu

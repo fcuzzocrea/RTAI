@@ -124,7 +124,7 @@ static int xnpod_read_proc (char *page,
 	    {
 	    p += sprintf(p,"%s%s (%d)",nrxfaces > 0 ? ", " : "",
 			    muxtable[muxid].name, 
-			    xnarch_atomic_get(&mutextable[muxid].refcnt));
+			    xnarch_atomic_get(&muxtable[muxid].refcnt));
 	    nrxfaces++;
 	    }
 

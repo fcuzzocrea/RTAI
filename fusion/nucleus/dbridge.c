@@ -83,7 +83,7 @@ static void xnbridge_wakeup_proc (void)
 	/* Wake up the sleepers whose suspension flag disappeared. */
 
 #ifdef XNBRIDGE_DEBUG
-	xnprintf("MINOR #%d FOUND ON SLEEPQ\n",minor_from_state(state));
+	xnprintf("MINOR #%d FOUND ON SLEEPQ\n",xnminor_from_state(state));
 #endif
 
 	if (!testbits(state->status,XNBRIDGE_USER_WMASK))
@@ -96,7 +96,7 @@ static void xnbridge_wakeup_proc (void)
 	    if (state->wchan)
 		{
 #ifdef XNBRIDGE_DEBUG
-		xnprintf("AWAKENING MINOR #%d ON SEM\n",minor_from_state(state));
+		xnprintf("AWAKENING MINOR #%d ON SEM\n",xnminor_from_state(state));
 #endif
 		up(state->wchan);
 		state->wchan = NULL;
@@ -104,7 +104,7 @@ static void xnbridge_wakeup_proc (void)
 	    else if (waitqueue_active(&state->pollq))
 		{
 #ifdef XNBRIDGE_DEBUG
-		xnprintf("AWAKENING MINOR #%d ON POLLQ\n",minor_from_state(state));
+		xnprintf("AWAKENING MINOR #%d ON POLLQ\n",xnminor_from_state(state));
 #endif
 		wake_up_interruptible(&state->pollq);
 		}
@@ -175,18 +175,18 @@ static inline void xnbridge_schedule_request (void) {
    sections using splhigh/splexit since we might be competing with the
    kernel-based Xenomai domain threads for data access. */
 
-void xnbridge_msetup (xnbridge_session_handler *open_handler,
-		      xnbridge_session_handler *close_handler)
+void xnbridge_setup (xnbridge_session_handler *open_handler,
+		     xnbridge_session_handler *close_handler)
 {
     xnbridge_open_handler = open_handler;
     xnbridge_close_handler = close_handler;
 }
 
-int xnbridge_mconnect (int minor,
-		       xnbridge_io_handler *output_handler,
-		       xnbridge_io_handler *input_handler,
-		       xnbridge_alloc_handler *alloc_handler,
-		       void *cookie)
+int xnbridge_connect (int minor,
+		      xnbridge_io_handler *output_handler,
+		      xnbridge_io_handler *input_handler,
+		      xnbridge_alloc_handler *alloc_handler,
+		      void *cookie)
 {
     xnbridge_state_t *state;
     spl_t s;
@@ -243,7 +243,7 @@ int xnbridge_mconnect (int minor,
     return 0;
 }
 
-int xnbridge_mdisconnect (int minor)
+int xnbridge_disconnect (int minor)
 
 {
     xnbridge_state_t *state;
@@ -302,10 +302,10 @@ int xnbridge_mdisconnect (int minor)
     return 0;
 }
 
-ssize_t xnbridge_msend (int minor,
-			struct xnbridge_mh *mh,
-			size_t size,
-			int flags)
+ssize_t xnbridge_send (int minor,
+		       struct xnbridge_mh *mh,
+		       size_t size,
+		       int flags)
 {
     xnbridge_state_t *state;
     spl_t s;
@@ -370,9 +370,9 @@ ssize_t xnbridge_msend (int minor,
     return (ssize_t)size;
 }
 
-ssize_t xnbridge_mrecv (int minor,
-			struct xnbridge_mh **pmh,
-			xnticks_t timeout)
+ssize_t xnbridge_recv (int minor,
+		       struct xnbridge_mh **pmh,
+		       xnticks_t timeout)
 {
     xnbridge_state_t *state;
     xnholder_t *holder;
@@ -449,7 +449,7 @@ ssize_t xnbridge_mrecv (int minor,
     return (ssize_t)xnbridge_m_size(*pmh);
 }
 
-int xnbridge_minquire (int minor)
+int xnbridge_inquire (int minor)
 
 {
     if (minor < 0 || minor >= XNBRIDGE_NDEVS)
@@ -501,7 +501,7 @@ static int xnbridge_open (struct inode *inode,
 	    {
 	    splexit(s);
 
-	    err = xnbridge_open_handler(minor_from_state(state),NULL);
+	    err = xnbridge_open_handler(xnminor_from_state(state),NULL);
 
 	    if (err != 0)
 		{
@@ -546,7 +546,7 @@ static int xnbridge_open (struct inode *inode,
 	splexit(s);
 
 	if (xnbridge_open_handler)
-	    err = xnbridge_open_handler(minor_from_state(state),state->cookie);
+	    err = xnbridge_open_handler(xnminor_from_state(state),state->cookie);
 	}
 
     return err;
@@ -576,7 +576,7 @@ static int xnbridge_release (struct inode *inode,
 
     if (testbits(state->status,XNBRIDGE_KERN_CONN))
 	{
-	int minor = minor_from_state(state);
+	int minor = xnminor_from_state(state);
 
 	if (state->output_handler != NULL)
 	    {
@@ -646,7 +646,7 @@ static ssize_t xnbridge_read (struct file *file,
 	splexit(s);
 
 #ifdef XNBRIDGE_DEBUG
-	xnprintf("USR: WAITING FOR RT SEND ON MINOR #%d\n",minor_from_state(state));
+	xnprintf("USR: WAITING FOR RT SEND ON MINOR #%d\n",xnminor_from_state(state));
 #endif
 
 	if (down_interruptible(&state->send_sem))
@@ -660,7 +660,7 @@ static ssize_t xnbridge_read (struct file *file,
 	splhigh(s);
 
 #ifdef XNBRIDGE_DEBUG
-	xnprintf("USR: GOT INPUT DATA ON MINOR #%d\n",minor_from_state(state));
+	xnprintf("USR: GOT INPUT DATA ON MINOR #%d\n",xnminor_from_state(state));
 #endif
 
 	holder = getq(&state->outq);
@@ -671,7 +671,7 @@ static ssize_t xnbridge_read (struct file *file,
 
 #ifdef XNBRIDGE_DEBUG
     xnprintf("USR: RT-INPUT #%d QUEUE HAS %d ELEMENTS, MH %p\n",
-	     minor_from_state(state),
+	     xnminor_from_state(state),
 	     countq(&state->outq),mh);
 #endif
 
@@ -686,7 +686,7 @@ static ssize_t xnbridge_read (struct file *file,
 	    ret = -ENOSPC;
 
 	if (state->output_handler != NULL)
-	    state->output_handler(minor_from_state(state),mh,ret < 0,state->cookie);
+	    state->output_handler(xnminor_from_state(state),mh,ret < 0,state->cookie);
 	}
     else /* Closed by peer. */
 	ret = 0;
@@ -715,7 +715,7 @@ static ssize_t xnbridge_write (struct file *file,
 	return -EFAULT;
 
     if (state->alloc_handler != NULL)
-	mh = (struct xnbridge_mh *)state->alloc_handler(minor_from_state(state),
+	mh = (struct xnbridge_mh *)state->alloc_handler(xnminor_from_state(state),
 							count + sizeof(*mh),
 							state->cookie);
     else
@@ -731,7 +731,7 @@ static ssize_t xnbridge_write (struct file *file,
 
     if (state->input_handler != NULL)
 	{
-	err = state->input_handler(minor_from_state(state),mh,0,state->cookie);
+	err = state->input_handler(xnminor_from_state(state),mh,0,state->cookie);
 
 	if (err != 0)
 	    count = (size_t)err;
@@ -750,7 +750,7 @@ static ssize_t xnbridge_write (struct file *file,
 	    sleeper = xnsynch_wakeup_one_sleeper(&state->synchbase);
 #ifdef XNBRIDGE_DEBUG
 	    xnprintf("USR: WAKING UP RT ON MINOR #%d (thread %s)\n",
-		     minor_from_state(state),
+		     xnminor_from_state(state),
 		     xnthread_name(sleeper));
 #endif
 	    xnpod_schedule();
@@ -883,9 +883,9 @@ void xnbridge_exit (void)
     unregister_chrdev(XNBRIDGE_MAJOR,"xnbridge");
 }
 
-EXPORT_SYMBOL(xnbridge_mconnect);
-EXPORT_SYMBOL(xnbridge_mdisconnect);
-EXPORT_SYMBOL(xnbridge_msend);
-EXPORT_SYMBOL(xnbridge_mrecv);
-EXPORT_SYMBOL(xnbridge_minquire);
-EXPORT_SYMBOL(xnbridge_msetup);
+EXPORT_SYMBOL(xnbridge_connect);
+EXPORT_SYMBOL(xnbridge_disconnect);
+EXPORT_SYMBOL(xnbridge_send);
+EXPORT_SYMBOL(xnbridge_recv);
+EXPORT_SYMBOL(xnbridge_inquire);
+EXPORT_SYMBOL(xnbridge_setup);

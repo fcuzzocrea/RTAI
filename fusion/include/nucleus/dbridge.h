@@ -98,7 +98,7 @@ typedef struct xnbridge_state {
 
 extern xnbridge_state_t xnbridge_states[];
 
-#define minor_from_state(s) (s - xnbridge_states)
+#define xnminor_from_state(s) (s - xnbridge_states)
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,27 +110,27 @@ void xnbridge_exit(void);
 
 /* Entry points of the kernel interface. */
 
-void xnbridge_msetup(xnbridge_session_handler *open_handler,
-		     xnbridge_session_handler *close_handler);
+void xnbridge_setup(xnbridge_session_handler *open_handler,
+		    xnbridge_session_handler *close_handler);
 
-int xnbridge_mconnect(int minor,
-		      xnbridge_io_handler *output_handler,
-		      xnbridge_io_handler *input_handler,
-		      xnbridge_alloc_handler *alloc_handler,
-		      void *cookie);
+int xnbridge_connect(int minor,
+		     xnbridge_io_handler *output_handler,
+		     xnbridge_io_handler *input_handler,
+		     xnbridge_alloc_handler *alloc_handler,
+		     void *cookie);
 
-int xnbridge_mdisconnect(int minor);
+int xnbridge_disconnect(int minor);
 
-ssize_t xnbridge_msend(int minor,
-		       struct xnbridge_mh *mh,
-		       size_t size,
-		       int flags);
+ssize_t xnbridge_send(int minor,
+		      struct xnbridge_mh *mh,
+		      size_t size,
+		      int flags);
 
-ssize_t xnbridge_mrecv(int minor,
-		       struct xnbridge_mh **pmh,
-		       xnticks_t timeout);
+ssize_t xnbridge_recv(int minor,
+		      struct xnbridge_mh **pmh,
+		      xnticks_t timeout);
 
-int xnbridge_minquire(int minor);
+int xnbridge_inquire(int minor);
 
 #ifdef __cplusplus
 }

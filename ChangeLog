@@ -1,3 +1,8 @@
+2004-07-23  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386/hal/hal.c (rtai_trap_fault): Fix the
+	conditional section mess.
+
 2004-07-20  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Upgrade the x86 patch to

@@ -61,6 +61,8 @@ typedef void irqreturn_t;
    daemonize(); \
 } while(0)
 
+#define get_thread_ptr(t)  (t)
+
 #define RTAI_LINUX_IRQ_HANDLED	/* i.e. "void" return */
 
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
@@ -74,6 +76,8 @@ typedef void irqreturn_t;
 #define get_tsk_addr_limit(t) ((t)->thread_info->addr_limit.seg)
 
 #define self_daemonize(name) daemonize(name)
+
+#define get_thread_ptr(t)  ((t)->thread_info)
 
 #define RTAI_LINUX_IRQ_HANDLED IRQ_HANDLED
 

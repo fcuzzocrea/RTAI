@@ -75,7 +75,7 @@
 #define	XNHEAP_MINALLOCSZ (1 << XNHEAP_MINLOG2)
 #define	XNHEAP_MINALIGNSZ (1 << (XNHEAP_MINLOG2 + 1))
 #define	XNHEAP_NBUCKETS   (XNHEAP_MAXLOG2 - XNHEAP_MINLOG2 + 2)
-#define	XNHEAP_MAXEXTSZ   (1 << 24) /* i.e. 16Mo */
+#define	XNHEAP_MAXEXTSZ   (1 << 24) /* i.e. 16Mb */
 
 #define XNHEAP_PFREE   0
 #define XNHEAP_PCONT   1
@@ -96,16 +96,7 @@ typedef struct xnextent {
 
 } xnextent_t;
 
-/* Creation flag */
-#define XNHEAP_EXTENDABLE 0x1
-
-/* Allocation flags */
-#define XNHEAP_WAIT       0x0
-#define XNHEAP_NOWAIT     0x1
-
 typedef struct xnheap {
-
-    xnflags_t flags;
 
 #ifdef CONFIG_SMP
     xnlock_t lock;
@@ -133,7 +124,7 @@ extern xnheap_t kheap;
 #define xnheap_page_count(heap)  ((heap)->npages)
 #define xnheap_used_mem(heap)    ((heap)->ubytes)
 
-#define xnmalloc(size)  xnheap_alloc(&kheap,size,XNHEAP_WAIT)
+#define xnmalloc(size)  xnheap_alloc(&kheap,size)
 #define xnfree(ptr)     xnheap_free(&kheap,ptr)
 
 #ifdef __cplusplus
@@ -145,11 +136,16 @@ int xnheap_init(xnheap_t *heap,
 		u_long heapsize,
 		u_long pagesize);
 
-void xnheap_destroy(xnheap_t *heap);
+void xnheap_destroy(xnheap_t *heap,
+		    void (*flushfn)(void *extaddr,
+				    u_long extsize));
+
+int xnheap_extend(xnheap_t *heap,
+		  void *extaddr,
+		  u_long extsize);
 
 void *xnheap_alloc(xnheap_t *heap,
-		   u_long size,
-		   xnflags_t flags);
+		   u_long size);
 
 int xnheap_free(xnheap_t *heap,
 		void *block);

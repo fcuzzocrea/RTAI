@@ -239,7 +239,7 @@ u_long rn_getseg (u_long rnid,
 	goto unlock_and_exit;
 	}
 
-    chunk = xnheap_alloc(&rn->heapbase,size,XNHEAP_NOWAIT);
+    chunk = xnheap_alloc(&rn->heapbase,size);
 
     if (chunk == NULL)
 	{

@@ -77,7 +77,7 @@ static void *__pipe_alloc_handler (int bminor,
 				   void *cookie) {
 
     /* Allocate memory for the incoming message. */
-    return xnheap_alloc(__pipe_heap,size,XNHEAP_NOWAIT);
+    return xnheap_alloc(__pipe_heap,size);
 }
 
 static int __pipe_output_handler (int bminor,
@@ -600,7 +600,7 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
 RT_PIPE_MSG *rt_pipe_alloc (size_t size)
 
 {
-    RT_PIPE_MSG *msg = (RT_PIPE_MSG *)xnheap_alloc(__pipe_heap,size,XNHEAP_NOWAIT);
+    RT_PIPE_MSG *msg = (RT_PIPE_MSG *)xnheap_alloc(__pipe_heap,size);
 
     if (msg)
 	{

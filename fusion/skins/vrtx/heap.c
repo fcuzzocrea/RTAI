@@ -222,7 +222,7 @@ char *sc_halloc(int hid, unsigned long bsize, int *errp)
 	return NULL;
 	}
 
-    blockp = xnheap_alloc(&heap->sysheap, bsize, XNHEAP_NOWAIT);
+    blockp = xnheap_alloc(&heap->sysheap,bsize);
     if (blockp == NULL)
 	{
 	*errp = ER_MEM;

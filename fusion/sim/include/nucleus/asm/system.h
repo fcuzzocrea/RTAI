@@ -409,25 +409,6 @@ int main (int argc, char *argv[])
 
 #endif  /* !XENO_MAIN_MODULE */
 
-#ifdef XENO_HEAP_MODULE
-
-void *xnarch_sysalloc (unsigned bytes) {
-    return malloc(bytes);
-}
-
-void xnarch_sysfree (void *chunk, unsigned bytes) {
-    free(chunk);
-}
-
-#else /* !XENO_HEAP_MODULE */
-
-void *xnarch_sysalloc(unsigned bytes);
-
-void xnarch_sysfree(void *chunk,
-		    unsigned bytes);
-
-#endif /* XENO_HEAP_MODULE */
-
 #ifdef XENO_POD_MODULE
 
 static inline void xnarch_start_timer (unsigned long nstick,
@@ -531,6 +512,14 @@ static inline void xnarch_escalate (void) {
 
     void xnpod_schedule_handler(void);
     xnpod_schedule_handler();
+}
+
+static inline void *xnarch_sysalloc (u_long bytes) {
+    return malloc(bytes);
+}
+
+static inline void xnarch_sysfree (void *chunk, u_long bytes) {
+    free(chunk);
 }
 
 #define xnarch_notify_ready()    mvm_finalize_init()

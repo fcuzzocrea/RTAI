@@ -667,6 +667,16 @@ static inline void xnarch_escalate (void) {
     adeos_trigger_irq(xnarch_escalation_virq);
 }
 
+static inline void *xnarch_sysalloc (u_long bytes) {
+
+    return kmalloc(bytes,GFP_ATOMIC);
+}
+
+static inline void xnarch_sysfree (void *chunk, u_long bytes) {
+
+    kfree(chunk);
+}
+
 #ifdef CONFIG_SMP
 
 static struct semaphore xnarch_finalize_sync;
@@ -723,27 +733,6 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 }
 
 #endif /* XENO_SHADOW_MODULE */
-
-#ifdef XENO_HEAP_MODULE
-
-void *xnarch_sysalloc (unsigned bytes) {
-
-    return kmalloc(bytes,GFP_ATOMIC);
-}
-
-void xnarch_sysfree (void *chunk, unsigned bytes) {
-
-    kfree(chunk);
-}
-
-#else /* !XENO_HEAP_MODULE */
-
-void *xnarch_sysalloc(unsigned bytes);
-
-void xnarch_sysfree(void *chunk,
-		    unsigned bytes);
-
-#endif /* XENO_HEAP_MODULE */
 
 #ifdef XENO_TIMER_MODULE
 

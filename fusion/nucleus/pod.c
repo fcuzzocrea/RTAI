@@ -255,10 +255,9 @@ void xnpod_schedule_handler (void)
 int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
 
 {
-    xnsched_t *sched;
-    u_long rem;
     unsigned cpu, nr_cpus = xnarch_num_online_cpus();
     char root_name[16];
+    xnsched_t *sched;
     int rc, n;
     spl_t s;
 
@@ -310,7 +309,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->jiffies = 0;
     pod->wallclock = 0;
     pod->tickvalue = XNARCH_DEFAULT_TICK;
-    pod->ticks2sec = xnarch_ulldiv(1000000000LL,XNARCH_DEFAULT_TICK,&rem);
+    pod->ticks2sec = xnarch_ulldiv(1000000000LL,XNARCH_DEFAULT_TICK,NULL);
 
     pod->svctable.shutdown = &xnpod_shutdown;
     pod->svctable.settime = &xnpod_set_time;
@@ -340,7 +339,10 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
 
     xnlock_put_irqrestore(&nklock,s);
 
-    if (xnheap_init(&kheap,NULL,XNPOD_HEAPSIZE,XNPOD_PAGESIZE) != 0)
+    heapaddr = xnarch_sysalloc(XNPOD_HEAPSIZE);
+
+    if (!heapaddr ||
+	xnheap_init(&kheap,heapaddr,XNPOD_HEAPSIZE,XNPOD_PAGESIZE) != 0)
         {
         rc = -ENOMEM;
         goto fail;
@@ -398,6 +400,11 @@ fail:
     xnarch_notify_ready();
 
     return 0;
+}
+
+static void xnpod_free_kmem (void *addr, u_long size) {
+
+    xnarch_sysfree(addr,size);
 }
 
 /*! 
@@ -466,7 +473,7 @@ void xnpod_shutdown (int xtype)
 
     xnarch_hook_ipi(NULL);
 
-    xnheap_destroy(&kheap);
+    xnheap_destroy(&kheap,&xnpod_free_kmem);
 
     xntimer_destroy(&nkpod->htimer);
 

@@ -70,10 +70,8 @@ void xnmod_alloc_glinks (xnqueue_t *freehq)
 {
     xngholder_t *sholder, *eholder;
 
-    sholder = (xngholder_t *)
-	xnheap_alloc(&kheap,
-		     sizeof(xngholder_t) * XNMOD_GHOLDER_REALLOC,
-		     xnpod_asynch_p() ? XNHEAP_NOWAIT : XNHEAP_WAIT);
+    sholder = (xngholder_t *)xnheap_alloc(&kheap,sizeof(xngholder_t) * XNMOD_GHOLDER_REALLOC);
+
     if (!sholder)
 	{
 	/* If we are running out of memory but still have some free

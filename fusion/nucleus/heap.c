@@ -54,10 +54,36 @@
  *
  * Dynamic memory allocation services.
  *
- * Implements a memory allocator based on the algorithm described in
- * "Design of a General Purpose Memory Allocator for the 4.3BSD Unix
- * Kernel" by Marshall K. McKusick and Michael J. Karels.
+ * The implementation of the memory allocator follows the algorithm
+ * described in a USENIX 1988 paper called "Design of a General
+ * Purpose Memory Allocator for the 4.3BSD Unix Kernel" by Marshall
+ * K. McKusick and Michael J. Karels. You can find it at various
+ * locations on the net, including
+ * http://docs.FreeBSD.org/44doc/papers/kernmalloc.pdf.  A minor
+ * variation allows this implementation to have 'extendable' heaps
+ * when needed, with multiple memory extents providing autonomous page
+ * address spaces.
  *
+ * The data structures hierarchy is as follows:
+ *
+ * HEAP {
+ *      block_buckets[]
+ *      extent_queue -------+
+ * }                        |
+ *                          V
+ *                       EXTENT #1 {
+ *                              <static header>
+ *                              page_map[npages]
+ *                              page_array[npages][pagesize]
+ *                       } -+
+ *                          |
+ *                          |
+ *                          V
+ *                       EXTENT #n {
+ *                              <static header>
+ *                              page_map[npages]
+ *                              page_array[npages][pagesize]
+ *                       }
  *@{*/
 
 #define XENO_HEAP_MODULE
@@ -99,43 +125,29 @@ static void init_extent (xnheap_t *heap,
 /*! 
  * \fn int xnheap_init(xnheap_t *heap,
                        void *heapaddr,
-		       u_long heapsize,
-		       u_long pagesize);
+                       u_long heapsize,
+                       u_long pagesize);
  * \brief Initialize a memory heap.
  *
- * Initializes a memory heap suitable for dynamic memory allocation
- * requests.  The heap manager can operate in two modes, whether
- * time-bounded if the heap storage area and size are statically
- * defined at initialization time, or dynamically extendable at the
- * expense of a less deterministic behaviour.
+ * Initializes a memory heap suitable for time-bounded allocation
+ * requests of dynamic memory.
  *
- * @param heap The address of a heap descriptor Xenomai will use to
+ * @param heap The address of a heap descriptor which will be used to
  * store the allocation data.  This descriptor must always be valid
  * while the heap is active therefore it must be allocated in
  * permanent memory.
  *
- * @param heapaddr The address of a statically-defined heap storage
- * area. If this parameter is non-zero, all allocations will be made
- * from the given area in fully time-bounded mode. In such a case, the
- * heap is non-extendable. If a null address is passed, the heap
- * manager will attempt to extend the heap each time a memory
- * starvation is encountered. In the latter case, the heap manager
- * will request additional chunks of core memory to the host operating
- * environment when needed, voiding the real-time guarantee for the
- * caller.
+ * @param heapaddr The address of the heap storage area. All
+ * allocations will be made from the given area in time-bounded
+ * mode. Since additional extents can be added to a heap, this
+ * parameter is also known as the "initial extent".
  *
- * @param heapsize If heapaddr is non-zero, heapsize gives the size in
- * bytes of the statically-defined storage area. Otherwise, heapsize
- * defines the standard length of each extent that will be requested
- * to the host operating environment when a memory starvation is
- * encountered for the heap.  heapsize must be a multiple of pagesize
- * and lower than 16 Mbytes. Depending on the host environment,
- * requests for extent memory might be limited in size. For instance,
- * heapsize must be lower than 128Kb for kmalloc()-based allocations
- * used in Linux. In the current implementation, heapsize must be
- * large enough to contain an internal header. The following formula
- * gives the size of this header: hdrsize = (sizeof(xnextent_t) +
- * ((heapsize - sizeof(xnextent_t))) / (pagesize + 1) + 15) & ~15;
+ * @param heapsize The size in bytes of the initial extent pointed at
+ * by @a heapaddr. @a heapsize must be a multiple of pagesize and
+ * lower than 16 Mbytes. @a heapsize must be large enough to contain
+ * an internal header. The following formula gives the size of this
+ * header: hdrsize = (sizeof(xnextent_t) + ((heapsize -
+ * sizeof(xnextent_t))) / (pagesize + 1) + 15) & ~15.
  *
  * @param pagesize The size in bytes of the fundamental memory page
  * which will be used to subdivide the heap internally. Choosing the
@@ -150,12 +162,9 @@ static void init_extent (xnheap_t *heap,
  *
  * - -EINVAL is returned whenever a parameter is invalid.
  *
- * - -ENOMEM is returned if no initial extent can be allocated for a
- * dynamically extendable heap (i.e. heapaddr == NULL).
- *
  * Side-effect: This routine does not call the rescheduling procedure.
  *
- * Context: This routine must be called on behalf of a thread.
+ * Context: This routine can be called on behalf of any context.
  */
 
 int xnheap_init (xnheap_t *heap,
@@ -208,44 +217,20 @@ int xnheap_init (xnheap_t *heap,
 	 shiftsize > 1; shiftsize >>= 1, pageshift++)
 	; /* Loop */
 
-    heap->flags = 0;
     heap->pagesize = pagesize;
     heap->pageshift = pageshift;
     heap->extentsize = heapsize;
     heap->hdrsize = hdrsize;
     heap->npages = (heapsize - hdrsize) >> pageshift;
     heap->ubytes = 0;
-    heap->maxcont = heap->npages*pagesize;
+    heap->maxcont = heap->npages * pagesize;
     initq(&heap->extents);
     xnlock_init(&heap->lock);
 
     for (n = 0; n < XNHEAP_NBUCKETS; n++)
 	heap->buckets[n] = NULL;
 
-    if (!heapaddr)
-	{
-	/* NULL initial heap address means that we should obtain it
-	   from the architecture-dependent allocation service. This
-	   also means that this heap is extendable by requesting
-	   additional extents to the very same service upon memory
-	   starvation. */
-
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
-	/* When called on behalf of xnpod_init(), there is no running
-	   thread. Running on behalf of the initialization context
-	   (i.e.  the root thread) means that we can use the
-	   arch-dependent allocation service safely. */
-	   
-	extent = (xnextent_t *)xnarch_sysalloc(heapsize);
-
-	if (!extent)
-	    return -ENOMEM;
-
-	setbits(heap->flags,XNHEAP_EXTENDABLE);
-	}
-    else
-	extent = (xnextent_t *)heapaddr;
+    extent = (xnextent_t *)heapaddr;
 
     init_extent(heap,extent);
 
@@ -260,44 +245,50 @@ int xnheap_init (xnheap_t *heap,
  * \fn void xnheap_destroy(xnheap_t *heap);
  * \brief Destroys a memory heap.
  *
- * Destroys a memory heap. Dynamically allocated extents are returned
- * to the host operating environment.
+ * Destroys a memory heap.
  *
  * @param heap The descriptor address of the destroyed heap.
+ *
+ * @param flusfn If non-NULL, the address of a flush routine which
+ * will be called for each extent attached to the heap. This routine
+ * can be used by the calling code to further release the heap memory.
  *
  * Side-effect: This routine does not call the rescheduling procedure.
  *
  * Context: This routine must be called on behalf of a thread.
  */
 
-void xnheap_destroy (xnheap_t *heap)
-
+void xnheap_destroy (xnheap_t *heap,
+		     void (*flushfn)(void *extaddr,
+				     u_long extsize))
 {
     xnholder_t *holder;
+    spl_t s;
 
-    if (!testbits(heap->flags,XNHEAP_EXTENDABLE))
+    if (!flushfn)
 	return;
 
-    /* If the heap is marked as extendable, we have to release each
-       allocated extent back to the arch-dependent allocator. */
-
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    xnlock_get_irqsave(&heap->lock,s);
 
     while ((holder = getq(&heap->extents)) != NULL)
-	xnarch_sysfree(link2extent(holder),heap->extentsize);
+	{
+	xnlock_put_irqrestore(&heap->lock,s);
+	flushfn(link2extent(holder),heap->extentsize);
+	xnlock_get_irqsave(&heap->lock,s);
+	}
+
+    xnlock_put_irqrestore(&heap->lock,s);
 }
 
 /*
  * get_free_range() -- Obtain a range of contiguous free pages to
- * fulfill an allocation of 2 ** log2size. Each extent is searched,
- * and a new one is allocated if needed, provided the heap is
- * extendable. Must be called with the heap mutex locked.
+ * fulfill an allocation of 2 ** log2size.  The caller must have
+ * acquired the heap lock.
  */
 
 static caddr_t get_free_range (xnheap_t *heap,
 			       u_long bsize,
-			       int log2size,
-			       int flags)
+			       int log2size)
 {
     caddr_t block, eblock, freepage, lastpage, headpage, freehead = NULL;
     u_long pagenum, pagecont, freecont;
@@ -309,8 +300,6 @@ static caddr_t get_free_range (xnheap_t *heap,
     while (holder != NULL)
 	{
 	extent = link2extent(holder);
-
-searchrange:
 
 	freepage = extent->freelist;
 
@@ -349,34 +338,7 @@ searchrange:
 	holder = nextq(&heap->extents,holder);
 	}
 
-    /* No available free range in the existing extents so far. If we
-       cannot extend the heap, we have failed and we are done with
-       this request. */
-    if (!testbits(heap->flags,XNHEAP_EXTENDABLE))
-	return NULL;
-
-#ifdef CONFIG_RTAI_OPT_DEBUG
-    /* If the caller has to wait, it must be running on behalf of a
-       regular thread context (i.e. not an interrupt context). */
-    if (!testbits(flags,XNHEAP_NOWAIT))
-	xnpod_check_context(XNPOD_THREAD_CONTEXT);
-#endif /* CONFIG_RTAI_OPT_DEBUG */
-
-    /* Asynchronous code cannot wait -- Bail out. */
-    if (xnpod_asynch_p() || testbits(flags,XNHEAP_NOWAIT))
-	return NULL;
-
-    /* Get a new extent. */
-    extent = (xnextent_t *)xnarch_sysalloc(heap->extentsize);
-
-    if (extent == NULL)
-	return NULL;
-
-    init_extent(heap,extent);
-
-    appendq(&heap->extents,&extent->link);
-
-    goto searchrange;	/* Always successful at the first try */
+    return NULL;
 
 splitpage:
 
@@ -410,7 +372,7 @@ splitpage:
        case, the following pages slots are marked as 'continued'
        (PCONT). */
 
-    extent->pagemap[pagenum] = log2size ? log2size : XNHEAP_PLIST;
+    extent->pagemap[pagenum] = log2size ?: XNHEAP_PLIST;
 
     for (pagecont = bsize >> heap->pageshift; pagecont > 1; pagecont--)
 	extent->pagemap[pagenum + pagecont - 1] = XNHEAP_PCONT;
@@ -419,14 +381,11 @@ splitpage:
 }
 
 /*! 
- * \fn void *xnheap_alloc(xnheap_t *heap, u_long size, xnflags_t flags);
+ * \fn void *xnheap_alloc(xnheap_t *heap, u_long size);
  * \brief Allocate a memory block from a memory heap.
  *
  * Allocates a contiguous region of memory from an active memory heap.
- * Such allocation is guaranteed to be time-bounded if the heap is
- * non-extendable (see xnheap_init()). Otherwise, it might trigger a
- * dynamic extension of the storage area through an internal request
- * to the host operating environment.
+ * Such allocation is guaranteed to be time-bounded.
  *
  * @param heap The descriptor address of the heap to get memory from.
  *
@@ -438,22 +397,15 @@ splitpage:
  * request will be rounded to 8 bytes, and a 17 bytes request will be
  * rounded to 32.
  *
- * @param flags A set of flags affecting the operation. If
- * XNHEAP_NOWAIT is passed, this service will return NULL without
- * attempting to extend the heap dynamically upon memory
- * starvation. This flag is not applicable to non-extendable heaps.
- *
  * @return The address of the allocated region upon success, or NULL
- * if no memory is available from the specified non-extendable heap,
- * or no memory can be obtained from the host operating environment to
- * extend the heap.
+ * if no memory is available from the specified heap.
  *
  * Side-effect: This routine does not call the rescheduling procedure.
  *
- * Context: This routine must be called on behalf of a thread.
+ * Context: This routine can be called on behalf of any context.
  */
 
-void *xnheap_alloc (xnheap_t *heap, u_long size, xnflags_t flags)
+void *xnheap_alloc (xnheap_t *heap, u_long size)
 
 {
     caddr_t block;
@@ -502,7 +454,7 @@ void *xnheap_alloc (xnheap_t *heap, u_long size, xnflags_t flags)
 
 	if (block == NULL)
 	    {
-	    block = get_free_range(heap,bsize,log2size,flags);
+	    block = get_free_range(heap,bsize,log2size);
 
 	    if (block == NULL)
 		goto release_and_exit;
@@ -519,7 +471,7 @@ void *xnheap_alloc (xnheap_t *heap, u_long size, xnflags_t flags)
 	xnlock_get_irqsave(&heap->lock,s);
 
 	/* Directly request a free page range. */
-	block = get_free_range(heap,size,0,flags);
+	block = get_free_range(heap,size,0);
 
 	if (block)   
 	    heap->ubytes += size;
@@ -542,15 +494,14 @@ release_and_exit:
  * @param heap The descriptor address of the heap to release memory
  * to.
  *
- * @param block The address of the region to release returned by a
- * previous call to xnheap_alloc().
+ * @param block The address of the region to be returned to the heap.
  *
  * @return 0 is returned upon success, or -EINVAL is returned whenever
  * the block is not a valid region of the specified heap.
  *
  * Side-effect: This routine does not call the rescheduling procedure.
  *
- * Context: This routine must be called on behalf of a thread.
+ * Context: This routine can be called on behalf of any context.
  */
 
 int xnheap_free (xnheap_t *heap, void *block)
@@ -566,8 +517,7 @@ int xnheap_free (xnheap_t *heap, void *block)
     xnlock_get_irqsave(&heap->lock,s);
 
     /* Find the extent from which the returned block is
-       originating. If the heap is non-extendable, then a single
-       extent is scanned at most. */
+       originating. */
 
     for (holder = getheadq(&heap->extents);
 	 holder != NULL; holder = nextq(&heap->extents,holder))
@@ -658,45 +608,53 @@ unlock_and_fail:
     return 0;
 }
 
-/*
- * IMPLEMENTATION NOTES:
+/*! 
+ * \fn int xnheap_extend(xnheap_t *heap, void *extaddr);
+ * \brief Extend a memory heap.
  *
- * The implementation follows the algorithm described in a USENIX
- * 1988 paper called "Design of a General Purpose Memory Allocator for
- * the 4.3BSD Unix Kernel" by Marshall K. McKusick and Michael
- * J. Karels. You can find it at various locations on the net,
- * including http://docs.FreeBSD.org/44doc/papers/kernmalloc.pdf.
- * A minor variation allows this implementation to have 'extendable'
- * heaps when needed, with multiple memory extents providing autonomous
- * page address spaces. When the non-extendable form is used, the heap
- * management routines show bounded worst-case execution time.
+ * Add a new extent to an existing memory heap.
  *
- * The data structures hierarchy is as follows:
+ * @param heap The descriptor address of the heap to add an extent to.
  *
- * HEAP {
- *      block_buckets[]
- *      extent_queue -------+
- * }                        |
- *                          V
- *                       EXTENT #1 {
- *                              <static header>
- *                              page_map[npages]
- *                              page_array[npages][pagesize]
- *                       } -+
- *                          |
- *                          |
- *                          V
- *                       EXTENT #n {
- *                              <static header>
- *                              page_map[npages]
- *                              page_array[npages][pagesize]
- *                       }
+ * @param extaddr The address of the extent memory.
+ *
+ * @param extsize The size of the extent memory (in bytes). In the
+ * current implementation, this size must match the one of the initial
+ * extent passed to xnheap_init().
+ *
+ * @return 0 is returned upon success, or -EINVAL is returned if
+ * @extsize differs from the initial extent's size.
+ *
+ * Side-effect: This routine does not call the rescheduling procedure.
+ *
+ * Context: This routine can be called on behalf of any context.
  */
+
+int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
+
+{
+    xnextent_t *extent = (xnextent_t *)extaddr;
+    spl_t s;
+
+    if (extsize != heap->extentsize)
+	return -EINVAL;
+
+    init_extent(heap,extent);
+
+    xnlock_get_irqsave(&heap->lock,s);
+
+    appendq(&heap->extents,&extent->link);
+
+    xnlock_put_irqrestore(&heap->lock,s);
+
+    return 0;
+}
 
 /*@}*/
 
 EXPORT_SYMBOL(xnheap_alloc);
 EXPORT_SYMBOL(xnheap_destroy);
+EXPORT_SYMBOL(xnheap_extend);
 EXPORT_SYMBOL(xnheap_free);
 EXPORT_SYMBOL(xnheap_init);
 

@@ -1,3 +1,10 @@
+2004-06-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/heap.c: Remove the automatically extendable heap
+	feature: this proved to be useless and confusing. Provide
+	xnheap_extend() to manually extend any given heap instead.
+	Fix documentation accordingly.
+
 2004-06-25  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_schedule_runnable): Fix XNSCHED handling,

@@ -1,5 +1,7 @@
 2004-08-26  Philippe Gerum  <rpm@xenomai.org>
 
+	* testsuite/latency/latency.c (cleanup_upon_sig): Stop timer.
+
 	* nucleus/shadow.c (xnshadow_kick_process): Check shared pending
 	signal mask too.
 

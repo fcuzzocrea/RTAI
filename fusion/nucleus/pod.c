@@ -160,15 +160,12 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 #ifdef __KERNEL__
     /* If we experienced a trap on behalf of a shadow thread, just
        move the second to the Linux domain, so that the host O/S
-       (e.g. Linux) can attempt to process the first. This is
-       especially useful in order to handle user-space errors
-       gracefully. */
+       (e.g. Linux) can attempt to process the exception. This is
+       especially useful in order to handle user-space errors or debug
+       stepping properly. */
 
     if (xnpod_shadow_p())
-        {
         xnshadow_relax();
-        return 1;
-        }
 #endif /* __KERNEL__ */
 
     return 0;

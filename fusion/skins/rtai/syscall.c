@@ -369,7 +369,7 @@ static int __rt_task_wait_period (struct task_struct *curr, struct pt_regs *regs
 
 /*
  * int __rt_task_set_priority(RT_TASK_PLACEHOLDER *ph,
- *			         int prio)
+ *                            int prio)
  */
 
 static int __rt_task_set_priority (struct task_struct *curr, struct pt_regs *regs)
@@ -489,6 +489,69 @@ call_on_self:
 
     if (!err)
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),&info,sizeof(info));
+
+    return err;
+}
+
+/*
+ * int __rt_task_notify(RT_TASK_PLACEHOLDER *ph,
+ *                      rt_sigset_t signals)
+ */
+
+static int __rt_task_notify (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_TASK_PLACEHOLDER ph;
+    RT_TASK *task = NULL;
+    rt_sigset_t signals;
+
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	}
+    else if (xnpod_regular_p())
+	goto call_on_self;
+
+    if (!task)
+	return -ENOENT;
+
+call_on_self:
+
+    signals = (rt_sigset_t)__xn_reg_arg2(regs);
+
+    return rt_task_notify(task,signals);
+}
+
+/*
+ * int __rt_task_set_mode(int clrmask,
+ *                        int setmask,
+ *                        int *oldmode)
+ */
+
+static int __rt_task_set_mode (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    int err, setmask, clrmask, oldmode;
+
+    if (!xnpod_regular_p())
+	return -ENOENT;
+
+    if (__xn_reg_arg3(regs) &&
+	!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(int)))
+	return -EFAULT;
+
+    clrmask = __xn_reg_arg1(regs);
+    setmask = __xn_reg_arg2(regs);
+
+    err = rt_task_set_mode(setmask,clrmask,&oldmode);
+
+    if (!err && __xn_reg_arg3(regs))
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&oldmode,sizeof(oldmode));
 
     return err;
 }
@@ -2119,6 +2182,8 @@ static xnsysent_t __systab[] = {
     [__rtai_task_sleep_until ] = { &__rt_task_sleep_until, __xn_flag_regular },
     [__rtai_task_unblock ] = { &__rt_task_unblock, __xn_flag_anycall },
     [__rtai_task_inquire ] = { &__rt_task_inquire, __xn_flag_anycall },
+    [__rtai_task_notify ] = { &__rt_task_notify, __xn_flag_anycall },
+    [__rtai_task_set_mode ] = { &__rt_task_set_mode, __xn_flag_regular },
     [__rtai_timer_start ] = { &__rt_timer_start, __xn_flag_anycall },
     [__rtai_timer_stop ] = { &__rt_timer_stop, __xn_flag_anycall },
     [__rtai_timer_read ] = { &__rt_timer_read, __xn_flag_anycall },

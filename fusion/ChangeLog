@@ -1,5 +1,8 @@
 2004-11-26  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/lib/task.c (rt_task_set_mode, rt_task_notify): Export
+	to user-space.
+
 	* testsuite/latency/latency.c (main): Allow for setting the
 	sampling period.
 

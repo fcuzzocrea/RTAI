@@ -248,3 +248,23 @@ int rt_task_inquire (RT_TASK *task,
 			     task,
 			     info);
 }
+
+int rt_task_notify (RT_TASK *task,
+		    rt_sigset_t signals)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_task_notify,
+			     task,
+			     signals);
+}
+
+int rt_task_set_mode (int clrmask,
+		      int setmask,
+		      int *oldmode)
+{
+    return XENOMAI_SKINCALL3(__rtai_muxid,
+			     __rtai_task_set_mode,
+			     clrmask,
+			     setmask,
+			     oldmode);
+}

@@ -1,3 +1,24 @@
+2004-08-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/system.h (XNARCH_CALIBRATION_PERIOD):
+	Set to 100 us.
+
+	* arch/i386/hal/hal.c (rthal_trap_fault): Remove obsolete code
+	trapping exception #7 over the RTAI domain.
+
+	* nucleus/timer.c (xntimer_next_shot): Rewrite so that the
+	calibrated latencies are properly used.
+
+	* nucleus/pod.c (xnpod_resume_thread): Single exit branch.
+
+2004-08-01  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/types.h: Define signed types for tick and
+	nanosecond values.
+
+	* skins/rtai/timer.c (rt_timer_ticks2ns, rt_timer_ns2ticks):
+	Operate on signed input/output values.
+
 2004-07-26  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/dbridge.c: Use SMP locking.

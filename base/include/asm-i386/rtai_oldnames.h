@@ -37,9 +37,9 @@
 #define IFLAG                        RTAI_IFLAG
 #define hard_cli()                   rtai_cli()
 #define hard_sti()                   rtai_sti()
-#define hard_save_flags_and_cli(x)   rtai_local_irq_save(x)
-#define hard_restore_flags(x)        rtai_local_irq_restore(x)
-#define hard_save_flags(x)           rtai_local_irq_flags(x)
+#define hard_save_flags_and_cli(x)   rtai_save_flags_and_cli(x)
+#define hard_restore_flags(x)        rtai_restore_flags(x)
+#define hard_save_flags(x)           rtai_save_flags(x)
 #define hard_cpu_id                  adeos_processor_id
 
 #endif /* __KERNEL__ */

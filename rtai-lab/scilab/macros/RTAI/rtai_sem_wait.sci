@@ -17,7 +17,7 @@ case 'set' then
   label=graphics.exprs;
   oldlb=label(1)
   while %t do
-    [ok,port,name,lab]=..
+    [ok,port,name,ipaddr,lab]=..
         getvalue('Set RTAI-sem wait block parameters',..
         ['Port nr';
 	'Semaphore name'

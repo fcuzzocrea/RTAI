@@ -150,6 +150,7 @@ static inline void lxrt_context_switch (struct task_struct *prev,
 #endif /* < 2.6.0 */
 	
     __asm__ __volatile__(						\
+		 "pushfl\n\t"				       		\
 		 "pushl %%esi\n\t"				        \
 		 "pushl %%edi\n\t"					\
 		 "pushl %%ebp\n\t"					\
@@ -162,6 +163,7 @@ static inline void lxrt_context_switch (struct task_struct *prev,
 		 "popl %%ebp\n\t"					\
 		 "popl %%edi\n\t"					\
 		 "popl %%esi\n\t"					\
+		 "popfl\n\t"						\
 		 :"=m" (prev->thread.esp),"=m" (prev->thread.eip),	\
 		  "=b" (prev)						\
 		 :"m" (next->thread.esp),"m" (next->thread.eip),	\

@@ -1,3 +1,23 @@
+2004-06-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_realtime_sysentry): Properly return
+	-ENOSYS upon syscall request without any skin loaded.
+
+	* nucleus/pod.c (xnpod_schedule_runnable): Postpone
+	xnsched_clr_resched() so that calls with XNPOD_NOSWITCH set don't
+	clear it.
+
+	* nucleus/pod.c (xnpod_schedule): Make sure we don't lose the
+	rescheduling bit upon early exit.
+	
+	* nucleus/thread.c (xnthread_init): Add built-in support for
+	periodic timing.
+
+2004-06-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* scripts/rtai-load.in: Use modprobe instead of insmod for modules
+	from /lib/modules.
+
 2004-06-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c: Export event group interface.

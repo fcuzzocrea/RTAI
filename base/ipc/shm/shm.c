@@ -177,7 +177,7 @@ static int rt_shm_size(unsigned long *arg)
 
 	size = abs(rt_get_type(*arg));
 	for (vma = (current->mm)->mmap; vma; vma = vma->vm_next) {
-		if (vma->vm_private_data == (void *)arg && (vma->vm_end - vma->vm_start) == size) {
+		if (vma->vm_private_data == (void *)*arg && (vma->vm_end - vma->vm_start) == size) {
 			*arg = vma->vm_start;
 			return size;
 		}
@@ -652,6 +652,7 @@ int __rtai_shm_init (void)
 	}
 #ifndef CONFIG_RTAI_MALLOC_VMALLOC
 	printk("***** WARNING: GLOBAL HEAP NEITHER SHARABLE NOR USABLE FROM USER SPACE (use the vmalloc option for RTAI malloc) *****\n");
+#else
 	rt_register(GLOBAL_HEAP_ID, rtai_global_heap_adr, rtai_global_heap_size, 0);
 	rt_smp_linux_task->heap[GLOBAL].heap = &rtai_global_heap;
 	rt_smp_linux_task->heap[GLOBAL].kadr =

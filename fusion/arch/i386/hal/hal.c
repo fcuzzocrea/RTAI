@@ -881,6 +881,8 @@ static void rthal_domain_entry (int iflag)
 
 struct proc_dir_entry *rthal_proc_root;
 
+spinlock_t rthal_proc_lock = SPIN_LOCK_UNLOCKED;
+
 static ssize_t hal_read_proc (char *page,
 			      char **start,
 			      off_t off,
@@ -1179,4 +1181,5 @@ EXPORT_SYMBOL(rthal_tunables);
 EXPORT_SYMBOL(rthal_cpu_realtime);
 #ifdef CONFIG_PROC_FS
 EXPORT_SYMBOL(rthal_proc_root);
+EXPORT_SYMBOL(rthal_proc_lock);
 #endif /* CONFIG_PROC_FS */

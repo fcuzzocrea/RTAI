@@ -80,6 +80,8 @@ void xnmod_alloc_glinks (xnqueue_t *freehq)
 
 extern struct proc_dir_entry *rthal_proc_root;
 
+extern spinlock_t rthal_proc_lock;
+
 static struct proc_dir_entry *iface_proc_root;
 
 static inline xnticks_t __get_thread_timeout (xnthread_t *thread)
@@ -296,14 +298,14 @@ static struct proc_dir_entry *add_proc_leaf (const char *name,
 
     entry = create_proc_entry(name,mode,parent);
 
-    if (entry)
-	{
-	entry->nlink = 1;
-	entry->data = data;
-	entry->read_proc = rdproc;
-	entry->write_proc = wrproc;
-	entry->owner = THIS_MODULE;
-	}
+    if (!entry)
+	return NULL;
+
+    entry->nlink = 1;
+    entry->data = data;
+    entry->read_proc = rdproc;
+    entry->write_proc = wrproc;
+    entry->owner = THIS_MODULE;
 
     return entry;
 }
@@ -368,23 +370,27 @@ void xnpod_delete_proc (void)
 void xnpod_declare_iface_proc (struct xnskentry *iface)
 
 {
+    spin_lock(&rthal_proc_lock);
     iface->proc = add_proc_leaf(iface->name,
 				&iface_read_proc,
 				NULL,
 				iface,
 				iface_proc_root);
+    spin_unlock(&rthal_proc_lock);
 }
 
 void xnpod_discard_iface_proc (struct xnskentry *iface)
 
 {
+    spin_lock(&rthal_proc_lock);
     remove_proc_entry(iface->name,iface_proc_root);
     iface->proc = NULL;
+    spin_unlock(&rthal_proc_lock);
 }
 
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
-#endif /* CONFIG_PROC_FS */
+#endif /* CONFIG_PROC_FS && __KERNEL__ */
 
 int __fusion_sys_init (void)
 

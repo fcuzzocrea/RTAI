@@ -255,6 +255,7 @@ static void schedback_handler (unsigned virq)
 		/* Unstall the root stage since the following might sleep.  */
 		__adeos_unstall_root();
 		rthal_set_linux_task_priority(task,SCHED_FIFO,sb->req[reqnum].arg);
+		__adeos_stall_root();
 		break;
 	    }
 	}

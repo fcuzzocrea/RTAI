@@ -1,3 +1,8 @@
+2005-01-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai: Export the registry contents through the /proc
+	interface.
+
 2005-01-10  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
 
 	* testsuite/klatency/latency.c: Clarify error message upon failure

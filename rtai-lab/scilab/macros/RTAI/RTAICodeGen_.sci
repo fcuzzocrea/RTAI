@@ -996,15 +996,14 @@ zcptr=cpr.sim.zcptr;
   // Get the name of the file
   //***********************************
   foo=3;okk=%f;rdnom='foo';rpat=getcwd();archname='';sTsamp=sci2exp(eval(sTsamp));
-  label1=[hname;getcwd()+'/'+hname;'config';sTsamp];
+  label1=[hname;getcwd()+'/'+hname;sTsamp];
   while %t do
-    [okk,rdnom,rpat,cffile,Tsamp,label1]=getvalue(..
+    [okk,rdnom,rpat,Tsamp,label1]=getvalue(..
 			'PLEASE, GIVE US SOME INFORMATION. ',..
 		        ['New block''s name: ';
 		        'Created files Path: ';
-			'Config file: ';
 			'Sampling Time: '],..
-		        list('str',1,'str',1,'str',1,'str',1),label1);
+		        list('str',1,'str',1,'str',1),label1);
     if okk==%f then ok=%f;return; end
   
     dirinfo=fileinfo(rpat)
@@ -1619,9 +1618,6 @@ nztotal=size(z,1);
 	 '{'
 	 '  return(' + string(Tsamp) + ');'
 	 '}'
-	 ''
-	 '#define N_ACT  0'
-	 '#define N_SENS 0'
 	 ''
 	 '#include ""' + rdnom + '_io.c""'
 	 ''

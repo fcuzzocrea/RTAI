@@ -65,22 +65,22 @@ echo done
 cd "$abs_srcdir"
 echo -n 'Removing files...'
 cat "$builddir/tmp-dist/removed" | while read -a file; do
-    echo rm "${file[*]}"
-    echo cvs remove "${file[*]}"
+    rm "${file[*]}"
+    cvs remove "${file[*]}"
 done
 echo `cat "$builddir/tmp-dist/removed"` done.
 
 echo -n 'Adding new directories...'
 cat "$builddir/tmp-dist/added_dirs" | while read -a dir; do
-    echo cvs add "${dir[*]}"
+    cvs add "${dir[*]}"
 done
 echo `cat "$builddir/tmp-dist/added_dirs"` done.
 
 echo -n 'Adding new files...'
     cat "$builddir/tmp-dist/added_files" | while read -a file; do
-    echo cvs add "${file[*]}"
+    cvs add "${file[*]}"
 done
 echo `cat "$builddir/tmp-dist/added_files"` done.
 
-cvs commit generated -m 'generated doc update'
+cvs commit -m 'generated doc update' generated
 cd "$builddir"

@@ -242,7 +242,7 @@ int main (int argc, char **argv)
 	if (s.minjitter < gminjitter) gminjitter = s.minjitter;
 	if (s.maxjitter > gmaxjitter) gmaxjitter = s.maxjitter;
 	gavgjitter += s.avgjitter;
-	goverrun += s.overrun;
+	goverrun = s.overrun;
 	}
 
     if ((err = close(fd))) {

@@ -173,7 +173,10 @@ void display (void *cookie)
 	if (minjitter < gminjitter) gminjitter = minjitter;
 	if (maxjitter > gmaxjitter) gmaxjitter = maxjitter;
 	gavgjitter += avgjitter;
-	goverrun += overrun;
+	if (do_histogram)
+	    goverrun += overrun;
+	else
+	    goverrun = overrun;
 	}
 }
 

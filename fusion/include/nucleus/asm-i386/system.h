@@ -62,8 +62,8 @@
 #include <nucleus/asm/atomic.h>
 #include <nucleus/shadow.h>
 
-#if ADEOS_RELEASE_NUMBER < 0x02060806
-#error "Adeos 2.6r8c6/x86 or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x02060901
+#error "Adeos 2.6r9c1/x86 or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/i386/"
 #endif
 
@@ -361,7 +361,7 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes) {
 do { \
     adeos_set_printk_sync(adp_current); \
     xnarch_logerr("fatal: %s\n",emsg); \
-    show_stack(NULL,NULL);			\
+    /*show_stack(NULL,NULL);*/			\
     for (;;) safe_halt();			\
 } while(0)
 

@@ -268,7 +268,7 @@ do { \
 } while(0)
 #endif /* CONFIG_SMP */
 
-#if defined(CONFIG_ADEOS_THREADS) || !defined(CONFIG_ADEOS_NOTHREADS)
+#if !defined(CONFIG_ADEOS_NOTHREADS)
 
 /* Since real-time interrupt handlers are called on behalf of the RTAI
    domain stack, we cannot infere the "current" Linux task address
@@ -292,7 +292,7 @@ static inline struct task_struct *rthal_get_current (int cpuid)
     return get_current();
 }
 
-#else /* !(CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS) */
+#else /* CONFIG_ADEOS_NOTHREADS */
 
 static inline struct task_struct *rthal_get_root_current (int cpuid) {
     return current;
@@ -302,7 +302,7 @@ static inline struct task_struct *rthal_get_current (int cpuid) {
     return current;
 }
 
-#endif /* CONFIG_ADEOS_THREADS || !CONFIG_ADEOS_NOTHREADS */
+#endif /* !CONFIG_ADEOS_NOTHREADS */
 
 static inline void rthal_set_timer_shot (unsigned long delay) {
 

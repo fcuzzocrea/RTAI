@@ -162,9 +162,16 @@ static void init_extent (xnheap_t *heap,
  *
  * - -EINVAL is returned whenever a parameter is invalid.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of any context.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnheap_init (xnheap_t *heap,
@@ -267,9 +274,15 @@ int xnheap_init (xnheap_t *heap,
  * @return 0 is returned on success, or -EBUSY if external mappings
  * are still pending on the heap memory.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnheap_destroy (xnheap_t *heap,
@@ -419,9 +432,16 @@ splitpage:
  * @return The address of the allocated region upon success, or NULL
  * if no memory is available from the specified heap.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of any context.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void *xnheap_alloc (xnheap_t *heap, u_long size)
@@ -518,9 +538,16 @@ release_and_exit:
  * @return 0 is returned upon success, or -EINVAL is returned whenever
  * the block is not a valid region of the specified heap.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of any context.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnheap_free (xnheap_t *heap, void *block)
@@ -644,9 +671,16 @@ unlock_and_fail:
  * @return 0 is returned upon success, or -EINVAL is returned if
  * @a extsize differs from the initial extent's size.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of any context.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)

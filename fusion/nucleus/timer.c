@@ -99,7 +99,16 @@
  * There is no limitation on the number of timers which can be
  * created/active concurrently.
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xntimer_init (xntimer_t *timer,
@@ -131,7 +140,16 @@ void xntimer_init (xntimer_t *timer,
  *
  * @param timer The address of a valid timer descriptor.
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xntimer_destroy (xntimer_t *timer)
@@ -247,8 +265,16 @@ static inline int xntimer_heading_p (xntimer_t *timer) {
  * - -EAGAIN is returned if the underlying time source is operating in
  * one-shot mode and @a value is anterior to the current date.
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * Environments:
  *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
@@ -324,7 +350,16 @@ int xntimer_start (xntimer_t *timer,
  *
  * @param timer The address of a valid timer descriptor.
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xntimer_stop (xntimer_t *timer)
@@ -367,8 +402,16 @@ void xntimer_stop (xntimer_t *timer)
  * special value XN_INFINITE is returned if @a timer is currently
  * inactive.
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * Environments:
  *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
@@ -405,8 +448,16 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
  * already expired when this service is run (even if the associated
  * handler has not been fired yet); in such a case, 1 is returned.
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * Environments:
  *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
  * periodic mode, clock ticks are expressed as periodic jiffies. In
@@ -444,7 +495,13 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
  * updated by processing the timer wheel. Elapsed timer actions will
  * be fired.
  *
- * Context: Called from ISR with nklock locked, interrupts off.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Interrupt service routine, nklock locked, interrupts off
+ *
+ * Rescheduling: never.
  *
  * @note Only active timers are inserted into the timer wheel.
  */
@@ -584,7 +641,13 @@ void xntimer_do_timers (void)
  *
  * This routine deactivates all active timers atomically.
  *
- * Context: Called from ISR with nklock locked, interrupts off.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Interrupt service routine, nklock unlocked
+ *
+ * Rescheduling: never.
  *
  * @note Always make sure the nklock is free when stopping the
  * underlying timing source by calling xnarch_stop_timer(), otherwise,

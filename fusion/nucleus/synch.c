@@ -90,9 +90,15 @@
  * threads using this object. Otherwise, no priority inheritance takes
  * place upon priority inversion (XNSYNCH_NOPIP).
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xnsynch_init (xnsynch_t *synch,
@@ -158,9 +164,15 @@ static inline void xnsynch_renice_thread (xnthread_t *thread, int prio)
  * note).  Passing XN_INFINITE specifies an unbounded wait. All other
  * values are used to initialize a nucleus watchdog timer.
  *
- * Side-effect: This routine always calls the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: alway.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
@@ -313,9 +325,16 @@ void xnsynch_renice_sleeper (xnthread_t *thread)
  * - The synchronization object ownership is transfered to the
  * unblocked thread.
  *
- * - This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 xnthread_t *xnsynch_wakeup_one_sleeper (xnsynch_t *synch)
@@ -380,9 +399,16 @@ xnthread_t *xnsynch_wakeup_one_sleeper (xnsynch_t *synch)
  * - The synchronization object ownership is transfered to the
  * unblocked thread.
  *
- * - This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 xnpholder_t *xnsynch_wakeup_this_sleeper (xnsynch_t *synch,
@@ -447,9 +473,16 @@ xnpholder_t *xnsynch_wakeup_this_sleeper (xnsynch_t *synch,
  *
  * - The synchronization object is no more owned by any thread.
  *
- * - This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnsynch_flush (xnsynch_t *synch, xnflags_t reason)

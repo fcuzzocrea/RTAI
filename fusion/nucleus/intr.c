@@ -120,9 +120,15 @@ xnintr_t nkclock;
  *
  * @return No error condition being defined, 0 is always returned.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnintr_init (xnintr_t *intr,
@@ -154,9 +160,15 @@ int xnintr_init (xnintr_t *intr,
  * an error occurred while detaching the interrupt (see
  * xnintr_detach()).
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnintr_destroy (xnintr_t *intr) {
@@ -184,9 +196,15 @@ int xnintr_destroy (xnintr_t *intr) {
  * a low-level error occurred while attaching the interrupt. -EBUSY is
  * specifically returned if the interrupt object was already attached.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnintr_attach (xnintr_t *intr,
@@ -214,9 +232,15 @@ int xnintr_attach (xnintr_t *intr,
  * a non-attached interrupt object leads to a null-effect and returns
  * 0.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnintr_detach (xnintr_t *intr) {
@@ -239,9 +263,15 @@ int xnintr_detach (xnintr_t *intr) {
  * @return 0 is returned on success. Otherwise, -EINVAL is returned if
  * a low-level error occurred while enabling the interrupt.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnintr_enable (xnintr_t *intr) {
@@ -263,9 +293,15 @@ int xnintr_enable (xnintr_t *intr) {
  * @return 0 is returned on success. Otherwise, -EINVAL is returned if
  * a low-level error occurred while disabling the interrupt.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnintr_disable (xnintr_t *intr) {

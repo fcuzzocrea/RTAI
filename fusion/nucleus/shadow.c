@@ -471,11 +471,13 @@ void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)
  * procedure in the RTAI domain. The shadow will resume in the RTAI
  * domain as returning from schedule().
  *
- * Side-effect: This routine indirectly triggers the rescheduling
- * procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a user-space task
- * from the Linux domain.
+ * This service can be called from:
+ *
+ * - User-space thread operating in secondary (i.e. relaxed) mode.
+ *
+ * Rescheduling: always.
  */
 
 void xnshadow_harden (void)
@@ -543,13 +545,15 @@ void xnshadow_harden (void)
  * Linux task will resume on return from xnpod_suspend_thread() on
  * behalf of the root thread.
  *
- * Side-effect: This routine indirectly calls the rescheduling
- * procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a real-time
- * shadow inside the RTAI domain.
-
- * Note: "current" is valid here since the shadow runs with the
+ * This service can be called from:
+ *
+ * - User-space thread operating in primary (i.e. harden) mode.
+ *
+ * Rescheduling: always.
+ *
+ * @note "current" is valid here since the shadow runs with the
  * properties of the Linux task.
  */
 
@@ -726,11 +730,14 @@ void xnshadow_umount (void)
  * effect as passing a zero pid argument, and there will be no attempt
  * to wake up any task.
  *
- * Side-effect: This routine indirectly calls the rescheduling
- * procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of the Linux
- * user-space task which is being shadowed.
+ * This service can be called from:
+ *
+ * - Regular user-space process. 
+ *
+ * Rescheduling: always.
+ *
  */
 
 void xnshadow_map (xnthread_t *thread,

@@ -229,10 +229,14 @@ void xnpod_schedule_handler (void)
  *
  * - -ENOMEM is returned if the memory manager fails to initialize.
  *
- * Context: This routine must be called on behalf of a context
- * allowing immediate memory allocation requests (e.g. an
- * init_module() routine). No initialization code called by this
- * routine may refer to the global "nkpod" pointer.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization code
+ *
+ * @note No initialization code called by this routine may refer to
+ * the global "nkpod" pointer.
  */
 
 int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
@@ -417,8 +421,13 @@ static void xnpod_flush_heap (xnheap_t *heap,
  * up calling xnpod_shutdown() after their own housekeeping chores
  * have been carried out.
  *
- * Context: This routine must be called on behalf of the root thread
- * (e.g. a cleanup_module() routine).
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ *
+ * Rescheduling: never.
  */
 
 void xnpod_shutdown (int xtype)
@@ -595,7 +604,15 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
  *
  * Side-effect: This routine does not call the rescheduling procedure.
  *
- * Context: This routine must be called on behalf of a thread.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnpod_init_thread (xnthread_t *thread,
@@ -695,9 +712,15 @@ int xnpod_init_thread (xnthread_t *thread,
  *
  * @retval -EINVAL if the value of @a affinity is invalid.
  *
- * Side-effect: This routine calls the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 int xnpod_start_thread (xnthread_t *thread,
@@ -805,9 +828,14 @@ int xnpod_start_thread (xnthread_t *thread,
  * Self-restarting a thread is allowed. However, restarting the root
  * thread is not.
  *
- * Side-effect: This routine calls the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
  */
 
 void xnpod_restart_thread (xnthread_t *thread)
@@ -907,9 +935,15 @@ void xnpod_restart_thread (xnthread_t *thread)
  * - XNASDI disables the asynchronous signal handling for this thread.
  * See xnpod_schedule() for more on this.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
@@ -961,10 +995,15 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
  * Self-terminating a thread is allowed. In such a case, this service
  * does not return to the caller.
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * current thread self-deletes.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible if the current thread self-deletes.
  */
 
 void xnpod_delete_thread (xnthread_t *thread)
@@ -1108,10 +1147,16 @@ void xnpod_delete_thread (xnthread_t *thread)
  * without suspending the thread, but raises the XNBREAK condition in
  * its status.
  *
- * Side-effect: A rescheduling immediately occurs if the caller
- * self-suspends, in which case true is always returned.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible if the current thread suspends itself.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
@@ -1262,10 +1307,16 @@ void xnpod_suspend_thread (xnthread_t *thread,
  * - XNBREAK means that the wait has been forcibly broken by a call to
  * xnpod_unblock_thread().
  *
- * Side-effect: This service does not call the rescheduling procedure
- * but may affect the ready queue.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xnpod_resume_thread (xnthread_t *thread,
@@ -1416,11 +1467,17 @@ unlock_and_exit:
  *
  * @return non-zero is returned if the thread was actually unblocked
  * from a pending wait state, 0 otherwise.
-
- * Side-effect: This service does not call the rescheduling procedure
- * but may affect the ready queue.
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnpod_unblock_thread (xnthread_t *thread)
@@ -1490,7 +1547,16 @@ int xnpod_unblock_thread (xnthread_t *thread)
  * - If the reniced thread is a user-space shadow, propagate the
  * request to the mated Linux task.
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xnpod_renice_thread (xnthread_t *thread, int prio) {
@@ -1641,10 +1707,16 @@ unlock_and_exit:
  * value. Specifying a priority level with no thread on it is harmless,
  * and will simply lead to a null-effect.
  *
- * Side-effect: This service does not call the rescheduling procedure
- * but affects the ready queue.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xnpod_rotate_readyq (int prio)
@@ -1695,9 +1767,16 @@ void xnpod_rotate_readyq (int prio)
  * @param quantum The time credit which will be given to each
  * rr-enabled thread (in ticks).
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xnpod_activate_rr (xnticks_t quantum)
@@ -1734,9 +1813,16 @@ void xnpod_activate_rr (xnticks_t quantum)
  * which have the XNRRB flag set in their status mask (see
  * xnpod_set_thread_mode()).
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xnpod_deactivate_rr (void)
@@ -1984,11 +2070,16 @@ static inline void xnpod_preempt_current_thread (xnsched_t *sched)
  * setting the XNASDI flag in the thread's status mask by calling
  * xnpod_set_thread_mode().
  * 
- * - The switch hooks are called on behalf of the resuming thread.
+ * Environments:
  *
- * - This call may affect the ready queue and switch thread contexts.
+ * This service can be called from:
  *
- * Context: This routine must be called on behalf of a thread.
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine, although this leads to a no-op.
+ * - Kernel-based task
+ * - User-space task
+ *
+ * @note The switch hooks are called on behalf of the resuming thread.
  */
 
 void xnpod_schedule (void)
@@ -2284,11 +2375,16 @@ maybe_switch:
  * base thus are not affected by this operation. The nucleus time
  * is only accounted when the system timer runs in periodic mode.
  *
- * Side-effect:
+ * Environments:
  *
- * - This routine does not call the rescheduling procedure.
+ * This service can be called from:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xnpod_set_time (xnticks_t newtime)
@@ -2313,9 +2409,16 @@ void xnpod_set_time (xnticks_t newtime)
  * nanoseconds) as maintained by the CPU if aperiodic mode is in
  * effect, or no timer is running.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of any context.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 xnticks_t xnpod_get_time (void)
@@ -2370,9 +2473,15 @@ xnticks_t xnpod_get_time (void)
  *         - -ENOMEM is returned if not enough memory is available
  *         from the system heap to add the new hook.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnpod_add_hook (int type, void (*routine)(xnthread_t *))
@@ -2436,9 +2545,15 @@ int xnpod_add_hook (int type, void (*routine)(xnthread_t *))
  * type is incorrect or if the routine has never been registered
  * before.
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnpod_remove_hook (int type, void (*routine)(xnthread_t *))
@@ -2605,7 +2720,15 @@ int xnpod_trap_fault (void *fltinfo)
  * regardless of the frequency used for Xenomai's system tick. This
  * routine does not call the rescheduling procedure.
  *
- * Context: This routine must be called on behalf of a thread.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
@@ -2719,9 +2842,15 @@ unlock_and_exit:
  * Stops the system timer previously started by a call to
  * xnpod_start_timer().
  *
- * Side-effect: This routine does not call the rescheduling procedure.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or ISR.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
  */
 
 void xnpod_stop_timer (void)
@@ -2772,7 +2901,13 @@ void xnpod_stop_timer (void)
  *
  * @return XN_ISR_HANDLED is always returned.
  *
- * Context: The caller can be a thread but is usually an ISR.
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Interrupt service routine
+ *
+ * Rescheduling: possible.
  */
 
 int xnpod_announce_tick (xnintr_t *intr)
@@ -2872,12 +3007,16 @@ int xnpod_announce_tick (xnintr_t *intr)
  * - -EWOULDBLOCK is returned if the system timer has not been
  * started using xnpod_start_timer().
  *
- * Side-effect: This routine calls the rescheduling procedure if the
- * operation affects the current thread and @a idate has not elapsed
- * yet.
+ * Environments:
  *
- * Context: This routine can be called on behalf of a thread or from
- * the initialization code.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible if the operation affects the current thread
+ * and @a idate has not elapsed yet.
  *
  * @note This service is sensitive to the current operation mode of
  * the system timer, as defined by the xnpod_start_timer() service. In
@@ -2940,11 +3079,17 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
  * indicates that a previous release point has been missed by the
  * calling thread.
  *
- * Side-effect: This routine calls the rescheduling procedure unless
- * an overrun has been detected.  In the latter case, the current
- * thread immediately returns from this service without being delayed.
+ * Environments:
  *
- * Context: This routine must be called on behalf of a thread.
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: always, unless an overrun has been detected.  In the
+ * latter case, the current thread immediately returns from this
+ * service without being delayed.
  */
 
 int xnpod_wait_thread_period (void)

@@ -3235,8 +3235,6 @@ static void xnpod_calibration_thread (void *cookie)
 
     period = xnarch_ns_to_tsc(XNARCH_CALIBRATION_PERIOD);
 
-    xnpod_delay(XNARCH_CALIBRATION_PERIOD * 5);
-
     expected = xnarch_get_cpu_tsc();
 
     xnpod_set_thread_periodic(xnpod_current_thread(),

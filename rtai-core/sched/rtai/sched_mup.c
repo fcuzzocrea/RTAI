@@ -105,6 +105,10 @@ static struct rt_times *linux_times;
 
 static RT_TASK *wdog_task[NR_RT_CPUS];
 
+#ifdef CONFIG_RTAI_ADEOS
+static unsigned sched_virq;
+#endif /* CONFIG_RTAI_ADEOS */
+
 #define fpu_task (rt_smp_fpu_task[cpuid])
 
 //#define rt_linux_task (rt_smp_linux_task[cpuid])
@@ -212,7 +216,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data,
 	int *st, i;
 	unsigned long flags;
 
-	if (smp_num_cpus <= 1) {
+	if (num_online_cpus() <= 1) {
 		cpuid = 0;
 	}
 	if (task->magic == RT_TASK_MAGIC || cpuid >= NR_RT_CPUS || priority < 0) {
@@ -471,6 +475,14 @@ void rt_schedule(void)
 	RT_TASK *task, *new_task;
 	int prio, delay, preempt;
 
+#ifdef CONFIG_RTAI_ADEOS
+	if (adp_current != &rtai_domain)
+	    {
+	    adeos_trigger_irq(sched_virq);
+	    return;
+	    }
+#endif /* CONFIG_RTAI_ADEOS */
+
 	prio = RT_SCHED_LINUX_PRIORITY;
 	ASSIGN_RT_CURRENT;
 	sched_rqsted[cpuid] = 1;
@@ -552,7 +564,7 @@ void rt_spv_RMS(int cpuid)
 {
 	RT_TASK *task;
 	int prio;
-	if (cpuid < 0 || cpuid >= smp_num_cpus) {
+	if (cpuid < 0 || cpuid >= num_online_cpus()) {
 		cpuid = hard_cpu_id();
 	}
 	prio = 0;
@@ -777,7 +789,7 @@ static void rt_timer_handler(void)
 }
 
 
-static void recover_jiffies(int irq, void *dev_id, struct pt_regs *regs)
+static irqreturn_t recover_jiffies(int irq, void *dev_id, struct pt_regs *regs)
 {
     
 	rt_global_cli();
@@ -787,13 +799,15 @@ static void recover_jiffies(int irq, void *dev_id, struct pt_regs *regs)
 	}
 	rt_global_sti();
 	BROADCAST_TO_LOCAL_TIMERS();
+	return RTAI_LINUX_IRQ_HANDLED;
 } 
 
 
 int rt_is_hard_timer_running(void)
 {
-	int cpuid, running;
-	for (running = cpuid = 0; cpuid < smp_num_cpus; cpuid++) {
+    int cpuid;
+    unsigned long running;
+	for (running = cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		if (rt_time_h) {
 			set_bit(cpuid, &running);
 		}
@@ -1141,7 +1155,7 @@ RTIME rt_get_cpu_time_ns(void)
 RT_TASK *rt_get_base_linux_task(RT_TASK **base_linux_tasks)
 {
         int cpuid;
-        for (cpuid = 0; cpuid < smp_num_cpus; cpuid++) {
+        for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
                 base_linux_tasks[cpuid] = rt_smp_linux_task + cpuid;
         }
         return rt_smp_linux_task;
@@ -1458,6 +1472,16 @@ int __rtai_mup_init(void)
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 	rt_set_ihook(&rtai_handle_isched_lock);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+#ifdef CONFIG_RTAI_ADEOS
+	sched_virq = adeos_alloc_irq();
+
+	adeos_virtualize_irq_from(&rtai_domain,
+				  sched_virq,
+				  (void (*)(unsigned))&rt_schedule,
+				  NULL,
+				  IPIPE_HANDLE_MASK);
+#endif /* CONFIG_RTAI_ADEOS */
+
 	return rtai_init_features(); /* see rtai_schedcore.h */
 }
 
@@ -1474,6 +1498,15 @@ void __rtai_mup_exit(void)
 		}
 	}
 	krtai_objects_release();
+
+#ifdef CONFIG_RTAI_ADEOS
+	if (sched_virq)
+	    {
+	    adeos_virtualize_irq_from(&rtai_domain,sched_virq,NULL,NULL,0);
+	    adeos_free_irq(sched_virq);
+	    }
+#endif /* CONFIG_RTAI_ADEOS */
+
 	rtai_cleanup_features();
 #ifdef CONFIG_PROC_FS
         rtai_proc_sched_unregister();

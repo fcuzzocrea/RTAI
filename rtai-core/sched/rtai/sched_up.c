@@ -157,6 +157,10 @@ static RT_TASK *wdog_task;
 
 static int rt_next_tid = 1;       /* Next task ID */
 
+#ifdef CONFIG_RTAI_ADEOS
+static unsigned sched_virq;
+#endif /* CONFIG_RTAI_ADEOS */
+
 #define MAX_FRESTK_SRQ  64
 static struct { int srq, in, out; void *mp[MAX_FRESTK_SRQ]; } frstk_srq;
 
@@ -543,6 +547,14 @@ void rt_schedule(void)
 	RT_TASK *task, *new_task;
 	RTIME intr_time, now;
 	int prio, delay, preempt;
+
+#ifdef CONFIG_RTAI_ADEOS
+	if (adp_current != &rtai_domain)
+	    {
+	    adeos_trigger_irq(sched_virq);
+	    return;
+	    }
+#endif /* CONFIG_RTAI_ADEOS */
 
 	sched_rqsted = 1;
 	prio = RT_SCHED_LINUX_PRIORITY;
@@ -1786,6 +1798,16 @@ static int __rtai_up_init(void)
 	rt_set_ihook(&rtai_handle_isched_lock);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
+#ifdef CONFIG_RTAI_ADEOS
+	sched_virq = adeos_alloc_irq();
+
+	adeos_virtualize_irq_from(&rtai_domain,
+				  sched_virq,
+				  (void (*)(unsigned))&rt_schedule,
+				  NULL,
+				  IPIPE_HANDLE_MASK);
+#endif /* CONFIG_RTAI_ADEOS */
+
 	return rtai_init_features(); /* see rtai_schedcore.h */
 }
 
@@ -1807,6 +1829,15 @@ static void __rtai_up_exit(void)
 	if (rt_free_srq(frstk_srq.srq) < 0) {
 		printk("MEM SRQ: frstk_srq %d illegal or already free.\n", frstk_srq.srq);
 	}
+
+#ifdef CONFIG_RTAI_ADEOS
+	if (sched_virq)
+	    {
+	    adeos_virtualize_irq_from(&rtai_domain,sched_virq,NULL,NULL,0);
+	    adeos_free_irq(sched_virq);
+	    }
+#endif /* CONFIG_RTAI_ADEOS */
+
 	rtai_cleanup_features();
 	sched_mem_end();
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK

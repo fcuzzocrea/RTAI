@@ -145,6 +145,10 @@ static int shot_fired;
 
 static int preempt_always;
 
+#ifdef CONFIG_RTAI_ADEOS
+static unsigned sched_virq;
+#endif /* CONFIG_RTAI_ADEOS */
+
 static rwlock_t task_list_lock = RW_LOCK_UNLOCKED;
 
 static RT_TASK *wdog_task[NR_RT_CPUS];
@@ -608,6 +612,14 @@ void rt_schedule(void)
 	RTIME intr_time, now;
 	unsigned int cpus_with_ready_tasks;
 	int prio, delay, preempt;
+
+#ifdef CONFIG_RTAI_ADEOS
+	if (adp_current != &rtai_domain)
+	    {
+	    adeos_trigger_irq(sched_virq);
+	    return;
+	    }
+#endif /* CONFIG_RTAI_ADEOS */
 
 	task = &rt_base_linux_task;
 	cpus_with_ready_tasks = 0;
@@ -1559,6 +1571,16 @@ int __rtai_smp_init(void)
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 	rt_set_ihook(&rtai_handle_isched_lock);
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+#ifdef CONFIG_RTAI_ADEOS
+	sched_virq = adeos_alloc_irq();
+
+	adeos_virtualize_irq_from(&rtai_domain,
+				  sched_virq,
+				  (void (*)(unsigned))&rt_schedule,
+				  NULL,
+				  IPIPE_HANDLE_MASK);
+#endif /* CONFIG_RTAI_ADEOS */
+
 	return rtai_init_features(); /* see rtai_schedcore.h */
 }
 
@@ -1573,6 +1595,15 @@ void __rtai_smp_exit(void)
 		rt_task_delete(rt_base_linux_task.next);
 	}
 	krtai_objects_release();
+
+#ifdef CONFIG_RTAI_ADEOS
+	if (sched_virq)
+	    {
+	    adeos_virtualize_irq_from(&rtai_domain,sched_virq,NULL,NULL,0);
+	    adeos_free_irq(sched_virq);
+	    }
+#endif /* CONFIG_RTAI_ADEOS */
+
 	rtai_cleanup_features();
 #ifdef CONFIG_PROC_FS
         rtai_proc_sched_unregister();

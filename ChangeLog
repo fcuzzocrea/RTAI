@@ -1,3 +1,17 @@
+2004-07-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched/rtai/sched_mup.c: Fix compilation.
+
+	* rtai-core/sched/rtai/sched_*.c: Always escalate the rescheduling
+	requests to the RTAI domain as needed; this closes a long-standing
+	race window where Linux interrupts might be served on a non-Linux
+	stack.
+
+	* rtai-core/sched/rtai/sched_lxrt.c (put_current_on_cpu): Use the
+	direct kernel interface (set_cpus_allowed()) for setting the
+	scheduling affinity of the current task. Do _not_ mess anymore with the
+	'cpus_allowed' member of the Linux task struct with v2.6.
+
 2004-07-14  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/sched/rtai/sched_lxrt.c (intr_get_current): Iron the

@@ -57,9 +57,9 @@ typedef struct xnqueue {
 
     xnholder_t head;
     int elems;
-#if defined(CONFIG_RTAI_OPT_DEBUG) && defined(CONFIG_SMP)
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_DEBUG) && defined(CONFIG_SMP)
     xnlock_t lock;
-#endif /* CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP */
 
 } xnqueue_t;
 
@@ -72,9 +72,9 @@ typedef struct xnqueue {
 static inline void initq (xnqueue_t *qslot) {
     inith(&qslot->head);
     qslot->elems = 0;
-#if defined(CONFIG_RTAI_OPT_DEBUG) && defined(CONFIG_SMP)
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_DEBUG) && defined(CONFIG_SMP)
     xnlock_init(&qslot->lock);
-#endif /* CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP */
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_DEBUG && CONFIG_SMP */
 }
 
 #ifdef CONFIG_RTAI_OPT_DEBUG

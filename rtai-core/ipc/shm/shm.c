@@ -78,7 +78,7 @@ static inline int _rt_shm_free(unsigned long name, int size)
 
 	if (size && (adr = rt_get_adr(name))) {
 		if (RT_SHM_OP_PERM()) {
-			if (!rt_drg_on_name_cnt(name)) {
+			if (!rt_drg_on_name_cnt(name) && name != GLOBAL_HEAP_ID) {
 				if (size < 0) {
 					rkfree(adr, -size);
 				} else {

@@ -97,14 +97,21 @@ before the actions are run by "rtai-load". The special verb
 exiting the application to be echoed.
 
 The file may also contain some specific variable assignments defining
-some parameters internally used by "rtai-load". As of now there is
-only one of them:
+some parameters internally used by "rtai-load":
 
 o rtai_moddir=<path_to_RTAI_system_modules>
 
   > Causes each kernel module listed in the dependency section to be
 searched into the given directory. Otherwise, it is searched in the
 installation directory for modules (e.g. /usr/realtime/modules).
+
+o user_moddir=<path_to_additional_user_modules>
+
+  > Adds an additional module search path that can indicate the
+location of kernel modules that are not present in the current
+directory or the RTAI directory, but are needed by the application
+being launched from the .runinfo file (by Ivan Raikov,
+http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=273076)
 
 Example
 -------

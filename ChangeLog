@@ -1,3 +1,8 @@
+2004-10-09  Edelhard Becker <ebecker@software-manufaktur.de>
+
+	* rtai-core/scripts/rtai-load.in: Add support for user-defined
+	module search directory.
+
 2004-09-17  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/arch/i386/patches: Upgrade to hal16 final.

@@ -22,9 +22,6 @@
 
 #include <nucleus/queue.h>
 
-#define XNPOD_APERIODIC_TICK       0
-#define XNPOD_NO_TICK              ((xnticks_t)-1)
-
 #if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
 /* Number of outstanding timers (hint only) -- must be ^2 */

@@ -55,6 +55,9 @@ typedef struct xntimes {
 #define XN_INFINITE   (0)
 #define XN_NONBLOCK   ((xnticks_t)-1)
 
+#define XNPOD_APERIODIC_TICK  0
+#define XNPOD_NO_TICK         ((xnticks_t)-1)
+
 #define testbits(flags,mask) ((flags) & (mask))
 #define setbits(flags,mask)  xnarch_atomic_set_mask(&(flags),mask)
 #define clrbits(flags,mask)  xnarch_atomic_clear_mask(&(flags),mask)

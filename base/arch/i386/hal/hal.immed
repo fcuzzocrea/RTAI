@@ -953,7 +953,7 @@ void rt_request_apic_timers (void (*handler)(void),
 
     rt_release_irq(RTAI_APIC_TIMER_IPI);
 
-    rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 1);
+    rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
 
     REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 
@@ -1148,7 +1148,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 
 		if (use_apic) {
 			rt_release_irq(RTAI_APIC_TIMER_IPI);
-			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 1);
+			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
 			rtai_setup_periodic_apic(tick,RTAI_APIC_TIMER_VECTOR);
 			retval = REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		} else {
@@ -1156,7 +1156,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(tick & 0xff, 0x40);
 			outb(tick >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
-		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 1);
+		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
 		}
 	} else {
 		rt_times.linux_tick = rtai_imuldiv(LATCH,rtai_tunables.cpu_freq,RTAI_FREQ_8254);
@@ -1166,7 +1166,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 
 		if (use_apic) {
 			rt_release_irq(RTAI_APIC_TIMER_IPI);
-			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 1);
+			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
 			rtai_setup_oneshot_apic(RTAI_APIC_ICOUNT,RTAI_APIC_TIMER_VECTOR);
     			retval = REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		} else {
@@ -1174,7 +1174,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(LATCH & 0xff, 0x40);
 			outb(LATCH >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
-			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 1);
+			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
 		}
 	}
 	rtai_restore_flags(flags);

@@ -255,18 +255,30 @@ fi
 dnl Extract GCC architecture tuning flags from KBUILD Makefiles.
 
 AC_MSG_CHECKING(for GCC architecture tuning flags)
-rtai_mf=`pwd`/rtai_display_archflags_makefile
-cat > $rtai_mf << EOF
-include Makefile
+mkdir -p .rtai_display_archflags
+cat > .rtai_display_archflags/display_archflags.c <<EOF
+#include <stdio.h>
 
-rtai-arch:
-	@for flag in \$(CFLAGS); do case \$\$flag in \
-        -march*|-mcpu*|-mtune*) echo -n "\$\$flag ";; \
-	*);; \
-	esac; done
+int main(void)
+{
+    char *str = RTAI_CFLAGS;
+    printf("%s\n", str);
+    return 0;
+}
 EOF
-RTAI_ARCH_TUNE_FLAGS=`make -s -C $RTAI_LINUX_DIR -f $rtai_mf rtai-arch`
-rm -f $rtai_mf
+cat > .rtai_display_archflags/Makefile <<EOF
+hostprogs-y := display_archflags
+always := display_archflags
+
+HOST_EXTRACFLAGS += -DRTAI_CFLAGS="\"\$(CFLAGS)\""
+EOF
+make -s -C $RTAI_LINUX_DIR M=$PWD/.rtai_display_archflags >& /dev/null
+for flag in `.rtai_display_archflags/display_archflags`; do case $flag in
+    -march*|-mcpu*|-mtune*) 
+        RTAI_ARCH_TUNE_FLAGS="$RTAI_ARCH_TUNE_FLAGS $flag";;
+    *);; 
+esac; done
+rm -Rf .rtai_display_archflags
 AC_MSG_RESULT(${RTAI_ARCH_TUNE_FLAGS:-none})
 
 AC_MSG_CHECKING(for real-time support in user-space)

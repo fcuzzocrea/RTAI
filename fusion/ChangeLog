@@ -3,6 +3,7 @@
 	* configure.in, Kconfig: Allow kernel built ouside their source 
 	tree to be used. The configure and Kconfig parameter is the 
 	kernel build tree root.
+	Fix architecture tuning flags determination for that case.
 
 2005-02-24  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 

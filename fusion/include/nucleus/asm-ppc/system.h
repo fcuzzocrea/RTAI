@@ -424,15 +424,8 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
         _switch(&prev->thread, &next->thread);
 	}
     else
-        {
         /* Kernel-to-kernel context switch. */
         rthal_switch_context(out_tcb->kspp,in_tcb->kspp);
-
-#ifdef CONFIG_RTAI_HW_FPU
-        /* FPU will be reenabled by xnarch_save_fpu when needed */
-        rthal_disable_fpu();
-#endif /* CONFIG_RTAI_HW_FPU */
-        }
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
@@ -503,7 +496,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     tcb->ksp = (unsigned long)ksp - STACK_FRAME_OVERHEAD;
     ksp[19] = (unsigned long)tcb; /* r3 */
     ksp[25] = (unsigned long)&xnarch_thread_trampoline; /* lr */
-    ksp[26] = flags & ~MSR_EE; /* msr */
+    ksp[26] = flags & ~(MSR_EE | MSR_FP); /* msr */
 
     tcb->entry = entry;
     tcb->cookie = cookie;

@@ -1006,6 +1006,9 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    xnticks_t now, expire, delay;
 	    struct timespec t;
 
+	    if (!testbits(nkpod->status,XNTIMED))
+		return 0; /* No RT timer started -- Let Linux handle this. */
+
 	    if (!__xn_access_ok(curr,VERIFY_READ,(void *)__xn_reg_arg1(regs),sizeof(t)))
 		{
 		__xn_reg_rval(regs) = -EFAULT;
@@ -1071,7 +1074,8 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    xnticks_t delay, interval, expire;
 	    struct itimerval itv;
 
-	    if (__xn_reg_arg1(regs) != ITIMER_REAL)
+	    if (!testbits(nkpod->status,XNTIMED) ||
+		__xn_reg_arg1(regs) != ITIMER_REAL)
 		return 0;
 
 	    if (__xn_reg_arg2(regs))
@@ -1140,8 +1144,8 @@ static int xnshadow_substitute_syscall (struct task_struct *curr,
 	    xnticks_t delay, interval;
 	    struct itimerval itv;
 
-	    if (__xn_reg_arg1(regs) != ITIMER_REAL)
-		return 0;
+	    if (!testbits(nkpod->status,XNTIMED) ||
+		__xn_reg_arg1(regs) != ITIMER_REAL)
 
 	    if (!__xn_reg_arg2(regs) ||
 		!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg2(regs),sizeof(itv)))

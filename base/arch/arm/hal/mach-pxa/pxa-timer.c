@@ -77,7 +77,7 @@ int soft_timer_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	return IRQ_HANDLED;
 }
 
-void rt_request_timer(void (*handler)(void), unsigned int tick, int unused)
+int	rt_request_timer(rt_timer_irq_handler_t handler, unsigned tick, int use_apic)
 {
 	RTIME t;
 	unsigned long flags;
@@ -121,7 +121,7 @@ void rt_request_timer(void (*handler)(void), unsigned int tick, int unused)
  	rt_pend_linux_irq(TIMER_8254_IRQ);
 	rtai_critical_exit(flags);
 
-	return;
+	return 0;
 }
 
 void rt_free_timer(void)
@@ -137,5 +137,3 @@ void rt_free_timer(void)
 
 	rtai_critical_exit(flags);
 }
-
-

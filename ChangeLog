@@ -1,3 +1,8 @@
+2004-02-18  Michael Neuhauser  <mike@firmix.at>
+
+	* base/arch/arm/hal/mach-pxa/pxa-timer.c (rt_request_timer): fixed
+	return and argument type
+
 2004-02-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/ipc/mq/mq.c: cleaned of unused stuff and revised for some

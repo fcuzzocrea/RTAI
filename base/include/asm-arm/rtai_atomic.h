@@ -23,6 +23,9 @@
  * RTAI/ARM over Adeos rewrite:
  *   Copyright (c) 2004-2005 Michael Neuhauser, Firmix Software GmbH (mike@firmix.at)
  *
+ *  RTAI/ARM over Adeos rewrite for PXA255_2.6.7:
+ *   Copyright (c) 2005 Stefano Gafforelli (stefano.gafforelli@tiscali.it)
+ *   Copyright (c) 2005 Luca Pizzi (lucapizzi@hotmail.com)
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -41,9 +44,11 @@
 #ifndef _RTAI_ASM_ARM_ATOMIC_H
 #define _RTAI_ASM_ARM_ATOMIC_H
 
+#include <linux/version.h>
 #include <linux/bitops.h>
 #include <asm/atomic.h>
 #include <rtai_config.h>
+#include <asm/rtai_hal.h>
 
 #ifdef __KERNEL__
 
@@ -66,7 +71,11 @@
 
 #else /* !__KERNEL__ */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #include <asm/proc/system.h>
+#else
+#include <asm/system.h>
+#endif
 
 static inline unsigned long
 atomic_xchg(volatile void *ptr, unsigned long x)

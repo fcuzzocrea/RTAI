@@ -23,6 +23,10 @@
  * RTAI/ARM over Adeos rewrite:
  *   Copyright (c) 2004-2005 Michael Neuhauser, Firmix Software GmbH (mike@firmix.at)
  *
+ * RTAI/ARM over Adeos rewrite for PXA255_2.6.7:
+ *   Copyright (c) 2005 Stefano Gafforelli (stefano.gafforelli@tiscali.it)
+ *   Copyright (c) 2005 Luca Pizzi (lucapizzi@hotmail.com)
+ *
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -43,11 +47,19 @@
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/stddef.h>
+#include <linux/sched.h>
 #include <linux/timer.h>
 #include <linux/interrupt.h>
 #include <asm/mach/irq.h>
 #include <asm/arch/irq.h>	/* get fixup_irq() */
-#include <asm/proc/ptrace.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#	include <asm/proc/ptrace.h>
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+#	include <asm/ptrace.h>
+#	include <asm/uaccess.h>
+#	include <asm/unistd.h>
+#	include <stdarg.h>
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 #define __RTAI_HAL__
 #include <asm/rtai_hal.h>
 #include <asm/rtai_lxrt.h>
@@ -273,8 +285,12 @@ rt_ack_irq(unsigned irq)
 /* We use what follows in place of ADEOS ones to play safely with 
  * Linux preemption and to quickly manage Linux interrupt state. */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 /* original irq_desc[] data */
 extern struct irqdesc __adeos_std_irq_desc[];
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+extern struct irqchip __adeos_std_irq_chip[];
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 
 #define BEGIN_PIC() \
     do { \
@@ -299,7 +315,11 @@ rt_startup_irq(unsigned irq)
     irq_desc[irq].triggered = 0;
     irq_desc[irq].disable_depth = 0;
     __adeos_unlock_irq(adp_root, irq);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     __adeos_std_irq_desc[irq].unmask(irq);
+#else
+    __adeos_std_irq_chip[irq].unmask(irq);
+#endif
     END_PIC();
     return 0;
 }
@@ -309,8 +329,13 @@ rt_shutdown_irq(unsigned irq)
 {
     BEGIN_PIC();
     irq_desc[irq].disable_depth = (unsigned int)-1;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     __adeos_std_irq_desc[irq].mask(irq);
     __adeos_clear_irq(adp_root, irq);
+#else
+    __adeos_std_irq_chip[irq].mask(irq);
+    __adeos_lock_irq(adp_root, cpuid, irq);
+#endif
     END_PIC();
 }
 
@@ -324,7 +349,11 @@ rt_enable_irq(unsigned irq)
     } else if (--irq_desc[irq].disable_depth == 0) {
 	irq_desc[irq].probing = 0;
 	__adeos_unlock_irq(adp_root, irq);
-	__adeos_std_irq_desc[irq].unmask(irq);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+    __adeos_std_irq_desc[irq].unmask(irq);
+#else
+    __adeos_std_irq_chip[irq].unmask(irq);
+#endif
     }
     END_PIC();
 }
@@ -334,7 +363,11 @@ rt_disable_irq(unsigned irq)
 {
     BEGIN_PIC();
     if (irq_desc[irq].disable_depth++ == 0) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	__adeos_std_irq_desc[irq].mask(irq);
+#else
+	__adeos_std_irq_chip[irq].mask(irq);
+#endif
 	__adeos_lock_irq(adp_root, cpuid, irq);
     }
     END_PIC();
@@ -344,8 +377,12 @@ void
 rt_mask_and_ack_irq(unsigned irq)
 {
     BEGIN_PIC();
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     __adeos_std_irq_desc[irq].mask_ack(irq);
     __adeos_lock_irq(adp_root, cpuid, irq);
+#else
+    irq_desc[irq].chip->mask(irq);
+#endif
     END_PIC();
 }
 
@@ -353,8 +390,12 @@ void
 rt_unmask_irq(unsigned irq)
 {
     BEGIN_PIC();
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     __adeos_unlock_irq(adp_root, irq);	// *TODO* conditional? (if !(status & (disabled|inprogress))
     __adeos_std_irq_desc[irq].unmask(irq);
+#else
+    irq_desc[irq].chip->unmask(irq);
+#endif
     END_PIC();
 }
 
@@ -363,9 +404,13 @@ rt_ack_irq(unsigned irq)
 {
     BEGIN_PIC();
     /* ARM has no "ack" slot in irqdesc, do mask_ack and then unmask */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
     __adeos_std_irq_desc[irq].mask_ack(irq);
     __adeos_unlock_irq(adp_root, irq);
     __adeos_std_irq_desc[irq].unmask(irq);
+#else
+    irq_desc[irq].chip->ack(irq);
+#endif
     END_PIC();
 }
 
@@ -629,8 +674,13 @@ rtai_irq_trampoline(int irq, struct pt_regs *regs)
 	    __adeos_irq_regs.ARM_cpsr = regs->ARM_cpsr;
 	    __adeos_irq_regs.ARM_pc = regs->ARM_pc;
 	}
-	if (adp_root->cpudata[cpuid].irq_pending_hi != 0)
+	if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
+#ifdef CONFIG_ARCH_PXA
+	    __adeos_sync_stage();
+#else
 	    __adeos_sync_stage(IPIPE_IRQMASK_ANY);
+#endif
+	}
 	TRACE_RTAI_GLOBAL_IRQ_EXIT();
 	/* ipipe is unstalled, current domain is Linux and not in atomic
 	 * -> do slow return from irq */
@@ -758,6 +808,7 @@ rt_set_ihook(isr_hook_t hookfn)
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
 void
 rtai_set_linux_task_priority(struct task_struct *task, int policy, int prio)
 {
@@ -765,8 +816,29 @@ rtai_set_linux_task_priority(struct task_struct *task, int policy, int prio)
     task->rt_priority = prio;
     set_tsk_need_resched(current);
 }
+
 #else
-#error "Sorry, Kernels >= 2.6.0 not supported (yet)"
+
+static int errno;
+
+static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct sched_param *,param)
+
+void
+rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
+{
+    struct sched_param __user param;
+    mm_segment_t old_fs;
+    int rc;
+
+    param.sched_priority = prio;
+    old_fs = get_fs();
+    set_fs(KERNEL_DS);
+    rc = sched_setscheduler(task->pid, policy, &param);
+    set_fs(old_fs);
+    if (rc)
+	printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);
+}
+
 #endif  /* KERNEL_VERSION < 2.6.0 */
 
 #ifdef CONFIG_PROC_FS

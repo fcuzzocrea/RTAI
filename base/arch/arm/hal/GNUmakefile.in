@@ -39,6 +39,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @CONFIG_ARCH_EP9301_TRUE@am__append_1 = mach-ep9301/ep9301-timer.c
+@CONFIG_ARCH_PXA_TRUE@am__append_2 = mach-pxa/pxa-timer.c
 subdir = base/arch/arm/hal
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -54,9 +55,11 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libhal_a_LIBADD =
-am__libhal_a_SOURCES_DIST = hal.c mach-ep9301/ep9301-timer.c
+am__libhal_a_SOURCES_DIST = hal.c mach-ep9301/ep9301-timer.c \
+	mach-pxa/pxa-timer.c
 @CONFIG_ARCH_EP9301_TRUE@am__objects_1 = ep9301-timer.$(OBJEXT)
-am_libhal_a_OBJECTS = hal.$(OBJEXT) $(am__objects_1)
+@CONFIG_ARCH_PXA_TRUE@am__objects_2 = pxa-timer.$(OBJEXT)
+am_libhal_a_OBJECTS = hal.$(OBJEXT) $(am__objects_1) $(am__objects_2)
 libhal_a_OBJECTS = $(am_libhal_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
@@ -91,6 +94,8 @@ CFLAGS = @CFLAGS@
 COMEDI_DIR = @COMEDI_DIR@
 CONFIG_ARCH_EP9301_FALSE = @CONFIG_ARCH_EP9301_FALSE@
 CONFIG_ARCH_EP9301_TRUE = @CONFIG_ARCH_EP9301_TRUE@
+CONFIG_ARCH_PXA_FALSE = @CONFIG_ARCH_PXA_FALSE@
+CONFIG_ARCH_PXA_TRUE = @CONFIG_ARCH_PXA_TRUE@
 CONFIG_ARM_FALSE = @CONFIG_ARM_FALSE@
 CONFIG_ARM_TRUE = @CONFIG_ARM_TRUE@
 CONFIG_KBUILD_FALSE = @CONFIG_KBUILD_FALSE@
@@ -341,15 +346,17 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-noinst_LIBRARIES = libhal.a
-libhal_a_SOURCES = hal.c $(am__append_1)
-libhal_a_AR = $(CROSS_COMPILE)ar cru
-INCLUDES = \
-	@RTAI_KMOD_CFLAGS@ \
-	-I$(top_srcdir)/base/include \
-	-I../../../include \
-	-I../../../..
+modext = @RTAI_MODULE_EXT@
+libhal_a_SOURCES = hal.c $(am__append_1) $(am__append_2)
+@CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libhal.a
+@CONFIG_KBUILD_FALSE@libhal_a_AR = $(CROSS_COMPILE)ar cru
+@CONFIG_KBUILD_FALSE@INCLUDES = \
+@CONFIG_KBUILD_FALSE@	@RTAI_KMOD_CFLAGS@ \
+@CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
+@CONFIG_KBUILD_FALSE@	-I../../../include \
+@CONFIG_KBUILD_FALSE@	-I../../../..
 
+EXTRA_DIST = Makefile.kbuild
 all: all-am
 
 .SUFFIXES:
@@ -399,6 +406,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ep9301-timer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pxa-timer.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -434,6 +442,20 @@ ep9301-timer.obj: mach-ep9301/ep9301-timer.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mach-ep9301/ep9301-timer.c' object='ep9301-timer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ep9301-timer.obj `if test -f 'mach-ep9301/ep9301-timer.c'; then $(CYGPATH_W) 'mach-ep9301/ep9301-timer.c'; else $(CYGPATH_W) '$(srcdir)/mach-ep9301/ep9301-timer.c'; fi`
+
+pxa-timer.o: mach-pxa/pxa-timer.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pxa-timer.o -MD -MP -MF "$(DEPDIR)/pxa-timer.Tpo" -c -o pxa-timer.o `test -f 'mach-pxa/pxa-timer.c' || echo '$(srcdir)/'`mach-pxa/pxa-timer.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pxa-timer.Tpo" "$(DEPDIR)/pxa-timer.Po"; else rm -f "$(DEPDIR)/pxa-timer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mach-pxa/pxa-timer.c' object='pxa-timer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pxa-timer.o `test -f 'mach-pxa/pxa-timer.c' || echo '$(srcdir)/'`mach-pxa/pxa-timer.c
+
+pxa-timer.obj: mach-pxa/pxa-timer.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pxa-timer.obj -MD -MP -MF "$(DEPDIR)/pxa-timer.Tpo" -c -o pxa-timer.obj `if test -f 'mach-pxa/pxa-timer.c'; then $(CYGPATH_W) 'mach-pxa/pxa-timer.c'; else $(CYGPATH_W) '$(srcdir)/mach-pxa/pxa-timer.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pxa-timer.Tpo" "$(DEPDIR)/pxa-timer.Po"; else rm -f "$(DEPDIR)/pxa-timer.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mach-pxa/pxa-timer.c' object='pxa-timer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pxa-timer.obj `if test -f 'mach-pxa/pxa-timer.c'; then $(CYGPATH_W) 'mach-pxa/pxa-timer.c'; else $(CYGPATH_W) '$(srcdir)/mach-pxa/pxa-timer.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -550,8 +572,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstLIBRARIES \
-	mostlyclean-am
+clean-am: clean-generic clean-libtool clean-local \
+	clean-noinstLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -600,8 +622,8 @@ ps-am:
 uninstall-am: uninstall-info-am
 
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-libtool clean-noinstLIBRARIES ctags \
-	distclean distclean-compile distclean-generic \
+	clean-generic clean-libtool clean-local clean-noinstLIBRARIES \
+	ctags distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
 	install-data-am install-exec install-exec-am \
@@ -613,14 +635,25 @@ uninstall-am: uninstall-info-am
 	uninstall-info-am
 
 
-rtai_hal.o: libhal.a
-	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+@CONFIG_KBUILD_TRUE@rtai_hal.ko: @RTAI_KBUILD_ENV@
+@CONFIG_KBUILD_TRUE@rtai_hal.ko: $(libhal_a_SOURCES)
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ \
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@
 
-all-local: rtai_hal.o
+@CONFIG_KBUILD_TRUE@clean-local:
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
+
+@CONFIG_KBUILD_FALSE@rtai_hal.o: libhal.a
+@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+
+@CONFIG_KBUILD_FALSE@clean-local:
+
+all-local: rtai_hal$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
-install-exec-local: rtai_hal.o
+install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

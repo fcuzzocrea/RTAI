@@ -24,6 +24,10 @@
  * RTAI/ARM over Adeos rewrite:
  *   Copyright (c) 2004-2005 Michael Neuhauser, Firmix Software GmbH (mike@firmix.at)
  *
+ * RTAI/ARM over Adeos rewrite for PXA255_2.6.7:
+ *   Copyright (c) 2005 Stefano Gafforelli (stefano.gafforelli@tiscali.it)
+ *   Copyright (c) 2005 Luca Pizzi (lucapizzi@hotmail.com)
+ *
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -148,6 +152,10 @@ rtai_imuldiv(int i, int mult, int div)
 #define rtai_hw_lock(flags)		adeos_hw_local_irq_save(flags)
 #define rtai_hw_unlock(flags)		adeos_hw_local_irq_restore(flags)
 #define rtai_hw_flags(x)		adeos_hw_local_irq_flags(flags)
+/* alternative names */
+#define rtai_hw_save_flags_and_cli(f)	rtai_hw_lock(f)
+#define rtai_hw_restore_flags(f)	rtai_hw_unlock(f)
+#define rtai_hw_save_flags(f)		rtai_hw_flags(f)
 
 #define __adeos_pend_uncond(irq, cpuid) \
     do { \
@@ -265,6 +273,9 @@ extern void		rtai_set_linux_task_priority(struct task_struct *task,
 #ifdef __KERNEL__
 
 #include <linux/kernel.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#include <linux/interrupt.h>
+#endif /* LINUX_VERSION_CODE >= 2.6.0 */
 
 #define rtai_print_to_screen  		rt_printk
 

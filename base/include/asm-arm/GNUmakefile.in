@@ -36,9 +36,19 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@CONFIG_ARCH_PXA_TRUE@am__append_1 = \
+@CONFIG_ARCH_PXA_TRUE@		arch-pxa/rtai_arch.h \
+@CONFIG_ARCH_PXA_TRUE@		arch-pxa/rtai_exports.h \
+@CONFIG_ARCH_PXA_TRUE@		arch-pxa/rtai_timer.h
+
+@CONFIG_ARCH_EP9301_TRUE@am__append_2 = \
+@CONFIG_ARCH_EP9301_TRUE@		arch-ep9301/rtai_arch.h \
+@CONFIG_ARCH_EP9301_TRUE@		arch-ep9301/rtai_exports.h \
+@CONFIG_ARCH_EP9301_TRUE@		arch-ep9301/rtai_timer.h
+
 subdir = base/include/asm-arm
-DIST_COMMON = $(nobase_include_HEADERS) $(srcdir)/GNUmakefile.am \
-	$(srcdir)/GNUmakefile.in
+DIST_COMMON = $(am__nobase_include_HEADERS_DIST) \
+	$(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/base/config/autoconf/acinclude.m4 \
 	$(top_srcdir)/base/config/autoconf/docbook.m4 \
@@ -51,6 +61,12 @@ CONFIG_HEADER = $(top_builddir)/rtai_config.h
 CONFIG_CLEAN_FILES = arch
 SOURCES =
 DIST_SOURCES =
+am__nobase_include_HEADERS_DIST = rtai_atomic.h rtai_fpu.h rtai.h \
+	rtai_hal.h rtai_lxrt.h rtai_oldnames.h rtai_sched.h rtai_shm.h \
+	rtai_srq.h rtai_usi.h rtai_vectors.h arch-pxa/rtai_arch.h \
+	arch-pxa/rtai_exports.h arch-pxa/rtai_timer.h \
+	arch-ep9301/rtai_arch.h arch-ep9301/rtai_exports.h \
+	arch-ep9301/rtai_timer.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -80,6 +96,8 @@ CFLAGS = @CFLAGS@
 COMEDI_DIR = @COMEDI_DIR@
 CONFIG_ARCH_EP9301_FALSE = @CONFIG_ARCH_EP9301_FALSE@
 CONFIG_ARCH_EP9301_TRUE = @CONFIG_ARCH_EP9301_TRUE@
+CONFIG_ARCH_PXA_FALSE = @CONFIG_ARCH_PXA_FALSE@
+CONFIG_ARCH_PXA_TRUE = @CONFIG_ARCH_PXA_TRUE@
 CONFIG_ARM_FALSE = @CONFIG_ARM_FALSE@
 CONFIG_ARM_TRUE = @CONFIG_ARM_TRUE@
 CONFIG_KBUILD_FALSE = @CONFIG_KBUILD_FALSE@
@@ -329,22 +347,9 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-nobase_include_HEADERS = \
-		arch-ep9301/rtai_arch.h \
-		arch-ep9301/rtai_exports.h \
-		arch-ep9301/rtai_timer.h \
-		rtai_atomic.h \
-		rtai_fpu.h \
-		rtai.h \
-		rtai_hal.h \
-		rtai_lxrt.h \
-		rtai_oldnames.h \
-		rtai_sched.h \
-		rtai_shm.h \
-		rtai_srq.h \
-		rtai_usi.h \
-		rtai_vectors.h
-
+nobase_include_HEADERS = rtai_atomic.h rtai_fpu.h rtai.h rtai_hal.h \
+	rtai_lxrt.h rtai_oldnames.h rtai_sched.h rtai_shm.h rtai_srq.h \
+	rtai_usi.h rtai_vectors.h $(am__append_1) $(am__append_2)
 all: all-am
 
 .SUFFIXES:
@@ -456,7 +461,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/arch-ep9301
+	$(mkdir_p) $(distdir)/arch-ep9301 $(distdir)/arch-pxa
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -148,6 +148,10 @@ rtai_imuldiv(int i, int mult, int div)
 #define rtai_hw_lock(flags)		adeos_hw_local_irq_save(flags)
 #define rtai_hw_unlock(flags)		adeos_hw_local_irq_restore(flags)
 #define rtai_hw_flags(x)		adeos_hw_local_irq_flags(flags)
+/* alternative names */
+#define rtai_hw_save_flags_and_cli(f)	rtai_hw_lock(f)
+#define rtai_hw_restore_flags(f)	rtai_hw_unlock(f)
+#define rtai_hw_save_flags(f)		rtai_hw_flags(f)
 
 #define __adeos_pend_uncond(irq, cpuid) adeos_propagate_irq(irq)
 

@@ -23,6 +23,9 @@
  * RTAI/ARM over Adeos rewrite:
  *   Copyright (c) 2004-2005 Michael Neuhauser, Firmix Software GmbH (mike@firmix.at)
  *
+ * RTAI/ARM over Adeos rewrite for PXA255_2.6.7:
+ *   Copyright (c) 2005 Stefano Gafforelli (stefano.gafforelli@tiscali.it)
+ *   Copyright (c) 2005 Luca Pizzi (lucapizzi@hotmail.com)
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -60,7 +63,6 @@
 
 #define RTAI_NUM_VECTORS	16		/* number of usable vectors */
 #define RTAI_SWI_SCNO_MASK	0x00FFFFF0
-#define RTAI_SWI_SCNO_MAGIC	0x009FFFF0
 #define RTAI_SWI_VEC_MASK	0x0000000F
 
 #define RTAI_SYS_VECTOR		0x0		/* only one used (-> LXRT requests and SRQs) */
@@ -75,7 +77,7 @@
  * structure by the call might not be (re)read after the call without the
  * constraint. (glibc implements syscalls pretty much the same way) */
 
-#define RTAI_DO_SWI(vector, srq, parg) ({ 					\
+#define _RTAI_DO_SWI(scno_magic, srq, parg) ({ 					\
     union {									\
 	long long ll;								\
 	struct {								\
@@ -88,7 +90,7 @@
 	register int _r1 asm ("r1") = (int)(parg);				\
 	asm volatile("swi %[nr]"						\
 	    : "+r" (_r0), "+r" (_r1)						\
-	    : [nr] "i" (RTAI_SWI_SCNO_MAGIC | ((vector) & RTAI_SWI_VEC_MASK))	\
+	    : [nr] "i" (scno_magic)						\
 	    : "memory"								\
 	);									\
 	_retval.l.low = _r0;							\
@@ -96,5 +98,13 @@
     }										\
     _retval.ll;									\
 })
+
+#ifdef CONFIG_ARCH_PXA
+#	define RTAI_SWI_SCNO_MAGIC		0x00404404
+#	define RTAI_DO_SWI(vector, srq, parg)	_RTAI_DO_SWI(RTAI_SWI_SCNO_MAGIC, srq, parg)
+#else /* !CONFIG_ARCH_PXA */
+#	define RTAI_SWI_SCNO_MAGIC		0x009FFFF0
+#	define RTAI_DO_SWI(vector, srq, parg)	_RTAI_DO_SWI((RTAI_SWI_SCNO_MAGIC | ((vector) & RTAI_SWI_VEC_MASK)), srq, parg)
+#endif /* CONFIG_ARCH_PXA */
 
 #endif /* _RTAI_ASM_ARM_VECTORS_H */

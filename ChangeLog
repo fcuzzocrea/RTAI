@@ -1,6 +1,21 @@
+2004-02-18  Michael Neuhauser  <mike@firmix.at>
+
+	* base/include/asm-arm/rtai_hal.*: added alternative names for
+	rtai_hw_*() (compatibility to x86)
+
 2004-02-18  Luca Pizzi  <lucapizzi@hotmail.it>
 	    Stefano Gafforelli  <Stefano.Gafforelli@tiscali.it>
 
+	* configure, configure.in: added CONFIG_ARCH_PXA
+	* base/arch/arm/hal/GNUmakefile.am: 2.6 support
+	* base/include/asm-arm/GNUmakefile.am: arch-{pxa,ep9301} support
+	* all GNUmakefile.in: regenerated because of above changes
+	* base/arch/arm/hal/Makefile.kbuild: new
+	* base/arch/arm/hal/hal.immed: 2.6/pxa support
+	* base/include/asm-arm/rtai_atomic.h: 2.6/pxa support
+	* base/include/asm-arm/rtai_hal.immmed: 2.6/pxa support
+	* base/include/asm-arm/rtai_sched.h: 2.6/pxa support
+	* base/include/asm-arm/rtai_vectors.h: 2.6/pxa support
 	* base/include/asm-arm/rtai_fpu.h: set_tsk_used_fpu() was moved here
 	from base/include/rtai_wrappers.h (because it is arch specific)
 

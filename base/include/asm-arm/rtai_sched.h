@@ -23,6 +23,10 @@
  * RTAI/ARM over Adeos rewrite:
  *   Copyright (c) 2004-2005 Michael Neuhauser, Firmix Software GmbH (mike@firmix.at)
  *
+ * RTAI/ARM over Adeos rewrite for PXA255_2.6.7:
+ *   Copyright (c) 2005 Stefano Gafforelli (stefano.gafforelli@tiscali.it)
+ *   Copyright (c) 2005 Luca Pizzi (lucapizzi@hotmail.com)
+ *
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -41,7 +45,12 @@
 #ifndef _RTAI_ASM_ARM_RTAI_SCHED_H
 #define _RTAI_ASM_ARM_RTAI_SCHED_H
 
-#include <asm/proc/ptrace.h>
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#	include <asm/proc/ptrace.h>
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+#	include <asm/ptrace.h>
+#	define	I_BIT PSR_I_BIT
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 
 /*
  * Registers according to the ARM procedure call standard:

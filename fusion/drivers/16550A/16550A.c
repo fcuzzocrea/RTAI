@@ -195,7 +195,7 @@ int rt_uart_open (RT_UART *uart,
     uart->intr_desc.private_data = uart;
     uart->magic = RTAI_UART_MAGIC;
     uart->handle = 0;
-    snprintf(uart->name,sizeof(uart->name),"uart/%x",config->port.base);
+    snprintf(uart->name,sizeof(uart->name),"uart@%x",config->port.base);
 
     /* Mask all UART interrupts and clear pending ones. */
     outb(0,IER(uart));

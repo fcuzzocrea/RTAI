@@ -18,7 +18,7 @@ endif
 endif
 build_alias := $(shell $(srctree)/config/autoconf/config.guess)
 host_alias := $(shell  $(srctree)/config/autoconf/arch2host.sh $(ARCH) $(build_alias))
-override ARCH := $(shell echo $(host_alias)|cut -f1 -d-|sed -e s/^i.86/i386/)
+override ARCH := $(shell echo $(host_alias)|cut -f1 -d-|sed -e s/^i.86/i386/ -e s/^powerpc/ppc/)
 endif
 
 ifeq ($(MAKECMDGOALS),)

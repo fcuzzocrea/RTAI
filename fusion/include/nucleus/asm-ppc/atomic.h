@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2003 Philippe Gerum <rpm@xenomai.org>.
+ * Copyright (C) 2003,2004 Philippe Gerum <rpm@xenomai.org>.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -45,11 +45,11 @@
 #ifndef _RTAI_ASM_PPC_ATOMIC_H
 #define _RTAI_ASM_PPC_ATOMIC_H
 
-#include <linux/bitops.h>
 #include <asm/atomic.h>
 
 #ifdef __KERNEL__
 
+#include <linux/bitops.h>
 #include <asm/system.h>
 
 #define atomic_xchg(ptr,v)       xchg(ptr,v)
@@ -57,7 +57,7 @@
 #define xnarch_memory_barrier()  smp_mb()
 
 void atomic_set_mask(unsigned long mask, /* from arch/ppc/kernel/misc.S */
-		     atomic_t *addr);
+		     unsigned long *ptr);
 
 #define xnarch_atomic_set(pcounter,i)          atomic_set(pcounter,i)
 #define xnarch_atomic_get(pcounter)            atomic_read(pcounter)
@@ -73,8 +73,8 @@ void atomic_set_mask(unsigned long mask, /* from arch/ppc/kernel/misc.S */
 #include <asm/ppc_asm.h>
 
 /*
-/* Shamelessly lifted from <linux/asm-ppc/system.h>
- * and <linux/asm-ppc/atomic.h> */
+ * Shamelessly lifted from <linux/asm-ppc/system.h>
+ * and <linux/asm-ppc/atomic.h>
  */
 
 static inline unsigned long atomic_cmpxchg (volatile void *ptr,

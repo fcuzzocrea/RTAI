@@ -575,17 +575,17 @@ ER ref_tsk (T_RTSK *pk_rtsk, ID tskid)
 	}
 
     if (task == ui_current_task())
-	setbits(tskstat,TTS_RUN);
+	tskstat |= TTS_RUN;
     else if (xnthread_test_flags(&task->threadbase,XNDORMANT))
-	setbits(tskstat,TTS_DMT);
+	tskstat |= TTS_DMT;
     else if (xnthread_test_flags(&task->threadbase,XNREADY))
-	setbits(tskstat,TTS_RDY);
+	tskstat |= TTS_RDY;
     else
 	{
 	if (xnthread_test_flags(&task->threadbase,XNPEND))
-	    setbits(tskstat,TTS_WAI);
+	    tskstat |= TTS_WAI;
 	if (xnthread_test_flags(&task->threadbase,XNSUSP))
-	    setbits(tskstat,TTS_SUS);
+	    tskstat |= TTS_SUS;
 	}
 
     pk_rtsk->exinf = task->exinf;

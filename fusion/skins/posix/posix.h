@@ -69,6 +69,7 @@ typedef void sighandler_t (int sig);
 
 /* Error Codes (pse51_errno_location is implemented in sem.c). */
 /* errno values pasted from Linux asm/errno.h and bits/errno.h (ENOTSUP). */
+#if 0
 #define	EPERM		 1	/* Operation not permitted */
 #define	ESRCH		 3	/* No such process */
 #define	EINTR		 4	/* Interrupted system call */
@@ -81,8 +82,8 @@ typedef void sighandler_t (int sig);
 #define	EDEADLK		35	/* Resource deadlock would occur */
 #define	EDEADLOCK	EDEADLK
 #define	ENOSYS		38	/* Function not implemented */
-#define	EOPNOTSUPP	95	/* Operation not supported on transport
-                                   endpoint */
+#define	EOPNOTSUPP	95	/* Operation not supported on transport endpoint */
+#endif
 #define ENOTSUP         EOPNOTSUPP
 #define	ETIMEDOUT	110	/* Connection timed out */
 

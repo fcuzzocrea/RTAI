@@ -61,7 +61,7 @@
         ((addr) <= (task)->thread.fs.seg \
 	 && ((size) == 0 || (size) - 1 <= (task)->thread.fs.seg - (addr)))
 
-#define __xn_access_ok(task,type,addr,size)  __xn_range_ok(task,addr,size)
+#define __xn_access_ok(task,type,addr,size)  __xn_range_ok(task,(unsigned long)addr,size)
 
 #define XNARCH_MAX_SYSENT 255
 
@@ -132,11 +132,11 @@ extern int nkgkptd;
 		: ASM_INPUT_##nr				\
 		: "cr0", "ctr", "memory",			\
 		  "r8", "r9", "r10","r11", "r12");		\
-	__sc_3;
+	__sc_3;							\
   })
 
 #define LOADARGS_0(muxcode, dummy...)				\
-	__sc_0 = __NR_##muxcode
+	__sc_0 = muxcode
 #define LOADARGS_1(muxcode, arg1)				\
 	LOADARGS_0(muxcode);					\
 	__sc_3 = (unsigned long) (arg1)

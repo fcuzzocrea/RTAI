@@ -48,7 +48,8 @@ typedef unsigned long long rthal_time_t;
 
 static inline unsigned long long rthal_ulldiv (unsigned long long ull,
 					       unsigned long uld,
-					       unsigned long *r) {
+					       unsigned long *r)
+{
     unsigned long long q, rf;
     unsigned long qh, rh, ql, qf;
     
@@ -69,12 +70,26 @@ static inline unsigned long long rthal_ulldiv (unsigned long long ull,
     return q;
 }
 
+static inline unsigned long long rthal_ullmul(unsigned long m0, 
+					      unsigned long m1)
+{
+    unsigned long long res;
+    
+    __asm__ __volatile__ ("mulhwu %0, %1, %2"
+			  : "=r" (((unsigned long *)&res)[0]) 
+			  : "%r" (m0), "r" (m1));
+
+    ((unsigned long *)&res)[1] = m0*m1;
+    
+    return res;
+}
+
 static inline int rthal_imuldiv (int i, int mult, int div) {
 
     /* Returns (int)i = (int)i*(int)(mult)/(int)div. */
     
     unsigned long q, r;
-    q = rtai_ulldiv(rtai_ullmul(i, mult), div, &r);
+    q = rthal_ulldiv(rthal_ullmul(i, mult), div, &r);
     return (r + r) > div ? q + 1 : q;
 }
 
@@ -85,10 +100,10 @@ static inline long long rthal_llimd(long long ll, int mult, int div) {
     unsigned long long low;
     unsigned long q, r;
     
-    low  = rtai_ullmul(((unsigned long *)&ull)[1], mult);	
-    q = rtai_ulldiv(rtai_ullmul(((unsigned long *)&ull)[0], mult) + 
-		((unsigned long *)&low)[0], div, (unsigned long *)&low);
-    low = rtai_ulldiv(low, div, &r);
+    low  = rthal_ullmul(((unsigned long *)&ll)[1], mult);	
+    q = rthal_ulldiv(rthal_ullmul(((unsigned long *)&ll)[0], mult) + 
+		     ((unsigned long *)&low)[0], div, (unsigned long *)&low);
+    low = rthal_ulldiv(low, div, &r);
     ((unsigned long *)&low)[0] += q;
     
     return (r + r) > div ? low + 1 : low;
@@ -239,6 +254,34 @@ void rthal_critical_exit(unsigned long flags);
 void rthal_set_linux_task_priority(struct task_struct *task,
 				   int policy,
 				   int prio);
+
+void rthal_switch_context(void *out_tcb,
+			  void *in_tcb,
+			  struct task_struct *outproc,
+			  struct task_struct *inproc);
+
+#ifdef CONFIG_RTAI_HW_FPU
+
+typedef struct rthal_fpenv {
+    
+    /* This layout must follow exactely the definition of the FPU
+       backup area in a PPC thread struct available from
+       <asm-ppc/processor.h>. Specifically, fpr[] an fpscr words must
+       be contiguous in memory (see arch/ppc/fpu.S). */
+
+    double fpr[32];
+    unsigned long fpscr_pad;	/* <= Hi-word of the FPR used to */
+    unsigned long fpscr;	/* retrieve the FPSCR. */
+
+} rthal_fpenv_t;
+
+void rthal_init_fpu(rthal_fpenv_t *fpuenv);
+
+void rthal_save_fpu(rthal_fpenv_t *fpuenv);
+
+void rthal_restore_fpu(rthal_fpenv_t *fpuenv);
+
+#endif /* CONFIG_RTAI_HW_FPU */
 
 #endif /* __KERNEL__ && !__cplusplus */
 

@@ -176,38 +176,29 @@ struct xnthread;
 struct task_struct;
 
 #define xnarch_stack_size(tcb)  ((tcb)->stacksize)
-#define xnarch_fpu_ptr(tcb)     ((tcb)->fpup)
-
-struct xnarchfpu {
-    
-    /* This layout must follow exactely the definition of the FPU
-       backup area in a PPC thread struct available from
-       <asm-ppc/processor.h>. */
-
-    double fpr[32];
-    unsigned long fpscr_pad;	/* fpr ... fpscr must be contiguous */
-    unsigned long fpscr;
-
-} xnarchfpu_t;
 
 typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
 
     /* Kernel mode side */
 
-    xnarchfpu_t fpuenv;		/* We only care for basic FPU handling
-				   in kernel-space; Altivec and SPE are
-				   not available to kernel-based Xenomai
-				   threads. */
+#ifdef CONFIG_RTAI_HW_FPU
+    /* We only care for basic FPU handling in kernel-space; Altivec
+       and SPE are not available to kernel-based Xenomai threads. */
+    rthal_fpenv_t fpuenv  __attribute__ ((aligned (16)));
+    rthal_fpenv_t *fpup;		/* Pointer to the FPU backup area */
+#define xnarch_fpu_ptr(tcb)     ((tcb)->fpup)
+#else /* !CONFIG_RTAI_HW_FPU */
+#define xnarch_fpu_ptr(tcb)     NULL
+#endif /* CONFIG_RTAI_HW_FPU */
+
     unsigned stacksize;		/* Aligned size of stack (bytes) */
     unsigned long *stackbase;	/* Stack space */
     unsigned long ksp;		/* Saved KSP for kernel-based threads */
+    unsigned long *kspp;	/* Pointer to saved KSP (&ksp or &user->thread.ksp) */
 
     /* User mode side */
     struct task_struct *user_task;	/* Shadowed user-space task */
     struct task_struct *active_task;	/* Active user-space task */
-
-    unsigned long *kspp;	/* Pointer to saved KSP (&ksp or &user->thread.ksp) */
-    xnarchfpu_t *fpup;		/* Pointer to the FPU backup area */
 
 } xnarchtcb_t;
 
@@ -217,7 +208,7 @@ typedef struct xnarch_fltinfo {
 
 } xnarch_fltinfo_t;
 
-#define xnarch_fault_trap(fi)  ((fi)->regs->trap)
+#define xnarch_fault_trap(fi)  ((unsigned int)(fi)->regs->trap)
 #define xnarch_fault_code(fi)  ((fi)->regs->dar)
 #define xnarch_fault_pc(fi)    ((fi)->regs->nip)
 
@@ -253,8 +244,8 @@ static inline unsigned xnarch_current_cpu (void) {
 do { \
     adeos_set_printk_sync(adp_current); \
     xnarch_logerr("fatal: %s\n",emsg); \
-    show_stack(NULL,NULL);			\
-    for (;;) safe_halt();			\
+    show_stack(NULL,NULL);		\
+    for (;;) ;				\
 } while(0)
 
 #define xnarch_alloc_stack xnmalloc
@@ -321,12 +312,16 @@ static inline void xnarch_isr_enable_irq (unsigned irq) {
 
 static inline void xnarch_relay_tick (void) {
 
-    rthal_pend_linux_irq(RTHAL_8254_IRQ);
+    rthal_pend_linux_irq(__adeos_timer_virq);
 }
 
 static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
-						     unsigned long affinity) {
-    return adeos_set_irq_affinity(irq,affinity);
+						     unsigned long affinity)
+{
+    cpumask_t m; /* Hmm... please, FIXME... */
+    m.bits[0] = affinity;
+    m = adeos_set_irq_affinity(irq,m);
+    return m.bits[0];
 }
 
 #endif /* XENO_INTR_MODULE */
@@ -365,19 +360,13 @@ static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
     /* Remember the preempted Linux task pointer. */
     rootcb->user_task = rootcb->active_task = rthal_get_current(cpuid);
     /* So that xnarch_save_fpu() will operate on the right FPU area. */
-    rootcb->fpup = rootcb->user_task->thread.fpr;
+#ifdef CONFIG_RTAI_HW_FPU
+    rootcb->fpup = (rthal_fpenv_t *)&rootcb->user_task->thread.fpr[0];
+#endif /* CONFIG_RTAI_HW_FPU */
 }
 
 static inline void xnarch_enter_root (xnarchtcb_t *rootcb) {
     clear_bit(xnarch_current_cpu(),&rthal_cpu_realtime);
-}
-
-static inline void __switch_threads(xnarchtcb_t *out_tcb,
-				    xnarchtcb_t *in_tcb,
-				    struct task_struct *outproc,
-				    struct task_struct *inproc)
-{
-    /* FIXME */
 }
 
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
@@ -387,8 +376,6 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
     struct task_struct *inproc = in_tcb->user_task;
 
     in_tcb->active_task = inproc ?: outproc;
-
-    /* FIXME FPU */
 
     if (inproc && inproc != outproc)
 	{
@@ -400,7 +387,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 	    enter_lazy_tlb(oldmm,inproc);
 	}
 
-    __switch_threads(out_tcb,in_tcb,outproc,inproc);
+    rthal_switch_context(out_tcb,in_tcb,outproc,inproc);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
@@ -416,7 +403,21 @@ static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
 
 {
 #ifdef CONFIG_RTAI_HW_FPU
-    /* FIXME */
+
+    struct task_struct *task = tcb->user_task;
+
+    if (task)
+	{
+	if (task->thread.regs && (task->thread.regs->msr & MSR_FP))
+	    giveup_fpu(task);
+
+	return;
+	}
+
+    /* Save the fp regs of the kernel thread owning the FPU. */
+
+    rthal_save_fpu(tcb->fpup);
+
 #endif /* CONFIG_RTAI_HW_FPU */
 }
 
@@ -424,7 +425,17 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
 {
 #ifdef CONFIG_RTAI_HW_FPU
-    /* FIXME */
+
+    if (tcb->user_task)
+	/* On PowerpPC, we let the unavailability exception happen for
+	   the incoming user-space task if it happens to use the FPU,
+	   instead of eagerly reloading the fp regs upon switch. */
+	return;
+
+    /* Restore the fp regs of the incoming kernel thread. */
+
+    rthal_restore_fpu(tcb->fpup);
+
 #endif /* CONFIG_RTAI_HW_FPU */
 }
 
@@ -436,7 +447,9 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
     tcb->active_task = NULL;
     tcb->ksp = 0;
     tcb->kspp = &tcb->ksp;
+#ifdef CONFIG_RTAI_HW_FPU
     tcb->fpup = NULL;
+#endif /* CONFIG_RTAI_HW_FPU */
 }
 
 static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
@@ -444,7 +457,9 @@ static inline void xnarch_init_tcb (xnarchtcb_t *tcb) {
     tcb->user_task = NULL;
     tcb->active_task = NULL;
     tcb->kspp = &tcb->ksp;
+#ifdef CONFIG_RTAI_HW_FPU
     tcb->fpup = &tcb->fpuenv;
+#endif /* CONFIG_RTAI_HW_FPU */
     /* Must be followed by xnarch_init_thread(). */
 }
 
@@ -469,23 +484,16 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     /* FIXME */
 }
 
-#ifdef CONFIG_RTAI_HW_FPU
-
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 
 {
+#ifdef CONFIG_RTAI_HW_FPU
     /* Initialize the FPU for an emerging kernel-based RT thread. This
        must be run on behalf of the emerging thread. */
-
-    /* FIXME */
-}
-
-#else /* !CONFIG_RTAI_HW_FPU */
-
-static inline void xnarch_init_fpu (xnarchtcb_t *tcb) {
-}
-
+    memset(&tcb->fpuenv,0,sizeof(tcb->fpuenv));
+    rthal_init_fpu(&tcb->fpuenv);
 #endif /* CONFIG_RTAI_HW_FPU */
+}
 
 void xnarch_sleep_on (int *flagp) {
 
@@ -578,9 +586,11 @@ static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
 
     tcb->user_task = task;
     tcb->active_task = NULL;
-    tcb->thread.ksp = 0;
+    tcb->ksp = 0;
     tcb->kspp = &task->thread.ksp;
-    tcb->fpup = task->thread.fpr;
+#ifdef CONFIG_RTAI_HW_FPU
+    tcb->fpup = (rthal_fpenv_t *)&task->thread.fpr[0];
+#endif /* CONFIG_RTAI_HW_FPU */
 }
 
 #endif /* XENO_SHADOW_MODULE */

@@ -2,7 +2,6 @@ includedir = $(prefix)/include/nucleus/asm-ppc
 
 include_HEADERS = \
 		atomic.h \
-		fpu.h \
 		hal.h \
 		system.h \
 		syscall.h

@@ -7,6 +7,9 @@ case "$1" in
 i?86)
     echo $1-pc-linux-gnu
     ;;
+ppc|powerpc)
+    echo powerpc-unknown-linux-gnu
+    ;;
 "")
     # Shorthand not specified: return default value.
     echo $2

@@ -25,8 +25,7 @@
 extern devStr inpDevStr[];
 extern devStr outDevStr[];
 
-void inp_extdata_init(int port,int nch,char * sName,char * sParam,double p1,
-		      double p2, double p3, double p4, double p5)
+void inp_extdata_init(int port,int nch,char * sName)
 {
   FILE * fp;
   double * pData;

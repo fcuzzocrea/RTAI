@@ -32,8 +32,7 @@
 
 extern devStr outDevStr[];
 
-void out_mbx_send_if_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5)
+void out_mbx_send_if_init(int port,int nch,char * sName,char * IP)
 {
   long Target_Node;
   long Target_Port=0;
@@ -43,23 +42,23 @@ void out_mbx_send_if_init(int port,int nch,char * sName,char * sParam,double p1,
     int id=port-1;
     outDevStr[id].nch=nch;
     strcpy(outDevStr[id].sName,sName);
-    strcpy(outDevStr[id].sParam,sParam);
+    strcpy(outDevStr[id].sParam,IP);
     strcpy(outDevStr[id].IOName,"mbx_send_if out");
 
-    if(!strcmp(sName,"0")) {
+    if(!strcmp(IP,"0")) {
       Target_Node = 0;
       Target_Port = 0;
     }
     else {
       inet_aton(sName, &addr.sin_addr);
       Target_Node = addr.sin_addr.s_addr;
-      while ((Target_Port = rt_request_port_id(Target_Node,nam2num(sParam))) <= 0 && Target_Port != -EINVAL);
+      while ((Target_Port = rt_request_port_id(Target_Node,nam2num(sName))) <= 0 && Target_Port != -EINVAL);
     }
 
-    mbx = (MBX *) RT_typed_named_mbx_init(Target_Node,Target_Port,sParam,nch*sizeof(double),FIFO_Q);
+    mbx = (MBX *) RT_typed_named_mbx_init(Target_Node,Target_Port,sName,nch*sizeof(double),FIFO_Q);
 
     if(mbx == NULL) {
-      fprintf(stderr, "Error in getting %s mailbox address\n", sParam);
+      fprintf(stderr, "Error in getting %s mailbox address\n", sName);
       exit_on_error();
     }
 

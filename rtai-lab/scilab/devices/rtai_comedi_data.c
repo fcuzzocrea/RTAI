@@ -39,8 +39,7 @@ extern int ComediDev_AIInUse[];
 extern devStr inpDevStr[];
 extern devStr outDevStr[];
 
-void inp_rtai_comedi_data_init(int port,int nch,char * sName,char * sParam,
-			       double p1,double p2, double p3, double p4, double p5)
+void inp_rtai_comedi_data_init(int port,int nch,char * sName,int Range, int aRef)
 {
     int id;
     void *dev;
@@ -58,14 +57,11 @@ void inp_rtai_comedi_data_init(int port,int nch,char * sName,char * sParam,
     inpDevStr[id].nch=nch;
     strcpy(inpDevStr[id].IOName,"Comedi data input");
     sprintf(inpDevStr[id].sName,"/dev/%s",sName);
-    inpDevStr[id].dParam[0]=p1;
-    inpDevStr[id].dParam[1]=p2;
-    inpDevStr[id].dParam[2]=p3;
-    inpDevStr[id].dParam[3]=p4;
-    inpDevStr[id].dParam[4]=p5;
+    inpDevStr[id].dParam[0]=(double) Range;
+    inpDevStr[id].dParam[1]=(double) aRef;
 
     channel = nch;
-    range   = (unsigned int) p1;
+    range = (unsigned int) Range;
     len=strlen(inpDevStr[id].sName);
     int index = inpDevStr[id].sName[len-1]-'0';
 
@@ -122,8 +118,8 @@ void inp_rtai_comedi_data_init(int port,int nch,char * sName,char * sParam,
     inpDevStr[id].dParam[4]  = range_max;
 }
 
-void out_rtai_comedi_data_init(int port,int nch,char * sName,char * sParam,
-			       double p1,double p2, double p3, double p4, double p5)
+void out_rtai_comedi_data_init(int port,int nch,char * sName,int Range, int aRef)
+
 {
     int id;
     void *dev;
@@ -145,15 +141,12 @@ void out_rtai_comedi_data_init(int port,int nch,char * sName,char * sParam,
     strcpy(outDevStr[id].IOName,"Comedi data output");
     sprintf(outDevStr[id].sName,"/dev/%s",sName);
 
-    outDevStr[id].dParam[0]=p1;
-    outDevStr[id].dParam[1]=p2;
-    outDevStr[id].dParam[2]=p3;
-    outDevStr[id].dParam[3]=p4;
-    outDevStr[id].dParam[4]=p5;
+    outDevStr[id].dParam[0]=(double) Range;
+    outDevStr[id].dParam[1]=(double) aRef;
 
     channel = nch;
-    range   = (unsigned int) p1;
-    aref    = (unsigned int) p2-1;
+    range   = (unsigned int) Range;
+    aref    = (unsigned int) aRef-1;
 
     len=strlen(outDevStr[id].sName);
     int index = outDevStr[id].sName[len-1]-'0';

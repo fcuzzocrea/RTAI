@@ -15,13 +15,11 @@ libsciblk_a_SOURCES = \
 	mbx_ovrwr_send.c \
 	mbx_send_if.c \
 	cioquad4.c \
-        peak.c \
-        pcan.c \
+        maxon_can.c \
         libpcan.c \
 	rtmain.h \
 	libpcan.h \
-	pcan.h \
-	peak.h
+	pcan.h 
 
 if CONFIG_RTAI_COMEDI_LXRT
 libsciblk_a_SOURCES += \

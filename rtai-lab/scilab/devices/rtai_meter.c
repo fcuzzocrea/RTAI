@@ -30,14 +30,13 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 extern char *TargetMeterMbxID;
 extern devStr outDevStr[];
 
-void out_rtai_meter_init(int port,int nch,char * sName,char * sParam,double p1,
-			 double p2, double p3, double p4, double p5)
+void out_rtai_meter_init(int port,char * sName)
 {
     MBX * mbx;
     char name[7];
 
     strcpy(outDevStr[port-1].IOName,"Meter");
-    rtRegisterMeter(sName,nch);
+    rtRegisterMeter(sName,1);
     get_a_name(TargetMeterMbxID,name);
 
     mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(MBX_RTAI_METER_SIZE/(sizeof(float)))*(sizeof(float)),FIFO_Q);

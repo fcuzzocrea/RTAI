@@ -36,8 +36,7 @@
 extern devStr inpDevStr[];
 extern devStr outDevStr[];
 
-void inp_cioquad4_init(int port,int nch,char * sName,char * sParam,double p1,
-		       double p2, double p3, double p4, double p5)
+void inp_cioquad4_init(int port,int modul ,char * Addr,int reso, int prec, int Rot, int Reset)
 {
   int   mode;
   int bAdrG;
@@ -45,15 +44,15 @@ void inp_cioquad4_init(int port,int nch,char * sName,char * sParam,double p1,
   int id=port-1;
 
   strcpy(inpDevStr[id].IOName,"cioquad4");
-  sscanf(sName,"%x",& bAdrG);
-  inpDevStr[id].dParam[0]=p1;
-  inpDevStr[id].dParam[1]=p2;
-  inpDevStr[id].dParam[2]=p3;
-  inpDevStr[id].dParam[3]=p4;
+  sscanf(Addr,"%x",& bAdrG);
+  inpDevStr[id].dParam[0]=(double) reso;
+  inpDevStr[id].dParam[1]=(double) prec;
+  inpDevStr[id].dParam[2]=(double) Rot;
+  inpDevStr[id].dParam[3]=(double) Reset;
 
   inpDevStr[id].i1=0;
 
-  bAdr = bAdrG + (nch-1) * 2;
+  bAdr = bAdrG + (modul-1) * 2;
   inpDevStr[id].nch=bAdr;
 
   mode = (int) inpDevStr[id].dParam[1];

@@ -31,8 +31,8 @@
 // originally created from Wilhelm Hoppe in pcan_pci.h
 //
 // $Log: libpcan.h,v $
-// Revision 1.1  2004/12/09 09:19:56  rpm
-// Magma baseline
+// Revision 1.2  2005/01/18 11:59:32  bucher
+// New block interface
 //
 // Revision 1.3  2004/10/20 06:28:40  bucher
 // Changed to peaks driver 3.9

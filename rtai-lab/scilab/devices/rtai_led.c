@@ -30,8 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 extern char *TargetLedMbxID;
 extern devStr outDevStr[];
 
-void out_rtai_led_init(int port,int nch,char * sName,char * sParam,double p1,
-			 double p2, double p3, double p4, double p5)
+void out_rtai_led_init(int port,int nch,char * sName)
 {
     MBX * mbx;
     outDevStr[port-1].nch=nch;

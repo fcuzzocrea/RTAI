@@ -37,8 +37,7 @@ extern int ComediDev_DIOInUse[];
 extern devStr inpDevStr[];
 extern devStr outDevStr[];
 
-void inp_rtai_comedi_dio_init(int port,int nch,char * sName,char * sParam,
-			      double p1,double p2, double p3, double p4, double p5)
+void inp_rtai_comedi_dio_init(int port,int nch,char * sName)
 {
     int id;
     void *dev;
@@ -53,11 +52,6 @@ void inp_rtai_comedi_dio_init(int port,int nch,char * sName,char * sParam,
     inpDevStr[id].nch=nch;
     sprintf(inpDevStr[id].sName,"/dev/%s",sName);
     strcpy(inpDevStr[id].IOName,"Comedi DIO input");
-    inpDevStr[id].dParam[0]=p1;
-    inpDevStr[id].dParam[1]=p2;
-    inpDevStr[id].dParam[2]=p3;
-    inpDevStr[id].dParam[3]=p4;
-    inpDevStr[id].dParam[4]=p5;
 
     channel = nch;
     len=strlen(inpDevStr[id].sName);
@@ -112,8 +106,7 @@ void inp_rtai_comedi_dio_init(int port,int nch,char * sName,char * sParam,
     inpDevStr[id].dParam[2]  = (double) subdev;
 }
 
-void out_rtai_comedi_dio_init(int port,int nch,char * sName,char * sParam,
-			      double p1,double p2, double p3, double p4, double p5)
+void out_rtai_comedi_dio_init(int port,int nch,char * sName,char * sParam,double threshold)
 {
     int id;
     void *dev;
@@ -128,11 +121,7 @@ void out_rtai_comedi_dio_init(int port,int nch,char * sName,char * sParam,
     outDevStr[id].nch=nch;
     strcpy(outDevStr[id].IOName,"Comedi DIO output");
     sprintf(outDevStr[id].sName,"/dev/%s",sName);
-    outDevStr[id].dParam[0]=p1;
-    outDevStr[id].dParam[1]=p2;
-    outDevStr[id].dParam[2]=p3;
-    outDevStr[id].dParam[3]=p4;
-    outDevStr[id].dParam[4]=p5;
+    outDevStr[id].dParam[0]=threshold;
 
     len=strlen(outDevStr[id].sName);
     index = outDevStr[id].sName[len-1]-'0';

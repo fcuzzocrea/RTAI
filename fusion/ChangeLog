@@ -1,3 +1,7 @@
+2005-03-15  Jim Cromie <jcromie@divsol.com>
+
+	* testsuite/klatency: Add test duration switch (-T).
+
 2005-03-14  Philippe Gerum  <rpm@xenomai.org>
 
 	* testsuite/klatency/latency-module.c (__latency_init): Remove fpu

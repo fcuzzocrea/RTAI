@@ -13,14 +13,19 @@ RT_TASK latency_task, display_task;
 
 RT_SEM display_sem;
 
-long minjitter = 10000000,
-     maxjitter = -10000000,
+#define ONE_BILLION  1000000000
+#define TEN_MILLION    10000000
+
+long minjitter = TEN_MILLION,
+     maxjitter = -TEN_MILLION,
      avgjitter = 0,
      overrun = 0;
 
 int sampling_period = 0;
+int test_duration = 0;		// sec of testing = 60 * -T <min>, 0 is inf
 
-#define SAMPLE_COUNT (1000000000 / sampling_period)
+#define MEASURE_PERIOD ONE_BILLION
+#define SAMPLE_COUNT (MEASURE_PERIOD / sampling_period)
 
 #define HISTOGRAM_CELLS 100
 
@@ -38,7 +43,7 @@ static inline void add_histogram (long addval)
 void latency (void *cookie)
 
 {
-    long minj = 10000000, maxj = -10000000, dt, sumj;
+    long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
     int err, count, nsamples;
     RTIME expected, period;
 
@@ -50,7 +55,7 @@ void latency (void *cookie)
 	return;
 	}
 
-    nsamples = 1000000000 / sampling_period;
+    nsamples = ONE_BILLION / sampling_period;
     period = rt_timer_ns2ticks(sampling_period);
     expected = rt_timer_tsc();
     err = rt_task_set_periodic(NULL,TM_NOW,sampling_period);
@@ -161,10 +166,11 @@ int main (int argc, char **argv)
 {
     int err, c;
 
-    while ((c = getopt(argc,argv,"hp:")) != EOF)
+    while ((c = getopt(argc,argv,"hHp:T:")) != EOF)
 	switch (c)
 	    {
 	    case 'h':
+	    case 'H':
 		/* ./latency --h[istogram] */
 		do_histogram = 1;
 		break;
@@ -174,9 +180,17 @@ int main (int argc, char **argv)
 		sampling_period = atoi(optarg) * 1000;
 		break;
 
+	    case 'T':
+
+		test_duration = atoi(optarg) * 60;
+		alarm(test_duration);
+		break;
+
 	    default:
 		
-		fprintf(stderr,"usage: latency [-h][-p <period_us>]\n");
+		fprintf(stderr,"usage: latency [-h]"
+			" [-p <period_us>]"
+			" [-T <test_duration_minutes>]\n");
 		exit(2);
 	    }
 
@@ -186,6 +200,7 @@ int main (int argc, char **argv)
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
     signal(SIGHUP, cleanup_upon_sig);
+    signal(SIGALRM, cleanup_upon_sig);
 
     setlinebuf(stdout);
 

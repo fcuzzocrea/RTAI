@@ -5,9 +5,12 @@
 
 MODULE_LICENSE("GPL");
 
+#define ONE_BILLION  1000000000
+#define TEN_MILLION    10000000
+
 #define TASK_PERIOD_NS 100000	/* ns */
 
-#define SAMPLE_COUNT (1000000000 / TASK_PERIOD_NS)
+#define SAMPLE_COUNT (ONE_BILLION / TASK_PERIOD_NS)
 
 int task_period_ns = TASK_PERIOD_NS;
 module_param(task_period_ns,int,0444);
@@ -19,15 +22,15 @@ RT_TASK latency_task;
 
 RT_PIPE pipe;
 
-long minjitter = 10000000,
-     maxjitter = -10000000,
+long minjitter = TEN_MILLION,
+     maxjitter = -TEN_MILLION,
      avgjitter,
      overrun;
 
 void latency (void *cookie)
 
 {
-    long minj = 10000000, maxj = -10000000, dt, sumj;
+    long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
     struct rtai_latency_stat *s;
     RTIME expected, period;
     RT_PIPE_MSG *msg;
@@ -43,7 +46,7 @@ void latency (void *cookie)
 	return;
 	}
 
-    sample_count = (1000000000 / task_period_ns);
+    sample_count = (ONE_BILLION / task_period_ns);
 
     for (;;)
 	{

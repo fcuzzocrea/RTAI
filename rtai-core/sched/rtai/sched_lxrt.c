@@ -697,7 +697,9 @@ repeat:
 	sched_get_global_lock(cpuid);
 	RR_YIELD();
 	if (oneshot_running) {
+#ifdef CONFIG_RTAI_ADEOS
 	        arti_hw_lock(flags);
+#endif
 #ifdef ANTICIPATE
 		rt_time_h = rdtsc() + rt_half_tick;
 		wake_up_timed_tasks(cpuid);
@@ -730,7 +732,9 @@ repeat:
 			}
 			set_timer_chip(delay);
 		}
+#ifdef CONFIG_RTAI_ADEOS
 	        arti_hw_unlock(flags);
+#endif
 	} else {
 		TASK_TO_SCHEDULE();
 		RR_SETYT();
@@ -1020,7 +1024,9 @@ static void rt_timer_handler(void)
 	RR_SETYT();
 
 	if (oneshot_timer) {
+#ifdef CONFIG_RTAI_ADEOS
 	        arti_hw_lock(flags);
+#endif
 		rt_times.intr_time = rt_times.linux_time > rt_times.tick_time ?
 		rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
 		RR_TPREMP();
@@ -1043,7 +1049,9 @@ static void rt_timer_handler(void)
 			}
 			set_timer_chip(delay);
 		}
+#ifdef CONFIG_RTAI_ADEOS
 	        arti_hw_unlock(flags);
+#endif
 	} else {
 		rt_times.intr_time += rt_times.periodic_tick;
                 rt_set_timer_delay(0);
@@ -1756,12 +1764,8 @@ void rt_schedule_soft(RT_TASK *rt_task)
 {
 	struct fun_args *funarg;
 	int cpuid, priority, rt_priority, policy;
-	unsigned long hwflags, flags;
 
-	arti_hw_lock(hwflags);
-
-	flags = rt_global_save_flags_and_cli();
-
+	rt_global_cli();
 	if ((priority = rt_task->priority) < BASE_SOFT_PRIORITY) {
 		rt_task->priority += BASE_SOFT_PRIORITY;
 	}
@@ -1779,8 +1783,8 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	LOCK_LINUX(cpuid = hard_cpu_id());
 	enq_ready_task(rt_task);
 	rt_smp_current[cpuid] = rt_task;
-	funarg = (void *)rt_task->fun_args;
 	rt_global_sti();
+	funarg = (void *)rt_task->fun_args;
 	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
 	rt_global_cli();
 	if (current->rt_priority == BASE_SOFT_PRIORITY) {
@@ -1798,10 +1802,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	current->policy = policy;
 	rt_global_sti();
 	schedule();
-
-	rt_global_restore_flags(flags);
-
-	arti_hw_unlock(hwflags);
+	rt_global_sti();
 }
 
 static struct klist_t klistb[NR_RT_CPUS];
@@ -1980,7 +1981,9 @@ void give_back_to_linux(RT_TASK *rt_task)
 	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_task->state = 0;
 	rt_schedule();
+#ifdef CONFIG_RTAI_ADEOS
 	__adeos_schedule_back_root(rt_task->lnxtsk);
+#endif
 	rt_task->is_hard = 0;
 
 	rt_global_restore_flags(flags);

@@ -1,6 +1,4 @@
 /*
- * rtai-core/arch/arm/hal/mach-ep9301/ep9301-timer.c
- *
  * ARM/EP9301 specific timer code
  *
  * COPYRIGHT (C) 2004 Michael Neuhauser, Firmix Software GmbH <mike@firmix.at>

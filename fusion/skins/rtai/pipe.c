@@ -401,7 +401,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  * does not preserve message boundaries. Instead, an internal buffer
  * is filled on the fly with the data. The actual sending may be
  * delayed until the internal buffer is full, or the Linux kernel is
- * re-entered after the real-time activity enters a quiescent state.
+ * re-entered after the real-time kernel enters a quiescent state.
  *
  * Data buffers sent by the rt_pipe_stream() service are always
  * transmitted in FIFO order (i.e. RT_PIPE_NORMAL mode).

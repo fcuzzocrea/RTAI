@@ -34,7 +34,7 @@
 
         * rtai-core/ipc/msg.c: fixed missing enqueuing on the return list
         for RPCing tasks that, finding the sent task ready to receive, go
-        directly to RT_SCHED_RETURN state.
+        directly to RT_SCHED_RETURN state. 
 
 2004-05-29  Philippe Gerum  <rpm@xenomai.org>
 

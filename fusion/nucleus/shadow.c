@@ -589,6 +589,10 @@ void xnshadow_exit (void)
  * mapped to "current". This descriptor must have been previously
  * initialized by a call to xnpod_init_thread().
  *
+ * @warning The thread must have been set the same magic number
+ * (i.e. xnthread_set_magic()) than the one used to register the skin
+ * it belongs to. Failing to do so leads to unexpected results.
+ *
  * @param syncpid If non-zero, this must be the pid of a Linux task to
  * wake up when the shadow has been initialized. In this case, u_syncp
  * must be valid to, and the new shadow thread is left in a dormant
@@ -1030,6 +1034,8 @@ static void xnshadow_realtime_sysentry (adevinfo_t *evinfo)
 	printk("Xenomai: bad syscall %ld/%ld -- no skin loaded\n",
 	       __xn_mux_id(regs),
 	       __xn_mux_op(regs));
+
+	__xn_reg_rval(regs) = -ENOSYS;
 	}
     else
 	/* Regular Linux syscall with no skin loaded -- propagate it

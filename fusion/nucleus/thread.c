@@ -57,6 +57,17 @@ static void xnthread_timeout_handler (void *cookie)
     xnpod_resume_thread(thread,XNDELAY);
 }
 
+static void xnthread_periodic_handler (void *cookie)
+
+{
+    xnthread_t *thread = (xnthread_t *)cookie;
+
+    thread->poverrun++;
+
+    if (xnthread_test_flags(thread,XNDELAY))
+	xnpod_resume_thread(thread,XNDELAY);
+}
+
 int xnthread_init (xnthread_t *thread,
 		   const char *name,
 		   int prio,
@@ -64,8 +75,9 @@ int xnthread_init (xnthread_t *thread,
 		   unsigned stacksize)
 {
     xntimer_init(&thread->timer,&xnthread_timeout_handler,thread);
-
     xntimer_init(&thread->atimer,NULL,NULL);
+    xntimer_init(&thread->ptimer,&xnthread_periodic_handler,thread);
+    thread->poverrun = -1;
 
     if (!(flags & XNSHADOW) && stacksize > 0)
 	{

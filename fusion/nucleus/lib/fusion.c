@@ -54,7 +54,7 @@ int pthread_init_rt (const char *name, void *uhandle, void **khandlep)
     char stack[32768];
 
     if (__fusion_muxid == 0 && __init_skin() < 0)
-	return -1;
+	return -ENOSYS;
 
     XENOMAI_SYSCALL1(__xn_sys_migrate,FUSION_LINUX_DOMAIN);
 
@@ -74,7 +74,7 @@ int pthread_create_rt (const char *name,
     char stack[32768];
 
     if (__fusion_muxid == 0 && __init_skin() < 0)
-	return -1;
+	return -ENOSYS;
 
     XENOMAI_SYSCALL1(__xn_sys_migrate,FUSION_LINUX_DOMAIN);
 
@@ -97,14 +97,31 @@ int pthread_sync_rt (int *syncp)
     return XENOMAI_SYSCALL1(__xn_sys_sync,syncp);
 }
 
-int pthread_time_rt (unsigned long long *tp) {
+int pthread_time_rt (nanotime_t *tp)
+
+{
+    if (__fusion_muxid == 0 && __init_skin() < 0)
+	return -ENOSYS;
 
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_time,tp);
 }
 
-int pthread_start_timer_rt (unsigned long tickval) {
+int pthread_cputime_rt (nanotime_t *tp)
 
-    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_start_timer,tickval);
+{
+    if (__fusion_muxid == 0 && __init_skin() < 0)
+	return -ENOSYS;
+
+    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_cputime,tp);
+}
+
+int pthread_start_timer_rt (nanotime_t nstick)
+
+{
+    if (__fusion_muxid == 0 && __init_skin() < 0)
+	return -ENOSYS;
+
+    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_start_timer,&nstick);
 }
 
 int pthread_stop_timer_rt (void) {
@@ -112,9 +129,19 @@ int pthread_stop_timer_rt (void) {
     return XENOMAI_SKINCALL0(__fusion_muxid,__xn_fusion_stop_timer);
 }
 
-int pthread_sleep_rt (unsigned long long delay) {
+int pthread_sleep_rt (nanotime_t delay) {
 
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_sleep,&delay);
+}
+
+int pthread_ns2ticks_rt (nanotime_t ns, nanotime_t *pticks) {
+
+    return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_ns2ticks,&ns,pticks);
+}
+
+int pthread_ticks2ns_rt (nanotime_t ticks, nanotime_t *pns) {
+
+    return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_ticks2ns,&ticks,pns);
 }
 
 int pthread_inquire_rt (xninquiry_t *buf) {
@@ -125,6 +152,22 @@ int pthread_inquire_rt (xninquiry_t *buf) {
 int pthread_migrate_rt (int domain) {
 
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_migrate,domain);
+}
+
+int pthread_set_periodic_rt (nanotime_t idate,
+			     nanotime_t period)
+{
+    return XENOMAI_SKINCALL2(__fusion_muxid,
+			     __xn_fusion_set_periodic,
+			     &idate,
+			     &period);
+}
+
+int pthread_wait_period_rt (void)
+
+{
+    return XENOMAI_SKINCALL0(__fusion_muxid,
+			     __xn_fusion_wait_period);
 }
 
 /* Private RTAI/vm interface. */

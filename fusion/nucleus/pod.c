@@ -1928,6 +1928,8 @@ void xnpod_schedule (void)
 
     if (!resched)
         goto unlock_and_exit;
+
+    xnsched_set_resched(local_sched);
     }
 #endif /* CONFIG_SMP */
 
@@ -2137,8 +2139,6 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 
 maybe_switch:
 
-    xnsched_clr_resched(sched);
-
     if (flags & XNPOD_NOSWITCH)
         {
         if (testbits(runthread->status,XNREADY))
@@ -2149,6 +2149,8 @@ maybe_switch:
 
         return;
         }
+
+    xnsched_clr_resched(sched);
 
     threadin = link2thread(getpq(&sched->readyq),rlink);
 

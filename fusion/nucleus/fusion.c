@@ -28,6 +28,9 @@ static xnsynch_t __fusion_barrier;
 
 static xnpod_t __fusion_pod;
 
+/* This file implements the Fusion syscall wrappers. Unchecked uaccess
+   is used since the syslib is trusted. */
+
 static inline xnthread_t *__pthread_find_by_handle (struct task_struct *curr, void *khandle)
 
 {
@@ -42,8 +45,6 @@ static inline xnthread_t *__pthread_find_by_handle (struct task_struct *curr, vo
     thread = (xnthread_t *)khandle;
 
     if (xnthread_get_magic(thread) != FUSION_SKIN_MAGIC)
-	/* FIXME: We should kill all VM threads at once when a signal
-	   is caught for one of them. */
 	return NULL;
 
     return thread;
@@ -155,7 +156,21 @@ static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
 static int __pthread_time_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    unsigned long long t;
+    nanotime_t t;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(t)))
+	return -EFAULT;
+
+    t = xnpod_get_time();
+    __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&t,sizeof(t));
+
+    return 0;
+}
+
+static int __pthread_cputime_rt (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    nanotime_t t;
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(t)))
 	return -EFAULT;
@@ -169,18 +184,20 @@ static int __pthread_time_rt (struct task_struct *curr, struct pt_regs *regs)
 static int __pthread_start_timer_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    unsigned long tickval = __xn_reg_arg1(regs);
+    nanotime_t nstick;
+
+    __xn_copy_from_user(curr,&nstick,(void *)__xn_reg_arg1(regs),sizeof(nstick));
 
     if (testbits(nkpod->status,XNTIMED))
 	{
-	if ((tickval == FUSION_APERIODIC_TIMER && xnpod_get_tickval() == 1) ||
-	    (tickval != FUSION_APERIODIC_TIMER && xnpod_get_tickval() == tickval))
+	if ((nstick == FUSION_APERIODIC_TIMER && xnpod_get_tickval() == 1) ||
+	    (nstick != FUSION_APERIODIC_TIMER && xnpod_get_tickval() == nstick))
 	    return 0;
 
 	xnpod_stop_timer();
 	}
 
-    if (xnpod_start_timer(tickval,XNPOD_DEFAULT_TICKHANDLER) != 0)
+    if (xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER) != 0)
 	return -ETIME;
 
     return 0;
@@ -196,14 +213,60 @@ static int __pthread_stop_timer_rt (struct task_struct *curr, struct pt_regs *re
 static int __pthread_sleep_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    unsigned long long delay;
+    nanotime_t delay;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(delay)))
-	return -EFAULT;
+    if (!testbits(nkpod->status,XNTIMED))
+	return -EWOULDBLOCK;
 
     __xn_copy_from_user(curr,&delay,(void *)__xn_reg_arg1(regs),sizeof(delay));
 
     xnpod_delay(delay);
+
+    return 0;
+}
+
+static int __pthread_ns2ticks_rt (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    nanotime_t ns, ticks;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(ticks)))
+	return -EFAULT;
+
+    if (!testbits(nkpod->status,XNTIMED))
+	return -EWOULDBLOCK;
+
+    __xn_copy_from_user(curr,&ns,(void *)__xn_reg_arg1(regs),sizeof(ns));
+
+    if (testbits(nkpod->status,XNTMPER))
+	ticks = xnpod_ns2ticks(ns);
+    else
+	ticks = xnarch_ns_to_tsc(ns);
+    
+    __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&ticks,sizeof(ticks));
+
+    return 0;
+}
+
+static int __pthread_ticks2ns_rt (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    nanotime_t ticks, ns;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(ns)))
+	return -EFAULT;
+
+    if (!testbits(nkpod->status,XNTIMED))
+	return -EWOULDBLOCK;
+
+    __xn_copy_from_user(curr,&ticks,(void *)__xn_reg_arg1(regs),sizeof(ticks));
+
+    if (testbits(nkpod->status,XNTMPER))
+	ns = xnpod_ticks2ns(ticks);
+    else
+	ns = xnarch_tsc_to_ns(ticks);
+
+    __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&ns,sizeof(ns));
 
     return 0;
 }
@@ -256,6 +319,80 @@ static int __pthread_migrate_rt (struct task_struct *curr, struct pt_regs *regs)
 	}
 
     return 0;
+}
+
+int __pthread_set_periodic_rt (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
+    nanotime_t idate, period;
+    nanotime_t now;
+    int err = 0;
+    spl_t s;
+
+    if (!testbits(nkpod->status,XNTIMED))
+	return -EWOULDBLOCK;
+
+    __xn_copy_from_user(curr,&idate,(void *)__xn_reg_arg1(regs),sizeof(idate));
+    __xn_copy_from_user(curr,&period,(void *)__xn_reg_arg2(regs),sizeof(period));
+
+    splhigh(s);
+
+    now = xnpod_get_time();
+
+    if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
+	xnpod_suspend_thread(thread,
+			     XNDELAY,
+			     XN_INFINITE,
+			     NULL);
+    else
+	err = -ETIMEDOUT;
+
+    thread->poverrun = -1;
+
+    splexit(s);
+
+    return err;
+}
+
+int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
+    int err = 0;
+    spl_t s;
+
+    splhigh(s);
+
+    if (!xntimer_active_p(&thread->ptimer))
+	{
+	err = -EINVAL;
+	goto unlock_and_exit;
+	}
+
+    if (thread->poverrun < 0)
+	{
+	xnpod_suspend_thread(thread,
+			     XNDELAY,
+			     XN_INFINITE,
+			     NULL);
+
+	if (xnthread_test_flags(thread,XNBREAK))
+	    {
+	    err = -EINTR;
+	    goto unlock_and_exit;
+	    }
+	}
+    else
+	err = -ETIMEDOUT;
+
+    thread->poverrun--;
+
+ unlock_and_exit:
+
+    splexit(s);
+
+    return err;
 }
 
 static int __pthread_hold_vm (struct task_struct *curr, struct pt_regs *regs)
@@ -429,10 +566,15 @@ static xnsysent_t __systab[] = {
     { &__pthread_create_rt, __xn_flag_init }, /* __xn_fusion_create */
     { &__pthread_start_rt, __xn_flag_anycall }, /* __xn_fusion_start */
     { &__pthread_migrate_rt, __xn_flag_shadow },   /* __xn_fusion_migrate */
+    { &__pthread_set_periodic_rt, __xn_flag_shadow },   /* __xn_fusion_set_periodic */
+    { &__pthread_wait_period_rt, __xn_flag_shadow },   /* __xn_fusion_wait_period */
     { &__pthread_time_rt, __xn_flag_anycall  },   /* __xn_fusion_time */
+    { &__pthread_cputime_rt, __xn_flag_anycall  },   /* __xn_fusion_cputime */
     { &__pthread_start_timer_rt, __xn_flag_anycall  },   /* __xn_fusion_start_timer */
     { &__pthread_stop_timer_rt, __xn_flag_anycall  },   /* __xn_fusion_stop_timer */
     { &__pthread_sleep_rt, __xn_flag_regular  },   /* __xn_fusion_sleep */
+    { &__pthread_ns2ticks_rt, __xn_flag_anycall  },   /* __xn_fusion_ns2ticks */
+    { &__pthread_ticks2ns_rt, __xn_flag_anycall  },   /* __xn_fusion_ticks2ns */
     { &__pthread_inquire_rt, __xn_flag_shadow },   /* __xn_fusion_inquire */
     { &__pthread_idle_vm, __xn_flag_regular }, /* __xn_fusion_idle */
     { &__pthread_cancel_vm, __xn_flag_regular }, /* __xn_fusion_cancel */

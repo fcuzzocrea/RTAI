@@ -112,7 +112,7 @@ int pthread_sync_rt(int *syncp);
 
 int pthread_migrate_rt(int domain);
 
-int pthread_start_timer_rt(unsigned long tickval);
+int pthread_start_timer_rt(unsigned long nstick);
 
 int pthread_stop_timer_rt(void);
 

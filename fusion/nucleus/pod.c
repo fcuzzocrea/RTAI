@@ -2360,7 +2360,10 @@ int xnpod_add_hook (int type, void (*routine)(xnthread_t *))
 {
     xnqueue_t *hookq;
     xnhook_t *hook;
+    int err = 0;
     spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
 
     switch (type)
         {
@@ -2374,21 +2377,26 @@ int xnpod_add_hook (int type, void (*routine)(xnthread_t *))
             hookq = &nkpod->tdeleteq;
             break;
         default:
-            return -EINVAL;
+            err = -EINVAL;
+	    goto unlock_and_exit;
         }
 
     hook = xnmalloc(sizeof(*hook));
 
-    if (!hook)
-        return -ENOMEM;
+    if (hook)
+	{
+	inith(&hook->link);
+	hook->routine = routine;
+	prependq(hookq,&hook->link);
+	}
+    else
+        err = -ENOMEM;
 
-    inith(&hook->link);
-    hook->routine = routine;
-    xnlock_get_irqsave(&nklock,s);
-    prependq(hookq,&hook->link);
+ unlock_and_exit:
+
     xnlock_put_irqrestore(&nklock,s);
 
-    return 0;
+    return err;
 }
 
 /*! 
@@ -2419,7 +2427,10 @@ int xnpod_remove_hook (int type, void (*routine)(xnthread_t *))
     xnhook_t *hook = NULL;
     xnholder_t *holder;
     xnqueue_t *hookq;
+    int err = 0;
     spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
 
     switch (type)
         {
@@ -2433,10 +2444,8 @@ int xnpod_remove_hook (int type, void (*routine)(xnthread_t *))
             hookq = &nkpod->tdeleteq;
             break;
         default:
-            return -EINVAL;
+	    goto bad_hook;
         }
-
-    xnlock_get_irqsave(&nklock,s);
 
     for (holder = getheadq(hookq); holder; holder = nextq(hookq,holder))
         {
@@ -2445,18 +2454,20 @@ int xnpod_remove_hook (int type, void (*routine)(xnthread_t *))
         if (hook->routine == routine)
             {
             removeq(hookq,holder);
-            break;
+	    xnfree(hook);
+            goto unlock_and_exit;
             }
         }
 
+ bad_hook:
+
+    err = -EINVAL;
+
+ unlock_and_exit:
+
     xnlock_put_irqrestore(&nklock,s);
 
-    if (!hook)
-        return -EINVAL;
-
-    xnfree(hook);
-
-    return 0;
+    return err;
 }
 
 void xnpod_check_context (int mask)

@@ -1,5 +1,7 @@
 2004-12-28  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/*/hal/hal.c (__rthal_init): Fix error return values.
+
 	* nucleus/lib/GNUmakefile.am, skins/rtai/lib/GNUmakefile.am: Add
 	shared lib support.
 

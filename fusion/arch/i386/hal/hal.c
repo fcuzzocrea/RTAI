@@ -985,19 +985,12 @@ int __rthal_init (void)
     adattr_t attr;
     int err;
 
-    if (num_online_cpus() > RTHAL_NR_CPUS)
-	{
-	printk(KERN_ERR "RTAI[hal]: Too many processors found -- need RTHAL_NR_CPUS >= %d.\n",
-	       num_online_cpus());
-	return 1;
-	}
-
 #ifdef CONFIG_X86_LOCAL_APIC
     if (!test_bit(X86_FEATURE_APIC,boot_cpu_data.x86_capability))
 	{
 	printk("RTAI[hal]: Local APIC absent or disabled!\n"
-	       "Disable APIC support or pass \"lapic\" in bootparam.");
-	return 1;
+	       "Disable APIC support or pass \"lapic\" as bootparam.\n");
+	return -ENODEV;
 	}
 
 #endif /* CONFIG_X86_LOCAL_APIC */
@@ -1015,7 +1008,7 @@ int __rthal_init (void)
     if (!rthal_sysreq_virq)
 	{
 	printk(KERN_ERR "RTAI[hal]: No virtual interrupt available.\n");
-	return 1;
+	return -EBUSY;
 	}
 
     adeos_virtualize_irq(rthal_sysreq_virq,

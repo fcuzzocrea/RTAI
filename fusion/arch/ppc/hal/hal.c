@@ -731,13 +731,6 @@ int __rthal_init (void)
     adattr_t attr;
     int err;
 
-    if (num_online_cpus() > RTHAL_NR_CPUS)
-	{
-	printk(KERN_ERR "RTAI[hal]: Too many processors found -- need RTHAL_NR_CPUS >= %d.\n",
-	       num_online_cpus());
-	return 1;
-	}
-
 #ifdef CONFIG_SMP
     /* The nucleus also sets the same CPU affinity so that both
        modules keep their execution sequence on SMP boxen. */
@@ -751,7 +744,7 @@ int __rthal_init (void)
     if (!rthal_sysreq_virq)
 	{
 	printk(KERN_ERR "RTAI[hal]: No virtual interrupt available.\n");
-	return 1;
+	return -EBUSY;
 	}
 
     adeos_virtualize_irq(rthal_sysreq_virq,

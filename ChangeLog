@@ -1,4 +1,4 @@
-2004-12-29  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+2004-12-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_hal.h, rtai_lxrt.h: got rid of 
 	  __USE_APIC__, by referring to CONFIG_X86_LOCAL_APIC directly.

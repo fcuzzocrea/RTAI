@@ -578,7 +578,7 @@ if test "$CONFIG_X86" = y; then
     CONFIG_RTAI_SCHED_UP=y
     CONFIG_RTAI_CPUS=1
   fi
-  if test x$CONFIG_X86_CMPXCHG = x; then
+  if test x$CONFIG_X86_EMU486 = x -a x$CONFIG_X86_CMPXCHG = x; then
      AC_MSG_ERROR([RTAI won't work on legacy i386 platforms (cmpxchg() is missing, need >= CONFIG_M486)])
   fi
   if test x$CONFIG_RTAI_XENOMAI = xy -a x$CONFIG_X86_WP_WORKS_OK = x; then

@@ -1,3 +1,8 @@
+2004-10-04  Edelhard Becker <ebecker@software-manufaktur.de>
+
+	* configure.in: Detect CONFIG_X86_EMU486 when testing for
+	cmpxchg() availability.
+
 2004-10-04  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/include/rtai_lxrt.h: introduced encoding of LXRT calla
@@ -16,6 +21,10 @@
 	eliminated useless initializations in the scheduling functions,
 	took away redundancies in making hard through an ADEOS virq,
 	reworked scheduling of RTAI proper tasks (untested yet).
+
+2004-09-20  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: rtai-3.1 final.
 
 2004-09-17  Philippe Gerum  <rpm@xenomai.org>
 

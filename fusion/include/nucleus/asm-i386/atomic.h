@@ -62,6 +62,9 @@ static inline unsigned long atomic_cmpxchg (volatile void *ptr,
 
 #define xnarch_memory_barrier()  __asm__ __volatile__("": : :"memory")
 
+#define likely(x)	__builtin_expect(!!(x), 1)
+#define unlikely(x)	__builtin_expect(!!(x), 0)
+
 /* Depollute the namespace a bit. */
 #undef ADDR
 

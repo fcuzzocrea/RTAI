@@ -1,5 +1,8 @@
 2005-02-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-*/atomic.h: Define likely()/unlikely() hints
+	for user-space inclusion.
+
 	* nucleus/pod.c (xnpod_announce_tick): Add watchdog support for
 	detecting runaway threads.
 

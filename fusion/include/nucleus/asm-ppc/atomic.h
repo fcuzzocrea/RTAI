@@ -216,6 +216,9 @@ static __inline__ void atomic_clear_mask(unsigned long mask,
 #define xnarch_atomic_set_mask(pflags,mask)    atomic_set_mask(mask,pflags)
 #define xnarch_atomic_clear_mask(pflags,mask)  atomic_clear_mask(mask,pflags)
 
+#define likely(x)	__builtin_expect(!!(x), 1)
+#define unlikely(x)	__builtin_expect(!!(x), 0)
+
 #endif /* __KERNEL__ */
 
 typedef atomic_t atomic_counter_t;

@@ -28,7 +28,13 @@
 #undef CONFIG_RTAI_OPT_DEBUG
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_COND
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_NATIVE_EVENT
+
+/* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_MUTEX
 
 /* Kconfig */
 #undef CONFIG_RTAI_OPT_NATIVE_PIPE

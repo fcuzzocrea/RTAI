@@ -267,6 +267,22 @@ config RTAI_OPT_NATIVE_EVENT
 	
 	Event flag support.
 
+config RTAI_OPT_NATIVE_MUTEX
+	bool "Mutex support"
+	depends on RTAI_SKIN_NATIVE
+	default y if RTAI_OPT_NATIVE_COND=y
+	help
+	
+	Mutex support.
+
+config RTAI_OPT_NATIVE_COND
+	bool "Condition variable support"
+	depends on RTAI_SKIN_NATIVE && RTAI_OPT_NATIVE_MUTEX
+	default y
+	help
+	
+	Condition variable support.
+
 config RTAI_SKIN_POSIX
 	bool "POSIX API"
 	default y

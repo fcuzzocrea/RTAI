@@ -322,6 +322,24 @@ AC_ARG_ENABLE(native-event,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_EVENT:-no})
 
+AC_MSG_CHECKING(for native mutex support)
+AC_ARG_ENABLE(native-mutex,
+	[ --enable-native-mutex	Enable mutex support for native skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_NATIVE_MUTEX=y ;;
+	*) unset CONFIG_RTAI_OPT_NATIVE_MUTEX ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_MUTEX:-no})
+
+AC_MSG_CHECKING(for native condition variable support)
+AC_ARG_ENABLE(native-cond,
+	[ --enable-native-cond	Enable condition variable support for native skin],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_NATIVE_COND=y ;;
+	*) unset CONFIG_RTAI_OPT_NATIVE_COND ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_NATIVE_COND:-no})
+
 AC_MSG_CHECKING(for pSOS+ skin)
 AC_ARG_ENABLE(psos-skin,
 	[ --enable-psos-skin	Build pSOS+ emulator],
@@ -630,6 +648,8 @@ test \! x$CONFIG_RTAI_OPT_NATIVE_PIPE = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_PI
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ,$CONFIG_RTAI_OPT_NATIVE_PIPE_BUFSZ,[Kconfig])
 test \! x$CONFIG_RTAI_OPT_NATIVE_SEM = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_SEM,1,[Kconfig])
 test \! x$CONFIG_RTAI_OPT_NATIVE_EVENT = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_EVENT,1,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_NATIVE_MUTEX = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_MUTEX,1,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_NATIVE_COND = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_COND,1,[Kconfig])
 
 dnl CAUTION: We need to have the CONFIG_RTAI_XX symbols always defined when
 dnl the configuration header is read, but we want the Autoconf-produced
@@ -679,6 +699,8 @@ AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_REGISTRY,[test x$CONFIG_RTAI_OPT_NATIVE_RE
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_PIPE,[test x$CONFIG_RTAI_OPT_NATIVE_PIPE = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_SEM,[test x$CONFIG_RTAI_OPT_NATIVE_SEM = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_EVENT,[test x$CONFIG_RTAI_OPT_NATIVE_EVENT = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_MUTEX,[test x$CONFIG_RTAI_OPT_NATIVE_MUTEX = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_COND,[test x$CONFIG_RTAI_OPT_NATIVE_COND = xy])
 
 dnl Documentation.
 AM_CONDITIONAL(CONFIG_RTAI_DOC_DOX,[test "$CONFIG_RTAI_DOC_DOX" = y])

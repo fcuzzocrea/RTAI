@@ -23,7 +23,7 @@
 #include <linux/errno.h>
 #include <nucleus/asm/system.h>
 
-typedef int xnsigmask_t;
+typedef unsigned long xnsigmask_t;
 
 typedef unsigned long long xnticks_t;
 

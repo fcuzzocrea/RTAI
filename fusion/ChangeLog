@@ -1,4 +1,12 @@
+2005-03-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/types.h: typedef unsigned long xnsigmask_t, so
+	we can use atomic ops on this data type seamlessly.
+
 2005-03-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/latency/[k]latency.c (display): Print out current test
+	time.
 
 	* include/nucleus/asm-*/syscall.h (__xn_copy_to/from_user):
 	Silence GCC's "warn_unused_result" attribute and elaborate a bit

@@ -329,7 +329,7 @@ static int __pthread_hold_uvm (struct task_struct *curr, struct pt_regs *regs)
 
     xnlock_get_irqsave(&nklock,s);
 
-    __xn_put_user(curr,1,(int __user *)__xn_reg_arg1(regs)); /* Raise the pend flag */
+    __xn_put_user(curr,1,(int __user *)__xn_reg_arg1(regs)); /* Raise the irqlock flag */
 
     xnsynch_sleep_on(&__fusion_uvm_irqsync,XN_INFINITE);
 
@@ -350,7 +350,7 @@ static int __pthread_release_uvm (struct task_struct *curr, struct pt_regs *regs
 
     xnlock_get_irqsave(&nklock,s);
 
-    __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the lock flag */
+    __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the irqlock flag */
 
     if (xnsynch_flush(&__fusion_uvm_irqsync,XNBREAK) == XNSYNCH_RESCHED)
 	xnpod_schedule();
@@ -369,9 +369,9 @@ static int __pthread_idle_uvm (struct task_struct *curr, struct pt_regs *regs)
 
     xnlock_get_irqsave(&nklock,s);
 
-    __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the lock flag */
+    /* Emulate sti() for the UVM before returning to idle mode. */
 
-    xnpod_renice_thread(thread,xnthread_initial_priority(thread));
+    __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the irqlock flag */
 
     if (xnsynch_nsleepers(&__fusion_uvm_irqsync) > 0)
 	xnsynch_flush(&__fusion_uvm_irqsync,XNBREAK);
@@ -405,30 +405,25 @@ static int __pthread_activate_uvm (struct task_struct *curr, struct pt_regs *reg
     if (!prev)
 	goto out;
 
-    xnpod_renice_thread(next,xnthread_initial_priority(next) + 1);
-
     if (!testbits(next->status,XNSTARTED))
 	{
 	err = xnpod_start_thread(next,0,0,XNPOD_ALL_CPUS,NULL,NULL);
 	goto out;
 	}
 
-    if (testbits(next->status,XNSUSP))
-	xnpod_resume_thread(next,XNSUSP);
+    xnpod_resume_thread(next,XNSUSP);
 
-    xnpod_renice_thread(prev,xnthread_initial_priority(prev));
+    xnpod_suspend_thread(prev,XNSUSP,XN_INFINITE,NULL);
 
-    if (!testbits(prev->status,XNSUSP))
-        {
-	xnpod_suspend_thread(prev,XNSUSP,XN_INFINITE,NULL);
+    err = 0;
 
+    if (prev == xnpod_current_thread())
+	{
 	if (xnthread_test_flags(prev,XNBREAK))
 	    err = -EINTR; /* Unblocked.*/
 	}
-
-    xnpod_schedule();
-
-    err = 0;
+    else
+	xnpod_schedule();
 
  out:
 
@@ -463,10 +458,7 @@ static int __pthread_cancel_uvm (struct task_struct *curr, struct pt_regs *regs)
 	if (!next)
 	    goto out;
 
-	xnpod_renice_thread(next,xnthread_initial_priority(next) + 1);
-
-	if (testbits(next->status,XNSUSP))
-	    xnpod_resume_thread(next,XNSUSP);
+	xnpod_resume_thread(next,XNSUSP);
 	}
 
     err = 0;

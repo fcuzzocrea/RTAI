@@ -241,7 +241,7 @@ static inline void xnarch_unlock_irq (int x) {
     if (!x && uvm_irqlock)
 	{
 	if (xnarch_atomic_xchg(&uvm_irqpend,0))
-	    __pthread_release_vm(&uvm_irqlock);
+	    __pthread_release_uvm(&uvm_irqlock);
 	else
 	    uvm_irqlock = 0;
 	}
@@ -267,7 +267,7 @@ void xnarch_sync_irq (void)
 
 {
     if (uvm_irqlock)
-	__pthread_hold_vm(&uvm_irqpend);
+	__pthread_hold_uvm(&uvm_irqpend);
 }
 
 static inline int xnarch_hook_irq (unsigned irq,
@@ -377,7 +377,7 @@ int main (int argc, char *argv[])
     sigaction(XNARCH_SIG_RESTART,&sa,NULL);
 
     for (;;)
-	__pthread_idle_vm(&uvm_irqlock);
+	__pthread_idle_uvm(&uvm_irqlock);
 
     __fusion_user_exit();
     __fusion_skin_exit();
@@ -397,7 +397,7 @@ static inline void xnarch_program_timer_shot (unsigned long delay) {
 }
 
 static inline void xnarch_stop_timer (void) {
-    __pthread_cancel_vm(uvm_timer_handle,NULL);
+    __pthread_cancel_uvm(uvm_timer_handle,NULL);
 }
 
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
@@ -480,10 +480,14 @@ static inline int xnarch_start_timer (unsigned long nstick,
     pthread_t thid;
     int err;
 
-    /* If oneshot timing is available, use it. Otherwise, ask for
-       plain periodic mode, hoping that the period given will be
-       compatible with Linux's own requirements wrt the jiffy-based
-       timer. */
+    if (nstick == 0) /* UVM does not provide oneshot timing. */
+        return -ENODEV;
+
+    /* However, if oneshot timing is available at system level, use it
+       so that we can provide a better resolution for virtual machine
+       ticks. Otherwise, ask for plain periodic mode, hoping that the
+       period given will be compatible with Linux's own requirements
+       wrt its jiffy-based timer. */
 
 #if CONFIG_RTAI_HW_APERIODIC_TIMER
     err = pthread_start_timer_rt(0);
@@ -492,7 +496,7 @@ static inline int xnarch_start_timer (unsigned long nstick,
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     if (err)
-      return err;
+	return err;
 
     parms.sec = nstick / 1000000000;
     parms.nsec = nstick % 1000000000;
@@ -516,20 +520,23 @@ static inline void xnarch_enter_root(xnarchtcb_t *rootcb) {
 }
 
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
-				     xnarchtcb_t *in_tcb) {
+				     xnarchtcb_t *in_tcb)
+{
     uvm_current = in_tcb;
-    __pthread_activate_vm(in_tcb->khandle,out_tcb->khandle);
+    __pthread_activate_uvm(in_tcb->khandle,out_tcb->khandle);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
-					       xnarchtcb_t *next_tcb) {
+					       xnarchtcb_t *next_tcb)
+{
     uvm_current = next_tcb;
-    __pthread_cancel_vm(dead_tcb->khandle,next_tcb->khandle);
+    __pthread_cancel_uvm(dead_tcb->khandle,next_tcb->khandle);
 }
 
-static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb) {
+static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb)
 
-    __pthread_cancel_vm(dead_tcb->khandle,NULL);
+{
+    __pthread_cancel_uvm(dead_tcb->khandle,NULL);
 }
 
 static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,

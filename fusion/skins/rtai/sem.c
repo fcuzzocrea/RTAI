@@ -34,9 +34,9 @@ void __sem_pkg_cleanup (void) {
 
 /**
  * @fn int rt_sem_create(RT_SEM *sem,
-		           const char *name,
-			    unsigned long icount,
-			    int mode)
+                         const char *name,
+                         unsigned long icount,
+                         int mode)
  * @brief Create a counting semaphore.
  *
  * @param sem The address of a semaphore descriptor RTAI will use to
@@ -68,9 +68,9 @@ void __sem_pkg_cleanup (void) {
  */
 
 int rt_sem_create (RT_SEM *sem,
-		   const char *name,
-		   unsigned long icount,
-		   int mode)
+                   const char *name,
+                   unsigned long icount,
+                   int mode)
 {
     int err = 0;
 
@@ -78,7 +78,7 @@ int rt_sem_create (RT_SEM *sem,
 
     xnsynch_init(&sem->synch_base,mode & S_PRIO);
     sem->count = icount;
-    sem->handle = 0;	/* i.e. (still) unregistered semaphore. */
+    sem->handle = 0;    /* i.e. (still) unregistered semaphore. */
     sem->magic = RTAI_SEM_MAGIC;
     xnobject_copy_name(sem->name,name);
 
@@ -88,12 +88,12 @@ int rt_sem_create (RT_SEM *sem,
        half-baked objects... */
 
     if (name && *name)
-	{
-	err = rt_registry_enter(sem->name,sem,&sem->handle);
+        {
+        err = rt_registry_enter(sem->name,sem,&sem->handle);
 
-	if (err)
-	    rt_sem_delete(sem);
-	}
+        if (err)
+            rt_sem_delete(sem);
+        }
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     return err;
@@ -136,24 +136,24 @@ int rt_sem_delete (RT_SEM *sem)
     sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
 
     if (!sem)
-	{
-	err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
-	goto unlock_and_exit;
-	}
+        {
+        err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
+        goto unlock_and_exit;
+        }
     
     rc = xnsynch_destroy(&sem->synch_base);
 
 #if CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (sem->handle)
-	rt_registry_remove(sem->handle);
+        rt_registry_remove(sem->handle);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     rtai_mark_deleted(sem);
 
     if (rc == XNSYNCH_RESCHED)
-	/* Some task has been woken up as a result of the deletion:
-	   reschedule now. */
-	xnpod_schedule();
+        /* Some task has been woken up as a result of the deletion:
+           reschedule now. */
+        xnpod_schedule();
 
  unlock_and_exit:
 
@@ -213,7 +213,7 @@ int rt_sem_delete (RT_SEM *sem)
  */
 
 int rt_sem_p (RT_SEM *sem,
-	      RTIME timeout)
+              RTIME timeout)
 {
     int err = 0;
     spl_t s;
@@ -223,38 +223,38 @@ int rt_sem_p (RT_SEM *sem,
     sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
 
     if (!sem)
-	{
-	err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
-	goto unlock_and_exit;
-	}
+        {
+        err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
+        goto unlock_and_exit;
+        }
     
     if (timeout == RT_TIME_NONBLOCK)
-	{
-	if (sem->count > 0)
-	    sem->count--;
-	else
-	    err = -EWOULDBLOCK;
+        {
+        if (sem->count > 0)
+            sem->count--;
+        else
+            err = -EWOULDBLOCK;
 
-	goto unlock_and_exit;
-	}
+        goto unlock_and_exit;
+        }
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
     if (sem->count > 0)
-	--sem->count;
+        --sem->count;
     else
-	{
-	RT_TASK *task = rtai_current_task();
+        {
+        RT_TASK *task = rtai_current_task();
 
-	xnsynch_sleep_on(&sem->synch_base,timeout);
-	
-	if (xnthread_test_flags(&task->thread_base,XNRMID))
-	    err = -EIDRM; /* Semaphore deleted while pending. */
-	else if (xnthread_test_flags(&task->thread_base,XNTIMEO))
-	    err = -ETIMEDOUT; /* Timeout.*/
-	else if (xnthread_test_flags(&task->thread_base,XNBREAK))
-	    err = -EINTR; /* Unblocked.*/
-	}
+        xnsynch_sleep_on(&sem->synch_base,timeout);
+        
+        if (xnthread_test_flags(&task->thread_base,XNRMID))
+            err = -EIDRM; /* Semaphore deleted while pending. */
+        else if (xnthread_test_flags(&task->thread_base,XNTIMEO))
+            err = -ETIMEDOUT; /* Timeout.*/
+        else if (xnthread_test_flags(&task->thread_base,XNBREAK))
+            err = -EINTR; /* Unblocked.*/
+        }
 
  unlock_and_exit:
 
@@ -267,9 +267,9 @@ int rt_sem_p (RT_SEM *sem,
  * @fn int rt_sem_v(RT_SEM *sem)
  * @brief Signal a semaphore.
  *
- * Release a semaphore unit. If a task is currently pending on the
- * semaphore, it is immediately unblocked; otherwise, the semaphore
- * value is incremented by one.
+ * Release a semaphore unit. If the semaphore is pended, the first
+ * waiting task (by queuing order) is immediately unblocked;
+ * otherwise, the semaphore value is incremented by one.
  *
  * @param sem The descriptor address of the affected semaphore.
  *
@@ -297,15 +297,15 @@ int rt_sem_v (RT_SEM *sem)
     sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
 
     if (!sem)
-	{
-	err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
-	goto unlock_and_exit;
-	}
+        {
+        err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
+        goto unlock_and_exit;
+        }
     
     if (xnsynch_wakeup_one_sleeper(&sem->synch_base) != NULL)
-	xnpod_schedule();
+        xnpod_schedule();
     else
-	sem->count++;
+        sem->count++;
 
  unlock_and_exit:
 
@@ -317,7 +317,7 @@ int rt_sem_v (RT_SEM *sem)
 /**
  * @fn int rt_sem_inquire(RT_SEM *sem,
                           RT_SEM_INFO *info)
- * @brief Inquire about a semaphore status.
+ * @brief Inquire about a semaphore.
  *
  * Return various information about the status of a specified
  * semaphore.
@@ -339,7 +339,7 @@ int rt_sem_v (RT_SEM *sem)
  */
 
 int rt_sem_inquire (RT_SEM *sem,
-		    RT_SEM_INFO *info)
+                    RT_SEM_INFO *info)
 {
     int err = 0;
     spl_t s;
@@ -349,10 +349,10 @@ int rt_sem_inquire (RT_SEM *sem,
     sem = rtai_h2obj_validate(sem,RTAI_SEM_MAGIC,RT_SEM);
 
     if (!sem)
-	{
-	err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
-	goto unlock_and_exit;
-	}
+        {
+        err = rtai_handle_error(sem,RTAI_SEM_MAGIC,RT_SEM);
+        goto unlock_and_exit;
+        }
     
     strcpy(info->name,sem->name);
     info->count = sem->count;

@@ -84,7 +84,7 @@ RTIME rt_timer_ticks2ns (RTIME ticks)
 
 /*!
  * @fn RTIME rt_timer_inquire(void)
- * @brief Inquire about the timer status.
+ * @brief Inquire about the timer.
  *
  * Return the current settings of the system timer.
  *

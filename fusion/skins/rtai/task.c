@@ -869,7 +869,7 @@ int rt_task_unblock (RT_TASK *task)
 /**
  * @fn int rt_task_inquire(RT_TASK *task,
                            RT_TASK_INFO *info)
- * @brief Inquire about a real-time task status.
+ * @brief Inquire about a real-time task.
  *
  * Return various information about the status of a specified task.
  *

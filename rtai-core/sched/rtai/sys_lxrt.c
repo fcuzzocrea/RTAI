@@ -291,7 +291,7 @@ static int __task_delete(RT_TASK *rt_task)
 	return (!rt_drg_on_adr(rt_task)) ? -ENODEV : 0;
 }
 
-//#define ECHO_SYSW
+#define ECHO_SYSW
 #ifdef ECHO_SYSW
 #define SYSW_DIAG_MSG(x) x
 #else
@@ -341,9 +341,10 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		if ((type = funcm[srq].type)) {
 			int net_rpc;
 			if ((int)task->is_hard > 1) {
-				task->is_hard = 1;
 				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD, PID = %d.\n", current->pid););
+				task->is_hard = 0;
 				steal_from_linux(task);
+				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD,  PID = %d.\n", current->pid););
 			}
 			net_rpc = idx == 2 && !srq;
 			lxrt_resume(funcm[srq].fun, NARG(lxsrq), (int *)arg, net_rpc ? ((long long *)((int *)arg + 2))[0] : type, task, net_rpc);

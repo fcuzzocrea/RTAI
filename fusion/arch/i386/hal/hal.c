@@ -30,9 +30,10 @@
  */
 
 /**
- * @defgroup hal Real-time hardware abstraction layer.
+ * @defgroup hal Hardware abstraction layer.
  *
- * Basic architecture-dependent services used by the nucleus.
+ * Basic architecture-dependent services used by the real-time
+ * nucleus.
  *
  *@{*/
 

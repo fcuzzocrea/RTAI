@@ -207,6 +207,7 @@ lib_LIBRARIES = librtai.a
 librtai_a_AR = $(CROSS_COMPILE)ar cru
 
 librtai_a_SOURCES = \
+	event.c \
 	task.c \
 	timer.c \
 	sem.c
@@ -228,14 +229,16 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 librtai_a_LIBADD =
-am_librtai_a_OBJECTS = librtai_a-task.$(OBJEXT) \
-	librtai_a-timer.$(OBJEXT) librtai_a-sem.$(OBJEXT)
+am_librtai_a_OBJECTS = librtai_a-event.$(OBJEXT) \
+	librtai_a-task.$(OBJEXT) librtai_a-timer.$(OBJEXT) \
+	librtai_a-sem.$(OBJEXT)
 librtai_a_OBJECTS = $(am_librtai_a_OBJECTS)
 
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/librtai_a-sem.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/librtai_a-event.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/librtai_a-sem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/librtai_a-task.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/librtai_a-timer.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -301,6 +304,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-event.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-sem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-task.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtai_a-timer.Po@am__quote@
@@ -337,6 +341,39 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Plo' tmpdepfile='$(DEPDIR)/$*.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+librtai_a-event.o: event.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtai_a-event.o -MD -MP -MF "$(DEPDIR)/librtai_a-event.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o librtai_a-event.o `test -f 'event.c' || echo '$(srcdir)/'`event.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtai_a-event.Tpo" "$(DEPDIR)/librtai_a-event.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/librtai_a-event.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='event.c' object='librtai_a-event.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/librtai_a-event.Po' tmpdepfile='$(DEPDIR)/librtai_a-event.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_a-event.o `test -f 'event.c' || echo '$(srcdir)/'`event.c
+
+librtai_a-event.obj: event.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtai_a-event.obj -MD -MP -MF "$(DEPDIR)/librtai_a-event.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o librtai_a-event.obj `if test -f 'event.c'; then $(CYGPATH_W) 'event.c'; else $(CYGPATH_W) '$(srcdir)/event.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtai_a-event.Tpo" "$(DEPDIR)/librtai_a-event.Po"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/librtai_a-event.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='event.c' object='librtai_a-event.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/librtai_a-event.Po' tmpdepfile='$(DEPDIR)/librtai_a-event.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_a-event.obj `if test -f 'event.c'; then $(CYGPATH_W) 'event.c'; else $(CYGPATH_W) '$(srcdir)/event.c'; fi`
+
+librtai_a-event.lo: event.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtai_a-event.lo -MD -MP -MF "$(DEPDIR)/librtai_a-event.Tpo" \
+@am__fastdepCC_TRUE@	  -c -o librtai_a-event.lo `test -f 'event.c' || echo '$(srcdir)/'`event.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtai_a-event.Tpo" "$(DEPDIR)/librtai_a-event.Plo"; \
+@am__fastdepCC_TRUE@	else rm -f "$(DEPDIR)/librtai_a-event.Tpo"; exit 1; \
+@am__fastdepCC_TRUE@	fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='event.c' object='librtai_a-event.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/librtai_a-event.Plo' tmpdepfile='$(DEPDIR)/librtai_a-event.TPlo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtai_a-event.lo `test -f 'event.c' || echo '$(srcdir)/'`event.c
 
 librtai_a-task.o: task.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtai_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtai_a-task.o -MD -MP -MF "$(DEPDIR)/librtai_a-task.Tpo" \

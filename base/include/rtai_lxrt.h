@@ -299,7 +299,21 @@
 #define NAMED_MALLOC                   197
 #define NAMED_FREE                     198
 
-#define MAX_LXRT_FUN                   200
+#define SUSPEND_IF		       199
+#define SUSPEND_UNTIL	 	       200
+#define SUSPEND_TIMED		       201
+#define IRQ_WAIT		       202	
+#define IRQ_WAIT_IF		       203	
+#define IRQ_WAIT_UNTIL		       204
+#define IRQ_WAIT_TIMED		       205
+#define IRQ_SIGNAL		       206
+#define REQUEST_IRQ_TASK	       207
+#define RELEASE_IRQ_TASK	       208
+#define SCHED_LOCK		       209
+#define SCHED_UNLOCK		       210
+#define PEND_LINUX_IRQ		       211
+
+#define MAX_LXRT_FUN                   213
 
 // not recovered yet 
 // Qblk's 
@@ -379,12 +393,13 @@
 
 #define FORCE_SOFT 0x80000000
 
-// Keep LXRT call enc/decoding together, so you are ure to act consistently.
-// This is the encoding, note " |  0x8000" to ensure not a Linux syscall, ...
-#define ENCODE_LXRT_REQ(dynx, srq, lsize)  (((dynx) << 28) | (((srq) & 0xFFF) << 16) | 0x8000 | (lsize))
+// Keep LXRT call enc/decoding together, so you are sure to act consistently.
+// This is the encoding, note " | GT_NR_SYSCALLS" to ensure not a Linux syscall, ...
+#define GT_NR_SYSCALLS  (1 << 15)
+#define ENCODE_LXRT_REQ(dynx, srq, lsize)  (((dynx) << 28) | (((srq) & 0xFFF) << 16) | GT_NR_SYSCALLS | (lsize))
 // ... and this is the decoding.
 #define SRQ(x)   (((x) >> 16) & 0xFFF)
-#define NARG(x)  ((x) & 0x7FFF)
+#define NARG(x)  ((x) & (GT_NR_SYSCALLS - 1))
 #define INDX(x)  (((x) >> 28) & 0xF)
 
 #ifdef __KERNEL__
@@ -491,7 +506,7 @@ extern "C" {
  
 static inline struct rt_task_struct *pid2rttask(pid_t pid)
 {
-        return ((unsigned long)pid) > PID_MAX_LIMIT ? (struct rt_task_struct *)pid : find_task_by_pid(pid)->this_rt_task[0];
+        return ((unsigned long)pid) > PID_MAX_LIMIT ? (struct rt_task_struct *)pid : find_task_by_pid(pid)->rtai_tskext[0];
 }
 
 static inline pid_t rttask2pid(struct rt_task_struct * task)
@@ -712,10 +727,89 @@ RTAI_PROTO(int,rt_task_suspend,(RT_TASK *task))
 	return rtai_lxrt(BIDX, SIZARG, SUSPEND, &arg).i[LOW];
 }
 
+RTAI_PROTO(int,rt_task_suspend_if,(RT_TASK *task))
+{
+	struct { RT_TASK *task; } arg = { task };
+	return rtai_lxrt(BIDX, SIZARG, SUSPEND_IF, &arg).i[LOW];
+}
+
+RTAI_PROTO(int,rt_task_suspend_until,(RT_TASK *task, RTIME time))
+{
+	struct { RT_TASK *task; RTIME time; } arg = { task, time };
+	return rtai_lxrt(BIDX, SIZARG, SUSPEND_UNTIL, &arg).i[LOW];
+}
+
+RTAI_PROTO(int,rt_task_suspend_timed,(RT_TASK *task, RTIME delay))
+{
+	struct { RT_TASK *task; RTIME delay; } arg = { task, delay };
+	return rtai_lxrt(BIDX, SIZARG, SUSPEND_TIMED, &arg).i[LOW];
+}
+
 RTAI_PROTO(int,rt_task_resume,(RT_TASK *task))
 {
 	struct { RT_TASK *task; } arg = { task };
 	return rtai_lxrt(BIDX, SIZARG, RESUME, &arg).i[LOW];
+}
+
+RTAI_PROTO(void, rt_sched_lock, (void))
+{
+	struct { int dummy; } arg;
+	rtai_lxrt(BIDX, SIZARG, SCHED_LOCK, &arg);
+}
+
+RTAI_PROTO(void, rt_sched_unlock, (void))
+{
+	struct { int dummy; } arg;
+	rtai_lxrt(BIDX, SIZARG, SCHED_UNLOCK, &arg);
+}
+
+RTAI_PROTO(void, rt_pend_linux_irq, (unsigned irq))
+{
+	struct { unsigned irq; } arg = { irq };
+	rtai_lxrt(BIDX, SIZARG, PEND_LINUX_IRQ, &arg);
+}
+
+RTAI_PROTO(int, rt_irq_wait, (unsigned irq))
+{
+	struct { unsigned irq; } arg = { irq };
+	return rtai_lxrt(BIDX, SIZARG, IRQ_WAIT, &arg).i[LOW];
+}
+
+RTAI_PROTO(int, rt_irq_wait_if, (unsigned irq))
+{
+	struct { unsigned irq; } arg = { irq };
+	return rtai_lxrt(BIDX, SIZARG, IRQ_WAIT_IF, &arg).i[LOW];
+}
+
+RTAI_PROTO(int, rt_irq_wait_until, (unsigned irq, RTIME time))
+{
+	struct { unsigned irq; RTIME time; } arg = { irq, time };
+	return rtai_lxrt(BIDX, SIZARG, IRQ_WAIT_UNTIL, &arg).i[LOW];
+}
+
+RTAI_PROTO(int, rt_irq_wait_timed, (unsigned irq, RTIME delay))
+{
+	struct { unsigned irq; RTIME delay; } arg = { irq, delay };
+	return rtai_lxrt(BIDX, SIZARG, IRQ_WAIT_TIMED, &arg).i[LOW];
+}
+
+RTAI_PROTO(int, rt_irq_signal, (unsigned irq))
+{
+	struct { unsigned irq; } arg = { irq };
+	return rtai_lxrt(BIDX, SIZARG, IRQ_SIGNAL, &arg).i[LOW];
+}
+
+RTAI_PROTO(int, rt_request_irq_task, (unsigned irq, void *handler, int type, int affine2task))
+{
+	struct { unsigned irq; void *handler; int type, affine2task; } arg = { irq, handler, type, affine2task };
+	return rtai_lxrt(BIDX, SIZARG, REQUEST_IRQ_TASK, &arg).i[LOW];
+}
+
+
+RTAI_PROTO(int, rt_release_irq_task, (unsigned irq))
+{
+	struct { unsigned irq; } arg = { irq };
+	return rtai_lxrt(BIDX, SIZARG, RELEASE_IRQ_TASK, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_task_make_periodic,(RT_TASK *task, RTIME start_time, RTIME period))

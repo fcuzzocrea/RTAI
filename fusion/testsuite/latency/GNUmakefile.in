@@ -290,7 +290,7 @@ latency_CPPFLAGS = \
 
 latency_LDADD = \
 	../../skins/rtai/lib/librtai.la \
-	-lpthread
+	-lpthread -lm
 
 EXTRA_DIST = runinfo
 all: all-am

@@ -140,7 +140,7 @@ int __latency_init (void)
 {
     int err;
 
-    err = rt_task_create(&latency_task,"sampling",0,1,0);
+    err = rt_task_create(&latency_task,"sampling",0,1,T_FPU);
 
     if (err)
 	{

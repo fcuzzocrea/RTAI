@@ -542,6 +542,12 @@ static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
 {
 #ifdef CONFIG_RTAI_HW_FPU
 
+    struct task_struct *task = tcb->user_task;
+
+    if (task)
+	{
+	}
+    
     rthal_save_fpu(tcb->fpup);
 
 #endif /* CONFIG_RTAI_HW_FPU */

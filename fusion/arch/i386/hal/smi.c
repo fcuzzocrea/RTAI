@@ -39,10 +39,10 @@
 #define SMI_STATUS_ADDR  0x34
 #define SMI_MON_ADDR     0x40
 
-// SMI_EN register: ICH[0](16 bits), ICH[2-5](32 bits)
-#define INTEL_USB2_EN_BIT   (0x01 << 18) // ICH4, ...
-#define LEGACY_USB2_EN_BIT  (0x01 << 17) // ICH4, ...
-#define PERIODIC_EN_BIT     (0x01 << 14) // called 1MIN_ in ICH0
+/* SMI_EN register: ICH[0](16 bits), ICH[2-5](32 bits) */
+#define INTEL_USB2_EN_BIT   (0x01 << 18) /* ICH4, ... */
+#define LEGACY_USB2_EN_BIT  (0x01 << 17) /* ICH4, ... */
+#define PERIODIC_EN_BIT     (0x01 << 14) /* called 1MIN_ in ICH0 */
 #define TCO_EN_BIT          (0x01 << 13)
 #define MCSMI_EN_BIT        (0x01 << 11)
 #define SWSMI_TMR_EN_BIT    (0x01 << 6)
@@ -50,7 +50,7 @@
 #define SLP_EN_BIT          (0x01 << 4)
 #define LEGACY_USB_EN_BIT   (0x01 << 3)
 #define BIOS_EN_BIT         (0x01 << 2)
-#define GBL_SMI_EN_BIT      (0x01) // this is reset by a PCI reset event!
+#define GBL_SMI_EN_BIT      (0x01) /* This is reset by a PCI reset event! */
 
 static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
 { PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0, PCI_ANY_ID, PCI_ANY_ID, },
@@ -90,9 +90,9 @@ pci.ids database, ICH5-M ?)
 */
 
 static const unsigned rthal_smi_masked_bits =
-#ifdef CONFIG_RTAI_HW_SMI_GLOBAL_DIS
+#ifdef CONFIG_RTAI_HW_SMI_ALL
     GBL_SMI_EN_BIT;
-#else /* !defined(CONFIG_RTAI_HW_SMI_GLOBAL_DIS) */
+#else /* !defined(CONFIG_RTAI_HW_SMI_ALL) */
 
     0
 #ifndef CONFIG_RTAI_HW_SMI_INTEL_USB2
@@ -128,7 +128,7 @@ static const unsigned rthal_smi_masked_bits =
 #endif /* !defined(CONFIG_RTAI_HW_SMI_BIOS) */
     ;
 
-#endif /* !defined(CONFIG_RTAI_HW_SMI_GLOBAL_DIS) */
+#endif /* !defined(CONFIG_RTAI_HW_SMI_ALL) */
 
 static unsigned short rthal_smi_en_addr;
 static unsigned rthal_smi_saved_bits;

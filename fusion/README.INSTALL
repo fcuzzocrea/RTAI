@@ -69,8 +69,7 @@ configuration switches can be listed by running ./configure
 You can also recycle an existing .rtai_config file from a previous
 build by running:
 
-$ cp -rp $old_builddir/.rtai_config \
-         $new_builddir/.rtai_config
+$ cp -p $old_builddir/.rtai_config $new_builddir
 $ cd $new_builddir
 $ make -f $source_tree/makefile srctree=$source_tree oldconfig
 

@@ -2164,6 +2164,8 @@ static void lxrt_intercept_syscall (adevinfo_t *evinfo)
     adeos_declare_cpuid;
     unsigned long flags;
 
+    adeos_propagate_event(evinfo);
+
     adeos_get_cpu(flags);
 
     if (test_bit(cpuid, &rtai_cpu_realtime))
@@ -2171,13 +2173,13 @@ static void lxrt_intercept_syscall (adevinfo_t *evinfo)
 	struct task_struct *t = evinfo->domid == adp_current->domid ? current : rtai_get_root_current(cpuid);
 	RT_TASK *task = t->this_rt_task[0];
 	give_back_to_linux(task);
+#if 0
 	task->is_hard = 2;
+#endif
 	SYSW_DIAG_MSG(rt_printk("FORCING IT SOFT, PID = %d.\n", t->pid););
 	}
 
     adeos_put_cpu(flags);
-
-    adeos_propagate_event(evinfo);
 }
 
 /* ++++++++++++++++++++++++++ SCHEDULER PROC FILE +++++++++++++++++++++++++++ */

@@ -1,3 +1,9 @@
+2004-06-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/sched_rtai/sched_lxrt.c (lxrt_intercept_syscall): Fix
+	the domain migration handler (do not reset the RT_TASK state to
+	2).
+
 2004-06-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * rtai-core/ipc/mbx/mbx.c: all inlines eliminated, module size

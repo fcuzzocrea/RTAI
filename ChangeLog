@@ -1,3 +1,10 @@
+2004-01-25  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+	* rtai-lab/xrtailab.cpp: Fixed problem with rt_VECTOR type in
+	matlab7
+	* rtai-lab/matlab/rtmain.c: Fixed problem with rt_VECTOR type in
+	matlab7
+	
 2004-01-24  Michael Neuhauser <mike@firmix.at>
 
 	* configure.in: allow CONFIG_RTAI_SCHED_LXRT to be enabled for ARM,
@@ -5,7 +12,7 @@
 	ARM sub-architecture (EP9301)
 	* configure, all GNUmakefile.in: regenerated because of above change
 
-2004-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
+2004-01-24  Roberto Bucher  <roberto.bucher@supsi.ch>
 
 	* rtai-lab/xrtailab.cpp: Fixed problem with the counter by parameter
 	batch download.

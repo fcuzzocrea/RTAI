@@ -3,6 +3,9 @@
 	* arch/i386/hal.c (rthal_release_irq): Handle the possible failure 
 	of the adeos_virtualize_irq_from() call. 
 	
+	* arch/ppc/hal.c (rthal_release_irq): Handle the possible failure 
+	of the adeos_virtualize_irq_from() call. 
+	
 2005-03-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/module.c (rtai_shutdown): Make sure to wipe out all

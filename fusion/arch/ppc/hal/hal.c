@@ -255,18 +255,21 @@ int rthal_request_irq (unsigned irq,
 int rthal_release_irq (unsigned irq)
 
 {
+    int err = 0;
+    
     if (irq >= IPIPE_NR_IRQS)
 	return -EINVAL;
 
-    adeos_virtualize_irq_from(&rthal_domain,
+    err = adeos_virtualize_irq_from(&rthal_domain,
 			      irq,
 			      NULL,
 			      NULL,
 			      IPIPE_PASS_MASK);
 
-    xchg(&rthal_realtime_irq[irq].handler,NULL);
+    if (!err)
+        xchg(&rthal_realtime_irq[irq].handler,NULL);
 
-    return 0;
+    return err;
 }
 
 /**

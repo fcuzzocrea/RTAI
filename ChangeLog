@@ -1,3 +1,19 @@
+2004-10-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* rtai-core/arch/i386/hal/hal.c: changed to support a single entry
+	point: for srq, lxrt, shm, from user space; added exported function
+	to set up the idt table for immediate interrupt handling.
+
+	* rtai-core/sched/rtai/sched_lxrt.c, sys_lxrt.c: hooked to the
+	single entry point from user space available in rtai_hal.
+
+	* rtai-core/include/asm-i386/rtai_hal.h: added definition of idt 
+	table set/reset functions.
+
+	* rtai-core/include/asm-i386/rtai_lxrt.h, rtai_vectors.h, 
+	rtai_srq.h, cleaned to support a single entry point: for srq, 
+	lxrt, shm, from user space.
+
 2004-10-11  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* rtai-core/arch/i386/hal/hal.c eliminate useless process exit

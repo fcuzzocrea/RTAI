@@ -1,3 +1,7 @@
+2004-08-29  Malte Cornils <mcornils@fzi.de>
+
+	* rtai-addons/cpp/rtai_cpp.h: Export missing declarations.
+
 2004-08-28  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/include/asm/rtai_hal.h: Re-enable back a minimalistic

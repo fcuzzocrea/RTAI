@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework 
  *
- * File: $Id: rtai_wrapper.h,v 1.3 2004/08/15 14:33:07 rpm Exp $
+ * File: $Id: rtai_wrapper.h,v 1.4 2004/08/29 17:34:09 rpm Exp $
  *
  * Copyright: (C) 2001,2002 Erwin Rol <erwin@muffin.org>
  *
@@ -25,8 +25,6 @@
 #ifndef __RTAI_WRAPPER_H__
 #define __RTAI_WRAPPER_H__
 
-#include <rtai_sched.h>
-
 /**
  * The aim of this file is to contain all RTAI functions that can by no
  * means be included with the C++ compiler.
@@ -43,13 +41,6 @@ void __rt_get_global_lock(void);
 void __rt_release_global_lock(void);
 
 int __hard_cpu_id(void);
-
-extern RT_TASK*  __rt_task_init(void (*rt_thread)(int), int data,
-                                int stack_size, int priority, int uses_fpu,
-	                        void(*signal)(void));
-
-extern int __rt_task_delete(RT_TASK *task);
-
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 /*
  * Project: rtai_cpp - RTAI C++ Framework 
  *
- * File: $Id: rtai_cpp.h,v 1.1 2004/06/06 14:13:43 rpm Exp $
+ * File: $Id: rtai_cpp.h,v 1.2 2004/08/29 17:34:09 rpm Exp $
  *
  * Copyright: (C) 2001,2002 Erwin Rol <erwin@muffin.org>
  *
@@ -27,6 +27,14 @@
 
 #ifdef __cplusplus
 // for C++ only
+
+#include <rtai_sched.h>
+
+extern RT_TASK*  __rt_task_init(void (*rt_thread)(int), int data,
+                                int stack_size, int priority, int uses_fpu,
+                                void(*signal)(void));
+
+extern int __rt_task_delete(RT_TASK *task);
 
 #endif
 

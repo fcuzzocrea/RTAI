@@ -267,6 +267,8 @@ void rt_register_task(struct rt_tasklet_struct *tasklet,
 #include <sys/wait.h>
 #include <sys/mman.h>
 #include <stdarg.h>
+
+#include <rtai_usi.h>
 #include <rtai_lxrt.h>
 
 #ifndef __SUPPORT_TASKLET__
@@ -297,6 +299,7 @@ static int support_tasklet(void *tasklet)
 			break;
 		}
 	}
+	rtai_sti();
 	rt_make_soft_real_time();
 	rt_task_delete(task);
 

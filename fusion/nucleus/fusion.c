@@ -55,12 +55,12 @@ static inline xnthread_t *__pthread_find_by_handle (struct task_struct *curr, vo
 
 static int __pthread_shadow_helper (struct task_struct *curr,
 				    struct pt_regs *regs,
-				    pid_t syncpid,
-				    int __user *u_syncp)
+				    xncompletion_t __user *u_completion)
 {
     char name[XNOBJECT_NAME_LEN];
     xnthread_t *thread;
     spl_t s;
+    int err;
 
     if (__xn_reg_arg2(regs) &&
 	!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(thread)))
@@ -116,16 +116,16 @@ static int __pthread_shadow_helper (struct task_struct *curr,
 
     xnthread_extended_info(thread) = (void *)__xn_reg_arg3(regs);
 
-    xnshadow_map(thread,syncpid,u_syncp);
+    err = xnshadow_map(thread,u_completion);
 
     splexit(s);
 
-    return 0;
+    return err;
 }
 
 static int __pthread_init_rt (struct task_struct *curr, struct pt_regs *regs) {
 
-    return __pthread_shadow_helper(curr,regs,0,NULL);
+    return __pthread_shadow_helper(curr,regs,NULL);
 }
 
 static int __pthread_exit_rt (struct task_struct *curr, struct pt_regs *regs)
@@ -142,10 +142,10 @@ static int __pthread_exit_rt (struct task_struct *curr, struct pt_regs *regs)
 static int __pthread_create_rt (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg5(regs),sizeof(int)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg4(regs),sizeof(xncompletion_t)))
 	return -EFAULT;
 
-    return __pthread_shadow_helper(curr,regs,__xn_reg_arg4(regs),(int __user *)__xn_reg_arg5(regs));
+    return __pthread_shadow_helper(curr,regs,(xncompletion_t __user *)__xn_reg_arg4(regs));
 }
 
 static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)

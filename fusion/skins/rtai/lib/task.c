@@ -36,8 +36,7 @@ struct rt_task_iargs {
     RT_TASK *task;
     const char *name;
     int prio;
-    pid_t ppid;
-    int *syncp;
+    xncompletion_t *completionp;
 };
 
 static void *rt_task_trampoline (void *cookie)
@@ -57,11 +56,10 @@ static void *rt_task_trampoline (void *cookie)
     bulk.a2 = (u_long)iargs->name;
     bulk.a3 = (u_long)iargs->prio;
 
-    err = XENOMAI_SKINCALL3(__rtai_muxid,
+    err = XENOMAI_SKINCALL2(__rtai_muxid,
 			    __rtai_task_create,
 			    &bulk,
-			    iargs->ppid,
-			    iargs->syncp);
+			    iargs->completionp);
     if (err)
 	goto fail;
 
@@ -73,14 +71,12 @@ static void *rt_task_trampoline (void *cookie)
 	err = XENOMAI_SYSCALL2(__xn_sys_barrier,&entry,&cookie);
     while (err == -EINTR);
 
-    if (err)
-	goto fail;
-
-    entry(cookie);
+    if (!err)
+	entry(cookie);
 
  fail:
 
-    return NULL;
+    pthread_exit((void *)err);
 }
 
 int rt_task_create (RT_TASK *task,
@@ -90,9 +86,9 @@ int rt_task_create (RT_TASK *task,
 		    int mode)	/* Ignored. */
 {
     struct rt_task_iargs iargs;
+    xncompletion_t completion;
     struct sched_param param;
     pthread_attr_t thattr;
-    int syncflag = 0;
     pthread_t thid;
 
     /* Try to attach to the in-kernel skin on-the-fly at the first
@@ -108,11 +104,13 @@ int rt_task_create (RT_TASK *task,
 
     XENOMAI_SYSCALL1(__xn_sys_migrate,FUSION_LINUX_DOMAIN);
 
+    completion.syncflag = 0;
+    completion.pid = -1;
+
     iargs.task = task;
     iargs.name = name;
     iargs.prio = prio;
-    iargs.ppid = getpid();
-    iargs.syncp = &syncflag;
+    iargs.completionp = &completion;
 
     pthread_attr_init(&thattr);
 
@@ -129,7 +127,7 @@ int rt_task_create (RT_TASK *task,
     pthread_create(&thid,&thattr,&rt_task_trampoline,&iargs);
 
     /* Wait for sync with rt_task_trampoline() */
-    return XENOMAI_SYSCALL1(__xn_sys_sync,&syncflag);
+    return XENOMAI_SYSCALL1(__xn_sys_completion,&completion);
 }
 
 int rt_task_start (RT_TASK *task,

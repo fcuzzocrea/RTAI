@@ -25,11 +25,17 @@
 /* RTAI/fusion multiplexer syscall. */
 #define __xn_sys_mux    555
 /* RTAI/fusion nucleus syscalls. */
-#define __xn_sys_attach     0	/* muxid = xnshadow_attach_interface(magic,infp) */
-#define __xn_sys_detach     1	/* xnshadow_detach_interface(muxid) */
-#define __xn_sys_sync       2	/* xnshadow_sync(&syncflag) */
-#define __xn_sys_migrate    3	/* switched = xnshadow_relax/harden() */
-#define __xn_sys_barrier    4	/* started = xnshadow_wait_barrier(&entry,&cookie) */
+#define __xn_sys_bind       0	/* muxid = bind_to_interface(magic,infp) */
+#define __xn_sys_completion 1	/* xnshadow_completion(&completion) */
+#define __xn_sys_migrate    2	/* switched = xnshadow_relax/harden() */
+#define __xn_sys_barrier    3	/* started = xnshadow_wait_barrier(&entry,&cookie) */
+
+typedef struct xncompletion {
+
+    long syncflag;		/* Semaphore variable. */
+    pid_t pid;			/* Single waiter ID. */
+
+} xncompletion_t;
 
 typedef struct xnsysinfo {
 

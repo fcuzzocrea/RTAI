@@ -92,15 +92,14 @@ int pthread_exit_rt(void);
 
 int pthread_create_rt(const char *name,
 		      void *uhandle,
-		      pid_t syncpid,
-		      int *syncp,
+		      xncompletion_t *completionp,
 		      void **khandlep);
 
 int pthread_barrier_rt(void);
 
 int pthread_start_rt(void *khandle);
 
-int pthread_sync_rt(int *syncp);
+int pthread_sync_rt(xncompletion_t *completionp);
 
 int pthread_migrate_rt(int domain);
 

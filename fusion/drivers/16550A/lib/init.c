@@ -26,7 +26,7 @@ int __16550A_muxid = -1;
 int __init_skin (void)
 
 {
-    int muxid = XENOMAI_SYSCALL2(__xn_sys_attach,RTAI_UART_MAGIC,NULL); /* atomic */
+    int muxid = XENOMAI_SYSCALL2(__xn_sys_bind,RTAI_UART_MAGIC,NULL); /* atomic */
 
     if (muxid < 0)
 	return -1;

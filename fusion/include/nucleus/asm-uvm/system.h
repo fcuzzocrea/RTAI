@@ -175,9 +175,8 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
     void *cookie;		/* Thread cookie passed on entry */
     int imask;			/* Initial interrupt mask */
     jmp_buf rstenv;             /* Restart context info */
-    pid_t ppid;
-    int syncflag;
     pthread_t thid;
+    xncompletion_t completion;
 
     /* The following fields are not used by the Fusion skin, however
        they are set by the nucleus. */
@@ -434,8 +433,7 @@ struct xnarch_tick_parms {
     time_t sec;
     long nsec;
     void (*tickhandler)(void);
-    pid_t ppid;
-    int syncflag;
+    xncompletion_t completion;
 };
 
 /*
@@ -454,18 +452,23 @@ static void *xnarch_timer_thread (void *cookie)
     void (*tickhandler)(void);
     struct sched_param param;
     struct timespec ts;
+    int err;
 
     param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 3;
     sched_setscheduler(0,SCHED_FIFO,&param);
 
     /* Copy the following values laid in our parent's stack before it
-       is unblocked from the sync barrier by pthread_create_rt(). */
+       is unblocked from the completion by pthread_create_rt(). */
     ts.tv_sec = p->sec;
     ts.tv_nsec = p->nsec;
     tickhandler = p->tickhandler;
 
-    pthread_create_rt("uvm-timer",NULL,p->ppid,&p->syncflag,&uvm_timer_handle);
-    pthread_barrier_rt();	/* Wait for start. */
+    pthread_create_rt("uvm-timer",NULL,&p->completion,&uvm_timer_handle);
+
+    err = pthread_barrier_rt();	/* Wait for start. */
+
+    if (err)
+	pthread_exit((void *)err);
 
     for (;;)
 	{
@@ -474,7 +477,7 @@ static void *xnarch_timer_thread (void *cookie)
 	tickhandler();
 	}
 
-    return NULL;
+    pthread_exit(NULL);
 }
 
 static inline int xnarch_start_timer (unsigned long nstick,
@@ -506,16 +509,19 @@ static inline int xnarch_start_timer (unsigned long nstick,
     parms.sec = nstick / 1000000000;
     parms.nsec = nstick % 1000000000;
     parms.tickhandler = tickhandler;
-    parms.syncflag = 0;
-    parms.ppid = getpid();
+    parms.completion.syncflag = 0;
+    parms.completion.pid = -1;
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
     pthread_create(&thid,&thattr,&xnarch_timer_thread,&parms);
-    pthread_sync_rt(&parms.syncflag);
-    pthread_start_rt(uvm_timer_handle);
 
-    return 0;
+    err = pthread_sync_rt(&parms.completion);
+
+    if (err == 0)
+	pthread_start_rt(uvm_timer_handle);
+
+    return err;
 }
 
 static inline void xnarch_leave_root(xnarchtcb_t *rootcb) {
@@ -571,13 +577,16 @@ static void *xnarch_thread_trampoline (void *cookie)
 {
     xnarchtcb_t *tcb = (xnarchtcb_t *)cookie;
     struct sched_param param;
+    int err;
 
     if (!setjmp(tcb->rstenv))
 	{
 	param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
 	sched_setscheduler(0,SCHED_FIFO,&param);
-	pthread_create_rt(tcb->name,tcb,tcb->ppid,&tcb->syncflag,&tcb->khandle);
-	pthread_barrier_rt();	/* Wait for start. */
+	pthread_create_rt(tcb->name,tcb,&tcb->completion,&tcb->khandle);
+	err = pthread_barrier_rt();	/* Wait for start. */
+	if (err)
+	    pthread_exit((void *)err);
 	}
 
     xnarch_setimask(tcb->imask);
@@ -586,7 +595,7 @@ static void *xnarch_thread_trampoline (void *cookie)
 
     tcb->entry(tcb->cookie);
 
-    return NULL;
+    pthread_exit(NULL);
 }
 
 static inline void xnarch_init_thread (xnarchtcb_t *tcb,
@@ -609,14 +618,13 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     tcb->cookie = cookie;
     tcb->thread = thread;
     tcb->name = name;
-    tcb->ppid = getpid();
-    tcb->syncflag = 0;
+    tcb->completion.syncflag = 0;
+    tcb->completion.pid = -1;
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
     pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
-
-    pthread_sync_rt(&tcb->syncflag);
+    pthread_sync_rt(&tcb->completion);
 }
 
 static inline void xnarch_enable_fpu(xnarchtcb_t *current_tcb) {

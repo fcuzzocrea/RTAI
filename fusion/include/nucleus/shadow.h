@@ -63,9 +63,8 @@ void xnshadow_grab_events(void);
 
 void xnshadow_release_events(void);
 
-void xnshadow_map(struct xnthread *thread,
-		  pid_t syncpid,
-		  int __user *u_syncp);
+int xnshadow_map(struct xnthread *thread,
+		 xncompletion_t __user *u_completion);
 
 void xnshadow_unmap(struct xnthread *thread);
 
@@ -76,12 +75,11 @@ void xnshadow_renice(struct xnthread *thread);
 int xnshadow_wait_barrier(struct pt_regs *regs);
 
 void xnshadow_start(struct xnthread *thread,
-		    void (*uentry)(void *cookie),
-		    void *ucookie);
+		    void (*u_entry)(void *cookie),
+		    void *u_cookie);
 
-void xnshadow_sync_post(pid_t syncpid,
-			int *u_syncp,
-			int err);
+void xnshadow_signal_completion(xncompletion_t __user *u_completion,
+				int err);
 
 void xnshadow_exit(void);
 

@@ -112,8 +112,7 @@ static RT_TASK *__rt_task_current (struct task_struct *curr)
 
 /*
  * int __rt_task_create(struct rt_arg_bulk *bulk,
- *                      pid_t syncpid,
- *                      int __user *u_syncp)
+ *                      xncompletion_t __user *u_completion)
  *
  * bulk = {
  * a1: RT_TASK_PLACEHOLDER *task;
@@ -125,12 +124,11 @@ static RT_TASK *__rt_task_current (struct task_struct *curr)
 static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 
 {
+    xncompletion_t __user *u_completion;
     char name[XNOBJECT_NAME_LEN];
     struct rt_arg_bulk bulk;
     RT_TASK_PLACEHOLDER ph;
-    int __user *u_syncp;
     int err, prio;
-    pid_t syncpid;
     RT_TASK *task;
     spl_t s;
 
@@ -154,10 +152,8 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 
     /* Task priority. */
     prio = bulk.a3;
-    /* PID of parent thread waiting for sync. */
-    syncpid = __xn_reg_arg2(regs);
-    /* Semaphore address. */
-    u_syncp = (int __user *)__xn_reg_arg3(regs);
+    /* Completion descriptor our parent thread is pending on. */
+    u_completion = (xncompletion_t __user *)__xn_reg_arg2(regs);
 
     task = (RT_TASK *)xnmalloc(sizeof(*task));
 
@@ -183,14 +179,15 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = task->handle;
 	__xn_copy_to_user(curr,(void __user *)bulk.a1,&ph,sizeof(ph));
-	xnshadow_map(&task->thread_base,syncpid,u_syncp);
+	err = xnshadow_map(&task->thread_base,u_completion);
 
 	splexit(s);
 	}
     else
 	{
 	xnfree(task);
-	xnshadow_sync_post(syncpid,u_syncp,err);
+	/* Unblock and pass back error code. */
+	xnshadow_signal_completion(u_completion,err);
 	}
 
     return err;

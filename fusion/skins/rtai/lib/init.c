@@ -41,7 +41,7 @@ int __init_skin (void)
 {
     int muxid;
 
-    muxid = XENOMAI_SYSCALL2(__xn_sys_attach,RTAI_SKIN_MAGIC,NULL); /* atomic */
+    muxid = XENOMAI_SYSCALL2(__xn_sys_bind,RTAI_SKIN_MAGIC,NULL); /* atomic */
 
     /* Allocate a TSD key for indexing self task pointers. */
 

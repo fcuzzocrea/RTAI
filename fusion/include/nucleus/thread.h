@@ -28,7 +28,7 @@
 #define XNDELAY   0x00000004	/* Delayed */
 #define XNREADY   0x00000008	/* Linked to the ready queue */
 #define XNDORMANT 0x00000010	/* Not started yet or killed */
-#define XNZOMBIE  0x00000020	/* Self-deleting running thread */
+#define XNZOMBIE  0x00000020	/* Zombie thread in deletion process */
 #define XNRESTART 0x00000040	/* Restarting thread */
 #define XNSTARTED 0x00000080	/* Could be restarted */
 #define XNRELAX   0x00000100	/* Relaxed shadow thread (blocking bit) */

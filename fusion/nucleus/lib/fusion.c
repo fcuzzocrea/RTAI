@@ -57,7 +57,7 @@ static long long llimd(long long ll, u_long m, u_long d) {
 static inline int __init_skin (void)
 
 {
-    __fusion_muxid = XENOMAI_SYSCALL2(__xn_sys_attach,FUSION_SKIN_MAGIC,&__fusion_info);
+    __fusion_muxid = XENOMAI_SYSCALL2(__xn_sys_bind,FUSION_SKIN_MAGIC,&__fusion_info);
     return __fusion_muxid;
 }
 
@@ -88,14 +88,12 @@ int pthread_init_rt (const char *name,
 int pthread_exit_rt (void)
 
 {
-    return XENOMAI_SKINCALL0(__fusion_muxid,
-			     __xn_fusion_exit);
+    return XENOMAI_SKINCALL0(__fusion_muxid,__xn_fusion_exit);
 }
 
 int pthread_create_rt (const char *name,
 		       void *uhandle,
-		       pid_t syncpid,
-		       int *syncp,
+		       xncompletion_t *completionp,
 		       void **khandlep)
 {
     if (__fusion_muxid == 0 && __init_skin() < 0)
@@ -107,7 +105,7 @@ int pthread_create_rt (const char *name,
        start the mated shadow thread. Caller will need to wait on the
        barrier (pthread_barrier_rt()) for the start event
        (pthread_start_rt()). */
-    return XENOMAI_SKINCALL5(__fusion_muxid,__xn_fusion_create,name,khandlep,uhandle,syncpid,syncp);
+    return XENOMAI_SKINCALL4(__fusion_muxid,__xn_fusion_create,name,khandlep,uhandle,completionp);
 }
 
 int pthread_barrier_rt (void)
@@ -134,10 +132,10 @@ int pthread_start_rt (void *khandle)
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_start,khandle);
 }
 
-int pthread_sync_rt (int *syncp)
+int pthread_sync_rt (xncompletion_t *completionp)
 
 {
-    return XENOMAI_SYSCALL1(__xn_sys_sync,syncp);
+    return XENOMAI_SYSCALL1(__xn_sys_completion,completionp);
 }
 
 int pthread_time_rt (nanotime_t *tp)

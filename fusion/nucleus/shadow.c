@@ -248,7 +248,6 @@ static void schedback_handler (unsigned virq)
 		if (xnshadow_thread(task) &&
 		    testbits(xnshadow_thread(task)->status,XNSHIELD))
 		    engage_irq_shield();
-
 #ifdef CONFIG_SMP
 		/* If the shadow thread changed its CPU while in primary mode,
                    change the CPU of its Linux counter-part (this is a cheap
@@ -462,7 +461,12 @@ static int xnshadow_harden (void)
 
     if (signal_pending(this_task) ||
 	down_interruptible(&gk->sync)) /* Grab the request token. */
-	return -EINTR;
+	return -ERESTARTSYS;
+
+    thread = xnshadow_thread(this_task);
+
+    if (!thread)
+	return -EPERM;
 
     xnltt_log_event(rtai_ev_primarysw,this_task->comm);
 
@@ -473,7 +477,7 @@ static int xnshadow_harden (void)
        wake up the gatekeeper which will perform the actual
        transition. */
 
-    gk->thread = xnshadow_thread(this_task);
+    gk->thread = thread;
     wake_up_interruptible_sync(&gk->waitq);
     set_current_state(TASK_INTERRUPTIBLE);
     schedule();
@@ -486,8 +490,6 @@ static int xnshadow_harden (void)
 #ifdef CONFIG_RTAI_HW_FPU
     xnpod_switch_fpu(xnpod_current_sched());
 #endif /* CONFIG_RTAI_HW_FPU */
-
-    thread = xnpod_current_thread();
 
     ++thread->stat.psw;	/* Account for primary mode switch. */
 
@@ -562,49 +564,79 @@ void xnshadow_relax (void)
     xnltt_log_event(rtai_ev_secondary,current->comm);
 }
 
-void xnshadow_sync_post (pid_t syncpid, int __user *u_syncp, int err)
+#define completion_value_ok ((1UL << (BITS_PER_LONG-1))-1)
+
+void xnshadow_signal_completion (xncompletion_t __user *u_completion, int err)
 
 {
     struct task_struct *synctask;
+    pid_t pid;
+    spl_t s;
 
-    /* FIXME: this won't be SMP safe. */
+    /* We should not be able to signal completion to any stale
+       waiter. */
+
+    xnlock_get_irqsave(&nklock,s);
+
+    __xn_get_user(current,pid,&u_completion->pid);
+	/* Poor man's semaphore V. */
+    __xn_put_user(current,err ?: completion_value_ok,&u_completion->syncflag);
+
+    if (pid == -1)
+	{
+	/* The waiter did not enter xnshadow_wait_completion() yet:
+	   just raise the flag and exit. */
+	xnlock_put_irqrestore(&nklock,s);
+	return;
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
 
     read_lock(&tasklist_lock);
-    synctask = find_task_by_pid(syncpid);
+    synctask = find_task_by_pid(pid);
     read_unlock(&tasklist_lock);
 
     if (synctask)
-	{
-	__xn_put_user(synctask,err ?: 0x7fffffff,u_syncp); /* Poor man's semaphore V. */
 	wake_up_process(synctask);
-	}
 }
 
-static int xnshadow_sync_wait (int __user *u_syncp)
+static int xnshadow_wait_completion (xncompletion_t __user *u_completion)
 
 {
-    int syncflag;
+    long syncflag;
     spl_t s;
+
+    /* The completion block is always part of the waiter's address
+       space. */
 
     for (;;)	/* Poor man's semaphore P. */
 	{
 	xnlock_get_irqsave(&nklock,s);
 
-	__xn_get_user(current,syncflag,u_syncp);
+	__xn_get_user(current,syncflag,&u_completion->syncflag);
 
 	if (syncflag)
 	    break;
+
+	__xn_put_user(current,current->pid,&u_completion->pid);
 
 	set_current_state(TASK_INTERRUPTIBLE);
 
 	xnlock_put_irqrestore(&nklock,s);
 
 	schedule();
+
+	if (signal_pending(current))
+	    {
+	    __xn_put_user(current,-1,&u_completion->pid);
+	    syncflag = -ERESTARTSYS;
+	    break;
+	    }
 	}
 
     xnlock_put_irqrestore(&nklock,s);
 
-    return syncflag == 0x7fffffff ? 0 : syncflag;
+    return syncflag == completion_value_ok ? 0 : (int)syncflag;
 }
 
 void xnshadow_exit (void)
@@ -615,9 +647,8 @@ void xnshadow_exit (void)
 }
 
 /*! 
- * \fn void xnshadow_map(xnthread_t *thread,
-			 pid_t syncpid,
-			 int __user *u_syncp);
+ * \fn int xnshadow_map(xnthread_t *thread,
+                        xncompletion_t __user *u_completion);
  * @internal
  * \brief Create a shadow thread context.
  *
@@ -631,23 +662,28 @@ void xnshadow_exit (void)
  * (i.e. xnthread_set_magic()) than the one used to register the skin
  * it belongs to. Failing to do so leads to unexpected results.
  *
- * @param syncpid If non-zero, this must be the pid of a Linux task to
- * wake up when the shadow has been initialized. In this case, u_syncp
- * must be valid to, and the new shadow thread is left in a dormant
- * state (XNDORMANT) after its creation, leading to the suspension of
- * "current" in the RTAI domain. Otherwise, the shadow thread is
- * immediately started and "current" exits from this service without
- * being suspended.
+ * @param u_completion is the address of an optional completion
+ * descriptor aimed at synchronizing our parent thread with us. If
+ * non-NULL, the information xnshadow_map() will store into the
+ * completion block will be later used to wake up the parent thread
+ * when the current shadow has been initialized. In the latter case,
+ * the new shadow thread is left in a dormant state (XNDORMANT) after
+ * its creation, leading to the suspension of "current" in the Linux
+ * domain, only processing signals. Otherwise, the shadow thread is
+ * immediately started and "current" immediately resumes in the RTAI
+ * domain from this service.
  *
- * @param u_syncp If non-zero, this must be a pointer to an integer
- * variable into the caller's address space in user-space which will
- * be used as a semaphore. This semaphore will be posted to wakeup the
- * task identified by pid before "current" is suspended in dormant
- * state by this service. The awaken Linux task is expected to invoke
- * a syscall hat ends up calling xnshadow_start() to finally start the
- * newly created shadow. Passing a null pointer here has the same
- * effect as passing a zero pid argument, and there will be no attempt
- * to wake up any task.
+ * @return 0 is returned on success. Otherwise:
+ *
+ * - -ERESTARTSYS is returned if the current Linux task has received a
+ * signal, thus preventing the final migration to the RTAI domain
+ * (i.e. in order to process the signal in the Linux domain). This
+ * error should not be considered as fatal.
+ *
+ * - -EPERM is returned if the shadow thread has been killed before
+ * the current task had a chance to return to the caller. In such a
+ * case, the real-time mapping operation has failed globally, and no
+ * RTAI resource remains attached to it.
  *
  * Environments:
  *
@@ -659,11 +695,9 @@ void xnshadow_exit (void)
  *
  */
 
-void xnshadow_map (xnthread_t *thread,
-                   pid_t syncpid,
-                   int __user *u_syncp)
+int xnshadow_map (xnthread_t *thread,
+		  xncompletion_t __user *u_completion)
 {
-    int autostart = !(syncpid && u_syncp);
     unsigned muxid, magic;
 
     preempt_disable();
@@ -698,13 +732,15 @@ void xnshadow_map (xnthread_t *thread,
     xnshadow_ptd(current) = thread;
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
 
-   if (autostart)
+   if (u_completion)
        {
-       xnshadow_start(thread,NULL,NULL);
-       xnshadow_harden();
+       xnshadow_signal_completion(u_completion,0);
+       return 0;
        }
-   else
-       xnshadow_sync_post(syncpid,u_syncp,0);
+
+   xnshadow_start(thread,NULL,NULL);
+
+   return xnshadow_harden();
 }
 
 void xnshadow_unmap (xnthread_t *thread)
@@ -728,7 +764,7 @@ void xnshadow_unmap (xnthread_t *thread)
             {
             if (xnarch_atomic_dec_and_test(&muxtable[muxid].refcnt))
                 /* We were the last thread, decrement the counter,
-		   since it was incremented by the first "attach"
+		   since it was incremented by the xn_sys_bind
 		   operation. */
                 xnarch_atomic_dec(&muxtable[muxid].refcnt);
 
@@ -745,16 +781,17 @@ void xnshadow_unmap (xnthread_t *thread)
     xnshadow_ptd(task) = NULL;
 
     if (task->state != TASK_RUNNING)
-	/* If the shadow is being unmapped in primary mode, the
-	   associated Linux task should also die. The zombie Linux
-	   side returning to user-space will be trapped and exited
-	   inside the pod's rescheduling routines. */
-	schedule_linux_call(SB_WAKEUP_REQ,task,0);
+	/* If the shadow is being unmapped in primary mode or blocked
+	   in secondary mode, the associated Linux task should also
+	   die. In the former case, the zombie Linux side returning to
+	   user-space will be trapped and exited inside the pod's
+	   rescheduling routines. */
+	schedule_linux_call(SB_SIGNAL_REQ,task,SIGKILL);
     else
 	/* Otherwise, if the shadow is being unmapped in secondary
-	   mode, we only detach the shadow thread from its Linux mate,
-	   and renice the root thread appropriately. We do not
-	   reschedule since xnshadow_unmap() must be called from a
+	   mode and running, we only detach the shadow thread from its
+	   Linux mate, and renice the root thread appropriately. We do
+	   not reschedule since xnshadow_unmap() must be called from a
 	   thread deletion hook. */
 	xnpod_renice_root(XNPOD_ROOT_PRIO_BASE);
 }
@@ -765,6 +802,9 @@ int xnshadow_wait_barrier (struct pt_regs *regs)
     xnthread_t *thread = xnshadow_thread(current);
     spl_t s;
 
+    if (!thread)
+	return -EPERM;
+	
     xnlock_get_irqsave(&nklock,s);
 
     if (testbits(thread->status,XNSTARTED))
@@ -780,8 +820,11 @@ int xnshadow_wait_barrier (struct pt_regs *regs)
 
     schedule();
 
-    if (!testbits(thread->status,XNSTARTED))
-	return -EINTR;
+    if (signal_pending(current))
+	return -ERESTARTSYS;
+
+    if (!testbits(thread->status,XNSTARTED)) /* Paranoid. */
+	return -EPERM;
 
  release_task:
 
@@ -844,9 +887,9 @@ void xnshadow_renice (xnthread_t *thread)
     schedule_linux_call(SB_RENICE_REQ,task,prio);
 }
 
-static int attach_to_interface (struct task_struct *curr,
-				unsigned magic,
-				u_long infarg)
+static int bind_to_interface (struct task_struct *curr,
+			      unsigned magic,
+			      u_long infarg)
 {
     xnsysinfo_t info;
     int muxid;
@@ -859,9 +902,9 @@ static int attach_to_interface (struct task_struct *curr,
 	if (muxtable[muxid].magic == magic)
 	    {
 	    /* Increment the reference count now (actually, only the
-	       first call to attach_to_interface() really increments
-	       the counter), so that the interface cannot be removed
-	       under our feet. */
+	       first call to bind_to_interface() really increments the
+	       counter), so that the interface cannot be removed under
+	       our feet. */
 
             if (!xnarch_atomic_inc_and_test(&muxtable[muxid].refcnt))
                 xnarch_atomic_dec(&muxtable[muxid].refcnt);
@@ -905,51 +948,11 @@ static int attach_to_interface (struct task_struct *curr,
     return -ESRCH;
 }
 
-static int detach_from_interface (struct task_struct *curr, int muxid)
-
-{
-    xnholder_t *holder, *nholder;
-    xnthread_t *thread;
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-
-    if (--muxid < 0 || muxid >= XENOMAI_MUX_NR || muxtable[muxid].magic == 0)
-	{
-	xnlock_put_irqrestore(&nklock,s);
-	return -EINVAL;
-	}
-
-    if (muxtable[muxid].eventcb)
-	/* The reference count is our safety belt against concurrent
-	   removal of the skin under our feet, so we do not decrement
-	   it until the event callback had a chance to run, possibly
-	   releasing the current critical section internally. */
-	muxtable[muxid].eventcb(XNSHADOW_CLIENT_DETACH);
-
-    /* Find all active shadow threads belonging to the detached skin
-       and delete them. */
-
-    nholder = getheadq(&nkpod->threadq);
-
-    while ((holder = nholder) != NULL)
-	{
-	nholder = nextq(&nkpod->threadq,holder);
-	thread = link2thread(holder,glink);
-
-	if (xnthread_get_magic(thread) == muxtable[muxid].magic)
-	    xnpod_delete_thread(thread);
-	}
-
-    xnlock_put_irqrestore(&nklock,s);
-
-    return 0;
-}
-
 static int substitute_linux_syscall (struct task_struct *curr,
 				     struct pt_regs *regs)
 {
     xnthread_t *thread = xnshadow_thread(curr);
+    int err;
 
     switch (__xn_reg_mux(regs))
 	{
@@ -986,9 +989,9 @@ static int substitute_linux_syscall (struct task_struct *curr,
 	    delay = xnshadow_ts2ticks(&t);
 	    expire += delay;
 
-	    if (!xnpod_shadow_p() && xnshadow_harden() == -EINTR)
+	    if (!xnpod_shadow_p() && (err = xnshadow_harden()) != 0)
 		{
-		__xn_error_return(regs,-ERESTARTSYS);
+		__xn_error_return(regs,err);
 		goto intr;
 		}
 
@@ -1144,19 +1147,21 @@ intr:
 static void exec_nucleus_syscall (int muxop, struct pt_regs *regs)
 
 {
+    int err;
+
     /* Called on behalf of the root thread. */
 
     switch (muxop)
 	{
-	case __xn_sys_sync:
+	case __xn_sys_completion:
 
-	    __xn_status_return(regs,xnshadow_sync_wait((int *)__xn_reg_arg1(regs)));
+	    __xn_status_return(regs,xnshadow_wait_completion((xncompletion_t __user *)__xn_reg_arg1(regs)));
 	    break;
 
 	case __xn_sys_migrate:
 
-	    if (xnshadow_harden() == -EINTR)
-		__xn_error_return(regs,-ERESTARTSYS);
+	    if ((err = xnshadow_harden()) != 0)
+		__xn_error_return(regs,err);
 	    else
 		__xn_success_return(regs,1);
 
@@ -1167,21 +1172,14 @@ static void exec_nucleus_syscall (int muxop, struct pt_regs *regs)
 	    __xn_status_return(regs,xnshadow_wait_barrier(regs));
 	    break;
 
-	case __xn_sys_attach:
+	case __xn_sys_bind:
 
 	    __xn_status_return(regs,
-                               attach_to_interface(current,
-						   __xn_reg_arg1(regs),
-						   __xn_reg_arg2(regs)));
+                               bind_to_interface(current,
+						 __xn_reg_arg1(regs),
+						 __xn_reg_arg2(regs)));
 	    break;
 		
-	case __xn_sys_detach:
-	    
-	    __xn_status_return(regs,
-                               detach_from_interface(current,
-						     __xn_reg_arg1(regs)));
-	    break;
-
 	default:
 
 	    printk(KERN_WARNING "RTAI: Unknown nucleus syscall #%d\n",muxop);
@@ -1202,10 +1200,10 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
     if (__xn_reg_mux_p(regs))
 	{
-	if (__xn_reg_mux(regs) == __xn_mux_code(0,__xn_sys_attach))
-	    /* Valid exception case: we may be called to attach a
-	       skin which will create its own pod through its
-	       callback routine before returning to user-space. */
+	if (__xn_reg_mux(regs) == __xn_mux_code(0,__xn_sys_bind))
+	    /* Valid exception case: we may be called to bind to a
+	       skin which will create its own pod through its callback
+	       routine before returning to user-space. */
 	    goto propagate_syscall;
 
 	xnlogwarn("Bad syscall %ld/%ld -- no skin loaded.\n",
@@ -1298,9 +1296,8 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
 	    return;
 
-	case __xn_sys_attach:
-	case __xn_sys_detach:
-	case __xn_sys_sync:
+	case __xn_sys_bind:
+	case __xn_sys_completion:
 	case __xn_sys_barrier:
 
 	    /* If called from RTAI, switch to secondary mode then run
@@ -1405,7 +1402,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     if (xnpod_shadow_p() && signal_pending(task))
 	request_syscall_restart(thread,regs);
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
-	xnshadow_harden();
+	xnshadow_harden(); /* -EPERM will be trapped later if needed. */
 }
 
 static void linux_sysentry (adevinfo_t *evinfo)
@@ -1413,7 +1410,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
 {
     struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
     xnthread_t *thread = xnshadow_thread(current);
-    int muxid, muxop, sysflags, switched;
+    int muxid, muxop, sysflags, switched, err;
 
     if (__xn_reg_mux_p(regs))
 	goto xenomai_syscall;
@@ -1461,9 +1458,9 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	/* This request originates from the Linux domain and must be
 	   run into the RTAI domain: harden the caller and execute the
 	   syscall. */
-	if (xnshadow_harden() == -EINTR)
+	if ((err = xnshadow_harden()) != 0)
 	    {
-	    __xn_error_return(regs,-ERESTARTSYS);
+	    __xn_error_return(regs,err);
 	    return;
 	    }
 
@@ -1499,7 +1496,7 @@ static void linux_task_exit (adevinfo_t *evinfo)
 
     xnshadow_ptd(current) = NULL;
     xnthread_archtcb(thread)->user_task = NULL;
-    xnpod_delete_thread(thread);
+    xnpod_delete_thread(thread); /* Should indirectly call xnshadow_unmap(). */
 
     xnltt_log_event(rtai_ev_shadowexit,thread->name);
 }
@@ -1676,7 +1673,7 @@ static void linux_renice_process (adevinfo_t *evinfo)
  * NOTE: an interface can be registered without its pod being
  * necessarily active. In such a case, a lazy initialization scheme
  * can be implemented through the event callback fired upon the first
- * client attachment.
+ * client binding.
  */
 
 int xnshadow_register_interface (const char *name,
@@ -1845,7 +1842,7 @@ EXPORT_SYMBOL(xnshadow_map);
 EXPORT_SYMBOL(xnshadow_register_interface);
 EXPORT_SYMBOL(xnshadow_relax);
 EXPORT_SYMBOL(xnshadow_start);
-EXPORT_SYMBOL(xnshadow_sync_post);
+EXPORT_SYMBOL(xnshadow_signal_completion);
 EXPORT_SYMBOL(xnshadow_ticks2ts);
 EXPORT_SYMBOL(xnshadow_ticks2tv);
 EXPORT_SYMBOL(xnshadow_ts2ticks);

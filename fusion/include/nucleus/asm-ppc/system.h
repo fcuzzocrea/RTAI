@@ -174,6 +174,12 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define xnarch_printf(fmt,args...)   printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
 
 #define xnarch_ullmod(ull,uld,rem)   ({ xnarch_ulldiv(ull,uld,rem); (*rem); })
+#define xnarch_uldiv(ull, d)         xnarch_uldivrem(ull, d, NULL)
+#define xnarch_ulmod(ull, d)         ({ u_long _rem;                    \
+                                        xnarh_uldivrem(ull,uld,&_rem); _rem; })
+
+#define xnarch_ullmul                rthal_ullmul
+#define xnarch_uldivrem              rthal_uldivrem
 #define xnarch_ulldiv                rthal_ulldiv
 #define xnarch_imuldiv               rthal_imuldiv
 #define xnarch_llimd                 rthal_llimd

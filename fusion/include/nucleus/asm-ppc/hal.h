@@ -66,6 +66,8 @@ static inline unsigned long long rthal_ulldiv (unsigned long long ull,
     return q;
 }
 
+#define rthal_uldivrem(ull,ul,rp) ((u_long) rthal_ulldiv((ull),(ul),(rp)))
+
 static inline unsigned long long rthal_ullmul(unsigned long m0, 
 					      unsigned long m1)
 {

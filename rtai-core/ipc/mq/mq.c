@@ -1575,7 +1575,7 @@ int __rtai_mq_init(void)
 #ifdef CONFIG_PROC_FS
 	pqueue_proc_register();
 #endif
-	printk("\n==== RTAI MQ API v%s (%s, %s) Loaded ====\n", rtai_pqueue_version, __TIME__, __DATE__);
+	printk(KERN_INFO "RTAI[mq]: loaded.\n");
 	return set_rt_fun_entries(rt_pqueue_entries);
 	return OK;
 }  // End function - init_module
@@ -1588,7 +1588,7 @@ void __rtai_mq_exit(void)
 #ifdef CONFIG_PROC_FS
 	pqueue_proc_unregister();
 #endif
-	printk("\n==== RTAI MQ API v%s Unloaded ====\n", rtai_pqueue_version);
+	printk(KERN_INFO "RTAI[mq]: unloaded.\n");
 }  // End function - cleanup_module
 // ---------------------------------< eof >------------------------------------
 

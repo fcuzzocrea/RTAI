@@ -81,6 +81,7 @@ ACKNOWLEDGMENTS:
 #include <linux/kernel.h>
 #include <linux/timex.h>
 #include <linux/sched.h>
+#include <linux/interrupt.h>
 
 #include <asm/param.h>
 #include <asm/system.h>

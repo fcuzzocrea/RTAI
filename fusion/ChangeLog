@@ -1,5 +1,13 @@
 2004-12-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c: Fix "self" task determination code to
+	encompass the case where the caller is a relaxed shadow.
+
+	* skins/rtai/syscall.c: Turn -ENOENT errors into -ESRCH.
+
+	* skins/rtai/task.c, skin/rtai/lib/task.c (rt_task_self,
+	rt_task_slice): Finalize user-space support.
+
 	* nucleus/pod.c (xnpod_calibration_thread): Fix stupid time
 	reference bug.
 

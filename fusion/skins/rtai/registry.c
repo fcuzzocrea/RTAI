@@ -203,7 +203,7 @@ static inline int __registry_hash_remove (RT_OBJECT *object)
 	    }
 	}
 
-    return -ENOENT;
+    return -ESRCH;
 }
 
 static RT_OBJECT *__registry_hash_find (const char *key)
@@ -462,7 +462,7 @@ int rt_registry_bind (const char *key,
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -ENOENT is returned if @a handle does not reference a registered
+ * - -ESRCH is returned if @a handle does not reference a registered
  * object.
  *
  * Environments:
@@ -489,7 +489,7 @@ int rt_registry_remove (rt_handle_t handle)
 
     if (!object)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -526,7 +526,7 @@ int rt_registry_remove (rt_handle_t handle)
  *
  * @return 0 is returned upon success. Otherwise:
  *
- * - -ENOENT is returned if @a handle does not reference a registered
+ * - -ESRCH is returned if @a handle does not reference a registered
  * object.
  *
  * - -EWOULDBLOCK is returned if @a timeout is equal to
@@ -575,7 +575,7 @@ int rt_registry_remove_safe (rt_handle_t handle, RTIME timeout)
 
     if (!object)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -634,7 +634,7 @@ int rt_registry_remove_safe (rt_handle_t handle, RTIME timeout)
 	err = rt_registry_remove(handle);
     else
 	/* The caller should silently abort the deletion process. */
-	err = -ENOENT;
+	err = -ESRCH;
 
  unlock_and_exit:
 

@@ -923,7 +923,7 @@ static int xnshadow_attach_skin (struct task_struct *curr,
 
     xnlock_put_irqrestore(&nklock,s);
 
-    return -ENOENT;
+    return -ESRCH;
 }
 
 static int xnshadow_detach_skin (struct task_struct *curr, int muxid)

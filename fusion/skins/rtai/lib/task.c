@@ -19,18 +19,35 @@
 #include <sys/types.h>
 #include <sys/mman.h>
 #include <memory.h>
+#include <malloc.h>
 #include <unistd.h>
 #include <limits.h>
 #include <rtai/syscall.h>
 #include <rtai/registry.h>
 #include <rtai/task.h>
 
+static pthread_key_t __rtai_tskey;
+
 int __rtai_muxid = -1;
+
+static void __flush_tsd (void *tsd)
+
+{
+    /* Free the task descriptor allocated by rt_task_self(). */
+    free(tsd);
+}
 
 static inline int __init_skin (void)
 
 {
     __rtai_muxid = XENOMAI_SYSCALL2(__xn_sys_attach,RTAI_SKIN_MAGIC,NULL);
+
+    /* Allocate a TSD key for indexing self task pointers. */
+
+    if (__rtai_muxid >= 0 &&
+	pthread_key_create(&__rtai_tskey,&__flush_tsd) != 0)
+	return -1;
+	
     return __rtai_muxid;
 }
 
@@ -267,4 +284,36 @@ int rt_task_set_mode (int clrmask,
 			     clrmask,
 			     setmask,
 			     oldmode);
+}
+
+RT_TASK *rt_task_self (void)
+
+{
+    RT_TASK *self;
+
+    if (__rtai_muxid < 0 && __init_skin() < 0)
+	return NULL;
+
+    self = (RT_TASK *)pthread_getspecific(__rtai_tskey);
+
+    if (self)
+	return self;
+
+    self = (RT_TASK *)malloc(sizeof(*self));
+
+    if (!self || XENOMAI_SYSCALL1(__rtai_muxid,__rtai_task_self,self) != 0)
+	return NULL;
+
+    pthread_setspecific(__rtai_tskey,self);
+
+    return self;
+}
+
+int rt_task_slice (RT_TASK *task,
+		   RTIME quantum)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_task_slice,
+			     task,
+			     &quantum);
 }

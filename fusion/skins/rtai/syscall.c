@@ -91,6 +91,20 @@ static int __rt_bind_helper (struct task_struct *curr,
     return err;
 }
 
+static RT_TASK *__rt_task_current (struct task_struct *curr)
+
+{
+    xnthread_t *thread = xnshadow_thread(curr);
+
+    /* Don't call rt_task_self() which does not know about relaxed
+       tasks, but rather use the shadow information directly. */
+
+    if (!thread || xnthread_get_magic(thread) != RTAI_SKIN_MAGIC)
+	return NULL;
+
+    return thread2rtask(thread); /* Convert TCB pointers. */
+}
+
 /*
  * int __rt_task_create(struct rt_arg_bulk *bulk,
  *                      pid_t syncpid,
@@ -223,7 +237,7 @@ static int __rt_task_start (struct task_struct *curr, struct pt_regs *regs)
     task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 
     if (!task)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_task_start(task,
 			 (void (*)(void *))__xn_reg_arg2(regs),
@@ -238,7 +252,7 @@ static int __rt_task_suspend (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task = NULL;
+    RT_TASK *task;
 
     if (__xn_reg_arg1(regs))
 	{
@@ -249,13 +263,11 @@ static int __rt_task_suspend (struct task_struct *curr, struct pt_regs *regs)
 
 	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 	}
-    else if (xnpod_regular_p())
-	goto call_on_self;
+    else
+	task = __rt_task_current(curr);
 
     if (!task)
-	return -ENOENT;
-
-call_on_self:
+	return -ESRCH;
 
     return rt_task_suspend(task);
 }
@@ -278,7 +290,7 @@ static int __rt_task_resume (struct task_struct *curr, struct pt_regs *regs)
     task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 
     if (!task)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_task_resume(task);
 }
@@ -291,7 +303,7 @@ static int __rt_task_delete (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task = NULL;
+    RT_TASK *task;
 
     if (__xn_reg_arg1(regs))
 	{
@@ -302,13 +314,11 @@ static int __rt_task_delete (struct task_struct *curr, struct pt_regs *regs)
 
 	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 	}
-    else if (xnpod_regular_p())
-	goto call_on_self;
+    else
+	task = __rt_task_current(curr);
 
     if (!task)
-	return -ENOENT;
-
-call_on_self:
+	return -ESRCH;
 
     return rt_task_delete(task);
 }
@@ -332,8 +342,8 @@ static int __rt_task_set_periodic (struct task_struct *curr, struct pt_regs *reg
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task = NULL;
     RTIME idate, period;
+    RT_TASK *task;
 
     if (__xn_reg_arg1(regs))
 	{
@@ -344,13 +354,11 @@ static int __rt_task_set_periodic (struct task_struct *curr, struct pt_regs *reg
 
 	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 	}
-    else if (xnpod_regular_p())
-	goto call_on_self;
+    else
+	task = __rt_task_current(curr);
 
     if (!task)
-	return -ENOENT;
-
-call_on_self:
+	return -ESRCH;
 
     __xn_copy_from_user(curr,&idate,(void __user *)__xn_reg_arg2(regs),sizeof(idate));
     __xn_copy_from_user(curr,&period,(void __user *)__xn_reg_arg3(regs),sizeof(period));
@@ -376,7 +384,7 @@ static int __rt_task_set_priority (struct task_struct *curr, struct pt_regs *reg
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task = NULL;
+    RT_TASK *task;
     int prio;
 
     if (__xn_reg_arg1(regs))
@@ -388,13 +396,11 @@ static int __rt_task_set_priority (struct task_struct *curr, struct pt_regs *reg
 
 	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 	}
-    else if (xnpod_regular_p())
-	goto call_on_self;
+    else
+	task = __rt_task_current(curr);
 
     if (!task)
-	return -ENOENT;
-
-call_on_self:
+	return -ESRCH;
 
     prio = __xn_reg_arg2(regs);
 
@@ -447,7 +453,7 @@ static int __rt_task_unblock (struct task_struct *curr, struct pt_regs *regs)
     task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 
     if (!task)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_task_unblock(task);
 }
@@ -461,8 +467,8 @@ static int __rt_task_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task = NULL;
     RT_TASK_INFO info;
+    RT_TASK *task;
     int err;
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(info)))
@@ -477,13 +483,11 @@ static int __rt_task_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 	}
-    else if (xnpod_regular_p())
-	goto call_on_self;
+    else
+	task = __rt_task_current(curr);
 
     if (!task)
-	return -ENOENT;
-
-call_on_self:
+	return -ESRCH;
 
     err = rt_task_inquire(task,&info);
 
@@ -502,8 +506,8 @@ static int __rt_task_notify (struct task_struct *curr, struct pt_regs *regs)
 
 {
     RT_TASK_PLACEHOLDER ph;
-    RT_TASK *task = NULL;
     rt_sigset_t signals;
+    RT_TASK *task;
 
     if (__xn_reg_arg1(regs))
 	{
@@ -514,13 +518,11 @@ static int __rt_task_notify (struct task_struct *curr, struct pt_regs *regs)
 
 	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
 	}
-    else if (xnpod_regular_p())
-	goto call_on_self;
+    else
+	task = __rt_task_current(curr);
 
     if (!task)
-	return -ENOENT;
-
-call_on_self:
+	return -ESRCH;
 
     signals = (rt_sigset_t)__xn_reg_arg2(regs);
 
@@ -538,8 +540,8 @@ static int __rt_task_set_mode (struct task_struct *curr, struct pt_regs *regs)
 {
     int err, setmask, clrmask, mode_r;
 
-    if (!xnpod_regular_p())
-	return -ENOENT;
+    if (!__rt_task_current(curr))
+	return -ESRCH;
 
     if (__xn_reg_arg3(regs) &&
 	!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(int)))
@@ -554,6 +556,65 @@ static int __rt_task_set_mode (struct task_struct *curr, struct pt_regs *regs)
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mode_r,sizeof(mode_r));
 
     return err;
+}
+
+/*
+ * int __rt_task_self(RT_TASK_PLACEHOLDER *ph)
+ */
+
+static int __rt_task_self (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_TASK_PLACEHOLDER ph;
+    RT_TASK *task;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    task = __rt_task_current(curr);
+
+    if (!task)
+	/* Calls on behalf of a non-task context beget an error for
+	   the user-space interface. */
+	return -ESRCH;
+
+    ph.opaque = task->handle;	/* Copy back the task handle. */
+
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return 0;
+}
+
+/*
+ * int __rt_task_slice(RT_TASK_PLACEHOLDER *ph,
+ *                     RTIME quantum)
+ */
+
+static int __rt_task_slice (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_TASK_PLACEHOLDER ph;
+    RT_TASK *task;
+    RTIME quantum;
+
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	}
+    else
+	task = __rt_task_current(curr);
+
+    if (!task)
+	return -ESRCH;
+
+    __xn_copy_from_user(curr,&quantum,(void __user *)__xn_reg_arg2(regs),sizeof(quantum));
+
+    return rt_task_slice(task,quantum);
 }
 
 /*
@@ -751,7 +812,7 @@ static int __rt_sem_delete (struct task_struct *curr, struct pt_regs *regs)
     sem = (RT_SEM *)rt_registry_fetch(ph.opaque);
 
     if (!sem)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_sem_delete(sem);
 }
@@ -776,7 +837,7 @@ static int __rt_sem_p (struct task_struct *curr, struct pt_regs *regs)
     sem = (RT_SEM *)rt_registry_fetch(ph.opaque);
 
     if (!sem)
-	return -ENOENT;
+	return -ESRCH;
 
     __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg2(regs),sizeof(timeout));
 
@@ -801,7 +862,7 @@ static int __rt_sem_v (struct task_struct *curr, struct pt_regs *regs)
     sem = (RT_SEM *)rt_registry_fetch(ph.opaque);
 
     if (!sem)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_sem_v(sem);
 }
@@ -830,7 +891,7 @@ static int __rt_sem_inquire (struct task_struct *curr, struct pt_regs *regs)
     sem = (RT_SEM *)rt_registry_fetch(ph.opaque);
 
     if (!sem)
-	return -ENOENT;
+	return -ESRCH;
 
     err = rt_sem_inquire(sem,&info);
 
@@ -935,7 +996,7 @@ static int __rt_event_delete (struct task_struct *curr, struct pt_regs *regs)
     event = (RT_EVENT *)rt_registry_fetch(ph.opaque);
 
     if (!event)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_event_delete(event);
 }
@@ -965,7 +1026,7 @@ static int __rt_event_wait (struct task_struct *curr, struct pt_regs *regs)
     event = (RT_EVENT *)rt_registry_fetch(ph.opaque);
 
     if (!event)
-	return -ENOENT;
+	return -ESRCH;
 
     mask = (unsigned long)__xn_reg_arg2(regs);
     mode = (int)__xn_reg_arg4(regs);
@@ -998,7 +1059,7 @@ static int __rt_event_signal (struct task_struct *curr, struct pt_regs *regs)
     event = (RT_EVENT *)rt_registry_fetch(ph.opaque);
 
     if (!event)
-	return -ENOENT;
+	return -ESRCH;
 
     mask = (unsigned long)__xn_reg_arg2(regs);
 
@@ -1031,7 +1092,7 @@ static int __rt_event_clear (struct task_struct *curr, struct pt_regs *regs)
     event = (RT_EVENT *)rt_registry_fetch(ph.opaque);
 
     if (!event)
-	return -ENOENT;
+	return -ESRCH;
 
     mask = (unsigned long)__xn_reg_arg2(regs);
 
@@ -1067,7 +1128,7 @@ static int __rt_event_inquire (struct task_struct *curr, struct pt_regs *regs)
     event = (RT_EVENT *)rt_registry_fetch(ph.opaque);
 
     if (!event)
-	return -ENOENT;
+	return -ESRCH;
 
     err = rt_event_inquire(event,&info);
 
@@ -1165,7 +1226,7 @@ static int __rt_mutex_delete (struct task_struct *curr, struct pt_regs *regs)
     mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
 
     if (!mutex)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_mutex_delete(mutex);
 }
@@ -1189,7 +1250,7 @@ static int __rt_mutex_lock (struct task_struct *curr, struct pt_regs *regs)
     mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
 
     if (!mutex)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_mutex_lock(mutex);
 }
@@ -1212,7 +1273,7 @@ static int __rt_mutex_unlock (struct task_struct *curr, struct pt_regs *regs)
     mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
 
     if (!mutex)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_mutex_unlock(mutex);
 }
@@ -1241,7 +1302,7 @@ static int __rt_mutex_inquire (struct task_struct *curr, struct pt_regs *regs)
     mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
 
     if (!mutex)
-	return -ENOENT;
+	return -ESRCH;
 
     err = rt_mutex_inquire(mutex,&info);
 
@@ -1338,7 +1399,7 @@ static int __rt_cond_delete (struct task_struct *curr, struct pt_regs *regs)
     cond = (RT_COND *)rt_registry_fetch(ph.opaque);
 
     if (!cond)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_cond_delete(cond);
 }
@@ -1367,12 +1428,12 @@ static int __rt_cond_wait (struct task_struct *curr, struct pt_regs *regs)
     cond = (RT_COND *)rt_registry_fetch(cph.opaque);
 
     if (!cond)
-	return -ENOENT;
+	return -ESRCH;
 
     mutex = (RT_MUTEX *)rt_registry_fetch(mph.opaque);
 
     if (!mutex)
-	return -ENOENT;
+	return -ESRCH;
 
     __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg3(regs),sizeof(timeout));
 
@@ -1397,7 +1458,7 @@ static int __rt_cond_signal (struct task_struct *curr, struct pt_regs *regs)
     cond = (RT_COND *)rt_registry_fetch(ph.opaque);
 
     if (!cond)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_cond_signal(cond);
 }
@@ -1420,7 +1481,7 @@ static int __rt_cond_broadcast (struct task_struct *curr, struct pt_regs *regs)
     cond = (RT_COND *)rt_registry_fetch(ph.opaque);
 
     if (!cond)
-	return -ENOENT;
+	return -ESRCH;
 
     return rt_cond_broadcast(cond);
 }
@@ -1449,7 +1510,7 @@ static int __rt_cond_inquire (struct task_struct *curr, struct pt_regs *regs)
     cond = (RT_COND *)rt_registry_fetch(ph.opaque);
 
     if (!cond)
-	return -ENOENT;
+	return -ESRCH;
 
     err = rt_cond_inquire(cond,&info);
 
@@ -1613,7 +1674,7 @@ static int __rt_queue_delete (struct task_struct *curr, struct pt_regs *regs)
 
     if (!q)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -1656,7 +1717,7 @@ static int __rt_queue_alloc (struct task_struct *curr, struct pt_regs *regs)
 
     if (!q)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -1708,7 +1769,7 @@ static int __rt_queue_free (struct task_struct *curr, struct pt_regs *regs)
 
     if (!q)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -1767,7 +1828,7 @@ static int __rt_queue_send (struct task_struct *curr, struct pt_regs *regs)
 
     if (!q)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -1824,7 +1885,7 @@ static int __rt_queue_recv (struct task_struct *curr, struct pt_regs *regs)
 
     if (!q)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -1872,7 +1933,7 @@ static int __rt_queue_inquire (struct task_struct *curr, struct pt_regs *regs)
     q = (RT_QUEUE *)rt_registry_fetch(ph.opaque);
 
     if (!q)
-	return -ENOENT;
+	return -ESRCH;
 
     err = rt_queue_inquire(q,&info);
 
@@ -2034,7 +2095,7 @@ static int __rt_heap_delete (struct task_struct *curr, struct pt_regs *regs)
 
     if (!heap)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -2084,7 +2145,7 @@ static int __rt_heap_alloc (struct task_struct *curr, struct pt_regs *regs)
 
     if (!heap)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -2134,7 +2195,7 @@ static int __rt_heap_free (struct task_struct *curr, struct pt_regs *regs)
 
     if (!heap)
 	{
-	err = -ENOENT;
+	err = -ESRCH;
 	goto unlock_and_exit;
 	}
 
@@ -2180,7 +2241,7 @@ static int __rt_heap_inquire (struct task_struct *curr, struct pt_regs *regs)
     heap = (RT_HEAP *)rt_registry_fetch(ph.opaque);
 
     if (!heap)
-	return -ENOENT;
+	return -ESRCH;
 
     err = rt_heap_inquire(heap,&info);
 
@@ -2223,6 +2284,8 @@ static xnsysent_t __systab[] = {
     [__rtai_task_inquire ] = { &__rt_task_inquire, __xn_flag_anycall },
     [__rtai_task_notify ] = { &__rt_task_notify, __xn_flag_anycall },
     [__rtai_task_set_mode ] = { &__rt_task_set_mode, __xn_flag_regular },
+    [__rtai_task_self ] = { &__rt_task_self, __xn_flag_anycall },
+    [__rtai_task_slice ] = { &__rt_task_slice, __xn_flag_anycall },
     [__rtai_timer_start ] = { &__rt_timer_start, __xn_flag_anycall },
     [__rtai_timer_stop ] = { &__rt_timer_stop, __xn_flag_anycall },
     [__rtai_timer_read ] = { &__rt_timer_read, __xn_flag_anycall },

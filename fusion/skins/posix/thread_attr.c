@@ -493,7 +493,8 @@ int pthread_attr_setfp_np (pthread_attr_t *attr, int fp)
     return 0;
 }
 
-int pthread_attr_getaffinity_np (const pthread_attr_t *attr, unsigned *mask)
+int
+pthread_attr_getaffinity_np (const pthread_attr_t *attr, xnarch_cpumask_t *mask)
 
 {
     spl_t s;
@@ -516,7 +517,7 @@ int pthread_attr_getaffinity_np (const pthread_attr_t *attr, unsigned *mask)
     return 0;
 }
 
-int pthread_attr_setaffinity_np (pthread_attr_t *attr, unsigned mask)
+int pthread_attr_setaffinity_np (pthread_attr_t *attr, xnarch_cpumask_t mask)
 {
     spl_t s;
 

@@ -72,7 +72,7 @@
  * }                        |
  *                          V
  *                       EXTENT #1 {
- *                              <static header>
+ *                              {static header}
  *                              page_map[npages]
  *                              page_array[npages][pagesize]
  *                       } -+
@@ -80,7 +80,7 @@
  *                          |
  *                          V
  *                       EXTENT #n {
- *                              <static header>
+ *                              {static header}
  *                              page_map[npages]
  *                              page_array[npages][pagesize]
  *                       }

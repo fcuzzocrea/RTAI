@@ -66,7 +66,7 @@ typedef struct xnintr {
 
     xnisr_t isr;	/* !< Interrupt service routine. */
 
-    unsigned affinity;	/* !< Processor affinity. */
+    xnarch_cpumask_t affinity;	/* !< Processor affinity. */
 
     void *cookie;	/* !< User-defined cookie value. */
 
@@ -98,8 +98,8 @@ int xnintr_enable(xnintr_t *intr);
 
 int xnintr_disable(xnintr_t *intr);
     
-int xnintr_affinity(xnintr_t *intr,
-		    unsigned long cpumask);
+xnarch_cpumask_t xnintr_affinity(xnintr_t *intr,
+                                 xnarch_cpumask_t cpumask);
 
 #ifdef __cplusplus
 }

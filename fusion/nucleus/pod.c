@@ -266,12 +266,6 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
             }
         }
 
-#ifdef __KERNEL__
-    /* Avoid Linux migrations, this is legal since xnpod_init() must
-       be called on a Linux context. */
-    set_cpus_allowed(current,cpumask_of_cpu(smp_processor_id()));
-#endif
-
     if (minpri > maxpri)
         /* The lower the value, the higher the priority */
         flags |= XNRPRIO;
@@ -383,7 +377,7 @@ fail:
 
         sched->rootcb.sched = sched;
         
-        sched->rootcb.affinity = 1 << cpu;
+        sched->rootcb.affinity = xnarch_cpumask_of_cpu(cpu);
         }
 
     xnarch_hook_ipi(&xnpod_schedule_handler);
@@ -426,12 +420,6 @@ void xnpod_shutdown (int xtype)
     xnholder_t *holder, *nholder;
     xnthread_t *thread;
     spl_t s;
-
-#ifdef CONFIG_SMP
-    /* Avoid Linux-originated migrations; this is legal since
-       xnpod_shutdown() must be called on the Linux context. */
-    set_cpus_allowed(current,cpumask_of_cpu(smp_processor_id()));
-#endif /* CONFIG_SMP */
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -634,7 +622,7 @@ int xnpod_init_thread (xnthread_t *thread,
  * \fn int xnpod_start_thread(xnthread_t *thread,
                               xnflags_t mode,
                               int imask,
-                              unsigned affinity,
+                              xnarch_cpumask_t affinity,
                               void (*entry)(void *cookie),
                               void *cookie)
  * \brief Initial start of a newly created thread.
@@ -702,11 +690,10 @@ int xnpod_init_thread (xnthread_t *thread,
 int xnpod_start_thread (xnthread_t *thread,
                         xnflags_t mode,
                         int imask,
-                        unsigned affinity,
+                        xnarch_cpumask_t affinity,
                         void (*entry)(void *cookie),
                         void *cookie)
 {
-    unsigned valid_cpumask;
     spl_t s;
 
     if (!testbits(thread->status,XNDORMANT))
@@ -749,19 +736,18 @@ int xnpod_start_thread (xnthread_t *thread,
     if (testbits(thread->status,XNRRB))
         thread->rrcredit = thread->rrperiod;
 
-    valid_cpumask = (1 << xnarch_num_online_cpus()) - 1;
+    if (xnarch_cpus_empty(affinity))
+        affinity = XNARCH_CPU_MASK_ALL;
 
-    if (!affinity)
-        affinity = ~0;
+    thread->affinity = xnarch_cpu_online_map;
+    xnarch_cpus_and(thread->affinity, affinity, thread->affinity);
 
-    if (!testbits(affinity,valid_cpumask))
+    if (xnarch_cpus_empty(thread->affinity))
         return -EINVAL;
 
-    thread->affinity = affinity & valid_cpumask;
-
 #ifdef CONFIG_SMP
-    if (!testbits(thread->affinity, 1 << xnsched_cpu(thread->sched)))
-        thread->sched = xnpod_sched_slot(ffnz(thread->affinity));
+    if (!xnarch_cpu_isset(xnsched_cpu(thread->sched), thread->affinity))
+        thread->sched = xnpod_sched_slot(xnarch_first_cpu(thread->affinity));
 #endif /* CONFIG_SMP */
 
     xnpod_resume_thread(thread,XNDORMANT);
@@ -866,8 +852,7 @@ void xnpod_restart_thread (xnthread_t *thread)
 
     /* Running this code tells us that xnpod_restart_thread() was not
        self-directed, so we must reschedule now since our priority may
-       be lower than the restarted thread's priority, and re-acquire
-       the interface mutex as needed. */
+       be lower than the restarted thread's priority. */
 
     xnpod_schedule();
 
@@ -1034,8 +1019,6 @@ void xnpod_delete_thread (xnthread_t *thread)
            through the rescheduling procedure then actually destroy
            the thread object. */
         xnsched_set_resched(sched);
-        /* The interface mutex will be cleared by the rescheduling
-           proc. */
         xnpod_schedule();
         }
     else
@@ -1509,6 +1492,85 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
 #endif /* __KERNEL__ */
 }
 
+/** 
+ * Migrate to another CPU.
+ *
+ * This call makes the current thread migrate to another CPU if its affinity
+ * allows it.
+ * 
+ * @param cpu The destination CPU.
+ * 
+ * @retval 0 if the thread could migrate ;
+ * @retval -EPERM if the thread affinity forbids this migration ;
+ * @retval -EINVAL if the scheduler is locked.
+ */
+int xnpod_migrate(int cpu)
+{
+    xnthread_t *thread;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    thread = xnpod_current_thread();
+
+    /* Trying to migrate a killed thread would end up badly in
+       xnpod_delete_thread, since 'thread' would be the current but it would
+       not be detected, since the sched pointer would point on the destination
+       scheduler, not the local. */ 
+    if (testbits(thread->status, XNKILLED))
+        {
+        __clrbits(thread->status, XNKILLED);
+        xnpod_delete_self();
+        }
+
+    if (xnpod_locked_p())
+        {
+        xnlock_put_irqrestore(&nklock, s);
+        return -EINVAL;
+        }
+    
+    if (!xnarch_cpu_isset(cpu, thread->affinity))
+        {
+        xnlock_put_irqrestore(&nklock, s);
+        return -EPERM;
+        }
+
+    if (cpu == xnarch_current_cpu())
+        goto normal_exit;
+    
+#ifdef CONFIG_RTAI_HW_FPU
+    if (testbits(thread->status, XNFPU))
+        {
+        /* Force the FPU save, and nullify the sched->fpuholder pointer, to
+           avoid leaving fpuholder pointing on the backup area of the migrated
+           thread. */
+        xnarch_save_fpu(xnthread_archtcb(thread));    
+
+        thread->sched->fpuholder = NULL;
+        }
+#endif /* CONFIG_RTAI_HW_FPU */    
+
+    if(testbits(thread->status, XNREADY))
+        {
+        removepq(&thread->sched->readyq, &thread->rlink);
+        clrbits(thread->status, XNREADY);
+        }
+
+    xnsched_set_resched(thread->sched);
+
+    thread->sched = xnpod_sched_slot(cpu);
+
+    /* Put thread in the ready queue of the destination CPU's scheduler. */
+    xnpod_resume_thread(thread, 0);
+
+    xnpod_schedule();
+
+normal_exit:    
+    xnlock_put_irqrestore(&nklock, s);
+
+    return 0;
+}
+
 /*!
  * \fn void xnpod_rotate_readyq(int prio)
  * \brief Rotate a priority level in the ready queue.
@@ -1789,7 +1851,7 @@ void xnpod_switch_fpu (xnsched_t *sched)
 
 /*! 
  * @internal
- * \fn void xnpod_preempt_current_thread(void);
+ * \fn void xnpod_preempt_current_thread(xnsched_t *sched);
  * \brief Preempts the current thread.
  *
  * Preempts the running thread (because a more prioritary thread has
@@ -2069,8 +2131,8 @@ void xnpod_schedule (void)
  *        the FIFO ordering is applied.
  *
  *        - XNPOD_NOSWITCH reorders the ready queue without switching
- *        contexts. This feature is used by the nucleus mutex code
- *        to preserve the atomicity of some operations.
+ *        contexts. This feature is used to preserve the atomicity of some
+ *        operations.
  */
 
 void xnpod_schedule_runnable (xnthread_t *thread, int flags)

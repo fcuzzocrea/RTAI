@@ -84,7 +84,7 @@ int xnthread_init (xnthread_t *thread,
 	/* Align stack on a word boundary */
 	stacksize &= ~(sizeof(int) - 1);
 
-	thread->tcb.stackbase = (unsigned long *)xnmalloc(stacksize);
+	thread->tcb.stackbase = (unsigned long *)xnarch_alloc_stack(stacksize);
 
 	if (!thread->tcb.stackbase)
 	    return -ENOMEM;

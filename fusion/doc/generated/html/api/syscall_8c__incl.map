@@ -1,0 +1,9 @@
+base referer
+rect $syscall_8h-source.html 149,150 232,174
+rect $registry_8h.html 149,198 232,222
+rect $task_8h.html 157,297 224,321
+rect $timer_8h.html 17,273 87,297
+rect $sem_8h.html 157,345 224,369
+rect $event_8h.html 156,393 225,417
+rect $mutex_8h.html 152,441 229,465
+rect $cond_8h.html 156,489 225,513

@@ -178,7 +178,24 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define xnarch_imuldiv               rthal_imuldiv
 #define xnarch_llimd                 rthal_llimd
 #define xnarch_get_cpu_tsc           rthal_rdtsc
-#define xnarch_num_online_cpus()     num_online_cpus()
+
+typedef cpumask_t xnarch_cpumask_t;
+#ifdef CONFIG_SMP
+#define xnarch_cpu_online_map            cpu_online_map
+#else
+#define xnarch_cpu_online_map		 cpumask_of_cpu(0)
+#endif
+#define xnarch_num_online_cpus()         num_online_cpus()
+#define xnarch_cpu_set(cpu, mask)        cpu_set(cpu, mask)
+#define xnarch_cpu_clear(cpu, mask)      cpu_clear(cpu, mask)
+#define xnarch_cpus_clear(mask)          cpus_clear(mask)
+#define xnarch_cpu_isset(cpu, mask)      cpu_isset(cpu, mask)
+#define xnarch_cpus_and(dst, src1, src2) cpus_and(dst, src1, src2)
+#define xnarch_cpus_equal(mask1, mask2)  cpus_equal(mask1, mask2)
+#define xnarch_cpus_empty(mask)          cpus_empty(mask)
+#define xnarch_cpumask_of_cpu(cpu)       cpumask_of_cpu(cpu)
+#define xnarch_first_cpu(mask)           first_cpu(mask)
+#define XNARCH_CPU_MASK_ALL              CPU_MASK_ALL
 
 struct xnthread;
 struct task_struct;
@@ -265,6 +282,7 @@ static inline int xnarch_setimask (int imask)
     return !!s;
 }
 
+
 #ifdef XENO_INTR_MODULE
 
 static inline int xnarch_hook_irq (unsigned irq,
@@ -320,8 +338,8 @@ static inline void xnarch_relay_tick (void) {
     rthal_pend_linux_irq(RTHAL_8254_IRQ);
 }
 
-static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
-						     unsigned long affinity) {
+static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
+                                                 cpumask_t affinity) {
     return adeos_set_irq_affinity(irq,affinity);
 }
 
@@ -664,6 +682,8 @@ static inline int xnarch_release_ipi (void)
 static inline void xnarch_notify_shutdown(void)
 
 {
+    /* FIXME: This implementation is not quite correct, since it does not
+       guarantee us that no real-time activity will take place after that. */
     unsigned long flags = adeos_critical_enter(NULL);
     adeos_critical_exit(flags);
 }

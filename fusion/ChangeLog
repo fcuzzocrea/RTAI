@@ -1,3 +1,21 @@
+2004-08-30  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* arch/ppc/hal/hal.c: Move the Doxygen documentation to a new
+	group, 	hal_ppc, in order to avoid clash (and doxygen warnings)
+	with x86 documentation.
+
+2004-08-29  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_migrate): Initial implementation of a
+	migration function.
+
+	* nucleus/pod.c (xnpod_init, xnpod_shutdown): Remove useless calls
+	to set_cpus_allowed.
+
+	* nucleus, */system.h: Use cpumask_t for affinity, providing
+	an 'unsigned long' based implementation for architectures other
+	than the Linux kernel.
+
 2004-08-29  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/pod.h (struct pod): Remove the usrthread member;

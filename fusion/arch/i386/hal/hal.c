@@ -670,8 +670,8 @@ int rthal_pend_linux_srq (unsigned srq)
 
 #ifdef CONFIG_SMP
 
-static unsigned long rthal_old_irq_affinity[IPIPE_NR_XIRQS],
-                     rthal_current_irq_affinity[IPIPE_NR_XIRQS];
+static cpumask_t rthal_old_irq_affinity[IPIPE_NR_XIRQS],
+                 rthal_current_irq_affinity[IPIPE_NR_XIRQS];
 
 static spinlock_t rthal_iset_lock = SPIN_LOCK_UNLOCKED;
 
@@ -686,10 +686,11 @@ static spinlock_t rthal_iset_lock = SPIN_LOCK_UNLOCKED;
  *
  * @note This function has effect only on multiprocessors systems.
  */
-int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask)
+int rthal_set_irq_affinity (unsigned irq, cpumask_t cpumask)
 
 {
-    unsigned long oldmask, flags;
+    unsigned long flags;
+    cpumask_t oldmask;
 
     if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
@@ -700,7 +701,7 @@ int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask)
 
     oldmask = adeos_set_irq_affinity(irq,cpumask);
 
-    if (oldmask == 0)
+    if (cpus_empty(oldmask))
 	{
 	/* Oops... Something went wrong. */
 	rthal_spin_unlock(&rthal_iset_lock);
@@ -732,7 +733,8 @@ int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask)
 int rthal_reset_irq_affinity (unsigned irq)
 
 {
-    unsigned long oldmask, flags;
+    unsigned long flags;
+    cpumask_t oldmask;
 
     if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
@@ -741,20 +743,20 @@ int rthal_reset_irq_affinity (unsigned irq)
 
     rthal_spin_lock(&rthal_iset_lock);
 
-    if (rthal_old_irq_affinity[irq] == 0)
+    if (cpus_empty(rthal_old_irq_affinity[irq]))
 	{
 	rthal_spin_unlock(&rthal_iset_lock);
 	rthal_local_irq_restore(flags);
 	return -EINVAL;
 	}
 
-    oldmask = adeos_set_irq_affinity(irq,0); /* Query -- no change. */
+    oldmask = adeos_set_irq_affinity(irq,CPU_MASK_NONE); /* Query -- no change. */
 
-    if (oldmask == rthal_current_irq_affinity[irq])
+    if (cpus_equal(oldmask,rthal_current_irq_affinity[irq]))
 	{
 	/* Ok, proceed since nobody changed it in the meantime. */
 	adeos_set_irq_affinity(irq,rthal_old_irq_affinity[irq]);
-	rthal_old_irq_affinity[irq] = 0;
+	rthal_old_irq_affinity[irq] = CPU_MASK_NONE;
 	}
 
     rthal_spin_unlock(&rthal_iset_lock);
@@ -766,7 +768,7 @@ int rthal_reset_irq_affinity (unsigned irq)
 
 #else /* !CONFIG_SMP */
 
-int rthal_set_irq_affinity (unsigned irq, unsigned long cpumask) {
+int rthal_set_irq_affinity (unsigned irq, cpumask_t cpumask) {
 
     return 0;
 }

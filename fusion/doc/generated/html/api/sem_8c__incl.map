@@ -1,0 +1,6 @@
+base referer
+rect $task_8h.html 244,242 310,266
+rect $timer_8h.html 20,168 89,191
+rect $types_8h.html 327,93 399,117
+rect $sem_8h.html 421,168 487,191
+rect $registry_8h.html 334,242 417,266

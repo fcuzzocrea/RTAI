@@ -239,11 +239,13 @@ static void engage_irq_shield (unsigned local_cpu)
     if (!testbits(shield_requests, ~0)
         && !test_and_set_bit(local_cpu, &shield_requests))
         {
+        cpumask_t other_cpus = xnarch_cpu_online_map;
+
         local_irq_shield(local_cpu);
+
+        xnarch_cpu_clear(local_cpu, other_cpus);
         
-        adeos_send_ipi(ADEOS_SERVICE_IPI1,
-                       ((1 << xnarch_num_online_cpus()) - 1) &
-                       ~(1 << local_cpu));
+        adeos_send_ipi(ADEOS_SERVICE_IPI1, other_cpus);
         }
 }
 
@@ -253,10 +255,13 @@ static void disengage_irq_shield (unsigned local_cpu)
     if (test_and_clear_bit(local_cpu,&shield_requests) &&
 	!testbits(shield_requests, ~0))
         {
+        cpumask_t other_cpus = xnarch_cpu_online_map;
+
         local_irq_shield(local_cpu);
-        adeos_send_ipi(ADEOS_SERVICE_IPI1,
-                       ((1 << xnarch_num_online_cpus()) - 1) &
-                       ~(1 << local_cpu));
+
+        cpu_clear(local_cpu, other_cpus);
+
+        adeos_send_ipi(ADEOS_SERVICE_IPI1, other_cpus);
         }
 }
 

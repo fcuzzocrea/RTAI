@@ -1,8 +1,8 @@
 /**
- *   @ingroup hal
+ *   @ingroup hal_ppc
  *   @file
  *
- *   Adeos-based Real-Time Abstraction Layer for x86.
+ *   Adeos-based Real-Time Abstraction Layer for PPC.
  *
  *   Original RTAI/x86 layer implementation: \n
  *   Copyright &copy; 2000 Paolo Mantegazza, \n
@@ -30,7 +30,7 @@
  */
 
 /**
-v * @defgroup hal Hardware abstraction layer.
+ * @defgroup hal_ppc Hardware abstraction layer.
  *
  * Basic architecture-dependent services used by the real-time
  * nucleus.

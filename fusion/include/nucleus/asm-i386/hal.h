@@ -378,7 +378,7 @@ int rthal_request_srq(unsigned label,
 int rthal_release_srq(unsigned srq);
 
 int rthal_set_irq_affinity(unsigned irq,
-			   unsigned long cpumask);
+			   cpumask_t cpumask);
 
 int rthal_reset_irq_affinity(unsigned irq);
 

@@ -222,7 +222,7 @@ int xntimer_start (xntimer_t *timer,
 		{
 		if (timer->date <= xnarch_get_cpu_tsc())
 		    { /* Too late for this one. */
-		    xntimer_dequeue(timer);
+		    xntimer_dequeue_aperiodic(timer);
 		    err = -EAGAIN;
 		    }
 		else
@@ -306,15 +306,13 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
 xnticks_t xntimer_get_timeout (xntimer_t *timer)
 
 {
-    xnticks_t tsc;
-
     if (!xntimer_active_p(timer))
 	return XN_INFINITE;
 
 #if XNARCH_HAVE_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
 	{
-	tsc = xnarch_get_cpu_tsc();
+        xnticks_t tsc = xnarch_get_cpu_tsc();
 
 	if (xntimer_date(timer) < tsc)
 	    return 1; /* Will elapse shortly. */

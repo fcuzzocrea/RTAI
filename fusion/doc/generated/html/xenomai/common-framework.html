@@ -1,7 +1,6 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 <head>
-<meta content="text/html; charset=ISO-8859-1" http-equiv="Content-Type">
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <title>1.3. A common emulation framework</title>
 <link rel="stylesheet" href="../css/rtai.css" type="text/css">
 <meta name="generator" content="DocBook XSL Stylesheets V1.64.1">
@@ -54,8 +53,7 @@
 	  an application to control and react to multiple, discrete
 	  external events. The nucleus provides the basic
 	  multi-threading environment.</p>
-<p>
-<span class="emphasis"><em>Thread states.</em></span> The nucleus has to
+<p><span class="emphasis"><em>Thread states.</em></span> The nucleus has to
 	  maintain the current state of each thread in the system. A
 	  state transition from one state to another may occur as the
 	  result of specific nucleus services called by the RTOS
@@ -88,8 +86,7 @@
 	  slice, in rotation. Moreover, each thread undergoing the
 	  round-robin scheduling is given an individual time
 	  quantum.</p>
-<p>
-<span class="emphasis"><em>Priority management.</em></span> It is
+<p><span class="emphasis"><em>Priority management.</em></span> It is
 	  possible to use whether an increasing or decreasing thread
 	  priority ordering, depending on an initial configuration. In
 	  other words, numerically highest priority values could
@@ -101,14 +98,12 @@
 	  where the highest the value, the lowest the priority. pSOS+
 	  instead uses the opposite ordering, in which the highest the
 	  value, the highest the priority.</p>
-<p>
-<span class="emphasis"><em>Running thread.</em></span> At any given
+<p><span class="emphasis"><em>Running thread.</em></span> At any given
 	  time, the highest priority thread which has been ready to
 	  run for the longuest time among the currently runnable
 	  threads (i.e. not currently blocked by any delay or resource
 	  wait) is elected to run by the scheduler.</p>
-<p>
-<span class="emphasis"><em>Preemption.</em></span> When preempted by a
+<p><span class="emphasis"><em>Preemption.</em></span> When preempted by a
 	  more prioritary thread, the running thread is put at front
 	  of the ready thread queue waiting for the processor
 	  resource, provided it has not been suspended or blocked in
@@ -126,20 +121,17 @@
 	  traditional RTOS, the following features are also retained
 	  for the sake of efficiency in the implementation of some
 	  emulators:</p>
-<p>
-<span class="emphasis"><em>Priority inversion.</em></span> In order to
+<p><span class="emphasis"><em>Priority inversion.</em></span> In order to
 	  provide support for preventing priority inversion when using
 	  inter-thread synchronization services, the priority
 	  inheritance protocol is supported.</p>
-<p>
-<span class="emphasis"><em>Signaling.</em></span> A support for sending
+<p><span class="emphasis"><em>Signaling.</em></span> A support for sending
 	  signals to threads and running asynchronous service routines
 	  to process them is available. The asynchronous service
 	  routine is run on behalf of the signaled thread context the
 	  next time it returns from the nucleus level of execution, as
 	  soon as one or more signals are pending.</p>
-<p>
-<span class="emphasis"><em>Disjunctive wait.</em></span> A thread is
+<p><span class="emphasis"><em>Disjunctive wait.</em></span> A thread is
 	  able to wait in a disjunctive manner on multiple
 	  resources. The nucleus unblocks the thread when at least one
 	  among the pended resources is available.</p>
@@ -156,25 +148,21 @@
 	  flags or mailboxes. Looking at them closely, we can define
 	  the characteristics of a basic mechanism which will be
 	  usable in turn to build these facilities.</p>
-<p>
-<span class="emphasis"><em>Pending mode.</em></span> The thread
+<p><span class="emphasis"><em>Pending mode.</em></span> The thread
 	  synchronization facility provides a mean for threads to pend
 	  either by priority or FIFO ordering. Multiple threads should
 	  be able to pend on a single resource.</p>
-<p>
-<span class="emphasis"><em>Priority inheritance protocol.</em></span> In
+<p><span class="emphasis"><em>Priority inheritance protocol.</em></span> In
 	  order to prevent priority inversion problems, the thread
 	  synchronization facility implements a priority inheritance
 	  protocol in conjunction with the thread scheduler. The
 	  implementation allows for supporting the priority ceiling
 	  protocol as a derivative of the priority inheritance
 	  protocol.</p>
-<p>
-<span class="emphasis"><em>Time-bounded wait.</em></span> The thread
+<p><span class="emphasis"><em>Time-bounded wait.</em></span> The thread
 	  synchronization facility provides a mean to limit the time a
 	  thread waits for a given resource using a watchdog.</p>
-<p>
-<span class="emphasis"><em>Forcible deletion.</em></span> It is legal to
+<p><span class="emphasis"><em>Forcible deletion.</em></span> It is legal to
 	  destroy a resource while threads are pending on it. This
 	  action resumes all waiters atomically.</p>
 </div>
@@ -189,19 +177,16 @@
 	  providing a simple mechanism with sufficient hooks for
 	  specific implementations to be built onto according to the
 	  emulated RTOS flavour.</p>
-<p>
-<span class="emphasis"><em>Nesting.</em></span> Interrupt management
+<p><span class="emphasis"><em>Nesting.</em></span> Interrupt management
 	  code is reentrant in order to support interrupt nesting
 	  safely.</p>
-<p>
-<span class="emphasis"><em>Atomicity.</em></span> Interrupts are
+<p><span class="emphasis"><em>Atomicity.</em></span> Interrupts are
 	  associated with dedicated service routines called ISRs. In
 	  order for these routines not to be preempted by thread
 	  execution, the rescheduling procedure is locked until the
 	  outer ISR has exited (i.e. in case of nested
 	  interrupts).</p>
-<p>
-<span class="emphasis"><em>Priority.</em></span> ISRs is always
+<p><span class="emphasis"><em>Priority.</em></span> ISRs is always
 	  considered as prioritary over thread execution. Interrupt
 	  prioritization is left to the underlying
 	  hardware.</p>
@@ -219,12 +204,10 @@
 	  aperiodic time sources, the nucleus transparently switches
 	  from periodic jiffies to time-stamp counter values depending
 	  on the current timer operating mode.</p>
-<p>
-<span class="emphasis"><em>Software timer support.</em></span> A
+<p><span class="emphasis"><em>Software timer support.</em></span> A
 	  watchdog facility is provided to manage time-bound
 	  operations by the nucleus.</p>
-<p>
-<span class="emphasis"><em>Absolute and relative clock.</em></span> The
+<p><span class="emphasis"><em>Absolute and relative clock.</em></span> The
 	  nucleus keeps a global clock value which can be set by the
 	  RTOS emulator as being the system-defined epoch.</p>
 <p>Some RTOS like pSOS+ also provide support for

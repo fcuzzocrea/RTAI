@@ -112,7 +112,7 @@ typedef struct xnthread {
 
     struct xnsched *sched;	/* Thread scheduler */
 
-    unsigned affinity;		/* Processor affinity. */
+    xnarch_cpumask_t affinity;	/* Processor affinity. */
 
     int bprio;			/* Base priority (before PIP boost) */
 

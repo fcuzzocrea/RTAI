@@ -96,7 +96,7 @@
 #define XNPOD_DEFAULT_TICK         XNARCH_DEFAULT_TICK
 #define XNPOD_DEFAULT_TICKHANDLER  (&xnpod_announce_tick)
 
-#define XNPOD_ALL_CPUS  (~0)
+#define XNPOD_ALL_CPUS  XNARCH_CPU_MASK_ALL
 
 #define XNPOD_HEAPSIZE  (128 * 1024)
 #define XNPOD_PAGESIZE  512
@@ -118,6 +118,8 @@ typedef struct xnsched {
 
     xnflags_t status;           /*!< Scheduler specific status bitmask */
 
+    xnarch_cpumask_t resched;   /*!< Mask of CPUs needing rescheduling.*/
+
     xnpqueue_t readyq;		/*!< Ready-to-run threads (prioritized). */
 
     xnthread_t rootcb;		/*!< Root thread control block. */
@@ -136,22 +138,22 @@ typedef struct xnsched {
     ((__sched__) - &nkpod->sched[0])
 
 #define xnsched_resched_mask() \
-    (xnpod_current_sched()->status & XNSCHEDMASK)
+    (xnpod_current_sched()->resched)
 
 #define xnsched_resched_p()                     \
-    (!!xnsched_resched_mask())
+    (!xnarch_cpus_empty(xnsched_resched_mask()))
 
 #define xnsched_tst_resched(__sched__) \
-    testbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
+    xnarch_cpu_isset(xnsched_cpu(__sched__), xnsched_resched_mask())
 
 #define xnsched_set_resched(__sched__) \
-    __setbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
+    xnarch_cpu_set(xnsched_cpu(__sched__), xnsched_resched_mask())
 
 #define xnsched_clr_resched(__sched__) \
-    __clrbits(xnpod_current_sched()->status,1 << xnsched_cpu(__sched__))
+    xnarch_cpu_clear(xnsched_cpu(__sched__), xnsched_resched_mask())
 
 #define xnsched_clr_mask() \
-    __clrbits(xnpod_current_sched()->status, XNSCHEDMASK)
+    xnarch_cpus_clear(xnsched_resched_mask())
 
 struct xnsynch;
 struct xnintr;
@@ -384,7 +386,7 @@ int xnpod_init_thread(xnthread_t *thread,
 int xnpod_start_thread(xnthread_t *thread,
 		       xnflags_t mode,
 		       int imask,
-		       unsigned affinity,
+		       xnarch_cpumask_t affinity,
 		       void (*entry)(void *cookie),
 		       void *cookie);
 
@@ -408,6 +410,8 @@ void xnpod_unblock_thread(xnthread_t *thread);
 
 void xnpod_renice_thread(xnthread_t *thread,
 			 int prio);
+
+int xnpod_migrate(int cpu);
 
 void xnpod_rotate_readyq(int prio);
 

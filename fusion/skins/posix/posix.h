@@ -121,7 +121,7 @@ typedef struct pse51_threadattr {
     /* Non portable */
     char *name;
     int fp;
-    unsigned affinity;
+    xnarch_cpumask_t affinity;
 
 } pthread_attr_t;
 
@@ -187,10 +187,10 @@ int pthread_attr_setfp_np(pthread_attr_t *attr,
 			  int use_fp);
 
 int pthread_attr_getaffinity_np (const pthread_attr_t *attr,
-                                 unsigned *mask);
+                                 xnarch_cpumask_t *mask);
 
 int pthread_attr_setaffinity_np (pthread_attr_t *attr,
-                                 unsigned mask);
+                                 xnarch_cpumask_t mask);
 
 END_C_DECLS
 

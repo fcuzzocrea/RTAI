@@ -134,7 +134,7 @@ int xnintr_init (xnintr_t *intr,
     intr->isr = isr;
     intr->cookie = NULL;
     intr->status = 0;
-    intr->affinity = ~0;
+    intr->affinity = XNARCH_CPU_MASK_ALL;
 
     return 0;
 }
@@ -314,16 +314,16 @@ int xnintr_disable (xnintr_t *intr)
     return err;
 }
     
-int xnintr_affinity (xnintr_t *intr, unsigned long cpumask) {
+xnarch_cpumask_t xnintr_affinity (xnintr_t *intr, xnarch_cpumask_t cpumask) {
 
+    xnarch_cpumask_t err;
     spl_t s;
-    int err;
 
     xnlock_get_irqsave(&nklock,s);
 
     err = xnarch_set_irq_affinity(intr->irq,cpumask);
 
-    if (!err)
+    if (!xnarch_cpus_empty(err))
 	intr->affinity = cpumask;
 
     xnlock_put_irqrestore(&nklock,s);

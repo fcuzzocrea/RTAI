@@ -93,7 +93,20 @@ typedef unsigned long xnlock_t;
 #define xnarch_llimd(ll,m,d)       ((int)(ll) * (int)(m) / (int)(d))
 #define xnarch_imuldiv(i,m,d)      ((int)(i) * (int)(m) / (int)(d))
 #define xnarch_ullmod(ull,uld,rem) ((*rem) = ((ull) % (uld)))
-#define xnarch_num_online_cpus()   XNARCH_NR_CPUS
+
+typedef unsigned long xnarch_cpumask_t;
+#define xnarch_num_online_cpus()         XNARCH_NR_CPUS
+#define xnarch_cpu_online_map            ((1<<xnarch_num_online_cpus()) - 1)
+#define xnarch_cpu_set(cpu, mask)        ((mask) |= 1 << (cpu))
+#define xnarch_cpu_clear(cpu, mask)      ((mask) &= 1 << (cpu))
+#define xnarch_cpus_clear(mask)          ((mask) = 0UL)
+#define xnarch_cpu_isset(cpu, mask)      (!!((mask) & (1 << (cpu))))
+#define xnarch_cpus_and(dst, src1, src2) ((dst) = (src1) & (src2))
+#define xnarch_cpus_equal(mask1, mask2)  ((mask1) == (mask2))
+#define xnarch_cpus_empty(mask)          ((mask) == 0UL)
+#define xnarch_cpumask_of_cpu(cpu)       (1 << (cpu))
+#define xnarch_first_cpu(mask)           (ffnz(mask))
+#define XNARCH_CPU_MASK_ALL              (~0UL)
 
 static inline unsigned long long xnarch_ulldiv (unsigned long long ull,
 						unsigned long uld,
@@ -559,6 +572,9 @@ static inline unsigned long xnarch_get_cpu_freq (void) {
 static inline void xnarch_halt (const char *emsg) {
     __mvm_breakable(mvm_fatal)("%s",emsg);
 }
+
+#define xnarch_alloc_stack xnmalloc
+#define xnarch_free_stack  xnfree
 
 #define xnarch_current_cpu()  0
 #define xnarch_declare_cpuid  const int cpuid = 0

@@ -852,22 +852,24 @@ void rt_schedule(void)
 			}
 		} else {
 sched_soft:
-			UNLOCK_LINUX(cpuid);
-			rt_global_sti();
-			if (adp_current != adp_root) {
-				adp_root->dswitch = schedule;
-				adeos_suspend_domain();
-				adp_root->dswitch = NULL;
-			} else {
-				local_irq_enable();
-				schedule();
-			}
-			rt_global_cli();
-			rt_current->state = (rt_current->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;
-			LOCK_LINUX(cpuid);
-			enq_soft_ready_task(rt_current);
-			rt_smp_current[cpuid] = rt_current;
-        	}
+			if (current->state != TASK_RUNNING) {
+				UNLOCK_LINUX(cpuid);
+				rt_global_sti();
+				if (adp_current != adp_root) {
+					adp_root->dswitch = schedule;
+					adeos_suspend_domain();
+					adp_root->dswitch = NULL;
+				} else {
+					local_irq_enable();
+					schedule();
+				}	
+				rt_global_cli();
+				rt_current->state = (rt_current->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;
+				LOCK_LINUX(cpuid);
+				enq_soft_ready_task(rt_current);
+				rt_smp_current[cpuid] = rt_current;
+        		}
+		}
 	}
 sched_exit:
 	rtai_cli();

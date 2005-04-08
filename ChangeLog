@@ -1,3 +1,8 @@
+2005-04-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/sched/sched.*: avoid useless passes through Linux schedule() 
+	  in soft mode.
+
 2005-03-31  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/hal/GNUmakefile.*, base/include/asm-arm/GNUmakefile.*:

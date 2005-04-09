@@ -125,7 +125,7 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static inline void set_linux_task_priority (struct task_struct *task, int prio)
 
 {
-    if (prio < 0 || prio > MAX_USER_RT_PRIO-1)
+    if (prio < 0 || prio > MAX_RT_PRIO-1)
 	/* FIXME: __adeos_setscheduler_root() should check this instead of us. */
 	printk(KERN_WARNING "RTAI: invalid Linux priority level: %d, task=%s\n",prio,task->comm);
     else
@@ -318,7 +318,7 @@ static void gatekeeper_thread (void *data)
 
     sigfillset(&this_task->blocked);
     set_cpus_allowed(this_task, cpumask_of_cpu(cpu));
-    set_linux_task_priority(this_task,MAX_USER_RT_PRIO - 1);
+    set_linux_task_priority(this_task,MAX_RT_PRIO-1);
 
     init_waitqueue_head(&gk->waitq);
     add_wait_queue_exclusive(&gk->waitq,&wait);
@@ -529,6 +529,7 @@ void xnshadow_relax (void)
 
 {
     xnthread_t *thread = xnpod_current_thread();
+    int cprio;
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
     if (testbits(thread->status,XNROOT))
@@ -554,7 +555,8 @@ void xnshadow_relax (void)
 
     xnpod_renice_root(thread->cprio);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
-    __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,thread->cprio);
+    cprio = thread->cprio < MAX_RT_PRIO ? thread->cprio : MAX_RT_PRIO-1;
+    __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,cprio);
 
     ++thread->stat.ssw;	/* Account for secondary mode switch. */
 
@@ -885,7 +887,7 @@ void xnshadow_renice (xnthread_t *thread)
 {
   /* Called with nklock locked, RTAI interrupts off. */
     struct task_struct *task = xnthread_archtcb(thread)->user_task;
-    int prio = thread->cprio;
+    int prio = thread->cprio < MAX_RT_PRIO ? thread->cprio : MAX_RT_PRIO-1;
     schedule_linux_call(SB_RENICE_REQ,task,prio);
 }
 

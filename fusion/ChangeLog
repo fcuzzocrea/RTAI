@@ -1,5 +1,9 @@
 2005-04-09  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (xnshadow_relax): Make sure we don't
+	inadvertently pass out-of-range priority levels to the Linux
+	kernel when reentering the root domain (__adeos_reenter_root()).
+
 	* skins/rtai/syscall.c (__rt_intr_create): Handle I_PROPAGATE mode
 	bit for dynamic propagation of interrupts down the pipeline
 	(i.e. IRQ chaining to Linux). Quite useful for people hooking an

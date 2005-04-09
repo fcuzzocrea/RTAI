@@ -63,16 +63,16 @@ static ssize_t __mutex_read_proc (char *page,
 
     xnlock_get_irqsave(&nklock,s);
 
-    if (xnsynch_nsleepers(&mutex->synch_base) == 0)
-	/* Mutex unlocked. */
-	p += sprintf(p,"=unlocked\n");
-    else
+    if (mutex->owner)
 	{
-	xnthread_t *owner = &mutex->owner->thread_base;
 	xnpholder_t *holder;
 	
-	/* Pended mutex -- dump owner and waiters. */
-	p += sprintf(p,"=locked by %s depth=%d\n",xnthread_name(owner),mutex->lockcnt);
+	/* Locked mutex -- dump owner and waiters, if any. */
+
+	p += sprintf(p,"=locked by %s depth=%d\n",
+		     xnthread_name(&mutex->owner->thread_base),
+		     mutex->lockcnt);
+
 	holder = getheadpq(xnsynch_wait_queue(&mutex->synch_base));
 
 	while (holder)
@@ -82,6 +82,9 @@ static ssize_t __mutex_read_proc (char *page,
 	    holder = nextpq(xnsynch_wait_queue(&mutex->synch_base),holder);
 	    }
 	}
+    else
+	/* Mutex unlocked. */
+	p += sprintf(p,"=unlocked\n");
 
     xnlock_put_irqrestore(&nklock,s);
 

@@ -30,8 +30,8 @@
  * - "rn" is the revision number.
  */
 
-#define FUSION_VERSION_CODE  0x00000701
+#define FUSION_VERSION_CODE  0x00000702
 
-#define FUSION_VERSION_NAME  "Raspberry Jam Delta-V"
+#define FUSION_VERSION_NAME  "New Last Jam"
 
 #endif /* _RTAI_NUCLEUS_VERSION_H */

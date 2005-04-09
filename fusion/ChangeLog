@@ -1,3 +1,19 @@
+2005-04-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/mutex.c (rt_mutex_unlock): Make sure -EPERM is
+	returned when applicable and fix the documentation.
+
+2005-04-09 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* skins/rtai/syscalls.c (__rt_mutex_unlock): Force primary mode
+	switch so that a RT task currently running in secondary mode that
+	owns a mutex does not get a spurious -EPERM error when trying to
+	release it.
+
+	* skins/rtai/mutex.c (__mutex_read_proc): Fix output, ensuring
+	that a locked mutex always gets dumped as such even if the wait
+	queue is empty.
+
 2005-04-04  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* configure.in: Make sure RTAI_LINUXDIR is written to .rtai_config

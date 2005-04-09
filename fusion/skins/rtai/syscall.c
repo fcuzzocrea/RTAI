@@ -2557,6 +2557,9 @@ static int __rt_intr_handler (xnintr_t *cookie)
     if (xnsynch_nsleepers(&intr->synch_base) > 0)
 	xnsynch_flush(&intr->synch_base,0);
 
+    if (intr->mode & XN_ISR_CHAINED)
+	return XN_ISR_CHAINED|(intr->mode & XN_ISR_ENABLE);
+
     return XN_ISR_HANDLED|(intr->mode & XN_ISR_ENABLE);
 }
 
@@ -2583,7 +2586,7 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
     /* Interrupt control mode. */
     mode = (int)__xn_reg_arg3(regs);
 
-    if (mode & ~I_AUTOENA)
+    if (mode & ~(I_AUTOENA|I_PROPAGATE))
 	return -EINVAL;
 
     intr = (RT_INTR *)xnmalloc(sizeof(*intr));

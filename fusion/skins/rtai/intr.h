@@ -27,8 +27,11 @@
 #include <rtai/types.h>
 
 /* Creation flag. */
-#define I_AUTOENA  XN_ISR_ENABLE /* Auto-enable interrupt channel
-				    after each IRQ. */
+#define I_AUTOENA    XN_ISR_ENABLE /* Auto-enable interrupt channel
+				      after each IRQ. */
+#define I_PROPAGATE  XN_ISR_CHAINED /* Propagate IRQs down the
+				       pipeline after processing; IOW,
+				       pass them to Linux. */
 typedef struct rt_intr_info {
 
     unsigned irq;	/* !< Interrupt request number. */

@@ -1,3 +1,10 @@
+2005-04-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c (__rt_intr_create): Handle I_PROPAGATE mode
+	bit for dynamic propagation of interrupts down the pipeline
+	(i.e. IRQ chaining to Linux). Quite useful for people hooking an
+	ISR on, say, the keyboard interrupt...
+
 2005-04-09  Jim Cromie <jcromie@divsol.com>
 	
 	* testsuite/latency: Fix the overrun count.

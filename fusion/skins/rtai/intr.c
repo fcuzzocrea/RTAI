@@ -441,13 +441,19 @@ int rt_intr_inquire (RT_INTR *intr,
  * @param irq The hardware interrupt channel associated with the
  * interrupt object. This value is architecture-dependent.
  *
- * @param mode The interrupt object creation mode. The following flag
+ * @param mode The interrupt object creation mode. The following flags
  * can be OR'ed into this bitmask:
  *
  * - I_AUTOENA asks RTAI to re-enable the IRQ line before awakening
  * the interrupt server task. This flag is functionally equivalent as
  * always returning RT_INTR_ENABLE from a kernel space interrupt
  * handler.
+ *
+ * - I_PROPAGATE asks RTAI to propagate the IRQ down the pipeline; in
+ * other words, the interrupt occurrence is chained to Linux after it
+ * has been processed by the RTAI task. This flag is functionally
+ * equivalent as always returning RT_INTR_CHAINED from a kernel space
+ * interrupt handler.
  *
  * @return 0 is returned upon success. Otherwise:
  *

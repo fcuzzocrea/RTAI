@@ -370,16 +370,15 @@ int rt_mutex_lock (RT_MUTEX *mutex)
  * - -EIDRM is returned if @a mutex is a deleted mutex descriptor.
  *
  * - -EPERM is returned if @a mutex is not owned by the current task,
- * or if this service was called from a context which cannot sleep
- * (e.g. interrupt, non-realtime or scheduler locked).
+ * or more generally if this service was called from a context which
+ * cannot own any mutex (e.g. interrupt, or non-realtime context).
  *
  * Environments:
  *
  * This service can be called from:
  *
- * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
+ * - User-space task (switches to primary mode)
  *
  * Rescheduling: possible.
  */
@@ -390,7 +389,7 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
     int err = 0;
     spl_t s;
 
-    if (xnpod_unblockable_p())
+    if (xnpod_asynch_p() || testbits(xnpod_current_thread()->status,XNROOT))
 	return -EPERM;
 
     xnlock_get_irqsave(&nklock,s);

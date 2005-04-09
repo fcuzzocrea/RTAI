@@ -65,7 +65,6 @@ void latency (void *cookie)
 	return;
       }
 
-    overrun = 0;
     nsamples = ONE_BILLION / sampling_period;
     period = rt_timer_ns2ticks(sampling_period);
     expected = rt_timer_tsc();
@@ -80,6 +79,7 @@ void latency (void *cookie)
     for (;;)
       {
 	long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
+	overrun = 0;
  	test_loops++;
 
 	for (count = sumj = 0; count < nsamples; count++)
@@ -151,10 +151,7 @@ void display (void *cookie)
 	if (minjitter < gminjitter) gminjitter = minjitter;
 	if (maxjitter > gmaxjitter) gmaxjitter = maxjitter;
 	gavgjitter += avgjitter;
-	if (do_histogram)
-	    goverrun += overrun;
-	else
-	    goverrun = overrun;
+	goverrun += overrun;
 
 	if (!quiet)
 	    {
@@ -174,7 +171,7 @@ void display (void *cookie)
 		   minjitter,
 		   avgjitter,
 		   maxjitter,
-		   overrun,
+		   goverrun,
 		   gminjitter,
 		   gmaxjitter);
 	    }

@@ -1,3 +1,7 @@
+2005-04-09  Jim Cromie <jcromie@divsol.com>
+	
+	* testsuite/latency: Fix the overrun count.
+	
 2005-04-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.9,10,11-i386-r10c2.

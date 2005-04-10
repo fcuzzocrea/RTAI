@@ -45,7 +45,7 @@ typedef struct rt_mutex_placeholder {
 
 #define RTAI_MUTEX_MAGIC 0x55550505
 
-typedef struct rt_mutex {
+typedef struct __rt_mutex {
 
     unsigned magic;   /* !< Magic code - must be first */
 

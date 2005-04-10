@@ -475,10 +475,10 @@ int rthal_release_irq (unsigned irq)
 	return -EINVAL;
 
     err = adeos_virtualize_irq_from(&rthal_domain,
-			      irq,
-			      NULL,
-			      NULL,
-			      IPIPE_PASS_MASK);
+				    irq,
+				    NULL,
+				    NULL,
+				    IPIPE_PASS_MASK);
     if (!err)
         xchg(&rthal_realtime_irq[irq].handler,NULL);
 
@@ -555,7 +555,7 @@ int rthal_request_linux_irq (unsigned irq,
     if (irq >= IPIPE_NR_XIRQS || !handler)
 	return -EINVAL;
 
-    flags = rthal_spin_lock_irqsave(&irq_desc[irq].lock);
+    spin_lock_irqsave(&irq_desc[irq].lock,flags);
 
     if (rthal_linux_irq[irq].count++ == 0 && irq_desc[irq].action)
 	{
@@ -563,7 +563,7 @@ int rthal_request_linux_irq (unsigned irq,
 	irq_desc[irq].action->flags |= SA_SHIRQ;
 	}
 
-    rthal_spin_unlock_irqrestore(flags,&irq_desc[irq].lock);
+    spin_unlock_irqrestore(&irq_desc[irq].lock,flags);
 
     err = request_irq(irq,handler,SA_SHIRQ,name,dev_id);
 
@@ -580,12 +580,12 @@ int rthal_release_linux_irq (unsigned irq, void *dev_id)
 
     free_irq(irq,dev_id);
 
-    flags = rthal_spin_lock_irqsave(&irq_desc[irq].lock);
+    spin_lock_irqsave(&irq_desc[irq].lock,flags);
 
     if (--rthal_linux_irq[irq].count == 0 && irq_desc[irq].action)
 	irq_desc[irq].action->flags = rthal_linux_irq[irq].flags;
 
-    rthal_spin_unlock_irqrestore(flags,&irq_desc[irq].lock);
+    spin_unlock_irqrestore(&irq_desc[irq].lock,flags);
 
     return 0;
 }
@@ -1114,9 +1114,9 @@ int __rthal_init (void)
     }
 
     err = adeos_virtualize_irq(rthal_sysreq_virq,
-			 &rthal_ssrq_trampoline,
-			 NULL,
-			 IPIPE_HANDLE_MASK);
+			       &rthal_ssrq_trampoline,
+			       NULL,
+			       IPIPE_HANDLE_MASK);
     if (err)
     {
         printk(KERN_ERR "RTAI: Failed to virtualize IRQ.\n");

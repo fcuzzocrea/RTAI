@@ -1,3 +1,9 @@
+2005-04-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/*/hal/hal.c (rthal_request_linux_irq,
+	rthal_release_linux_irq): Use generic spinlocks since we must be
+	running over the Linux context in those routines.
+
 2005-04-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_relax): Make sure we don't

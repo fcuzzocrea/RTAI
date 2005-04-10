@@ -125,7 +125,7 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static inline void set_linux_task_priority (struct task_struct *task, int prio)
 
 {
-    if (prio < 0 || prio > MAX_RT_PRIO-1)
+    if (prio < 0 || prio >= MAX_RT_PRIO)
 	/* FIXME: __adeos_setscheduler_root() should check this instead of us. */
 	printk(KERN_WARNING "RTAI: invalid Linux priority level: %d, task=%s\n",prio,task->comm);
     else

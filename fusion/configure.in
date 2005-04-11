@@ -1224,6 +1224,7 @@ AC_CONFIG_FILES([ \
 	scripts/GNUmakefile \
 	scripts/rtai-config \
 	scripts/rtai-load \
+	scripts/rtai-test \
 	testsuite/GNUmakefile \
 	testsuite/latency/GNUmakefile \
 	testsuite/klatency/GNUmakefile \

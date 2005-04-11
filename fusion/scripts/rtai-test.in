@@ -1,0 +1,157 @@
+#!/bin/bash
+
+#set -e	# ctrl-C's should end everything, not just subshells. 
+	# commenting it out may help to debug stuff.
+
+loudly() {
+    # run task after announcing it
+    echo;  date;
+    echo running $PWD: $*
+    $* &
+    top -bn1c | head -12
+    wait
+}
+
+# defaults for cpu workload 
+device=/dev/zero	
+typeset -a dd_jobs
+dd_jobs=()
+
+generate_load() {
+    local jobsct=$1;
+    for (( ; $jobsct ; jobsct-- )) ; do
+        # run dd in subshell endless loop to create workload
+	( 
+	    trap infanticide TERM #EXIT 
+	    infanticide() { echo killing $!; kill SIGKILL $!; exit; }
+	    trap
+	    while true ; do
+		dd if=$device of=/dev/null;
+		echo dd job $! ended, restarting
+	    done;
+	)&
+	dd_jobs[${#dd_jobs[*]}]=$!
+    done
+    echo dd workload started, pids ${dd_jobs[*]}
+}
+
+cleanup_load() {
+    # kill the workload
+    echo killing workload pids ${dd_jobs[*]}
+    kill ${dd_jobs[*]};
+    unset dd_jobs;
+}
+
+trap cleanup_load EXIT	# under all exit conditions
+
+runit() {
+    # 
+    local rtime=$1; shift;
+    local opts="$*";
+    [ "$rtime" = '' ] && rtime=10
+    [ "$opts"  = '' ] && opts='-q -s'
+
+    #dir=$PWD
+    (
+	cd /usr/realtime/`uname -r`/testsuite/latency
+	loudly ./run -- -T 10 -s -l 5
+       #loudly ./run -- -T $rtime -s $opts
+	loudly ./run -- -T $rtime -h $opts
+ 
+	cd ../klatency
+	loudly ./run -- -T 10 -s -l 5
+       #loudly ./run -- -T $rtime -s $opts
+	loudly ./run -- -T $rtime -h $opts;
+    )
+    #cd $dir
+}
+
+run_w_load() {
+    cat /proc/interrupts
+    generate_load $workload
+    #runit $*
+    cat /proc/interrupts
+    #cleanup_load	# done by trap
+}
+
+
+myusage() {
+    cat >&1 <<EOF
+rt-test [options]
+  -w <number>	spawn N workloads (dd if=/dev/zero of=/dev/null) default=1
+  -d <device>	used as alternate src in workload (dd if=$device ..)
+     device must be mounted, and (unfortunately) cannot be an NFS mount
+     a real device (ex /dev/hda) will generate interrupts
+  -L log (via script) the test output to a file (default 'test-load-`uname -r`)
+  -N <name>	same as -L, but append $name (without -L, logname=$name)
+
+
+  # following options are passed thru to latency, klatency
+  -s	print statistics of sampled data
+  -h	print histogram of sampled data
+  -q	quiet, no print 1 sec sampled data
+  -T <sec test>
+  -l <data/header lines>
+  -H <bucketcount>
+  -B <bucketsize ns>
+EOF
+exit 1
+}
+
+
+if [ -f /proc/config.gz ] ; then
+
+    # check/warn on problem configs
+    
+    eval `zgrep CONFIG_CPU_FREQ /proc/config.gz`;
+    if [ ! -z "$CONFIG_CPU_FREQ" ] ; then
+	echo "warning: CONFIG_CPU_FREQ=$CONFIG_CPU_FREQ may be problematic"
+    fi
+
+fi
+
+workload=1
+while getopts 'd:shqT:l:H:B:uLN:w:' FOO ; do
+    #echo processing $FOO $OPTARG
+    case $FOO in
+	s|h|q)
+	    pass="$pass -$FOO" ;;
+	T|l|H|B)
+	    pass="$pass -$FOO $OPTARG" ;;
+	d) 
+	    device=$OPTARG    
+	    echo creating workload using dd if=$device
+	    if !(mount | grep -q ^$device) ; then
+		echo d option must be a block device, ie one of:
+		mount | cut -d\  -f1 | egrep -ve 'sysfs|proc|depts'
+		exit;
+	    fi
+	    ;;
+	L)
+	    logging=1
+	    logname=test-load-`uname -r`
+	    ;;
+	N)
+	    logging=1
+	    logname=$logname$OPTARG
+	    ;;
+	w)
+	    workload=$OPTARG ;;
+	?)
+	    myusage ;;
+    esac
+done
+
+shift $(($OPTIND - 1));
+
+
+if [ "$logging" != "" ]; then
+    # restart inside a script invocation
+    script -c "./rt-test $pass $*" $logname
+else
+    echo running $0 $pass $*
+    run_w_load $pass $*
+fi
+
+exit;
+

@@ -2,6 +2,7 @@ install-exec-local:
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	$(INSTALL_SCRIPT) rtai-config $(DESTDIR)$(bindir)
 	$(INSTALL_SCRIPT) rtai-load $(DESTDIR)$(bindir)
+	$(INSTALL_SCRIPT) rtai-test $(DESTDIR)$(bindir)
 	$(INSTALL_SCRIPT) $(srcdir)/rtai-info $(DESTDIR)$(bindir)
 	@if test -r $(srcdir)/postinstall.sh; then \
 	   echo "Running post-install script..." ;\
@@ -12,5 +13,6 @@ uninstall-local:
 	$(RM) $(DESTDIR)$(bindir)/rtai-info
 	$(RM) $(DESTDIR)$(bindir)/rtai-load
 	$(RM) $(DESTDIR)$(bindir)/rtai-config
+	$(RM) $(DESTDIR)$(bindir)/rtai-test
 
-EXTRA_DIST = rtai-info bootstrap $(wildcard $(srcdir)/postinstall.sh)
+EXTRA_DIST = rtai-info bootstrap $(wildcard postinstall.sh)

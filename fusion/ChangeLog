@@ -1,3 +1,8 @@
+2005-04-11  Jim Cromie <jcromie@divsol.com>
+
+	* scripts/rtai-test: Add preliminary version of the fusion test
+	script.
+	
 2005-04-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/*/hal/hal.c (rthal_ssrq_trampoline): Unstall the root

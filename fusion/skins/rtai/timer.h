@@ -30,7 +30,7 @@
 
 typedef struct rt_timer_info {
 
-    RTIME period;	/* <! Current status (unset, aperiodic, period). */
+    RTIME period;	/* !< Current status (unset, aperiodic, period). */
     RTIME date;		/* !< Current date. */
 
 } RT_TIMER_INFO;

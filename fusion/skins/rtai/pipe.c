@@ -47,24 +47,24 @@
 
 static xnheap_t *__pipe_heap = &kheap;
 
-static unsigned __pipe_flush_virq;
+static int __pipe_flush_srq;
 
 static DECLARE_XNQUEUE(__pipe_flush_q);
 
 static inline ssize_t __pipe_flush (RT_PIPE *pipe)
 
 {
-    ssize_t nbytes;
+    ssize_t nbytes = pipe->fillsz + sizeof(RT_PIPE_MSG);
+    void *buffer = pipe->buffer;
 
-    nbytes = xnpipe_send(pipe->minor,pipe->buffer,pipe->fillsz + sizeof(RT_PIPE_MSG),P_NORMAL);
-    rt_pipe_free(pipe->buffer);
     pipe->buffer = NULL;
     pipe->fillsz = 0;
 
-    return nbytes;
+    return xnpipe_send(pipe->minor,buffer,nbytes,P_NORMAL);
+    /* The buffer will be freed by the output handler. */
 }
 
-static void __pipe_flush_handler (void)
+static void __pipe_flush_handler (void *cookie)
 
 {
     xnholder_t *holder;
@@ -77,8 +77,10 @@ static void __pipe_flush_handler (void)
     while ((holder = getq(&__pipe_flush_q)) != NULL)
 	{
 	RT_PIPE *pipe = link2rtpipe(holder);
-	__pipe_flush(pipe);	/* Cannot do anything upon error here. */
 	__clear_bit(0,&pipe->flushable);
+	xnlock_put_irqrestore(&nklock,s);
+	__pipe_flush(pipe);	/* Cannot do anything upon error here. */
+	xnlock_get_irqsave(&nklock,s);
 	}
 
     xnlock_put_irqrestore(&nklock,s);
@@ -105,9 +107,9 @@ static int __pipe_output_handler (int bminor,
 int __pipe_pkg_init (void)
 
 {
-    __pipe_flush_virq = rthal_request_srq(0,&__pipe_flush_handler);
+    __pipe_flush_srq = rthal_request_srq(&__pipe_flush_handler);
 
-    if (__pipe_flush_virq <= 0)
+    if (__pipe_flush_srq <= 0)
 	return -EBUSY;
 
     return 0;
@@ -117,7 +119,7 @@ void __pipe_pkg_cleanup (void)
 
 {
     xnpipe_setup(NULL,NULL);
-    rthal_release_srq(__pipe_flush_virq);
+    rthal_release_srq(__pipe_flush_srq);
 }
 
 /**
@@ -584,7 +586,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
     if (pipe->fillsz > 0 && !__test_and_set_bit(0,&pipe->flushable))
 	{
 	appendq(&__pipe_flush_q,&pipe->link);
-	rthal_pend_linux_srq(__pipe_flush_virq);
+	rthal_pend_srq(__pipe_flush_srq);
 	}
 
  unlock_and_exit:

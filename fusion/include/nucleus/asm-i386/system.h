@@ -766,7 +766,7 @@ static inline void xnarch_notify_halt(void)
     unsigned long flags;
     adeos_declare_cpuid;
 
-    init_MUTEX_LOCKED(&xnarch_finalize_sync);
+    sema_init(&xnarch_finalize_sync,0);
 
     /* Here adp_current is in fact root, since xnarch_notify_halt is
        called from xnpod_shutdown, itself called from Linux

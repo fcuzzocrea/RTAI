@@ -1801,7 +1801,7 @@ int __init xnshadow_mount (void)
     for (cpu = 0; cpu < num_online_cpus(); ++cpu)
 	{
 	struct __gatekeeper *gk = &gatekeeper[cpu];
-	init_MUTEX_LOCKED(&gk->sync);
+	sema_init(&gk->sync,0);
 	xnarch_memory_barrier();
         kernel_thread((void *)&gatekeeper_thread, (void *)(unsigned long) cpu,0);
         down(&gk->sync);

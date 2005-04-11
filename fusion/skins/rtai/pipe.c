@@ -54,14 +54,14 @@ static DECLARE_XNQUEUE(__pipe_flush_q);
 static inline ssize_t __pipe_flush (RT_PIPE *pipe)
 
 {
-    ssize_t nbytes = pipe->fillsz + sizeof(RT_PIPE_MSG);
-    void *buffer = pipe->buffer;
+    ssize_t nbytes;
 
+    nbytes = xnpipe_send(pipe->minor,pipe->buffer,pipe->fillsz + sizeof(RT_PIPE_MSG),P_NORMAL);
+    rt_pipe_free(pipe->buffer);
     pipe->buffer = NULL;
     pipe->fillsz = 0;
 
-    return xnpipe_send(pipe->minor,buffer,nbytes,P_NORMAL);
-    /* The buffer will be freed by the output handler. */
+    return nbytes;
 }
 
 static void __pipe_flush_handler (void *cookie)

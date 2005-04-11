@@ -369,12 +369,12 @@ int rthal_release_linux_irq(unsigned irq,
 
 int rthal_pend_linux_irq(unsigned irq);
 
-int rthal_pend_linux_srq(unsigned srq);
+int rthal_request_srq(void (*handler)(void *cookie),
+		      void *cookie);
 
-int rthal_request_srq(unsigned label,
-		      void (*handler)(void));
+int rthal_release_srq(int srq);
 
-int rthal_release_srq(unsigned srq);
+int rthal_pend_srq(int srq);
 
 int rthal_set_irq_affinity(unsigned irq,
 			   cpumask_t cpumask,

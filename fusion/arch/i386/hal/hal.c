@@ -96,8 +96,8 @@ static struct {
 
 static struct {
 
-    void (*handler)(void);
-    unsigned label;
+    void (*handler)(void *cookie);
+    void *cookie;
 
 } rthal_sysreq_table[RTHAL_NR_SRQS];
 
@@ -596,8 +596,34 @@ int rthal_pend_linux_irq (unsigned irq)
     return adeos_propagate_irq(irq);
 }
 
-int rthal_request_srq (unsigned label,
-		       void (*handler)(void))
+static void rthal_ssrq_trampoline (unsigned virq)
+
+{
+    unsigned long pending;
+
+    rthal_spin_lock(&rthal_ssrq_lock);
+
+    /* This loop is not protected against a handler becoming
+       unavailable while processing the pending queue; the software
+       must make sure to uninstall all sysreqs before eventually
+       unloading any module that may contain sysreq handlers. */
+
+    while ((pending = (rthal_sysreq_pending & ~rthal_sysreq_running)) != 0)
+	{
+	unsigned srq = ffnz(pending);
+	set_bit(srq,&rthal_sysreq_running);
+	clear_bit(srq,&rthal_sysreq_pending);
+	rthal_spin_unlock(&rthal_ssrq_lock);
+	rthal_sysreq_table[srq].handler(rthal_sysreq_table[srq].cookie);
+	clear_bit(srq,&rthal_sysreq_running);
+	rthal_spin_lock(&rthal_ssrq_lock);
+	}
+
+    rthal_spin_unlock(&rthal_ssrq_lock);
+}
+
+int rthal_request_srq (void (*handler)(void *), void *cookie)
+
 {
     unsigned long flags;
     int srq;
@@ -612,7 +638,7 @@ int rthal_request_srq (unsigned label,
 	srq = ffz(rthal_sysreq_map);
 	set_bit(srq,&rthal_sysreq_map);
 	rthal_sysreq_table[srq].handler = handler;
-	rthal_sysreq_table[srq].label = label;
+	rthal_sysreq_table[srq].cookie = cookie;
 	}
     else
 	srq = -EBUSY;
@@ -622,40 +648,29 @@ int rthal_request_srq (unsigned label,
     return srq;
 }
 
-/**
- * Uninstall a system request handler
- *
- * rthal_release_srq uninstalls the specified system call @a srq, returned by
- * installing the related handler with a previous call to rthal_request_srq().
- *
- * @retval EINVAL if @a srq is invalid.
- */
-int rthal_release_srq (unsigned srq)
+int rthal_release_srq (int srq)
 
 {
-    if (srq < 1 ||
-	srq >= RTHAL_NR_SRQS ||
+    if (srq < 1 || srq >= RTHAL_NR_SRQS ||
 	!test_and_clear_bit(srq,&rthal_sysreq_map))
 	return -EINVAL;
 
     return 0;
 }
 
-int rthal_pend_linux_srq (unsigned srq)
+int rthal_pend_srq (int srq)
 
 {
-    if (srq > 0 && srq < RTHAL_NR_SRQS)
-	{
-	if (!test_and_set_bit(srq,&rthal_sysreq_pending))
-	    {
-	    adeos_schedule_irq(rthal_sysreq_virq);
-	    return 1;
-	    }
+    if (srq <= 0 || srq >= RTHAL_NR_SRQS)
+	return -EINVAL;
 
-	return 0;	/* Already pending. */
+    if (!test_and_set_bit(srq,&rthal_sysreq_pending))
+	{
+	adeos_schedule_irq(rthal_sysreq_virq);
+	return 1;
 	}
 
-    return -EINVAL;
+    return 0;	/* Already pending. */
 }
 
 #ifdef CONFIG_SMP
@@ -794,30 +809,6 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
  endtrap:
 
     return;
-}
-
-static void rthal_ssrq_trampoline (unsigned virq)
-
-{
-    unsigned long pending;
-
-    rthal_spin_lock(&rthal_ssrq_lock);
-
-    while ((pending = rthal_sysreq_pending & ~rthal_sysreq_running) != 0)
-	{
-	unsigned srq = ffnz(pending);
-	set_bit(srq,&rthal_sysreq_running);
-	clear_bit(srq,&rthal_sysreq_pending);
-	rthal_spin_unlock(&rthal_ssrq_lock);
-
-	if (test_bit(srq,&rthal_sysreq_map))
-	    rthal_sysreq_table[srq].handler();
-
-	clear_bit(srq,&rthal_sysreq_running);
-	rthal_spin_lock(&rthal_ssrq_lock);
-	}
-
-    rthal_spin_unlock(&rthal_ssrq_lock);
 }
 
 static void rthal_domain_entry (int iflag)
@@ -1226,7 +1217,7 @@ EXPORT_SYMBOL(rthal_release_linux_irq);
 EXPORT_SYMBOL(rthal_pend_linux_irq);
 EXPORT_SYMBOL(rthal_request_srq);
 EXPORT_SYMBOL(rthal_release_srq);
-EXPORT_SYMBOL(rthal_pend_linux_srq);
+EXPORT_SYMBOL(rthal_pend_srq);
 EXPORT_SYMBOL(rthal_set_irq_affinity);
 EXPORT_SYMBOL(rthal_request_timer);
 EXPORT_SYMBOL(rthal_release_timer);

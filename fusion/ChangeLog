@@ -1,3 +1,8 @@
+2005-04-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i386/hal.h (rthal_set_timer_shot): Program
+	the timer for a one tick delay when passed a null delay.
+
 2005-04-11  Jim Cromie <jcromie@divsol.com>
 
 	* scripts/rtai-test: Add preliminary version of the fusion test

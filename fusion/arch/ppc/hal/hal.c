@@ -42,7 +42,7 @@
 #include <linux/module.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
-#include <linux/console.h>
+v#include <linux/console.h>
 #include <linux/kallsyms.h>
 #include <asm/system.h>
 #include <asm/hw_irq.h>
@@ -100,7 +100,7 @@ static unsigned long rthal_sysreq_pending;
 
 static unsigned long rthal_sysreq_running;
 
-static spinlock_t rthal_ssrq_lock = SPIN_LOCK_UNLOCKED;
+static spinlock_t rthal_sysreq_lock = SPIN_LOCK_UNLOCKED;
 
 static volatile int rthal_sync_op;
 
@@ -400,33 +400,37 @@ int rthal_pend_linux_irq (unsigned irq)
     return adeos_propagate_irq(irq);
 }
 
-static void rthal_ssrq_trampoline (unsigned virq)
+static void rthal_sysreq_trampoline (unsigned virq)
 
 {
+    void (*handler)(void *), *cookie;
     unsigned long pending;
 
-    rthal_spin_lock(&rthal_ssrq_lock);
+    rthal_spin_lock(&rthal_sysreq_lock);
 
-    /* This loop is not protected against a handler becoming
+    /* <!> This loop is not protected against a handler becoming
        unavailable while processing the pending queue; the software
        must make sure to uninstall all sysreqs before eventually
-       unloading any module that may contain sysreq handlers. */
+       unloading any module that may contain sysreq handlers. We make
+       sure that no more than a single CPU can fire a given handler at
+       any given time (see rthal_sysreq_running). */
 
     while ((pending = (rthal_sysreq_pending & ~rthal_sysreq_running)) != 0)
 	{
-	unsigned srq = ffnz(pending);
+	int srq = ffnz(pending);
 	set_bit(srq,&rthal_sysreq_running);
 	clear_bit(srq,&rthal_sysreq_pending);
-	rthal_spin_unlock(&rthal_ssrq_lock);
-
-	if (test_bit(srq,&rthal_sysreq_map))
-	    rthal_sysreq_table[srq].handler();
-
+	handler = rthal_sysreq_table[srq].handler;
+	cookie = rthal_sysreq_table[srq].cookie;
+	rthal_spin_unlock(&rthal_sysreq_lock);
+	rthal_linux_sti();
+	handler(cookie);
+	rthal_linux_cli();
 	clear_bit(srq,&rthal_sysreq_running);
-	rthal_spin_lock(&rthal_ssrq_lock);
+	rthal_spin_lock(&rthal_sysreq_lock);
 	}
 
-    rthal_spin_unlock(&rthal_ssrq_lock);
+    rthal_spin_unlock(&rthal_sysreq_lock);
 }
 
 int rthal_request_srq (void (*handler)(void *cookie),
@@ -438,7 +442,7 @@ int rthal_request_srq (void (*handler)(void *cookie),
     if (handler == NULL)
 	return -EINVAL;
 
-    flags = rthal_spin_lock_irqsave(&rthal_ssrq_lock);
+    flags = rthal_spin_lock_irqsave(&rthal_sysreq_lock);
 
     if (rthal_sysreq_map != ~0)
 	{
@@ -450,7 +454,7 @@ int rthal_request_srq (void (*handler)(void *cookie),
     else
 	srq = -EBUSY;
 
-    rthal_spin_unlock_irqrestore(flags,&rthal_ssrq_lock);
+    rthal_spin_unlock_irqrestore(flags,&rthal_sysreq_lock);
 
     return srq;
 }
@@ -802,9 +806,9 @@ int __rthal_init (void)
 	}
 
     err = adeos_virtualize_irq(rthal_sysreq_virq,
-			 &rthal_ssrq_trampoline,
-			 NULL,
-			 IPIPE_HANDLE_MASK);
+			       &rthal_sysreq_trampoline,
+			       NULL,
+			       IPIPE_HANDLE_MASK);
     if (err)
     {
         printk(KERN_ERR "RTAI: Failed to virtualize IRQ.\n");

@@ -1,5 +1,8 @@
 2005-04-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/*/hal/hal.c (rthal_ssrq_trampoline): Unstall the root
+	domain while running the sysreq handler.
+
 	* skins/rtai/pipe.c (__pipe_flush_handler): Release the superlock
 	while cycling on the flush queue.
 	(__pipe_flush): Do _not_ free the stream buffer in the flush

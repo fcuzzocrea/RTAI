@@ -202,7 +202,7 @@ extern adomain_t rthal_domain;
 
 #define RTHAL_DOMAIN_ID  0x52544149
 
-#define RTHAL_NR_SRQS    32
+#define RTHAL_NR_SRQS  BITS_PER_LONG
 
 #define RTHAL_TIMER_FREQ  (rthal_tunables.timer_freq)
 #define RTHAL_CPU_FREQ    (rthal_tunables.cpu_freq)

@@ -751,7 +751,7 @@ static inline int xnarch_release_ipi (void)
                                      IPIPE_PASS_MASK);
 }
 
-static struct semaphore xnarch_finalize_sync;
+static struct linux_semaphore xnarch_finalize_sync;
 
 static void xnarch_finalize_cpu(unsigned irq)
 {

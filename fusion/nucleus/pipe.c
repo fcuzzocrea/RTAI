@@ -48,7 +48,7 @@ spinlock_t xnpipe_sqlock;
 
 spinlock_t xnpipe_aqlock;
 
-unsigned xnpipe_wakeup_srq;
+int xnpipe_wakeup_srq;
 
 /*
  * Attempt to wake up Linux-side sleepers upon pipe
@@ -57,7 +57,7 @@ unsigned xnpipe_wakeup_srq;
  * Linux-related variables.
  */
 
-static void xnpipe_wakeup_proc (void)
+static void xnpipe_wakeup_proc (void *cookie)
 
 {
     xnholder_t *holder, *nholder;
@@ -130,7 +130,7 @@ static void xnpipe_wakeup_proc (void)
 }
 
 static inline void xnpipe_enqueue_wait (xnpipe_state_t *state,
-					struct semaphore *wchan,
+					struct linux_semaphore *wchan,
 					int flags)
 {
     spl_t s;
@@ -154,7 +154,7 @@ static inline void xnpipe_dequeue_wait (xnpipe_state_t *state,
 }
 
 static inline void xnpipe_schedule_request (void) {
-    rthal_pend_linux_srq(xnpipe_wakeup_srq);
+    rthal_pend_srq(xnpipe_wakeup_srq);
 }
 
 /* Real-time entry points. Remember that we _must_ enforce critical
@@ -805,7 +805,7 @@ int xnpipe_mount (void)
 	return -EPIPE;
 	}
 
-    xnpipe_wakeup_srq = rthal_request_srq(0,&xnpipe_wakeup_proc);
+    xnpipe_wakeup_srq = rthal_request_srq(&xnpipe_wakeup_proc,NULL);
 
     return 0;
 }

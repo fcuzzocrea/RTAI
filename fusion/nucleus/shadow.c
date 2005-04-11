@@ -55,7 +55,7 @@ static struct __gatekeeper {
 
     struct task_struct *server;
     wait_queue_head_t waitq;
-    struct semaphore sync;
+    struct linux_semaphore sync;
     xnthread_t *thread;
 
 } gatekeeper[XNARCH_NR_CPUS];

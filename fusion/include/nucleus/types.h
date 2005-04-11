@@ -52,6 +52,12 @@ typedef int (*xnisr_t)(struct xnintr *intr);
 
 typedef atomic_flags_t xnflags_t;
 
+#ifdef CONFIG_PREEMPT_RT
+#define linux_semaphore compat_semaphore
+#else /* CONFIG_PREEMPT_RT */
+#define linux_semaphore semaphore
+#endif /* !CONFIG_PREEMPT_RT */
+
 #ifndef NULL
 #define NULL 0
 #endif

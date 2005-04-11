@@ -89,9 +89,9 @@ typedef struct xnpipe_state {
 
     /* Linux kernel part */
     xnflags_t status;
-    struct semaphore open_sem;
-    struct semaphore send_sem;
-    struct semaphore *wchan;	/* any sem */
+    struct linux_semaphore open_sem;
+    struct linux_semaphore send_sem;
+    struct linux_semaphore *wchan;	/* any sem */
     struct fasync_struct *asyncq;
     wait_queue_head_t pollq;
 

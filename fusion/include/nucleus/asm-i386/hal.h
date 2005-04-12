@@ -312,15 +312,16 @@ static inline struct task_struct *rthal_get_current (int cpuid) {
 static inline void rthal_set_timer_shot (unsigned long delay) {
 
     unsigned long flags;
-    if(!delay)
-        delay = 1;
-    rthal_hw_lock(flags);
 #ifdef CONFIG_X86_LOCAL_APIC
+    rthal_hw_lock(flags);
     apic_read(APIC_LVTT);
     apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
     apic_read(APIC_TMICT);
     apic_write_around(APIC_TMICT,delay);
 #else /* !CONFIG_X86_LOCAL_APIC */
+    if(!delay)
+        delay = 1;
+    rthal_hw_lock(flags);
     outb(delay & 0xff,0x40);
     outb(delay >> 8,0x40);
 #endif /* CONFIG_X86_LOCAL_APIC */

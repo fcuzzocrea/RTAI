@@ -1,5 +1,8 @@
 2005-04-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* nucleus/timer.c (xntimer_next_local_shot): Pessimistically
+	substract nktimerlat from delay before programming next shot.
+
 	* include/nucleus/timer.h, nucleus/timer.c: Eliminate
 	xntimer_sched and xntimer_set_sched as much as possible at
 	compile-time.

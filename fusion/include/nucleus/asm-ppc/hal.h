@@ -249,13 +249,13 @@ static inline struct task_struct *rthal_get_current (int cpuid) {
 
 static inline void rthal_set_timer_shot (unsigned long delay) {
 
-    if (delay) {
+    if(!delay)
+        delay = 1;
 #ifdef CONFIG_40x
-	mtspr(SPRN_PIT,delay);
+    mtspr(SPRN_PIT,delay);
 #else /* !CONFIG_40x */
-	set_dec(delay);
+    set_dec(delay);
 #endif /* CONFIG_40x */
-    }
 }
 
     /* Private interface -- Internal use only */

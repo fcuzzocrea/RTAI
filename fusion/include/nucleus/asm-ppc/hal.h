@@ -188,31 +188,29 @@ static inline unsigned long long rthal_rdtsc (void) {
 #define rthal_spin_lock(lock)    adeos_spin_lock(lock)
 #define rthal_spin_unlock(lock)  adeos_spin_unlock(lock)
 
-static inline void rthal_spin_lock_irq(spinlock_t *lock) {
+#define rthal_spin_lock_irq(lock) \
+do {  \
+    rthal_cli(); \
+    rthal_spin_lock(lock); \
+} while(0)
 
-    rthal_cli();
-    rthal_spin_lock(lock);
-}
+#define rthal_spin_unlock_irq(lock) \
+do {  \
+    rthal_spin_unlock(lock); \
+    rthal_sti(); \
+} while(0)
 
-static inline void rthal_spin_unlock_irq(spinlock_t *lock) {
+#define rthal_spin_lock_irqsave(lock,flags) \
+do {  \
+    rthal_local_irq_save(flags); \
+    rthal_spin_lock(lock); \
+} while(0)
 
-    rthal_spin_unlock(lock);
-    rthal_sti();
-}
-
-static inline unsigned long rthal_spin_lock_irqsave(spinlock_t *lock) {
-
-    unsigned long flags;
-    rthal_local_irq_save(flags);
-    rthal_spin_lock(lock);
-    return flags;
-}
-
-static inline void rthal_spin_unlock_irqrestore(unsigned long flags,
-						spinlock_t *lock) {
-    rthal_spin_unlock(lock);
-    rthal_local_irq_restore(flags);
-}
+#define rthal_spin_unlock_irqrestore(lock,flags) \
+do {  \
+    rthal_spin_unlock(lock); \
+    rthal_local_irq_restore(flags); \
+} while(0)
 
 #if !defined(CONFIG_ADEOS_NOTHREADS)
 

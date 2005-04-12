@@ -20,7 +20,15 @@
 #ifndef _RTAI_NUCLEUS_TYPES_H
 #define _RTAI_NUCLEUS_TYPES_H
 
+#include <linux/config.h>
 #include <linux/errno.h>
+
+#ifdef CONFIG_PREEMPT_RT
+#define linux_semaphore compat_semaphore
+#else /* CONFIG_PREEMPT_RT */
+#define linux_semaphore semaphore
+#endif /* !CONFIG_PREEMPT_RT */
+
 #include <nucleus/asm/system.h>
 
 typedef unsigned long xnsigmask_t;
@@ -51,12 +59,6 @@ typedef int (*xnisr_t)(struct xnintr *intr);
 #define __clrbits(flags,mask)  do { (flags) &= ~(mask); } while(0)
 
 typedef atomic_flags_t xnflags_t;
-
-#ifdef CONFIG_PREEMPT_RT
-#define linux_semaphore compat_semaphore
-#else /* CONFIG_PREEMPT_RT */
-#define linux_semaphore semaphore
-#endif /* !CONFIG_PREEMPT_RT */
 
 #ifndef NULL
 #define NULL 0

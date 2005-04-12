@@ -77,11 +77,13 @@ typedef struct xntimer {
 } xntimer_t;
 
 #define xntimer_date(t)           ((t)->date)
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_OPT_PERCPU_TIMER)
 #define xntimer_sched(t)          ((t)->sched)
+#elif defined(CONFIG_SMP)
+#define xntimer_sched(t)          (xnpod_sched_slot(XNTIMER_KEEPER_ID))
 #else /* !CONFIG_SMP */
 #define xntimer_sched(t)          xnpod_current_sched()
-#endif /* CONFIG_SMP */
+#endif /* CONFIG_SMP && CONFIG_RTAI_OPT_PERCPU_TIMER*/
 #define xntimer_interval(t)       ((t)->interval)
 #define xntimer_set_cookie(t,c)   ((t)->cookie = (c))
 #define xntimer_set_priority(t,p) ((t)->prio = (p))
@@ -114,11 +116,11 @@ xnticks_t xntimer_get_date(xntimer_t *timer);
 
 xnticks_t xntimer_get_timeout(xntimer_t *timer);
 
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_OPT_PERCPU_TIMER)
 int xntimer_set_sched(xntimer_t *timer, struct xnsched *sched);
-#else /* ! CONFIG_SMP */
+#else /* ! CONFIG_SMP || ! CONFIG_OPT_PERCPU_TIMER */
 #define xntimer_set_sched(timer,sched)
-#endif /* CONFIG_SMP */
+#endif /* CONFIG_SMP && CONFIG_OPT_PERCPU_TIMER */
 
 #ifdef __cplusplus
 }

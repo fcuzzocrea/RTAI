@@ -374,7 +374,7 @@ void xntimer_stop (xntimer_t *timer)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_OPT_PERCPU_TIMER)
 /**
  * Migrate a timer.
  *
@@ -393,8 +393,6 @@ void xntimer_stop (xntimer_t *timer)
 int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 {
     int err = 0;
-
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     int queued;
     spl_t s;
 
@@ -441,11 +439,9 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 
     xnlock_put_irqrestore(&nklock, s);
 
-#endif  /* CONFIG_RTAI_OPT_PERCPU_TIMER */
-
     return err;
 }
-#endif /* CONFIG_SMP */
+#endif /* CONFIG_SMP && CONFIG_RTAI_OPT_PERCPU_TIMER */
 
 /*!
  * \fn xnticks_t xntimer_get_date(xntimer_t *timer)
@@ -753,6 +749,9 @@ EXPORT_SYMBOL(xntimer_init);
 EXPORT_SYMBOL(xntimer_destroy);
 EXPORT_SYMBOL(xntimer_start);
 EXPORT_SYMBOL(xntimer_stop);
+#if defined(CONFIG_SMP) && defined(CONFIG_OPT_PERCPU_TIMER)
+EXPORT_SYMBOL(xntimer_set_sched);
+#endif /* CONFIG_SMP && CONFIG_OPT_PERCPU_TIMER */
 EXPORT_SYMBOL(xntimer_freeze);
 EXPORT_SYMBOL(xntimer_get_date);
 EXPORT_SYMBOL(xntimer_get_timeout);

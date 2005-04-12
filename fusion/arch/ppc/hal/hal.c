@@ -442,7 +442,7 @@ int rthal_request_srq (void (*handler)(void *cookie),
     if (handler == NULL)
 	return -EINVAL;
 
-    flags = rthal_spin_lock_irqsave(&rthal_sysreq_lock);
+    rthal_spin_lock_irqsave(&rthal_sysreq_lock,flags);
 
     if (rthal_sysreq_map != ~0)
 	{
@@ -454,7 +454,7 @@ int rthal_request_srq (void (*handler)(void *cookie),
     else
 	srq = -EBUSY;
 
-    rthal_spin_unlock_irqrestore(flags,&rthal_sysreq_lock);
+    rthal_spin_unlock_irqrestore(&rthal_sysreq_lock,flags);
 
     return srq;
 }

@@ -1,3 +1,10 @@
+2005-04-12  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/hal.c: Add the required kernel thread support for
+	dispatching sysreqs w/ PREEMPT_RT.
+
+	* include/nucleus/asm-*/hal.h: Rewrite spinlock helpers sanely.
+
 2005-04-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-i386/hal.h (rthal_set_timer_shot): Program

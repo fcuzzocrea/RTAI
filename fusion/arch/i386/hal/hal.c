@@ -595,7 +595,7 @@ int rthal_pend_linux_irq (unsigned irq)
     return adeos_propagate_irq(irq);
 }
 
-static void rthal_sysreq_trampoline (unsigned virq)
+static void rthal_sysreq_handler (unsigned virq)
 
 {
     void (*handler)(void *), *cookie;
@@ -628,6 +628,60 @@ static void rthal_sysreq_trampoline (unsigned virq)
     rthal_spin_unlock(&rthal_sysreq_lock);
 }
 
+#ifdef CONFIG_PREEMPT_RT
+
+/* On PREEMPT_RT, we need to invoke the sysreq handlers over a process
+   context, so that the latter can access non-atomic kernel services
+   properly. So the Adeos virq is only used to kick a per-CPU sysreq
+   server process which in turns runs the sysreq dispatcher. A bit
+   twisted, but indeed consistent with the threaded IRQ model of
+   PREEMPT_RT. */
+
+#include <linux/kthread.h>
+
+static struct task_struct *rthal_sysreq_servers[RTHAL_NR_CPUS];
+
+static int rthal_sysreq_thread (void *data)
+
+{
+    unsigned cpu = (unsigned)(unsigned long)data;
+
+    set_cpus_allowed(current, cpumask_of_cpu(cpu));
+    sigfillset(&current->blocked);
+    current->flags |= PF_NOFREEZE;
+    /* Use highest priority here, since some sysreq handlers might
+       require to run as soon as possible after the request has been
+       pended. */
+    __adeos_setscheduler_root(current,SCHED_FIFO,MAX_RT_PRIO-1);
+
+    while (!kthread_should_stop()) {
+	set_current_state(TASK_INTERRUPTIBLE);
+	local_irq_enable();
+	schedule();
+	rthal_sysreq_handler(0);
+    }
+
+    __set_current_state(TASK_RUNNING);
+
+    return 0;
+}
+
+void rthal_sysreq_kicker (unsigned virq)
+
+{
+    /* Don't use smp_processor_id() since it could whine uselessly
+       with PREEMPT_RT here. */
+    wake_up_process(rthal_sysreq_servers[adeos_processor_id()]);
+}
+
+#define rthal_sysreq_trampoline rthal_sysreq_kicker
+
+#else /* !CONFIG_PREEMPT_RT */
+
+#define rthal_sysreq_trampoline rthal_sysreq_handler
+
+#endif /* CONFIG_PREEMPT_RT */
+
 int rthal_request_srq (void (*handler)(void *), void *cookie)
 
 {
@@ -637,7 +691,7 @@ int rthal_request_srq (void (*handler)(void *), void *cookie)
     if (handler == NULL)
 	return -EINVAL;
 
-    flags = rthal_spin_lock_irqsave(&rthal_sysreq_lock);
+    rthal_spin_lock_irqsave(&rthal_sysreq_lock,flags);
 
     if (rthal_sysreq_map != ~0)
 	{
@@ -649,7 +703,7 @@ int rthal_request_srq (void (*handler)(void *), void *cookie)
     else
 	srq = -EBUSY;
 
-    rthal_spin_unlock_irqrestore(flags,&rthal_sysreq_lock);
+    rthal_spin_unlock_irqrestore(&rthal_sysreq_lock,flags);
 
     return srq;
 }
@@ -1120,6 +1174,18 @@ int __rthal_init (void)
         goto out_free_irq;
     }
 
+#ifdef CONFIG_PREEMPT_RT
+    {
+    int cpu;
+    for_each_online_cpu(cpu) {
+       rthal_sysreq_servers[cpu] = kthread_create(&rthal_sysreq_thread,(void *)cpu,"srq/%d",cpu);
+       if (!rthal_sysreq_servers[cpu])
+	   goto out_kthread_stop;
+       wake_up_process(rthal_sysreq_servers[cpu]);
+      }
+    }
+#endif /* CONFIG_PREEMPT_RT */
+
     if (rthal_cpufreq_arg == 0)
 #ifdef CONFIG_X86_TSC
 	{
@@ -1171,6 +1237,16 @@ out_proc_unregister:
 #ifdef CONFIG_PROC_FS
     rthal_proc_unregister();
 #endif
+#ifdef CONFIG_PREEMPT_RT
+out_kthread_stop:
+    {
+    int cpu;
+    for_each_online_cpu(cpu) {
+        if (rthal_sysreq_servers[cpu])
+            kthread_stop(rthal_sysreq_servers[cpu]);
+      }
+    }
+#endif /* CONFIG_PREEMPT_RT */
     adeos_virtualize_irq(rthal_sysreq_virq,NULL,NULL,0);
    
 out_free_irq:
@@ -1199,6 +1275,14 @@ void __rthal_exit (void)
 	{
 	adeos_virtualize_irq(rthal_sysreq_virq,NULL,NULL,0);
 	adeos_free_irq(rthal_sysreq_virq);
+#ifdef CONFIG_PREEMPT_RT
+	{
+	int cpu;
+	for_each_online_cpu(cpu) {
+            kthread_stop(rthal_sysreq_servers[cpu]);
+	  }
+	}
+#endif /* CONFIG_PREEMPT_RT */
 	}
 
     if (rthal_init_done)

@@ -205,10 +205,10 @@ static inline void xntimer_next_local_shot (xnsched_t *this_sched)
 
     timer = link2timer(holder);
     now = xnarch_get_cpu_tsc();
-    xdate = now + nkschedlat;
+    xdate = now + nkschedlat + nktimerlat;
 
-    if (xdate + nktimerlat >= timer->date)
-	delay = nktimerlat;
+    if (xdate >= timer->date)
+	delay = 0;
     else
 	delay = timer->date - xdate;
 

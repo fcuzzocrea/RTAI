@@ -1,3 +1,12 @@
+2005-04-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/timer.h, nucleus/timer.c: Eliminate
+	xntimer_sched and xntimer_set_sched as much as possible at
+	compile-time.
+
+	* include/nucleus/asm-i386/hal.h: Allow programming local APIC
+	with null delay.
+
 2005-04-12  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/hal/hal.c: Add the required kernel thread support for

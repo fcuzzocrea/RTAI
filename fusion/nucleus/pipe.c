@@ -65,6 +65,10 @@ static void xnpipe_wakeup_proc (void *cookie)
     unsigned long slflags;
     spl_t s;
 
+#ifdef CONFIG_PREEMPT_RT
+ lock_and_scan:
+#endif /* CONFIG_PREEMPT_RT */
+
     spin_lock_irqsave(&xnpipe_sqlock,slflags);
 
     nholder = getheadq(&xnpipe_sleepq);
@@ -80,19 +84,34 @@ static void xnpipe_wakeup_proc (void *cookie)
 	    nholder = popq(&xnpipe_sleepq,holder);
 	    clrbits(state->status,XNPIPE_USER_ONWAIT);
 
-	    spin_unlock_irqrestore(&xnpipe_sqlock,slflags);
-
 	    if (state->wchan)
 		{
-		up(state->wchan);
+		/* PREEMPT_RT kernels could schedule us out as a
+		   result of up()'ing the semaphore, so we need to do
+		   the housekeeping and release the spinlock early
+		   on. */
+		struct linux_semaphore *wchan = state->wchan;
 		state->wchan = NULL;
+		spin_unlock_irqrestore(&xnpipe_sqlock,slflags);
+		up(wchan);
 		}
 	    else if (waitqueue_active(&state->pollq))
-		     wake_up_interruptible(&state->pollq);
+		{
+		spin_unlock_irqrestore(&xnpipe_sqlock,slflags);
+		wake_up_interruptible(&state->pollq);
+		}
 
+	    /* On PREEMPT_RT kernels, __wake_up() might sleep, so we
+	       need to refetch the sleep queue head just to be safe;
+	       for the very same reason, livelocking inside this loop
+	       cannot happen. On regular kernel variants, we just keep
+	       processing the entire loop in a row. */
+
+#ifdef CONFIG_PREEMPT_RT
+	    goto lock_and_scan;
+#else /* !CONFIG_PREEMPT_RT */
 	    spin_lock_irqsave(&xnpipe_sqlock,slflags);
-
-	    set_need_resched();
+#endif /* CONFIG_PREEMPT_RT */
 	    }
 	else
 	    nholder = nextq(&xnpipe_sleepq,holder);
@@ -111,14 +130,17 @@ static void xnpipe_wakeup_proc (void *cookie)
 	{
 	state = link2xnpipe(holder,alink);
 
+	/* We need to protect against races w/ RTAI when manipulating
+	   the status word. */
 	xnlock_get_irqsave(&nklock,s);
 
 	if (testbits(state->status,XNPIPE_USER_SIGIO))
 	    {
 	    clrbits(state->status,XNPIPE_USER_SIGIO);
 	    xnlock_put_irqrestore(&nklock,s);
+	    spin_unlock_irqrestore(&xnpipe_aqlock,slflags);
 	    kill_fasync(&state->asyncq,xnpipe_asyncsig,POLL_IN);
-	    set_need_resched();
+	    spin_lock_irqsave(&xnpipe_aqlock,slflags);
 	    }
 	else
 	    xnlock_put_irqrestore(&nklock,s);
@@ -556,13 +578,12 @@ static int xnpipe_release (struct inode *inode,
 	{
 	spin_lock_irqsave(&xnpipe_aqlock,slflags);
 	removeq(&xnpipe_asyncq,&state->alink);
+	clrbits(state->status,XNPIPE_USER_SIGIO);
 	spin_unlock_irqrestore(&xnpipe_aqlock,slflags);
 	fasync_helper(-1,file,0,&state->asyncq);
 	}
 
-    set_need_resched();
-
-    return err;
+     return err;
 }
 
 static ssize_t xnpipe_read (struct file *file,

@@ -1,6 +1,35 @@
 Installing RTAI-3.x
 ===================
 
+0. Interrupt dispatching mode
+=============================
+
+It is important to note that RTAI comes with ADEOS, or "piped",
+dispatching by default and that the "immediate" variant builds
+upon a given version of an official ADEOS patch but departs from
+there by adding 3.x-specific support.
+
+In "piped" mode, interrupts are dispatched by ADEOS while in
+"immediate" mode RTAI dispatches real time interrupts by itself
+and defers other interrupts to ADEOS. The "immediate" mode will
+likely be worth having only on low end CPUs, e.g.: 486, small ARM;
+on which it has proven useful already.
+
+Once such a choice has been made go to the base/scripts directory
+and type:
+- "./mode-control immed" for immediate dispatching;
+- "./mode-control piped" for piped dispatching;
+- "./mode-control check" to check the current mode;
+then go on with the configuration/installation.
+
+This procedure must be done in full conscience, so it is likely it
+will never become part of the configuration process described below.
+It is important to note that RTAI comes with "piped" dispatching by
+default and that the "immediate" mode requires the mentioned minimal
+change to ADEOS which, nonetheless, imposes using only ADEOS
+patches accompanying RTAI (and not from the ADEOS CVS or any other
+source).
+
 1. How to build
 ===============
 

@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
 #define SLOWMUL  24
 
-#ifdef CONFIG_UCLINUX
+#if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
 #define TICK_TIME 1000000
 #else
 #define TICK_TIME 500000

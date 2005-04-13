@@ -21,6 +21,7 @@
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
+#include <linux/stringify.h>
 #include <asm/io.h>
 
 #include <asm/rtai.h>
@@ -42,9 +43,14 @@ MODULE_PARM(overall, "i");
 MODULE_PARM_DESC(overall,
 		 "Calculate overall (1) or per-loop (0) statistics (default: 1)");
 
-int period = 100000;
+#if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
+#define DEFAULT_PERIOD 1000000
+#else
+#define DEFAULT_PERIOD 100000
+#endif
+int period = DEFAULT_PERIOD;
 MODULE_PARM(period, "i");
-MODULE_PARM_DESC(period, "period in ns (default: 100000)");
+MODULE_PARM_DESC(period, "period in ns (default: " __stringify(DEFAULT_PERIOD) ")");
 
 static int loops;
 int avrgtime = 1;

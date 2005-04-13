@@ -170,7 +170,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
-#define RTAI_DOMAIN_ID  0x52544149
+#define RTAI_DOMAIN_ID  0x9ac15d93  // nam2num("rtai_d")
 #define RTAI_NR_SRQS    32
 
 #define RTAI_SMP_NOTIFY_VECTOR    RTAI_APIC1_VECTOR
@@ -195,7 +195,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define RTAI_IFLAG  9
 
 #define rtai_cpuid()  adeos_processor_id()
-#define rtai_tskext   ptd
+#define rtai_tskext(idx)   ptd[idx]
 
 extern adomain_t rtai_domain;
 
@@ -419,21 +419,13 @@ static inline void rt_global_save_flags(unsigned long *flags)
  */
 static inline void rt_global_restore_flags(unsigned long flags)
 {
-	switch (flags & ((1 << RTAI_IFLAG) | 1)) {
-		case (1 << RTAI_IFLAG) | 1:
-			rt_release_global_lock();
-			rtai_sti();
-			break;
-		case (1 << RTAI_IFLAG) | 0:
-			rt_get_global_lock();
-			rtai_sti();
-			break;
-		case (0 << RTAI_IFLAG) | 1:
-			rt_release_global_lock();
-			break;
-		case (0 << RTAI_IFLAG) | 0:
-			rt_get_global_lock();
-			break;
+	if (test_and_clear_bit(0, &flags)) {
+		rt_release_global_lock();
+	} else {
+		rt_get_global_lock();
+	}
+	if (flags) {
+		rtai_sti();
 	}
 }
 

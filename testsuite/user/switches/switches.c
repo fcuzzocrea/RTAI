@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #include <signal.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <sys/poll.h>
 
 #include <rtai_sem.h>
 
@@ -76,10 +77,7 @@ static void *thread_fun(void *arg)
 
 static void msleep(int ms)
 {
-	struct timeval timout;
-	timout.tv_sec = 0;
-	timout.tv_usec = 1000*ms;
-	select(0, NULL, NULL, NULL, &timout);
+	poll(NULL, 0, ms);
 }
 
 int main(void)

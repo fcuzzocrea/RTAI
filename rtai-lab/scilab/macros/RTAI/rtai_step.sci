@@ -41,10 +41,10 @@ case 'set' then
 
     funam='i_step_' + string(port);
 
-    tt=label(2);
-    if find(oldlb <> label(1)) <> [] then
+//    tt=label(2);
+//    if find(oldlb <> label(1)) <> [] then
       tt=[]
-    end
+//    end
 
     [ok,tt]=getCode(funam,tt)
     if ~ok then break,end

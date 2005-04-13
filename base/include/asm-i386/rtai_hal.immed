@@ -170,7 +170,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
-#define RTAI_DOMAIN_ID  0x52544149
+#define RTAI_DOMAIN_ID  0x9ac15d93  // nam2num("rtai_d")
 #define RTAI_NR_SRQS    32
 
 #define RTAI_SMP_NOTIFY_VECTOR    RTAI_APIC1_VECTOR
@@ -195,7 +195,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define RTAI_IFLAG  9
 
 #define rtai_cpuid()  adeos_processor_id()
-#define rtai_tskext   ptd
+#define rtai_tskext(idx)   ptd[idx]
 
 /* Use these to grant atomic protection when accessing the hardware */
 #define rtai_hw_cli()                  adeos_hw_cli()
@@ -211,9 +211,6 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define rtai_restore_flags(x)       adeos_hw_local_irq_restore(flags)
 #define rtai_save_flags(x)          adeos_hw_local_irq_flags(flags)
 
-/* The only Linux irq flags manipulation lacking in its system.h */
-#define local_irq_restore_nosync(flags, cpuid)  do { adp_root->cpudata[cpuid].status = flags; } while (0)
-
 extern unsigned long adeos_pended;
 
 #define adeos_pend_uncond(irq, cpuid) \
@@ -221,7 +218,7 @@ do { \
         adp_root->cpudata[cpuid].irq_hits[irq]++; \
         __set_bit(irq & IPIPE_IRQ_IMASK, &adp_root->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
         __set_bit(irq >> IPIPE_IRQ_ISHIFT, &adp_root->cpudata[cpuid].irq_pending_hi); \
-        __set_bit(cpuid, &adeos_pended); \
+        test_and_set_bit(cpuid, &adeos_pended); /* cautious, cautious */ \
 } while (0)
 
 #ifdef CONFIG_PREEMPT
@@ -482,21 +479,13 @@ static inline void rt_global_save_flags(unsigned long *flags)
 static inline void rt_global_restore_flags(unsigned long flags)
 {
 	barrier();
-	switch (flags & ((1 << RTAI_IFLAG) | 1)) {
-		case (1 << RTAI_IFLAG) | 1:
-			rt_release_global_lock();
-			rtai_sti();
-			break;
-		case (1 << RTAI_IFLAG) | 0:
-			rt_get_global_lock();
-			rtai_sti();
-			break;
-		case (0 << RTAI_IFLAG) | 1:
-			rt_release_global_lock();
-			break;
-		case (0 << RTAI_IFLAG) | 0:
-			rt_get_global_lock();
-			break;
+	if (test_and_clear_bit(0, &flags)) {
+		rt_release_global_lock();
+	} else {
+		rt_get_global_lock();
+	}
+	if (flags) {
+		rtai_sti();
 	}
 	barrier();
 }

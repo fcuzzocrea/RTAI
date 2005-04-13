@@ -37,10 +37,10 @@ case 'set' then
     dept=%f;
     dep_ut=[depu dept];
 
-    tt=label(2);
-    if find(oldlb <> label(1)) <> [] then
+//    tt=label(2);
+//    if find(oldlb <> label(1)) <> [] then
       tt=[]
-    end
+//    end
 
     [ok,tt]=getCode(funam,tt)
     if ~ok then break,end

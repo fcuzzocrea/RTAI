@@ -29,7 +29,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #define OVERALL
 
 #define AVRGTIME    1
-#define PERIOD      100000
+#if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
+#define PERIOD 1000000
+#else
+#define PERIOD 100000
+#endif
 #define TIMER_MODE  0
 
 #define SKIP ((1000000000*AVRGTIME)/PERIOD)

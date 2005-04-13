@@ -133,7 +133,7 @@ rtai_imuldiv(int i, int mult, int div)
 #define RTAI_IFLAG			(7)
 
 #define rtai_cpuid()			adeos_processor_id()
-#define rtai_tskext			ptd
+#define rtai_tskext(idx)                ptd[idx]
 
 /* Use these in hard real time code to achieve UP-atomicity. */
 #define rtai_cli()			adeos_stall_pipeline_from(&rtai_domain)
@@ -149,6 +149,8 @@ rtai_imuldiv(int i, int mult, int div)
 #define rtai_hw_unlock(flags)		adeos_hw_local_irq_restore(flags)
 #define rtai_hw_flags(x)		adeos_hw_local_irq_flags(flags)
 /* alternative names */
+#define rtai_hw_cli()			rtai_hw_disable()
+#define rtai_hw_sti()			rtai_hw_enable()
 #define rtai_hw_save_flags_and_cli(f)	rtai_hw_lock(f)
 #define rtai_hw_restore_flags(f)	rtai_hw_unlock(f)
 #define rtai_hw_save_flags(f)		rtai_hw_flags(f)

@@ -45,7 +45,7 @@ MODULE_PARM_DESC(use_fpu, "Use full FPU support (default: 1)");
 int use_fpu = 0;
 #endif
 
-int stack_size = 5000;
+int stack_size = 4096;
 MODULE_PARM(stack_size, "i");
 MODULE_PARM_DESC(stack_size, "Task stack size in bytes (default: 2000)");
 
@@ -108,6 +108,7 @@ static void sched_task(int t) {
 static int __switches_init(void)
 {
 	int i;
+	int e;
 
 	printk("\nWait for it ...\n");
 	rt_typed_sem_init(&sem, 1, SEM_TYPE);
@@ -115,12 +116,21 @@ static int __switches_init(void)
         thread = (RT_TASK *)kmalloc(ntasks*sizeof(RT_TASK), GFP_KERNEL);
 	for (i = 0; i < ntasks; i++) {
 #ifdef DISTRIBUTE
-		rt_task_init_cpuid(thread + i, pend_task, i, stack_size, 0, use_fpu, 0,  i%2);
+		e = rt_task_init_cpuid(thread + i, pend_task, i, stack_size, 0, use_fpu, 0,  i%2);
 #else
-		rt_task_init_cpuid(thread + i, pend_task, i, stack_size, 0, use_fpu, 0,  hard_cpu_id());
+		e = rt_task_init_cpuid(thread + i, pend_task, i, stack_size, 0, use_fpu, 0,  hard_cpu_id());
 #endif
+		if (e < 0) {
+		task_init_has_failed:
+		    rt_printk("switches: failed to initialize task %d, error=%d\n", i, e);
+		    while (--i >= 0)
+			rt_task_delete(thread + i);
+		    return -1;
+		}
 	}
-	rt_task_init_cpuid(&task, sched_task, i, stack_size, 1, 0, 0, hard_cpu_id());
+	e = rt_task_init_cpuid(&task, sched_task, i, stack_size, 1, 0, 0, hard_cpu_id());
+	if (e < 0)
+	    goto task_init_has_failed;
 	rt_task_resume(&task);
 
 	return 0;

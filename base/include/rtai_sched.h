@@ -57,7 +57,7 @@ struct rt_task_struct;
 #include <linux/time.h>
 #include <linux/errno.h>
 
-#define RT_TASK_MAGIC 0x754d2774
+#define RT_TASK_MAGIC 0x9ad25f6f  // nam2num("rttask")
 
 #ifndef __cplusplus
 

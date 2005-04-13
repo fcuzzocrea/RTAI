@@ -29,8 +29,6 @@
 
 MODULE_LICENSE("GPL");
 
-#define RT_BITS_MAGIC 0xaabcdeff  // same as SEM_MAGIC to ease it in user space
-
 #define MASK0(x) ((unsigned long *)&(x))[0]
 #define MASK1(x) ((unsigned long *)&(x))[1]
 

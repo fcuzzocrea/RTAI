@@ -270,4 +270,4 @@ endif
 
 SUBDIRS = $(OPTDIRS)
 
-EXTRA_DIST = Makefile.kbuild
+EXTRA_DIST = Makefile.kbuild sched.piped sched.immed

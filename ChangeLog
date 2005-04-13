@@ -1,3 +1,8 @@
+2005-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/include/asm-i386/rtai_emulate_tsc.h: fixed a mixing symbol 
+	  when TSC emulation is used with 2.6.xx; it is simply not needed.
+
 2005-04-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/sched/sched.*: avoid useless passes through Linux schedule() 

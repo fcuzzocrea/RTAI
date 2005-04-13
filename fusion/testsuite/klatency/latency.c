@@ -258,8 +258,8 @@ int main (int argc, char **argv)
 		printf("RTT|  %.2ld:%.2ld:%.2ld\n",
 		       dt / 3600,(dt / 60) % 60,dt % 60);
 		printf("RTH|%12s|%12s|%12s|%8s|%12s|%12s\n",
-		       "-----lat min","-----lat avg","-----lat max","overrun",
-		       "----lat best","---lat worst");
+		       "----klat min","----klat avg","----klat max","overrun",
+		       "---klat best","--klat worst");
 	      }
 
 	    printf("RTD|%12d|%12d|%12d|%8d|%12ld|%12ld\n",

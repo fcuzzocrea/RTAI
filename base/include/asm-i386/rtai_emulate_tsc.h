@@ -41,7 +41,8 @@
 
 #define TICK_8254_TSC_EMULATION()  rd_8254_ts()
 
-#ifdef CONFIG_VT
+#include <linux/version.h>
+#if defined(CONFIG_VT) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
 #define DECLR_8254_TSC_EMULATION \
 extern void *kd_mksound; \

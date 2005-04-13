@@ -1,90 +1,19 @@
 #!/bin/bash
 
-#set -e	# ctrl-C's should end everything, not just subshells. 
-	# commenting it out may help to debug stuff.
-
-loudly() {
-    # run task after announcing it
-    echo;  date;
-    echo running $PWD: $*
-    $* &
-    top -bn1c | head -12
-    wait
-}
-
-# defaults for cpu workload 
-device=/dev/zero	
-typeset -a dd_jobs
-dd_jobs=()
-
-generate_load() {
-    local jobsct=$1;
-    for (( ; $jobsct ; jobsct-- )) ; do
-        # run dd in subshell endless loop to create workload
-	( 
-	    trap infanticide TERM #EXIT 
-	    infanticide() { echo killing $!; kill SIGKILL $!; exit; }
-	    trap
-	    while true ; do
-		dd if=$device of=/dev/null;
-		echo dd job $! ended, restarting
-	    done;
-	)&
-	dd_jobs[${#dd_jobs[*]}]=$!
-    done
-    echo dd workload started, pids ${dd_jobs[*]}
-}
-
-cleanup_load() {
-    # kill the workload
-    echo killing workload pids ${dd_jobs[*]}
-    kill ${dd_jobs[*]};
-    unset dd_jobs;
-}
-
-trap cleanup_load EXIT	# under all exit conditions
-
-runit() {
-    # 
-    local rtime=$1; shift;
-    local opts="$*";
-    [ "$rtime" = '' ] && rtime=10
-    [ "$opts"  = '' ] && opts='-q -s'
-
-    #dir=$PWD
-    (
-	cd /usr/realtime/`uname -r`/testsuite/latency
-	loudly ./run -- -T 10 -s -l 5
-       #loudly ./run -- -T $rtime -s $opts
-	loudly ./run -- -T $rtime -h $opts
- 
-	cd ../klatency
-	loudly ./run -- -T 10 -s -l 5
-       #loudly ./run -- -T $rtime -s $opts
-	loudly ./run -- -T $rtime -h $opts;
-    )
-    #cd $dir
-}
-
-run_w_load() {
-    cat /proc/interrupts
-    generate_load $workload
-    #runit $*
-    cat /proc/interrupts
-    #cleanup_load	# done by trap
-}
-
-
 myusage() {
     cat >&1 <<EOF
-rt-test [options]
+rtai-test [options]
   -w <number>	spawn N workloads (dd if=/dev/zero of=/dev/null) default=1
   -d <device>	used as alternate src in workload (dd if=$device ..)
-     device must be mounted, and (unfortunately) cannot be an NFS mount
-     a real device (ex /dev/hda) will generate interrupts
-  -L log (via script) the test output to a file (default 'test-load-`uname -r`)
-  -N <name>	same as -L, but append $name (without -L, logname=$name)
-
+		The device must be mounted, and (unfortunately) cannot
+		be an NFS mount a real device (ex /dev/hda) will
+		generate interrupts
+  -W <script>   script is an alternate workload.  If you need to pass args
+		to your program, use quotes.  The program must clean
+		up its children when it gets a SIGTERM
+   -L	     	writes to logfile (default "test-load-`uname -r`") (via script)
+  -N <name>	same as -L, but prepend "$name-" (without -L, logname="$name-")
+		prepending allows you to give a full path.
 
   # following options are passed thru to latency, klatency
   -s	print statistics of sampled data
@@ -98,6 +27,69 @@ EOF
 exit 1
 }
 
+#set -e	# ctrl-C's should end everything, not just subshells. 
+	# commenting it out may help to debug stuff.
+
+set -o notify	# see dd's finish immediately.(or not!)
+
+loudly() {
+    # run task after announcing it
+    echo;  date;
+    echo running $PWD: $*
+    $* &
+    top -bn1c | head -$(( 12 + $workload ))
+    wait
+}
+
+# defaults for cpu workload 
+device=/dev/zero	
+typeset -a dd_jobs
+dd_jobs=()
+
+# used in generate-loads
+mkload() { exec dd if=$device of=/dev/null $* ; }
+
+generate_loads() {
+    local jobsct=$1; shift;
+
+    reaper() { echo something died $*; }
+    trap reaper CHLD
+    trap cleanup_load EXIT	# under all exit conditions
+    
+    for (( ; $jobsct ; jobsct-- )) ; do
+	mkload &
+	dd_jobs[${#dd_jobs[*]}]=$!
+    done;
+
+    echo dd workload started, pids ${dd_jobs[*]}
+}
+
+cleanup_load() {
+    # kill the workload
+    echo killing workload pids ${dd_jobs[*]}
+    kill ${dd_jobs[*]};
+    unset dd_jobs;
+}
+
+run_w_load() {
+    local opts="$*";
+    [ "$opts"  = '' ] && opts='-q -s -T 10'
+
+    cat /proc/interrupts
+    generate_loads $workload
+    (
+	cd ../testsuite/latency
+	loudly ./run -- -T 10 -s -l 5
+	loudly ./run -- -h $opts
+	
+	cd ../klatency
+	loudly ./run -- -T 10 -s -l 5
+	loudly ./run -- -h $opts;
+    )
+    cat /proc/interrupts
+}
+
+
 
 if [ -f /proc/config.gz ] ; then
 
@@ -110,9 +102,14 @@ if [ -f /proc/config.gz ] ; then
 
 fi
 
-workload=1
-while getopts 'd:shqT:l:H:B:uLN:w:' FOO ; do
-    #echo processing $FOO $OPTARG
+workload=1	# default = 1 job
+pass=		# pass thru to latency, klatency
+loadpass=	# pass thru to subshell, ie: script -c "rtai-load $loadpass"
+logfile=
+logprefix=	# if both empty means no logging
+
+while getopts 'd:shqT:l:H:B:uLN:w:W:' FOO ; do
+
     case $FOO in
 	s|h|q)
 	    pass="$pass -$FOO" ;;
@@ -126,32 +123,66 @@ while getopts 'd:shqT:l:H:B:uLN:w:' FOO ; do
 		mount | cut -d\  -f1 | egrep -ve 'sysfs|proc|depts'
 		exit;
 	    fi
+	    loadpass="$loadpass -d $device"
 	    ;;
 	L)
-	    logging=1
-	    logname=test-load-`uname -r`
-	    ;;
+	    logfile=test-load-`uname -r`  ;;
 	N)
-	    logging=1
-	    logname=$logname$OPTARG
-	    ;;
+	    logprefix=$OPTARG ;;
 	w)
-	    workload=$OPTARG ;;
+	    workload=$OPTARG
+	    loadpass="$loadpass -w $workload"  ;;
+	W)
+	    altwork="$OPTARG" ;;
 	?)
 	    myusage ;;
     esac
 done
 
+# all args have been handled, and split into 2 passthrus
 shift $(($OPTIND - 1));
 
 
-if [ "$logging" != "" ]; then
-    # restart inside a script invocation
-    script -c "./rt-test $pass $*" $logname
+if [ "$logprefix$logfile" != "" ]; then
+    # restart inside a script invocation, passing all
+    script -c "./rtai-test $loadpass $pass $*" "$logprefix$logfile"
 else
+    if [ "$altwork" != "" ]; then
+	mkload() { exec $altwork; }
+    fi
     echo running $0 $pass $*
     run_w_load $pass $*
 fi
 
 exit;
 
+#################################################
+
+
+TODO:
+
+get workload child reaper to work when child is killed from separate
+window, or when it finishes, as a dd 'if=/dev/hda ...' will eventually
+do.
+
+
+add -W <program invocation>  (mostly works)
+
+The program should generate a load that is appropriately demanding
+upon cpu, interrupts, devices, etc.  
+
+It should also work when invoked more than once, and scale the loads
+reasonably linearly (since the -w will count by N).
+
+Also, if it spawns subtasks, it should end them all when it gets SIGTERM.
+
+Much more testing.  Heres a weak start..
+
+#!/bin/bash
+PATH=.:$PATH
+rtai-test -L
+rtai-test -N foo -T 18 -l 6 -s
+rtai-test -L -N foo1-
+rtai-test -N foo0 -w0 -l 5 -T 30 -h
+rtai-test -L -N foo4- -w4
+rtai-test -L -N foo4W- -w4 -W 'dd if=/dev/hda1 of=/dev/null'

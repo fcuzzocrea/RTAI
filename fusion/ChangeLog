@@ -1,3 +1,23 @@
+2005-04-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/generic/hal (generic.c):
+	* include/nucleus/asm-generic (hal.h, system.h): Allow
+	arch-level code do share arch-independent bits.
+
+	* nucleus/shadow.c (linux_schedule_tail): No more need to
+	interpose on the SCHEDULE_TAIL event since Adeos will truncate the
+	scheduling tail as required starting with r10c3/x86 and r7c1/ppc.
+
+2005-04-14  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/hal.c (rthal_sysreq_handler): Make the pending srq
+	bitmap a per-CPU variable so that affinity is kept with the
+	poster's CPU.
+
+2005-04-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/registry.c: Fix /proc export handler for PREEMPT_RT.
+
 2005-04-13  Jim Cromie <jcromie@divsol.com>
 
 	* scripts/rtai-test: Properly stop workload procs upon exit and

@@ -21760,6 +21760,8 @@ fi
 
           ac_config_links="$ac_config_links arch/$RTAI_TARGET_ARCH/hal/Makefile:arch/$RTAI_TARGET_ARCH/hal/Makefile.kbuild"
 
+          ac_config_links="$ac_config_links arch/$RTAI_TARGET_ARCH/hal/generic.c:arch/generic/hal/generic.c"
+
           ac_config_links="$ac_config_links nucleus/Makefile:nucleus/Makefile.kbuild"
 
           ac_config_links="$ac_config_links skins/posix/Makefile:skins/posix/Makefile.kbuild"
@@ -21808,7 +21810,7 @@ fi
 
 
 
-                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile arch/ppc/GNUmakefile arch/ppc/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-ppc/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load scripts/rtai-test testsuite/GNUmakefile testsuite/latency/GNUmakefile testsuite/klatency/GNUmakefile testsuite/cruncher/GNUmakefile testsuite/switch/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile drivers/GNUmakefile drivers/16550A/GNUmakefile drivers/16550A/lib/GNUmakefile"
+                                                                                                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files GNUmakefile config/GNUmakefile arch/GNUmakefile arch/generic/GNUmakefile arch/i386/GNUmakefile arch/i386/hal/GNUmakefile arch/ppc/GNUmakefile arch/ppc/hal/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile include/nucleus/asm-generic/GNUmakefile include/nucleus/asm-i386/GNUmakefile include/nucleus/asm-ppc/GNUmakefile include/nucleus/asm-uvm/GNUmakefile nucleus/GNUmakefile nucleus/lib/GNUmakefile scripts/GNUmakefile scripts/rtai-config scripts/rtai-load scripts/rtai-test testsuite/GNUmakefile testsuite/latency/GNUmakefile testsuite/klatency/GNUmakefile testsuite/cruncher/GNUmakefile testsuite/switch/GNUmakefile skins/GNUmakefile skins/posix/GNUmakefile skins/rtai/GNUmakefile skins/rtai/lib/GNUmakefile skins/psos+/GNUmakefile skins/uitron/GNUmakefile skins/vrtx/GNUmakefile skins/vxworks/GNUmakefile drivers/GNUmakefile drivers/16550A/GNUmakefile drivers/16550A/lib/GNUmakefile"
 
 
 if test \! x$RTAI_MAYBE_DOCDIR = x; then
@@ -22630,12 +22632,14 @@ do
   "GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES GNUmakefile" ;;
   "config/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES config/GNUmakefile" ;;
   "arch/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/GNUmakefile" ;;
+  "arch/generic/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/generic/GNUmakefile" ;;
   "arch/i386/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/i386/GNUmakefile" ;;
   "arch/i386/hal/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/i386/hal/GNUmakefile" ;;
   "arch/ppc/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/ppc/GNUmakefile" ;;
   "arch/ppc/hal/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES arch/ppc/hal/GNUmakefile" ;;
   "include/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/GNUmakefile" ;;
   "include/nucleus/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/GNUmakefile" ;;
+  "include/nucleus/asm-generic/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/asm-generic/GNUmakefile" ;;
   "include/nucleus/asm-i386/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/asm-i386/GNUmakefile" ;;
   "include/nucleus/asm-ppc/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/asm-ppc/GNUmakefile" ;;
   "include/nucleus/asm-uvm/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES include/nucleus/asm-uvm/GNUmakefile" ;;
@@ -22676,6 +22680,7 @@ do
   "include/nucleus/asm" ) CONFIG_LINKS="$CONFIG_LINKS include/nucleus/asm:include/nucleus/asm-$RTAI_TARGET_ARCH" ;;
   "include/rtai_config.h" ) CONFIG_LINKS="$CONFIG_LINKS include/rtai_config.h:rtai_config.h" ;;
   "arch/$RTAI_TARGET_ARCH/hal/Makefile" ) CONFIG_LINKS="$CONFIG_LINKS arch/$RTAI_TARGET_ARCH/hal/Makefile:arch/$RTAI_TARGET_ARCH/hal/Makefile.kbuild" ;;
+  "arch/$RTAI_TARGET_ARCH/hal/generic.c" ) CONFIG_LINKS="$CONFIG_LINKS arch/$RTAI_TARGET_ARCH/hal/generic.c:arch/generic/hal/generic.c" ;;
   "nucleus/Makefile" ) CONFIG_LINKS="$CONFIG_LINKS nucleus/Makefile:nucleus/Makefile.kbuild" ;;
   "skins/posix/Makefile" ) CONFIG_LINKS="$CONFIG_LINKS skins/posix/Makefile:skins/posix/Makefile.kbuild" ;;
   "skins/rtai/Makefile" ) CONFIG_LINKS="$CONFIG_LINKS skins/rtai/Makefile:skins/rtai/Makefile.kbuild" ;;

@@ -1164,6 +1164,7 @@ else
 fi
 
 AC_CONFIG_LINKS(arch/$RTAI_TARGET_ARCH/hal/Makefile:arch/$RTAI_TARGET_ARCH/hal/Makefile.kbuild)
+AC_CONFIG_LINKS(arch/$RTAI_TARGET_ARCH/hal/generic.c:arch/generic/hal/generic.c)
 AC_CONFIG_LINKS(nucleus/Makefile:nucleus/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/posix/Makefile:skins/posix/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/rtai/Makefile:skins/rtai/Makefile.kbuild)
@@ -1210,12 +1211,14 @@ AC_CONFIG_FILES([ \
 	GNUmakefile \
 	config/GNUmakefile \
 	arch/GNUmakefile \
+	arch/generic/GNUmakefile \
         arch/i386/GNUmakefile \
 	arch/i386/hal/GNUmakefile \
         arch/ppc/GNUmakefile \
 	arch/ppc/hal/GNUmakefile \
 	include/GNUmakefile \
 	include/nucleus/GNUmakefile \
+	include/nucleus/asm-generic/GNUmakefile \
 	include/nucleus/asm-i386/GNUmakefile \
 	include/nucleus/asm-ppc/GNUmakefile \
 	include/nucleus/asm-uvm/GNUmakefile \

@@ -37,6 +37,7 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/GNUmakefile.am \
 	$(srcdir)/GNUmakefile.in $(srcdir)/rtai_config.h.in \
+	$(top_srcdir)/arch/generic/hal/generic.c \
 	$(top_srcdir)/configure ChangeLog config/autoconf/INSTALL \
 	config/autoconf/compile config/autoconf/config.guess \
 	config/autoconf/config.sub config/autoconf/depcomp \
@@ -488,7 +489,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config/autoconf $(distdir)/doc/docbook $(distdir)/doc/docbook/custom-stylesheets/xsl/html $(distdir)/doc/doxygen $(distdir)/drivers/16550A $(distdir)/nucleus $(distdir)/scripts $(distdir)/skins/posix $(distdir)/skins/psos+ $(distdir)/skins/rtai $(distdir)/skins/uitron $(distdir)/skins/vrtx $(distdir)/skins/vxworks $(distdir)/testsuite/klatency
+	$(mkdir_p) $(distdir)/. $(distdir)/arch/generic/hal $(distdir)/config/autoconf $(distdir)/doc/docbook $(distdir)/doc/docbook/custom-stylesheets/xsl/html $(distdir)/doc/doxygen $(distdir)/drivers/16550A $(distdir)/nucleus $(distdir)/scripts $(distdir)/skins/posix $(distdir)/skins/psos+ $(distdir)/skins/rtai $(distdir)/skins/uitron $(distdir)/skins/vrtx $(distdir)/skins/vxworks $(distdir)/testsuite/klatency
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

@@ -192,8 +192,8 @@ diff -uNrp linux-2.6.10/Makefile linux-2.6.10-ppc-adeos/Makefile
  		     $(net-y) $(net-m) $(libs-y) $(libs-m)))
 diff -uNrp linux-2.6.10/adeos/Kconfig linux-2.6.10-ppc-adeos/adeos/Kconfig
 --- linux-2.6.10/adeos/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/adeos/Kconfig	2005-02-03 19:26:19.000000000 +0100
-@@ -0,0 +1,37 @@
++++ linux-2.6.10-ppc-adeos/adeos/Kconfig	2005-04-15 17:56:13.000000000 +0200
+@@ -0,0 +1,40 @@
 +menu "Adeos support"
 +
 +config ADEOS
@@ -229,6 +229,9 @@ diff -uNrp linux-2.6.10/adeos/Kconfig linux-2.6.10-ppc-adeos/adeos/Kconfig
 +	  This option activates the profiling code which collects the
 +	  timestamps needed to measure the propagation time of
 +	  interrupts through the pipeline. Say N if unsure.
++
++config ADEOS_PREEMPT_RT
++	def_bool PREEMPT_NONE || PREEMPT_VOLUNTARY || PREEMPT_DESKTOP || PREEMPT_RT
 +
 +endmenu
 diff -uNrp linux-2.6.10/adeos/Makefile linux-2.6.10-ppc-adeos/adeos/Makefile
@@ -1431,8 +1434,8 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/Makefile linux-2.6.10-ppc-adeos/arch/ppc
 +obj-$(CONFIG_ADEOS_CORE)	+= adeos.o
 diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/kernel/adeos.c
 --- linux-2.6.10/arch/ppc/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/arch/ppc/kernel/adeos.c	2005-03-24 20:07:09.000000000 +0100
-@@ -0,0 +1,664 @@
++++ linux-2.6.10-ppc-adeos/arch/ppc/kernel/adeos.c	2005-04-14 09:04:41.000000000 +0200
+@@ -0,0 +1,677 @@
 +/*
 + *   linux/arch/ppc/kernel/adeos.c
 + *
@@ -1735,14 +1738,23 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/
 +#endif /* CONFIG_ADEOS_PROFILING */
 +
 +	    if (adp == adp_root)
++		{
 +		adeos_hw_sti();
-+
-+	    ((void (*)(unsigned, struct pt_regs *))adp->irqs[irq].handler)(irq,&__adeos_irq_regs);
++		irq_enter();
++		((void (*)(unsigned, struct pt_regs *))adp->irqs[irq].handler)(irq,&__adeos_irq_regs);
++		irq_exit();
++		}
++	    else
++		((void (*)(unsigned, struct pt_regs *))adp->irqs[irq].handler)(irq,&__adeos_irq_regs);
 +
 +	    adeos_hw_cli();
 +
 +#ifdef CONFIG_SMP
-+	    if (adeos_processor_id() != cpuid) /* Handle CPU migration. */
++	    {
++	    int _cpuid = adeos_processor_id();
++
++	    if (_cpuid != cpuid) /* Handle CPU migration. */
++		{
 +		/* We expect any domain to clear the SYNC bit each
 +		   time it switches in a new task, so that preemptions
 +		   and/or CPU migrations (in the SMP case) over the
@@ -1753,7 +1765,11 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/
 +		   the source CPU in the migration handling case,
 +		   since it must have scheduled another task in by
 +		   now. */
-+		return;
++		cpuid = _cpuid;
++		cpudata = &adp->cpudata[cpuid];
++		__set_bit(IPIPE_SYNC_FLAG,&cpudata->status);
++		}
++	    }
 +#endif /* CONFIG_SMP */
 +
 +	    __clear_bit(IPIPE_STALL_FLAG,&cpudata->status);
@@ -1969,9 +1985,9 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/
 +void __adeos_do_IRQ (int irq, struct pt_regs *regs)
 +
 +{
-+    irq_enter();
++    /* irq_enter/exit are notified from our caller,
++       i.e. __adeos_sync_stage(). */
 +    __do_IRQ(irq,regs);
-+    irq_exit();
 +}
 +
 +/* ADEOS's version of the decrementer trap handler. */
@@ -2749,8 +2765,8 @@ diff -uNrp linux-2.6.10/arch/ppc/mm/fault.c linux-2.6.10-ppc-adeos/arch/ppc/mm/f
  		debugger_fault_handler(regs);
 diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h
 --- linux-2.6.10/include/asm-ppc/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h	2005-03-27 10:49:24.000000000 +0200
-@@ -0,0 +1,444 @@
++++ linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h	2005-04-15 17:53:36.000000000 +0200
+@@ -0,0 +1,448 @@
 +/*
 + *   include/asm-ppc/adeos.h
 + *
@@ -2790,9 +2806,9 @@ diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/a
 +#include <linux/cpumask.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r6/ppc"
-+#define ADEOS_MAJOR_NUMBER    6
-+#define ADEOS_MINOR_NUMBER    255
++#define ADEOS_ARCH_STRING     "r7c1/ppc"
++#define ADEOS_MAJOR_NUMBER    7
++#define ADEOS_MINOR_NUMBER    1
 +
 +#define ADEOS_IRQ_ACKED		0x1000
 +#define ADEOS_IRQ_ACKED_MASK	(ADEOS_IRQ_ACKED - 1)
@@ -3074,14 +3090,18 @@ diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/a
 +
 +#define adeos_cpu_freq() (HZ * tb_ticks_per_jiffy)
 +
-+#define adeos_spin_lock(x)     _raw_spin_lock(x)
-+#define adeos_spin_unlock(x)   _raw_spin_unlock(x)
-+#define adeos_spin_trylock(x)  _raw_spin_trylock(x)
-+#define adeos_write_lock(x)    _raw_write_lock(x)
-+#define adeos_write_unlock(x)  _raw_write_unlock(x)
-+#define adeos_write_trylock(x) _raw_write_trylock(x)
-+#define adeos_read_lock(x)     _raw_read_lock(x)
-+#define adeos_read_unlock(x)   _raw_read_unlock(x)
++#define adeos_spin_lock(x)     _spin_lock(x)
++#define adeos_spin_unlock(x)   _spin_unlock(x)
++#define adeos_spin_trylock(x)  _spin_trylock(x)
++#define adeos_write_lock(x)    _write_lock(x)
++#define adeos_write_unlock(x)  _write_unlock(x)
++#define adeos_write_trylock(x) _write_trylock(x)
++#define adeos_read_lock(x)     _read_lock(x)
++#define adeos_read_unlock(x)   _read_unlock(x)
++#define raw_spinlock_t         spinlock_t
++#define RAW_SPIN_LOCK_UNLOCKED SPIN_LOCK_UNLOCKED
++#define raw_rwlock_t           rwlock_t
++#define RAW_RW_LOCK_UNLOCKED   RW_LOCK_UNLOCKED
 +
 +#define adeos_spin_lock_irqsave(x,flags)  \
 +do { \
@@ -3264,7 +3284,7 @@ diff -uNrp linux-2.6.10/include/asm-ppc/smp.h linux-2.6.10-ppc-adeos/include/asm
  
 diff -uNrp linux-2.6.10/include/linux/adeos.h linux-2.6.10-ppc-adeos/include/linux/adeos.h
 --- linux-2.6.10/include/linux/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/include/linux/adeos.h	2005-03-23 18:58:41.000000000 +0100
++++ linux-2.6.10-ppc-adeos/include/linux/adeos.h	2005-04-15 11:57:59.000000000 +0200
 @@ -0,0 +1,518 @@
 +/*
 + *   include/linux/adeos.h
@@ -3357,19 +3377,19 @@ diff -uNrp linux-2.6.10/include/linux/adeos.h linux-2.6.10-ppc-adeos/include/lin
 +
 +typedef struct admutex {
 +
-+    spinlock_t lock;
++    raw_spinlock_t lock;
 +
 +#ifdef CONFIG_ADEOS_THREADS
 +    adomain_t *sleepq, /* Pending domain queue */
 +	      *owner;	/* Domain owning the mutex */
 +#ifdef CONFIG_SMP
 +    volatile int owncpu;
-+#define ADEOS_MUTEX_UNLOCKED { SPIN_LOCK_UNLOCKED, NULL, NULL, -1 }
++#define ADEOS_MUTEX_UNLOCKED { RAW_SPIN_LOCK_UNLOCKED, NULL, NULL, -1 }
 +#else  /* !CONFIG_SMP */
-+#define ADEOS_MUTEX_UNLOCKED { SPIN_LOCK_UNLOCKED, NULL, NULL }
++#define ADEOS_MUTEX_UNLOCKED { RAW_SPIN_LOCK_UNLOCKED, NULL, NULL }
 +#endif /* CONFIG_SMP */
 +#else /* !CONFIG_ADEOS_THREADS */
-+#define ADEOS_MUTEX_UNLOCKED { SPIN_LOCK_UNLOCKED }
++#define ADEOS_MUTEX_UNLOCKED { RAW_SPIN_LOCK_UNLOCKED }
 +#endif /* CONFIG_ADEOS_THREADS */
 +
 +} admutex_t;
@@ -3387,7 +3407,7 @@ diff -uNrp linux-2.6.10/include/linux/adeos.h linux-2.6.10-ppc-adeos/include/lin
 +
 +extern struct list_head __adeos_pipeline;
 +
-+extern spinlock_t __adeos_pipelock;
++extern raw_spinlock_t __adeos_pipelock;
 +
 +#ifdef CONFIG_ADEOS_PROFILING
 +
@@ -3980,7 +4000,7 @@ diff -uNrp linux-2.6.10/kernel/Makefile linux-2.6.10-ppc-adeos/kernel/Makefile
  obj-$(CONFIG_SMP) += cpu.o spinlock.o
 diff -uNrp linux-2.6.10/kernel/adeos.c linux-2.6.10-ppc-adeos/kernel/adeos.c
 --- linux-2.6.10/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/kernel/adeos.c	2005-03-25 18:14:05.000000000 +0100
++++ linux-2.6.10-ppc-adeos/kernel/adeos.c	2005-04-15 11:53:10.000000000 +0200
 @@ -0,0 +1,800 @@
 +/*
 + *   linux/kernel/adeos.c
@@ -4021,7 +4041,7 @@ diff -uNrp linux-2.6.10/kernel/adeos.c linux-2.6.10-ppc-adeos/kernel/adeos.c
 +adomain_t *adp_cpu_current[ADEOS_NR_CPUS] = { [ 0 ... ADEOS_NR_CPUS - 1] = &adeos_root_domain };
 +
 +/* The spinlock protecting from races while modifying the pipeline. */
-+spinlock_t __adeos_pipelock = SPIN_LOCK_UNLOCKED;
++raw_spinlock_t __adeos_pipelock = RAW_SPIN_LOCK_UNLOCKED;
 +
 +/* The pipeline data structure. Enqueues adomain_t objects by priority. */
 +struct list_head __adeos_pipeline;
@@ -4963,7 +4983,7 @@ diff -uNrp linux-2.6.10/kernel/printk.c linux-2.6.10-ppc-adeos/kernel/printk.c
   * If the console code is currently allowed to sleep, and
 diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-ppc-adeos/kernel/sched.c
 --- linux-2.6.10/kernel/sched.c	2004-12-24 22:35:24.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/kernel/sched.c	2005-03-27 16:36:52.000000000 +0200
++++ linux-2.6.10-ppc-adeos/kernel/sched.c	2005-04-15 10:32:29.000000000 +0200
 @@ -302,7 +302,16 @@ static DEFINE_PER_CPU(struct runqueue, r
   * Default context-switch locking:
   */
@@ -5003,7 +5023,7 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-ppc-adeos/kernel/sched.c
  	/*
  	 * Test if we are atomic.  Since do_exit() needs to call into
  	 * schedule() atomically, we ignore that path for now.
-@@ -2684,9 +2701,25 @@ switch_tasks:
+@@ -2684,9 +2701,28 @@ switch_tasks:
  		rq->curr = next;
  		++*switch_count;
  
@@ -5022,15 +5042,18 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-ppc-adeos/kernel/sched.c
 +		    adeos_hw_sti();
 +		    }
 +
-+		if (__adeos_schedule_tail(prev) > 0)
-+		    /* Some event handler asked for a truncated
-+		       scheduling tail. Just obey. */
++		if (__adeos_schedule_tail(prev) > 0 || adp_current != adp_root)
++		    /* Someone has just recycled the register set of
++		       prev for running over a non-root domain, or
++		       some event handler in the pipeline asked for a
++		       truncated scheduling tail. Don't perform the
++		       Linux housekeeping chores, at least not now. */
 +		    return;
 +#endif /* CONFIG_ADEOS_CORE */
  
  		finish_task_switch(prev);
  	} else
-@@ -3148,6 +3181,16 @@ recheck:
+@@ -3148,6 +3184,16 @@ recheck:
  	retval = security_task_setscheduler(p, policy, &lp);
  	if (retval)
  		goto out_unlock;
@@ -5047,7 +5070,7 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-ppc-adeos/kernel/sched.c
  	/*
  	 * To be able to change p->policy safely, the apropriate
  	 * runqueue lock must be held.
-@@ -4676,3 +4719,51 @@ void normalize_rt_tasks(void)
+@@ -4676,3 +4722,51 @@ void normalize_rt_tasks(void)
  }
  
  #endif /* CONFIG_MAGIC_SYSRQ */

@@ -24,8 +24,7 @@
 /**
  * @defgroup hal HAL.
  *
- * Arch-independent services forming the generic part of the HAL used
- * by the real-time nucleus.
+ * Real-time hardware abstraction layer used by the real-time nucleus.
  *
  *@{*/
 
@@ -131,6 +130,49 @@ static void rthal_irq_trampoline (unsigned irq)
     rthal_realtime_irq[irq].handler(irq,rthal_realtime_irq[irq].cookie);
 }
 
+/**
+ * @fn int rthal_irq_request(unsigned irq,
+                             void (*handler)(unsigned irq, void *cookie),
+			     void *cookie)
+ *                           
+ * @brief Install a real-time interrupt handler.
+ *
+ * Installs an interrupt handler for the specified IRQ line by
+ * requesting the appropriate Adeos virtualization service. The
+ * handler is invoked by Adeos on behalf of the RTAI domain context.
+ * Once installed, the HAL interrupt handler will be called prior to
+ * the regular Linux handler for the same interrupt
+ * source.
+ *
+ * @param irq The hardware interrupt channel to install a handler on.
+ * This value is architecture-dependent.
+ *
+ * @param handler The address of a valid interrupt service routine.
+ * This handler will be called each time the corresponding IRQ is
+ * delivered, and will be passed the @a cookie value unmodified.
+ *
+ * @param cookie A user-defined opaque cookie the HAL will pass to the
+ * interrupt handler as its sole argument.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EBUSY is returned if an interrupt handler is already installed.
+ * rthal_irq_release() must be issued first before a handler is
+ * installed anew.
+ *
+ * - -EINVAL is returned if @a irq is invalid or @a handler is NULL.
+ *
+ * - Other error codes might be returned in case some internal error
+ * happens at the Adeos level. Such error might caused by conflicting
+ * Adeos requests made by third-party code.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any domain context.
+ */
+
 int rthal_irq_request (unsigned irq,
 		       void (*handler)(unsigned irq, void *cookie),
 		       void *cookie)
@@ -167,6 +209,32 @@ int rthal_irq_request (unsigned irq,
     return err;
 }
 
+/**
+ * @fn int rthal_irq_release(unsigned irq)
+ *                           
+ * @brief Uninstall a real-time interrupt handler.
+ *
+ * Uninstalls an interrupt handler previously attached using the
+ * rthal_request_irq() service.
+ *
+ * @param irq The hardware interrupt channel to uninstall a handler
+ * from.  This value is architecture-dependent.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a irq is invalid.
+ *
+ * - Other error codes might be returned in case some internal error
+ * happens at the Adeos level. Such error might caused by conflicting
+ * Adeos requests made by third-party code.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any domain context.
+ */
+
 int rthal_irq_release (unsigned irq)
 
 {
@@ -186,6 +254,37 @@ int rthal_irq_release (unsigned irq)
     return err;
 }
 
+/**
+ * @fn int rthal_irq_enable(unsigned irq)
+ *                           
+ * @brief Enable an interrupt source.
+ *
+ * Enables an interrupt source at PIC level. Since Adeos masks and
+ * acknowledges the associated interrupt source upon IRQ receipt, this
+ * action is usually needed whenever the HAL handler does not
+ * propagate the IRQ event to the Linux domain, thus preventing the
+ * regular Linux interrupt handling code from re-enabling said
+ * source. After this call has returned, IRQs from the given source
+ * will be enabled again.
+ *
+ * @param irq The interrupt source to enable.  This value is
+ * architecture-dependent.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a irq is invalid.
+ *
+ * - Other error codes might be returned in case some internal error
+ * happens at the Adeos level. Such error might caused by conflicting
+ * Adeos requests made by third-party code.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any domain context.
+ */
+
 int rthal_irq_enable (unsigned irq)
 
 {
@@ -200,6 +299,33 @@ int rthal_irq_enable (unsigned irq)
 
     return 0;
 }
+
+/**
+ * @fn int rthal_irq_disable(unsigned irq)
+ *                           
+ * @brief Disable an interrupt source.
+ *
+ * Disables an interrupt source at PIC level. After this call has
+ * returned, no more IRQs from the given source will be allowed, until
+ * the latter is enabled again using rthal_irq_enable().
+ *
+ * @param irq The interrupt source to disable.  This value is
+ * architecture-dependent.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a irq is invalid.
+ *
+ * - Other error codes might be returned in case some internal error
+ * happens at the Adeos level. Such error might caused by conflicting
+ * Adeos requests made by third-party code.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any domain context.
+ */
 
 int rthal_irq_disable (unsigned irq)
 {
@@ -217,41 +343,54 @@ int rthal_irq_disable (unsigned irq)
 }
 
 /**
- * Install a shared Linux interrupt handler.
+ * @fn int rthal_irq_host_request (unsigned irq,
+                                   irqreturn_t (*handler)(int irq,
+				                          void *dev_id,
+							  struct pt_regs *regs),
+				   char *name,
+				   void *dev_id)
+ *                           
+ * @brief Install a shared Linux interrupt handler.
  *
- * rthal_irq_host_request installs function @a handler as a standard
- * Linux interrupt service routine for IRQ level @a irq forcing Linux
- * to share the IRQ with other interrupt handlers. The handler is
- * appended to any already existing Linux handler for the same irq and
- * is run by Linux irq as any of its handler. In this way a real time
- * application can monitor Linux interrupts handling at its will. The
- * handler appears in /proc/interrupts.
+ * Installs a shared interrupt handler in the Linux domain for the
+ * given interrupt source.  The handler is appended to the existing
+ * list of Linux handlers for this interrupt source.
  *
- * @param irq is the IRQ level to which the handler will be associated.
+ * @param irq The interrupt source to attach the shared handler to.
+ * This value is architecture-dependent.
  *
- * @param handler pointer on the interrupt service routine to be installed.
+ * @param handler The address of a valid interrupt service routine.
+ * This handler will be called each time the corresponding IRQ is
+ * delivered, as part of the chain of existing regular Linux handlers
+ * for this interrupt source. The handler prototype is the same as the
+ * one required by the request_irq() service provided by the Linux
+ * kernel.
  *
- * @param name is a name for /proc/interrupts.
+ * @param name is a symbolic name identifying the handler which will
+ * get reported through the /proc/interrupts interface.
  *
- * @param dev_id is to pass to the interrupt handler, in the same way as the
- * standard Linux irq request call.
+ * @param dev_id is a unique device id, identical in essence to the
+ * one requested by the request_irq() service.
  *
- * The interrupt service routine can be uninstalled using
- * rthal_irq_host_release().
+ * @return 0 is returned upon success. Otherwise:
  *
- * @retval 0 on success.
- * @retval -EINVAL if @a irq is not a valid external IRQ number or handler
- * is @c NULL.
+ * - -EINVAL is returned if @a irq is invalid or @æ handler is NULL.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Linux domain context.
  */
+
 int rthal_irq_host_request (unsigned irq,
-			     irqreturn_t (*handler)(int irq,
-						    void *dev_id,
-						    struct pt_regs *regs), 
-			     char *name,
-			     void *dev_id)
+			    irqreturn_t (*handler)(int irq,
+						   void *dev_id,
+						   struct pt_regs *regs), 
+			    char *name,
+			    void *dev_id)
 {
     unsigned long flags;
-    int err = 0;
 
     if (irq >= IPIPE_NR_XIRQS || !handler)
 	return -EINVAL;
@@ -266,10 +405,39 @@ int rthal_irq_host_request (unsigned irq,
 
     spin_unlock_irqrestore(&irq_desc[irq].lock,flags);
 
-    err = request_irq(irq,handler,SA_SHIRQ,name,dev_id);
-
-    return err;
+    return request_irq(irq,handler,SA_SHIRQ,name,dev_id);
 }
+
+/**
+ * @fn int rthal_irq_host_release (unsigned irq,
+				   void *dev_id)
+ *                           
+ * @brief Uninstall a shared Linux interrupt handler.
+ *
+ * Uninstalls a shared interrupt handler from the Linux domain for the
+ * given interrupt source.  The handler is removed from the existing
+ * list of Linux handlers for this interrupt source.
+ *
+ * @param irq The interrupt source to detach the shared handler from.
+ * This value is architecture-dependent.
+ *
+ * @param dev_id is a valid device id, identical in essence to the one
+ * requested by the free_irq() service provided by the Linux
+ * kernel. This value will be used to locate the handler to remove
+ * from the chain of existing Linux handlers for the given interrupt
+ * source. This parameter must match the device id. passed to
+ * rthal_irq_host_request() for the same handler instance.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a irq is invalid.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Linux domain context.
+ */
 
 int rthal_irq_host_release (unsigned irq, void *dev_id)
 
@@ -291,10 +459,67 @@ int rthal_irq_host_release (unsigned irq, void *dev_id)
     return 0;
 }
 
+/**
+ * @fn int rthal_irq_host_pend (unsigned irq)
+ *                           
+ * @brief Propagate an IRQ event to Linux.
+ *
+ * Causes the given IRQ to be propagated down to the Adeos pipeline to
+ * the Linux kernel. This operation is typically used after the given
+ * IRQ has been processed into the RTAI domain by a real-time
+ * interrupt handler (see rthal_request_irq()), in case such interrupt
+ * must also be handled by the Linux kernel.
+ *
+ * @param irq The interrupt source to detach the shared handler from.
+ * This value is architecture-dependent.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a irq is invalid.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - RTAI domain context.
+ */
+
 int rthal_irq_host_pend (unsigned irq)
 
 {
     return adeos_propagate_irq(irq);
+}
+
+#ifdef CONFIG_SMP
+
+int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
+
+{
+    cpumask_t _oldmask;
+
+    if (irq >= IPIPE_NR_XIRQS)
+	return -EINVAL;
+
+    _oldmask = adeos_set_irq_affinity(irq,cpumask);
+
+    if (oldmask)
+	*oldmask = _oldmask;
+
+    return cpus_empty(_oldmask) ? -EINVAL : 0;
+}
+
+#else /* !CONFIG_SMP */
+
+int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
+{
+    return 0;
+}
+
+#endif /* CONFIG_SMP */
+
+rthal_trap_handler_t rthal_trap_catch (rthal_trap_handler_t handler) {
+
+    return (rthal_trap_handler_t)xchg(&rthal_trap_handler,handler);
 }
 
 static void rthal_apc_handler (unsigned virq)
@@ -382,8 +607,9 @@ void rthal_apc_kicker (unsigned virq)
 
 #endif /* CONFIG_PREEMPT_RT */
 
-int rthal_apc_alloc (const char *name, void (*handler)(void *), void *cookie)
-
+int rthal_apc_alloc (const char *name,
+		     void (*handler)(void *),
+		     void *cookie)
 {
     unsigned long flags;
     int apc;
@@ -436,38 +662,6 @@ int rthal_apc_schedule (int apc)
 	}
 
     return 0;	/* Already pending. */
-}
-
-#ifdef CONFIG_SMP
-
-int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
-
-{
-    cpumask_t _oldmask;
-
-    if (irq >= IPIPE_NR_XIRQS)
-	return -EINVAL;
-
-    _oldmask = adeos_set_irq_affinity(irq,cpumask);
-
-    if (oldmask)
-	*oldmask = _oldmask;
-
-    return cpus_empty(_oldmask) ? -EINVAL : 0;
-}
-
-#else /* !CONFIG_SMP */
-
-int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask) {
-
-    return 0;
-}
-
-#endif /* CONFIG_SMP */
-
-rthal_trap_handler_t rthal_trap_catch (rthal_trap_handler_t handler) {
-
-    return (rthal_trap_handler_t)xchg(&rthal_trap_handler,handler);
 }
 
 #ifdef CONFIG_PROC_FS
@@ -879,14 +1073,14 @@ EXPORT_SYMBOL(rthal_irq_disable);
 EXPORT_SYMBOL(rthal_irq_host_request);
 EXPORT_SYMBOL(rthal_irq_host_release);
 EXPORT_SYMBOL(rthal_irq_host_pend);
+EXPORT_SYMBOL(rthal_irq_affinity);
+EXPORT_SYMBOL(rthal_trap_catch);
+EXPORT_SYMBOL(rthal_timer_request);
+EXPORT_SYMBOL(rthal_timer_release);
+EXPORT_SYMBOL(rthal_timer_calibrate);
 EXPORT_SYMBOL(rthal_apc_alloc);
 EXPORT_SYMBOL(rthal_apc_free);
 EXPORT_SYMBOL(rthal_apc_schedule);
-EXPORT_SYMBOL(rthal_irq_affinity);
-EXPORT_SYMBOL(rthal_timer_request);
-EXPORT_SYMBOL(rthal_timer_release);
-EXPORT_SYMBOL(rthal_trap_catch);
-EXPORT_SYMBOL(rthal_timer_calibrate);
 
 EXPORT_SYMBOL(rthal_critical_enter);
 EXPORT_SYMBOL(rthal_critical_exit);

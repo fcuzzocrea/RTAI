@@ -30,9 +30,9 @@
  */
 
 /**
- * @defgroup hal_x86 HAL/x86.
+ * \ingroup hal
  *
- * Basic x86-dependent services used by the real-time nucleus.
+ * x86-specific HAL services.
  *
  *@{*/
 

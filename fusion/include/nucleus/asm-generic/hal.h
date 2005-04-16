@@ -148,28 +148,28 @@ int rthal_irq_enable(unsigned irq);
 int rthal_irq_disable(unsigned irq);
 
 int rthal_irq_host_request(unsigned irq,
-			    irqreturn_t (*handler)(int irq,
-						   void *dev_id,
-						   struct pt_regs *regs), 
-			    char *name,
-			    void *dev_id);
+			   irqreturn_t (*handler)(int irq,
+						  void *dev_id,
+						  struct pt_regs *regs), 
+			   char *name,
+			   void *dev_id);
 
 int rthal_irq_host_release(unsigned irq,
-			    void *dev_id);
+			   void *dev_id);
 
 int rthal_irq_host_pend(unsigned irq);
 
 int rthal_apc_alloc(const char *name,
-		      void (*handler)(void *cookie),
-		      void *cookie);
+		    void (*handler)(void *cookie),
+		    void *cookie);
 
 int rthal_apc_free(int apc);
 
 int rthal_apc_schedule(int apc);
 
 int rthal_irq_affinity(unsigned irq,
-			   cpumask_t cpumask,
-			   cpumask_t *oldmask);
+		       cpumask_t cpumask,
+		       cpumask_t *oldmask);
 
 int rthal_timer_request(void (*handler)(void),
 			unsigned long nstick);

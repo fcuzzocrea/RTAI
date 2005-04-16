@@ -30,9 +30,9 @@
  */
 
 /**
- * @defgroup hal_ppc HAL/ppc.
+ * \ingroup hal
  *
- * Basic PowerPC-dependent services used by the real-time nucleus.
+ * PowerPC-specific HAL services.
  *
  *@{*/
 

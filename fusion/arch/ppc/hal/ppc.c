@@ -58,7 +58,7 @@
 
 static int rthal_periodic_p;
 
-int rthal_request_timer (void (*handler)(void),
+int rthal_timer_request (void (*handler)(void),
 			 unsigned long nstick)
 {
     unsigned long flags;
@@ -81,12 +81,12 @@ int rthal_request_timer (void (*handler)(void),
 #ifdef CONFIG_40x
         mtspr(SPRN_TCR,mfspr(SPRN_TCR) & ~TCR_ARE); /* Auto-reload off. */
 #endif /* CONFIG_40x */
-	rthal_set_timer_shot(tb_ticks_per_jiffy);
+	rthal_timer_program_shot(tb_ticks_per_jiffy);
 	}
 
-    rthal_release_irq(RTHAL_TIMER_IRQ);
+    rthal_irq_release(RTHAL_TIMER_IRQ);
 
-    err = rthal_request_irq(RTHAL_TIMER_IRQ,
+    err = rthal_irq_request(RTHAL_TIMER_IRQ,
 			    (rthal_irq_handler_t)handler,
 			    NULL);
 
@@ -95,7 +95,7 @@ int rthal_request_timer (void (*handler)(void),
     return err;
 }
 
-void rthal_release_timer (void)
+void rthal_timer_release (void)
 
 {
     unsigned long flags;
@@ -115,12 +115,12 @@ void rthal_release_timer (void)
 #endif /* CONFIG_40x */
 	}
 
-    rthal_release_irq(RTHAL_TIMER_IRQ);
+    rthal_irq_release(RTHAL_TIMER_IRQ);
 
     rthal_critical_exit(flags);
 }
 
-unsigned long rthal_calibrate_timer (void)
+unsigned long rthal_timer_calibrate (void)
 
 {
     /* On PowerPC systems, the cost of setting the decrementer or the

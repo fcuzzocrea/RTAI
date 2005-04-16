@@ -88,7 +88,7 @@ static DECLARE_WORK(__registry_proc_work,&__registry_proc_callback,NULL);
 
 static struct proc_dir_entry *registry_proc_root;
 
-static int registry_proc_srq;
+static int registry_proc_apc;
 
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
@@ -108,17 +108,17 @@ int __registry_pkg_init (void)
 
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
-    registry_proc_srq = rthal_request_srq("registry_export",&__registry_proc_schedule,NULL);
+    registry_proc_apc = rthal_apc_alloc("registry_export",&__registry_proc_schedule,NULL);
 
-    if (registry_proc_srq < 0)
-	return registry_proc_srq;
+    if (registry_proc_apc < 0)
+	return registry_proc_apc;
 
     registry_proc_root = create_proc_entry("registry",
 					   S_IFDIR,
 					   rthal_proc_root);
     if (!registry_proc_root)
 	{
-	rthal_release_srq(registry_proc_srq);
+	rthal_apc_free(registry_proc_apc);
 	return -ENOMEM;
 	}
 
@@ -179,7 +179,7 @@ void __registry_pkg_cleanup (void)
     xnsynch_destroy(&__rtai_hash_synch);
 
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
-    rthal_release_srq(registry_proc_srq);
+    rthal_apc_free(registry_proc_apc);
     flush_scheduled_work();
     remove_proc_entry("registry",rthal_proc_root);
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
@@ -343,7 +343,7 @@ static inline void __registry_proc_export (RT_OBJECT *object,
     object->pnode = pnode;
     removeq(&__rtai_obj_busyq,&object->link);
     appendq(&__rtai_obj_exportq,&object->link);
-    rthal_pend_srq(registry_proc_srq);
+    rthal_apc_schedule(registry_proc_apc);
 }
 
 static inline void __registry_proc_unexport (RT_OBJECT *object)
@@ -353,7 +353,7 @@ static inline void __registry_proc_unexport (RT_OBJECT *object)
 	{
 	removeq(&__rtai_obj_busyq,&object->link);
 	appendq(&__rtai_obj_unexportq,&object->link);
-	rthal_pend_srq(registry_proc_srq);
+	rthal_apc_schedule(registry_proc_apc);
 	}
     else
 	{

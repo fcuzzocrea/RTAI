@@ -47,7 +47,7 @@
 
 static xnheap_t *__pipe_heap = &kheap;
 
-static int __pipe_flush_srq;
+static int __pipe_flush_apc;
 
 static DECLARE_XNQUEUE(__pipe_flush_q);
 
@@ -107,10 +107,10 @@ static int __pipe_output_handler (int bminor,
 int __pipe_pkg_init (void)
 
 {
-    __pipe_flush_srq = rthal_request_srq("pipe_flush",&__pipe_flush_handler,NULL);
+    __pipe_flush_apc = rthal_apc_alloc("pipe_flush",&__pipe_flush_handler,NULL);
 
-    if (__pipe_flush_srq < 0)
-	return __pipe_flush_srq;
+    if (__pipe_flush_apc < 0)
+	return __pipe_flush_apc;
 
     return 0;
 }
@@ -119,7 +119,7 @@ void __pipe_pkg_cleanup (void)
 
 {
     xnpipe_setup(NULL,NULL);
-    rthal_release_srq(__pipe_flush_srq);
+    rthal_apc_free(__pipe_flush_apc);
 }
 
 /**
@@ -586,7 +586,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
     if (pipe->fillsz > 0 && !__test_and_set_bit(0,&pipe->flushable))
 	{
 	appendq(&__pipe_flush_q,&pipe->link);
-	rthal_pend_srq(__pipe_flush_srq);
+	rthal_apc_schedule(__pipe_flush_apc);
 	}
 
  unlock_and_exit:

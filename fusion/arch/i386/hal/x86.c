@@ -151,7 +151,7 @@ irqreturn_t rthal_broadcast_to_local_timers (int irq,
     return IRQ_HANDLED;
 }
 
-unsigned long rthal_calibrate_timer (void)
+unsigned long rthal_timer_calibrate (void)
 
 {
     unsigned long flags;
@@ -177,7 +177,7 @@ unsigned long rthal_calibrate_timer (void)
     return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
 }
 
-int rthal_request_timer (void (*handler)(void),
+int rthal_timer_request (void (*handler)(void),
 			 unsigned long nstick)
 {
     struct rthal_apic_data *p;
@@ -191,7 +191,7 @@ int rthal_request_timer (void (*handler)(void),
        run a LAPIC-enabled RTAI over a plain 8254-only/UP kernel will
        beget an error immediately. */
 
-    if (rthal_release_irq(RTHAL_APIC_TIMER_IPI) < 0)
+    if (rthal_irq_release(RTHAL_APIC_TIMER_IPI) < 0)
 	return -EINVAL;
 
     flags = rthal_critical_enter(rthal_critical_sync);
@@ -235,39 +235,39 @@ int rthal_request_timer (void (*handler)(void),
     else
 	rthal_setup_oneshot_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
 
-    rthal_request_irq(RTHAL_APIC_TIMER_IPI,
+    rthal_irq_request(RTHAL_APIC_TIMER_IPI,
 		      (rthal_irq_handler_t)handler,
 		      NULL);
 
     rthal_critical_exit(flags);
 
-    rthal_request_linux_irq(RTHAL_8254_IRQ,
+    rthal_irq_host_request(RTHAL_8254_IRQ,
 			    &rthal_broadcast_to_local_timers,
 			    "rthal_broadcast_timer",
 			    &rthal_broadcast_to_local_timers);
     return 0;
 }
 
-void rthal_release_timer (void)
+void rthal_timer_release (void)
 
 {
     unsigned long flags;
 
-    rthal_release_linux_irq(RTHAL_8254_IRQ,
+    rthal_irq_host_release(RTHAL_8254_IRQ,
 			    &rthal_broadcast_to_local_timers);
 
     flags = rthal_critical_enter(&rthal_critical_sync);
 
     rthal_sync_op = 2;
     rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
-    rthal_release_irq(RTHAL_APIC_TIMER_IPI);
+    rthal_irq_release(RTHAL_APIC_TIMER_IPI);
 
     rthal_critical_exit(flags);
 }
 
 #else /* !CONFIG_X86_LOCAL_APIC */
 
-unsigned long rthal_calibrate_timer (void)
+unsigned long rthal_timer_calibrate (void)
 
 {
     unsigned long flags;
@@ -293,7 +293,7 @@ unsigned long rthal_calibrate_timer (void)
     return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
 }
 
-int rthal_request_timer (void (*handler)(void),
+int rthal_timer_request (void (*handler)(void),
 			 unsigned long nstick)
 {
     unsigned long flags;
@@ -319,9 +319,9 @@ int rthal_request_timer (void (*handler)(void),
 	outb(LATCH >> 8,PIT_CH0);
 	}
 
-    rthal_release_irq(RTHAL_8254_IRQ);
+    rthal_irq_release(RTHAL_8254_IRQ);
 
-    err = rthal_request_irq(RTHAL_8254_IRQ,
+    err = rthal_irq_request(RTHAL_8254_IRQ,
 			    (rthal_irq_handler_t)handler,
 			    NULL);
 
@@ -330,7 +330,7 @@ int rthal_request_timer (void (*handler)(void),
     return err;
 }
 
-void rthal_release_timer (void)
+void rthal_timer_release (void)
 
 {
     unsigned long flags;
@@ -339,7 +339,7 @@ void rthal_release_timer (void)
     outb(0x34,PIT_MODE);
     outb(LATCH & 0xff,PIT_CH0);
     outb(LATCH >> 8,PIT_CH0);
-    rthal_release_irq(RTHAL_8254_IRQ);
+    rthal_irq_release(RTHAL_8254_IRQ);
 
     rthal_critical_exit(flags);
 }

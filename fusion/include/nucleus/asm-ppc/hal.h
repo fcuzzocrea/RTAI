@@ -149,35 +149,35 @@ static inline unsigned long long rthal_rdtsc (void) {
    using %esp. We must use the suspended Linux domain's stack pointer
    instead. */
 
-static inline struct task_struct *rthal_get_root_current (int cpuid) {
+static inline struct task_struct *rthal_root_host_task (int cpuid) {
     return ((struct thread_info *)(adp_root->esp[cpuid] & (~8191UL)))->task;
 }
 
-static inline struct task_struct *rthal_get_current (int cpuid)
+static inline struct task_struct *rthal_current_host_task (int cpuid)
 
 {
     register unsigned long esp asm ("r1");
     /* FIXME: r2 should be ok or even __adeos_current_threadinfo() - offsetof(THREAD) */
     
     if (esp >= rthal_domain.estackbase[cpuid] && esp < rthal_domain.estackbase[cpuid] + 8192)
-	return rthal_get_root_current(cpuid);
+	return rthal_root_host_task(cpuid);
 
     return current;
 }
 
 #else /* CONFIG_ADEOS_NOTHREADS */
 
-static inline struct task_struct *rthal_get_root_current (int cpuid) {
+static inline struct task_struct *rthal_root_host_task (int cpuid) {
     return current;
 }
 
-static inline struct task_struct *rthal_get_current (int cpuid) {
+static inline struct task_struct *rthal_current_host_task (int cpuid) {
     return current;
 }
 
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 
-static inline void rthal_set_timer_shot (unsigned long delay) {
+static inline void rthal_timer_program_shot (unsigned long delay) {
 
     if(!delay)
         delay = 1;

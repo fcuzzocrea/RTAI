@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2001,2002,2003 Philippe Gerum <rpm@xenomai.org>.
  * Copyright (C) 2004 The HYADES Project (http://www.hyades-itea.org).
+ * Copyright (C) 2004,2005 Gilles Chanteperdrix <gilles.chanteperdrix@laposte.net>.
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -118,7 +119,7 @@ static inline int xnarch_shadow_p (xnarchtcb_t *tcb, struct task_struct *task)
 static inline void xnarch_relay_tick (void)
 
 {
-    rthal_pend_linux_irq(RTHAL_8254_IRQ);
+    rthal_irq_host_pend(RTHAL_8254_IRQ);
 }
 
 #ifdef XENO_POD_MODULE
@@ -129,7 +130,7 @@ void xnpod_delete_thread(struct xnthread *);
 
 static inline int xnarch_start_timer (unsigned long ns,
 				      void (*tickhandler)(void)) {
-    return rthal_request_timer(tickhandler,ns);
+    return rthal_timer_request(tickhandler,ns);
 }
 
 static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
@@ -143,7 +144,7 @@ static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
        and always inside a critical section. */
     __set_bit(cpuid,&rthal_cpu_realtime);
     /* Remember the preempted Linux task pointer. */
-    rootcb->user_task = rootcb->active_task = rthal_get_current(cpuid);
+    rootcb->user_task = rootcb->active_task = rthal_current_host_task(cpuid);
     /* So that xnarch_save_fpu() will operate on the right FPU area. */
     rootcb->fpup = &rootcb->user_task->thread.i387;
 }
@@ -665,14 +666,14 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 
 static inline void xnarch_program_timer_shot (unsigned long delay) {
     /* Even though some architectures may use a 64 bits delay here, we
-       voluntarily limit to 32 bits, 4 billions ticks should be enough for
-       now. If a timer need more, a spurious but harmless call to the tick
-       handler will occur after 4 billions ticks. */
-    rthal_set_timer_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
+       voluntarily limit to 32 bits, 4 billions ticks should be enough
+       for now. Would a timer needs more, an extra call to the tick
+       handler would simply occur after 4 billions ticks. */
+    rthal_timer_program_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
 }
 
 static inline void xnarch_stop_timer (void) {
-    rthal_release_timer();
+    rthal_timer_release();
 }
 
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask)
@@ -741,7 +742,7 @@ static inline unsigned long xnarch_calibrate_timer (void)
        configuration RTAI is compiled against,
        CONFIG_RTAI_HW_TIMER_LATENCY will either refer to the local
        APIC or 8254 timer latency value. */
-    return xnarch_ns_to_tsc(rthal_calibrate_timer()) ?: 1;
+    return xnarch_ns_to_tsc(rthal_timer_calibrate()) ?: 1;
 #endif /* CONFIG_RTAI_HW_TIMER_LATENCY != 0 */
 }
 
@@ -785,7 +786,7 @@ static inline int xnarch_init (void)
 			      NULL,
 			      IPIPE_HANDLE_MASK);
 
-    xnarch_old_trap_handler = rthal_set_trap_handler(&xnarch_trap_fault);
+    xnarch_old_trap_handler = rthal_trap_catch(&xnarch_trap_fault);
 
 #ifdef CONFIG_RTAI_OPT_FUSION
     err = xnshadow_mount();
@@ -793,7 +794,7 @@ static inline int xnarch_init (void)
 
     if (err)
 	{
-	rthal_set_trap_handler(xnarch_old_trap_handler);
+	rthal_trap_catch(xnarch_old_trap_handler);
         adeos_free_irq(xnarch_escalation_virq);
 	}
 
@@ -806,7 +807,7 @@ static inline void xnarch_exit (void)
 #ifdef CONFIG_RTAI_OPT_FUSION
     xnshadow_cleanup();
 #endif /* CONFIG_RTAI_OPT_FUSION */
-    rthal_set_trap_handler(xnarch_old_trap_handler);
+    rthal_trap_catch(xnarch_old_trap_handler);
     adeos_free_irq(xnarch_escalation_virq);
 }
 

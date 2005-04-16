@@ -137,48 +137,48 @@ void rthal_critical_exit(unsigned long flags);
 extern "C" {
 #endif /* __cplusplus */
 
-int rthal_request_irq(unsigned irq,
+int rthal_irq_request(unsigned irq,
 		      void (*handler)(unsigned irq, void *cookie),
 		      void *cookie);
 
-int rthal_release_irq(unsigned irq);
+int rthal_irq_release(unsigned irq);
 
-int rthal_enable_irq(unsigned irq);
+int rthal_irq_enable(unsigned irq);
 
-int rthal_disable_irq(unsigned irq);
+int rthal_irq_disable(unsigned irq);
 
-int rthal_request_linux_irq(unsigned irq,
+int rthal_irq_host_request(unsigned irq,
 			    irqreturn_t (*handler)(int irq,
 						   void *dev_id,
 						   struct pt_regs *regs), 
 			    char *name,
 			    void *dev_id);
 
-int rthal_release_linux_irq(unsigned irq,
+int rthal_irq_host_release(unsigned irq,
 			    void *dev_id);
 
-int rthal_pend_linux_irq(unsigned irq);
+int rthal_irq_host_pend(unsigned irq);
 
-int rthal_request_srq(const char *name,
+int rthal_apc_alloc(const char *name,
 		      void (*handler)(void *cookie),
 		      void *cookie);
 
-int rthal_release_srq(int srq);
+int rthal_apc_free(int apc);
 
-int rthal_pend_srq(int srq);
+int rthal_apc_schedule(int apc);
 
-int rthal_set_irq_affinity(unsigned irq,
+int rthal_irq_affinity(unsigned irq,
 			   cpumask_t cpumask,
 			   cpumask_t *oldmask);
 
-int rthal_request_timer(void (*handler)(void),
+int rthal_timer_request(void (*handler)(void),
 			unsigned long nstick);
 
-void rthal_release_timer(void);
+void rthal_timer_release(void);
 
-rthal_trap_handler_t rthal_set_trap_handler(rthal_trap_handler_t handler);
+rthal_trap_handler_t rthal_trap_catch(rthal_trap_handler_t handler);
 
-unsigned long rthal_calibrate_timer(void);
+unsigned long rthal_timer_calibrate(void);
 
 #ifdef __cplusplus
 }

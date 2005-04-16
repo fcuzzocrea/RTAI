@@ -78,17 +78,17 @@ static struct {
     const char *name;
     unsigned long hits[RTHAL_NR_CPUS];
 
-} rthal_sysreq_table[RTHAL_NR_SRQS];
+} rthal_apc_table[RTHAL_NR_SRQS];
 
 static int rthal_init_done;
 
-static unsigned rthal_sysreq_virq;
+static unsigned rthal_apc_virq;
 
-static unsigned long rthal_sysreq_map;
+static unsigned long rthal_apc_map;
 
-static unsigned long rthal_sysreq_pending[RTHAL_NR_CPUS];
+static unsigned long rthal_apc_pending[RTHAL_NR_CPUS];
 
-static raw_spinlock_t rthal_sysreq_lock = RAW_SPIN_LOCK_UNLOCKED;
+static raw_spinlock_t rthal_apc_lock = RAW_SPIN_LOCK_UNLOCKED;
 
 static atomic_t rthal_sync_count = ATOMIC_INIT(1);
 
@@ -131,7 +131,7 @@ static void rthal_irq_trampoline (unsigned irq)
     rthal_realtime_irq[irq].handler(irq,rthal_realtime_irq[irq].cookie);
 }
 
-int rthal_request_irq (unsigned irq,
+int rthal_irq_request (unsigned irq,
 		       void (*handler)(unsigned irq, void *cookie),
 		       void *cookie)
 {
@@ -167,7 +167,7 @@ int rthal_request_irq (unsigned irq,
     return err;
 }
 
-int rthal_release_irq (unsigned irq)
+int rthal_irq_release (unsigned irq)
 
 {
     int err = 0;
@@ -186,7 +186,7 @@ int rthal_release_irq (unsigned irq)
     return err;
 }
 
-int rthal_enable_irq (unsigned irq)
+int rthal_irq_enable (unsigned irq)
 
 {
     if (irq >= IPIPE_NR_XIRQS)
@@ -201,7 +201,7 @@ int rthal_enable_irq (unsigned irq)
     return 0;
 }
 
-int rthal_disable_irq (unsigned irq)
+int rthal_irq_disable (unsigned irq)
 {
 
     if (irq >= IPIPE_NR_XIRQS)
@@ -219,7 +219,7 @@ int rthal_disable_irq (unsigned irq)
 /**
  * Install a shared Linux interrupt handler.
  *
- * rthal_request_linux_irq installs function @a handler as a standard
+ * rthal_irq_host_request installs function @a handler as a standard
  * Linux interrupt service routine for IRQ level @a irq forcing Linux
  * to share the IRQ with other interrupt handlers. The handler is
  * appended to any already existing Linux handler for the same irq and
@@ -237,13 +237,13 @@ int rthal_disable_irq (unsigned irq)
  * standard Linux irq request call.
  *
  * The interrupt service routine can be uninstalled using
- * rthal_release_linux_irq().
+ * rthal_irq_host_release().
  *
  * @retval 0 on success.
  * @retval -EINVAL if @a irq is not a valid external IRQ number or handler
  * is @c NULL.
  */
-int rthal_request_linux_irq (unsigned irq,
+int rthal_irq_host_request (unsigned irq,
 			     irqreturn_t (*handler)(int irq,
 						    void *dev_id,
 						    struct pt_regs *regs), 
@@ -271,7 +271,7 @@ int rthal_request_linux_irq (unsigned irq,
     return err;
 }
 
-int rthal_release_linux_irq (unsigned irq, void *dev_id)
+int rthal_irq_host_release (unsigned irq, void *dev_id)
 
 {
     unsigned long flags;
@@ -291,13 +291,13 @@ int rthal_release_linux_irq (unsigned irq, void *dev_id)
     return 0;
 }
 
-int rthal_pend_linux_irq (unsigned irq)
+int rthal_irq_host_pend (unsigned irq)
 
 {
     return adeos_propagate_irq(irq);
 }
 
-static void rthal_sysreq_handler (unsigned virq)
+static void rthal_apc_handler (unsigned virq)
 
 {
     void (*handler)(void *), *cookie;
@@ -305,46 +305,46 @@ static void rthal_sysreq_handler (unsigned virq)
 
     adeos_load_cpuid();
 
-    rthal_spin_lock(&rthal_sysreq_lock);
+    rthal_spin_lock(&rthal_apc_lock);
 
     /* <!> This loop is not protected against a handler becoming
        unavailable while processing the pending queue; the software
-       must make sure to uninstall all sysreqs before eventually
-       unloading any module that may contain sysreq handlers. We keep
+       must make sure to uninstall all apcs before eventually
+       unloading any module that may contain apc handlers. We keep
        the handler affinity with the poster's CPU, so that the handler
        is invoked on the same CPU than the code which called
-       rthal_pend_srq(). We spinlock for handling the CPU migration
+       rthal_apc_schedule(). We spinlock for handling the CPU migration
        case; we might get rid of this some day. */
 
-    while (rthal_sysreq_pending[cpuid] != 0)
+    while (rthal_apc_pending[cpuid] != 0)
 	{
-	int srq = ffnz(rthal_sysreq_pending[cpuid]);
-	clear_bit(srq,&rthal_sysreq_pending[cpuid]);
-	handler = rthal_sysreq_table[srq].handler;
-	cookie = rthal_sysreq_table[srq].cookie;
-	rthal_sysreq_table[srq].hits[cpuid]++;
-	rthal_spin_unlock(&rthal_sysreq_lock);
+	int apc = ffnz(rthal_apc_pending[cpuid]);
+	clear_bit(apc,&rthal_apc_pending[cpuid]);
+	handler = rthal_apc_table[apc].handler;
+	cookie = rthal_apc_table[apc].cookie;
+	rthal_apc_table[apc].hits[cpuid]++;
+	rthal_spin_unlock(&rthal_apc_lock);
 	handler(cookie);
-	rthal_spin_lock(&rthal_sysreq_lock);
+	rthal_spin_lock(&rthal_apc_lock);
 	}
 
-    rthal_spin_unlock(&rthal_sysreq_lock);
+    rthal_spin_unlock(&rthal_apc_lock);
 }
 
 #ifdef CONFIG_PREEMPT_RT
 
-/* On PREEMPT_RT, we need to invoke the sysreq handlers over a process
+/* On PREEMPT_RT, we need to invoke the apc handlers over a process
    context, so that the latter can access non-atomic kernel services
-   properly. So the Adeos virq is only used to kick a per-CPU sysreq
-   server process which in turns runs the sysreq dispatcher. A bit
+   properly. So the Adeos virq is only used to kick a per-CPU apc
+   server process which in turns runs the apc dispatcher. A bit
    twisted, but indeed consistent with the threaded IRQ model of
    PREEMPT_RT. */
 
 #include <linux/kthread.h>
 
-static struct task_struct *rthal_sysreq_servers[RTHAL_NR_CPUS];
+static struct task_struct *rthal_apc_servers[RTHAL_NR_CPUS];
 
-static int rthal_sysreq_thread (void *data)
+static int rthal_apc_thread (void *data)
 
 {
     unsigned cpu = (unsigned)(unsigned long)data;
@@ -352,7 +352,7 @@ static int rthal_sysreq_thread (void *data)
     set_cpus_allowed(current, cpumask_of_cpu(cpu));
     sigfillset(&current->blocked);
     current->flags |= PF_NOFREEZE;
-    /* Use highest priority here, since some sysreq handlers might
+    /* Use highest priority here, since some apc handlers might
        require to run as soon as possible after the request has been
        pended. */
     __adeos_setscheduler_root(current,SCHED_FIFO,MAX_RT_PRIO-1);
@@ -360,7 +360,7 @@ static int rthal_sysreq_thread (void *data)
     while (!kthread_should_stop()) {
 	set_current_state(TASK_INTERRUPTIBLE);
 	schedule();
-	rthal_sysreq_handler(0);
+	rthal_apc_handler(0);
     }
 
     __set_current_state(TASK_RUNNING);
@@ -368,70 +368,70 @@ static int rthal_sysreq_thread (void *data)
     return 0;
 }
 
-void rthal_sysreq_kicker (unsigned virq)
+void rthal_apc_kicker (unsigned virq)
 
 {
-    wake_up_process(rthal_sysreq_servers[smp_processor_id()]);
+    wake_up_process(rthal_apc_servers[smp_processor_id()]);
 }
 
-#define rthal_sysreq_trampoline rthal_sysreq_kicker
+#define rthal_apc_trampoline rthal_apc_kicker
 
 #else /* !CONFIG_PREEMPT_RT */
 
-#define rthal_sysreq_trampoline rthal_sysreq_handler
+#define rthal_apc_trampoline rthal_apc_handler
 
 #endif /* CONFIG_PREEMPT_RT */
 
-int rthal_request_srq (const char *name, void (*handler)(void *), void *cookie)
+int rthal_apc_alloc (const char *name, void (*handler)(void *), void *cookie)
 
 {
     unsigned long flags;
-    int srq;
+    int apc;
 
     if (handler == NULL)
 	return -EINVAL;
 
-    rthal_spin_lock_irqsave(&rthal_sysreq_lock,flags);
+    rthal_spin_lock_irqsave(&rthal_apc_lock,flags);
 
-    if (rthal_sysreq_map != ~0)
+    if (rthal_apc_map != ~0)
 	{
-	srq = ffz(rthal_sysreq_map);
-	set_bit(srq,&rthal_sysreq_map);
-	rthal_sysreq_table[srq].handler = handler;
-	rthal_sysreq_table[srq].cookie = cookie;
-	rthal_sysreq_table[srq].name = name;
+	apc = ffz(rthal_apc_map);
+	set_bit(apc,&rthal_apc_map);
+	rthal_apc_table[apc].handler = handler;
+	rthal_apc_table[apc].cookie = cookie;
+	rthal_apc_table[apc].name = name;
 	}
     else
-	srq = -EBUSY;
+	apc = -EBUSY;
 
-    rthal_spin_unlock_irqrestore(&rthal_sysreq_lock,flags);
+    rthal_spin_unlock_irqrestore(&rthal_apc_lock,flags);
 
-    return srq;
+    return apc;
 }
 
-int rthal_release_srq (int srq)
+int rthal_apc_free (int apc)
 
 {
-    if (srq < 0 || srq >= RTHAL_NR_SRQS ||
-	!test_and_clear_bit(srq,&rthal_sysreq_map))
+    if (apc < 0 || apc >= RTHAL_NR_SRQS ||
+	!test_and_clear_bit(apc,&rthal_apc_map))
 	return -EINVAL;
 
     return 0;
 }
 
-int rthal_pend_srq (int srq)
+int rthal_apc_schedule (int apc)
 
 {
     adeos_declare_cpuid;
 
-    if (srq < 0 || srq >= RTHAL_NR_SRQS)
+    if (apc < 0 || apc >= RTHAL_NR_SRQS)
 	return -EINVAL;
 
     adeos_load_cpuid();	/* Migration would harmless here. */
 
-    if (!test_and_set_bit(srq,&rthal_sysreq_pending[cpuid]))
+    if (!test_and_set_bit(apc,&rthal_apc_pending[cpuid]))
 	{
-	adeos_schedule_irq(rthal_sysreq_virq);
+	adeos_schedule_irq(rthal_apc_virq);
 	return 1;
 	}
 
@@ -440,7 +440,7 @@ int rthal_pend_srq (int srq)
 
 #ifdef CONFIG_SMP
 
-int rthal_set_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
+int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
 
 {
     cpumask_t _oldmask;
@@ -458,14 +458,14 @@ int rthal_set_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
 
 #else /* !CONFIG_SMP */
 
-int rthal_set_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask) {
+int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask) {
 
     return 0;
 }
 
 #endif /* CONFIG_SMP */
 
-rthal_trap_handler_t rthal_set_trap_handler (rthal_trap_handler_t handler) {
+rthal_trap_handler_t rthal_trap_catch (rthal_trap_handler_t handler) {
 
     return (rthal_trap_handler_t)xchg(&rthal_trap_handler,handler);
 }
@@ -606,35 +606,35 @@ static int faults_read_proc (char *page,
     return len;
 }
 
-static int sysreq_read_proc (char *page,
+static int apc_read_proc (char *page,
 			     char **start,
 			     off_t off,
 			     int count,
 			     int *eof,
 			     void *data)
 {
-    int len = 0, cpu, srq;
+    int len = 0, cpu, apc;
     char *p = page;
 
-    p += sprintf(p,"SYSREQ ");
+    p += sprintf(p,"APC ");
 
     for_each_online_cpu(cpu) {
 	p += sprintf(p,"      CPU%d",cpu);
     }
 
-    for (srq = 0; srq < BITS_PER_LONG; srq++)
+    for (apc = 0; apc < BITS_PER_LONG; apc++)
 	{
-	if (!test_bit(srq,&rthal_sysreq_map))
+	if (!test_bit(apc,&rthal_apc_map))
 	    continue;	/* Not hooked. */
 
-	p += sprintf(p,"\n%3d: ",srq);
+	p += sprintf(p,"\n%3d: ",apc);
 
 	for_each_online_cpu(cpu) {
 	    p += sprintf(p,"%12lu",
-			 rthal_sysreq_table[srq].hits[cpu]);
+			 rthal_apc_table[apc].hits[cpu]);
 	}
 
-	p += sprintf(p,"    (%s)",rthal_sysreq_table[srq].name);
+	p += sprintf(p,"    (%s)",rthal_apc_table[apc].name);
 	}
 
     p += sprintf(p,"\n");
@@ -708,8 +708,8 @@ static int rthal_proc_register (void)
 		  NULL,
 		  rthal_proc_root);
 
-    add_proc_leaf("sysreq",
-		  &sysreq_read_proc,
+    add_proc_leaf("apc",
+		  &apc_read_proc,
 		  NULL,
 		  NULL,
 		  rthal_proc_root);
@@ -723,7 +723,7 @@ static void rthal_proc_unregister (void)
     remove_proc_entry("compiler",rthal_proc_root);
     remove_proc_entry("irq",rthal_proc_root);
     remove_proc_entry("faults",rthal_proc_root);
-    remove_proc_entry("sysreq",rthal_proc_root);
+    remove_proc_entry("apc",rthal_proc_root);
     remove_proc_entry("rtai",NULL);
 }
 
@@ -751,19 +751,19 @@ int __rthal_init (void)
     rthal_tunables.cpu_freq = rthal_cpufreq_arg;
     rthal_tunables.timer_freq = rthal_timerfreq_arg;
 
-    /* Allocate a virtual interrupt to handle sysreqs within the Linux
+    /* Allocate a virtual interrupt to handle apcs within the Linux
        domain. */
-    rthal_sysreq_virq = adeos_alloc_irq();
+    rthal_apc_virq = adeos_alloc_irq();
 
-    if (!rthal_sysreq_virq)
+    if (!rthal_apc_virq)
     {
         printk(KERN_ERR "RTAI: No virtual interrupt available.\n");
 	    err = -EBUSY;
         goto out_arch_cleanup;
     }
 
-    err = adeos_virtualize_irq(rthal_sysreq_virq,
-			       &rthal_sysreq_trampoline,
+    err = adeos_virtualize_irq(rthal_apc_virq,
+			       &rthal_apc_trampoline,
 			       NULL,
 			       IPIPE_HANDLE_MASK);
     if (err)
@@ -776,11 +776,11 @@ int __rthal_init (void)
     {
     int cpu;
     for_each_online_cpu(cpu) {
-       rthal_sysreq_servers[cpu] =
-	   kthread_create(&rthal_sysreq_thread,(void *)(unsigned long)cpu,"srq/%d",cpu);
-       if (!rthal_sysreq_servers[cpu])
+       rthal_apc_servers[cpu] =
+	   kthread_create(&rthal_apc_thread,(void *)(unsigned long)cpu,"apc/%d",cpu);
+       if (!rthal_apc_servers[cpu])
 	   goto out_kthread_stop;
-       wake_up_process(rthal_sysreq_servers[cpu]);
+       wake_up_process(rthal_apc_servers[cpu]);
       }
     }
 #endif /* CONFIG_PREEMPT_RT */
@@ -817,15 +817,15 @@ out_kthread_stop:
     {
     int cpu;
     for_each_online_cpu(cpu) {
-        if (rthal_sysreq_servers[cpu])
-            kthread_stop(rthal_sysreq_servers[cpu]);
+        if (rthal_apc_servers[cpu])
+            kthread_stop(rthal_apc_servers[cpu]);
       }
     }
 #endif /* CONFIG_PREEMPT_RT */
-    adeos_virtualize_irq(rthal_sysreq_virq,NULL,NULL,0);
+    adeos_virtualize_irq(rthal_apc_virq,NULL,NULL,0);
    
 out_free_irq:
-    adeos_free_irq(rthal_sysreq_virq);
+    adeos_free_irq(rthal_apc_virq);
 
  out_arch_cleanup:
     rthal_arch_cleanup();
@@ -847,15 +847,15 @@ void __rthal_exit (void)
     rthal_proc_unregister();
 #endif /* CONFIG_PROC_FS */
 
-    if (rthal_sysreq_virq)
+    if (rthal_apc_virq)
 	{
-	adeos_virtualize_irq(rthal_sysreq_virq,NULL,NULL,0);
-	adeos_free_irq(rthal_sysreq_virq);
+	adeos_virtualize_irq(rthal_apc_virq,NULL,NULL,0);
+	adeos_free_irq(rthal_apc_virq);
 #ifdef CONFIG_PREEMPT_RT
 	{
 	int cpu;
 	for_each_online_cpu(cpu) {
-            kthread_stop(rthal_sysreq_servers[cpu]);
+            kthread_stop(rthal_apc_servers[cpu]);
 	  }
 	}
 #endif /* CONFIG_PREEMPT_RT */
@@ -872,21 +872,21 @@ void __rthal_exit (void)
 module_init(__rthal_init);
 module_exit(__rthal_exit);
 
-EXPORT_SYMBOL(rthal_request_irq);
-EXPORT_SYMBOL(rthal_release_irq);
-EXPORT_SYMBOL(rthal_enable_irq);
-EXPORT_SYMBOL(rthal_disable_irq);
-EXPORT_SYMBOL(rthal_request_linux_irq);
-EXPORT_SYMBOL(rthal_release_linux_irq);
-EXPORT_SYMBOL(rthal_pend_linux_irq);
-EXPORT_SYMBOL(rthal_request_srq);
-EXPORT_SYMBOL(rthal_release_srq);
-EXPORT_SYMBOL(rthal_pend_srq);
-EXPORT_SYMBOL(rthal_set_irq_affinity);
-EXPORT_SYMBOL(rthal_request_timer);
-EXPORT_SYMBOL(rthal_release_timer);
-EXPORT_SYMBOL(rthal_set_trap_handler);
-EXPORT_SYMBOL(rthal_calibrate_timer);
+EXPORT_SYMBOL(rthal_irq_request);
+EXPORT_SYMBOL(rthal_irq_release);
+EXPORT_SYMBOL(rthal_irq_enable);
+EXPORT_SYMBOL(rthal_irq_disable);
+EXPORT_SYMBOL(rthal_irq_host_request);
+EXPORT_SYMBOL(rthal_irq_host_release);
+EXPORT_SYMBOL(rthal_irq_host_pend);
+EXPORT_SYMBOL(rthal_apc_alloc);
+EXPORT_SYMBOL(rthal_apc_free);
+EXPORT_SYMBOL(rthal_apc_schedule);
+EXPORT_SYMBOL(rthal_irq_affinity);
+EXPORT_SYMBOL(rthal_timer_request);
+EXPORT_SYMBOL(rthal_timer_release);
+EXPORT_SYMBOL(rthal_trap_catch);
+EXPORT_SYMBOL(rthal_timer_calibrate);
 
 EXPORT_SYMBOL(rthal_critical_enter);
 EXPORT_SYMBOL(rthal_critical_exit);

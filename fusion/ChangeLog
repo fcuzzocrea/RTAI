@@ -1,5 +1,16 @@
 2005-04-16  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/generic/hal: Rename "sysreq" support to APC
+	(i.e. Asynchronous Procedure Call), so that we stop conflicting
+	uselessly with Linux's (totally unrelated) sysrq feature.  Also
+	globally revamp all HAL service names to get more consistent with
+	upper layers.
+
+	* include/nucleus/asm-i386/hal.h: Revert last change and make sure
+	we _never_ program the local APIC with a null delay: this
+	definitely breaks with many APIC timers, stopping the countdown
+	instead of causing an interrupt to be triggered immediately.
+
 	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r7c1.
 
 2005-04-15  Philippe Gerum  <rpm@xenomai.org>
@@ -48,7 +59,7 @@
 
 2005-04-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
-	* include/nucleus/asm-i386/hal.h (rthal_set_timer_shot): Program
+	* include/nucleus/asm-i386/hal.h (rthal_timer_program_shot): Program
 	the timer for a one tick delay when passed a null delay.
 
 2005-04-11  Jim Cromie <jcromie@divsol.com>
@@ -71,8 +82,8 @@
 	
 2005-04-10  Philippe Gerum  <rpm@xenomai.org>
 
-	* arch/*/hal/hal.c (rthal_request_linux_irq,
-	rthal_release_linux_irq): Use generic spinlocks since we must be
+	* arch/*/hal/hal.c (rthal_irq_host_request,
+	rthal_irq_host_release): Use generic spinlocks since we must be
 	running over the Linux context in those routines.
 
 2005-04-09  Philippe Gerum  <rpm@xenomai.org>
@@ -342,10 +353,10 @@
 
 2005-03-07  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
 
-	* arch/i386/hal.c (rthal_release_irq): Handle the possible failure 
+	* arch/i386/hal.c (rthal_irq_release): Handle the possible failure 
 	of the adeos_virtualize_irq_from() call. 
 	
-	* arch/ppc/hal.c (rthal_release_irq): Handle the possible failure 
+	* arch/ppc/hal.c (rthal_irq_release): Handle the possible failure 
 	of the adeos_virtualize_irq_from() call. 
 
 	* arch/i386/hal.c (__rthal_init): Handle the possible failure of
@@ -356,16 +367,16 @@
 	adeos_virtualize_irq() and adeos_register_domain(). Perform the 
 	necessary cleanups on all failures in this function.
 
-	* arch/i386/hal.c (rthal_request_linux_irq): Handle the possible 
+	* arch/i386/hal.c (rthal_irq_host_request): Handle the possible 
 	failure of the Linux interrupt handler registration.
 	
-	* arch/ppc/hal.c (rthal_request_linux_irq): Handle the possible 
+	* arch/ppc/hal.c (rthal_irq_host_request): Handle the possible 
 	failure of the Linux interrupt handler registration.
 	
-	* arch/i386/hal.c (rthal_pend_linux_irq): Remove redundant parameter
+	* arch/i386/hal.c (rthal_irq_host_pend): Remove redundant parameter
 	check.
 	
-	* arch/ppc/hal.c (rthal_pend_linux_irq): Remove redundant parameter
+	* arch/ppc/hal.c (rthal_irq_host_pend): Remove redundant parameter
 	check.
 	
 2005-03-06  Philippe Gerum  <rpm@xenomai.org>
@@ -561,17 +572,17 @@
 	to rt_timer_start() out of the latency task, since this it might
 	sleep Linux-wise.
 
-	* arch/*/hal/hal.c (rthal_release_linux_irq): Call free_irq()
+	* arch/*/hal/hal.c (rthal_irq_host_release): Call free_irq()
 	outside of the critical section.
 
-	* arch/*/hal/hal.c (rthal_request_linux_irq,
-	rthal_request_linux_irq): Use spinlock_irq form.
+	* arch/*/hal/hal.c (rthal_irq_host_request,
+	rthal_irq_host_request): Use spinlock_irq form.
 
 	* skins/rtai/syscall.c, nucleus/fusion.c: Mark start/stop timer
 	services as "lostage".
 
-	* arch/i386/hal/hal.c (rthal_request_timer): Exit the critical
-	section before calling rthal_request_linux_irq().
+	* arch/i386/hal/hal.c (rthal_timer_request): Exit the critical
+	section before calling rthal_irq_host_request().
 
 	* arch/*/hal/hal.c: Discard useless and somewhat bugous
 	rthal_proc_lock.
@@ -952,7 +963,7 @@
 
 2005-01-09  Philippe Gerum  <rpm@xenomai.org>
 
-	* arch/ppc/hal/hal.c (rthal_calibrate_timer): Stop using
+	* arch/ppc/hal/hal.c (rthal_timer_calibrate): Stop using
 	rthal_llimd() uselessly.
 
 	* include/nucleus/intr.h: Move the ISR return codes to the
@@ -1046,7 +1057,7 @@
 	* include/nucleus/asm-ppc/system.h (xnarch_send_timer_ipi):
 	Provide for an empty definition in UP mode.
 
-	* arch/ppc/hal/hal.c (rthal_release_irq): Fix call to
+	* arch/ppc/hal/hal.c (rthal_irq_release): Fix call to
 	adeos_virtualize_irq_from().
 
 2004-12-29  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
@@ -1170,13 +1181,13 @@
 	call xntimer_set_sched allowing to change this structure. When a
 	timer is modified on a distant CPU, xnarch_send_timer_ipi is
 	called. The HAL is expected to either install the handler passed
-	to rthal_request_timer for this IPI, or to use the same interrupt
+	to rthal_timer_request for this IPI, or to use the same interrupt
 	for the timer and this IPI (the x86 case).
 
 	* nucleus/timer.c (xntimer_next_shot): Round delays greater than
 	ULONG_MAX ticks to ULONG_MAX, so that 32 bits are enough.
 
-	* arch/i386/hal/hal.c (rthal_critical_sync, rthal_request_timer):
+	* arch/i386/hal/hal.c (rthal_critical_sync, rthal_timer_request):
 	Avoid timers to tick at the same time on all CPUS on SMP systems.
 
 	* skins/posix: add missing EXPORT_SYMBOL, use fusion POD, add
@@ -1252,7 +1263,7 @@
 	syslibs. This fixes the CONFIG_RTAI_OPT_DEBUG problem with
 	skin/rtai/lib.
 
-	* arch/*/hal/hal.c (rthal_request_irq): Only virtualize requested
+	* arch/*/hal/hal.c (rthal_irq_request): Only virtualize requested
 	IRQs.
 
 2004-12-09  Philippe Gerum  <rpm@xenomai.org>
@@ -2047,7 +2058,7 @@
 
 2004-09-04  Philippe Gerum  <rpm@xenomai.org>
 
-	* arch/i386/hal/hal.c (rthal_calibrate_timer): Fix the way we
+	* arch/i386/hal/hal.c (rthal_timer_calibrate): Fix the way we
 	calibrate the APIC programming time; the old way simply broke any
 	SMP setup.
 
@@ -2090,7 +2101,7 @@
 	* nucleus/timer.c (xntimer_do_timers): Refresh the tested clock
 	value in aperiodic mode after each timer processing loop.
 
-	* arch/*/hal/hal.c (rthal_set_irq_affinity): Replace reset action
+	* arch/*/hal/hal.c (rthal_irq_affinity): Replace reset action
 	by returning the old cpumask.
 
 2004-08-31  Philippe Gerum  <rpm@xenomai.org>
@@ -2205,7 +2216,7 @@
 
 2004-08-23  Philippe Gerum  <rpm@xenomai.org>
 
-	* arch/ppc/hal/hal.c (rthal_request_timer, rthal_release_timer):
+	* arch/ppc/hal/hal.c (rthal_timer_request, rthal_timer_release):
 	Implement timer setup code.
 
 	* testsuite/cruncher/cruncher.c: Remove useless and offending

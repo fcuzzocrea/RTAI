@@ -209,11 +209,11 @@ rthal_time_t rthal_get_8254_tsc(void);
    using %esp. We must use the suspended Linux domain's stack pointer
    instead. */
 
-static inline struct task_struct *rthal_get_root_current (int cpuid) {
+static inline struct task_struct *rthal_root_host_task (int cpuid) {
     return ((struct thread_info *)(((u_long)adp_root->esp[cpuid]) & (~8191UL)))->task;
 }
 
-static inline struct task_struct *rthal_get_current (int cpuid)
+static inline struct task_struct *rthal_current_host_task (int cpuid)
 
 {
     int *esp;
@@ -221,36 +221,40 @@ static inline struct task_struct *rthal_get_current (int cpuid)
     __asm__ ("movl %%esp, %0" : "=r,?m" (esp));
 
     if (esp >= rthal_domain.estackbase[cpuid] && esp < rthal_domain.estackbase[cpuid] + 2048)
-	return rthal_get_root_current(cpuid);
+	return rthal_root_host_task(cpuid);
 
     return get_current();
 }
 
 #else /* CONFIG_ADEOS_NOTHREADS */
 
-static inline struct task_struct *rthal_get_root_current (int cpuid) {
+static inline struct task_struct *rthal_root_host_task (int cpuid) {
     return current;
 }
 
-static inline struct task_struct *rthal_get_current (int cpuid) {
+static inline struct task_struct *rthal_current_host_task (int cpuid) {
     return current;
 }
 
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 
-static inline void rthal_set_timer_shot (unsigned long delay) {
+static inline void rthal_timer_program_shot (unsigned long delay) {
 
     unsigned long flags;
-#ifdef CONFIG_X86_LOCAL_APIC
+    /* Neither the 8254 nor most APICs won't trigger any interrupt
+       upon receiving a null timer count, so don't let this
+       happen. --rpm */
+    if(!delay) delay = 1;
     rthal_hw_lock(flags);
-    apic_read(APIC_LVTT);
+#ifdef CONFIG_X86_LOCAL_APIC
+    /* Note: reading before writing just to work around the Pentium
+       APIC double write bug. apic_read_around() leads to a no-op
+       whenever CONFIG_X86_GOOD_APIC is set. --rpm */
+    apic_read_around(APIC_LVTT);
     apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
-    apic_read(APIC_TMICT);
+    apic_read_around(APIC_TMICT);
     apic_write_around(APIC_TMICT,delay);
 #else /* !CONFIG_X86_LOCAL_APIC */
-    if(!delay)
-        delay = 1;
-    rthal_hw_lock(flags);
     outb(delay & 0xff,0x40);
     outb(delay >> 8,0x40);
 #endif /* CONFIG_X86_LOCAL_APIC */

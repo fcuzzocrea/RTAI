@@ -281,31 +281,31 @@ static inline int xnarch_hook_irq (unsigned irq,
 						   void *cookie),
 				   void *cookie)
 {
-    return rthal_request_irq(irq,handler,cookie);
+    return rthal_irq_request(irq,handler,cookie);
 }
 
 static inline int xnarch_release_irq (unsigned irq)
 
 {
-    return rthal_release_irq(irq);
+    return rthal_irq_release(irq);
 }
 
 static inline int xnarch_enable_irq (unsigned irq)
 
 {
-    return rthal_enable_irq(irq);
+    return rthal_irq_enable(irq);
 }
 
 static inline int xnarch_disable_irq (unsigned irq)
 
 {
-    return rthal_disable_irq(irq);
+    return rthal_irq_disable(irq);
 }
 
 static inline void xnarch_chain_irq (unsigned irq)
 
 {
-    rthal_pend_linux_irq(irq);
+    rthal_irq_host_pend(irq);
 }
 
 static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,

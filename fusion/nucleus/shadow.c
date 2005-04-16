@@ -61,7 +61,7 @@ static struct __gatekeeper {
 
 } gatekeeper[XNARCH_NR_CPUS];
  
-static int sbsrq;
+static int sb_apc;
 
 static struct __schedback {
 
@@ -104,7 +104,7 @@ static inline struct task_struct *get_calling_task (adevinfo_t *evinfo)
 {
     return xnpod_shadow_p()
 	? current
-	: rthal_get_root_current(xnarch_current_cpu());
+	: rthal_root_host_task(xnarch_current_cpu());
 }
 
 static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *regs)
@@ -290,7 +290,7 @@ static void schedule_linux_call (int type,
     sb->in = (reqnum + 1) & (SB_MAX_REQUESTS - 1);
     splexit(s);
 
-    rthal_pend_srq(sbsrq);
+    rthal_apc_schedule(sb_apc);
 }
 
 static void itimer_handler (void *cookie)
@@ -1772,7 +1772,7 @@ int __init xnshadow_mount (void)
     unshielded_cpus = xnarch_cpu_online_map;
 
     nkgkptd = adeos_alloc_ptdkey();
-    sbsrq = rthal_request_srq("schedule_back",&schedback_handler,NULL);
+    sb_apc = rthal_apc_alloc("schedule_back",&schedback_handler,NULL);
 
     for_each_online_cpu(cpu) {
 	struct __gatekeeper *gk = &gatekeeper[cpu];
@@ -1805,7 +1805,7 @@ void __exit xnshadow_cleanup (void)
 	kthread_stop(gk->server);
     }
 
-    rthal_release_srq(sbsrq);
+    rthal_apc_free(sb_apc);
     adeos_free_ptdkey(nkgkptd);
 
     adeos_unregister_domain(&irq_shield);

@@ -39,6 +39,7 @@
 #include <linux/unistd.h>
 #include <linux/wait.h>
 #include <linux/init.h>
+#include <linux/kthread.h>
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
 #include <nucleus/synch.h>
@@ -60,9 +61,7 @@ static struct __gatekeeper {
 
 } gatekeeper[XNARCH_NR_CPUS];
  
-static int gkstop;
-
-static unsigned sbvirq;
+static int sbsrq;
 
 static struct __schedback {
 
@@ -85,7 +84,7 @@ static adomain_t irq_shield;
 static cpumask_t shielded_cpus,
                  unshielded_cpus;
 
-static rwlock_t shield_lock = RW_LOCK_UNLOCKED;
+static raw_rwlock_t shield_lock = RAW_RW_LOCK_UNLOCKED;
 
 #define get_switch_lock_owner() \
 switch_lock_owner[task_cpu(current)]
@@ -228,7 +227,7 @@ static void shield_entry (int iflag)
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
-static void schedback_handler (unsigned virq)
+static void schedback_handler (void *cookie)
 
 {
     int cpuid = smp_processor_id(), reqnum;
@@ -291,10 +290,7 @@ static void schedule_linux_call (int type,
     sb->in = (reqnum + 1) & (SB_MAX_REQUESTS - 1);
     splexit(s);
 
-    /* Do _not_ use adeos_propagate_irq() here since we might need to
-       schedule a command on behalf of the Linux domain. */
-
-    adeos_schedule_irq(sbvirq);
+    rthal_pend_srq(sbsrq);
 }
 
 static void itimer_handler (void *cookie)
@@ -305,17 +301,14 @@ static void itimer_handler (void *cookie)
     schedule_linux_call(SB_SIGNAL_REQ,task,SIGALRM);
 }
 
-static void gatekeeper_thread (void *data)
+static int gatekeeper_thread (void *data)
 
 {
-    unsigned cpu = (unsigned)(unsigned long)data;
-    struct __gatekeeper *gk = &gatekeeper[cpu];
+    struct __gatekeeper *gk = (struct __gatekeeper *)data;
     struct task_struct *this_task = current;
     DECLARE_WAITQUEUE(wait,this_task);
-    char name[32] = "gatekeeper";
+    int cpu = gk - &gatekeeper[0];
     
-    gk->server = this_task;
-
     sigfillset(&this_task->blocked);
     set_cpus_allowed(this_task, cpumask_of_cpu(cpu));
     set_linux_task_priority(this_task,MAX_RT_PRIO-1);
@@ -323,21 +316,15 @@ static void gatekeeper_thread (void *data)
     init_waitqueue_head(&gk->waitq);
     add_wait_queue_exclusive(&gk->waitq,&wait);
 
-#ifdef CONFIG_SMP
-    sprintf(name,"gatekeeper/%u",cpu);
-#endif /* CONFIG_SMP */
-    daemonize(name);
-
     up(&gk->sync);	/* Sync with xnshadow_mount(). */
 
-    for (;;)
-        {
+    for (;;) {
 	set_current_state(TASK_INTERRUPTIBLE);
 	up(&gk->sync); /* Make the request token available. */
 	schedule();
 	splnone();
 
-	if (gkstop)
+	if (kthread_should_stop())
 	    break;
 
 #ifdef CONFIG_SMP
@@ -355,12 +342,11 @@ static void gatekeeper_thread (void *data)
 #else /* !CONFIG_SMP */
 	xnpod_resume_thread(gk->thread,XNRELAX);
 #endif /* CONFIG_SMP */
-
 	xnpod_renice_root(XNPOD_ROOT_PRIO_BASE);
 	xnpod_schedule();
-	}
+    }
 
-    up(&gk->sync);	/* Sync whith xnshadow_cleanup(). */
+    return 0;
 }
 
 /* timespec/timeval <-> ticks conversion routines -- Lifted and
@@ -478,8 +464,8 @@ static int xnshadow_harden (void)
        transition. */
 
     gk->thread = thread;
-    wake_up_interruptible_sync(&gk->waitq);
     set_current_state(TASK_INTERRUPTIBLE);
+    wake_up_interruptible_sync(&gk->waitq);
     schedule();
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
@@ -994,7 +980,7 @@ static int substitute_linux_syscall (struct task_struct *curr,
 	    if (!xnpod_shadow_p() && (err = xnshadow_harden()) != 0)
 		{
 		__xn_error_return(regs,err);
-		goto intr;
+		goto out_sleep;
 		}
 
 	    __xn_success_return(regs,-1);
@@ -1009,7 +995,7 @@ static int substitute_linux_syscall (struct task_struct *curr,
 		    request_syscall_restart(thread,regs);
 		    }
 		}
-intr:
+out_sleep:
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	    if (!testbits(nkpod->status,XNTMPER))
@@ -1503,7 +1489,7 @@ static void linux_task_exit (adevinfo_t *evinfo)
     xnltt_log_event(rtai_ev_shadowexit,thread->name);
 }
 
-static inline void __xnshadow_reset_shield (xnthread_t *thread)
+static inline void reset_shield (xnthread_t *thread)
 
 {
     if (testbits(thread->status,XNSHIELD))
@@ -1520,7 +1506,7 @@ void xnshadow_reset_shield (void)
     if (!thread)
 	return; /* uh?! */
 
-    __xnshadow_reset_shield(thread);
+    reset_shield(thread);
 }
 
 static void linux_schedule_head (adevinfo_t *evinfo)
@@ -1549,10 +1535,15 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
         if (testbits(thread->status,XNTHREAD_BLOCK_BITS & ~XNRELAX))
-            xnpod_fatal("blocked thread %s rescheduled?!",thread->name);
+            xnpod_fatal("blocked thread %s[%d] rescheduled?! (status=0x%lx, prev=%s[%d])",
+			thread->name,
+			next->pid,
+			thread->status,
+			prev->comm,
+			prev->pid);
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
-	__xnshadow_reset_shield(thread);
+	reset_shield(thread);
 	}
     else if (next != gatekeeper[cpuid].server)
 	    {
@@ -1580,18 +1571,6 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 	       let's call the rescheduling procedure ourselves. */
             xnpod_schedule();
         }
-}
-
-static void linux_schedule_tail (adevinfo_t *evinfo)
-
-{
-    if (evinfo->domid == RTHAL_DOMAIN_ID)
-	/* About to resume in xnshadow_harden() after the gatekeeper
-	   switched us back. Do _not_ propagate this event so that
-	   Linux's tail scheduling won't be performed. */
-	return;
-
-    adeos_propagate_event(evinfo);
 }
 
 static void linux_kick_process (adevinfo_t *evinfo)
@@ -1762,7 +1741,6 @@ void xnshadow_grab_events (void)
     adeos_catch_event(ADEOS_EXIT_PROCESS,&linux_task_exit);
     adeos_catch_event(ADEOS_KICK_PROCESS,&linux_kick_process);
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,&linux_schedule_head);
-    adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,&linux_schedule_tail);
     adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,&linux_renice_process);
 }
 
@@ -1772,7 +1750,6 @@ void xnshadow_release_events (void)
     adeos_catch_event(ADEOS_EXIT_PROCESS,NULL);
     adeos_catch_event(ADEOS_KICK_PROCESS,NULL);
     adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
-    adeos_catch_event_from(&rthal_domain,ADEOS_SCHEDULE_TAIL,NULL);
     adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,NULL);
 }
 
@@ -1780,7 +1757,7 @@ int __init xnshadow_mount (void)
 
 {
     adattr_t attr;
-    unsigned cpu;
+    int cpu;
 
     adeos_init_attr(&attr);
     attr.name = "IShield";
@@ -1795,17 +1772,16 @@ int __init xnshadow_mount (void)
     unshielded_cpus = xnarch_cpu_online_map;
 
     nkgkptd = adeos_alloc_ptdkey();
-    sbvirq = adeos_alloc_irq();
-    adeos_virtualize_irq(sbvirq,&schedback_handler,NULL,IPIPE_HANDLE_MASK);
+    sbsrq = rthal_request_srq("schedule_back",&schedback_handler,NULL);
 
-    for (cpu = 0; cpu < num_online_cpus(); ++cpu)
-	{
+    for_each_online_cpu(cpu) {
 	struct __gatekeeper *gk = &gatekeeper[cpu];
 	sema_init(&gk->sync,0);
 	xnarch_memory_barrier();
-        kernel_thread((void *)&gatekeeper_thread, (void *)(unsigned long) cpu,0);
+	gk->server = kthread_create(&gatekeeper_thread,gk,"gatekeeper/%d",cpu);
+	wake_up_process(gk->server);
         down(&gk->sync);
-	}
+    }
 
     /* We need to grab these ones right now. */
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&linux_sysentry);
@@ -1817,22 +1793,19 @@ int __init xnshadow_mount (void)
 void __exit xnshadow_cleanup (void)
 
 {
-    unsigned cpu;
-
-    gkstop = 1;
+    int cpu;
 
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
     adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,NULL);
 
-    for (cpu = 0; cpu < num_online_cpus(); ++cpu)
-	{
+    for_each_online_cpu(cpu) {
 	struct __gatekeeper *gk = &gatekeeper[cpu];
         down(&gk->sync);
-	wake_up_interruptible_sync(&gk->waitq);
-        down(&gk->sync);
-	}
+	gk->thread = NULL;
+	kthread_stop(gk->server);
+    }
 
-    adeos_free_irq(sbvirq);
+    rthal_release_srq(sbsrq);
     adeos_free_ptdkey(nkgkptd);
 
     adeos_unregister_domain(&irq_shield);

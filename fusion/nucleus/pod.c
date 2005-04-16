@@ -2857,7 +2857,7 @@ int xnpod_trap_fault (void *fltinfo)
 int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 
 {
-    int err = 0, delta;
+    int err, delta;
     spl_t s;
 
     if (tickhandler == NULL)
@@ -2942,10 +2942,7 @@ unlock_and_exit:
     delta = xnarch_start_timer(nstick,&xnintr_clock_handler);
 
     if (delta < 0)
-	{
-	err = -ENODEV;
-	goto done;
-	}
+	return -ENODEV;
 
     if (delta == 0)
 	delta = XNARCH_HOST_TICK / nkpod->tickvalue;
@@ -2962,9 +2959,7 @@ unlock_and_exit:
     xntimer_start(&nkpod->htimer,
                   delta,
                   XNARCH_HOST_TICK / nkpod->tickvalue);
- done:
-
-    return err;
+    return 0;
 }
 
 /*! 

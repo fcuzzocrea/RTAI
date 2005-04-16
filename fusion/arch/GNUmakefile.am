@@ -6,4 +6,4 @@ if CONFIG_PPC
 ARCHDIR = ppc
 endif
 
-SUBDIRS = $(ARCHDIR)
+SUBDIRS = generic $(ARCHDIR)

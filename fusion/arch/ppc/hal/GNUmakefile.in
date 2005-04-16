@@ -260,7 +260,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
-libhal_SRC = hal.c switch.S $(am__append_1)
+libhal_SRC = generic.c ppc.c switch.S $(am__append_1)
 EXTRA_DIST = $(libhal_SRC) fpu.S Makefile.kbuild
 all: all-am
 

@@ -2,9 +2,9 @@
  *   @ingroup hal
  *   @file
  *
- *   Adeos-based Real-Time Hardware Abstraction Layer for x86.
+ *   Real-Time Hardware Abstraction Layer for x86.
  *
- *   Original RTAI/x86 layer implementation: \n
+ *   Original RTAI/x86 HAL services from: \n
  *   Copyright &copy; 2000 Paolo Mantegazza, \n
  *   Copyright &copy; 2000 Steve Papacharalambous, \n
  *   Copyright &copy; 2000 Stuart Hughes, \n
@@ -39,9 +39,7 @@
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
-#include <rtai_config.h>
-
-#define RTHAL_NR_CPUS  ADEOS_NR_CPUS
+#include <nucleus/asm-generic/hal.h>	/* Read the generic bits. */
 
 typedef unsigned long long rthal_time_t;
 
@@ -172,8 +170,6 @@ static inline __attribute_const__ unsigned long ffnz (unsigned long word) {
 }
 
 #if defined(__KERNEL__) && !defined(__cplusplus)
-#include <linux/sched.h>
-#include <linux/interrupt.h>
 #include <asm/system.h>
 #include <asm/io.h>
 #include <asm/timex.h>
@@ -185,27 +181,6 @@ static inline __attribute_const__ unsigned long ffnz (unsigned long word) {
 #include <asm/apic.h>
 #endif /* CONFIG_X86_LOCAL_APIC */
 
-typedef void (*rthal_irq_handler_t)(unsigned irq,
-				    void *cookie);
-
-struct rthal_calibration_data {
-
-    unsigned long cpu_freq;
-    unsigned long timer_freq;
-};
-
-extern struct rthal_calibration_data rthal_tunables;
-
-extern volatile unsigned long rthal_cpu_realtime;
-
-extern adomain_t rthal_domain;
-
-#define RTHAL_DOMAIN_ID  0x52544149
-
-#define RTHAL_NR_SRQS  BITS_PER_LONG
-
-#define RTHAL_TIMER_FREQ  (rthal_tunables.timer_freq)
-#define RTHAL_CPU_FREQ    (rthal_tunables.cpu_freq)
 #define RTHAL_8254_IRQ    0
 
 #ifdef CONFIG_X86_LOCAL_APIC
@@ -226,52 +201,6 @@ void rthal_setup_8254_tsc(void);
 rthal_time_t rthal_get_8254_tsc(void);
 #define rthal_rdtsc() rthal_get_8254_tsc()
 #endif /* CONFIG_X86_TSC */
-
-#define rthal_cli()                     adeos_stall_pipeline_from(&rthal_domain)
-#define rthal_sti()                     adeos_unstall_pipeline_from(&rthal_domain)
-#define rthal_local_irq_save(x)         ((x) = !!adeos_test_and_stall_pipeline_from(&rthal_domain))
-#define rthal_local_irq_restore(x)      adeos_restore_pipeline_from(&rthal_domain,(x))
-#define rthal_local_irq_flags(x)        ((x) = !!adeos_test_pipeline_from(&rthal_domain))
-#define rthal_local_irq_test()          (!!adeos_test_pipeline_from(&rthal_domain))
-#define rthal_local_irq_sync(x)         ((x) = !!adeos_test_and_unstall_pipeline_from(&rthal_domain))
-
-#define rthal_hw_lock(flags)            adeos_hw_local_irq_save(flags)
-#define rthal_hw_unlock(flags)          adeos_hw_local_irq_restore(flags)
-#define rthal_hw_enable()               adeos_hw_sti()
-#define rthal_hw_disable()              adeos_hw_cli()
-
-#define rthal_linux_sti()                adeos_unstall_pipeline_from(adp_root)
-#define rthal_linux_cli()                adeos_stall_pipeline_from(adp_root)
-#define rthal_linux_local_irq_save(x)    ((x) = !!adeos_test_and_stall_pipeline_from(adp_root))
-#define rthal_linux_local_irq_restore(x) adeos_restore_pipeline_from(adp_root,x)
-#define rthal_linux_local_irq_restore_nosync(x,cpuid) adeos_restore_pipeline_nosync(adp_root,x,cpuid)
-
-#define rthal_spin_lock(lock)    adeos_spin_lock(lock)
-#define rthal_spin_unlock(lock)  adeos_spin_unlock(lock)
-
-#define rthal_spin_lock_irq(lock) \
-do {  \
-    rthal_cli(); \
-    rthal_spin_lock(lock); \
-} while(0)
-
-#define rthal_spin_unlock_irq(lock) \
-do {  \
-    rthal_spin_unlock(lock); \
-    rthal_sti(); \
-} while(0)
-
-#define rthal_spin_lock_irqsave(lock,flags) \
-do {  \
-    rthal_local_irq_save(flags); \
-    rthal_spin_lock(lock); \
-} while(0)
-
-#define rthal_spin_unlock_irqrestore(lock,flags) \
-do {  \
-    rthal_spin_unlock(lock); \
-    rthal_local_irq_restore(flags); \
-} while(0)
 
 #if !defined(CONFIG_ADEOS_NOTHREADS)
 
@@ -328,82 +257,31 @@ static inline void rthal_set_timer_shot (unsigned long delay) {
     rthal_hw_unlock(flags);
 }
 
-    /* Private interface -- Internal use only */
-
-unsigned long rthal_critical_enter(void (*synch)(void));
-
-void rthal_critical_exit(unsigned long flags);
+static const char *const rthal_fault_labels[] = {
+    [0] = "Divide error",
+    [1] = "Debug",
+    [2] = "",	/* NMI is not pipelined. */
+    [3] = "Int3",
+    [4] = "Overflow",
+    [5] = "Bounds",
+    [6] = "Invalid opcode",
+    [7] = "FPU not available",
+    [8] = "Double fault",
+    [9] = "FPU segment overrun",
+    [10] = "Invalid TSS",
+    [11] = "Segment not present",
+    [12] = "Stack segment",
+    [13] = "General protection",
+    [14] = "Page fault",
+    [15] = "Spurious interrupt",
+    [16] = "FPU error",
+    [17] = "Alignment check",
+    [18] = "Machine check",
+    [19] = "SIMD error",
+    [20] = NULL,
+};
 
 #endif /* __KERNEL__ && !__cplusplus */
-
-    /* Public interface */
-
-#ifdef __KERNEL__
-
-#include <linux/kernel.h>
-
-typedef int (*rthal_trap_handler_t)(adevinfo_t *evinfo);
-
-#define rthal_printk    printk /* This is safe over Adeos */
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-int rthal_request_irq(unsigned irq,
-		      void (*handler)(unsigned irq, void *cookie),
-		      void *cookie);
-
-int rthal_release_irq(unsigned irq);
-
-/**
- * @name Programmable Interrupt Controllers (PIC) management functions.
- *
- *@{*/
-
-int rthal_enable_irq(unsigned irq);
-
-int rthal_disable_irq(unsigned irq);
-
-/*@}*/
-
-int rthal_request_linux_irq(unsigned irq,
-			    irqreturn_t (*handler)(int irq,
-						   void *dev_id,
-						   struct pt_regs *regs), 
-			    char *name,
-			    void *dev_id);
-
-int rthal_release_linux_irq(unsigned irq,
-			    void *dev_id);
-
-int rthal_pend_linux_irq(unsigned irq);
-
-int rthal_request_srq(void (*handler)(void *cookie),
-		      void *cookie);
-
-int rthal_release_srq(int srq);
-
-int rthal_pend_srq(int srq);
-
-int rthal_set_irq_affinity(unsigned irq,
-			   cpumask_t cpumask,
-			   cpumask_t *oldmask);
-
-int rthal_request_timer(void (*handler)(void),
-			unsigned long nstick);
-
-void rthal_release_timer(void);
-
-rthal_trap_handler_t rthal_set_trap_handler(rthal_trap_handler_t handler);
-
-unsigned long rthal_calibrate_timer(void);
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
-#endif /* __KERNEL__ */
 
 /*@}*/
 

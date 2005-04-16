@@ -6,7 +6,7 @@ CROSS_COMPILE = @CROSS_COMPILE@
 
 abs_srcdir = @abs_srcdir@
 
-libhal_SRC = hal.c
+libhal_SRC = generic.c x86.c
 
 if CONFIG_RTAI_HW_SMI_DETECT
 libhal_SRC += smi.c smi.h

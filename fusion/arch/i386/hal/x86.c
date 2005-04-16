@@ -1,0 +1,530 @@
+/**
+ *   @ingroup hal
+ *   @file
+ *
+ *   Adeos-based Real-Time Abstraction Layer for x86.
+ *
+ *   Original RTAI/x86 layer implementation: \n
+ *   Copyright &copy; 2000 Paolo Mantegazza, \n
+ *   Copyright &copy; 2000 Steve Papacharalambous, \n
+ *   Copyright &copy; 2000 Stuart Hughes, \n
+ *   and others.
+ *
+ *   RTAI/x86 rewrite over Adeos: \n
+ *   Copyright &copy; 2002 Philippe Gerum.
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA 02139,
+ *   USA; either version 2 of the License, or (at your option) any later
+ *   version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/**
+ * @defgroup hal_x86 HAL/x86.
+ *
+ * Basic x86-dependent services used by the real-time nucleus.
+ *
+ *@{*/
+
+#include <linux/version.h>
+#include <linux/slab.h>
+#include <linux/errno.h>
+#include <linux/module.h>
+#include <linux/interrupt.h>
+#include <linux/irq.h>
+#include <linux/console.h>
+#include <linux/kallsyms.h>
+#include <asm/system.h>
+#include <asm/hw_irq.h>
+#include <asm/irq.h>
+#include <asm/desc.h>
+#include <asm/io.h>
+#include <asm/uaccess.h>
+#include <asm/unistd.h>
+#ifdef CONFIG_X86_LOCAL_APIC
+#include <asm/fixmap.h>
+#include <asm/bitops.h>
+#include <asm/mpspec.h>
+#ifdef CONFIG_X86_IO_APIC
+#include <asm/io_apic.h>
+#endif /* CONFIG_X86_IO_APIC */
+#include <asm/apic.h>
+#endif /* CONFIG_X86_LOCAL_APIC */
+#include <nucleus/asm/hal.h>
+#ifdef CONFIG_PROC_FS
+#include <linux/proc_fs.h>
+#endif /* CONFIG_PROC_FS */
+#include <stdarg.h>
+#include <smi.h>
+
+extern struct desc_struct idt_table[];
+
+#ifdef CONFIG_X86_LOCAL_APIC
+
+static long long rthal_timers_sync_time;
+
+static struct rthal_apic_data rthal_timer_mode[ADEOS_NR_CPUS];
+
+struct rthal_apic_data {
+
+    int mode;
+    unsigned long count;
+};
+
+static inline void rthal_setup_periodic_apic (unsigned count,
+					      unsigned vector)
+{
+    apic_read(APIC_LVTT);
+    apic_write_around(APIC_LVTT,APIC_LVT_TIMER_PERIODIC|vector);
+    apic_read(APIC_TMICT);
+    apic_write_around(APIC_TMICT,count);
+}
+
+static inline void rthal_setup_oneshot_apic (unsigned count,
+					     unsigned vector)
+{
+    apic_read(APIC_LVTT);
+    apic_write_around(APIC_LVTT,vector);
+    apic_read(APIC_TMICT);
+    apic_write_around(APIC_TMICT,count);
+}
+
+static void rthal_critical_sync (void)
+
+{
+    struct rthal_apic_data *p;
+    long long sync_time;
+    adeos_declare_cpuid;
+
+    switch (rthal_sync_op)
+	{
+	case 1:
+            adeos_load_cpuid();
+
+	    p = &rthal_timer_mode[cpuid];
+
+            sync_time = rthal_timers_sync_time;
+
+            /* Stagger local timers on SMP systems, to avoid tick handler
+               stupidly spinning while running on other CPU. */
+            if(p->mode)
+                sync_time += rthal_imuldiv(p->count, cpuid, num_online_cpus());
+
+            while (rthal_rdtsc() < sync_time)
+                ;
+            
+	    if (p->mode)
+		rthal_setup_periodic_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
+	    else
+		rthal_setup_oneshot_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
+
+	    break;
+
+	case 2:
+
+	    rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
+	    break;
+	}
+}
+
+irqreturn_t rthal_broadcast_to_local_timers (int irq,
+					     void *dev_id,
+					     struct pt_regs *regs)
+{
+    unsigned long flags;
+
+    rthal_hw_lock(flags);
+    apic_wait_icr_idle();
+    apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
+    rthal_hw_unlock(flags);
+
+    return IRQ_HANDLED;
+}
+
+unsigned long rthal_calibrate_timer (void)
+
+{
+    unsigned long flags;
+    rthal_time_t t, dt;
+    int i;
+
+    flags = rthal_critical_enter(NULL);
+
+    t = rthal_rdtsc();
+
+    for (i = 0; i < 10000; i++)
+	{ 
+	apic_read(APIC_LVTT);
+        apic_write_around(APIC_LVTT,APIC_LVT_TIMER_PERIODIC|LOCAL_TIMER_VECTOR);
+        apic_read(APIC_TMICT);
+        apic_write_around(APIC_TMICT,RTHAL_APIC_ICOUNT);
+	}
+
+    dt = rthal_rdtsc() - t;
+
+    rthal_critical_exit(flags);
+
+    return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
+}
+
+int rthal_request_timer (void (*handler)(void),
+			 unsigned long nstick)
+{
+    struct rthal_apic_data *p;
+    long long sync_time;
+    unsigned long flags;
+    int cpuid;
+
+    /* This code works both for UP+LAPIC and SMP configurations. */
+
+    /* Try releasing the LAPIC-bound IRQ now so that any attempt to
+       run a LAPIC-enabled RTAI over a plain 8254-only/UP kernel will
+       beget an error immediately. */
+
+    if (rthal_release_irq(RTHAL_APIC_TIMER_IPI) < 0)
+	return -EINVAL;
+
+    flags = rthal_critical_enter(rthal_critical_sync);
+
+    rthal_sync_op = 1;
+
+    rthal_timers_sync_time = rthal_rdtsc() + rthal_imuldiv(LATCH,
+							   RTHAL_CPU_FREQ,
+							   CLOCK_TICK_RATE);
+
+    /* We keep the setup data array just to be able to expose it to
+       the visible interface if it happens to be really needed at some
+       point in time. */
+    
+    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	{
+	p = &rthal_timer_mode[cpuid];
+	p->mode = !!nstick;	/* 0=oneshot, 1=periodic */
+	p->count = nstick;
+
+	if (p->mode)
+	    p->count = rthal_imuldiv(p->count,RTHAL_TIMER_FREQ,1000000000);
+	else
+	    p->count = RTHAL_APIC_ICOUNT;
+	}
+
+    adeos_load_cpuid();
+
+    p = &rthal_timer_mode[cpuid];
+
+    sync_time = rthal_timers_sync_time;
+
+    if(p->mode)
+        sync_time += rthal_imuldiv(p->count, cpuid, num_online_cpus());
+    
+    while (rthal_rdtsc() < sync_time)
+	;
+
+    if (p->mode)
+	rthal_setup_periodic_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
+    else
+	rthal_setup_oneshot_apic(p->count,RTHAL_APIC_TIMER_VECTOR);
+
+    rthal_request_irq(RTHAL_APIC_TIMER_IPI,
+		      (rthal_irq_handler_t)handler,
+		      NULL);
+
+    rthal_critical_exit(flags);
+
+    rthal_request_linux_irq(RTHAL_8254_IRQ,
+			    &rthal_broadcast_to_local_timers,
+			    "rthal_broadcast_timer",
+			    &rthal_broadcast_to_local_timers);
+    return 0;
+}
+
+void rthal_release_timer (void)
+
+{
+    unsigned long flags;
+
+    rthal_release_linux_irq(RTHAL_8254_IRQ,
+			    &rthal_broadcast_to_local_timers);
+
+    flags = rthal_critical_enter(&rthal_critical_sync);
+
+    rthal_sync_op = 2;
+    rthal_setup_periodic_apic(RTHAL_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
+    rthal_release_irq(RTHAL_APIC_TIMER_IPI);
+
+    rthal_critical_exit(flags);
+}
+
+#else /* !CONFIG_X86_LOCAL_APIC */
+
+unsigned long rthal_calibrate_timer (void)
+
+{
+    unsigned long flags;
+    rthal_time_t t, dt;
+    int i;
+
+    flags = rthal_critical_enter(NULL);
+
+    outb(0x34,PIT_MODE);
+
+    t = rthal_rdtsc();
+
+    for (i = 0; i < 10000; i++)
+	{ 
+	outb(LATCH & 0xff,PIT_CH0);
+	outb(LATCH >> 8,PIT_CH0);
+	}
+
+    dt = rthal_rdtsc() - t;
+
+    rthal_critical_exit(flags);
+
+    return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
+}
+
+int rthal_request_timer (void (*handler)(void),
+			 unsigned long nstick)
+{
+    unsigned long flags;
+    int err;
+
+    flags = rthal_critical_enter(NULL);
+
+    if (nstick > 0)
+	{
+	/* Periodic setup for 8254 channel #0. */
+	unsigned period;
+	period = (unsigned)rthal_llimd(nstick,RTHAL_TIMER_FREQ,1000000000);
+	if (period > LATCH) period = LATCH;
+	outb(0x34,PIT_MODE);
+	outb(period & 0xff,PIT_CH0);
+	outb(period >> 8,PIT_CH0);
+	}
+    else
+	{
+	/* Oneshot setup for 8254 channel #0. */
+	outb(0x30,PIT_MODE);
+	outb(LATCH & 0xff,PIT_CH0);
+	outb(LATCH >> 8,PIT_CH0);
+	}
+
+    rthal_release_irq(RTHAL_8254_IRQ);
+
+    err = rthal_request_irq(RTHAL_8254_IRQ,
+			    (rthal_irq_handler_t)handler,
+			    NULL);
+
+    rthal_critical_exit(flags);
+
+    return err;
+}
+
+void rthal_release_timer (void)
+
+{
+    unsigned long flags;
+
+    flags = rthal_critical_enter(NULL);
+    outb(0x34,PIT_MODE);
+    outb(LATCH & 0xff,PIT_CH0);
+    outb(LATCH >> 8,PIT_CH0);
+    rthal_release_irq(RTHAL_8254_IRQ);
+
+    rthal_critical_exit(flags);
+}
+
+#endif /* CONFIG_X86_LOCAL_APIC */
+
+#ifndef CONFIG_X86_TSC
+
+static rthal_time_t rthal_tsc_8254;
+
+static int rthal_last_8254_counter2;
+
+/* TSC emulation using PIT channel #2. */
+
+void rthal_setup_8254_tsc (void)
+
+{
+    unsigned long flags;
+    int count;
+
+    rthal_hw_lock(flags);
+
+    outb_p(0x0,PIT_MODE);
+    count = inb_p(PIT_CH0);
+    count |= inb_p(PIT_CH0) << 8;
+    outb_p(0xb4,PIT_MODE);
+    outb_p(RTHAL_8254_COUNT2LATCH & 0xff,PIT_CH2);
+    outb_p(RTHAL_8254_COUNT2LATCH >> 8,PIT_CH2);
+    rthal_tsc_8254 = count + LATCH * jiffies;
+    rthal_last_8254_counter2 = 0; 
+    /* Gate high, disable speaker */
+    outb_p((inb_p(0x61)&~0x2)|1,0x61);
+
+    rthal_hw_unlock(flags);
+}
+
+rthal_time_t rthal_get_8254_tsc (void)
+
+{
+    unsigned long flags;
+    int delta, count;
+    rthal_time_t t;
+
+    rthal_hw_lock(flags);
+
+    outb(0xd8,PIT_MODE);
+    count = inb(PIT_CH2);
+    delta = rthal_last_8254_counter2 - (count |= (inb(PIT_CH2) << 8));
+    rthal_last_8254_counter2 = count;
+    rthal_tsc_8254 += (delta > 0 ? delta : delta + RTHAL_8254_COUNT2LATCH);
+    t = rthal_tsc_8254;
+
+    rthal_hw_unlock(flags);
+
+    return t;
+}
+
+#endif /* !CONFIG_X86_TSC */
+
+static void rthal_trap_fault (adevinfo_t *evinfo)
+
+{
+    adeos_declare_cpuid;
+
+    /* Notes:
+
+    1) GPF needs to be propagated downstream whichever domain caused
+    it. This is required so that we don't spuriously raise a fatal
+    error when some fixup code is available to solve the error
+    condition. For instance, Linux always attempts to reload the %gs
+    segment register when switching a process in (__switch_to()),
+    regardless of its value. It is then up to Linux's GPF handling
+    code to search for a possible fixup whenever some exception
+    occurs. In the particular case of the %gs register, such an
+    exception could be raised for an exiting process if a preemption
+    occurs inside a short time window, after the process's LDT has
+    been dropped, but before the kernel lock is taken.  The same goes
+    for fusion switching back a Linux thread in non-RT mode which
+    happens to have been preempted inside do_exit() after the MM
+    context has been dropped (thus the LDT too). In such a case, %gs
+    could be reloaded with what used to be the TLS descriptor of the
+    exiting thread, but unfortunately after the LDT itself has been
+    dropped. Since the default LDT is only 5 entries long, any attempt
+    to refer to an LDT-indexed descriptor above this value would cause
+    a GPF.
+    2) NMI is not pipelined by Adeos. */
+
+    adeos_load_cpuid();
+
+    if (evinfo->domid == RTHAL_DOMAIN_ID)
+	{
+	rthal_realtime_faults[cpuid][evinfo->event]++;
+
+	if (evinfo->event == 7)
+	    {
+	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
+            print_symbol("Invalid use of FPU in RTAI context at %s\n",regs->eip);
+	    }
+
+	if (rthal_trap_handler != NULL &&
+	    test_bit(cpuid,&rthal_cpu_realtime) &&
+	    rthal_trap_handler(evinfo) != 0)
+	    goto endtrap;
+	}
+
+    adeos_propagate_event(evinfo);
+
+ endtrap:
+
+    return;
+}
+
+void rthal_domain_entry (int iflag)
+
+{
+    unsigned trapnr;
+
+#if !defined(CONFIG_ADEOS_NOTHREADS)
+    if (!iflag)
+	goto spin;
+#endif /* !CONFIG_ADEOS_NOTHREADS */
+
+    /* Trap all faults. */
+    for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
+	adeos_catch_event(trapnr,&rthal_trap_fault);
+
+    printk(KERN_INFO "RTAI: hal/x86 loaded.\n");
+
+#if !defined(CONFIG_ADEOS_NOTHREADS)
+ spin:
+
+    for (;;)
+	adeos_suspend_domain();
+#endif /* !CONFIG_ADEOS_NOTHREADS */
+}
+
+int rthal_arch_init (void)
+
+{
+    rthal_smi_init();
+    rthal_smi_disable();
+    
+#ifdef CONFIG_X86_LOCAL_APIC
+    if (!test_bit(X86_FEATURE_APIC,boot_cpu_data.x86_capability))
+    {
+        printk("RTAI: Local APIC absent or disabled!\n"
+	           "      Disable APIC support or pass \"lapic\" as bootparam.\n");
+	rthal_smi_restore();
+        return -ENODEV;
+    }
+
+#endif /* CONFIG_X86_LOCAL_APIC */
+
+    if (rthal_cpufreq_arg == 0)
+#ifdef CONFIG_X86_TSC
+	{
+	adsysinfo_t sysinfo;
+	adeos_get_sysinfo(&sysinfo);
+	/* FIXME: 4Ghz barrier is close... */
+	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
+	}
+#else /* ! CONFIG_X86_TSC */
+    rthal_cpufreq_arg = CLOCK_TICK_RATE;
+    rthal_setup_8254_tsc();
+#endif /* CONFIG_X86_TSC */
+
+    if (rthal_timerfreq_arg == 0)
+#ifdef CONFIG_X86_LOCAL_APIC
+	rthal_timerfreq_arg = apic_read(APIC_TMICT) * HZ;
+#else /* !CONFIG_X86_LOCAL_APIC */
+	rthal_timerfreq_arg = CLOCK_TICK_RATE;
+#endif /* CONFIG_X86_LOCAL_APIC */
+
+    return 0;
+}
+
+void rthal_arch_cleanup (void)
+
+{
+    rthal_smi_restore();
+    printk(KERN_INFO "RTAI: hal/x86 unloaded.\n");
+}
+
+/*@}*/
+
+#ifndef CONFIG_X86_TSC
+EXPORT_SYMBOL(rthal_get_8254_tsc);
+#endif /* !CONFIG_X86_TSC */

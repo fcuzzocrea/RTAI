@@ -27,7 +27,7 @@ include_HEADERS = \
 		version.h \
 		xenomai.h
 
-SUBDIRS = $(ARCHDIR)
+SUBDIRS = asm-generic $(ARCHDIR)
 
 if CONFIG_RTAI_OPT_UVM
 SUBDIRS += asm-uvm

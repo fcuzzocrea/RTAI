@@ -261,7 +261,7 @@ target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 abs_srcdir = @abs_srcdir@
-libhal_SRC = hal.c $(am__append_1)
+libhal_SRC = generic.c x86.c $(am__append_1)
 EXTRA_DIST = $(libhal_SRC) Makefile.kbuild
 all: all-am
 

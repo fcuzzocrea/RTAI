@@ -4,7 +4,7 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
-libhal_SRC = hal.c switch.S
+libhal_SRC = generic.c ppc.c switch.S
 
 if CONFIG_RTAI_HW_FPU
 libhal_SRC += fpu.S

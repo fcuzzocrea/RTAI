@@ -20,165 +20,27 @@
 #ifndef _RTAI_ASM_PPC_SYSTEM_H
 #define _RTAI_ASM_PPC_SYSTEM_H
 
+#include <nucleus/asm-generic/system.h>
+
 #ifdef __KERNEL__
 
-#include <linux/kernel.h>
-#include <linux/version.h>
-#include <linux/module.h>
-#include <linux/slab.h>
-#include <linux/errno.h>
-#include <linux/adeos.h>
-#include <linux/vmalloc.h>
-#include <asm/uaccess.h>
-#include <asm/param.h>
-#include <asm/mmu_context.h>
-#include <rtai_config.h>
-#include <nucleus/asm/hal.h>
-#include <nucleus/asm/atomic.h>
-#include <nucleus/shadow.h>
-
-#if ADEOS_RELEASE_NUMBER < 0x0206060f
-#error "Adeos 2.6r6c15/ppc or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x02060701
+#error "Adeos 2.6r7c1/ppc or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/ppc/"
 #endif
 
-#define module_param_value(parm) (parm)
-
-typedef unsigned long spl_t;
-
-#define splhigh(x)  rthal_local_irq_save(x)
-#ifdef CONFIG_SMP
-#define splexit(x)  rthal_local_irq_restore((x) & 1)
-#else /* !CONFIG_SMP */
-#define splexit(x)  rthal_local_irq_restore(x)
-#endif /* CONFIG_SMP */
-#define splnone()   rthal_sti()
-#define spltest()   rthal_local_irq_test()
-#define splget(x)   rthal_local_irq_flags(x)
-#define splsync(x)  rthal_local_irq_sync(x)
-
-typedef unsigned long xnlock_t;
-
-#define XNARCH_LOCK_UNLOCKED 0
-
-#ifdef CONFIG_SMP
-
-#define xnlock_get_irqsave(lock,x)  ((x) = __xnlock_get_irqsave(lock))
-#define xnlock_clear_irqoff(lock)   xnlock_put_irqrestore(lock,1)
-#define xnlock_clear_irqon(lock)    xnlock_put_irqrestore(lock,0)
-
-static inline void xnlock_init (xnlock_t *lock) {
-
-    *lock = XNARCH_LOCK_UNLOCKED;
-}
-
-static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
-
-{
-    adeos_declare_cpuid;
-    spl_t flags;
-
-    rthal_local_irq_save(flags);
-
-    adeos_load_cpuid();
-
-    if (!test_and_set_bit(cpuid,lock))
-	{
-	while (test_and_set_bit(BITS_PER_LONG - 1,lock))
-            /* Use a non-locking test in the inner loop, as Linux'es
-               bit_spin_lock. */
-            while (test_bit(BITS_PER_LONG - 1, lock))
-                cpu_relax();
-	}
-    else
-        flags |= 2;
-
-    return flags;
-}
-
-static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
-
-{
-    if (!(flags & 2))
-        {
-        adeos_declare_cpuid;
-
-        rthal_cli();
-
-        adeos_load_cpuid();
-
-        if (test_bit(cpuid,lock))
-            {
-            clear_bit(cpuid,lock);
-            clear_bit(BITS_PER_LONG - 1,lock);
-            }
-        }
-
-    rthal_local_irq_restore(flags & 1);
-}
-
 #define XNARCH_PASSTHROUGH_IRQS /*empty*/
 
-#else /* !CONFIG_SMP */
+#define XNARCH_DEFAULT_TICK     1000000 /* ns, i.e. 1ms */
+#define XNARCH_HOST_TICK        (1000000000UL/HZ)
 
-#define xnlock_init(lock)              do { } while(0)
-#define xnlock_get_irqsave(lock,x)     rthal_local_irq_save(x)
-#define xnlock_put_irqrestore(lock,x)  rthal_local_irq_restore(x)
-#define xnlock_clear_irqoff(lock)      rthal_cli()
-#define xnlock_clear_irqon(lock)       rthal_sti()
-
-#endif /* CONFIG_SMP */
-
-#define XNARCH_NR_CPUS               RTHAL_NR_CPUS
-
-#define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
-#define XNARCH_HOST_TICK             (1000000000UL/HZ)
-
-#define XNARCH_THREAD_STACKSZ 4096
-#define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
-
-#define XNARCH_PROMPT "RTAI: "
-#define xnarch_loginfo(fmt,args...)  printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
-#define xnarch_logwarn(fmt,args...)  printk(KERN_WARNING XNARCH_PROMPT fmt, ##args)
-#define xnarch_logerr(fmt,args...)   printk(KERN_ERR XNARCH_PROMPT fmt, ##args)
-#define xnarch_printf(fmt,args...)   printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
-
-#define xnarch_ullmod(ull,uld,rem)   ({ xnarch_ulldiv(ull,uld,rem); (*rem); })
-#define xnarch_uldiv(ull, d)         rthal_uldivrem(ull, d, NULL)
-#define xnarch_ulmod(ull, d)         ({ u_long _rem;                    \
-                                        rthal_uldivrem(ull,d,&_rem); _rem; })
-
-#define xnarch_ullmul                rthal_ullmul
-#define xnarch_uldivrem              rthal_uldivrem
-#define xnarch_ulldiv                rthal_ulldiv
-#define xnarch_imuldiv               rthal_imuldiv
-#define xnarch_llimd                 rthal_llimd
-#define xnarch_get_cpu_tsc           rthal_rdtsc
-
-typedef cpumask_t xnarch_cpumask_t;
-#ifdef CONFIG_SMP
-#define xnarch_cpu_online_map            cpu_online_map
-#else
-#define xnarch_cpu_online_map            cpumask_of_cpu(0)
-#endif
-#define xnarch_num_online_cpus()         num_online_cpus()
-#define xnarch_cpu_set(cpu, mask)        cpu_set(cpu, mask)
-#define xnarch_cpu_clear(cpu, mask)      cpu_clear(cpu, mask)
-#define xnarch_cpus_clear(mask)          cpus_clear(mask)
-#define xnarch_cpu_isset(cpu, mask)      cpu_isset(cpu, mask)
-#define xnarch_cpus_and(dst, src1, src2) cpus_and(dst, src1, src2)
-#define xnarch_cpus_equal(mask1, mask2)  cpus_equal(mask1, mask2)
-#define xnarch_cpus_empty(mask)          cpus_empty(mask)
-#define xnarch_cpumask_of_cpu(cpu)       cpumask_of_cpu(cpu)
-#define xnarch_first_cpu(mask)           first_cpu(mask)
-#define XNARCH_CPU_MASK_ALL              CPU_MASK_ALL
-
-struct xnthread;
-struct xnheap;
-struct task_struct;
+#define XNARCH_THREAD_STACKSZ   4096
 
 #define xnarch_stack_size(tcb)  ((tcb)->stacksize)
 #define xnarch_user_task(tcb)   ((tcb)->user_task)
+
+struct xnthread;
+struct task_struct;
 
 typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
 
@@ -228,39 +90,9 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_code(fi)  ((fi)->regs->dar)
 #define xnarch_fault_pc(fi)    ((fi)->regs->nip)
 
-typedef struct xnarch_heapcb {
-
-    atomic_t numaps;	/* # of active user-space mappings. */
-
-    int kmflags;	/* Kernel memory flags (0 if vmalloc()). */
-
-    void *heapbase;	/* Shared heap memory base. */
-
-} xnarch_heapcb_t;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-static inline long long xnarch_tsc_to_ns (long long ts) {
-    return xnarch_llimd(ts,1000000000,RTHAL_CPU_FREQ);
-}
-
-static inline long long xnarch_ns_to_tsc (long long ns) {
-    return xnarch_llimd(ns,RTHAL_CPU_FREQ,1000000000);
-}
-
-static inline unsigned long long xnarch_get_cpu_time (void) {
-    return xnarch_tsc_to_ns(xnarch_get_cpu_tsc());
-}
-
-static inline unsigned long long xnarch_get_cpu_freq (void) {
-    return RTHAL_CPU_FREQ;
-}
-
-static inline unsigned xnarch_current_cpu (void) {
-    return adeos_processor_id();
-}
 
 static inline void *xnarch_sysalloc (u_long bytes)
 
@@ -284,76 +116,11 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes)
 	kfree(chunk);
 }
 
-#define xnarch_declare_cpuid  adeos_declare_cpuid
-#define xnarch_get_cpu(flags) adeos_get_cpu(flags)
-#define xnarch_put_cpu(flags) adeos_put_cpu(flags)
-
-#define xnarch_halt(emsg) \
-do { \
-    adeos_set_printk_sync(adp_current); \
-    xnarch_logerr("fatal: %s\n",emsg); \
-    show_stack(NULL,NULL);		\
-    for (;;) ;				\
-} while(0)
-
-#define xnarch_alloc_stack xnmalloc
-#define xnarch_free_stack  xnfree
-
-static inline int xnarch_setimask (int imask)
-
-{
-    spl_t s;
-    splhigh(s);
-    splexit(!!imask);
-    return !!s;
-}
-
-#ifdef XENO_INTR_MODULE
-
-static inline int xnarch_hook_irq (unsigned irq,
-				   void (*handler)(unsigned irq,
-						   void *cookie),
-				   void *cookie)
-{
-    return rthal_request_irq(irq,handler,cookie);
-}
-
-static inline int xnarch_release_irq (unsigned irq) {
-
-    return rthal_release_irq(irq);
-}
-
-static inline int xnarch_enable_irq (unsigned irq)
-
-{
-    return rthal_enable_irq(irq);
-}
-
-static inline int xnarch_disable_irq (unsigned irq)
-
-{
-    return rthal_disable_irq(irq);
-}
-
-static inline void xnarch_chain_irq (unsigned irq)
-
-{
-    rthal_pend_linux_irq(irq);
-}
-
 static inline void xnarch_relay_tick (void)
 
 {
     rthal_pend_linux_irq(ADEOS_TIMER_VIRQ);
 }
-
-static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
-						 xnarch_cpumask_t affinity)
-{
-    return adeos_set_irq_affinity(irq,affinity);
-}
-
-#endif /* XENO_INTR_MODULE */
 
 #ifdef XENO_POD_MODULE
 
@@ -812,29 +579,6 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 
 #endif /* XENO_TIMER_MODULE */
 
-#ifdef XENO_HEAP_MODULE
-
-#include <linux/mm.h>
-
-static inline void xnarch_init_heapcb (xnarch_heapcb_t *hcb)
-
-{
-    atomic_set(&hcb->numaps,0);
-    hcb->kmflags = 0;
-    hcb->heapbase = NULL;
-}
-
-static inline int xnarch_remap_page_range(struct vm_area_struct *vma,
-					  unsigned long uvaddr,
-					  unsigned long paddr,
-					  unsigned long size,
-					  pgprot_t prot)
-{
-    return remap_pfn_range(vma,uvaddr,paddr >> PAGE_SHIFT,size,prot);
-}
-
-#endif /* XENO_HEAP_MODULE */
-
 #ifdef XENO_MAIN_MODULE
 
 #include <linux/init.h>
@@ -942,14 +686,6 @@ static inline void xnarch_exit (void)
 #ifdef __cplusplus
 }
 #endif
-
-/* Dashboard and graph control. */
-#define XNARCH_DECL_DISPLAY_CONTEXT();
-#define xnarch_init_display_context(obj)
-#define xnarch_create_display(obj,name,tag)
-#define xnarch_delete_display(obj)
-#define xnarch_post_graph(obj,state)
-#define xnarch_post_graph_if(obj,state,cond)
 
 #else /* !__KERNEL__ */
 

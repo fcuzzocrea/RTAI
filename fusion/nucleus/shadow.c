@@ -2,7 +2,7 @@
  * \brief Real-time shadow services.
  * \author Philippe Gerum
  *
- * Copyright (C) 2001,2002,2003,2004 Philippe Gerum <rpm@xenomai.org>.
+ * Copyright (C) 2001,2002,2003,2004,2005 Philippe Gerum <rpm@xenomai.org>.
  * Copyright (C) 2004 The RTAI project <http://www.rtai.org>
  * Copyright (C) 2004 The HYADES project <http://www.hyades-itea.org>
  *
@@ -61,23 +61,23 @@ static struct __gatekeeper {
 
 } gatekeeper[XNARCH_NR_CPUS];
  
-static int sb_apc;
+static int lostage_apc;
 
-static struct __schedback {
+static struct __lostagerq {
 
     int in, out;
 
     struct {
-#define SB_WAKEUP_REQ 1
-#define SB_SIGNAL_REQ 2
-#define SB_RENICE_REQ 3
+#define LO_WAKEUP_REQ 1
+#define LO_SIGNAL_REQ 2
+#define LO_RENICE_REQ 3
 	int type;
 	struct task_struct *task;
 	int arg;
-#define SB_MAX_REQUESTS 64 /* Must be a ^2 */
-    } req[SB_MAX_REQUESTS];
+#define LO_MAX_REQUESTS 64 /* Must be a ^2 */
+    } req[LO_MAX_REQUESTS];
 
-} schedback[XNARCH_NR_CPUS];
+} lostagerq[XNARCH_NR_CPUS];
 
 static adomain_t irq_shield;
 
@@ -227,22 +227,22 @@ static void shield_entry (int iflag)
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
-static void schedback_handler (void *cookie)
+static void lostage_handler (void *cookie)
 
 {
     int cpuid = smp_processor_id(), reqnum;
-    struct __schedback *sb = &schedback[cpuid];
+    struct __lostagerq *rq = &lostagerq[cpuid];
 
-    while ((reqnum = sb->out) != sb->in)
+    while ((reqnum = rq->out) != rq->in)
 	{
-	struct task_struct *task = sb->req[reqnum].task;
-	sb->out = (reqnum + 1) & (SB_MAX_REQUESTS - 1);
+	struct task_struct *task = rq->req[reqnum].task;
+	rq->out = (reqnum + 1) & (LO_MAX_REQUESTS - 1);
 
 	xnltt_log_event(rtai_ev_lohandler,reqnum,task->comm,task->pid);
 
-	switch (sb->req[reqnum].type)
+	switch (rq->req[reqnum].type)
 	    {
-	    case SB_WAKEUP_REQ:
+	    case LO_WAKEUP_REQ:
 
 		if (xnshadow_thread(task) &&
 		    testbits(xnshadow_thread(task)->status,XNSHIELD))
@@ -259,14 +259,14 @@ static void schedback_handler (void *cookie)
 		wake_up_process(task);
 		break;
 
-	    case SB_SIGNAL_REQ:
+	    case LO_SIGNAL_REQ:
 
-		send_sig(sb->req[reqnum].arg,task,1);
+		send_sig(rq->req[reqnum].arg,task,1);
 		break;
 
-	    case SB_RENICE_REQ:
+	    case LO_RENICE_REQ:
 
-		set_linux_task_priority(task,sb->req[reqnum].arg);
+		set_linux_task_priority(task,rq->req[reqnum].arg);
 		break;
 	    }
 	}
@@ -279,18 +279,18 @@ static void schedule_linux_call (int type,
     /* Do _not_ use smp_processor_id() here so we don't trigger Linux
        preemption debug traps inadvertently (see lib/kernel_lock.c). */
     int cpuid = adeos_processor_id(), reqnum;
-    struct __schedback *sb = &schedback[cpuid];
+    struct __lostagerq *rq = &lostagerq[cpuid];
     spl_t s;
 
     splhigh(s);
-    reqnum = sb->in;
-    sb->req[reqnum].type = type;
-    sb->req[reqnum].task = task;
-    sb->req[reqnum].arg = arg;
-    sb->in = (reqnum + 1) & (SB_MAX_REQUESTS - 1);
+    reqnum = rq->in;
+    rq->req[reqnum].type = type;
+    rq->req[reqnum].task = task;
+    rq->req[reqnum].arg = arg;
+    rq->in = (reqnum + 1) & (LO_MAX_REQUESTS - 1);
     splexit(s);
 
-    rthal_apc_schedule(sb_apc);
+    rthal_apc_schedule(lostage_apc);
 }
 
 static void itimer_handler (void *cookie)
@@ -298,7 +298,7 @@ static void itimer_handler (void *cookie)
 {
     xnthread_t *thread = (xnthread_t *)cookie;
     struct task_struct *task = xnthread_archtcb(thread)->user_task;
-    schedule_linux_call(SB_SIGNAL_REQ,task,SIGALRM);
+    schedule_linux_call(LO_SIGNAL_REQ,task,SIGALRM);
 }
 
 static int gatekeeper_thread (void *data)
@@ -537,7 +537,7 @@ void xnshadow_relax (void)
 	   interruptible state, like schedule() saw them initially. */
 	set_current_state((current->state&~TASK_UNINTERRUPTIBLE)|TASK_INTERRUPTIBLE);
 
-    schedule_linux_call(SB_WAKEUP_REQ,current,0);
+    schedule_linux_call(LO_WAKEUP_REQ,current,0);
 
     xnpod_renice_root(thread->cprio);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
@@ -776,7 +776,7 @@ void xnshadow_unmap (xnthread_t *thread)
 	   die. In the former case, the zombie Linux side returning to
 	   user-space will be trapped and exited inside the pod's
 	   rescheduling routines. */
-	schedule_linux_call(SB_WAKEUP_REQ,task,0);
+	schedule_linux_call(LO_WAKEUP_REQ,task,0);
     else
 	/* Otherwise, if the shadow is being unmapped in secondary
 	   mode and running, we only detach the shadow thread from its
@@ -865,7 +865,7 @@ void xnshadow_start (xnthread_t *thread,
 
     if (task->state == TASK_INTERRUPTIBLE)
 	/* Wakeup the Linux mate waiting on the barrier. */
-	schedule_linux_call(SB_WAKEUP_REQ,task,0);
+	schedule_linux_call(LO_WAKEUP_REQ,task,0);
 }
 
 void xnshadow_renice (xnthread_t *thread)
@@ -874,7 +874,7 @@ void xnshadow_renice (xnthread_t *thread)
   /* Called with nklock locked, RTAI interrupts off. */
     struct task_struct *task = xnthread_archtcb(thread)->user_task;
     int prio = thread->cprio < MAX_RT_PRIO ? thread->cprio : MAX_RT_PRIO-1;
-    schedule_linux_call(SB_RENICE_REQ,task,prio);
+    schedule_linux_call(LO_RENICE_REQ,task,prio);
 }
 
 static int bind_to_interface (struct task_struct *curr,
@@ -1772,7 +1772,7 @@ int __init xnshadow_mount (void)
     unshielded_cpus = xnarch_cpu_online_map;
 
     nkgkptd = adeos_alloc_ptdkey();
-    sb_apc = rthal_apc_alloc("schedule_back",&schedback_handler,NULL);
+    lostage_apc = rthal_apc_alloc("lostage_handler",&lostage_handler,NULL);
 
     for_each_online_cpu(cpu) {
 	struct __gatekeeper *gk = &gatekeeper[cpu];
@@ -1805,7 +1805,7 @@ void __exit xnshadow_cleanup (void)
 	kthread_stop(gk->server);
     }
 
-    rthal_apc_free(sb_apc);
+    rthal_apc_free(lostage_apc);
     adeos_free_ptdkey(nkgkptd);
 
     adeos_unregister_domain(&irq_shield);

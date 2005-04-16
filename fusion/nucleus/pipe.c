@@ -826,7 +826,7 @@ int xnpipe_mount (void)
 	return -EPIPE;
 	}
 
-    xnpipe_wakeup_srq = rthal_request_srq(&xnpipe_wakeup_proc,NULL);
+    xnpipe_wakeup_srq = rthal_request_srq("pipe_wakeup",&xnpipe_wakeup_proc,NULL);
 
     return 0;
 }

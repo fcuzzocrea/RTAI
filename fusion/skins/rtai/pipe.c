@@ -107,10 +107,10 @@ static int __pipe_output_handler (int bminor,
 int __pipe_pkg_init (void)
 
 {
-    __pipe_flush_srq = rthal_request_srq(&__pipe_flush_handler,NULL);
+    __pipe_flush_srq = rthal_request_srq("pipe_flush",&__pipe_flush_handler,NULL);
 
-    if (__pipe_flush_srq <= 0)
-	return -EBUSY;
+    if (__pipe_flush_srq < 0)
+	return __pipe_flush_srq;
 
     return 0;
 }

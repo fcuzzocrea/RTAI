@@ -76,17 +76,19 @@ extern struct proc_dir_entry *rthal_proc_root;
 
 static void __registry_proc_callback(void *cookie);
 
-static void __registry_proc_schedule(unsigned virq);
+static void __registry_proc_schedule(void *cookie);
 
 static DECLARE_XNQUEUE(__rtai_obj_exportq); /* Objects waiting for /proc export. */
 
 static DECLARE_XNQUEUE(__rtai_obj_unexportq); /* Objects waiting for /proc unexport. */
 
+#ifndef CONFIG_PREEMPT_RT
 static DECLARE_WORK(__registry_proc_work,&__registry_proc_callback,NULL);
+#endif /* !CONFIG_PREEMPT_RT */
 
 static struct proc_dir_entry *registry_proc_root;
 
-static unsigned registry_proc_virq;
+static int registry_proc_srq;
 
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
@@ -106,24 +108,19 @@ int __registry_pkg_init (void)
 
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
-    registry_proc_virq = adeos_alloc_irq();
+    registry_proc_srq = rthal_request_srq("registry_export",&__registry_proc_schedule,NULL);
 
-    if (!registry_proc_virq)
-	return -EBUSY;
+    if (registry_proc_srq < 0)
+	return registry_proc_srq;
 
     registry_proc_root = create_proc_entry("registry",
 					   S_IFDIR,
 					   rthal_proc_root);
     if (!registry_proc_root)
 	{
-	adeos_free_irq(registry_proc_virq);
+	rthal_release_srq(registry_proc_srq);
 	return -ENOMEM;
 	}
-
-    adeos_virtualize_irq(registry_proc_virq,
-			 &__registry_proc_schedule,
-			 NULL,
-			 IPIPE_HANDLE_MASK);
 
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
@@ -182,7 +179,7 @@ void __registry_pkg_cleanup (void)
     xnsynch_destroy(&__rtai_hash_synch);
 
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
-    adeos_free_irq(registry_proc_virq);
+    rthal_release_srq(registry_proc_srq);
     flush_scheduled_work();
     remove_proc_entry("registry",rthal_proc_root);
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
@@ -324,12 +321,19 @@ static void __registry_proc_callback (void *cookie)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-static void __registry_proc_schedule (unsigned virq)
+static void __registry_proc_schedule (void *cookie)
 
 {
+#ifdef CONFIG_PREEMPT_RT
+    /* On PREEMPT_RT, we are already running over a thread context, so
+       we don't need the workqueue indirection: let's invoke the
+       export handler directly. */
+    __registry_proc_callback(cookie);
+#else /* CONFIG_PREEMPT_RT */
     /* schedule_work() will check for us if the work has already been
        scheduled, so just be lazy and submit blindly. */
     schedule_work(&__registry_proc_work);
+#endif /* CONFIG_PREEMPT_RT */
 }
 
 static inline void __registry_proc_export (RT_OBJECT *object,
@@ -339,7 +343,7 @@ static inline void __registry_proc_export (RT_OBJECT *object,
     object->pnode = pnode;
     removeq(&__rtai_obj_busyq,&object->link);
     appendq(&__rtai_obj_exportq,&object->link);
-    adeos_trigger_irq(registry_proc_virq);
+    rthal_pend_srq(registry_proc_srq);
 }
 
 static inline void __registry_proc_unexport (RT_OBJECT *object)
@@ -349,7 +353,7 @@ static inline void __registry_proc_unexport (RT_OBJECT *object)
 	{
 	removeq(&__rtai_obj_busyq,&object->link);
 	appendq(&__rtai_obj_unexportq,&object->link);
-	adeos_trigger_irq(registry_proc_virq);
+	rthal_pend_srq(registry_proc_srq);
 	}
     else
 	{

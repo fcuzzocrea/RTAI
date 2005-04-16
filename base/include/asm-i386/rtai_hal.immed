@@ -211,7 +211,7 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define rtai_restore_flags(x)       adeos_hw_local_irq_restore(flags)
 #define rtai_save_flags(x)          adeos_hw_local_irq_flags(flags)
 
-extern unsigned long adeos_pended;
+extern volatile unsigned long adeos_pended;
 
 #define adeos_pend_uncond(irq, cpuid) \
 do { \

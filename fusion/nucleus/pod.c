@@ -2797,10 +2797,9 @@ int xnpod_trap_fault (void *fltinfo)
  * to a given frequency. On architectures that provide a
  * oneshot-programmable time source, the system timer can operate
  * either in aperiodic or periodic mode. Using the aperiodic mode
- * still allows to run periodic nucleus timers over it: the
- * underlying hardware will simply be reprogrammed after each tick by
- * the timer manager using the appropriate interval value (see
- * xntimer_start()).
+ * still allows to run periodic timings over it: the underlying
+ * hardware will simply be reprogrammed after each tick by the timer
+ * manager using the appropriate interval value (see xntimer_start()).
  *
  * The time interval that elapses between two consecutive invocations
  * of the handler is called a tick.

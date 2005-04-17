@@ -68,6 +68,7 @@ static struct __lostagerq {
     int in, out;
 
     struct {
+#define LO_START_REQ  0
 #define LO_WAKEUP_REQ 1
 #define LO_SIGNAL_REQ 2
 #define LO_RENICE_REQ 3
@@ -242,11 +243,19 @@ static void lostage_handler (void *cookie)
 
 	switch (rq->req[reqnum].type)
 	    {
+	    case LO_START_REQ:
+
+#ifdef CONFIG_SMP
+		if (xnshadow_thread(task))
+		    /* Set up the initial task affinity using the
+		       information passed to xnpod_start_thread(). */
+		    set_cpus_allowed(task, xnshadow_thread(task)->affinity);
+#endif /* CONFIG_SMP */
+
+		goto do_wakeup;
+
 	    case LO_WAKEUP_REQ:
 
-		if (xnshadow_thread(task) &&
-		    testbits(xnshadow_thread(task)->status,XNSHIELD))
-		    engage_irq_shield();
 #ifdef CONFIG_SMP
 		/* If the shadow thread changed its CPU while in primary mode,
                    change the CPU of its Linux counter-part (this is a cheap
@@ -255,6 +264,12 @@ static void lostage_handler (void *cookie)
 		if (!cpu_isset(cpuid, task->cpus_allowed))
 		    set_cpus_allowed(task, cpumask_of_cpu(cpuid));
 #endif /* CONFIG_SMP */
+
+ do_wakeup:
+
+		if (xnshadow_thread(task) &&
+		    testbits(xnshadow_thread(task)->status,XNSHIELD))
+		    engage_irq_shield();
 
 		wake_up_process(task);
 		break;
@@ -690,11 +705,6 @@ int xnshadow_map (xnthread_t *thread,
 {
     unsigned muxid, magic;
 
-    preempt_disable();
-    /* Prevent Linux from migrating us from now on. */
-    set_cpus_allowed(current, cpumask_of_cpu(smp_processor_id()));
-    preempt_enable();
-
     /* Increment the interface reference count. */
     magic = xnthread_get_magic(thread);
 
@@ -727,6 +737,15 @@ int xnshadow_map (xnthread_t *thread,
        xnshadow_signal_completion(u_completion,0);
        return 0;
        }
+
+   /* Nobody waits for us, so we may start the shadow immediately
+      after having forced the CPU affinity to the current
+      processor. Note that we don't use smp_processor_id() to prevent
+      kernel debug stuff to yield at us for calling it in a
+      preemptible section of code. */
+
+   thread->affinity = xnarch_cpumask_of_cpu(adeos_processor_id());
+   set_cpus_allowed(current, thread->affinity);
 
    xnshadow_start(thread,NULL,NULL);
 
@@ -846,9 +865,9 @@ void xnshadow_start (xnthread_t *thread,
     thread->entry = u_entry;    /* user-space pointer -- do not deref. */
     thread->cookie = u_cookie;  /* ditto. */
     thread->stime = xnarch_get_cpu_time();
-    /* Do _not_ use smp_processor_id() here so we don't trigger Linux
-       preemption debug traps inadvertently (see lib/kernel_lock.c). */
-    thread->affinity = xnarch_cpumask_of_cpu(adeos_processor_id());
+
+    /* The CPU affinity of the started thread should have been filled
+       in by the caller into the thread->affinity field. */
 
     if (testbits(thread->status,XNRRB))
         thread->rrcredit = thread->rrperiod;
@@ -865,7 +884,7 @@ void xnshadow_start (xnthread_t *thread,
 
     if (task->state == TASK_INTERRUPTIBLE)
 	/* Wakeup the Linux mate waiting on the barrier. */
-	schedule_linux_call(LO_WAKEUP_REQ,task,0);
+	schedule_linux_call(LO_START_REQ,task,0);
 }
 
 void xnshadow_renice (xnthread_t *thread)

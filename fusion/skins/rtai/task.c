@@ -296,8 +296,7 @@ int rt_task_start (RT_TASK *task,
     xnpod_start_thread(&task->thread_base,
 		       0,
 		       0,
-		       xnarch_cpus_empty(task->affinity) ?
-		       XNPOD_ALL_CPUS : task->affinity,
+		       task->affinity,
 		       entry,
 		       cookie);
  unlock_and_exit:

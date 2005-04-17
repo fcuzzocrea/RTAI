@@ -710,7 +710,7 @@ int xnpod_init_thread (xnthread_t *thread,
  * preemptible state regarding interrupts (i.e. sti()).
  *
  * @param affinity The processor affinity of this thread. Passing
- * XNPOD_ALL_CPUS means "any cpu".
+ * XNPOD_ALL_CPUS or an empty affinity set means "any cpu".
  *
  * @param entry The address of the thread's body routine. In other
  * words, it is the thread entry point.
@@ -751,17 +751,35 @@ int xnpod_start_thread (xnthread_t *thread,
     if (!testbits(thread->status,XNDORMANT))
         return -EBUSY;
 
+    if (xnarch_cpus_empty(affinity))
+        affinity = XNARCH_CPU_MASK_ALL;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    thread->affinity = xnarch_cpu_online_map;
+    xnarch_cpus_and(thread->affinity, affinity, thread->affinity);
+
+    if (xnarch_cpus_empty(thread->affinity))
+	{
+        err = -EINVAL;
+	goto unlock_and_exit;
+	}
+
+#ifdef CONFIG_SMP
+    if (!xnarch_cpu_isset(xnsched_cpu(thread->sched), thread->affinity))
+        thread->sched = xnpod_sched_slot(xnarch_first_cpu(thread->affinity));
+#endif /* CONFIG_SMP */
+
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (testbits(thread->status,XNSHADOW))
         {
+	xnlock_put_irqrestore(&nklock,s);
 	xnltt_log_event(rtai_ev_thrstart,thread->name);
         xnshadow_start(thread,entry,cookie);
 	xnpod_schedule();
         return 0;
         }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
-
-    xnlock_get_irqsave(&nklock,s);
 
     if (testbits(thread->status,XNSTARTED))
         {
@@ -787,23 +805,6 @@ int xnpod_start_thread (xnthread_t *thread,
 
     if (testbits(thread->status,XNRRB))
         thread->rrcredit = thread->rrperiod;
-
-    if (xnarch_cpus_empty(affinity))
-        affinity = XNARCH_CPU_MASK_ALL;
-
-    thread->affinity = xnarch_cpu_online_map;
-    xnarch_cpus_and(thread->affinity, affinity, thread->affinity);
-
-    if (xnarch_cpus_empty(thread->affinity))
-	{
-        err = -EINVAL;
-	goto unlock_and_exit;
-	}
-
-#ifdef CONFIG_SMP
-    if (!xnarch_cpu_isset(xnsched_cpu(thread->sched), thread->affinity))
-        thread->sched = xnpod_sched_slot(xnarch_first_cpu(thread->affinity));
-#endif /* CONFIG_SMP */
 
     xnltt_log_event(rtai_ev_thrstart,thread->name);
 

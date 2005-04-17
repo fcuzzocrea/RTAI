@@ -1,5 +1,10 @@
 2005-04-17  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (xnshadow_start): Set CPU affinity as requested
+	by xnpod_start_thread().
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.9,10,11-i386-r10c3.
+	
 	* skins/rtai/syscall.c (__rt_task_create): Pass the new task's CPU
 	affinity settings to rt_task_create() as needed.
 

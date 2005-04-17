@@ -77,7 +77,7 @@ static struct {
     const char *name;
     unsigned long hits[RTHAL_NR_CPUS];
 
-} rthal_apc_table[RTHAL_NR_SRQS];
+} rthal_apc_table[RTHAL_NR_APCS];
 
 static int rthal_init_done;
 
@@ -667,6 +667,49 @@ void rthal_apc_kicker (unsigned virq)
 
 #endif /* CONFIG_PREEMPT_RT */
 
+/**
+ * @fn int rthal_apc_alloc (const char *name,
+                            void (*handler)(void *cookie),
+			    void *cookie)
+ *
+ * @brief Allocate an APC slot.
+ *
+ * APC is the acronym for Asynchronous Procedure Call, a mean by which
+ * activities from the RTAI domain can schedule deferred invocations
+ * of handlers to be run into the Linux domain, as soon as possible
+ * when the Linux kernel gets back in control. Up to BITS_PER_LONG APC
+ * slots can be active at any point in time. APC support is built upon
+ * Adeos's virtual interrupt support.
+ *
+ * The HAL guarantees that any Linux kernel service which would be
+ * callable from a regular Linux interrupt handler is also available
+ * to APC handlers, including over PREEMPT_RT kernels exhibiting a
+ * threaded IRQ model.
+ *
+ * @param name is a symbolic name identifying the APC which will get
+ * reported through the /proc/rtai/apc interface.
+ *
+ * @param handler The address of the fault handler to call upon
+ * exception condition. The handle will be passed the @a cookie value
+ * unmodified.
+ *
+ * @param cookie A user-defined opaque cookie the HAL will pass to the
+ * APC handler as its sole argument.
+ *
+ * @return an valid APC id. is returned upon success, or a negative
+ * error code otherwise:
+ *
+ * - -EINVAL is returned if @a handler is invalid.
+ *
+ * - -EBUSY is returned if no more APC slots are available.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any domain context.
+ */
+
 int rthal_apc_alloc (const char *name,
 		     void (*handler)(void *),
 		     void *cookie)
@@ -695,22 +738,73 @@ int rthal_apc_alloc (const char *name,
     return apc;
 }
 
+/**
+ * @fn int rthal_apc_free (int apc)
+ *
+ * @brief Releases an APC slot.
+ *
+ * This service deallocates an APC slot obtained by rthal_apc_alloc().
+ *
+ * @param apc The APC id. to release, as returned by a successful call
+ * to the rthal_apc_alloc() service.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a apc is invalid.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any domain context.
+ */
+
 int rthal_apc_free (int apc)
 
 {
-    if (apc < 0 || apc >= RTHAL_NR_SRQS ||
+    if (apc < 0 || apc >= RTHAL_NR_APCS ||
 	!test_and_clear_bit(apc,&rthal_apc_map))
 	return -EINVAL;
 
     return 0;
 }
 
+/**
+ * @fn int rthal_apc_schedule (int apc)
+ *                           
+ * @brief Schedule an APC invocation.
+ *
+ * This service marks the APC as pending for the Linux domain, so that
+ * its handler will be called as soon as possible, when the Linux
+ * domain gets back in control.
+ *
+ * When posted from the Linux domain, the APC handler is fired as soon
+ * as the interrupt mask is explicitely cleared by some kernel
+ * code. When posted from the RTAI domain, the APC handler is fired as
+ * soon as the Linux domain is resumed, i.e. after RTAI has completed
+ * all its pending duties.
+ *
+ * @param apc The APC id. to schedule.
+ *
+ * @return 0 or 1 are returned upon success, the former meaning that
+ * the APC was already pending. Otherwise:
+ *
+ * - -EINVAL is returned if @a apc is invalid.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any domain context, albeit the usual calling place is from the
+ * RTAI domain.
+ */
+
 int rthal_apc_schedule (int apc)
 
 {
     adeos_declare_cpuid;
 
-    if (apc < 0 || apc >= RTHAL_NR_SRQS)
+    if (apc < 0 || apc >= RTHAL_NR_APCS)
 	return -EINVAL;
 
     adeos_load_cpuid();	/* Migration would harmless here. */

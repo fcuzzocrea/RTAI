@@ -535,11 +535,11 @@ static void rthal_apc_handler (unsigned virq)
     /* <!> This loop is not protected against a handler becoming
        unavailable while processing the pending queue; the software
        must make sure to uninstall all apcs before eventually
-       unloading any module that may contain apc handlers. We keep
-       the handler affinity with the poster's CPU, so that the handler
-       is invoked on the same CPU than the code which called
-       rthal_apc_schedule(). We spinlock for handling the CPU migration
-       case; we might get rid of this some day. */
+       unloading any module that may contain apc handlers. We keep the
+       handler affinity with the poster's CPU, so that the handler is
+       invoked on the same CPU than the code which called
+       rthal_apc_schedule(). We spinlock for handling the CPU
+       migration case; we might get rid of this some day. */
 
     while (rthal_apc_pending[cpuid] != 0)
 	{

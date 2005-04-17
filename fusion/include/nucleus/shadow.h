@@ -21,7 +21,7 @@
 #define _RTAI_NUCLEUS_SHADOW_H
 
 #include <nucleus/asm/atomic.h>
-#include <nucleus/syscall.h>
+#include <nucleus/asm/syscall.h>
 #ifdef CONFIG_PROC_FS
 #include <linux/proc_fs.h>
 #endif /* CONFIG_PROC_FS */

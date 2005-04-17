@@ -22,6 +22,7 @@
 
 #include <rtai_config.h>
 #include <asm/ptrace.h>
+#include <nucleus/asm-generic/syscall.h>
 
 /*
  * Some of the following macros have been adapted from Linux's

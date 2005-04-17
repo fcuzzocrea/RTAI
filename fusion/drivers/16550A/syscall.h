@@ -20,7 +20,7 @@
 #define _16550A_SYSCALL_H
 
 #ifndef __RTAI_SIM__
-#include <nucleus/syscall.h>
+#include <nucleus/asm/syscall.h>
 #endif /* __RTAI_SIM__ */
 
 #define __rtai_uart_open     0

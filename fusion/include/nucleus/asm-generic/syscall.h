@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001,2002,2003 Philippe Gerum <rpm@xenomai.org>.
+ * Copyright (C) 2001,2002,2003,2004,2005 Philippe Gerum <rpm@xenomai.org>.
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
@@ -17,10 +17,8 @@
  * 02111-1307, USA.
  */
 
-#ifndef _RTAI_NUCLEUS_SYSCALL_H
-#define _RTAI_NUCLEUS_SYSCALL_H
-
-#include <nucleus/asm/syscall.h>
+#ifndef _RTAI_ASM_GENERIC_SYSCALL_H
+#define _RTAI_ASM_GENERIC_SYSCALL_H
 
 /* RTAI/fusion multiplexer syscall. */
 #define __xn_sys_mux    555
@@ -101,4 +99,4 @@ typedef struct xncompletion {
 
 } xncompletion_t;
 
-#endif /* !_RTAI_NUCLEUS_SYSCALL_H */
+#endif /* !_RTAI_ASM_GENERIC_SYSCALL_H */

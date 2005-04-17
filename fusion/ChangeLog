@@ -1,3 +1,8 @@
+2005-04-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/asm-generic/syscall.h: Generic low-level bits for
+	syscall support; formerly include/nucleus/syscall.h.
+
 2005-04-16  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/generic/hal: Rename "sysreq" support to APC

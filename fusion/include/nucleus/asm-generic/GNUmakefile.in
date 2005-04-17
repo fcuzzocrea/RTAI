@@ -270,7 +270,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-include_HEADERS = hal.h system.h
+include_HEADERS = hal.h system.h syscall.h
 all: all-am
 
 .SUFFIXES:

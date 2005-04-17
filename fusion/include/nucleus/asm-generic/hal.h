@@ -39,7 +39,7 @@
 
 #define RTHAL_NR_CPUS  ADEOS_NR_CPUS
 
-#define RTHAL_NR_SRQS  BITS_PER_LONG
+#define RTHAL_NR_APCS  BITS_PER_LONG
 
 #define RTHAL_TIMER_FREQ  (rthal_tunables.timer_freq)
 #define RTHAL_CPU_FREQ    (rthal_tunables.cpu_freq)

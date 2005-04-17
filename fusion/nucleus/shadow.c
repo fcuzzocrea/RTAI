@@ -327,7 +327,7 @@ static int gatekeeper_thread (void *data)
     sigfillset(&this_task->blocked);
     set_cpus_allowed(this_task, cpumask_of_cpu(cpu));
 #ifdef CONFIG_PREEMPT_RT
-    /* FIXME -- PREEMPT_RT badly changes semantics of
+    /* FIXME -- PREEMPT_RT badly changes the semantics of
        wake_up_interruptible_sync(), we need to work around this. */
     set_linux_task_priority(this_task,1);
 #else /* CONFIG_PREEMPT_RT */

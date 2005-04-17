@@ -4,14 +4,14 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
-libhal_SRC = generic.c ppc.c switch.S
+libhal_SRC = ppc.c switch.S
 
 if CONFIG_RTAI_HW_FPU
 libhal_SRC += fpu.S
 endif
 
 rtai_hal.ko: @RTAI_KBUILD_ENV@
-rtai_hal.ko: $(libhal_SRC) FORCE
+rtai_hal.ko: $(libhal_SRC) generic.c FORCE
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
 	@RTAI_KBUILD_BOTTOM@

@@ -6,14 +6,14 @@ CROSS_COMPILE = @CROSS_COMPILE@
 
 abs_srcdir = @abs_srcdir@
 
-libhal_SRC = generic.c x86.c
+libhal_SRC = x86.c
 
 if CONFIG_RTAI_HW_SMI_DETECT
 libhal_SRC += smi.c smi.h
 endif
 
 rtai_hal.ko: @RTAI_KBUILD_ENV@
-rtai_hal.ko: $(libhal_SRC) FORCE
+rtai_hal.ko: generic.c $(libhal_SRC) FORCE
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@ -I$(abs_srcdir)" \
 	@RTAI_KBUILD_BOTTOM@

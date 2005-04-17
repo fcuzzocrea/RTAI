@@ -1,5 +1,8 @@
 2005-04-17  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Add preliminary support for experimental
+	PREEMPT_RT kernels over Adeos: 2.6.12-rc2-RT-V0.7.44-03.
+
 	* nucleus/shadow.c (xnshadow_start): Set CPU affinity as defined
 	by xnpod_start_thread().
 

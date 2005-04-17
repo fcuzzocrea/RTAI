@@ -490,6 +490,43 @@ int rthal_irq_host_pend (unsigned irq)
     return adeos_propagate_irq(irq);
 }
 
+/**
+ * @fn int rthal_irq_affinity (unsigned irq,
+                               cpumask_t cpumask,
+			       cpumask_t *oldmask)
+ *                           
+ * @brief Set/Get processor affinity for external interrupt.
+ *
+ * On SMP systems, this service ensures that the given interrupt is
+ * preferably dispatched to the specified set of processors. The
+ * previous affinity mask is returned by this service.
+ * 
+ * @param irq The interrupt source whose processor affinity is
+ * affected by the operation. Only external interrupts can have their
+ * affinity changed/queried, thus virtual interrupt numbers allocated
+ * by adeos_alloc_irq() are invalid values for this parameter.
+ *
+ * @param cpumask A list of CPU identifiers passed as a bitmask
+ * representing the new affinity for this interrupt. A zero value
+ * cause this service to return the current affinity mask without
+ * changing it.
+ * 
+ * @param oldmask If non-NULL, a pointer to a memory area which will
+ * bve overwritten by the previous affinity mask used for this
+ * interrupt source, or a zeroed mask if an error occurred.  This
+ * service always returns a zeroed mask on uniprocessor systems.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a irq is invalid.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Linux domain context.
+ */
+
 #ifdef CONFIG_SMP
 
 int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
@@ -516,6 +553,29 @@ int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
 }
 
 #endif /* CONFIG_SMP */
+
+/**
+ * @fn int rthal_trap_catch (rthal_trap_handler_t handler)
+ *                           
+ * @brief Installs a fault handler.
+ *
+ * The HAL attempts to invoke a fault handler whenever an uncontrolled
+ * exception or fault is caught at machine level. This service allows
+ * to install a user-defined handler for such events.
+ *
+ * @param handler The address of the fault handler to call upon
+ * exception condition. The handler is passed the address of the
+ * low-level information block describing the fault as passed by
+ * Adeos. Its layout is implementation-dependent.
+ *
+ * @return The address of the fault handler previously installed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any domain context.
+ */
 
 rthal_trap_handler_t rthal_trap_catch (rthal_trap_handler_t handler) {
 

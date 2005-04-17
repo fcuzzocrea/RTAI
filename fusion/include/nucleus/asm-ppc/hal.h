@@ -177,10 +177,9 @@ static inline struct task_struct *rthal_current_host_task (int cpuid) {
 
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 
-static inline void rthal_timer_program_shot (unsigned long delay) {
-
-    if(!delay)
-        delay = 1;
+static inline void rthal_timer_program_shot (unsigned long delay)
+{
+    if(!delay) delay = 1;
 #ifdef CONFIG_40x
     mtspr(SPRN_PIT,delay);
 #else /* !CONFIG_40x */

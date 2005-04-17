@@ -238,8 +238,8 @@ static inline struct task_struct *rthal_current_host_task (int cpuid) {
 
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 
-static inline void rthal_timer_program_shot (unsigned long delay) {
-
+static inline void rthal_timer_program_shot (unsigned long delay)
+{
     unsigned long flags;
     /* Neither the 8254 nor most APICs won't trigger any interrupt
        upon receiving a null timer count, so don't let this
@@ -248,7 +248,7 @@ static inline void rthal_timer_program_shot (unsigned long delay) {
     rthal_hw_lock(flags);
 #ifdef CONFIG_X86_LOCAL_APIC
     /* Note: reading before writing just to work around the Pentium
-       APIC double write bug. apic_read_around() leads to a no-op
+       APIC double write bug. apic_read_around() expands to nil
        whenever CONFIG_X86_GOOD_APIC is set. --rpm */
     apic_read_around(APIC_LVTT);
     apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);

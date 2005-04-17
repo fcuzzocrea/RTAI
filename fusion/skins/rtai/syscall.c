@@ -127,8 +127,8 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
     xncompletion_t __user *u_completion;
     char name[XNOBJECT_NAME_LEN];
     struct rt_arg_bulk bulk;
+    int err, prio, affinity;
     RT_TASK_PLACEHOLDER ph;
-    int err, prio;
     RT_TASK *task;
     spl_t s;
 
@@ -152,6 +152,8 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 
     /* Task priority. */
     prio = bulk.a3;
+    /* CPU affinity. */
+    affinity = bulk.a4 & T_CPUMASK;
     /* Completion descriptor our parent thread is pending on. */
     u_completion = (xncompletion_t __user *)__xn_reg_arg2(regs);
 
@@ -163,7 +165,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
     /* Force FPU support in user-space. This will lead to a no-op if
        the platform does not support it. */
 
-    err = rt_task_create(task,name,0,prio,XNFPU|XNSHADOW|XNSHIELD);
+    err = rt_task_create(task,name,0,prio,XNFPU|XNSHADOW|XNSHIELD|affinity);
 
     if (err == 0)
 	{
@@ -171,14 +173,14 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 	   two user-space threads are being synchronized on it, so
 	   enter a critical section. Do *not* take the big lock here:
 	   this is useless since deleting a thread through an
-	   inter-CPU request requires the target CPU to accept
-	   IPIs. */
+	   inter-CPU request requires the target CPU to accept IPIs,
+	   and we won't. */
 
 	splhigh(s);
 
 	/* Copy back the registry handle to the ph struct. */
 	ph.opaque = task->handle;
-	ph.opaque2 = bulk.a4;	/* hidden pthread_t identifier. */
+	ph.opaque2 = bulk.a5;	/* hidden pthread_t identifier. */
 	__xn_copy_to_user(curr,(void __user *)bulk.a1,&ph,sizeof(ph));
 	err = xnshadow_map(&task->thread_base,u_completion);
 

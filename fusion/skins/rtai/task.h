@@ -30,7 +30,8 @@
 #define T_FPU     XNFPU
 #define T_SUSP    XNSUSP
 /* <!> High bits must not conflict with XNFPU|XNSHADOW|XNSHIELD|XNSUSP. */
-#define T_CPU(cpu) (1 << (24 + (cpu & 0xff))) /* Up to 8 cpus [0-7] */
+#define T_CPU(cpu) (1 << (24 + (cpu & 7))) /* Up to 8 cpus [0-7] */
+#define T_CPUMASK  0xff000000
 
 /* Status/mode flags. */
 #define T_BLOCKED XNPEND

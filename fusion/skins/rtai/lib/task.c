@@ -36,6 +36,7 @@ struct rt_task_iargs {
     RT_TASK *task;
     const char *name;
     int prio;
+    int mode;
     xncompletion_t *completionp;
 };
 
@@ -55,7 +56,8 @@ static void *rt_task_trampoline (void *cookie)
     bulk.a1 = (u_long)iargs->task;
     bulk.a2 = (u_long)iargs->name;
     bulk.a3 = (u_long)iargs->prio;
-    bulk.a4 = (u_long)pthread_self();
+    bulk.a4 = (u_long)iargs->mode;
+    bulk.a5 = (u_long)pthread_self();
 
     err = XENOMAI_SKINCALL2(__rtai_muxid,
 			    __rtai_task_create,
@@ -84,7 +86,7 @@ int rt_task_create (RT_TASK *task,
 		    const char *name,
 		    int stksize,
 		    int prio,
-		    int mode)	/* Ignored. */
+		    int mode)
 {
     struct rt_task_iargs iargs;
     xncompletion_t completion;
@@ -111,6 +113,7 @@ int rt_task_create (RT_TASK *task,
     iargs.task = task;
     iargs.name = name;
     iargs.prio = prio;
+    iargs.mode = mode;
     iargs.completionp = &completion;
 
     pthread_attr_init(&thattr);

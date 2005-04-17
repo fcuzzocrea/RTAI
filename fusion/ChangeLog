@@ -1,5 +1,8 @@
 2005-04-17  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c (__rt_task_create): Pass the new task's CPU
+	affinity settings to rt_task_create() as needed.
+
 	* include/asm-generic/syscall.h: Generic low-level bits for
 	syscall support; formerly include/nucleus/syscall.h.
 

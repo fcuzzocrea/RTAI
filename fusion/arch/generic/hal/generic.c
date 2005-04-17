@@ -1215,6 +1215,65 @@ void __rthal_exit (void)
     rthal_arch_cleanup();
 }
 
+/*! 
+ * \fn int rthal_timer_request(void (*handler)(void),
+                               u_long nstick)
+ * \brief Grab the hardware timer.
+ *
+ * rthal_timer_request() grabs and tunes the hardware timer so that a
+ * user-defined routine is called according to a given frequency. On
+ * architectures that provide a oneshot-programmable time source, the
+ * hardware timer can operate either in aperiodic or periodic
+ * mode. Using the aperiodic mode still allows to run periodic timings
+ * over it: the underlying hardware simply needs to be reprogrammed
+ * after each tick using the appropriate interval value
+ *
+ * The time interval that elapses between two consecutive invocations
+ * of the handler is called a tick. The user-supplied handler will
+ * always be invoked on behalf of the RTAI domain for each incoming
+ * tick.
+ *
+ * @param handler The address of the tick handler which will process
+ * each incoming tick.
+ *
+ * @param nstick The timer period in nanoseconds. If this parameter is
+ * zero, the underlying hardware timer is set to operate in
+ * oneshot-programming mode. In this mode, timing accuracy is higher -
+ * since it is not rounded to a constant time slice - at the expense
+ * of a lesser efficicency due to the timer chip programming
+ * duties. On the other hand, the shorter the period, the higher the
+ * overhead induced by the periodic mode, since the handler will end
+ * up consuming a lot of CPU power to process useless ticks.
+ *
+ * @return 0 is returned on success. Otherwise:
+ *
+ * - -EBUSY is returned if the hardware timer has already been
+ * grabbed.  rthal_timer_request() must be issued before
+ * rthal_timer_request() is called again.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Linux domain context.
+ */
+
+/*! 
+ * \fn void rthal_timer_release(void)
+ * \brief Release the hardware timer.
+ *
+ * Releases the hardware timer, thus reverting the effect of a
+ * previous call to rthal_timer_request(). In case the timer hardware
+ * is shared with Linux, a periodic setup suitable for the Linux
+ * kernel will be reset.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Linux domain context.
+ */
+
 /*@}*/
 
 module_init(__rthal_init);

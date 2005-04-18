@@ -711,7 +711,7 @@ void rthal_apc_kicker (unsigned virq)
  */
 
 int rthal_apc_alloc (const char *name,
-		     void (*handler)(void *),
+		     void (*handler)(void *cookie),
 		     void *cookie)
 {
     unsigned long flags;
@@ -1217,7 +1217,7 @@ void __rthal_exit (void)
 
 /*! 
  * \fn int rthal_timer_request(void (*handler)(void),
-                               u_long nstick)
+                               unsigned long nstick)
  * \brief Grab the hardware timer.
  *
  * rthal_timer_request() grabs and tunes the hardware timer so that a

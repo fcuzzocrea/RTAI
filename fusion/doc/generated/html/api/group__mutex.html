@@ -416,17 +416,17 @@ Release a mutex. If the mutex is pended, the first waiting task (by priority ord
 <li>-EIDRM is returned if <em>mutex</em> is a deleted mutex descriptor.</li></ul>
 <p>
 <ul>
-<li>-EPERM is returned if <em>mutex</em> is not owned by the current task, or if this service was called from a context which cannot sleep (e.g. interrupt, non-realtime or scheduler locked).</li></ul>
+<li>-EPERM is returned if <em>mutex</em> is not owned by the current task, or more generally if this service was called from a context which cannot own any mutex (e.g. interrupt, or non-realtime context).</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<li>Kernel-based task</li><li>User-space task (switches to primary mode)</li></ul>
 <p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Apr 3 22:45:47 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:05 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

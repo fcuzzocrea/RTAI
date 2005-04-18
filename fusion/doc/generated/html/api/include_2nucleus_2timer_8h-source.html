@@ -7,7 +7,7 @@
 <div class="qindex">  <form class="search" action="search.php" method="get">
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="dirs.html">Directories</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <div class="nav">
-<a class="el" href="dir_000005.html">include</a>&nbsp;/&nbsp;<a class="el" href="dir_000006.html">nucleus</a></div>
+<a class="el" href="dir_000007.html">include</a>&nbsp;/&nbsp;<a class="el" href="dir_000008.html">nucleus</a></div>
 <h1>timer.h</h1><div class="fragment"><pre class="fragment">00001 <span class="comment">/*</span>
 00002 <span class="comment"> * Copyright (C) 2001,2002,2003 Philippe Gerum &lt;rpm@xenomai.org&gt;.</span>
 00003 <span class="comment"> *</span>
@@ -87,57 +87,59 @@
 00077 } xntimer_t;
 00078 
 00079 <span class="preprocessor">#define xntimer_date(t)           ((t)-&gt;date)</span>
-00080 <span class="preprocessor"></span><span class="preprocessor">#ifdef CONFIG_SMP</span>
+00080 <span class="preprocessor"></span><span class="preprocessor">#if defined(CONFIG_SMP) &amp;&amp; defined(CONFIG_RTAI_OPT_PERCPU_TIMER)</span>
 00081 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_sched(t)          ((t)-&gt;sched)</span>
-00082 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* !CONFIG_SMP */</span>
-00083 <span class="preprocessor">#define xntimer_sched(t)          xnpod_current_sched()</span>
-00084 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
-00085 <span class="preprocessor">#define xntimer_interval(t)       ((t)-&gt;interval)</span>
-00086 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_set_cookie(t,c)   ((t)-&gt;cookie = (c))</span>
-00087 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_set_priority(t,p) ((t)-&gt;prio = (p))</span>
-00088 <span class="preprocessor"></span>
-00089 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xntimer_active_p (xntimer_t *timer) {
-00090     <span class="keywordflow">return</span> !testbits(timer-&gt;status,XNTIMER_DEQUEUED);
-00091 }
-00092 
-00093 <span class="preprocessor">#ifdef __cplusplus</span>
-00094 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00095 <span class="preprocessor">#endif</span>
-00096 <span class="preprocessor"></span>
-00097 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga0">xntimer_init</a>(xntimer_t *timer,
-00098                   <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span> *cookie),
-00099                   <span class="keywordtype">void</span> *cookie);
-00100 
-00101 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga1">xntimer_destroy</a>(xntimer_t *timer);
+00082 <span class="preprocessor"></span><span class="preprocessor">#elif defined(CONFIG_SMP)</span>
+00083 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_sched(t)          (xnpod_sched_slot(XNTIMER_KEEPER_ID))</span>
+00084 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* !CONFIG_SMP */</span>
+00085 <span class="preprocessor">#define xntimer_sched(t)          xnpod_current_sched()</span>
+00086 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP &amp;&amp; CONFIG_RTAI_OPT_PERCPU_TIMER*/</span>
+00087 <span class="preprocessor">#define xntimer_interval(t)       ((t)-&gt;interval)</span>
+00088 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_set_cookie(t,c)   ((t)-&gt;cookie = (c))</span>
+00089 <span class="preprocessor"></span><span class="preprocessor">#define xntimer_set_priority(t,p) ((t)-&gt;prio = (p))</span>
+00090 <span class="preprocessor"></span>
+00091 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xntimer_active_p (xntimer_t *timer) {
+00092     <span class="keywordflow">return</span> !testbits(timer-&gt;status,XNTIMER_DEQUEUED);
+00093 }
+00094 
+00095 <span class="preprocessor">#ifdef __cplusplus</span>
+00096 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00097 <span class="preprocessor">#endif</span>
+00098 <span class="preprocessor"></span>
+00099 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga0">xntimer_init</a>(xntimer_t *timer,
+00100                   <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span> *cookie),
+00101                   <span class="keywordtype">void</span> *cookie);
 00102 
-00103 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga13">xntimer_do_timers</a>(<span class="keywordtype">void</span>);
+00103 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga1">xntimer_destroy</a>(xntimer_t *timer);
 00104 
-00105 <span class="keywordtype">int</span> <a class="code" href="group__timer.html#ga9">xntimer_start</a>(xntimer_t *timer,
-00106                   xnticks_t value,
-00107                   xnticks_t interval);
-00108 
-00109 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga10">xntimer_stop</a>(xntimer_t *timer);
+00105 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga13">xntimer_do_timers</a>(<span class="keywordtype">void</span>);
+00106 
+00107 <span class="keywordtype">int</span> <a class="code" href="group__timer.html#ga9">xntimer_start</a>(xntimer_t *timer,
+00108                   xnticks_t value,
+00109                   xnticks_t interval);
 00110 
-00111 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga14">xntimer_freeze</a>(<span class="keywordtype">void</span>);
+00111 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga10">xntimer_stop</a>(xntimer_t *timer);
 00112 
-00113 xnticks_t <a class="code" href="group__timer.html#ga11">xntimer_get_date</a>(xntimer_t *timer);
+00113 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga14">xntimer_freeze</a>(<span class="keywordtype">void</span>);
 00114 
-00115 xnticks_t <a class="code" href="group__timer.html#ga12">xntimer_get_timeout</a>(xntimer_t *timer);
+00115 xnticks_t <a class="code" href="group__timer.html#ga11">xntimer_get_date</a>(xntimer_t *timer);
 00116 
-00117 <span class="preprocessor">#ifdef CONFIG_SMP</span>
-00118 <span class="preprocessor"></span><span class="keywordtype">int</span> xntimer_set_sched(xntimer_t *timer, <span class="keyword">struct</span> <a class="code" href="structxnsched.html">xnsched</a> *sched);
-00119 <span class="preprocessor">#else </span><span class="comment">/* ! CONFIG_SMP */</span>
-00120 <span class="preprocessor">#define xntimer_set_sched(timer,sched)</span>
-00121 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
-00122 
-00123 <span class="preprocessor">#ifdef __cplusplus</span>
-00124 <span class="preprocessor"></span>}
-00125 <span class="preprocessor">#endif</span>
-00126 <span class="preprocessor"></span>
-00127 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
-00128 
-00129 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TIMER_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Apr 3 22:45:43 2005 for RTAI Fusion API by&nbsp;
+00117 xnticks_t <a class="code" href="group__timer.html#ga12">xntimer_get_timeout</a>(xntimer_t *timer);
+00118 
+00119 <span class="preprocessor">#if defined(CONFIG_SMP) &amp;&amp; defined(CONFIG_RTAI_OPT_PERCPU_TIMER)</span>
+00120 <span class="preprocessor"></span><span class="keywordtype">int</span> xntimer_set_sched(xntimer_t *timer, <span class="keyword">struct</span> <a class="code" href="structxnsched.html">xnsched</a> *sched);
+00121 <span class="preprocessor">#else </span><span class="comment">/* ! CONFIG_SMP || ! CONFIG_OPT_PERCPU_TIMER */</span>
+00122 <span class="preprocessor">#define xntimer_set_sched(timer,sched)</span>
+00123 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP &amp;&amp; CONFIG_OPT_PERCPU_TIMER */</span>
+00124 
+00125 <span class="preprocessor">#ifdef __cplusplus</span>
+00126 <span class="preprocessor"></span>}
+00127 <span class="preprocessor">#endif</span>
+00128 <span class="preprocessor"></span>
+00129 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00130 
+00131 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TIMER_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:01 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

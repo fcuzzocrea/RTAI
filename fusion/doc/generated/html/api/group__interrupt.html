@@ -164,11 +164,14 @@ When an interrupt occurs on the given <em>irq</em> line, any task pending on the
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of a interrupt object descriptor RTAI will use to store the object-specific data. This descriptor must always be valid while the object is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>irq</em>&nbsp;</td><td>The hardware interrupt channel associated with the interrupt object. This value is architecture-dependent.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The interrupt object creation mode. The following flag can be OR'ed into this bitmask:</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The interrupt object creation mode. The following flags can be OR'ed into this bitmask:</td></tr>
   </table>
 </dl>
 <ul>
 <li>I_AUTOENA asks RTAI to re-enable the IRQ line before awakening the interrupt server task. This flag is functionally equivalent as always returning RT_INTR_ENABLE from a kernel space interrupt handler.</li></ul>
+<p>
+<ul>
+<li>I_PROPAGATE asks RTAI to propagate the IRQ down the pipeline; in other words, the interrupt occurrence is chained to Linux after it has been processed by the RTAI task. This flag is functionally equivalent as always returning RT_INTR_CHAINED from a kernel space interrupt handler.</li></ul>
 <p>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
 <ul>
@@ -570,7 +573,7 @@ Rescheduling: always, unless an interrupt is already pending on entry.<p>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Apr 3 22:45:46 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:04 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

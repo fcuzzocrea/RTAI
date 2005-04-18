@@ -7,7 +7,7 @@
 <div class="qindex">  <form class="search" action="search.php" method="get">
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="dirs.html">Directories</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <div class="nav">
-<a class="el" href="dir_000009.html">skins</a>&nbsp;/&nbsp;<a class="el" href="dir_000010.html">rtai</a></div>
+<a class="el" href="dir_000012.html">skins</a>&nbsp;/&nbsp;<a class="el" href="dir_000013.html">rtai</a></div>
 <h1>module.c File Reference</h1><hr><a name="_details"></a><h2>Detailed Description</h2>
 This file is part of the RTAI project. 
 <p>
@@ -20,35 +20,34 @@ You should have received a copy of the GNU General Public License along with thi
 <p>
 Include dependency graph for module.c:<p><center><img src="skins_2rtai_2module_8c__incl.png" border="0" usemap="#skins/rtai/module.c_map" alt=""></center>
 <map name="skins/rtai/module.c_map">
-<area href="pod_8h.html" shape="rect" coords="190,458,294,482" alt="">
-<area href="task_8h.html" shape="rect" coords="202,506,282,530" alt="">
-<area href="skins_2rtai_2timer_8h.html" shape="rect" coords="362,550,448,574" alt="">
-<area href="registry_8h.html" shape="rect" coords="193,8,292,32" alt="">
-<area href="sem_8h.html" shape="rect" coords="365,209,445,233" alt="">
-<area href="event_8h.html" shape="rect" coords="361,161,449,185" alt="">
-<area href="mutex_8h.html" shape="rect" coords="360,305,450,329" alt="">
-<area href="cond_8h.html" shape="rect" coords="200,360,285,384" alt="">
-<area href="skins_2rtai_2pipe_8h.html" shape="rect" coords="202,626,282,650" alt="">
-<area href="skins_2rtai_2queue_8h.html" shape="rect" coords="358,65,452,89" alt="">
-<area href="skins_2rtai_2heap_8h.html" shape="rect" coords="362,113,448,137" alt="">
-<area href="alarm_8h.html" shape="rect" coords="361,404,449,428" alt="">
-<area href="skins_2rtai_2intr_8h.html" shape="rect" coords="369,257,441,281" alt="">
-<area href="thread_8h-source.html" shape="rect" coords="345,502,465,526" alt="">
-<area href="include_2nucleus_2intr_8h-source.html" shape="rect" coords="526,305,625,329" alt="">
-<area href="include_2nucleus_2timer_8h-source.html" shape="rect" coords="520,422,632,446" alt="">
-<area href="include_2nucleus_2queue_8h-source.html" shape="rect" coords="701,344,821,368" alt="">
-<area href="include_2nucleus_2types_8h-source.html" shape="rect" coords="885,294,1000,318" alt="">
-<area href="fusion_8h-source.html" shape="rect" coords="346,598,464,622" alt="">
-<area href="include_2nucleus_2syscall_8h-source.html" shape="rect" coords="514,537,637,561" alt="">
-<area href="skins_2rtai_2types_8h.html" shape="rect" coords="532,209,620,233" alt="">
-<area href="synch_8h-source.html" shape="rect" coords="517,257,634,281" alt="">
-<area href="include_2nucleus_2pipe_8h-source.html" shape="rect" coords="522,684,629,708" alt="">
-<area href="include_2nucleus_2heap_8h-source.html" shape="rect" coords="520,113,632,137" alt="">
+<area href="pod_8h.html" shape="rect" coords="190,127,294,151" alt="">
+<area href="task_8h.html" shape="rect" coords="202,175,282,199" alt="">
+<area href="skins_2rtai_2timer_8h.html" shape="rect" coords="362,227,447,251" alt="">
+<area href="registry_8h.html" shape="rect" coords="193,325,291,349" alt="">
+<area href="sem_8h.html" shape="rect" coords="365,425,445,449" alt="">
+<area href="event_8h.html" shape="rect" coords="361,473,449,497" alt="">
+<area href="mutex_8h.html" shape="rect" coords="359,521,450,545" alt="">
+<area href="cond_8h.html" shape="rect" coords="199,575,285,599" alt="">
+<area href="skins_2rtai_2pipe_8h.html" shape="rect" coords="202,725,282,749" alt="">
+<area href="skins_2rtai_2queue_8h.html" shape="rect" coords="358,667,451,691" alt="">
+<area href="skins_2rtai_2heap_8h.html" shape="rect" coords="362,619,447,643" alt="">
+<area href="alarm_8h.html" shape="rect" coords="361,377,449,401" alt="">
+<area href="skins_2rtai_2intr_8h.html" shape="rect" coords="369,278,441,302" alt="">
+<area href="thread_8h-source.html" shape="rect" coords="345,178,465,202" alt="">
+<area href="include_2nucleus_2intr_8h-source.html" shape="rect" coords="541,278,639,302" alt="">
+<area href="include_2nucleus_2timer_8h-source.html" shape="rect" coords="534,351,646,375" alt="">
+<area href="include_2nucleus_2queue_8h-source.html" shape="rect" coords="714,497,834,521" alt="">
+<area href="include_2nucleus_2types_8h-source.html" shape="rect" coords="882,425,997,449" alt="">
+<area href="fusion_8h-source.html" shape="rect" coords="346,79,463,103" alt="">
+<area href="skins_2rtai_2types_8h.html" shape="rect" coords="546,425,634,449" alt="">
+<area href="synch_8h-source.html" shape="rect" coords="531,497,649,521" alt="">
+<area href="include_2nucleus_2pipe_8h-source.html" shape="rect" coords="537,694,643,718" alt="">
+<area href="include_2nucleus_2heap_8h-source.html" shape="rect" coords="534,619,646,643" alt="">
 </map>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Apr 3 22:45:43 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:01 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

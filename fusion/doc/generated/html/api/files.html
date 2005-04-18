@@ -7,10 +7,11 @@
 <div class="qindex">  <form class="search" action="search.php" method="get">
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="dirs.html">Directories</a> | <a class="qindexHL" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <h1>RTAI Fusion API File List</h1>Here is a list of all documented files with brief descriptions:<table>
-  <tr><td class="indexkey">arch/i386/hal/<a class="el" href="i386_2hal_2hal_8c.html">hal.c</a></td><td class="indexvalue">Adeos-based Real-Time Abstraction Layer for x86 </td></tr>
+  <tr><td class="indexkey">arch/generic/hal/<a class="el" href="generic_8c.html">generic.c</a></td><td class="indexvalue">Common Real-Time Abstraction Layer </td></tr>
   <tr><td class="indexkey">arch/i386/hal/<a class="el" href="smi_8c.html">smi.c</a></td><td class="indexvalue">SMI workaround for x86 </td></tr>
   <tr><td class="indexkey">arch/i386/hal/<a class="el" href="smi_8h.html">smi.h</a> <a href="smi_8h-source.html">[code]</a></td><td class="indexvalue">SMI workaround for x86 </td></tr>
-  <tr><td class="indexkey">arch/ppc/hal/<a class="el" href="ppc_2hal_2hal_8c.html">hal.c</a></td><td class="indexvalue">Adeos-based Real-Time Abstraction Layer for PPC </td></tr>
+  <tr><td class="indexkey">arch/i386/hal/<a class="el" href="x86_8c.html">x86.c</a></td><td class="indexvalue">Adeos-based Real-Time Abstraction Layer for x86 </td></tr>
+  <tr><td class="indexkey">arch/ppc/hal/<a class="el" href="ppc_8c.html">ppc.c</a></td><td class="indexvalue">Adeos-based Real-Time Abstraction Layer for PPC </td></tr>
   <tr><td class="indexkey">include/nucleus/<b>fusion.h</b> <a href="fusion_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>heap.h</b> <a href="include_2nucleus_2heap_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>intr.h</b> <a href="include_2nucleus_2intr_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
@@ -21,22 +22,24 @@
   <tr><td class="indexkey">include/nucleus/<b>queue.h</b> <a href="include_2nucleus_2queue_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>shadow.h</b> <a href="shadow_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>synch.h</b> <a href="synch_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
-  <tr><td class="indexkey">include/nucleus/<b>syscall.h</b> <a href="include_2nucleus_2syscall_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>system.h</b> <a href="system_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>thread.h</b> <a href="thread_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>timer.h</b> <a href="include_2nucleus_2timer_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>types.h</b> <a href="include_2nucleus_2types_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>version.h</b> <a href="version_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/<b>xenomai.h</b> <a href="xenomai_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
+  <tr><td class="indexkey">include/nucleus/asm-generic/<a class="el" href="asm-generic_2hal_8h.html">hal.h</a> <a href="asm-generic_2hal_8h-source.html">[code]</a></td><td class="indexvalue">Generic Real-Time HAL </td></tr>
+  <tr><td class="indexkey">include/nucleus/asm-generic/<b>syscall.h</b> <a href="include_2nucleus_2asm-generic_2syscall_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
+  <tr><td class="indexkey">include/nucleus/asm-generic/<b>system.h</b> <a href="asm-generic_2system_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/asm-i386/<b>atomic.h</b> <a href="asm-i386_2atomic_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/asm-i386/<b>calibration.h</b> <a href="asm-i386_2calibration_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
-  <tr><td class="indexkey">include/nucleus/asm-i386/<a class="el" href="asm-i386_2hal_8h.html">hal.h</a> <a href="asm-i386_2hal_8h-source.html">[code]</a></td><td class="indexvalue">Adeos-based Real-Time Hardware Abstraction Layer for x86 </td></tr>
+  <tr><td class="indexkey">include/nucleus/asm-i386/<a class="el" href="asm-i386_2hal_8h.html">hal.h</a> <a href="asm-i386_2hal_8h-source.html">[code]</a></td><td class="indexvalue">Real-Time Hardware Abstraction Layer for x86 </td></tr>
   <tr><td class="indexkey">include/nucleus/asm-i386/<b>syscall.h</b> <a href="include_2nucleus_2asm-i386_2syscall_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/asm-i386/<b>system.h</b> <a href="asm-i386_2system_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/asm-i386/<a class="el" href="asm-i386_2uart_8h.html">uart.h</a> <a href="asm-i386_2uart_8h-source.html">[code]</a></td><td class="indexvalue">This file is part of the RTAI project </td></tr>
   <tr><td class="indexkey">include/nucleus/asm-ppc/<b>atomic.h</b> <a href="asm-ppc_2atomic_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/asm-ppc/<b>calibration.h</b> <a href="asm-ppc_2calibration_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
-  <tr><td class="indexkey">include/nucleus/asm-ppc/<a class="el" href="asm-ppc_2hal_8h.html">hal.h</a> <a href="asm-ppc_2hal_8h-source.html">[code]</a></td><td class="indexvalue">Adeos-based Real-Time Hardware Abstraction Layer for PPC </td></tr>
+  <tr><td class="indexkey">include/nucleus/asm-ppc/<a class="el" href="asm-ppc_2hal_8h.html">hal.h</a> <a href="asm-ppc_2hal_8h-source.html">[code]</a></td><td class="indexvalue">Real-Time Hardware Abstraction Layer for PowerPC </td></tr>
   <tr><td class="indexkey">include/nucleus/asm-ppc/<b>syscall.h</b> <a href="include_2nucleus_2asm-ppc_2syscall_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/asm-ppc/<b>system.h</b> <a href="asm-ppc_2system_8h-source.html">[code]</a></td><td class="indexvalue"></td></tr>
   <tr><td class="indexkey">include/nucleus/asm-ppc/<a class="el" href="asm-ppc_2uart_8h.html">uart.h</a> <a href="asm-ppc_2uart_8h-source.html">[code]</a></td><td class="indexvalue">This file is part of the RTAI project </td></tr>
@@ -77,7 +80,7 @@
   <tr><td class="indexkey">skins/rtai/<a class="el" href="skins_2rtai_2timer_8h.html">timer.h</a> <a href="skins_2rtai_2timer_8h-source.html">[code]</a></td><td class="indexvalue">This file is part of the RTAI project </td></tr>
   <tr><td class="indexkey">skins/rtai/<a class="el" href="skins_2rtai_2types_8h.html">types.h</a> <a href="skins_2rtai_2types_8h-source.html">[code]</a></td><td class="indexvalue">This file is part of the RTAI project </td></tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Apr 3 22:45:42 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:01 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

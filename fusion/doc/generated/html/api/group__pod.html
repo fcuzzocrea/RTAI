@@ -1342,7 +1342,7 @@ Starts a (newly) created thread, scheduling it for the first time. This call rel
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>imask</em>&nbsp;</td><td>The interrupt mask that should be asserted when the thread starts. The processor interrupt state will be set to the given value when the thread starts running. The interpretation of this value might be different across real-time layers, but a non-zero value should always mark an interrupt masking in effect (e.g. cli()). Conversely, a zero value should always mark a fully preemptible state regarding interrupts (i.e. sti()).</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>affinity</em>&nbsp;</td><td>The processor affinity of this thread. Passing XNPOD_ALL_CPUS means "any cpu".</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>affinity</em>&nbsp;</td><td>The processor affinity of this thread. Passing XNPOD_ALL_CPUS or an empty affinity set means "any cpu".</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>entry</em>&nbsp;</td><td>The address of the thread's body routine. In other words, it is the thread entry point.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>cookie</em>&nbsp;</td><td>A user-defined opaque cookie the nucleus will pass to the emerging thread as the sole argument of its entry point.</td></tr>
   </table>
@@ -1399,7 +1399,7 @@ Rescheduling: possible.     </td>
 <p>
 Start the system timer. 
 <p>
-The nucleus needs a time source to provide the time-related services to the upper interfaces. <a class="el" href="group__pod.html#ga23">xnpod_start_timer()</a> tunes the timer hardware so that a user-defined routine is called according to a given frequency. On architectures that provide a oneshot-programmable time source, the system timer can operate either in aperiodic or periodic mode. Using the aperiodic mode still allows to run periodic nucleus timers over it: the underlying hardware will simply be reprogrammed after each tick by the timer manager using the appropriate interval value (see <a class="el" href="group__timer.html#ga9">xntimer_start()</a>).<p>
+The nucleus needs a time source to provide the time-related services to the upper interfaces. <a class="el" href="group__pod.html#ga23">xnpod_start_timer()</a> tunes the timer hardware so that a user-defined routine is called according to a given frequency. On architectures that provide a oneshot-programmable time source, the system timer can operate either in aperiodic or periodic mode. Using the aperiodic mode still allows to run periodic timings over it: the underlying hardware will simply be reprogrammed after each tick by the timer manager using the appropriate interval value (see <a class="el" href="group__timer.html#ga9">xntimer_start()</a>).<p>
 The time interval that elapses between two consecutive invocations of the handler is called a tick.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
@@ -1705,7 +1705,7 @@ This internal routine is called on behalf of a (re)starting thread's prologue be
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Apr 3 22:45:44 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:03 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

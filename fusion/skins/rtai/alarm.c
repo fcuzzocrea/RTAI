@@ -65,9 +65,9 @@ static void __alarm_trampoline (void *cookie)
                            void *cookie)
  * @brief Create an alarm object.
  *
- * Create an object calling an alarm routine at specified
- * times. Alarms can be made periodic or aperiodic, depending on the
- * reload interval value passed to rt_alarm_start() for them.
+ * Create an object triggering an alarm routine at a specified time in
+ * the future. Alarms can be made periodic or oneshot, depending on
+ * the reload interval value passed to rt_alarm_start() for them.
  *
  * @param alarm The address of an alarm descriptor RTAI will use to
  * store the alarm-related data.  This descriptor must always be valid
@@ -80,7 +80,7 @@ static void __alarm_trampoline (void *cookie)
  * enabled for indexing the created alarm.
  *
  * @param handler The address of the routine to call when the alarm
- * expiries. This routine will be passed the address of the current
+ * expires. This routine will be passed the address of the current
  * alarm descriptor, and the opaque @a cookie.
  *
  * @param cookie A user-defined opaque cookie the real-time kernel
@@ -221,9 +221,9 @@ int rt_alarm_delete (RT_ALARM *alarm)
  * @brief Start an alarm.
  *
  * Program the trigger date of an alarm object. An alarm can be either
- * periodic or single-shot, depending on the reload value passed to
- * this routine. The given alarm must have been previously created by
- * a call to rt_alarm_create().
+ * periodic or oneshot, depending on the reload value passed to this
+ * routine. The given alarm must have been previously created by a
+ * call to rt_alarm_create().
  *
  * Alarm handlers are always called on behalf of RTAI's internal timer
  * tick handler, so the RTAI services which can be called from such

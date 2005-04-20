@@ -29,16 +29,18 @@
 
 extern devStr inpDevStr[];
 extern devStr outDevStr[];
+extern int pinp_cnt;
+extern int pout_cnt;
 
-void inp_rtai_sem_init(int port,char * sName,char * IP)
+int inp_rtai_sem_init(char * sName,char * IP)
 {
   long Target_Node;
   long Target_Port=0;
   SEM * sem;
   struct sockaddr_in addr;
 
-  int id=port-1;
-  strcpy(inpDevStr[id].IOName,"rtai_sem inp");
+  int port=pinp_cnt++;
+  strcpy(inpDevStr[port].IOName,"rtai_sem inp");
 
   if(!strcmp(IP,"0")) {
     Target_Node = 0;
@@ -53,18 +55,19 @@ void inp_rtai_sem_init(int port,char * sName,char * IP)
 
   sem = RT_typed_named_sem_init(Target_Node,Target_Port,sName, 0, CNT_SEM);
 
-  inpDevStr[port-1].ptr1 = (void *) sem;
-  inpDevStr[id].l1 = Target_Node;
-  inpDevStr[id].l2 = Target_Port;
+  inpDevStr[port].ptr1 = (void *) sem;
+  inpDevStr[port].l1 = Target_Node;
+  inpDevStr[port].l2 = Target_Port;
+
+  return(port);
 }
 
 void inp_rtai_sem_input(int port, double * y, double t)
 {
-  int ret,id;
+  int ret;
 
-  id=port-1;
-  SEM *sem = (SEM *) inpDevStr[id].ptr1;
-  ret = RT_sem_wait(inpDevStr[id].l1, inpDevStr[id].l2,sem);
+  SEM *sem = (SEM *) inpDevStr[port].ptr1;
+  ret = RT_sem_wait(inpDevStr[port].l1, inpDevStr[port].l2,sem);
   y[0]=0.0;
 }
 
@@ -74,23 +77,22 @@ void inp_rtai_sem_update(void)
 
 void inp_rtai_sem_end(int port)
 {
-  int id=port-1;
-  SEM *sem = (SEM *) inpDevStr[id].ptr1;
-  RT_named_sem_delete(inpDevStr[id].l1, inpDevStr[id].l2,sem);
-  if(inpDevStr[id].l1){
-    rt_release_port(inpDevStr[id].l1, inpDevStr[id].l2);
+  SEM *sem = (SEM *) inpDevStr[port].ptr1;
+  RT_named_sem_delete(inpDevStr[port].l1, inpDevStr[port].l2,sem);
+  if(inpDevStr[port].l1){
+    rt_release_port(inpDevStr[port].l1, inpDevStr[port].l2);
   }
 }
 
-void out_rtai_sem_init(int port,char * sName,char * IP)
+int out_rtai_sem_init(char * sName,char * IP)
 {
   long Target_Node;
   long Target_Port=0;
   SEM * sem;
   struct sockaddr_in addr;
 
-  int id=port-1;
-  strcpy(outDevStr[id].IOName,"rtai_sem out");
+  int port=pout_cnt++;
+  strcpy(outDevStr[port].IOName,"rtai_sem out");
 
   if(!strcmp(IP,"0")) {
     Target_Node = 0;
@@ -105,28 +107,27 @@ void out_rtai_sem_init(int port,char * sName,char * IP)
 
   sem = RT_typed_named_sem_init(Target_Node,Target_Port,sName, 0, CNT_SEM);
 
-  outDevStr[port-1].ptr1 = (void *) sem;
-  outDevStr[id].l1 = Target_Node;
-  outDevStr[id].l2 = Target_Port;
+  outDevStr[port].ptr1 = (void *) sem;
+  outDevStr[port].l1 = Target_Node;
+  outDevStr[port].l2 = Target_Port;
+
+  return(port);
 }
 
 void out_rtai_sem_output(int port, double * u,double t)
 {
   int ret; 
-  int id=port-1;
-  SEM *sem = (SEM *) outDevStr[id].ptr1;
-  if(*u > 0.0) ret = RT_sem_signal(outDevStr[id].l1, outDevStr[id].l2,sem);
+  SEM *sem = (SEM *) outDevStr[port].ptr1;
+  if(*u > 0.0) ret = RT_sem_signal(outDevStr[port].l1, outDevStr[port].l2,sem);
 }
 
 void out_rtai_sem_end(int port)
 {
-  int id=port-1;
-
-  SEM *sem = (SEM *) outDevStr[id].ptr1;
-  RT_named_sem_delete(outDevStr[id].l1, outDevStr[id].l2,sem);
-  printf("%s closed\n",outDevStr[port-1].IOName);
-  if(outDevStr[id].l1){
-    rt_release_port(outDevStr[id].l1, outDevStr[id].l2);
+  SEM *sem = (SEM *) outDevStr[port].ptr1;
+  RT_named_sem_delete(outDevStr[port].l1, outDevStr[port].l2,sem);
+  printf("%s closed\n",outDevStr[port].IOName);
+  if(outDevStr[port].l1){
+    rt_release_port(outDevStr[port].l1, outDevStr[port].l2);
   }
 }
 

@@ -34,28 +34,28 @@
 #define INDEX_DETECT 0x000000
 
 extern devStr inpDevStr[];
-extern devStr outDevStr[];
+extern int pinp_cnt;
 
-void inp_cioquad4_init(int port,int modul ,char * Addr,int reso, int prec, int Rot, int Reset)
+int inp_cioquad4_init(int modul ,char * Addr,int reso, int prec, int Rot, int Reset)
 {
   int   mode;
   int bAdrG;
   int bAdr;
-  int id=port-1;
+  int port=pinp_cnt++;
 
-  strcpy(inpDevStr[id].IOName,"cioquad4");
+  strcpy(inpDevStr[port].IOName,"cioquad4");
   sscanf(Addr,"%x",& bAdrG);
-  inpDevStr[id].dParam[0]=(double) reso;
-  inpDevStr[id].dParam[1]=(double) prec;
-  inpDevStr[id].dParam[2]=(double) Rot;
-  inpDevStr[id].dParam[3]=(double) Reset;
+  inpDevStr[port].dParam[0]=(double) reso;
+  inpDevStr[port].dParam[1]=(double) prec;
+  inpDevStr[port].dParam[2]=(double) Rot;
+  inpDevStr[port].dParam[3]=(double) Reset;
 
-  inpDevStr[id].i1=0;
+  inpDevStr[port].i1=0;
 
   bAdr = bAdrG + (modul-1) * 2;
-  inpDevStr[id].nch=bAdr;
+  inpDevStr[port].nch=bAdr;
 
-  mode = (int) inpDevStr[id].dParam[1];
+  mode = (int) inpDevStr[port].dParam[1];
 
   switch(mode){
   case 1:
@@ -96,19 +96,20 @@ void inp_cioquad4_init(int port,int modul ,char * Addr,int reso, int prec, int R
   outb(RESET_DETECT & 0x0000ff,bAdr);
   outb((RESET_DETECT >> 8) & 0x0000ff,bAdr);
   outb((RESET_DETECT >> 16) & 0x0000ff,bAdr);
+
+  return(port);
 }
 
 void inp_cioquad4_input(int port, double * y, double t)
 {
   int       enc_flags, cntrout;
   int       tmpout;
-  int       id = port-1;
-  int       tmpres = (int) inpDevStr[id].dParam[0];
-  int       bAdr  = inpDevStr[id].nch;
-  int       quad_mode = (int) inpDevStr[id].dParam[1];
-  int       firstindex = inpDevStr[id].i1;
-  double    rotation = inpDevStr[id].dParam[2];
-  int       counter  = (int) inpDevStr[id].dParam[3];
+  int       tmpres = (int) inpDevStr[port].dParam[0];
+  int       bAdr  = inpDevStr[port].nch;
+  int       quad_mode = (int) inpDevStr[port].dParam[1];
+  int       firstindex = inpDevStr[port].i1;
+  double    rotation = inpDevStr[port].dParam[2];
+  int       counter  = (int) inpDevStr[port].dParam[3];
  
   enc_flags = inb(bAdr + 0x01);  // READ FLAGS
 
@@ -123,7 +124,7 @@ void inp_cioquad4_input(int port, double * y, double t)
 
   if ((enc_flags & 0x03) != 0x00){
     firstindex=0;
-    inpDevStr[id].i1=0;
+    inpDevStr[port].i1=0;
     outb(IOR | 0x00,bAdr + 0x01); // DISABLE COUNTER
   }
   
@@ -131,7 +132,7 @@ void inp_cioquad4_input(int port, double * y, double t)
     //      if (enc_flags & 0x04){
     if(abs(tmpout-INDEX_DETECT)>(2*tmpres*quad_mode)){
       firstindex=1;
-      inpDevStr[id].i1=1;
+      inpDevStr[port].i1=1;
          
       if(counter == 2) outb(IOR | 0x01,bAdr + 0x01); // ENABLE AB
       // LOAD CNTR input
@@ -155,7 +156,7 @@ void inp_cioquad4_update(void)
 
 void inp_cioquad4_end(int port)
 {
-  printf("%s closed\n",inpDevStr[port-1].IOName);
+  printf("%s closed\n",inpDevStr[port].IOName);
 }
 
 

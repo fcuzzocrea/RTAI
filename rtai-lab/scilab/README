@@ -1,19 +1,25 @@
+
+=============================================================================================
+IMPORTANT: Scicos scheme created with a earlier versin of the Code generator (until RTAI-3.2)
+should be recreated! There is no possibility to update old scheme to the new block macros!!!! 
+=============================================================================================
+
+
 This directory contains the support for modifing the Scilab/Scicos code 
 generation, so that it can be used within RTAI user space soft/hard real time
 and monitered with RTAI-Lab.
 
-First of all you have to install RTAI-Lab: please follow the instructions contained in 
+First of all RTAI-Lab should be installed: please follow the instructions contained in 
 the files lab/README and lab/INSTALL.
 
-Now you have to download and install the full source Scilab-3.0 release 
-from "www.scilab.org", it contains Scicos already.
+The second step involves the installation of Scilab-3.0. Please download it from www.scilab.org. It already contains Scicos.
 
 Follow these steps to properly install all the Scilab/Scicos add-ons for RTAI-Lab:
 
 1) become superuser
 2) go in the "macros" directory found here
 3) modify in the file "Makefile" the line 
-	"SCILAB_DIR = /usr/lib/scilab"
+	"SCILAB_DIR = /usr/local/scilab-3.0"
    to fit your SCILAB installation.
  
 4) run "make install"
@@ -32,14 +38,14 @@ new RTAI-Lib.cosf library with the RTAI specific blocks to scicos.
 The RTAICodeGen_.sci routines call some rtai application during the code generation. In order
 to use these applications 
 
-    YOU HAVE TO ADD THE /USR/REALTIME/BIN (or equivalent) DIRECTORY TO THE SYSTEM PATH!!!!!
+    PLEASE CHECK THAT THE /USR/REALTIME/BIN (or equivalent) DIRECTORY TO THE SYSTEM PATH!!!!!
 
-At this point you are ready to generate code for RTAI, using the new menu 
+At this point code for RTAI can be generated, using the new menu 
 "RTAI->RTAICodeGen" in the scicos window.
 
-Start the example "test1.cos" to check if your installation is complete:
+Start the example "test.cos" to check if the installation is complete:
 
-1) Copy "test1.cos" to a directory (you need write permissions!)
+1) Copy "test.cos" to a directory (you need write permissions!)
 2) Open a shell
 3) Go to this directory 
 4) Open scilab running "scilab"
@@ -47,14 +53,14 @@ Start the example "test1.cos" to check if your installation is complete:
 6) Start "RTAI->Code Gen" in the scicos window and give "OK" on the first
    dialog box
 
-If all is OK you see the "link" command as output on the scilab window
+If all is OK the "link" command appears as output in the scilab window
 
-Now you can star the realtime standalone application on the shell:
+Now the realtime standalone application can be started on a shell:
 
 1) Load the RTAI needed modules (rtai_hal, rtai_lxrt, rtai_fifos, rtai_sem,
                                  rtai_mbx, rtai_msg, rtai_netrpc.o ThisNode="127.0.0.1")
-2) go to the directory "test1"
-3) start the realtime application using "./test1 -v"
+2) go to the directory "test"
+3) start the realtime application using "./test -v"
 4) open a new shell
 5) start the "xrtailab" application, click on connect, open the scopes, the meter and the led
    using the manager windows
@@ -64,14 +70,12 @@ Now you can star the realtime standalone application on the shell:
 Possible known troubles
 =======================
 
-- The Code Generation crashes and on the scilab window you see a message such "gen_io not found":
-  this happens normally when "/usr/realtime/bin" is not added to the PATH environment variable;
-  check with "echo $PATH" if it is setted correcly.
+- If the "/usr/realtime/bin" directory is not in the PATH the code generator is not able to
+  create the standalone executable.Check with "echo $PATH" if it is ok.
 
-You can allways compile the generated code directly in the "test1" directory using
-   make -f test1_Makefile test1
-
-In this case you get more informations about errors by compiling the generated code.
+- Under the directory "test_rtai" the generated code can be compiled by hand using 
+  "make -f test_Makefile ../test. This allows to find better the kind of error by compilation
+  and link.
 
 Sensors and actuators library
 =============================

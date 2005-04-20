@@ -15,17 +15,15 @@ case 'set' then
   x=arg1
   model=arg1.model;graphics=arg1.graphics;
   label=graphics.exprs;
-  oldlb=label(1)
   while %t do
-    [ok,port,A,frq,phase,bias,delay,lab]=..
+    [ok,A,frq,phase,bias,delay,lab]=..
         getvalue('Set RTAI-sinus block parameters',..
-        ['Port nr';
-	'Amplitude';
+        ['Amplitude';
 	'Frequency';
         'Phase';
 	'Bias';
 	'Delay'],..
-         list('vec',1,'vec',1,'vec',1,'vec',1,'vec',1','vec',1),label(1))
+         list('vec',1,'vec',1,'vec',1,'vec',1','vec',1),label(1))
 
     if ~ok then break,end
     label(1)=lab
@@ -42,14 +40,9 @@ case 'set' then
     dept=%f;
     dep_ut=[depu dept];
 
-    funam='i_sinus_' + string(port);
+    funam='i_sinus_' + string(%kk);
 
-//    tt=label(2);
-//    if find(oldlb <> label(1)) <> [] then
-      tt=[]
-//    end
-
-    [ok,tt]=getCode(funam,tt)
+    [ok,tt]=getCode(funam)
     if ~ok then break,end
     [model,graphics,ok]=check_io(model,graphics,i,o,ci,co)
     if ok then
@@ -73,7 +66,7 @@ case 'set' then
     end
   end
 case 'define' then
-  port=1;A=1;frq=1;phase=0;bias=0;delay=0;
+  A=1;frq=1;phase=0;bias=0;delay=0;
   rt_par=[A,frq,phase,bias,delay];
   rpar=rt_par(:);
   model=scicos_model()
@@ -91,18 +84,15 @@ case 'define' then
   model.dep_ut=[%t %f]
   model.nzcross=0
 
-  label=list([sci2exp(port), sci2exp(A), sci2exp(frq), sci2exp(phase), sci2exp(bias), sci2exp(delay)],[])
+  label=list([sci2exp(A), sci2exp(frq), sci2exp(phase), sci2exp(bias), sci2exp(delay)],[])
 
   gr_i=['xstringb(orig(1),orig(2),''Sine'',sz(1),sz(2),''fill'');']
-  x=standard_define([2 2],model,label,gr_i)
+  x=standard_define([3 2],model,label,gr_i)
 
 end
 endfunction
 
-function [ok,tt]=getCode(funam,tt)
-//
-if tt==[] then
-  
+function [ok,tt]=getCode(funam)
   textmp=[
 	  '#ifndef MODEL'
 	  '#include <math.h>';
@@ -112,7 +102,6 @@ if tt==[] then
 	  '';
 	  'void '+funam+'(scicos_block *block,int flag)';
 	 ];
-  ttext=[];
   textmp($+1)='{'
   textmp($+1)='  double w,pi=3.1415927;'
   textmp($+1)='  double t = get_scicos_time();'
@@ -134,20 +123,6 @@ if tt==[] then
   textmp($+1)='}'
   textmp=[textmp;' '];
 
-else
-  textmp=tt;
-end
-
-while 1==1
-  [txt]=x_dialog(['Function definition in C';
-		  'Here is a skeleton of the functions which you should edit'],..
-		 textmp);
-  
-  if txt<>[] then
-    tt=txt
-    textmp=txt;
-    break;
-  end
-end
-
+  tt=textmp;
+  ok = %t;
 endfunction

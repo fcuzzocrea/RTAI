@@ -26,18 +26,22 @@
 
 extern devStr inpDevStr[];
 extern devStr outDevStr[];
+extern int pinp_cnt;
+extern int pout_cnt;
 
-void inp_rtai_fifo_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5)
+int inp_rtai_fifo_init(int nch,char * sName,char * sParam,double p1,
+		       double p2, double p3, double p4, double p5)
 {
-    int id=port-1;
-    inpDevStr[id].nch=nch;
-    strcpy(inpDevStr[id].IOName,"rtai_fifo inp");
+  int port=pinp_cnt++;
+  inpDevStr[port].nch=nch;
+  strcpy(inpDevStr[port].IOName,"rtai_fifo inp");
+
+  return(port);
 }
 
 void inp_rtai_fifo_input(int port, double * y, double t)
 {
-/*     *y=XXXX; */
+  /*     *y=XXXX; */
 }
 
 void inp_rtai_fifo_update(void)
@@ -46,28 +50,27 @@ void inp_rtai_fifo_update(void)
 
 void inp_rtai_fifo_end(int port)
 {
-  printf("%s closed\n",inpDevStr[port-1].IOName);
+  printf("%s closed\n",inpDevStr[port].IOName);
 }
 
-void out_rtai_fifo_init(int port,int nch,char * sName,char * sParam,double p1,
-			double p2, double p3, double p4, double p5)
+int out_rtai_fifo_init(int nch, int fifon)
 {
-  int id=port-1;
-  int fifo_id;
-  outDevStr[id].nch=nch;
-  fifo_id=atoi(sName);
-  outDevStr[id].i1=fifo_id;
+  int port=pout_cnt++;
+  outDevStr[port].nch=nch;
+  outDevStr[port].i1=fifon;
 
-  strcpy(outDevStr[id].IOName,"rtai_fifo out");
+  strcpy(outDevStr[port].IOName,"rtai_fifo out");
 
-  rtf_create(fifo_id,FIFO_SIZE);
-  rtf_reset(fifo_id);
+  rtf_create(fifon,FIFO_SIZE);
+  rtf_reset(fifon);
+
+  return(port);
 }
 
 void out_rtai_fifo_output(int port, double * u,double t)
 {
-  int fifo_id=outDevStr[port-1].i1;
-  int ntraces=outDevStr[port-1].nch;
+  int fifo_id=outDevStr[port].i1;
+  int ntraces=outDevStr[port].nch;
   struct {
     float t;
     float u[ntraces];
@@ -83,8 +86,8 @@ void out_rtai_fifo_output(int port, double * u,double t)
 
 void out_rtai_fifo_end(int port)
 {
-  rtf_destroy(outDevStr[port-1].i1);
-  printf("%s closed\n",outDevStr[port-1].IOName);
+  rtf_destroy(outDevStr[port].i1);
+  printf("%s closed\n",outDevStr[port].IOName);
 }
 
 

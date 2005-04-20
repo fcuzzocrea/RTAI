@@ -41,7 +41,7 @@
 #include <devstruct.h>
 #include <devices.h>
 
-#define RTAILAB_VERSION   "3.1.1"
+#define RTAILAB_VERSION   "3.2.1"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -116,6 +116,8 @@ int ComediDev_DIOInUse[MAX_COMEDI_DEVICES] = {0};
 
 devStr inpDevStr[40];
 devStr outDevStr[40];
+int pinp_cnt = 0;
+int pout_cnt = 0;
 
 static void DummyWait(void) { }
 static void DummySend(void) { }

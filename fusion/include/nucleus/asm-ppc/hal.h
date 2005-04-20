@@ -1,5 +1,5 @@
 /**
- *   @ingroup hal_ppc
+ *   @ingroup hal
  *   @file
  *
  *   Real-Time Hardware Abstraction Layer for PowerPC.
@@ -32,7 +32,7 @@
  */
 
 /**
- * @addtogroup hal_ppc
+ * @addtogroup hal
  *@{*/
 
 #ifndef _RTAI_ASM_PPC_HAL_H

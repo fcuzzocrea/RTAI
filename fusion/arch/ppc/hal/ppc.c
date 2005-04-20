@@ -1,5 +1,5 @@
 /**
- *   @ingroup hal_ppc
+ *   @ingroup hal
  *   @file
  *
  *   Adeos-based Real-Time Abstraction Layer for PPC.

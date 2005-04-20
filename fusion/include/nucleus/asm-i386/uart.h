@@ -24,7 +24,7 @@
 
 #define TTYS0  { 0x3f8, 4 }
 #define TTYS1  { 0x2f8, 3 }
-#define TTYS2  { 0x3e8, 4 }
-#define TTYS3  { 0x2e8, 3 }
+#define TTYS2  { 0x3e8, 5 }
+#define TTYS3  { 0x2e8, 7 }
 
 #endif /* !_RTAI_ASM_I386_UART_H */

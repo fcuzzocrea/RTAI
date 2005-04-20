@@ -88,8 +88,8 @@ static void __pipe_flush_handler (void *cookie)
 
 static void *__pipe_alloc_handler (int bminor,
 				   size_t size,
-				   void *cookie) {
-
+				   void *cookie)
+{
     /* Allocate memory for the incoming message. */
     return xnheap_alloc(__pipe_heap,size);
 }
@@ -179,10 +179,10 @@ int rt_pipe_open (RT_PIPE *pipe,
     pipe->magic = 0;
 
     err = xnpipe_connect(minor,
-			   &__pipe_output_handler,
-			   NULL,
-			   &__pipe_alloc_handler,
-			   pipe);
+			 &__pipe_output_handler,
+			 NULL,
+			 &__pipe_alloc_handler,
+			 pipe);
 
     if (!err)
 	pipe->magic = RTAI_PIPE_MAGIC;

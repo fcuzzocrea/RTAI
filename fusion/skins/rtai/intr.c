@@ -495,7 +495,7 @@ int rt_intr_inquire (RT_INTR *intr,
  * indefinitely until an interrupt triggers. Passing TM_NONBLOCK is
  * invalid.
  *
- * @return a positive value is returned upon success, representing the
+ * @return A positive value is returned upon success, representing the
  * number of pending interrupts to process. Otherwise:
  *
  * - -ETIMEDOUT is returned if no interrupt occurred within the

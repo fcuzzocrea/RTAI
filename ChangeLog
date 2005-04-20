@@ -1,3 +1,9 @@
+2004-04-20  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/scilab/macros/RTAI/*: Scicos ports are now set automatically
+	* rtai-lab/scilab/devices/*: library files modified for port set automatically
+	* rtai-lab/scilab/example/tes.cos: Modifies with the new scicos blocks
+
 2004-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * begin new development phase, aligning to stable vulcano.

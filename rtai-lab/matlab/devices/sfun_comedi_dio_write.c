@@ -116,6 +116,7 @@ static void mdlStart(SimStruct *S)
 #ifndef MATLAB_MEX_FILE
 	void *dev;
 	int subdev;
+	int subdev_type = -1;
 	int index = (int)COMEDI_DEVICE - 1;
 	unsigned int channel = (unsigned int)COMEDI_CHANNEL;
 	int n_channels;
@@ -134,13 +135,28 @@ static void mdlStart(SimStruct *S)
 		rt_comedi_get_board_name(dev, board);
 		printf("COMEDI %s (%s) opened.\n\n", devname[index], board);
 		ComediDev[index] = dev;
-		if ((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DIO, 0)) < 0) {
-			sprintf(errMsg, "Comedi find_subdevice failed (No digital I/O)\n");
-			ssSetErrorStatus(S, errMsg);
-			printf("%s", errMsg);
-			comedi_close(dev);
-			return;
-		}
+		if ((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DO, 0)) < 0) {
+			//sprintf(errMsg, "Comedi find_subdevice failed (No digital I/O)\n");
+			//ssSetErrorStatus(S, errMsg);
+			//printf("%s", errMsg);
+			//comedi_close(dev);
+			//return;
+		}else {
+			subdev_type = COMEDI_SUBD_DO;
+			//printf("Subdevice %d type %d of (%s) opened.\n\n", subdev, subdev_type, board);
+			}
+		if(subdev == -1){
+				if ((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DIO, 0)) < 0) {
+				sprintf(errMsg, "Comedi find_subdevice failed (No digital Output)\n");
+				ssSetErrorStatus(S, errMsg);
+				printf("%s", errMsg);
+				comedi_close(dev);
+				return;
+				}else{
+				       subdev_type = COMEDI_SUBD_DIO;
+				       //printf("Subdevice %d type %d of (%s) opened.\n\n", subdev, subdev_type, board);
+				     }  
+		}  
 		if ((comedi_lock(dev, subdev)) < 0) {
 			sprintf(errMsg, "Comedi lock failed for subdevice %d\n", subdev);
 			ssSetErrorStatus(S, errMsg);
@@ -150,7 +166,10 @@ static void mdlStart(SimStruct *S)
 		}
 	} else {
 		dev = ComediDev[index];
-		subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DIO, 0);
+		if((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DO, 0)) < 0){
+		 	subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DIO, 0);
+		 	subdev_type =COMEDI_SUBD_DIO;
+		}else subdev_type =COMEDI_SUBD_DO; 
 	}
 	if ((n_channels = comedi_get_n_channels(dev, subdev)) < 0) {
 		sprintf(errMsg, "Comedi get_n_channels failed for subdev %d\n", subdev);
@@ -168,13 +187,15 @@ static void mdlStart(SimStruct *S)
 		comedi_close(dev);
 		return;
 	}
-	if ((comedi_dio_config(dev, subdev, channel, COMEDI_OUTPUT)) < 0) {
-		sprintf(errMsg, "Comedi DIO config failed for subdevice %d\n", subdev);
-		ssSetErrorStatus(S, errMsg);
-		printf("%s", errMsg);
-		comedi_unlock(dev, subdev);
-		comedi_close(dev);
-		return;
+	if(subdev_type == COMEDI_SUBD_DIO){
+		if ((comedi_dio_config(dev, subdev, channel, COMEDI_OUTPUT)) < 0) {
+			sprintf(errMsg, "Comedi DIO config failed for subdevice %d\n", subdev);
+			ssSetErrorStatus(S, errMsg);
+			printf("%s", errMsg);
+			comedi_unlock(dev, subdev);
+			comedi_close(dev);
+			return;
+		}
 	}
 	ComediDev_InUse[index]++;
 	ComediDev_DIOInUse[index]++;

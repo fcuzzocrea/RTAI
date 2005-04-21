@@ -1,3 +1,13 @@
+2005-04-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/include/ipc/msg/msg.c: backported the previous version, the
+	  new one needs some more testing.
+
+2005-04-21  Luca Pizzi  <lucapizzi@hotmail.it>
+	    Stefano Gafforelli  <Stefano.Gafforelli@tiscali.it>
+	
+	* base/arch/arm/Kconfig: added support for COMEDI on ARM.
+
 2005-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/include/asm-i386/rtai_emulate_tsc.h: fixed a mixing symbol 

@@ -1,3 +1,8 @@
+2005-04-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* sim/examples/vxworks/satch: Port Satch example over the VxWorks
+	interface.
+
 2005-04-20  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/*/Kconfig: Give better hints about setting RTAI_HW_FPU.

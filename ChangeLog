@@ -1,4 +1,10 @@
-2005-03-30  Michael Neuhauser  <mike@firmix.at>
+2005-04-22  Christian Körner <ckoerner@sysgo.com> (first suggestion)
+            Michael Neuhauser  <mike@firmix.at> (final suggestion)
+
+	* base/include/rtai_sched.h: forced a few conservative alignements
+	  in rt_task_struct.
+
+2005-04-21  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/patches/README: added note that pxa255_2.6.7-bk6-karo
 	only works in immediate mode

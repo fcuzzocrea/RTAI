@@ -1,3 +1,8 @@
+2005-03-30  Michael Neuhauser  <mike@firmix.at>
+
+	* base/arch/arm/patches/README: added note that pxa255_2.6.7-bk6-karo
+	only works in immediate mode
+
 2005-04-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/include/ipc/msg/msg.c: backported the previous version, the

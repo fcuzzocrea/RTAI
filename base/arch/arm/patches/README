@@ -26,6 +26,11 @@ pxa255_2.6.7-bk6-karo
 
     Supports Triton LP board with PXA255 CPU
 	-> http://www.karo-electronics.de/index.php?id=15&L=1
+    **********************************************
+    *** Only immediate mode RTAI is supported! ***
+    **********************************************
+    (See ../../../../README.INSTALL for an explanation of immediate/piped mode.
+    Bottom line: you have to execute "./mode-control immed" in ../../../scripts)
     Patch chain:
     	* base is vanilla Linux 2.6.7
 	    -> http://kernel.org/pub/linux/kernel/v2.6/linux-2.6.7.tar.bz2

@@ -1,5 +1,12 @@
 2005-04-22  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c (__rt_task_set_mode): Add T_PRIMARY bit to
+	switch to primary/secondary mode (depends on this bit being set
+	into setmask/clrmask).
+
+	* skins/rtai/task.c (rt_task_set_mode): Accept T_SHIELD as we
+	should.
+
 	* include/nucleus/asm-generic/syscall.h: Add conforming domain
 	exec bit, ensuring that calling shadows are switched to primary
 	mode before entering the syscall, whilst the latter is fired over

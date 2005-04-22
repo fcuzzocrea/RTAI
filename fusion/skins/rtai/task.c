@@ -1323,6 +1323,11 @@ int rt_task_notify (RT_TASK *task,
  * context switch, depending on the setting of this bit. This bit is
  * set by default upon user-space task creation.
  *
+ * - T_PRIMARY can be passed to switch the current user-space task to
+ * primary mode (setmask |= T_PRIMARY), or secondary mode (clrmask |=
+ * T_PRIMARY). Upon return from rt_task_set_mode(), the user-space
+ * task will run into the specified domain.
+ *
  * Normally, this service can only be called on behalf of a regular
  * real-time task, either running in kernel or user-space. However, as
  * a special exception, requests for setting/clearing the T_LOCK bit
@@ -1346,7 +1351,7 @@ int rt_task_notify (RT_TASK *task,
  * @return 0 is returned upon success, or:
  *
  * - -EINVAL if either @a setmask or @a clrmask specifies invalid
- * bits.
+ * bits. T_PRIMARY is invalid for kernel-based tasks.
  *
  * - -EPERM is returned if this service was not called from a
  * real-time task context.
@@ -1377,7 +1382,7 @@ int rt_task_set_mode (int clrmask,
 	    return 0;
 	}
 
-    if (((clrmask|setmask) & ~(T_LOCK|T_RRB|T_NOSIG)) != 0)
+    if (((clrmask|setmask) & ~(T_LOCK|T_RRB|T_NOSIG|T_SHIELD)) != 0)
 	return -EINVAL;
 
     if (!xnpod_primary_p())

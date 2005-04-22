@@ -497,11 +497,6 @@ AC_CONFIG_FILES([ \
      skins/rtai/GNUmakefile \
      gcic/GNUmakefile \
      scope/GNUmakefile \
-     examples/GNUmakefile \
-     examples/psos+/GNUmakefile \
-     examples/psos+/satch/GNUmakefile \
-     examples/vxworks/GNUmakefile \
-     examples/vxworks/satch/GNUmakefile \
      ])
 
 AC_OUTPUT()

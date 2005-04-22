@@ -1,7 +1,8 @@
-2005-04-21  Philippe Gerum  <rpm@xenomai.org>
+2005-04-22  Philippe Gerum  <rpm@xenomai.org>
 
-	* sim/examples/vxworks/satch: Port Satch example over the VxWorks
-	interface.
+	* skins/psos+/demos, skins/vxworks/demos: Create per-skin demo
+	directory, illustrating the use of the RTOS emulators over the UVM
+	and simulator engines.
 
 2005-04-20  Philippe Gerum  <rpm@xenomai.org>
 

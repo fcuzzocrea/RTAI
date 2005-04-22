@@ -110,7 +110,7 @@ void producer_task (u_long a0, u_long a1, u_long a2, u_long a3)
 	}
 }
 
-int __fusion_user_init (void)
+int ROOT_THREAD_INIT (void)
 
 {
     u_long err, args[4];
@@ -169,7 +169,7 @@ int __fusion_user_init (void)
     return 0;
 }
 
-void __fusion_user_exit (void)
+void ROOT_THREAD_EXIT (void)
 
 {
     t_delete(producer_tid);

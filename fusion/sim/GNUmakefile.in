@@ -240,7 +240,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = vmutils vm include adapter gcic tkimg scope nucleus skins examples
+SUBDIRS = vmutils vm include adapter gcic tkimg scope nucleus skins
 EXTRA_DIST = Kconfig doc
 all: rtai_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive

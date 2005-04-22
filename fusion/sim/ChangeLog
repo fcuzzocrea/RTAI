@@ -1,3 +1,7 @@
+2005-04-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* examples: Move example code to the new per-skin demo directory.
+
 2005-02-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* vm/thread.cc (joinClientThreads): Lower interrupt masking level

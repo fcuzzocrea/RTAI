@@ -27185,7 +27185,7 @@ fi
 subdirs="$subdirs tkimg"
 
 
-                                                                                                                                                                                                                            ac_config_files="$ac_config_files GNUmakefile vmutils/GNUmakefile vm/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile adapter/GNUmakefile skins/GNUmakefile nucleus/GNUmakefile skins/psos+/GNUmakefile skins/vxworks/GNUmakefile skins/vrtx/GNUmakefile skins/uitron/GNUmakefile skins/posix/GNUmakefile skins/posix/testsuite/GNUmakefile skins/rtai/GNUmakefile gcic/GNUmakefile scope/GNUmakefile examples/GNUmakefile examples/psos+/GNUmakefile examples/psos+/satch/GNUmakefile examples/vxworks/GNUmakefile examples/vxworks/satch/GNUmakefile"
+                                                                                                                                                                          ac_config_files="$ac_config_files GNUmakefile vmutils/GNUmakefile vm/GNUmakefile include/GNUmakefile include/nucleus/GNUmakefile adapter/GNUmakefile skins/GNUmakefile nucleus/GNUmakefile skins/psos+/GNUmakefile skins/vxworks/GNUmakefile skins/vrtx/GNUmakefile skins/uitron/GNUmakefile skins/posix/GNUmakefile skins/posix/testsuite/GNUmakefile skins/rtai/GNUmakefile gcic/GNUmakefile scope/GNUmakefile"
 
 
 cat >confcache <<\_ACEOF
@@ -27817,11 +27817,6 @@ do
   "skins/rtai/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES skins/rtai/GNUmakefile" ;;
   "gcic/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES gcic/GNUmakefile" ;;
   "scope/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES scope/GNUmakefile" ;;
-  "examples/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES examples/GNUmakefile" ;;
-  "examples/psos+/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES examples/psos+/GNUmakefile" ;;
-  "examples/psos+/satch/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES examples/psos+/satch/GNUmakefile" ;;
-  "examples/vxworks/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES examples/vxworks/GNUmakefile" ;;
-  "examples/vxworks/satch/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES examples/vxworks/satch/GNUmakefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "rtai_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS rtai_config.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

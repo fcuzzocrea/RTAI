@@ -88,7 +88,7 @@ void producer_task (int a0, int a1, int a2, int a3, int a4,
 	}
 }
 
-int __fusion_user_init (void)
+int ROOT_THREAD_INIT (void)
 
 {
     message_qid = msgQCreate(16,sizeof(char *),MSG_Q_FIFO);
@@ -109,7 +109,7 @@ int __fusion_user_init (void)
     return 0;
 }
 
-void __fusion_user_exit (void)
+void ROOT_THREAD_EXIT (void)
 
 {
     taskDelete(producer_tid);

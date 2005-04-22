@@ -1364,6 +1364,13 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	return;
 	}
 
+    if ((sysflags & __xn_exec_conforming) != 0)
+	/* If the conforming exec bit has been set, turn the exec
+	   bitmask for the syscall into the most appropriate setup for
+	   the caller, i.e. RTAI domain for shadow threads, Linux
+	   otherwise. */
+	sysflags |= (thread ? __xn_exec_histage : __xn_exec_lostage);
+
     /*
      * Here we have to dispatch the syscall execution properly,
      * depending on:

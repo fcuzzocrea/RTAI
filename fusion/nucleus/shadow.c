@@ -1473,6 +1473,9 @@ static void linux_sysentry (adevinfo_t *evinfo)
 
     sysflags = muxtable[muxid - 1].systab[muxop].flags;
 
+    if ((sysflags & __xn_exec_conforming) != 0)
+	sysflags |= (thread ? __xn_exec_histage : __xn_exec_lostage);
+
     if ((sysflags & __xn_exec_histage) != 0)
 	{
 	/* This request originates from the Linux domain and must be

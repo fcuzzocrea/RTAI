@@ -20,18 +20,13 @@
 #ifndef _RTAI_NUCLEUS_VERSION_H
 #define _RTAI_NUCLEUS_VERSION_H
 
-/*
- * RTAI/fusion version code is an hexadecimal value formatted as
- * follows:
- *
- * code = 00mamirn, where:
- * - "ma" is the major version number,
- * - "mi" is the minor version number,
- * - "rn" is the revision number.
- */
+#include <rtai_config.h>
 
-#define FUSION_VERSION_CODE  0x00000702
+#define FUSION_VERSION(maj,min,rev)  (((maj)<<16)|((min)<<8)|(rev))
 
-#define FUSION_VERSION_NAME  "New Last Jam"
+#define FUSION_VERSION_CODE  FUSION_VERSION(CONFIG_RTAI_VERSION_MAJOR, \
+					    CONFIG_RTAI_VERSION_MINOR, \
+					    CONFIG_RTAI_REVISION_LEVEL)
+#define FUSION_VERSION_NAME  "Mind Storm"
 
 #endif /* _RTAI_NUCLEUS_VERSION_H */

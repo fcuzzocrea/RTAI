@@ -110,7 +110,7 @@ void producer_task (u_long a0, u_long a1, u_long a2, u_long a3)
 	}
 }
 
-int ROOT_THREAD_INIT (void)
+int root_thread_init (void)
 
 {
     u_long err, args[4];
@@ -169,7 +169,7 @@ int ROOT_THREAD_INIT (void)
     return 0;
 }
 
-void ROOT_THREAD_EXIT (void)
+void root_thread_exit (void)
 
 {
     t_delete(producer_tid);

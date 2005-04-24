@@ -88,7 +88,7 @@ void producer_task (int a0, int a1, int a2, int a3, int a4,
 	}
 }
 
-int ROOT_THREAD_INIT (void)
+int root_thread_init (void)
 
 {
     message_qid = msgQCreate(16,sizeof(char *),MSG_Q_FIFO);
@@ -109,7 +109,7 @@ int ROOT_THREAD_INIT (void)
     return 0;
 }
 
-void ROOT_THREAD_EXIT (void)
+void root_thread_exit (void)
 
 {
     taskDelete(producer_tid);

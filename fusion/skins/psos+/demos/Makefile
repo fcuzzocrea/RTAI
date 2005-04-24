@@ -13,7 +13,7 @@ SIM_CFLAGS  := -g
 SIM_LDFLAGS := -lpsos_s
 SIM_TARGETS := satch_s
 
-# "uvm" makes all demos running over the virtual RTOS machine.
+# "uvm" makes all demos running over the UVM.
 # "sim" makes all demos running over the RTOS simulator.
 # "all" makes both.
 

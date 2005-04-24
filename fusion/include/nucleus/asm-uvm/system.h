@@ -466,7 +466,7 @@ static void *xnarch_timer_thread (void *cookie)
     err = pthread_barrier_rt();	/* Wait for start. */
 
     if (!err)
-	err = pthread_set_periodic_rt(XN_INFINITE,nstick);
+	err = pthread_set_periodic_rt(0,nstick);
 
     if (err)
 	pthread_exit((void *)err);

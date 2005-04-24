@@ -1,5 +1,8 @@
 2005-04-24  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/version.h: Add FUSION_VERSION() macro to mangle
+	a version code from a major/minor/revision triplet.
+	
 	* include/nucleus/types.h: Stop shouting, rename ROOT_THREAD_*
 	routines to lowercase versions.
 

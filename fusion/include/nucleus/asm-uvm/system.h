@@ -430,8 +430,7 @@ xnarchtcb_t *uvm_root;
 xnarchtcb_t *uvm_current;
 
 struct xnarch_tick_parms {
-    time_t sec;
-    long nsec;
+    unsigned long nstick;
     void (*tickhandler)(void);
     xncompletion_t completion;
 };
@@ -441,8 +440,8 @@ struct xnarch_tick_parms {
  * defined as follows:
  *
  * - uvm-root = prio_min(SCHED_FIFO)
- * - uvm-<user> = prio_min(SCHED_FIFO) + 1(waiting) or 2(running)
- * - uvm-timer = prio_min(SCHED_FIFO) + 3
+ * - uvm-<user> = prio_min(SCHED_FIFO) + 1
+ * - uvm-timer = prio_min(SCHED_FIFO) + 2
  */
 
 static void *xnarch_timer_thread (void *cookie)
@@ -451,28 +450,32 @@ static void *xnarch_timer_thread (void *cookie)
     struct xnarch_tick_parms *p = (struct xnarch_tick_parms *)cookie;
     void (*tickhandler)(void);
     struct sched_param param;
-    struct timespec ts;
+    unsigned long nstick;
     int err;
 
-    param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 3;
+    param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 2;
     sched_setscheduler(0,SCHED_FIFO,&param);
 
-    /* Copy the following values laid in our parent's stack before it
-       is unblocked from the completion by pthread_create_rt(). */
-    ts.tv_sec = p->sec;
-    ts.tv_nsec = p->nsec;
+    /* Copy the following values laid into our parent's stack before
+       it is unblocked from the completion by pthread_create_rt(). */
     tickhandler = p->tickhandler;
+    nstick = p->nstick;
 
     pthread_create_rt("uvm-timer",NULL,&p->completion,&uvm_timer_handle);
 
     err = pthread_barrier_rt();	/* Wait for start. */
+
+    if (!err)
+	err = pthread_set_periodic_rt(XN_INFINITE,nstick);
 
     if (err)
 	pthread_exit((void *)err);
 
     for (;;)
 	{
-	nanosleep(&ts,NULL);
+	if (pthread_wait_period_rt() == -EWOULDBLOCK) /* Timer killed? */
+	    break;
+
 	xnarch_sync_irq();
 	tickhandler();
 	}
@@ -506,8 +509,7 @@ static inline int xnarch_start_timer (unsigned long nstick,
     if (err)
 	return err;
 
-    parms.sec = nstick / 1000000000;
-    parms.nsec = nstick % 1000000000;
+    parms.nstick = nstick;
     parms.tickhandler = tickhandler;
     parms.completion.syncflag = 0;
     parms.completion.pid = -1;

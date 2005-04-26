@@ -1,3 +1,14 @@
+2005-04-27  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/sched/api.c: timing functions return an integer to indicate
+	  posssible overruns.
+        * base/include/rtai_lxrt.h, rtai_sched.h: changed declarations to
+	  reflect above changes in api.c.
+        * base/include/asm/rtai_hal.immed: added change of ADEOS domain in
+	  switching to/from Linux.
+        * base/arch/i386/patches: modified to allow triggering ADEOS virqs 
+	  in immediate mode also.
+
 2005-04-22  Christian Körner <ckoerner@sysgo.com> (first suggestion)
             Michael Neuhauser  <mike@firmix.at> (final suggestion)
 

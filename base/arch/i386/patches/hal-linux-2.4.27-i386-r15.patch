@@ -4599,7 +4599,7 @@ diff -uNrp linux-2.4.27/kernel/adeos.c linux-2.4.27-adeos/kernel/adeos.c
 +asmlinkage int __adeos_handle_event (unsigned event, void *evdata)
 +/* asmlinkage is there just in case -mregparm is used... */
 +{
-+    void *adeos_extern_irq_handler;
++    extern void *adeos_extern_irq_handler;
 +    if (adeos_extern_irq_handler) {
 +        adevinfo_t evinfo;
 +        evinfo.event = event;

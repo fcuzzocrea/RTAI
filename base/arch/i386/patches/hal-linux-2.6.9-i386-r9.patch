@@ -5353,7 +5353,7 @@ diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 +asmlinkage int __adeos_handle_event (unsigned event, void *evdata)
 +/* asmlinkage is there just in case CONFIG_REGPARM is enabled... */
 +{
-+    void *adeos_extern_irq_handler;
++    extern void *adeos_extern_irq_handler;
 +    if (adeos_extern_irq_handler) {
 +        adevinfo_t evinfo;
 +        evinfo.event = event;
@@ -5425,7 +5425,7 @@ diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 +asmlinkage int __adeos_handle_event (unsigned event, void *evdata)
 +/* asmlinkage is there just in case CONFIG_REGPARM is enabled... */
 +{
-+    void *adeos_extern_irq_handler;
++    extern void *adeos_extern_irq_handler;
 +    if (adeos_extern_irq_handler) {
 +        adevinfo_t evinfo;
 +        evinfo.event = event;

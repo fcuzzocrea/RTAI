@@ -29,7 +29,7 @@ int main(void)
 {
 	unsigned int msg;
 	MBX *mbx;
-	struct sample { long long min; long long max; int index; } samp;
+	struct sample { long long min; long long max; int index, ovrn; } samp;
 
  	if (!(task = rt_task_init(nam2num("LATCHK"), 20, 0, 0))) {
 		printf("CANNOT INIT MASTER TASK\n");
@@ -44,7 +44,7 @@ int main(void)
 	while (1) {
 		struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 		rt_mbx_receive(mbx, &samp, sizeof(samp));
-		printf("*** min: %d, max: %d average: %d  <Hit [RETURN] to stop> ***\n", (int) samp.min, (int) samp.max, samp.index);
+		printf("*** min: %d, max: %d average: %d (%d) <Hit [RETURN] to stop> ***\n", (int) samp.min, (int) samp.max, samp.index, samp.ovrn);
 		if (poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN|POLLERR|POLLHUP)) != 0)
 		    break;
 	}

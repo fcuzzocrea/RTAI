@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	FILE *procfile;
 	time_t timestamp;
 	struct tm *tm_timestamp;
-	struct sample { long long min; long long max; int index; } samp;
+	struct sample { long long min; long long max; int index, ovrn; } samp;
 
 	signal(SIGINT, endme);
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 			tm_timestamp->tm_year+1900, tm_timestamp->tm_mon+1, tm_timestamp->tm_mday,
 		 	tm_timestamp->tm_hour, tm_timestamp->tm_min, tm_timestamp->tm_sec	
 		);
-		printf("min: %8d    max: %8d    average: %8d\n", (int) samp.min, (int) samp.max, samp.index);
+		printf("min: %8d    max: %8d    average: %8d (%d)\n", (int) samp.min, (int) samp.max, samp.index, samp.ovrn);
 		fflush(stdout);
 	}
 

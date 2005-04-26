@@ -342,6 +342,7 @@ include_HEADERS = \
 		rtai_sched.h \
 		rtai_shm.h \
 		rtai_srq.h \
+		rtai_usi.h \
 		rtai_vectors.h
 
 all: all-am

@@ -352,7 +352,7 @@ switches_LDADD = \
 	../../../base/sched/liblxrt/liblxrt.la \
 	-lpthread
 
-EXTRA_DIST = runinfo
+EXTRA_DIST = runinfo switches.pthread switches.rthread
 all: all-am
 
 .SUFFIXES:

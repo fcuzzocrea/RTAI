@@ -365,7 +365,7 @@ display_LDADD = \
 	../../../base/sched/liblxrt/liblxrt.la \
 	-lpthread
 
-EXTRA_DIST = runinfo
+EXTRA_DIST = runinfo preempt.pthread preempt.rthread
 all: all-am
 
 .SUFFIXES:

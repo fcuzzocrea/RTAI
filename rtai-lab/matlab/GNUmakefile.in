@@ -320,6 +320,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 EXTRA_DIST = \
 	rtai.tlc \
+	ptinfo.tlc \
 	rtai.tmf \
 	rtmain.c \
 	setup.m \

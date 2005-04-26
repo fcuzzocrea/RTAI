@@ -676,7 +676,7 @@ int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
  * @note The task is suspended only temporarily, i.e. it simply gives
  * up control until the next time period.
  */
-void rt_task_wait_period(void)
+int rt_task_wait_period(void)
 {
 	DECLARE_RT_CURRENT;
 	long flags;
@@ -695,8 +695,11 @@ void rt_task_wait_period(void)
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		rt_global_restore_flags(flags);
+		return 0;
 	}
 	rt_global_restore_flags(flags);
+	return 1;
 }
 
 void rt_task_set_resume_end_times(RTIME resume, RTIME end)
@@ -823,7 +826,7 @@ void rt_busy_sleep(int ns)
  *	 the task goes to sleep, so the actual time spent in these
  *	 functions may be longer than the the one specified.
  */
-void rt_sleep(RTIME delay)
+int rt_sleep(RTIME delay)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -834,8 +837,11 @@ void rt_sleep(RTIME delay)
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		rt_global_restore_flags(flags);
+		return 0;
 	}
 	rt_global_restore_flags(flags);
+	return 1;
 }
 
 /**
@@ -854,7 +860,7 @@ void rt_sleep(RTIME delay)
  *	 the task goes to sleep, so the actual time spent in these
  *	 functions may be longer than the the one specified.
  */
-void rt_sleep_until(RTIME time)
+int rt_sleep_until(RTIME time)
 {
 	DECLARE_RT_CURRENT;
 	unsigned long flags;
@@ -865,8 +871,11 @@ void rt_sleep_until(RTIME time)
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		rt_global_restore_flags(flags);
+		return 0;
 	}
 	rt_global_restore_flags(flags);
+	return 1;
 }
 
 int rt_task_wakeup_sleeping(RT_TASK *task)

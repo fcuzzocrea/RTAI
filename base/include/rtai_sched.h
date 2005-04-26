@@ -316,7 +316,7 @@ int rt_set_resume_time(struct rt_task_struct *task,
 int rt_set_period(struct rt_task_struct *task,
 		  RTIME new_period);
 
-void rt_task_wait_period(void);
+int rt_task_wait_period(void);
 
 void rt_schedule(void);
 
@@ -324,9 +324,9 @@ RTIME next_period(void);
 
 void rt_busy_sleep(int nanosecs);
 
-void rt_sleep(RTIME delay);
+int rt_sleep(RTIME delay);
 
-void rt_sleep_until(RTIME time);
+int rt_sleep_until(RTIME time);
 
 int rt_task_wakeup_sleeping(struct rt_task_struct *task);
 

@@ -39,6 +39,9 @@ int main(int argc,char *argv[])
 	int fd0;
 	char nm[RTF_NAMELEN+1];
 	struct sample { long min, max, avrg, jitters[2]; } samp;
+	int n = 0;
+
+	setlinebuf(stdout);
 	
 	if ((fd0 = open(rtf_getfifobyminor(0,nm,sizeof(nm)), O_RDONLY)) < 0) {
 		fprintf(stderr, "Error opening %s\n",nm);
@@ -47,9 +50,12 @@ int main(int argc,char *argv[])
 
 	signal (SIGINT, endme);
 
+	printf("RTAI Testsuite - UP preempt (all data in nanoseconds)\n");
 	while (!end) {
+		if ((n++ % 21)==0)
+			printf("RTH|%12s|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","jit fast","jit slow");
 		read(fd0, &samp, sizeof(samp));
-		printf("* latency: min: %ld, max: %ld, average: %ld; fastjit: %ld, slowjit: %ld * (all us) *\n", samp.min/1000, samp.max/1000, samp.avrg/1000, samp.jitters[0]/1000, samp.jitters[1]/1000);
+		printf("RTD|%12ld|%12ld|%12ld|%12ld|%12ld\n", samp.min, samp.avrg, samp.max, samp.jitters[0], samp.jitters[1]);
 		fflush(stdout);
         }
 	return 0;

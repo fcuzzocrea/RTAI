@@ -1,3 +1,7 @@
+2005-04-27  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
+        * testsuite/{user,kernel}/{latency,preempt}/display.c: output is now 
+		in tabular format and output uses the same units for each test.
+		
 2005-04-27  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/sched/api.c: timing functions return an integer to indicate

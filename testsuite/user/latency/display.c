@@ -30,6 +30,10 @@ int main(void)
 	unsigned int msg;
 	MBX *mbx;
 	struct sample { long long min; long long max; int index; } samp;
+ 	long long max = 0;
+ 	int n = 0;
+
+ 	setlinebuf(stdout);
 
  	if (!(task = rt_task_init(nam2num("LATCHK"), 20, 0, 0))) {
 		printf("CANNOT INIT MASTER TASK\n");
@@ -40,11 +44,15 @@ int main(void)
 		printf("CANNOT FIND MAILBOX\n");
 		exit(1);
 	}
-
+  	
+	printf("RTAI Testsuite - LXRT latency (all data in nanoseconds)\n");
 	while (1) {
 		struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
+  		if ((n++ % 21)==0)
+  			printf("RTH|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","ovl max");
 		rt_mbx_receive(mbx, &samp, sizeof(samp));
-		printf("*** min: %d, max: %d average: %d  <Hit [RETURN] to stop> ***\n", (int) samp.min, (int) samp.max, samp.index);
+ 		if (max < samp.max) max = samp.max;
+  		printf("RTD|%12lld|%12d|%12lld|%12lld\n", samp.min, samp.index, samp.max, max);
 		if (poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN|POLLERR|POLLHUP)) != 0)
 		    break;
 	}

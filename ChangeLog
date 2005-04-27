@@ -1,3 +1,8 @@
+2005-04-27  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
+	* testsuite/{user,kernel}/{latency,preempt}/display.c: output is now 
+	in tabular format and output uses the same units for each test.
+	* testsuite/user/latency/display.c: show overall maximum latency.
+
 2004-04-20  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/*: Scicos ports are now set automatically

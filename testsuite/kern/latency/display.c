@@ -44,6 +44,9 @@ int main(int argc, char *argv[])
 	time_t timestamp;
 	struct tm *tm_timestamp;
 	struct sample { long long min; long long max; int index; } samp;
+	int n = 0;
+
+	setlinebuf(stdout);
 
 	signal(SIGINT, endme);
 
@@ -60,16 +63,20 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	printf("RTAI Testsuite - UP latency (all data in nanoseconds)\n");
 
 	while (!end) {
+		if ((n++ % 21)==0)
+			printf("RTH|%12s|%12s|%12s\n", "lat min","lat avg","lat max");
 		read(fd0, &samp, sizeof(samp));
+		printf("RTD|%12lld|%12d|%12lld\n", samp.min, samp.index, samp.max);
+		/*
 		time(&timestamp); 
 		tm_timestamp=localtime(&timestamp);
 		printf("%04d/%02d/%0d %02d:%02d:%02d   ", 
 			tm_timestamp->tm_year+1900, tm_timestamp->tm_mon+1, tm_timestamp->tm_mday,
 		 	tm_timestamp->tm_hour, tm_timestamp->tm_min, tm_timestamp->tm_sec	
-		);
-		printf("min: %8d    max: %8d    average: %8d\n", (int) samp.min, (int) samp.max, samp.index);
+		);*/
 		fflush(stdout);
 	}
 

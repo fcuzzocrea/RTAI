@@ -40,6 +40,9 @@ int main(int argc,char *argv[])
 	char nm[RTF_NAMELEN+1];
         struct pollfd pollkb;
 	struct sample { long min, max, avrg, jitters[2]; } samp;
+	int n = 0;
+
+	setlinebuf(stdout);
 	
 	pollkb.fd = 0;
 	pollkb.events = POLLIN;
@@ -48,11 +51,15 @@ int main(int argc,char *argv[])
 		exit(1);
 	}
 
+	printf("RTAI Testsuite - LXRT preempt (all data in nanoseconds)\n");
+
 	signal (SIGINT, endme);
 
 	while (!end) {
+		if ((n++ % 21)==0)
+			printf("RTH|%12s|%12s|%12s|%12s|%12s\n", "lat min","lat avg","lat max","jit fast","jit slow");
 		read(fd0, &samp, sizeof(samp));
-		printf("* latency: min: %ld, max: %ld, average: %ld; fastjit: %ld, slowjit: %ld * (all us) *\n", samp.min/1000, samp.max/1000, samp.avrg/1000, samp.jitters[0]/1000, samp.jitters[1]/1000);
+		printf("RTD|%12ld|%12ld|%12ld|%12ld|%12ld\n", samp.min, samp.avrg, samp.max, samp.jitters[0], samp.jitters[1]);
 		fflush(stdout);
 		if (poll(&pollkb, 1, 1) > 0) {
 			getchar();

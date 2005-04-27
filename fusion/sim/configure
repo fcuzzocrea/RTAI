@@ -27054,6 +27054,12 @@ fi
 
 
 
+cat >>confdefs.h <<_ACEOF
+#define CONFIG_RTAI_OPT_SYS_HEAPSZ 128
+_ACEOF
+
+
+
 cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_OPT_NATIVE_REGISTRY 1
 _ACEOF

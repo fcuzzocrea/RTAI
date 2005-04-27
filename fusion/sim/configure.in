@@ -442,6 +442,9 @@ typedef u_quad_t u_gnuquad_t;
 
 AH_BOTTOM([#endif /* !_RTAI_SIM_CONFIG_H */])
 
+dnl Nucleus limits -- set reasonable values.
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_SYS_HEAPSZ,128,[Kconfig])
+
 dnl Native skin options -- force all in.
 AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_REGISTRY,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS,1024,[Kconfig])

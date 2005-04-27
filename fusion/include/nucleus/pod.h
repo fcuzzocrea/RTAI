@@ -73,7 +73,7 @@
 
 #define XNPOD_ALL_CPUS  XNARCH_CPU_MASK_ALL
 
-#define XNPOD_HEAPSIZE  (128 * 1024)
+#define XNPOD_HEAPSIZE  (CONFIG_RTAI_OPT_SYS_HEAPSZ * 1024)
 #define XNPOD_PAGESIZE  512
 #define XNPOD_RUNPRIO   0x80000000 /* Placeholder for "stdthread priority" */
 

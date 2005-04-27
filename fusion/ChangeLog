@@ -1,3 +1,8 @@
+2005-04-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/pod.h (XNPOD_HEAPSIZE): Export this to the
+	configuration interface.
+
 2005-02-23  Jan Kiszka <kiszka@rts.uni-hannover.de>
 
 	* include/nucleus/thread.h: Make sure that spare bits are defined

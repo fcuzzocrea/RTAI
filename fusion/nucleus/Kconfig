@@ -33,6 +33,15 @@ config RTAI_OPT_PIPE_NRDEV
 	in the system. Pipe devices are named /dev/rtpN where N is a
 	device minor number ranging from 0 to RTAI_OPT_PIPE_NRDEV - 1.
 
+config RTAI_OPT_SYS_HEAPSZ
+	string "Size of the system heap (Kb)"
+	default 128
+	help
+
+	The system heap is used for various internal allocations by
+	the nucleus and the real-time skins. The size is expressed in
+	Kilobytes.
+
 config RTAI_OPT_EXPERT_PERCPU_TIMER
         bool "Per-cpu timers list"
 	depends on RTAI_OPT_EXPERT

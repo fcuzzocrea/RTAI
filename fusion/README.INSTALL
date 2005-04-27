@@ -32,7 +32,7 @@ configuration switches can be listed by running ./configure
  --enable-native-skin	Build native RTAI skin
  --enable-native-registry-slots=<val> Set maximum number of registry slots
  --enable-native-pipe	 Enable pipe support in native skin
- --enable-native-pipe-bufsz	Set size of pipe fill space
+ --enable-native-pipe-bufsz	Set the size of the pipe fill space
  --enable-native-sem	Enable semaphore support in native skin
  --enable-native-event	Enable event flag support in native skin
  --enable-native-mutex	Enable mutex support in native skin
@@ -48,6 +48,7 @@ configuration switches can be listed by running ./configure
  --enable-vrtx-skin	Build VRTX emulator
  --enable-uitron-skin	Build uITRON API skin
  --enable-user-vm	Build user-space VMs
+ --enable-nucleus-heap-size	Set the size of the system heap (Kb)
  --enable-nucleus-debug	Enable debug support in nucleus
  --enable-nucleus-watchdog	Enable nucleus watchdog support
  --enable-fpu		Enable FPU support

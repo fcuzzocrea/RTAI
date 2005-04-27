@@ -118,6 +118,9 @@
 #undef CONFIG_RTAI_OPT_PIPE_NRDEV
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_SYS_HEAPSZ
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_WATCHDOG
 
 /* Kconfig */

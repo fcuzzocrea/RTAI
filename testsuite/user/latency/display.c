@@ -52,7 +52,7 @@ int main(void)
 		struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 		rt_mbx_receive(mbx, &samp, sizeof(samp));
  		if (max < samp.max) max = samp.max;
-  		printf("RTD|%12lld|%12d|%12lld|%12lld\n", samp.min, samp.index, samp.max, max, samp.ovrn);
+  		printf("RTD|%12lld|%12d|%12lld|%12lld|%12d\n", samp.min, samp.index, samp.max, max, samp.ovrn);
 		if (poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN|POLLERR|POLLHUP)) != 0)
 		    break;
 	}

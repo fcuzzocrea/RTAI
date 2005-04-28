@@ -1,3 +1,8 @@
+2005-04-28  Alexey Zhelezov  <zhelezov@mail.desy.de>
+
+        * base/include/rtai_scb.h: fixed wrong free space calculation in
+	  rt_scb_put.
+
 2005-04-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/arch/i386/hal-*.*: made compatible back to gcc 2.95.xx.

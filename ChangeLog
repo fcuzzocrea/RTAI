@@ -8,6 +8,8 @@
         * base/arch/i386/hal-*.*: made compatible back to gcc 2.95.xx.
         * base/include/rtai_tbx.h: made compatible back to gcc 2.95.xx.
 
+2005-04-27  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
+
         * testsuite/{user,kernel}/{latency,preempt}/display.c: output is now 
 	  in tabular format and output uses the same units for each test.
 		

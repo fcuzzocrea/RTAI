@@ -2327,7 +2327,7 @@ diff -uNrp linux-2.6.9/arch/i386/kernel/adeos.c linux-2.6.9-adeos/arch/i386/kern
 +void __adeos_handle_irq (struct pt_regs regs)
 +
 +{
-+    if (adeos_extern_irq_handler) { adeos_extern_irq_handler(&regs); return; }
++    if (adeos_extern_irq_handler && regs.orig_eax < 0) { adeos_extern_irq_handler(&regs); return; } else {
 +    int m_ack = regs.orig_eax >= 0, s_ack;
 +    unsigned irq = regs.orig_eax & 0xff;
 +    struct list_head *head, *pos;
@@ -2416,7 +2416,7 @@ diff -uNrp linux-2.6.9/arch/i386/kernel/adeos.c linux-2.6.9-adeos/arch/i386/kern
 +       neighbour down the pipeline. */
 +
 +    __adeos_walk_pipeline(head,cpuid);
-+}
++} }
 +
 +/* adeos_trigger_irq() -- Push the interrupt to the pipeline entry
 +   just like if it has been actually received from a hw source. This
@@ -5361,7 +5361,7 @@ diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 +        evinfo.propagate = 0;
 +        adp_root->events[event].handler(&evinfo);
 +        return !evinfo.propagate;
-+    }
++    } else {
 +    struct list_head *pos, *npos;
 +    adomain_t *this_domain;
 +    unsigned long flags;
@@ -5418,7 +5418,7 @@ diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 + done:
 +
 +    return !propagate;
-+}
++} }
 +
 +#else /* !CONFIG_ADEOS_THREADS */
 +
@@ -5433,7 +5433,7 @@ diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 +        evinfo.propagate = 0;
 +        adp_root->events[event].handler(&evinfo);
 +        return !evinfo.propagate;
-+    }
++    } else {
 +    adomain_t *start_domain, *this_domain, *next_domain;
 +    struct list_head *pos, *npos;
 +    unsigned long flags;
@@ -5477,7 +5477,7 @@ diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 +    adeos_unlock_cpu(flags);
 +
 +    return !propagate;
-+}
++} }
 +
 +#endif /* CONFIG_ADEOS_THREADS */
 +

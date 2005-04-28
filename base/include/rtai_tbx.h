@@ -58,7 +58,7 @@ typedef struct rt_msgh {
 
 typedef struct rt_msg {
 	RT_MSGH hdr;
-	char msg[];
+	char msg[1];
 } RT_MSG;
 
 typedef struct rt_msgq {

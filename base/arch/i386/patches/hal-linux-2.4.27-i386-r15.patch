@@ -2476,7 +2476,7 @@ diff -uNrp linux-2.4.27/arch/i386/kernel/adeos.c linux-2.4.27-adeos/arch/i386/ke
 +int __adeos_handle_irq (struct pt_regs regs)
 +
 +{
-+    if (adeos_extern_irq_handler) { return adeos_extern_irq_handler(&regs); } else {
++    if (adeos_extern_irq_handler  && regs.orig_eax < 0) { return adeos_extern_irq_handler(&regs); } else {
 +    int m_ack = regs.orig_eax >= 0, s_ack;
 +    unsigned irq = regs.orig_eax & 0xff;
 +    struct list_head *head, *pos;

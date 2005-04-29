@@ -1,3 +1,8 @@
+2005-04-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc/hal/fpu.S: Fix compilation issue with
+	CONFIG_PPC601_SYNC_FIX.
+
 2005-04-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/pod.h (XNPOD_HEAPSIZE): Export this to the

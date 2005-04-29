@@ -18,6 +18,7 @@
  */
 
 #include <asm/processor.h>
+#include <asm/cputable.h>
 #include <asm/ppc_asm.h>
 #include <rtai_config.h> 
 

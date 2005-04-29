@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
 #define PERIOD 1000000
 #else
-#define PERIOD 6000
+#define PERIOD 100000
 #endif
 #define TIMER_MODE  0
 

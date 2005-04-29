@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
 #define PERIOD 1000000
 #else
-#define PERIOD 100000
+#define PERIOD 10000
 #endif
 #define TIMER_MODE  0
 
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	RTIME expected, exectime[3];
 	MBX *mbx;
 	RT_TASK *task;
-	struct sample { long long min; long long max; int index, ovrn; } samp;
+	struct sample { long long min; long long max; int index, ovrn, cnt; } samp;
 	double s;
 
  	if (!(mbx = rt_mbx_init(nam2num("LATMBX"), 20*sizeof(samp)))) {
@@ -124,9 +124,11 @@ int main(int argc, char *argv[])
 #endif
 		average = 0;
 
+		samp.cnt = 0;
 		for (skip = 0; skip < SKIP; skip++) {
 			expected += period;
 			samp.ovrn += rt_task_wait_period();
+			samp.cnt++;
 
 			if (TIMER_MODE) {
 				diff = (int) ((t = rt_get_cpu_time_ns()) - svt - PERIOD);

@@ -32,6 +32,7 @@ int main(void)
 	struct sample { long long min; long long max; int index, ovrn, cnt; } samp;
  	long long max = 0;
  	int n = 0;
+	struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 
  	setlinebuf(stdout);
 
@@ -49,7 +50,6 @@ int main(void)
 	while (1) {
   		if ((n++ % 21)==0)
   			printf("RTH|%11s|%11s|%11s|%11s|%11s|%11s\n", "lat min","lat avg","lat max","ovl max", "overruns", "freq.cntr");
-		struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 		rt_mbx_receive(mbx, &samp, sizeof(samp));
  		if (max < samp.max) max = samp.max;
   		printf("RTD|%11lld|%11d|%11lld|%11lld|%11d|%11d\n", samp.min, samp.index, samp.max, max, samp.ovrn, samp.cnt);

@@ -85,7 +85,7 @@ int period_counts;
 struct sample {
 	long long min;
 	long long max;
-	int index, ovrn;
+	int index, ovrn, cnt;
 } samp;
 double dotres;
 
@@ -168,10 +168,12 @@ fun(int thread)
 
 		average = 0;
 
+		samp.cnt = 0;
 		for (i = 0; i < loops; i++) {
 			cpu_used[hard_cpu_id()]++;
 			expected += period_counts;
 			samp.ovrn += rt_task_wait_period();
+			samp.cnt++;
 
 			if (timer_mode) {
 				diff = (int) ((t = rt_get_cpu_time_ns()) - svt - period);

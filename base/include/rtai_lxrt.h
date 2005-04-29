@@ -925,22 +925,22 @@ RTAI_PROTO(int,rt_task_make_periodic_relative_ns,(RT_TASK *task, RTIME start_del
 	return rtai_lxrt(BIDX, SIZARG, MAKE_PERIODIC_NS, &arg).i[LOW];
 }
 
-RTAI_PROTO(void,rt_task_wait_period,(void))
+RTAI_PROTO(int, rt_task_wait_period,(void))
 {
 	struct { unsigned long dummy; } arg;
-	rtai_lxrt(BIDX, SIZARG, WAIT_PERIOD, &arg);
+	return rtai_lxrt(BIDX, SIZARG, WAIT_PERIOD, &arg).i[LOW];
 }
 
-RTAI_PROTO(void,rt_sleep,(RTIME delay))
+RTAI_PROTO(int, rt_sleep,(RTIME delay))
 {
 	struct { RTIME delay; } arg = { delay };
-	rtai_lxrt(BIDX, SIZARG, SLEEP, &arg);
+	return rtai_lxrt(BIDX, SIZARG, SLEEP, &arg).i[LOW];
 }
 
-RTAI_PROTO(void,rt_sleep_until,(RTIME time))
+RTAI_PROTO(int, rt_sleep_until,(RTIME time))
 {
 	struct { RTIME time; } arg = { time };
-	rtai_lxrt(BIDX, SIZARG, SLEEP_UNTIL, &arg);
+	return rtai_lxrt(BIDX, SIZARG, SLEEP_UNTIL, &arg).i[LOW];
 }
 
 RTAI_PROTO(int,rt_is_hard_timer_running,(void))

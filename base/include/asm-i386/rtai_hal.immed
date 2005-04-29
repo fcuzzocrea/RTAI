@@ -379,6 +379,12 @@ static inline void rt_get_global_lock(void)
 
 static inline void rt_release_global_lock(void)
 {
+#if 1
+        barrier(); 
+        atomic_clear_mask((0xFFFF0001 << adeos_processor_id()), (atomic_t *)&rtai_cpu_lock);
+        cpu_relax();
+        barrier();
+#else
 	barrier();
 	rtai_cli();
 	if (test_and_clear_bit(adeos_processor_id(), &rtai_cpu_lock)) {
@@ -386,6 +392,7 @@ static inline void rt_release_global_lock(void)
 		cpu_relax();
 	}
 	barrier();
+#endif
 }
 
 /**
@@ -528,11 +535,14 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 
 int rt_printk(const char *format, ...);
 
+extern adomain_t rtai_domain;
+
 static inline void rt_switch_to_real_time(int cpuid)
 {
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].depth++) {
 		rtai_linux_context[cpuid].oldflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+		adp_cpu_current[cpuid] = &rtai_domain;
 		test_and_set_bit(cpuid, &rtai_cpu_realtime);
 	}
 }
@@ -543,6 +553,7 @@ static inline void rt_switch_to_linux(int cpuid)
 	if (rtai_linux_context[cpuid].depth) {
 		if (!--rtai_linux_context[cpuid].depth) {
 			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
+			adp_cpu_current[cpuid] = adp_root;
 			adp_root->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 		}
 		return;

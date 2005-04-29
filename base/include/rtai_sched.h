@@ -57,6 +57,8 @@ struct rt_task_struct;
 #include <linux/time.h>
 #include <linux/errno.h>
 
+#include <asm/cache.h>
+
 #define RT_TASK_MAGIC 0x9ad25f6f  // nam2num("rttask")
 
 #ifndef __cplusplus
@@ -89,7 +91,7 @@ struct rt_heap_t { void *heap, *kadr, *uadr; };
 
 typedef struct rt_task_struct {
 
-    int *stack;
+    int *stack __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
     int uses_fpu;
     int magic;
     volatile int state, running;
@@ -114,7 +116,7 @@ typedef struct rt_task_struct {
     unsigned msg;
     struct rt_queue ret_queue;
     void (*signal)(void);
-    FPU_ENV fpu_reg;
+    FPU_ENV fpu_reg __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
     struct rt_task_struct *prev;
     struct rt_task_struct *next;
     struct rt_task_struct *tprev;
@@ -159,7 +161,7 @@ typedef struct rt_task_struct {
     /* Real time heaps. */
     struct rt_heap_t heap[2];
 
-} RT_TASK __attribute__ ((__aligned__ (16)));
+} RT_TASK __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
 
 #else /* __cplusplus */
 extern "C" {
@@ -314,7 +316,7 @@ int rt_set_resume_time(struct rt_task_struct *task,
 int rt_set_period(struct rt_task_struct *task,
 		  RTIME new_period);
 
-void rt_task_wait_period(void);
+int rt_task_wait_period(void);
 
 void rt_schedule(void);
 
@@ -322,9 +324,9 @@ RTIME next_period(void);
 
 void rt_busy_sleep(int nanosecs);
 
-void rt_sleep(RTIME delay);
+int rt_sleep(RTIME delay);
 
-void rt_sleep_until(RTIME time);
+int rt_sleep_until(RTIME time);
 
 int rt_task_wakeup_sleeping(struct rt_task_struct *task);
 

@@ -225,7 +225,7 @@ RTAI_PROTO(int, rt_scb_evdrp, (void *scb, void *msg, int msg_size))
 RTAI_PROTO(int, rt_scb_put, (void *scb, void *msg, int msg_size))
 { 
 	int size = SIZE, fbyte = FBYTE, lbyte = LBYTE;
-	if (msg_size > 0 && (lbyte >= fbyte ? size - (lbyte - fbyte) : lbyte - fbyte) > msg_size) {
+	if (msg_size > 0 && (lbyte >= fbyte ? size - (lbyte - fbyte) : fbyte - lbyte) > msg_size) {
 		int tocpy;
 		if ((tocpy = size - lbyte) > msg_size) {
 			memcpy(SCB + lbyte, msg, msg_size);

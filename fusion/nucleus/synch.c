@@ -269,7 +269,7 @@ void xnsynch_renice_sleeper (xnthread_t *thread)
 }
 
 /*! 
- * \fn void xnsynch_wakeup_one_sleeper(xnsynch_t *synch);
+ * \fn xnthread_t *xnsynch_wakeup_one_sleeper(xnsynch_t *synch);
  * \brief Give the resource ownership to the next waiting thread.
  *
  * This service gives the ownership of a synchronization object to the
@@ -549,6 +549,64 @@ void xnsynch_forget_sleeper (xnthread_t *thread)
 	}
 
     xnarch_post_graph_if(synch,0,countpq(&synch->pendq) == 0);
+}
+
+/*! 
+ * \fn xnthread_t *xnsynch_forget_one_sleeper(xnsynch_t *synch);
+ * \brief Release the thread at front of the wait queue.
+ *
+ * Resumes the thread leading a wait queue without transferring the
+ * synchronization object ownership.
+ *
+ * @param synch The descriptor address of the target synchronization
+ * object.
+ *
+ * @return The descriptor address of the unblocked thread.
+ *
+ * Side-effects:
+ *
+ * - The effective priority of the current resource owner might be
+ * lowered to the next priority level required to enforce the priority
+ * inheritance protocol.
+ *
+ * - The synchronization object ownership is NOT transfered to the
+ * unblocked thread.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
+xnthread_t *xnsynch_forget_one_sleeper (xnsynch_t *synch)
+
+{
+    xnpholder_t *holder;
+    xnthread_t *thread;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    holder = getheadpq(&synch->pendq);
+
+    if (holder)
+	{
+	thread = link2thread(holder,plink);
+	/* This will end up calling xnsynch_forget_sleeper(). */
+	xnpod_resume_thread(thread,XNPEND);
+	}
+    else
+	thread = NULL;
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return thread;
 }
 
 /*! 

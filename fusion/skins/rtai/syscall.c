@@ -709,11 +709,11 @@ static int __rt_task_send (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_task_send(task,&mcb_s,&mcb_r,timeout);
 
-    if (!err && mcb_r.size > 0)
-	{
+    if (err > 0)
 	__xn_copy_to_user(curr,(void __user *)data_r,mcb_r.data,mcb_r.size);
+
+    if (__xn_reg_arg3(regs))
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mcb_r,sizeof(mcb_r));
-	}
 
     if (tmp_area && tmp_area != tmp_buf)
 	xnfree(tmp_area);
@@ -773,11 +773,10 @@ static int __rt_task_receive (struct task_struct *curr, struct pt_regs *regs)
 
     err = rt_task_receive(&mcb_r,timeout);
 
-    if (!err && mcb_r.size > 0)
-	{
+    if (err > 0 && mcb_r.size > 0)
 	__xn_copy_to_user(curr,(void __user *)data_r,mcb_r.data,mcb_r.size);
-	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mcb_r,sizeof(mcb_r));
-	}
+
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&mcb_r,sizeof(mcb_r));
 
     if (tmp_area && tmp_area != tmp_buf)
 	xnfree(tmp_area);

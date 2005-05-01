@@ -27105,6 +27105,11 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_NATIVE_MPS 1
+_ACEOF
+
+
 
 
 

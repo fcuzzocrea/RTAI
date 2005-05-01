@@ -612,6 +612,249 @@ static int __rt_task_slice (struct task_struct *curr, struct pt_regs *regs)
     return rt_task_slice(task,quantum);
 }
 
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+
+/*
+ * int __rt_task_send(RT_TASK_PLACEHOLDER *ph,
+ *                    RT_TASK_MCB *mcb_s,
+ *                    RT_TASK_MCB *mcb_r,
+ *                    RTIME timeout)
+ */
+
+static int __rt_task_send (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_TASK_MCB mcb_s, mcb_r;
+    caddr_t tmp_area, data_r;
+    RT_TASK_PLACEHOLDER ph;
+    char tmp_buf[64];
+    RT_TASK *task;
+    RTIME timeout;
+    size_t xsize;
+    ssize_t err;
+
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+	task = (RT_TASK *)rt_registry_fetch(ph.opaque);
+	}
+    else
+	task = __rt_task_current(curr);
+
+    if (!task)
+	return -ESRCH;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(mcb_s)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&mcb_s,(void __user *)__xn_reg_arg2(regs),sizeof(mcb_s));
+
+    if (mcb_s.size > 0 && !__xn_access_ok(curr,VERIFY_READ,mcb_s.data,mcb_s.size))
+	return -EFAULT;
+
+    if (__xn_reg_arg3(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(mcb_r)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,&mcb_r,(void __user *)__xn_reg_arg3(regs),sizeof(mcb_r));
+
+	if (mcb_r.size > 0 && !__xn_access_ok(curr,VERIFY_WRITE,mcb_r.data,mcb_r.size))
+	    return -EFAULT;
+	}
+    else
+	{
+	mcb_r.data = NULL;
+	mcb_r.size = 0;
+	}
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg4(regs),sizeof(timeout)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg4(regs),sizeof(timeout));
+
+    xsize = mcb_s.size + mcb_r.size;
+
+    if (xsize > 0)
+	{
+	/* Try optimizing a bit here: if the cumulated message sizes
+	   (initial+reply) can fit into our local buffer, use it;
+	   otherwise, take the slow path and fetch a larger buffer
+	   from the system heap. Most messages are expected to be
+	   short enough to fit on the stack anyway. */
+
+	if (xsize <= sizeof(tmp_buf))
+	    tmp_area = tmp_buf;
+	else
+	    {
+	    tmp_area = xnmalloc(xsize);
+
+	    if (!tmp_area)
+		return -ENOMEM;
+	    }
+
+	if (mcb_s.size > 0)
+	    __xn_copy_from_user(curr,tmp_area,(void __user *)mcb_s.data,mcb_s.size);
+
+	data_r = mcb_r.data;
+	mcb_s.data = tmp_area;
+	mcb_r.data = tmp_area + mcb_s.size;
+	}
+    else
+	data_r = tmp_area = NULL;
+
+    err = rt_task_send(task,&mcb_s,&mcb_r,timeout);
+
+    if (!err && mcb_r.size > 0)
+	{
+	__xn_copy_to_user(curr,(void __user *)data_r,mcb_r.data,mcb_r.size);
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mcb_r,sizeof(mcb_r));
+	}
+
+    if (tmp_area && tmp_area != tmp_buf)
+	xnfree(tmp_area);
+
+    return err;
+}
+
+/*
+ * int __rt_task_receive(RT_TASK_MCB *mcb_r,
+ *                       RTIME timeout)
+ */
+
+static int __rt_task_receive (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    caddr_t tmp_area, data_r;
+    RT_TASK_MCB mcb_r;
+    char tmp_buf[64];
+    RTIME timeout;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(mcb_r)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&mcb_r,(void __user *)__xn_reg_arg1(regs),sizeof(mcb_r));
+
+    if (mcb_r.size > 0 && !__xn_access_ok(curr,VERIFY_WRITE,mcb_r.data,mcb_r.size))
+	return -EFAULT;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(timeout)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg2(regs),sizeof(timeout));
+
+    if (mcb_r.size > 0)
+	{
+	/* Same optimization as in __rt_task_send(): if the size of
+	   the reply message can fit into our local buffer, use it;
+	   otherwise, take the slow path and fetch a larger buffer
+	   from the system heap. */
+
+	if (mcb_r.size <= sizeof(tmp_buf))
+	    tmp_area = tmp_buf;
+	else
+	    {
+	    tmp_area = xnmalloc(mcb_r.size);
+
+	    if (!tmp_area)
+		return -ENOMEM;
+	    }
+
+	data_r = mcb_r.data;
+	mcb_r.data = tmp_area;
+	}
+    else
+	data_r = tmp_area = NULL;
+
+    err = rt_task_receive(&mcb_r,timeout);
+
+    if (!err && mcb_r.size > 0)
+	{
+	__xn_copy_to_user(curr,(void __user *)data_r,mcb_r.data,mcb_r.size);
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mcb_r,sizeof(mcb_r));
+	}
+
+    if (tmp_area && tmp_area != tmp_buf)
+	xnfree(tmp_area);
+
+    return err;
+}
+
+/*
+ * int __rt_task_reply(int flowid,
+ *                     RT_TASK_MCB *mcb_s)
+ */
+
+static int __rt_task_reply (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_TASK_MCB mcb_s;
+    caddr_t tmp_area;
+    char tmp_buf[64];
+    int flowid, err;
+
+    flowid = __xn_reg_arg1(regs);
+
+    if (__xn_reg_arg2(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(mcb_s)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,&mcb_s,(void __user *)__xn_reg_arg2(regs),sizeof(mcb_s));
+
+	if (mcb_s.size > 0 && !__xn_access_ok(curr,VERIFY_READ,mcb_s.data,mcb_s.size))
+	    return -EFAULT;
+	}
+    else
+	{
+	mcb_s.data = NULL;
+	mcb_s.size = 0;
+	}
+
+    if (mcb_s.size > 0)
+	{
+	/* Same optimization as in __rt_task_send(): if the size of
+	   the reply message can fit into our local buffer, use it;
+	   otherwise, take the slow path and fetch a larger buffer
+	   from the system heap. */
+
+	if (mcb_s.size <= sizeof(tmp_buf))
+	    tmp_area = tmp_buf;
+	else
+	    {
+	    tmp_area = xnmalloc(mcb_s.size);
+
+	    if (!tmp_area)
+		return -ENOMEM;
+	    }
+
+	__xn_copy_from_user(curr,tmp_area,(void __user *)mcb_s.data,mcb_s.size);
+	mcb_s.data = tmp_area;
+	}
+    else
+	tmp_area = NULL;
+
+    err = rt_task_reply(flowid,&mcb_s);
+
+    if (tmp_area && tmp_area != tmp_buf)
+	xnfree(tmp_area);
+
+    return err;
+}
+
+#else /* !CONFIG_RTAI_OPT_NATIVE_MPS */
+
+#define __rt_task_send     __rt_call_not_available
+#define __rt_task_receive  __rt_call_not_available
+#define __rt_task_reply    __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
+
 /*
  * int __rt_timer_start(RTIME *tickvalp)
  */
@@ -2880,6 +3123,9 @@ static xnsysent_t __systab[] = {
     [__rtai_task_set_mode ] = { &__rt_task_set_mode, __xn_exec_primary },
     [__rtai_task_self ] = { &__rt_task_self, __xn_exec_any },
     [__rtai_task_slice ] = { &__rt_task_slice, __xn_exec_any },
+    [__rtai_task_send ] = { &__rt_task_send, __xn_exec_primary },
+    [__rtai_task_receive ] = { &__rt_task_receive, __xn_exec_primary },
+    [__rtai_task_reply ] = { &__rt_task_reply, __xn_exec_primary },
     [__rtai_timer_start ] = { &__rt_timer_start, __xn_exec_lostage|__xn_exec_switchback },
     [__rtai_timer_stop ] = { &__rt_timer_stop, __xn_exec_lostage|__xn_exec_switchback },
     [__rtai_timer_read ] = { &__rt_timer_read, __xn_exec_any },

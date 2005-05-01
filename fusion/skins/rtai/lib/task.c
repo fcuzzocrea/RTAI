@@ -306,3 +306,38 @@ int rt_task_slice (RT_TASK *task,
 			     task,
 			     &quantum);
 }
+
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+
+ssize_t rt_task_send (RT_TASK *task,
+		      RT_TASK_MCB *mcb_s,
+		      RT_TASK_MCB *mcb_r,
+		      RTIME timeout)
+{
+    return (ssize_t)XENOMAI_SKINCALL4(__rtai_muxid,
+				      __rtai_task_send,
+				      task,
+				      mcb_s,
+				      mcb_r,
+				      &timeout);
+}
+
+int rt_task_receive (RT_TASK_MCB *mcb_r,
+		     RTIME timeout)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_task_receive,
+			     mcb_r,
+			     &timeout);
+}
+
+int rt_task_reply (int flowid,
+		   RT_TASK_MCB *mcb_s)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_task_reply,
+			     flowid,
+			     mcb_s);
+}
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */

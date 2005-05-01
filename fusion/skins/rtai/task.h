@@ -24,6 +24,7 @@
 
 #include <nucleus/fusion.h>
 #include <nucleus/thread.h>
+#include <nucleus/synch.h>
 #include <rtai/timer.h>
 
 /* Creation flags. */
@@ -65,6 +66,7 @@ typedef struct rt_task_placeholder {
 (T_FPU|T_BLOCKED|T_DELAYED|T_READY|T_DORMANT|T_STARTED|T_BOOST|T_LOCK|T_RRB|T_NOSIG|T_SHIELD)
 
 struct rt_queue_msg;
+struct rt_task;
 
 typedef struct rt_task_info {
 
@@ -79,6 +81,18 @@ typedef struct rt_task_info {
     char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
 
 } RT_TASK_INFO;
+
+typedef struct rt_task_mcb {
+
+    int flowid;			/* !< Flow identifier. */
+
+    int opcode;			/* !< Operation code. */
+
+    caddr_t data;		/* !< Address of message. */
+
+    size_t size;		/* !< Size of message. */
+
+} RT_TASK_MCB;
 
 #if defined(__KERNEL__) || defined(__RTAI_SIM__)
 
@@ -123,7 +137,21 @@ typedef struct rt_task {
 	    const char *key;
 	} registry;
 
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+	struct {
+	    RT_TASK_MCB mcb_s; /* Send area. */
+	    RT_TASK_MCB mcb_r; /* Reply area. */
+	} mps;
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
+
     } wait_args;
+
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+    xnsynch_t mrecv,
+	      msendq;
+
+    int flowgen;		/* !< FLow id. generator. */
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
 
 } RT_TASK;
 
@@ -233,6 +261,37 @@ RT_TASK *rt_task_self(void);
 
 int rt_task_slice(RT_TASK *task,
 		  RTIME quantum);
+
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+
+ssize_t rt_task_send(RT_TASK *task,
+		     RT_TASK_MCB *mcb_s,
+		     RT_TASK_MCB *mcb_r,
+		     RTIME timeout);
+
+int rt_task_receive(RT_TASK_MCB *mcb_r,
+		    RTIME timeout);
+
+int rt_task_reply(int flowid,
+		  RT_TASK_MCB *mcb_s);
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
+
+static inline int rt_task_spawn(RT_TASK *task,
+				const char *name,
+				int stksize,
+				int prio,
+				int mode,
+				void (*fun)(void *cookie),
+				void *cookie)
+{
+    int err = rt_task_create(task,name,stksize,prio,mode);
+
+    if (!err)
+	err = rt_task_start(task,fun,cookie);
+
+    return err;
+}
 
 #ifdef __cplusplus
 }

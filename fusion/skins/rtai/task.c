@@ -56,6 +56,13 @@ static void __task_delete_hook (xnthread_t *thread)
 
     task = thread2rtask(thread);
 
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+    /* The nucleus will reschedule as needed when all the deletion
+       hooks are done. */
+    xnsynch_destroy(&task->mrecv);
+    xnsynch_destroy(&task->msendq);
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
+
 #ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     if (task->handle)
 	rt_registry_remove(task->handle);
@@ -198,6 +205,13 @@ int rt_task_create (RT_TASK *task,
 	 cpumask != 0 && cpu < 8; cpu++, cpumask >>= 1)
 	if (cpumask & 1)
 	    xnarch_cpu_set(cpu,task->affinity);
+
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+    xnsynch_init(&task->mrecv,XNSYNCH_FIFO);
+    xnsynch_init(&task->msendq,XNSYNCH_PRIO|XNSYNCH_PIP);
+    xnsynch_set_owner(&task->msendq,&task->thread_base);
+    task->flowgen = 0;
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
 
     xnlock_get_irqsave(&nklock,s);
     task->magic = RTAI_TASK_MAGIC;
@@ -1509,6 +1523,282 @@ int rt_task_slice (RT_TASK *task, RTIME quantum)
     return err;
 }
 
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+
+ssize_t rt_task_send (RT_TASK *task,
+		      RT_TASK_MCB *mcb_s,
+		      RT_TASK_MCB *mcb_r,
+		      RTIME timeout)
+{
+    RT_TASK *sender;
+    size_t rsize;
+    ssize_t err;
+    spl_t s;
+
+    if (!task)
+	{
+	if (!xnpod_primary_p())
+	    return -EPERM;
+
+	task = rtai_current_task();
+	}
+
+    xnlock_get_irqsave(&nklock,s);
+
+    task = rtai_h2obj_validate(task,RTAI_TASK_MAGIC,RT_TASK);
+
+    if (!task)
+	{
+	err = rtai_handle_error(task,RTAI_TASK_MAGIC,RT_TASK);
+	goto unlock_and_exit;
+	}
+
+    if (timeout == TM_NONBLOCK && xnsynch_nsleepers(&task->mrecv) == 0)
+	{
+	/* Can't block and no receiver pending; just bail out. */
+	err = -EWOULDBLOCK;
+	goto unlock_and_exit;
+	}
+
+    if (xnpod_unblockable_p())
+	{
+	err = -EPERM;
+	goto unlock_and_exit;
+	}
+
+    sender = rtai_current_task();
+
+    /* First, setup the send control block. Compute the flow
+       identifier, making sure that we won't draw a null or negative
+       value. */
+
+    if (++task->flowgen < 0)
+	task->flowgen = 1;
+
+    mcb_s->flowid = task->flowgen;
+
+    sender->wait_args.mps.mcb_s = *mcb_s;
+
+    /* Then, setup the reply control block. */
+
+    if (mcb_r)
+	sender->wait_args.mps.mcb_r = *mcb_r;
+    else
+	sender->wait_args.mps.mcb_r.size = 0;
+
+    /* Wake up the receiver if it is currently waiting for a message,
+       then sleep on the send queue, waiting for the remote
+       reply. xnsynch_sleep_on() will reschedule as needed. */
+
+    xnsynch_flush(&task->mrecv,0);
+
+    /* Since the receiver is perpetually marked as the current owner
+       of its own send queue which has been declared as a PIP-enabled
+       object, it will inherit the priority of the sender in the case
+       required by the priority inheritance protocol
+       (i.e. prio(sender) > prio(receiver)). */
+
+    xnsynch_sleep_on(&task->msendq,timeout);
+
+    if (xnthread_test_flags(&sender->thread_base,XNRMID))
+	err = -EIDRM; /* Receiver deleted while pending. */
+    else if (xnthread_test_flags(&sender->thread_base,XNTIMEO))
+	err = -ETIMEDOUT; /* Timeout.*/
+    else if (xnthread_test_flags(&sender->thread_base,XNBREAK))
+	err = -EINTR; /* Unblocked.*/
+    else
+	{
+	rsize = sender->wait_args.mps.mcb_r.size;
+
+	if (rsize > 0)
+	    {
+	    /* Ok, the message has been processed and answered by the
+	       remote, and a memory address is available to pass the
+	       reply back to our caller: let's do it. Make sure we
+	       have enough buffer space to perform the entire copy. */
+
+	    if (mcb_r != NULL && rsize <= mcb_r->size)
+		{
+		memcpy(mcb_r->data,sender->wait_args.mps.mcb_r.data,rsize);
+		err = (ssize_t)rsize;
+		}
+	    else
+		err = -ENOSPC;
+	    }
+	else
+	    err = 0; /* i.e. message processed, no reply expected or sent. */
+
+	/* The status code is considered meaningful whether there is
+	   some actual reply data or not; recycle the opcode field to
+	   return it. */
+
+	if (mcb_r)
+	    {
+	    mcb_r->opcode = sender->wait_args.mps.mcb_r.opcode;
+	    mcb_r->size = rsize;
+	    }
+	}
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+int rt_task_receive (RT_TASK_MCB *mcb_r,
+		     RTIME timeout)
+{
+    RT_TASK *receiver, *sender;
+    xnpholder_t *holder;
+    size_t rsize;
+    int err;
+    spl_t s;
+
+    if (!xnpod_primary_p())
+	return -EPERM;
+
+    receiver = rtai_current_task();
+
+    xnlock_get_irqsave(&nklock,s);
+
+    /* Fetch the first available message, but don't wake up the sender
+       until our caller invokes rt_task_reply(). IOW,
+       rt_task_receive() will fetch back the exact same message until
+       rt_task_reply() is called to release the heading sender. */
+    holder = getheadpq(xnsynch_wait_queue(&receiver->msendq));
+
+    if (holder)
+	goto pull_message;
+
+    if (timeout == TM_NONBLOCK)
+	{
+	err = -EWOULDBLOCK;
+	goto unlock_and_exit;
+	}
+
+    if (xnpod_unblockable_p())
+	{
+	err = -EPERM;
+	goto unlock_and_exit;
+	}
+
+    /* Wait on our receive slot for some sender to enqueue itself in
+       our send queue. */
+
+    xnsynch_sleep_on(&receiver->mrecv,timeout);
+
+    /* XNRMID cannot happen, since well, the current task would be the
+       deleted object, so... */
+
+    if (xnthread_test_flags(&receiver->thread_base,XNTIMEO))
+	{
+	err = -ETIMEDOUT; /* Timeout.*/
+	goto unlock_and_exit;
+	}
+    else if (xnthread_test_flags(&receiver->thread_base,XNBREAK))
+	{
+	err = -EINTR; /* Unblocked.*/
+	goto unlock_and_exit;
+	}
+
+    holder = getheadpq(xnsynch_wait_queue(&receiver->msendq));
+    /* There must be a valid holder since we waited for it. */
+
+ pull_message:
+
+    sender = thread2rtask(link2thread(holder,plink));
+
+    rsize = sender->wait_args.mps.mcb_s.size;
+
+    if (rsize <= mcb_r->size)
+	{
+	if (rsize > 0)
+	    memcpy(mcb_r->data,sender->wait_args.mps.mcb_s.data,rsize);
+
+	/* The flow identifier can't be either null or negative. */
+	err = sender->wait_args.mps.mcb_s.flowid;
+	}
+    else
+	err = -ENOSPC;
+
+    mcb_r->opcode = sender->wait_args.mps.mcb_s.opcode;
+    mcb_r->size = rsize;
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
+
+{
+    RT_TASK *sender, *receiver;
+    size_t rsize;
+    int err;
+    spl_t s;
+
+    if (!xnpod_primary_p())
+	return -EPERM;
+
+    sender = rtai_current_task();
+
+    xnlock_get_irqsave(&nklock,s);
+
+    receiver = thread2rtask(xnsynch_forget_one_sleeper(&sender->msendq));
+
+    /* Check the flow identifier, just in case the sender has vanished
+       away while we were processing its last message. Each sent
+       message carries a distinct flow identifier from other
+       senders wrt to a given receiver. */
+
+    if (!receiver || receiver->wait_args.mps.mcb_s.flowid != flowid)
+	{
+	err = -ENXIO;
+	goto unlock_and_exit;
+	}
+
+    /* Copy the reply data to a location where the receiver can find
+       it. */
+
+    rsize = mcb_s ? mcb_s->size : 0;
+    err = 0;
+
+    if (receiver->wait_args.mps.mcb_r.size >= rsize)
+	{
+	/* Sending back a NULL or zero-length reply is perfectly
+	   valid; it just means to unblock the initial sender without
+	   passing it back any reply data. */
+
+	if (rsize > 0)
+	    memcpy(receiver->wait_args.mps.mcb_r.data,mcb_s->data,rsize);
+	}
+    else
+	/* The receiver will get the same error code. Falldown
+	   through the rescheduling is wanted. */
+	err = -ENOSPC;
+
+    /* Copy back the actual size of the reply data, */
+    receiver->wait_args.mps.mcb_r.size = rsize;
+    /* And the status code. */
+    receiver->wait_args.mps.mcb_r.opcode = mcb_s ? mcb_s->opcode : 0;
+
+    /* That's it, we just need to start the rescheduling procedure
+       now. */
+
+    xnpod_schedule();
+
+ unlock_and_exit:
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
+
 /**
  * @fn int rt_task_bind(RT_TASK *task,
 			const char *name)
@@ -1583,3 +1873,8 @@ EXPORT_SYMBOL(rt_task_notify);
 EXPORT_SYMBOL(rt_task_set_mode);
 EXPORT_SYMBOL(rt_task_self);
 EXPORT_SYMBOL(rt_task_slice);
+#ifdef CONFIG_RTAI_OPT_NATIVE_MPS
+EXPORT_SYMBOL(rt_task_send);
+EXPORT_SYMBOL(rt_task_receive);
+EXPORT_SYMBOL(rt_task_reply);
+#endif /* CONFIG_RTAI_OPT_NATIVE_MPS */

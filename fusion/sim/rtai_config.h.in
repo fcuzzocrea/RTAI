@@ -25,6 +25,9 @@
 #undef CONFIG_RTAI_OPT_NATIVE_HEAP
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_NATIVE_MPS
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_NATIVE_MUTEX
 
 /* Kconfig */

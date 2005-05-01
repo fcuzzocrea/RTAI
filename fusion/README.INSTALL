@@ -40,6 +40,7 @@ configuration switches can be listed by running ./configure
  --enable-native-heap	Enable heap support in native skin
  --enable-native-queue	Enable queue support in native skin
  --enable-native-alarm	Enable alarm support in native skin
+ --enable-native-mps	Enable message passing support in native skin
  --enable-native-intr	Enable interrupt API in native skin
  --enable-uart-16550A	Build 16550A UART driver
  --enable-psos-skin	Build pSOS+ emulator

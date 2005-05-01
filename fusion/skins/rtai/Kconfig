@@ -120,6 +120,16 @@ config RTAI_OPT_NATIVE_ALARM
 	Alarms are general watchdog timers allowing to run
 	user-defined handlers after a specified delay has elapsed.
 
+config RTAI_OPT_NATIVE_MPS
+	bool "Message passing support"
+	depends on RTAI_SKIN_NATIVE
+	default y
+	help
+	
+	This simple message passing interface allows to exchange
+	variable-sized messages in a synchronous fashion between RTAI
+	tasks.
+
 config RTAI_OPT_NATIVE_INTR
 	bool "Interrupts"
 	depends on RTAI_SKIN_NATIVE

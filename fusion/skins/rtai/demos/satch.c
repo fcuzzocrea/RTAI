@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <rtai/task.h>
 #include <rtai/queue.h>
 
@@ -11,6 +12,8 @@
 
 #define CONSUMER_WAIT 150
 #define PRODUCER_TRIG 40
+
+#define MAX_STRING_LEN 40
 
 static const char *satch_s_tunes[] = {
     "Surfing With The Alien",
@@ -37,8 +40,8 @@ static RT_TASK producer_task,
 void consumer (void *cookie)
 
 {
+    char buf[MAX_STRING_LEN];
     RT_TASK_MCB mcb;
-    const char *msg;
     int flowid;
 
     for (;;)
@@ -48,14 +51,14 @@ void consumer (void *cookie)
 	for (;;)
 	    {
 	    mcb.opcode = 0;	/* Dummy. */
-	    mcb.data = (caddr_t)&msg;
-	    mcb.size = sizeof(msg);
+	    mcb.data = (caddr_t)buf;
+	    mcb.size = sizeof(buf);
 	    flowid = rt_task_receive(&mcb,TM_NONBLOCK);
 
 	    if (flowid < 0)
 		break;
 
-	    printf("Now playing %s...\n",msg);
+	    printf("Now playing %s...\n",buf);
 	    rt_task_reply(flowid,NULL);
 	    }
 	}
@@ -76,8 +79,8 @@ void producer (void *cookie)
 	next_msg %= (sizeof(satch_s_tunes) / sizeof(satch_s_tunes[0]));
 
 	mcb.opcode = 0;	/* Dummy. */
-	mcb.data = (caddr_t)&msg;
-	mcb.size = sizeof(msg);
+	mcb.data = (caddr_t)msg;
+	mcb.size = strlen(msg) + 1; /* \0 must be copied. */
 	rt_task_send(&consumer_task,&mcb,NULL,TM_INFINITE);
 	}
 }

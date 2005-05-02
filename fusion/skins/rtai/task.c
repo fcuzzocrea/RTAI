@@ -1930,7 +1930,7 @@ int rt_task_receive (RT_TASK_MCB *mcb_r,
  * transaction.
  *
  * @param mcb_s The address of an optional message control block
- * referring to the message to be sent back. If @mcb_s is NULL, the
+ * referring to the message to be sent back. If @a mcb_s is NULL, the
  * sender will be unblocked without getting any reply data. When @a
  * mcb_s is valid, the fields from this control block should be set as
  * follows:

@@ -20,13 +20,14 @@ You should have received a copy of the GNU General Public License along with thi
 <p>
 Include dependency graph for task.h:<p><center><img src="task_8h__incl.png" border="0" usemap="#skins/rtai/task.h_map" alt=""></center>
 <map name="skins/rtai/task.h_map">
-<area href="fusion_8h-source.html" shape="rect" coords="173,103,290,127" alt="">
-<area href="thread_8h-source.html" shape="rect" coords="172,175,292,199" alt="">
-<area href="skins_2rtai_2timer_8h.html" shape="rect" coords="189,223,274,247" alt="">
-<area href="include_2nucleus_2timer_8h-source.html" shape="rect" coords="361,199,473,223" alt="">
-<area href="include_2nucleus_2queue_8h-source.html" shape="rect" coords="541,201,661,225" alt="">
-<area href="include_2nucleus_2types_8h-source.html" shape="rect" coords="709,225,824,249" alt="">
-<area href="skins_2rtai_2types_8h.html" shape="rect" coords="557,249,645,273" alt="">
+<area href="fusion_8h-source.html" shape="rect" coords="173,104,290,128" alt="">
+<area href="thread_8h-source.html" shape="rect" coords="172,249,292,273" alt="">
+<area href="synch_8h-source.html" shape="rect" coords="173,201,290,225" alt="">
+<area href="skins_2rtai_2timer_8h.html" shape="rect" coords="189,297,274,321" alt="">
+<area href="include_2nucleus_2timer_8h-source.html" shape="rect" coords="361,250,473,274" alt="">
+<area href="include_2nucleus_2queue_8h-source.html" shape="rect" coords="541,250,661,274" alt="">
+<area href="include_2nucleus_2types_8h-source.html" shape="rect" coords="709,274,824,298" alt="">
+<area href="skins_2rtai_2types_8h.html" shape="rect" coords="557,298,645,322" alt="">
 </map>
 
 <p>
@@ -50,12 +51,12 @@ This graph shows which files directly or indirectly include this file:<p><center
 <a href="task_8h-source.html">Go to the source code of this file.</a><table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga24">rt_task_bind</a> (RT_TASK *task, const char *name)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga27">rt_task_bind</a> (RT_TASK *task, const char *name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a real-time task.  <a href="group__task.html#ga24"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">static int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga25">rt_task_unbind</a> (RT_TASK *task)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a real-time task.  <a href="group__task.html#ga27"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">static int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga28">rt_task_unbind</a> (RT_TASK *task)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from a real-time task.  <a href="group__task.html#ga25"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from a real-time task.  <a href="group__task.html#ga28"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga4">rt_task_create</a> (RT_TASK *task, const char *name, int stksize, int prio, int mode)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create a new real-time task.  <a href="group__task.html#ga4"></a><br></td></tr>
@@ -110,8 +111,17 @@ This graph shows which files directly or indirectly include this file:<p><center
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga23">rt_task_slice</a> (RT_TASK *task, RTIME quantum)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Set a task's round-robin quantum.  <a href="group__task.html#ga23"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">ssize_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga24">rt_task_send</a> (RT_TASK *task, RT_TASK_MCB *mcb_s, RT_TASK_MCB *mcb_r, RTIME timeout)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Send a message to a task.  <a href="group__task.html#ga24"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga25">rt_task_receive</a> (RT_TASK_MCB *mcb_r, RTIME timeout)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Receive a message from a task.  <a href="group__task.html#ga25"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga26">rt_task_reply</a> (int flowid, RT_TASK_MCB *mcb_s)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Reply to a task.  <a href="group__task.html#ga26"></a><br></td></tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:02 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

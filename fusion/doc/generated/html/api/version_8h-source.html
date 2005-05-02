@@ -30,22 +30,17 @@
 00020 <span class="preprocessor">#ifndef _RTAI_NUCLEUS_VERSION_H</span>
 00021 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_NUCLEUS_VERSION_H</span>
 00022 <span class="preprocessor"></span>
-00023 <span class="comment">/*</span>
-00024 <span class="comment"> * RTAI/fusion version code is an hexadecimal value formatted as</span>
-00025 <span class="comment"> * follows:</span>
-00026 <span class="comment"> *</span>
-00027 <span class="comment"> * code = 00mamirn, where:</span>
-00028 <span class="comment"> * - "ma" is the major version number,</span>
-00029 <span class="comment"> * - "mi" is the minor version number,</span>
-00030 <span class="comment"> * - "rn" is the revision number.</span>
-00031 <span class="comment"> */</span>
-00032 
-00033 <span class="preprocessor">#define FUSION_VERSION_CODE  0x00000702</span>
-00034 <span class="preprocessor"></span>
-00035 <span class="preprocessor">#define FUSION_VERSION_NAME  "New Last Jam"</span>
-00036 <span class="preprocessor"></span>
-00037 <span class="preprocessor">#endif </span><span class="comment">/* _RTAI_NUCLEUS_VERSION_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:01 2005 for RTAI Fusion API by&nbsp;
+00023 <span class="preprocessor">#include &lt;rtai_config.h&gt;</span>
+00024 
+00025 <span class="preprocessor">#define FUSION_VERSION(maj,min,rev)  (((maj)&lt;&lt;16)|((min)&lt;&lt;8)|(rev))</span>
+00026 <span class="preprocessor"></span>
+00027 <span class="preprocessor">#define FUSION_VERSION_CODE  FUSION_VERSION(CONFIG_RTAI_VERSION_MAJOR, \</span>
+00028 <span class="preprocessor">                                            CONFIG_RTAI_VERSION_MINOR, \</span>
+00029 <span class="preprocessor">                                            CONFIG_RTAI_REVISION_LEVEL)</span>
+00030 <span class="preprocessor"></span><span class="preprocessor">#define FUSION_VERSION_NAME  "Mind Storm"</span>
+00031 <span class="preprocessor"></span>
+00032 <span class="preprocessor">#endif </span><span class="comment">/* _RTAI_NUCLEUS_VERSION_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

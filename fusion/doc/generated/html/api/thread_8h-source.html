@@ -71,14 +71,14 @@
 00061 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_MODE_BITS    (XNLOCK|XNRRB|XNASDI|XNSHIELD)</span>
 00062 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SYSTEM_BITS  (XNROOT)</span>
 00063 <span class="preprocessor"></span>
-00064 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)</span>
-00065 <span class="preprocessor"></span>
-00066 <span class="comment">/* These flags are available to the real-time interfaces */</span>
-00067 <span class="preprocessor">#define XNTHREAD_SPARE0  0x10000000</span>
-00068 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SPARE1  0x20000000</span>
-00069 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SPARE2  0x40000000</span>
-00070 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SPARE3  0x80000000</span>
-00071 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SPARES  0xf0000000</span>
+00064 <span class="comment">/* These flags are available to the real-time interfaces */</span>
+00065 <span class="preprocessor">#define XNTHREAD_SPARE0  0x10000000</span>
+00066 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SPARE1  0x20000000</span>
+00067 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SPARE2  0x40000000</span>
+00068 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SPARE3  0x80000000</span>
+00069 <span class="preprocessor"></span><span class="preprocessor">#define XNTHREAD_SPARES  0xf0000000</span>
+00070 <span class="preprocessor"></span>
+00071 <span class="preprocessor">#if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)</span>
 00072 <span class="preprocessor"></span>
 00073 <span class="preprocessor">#ifdef __RTAI_SIM__</span>
 00074 <span class="preprocessor"></span><span class="preprocessor">#define XNRUNNING  XNTHREAD_SPARE0      </span><span class="comment">/* Pseudo-status (must not conflict with system bits) */</span>
@@ -233,7 +233,7 @@
 00223 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
 00224 
 00225 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_THREAD_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:01 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

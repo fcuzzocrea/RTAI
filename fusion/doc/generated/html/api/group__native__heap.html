@@ -249,7 +249,7 @@ Create a memory heap or a shared memory segment.
 <p>
 Initializes a memory heap suitable for time-bounded allocation requests of dynamic memory. Memory heaps can be local to the kernel space, or shared between kernel and user-space.<p>
 In their simplest form, heaps are only accessible from kernel space, and are merely usable as regular memory allocators.<p>
-In the shared case, heaps are used as shared memory segments. All allocation requests made through <a class="el" href="group__native__heap.html#ga4">rt_heap_alloc()</a> will then return the same memory block, which will point at to the beginning of the heap memory, and cover the entire heap space. This operating mode is specified by passing the H_SHARED flag into the <em>mode</em> parameter. By the proper use of a common <em>name</em>, all tasks can bind themselves to the same heap and thus share the same memory space, which start address should be subsequently retrieved by a call to <a class="el" href="group__native__heap.html#ga4">rt_heap_alloc()</a>.<p>
+In the shared case, heaps are used as shared memory segments. All allocation requests made through <a class="el" href="group__native__heap.html#ga4">rt_heap_alloc()</a> will then return the same memory block, which will point at the beginning of the heap memory, and cover the entire heap space. This operating mode is specified by passing the H_SHARED flag into the <em>mode</em> parameter. By the proper use of a common <em>name</em>, all tasks can bind themselves to the same heap and thus share the same memory space, which start address should be subsequently retrieved by a call to <a class="el" href="group__native__heap.html#ga4">rt_heap_alloc()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>heap</em>&nbsp;</td><td>The address of a heap descriptor RTAI will use to store the heap-related data. This descriptor must always be valid while the heap is active therefore it must be allocated in permanent memory.</td></tr>
@@ -495,7 +495,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:04 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:40 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

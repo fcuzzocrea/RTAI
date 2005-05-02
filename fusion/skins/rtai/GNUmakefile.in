@@ -318,7 +318,7 @@ distfiles = $(libmodule_SRC) syscall.c syscall.h misc.h registry.c \
 	registry.h pipe.c pipe.h sem.c sem.h event.c event.h mutex.c \
 	mutex.h cond.c cond.h queue.c queue.h heap.c heap.h alarm.c \
 	alarm.h intr.c intr.h
-EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig snippets API.CHANGES
+EXTRA_DIST = $(distfiles) doc Makefile.kbuild Kconfig snippets demos API.CHANGES
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
 all: all-recursive
 

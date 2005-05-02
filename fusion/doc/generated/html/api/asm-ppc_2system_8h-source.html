@@ -129,7 +129,7 @@
 00119 static inline <span class="keywordtype">void</span> xnarch_relay_tick (<span class="keywordtype">void</span>)
 00120 
 00121 {
-00122     <a class="code" href="group__hal.html#ga50">rthal_irq_host_pend</a>(ADEOS_TIMER_VIRQ);
+00122     <a class="code" href="group__hal.html#ga51">rthal_irq_host_pend</a>(ADEOS_TIMER_VIRQ);
 00123 }
 00124 
 00125 <span class="preprocessor">#ifdef XENO_POD_MODULE</span>
@@ -141,7 +141,7 @@
 00131 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_start_timer (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ns,
 00132                                       <span class="keywordtype">void</span> (*tickhandler)(<span class="keywordtype">void</span>))
 00133 {
-00134     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga63">rthal_timer_request</a>(tickhandler,ns);
+00134     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga67">rthal_timer_request</a>(tickhandler,ns);
 00135 }
 00136 
 00137 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_leave_root (xnarchtcb_t *rootcb)
@@ -560,7 +560,7 @@
 00550 }
 00551 
 00552 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_stop_timer (<span class="keywordtype">void</span>) {
-00553     <a class="code" href="group__hal.html#ga64">rthal_timer_release</a>();
+00553     <a class="code" href="group__hal.html#ga68">rthal_timer_release</a>();
 00554 }
 00555 
 00556 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_send_timer_ipi (xnarch_cpumask_t mask)
@@ -674,7 +674,7 @@
 00664 
 00665     if (err)
 00666         {
-00667         <a class="code" href="group__hal.html#ga52">rthal_trap_catch</a>(xnarch_old_trap_handler);
+00667         <a class="code" href="group__hal.html#ga53">rthal_trap_catch</a>(xnarch_old_trap_handler);
 00668         adeos_free_irq(xnarch_escalation_virq);
 00669         }
 00670 
@@ -687,7 +687,7 @@
 00677 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_FUSION</span>
 00678 <span class="preprocessor"></span>    xnshadow_cleanup();
 00679 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_FUSION */</span>
-00680     <a class="code" href="group__hal.html#ga52">rthal_trap_catch</a>(xnarch_old_trap_handler);
+00680     <a class="code" href="group__hal.html#ga53">rthal_trap_catch</a>(xnarch_old_trap_handler);
 00681     adeos_free_irq(xnarch_escalation_virq);
 00682 }
 00683 
@@ -704,7 +704,7 @@
 00694 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00695 
 00696 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SYSTEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:01 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

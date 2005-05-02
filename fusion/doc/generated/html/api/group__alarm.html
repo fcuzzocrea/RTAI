@@ -95,12 +95,12 @@ Alarms are general watchdog timers. Any RTAI task may create any number of alarm
 <p>
 Create an alarm object. 
 <p>
-Create an object calling an alarm routine at specified times. Alarms can be made periodic or aperiodic, depending on the reload interval value passed to <a class="el" href="group__alarm.html#ga5">rt_alarm_start()</a> for them.<p>
+Create an object triggering an alarm routine at a specified time in the future. Alarms can be made periodic or oneshot, depending on the reload interval value passed to <a class="el" href="group__alarm.html#ga5">rt_alarm_start()</a> for them.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>alarm</em>&nbsp;</td><td>The address of an alarm descriptor RTAI will use to store the alarm-related data. This descriptor must always be valid while the alarm is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the alarm. When non-NULL and non-empty, this string is copied to a safe place into the descriptor, and passed to the registry package if enabled for indexing the created alarm.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>handler</em>&nbsp;</td><td>The address of the routine to call when the alarm expiries. This routine will be passed the address of the current alarm descriptor, and the opaque <em>cookie</em>.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>handler</em>&nbsp;</td><td>The address of the routine to call when the alarm expires. This routine will be passed the address of the current alarm descriptor, and the opaque <em>cookie</em>.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>cookie</em>&nbsp;</td><td>A user-defined opaque cookie the real-time kernel will pass to the alarm handler as its second argument.</td></tr>
   </table>
 </dl>
@@ -271,7 +271,7 @@ Rescheduling: never.     </td>
 <p>
 Start an alarm. 
 <p>
-Program the trigger date of an alarm object. An alarm can be either periodic or single-shot, depending on the reload value passed to this routine. The given alarm must have been previously created by a call to <a class="el" href="group__alarm.html#ga3">rt_alarm_create()</a>.<p>
+Program the trigger date of an alarm object. An alarm can be either periodic or oneshot, depending on the reload value passed to this routine. The given alarm must have been previously created by a call to <a class="el" href="group__alarm.html#ga3">rt_alarm_create()</a>.<p>
 Alarm handlers are always called on behalf of RTAI's internal timer tick handler, so the RTAI services which can be called from such handlers are restricted to the set of services available on behalf of any ISR.<p>
 This service overrides any previous setup of the expiry date and reload interval for the given alarm.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
@@ -397,7 +397,7 @@ This service can be called from:<p>
 Rescheduling: always.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:03 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:39 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

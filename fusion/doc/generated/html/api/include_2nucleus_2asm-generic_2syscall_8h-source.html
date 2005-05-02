@@ -78,39 +78,41 @@
 00068 <span class="preprocessor">#define __xn_exec_switchback 0x8</span>
 00069 <span class="preprocessor"></span><span class="comment">/* Exec in current domain. */</span>
 00070 <span class="preprocessor">#define __xn_exec_current    0x10</span>
-00071 <span class="preprocessor"></span><span class="comment">/* Context-agnostic syscall. */</span>
-00072 <span class="preprocessor">#define __xn_exec_any        0x0</span>
-00073 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow init syscall. */</span>
-00074 <span class="preprocessor">#define __xn_exec_init       __xn_exec_lostage</span>
-00075 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow syscall in RTAI space. */</span>
-00076 <span class="preprocessor">#define __xn_exec_primary   (__xn_exec_shadow|__xn_exec_histage)</span>
-00077 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow syscall in Linux space. */</span>
-00078 <span class="preprocessor">#define __xn_exec_secondary (__xn_exec_shadow|__xn_exec_lostage)</span>
-00079 <span class="preprocessor"></span>
-00080     u_long flags;
-00081 
-00082 } xnsysent_t;
+00071 <span class="preprocessor"></span><span class="comment">/* Exec in conforming domain, RTAI for fusion threads, Linux otherwise. */</span>
+00072 <span class="preprocessor">#define __xn_exec_conforming 0x20</span>
+00073 <span class="preprocessor"></span><span class="comment">/* Context-agnostic syscall. */</span>
+00074 <span class="preprocessor">#define __xn_exec_any        0x0</span>
+00075 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow init syscall. */</span>
+00076 <span class="preprocessor">#define __xn_exec_init       __xn_exec_lostage</span>
+00077 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow syscall in RTAI space. */</span>
+00078 <span class="preprocessor">#define __xn_exec_primary   (__xn_exec_shadow|__xn_exec_histage)</span>
+00079 <span class="preprocessor"></span><span class="comment">/* Short-hand for shadow syscall in Linux space. */</span>
+00080 <span class="preprocessor">#define __xn_exec_secondary (__xn_exec_shadow|__xn_exec_lostage)</span>
+00081 <span class="preprocessor"></span>
+00082     u_long flags;
 00083 
-00084 <span class="keyword">extern</span> <span class="keywordtype">int</span> nkgkptd;
+00084 } xnsysent_t;
 00085 
-00086 <span class="preprocessor">#define xnshadow_ptd(t)    ((t)-&gt;ptd[nkgkptd])</span>
-00087 <span class="preprocessor"></span><span class="preprocessor">#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))</span>
-00088 <span class="preprocessor"></span>
-00089 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
-00090 
-00091 <span class="preprocessor">#include &lt;sys/types.h&gt;</span>
+00086 <span class="keyword">extern</span> <span class="keywordtype">int</span> nkgkptd;
+00087 
+00088 <span class="preprocessor">#define xnshadow_ptd(t)    ((t)-&gt;ptd[nkgkptd])</span>
+00089 <span class="preprocessor"></span><span class="preprocessor">#define xnshadow_thread(t) ((xnthread_t *)xnshadow_ptd(t))</span>
+00090 <span class="preprocessor"></span>
+00091 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
 00092 
-00093 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00093 <span class="preprocessor">#include &lt;sys/types.h&gt;</span>
 00094 
-00095 <span class="keyword">typedef</span> <span class="keyword">struct </span>xncompletion {
+00095 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00096 
-00097     <span class="keywordtype">long</span> syncflag;              <span class="comment">/* Semaphore variable. */</span>
-00098     pid_t pid;                  <span class="comment">/* Single waiter ID. */</span>
-00099 
-00100 } xncompletion_t;
+00097 <span class="keyword">typedef</span> <span class="keyword">struct </span>xncompletion {
+00098 
+00099     <span class="keywordtype">long</span> syncflag;              <span class="comment">/* Semaphore variable. */</span>
+00100     pid_t pid;                  <span class="comment">/* Single waiter ID. */</span>
 00101 
-00102 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_GENERIC_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Apr 18 18:36:01 2005 for RTAI Fusion API by&nbsp;
+00102 } xncompletion_t;
+00103 
+00104 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_GENERIC_SYSCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

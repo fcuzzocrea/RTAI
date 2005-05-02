@@ -82,6 +82,8 @@ typedef struct rt_task_info {
 
 } RT_TASK_INFO;
 
+#define RT_MCB_FSTORE_LIMIT  64
+
 typedef struct rt_task_mcb {
 
     int flowid;			/* !< Flow identifier. */

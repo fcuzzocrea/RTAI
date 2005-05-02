@@ -624,10 +624,10 @@ static int __rt_task_slice (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_task_send (struct task_struct *curr, struct pt_regs *regs)
 
 {
+    char tmp_buf[RT_MCB_FSTORE_LIMIT];
     RT_TASK_MCB mcb_s, mcb_r;
     caddr_t tmp_area, data_r;
     RT_TASK_PLACEHOLDER ph;
-    char tmp_buf[64];
     RT_TASK *task;
     RTIME timeout;
     size_t xsize;
@@ -678,6 +678,7 @@ static int __rt_task_send (struct task_struct *curr, struct pt_regs *regs)
     __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg4(regs),sizeof(timeout));
 
     xsize = mcb_s.size + mcb_r.size;
+    data_r = mcb_r.data;
 
     if (xsize > 0)
 	{
@@ -700,12 +701,11 @@ static int __rt_task_send (struct task_struct *curr, struct pt_regs *regs)
 	if (mcb_s.size > 0)
 	    __xn_copy_from_user(curr,tmp_area,(void __user *)mcb_s.data,mcb_s.size);
 
-	data_r = mcb_r.data;
 	mcb_s.data = tmp_area;
 	mcb_r.data = tmp_area + mcb_s.size;
 	}
     else
-	data_r = tmp_area = NULL;
+	tmp_area = NULL;
 
     err = rt_task_send(task,&mcb_s,&mcb_r,timeout);
 
@@ -713,7 +713,10 @@ static int __rt_task_send (struct task_struct *curr, struct pt_regs *regs)
 	__xn_copy_to_user(curr,(void __user *)data_r,mcb_r.data,mcb_r.size);
 
     if (__xn_reg_arg3(regs))
+	{
+	mcb_r.data = data_r;
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mcb_r,sizeof(mcb_r));
+	}
 
     if (tmp_area && tmp_area != tmp_buf)
 	xnfree(tmp_area);
@@ -729,9 +732,9 @@ static int __rt_task_send (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_task_receive (struct task_struct *curr, struct pt_regs *regs)
 
 {
+    char tmp_buf[RT_MCB_FSTORE_LIMIT];
     caddr_t tmp_area, data_r;
     RT_TASK_MCB mcb_r;
-    char tmp_buf[64];
     RTIME timeout;
     int err;
 
@@ -747,6 +750,8 @@ static int __rt_task_receive (struct task_struct *curr, struct pt_regs *regs)
 	return -EFAULT;
 
     __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg2(regs),sizeof(timeout));
+
+    data_r = mcb_r.data;
 
     if (mcb_r.size > 0)
 	{
@@ -765,17 +770,17 @@ static int __rt_task_receive (struct task_struct *curr, struct pt_regs *regs)
 		return -ENOMEM;
 	    }
 
-	data_r = mcb_r.data;
 	mcb_r.data = tmp_area;
 	}
     else
-	data_r = tmp_area = NULL;
+	tmp_area = NULL;
 
     err = rt_task_receive(&mcb_r,timeout);
 
     if (err > 0 && mcb_r.size > 0)
 	__xn_copy_to_user(curr,(void __user *)data_r,mcb_r.data,mcb_r.size);
 
+    mcb_r.data = data_r;
     __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&mcb_r,sizeof(mcb_r));
 
     if (tmp_area && tmp_area != tmp_buf)
@@ -792,9 +797,9 @@ static int __rt_task_receive (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_task_reply (struct task_struct *curr, struct pt_regs *regs)
 
 {
+    char tmp_buf[RT_MCB_FSTORE_LIMIT];
     RT_TASK_MCB mcb_s;
     caddr_t tmp_area;
-    char tmp_buf[64];
     int flowid, err;
 
     flowid = __xn_reg_arg1(regs);

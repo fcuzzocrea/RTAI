@@ -1525,6 +1525,114 @@ int rt_task_slice (RT_TASK *task, RTIME quantum)
 
 #ifdef CONFIG_RTAI_OPT_NATIVE_MPS
 
+/**
+ * @fn int rt_task_send(RT_TASK *task,
+                        RT_TASK_MCB *mcb_s,
+                        RT_TASK_MCB *mcb_r,
+                        RTIME timeout)
+ * @brief Send a message to a task.
+ *
+ * This service is part of the synchronous message passing support
+ * available to RTAI tasks. It allows the caller to send a
+ * variable-sized message to another task, waiting for the remote to
+ * receive the initial message by a call to rt_task_receive(), then
+ * reply to it using rt_task_reply().
+ *
+ * A basic message control block is used to store the location and
+ * size of the data area to send or retrieve upon reply, in addition
+ * to a user-defined operation code.
+ *
+ * @param task The descriptor address of the recipient task.
+ *
+ * @param mcb_s The address of the message control block referring to
+ * the message to be sent. The fields from this control block should
+ * be set as follows:
+ *
+ * - mcb_s->data should contain the address of the payload data to
+ * send to the remote task.
+ *
+ * - mcb_s->size should contain the size in bytes of the payload data
+ * pointed at by mcb_s->data. 0 is a legitimate value, and indicates
+ * that no payload data will be transferred. In the latter case,
+ * mcb_s->data will be ignored. See note.
+ *
+ * - mcb_s->opcode is an opaque operation code carried during the
+ * message transfer the caller can fill with any appropriate value. It
+ * will be made available "as is" to the remote task into the
+ * operation code field by the rt_task_receive() service.
+ *
+ * @param mcb_r The address of an optional message control block
+ * referring to the reply message area. If @a mcb_r is NULL and a
+ * reply is sent back by the remote task, the reply message will be
+ * discarded, and -ENOSPC will be returned to the caller. When @a
+ * mcb_r is valid, the fields from this control block should be set as
+ * follows:
+ *
+ * - mcb_r->data should contain the address of a buffer large enough
+ * to collect the reply data from the remote task.
+ *
+ * - mcb_r->size should contain the size in bytes of the buffer space
+ * pointed at by mcb_r->data. If mcb_r->size is lower than the actual
+ * size of the reply message, no data copy takes place and -ENOSPC is
+ * returned to the caller. See note.
+ *
+ * Upon return, mcb_r->opcode will contain the status code sent back
+ * from the remote task using rt_task_reply(), or 0 if unspecified.
+ *
+ * @param timeout The number of clock ticks to wait for the remote
+ * task to reply to the initial message (see note). Passing
+ * TM_INFINITE causes the caller to block indefinitely until the
+ * remote task eventually replies. Passing TM_NONBLOCK causes the
+ * service to return immediately without waiting if the remote task is
+ * not waiting for messages (i.e. if @a task is not currently blocked
+ * on the rt_task_receive() service).
+ *
+ * @return A positive value is returned upon success, representing the
+ * length (in bytes) of the reply message returned by the remote
+ * task. 0 is a success status, meaning either that @a mcb_r was NULL
+ * on entry, or that no actual message was passed to the remote call
+ * to rt_task_reply(). Otherwise:
+ *
+ * - -ENOSPC is returned if @a mcb_r does not point at a message area
+ * large enough to collect the remote task's reply. This includes the
+ * case where @a mcb_r is NULL on entry albeit the remote task
+ * attempts to send a reply message.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and @a task is not currently blocked on the rt_task_receive()
+ * service.
+ *
+ * - -EIDRM is returned if @a task has been deleted while waiting for
+ * a reply.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * caller before any reply was available.
+ *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: Always.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
+ *
+ * @note When called from a user-space task, this service may need to
+ * allocate some temporary buffer space from the system heap to hold
+ * both the sent and the reply data if this cumulated size exceeds a
+ * certain amount; the threshold before allocation is currently set to
+ * 64 bytes.
+ */
+
 ssize_t rt_task_send (RT_TASK *task,
 		      RT_TASK_MCB *mcb_s,
 		      RT_TASK_MCB *mcb_r,
@@ -1534,14 +1642,6 @@ ssize_t rt_task_send (RT_TASK *task,
     size_t rsize;
     ssize_t err;
     spl_t s;
-
-    if (!task)
-	{
-	if (!xnpod_primary_p())
-	    return -EPERM;
-
-	task = rtai_current_task();
-	}
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -1646,6 +1746,83 @@ ssize_t rt_task_send (RT_TASK *task,
     return err;
 }
 
+/**
+ * @fn int rt_task_receive(RT_TASK_MCB *mcb_r,
+                           RTIME timeout)
+ * @brief Receive a message from a task.
+ *
+ * This service is part of the synchronous message passing support
+ * available to RTAI tasks. It allows the caller to receive a
+ * variable-sized message sent from another task using the
+ * rt_task_send() service. The sending task is blocked until the
+ * caller invokes rt_task_reply() to finish the transaction.
+ *
+ * A basic message control block is used to store the location and
+ * size of the data area to receive from the sender, in addition to a
+ * user-defined operation code.
+ *
+ * @param mcb_r The address of a message control block referring to
+ * the receive message area. The fields from this control block should
+ * be set as follows:
+ *
+ * - mcb_r->data should contain the address of a buffer large enough
+ * to collect the data sent by the remote task;
+ *
+ * - mcb_r->size should contain the size in bytes of the buffer space
+ * pointed at by mcb_r->data. If mcb_r->size is lower than the actual
+ * size of the received message, no data copy takes place and -ENOSPC
+ * is returned to the caller. See note.
+ *
+ * Upon return, mcb_r->opcode will contain the operation code sent
+ * from the remote task using rt_task_send().
+ *
+ * @param timeout The number of clock ticks to wait for receiving a
+ * message (see note). Passing TM_INFINITE causes the caller to block
+ * indefinitely until a remote task eventually sends a message.
+ * Passing TM_NONBLOCK causes the service to return immediately
+ * without waiting if no remote task is currently waiting for sending
+ * a message.
+ *
+ * @return A strictly positive value is returned upon success,
+ * representing a flow identifier for the opening transaction; this
+ * token should be passed to rt_task_reply(), in order to send back a
+ * reply to and unblock the remote task appropriately. Otherwise:
+ *
+ * - -ENOSPC is returned if @a mcb_r does not point at a message area
+ * large enough to collect the remote task's message.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and no remote task is currently waiting for sending a message to
+ * the caller.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * caller before any message was available.
+ *
+ * - -EPERM is returned if this service was called from a context
+ * which cannot sleep (e.g. interrupt, non-realtime or scheduler
+ * locked).
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: Always.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
+ *
+ * @note When called from a user-space task, this service may need to
+ * allocate some temporary buffer space from the system heap to hold
+ * the received data if the size of the latter exceeds a certain
+ * amount; the threshold before allocation is currently set to 64
+ * bytes.
+ */
+
 int rt_task_receive (RT_TASK_MCB *mcb_r,
 		     RTIME timeout)
 {
@@ -1731,6 +1908,72 @@ int rt_task_receive (RT_TASK_MCB *mcb_r,
 
     return err;
 }
+
+/**
+ * @fn int rt_task_reply(int flowid,
+                         RT_TASK_MCB *mcb_s)
+ * @brief Reply to a task.
+ *
+ * This service is part of the synchronous message passing support
+ * available to RTAI tasks. It allows the caller to send back a
+ * variable-sized message to the sender task, once the initial message
+ * from this task has been pulled using rt_task_receive() and
+ * processed. As a consequence of this call, the remote task will be
+ * unblocked from the rt_task_send() service.
+ *
+ * A basic message control block is used to store the location and
+ * size of the data area to send back, in addition to a user-defined
+ * status code.
+ *
+ * @param flowid The flow identifier returned by a previous call to
+ * rt_task_receive() which uniquely identifies the current
+ * transaction.
+ *
+ * @param mcb_s The address of an optional message control block
+ * referring to the message to be sent back. If @mcb_s is NULL, the
+ * sender will be unblocked without getting any reply data. When @a
+ * mcb_s is valid, the fields from this control block should be set as
+ * follows:
+ *
+ * - mcb_s->data should contain the address of the payload data to
+ * send to the remote task.
+ *
+ * - mcb_s->size should contain the size in bytes of the payload data
+ * pointed at by mcb_s->data. 0 is a legitimate value, and indicates
+ * that no payload data will be transferred. In the latter case,
+ * mcb_s->data will be ignored. See note.
+ *
+ * - mcb_s->opcode is an opaque status code carried during the message
+ * transfer the caller can fill with any appropriate value. It will be
+ * made available "as is" to the remote task into the status code
+ * field by the rt_task_send() service. If @a mcb_s is NULL, 0 will be
+ * returned to the initial sender into the status code field.
+ *
+ * @return O is returned upon success. Otherwise:
+ *
+ * - -ENXIO is returned if @a flowid does not match the expected
+ * identifier returned from the latest call of the current task to
+ * rt_task_receive(), or if the remote task stopped waiting for the
+ * reply in the meantime (e.g. the initial sender could have been
+ * deleted or forcibly unblocked).
+ *
+ * - -EPERM is returned if this service was called from an invalid
+ * context (e.g. interrupt, or non-primary).
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (switches to primary mode)
+ *
+ * Rescheduling: Always.
+ *
+ * @note When called from a user-space task, this service may need to
+ * allocate some temporary buffer space from the system heap to hold
+ * the reply data if the size of the latter exceeds a certain amount;
+ * the threshold before allocation is currently set to 64 bytes.
+ */
 
 int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
 

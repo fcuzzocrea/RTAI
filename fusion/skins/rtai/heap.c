@@ -138,7 +138,7 @@ static void __heap_flush_private (xnheap_t *heap,
  *
  * In the shared case, heaps are used as shared memory segments. All
  * allocation requests made through rt_heap_alloc() will then return
- * the same memory block, which will point at to the beginning of the
+ * the same memory block, which will point at the beginning of the
  * heap memory, and cover the entire heap space. This operating mode
  * is specified by passing the H_SHARED flag into the @a mode
  * parameter. By the proper use of a common @a name, all tasks can

@@ -240,3 +240,57 @@ scs_m.objs(18)=mlist(["Block","graphics","model","gui","doc"],..
                "ipar","blocktype","firing","dep_ut","label","nzcross","nmode",..
                "equations"],list(" ",2004),[],1,1,[],[],[],[1;0],[],"c",[],..
                [%t,%f],"",0,0,list()),"rtai_step",list())
+scs_m.objs(19)=mlist(["Block","graphics","model","gui","doc"],..
+               mlist(..
+               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
+               "gr_i","id","in_implicit","out_implicit"],[497.22251,208.59729],..
+               [60,40],%t,..
+               list(..
+               ["toto";
+               "n";
+               "1";
+               "1";
+               "[]";
+               "[]";
+               "[]";
+               "0";
+               "[]";
+               "[]";
+               "[]";
+               "[]";
+               "y";
+               "n"],[]),0,0,[],[],..
+               list(..
+               "xstringb(orig(1),orig(2),[''C RTAI'';''Block''],sz(1),sz(2),''fill'');",..
+               8),"","E","E"),..
+               mlist(..
+               ["model","sim","in","out","evtin","evtout","state","dstate","rpar",..
+               "ipar","blocktype","firing","dep_ut","label","nzcross","nmode",..
+               "equations"],list(" ",2004),1,1,[],[],[],[],[],[],"c",[],[%t,%f],..
+               "",0,0,list()),"C_RTAI_BLK",list())
+scs_m.objs(20)=mlist(["Block","graphics","model","gui","doc"],..
+               mlist(..
+               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
+               "gr_i","id","in_implicit","out_implicit"],[103.46353,88.111666],..
+               [60,40],%t,list(["1","SENS"],[]),[],0,0,[],..
+               list(..
+               "xstringb(orig(1),orig(2),[''SENSOR'';name],sz(1),sz(2),''fill'');",..
+               8),"",[],"E"),..
+               mlist(..
+               ["model","sim","in","out","evtin","evtout","state","dstate","rpar",..
+               "ipar","blocktype","firing","dep_ut","label","nzcross","nmode",..
+               "equations"],list(" ",2004),[],1,1,[],[],[],[],[],"c",[],[%t,%f],..
+               "",0,0,list()),"rtai_generic_inp",list())
+scs_m.objs(21)=mlist(["Block","graphics","model","gui","doc"],..
+               mlist(..
+               ["graphics","orig","sz","flip","exprs","pin","pout","pein","peout",..
+               "gr_i","id","in_implicit","out_implicit"],[197.25111,89.602194],..
+               [60,40],%t,list(["1","ACT"],[]),0,[],0,[],..
+               list(..
+               "xstringb(orig(1),orig(2),[''ACTUATOR'';name],sz(1),sz(2),''fill'');",..
+               8),"","E",[]),..
+               mlist(..
+               ["model","sim","in","out","evtin","evtout","state","dstate","rpar",..
+               "ipar","blocktype","firing","dep_ut","label","nzcross","nmode",..
+               "equations"],list(" ",2004),1,[],1,[],[],[],[],[],"d",[],[%t,%f],..
+               "",0,0,list()),"rtai_generic_out",list())

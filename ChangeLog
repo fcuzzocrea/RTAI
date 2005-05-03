@@ -1,3 +1,7 @@
+2004-05-03  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/scilab/macros/RTAI/*: Added new blocks
+
 2005-04-27  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
 	* testsuite/{user,kernel}/{latency,preempt}/display.c: output is now 
 	in tabular format and output uses the same units for each test.

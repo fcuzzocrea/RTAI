@@ -1,10 +1,12 @@
+2005-05-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/task.c (rt_task_reply): Fix flowid check (as pointed
+	out by Dmitry).
+
 2005-05-01  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/task.c (rt_task_send, rt_task_receive,
 	rt_task_reply): Add basic message passing primitives.
-
-	* nucleus/synch.c (xnsynch_forget_one_sleeper): Resumes the thread
-	leading a wait queue without transferring it the object ownership.
 
 	* skins/rtai/task.h (rt_task_spawn): Add helper combining
 	calls to rt_task_create() + rt_task_start().

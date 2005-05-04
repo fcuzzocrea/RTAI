@@ -1979,6 +1979,7 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
 
 {
     RT_TASK *sender, *receiver;
+    xnpholder_t *holder;
     size_t rsize;
     int err;
     spl_t s;
@@ -1990,14 +1991,28 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
 
     xnlock_get_irqsave(&nklock,s);
 
-    receiver = thread2rtask(xnsynch_forget_one_sleeper(&sender->msendq));
+    for (holder = getheadpq(xnsynch_wait_queue(&sender->msendq));
+	 holder != NULL;
+	 holder = nextpq(xnsynch_wait_queue(&sender->msendq),holder))
+	{
+	receiver = thread2rtask(link2thread(holder,plink));
 
-    /* Check the flow identifier, just in case the sender has vanished
-       away while we were processing its last message. Each sent
-       message carries a distinct flow identifier from other
-       senders wrt to a given receiver. */
+	/* Check the flow identifier, just in case the sender has
+	   vanished away while we were processing its last
+	   message. Each sent message carries a distinct flow
+	   identifier from other senders wrt to a given receiver. */
 
-    if (!receiver || receiver->wait_args.mps.mcb_s.flowid != flowid)
+	if (receiver->wait_args.mps.mcb_s.flowid == flowid)
+	    {
+	    /* Note that the following will cause the receiver to be
+	       unblocked without transferring the ownership of the
+	       msendq object, since we want the sender to keep it. */
+	    xnpod_resume_thread(&receiver->thread_base,XNPEND);
+	    break;
+	    }
+	}
+
+    if (!holder)
 	{
 	err = -ENXIO;
 	goto unlock_and_exit;

@@ -28,23 +28,24 @@
 #include <linux/module.h>
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
+#include <linux/reboot.h>
 
 #include <smi.h>
 
 static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_0, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_0, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_10, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801E_0, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_0, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_12, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_0, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_12, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801EB_0, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_0, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_1, PCI_ANY_ID, PCI_ANY_ID, },
-{ PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_2, PCI_ANY_ID, PCI_ANY_ID, },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801BA_10) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801E_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801CA_12) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801DB_12) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801EB_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_0) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_1) },
+{ PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_ICH6_2) },
 { 0, },
 };
 
@@ -123,9 +124,26 @@ static const unsigned rthal_smi_masked_bits =
 
 static unsigned rthal_smi_saved_bits;
 static unsigned short rthal_smi_en_addr;
+static struct pci_dev *smi_dev;
 
 #define mask_bits(v, p) outl(inl(p)&~(v),(p))
 #define set_bits(v, p)  outl(inl(p)|(v), (p))
+
+static int rthal_smi_reboot(struct notifier_block *nb, ulong event, void *buf);
+
+static struct notifier_block rthal_smi_notifier = {
+    .notifier_call = rthal_smi_reboot
+};
+
+static int rthal_smi_reboot(struct notifier_block *nb, ulong event, void *buf)
+{
+    if ((event != SYS_RESTART) && (event != SYS_HALT) &&
+        (event != SYS_POWER_OFF))
+        return NOTIFY_DONE;
+
+    rthal_smi_restore();
+    return NOTIFY_OK;
+}
 
 void rthal_smi_disable(void)
 {
@@ -134,6 +152,8 @@ void rthal_smi_disable(void)
 
     rthal_smi_saved_bits = inl(rthal_smi_en_addr) & rthal_smi_masked_bits;
     mask_bits(rthal_smi_masked_bits, rthal_smi_en_addr);
+
+    register_reboot_notifier(&rthal_smi_notifier);
 }
 
 void rthal_smi_restore(void)
@@ -142,12 +162,16 @@ void rthal_smi_restore(void)
         return;
 
     set_bits(rthal_smi_saved_bits, rthal_smi_en_addr);
+
+    unregister_reboot_notifier(&rthal_smi_notifier);
+
+    pci_dev_put(smi_dev);
 }
 
 static unsigned short __devinit get_smi_en_addr(struct pci_dev *dev)
 {
     u_int8_t byte0, byte1;
-    
+
     pci_read_config_byte (dev, PMBASE_B0, &byte0);
     pci_read_config_byte (dev, PMBASE_B1, &byte1);
     return SMI_CTRL_ADDR + (((byte1 << 1) | (byte0 >> 7)) << 7); // bits 7-15
@@ -166,21 +190,26 @@ void __devinit rthal_smi_init(void)
      */
     for(id = &rthal_smi_pci_tbl[0]; dev == NULL && id->vendor != 0; id++)
         dev = pci_get_device(id->vendor, id->device, NULL);
-    
+
     if(dev == NULL || dev->bus->number || dev->devfn != DEVFN)
+        {
+        pci_dev_put(dev);
         return ;
+        }
 
 #if CONFIG_RTAI_HW_SMI_WORKAROUND
 
     printk("RTAI: Intel chipset found, enabling SMI workaround.\n");
     rthal_smi_en_addr = get_smi_en_addr(dev);
+    smi_dev = dev;
 
 #else /* ! CONFIG_RTAI_HW_SMI_WORKAROUND */
 
     printk("RTAI: Intel chipset found and SMI workaround not enabled,\n"
            "      you may encounter high interrupt latencies.\n");
+    pci_dev_put(dev);
 
-#endif /* ! CONFIG_RTAI_HW_SMI_WORKAROUND */    
+#endif /* ! CONFIG_RTAI_HW_SMI_WORKAROUND */
 }
 
 /*

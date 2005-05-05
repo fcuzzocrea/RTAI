@@ -1,3 +1,15 @@
+2005-05-05  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* arch/i386/hal/smi.c (rthal_smi_pci_tbl): Use PCI_DEVICE
+	macro to build table initializer.
+
+	Call pci_dev_put when the pci device is no longer used.
+
+2005-05-05  Jan Kiszka <jan.kiszka@web.de>
+
+	* arch/i386/hal/smi.c (rthal_smi_disable): Register reboot
+	notifier to re-enable SMI upon reboot notification.
+
 2005-05-04  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/task.c (rt_task_reply): Fix flowid check (as pointed

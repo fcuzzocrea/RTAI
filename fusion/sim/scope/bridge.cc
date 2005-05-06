@@ -274,7 +274,7 @@ const char *TkContext::callTkGlobalProc (const char *proc,
 	{
 	va_list ap;
 	va_start(ap,format);
-	ap = formatArgs(format,0,ap);
+	formatArgs(format,0,ap);
 	va_end(ap);
 	tclCommand += formatString;
 	}
@@ -511,9 +511,9 @@ void TkContext::idleProc (ClientData clientData)
     stateProc((TkContext *)clientData,TkLeaveContext);
 }
 
-va_list TkContext::formatArgs (const char *format,
-			       int retArgs,
-			       va_list ap)
+void TkContext::formatArgs (const char *format,
+			    int retArgs,
+			    va_list& ap)
 {
     int phoff = -1;
 
@@ -594,8 +594,6 @@ va_list TkContext::formatArgs (const char *format,
 	if (substString.len() > 0)
 	    phoff += (substString.len() - 2);
 	}
-
-    return ap;
 }
 
 int TkContext::callTkProc (const char *proc,
@@ -610,7 +608,7 @@ int TkContext::callTkProc (const char *proc,
 	{
 	va_list ap;
 	va_start(ap,format);
-	ap = formatArgs(format,0,ap);
+	formatArgs(format,0,ap);
 	va_end(ap);
 	tclCommand += formatString;
 	}
@@ -638,7 +636,7 @@ void TkContext::setTkResult (const char *format, ...)
 {
     va_list ap;
     va_start(ap,format);
-    ap = formatArgs(format,1,ap);
+    formatArgs(format,1,ap);
     va_end(ap);
 
     Tcl_ResetResult(tclInterp);
@@ -650,7 +648,7 @@ void TkContext::appendTkResult (const char *format, ...)
 {
     va_list ap;
     va_start(ap,format);
-    ap = formatArgs(format,1,ap);
+    formatArgs(format,1,ap);
     va_end(ap);
     Tcl_AppendResult(tclInterp,(const char *)formatString,NULL);
 }

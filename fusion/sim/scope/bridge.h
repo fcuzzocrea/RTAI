@@ -84,9 +84,9 @@ private:
 
 protected:
 
-    static va_list formatArgs(const char *format,
-			      int retArgs,
-			      va_list ap);
+    static void formatArgs(const char *format,
+			   int retArgs,
+			   va_list& ap);
 
     static int notifyRequest(ClientData clientData,
 			     Tcl_Interp *interp,

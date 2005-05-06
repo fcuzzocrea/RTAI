@@ -198,7 +198,7 @@ typedef struct xnarch_heapcb {
 static inline void xnarch_init_heapcb (xnarch_heapcb_t *cb) {
 }
 
-#define __mvm_breakable(f) f ## $kdoor$
+#define __mvm_breakable(f) f ## _kdoor_
 
 static inline int __attribute__ ((unused))
 xnarch_read_environ (const char *name, const char **ptype, void *pvar)

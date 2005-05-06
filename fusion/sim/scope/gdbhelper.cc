@@ -185,15 +185,15 @@ static int translateProto (char **funcProto)
     // search for a kernel marker at tail of each
     // function name.
 	
-    if (*eow == '$')
+    if (*eow == '_')
 	{
 	char *sow = eow;
 
 	do
 	    sow--;
-	while (sow > *funcProto && !isspace(*sow) && *sow != '$');
+	while (sow > *funcProto && !isspace(*sow) && *sow != '_');
 
-	if (*sow == '$')
+	if (*sow == '_')
 	    {
 	    CString word(sow + 1,eow - sow - 1);
 

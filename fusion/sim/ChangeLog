@@ -1,3 +1,11 @@
+2005-05-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* scope/bridge.cc (formatArgs): Do not return va_list; some archs
+	may define this as a non-scalar type (i.e. PPC).
+
+	* scope/gdbhelper.cc (translateProto), vmutils/interface.h,
+	include/nucleus/asm/system.h: Stop using dollars in identifiers.
+
 2005-04-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* examples: Move example code to the new per-skin demo directory.

@@ -544,14 +544,14 @@ struct MvmSetFilterMsg : public MvmInterfaceMsg {
 #define name2(a,b) a ## b
 #endif // !name2
 
-#define kdoor(f) name2(f,$kdoor$)
-#define khook(f) name2(f,$khook$)
-#define kisrt(f) name2(f,$kisrt$)
-#define kdsrt(f) name2(f,$kdsrt$)
-#define kroot(f) name2(f,$kroot$)
-#define kcout(f) name2(f,$kcout$)
-#define kidle(f) name2(f,$kidle$)
-#define kinit(f) name2(f,$kinit$)
-#define khide(f) name2(f,$khide$)
+#define kdoor(f) name2(f,_kdoor_)
+#define khook(f) name2(f,_khook_)
+#define kisrt(f) name2(f,_kisrt_)
+#define kdsrt(f) name2(f,_kdsrt_)
+#define kroot(f) name2(f,_kroot_)
+#define kcout(f) name2(f,_kcout_)
+#define kidle(f) name2(f,_kidle_)
+#define kinit(f) name2(f,_kinit_)
+#define khide(f) name2(f,_khide_)
 
 #endif // !_mvmutils_interface_h

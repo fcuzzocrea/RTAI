@@ -23,9 +23,9 @@
 
 /*!
  * \ingroup native
- * \defgroup pipe Pipe management services.
+ * \defgroup pipe Message pipe services.
  *
- * Pipe management services.
+ * Message pipe services.
  *
  * Message pipes are an improved replacement for the legacy
  * RT-FIFOS. A message pipe is a two-way communication channel between

@@ -406,21 +406,21 @@ int rt_named_bits_delete(BITS *bits)
 	return rt_drg_on_adr(bits);
 }
 
-int rt_bits_init_u(unsigned long name, unsigned long mask)
+void *rt_bits_init_u(unsigned long name, unsigned long mask)
 {
 	BITS *bits;
 	if (rt_get_adr(name)) {
-		return 0;
+		return NULL;
 	}
 	if ((bits = rt_malloc(sizeof(BITS)))) {
 		rt_bits_init(bits, mask);
 		if (rt_register(name, bits, IS_BIT, current)) {
-			return (int)bits;
+			return bits;
 		} else {
 			rt_free(bits);
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 int rt_bits_delete_u(BITS *bits)

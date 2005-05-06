@@ -20,6 +20,13 @@
 #ifndef _RTAI_NUCLEUS_SYSTEM_H
 #define _RTAI_NUCLEUS_SYSTEM_H
 
+#include <memory.h>
+#include <string.h>
+
+static inline unsigned long ffnz (unsigned long word) {
+    return ffs((int)word) - 1;
+}
+
 #ifdef __RTAI_UVM__
 #include <nucleus/asm-uvm/system.h>
 #else /* !__RTAI_UVM__ */

@@ -1,3 +1,9 @@
+2005-05-06 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* include/nucleus/queue.h, nucleus/pod.c: Add optional scalable
+	scheduler support for large multi-threaded systems involving a lot
+	of concurrently runnable threads.
+
 2005-05-05  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* arch/i386/hal/smi.c (rthal_smi_pci_tbl): Use PCI_DEVICE

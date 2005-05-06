@@ -27059,6 +27059,11 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+cat >>confdefs.h <<_ACEOF
+#define CONFIG_RTAI_OPT_SCALABLE_PRIOS 256
+_ACEOF
+
+
 
 cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_OPT_NATIVE_REGISTRY 1

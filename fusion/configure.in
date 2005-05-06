@@ -353,6 +353,31 @@ AC_ARG_ENABLE(percpu-timer,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_OPT_PERCPU_TIMER:-no})
 
+AC_MSG_CHECKING(for scalable scheduler)
+AC_ARG_ENABLE(nucleus-scalable-sched,
+	AS_HELP_STRING([--enable-nucleus-scalable-sched], 
+                        [Enable scalable scheduler in nucleus]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_SCALABLE_SCHED=y ;;
+	*) unset CONFIG_RTAI_OPT_SCALABLE_SCHED ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_SCALABLE_SCHED:-no})
+
+if test x$CONFIG_RTAI_OPT_SCALABLE_SCHED = xy; then
+AC_MSG_CHECKING(for maximum number of priority levels)
+AC_ARG_ENABLE(nucleus-scalable-prios,
+	AS_HELP_STRING([--enable-nucleus-scalable-prios], [Set maximum number of priority levels]),
+	[case "$enableval" in
+	[[0-9]]*) CONFIG_RTAI_OPT_SCALABLE_PRIOS=$enableval ;;
+	*) AC_MSG_ERROR([Bad argument to option: --enable-nucleus-scalable-prios=<number>]) ;;
+	esac])
+if test x$CONFIG_RTAI_OPT_SCALABLE_PRIOS = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_OPT_SCALABLE_PRIOS=256
+fi
+AC_MSG_RESULT($CONFIG_RTAI_OPT_SCALABLE_PRIOS)
+fi
+
 AC_MSG_CHECKING(for debug support in nucleus)
 AC_ARG_ENABLE(nucleus-debug,
 	AS_HELP_STRING([--enable-nucleus-debug], [Enable debug support in nucleus]),
@@ -1002,11 +1027,13 @@ test \! x$CONFIG_RTAI_HW_FPU = x && AC_DEFINE(CONFIG_RTAI_HW_FPU,1,[Kconfig])
 test \! x$CONFIG_RTAI_HW_APERIODIC_TIMER = x && AC_DEFINE(CONFIG_RTAI_HW_APERIODIC_TIMER,1,[Kconfig])
 
 test x$CONFIG_RTAI_OPT_PERCPU_TIMER = xy && AC_DEFINE(CONFIG_RTAI_OPT_PERCPU_TIMER,1,[Kconfig])
+test x$CONFIG_RTAI_OPT_SCALABLE_SCHED = xy && AC_DEFINE(CONFIG_RTAI_OPT_SCALABLE_SCHED,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_DEBUG = xy && AC_DEFINE(CONFIG_RTAI_OPT_DEBUG,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_WATCHDOG = xy && AC_DEFINE(CONFIG_RTAI_OPT_WATCHDOG,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_FUSION = xy && AC_DEFINE(CONFIG_RTAI_OPT_FUSION,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_PIPE = xy && AC_DEFINE(CONFIG_RTAI_OPT_PIPE,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_PIPE_NRDEV,$CONFIG_RTAI_OPT_PIPE_NRDEV,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_SCALABLE_PRIOS,$CONFIG_RTAI_OPT_SCALABLE_PRIOS,[Kconfig])
 test x$CONFIG_RTAI_OPT_FILTER_EVIRQ = xy && AC_DEFINE(CONFIG_RTAI_OPT_FILTER_EVIRQ,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_FILTER_EVTHR = xy && AC_DEFINE(CONFIG_RTAI_OPT_FILTER_EVTHR,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_FILTER_EVSYS = xy && AC_DEFINE(CONFIG_RTAI_OPT_FILTER_EVSYS,1,[Kconfig])

@@ -157,10 +157,6 @@ static inline unsigned long long xnarch_ulldiv (unsigned long long ull,
     return ull / uld;
 }
 
-static inline unsigned long ffnz (unsigned long word) {
-    return ffs((int)word) - 1;
-}
-
 #define xnarch_stack_size(tcb)     ((tcb)->stacksize)
 #define xnarch_fpu_ptr(tcb)        (NULL)
 

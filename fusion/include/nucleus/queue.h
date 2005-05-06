@@ -38,7 +38,7 @@ static inline void inith (xnholder_t *holder) {
 }
 
 static inline void ath (xnholder_t *head,
-			xnholder_t *holder) {
+                        xnholder_t *holder) {
     /* Inserts the new element right after the heading one  */
     holder->last = head;
     holder->next = head->next;
@@ -89,11 +89,11 @@ do { \
     xnlock_get_irqsave(&qslot->lock,s); \
     curr = qslot->head.last; \
     while (curr != &qslot->head && nelems < qslot->elems) \
-	curr = curr->last, nelems++; \
+        curr = curr->last, nelems++; \
     if (curr != &qslot->head || nelems != qslot->elems) \
         xnpod_fatal("corrupted queue, qslot->elems=%d, qslot=%p", \
                     qslot->elems, \
-		    qslot); \
+                    qslot); \
     xnlock_put_irqrestore(&qslot->lock,s); \
 } while(0)
 
@@ -104,15 +104,15 @@ do { \
     xnlock_get_irqsave(&qslot->lock,s); \
     curr = qslot->head.last; \
     while (curr != &qslot->head && holder != curr) \
-	curr = curr->last; \
+        curr = curr->last; \
     if (curr == holder) \
         xnpod_fatal("inserting element twice, holder=%p, qslot=%p", \
-		    holder, \
-		    qslot); \
-    if (holder->last == NULL)	/* Just a guess. */ \
-	xnpod_fatal("holder=%p not initialized, qslot=%p", \
-		    holder, \
-		    qslot); \
+                    holder, \
+                    qslot); \
+    if (holder->last == NULL)   /* Just a guess. */ \
+        xnpod_fatal("holder=%p not initialized, qslot=%p", \
+                    holder, \
+                    qslot); \
     xnlock_put_irqrestore(&qslot->lock,s); \
 } while(0)
 
@@ -123,11 +123,11 @@ do { \
     xnlock_get_irqsave(&qslot->lock,s); \
     curr = qslot->head.last; \
     while (curr != &qslot->head && holder != curr) \
-	curr = curr->last; \
+        curr = curr->last; \
     if (curr == &qslot->head) \
-	xnpod_fatal("removing non-linked element, holder=%p, qslot=%p", \
-		    holder, \
-		    qslot); \
+        xnpod_fatal("removing non-linked element, holder=%p, qslot=%p", \
+                    holder, \
+                    qslot); \
     xnlock_put_irqrestore(&qslot->lock,s); \
 } while(0)
 
@@ -145,8 +145,9 @@ do { \
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
 static inline int insertq (xnqueue_t *qslot,
-			   xnholder_t *head,
-			   xnholder_t *holder) {
+                           xnholder_t *head,
+                           xnholder_t *holder)
+{
     /* Insert the <holder> element before <head> */
 #ifdef CONFIG_RTAI_OPT_DEBUG
     XENO_DEBUG_CHECK_QUEUE();
@@ -157,7 +158,8 @@ static inline int insertq (xnqueue_t *qslot,
 }
 
 static inline int prependq (xnqueue_t *qslot,
-			    xnholder_t *holder) {
+                            xnholder_t *holder)
+{
     /* Prepend the element to the queue */
 #ifdef CONFIG_RTAI_OPT_DEBUG
     XENO_DEBUG_CHECK_QUEUE();
@@ -168,7 +170,8 @@ static inline int prependq (xnqueue_t *qslot,
 }
 
 static inline int appendq (xnqueue_t *qslot,
-			   xnholder_t *holder) {
+                           xnholder_t *holder)
+{
     /* Append the element to the queue */
 #ifdef CONFIG_RTAI_OPT_DEBUG
     XENO_DEBUG_CHECK_QUEUE();
@@ -179,7 +182,8 @@ static inline int appendq (xnqueue_t *qslot,
 }
 
 static inline int removeq (xnqueue_t *qslot,
-			   xnholder_t *holder) {
+                           xnholder_t *holder)
+{
 #ifdef CONFIG_RTAI_OPT_DEBUG
     XENO_DEBUG_CHECK_QUEUE();
     XENO_DEBUG_REMOVE_QUEUE();
@@ -188,37 +192,42 @@ static inline int removeq (xnqueue_t *qslot,
     return --qslot->elems;
 }
 
-static inline xnholder_t *getheadq (xnqueue_t *qslot) {
+static inline xnholder_t *getheadq (xnqueue_t *qslot)
+{
     xnholder_t *holder = qslot->head.next;
     if (holder == &qslot->head) return NULL;
     return holder;
 }
 
-static inline xnholder_t *getq (xnqueue_t *qslot) {
+static inline xnholder_t *getq (xnqueue_t *qslot)
+{
     xnholder_t *holder = getheadq(qslot);
     if (holder) removeq(qslot,holder);
     return holder;
 }
 
 static inline xnholder_t *nextq (xnqueue_t *qslot,
-				 xnholder_t *holder) {
+                                 xnholder_t *holder)
+{
     xnholder_t *nextholder = holder->next;
     return nextholder == &qslot->head ? NULL : nextholder;
 }
 
 static inline xnholder_t *popq (xnqueue_t *qslot,
-				xnholder_t *holder) {
+                                xnholder_t *holder)
+{
     xnholder_t *nextholder = nextq(qslot,holder);
     removeq(qslot,holder);
     return nextholder;
 }
 
-static inline int countq (xnqueue_t *qslot) {
+static inline int countq (xnqueue_t *qslot)
+{
     return qslot->elems;
 }
 
-static inline int moveq (xnqueue_t *dstq, xnqueue_t *srcq) {
-    
+static inline int moveq (xnqueue_t *dstq, xnqueue_t *srcq)
+{
     xnholder_t *headsrc = srcq->head.next;
     xnholder_t *tailsrc = srcq->head.last->last;
     xnholder_t *headdst = &dstq->head;
@@ -262,39 +271,42 @@ typedef struct xnpqueue {
 } xnpqueue_t;
 
 static inline void initpq (xnpqueue_t *pqslot,
-			   int qdir) {
+                           int qdir,
+                           int maxpri)
+{
     initq(&pqslot->pqueue);
     pqslot->qdir = qdir;
 }
 
 static inline int insertpq (xnpqueue_t *pqslot,
-			    xnpholder_t *head,
-			    xnpholder_t *holder) {
+                            xnpholder_t *head,
+                            xnpholder_t *holder)
+{
     /* Insert the <holder> element before <head> */
     return insertq(&pqslot->pqueue,&head->plink,&holder->plink);
 }
 
 static inline int insertpqf (xnpqueue_t *pqslot,
-			     xnpholder_t *holder,
-			     int prio) {
-
+                             xnpholder_t *holder,
+                             int prio)
+{
     /* Insert the element at the end of its priority group (FIFO) */
 
     xnholder_t *curr;
 
     if (pqslot->qdir == xnqueue_down) {
-    	for (curr = pqslot->pqueue.head.last;
-	     curr != &pqslot->pqueue.head; curr = curr->last) {
-		if (prio <= ((xnpholder_t *)curr)->prio)
-		    break;
-	}
+        for (curr = pqslot->pqueue.head.last;
+             curr != &pqslot->pqueue.head; curr = curr->last) {
+                if (prio <= ((xnpholder_t *)curr)->prio)
+                    break;
+        }
     }
     else {
-    	for (curr = pqslot->pqueue.head.last;
-	     curr != &pqslot->pqueue.head; curr = curr->last) {
-		if (prio >= ((xnpholder_t *)curr)->prio)
-		    break;
-	}
+        for (curr = pqslot->pqueue.head.last;
+             curr != &pqslot->pqueue.head; curr = curr->last) {
+                if (prio >= ((xnpholder_t *)curr)->prio)
+                    break;
+        }
     }
 
     holder->prio = prio;
@@ -303,26 +315,26 @@ static inline int insertpqf (xnpqueue_t *pqslot,
 }
 
 static inline int insertpql (xnpqueue_t *pqslot,
-			     xnpholder_t *holder,
-			     int prio) {
-
+                             xnpholder_t *holder,
+                             int prio)
+{
     /* Insert the element at the front of its priority group (LIFO) */
 
     xnholder_t *curr;
 
     if (pqslot->qdir == xnqueue_down) {
-    	for (curr = pqslot->pqueue.head.next;
-	     curr != &pqslot->pqueue.head; curr = curr->next) {
-		if (prio >= ((xnpholder_t *)curr)->prio)
-		    break;
-	}
+        for (curr = pqslot->pqueue.head.next;
+             curr != &pqslot->pqueue.head; curr = curr->next) {
+                if (prio >= ((xnpholder_t *)curr)->prio)
+                    break;
+        }
     }
     else {
-    	for (curr = pqslot->pqueue.head.next;
-	     curr != &pqslot->pqueue.head; curr = curr->next) {
-		if (prio <= ((xnpholder_t *)curr)->prio)
-		    break;
-	}
+        for (curr = pqslot->pqueue.head.next;
+             curr != &pqslot->pqueue.head; curr = curr->next) {
+                if (prio <= ((xnpholder_t *)curr)->prio)
+                    break;
+        }
     }
 
     holder->prio = prio;
@@ -331,69 +343,77 @@ static inline int insertpql (xnpqueue_t *pqslot,
 }
 
 static inline xnpholder_t *findpqh (xnpqueue_t *pqslot,
-				    int prio) {
-
+                                    int prio)
+{
     /* Find the element heading a given priority group */
 
     xnholder_t *curr;
 
     if (pqslot->qdir == xnqueue_down) {
-    	for (curr = pqslot->pqueue.head.next;
-	     curr != &pqslot->pqueue.head; curr = curr->next) {
-		if (prio >= ((xnpholder_t *)curr)->prio)
-		    break;
-	}
+        for (curr = pqslot->pqueue.head.next;
+             curr != &pqslot->pqueue.head; curr = curr->next) {
+                if (prio >= ((xnpholder_t *)curr)->prio)
+                    break;
+        }
     }
     else {
-    	for (curr = pqslot->pqueue.head.next;
-	     curr != &pqslot->pqueue.head; curr = curr->next) {
-		if (prio <= ((xnpholder_t *)curr)->prio)
-		    break;
-	}
+        for (curr = pqslot->pqueue.head.next;
+             curr != &pqslot->pqueue.head; curr = curr->next) {
+                if (prio <= ((xnpholder_t *)curr)->prio)
+                    break;
+        }
     }
 
     if (curr && ((xnpholder_t *)curr)->prio == prio)
-	return (xnpholder_t *)curr;
+        return (xnpholder_t *)curr;
 
     return NULL;
 }
 
 static inline int appendpq (xnpqueue_t *pqslot,
-			    xnpholder_t *holder) {
+                            xnpholder_t *holder)
+{
     holder->prio = 0;
     return appendq(&pqslot->pqueue,&holder->plink);
 }
 
 static inline int prependpq (xnpqueue_t *pqslot,
-			     xnpholder_t *holder) {
+                             xnpholder_t *holder)
+{
     holder->prio = 0;
     return prependq(&pqslot->pqueue,&holder->plink);
 }
 
 static inline int removepq (xnpqueue_t *pqslot,
-			    xnpholder_t *holder) {
+                            xnpholder_t *holder)
+{
     return removeq(&pqslot->pqueue,&holder->plink);
 }
 
-static inline xnpholder_t *getheadpq (xnpqueue_t *pqslot) {
+static inline xnpholder_t *getheadpq (xnpqueue_t *pqslot)
+{
     return (xnpholder_t *)getheadq(&pqslot->pqueue);
 }
 
 static inline xnpholder_t *nextpq (xnpqueue_t *pqslot,
-				   xnpholder_t *holder) {
+                                   xnpholder_t *holder)
+{
     return (xnpholder_t *)nextq(&pqslot->pqueue,&holder->plink);
 }
 
-static inline xnpholder_t *getpq (xnpqueue_t *pqslot) {
+static inline xnpholder_t *getpq (xnpqueue_t *pqslot)
+{
     return (xnpholder_t *)getq(&pqslot->pqueue);
 }
 
 static inline xnpholder_t *poppq (xnpqueue_t *pqslot,
-				  xnpholder_t *holder) {
+                                  xnpholder_t *holder)
+{
     return (xnpholder_t *)popq(&pqslot->pqueue,&holder->plink);
 }
 
-static inline int countpq (xnpqueue_t *pqslot) {
+static inline int countpq (xnpqueue_t *pqslot)
+{
     return countq(&pqslot->pqueue);
 }
 
@@ -406,7 +426,8 @@ typedef struct xngholder {
 
 } xngholder_t;
 
-static inline void initgh (xngholder_t *holder, void *data) {
+static inline void initgh (xngholder_t *holder, void *data)
+{
     inith(&holder->glink.plink);
     holder->data = data;
 }
@@ -423,71 +444,81 @@ typedef struct xngqueue {
 } xngqueue_t;
 
 static inline void initgq (xngqueue_t *gqslot,
-			   xnqueue_t *freehq,
-			   void (*starvation)(xnqueue_t *),
-			   int threshold,
-			   int qdir) {
-    initpq(&gqslot->gqueue,qdir);
+                           xnqueue_t *freehq,
+                           void (*starvation)(xnqueue_t *),
+                           int threshold,
+                           int qdir,
+                           int maxpri)
+{
+    initpq(&gqslot->gqueue,qdir,maxpri);
     gqslot->freehq = freehq;
     gqslot->starvation = starvation;
     gqslot->threshold = threshold;
 }
 
-static inline xngholder_t *allocgh (xngqueue_t *gqslot) {
-
+static inline xngholder_t *allocgh (xngqueue_t *gqslot)
+{
     if (countq(gqslot->freehq) < gqslot->threshold)
-	gqslot->starvation(gqslot->freehq);
+        gqslot->starvation(gqslot->freehq);
 
     return (xngholder_t *)getq(gqslot->freehq);
 }
 
 static inline void *removegh (xngqueue_t *gqslot,
-			      xngholder_t *holder) {
+                              xngholder_t *holder)
+{
     removepq(&gqslot->gqueue,&holder->glink);
     appendq(gqslot->freehq,&holder->glink.plink);
     return holder->data;
 }
 
 static inline int insertgqf (xngqueue_t *gqslot,
-			     void *data,
-			     int prio) {
+                             void *data,
+                             int prio)
+{
     xngholder_t *holder = allocgh(gqslot);
     holder->data = data;
     return insertpqf(&gqslot->gqueue,&holder->glink,prio);
 }
 
 static inline int insertgql (xngqueue_t *gqslot,
-			     void *data,
-			     int prio) {
+                             void *data,
+                             int prio)
+{
     xngholder_t *holder = allocgh(gqslot);
     holder->data = data;
     return insertpql(&gqslot->gqueue,&holder->glink,prio);
 }
 
 static inline int appendgq (xngqueue_t *gqslot,
-			    void *data) {
+                            void *data)
+{
     xngholder_t *holder = allocgh(gqslot);
     holder->data = data;
     return appendpq(&gqslot->gqueue,&holder->glink);
 }
 
 static inline int prependgq (xngqueue_t *gqslot,
-			     void *data) {
+                             void *data)
+{
     xngholder_t *holder = allocgh(gqslot);
     holder->data = data;
     return prependpq(&gqslot->gqueue,&holder->glink);
 }
 
-static inline xngholder_t *getheadgq (xngqueue_t *gqslot) {
+static inline xngholder_t *getheadgq (xngqueue_t *gqslot)
+{
     return (xngholder_t *)getheadpq(&gqslot->gqueue);
 }
 
 static inline xngholder_t *nextgq (xngqueue_t *gqslot,
-				   xngholder_t *holder) {
+                                   xngholder_t *holder)
+{
     return (xngholder_t *)nextpq(&gqslot->gqueue,&holder->glink);
 }
 
-static inline void *getgq (xngqueue_t *gqslot) {
+static inline void *getgq (xngqueue_t *gqslot)
+{
     xngholder_t *holder = getheadgq(gqslot);
     if (!holder) return NULL;
     appendq(gqslot->freehq,&getpq(&gqslot->gqueue)->plink);
@@ -495,33 +526,201 @@ static inline void *getgq (xngqueue_t *gqslot) {
 }
 
 static inline xngholder_t *popgq (xngqueue_t *gqslot,
-				  xngholder_t *holder) {
+                                  xngholder_t *holder)
+{
     xngholder_t *nextholder = nextgq(gqslot,holder);
     removegh(gqslot,holder);
     return nextholder;
 }
 
 static inline xngholder_t *findgq (xngqueue_t *gqslot,
-				   void *data) {
+                                   void *data)
+{
     xnholder_t *holder;
 
     for (holder = gqslot->gqueue.pqueue.head.next;
-	 holder != &gqslot->gqueue.pqueue.head; holder = holder->next) {
+         holder != &gqslot->gqueue.pqueue.head; holder = holder->next) {
          if (((xngholder_t *)holder)->data == data)
-	     return (xngholder_t *)holder;
-	}
+             return (xngholder_t *)holder;
+        }
 
     return NULL;
 }
 
 static inline void *removegq (xngqueue_t *gqslot,
-			      void *data) {
+                              void *data)
+{
     xngholder_t *holder = findgq(gqslot,data);
     return holder ? removegh(gqslot,holder) : NULL;
 }
 
-static inline int countgq (xngqueue_t *gqslot) {
+static inline int countgq (xngqueue_t *gqslot)
+{
     return countpq(&gqslot->gqueue);
+}
+
+/* Multi-level priority queue */
+
+#define XNSPQUEUE_PRIOS      (CONFIG_RTAI_OPT_SCALABLE_PRIOS + 1)
+#define XNSPQUEUE_BITMAPSIZE ((XNSPQUEUE_PRIOS + BITS_PER_LONG - 1) / BITS_PER_LONG)
+
+typedef struct xnspqueue {
+
+    int qdir, maxpri;
+
+    unsigned int elems;
+
+    u_long bitmap[XNSPQUEUE_BITMAPSIZE];
+
+    struct xnqueue queue[XNSPQUEUE_PRIOS];
+
+} xnspqueue_t;
+
+static inline unsigned int countspq(xnspqueue_t *spqslot)
+{
+    return spqslot->elems;
+}
+
+static inline unsigned int xnspqueue_prio2idx(xnspqueue_t *spqslot, int prio)
+{
+    if (spqslot->qdir == xnqueue_up) /* minprio > maxprio */
+        return prio - spqslot->maxpri;
+    else
+        return spqslot->maxpri - prio;
+}
+
+static inline unsigned int xnspqueue_find_firstbit(xnspqueue_t *spqslot)
+{
+    int i;
+
+/* simplest approach for now */
+    for (i = 0; i < XNSPQUEUE_BITMAPSIZE; i++)
+        {
+        if (spqslot->bitmap[i])
+            return ffnz(spqslot->bitmap[i]) + i*BITS_PER_LONG;
+        }
+
+    return 0; /* something already had gone wrong before this code was called */
+}
+
+static inline void initspq(xnspqueue_t *spqslot, int qdir, int maxpri)
+{
+    int i;
+
+    spqslot->elems = 0;
+    spqslot->qdir  = qdir;
+    spqslot->maxpri = maxpri;
+    
+    memset(&spqslot->bitmap, 0, XNSPQUEUE_BITMAPSIZE*sizeof(u_long));
+    
+    for (i = 0; i < XNSPQUEUE_PRIOS; i++)
+        initq(&spqslot->queue[i]);
+}
+
+#define XNSPQUEUE_APPEND        0
+#define XNSPQUEUE_PREPEND       1
+
+static inline void __xnspqueue_insert(xnspqueue_t *spqslot,
+                                      xnpholder_t  *holder,
+                                      unsigned int idx,
+                                      int mode)
+{
+    xnqueue_t *queue = &spqslot->queue[idx];
+
+    if (mode == XNSPQUEUE_PREPEND) /* Hopefully, this should be optimized away. */
+        prependq(queue, &holder->plink);
+    else
+        appendq(queue, &holder->plink);
+
+    spqslot->elems++;
+    __setbits(spqslot->bitmap[idx / BITS_PER_LONG],1 << (idx % BITS_PER_LONG));
+}
+
+static inline void insertspql(xnspqueue_t *spqslot,
+                             xnpholder_t *holder,
+                             int prio)
+{
+    __xnspqueue_insert(spqslot, holder, xnspqueue_prio2idx(spqslot,prio), XNSPQUEUE_PREPEND);
+    holder->prio = prio;
+}
+
+static inline void insertspqf(xnspqueue_t *spqslot,
+                             xnpholder_t *holder,
+                             int prio)
+{
+    __xnspqueue_insert(spqslot, holder, xnspqueue_prio2idx(spqslot,prio), XNSPQUEUE_APPEND);
+    holder->prio = prio;
+}
+
+static inline void appendspq(xnspqueue_t *spqslot,
+                            xnpholder_t *holder)
+{
+    __xnspqueue_insert(spqslot, holder, spqslot->maxpri, XNSPQUEUE_APPEND);
+    holder->prio = spqslot->maxpri;
+}
+
+static inline void prependspq(xnspqueue_t *spqslot,
+                             xnpholder_t *holder)
+{
+    __xnspqueue_insert(spqslot, holder, 0, XNSPQUEUE_PREPEND);
+    holder->prio = 0;
+}
+
+static inline void removespq(xnspqueue_t *spqslot,
+                            xnpholder_t *holder)
+{
+    unsigned int idx = xnspqueue_prio2idx(spqslot,holder->prio);
+    xnqueue_t *queue = &spqslot->queue[idx];
+
+    spqslot->elems--;
+    
+    removeq(queue, &holder->plink);
+    
+    if (!countq(queue))
+        __clrbits(spqslot->bitmap[idx / BITS_PER_LONG],1 << (idx % BITS_PER_LONG));
+}
+
+static inline xnpholder_t* findspqh(xnspqueue_t *spqslot,
+                                   int prio)
+{
+    xnqueue_t *queue = &spqslot->queue[xnspqueue_prio2idx(spqslot,prio)];
+    return (xnpholder_t *)getheadq(queue);
+}
+
+static inline xnpholder_t* getheadspq(xnspqueue_t *spqslot)
+{
+    xnqueue_t *queue;
+
+    if (!countspq(spqslot))
+        return NULL;
+
+    queue = &spqslot->queue[xnspqueue_find_firstbit(spqslot)];
+    
+    return (xnpholder_t *)getheadq(queue);
+}
+
+static inline xnpholder_t* getspq(xnspqueue_t *spqslot)
+{
+    unsigned int idx;
+    xnholder_t *holder;
+    xnqueue_t *queue;
+
+    if (!countspq(spqslot))
+        return NULL;
+
+    idx    = xnspqueue_find_firstbit(spqslot);
+    queue  = &spqslot->queue[idx];
+    holder = getq(queue);
+
+    if (!holder)
+        return NULL;
+        
+    spqslot->elems--;    
+
+    if (!countq(queue))
+        __clrbits(spqslot->bitmap[idx / BITS_PER_LONG],1 << (idx % BITS_PER_LONG));
+    
+    return (xnpholder_t *)holder;
 }
 
 #endif /* !_RTAI_NUCLEUS_QUEUE_H */

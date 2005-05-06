@@ -34,19 +34,19 @@
 #include <nucleus/intr.h>
 
 /* Creation flags */
-#define XNDREORD 0x00000001	/* Don't reorder pend queues upon prio change */
+#define XNDREORD 0x00000001     /* Don't reorder pend queues upon prio change */
 
 /* Pod status flags */
-#define XNRPRIO  0x00000002	/* Reverse priority scheme */
-#define XNTIMED  0x00000004	/* Timer started */
-#define XNTMSET  0x00000008	/* Pod time has been set */
-#define XNTMPER  0x00000010	/* Periodic timing */
-#define XNFATAL  0x00000020	/* Pod encountered a fatal error */
-#define XNPIDLE  0x00000040	/* Pod is unavailable (initializing/shutting down) */
+#define XNRPRIO  0x00000002     /* Reverse priority scheme */
+#define XNTIMED  0x00000004     /* Timer started */
+#define XNTMSET  0x00000008     /* Pod time has been set */
+#define XNTMPER  0x00000010     /* Periodic timing */
+#define XNFATAL  0x00000020     /* Pod encountered a fatal error */
+#define XNPIDLE  0x00000040     /* Pod is unavailable (initializing/shutting down) */
 
 /* Sched status flags */
-#define XNKCOUT      0x80000000	/* Sched callout context */
-#define XNHTICK      0x40000000	/* Host tick pending  */
+#define XNKCOUT      0x80000000 /* Sched callout context */
+#define XNHTICK      0x40000000 /* Host tick pending  */
 #define XNSCHEDMASK  ~(XNKCOUT|XNHTICK)
 
 /* These flags are available to the real-time interfaces */
@@ -85,6 +85,32 @@
 /* Normal root thread priority == min_std_prio - 1 */
 #define XNPOD_ROOT_PRIO_BASE   ((nkpod)->root_prio_base)
 
+#ifdef CONFIG_RTAI_OPT_SCALABLE_SCHED
+typedef xnspqueue_t xnsched_queue_t;
+#define sched_initpq    initspq
+#define sched_countpq   countspq
+#define sched_insertpql insertspql
+#define sched_insertpqf insertspqf
+#define sched_appendpq  appendspq
+#define sched_prependpq prependspq
+#define sched_removepq  removespq
+#define sched_getheadpq getheadspq
+#define sched_getpq     getspq
+#define sched_findpqh   findspqh
+#else /* ! CONFIG_RTAI_OPT_SCALABLE_SCHED */
+typedef xnpqueue_t xnsched_queue_t;
+#define sched_initpq    initpq
+#define sched_countpq   countpq
+#define sched_insertpql insertpql
+#define sched_insertpqf insertpqf
+#define sched_appendpq  appendpq
+#define sched_prependpq prependpq
+#define sched_removepq  removepq
+#define sched_getheadpq getheadpq
+#define sched_getpq     getpq
+#define sched_findpqh   findpqh
+#endif /* !CONFIG_RTAI_OPT_SCALABLE_SCHED */
+
 /*! 
  * \brief Scheduling information structure.
  */
@@ -93,21 +119,21 @@ typedef struct xnsched {
 
     xnflags_t status;           /*!< Scheduler specific status bitmask */
 
-    xnthread_t *runthread;	/*!< Current thread (service or user). */
+    xnthread_t *runthread;      /*!< Current thread (service or user). */
 
     xnarch_cpumask_t resched;   /*!< Mask of CPUs needing rescheduling.*/
 
-    xnpqueue_t readyq;		/*!< Ready-to-run threads (prioritized). */
+    xnsched_queue_t readyq;     /*!< Ready-to-run threads (prioritized). */
 
     xnqueue_t timerwheel[XNTIMER_WHEELSIZE]; /*!< BSDish timer wheel. */
 
-    volatile unsigned inesting;	/*!< Interrupt nesting level. */
+    volatile unsigned inesting; /*!< Interrupt nesting level. */
 
 #ifdef CONFIG_RTAI_HW_FPU
-    xnthread_t *fpuholder;	/*!< Thread owning the current FPU context. */
+    xnthread_t *fpuholder;      /*!< Thread owning the current FPU context. */
 #endif /* CONFIG_RTAI_HW_FPU */
 
-    xnthread_t rootcb;		/*!< Root thread control block. */
+    xnthread_t rootcb;          /*!< Root thread control block. */
 
 } xnsched_t;
 
@@ -143,53 +169,53 @@ struct xnintr;
 
 struct xnpod {
 
-    xnflags_t status;		/*!< Status bitmask. */
+    xnflags_t status;           /*!< Status bitmask. */
 
-    xnticks_t jiffies;		/*!< Periodic ticks elapsed since boot. */
+    xnticks_t jiffies;          /*!< Periodic ticks elapsed since boot. */
 
-    xnticks_t wallclock;	/*!< Wallclock time in ticks. */
+    xnticks_t wallclock;        /*!< Wallclock time in ticks. */
 
-    xntimer_t htimer;		/*!< Host timer. */
+    xntimer_t htimer;           /*!< Host timer. */
 
     xnsched_t sched[XNARCH_NR_CPUS]; /*!< Per-cpu scheduler slots. */
 
-    xnqueue_t suspendq;		/*!< Suspended (blocked) threads. */
+    xnqueue_t suspendq;         /*!< Suspended (blocked) threads. */
 
-    xnqueue_t threadq;		/*!< All existing threads. */
+    xnqueue_t threadq;          /*!< All existing threads. */
 
-    atomic_counter_t schedlck;	/*!< Scheduler lock count. */
+    atomic_counter_t schedlck;  /*!< Scheduler lock count. */
 
-    xnqueue_t tstartq,		/*!< Thread start hook queue. */
-	      tswitchq,		/*!< Thread switch hook queue. */
-	      tdeleteq;		/*!< Thread delete hook queue. */
+    xnqueue_t tstartq,          /*!< Thread start hook queue. */
+              tswitchq,         /*!< Thread switch hook queue. */
+              tdeleteq;         /*!< Thread delete hook queue. */
 
-    int minpri,			/*!< Minimum priority value. */
-        maxpri;			/*!< Maximum priority value. */
+    int minpri,                 /*!< Minimum priority value. */
+        maxpri;                 /*!< Maximum priority value. */
 
-    int root_prio_base;		/*!< Base priority of ROOT thread. */
+    int root_prio_base;         /*!< Base priority of ROOT thread. */
 
-    u_long tickvalue;		/*!< Tick duration (ns, 1 if aperiodic). */
+    u_long tickvalue;           /*!< Tick duration (ns, 1 if aperiodic). */
 
-    u_long ticks2sec;	/*!< Number of ticks per second (1e9
-				  if aperiodic). */
+    u_long ticks2sec;   /*!< Number of ticks per second (1e9
+                                  if aperiodic). */
 
     struct {
-	xnisr_t tickhandler; /*!< Clock tick handler. */
-	void (*shutdown)(int xtype); /*!< Shutdown hook. */
-	void (*settime)(xnticks_t newtime); /*!< Clock setting hook. */
-	int (*faulthandler)(xnarch_fltinfo_t *fltinfo); /*!< Trap/exception handler. */
-	int (*unload)(void);	/*!< Unloading hook. */
-    } svctable;			/*!< Table of overridable service entry points. */
+        xnisr_t tickhandler; /*!< Clock tick handler. */
+        void (*shutdown)(int xtype); /*!< Shutdown hook. */
+        void (*settime)(xnticks_t newtime); /*!< Clock setting hook. */
+        int (*faulthandler)(xnarch_fltinfo_t *fltinfo); /*!< Trap/exception handler. */
+        int (*unload)(void);    /*!< Unloading hook. */
+    } svctable;                 /*!< Table of overridable service entry points. */
 
 #ifdef CONFIG_RTAI_OPT_WATCHDOG
-    xnticks_t watchdog_trigger;	/* !< Watchdog trigger value. */
-    xnticks_t watchdog_reload;	/* !< Watchdog reload value. */
-    int watchdog_armed;		/* !< Watchdog state. */
+    xnticks_t watchdog_trigger; /* !< Watchdog trigger value. */
+    xnticks_t watchdog_reload;  /* !< Watchdog reload value. */
+    int watchdog_armed;         /* !< Watchdog state. */
 #endif /* CONFIG_RTAI_OPT_WATCHDOG */
 
 #ifdef __RTAI_SIM__
     void (*schedhook)(xnthread_t *thread,
-		      xnflags_t mask); /*!< Internal scheduling hook. */
+                      xnflags_t mask); /*!< Internal scheduling hook. */
 #endif /* __RTAI_SIM__ */
 
 };
@@ -216,11 +242,11 @@ extern "C" {
 #endif
 
 void xnpod_schedule_runnable(xnthread_t *thread,
-			     int flags);
+                             int flags);
 
 void xnpod_renice_thread_inner(xnthread_t *thread,
-			       int prio,
-			       int propagate);
+                               int prio,
+                               int propagate);
 
 #ifdef CONFIG_RTAI_HW_FPU
 void xnpod_switch_fpu(xnsched_t *sched);
@@ -247,15 +273,15 @@ static inline int xnpod_get_qdir (xnpod_t *pod)
 static inline int xnpod_get_minprio (xnpod_t *pod, int incr)
 {
     return xnpod_get_qdir(pod) == xnqueue_up ?
-	pod->minpri + incr :
-	pod->minpri - incr;
+        pod->minpri + incr :
+        pod->minpri - incr;
 }
 
 static inline int xnpod_get_maxprio (xnpod_t *pod, int incr)
 {
     return xnpod_get_qdir(pod) == xnqueue_up ?
-	pod->maxpri - incr :
-	pod->maxpri + incr;
+        pod->maxpri - incr :
+        pod->maxpri + incr;
 }
 
 static inline int xnpod_priocompare (int inprio, int outprio)
@@ -365,50 +391,50 @@ static inline xnticks_t xnpod_ns2ticks (xntime_t t) {
 }
 
 int xnpod_init(xnpod_t *pod,
-	       int minpri,
-	       int maxpri,
-	       xnflags_t flags);
+               int minpri,
+               int maxpri,
+               xnflags_t flags);
 
 int xnpod_start_timer(u_long nstick,
-		      xnisr_t tickhandler);
+                      xnisr_t tickhandler);
 
 void xnpod_stop_timer(void);
 
 void xnpod_shutdown(int xtype);
 
 int xnpod_init_thread(xnthread_t *thread,
-		      const char *name,
-		      int prio,
-		      xnflags_t flags,
-		      unsigned stacksize);
+                      const char *name,
+                      int prio,
+                      xnflags_t flags,
+                      unsigned stacksize);
 
 int xnpod_start_thread(xnthread_t *thread,
-		       xnflags_t mode,
-		       int imask,
-		       xnarch_cpumask_t affinity,
-		       void (*entry)(void *cookie),
-		       void *cookie);
+                       xnflags_t mode,
+                       int imask,
+                       xnarch_cpumask_t affinity,
+                       void (*entry)(void *cookie),
+                       void *cookie);
 
 void xnpod_restart_thread(xnthread_t *thread);
 
 void xnpod_delete_thread(xnthread_t *thread);
 
 xnflags_t xnpod_set_thread_mode(xnthread_t *thread,
-				xnflags_t clrmask,
-				xnflags_t setmask);
+                                xnflags_t clrmask,
+                                xnflags_t setmask);
 
 void xnpod_suspend_thread(xnthread_t *thread,
-			  xnflags_t mask,
-			  xnticks_t timeout,
-			  struct xnsynch *resource);
+                          xnflags_t mask,
+                          xnticks_t timeout,
+                          struct xnsynch *resource);
 
 void xnpod_resume_thread(xnthread_t *thread,
-			 xnflags_t mask);
+                         xnflags_t mask);
 
 int xnpod_unblock_thread(xnthread_t *thread);
 
 void xnpod_renice_thread(xnthread_t *thread,
-			 int prio);
+                         int prio);
 
 int xnpod_migrate_thread(int cpu);
 
@@ -426,10 +452,10 @@ static inline void xnpod_lock_sched (void) {
 static inline void xnpod_unlock_sched (void) {
 
     if (xnarch_atomic_dec_and_test(&nkpod->schedlck))
-	{
-	__clrbits(xnpod_current_sched()->runthread->status,XNLOCK);
-	xnpod_schedule();
-	}
+        {
+        __clrbits(xnpod_current_sched()->runthread->status,XNLOCK);
+        xnpod_schedule();
+        }
 }
 
 int xnpod_announce_tick(struct xnintr *intr);
@@ -441,8 +467,8 @@ void xnpod_deactivate_rr(void);
 void xnpod_set_time(xnticks_t newtime);
 
 int xnpod_set_thread_periodic(xnthread_t *thread,
-			      xnticks_t idate,
-			      xnticks_t period);
+                              xnticks_t idate,
+                              xnticks_t period);
 
 int xnpod_wait_thread_period(void);
 
@@ -453,10 +479,10 @@ static inline xntime_t xnpod_get_cpu_time(void) {
 }
 
 int xnpod_add_hook(int type,
-		   void (*routine)(xnthread_t *));
+                   void (*routine)(xnthread_t *));
 
 int xnpod_remove_hook(int type,
-		      void (*routine)(xnthread_t *));
+                      void (*routine)(xnthread_t *));
 
 void xnpod_check_context(int mask);
 

@@ -444,6 +444,7 @@ AH_BOTTOM([#endif /* !_RTAI_SIM_CONFIG_H */])
 
 dnl Nucleus limits -- set reasonable values.
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_SYS_HEAPSZ,128,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_OPT_SCALABLE_PRIOS,256,[Kconfig])
 
 dnl Native skin options -- force all in.
 AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_REGISTRY,1,[Kconfig])

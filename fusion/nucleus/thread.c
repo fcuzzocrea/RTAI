@@ -110,7 +110,7 @@ int xnthread_init (xnthread_t *thread,
     inith(&thread->slink);
     initph(&thread->rlink);
     initph(&thread->plink);
-    initpq(&thread->claimq,xnpod_get_qdir(nkpod));
+    initpq(&thread->claimq,xnpod_get_qdir(nkpod),xnpod_get_maxprio(nkpod,0));
 
     xnarch_init_display_context(thread);
 

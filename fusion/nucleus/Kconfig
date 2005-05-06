@@ -82,6 +82,38 @@ config RTAI_OPT_WATCHDOG
 	bahalf of the timer tick handler, thus is only active after
 	the timer has been started.
 
+menu "Scalability"
+	depends on RTAI_OPT_EXPERT
+
+config RTAI_OPT_SCALABLE_SCHED
+	bool "O(1) scheduler"
+	default n
+	help
+	
+	This option causes a multi-level priority queue to be
+	used in the real-time thread scheduler, so that it operates
+	in constant-time regardless of the number of _concurrently
+	runnable_ threads (which might be much lower than the total
+	number of active threads). Its use is recommended for
+	large multi-threaded systems involving more than 10 of such
+	threads; otherwise, the default linear method usually performs
+	better with lower memory footprints.
+
+config RTAI_OPT_SCALABLE_PRIOS
+	string "Number of priority levels"
+	depends on RTAI_OPT_SCALABLE_SCHED
+	default 256
+	help
+
+	This option sets the maximum number of priority levels available
+	within the scalable scheduler's multi-level queue. This value
+	must be higher or equal than the maximum priority range which
+	could be required for running the real-time skin used by the
+	application. For instance, the native RTAI skin needs a
+	hundred priority levels.
+
+endmenu
+
 menu "LTT tracepoints filtering"
 	depends on RTAI_OPT_EXPERT && RTAI_OPT_DISABLED
 

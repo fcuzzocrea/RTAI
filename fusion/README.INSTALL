@@ -52,6 +52,8 @@ configuration switches can be listed by running ./configure
  --enable-nucleus-heap-size	Set the size of the system heap (Kb)
  --enable-nucleus-debug	Enable debug support in nucleus
  --enable-nucleus-watchdog	Enable nucleus watchdog support
+ --enable-nucleus-scalable-sched	Enable the scalable O(1) scheduler
+ --enable-nucleus-scalable-prios	Set the maximum number of priority levels
  --enable-fpu		Enable FPU support
  --enable-aperiodic_timer Enable aperiodic timer support (oneshot mode)
  --enable-module-debug	Enable debug information in kernel modules

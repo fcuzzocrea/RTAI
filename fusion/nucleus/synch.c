@@ -86,7 +86,7 @@ void xnsynch_init (xnsynch_t *synch,
 
     synch->status = flags;
     synch->owner = NULL;
-    initpq(&synch->pendq,xnpod_get_qdir(nkpod));
+    initpq(&synch->pendq,xnpod_get_qdir(nkpod),xnpod_get_maxprio(nkpod,0));
     xnarch_init_display_context(synch);
 }
 

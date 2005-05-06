@@ -43,6 +43,9 @@
 #undef CONFIG_RTAI_OPT_NATIVE_SEM
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_SCALABLE_PRIOS
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_SYS_HEAPSZ
 
 /* Define to one of `_getb67', `GETB67', `getb67' for Cray-2 and Cray-YMP

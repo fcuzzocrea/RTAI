@@ -298,7 +298,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     for (cpu=0; cpu < nr_cpus; ++cpu)
         {
         sched = &pod->sched[cpu];
-        initpq(&sched->readyq,xnpod_get_qdir(pod));
+        sched_initpq(&sched->readyq,xnpod_get_qdir(pod),xnpod_get_maxprio(pod,0));
         sched->status = 0;
         sched->inesting = 0;
         sched->runthread = NULL;
@@ -1082,7 +1082,7 @@ void xnpod_delete_thread (xnthread_t *thread)
         {
         if (testbits(thread->status,XNREADY))
             {
-            removepq(&sched->readyq,&thread->rlink);
+            sched_removepq(&sched->readyq,&thread->rlink);
             __clrbits(thread->status,XNREADY);
             }
         }
@@ -1279,7 +1279,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 
         if (testbits(thread->status,XNREADY))
             {
-            removepq(&sched->readyq,&thread->rlink);
+            sched_removepq(&sched->readyq,&thread->rlink);
             __clrbits(thread->status,XNREADY);
             }
 
@@ -1488,14 +1488,14 @@ void xnpod_resume_thread (xnthread_t *thread,
         }
     else if (testbits(thread->status,XNREADY))
         {
-        removepq(&sched->readyq,&thread->rlink);
+        sched_removepq(&sched->readyq,&thread->rlink);
         __clrbits(thread->status,XNREADY);
         }
 
     /* The readied thread is always put to the end of its priority
        group. */
 
-    insertpqf(&sched->readyq,&thread->rlink,thread->cprio);
+    sched_insertpqf(&sched->readyq,&thread->rlink,thread->cprio);
 
     xnsched_set_resched(sched);
 
@@ -1505,7 +1505,7 @@ void xnpod_resume_thread (xnthread_t *thread,
 
 #ifdef __RTAI_SIM__
         if (nkpod->schedhook &&
-            getheadpq(&sched->readyq) != &thread->rlink)
+            sched_getheadpq(&sched->readyq) != &thread->rlink)
             /* The running thread does no longer lead the ready
                queue. */
             nkpod->schedhook(thread,XNREADY);
@@ -1757,7 +1757,7 @@ int xnpod_migrate_thread (int cpu)
 
     if(testbits(thread->status, XNREADY))
         {
-        removepq(&thread->sched->readyq, &thread->rlink);
+        sched_removepq(&thread->sched->readyq, &thread->rlink);
         clrbits(thread->status, XNREADY);
         }
 
@@ -1823,7 +1823,7 @@ void xnpod_rotate_readyq (int prio)
 
     sched = xnpod_current_sched();
 
-    if (countpq(&sched->readyq) == 0)
+    if (sched_countpq(&sched->readyq) == 0)
         goto unlock_and_exit; /* Nobody is ready. */
 
     xnltt_log_event(rtai_ev_rdrotate,sched->runthread,prio);
@@ -1836,7 +1836,7 @@ void xnpod_rotate_readyq (int prio)
         xnpod_resume_thread(sched->runthread,0);
     else
         {
-        pholder = findpqh(&sched->readyq,prio);
+        pholder = sched_findpqh(&sched->readyq,prio);
 
         if (pholder)
             /* This call performs the actual rotation. */
@@ -2111,13 +2111,13 @@ static inline void xnpod_preempt_current_thread (xnsched_t *sched)
 {
     xnthread_t *thread = sched->runthread;
 
-    insertpql(&sched->readyq,&thread->rlink,thread->cprio);
+    sched_insertpql(&sched->readyq,&thread->rlink,thread->cprio);
     __setbits(thread->status,XNREADY);
 
 #ifdef __RTAI_SIM__
-    if (getheadpq(&sched->readyq) != &thread->rlink)
+    if (sched_getheadpq(&sched->readyq) != &thread->rlink)
         nkpod->schedhook(thread,XNREADY);
-    else if (countpq(&sched->readyq) > 1)
+    else if (sched_countpq(&sched->readyq) > 1)
         {
         /* The running thread is still heading the ready queue and
            more than one thread is linked to this queue, so we may
@@ -2261,7 +2261,7 @@ void xnpod_schedule (void)
 
     if (!testbits(runthread->status,XNTHREAD_BLOCK_BITS|XNZOMBIE))
         {
-	xnpholder_t *pholder = getheadpq(&sched->readyq);
+	xnpholder_t *pholder = sched_getheadpq(&sched->readyq);
 	  
         if (pholder)
             {
@@ -2287,7 +2287,7 @@ void xnpod_schedule (void)
  do_switch:
 
     threadout = runthread;
-    threadin = link2thread(getpq(&sched->readyq),rlink);
+    threadin = link2thread(sched_getpq(&sched->readyq),rlink);
 
     __clrbits(threadin->status,XNREADY);
 
@@ -2392,7 +2392,7 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 
     if (thread != runthread)
         {
-        removepq(&sched->readyq,&thread->rlink);
+        sched_removepq(&sched->readyq,&thread->rlink);
 
         /* The running thread might be in the process of being blocked
            or reniced but not (un/re)scheduled yet.  Therefore, we
@@ -2408,9 +2408,9 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
                readyq, regardless of its priority. */
 
             if (testbits(runthread->status,XNLOCK))
-                prependpq(&sched->readyq,&runthread->rlink);
+                sched_prependpq(&sched->readyq,&runthread->rlink);
             else
-                insertpql(&sched->readyq,&runthread->rlink,runthread->cprio);
+                sched_insertpql(&sched->readyq,&runthread->rlink,runthread->cprio);
 
             __setbits(runthread->status,XNREADY);
             }
@@ -2422,10 +2422,10 @@ void xnpod_schedule_runnable (xnthread_t *thread, int flags)
 
     if (flags & XNPOD_SCHEDLIFO)
         /* Insert LIFO inside priority group */
-        insertpql(&sched->readyq,&thread->rlink,thread->cprio);
+        sched_insertpql(&sched->readyq,&thread->rlink,thread->cprio);
     else
         /* Insert FIFO inside priority group */
-        insertpqf(&sched->readyq,&thread->rlink,thread->cprio);
+        sched_insertpqf(&sched->readyq,&thread->rlink,thread->cprio);
 
     __setbits(thread->status,XNREADY);
 
@@ -2437,7 +2437,7 @@ maybe_switch:
 
         if (testbits(runthread->status,XNREADY))
             {
-            removepq(&sched->readyq,&runthread->rlink);
+            sched_removepq(&sched->readyq,&runthread->rlink);
             __clrbits(runthread->status,XNREADY);
             }
 
@@ -2446,7 +2446,7 @@ maybe_switch:
 
     xnsched_clr_resched(sched);
 
-    threadin = link2thread(getpq(&sched->readyq),rlink);
+    threadin = link2thread(sched_getpq(&sched->readyq),rlink);
 
     __clrbits(threadin->status,XNREADY);
 

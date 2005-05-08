@@ -1,3 +1,13 @@
+2005-05-08  Michael Neuhauser  <mike@firmix.at>
+
+	* base/include/asm-arm/rtai_hal.immed: added change of ADEOS domain
+	  in switching to/from Linux (copied from i386).
+	* base/include/asm-arm/rtai_hal.*: made RTAI_CPU_FREQ &
+	  RTAI_TSC_FREQ visible in user-space.
+	* configure, configure.in: tuned RTAI_USER_CFLAGS
+	  - added cpu flags (-march=armv4 -mtune=arm9tdmi) for EP9301
+	  - added -fomit-frame-pointer if not debugging (all ARM sub-archs)
+
 2005-04-28  Alexey Zhelezov  <zhelezov@mail.desy.de>
 
         * base/include/rtai_scb.h: fixed wrong free space calculation in
@@ -12,7 +22,7 @@
 
         * testsuite/{user,kernel}/{latency,preempt}/display.c: output is now 
 	  in tabular format and output uses the same units for each test.
-		
+
 2005-04-27  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/sched/api.c: timing functions return an integer to indicate
@@ -33,7 +43,7 @@
 2005-04-21  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/patches/README: added note that pxa255_2.6.7-bk6-karo
-	only works in immediate mode
+	  only works in immediate mode
 
 2005-04-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

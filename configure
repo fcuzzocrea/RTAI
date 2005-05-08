@@ -24040,15 +24040,19 @@ case $RTAI_TARGET_ARCH in
         ;;
  arm)
 	if test "$CONFIG_ARCH_EP9301" = y; then
-               RTAI_TARGET_SUBARCH=ep9301
+		RTAI_TARGET_SUBARCH=ep9301
+		RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -march=armv4 -mtune=arm9tdmi"
 	elif test "$CONFIG_ARCH_PXA" = y; then
-               RTAI_TARGET_SUBARCH=pxa
+		RTAI_TARGET_SUBARCH=pxa
 	else
-	   echo
-	   echo "******************************************"
-	   echo "Unsupported ARM sub-architecture -- Sorry."
-	   echo "******************************************"
-	   exit 1
+		echo
+		echo "******************************************"
+		echo "Unsupported ARM sub-architecture -- Sorry."
+		echo "******************************************"
+		exit 1
+	fi
+	if test x$CONFIG_RTAI_USER_DEBUG != xy; then
+		RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -fomit-frame-pointer"
 	fi
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"

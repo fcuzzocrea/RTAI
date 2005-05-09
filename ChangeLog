@@ -1,3 +1,12 @@
+2005-05-09  Michael Neuhauser  <mike@firmix.at>
+
+	* base/arch/arm/patches/ep9301_hal17_2.4.21-rmk1-crus1.4.2.patch,
+	  base/arch/arm/patches/ep9301_hal17_2.4.21-rmk1-crus1.4.2.ChangeLog:
+	  new Adeos patch (r17c3) see
+	  ep9301_hal17_2.4.21-rmk1-crus1.4.2.ChangeLog for changes (short
+	  summary: Adeos can be loaded as module again; fixed bug in fix
+	  for mlockall() & mmap() problem)
+
 2005-05-08  Michael Neuhauser  <mike@firmix.at>
 
 	* base/include/asm-arm/rtai_hal.immed: added change of ADEOS domain

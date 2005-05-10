@@ -1909,12 +1909,16 @@ int __rtai_hal_init (void)
 	}
 	printk(KERN_INFO "RTAI[hal]: mounted (IMMEDIATE).\n");
 
+#ifdef CONFIG_SMP
 	if (IsolCpusMask) {
 		for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {
 			rt_assign_irq_to_cpu(trapnr, ~IsolCpusMask);
 			rtai_orig_irq_affinity[trapnr] = rtai_old_irq_affinity[trapnr];
 		}
 	}
+#else 
+	IsolCpusMask = 0;
+#endif
 	return 0;
 }
 

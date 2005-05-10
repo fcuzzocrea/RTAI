@@ -266,7 +266,6 @@ AC_MSG_CHECKING(for GCC architecture specific flags)
 mkdir -p .rtai_display_archflags
 cat > .rtai_display_archflags/display_archflags.c <<EOF
 #include <stdio.h>
-
 int main(void)
 {
     char *str = RTAI_CFLAGS;
@@ -280,7 +279,7 @@ always := display_archflags
 
 HOST_EXTRACFLAGS += -DRTAI_CFLAGS="\"\$(CFLAGS)\""
 EOF
-make -s -C $RTAI_LINUX_DIR ARCH=$RTAI_TARGET_ARCH \
+make -s -C $RTAI_LINUX_DIR CC=$CC ARCH=$RTAI_TARGET_ARCH \
         CROSS_COMPILE=$CROSS_COMPILE M=$PWD/.rtai_display_archflags >& /dev/null
 for flag in `.rtai_display_archflags/display_archflags`; do case $flag in
     -march*|-mcpu*|-mtune*|-Wa,-me500|-EB|-EL)
@@ -1171,7 +1170,12 @@ AC_MSG_RESULT([done])
 
 AC_MSG_CHECKING([for RTAI target architecture])
 
-RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include -D_GNU_SOURCE -D_REENTRANT"
+
+RTAI_USER_CFLAGS="-I$RTAI_LINUX_SRCDIR/include -D_GNU_SOURCE -D_REENTRANT"
+if test x"$RTAI_LINUX_DIR" != x"$RTAI_LINUX_SRCDIR"; then
+  RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include2 $RTAI_USER_CFLAGS"
+  RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include $RTAI_USER_CFLAGS"
+fi
 RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS $RTAI_ARCH_FLAGS"
 
 case $RTAI_TARGET_ARCH in
@@ -1247,6 +1251,7 @@ AC_SUBST(RTAI_KMOD_APP_CFLAGS)
 AC_SUBST(RTAI_USER_APP_CFLAGS)
 AC_SUBST(RTAI_FP_CFLAGS)
 AC_SUBST(RTAI_LINUX_DIR)
+AC_SUBST(RTAI_LINUX_SRCDIR)
 AC_SUBST(RTAI_LINUX_VERSION)
 AC_SUBST(RTAI_MODULE_DIR)
 AC_SUBST(RTAI_MODULE_EXT)

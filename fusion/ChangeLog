@@ -1,3 +1,16 @@
+2005-05-10  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/vxworks/sysLib.c: Remove redundant and wrong book-keeping
+	of system clock period and frequency, delegate this to pod
+	functions.
+
+	* configure.in: Pass CC variable to Kbuild when determining GCC
+	architecture flags, CROSS_COMPILE may be empty but CC defined
+	alone (when compiling with gcc-2.95 for example).
+	Fix compiling user-space applications using kernel headers for out
+	of tree builds by exporting kernel source dir and adding correct -I
+	options to RTAI_USER_CFLAGS.
+
 2005-05-06 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* include/nucleus/queue.h, nucleus/pod.c: Add optional scalable

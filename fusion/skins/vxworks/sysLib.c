@@ -21,11 +21,10 @@
 #include "rtai_config.h"
 #include "vxworks/defs.h"
 
-static u_long nstick;
+#define ONE_BILLION 1000000000
+
 static wind_tick_handler_t tick_handler;
 static int tick_handler_arg;
-
-
 
 
 void tickAnnounce(void)
@@ -44,10 +43,10 @@ static int __tickAnnounce(xnintr_t *intr)
 }
 
 
-int wind_sysclk_init(u_long init_ticks)
+int wind_sysclk_init(u_long init_rate)
 {
-    tick_handler = NULL;
-    return xnpod_start_timer(nstick = init_ticks, (xnisr_t)&__tickAnnounce);
+    sysClkConnect(NULL, 0);
+    return sysClkRateSet(init_rate);
 }
 
 
@@ -57,17 +56,13 @@ void wind_sysclk_cleanup(void)
 }
 
 
-STATUS sysClkConnect (wind_tick_handler_t func, int arg )
+STATUS sysClkConnect (wind_tick_handler_t func, int arg)
 {
-    spl_t s;
-
     if(func == NULL)
         return ERROR;
 
-    xnlock_get_irqsave(&nklock, s);
-    tick_handler = func;
     tick_handler_arg = arg;
-    xnlock_put_irqrestore(&nklock, s);
+    tick_handler = func;
 
     return OK;
 }
@@ -81,28 +76,29 @@ void sysClkDisable (void)
 
 void sysClkEnable (void)
 {
-    xnpod_start_timer(nstick, &__tickAnnounce);
+    /* Rely on the fact that even if sysClkDisable was called, the value of
+       nkpod->tickvalue did not change. */
+    xnpod_start_timer(xnpod_get_tickval(), &__tickAnnounce);
 }
 
 
 int sysClkRateGet (void)
 {
-    return nstick;
+    return xnpod_get_ticks2sec();
 }
 
 
 STATUS sysClkRateSet (int new_rate)
 {
-    spl_t s;
     int err;
     
     if(new_rate <= 0)
         return ERROR;
-    
-    xnlock_get_irqsave(&nklock, s);
-    xnpod_stop_timer();
-    err = xnpod_start_timer(nstick = new_rate, &__tickAnnounce);
-    xnlock_put_irqrestore(&nklock, s);
+
+    if (testbits(nkpod->status,XNTIMED))
+        xnpod_stop_timer();
+
+    err = xnpod_start_timer(ONE_BILLION / new_rate , &__tickAnnounce);
 
     return err == 0 ? OK : ERROR;
 }

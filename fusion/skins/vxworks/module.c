@@ -25,7 +25,8 @@ MODULE_DESCRIPTION("VxWorks(R) virtual machine");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
-static u_long tick_hz_arg = 1000; /* Default tick period */
+/* Default tick period */
+static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK;
 module_param_named(tick_hz,tick_hz_arg,ulong,0444);
 MODULE_PARM_DESC(tick_hz,"Clock tick frequency (Hz)");
 
@@ -52,7 +53,6 @@ static void wind_shutdown (int xtype)
 
 int __fusion_skin_init (void)
 {
-    u_long nstick = XNPOD_DEFAULT_TICK;
     int err;
 
     err = xnpod_init(&pod,255,0,0);
@@ -60,10 +60,7 @@ int __fusion_skin_init (void)
     if (err != 0)
         return err;
 
-    if (module_param_value(tick_hz_arg) > 0)
-        nstick = 1000000000 / module_param_value(tick_hz_arg);
-
-    err = wind_sysclk_init(nstick);
+    err = wind_sysclk_init(module_param_value(tick_hz_arg));
 
     if (err != 0)
         {

@@ -51,7 +51,6 @@ typedef struct wind_task wind_task_t;
 #define wind_current_task() (thread2wind_task(xnpod_current_thread()))
 
 
-/* FIXME: handle errno in isrs */
 #define wind_errnoset(value) do                                         \
 {                                                                       \
     if(!xnpod_asynch_p() &&                                             \
@@ -62,21 +61,21 @@ typedef struct wind_task wind_task_t;
 
 #define error_check(cond, status, action) do    \
 {                                               \
-    if( (cond) )                                \
-    {                                           \
+    if ((cond))                                 \
+        {                                       \
         wind_errnoset(status);                  \
         action;                                 \
-    }                                           \
+        }                                       \
 } while (0)
 
 
 #define check_NOT_ISR_CALLABLE(action) do               \
 {                                                       \
     if(xnpod_asynch_p())                                \
-    {                                                   \
+        {                                               \
         wind_errnoset(S_intLib_NOT_ISR_CALLABLE);       \
         action;                                         \
-    }                                                   \
+        }                                               \
 } while(0)
 
 
@@ -84,10 +83,10 @@ typedef struct wind_task wind_task_t;
 {                                                       \
     ptr = (type *) xnmalloc (sizeof(type));             \
     if(!ptr)                                            \
-    {                                                   \
+        {                                               \
         wind_errnoset(S_memLib_NOT_ENOUGH_MEMORY);      \
         action;                                         \
-    }                                                   \
+        }                                               \
 } while(0)
 
 
@@ -95,10 +94,10 @@ typedef struct wind_task wind_task_t;
 {                                                       \
     ptr = wind_h2obj_active(id, magic, type);           \
     if(!ptr)                                            \
-    {                                                   \
+        {                                               \
         wind_errnoset(S_objLib_OBJ_ID_ERROR);           \
         action;                                         \
-    }                                                   \
+        }                                               \
 } while(0)
 
 
@@ -131,7 +130,7 @@ static inline int taskUnsafeInner (wind_task_t *cur)
 extern "C" {
 #endif
 
-    int wind_sysclk_init(u_long init_ticks);
+    int wind_sysclk_init(u_long init_rate);
 
     void wind_sysclk_cleanup(void);
     

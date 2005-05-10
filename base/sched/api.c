@@ -267,6 +267,7 @@ int rt_task_suspend(RT_TASK *task)
 	if (!task->owndres) {
 		if (!task->suspdepth++) {
 			rem_ready_task(task);
+			rem_timed_task(task);
 			task->state |= RT_SCHED_SUSPENDED;
 			if (task == RT_CURRENT) {
 				rt_schedule();

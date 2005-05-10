@@ -194,6 +194,9 @@ void rtai_critical_exit (unsigned long flags)
 	adeos_critical_exit(flags);
 }
 
+static unsigned long IsolCpusMask = 0;
+MODULE_PARM(IsolCpusMask,"i");
+
 int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode)
 {
 	unsigned long flags;
@@ -209,6 +212,9 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 	rtai_realtime_irq[irq].cookie  = cookie;
 	rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
 	rtai_critical_exit(flags);
+	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
+		rt_assign_irq_to_cpu(irq, IsolCpusMask);
+	}
 	return 0;
 }
 
@@ -221,6 +227,9 @@ int rt_release_irq (unsigned irq)
 	flags = rtai_critical_enter(NULL);
 	rtai_realtime_irq[irq].handler = NULL;
 	rtai_critical_exit(flags);
+	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
+		rt_reset_irq_to_sym_mode(irq);
+	}
 	return 0;
 }
 
@@ -1034,7 +1043,7 @@ int rt_assign_irq_to_cpu (int irq, unsigned long cpumask)
 	}
 
     rtai_old_irq_affinity[irq] = oldmask;
-    rtai_set_irq_affinity[irq] = cpumask;
+    rtai_set_irq_affinity[irq] = CPUMASK(adeos_set_irq_affinity(irq, CPUMASK_T(0)));
 
     spin_unlock(&rtai_iset_lock);
 
@@ -1834,6 +1843,8 @@ extern void *adeos_extern_irq_handler;
 static void rt_printk_srq_handler(void);
 #define RT_PRINTK_SRQ  1
 
+static unsigned long rtai_orig_irq_affinity[IPIPE_NR_XIRQS];
+
 int __rtai_hal_init (void)
 {
 	unsigned long flags;
@@ -1898,6 +1909,12 @@ int __rtai_hal_init (void)
 	}
 	printk(KERN_INFO "RTAI[hal]: mounted (IMMEDIATE).\n");
 
+	if (IsolCpusMask) {
+		for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {
+			rt_assign_irq_to_cpu(trapnr, ~IsolCpusMask);
+			rtai_orig_irq_affinity[trapnr] = rtai_old_irq_affinity[trapnr];
+		}
+	}
 	return 0;
 }
 
@@ -1924,6 +1941,12 @@ void __rtai_hal_exit (void)
 	current->state = TASK_INTERRUPTIBLE;
 	schedule_timeout(HZ/20);
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
+	if (IsolCpusMask) {
+		for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {
+			rt_assign_irq_to_cpu(trapnr, rtai_orig_irq_affinity[trapnr]);
+		}
+	}
+
 }
 
 module_init(__rtai_hal_init);

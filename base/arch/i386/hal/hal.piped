@@ -911,7 +911,7 @@ int rt_assign_irq_to_cpu (int irq, unsigned long cpumask)
 	}
 
     rtai_old_irq_affinity[irq] = oldmask;
-    rtai_set_irq_affinity[irq] = cpumask;
+    rtai_set_irq_affinity[irq] = CPUMASK(adeos_set_irq_affinity(irq, CPUMASK_T(0)));
 
     spin_unlock(&rtai_iset_lock);
 

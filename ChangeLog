@@ -1,3 +1,11 @@
+2005-05-10  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/arch/i386/hal.*: fixed ire affinity saved old state.
+        * base/arch/i386/hal.immed: possibility of exploting isolated CPUs
+	  for RTAI only.
+        * base/sched/api.c: care of removing a task to be suspended from the
+	  timed list also.
+
 2005-05-09  Michael Neuhauser  <mike@firmix.at>
 
 	* base/arch/arm/patches/ep9301_hal17_2.4.21-rmk1-crus1.4.2.patch,
@@ -24,7 +32,7 @@
 
 2005-04-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-        * base/arch/i386/hal-*.*: made compatible back to gcc 2.95.xx.
+        * base/arch/i386/hal.*: made compatible back to gcc 2.95.xx.
         * base/include/rtai_tbx.h: made compatible back to gcc 2.95.xx.
 
 2005-04-27  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>

@@ -19,6 +19,19 @@ libmodule_SRC = \
 	tickLib.c \
 	wdLib.c
 
+HEADER_SYMLINKS = \
+	errnoLib.h \
+	intLib.h \
+	kernelLib.h \
+	msgQLib.h \
+	semLib.h \
+	sysLib.h \
+	taskHookLib.h \
+	taskInfo.h \
+	taskLib.h \
+	tickLib.h \
+	wdLib.h
+
 include_HEADERS = \
 	vxworks.h
 
@@ -44,11 +57,17 @@ if CONFIG_RTAI_OLD_FASHIONED_BUILD
 endif
 
 install-exec-local: rtai_vxworks$(modext)
-	$(mkinstalldirs) $(moduledir)
+	$(mkinstalldirs) $(moduledir) $(DESTDIR)$(includedir)
 	$(INSTALL_DATA) $< $(moduledir)
+	for f in $(HEADER_SYMLINKS); do \
+		$(LN_S) vxworks.h $(DESTDIR)$(includedir)/$$f; \
+	done
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_vxworks$(modext)
+	for f in $(HEADER_SYMLINKS); do \
+		$(RM) $(DESTDIR)$(includedir)/$$f; \
+	done
 
 if CONFIG_RTAI_OPT_UVM
 

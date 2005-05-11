@@ -1,3 +1,9 @@
+2005-05-11  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/vxworks/GNUmakefile.am (install-exec-local): Add symbolic
+	links from relevant vxworks headers to vxworks.h, to ease porting
+	applications.
+
 2005-05-10  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/vxworks/sysLib.c: Remove redundant and wrong book-keeping

@@ -245,7 +245,6 @@ RTAI_KBUILD_TOP = @RTAI_KBUILD_TOP@
 RTAI_KMOD_APP_CFLAGS = @RTAI_KMOD_APP_CFLAGS@
 RTAI_KMOD_CFLAGS = @RTAI_KMOD_CFLAGS@
 RTAI_LINUX_DIR = @RTAI_LINUX_DIR@
-RTAI_LINUX_SRCDIR = @RTAI_LINUX_SRCDIR@
 RTAI_LINUX_VERSION = @RTAI_LINUX_VERSION@
 RTAI_MAYBE_DOCDIR = @RTAI_MAYBE_DOCDIR@
 RTAI_MAYBE_SIMDIR = @RTAI_MAYBE_SIMDIR@
@@ -319,6 +318,19 @@ libmodule_SRC = \
 	taskLib.c \
 	tickLib.c \
 	wdLib.c
+
+HEADER_SYMLINKS = \
+	errnoLib.h \
+	intLib.h \
+	kernelLib.h \
+	msgQLib.h \
+	semLib.h \
+	sysLib.h \
+	taskHookLib.h \
+	taskInfo.h \
+	taskLib.h \
+	tickLib.h \
+	wdLib.h
 
 include_HEADERS = \
 	vxworks.h
@@ -842,11 +854,17 @@ all-local: rtai_vxworks$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
 install-exec-local: rtai_vxworks$(modext)
-	$(mkinstalldirs) $(moduledir)
+	$(mkinstalldirs) $(moduledir) $(DESTDIR)$(includedir)
 	$(INSTALL_DATA) $< $(moduledir)
+	for f in $(HEADER_SYMLINKS); do \
+		$(LN_S) vxworks.h $(DESTDIR)$(includedir)/$$f; \
+	done
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_vxworks$(modext)
+	for f in $(HEADER_SYMLINKS); do \
+		$(RM) $(DESTDIR)$(includedir)/$$f; \
+	done
 
 .PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

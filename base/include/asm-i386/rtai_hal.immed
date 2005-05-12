@@ -35,6 +35,8 @@
  *@{*/
 
 
+//#define STALL_RTAI_DOMAIN
+
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
@@ -380,10 +382,11 @@ static inline void rt_get_global_lock(void)
 static inline void rt_release_global_lock(void)
 {
 #if 1
-        barrier(); 
-        atomic_clear_mask((0xFFFF0001 << adeos_processor_id()), (atomic_t *)&rtai_cpu_lock);
-        cpu_relax();
-        barrier();
+	barrier();
+	rtai_cli();
+	atomic_clear_mask((0xFFFF0001 << adeos_processor_id()), (atomic_t *)&rtai_cpu_lock);
+	cpu_relax();
+	barrier();
 #else
 	barrier();
 	rtai_cli();
@@ -541,7 +544,11 @@ static inline void rt_switch_to_real_time(int cpuid)
 {
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].depth++) {
+#ifdef STALL_RTAI_DOMAIN
+		rtai_linux_context[cpuid].oldflags = xchg(&rtai_domain.cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+#else
 		rtai_linux_context[cpuid].oldflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+#endif
 		adp_cpu_current[cpuid] = &rtai_domain;
 		test_and_set_bit(cpuid, &rtai_cpu_realtime);
 	}
@@ -554,15 +561,19 @@ static inline void rt_switch_to_linux(int cpuid)
 		if (!--rtai_linux_context[cpuid].depth) {
 			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
 			adp_cpu_current[cpuid] = adp_root;
+#ifdef STALL_RTAI_DOMAIN
+			rtai_domain.cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
+#else
 			adp_root->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
+#endif
 		}
 		return;
 	}
 	rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n");
 }
 
-#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
-//#define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].depth)
+//#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
+#define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].depth)
 
 static inline void rt_set_timer_delay (int delay) {
 

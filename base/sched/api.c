@@ -878,7 +878,7 @@ int rt_sleep_until(RTIME time)
 	return 1;
 }
 
-int rt_task_wakeup_sleeping(RT_TASK *task)
+int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 {
 	unsigned long flags;
 
@@ -887,8 +887,20 @@ int rt_task_wakeup_sleeping(RT_TASK *task)
 	}
 
 	flags = rt_global_save_flags_and_cli();
-	rem_timed_task(task);
-	if (task->state != RT_SCHED_READY && (task->state &= ~RT_SCHED_DELAYED) == RT_SCHED_READY) {
+	if (mask & RT_SCHED_DELAYED) {
+		rem_timed_task(task);
+	}
+	if (task->blocked_on && (mask & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN))) {
+		(task->queue.prev)->next = task->queue.next;
+		(task->queue.next)->prev = task->queue.prev;
+		if (task->state & RT_SCHED_SEMAPHORE) {
+			((SEM *)(task->blocked_on))->count++;
+			if (((SEM *)(task->blocked_on))->type && ((SEM *)(task->blocked_on))->count > 1) {
+				((SEM *)(task->blocked_on))->count = 1;
+			}
+		}
+	}
+	if (task->state != RT_SCHED_READY && (task->state &= ~mask) == RT_SCHED_READY) {
 		enq_ready_task(task);
 		RT_SCHEDULE(task, rtai_cpuid());
 	}
@@ -1614,7 +1626,7 @@ EXPORT_SYMBOL(next_period);
 EXPORT_SYMBOL(rt_busy_sleep);
 EXPORT_SYMBOL(rt_sleep);
 EXPORT_SYMBOL(rt_sleep_until);
-EXPORT_SYMBOL(rt_task_wakeup_sleeping);
+EXPORT_SYMBOL(rt_task_masked_unblock);
 EXPORT_SYMBOL(rt_nanosleep);
 EXPORT_SYMBOL(rt_enq_ready_edf_task);
 EXPORT_SYMBOL(rt_enq_ready_task);

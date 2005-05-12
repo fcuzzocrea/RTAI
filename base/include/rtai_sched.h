@@ -57,8 +57,6 @@ struct rt_task_struct;
 #include <linux/time.h>
 #include <linux/errno.h>
 
-#include <asm/cache.h>
-
 #define RT_TASK_MAGIC 0x9ad25f6f  // nam2num("rttask")
 
 #ifndef __cplusplus
@@ -136,7 +134,7 @@ typedef struct rt_task_struct {
     struct rt_task_struct *prevp;
 
     /* Added to support user specific trap handlers. */
-    RT_TRAP_HANDLER task_trap_handler[RTAI_NR_TRAPS];
+    RT_TRAP_HANDLER task_trap_handler[ADEOS_NR_FAULTS];
 
     /* Added from rtai-22. */
     void (*usp_signal)(void);
@@ -161,6 +159,7 @@ typedef struct rt_task_struct {
     /* Real time heaps. */
     struct rt_heap_t heap[2];
 
+    volatile int scheduler;
 } RT_TASK __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
 
 #else /* __cplusplus */
@@ -328,7 +327,9 @@ int rt_sleep(RTIME delay);
 
 int rt_sleep_until(RTIME time);
 
-int rt_task_wakeup_sleeping(struct rt_task_struct *task);
+int rt_task_masked_unblock(struct rt_task_struct *task, unsigned long mask);
+
+#define rt_task_wakeup_sleeping(t)  rt_task_masked_unblock(t, RT_SCHED_DELAYED)
 
 struct rt_task_struct *rt_named_task_init(const char *task_name,
 					  void (*thread)(int),
@@ -360,7 +361,7 @@ static inline RTIME timeval2count(struct timeval *t)
 
 static inline void count2timeval(RTIME rt, struct timeval *t)
 {
-        t->tv_sec = ulldiv(count2nano(rt), 1000000000, (unsigned long *)&t->tv_usec);
+        t->tv_sec = rtai_ulldiv(count2nano(rt), 1000000000, (unsigned long *)&t->tv_usec);
         t->tv_usec /= 1000;
 }
 
@@ -371,7 +372,7 @@ static inline RTIME timespec2count(const struct timespec *t)
 
 static inline void count2timespec(RTIME rt, struct timespec *t)
 {
-        t->tv_sec = ulldiv(count2nano(rt), 1000000000, (unsigned long *)&t->tv_nsec);
+        t->tv_sec = rtai_ulldiv(count2nano(rt), 1000000000, (unsigned long *)&t->tv_nsec);
 }
 
 static inline RTIME timespec2nanos(const struct timespec *t)
@@ -381,7 +382,7 @@ static inline RTIME timespec2nanos(const struct timespec *t)
 
 static inline void nanos2timespec(RTIME rt, struct timespec *t)
 {
-        t->tv_sec = ulldiv(rt, 1000000000, (unsigned long *)&t->tv_nsec);
+        t->tv_sec = rtai_ulldiv(rt, 1000000000, (unsigned long *)&t->tv_nsec);
 }
 
 #ifdef __cplusplus

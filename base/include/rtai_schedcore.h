@@ -187,8 +187,15 @@ static inline void enq_ready_edf_task(RT_TASK *ready_task)
 
 #define MAX_WAKEUP_SRQ (2 << 6)
 
-struct klist_t { volatile int srq, in, out; void *task[MAX_WAKEUP_SRQ]; };
+struct klist_t { int srq; volatile unsigned long in, out; void *task[MAX_WAKEUP_SRQ]; };
 extern struct klist_t wake_up_srq;
+
+#define pend_wake_up_srq(lnxtsk) \
+do { \
+	wake_up_srq.task[wake_up_srq.in & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
+	wake_up_srq.in++; \
+	rt_pend_linux_irq(wake_up_srq.srq); \
+} while (0)
 
 static inline void enq_ready_task(RT_TASK *ready_task)
 {
@@ -206,9 +213,7 @@ static inline void enq_ready_task(RT_TASK *ready_task)
 		ready_task->rnext = task;
 	} else {
 		ready_task->state |= RT_SCHED_SFTRDY;
-		wake_up_srq.task[wake_up_srq.in] = ready_task->lnxtsk;
-		wake_up_srq.in = (wake_up_srq.in + 1) & (MAX_WAKEUP_SRQ - 1);
-		rt_pend_linux_srq(wake_up_srq.srq);
+		pend_wake_up_srq(ready_task->lnxtsk);
 	}
 }
 

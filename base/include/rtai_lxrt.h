@@ -925,19 +925,19 @@ RTAI_PROTO(int,rt_task_make_periodic_relative_ns,(RT_TASK *task, RTIME start_del
 	return rtai_lxrt(BIDX, SIZARG, MAKE_PERIODIC_NS, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_task_wait_period,(void))
+RTAI_PROTO(int,rt_task_wait_period,(void))
 {
 	struct { unsigned long dummy; } arg;
 	return rtai_lxrt(BIDX, SIZARG, WAIT_PERIOD, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_sleep,(RTIME delay))
+RTAI_PROTO(int,rt_sleep,(RTIME delay))
 {
 	struct { RTIME delay; } arg = { delay };
 	return rtai_lxrt(BIDX, SIZARG, SLEEP, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_sleep_until,(RTIME time))
+RTAI_PROTO(int,rt_sleep_until,(RTIME time))
 {
 	struct { RTIME time; } arg = { time };
 	return rtai_lxrt(BIDX, SIZARG, SLEEP_UNTIL, &arg).i[LOW];
@@ -1287,11 +1287,13 @@ RTAI_PROTO(void,rt_spv_RMS,(int cpuid))
 	rtai_lxrt(BIDX, SIZARG, SPV_RMS, &arg);
 }
 
-RTAI_PROTO(int,rt_task_wakeup_sleeping,(RT_TASK *task))
+RTAI_PROTO(int, rt_task_masked_unblock,(RT_TASK *task, unsigned long mask))
 {
-	struct { RT_TASK *task; } arg = { task };
+	struct { RT_TASK *task; unsigned long mask; } arg = { task, mask };
 	return rtai_lxrt(BIDX, SIZARG, WAKEUP_SLEEPING, &arg).i[LOW];
 }
+
+#define rt_task_wakeup_sleeping(task, mask)  rt_task_masked_unblock(task, RT_SCHED_DELAYED)
 
 RTAI_PROTO(void,rt_get_exectime,(RT_TASK *task, RTIME *exectime))
 {

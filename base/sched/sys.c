@@ -77,7 +77,7 @@ int clr_rtext(RT_TASK *task);
 
 void steal_from_linux(RT_TASK *task);
 
-void give_back_to_linux(RT_TASK *task);
+void give_back_to_linux(RT_TASK *task, int);
 
 void rt_schedule_soft(RT_TASK *task);
 
@@ -283,7 +283,7 @@ static int __task_delete(RT_TASK *rt_task)
 {
 	struct task_struct *process;
 	if (current == rt_task->lnxtsk && rt_task->is_hard == 1) {
-		give_back_to_linux(rt_task);
+		give_back_to_linux(rt_task, 0);
 	}
 	if (clr_rtext(rt_task)) {
 		return -EFAULT;
@@ -309,7 +309,7 @@ static inline void __force_soft(RT_TASK *task)
 	if (task && task->force_soft) {
 		task->force_soft = 0;
 		task->usp_flags &= ~FORCE_SOFT;
-		give_back_to_linux(task);
+		give_back_to_linux(task, 0);
 	}
 }
 #else 
@@ -380,7 +380,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case LXRT_TASK_DELETE: {
-			return __task_delete(arg0.rt_task);
+			return __task_delete(arg0.rt_task ? arg0.rt_task : current->rtai_tskext(0));
 		}
 
 		case LXRT_SEM_INIT: {
@@ -500,7 +500,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 			if (task->is_hard > 1) {
 				task->is_hard = 0;
 			} else {
-				give_back_to_linux(task);
+				give_back_to_linux(task, 0);
 			}
 #endif
 			return 0;

@@ -1,3 +1,31 @@
+2004-05-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/sched/sched.immed: 
+	  - changed coding of circular pending lists,
+	  - pending wake up macro transferred to rtai_schedcore.h,
+	  - parametrised give_back_to_linux to distinguish between raw
+	    use and internal hard/soft transitions following Linux use,
+	  - use ADEOS virq directly for waking up Linux tasks from RTAI.
+        * base/sched/api.c: sleeping tasks wake up substituted with the more
+	  general rt_task_masked_unblock, so that it becomes just a #define 
+	  subcase of it.
+        * base/sched/sys.c: cares of the paremetrised give_back_to_linux.
+        * base/arch/i386/hal.immed: 
+	  - cleaned unused/useless stuff,
+	  - layout restyling,
+	  - old cpu affinity state is saved no more, as it could wrongly 
+	    restate an unintended mask in case of repeated calls, user must
+	    care of it; to such an aim the set affinity function return the
+	    previous state,
+	  - optional stalling of the RTAI domain in hard mode, under control
+	    of the STALL_RTAI_DOMAIN macro,
+        * base/include/asm-i386/rtai_hal.immed: changes to support consistency 
+	  when STALL_RTAI_DOMAIN is used.
+        * base/include/rtai_schedcore.h: defines pending wake up macros for
+	  any need. 
+	  when STALL_RTAI_DOMAIN is used.
+
+
 2004-05-03  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/*: Added new blocks
@@ -15,4 +43,4 @@
 
 2004-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-        * begin new development phase, aligning to stable vulcano.
+        * begin new development cycle, aligning to stable vulcano.

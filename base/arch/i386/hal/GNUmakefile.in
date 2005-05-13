@@ -38,10 +38,12 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-subdir = ./base/arch/i386/hal
+subdir = base/arch/i386/hal
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/configure.in
+am__aclocal_m4_deps = $(top_srcdir)/base/config/autoconf/acinclude.m4 \
+	$(top_srcdir)/base/config/autoconf/docbook.m4 \
+	$(top_srcdir)/configure.in
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) \
@@ -207,6 +209,18 @@ CXXCPP = @CXXCPP@
 CXXDEPMODE = @CXXDEPMODE@
 CXXFLAGS = @CXXFLAGS@
 CYGPATH_W = @CYGPATH_W@
+DBX_ABS_SRCDIR_FALSE = @DBX_ABS_SRCDIR_FALSE@
+DBX_ABS_SRCDIR_TRUE = @DBX_ABS_SRCDIR_TRUE@
+DBX_DOC_FALSE = @DBX_DOC_FALSE@
+DBX_DOC_ROOT = @DBX_DOC_ROOT@
+DBX_DOC_TRUE = @DBX_DOC_TRUE@
+DBX_FOP = @DBX_FOP@
+DBX_GEN_DOC_ROOT = @DBX_GEN_DOC_ROOT@
+DBX_LINT = @DBX_LINT@
+DBX_MAYBE_NONET = @DBX_MAYBE_NONET@
+DBX_ROOT = @DBX_ROOT@
+DBX_XSLTPROC = @DBX_XSLTPROC@
+DBX_XSL_ROOT = @DBX_XSL_ROOT@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DOXYGEN = @DOXYGEN@
@@ -221,6 +235,8 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
+GL_CFLAGS = @GL_CFLAGS@
+GL_LIBS = @GL_LIBS@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -275,6 +291,10 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
 ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -343,9 +363,9 @@ $(srcdir)/GNUmakefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/GNUmakefile.am  $(am_
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  ./base/arch/i386/hal/GNUmakefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  base/arch/i386/hal/GNUmakefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  ./base/arch/i386/hal/GNUmakefile
+	  $(AUTOMAKE) --foreign  base/arch/i386/hal/GNUmakefile
 .PRECIOUS: GNUmakefile
 GNUmakefile: $(srcdir)/GNUmakefile.in $(top_builddir)/config.status
 	@case '$?' in \

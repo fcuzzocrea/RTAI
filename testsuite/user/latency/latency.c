@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 	RTIME expected, exectime[3];
 	MBX *mbx;
 	RT_TASK *task;
-	struct sample { long long min; long long max; int index; } samp;
+	struct sample { long long min; long long max; int index, ovrn, cnt; } samp;
 	double s;
 
  	if (!(mbx = rt_mbx_init(nam2num("LATMBX"), 20*sizeof(samp)))) {
@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
 	max_diff = -1000000000;
 #endif
 	svt = rt_get_cpu_time_ns();
+	samp.ovrn = 0;
 	while (1) {
 #ifndef OVERALL
 		min_diff = 1000000000;
@@ -123,9 +124,11 @@ int main(int argc, char *argv[])
 #endif
 		average = 0;
 
+		samp.cnt = 0;
 		for (skip = 0; skip < SKIP; skip++) {
 			expected += period;
-			rt_task_wait_period();
+			samp.ovrn += rt_task_wait_period();
+			samp.cnt++;
 
 			if (TIMER_MODE) {
 				diff = (int) ((t = rt_get_cpu_time_ns()) - svt - PERIOD);

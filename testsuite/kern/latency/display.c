@@ -43,7 +43,7 @@ int main(int argc, char *argv[])
 	FILE *procfile;
 	time_t timestamp;
 	struct tm *tm_timestamp;
-	struct sample { long long min; long long max; int index; } samp;
+	struct sample { long long min; long long max; int index, ovrn, cnt; } samp;
 	int n = 0;
 
 	setlinebuf(stdout);
@@ -67,9 +67,9 @@ int main(int argc, char *argv[])
 
 	while (!end) {
 		if ((n++ % 21)==0)
-			printf("RTH|%12s|%12s|%12s\n", "lat min","lat avg","lat max");
+			printf("RTH|%11s|%11s|%11s|%11s|%11s\n", "lat min","lat avg","lat max", "overruns", "freq.cntr");
 		read(fd0, &samp, sizeof(samp));
-		printf("RTD|%12lld|%12d|%12lld\n", samp.min, samp.index, samp.max);
+		printf("RTD|%11lld|%11d|%11lld|%11d|%11d\n", samp.min, samp.index, samp.max, samp.ovrn, samp.cnt);
 		/*
 		time(&timestamp); 
 		tm_timestamp=localtime(&timestamp);

@@ -23,8 +23,9 @@
 	  when STALL_RTAI_DOMAIN is used.
         * base/include/rtai_schedcore.h: defines pending wake up macros for
 	  any need. 
-	  when STALL_RTAI_DOMAIN is used.
-
+        * testsuite/kern/latency/, testsuite/user/latency/: output conforming
+	  to 3.2, i.e with overall count of periodic reschedules displayed
+	  also.
 
 2004-05-03  Roberto Bucher  <roberto.bucher@supsi.ch>
 

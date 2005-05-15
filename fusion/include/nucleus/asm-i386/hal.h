@@ -161,12 +161,12 @@ static inline __attribute_const__ long long rthal_llimd (const long long op,
     return __rthal_ullimd(op, m, d);
 }
 
-static inline __attribute_const__ unsigned long ffnz (unsigned long word) {
+static inline __attribute_const__ unsigned long ffnz (unsigned long ul) {
     /* Derived from bitops.h's ffs() */
     __asm__("bsfl %1, %0"
-	    : "=r,r" (word)
-	    : "r,?m"  (word));
-    return word;
+	    : "=r,r" (ul)
+	    : "r,?m"  (ul));
+    return ul;
 }
 
 #if defined(__KERNEL__) && !defined(__cplusplus)

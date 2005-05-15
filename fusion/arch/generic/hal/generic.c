@@ -967,7 +967,7 @@ static int apc_read_proc (char *page,
     p += sprintf(p,"APC ");
 
     for_each_online_cpu(cpu) {
-	p += sprintf(p,"      CPU%d",cpu);
+	p += sprintf(p,"         CPU%d",cpu);
     }
 
     for (apc = 0; apc < BITS_PER_LONG; apc++)

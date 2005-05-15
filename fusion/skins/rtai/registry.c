@@ -233,10 +233,31 @@ static struct proc_dir_entry *add_proc_leaf (const char *name,
     return entry;
 }
 
+static struct proc_dir_entry *add_proc_link (const char *name,
+					     link_proc_t *link_proc,
+					     void *data,
+					     struct proc_dir_entry *parent)
+{
+    struct proc_dir_entry *entry;
+    char target[128];
+
+    if (link_proc(target,sizeof(target),data) <= 0)
+	return NULL;
+
+    entry = proc_symlink(name,parent,target);
+
+    if (!entry)
+	return NULL;
+
+    entry->owner = THIS_MODULE;
+
+    return entry;
+}
+
 static void __registry_proc_callback (void *cookie)
 
 {
-    struct proc_dir_entry *dir;
+    struct proc_dir_entry *dir, *entry;
     RT_OBJECT_PROCNODE *pnode;
     xnholder_t *holder;
     RT_OBJECT *object;
@@ -272,11 +293,19 @@ static void __registry_proc_callback (void *cookie)
 	    pnode->dir = dir;
 	    }
 
-	object->proc = add_proc_leaf(object->key,
-				     pnode->read_proc,
-				     pnode->write_proc,
-				     object->objaddr,
-				     dir);
+	if (pnode->link_proc)
+	    /* Entry is a symlink to somewhere else. */
+	    object->proc = add_proc_link(object->key,
+					 pnode->link_proc,
+					 object->objaddr,
+					 dir);
+	else
+	    /* Entry allows to get/set object properties. */
+	    object->proc = add_proc_leaf(object->key,
+					 pnode->read_proc,
+					 pnode->write_proc,
+					 object->objaddr,
+					 dir);
  fail:
 	xnlock_get_irqsave(&nklock,s);
 
@@ -294,6 +323,8 @@ static void __registry_proc_callback (void *cookie)
 	object = link2rtobj(holder);
 	pnode = object->pnode;
 	object->pnode = NULL;
+	entry = object->proc;
+	object->proc = NULL;
 	type = pnode->type;
 	dir = pnode->dir;
 	entries = --pnode->entries;
@@ -310,7 +341,7 @@ static void __registry_proc_callback (void *cookie)
 
 	xnlock_put_irqrestore(&nklock,s);
 
-	remove_proc_entry(object->key,dir);
+	remove_proc_entry(entry->name,dir);
 
 	if (entries <= 0)
 	    remove_proc_entry(type,registry_proc_root);
@@ -363,9 +394,8 @@ static inline void __registry_proc_unexport (RT_OBJECT *object)
 	removeq(&__rtai_obj_exportq,&object->link);
 	appendq(&__rtai_obj_busyq,&object->link);
 	object->pnode = NULL;
+	object->proc = NULL;
 	}
-
-    object->proc = NULL;
 }
 
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
@@ -787,13 +817,15 @@ int rt_registry_remove (rt_handle_t handle)
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
     if (object->pnode)
+	{
 	__registry_proc_unexport(object);
 
-    /* Leave the update of the object queues to the work callback if
-       it has been kicked. */
+	/* Leave the update of the object queues to the work callback
+	   if it has been kicked. */
 
-    if (object->pnode || object->proc)
-	goto unlock_and_exit;
+	if (object->pnode)
+	    goto unlock_and_exit;
+	}
 
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 

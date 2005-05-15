@@ -12,14 +12,16 @@ RT_TASK task;
 void task_body (void *cookie)
 
 {
+    /* Ask RTAI to warn us upon switches to secondary mode. */
+    rt_task_set_mode(T_WARNSW,0,NULL);
+
     /* A real-time task always starts in primary mode. */
-    rt_task_set_mode(T_SWITCH,0,NULL);
 
     for (;;) {
 	rt_task_sleep(1000000000);
         /* Running in primary mode... */
 	printf("Switched to secondary mode\n");
-        /* ...printf() => write(2): we were switched to secondary
+        /* ...printf() => write(2): we have just switched to secondary
 	   mode: SIGXCPU should have been sent to us by now. */
     }
 }

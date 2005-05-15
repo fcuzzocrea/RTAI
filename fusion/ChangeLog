@@ -16,7 +16,7 @@
 
 2005-05-12  Philippe Gerum  <rpm@xenomai.org>
 
-	* skins/rtai/task.c (rt_task_set_mode): Add the T_SWITCH mode bit
+	* skins/rtai/task.c (rt_task_set_mode): Add the T_WARNSW mode bit
 	allowing to detect (unwanted) switches to secondary mode.
 
 	* nucleus/shadow.c (xnshadow_relax): Send SIGXCPU upon migration

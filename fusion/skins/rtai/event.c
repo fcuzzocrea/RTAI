@@ -31,7 +31,7 @@
  * associated event is said to have occurred. RTAI tasks and interrupt
  * handlers can use event flags to signal the occurrence of events to
  * other tasks; those tasks can either wait for the events to occur in
- * a conjuntive manner (all awaited events must have occurred to wake
+ * a conjunctive manner (all awaited events must have occurred to wake
  * up), or in a disjunctive way (at least one of the awaited events
  * must have occurred to wake up).
  *

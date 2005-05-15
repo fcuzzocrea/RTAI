@@ -88,6 +88,10 @@ void __registry_pkg_cleanup(void);
 #define RT_OBJECT_PROC_RESERVED1 ((struct proc_dir_entry *)1)
 #define RT_OBJECT_PROC_RESERVED2 ((struct proc_dir_entry *)2)
 
+typedef ssize_t link_proc_t(char *buf,
+			    int count,
+			    void *data);
+
 typedef struct rt_object_procnode {
 
     struct proc_dir_entry *dir;
@@ -95,6 +99,7 @@ typedef struct rt_object_procnode {
     int entries;
     read_proc_t *read_proc;
     write_proc_t *write_proc;
+    link_proc_t *link_proc;
 
 } RT_OBJECT_PROCNODE;
 

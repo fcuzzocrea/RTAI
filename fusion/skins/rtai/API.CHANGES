@@ -29,3 +29,20 @@ ___________________________________________________________________
 	rt_task_receive(), rt_task_reply(). Those work the QNX way.
 
 ___________________________________________________________________
+
+0.7.3 -> 0.7.4
+
+	o Renames:
+	  rt_pipe_open() -> rt_pipe_create()
+	  rt_pipe_close() -> rt_pipe_delete()
+	  rt_pipe_read() -> rt_pipe_receive()
+	  rt_pipe_write() -> rt_pipe_send()
+
+	o Added "name" parameter to rt_pipe_create() as 2nd argument,
+	so that message pipe objects can be registered for naming
+	support.
+
+	o New implementations of rt_pipe_write() and rt_pipe_read()
+	taking raw data buffers instead of canned message buffers.
+
+___________________________________________________________________

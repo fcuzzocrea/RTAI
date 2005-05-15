@@ -120,9 +120,9 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 	}
 
     /* Relaxing due to a fault will trigger a notification from the
-       trap handler if T_SWITCH is enabled, so we don't otherwise
-       notify upon signal receipt, since testing syscall return values
-       for -EINTR is still possible to detect such situation. */
+       trap handler when applicable, so we don't otherwise notify upon
+       signal receipt, since testing syscall return values for -EINTR
+       is still possible to detect such situation. */
 
     xnshadow_relax(0);
 }

@@ -217,6 +217,7 @@ void __pipe_pkg_cleanup (void)
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
+ * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -294,6 +295,7 @@ int rt_pipe_create (RT_PIPE *pipe,
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
+ * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -519,6 +521,7 @@ ssize_t rt_pipe_receive (RT_PIPE *pipe,
  *   only if @a timeout is equal to TM_NONBLOCK.
  *
  * - Kernel-based task
+ * - User-space task (switches to primary mode)
  *
  * Rescheduling: always unless the request is immediately satisfied or
  * @a timeout specifies a non-blocking operation.
@@ -733,6 +736,7 @@ ssize_t rt_pipe_send (RT_PIPE *pipe,
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -818,6 +822,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  * - Kernel module initialization/cleanup code
  * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -1043,6 +1048,8 @@ EXPORT_SYMBOL(rt_pipe_create);
 EXPORT_SYMBOL(rt_pipe_delete);
 EXPORT_SYMBOL(rt_pipe_receive);
 EXPORT_SYMBOL(rt_pipe_send);
+EXPORT_SYMBOL(rt_pipe_read);
+EXPORT_SYMBOL(rt_pipe_write);
 EXPORT_SYMBOL(rt_pipe_stream);
 EXPORT_SYMBOL(rt_pipe_alloc);
 EXPORT_SYMBOL(rt_pipe_free);

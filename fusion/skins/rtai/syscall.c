@@ -35,6 +35,7 @@
 #include <rtai/heap.h>
 #include <rtai/alarm.h>
 #include <rtai/intr.h>
+#include <rtai/pipe.h>
 
 /* This file implements the RTAI syscall wrappers;
  *
@@ -547,7 +548,7 @@ static int __rt_task_set_mode (struct task_struct *curr, struct pt_regs *regs)
 	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg3(regs),&mode_r,sizeof(mode_r));
 
 	if ((clrmask & T_PRIMARY) != 0)
-	    xnshadow_relax();
+	    xnshadow_relax(0);
 	}
 
     return err;
@@ -1927,7 +1928,7 @@ static int __rt_queue_bind (struct task_struct *curr, struct pt_regs *regs)
        memory to user-space; we must have entered this syscall in
        primary mode. */
 
-    xnshadow_relax();
+    xnshadow_relax(0);
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -2353,7 +2354,7 @@ static int __rt_heap_bind (struct task_struct *curr, struct pt_regs *regs)
        memory to user-space; we must have entered this syscall in
        primary mode. */
 
-    xnshadow_relax();
+    xnshadow_relax(0);
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -3062,6 +3063,279 @@ static int __rt_intr_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #endif /* CONFIG_RTAI_OPT_NATIVE_INTR */
 
+#ifdef CONFIG_RTAI_OPT_NATIVE_PIPE
+
+/*
+ * int __rt_pipe_create(RT_PIPE_PLACEHOLDER *ph,
+ *                      const char *name,
+ *                      int minor)
+ */
+
+static int __rt_pipe_create (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    char name[XNOBJECT_NAME_LEN];
+    RT_PIPE_PLACEHOLDER ph;
+    int err, minor;
+    RT_PIPE *pipe;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    if (__xn_reg_arg2(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	name[sizeof(name) - 1] = '\0';
+	}
+    else
+	*name = '\0';
+
+    /* Device minor. */
+    minor = (int)__xn_reg_arg3(regs);
+
+    pipe = (RT_PIPE *)xnmalloc(sizeof(*pipe));
+
+    if (!pipe)
+	return -ENOMEM;
+
+    err = rt_pipe_create(pipe,name,minor);
+
+    if (err == 0)
+	{
+	pipe->cpid = curr->pid;
+	/* Copy back the registry handle to the ph struct. */
+	ph.opaque = pipe->handle;
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+	}
+    else
+	xnfree(pipe);
+
+    return err;
+}
+
+/*
+ * int __rt_pipe_bind(RT_PIPE_PLACEHOLDER *ph,
+ *                    const char *name)
+ */
+
+static int __rt_pipe_bind (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    return __rt_bind_helper(curr,regs,RTAI_PIPE_MAGIC,NULL);
+}
+
+/*
+ * int __rt_pipe_delete(RT_PIPE_PLACEHOLDER *ph)
+ */
+
+static int __rt_pipe_delete (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_PIPE_PLACEHOLDER ph;
+    RT_PIPE *pipe;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    pipe = (RT_PIPE *)rt_registry_fetch(ph.opaque);
+
+    if (!pipe)
+	return -ESRCH;
+
+    err = rt_pipe_delete(pipe);
+
+    if (!err && pipe->cpid)
+	xnfree(pipe);
+
+    return err;
+}
+
+/*
+ * int __rt_pipe_read(RT_PIPE_PLACEHOLDER *ph,
+ *                    void *buf,
+ *                    size_t size,
+ *                    RTIME timeout)
+ */
+
+static int __rt_pipe_read (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_PIPE_PLACEHOLDER ph;
+    RT_PIPE_MSG *msg;
+    RT_PIPE *pipe;
+    RTIME timeout;
+    size_t size;
+    ssize_t err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    pipe = (RT_PIPE *)rt_registry_fetch(ph.opaque);
+
+    if (!pipe)
+	return -ESRCH;
+
+    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg4(regs),sizeof(timeout));
+
+    size = (size_t)__xn_reg_arg3(regs);
+
+    if (size > 0 && !__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),size))
+	return -EFAULT;
+
+    err = rt_pipe_receive(pipe,&msg,timeout);
+
+    if (err < 0)
+	return err;
+
+    if (size < P_MSGSIZE(msg))
+	err = -ENOSPC;
+    else if (P_MSGSIZE(msg) > 0)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg2(regs),P_MSGPTR(msg),P_MSGSIZE(msg));
+
+    /* Zero-sized messages are allowed, so we still need to free the
+       message buffer even if no data copy took place. */
+
+    rt_pipe_free(msg);
+
+    return err;
+}
+
+/*
+ * int __rt_pipe_write(RT_PIPE_PLACEHOLDER *ph,
+ *                     const void *buf,
+ *                     size_t size,
+ *                     int mode)
+ */
+
+static int __rt_pipe_write (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_PIPE_PLACEHOLDER ph;
+    RT_PIPE_MSG *msg;
+    RT_PIPE *pipe;
+    size_t size;
+    ssize_t err;
+    int mode;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    pipe = (RT_PIPE *)rt_registry_fetch(ph.opaque);
+
+    if (!pipe)
+	return -ESRCH;
+
+    size = (size_t)__xn_reg_arg3(regs);
+    mode = (int)__xn_reg_arg4(regs);
+
+    if (size == 0)
+	/* Try flushing the streaming buffer in any case. */
+	return rt_pipe_send(pipe,NULL,0,mode);
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),size))
+	return -EFAULT;
+
+    msg = rt_pipe_alloc(size);
+	
+    if (!msg)
+	return -ENOMEM;
+
+    __xn_copy_from_user(curr,P_MSGPTR(msg),(void __user *)__xn_reg_arg2(regs),size);
+
+    err = rt_pipe_send(pipe,msg,size,mode);
+
+    if (err != size)
+	/* If the operation failed, we need to free the message buffer
+	   by ourselves. */
+	rt_pipe_free(msg);
+
+    return err;
+}
+
+/*
+ * int __rt_pipe_stream(RT_PIPE_PLACEHOLDER *ph,
+ *                      const void *buf,
+ *                      size_t size)
+ */
+
+static int __rt_pipe_stream (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RT_PIPE_PLACEHOLDER ph;
+    RT_PIPE_MSG *msg;
+    char tmp_buf[64];
+    RT_PIPE *pipe;
+    size_t size;
+    ssize_t err;
+    void *buf;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+
+    pipe = (RT_PIPE *)rt_registry_fetch(ph.opaque);
+
+    if (!pipe)
+	return -ESRCH;
+
+    size = (size_t)__xn_reg_arg3(regs);
+
+    if (size == 0)
+	/* Try flushing the streaming buffer in any case. */
+	return rt_pipe_stream(pipe,NULL,0);
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),size))
+	return -EFAULT;
+
+    /* Try using a local fast buffer if the sent data fits into it. */
+ 
+    if (size <= sizeof(tmp_buf))
+	{
+	msg = NULL;
+	buf = tmp_buf;
+	}
+    else
+	{
+	msg = rt_pipe_alloc(size);
+	
+	if (!msg)
+	    return -ENOMEM;
+
+	buf = P_MSGPTR(msg);
+	}
+
+    __xn_copy_from_user(curr,buf,(void __user *)__xn_reg_arg2(regs),size);
+
+    err = rt_pipe_stream(pipe,buf,size);
+
+    if (msg)
+	rt_pipe_free(msg);
+
+    return err;
+}
+
+#else /* !CONFIG_RTAI_OPT_NATIVE_PIPE */
+
+#define __rt_pipe_create   __rt_call_not_available
+#define __rt_pipe_bind     __rt_call_not_available
+#define __rt_pipe_delete   __rt_call_not_available
+#define __rt_pipe_read     __rt_call_not_available
+#define __rt_pipe_write    __rt_call_not_available
+#define __rt_pipe_stream   __rt_call_not_available
+
+#endif /* CONFIG_RTAI_OPT_NATIVE_PIPE */
+
 /*
  * int __rt_misc_get_io_region(unsigned long start,
  *                             unsigned long len,
@@ -3191,6 +3465,12 @@ static xnsysent_t __systab[] = {
     [__rtai_intr_enable ] = { &__rt_intr_enable, __xn_exec_any },
     [__rtai_intr_disable ] = { &__rt_intr_disable, __xn_exec_any },
     [__rtai_intr_inquire ] = { &__rt_intr_inquire, __xn_exec_any },
+    [__rtai_pipe_create ] = { &__rt_pipe_create, __xn_exec_any },
+    [__rtai_pipe_bind ] = { &__rt_pipe_bind, __xn_exec_primary },
+    [__rtai_pipe_delete ] = { &__rt_pipe_delete, __xn_exec_any },
+    [__rtai_pipe_read ] = { &__rt_pipe_read, __xn_exec_primary },
+    [__rtai_pipe_write ] = { &__rt_pipe_write, __xn_exec_any },
+    [__rtai_pipe_stream ] = { &__rt_pipe_stream, __xn_exec_any },
     [__rtai_misc_get_io_region ] = { &__rt_misc_get_io_region, __xn_exec_lostage },
     [__rtai_misc_put_io_region ] = { &__rt_misc_put_io_region, __xn_exec_lostage },
 };

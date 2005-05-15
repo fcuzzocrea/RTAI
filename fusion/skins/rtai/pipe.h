@@ -23,10 +23,13 @@
 #define _RTAI_PIPE_H
 
 #include <nucleus/pipe.h>
+#include <rtai/types.h>
+
+typedef struct rt_pipe_placeholder {
+    rt_handle_t opaque;
+} RT_PIPE_PLACEHOLDER;
 
 #ifdef __KERNEL__
-
-#include <rtai/types.h>
 
 #define RTAI_PIPE_MAGIC 0x55550202
 
@@ -55,46 +58,82 @@ typedef struct rt_pipe {
 
     u_long flushable;		/* !< Flush request flag. */
 
+    rt_handle_t handle;		/* !< Handle in registry -- zero if unregistered. */
+
+    char name[XNOBJECT_NAME_LEN]; /* !< Symbolic name. */
+
+#ifdef CONFIG_RTAI_OPT_FUSION
+    pid_t cpid;			/* !< Creator's pid. */
+#endif /* CONFIG_RTAI_OPT_FUSION */
+
 } RT_PIPE;
+
+#else /* !__KERNEL__ */
+
+typedef RT_PIPE_PLACEHOLDER RT_PIPE;
+
+#endif /* __KERNEL__ */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int __pipe_pkg_init(void);
-
-void __pipe_pkg_cleanup(void);
-
 /* Public interface. */
 
-int rt_pipe_open(RT_PIPE *pipe,
-		 int minor);
+int rt_pipe_create(RT_PIPE *pipe,
+		   const char *name,
+		   int minor);
 
-int rt_pipe_close(RT_PIPE *pipe);
+int rt_pipe_delete(RT_PIPE *pipe);
 
 ssize_t rt_pipe_read(RT_PIPE *pipe,
-		     RT_PIPE_MSG **msg,
+		     void *buf,
+		     size_t size,
 		     RTIME timeout);
 
 ssize_t rt_pipe_write(RT_PIPE *pipe,
-		      RT_PIPE_MSG *msg,
+		      const void *buf,
 		      size_t size,
 		      int mode);
 
 ssize_t rt_pipe_stream(RT_PIPE *pipe,
 		       const void *buf,
 		       size_t size);
+#ifdef __KERNEL__
+
+ssize_t rt_pipe_receive(RT_PIPE *pipe,
+			RT_PIPE_MSG **msg,
+			RTIME timeout);
+
+ssize_t rt_pipe_send(RT_PIPE *pipe,
+		     RT_PIPE_MSG *msg,
+		     size_t size,
+		     int mode);
 
 RT_PIPE_MSG *rt_pipe_alloc(size_t size);
 
 int rt_pipe_free(RT_PIPE_MSG *msg);
 
-#ifdef __cplusplus
-}
-#endif
+int __pipe_pkg_init(void);
+
+void __pipe_pkg_cleanup(void);
 
 #else /* !__KERNEL__ */
 
+int rt_pipe_bind(RT_PIPE *pipe,
+		 const char *name);
+
+static inline int rt_pipe_unbind (RT_PIPE *pipe)
+
+{
+    pipe->opaque = RT_HANDLE_INVALID;
+    return 0;
+}
+
 #endif /* __KERNEL__ */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* !_RTAI_PIPE_H */

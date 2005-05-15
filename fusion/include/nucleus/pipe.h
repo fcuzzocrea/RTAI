@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2001,2002,2003 Philippe Gerum.
  *
- * RAI/fusion is free software; you can redistribute it and/or modify
+ * RTAI/fusion is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
  * by the Free Software Foundation, Inc., 675 Mass Ave, Cambridge MA
  * 02139, USA; either version 2 of the License, or (at your option)
@@ -20,16 +20,26 @@
 #ifndef _RTAI_NUCLEUS_PIPE_H
 #define _RTAI_NUCLEUS_PIPE_H
 
+#define XNPIPE_NDEVS      CONFIG_RTAI_OPT_PIPE_NRDEV
+#define XNPIPE_DEV_MAJOR  150
+
+#define	XNPIPE_IOCTL_BASE     'p'
+#define XNPIPEIOC_GET_NRDEV   _IOW(XNPIPE_IOCTL_BASE,0,int)
+#define XNPIPEIOC_FLUSH       _IO(XNPIPE_IOCTL_BASE,1)
+
+#ifdef __KERNEL__
+
 #include <nucleus/queue.h>
+#include <nucleus/synch.h>
+#include <nucleus/thread.h>
+#include <linux/types.h>
+#include <linux/poll.h>
 
 #define XNPIPE_WAIT   0x0
 #define XNPIPE_NOWAIT 0x1
 
 #define XNPIPE_NORMAL 0x0
 #define XNPIPE_URGENT 0x1
-
-#define XNPIPE_NDEVS      CONFIG_RTAI_OPT_PIPE_NRDEV
-#define XNPIPE_DEV_MAJOR  150
 
 #define XNPIPE_KERN_CONN   0x1
 #define XNPIPE_USER_CONN   0x2
@@ -54,24 +64,17 @@ static inline xnpipe_mh_t *link2mh (xnholder_t *laddr)
     return laddr ? ((xnpipe_mh_t *)(((char *)laddr) - (int)(&((xnpipe_mh_t *)0)->link))) : 0;
 }
 
-#ifdef __KERNEL__
-
-#include <nucleus/synch.h>
-#include <nucleus/thread.h>
-#include <linux/types.h>
-#include <linux/poll.h>
-
 typedef int xnpipe_io_handler(int minor,
-				struct xnpipe_mh *mh,
-				int onerror,
-				void *cookie);
+			      struct xnpipe_mh *mh,
+			      int onerror,
+			      void *cookie);
 
 typedef int xnpipe_session_handler(int minor,
-				     void *cookie);
+				   void *cookie);
 
 typedef void *xnpipe_alloc_handler(int minor,
-				     size_t size,
-				     void *cookie);
+				   size_t size,
+				   void *cookie);
 typedef struct xnpipe_state {
 
     xnholder_t slink;	/* Link on sleep queue */
@@ -94,6 +97,7 @@ typedef struct xnpipe_state {
     struct linux_semaphore *wchan;	/* any sem */
     struct fasync_struct *asyncq;
     wait_queue_head_t pollq;
+    size_t ionrd;
 
 } xnpipe_state_t;
 
@@ -137,16 +141,18 @@ int xnpipe_inquire(int minor);
 }
 #endif /* __cplusplus */
 
-static inline xnholder_t *xnpipe_m_link(xnpipe_mh_t *mh) {
+static inline xnholder_t *xnpipe_m_link(xnpipe_mh_t *mh)
+{
     return &mh->link;
 }
 
-#endif /* __KERNEL__ */
-
-static inline char *xnpipe_m_data(xnpipe_mh_t *mh) {
+static inline char *xnpipe_m_data(xnpipe_mh_t *mh)
+{
     return (char *)(mh + 1);
 }
 
 #define xnpipe_m_size(mh) ((mh)->size)
+
+#endif /* __KERNEL__ */
 
 #endif /* !_RTAI_NUCLEUS_PIPE_H */

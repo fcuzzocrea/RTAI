@@ -88,7 +88,7 @@ void latency (void *cookie)
 	   the latter case, we need to free the unsent message by
 	   ourselves. */
 
-	if (rt_pipe_write(&pipe,msg,sizeof(*s),0) != sizeof(*s))
+	if (rt_pipe_send(&pipe,msg,sizeof(*s),0) != sizeof(*s))
 	    rt_pipe_free(msg);
 	}
 }
@@ -114,7 +114,7 @@ int __latency_init (void)
 	return 2;
 	}
 
-    err = rt_pipe_open(&pipe,0);
+    err = rt_pipe_create(&pipe,"klatency",0);
 
     if (err)
 	{
@@ -140,10 +140,10 @@ void __latency_exit (void)
 
     rt_task_delete(&latency_task);
 
-    err = rt_pipe_close(&pipe);
+    err = rt_pipe_delete(&pipe);
 
     if(err)
-        xnarch_logerr("Warning: could not close pipe: err=%d.\n",err);
+        xnarch_logerr("Warning: could not delete pipe: err=%d.\n",err);
 
     rt_timer_stop();
 }

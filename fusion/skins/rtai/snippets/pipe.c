@@ -70,10 +70,10 @@ void task_body (void)
     /* Send prompt message "Hello" (the output buffer will be freed
        automatically)... */
     strcpy(RT_PIPE_MSGPTR(msgout),"Hello");
-    rt_pipe_write(&pipe_desc,msgout,len,P_NORMAL);
+    rt_pipe_send(&pipe_desc,msgout,len,P_NORMAL);
 
     /* Then wait for the reply string "World": */
-    rt_pipe_read(&pipe_desc,&msgin,TM_INFINITE);
+    rt_pipe_receive(&pipe_desc,&msgin,TM_INFINITE);
     printf("received msg> %s, size=%d\n",P_MSGPTR(msg),P_MSGSIZE(msg));
     /* Free the received message buffer. */
     rt_pipe_free(&pipe_desc,msgin);
@@ -86,7 +86,7 @@ init init_module (void)
 {
     int err;
 
-    err = rt_pipe_open(&pipe_desc,PIPE_MINOR);
+    err = rt_pipe_create(&pipe_desc,NULL,PIPE_MINOR);
 
     if (err)
 	fail();
@@ -107,6 +107,6 @@ init init_module (void)
 void cleanup_module (void)
 
 {
-    rt_pipe_close(&pipe_desc);
+    rt_pipe_delete(&pipe_desc);
     rt_task_delete(&task_desc);
 }

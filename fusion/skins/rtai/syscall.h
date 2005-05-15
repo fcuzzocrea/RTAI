@@ -105,8 +105,14 @@
 #define __rtai_intr_enable        79
 #define __rtai_intr_disable       80
 #define __rtai_intr_inquire       81
-#define __rtai_misc_get_io_region 82
-#define __rtai_misc_put_io_region 83
+#define __rtai_pipe_create        82
+#define __rtai_pipe_bind          83
+#define __rtai_pipe_delete        84
+#define __rtai_pipe_read          85
+#define __rtai_pipe_write         86
+#define __rtai_pipe_stream        87
+#define __rtai_misc_get_io_region 88
+#define __rtai_misc_put_io_region 89
 
 struct rt_arg_bulk {
 

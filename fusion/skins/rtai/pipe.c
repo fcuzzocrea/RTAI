@@ -29,20 +29,25 @@
  *
  * Message pipes are an improved replacement for the legacy
  * RT-FIFOS. A message pipe is a two-way communication channel between
- * a kernel-based real-time thread and a user-space process. Pipes can
- * be operated in a message-oriented fashion so that message
- * boundaries are preserved, and also in byte streaming mode from
- * kernel to user-space for optimal throughput.
+ * RTAI tasks and standard Linux processes using regular file I/O
+ * operations on a pseudo-device. Pipes can be operated in a
+ * message-oriented fashion so that message boundaries are preserved,
+ * and also in byte streaming mode from real-time to standard Linux
+ * processes for optimal throughput.
  *
- * Kernel-based RTAI tasks open their side of the pipe using the
- * rt_pipe_open() service; user-space processes do the same by opening
- * the /dev/rtpN special devices, where N is the minor number agreed
- * between both ends of each pipe.
+ * RTAI tasks open their side of the pipe using the rt_pipe_create()
+ * service; standard Linux processes do the same by opening one of the
+ * /dev/rtpN special devices, where N is the minor number agreed upon
+ * between both ends of each pipe. Additionally, named pipes are
+ * available through the registry support, which automatically creates
+ * a symbolic link from entries under /proc/rtai/registry/pipes/ to
+ * the appropriate special device file.
  *
  *@{*/
 
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
+#include <rtai/registry.h>
 #include <rtai/pipe.h>
 
 static xnheap_t *__pipe_heap = &kheap;
@@ -50,6 +55,33 @@ static xnheap_t *__pipe_heap = &kheap;
 static int __pipe_flush_apc;
 
 static DECLARE_XNQUEUE(__pipe_flush_q);
+
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+
+static ssize_t __pipe_link_proc (char *buf,
+				 int count,
+				 void *data)
+{
+    RT_PIPE *pipe = (RT_PIPE *)data;
+    return snprintf(buf,count,"/dev/rtp%d",pipe->minor);
+}
+
+static RT_OBJECT_PROCNODE __pipe_pnode = {
+
+    .dir = NULL,
+    .type = "pipes",
+    .entries = 0,
+    .link_proc = &__pipe_link_proc,
+};
+
+#elif CONFIG_RTAI_OPT_NATIVE_REGISTRY
+
+static RT_OBJECT_PROCNODE __pipe_pnode = {
+
+    .type = "pipes"
+};
+
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 static inline ssize_t __pipe_flush (RT_PIPE *pipe)
 
@@ -123,31 +155,56 @@ void __pipe_pkg_cleanup (void)
 }
 
 /**
- * @fn int rt_pipe_open(RT_PIPE *pipe, int minor)
- * @brief Open a pipe.
+ * @fn int rt_pipe_create(RT_PIPE *pipe,
+                          const char *name,
+			  int minor)
+ * @brief Create a message pipe.
  *
  * This service opens a bi-directional communication channel allowing
- * data exchange between real-time tasks and regular user-space
+ * data exchange between RTAI tasks and standard Linux
  * processes. Pipes natively preserve message boundaries, but can also
- * be used in byte stream mode from kernel to user space.
+ * be used in byte stream mode from RTAI tasks to standard Linux
+ * processes.
  *
- * rt_pipe_open() always returns immediately, even if the user-space
- * side of the same pipe has not been opened yet. On the contrary, the
- * user-space opener might be suspended until rt_pipe_open() is issued
- * on the same pipe from kernel space, unless O_NONBLOCK has been
- * specified to open(2).
+ * rt_pipe_create() always returns immediately, even if no Linux
+ * process has opened the associated special device file yet. On the
+ * contrary, the non real-time side could block upon attempt to open
+ * the special device file until rt_pipe_create() is issued on the
+ * same pipe from a RTAI task, unless O_NONBLOCK has been specified to
+ * the open(2) system call.
  *
  * @param pipe The address of a pipe descriptor RTAI will use to store
  * the pipe-related data.  This descriptor must always be valid while
  * the pipe is active therefore it must be allocated in permanent
  * memory.
  *
+ * @param name An ASCII string standing for the symbolic name of the
+ * message pipe. When non-NULL and non-empty, this string is copied to
+ * a safe place into the descriptor, and passed to the registry
+ * package if enabled for indexing the created pipe.
+ *
+ * Named pipes are supported through the use of the registry. When the
+ * registry support is enabled, passing a valid @a name parameter when
+ * creating a message pipe subsequently allows standard Linux
+ * processes to follow a symbolic link from
+ * /proc/rtai/registry/pipes/@a name in order to reach the associated
+ * special device (i.e. /dev/rtp*), so that the specific @a minor
+ * information does not need to be known from those processes for
+ * opening the proper device file. In such a case, both sides of the
+ * pipe only need to agree upon a symbolic name to refer to the same
+ * data path, which is especially useful whenever the @a minor number
+ * is picked up dynamically using an adaptive algorithm, depending on
+ * the current system configuration.
+ *
  * @param minor The minor number of the device associated with the pipe.
  *
  * @return 0 is returned upon success. Otherwise:
  *
+ * - -EEXIST is returned if the @a name is already in use by some
+ * registered object.
+ *
  * - -ENODEV is returned if @a minor is not a valid minor number for
- * the pipe pseudo-device (i.e. /dev/rtp*).
+ * the pipe special device (i.e. /dev/rtp*).
  *
  * - -EBUSY is returned if @a minor is already open.
  *
@@ -161,11 +218,12 @@ void __pipe_pkg_cleanup (void)
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
  *
- * Rescheduling: never.
+ * Rescheduling: possible.
  */
 
-int rt_pipe_open (RT_PIPE *pipe,
-		  int minor)
+int rt_pipe_create (RT_PIPE *pipe,
+		    const char *name,
+		    int minor)
 {
     int err;
 
@@ -176,27 +234,46 @@ int rt_pipe_open (RT_PIPE *pipe,
     pipe->buffer = NULL;
     pipe->fillsz = 0;
     pipe->flushable = 0;
-    pipe->magic = 0;
+    pipe->handle = 0;    /* i.e. (still) unregistered pipe. */
+    pipe->magic = RTAI_PIPE_MAGIC;
+    xnobject_copy_name(pipe->name,name);
 
     err = xnpipe_connect(minor,
 			 &__pipe_output_handler,
 			 NULL,
 			 &__pipe_alloc_handler,
 			 pipe);
+    if (err)
+	return err;
 
-    if (!err)
-	pipe->magic = RTAI_PIPE_MAGIC;
+#ifdef CONFIG_RTAI_OPT_FUSION
+    pipe->cpid = 0;
+#endif /* CONFIG_RTAI_OPT_FUSION */
+
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
+    /* <!> Since rt_register_enter() may reschedule, only register
+       complete objects, so that the registry cannot return handles to
+       half-baked objects... */
+
+    if (name && *name)
+        {
+        err = rt_registry_enter(pipe->name,pipe,&pipe->handle,&__pipe_pnode);
+
+        if (err)
+            rt_pipe_delete(pipe);
+        }
+#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     return err;
 }
 
 /**
- * @fn int rt_pipe_close(RT_PIPE *pipe)
+ * @fn int rt_pipe_delete(RT_PIPE *pipe)
  *
- * @brief Close a pipe.
+ * @brief Delete a message pipe.
  *
- * This service closes a pipe previously opened by rt_pipe_open().
- * Data pending for transmission to user-space are lost.
+ * This service deletes a pipe previously created by rt_pipe_create().
+ * Data pending for transmission to non real-time processes are lost.
  *
  * @param pipe The descriptor address of the affected pipe.
  *
@@ -221,7 +298,7 @@ int rt_pipe_open (RT_PIPE *pipe,
  * Rescheduling: possible.
  */
 
-int rt_pipe_close (RT_PIPE *pipe)
+int rt_pipe_delete (RT_PIPE *pipe)
 
 {
     int err;
@@ -249,6 +326,11 @@ int rt_pipe_close (RT_PIPE *pipe)
 
     err = xnpipe_disconnect(pipe->minor);
 
+#ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
+    if (pipe->handle)
+        rt_registry_remove(pipe->handle);
+#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
+
     rtai_mark_deleted(pipe);
 
  unlock_and_exit:
@@ -259,22 +341,26 @@ int rt_pipe_close (RT_PIPE *pipe)
 }
 
 /**
- * @fn int rt_pipe_read(RT_PIPE *pipe,
-                        RT_PIPE_MSG **msgp,
-			RTIME timeout)
+ * @fn ssize_t rt_pipe_receive(RT_PIPE *pipe,
+                               RT_PIPE_MSG **msgp,
+			       RTIME timeout)
  *
- * @brief Read a message from a pipe.
+ * @brief Receive a message from a pipe.
  *
- * This service retrieves the next message sent from the user-space
- * side of the pipe. rt_pipe_read() always preserves message
- * boundaries, which means that all data sent through the same
- * write(2) operation on the user-space side will be gathered in a
- * single message by this service.
+ * This service retrieves the next message written to the associated
+ * special device in user-space. rt_pipe_receive() always preserves
+ * message boundaries, which means that all data sent through the same
+ * write(2) operation to the special device will be gathered in a
+ * single message by this service. This service differs from
+ * rt_pipe_read() in that it returns a pointer to the internal buffer
+ * holding the message, which improves performances by saving a data
+ * copy to a user-provided buffer, especially when large messages are
+ * involved.
  *
  * Unless otherwise specified, the caller is blocked for a given
  * amount of time if no data is immediately available on entry.
  *
- * @param pipe The descriptor address of the pipe to read from.
+ * @param pipe The descriptor address of the pipe to receive from.
  *
  * @param msgp A pointer to a memory location which will be written
  * upon success with the address of the received message. Once
@@ -332,9 +418,9 @@ int rt_pipe_close (RT_PIPE *pipe)
  * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
-ssize_t rt_pipe_read (RT_PIPE *pipe,
-		      RT_PIPE_MSG **msgp,
-		      RTIME timeout)
+ssize_t rt_pipe_receive (RT_PIPE *pipe,
+			 RT_PIPE_MSG **msgp,
+			 RTIME timeout)
 {
     ssize_t n;
     spl_t s;
@@ -362,37 +448,156 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
 }
 
 /**
- * @fn int rt_pipe_write(RT_PIPE *pipe,
-                         RT_PIPE_MSG *msg,
-			 size_t size,
-			 int mode)
+ * @fn ssize_t rt_pipe_read(RT_PIPE *pipe,
+                            void *buf,
+                            size_t size,
+			    RTIME timeout)
  *
- * @brief Write a message to a pipe.
+ * @brief Read a message from a pipe.
  *
- * This service writes a complete message to be received by the
- * user-space side of the pipe. rt_pipe_write() always preserves
- * message boundaries, which means that all data sent through a single
- * call of this service will be gathered in a single read(2) operation
- * on the user-space side.
+ * This service retrieves the next message written to the associated
+ * special device in user-space. rt_pipe_read() always preserves
+ * message boundaries, which means that all data sent through the same
+ * write(2) operation to the special device will be gathered in a
+ * single message by this service. This services differs from
+ * rt_pipe_receive() in that it copies back the payload data to a
+ * user-defined memory area, instead of returning a pointer to the
+ * internal message buffer holding such data.
  *
- * @param pipe The descriptor address of the pipe to write to.
+ * Unless otherwise specified, the caller is blocked for a given
+ * amount of time if no data is immediately available on entry.
+ *
+ * @param pipe The descriptor address of the pipe to read from.
+ *
+ * @param buf A pointer to a memory location which will be written
+ * upon success with the read message contents.
+ *
+ * @param size The count of bytes from the received message to read up
+ * into @a buf. If @a size is lower than the actual message size,
+ * -ENOSPC is returned since the incompletely received message would
+ * be lost. If @a size is zero, this call returns immediately with no
+ * other action.
+ *
+ * @param timeout The number of clock ticks to wait for some message
+ * to arrive (see note). Passing TM_INFINITE causes the caller to
+ * block indefinitely until some data is eventually available. Passing
+ * TM_NONBLOCK causes the service to return immediately without
+ * waiting if no data is available on entry.
+ *
+ * @return The number of read bytes copied to the @a buf is returned
+ * upon success. Otherwise:
+ *
+ * - -EINVAL is returned if @a pipe is not a pipe descriptor.
+ *
+ * - -EIDRM is returned if @a pipe is a closed pipe descriptor.
+ *
+ * - -ENODEV or -EBADF are returned if @a pipe is scrambled.
+ *
+ * - -ETIMEDOUT is returned if @a timeout is different from
+ * TM_NONBLOCK and no data is available within the specified amount of
+ * time.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and no data is immediately available on entry.
+ *
+ * - -EINTR is returned if rt_task_unblock() has been called for the
+ * waiting task before any data was available.
+ *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
+ * - -ENOSPC is returned if @a size is not large enough to collect the
+ * message data.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ *   only if @a timeout is equal to TM_NONBLOCK.
+ *
+ * - Kernel-based task
+ *
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
+ */
+
+ssize_t rt_pipe_read (RT_PIPE *pipe,
+		      void *buf,
+		      size_t size,
+		      RTIME timeout)
+{
+    RT_PIPE_MSG *msg;
+    ssize_t nbytes;
+
+    if (size == 0)
+	return 0;
+
+    nbytes = rt_pipe_receive(pipe,&msg,timeout);
+
+    if (nbytes < 0)
+	return nbytes;
+
+    if (size < P_MSGSIZE(msg))
+	nbytes = -ENOSPC;
+    else if (P_MSGSIZE(msg) > 0)
+	memcpy(buf,P_MSGPTR(msg),P_MSGSIZE(msg));
+
+    /* Zero-sized messages are allowed, so we still need to free the
+       message buffer even if no data copy took place. */
+
+    rt_pipe_free(msg);
+
+    return nbytes;
+}
+
+ /**
+ * @fn ssize_t rt_pipe_send(RT_PIPE *pipe,
+                            RT_PIPE_MSG *msg,
+			    size_t size,
+			    int mode)
+ *
+ * @brief Send a message through a pipe.
+ *
+ * This service writes a complete message to be received from the
+ * associated special device. rt_pipe_send() always preserves message
+ * boundaries, which means that all data sent through a single call of
+ * this service will be gathered in a single read(2) operation from
+ * the special device. This service differs from rt_pipe_write() in
+ * that it accepts a canned message buffer, instead of a pointer to
+ * the raw data to be sent. This call is useful whenever the caller
+ * wants to prepare the message contents separately from its sending,
+ * which does not require to have all the data to be sent available at
+ * once but allows for incremental updates of the message, and also
+ * saves a message copy, since rt_pipe_send() deals internally with
+ * message buffers.
+ *
+ * @param pipe The descriptor address of the pipe to send to.
  *
  * @param msg The address of the message to be sent.  The message
  * space must have been allocated using the rt_pipe_alloc() service.
- * Once passed to rt_pipe_write(), the memory pointed to by @a msg is
+ * Once passed to rt_pipe_send(), the memory pointed to by @a msg is
  * no more under the control of the application code and thus should
  * not be referenced by it anymore; deallocation of this memory will
- * be automatically handled as needed.
+ * be automatically handled as needed. As a special exception, @a msg
+ * can be NULL and will not be dereferenced if @a size is zero.
  *
  * @param size The size in bytes of the message (payload data
  * only). Zero is a valid value, in which case the service returns
  * immediately without sending any message.
  *
- * Additionally, rt_pipe_write() causes any data buffered by
+ * Additionally, rt_pipe_send() causes any data buffered by
  * rt_pipe_stream() to be flushed prior to sending the message. For
- * this reason, rt_pipe_write() can return a non-zero byte count to
- * the caller if some pending data has been flushed, even if @a size
- * was zero on entry.
+ * this reason, rt_pipe_send() can return a non-zero byte count to the
+ * caller if some pending data has been flushed, even if @a size was
+ * zero on entry.
  *
  * @param mode A set of flags affecting the operation:
  *
@@ -408,7 +613,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  *
  * - -EINVAL is returned if @a pipe is not a pipe descriptor.
  *
- * - -EPIPE is returned if the user-space side of the pipe is not yet
+ * - -EPIPE is returned if the associated special device is not yet
  * open.
  *
  * - -EIDRM is returned if @a pipe is a closed pipe descriptor.
@@ -426,10 +631,10 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
  * Rescheduling: possible.
  */
 
-ssize_t rt_pipe_write (RT_PIPE *pipe,
-		       RT_PIPE_MSG *msg,
-		       size_t size,
-		       int mode)
+ssize_t rt_pipe_send (RT_PIPE *pipe,
+		      RT_PIPE_MSG *msg,
+		      size_t size,
+		      int mode)
 {
     ssize_t n = 0;
     spl_t s;
@@ -464,16 +669,115 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
     return n <= 0 ? n : n - sizeof(RT_PIPE_MSG);
 }
 
+ /**
+ * @fn ssize_t rt_pipe_write(RT_PIPE *pipe,
+                             const void *buf,
+			     size_t size,
+			     int mode)
+ *
+ * @brief Write a message to a pipe.
+ *
+ * This service writes a complete message to be received from the
+ * associated special device. rt_pipe_write() always preserves message
+ * boundaries, which means that all data sent through a single call of
+ * this service will be gathered in a single read(2) operation from
+ * the special device. This service differs from rt_pipe_send() in
+ * that it accepts a pointer to the raw data to be sent, instead of a
+ * canned message buffer. This call is useful whenever the caller does
+ * not need to prepare the message contents separately from its
+ * sending.
+ *
+ * @param pipe The descriptor address of the pipe to write to.
+ *
+ * @param buf The address of the first data byte to send. The
+ * data will be copied to an internal buffer before transmission.
+ *
+ * @param size The size in bytes of the message (payload data
+ * only). Zero is a valid value, in which case the service returns
+ * immediately without sending any message.
+ *
+ * Additionally, rt_pipe_write() causes any data buffered by
+ * rt_pipe_stream() to be flushed prior to sending the message. For
+ * this reason, rt_pipe_write() can return a non-zero byte count to
+ * the caller if some pending data has been flushed, even if @a size
+ * was zero on entry.
+ *
+ * @param mode A set of flags affecting the operation:
+ *
+ * - P_URGENT causes the message to be prepended to the output
+ * queue, ensuring a LIFO ordering.
+ *
+ * - P_NORMAL causes the message to be appended to the output
+ * queue, ensuring a FIFO ordering.
+ *
+ * @return Upon success, this service returns @a size if the latter is
+ * non-zero, or the number of bytes flushed otherwise. Upon error, one
+ * of the following error codes is returned:
+ *
+ * - -EINVAL is returned if @a pipe is not a pipe descriptor.
+ *
+ * - -EPIPE is returned if the associated special device is not yet
+ * open.
+ *
+ * - -ENOMEM is returned if not enough buffer space is available to
+ * complete the operation.
+ *
+ * - -EIDRM is returned if @a pipe is a closed pipe descriptor.
+ *
+ * - -ENODEV or -EBADF are returned if @a pipe is scrambled.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+
+ssize_t rt_pipe_write (RT_PIPE *pipe,
+		       const void *buf,
+		       size_t size,
+		       int mode)
+{
+    RT_PIPE_MSG *msg;
+    ssize_t nbytes;
+
+    if (size == 0)
+	/* Try flushing the streaming buffer in any case. */
+	return rt_pipe_send(pipe,NULL,0,mode);
+
+    msg = rt_pipe_alloc(size);
+	
+    if (!msg)
+	return -ENOMEM;
+
+    memcpy(P_MSGPTR(msg),buf,size);
+
+    nbytes = rt_pipe_send(pipe,msg,size,mode);
+
+    if (nbytes != size)
+	/* If the operation failed, we need to free the message buffer
+	   by ourselves. */
+	rt_pipe_free(msg);
+
+    return nbytes;
+}
+
 /**
- * @fn int rt_pipe_stream(RT_PIPE *pipe, const void *buf, size_t size)
+ * @fn ssize_t rt_pipe_stream(RT_PIPE *pipe,
+                              const void *buf,
+			      size_t size)
  *
  * @brief Stream bytes to a pipe.
  *
- * This service writes a sequence of bytes to be received by the
- * user-space side of the pipe. Unlike rt_pipe_write(), this service
- * does not preserve message boundaries. Instead, an internal buffer
- * is filled on the fly with the data. The actual sending may be
- * delayed until the internal buffer is full, or the Linux kernel is
+ * This service writes a sequence of bytes to be received from the
+ * associated special device. Unlike rt_pipe_send(), this service does
+ * not preserve message boundaries. Instead, an internal buffer is
+ * filled on the fly with the data. The actual sending may be delayed
+ * until the internal buffer is full, or the Linux kernel is
  * re-entered after the real-time system enters a quiescent state.
  *
  * Data buffers sent by the rt_pipe_stream() service are always
@@ -493,8 +797,11 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
  *
  * - -EINVAL is returned if @a pipe is not a pipe descriptor.
  *
- * - -EPIPE is returned if the user-space side of the pipe is not yet
+ * - -EPIPE is returned if the associated special device is not yet
  * open.
+ *
+ * - -ENOMEM is returned if not enough buffer space is available to
+ * complete the operation.
  *
  * - -EIDRM is returned if @a pipe is a closed pipe descriptor.
  *
@@ -598,13 +905,13 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
 }
 
 /**
- * @fn int rt_pipe_flush(RT_PIPE *pipe)
+ * @fn ssize_t rt_pipe_flush(RT_PIPE *pipe)
  *
  * @brief Flush the pipe.
  *
  * This service flushes any pending data buffered by rt_pipe_stream().
- * The data will be immediately sent to the user-space side of the
- * pipe.
+ * This operation makes the data available for reading from the
+ * associated special device.
  *
  * @param pipe The descriptor address of the pipe to flush.
  *
@@ -612,7 +919,7 @@ ssize_t rt_pipe_stream (RT_PIPE *pipe,
  *
  * - -EINVAL is returned if @a pipe is not a pipe descriptor.
  *
- * - -EPIPE is returned if the user-space side of the pipe is not yet
+ * - -EPIPE is returned if the associated special device is not yet
  * open.
  *
  * - -EIDRM is returned if @a pipe is a closed pipe descriptor.
@@ -666,7 +973,7 @@ ssize_t rt_pipe_flush (RT_PIPE *pipe)
  *
  * This service allocates a message buffer from the system heap which
  * can be subsequently filled by the caller then passed to
- * rt_pipe_write() for sending. The beginning of the available data
+ * rt_pipe_send() for sending. The beginning of the available data
  * area of @a size contiguous bytes is accessible from P_MSGPTR(msg).
  *
  * @param size The requested size in bytes of the buffer. This value
@@ -705,8 +1012,8 @@ RT_PIPE_MSG *rt_pipe_alloc (size_t size)
  *
  * @brief Free a message pipe buffer.
  *
- * This service releases a message buffer returned by rt_pipe_read()
- * to the system heap.
+ * This service releases a message buffer returned by
+ * rt_pipe_receive() to the system heap.
  *
  * @param msg The address of the message buffer to free.
  *
@@ -732,10 +1039,10 @@ int rt_pipe_free (RT_PIPE_MSG *msg)
 
 /*@}*/
 
-EXPORT_SYMBOL(rt_pipe_open);
-EXPORT_SYMBOL(rt_pipe_close);
-EXPORT_SYMBOL(rt_pipe_read);
-EXPORT_SYMBOL(rt_pipe_write);
+EXPORT_SYMBOL(rt_pipe_create);
+EXPORT_SYMBOL(rt_pipe_delete);
+EXPORT_SYMBOL(rt_pipe_receive);
+EXPORT_SYMBOL(rt_pipe_send);
 EXPORT_SYMBOL(rt_pipe_stream);
 EXPORT_SYMBOL(rt_pipe_alloc);
 EXPORT_SYMBOL(rt_pipe_free);

@@ -24,6 +24,7 @@
 #include <linux/init.h>
 #include <linux/fcntl.h>
 #include <linux/poll.h>
+#include <linux/termios.h>
 #include <linux/proc_fs.h>
 #include <linux/spinlock.h>
 #include <asm/io.h>
@@ -221,6 +222,7 @@ int xnpipe_connect (int minor,
     state->input_handler = input_handler;
     state->alloc_handler = alloc_handler;
     state->cookie = cookie;
+    state->ionrd = 0;
 
     if (testbits(state->status,XNPIPE_USER_CONN))
 	{
@@ -330,6 +332,7 @@ ssize_t xnpipe_send (int minor,
 
     inith(xnpipe_m_link(mh));
     xnpipe_m_size(mh) = size - sizeof(*mh);
+    state->ionrd += xnpipe_m_size(mh);
 
     if (flags & XNPIPE_URGENT)
 	prependq(&state->outq,xnpipe_m_link(mh));
@@ -363,6 +366,7 @@ ssize_t xnpipe_recv (int minor,
 		     xnticks_t timeout)
 {
     xnpipe_state_t *state;
+    xnthread_t *thread;
     xnholder_t *holder;
     xnticks_t stime;
     ssize_t ret;
@@ -412,21 +416,23 @@ ssize_t xnpipe_recv (int minor,
 
 	xnsynch_sleep_on(&state->synchbase,timeout);
 
-	if (xnthread_test_flags(xnpod_current_thread(),XNTIMEO))
+	thread = xnpod_current_thread();
+
+	if (xnthread_test_flags(thread,XNTIMEO))
 	    {
 	    ret = -ETIMEDOUT;
 	    goto unlock_and_exit;
 	    }
 
-	if (xnthread_test_flags(xnpod_current_thread(),XNBREAK))
+	if (xnthread_test_flags(thread,XNBREAK))
 	    {
 	    ret = -EINTR;
 	    goto unlock_and_exit;
 	    }
 
-	if (xnthread_test_flags(xnpod_current_thread(),XNRMID))
+	if (xnthread_test_flags(thread,XNRMID))
 	    {
-	    ret = -ESTALE;
+	    ret = -EIDRM;
 	    goto unlock_and_exit;
 	    }
 	}
@@ -639,6 +645,7 @@ static ssize_t xnpipe_read (struct file *file,
     if (mh)
 	{
 	ret = (ssize_t)xnpipe_m_size(mh); /* Cannot be zero */
+	state->ionrd -= ret;
 
 	if (ret <= count)
 	    {
@@ -726,7 +733,74 @@ static int xnpipe_ioctl (struct inode *inode,
 			 unsigned int cmd,
 			 unsigned long arg)
 {
-    return -ENOSYS;
+    xnpipe_state_t *state = (xnpipe_state_t *)file->private_data;
+    struct xnpipe_mh *mh;
+    xnholder_t *holder;
+    int err = 0, n;
+    spl_t s;
+
+    switch (cmd)
+	{
+	case XNPIPEIOC_GET_NRDEV:
+
+	    if (put_user(XNPIPE_NDEVS,(int *)arg))
+		return -EFAULT;
+
+	    break;
+
+	case XNPIPEIOC_FLUSH:
+
+	    /* Theoretically, a flush request could be prevented from
+	       ending by a real-time sender perpetually feeding its
+	       output queue, and doing so fast enough for the current
+	       Linux task to be stuck inside the flush loop. However,
+	       the way it is coded also reduces the interrupt-free
+	       section to a bare minimum, so it's definitely better
+	       latency-wise. Additionally, such jamming behaviour from
+	       the kernel side would be the sign of some design
+	       problem anyway. */
+
+	    n = 0;
+	    xnlock_get_irqsave(&nklock,s);
+
+	    while ((holder = getq(&state->outq)) != NULL)
+		{
+		mh = link2mh(holder);
+		n += xnpipe_m_size(mh);
+
+		xnlock_put_irqrestore(&nklock,s);
+
+		if (state->output_handler != NULL)
+		    state->output_handler(xnminor_from_state(state),mh,0,state->cookie);
+
+		xnlock_get_irqsave(&nklock,s);
+		}
+
+	    state->ionrd -= n;
+	    xnlock_put_irqrestore(&nklock,s);
+	    err = n;
+
+	    break;
+
+	case FIONREAD:
+
+	    n = testbits(state->status,XNPIPE_KERN_CONN) ? state->ionrd : 0;
+
+	    if (put_user(n,(int *)arg))
+		return -EFAULT;
+
+	    break;
+
+	case TCGETS:
+	    /* For isatty() probing. */
+	    return -ENOTTY;
+
+	default:
+
+	    return -EINVAL;
+	}
+
+    return err;
 }
 
 static int xnpipe_fasync (int fd,
@@ -821,7 +895,7 @@ int xnpipe_mount (void)
 
     if (register_chrdev(XNPIPE_DEV_MAJOR,"rtpipe",&xnpipe_fops))
 	{
-	xnlogerr("Unable to reserve major #%d for real-time pipe service.\n",
+	xnlogerr("Unable to reserve major #%d for message pipe support.\n",
 		 XNPIPE_DEV_MAJOR);
 	return -EPIPE;
 	}

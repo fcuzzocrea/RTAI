@@ -44,21 +44,23 @@
 #define XNRRB     0x00008000	/* Undergoes a round-robin scheduling */
 #define XNASDI    0x00010000	/* ASR are disabled */
 #define XNSHIELD  0x00020000	/* IRQ shield is enabled (shadow only) */
+#define XNTRAPSW  0x00040000	/* Trap execution mode switches */
 
-#define XNFPU     0x00040000	/* Thread uses FPU */
-#define XNSHADOW  0x00080000	/* Shadow thread */
-#define XNROOT    0x00100000	/* Root thread (i.e. Linux/IDLE) */
+#define XNFPU     0x00080000	/* Thread uses FPU */
+#define XNSHADOW  0x00100000	/* Shadow thread */
+#define XNROOT    0x00200000	/* Root thread (i.e. Linux/IDLE) */
 
 /* Must follow the declaration order of the above bits. */
-#define XNTHREAD_SLABEL_INIT \
-{ "ssp", "pnd", "dly", "rdy", "dor", \
+#define XNTHREAD_SLABEL_INIT { \
+  "ssp", "pnd", "dly", "rdy", "dor", \
   "zom", "rst", "sta", "rlx", "tmo", \
   "rmi", "brk", "sig", "pip", "lck", \
-  "rrb", "asd", "shl", "fpu", "usr", \
-  "idl" }
+  "rrb", "asd", "shl", "tsw", "fpu", \
+  "usr", "idl" \
+}
 
 #define XNTHREAD_BLOCK_BITS   (XNSUSP|XNPEND|XNDELAY|XNDORMANT|XNRELAX)
-#define XNTHREAD_MODE_BITS    (XNLOCK|XNRRB|XNASDI|XNSHIELD)
+#define XNTHREAD_MODE_BITS    (XNLOCK|XNRRB|XNASDI|XNSHIELD|XNTRAPSW)
 #define XNTHREAD_SYSTEM_BITS  (XNROOT)
 
 /* These flags are available to the real-time interfaces */

@@ -110,13 +110,13 @@
 00100 <span class="keywordtype">int</span> <a class="code" href="group__synch.html#ga7">xnsynch_flush</a>(xnsynch_t *synch,
 00101                   xnflags_t reason);
 00102 
-00103 <span class="keywordtype">void</span> <a class="code" href="group__synch.html#ga10">xnsynch_release_all_ownerships</a>(<span class="keyword">struct</span> xnthread *thread);
+00103 <span class="keywordtype">void</span> <a class="code" href="group__synch.html#ga9">xnsynch_release_all_ownerships</a>(<span class="keyword">struct</span> xnthread *thread);
 00104 
 00105 <span class="keywordtype">void</span> <a class="code" href="group__synch.html#ga4">xnsynch_renice_sleeper</a>(<span class="keyword">struct</span> xnthread *thread);
 00106 
 00107 <span class="keywordtype">void</span> <a class="code" href="group__synch.html#ga8">xnsynch_forget_sleeper</a>(<span class="keyword">struct</span> xnthread *thread);
 00108 
-00109 <span class="keyword">struct </span>xnthread *<a class="code" href="group__synch.html#ga9">xnsynch_forget_one_sleeper</a>(xnsynch_t *synch);
+00109 <span class="keyword">struct </span>xnthread *xnsynch_forget_one_sleeper(xnsynch_t *synch);
 00110 
 00111 <span class="preprocessor">#ifdef __cplusplus</span>
 00112 <span class="preprocessor"></span>}
@@ -125,7 +125,7 @@
 00115 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
 00116 
 00117 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_SYNCH_H_ */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:53 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

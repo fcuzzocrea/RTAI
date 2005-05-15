@@ -78,56 +78,61 @@
 00088 <span class="preprocessor">#define RT_OBJECT_PROC_RESERVED1 ((struct proc_dir_entry *)1)</span>
 00089 <span class="preprocessor"></span><span class="preprocessor">#define RT_OBJECT_PROC_RESERVED2 ((struct proc_dir_entry *)2)</span>
 00090 <span class="preprocessor"></span>
-00091 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_object_procnode {
-00092 
-00093     <span class="keyword">struct </span>proc_dir_entry *dir;
-00094     <span class="keyword">const</span> <span class="keywordtype">char</span> *type;
-00095     <span class="keywordtype">int</span> entries;
-00096     read_proc_t *read_proc;
-00097     write_proc_t *write_proc;
-00098 
-00099 } RT_OBJECT_PROCNODE;
-00100 
-00101 <span class="preprocessor">#else </span><span class="comment">/* !(CONFIG_PROC_FS &amp;&amp; __KERNEL__) */</span>
-00102 
-00103 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_object_procnode { <span class="comment">/* Placeholder. */</span>
-00104 
-00105     <span class="keyword">const</span> <span class="keywordtype">char</span> *type;
-00106 
-00107 } RT_OBJECT_PROCNODE;
-00108 
-00109 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_PROC_FS &amp;&amp; __KERNEL__ */</span>
-00110 
-00111 <span class="comment">/* Public interface. */</span>
-00112 
-00113 <span class="keywordtype">int</span> <a class="code" href="group__registry.html#ga15">rt_registry_enter</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *key,
-00114                       <span class="keywordtype">void</span> *objaddr,
-00115                       rt_handle_t *phandle,
-00116                       RT_OBJECT_PROCNODE *pnode);
+00091 <span class="keyword">typedef</span> ssize_t link_proc_t(<span class="keywordtype">char</span> *buf,
+00092                             <span class="keywordtype">int</span> count,
+00093                             <span class="keywordtype">void</span> *data);
+00094 
+00095 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_object_procnode {
+00096 
+00097     <span class="keyword">struct </span>proc_dir_entry *dir;
+00098     <span class="keyword">const</span> <span class="keywordtype">char</span> *type;
+00099     <span class="keywordtype">int</span> entries;
+00100     read_proc_t *read_proc;
+00101     write_proc_t *write_proc;
+00102     link_proc_t *link_proc;
+00103 
+00104 } RT_OBJECT_PROCNODE;
+00105 
+00106 <span class="preprocessor">#else </span><span class="comment">/* !(CONFIG_PROC_FS &amp;&amp; __KERNEL__) */</span>
+00107 
+00108 <span class="keyword">typedef</span> <span class="keyword">struct </span>rt_object_procnode { <span class="comment">/* Placeholder. */</span>
+00109 
+00110     <span class="keyword">const</span> <span class="keywordtype">char</span> *type;
+00111 
+00112 } RT_OBJECT_PROCNODE;
+00113 
+00114 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_PROC_FS &amp;&amp; __KERNEL__ */</span>
+00115 
+00116 <span class="comment">/* Public interface. */</span>
 00117 
-00118 <span class="keywordtype">int</span> <a class="code" href="group__registry.html#ga16">rt_registry_bind</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *key,
-00119                      RTIME timeout,
-00120                      rt_handle_t *phandle);
-00121 
-00122 <span class="keywordtype">int</span> <a class="code" href="group__registry.html#ga17">rt_registry_remove</a>(rt_handle_t handle);
-00123 
-00124 <span class="keywordtype">int</span> <a class="code" href="group__registry.html#ga18">rt_registry_remove_safe</a>(rt_handle_t handle,
-00125                             RTIME timeout);
+00118 <span class="keywordtype">int</span> <a class="code" href="group__registry.html#ga15">rt_registry_enter</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *key,
+00119                       <span class="keywordtype">void</span> *objaddr,
+00120                       rt_handle_t *phandle,
+00121                       RT_OBJECT_PROCNODE *pnode);
+00122 
+00123 <span class="keywordtype">int</span> <a class="code" href="group__registry.html#ga16">rt_registry_bind</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *key,
+00124                      RTIME timeout,
+00125                      rt_handle_t *phandle);
 00126 
-00127 <span class="keywordtype">void</span> *<a class="code" href="group__registry.html#ga19">rt_registry_get</a>(rt_handle_t handle);
+00127 <span class="keywordtype">int</span> <a class="code" href="group__registry.html#ga17">rt_registry_remove</a>(rt_handle_t handle);
 00128 
-00129 <span class="keywordtype">void</span> *<a class="code" href="group__registry.html#ga21">rt_registry_fetch</a>(rt_handle_t handle);
-00130 
-00131 u_long <a class="code" href="group__registry.html#ga20">rt_registry_put</a>(rt_handle_t handle);
-00132 
-00133 <span class="preprocessor">#ifdef __cplusplus</span>
-00134 <span class="preprocessor"></span>}
-00135 <span class="preprocessor">#endif</span>
-00136 <span class="preprocessor"></span>
-00137 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
-00138 
-00139 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_REGISTRY_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
+00129 <span class="keywordtype">int</span> <a class="code" href="group__registry.html#ga18">rt_registry_remove_safe</a>(rt_handle_t handle,
+00130                             RTIME timeout);
+00131 
+00132 <span class="keywordtype">void</span> *<a class="code" href="group__registry.html#ga19">rt_registry_get</a>(rt_handle_t handle);
+00133 
+00134 <span class="keywordtype">void</span> *<a class="code" href="group__registry.html#ga21">rt_registry_fetch</a>(rt_handle_t handle);
+00135 
+00136 u_long <a class="code" href="group__registry.html#ga20">rt_registry_put</a>(rt_handle_t handle);
+00137 
+00138 <span class="preprocessor">#ifdef __cplusplus</span>
+00139 <span class="preprocessor"></span>}
+00140 <span class="preprocessor">#endif</span>
+00141 <span class="preprocessor"></span>
+00142 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
+00143 
+00144 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_REGISTRY_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:53 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

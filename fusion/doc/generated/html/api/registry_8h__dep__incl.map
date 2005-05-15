@@ -6,8 +6,9 @@ rect $skins_2rtai_2heap_8c.html 197,152 314,176
 rect $skins_2rtai_2intr_8c.html 202,200 309,224
 rect $skins_2rtai_2module_8c.html 189,248 322,272
 rect $mutex_8c.html 193,296 318,320
-rect $queue_8c.html 193,344 318,368
-rect $registry_8c.html 189,392 322,416
-rect $sem_8c.html 198,440 313,464
-rect $syscall_8c.html 192,488 320,512
-rect $task_8c.html 198,536 313,560
+rect $skins_2rtai_2pipe_8c.html 198,344 313,368
+rect $queue_8c.html 193,392 318,416
+rect $registry_8c.html 189,440 322,464
+rect $sem_8c.html 198,488 313,512
+rect $syscall_8c.html 192,536 320,560
+rect $task_8c.html 198,584 313,608

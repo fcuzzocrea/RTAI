@@ -134,12 +134,12 @@
 00161     <span class="keywordflow">return</span> __rthal_ullimd(op, m, d);
 00162 }
 00163 
-00164 <span class="keyword">static</span> <span class="keyword">inline</span> __attribute_const__ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ffnz (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> word) {
+00164 <span class="keyword">static</span> <span class="keyword">inline</span> __attribute_const__ <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ffnz (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> ul) {
 00165     <span class="comment">/* Derived from bitops.h's ffs() */</span>
 00166     __asm__(<span class="stringliteral">"bsfl %1, %0"</span>
-00167             : <span class="stringliteral">"=r,r"</span> (word)
-00168             : <span class="stringliteral">"r,?m"</span>  (word));
-00169     <span class="keywordflow">return</span> word;
+00167             : <span class="stringliteral">"=r,r"</span> (ul)
+00168             : <span class="stringliteral">"r,?m"</span>  (ul));
+00169     <span class="keywordflow">return</span> ul;
 00170 }
 00171 
 00172 <span class="preprocessor">#if defined(__KERNEL__) &amp;&amp; !defined(__cplusplus)</span>
@@ -261,7 +261,7 @@
 00288 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
 00289 
 00292 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:53 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

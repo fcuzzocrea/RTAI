@@ -1034,6 +1034,9 @@ The following bits can be part of the bitmask:<p>
 <li>T_SHIELD enables the interrupt shield for the current user-space task. When engaged, the interrupt shield protects the RTAI task running in secondary mode from any preemption by the regular Linux interrupt handlers, without delaying in any way the RTAI interrupt handling. The shield is operated on a per-task basis at each context switch, depending on the setting of this bit. This bit is set by default upon user-space task creation.</li></ul>
 <p>
 <ul>
+<li>When set, T_SWITCH causes the SIGXCPU signal to be sent to the current user-space task whenever it switches to the secondary mode. This feature is useful to detect unwanted migrations to the Linux domain.</li></ul>
+<p>
+<ul>
 <li>T_PRIMARY can be passed to switch the current user-space task to primary mode (setmask |= T_PRIMARY), or secondary mode (clrmask |= T_PRIMARY). Upon return from <a class="el" href="group__task.html#ga21">rt_task_set_mode()</a>, the user-space task will run into the specified domain.</li></ul>
 <p>
 Normally, this service can only be called on behalf of a regular real-time task, either running in kernel or user-space. However, as a special exception, requests for setting/clearing the T_LOCK bit from asynchronous contexts are silently dropped, and the call returns successfully if no other mode bits have been specified. This is consistent with the fact that RTAI enforces a scheduler lock until the outer interrupt handler has returned.<p>
@@ -1686,7 +1689,7 @@ This service can be called from:<p>
 Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:42 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:58 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

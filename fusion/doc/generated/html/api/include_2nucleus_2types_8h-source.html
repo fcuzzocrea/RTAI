@@ -95,32 +95,37 @@
 00085 <span class="preprocessor"></span><span class="preprocessor">#define maxval(a,b) ((a) &gt; (b) ? (a) : (b))</span>
 00086 <span class="preprocessor"></span>
 00087 <span class="preprocessor">#define XN_NBBY 8</span>
-00088 <span class="preprocessor"></span>
-00089 <span class="preprocessor">#ifdef __cplusplus</span>
-00090 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00091 <span class="preprocessor">#endif</span>
-00092 <span class="preprocessor"></span>
-00093 <span class="keyword">const</span> <span class="keywordtype">char</span> *xnpod_fatal_helper(<span class="keyword">const</span> <span class="keywordtype">char</span> *format, ...);
-00094 
-00095 <span class="keywordtype">int</span> __fusion_user_init(<span class="keywordtype">void</span>);
-00096 
-00097 <span class="keywordtype">void</span> __fusion_user_exit(<span class="keywordtype">void</span>);
-00098 
-00099 <span class="preprocessor">#ifdef __cplusplus</span>
-00100 <span class="preprocessor"></span>}
-00101 <span class="preprocessor">#endif</span>
-00102 <span class="preprocessor"></span>
-00103 <span class="preprocessor">#define xnpod_fatal(format,args...) \</span>
-00104 <span class="preprocessor">do { \</span>
-00105 <span class="preprocessor">   const char *panic = xnpod_fatal_helper(format,##args); \</span>
-00106 <span class="preprocessor">   xnarch_halt(panic); \</span>
-00107 <span class="preprocessor">} while (0)</span>
-00108 <span class="preprocessor"></span>
-00109 <span class="preprocessor">#define root_thread_init __fusion_user_init</span>
-00110 <span class="preprocessor"></span><span class="preprocessor">#define root_thread_exit __fusion_user_exit</span>
-00111 <span class="preprocessor"></span>
-00112 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TYPES_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon May 2 15:09:37 2005 for RTAI Fusion API by&nbsp;
+00088 <span class="preprocessor"></span><span class="preprocessor">#ifndef __KERNEL__</span>
+00089 <span class="preprocessor"></span><span class="preprocessor">#ifndef BITS_PER_LONG</span>
+00090 <span class="preprocessor"></span><span class="preprocessor">#define BITS_PER_LONG (sizeof(long) * XN_NBBY)</span>
+00091 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* BITS_PER_LONG */</span>
+00092 <span class="preprocessor">#endif </span><span class="comment">/* !__KERNEL__ */</span>
+00093 
+00094 <span class="preprocessor">#ifdef __cplusplus</span>
+00095 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00096 <span class="preprocessor">#endif</span>
+00097 <span class="preprocessor"></span>
+00098 <span class="keyword">const</span> <span class="keywordtype">char</span> *xnpod_fatal_helper(<span class="keyword">const</span> <span class="keywordtype">char</span> *format, ...);
+00099 
+00100 <span class="keywordtype">int</span> __fusion_user_init(<span class="keywordtype">void</span>);
+00101 
+00102 <span class="keywordtype">void</span> __fusion_user_exit(<span class="keywordtype">void</span>);
+00103 
+00104 <span class="preprocessor">#ifdef __cplusplus</span>
+00105 <span class="preprocessor"></span>}
+00106 <span class="preprocessor">#endif</span>
+00107 <span class="preprocessor"></span>
+00108 <span class="preprocessor">#define xnpod_fatal(format,args...) \</span>
+00109 <span class="preprocessor">do { \</span>
+00110 <span class="preprocessor">   const char *panic = xnpod_fatal_helper(format,##args); \</span>
+00111 <span class="preprocessor">   xnarch_halt(panic); \</span>
+00112 <span class="preprocessor">} while (0)</span>
+00113 <span class="preprocessor"></span>
+00114 <span class="preprocessor">#define root_thread_init __fusion_user_init</span>
+00115 <span class="preprocessor"></span><span class="preprocessor">#define root_thread_exit __fusion_user_exit</span>
+00116 <span class="preprocessor"></span>
+00117 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TYPES_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:53 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

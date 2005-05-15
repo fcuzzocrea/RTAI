@@ -1,8 +1,53 @@
+2005-05-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/registry.c (__registry_proc_callback): Do not
+	dereference object->key in the unexport case, since it's stale
+	memory after the real-time caller has destroyed the containing
+	descriptor.
+
+	* include/nucleus/asm-*/system.h (xnarch_fault_notify): Add
+	predicate to filter out debug traps from events causing SIGXCPU
+	sending upon secondary mode switch.
+
+2005-05-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/lib/pipe.c: Add user-space support to the real-time
+	side of the pipe.
+
+2005-05-12  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/task.c (rt_task_set_mode): Add the T_SWITCH mode bit
+	allowing to detect (unwanted) switches to secondary mode.
+
+	* nucleus/shadow.c (xnshadow_relax): Send SIGXCPU upon migration
+	whenever the XNTRAPSW bit is set in the thread status.
+
+	* nucleus/pipe.c (xnpipe_recv): Return -EIDRM instead of -ESTALE
+	upon pipe deletion.
+
+	* skins/rtai/pipe.c: Previously defined rt_pipe_write() ->
+	rt_pipe_send(), and rt_pipe_read() -> rt_pipe_receive(). New
+	implementations of rt_pipe_write() and rt_pipe_read() have been
+	provided.
+
 2005-05-11  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/vxworks/GNUmakefile.am (install-exec-local): Add symbolic
 	links from relevant vxworks headers to vxworks.h, to ease porting
 	applications.
+
+2005-05-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/registry.c (__registry_proc_callback): Provide
+	support for symlink entries.
+
+	* nucleus/pipe.c (xnpipe_ioctl): Add basic ioctls.
+
+	* include/nucleus/pipe.h: Cleanup user namespace.
+
+	* skins/rtai/pipe.c (rt_pipe_open): Make pipe objects
+	registerable, so that entries under /proc/rtai/registry/pipes/
+	appear as symlinks to the associated devices.
 
 2005-05-10  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
@@ -16,6 +61,10 @@
 	Fix compiling user-space applications using kernel headers for out
 	of tree builds by exporting kernel source dir and adding correct -I
 	options to RTAI_USER_CFLAGS.
+
+2005-05-06  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: fusion-0.7.3
 
 2005-05-06 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 

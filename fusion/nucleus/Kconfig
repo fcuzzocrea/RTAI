@@ -21,7 +21,7 @@ config RTAI_OPT_PIPE
 	channels allowing data exchange between real-time kernel
 	threads and regular user-space processes. Pipes natively
 	preserve message boundaries, but can also be used in byte
-	stream mode from kernel to user space.
+	streaming mode from kernel to user-space.
 
 config RTAI_OPT_PIPE_NRDEV
 	string "Number of pipe devices"
@@ -41,23 +41,6 @@ config RTAI_OPT_SYS_HEAPSZ
 	The system heap is used for various internal allocations by
 	the nucleus and the real-time skins. The size is expressed in
 	Kilobytes.
-
-config RTAI_OPT_EXPERT_PERCPU_TIMER
-        bool "Per-cpu timers list"
-	depends on RTAI_OPT_EXPERT
-        default y
-        help
-
-        This option make the nucleus timer module use one timers list
-        by CPU, this reduces the need for inter-cpu communication and 
-        should significantly reduce the scheduling latency on other CPUs
-        than the first one. Changing this option has no effect on UP 
-        machines.
-
-config RTAI_OPT_PERCPU_TIMER
-        bool
-        depends on !RTAI_OPT_EXPERT || RTAI_OPT_EXPERT_PERCPU_TIMER
-        default y
 
 config RTAI_OPT_DEBUG
 	bool "Debug support"
@@ -79,11 +62,22 @@ config RTAI_OPT_WATCHDOG
 	seconds of uninterrupted real-time activity without Linux
 	interaction; in such event, the current real-time thread is
 	forcibly suspended. The built-in watchdog support operates on
-	bahalf of the timer tick handler, thus is only active after
+	behalf of the timer tick handler, thus is only active after
 	the timer has been started.
 
 menu "Scalability"
 	depends on RTAI_OPT_EXPERT
+
+config RTAI_OPT_EXPERT_PERCPU_TIMER
+        bool "Per-cpu timers list"
+        default y
+        help
+
+        This option make the nucleus timer module use one timers list
+        by CPU, this reduces the need for inter-CPU communication and
+        should significantly reduce the scheduling latency on other CPUs
+        than the first one. This option has no effect on uniprocessor
+        machines.
 
 config RTAI_OPT_SCALABLE_SCHED
 	bool "O(1) scheduler"
@@ -113,6 +107,11 @@ config RTAI_OPT_SCALABLE_PRIOS
 	hundred priority levels.
 
 endmenu
+
+config RTAI_OPT_PERCPU_TIMER
+        bool
+        depends on !RTAI_OPT_EXPERT || RTAI_OPT_EXPERT_PERCPU_TIMER
+        default y
 
 menu "LTT tracepoints filtering"
 	depends on RTAI_OPT_EXPERT && RTAI_OPT_DISABLED

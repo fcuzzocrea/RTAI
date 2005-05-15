@@ -45,6 +45,7 @@
 #define T_RRB     XNRRB
 #define T_NOSIG   XNASDI
 #define T_SHIELD  XNSHIELD
+#define T_SWITCH  XNTRAPSW
 #define T_PRIMARY XNTHREAD_SPARE0
 
 /* Task hook types. */
@@ -63,7 +64,7 @@ typedef struct rt_task_placeholder {
 } RT_TASK_PLACEHOLDER;
 
 #define RT_TASK_STATUS_MASK \
-(T_FPU|T_BLOCKED|T_DELAYED|T_READY|T_DORMANT|T_STARTED|T_BOOST|T_LOCK|T_RRB|T_NOSIG|T_SHIELD)
+(T_FPU|T_BLOCKED|T_DELAYED|T_READY|T_DORMANT|T_STARTED|T_BOOST|T_LOCK|T_RRB|T_NOSIG|T_SHIELD|T_SWITCH)
 
 struct rt_queue_msg;
 struct rt_task;

@@ -119,7 +119,12 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 	clrbits(thread->status,XNKICKED);
 	}
 
-    xnshadow_relax();
+    /* Relaxing due to a fault will trigger a notification from the
+       trap handler if T_SWITCH is enabled, so we don't otherwise
+       notify upon signal receipt, since testing syscall return values
+       for -EINTR is still possible to detect such situation. */
+
+    xnshadow_relax(0);
 }
 
 static inline void set_linux_task_priority (struct task_struct *task, int prio)
@@ -511,7 +516,7 @@ static int xnshadow_harden (void)
 
 /*! 
  * @internal
- * \fn void xnshadow_relax(void);
+ * \fn void xnshadow_relax(int notify);
  * \brief Switch a shadow thread back to the Linux domain.
  *
  * This service yields the control of the running shadow back to
@@ -519,6 +524,11 @@ static int xnshadow_harden (void)
  * wake up call for the mated user task inside the Linux domain. The
  * Linux task will resume on return from xnpod_suspend_thread() on
  * behalf of the root thread.
+ *
+ * @param notify A boolean flag indicating whether threads monitored
+ * from secondary mode switches should be sent a SIGXCPU signal. For
+ * instance, some internal operations like task exit should not
+ * trigger such signal.
  *
  * Environments:
  *
@@ -532,7 +542,7 @@ static int xnshadow_harden (void)
  * properties of the Linux task.
  */
 
-void xnshadow_relax (void)
+void xnshadow_relax (int notify)
 
 {
     xnthread_t *thread = xnpod_current_thread();
@@ -540,7 +550,7 @@ void xnshadow_relax (void)
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
     if (testbits(thread->status,XNROOT))
-	xnpod_fatal("xnshadow_relax() called from Linux domain");
+	xnpod_fatal("xnshadow_relax() called from the Linux domain");
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
     /* Enqueue the request to move the running shadow from the RTAI
@@ -553,7 +563,7 @@ void xnshadow_relax (void)
 	engage_irq_shield();
 
     if (current->state & TASK_UNINTERRUPTIBLE)
-	/* Just to avoid wrecking Linux's accounting of non-
+	/* Just to avoid wrecking Linux's accoun_sigting of non-
 	   interruptible tasks, move back kicked tasks to
 	   interruptible state, like schedule() saw them initially. */
 	set_current_state((current->state&~TASK_UNINTERRUPTIBLE)|TASK_INTERRUPTIBLE);
@@ -566,6 +576,10 @@ void xnshadow_relax (void)
     __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,cprio);
 
     ++thread->stat.ssw;	/* Account for secondary mode switch. */
+
+    if (notify && testbits(thread->status,XNTRAPSW))
+	/* Help debugging spurious relaxes. */
+	send_sig(SIGXCPU,current,1);
 
     /* "current" is now running into the Linux domain on behalf of the
        root thread. */
@@ -747,8 +761,8 @@ int xnshadow_map (xnthread_t *thread,
    /* Nobody waits for us, so we may start the shadow immediately
       after having forced the CPU affinity to the current
       processor. Note that we don't use smp_processor_id() to prevent
-      kernel debug stuff to yield at us for calling it in a
-      preemptible section of code. */
+      kernel debug stuff to yell at us for calling it in a preemptible
+      section of code. */
 
    thread->affinity = xnarch_cpumask_of_cpu(adeos_processor_id());
    set_cpus_allowed(current, thread->affinity);
@@ -1262,7 +1276,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
        let it go, ensure that our running thread has properly entered
        the Linux domain. */
 
-    xnshadow_relax();
+    xnshadow_relax(1);
 
     goto propagate_syscall;
 
@@ -1301,7 +1315,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 		else
 		    {
 		    __xn_success_return(regs,1);
-		    xnshadow_relax();
+		    xnshadow_relax(0); /* Don't notify upon explicit migration. */
 		    }
 		}
 	    else
@@ -1330,7 +1344,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
 	    if (evinfo->domid == RTHAL_DOMAIN_ID)
 	        {
-		xnshadow_relax();
+		xnshadow_relax(1);
 		exec_nucleus_syscall(muxop,regs);
 		return;
 		}
@@ -1392,7 +1406,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	    /* Request originates from the RTAI domain: just relax the
 	       caller and execute the syscall immediately after. */
 	    {
-	    xnshadow_relax();
+	    xnshadow_relax(1);
 	    switched = 1;
 	    }
 	else
@@ -1497,7 +1511,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
     if (xnpod_shadow_p() && signal_pending(current))
 	request_syscall_restart(xnshadow_thread(current),regs);
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
-	xnshadow_relax();
+	xnshadow_relax(0);
 }
 
 static void linux_task_exit (adevinfo_t *evinfo)
@@ -1512,7 +1526,7 @@ static void linux_task_exit (adevinfo_t *evinfo)
 	}
 
     if (xnpod_shadow_p())
-	xnshadow_relax();
+	xnshadow_relax(0);
 
     /* So that we won't attempt to further wakeup the exiting task in
        xnshadow_unmap(). */

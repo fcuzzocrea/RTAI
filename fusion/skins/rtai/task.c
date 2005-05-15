@@ -1337,6 +1337,11 @@ int rt_task_notify (RT_TASK *task,
  * context switch, depending on the setting of this bit. This bit is
  * set by default upon user-space task creation.
  *
+ * - When set, T_SWITCH causes the SIGXCPU signal to be sent to the
+ * current user-space task whenever it switches to the secondary
+ * mode. This feature is useful to detect unwanted migrations to the
+ * Linux domain.
+ *
  * - T_PRIMARY can be passed to switch the current user-space task to
  * primary mode (setmask |= T_PRIMARY), or secondary mode (clrmask |=
  * T_PRIMARY). Upon return from rt_task_set_mode(), the user-space
@@ -1396,7 +1401,7 @@ int rt_task_set_mode (int clrmask,
 	    return 0;
 	}
 
-    if (((clrmask|setmask) & ~(T_LOCK|T_RRB|T_NOSIG|T_SHIELD)) != 0)
+    if (((clrmask|setmask) & ~(T_LOCK|T_RRB|T_NOSIG|T_SHIELD|T_SWITCH)) != 0)
 	return -EINVAL;
 
     if (!xnpod_primary_p())

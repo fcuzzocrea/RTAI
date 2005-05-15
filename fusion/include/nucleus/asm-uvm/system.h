@@ -187,9 +187,10 @@ extern xnarchtcb_t *uvm_current;
 
 typedef void *xnarch_fltinfo_t;	/* Unused but required */
 
-#define xnarch_fault_trap(fi)  (0)
-#define xnarch_fault_code(fi)  (0)
-#define xnarch_fault_pc(fi)    (0L)
+#define xnarch_fault_trap(fi)   0
+#define xnarch_fault_code(fi)   0
+#define xnarch_fault_pc(fi)     0L
+#define xnarch_fault_notify(fi) 1
 
 typedef struct xnarch_heapcb {
 

@@ -26,6 +26,8 @@
 
 #ifdef __KERNEL__
 
+#include <linux/ptrace.h>
+
 #if ADEOS_RELEASE_NUMBER < 0x02060a03
 #error "Adeos 2.6r10c3/x86 or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/i386/"
@@ -85,10 +87,13 @@ typedef struct xnarch_fltinfo {
 
 } xnarch_fltinfo_t;
 
-#define xnarch_fault_trap(fi)  ((fi)->vector)
-#define xnarch_fault_code(fi)  ((fi)->errcode)
-#define xnarch_fault_pc(fi)    ((fi)->regs->eip)
-
+#define xnarch_fault_trap(fi)   ((fi)->vector)
+#define xnarch_fault_code(fi)   ((fi)->errcode)
+#define xnarch_fault_pc(fi)     ((fi)->regs->eip)
+/* The following predicate is guaranteed to be called over a regular
+   Linux stack context. */
+#define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
+				 ((fi)->vector != 1 && (fi)->vector != 3))
 #ifdef __cplusplus
 extern "C" {
 #endif

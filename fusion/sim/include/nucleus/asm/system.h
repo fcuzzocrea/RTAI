@@ -55,9 +55,10 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
 
 typedef void *xnarch_fltinfo_t;	/* Unused but required */
 
-#define xnarch_fault_trap(fi)  (0)
-#define xnarch_fault_code(fi)  (0)
-#define xnarch_fault_pc(fi)    (0L)
+#define xnarch_fault_trap(fi)   0
+#define xnarch_fault_code(fi)   0
+#define xnarch_fault_pc(fi)     0L
+#define xnarch_fault_notify(fi) 1
 
 typedef int spl_t;
 

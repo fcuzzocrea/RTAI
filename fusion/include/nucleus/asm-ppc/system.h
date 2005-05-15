@@ -24,6 +24,8 @@
 
 #ifdef __KERNEL__
 
+#include <linux/ptrace.h>
+
 #if ADEOS_RELEASE_NUMBER < 0x02060701
 #error "Adeos 2.6r7c1/ppc or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/ppc/"
@@ -82,14 +84,21 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
 
 typedef struct xnarch_fltinfo {
 
+    unsigned exception;
     struct pt_regs *regs;
 
 } xnarch_fltinfo_t;
 
-#define xnarch_fault_trap(fi)  ((unsigned int)(fi)->regs->trap)
-#define xnarch_fault_code(fi)  ((fi)->regs->dar)
-#define xnarch_fault_pc(fi)    ((fi)->regs->nip)
-
+#define xnarch_fault_trap(fi)   ((unsigned int)(fi)->regs->trap)
+#define xnarch_fault_code(fi)   ((fi)->regs->dar)
+#define xnarch_fault_pc(fi)     ((fi)->regs->nip)
+#define xnarch_fault_pc(fi)     ((fi)->regs->nip)
+/* The following predicate is guaranteed to be called over a regular
+   Linux stack context. */
+#define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
+				 ((fi)->exception != ADEOS_IABR_TRAP && \
+				  (fi)->exception != ADEOS_SSTEP_TRAP && \
+				  (fi)->exception != ADEOS_DEBUG_TRAP))
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -600,6 +609,7 @@ static int xnarch_trap_fault (adevinfo_t *evinfo)
 
 {
     xnarch_fltinfo_t fltinfo;
+    fltinfo.exception = evinfo->event;
     fltinfo.regs = (struct pt_regs *)evinfo->evdata;
     return xnpod_trap_fault(&fltinfo);
 }

@@ -23,8 +23,8 @@
 #include <memory.h>
 #include <string.h>
 
-static inline unsigned long ffnz (unsigned long word) {
-    return ffs((int)word) - 1;
+static inline unsigned long ffnz (unsigned long ul) {
+    return ffs((int)ul) - 1;
 }
 
 #ifdef __RTAI_UVM__

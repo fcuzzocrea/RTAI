@@ -1,11 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 
-AC_INIT(fusion,0.7.3,rpm@xenomai.org)
+AC_INIT(fusion,0.7.4,rpm@xenomai.org)
 
 CONFIG_RTAI_VERSION_MAJOR=0
 CONFIG_RTAI_VERSION_MINOR=7
-CONFIG_RTAI_REVISION_LEVEL=3
+CONFIG_RTAI_REVISION_LEVEL=4
 
 AC_CONFIG_HEADERS(rtai_config.h)
 AC_CONFIG_AUX_DIR(config/autoconf)
@@ -342,10 +342,10 @@ if test x$CONFIG_RTAI_OPT_SYS_HEAPSZ = x ; then
 fi
 AC_MSG_RESULT([$CONFIG_RTAI_OPT_SYS_HEAPSZ Kbytes])
 
-AC_MSG_CHECKING(for per-cpu timer list)
+AC_MSG_CHECKING(for per-CPU timer list)
 AC_ARG_ENABLE(percpu-timer,
 	AS_HELP_STRING([--enable-percpu-timer], 
-                        [Enable per-cpu timer support in nucleus]),
+                        [Enable per-CPU timer support in nucleus]),
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_OPT_PERCPU_TIMER=y ;;
 	*) unset CONFIG_RTAI_OPT_PERCPU_TIMER ;;
@@ -370,12 +370,12 @@ AC_ARG_ENABLE(nucleus-scalable-prios,
 	[[0-9]]*) CONFIG_RTAI_OPT_SCALABLE_PRIOS=$enableval ;;
 	*) AC_MSG_ERROR([Bad argument to option: --enable-nucleus-scalable-prios=<number>]) ;;
 	esac])
+fi
 if test x$CONFIG_RTAI_OPT_SCALABLE_PRIOS = x ; then
   # Use a reasonable default if unset
   CONFIG_RTAI_OPT_SCALABLE_PRIOS=256
 fi
 AC_MSG_RESULT($CONFIG_RTAI_OPT_SCALABLE_PRIOS)
-fi
 
 AC_MSG_CHECKING(for debug support in nucleus)
 AC_ARG_ENABLE(nucleus-debug,
@@ -1323,16 +1323,3 @@ if test x$CONFIG_RTAI_MVM = xy; then
 fi
 
 AC_OUTPUT()
-
-if test x$CONFIG_RTAI_SKIN_NATIVE = xy; then
-   AC_MSG_NOTICE([
-   *******************************************************************
-   Starting with version 0.7 of RTAI/fusion, the native RTAI skin uses
-   an increasing priority scale for tasks, which is the same as the
-   one Linux uses for the SCHED_FIFO scheduling class, i.e. 1 - 99
-   with 1 being the _lowest_ effective priority level. Make sure to
-   adapt your application software accordingly.
-   See skins/rtai/API.CHANGES for additional information.
-   *******************************************************************
-   ])
-fi

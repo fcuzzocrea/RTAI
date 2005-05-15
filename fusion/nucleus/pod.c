@@ -147,13 +147,14 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
     if (xnpod_shadow_p())
         {
 #ifdef CONFIG_RTAI_OPT_DEBUG
-        xnprintf("Switching %s to secondary mode after exception #%u from "
-                 "user-space at 0x%lx\n",
-                 xnpod_current_thread()->name,
-                 xnarch_fault_trap(fltinfo),
-                 xnarch_fault_pc(fltinfo));
+	if (xnarch_fault_notify(fltinfo)) /* Don't report debug traps */
+	    xnprintf("Switching %s to secondary mode after exception #%u from "
+		     "user-space at 0x%lx\n",
+		     xnpod_current_thread()->name,
+		     xnarch_fault_trap(fltinfo),
+		     xnarch_fault_pc(fltinfo));
 #endif /* CONFIG_RTAI_OPT_DEBUG */
-        xnshadow_relax();
+        xnshadow_relax(xnarch_fault_notify(fltinfo));
         }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
@@ -1438,17 +1439,14 @@ void xnpod_resume_thread (xnthread_t *thread,
                 if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Still blocked? */
 		    {
 		    if (testbits(thread->status,XNDELAY))
-			/* Funky corner case here: the condition we've
-			   just removed was not XNDELAY, but we are
-			   still blocked by it after having attempted
-			   to remove the only situation where XNDELAY
-			   can be a secondary condition (i.e. mated to
-			   primary XNPEND). We thus need to remove the
-			   thread from the suspension queue to reflect
-			   the removal of the condition bit passed on
-			   entry (i.e. 'mask'), since thread on
-			   resource-free timed waits should not be
-			   linked to it. */
+			/* Funky corner case here: the suspensive
+			   condition we have just removed was not
+			   XNPEND, and we are still blocked on
+			   XNDELAY.  We thus need to remove the thread
+			   from the suspension queue to reflect the
+			   removal of the cleared condition, since
+			   threads on resource-free timed waits are
+			   not expected to be linked to this queue. */
 			removeq(&nkpod->suspendq,&thread->slink);
 
 		    goto unlock_and_exit;

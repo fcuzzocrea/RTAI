@@ -195,7 +195,7 @@ int rt_task_create (RT_TASK *task,
     xnthread_set_magic(&task->thread_base,RTAI_SKIN_MAGIC);
 
     inith(&task->link);
-    task->suspend_depth = 0;
+    task->suspend_depth = (bflags & XNSUSP) ? 1 : 0;
     task->overrun = -1;
     task->handle = 0;	/* i.e. (still) unregistered task. */
 

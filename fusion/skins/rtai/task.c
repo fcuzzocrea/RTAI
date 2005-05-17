@@ -655,8 +655,6 @@ int rt_task_set_periodic (RT_TASK *task,
 	goto unlock_and_exit;
 	}
 
-    task->suspend_depth = 0;
-
     err = xnpod_set_thread_periodic(&task->thread_base,idate,period);
 
  unlock_and_exit:

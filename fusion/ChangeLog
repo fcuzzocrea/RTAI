@@ -3,6 +3,9 @@
 	* skins/rtai/task.c (rt_task_create): Properly set the suspension
 	depth to 1 whenever the task is left in suspended state after
 	creation.
+	(rt_task_set_periodic): Do not clear the suspension depth: this is
+	irrelevant with respect to the underlying conjunctive suspension
+	scheme (XNSUSP, XNDELAY and XNPEND are dissociated).
 
 2005-05-15  Philippe Gerum  <rpm@xenomai.org>
 

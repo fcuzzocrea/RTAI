@@ -1,5 +1,9 @@
 2005-05-17  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.7.4
+
+2005-05-17  Philippe Gerum  <rpm@xenomai.org>
+
 	* include/nucleus/types.h: Do not include <linux/config.h> in
 	simulation context.
 

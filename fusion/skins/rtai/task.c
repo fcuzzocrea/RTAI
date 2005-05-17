@@ -326,7 +326,10 @@ int rt_task_start (RT_TASK *task,
  *
  * Forcibly suspend the execution of a task. This task will not be
  * eligible for scheduling until it is explicitly resumed by a call to
- * rt_task_resume().
+ * rt_task_resume(). In other words, the suspended state caused by a
+ * call to rt_task_suspend() is cumulative with respect to the delayed
+ * and blocked states caused by other services, and is managed
+ * separately from them.
  *
  * A nesting count is maintained so that rt_task_suspend() and
  * rt_task_resume() must be used in pairs.

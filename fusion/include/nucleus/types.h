@@ -20,8 +20,9 @@
 #ifndef _RTAI_NUCLEUS_TYPES_H
 #define _RTAI_NUCLEUS_TYPES_H
 
+#ifndef __RTAI_SIM__
+
 #include <linux/config.h>
-#include <linux/errno.h>
 
 #ifdef CONFIG_PREEMPT_RT
 #define linux_semaphore compat_semaphore
@@ -29,6 +30,9 @@
 #define linux_semaphore semaphore
 #endif /* !CONFIG_PREEMPT_RT */
 
+#endif /* __RTAI_SIM__ */
+
+#include <linux/errno.h>
 #include <nucleus/asm/system.h>
 
 typedef unsigned long xnsigmask_t;

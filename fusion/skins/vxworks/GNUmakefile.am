@@ -60,7 +60,7 @@ install-exec-local: rtai_vxworks$(modext)
 	$(mkinstalldirs) $(moduledir) $(DESTDIR)$(includedir)
 	$(INSTALL_DATA) $< $(moduledir)
 	for f in $(HEADER_SYMLINKS); do \
-		$(LN_S) vxworks.h $(DESTDIR)$(includedir)/$$f; \
+		$(LN_S) -f vxworks.h $(DESTDIR)$(includedir)/$$f; \
 	done
 
 uninstall-local:

@@ -30,102 +30,106 @@
 00020 <span class="preprocessor">#ifndef _RTAI_NUCLEUS_TYPES_H</span>
 00021 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_NUCLEUS_TYPES_H</span>
 00022 <span class="preprocessor"></span>
-00023 <span class="preprocessor">#include &lt;linux/config.h&gt;</span>
-00024 <span class="preprocessor">#include &lt;linux/errno.h&gt;</span>
-00025 
-00026 <span class="preprocessor">#ifdef CONFIG_PREEMPT_RT</span>
-00027 <span class="preprocessor"></span><span class="preprocessor">#define linux_semaphore compat_semaphore</span>
-00028 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* CONFIG_PREEMPT_RT */</span>
-00029 <span class="preprocessor">#define linux_semaphore semaphore</span>
-00030 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* !CONFIG_PREEMPT_RT */</span>
-00031 
-00032 <span class="preprocessor">#include &lt;nucleus/asm/system.h&gt;</span>
-00033 
-00034 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> xnsigmask_t;
-00035 
-00036 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnticks_t;
+00023 <span class="preprocessor">#ifndef __RTAI_SIM__</span>
+00024 <span class="preprocessor"></span>
+00025 <span class="preprocessor">#include &lt;linux/config.h&gt;</span>
+00026 
+00027 <span class="preprocessor">#ifdef CONFIG_PREEMPT_RT</span>
+00028 <span class="preprocessor"></span><span class="preprocessor">#define linux_semaphore compat_semaphore</span>
+00029 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* CONFIG_PREEMPT_RT */</span>
+00030 <span class="preprocessor">#define linux_semaphore semaphore</span>
+00031 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* !CONFIG_PREEMPT_RT */</span>
+00032 
+00033 <span class="preprocessor">#endif </span><span class="comment">/* __RTAI_SIM__ */</span>
+00034 
+00035 <span class="preprocessor">#include &lt;linux/errno.h&gt;</span>
+00036 <span class="preprocessor">#include &lt;nucleus/asm/system.h&gt;</span>
 00037 
-00038 <span class="keyword">typedef</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnsticks_t;
+00038 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> xnsigmask_t;
 00039 
-00040 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xntime_t; <span class="comment">/* ns */</span>
+00040 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnticks_t;
 00041 
-00042 <span class="keyword">typedef</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnstime_t;
+00042 <span class="keyword">typedef</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnsticks_t;
 00043 
-00044 <span class="keyword">struct </span>xnintr;
+00044 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xntime_t; <span class="comment">/* ns */</span>
 00045 
-00046 <span class="keyword">typedef</span> int (*xnisr_t)(<span class="keyword">struct </span>xnintr *intr);
+00046 <span class="keyword">typedef</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> xnstime_t;
 00047 
-00048 <span class="preprocessor">#define XN_INFINITE   (0)</span>
-00049 <span class="preprocessor"></span><span class="preprocessor">#define XN_NONBLOCK   ((xnticks_t)-1)</span>
-00050 <span class="preprocessor"></span>
-00051 <span class="preprocessor">#define XN_APERIODIC_TICK  0</span>
-00052 <span class="preprocessor"></span><span class="preprocessor">#define XN_NO_TICK         ((xnticks_t)-1)</span>
-00053 <span class="preprocessor"></span>
-00054 <span class="preprocessor">#define testbits(flags,mask) ((flags) &amp; (mask))</span>
-00055 <span class="preprocessor"></span><span class="preprocessor">#define setbits(flags,mask)  xnarch_atomic_set_mask(&amp;(flags),mask)</span>
-00056 <span class="preprocessor"></span><span class="preprocessor">#define clrbits(flags,mask)  xnarch_atomic_clear_mask(&amp;(flags),mask)</span>
-00057 <span class="preprocessor"></span><span class="preprocessor">#define __testbits(flags,mask) testbits(flags,mask)</span>
-00058 <span class="preprocessor"></span><span class="preprocessor">#define __setbits(flags,mask)  do { (flags) |= (mask); } while(0)</span>
-00059 <span class="preprocessor"></span><span class="preprocessor">#define __clrbits(flags,mask)  do { (flags) &amp;= ~(mask); } while(0)</span>
-00060 <span class="preprocessor"></span>
-00061 <span class="keyword">typedef</span> atomic_flags_t xnflags_t;
-00062 
-00063 <span class="preprocessor">#ifndef NULL</span>
-00064 <span class="preprocessor"></span><span class="preprocessor">#define NULL 0</span>
-00065 <span class="preprocessor"></span><span class="preprocessor">#endif</span>
-00066 <span class="preprocessor"></span>
-00067 <span class="preprocessor">#define XNOBJECT_NAME_LEN 32</span>
-00068 <span class="preprocessor"></span>
-00069 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnobject_copy_name (<span class="keywordtype">char</span> *dst,
-00070                                        <span class="keyword">const</span> <span class="keywordtype">char</span> *src)
-00071 {
-00072     <span class="keywordflow">if</span> (src)
-00073         {
-00074         <span class="keyword">const</span> <span class="keywordtype">char</span> *rp = src;
-00075         <span class="keywordtype">char</span> *wp = dst;
-00076         <span class="keywordflow">do</span>
-00077             *wp++ = *rp;
-00078         <span class="keywordflow">while</span> (*rp &amp;&amp; rp++ - src &lt; XNOBJECT_NAME_LEN);
-00079         }
-00080     <span class="keywordflow">else</span>
-00081         *dst = <span class="charliteral">'\0'</span>;
-00082 }
-00083 
-00084 <span class="preprocessor">#define minval(a,b) ((a) &lt; (b) ? (a) : (b))</span>
-00085 <span class="preprocessor"></span><span class="preprocessor">#define maxval(a,b) ((a) &gt; (b) ? (a) : (b))</span>
-00086 <span class="preprocessor"></span>
-00087 <span class="preprocessor">#define XN_NBBY 8</span>
-00088 <span class="preprocessor"></span><span class="preprocessor">#ifndef __KERNEL__</span>
-00089 <span class="preprocessor"></span><span class="preprocessor">#ifndef BITS_PER_LONG</span>
-00090 <span class="preprocessor"></span><span class="preprocessor">#define BITS_PER_LONG (sizeof(long) * XN_NBBY)</span>
-00091 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* BITS_PER_LONG */</span>
-00092 <span class="preprocessor">#endif </span><span class="comment">/* !__KERNEL__ */</span>
-00093 
-00094 <span class="preprocessor">#ifdef __cplusplus</span>
-00095 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00096 <span class="preprocessor">#endif</span>
-00097 <span class="preprocessor"></span>
-00098 <span class="keyword">const</span> <span class="keywordtype">char</span> *xnpod_fatal_helper(<span class="keyword">const</span> <span class="keywordtype">char</span> *format, ...);
-00099 
-00100 <span class="keywordtype">int</span> __fusion_user_init(<span class="keywordtype">void</span>);
-00101 
-00102 <span class="keywordtype">void</span> __fusion_user_exit(<span class="keywordtype">void</span>);
+00048 <span class="keyword">struct </span>xnintr;
+00049 
+00050 <span class="keyword">typedef</span> int (*xnisr_t)(<span class="keyword">struct </span>xnintr *intr);
+00051 
+00052 <span class="preprocessor">#define XN_INFINITE   (0)</span>
+00053 <span class="preprocessor"></span><span class="preprocessor">#define XN_NONBLOCK   ((xnticks_t)-1)</span>
+00054 <span class="preprocessor"></span>
+00055 <span class="preprocessor">#define XN_APERIODIC_TICK  0</span>
+00056 <span class="preprocessor"></span><span class="preprocessor">#define XN_NO_TICK         ((xnticks_t)-1)</span>
+00057 <span class="preprocessor"></span>
+00058 <span class="preprocessor">#define testbits(flags,mask) ((flags) &amp; (mask))</span>
+00059 <span class="preprocessor"></span><span class="preprocessor">#define setbits(flags,mask)  xnarch_atomic_set_mask(&amp;(flags),mask)</span>
+00060 <span class="preprocessor"></span><span class="preprocessor">#define clrbits(flags,mask)  xnarch_atomic_clear_mask(&amp;(flags),mask)</span>
+00061 <span class="preprocessor"></span><span class="preprocessor">#define __testbits(flags,mask) testbits(flags,mask)</span>
+00062 <span class="preprocessor"></span><span class="preprocessor">#define __setbits(flags,mask)  do { (flags) |= (mask); } while(0)</span>
+00063 <span class="preprocessor"></span><span class="preprocessor">#define __clrbits(flags,mask)  do { (flags) &amp;= ~(mask); } while(0)</span>
+00064 <span class="preprocessor"></span>
+00065 <span class="keyword">typedef</span> atomic_flags_t xnflags_t;
+00066 
+00067 <span class="preprocessor">#ifndef NULL</span>
+00068 <span class="preprocessor"></span><span class="preprocessor">#define NULL 0</span>
+00069 <span class="preprocessor"></span><span class="preprocessor">#endif</span>
+00070 <span class="preprocessor"></span>
+00071 <span class="preprocessor">#define XNOBJECT_NAME_LEN 32</span>
+00072 <span class="preprocessor"></span>
+00073 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnobject_copy_name (<span class="keywordtype">char</span> *dst,
+00074                                        <span class="keyword">const</span> <span class="keywordtype">char</span> *src)
+00075 {
+00076     <span class="keywordflow">if</span> (src)
+00077         {
+00078         <span class="keyword">const</span> <span class="keywordtype">char</span> *rp = src;
+00079         <span class="keywordtype">char</span> *wp = dst;
+00080         <span class="keywordflow">do</span>
+00081             *wp++ = *rp;
+00082         <span class="keywordflow">while</span> (*rp &amp;&amp; rp++ - src &lt; XNOBJECT_NAME_LEN);
+00083         }
+00084     <span class="keywordflow">else</span>
+00085         *dst = <span class="charliteral">'\0'</span>;
+00086 }
+00087 
+00088 <span class="preprocessor">#define minval(a,b) ((a) &lt; (b) ? (a) : (b))</span>
+00089 <span class="preprocessor"></span><span class="preprocessor">#define maxval(a,b) ((a) &gt; (b) ? (a) : (b))</span>
+00090 <span class="preprocessor"></span>
+00091 <span class="preprocessor">#define XN_NBBY 8</span>
+00092 <span class="preprocessor"></span><span class="preprocessor">#ifndef __KERNEL__</span>
+00093 <span class="preprocessor"></span><span class="preprocessor">#ifndef BITS_PER_LONG</span>
+00094 <span class="preprocessor"></span><span class="preprocessor">#define BITS_PER_LONG (sizeof(long) * XN_NBBY)</span>
+00095 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* BITS_PER_LONG */</span>
+00096 <span class="preprocessor">#endif </span><span class="comment">/* !__KERNEL__ */</span>
+00097 
+00098 <span class="preprocessor">#ifdef __cplusplus</span>
+00099 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00100 <span class="preprocessor">#endif</span>
+00101 <span class="preprocessor"></span>
+00102 <span class="keyword">const</span> <span class="keywordtype">char</span> *xnpod_fatal_helper(<span class="keyword">const</span> <span class="keywordtype">char</span> *format, ...);
 00103 
-00104 <span class="preprocessor">#ifdef __cplusplus</span>
-00105 <span class="preprocessor"></span>}
-00106 <span class="preprocessor">#endif</span>
-00107 <span class="preprocessor"></span>
-00108 <span class="preprocessor">#define xnpod_fatal(format,args...) \</span>
-00109 <span class="preprocessor">do { \</span>
-00110 <span class="preprocessor">   const char *panic = xnpod_fatal_helper(format,##args); \</span>
-00111 <span class="preprocessor">   xnarch_halt(panic); \</span>
-00112 <span class="preprocessor">} while (0)</span>
-00113 <span class="preprocessor"></span>
-00114 <span class="preprocessor">#define root_thread_init __fusion_user_init</span>
-00115 <span class="preprocessor"></span><span class="preprocessor">#define root_thread_exit __fusion_user_exit</span>
-00116 <span class="preprocessor"></span>
-00117 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TYPES_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:53 2005 for RTAI Fusion API by&nbsp;
+00104 <span class="keywordtype">int</span> __fusion_user_init(<span class="keywordtype">void</span>);
+00105 
+00106 <span class="keywordtype">void</span> __fusion_user_exit(<span class="keywordtype">void</span>);
+00107 
+00108 <span class="preprocessor">#ifdef __cplusplus</span>
+00109 <span class="preprocessor"></span>}
+00110 <span class="preprocessor">#endif</span>
+00111 <span class="preprocessor"></span>
+00112 <span class="preprocessor">#define xnpod_fatal(format,args...) \</span>
+00113 <span class="preprocessor">do { \</span>
+00114 <span class="preprocessor">   const char *panic = xnpod_fatal_helper(format,##args); \</span>
+00115 <span class="preprocessor">   xnarch_halt(panic); \</span>
+00116 <span class="preprocessor">} while (0)</span>
+00117 <span class="preprocessor"></span>
+00118 <span class="preprocessor">#define root_thread_init __fusion_user_init</span>
+00119 <span class="preprocessor"></span><span class="preprocessor">#define root_thread_exit __fusion_user_exit</span>
+00120 <span class="preprocessor"></span>
+00121 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TYPES_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:05 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

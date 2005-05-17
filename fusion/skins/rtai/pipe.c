@@ -200,6 +200,10 @@ void __pipe_pkg_cleanup (void)
  *
  * @return 0 is returned upon success. Otherwise:
  *
+ * - -ENOMEM is returned if the system fails to get enough dynamic
+ * memory from the global real-time heap in order to register the
+ * pipe.
+ *
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *

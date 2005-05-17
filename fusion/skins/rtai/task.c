@@ -2064,6 +2064,85 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
 #endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
 
 /**
+ * @fn int rt_task_spawn(RT_TASK *task,
+		         const char *name,
+			 int stksize,
+			 int prio,
+			 int mode,
+			 void (*entry)(void *cookie),
+			 void *cookie)
+ * @brief Spawn a new real-time task.
+ *
+ * Creates and immediately starts a real-time task, either running in
+ * a kernel module or in user-space depending on the caller's
+ * context. This service is a simple shorthand for rt_task_create()
+ * followed by a call to rt_task_start().
+ *
+ * @param task The address of a task descriptor RTAI will use to store
+ * the task-related data.  This descriptor must always be valid while
+ * the task is active therefore it must be allocated in permanent
+ * memory.
+ *
+ * @param name An ASCII string standing for the symbolic name of the
+ * task. When non-NULL and non-empty, this string is copied to a safe
+ * place into the descriptor, and passed to the registry package if
+ * enabled for indexing the created task.
+ *
+ * @param stksize The size of the stack (in bytes) for the new
+ * task. If zero is passed, a reasonable pre-defined size will be
+ * substituted. This parameter is ignored for user-space tasks.
+ *
+ * @param prio The base priority of the new thread. This value must
+ * range from [1 .. 99] (inclusive) where 1 is the lowest effective
+ * priority.
+ *
+ * @param mode The task creation mode. The following flags can be
+ * OR'ed into this bitmask, each of them affecting the new task:
+ *
+ * - T_FPU allows the task to use the FPU whenever available on the
+ * platform. This flag is forced for user-space tasks.
+ *
+ * - T_SUSP causes the task to start in suspended mode. In such a
+ * case, the thread will have to be explicitely resumed using the
+ * rt_task_resume() service for its execution to actually begin.
+ *
+ * - T_CPU(cpuid) makes the new task affine to CPU # @b cpuid. CPU
+ * identifiers range from 0 to RTHAL_NR_CPUS - 1 (inclusive).
+ *
+ * Passing T_FPU|T_CPU(1) in the @a mode parameter thus creates a task
+ * with FPU support enabled and which will be affine to CPU #1.
+ *
+ * @param entry The address of the task's body routine. In other
+ * words, it is the task entry point.
+ *
+ * @param cookie A user-defined opaque cookie the real-time kernel
+ * will pass to the emerging task as the sole argument of its entry
+ * point.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -ENOMEM is returned if the system fails to get enough dynamic
+ * memory from the global real-time heap in order to create the new
+ * task's stack space or register the task.
+ *
+ * - -EEXIST is returned if the @a name is already in use by some
+ * registered object.
+ *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
+/**
  * @fn int rt_task_bind(RT_TASK *task,
 			const char *name)
  * @brief Bind to a real-time task.

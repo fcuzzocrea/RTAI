@@ -153,6 +153,10 @@ static RT_OBJECT_PROCNODE __event_pnode = {
  * - -EPERM is returned if this service was called from an
  * asynchronous context.
  *
+ * - -ENOMEM is returned if the system fails to get enough dynamic
+ * memory from the global real-time heap in order to register the
+ * event group.
+ *
  * Environments:
  *
  * This service can be called from:

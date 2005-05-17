@@ -100,6 +100,10 @@ void __intr_pkg_cleanup (void)
  *
  * @return 0 is returned upon success. Otherwise:
  *
+ * - -ENOMEM is returned if the system fails to get enough dynamic
+ * memory from the global real-time heap in order to register the
+ * interrupt object.
+ *
  * - -EBUSY is returned if the interrupt line is already in use by
  * another interrupt object. Only a single interrupt object can be
  * associated to any given interrupt line using rt_intr_create() at

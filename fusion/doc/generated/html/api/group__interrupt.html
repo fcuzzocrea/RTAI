@@ -246,6 +246,9 @@ A count of interrupt receipts is tracked into the interrupt descriptor, and rese
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
 <ul>
+<li>-ENOMEM is returned if the system fails to get enough dynamic memory from the global real-time heap in order to register the interrupt object.</li></ul>
+<p>
+<ul>
 <li>-EBUSY is returned if the interrupt line is already in use by another interrupt object. Only a single interrupt object can be associated to any given interrupt line using <a class="el" href="group__interrupt.html#ga3">rt_intr_create()</a> at any time.</li></ul>
 <p>
 <ul>
@@ -573,7 +576,7 @@ Rescheduling: always, unless an interrupt is already pending on entry.<p>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:56 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:08 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

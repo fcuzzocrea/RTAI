@@ -285,13 +285,13 @@ static inline int rt_task_spawn(RT_TASK *task,
 				int stksize,
 				int prio,
 				int mode,
-				void (*fun)(void *cookie),
+				void (*entry)(void *cookie),
 				void *cookie)
 {
     int err = rt_task_create(task,name,stksize,prio,mode);
 
     if (!err)
-	err = rt_task_start(task,fun,cookie);
+	err = rt_task_start(task,entry,cookie);
 
     return err;
 }

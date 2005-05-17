@@ -143,6 +143,10 @@ static RT_OBJECT_PROCNODE __sem_pnode = {
  *
  * @return 0 is returned upon success. Otherwise:
  *
+ * - -ENOMEM is returned if the system fails to get enough dynamic
+ * memory from the global real-time heap in order to register the
+ * semaphore.
+ *
  * - -EEXIST is returned if the @a name is already in use by some
  * registered object.
  *

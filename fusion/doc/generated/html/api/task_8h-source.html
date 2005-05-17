@@ -35,7 +35,7 @@
 00045 <span class="preprocessor"></span><span class="preprocessor">#define T_RRB     XNRRB</span>
 00046 <span class="preprocessor"></span><span class="preprocessor">#define T_NOSIG   XNASDI</span>
 00047 <span class="preprocessor"></span><span class="preprocessor">#define T_SHIELD  XNSHIELD</span>
-00048 <span class="preprocessor"></span><span class="preprocessor">#define T_SWITCH  XNTRAPSW</span>
+00048 <span class="preprocessor"></span><span class="preprocessor">#define T_WARNSW  XNTRAPSW</span>
 00049 <span class="preprocessor"></span><span class="preprocessor">#define T_PRIMARY XNTHREAD_SPARE0</span>
 00050 <span class="preprocessor"></span>
 00051 <span class="comment">/* Task hook types. */</span>
@@ -54,7 +54,7 @@
 00064 } RT_TASK_PLACEHOLDER;
 00065 
 00066 <span class="preprocessor">#define RT_TASK_STATUS_MASK \</span>
-00067 <span class="preprocessor">(T_FPU|T_BLOCKED|T_DELAYED|T_READY|T_DORMANT|T_STARTED|T_BOOST|T_LOCK|T_RRB|T_NOSIG|T_SHIELD|T_SWITCH)</span>
+00067 <span class="preprocessor">(T_FPU|T_BLOCKED|T_DELAYED|T_READY|T_DORMANT|T_STARTED|T_BOOST|T_LOCK|T_RRB|T_NOSIG|T_SHIELD|T_WARNSW)</span>
 00068 <span class="preprocessor"></span>
 00069 <span class="keyword">struct </span>rt_queue_msg;
 00070 <span class="keyword">struct </span>rt_task;
@@ -183,10 +183,10 @@
 00193 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
 00194 <span class="preprocessor">#endif</span>
 00195 <span class="preprocessor"></span>
-00196 <span class="keywordtype">int</span> <a class="code" href="group__task.html#ga27">rt_task_bind</a>(RT_TASK *task,
+00196 <span class="keywordtype">int</span> <a class="code" href="group__task.html#ga28">rt_task_bind</a>(RT_TASK *task,
 00197                  <span class="keyword">const</span> <span class="keywordtype">char</span> *name);
 00198 
-<a name="l00199"></a><a class="code" href="group__task.html#ga28">00199</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__task.html#ga28">rt_task_unbind</a> (RT_TASK *task)
+<a name="l00199"></a><a class="code" href="group__task.html#ga29">00199</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__task.html#ga29">rt_task_unbind</a> (RT_TASK *task)
 00200 
 00201 {
 00202     task-&gt;opaque = RT_HANDLE_INVALID;
@@ -270,28 +270,28 @@
 00280 
 00281 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_RTAI_OPT_NATIVE_MPS */</span>
 00282 
-00283 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> rt_task_spawn(RT_TASK *task,
+<a name="l00283"></a><a class="code" href="group__task.html#ga27">00283</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__task.html#ga27">rt_task_spawn</a>(RT_TASK *task,
 00284                                 <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
 00285                                 <span class="keywordtype">int</span> stksize,
 00286                                 <span class="keywordtype">int</span> prio,
 00287                                 <span class="keywordtype">int</span> mode,
-00288                                 <span class="keywordtype">void</span> (*fun)(<span class="keywordtype">void</span> *cookie),
+00288                                 <span class="keywordtype">void</span> (*entry)(<span class="keywordtype">void</span> *cookie),
 00289                                 <span class="keywordtype">void</span> *cookie)
 00290 {
 00291     <span class="keywordtype">int</span> err = <a class="code" href="group__task.html#ga4">rt_task_create</a>(task,name,stksize,prio,mode);
 00292 
 00293     <span class="keywordflow">if</span> (!err)
-00294         err = rt_task_start(task,fun,cookie);
+00294         err = <a class="code" href="group__task.html#ga5">rt_task_start</a>(task,entry,cookie);
 00295 
-00296     return err;
+00296     <span class="keywordflow">return</span> err;
 00297 }
 00298 
-00299 #ifdef __cplusplus
-00300 }
-00301 #endif
-00302 
-00303 #endif <span class="comment">/* !_RTAI_TASK_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:53 2005 for RTAI Fusion API by&nbsp;
+00299 <span class="preprocessor">#ifdef __cplusplus</span>
+00300 <span class="preprocessor"></span>}
+00301 <span class="preprocessor">#endif</span>
+00302 <span class="preprocessor"></span>
+00303 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_TASK_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:05 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

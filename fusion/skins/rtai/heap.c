@@ -193,9 +193,9 @@ static void __heap_flush_private (xnheap_t *heap,
  * system limit, or @a name is null or empty for a shared heap.
  *
  * - -ENOMEM is returned if not enough system memory is available to
- * create the heap. Additionally, and if H_SHARED has been passed in
- * @a mode, errors while mapping the block pool in the caller's
- * address space might beget this return code too.
+ * create or register the heap. Additionally, and if H_SHARED has been
+ * passed in @a mode, errors while mapping the block pool in the
+ * caller's address space might beget this return code too.
  *
  * - -ENOSYS is returned if @a mode specifies H_SHARED, but the
  * real-time support in user-space is unavailable.

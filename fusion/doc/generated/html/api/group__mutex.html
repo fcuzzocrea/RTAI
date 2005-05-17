@@ -156,6 +156,9 @@ Create a mutual exclusion object that allows multiple tasks to synchronize acces
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
 <ul>
+<li>-ENOMEM is returned if the system fails to get enough dynamic memory from the global real-time heap in order to register the mutex.</li></ul>
+<p>
+<ul>
 <li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
 <p>
 <ul>
@@ -426,7 +429,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun May 15 19:04:57 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:08 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

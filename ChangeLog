@@ -1,3 +1,11 @@
+2005-05-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/include/asm-ppc/rtai_sched.h (init_fp_env): Add the
+	dummy arg which dripped from the x86 port to the generic code.
+
+	* rtai-core/include/asm-ppc/rtai_srq.h (rtai_srq): Fix overlap
+	between asm-register-declared variables and the clobber list.
+
 2004-01-15  Jan Kiszka <kiszka@rts.uni-hannover.de>
 
 	* rtai-core/include/asm-i386/rtai_oldnames.h: Do not refer to use

@@ -263,6 +263,11 @@ if test x${CONFIG_MODULES} = x ; then
   AC_MSG_ERROR([Please set CONFIG_MODULES for $RTAI_LINUX_DIR and rebuild your kernel])
 fi
 
+if test x${CONFIG_REGPARM} = xy ; then
+  AC_MSG_ERROR([Please unset CONFIG_REGPARM for $RTAI_LINUX_DIR and 
+rebuild your kernel])
+fi
+
 if test x${CONFIG_MODVERSIONS} = xy ; then
   AC_MSG_ERROR([Please unset CONFIG_MODVERSIONS for $RTAI_LINUX_DIR and rebuild your kernel])
 fi

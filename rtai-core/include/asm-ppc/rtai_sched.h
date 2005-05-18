@@ -52,12 +52,12 @@ do { \
 #define DEFINE_LINUX_SMP_CR0
 
 #ifdef CONFIG_RTAI_FPU_SUPPORT
-#define init_fp_env() \
+#define init_fp_env(x) \
 do { \
 	memset(&task->fpu_reg, 0, sizeof(task->fpu_reg)); \
 }while(0)
 #else
-#define init_fp_env() do { } while(0)
+#define init_fp_env(x) do { } while(0)
 #endif
 
 static inline void *get_stack_pointer(void)

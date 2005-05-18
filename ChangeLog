@@ -1,3 +1,8 @@
+2005-05-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/include/rtai_malloc.h: practically break any constraint in 
+	  dynamic memory allocation.
+
 2005-05-10  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/arch/i386/hal.*: fixed ire affinity saved old state.

@@ -1,3 +1,8 @@
+2005-05-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_malloc.h: practically break any constraint in
+	  dynamic memory allocation.
+
 2004-05-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/sched/sched.immed: 

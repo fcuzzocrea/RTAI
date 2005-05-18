@@ -1,3 +1,7 @@
+2005-05-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: stop configuring if Linux REGPARMS is set.
+	
 2005-05-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/include/rtai_malloc.h: practically break any constraint in 

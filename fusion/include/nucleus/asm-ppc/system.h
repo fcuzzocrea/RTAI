@@ -578,8 +578,8 @@ static inline void xnarch_read_timings (unsigned long long *shot,
 {
 #ifdef CONFIG_ADEOS_PROFILING
     int cpuid = adeos_processor_id();
-    *shot = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_handled;
-    *delivery = __adeos_profile_data[cpuid].irqs[__adeos_tick_irq].t_synced;
+    *shot = __adeos_profile_data[cpuid].irqs[RTHAL_TIMER_IRQ].t_handled;
+    *delivery = __adeos_profile_data[cpuid].irqs[RTHAL_TIMER_IRQ].t_synced;
 #else /* !CONFIG_ADEOS_PROFILING */
     *shot = defval;
     *delivery = defval;

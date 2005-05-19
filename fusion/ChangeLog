@@ -1,3 +1,17 @@
+2005-05-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/Kconfig: Enable LTT support.
+
+	* arch/i386/patches: Add combo patch against 2.6.9, merging LTT +
+	Adeos r10c3.
+
+	* nucleus/ltt.c: Shorten event labels.
+
+2005-05-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-ppc/system.h (xnarch_read_timings): Fix
+	CONFIG_ADEOS_PROFILING case.
+	
 2005-05-17  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.7.4

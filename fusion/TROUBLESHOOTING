@@ -86,6 +86,29 @@ lower user-limit for initial stack allocation, like calling "ulimit -s
 <initial-size-in-kbytes>" in your parent shell before running your
 application (defaults to 8192).
 
+______________________________________________________________________
+
+Q: When running a real-time application with LTT support enabled, I
+get a slew of scary messages like this one:
+"TraceDaemon: WARNING!!!!
+ TraceDaemon: INCOMPLETE EVENT BUFFER LOST (buffer size: ..."
+Sometimes, my real-time application even seems to go out of the
+window, what's this?!
+
+A: It's likely that your application was running, thus indirectly
+producing trace events, when LTT's trace daemon finished and closed
+its internal trace buffers (e.g. the tracing duration you passed to
+the "tracedaemon" command has elapsed, causing the daemon to
+exit). Since this particular operation is not synchronized with
+RTAI/fusion's activity, some real-time task has probably referred to
+stale memory.
+
+The cure is simple: just make sure to stop all RTAI/fusion activities
+before the tracedaemon exits.
+
+______________________________________________________________________
+
+
 ======================================================================
 
                              x86

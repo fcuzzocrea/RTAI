@@ -114,7 +114,7 @@ config RTAI_OPT_PERCPU_TIMER
         default y
 
 menu "LTT tracepoints filtering"
-	depends on RTAI_OPT_EXPERT && RTAI_OPT_DISABLED
+	depends on RTAI_OPT_EXPERT
 
 config RTAI_OPT_FILTER_EVIRQ
 	bool "Disable IRQ-related tracepoints"

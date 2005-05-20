@@ -745,7 +745,7 @@ void xntimer_freeze (void)
 EXPORT_SYMBOL(xntimer_init);
 EXPORT_SYMBOL(xntimer_destroy);
 EXPORT_SYMBOL(xntimer_start);
-EXPORT_SYMBOL(xntimer_stop_inner);
+EXPORT_SYMBOL(xntimer_stop_timer_inner);
 #if defined(CONFIG_SMP) && defined(CONFIG_OPT_PERCPU_TIMER)
 EXPORT_SYMBOL(xntimer_set_sched);
 #endif /* CONFIG_SMP && CONFIG_OPT_PERCPU_TIMER */

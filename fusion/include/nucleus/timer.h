@@ -108,7 +108,13 @@ int xntimer_start(xntimer_t *timer,
 		  xnticks_t value,
 		  xnticks_t interval);
 
-void xntimer_stop(xntimer_t *timer);
+void xntimer_stop_timer_inner(xntimer_t *timer);
+
+static inline void xntimer_stop(xntimer_t *timer)
+{
+    if (!testbits(timer->status,XNTIMER_DEQUEUED))
+	xntimer_stop_timer_inner(timer);
+}
 
 void xntimer_freeze(void);
 

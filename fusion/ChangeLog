@@ -1,5 +1,7 @@
 2005-05-20  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/timer.c (xntimer_stop): Inline the fast path.
+
 	* nucleus/ltt.c: Export xnltt_log_mark().
 
 2005-05-19  Philippe Gerum  <rpm@xenomai.org>

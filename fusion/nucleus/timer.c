@@ -346,30 +346,27 @@ int xntimer_start (xntimer_t *timer,
  * Rescheduling: never.
  */
 
-void xntimer_stop (xntimer_t *timer)
+void xntimer_stop_timer_inner (xntimer_t *timer)
 
 {
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
 
-    if (!testbits(timer->status,XNTIMER_DEQUEUED))
-	{
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
-	    {
-	    int heading = xntimer_heading_p(timer);
-	    xntimer_dequeue_aperiodic(timer);
-	    /* If we removed the heading timer, reprogram the next
-	       shot if any. If the timer was running on another CPU, let it
-	       tick. */
-	    if (heading && xntimer_sched(timer) == xnpod_current_sched())
-                xntimer_next_local_shot(xntimer_sched(timer));
-	    }
-	else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    xntimer_dequeue_periodic(timer);
+    if (!testbits(nkpod->status,XNTMPER))
+	{
+	int heading = xntimer_heading_p(timer);
+	xntimer_dequeue_aperiodic(timer);
+	/* If we removed the heading timer, reprogram the next
+	   shot if any. If the timer was running on another CPU, let it
+	   tick. */
+	if (heading && xntimer_sched(timer) == xnpod_current_sched())
+	    xntimer_next_local_shot(xntimer_sched(timer));
 	}
+    else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+	xntimer_dequeue_periodic(timer);
 
     xnlock_put_irqrestore(&nklock,s);
 }
@@ -748,7 +745,7 @@ void xntimer_freeze (void)
 EXPORT_SYMBOL(xntimer_init);
 EXPORT_SYMBOL(xntimer_destroy);
 EXPORT_SYMBOL(xntimer_start);
-EXPORT_SYMBOL(xntimer_stop);
+EXPORT_SYMBOL(xntimer_stop_inner);
 #if defined(CONFIG_SMP) && defined(CONFIG_OPT_PERCPU_TIMER)
 EXPORT_SYMBOL(xntimer_set_sched);
 #endif /* CONFIG_SMP && CONFIG_OPT_PERCPU_TIMER */

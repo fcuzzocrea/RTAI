@@ -7,7 +7,7 @@ CC = $(top_builddir)/gcic/gcic
 override CFLAGS = -g
 
 if CONFIG_RTAI_MVM_ATOMIC_CORE
-atomic_core := --no-inst
+atomic_core := --no-inst -O2
 endif
 
 AM_CPPFLAGS = \

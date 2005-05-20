@@ -240,7 +240,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-@CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE@atomic_core := --no-inst
+@CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE@atomic_core := --no-inst -O2
 lib_LIBRARIES = libnucleus_s.a
 
 # Shadow, pipe and fusion supports make no sense compiling in native

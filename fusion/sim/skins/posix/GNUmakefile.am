@@ -6,10 +6,15 @@ CC = $(top_builddir)/gcic/gcic
 
 override CFLAGS = -g
 
+if CONFIG_RTAI_MVM_ATOMIC_CORE
+atomic_core := --no-inst
+endif
+
 AM_CPPFLAGS = \
 	-D__IN_RTAI__ \
 	--gcic-backend=$(prefix)/libexec/gcic \
 	--skin-code \
+	$(atomic_core) \
 	-I$(srcdir)/.. \
 	-I$(top_srcdir)/include \
 	-I@RTAI_INSTALLDIR@/source/skins \

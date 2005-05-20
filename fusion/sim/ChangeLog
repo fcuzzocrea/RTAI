@@ -1,3 +1,7 @@
+2005-05-20  Philippe Gerum  <rpm@xenomai.org>
+
+	* gcic/gcic.cc (patchSource): Add no-instrumentation mode.
+
 2005-05-06  Philippe Gerum  <rpm@xenomai.org>
 
 	* scope/bridge.cc (formatArgs): Do not return va_list; some archs

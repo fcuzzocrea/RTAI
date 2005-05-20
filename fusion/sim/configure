@@ -467,7 +467,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all tkimg"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL LEX LEXLIB LEX_OUTPUT_ROOT X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS X11_LIBS TCL_INCLUDES TCL_SCRIPT TCL_BIN_DIR TCL_SRC_DIR TCL_LIB_FILE TCL_LIBS TCL_DEFS TCL_SHLIB_LD_LIBS TCL_EXTRA_CFLAGS TCL_LD_FLAGS TCL_STUB_LIB_FILE TCL_LIB_SPEC TCL_BUILD_LIB_SPEC TCL_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_DBGX TK_BIN_DIR TK_SRC_DIR TK_LIB_FILE TK_LIB_FLAG TK_LIB_SPEC TK_DBGX TIX_TCL_LIB TIX_LIB_SPEC MVM_PROG_PATCH MVM_GCCAS MVM_GCCLD ALLOCA LIBOBJS MVM_LDADD MVM_CFLAGS MVM_CXXFLAGS MVM_GCC_TARBALL MVM_BUILD_STRING MVM_HOST_STRING RTAI_INSTALLDIR CONFIG_RTAI_MVM_TCLWRAP_TRUE CONFIG_RTAI_MVM_TCLWRAP_FALSE CONFIG_RTAI_MVM_SKIN_PSOS_TRUE CONFIG_RTAI_MVM_SKIN_PSOS_FALSE CONFIG_RTAI_MVM_SKIN_VXWORKS_TRUE CONFIG_RTAI_MVM_SKIN_VXWORKS_FALSE CONFIG_RTAI_MVM_SKIN_VRTX_TRUE CONFIG_RTAI_MVM_SKIN_VRTX_FALSE CONFIG_RTAI_MVM_SKIN_UITRON_TRUE CONFIG_RTAI_MVM_SKIN_UITRON_FALSE CONFIG_RTAI_MVM_SKIN_POSIX_TRUE CONFIG_RTAI_MVM_SKIN_POSIX_FALSE CONFIG_RTAI_MVM_SKIN_NATIVE_TRUE CONFIG_RTAI_MVM_SKIN_NATIVE_FALSE subdirs LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL LEX LEXLIB LEX_OUTPUT_ROOT X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS X11_LIBS TCL_INCLUDES TCL_SCRIPT TCL_BIN_DIR TCL_SRC_DIR TCL_LIB_FILE TCL_LIBS TCL_DEFS TCL_SHLIB_LD_LIBS TCL_EXTRA_CFLAGS TCL_LD_FLAGS TCL_STUB_LIB_FILE TCL_LIB_SPEC TCL_BUILD_LIB_SPEC TCL_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_DBGX TK_BIN_DIR TK_SRC_DIR TK_LIB_FILE TK_LIB_FLAG TK_LIB_SPEC TK_DBGX TIX_TCL_LIB TIX_LIB_SPEC MVM_PROG_PATCH MVM_GCCAS MVM_GCCLD ALLOCA LIBOBJS MVM_LDADD MVM_CFLAGS MVM_CXXFLAGS MVM_GCC_TARBALL MVM_BUILD_STRING MVM_HOST_STRING RTAI_INSTALLDIR CONFIG_RTAI_MVM_TCLWRAP_TRUE CONFIG_RTAI_MVM_TCLWRAP_FALSE CONFIG_RTAI_MVM_SKIN_PSOS_TRUE CONFIG_RTAI_MVM_SKIN_PSOS_FALSE CONFIG_RTAI_MVM_SKIN_VXWORKS_TRUE CONFIG_RTAI_MVM_SKIN_VXWORKS_FALSE CONFIG_RTAI_MVM_SKIN_VRTX_TRUE CONFIG_RTAI_MVM_SKIN_VRTX_FALSE CONFIG_RTAI_MVM_SKIN_UITRON_TRUE CONFIG_RTAI_MVM_SKIN_UITRON_FALSE CONFIG_RTAI_MVM_SKIN_POSIX_TRUE CONFIG_RTAI_MVM_SKIN_POSIX_FALSE CONFIG_RTAI_MVM_SKIN_NATIVE_TRUE CONFIG_RTAI_MVM_SKIN_NATIVE_FALSE CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE CONFIG_RTAI_MVM_ATOMIC_CORE_FALSE subdirs LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1045,6 +1045,8 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-mvm-debug      Enable MVM debug
+  --enable-mvm-atomic-core
+                          Enable MVM atomic core mode
   --enable-nucleus-debug  Enable RTAI nucleus debug
    --enable-tclwrap       Wrap Tcl scripts in the executable files
   --enable-psos           Build pSOS+ simulator
@@ -4231,7 +4233,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4234 "configure"' > conftest.$ac_ext
+  echo '#line 4236 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5339,7 +5341,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5342:" \
+echo "$as_me:5344:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6389,11 +6391,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6392: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6394: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6396: \$? = $ac_status" >&5
+   echo "$as_me:6398: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -6632,11 +6634,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6635: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6637: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6639: \$? = $ac_status" >&5
+   echo "$as_me:6641: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -6692,11 +6694,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6695: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6697: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6699: \$? = $ac_status" >&5
+   echo "$as_me:6701: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8877,7 +8879,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8880 "configure"
+#line 8882 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -8975,7 +8977,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8978 "configure"
+#line 8980 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11164,11 +11166,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11167: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11169: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11171: \$? = $ac_status" >&5
+   echo "$as_me:11173: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -11224,11 +11226,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11227: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11229: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11231: \$? = $ac_status" >&5
+   echo "$as_me:11233: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12585,7 +12587,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12588 "configure"
+#line 12590 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12683,7 +12685,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12686 "configure"
+#line 12688 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13520,11 +13522,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13523: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13525: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13527: \$? = $ac_status" >&5
+   echo "$as_me:13529: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -13580,11 +13582,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13583: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13585: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13587: \$? = $ac_status" >&5
+   echo "$as_me:13589: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15615,11 +15617,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15618: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15620: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15622: \$? = $ac_status" >&5
+   echo "$as_me:15624: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -15858,11 +15860,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15861: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15863: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15865: \$? = $ac_status" >&5
+   echo "$as_me:15867: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -15918,11 +15920,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15921: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15923: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15925: \$? = $ac_status" >&5
+   echo "$as_me:15927: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18103,7 +18105,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18106 "configure"
+#line 18108 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18201,7 +18203,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18204 "configure"
+#line 18206 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -19548,6 +19550,19 @@ if test x$CONFIG_RTAI_MVM_DEBUG = xy; then
 else
    defaultwrap=no
 fi
+
+echo "$as_me:$LINENO: checking for MVM atomic core mode" >&5
+echo $ECHO_N "checking for MVM atomic core mode... $ECHO_C" >&6
+# Check whether --enable-mvm-atomic_core or --disable-mvm-atomic_core was given.
+if test "${enable_mvm_atomic_core+set}" = set; then
+  enableval="$enable_mvm_atomic_core"
+  case "$enableval" in
+	y | yes) CONFIG_RTAI_MVM_ATOMIC_CORE=y ;;
+	*) unset CONFIG_RTAI_MVM_ATOMIC_CORE ;;
+	esac
+fi;
+echo "$as_me:$LINENO: result: ${CONFIG_RTAI_MVM_ATOMIC_CORE:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_MVM_ATOMIC_CORE:-no}" >&6
 
 echo "$as_me:$LINENO: checking for RTAI nucleus debug support" >&5
 echo $ECHO_N "checking for RTAI nucleus debug support... $ECHO_C" >&6
@@ -27196,6 +27211,16 @@ fi
 
 
 
+if test x$CONFIG_RTAI_MVM_ATOMIC_CORE = xy; then
+  CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE=
+  CONFIG_RTAI_MVM_ATOMIC_CORE_FALSE='#'
+else
+  CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE='#'
+  CONFIG_RTAI_MVM_ATOMIC_CORE_FALSE=
+fi
+
+
+
 
 
 subdirs="$subdirs tkimg"
@@ -27369,6 +27394,13 @@ if test -z "${CONFIG_RTAI_MVM_SKIN_NATIVE_TRUE}" && test -z "${CONFIG_RTAI_MVM_S
   { { echo "$as_me:$LINENO: error: conditional \"CONFIG_RTAI_MVM_SKIN_NATIVE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"CONFIG_RTAI_MVM_SKIN_NATIVE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE}" && test -z "${CONFIG_RTAI_MVM_ATOMIC_CORE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_RTAI_MVM_ATOMIC_CORE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"CONFIG_RTAI_MVM_ATOMIC_CORE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -28046,6 +28078,8 @@ s,@CONFIG_RTAI_MVM_SKIN_POSIX_TRUE@,$CONFIG_RTAI_MVM_SKIN_POSIX_TRUE,;t t
 s,@CONFIG_RTAI_MVM_SKIN_POSIX_FALSE@,$CONFIG_RTAI_MVM_SKIN_POSIX_FALSE,;t t
 s,@CONFIG_RTAI_MVM_SKIN_NATIVE_TRUE@,$CONFIG_RTAI_MVM_SKIN_NATIVE_TRUE,;t t
 s,@CONFIG_RTAI_MVM_SKIN_NATIVE_FALSE@,$CONFIG_RTAI_MVM_SKIN_NATIVE_FALSE,;t t
+s,@CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE@,$CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE,;t t
+s,@CONFIG_RTAI_MVM_ATOMIC_CORE_FALSE@,$CONFIG_RTAI_MVM_ATOMIC_CORE_FALSE,;t t
 s,@subdirs@,$subdirs,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF

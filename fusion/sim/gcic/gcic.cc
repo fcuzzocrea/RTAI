@@ -94,7 +94,8 @@ int FlagDryRun = 0,
     FlagCCmdSet = 0,
     FlagKTag = 0,
     FlagITag = 0,
-    FlagATag = 0;
+    FlagATag = 0,
+    FlagNoInst = 0;
 
 // The list of our local options and flags.
 
@@ -130,6 +131,7 @@ static struct tool_options {
     { "-user-code", &FlagATag, 1, NULL },
     { "-gcic-backend", NULL, 0, &BackendPrefix },
     { "-no-mvm-libs", &FlagNoMvmLib, 1, NULL },
+    { "-no-inst", &FlagNoInst, 1, NULL },
     { NULL, NULL, 0, NULL }
 };
 
@@ -208,6 +210,7 @@ static void usage ()
     fprintf(stderr,"            [--asm-ext=<asm-file-ext>]\n");
     fprintf(stderr,"            [--cplusplus]\n");
     fprintf(stderr,"            [--no-mvm-libs]\n");
+    fprintf(stderr,"            [--no-inst]\n");
     fprintf(stderr,"            [--dry-run]\n");
     fprintf(stderr,"            [--stdout]\n");
     fprintf(stderr,"            [--verbose]\n");
@@ -405,65 +408,70 @@ static int patchSource (CStringList& argStage0,
     // the path of the preprocessed version of the original source
     // file.
 
-    CString cmdLine = BackendPrefix + "bin/gcc ";
-    // Force the use of the GCIC installation.
-    cmdLine += "-B";
-    cmdLine += GccPrefix;
-    cmdLine += " --syntax-only -nostdlib --gcic-mode ";
-
-    // Set context tag. Defaults to tag3 when unspecified to the
-    // instrumentation engine.
-
-    if (FlagKTag)
-	cmdLine += "--gcic-trace-tag1 ";
-
-    if (FlagITag)
-	cmdLine += "--gcic-trace-tag2 ";
-
-    if (FlagATag)
-	cmdLine += "--gcic-trace-tag3 ";
-
-    cmdLine += langOpt;
-    cmdLine += cppFileName;
-
     CString srcBase(CString(fileName).basename());
     CString tmpName(srcBase);
     tmpName.rstrip(ext->in);
     CString patchedFile = TmpDir + "/ic1@" + tmpName + ext->out;
 
-    if (!FlagToStdout)
+    if (FlagNoInst)
+	symlink(cppFileName,patchedFile);
+    else
 	{
-	cmdLine += " > ";
-	cmdLine += patchedFile;
-	// To be unlinked later by atexit() hook
-	TempFiles.append(new LString(patchedFile));
-	BaseFiles.append(new LString(tmpName));
-	}
+	CString cmdLine = BackendPrefix + "bin/gcc ";
+	// Force the use of the GCIC installation.
+	cmdLine += "-B";
+	cmdLine += GccPrefix;
+	cmdLine += " --syntax-only -nostdlib --gcic-mode ";
 
-    // Always set the temp file info. even if where are actually
-    // redirecting to stdout -- this way, we can have the exact
-    // instrumenter's output for debugging purposes.
-    CString envArg = "GCIC_TEMP_FILE=" + patchedFile;
-    putenv(strdup(envArg));
+	// Set context tag. Defaults to tag3 when unspecified to the
+	// instrumentation engine.
 
-    // Set the control file once for GCIC.
-    if (!ControlFile.isEmpty() && !getenv("GCIC_CONTROL_FILE"))
-	{
-	envArg = "GCIC_CONTROL_FILE=" + ControlFile;
+	if (FlagKTag)
+	    cmdLine += "--gcic-trace-tag1 ";
+
+	if (FlagITag)
+	    cmdLine += "--gcic-trace-tag2 ";
+
+	if (FlagATag)
+	    cmdLine += "--gcic-trace-tag3 ";
+
+	cmdLine += langOpt;
+	cmdLine += cppFileName;
+
+	if (!FlagToStdout)
+	    {
+	    cmdLine += " > ";
+	    cmdLine += patchedFile;
+	    // To be unlinked later by atexit() hook
+	    TempFiles.append(new LString(patchedFile));
+	    BaseFiles.append(new LString(tmpName));
+	    }
+
+	// Always set the temp file info. even if where are actually
+	// redirecting to stdout -- this way, we can have the exact
+	// instrumenter's output for debugging purposes.
+	CString envArg = "GCIC_TEMP_FILE=" + patchedFile;
 	putenv(strdup(envArg));
+
+	// Set the control file once for GCIC.
+	if (!ControlFile.isEmpty() && !getenv("GCIC_CONTROL_FILE"))
+	    {
+	    envArg = "GCIC_CONTROL_FILE=" + ControlFile;
+	    putenv(strdup(envArg));
+	    }
+	
+	char *av[4];
+	av[0] = "sh";
+	av[1] = "-c";
+	av[2] = cmdLine.gets();
+	av[3] = NULL;
+
+	if (FlagVerbose)
+	    printf("%s\n",cmdLine.gets());
+	
+	if (tosh_spawnw(av[0],av))
+	    return -1; // oops --- something went wrong...
 	}
-
-    char *av[4];
-    av[0] = "sh";
-    av[1] = "-c";
-    av[2] = cmdLine.gets();
-    av[3] = NULL;
-
-    if (FlagVerbose)
-	printf("%s\n",cmdLine.gets());
-
-    if (tosh_spawnw(av[0],av))
-	return -1; // oops --- something went wrong...
 
     if (!FlagToStdout)
 	{

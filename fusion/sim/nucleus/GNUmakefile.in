@@ -94,6 +94,8 @@ AWK = @AWK@
 CC = $(top_builddir)/gcic/gcic
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CONFIG_RTAI_MVM_ATOMIC_CORE_FALSE = @CONFIG_RTAI_MVM_ATOMIC_CORE_FALSE@
+CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE = @CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE@
 CONFIG_RTAI_MVM_SKIN_NATIVE_FALSE = @CONFIG_RTAI_MVM_SKIN_NATIVE_FALSE@
 CONFIG_RTAI_MVM_SKIN_NATIVE_TRUE = @CONFIG_RTAI_MVM_SKIN_NATIVE_TRUE@
 CONFIG_RTAI_MVM_SKIN_POSIX_FALSE = @CONFIG_RTAI_MVM_SKIN_POSIX_FALSE@
@@ -238,6 +240,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+@CONFIG_RTAI_MVM_ATOMIC_CORE_TRUE@atomic_core := --no-inst
 lib_LIBRARIES = libnucleus_s.a
 
 # Shadow, pipe and fusion supports make no sense compiling in native
@@ -256,6 +259,7 @@ AM_CPPFLAGS = \
 	-D__IN_RTAI__ \
 	--gcic-backend=$(prefix)/libexec/gcic \
 	--kernel-code \
+	$(atomic_core) \
 	-I$(top_srcdir)/include \
 	-I@RTAI_INSTALLDIR@/source/include
 

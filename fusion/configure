@@ -20741,6 +20741,7 @@ else
     if test x$CONFIG_RTAI_MVM = xy; then
 	export CONFIG_RTAI_MVM_DEBUG
     	export CONFIG_RTAI_MVM_GCC_TARBALL
+    	export CONFIG_RTAI_MVM_ATOMIC_CORE
 	export CONFIG_RTAI_OPT_DEBUG
     else
 	RTAI_MAYBE_SIMDIR=sim

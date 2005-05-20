@@ -46,6 +46,19 @@ config RTAI_MVM_DEBUG
 	simulator state. Do not activate it unless you really intend
 	to debug the Minute Virtual Machine.
 
+config RTAI_MVM_ATOMIC_CORE
+	bool "Disable core instrumentation"
+	depends on RTAI_MVM && RTAI_OPT_EXPERT
+	default n
+	help
+	
+	This option suppresses the instrumentation of the nucleus and
+	skin sources so that the resulting simulation is suitable for
+	performance analysis through the Valgrind/Cachegrind/Callgrind
+	toolsuite. Enabling this option prevents those portions of
+	code from being debugged interactively using the Xenoscope
+	though.
+
 config RTAI_HW_APERIODIC_TIMER
 	bool
 	default y

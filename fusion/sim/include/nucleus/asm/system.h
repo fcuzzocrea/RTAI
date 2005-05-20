@@ -362,6 +362,8 @@ const char *mvm_tcl_value(mvm_tcl_listobj_t *tclist);
 void mvm_tcl_build_pendq(mvm_tcl_listobj_t *tclist,
 			 struct xnsynch *synch);
 
+#define xnarch_relay_tick()  /* Nullified. */
+
 #ifdef XENO_INTR_MODULE
 
 static inline int xnarch_hook_irq (unsigned irq,
@@ -396,8 +398,6 @@ static inline unsigned long xnarch_set_irq_affinity (unsigned irq,
 {
     return 0;
 }
-
-#define xnarch_relay_tick()  /* Nullified. */
 
 #endif /* XENO_INTR_MODULE */
 

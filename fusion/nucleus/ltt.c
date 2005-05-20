@@ -150,3 +150,4 @@ int xnltt_filter = rtai_evall;
 
 EXPORT_SYMBOL(xnltt_evtable);
 EXPORT_SYMBOL(xnltt_filter);
+EXPORT_SYMBOL(xnltt_log_mark);

@@ -98,6 +98,10 @@ typedef void irqreturn_t;
 #define CPUMASK(name)    (name.bits[0])
 #endif /* LINUX_VERSION_CODE <= KERNEL_VERSION(2,6,7) */
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
+#define TASK_ZOMBIE EXIT_ZOMBIE
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10) */
+
 #endif /* __KERNEL__ */
 
 #endif /* !_RTAI_WRAPPERS_H */

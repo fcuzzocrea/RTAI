@@ -2232,9 +2232,11 @@ void xnpod_schedule (void)
         xnsched_clr_resched(sched);
 
     if (xnsched_resched_p())
+	{
         xnarch_send_ipi(xnsched_resched_mask());
+	xnsched_clr_mask(sched);
+	}
 
-    xnsched_clr_mask(sched);
     runthread = sched->runthread;
 
     if (!need_resched)

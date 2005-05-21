@@ -140,9 +140,7 @@ void xntimer_init (xntimer_t *timer,
 void xntimer_destroy (xntimer_t *timer)
 
 {
-    if (!testbits(timer->status,XNTIMER_DEQUEUED))
-	xntimer_stop(timer);
-
+    xntimer_stop(timer);
     __setbits(timer->status,XNTIMER_KILLED);
 }
 
@@ -565,17 +563,16 @@ void xntimer_do_timers (void)
 {
     xnsched_t *sched = xnpod_current_sched();
     xnholder_t *nextholder, *holder;
-    xnqueue_t *timerq, reschedq;
+    xnqueue_t *timerq;
     xntimer_t *timer;
-    xnticks_t now;
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    int aperiodic = !testbits(nkpod->status,XNTMPER);
+    int aperiodic;
 
-    if (aperiodic)
-        {
+    if (!testbits(nkpod->status,XNTMPER))
+	{
 	/* Only use slot #0 in aperiodic mode. */
         timerq = &sched->timerwheel[0];
-	now = xnarch_get_cpu_tsc();
+	aperiodic = 1;
 	}
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
@@ -591,11 +588,10 @@ void xntimer_do_timers (void)
             ++nkpod->jiffies;
             ++nkpod->wallclock;
             }
-        now = nkpod->jiffies;
-        timerq = &sched->timerwheel[now & XNTIMER_WHEELMASK];
-	}
 
-    initq(&reschedq);
+        timerq = &sched->timerwheel[nkpod->jiffies & XNTIMER_WHEELMASK];
+	aperiodic = 0;
+	}
 
     nextholder = getheadq(timerq);
 
@@ -607,23 +603,20 @@ void xntimer_do_timers (void)
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)
 	    {
-	    if (timer->date - nkschedlat > now)
+	    if (timer->date - nkschedlat > xnarch_get_cpu_tsc())
 		/* No need to continue in aperiodic mode since
 		   timeout dates are ordered by increasing
 		   values. */
 		break;
+
+	    xntimer_dequeue_aperiodic(timer);
 	    }
 	else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    if (timer->date > now)
+	    if (timer->date > nkpod->jiffies)
 		continue;
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (aperiodic)
-	    xntimer_dequeue_aperiodic(timer);
-	else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    xntimer_dequeue_periodic(timer);
+	    else
+		xntimer_dequeue_periodic(timer);
 
 	if (timer == &nkpod->htimer)
 	    /* By postponing the propagation of the low-priority host
@@ -632,33 +625,19 @@ void xntimer_do_timers (void)
 	       translates into precious microsecs on low-end hw. */
 	    __setbits(sched->status,XNHTICK);
 	else
-	    /* Otherwise, we'd better have a valid handler... */
+	    {
 	    timer->handler(timer->cookie);
 
-	/* Restart the timer for the next period if a valid interval
-	   has been given. The status is checked in order to prevent
-	   rescheduling a timer which has been destroyed, or already
-	   rescheduled on behalf of its timeout handler. */
-
-	if (timer->interval != XN_INFINITE &&
-	    testbits(timer->status,XNTIMER_DEQUEUED) &&
-	    !testbits(timer->status,XNTIMER_KILLED))
-	    /* Temporarily move the interval timer to the rescheduling
-	       queue, so that we don't see it again until the current
-	       dispatching loop is over. */
-	    appendq(&reschedq,&timer->link);
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (aperiodic)
-	    now = xnarch_get_cpu_tsc();
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	}
-
-    /* Reschedule elapsed interval timers for the next shot. */
-
-    while ((holder = getq(&reschedq)) != NULL)
-	{
-	timer = link2timer(holder);
+	    if (timer->interval == XN_INFINITE ||
+		!testbits(timer->status,XNTIMER_DEQUEUED) ||
+		testbits(timer->status,XNTIMER_KILLED))
+		/* The elapsed timer has no reload value, or has been
+		   re-enqueued likely as a result of a call to
+		   xntimer_start() from the timeout handler, or has
+		   been killed by the handler. In all cases, don't
+		   attept to re-enqueue it for the next shot. */
+		continue;
+	    }
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
 	if (aperiodic)

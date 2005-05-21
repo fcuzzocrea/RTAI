@@ -40,7 +40,7 @@ static void xnthread_periodic_handler (void *cookie)
 
     thread->poverrun++;
 
-    if (xnthread_test_flags(thread,XNDELAY))
+    if (xnthread_test_flags(thread,XNDELAY)) /* Prevent unwanted round-robin. */
 	xnpod_resume_thread(thread,XNDELAY);
 }
 

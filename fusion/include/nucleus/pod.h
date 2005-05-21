@@ -47,7 +47,6 @@
 /* Sched status flags */
 #define XNKCOUT      0x80000000 /* Sched callout context */
 #define XNHTICK      0x40000000 /* Host tick pending  */
-#define XNSCHEDMASK  ~(XNKCOUT|XNHTICK)
 
 /* These flags are available to the real-time interfaces */
 #define XNPOD_SPARE0  0x01000000

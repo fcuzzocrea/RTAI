@@ -1997,7 +1997,7 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
 
     xnlock_get_irqsave(&nklock,s);
 
-    for (holder = getheadpq(xnsynch_wait_queue(&sender->msendq));
+    for (holder = getheadpq(xnsynch_wait_queue(&sender->msendq)), receiver = NULL;
 	 holder != NULL;
 	 holder = nextpq(xnsynch_wait_queue(&sender->msendq),holder))
 	{
@@ -2018,7 +2018,7 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
 	    }
 	}
 
-    if (!holder)
+    if (!receiver)
 	{
 	err = -ENXIO;
 	goto unlock_and_exit;

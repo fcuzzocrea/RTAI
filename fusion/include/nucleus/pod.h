@@ -116,23 +116,23 @@ typedef xnpqueue_t xnsched_queue_t;
 
 typedef struct xnsched {
 
-    xnflags_t status;           /*!< Scheduler specific status bitmask */
-
     xnthread_t *runthread;      /*!< Current thread (service or user). */
 
     xnarch_cpumask_t resched;   /*!< Mask of CPUs needing rescheduling.*/
 
-    xnsched_queue_t readyq;     /*!< Ready-to-run threads (prioritized). */
-
-    xnqueue_t timerwheel[XNTIMER_WHEELSIZE]; /*!< BSDish timer wheel. */
-
-    volatile unsigned inesting; /*!< Interrupt nesting level. */
+    xnflags_t status;           /*!< Scheduler specific status bitmask */
 
 #ifdef CONFIG_RTAI_HW_FPU
     xnthread_t *fpuholder;      /*!< Thread owning the current FPU context. */
 #endif /* CONFIG_RTAI_HW_FPU */
 
+    xnsched_queue_t readyq;     /*!< Ready-to-run threads (prioritized). */
+
+    volatile unsigned inesting; /*!< Interrupt nesting level. */
+
     xnthread_t rootcb;          /*!< Root thread control block. */
+
+    xnqueue_t timerwheel[XNTIMER_WHEELSIZE]; /*!< BSDish timer wheel. */
 
 } xnsched_t;
 
@@ -170,33 +170,39 @@ struct xnpod {
 
     xnflags_t status;           /*!< Status bitmask. */
 
+    xnqueue_t suspendq;         /*!< Suspended (blocked) threads. */
+
+    xnsched_t sched[XNARCH_NR_CPUS]; /*!< Per-cpu scheduler slots. */
+
     xnticks_t jiffies;          /*!< Periodic ticks elapsed since boot. */
 
     xnticks_t wallclock;        /*!< Wallclock time in ticks. */
 
     xntimer_t htimer;           /*!< Host timer. */
 
-    xnsched_t sched[XNARCH_NR_CPUS]; /*!< Per-cpu scheduler slots. */
-
-    xnqueue_t suspendq;         /*!< Suspended (blocked) threads. */
-
-    xnqueue_t threadq;          /*!< All existing threads. */
-
-    atomic_counter_t schedlck;  /*!< Scheduler lock count. */
-
     xnqueue_t tstartq,          /*!< Thread start hook queue. */
               tswitchq,         /*!< Thread switch hook queue. */
               tdeleteq;         /*!< Thread delete hook queue. */
+
+#ifdef CONFIG_RTAI_OPT_WATCHDOG
+    xnticks_t watchdog_trigger; /* !< Watchdog trigger value. */
+    xnticks_t watchdog_reload;  /* !< Watchdog reload value. */
+    int watchdog_armed;         /* !< Watchdog state. */
+#endif /* CONFIG_RTAI_OPT_WATCHDOG */
+
+    u_long tickvalue;           /*!< Tick duration (ns, 1 if aperiodic). */
+
+    u_long ticks2sec;		/*!< Number of ticks per second (1e9
+                                  if aperiodic). */
+
+    atomic_counter_t schedlck;  /*!< Scheduler lock count. */
 
     int minpri,                 /*!< Minimum priority value. */
         maxpri;                 /*!< Maximum priority value. */
 
     int root_prio_base;         /*!< Base priority of ROOT thread. */
 
-    u_long tickvalue;           /*!< Tick duration (ns, 1 if aperiodic). */
-
-    u_long ticks2sec;   /*!< Number of ticks per second (1e9
-                                  if aperiodic). */
+    xnqueue_t threadq;          /*!< All existing threads. */
 
     struct {
         xnisr_t tickhandler; /*!< Clock tick handler. */
@@ -206,17 +212,10 @@ struct xnpod {
         int (*unload)(void);    /*!< Unloading hook. */
     } svctable;                 /*!< Table of overridable service entry points. */
 
-#ifdef CONFIG_RTAI_OPT_WATCHDOG
-    xnticks_t watchdog_trigger; /* !< Watchdog trigger value. */
-    xnticks_t watchdog_reload;  /* !< Watchdog reload value. */
-    int watchdog_armed;         /* !< Watchdog state. */
-#endif /* CONFIG_RTAI_OPT_WATCHDOG */
-
 #ifdef __RTAI_SIM__
     void (*schedhook)(xnthread_t *thread,
                       xnflags_t mask); /*!< Internal scheduling hook. */
 #endif /* __RTAI_SIM__ */
-
 };
 
 typedef struct xnpod xnpod_t;

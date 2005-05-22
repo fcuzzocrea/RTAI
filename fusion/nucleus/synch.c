@@ -567,18 +567,14 @@ void xnsynch_release_all_ownerships (xnthread_t *thread)
 
 {
     xnpholder_t *holder, *nholder;
-    xnsynch_t *synch;
 
-    holder = getheadpq(&thread->claimq);
-
-    while ((synch = link2synch(holder)) != NULL)
+    for (holder = getheadpq(&thread->claimq);
+	 holder != NULL; holder = nholder)
 	{
 	/* Since xnsynch_wakeup_one_sleeper() alters the claim queue,
 	   we need to be conservative while scanning it. */
-
 	nholder = nextpq(&thread->claimq,holder);
-	xnsynch_wakeup_one_sleeper(synch);
-	holder = nholder;
+	xnsynch_wakeup_one_sleeper(link2synch(holder));
 	}
 }
 

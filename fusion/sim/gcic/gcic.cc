@@ -414,7 +414,18 @@ static int patchSource (CStringList& argStage0,
     CString patchedFile = TmpDir + "/ic1@" + tmpName + ext->out;
 
     if (FlagNoInst)
-	symlink(cppFileName,patchedFile);
+	{
+	if (FlagToStdout)
+	    {
+	    symlink(cppFileName,patchedFile);
+	    system(CString().format("cat " + patchedFile));
+	    }
+	else
+	    {
+	    symlink(cppFileName,patchedFile);
+	    TempFiles.append(new LString(patchedFile));
+	    }
+	}
     else
 	{
 	CString cmdLine = BackendPrefix + "bin/gcc ";

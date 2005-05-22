@@ -92,11 +92,11 @@ typedef struct xnthread {
 
     struct xnsched *sched;	/* Thread scheduler */
 
+    xnarch_cpumask_t affinity;	/* Processor affinity. */
+
+    int bprio;			/* Base priority (before PIP boost) */
+
     int cprio;			/* Current priority */
-
-    struct xnsynch *wchan;	/* Resource the thread pends on */
-
-    xnsigmask_t signals;	/* Pending signals */
 
     xnholder_t slink;		/* Thread holder in suspend queue */
 
@@ -104,15 +104,17 @@ typedef struct xnthread {
 
     xnpholder_t plink;		/* Thread holder in synchronization queue(s) */
 
+    xnholder_t glink;		/* Thread holder in global queue */
+
 /* We don't want side-effects on laddr here! */
 #define link2thread(laddr,link) \
 ((xnthread_t *)(((char *)laddr) - (int)(&((xnthread_t *)0)->link)))
 
-    xntimer_t rtimer;		/* Resource timer */
-
-    int bprio;			/* Base priority (before PIP boost) */
-
     xnpqueue_t claimq;		/* Owned resources claimed by others (PIP) */
+
+    struct xnsynch *wchan;	/* Resource the thread pends on */
+
+    xntimer_t rtimer;		/* Resource timer */
 
     xntimer_t atimer;		/* Asynchronous timer (shadow only) */
 
@@ -120,15 +122,17 @@ typedef struct xnthread {
 
     int poverrun;		/* Periodic timer overrun. */
 
+    xnsigmask_t signals;	/* Pending signals */
+
     xnticks_t rrperiod;		/* Allotted round-robin period (ticks) */
 
     xnticks_t rrcredit;		/* Remaining round-robin time credit (ticks) */
 
-    xnarch_cpumask_t affinity;	/* Processor affinity. */
-
     struct {
+
 	unsigned long psw;	/* Primary mode switch count */
 	unsigned long ssw;	/* Secondary mode switch count */
+
     } stat;
 
     xnasr_t asr;		/* Asynchronous service routine */
@@ -156,8 +160,6 @@ typedef struct xnthread {
     void *cookie;		/* Cookie to pass to the entry routine */
 
     void *extinfo;		/* Extended information -- user-defined */
-
-    xnholder_t glink;		/* Thread holder in global queue */
 
     XNARCH_DECL_DISPLAY_CONTEXT();
 

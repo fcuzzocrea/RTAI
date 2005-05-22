@@ -110,6 +110,29 @@ int xntimer_start(xntimer_t *timer,
 
 void xntimer_stop_timer_inner(xntimer_t *timer);
 
+/*!
+ * \fn int xntimer_stop(xntimer_t *timer)
+ *
+ * \brief Disarm a timer.
+ *
+ * This service deactivates a timer previously armed using
+ * xntimer_start(). Once disarmed, the timer can be subsequently
+ * re-armed using the latter service.
+ *
+ * @param timer The address of a valid timer descriptor.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
 static inline void xntimer_stop(xntimer_t *timer)
 {
     if (!testbits(timer->status,XNTIMER_DEQUEUED))

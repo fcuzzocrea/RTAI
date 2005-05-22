@@ -72,10 +72,6 @@ typedef struct xnextent {
 
 typedef struct xnheap {
 
-#ifdef CONFIG_SMP
-    xnlock_t lock;
-#endif /* CONFIG_SMP */
-
     xnholder_t link;
 
 #define link2heap(laddr) \
@@ -91,7 +87,13 @@ typedef struct xnheap {
 
     xnqueue_t extents;
 
+#ifdef CONFIG_SMP
+    xnlock_t lock;
+#endif /* CONFIG_SMP */
+
     caddr_t buckets[XNHEAP_NBUCKETS];
+
+    xnholder_t *idleq;
 
     xnarch_heapcb_t archdep;
 
@@ -110,8 +112,16 @@ extern xnheap_t kheap;
 ((sizeof(xnextent_t) + (((hsize) - sizeof(xnextent_t)) / (psize)) + \
  XNHEAP_MINALIGNSZ - 1) & ~(XNHEAP_MINALIGNSZ - 1))
 
-#define xnmalloc(size)  xnheap_alloc(&kheap,size)
-#define xnfree(ptr)     xnheap_free(&kheap,ptr)
+#define xnmalloc(size)     xnheap_alloc(&kheap,size)
+#define xnfree(ptr)        xnheap_free(&kheap,ptr)
+#define xnfreesync()       xnheap_finalize_free(&kheap)
+#define xnfreesafe(thread,ptr,ln) \
+do { \
+    if (xnpod_current_thread() == thread) \
+	xnheap_schedule_free(&kheap,ptr,ln); \
+    else \
+	xnheap_free(&kheap,ptr); \
+} while(0)
 
 #ifdef __cplusplus
 extern "C" {
@@ -168,6 +178,18 @@ int xnheap_test_and_free(xnheap_t *heap,
 
 int xnheap_free(xnheap_t *heap,
 		void *block);
+
+void xnheap_schedule_free(xnheap_t *heap,
+			  void *block,
+			  xnholder_t *link);
+
+void xnheap_finalize_free_inner(xnheap_t *heap);
+
+static inline void xnheap_finalize_free(xnheap_t *heap)
+{
+    if (heap->idleq)
+	xnheap_finalize_free_inner(heap);
+}
 
 #ifdef __cplusplus
 }

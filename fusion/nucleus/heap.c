@@ -100,7 +100,7 @@ static void init_extent (xnheap_t *heap,
  * \fn int xnheap_init(xnheap_t *heap,
                        void *heapaddr,
                        u_long heapsize,
-                       u_long pagesize);
+                       u_long pagesize)
  * \brief Initialize a memory heap.
  *
  * Initializes a memory heap suitable for time-bounded allocation
@@ -204,6 +204,7 @@ int xnheap_init (xnheap_t *heap,
     heap->npages = (heapsize - hdrsize) >> pageshift;
     heap->ubytes = 0;
     heap->maxcont = heap->npages * pagesize;
+    heap->idleq = NULL;
     inith(&heap->link);
     initq(&heap->extents);
     xnlock_init(&heap->lock);
@@ -230,7 +231,7 @@ int xnheap_init (xnheap_t *heap,
 			                   void *extaddr,
 				           u_long extsize,
 					   void *cookie),
-					   void *cookie);
+					   void *cookie)
  * \brief Destroys a memory heap.
  *
  * Destroys a memory heap.
@@ -386,7 +387,7 @@ splitpage:
 }
 
 /*! 
- * \fn void *xnheap_alloc(xnheap_t *heap, u_long size);
+ * \fn void *xnheap_alloc(xnheap_t *heap, u_long size)
  * \brief Allocate a memory block from a memory heap.
  *
  * Allocates a contiguous region of memory from an active memory heap.
@@ -499,7 +500,7 @@ release_and_exit:
 /*! 
  * \fn int xnheap_test_and_free(xnheap_t *heap,
                                 void *block,
-                                int (*ckfn)(void *block));
+                                int (*ckfn)(void *block))
  * \brief Test and release a memory block to a memory heap.
  *
  * Releases a memory region to the memory heap it was previously
@@ -652,7 +653,7 @@ unlock_and_fail:
 }
 
 /*! 
- * \fn int xnheap_free(xnheap_t *heap, void *block);
+ * \fn int xnheap_free(xnheap_t *heap, void *block)
  * \brief Release a memory block to a memory heap.
  *
  * Releases a memory region to the memory heap it was previously
@@ -685,7 +686,7 @@ int xnheap_free (xnheap_t *heap, void *block)
 }
 
 /*! 
- * \fn int xnheap_extend(xnheap_t *heap, void *extaddr, u_long extsize);
+ * \fn int xnheap_extend(xnheap_t *heap, void *extaddr, u_long extsize)
  * \brief Extend a memory heap.
  *
  * Add a new extent to an existing memory heap.
@@ -731,6 +732,72 @@ int xnheap_extend (xnheap_t *heap, void *extaddr, u_long extsize)
     xnlock_put_irqrestore(&heap->lock,s);
 
     return 0;
+}
+
+/*! 
+ * \fn int xnheap_schedule_free(xnheap_t *heap, void *block, xnholder_t *link)
+ * \brief Schedule a memory block for release.
+ *
+ * This routine records a block for later release by
+ * xnheap_finalize_free(). This service is useful to lazily free
+ * blocks of heap memory when immediate release is not an option,
+ * e.g. when active references are still pending on the object for a
+ * short time after the call. xnheap_finalize_free() is expected to be
+ * eventually called by the client code at some point in the future
+ * when actually freeing the idle objects is deemed safe.
+ *
+ * @param heap The descriptor address of the heap to release memory
+ * to.
+ *
+ * @param block The address of the region to be returned to the heap.
+ *
+ * @param link The address of a link member, likely but not
+ * necessarily within the released object, which will be used by the
+ * heap manager to hold the block in the queue of idle objects.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
+void xnheap_schedule_free (xnheap_t *heap, void *block, xnholder_t *link)
+
+{
+    spl_t s;
+
+    xnlock_get_irqsave(&heap->lock,s);
+    /* Hack: we only need a one-way linked list for remembering the
+       idle objects through the 'next' field, so the 'last' field of
+       the link is used to point at the beginning of the freed
+       memory. */
+    link->last = (xnholder_t *)block;
+    link->next = heap->idleq;
+    heap->idleq = link;
+    xnlock_put_irqrestore(&heap->lock,s);
+}
+
+void xnheap_finalize_free_inner (xnheap_t *heap)
+
+{
+    xnholder_t *holder;
+    spl_t s;
+
+    xnlock_get_irqsave(&heap->lock,s);
+
+    while ((holder = heap->idleq) != NULL)
+	{
+	heap->idleq = holder->next;
+	xnheap_free(heap,holder->last);
+	}
+
+    xnlock_put_irqrestore(&heap->lock,s);
 }
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
@@ -1072,5 +1139,7 @@ EXPORT_SYMBOL(xnheap_extend);
 EXPORT_SYMBOL(xnheap_test_and_free);
 EXPORT_SYMBOL(xnheap_free);
 EXPORT_SYMBOL(xnheap_init);
+EXPORT_SYMBOL(xnheap_schedule_free);
+EXPORT_SYMBOL(xnheap_finalize_free_inner);
 
 EXPORT_SYMBOL(kheap);

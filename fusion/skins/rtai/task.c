@@ -73,7 +73,7 @@ static void __task_delete_hook (xnthread_t *thread)
     rtai_mark_deleted(task);
 
     if (xnthread_test_flags(&task->thread_base,XNSHADOW))
-	xnfree(task);
+	xnfreesafe(&task->thread_base,task,&task->link);
 }
 
 int __task_pkg_init (void)

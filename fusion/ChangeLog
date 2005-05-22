@@ -6,6 +6,16 @@
 
 2005-05-22  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/task.c (__task_delete_hook): Use safe memory release
+	service to discard the TCB of the destroyed task.
+
+	* include/nucleus/heap.h (xnfreesafe): Provide a safe xnfree()
+	helper delaying the actual memory release until the current thread
+	is switched out.
+
+	* nucleus/heap.c (xnheap_schedule_free, xnheap_finalize_free): Add
+	delayed free service.
+
 	* include/nucleus/pod.h, include/nucleus/thread.h,
 	include/nucleus/synch.h: Improve data locality.
 

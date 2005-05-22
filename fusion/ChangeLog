@@ -1,5 +1,8 @@
 2005-05-22  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* include/nucleus/asm-i386/hal.h (rthal_root_host_task): Use 
+	THREAD_SIZE to avoid bug with 4K kernel stacks.
+
 	* nucleus/pod.c (xnpod_schedule): re-read current scheduler when
 	resuming from xnarch_switch_to, in order to cope with migration
 	while suspended.

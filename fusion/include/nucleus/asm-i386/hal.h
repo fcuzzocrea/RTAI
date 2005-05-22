@@ -39,7 +39,7 @@
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
-#include <nucleus/asm-generic/hal.h>	/* Read the generic bits. */
+#include <nucleus/asm-generic/hal.h>    /* Read the generic bits. */
 
 typedef unsigned long long rthal_time_t;
 
@@ -164,8 +164,8 @@ static inline __attribute_const__ long long rthal_llimd (const long long op,
 static inline __attribute_const__ unsigned long ffnz (unsigned long ul) {
     /* Derived from bitops.h's ffs() */
     __asm__("bsfl %1, %0"
-	    : "=r,r" (ul)
-	    : "r,?m"  (ul));
+            : "=r,r" (ul)
+            : "r,?m"  (ul));
     return ul;
 }
 
@@ -186,7 +186,7 @@ static inline __attribute_const__ unsigned long ffnz (unsigned long ul) {
 #ifdef CONFIG_X86_LOCAL_APIC
 #define RTHAL_APIC_TIMER_VECTOR    ADEOS_SERVICE_VECTOR3
 #define RTHAL_APIC_TIMER_IPI       ADEOS_SERVICE_IPI3
-#define RTHAL_APIC_ICOUNT	   ((RTHAL_TIMER_FREQ + HZ/2)/HZ)
+#define RTHAL_APIC_ICOUNT          ((RTHAL_TIMER_FREQ + HZ/2)/HZ)
 #endif /* CONFIG_X86_LOCAL_APIC */
 
 #ifdef CONFIG_X86_TSC
@@ -210,7 +210,8 @@ rthal_time_t rthal_get_8254_tsc(void);
    instead. */
 
 static inline struct task_struct *rthal_root_host_task (int cpuid) {
-    return ((struct thread_info *)(((u_long)adp_root->esp[cpuid]) & (~8191UL)))->task;
+    u_long stack = (u_long)adp_root->esp[cpuid] & ~(THREAD_SIZE - 1);
+    return ((struct thread_info *)(stack))->task;
 }
 
 static inline struct task_struct *rthal_current_host_task (int cpuid)
@@ -221,7 +222,7 @@ static inline struct task_struct *rthal_current_host_task (int cpuid)
     __asm__ ("movl %%esp, %0" : "=r,?m" (esp));
 
     if (esp >= rthal_domain.estackbase[cpuid] && esp < rthal_domain.estackbase[cpuid] + 2048)
-	return rthal_root_host_task(cpuid);
+        return rthal_root_host_task(cpuid);
 
     return get_current();
 }
@@ -264,7 +265,7 @@ static inline void rthal_timer_program_shot (unsigned long delay)
 static const char *const rthal_fault_labels[] = {
     [0] = "Divide error",
     [1] = "Debug",
-    [2] = "",	/* NMI is not pipelined. */
+    [2] = "",   /* NMI is not pipelined. */
     [3] = "Int3",
     [4] = "Overflow",
     [5] = "Bounds",

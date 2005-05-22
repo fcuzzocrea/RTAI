@@ -53,6 +53,8 @@ struct xnmutex;
 
 typedef struct xnsynch {
 
+    xnpholder_t link;	/* Link in claim queues */
+
 #define link2synch(laddr) \
 ((xnsynch_t *)(((char *)laddr) - (int)(&((xnsynch_t *)0)->link)))
 
@@ -61,8 +63,6 @@ typedef struct xnsynch {
     xnpqueue_t pendq;	/* Pending threads */
 
     struct xnthread *owner; /* Thread which owns the resource */
-
-    xnpholder_t link;	/* Link in claim queues */
 
     XNARCH_DECL_DISPLAY_CONTEXT();
 

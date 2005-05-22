@@ -82,12 +82,12 @@ const char *xnpod_fatal_helper (const char *format, ...)
         {
         xnthread_t *thread = link2thread(holder,glink);
         xnprintf("%3d  %-12s %4d  0x%.8lx -- %s\n",
-		 (int)xnsched_cpu(xnthread_sched(thread)),
+                 (int)xnsched_cpu(xnthread_sched(thread)),
                  thread->name,
                  thread->cprio,
-		 thread->status,
-		 xnthread_symbolic_status(thread->status,
-					  sbuf,sizeof(sbuf)));
+                 thread->status,
+                 xnthread_symbolic_status(thread->status,
+                                          sbuf,sizeof(sbuf)));
         holder = nextq(&nkpod->threadq,holder);
         }
 
@@ -96,7 +96,7 @@ const char *xnpod_fatal_helper (const char *format, ...)
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
         if (!testbits(nkpod->status,XNTMPER))
             xnprintf("Aperiodic timer is running.\n");
-	else
+        else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
             xnprintf("Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
                      xnpod_get_tickval() / 1000,
@@ -120,9 +120,9 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 
 {
     xnltt_log_event(rtai_ev_fault,
-		    xnpod_current_thread()->name,
-		    xnarch_fault_pc(fltinfo),
-		    xnarch_fault_trap(fltinfo));
+                    xnpod_current_thread()->name,
+                    xnarch_fault_pc(fltinfo),
+                    xnarch_fault_trap(fltinfo));
 
     if (!xnpod_userspace_p())
         {
@@ -147,12 +147,12 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
     if (xnpod_shadow_p())
         {
 #ifdef CONFIG_RTAI_OPT_DEBUG
-	if (xnarch_fault_notify(fltinfo)) /* Don't report debug traps */
-	    xnprintf("Switching %s to secondary mode after exception #%u from "
-		     "user-space at 0x%lx\n",
-		     xnpod_current_thread()->name,
-		     xnarch_fault_trap(fltinfo),
-		     xnarch_fault_pc(fltinfo));
+        if (xnarch_fault_notify(fltinfo)) /* Don't report debug traps */
+            xnprintf("Switching %s to secondary mode after exception #%u from "
+                     "user-space at 0x%lx\n",
+                     xnpod_current_thread()->name,
+                     xnarch_fault_trap(fltinfo),
+                     xnarch_fault_pc(fltinfo));
 #endif /* CONFIG_RTAI_OPT_DEBUG */
         xnshadow_relax(xnarch_fault_notify(fltinfo));
         }
@@ -323,7 +323,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     heapaddr = xnarch_sysalloc(XNPOD_HEAPSIZE);
 
     if (!heapaddr ||
-	xnheap_init(&kheap,heapaddr,XNPOD_HEAPSIZE,XNPOD_PAGESIZE) != 0)
+        xnheap_init(&kheap,heapaddr,XNPOD_HEAPSIZE,XNPOD_PAGESIZE) != 0)
         {
         rc = -ENOMEM;
         goto fail;
@@ -338,7 +338,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
         sprintf(root_name,"ROOT");
 #endif /* CONFIG_SMP */
 
-	xnsched_clr_mask(sched);
+        xnsched_clr_mask(sched);
 
         /* Create the root thread -- it might be a placeholder for the
            current context or a real thread, it depends on the real-time
@@ -393,9 +393,9 @@ fail:
 }
 
 static void xnpod_flush_heap (xnheap_t *heap,
-			      void *extaddr,
-			      u_long extsize,
-			      void *cookie)
+                              void *extaddr,
+                              u_long extsize,
+                              void *cookie)
 {
     xnarch_sysfree(extaddr,extsize);
 }
@@ -444,7 +444,7 @@ void xnpod_shutdown (int xtype)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
         {
         xnlock_put_irqrestore(&nklock,s);
-	return; /* No-op */
+        return; /* No-op */
         }
 
     xntimer_destroy(&nkpod->htimer);
@@ -502,7 +502,7 @@ static inline void xnpod_fire_callouts (xnqueue_t *hookq, xnthread_t *thread)
 }
 
 static inline void xnpod_switch_zombie (xnthread_t *threadout,
-					xnthread_t *threadin)
+                                        xnthread_t *threadin)
 {
     /* Must be called with nklock locked, interrupts off. */
     xnsched_t *sched = xnpod_current_sched();
@@ -515,14 +515,14 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
     if (countq(&nkpod->tdeleteq) > 0 &&
         !testbits(threadout->status,XNTHREAD_SYSTEM_BITS))
         {
-	xnltt_log_event(rtai_ev_callout,"SELF-DELETE",threadout->name);
+        xnltt_log_event(rtai_ev_callout,"SELF-DELETE",threadout->name);
         xnpod_fire_callouts(&nkpod->tdeleteq,threadout);
-	}
+        }
 
     sched->runthread = threadin;
 
     if (testbits(threadin->status,XNROOT)) {
-	xnpod_reset_watchdog();
+        xnpod_reset_watchdog();
         xnarch_enter_root(xnthread_archtcb(threadin));
     }
 
@@ -542,7 +542,7 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
            The Linux task has resumed into the Linux domain at the
            last code location executed by the shadow. Remember
            that both sides use the Linux task's stack. */
-	xnshadow_exit();
+        xnshadow_exit();
 #endif /* __KERNEL__  && CONFIG_RTAI_OPT_FUSION */
     
     xnpod_fatal("zombie thread %s (%p) would not die...",threadout->name,threadout);
@@ -761,10 +761,10 @@ int xnpod_start_thread (xnthread_t *thread,
     xnarch_cpus_and(thread->affinity, affinity, thread->affinity);
 
     if (xnarch_cpus_empty(thread->affinity))
-	{
+        {
         err = -EINVAL;
-	goto unlock_and_exit;
-	}
+        goto unlock_and_exit;
+        }
 
 #ifdef CONFIG_SMP
     if (!xnarch_cpu_isset(xnsched_cpu(thread->sched), thread->affinity))
@@ -774,10 +774,10 @@ int xnpod_start_thread (xnthread_t *thread,
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (testbits(thread->status,XNSHADOW))
         {
-	xnlock_put_irqrestore(&nklock,s);
-	xnltt_log_event(rtai_ev_thrstart,thread->name);
+        xnlock_put_irqrestore(&nklock,s);
+        xnltt_log_event(rtai_ev_thrstart,thread->name);
         xnshadow_start(thread,entry,cookie);
-	xnpod_schedule();
+        xnpod_schedule();
         return 0;
         }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
@@ -785,7 +785,7 @@ int xnpod_start_thread (xnthread_t *thread,
     if (testbits(thread->status,XNSTARTED))
         {
         err = -EBUSY;
-	goto unlock_and_exit;
+        goto unlock_and_exit;
         }
 
     /* Setup the initial stack frame. */
@@ -819,9 +819,9 @@ int xnpod_start_thread (xnthread_t *thread,
     if (countq(&nkpod->tstartq) > 0 &&
         !testbits(thread->status,XNTHREAD_SYSTEM_BITS))
         {
-	xnltt_log_event(rtai_ev_callout,"START",thread->name);
+        xnltt_log_event(rtai_ev_callout,"START",thread->name);
         xnpod_fire_callouts(&nkpod->tstartq,thread);
-	}
+        }
 
     xnpod_schedule();
 
@@ -999,16 +999,16 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
     __setbits(thread->status,setmask & XNTHREAD_MODE_BITS);
 
     if (runthread == thread)
-	{
-	if (!(oldmode & XNLOCK))
-	    {
-	    if (testbits(thread->status,XNLOCK))
-		/* Actually grab the scheduler lock. */
-		xnpod_lock_sched();
-	    }
-	else if (!testbits(thread->status,XNLOCK))
-	    xnarch_atomic_set(&nkpod->schedlck,0);
-	}
+        {
+        if (!(oldmode & XNLOCK))
+            {
+            if (testbits(thread->status,XNLOCK))
+                /* Actually grab the scheduler lock. */
+                xnpod_lock_sched();
+            }
+        else if (!testbits(thread->status,XNLOCK))
+            xnarch_atomic_set(&nkpod->schedlck,0);
+        }
 
     if (!(oldmode & XNRRB) && testbits(thread->status,XNRRB))
         thread->rrcredit = thread->rrperiod;
@@ -1017,9 +1017,9 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (runthread == thread &&
-	testbits(thread->status,XNSHADOW) &&
-	((clrmask|setmask) & XNSHIELD) != 0)
-	xnshadow_reset_shield();
+        testbits(thread->status,XNSHADOW) &&
+        ((clrmask|setmask) & XNSHIELD) != 0)
+        xnshadow_reset_shield();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     return oldmode;
@@ -1133,10 +1133,10 @@ void xnpod_delete_thread (xnthread_t *thread)
         {
         if (countq(&nkpod->tdeleteq) > 0 &&
             !testbits(thread->status,XNTHREAD_SYSTEM_BITS))
-	    {
-	    xnltt_log_event(rtai_ev_callout,"DELETE",thread->name);
+            {
+            xnltt_log_event(rtai_ev_callout,"DELETE",thread->name);
             xnpod_fire_callouts(&nkpod->tdeleteq,thread);
-	    }
+            }
 
         /* Note: the thread control block must remain available until
            the user hooks have been called. */
@@ -1263,16 +1263,16 @@ void xnpod_suspend_thread (xnthread_t *thread,
     if (!testbits(thread->status,XNTHREAD_BLOCK_BITS))
         {
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-	/* If attempting to suspend a runnable (shadow) thread which
-	   has received a Linux signal, just raise the break condition
-	   and return immediately. */
-	if (testbits(thread->status,XNKICKED))
-	    {
-	    __clrbits(thread->status,XNRMID|XNTIMEO);
-	    __setbits(thread->status,XNBREAK);
-	    thread->wchan = NULL;
-	    goto unlock_and_exit;
-	    }
+        /* If attempting to suspend a runnable (shadow) thread which
+           has received a Linux signal, just raise the break condition
+           and return immediately. */
+        if (testbits(thread->status,XNKICKED))
+            {
+            __clrbits(thread->status,XNRMID|XNTIMEO);
+            __setbits(thread->status,XNBREAK);
+            thread->wchan = NULL;
+            goto unlock_and_exit;
+            }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
         /* A newly created thread is not linked to the ready thread
@@ -1307,11 +1307,11 @@ void xnpod_suspend_thread (xnthread_t *thread,
 
         xntimer_set_sched(&thread->rtimer, thread->sched);
         if (xntimer_start(&thread->rtimer,timeout,XN_INFINITE) < 0)
-	    {
-	    /* Bad timeout: rollback everything we've just done... */
-	    xnpod_unblock_thread(thread);
-	    goto unlock_and_exit;
-	    }
+            {
+            /* Bad timeout: rollback everything we've just done... */
+            xnpod_unblock_thread(thread);
+            goto unlock_and_exit;
+            }
         }
     
 #ifdef __RTAI_SIM__
@@ -1421,9 +1421,9 @@ void xnpod_resume_thread (xnthread_t *thread,
                     }
                 else
                     /* The thread is still suspended (XNSUSP or even
-		       XNDORMANT if xnpod_set_thread_periodic() has
-		       been applied to a non-started thread) */
-		    goto unlock_and_exit;
+                       XNDORMANT if xnpod_set_thread_periodic() has
+                       been applied to a non-started thread) */
+                    goto unlock_and_exit;
                 }
             else if (testbits(thread->status,XNDELAY))
                 {
@@ -1437,20 +1437,20 @@ void xnpod_resume_thread (xnthread_t *thread,
                     }
 
                 if (testbits(thread->status,XNTHREAD_BLOCK_BITS)) /* Still blocked? */
-		    {
-		    if (testbits(thread->status,XNDELAY))
-			/* Funky corner case here: the suspensive
-			   condition we have just removed was not
-			   XNPEND, and we are still blocked on
-			   XNDELAY.  We thus need to remove the thread
-			   from the suspension queue to reflect the
-			   removal of the cleared condition, since
-			   threads on resource-free timed waits are
-			   not expected to be linked to this queue. */
-			removeq(&nkpod->suspendq,&thread->slink);
+                    {
+                    if (testbits(thread->status,XNDELAY))
+                        /* Funky corner case here: the suspensive
+                           condition we have just removed was not
+                           XNPEND, and we are still blocked on
+                           XNDELAY.  We thus need to remove the thread
+                           from the suspension queue to reflect the
+                           removal of the cleared condition, since
+                           threads on resource-free timed waits are
+                           not expected to be linked to this queue. */
+                        removeq(&nkpod->suspendq,&thread->slink);
 
-		    goto unlock_and_exit;
-		    }
+                    goto unlock_and_exit;
+                    }
                 }
             else
                 {
@@ -1460,7 +1460,7 @@ void xnpod_resume_thread (xnthread_t *thread,
                 if ((mask & XNPEND) != 0 && thread->wchan)
                     xnsynch_forget_sleeper(thread);
 
-		goto unlock_and_exit;
+                goto unlock_and_exit;
                 }
             }
         else if ((mask & XNDELAY) != 0)
@@ -1581,7 +1581,7 @@ int xnpod_unblock_thread (xnthread_t *thread)
     else if (testbits(thread->status,XNPEND))
         xnpod_resume_thread(thread,XNPEND);
     else
-	ret = 0;
+        ret = 0;
 
     /* We should not clear a previous break state if this service is
        called more than once before the target thread actually
@@ -1723,7 +1723,7 @@ int xnpod_migrate_thread (int cpu)
     if (xnpod_locked_p())
         {
         err = -EBUSY;
-	goto unlock_and_exit;
+        goto unlock_and_exit;
         }
     
     thread = xnpod_current_thread();
@@ -1731,7 +1731,7 @@ int xnpod_migrate_thread (int cpu)
     if (!xnarch_cpu_isset(cpu, thread->affinity))
         {
         err = -EPERM;
-	goto unlock_and_exit;
+        goto unlock_and_exit;
         }
 
     err = 0;
@@ -2034,8 +2034,8 @@ void xnpod_welcome_thread (xnthread_t *thread)
        xnsched_t *sched = thread->sched;
 
         if (sched->fpuholder != NULL &&
-	    xnarch_fpu_ptr(xnthread_archtcb(sched->fpuholder)) !=
-	    xnarch_fpu_ptr(xnthread_archtcb(thread)))
+            xnarch_fpu_ptr(xnthread_archtcb(sched->fpuholder)) !=
+            xnarch_fpu_ptr(xnthread_archtcb(thread)))
             xnarch_save_fpu(xnthread_archtcb(sched->fpuholder));
 
         xnarch_init_fpu(xnthread_archtcb(thread));
@@ -2208,7 +2208,7 @@ void xnpod_schedule (void)
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
     if (xnarch_escalate())
-	return;
+        return;
 
     xnltt_log_event(rtai_ev_resched);
 #endif /* __KERNEL__ */
@@ -2232,10 +2232,10 @@ void xnpod_schedule (void)
         xnsched_clr_resched(sched);
 
     if (xnsched_resched_p())
-	{
+        {
         xnarch_send_ipi(xnsched_resched_mask());
-	xnsched_clr_mask(sched);
-	}
+        xnsched_clr_mask(sched);
+        }
 
     runthread = sched->runthread;
 
@@ -2261,8 +2261,8 @@ void xnpod_schedule (void)
 
     if (!testbits(runthread->status,XNTHREAD_BLOCK_BITS|XNZOMBIE))
         {
-	xnpholder_t *pholder = sched_getheadpq(&sched->readyq);
-	  
+        xnpholder_t *pholder = sched_getheadpq(&sched->readyq);
+          
         if (pholder)
             {
             xnthread_t *head = link2thread(pholder,rlink);
@@ -2310,7 +2310,7 @@ void xnpod_schedule (void)
     if (testbits(threadout->status,XNROOT))
         xnarch_leave_root(xnthread_archtcb(threadout));
     else if (testbits(threadin->status,XNROOT)) {
-	xnpod_reset_watchdog();
+        xnpod_reset_watchdog();
         xnarch_enter_root(xnthread_archtcb(threadin));
     }
 
@@ -2343,11 +2343,11 @@ void xnpod_schedule (void)
 #endif /* __RTAI_SIM__ */
     
     if (countq(&nkpod->tswitchq) > 0 &&
-	!testbits(runthread->status,XNTHREAD_SYSTEM_BITS))
+        !testbits(runthread->status,XNTHREAD_SYSTEM_BITS))
         {
-	xnltt_log_event(rtai_ev_callout,"SWITCH",runthread->name);
-	xnpod_fire_callouts(&nkpod->tswitchq,runthread);
-	}
+        xnltt_log_event(rtai_ev_callout,"SWITCH",runthread->name);
+        xnpod_fire_callouts(&nkpod->tswitchq,runthread);
+        }
 
  signal_unlock_and_exit:
 
@@ -2461,7 +2461,7 @@ maybe_switch:
     if (testbits(runthread->status,XNROOT))
         xnarch_leave_root(xnthread_archtcb(runthread));
     else if (testbits(threadin->status,XNROOT)) {
-	xnpod_reset_watchdog();
+        xnpod_reset_watchdog();
         xnarch_enter_root(xnthread_archtcb(threadin));
     }
 
@@ -2546,9 +2546,9 @@ xnticks_t xnpod_get_time (void)
 {
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
-	/* In aperiodic mode, our idea of time is the same as the
-	   CPU's. */
-	return xnpod_get_cpu_time(); /* Nanoseconds. */
+        /* In aperiodic mode, our idea of time is the same as the
+           CPU's. */
+        return xnpod_get_cpu_time(); /* Nanoseconds. */
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     return nkpod->wallclock;
@@ -2629,17 +2629,17 @@ int xnpod_add_hook (int type, void (*routine)(xnthread_t *))
             break;
         default:
             err = -EINVAL;
-	    goto unlock_and_exit;
+            goto unlock_and_exit;
         }
 
     hook = xnmalloc(sizeof(*hook));
 
     if (hook)
-	{
-	inith(&hook->link);
-	hook->routine = routine;
-	prependq(hookq,&hook->link);
-	}
+        {
+        inith(&hook->link);
+        hook->routine = routine;
+        prependq(hookq,&hook->link);
+        }
     else
         err = -ENOMEM;
 
@@ -2703,18 +2703,18 @@ int xnpod_remove_hook (int type, void (*routine)(xnthread_t *))
             hookq = &nkpod->tdeleteq;
             break;
         default:
-	    goto bad_hook;
+            goto bad_hook;
         }
 
     for (holder = getheadq(hookq);
-	 holder != NULL; holder = nextq(hookq,holder))
+         holder != NULL; holder = nextq(hookq,holder))
         {
         hook = link2hook(holder);
 
         if (hook->routine == routine)
             {
             removeq(hookq,holder);
-	    xnfree(hook);
+            xnfree(hook);
             goto unlock_and_exit;
             }
         }
@@ -2873,13 +2873,13 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
         {
         err = -ENOSYS;
-	goto unlock_and_exit;
+        goto unlock_and_exit;
         }
 
     if (testbits(nkpod->status,XNTIMED))
         {
         err = -EBUSY;
-	goto unlock_and_exit;
+        goto unlock_and_exit;
         }
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
@@ -2906,9 +2906,9 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 
 unlock_and_exit:
 
-	xnlock_put_irqrestore(&nklock,s);
+        xnlock_put_irqrestore(&nklock,s);
 
-	return err;
+        return err;
         }
 
     xnltt_log_event(rtai_ev_tmstart,nstick);
@@ -2942,10 +2942,10 @@ unlock_and_exit:
     delta = xnarch_start_timer(nstick,&xnintr_clock_handler);
 
     if (delta < 0)
-	return -ENODEV;
+        return -ENODEV;
 
     if (delta == 0)
-	delta = XNARCH_HOST_TICK / nkpod->tickvalue;
+        delta = XNARCH_HOST_TICK / nkpod->tickvalue;
 
     /* When no host ticking service is required for the underlying
        arch, the host timer exists but simply never ticks since
@@ -2989,7 +2989,7 @@ void xnpod_stop_timer (void)
     xnlock_get_irqsave(&nklock,s);
 
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
-	goto unlock_and_exit;
+        goto unlock_and_exit;
 
     xnltt_log_event(rtai_ev_tmstop);
 
@@ -3063,14 +3063,14 @@ int xnpod_announce_tick (xnintr_t *intr)
 
 #ifdef CONFIG_RTAI_OPT_WATCHDOG
     if (xnarch_get_cpu_tsc() >= nkpod->watchdog_trigger) {
-	if (!xnpod_root_p() && nkpod->watchdog_armed) {
-	    xnltt_log_event(rtai_ev_watchdog,xnpod_current_thread()->name);
-	    xnprintf("RTAI: watchdog triggered -- suspending runaway thread '%s'\n",
-		     xnpod_current_thread()->name);
-	    xnpod_suspend_thread(xnpod_current_thread(),XNSUSP,XN_INFINITE,NULL);
-	} else {
-	    xnpod_reset_watchdog();
-	}
+        if (!xnpod_root_p() && nkpod->watchdog_armed) {
+            xnltt_log_event(rtai_ev_watchdog,xnpod_current_thread()->name);
+            xnprintf("RTAI: watchdog triggered -- suspending runaway thread '%s'\n",
+                     xnpod_current_thread()->name);
+            xnpod_suspend_thread(xnpod_current_thread(),XNSUSP,XN_INFINITE,NULL);
+        } else {
+            xnpod_reset_watchdog();
+        }
     }
     nkpod->watchdog_armed = !xnpod_root_p();
 #endif /* CONFIG_RTAI_OPT_WATCHDOG */
@@ -3082,7 +3082,7 @@ int xnpod_announce_tick (xnintr_t *intr)
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     /* Round-robin in aperiodic mode makes no sense. */
     if (!testbits(nkpod->status,XNTMPER))
-	goto unlock_and_exit;
+        goto unlock_and_exit;
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 #ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
@@ -3179,41 +3179,41 @@ int xnpod_announce_tick (xnintr_t *intr)
  */
 
 int xnpod_set_thread_periodic (xnthread_t *thread,
-			       xnticks_t idate,
-			       xnticks_t period)
+                               xnticks_t idate,
+                               xnticks_t period)
 {
     xnticks_t now;
     int err = 0;
     spl_t s;
 
     if (!testbits(nkpod->status,XNTIMED))
-	return -EWOULDBLOCK;
+        return -EWOULDBLOCK;
 
     xnlock_get_irqsave(&nklock,s);
 
     xnltt_log_event(rtai_ev_thrperiodic,thread->name,idate,period);
 
     if (period == XN_INFINITE)
-	{
-	if (xntimer_active_p(&thread->ptimer))
-	    xntimer_stop(&thread->ptimer);
+        {
+        if (xntimer_active_p(&thread->ptimer))
+            xntimer_stop(&thread->ptimer);
 
-	goto unlock_and_exit;
-	}
+        goto unlock_and_exit;
+        }
 
     xntimer_set_sched(&thread->ptimer, thread->sched);
 
     if (idate == XN_INFINITE)
-	xntimer_start(&thread->ptimer,period,period);
+        xntimer_start(&thread->ptimer,period,period);
     else
-	{
-	now = xnpod_get_time();
+        {
+        now = xnpod_get_time();
 
-	if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
-	    xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
-	else
-	    err = -ETIMEDOUT;
-	}
+        if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
+            xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
+        else
+            err = -ETIMEDOUT;
+        }
 
  unlock_and_exit:
 
@@ -3269,25 +3269,25 @@ int xnpod_wait_thread_period (void)
     xnlock_get_irqsave(&nklock,s);
 
     if (!xntimer_active_p(&thread->ptimer))
-	{
-	err = -EWOULDBLOCK;
-	goto unlock_and_exit;
-	}
+        {
+        err = -EWOULDBLOCK;
+        goto unlock_and_exit;
+        }
 
     xnltt_log_event(rtai_ev_thrwait,thread->name);
 
     if (thread->poverrun < 0)
-	{
-	xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
+        {
+        xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
 
-	if (xnthread_test_flags(thread,XNBREAK))
-	    {
-	    err = -EINTR;
-	    goto unlock_and_exit;
-	    }
-	}
+        if (xnthread_test_flags(thread,XNBREAK))
+            {
+            err = -EINTR;
+            goto unlock_and_exit;
+            }
+        }
     else
-	err = -ETIMEDOUT;
+        err = -ETIMEDOUT;
 
     thread->poverrun--;
 

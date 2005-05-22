@@ -1,3 +1,9 @@
+2005-05-22  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_schedule): re-read current scheduler when
+	resuming from xnarch_switch_to, in order to cope with migration
+	while suspended.
+
 2005-05-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/pod.h, include/nucleus/thread.h,

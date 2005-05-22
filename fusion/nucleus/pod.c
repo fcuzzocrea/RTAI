@@ -2317,6 +2317,10 @@ void xnpod_schedule (void)
     xnarch_switch_to(xnthread_archtcb(threadout),
                      xnthread_archtcb(threadin));
 
+#ifdef CONFIG_SMP
+    /* If threadout migrated while suspended, sched is no longer correct. */
+    sched = xnpod_current_sched();
+#endif
     runthread = sched->runthread;
 
 #ifdef CONFIG_RTAI_HW_FPU

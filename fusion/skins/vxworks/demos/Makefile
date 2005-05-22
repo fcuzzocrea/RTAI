@@ -27,7 +27,7 @@ $(UVM_TARGETS): $(UVM_TARGETS:%=%.c)
 	$(CC) -o $@ $< $(UVM_CFLAGS) $(UVM_LDFLAGS)
 
 $(SIM_TARGETS): $(SIM_TARGETS:%_s=%_s.o)
-	$(GCIC) -o $@ $^ $(SIM_LDFLAGS)
+	$(GCIC) -o $@ $< $(SIM_LDFLAGS)
 
 %_s.o: %.c
 	$(GCIC) -o $@ -c $< $(SIM_CFLAGS)

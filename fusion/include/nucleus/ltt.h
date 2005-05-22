@@ -21,9 +21,9 @@
 #ifndef _RTAI_NUCLEUS_LTT_H
 #define _RTAI_NUCLEUS_LTT_H
 
-#include <linux/config.h>
+#include <nucleus/types.h>
 
-#if defined(__KERNEL__) && defined(CONFIG_LTT)
+#ifdef CONFIG_LTT
 
 #include <linux/ltt-core.h>
 
@@ -119,7 +119,7 @@ int xnltt_mount(void);
 
 void xnltt_umount(void);
 
-#else /* !(__KERNEL__ && CONFIG_LTT) */
+#else /* !CONFIG_LTT */
 
 #define xnltt_log_event(ev, args...); /* Eat the semi-colon. */
 
@@ -135,6 +135,6 @@ static inline void xnltt_stop_tracing (void)
 {
 }
 
-#endif /* __KERNEL__ && CONFIG_LTT */
+#endif /* CONFIG_LTT */
 
 #endif /* !_RTAI_NUCLEUS_LTT_H_ */

@@ -1,7 +1,15 @@
+2005-05-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/pod.h, include/nucleus/thread.h,
+	include/nucleus/synch.h: Improve data locality.
+
+	* nucleus/synch.c (xnsynch_release_all_ownerships): Fix empty
+	claimq case.
+
 2005-05-21  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/timer.c (xntimer_do_timers): Optimize the inner loop
-	doing the timer rescheduling on-the-fly.
+	by rescheduling the timers on-the-fly.
 
 2005-05-20  Philippe Gerum  <rpm@xenomai.org>
 

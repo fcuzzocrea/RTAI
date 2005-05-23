@@ -298,7 +298,6 @@ static void *rt_BaseRate(void *args)
     char name[7];
     int i;
     static RTIME t0;
-    int nevprt = 1;
 
     for(i = 0; i < MAX_NTARGETS; i++) {
       sprintf(name,"BRT%d",i);
@@ -327,9 +326,7 @@ static void *rt_BaseRate(void *args)
 	if (endBaseRate) break;
 
 	TIME = (rt_get_cpu_time_ns() - t0)*1.0E-9;
-	set_nevprt(nevprt);
-	NAME(MODEL,main1)(NAME(block_,MODEL),z, &TIME);
-	NAME(MODEL,main2)(NAME(block_,MODEL),z, &TIME);
+	NAME(MODEL,_rt_exec)(NAME(block_,MODEL),z, &TIME);
     }
     if (UseHRT) {
       rt_make_soft_real_time();

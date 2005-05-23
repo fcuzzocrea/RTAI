@@ -19,9 +19,6 @@
 	* nucleus/heap.c (xnheap_schedule_free, xnheap_finalize_free): Add
 	delayed free service.
 
-	* include/nucleus/pod.h, include/nucleus/thread.h,
-	include/nucleus/synch.h: Improve data locality.
-
 	* nucleus/synch.c (xnsynch_release_all_ownerships): Fix empty
 	claimq case.
 

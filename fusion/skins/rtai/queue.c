@@ -657,9 +657,9 @@ int rt_queue_send (RT_QUEUE *q,
 }
 
 /**
- * @fn int rt_queue_recv(RT_QUEUE *q,
-                         void **bufp,
-			 RTIME timeout)
+ * @fn ssize_t rt_queue_recv(RT_QUEUE *q,
+                             void **bufp,
+			     RTIME timeout)
  *
  * @brief Receive a message from a queue.
  *

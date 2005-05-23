@@ -187,9 +187,9 @@ int rt_queue_send (RT_QUEUE *q,
 			     mode);
 }
 
-int rt_queue_recv (RT_QUEUE *q,
-		   void **bufp,
-		   RTIME timeout)
+ssize_t rt_queue_recv (RT_QUEUE *q,
+		       void **bufp,
+		       RTIME timeout)
 {
     return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_queue_recv,

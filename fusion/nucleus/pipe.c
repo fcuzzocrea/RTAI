@@ -341,11 +341,11 @@ ssize_t xnpipe_send (int minor,
 
     if (testbits(state->status,XNPIPE_USER_CONN))
 	{
-	if (testbits(state->status,XNPIPE_USER_WSEND))
+	if (testbits(state->status,XNPIPE_USER_WSEND|XNPIPE_USER_WPOLL))
 	    {
 	    /* Wake up the userland thread waiting for input
 	       from the kernel side. */
-	    clrbits(state->status,XNPIPE_USER_WSEND);
+	    clrbits(state->status,XNPIPE_USER_WSEND|XNPIPE_USER_WPOLL);
 	    xnpipe_schedule_request();
 	    }
 
@@ -475,17 +475,20 @@ static int xnpipe_open (struct inode *inode,
 
     state = &xnpipe_states[minor];
 
+    xnlock_get_irqsave(&nklock,s);
+
+    /* Enforce exclusive open for the message queues. */
+    if (testbits(state->status,XNPIPE_USER_CONN))
+	{
+	xnlock_put_irqrestore(&nklock,s);
+	return -EBUSY;
+	}
+
     file->private_data = state;
     sema_init(&state->open_sem,0);
     sema_init(&state->send_sem,0);
     init_waitqueue_head(&state->pollq);
     state->wchan = NULL;
-
-    /* Enforce exclusive open for the message queues. */
-    if (testbits(state->status,XNPIPE_USER_CONN))
-	return -EBUSY;
-
-    xnlock_get_irqsave(&nklock,s);
 
     clrbits(state->status,XNPIPE_USER_WMASK|XNPIPE_USER_SIGIO|XNPIPE_USER_ONWAIT);
     setbits(state->status,XNPIPE_USER_CONN);
@@ -544,6 +547,7 @@ static int xnpipe_open (struct inode *inode,
 static int xnpipe_release (struct inode *inode,
 			   struct file *file)
 {
+    struct linux_semaphore *wchan = NULL;
     xnpipe_state_t *state;
     unsigned long slflags;
     xnholder_t *holder;
@@ -555,9 +559,17 @@ static int xnpipe_release (struct inode *inode,
     xnlock_get_irqsave(&nklock,s);
 
     if (testbits(state->status,XNPIPE_USER_ONWAIT))
+	{
 	removeq(&xnpipe_sleepq,&state->slink);
 
-    clrbits(state->status,XNPIPE_USER_CONN|XNPIPE_USER_WMASK);
+        if (state->wchan)
+	    {
+	    wchan = state->wchan;
+	    state->wchan = NULL;
+	    }
+	}
+
+    clrbits(state->status,XNPIPE_USER_CONN|XNPIPE_USER_ONWAIT|XNPIPE_USER_WMASK);
 
     if (testbits(state->status,XNPIPE_KERN_CONN))
 	{
@@ -579,6 +591,9 @@ static int xnpipe_release (struct inode *inode,
 
     if (waitqueue_active(&state->pollq))
 	wake_up_interruptible(&state->pollq);
+
+    if (wchan)
+	up(wchan);
 
     if (state->asyncq) /* Clear the async queue */
 	{
@@ -837,24 +852,24 @@ static unsigned xnpipe_poll (struct file *file,
 			     poll_table *pt)
 {
     xnpipe_state_t *state = (xnpipe_state_t *)file->private_data;
-    unsigned mask = 0;
+    unsigned r_mask = 0, w_mask = 0;
 
     poll_wait(file,&state->pollq,pt);
 
     if (testbits(state->status,XNPIPE_KERN_CONN))
-	mask |= (POLLOUT|POLLWRNORM);
+	w_mask |= (POLLOUT|POLLWRNORM);
 
     if (countq(&state->outq) > 0)
-	mask |= (POLLIN|POLLRDNORM);
+	r_mask |= (POLLIN|POLLRDNORM);
 
-    if (!mask && !testbits(state->status,XNPIPE_USER_WPOLL))
+    if ((!r_mask || !w_mask) && !testbits(state->status,XNPIPE_USER_WPOLL))
 	/* Procs which have issued a timed out poll req will remain
 	   linked to the sleepers queue, and will be silently unlinked
 	   the next time the real-time kernel side kicks
 	   xnpipe_wakeup_proc. */
 	xnpipe_enqueue_wait(state,NULL,XNPIPE_USER_WPOLL);
 
-    return mask;
+    return r_mask|w_mask;
 }
 
 static struct file_operations xnpipe_fops = {

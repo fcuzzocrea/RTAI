@@ -1,3 +1,9 @@
+2005-05-23  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* nucleus/pipe.c: Fix poll/select support, and prevent duplicate
+	open requests on a same device from accidentally trashing the
+	state information block of the active connection.
+
 2005-05-22  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-i386/hal.h (rthal_root_host_task): Use 

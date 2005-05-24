@@ -189,6 +189,8 @@ static inline __attribute_const__ unsigned long ffnz (unsigned long ul) {
 #define RTHAL_APIC_ICOUNT          ((RTHAL_TIMER_FREQ + HZ/2)/HZ)
 #endif /* CONFIG_X86_LOCAL_APIC */
 
+#define rthal_irq_descp(irq)  (irq_desc + irq)
+
 #ifdef CONFIG_X86_TSC
 static inline unsigned long long rthal_rdtsc (void) {
     unsigned long long t;

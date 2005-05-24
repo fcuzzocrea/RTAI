@@ -462,6 +462,7 @@ If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long lon
 #define URSZ2LL      (0x380000001LL)
 
 // and these are for deciding what to do in lxrt.c
+#if 0
 #define	NEED_TO_RW(x)	(((unsigned long *)&(x))[HIGH])
 
 #define NEED_TO_R(x)	(((unsigned long *)&(x))[LOW]  & 0x0000FFFC)
@@ -483,6 +484,29 @@ If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long lon
 #define USP_WSZ2(x)    	((((unsigned long *)&(x))[HIGH] >> 23) & 0x7F)
 #define USP_WSZ1LL(x)   (((unsigned long *)&(x))[HIGH] & 0x40000000)
 #define USP_WSZ2LL(x)   (((unsigned long *)&(x))[HIGH] & 0x80000000)
+#else
+#define	NEED_TO_RW(x)	((x >> 32) & 0xFFFFFFFF)
+
+#define NEED_TO_R(x)	(x & 0x0000FFFC)
+#define NEED_TO_W(x)	((x >> 32) & 0x0000FFFC)
+
+#define NEED_TO_R2ND(x)	(x & 0x3FFF0000)
+#define NEED_TO_W2ND(x)	((x >> 32) & 0x3FFF0000)
+
+#define USP_RBF1(x)  	((x >> 2) & 0x7F)
+#define USP_RSZ1(x)    	((x >> 9) & 0x7F)
+#define USP_RBF2(x)    	((x >> 16) & 0x7F)
+#define USP_RSZ2(x)    	((x >> 23) & 0x7F)
+#define USP_RSZ1LL(x)  	(x & 0x40000000)
+#define USP_RSZ2LL(x)  	(x & 0x80000000)
+
+#define USP_WBF1(x)   	(((x >> 32) >>  2) & 0x7F)
+#define USP_WSZ1(x)    	(((x >> 32) >>  9) & 0x7F)
+#define USP_WBF2(x)    	(((x >> 32) >> 16) & 0x7F)
+#define USP_WSZ2(x)    	(((x >> 32) >> 23) & 0x7F)
+#define USP_WSZ1LL(x)   ((x >> 32) & 0x40000000)
+#define USP_WSZ2LL(x)   ((x >> 32) & 0x80000000)
+#endif
 
 struct rt_fun_entry {
     unsigned long long type;

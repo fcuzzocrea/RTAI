@@ -309,43 +309,43 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 
 #if CONFIG_RTAI_MSG
 
-static inline RT_TASK *RT_send(unsigned long node, int port, RT_TASK *task, unsigned int msg)
+static inline RT_TASK *RT_send(unsigned long node, int port, RT_TASK *task, unsigned long msg)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; } arg = { task, msg };
+		struct { RT_TASK *task; unsigned long msg; } arg = { task, msg };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SENDMSG, 0), 0LL, &arg, SIZARG, 1);
 	}
 	return rt_send(task, msg);
 }
 
-static inline RT_TASK *RT_send_if(unsigned long node, int port, RT_TASK *task, unsigned int msg)
+static inline RT_TASK *RT_send_if(unsigned long node, int port, RT_TASK *task, unsigned long msg)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; } arg = { task, msg };
+		struct { RT_TASK *task; unsigned long msg; } arg = { task, msg };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEND_IF, 0), 0LL, &arg, SIZARG, 1);
 	}
 	return rt_send_if(task, msg);
 }
 
-static inline RT_TASK *RT_send_until(unsigned long node, int port, RT_TASK *task, unsigned int msg, RTIME time)
+static inline RT_TASK *RT_send_until(unsigned long node, int port, RT_TASK *task, unsigned long msg, RTIME time)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; RTIME time; } arg = { task, msg, time };
+		struct { RT_TASK *task; unsigned long msg; RTIME time; } arg = { task, msg, time };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEND_UNTIL, 3), 0LL, &arg, SIZARG, 1);
 	}
 	return rt_send_until(task, msg, nano2count(time));
 }
 
-static inline RT_TASK *RT_send_timed(unsigned long node, int port, RT_TASK *task, unsigned int msg, RTIME delay)
+static inline RT_TASK *RT_send_timed(unsigned long node, int port, RT_TASK *task, unsigned long msg, RTIME delay)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; RTIME delay; } arg = { task, msg, delay };
+		struct { RT_TASK *task; unsigned long msg; RTIME delay; } arg = { task, msg, delay };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, SEND_TIMED, 3), 0LL, &arg, SIZARG, 1);
 	}
 	return rt_send_timed(task, msg, nano2count(delay));
 }
 
-static inline RT_TASK *RT_receive(unsigned long node, int port, RT_TASK *task, unsigned int *msg)
+static inline RT_TASK *RT_receive(unsigned long node, int port, RT_TASK *task, unsigned long *msg)
 {
 	if (!task || !node) {
 		return rt_receive(task, msg);
@@ -353,7 +353,7 @@ static inline RT_TASK *RT_receive(unsigned long node, int port, RT_TASK *task, u
 	return rt_receive(rt_find_asgn_stub(OWNER(node, task), 1), msg) ? task : 0;
 }
 
-static inline RT_TASK *RT_receive_if(unsigned long node, int port, RT_TASK *task, unsigned int *msg)
+static inline RT_TASK *RT_receive_if(unsigned long node, int port, RT_TASK *task, unsigned long *msg)
 {
 	if (!task || !node) {
 		return rt_receive_if(task, msg);
@@ -361,7 +361,7 @@ static inline RT_TASK *RT_receive_if(unsigned long node, int port, RT_TASK *task
 	return rt_receive_if(rt_find_asgn_stub(OWNER(node, task), 1), msg) ? task : 0;
 }
 
-static inline RT_TASK *RT_receive_until(unsigned long node, int port, RT_TASK *task, unsigned int *msg, RTIME time)
+static inline RT_TASK *RT_receive_until(unsigned long node, int port, RT_TASK *task, unsigned long *msg, RTIME time)
 {
 	if (!task || !node) {
 		return rt_receive_until(task, msg, nano2count(time));
@@ -369,7 +369,7 @@ static inline RT_TASK *RT_receive_until(unsigned long node, int port, RT_TASK *t
 	return rt_receive_until(rt_find_asgn_stub(OWNER(node, task), 1), msg, nano2count(time)) ? task : 0;
 }
 
-static inline RT_TASK *RT_receive_timed(unsigned long node, int port, RT_TASK *task, unsigned int *msg, RTIME delay)
+static inline RT_TASK *RT_receive_timed(unsigned long node, int port, RT_TASK *task, unsigned long *msg, RTIME delay)
 {
 	if (!task || !node) {
 		return rt_receive_timed(task, msg, nano2count(delay));
@@ -377,37 +377,37 @@ static inline RT_TASK *RT_receive_timed(unsigned long node, int port, RT_TASK *t
 	return rt_receive_timed(rt_find_asgn_stub(OWNER(node, task), 1), msg, nano2count(delay)) ? task : 0;
 }
 
-static inline RT_TASK *RT_rpc(unsigned long node, int port, RT_TASK *task, unsigned int msg, unsigned int *ret)
+static inline RT_TASK *RT_rpc(unsigned long node, int port, RT_TASK *task, unsigned long msg, unsigned long *ret)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; unsigned int *ret; } arg = { task, msg, ret };
+		struct { RT_TASK *task; unsigned long msg; unsigned long *ret; } arg = { task, msg, ret };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, RPCMSG, 0), UW1(3, 0), &arg, SIZARG, 1);
 	}
 	return rt_rpc(task, msg, ret);
 }
 
-static inline RT_TASK *RT_rpc_if(unsigned long node, int port, RT_TASK *task, unsigned int msg, unsigned int *ret)
+static inline RT_TASK *RT_rpc_if(unsigned long node, int port, RT_TASK *task, unsigned long msg, unsigned long *ret)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; unsigned int *ret; } arg = { task, msg };
+		struct { RT_TASK *task; unsigned long msg; unsigned long *ret; } arg = { task, msg };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, RPC_IF, 0), UW1(3, 0), &arg, SIZARG, 1);
 	}
 	return rt_rpc_if(task, msg, ret);
 }
 
-static inline RT_TASK *RT_rpc_until(unsigned long node, int port, RT_TASK *task, unsigned int msg, unsigned int *ret, RTIME time)
+static inline RT_TASK *RT_rpc_until(unsigned long node, int port, RT_TASK *task, unsigned long msg, unsigned long *ret, RTIME time)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; unsigned int *ret; RTIME time; } arg = { task, msg, ret, time };
+		struct { RT_TASK *task; unsigned long msg; unsigned long *ret; RTIME time; } arg = { task, msg, ret, time };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, RPC_UNTIL, 4), UW1(3, 0), &arg, SIZARG, 1);
 	}
 	return rt_rpc_until(task, msg, ret, nano2count(time));
 }
 
-static inline RT_TASK *RT_rpc_timed(unsigned long node, int port, RT_TASK *task, unsigned int msg, unsigned int *ret, RTIME delay)
+static inline RT_TASK *RT_rpc_timed(unsigned long node, int port, RT_TASK *task, unsigned long msg, unsigned long *ret, RTIME delay)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; unsigned int *ret; RTIME delay; } arg = { task, msg, ret, delay };
+		struct { RT_TASK *task; unsigned long msg; unsigned long *ret; RTIME delay; } arg = { task, msg, ret, delay };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, RPC_TIMED, 4), UW1(3, 0), &arg, SIZARG, 1);
 	}
 	return rt_rpc_timed(task, msg, ret, nano2count(delay));
@@ -422,7 +422,7 @@ static inline int RT_isrpc(unsigned long node, int port, RT_TASK *task)
         return rt_isrpc(task);
 }
 
-static inline RT_TASK *RT_return(unsigned long node, int port, RT_TASK *task, unsigned int result)
+static inline RT_TASK *RT_return(unsigned long node, int port, RT_TASK *task, unsigned long result)
 {
 	if (!task || !node) {
 		return rt_return(task, result);
@@ -430,7 +430,7 @@ static inline RT_TASK *RT_return(unsigned long node, int port, RT_TASK *task, un
 	return rt_return(rt_find_asgn_stub(OWNER(node, task), 1), result) ? task : 0;
 }
 
-static inline RT_TASK *RT_evdrp(unsigned long node, int port, RT_TASK *task, unsigned int *msg)
+static inline RT_TASK *RT_evdrp(unsigned long node, int port, RT_TASK *task, unsigned long *msg)
 {
 	if (!task || !node) {
 		return rt_evdrp(task, msg);
@@ -918,47 +918,47 @@ static inline int RT_sem_wait_timed(unsigned long node, int port, SEM *sem, RTIM
 
 #if CONFIG_RTAI_MSG
 
-static inline RT_TASK *RT_send(unsigned long node, int port, RT_TASK *task, unsigned int msg)
+static inline RT_TASK *RT_send(unsigned long node, int port, RT_TASK *task, unsigned long msg)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; } arg = { task, msg };
+		struct { RT_TASK *task; unsigned long msg; } arg = { task, msg };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, SENDMSG, 0), 0LL, &arg, SIZARG, 0 };
 		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	} 
 	return rt_send(task, msg);
 } 
 
-static inline RT_TASK *RT_send_if(unsigned long node, int port, RT_TASK *task, unsigned int msg)
+static inline RT_TASK *RT_send_if(unsigned long node, int port, RT_TASK *task, unsigned long msg)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; } arg = { task, msg };
+		struct { RT_TASK *task; unsigned long msg; } arg = { task, msg };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, SEND_IF, 0), 0LL, &arg, SIZARG, 0 };
 		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	} 
 	return rt_send_if(task, msg);
 } 
 
-static inline RT_TASK *RT_send_until(unsigned long node, int port, RT_TASK *task, unsigned int msg, RTIME time)
+static inline RT_TASK *RT_send_until(unsigned long node, int port, RT_TASK *task, unsigned long msg, RTIME time)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; RTIME time; } arg = { task, msg, time };
+		struct { RT_TASK *task; unsigned long msg; RTIME time; } arg = { task, msg, time };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, SEND_UNTIL, 3), 0LL, &arg, SIZARG, 0 };
 		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	} 
 	return rt_send_until(task, msg, nano2count(time));
 } 
 
-static inline RT_TASK *RT_send_timed(unsigned long node, int port, RT_TASK *task, unsigned int msg, RTIME delay)
+static inline RT_TASK *RT_send_timed(unsigned long node, int port, RT_TASK *task, unsigned long msg, RTIME delay)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; RTIME delay; } arg = { task, msg, delay };
+		struct { RT_TASK *task; unsigned long msg; RTIME delay; } arg = { task, msg, delay };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, SEND_TIMED, 3), 0LL, &arg, SIZARG, 0 };
 		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	} 
 	return rt_send_timed(task, msg, nano2count(delay));
 } 
 
-static inline RT_TASK *RT_evdrp(unsigned long node, int port, RT_TASK *task, unsigned int *msg)
+static inline RT_TASK *RT_evdrp(unsigned long node, int port, RT_TASK *task, void *msg)
 {
         if (!task || !node) {
 		return rt_evdrp(task, msg);
@@ -966,7 +966,7 @@ static inline RT_TASK *RT_evdrp(unsigned long node, int port, RT_TASK *task, uns
 	return rt_evdrp(rt_find_asgn_stub(OWNER(node, task), 1), msg) ? task : 0;
 } 
 
-static inline RT_TASK *RT_receive(unsigned long node, int port, RT_TASK *task, unsigned int *msg)
+static inline RT_TASK *RT_receive(unsigned long node, int port, RT_TASK *task, void *msg)
 {
         if (!task || !node) {
 		return rt_receive(task, msg);
@@ -974,7 +974,7 @@ static inline RT_TASK *RT_receive(unsigned long node, int port, RT_TASK *task, u
 	return rt_receive(rt_find_asgn_stub(OWNER(node, task), 1), msg) ? task : 0;
 } 
 
-static inline RT_TASK *RT_receive_if(unsigned long node, int port, RT_TASK *task, unsigned int *msg)
+static inline RT_TASK *RT_receive_if(unsigned long node, int port, RT_TASK *task, void *msg)
 {
         if (!task || !node) {
 		return rt_receive_if(task, msg);
@@ -982,7 +982,7 @@ static inline RT_TASK *RT_receive_if(unsigned long node, int port, RT_TASK *task
 	return rt_receive_if(rt_find_asgn_stub(OWNER(node, task), 1), msg) ? task : 0;
 } 
 
-static inline RT_TASK *RT_receive_until(unsigned long node, int port, RT_TASK *task, unsigned int *msg, RTIME time)
+static inline RT_TASK *RT_receive_until(unsigned long node, int port, RT_TASK *task, void *msg, RTIME time)
 {
         if (!task || !node) {
 		return rt_receive_until(task, msg, nano2count(time));
@@ -990,7 +990,7 @@ static inline RT_TASK *RT_receive_until(unsigned long node, int port, RT_TASK *t
 	return rt_receive_until(rt_find_asgn_stub(OWNER(node, task), 1), msg, nano2count(time)) ? task : 0;
 } 
 
-static inline RT_TASK *RT_receive_timed(unsigned long node, int port, RT_TASK *task, unsigned int *msg, RTIME delay)
+static inline RT_TASK *RT_receive_timed(unsigned long node, int port, RT_TASK *task, void *msg, RTIME delay)
 {
         if (!task || !node) {
 		return rt_receive_timed(task, msg, nano2count(delay));
@@ -998,40 +998,40 @@ static inline RT_TASK *RT_receive_timed(unsigned long node, int port, RT_TASK *t
 	return rt_receive_timed(rt_find_asgn_stub(OWNER(node, task), 1), msg, nano2count(delay)) ? task : 0;
 } 
 
-static inline RT_TASK *RT_rpc(unsigned long node, int port, RT_TASK *task, unsigned int msg, unsigned int *ret)
+static inline RT_TASK *RT_rpc(unsigned long node, int port, RT_TASK *task, unsigned long msg, void *ret)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; unsigned int *ret; } arg = { task, msg, ret };
+		struct { RT_TASK *task; unsigned long msg; void *ret; } arg = { task, msg, ret };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, RPCMSG, 0), UW1(3, 0), &arg, SIZARG, 0 };
 		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}
 	return rt_rpc(task, msg, ret);
 } 
 
-static inline RT_TASK *RT_rpc_if(unsigned long node, int port, RT_TASK *task, unsigned int msg, unsigned int *ret)
+static inline RT_TASK *RT_rpc_if(unsigned long node, int port, RT_TASK *task, unsigned long msg, void *ret)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; unsigned int *ret; } arg = { task, msg, ret };
+		struct { RT_TASK *task; unsigned long msg; void *ret; } arg = { task, msg, ret };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, RPC_IF, 0), UW1(3, 0), &arg, SIZARG, 0 };
 		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}
 	return rt_rpc_if(task, msg, ret);
 } 
 
-static inline RT_TASK *RT_rpc_until(unsigned long node, int port, RT_TASK *task, unsigned int msg, unsigned int *ret, RTIME time)
+static inline RT_TASK *RT_rpc_until(unsigned long node, int port, RT_TASK *task, unsigned long msg, void *ret, RTIME time)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; unsigned int *ret; RTIME time; } arg = { task, msg, ret, time };
+		struct { RT_TASK *task; unsigned long msg; void *ret; RTIME time; } arg = { task, msg, ret, time };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, RPC_UNTIL, 4), UW1(3, 0), &arg, SIZARG, 0 };
 		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}
 	return rt_rpc_until(task, msg, ret, nano2count(time));
 } 
 
-static inline RT_TASK *RT_rpc_timed(unsigned long node, int port, RT_TASK *task, unsigned int msg, unsigned int *ret, RTIME delay)
+static inline RT_TASK *RT_rpc_timed(unsigned long node, int port, RT_TASK *task, unsigned long msg, void *ret, RTIME delay)
 {
 	if (node) {
-		struct { RT_TASK *task; unsigned int msg; unsigned int *ret; RTIME delay; } arg = { task, msg, ret, delay };
+		struct { RT_TASK *task; unsigned long msg; void *ret; RTIME delay; } arg = { task, msg, ret, delay };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, RPC_TIMED, 4), UW1(3, 0), &arg, SIZARG, 0 };
 		return (RT_TASK *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}
@@ -1048,7 +1048,7 @@ static inline int RT_isrpc(unsigned long node, int port, RT_TASK *task)
 	return rt_isrpc(task);
 } 
 
-static inline RT_TASK *RT_return(unsigned long node, int port, RT_TASK *task, unsigned int result)
+static inline RT_TASK *RT_return(unsigned long node, int port, RT_TASK *task, unsigned long result)
 {
 
         if (!task || !node) {

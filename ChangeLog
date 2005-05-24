@@ -1,3 +1,13 @@
+2005-05-24  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_hal.immed: do not double marking in hard 
+	  real time, in cpu_realtime, the depth count is more than enough.
+	* base/arch/i386/hal/hal.immed: lock out Linux directly from 
+	  interrupt handlers; avoid dispatching irqs completely.
+	* base/sched/sched.immed: care of avoiding Linux locking when done
+	  in irq handler already, enable immediate sched on ipi without
+	  dispatching.
+
 2004-05-23  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/rtmain.c: Support for continous blocks

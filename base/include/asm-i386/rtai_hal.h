@@ -35,10 +35,10 @@
  *@{*/
 
 
-//#define STALL_RTAI_DOMAIN
-
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
+
+#define LOCKED_LINUX_IN_IRQ_HANDLER
 
 #include <asm/rtai_vectors.h>
 #include <rtai_types.h>
@@ -544,13 +544,9 @@ static inline void rt_switch_to_real_time(int cpuid)
 {
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].depth++) {
-#ifdef STALL_RTAI_DOMAIN
-		rtai_linux_context[cpuid].oldflags = xchg(&rtai_domain.cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
-#else
 		rtai_linux_context[cpuid].oldflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
-#endif
 		adp_cpu_current[cpuid] = &rtai_domain;
-		test_and_set_bit(cpuid, &rtai_cpu_realtime);
+//		test_and_set_bit(cpuid, &rtai_cpu_realtime);
 	}
 }
 
@@ -559,13 +555,9 @@ static inline void rt_switch_to_linux(int cpuid)
 	TRACE_RTAI_SWITCHTO_LINUX(cpuid);
 	if (rtai_linux_context[cpuid].depth) {
 		if (!--rtai_linux_context[cpuid].depth) {
-			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
+//			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
 			adp_cpu_current[cpuid] = adp_root;
-#ifdef STALL_RTAI_DOMAIN
-			rtai_domain.cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
-#else
 			adp_root->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
-#endif
 		}
 		return;
 	}

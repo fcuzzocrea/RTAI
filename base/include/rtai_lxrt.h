@@ -598,16 +598,16 @@ RTAI_PROTO(void *, rt_get_adr, (unsigned long name))
  * @return the identifier pointed by the address @a adr on success, 0 on
  * failure.
  */
-RTAI_PROTO(unsigned long,rt_get_name,(void *adr))
+RTAI_PROTO(unsigned long, rt_get_name, (void *adr))
 {
 	struct { void *adr; } arg = { adr };
 	return rtai_lxrt(BIDX, SIZARG, LXRT_GET_NAME, &arg).i[LOW];
 }
 
-RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
+RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
 {
         struct sched_param mysched;
-        struct { int name, priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, stack_size, max_msg_size, cpus_allowed };
+        struct { unsigned long name, priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, stack_size, max_msg_size, cpus_allowed };
 
         mysched.sched_priority = sched_get_priority_max(policy) - priority;
         if (mysched.sched_priority < 1 ) {
@@ -716,7 +716,7 @@ RTAI_PROTO(int, rt_linux_syscall_server_create, (RT_TASK * task))
 	return -1;
 }
 
-RTAI_PROTO(RT_TASK *, rt_thread_init, (int name, int priority, int max_msg_size, int policy, int cpus_allowed))
+RTAI_PROTO(RT_TASK *, rt_thread_init, (unsigned long name, int priority, int max_msg_size, int policy, int cpus_allowed))
 {
 	return rt_task_init_schmod(name, priority, 0, max_msg_size, policy, cpus_allowed);
 }
@@ -774,7 +774,7 @@ RTAI_PROTO(RT_TASK *, rt_thread_init, (int name, int priority, int max_msg_size,
  * @return On failure a 0 value is returned if it was not possible to setup the
  * buddy task or something using the same name was found.
  */
-RTAI_PROTO(RT_TASK *,rt_task_init,(int name, int priority, int stack_size, int max_msg_size))
+RTAI_PROTO(RT_TASK *,rt_task_init,(unsigned long name, int priority, int stack_size, int max_msg_size))
 {
 	return rt_task_init_schmod(name, priority, 0, max_msg_size, SCHED_FIFO, 0xFF);
 }

@@ -31,8 +31,6 @@
 #error "See http://download.gna.org/adeos/patches/v2.6/ppc/"
 #endif
 
-#define XNARCH_PASSTHROUGH_IRQS /*empty*/
-
 #define XNARCH_DEFAULT_TICK     1000000 /* ns, i.e. 1ms */
 #define XNARCH_HOST_TICK        (1000000000UL/HZ)
 

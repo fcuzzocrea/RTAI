@@ -33,13 +33,6 @@
 #error "See http://download.gna.org/adeos/patches/v2.6/i386/"
 #endif
 
-#ifdef CONFIG_SMP
-#define XNARCH_PASSTHROUGH_IRQS \
-case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR: \
-case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR: \
-case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
-#endif /* CONFIG_SMP */
-
 #define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
 #ifdef CONFIG_X86_LOCAL_APIC
 /* When the local APIC is enabled, we do not need to relay the host

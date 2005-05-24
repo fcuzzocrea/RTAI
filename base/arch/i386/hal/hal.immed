@@ -781,7 +781,6 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 void _rtai_sched_on_ipi_handler(void)
 {
 	unsigned long cpuid = rtai_cpuid();
-rt_printk("SCHED>?\n");
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
 	adp_root->irqs[SCHED_IPI].acknowledge(SCHED_IPI);

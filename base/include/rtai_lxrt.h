@@ -584,9 +584,9 @@ extern "C" {
  *
  * @return the address associated to @a name on success, 0 on failure
  */
-RTAI_PROTO(void *,rt_get_adr,(unsigned long name))
+RTAI_PROTO(void *, rt_get_adr, (unsigned long name))
 {
-	struct { int name; } arg = { name };
+	struct { unsigned long name; } arg = { name };
 	return rtai_lxrt(BIDX, SIZARG, LXRT_GET_ADR, &arg).v[LOW];
 } 
 

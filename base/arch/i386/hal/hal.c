@@ -1374,6 +1374,134 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 #define HINT_DIAG_MSG(x)
 #endif
 
+#ifdef UNWRAPPED_CATCH_EVENT
+static int rtai_trap_fault (unsigned event, void *evdata)
+{
+#ifdef HINT_DIAG_TRAPS
+	static unsigned long traps_in_hard_intr = 0;
+        do {
+                unsigned long flags;
+                rtai_save_flags_and_cli(flags);
+                if (!test_bit(RTAI_IFLAG, &flags)) {
+                        if (!test_and_set_bit(evinfo->event, &traps_in_hard_intr)) {
+                                HINT_DIAG_MSG(rt_printk("TRAP %d HAS INTERRUPT DISABLED (TRAPS PICTURE %lx).\n", evinfo->event, traps_in_hard_intr););
+                        }
+                }
+        } while (0);
+#endif
+
+	static const int trap2sig[] = {
+    		SIGFPE,         //  0 - Divide error
+		SIGTRAP,        //  1 - Debug
+		SIGSEGV,        //  2 - NMI (but we ignore these)
+		SIGTRAP,        //  3 - Software breakpoint
+		SIGSEGV,        //  4 - Overflow
+		SIGSEGV,        //  5 - Bounds
+		SIGILL,         //  6 - Invalid opcode
+		SIGSEGV,        //  7 - Device not available
+		SIGSEGV,        //  8 - Double fault
+		SIGFPE,         //  9 - Coprocessor segment overrun
+		SIGSEGV,        // 10 - Invalid TSS
+		SIGBUS,         // 11 - Segment not present
+		SIGBUS,         // 12 - Stack segment
+		SIGSEGV,        // 13 - General protection fault
+		SIGSEGV,        // 14 - Page fault
+		0,              // 15 - Spurious interrupt
+		SIGFPE,         // 16 - Coprocessor error
+		SIGBUS,         // 17 - Alignment check
+		SIGSEGV,        // 18 - Reserved
+		SIGFPE,         // 19 - XMM fault
+		0,0,0,0,0,0,0,0,0,0,0,0
+	};
+
+	TRACE_RTAI_TRAP_ENTRY(evinfo->event, 0);
+
+    /* Notes:
+
+    1) GPF needs to be propagated downstream whichever domain caused
+    it. This is required so that we don't spuriously raise a fatal
+    error when some fixup code is available to solve the error
+    condition. For instance, Linux always attempts to reload the %gs
+    segment register when switching a process in (__switch_to()),
+    regardless of its value. It is then up to Linux's GPF handling
+    code to search for a possible fixup whenever some exception
+    occurs. In the particular case of the %gs register, such an
+    exception could be raised for an exiting process if a preemption
+    occurs inside a short time window, after the process's LDT has
+    been dropped, but before the kernel lock is taken.  The same goes
+    for LXRT switching back a Linux thread in non-RT mode which
+    happens to have been preempted inside do_exit() after the MM
+    context has been dropped (thus the LDT too). In such a case, %gs
+    could be reloaded with what used to be the TLS descriptor of the
+    exiting thread, but unfortunately after the LDT itself has been
+    dropped. Since the default LDT is only 5 entries long, any attempt
+    to refer to an LDT-indexed descriptor above this value would cause
+    a GPF.
+    2) NMI is not pipelined by Adeos. */
+
+	if (!in_hrt_mode(rtai_cpuid())) {
+		goto propagate;
+	}
+
+	if (event == 7)	{ /* (FPU) Device not available. */
+	/* A trap must come from a well estabilished Linux task context; from
+	   anywhere else it is a bug to fix and not a hal.c problem */
+		struct task_struct *linux_task = current;
+
+	/* We need to keep this to avoid going through Linux in case users
+	   do not set the FPU, for hard real time operations, either by 
+	   calling the appropriate LXRT function or by doing any FP operation
+	   before going to hard mode. Notice that after proper initialization
+	   LXRT anticipate restoring the hard FP context at any task switch.
+	   So just the initialisation should be needed, but we do what Linux
+	   does in math_state_restore anyhow, to stay on the safe side. 
+	   In any case we inform the user. */
+		rtai_hw_cli(); /* in task context, so we can be preempted */
+		if (!linux_task->used_math) {
+			init_xfpu();	/* Does clts(). */
+			linux_task->used_math = 1;
+			rt_printk("\nUNEXPECTED FPU INITIALIZATION FROM PID = %d\n", linux_task->pid);
+		} else {	
+			rt_printk("\nUNEXPECTED FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
+		}
+		restore_task_fpenv(linux_task);	/* Does clts(). */
+		set_tsk_used_fpu(linux_task);
+		rtai_hw_sti();
+		goto endtrap;
+	}
+
+#if ADEOS_RELEASE_NUMBER >= 0x02060601
+	if (event == 14) {	/* Page fault. */
+		struct pt_regs *regs = evdata;
+		unsigned long address;
+
+	/* Handle RTAI-originated faults in kernel space caused by
+	   on-demand virtual memory mappings. We can specifically
+	   process this case through the Linux fault handler since we
+	   know that it is context-agnostic and does not wreck the
+	   determinism. Any other case would lead us to panicking. */
+
+		rtai_hw_cli();
+		__asm__("movl %%cr2,%0":"=r" (address));
+		if (address >= TASK_SIZE && !(regs->orig_eax & 5)) { /* i.e. trap error code. */
+			asmlinkage void do_page_fault(struct pt_regs *regs, unsigned long error_code);
+			do_page_fault(regs,regs->orig_eax);
+			goto endtrap;
+		}
+		 rtai_hw_sti();
+	}
+#endif /* ADEOS_RELEASE_NUMBER >= 0x02060601 */
+
+	if (rtai_trap_handler && rtai_trap_handler(event, trap2sig[event], (struct pt_regs *)evdata, NULL)) {
+		goto endtrap;
+	}
+propagate:
+	return 0;
+endtrap:
+	TRACE_RTAI_TRAP_EXIT();
+	return 1;
+}
+#else
 static void rtai_trap_fault (adevinfo_t *evinfo)
 {
 #ifdef HINT_DIAG_TRAPS
@@ -1499,6 +1627,7 @@ propagate:
 endtrap:
 	TRACE_RTAI_TRAP_EXIT();
 }
+#endif
 
 static void rtai_lsrq_dispatcher (unsigned virq)
 {
@@ -1817,7 +1946,7 @@ int __rtai_hal_init (void)
 	attr.priority = 2000000000;
 	adeos_register_domain(&rtai_domain, &attr);
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++) {
-		adeos_catch_event(trapnr, &rtai_trap_fault);
+		adeos_catch_event(trapnr, (void *)rtai_trap_fault);
 	}
 
 #ifdef CONFIG_SMP

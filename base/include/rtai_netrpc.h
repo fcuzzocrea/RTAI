@@ -133,7 +133,7 @@ static inline int rt_sync_net_rpc(unsigned long node, int port)
 static inline void *RT_get_adr(unsigned long node, int port, const char *sname)
 {
 	if (node) {
-		struct { int name; } arg = { nam2num(sname) };
+		struct { unsigned long name; } arg = { nam2num(sname) };
 		return (void *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, GET_ADR, 0), 0LL, &arg, SIZARG, 1);
 	}
 	return rt_get_adr(nam2num(sname));
@@ -751,7 +751,7 @@ static inline int rt_sync_net_rpc(unsigned long node, int port)
 static inline void *RT_get_adr(unsigned long node, int port, const char *sname)
 {
 	if (node) {
-		struct { int name; } arg = { nam2num(sname) };
+		struct { unsigned long name; } arg = { nam2num(sname) };
 		struct { unsigned long fun; long long type; void *args; int argsize; int space; } args = { PACKPORT(port, NET_RPC_EXT, GET_ADR, 0), 0LL, &arg,SIZARG, 0 };
 		return rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	} 

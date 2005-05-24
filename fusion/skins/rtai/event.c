@@ -44,12 +44,12 @@
 
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
-static ssize_t __event_read_proc (char *page,
-				char **start,
-				off_t off,
-				int count,
-				int *eof,
-				void *data)
+static int __event_read_proc (char *page,
+			      char **start,
+			      off_t off,
+			      int count,
+			      int *eof,
+			      void *data)
 {
     RT_EVENT *event = (RT_EVENT *)data;
     char *p = page;

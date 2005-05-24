@@ -291,11 +291,11 @@ int rthal_irq_enable (unsigned irq)
     if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
-    if (irq_desc[irq].handler == NULL ||
-	irq_desc[irq].handler->enable == NULL)
+    if (rthal_irq_descp(irq)->handler == NULL ||
+	rthal_irq_descp(irq)->handler->enable == NULL)
 	return -ENODEV;
 
-    irq_desc[irq].handler->enable(irq);
+    rthal_irq_descp(irq)->handler->enable(irq);
 
     return 0;
 }
@@ -333,11 +333,11 @@ int rthal_irq_disable (unsigned irq)
     if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
-    if (irq_desc[irq].handler == NULL ||
-	irq_desc[irq].handler->disable == NULL)
+    if (rthal_irq_descp(irq)->handler == NULL ||
+	rthal_irq_descp(irq)->handler->disable == NULL)
 	return -ENODEV;
 
-    irq_desc[irq].handler->disable(irq);
+    rthal_irq_descp(irq)->handler->disable(irq);
 
     return 0;
 }
@@ -395,15 +395,15 @@ int rthal_irq_host_request (unsigned irq,
     if (irq >= IPIPE_NR_XIRQS || !handler)
 	return -EINVAL;
 
-    spin_lock_irqsave(&irq_desc[irq].lock,flags);
+    spin_lock_irqsave(&rthal_irq_descp(irq)->lock,flags);
 
-    if (rthal_linux_irq[irq].count++ == 0 && irq_desc[irq].action)
+    if (rthal_linux_irq[irq].count++ == 0 && rthal_irq_descp(irq)->action)
 	{
-	rthal_linux_irq[irq].flags = irq_desc[irq].action->flags;
-	irq_desc[irq].action->flags |= SA_SHIRQ;
+	rthal_linux_irq[irq].flags = rthal_irq_descp(irq)->action->flags;
+	rthal_irq_descp(irq)->action->flags |= SA_SHIRQ;
 	}
 
-    spin_unlock_irqrestore(&irq_desc[irq].lock,flags);
+    spin_unlock_irqrestore(&rthal_irq_descp(irq)->lock,flags);
 
     return request_irq(irq,handler,SA_SHIRQ,name,dev_id);
 }
@@ -449,12 +449,12 @@ int rthal_irq_host_release (unsigned irq, void *dev_id)
 
     free_irq(irq,dev_id);
 
-    spin_lock_irqsave(&irq_desc[irq].lock,flags);
+    spin_lock_irqsave(&rthal_irq_descp(irq)->lock,flags);
 
-    if (--rthal_linux_irq[irq].count == 0 && irq_desc[irq].action)
-	irq_desc[irq].action->flags = rthal_linux_irq[irq].flags;
+    if (--rthal_linux_irq[irq].count == 0 && rthal_irq_descp(irq)->action)
+	rthal_irq_descp(irq)->action->flags = rthal_linux_irq[irq].flags;
 
-    spin_unlock_irqrestore(&irq_desc[irq].lock,flags);
+    spin_unlock_irqrestore(&rthal_irq_descp(irq)->lock,flags);
 
     return 0;
 }
@@ -822,12 +822,12 @@ int rthal_apc_schedule (int apc)
 
 struct proc_dir_entry *rthal_proc_root;
 
-static ssize_t hal_read_proc (char *page,
-			      char **start,
-			      off_t off,
-			      int count,
-			      int *eof,
-			      void *data)
+static int hal_read_proc (char *page,
+			  char **start,
+			  off_t off,
+			  int count,
+			  int *eof,
+			  void *data)
 {
     int len, major, minor, patchlevel;
 
@@ -858,12 +858,12 @@ static ssize_t hal_read_proc (char *page,
     return len;
 }
 
-static ssize_t compiler_read_proc (char *page,
-				   char **start,
-				   off_t off,
-				   int count,
-				   int *eof,
-				   void *data)
+static int compiler_read_proc (char *page,
+			       char **start,
+			       off_t off,
+			       int count,
+			       int *eof,
+			       void *data)
 {
     int len;
 

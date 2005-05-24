@@ -47,12 +47,12 @@
 
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
-static ssize_t __queue_read_proc (char *page,
-				  char **start,
-				  off_t off,
-				  int count,
-				  int *eof,
-				  void *data)
+static int __queue_read_proc (char *page,
+			      char **start,
+			      off_t off,
+			      int count,
+			      int *eof,
+			      void *data)
 {
     RT_QUEUE *q = (RT_QUEUE *)data;
     char *p = page;

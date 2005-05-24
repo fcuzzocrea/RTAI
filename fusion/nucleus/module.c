@@ -232,12 +232,12 @@ static int stat_read_proc (char *page,
     return len;
 }
 
-static ssize_t latency_read_proc (char *page,
-				  char **start,
-				  off_t off,
-				  int count,
-				  int *eof,
-				  void *data)
+static int latency_read_proc (char *page,
+			      char **start,
+			      off_t off,
+			      int count,
+			      int *eof,
+			      void *data)
 {
     int len;
 
@@ -276,12 +276,12 @@ static int latency_write_proc (struct file *file,
     return count;
 }
 
-static ssize_t version_read_proc (char *page,
-				  char **start,
-				  off_t off,
-				  int count,
-				  int *eof,
-				  void *data)
+static int version_read_proc (char *page,
+			      char **start,
+			      off_t off,
+			      int count,
+			      int *eof,
+			      void *data)
 {
     int len;
 
@@ -295,12 +295,12 @@ static ssize_t version_read_proc (char *page,
     return len;
 }
 
-static ssize_t timer_read_proc (char *page,
-				char **start,
-				off_t off,
-				int count,
-				int *eof,
-				void *data)
+static int timer_read_proc (char *page,
+			    char **start,
+			    off_t off,
+			    int count,
+			    int *eof,
+			    void *data)
 {
     xnticks_t jiffies = 0, tickval = 0;
     const char *status = "off";
@@ -427,12 +427,12 @@ void xnpod_delete_proc (void)
 
 #ifdef CONFIG_RTAI_OPT_FUSION
 
-static ssize_t iface_read_proc (char *page,
-				char **start,
-				off_t off,
-				int count,
-				int *eof,
-				void *data)
+static int iface_read_proc (char *page,
+			    char **start,
+			    off_t off,
+			    int count,
+			    int *eof,
+			    void *data)
 {
     struct xnskentry *iface = (struct xnskentry *)data;
     int len, refcnt = xnarch_atomic_get(&iface->refcnt);

@@ -48,12 +48,12 @@
 
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
-static ssize_t __heap_read_proc (char *page,
-				 char **start,
-				 off_t off,
-				 int count,
-				 int *eof,
-				 void *data)
+static int __heap_read_proc (char *page,
+			     char **start,
+			     off_t off,
+			     int count,
+			     int *eof,
+			     void *data)
 {
     RT_HEAP *heap = (RT_HEAP *)data;
     char *p = page;
@@ -80,7 +80,7 @@ static ssize_t __heap_read_proc (char *page,
 	    xnthread_t *sleeper = link2thread(holder,plink);
 	    RT_TASK *task = thread2rtask(sleeper);
 	    size_t size = task->wait_args.heap.size;
-	    p += sprintf(p,"+%s (size=%d)\n",xnthread_name(sleeper),size);
+	    p += sprintf(p,"+%s (size=%zd)\n",xnthread_name(sleeper),size);
 	    holder = nextpq(xnsynch_wait_queue(&heap->synch_base),holder);
 	    }
 	}

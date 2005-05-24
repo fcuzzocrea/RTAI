@@ -49,12 +49,12 @@
 
 #ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
 
-static ssize_t __mutex_read_proc (char *page,
-				  char **start,
-				  off_t off,
-				  int count,
-				  int *eof,
-				  void *data)
+static int __mutex_read_proc (char *page,
+			      char **start,
+			      off_t off,
+			      int count,
+			      int *eof,
+			      void *data)
 {
     RT_MUTEX *mutex = (RT_MUTEX *)data;
     char *p = page;

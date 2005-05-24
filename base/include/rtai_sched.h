@@ -111,7 +111,7 @@ typedef struct rt_task_struct {
     struct rt_queue *blocked_on;
     struct rt_queue msg_queue;
     int tid;	/* trace ID */
-    unsigned msg;
+    unsigned long msg;
     struct rt_queue ret_queue;
     void (*signal)(void);
     FPU_ENV fpu_reg __attribute__ ((__aligned__ (L1_CACHE_BYTES)));

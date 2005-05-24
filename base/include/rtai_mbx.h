@@ -156,9 +156,9 @@ int rt_named_mbx_delete(struct rt_mailbox *mbx);
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_PROTO(void *,rt_typed_mbx_init,(int name, int size, int qtype))
+RTAI_PROTO(void *, rt_typed_mbx_init, (unsigned long name, int size, int qtype))
 {
-	struct { int name; int size; int qtype; } arg = { name, size, qtype };
+	struct { unsigned long name; int size; int qtype; } arg = { name, size, qtype };
 	return rtai_lxrt(BIDX, SIZARG, LXRT_MBX_INIT, &arg).v[LOW];
 }
 

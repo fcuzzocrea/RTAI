@@ -229,9 +229,9 @@ static inline int rt_cond_timedwait(CND *cnd, SEM *mtx, RTIME time) {
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_PROTO(SEM *, rt_typed_sem_init,(int name, int value, int type))
+RTAI_PROTO(SEM *, rt_typed_sem_init,(unsigned long name, int value, int type))
 {
-	struct { int name, value, type; } arg = { name, value, type };
+	struct { unsigned long name, value, type; } arg = { name, value, type };
 	return (SEM *)rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).v[LOW];
 }
 

@@ -319,7 +319,6 @@ int main (int ac, char **av)
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
-    pthread_attr_setstacksize(&thattr,PTHREAD_STACK_MIN * 2);
     pthread_create(&cruncher_thid,&thattr,&cruncher_thread,NULL);
     pthread_create(&sampler_thid,&thattr,&sampler_thread,NULL);
 

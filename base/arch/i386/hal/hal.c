@@ -39,6 +39,7 @@
  *@{*/
 
 
+#define DONT_DISPATCH_CORE_IRQS  1
 #define CHECK_STACK_IN_IRQ  0
 
 #include <linux/version.h>
@@ -741,6 +742,191 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 
 #endif
 
+#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+#define RTAI_SCHED_ISR_LOCK() \
+	do { \
+		if (!rt_scheduling[cpuid].locked++) { \
+			rt_scheduling[cpuid].rqsted = 0; \
+		} \
+	} while (0)
+#define RTAI_SCHED_ISR_UNLOCK() \
+	do { \
+		rtai_cli(); \
+		if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
+			if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook) { \
+				rtai_isr_hook(cpuid); \
+        		} \
+		} \
+	} while (0)
+#else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
+#define RTAI_SCHED_ISR_LOCK() \
+	do {             } while (0)
+#define RTAI_SCHED_ISR_UNLOCK() \
+	do { rtai_cli(); } while (0)
+#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
+#define ADEOS_TICK_REGS __adeos_tick_regs[cpuid]
+#else
+#define ADEOS_TICK_REGS __adeos_tick_regs
+#endif
+
+#if DONT_DISPATCH_CORE_IRQS
+
+#define SET_INTR_GATE(vector, handler, save) \
+	do { save = rtai_set_gate_vector(vector, 14, 0, handler); } while (0)
+#define RESET_INTR_GATE(vector, save) \
+	do { rtai_reset_gate_vector(vector, save); } while (0)
+
+void _rtai_sched_on_ipi_handler(void)
+{
+	unsigned long cpuid = rtai_cpuid();
+rt_printk("SCHED>?\n");
+	rt_switch_to_real_time(cpuid);
+	RTAI_SCHED_ISR_LOCK();
+	adp_root->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
+	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
+	RTAI_SCHED_ISR_UNLOCK();
+	rt_switch_to_linux(cpuid);
+}
+
+void rtai_sched_on_ipi_handler (void);
+	__asm__ ( \
+        "\n" __ALIGN_STR"\n\t" \
+        SYMBOL_NAME_STR(rtai_sched_on_ipi_handler) ":\n\t" \
+	"cld\n\t" \
+        "pushl %es\n\t" \
+        "pushl %ds\n\t" \
+        "pushl %eax\n\t" \
+        "pushl %ebp\n\t" \
+        "pushl %edx\n\t" \
+        "pushl %ecx\n\t" \
+	__LXRT_GET_DATASEG(ecx) \
+        "movl %ecx, %ds\n\t" \
+        "movl %ecx, %es\n\t" \
+        "call "SYMBOL_NAME_STR(_rtai_sched_on_ipi_handler)"\n\t" \
+        "popl %ecx\n\t" \
+        "popl %edx\n\t" \
+        "popl %ebp\n\t" \
+        "popl %eax\n\t" \
+        "popl %ds\n\t" \
+        "popl %es\n\t" \
+        "iret");
+
+static struct desc_struct rtai_sched_on_ipi_sysvec;
+
+void rt_set_sched_ipi_gate(void)
+{
+	SET_INTR_GATE(SCHED_VECTOR, rtai_sched_on_ipi_handler, rtai_sched_on_ipi_sysvec);
+}
+
+void rt_reset_sched_ipi_gate(void)
+{
+	RESET_INTR_GATE(SCHED_VECTOR, rtai_sched_on_ipi_sysvec);
+}
+
+void _rtai_apic_timer_handler(void)
+{
+	unsigned long cpuid = rtai_cpuid();
+	rt_switch_to_real_time(cpuid);
+	RTAI_SCHED_ISR_LOCK();
+	adp_root->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
+	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
+	RTAI_SCHED_ISR_UNLOCK();
+	rt_switch_to_linux(cpuid);
+}
+
+void rtai_apic_timer_handler (void);
+	__asm__ ( \
+        "\n" __ALIGN_STR"\n\t" \
+        SYMBOL_NAME_STR(rtai_apic_timer_handler) ":\n\t" \
+	"cld\n\t" \
+        "pushl %es\n\t" \
+        "pushl %ds\n\t" \
+        "pushl %eax\n\t" \
+        "pushl %ebp\n\t" \
+        "pushl %edx\n\t" \
+        "pushl %ecx\n\t" \
+	__LXRT_GET_DATASEG(ecx) \
+        "movl %ecx, %ds\n\t" \
+        "movl %ecx, %es\n\t" \
+        "call "SYMBOL_NAME_STR(_rtai_apic_timer_handler)"\n\t" \
+        "popl %ecx\n\t" \
+        "popl %edx\n\t" \
+        "popl %ebp\n\t" \
+        "popl %eax\n\t" \
+        "popl %ds\n\t" \
+        "popl %es\n\t" \
+        "iret");
+
+static struct desc_struct rtai_apic_timer_sysvec;
+
+/* this can be a prototy for the cse of a handler pending something for Linux */
+void _rtai_8254_timer_handler(long ecx, long edx, long ebp, long eax, long ds, long es, long eip, long xcs, long eflags)
+{
+	unsigned long cpuid = rtai_cpuid();
+	rt_switch_to_real_time(cpuid);
+	RTAI_SCHED_ISR_LOCK();
+	adp_root->irqs[RTAI_TIMER_8254_IRQ].acknowledge(RTAI_TIMER_8254_IRQ);
+	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
+	RTAI_SCHED_ISR_UNLOCK();
+	rt_switch_to_linux(cpuid);
+	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
+		rtai_sti();
+/* specific for the Linux tick, do not cre in a generic handler */
+		ADEOS_TICK_REGS.eflags = eflags;
+		ADEOS_TICK_REGS.eip    = eip;
+		ADEOS_TICK_REGS.xcs    = xcs;
+#if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
+		ADEOS_TICK_REGS.ebp    = ebp;
+#endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
+/* end of specific for the Linux tick, do not cre in a generic handler */
+#ifdef STALL_RTAI_DOMAIN
+		adeos_unstall_pipeline_from(&rtai_domain);
+#else
+		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
+			rtai_cli();
+			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
+		}
+#endif
+        }
+}
+
+void rtai_8254_timer_handler (void);
+	__asm__ ( \
+        "\n" __ALIGN_STR"\n\t" \
+        SYMBOL_NAME_STR(rtai_8254_timer_handler) ":\n\t" \
+	"cld\n\t" \
+        "pushl %es\n\t" \
+        "pushl %ds\n\t" \
+        "pushl %eax\n\t" \
+        "pushl %ebp\n\t" \
+        "pushl %edx\n\t" \
+        "pushl %ecx\n\t" \
+	__LXRT_GET_DATASEG(ecx) \
+        "movl %ecx, %ds\n\t" \
+        "movl %ecx, %es\n\t" \
+        "call "SYMBOL_NAME_STR(_rtai_8254_timer_handler)"\n\t" \
+        "popl %ecx\n\t" \
+        "popl %edx\n\t" \
+        "popl %ebp\n\t" \
+        "popl %eax\n\t" \
+        "popl %ds\n\t" \
+        "popl %es\n\t" \
+        "iret");
+static struct desc_struct rtai_8254_timer_sysvec;
+
+#else
+
+#define SET_INTR_GATE(vector, handler, save) 
+#define RESET_INTR_GATE(vector, save)
+
+void rt_set_sched_ipi_gate(void) { }
+void rt_reset_sched_ipi_gate(void) { }
+
+#endif
+
+
 #ifdef CONFIG_SMP
 
 static unsigned long rtai_old_irq_affinity[IPIPE_NR_XIRQS];
@@ -845,6 +1031,8 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 
 	rt_release_irq(RTAI_APIC_TIMER_IPI);
 	rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
+	SET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_handler, rtai_apic_timer_sysvec);
+
 	REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 
 	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
@@ -872,6 +1060,7 @@ void rt_free_apic_timers(void)
 	flags = rtai_critical_enter(rtai_critical_sync);
 	rtai_sync_level = 3;
 	rtai_setup_periodic_apic(RTAI_APIC_ICOUNT,LOCAL_TIMER_VECTOR);
+	RESET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_sysvec);
 	rt_release_irq(RTAI_APIC_TIMER_IPI);
 	rtai_critical_exit(flags);
 }
@@ -1017,6 +1206,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 		if (use_apic) {
 			rt_release_irq(RTAI_APIC_TIMER_IPI);
 			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
+			SET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_handler, rtai_apic_timer_sysvec);
 			rtai_setup_periodic_apic(tick,RTAI_APIC_TIMER_VECTOR);
 			retval = REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		} else {
@@ -1025,6 +1215,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(tick >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
 		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
+			SET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	} else {
 		rt_times.linux_tick = rtai_imuldiv(LATCH,rtai_tunables.cpu_freq,RTAI_FREQ_8254);
@@ -1035,6 +1226,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 		if (use_apic) {
 			rt_release_irq(RTAI_APIC_TIMER_IPI);
 			rt_request_irq(RTAI_APIC_TIMER_IPI, (rt_irq_handler_t)handler, NULL, 0);
+			SET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_handler, rtai_apic_timer_sysvec);
 			rtai_setup_oneshot_apic(RTAI_APIC_ICOUNT,RTAI_APIC_TIMER_VECTOR);
     			retval = REQUEST_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		} else {
@@ -1043,6 +1235,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(LATCH >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
 			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
+			SET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	}
 	rtai_restore_flags(flags);
@@ -1065,11 +1258,14 @@ void rt_free_timer (void)
 
 		FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		rtai_setup_periodic_apic(RTAI_APIC_ICOUNT, LOCAL_TIMER_VECTOR);
+		RESET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_sysvec);
+		rt_release_irq(RTAI_APIC_TIMER_IPI);
 		used_apic = 0;
 	} else {
 		outb(0x34, 0x43);
 		outb(LATCH & 0xff, 0x40);
 		outb(LATCH >> 8,0x40);
+		RESET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_sysvec);
 		rt_release_irq(RTAI_TIMER_8254_IRQ);
 	}
 	rtai_restore_flags(flags);
@@ -1115,29 +1311,6 @@ void rt_setup_8254_tsc (void)
 	rtai_critical_exit(flags);
 }
 
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-#define RTAI_SCHED_ISR_LOCK() \
-	do { \
-		if (!rt_scheduling[cpuid].locked++) { \
-			rt_scheduling[cpuid].rqsted = 0; \
-		} \
-	} while (0)
-#define RTAI_SCHED_ISR_UNLOCK() \
-	do { \
-		rtai_cli(); \
-		if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
-			if (rt_scheduling[cpuid].rqsted > 0 && rtai_isr_hook) { \
-				rtai_isr_hook(cpuid); \
-        		} \
-		} \
-	} while (0)
-#else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
-#define RTAI_SCHED_ISR_LOCK() \
-	do {             } while (0)
-#define RTAI_SCHED_ISR_UNLOCK() \
-	do { rtai_cli(); } while (0)
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 #define CHECK_KERCTX() \
 	if (CHECK_STACK_IN_IRQ) { \
@@ -1151,29 +1324,19 @@ void rt_setup_8254_tsc (void)
 #define CHECK_KERCTX();
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
-#define ADEOS_TICK_REGS __adeos_tick_regs[cpuid]
-#else
-#define ADEOS_TICK_REGS __adeos_tick_regs
-#endif
-
 static int rtai_hirq_dispatcher (struct pt_regs *regs)
 {
-	unsigned long pflags, cpuid, irq = regs->orig_eax & 0xFF;
+	unsigned long cpuid, irq = regs->orig_eax & 0xFF;
 
 	CHECK_KERCTX();
 
-	pflags = xchg(&adp_root->cpudata[cpuid = rtai_cpuid()].status, (1 << IPIPE_STALL_FLAG));
+	rt_switch_to_real_time(cpuid = rtai_cpuid());
 	adp_root->irqs[irq].acknowledge(irq); mb();
-#ifdef STALL_RTAI_DOMAIN
-	adp_root->cpudata[cpuid].status = pflags;
-	pflags = xchg(&rtai_domain.cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
-#endif
 	if (rtai_realtime_irq[irq].handler) {
 		RTAI_SCHED_ISR_LOCK();
 		if (rtai_realtime_irq[irq].retmode && rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie)) {
 			RTAI_SCHED_ISR_UNLOCK();
-			adp_root->cpudata[cpuid].status = pflags;
+			rt_switch_to_linux(cpuid);
 			return 0;
                 } else {
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
@@ -1182,13 +1345,9 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 	} else {
 		adeos_pend_uncond(irq, cpuid);
 	}
-#ifdef STALL_RTAI_DOMAIN
-	rtai_domain.cpudata[cpuid].status = pflags;
-#else
-	adp_root->cpudata[cpuid].status = pflags;
-#endif
+	rt_switch_to_linux(cpuid);
 
-	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &pflags)) {
+	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 		rtai_sti();
 		if (irq == __adeos_tick_irq) {
 			ADEOS_TICK_REGS.eflags = regs->eflags;
@@ -1198,14 +1357,10 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 			ADEOS_TICK_REGS.ebp    = regs->ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
         	}
-#ifdef STALL_RTAI_DOMAIN
-		adeos_unstall_pipeline_from(&rtai_domain);
-#else
 		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
 			rtai_cli();
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
-#endif
 		return 1;
         }
 	return 0;
@@ -1390,11 +1545,7 @@ asmlinkage void rtai_syscall_dispatcher (long bx, unsigned long cx_args, long lo
 #endif
 	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(ax_srq, cx_args) : rtai_usrq_dispatcher(ax_srq, cx_args);
 	if (!in_hrt_mode(rtai_cpuid())) {
-#ifdef STALL_RTAI_DOMAIN
-		adeos_unstall_pipeline_from(&rtai_domain);
-#else
 		local_irq_enable();
-#endif
 	}
 }
 
@@ -1402,6 +1553,7 @@ void rtai_uvec_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
         SYMBOL_NAME_STR(rtai_uvec_handler) ":\n\t" \
+	"pushl $0\n\t" \
 	"cld\n\t" \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
@@ -1425,6 +1577,7 @@ void rtai_uvec_handler (void);
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+	"addl $4, %esp\n\t" \
         "iret");
 
 struct desc_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler)
@@ -1866,4 +2019,6 @@ EXPORT_SYMBOL(rtai_reset_gate_vector);
 EXPORT_SYMBOL(rtai_lxrt_dispatcher);
 EXPORT_SYMBOL(rt_scheduling);
 EXPORT_SYMBOL(adeos_pended);
+EXPORT_SYMBOL(rt_set_sched_ipi_gate);
+EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
 /*@}*/

@@ -143,9 +143,27 @@ static struct { int srq; volatile unsigned long in, out; void *mp[MAX_FRESTK_SRQ
 
 #ifdef CONFIG_SMP
 
-#define rt_request_sched_ipi()  rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0)
+extern void rt_set_sched_ipi_gate(void);
+extern void rt_reset_sched_ipi_gate(void);
+static void rt_schedule_on_schedule_ipi(void);
 
-#define rt_free_sched_ipi()     rt_release_irq(SCHED_IPI)
+static inline int rt_request_sched_ipi(void)
+{
+        int retval;
+        retval = rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0);
+        rt_set_sched_ipi_gate();
+        return retval;
+}
+
+#define rt_free_sched_ipi() \
+do { \
+        rt_release_irq(SCHED_IPI); \
+        rt_reset_sched_ipi_gate(); \
+} while (0)
+
+//#define rt_request_sched_ipi()  rt_request_irq(SCHED_IPI, (void *)rt_schedule_on_schedule_ipi, NULL, 0)
+
+//#define rt_free_sched_ipi()     rt_release_irq(SCHED_IPI)
 
 #define sched_get_global_lock(cpuid) \
 do { \
@@ -546,8 +564,15 @@ do { \
 } while (0)
 
 #define LOCK_LINUX(cpuid)    do { rt_switch_to_real_time(cpuid); } while (0)
-
 #define UNLOCK_LINUX(cpuid)  do { rt_switch_to_linux(cpuid);     } while (0)
+
+#ifdef LOCKED_LINUX_IN_IRQ_HANDLER
+#define LOCK_LINUX_IN_IRQ(cpuid)
+#define UNLOCK_LINUX_IN_IRQ(cpuid)
+#else
+#define LOCK_LINUX_IN_IRQ(cpuid)    LOCK_LINUX(cpuid)    
+#define UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
+#endif
 
 #define EXECTIME
 #ifdef EXECTIME
@@ -725,7 +750,7 @@ static void rt_schedule_on_schedule_ipi(void)
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
 			if (!rt_current->is_hard) {
-				LOCK_LINUX(cpuid);
+				LOCK_LINUX_IN_IRQ(cpuid);
 				rt_linux_task.lnxtsk = prev = current;
 			} else {
 				prev = rt_current->lnxtsk;
@@ -737,7 +762,7 @@ static void rt_schedule_on_schedule_ipi(void)
                         	rt_current->signal();
                 	}
 			if (!rt_current->is_hard) {
-				UNLOCK_LINUX(cpuid);
+				UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (prev->used_math) {
 				restore_fpu(prev);
 			}
@@ -1124,7 +1149,7 @@ static void rt_timer_handler(void)
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
 			if (!rt_current->is_hard) {
-				LOCK_LINUX(cpuid);
+				LOCK_LINUX_IN_IRQ(cpuid);
 				rt_linux_task.lnxtsk = prev = current;
 			} else {
 				prev = rt_current->lnxtsk;
@@ -1136,7 +1161,7 @@ static void rt_timer_handler(void)
         	       	        rt_current->signal();
                 	}
 			if (!rt_current->is_hard) {
-				UNLOCK_LINUX(cpuid);
+				UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (prev->used_math) {
 				restore_fpu(prev);
 			}

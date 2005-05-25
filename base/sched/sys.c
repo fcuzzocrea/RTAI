@@ -122,12 +122,12 @@ static inline int GENERIC_DELETE(int index, void *object)
 #define lxrt_mbx_delete(mbx)        GENERIC_DELETE(MBX_DELETE, mbx)
 #define lxrt_named_mbx_delete(mbx)  GENERIC_DELETE(NAMED_MBX_DELETE, mbx)
 
-struct fun_args { int a0; int a1; int a2; int a3; int a4; int a5; int a6; int a7; int a8; int a9; long long (*fun)(int, ...); };
+struct fun_args { long a0; long a1; long a2; long a3; long a4; long a5; long a6; long a7; long a8; long a9; long long (*fun)(long, ...); };
 
 static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long long type, RT_TASK *rt_task, int net_rpc)
 {
 	int wsize, w2size;
-	int *wmsg_adr, *w2msg_adr;
+	long *wmsg_adr, *w2msg_adr;
 	struct fun_args *funarg;
 
 	memcpy(funarg = (void *)rt_task->fun_args, arg, narg);
@@ -144,17 +144,17 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
 	wmsg_adr = w2msg_adr = 0;
 	if (NEED_TO_RW(type)) {
 		int msg_size, rsize, r2size;
-		int *fun_args;
+		long *fun_args;
 		
-		fun_args = (net_rpc ? (int *)rt_task->fun_args[4] : rt_task->fun_args) - 1;
+		fun_args = (net_rpc ? (long *)rt_task->fun_args[4] : rt_task->fun_args) - 1;
 		rsize = r2size = 0;
 		if( NEED_TO_R(type)) {			
 			rsize = USP_RSZ1(type);
-			rsize = rsize ? *(fun_args + rsize) : (USP_RSZ1LL(type) ? sizeof(long long) : sizeof(int));
+			rsize = rsize ? *(fun_args + rsize) : (USP_RSZ1LL(type) ? sizeof(long long) : sizeof(long));
 		}
 		if (NEED_TO_W(type)) {
 			wsize = USP_WSZ1(type);
-			wsize = wsize ? *(fun_args + wsize) : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(int));
+			wsize = wsize ? *(fun_args + wsize) : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(long));
 		}
 		if ((msg_size = rsize > wsize ? rsize : wsize) > 0) {
 			if (msg_size > rt_task->max_msg_size[0]) {
@@ -163,19 +163,19 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
 				rt_task->msg_buf[0] = rt_malloc(rt_task->max_msg_size[0]);
 			}
 			if (rsize > 0) {			
-				int *buf_arg, *rmsg_adr;
+				long *buf_arg, *rmsg_adr;
 				buf_arg = fun_args + USP_RBF1(type);
-				rmsg_adr = (int *)(*buf_arg);
-				*(buf_arg) = (int)rt_task->msg_buf[0];
+				rmsg_adr = (long *)(*buf_arg);
+				*(buf_arg) = (long)rt_task->msg_buf[0];
 				if (rmsg_adr) {
 					copy_from_user(rt_task->msg_buf[0], rmsg_adr, rsize);
 				}
 			}
 			if (wsize > 0) {
-				int *buf_arg;
+				long *buf_arg;
 				buf_arg = fun_args + USP_WBF1(type);
-				wmsg_adr = (int *)(*buf_arg);
-				*(buf_arg) = (int)rt_task->msg_buf[0];
+				wmsg_adr = (long *)(*buf_arg);
+				*(buf_arg) = (long)rt_task->msg_buf[0];
 			}
 		}
 /*
@@ -183,11 +183,11 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
  */
 		if (NEED_TO_R2ND(type)) {
 			r2size = USP_RSZ2(type);
-			r2size = r2size ? *(fun_args + r2size) : (USP_RSZ2LL(type) ? sizeof(long long) : sizeof(int));
+			r2size = r2size ? *(fun_args + r2size) : (USP_RSZ2LL(type) ? sizeof(long long) : sizeof(long));
 		}
 		if (NEED_TO_W2ND(type)) {
 			w2size = USP_WSZ2(type);
-			w2size = w2size ? *(fun_args + w2size) : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(int));
+			w2size = w2size ? *(fun_args + w2size) : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(long));
 		}
 		if ((msg_size = r2size > w2size ? r2size : w2size) > 0) {
 			if (msg_size > rt_task->max_msg_size[1]) {
@@ -196,19 +196,19 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
 				rt_task->msg_buf[1] = rt_malloc(rt_task->max_msg_size[1]);
 			}
 			if (r2size > 0) {
-				int *buf_arg, *r2msg_adr;
+				long *buf_arg, *r2msg_adr;
 				buf_arg = fun_args + USP_RBF2(type);
-				r2msg_adr = (int *)(*buf_arg);
-				*(buf_arg) = (int)rt_task->msg_buf[1];
+				r2msg_adr = (long *)(*buf_arg);
+				*(buf_arg) = (long)rt_task->msg_buf[1];
 				if (r2msg_adr) {
 					copy_from_user(rt_task->msg_buf[1], r2msg_adr, r2size);
        				}
        			}
 			if (w2size > 0) {
-				int *buf_arg;
+				long *buf_arg;
 				buf_arg = fun_args + USP_WBF2(type);
-				w2msg_adr = (int *)(*buf_arg);
-       		        	*(buf_arg) = (int)rt_task->msg_buf[1];
+				w2msg_adr = (long *)(*buf_arg);
+       		        	*(buf_arg) = (long)rt_task->msg_buf[1];
        			}
 		}
 	}
@@ -216,7 +216,7 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
  * End of messaging mess.
  */
 	if (rt_task->is_hard > 0) {
-		rt_task->retval = ((long long (*)(int, ...))fun)(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
+		rt_task->retval = ((long long (*)(long, ...))fun)(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
 		if (!rt_task->is_hard) {
 extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
 			rt_schedule_soft_tail(rt_task, hard_cpu_id());
@@ -262,7 +262,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	    cpus_allowed = 0;
 	    }
 	    if (!set_rtext(rt_task, prio, 0, 0, cpus_allowed, 0)) {
-	        rt_task->fun_args = (int *)((struct fun_args *)(rt_task + 1));
+	        rt_task->fun_args = (long *)((struct fun_args *)(rt_task + 1));
 		rt_task->msg_buf[0] = msg_buf;
 		rt_task->msg_buf[1] = msg_buf + max_msg_size;
 		rt_task->max_msg_size[0] =
@@ -375,7 +375,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case LXRT_TASK_INIT: {
-			struct arg { int name, prio, stack_size, max_msg_size, cpus_allowed; };
+			struct arg { unsigned long name; int prio, stack_size, max_msg_size, cpus_allowed; };
 			return (unsigned long) __task_init(arg0.name, larg->prio, larg->stack_size, larg->max_msg_size, larg->cpus_allowed);
 		}
 
@@ -388,7 +388,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 				return 0;
 			}
 			if ((arg0.sem = rt_malloc(sizeof(SEM)))) {
-				struct arg { int name; int cnt; int typ; };
+				struct arg { unsigned long name; int cnt; int typ; };
 				lxrt_typed_sem_init(arg0.sem, larg->cnt, larg->typ);
 				if (rt_register(larg->name, arg0.sem, IS_SEM, current)) {
 					return arg0.name;
@@ -412,7 +412,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 				return 0;
 			}
 			if ((arg0.mbx = rt_malloc(sizeof(MBX)))) {
-				struct arg { int name; int size; int qtype; };
+				struct arg { unsigned long name; int size; int qtype; };
 				if (lxrt_typed_mbx_init(arg0.mbx, larg->size, larg->qtype) < 0) {
 					rt_free(arg0.mbx);
 					return 0;
@@ -439,7 +439,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 				return 0;
 			}
 			if ((arg0.rwl = rt_malloc(sizeof(RWL)))) {
-				struct arg { int name; };
+				struct arg { unsigned long name; };
 				lxrt_rwl_init(arg0.rwl);
 				if (rt_register(larg->name, arg0.rwl, IS_SEM, current)) {
 					return arg0.name;
@@ -463,7 +463,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 				return 0;
 			}
 			if ((arg0.spl = rt_malloc(sizeof(SPL)))) {
-				struct arg { int name; };
+				struct arg { unsigned long name; };
 				lxrt_spl_init(arg0.spl);
 				if (rt_register(larg->name, arg0.spl, IS_SEM, current)) {
 					return arg0.name;

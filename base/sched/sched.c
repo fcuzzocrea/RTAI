@@ -1617,7 +1617,7 @@ void rt_deregister_watchdog(RT_TASK *wd, int cpuid)
 
 static RT_TRAP_HANDLER lxrt_old_trap_handler;
 
-struct fun_args { int a0; int a1; int a2; int a3; int a4; int a5; int a6; int a7; int a8; int a9; long long (*fun)(int, ...); };
+struct fun_args { long a0; long a1; long a2; long a3; long a4; long a5; long a6; long a7; long a8; long a9; long long (*fun)(long, ...); };
 
 static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 {

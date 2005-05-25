@@ -265,7 +265,7 @@ RTAI_PROTO(int, rt_sem_delete,(SEM *sem))
 
 RTAI_PROTO(SEM *, rt_typed_named_sem_init,(const char *name, int value, int type))
 {
-	struct { unsigned long name; int value, type; } arg = { nam2num(name), value, type };
+	struct { unsigned long name; long value, type; } arg = { nam2num(name), value, type };
 	return (SEM *)rtai_lxrt(BIDX, SIZARG, NAMED_SEM_INIT, &arg).v[LOW];
 }
 

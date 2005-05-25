@@ -123,7 +123,8 @@ typedef struct rt_task_struct {
     struct rt_task_struct *rnext;
 
     /* Appended for calls from LINUX. */
-    int *fun_args, *bstack;
+    long *fun_args;
+    int *bstack;
     struct task_struct *lnxtsk;
     long long retval;
     char *msg_buf[2];

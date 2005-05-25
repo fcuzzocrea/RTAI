@@ -5223,7 +5223,7 @@ diff -uNrp linux-2.6.9/kernel/Makefile linux-2.6.9-adeos/kernel/Makefile
 diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 --- linux-2.6.9/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.9-adeos/kernel/adeos.c	2005-03-25 18:14:05.000000000 +0100
-@@ -0,0 +1,818 @@
+@@ -0,0 +1,808 @@
 +/*
 + *   linux/kernel/adeos.c
 + *
@@ -5355,12 +5355,7 @@ diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 +{
 +    extern void *adeos_extern_irq_handler;
 +    if (adeos_extern_irq_handler) {
-+        adevinfo_t evinfo;
-+        evinfo.event = event;
-+        evinfo.evdata = evdata;
-+        evinfo.propagate = 0;
-+        adp_root->events[event].handler(&evinfo);
-+        return !evinfo.propagate;
++        return ((int (*)(unsigned long, void *))adp_root->events[event].handler)(event, evdata);
 +    } else {
 +    struct list_head *pos, *npos;
 +    adomain_t *this_domain;
@@ -5427,12 +5422,7 @@ diff -uNrp linux-2.6.9/kernel/adeos.c linux-2.6.9-adeos/kernel/adeos.c
 +{
 +    extern void *adeos_extern_irq_handler;
 +    if (adeos_extern_irq_handler) {
-+        adevinfo_t evinfo;
-+        evinfo.event = event;
-+        evinfo.evdata = evdata;
-+        evinfo.propagate = 0;
-+        adp_root->events[event].handler(&evinfo);
-+        return !evinfo.propagate;
++        return ((int (*)(unsigned long, void *))adp_root->events[event].handler)(event, evdata);
 +    } else {
 +    adomain_t *start_domain, *this_domain, *next_domain;
 +    struct list_head *pos, *npos;

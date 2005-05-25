@@ -1,3 +1,11 @@
+2004-05-25  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Added checks for the
+	dialog box values
+        * rtai-lab/scilab/macros/RTAI/SetTarget_.sci: Added checks for the
+	dialog box values
+	
+
 2005-05-24  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm/rtai_hal.immed: do not double marking in hard 

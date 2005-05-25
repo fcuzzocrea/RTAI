@@ -39,7 +39,7 @@
 #define _RTAI_ASM_I386_HAL_H
 
 #define LOCKED_LINUX_IN_IRQ_HANDLER
-//#define UNWRAPPED_CATCH_EVENT
+#define UNWRAPPED_CATCH_EVENT
 
 #include <asm/rtai_vectors.h>
 #include <rtai_types.h>

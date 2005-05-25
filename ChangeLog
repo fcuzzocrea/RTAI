@@ -1,3 +1,15 @@
+2005-05-25  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: trap handler modified to use 
+	  unwrapped ADEOS event catching.
+	* base/sched/sched.immed: all event handlers modified to use
+          unwrapped ADEOS event catching; depends on the definition of the
+	  macro "UNWRAPPED_CATCH_EVENT", to be defined in rtai_hal.h.
+	* base/include/asm-i386/rtai_hal.immed: enabled macro to use 
+	  unwrapped event catching.
+	* base/arch/i386/patches: modified handle_event to avoid wrapping
+	  event and related data.
+
 2004-05-25  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Added checks for the

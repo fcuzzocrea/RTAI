@@ -28,6 +28,8 @@ function  SetTarget_()
 	lab = ['rtai','ode4','10'];
     end
 
+    ode_x=['ode1';'ode2';'ode4'];
+
     while %t
       [ok,target,odefun,stp]=getvalue(..
           'Please fill the following values',..
@@ -40,11 +42,20 @@ function  SetTarget_()
       [fd,ierr]=mopen(SCI+'/macros/RTAI/RT_templates/'+target+'.mak','r');
       if ierr==0 then
          mclose(fd);
+      else
+         x_message('Target not valid');
+         ok = %f;
+      end
+      
+      if grep(odefun,ode_x) == [] then
+         x_message('Ode function not valid');
+         ok = %f;
+      end
+        
+      if ok then
          lab=[target,odefun,stp];
 	 scs_m.objs(k).model.rpar.props.void3 = lab;
          break;
-      else
-         x_message('Target not valid');
       end
     end
 

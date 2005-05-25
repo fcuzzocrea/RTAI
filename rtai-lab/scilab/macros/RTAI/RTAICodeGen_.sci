@@ -27,7 +27,6 @@ function  RTAICodeGen_()
 
     if ok then 
       scs_m.objs(k)=XX
-//      edited=%f;
       needcompile=4
       Cmenu='Replot';
     else
@@ -1767,15 +1766,30 @@ zcptr=cpr.sim.zcptr;
   end
 
   label1=[hname;getcwd()+'/'+hname+"_rtai";target;sTsamp];
+  label2=[hname;getcwd()+'/'+hname+"_rtai";target;sTsamp;odefun;odestep];
+  ode_x=['ode1';'ode2';'ode4'];
 
   while %t do
-    [ok,rdnom,rpat,target,Tsamp,label1]=getvalue(..
-			'PLEASE, GIVE US SOME INFORMATION. ',..
-		        ['New block''s name: ';
-		        'Created files Path: ';
-			'Target: '
-			'Sampling Time: '],..
-		        list('str',1,'str',1,'str',1,'str',1),label1);
+    if x == [] then 
+      [ok,rdnom,rpat,target,Tsamp,label1]=getvalue(..
+			  'PLEASE, GIVE US SOME INFORMATION. ',..
+		          ['New block''s name: ';
+		          'Created files Path: ';
+			  'Target: ';
+			  'Sampling Time: '],..
+		          list('str',1,'str',1,'str',1,'str',1),label1);
+    else
+      [ok,rdnom,rpat,target,Tsamp,odefun,odesteplabel1]=getvalue(..
+			  'PLEASE, GIVE US SOME INFORMATION. ',..
+		          ['New block''s name: ';
+		          'Created files Path: ';
+			  'Target: ';
+			  'Sampling Time: ';
+		          'Ode function: ';
+		          'Step betw. Samples: '],..
+		          list('str',1,'str',1,'str',1,'str',1,'str',1,'str',1),label2);
+    end
+
     if ok==%f then 
       return; 
     end
@@ -1803,6 +1817,13 @@ zcptr=cpr.sim.zcptr;
       mclose(fd);
     else
       ok=%f;x_message('Target not valid');
+    end
+
+    if x ~= [] then
+      if grep(odefun,ode_x) == [] then
+         x_message('Ode function not valid');
+         ok = %f;
+      end
     end
 
     if ok then break,end

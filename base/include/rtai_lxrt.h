@@ -805,13 +805,13 @@ RTAI_PROTO(RT_TASK *,rt_task_init,(unsigned long name, int priority, int stack_s
 
 RTAI_PROTO(void,rt_set_sched_policy,(RT_TASK *task, int policy, int rr_quantum_ns))
 {
-	struct { RT_TASK *task; int policy; int rr_quantum_ns; } arg = { task, policy, rr_quantum_ns };
+	struct { RT_TASK *task; long policy; long rr_quantum_ns; } arg = { task, policy, rr_quantum_ns };
 	rtai_lxrt(BIDX, SIZARG, SET_SCHED_POLICY, &arg);
 }
 
 RTAI_PROTO(int,rt_change_prio,(RT_TASK *task, int priority))
 {
-	struct { RT_TASK *task; int priority; } arg = { task, priority };
+	struct { RT_TASK *task; long priority; } arg = { task, priority };
 	return rtai_lxrt(BIDX, SIZARG, CHANGE_TASK_PRIO, &arg).i[LOW];
 }
 
@@ -926,7 +926,7 @@ RTAI_PROTO(int, rt_irq_signal, (unsigned irq))
 
 RTAI_PROTO(int, rt_request_irq_task, (unsigned irq, void *handler, int type, int affine2task))
 {
-	struct { unsigned irq; void *handler; int type, affine2task; } arg = { irq, handler, type, affine2task };
+	struct { unsigned irq; void *handler; long type, affine2task; } arg = { irq, handler, type, affine2task };
 	return rtai_lxrt(BIDX, SIZARG, REQUEST_IRQ_TASK, &arg).i[LOW];
 }
 
@@ -975,7 +975,7 @@ RTAI_PROTO(int,rt_is_hard_timer_running,(void))
 
 RTAI_PROTO(RTIME, start_rt_timer,(int period))
 {
-	struct { int period; } arg = { period };
+	struct { long period; } arg = { period };
 	return rtai_lxrt(BIDX, SIZARG, START_TIMER, &arg).rt;
 }
 
@@ -1005,7 +1005,7 @@ RTAI_PROTO(RTIME,nano2count,(RTIME nanos))
 
 RTAI_PROTO(void,rt_busy_sleep,(int ns))
 {
-	struct { int ns; } arg = { ns };
+	struct { long ns; } arg = { ns };
 	rtai_lxrt(BIDX, SIZARG, BUSY_SLEEP, &arg);
 }
 
@@ -1029,7 +1029,7 @@ RTAI_PROTO(int,rt_task_signal_handler,(RT_TASK *task, void (*handler)(void)))
 
 RTAI_PROTO(int,rt_task_use_fpu,(RT_TASK *task, int use_fpu_flag))
 {
-        struct { RT_TASK *task; int use_fpu_flag; } arg = { task, use_fpu_flag };
+        struct { RT_TASK *task; long use_fpu_flag; } arg = { task, use_fpu_flag };
         if (rtai_lxrt(BIDX, SIZARG, RT_BUDDY, &arg).v[LOW] != task) {
                 return rtai_lxrt(BIDX, SIZARG, TASK_USE_FPU, &arg).i[LOW];
         } else {
@@ -1043,19 +1043,19 @@ RTAI_PROTO(int,rt_task_use_fpu,(RT_TASK *task, int use_fpu_flag))
 
 RTAI_PROTO(int,rt_buddy_task_use_fpu,(RT_TASK *task, int use_fpu_flag))
 {
-	struct { RT_TASK *task; int use_fpu_flag; } arg = { task, use_fpu_flag };
+	struct { RT_TASK *task; long use_fpu_flag; } arg = { task, use_fpu_flag };
 	return rtai_lxrt(BIDX, SIZARG, TASK_USE_FPU, &arg).i[LOW];
 }
 
 RTAI_PROTO(int,rt_linux_use_fpu,(int use_fpu_flag))
 {
-	struct { int use_fpu_flag; } arg = { use_fpu_flag };
+	struct { long use_fpu_flag; } arg = { use_fpu_flag };
 	return rtai_lxrt(BIDX, SIZARG, LINUX_USE_FPU, &arg).i[LOW];
 }
 
 RTAI_PROTO(void,rt_preempt_always,(int yes_no))
 {
-	struct { int yes_no; } arg = { yes_no };
+	struct { long yes_no; } arg = { yes_no };
 	rtai_lxrt(BIDX, SIZARG, PREEMPT_ALWAYS_GEN, &arg);
 }
 
@@ -1085,7 +1085,7 @@ RTAI_PROTO(void,rt_set_runnable_on_cpus,(RT_TASK *task, unsigned long cpu_mask))
 
 RTAI_PROTO(void,rt_set_runnable_on_cpuid,(RT_TASK *task, unsigned int cpuid))
 {
-	struct { RT_TASK *task; unsigned int cpuid; } arg = { task, cpuid };
+	struct { RT_TASK *task; unsigned long cpuid; } arg = { task, cpuid };
 	rtai_lxrt(BIDX, SIZARG, SET_RUNNABLE_ON_CPUID, &arg);
 }
 
@@ -1097,37 +1097,37 @@ RTAI_PROTO(int,rt_get_timer_cpu,(void))
 
 RTAI_PROTO(void,start_rt_apic_timers,(struct apic_timer_setup_data *setup_mode, unsigned int rcvr_jiffies_cpuid))
 {
-	struct { struct apic_timer_setup_data *setup_mode; unsigned int rcvr_jiffies_cpuid; } arg = { setup_mode, rcvr_jiffies_cpuid };
+	struct { struct apic_timer_setup_data *setup_mode; unsigned long rcvr_jiffies_cpuid; } arg = { setup_mode, rcvr_jiffies_cpuid };
 	rtai_lxrt(BIDX, SIZARG, START_RT_APIC_TIMERS, &arg);
 }
 
 RTAI_PROTO(void,rt_preempt_always_cpuid,(int yes_no, unsigned int cpuid))
 {
-	struct { int yes_no; unsigned int cpuid; } arg = { yes_no, cpuid };
+	struct { long yes_no; unsigned long cpuid; } arg = { yes_no, cpuid };
 	rtai_lxrt(BIDX, SIZARG, PREEMPT_ALWAYS_CPUID, &arg);
 }
 
 RTAI_PROTO(RTIME,count2nano_cpuid,(RTIME count, unsigned int cpuid))
 {
-	struct { RTIME count; unsigned int cpuid; } arg = { count, cpuid };
+	struct { RTIME count; unsigned long cpuid; } arg = { count, cpuid };
 	return rtai_lxrt(BIDX, SIZARG, COUNT2NANO_CPUID, &arg).rt;
 }
 
 RTAI_PROTO(RTIME,nano2count_cpuid,(RTIME nanos, unsigned int cpuid))
 {
-	struct { RTIME nanos; unsigned int cpuid; } arg = { nanos, cpuid };
+	struct { RTIME nanos; unsigned long cpuid; } arg = { nanos, cpuid };
 	return rtai_lxrt(BIDX, SIZARG, NANO2COUNT_CPUID, &arg).rt;
 }
 
 RTAI_PROTO(RTIME,rt_get_time_cpuid,(unsigned int cpuid))
 {
-	struct { unsigned int cpuid; } arg = { cpuid };
+	struct { unsigned long cpuid; } arg = { cpuid };
 	return rtai_lxrt(BIDX, SIZARG, GET_TIME_CPUID, &arg).rt;
 }
 
 RTAI_PROTO(RTIME,rt_get_time_ns_cpuid,(unsigned int cpuid))
 {
-	struct { unsigned int cpuid; } arg = { cpuid };
+	struct { unsigned long cpuid; } arg = { cpuid };
 	return rtai_lxrt(BIDX, SIZARG, GET_TIME_NS_CPUID, &arg).rt;
 }
 
@@ -1170,7 +1170,7 @@ RTAI_PROTO(int,rt_set_linux_signal_handler,(RT_TASK *task, void (*handler)(int s
 RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))
 {
 	char display[256];
-	struct { const char *display; int nch; } arg = { display, 0 };
+	struct { const char *display; long nch; } arg = { display, 0 };
 	va_list args;
 
 	va_start(args, format);
@@ -1183,7 +1183,7 @@ RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))
 RTAI_PROTO(int,rt_printk,(const char *format, ...))
 {
 	char display[256];
-	struct { const char *display; int nch; } arg = { display, 0 };
+	struct { const char *display; long nch; } arg = { display, 0 };
 	va_list args;
 
 	va_start(args, format);
@@ -1225,7 +1225,7 @@ RTAI_PROTO(void,rt_set_usp_flags_mask,(unsigned long flags_mask))
 
 RTAI_PROTO(RT_TASK *,rt_force_task_soft,(int pid))
 {
-	struct { int pid; } arg = { pid };
+	struct { long pid; } arg = { pid };
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, FORCE_TASK_SOFT, &arg).v[LOW];
 }
 
@@ -1307,7 +1307,7 @@ RTAI_PROTO(int,rt_set_period,(RT_TASK *rt_task, RTIME new_period))
 
 RTAI_PROTO(void,rt_spv_RMS,(int cpuid))
 {
-	struct { int cpuid; } arg = { cpuid };
+	struct { long cpuid; } arg = { cpuid };
 	rtai_lxrt(BIDX, SIZARG, SPV_RMS, &arg);
 }
 

@@ -458,9 +458,9 @@ RTAI_PROTO(int, rt_Send,(pid_t pid, void *smsg, void *rmsg, size_t ssize, size_t
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_SEND, &arg).i[LOW];
 }
 
-RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, size_t *msglen))
+RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, void *msglen))
 {
-	struct { pid_t pid; void *msg; size_t maxsize, *msglen;}
+	struct { pid_t pid; void *msg; long maxsize; void *msglen;}
 	arg = { pid, msg, maxsize, msglen };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_RECEIVE, &arg).i[LOW];
 }

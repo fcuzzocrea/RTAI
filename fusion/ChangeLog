@@ -1,3 +1,12 @@
+2005-05-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos 2.6.9,10,11-i386-r10 final.
+
+2005-05-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/heap.c (rt_heap_create), skins/rtai/heap.c
+	(rt_queue_create): Return -EPERM instead of panicking.
+
 2005-05-23  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* nucleus/pipe.c: Fix poll/select support, and prevent duplicate

@@ -1440,7 +1440,7 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs)
 
 	flags = rt_global_save_flags_and_cli();
 	if (task->state & RT_SCHED_RECEIVE) {
-		rt_current->msg = task->msg = (unsigned int)regs;
+		rt_current->msg = task->msg = (unsigned long)regs;
 		task->msg_queue.task = rt_current;
 		task->ret_queue.task = NOTHING;
 		task->state = RT_SCHED_READY;
@@ -1448,7 +1448,7 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs)
 		enqueue_blocked(rt_current, &task->ret_queue, 1);
 		rt_current->state |= RT_SCHED_RETURN;
 	} else {
-		rt_current->msg = (unsigned int)regs;
+		rt_current->msg = (unsigned long)regs;
                 enqueue_blocked(rt_current, &task->msg_queue, 1);
 		rt_current->state |= RT_SCHED_RPC;
 	}

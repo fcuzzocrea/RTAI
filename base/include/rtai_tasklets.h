@@ -313,7 +313,7 @@ extern "C" {
 
 RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 {
-	struct { void *tasklet; int thread; } arg;
+	struct { void *tasklet; long thread; } arg;
 
 	arg.tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
 	arg.thread = rt_thread_create(support_tasklet, arg.tasklet, TASKLET_STACK_SIZE);
@@ -344,9 +344,7 @@ RTAI_PROTO(int, rt_insert_timer,(struct rt_tasklet_struct *timer,
 				 unsigned long data,
 				 int pid))
 {
-	struct { struct rt_tasklet_struct *timer; int priority; RTIME firing_time;
-	    RTIME period; void (*handler)(unsigned long); unsigned long data; int pid; } arg =
-		{ timer, priority, firing_time, period, handler, data, pid };
+	struct { struct rt_tasklet_struct *timer; long priority; RTIME firing_time; RTIME period; void (*handler)(unsigned long); unsigned long data; long pid; } arg = { timer, priority, firing_time, period, handler, data, pid };
 	return rtai_lxrt(TSKIDX, SIZARG, TIMER_INSERT, &arg).i[LOW];
 }
 
@@ -358,7 +356,7 @@ RTAI_PROTO(void, rt_remove_timer,(struct rt_tasklet_struct *timer))
 
 RTAI_PROTO(void, rt_set_timer_priority,(struct rt_tasklet_struct *timer, int priority))
 {
-	struct { struct rt_tasklet_struct *timer; int priority; } arg = { timer, priority };
+	struct { struct rt_tasklet_struct *timer; long priority; } arg = { timer, priority };
 	rtai_lxrt(TSKIDX, SIZARG, SET_TASKLETS_PRI, &arg);
 }
 
@@ -393,7 +391,7 @@ RTAI_PROTO(void, rt_set_tasklet_data,(struct rt_tasklet_struct *tasklet, unsigne
 RTAI_PROTO(RT_TASK *, rt_tasklet_use_fpu,(struct rt_tasklet_struct *tasklet, int use_fpu))
 {
 	RT_TASK *task;
-	struct { struct rt_tasklet_struct *tasklet; int use_fpu; } arg = { tasklet, use_fpu };
+	struct { struct rt_tasklet_struct *tasklet; long use_fpu; } arg = { tasklet, use_fpu };
 	if ((task = (RT_TASK*)rtai_lxrt(TSKIDX, SIZARG, USE_FPU, &arg).v[LOW])) {
 		rt_task_use_fpu(task, use_fpu);
 	}
@@ -409,14 +407,13 @@ RTAI_PROTO(int, rt_insert_tasklet,(struct rt_tasklet_struct *tasklet,
 				   unsigned long id,
 				   int pid))
 {
-	struct { struct rt_tasklet_struct *tasklet; int priority; void (*handler)(unsigned long);
-	    unsigned long data; unsigned long id; int pid; } arg = { tasklet, priority, handler, data, id, pid };
+	struct { struct rt_tasklet_struct *tasklet; long priority; void (*handler)(unsigned long); unsigned long data; unsigned long id; long pid; } arg = { tasklet, priority, handler, data, id, pid };
 	return rtai_lxrt(TSKIDX, SIZARG, TASK_INSERT, &arg).i[LOW];
 }
 
 RTAI_PROTO(void, rt_set_tasklet_priority,(struct rt_tasklet_struct *tasklet, int priority))
 {
-	struct { struct rt_tasklet_struct *tasklet; int priority; } arg = { tasklet, priority };
+	struct { struct rt_tasklet_struct *tasklet; long priority; } arg = { tasklet, priority };
 	rtai_lxrt(TSKIDX, SIZARG, SET_TSK_PRI, &arg);
 }
 

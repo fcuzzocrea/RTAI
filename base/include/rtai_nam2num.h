@@ -55,7 +55,7 @@ static inline unsigned long nam2num (const char *name)
         unsigned long retval = 0;
 	int c, i;
 
-	for (i = 0; i < 6; i++) {
+	for (i = 0; i < (3*sizeof(long))/2; i++) {
 		if (!(c = name[i]))
 			break;
 		if (c >= 'a' && c <= 'z') {
@@ -91,7 +91,7 @@ static inline void num2nam (unsigned long num, char *name)
 		name[0] = 0;
 		return;
 	}
-        i = 5; 
+        i = (3*sizeof(long))/2; 
 	while (num && i >= 0) {
 		q = num/39;
 		c = num - q*39;
@@ -102,7 +102,7 @@ static inline void num2nam (unsigned long num, char *name)
 			name[i--] = c == 37 ? '_' : '$';
 		}
 	}
-	for (k = 0; i < 5; k++) {
+	for (k = 0; i < (3*sizeof(long))/2; k++) {
 		name[k] = name[++i];
 	}
 	name[k] = 0;

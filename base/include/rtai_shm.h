@@ -361,7 +361,7 @@ static inline int rt_shm_free(unsigned long name)
 
 RTAI_PROTO(void *, rt_halloc, (int size))
 {
-	struct { int size; } arg = { size };
+	struct { long size; } arg = { size };
 	return rtai_lxrt(BIDX, SIZARG, HEAP_ALLOC, &arg).v[LOW];
 }
 
@@ -373,7 +373,7 @@ RTAI_PROTO(void, rt_hfree, (void *addr))
 
 RTAI_PROTO(void *, rt_named_halloc, (unsigned long name, int size))
 {
-	struct { unsigned long name; int size; } arg = { name, size };
+	struct { unsigned long name; long size; } arg = { name, size };
 	return rtai_lxrt(BIDX, SIZARG, HEAP_NAMED_ALLOC, &arg).v[LOW];
 }
 
@@ -385,7 +385,7 @@ RTAI_PROTO(void, rt_named_hfree, (void *addr))
 
 RTAI_PROTO(void *, rt_malloc, (int size))
 {
-	struct { int size; } arg = { size };
+	struct { long size; } arg = { size };
 	return rtai_lxrt(BIDX, SIZARG, MALLOC, &arg).v[LOW];
 }
 
@@ -397,7 +397,7 @@ RTAI_PROTO(void, rt_free, (void *addr))
 
 RTAI_PROTO(void *, rt_named_malloc, (unsigned long name, int size))
 {
-	struct { unsigned long name; int size; } arg = { name, size };
+	struct { unsigned long name; long size; } arg = { name, size };
 	return rtai_lxrt(BIDX, SIZARG, NAMED_MALLOC, &arg).v[LOW];
 }
 

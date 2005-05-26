@@ -321,7 +321,7 @@ static void thread_fun(RT_TASK *task)
 static int soft_kthread_init(RT_TASK *task, int fun, int arg, int priority)
 {
 	task->magic = task->state = 0;
-	(task->fun_args = (int *)(task + 1))[1] = fun;
+	(task->fun_args = (long *)(task + 1))[1] = fun;
 	task->fun_args[2] = arg;
 	task->fun_args[3] = priority;
 	if (kernel_thread((void *)thread_fun, task, 0) > 0) {

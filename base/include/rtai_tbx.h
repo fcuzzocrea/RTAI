@@ -246,21 +246,21 @@ RTAI_PROTO(int, rt_msg_receive, (RT_MSGQ *msgq, void *msg, int msg_size, int *ms
 	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_msg_receive_if, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio))
+RTAI_PROTO(int, rt_msg_receive_if, (RT_MSGQ *msgq, void *msg, int msg_size, int *msgprio))
 {
-	struct { RT_MSGQ *msgq; void *msg; long msg_size; long msgprio; long space; } arg = { msgq, msg, msg_size, msgprio, 0 };
+	struct { RT_MSGQ *msgq; void *msg; long msg_size; int *msgprio; long space; } arg = { msgq, msg, msg_size, msgprio, 0 };
 	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE_IF, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_msg_receive_until, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio, RTIME until))
+RTAI_PROTO(int, rt_msg_receive_until, (RT_MSGQ *msgq, void *msg, int msg_size, int *msgprio, RTIME until))
 {
-	struct { RT_MSGQ *msgq; void *msg; long msg_size; long msgprio; RTIME until; long space; } arg = { msgq, msg, msg_size, msgprio, until, 0 };
+	struct { RT_MSGQ *msgq; void *msg; long msg_size; int *msgprio; RTIME until; long space; } arg = { msgq, msg, msg_size, msgprio, until, 0 };
 	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE_UNTIL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_msg_receive_timed, (RT_MSGQ *msgq, void *msg, int msg_size, int msgprio, RTIME delay))
+RTAI_PROTO(int, rt_msg_receive_timed, (RT_MSGQ *msgq, void *msg, int msg_size, int *msgprio, RTIME delay))
 {
-	struct { RT_MSGQ *msgq; void *msg; long msg_size; long msgprio; RTIME delay; long space; } arg = { msgq, msg, msg_size, msgprio, delay, 0 };
+	struct { RT_MSGQ *msgq; void *msg; long msg_size; int *msgprio; RTIME delay; long space; } arg = { msgq, msg, msg_size, msgprio, delay, 0 };
 	return rtai_lxrt(BIDX, SIZARG, MSG_RECEIVE_TIMED, &arg).i[LOW];
 }
 

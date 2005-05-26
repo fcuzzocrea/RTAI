@@ -124,7 +124,7 @@ static inline int GENERIC_DELETE(int index, void *object)
 
 struct fun_args { long a0; long a1; long a2; long a3; long a4; long a5; long a6; long a7; long a8; long a9; long long (*fun)(long, ...); };
 
-static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long long type, RT_TASK *rt_task, int net_rpc)
+static inline long long lxrt_resume(void *fun, int narg, long *arg, unsigned long long type, RT_TASK *rt_task, int net_rpc)
 {
 	int wsize, w2size;
 	long *wmsg_adr, *w2msg_adr;
@@ -133,7 +133,7 @@ static inline long long lxrt_resume(void *fun, int narg, int *arg, unsigned long
 	memcpy(funarg = (void *)rt_task->fun_args, arg, narg);
 	funarg->fun = fun;
 	if (net_rpc) {
-		memcpy((void *)(rt_task->fun_args[4] = (int)(funarg + 1)), (void *)arg[4], arg[5]);
+		memcpy((void *)(rt_task->fun_args[4] = (long)(funarg + 1)), (void *)arg[4], arg[5]);
 	}
 /*
  * Here type > 0 means any messaging with the need of copying from/to user
@@ -356,7 +356,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
 			}
 			net_rpc = idx == 2 && !srq;
-			lxrt_resume(funcm[srq].fun, NARG(lxsrq), (int *)arg, net_rpc ? ((long long *)((int *)arg + 2))[0] : type, task, net_rpc);
+			lxrt_resume(funcm[srq].fun, NARG(lxsrq), (long *)arg, net_rpc ? ((long long *)((int *)arg + 2))[0] : type, task, net_rpc);
 			__force_soft(task);
 			return task->retval;
 		} else {

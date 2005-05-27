@@ -123,11 +123,6 @@ void rthal_timer_release (void)
 unsigned long rthal_timer_calibrate (void)
 
 {
-    /* On PowerPC systems, the cost of setting the decrementer or the
-       PIT does not induce significant latency. In such a case, let's
-       return the shortest possible delay for a one-shot setup. In any
-       case, always return a non-zero value.  e.g. 1 decrementer tick
-       here. */
     return 1000000000 / RTHAL_CPU_FREQ;
 }
 

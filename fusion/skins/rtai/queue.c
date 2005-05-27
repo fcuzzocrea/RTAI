@@ -190,6 +190,9 @@ static void __queue_flush_private (xnheap_t *heap,
  * been passed in @a mode, errors while mapping the buffer pool in the
  * caller's address space might beget this return code too.
  *
+ * - -EPERM is returned if this service was called from an invalid
+ * context.
+ *
  * - -ENOSYS is returned if @a mode specifies Q_SHARED, but the
  * real-time support in user-space is unavailable.
  *
@@ -200,7 +203,7 @@ static void __queue_flush_private (xnheap_t *heap,
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - User-space task
+ * - User-space task (switches to secondary mode)
  *
  * Rescheduling: possible.
  */
@@ -213,7 +216,8 @@ int rt_queue_create (RT_QUEUE *q,
 {
     int err;
 
-    xnpod_check_context(XNPOD_ROOT_CONTEXT);
+    if (!xnpod_root_p())
+	return -EPERM;
 
     if (poolsize == 0)
 	return -EINVAL;

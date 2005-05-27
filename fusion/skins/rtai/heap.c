@@ -197,6 +197,9 @@ static void __heap_flush_private (xnheap_t *heap,
  * passed in @a mode, errors while mapping the block pool in the
  * caller's address space might beget this return code too.
  *
+ * - -EPERM is returned if this service was called from an invalid
+ * context.
+ *
  * - -ENOSYS is returned if @a mode specifies H_SHARED, but the
  * real-time support in user-space is unavailable.
  *
@@ -205,7 +208,7 @@ static void __heap_flush_private (xnheap_t *heap,
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
- * - User-space task
+ * - User-space task (switches to secondary mode)
  *
  * Rescheduling: possible.
  */
@@ -217,7 +220,8 @@ int rt_heap_create (RT_HEAP *heap,
 {
     int err;
 
-    xnpod_check_context(XNPOD_ROOT_CONTEXT);
+    if (!xnpod_root_p())
+	return -EPERM;
 
     if (heapsize == 0)
 	return -EINVAL;

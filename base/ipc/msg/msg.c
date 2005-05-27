@@ -1878,7 +1878,7 @@ RT_TASK *__rt_proxy_attach(void (*agent)(int), RT_TASK *task, void *msg, int nby
 	if (priority == -1 && (priority = rt_current->base_priority) == RT_SCHED_LINUX_PRIORITY) {
 		priority = RT_SCHED_LOWEST_PRIORITY;
 	}
-	if (rt_kthread_init(proxy, agent, (int)proxy, PROXY_MIN_STACK_SIZE + nbytes + sizeof(struct proxy_t), priority, 0, 0)) {
+	if (rt_kthread_init(proxy, agent, (long)proxy, PROXY_MIN_STACK_SIZE + nbytes + sizeof(struct proxy_t), priority, 0, 0)) {
 		rt_free(proxy);
 		return 0;
 	}
@@ -2087,7 +2087,7 @@ pid_t rt_Name_attach(const char *argname)
 	    	strncpy(task->task_name, argname, MAX_NAME_LENGTH);
 	}
     	task->task_name[MAX_NAME_LENGTH - 1] = 0;
-	return strnlen(task->task_name, MAX_NAME_LENGTH) > (MAX_NAME_LENGTH - 1) ? -EINVAL : task->lnxtsk ? ((struct task_struct *)current->rtai_tskext(1))->pid : (pid_t)task;
+	return strnlen(task->task_name, MAX_NAME_LENGTH) > (MAX_NAME_LENGTH - 1) ? -EINVAL : task->lnxtsk ? ((struct task_struct *)current->rtai_tskext(1))->pid : (long)task;
 }
 
 pid_t rt_Name_locate(const char *arghost, const char *argname)
@@ -2099,7 +2099,7 @@ pid_t rt_Name_locate(const char *arghost, const char *argname)
                 task = &rt_smp_linux_task[cpuid];
                 while ((task = task->next)) {
 			if (!strncmp(argname, task->task_name, MAX_NAME_LENGTH - 1)) {
-				return (struct task_struct *)(task->lnxtsk) ?  ((struct task_struct *)(task->lnxtsk)->rtai_tskext(1))->pid : (pid_t)task;
+				return (struct task_struct *)(task->lnxtsk) ?  ((struct task_struct *)(task->lnxtsk)->rtai_tskext(1))->pid : (long)task;
 
 			}
 		}
@@ -2115,7 +2115,7 @@ int rt_Name_detach(pid_t pid)
 		}
 	    	((RT_TASK *)current->rtai_tskext(0))->task_name[0] = 0;
 	} else {
-	    	((RT_TASK *)pid)->task_name[0] = 0;
+	    	((RT_TASK *)(long)pid)->task_name[0] = 0;
 	}
 	return 0;
 }

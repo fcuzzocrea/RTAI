@@ -551,7 +551,7 @@ static inline struct rt_task_struct *pid2rttask(pid_t pid)
 // buddies also.
 static inline pid_t rttask2pid(struct rt_task_struct * task)
 {
-    return (int) task;
+    return (long) task;
 }
 
 #endif /* CONFIG_RTAI_INTERNAL_LXRT_SUPPORT */

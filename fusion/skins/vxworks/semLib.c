@@ -78,7 +78,7 @@ static const sem_vtbl_t semc_vtbl;
 static const sem_vtbl_t semm_vtbl;
 
 static void sem_destroy_internal(wind_sem_t *sem);
-static int sem_create_internal(int flags, const sem_vtbl_t * vtbl, int count);
+static SEM_ID sem_create_internal(int flags, const sem_vtbl_t * vtbl, int count);
 
 
 
@@ -100,7 +100,7 @@ void wind_sem_cleanup (void)
 
 
 
-int semBCreate(int flags, SEM_B_STATE state)
+SEM_ID semBCreate(int flags, SEM_B_STATE state)
 {
     int bflags = 0;
 
@@ -118,7 +118,7 @@ int semBCreate(int flags, SEM_B_STATE state)
 }
 
 
-int semCCreate(int flags, int count)
+SEM_ID semCCreate(int flags, int count)
 {
     int bflags = 0;
 
@@ -132,7 +132,7 @@ int semCCreate(int flags, int count)
 }
 
 
-int semMCreate(int flags)
+SEM_ID semMCreate(int flags)
 {
     int bflags = 0;
 
@@ -161,7 +161,7 @@ int semMCreate(int flags)
 }
 
 
-STATUS semDelete(int sem_id)
+STATUS semDelete(SEM_ID sem_id)
 {
     wind_sem_t * sem;
     spl_t s;
@@ -181,7 +181,7 @@ STATUS semDelete(int sem_id)
 }
 
 
-STATUS semTake(int sem_id, int timeout)
+STATUS semTake(SEM_ID sem_id, int timeout)
 {
     xnticks_t xntimeout;
     wind_sem_t * sem;
@@ -216,7 +216,7 @@ STATUS semTake(int sem_id, int timeout)
 }
 
 
-STATUS semGive(int sem_id)
+STATUS semGive(SEM_ID sem_id)
 {
     wind_sem_t * sem;
     spl_t s;
@@ -236,7 +236,7 @@ STATUS semGive(int sem_id)
 }
 
 
-STATUS semFlush(int sem_id)
+STATUS semFlush(SEM_ID sem_id)
 {
     wind_sem_t * sem;
     spl_t s;
@@ -428,7 +428,7 @@ static const sem_vtbl_t semm_vtbl = {
 
 
 
-static int sem_create_internal(int flags, const sem_vtbl_t * vtbl, int count)
+static SEM_ID sem_create_internal(int flags, const sem_vtbl_t * vtbl, int count)
 {
     wind_sem_t *sem;
     spl_t s;
@@ -447,7 +447,7 @@ static int sem_create_internal(int flags, const sem_vtbl_t * vtbl, int count)
     appendq(&wind_sem_q,&sem->link);
     xnlock_put_irqrestore(&nklock, s);
 
-    return (int) sem;
+    return (SEM_ID) sem;
 }
 
 

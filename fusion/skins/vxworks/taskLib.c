@@ -52,7 +52,7 @@ void wind_task_cleanup (void)
     xnholder_t *holder;
 
     while ((holder = getheadq(&wind_tasks_q)) != NULL)
-        taskDeleteForce((int) link2wind_task(holder));
+        taskDeleteForce((TASK_ID) link2wind_task(holder));
     
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,wind_task_delete_hook);
 }
@@ -163,7 +163,7 @@ STATUS taskInit(WIND_TCB * handle,
 }
 
 
-STATUS taskActivate(int task_id)
+STATUS taskActivate(TASK_ID task_id)
 {
     wind_task_t * task;
     spl_t s;
@@ -203,13 +203,13 @@ int taskSpawn ( char * name,
                 int arg5, int arg6, int arg7, int arg8, int arg9 )
 {
     wind_task_t * task;
-    int task_id;
+    TASK_ID task_id;
     STATUS status;
     
     check_NOT_ISR_CALLABLE(return ERROR);
 
     check_alloc(wind_task_t, task, return ERROR);
-    task_id = (int) task;
+    task_id = (TASK_ID) task;
     
     status = taskInit( task, name, prio, flags, NULL, stacksize, entry, arg0,
                        arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9
@@ -232,7 +232,7 @@ int taskSpawn ( char * name,
 }
 
 
-STATUS taskDeleteForce (int task_id)
+STATUS taskDeleteForce (TASK_ID task_id)
 {
     wind_task_t *task;
     spl_t s;
@@ -255,7 +255,7 @@ STATUS taskDeleteForce (int task_id)
 }
 
 
-STATUS taskDelete(int task_id)
+STATUS taskDelete(TASK_ID task_id)
 {
     wind_task_t *task;
     unsigned long int flow_id;
@@ -303,7 +303,7 @@ void taskExit(int code)
 }
 
 
-STATUS taskSuspend (int task_id)
+STATUS taskSuspend (TASK_ID task_id)
 {
     wind_task_t *task;
     spl_t s;
@@ -333,7 +333,7 @@ STATUS taskSuspend (int task_id)
 }
 
 
-STATUS taskResume (int task_id)
+STATUS taskResume (TASK_ID task_id)
 {
     wind_task_t *task;
     spl_t s;
@@ -355,7 +355,7 @@ STATUS taskResume (int task_id)
 }
 
 
-STATUS taskRestart ( int task_id )
+STATUS taskRestart ( TASK_ID task_id )
 {
     wind_task_t * task;
     spl_t s;
@@ -380,7 +380,7 @@ STATUS taskRestart ( int task_id )
 }
 
 
-STATUS taskPrioritySet (int task_id, int prio)
+STATUS taskPrioritySet (TASK_ID task_id, int prio)
 {
     wind_task_t *task;
     spl_t s;
@@ -409,7 +409,7 @@ STATUS taskPrioritySet (int task_id, int prio)
 }
 
 
-STATUS taskPriorityGet ( int task_id, int * pprio )
+STATUS taskPriorityGet ( TASK_ID task_id, int * pprio )
 {
     wind_task_t *task;
     spl_t s;
@@ -456,7 +456,7 @@ int taskIdSelf (void)
 {
     check_NOT_ISR_CALLABLE(return ERROR);
 
-    return (int) wind_current_task();
+    return (TASK_ID) wind_current_task();
 }
 
 
@@ -516,7 +516,7 @@ STATUS taskDelay ( int ticks )
 
 
 /* TODO: check if TaskIdVerify or TaskTcb accept 0 as argument */
-STATUS taskIdVerify( int task_id )
+STATUS taskIdVerify( TASK_ID task_id )
 {
     wind_task_t * task;
 
@@ -526,7 +526,7 @@ STATUS taskIdVerify( int task_id )
 }
     
 
-wind_task_t * taskTcb( int task_id )
+wind_task_t * taskTcb( TASK_ID task_id )
 {
     wind_task_t * task;
     
@@ -558,7 +558,7 @@ int taskNameToId ( char * name )
         task = link2wind_task(holder);
         if(!strcmp(name, task->name))
         {
-            result = (int) task;
+            result = (TASK_ID) task;
             break;
         }
     }
@@ -611,5 +611,5 @@ static void wind_task_trampoline (void *cookie)
     task->entry( task->arg0, task->arg1, task->arg2, task->arg3, task->arg4, 
                  task->arg5, task->arg6, task->arg7, task->arg8, task->arg9 );
 
-    taskDeleteForce((int) task);
+    taskDeleteForce((TASK_ID) task);
 }

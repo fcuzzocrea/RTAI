@@ -120,7 +120,7 @@ int errnoGet(void)
 }
 
 
-int errnoOfTaskGet(int task_id)
+int errnoOfTaskGet(TASK_ID task_id)
 {
     wind_task_t * task;
     int result;
@@ -141,7 +141,7 @@ int errnoOfTaskGet(int task_id)
 }
 
 
-STATUS errnoOfTaskSet(int task_id, int status )
+STATUS errnoOfTaskSet(TASK_ID task_id, int status )
 {
     wind_task_t * task;
     spl_t s;

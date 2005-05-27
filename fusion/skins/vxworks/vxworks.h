@@ -169,8 +169,13 @@ typedef struct wind_task
 #define NO_WAIT (0)
 #define WAIT_FOREVER (-1)
 
+#if BITS_PER_LONG == 32
+#define __natural_word_type int
+#else  /* defaults to long othewise */
+#define __natural_word_type long
+#endif
 
-typedef int SEM_ID;
+typedef __natural_word_type SEM_ID;
 
 /*for binary semaphores */
 typedef enum {
@@ -178,9 +183,13 @@ typedef enum {
     SEM_FULL =1
 } SEM_B_STATE;
 
-typedef int WDOG_ID;
+typedef __natural_word_type WDOG_ID;
 
-typedef int MSG_Q_ID;
+typedef __natural_word_type MSG_Q_ID;
+
+typedef __natural_word_type TASK_ID;
+
+#undef __natural_word_type
 
 #define MSG_PRI_NORMAL (0)
 #define MSG_PRI_URGENT (1)
@@ -208,9 +217,9 @@ extern "C" {
 
     int errnoGet (void);
 
-    int errnoOfTaskGet(int task_id);
+    int errnoOfTaskGet(TASK_ID task_id);
 
-    STATUS errnoOfTaskSet(int task_id, int status);
+    STATUS errnoOfTaskSet(TASK_ID task_id, int status);
 
 
 
@@ -234,23 +243,23 @@ extern "C" {
                       int arg0, int arg1, int arg2, int arg3, int arg4,
                       int arg5, int arg6, int arg7, int arg8, int arg9 );
 
-    STATUS taskActivate(int task_id);
+    STATUS taskActivate(TASK_ID task_id);
 
     void taskExit(int code);
     
-    STATUS taskDelete(int task_id);
+    STATUS taskDelete(TASK_ID task_id);
 
-    STATUS taskDeleteForce(int task_id);
+    STATUS taskDeleteForce(TASK_ID task_id);
 
-    STATUS taskSuspend(int task_id);
+    STATUS taskSuspend(TASK_ID task_id);
 
-    STATUS taskResume(int task_id);
+    STATUS taskResume(TASK_ID task_id);
 
-    STATUS taskRestart(int task_id);
+    STATUS taskRestart(TASK_ID task_id);
 
-    STATUS taskPrioritySet(int task_id, int prio);
+    STATUS taskPrioritySet(TASK_ID task_id, int prio);
 
-    STATUS taskPriorityGet(int task_id, int * pprio);
+    STATUS taskPriorityGet(TASK_ID task_id, int * pprio);
 
     STATUS taskLock(void);
 
@@ -264,9 +273,9 @@ extern "C" {
     
     STATUS taskDelay(int ticks);
 
-    STATUS taskIdVerify(int task_id);
+    STATUS taskIdVerify(TASK_ID task_id);
 
-    WIND_TCB *taskTcb(int task_id);
+    WIND_TCB *taskTcb(TASK_ID task_id);
 
 
 
@@ -300,15 +309,15 @@ extern "C" {
 
 
     /* functions for tasks information */
-    char *taskName ( int task_id );
+    char *taskName ( TASK_ID task_id );
 
     int taskNameToId ( char * name );
 
-    int taskIdDefault ( int task_id );
+    int taskIdDefault ( TASK_ID task_id );
     
-    BOOL taskIsReady ( int task_id );
+    BOOL taskIsReady ( TASK_ID task_id );
 
-    BOOL taskIsSuspended ( int task_id );
+    BOOL taskIsSuspended ( TASK_ID task_id );
          
     /*Missing:
       taskIdListGet()

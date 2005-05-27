@@ -26,7 +26,7 @@
 
 /* TODO: check (in the doc or implementation) what should happen if task_id is
    zero */
-char * taskName ( int task_id )
+char * taskName ( TASK_ID task_id )
 {
     wind_task_t * task;
     
@@ -42,7 +42,7 @@ char * taskName ( int task_id )
 }
 
 
-int taskIdDefault ( int task_id )
+int taskIdDefault ( TASK_ID task_id )
 {
     static int value = 0;
 
@@ -53,7 +53,7 @@ int taskIdDefault ( int task_id )
 }
     
 
-BOOL taskIsReady ( int task_id )
+BOOL taskIsReady ( TASK_ID task_id )
 {
     wind_task_t * task;
     
@@ -66,7 +66,7 @@ BOOL taskIsReady ( int task_id )
 }
 
 
-BOOL taskIsSuspended ( int task_id )
+BOOL taskIsSuspended ( TASK_ID task_id )
 {
     wind_task_t * task;
 

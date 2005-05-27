@@ -64,7 +64,7 @@ void wind_wd_cleanup (void)
 
 
 
-int wdCreate (void)
+WDOG_ID wdCreate (void)
 {
     wind_wd_t *wd;
     spl_t s;
@@ -80,12 +80,12 @@ int wdCreate (void)
     appendq(&wind_wd_q,&wd->link);
     xnlock_put_irqrestore(&nklock, s);
 
-    return (int) wd;
+    return (WDOG_ID) wd;
 }
 
 
 
-STATUS wdDelete (int handle)
+STATUS wdDelete (WDOG_ID handle)
 {
     wind_wd_t *wd;
     spl_t s;
@@ -105,7 +105,7 @@ STATUS wdDelete (int handle)
 
 
 
-STATUS wdStart ( int handle,
+STATUS wdStart ( WDOG_ID handle,
                  int timeout,
                  wind_timer_t handler,
                  int arg )
@@ -126,7 +126,7 @@ STATUS wdStart ( int handle,
         if(xntimer_active_p(&wd->timerbase))
             xntimer_stop(&wd->timerbase);
     
-    xntimer_init(&wd->timerbase, (xntimer_handler) handler, (void *) arg);
+    xntimer_init(&wd->timerbase, (xntimer_handler) handler, (void *) (long)arg);
     
     xntimer_start(&wd->timerbase,timeout,XN_INFINITE);
 
@@ -140,7 +140,7 @@ STATUS wdStart ( int handle,
 
 
 
-STATUS wdCancel ( int handle )
+STATUS wdCancel ( WDOG_ID handle )
 {
     wind_wd_t *wd;
     spl_t s;

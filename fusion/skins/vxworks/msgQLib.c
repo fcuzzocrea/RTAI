@@ -125,7 +125,7 @@ static inline wind_msg_t * unqueue_msg(wind_msgq_t * queue)
 
 
 
-int msgQCreate ( int nb_msgs, int length, int flags )
+MSG_Q_ID msgQCreate ( int nb_msgs, int length, int flags )
 {
     wind_msgq_t *queue;
     xnflags_t bflags = 0;
@@ -174,11 +174,11 @@ int msgQCreate ( int nb_msgs, int length, int flags )
     appendq(&wind_msgq_q, &queue->link);
     xnlock_put_irqrestore(&nklock, s);
     
-    return (int) queue;
+    return (MSG_Q_ID) queue;
 }
 
 
-STATUS msgQDelete (int qid)
+STATUS msgQDelete (MSG_Q_ID qid)
 {
     wind_msgq_t *queue;
     spl_t s;
@@ -200,7 +200,7 @@ STATUS msgQDelete (int qid)
 }
 
 
-int msgQNumMsgs (int qid)
+int msgQNumMsgs (MSG_Q_ID qid)
 {
 
     wind_msgq_t * queue;
@@ -222,7 +222,7 @@ int msgQNumMsgs (int qid)
 }
 
 
-int msgQReceive ( int qid, char *buf,UINT bytes,int to )
+int msgQReceive ( MSG_Q_ID qid, char *buf,UINT bytes,int to )
 {
     xnticks_t timeout;
     wind_msgq_t *queue;
@@ -287,7 +287,7 @@ int msgQReceive ( int qid, char *buf,UINT bytes,int to )
 }
 
 
-STATUS msgQSend (int qid ,char * buf, UINT bytes,int to, int prio)
+STATUS msgQSend (MSG_Q_ID qid ,char * buf, UINT bytes,int to, int prio)
 {
     wind_msgq_t * queue;
     xnticks_t timeout;

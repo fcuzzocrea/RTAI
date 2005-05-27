@@ -128,7 +128,7 @@ typedef struct rt_task_struct {
     struct task_struct *lnxtsk;
     long long retval;
     char *msg_buf[2];
-    int max_msg_size[2];
+    long max_msg_size[2];
     char task_name[16];
     void *system_data_ptr;
     struct rt_task_struct *nextp;

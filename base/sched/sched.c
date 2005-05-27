@@ -1773,7 +1773,7 @@ static void thread_fun(int cpuid)
 }
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7)
-static inline _syscall3(pid_t,waitpid,pid_t,pid,int *,wait_stat,int,options)
+//static inline _syscall3(pid_t,waitpid,pid_t,pid,int *,wait_stat,int,options)
 #endif /* LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7) */
 
 
@@ -1813,7 +1813,7 @@ static void kthread_m(int cpuid)
 				if (taskidx[cpuid] < Reservoir) {
 					task->suspdepth = task->state = 0;
 					rt_global_sti();
-					kernel_thread((void *)thread_fun, (void *)cpuid, 0);
+					kernel_thread((void *)thread_fun, (void *)(long)cpuid, 0);
 					while (task->state != (RT_SCHED_READY | RT_SCHED_SUSPENDED)) {
 						current->state = TASK_INTERRUPTIBLE;
 						schedule_timeout(2);
@@ -1898,7 +1898,7 @@ static struct task_struct *get_kthread(int get, int cpuid, void *lnxtsk)
 		while (!(kthread = __get_kthread(cpuid))) {
 			this_task = rt_smp_current[cpuid];
 			rt_global_cli();
-			klistp->task[klistp->in & (MAX_WAKEUP_SRQ - 1)] = (void *)(hard = this_task->is_hard > 0 ? 1 : 0);
+			klistp->task[klistp->in & (MAX_WAKEUP_SRQ - 1)] = (void *)(long)(hard = this_task->is_hard > 0 ? 1 : 0);
 			klistp->in++;
 			klistp->task[klistp->in & (MAX_WAKEUP_SRQ - 1)] = (void *)this_task;
 			klistp->in++;
@@ -1929,7 +1929,7 @@ static void start_stop_kthread(RT_TASK *task, void (*rt_thread)(int), int data, 
 {
 	if (rt_thread) {
 		task->retval = set_rtext(task, priority, uses_fpu, signal, runnable_on_cpus, get_kthread(1, runnable_on_cpus, 0));
-		task->max_msg_size[0] = (int)rt_thread;
+		task->max_msg_size[0] = (long)rt_thread;
 		task->max_msg_size[1] = data;
 	} else {
 		get_kthread(0, task->runnable_on_cpus, task->lnxtsk);
@@ -2390,9 +2390,9 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 
 	PROC_PRINT("\nRTAI LXRT Real Time Task Scheduler.\n\n");
 	PROC_PRINT("    Calibrated CPU Frequency: %lu Hz\n", tuned.cpu_freq);
-	PROC_PRINT("    Calibrated 8254 interrupt to scheduler latency: %d ns\n", imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
+	PROC_PRINT("    Calibrated 8254 interrupt to scheduler latency: %d ns\n", (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 	PROC_PRINT("    Calibrated one shot setup time: %d ns\n\n",
-                  imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
+                  (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 	PROC_PRINT("Number of RT CPUs in system: %d\n\n", NR_RT_CPUS);
 	PROC_PRINT("Number of forced hard/soft/hard transitions: traps %lu, syscalls %lu\n\n", traptrans, systrans);
 
@@ -2564,7 +2564,7 @@ static int lxrt_init(void)
 	{
 	taskav[cpuid] = (void *)kmalloc(SpareKthreads*sizeof(void *), GFP_KERNEL);
 	init_MUTEX_LOCKED(&resem[cpuid]);
-	kernel_thread((void *)kthread_m, (void *)cpuid, 0);
+	kernel_thread((void *)kthread_m, (void *)(long)cpuid, 0);
 	down(&resem[cpuid]);
 	klistm[cpuid].in = (2*Reservoir) & (MAX_WAKEUP_SRQ - 1);
 	wake_up_process(kthreadm[cpuid]);
@@ -2781,8 +2781,8 @@ static int __rtai_lxrt_init(void)
 	       HZ,
 	       (unsigned long)tuned.cpu_freq);
 	printk(KERN_INFO "RTAI[sched_lxrt]: timer setup=%d ns, resched latency=%d ns.\n",
-	       imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq),
-	       imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
+	       (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq),
+	       (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 
 #ifdef DECLR_8254_TSC_EMULATION
 	SETUP_8254_TSC_EMULATION;

@@ -262,9 +262,6 @@ do { \
     for (;;) cpu_relax();			\
 } while(0)
 
-#define xnarch_alloc_stack xnmalloc
-#define xnarch_free_stack  xnfree
-
 static inline int xnarch_setimask (int imask)
 
 {

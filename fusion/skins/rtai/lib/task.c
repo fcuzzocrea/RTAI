@@ -47,7 +47,7 @@ static void *rt_task_trampoline (void *cookie)
     void (*entry)(void *cookie);
     struct sched_param param;
     struct rt_arg_bulk bulk;
-    int err;
+    long err;
 
     /* Ok, this looks like weird, but we need this. */
     param.sched_priority = sched_get_priority_max(SCHED_FIFO);

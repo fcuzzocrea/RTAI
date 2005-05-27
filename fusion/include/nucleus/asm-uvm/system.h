@@ -83,6 +83,9 @@ typedef unsigned long xnlock_t;
 #define XNARCH_THREAD_STACKSZ 0 /* Use the default POSIX value. */
 #define XNARCH_ROOT_STACKSZ   0	/* Only a placeholder -- no stack */
 
+#define xnarch_alloc_stack xnmalloc
+#define xnarch_free_stack  xnfree
+
 #define XNARCH_PROMPT "RTAI/uvm: "
 #define xnarch_loginfo(fmt,args...)  fprintf(stdout, XNARCH_PROMPT fmt , ##args)
 #define xnarch_logwarn(fmt,args...)  fprintf(stderr, XNARCH_PROMPT fmt , ##args)
@@ -448,7 +451,7 @@ static void *xnarch_timer_thread (void *cookie)
     void (*tickhandler)(void);
     struct sched_param param;
     unsigned long nstick;
-    int err;
+    long err;
 
     param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 2;
     sched_setscheduler(0,SCHED_FIFO,&param);
@@ -576,7 +579,7 @@ static void *xnarch_thread_trampoline (void *cookie)
 {
     xnarchtcb_t *tcb = (xnarchtcb_t *)cookie;
     struct sched_param param;
-    int err;
+    long err;
 
     if (!setjmp(tcb->rstenv))
 	{

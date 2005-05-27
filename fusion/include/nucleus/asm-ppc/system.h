@@ -24,6 +24,7 @@
 
 #ifdef __KERNEL__
 
+#include <linux/config.h>
 #include <linux/ptrace.h>
 
 #if ADEOS_RELEASE_NUMBER < 0x02060701
@@ -38,6 +39,9 @@
 
 #define xnarch_stack_size(tcb)  ((tcb)->stacksize)
 #define xnarch_user_task(tcb)   ((tcb)->user_task)
+
+#define xnarch_alloc_stack xnmalloc
+#define xnarch_free_stack  xnfree
 
 struct xnthread;
 struct task_struct;

@@ -88,11 +88,9 @@ static inline void xnobject_copy_name (char *dst,
 #define minval(a,b) ((a) < (b) ? (a) : (b))
 #define maxval(a,b) ((a) > (b) ? (a) : (b))
 
-#define XN_NBBY 8
-#ifndef __KERNEL__
-#ifndef BITS_PER_LONG
-#define BITS_PER_LONG (sizeof(long) * XN_NBBY)
-#endif /* BITS_PER_LONG */
+#if !defined(__KERNEL__) && !defined(BITS_PER_LONG)
+#include <stdint.h>
+#define BITS_PER_LONG __WORDSIZE
 #endif /* !__KERNEL__ */
 
 #ifdef __cplusplus

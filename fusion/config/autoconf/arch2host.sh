@@ -10,6 +10,9 @@ i?86)
 ppc|powerpc)
     echo powerpc-unknown-linux-gnu
     ;;
+ia64|itanium)
+    echo ia64-unknown-linux-gnu
+    ;;
 "")
     # Shorthand not specified: return default value.
     echo $2

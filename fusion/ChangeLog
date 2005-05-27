@@ -1,3 +1,8 @@
+2005-05-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ia64, include/nucleus/asm-ia64: Merge the ia64 port, a
+	contribution of the HYADES (ITEA) project.
+
 2005-05-26  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.9,10,11-i386-r10 final.

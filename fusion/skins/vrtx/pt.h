@@ -28,10 +28,10 @@
 #define ptext_align_mask   (sizeof(void *)-1)
 
 #define ptext_bitmap_pos(ptext,n) \
-ptext->bitmap[((n) / (sizeof(u_long) * XN_NBBY))]
+ptext->bitmap[((n) / (sizeof(u_long) * 8))]
 
 #define ptext_block_pos(n) \
-(1 << ((n) % (sizeof(u_long) * XN_NBBY)))
+(1 << ((n) % (sizeof(u_long) * 8)))
 
 #define ptext_bitmap_setbit(ptext,n) \
 (ptext_bitmap_pos(ptext,n) |= ptext_block_pos(n))

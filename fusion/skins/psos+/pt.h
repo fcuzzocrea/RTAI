@@ -28,10 +28,10 @@
 #define pt_align_mask   (sizeof(void *)-1)
 
 #define pt_bitmap_pos(pt,n) \
-pt->bitmap[((n) / (sizeof(u_long) * XN_NBBY))]
+pt->bitmap[((n) / (sizeof(u_long) * 8))]
 
 #define pt_block_pos(n) \
-(1 << ((n) % (sizeof(u_long) * XN_NBBY)))
+(1 << ((n) % (sizeof(u_long) * 8)))
 
 #define pt_bitmap_setbit(pt,n) \
 (pt_bitmap_pos(pt,n) |= pt_block_pos(n))

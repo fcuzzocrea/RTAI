@@ -53,6 +53,11 @@ case "$host" in
 	wanted_kernel_arch=CONFIG_PPC
 	arch_have_sim=y
         ;;
+ ia64-*)
+	RTAI_TARGET_ARCH=ia64
+	wanted_kernel_arch=CONFIG_IA64
+	arch_have_sim=y
+        ;;
  *) echo ""
    echo "*******************************************"
    echo "Still unsupported host: $host -- Sorry."
@@ -643,6 +648,23 @@ case $RTAI_TARGET_ARCH in
  ppc)
 	timer_type=decrementer
         ;;
+ ia64)
+	timer_type=counter
+
+	AC_MSG_CHECKING(for number of pre-allocated stacks)
+	AC_ARG_ENABLE(nucleus-kernel-stacks,
+	AS_HELP_STRING([--enable-nucleus-kernel-stacks], [Set number of pre-allocated kernel stacks]),
+	[case "$enableval" in
+	[[0-9]]*) CONFIG_RTAI_HW_STACK_POOL=$enableval ;;
+	*) AC_MSG_ERROR([Bad argument to option: --enable-nucleus-kernel-stacks=<number>]) ;;
+	esac])
+	if test x$CONFIG_RTAI_HW_STACK_POOL = x ; then
+	# Use a reasonable default if unset
+	CONFIG_RTAI_HW_STACK_POOL=8
+	fi
+	AC_MSG_RESULT([$CONFIG_RTAI_HW_STACK_POOL])
+	AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_STACK_POOL,$CONFIG_RTAI_HW_STACK_POOL,[Kconfig])
+        ;;
 esac
 
 AC_MSG_CHECKING(for $timer_type tuning latency)
@@ -1087,6 +1109,7 @@ dnl
 dnl CPU architecture
 AM_CONDITIONAL(CONFIG_X86,[test "$CONFIG_X86" = y])
 AM_CONDITIONAL(CONFIG_PPC,[test "$CONFIG_PPC" = y])
+AM_CONDITIONAL(CONFIG_IA64,[test "$CONFIG_IA64" = y])
 AM_CONDITIONAL(CONFIG_SMP,[test "$CONFIG_SMP" = y])
 AM_CONDITIONAL(CONFIG_LTT,[test "$CONFIG_LTT" = y])
 
@@ -1190,6 +1213,11 @@ case $RTAI_TARGET_ARCH in
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
 	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
         ;;
+ ia64)
+	RTAI_TARGET_SUBARCH=
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
+	RTAI_FP_CFLAGS="-ffast-math"
+        ;;
 esac
 
 if test x$CONFIG_RTAI_OPT_KSYMS = xy; then
@@ -1272,11 +1300,14 @@ AC_CONFIG_FILES([ \
 	arch/i386/hal/GNUmakefile \
         arch/ppc/GNUmakefile \
 	arch/ppc/hal/GNUmakefile \
+        arch/ia64/GNUmakefile \
+	arch/ia64/hal/GNUmakefile \
 	include/GNUmakefile \
 	include/nucleus/GNUmakefile \
 	include/nucleus/asm-generic/GNUmakefile \
 	include/nucleus/asm-i386/GNUmakefile \
 	include/nucleus/asm-ppc/GNUmakefile \
+	include/nucleus/asm-ia64/GNUmakefile \
 	include/nucleus/asm-uvm/GNUmakefile \
 	nucleus/GNUmakefile \
 	nucleus/lib/GNUmakefile \

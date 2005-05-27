@@ -68,7 +68,7 @@ static int vrtxpt_add_extent (vrtxpt_t *pt,
     ptext = (vrtxptext_t *)extaddr;
     inith(&ptext->link);
 
-    bitmapsize = (extsize * XN_NBBY) / (pt->bsize + XN_NBBY);
+    bitmapsize = (extsize * 8) / (pt->bsize + 8);
     bitmapsize = (bitmapsize + ptext_align_mask) & ~ptext_align_mask;
 
     if (bitmapsize <= ptext_align_mask)

@@ -263,7 +263,8 @@ static const char *const rthal_fault_labels[] = {
     [10] = "Software emulation",
     [11] = "Debug",
     [12] = "SPE",
-    [13] = "Altivec assist"
+    [13] = "Altivec assist",
+    [14] = NULL
 };
 
 #endif /* __KERNEL__ && !__cplusplus */

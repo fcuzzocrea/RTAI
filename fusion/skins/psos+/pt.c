@@ -74,7 +74,7 @@ u_long pt_create (char name[4],
     pt->flags = flags;
     pt->bsize = (bsize + pt_align_mask) & ~pt_align_mask;
 
-    bitmapsize = (psize * XN_NBBY) / (pt->bsize + XN_NBBY);
+    bitmapsize = (psize * 8) / (pt->bsize + 8);
     bitmapsize = (bitmapsize + pt_align_mask) & ~pt_align_mask;
 
     if (bitmapsize <= pt_align_mask)

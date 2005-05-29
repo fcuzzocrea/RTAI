@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2001,2002,2003,2004 Philippe Gerum <rpm@xenomai.org>.
+ * Copyright (C) 2005 Dmitry Adamushko
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
@@ -45,11 +46,57 @@ xnqueue_t xnpipe_sleepq;
 
 xnqueue_t xnpipe_asyncq;
 
-spinlock_t xnpipe_sqlock;
-
-spinlock_t xnpipe_aqlock;
-
 int xnpipe_wakeup_apc;
+
+/* Get nklock locked before using this macro */
+
+#define xnpipe_read_wait(state)						\
+do {									\
+    DEFINE_WAIT(__wait);						\
+									\
+    prepare_to_wait(&state->readq, &__wait, TASK_INTERRUPTIBLE);	\
+    xnpipe_enqueue_read(state,&state->readq,&state->readw);		\
+    xnlock_put_irqrestore(&nklock,s);					\
+    schedule();								\
+    xnlock_get_irqsave(&nklock,s);					\
+    finish_wait(&state->readq, &__wait);				\
+} while (0)
+
+static inline void xnpipe_enqueue_read (xnpipe_state_t *state,
+					wait_queue_head_t *queue,
+					unsigned int *count)
+{
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (!testbits(state->status,XNPIPE_USER_WREAD))
+	{
+	appendq(&xnpipe_sleepq,&state->slink);
+	setbits(state->status,XNPIPE_USER_WREAD);
+	}
+
+    (*count)++;
+
+    xnlock_put_irqrestore(&nklock,s);
+}
+
+static inline void xnpipe_dequeue_read (xnpipe_state_t *state,
+					wait_queue_head_t *queue,
+					unsigned int *count)
+{
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (!--(*count))
+	{
+	clrbits(state->status,XNPIPE_USER_WREAD);
+	removeq(&xnpipe_sleepq,&state->slink);
+	}
+    	
+    xnlock_put_irqrestore(&nklock,s);
+}
 
 /*
  * Attempt to wake up Linux-side sleepers upon pipe
@@ -63,67 +110,53 @@ static void xnpipe_wakeup_proc (void *cookie)
 {
     xnholder_t *holder, *nholder;
     xnpipe_state_t *state;
-    unsigned long slflags;
     spl_t s;
 
-#ifdef CONFIG_PREEMPT_RT
- lock_and_scan:
-#endif /* CONFIG_PREEMPT_RT */
-
-    spin_lock_irqsave(&xnpipe_sqlock,slflags);
+    xnlock_get_irqsave(&nklock,s);
 
     nholder = getheadq(&xnpipe_sleepq);
 
     while ((holder = nholder) != NULL)
 	{
+	nholder = nextq(&xnpipe_sleepq,holder);
 	state = link2xnpipe(holder,slink);
 
-	/* Wake up the sleepers whose suspension flag disappeared. */
+	/* Wake up the sleepers whose ready flag is set. */
 
-	if (!testbits(state->status,XNPIPE_USER_WMASK))
+	if (testbits(state->status,XNPIPE_USER_WREAD_READY))
 	    {
-	    nholder = popq(&xnpipe_sleepq,holder);
-	    clrbits(state->status,XNPIPE_USER_ONWAIT);
+	    clrbits(state->status,XNPIPE_USER_WREAD_READY);
 
-	    if (state->wchan)
-		{
 		/* PREEMPT_RT kernels could schedule us out as a
 		   result of up()'ing the semaphore, so we need to do
 		   the housekeeping and release the spinlock early
 		   on. */
-		struct linux_semaphore *wchan = state->wchan;
-		state->wchan = NULL;
-		spin_unlock_irqrestore(&xnpipe_sqlock,slflags);
-		up(wchan);
-		}
-	    else if (waitqueue_active(&state->pollq))
+	    if (waitqueue_active(&state->readq))
 		{
-		spin_unlock_irqrestore(&xnpipe_sqlock,slflags);
-		wake_up_interruptible(&state->pollq);
+		xnpipe_dequeue_read(state,&state->readq,&state->readw);
+		xnlock_put_irqrestore(&nklock,s);
+		wake_up_interruptible(&state->readq);
 		}
+	    else
+		/* just in case of bogus XNPIPE_USER_WREAD_READY */
+		continue;
 
+	    xnlock_get_irqsave(&nklock,s);
+	    
 	    /* On PREEMPT_RT kernels, __wake_up() might sleep, so we
 	       need to refetch the sleep queue head just to be safe;
 	       for the very same reason, livelocking inside this loop
 	       cannot happen. On regular kernel variants, we just keep
 	       processing the entire loop in a row. */
-
-#ifdef CONFIG_PREEMPT_RT
-	    goto lock_and_scan;
-#else /* !CONFIG_PREEMPT_RT */
-	    spin_lock_irqsave(&xnpipe_sqlock,slflags);
-#endif /* CONFIG_PREEMPT_RT */
-	    }
-	else
-	    nholder = nextq(&xnpipe_sleepq,holder);
+	
+#if defined(CONFIG_PREEMPT_RT) || defined (CONFIG_SMP)
+	    nholder = getheadq(&xnpipe_sleepq);
+#endif /* CONFIG_PREEMPT_RT || CONFIG_SMP */	    
+	    }	    
 	}
-
-    spin_unlock_irqrestore(&xnpipe_sqlock,slflags);
 
     /* Scan the async queue, sending the proper signal to
        subscribers. */
-
-    spin_lock_irqsave(&xnpipe_aqlock,slflags);
 
     holder = getheadq(&xnpipe_asyncq);
 
@@ -131,48 +164,26 @@ static void xnpipe_wakeup_proc (void *cookie)
 	{
 	state = link2xnpipe(holder,alink);
 
-	/* We need to protect against races w/ RTAI when manipulating
-	   the status word. */
-	xnlock_get_irqsave(&nklock,s);
-
 	if (testbits(state->status,XNPIPE_USER_SIGIO))
 	    {
 	    clrbits(state->status,XNPIPE_USER_SIGIO);
 	    xnlock_put_irqrestore(&nklock,s);
-	    spin_unlock_irqrestore(&xnpipe_aqlock,slflags);
 	    kill_fasync(&state->asyncq,xnpipe_asyncsig,POLL_IN);
-	    spin_lock_irqsave(&xnpipe_aqlock,slflags);
+	    xnlock_get_irqsave(&nklock,s);
+
+	    /* The reason is the same that was pointed out 
+	       for the sleep queue */
+	       	       
+#if defined(CONFIG_PREEMPT_RT) || defined (CONFIG_SMP)
+	    holder = getheadq(&xnpipe_sleepq);
+#else /* !(CONFIG_PREEMPT_RT || CONFIG_SMP) */
+	    holder = nextq(&xnpipe_asyncq,holder);
+#endif /* CONFIG_PREEMPT_RT || CONFIG_SMP */
 	    }
 	else
-	    xnlock_put_irqrestore(&nklock,s);
-
-	holder = nextq(&xnpipe_asyncq,holder);
+	    holder = nextq(&xnpipe_asyncq,holder);
 	}
 
-    spin_unlock_irqrestore(&xnpipe_aqlock,slflags);
-}
-
-static inline void xnpipe_enqueue_wait (xnpipe_state_t *state,
-					struct linux_semaphore *wchan,
-					int flags)
-{
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-    state->wchan = wchan;	/* may be NULL */
-    setbits(state->status,flags|XNPIPE_USER_ONWAIT);
-    appendq(&xnpipe_sleepq,&state->slink);
-    xnlock_put_irqrestore(&nklock,s);
-}
-
-static inline void xnpipe_dequeue_wait (xnpipe_state_t *state,
-					int flags)
-{
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-    removeq(&xnpipe_sleepq,&state->slink);
-    clrbits(state->status,flags|XNPIPE_USER_ONWAIT);
     xnlock_put_irqrestore(&nklock,s);
 }
 
@@ -205,6 +216,8 @@ int xnpipe_connect (int minor,
 
     state = &xnpipe_states[minor];
 
+    /* the whole function should be atomic
+       to prevent using a partially created object */
     xnlock_get_irqsave(&nklock,s);
 
     if (testbits(state->status,XNPIPE_KERN_CONN))
@@ -212,11 +225,9 @@ int xnpipe_connect (int minor,
 	xnlock_put_irqrestore(&nklock,s);
 	return -EBUSY;
 	}
-
+    
     setbits(state->status,XNPIPE_KERN_CONN);
-
-    xnlock_put_irqrestore(&nklock,s);
-
+    
     xnsynch_init(&state->synchbase,XNSYNCH_FIFO);
     state->output_handler = output_handler;
     state->input_handler = input_handler;
@@ -226,20 +237,27 @@ int xnpipe_connect (int minor,
 
     if (testbits(state->status,XNPIPE_USER_CONN))
 	{
-	if (testbits(state->status,XNPIPE_USER_WOPEN|XNPIPE_USER_WPOLL))
+	int need_sched = 0;
+	
+	if (testbits(state->status,XNPIPE_USER_WREAD))
 	    {
 	    /* Wake up the userland thread waiting for the nucleus
-	       side to connect (open or poll). */
-	    clrbits(state->status,XNPIPE_USER_WOPEN|XNPIPE_USER_WPOLL);
-	    xnpipe_schedule_request();
+	       side to connect (open). */
+	    setbits(state->status,XNPIPE_USER_WREAD_READY);
+	    need_sched = 1;
 	    }
 
 	if (state->asyncq) /* Schedule asynch sig. */
 	    {
 	    setbits(state->status,XNPIPE_USER_SIGIO);
-	    xnpipe_schedule_request();
+	    need_sched = 1;
 	    }
+	    
+	if (need_sched)
+	    xnpipe_schedule_request();
 	}
+
+    xnlock_put_irqrestore(&nklock,s);
 
     return 0;
 }
@@ -256,6 +274,7 @@ int xnpipe_disconnect (int minor)
 
     state = &xnpipe_states[minor];
 
+    /* the whole function should be atomic */
     xnlock_get_irqsave(&nklock,s);
 
     if (!testbits(state->status,XNPIPE_KERN_CONN))
@@ -265,8 +284,6 @@ int xnpipe_disconnect (int minor)
 	}
 
     clrbits(state->status,XNPIPE_KERN_CONN);
-
-    xnlock_put_irqrestore(&nklock,s);
 
     if (testbits(state->status,XNPIPE_USER_CONN))
 	{
@@ -278,18 +295,15 @@ int xnpipe_disconnect (int minor)
 		xnfree(link2mh(holder));
 	    }
 
-	xnlock_get_irqsave(&nklock,s);
-
 	if (xnsynch_destroy(&state->synchbase) == XNSYNCH_RESCHED)
 	    xnpod_schedule();
 
-	xnlock_put_irqrestore(&nklock,s);
-
 	if (testbits(state->status,XNPIPE_USER_WMASK))
 	    {
+	    setbits(state->status,XNPIPE_USER_WREADY);
+	    
 	    /* Wake up the userland thread waiting for some operation
 	       from the kernel side (read/write or poll). */
-	    clrbits(state->status,XNPIPE_USER_WMASK);
 	    xnpipe_schedule_request();
 	    }
 
@@ -299,6 +313,8 @@ int xnpipe_disconnect (int minor)
 	    xnpipe_schedule_request();
 	    }
 	}
+
+    xnlock_put_irqrestore(&nklock,s);
 
     return 0;
 }
@@ -319,10 +335,13 @@ ssize_t xnpipe_send (int minor,
 
     state = &xnpipe_states[minor];
 
-    if (!testbits(state->status,XNPIPE_USER_CONN))
-	return -EPIPE;
-
     xnlock_get_irqsave(&nklock,s);
+
+    if (!testbits(state->status,XNPIPE_USER_CONN))
+	{
+	xnlock_put_irqrestore(&nklock,s);
+	return -EPIPE;
+	}
 
     if (!testbits(state->status,XNPIPE_KERN_CONN))
 	{
@@ -341,19 +360,24 @@ ssize_t xnpipe_send (int minor,
 
     if (testbits(state->status,XNPIPE_USER_CONN))
 	{
-	if (testbits(state->status,XNPIPE_USER_WSEND|XNPIPE_USER_WPOLL))
+	int need_sched = 0;
+	
+	if (testbits(state->status,XNPIPE_USER_WREAD))
 	    {
 	    /* Wake up the userland thread waiting for input
 	       from the kernel side. */
-	    clrbits(state->status,XNPIPE_USER_WSEND|XNPIPE_USER_WPOLL);
-	    xnpipe_schedule_request();
+	    setbits(state->status,XNPIPE_USER_WREAD_READY);
+	    need_sched = 1;
 	    }
 
 	if (state->asyncq) /* Schedule asynch sig. */
 	    {
 	    setbits(state->status,XNPIPE_USER_SIGIO);
-	    xnpipe_schedule_request();
+	    need_sched = 1;
 	    }
+	    
+	if (need_sched)
+	    xnpipe_schedule_request();
 	}
 
     xnlock_put_irqrestore(&nklock,s);
@@ -375,7 +399,8 @@ ssize_t xnpipe_recv (int minor,
     if (minor < 0 || minor >= XNPIPE_NDEVS)
 	return -ENODEV;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+    if (xnpod_asynch_p())
+	return -EPERM;
 
     state = &xnpipe_states[minor];
 
@@ -484,14 +509,13 @@ static int xnpipe_open (struct inode *inode,
 	return -EBUSY;
 	}
 
-    file->private_data = state;
-    sema_init(&state->open_sem,0);
-    sema_init(&state->send_sem,0);
-    init_waitqueue_head(&state->pollq);
-    state->wchan = NULL;
-
-    clrbits(state->status,XNPIPE_USER_WMASK|XNPIPE_USER_SIGIO|XNPIPE_USER_ONWAIT);
     setbits(state->status,XNPIPE_USER_CONN);
+
+    file->private_data = state;
+    init_waitqueue_head(&state->readq);
+    state->readw = 0;
+
+    clrbits(state->status,XNPIPE_USER_WMASK|XNPIPE_USER_WREADY|XNPIPE_USER_SIGIO);
 
     if (!testbits(state->status,XNPIPE_KERN_CONN))
 	{
@@ -520,15 +544,16 @@ static int xnpipe_open (struct inode *inode,
             return -EWOULDBLOCK;
 	    }
 
-	xnpipe_enqueue_wait(state,&state->open_sem,XNPIPE_USER_WOPEN);
+	xnpipe_read_wait(state);
 
-	xnlock_put_irqrestore(&nklock,s);
-
-	if (down_interruptible(&state->open_sem))
+	if (signal_pending(current) && !testbits(state->status,XNPIPE_KERN_CONN))
 	    {
-	    xnpipe_dequeue_wait(state,XNPIPE_USER_WOPEN|XNPIPE_USER_CONN);
+	    clrbits(state->status,XNPIPE_USER_CONN);
+    	    xnlock_put_irqrestore(&nklock,s);
 	    return -ERESTARTSYS;
 	    }
+
+	xnlock_put_irqrestore(&nklock,s);
 	}
     else
 	{
@@ -547,9 +572,7 @@ static int xnpipe_open (struct inode *inode,
 static int xnpipe_release (struct inode *inode,
 			   struct file *file)
 {
-    struct linux_semaphore *wchan = NULL;
     xnpipe_state_t *state;
-    unsigned long slflags;
     xnholder_t *holder;
     int err = 0;
     spl_t s;
@@ -558,18 +581,10 @@ static int xnpipe_release (struct inode *inode,
 
     xnlock_get_irqsave(&nklock,s);
 
-    if (testbits(state->status,XNPIPE_USER_ONWAIT))
-	{
+    if (testbits(state->status,XNPIPE_USER_WMASK))
 	removeq(&xnpipe_sleepq,&state->slink);
 
-        if (state->wchan)
-	    {
-	    wchan = state->wchan;
-	    state->wchan = NULL;
-	    }
-	}
-
-    clrbits(state->status,XNPIPE_USER_CONN|XNPIPE_USER_ONWAIT|XNPIPE_USER_WMASK);
+    clrbits(state->status,XNPIPE_USER_WMASK);
 
     if (testbits(state->status,XNPIPE_KERN_CONN))
 	{
@@ -581,6 +596,15 @@ static int xnpipe_release (struct inode *inode,
 		state->output_handler(minor,link2mh(holder),1,state->cookie);
 	    }
 
+	/* If a real-time kernel thread is waiting on this object,
+	   wake it up now. */
+
+	if (xnsynch_nsleepers(&state->synchbase) > 0)
+	    {
+	    xnsynch_flush(&state->synchbase,XNBREAK);
+	    xnpod_schedule();
+	    }
+
 	xnlock_put_irqrestore(&nklock,s);
 
 	if (xnpipe_close_handler != NULL)
@@ -589,22 +613,22 @@ static int xnpipe_release (struct inode *inode,
     else
 	xnlock_put_irqrestore(&nklock,s);
 
-    if (waitqueue_active(&state->pollq))
-	wake_up_interruptible(&state->pollq);
-
-    if (wchan)
-	up(wchan);
+    if (waitqueue_active(&state->readq))
+	wake_up_interruptible_all(&state->readq);
 
     if (state->asyncq) /* Clear the async queue */
 	{
-	spin_lock_irqsave(&xnpipe_aqlock,slflags);
+        xnlock_get_irqsave(&nklock,s);
 	removeq(&xnpipe_asyncq,&state->alink);
 	clrbits(state->status,XNPIPE_USER_SIGIO);
-	spin_unlock_irqrestore(&xnpipe_aqlock,slflags);
+	xnlock_put_irqrestore(&nklock,s);
 	fasync_helper(-1,file,0,&state->asyncq);
 	}
 
-     return err;
+    /* Free the state object. Since that time it can be open by someone else */
+    clrbits(state->status,XNPIPE_USER_CONN);
+
+    return err;
 }
 
 static ssize_t xnpipe_read (struct file *file,
@@ -621,10 +645,13 @@ static ssize_t xnpipe_read (struct file *file,
     if (!access_ok(VERIFY_WRITE,buf,count))
 	return -EFAULT;
 
-    if (!testbits(state->status,XNPIPE_KERN_CONN))
-	return -EPIPE;
-
     xnlock_get_irqsave(&nklock,s);
+
+    if (!testbits(state->status,XNPIPE_KERN_CONN))
+	{
+	xnlock_put_irqrestore(&nklock,s);
+	return -EPIPE;
+	}
 
     /* Queue probe and proc enqueuing must be seen atomically,
        including from the real-time kernel side. */
@@ -640,27 +667,27 @@ static ssize_t xnpipe_read (struct file *file,
 	    return -EAGAIN;
 	    }
 
-	xnpipe_enqueue_wait(state,&state->send_sem,XNPIPE_USER_WSEND);
+	xnpipe_read_wait(state);
 
-	xnlock_put_irqrestore(&nklock,s);
-
-	if (down_interruptible(&state->send_sem))
-	    {
-	    xnpipe_dequeue_wait(state,XNPIPE_USER_WSEND);
-	    return -ERESTARTSYS;
-	    }
-
-	xnlock_get_irqsave(&nklock,s);
 	holder = getq(&state->outq);
 	mh = link2mh(holder);
-	}
 
-    xnlock_put_irqrestore(&nklock,s);
+	if (signal_pending(current) && !mh)
+	    {
+    	    xnlock_put_irqrestore(&nklock,s);
+	    return -ERESTARTSYS;
+	    }
+	}
 
     if (mh)
 	{
+	xnpipe_io_handler *handler = state->output_handler;
+	void *cookie = state->cookie;
+	
 	ret = (ssize_t)xnpipe_m_size(mh); /* Cannot be zero */
 	state->ionrd -= ret;
+	
+	xnlock_put_irqrestore(&nklock,s);
 
 	if (ret <= count)
 	    {
@@ -671,11 +698,14 @@ static ssize_t xnpipe_read (struct file *file,
 	    /* Return buffer is too small - message is lost. */
 	    ret = -ENOSPC;
 
-	if (state->output_handler != NULL)
-	    state->output_handler(xnminor_from_state(state),mh,ret < 0,state->cookie);
+	if (handler != NULL)
+	    handler(xnminor_from_state(state),mh,ret < 0,cookie);
 	}
     else /* Closed by peer. */
+	{
+	xnlock_put_irqrestore(&nklock,s);
 	ret = 0;
+	}
 
     return ret;
 }
@@ -686,13 +716,13 @@ static ssize_t xnpipe_write (struct file *file,
 			     loff_t *ppos)
 {
     xnpipe_state_t *state = (xnpipe_state_t *)file->private_data;
+    xnpipe_alloc_handler *alloc_handler;
+    xnpipe_io_handler *input_handler;
     struct xnpipe_mh *mh;
     xnthread_t *sleeper;
+    void *cookie;
     int err;
     spl_t s;
-
-    if (!testbits(state->status,XNPIPE_KERN_CONN))
-	return -EPIPE;
 
     if (count == 0)
 	return -EINVAL;
@@ -700,10 +730,24 @@ static ssize_t xnpipe_write (struct file *file,
     if (!access_ok(VERIFY_READ,buf,count))
 	return -EFAULT;
 
-    if (state->alloc_handler != NULL)
-	mh = (struct xnpipe_mh *)state->alloc_handler(xnminor_from_state(state),
-							count + sizeof(*mh),
-							state->cookie);
+    xnlock_get_irqsave(&nklock,s);
+    
+    if (!testbits(state->status,XNPIPE_KERN_CONN))
+	{
+	xnlock_put_irqrestore(&nklock,s);
+	return -EPIPE;
+	}
+
+    alloc_handler = state->alloc_handler;
+    input_handler = state->input_handler;
+    cookie = state->cookie;
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    if (alloc_handler != NULL)
+	mh = (struct xnpipe_mh *)alloc_handler(xnminor_from_state(state),
+					       count + sizeof(*mh),
+					       cookie);
     else
 	mh = (struct xnpipe_mh *)xnmalloc(count + sizeof(*mh));
 
@@ -715,9 +759,9 @@ static ssize_t xnpipe_write (struct file *file,
     xnpipe_m_size(mh) = count;
     __copy_from_user(xnpipe_m_data(mh),buf,count);
 
-    if (state->input_handler != NULL)
+    if (input_handler != NULL)
 	{
-	err = state->input_handler(xnminor_from_state(state),mh,0,state->cookie);
+	err = input_handler(xnminor_from_state(state),mh,0,cookie);
 
 	if (err != 0)
 	    count = (size_t)err;
@@ -749,8 +793,10 @@ static int xnpipe_ioctl (struct inode *inode,
 			 unsigned long arg)
 {
     xnpipe_state_t *state = (xnpipe_state_t *)file->private_data;
+    xnpipe_io_handler *io_handler;
     struct xnpipe_mh *mh;
     xnholder_t *holder;
+    void *cookie;
     int err = 0, n;
     spl_t s;
 
@@ -777,16 +823,19 @@ static int xnpipe_ioctl (struct inode *inode,
 
 	    n = 0;
 	    xnlock_get_irqsave(&nklock,s);
+	    
+	    io_handler = state->output_handler;
+	    cookie = state->cookie;
 
 	    while ((holder = getq(&state->outq)) != NULL)
 		{
+		xnlock_put_irqrestore(&nklock,s);
+
 		mh = link2mh(holder);
 		n += xnpipe_m_size(mh);
 
-		xnlock_put_irqrestore(&nklock,s);
-
-		if (state->output_handler != NULL)
-		    state->output_handler(xnminor_from_state(state),mh,0,state->cookie);
+		if (io_handler != NULL)
+		    io_handler(xnminor_from_state(state),mh,0,cookie);
 
 		xnlock_get_irqsave(&nklock,s);
 		}
@@ -799,7 +848,11 @@ static int xnpipe_ioctl (struct inode *inode,
 
 	case FIONREAD:
 
+	    xnlock_get_irqsave(&nklock,s);
+
 	    n = testbits(state->status,XNPIPE_KERN_CONN) ? state->ionrd : 0;
+
+	    xnlock_put_irqrestore(&nklock,s);
 
 	    if (put_user(n,(int *)arg))
 		return -EFAULT;
@@ -823,8 +876,8 @@ static int xnpipe_fasync (int fd,
 			  int on)
 {
     xnpipe_state_t *state = (xnpipe_state_t *)file->private_data;
-    unsigned long slflags;
     int ret, queued;
+    spl_t s;
 
     queued = (state->asyncq != NULL);
     ret = fasync_helper(fd,file,on,&state->asyncq);
@@ -833,16 +886,16 @@ static int xnpipe_fasync (int fd,
 	{
 	if (!queued)
 	    {
-	    spin_lock_irqsave(&xnpipe_aqlock,slflags);
+	    xnlock_get_irqsave(&nklock,s);
 	    appendq(&xnpipe_asyncq,&state->alink);
-	    spin_unlock_irqrestore(&xnpipe_aqlock,slflags);
+	    xnlock_put_irqrestore(&nklock,s);
 	    }
 	}
     else if (queued)
 	    {
-	    spin_lock_irqsave(&xnpipe_aqlock,slflags);
+	    xnlock_get_irqsave(&nklock,s);
 	    removeq(&xnpipe_asyncq,&state->alink);
-	    spin_unlock_irqrestore(&xnpipe_aqlock,slflags);
+	    xnlock_put_irqrestore(&nklock,s);
 	    }
 
     return ret;
@@ -854,7 +907,7 @@ static unsigned xnpipe_poll (struct file *file,
     xnpipe_state_t *state = (xnpipe_state_t *)file->private_data;
     unsigned r_mask = 0, w_mask = 0;
 
-    poll_wait(file,&state->pollq,pt);
+    poll_wait(file,&state->readq,pt);
 
     if (testbits(state->status,XNPIPE_KERN_CONN))
 	w_mask |= (POLLOUT|POLLWRNORM);
@@ -862,12 +915,16 @@ static unsigned xnpipe_poll (struct file *file,
     if (countq(&state->outq) > 0)
 	r_mask |= (POLLIN|POLLRDNORM);
 
-    if ((!r_mask || !w_mask) && !testbits(state->status,XNPIPE_USER_WPOLL))
+    if (!r_mask)
 	/* Procs which have issued a timed out poll req will remain
 	   linked to the sleepers queue, and will be silently unlinked
 	   the next time the real-time kernel side kicks
 	   xnpipe_wakeup_proc. */
-	xnpipe_enqueue_wait(state,NULL,XNPIPE_USER_WPOLL);
+	xnpipe_enqueue_read(state,&state->readq,&state->readw);
+			    
+    /* a descriptor is always ready for writing with the current
+       implementation, so there is no need to have/handle the writeq
+       queue so far */
 
     return r_mask|w_mask;
 }
@@ -894,7 +951,6 @@ int xnpipe_mount (void)
 	inith(&state->slink);
 	inith(&state->alink);
 	state->status = 0;
-	state->wchan = NULL;
 	state->asyncq = NULL;
 	initq(&state->inq);
 	initq(&state->outq);
@@ -905,8 +961,6 @@ int xnpipe_mount (void)
 
     initq(&xnpipe_sleepq);
     initq(&xnpipe_asyncq);
-    spin_lock_init(&xnpipe_sqlock);
-    spin_lock_init(&xnpipe_aqlock);
 
     if (register_chrdev(XNPIPE_DEV_MAJOR,"rtpipe",&xnpipe_fops))
 	{

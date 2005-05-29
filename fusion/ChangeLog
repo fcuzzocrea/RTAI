@@ -1,3 +1,8 @@
+2005-05-29  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* nucleus/pipe.c: Rewrite the blocking read implementation from
+	the special device side to fix SMP issues.
+
 2005-05-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ia64, include/nucleus/asm-ia64: Merge the ia64 port, a

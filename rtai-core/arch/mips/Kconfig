@@ -6,7 +6,7 @@ config MODULES
 
 config RTAI_VERSION
 	string
-	default "3.1 (vesuvio)"
+	default "3.1r2 (vesuvio)"
 
 menu "General"
 

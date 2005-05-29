@@ -1,5 +1,7 @@
 2005-05-29  Philippe Gerum  <rpm@xenomai.org>
 
+	* rtai-core/scripts/config/autoconf: Upgrade to 2.59.
+
 	* rtai-core/arch/i386: Upgrade 2.6 patches to r10. Use vanilla
 	Adeos patch names, to reduce confusion with non-vanilla hal-*
 	patches used in 3.2 and above.

@@ -1,7 +1,7 @@
 dnl AC_PATH_XREQUIRED() requires X libs. This frag has been
 dnl lifted nearly "as is" from Postgresql's configure.in script.
 
-AC_DEFUN(AC_PATH_XREQUIRED,
+AC_DEFUN([AC_PATH_XREQUIRED],
 [
 	save_LIBS="$LIBS"
 	save_CFLAGS="$CFLAGS"
@@ -42,7 +42,7 @@ dnl AC_POSIX_SIGHANDLER() determines whether
 dnl signal handlers are posix compliant. This frag
 dnl has been adapted from readline's aclocal.m4.
 
-AC_DEFUN(AC_POSIX_SIGHANDLER,
+AC_DEFUN([AC_POSIX_SIGHANDLER],
 [AC_MSG_CHECKING([if signal handlers are posix compliant])
 AC_CACHE_VAL(ac_cv_posix_sighandler,
 [AC_TRY_COMPILE([#include <sys/types.h>
@@ -65,7 +65,7 @@ dnl AC_GCC_MVM_MOREFLAGS() determines whether
 dnl the current compiler is GCC and accepts some
 dnl specific additional flags we need to build the MVM.
 
-AC_DEFUN(AC_GCC_MVM_MOREFLAGS,
+AC_DEFUN([AC_GCC_MVM_MOREFLAGS],
 [AC_MSG_CHECKING([if C compiler is GNU C])
 AC_CACHE_VAL(ac_cv_using_gcc_for_mvm_c,
 [AC_LANG_C
@@ -152,7 +152,7 @@ AC_LANG_C])
 #				the tclConfig.sh file
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PATH_TCLCONFIG, [
+AC_DEFUN([SC_PATH_TCLCONFIG], [
     #
     # Ok, lets find the tcl configuration
     # First, look for one uninstalled.
@@ -245,7 +245,7 @@ AC_DEFUN(SC_PATH_TCLCONFIG, [
 #				the tkConfig.sh file
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PATH_TKCONFIG, [
+AC_DEFUN([SC_PATH_TKCONFIG], [
     #
     # Ok, lets find the tk configuration
     # First, look for one uninstalled.
@@ -337,7 +337,7 @@ AC_DEFUN(SC_PATH_TKCONFIG, [
 #
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_LOAD_TCLCONFIG, [
+AC_DEFUN([SC_LOAD_TCLCONFIG], [
     AC_MSG_CHECKING([for existence of $TCL_BIN_DIR/tclConfig.sh])
 
     if test -f "$TCL_BIN_DIR/tclConfig.sh" ; then
@@ -382,7 +382,7 @@ AC_DEFUN(SC_LOAD_TCLCONFIG, [
 #		TK_BIN_DIR
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_LOAD_TKCONFIG, [
+AC_DEFUN([SC_LOAD_TKCONFIG], [
     AC_MSG_CHECKING([for existence of $TK_BIN_DIR/tkConfig.sh])
 
     if test -f "$TK_BIN_DIR/tkConfig.sh" ; then
@@ -415,7 +415,7 @@ AC_DEFUN(SC_LOAD_TKCONFIG, [
 #		TIX_LIB_SPEC
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PATH_TIX, [
+AC_DEFUN([SC_PATH_TIX], [
     AC_MSG_CHECKING(for Tix's Tcl library)
 
     AC_ARG_WITH(tixlibrary, [  --with-tixlibrary      directory containing the Tix library files.], with_tixlibrary=${withval})
@@ -470,7 +470,7 @@ AC_DEFUN(SC_PATH_TIX, [
 #		${basename}_LIB_SPEC	The computed linker flags.
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_LIB_SPEC, [
+AC_DEFUN([SC_LIB_SPEC], [
     AC_MSG_CHECKING(for $1 library)
     eval "sc_lib_name_dir=${libdir}"
     for i in \
@@ -530,7 +530,7 @@ AC_DEFUN(SC_LIB_SPEC, [
 #		TCL_INCLUDES
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PUBLIC_TCL_HEADERS, [
+AC_DEFUN([SC_PUBLIC_TCL_HEADERS], [
     AC_MSG_CHECKING(for Tcl public headers)
 
     AC_ARG_WITH(tclinclude, [  --with-tclinclude      directory containing the public Tcl header files.], with_tclinclude=${withval})
@@ -599,7 +599,7 @@ AC_DEFUN(SC_PUBLIC_TCL_HEADERS, [
 #		TK_INCLUDES
 #------------------------------------------------------------------------
 
-AC_DEFUN(SC_PUBLIC_TK_HEADERS, [
+AC_DEFUN([SC_PUBLIC_TK_HEADERS], [
     AC_MSG_CHECKING(for Tk public headers)
 
     AC_ARG_WITH(tkinclude, [  --with-tkinclude      directory containing the public Tk header files.], with_tkinclude=${withval})
@@ -710,12 +710,12 @@ dnl Please note that as the ac_opengl macro and the toy example evolves,
 dnl the version number increases, so you may have to adjust the above
 dnl URL accordingly.
 dnl
-dnl @version 0.01 $Id: acinclude.m4,v 1.1 2004/06/06 14:14:24 rpm Exp $
+dnl @version 0.01 $Id: acinclude.m4,v 1.2 2005/05/29 08:00:21 rpm Exp $
 dnl @author Matthew D. Langston <langston@SLAC.Stanford.EDU>
 dnl
 dnl Patched by <rpm@xenomai.org> to suit RTAI's requirements.
 
-AC_DEFUN(MDL_HAVE_OPENGL,
+AC_DEFUN([MDL_HAVE_OPENGL],
 [
   AC_REQUIRE([AC_PATH_X])
   AC_REQUIRE([AC_PATH_XTRA])
@@ -786,7 +786,7 @@ dnl and we don't want to be global namespace polluters.
   ])
 ])
 
-AC_DEFUN(SC_PATH_EFLTK, [
+AC_DEFUN([SC_PATH_EFLTK], [
 
 dnl EFLTK dir passed to the command line overrides the Kconfig setting
 
@@ -859,7 +859,7 @@ fi
 
 ])
 
-AC_DEFUN(SC_PATH_COMEDI, [
+AC_DEFUN([SC_PATH_COMEDI], [
 
 dnl COMEDI dir passed to the command line overrides the Kconfig setting
 

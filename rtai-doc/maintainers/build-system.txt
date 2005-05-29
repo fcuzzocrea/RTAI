@@ -90,11 +90,11 @@ The build system is based on:
 o Kconfig as extracted from Linux 2.5.69 development version. The
 X-based configuration front-ends either needs Qt (xconfig) or GTK2
 (gconfig), and the dialog-based one depends on ncurses.
-o Autoconf >= 2.57
-o Automake >= 1.7.3
-o Libtool >= 1.4.3
+o Autoconf >= 2.59
+o Automake >= 1.9.2
+o Libtool >= 1.5.8
 
 --
-Mai 17, 2003
+May 29, 2005
 Philippe Gerum
 <rpm@xenomai.org>

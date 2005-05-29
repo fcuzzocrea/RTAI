@@ -236,7 +236,7 @@ diff -uNrp linux-2.6.10/adeos/Kconfig linux-2.6.10-ppc-adeos/adeos/Kconfig
 +endmenu
 diff -uNrp linux-2.6.10/adeos/Makefile linux-2.6.10-ppc-adeos/adeos/Makefile
 --- linux-2.6.10/adeos/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/adeos/Makefile	2004-11-24 12:33:17.000000000 +0100
++++ linux-2.6.10-ppc-adeos/adeos/Makefile	2005-05-27 19:17:37.000000000 +0200
 @@ -0,0 +1,13 @@
 +#
 +# Makefile for the Adeos layer.
@@ -1424,6 +1424,9 @@ diff -uNrp linux-2.6.10/arch/ppc/Kconfig linux-2.6.10-ppc-adeos/arch/ppc/Kconfig
  source "arch/ppc/oprofile/Kconfig"
  
  source "arch/ppc/Kconfig.debug"
+Binary files linux-2.6.10/arch/ppc/boot/images/uImage and linux-2.6.10-ppc-adeos/arch/ppc/boot/images/uImage differ
+Binary files linux-2.6.10/arch/ppc/boot/images/vmlinux.bin and linux-2.6.10-ppc-adeos/arch/ppc/boot/images/vmlinux.bin differ
+Binary files linux-2.6.10/arch/ppc/boot/images/vmlinux.gz and linux-2.6.10-ppc-adeos/arch/ppc/boot/images/vmlinux.gz differ
 diff -uNrp linux-2.6.10/arch/ppc/kernel/Makefile linux-2.6.10-ppc-adeos/arch/ppc/kernel/Makefile
 --- linux-2.6.10/arch/ppc/kernel/Makefile	2004-12-24 22:35:28.000000000 +0100
 +++ linux-2.6.10-ppc-adeos/arch/ppc/kernel/Makefile	2005-03-27 16:35:18.000000000 +0200
@@ -1434,8 +1437,8 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/Makefile linux-2.6.10-ppc-adeos/arch/ppc
 +obj-$(CONFIG_ADEOS_CORE)	+= adeos.o
 diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/kernel/adeos.c
 --- linux-2.6.10/arch/ppc/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/arch/ppc/kernel/adeos.c	2005-04-14 09:04:41.000000000 +0200
-@@ -0,0 +1,677 @@
++++ linux-2.6.10-ppc-adeos/arch/ppc/kernel/adeos.c	2005-05-25 23:42:45.000000000 +0200
+@@ -0,0 +1,698 @@
 +/*
 + *   linux/arch/ppc/kernel/adeos.c
 + *
@@ -1502,6 +1505,11 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/
 +extern struct list_head __adeos_pipeline;
 +
 +struct pt_regs __adeos_irq_regs;
++
++#ifdef CONFIG_POWER4
++extern struct irqaction k2u3_cascade_action;
++extern int openpic2_get_irq(struct pt_regs *regs);
++#endif
 +
 +/* Current reload value for the decrementer. */
 +unsigned long __adeos_decr_ticks;
@@ -1745,7 +1753,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/
 +		irq_exit();
 +		}
 +	    else
-+		((void (*)(unsigned, struct pt_regs *))adp->irqs[irq].handler)(irq,&__adeos_irq_regs);
++		adp->irqs[irq].handler(irq);
 +
 +	    adeos_hw_cli();
 +
@@ -1784,7 +1792,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/
 +
 +{
 +    irq_desc_t *desc = irq_desc + irq;
-+
++    
 +    if (desc->handler->ack != NULL)
 +	{
 +	unsigned long adflags;
@@ -1798,15 +1806,23 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/
 +
 +	adeos_load_cpuid();
 +	adflags = adeos_test_and_stall_pipeline();
-+#ifdef CONFIG_PREEMPT
 +	preempt_disable();
-+#endif /* CONFIG_PREEMPT */
 +	spin_lock(&desc->lock);
-+	desc->handler->ack(irq);
++	desc->handler->ack(irq); 
++#ifdef CONFIG_POWER4
++	/* if it is a k2u3 cascaded irq, acknowledge it, also */
++	if (desc->action == &k2u3_cascade_action) {
++	    struct pt_regs regs;
++	    int irq2 = openpic2_get_irq(&regs);
++	    if (irq2 != -1) {
++                irq_desc_t *desc2 = irq_desc + irq2;
++		if (desc2->handler->ack)
++		    desc2->handler->ack(irq2);
++	    }
++	}
++#endif
 +	spin_unlock(&desc->lock);
-+#ifdef CONFIG_PREEMPT
 +	preempt_enable_no_resched();
-+#endif /* CONFIG_PREEMPT */
 +	adeos_restore_pipeline_nosync(adp_cpu_current[cpuid],adflags,cpuid);
 +	}
 +
@@ -2003,6 +2019,14 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/adeos.c linux-2.6.10-ppc-adeos/arch/ppc/
 +	return 1;
 +	}
 +
++#ifdef CONFIG_POWER4
++    /* On 970 CPUs DEC cannot be disabled, and without setting DEC
++     * here, DEC interrupt would be triggered as soon as interrupts are
++     * enabled in __adeos_sync_stage 
++     */
++    set_dec(0x7fffffff);
++#endif
++    
 +    __adeos_irq_regs.msr = regs->msr; /* for do_timer() */
 +
 +    __adeos_handle_irq(ADEOS_TIMER_VIRQ,regs);
@@ -2573,7 +2597,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/ppc_ksyms.c linux-2.6.10-ppc-adeos/arch/
 +#endif /* CONFIG_ADEOS_CORE */
 diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/kernel/traps.c
 --- linux-2.6.10/arch/ppc/kernel/traps.c	2004-12-24 22:34:26.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/arch/ppc/kernel/traps.c	2005-03-27 16:35:19.000000000 +0200
++++ linux-2.6.10-ppc-adeos/arch/ppc/kernel/traps.c	2005-05-15 11:10:33.000000000 +0200
 @@ -78,6 +78,12 @@ void die(const char * str, struct pt_reg
  {
  	static int die_counter;
@@ -2621,16 +2645,18 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  	printk("Bad trap at PC: %lx, MSR: %lx, vector=%lx    %s\n",
  	       regs->nip, regs->msr, regs->trap, print_tainted());
  	_exception(SIGTRAP, regs, 0, 0);
-@@ -347,11 +369,19 @@ void InstructionBreakpoint(struct pt_reg
+@@ -345,6 +367,10 @@ void UnknownException(struct pt_regs *re
+ 
+ void InstructionBreakpoint(struct pt_regs *regs)
  {
- 	if (debugger_iabr_match(regs))
- 		return;
 +#ifdef CONFIG_ADEOS_CORE
 +	if (__adeos_pipeline_trap(ADEOS_IABR_TRAP,regs))
 +	    return;
 +#endif /* CONFIG_ADEOS_CORE */
+ 	if (debugger_iabr_match(regs))
+ 		return;
  	_exception(SIGTRAP, regs, TRAP_BRKPT, 0);
- }
+@@ -352,6 +378,10 @@ void InstructionBreakpoint(struct pt_reg
  
  void RunModeException(struct pt_regs *regs)
  {
@@ -2641,7 +2667,18 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  	_exception(SIGTRAP, regs, 0, 0);
  }
  
-@@ -490,6 +520,11 @@ void ProgramCheckException(struct pt_reg
+@@ -421,6 +451,10 @@ static void emulate_single_step(struct p
+ {
+ 	if (single_stepping(regs)) {
+ 		clear_single_step(regs);
++#ifdef CONFIG_ADEOS_CORE
++		if (__adeos_pipeline_trap(ADEOS_SSTEP_TRAP,regs))
++		    return;
++#endif /* CONFIG_ADEOS_CORE */
+ 		_exception(SIGTRAP, regs, TRAP_TRACE, 0);
+ 	}
+ }
+@@ -490,6 +524,11 @@ void ProgramCheckException(struct pt_reg
  	unsigned int reason = get_reason(regs);
  	extern int do_mathemu(struct pt_regs *regs);
  
@@ -2653,18 +2690,18 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  #ifdef CONFIG_MATH_EMULATION
  	/* (reason & REASON_ILLEGAL) would be the obvious thing here,
  	 * but there seems to be a hardware bug on the 405GP (RevD)
-@@ -566,6 +601,10 @@ void ProgramCheckException(struct pt_reg
- 
+@@ -567,6 +606,10 @@ void ProgramCheckException(struct pt_reg
  void SingleStepException(struct pt_regs *regs)
  {
+ 	regs->msr &= ~MSR_SE;  /* Turn off 'trace' bit */
 +#ifdef CONFIG_ADEOS_CORE
 +	if (__adeos_pipeline_trap(ADEOS_SSTEP_TRAP,regs))
 +	    return;
 +#endif /* CONFIG_ADEOS_CORE */
- 	regs->msr &= ~MSR_SE;  /* Turn off 'trace' bit */
  	if (debugger_sstep(regs))
  		return;
-@@ -581,6 +620,12 @@ void AlignmentException(struct pt_regs *
+ 	_exception(SIGTRAP, regs, TRAP_TRACE, 0);
+@@ -581,6 +624,12 @@ void AlignmentException(struct pt_regs *
  		regs->nip += 4;	/* skip over emulated instruction */
  		return;
  	}
@@ -2677,7 +2714,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  	if (fixed == -EFAULT) {
  		/* fixed == -EFAULT means the operand address was bad */
  		if (user_mode(regs))
-@@ -603,6 +648,10 @@ void StackOverflow(struct pt_regs *regs)
+@@ -603,6 +652,10 @@ void StackOverflow(struct pt_regs *regs)
  
  void nonrecoverable_exception(struct pt_regs *regs)
  {
@@ -2688,7 +2725,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  	printk(KERN_ERR "Non-recoverable exception at PC=%lx MSR=%lx\n",
  	       regs->nip, regs->msr);
  	debugger(regs);
-@@ -623,6 +672,11 @@ void SoftwareEmulation(struct pt_regs *r
+@@ -623,6 +676,11 @@ void SoftwareEmulation(struct pt_regs *r
  	extern int Soft_emulate_8xx(struct pt_regs *);
  	int errcode;
  
@@ -2700,7 +2737,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  	CHECK_FULL_REGS(regs);
  
  	if (!user_mode(regs)) {
-@@ -651,6 +705,10 @@ void SoftwareEmulation(struct pt_regs *r
+@@ -651,6 +709,10 @@ void SoftwareEmulation(struct pt_regs *r
  
  void DebugException(struct pt_regs *regs, unsigned long debug_status)
  {
@@ -2711,7 +2748,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  	if (debug_status & DBSR_IC) {	/* instruction completion */
  		regs->msr &= ~MSR_DE;
  		if (user_mode(regs)) {
-@@ -680,6 +738,11 @@ void AltivecUnavailException(struct pt_r
+@@ -680,6 +742,11 @@ void AltivecUnavailException(struct pt_r
  {
  	static int kernel_altivec_count;
  
@@ -2723,7 +2760,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  #ifndef CONFIG_ALTIVEC
  	if (user_mode(regs)) {
  		/* A user program has executed an altivec instruction,
-@@ -701,6 +764,11 @@ void AltivecAssistException(struct pt_re
+@@ -701,6 +768,11 @@ void AltivecAssistException(struct pt_re
  {
  	int err;
  
@@ -2735,7 +2772,7 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  	preempt_disable();
  	if (regs->msr & MSR_VEC)
  		giveup_altivec(current);
-@@ -747,6 +815,11 @@ void SPEFloatingPointException(struct pt
+@@ -747,6 +819,11 @@ void SPEFloatingPointException(struct pt
  	int fpexc_mode;
  	int code = 0;
  
@@ -2747,6 +2784,194 @@ diff -uNrp linux-2.6.10/arch/ppc/kernel/traps.c linux-2.6.10-ppc-adeos/arch/ppc/
  	spefscr = current->thread.spefscr;
  	fpexc_mode = current->thread.fpexc_mode;
  
+diff -uNrp linux-2.6.10/arch/ppc/kernel/vmlinux.lds linux-2.6.10-ppc-adeos/arch/ppc/kernel/vmlinux.lds
+--- linux-2.6.10/arch/ppc/kernel/vmlinux.lds	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.10-ppc-adeos/arch/ppc/kernel/vmlinux.lds	2005-05-15 11:56:15.000000000 +0200
+@@ -0,0 +1,184 @@
++OUTPUT_ARCH(powerpc:common)
++jiffies = jiffies_64 + 4;
++SECTIONS
++{
++  /* Read-only sections, merged into text segment: */
++  . = + SIZEOF_HEADERS;
++  .interp : { *(.interp) }
++  .hash : { *(.hash) }
++  .dynsym : { *(.dynsym) }
++  .dynstr : { *(.dynstr) }
++  .rel.text : { *(.rel.text) }
++  .rela.text : { *(.rela.text) }
++  .rel.data : { *(.rel.data) }
++  .rela.data : { *(.rela.data) }
++  .rel.rodata : { *(.rel.rodata) }
++  .rela.rodata : { *(.rela.rodata) }
++  .rel.got : { *(.rel.got) }
++  .rela.got : { *(.rela.got) }
++  .rel.ctors : { *(.rel.ctors) }
++  .rela.ctors : { *(.rela.ctors) }
++  .rel.dtors : { *(.rel.dtors) }
++  .rela.dtors : { *(.rela.dtors) }
++  .rel.bss : { *(.rel.bss) }
++  .rela.bss : { *(.rela.bss) }
++  .rel.plt : { *(.rel.plt) }
++  .rela.plt : { *(.rela.plt) }
++/*  .init          : { *(.init)	} =0*/
++  .plt : { *(.plt) }
++  .text :
++  {
++    *(.text)
++    __sched_text_start = .; *(.sched.text) __sched_text_end = .;
++    __lock_text_start = .; *(.spinlock.text) __lock_text_end = .;
++    *(.fixup)
++    *(.got1)
++    __got2_start = .;
++    *(.got2)
++    __got2_end = .;
++  }
++  _etext = .;
++  PROVIDE (etext = .);
++
++  .rodata : AT(ADDR(.rodata) - 0) { *(.rodata) *(.rodata.*) *(__vermagic) } .rodata1 : AT(ADDR(.rodata1) - 0) { *(.rodata1) } .pci_fixup : AT(ADDR(.pci_fixup) - 0) { __start_pci_fixups_early = .; *(.pci_fixup_early) __end_pci_fixups_early = .; __start_pci_fixups_header = .; *(.pci_fixup_header) __end_pci_fixups_header = .; __start_pci_fixups_final = .; *(.pci_fixup_final) __end_pci_fixups_final = .; __start_pci_fixups_enable = .; *(.pci_fixup_enable) __end_pci_fixups_enable = .; } __ksymtab : AT(ADDR(__ksymtab) - 0) { __start___ksymtab = .; *(__ksymtab) __stop___ksymtab = .; } __ksymtab_gpl : AT(ADDR(__ksymtab_gpl) - 0) { __start___ksymtab_gpl = .; *(__ksymtab_gpl) __stop___ksymtab_gpl = .; } __kcrctab : AT(ADDR(__kcrctab) - 0) { __start___kcrctab = .; *(__kcrctab) __stop___kcrctab = .; } __kcrctab_gpl : AT(ADDR(__kcrctab_gpl) - 0) { __start___kcrctab_gpl = .; *(__kcrctab_gpl) __stop___kcrctab_gpl = .; } __ksymtab_strings : AT(ADDR(__ksymtab_strings) - 0) { *(__ksymtab_strings) } __param : AT(ADDR(__param) - 0) { __start___param = .; *(__param) __stop___param = .; }
++  .fini : { *(.fini) } =0
++  .ctors : { *(.ctors) }
++  .dtors : { *(.dtors) }
++
++  .fixup : { *(.fixup) }
++
++        __ex_table : {
++                __start___ex_table = .;
++                *(__ex_table)
++                __stop___ex_table = .;
++        }
++
++        __bug_table : {
++                __start___bug_table = .;
++                *(__bug_table)
++                __stop___bug_table = .;
++        }
++
++  /* Read-write section, merged into data segment: */
++  . = ALIGN(4096);
++  .data :
++  {
++    *(.data)
++    *(.data1)
++    *(.sdata)
++    *(.sdata2)
++    *(.got.plt) *(.got)
++    *(.dynamic)
++    CONSTRUCTORS
++  }
++
++  . = ALIGN(32);
++  .data.cacheline_aligned : { *(.data.cacheline_aligned) }
++
++  _edata = .;
++  PROVIDE (edata = .);
++
++  . = ALIGN(8192);
++  .data.init_task : { *(.data.init_task) }
++
++  . = ALIGN(4096);
++  __init_begin = .;
++  .init.text : {
++        _sinittext = .;
++        *(.init.text)
++        _einittext = .;
++  }
++  .init.data : {
++    *(.init.data);
++    __vtop_table_begin = .;
++    *(.vtop_fixup);
++    __vtop_table_end = .;
++    __ptov_table_begin = .;
++    *(.ptov_fixup);
++    __ptov_table_end = .;
++  }
++  . = ALIGN(16);
++  __setup_start = .;
++  .init.setup : { *(.init.setup) }
++  __setup_end = .;
++  __initcall_start = .;
++  .initcall.init : {
++        *(.initcall1.init)
++        *(.initcall2.init)
++        *(.initcall3.init)
++        *(.initcall4.init)
++        *(.initcall5.init)
++        *(.initcall6.init)
++        *(.initcall7.init)
++  }
++  __initcall_end = .;
++
++  __con_initcall_start = .;
++  .con_initcall.init : { *(.con_initcall.init) }
++  __con_initcall_end = .;
++
++  .security_initcall.init : { __security_initcall_start = .; *(.security_initcall.init) __security_initcall_end = .; }
++
++  __start___ftr_fixup = .;
++  __ftr_fixup : { *(__ftr_fixup) }
++  __stop___ftr_fixup = .;
++
++  . = ALIGN(32);
++  __per_cpu_start = .;
++  .data.percpu : { *(.data.percpu) }
++  __per_cpu_end = .;
++
++  . = ALIGN(4096);
++  __initramfs_start = .;
++  .init.ramfs : { *(.init.ramfs) }
++  __initramfs_end = .;
++
++  . = ALIGN(4096);
++  __init_end = .;
++
++  . = ALIGN(4096);
++  __pmac_begin = .;
++  .pmac.text : { *(.pmac.text) }
++  .pmac.data : { *(.pmac.data) }
++  . = ALIGN(4096);
++  __pmac_end = .;
++
++  . = ALIGN(4096);
++  __prep_begin = .;
++  .prep.text : { *(.prep.text) }
++  .prep.data : { *(.prep.data) }
++  . = ALIGN(4096);
++  __prep_end = .;
++
++  . = ALIGN(4096);
++  __chrp_begin = .;
++  .chrp.text : { *(.chrp.text) }
++  .chrp.data : { *(.chrp.data) }
++  . = ALIGN(4096);
++  __chrp_end = .;
++
++  . = ALIGN(4096);
++  __openfirmware_begin = .;
++  .openfirmware.text : { *(.openfirmware.text) }
++  .openfirmware.data : { *(.openfirmware.data) }
++  . = ALIGN(4096);
++  __openfirmware_end = .;
++
++  __bss_start = .;
++  .bss :
++  {
++   *(.sbss) *(.scommon)
++   *(.dynbss)
++   *(.bss)
++   *(COMMON)
++  }
++  __bss_stop = .;
++
++  _end = . ;
++  PROVIDE (end = .);
++
++  /* Sections to be discarded. */
++  /DISCARD/ : {
++    *(.exitcall.exit)
++  }
++}
 diff -uNrp linux-2.6.10/arch/ppc/mm/fault.c linux-2.6.10-ppc-adeos/arch/ppc/mm/fault.c
 --- linux-2.6.10/arch/ppc/mm/fault.c	2004-12-24 22:34:29.000000000 +0100
 +++ linux-2.6.10-ppc-adeos/arch/ppc/mm/fault.c	2005-03-27 16:35:19.000000000 +0200
@@ -2763,9 +2988,25 @@ diff -uNrp linux-2.6.10/arch/ppc/mm/fault.c linux-2.6.10-ppc-adeos/arch/ppc/mm/f
  #if defined(CONFIG_XMON) || defined(CONFIG_KGDB)
  	if (debugger_fault_handler && TRAP(regs) == 0x300) {
  		debugger_fault_handler(regs);
+diff -uNrp linux-2.6.10/arch/ppc/platforms/pmac_pic.c linux-2.6.10-ppc-adeos/arch/ppc/platforms/pmac_pic.c
+--- linux-2.6.10/arch/ppc/platforms/pmac_pic.c	2004-12-24 22:35:28.000000000 +0100
++++ linux-2.6.10-ppc-adeos/arch/ppc/platforms/pmac_pic.c	2005-05-25 23:42:45.000000000 +0200
+@@ -387,7 +387,12 @@ static irqreturn_t k2u3_action(int cpl, 
+ 	return IRQ_HANDLED;
+ }
+ 
++#ifdef CONFIG_ADEOS_CORE
++/* this is used in kernel/adeos.c adeos_acknowledge_irq */
++struct irqaction k2u3_cascade_action = {
++#else /* !CONFIG_ADEOS_CORE */
+ static struct irqaction k2u3_cascade_action = {
++#endif /* CONFIG_ADEOS_CORE */
+ 	.handler	= k2u3_action,
+ 	.flags		= 0,
+ 	.mask		= CPU_MASK_NONE,
 diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h
 --- linux-2.6.10/include/asm-ppc/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h	2005-04-15 17:53:36.000000000 +0200
++++ linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h	2005-05-29 18:44:34.000000000 +0200
 @@ -0,0 +1,448 @@
 +/*
 + *   include/asm-ppc/adeos.h
@@ -2806,9 +3047,9 @@ diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/a
 +#include <linux/cpumask.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r7c1/ppc"
++#define ADEOS_ARCH_STRING     "r7c2/ppc"
 +#define ADEOS_MAJOR_NUMBER    7
-+#define ADEOS_MINOR_NUMBER    1
++#define ADEOS_MINOR_NUMBER    2
 +
 +#define ADEOS_IRQ_ACKED		0x1000
 +#define ADEOS_IRQ_ACKED_MASK	(ADEOS_IRQ_ACKED - 1)
@@ -3265,6 +3506,99 @@ diff -uNrp linux-2.6.10/include/asm-ppc/hw_irq.h linux-2.6.10-ppc-adeos/include/
  extern void do_lost_interrupts(unsigned long);
  
  #define mask_irq(irq) ({if (irq_desc[irq].handler && irq_desc[irq].handler->disable) irq_desc[irq].handler->disable(irq);})
+diff -uNrp linux-2.6.10/include/asm-ppc/offsets.h linux-2.6.10-ppc-adeos/include/asm-ppc/offsets.h
+--- linux-2.6.10/include/asm-ppc/offsets.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.6.10-ppc-adeos/include/asm-ppc/offsets.h	2005-04-28 23:35:17.000000000 +0200
+@@ -0,0 +1,89 @@
++#ifndef __ASM_OFFSETS_H__
++#define __ASM_OFFSETS_H__
++/*
++ * DO NOT MODIFY.
++ *
++ * This file was generated by arch/ppc/Makefile
++ *
++ */
++
++#define THREAD 464 /* offsetof(struct task_struct, thread) */
++#define THREAD_INFO 4 /* offsetof(struct task_struct, thread_info) */
++#define MM 116 /* offsetof(struct task_struct, mm) */
++#define PTRACE 16 /* offsetof(struct task_struct, ptrace) */
++#define KSP 0 /* offsetof(struct thread_struct, ksp) */
++#define PGDIR 12 /* offsetof(struct thread_struct, pgdir) */
++#define LAST_SYSCALL 20 /* offsetof(struct thread_struct, last_syscall) */
++#define PT_REGS 4 /* offsetof(struct thread_struct, regs) */
++#define THREAD_FPEXC_MODE 16 /* offsetof(struct thread_struct, fpexc_mode) */
++#define THREAD_FPR0 24 /* offsetof(struct thread_struct, fpr[0]) */
++#define THREAD_FPSCR 284 /* offsetof(struct thread_struct, fpscr) */
++#define THREAD_VR0 288 /* offsetof(struct thread_struct, vr[0]) */
++#define THREAD_VRSAVE 816 /* offsetof(struct thread_struct, vrsave) */
++#define THREAD_VSCR 800 /* offsetof(struct thread_struct, vscr) */
++#define THREAD_USED_VR 820 /* offsetof(struct thread_struct, used_vr) */
++#define STACK_FRAME_OVERHEAD 16 /* STACK_FRAME_OVERHEAD */
++#define INT_FRAME_SIZE 192 /* STACK_FRAME_OVERHEAD + sizeof(struct pt_regs) */
++#define GPR0 16 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[0]) */
++#define GPR1 20 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[1]) */
++#define GPR2 24 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[2]) */
++#define GPR3 28 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[3]) */
++#define GPR4 32 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[4]) */
++#define GPR5 36 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[5]) */
++#define GPR6 40 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[6]) */
++#define GPR7 44 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[7]) */
++#define GPR8 48 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[8]) */
++#define GPR9 52 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[9]) */
++#define GPR10 56 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[10]) */
++#define GPR11 60 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[11]) */
++#define GPR12 64 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[12]) */
++#define GPR13 68 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[13]) */
++#define GPR14 72 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[14]) */
++#define GPR15 76 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[15]) */
++#define GPR16 80 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[16]) */
++#define GPR17 84 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[17]) */
++#define GPR18 88 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[18]) */
++#define GPR19 92 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[19]) */
++#define GPR20 96 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[20]) */
++#define GPR21 100 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[21]) */
++#define GPR22 104 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[22]) */
++#define GPR23 108 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[23]) */
++#define GPR24 112 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[24]) */
++#define GPR25 116 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[25]) */
++#define GPR26 120 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[26]) */
++#define GPR27 124 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[27]) */
++#define GPR28 128 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[28]) */
++#define GPR29 132 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[29]) */
++#define GPR30 136 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[30]) */
++#define GPR31 140 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, gpr[31]) */
++#define _NIP 144 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, nip) */
++#define _MSR 148 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, msr) */
++#define _CTR 156 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, ctr) */
++#define _LINK 160 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, link) */
++#define _CCR 168 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, ccr) */
++#define _MQ 172 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, mq) */
++#define _XER 164 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, xer) */
++#define _DAR 180 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, dar) */
++#define _DSISR 184 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, dsisr) */
++#define _DEAR 180 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, dar) */
++#define _ESR 184 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, dsisr) */
++#define ORIG_GPR3 152 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, orig_gpr3) */
++#define RESULT 188 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, result) */
++#define TRAP 176 /* STACK_FRAME_OVERHEAD+offsetof(struct pt_regs, trap) */
++#define CLONE_VM 256 /* CLONE_VM */
++#define CLONE_UNTRACED 8388608 /* CLONE_UNTRACED */
++#define MM_PGD 28 /* offsetof(struct mm_struct, pgd) */
++#define CPU_SPEC_ENTRY_SIZE 36 /* sizeof(struct cpu_spec) */
++#define CPU_SPEC_PVR_MASK 0 /* offsetof(struct cpu_spec, pvr_mask) */
++#define CPU_SPEC_PVR_VALUE 4 /* offsetof(struct cpu_spec, pvr_value) */
++#define CPU_SPEC_FEATURES 12 /* offsetof(struct cpu_spec, cpu_features) */
++#define CPU_SPEC_SETUP 32 /* offsetof(struct cpu_spec, cpu_setup) */
++#define TI_TASK 0 /* offsetof(struct thread_info, task) */
++#define TI_EXECDOMAIN 4 /* offsetof(struct thread_info, exec_domain) */
++#define TI_FLAGS 8 /* offsetof(struct thread_info, flags) */
++#define TI_LOCAL_FLAGS 12 /* offsetof(struct thread_info, local_flags) */
++#define TI_CPU 16 /* offsetof(struct thread_info, cpu) */
++#define TI_PREEMPT 20 /* offsetof(struct thread_info, preempt_count) */
++#define NUM_USER_SEGMENTS 8 /* TASK_SIZE>>28 */
++
++#endif
 diff -uNrp linux-2.6.10/include/asm-ppc/smp.h linux-2.6.10-ppc-adeos/include/asm-ppc/smp.h
 --- linux-2.6.10/include/asm-ppc/smp.h	2004-12-24 22:34:23.000000000 +0100
 +++ linux-2.6.10-ppc-adeos/include/asm-ppc/smp.h	2005-03-27 16:35:19.000000000 +0200

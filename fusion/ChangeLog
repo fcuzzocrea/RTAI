@@ -1,3 +1,7 @@
+2005-05-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r7c2.
+
 2005-05-29  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* nucleus/pipe.c: Rewrite the blocking read implementation from

@@ -70,7 +70,11 @@ typedef void irqreturn_t;
 
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10)
 #define mm_remap_page_range(vma,from,to,size,prot) remap_page_range(vma,from,to,size,prot)
+#else
+#define mm_remap_page_range(vma,from,to,size,prot) remap_pfn_range(vma,from,to>>PAGE_SHIFT,size,prot)
+#endif
 
 #define set_tsk_used_fpu(t)  do { \
     (t)->thread_info->status |= TS_USEDFPU; \

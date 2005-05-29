@@ -12,7 +12,9 @@ rtai_mq.ko:
 else
 rtai_mq.ko: @RTAI_KBUILD_ENV@
 rtai_mq.ko: $(libmq_a_SOURCES)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

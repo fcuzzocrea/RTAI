@@ -12,7 +12,9 @@ rtai_shm.ko:
 else
 rtai_shm.ko: @RTAI_KBUILD_ENV@
 rtai_shm.ko: $(libshm_a_SOURCES)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

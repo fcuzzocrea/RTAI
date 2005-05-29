@@ -12,7 +12,9 @@ rtai_malloc.ko:
 else
 rtai_malloc.ko: @RTAI_KBUILD_ENV@
 rtai_malloc.ko: $(libmalloc_a_SOURCES)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

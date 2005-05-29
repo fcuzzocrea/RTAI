@@ -84,23 +84,33 @@ modules = rtai_cpp.ko rtai_cpp_rtf.ko rtai_cpp_tbx.ko rtai_cpp_wd.ko
 
 rtai_cpp.ko: @RTAI_KBUILD_ENV@
 rtai_cpp.ko: $(libcpp_a_SOURCES) $(noinst_HEADERS)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 rtai_cpp_bits.ko: @RTAI_KBUILD_ENV@
 rtai_cpp_bits.ko: $(libcpp_bits_a_SOURCES) $(noinst_HEADERS)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 rtai_cpp_rtf.ko: @RTAI_KBUILD_ENV@
 rtai_cpp_rtf.ko: $(libcpp_rtf_a_SOURCES) $(noinst_HEADERS)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 rtai_cpp_tbx.ko: @RTAI_KBUILD_ENV@
 rtai_cpp_tbx.ko: $(libcpp_tbx_a_SOURCES) $(noinst_HEADERS)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 rtai_cpp_wd.ko: @RTAI_KBUILD_ENV@
 rtai_cpp_wd.ko: $(libcpp_wd_a_SOURCES) $(noinst_HEADERS)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

@@ -12,7 +12,9 @@ rtai_tasklets.ko:
 else
 rtai_tasklets.ko: @RTAI_KBUILD_ENV@
 rtai_tasklets.ko: $(libtasklets_a_SOURCES)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

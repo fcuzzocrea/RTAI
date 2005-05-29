@@ -31,7 +31,9 @@ libsched_up_a_SOURCES = sched_up.c common.c
 if CONFIG_KBUILD
 rtai_up.ko: @RTAI_KBUILD_ENV@
 rtai_up.ko: $(libsched_up_a_SOURCES) $(builtins_srclist)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 else
 noinst_LIBRARIES += libsched_up.a
 
@@ -57,7 +59,9 @@ rtai_mup_extradef =
 if CONFIG_KBUILD
 rtai_mup.ko: @RTAI_KBUILD_ENV@
 rtai_mup.ko: $(libsched_mup_a_SOURCES) $(builtins_srclist)
-	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_mup_extradef)"
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_mup_extradef)" \
+	@RTAI_KBUILD_BOTTOM@
 else
 noinst_LIBRARIES += libsched_mup.a
 
@@ -86,7 +90,9 @@ rtai_mup_extradef += -D__USE_APIC__
 if CONFIG_KBUILD
 rtai_mup-noapic.ko: @RTAI_KBUILD_ENV@
 rtai_mup-noapic.ko: $(libsched_mup_noapic_a_SOURCES) $(builtins_srclist)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 else
 noinst_LIBRARIES += libsched_mup-noapic.a
 
@@ -115,7 +121,9 @@ rtai_smp_extradef =
 if CONFIG_KBUILD
 rtai_smp.ko: @RTAI_KBUILD_ENV@
 rtai_smp.ko: $(libsched_smp_a_SOURCES) $(builtins_srclist)
-	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_smp_extradef)"
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_smp_extradef)" \
+	@RTAI_KBUILD_BOTTOM@
 else
 noinst_LIBRARIES += libsched_smp.a
 
@@ -143,7 +151,9 @@ rtai_smp_extradef += -D__USE_APIC__
 if CONFIG_KBUILD
 rtai_smp-noapic.ko: @RTAI_KBUILD_ENV@
 rtai_smp-noapic.ko: $(libsched_smp_noapic_a_SOURCES) $(builtins_srclist)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 else
 noinst_LIBRARIES += libsched_smp-noapic.a
 
@@ -172,7 +182,9 @@ rtai_lxrt_extradef = -D__RTAI_LXRT__
 if CONFIG_KBUILD
 rtai_lxrt.ko: @RTAI_KBUILD_ENV@
 rtai_lxrt.ko: $(libsched_lxrt_a_SOURCES) $(builtins_srclist)
-	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_lxrt_extradef)"
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_lxrt_extradef)" \
+	@RTAI_KBUILD_BOTTOM@
 else
 noinst_LIBRARIES += libsched_lxrt.a
 
@@ -203,7 +215,9 @@ rtai_lxrt_extradef += -D__USE_APIC__
 if CONFIG_KBUILD
 rtai_lxrt-noapic.ko: @RTAI_KBUILD_ENV@
 rtai_lxrt-noapic.ko: $(libsched_lxrt_noapic_a_SOURCES) $(builtins_srclist)
-	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_lxrt_noapic_extradef)"
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_lxrt_noapic_extradef)" \
+	@RTAI_KBUILD_BOTTOM@
 else
 noinst_LIBRARIES += libsched_lxrt-noapic.a
 

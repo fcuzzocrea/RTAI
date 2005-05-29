@@ -13,7 +13,9 @@ include_HEADERS = rtai_serial.h
 if CONFIG_KBUILD
 rtai_serial.ko: @RTAI_KBUILD_ENV@
 rtai_serial.ko: $(libserial_a_SOURCES)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

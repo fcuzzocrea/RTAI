@@ -12,7 +12,9 @@ rtai_sem.ko:
 else
 rtai_sem.ko: @RTAI_KBUILD_ENV@
 rtai_sem.ko: $(libsem_a_SOURCES)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

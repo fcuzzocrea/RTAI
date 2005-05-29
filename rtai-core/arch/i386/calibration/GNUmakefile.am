@@ -9,7 +9,9 @@ libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h
 if CONFIG_KBUILD
 calibrate_rt.ko: @RTAI_KBUILD_ENV@
 calibrate_rt.ko: $(libcalibrate_rt_a_SOURCES)
-	@RTAI_KBUILD_CMD@
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ \
+	@RTAI_KBUILD_BOTTOM@
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

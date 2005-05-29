@@ -176,17 +176,17 @@ struct xnpod {
 
     xntimer_t htimer;           /*!< Host timer. */
 
+    xnsched_t sched[XNARCH_NR_CPUS]; /*!< Per-cpu scheduler slots. */
+
     xnqueue_t suspendq;         /*!< Suspended (blocked) threads. */
+
+    xnqueue_t threadq;          /*!< All existing threads. */
+
+    atomic_counter_t schedlck;  /*!< Scheduler lock count. */
 
     xnqueue_t tstartq,          /*!< Thread start hook queue. */
               tswitchq,         /*!< Thread switch hook queue. */
               tdeleteq;         /*!< Thread delete hook queue. */
-
-    xnsched_t sched[XNARCH_NR_CPUS]; /*!< Per-cpu scheduler slots. */
-
-    atomic_counter_t schedlck;  /*!< Scheduler lock count. */
-
-    xnqueue_t threadq;          /*!< All existing threads. */
 
     int minpri,                 /*!< Minimum priority value. */
         maxpri;                 /*!< Maximum priority value. */
@@ -195,7 +195,7 @@ struct xnpod {
 
     u_long tickvalue;           /*!< Tick duration (ns, 1 if aperiodic). */
 
-    u_long ticks2sec;		/*!< Number of ticks per second (1e9
+    u_long ticks2sec;   /*!< Number of ticks per second (1e9
                                   if aperiodic). */
 
     struct {

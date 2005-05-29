@@ -268,8 +268,7 @@ OPTIONS:
 >1. patch and build a vanilla Linux kernel tree with the RTAI support as
     usual. Patches for x86 are available from
     vesuvio/rtai-core/arch/i386/patches/. Apply only one of them
-    that matches the Linux kernel version ("hal" selects Adeos,
-    "legacy" selects the old RTHAL), like this:
+    that matches the Linux kernel version, like this:
     $ cd $linux-src-dir
     $ patch -p1 < rtai-core/arch/$arch/patches/patchfile
 

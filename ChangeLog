@@ -1,3 +1,9 @@
+2005-05-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* rtai-core/arch/i386: Upgrade 2.6 patches to r10. Use vanilla
+	Adeos patch names, to reduce confusion with non-vanilla hal-*
+	patches used in 3.2 and above.
+
 2005-05-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* rtai-core/include/asm-ppc/rtai_sched.h (init_fp_env): Add the

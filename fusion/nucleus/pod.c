@@ -1708,7 +1708,8 @@ void xnpod_renice_thread_inner (xnthread_t *thread, int prio, int propagate)
  * @param cpu The destination CPU.
  * 
  * @retval 0 if the thread could migrate ;
- * @retval -EPERM if the thread affinity forbids this migration ;
+ * @retval -EPERM if the calling context is asynchronous, or the
+ * current thread affinity forbids this migration ;
  * @retval -EBUSY if the scheduler is locked.
  */
 
@@ -1719,14 +1720,14 @@ int xnpod_migrate_thread (int cpu)
     int err;
     spl_t s;
 
-    xnlock_get_irqsave(&nklock, s);
+    if (xnpod_asynch_p())
+        return -EPERM;
 
     if (xnpod_locked_p())
-        {
-        err = -EBUSY;
-        goto unlock_and_exit;
-        }
-    
+	return -EBUSY;
+
+    xnlock_get_irqsave(&nklock, s);
+
     thread = xnpod_current_thread();
 
     if (!xnarch_cpu_isset(cpu, thread->affinity))

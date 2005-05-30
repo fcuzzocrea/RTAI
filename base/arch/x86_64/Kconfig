@@ -495,7 +495,7 @@ config RTAI_MALLOC
 
 config RTAI_MALLOC_VMALLOC
 	bool "Use vmalloc() support"
-	depends on RTAI_EXTENDED && RTAI_MALLOC
+	depends on RTAI_MALLOC
 	default y
 	help
 	RTAI's malloc support offers two different ways to allocate

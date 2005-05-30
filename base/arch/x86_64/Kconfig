@@ -350,8 +350,9 @@ config RTAI_FIFOS
 config RTAI_NETRPC
 	tristate "Net RPC"
 	depends on RTAI_MSG
-	default y if RTAI_MSG=y
-	default m if RTAI_MSG=m
+	default n
+#	default n if RTAI_MSG=y
+#	default n if RTAI_MSG=m
 	help
 	RPC means Remote Procedure Call. The NetRPC implementation
 	corresponds to a synchronous intertask message passing which

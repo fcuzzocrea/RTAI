@@ -144,7 +144,7 @@ static struct {
 
 static unsigned rtai_sysreq_virq;
 
-static unsigned long rtai_sysreq_map = 3; /* srqs #[0-1] are reserved */
+static unsigned long rtai_sysreq_map = 1; /* srq 0 is reserved */
 
 static unsigned long rtai_sysreq_pending;
 
@@ -687,7 +687,7 @@ int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handl
  */
 int rt_free_srq (unsigned srq)
 {
-	return  (srq < 2 || srq >= RTAI_NR_SRQS || !test_and_clear_bit(srq, &rtai_sysreq_map)) ? -EINVAL : 0;
+	return  (srq < 1 || srq >= RTAI_NR_SRQS || !test_and_clear_bit(srq, &rtai_sysreq_map)) ? -EINVAL : 0;
 }
 
 /**
@@ -1650,10 +1650,10 @@ static void rtai_lsrq_dispatcher (unsigned virq)
 static inline long long rtai_usrq_dispatcher (unsigned srq, unsigned label)
 {
 	TRACE_RTAI_SRQ_ENTRY(srq);
-	if (srq > 1 && srq < RTAI_NR_SRQS && test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].u_handler) {
+	if (srq > 0 && srq < RTAI_NR_SRQS && test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].u_handler) {
 		return rtai_sysreq_table[srq].u_handler(label);
 	} else {
-		for (srq = 2; srq < RTAI_NR_SRQS; srq++) {
+		for (srq = 1; srq < RTAI_NR_SRQS; srq++) {
 			if (test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].label == label) {
 				return (long long)srq;
 			}
@@ -1674,6 +1674,9 @@ asmlinkage void rtai_syscall_dispatcher (long bx, unsigned long cx_args, long lo
 	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(ax_srq, cx_args) : rtai_usrq_dispatcher(ax_srq, cx_args);
 	if (!in_hrt_mode(rtai_cpuid())) {
 		local_irq_enable();
+		if (need_resched()) {
+			schedule();
+		}
 	}
 }
 
@@ -1905,8 +1908,6 @@ static void rtai_domain_entry (int iflag)
 }
 
 extern void *adeos_extern_irq_handler;
-static void rt_printk_srq_handler(void);
-#define RT_PRINTK_SRQ   1
 
 static int rtai_orig_irq_affinity[IPIPE_NR_XIRQS];
 
@@ -1934,9 +1935,6 @@ int __rtai_hal_init (void)
 #ifdef CONFIG_PROC_FS
 	rtai_proc_register();
 #endif
-
-	rtai_sysreq_table[RT_PRINTK_SRQ].k_handler = rt_printk_srq_handler;
-	set_bit(RT_PRINTK_SRQ, &rtai_sysreq_map);
 
 	adeos_init_attr(&attr);
 	attr.name     = "RTAI";
@@ -1979,7 +1977,6 @@ void __rtai_hal_exit (void)
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++) {
 		adeos_catch_event(trapnr, NULL);
 	}
-	clear_bit(RT_PRINTK_SRQ, &rtai_sysreq_map);
 	adeos_virtualize_irq(rtai_sysreq_virq, NULL, NULL, 0);
 	adeos_free_irq(rtai_sysreq_virq);
 	rtai_uninstall_archdep();
@@ -1993,69 +1990,33 @@ void __rtai_hal_exit (void)
 	printk(KERN_INFO "RTAI[hal]: unmounted.\n");
 }
 
-
 module_init(__rtai_hal_init);
 module_exit(__rtai_hal_exit);
 
-/*
- *  rt_printk.c, hacked from linux/kernel/printk.c.
- *
- * Modified for RT support, David Schleef.
- *
- * Adapted to RTAI, and restyled his own way by Paolo Mantegazza.
- *
- */
-
-#define PRINTK_BUF_SIZE  (10000) // Test programs may generate much output. PC
-#define TEMP_BUF_SIZE	 (500)
-
-static char rt_printk_buf[PRINTK_BUF_SIZE];
-
-static int buf_front, buf_back;
-static char buf[TEMP_BUF_SIZE];
-
-int rt_printk (const char *fmt, ...)
+asmlinkage int rt_printk(const char *fmt, ...)
 {
-	unsigned long flags;
-        static spinlock_t display_lock = SPIN_LOCK_UNLOCKED;
 	va_list args;
-	int len, i;
+	int r;
 
-        flags = rt_spin_lock_irqsave(&display_lock);
 	va_start(args, fmt);
-	len = vsprintf(buf, fmt, args);
+	r = vprintk(fmt, args);
 	va_end(args);
-	if ((buf_front + len) >= PRINTK_BUF_SIZE) {
-		i = PRINTK_BUF_SIZE - buf_front;
-		memcpy(rt_printk_buf + buf_front, buf, i);
-		memcpy(rt_printk_buf, buf + i, len - i);
-		buf_front = len - i;
-	} else {
-		memcpy(rt_printk_buf + buf_front, buf, len);
-		buf_front += len;
-	}
-        rt_spin_unlock_irqrestore(flags, &display_lock);
-	rt_pend_linux_srq(RT_PRINTK_SRQ);
 
-	return len;
+	return r;
 }
 
-static void rt_printk_srq_handler (void)
+asmlinkage int rt_sync_printk(const char *fmt, ...)
 {
-	int tmp;
+	va_list args;
+	int r;
 
-	while(1) {
-		tmp = buf_front;
-		if (buf_back > tmp) {
-			printk("%.*s", PRINTK_BUF_SIZE - buf_back, rt_printk_buf + buf_back);
-			buf_back = 0;
-		}
-		if (buf_back == tmp) {
-			break;
-		}
-		printk("%.*s", tmp - buf_back, rt_printk_buf + buf_back);
-		buf_back = tmp;
-	}
+	va_start(args, fmt);
+	adeos_set_printk_sync(&rtai_domain);
+	r = vprintk(fmt, args);
+	adeos_set_printk_async(&rtai_domain);
+	va_end(args);
+
+	return r;
 }
 
 /*
@@ -2139,6 +2100,7 @@ EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 
 EXPORT_SYMBOL(rt_printk);
+EXPORT_SYMBOL(rt_sync_printk);
 EXPORT_SYMBOL(ll2a);
 
 EXPORT_SYMBOL(rtai_set_gate_vector);

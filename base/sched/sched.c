@@ -1773,7 +1773,9 @@ static void thread_fun(int cpuid)
 }
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7)
-//static inline _syscall3(pid_t,waitpid,pid_t,pid,int *,wait_stat,int,options)
+#ifndef CONFIG_X86_64
+static inline _syscall3(pid_t,waitpid,pid_t,pid,int *,wait_stat,int,options)
+#endif
 #endif /* LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7) */
 
 
@@ -2560,6 +2562,7 @@ static int lxrt_init(void)
 
     Reservoir = (Reservoir + NR_RT_CPUS - 1)/NR_RT_CPUS;
 
+#ifndef CONFIG_X86_64
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	{
 	taskav[cpuid] = (void *)kmalloc(SpareKthreads*sizeof(void *), GFP_KERNEL);
@@ -2569,6 +2572,7 @@ static int lxrt_init(void)
 	klistm[cpuid].in = (2*Reservoir) & (MAX_WAKEUP_SRQ - 1);
 	wake_up_process(kthreadm[cpuid]);
 	}
+#endif
 
     for (cpuid = 0; cpuid < MAX_LXRT_FUN; cpuid++)
 	{
@@ -2609,6 +2613,7 @@ static void lxrt_exit(void)
     rtai_proc_lxrt_unregister();
 #endif
 
+#ifndef CONFIG_X86_64
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	{
 	struct klist_t *klistp;
@@ -2644,6 +2649,7 @@ static void lxrt_exit(void)
 
 	kfree(taskav[cpuid]);
 	}
+#endif
 
     rt_set_rtai_trap_handler(lxrt_old_trap_handler);
 

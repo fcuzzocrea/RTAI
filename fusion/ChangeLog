@@ -1,3 +1,8 @@
+2005-05-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/lib/task.c (rt_task_shadow): Add a service turning
+	the calling Linux task into a native RTAI task.
+
 2005-05-29  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/patches: Upgrade to Adeos 2.6.10-ppc-r7c2.

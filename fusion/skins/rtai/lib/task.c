@@ -145,6 +145,28 @@ int rt_task_start (RT_TASK *task,
 			     cookie);
 }
 
+int rt_task_shadow (RT_TASK *task,
+		    const char *name,
+		    int prio,
+		    int mode)
+{
+    struct rt_arg_bulk bulk;
+
+    if (__rtai_muxid < 0 && __init_skin() < 0)
+	return -ENOSYS;
+
+    bulk.a1 = (u_long)task;
+    bulk.a2 = (u_long)name;
+    bulk.a3 = (u_long)prio;
+    bulk.a4 = (u_long)mode;
+    bulk.a5 = (u_long)pthread_self();
+
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_task_create,
+			     &bulk,
+			     NULL);
+}
+
 int rt_task_bind (RT_TASK *task,
 		  const char *name)
 {

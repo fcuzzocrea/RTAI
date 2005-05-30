@@ -133,6 +133,9 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
     RT_TASK *task;
     spl_t s;
 
+    if (xnshadow_thread(curr))
+	return -EBUSY;
+
     __xn_copy_from_user(curr,&bulk,(void __user *)__xn_reg_arg1(regs),sizeof(bulk));
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,bulk.a1,sizeof(ph)))
@@ -155,7 +158,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
     prio = bulk.a3;
     /* CPU affinity. */
     affinity = bulk.a4 & T_CPUMASK;
-    /* Completion descriptor our parent thread is pending on. */
+    /* Completion descriptor our parent thread is pending on -- may be NULL. */
     u_completion = (xncompletion_t __user *)__xn_reg_arg2(regs);
 
     task = (RT_TASK *)xnmalloc(sizeof(*task));
@@ -191,7 +194,9 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 	{
 	xnfree(task);
 	/* Unblock and pass back error code. */
-	xnshadow_signal_completion(u_completion,err);
+
+	if (u_completion)
+	    xnshadow_signal_completion(u_completion,err);
 	}
 
     return err;

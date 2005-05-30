@@ -123,7 +123,7 @@ void __task_pkg_cleanup (void)
  * task. If zero is passed, a reasonable pre-defined size will be
  * substituted. This parameter is ignored for user-space tasks.
  *
- * @param prio The base priority of the new thread. This value must
+ * @param prio The base priority of the new task. This value must
  * range from [1 .. 99] (inclusive) where 1 is the lowest effective
  * priority.
  *
@@ -2092,7 +2092,7 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
  * task. If zero is passed, a reasonable pre-defined size will be
  * substituted. This parameter is ignored for user-space tasks.
  *
- * @param prio The base priority of the new thread. This value must
+ * @param prio The base priority of the new task. This value must
  * range from [1 .. 99] (inclusive) where 1 is the lowest effective
  * priority.
  *
@@ -2138,6 +2138,77 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
  * - User-space task
+ *
+ * Rescheduling: possible.
+ */
+
+/**
+ * @fn int rt_task_shadow(RT_TASK *task,
+		          const char *name,
+			  int prio,
+			  int mode)
+ * @brief Turns the current Linux task into a native RTAI task.
+ *
+ * Creates a real-time task running in the context of the calling
+ * regular Linux task in user-space.
+ *
+ * @param task The address of a task descriptor RTAI will use to store
+ * the task-related data.  This descriptor must always be valid while
+ * the task is active therefore it must be allocated in permanent
+ * memory.
+ *
+ * The current context is switched to primary execution mode and
+ * returns immediately, unless T_SUSP has been passed in the @a mode
+ * parameter.
+ *
+ * @param name An ASCII string standing for the symbolic name of the
+ * task. When non-NULL and non-empty, this string is copied to a safe
+ * place into the descriptor, and passed to the registry package if
+ * enabled for indexing the created task.
+ *
+ * @param prio The base priority which will be set for the current
+ * task. This value must range from [1 .. 99] (inclusive) where 1 is
+ * the lowest effective priority.
+ *
+ * @param mode The task creation mode. The following flags can be
+ * OR'ed into this bitmask, each of them affecting the new task:
+ *
+ * - T_FPU allows the task to use the FPU whenever available on the
+ * platform. This flag is forced for this call, therefore it can be
+ * omitted.
+ *
+ * - T_SUSP causes the task to enter the suspended mode after it has
+ * been put under RTAI's control. In such a case, a call to
+ * rt_task_resume() will be needed to wake up the current task.
+ *
+ * - T_CPU(cpuid) makes the current task affine to CPU # @b cpuid. CPU
+ * identifiers range from 0 to RTHAL_NR_CPUS - 1 (inclusive). The
+ * calling task will migrate to another processor before this service
+ * returns if the current one is not part of the CPU affinity mask.
+ *
+ * Passing T_CPU(0)|T_CPU(1) in the @a mode parameter thus defines a
+ * task affine to CPUs #0 and #1.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EBUSY is returned if the current Linux task is already mapped to
+ * a RTAI context.
+ *
+ * - -ENOMEM is returned if the system fails to get enough dynamic
+ * memory from the global real-time heap in order to create or
+ * register the task.
+ *
+ * - -EEXIST is returned if the @a name is already in use by some
+ * registered object.
+ *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task (enters primary mode)
  *
  * Rescheduling: possible.
  */

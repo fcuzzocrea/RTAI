@@ -193,6 +193,11 @@ typedef RT_TASK_PLACEHOLDER RT_TASK;
 extern "C" {
 #endif
 
+int rt_task_shadow(RT_TASK *task,
+		   const char *name,
+		   int prio,
+		   int mode);
+
 int rt_task_bind(RT_TASK *task,
 		 const char *name);
 

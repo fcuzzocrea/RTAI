@@ -683,10 +683,10 @@ int rt_sem_wait_barrier(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!sem->owndby) {
-		sem->owndby = (void *)(sem->count < 1 ? 1 : sem->count);
+		sem->owndby = (void *)(long)(sem->count < 1 ? 1 : sem->count);
 		sem->count = sem->type = 0;
 	}
-	if ((1 - sem->count) < (int)sem->owndby) {
+	if ((1 - sem->count) < (long)sem->owndby) {
 		rt_sem_wait(sem);
 	} else {
 		rt_sem_broadcast(sem);

@@ -1927,7 +1927,7 @@ RT_TASK *rt_trigger(RT_TASK *proxy)
 	return (RT_TASK *)0;
 }
 
-#ifdef CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
+#if 1 //def CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
 
 /* ++++++++++++ ANOTHER API SET FOR EXTENDED INTERTASK MESSAGES +++++++++++++++
 COPYRIGHT (C) 2003  Pierre Cloutier  (pcloutier@poseidoncontrols.com)
@@ -2157,7 +2157,7 @@ struct rt_native_fun_entry rt_msg_entries[] = {
 	{ { UR1(2, 3), rt_proxy_attach },         	PROXY_ATTACH },
 	{ { 1, rt_proxy_detach },                 	PROXY_DETACH },
 	{ { 1, rt_trigger },                      	PROXY_TRIGGER },
-#ifdef CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
+#if 1 //def CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
 	{ { UR1(2, 4) | UW1(3, 5), rt_Send },	 	RT_SEND },
 	{ { UW1(2, 3) | UW2(4, 0), rt_Receive },	RT_RECEIVE },
 	{ { UW1(2, 3) | UW2(4, 0), rt_Creceive }, 	RT_CRECEIVE },

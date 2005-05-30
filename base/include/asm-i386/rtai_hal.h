@@ -538,6 +538,7 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 #endif
 
 int rt_printk(const char *format, ...);
+int rt_printk_sync(const char *format, ...);
 
 extern adomain_t rtai_domain;
 

@@ -42,6 +42,9 @@
 #ifndef _RTAI_ASM_X8664_HAL_H
 #define _RTAI_ASM_X8664_HAL_H
 
+#define LOCKED_LINUX_IN_IRQ_HANDLER
+#define UNWRAPPED_CATCH_EVENT
+
 #include <asm/rtai_vectors.h>
 #include <rtai_types.h>
 
@@ -496,6 +499,7 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 #endif
 
 int rt_printk(const char *format, ...);
+int rt_printk_sync(const char *format, ...);
 
 extern adomain_t rtai_domain;
 
@@ -505,7 +509,7 @@ static inline void rt_switch_to_real_time(int cpuid)
 	if (!rtai_linux_context[cpuid].depth++) {
 		rtai_linux_context[cpuid].oldflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 		adp_cpu_current[cpuid] = &rtai_domain;
-		test_and_set_bit(cpuid, &rtai_cpu_realtime);
+//		test_and_set_bit(cpuid, &rtai_cpu_realtime);
 	}
 }
 
@@ -514,7 +518,7 @@ static inline void rt_switch_to_linux(int cpuid)
 	TRACE_RTAI_SWITCHTO_LINUX(cpuid);
 	if (rtai_linux_context[cpuid].depth) {
 		if (!--rtai_linux_context[cpuid].depth) {
-			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
+//			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
 			adp_cpu_current[cpuid] = adp_root;
 			adp_root->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 		}
@@ -523,8 +527,8 @@ static inline void rt_switch_to_linux(int cpuid)
 	rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n");
 }
 
-#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
-//#define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].depth)
+//#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
+#define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].depth)
 
 static inline void rt_set_timer_delay (int delay) {
 

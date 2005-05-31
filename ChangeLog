@@ -1,8 +1,9 @@
-2005-05-30  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+2005-05-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-	* base/arch/i386/hal/hal.immed: tested and fixed UP direct irq 
-	  handling of 8254 timers; do not use reduced set registers
-	  saving to be able to ret_from_int.
+	* base/arch/x86_64/hal/hal.immed:
+	  and
+	* base/include/asm-x86_64/rtai_hal.immed: all features of the 
+	  latest i386 version.
 
 2005-05-30  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

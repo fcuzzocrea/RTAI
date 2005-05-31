@@ -1,4 +1,4 @@
-function [x,y,typ]=rtai_mbx_rcv_if(job,arg1,arg2)
+function [x,y,typ]=rtai_generic_inp(job,arg1,arg2)
 //
 // Copyright roberto.bucher@supsi.ch
 x=[];y=[];typ=[];
@@ -18,16 +18,15 @@ case 'set' then
   model=arg1.model;graphics=arg1.graphics;
   label=graphics.exprs;
   while %t do
-    [ok,op,name,ipaddr,lab]=..
-        getvalue('Set RTAI-mbx_rcv_if block parameters',..
+    [ok,op,name,lab]=..
+        getvalue('Set RTAI generic input block parameters',..
         ['output ports';
-	'MBX Name';
-	'IP Addr'],..
-         list('vec',-1,'str',1,'str',1),label(1))
+	'Identifier'],..
+         list('vec',-1,'str',1),label(1))
 
     if ~ok then break,end
     label(1)=lab
-    funam='i_mbx_rcvif_' + name;
+    funam='i_generic_' + name;
     xx=[];ng=[];z=0;
     nx=0;nz=0;
     o=[];
@@ -69,8 +68,7 @@ case 'set' then
 case 'define' then
   out=1
   outsz = 1
-  name = 'MBX'
-  ipaddr = '127.0.0.1'
+  name = 'SENS'
 
   model=scicos_model()
   model.sim=list(' ',2004)
@@ -87,15 +85,17 @@ case 'define' then
   model.dep_ut=[%t %f]
   model.nzcross=0
 
-  label=list([sci2exp(out),name,ipaddr],[])
+  label=list([sci2exp(out),name],[])
 
-  gr_i=['xstringb(orig(1),orig(2),[''Mbx Rcv no blk'';name],sz(1),sz(2),''fill'');']
+  gr_i=['xstringb(orig(1),orig(2),[''SENSOR'';name],sz(1),sz(2),''fill'');']
   x=standard_define([3 2],model,label,gr_i)
 
 end
 endfunction
 
 function [ok,tt]=getCode(funam)
+if tt==[] then
+  
    textmp=[
           '#ifndef MODEL'
           '#include <math.h>';
@@ -107,26 +107,43 @@ function [ok,tt]=getCode(funam)
          ];
   textmp($+1)='{'
   textmp($+1)='#ifdef MODEL'
-  textmp($+1)='static int port;'
   textmp($+1)='int i;'
   textmp($+1)='double y[' + string(nout) + '];'
   textmp($+1)='double t = get_scicos_time();' 
   textmp($+1)='  switch(flag) {'
   textmp($+1)='  case 4:'
-  textmp($+1)='    port=inp_mbx_receive_if_init('+ string(nout)+','+ '""' + name + '"",""'+ipaddr+'"");'
+  textmp($+1)='    /* Initialisation */'
   textmp($+1)='    break;'; 
   textmp($+1)='  case 1:'
-  textmp($+1)='    inp_mbx_receive_if_input(port,y,t);'
+  textmp($+1)='    /* input(y,t); */'
   textmp($+1)='    for (i=0;i<' + string(nout) + ';i++) block->outptr[i][0] = y[i];'
   textmp($+1)='    break;'
   textmp($+1)='  case 5:'
-  textmp($+1)='    inp_mbx_receive_if_end(port);'
+  textmp($+1)='    /* end */'
   textmp($+1)='    break;'
   textmp($+1)='  }'
   textmp($+1)='#endif'
   textmp($+1)='}'
-  tt=textmp;
 
-  ok = %t;
+else
+  textmp=tt;
+end
+
+while 1==1
+  [txt]=x_dialog(['Function definition in C';
+		  'Here is a skeleton of the functions which you shoud edit'],..
+		 textmp);
+  
+  if txt<>[] then
+    tt=txt
+    [ok]=scicos_block_link(funam,tt,'c')
+    if ok then
+      textmp=txt;
+    end
+    break;
+  else
+    ok=%f;break;
+  end  
+end
 
 endfunction

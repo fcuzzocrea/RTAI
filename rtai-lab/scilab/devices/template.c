@@ -22,25 +22,29 @@
 
 extern devStr inpDevStr[];
 extern devStr outDevStr[];
+extern int pinp_cnt;
+extern int pout_cnt;
 
-void inp_xxx_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5)
+int inp_xxx_init(int nch,char * sName,char * sParam,double p1,
+		 double p2, double p3, double p4, double p5)
 {
-    int id=port-1;
-    inpDevStr[id].nch=nch;
-    strcpy(inpDevStr[id].sName,sName);
-    strcpy(inpDevStr[id].sParam,sParam);
-    strcpy(inpDevStr[id].IOName,"xxx inp");
-    inpDevStr[id].dParam[0]=p1;
-    inpDevStr[id].dParam[1]=p2;
-    inpDevStr[id].dParam[2]=p3;
-    inpDevStr[id].dParam[3]=p4;
-    inpDevStr[id].dParam[4]=p5;
+  int port=pinp_cnt++;
+  inpDevStr[port].nch=nch;
+  strcpy(inpDevStr[port].sName,sName);
+  strcpy(inpDevStr[port].sParam,sParam);
+  strcpy(inpDevStr[port].IOName,"xxx inp");
+  inpDevStr[port].dParam[0]=p1;
+  inpDevStr[port].dParam[1]=p2;
+  inpDevStr[port].dParam[2]=p3;
+  inpDevStr[port].dParam[3]=p4;
+  inpDevStr[port].dParam[4]=p5;
+
+  return(port);
 }
 
 void inp_xxx_input(int port, double * y, double t)
 {
-/*     *y=XXXX; */
+  /*     *y=XXXX; */
 }
 
 void inp_xxx_update(void)
@@ -49,32 +53,32 @@ void inp_xxx_update(void)
 
 void inp_xxx_end(int port)
 {
-  printf("%s closed\n",inpDevStr[port-1].IOName);
+  printf("%s closed\n",inpDevStr[port].IOName);
 }
 
-void out_xxx_init(int port,int nch,char * sName,char * sParam,double p1,
-                  double p2, double p3, double p4, double p5)
+int out_xxx_init(int nch,char * sName,char * sParam,double p1,
+		 double p2, double p3, double p4, double p5)
 {
-    int id=port-1;
-    outDevStr[id].nch=nch;
-    strcpy(outDevStr[id].sName,sName);
-    strcpy(outDevStr[id].sParam,sParam);
-    strcpy(outDevStr[id].IOName,"xxx out");
-    outDevStr[id].dParam[0]=p1;
-    outDevStr[id].dParam[1]=p2;
-    outDevStr[id].dParam[2]=p3;
-    outDevStr[id].dParam[3]=p4;
-    outDevStr[id].dParam[4]=p5;
+  int port=pout_cnt++;
+  outDevStr[port].nch=nch;
+  strcpy(outDevStr[port].sName,sName);
+  strcpy(outDevStr[port].sParam,sParam);
+  strcpy(outDevStr[port].IOName,"xxx out");
+  outDevStr[port].dParam[0]=p1;
+  outDevStr[port].dParam[1]=p2;
+  outDevStr[port].dParam[2]=p3;
+  outDevStr[port].dParam[3]=p4;
+  outDevStr[port].dParam[4]=p5;
 }
 
 void out_xxx_output(int port, double * u,double t)
 { 
-/*     XXXX=*u; */
+  /*     XXXX=*u; */
 }
 
 void out_xxx_end(int port)
 {
-  printf("%s closed\n",outDevStr[port-1].IOName);
+  printf("%s closed\n",outDevStr[port].IOName);
 }
 
 

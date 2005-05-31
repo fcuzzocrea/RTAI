@@ -30,54 +30,56 @@
 #include "rtmain.h"
 
 extern devStr inpDevStr[];
+extern int pinp_cnt;
 
-void inp_mbx_receive_init(int port,int nch,char * sName,char * IP)
+int inp_mbx_receive_init(int nch,char * sName,char * IP)
 {
   long Target_Node;
   long Target_Port=0;
   MBX * mbx;
   struct sockaddr_in addr;
+  int port=pinp_cnt++;
 
-    int id=port-1;
-    inpDevStr[id].nch=nch;
-    strcpy(inpDevStr[id].sName,sName);
-    strcpy(inpDevStr[id].sParam,IP);
-    strcpy(inpDevStr[id].IOName,"mbx_receive inp");
+  inpDevStr[port].nch=nch;
+  strcpy(inpDevStr[port].sName,sName);
+  strcpy(inpDevStr[port].sParam,IP);
+  strcpy(inpDevStr[port].IOName,"mbx_receive inp");
 
-    if(!strcmp(IP,"0")) {
-      Target_Node = 0;
-      Target_Port = 0;
-    }
-    else {
-      inet_aton(IP, &addr.sin_addr);
-      Target_Node = addr.sin_addr.s_addr;
-      while ((Target_Port = rt_request_port_id(Target_Node,nam2num(sName))) <= 0 && Target_Port != -EINVAL);
-    }
+  if(!strcmp(IP,"0")) {
+    Target_Node = 0;
+    Target_Port = 0;
+  }
+  else {
+    inet_aton(IP, &addr.sin_addr);
+    Target_Node = addr.sin_addr.s_addr;
+    while ((Target_Port = rt_request_port_id(Target_Node,nam2num(sName))) <= 0 && Target_Port != -EINVAL);
+  }
 
-    mbx = (MBX *) RT_typed_named_mbx_init(Target_Node,Target_Port,sName,nch*sizeof(double),FIFO_Q);
+  mbx = (MBX *) RT_typed_named_mbx_init(Target_Node,Target_Port,sName,nch*sizeof(double),FIFO_Q);
 
-    if(mbx == NULL) {
-      fprintf(stderr, "Error in getting %s mailbox address\n", sName);
-      exit_on_error();
-    }
-    inpDevStr[id].ptr1 = (void *) mbx;
-    inpDevStr[id].ptr2 = calloc(nch,sizeof(double));
-    inpDevStr[id].l1 = Target_Node;
-    inpDevStr[id].l2 = Target_Port;
+  if(mbx == NULL) {
+    fprintf(stderr, "Error in getting %s mailbox address\n", sName);
+    exit_on_error();
+  }
+  inpDevStr[port].ptr1 = (void *) mbx;
+  inpDevStr[port].ptr2 = calloc(nch,sizeof(double));
+  inpDevStr[port].l1 = Target_Node;
+  inpDevStr[port].l2 = Target_Port;
+
+  return(port);
 }
 
 void inp_mbx_receive_input(int port, double * y, double t)
 {
-  int id=port-1;
-  MBX *mbx = (MBX *) inpDevStr[port-1].ptr1;
-  double * old_val = (double *) inpDevStr[port-1].ptr2;
-  int ntraces = inpDevStr[port-1].nch;
+  MBX *mbx = (MBX *) inpDevStr[port].ptr1;
+  double * old_val = (double *) inpDevStr[port].ptr2;
+  int ntraces = inpDevStr[port].nch;
   struct{
     double u[ntraces];
   } data;
   int i;
 
-  if(!RT_mbx_receive(inpDevStr[id].l1, inpDevStr[id].l2, mbx ,&data, sizeof(data))) {
+  if(!RT_mbx_receive(inpDevStr[port].l1, inpDevStr[port].l2, mbx ,&data, sizeof(data))) {
     for(i=0;i<ntraces;i++) {
       old_val[i] = data.u[i];
     }
@@ -91,14 +93,13 @@ void inp_mbx_receive_update(void)
 
 void inp_mbx_receive_end(int port)
 {
-  int id=port-1;
   MBX *mbx;
 
-  mbx = (MBX *) inpDevStr[id].ptr1;
-  RT_named_mbx_delete(inpDevStr[id].l1, inpDevStr[id].l2,mbx);
-  free(inpDevStr[id].ptr2);
-  if(inpDevStr[id].l1) rt_release_port(inpDevStr[id].l1, inpDevStr[id].l2);
-  printf("%s closed\n",inpDevStr[id].IOName);
+  mbx = (MBX *) inpDevStr[port].ptr1;
+  RT_named_mbx_delete(inpDevStr[port].l1, inpDevStr[port].l2,mbx);
+  free(inpDevStr[port].ptr2);
+  if(inpDevStr[port].l1) rt_release_port(inpDevStr[port].l1, inpDevStr[port].l2);
+  printf("%s closed\n",inpDevStr[port].IOName);
 }
 
 

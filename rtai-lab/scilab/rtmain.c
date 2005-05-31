@@ -41,7 +41,7 @@
 #include <devstruct.h>
 #include <devices.h>
 
-#define RTAILAB_VERSION   "3.1.1"
+#define RTAILAB_VERSION   "3.2.1"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -116,6 +116,8 @@ int ComediDev_DIOInUse[MAX_COMEDI_DEVICES] = {0};
 
 devStr inpDevStr[40];
 devStr outDevStr[40];
+int pinp_cnt = 0;
+int pout_cnt = 0;
 
 static void DummyWait(void) { }
 static void DummySend(void) { }
@@ -296,7 +298,6 @@ static void *rt_BaseRate(void *args)
     char name[7];
     int i;
     static RTIME t0;
-    int nevprt = 1;
 
     for(i = 0; i < MAX_NTARGETS; i++) {
       sprintf(name,"BRT%d",i);
@@ -325,9 +326,7 @@ static void *rt_BaseRate(void *args)
 	if (endBaseRate) break;
 
 	TIME = (rt_get_cpu_time_ns() - t0)*1.0E-9;
-	set_nevprt(nevprt);
-	NAME(MODEL,main1)(NAME(block_,MODEL),z, &TIME);
-	NAME(MODEL,main2)(NAME(block_,MODEL),z, &TIME);
+	NAME(MODEL,_rt_exec)(NAME(block_,MODEL),z, &TIME);
     }
     if (UseHRT) {
       rt_make_soft_real_time();

@@ -27,6 +27,10 @@ MACROS= rtai_sinus.sci \
 	rtai_fifo.sci \
 	rtai_sem_signal.sci \
 	rtai_sem_wait.sci \
-	RTAICodeGen_.sci 
+	RTAICodeGen_.sci \
+	SetTarget_.sci \
+	C_RTAI_BLK.sci \
+	rtai_generic_inp.sci \
+	rtai_generic_out.sci
 
 include ../Make.lib

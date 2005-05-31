@@ -24,9 +24,9 @@ function  RTAICodeGen_()
     XX=scs_m.objs(k);
     [ok,XX,alreadyran]=do_compile_superblock(XX,all_scs_m,k,alreadyran)
     enablemenus()
+
     if ok then 
       scs_m.objs(k)=XX
-//      edited=%f;
       needcompile=4
       Cmenu='Replot';
     else
@@ -39,14 +39,17 @@ endfunction
 
 //==========================================================================
 
-function Code=c_make_doit1(cpr)
-// produces the code for ddoit1 and edoit1
+function Code=c_make_doit1(cpr,stalone)
+// produces the code for ddoit1, cdoit,edoit1, doit, odoit and ozdoit
 //Copyright INRIA
-//Author : Rachid Djenidi
-
 
   Code=[make_ddoit1()
-	make_edoit1()]
+	make_cdoit(stalone)
+	make_edoit1(stalone)
+        make_doit(stalone)
+	make_odoit(stalone)
+	make_zdoit(stalone)
+        make_ozdoit(stalone)]  
 endfunction
 
 //==========================================================================
@@ -65,40 +68,39 @@ function Code=make_ddoit1()
 	 'int '
 	 cformatline(rdnom+'ddoit1(z, told, outtb, iwa)',70); 
 	 '';
-	 '     double  *z; ';
-	 '     double  *told; ';
-	 ''
-	 '     double  *outtb; '; 
+	 '     double  *z, *told, *outtb; '; 
 	 '     integer *iwa; '; 
 	 '{'; 
 	 '  /* System generated locals */ '; 
 	 ' '; 
 	 '  /* Local variables */ '; 
 	 '  integer kiwa; ';
-	 '  integer urg; '; 
 	 ' '; 
 	 '  /* Function Body */ '; 
-	 '  kiwa = 0; ';
-	 '  urg = 1; '];
+	 '  kiwa = 0; '];
  //////////////////////////////////////////////////
-  if  szclkIN>=1 then
-    pointi=clkptr(howclk)-1;
-    Code($+1)='  pointi='+string(pointi)+'+ totalnevprt;';
-  else
-    pointi=clkptr(howclk)
-    Code($+1)='  pointi='+string(pointi)+';';
-  end
+   if  szclkIN>=1 then
+     pointi=clkptr(howclk)-1;
+     Code($+1)='  pointi='+string(pointi)+'+ totalnevprt;';
+   else
+     if (size(cap,'*') >1) then
+       pointi=clkptr(howclk)-1;
+       Code($+1)='  pointi='+string(pointi)+'+ totalnevprt;';
+     else
+       pointi=clkptr(howclk)
+       Code($+1)='  pointi='+string(pointi)+';';
+     end
+   end
+  
   Code=[Code;
 	'  tevts[pointi-1]=*told;'];
 
 
   Code=[Code;
-	 '  while (urg > 0) {';		 
-	 cformatline('    '+rdnom+'edoit1(told, '+..
-		    '&(z['+string(size(z,1))+']), &urg, '+..
+	 cformatline('  '+rdnom+'edoit1(told, '+..
+		    '&(z['+string(size(z,1))+']), '+..
 		    '(int *)(z+'+string(size(z,1)+size(outtb,1))+..
 		    '),&kiwa);',70);	
-	'  }';
 	'  iwa['+string(clkptr($)-1)+']=kiwa;';
 	'  return 0;'
 	' ';
@@ -107,8 +109,96 @@ function Code=make_ddoit1()
 endfunction
 
 //==========================================================================
+//nouveau
 
-function Code=make_edoit1()
+function Code=make_cdoit(stalone)
+//les pointeurs de cpr :
+  z=cpr.state.z;
+  pointi=cpr.state.pointi;
+  funs=cpr.sim.funs;
+  inpptr=cpr.sim.inpptr;
+  clkptr=cpr.sim.clkptr;
+  cord=cpr.sim.cord;
+  ncord=size(cord,1);
+  sztvec=max(clkptr(2:$)-clkptr(1:$-1))+1;
+  nZ=size(z,'*')+size(outtb,'*')+clkptr($)
+  Code=['';
+	 '/*'+part('-',ones(1,40))+' cdoit.c */ ';
+	 'int '
+	 cformatline(rdnom+'cdoit(z, told, outtb)',70); 
+	 '';
+	 '     double  *z, *told,*outtb; ';
+	 '{'; 
+	 '  /* System generated locals */ '; 
+	 '  integer i2; '; 
+	 ' '; 
+	 '  /* Local variables */ '; 
+	 '  integer flag,nport,sz[100],ierr1,nevprt,ntvec;';
+	 '  double  tvec['+string(sztvec)+'],rdouttb['+string(size(outtb,1)+1)+'],*args[100];'; 
+	 ' '; 
+	 '  /* Function Body */ ';];
+
+ //////////////////////////////////////////////////
+  for ii=1:ncord
+    fun=cord(ii,1);
+    if outptr(fun+1)-outptr(fun)>0  then
+      nclock=cord(ii,2);
+      if or(fun==act) | or(fun==cap) then
+	if stalone then
+	  Code=[Code;
+	      '  flag = 1 ;';
+	      '  nevprt='+string(nclock)+';';
+	      ' '+wfunclist(fun);
+	      ' ';
+	      ' '];
+        end     
+      else
+        Code=[Code;
+	      '  flag = 1 ;';
+	      '  nevprt='+string(nclock)+';';
+	      ' '+wfunclist(fun);
+	      ' ';
+	      ' '];
+      end 
+    end
+    ntvec=clkptr(fun+1)-clkptr(fun);
+    if ntvec >0  & funs(fun) <> 'bidon' then
+      nxx=lnkptr(inplnk(inpptr(fun)));
+      if funtyp(fun)==-1 then
+	Code=[Code;
+		'    if (outtb['+string(nxx-1)+']>0) {';
+		'      ntvecm=1;';
+		'    }';
+		'    else {';
+		'      ntvecm=2;';
+		'    }']
+        elseif funtyp(fun)==-2 then
+	  Code=[Code;
+		'    ntvecm=(integer)outtb['+string(nxx-1)+'];';
+		'    if(ntvecm>'+string(ntvec)+'){ntvecm='+string(ntvec)+';}';
+		'    if(ntvecm<1){ntvecm=1;}']
+	else
+	  message('Block '+fun+' has funtyp '+string(funtyp(fun))+': not allowed')
+	end
+	
+	Code=[Code;
+	      '    i2 = ntvecm + clkptr['+string(fun-1)+'] - 1;';
+	      '    '+rdnom+'_putevs(told, &i2, &ierr1); ';
+	      '    if (ierr1 != 0) return 3;'
+	      cformatline('    '+rdnom+'doit(z, told, &(z['+string(size(z,1))+']));',70);	]
+    end
+  end
+  Code=[Code;	
+	'  return 0;'
+	' ';
+	'} /* cdoit */';
+	'  '];
+
+endfunction
+
+//==========================================================================
+
+function Code=make_edoit1(stalone)
   //les pointeurs de cpr :
   z=cpr.state.z;  
   funs=cpr.sim.funs;
@@ -119,70 +209,63 @@ function Code=make_edoit1()
   clkptr=cpr.sim.clkptr;evtspt=cpr.state.evtspt;
   nZ=size(z,'*')+size(outtb,'*')+clkptr($)
   //////////////////////////////////////////////////
-  maxkeve=size(evtspt,1);
+  maxkeve=size(ordptr,1)-1;
   
   Code=[ '/*'+part('-',ones(1,40))+' edoit1.c */ ';
 	 'int '
 	 cformatline(rdnom+'edoit1(told, '+..
-		    'outtb, urg, iwa, kiwa)',70)
-	'     double  *told; ';
-	'     double  *outtb; ';
-	'     integer *urg,  *iwa, *kiwa; ';
+		    'outtb, iwa, kiwa)',70)
+	'     double  *told, *outtb; ';
+	'     integer *iwa, *kiwa; ';
 	'{ ';
 	'  /* System generated locals */ ';
 	'  integer i2; ';
 	' ';
 	'  /* Local variables */ ';
-	'  integer flag, keve, nport; ';
-	'  integer nord; ';
-	'  double  rdouttb['+string(size(outtb,1)+1)+']; ';
-	'  double  *args[100]; '; 
-	'  integer ierr1; ';
-	'  integer ntvecm, nevprt; ';
+	'  integer flag, kever, nport, nord, ierr1, ntvecm, nevprt; ';
+	'  double  rdouttb['+string(size(outtb,1)+1)+'], *args[100]; ';
 	' ';
 	'  /* Function Body */ ';
-	'  --(*urg); '
-	'  keve = pointi; ';
-	'  pointi = evtspt[keve-1]; ';
-	'  evtspt[keve-1] = -1; ';
+	'  kever = pointi; ';
+	'  pointi = evtspt[kever-1]; ';
+	'  evtspt[kever-1] = -1; ';
 	' ';
-	'  nord = ordptr[keve] - ordptr[keve-1]; ';
+	'  nord = ordptr[kever] - ordptr[kever-1]; ';
 	'  if (nord == 0) { ';
 	'    return 0; ';
 	'  } ';
 	'  ++(*kiwa);   ';
-	'  iwa[*kiwa-1] = keve;   ';
-	'  switch(keve) {'];
+	'  iwa[*kiwa-1] = kever;   ';
+	'  switch(kever) {'];
 
-  for keve=1:maxkeve
-    Code($+1)='  case '+string(keve)+':';
+  for kever=1:maxkeve
+    Code($+1)='  case '+string(kever)+':';
 
-    for ii=ordptr(keve):ordptr(keve+1)-1
+    for ii=ordptr(kever):ordptr(kever+1)-1
       //***********************************
       fun=ordclk(ii,1);
-      i=fun;
       if outptr(fun+1)-outptr(fun)>0  then
 	nclock=ordclk(ii,2);
-	Code=[Code;
-	      '    flag = 1 ;';
-	      '    nevprt='+string(nclock)+';';
-	      '   '+wfunclist(i);
-	      ' ';
-	      ' '];
-       end
-    end
-    Code($+1)='    break;';
-  end
-  Code($+1)='  }  ';
-  Code($+1)='  ';
-  Code($+1)='  switch(keve) {';
-  for keve=1:maxkeve
-    Code($+1)='  case '+string(keve)+':';
-
-    for ii=ordptr(keve):ordptr(keve+1)-1
-      //***********************************
-      fun=ordclk(ii,1);
-      i=fun;
+	if or(fun==act) | or(fun==cap) then
+	  if stalone then
+	    Code=[Code;
+	          '    flag = 1 ;';
+	          '    nevprt='+string(nclock)+';';
+	          '    '+wfunclist(fun);
+	          '    ';
+	          '    '];
+          end     
+        else
+            Code=[Code;
+	         '    flag = 1 ;';
+	         '    nevprt='+string(nclock)+';';
+	         '    '+wfunclist(fun);
+	         '    ';
+	         '    '];
+        end 
+	
+      end
+       
       nevprt=ordclk(ii,2);
       ntvec=clkptr(fun+1)-clkptr(fun);
       if ntvec >0  & funs(fun) <> 'bidon' then
@@ -205,10 +288,11 @@ function Code=make_edoit1()
 	end
 	
 	Code=[Code;
-	      '     ++(*urg);';
-	      '     i2 = ntvecm + clkptr['+string(fun-1)+'] - 1;';
+	      '    i2 = ntvecm + clkptr['+string(fun-1)+'] - 1;';
 	      '    '+rdnom+'_putevs(told, &i2, &ierr1); ';
-	      '     if (ierr1 != 0) return 3;']
+	      '    if (ierr1 != 0) return 3;';
+	      cformatline('    '+rdnom+'edoit1(told, outtb, iwa, kiwa);',70)
+	      ]
       end
     end
     Code($+1)='    break;';
@@ -221,7 +305,625 @@ endfunction
 
 //==========================================================================
 
-function Code=c_make_doit2(cpr);
+function Code=make_doit(stalone)
+    ///////////////////
+  //les pointeurs de cpr :
+  z=cpr.state.z;  
+  funs=cpr.sim.funs;
+  inpptr=cpr.sim.inpptr;
+  outptr=cpr.sim.outptr;
+  funtyp=cpr.sim.funtyp;
+  ordptr=cpr.sim.ordptr;ordclk=cpr.sim.ordclk;
+  clkptr=cpr.sim.clkptr;evtspt=cpr.state.evtspt;
+  sztvec=max(clkptr(2:$)-clkptr(1:$-1))+1;
+  nZ=size(z,'*')+size(outtb,'*')+clkptr($)
+  //////////////////////////////////////////////////
+  //maxkeve=size(evtspt,1);
+  maxkeve=size(ordptr,1)-1;
+  Code=[ '/*'+part('-',ones(1,40))+' doit.c */ ';
+	 'int '
+	 cformatline(rdnom+'doit(z, told, outtb)',70)
+	'     double  *z, *told, *outtb; ';
+	'{ ';
+	'  /* System generated locals */ ';
+	'  integer i2; ';
+	' ';
+	'  /* Local variables */ ';
+	'  integer flag, kever, nport; ';
+	'  integer nord; ';
+	'  double  tvec['+string(sztvec)+']; '; 
+	'  double  rdouttb['+string(size(outtb,1)+1)+']; ';
+	'  double  *args[100]; '; 
+	'  integer sz[100]; ';
+	'  integer ierr1, i, nx=0; ';
+	'  integer ntvec, ntvecm, nevprt; ';
+	' ';
+	'  /* Function Body */ ';
+	'  kever = pointi; ';
+	'  pointi = evtspt[kever]; ';
+	'  evtspt[kever] = -1; ';
+	' ';
+	'  nord = ordptr[kever + 1] - ordptr[kever]; ';
+	'  if (nord == 0) { ';
+	'    return 0; ';
+	'  } ';	
+	'  switch(kever) {'];
+
+  for kever=1:maxkeve
+    Code($+1)='  case '+string(kever)+':';
+
+    for ii=ordptr(kever):ordptr(kever+1)-1
+      //***********************************
+      fun=ordclk(ii,1);
+      if outptr(fun+1)-outptr(fun)>0  then
+	nclock=ordclk(ii,2);
+        if or(fun==act) | or(fun==cap) then
+	  if stalone then
+	    Code=[Code;
+	          '  flag = 1 ;';
+	          '  nevprt='+string(nclock)+';';
+	          ' '+wfunclist(fun);
+	          ' ';
+	          ' '];
+          end     
+        else
+            Code=[Code;
+	         '  flag = 1 ;';
+	         '  nevprt='+string(nclock)+';';
+	         ' '+wfunclist(fun);
+	         ' ';
+	         ' '];
+        end 
+	
+      end
+    
+      nevprt=ordclk(ii,2);
+      ntvec=clkptr(fun+1)-clkptr(fun);
+      if ntvec >0  & funs(fun) <> 'bidon' then
+	nxx=lnkptr(inplnk(inpptr(fun)));
+	if funtyp(fun)==-1 then
+	  Code=[Code;
+		'    if (outtb['+string(nxx-1)+']>0) {';
+		'      ntvecm=1;';
+		'    }';
+		'    else {';
+		'      ntvecm=2;';
+		'    }']
+	elseif funtyp(fun)==-2 then
+	  Code=[Code;
+		'    ntvecm=(integer)outtb['+string(nxx-1)+'];';
+		'    if(ntvecm>'+string(ntvec)+'){ntvecm='+string(ntvec)+';}';
+		'    if(ntvecm<1){ntvecm=1;}']
+	else
+	  message('Block '+fun+' has funtyp '+string(funtyp(fun))+': not allowed')
+	end
+	
+	Code=[Code;
+	      '     i2 = ntvecm + clkptr['+string(fun-1)+'] - 1;';
+	      '    '+rdnom+'_putevs(told, &i2, &ierr1); ';
+	      '     if (ierr1 != 0) return 3;'
+	      cformatline('    '+rdnom+'doit(z, told, outtb);',70)]
+      end
+    end
+    Code($+1)='    break;';
+  end
+  Code=[Code;
+	'  }  ';
+	'  return 0;'
+	'} /* doit */      '];
+endfunction
+
+//==========================================================================
+
+//nouveau
+function Code=make_odoit(stalone)
+//les pointeurs de cpr :
+  z=cpr.state.z;
+  pointi=cpr.state.pointi;
+  funs=cpr.sim.funs;
+  inpptr=cpr.sim.inpptr;
+  clkptr=cpr.sim.clkptr;
+  oord=cpr.sim.oord;
+  noord=size(oord,1);
+  xptr=cpr.sim.xptr;
+  evtspt=cpr.state.evtspt;
+  ordptr=cpr.sim.ordptr;ordclk=cpr.sim.ordclk;
+  sztvec=max(clkptr(2:$)-clkptr(1:$-1))+1;
+  nZ=size(z,'*')+size(outtb,'*')+clkptr($)
+  Code=['';
+	 '/*'+part('-',ones(1,40))+' odoit.c */ ';]
+
+if (stalone & x <> []) then
+   Code=[Code
+         'int '
+	 cformatline(rdnom+'odoit(told, outtb, iwa, phase,residual, xt, xtd)',70);  
+	 '';
+	 '     double  *told, *outtb, *residual, *xt, *xtd; '; 
+	 '     integer *iwa, phase; ';
+         '{']
+else
+  Code=[Code
+         'int '
+	 cformatline(rdnom+'odoit(told, outtb, iwa, phase)',70);  
+	 '';
+	 '     double  *told, *outtb; '; 
+	 '     integer *iwa, phase; ';
+         '{']
+end
+if (x <> []) then
+   Code=[Code        	 
+	 '  /* System generated locals */ '; 
+	 '  integer i,i2; '; 
+	 ' '; 
+	 '  /* Local variables */ '; 
+	 '  integer flag, keve, kiwa, nport; ';
+	 '  double  tvec['+string(sztvec)+']; '; 
+	 '  double  rdouttb['+string(size(outtb,1)+1)+']; ';
+	 '  double  *args[100]; '; 
+	 '  integer sz[100]; ';
+	 '  integer ierr1; '; 
+	 '  integer nevprt; '; 
+	 '  integer ntvec;'; 
+	 ' '; 
+	 '  /* Function Body */ ';
+	 '  kiwa = 0; ';];
+end
+ //////////////////////////////////////////////////
+  
+  for ii=1:noord
+    fun=oord(ii,1);
+    if outptr(fun+1)-outptr(fun)>0  then
+      nclock=oord(ii,2);
+      if or(fun==act) | or(fun==cap) then
+	if stalone then
+	  Code=[Code;
+	        '  flag = 1 ;';
+	        '  nevprt='+string(nclock)+';';
+	        ' '+wfunclist(fun);
+	        ' ';
+	        ' '];
+        end     
+      else
+        Code=[Code;
+	      '  flag = 1 ;';
+	      '  nevprt='+string(nclock)+';';
+	      ' '+wfunclist(fun);
+	      ' ';
+	      ' '];
+      end 
+      
+    end
+    ntvec=clkptr(fun+1)-clkptr(fun);
+    if ntvec >0  & funs(fun) <> 'bidon' then
+      if funtyp(fun)<0 then
+        Code=[Code;
+	      '    i2 = ntvecm + clkptr['+string(fun-1)+'] - 1;';
+	      '    '+rdnom+'_putevs(told, &i2, &ierr1); ';
+	      '    if (ierr1 != 0) return 3;'
+	      cformatline('    '+rdnom+'ozdoit(told, outtb, iwa, &kiwa, phase);',70)]
+      end
+    end
+  end
+  Code=[Code;			
+	'  /*     .  update states derivatives */'];
+
+  for ii=1:noord
+    fun=oord(ii,1);
+    if xptr(fun+1)-xptr(fun)>0  then
+      nclock=oord(ii,2);
+      if or(fun==act) | or(fun==cap) then
+	if stalone then
+	  Code=[Code;
+	        '  flag = 0 ;';
+	        '  nevprt='+string(nclock)+';';
+                ' '+wfunclist(fun);
+	        ' ';
+	        ' '];          
+        end     
+      else
+        Code=[Code;
+	      '  flag = 0 ;';
+	      '  nevprt='+string(nclock)+';';]
+        if stalone then
+	  Code=[Code;
+	        '  block_'+rdnom+'['+string(fun-1)+'].x=&(xt['+string(xptr(fun)-1)+']);'
+                '  block_'+rdnom+'['+string(fun-1)+'].xd=&(xtd['+string(xptr(fun)-1)+']);']
+        end	
+        Code=[Code;
+	      ' '+wfunclist(fun);
+	      ' ';
+	      ' '];
+      end 
+      
+    end
+  end
+  if (x <>[]) then
+    Code=[Code;	
+          '  for (i = 1; i <= kiwa; ++i) {';
+	  '    keve = iwa[i-1];';
+	  '    switch(keve) {'];
+    maxkeve=size(ordptr,1)-1;
+    for keve=1:maxkeve
+      Code($+1)='    case '+string(keve)+':';
+      for ii=ordptr(keve):ordptr(keve+1)-1
+        fun=ordclk(ii,1);
+        if (xptr(fun+1)-xptr(fun))>0  then
+          nclock=ordclk(ii,2);
+	  if or(fun==act) | or(fun==cap) then
+	    if stalone then
+	      Code=[Code;
+	            '  flag = 0 ;';
+	            '  nevprt='+string(nclock)+';';
+	            ' '+wfunclist(fun);
+	            ' ';
+	            ' '];
+            end     
+          else
+            Code=[Code;
+	          '  flag = 0 ;';
+	          '  nevprt='+string(nclock)+';';]
+            if stalone then
+	      Code=[Code;
+	            '  block_'+rdnom+'['+string(fun-1)+'].x=&(xt['+string(xptr(fun)-1)+']);'
+                    '  block_'+rdnom+'['+string(fun-1)+'].xd=&(xtd['+string(xptr(fun)-1)+']);']
+            end	
+            Code=[Code;
+	          ' '+wfunclist(fun);
+	          ' ';
+	          ' '];          
+          end 
+        
+        end
+      end
+      Code($+1)='    break;';
+    end
+    Code=[Code;
+          '    }'; //switch
+	  '  }';]
+    end
+    Code=[Code;
+          '  return 0;'
+	  ' ';
+	  '} /* odoit */';
+	  '  '];
+
+endfunction
+
+//==========================================================================
+
+//nouveau
+function Code=make_zdoit(stalone)
+//les pointeurs de cpr :
+  z=cpr.state.z;zcptr=cpr.sim.zcptr;
+  pointi=cpr.state.pointi;
+  funs=cpr.sim.funs;
+  inpptr=cpr.sim.inpptr;
+  clkptr=cpr.sim.clkptr;
+  zord=cpr.sim.zord;
+  nzord=size(zord,1);
+  xptr=cpr.sim.xptr;
+  evtspt=cpr.state.evtspt;
+  ordptr=cpr.sim.ordptr;ordclk=cpr.sim.ordclk;
+  sztvec=max(clkptr(2:$)-clkptr(1:$-1))+1;
+  nZ=size(z,'*')+size(outtb,'*')+clkptr($)
+  Code=['';
+	 '/*'+part('-',ones(1,40))+' zdoit.c */ ';
+	 'int '
+	cformatline(rdnom+'zdoit(g,told, outtb, iwa, phase)',70);  
+	 '';
+	 '     double *g, *told, *outtb; '; 
+	 '     integer *iwa, phase; '; 
+	 '{'; 
+	 '  /* System generated locals */ '; 
+	 '  integer i,i2; '; 
+	 ' '; 
+	 '  /* Local variables */ '; 
+	 '  integer flag, keve, kiwa, nport, jj, j; ';
+	 '  double  tvec['+string(sztvec)+']; '; 
+	 '  double  rdouttb['+string(size(outtb,1)+1)+']; ';
+	 '  double  *args[100]; '; 
+	 '  integer sz[100]; ';
+	 '  integer ierr1; '; 
+	 '  integer nevprt; '; 
+	 '  integer ntvec;'; 
+	 ' '; 
+	 '  /* Function Body */ ';
+	 '  kiwa = 0; ';];
+
+ //////////////////////////////////////////////////
+ 
+  for ii=1:nzord
+    fun=zord(ii,1);
+    if outptr(fun+1)-outptr(fun)>0  then
+      nclock=zord(ii,2);
+      if or(fun==act) | or(fun==cap) then
+	if stalone then
+	  Code=[Code;
+	        '  flag = 1 ;';
+	        '  nevprt='+string(nclock)+';';
+	        ' '+wfunclist(fun);
+	        ' ';
+	        ' '];
+        end     
+      else
+        Code=[Code;
+	      '  flag = 1 ;';
+	      '  nevprt='+string(nclock)+';';
+	      ' '+wfunclist(fun);
+	      ' ';
+	      ' '];
+      end 
+      
+    end
+    ntvec=clkptr(fun+1)-clkptr(fun);
+    if ntvec >0  & funs(fun) <> 'bidon' then
+      if funtyp(fun)<0 then
+        Code=[Code;
+	      '    i2 = ntvecm + clkptr['+string(fun-1)+'] - 1;';
+	      '    '+rdnom+'_putevs(told, &i2, &ierr1); ';
+	      '    if (ierr1 != 0) return 3;'
+              cformatline('    '+rdnom+'ozdoit(told, outtb, iwa, &kiwa, phase);',70)]
+      end
+    end
+  end
+  Code=[Code;
+	'  /*     .  update states derivatives */'];
+ 
+  for ii=1:nzord
+    fun=zord(ii,1);
+    nclock=zord(ii,2);
+   
+    if funtyp(fun) > 0 then
+	   Code=[Code;
+	         ' if ( block_'+rdnom+'['+string(fun-1)+'].ng > 0){']
+	  if or(fun==act) | or(fun==cap) then
+	    if stalone then
+	      Code=[Code;
+	            '  flag = 9 ;';
+	            '  nevprt='+string(nclock)+';';
+	            ' '+wfunclist(fun);
+	            ' ';
+	            ' '];
+            end     
+          else
+            Code=[Code;
+	          '  flag = 9 ;';
+	          '  nevprt='+string(nclock)+';';
+	          ' '+wfunclist(fun);
+	          ' ';
+	          ' '];
+          end
+          
+    else 
+      Code=[Code;
+	         ' if ( block_'+rdnom+'['+string(fun-1)+'].ng > 0){']
+      if funtyp(fun)==-1 then
+	  Code=[Code;
+	        '  g['+string(zcptr(fun))+']=outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+'];'
+		'  if(phase==1 && block_'+rdnom+'['+string(fun-1)+'].nmode > 0){'
+		'    if (g['+string(zcptr(fun))+'] <= 0.){'
+		'      block_'+rdnom+'['+string(fun-1)+'].mode[0] = 2;'
+		'    }'
+		'    else {'
+		'      block_'+rdnom+'['+string(fun-1)+'].mode[0] = 1;'
+		'    }'
+		'  }']
+      elseif funtyp(fun)==-2 then
+	  Code=[Code;
+	        '  for (jj=0;jj<block_'+rdnom+'['+string(fun-1)+'].nevout-1;++jj) {'     
+		'    g['+string(zcptr(fun)-1)+'+jj]='
+	        '      outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+']'
+	        '      -(double)(jj+2);'
+		'  }'
+		'  if(phase==1 && block_'+rdnom+'['+string(fun-1)+'].nmode>0){'
+	        '    j=max(min((integer) '
+		'              outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+'],'
+		'              block_'+rdnom+'['+string(fun-1)+'].nevout),1);'
+	        '    block_'+rdnom+'['+string(fun-1)+'].mode[0]= j;'
+                '  }']
+      end
+    end
+    Code($+1)=' }'	  
+  end
+
+  Code=[Code;	
+        '  for (i = 1; i <= kiwa; ++i) {';
+	'    keve = iwa[i-1];';
+	'    switch(keve) {'];
+  maxkeve=size(ordptr,1)-1;
+  for keve=1:maxkeve
+    Code($+1)='    case '+string(keve)+':';
+    for ii=ordptr(keve):ordptr(keve+1)-1
+      fun=ordclk(ii,1);
+      nclock=abs(ordclk(ii,2));
+      Code=[Code;
+	  ' if ( block_'+rdnom+'['+string(fun-1)+'].ng > 0){']
+      if funtyp(fun) > 0 then
+	if or(fun==act) | or(fun==cap) then
+	  if stalone then
+	    Code=[Code;
+	          '  flag = 9 ;';
+	          '  nevprt='+string(nclock)+';';
+	          ' '+wfunclist(fun);
+	          ' ';
+	          ' '];
+          end     
+        else
+          Code=[Code;
+	        '  flag = 9 ;';
+	        '  nevprt='+string(nclock)+';';
+	        ' '+wfunclist(fun);
+	        ' ';
+	        ' '];
+        end
+          
+      else
+        if funtyp(fun)==-1 then
+	  Code=[Code;
+	        '  g['+string(zcptr(fun))+']=outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+'];'
+		'  if(phase==1 && block_'+rdnom+'['+string(fun-1)+'].nmode > 0){'
+		'    if (g['+string(zcptr(fun))+'] <= 0.){'
+		'      block_'+rdnom+'['+string(fun-1)+'].mode[0] = 2;'
+		'    }'
+		'    else {'
+		'      block_'+rdnom+'['+string(fun-1)+'].mode[0] = 1;'
+		'    }'
+		'  }'];
+        elseif funtyp(fun)==-2 then
+	  Code=[Code;
+	        '  for (jj=0;jj<block_'+rdnom+'['+string(fun-1)+'].nevout-1;++jj) {'     
+		'    g['+string(zcptr(fun)-1)+'+jj]='
+	        '      outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+']'
+	        '      -(double)(jj+2);'
+		'  }'
+		'  if(phase==1 && block_'+rdnom+'['+string(fun-1)+'].nmode>0){'
+	        '    j=max(min((integer) '
+		'              outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+'],'
+		'              block_'+rdnom+'['+string(fun-1)+'].nevout),1);'
+	        '    block_'+rdnom+'['+string(fun-1)+'].mode[0]= j;'
+                '  }']
+        end
+      end
+      Code($+1)=' }'	  
+      
+    end
+    Code($+1)='    break;';
+  end
+  Code=[Code;
+        '    }'; //switch
+	'  }';
+        '  return 0;'
+	' ';
+	'} /* zdoit */';
+	'  '];
+
+endfunction
+
+//==========================================================================
+
+function Code=make_ozdoit(stalone)
+    ///////////////////
+  //les pointeurs de cpr :
+  z=cpr.state.z;  
+  funs=cpr.sim.funs;
+  inpptr=cpr.sim.inpptr;
+  outptr=cpr.sim.outptr;
+  funtyp=cpr.sim.funtyp;
+  ordptr=cpr.sim.ordptr;ordclk=cpr.sim.ordclk;
+  clkptr=cpr.sim.clkptr;evtspt=cpr.state.evtspt;
+  sztvec=max(clkptr(2:$)-clkptr(1:$-1))+1;
+  nZ=size(z,'*')+size(outtb,'*')+clkptr($) 
+  //////////////////////////////////////////////////
+  maxkeve=size(ordptr,1)-1;
+  
+  Code=[ '/*'+part('-',ones(1,40))+' ozdoit.c */ ';
+	 'int '
+	cformatline(rdnom+'ozdoit(told, outtb, iwa, kiwa, phase)',70)	 
+	'     double  *told, *outtb; ';
+	'     integer *iwa, *kiwa, phase; ';
+	'{ ';
+	'  /* System generated locals */ ';
+	'  integer i2; ';
+	' ';
+	'  /* Local variables */ ';
+	'  integer flag, kever, nport; ';
+	'  integer nord; ';
+	'  double  tvec['+string(sztvec)+']; '; 
+	'  double  rdouttb['+string(size(outtb,1)+1)+']; ';
+	'  double  *args[100]; '; 
+	'  integer sz[100]; ';
+	'  integer ierr1, i, nx=0; ';
+	'  integer ntvec, ntvecm, nevprt; ';
+	' ';
+	'  /* Function Body */ ';
+	'  kever = pointi; ';
+	'  pointi = evtspt[kever]; ';
+	'  evtspt[kever] = -1; ';
+	' ';
+	'  nord = ordptr[kever + 1] - ordptr[kever]; ';
+	'  if (nord == 0) { ';
+	'    return 0; ';
+	'  } ';
+	'  ++(*kiwa);   ';
+	'  iwa[*kiwa-1] = kever;   ';
+	'  switch(kever) {'];
+
+  for kever=1:maxkeve
+    Code($+1)='  case '+string(kever)+':';
+
+    for ii=ordptr(kever):ordptr(kever+1)-1
+      //***********************************
+      fun=ordclk(ii,1);
+      if outptr(fun+1)-outptr(fun)>0  then
+	nclock=ordclk(ii,2);
+	if or(fun==act) | or(fun==cap) then
+	  if stalone then
+	    Code=[Code;
+	          '  flag = 1 ;';
+	          '  nevprt='+string(nclock)+';';
+	          ' '+wfunclist(fun);
+	          ' ';
+	          ' '];
+          end     
+        else
+            Code=[Code;
+	         '  flag = 1 ;';
+	         '  nevprt='+string(nclock)+';';
+	         ' '+wfunclist(fun);
+	         ' ';
+	         ' '];
+        end 
+	
+      end
+
+      i=fun;
+      nevprt=ordclk(ii,2);
+      ntvec=clkptr(fun+1)-clkptr(fun);
+      if ntvec >0  & funs(fun) <> 'bidon' then
+	nxx=lnkptr(inplnk(inpptr(fun)));
+	if funtyp(fun)==-1 then
+	  Code=[Code;
+	        '    if (phase==1){';
+		'      if (outtb['+string(nxx-1)+']>0) {';
+		'        ntvecm=1;';
+		'      }';
+		'      else {';
+		'        ntvecm=2;';
+		'      }';
+                '    }else {';
+                '      ntvecm=block_'+rdnom+'['+string(i-1)+'].mode[0];';
+                '    }']
+	elseif funtyp(fun)==-2 then
+	  Code=[Code;
+                '    if (phase==1){';
+		'      ntvecm=(integer)outtb['+string(nxx-1)+'];';
+		'      if(ntvecm>'+string(ntvec)+'){ntvecm='+string(ntvec)+';}';
+		'      if(ntvecm<1){ntvecm=1;}';
+                '    }else {';
+                '      ntvecm=block_'+rdnom+'['+string(i-1)+'].mode[0];';
+                '    }']
+	else
+	  message('Block '+fun+' has funtyp '+string(funtyp(fun))+': not allowed')
+	end
+	
+	Code=[Code;
+	      '    i2 = ntvecm + clkptr['+string(fun-1)+'] - 1;';
+	      '    '+rdnom+'_putevs(told, &i2, &ierr1); ';
+	      '    if (ierr1 != 0) return 3;'
+	      cformatline('    '+rdnom+'ozdoit(told, outtb, iwa, kiwa, phase);',70)]
+      end
+    end
+    Code($+1)='    break;';
+  end
+  Code=[Code;
+	'  }  ';
+	'  return 0;'
+	'} /* ozdoit */      '];
+endfunction
+
+//==========================================================================
+
+function Code=c_make_doit2(cpr,stalone);
 //procuces the code for ddoit2 
 //Copyright INRIA
 //Author : Rachid Djenidi
@@ -239,9 +941,7 @@ function Code=c_make_doit2(cpr);
 	'int '
 	cformatline(rdnom+'ddoit2(z, told, outtb, iwa)',70);  
 	''; 
-	'     double  *z; '; 
-	'     double  *told; '; 
-	'     double  *outtb; '; 
+	'     double  *z, *told, *outtb; '; 
 	'     integer *iwa; '; 
 	'{ '; 
 	'  /* System generated locals */ '; 
@@ -264,35 +964,55 @@ function Code=c_make_doit2(cpr);
 	'  for (i = 1; i <= i1; ++i) {';
 	'    keve = iwa[i-1];';
 	'    switch(keve) {'];
-  maxkeve=size(evtspt,1);
+  maxkeve=size(ordptr,1)-1;
   for keve=1:maxkeve
     Code($+1)='    case '+string(keve)+':';
     for ii=ordptr(keve):ordptr(keve+1)-1
       //***********************************
       fun=ordclk(ii,1);
-      i=fun;
       //Actuator blocks have to be called even if they have no discrete
       //state
-      is_act=or(i==act)
-      is_cap=or(i==cap);
-      if (zptr(i+1)-zptr(i)+xptr(i+1)-xptr(i))>0|is_act  then
-      //if is_act  then
-         Code($+1)='/*     .     If continuous state jumps, do cold restart */';
-	 Code=[Code
-	       '    flag = 2;';
-	       '    nevprt='+string(ordclk(ii,2))+';';
-	       '   '+wfunclist(i);];
-      elseif ~is_cap then
-	Code=[Code
-	      '    if (block_'+rdnom+'['+string(i-1)+'].nx+block_'+rdnom+'['+string(i-1)+'].nz > 0||'
-	      '        *block_'+rdnom+'['+string(i-1)+'].work !=NULL) {'
-	      '    flag = 2;';
-	      '    nevprt='+string(ordclk(ii,2))+';';
-	      '   '+wfunclist(i);
-              '   }'];
-
-      end  
-    end   
+      is_act=or(fun==act)
+      is_cap=or(fun==cap);
+      if ~is_cap then    
+	if ordclk(ii,2)>0 then
+	  if  is_act then
+	    if stalone then
+	      Code=[Code
+	            '      flag = 2;';
+	            '      nevprt='+string(ordclk(ii,2))+';';
+	            '     '+wfunclist(fun)];
+	      
+            end     
+          else
+            Code=[Code
+	          '    if (block_'+rdnom+'['+string(fun-1)+'].nx+block_'+rdnom+'['+string(fun-1)+'].nz > 0||'
+	          '        *block_'+rdnom+'['+string(fun-1)+'].work !=NULL) {'
+	          '      flag = 2;';
+	          '      nevprt='+string(ordclk(ii,2))+';';
+	          '     '+wfunclist(fun);
+                  '     }'];  
+          end
+      	  
+        else
+	  if  is_act then
+	    if stalone then
+	      Code=[Code
+	            '      flag = 2;';
+	            '      nevprt=0;';
+	            '     '+wfunclist(fun)]; 
+	    end     
+          else
+            Code=[Code
+	            '    if (*block_'+rdnom+'['+string(fun-1)+'].work !=NULL) {'
+	            '      flag = 2;';
+	            '      nevprt=0;';
+	            '     '+wfunclist(fun);
+                     '     }'];  
+          end
+        end  
+      end 
+    end  
     Code($+1)='    break;';
   end
   Code=[Code
@@ -305,7 +1025,7 @@ endfunction
 
 //==========================================================================
 
-function Code=c_make_endi(cpr)
+function Code=c_make_endi(cpr,stalone)
 //Copyright INRIA
 //Author : Rachid Djenidi
 
@@ -336,10 +1056,18 @@ Code=[	'/*'+part('-',ones(1,40))+' endi */ ';
 	'  flag=5 ;'];
 
 for i=1:size(wfunclist)
-  Code=[Code;
-	'';
-	'  '+wfunclist(i);
-	'';];
+  if or(i==act) | or(i==cap) then
+    if stalone then
+      Code=[Code;
+	    '';
+	    '  '+wfunclist(i)];	    
+    end     
+  else
+    Code=[Code;
+	  '';
+	  '  '+wfunclist(i)];	     
+  end 
+  
 end   
 Code=[Code;
       '  return 0;'
@@ -349,7 +1077,7 @@ endfunction
 
 //==========================================================================
 
-function Code=c_make_initi(cpr)
+function Code=c_make_initi(cpr,stalone)
 //Copyright INRIA
 //Author : Rachid Djenidi
 
@@ -380,9 +1108,16 @@ function Code=c_make_initi(cpr)
 	'  flag=4 ;'];
 
   for i=1:size(wfunclist)
-    Code=[Code
-	  '  '+wfunclist(i);
-	  '  '];
+    if or(i==act) | or(i==cap) then
+      if stalone then
+	Code=[Code
+	      '  '+wfunclist(i)];	    
+      end     
+    else
+      Code=[Code
+	    '  '+wfunclist(i)];  
+    end 
+    
   end   
   Code=[Code
 	'  return 0;'
@@ -391,7 +1126,7 @@ endfunction
 
 //==========================================================================
 
-function Code=c_make_outtb()
+function Code=c_make_outtb(stalone)
 //Copyright INRIA
 //Author : Rachid Djenidi
 
@@ -426,8 +1161,16 @@ function Code=c_make_outtb()
   
   for i=iord(:,1)'
     if (outptr(i+1)-outptr(i))>0 then
-      Code=[Code
-	    '  '+wfunclist(i);]
+      if or(i==act) then
+	if stalone then
+	    Code=[Code
+	          '  '+wfunclist(i);]
+        end     
+      else
+          Code=[Code
+	        '  '+wfunclist(i);]  
+      end 
+      
     end
   end   
   Code=[Code
@@ -446,12 +1189,12 @@ function [Code,actt,proto]=call_actuator(i)
     if nin==0 then
       uk=0;
       nuk=0;
-      Code=+'args[0]=&(outtb[0]);';
+      Code($+1)=+'  args[0]=&(outtb[0]);';
     else
       lprt=inplnk(inpptr(i));
       uk=lnkptr(lprt);
       nuk=(lnkptr(lprt+1))-uk;
-      Code='args[0]=&(outtb['+string(uk-1)+']);';
+      Code($+1)='  args[0]=&(outtb['+string(uk-1)+']);';
     end
   end
   
@@ -459,13 +1202,13 @@ function [Code,actt,proto]=call_actuator(i)
   //nouveau  z et la taille du port
 
   actt=[i uk nuk bllst(i).ipar]
-  Code($+1)='block_'+rdnom+'['+string(i-1)+'].nevprt=nevprt;'
+  Code($+1)='  block_'+rdnom+'['+string(i-1)+'].nevprt=nevprt;'
   Code=[Code;
-	 'nport = '+string(nbact)+';';
-	 rdnom+'_actuator(&flag, &nport, &block_'+rdnom+'['+string(i-1)+'].nevprt, told, '+..
-	 '(double *)args[0], &nrd_'+string(nuk)+');'];
+	 '  nport = '+string(nbact)+';';
+	 '  '+rdnom+'_actuator(&flag, &nport, &block_'+rdnom+'['+string(i-1)+'].nevprt, told, '+..
+	 '(double *)args[0], &nrd_'+string(nuk)+',bbb);'];
   proto='void '+rdnom+'_actuator(int *, int *, int *, double *,"+...
-	" double *, int *);"
+	" double *, int *,int);"
   proto=cformatline(proto,70);
 endfunction
 
@@ -515,7 +1258,7 @@ function [Code,proto]=callf(i)
   //******************************************
   //Generate c code for input output arguments
   //******************************************
-  Code($+1)='block_'+rdnom+'['+string(i-1)+'].nevprt=nevprt;'
+  Code($+1)=' block_'+rdnom+'['+string(i-1)+'].nevprt=nevprt;'
   if ftyp==0 then
     if nin>1 then
       for k=1:nin
@@ -576,8 +1319,8 @@ function [Code,proto]=callf(i)
   //************************
   if ftyp==0 | ftyp==1 then
     if (cpr.sim.funtyp(i)> 2000 & cpr.sim.funtyp(i)< 3000)
-      CodeC=fun+'(&flag,&block_'+rdnom+'['+string(i-1)+'].nevprt,told,&(w['+..
-           string(x)+']),&(x['+string(x)+']),&nrd_'+string(nx)+',..
+      CodeC=fun+'(&flag,&block_'+rdnom+'['+string(i-1)+'].nevprt,told,block_'+rdnom+'['+string(i-1)+'].xd,..
+	   block_'+rdnom+'['+string(i-1)+'].x,&block_'+rdnom+'['+string(i-1)+'].nx,..
            block_'+rdnom+'['+string(i-1)+'].z,&block_'+rdnom+'['+string(i-1)+'].nz,block_'+rdnom+'['+string(i-1)+'].evout,..
            &block_'+rdnom+'['+string(i-1)+'].nevout,block_'+rdnom+'['+string(i-1)+'].rpar,&block_'+rdnom+'['+string(i-1)+'].nrpar,.. 
            block_'+rdnom+'['+string(i-1)+'].ipar,&block_'+rdnom+'['+string(i-1)+'].nipar';
@@ -586,8 +1329,8 @@ function [Code,proto]=callf(i)
 	  " int *, double *, int *,int *,int *"
     
     elseif (cpr.sim.funtyp(i)< 2000)
-    CodeC='C2F(' +fun+')(&flag,&block_'+rdnom+'['+string(i-1)+'].nevprt,told,&(w['+..
-           string(x)+']),&(x['+string(x)+']),&nrd_'+string(nx)+',..
+    CodeC='C2F(' +fun+')(&flag,&block_'+rdnom+'['+string(i-1)+'].nevprt,told,block_'+rdnom+'['+string(i-1)+'].xd,..
+           block_'+rdnom+'['+string(i-1)+'].x,&block_'+rdnom+'['+string(i-1)+'].nx,..
            block_'+rdnom+'['+string(i-1)+'].z,&block_'+rdnom+'['+string(i-1)+'].nz,block_'+rdnom+'['+string(i-1)+'].evout,..
            &block_'+rdnom+'['+string(i-1)+'].nevout,block_'+rdnom+'['+string(i-1)+'].rpar,&block_'+rdnom+'['+string(i-1)+'].nrpar,.. 
            block_'+rdnom+'['+string(i-1)+'].ipar,&block_'+rdnom+'['+string(i-1)+'].nipar';
@@ -604,6 +1347,7 @@ function [Code,proto]=callf(i)
 	for k=1:nin
 	  lprt=inplnk(inpptr(i)-1+k);
 	  uk=lnkptr(lprt);
+          nuk=(lnkptr(lprt+1))-uk;
 	  CodeC=CodeC+',&(outtb['+string(uk-1)+']),&nrd_'+string(nuk);
 	  proto=proto+", double *, int *"
 	end
@@ -612,6 +1356,7 @@ function [Code,proto]=callf(i)
 	for k=1:nout
 	  lprt=outlnk(outptr(i)-1+k);
 	  yk=lnkptr(lprt);
+          nyk=(lnkptr(lprt+1))-yk;
 	  CodeC=CodeC+',&(outtb['+string(yk-1)+']),&nrd_'+string(nyk);
 	  proto=proto+", double *, int *"
 	end
@@ -627,8 +1372,8 @@ function [Code,proto]=callf(i)
     end
   elseif ftyp==2 
     if ~ztyp(i) then
-      CodeC=fun+'(&flag,&block_'+rdnom+'['+string(i-1)+'].nevprt,told,&(w['+string(x)+..
-	    ']),&(x['+string(x)+']),&nrd_'+string(nx);
+      CodeC=fun+'(&flag,&block_'+rdnom+'['+string(i-1)+'].nevprt,told,block_'+rdnom+'['+string(i-1)+'].xd,..
+            block_'+rdnom+'['+string(i-1)+'].x,&block_'+rdnom+'['+string(i-1)+'].nx';
       CodeC=CodeC+',block_'+rdnom+'['+string(i-1)+'].z,&block_'+rdnom+'['+string(i-1)+'].nz,block_'+rdnom+'['+string(i-1)+'].evout,..
 	    &block_'+rdnom+'['+string(i-1)+'].nevout,block_'+rdnom+'['+string(i-1)+'].rpar,&block_'+rdnom+'['+string(i-1)+'].nrpar,..
 	    block_'+rdnom+'['+string(i-1)+'].ipar';
@@ -641,8 +1386,8 @@ function [Code,proto]=callf(i)
 	  " double **, int *, int *, double **,int"+...
 	  " *, int *);" 
     else
-	CodeC=fun+'(&flag,&block_'+rdnom+'['+string(i-1)+'].nevprt,told,&(w['+string(x)+..
-	      ']),&(x['+string(x)+']),&nrd_'+string(nx);
+	CodeC=fun+'(&flag,&block_'+rdnom+'['+string(i-1)+'].nevprt,told,block_'+rdnom+'['+string(i-1)+'].xd,..
+        block_'+rdnom+'['+string(i-1)+'].x,&block_'+rdnom+'['+string(i-1)+'].nx';
 	CodeC=CodeC+',block_'+rdnom+'['+string(i-1)+'].z,&block_'+rdnom+'['+string(i-1)+'].nz,block_'+rdnom+'['+string(i-1)+'].evout,..
 	&block_'+rdnom+'['+string(i-1)+'].nevout,block_'+rdnom+'['+string(i-1)+'].rpar,&block_'+rdnom+'['+string(i-1)+'].nrpar,..
 	block_'+rdnom+'['+string(i-1)+'].ipar';
@@ -676,23 +1421,23 @@ function [Code,capt,proto]=call_sensor(i)
     if nout==0 then
       yk=0;
       nyk=0;
-      Code=+'args[1]=&(outtb[0]);';
+      Code($+1)=+'  args[1]=&(outtb[0]);';
     else
       lprt=outlnk(outptr(i));
       yk=lnkptr(lprt);
       nyk=(lnkptr(lprt+1))-yk;
-      Code='args[1]=&(outtb['+string(yk-1)+']);';
+      Code($+1)='  args[1]=&(outtb['+string(yk-1)+']);';
     end
 
   end
   capt=[i yk nyk bllst(i).ipar]
-  Code($+1)='block_'+rdnom+'['+string(i-1)+'].nevprt=nevprt;'
+  Code($+1)='  block_'+rdnom+'['+string(i-1)+'].nevprt=nevprt;'
   Code=[Code;
-	 'nport = '+string(nbcap)+';'; 
-	 rdnom+'_sensor(&flag, &nport, &block_'+rdnom+'['+string(i-1)+'].nevprt, '+..
-	 'told, (double *)args[1], &nrd_'+string(nyk)+');'];
+	 '  nport = '+string(nbcap)+';'; 
+	 '  '+rdnom+'_sensor(&flag, &nport, &block_'+rdnom+'['+string(i-1)+'].nevprt, '+..
+	 'told, (double *)args[1], &nrd_'+string(nyk)+',aaa);'];
   proto='void '+rdnom+'_sensor(int *, int *, int *, double *,"+...
-	" double *, int *);"
+	" double *, int *, int);"
   proto=cformatline(proto,70);
 endfunction
 
@@ -742,7 +1487,6 @@ endfunction
 function  [ok,XX,alreadyran]=do_compile_superblock(XX,all_scs_m,numk,alreadyran)
 // Transforms a given Scicos discrete and continuous SuperBlock into a C defined Block
 // Copyright INRIA
-//Author : Rachid Djenidi
 
   scs_m=XX.model.rpar
   par=scs_m.props;
@@ -781,11 +1525,11 @@ function  [ok,XX,alreadyran]=do_compile_superblock(XX,all_scs_m,numk,alreadyran)
 	scs_m.objs(i).gui='EVTGEN_f';
 	scs_m.objs(i).model.sim(1)='bidon'
 	clkIN=[clkIN scs_m.objs(i).model.ipar];
-      elseif scs_m.objs(i).model.dep_ut(2)==%t then
+      //elseif scs_m.objs(i).model.dep_ut(2)==%t then
 	//check for time dependency PAS IICI
-	ok=%f;%cpr=list()
-	message('a block have time dependence.')
-	return
+	//ok=%f;%cpr=list()
+	//message('a block have time dependence.')
+	//return
       end
     end
   end
@@ -868,8 +1612,12 @@ if ok==%f then message('Sorry: problem in the pre-compilation step.'),return, en
     end
   elseif szclkIN==[]  then
     //superblock has no Event input, add a fictious clock
-    bllst($+1)=scicos_model(sim=list('bidon',1),evtout=1,..
-			    firing=0,blocktype='d',dep_ut=[%f %f])
+    output=ones((2^(size(cap,'*')))-1,1)
+    if (output == []) then 
+       output=0;
+    end
+    bllst($+1)=scicos_model(sim=list('bidon',1),evtout=output,..
+			    firing=-output,blocktype='d',dep_ut=[%f %f])
     corinv(size(bllst))=size(bllst)+1;
     howclk=size(bllst);
   elseif szclkIN==1  then
@@ -903,25 +1651,38 @@ if ok==%f then message('Sorry: problem in the pre-compilation step.'),return, en
     clkconnect=newclkconnect;
   end
 
+
   //**************************************************
   // nouveau clkconnect avec liaisons sur les capteurs
   //**************************************************
-
-  for i=1:size(cap,1)
+  n=size(cap,1)
+  for i=1:n
     if szclkIN>1 then
       for j=1:(2^szclkIN)-1
 	clkconnect=[clkconnect;[howclk j cap(i) 1]];
       end	
-    else
+    elseif szclkIN==1 then
       clkconnect=[clkconnect;[howclk 1 cap(i) 1]];
     end
   end
+  // codage de l'activation des capteurs dans le cas de l'heritage
+  
+  for i=1:2^n-1
+    vec=codebinaire(i,n);
+    for j=1:n
+      if (vec(j)==1) then
+         clkconnect=[clkconnect;[howclk i cap(j) 1]];
+      end
+    end
+  end
+
 Code_gene_run=[];
 %windo=xget('window')
 
-cpr=newc_pass2(bllst,connectmat,clkconnect,cor,corinv);
+//cpr=newc_pass2(bllst,connectmat,clkconnect,cor,corinv);
 
-//cpr=c_pass2(bllst,connectmat,clkconnect,cor,corinv)
+cpr=c_pass2(bllst,connectmat,clkconnect,cor,corinv)
+
 xset('window',%windo)
 
   if cpr==list() then ok=%f,return, end
@@ -955,12 +1716,10 @@ zcptr=cpr.sim.zcptr;
     if funtyp(i)==3 then
       msg=[msg;'Type 3 block''s not allowed']
 //RN   elseif ztyp(i)<>0 then
-    elseif (zcptr(i+1)-zcptr(i))<>0 then
+    //elseif (zcptr(i+1)-zcptr(i))<>0 then
 //
-      msg=[msg;'Active zero crossing block''s not allowed']
-    elseif (xptr(i+1)-xptr(i))<>0 then
-      msg=[msg;'Continuous state block''s not allowed']
-    elseif (clkptr(i+1)-clkptr(i))<>0 &funtyp(i)>-1 &funs(i)~='bidon' then
+      //msg=[msg;'Active zero crossing block''s not allowed']
+     elseif (clkptr(i+1)-clkptr(i))<>0 &funtyp(i)>-1 &funs(i)~='bidon' then
       msg=[msg;'Regular block generating activation not allowed yet']
     end
     if msg<>[] then message(msg),ok=%f,return,end
@@ -996,19 +1755,52 @@ zcptr=cpr.sim.zcptr;
   // Get the name of the file
   //***********************************
   foo=3;okk=%f;rdnom='foo';rpat=getcwd();archname='';sTsamp=sci2exp(eval(sTsamp));
-  label1=[hname;getcwd()+'/'+hname+"_rtai";sTsamp];
+  if XX.model.rpar.props.void3 == [] then
+	target = 'rtai';
+	odefun = 'ode4';
+	odestep = '10';
+  else
+	target = XX.model.rpar.props.void3(1);
+	odefun = XX.model.rpar.props.void3(2);
+	odestep = XX.model.rpar.props.void3(3);
+  end
+
+  label1=[hname;getcwd()+'/'+hname+"_rtai";target;sTsamp];
+  label2=[hname;getcwd()+'/'+hname+"_rtai";target;sTsamp;odefun;odestep];
+  ode_x=['ode1';'ode2';'ode4'];
+
   while %t do
-    [okk,rdnom,rpat,Tsamp,label1]=getvalue(..
-			'PLEASE, GIVE US SOME INFORMATION. ',..
-		        ['New block''s name: ';
-		        'Created files Path: ';
-			'Sampling Time: '],..
-		        list('str',1,'str',1,'str',1),label1);
-    if okk==%f then ok=%f;return; end
+    if x == [] then 
+      [ok,rdnom,rpat,target,Tsamp,label1]=getvalue(..
+			  'PLEASE, GIVE US SOME INFORMATION. ',..
+		          ['New block''s name: ';
+		          'Created files Path: ';
+			  'Target: ';
+			  'Sampling Time: '],..
+		          list('str',1,'str',1,'str',1,'str',1),label1);
+    else
+      [ok,rdnom,rpat,target,Tsamp,odefun,odesteplabel1]=getvalue(..
+			  'PLEASE, GIVE US SOME INFORMATION. ',..
+		          ['New block''s name: ';
+		          'Created files Path: ';
+			  'Target: ';
+			  'Sampling Time: ';
+		          'Ode function: ';
+		          'Step betw. Samples: '],..
+		          list('str',1,'str',1,'str',1,'str',1,'str',1,'str',1),label2);
+    end
+
+    if ok==%f then 
+      return; 
+    end
   
+    rpat=stripblanks(rpat);
     dirinfo=fileinfo(rpat)
     if dirinfo==[] then
-      ok=mkdir(rpat)    
+      [pathrp,fnamerp,extensionrp]=fileparts(rpat)
+
+      cmd='mkdir '+rpat
+      ok=0==execstr('unix_s(cmd)','errcatch')
       if ~ok then 
 	x_message('Directory '+rpat+' cannot be created');
       end
@@ -1019,6 +1811,21 @@ zcptr=cpr.sim.zcptr;
     if stripblanks(rdnom)==emptystr() then 
       ok=%f;x_message('sorry C file name not defined');
     end
+
+    [fd,ierr]=mopen(SCI+'/macros/RTAI/RT_templates/'+target+'.mak','r');
+    if ierr==0 then
+      mclose(fd);
+    else
+      ok=%f;x_message('Target not valid');
+    end
+
+    if x ~= [] then
+      if grep(odefun,ode_x) == [] then
+         x_message('Ode function not valid');
+         ok = %f;
+      end
+    end
+
     if ok then break,end
   end
   
@@ -1041,20 +1848,20 @@ zcptr=cpr.sim.zcptr;
   //generate the call to the blocks and blocs simulation function prototypes
   //************************************************************************
   wfunclist=list();
-  nbcap=0;nbact=0;capt=[];actt=[];Protos=[];
+  nbcap=0;nbact=0;capt=[];actt=[];Protostalone=[];Protos=[];
   dfuns=[]
   for i=1:length(funs)
     if or(i==act) then //block is an actuator
       nbact=nbact+1;
       [Code,actti,protoi]=call_actuator(i)
       wfunclist($+1)=[Code;'   if(flag < 0 ) return(5 - flag); ']
-      if nbact==1 then Protos=[Protos;'';protoi],end   
+      if nbact==1 then Protostalone=[Protostalone;'';protoi],end   
       actt=[actt;actti]
     elseif or(i==cap) then //block is a sensor 
       nbcap=nbcap+1;
       [Code,capti,protoi]=call_sensor(i)
       wfunclist($+1)=[Code;'   if(flag < 0 ) return(5 - flag); ']
-      if nbcap==1 then Protos=[Protos;'';protoi] ,end
+      if nbcap==1 then Protostalone=[Protostalone;'';protoi] ,end
       capt=[capt;capti]
     elseif funs(i)=='bidon'
       wfunclist($+1)=' '
@@ -1067,7 +1874,10 @@ zcptr=cpr.sim.zcptr;
       else
 	wfunclist($+1)=' ';
       end
-      if ki==[] then Protos=[Protos;'';protoi],end 
+      if ki==[] then 
+	Protos=[Protos;'';protoi];
+	Protostalone=[Protostalone;'';protoi];
+	end 
     end
 
   end
@@ -1100,7 +1910,7 @@ zcptr=cpr.sim.zcptr;
   z=cpr.state.z;outtb=cpr.state.outtb;
   //[junk_state,t]=scicosim(cpr.state,tcur,tf,Total_rdcpr,'finish',tolerances);
  
-  
+   
   //***********************************
   // Scilab and C files generation
   //***********************************
@@ -1115,7 +1925,8 @@ zcptr=cpr.sim.zcptr;
   if ierr==0 then mclose(fd),files=[files,rdnom+'f'],end
   [fd,ierr]=mopen(rpat+'/'+rdnom+'c.c','r')
   if ierr==0 then mclose(fd),files=[files,rdnom+'c'],end
-  Makename=gen_make(rdnom,files,archname,rpat+'/'+rdnom+'_Makefile')
+
+  Makename=gen_make(rdnom,files,archname,rpat+'/Makefile')
   [ok] = compile_rt_standalone();
 
 endfunction
@@ -1273,7 +2084,7 @@ function ok=gen_ccode();
   end
 
   Code=[make_decl_standalone()
-	Protos;
+	Protostalone;
 	make_static_standalone()
         make_standalone()]
   ierr=execstr('mputl(Code,rpat+''/''+rdnom+''_standalone.c'')','errcatch')
@@ -1290,31 +2101,10 @@ function Makename=gen_make(name,files,libs,Makename)
   //   "OBJSSTAN="+strcat(strsubst(files,'_void_io','_standalone')+'.o',' ...
   //		')+' '+rdnom+'_act_sens_events.o'
 
-  T=["# Please do not edit this file"
-     "# ------------------------------------------------------"
-     ""
-     "RTAIDIR = $(shell rtai-config --prefix)"
-     "SCIDIR = "+SCI
-     ""
-     "MODEL = "+name
-     "OBJSSTAN = " + strcat(files+'.o',' ')
-     ""
-     "SCILIBS = $(SCIDIR)/libs/scicos.a $(SCIDIR)/libs/lapack.a "+..
-     "$(SCIDIR)/libs/poly.a $(SCIDIR)/libs/calelm.a "+..
-     "$(SCIDIR)/libs/blas.a $(SCIDIR)/libs/lapack.a"
-     "OTHERLIBS = "+libs
-     "ULIBRARY = $(RTAIDIR)/lib/libsciblk.a $(RTAIDIR)/lib/liblxrt.a"
-     ""
-     "include $(SCIDIR)/Makefile.incl"
-     "CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/routines -I$(RTAIDIR)/include -I$(RTAIDIR)/include/scicos -DMODEL=$(MODEL)"
-     "include $(SCIDIR)/config/Makeso.incl"
-     ""
-     "rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL)_standalone.c $(MODEL)_io.c"
-     ascii(9)+"cp $< ."
-     ""
-     "../"+name+": $(OBJSSTAN) $(ULIBRARY)"
-      ascii(9)+"gcc -static -o $@  $(OBJSSTAN) $(SCILIBS) $(ULIBRARY) -lpthread -lm"
-      ascii(9)+"@echo ""### Created executable: $(MODEL) ###"""];
+  T=mgetl(SCI+'/macros/RTAI/RT_templates/'+target+'.mak');
+  T=strsubst(T,'$$MODEL$$',name);
+  T=strsubst(T,'$$OBJ$$',strcat(files+'.o',' '));
+  T=strsubst(T,'$$SCILAB_DIR$$',SCI);
   mputl(T,Makename)
 endfunction
 
@@ -1328,7 +2118,7 @@ function Code=make_actuator(standalone)
   
 Call=['/*'+part('-',ones(1,40))+' Actuators */ ';
       'void ';
-      rdnom+'_actuator(flag,nport,nevprt,t,u,nu)']
+      rdnom+'_actuator(flag,nport,nevprt,t,u,nu,flag1)']
 comments=['     /*'
 	  '      * To be customized for standalone execution';
 	  '      * flag  : specifies the action to be done'
@@ -1341,10 +2131,11 @@ comments=['     /*'
 	  '      * t     : the current time value'
 	  '      * u     : the vector inputs value'
 	  '      * nu    : the input  vector size'
+	  '      * flag1 : learn mode (0 from terminal,1 from input file'
 	  '      */']
 
-dcl=['     integer *flag,*nevprt,*nport;'
-     '     integer *nu;'
+dcl=['     int *flag,*nevprt,*nport;'
+     '     int *nu,flag1;'
      ''
      '     double  *t, u[];'
      '{'
@@ -1409,12 +2200,16 @@ function Code=make_decl_standalone()
 
   Code=['#include '"'+SCI+'/routines/machine.h'"';
 	'#include '"'+SCI+'/routines/scicos/scicos_block.h'"';
+        '#include <math.h>';
+	'#include <memory.h>';
 	'';
 	'/* Code prototype for standalone use  */';
 	'/*     Generated by Code_Generation toolbox of Scicos with '+ ..
 	getversion()+' */';
 	'/*     date : '+date(getdate())+' */';
 	''
+	cformatline('void '+rdnom+'main0(scicos_block *block_'+rdnom+',double *z, double *t, int phase);',70);
+	'';
 	cformatline('void '+rdnom+'main1(scicos_block *block_'+rdnom+',double *z, double *t);',70);
 	'';
 	cformatline('void '+rdnom+'main2(scicos_block *block_'+rdnom+',double *z, double *t) ;',70);
@@ -1425,14 +2220,33 @@ function Code=make_decl_standalone()
 	''
 	cformatline('int '+rdnom+'_init_blk()"+...
 		    " ;',70);
-	cformatline('int '+rdnom+'ddoit1(double *, double *,'+...
-		     'double *, int *);',70);
+	''
+	cformatline('int '+rdnom+'_rt_exec(scicos_block *block_'+rdnom+',double *z, double *t)"+...
+		    ";',70);
+	''
+	cformatline('int '+rdnom+'ddoit1(double *, double *, double *, int *);',70);
 	' ';
-        cformatline('int '+rdnom+'ddoit2(double *, double *,'+...
-		     'double *, int *);',70);
+	cformatline('int '+rdnom+'cdoit(double *, double *, double *);',70);
+	' ';]
+if x <> [] then
+  Code=[Code
+  	cformatline('int '+rdnom+'odoit(double *, double *, int* , int , double *, double *, double *);',70);
+	' ';]
+else
+  Code=[Code
+  	cformatline('int '+rdnom+'odoit(double *, double *, int* , int );',70);
+	' ';]
+end
+  Code=[Code 
+	cformatline('int '+rdnom+'zdoit(double *, double *, double *, int* , int );',70);
 	' ';
-	cformatline('int '+rdnom+'edoit1(double *, double *,'+...
-		     'int *, int *, int *);',70);	
+        cformatline('int '+rdnom+'ddoit2(double *, double *, double *, int *);',70);
+	' ';
+	cformatline('int '+rdnom+'edoit1(double *, double *, int *, int *);',70);	
+	' ';
+	cformatline('int '+rdnom+'ozdoit(double *,double *, int*, int *, int);',70);	
+	' ';
+        cformatline('int '+rdnom+'doit(double *, double *, double *);',70);
 	' ';
         cformatline('int '+rdnom+'_initi(double *, double *, int *);',70);
 	' ';
@@ -1445,6 +2259,15 @@ function Code=make_decl_standalone()
 	cformatline('void '+rdnom+'_events(int *nevprt, double *t);',70)
 	''
 	'static void set_nevprt(int nevprt);']
+if (x <>[]) then
+  Code=[Code
+        '/* Code prototype for standalone use  */';
+	'int C2F('+rdnom+'simblk)(double *, double *, double *);'
+        'extern  integer C2F(dset)();'
+        'int ode1();'
+        'int ode2();'
+        'int ode4();']
+end       
 endfunction
 
 //==========================================================================
@@ -1491,6 +2314,22 @@ endfunction
 
 //==========================================================================
 
+//nouveau
+function Code=make_main0()
+//generate code for flag=0 case  
+//Copyright INRIA
+  Code=['/*'+part('-',ones(1,40))+' main0 */ ';
+	cformatline('void '+rdnom+'main0(scicos_block *block_'+rdnom+',double *z, double *t, int phase)',70);	
+	'{'];
+  
+  Code($+1)=cformatline('  '+rdnom+'odoit(t,'+..
+		    '&(z['+string(size(z,1))+']), '+..
+		    '(int *)(z+'+string(size(z,1)+size(outtb,1))+'), phase);',70);    
+  Code($+1)='} '
+endfunction
+
+//==========================================================================
+
 function Code=make_main1()
 //generate code for flag=1 case  
 //Copyright INRIA
@@ -1499,7 +2338,7 @@ function Code=make_main1()
 	'void '
 	cformatline(rdnom+'main1(scicos_block *block_'+rdnom+',double *z, double *t)',70);
 	'{'];
-  Code($+1)=cformatline('    '+rdnom+'ddoit1(z, t, '+..
+  Code($+1)=cformatline('  '+rdnom+'ddoit1(z, t, '+..
 		    '&(z['+string(size(z,1))+']), '+..
 		    '(int *)(z+'+string(size(z,1)+size(outtb,1))+'));',70);  
   
@@ -1534,7 +2373,7 @@ function Code=make_sensor(standalone)
   
 Call=['/*'+part('-',ones(1,40))+' Sensor */ ';
       'void ';
-      rdnom+'_sensor(flag,nport,nevprt,t,y,ny)']
+      rdnom+'_sensor(flag,nport,nevprt,t,y,ny,flag1)']
 comments=['     /*'
           '      * To be customized for standalone execution';
 	  '      * flag  : specifies the action to be done'
@@ -1547,9 +2386,10 @@ comments=['     /*'
 	  '      * t     : the current time value'
 	  '      * y     : the vector outputs value'
 	  '      * ny    : the output  vector size'
+	  '      * flag1 : learn mode (0 from terminal,1 from input file'
 	  '      */']
-dcl=['     integer *flag,*nevprt,*nport;'
-     '     integer *ny;'
+dcl=['     int *flag,*nevprt,*nport;'
+     '     int *ny,flag1;'
      ''
      '     double  *t, y[];'
      '{'
@@ -1614,20 +2454,30 @@ function Code=make_standalone()
 //Modified for RTAI by Paolo Mantegazza (mantegazza@aero.polimi.it)
 //and Roberto Bucher (roberto.bucher@die.supsi.ch)
 
+x=cpr.state.x;
+nX=size(x,'*');
+txt1=mgetl(SCI+'/routines/machine.h');
+mputl(txt1,rpat+'/machine.h');
+txt2=mgetl(SCI+'/routines/scicos/scicos_block.h');
+mputl(txt2,rpat+'/scicos_block.h');
+
 modptr=cpr.sim.modptr;
 nZ=size(z,'*')+size(outtb,'*')+clkptr($);
 nztotal=size(z,1);
+niwa=size(z,'*')+size(outtb,'*');
 //Generates simulation routine for standalone simulation
+  work=zeros(nblk,1)
   iwa=zeros(clkptr($),1),Z=[z;outtb;iwa]';
   nact = size(act,'*');
   ncap = size(cap,'*');
 
   Code=[ ''
-         cformatline('static double z[]={'+strcat(string(Z),',')+'};',70);
+         cformatline('double z[]={'+strcat(string(Z),',')+'};',70);
 	 '/* Note that z[]=[z_initial_condition;outtb;iwa]';
 	 cformatline('z_initial_condition= {'+strcat(string(z),",")+'};',70);
 	 cformatline('outtb= {'+strcat(string(outtb),"," )+'};',70);
 	 cformatline('iwa= {'+strcat(string(iwa),"," )+'};',70);
+	 cformatline('work= {'+strcat(string(work),"," )+'};',70);
 	 '*/ '
 	 ''
 	 'double get_tsamp()'
@@ -1645,9 +2495,10 @@ nztotal=size(z,1);
 	 '  int nevprt=1;'
 	 '']
   Code=[Code
-	'double* block_outtb = z+'+string(nztotal)+';'
-	'void **work;'
-	'work = (void **) (z+'+string(nZ)+'); ']
+	'  void **work;'
+	'  work = (void **) (z+'+string(nZ)+'); '
+	'  '+rdnom+'_block_outtb = z+'+string(nztotal)+';'
+	'  '+rdnom+'_iwa = (int *)(z+'+string(niwa)+');']
   if size(z,1) <> 0 then
     for i=1:(length(zptr)-1) 
       
@@ -1680,70 +2531,112 @@ nztotal=size(z,1);
 			    strcat(string(OO.graphics.id)),70)];
 	  
 	end
+	Code=[Code;cformatline('z= {'+strcat(string(z(zptr(i):zptr(i+1)-1)),",")+'};',70)];
 	Code($+1)='*/';
 	end
       end
     end
   end
 
-for kf=1:nblk        
+for kf=1:nblk
+      nx=xptr(kf+1)-xptr(kf); ///* number d'etat continu */       
       nin=inpptr(kf+1)-inpptr(kf); ///* number of input ports */
       nout=outptr(kf+1)-outptr(kf); ///* number of output ports */
       Code=[Code;
-	    '    block_'+rdnom+'['+string(kf-1)+'].type = '+string(funtyp(kf))+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].ztyp = '+string(ztyp(kf))+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].ng = '+string(zcptr(kf+1)-zcptr(kf))+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].nz = '+string(zptr(kf+1)-zptr(kf))+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].nrpar = '+string(rpptr(kf+1)-rpptr(kf))+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].nipar = '+string(ipptr(kf+1)-ipptr(kf))+';'
-            '    block_'+rdnom+'['+string(kf-1)+'].nin = '+string(inpptr(kf+1)-inpptr(kf))+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].nout = '+string(outptr(kf+1)-outptr(kf))+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].nevout = '+string(clkptr(kf+1)-clkptr(kf))+';';
-            '    block_'+rdnom+'['+string(kf-1)+'].nmode = '+string(modptr(kf+1)-modptr(kf))+';';
-	    '    if ((block_'+rdnom+'['+string(kf-1)+'].insz=malloc(sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nin))== NULL ) return 0;';
-	    '    if ((block_'+rdnom+'['+string(kf-1)+'].inptr=malloc(sizeof(double*)*block_'+rdnom+'['+string(kf-1)+'].nin))== NULL ) return 0;';
-	    '    if ((block_'+rdnom+'['+string(kf-1)+'].evout=calloc(block_'+rdnom+'['+string(kf-1)+'].nevout,sizeof(double)))== NULL )return 0;'];
-    
+	    '  block_'+rdnom+'['+string(kf-1)+'].type = '+string(funtyp(kf))+';';
+            '  block_'+rdnom+'['+string(kf-1)+'].ztyp = '+string(ztyp(kf))+';';
+            '  block_'+rdnom+'['+string(kf-1)+'].ng = '+string(zcptr(kf+1)-zcptr(kf))+';';
+            '  block_'+rdnom+'['+string(kf-1)+'].nz = '+string(zptr(kf+1)-zptr(kf))+';';
+            '  block_'+rdnom+'['+string(kf-1)+'].nrpar = '+string(rpptr(kf+1)-rpptr(kf))+';';
+            '  block_'+rdnom+'['+string(kf-1)+'].nipar = '+string(ipptr(kf+1)-ipptr(kf))+';'
+            '  block_'+rdnom+'['+string(kf-1)+'].nin = '+string(inpptr(kf+1)-inpptr(kf))+';';
+            '  block_'+rdnom+'['+string(kf-1)+'].nout = '+string(outptr(kf+1)-outptr(kf))+';';
+            '  block_'+rdnom+'['+string(kf-1)+'].nevout = '+string(clkptr(kf+1)-clkptr(kf))+';';
+            '  block_'+rdnom+'['+string(kf-1)+'].nmode = '+string(modptr(kf+1)-modptr(kf))+';';
+	    '  if ((block_'+rdnom+'['+string(kf-1)+'].insz=malloc(sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nin))== NULL ) return 0;';
+	    '  if ((block_'+rdnom+'['+string(kf-1)+'].inptr=malloc(sizeof(double*)*block_'+rdnom+'['+string(kf-1)+'].nin))== NULL ) return 0;';
+	    '  if ((block_'+rdnom+'['+string(kf-1)+'].evout=calloc(block_'+rdnom+'['+string(kf-1)+'].nevout,sizeof(double)))== NULL )return 0;'];
+      if nx <> 0 then 
+	Code=[Code;	    
+              '  block_'+rdnom+'['+string(kf-1)+'].nx = '+string(nx)+';';
+	      '  block_'+rdnom+'['+string(kf-1)+'].x=&(x['+string(xptr(kf)-1)+']);'
+              '  block_'+rdnom+'['+string(kf-1)+'].xd=&(xd['+string(xptr(kf)-1)+']);']
+      end
       for k=1:nin
          lprt=inplnk(inpptr(kf)-1+k);
          Code=[Code
-               '    block_'+rdnom+'['+string(kf-1)+'].inptr['+string(k-1)+'] = &(block_outtb['+string(lnkptr(lprt)-1)+']);'
-	       '    block_'+rdnom+'['+string(kf-1)+'].insz['+string(k-1)+'] = '+string(lnkptr(lprt+1)-lnkptr(lprt))+';'];
+               '  block_'+rdnom+'['+string(kf-1)+'].inptr['+string(k-1)+'] = &('+rdnom+'_block_outtb['+string(lnkptr(lprt)-1)+']);'
+	       '  block_'+rdnom+'['+string(kf-1)+'].insz['+string(k-1)+'] = '+string(lnkptr(lprt+1)-lnkptr(lprt))+';'];
       end 
       Code=[Code
-            '    if ((block_'+rdnom+'['+string(kf-1)+'].outsz=malloc(sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nout))== NULL ) return 0;';
-            '    if ((block_'+rdnom+'['+string(kf-1)+'].outptr=malloc(sizeof(double*)*block_'+rdnom+'['+string(kf-1)+'].nout))== NULL ) return 0;'];
+            '  if ((block_'+rdnom+'['+string(kf-1)+'].outsz=malloc(sizeof(int)*block_'+rdnom+'['+string(kf-1)+'].nout))== NULL ) return 0;';
+            '  if ((block_'+rdnom+'['+string(kf-1)+'].outptr=malloc(sizeof(double*)*block_'+rdnom+'['+string(kf-1)+'].nout))== NULL ) return 0;'];
           
       for k=1:nout
         lprt=outlnk(outptr(kf)-1+k);
         Code=[Code
-	      '    block_'+rdnom+'['+string(kf-1)+'].outptr['+string(k-1)+']=&(block_outtb['+string(lnkptr(lprt)-1)+']);'
-	      '    block_'+rdnom+'['+string(kf-1)+'].outsz['+string(k-1)+']='+string(lnkptr(lprt+1)-lnkptr(lprt))+';'];
+	      '  block_'+rdnom+'['+string(kf-1)+'].outptr['+string(k-1)+']=&('+rdnom+'_block_outtb['+string(lnkptr(lprt)-1)+']);'
+	      '  block_'+rdnom+'['+string(kf-1)+'].outsz['+string(k-1)+']='+string(lnkptr(lprt+1)-lnkptr(lprt))+';'];
       end
       Code=[Code
-	    '    block_'+rdnom+'['+string(kf-1)+'].z=&(z['+string(zptr(kf)-1)+']);'
-	    ]
-      if ~(part(cpr.sim.funs(kf),1:7) == 'capteur' |part(cpr.sim.funs(kf),1:10) == 'actionneur' |cpr.sim.funs(kf)=='bidon') then
-	Code=[Code
-	    '    block_'+rdnom+'['+string(kf-1)+'].rpar=&(RPAR1['+string(rpptr(kf)-1)+']);';
-            '    block_'+rdnom+'['+string(kf-1)+'].ipar=&(IPAR1['+string(ipptr(kf)-1)+']);';
-	    '    block_'+rdnom+'['+string(kf-1)+'].work=(void **)(((double *)work)+'+string(kf-1)+');']
+	    '  block_'+rdnom+'['+string(kf-1)+'].z=&(z['+string(zptr(kf)-1)+']);']
+      if (part(funs(kf),1:7) ~= 'capteur' & part(funs(kf),1:10) ~= 'actionneur' & funs(kf) ~= 'bidon') then 
+	if (rpptr(kf+1)-rpptr(kf)>0) then
+	  Code=[Code;
+	        '  block_'+rdnom+'['+string(kf-1)+'].rpar=&(RPAR1['+string(rpptr(kf)-1)+']);']
+	end
+	if (ipptr(kf+1)-ipptr(kf)>0) then
+	  Code=[Code;
+	        '  block_'+rdnom+'['+string(kf-1)+'].ipar=&(IPAR1['+string(ipptr(kf)-1)+']);'] 
+	end
       end
-end
-    
+      Code=[Code;
+	    '  block_'+rdnom+'['+string(kf-1)+'].work=(void **)(((double *)work)+'+string(kf-1)+');']
+ 
+end    
 
   Code=[Code;
 	'  '+rdnom+'_init(block_'+rdnom+',z,&t);'
 	'  return ;'
-	'}'  
+	'}' 
+	''
+	'int '+rdnom+'_rt_exec(scicos_block *block_'+rdnom+',double *z, double *t)'
+	'{'
+	'int nevprt = 1;']
+  if (x ==[]) then
+    Code=[Code	
+	'    set_nevprt(nevprt);'
+	'    '+rdnom+'main1(block_'+rdnom+',z,t);']
+  else
+    Code=[Code
+	'double tout,dt,he,h;'
+	''	     	
+	'    set_nevprt(nevprt);'
+  	'    '+rdnom+'main1(block_'+rdnom+',z,t);'
+        '    neq= '+string(nX)+'; '
+        '    tout=*t;'
+	'    dt=get_tsamp();'
+        '    h=dt/'+odestep+';'
+        '    while (tout<*t+dt){'
+        '      '+odefun+'(C2F('+rdnom+'simblk),tout,h);'
+        '      tout=tout+h;'
+        '    }'
+        '    tout=tout-h;'
+        '    he=*t+dt-tout+h;'
+        '    '+odefun+'(C2F('+rdnom+'simblk),tout,he);']
+  end
+  Code=[Code	
+	'    '+rdnom+'main2(block_'+rdnom+',z,t);'
+	'}'
+	'' 
 	'/*'+part('-',ones(1,40))+'  Lapack messag function */ ';
 	'void'
 	'C2F(xerbla)(SRNAME,INFO,L)'
-	'char *SRNAME;'
-	'int *INFO;'
-	'long int L;'
+	'     char *SRNAME;'
+	'     int *INFO;'
+	'     long int L;'
 	'{'
-	'printf(""** On entry to %s, parameter number %d  had an illegal value\n"",SRNAME,*INFO);'
+	'  printf(""** On entry to %s, parameter number %d  had an illegal value\n"",SRNAME,*INFO);'
 	'}']
 //duplication de main1 et main2 pour le standalone
   Code=[Code
@@ -1751,11 +2644,11 @@ end
 	make_main2();
 	make_init();
 	make_end()
-	c_make_doit1();
-	c_make_doit2();
-	c_make_outtb();
-	c_make_initi();
-	c_make_endi();
+	c_make_doit1(cpr,%t);
+	c_make_doit2(cpr,%t);
+	c_make_outtb(%t);
+	c_make_initi(cpr,%t);
+	c_make_endi(cpr,%t);
 	make_putevs()]
   Code=[Code
 	'void set_block_error(int err)'
@@ -1785,6 +2678,87 @@ end
 	'void sciprint (char *fmt){'
         '  return;'
 	'}']
+if (x <> []) then
+Code=[Code
+      'int C2F('+rdnom+'simblk)(t, xc, xcdot)'
+      '     double *t, *xc, *xcdot;'
+      '     /* '
+      '        !purpose '
+      '        compute state derivative of the continuous part'
+      '        !calling sequence '
+      '        neq   : integer the size of the  continuous state'
+      '        t     : current time '
+      '        xc    : double precision vector whose  contains the continuous state.' 
+      '        xcdot : double precision vector, contain the computed derivative '
+      '        of the state' 
+      '     */'
+      '{ '
+      '  /* int iwa[1]={0}; */'
+      '  int phase=2;'
+      '  neq='+string(nX)+';'
+      '  C2F(dset)(&neq, &c_b14,xcdot , &c__1);'
+      '  '+rdnom+'odoit(t, '+rdnom+'_block_outtb,'+rdnom+'_iwa,phase,xcdot, xc, xcdot);'
+      ' '
+      '  return 0;'
+      '}'
+      '/* Euler''s Method */' 
+      'int ode1(f,t,h)'
+      '  int (*f) ();'
+      '  double t, h;' 
+      '{'
+      '  int i;'
+      '  (*f)(&t,x, xd);'
+      '  for (i=0;i<neq;i++){'
+      '  x[i]=x[i]+h*xd[i];'
+      '  }'
+      '  return 0;'
+      '}'
+      ' '
+      'int ode2(f,t,h)'
+      '  int (*f) ();'
+      '  double t, h;'
+      '{'
+      '  /* Heun''s Method */'
+      '  int i;'
+      '  double y['+string(nX)+'],yh['+string(nX)+'],temp,f0['+string(nX)+'],th;'
+      '  memcpy(y,x,neq*sizeof(double));'
+      '  memcpy(f0,xd,neq*sizeof(double));'
+      '  (*f)(&t,y, f0);'
+      '  for (i=0;i<neq;i++) x[i]=y[i]+h*f0[i];'
+      '  temp=0.5*h;'
+      '  th=t+h;'
+      '  for (i=0;i<neq;i++) yh[i]=y[i]+h*f0[i];'
+      '  (*f)(&th,yh, xd);'
+      '  for (i=0;i<neq;i++) x[i]=y[i]+temp*(f0[i]+xd[i]);'
+      '  return 0;'
+      '}'
+      'int ode4(f,t,h)'
+      '  int (*f) ();'
+      '  double t, h;'
+      '{'
+      '  /* Fourth-Order Runge-Kutta (RK4) Formula */'
+      '  int i;'
+      '  double y['+string(nX)+'],yh['+string(nX)+'],temp,f0['+string(nX)+'],th,th2,f1['+string(nX)+'],f2['+string(nX)+'];'
+      '  memcpy(y,x,neq*sizeof(double));'
+      '  memcpy(f0,xd,neq*sizeof(double));'
+      '  (*f)(&t,y, f0);'
+      '  for (i=0;i<neq;i++) x[i]=y[i]+h*f0[i];'
+      '  temp=0.5*h;'
+      '  th2=t+h/2;'                          
+      '  for (i=0;i<neq;i++) yh[i]=y[i]+(h/2)*f0[i];'
+      '  (*f)(&th2,yh, f1);'
+      '  for (i=0;i<neq;i++) x[i]=y[i]+temp*f1[i];'  
+      '  for (i=0;i<neq;i++) yh[i]=y[i]+(h/2)*f1[i];'
+      '  (*f)(&th2,yh, f2);'
+      '  for (i=0;i<neq;i++) x[i]=y[i]+h*f2[i];'
+      '  th=t+h;'
+      '  for (i=0;i<neq;i++) yh[i]=y[i]+h*f2[i];'
+      '  (*f)(&th2,yh, xd);'
+      '  temp=h/6;'
+      '  for (i=0;i<neq;i++) x[i]=y[i]+temp*(f0[i]+2.0*f1[i]+2.0*f2[i]+xd[i]);'
+      'return 0;'
+      '}']
+end
 
 endfunction
 
@@ -1812,7 +2786,7 @@ function Code=cg_sa_static()
     Code($+1)='static integer evtspt[1];';
   end
   
-  Code($+1)='static double x[1];';
+  Code($+1)='static double zero=0;';
     
   if size(clkptr,1) <> 0 then
     Code=[Code;cformatline('static integer clkptr[ ]={'+..
@@ -1842,6 +2816,9 @@ function Code=cg_sa_static()
     Code($+1)='static integer pointi=1;';
   end
   Code($+1)='static double w[1];'
+  Code($+1)='double *'+rdnom+'_block_outtb;'
+  Code($+1)='static int *'+rdnom+'_iwa;'
+  Code($+1)='static int aaa=0, bbb=0;'
   Code=[Code;
 	'static void set_nevprt(int nevprt)'
 	'{'
@@ -1855,11 +2832,23 @@ function Code=make_static_standalone()
 //generates  static table definitions
 //Copyright INRIA
 //Author : Rachid Djenidi
+//Modified for Linux RTAI by Roberto Bucher (roberto.bucher@supsi.ch)
+
   rpptr=cpr.sim.rpptr;ipptr=cpr.sim.ipptr;
   rpar=cpr.sim.rpar;ipar=cpr.sim.ipar;
+  x=cpr.state.x;
   nbrpa=0;
   
-  Code =cg_sa_static();
+  Code=cg_sa_static();
+  if x <> [] then
+   Code=[Code;	
+         cformatline('double x[]={'+strcat(string(x),',')+'};',70)
+         cformatline('double xd[]={'+strcat(string(x),',')+'};',70)
+         'static integer c__1 = 1;'
+         'static double c_b14 = 0.;'
+         'static integer neq;']	
+  end
+
   Code=[Code;
         '';
 	'scicos_block block_'+rdnom+'['+string(nblk)+'];'];
@@ -1880,9 +2869,9 @@ function Code=make_static_standalone()
 	  path($+1)=cpr.corinv(i)($);
 	  OO=scs_m(path);
 	end
-	aaa=OO.gui;bbb=emptystr(3,1);
-	if and(aaa+bbb~= ['INPUTPORTEVTS'; ...
-			  'OUTPUTPORTEVTS';'EVTGEN_f']) then
+//	aaa=OO.gui;bbb=emptystr(3,1);
+//	if and(aaa+bbb~= ['INPUTPORTEVTS'; ...
+//			  'OUTPUTPORTEVTS';'EVTGEN_f']) then
 	  nbrpa=nbrpa+1;
 	  ntot_r = ntot_r + (rpptr(i+1)-rpptr(i));
 	  RCode($+1)='/* Routine name of block: '+strcat(string(cpr.sim.funs(i)));
@@ -1906,7 +2895,7 @@ function Code=make_static_standalone()
 	  RCode=[RCode;cformatline(strcat(string(rpar(rpptr(i):rpptr(i+1)-1))+','),70)];
 	  strRCode = strRCode + '""' + str_id + '"",';
 	  lenRCode = lenRCode + string(rpptr(i+1)-rpptr(i)) + ',';
-	end
+//	end
       end
     end
     RCode($+1)='};';
@@ -1947,8 +2936,8 @@ function Code=make_static_standalone()
 	  path($+1)=cpr.corinv(i)($);
 	  OO=scs_m(path);
 	end
-	aaa=OO.gui;bbb=emptystr(3,1);
-	if and(aaa+bbb~= ['INPUTPORTEVTS';'OUTPUTPORTEVTS';'EVTGEN_f']) then
+//	aaa=OO.gui;bbb=emptystr(3,1);
+//	if and(aaa+bbb~= ['INPUTPORTEVTS';'OUTPUTPORTEVTS';'EVTGEN_f']) then
 	  nbipa=nbipa+1;
 	  ntot_i = ntot_i + (ipptr(i+1)-ipptr(i));
 	  ICode($+1)='/* Routine name of block: '+strcat(string(cpr.sim.funs(i)));
@@ -1972,7 +2961,7 @@ function Code=make_static_standalone()
 	  ICode=[ICode;cformatline(strcat(string(ipar(ipptr(i):ipptr(i+1)-1))+','),70)];
 	  strICode = strICode + '""' + str_id + '"",';
 	  lenICode = lenICode + string(ipptr(i+1)-ipptr(i)) + ',';
-	end
+//	end
       end
     end
     ICode($+1)='};';
@@ -2000,14 +2989,14 @@ endfunction
 
 //==========================================================================
 
-function ok=mkdir(path)
-  if MSDOS then
-    cmd='mkdir '+strsubst(path,'/','\')
-  else
-    cmd='mkdir '+strsubst(path,'\','/')
-  end
-  ok=0==execstr('unix_s(cmd)','errcatch')
-endfunction
+// function ok=mkdir(path)
+//   if MSDOS then
+//     cmd='mkdir '+strsubst(path,'/','\')
+//   else
+//     cmd='mkdir '+strsubst(path,'\','/')
+//   end
+//   ok=0==execstr('unix_s(cmd)','errcatch')
+// endfunction
 
 //==========================================================================
 
@@ -2030,8 +3019,7 @@ function ok = compile_rt_standalone()
   wd = unix_g('pwd');
   chdir(rpat);
 
-  exec_str = 'make -f '+ rdnom + '_Makefile ../' + rdnom;
-  unix_w(exec_str)
+  unix_w('make')
   
   chdir(wd);
   ok = %t;
@@ -2042,24 +3030,24 @@ endfunction
 function Code=make_putevs()
   //RN
   Code=['int '+rdnom+'_putevs(t, evtnb, ierr)';
-	'double *t;'
-	'integer *evtnb, *ierr;'
+	'  double *t;'
+	'  integer *evtnb, *ierr;'
 	'{'
-	'*ierr = 0;'
-	'if (evtspt[*evtnb-1] != -1) {'
-	'*ierr = 1;'
-	'return 0;'
-	'} else {'
-	'evtspt[*evtnb-1] = 0;'
-	'tevts[*evtnb-1] = *t;'
-	'}'
-	'if (pointi == 0) {'
-	'pointi = *evtnb;'
-	'return 0;'
-	'}'
-	'evtspt[*evtnb-1] = pointi;'
-	'pointi = *evtnb;'
-	'return 0;'
+	'  *ierr = 0;'
+	'  if (evtspt[*evtnb-1] != -1) {'
+	'    *ierr = 1;'
+	'    return 0;'
+	'  } else {'
+	'    evtspt[*evtnb-1] = 0;'
+	'    tevts[*evtnb-1] = *t;'
+	'  }'
+	'  if (pointi == 0) {'
+	'    pointi = *evtnb;'
+	'    return 0;'
+	'  }'
+	'  evtspt[*evtnb-1] = pointi;'
+	'  pointi = *evtnb;'
+	'  return 0;'
 	'} ']
 endfunction
 

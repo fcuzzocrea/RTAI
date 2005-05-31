@@ -778,6 +778,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define RESET_INTR_GATE(vector, save) \
 	do { rtai_reset_gate_vector(vector, save); } while (0)
 
+#ifdef CONFIG_SMP
 void _rtai_sched_on_ipi_handler(void)
 {
 	unsigned long cpuid = rtai_cpuid();
@@ -823,6 +824,7 @@ void rt_reset_sched_ipi_gate(void)
 {
 	RESET_INTR_GATE(SCHED_VECTOR, rtai_sched_on_ipi_sysvec);
 }
+#endif
 
 void _rtai_apic_timer_handler(void)
 {
@@ -861,58 +863,66 @@ void rtai_apic_timer_handler (void);
 static struct desc_struct rtai_apic_timer_sysvec;
 
 /* this can be a prototy for the cse of a handler pending something for Linux */
-void _rtai_8254_timer_handler(long ecx, long edx, long ebp, long eax, long ds, long es, long eip, long xcs, long eflags)
+int _rtai_8254_timer_handler(struct pt_regs regs)
 {
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
 	adp_root->irqs[RTAI_TIMER_8254_IRQ].acknowledge(RTAI_TIMER_8254_IRQ);
-	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
+	((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
 	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 		rtai_sti();
 /* specific for the Linux tick, do not cre in a generic handler */
-		ADEOS_TICK_REGS.eflags = eflags;
-		ADEOS_TICK_REGS.eip    = eip;
-		ADEOS_TICK_REGS.xcs    = xcs;
+		ADEOS_TICK_REGS.eflags = regs.eflags;
+		ADEOS_TICK_REGS.eip    = regs.eip;
+		ADEOS_TICK_REGS.xcs    = regs.xcs;
 #if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
-		ADEOS_TICK_REGS.ebp    = ebp;
+		ADEOS_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
-/* end of specific for the Linux tick, do not cre in a generic handler */
-#ifdef STALL_RTAI_DOMAIN
-		adeos_unstall_pipeline_from(&rtai_domain);
-#else
 		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
 			rtai_cli();
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
-#endif
+		return 1;
         }
+	return 0;
 }
 
 void rtai_8254_timer_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
         SYMBOL_NAME_STR(rtai_8254_timer_handler) ":\n\t" \
+        "pushl $-256\n\t" \
 	"cld\n\t" \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
         "pushl %eax\n\t" \
         "pushl %ebp\n\t" \
+        "pushl %edi\n\t" \
+        "pushl %esi\n\t" \
         "pushl %edx\n\t" \
         "pushl %ecx\n\t" \
+        "pushl %ebx\n\t" \
 	__LXRT_GET_DATASEG(ecx) \
         "movl %ecx, %ds\n\t" \
         "movl %ecx, %es\n\t" \
         "call "SYMBOL_NAME_STR(_rtai_8254_timer_handler)"\n\t" \
+        "testl %eax,%eax\n\t" \
+        "jnz  ret_from_intr\n\t" \
+        "popl %ebx\n\t" \
         "popl %ecx\n\t" \
         "popl %edx\n\t" \
+        "popl %esi\n\t" \
+        "popl %edi\n\t" \
         "popl %ebp\n\t" \
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+        "addl $4,%esp\n\t" \
         "iret");
+
 static struct desc_struct rtai_8254_timer_sysvec;
 
 #else
@@ -925,10 +935,10 @@ void rt_reset_sched_ipi_gate(void) { }
 
 #endif
 
-
 #ifdef CONFIG_SMP
 
 static unsigned long rtai_old_irq_affinity[IPIPE_NR_XIRQS];
+static int rtai_orig_irq_affinity[IPIPE_NR_XIRQS];
 
 static spinlock_t rtai_iset_lock = SPIN_LOCK_UNLOCKED;
 
@@ -1254,7 +1264,6 @@ void rt_free_timer (void)
 
 	rtai_save_flags_and_cli(flags);
 	if (used_apic) {
-
 		FREE_LINUX_IRQ_BROADCAST_TO_APIC_TIMERS();
 		rtai_setup_periodic_apic(RTAI_APIC_ICOUNT, LOCAL_TIMER_VECTOR);
 		RESET_INTR_GATE(RTAI_APIC_TIMER_VECTOR, rtai_apic_timer_sysvec);
@@ -1264,8 +1273,9 @@ void rt_free_timer (void)
 		outb(0x34, 0x43);
 		outb(LATCH & 0xff, 0x40);
 		outb(LATCH >> 8,0x40);
-		RESET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_sysvec);
-		rt_release_irq(RTAI_TIMER_8254_IRQ);
+		if (!rt_release_irq(RTAI_TIMER_8254_IRQ)) {
+			RESET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_sysvec);
+		}
 	}
 	rtai_restore_flags(flags);
 }
@@ -1909,8 +1919,6 @@ static void rtai_domain_entry (int iflag)
 
 extern void *adeos_extern_irq_handler;
 
-static int rtai_orig_irq_affinity[IPIPE_NR_XIRQS];
-
 int __rtai_hal_init (void)
 {
 	int trapnr;
@@ -2109,6 +2117,8 @@ EXPORT_SYMBOL(rtai_reset_gate_vector);
 EXPORT_SYMBOL(rtai_lxrt_dispatcher);
 EXPORT_SYMBOL(rt_scheduling);
 EXPORT_SYMBOL(adeos_pended);
+#ifdef CONFIG_SMP
 EXPORT_SYMBOL(rt_set_sched_ipi_gate);
 EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
+#endif
 /*@}*/

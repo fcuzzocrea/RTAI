@@ -55,16 +55,14 @@ do {									\
     DEFINE_WAIT(__wait);						\
 									\
     prepare_to_wait(&state->readq, &__wait, TASK_INTERRUPTIBLE);	\
-    xnpipe_enqueue_read(state,&state->readq,&state->readw);		\
+    xnpipe_enqueue_read(state);						\
     xnlock_put_irqrestore(&nklock,s);					\
     schedule();								\
     xnlock_get_irqsave(&nklock,s);					\
     finish_wait(&state->readq, &__wait);				\
 } while (0)
 
-static inline void xnpipe_enqueue_read (xnpipe_state_t *state,
-					wait_queue_head_t *queue,
-					unsigned int *count)
+static inline void xnpipe_enqueue_read (xnpipe_state_t *state)
 {
     spl_t s;
 
@@ -76,20 +74,18 @@ static inline void xnpipe_enqueue_read (xnpipe_state_t *state,
 	setbits(state->status,XNPIPE_USER_WREAD);
 	}
 
-    (*count)++;
+    (state->readw)++;
 
     xnlock_put_irqrestore(&nklock,s);
 }
 
-static inline void xnpipe_dequeue_read (xnpipe_state_t *state,
-					wait_queue_head_t *queue,
-					unsigned int *count)
+static inline void xnpipe_dequeue_read (xnpipe_state_t *state)
 {
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
 
-    if (!--(*count))
+    if (!--(state->readw))
 	{
 	clrbits(state->status,XNPIPE_USER_WREAD);
 	removeq(&xnpipe_sleepq,&state->slink);
@@ -133,7 +129,7 @@ static void xnpipe_wakeup_proc (void *cookie)
 		   on. */
 	    if (waitqueue_active(&state->readq))
 		{
-		xnpipe_dequeue_read(state,&state->readq,&state->readw);
+		xnpipe_dequeue_read(state);
 		xnlock_put_irqrestore(&nklock,s);
 		wake_up_interruptible(&state->readq);
 		}
@@ -920,7 +916,7 @@ static unsigned xnpipe_poll (struct file *file,
 	   linked to the sleepers queue, and will be silently unlinked
 	   the next time the real-time kernel side kicks
 	   xnpipe_wakeup_proc. */
-	xnpipe_enqueue_read(state,&state->readq,&state->readw);
+	xnpipe_enqueue_read(state);
 			    
     /* a descriptor is always ready for writing with the current
        implementation, so there is no need to have/handle the writeq

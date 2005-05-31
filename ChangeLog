@@ -1,5 +1,11 @@
 2005-05-30  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
+	* base/arch/i386/hal/hal.immed: tested and fixed UP direct irq 
+	  handling of 8254 timers; do not use reduced set registers
+	  saving to be able to ret_from_int.
+
+2005-05-30  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
 	* base/arch/i386/hal/hal.immed: rt_printk uses printk directly, 
 	  a sync version added also.
 	  

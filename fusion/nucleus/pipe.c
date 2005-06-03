@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2001,2002,2003,2004 Philippe Gerum <rpm@xenomai.org>.
- * Copyright (C) 2005 Dmitry Adamushko
+ * Copyright (C) 2005 Dmitry Adamushko <dmitry.adamushko@gmail.com>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published

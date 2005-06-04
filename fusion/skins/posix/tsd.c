@@ -69,8 +69,7 @@ int pthread_key_create (pthread_key_t *key, pse51_key_destructor_t destructor)
 
         for (holder = getheadq(&pse51_threadq); holder;
 	     holder = nextq(&pse51_threadq, holder))
-            thread_settsd(link2pthread(holder), result->key, NULL)
-		;
+            thread_settsd(link2pthread(holder), result->key, NULL);
 	}
     else
 	{

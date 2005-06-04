@@ -55,7 +55,7 @@ struct pse51_thread {
     /* For pthread_cancel */
     unsigned cancelstate : 2;
     unsigned canceltype : 2;
-    unsigned cancel_request:1;
+    unsigned cancel_request : 1;
     xnqueue_t cleanup_handlers_q;
 
     /* errno value for this thread. */
@@ -68,6 +68,8 @@ struct pse51_thread {
     /* For thread specific data. */
     const void *tsd [PTHREAD_KEYS_MAX];
 };
+
+#define PSE51_JOINEE_DETACHED XNTHREAD_SPARE0
 
 #define pse51_current_thread() thread2pthread(xnpod_current_thread())
 

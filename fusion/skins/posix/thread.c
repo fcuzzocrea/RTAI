@@ -38,7 +38,7 @@ static void thread_destroy (pthread_t thread)
 
 static void thread_trampoline (void *cookie)
 {
-    pthread_t thread=(pthread_t ) cookie;
+    pthread_t thread = (pthread_t) cookie;
     pthread_exit(thread->entry(thread->arg));
 }
 
@@ -67,10 +67,7 @@ static void thread_delete_hook (xnthread_t *xnthread)
 	case PTHREAD_CREATE_JOINABLE:
 
 	    if (xnsynch_wakeup_one_sleeper(&thread->join_synch))
-		{
 		thread_setdetachstate(thread, PTHREAD_CREATE_DETACHED);
-                xnpod_schedule();
-		}
 
 	    /* The TCB will be freed by the last joiner. */
 	    break;
@@ -208,7 +205,8 @@ int pthread_detach (pthread_t thread)
 
     thread_setdetachstate(thread, PTHREAD_CREATE_DETACHED);
 
-    if (xnsynch_flush(&thread->join_synch, XNBREAK) == XNSYNCH_RESCHED)
+    if (xnsynch_flush(&thread->join_synch,
+                      PSE51_JOINEE_DETACHED) == XNSYNCH_RESCHED)
 	xnpod_schedule();
 
     xnlock_put_irqrestore(&nklock, s);
@@ -271,8 +269,7 @@ int pthread_join (pthread_t thread, void **value_ptr)
         thread_cancellation_point(cur);
         
         /* In case another thread called pthread_detach. */
-        if (xnthread_test_flags(&cur->threadbase, XNBREAK) &&
-	    thread_getdetachstate(thread) != PTHREAD_CREATE_JOINABLE)
+        if (xnthread_test_flags(&cur->threadbase, PSE51_JOINEE_DETACHED))
 	    {
             xnlock_put_irqrestore(&nklock, s);
             return EINVAL;
@@ -332,7 +329,7 @@ int pthread_make_periodic_np (pthread_t thread,
 
     start = ts2ticks_ceil(starttp);
     period = ts2ticks_ceil(periodtp);
-    err = -xnpod_set_thread_periodic(&thread->threadbase,start,period);
+    err = -xnpod_set_thread_periodic(&thread->threadbase, start, period);
     
  unlock_and_exit:
 

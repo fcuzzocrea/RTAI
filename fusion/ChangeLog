@@ -1,3 +1,10 @@
+2005-06-04  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/thread.c (pthread_detach, pthread_join): Use
+	xnthread_t flags spare bit to signal a detached joinee instead of
+	XNBREAK, XNBREAK is reserved for signals.
+	(thread_delete_hook): Avoid useless call to xnpod_schedule.
+
 2005-06-04  Philippe Gerum  <rpm@xenomai.org>
 
 	* scripts/rtai-config.in: Provide for --posix-* flags.

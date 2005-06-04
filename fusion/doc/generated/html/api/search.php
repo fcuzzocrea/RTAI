@@ -350,7 +350,7 @@ main();
 
 
 ?>
-<hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:14 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:13 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

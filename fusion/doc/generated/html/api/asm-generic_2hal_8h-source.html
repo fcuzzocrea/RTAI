@@ -7,7 +7,7 @@
 <div class="qindex">  <form class="search" action="search.php" method="get">
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="dirs.html">Directories</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <div class="nav">
-<a class="el" href="dir_000007.html">include</a>&nbsp;/&nbsp;<a class="el" href="dir_000008.html">nucleus</a>&nbsp;/&nbsp;<a class="el" href="dir_000009.html">asm-generic</a></div>
+<a class="el" href="dir_000009.html">include</a>&nbsp;/&nbsp;<a class="el" href="dir_000010.html">nucleus</a>&nbsp;/&nbsp;<a class="el" href="dir_000011.html">asm-generic</a></div>
 <h1>hal.h</h1><a href="asm-generic_2hal_8h.html">Go to the documentation of this file.</a><div class="fragment"><pre class="fragment">00001 
 00028 <span class="preprocessor">#ifndef _RTAI_ASM_GENERIC_HAL_H</span>
 00029 <span class="preprocessor"></span><span class="preprocessor">#define _RTAI_ASM_GENERIC_HAL_H</span>
@@ -121,46 +121,46 @@
 00137 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
 00138 <span class="preprocessor">#endif </span><span class="comment">/* __cplusplus */</span>
 00139 
-00140 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga45">rthal_irq_request</a>(<span class="keywordtype">unsigned</span> irq,
+00140 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga46">rthal_irq_request</a>(<span class="keywordtype">unsigned</span> irq,
 00141                       <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq, <span class="keywordtype">void</span> *cookie),
 00142                       <span class="keywordtype">void</span> *cookie);
 00143 
-00144 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga46">rthal_irq_release</a>(<span class="keywordtype">unsigned</span> irq);
+00144 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga47">rthal_irq_release</a>(<span class="keywordtype">unsigned</span> irq);
 00145 
-00146 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga47">rthal_irq_enable</a>(<span class="keywordtype">unsigned</span> irq);
+00146 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga48">rthal_irq_enable</a>(<span class="keywordtype">unsigned</span> irq);
 00147 
-00148 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga48">rthal_irq_disable</a>(<span class="keywordtype">unsigned</span> irq);
+00148 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga49">rthal_irq_disable</a>(<span class="keywordtype">unsigned</span> irq);
 00149 
-00150 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga49">rthal_irq_host_request</a>(<span class="keywordtype">unsigned</span> irq,
+00150 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga50">rthal_irq_host_request</a>(<span class="keywordtype">unsigned</span> irq,
 00151                            irqreturn_t (*handler)(<span class="keywordtype">int</span> irq,
 00152                                                   <span class="keywordtype">void</span> *dev_id,
 00153                                                   <span class="keyword">struct</span> pt_regs *regs), 
 00154                            <span class="keywordtype">char</span> *name,
 00155                            <span class="keywordtype">void</span> *dev_id);
 00156 
-00157 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga50">rthal_irq_host_release</a>(<span class="keywordtype">unsigned</span> irq,
+00157 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga51">rthal_irq_host_release</a>(<span class="keywordtype">unsigned</span> irq,
 00158                            <span class="keywordtype">void</span> *dev_id);
 00159 
-00160 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga51">rthal_irq_host_pend</a>(<span class="keywordtype">unsigned</span> irq);
+00160 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga52">rthal_irq_host_pend</a>(<span class="keywordtype">unsigned</span> irq);
 00161 
-00162 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga55">rthal_apc_alloc</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00162 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga56">rthal_apc_alloc</a>(<span class="keyword">const</span> <span class="keywordtype">char</span> *name,
 00163                     <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span> *cookie),
 00164                     <span class="keywordtype">void</span> *cookie);
 00165 
-00166 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga56">rthal_apc_free</a>(<span class="keywordtype">int</span> apc);
+00166 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga57">rthal_apc_free</a>(<span class="keywordtype">int</span> apc);
 00167 
-00168 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga57">rthal_apc_schedule</a>(<span class="keywordtype">int</span> apc);
+00168 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga58">rthal_apc_schedule</a>(<span class="keywordtype">int</span> apc);
 00169 
-00170 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga52">rthal_irq_affinity</a>(<span class="keywordtype">unsigned</span> irq,
+00170 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga53">rthal_irq_affinity</a>(<span class="keywordtype">unsigned</span> irq,
 00171                        cpumask_t cpumask,
 00172                        cpumask_t *oldmask);
 00173 
-00174 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga67">rthal_timer_request</a>(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
+00174 <span class="keywordtype">int</span> <a class="code" href="group__hal.html#ga70">rthal_timer_request</a>(<span class="keywordtype">void</span> (*handler)(<span class="keywordtype">void</span>),
 00175                         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> nstick);
 00176 
-00177 <span class="keywordtype">void</span> <a class="code" href="group__hal.html#ga68">rthal_timer_release</a>(<span class="keywordtype">void</span>);
+00177 <span class="keywordtype">void</span> <a class="code" href="group__hal.html#ga71">rthal_timer_release</a>(<span class="keywordtype">void</span>);
 00178 
-00179 rthal_trap_handler_t <a class="code" href="group__hal.html#ga53">rthal_trap_catch</a>(rthal_trap_handler_t handler);
+00179 rthal_trap_handler_t <a class="code" href="group__hal.html#ga54">rthal_trap_catch</a>(rthal_trap_handler_t handler);
 00180 
 00181 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> rthal_timer_calibrate(<span class="keywordtype">void</span>);
 00182 
@@ -171,7 +171,7 @@
 00187 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00188 
 00191 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_GENERIC_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:04 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:02 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

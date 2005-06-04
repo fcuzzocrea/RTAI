@@ -36,9 +36,6 @@ The current implementation assumes that the maximum number of outstanding timers
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__timer.html#ga9">xntimer_start</a> (xntimer_t *timer, xnticks_t value, xnticks_t interval)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Arm a timer.  <a href="#ga9"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__timer.html#ga10">xntimer_stop</a> (xntimer_t *timer)</td></tr>
-
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Disarm a timer.  <a href="#ga10"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">xnticks_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__timer.html#ga11">xntimer_get_date</a> (xntimer_t *timer)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Return the absolute expiration date.  <a href="#ga11"></a><br></td></tr>
@@ -216,7 +213,7 @@ This service can be called from:<p>
 <li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
 Rescheduling: never.<p>
-<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga24">xnpod_start_timer()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed as nanoseconds. </dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga23">xnpod_start_timer()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed as nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
@@ -260,7 +257,7 @@ This service can be called from:<p>
 <li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
 Rescheduling: never.<p>
-<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga24">xnpod_start_timer()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed as nanoseconds. </dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga23">xnpod_start_timer()</a> service. In periodic mode, clock ticks are expressed as periodic jiffies. In oneshot mode, clock ticks are expressed as nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
@@ -380,52 +377,11 @@ This service can be called from:<p>
 <li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
 <p>
 Rescheduling: never.<p>
-<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga24">xnpod_start_timer()</a> service. In periodic mode, clock ticks are interpreted as periodic jiffies. In oneshot mode, clock ticks are interpreted as nanoseconds. </dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__pod.html#ga23">xnpod_start_timer()</a> service. In periodic mode, clock ticks are interpreted as periodic jiffies. In oneshot mode, clock ticks are interpreted as nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
-<a class="anchor" name="ga10" doxytag="timer.c::xntimer_stop"></a><p>
-<table class="mdTable" cellpadding="2" cellspacing="0">
-  <tr>
-    <td class="mdRow">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td class="md" nowrap valign="top">int xntimer_stop           </td>
-          <td class="md" valign="top">(&nbsp;</td>
-          <td class="md" nowrap valign="top">xntimer_t *&nbsp;</td>
-          <td class="mdname1" valign="top" nowrap> <em>timer</em>          </td>
-          <td class="md" valign="top">&nbsp;)&nbsp;</td>
-          <td class="md" nowrap></td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-<table cellspacing="5" cellpadding="0" border="0">
-  <tr>
-    <td>
-      &nbsp;
-    </td>
-    <td>
-
-<p>
-Disarm a timer. 
-<p>
-This service deactivates a timer previously armed using <a class="el" href="group__timer.html#ga9">xntimer_start()</a>. Once disarmed, the timer can be subsequently re-armed using the latter service.<p>
-<dl compact><dt><b>Parameters:</b></dt><dd>
-  <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"></td><td valign="top"><em>timer</em>&nbsp;</td><td>The address of a valid timer descriptor.</td></tr>
-  </table>
-</dl>
-Environments:<p>
-This service can be called from:<p>
-<ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
-<p>
-Rescheduling: never.     </td>
-  </tr>
-</table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:06 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:05 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

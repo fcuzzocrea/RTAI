@@ -7,7 +7,7 @@
 <div class="qindex">  <form class="search" action="search.php" method="get">
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="dirs.html">Directories</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <div class="nav">
-<a class="el" href="dir_000007.html">include</a>&nbsp;/&nbsp;<a class="el" href="dir_000008.html">nucleus</a></div>
+<a class="el" href="dir_000009.html">include</a>&nbsp;/&nbsp;<a class="el" href="dir_000010.html">nucleus</a></div>
 <h1>heap.h</h1><div class="fragment"><pre class="fragment">00001 <span class="comment">/*</span>
 00002 <span class="comment"> * Copyright (C) 2001,2002,2003 Philippe Gerum &lt;rpm@xenomai.org&gt;.</span>
 00003 <span class="comment"> *</span>
@@ -82,113 +82,135 @@
 00072 
 00073 <span class="keyword">typedef</span> <span class="keyword">struct </span>xnheap {
 00074 
-00075 <span class="preprocessor">#ifdef CONFIG_SMP</span>
-00076 <span class="preprocessor"></span>    xnlock_t lock;
-00077 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
-00078 
-00079     xnholder_t link;
-00080 
-00081 <span class="preprocessor">#define link2heap(laddr) \</span>
-00082 <span class="preprocessor">((xnheap_t *)(((char *)laddr) - (int)(&amp;((xnheap_t *)0)-&gt;link)))</span>
-00083 <span class="preprocessor"></span>
-00084     u_long extentsize,
-00085            pagesize,
-00086            pageshift,
-00087            hdrsize,
-00088            npages,      <span class="comment">/* Number of pages per extent */</span>
-00089            ubytes,
-00090            maxcont;
-00091 
-00092     xnqueue_t extents;
+00075     xnholder_t link;
+00076 
+00077 <span class="preprocessor">#define link2heap(laddr) \</span>
+00078 <span class="preprocessor">((xnheap_t *)(((char *)laddr) - (int)(&amp;((xnheap_t *)0)-&gt;link)))</span>
+00079 <span class="preprocessor"></span>
+00080     u_long extentsize,
+00081            pagesize,
+00082            pageshift,
+00083            hdrsize,
+00084            npages,      <span class="comment">/* Number of pages per extent */</span>
+00085            ubytes,
+00086            maxcont;
+00087 
+00088     xnqueue_t extents;
+00089 
+00090 <span class="preprocessor">#ifdef CONFIG_SMP</span>
+00091 <span class="preprocessor"></span>    xnlock_t lock;
+00092 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP */</span>
 00093 
 00094     caddr_t buckets[XNHEAP_NBUCKETS];
 00095 
-00096     xnarch_heapcb_t archdep;
+00096     xnholder_t *idleq;
 00097 
-00098     XNARCH_DECL_DISPLAY_CONTEXT();
+00098     xnarch_heapcb_t archdep;
 00099 
-00100 } xnheap_t;
+00100     XNARCH_DECL_DISPLAY_CONTEXT();
 00101 
-00102 <span class="keyword">extern</span> xnheap_t kheap;
+00102 } xnheap_t;
 00103 
-00104 <span class="preprocessor">#define xnheap_size(heap)            ((heap)-&gt;extentsize)</span>
-00105 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_page_size(heap)       ((heap)-&gt;pagesize)</span>
-00106 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_page_count(heap)      ((heap)-&gt;npages)</span>
-00107 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_used_mem(heap)        ((heap)-&gt;ubytes)</span>
-00108 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_max_contiguous(heap)  ((heap)-&gt;maxcont)</span>
-00109 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_overhead(hsize,psize) \</span>
-00110 <span class="preprocessor">((sizeof(xnextent_t) + (((hsize) - sizeof(xnextent_t)) / (psize)) + \</span>
-00111 <span class="preprocessor"> XNHEAP_MINALIGNSZ - 1) &amp; ~(XNHEAP_MINALIGNSZ - 1))</span>
-00112 <span class="preprocessor"></span>
-00113 <span class="preprocessor">#define xnmalloc(size)  xnheap_alloc(&amp;kheap,size)</span>
-00114 <span class="preprocessor"></span><span class="preprocessor">#define xnfree(ptr)     xnheap_free(&amp;kheap,ptr)</span>
-00115 <span class="preprocessor"></span>
-00116 <span class="preprocessor">#ifdef __cplusplus</span>
-00117 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00118 <span class="preprocessor">#endif</span>
-00119 <span class="preprocessor"></span>
-00120 <span class="comment">/* Private interface. */</span>
-00121 
-00122 <span class="preprocessor">#ifdef __KERNEL__</span>
-00123 <span class="preprocessor"></span>
-00124 <span class="preprocessor">#define XNHEAP_DEV_MINOR 254</span>
+00104 <span class="keyword">extern</span> xnheap_t kheap;
+00105 
+00106 <span class="preprocessor">#define xnheap_size(heap)            ((heap)-&gt;extentsize)</span>
+00107 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_page_size(heap)       ((heap)-&gt;pagesize)</span>
+00108 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_page_count(heap)      ((heap)-&gt;npages)</span>
+00109 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_used_mem(heap)        ((heap)-&gt;ubytes)</span>
+00110 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_max_contiguous(heap)  ((heap)-&gt;maxcont)</span>
+00111 <span class="preprocessor"></span><span class="preprocessor">#define xnheap_overhead(hsize,psize) \</span>
+00112 <span class="preprocessor">((sizeof(xnextent_t) + (((hsize) - sizeof(xnextent_t)) / (psize)) + \</span>
+00113 <span class="preprocessor"> XNHEAP_MINALIGNSZ - 1) &amp; ~(XNHEAP_MINALIGNSZ - 1))</span>
+00114 <span class="preprocessor"></span>
+00115 <span class="preprocessor">#define xnmalloc(size)     xnheap_alloc(&amp;kheap,size)</span>
+00116 <span class="preprocessor"></span><span class="preprocessor">#define xnfree(ptr)        xnheap_free(&amp;kheap,ptr)</span>
+00117 <span class="preprocessor"></span><span class="preprocessor">#define xnfreesync()       xnheap_finalize_free(&amp;kheap)</span>
+00118 <span class="preprocessor"></span><span class="preprocessor">#define xnfreesafe(thread,ptr,ln) \</span>
+00119 <span class="preprocessor">do { \</span>
+00120 <span class="preprocessor">    if (xnpod_current_thread() == thread) \</span>
+00121 <span class="preprocessor">        xnheap_schedule_free(&amp;kheap,ptr,ln); \</span>
+00122 <span class="preprocessor">    else \</span>
+00123 <span class="preprocessor">        xnheap_free(&amp;kheap,ptr); \</span>
+00124 <span class="preprocessor">} while(0)</span>
 00125 <span class="preprocessor"></span>
-00126 <span class="keywordtype">int</span> xnheap_mount(<span class="keywordtype">void</span>);
-00127 
-00128 <span class="keywordtype">void</span> xnheap_umount(<span class="keywordtype">void</span>);
-00129 
-00130 <span class="keywordtype">int</span> xnheap_init_shared(xnheap_t *heap,
-00131                        u_long heapsize,
-00132                        <span class="keywordtype">int</span> memflags);
-00133 
-00134 <span class="keywordtype">int</span> xnheap_destroy_shared(xnheap_t *heap);
-00135 
-00136 <span class="preprocessor">#define xnheap_shared_offset(heap,ptr) \</span>
-00137 <span class="preprocessor">(((caddr_t)(ptr)) - ((caddr_t)(heap)-&gt;archdep.heapbase))</span>
-00138 <span class="preprocessor"></span>
-00139 <span class="preprocessor">#define xnheap_shared_address(heap,off) \</span>
-00140 <span class="preprocessor">(((caddr_t)(heap)-&gt;archdep.heapbase) + (off))</span>
-00141 <span class="preprocessor"></span>
-00142 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00126 <span class="preprocessor">#ifdef __cplusplus</span>
+00127 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00128 <span class="preprocessor">#endif</span>
+00129 <span class="preprocessor"></span>
+00130 <span class="comment">/* Private interface. */</span>
+00131 
+00132 <span class="preprocessor">#ifdef __KERNEL__</span>
+00133 <span class="preprocessor"></span>
+00134 <span class="preprocessor">#define XNHEAP_DEV_MINOR 254</span>
+00135 <span class="preprocessor"></span>
+00136 <span class="keywordtype">int</span> xnheap_mount(<span class="keywordtype">void</span>);
+00137 
+00138 <span class="keywordtype">void</span> xnheap_umount(<span class="keywordtype">void</span>);
+00139 
+00140 <span class="keywordtype">int</span> xnheap_init_shared(xnheap_t *heap,
+00141                        u_long heapsize,
+00142                        <span class="keywordtype">int</span> memflags);
 00143 
-00144 <span class="comment">/* Public interface. */</span>
+00144 <span class="keywordtype">int</span> xnheap_destroy_shared(xnheap_t *heap);
 00145 
-00146 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga2">xnheap_init</a>(xnheap_t *heap,
-00147                 <span class="keywordtype">void</span> *heapaddr,
-00148                 u_long heapsize,
-00149                 u_long pagesize);
-00150 
-00151 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga3">xnheap_destroy</a>(xnheap_t *heap,
-00152                    <span class="keywordtype">void</span> (*flushfn)(xnheap_t *heap,
-00153                                    <span class="keywordtype">void</span> *extaddr,
-00154                                    u_long extsize,
-00155                                    <span class="keywordtype">void</span> *cookie),
-00156                    <span class="keywordtype">void</span> *cookie);
-00157 
-00158 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga8">xnheap_extend</a>(xnheap_t *heap,
-00159                   <span class="keywordtype">void</span> *extaddr,
-00160                   u_long extsize);
-00161 
-00162 <span class="keywordtype">void</span> *<a class="code" href="group__heap.html#ga5">xnheap_alloc</a>(xnheap_t *heap,
-00163                    u_long size);
-00164 
-00165 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga6">xnheap_test_and_free</a>(xnheap_t *heap,
-00166                          <span class="keywordtype">void</span> *block,
-00167                          <span class="keywordtype">int</span> (*ckfn)(<span class="keywordtype">void</span> *block));
-00168 
-00169 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga7">xnheap_free</a>(xnheap_t *heap,
-00170                 <span class="keywordtype">void</span> *block);
+00146 <span class="preprocessor">#define xnheap_shared_offset(heap,ptr) \</span>
+00147 <span class="preprocessor">(((caddr_t)(ptr)) - ((caddr_t)(heap)-&gt;archdep.heapbase))</span>
+00148 <span class="preprocessor"></span>
+00149 <span class="preprocessor">#define xnheap_shared_address(heap,off) \</span>
+00150 <span class="preprocessor">(((caddr_t)(heap)-&gt;archdep.heapbase) + (off))</span>
+00151 <span class="preprocessor"></span>
+00152 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00153 
+00154 <span class="comment">/* Public interface. */</span>
+00155 
+00156 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga2">xnheap_init</a>(xnheap_t *heap,
+00157                 <span class="keywordtype">void</span> *heapaddr,
+00158                 u_long heapsize,
+00159                 u_long pagesize);
+00160 
+00161 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga3">xnheap_destroy</a>(xnheap_t *heap,
+00162                    <span class="keywordtype">void</span> (*flushfn)(xnheap_t *heap,
+00163                                    <span class="keywordtype">void</span> *extaddr,
+00164                                    u_long extsize,
+00165                                    <span class="keywordtype">void</span> *cookie),
+00166                    <span class="keywordtype">void</span> *cookie);
+00167 
+00168 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga8">xnheap_extend</a>(xnheap_t *heap,
+00169                   <span class="keywordtype">void</span> *extaddr,
+00170                   u_long extsize);
 00171 
-00172 <span class="preprocessor">#ifdef __cplusplus</span>
-00173 <span class="preprocessor"></span>}
-00174 <span class="preprocessor">#endif</span>
-00175 <span class="preprocessor"></span>
-00176 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
-00177 
-00178 <span class="preprocessor">#define XNHEAP_DEV_NAME  "/dev/rtheap"</span>
-00179 <span class="preprocessor"></span>
-00180 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_HEAP_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:04 2005 for RTAI Fusion API by&nbsp;
+00172 <span class="keywordtype">void</span> *<a class="code" href="group__heap.html#ga5">xnheap_alloc</a>(xnheap_t *heap,
+00173                    u_long size);
+00174 
+00175 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga6">xnheap_test_and_free</a>(xnheap_t *heap,
+00176                          <span class="keywordtype">void</span> *block,
+00177                          <span class="keywordtype">int</span> (*ckfn)(<span class="keywordtype">void</span> *block));
+00178 
+00179 <span class="keywordtype">int</span> <a class="code" href="group__heap.html#ga7">xnheap_free</a>(xnheap_t *heap,
+00180                 <span class="keywordtype">void</span> *block);
+00181 
+00182 <span class="keywordtype">void</span> <a class="code" href="group__heap.html#ga9">xnheap_schedule_free</a>(xnheap_t *heap,
+00183                           <span class="keywordtype">void</span> *block,
+00184                           xnholder_t *link);
+00185 
+00186 <span class="keywordtype">void</span> xnheap_finalize_free_inner(xnheap_t *heap);
+00187 
+00188 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnheap_finalize_free(xnheap_t *heap)
+00189 {
+00190     <span class="keywordflow">if</span> (heap-&gt;idleq)
+00191         xnheap_finalize_free_inner(heap);
+00192 }
+00193 
+00194 #ifdef __cplusplus
+00195 }
+00196 #endif
+00197 
+00198 #endif <span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00199 
+00200 #define XNHEAP_DEV_NAME  "/dev/rtheap"
+00201 
+00202 #endif <span class="comment">/* !_RTAI_NUCLEUS_HEAP_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:02 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

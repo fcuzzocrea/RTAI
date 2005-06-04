@@ -281,12 +281,15 @@ In the shared case, heaps are used as shared memory segments. All allocation req
 <li>-ENOMEM is returned if not enough system memory is available to create or register the heap. Additionally, and if H_SHARED has been passed in <em>mode</em>, errors while mapping the block pool in the caller's address space might beget this return code too.</li></ul>
 <p>
 <ul>
+<li>-EPERM is returned if this service was called from an invalid context.</li></ul>
+<p>
+<ul>
 <li>-ENOSYS is returned if <em>mode</em> specifies H_SHARED, but the real-time support in user-space is unavailable.</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>User-space task</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>User-space task (switches to secondary mode)</li></ul>
 <p>
 Rescheduling: possible.     </td>
   </tr>
@@ -495,7 +498,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:08 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:06 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

@@ -100,12 +100,15 @@ The RTAI scheduler ensures that concurrent tasks are run according to one of the
 <tr><td class="memItemLeft" nowrap align="right" valign="top">static int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga27">rt_task_spawn</a> (RT_TASK *task, const char *name, int stksize, int prio, int mode, void(*entry)(void *cookie), void *cookie)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Spawn a new real-time task.  <a href="#ga27"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga28">rt_task_bind</a> (RT_TASK *task, const char *name)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga28">rt_task_shadow</a> (RT_TASK *task, const char *name, int prio, int mode)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a real-time task.  <a href="#ga28"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">static int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga29">rt_task_unbind</a> (RT_TASK *task)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Turns the current Linux task into a native RTAI task.  <a href="#ga28"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga29">rt_task_bind</a> (RT_TASK *task, const char *name)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from a real-time task.  <a href="#ga29"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to a real-time task.  <a href="#ga29"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">static int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__task.html#ga30">rt_task_unbind</a> (RT_TASK *task)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from a real-time task.  <a href="#ga30"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
 <a class="anchor" name="ga17" doxytag="task.c::rt_task_add_hook"></a><p>
@@ -180,7 +183,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga28" doxytag="task.c::rt_task_bind"></a><p>
+<a class="anchor" name="ga29" doxytag="task.c::rt_task_bind"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -349,7 +352,7 @@ The task is left in an innocuous state until it is actually started by <a class=
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the task. When non-NULL and non-empty, this string is copied to a safe place into the descriptor, and passed to the registry package if enabled for indexing the created task.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>stksize</em>&nbsp;</td><td>The size of the stack (in bytes) for the new task. If zero is passed, a reasonable pre-defined size will be substituted. This parameter is ignored for user-space tasks.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>prio</em>&nbsp;</td><td>The base priority of the new thread. This value must range from [1 .. 99] (inclusive) where 1 is the lowest effective priority.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>prio</em>&nbsp;</td><td>The base priority of the new task. This value must range from [1 .. 99] (inclusive) where 1 is the lowest effective priority.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The task creation mode. The following flags can be OR'ed into this bitmask, each of them affecting the new task:</td></tr>
   </table>
 </dl>
@@ -1215,6 +1218,99 @@ This service can be called from:<p>
 Rescheduling: possible if <em>task</em> is the current one.     </td>
   </tr>
 </table>
+<a class="anchor" name="ga28" doxytag="task.c::rt_task_shadow"></a><p>
+<table class="mdTable" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int rt_task_shadow           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">RT_TASK *&nbsp;</td>
+          <td class="mdname" nowrap> <em>task</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>const char *&nbsp;</td>
+          <td class="mdname" nowrap> <em>name</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>int&nbsp;</td>
+          <td class="mdname" nowrap> <em>prio</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>int&nbsp;</td>
+          <td class="mdname" nowrap> <em>mode</em></td>
+        </tr>
+        <tr>
+          <td class="md"></td>
+          <td class="md">)&nbsp;</td>
+          <td class="md" colspan="2"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Turns the current Linux task into a native RTAI task. 
+<p>
+Creates a real-time task running in the context of the calling regular Linux task in user-space.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>task</em>&nbsp;</td><td>The address of a task descriptor RTAI will use to store the task-related data. This descriptor must always be valid while the task is active therefore it must be allocated in permanent memory.</td></tr>
+  </table>
+</dl>
+The current context is switched to primary execution mode and returns immediately, unless T_SUSP has been passed in the <em>mode</em> parameter.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the task. When non-NULL and non-empty, this string is copied to a safe place into the descriptor, and passed to the registry package if enabled for indexing the created task.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>prio</em>&nbsp;</td><td>The base priority which will be set for the current task. This value must range from [1 .. 99] (inclusive) where 1 is the lowest effective priority.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The task creation mode. The following flags can be OR'ed into this bitmask, each of them affecting the new task:</td></tr>
+  </table>
+</dl>
+<ul>
+<li>T_FPU allows the task to use the FPU whenever available on the platform. This flag is forced for this call, therefore it can be omitted.</li></ul>
+<p>
+<ul>
+<li>T_SUSP causes the task to enter the suspended mode after it has been put under RTAI's control. In such a case, a call to <a class="el" href="group__task.html#ga7">rt_task_resume()</a> will be needed to wake up the current task.</li></ul>
+<p>
+<ul>
+<li>T_CPU(cpuid) makes the current task affine to CPU # <b>cpuid</b>. CPU identifiers range from 0 to RTHAL_NR_CPUS - 1 (inclusive). The calling task will migrate to another processor before this service returns if the current one is not part of the CPU affinity mask.</li></ul>
+<p>
+Passing T_CPU(0)|T_CPU(1) in the <em>mode</em> parameter thus defines a task affine to CPUs #0 and #1.<p>
+<dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
+<ul>
+<li>-EBUSY is returned if the current Linux task is already mapped to a RTAI context.</li></ul>
+<p>
+<ul>
+<li>-ENOMEM is returned if the system fails to get enough dynamic memory from the global real-time heap in order to create or register the task.</li></ul>
+<p>
+<ul>
+<li>-EEXIST is returned if the <em>name</em> is already in use by some registered object.</li></ul>
+<p>
+<ul>
+<li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
+<p>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>User-space task (enters primary mode)</li></ul>
+<p>
+Rescheduling: possible.     </td>
+  </tr>
+</table>
 <a class="anchor" name="ga13" doxytag="task.c::rt_task_sleep"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
@@ -1459,7 +1555,7 @@ Creates and immediately starts a real-time task, either running in a kernel modu
     <tr><td valign="top"></td><td valign="top"><em>task</em>&nbsp;</td><td>The address of a task descriptor RTAI will use to store the task-related data. This descriptor must always be valid while the task is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>name</em>&nbsp;</td><td>An ASCII string standing for the symbolic name of the task. When non-NULL and non-empty, this string is copied to a safe place into the descriptor, and passed to the registry package if enabled for indexing the created task.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>stksize</em>&nbsp;</td><td>The size of the stack (in bytes) for the new task. If zero is passed, a reasonable pre-defined size will be substituted. This parameter is ignored for user-space tasks.</td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>prio</em>&nbsp;</td><td>The base priority of the new thread. This value must range from [1 .. 99] (inclusive) where 1 is the lowest effective priority.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>prio</em>&nbsp;</td><td>The base priority of the new task. This value must range from [1 .. 99] (inclusive) where 1 is the lowest effective priority.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>mode</em>&nbsp;</td><td>The task creation mode. The following flags can be OR'ed into this bitmask, each of them affecting the new task:</td></tr>
   </table>
 </dl>
@@ -1624,7 +1720,7 @@ This service can be called from:<p>
 Rescheduling: always if <em>task</em> is NULL.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga29" doxytag="task.h::rt_task_unbind"></a><p>
+<a class="anchor" name="ga30" doxytag="task.h::rt_task_unbind"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -1651,7 +1747,7 @@ Rescheduling: always if <em>task</em> is NULL.     </td>
 <p>
 Unbind from a real-time task. 
 <p>
-This user-space only service unbinds the calling task from the task object previously retrieved by a call to <a class="el" href="group__task.html#ga28">rt_task_bind()</a>.<p>
+This user-space only service unbinds the calling task from the task object previously retrieved by a call to <a class="el" href="group__task.html#ga29">rt_task_bind()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>task</em>&nbsp;</td><td>The address of a task descriptor to unbind from.</td></tr>
@@ -1802,7 +1898,7 @@ This service can be called from:<p>
 Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:10 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:08 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

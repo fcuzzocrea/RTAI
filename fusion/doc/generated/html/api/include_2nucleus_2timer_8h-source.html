@@ -7,7 +7,7 @@
 <div class="qindex">  <form class="search" action="search.php" method="get">
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="dirs.html">Directories</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <div class="nav">
-<a class="el" href="dir_000007.html">include</a>&nbsp;/&nbsp;<a class="el" href="dir_000008.html">nucleus</a></div>
+<a class="el" href="dir_000009.html">include</a>&nbsp;/&nbsp;<a class="el" href="dir_000010.html">nucleus</a></div>
 <h1>timer.h</h1><div class="fragment"><pre class="fragment">00001 <span class="comment">/*</span>
 00002 <span class="comment"> * Copyright (C) 2001,2002,2003 Philippe Gerum &lt;rpm@xenomai.org&gt;.</span>
 00003 <span class="comment"> *</span>
@@ -118,28 +118,34 @@
 00108                   xnticks_t value,
 00109                   xnticks_t interval);
 00110 
-00111 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga10">xntimer_stop</a>(xntimer_t *timer);
+00111 <span class="keywordtype">void</span> xntimer_stop_timer_inner(xntimer_t *timer);
 00112 
-00113 <span class="keywordtype">void</span> <a class="code" href="group__timer.html#ga14">xntimer_freeze</a>(<span class="keywordtype">void</span>);
-00114 
-00115 xnticks_t <a class="code" href="group__timer.html#ga11">xntimer_get_date</a>(xntimer_t *timer);
-00116 
-00117 xnticks_t <a class="code" href="group__timer.html#ga12">xntimer_get_timeout</a>(xntimer_t *timer);
-00118 
-00119 <span class="preprocessor">#if defined(CONFIG_SMP) &amp;&amp; defined(CONFIG_RTAI_OPT_PERCPU_TIMER)</span>
-00120 <span class="preprocessor"></span><span class="keywordtype">int</span> xntimer_set_sched(xntimer_t *timer, <span class="keyword">struct</span> <a class="code" href="structxnsched.html">xnsched</a> *sched);
-00121 <span class="preprocessor">#else </span><span class="comment">/* ! CONFIG_SMP || ! CONFIG_OPT_PERCPU_TIMER */</span>
-00122 <span class="preprocessor">#define xntimer_set_sched(timer,sched)</span>
-00123 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_SMP &amp;&amp; CONFIG_OPT_PERCPU_TIMER */</span>
-00124 
-00125 <span class="preprocessor">#ifdef __cplusplus</span>
-00126 <span class="preprocessor"></span>}
-00127 <span class="preprocessor">#endif</span>
-00128 <span class="preprocessor"></span>
-00129 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
-00130 
-00131 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_TIMER_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:05 2005 for RTAI Fusion API by&nbsp;
+00136 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xntimer_stop(xntimer_t *timer)
+00137 {
+00138     <span class="keywordflow">if</span> (!testbits(timer-&gt;status,XNTIMER_DEQUEUED))
+00139         xntimer_stop_timer_inner(timer);
+00140 }
+00141 
+00142 <span class="keywordtype">void</span> xntimer_freeze(<span class="keywordtype">void</span>);
+00143 
+00144 xnticks_t xntimer_get_date(xntimer_t *timer);
+00145 
+00146 xnticks_t xntimer_get_timeout(xntimer_t *timer);
+00147 
+00148 #if defined(CONFIG_SMP) &amp;&amp; defined(CONFIG_RTAI_OPT_PERCPU_TIMER)
+00149 <span class="keywordtype">int</span> xntimer_set_sched(xntimer_t *timer, struct <a class="code" href="structxnsched.html">xnsched</a> *sched);
+00150 #else <span class="comment">/* ! CONFIG_SMP || ! CONFIG_OPT_PERCPU_TIMER */</span>
+00151 #define xntimer_set_sched(timer,sched)
+00152 #endif <span class="comment">/* CONFIG_SMP &amp;&amp; CONFIG_OPT_PERCPU_TIMER */</span>
+00153 
+00154 #ifdef __cplusplus
+00155 }
+00156 #endif
+00157 
+00158 #endif <span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00159 
+00160 #endif <span class="comment">/* !_RTAI_NUCLEUS_TIMER_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:02 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

@@ -7,7 +7,7 @@
 <div class="qindex">  <form class="search" action="search.php" method="get">
 <a class="qindex" href="main.html">Main&nbsp;Page</a> | <a class="qindex" href="modules.html">Modules</a> | <a class="qindex" href="annotated.html">Data&nbsp;Structures</a> | <a class="qindex" href="dirs.html">Directories</a> | <a class="qindex" href="files.html">File&nbsp;List</a> | <a class="qindex" href="functions.html">Data&nbsp;Fields</a> | <a class="qindex" href="globals.html">Globals</a>  | <span class="search"><u>S</u>earch&nbsp;for&nbsp;<input class="search" type="text" name="query" value="" size="20" accesskey="s"/></span></form></div>
 <div class="nav">
-<a class="el" href="dir_000015.html">nucleus</a></div>
+<a class="el" href="dir_000018.html">nucleus</a></div>
 <h1>pod.c File Reference</h1><hr><a name="_details"></a><h2>Detailed Description</h2>
 Real-time pod services. 
 <p>
@@ -21,38 +21,40 @@ You should have received a copy of the GNU General Public License along with RTA
 <p>
 Include dependency graph for pod.c:<p><center><img src="pod_8c__incl.png" border="0" usemap="#nucleus/pod.c_map" alt=""></center>
 <map name="nucleus/pod.c_map">
-<area href="pod_8h.html" shape="rect" coords="172,56,276,80" alt="">
-<area href="include_2nucleus_2intr_8h-source.html" shape="rect" coords="348,105,446,129" alt="">
-<area href="synch_8h-source.html" shape="rect" coords="165,154,282,178" alt="">
-<area href="include_2nucleus_2heap_8h-source.html" shape="rect" coords="168,202,280,226" alt="">
-<area href="module_8h-source.html" shape="rect" coords="161,250,286,274" alt="">
-<area href="ltt_8h-source.html" shape="rect" coords="177,298,270,322" alt="">
-<area href="thread_8h-source.html" shape="rect" coords="337,56,457,80" alt="">
-<area href="include_2nucleus_2queue_8h-source.html" shape="rect" coords="337,202,457,226" alt="">
+<area href="pod_8h.html" shape="rect" coords="171,106,275,130" alt="">
+<area href="include_2nucleus_2intr_8h-source.html" shape="rect" coords="347,58,446,82" alt="">
+<area href="synch_8h-source.html" shape="rect" coords="338,256,455,280" alt="">
+<area href="include_2nucleus_2heap_8h-source.html" shape="rect" coords="506,156,618,180" alt="">
+<area href="module_8h-source.html" shape="rect" coords="161,205,286,229" alt="">
+<area href="ltt_8h-source.html" shape="rect" coords="515,305,609,329" alt="">
+<area href="thread_8h-source.html" shape="rect" coords="337,106,457,130" alt="">
+<area href="include_2nucleus_2timer_8h-source.html" shape="rect" coords="506,108,618,132" alt="">
+<area href="include_2nucleus_2queue_8h-source.html" shape="rect" coords="666,181,786,205" alt="">
+<area href="include_2nucleus_2types_8h-source.html" shape="rect" coords="834,181,949,205" alt="">
 </map>
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga62">xnpod_suspend_thread</a> (xnthread_t *thread, xnflags_t mask, xnticks_t timeout, xnsynch_t *wchan)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga61">xnpod_suspend_thread</a> (xnthread_t *thread, xnflags_t mask, xnticks_t timeout, xnsynch_t *wchan)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Suspend a thread.  <a href="group__pod.html#ga62"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga63">xnpod_dispatch_signals</a> (void)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Suspend a thread.  <a href="group__pod.html#ga61"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga62">xnpod_dispatch_signals</a> (void)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Deliver pending asynchronous signals to the running thread.  <a href="group__pod.html#ga63"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga64">xnpod_welcome_thread</a> (xnthread_t *thread)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Deliver pending asynchronous signals to the running thread.  <a href="group__pod.html#ga62"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga63">xnpod_welcome_thread</a> (xnthread_t *thread)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Thread prologue.  <a href="group__pod.html#ga64"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga66">xnpod_preempt_current_thread</a> (<a class="el" href="structxnsched.html">xnsched_t</a> *sched)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Thread prologue.  <a href="group__pod.html#ga63"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">static void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga65">xnpod_preempt_current_thread</a> (<a class="el" href="structxnsched.html">xnsched_t</a> *sched)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Preempts the current thread.  <a href="group__pod.html#ga66"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga67">xnpod_trap_fault</a> (void *fltinfo)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Preempts the current thread.  <a href="group__pod.html#ga65"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga66">xnpod_trap_fault</a> (void *fltinfo)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Default fault handler.  <a href="group__pod.html#ga67"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga68">xnpod_announce_tick</a> (xnintr_t *intr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Default fault handler.  <a href="group__pod.html#ga66"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga67">xnpod_announce_tick</a> (xnintr_t *intr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Announce a new clock tick.  <a href="group__pod.html#ga68"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Announce a new clock tick.  <a href="group__pod.html#ga67"></a><br></td></tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:05 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:02 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

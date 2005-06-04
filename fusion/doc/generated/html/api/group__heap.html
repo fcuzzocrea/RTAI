@@ -48,6 +48,9 @@ HEAP { block_buckets[] extent_queue -------+ } | V EXTENT #1 { {static header} p
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__heap.html#ga8">xnheap_extend</a> (xnheap_t *heap, void *extaddr, u_long extsize)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Extend a memory heap.  <a href="#ga8"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__heap.html#ga9">xnheap_schedule_free</a> (xnheap_t *heap, void *block, xnholder_t *link)</td></tr>
+
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Schedule a memory block for release.  <a href="#ga9"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
 <a class="anchor" name="ga5" doxytag="heap.c::xnheap_alloc"></a><p>
@@ -341,6 +344,64 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
+<a class="anchor" name="ga9" doxytag="heap.c::xnheap_schedule_free"></a><p>
+<table class="mdTable" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">int xnheap_schedule_free           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">xnheap_t *&nbsp;</td>
+          <td class="mdname" nowrap> <em>heap</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>void *&nbsp;</td>
+          <td class="mdname" nowrap> <em>block</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>xnholder_t *&nbsp;</td>
+          <td class="mdname" nowrap> <em>link</em></td>
+        </tr>
+        <tr>
+          <td class="md"></td>
+          <td class="md">)&nbsp;</td>
+          <td class="md" colspan="2"></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Schedule a memory block for release. 
+<p>
+This routine records a block for later release by xnheap_finalize_free(). This service is useful to lazily free blocks of heap memory when immediate release is not an option, e.g. when active references are still pending on the object for a short time after the call. xnheap_finalize_free() is expected to be eventually called by the client code at some point in the future when actually freeing the idle objects is deemed safe.<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"></td><td valign="top"><em>heap</em>&nbsp;</td><td>The descriptor address of the heap to release memory to.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>block</em>&nbsp;</td><td>The address of the region to be returned to the heap.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>link</em>&nbsp;</td><td>The address of a link member, likely but not necessarily within the released object, which will be used by the heap manager to hold the block in the queue of idle objects.</td></tr>
+  </table>
+</dl>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<p>
+Rescheduling: never.     </td>
+  </tr>
+</table>
 <a class="anchor" name="ga6" doxytag="heap.c::xnheap_test_and_free"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
@@ -400,7 +461,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Tue May 17 14:23:05 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:03 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

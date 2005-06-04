@@ -1,3 +1,3 @@
 SUBDIRS = hal
 
-EXTRA_DIST = Kconfig defconfig rtai_config.distcheck patches
+EXTRA_DIST = Kconfig defconfig patches

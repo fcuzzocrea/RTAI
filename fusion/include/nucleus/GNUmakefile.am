@@ -8,6 +8,10 @@ if CONFIG_PPC
 ARCHDIR = asm-ppc
 endif
 
+if CONFIG_IA64
+ARCHDIR = asm-ia64
+endif
+
 include_HEADERS = \
 		fusion.h \
 		heap.h \

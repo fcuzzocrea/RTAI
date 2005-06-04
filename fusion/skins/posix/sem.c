@@ -36,6 +36,8 @@ static void sem_destroy_internal (sem_t *sem)
 
 {
     pse51_mark_deleted(sem);
+    /* synchbase wait queue may not be empty only when this function is called
+       from pse51_sem_obj_cleanup, hence the absence of xnpod_schedule(). */
     xnsynch_destroy(&sem->synchbase);
     removeq(&pse51_semq, &sem->link);    
 }

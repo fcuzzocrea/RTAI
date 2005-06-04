@@ -32,6 +32,8 @@ static void pse51_mutex_destroy_internal (pthread_mutex_t *mutex)
 
 {
     pse51_mark_deleted(mutex);
+    /* synchbase wait queue may not be empty only when this function is called
+       from pse51_mutex_obj_cleanup, hence the absence of xnpod_schedule(). */
     xnsynch_destroy(&mutex->synchbase);
     removeq(&pse51_mutexq, &mutex->link);
 }
@@ -60,7 +62,7 @@ void pse51_mutex_obj_cleanup (void)
 int pthread_mutex_init (pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
 
 {
-    xnflags_t synch_flags = XNSYNCH_PRIO & XNSYNCH_NOPIP;
+    xnflags_t synch_flags = XNSYNCH_PRIO | XNSYNCH_NOPIP;
     spl_t s;
     
     xnpod_check_context(XNPOD_THREAD_CONTEXT);

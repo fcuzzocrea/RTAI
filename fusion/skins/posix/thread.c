@@ -32,6 +32,8 @@ static void thread_destroy (pthread_t thread)
 
 {
     removeq(&pse51_threadq, &thread->link);
+    /* join_sync wait queue may not be empty only when this function is called
+       from pse51_cond_obj_cleanup, hence the absence of xnpod_schedule(). */
     xnsynch_destroy(&thread->join_synch);
     xnfree(thread);
 }

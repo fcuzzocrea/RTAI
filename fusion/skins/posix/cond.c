@@ -31,6 +31,8 @@ static void cond_destroy_internal (pthread_cond_t *cond)
 
 {
     pse51_mark_deleted(cond);
+    /* synchbase wait queue may not be empty only when this function is called
+       from pse51_cond_obj_cleanup, hence the absence of xnpod_schedule(). */
     xnsynch_destroy(&cond->synchbase);
     removeq(&pse51_condq, &cond->link);
 }
@@ -38,9 +40,8 @@ static void cond_destroy_internal (pthread_cond_t *cond)
 int pthread_cond_init (pthread_cond_t *cond, const pthread_condattr_t *attr)
 
 {
-    xnflags_t synch_flags = XNSYNCH_PRIO & XNSYNCH_NOPIP;
+    xnflags_t synch_flags = XNSYNCH_PRIO | XNSYNCH_NOPIP;
     spl_t s;
-
 
     if (!attr)
         attr = &default_cond_attr;
@@ -85,9 +86,7 @@ int pthread_cond_destroy (pthread_cond_t *cond)
         return EBUSY;
 	}
 
-    pse51_mark_deleted(cond);
-    xnsynch_destroy(&cond->synchbase);
-    removeq(&pse51_condq, &cond->link);
+    cond_destroy_internal(cond);
     
     xnlock_put_irqrestore(&nklock, s);
 

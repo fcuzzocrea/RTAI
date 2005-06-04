@@ -17,7 +17,6 @@
  */
 
 #include <errno.h>
-#include <malloc.h>
 #include <posix/syscall.h>
 #include <posix/lib/semaphore.h>
 

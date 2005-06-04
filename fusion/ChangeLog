@@ -1,5 +1,9 @@
 2005-06-04  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* testsuite/latency/latency.c: Warm-up times, for better accuracy,
+	especially on low-end machines. Compute extrema latencies in
+	latency thread, to avoid losing some of them.
+
 	* skins/posix/thread.c (pthread_detach, pthread_join): Use
 	xnthread_t flags spare bit to signal a detached joinee instead of
 	XNBREAK, XNBREAK is reserved for signals.

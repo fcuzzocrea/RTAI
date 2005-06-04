@@ -21,17 +21,17 @@ RT_SEM display_sem;
 
 long minjitter, maxjitter, avgjitter, overrun;
 long gminjitter = TEN_MILLION,
-     gmaxjitter = -TEN_MILLION,
-     gavgjitter = 0,
-     goverrun = 0;
+    gmaxjitter = -TEN_MILLION,
+    gavgjitter = 0,
+    goverrun = 0;
 
 int sampling_period = 0;
-int test_duration = 0;	/* sec of testing, via -T <sec>, 0 is inf */
-int data_lines = 21;	/* data lines per header line, -l <lines> to change */
-int quiet = 0;		/* suppress printing of RTH, RTD lines when -T given */
+int test_duration = 0;  /* sec of testing, via -T <sec>, 0 is inf */
+int data_lines = 21;    /* data lines per header line, -l <lines> to change */
+int quiet = 0;          /* suppress printing of RTH, RTD lines when -T given */
 
-time_t test_start, test_end;	/* report test duration */
-int test_loops = 0;		/* outer loop count */
+time_t test_start, test_end;    /* report test duration */
+int test_loops = 0;             /* outer loop count */
 
 #define MEASURE_PERIOD ONE_BILLION
 #define SAMPLE_COUNT (MEASURE_PERIOD / sampling_period)
@@ -39,11 +39,11 @@ int test_loops = 0;		/* outer loop count */
 #define HISTOGRAM_CELLS 100
 int histogram_size = HISTOGRAM_CELLS;
 unsigned long *histogram_avg = NULL,
-              *histogram_max = NULL,
-              *histogram_min = NULL;
+    *histogram_max = NULL,
+    *histogram_min = NULL;
 
 int do_histogram = 0, do_stats = 0, finished = 0;
-int bucketsize = 1000;	/* default = 1000ns, -B <size> to override */
+int bucketsize = 1000;  /* default = 1000ns, -B <size> to override */
 
 static inline void add_histogram (long *histogram, long addval)
 {
@@ -54,67 +54,84 @@ static inline void add_histogram (long *histogram, long addval)
 
 void latency (void *cookie)
 {
-    int err, count, nsamples;
-    RTIME expected, period;
+    int err, count, nsamples, warmup = 1;
+    RTIME expected, period, start;
 
     err = rt_timer_start(TM_ONESHOT);
 
     if (err)
-      {
-	fprintf(stderr,"latency: cannot start timer, code %d\n",err);
-	return;
-      }
+        {
+        fprintf(stderr,"latency: cannot start timer, code %d\n",err);
+        return;
+        }
 
     nsamples = ONE_BILLION / sampling_period;
     period = rt_timer_ns2ticks(sampling_period);
-    expected = rt_timer_tsc();
-    err = rt_task_set_periodic(NULL,TM_NOW,sampling_period);
+    expected = rt_timer_tsc() + nsamples * period; /* start time: one second
+                                                      from now. */
+    start = rt_timer_ticks2ns(expected);
+    err = rt_task_set_periodic(NULL,start,sampling_period);
 
     if (err)
-      {
-	fprintf(stderr,"latency: failed to set periodic, code %d\n",err);
-	return;
-      }
+        {
+        fprintf(stderr,"latency: failed to set periodic, code %d\n",err);
+        return;
+        }
 
     for (;;)
-      {
-	long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
-	overrun = 0;
- 	test_loops++;
+        {
+        long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
+        overrun = 0;
+        test_loops++;
 
-	for (count = sumj = 0; count < nsamples; count++)
-	  {
-	    expected += period;
-	    err = rt_task_wait_period();
-	    
-	    if (err)
-	      {
-		if (err != -ETIMEDOUT)
-		  rt_task_delete(NULL); /* Timer stopped. */
-		
-		overrun++;
-	      }
-	    
-	    dt = (long)(rt_timer_tsc() - expected);
-	    if (dt > maxj) maxj = dt;
-	    if (dt < minj) minj = dt;
-	    sumj += dt;
+        for (count = sumj = 0; count < nsamples; count++)
+            {
+            expected += period;
+            err = rt_task_wait_period();
 
-	    if (!finished && (do_histogram || do_stats))
-	        add_histogram(histogram_avg, dt);
-	  }
-	
-	if (!finished && (do_histogram || do_stats))
-	  {
-	    add_histogram(histogram_max, maxj);
-	    add_histogram(histogram_min, minj);
-	  }
-    
-	minjitter = rt_timer_ticks2ns(minj);
-	maxjitter = rt_timer_ticks2ns(maxj);
-	avgjitter = rt_timer_ticks2ns(sumj / nsamples);
-	rt_sem_v(&display_sem);
-      }
+            if (err)
+                {
+                if (err != -ETIMEDOUT)
+                    rt_task_delete(NULL); /* Timer stopped. */
+
+                overrun++;
+                }
+
+            dt = (long)(rt_timer_tsc() - expected);
+            if (dt > maxj) maxj = dt;
+            if (dt < minj) minj = dt;
+            sumj += dt;
+
+            if (!(finished || warmup) && (do_histogram || do_stats))
+                add_histogram(histogram_avg, dt);
+            }
+
+        if(warmup && test_loops == 3)     /* Warmup: 2 loops, i.e. 2 seconds. */
+            {
+            test_loops = 1;
+            warmup = 0;
+            }
+
+        if(!warmup)
+            {
+            if (!finished && (do_histogram || do_stats))
+                {
+                add_histogram(histogram_max, maxj);
+                add_histogram(histogram_min, minj);
+                }
+
+            minjitter = minj;
+            if(minjitter < gminjitter)
+                gminjitter = minjitter;
+
+            maxjitter = maxj;
+            if(maxjitter > gmaxjitter)
+                gmaxjitter = maxjitter;
+
+            avgjitter = sumj / nsamples;
+            rt_sem_v(&display_sem);
+            }
+        }
 }
 
 void display (void *cookie)
@@ -125,79 +142,91 @@ void display (void *cookie)
     err = rt_sem_create(&display_sem,"dispsem",0,S_FIFO);
 
     if (err)
-	{
+        {
         fprintf(stderr,"latency: cannot create semaphore: %s\n",strerror(-err));
-	return;
-	}
+        return;
+        }
 
     time(&start);
 
     if (quiet)
-      fprintf(stderr, "running quietly for %d seconds\n", test_duration);
+        fprintf(stderr, "running quietly for %d seconds\n", test_duration);
 
     for (;;)
-	{
-	err = rt_sem_p(&display_sem,TM_INFINITE);
+        {
+        long minj, gminj, maxj, gmaxj, avgj;
+        err = rt_sem_p(&display_sem,TM_INFINITE);
 
-	if (err)
-	    {
-	    if (err != -EIDRM)
-		fprintf(stderr,"latency: failed to pend on semaphore, code %d\n",err);
+        if (err)
+            {
+            if (err != -EIDRM)
+                fprintf(stderr,"latency: failed to pend on semaphore, code %d\n",err);
 
-	    rt_task_delete(NULL);
-	    }
+            rt_task_delete(NULL);
+            }
 
-	/* update global jitters */
-	if (minjitter < gminjitter) gminjitter = minjitter;
-	if (maxjitter > gmaxjitter) gmaxjitter = maxjitter;
-	gavgjitter += avgjitter;
-	goverrun += overrun;
+        /* convert jitters to nanoseconds. */
+        minj = rt_timer_ticks2ns(minjitter);
+        gminj = rt_timer_ticks2ns(gminjitter);
+        avgj = rt_timer_ticks2ns(avgjitter);
+        maxj = rt_timer_ticks2ns(maxjitter);
+        gmaxj = rt_timer_ticks2ns(gmaxjitter);
 
-	if (!quiet)
-	    {
-	    if (data_lines && (n++ % data_lines)==0)
-	        {
-		time_t now, dt;
-		time(&now);
-		dt = now - start;
-		printf("RTT|  %.2ld:%.2ld:%.2ld\n",
-		       dt / 3600,(dt / 60) % 60,dt % 60);
-		printf("RTH|%12s|%12s|%12s|%8s|%12s|%12s\n",
-		       "-----lat min","-----lat avg","-----lat max","-overrun",
-		       "----lat best","---lat worst");
-	        }
-	    
-	    printf("RTD|%12ld|%12ld|%12ld|%8ld|%12ld|%12ld\n",
-		   minjitter,
-		   avgjitter,
-		   maxjitter,
-		   goverrun,
-		   gminjitter,
-		   gmaxjitter);
-	    }
-	}
+        gavgjitter += avgj;
+        goverrun += overrun;
+
+        if (!quiet)
+            {
+            if (data_lines && (n++ % data_lines)==0)
+                {
+                time_t now, dt;
+                time(&now);
+                dt = now - start;
+                printf("RTT|  %.2ld:%.2ld:%.2ld\n",
+                       dt / 3600,(dt / 60) % 60,dt % 60);
+                printf("RTH|%12s|%12s|%12s|%8s|%12s|%12s\n",
+                       "-----lat min","-----lat avg","-----lat max","-overrun",
+                       "----lat best","---lat worst");
+                }
+
+            printf("RTD|%12ld|%12ld|%12ld|%8ld|%12ld|%12ld\n",
+                   minj,
+                   avgj,
+                   maxj,
+                   goverrun,
+                   gminj,
+                   gmaxj);
+            }
+        }
 }
 
 double dump_histogram (long *histogram, char* kind)
 {
     int n, total_hits = 0;
-    double avg = 0;		/* used to sum hits 1st */
+    double avg = 0;             /* used to sum hits 1st */
 
     if (do_histogram)
         fprintf(stderr,"---|--param|----range-|--samples\n");
 
     for (n = 0; n < histogram_size; n++)
-      {
-	long hits = histogram[n];
-	if (hits) {
-	    total_hits += hits;
-	    avg += n * hits;
-	    if (do_histogram)
-	        fprintf(stderr,"HSD|    %s| %3d -%3d | %8ld\n",kind, n, n+1, hits);
-	}
-      }
+        {
+        long hits = histogram[n];
 
-    avg /= total_hits;	/* compute avg, reuse variable */
+        if (hits)
+            {
+            total_hits += hits;
+            avg += n * hits;
+            if (do_histogram)
+                fprintf(stderr,
+                        "HSD|    %s| %3d -%3d | %8ld\n",
+                        kind,
+                        n,
+                        n+1,
+                        hits);
+            }
+        }
+
+    avg /= total_hits;  /* compute avg, reuse variable */
 
     return avg;
 }
@@ -208,20 +237,22 @@ void dump_stats (long *histogram, char* kind, double avg)
     double variance = 0;
 
     for (n = 0; n < histogram_size; n++)
-      {
-	long hits = histogram[n];
-	if (hits) {
-  	    total_hits += hits;
-	    variance += hits * (n-avg) * (n-avg);
-	}
-      }
+        {
+        long hits = histogram[n];
+
+        if (hits)
+            {
+            total_hits += hits;
+            variance += hits * (n-avg) * (n-avg);
+            }
+        }
 
     /* compute std-deviation (unbiased form) */
     variance /= total_hits - 1;
     variance = sqrt(variance);
 
     fprintf(stderr,"HSS|    %s| %9d| %10.3f| %10.3f\n",
-	    kind, total_hits, avg, variance);
+            kind, total_hits, avg, variance);
 }
 
 void dump_hist_stats (void)
@@ -243,34 +274,43 @@ void dump_hist_stats (void)
 void cleanup_upon_sig(int sig __attribute__((unused)))
 {
     time_t actual_duration;
+    long gmaxj, gminj;
 
     if (finished)
-	return;
+        return;
 
     finished = 1;
     rt_timer_stop();
     rt_sem_delete(&display_sem);
 
     if (do_histogram || do_stats)
-	dump_hist_stats();
+        dump_hist_stats();
 
     time(&test_end);
     actual_duration = test_end - test_start;
     if (!test_duration) test_duration = actual_duration;
     gavgjitter /= (test_loops ?: 2)-1;
 
+    gminj = rt_timer_ticks2ns(gminjitter);
+    gmaxj = rt_timer_ticks2ns(gmaxjitter);
+    
+    
     printf("---|------------|------------|------------|--------|-------------------------\n"
-	   "RTS|%12ld|%12ld|%12ld|%8ld|    %.2ld:%.2ld:%.2ld/%.2d:%.2d:%.2d\n",
-	   gminjitter,
-	   gavgjitter,
-	   gmaxjitter,
-	   goverrun,
-	   actual_duration / 3600,(actual_duration / 60) % 60,actual_duration % 60,
-	   test_duration / 3600,(test_duration / 60) % 60,test_duration % 60);
+           "RTS|%12ld|%12ld|%12ld|%8ld|    %.2ld:%.2ld:%.2ld/%.2d:%.2d:%.2d\n",
+           gminj,
+           gavgjitter,
+           gmaxj,
+           goverrun,
+           actual_duration / 3600,
+           (actual_duration / 60) % 60,
+           actual_duration % 60,
+           test_duration / 3600,
+           (test_duration / 60) % 60,
+           test_duration % 60);
 
-    if (histogram_avg)	free(histogram_avg);
-    if (histogram_max)	free(histogram_max);
-    if (histogram_min)	free(histogram_min);
+    if (histogram_avg)  free(histogram_avg);
+    if (histogram_max)  free(histogram_max);
+    if (histogram_min)  free(histogram_min);
 
     exit(0);
 }
@@ -280,68 +320,68 @@ int main (int argc, char **argv)
     int c, err;
 
     while ((c = getopt(argc,argv,"hp:l:T:qH:B:s")) != EOF)
-	switch (c)
-	    {
-	    case 'h':
+        switch (c)
+            {
+            case 'h':
 
-		do_histogram = 1;
-		break;
+                do_histogram = 1;
+                break;
 
-	    case 's':
+            case 's':
 
-		do_stats = 1;
-		break;
+                do_stats = 1;
+                break;
 
-	    case 'H':
+            case 'H':
 
-		histogram_size = atoi(optarg);
-		break;
+                histogram_size = atoi(optarg);
+                break;
 
-	    case 'B':
+            case 'B':
 
-		bucketsize = atoi(optarg);
-		break;
+                bucketsize = atoi(optarg);
+                break;
 
-	    case 'p':
+            case 'p':
 
-		sampling_period = atoi(optarg) * 1000;
-		break;
+                sampling_period = atoi(optarg) * 1000;
+                break;
 
-	    case 'l':
+            case 'l':
 
-		data_lines = atoi(optarg);
-		break;
-		
-	    case 'T':
+                data_lines = atoi(optarg);
+                break;
 
-		test_duration = atoi(optarg);
-		alarm(test_duration);
-		break;
+            case 'T':
 
-	    case 'q':
+                test_duration = atoi(optarg) + 3;
+                alarm(test_duration);
+                break;
 
-	        quiet = 1;
-		break;
-		
-	    default:
-		
-		fprintf(stderr, "usage: latency [options]\n"
-			"  [-h]				# print histograms of min, avg, max latencies\n"
-			"  [-s]				# print statistics of min, avg, max latencies\n"
-			"  [-H <histogram-size>]	# default = 200, increase if your last bucket is full\n"
-			"  [-B <bucket-size>]		# default = 1000ns, decrease for more resolution\n"
-			"  [-p <period_us>]		# sampling period\n"
-			"  [-l <data-lines per header>]	# default=21, 0 to supress headers\n"
-			"  [-T <test_duration_seconds>]	# default=0, so ^C to end\n"
-			"  [-q]				# supresses RTD, RTH lines if -T is used\n");
-		exit(2);
-	    }
+            case 'q':
+
+                quiet = 1;
+                break;
+
+            default:
+
+                fprintf(stderr, "usage: latency [options]\n"
+                        "  [-h]                         # print histograms of min, avg, max latencies\n"
+                        "  [-s]                         # print statistics of min, avg, max latencies\n"
+                        "  [-H <histogram-size>]        # default = 200, increase if your last bucket is full\n"
+                        "  [-B <bucket-size>]           # default = 1000ns, decrease for more resolution\n"
+                        "  [-p <period_us>]             # sampling period\n"
+                        "  [-l <data-lines per header>] # default=21, 0 to supress headers\n"
+                        "  [-T <test_duration_seconds>] # default=0, so ^C to end\n"
+                        "  [-q]                         # supresses RTD, RTH lines if -T is used\n");
+                exit(2);
+            }
 
     if (!test_duration && quiet)
-       {
-       fprintf(stderr, "latency: -q only works if -T has been given.\n");
-       quiet = 0;
-       }
+        {
+        fprintf(stderr, "latency: -q only works if -T has been given.\n");
+        quiet = 0;
+        }
 
     time(&test_start);
 
@@ -353,7 +393,7 @@ int main (int argc, char **argv)
         cleanup_upon_sig(0);
 
     if (sampling_period == 0)
-	sampling_period = 100000; /* ns */
+        sampling_period = 100000; /* ns */
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
@@ -369,34 +409,34 @@ int main (int argc, char **argv)
     err = rt_task_create(&display_task,"display",0,98,0);
 
     if (err)
-	{
-	fprintf(stderr,"latency: failed to create display task, code %d\n",err);
-	return 0;
-	}
+        {
+        fprintf(stderr,"latency: failed to create display task, code %d\n",err);
+        return 0;
+        }
 
     err = rt_task_start(&display_task,&display,NULL);
 
     if (err)
-	{
-	fprintf(stderr,"latency: failed to start display task, code %d\n",err);
-	return 0;
-	}
+        {
+        fprintf(stderr,"latency: failed to start display task, code %d\n",err);
+        return 0;
+        }
 
     err = rt_task_create(&latency_task,"sampling",0,99,T_FPU);
 
     if (err)
-	{
-	fprintf(stderr,"latency: failed to create latency task, code %d\n",err);
-	return 0;
-	}
+        {
+        fprintf(stderr,"latency: failed to create latency task, code %d\n",err);
+        return 0;
+        }
 
     err = rt_task_start(&latency_task,&latency,NULL);
 
     if (err)
-	{
-	fprintf(stderr,"latency: failed to start latency task, code %d\n",err);
-	return 0;
-	}
+        {
+        fprintf(stderr,"latency: failed to start latency task, code %d\n",err);
+        return 0;
+        }
 
     pause();
 

@@ -21,4 +21,13 @@
 
 #include_next <semaphore.h>
 
+union __fusion_semaphore {
+    sem_t native_sem;
+    struct __shadow_sem {
+#define SHADOW_SEMAPHORE_MAGIC 0x13010d01
+	unsigned magic;
+	unsigned long handle;
+    } shadow_sem;
+};
+
 #endif /* _RTAI_POSIX_SEMAPHORE_H */

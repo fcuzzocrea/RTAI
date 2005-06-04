@@ -25,6 +25,7 @@
 
 static int __muxid;
 
+#if 0
 static pthread_t __pthread_get_current (struct task_struct *curr)
 
 {
@@ -35,6 +36,7 @@ static pthread_t __pthread_get_current (struct task_struct *curr)
 
     return thread2pthread(thread); /* Convert TCB pointers. */
 }
+#endif
 
 int __pthread_create (struct task_struct *curr, struct pt_regs *regs)
 
@@ -170,8 +172,110 @@ int __pthread_make_periodic_np (struct task_struct *curr, struct pt_regs *regs)
 int __pthread_wait_np (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    pthread_t tid = __pthread_get_current(curr);
-    return tid ? -pthread_wait_np() : EPERM;
+    return -pthread_wait_np();
+}
+
+int __sem_init (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    unsigned long handle;
+    unsigned value;
+    int pshared;
+    sem_t *sem;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(handle)))
+	return -EFAULT;
+
+    sem = (sem_t *)xnmalloc(sizeof(*sem));
+
+    if (!sem)
+	return -ENOMEM;
+
+    pshared = (int)__xn_reg_arg2(regs);
+    value = (unsigned)__xn_reg_arg3(regs);
+
+    if (sem_init(sem,pshared,value) == -1)
+        return -thread_errno();
+
+    handle = (unsigned long)sem;
+
+    __xn_copy_to_user(curr,
+		      (void __user *)__xn_reg_arg1(regs),
+		      &handle,
+		      sizeof(handle));
+    return 0;
+}
+
+int __sem_post (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    unsigned long handle;
+    sem_t *sem;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(handle)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,
+			&handle,
+			(void __user *)__xn_reg_arg1(regs),
+			sizeof(handle));
+
+    sem = (sem_t *)handle;
+
+    return sem_post(sem) == 0 ? 0 : -thread_errno();
+}
+
+int __sem_wait (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    unsigned long handle;
+    sem_t *sem;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(handle)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,
+			&handle,
+			(void __user *)__xn_reg_arg1(regs),
+			sizeof(handle));
+
+    sem = (sem_t *)handle;
+
+    return sem_wait(sem) == 0 ? 0 : -thread_errno();
+}
+
+int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    unsigned long handle;
+    sem_t *sem;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(handle)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,
+			&handle,
+			(void __user *)__xn_reg_arg1(regs),
+			sizeof(handle));
+
+    sem = (sem_t *)handle;
+
+    err = sem_destroy(sem);
+
+    if (err)
+	return -thread_errno();
+
+    /* The caller first checked its own magic value
+       (SHADOW_SEMAPHORE_MAGIC) before calling us with our internal
+       handle, then the kernel skin did the same to validate our
+       handle (PSE51_SEM_MAGIC), so at this point, if everything has
+       been ok so far, we can expect the sem block to be valid, so
+       let's free it. */
+
+    xnfree(sem);
+
+    return 0;
 }
 
 static xnsysent_t __systab[] = {
@@ -181,6 +285,10 @@ static xnsysent_t __systab[] = {
     [__pse51_sched_yield ] = { &__sched_yield, __xn_exec_primary },
     [__pse51_thread_make_periodic ] = { &__pthread_make_periodic_np, __xn_exec_primary },
     [__pse51_thread_wait] = { &__pthread_wait_np, __xn_exec_primary },
+    [__pse51_sem_init] = { &__sem_init, __xn_exec_any },
+    [__pse51_sem_destroy] = { &__sem_destroy, __xn_exec_any },
+    [__pse51_sem_post] = { &__sem_post, __xn_exec_any },
+    [__pse51_sem_wait] = { &__sem_wait, __xn_exec_primary },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

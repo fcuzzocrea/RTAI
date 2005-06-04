@@ -29,6 +29,10 @@
 #define __pse51_sched_yield           3
 #define __pse51_thread_make_periodic  4
 #define __pse51_thread_wait           5
+#define __pse51_sem_init              6
+#define __pse51_sem_destroy           7
+#define __pse51_sem_post              8
+#define __pse51_sem_wait              9
 
 #ifdef __KERNEL__
 

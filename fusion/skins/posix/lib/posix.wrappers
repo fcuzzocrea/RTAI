@@ -2,3 +2,7 @@ pthread_create
 pthread_detach
 pthread_setschedparam
 sched_yield
+sem_init
+sem_destroy
+sem_post
+sem_wait

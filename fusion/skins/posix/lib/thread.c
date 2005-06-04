@@ -252,7 +252,7 @@ int __wrap_pthread_detach (pthread_t thread)
     unsigned long internal_tid = __pthread_find(thread);
 
     if (!internal_tid)
-	return EPERM;
+	pthread_detach(thread);
     
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_thread_detach,

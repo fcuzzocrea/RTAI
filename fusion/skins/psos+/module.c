@@ -101,7 +101,7 @@ int __fusion_skin_init (void)
 
     pod.svctable.shutdown = &psos_shutdown;
 
-    xnprintf("pSOS/vm: Starting services.\n");
+    xnprintf("starting pSOS+ services.\n");
 
     return err;
 }
@@ -109,7 +109,7 @@ int __fusion_skin_init (void)
 void __fusion_skin_exit (void)
 
 {
-    xnprintf("pSOS/vm: Stopping services.\n");
+    xnprintf("stopping pSOS+ services.\n");
     psos_shutdown(XNPOD_NORMAL_EXIT);
 }
 

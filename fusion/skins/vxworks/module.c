@@ -76,14 +76,14 @@ int __fusion_skin_init (void)
     
     pod.svctable.shutdown = &wind_shutdown;
 
-    xnprintf("VxWorks/vm: Starting services.\n");
+    xnprintf("starting VxWorks services.\n");
 
     return 0;
 }
 
 void __fusion_skin_exit (void)
 {
-    xnprintf("VxWorks/vm: Stopping services.\n");
+    xnprintf("stopping VxWorks services.\n");
     wind_shutdown(XNPOD_NORMAL_EXIT);
 }
 

@@ -161,7 +161,7 @@ int __fusion_skin_init (void)
 
     pod.svctable.shutdown = &vrtx_shutdown;
 
-    xnprintf("VRTX/vm: Starting services.\n");
+    xnprintf("starting VRTX services.\n");
 
     return 0;
 }
@@ -169,7 +169,7 @@ int __fusion_skin_init (void)
 void __fusion_skin_exit (void)
 
 {
-    xnprintf("VRTX/vm: Stopping services.\n");
+    xnprintf("stopping VRTX services.\n");
     vrtx_shutdown(XNPOD_NORMAL_EXIT);
 }
 

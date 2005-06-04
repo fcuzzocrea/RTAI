@@ -207,6 +207,8 @@ int __fusion_skin_init (void)
 	goto cleanup_intr;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     
+    xnprintf("starting native API services.\n");
+
     return 0;	/* SUCCESS. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
@@ -283,6 +285,7 @@ int __fusion_skin_init (void)
 void __fusion_skin_exit (void)
 
 {
+    xnprintf("stopping native API services.\n");
     rtai_shutdown(XNPOD_NORMAL_EXIT);
 }
 

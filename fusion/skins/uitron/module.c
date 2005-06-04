@@ -74,7 +74,7 @@ int __fusion_skin_init (void)
     uiflag_init();
     uimbx_init();
 
-    xnprintf("uITRON: Starting services.\n");
+    xnprintf("starting uITRON services.\n");
 
     return 0;
 }
@@ -82,7 +82,7 @@ int __fusion_skin_init (void)
 void __fusion_skin_exit (void)
 
 {
-    xnprintf("uITRON: Stopping services\n");
+    xnprintf("stopping uITRON services.\n");
     uitron_shutdown(XNPOD_NORMAL_EXIT);
 }
 

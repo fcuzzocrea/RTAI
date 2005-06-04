@@ -63,7 +63,7 @@ static inline int __init_skin (void)
 
 /* Public RTAI/fusion interface. */
 
-int pthread_info_rt (xnsysinfo_t *infop)
+int fusion_probe (xnsysinfo_t *infop)
 
 {
     if (__fusion_muxid == 0 && __init_skin() < 0)
@@ -74,9 +74,9 @@ int pthread_info_rt (xnsysinfo_t *infop)
     return 0;
 }
 
-int pthread_init_rt (const char *name,
-		     void *uhandle,
-		     void **khandlep)
+int fusion_thread_shadow (const char *name,
+			  void *uhandle,
+			  void **khandlep)
 {
     if (__fusion_muxid == 0 && __init_skin() < 0)
 	return -ENOSYS;
@@ -85,16 +85,16 @@ int pthread_init_rt (const char *name,
     return XENOMAI_SKINCALL3(__fusion_muxid,__xn_fusion_init,name,khandlep,uhandle);
 }
 
-int pthread_exit_rt (void)
+int fusion_thread_release (void)
 
 {
     return XENOMAI_SKINCALL0(__fusion_muxid,__xn_fusion_exit);
 }
 
-int pthread_create_rt (const char *name,
-		       void *uhandle,
-		       xncompletion_t *completionp,
-		       void **khandlep)
+int fusion_thread_create (const char *name,
+			  void *uhandle,
+			  xncompletion_t *completionp,
+			  void **khandlep)
 {
     if (__fusion_muxid == 0 && __init_skin() < 0)
 	return -ENOSYS;
@@ -103,12 +103,12 @@ int pthread_create_rt (const char *name,
 
     /* Move the current Linux task into the RTAI realm, but do not
        start the mated shadow thread. Caller will need to wait on the
-       barrier (pthread_barrier_rt()) for the start event
-       (pthread_start_rt()). */
+       barrier (fusion_thread_barrier()) for the start event
+       (fusion_thread_start()). */
     return XENOMAI_SKINCALL4(__fusion_muxid,__xn_fusion_create,name,khandlep,uhandle,completionp);
 }
 
-int pthread_barrier_rt (void)
+int fusion_thread_barrier (void)
 
 {
     void (*entry)(void *), *cookie;
@@ -126,88 +126,29 @@ int pthread_barrier_rt (void)
     return err;
 }
 
-int pthread_start_rt (void *khandle)
+int fusion_thread_start (void *khandle)
 
 {
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_start,khandle);
 }
 
-int pthread_sync_rt (xncompletion_t *completionp)
+int fusion_thread_sync (xncompletion_t *completionp)
 
 {
     return XENOMAI_SYSCALL1(__xn_sys_completion,completionp);
 }
 
-int pthread_time_rt (nanotime_t *tp)
-
+int fusion_thread_sleep (nanotime_t delay)
 {
-    if (__fusion_muxid == 0 && __init_skin() < 0)
-	return -ENOSYS;
-
-    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_time,tp);
-}
-
-int pthread_cputime_rt (nanotime_t *tp)
-
-{
-#ifdef CONFIG_RTAI_HW_DIRECT_TSC
-    *tp = __xn_rdtsc();
-    return 0;
-#else /* !CONFIG_RTAI_HW_DIRECT_TSC */
-    if (__fusion_muxid == 0 && __init_skin() < 0)
-	return -ENOSYS;
-
-    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_cputime,tp);
-#endif /* CONFIG_RTAI_HW_DIRECT_TSC */
-}
-
-int pthread_start_timer_rt (nanotime_t nstick)
-
-{
-    if (__fusion_muxid == 0 && __init_skin() < 0)
-	return -ENOSYS;
-
-    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_start_timer,&nstick);
-}
-
-int pthread_stop_timer_rt (void) {
-
-    return XENOMAI_SKINCALL0(__fusion_muxid,__xn_fusion_stop_timer);
-}
-
-int pthread_sleep_rt (nanotime_t delay) {
-
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_sleep,&delay);
 }
 
-int pthread_ns2tsc_rt(nanostime_t ns, nanostime_t *ptsc)
-
+int fusion_thread_inquire (xninquiry_t *buf)
 {
-    if (__fusion_muxid == 0)
-	return -ENOSYS;
-
-    *ptsc = llimd(ns, __fusion_info.cpufreq, 1000000000);
-
-    return 0;
-}
-
-int pthread_tsc2ns_rt(nanostime_t tsc, nanostime_t *pns)
-
-{
-    if (__fusion_muxid == 0)
-	return -ENOSYS;
-
-    *pns = llimd(tsc, 1000000000, __fusion_info.cpufreq);
-
-    return 0;
-}
-
-int pthread_inquire_rt (xninquiry_t *buf) {
-
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_inquire,buf);
 }
 
-int pthread_migrate_rt (int domain)
+int fusion_thread_migrate (int domain)
 
 {
     switch (domain)
@@ -223,8 +164,68 @@ int pthread_migrate_rt (int domain)
 	}
 }
 
-int pthread_set_periodic_rt (nanotime_t idate,
-			     nanotime_t period)
+int fusion_timer_read (nanotime_t *tp)
+
+{
+    if (__fusion_muxid == 0 && __init_skin() < 0)
+	return -ENOSYS;
+
+    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_time,tp);
+}
+
+int fusion_timer_tsc (nanotime_t *tp)
+
+{
+#ifdef CONFIG_RTAI_HW_DIRECT_TSC
+    *tp = __xn_rdtsc();
+    return 0;
+#else /* !CONFIG_RTAI_HW_DIRECT_TSC */
+    if (__fusion_muxid == 0 && __init_skin() < 0)
+	return -ENOSYS;
+
+    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_cputime,tp);
+#endif /* CONFIG_RTAI_HW_DIRECT_TSC */
+}
+
+int fusion_timer_start (nanotime_t nstick)
+
+{
+    if (__fusion_muxid == 0 && __init_skin() < 0)
+	return -ENOSYS;
+
+    return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_start_timer,&nstick);
+}
+
+int fusion_timer_stop (void)
+{
+
+    return XENOMAI_SKINCALL0(__fusion_muxid,__xn_fusion_stop_timer);
+}
+
+int fusion_timer_ns2tsc (nanostime_t ns, nanostime_t *ptsc)
+
+{
+    if (__fusion_muxid == 0)
+	return -ENOSYS;
+
+    *ptsc = llimd(ns, __fusion_info.cpufreq, 1000000000);
+
+    return 0;
+}
+
+int fusion_timer_tsc2ns (nanostime_t tsc, nanostime_t *pns)
+
+{
+    if (__fusion_muxid == 0)
+	return -ENOSYS;
+
+    *pns = llimd(tsc, 1000000000, __fusion_info.cpufreq);
+
+    return 0;
+}
+
+int fusion_thread_set_periodic (nanotime_t idate,
+				   nanotime_t period)
 {
     return XENOMAI_SKINCALL2(__fusion_muxid,
 			     __xn_fusion_set_periodic,
@@ -232,36 +233,36 @@ int pthread_set_periodic_rt (nanotime_t idate,
 			     &period);
 }
 
-int pthread_wait_period_rt (void)
+int fusion_thread_wait_period (void)
 
 {
     return XENOMAI_SKINCALL0(__fusion_muxid,
 			     __xn_fusion_wait_period);
 }
 
-/* Private RTAI/vm interface. */
+/* Private UVM interface. */
 
-int __pthread_idle_uvm (int *lockp) {
-
+int fusion_uvm_idle (int *lockp)
+{
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_idle,lockp);
 }
 
-int __pthread_cancel_uvm (void *deadhandle, void *nexthandle) {
-
+int fusion_uvm_cancel (void *deadhandle, void *nexthandle)
+{
     return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_cancel,deadhandle,nexthandle);
 }
 
-int __pthread_activate_uvm (void *nexthandle, void *prevhandle) {
-
+int fusion_uvm_activate (void *nexthandle, void *prevhandle)
+{
     return XENOMAI_SKINCALL2(__fusion_muxid,__xn_fusion_activate,nexthandle,prevhandle);
 }
 
-int __pthread_hold_uvm (int *pendp) {
-
+int fusion_uvm_hold (int *pendp)
+{
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_hold,pendp);
 }
 
-int __pthread_release_uvm (int *lockp) {
-
+int fusion_uvm_release (int *lockp)
+{
     return XENOMAI_SKINCALL1(__fusion_muxid,__xn_fusion_release,lockp);
 }

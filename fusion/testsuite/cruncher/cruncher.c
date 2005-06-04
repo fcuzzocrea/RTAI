@@ -41,7 +41,7 @@ static inline void get_time_us (suseconds_t *tp)
 	/* We need a better resolution than the one gettimeofday()
 	   provides here. */
 	nanotime_t t;
-	pthread_time_rt(&t);
+	fusion_timer_read(&t);
 	*tp = t / 1000;
 	}
     else
@@ -95,7 +95,7 @@ void *cruncher_thread (void *arg)
 	perror("pthread_setschedparam()");
 
     if (has_fusion)
-	pthread_init_rt("cruncher",NULL,NULL);
+	fusion_thread_shadow("cruncher",NULL,NULL);
 
     for (;;)
 	{
@@ -140,7 +140,7 @@ void *sampler_thread (void *arg)
 	perror("pthread_getschedparam()");
 
     if (has_fusion)
-	pthread_init_rt("sampler",NULL,NULL);
+	fusion_thread_shadow("sampler",NULL,NULL);
 
     printf("Calibrating cruncher...");
 
@@ -203,7 +203,7 @@ void *sampler_thread (void *arg)
 	if (has_fusion)
 	    /* Not required, but ensures that we won't be charged for
 	       the cost of migrating to the Linux domain. */
-	    pthread_migrate_rt(FUSION_LINUX_DOMAIN);
+	    fusion_thread_migrate(FUSION_LINUX_DOMAIN);
 
 	/* Run the computational loop. */
 	get_time_us(&t0);
@@ -246,7 +246,7 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
 {
     finished = 1;
 
-    pthread_stop_timer_rt();
+    fusion_timer_stop();
 
     if (do_histogram)
 	dump_histogram();
@@ -286,12 +286,12 @@ int main (int ac, char **av)
     if (sample_count == 0)
 	sample_count = 1000;
 
-    if (pthread_info_rt(&info) == 0)
+    if (fusion_probe(&info) == 0)
 	{
 	printf("RTAI/fusion detected.\n");
 	has_fusion = 1;
 
-	if (pthread_start_timer_rt(FUSION_APERIODIC_TIMER))
+	if (fusion_timer_start(FUSION_APERIODIC_TIMER))
 	    {
 	    fprintf(stderr,"failed to start real-time timer.\n");
 	    exit(1);
@@ -324,7 +324,7 @@ int main (int ac, char **av)
 
     sem_wait(&semX);
 
-    pthread_stop_timer_rt();
+    fusion_timer_stop();
 
     return 0;
 }

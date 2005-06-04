@@ -772,31 +772,11 @@ int xnpod_start_thread (xnthread_t *thread,
         thread->sched = xnpod_sched_slot(xnarch_first_cpu(thread->affinity));
 #endif /* CONFIG_SMP */
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    if (testbits(thread->status,XNSHADOW))
-        {
-        xnlock_put_irqrestore(&nklock,s);
-        xnltt_log_event(rtai_ev_thrstart,thread->name);
-        xnshadow_start(thread,entry,cookie);
-        xnpod_schedule();
-        return 0;
-        }
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
-
     if (testbits(thread->status,XNSTARTED))
         {
         err = -EBUSY;
         goto unlock_and_exit;
         }
-
-    /* Setup the initial stack frame. */
-
-    xnarch_init_thread(xnthread_archtcb(thread),
-                       entry,
-                       cookie,
-                       imask,
-                       thread,
-                       thread->name);
 
     __setbits(thread->status,(mode & (XNTHREAD_MODE_BITS|XNSUSP))|XNSTARTED);
     thread->imask = imask;
@@ -809,6 +789,25 @@ int xnpod_start_thread (xnthread_t *thread,
         thread->rrcredit = thread->rrperiod;
 
     xnltt_log_event(rtai_ev_thrstart,thread->name);
+
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    if (testbits(thread->status,XNSHADOW))
+        {
+        xnlock_put_irqrestore(&nklock,s);
+        xnshadow_start(thread);
+        xnpod_schedule();
+        return 0;
+        }
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
+    /* Setup the initial stack frame. */
+
+    xnarch_init_thread(xnthread_archtcb(thread),
+                       entry,
+                       cookie,
+                       imask,
+                       thread,
+                       thread->name);
 
     xnpod_resume_thread(thread,XNDORMANT);
 

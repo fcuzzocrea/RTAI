@@ -74,9 +74,7 @@ void xnshadow_renice(struct xnthread *thread);
 
 int xnshadow_wait_barrier(struct pt_regs *regs);
 
-void xnshadow_start(struct xnthread *thread,
-		    void (*u_entry)(void *cookie),
-		    void *u_cookie);
+void xnshadow_start(struct xnthread *thread);
 
 void xnshadow_signal_completion(xncompletion_t __user *u_completion,
 				int err);

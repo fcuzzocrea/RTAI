@@ -20,6 +20,9 @@ RTAI_KERNEL_CFLAGS="-I. -I${staging}${includedir} @RTAI_KMOD_APP_CFLAGS@ @RTAI_F
 RTAI_MODULE_DIR="${staging}@RTAI_MODULE_DIR@"
 RTAI_FUSION_CFLAGS="-I. -I${staging}${includedir} @RTAI_USER_APP_CFLAGS@"
 RTAI_FUSION_LDFLAGS="-L${staging}${libdir} -lfusion -lpthread"
+RTAI_POSIX_CFLAGS="-I. -I${staging}${includedir} -I${staging}${includedir}/posix @RTAI_USER_APP_CFLAGS@"
+RTAI_POSIX_LDFLAGS="-L${staging}${libdir} -lpthread_rt -lpthread"
+RTAI_POSIX_WRAPPERS="${staging}${libdir}/posix.wrappers"
 RTAI_UVM_CFLAGS="-I. -I${staging}${includedir} @RTAI_USER_APP_CFLAGS@ -D__RTAI_UVM__"
 RTAI_UVM_LDFLAGS="-u__fusion_skin_init -L${staging}${libdir} -lfusion -lnucleus -lpthread"
 RTAI_LIBRARY_DIR="${staging}${libdir}"
@@ -44,6 +47,8 @@ Options :
         --module-cxxflags
         --fusion-cflags
         --fusion-ldflags
+        --posix-cflags
+        --posix-ldflags
         --uvm-cflags
         --uvm-ldflags
         --linux-dir
@@ -89,6 +94,20 @@ while test $# -gt 0; do
             ;;
         --fusion-ldflags)
             echo $RTAI_FUSION_LDFLAGS
+            ;;
+        --posix-cflags)
+            echo $RTAI_POSIX_CFLAGS
+            ;;
+        --posix-ldflags)
+            if test \! -r $RTAI_POSIX_WRAPPERS; then
+	       echo "POSIX support is not available" >&2
+	       exit 1
+	    fi
+	    wrappers=`cat $RTAI_POSIX_WRAPPERS | \
+	    while read symbol; do \
+                echo -n "-Wl,--wrap -Wl,$symbol " ; \
+	     done`
+            echo "$wrappers $RTAI_POSIX_LDFLAGS"
             ;;
         --uvm-cflags)
             echo $RTAI_UVM_CFLAGS

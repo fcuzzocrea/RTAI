@@ -244,7 +244,7 @@ static inline void xnarch_unlock_irq (int x) {
     if (!x && uvm_irqlock)
 	{
 	if (xnarch_atomic_xchg(&uvm_irqpend,0))
-	    __pthread_release_uvm(&uvm_irqlock);
+	    fusion_uvm_release(&uvm_irqlock);
 	else
 	    uvm_irqlock = 0;
 	}
@@ -270,7 +270,7 @@ void xnarch_sync_irq (void)
 
 {
     if (uvm_irqlock)
-	__pthread_hold_uvm(&uvm_irqpend);
+	fusion_uvm_hold(&uvm_irqpend);
 }
 
 static inline int xnarch_hook_irq (unsigned irq,
@@ -381,7 +381,7 @@ int main (int argc, char *argv[])
     sigaction(XNARCH_SIG_RESTART,&sa,NULL);
 
     for (;;)
-	__pthread_idle_uvm(&uvm_irqlock);
+	fusion_uvm_idle(&uvm_irqlock);
 
     __fusion_user_exit();
     __fusion_skin_exit();
@@ -401,7 +401,7 @@ static inline void xnarch_program_timer_shot (unsigned long delay) {
 }
 
 static inline void xnarch_stop_timer (void) {
-    __pthread_cancel_uvm(uvm_timer_handle,NULL);
+    fusion_uvm_cancel(uvm_timer_handle,NULL);
 }
 
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
@@ -457,23 +457,23 @@ static void *xnarch_timer_thread (void *cookie)
     sched_setscheduler(0,SCHED_FIFO,&param);
 
     /* Copy the following values laid into our parent's stack before
-       it is unblocked from the completion by pthread_create_rt(). */
+       it is unblocked from the completion by fusion_thread_create(). */
     tickhandler = p->tickhandler;
     nstick = p->nstick;
 
-    pthread_create_rt("uvm-timer",NULL,&p->completion,&uvm_timer_handle);
+    fusion_thread_create("uvm-timer",NULL,&p->completion,&uvm_timer_handle);
 
-    err = pthread_barrier_rt();	/* Wait for start. */
+    err = fusion_thread_barrier();	/* Wait for start. */
 
     if (!err)
-	err = pthread_set_periodic_rt(0,nstick);
+	err = fusion_thread_set_periodic(0,nstick);
 
     if (err)
 	pthread_exit((void *)err);
 
     for (;;)
 	{
-	if (pthread_wait_period_rt() == -EWOULDBLOCK) /* Timer killed? */
+	if (fusion_thread_wait_period() == -EWOULDBLOCK) /* Timer killed? */
 	    break;
 
 	xnarch_sync_irq();
@@ -501,9 +501,9 @@ static inline int xnarch_start_timer (unsigned long nstick,
        wrt its jiffy-based timer. */
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    err = pthread_start_timer_rt(0);
+    err = fusion_timer_start(0);
 #else /* !CONFIG_RTAI_HW_APERIODIC_TIMER */
-    err = pthread_start_timer_rt(nstick);
+    err = fusion_timer_start(nstick);
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     if (err)
@@ -518,10 +518,10 @@ static inline int xnarch_start_timer (unsigned long nstick,
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
     pthread_create(&thid,&thattr,&xnarch_timer_thread,&parms);
 
-    err = pthread_sync_rt(&parms.completion);
+    err = fusion_thread_sync(&parms.completion);
 
     if (err == 0)
-	pthread_start_rt(uvm_timer_handle);
+	fusion_thread_start(uvm_timer_handle);
 
     return err;
 }
@@ -536,20 +536,20 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 				     xnarchtcb_t *in_tcb)
 {
     uvm_current = in_tcb;
-    __pthread_activate_uvm(in_tcb->khandle,out_tcb->khandle);
+    fusion_uvm_activate(in_tcb->khandle,out_tcb->khandle);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
 					       xnarchtcb_t *next_tcb)
 {
     uvm_current = next_tcb;
-    __pthread_cancel_uvm(dead_tcb->khandle,next_tcb->khandle);
+    fusion_uvm_cancel(dead_tcb->khandle,next_tcb->khandle);
 }
 
 static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb)
 
 {
-    __pthread_cancel_uvm(dead_tcb->khandle,NULL);
+    fusion_uvm_cancel(dead_tcb->khandle,NULL);
 }
 
 static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
@@ -561,7 +561,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 
     param.sched_priority = sched_get_priority_min(SCHED_FIFO);
     sched_setscheduler(0,SCHED_FIFO,&param);
-    err = pthread_info_rt(&uvm_info);
+    err = fusion_probe(&uvm_info);
 
     if (err)
 	{
@@ -569,7 +569,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 	exit(1);
 	}
 
-    pthread_init_rt("uvm-root",tcb,&tcb->khandle);
+    fusion_thread_shadow("uvm-root",tcb,&tcb->khandle);
     tcb->name = name;
     uvm_root = uvm_current = tcb;
 }
@@ -585,8 +585,8 @@ static void *xnarch_thread_trampoline (void *cookie)
 	{
 	param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
 	sched_setscheduler(0,SCHED_FIFO,&param);
-	pthread_create_rt(tcb->name,tcb,&tcb->completion,&tcb->khandle);
-	err = pthread_barrier_rt();	/* Wait for start. */
+	fusion_thread_create(tcb->name,tcb,&tcb->completion,&tcb->khandle);
+	err = fusion_thread_barrier();	/* Wait for start. */
 	if (err)
 	    pthread_exit((void *)err);
 	}
@@ -626,7 +626,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
     pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
-    pthread_sync_rt(&tcb->completion);
+    fusion_thread_sync(&tcb->completion);
 }
 
 static inline void xnarch_enable_fpu(xnarchtcb_t *current_tcb) {
@@ -689,20 +689,20 @@ extern xnsysinfo_t uvm_info;
 static inline unsigned long long xnarch_tsc_to_ns (unsigned long long tsc) {
 
     nanostime_t ns;
-    return pthread_tsc2ns_rt(tsc,&ns) ? 0 : ns;
+    return fusion_timer_tsc2ns(tsc,&ns) ? 0 : ns;
 }
 
 static inline unsigned long long xnarch_ns_to_tsc (unsigned long long ns) {
 
     nanostime_t tsc;
-    return pthread_ns2tsc_rt(ns,&tsc) ? 0 : tsc;
+    return fusion_timer_ns2tsc(ns,&tsc) ? 0 : tsc;
 }
 
 static inline unsigned long long xnarch_get_cpu_time (void)
 
 {
     nanotime_t t;
-    pthread_time_rt(&t);
+    fusion_timer_read(&t);
     return t;
 }
 
@@ -710,7 +710,7 @@ static inline unsigned long long xnarch_get_cpu_tsc (void)
 
 {
     nanotime_t t;
-    pthread_cputime_rt(&t);
+    fusion_timer_tsc(&t);
     return t;
 }
 

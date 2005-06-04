@@ -123,12 +123,12 @@ static int __pthread_shadow_helper (struct task_struct *curr,
     return err;
 }
 
-static int __pthread_init_rt (struct task_struct *curr, struct pt_regs *regs) {
-
+static int __fusion_thread_shadow (struct task_struct *curr, struct pt_regs *regs)
+{
     return __pthread_shadow_helper(curr,regs,NULL);
 }
 
-static int __pthread_exit_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_thread_release (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
@@ -139,7 +139,7 @@ static int __pthread_exit_rt (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
-static int __pthread_create_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_thread_create (struct task_struct *curr, struct pt_regs *regs)
 
 {
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg4(regs),sizeof(xncompletion_t)))
@@ -148,7 +148,7 @@ static int __pthread_create_rt (struct task_struct *curr, struct pt_regs *regs)
     return __pthread_shadow_helper(curr,regs,(xncompletion_t __user *)__xn_reg_arg4(regs));
 }
 
-static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_thread_start (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread;
@@ -174,7 +174,7 @@ static int __pthread_start_rt (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
-static int __pthread_time_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_timer_read (struct task_struct *curr, struct pt_regs *regs)
 
 {
     nanotime_t t;
@@ -188,7 +188,7 @@ static int __pthread_time_rt (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
-static int __pthread_cputime_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_timer_tsc (struct task_struct *curr, struct pt_regs *regs)
 
 {
     nanotime_t t;
@@ -202,7 +202,7 @@ static int __pthread_cputime_rt (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
-static int __pthread_start_timer_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_timer_start (struct task_struct *curr, struct pt_regs *regs)
 
 {
     nanotime_t nstick;
@@ -221,14 +221,14 @@ static int __pthread_start_timer_rt (struct task_struct *curr, struct pt_regs *r
     return xnpod_start_timer(nstick,XNPOD_DEFAULT_TICKHANDLER);
 }
 
-static int __pthread_stop_timer_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_timer_stop (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnpod_stop_timer();
     return 0;
 }
 
-static int __pthread_sleep_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_thread_sleep (struct task_struct *curr, struct pt_regs *regs)
 
 {
     nanotime_t delay;
@@ -247,7 +247,7 @@ static int __pthread_sleep_rt (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
-static int __pthread_inquire_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_thread_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
@@ -268,7 +268,7 @@ static int __pthread_inquire_rt (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
-int __pthread_set_periodic_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_thread_set_periodic (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread = xnshadow_thread(curr);	/* Can't be NULL. */
@@ -280,7 +280,7 @@ int __pthread_set_periodic_rt (struct task_struct *curr, struct pt_regs *regs)
     return xnpod_set_thread_periodic(thread,idate,period);
 }
 
-int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs)
+static int __fusion_thread_wait_period (struct task_struct *curr, struct pt_regs *regs)
 
 {
     return xnpod_wait_thread_period();
@@ -292,7 +292,7 @@ int __pthread_wait_period_rt (struct task_struct *curr, struct pt_regs *regs)
 
 static xnsynch_t __fusion_uvm_irqsync;
 
-static int __pthread_hold_uvm (struct task_struct *curr, struct pt_regs *regs)
+static int fusion_uvm_hold (struct task_struct *curr, struct pt_regs *regs)
 
 {
     int err = 0;
@@ -314,7 +314,7 @@ static int __pthread_hold_uvm (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
-static int __pthread_release_uvm (struct task_struct *curr, struct pt_regs *regs)
+static int fusion_uvm_release (struct task_struct *curr, struct pt_regs *regs)
 
 {
     spl_t s;
@@ -331,7 +331,7 @@ static int __pthread_release_uvm (struct task_struct *curr, struct pt_regs *regs
     return 0;
 }
 
-static int __pthread_idle_uvm (struct task_struct *curr, struct pt_regs *regs)
+static int fusion_uvm_idle (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *thread = xnpod_current_thread();
@@ -357,7 +357,7 @@ static int __pthread_idle_uvm (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
-static int __pthread_activate_uvm (struct task_struct *curr, struct pt_regs *regs)
+static int fusion_uvm_activate (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *prev, *next;
@@ -403,7 +403,7 @@ static int __pthread_activate_uvm (struct task_struct *curr, struct pt_regs *reg
     return err;
 }
 
-static int __pthread_cancel_uvm (struct task_struct *curr, struct pt_regs *regs)
+static int fusion_uvm_cancel (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnthread_t *dead, *next;
@@ -455,24 +455,24 @@ static void xnfusion_shadow_delete_hook (xnthread_t *thread)
 
 static xnsysent_t __systab[] = {
     /* Exported calls. */
-    [__xn_fusion_init] = { &__pthread_init_rt, __xn_exec_init },
-    [__xn_fusion_exit] = { &__pthread_exit_rt, __xn_exec_secondary },
-    [__xn_fusion_create] = { &__pthread_create_rt, __xn_exec_init },
-    [__xn_fusion_start] = { &__pthread_start_rt, __xn_exec_any },
-    [__xn_fusion_set_periodic] = { &__pthread_set_periodic_rt, __xn_exec_primary },
-    [__xn_fusion_wait_period] = { &__pthread_wait_period_rt, __xn_exec_primary },
-    [__xn_fusion_time] = { &__pthread_time_rt, __xn_exec_any  },
-    [__xn_fusion_cputime] = { &__pthread_cputime_rt, __xn_exec_any  },
-    [__xn_fusion_start_timer] = { &__pthread_start_timer_rt, __xn_exec_lostage  },
-    [__xn_fusion_stop_timer] = { &__pthread_stop_timer_rt, __xn_exec_lostage  },
-    [__xn_fusion_sleep] = { &__pthread_sleep_rt, __xn_exec_primary  },
-    [__xn_fusion_inquire] = { &__pthread_inquire_rt, __xn_exec_shadow },
+    [__xn_fusion_init] = { &__fusion_thread_shadow, __xn_exec_init },
+    [__xn_fusion_exit] = { &__fusion_thread_release, __xn_exec_secondary },
+    [__xn_fusion_create] = { &__fusion_thread_create, __xn_exec_init },
+    [__xn_fusion_start] = { &__fusion_thread_start, __xn_exec_any },
+    [__xn_fusion_time] = { &__fusion_timer_read, __xn_exec_any  },
+    [__xn_fusion_cputime] = { &__fusion_timer_tsc, __xn_exec_any  },
+    [__xn_fusion_start_timer] = { &__fusion_timer_start, __xn_exec_lostage  },
+    [__xn_fusion_stop_timer] = { &__fusion_timer_stop, __xn_exec_lostage  },
+    [__xn_fusion_sleep] = { &__fusion_thread_sleep, __xn_exec_primary  },
+    [__xn_fusion_inquire] = { &__fusion_thread_inquire, __xn_exec_shadow },
+    [__xn_fusion_set_periodic] = { &__fusion_thread_set_periodic, __xn_exec_primary },
+    [__xn_fusion_wait_period] = { &__fusion_thread_wait_period, __xn_exec_primary },
     /* Internal UVM calls. */
-    [__xn_fusion_idle] = { &__pthread_idle_uvm, __xn_exec_primary },
-    [__xn_fusion_cancel] = { &__pthread_cancel_uvm, __xn_exec_primary },
-    [__xn_fusion_activate] = { &__pthread_activate_uvm, __xn_exec_primary },
-    [__xn_fusion_hold] = { &__pthread_hold_uvm, __xn_exec_primary },
-    [__xn_fusion_release] = { &__pthread_release_uvm, __xn_exec_any },
+    [__xn_fusion_idle] = { &fusion_uvm_idle, __xn_exec_primary },
+    [__xn_fusion_cancel] = { &fusion_uvm_cancel, __xn_exec_primary },
+    [__xn_fusion_activate] = { &fusion_uvm_activate, __xn_exec_primary },
+    [__xn_fusion_hold] = { &fusion_uvm_hold, __xn_exec_primary },
+    [__xn_fusion_release] = { &fusion_uvm_release, __xn_exec_any },
 };
 
 static int xnfusion_unload_hook (void)

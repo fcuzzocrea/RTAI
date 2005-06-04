@@ -44,14 +44,14 @@
 #define __xn_fusion_exit         1
 #define __xn_fusion_create       2
 #define __xn_fusion_start        3
-#define __xn_fusion_set_periodic 4
-#define __xn_fusion_wait_period  5
-#define __xn_fusion_time         6
-#define __xn_fusion_cputime      7
-#define __xn_fusion_start_timer  8
-#define __xn_fusion_stop_timer   9
-#define __xn_fusion_sleep        10
-#define __xn_fusion_inquire      11
+#define __xn_fusion_time         4
+#define __xn_fusion_cputime      5
+#define __xn_fusion_start_timer  6
+#define __xn_fusion_stop_timer   7
+#define __xn_fusion_sleep        8
+#define __xn_fusion_inquire      9
+#define __xn_fusion_set_periodic 10
+#define __xn_fusion_wait_period  11
 #define __xn_fusion_idle         12
 #define __xn_fusion_cancel       13
 #define __xn_fusion_activate     14
@@ -80,66 +80,63 @@ int xnfusion_attach(void);
 #include <sys/mman.h>
 #include <pthread.h>
 
-    /* Public RTAI/fusion interface. */
+    /* Internal RTAI/fusion interface. */
 
-int pthread_info_rt(xnsysinfo_t *infop);
+int fusion_probe(xnsysinfo_t *infop);
 
-int pthread_init_rt(const char *name,
-		    void *uhandle,
-		    void **khandlep);
+int fusion_thread_shadow(const char *name,
+			 void *uhandle,
+			 void **khandlep);
 
-int pthread_exit_rt(void);
+int fusion_thread_release(void);
 
-int pthread_create_rt(const char *name,
-		      void *uhandle,
-		      xncompletion_t *completionp,
-		      void **khandlep);
+int fusion_thread_create(const char *name,
+			 void *uhandle,
+			 xncompletion_t *completionp,
+			 void **khandlep);
 
-int pthread_barrier_rt(void);
+int fusion_thread_barrier(void);
 
-int pthread_start_rt(void *khandle);
+int fusion_thread_start(void *khandle);
 
-int pthread_sync_rt(xncompletion_t *completionp);
+int fusion_thread_sync(xncompletion_t *completionp);
 
-int pthread_migrate_rt(int domain);
+int fusion_thread_migrate(int domain);
 
-int pthread_start_timer_rt(nanotime_t nstick);
+int fusion_thread_sleep(nanotime_t ticks);
 
-int pthread_stop_timer_rt(void);
+int fusion_thread_inquire(xninquiry_t *infop);
 
-int pthread_time_rt(nanotime_t *tp);
+int fusion_thread_set_periodic(nanotime_t idate,
+			       nanotime_t period);
 
-int pthread_cputime_rt(nanotime_t *tp);
+int fusion_thread_wait_period(void);
 
-int pthread_ns2tsc_rt(nanostime_t ns,
-                      nanostime_t *ptsc);
+int fusion_timer_start(nanotime_t nstick);
 
-int pthread_tsc2ns_rt(nanostime_t tsc,
-                      nanostime_t *pns);
+int fusion_timer_stop(void);
 
-int pthread_sleep_rt(nanotime_t ticks);
+int fusion_timer_read(nanotime_t *tp);
 
-int pthread_inquire_rt(xninquiry_t *infop);
+int fusion_timer_tsc(nanotime_t *tp);
 
-int pthread_set_periodic_rt(nanotime_t idate,
-			    nanotime_t period);
+int fusion_timer_ns2tsc(nanostime_t ns,
+			nanostime_t *ptsc);
 
-int pthread_wait_period_rt(void);
+int fusion_timer_tsc2ns(nanostime_t tsc,
+			nanostime_t *pns);
 
-/* The following routines are private to the UVM control layer. Do not
-   use them directly in applications. */
+int fusion_uvm_idle(int *lockp);
 
-int __pthread_idle_uvm(int *lockp);
+int fusion_uvm_cancel(void *deadhandle,
+		      void *nexthandle);
 
-int __pthread_cancel_uvm(void *deadhandle,
-			 void *nexthandle);
+int fusion_uvm_activate(void *nexthandle,
+			void *prevhandle);
 
-int __pthread_activate_uvm(void *nexthandle,
-			   void *prevhandle);
+int fusion_uvm_hold(int *pendp);
 
-int __pthread_hold_uvm(int *pendp);
-
-int __pthread_release_uvm(int *lockp);
+int fusion_uvm_release(int *lockp);
 
 #endif /* __KERNEL__ */
 

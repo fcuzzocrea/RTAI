@@ -130,7 +130,7 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static inline void set_linux_task_priority (struct task_struct *task, int prio)
 
 {
-    if (prio < 0 || prio >= MAX_RT_PRIO)
+    if (prio < 1 || prio >= MAX_RT_PRIO)
 	/* FIXME: __adeos_setscheduler_root() should check this instead of us. */
 	printk(KERN_WARNING "RTAI: invalid Linux priority level: %d, task=%s\n",prio,task->comm);
     else
@@ -705,6 +705,10 @@ void xnshadow_exit (void)
  * (i.e. in order to process the signal in the Linux domain). This
  * error should not be considered as fatal.
  *
+ * - -EINVAL is returned if the shadow thread has an invalid base
+ * priority. Priority levels must be in the range [ 1..MAX_RT_PRIO-1 ]
+ * inclusive.
+ *
  * - -EPERM is returned if the shadow thread has been killed before
  * the current task had a chance to return to the caller. In such a
  * case, the real-time mapping operation has failed globally, and no
@@ -723,7 +727,14 @@ void xnshadow_exit (void)
 int xnshadow_map (xnthread_t *thread,
 		  xncompletion_t __user *u_completion)
 {
+    xnarch_cpumask_t affinity;
     unsigned muxid, magic;
+    int mode, prio;
+
+    prio = xnthread_base_priority(thread);
+
+    if (prio < 1 || prio >= MAX_RT_PRIO)
+	return -EINVAL;
 
     /* Increment the interface reference count. */
     magic = xnthread_get_magic(thread);
@@ -740,7 +751,7 @@ int xnshadow_map (xnthread_t *thread,
     xnltt_log_event(rtai_ev_shadowmap,
 		    thread->name,
 		    current->pid,
-		    xnthread_base_priority(thread));
+		    prio);
 
     current->cap_effective |= 
 	CAP_TO_MASK(CAP_IPC_LOCK)|
@@ -764,10 +775,11 @@ int xnshadow_map (xnthread_t *thread,
       kernel debug stuff to yell at us for calling it in a preemptible
       section of code. */
 
-   thread->affinity = xnarch_cpumask_of_cpu(adeos_processor_id());
-   set_cpus_allowed(current, thread->affinity);
+   affinity = xnarch_cpumask_of_cpu(adeos_processor_id());
+   set_cpus_allowed(current, affinity);
 
-   xnshadow_start(thread,NULL,NULL);
+   mode = thread->rrperiod != XN_INFINITE ? XNRRB : 0;
+   xnpod_start_thread(thread,mode,0,affinity,NULL,NULL);
 
    return xnshadow_harden();
 }
@@ -857,47 +869,32 @@ int xnshadow_wait_barrier (struct pt_regs *regs)
 
  release_task:
 
-    __xn_copy_to_user(task,
-		      (void __user *)__xn_reg_arg1(regs),
-		      &thread->entry,
-		      sizeof(thread->entry));
+    if (__xn_reg_arg1(regs))
+	__xn_copy_to_user(task,
+			  (void __user *)__xn_reg_arg1(regs),
+			  &thread->entry,
+			  sizeof(thread->entry));
 
-    __xn_copy_to_user(task,
-		      (void __user *)__xn_reg_arg2(regs),
-		      &thread->cookie,
-		      sizeof(thread->cookie));
+    if (__xn_reg_arg2(regs))
+	__xn_copy_to_user(task,
+			  (void __user *)__xn_reg_arg2(regs),
+			  &thread->cookie,
+			  sizeof(thread->cookie));
 
     return xnshadow_harden();
 }
 
-void xnshadow_start (xnthread_t *thread,
-                     void (*u_entry)(void *cookie),
-                     void *u_cookie)
+void xnshadow_start (xnthread_t *thread)
+
 {
     struct task_struct *task;
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
 
-    __setbits(thread->status,XNSTARTED);
-    thread->imask = 0;
-    thread->imode = 0;
-    thread->entry = u_entry;    /* user-space pointer -- do not deref. */
-    thread->cookie = u_cookie;  /* ditto. */
-    thread->stime = xnarch_get_cpu_time();
-
-    /* The CPU affinity of the started thread should have been filled
-       in by the caller into the thread->affinity field. */
-
-    if (testbits(thread->status,XNRRB))
-        thread->rrcredit = thread->rrperiod;
-
     xntimer_init(&thread->atimer,&itimer_handler,thread);
-
     xnpod_resume_thread(thread,XNDORMANT);
-
     task = xnthread_archtcb(thread)->user_task;
-
     xnltt_log_event(rtai_ev_shadowstart,thread->name);
 
     xnlock_put_irqrestore(&nklock,s);

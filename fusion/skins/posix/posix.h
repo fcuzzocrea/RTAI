@@ -19,11 +19,20 @@
 #ifndef _RTAI_SKIN_POSIX_H
 #define _RTAI_SKIN_POSIX_H
 
-#ifndef __KERNEL__
-#include <limits.h>  /* For INT_MAX in user-space, kernel space finds
-			this in linux/kernel.h */
-#endif /* !__KERNEL__ */
+#define PSE51_SKIN_VERSION_STRING  "0.1"
+#define PSE51_SKIN_VERSION_CODE    0x00000001
+#define PSE51_SKIN_MAGIC           0x50534531
+
+#if defined(__KERNEL__) || defined(__RTAI_SIM__)
+
+#ifdef __KERNEL__
 #include <linux/version.h>
+#else /* !__KERNEL__ */
+/* For INT_MAX in user-space, kernel space finds this in
+   linux/kernel.h */
+#include <limits.h>
+#endif /* __KERNEL__ */
+
 #include <nucleus/xenomai.h>
 
 #ifndef BEGIN_C_DECLS
@@ -35,10 +44,6 @@
 #define END_C_DECLS
 #endif
 #endif
-
-#define PSE51_SKIN_VERSION_STRING  "0.1"
-#define PSE51_SKIN_VERSION_CODE    0x00000001
-#define PSE51_SKIN_MAGIC           0x50534531
 
 typedef void sighandler_t (int sig);
 
@@ -534,12 +539,14 @@ int clock_nanosleep(clockid_t clock_id,
 int nanosleep(const struct timespec *rqtp,
               struct timespec *rmtp);
 
-int pthread_make_periodic_np (pthread_t thread,
-                              struct timespec *starttp,
-                              struct timespec *periodtp);
+int pthread_make_periodic_np(pthread_t thread,
+			     struct timespec *starttp,
+			     struct timespec *periodtp);
 
 int pthread_wait_np(void);
 
 END_C_DECLS
+
+#endif /* __KERNEL__ || __RTAI_SIM__ */
 
 #endif /* !_RTAI_SKIN_POSIX_H */

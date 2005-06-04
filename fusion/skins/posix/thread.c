@@ -97,7 +97,7 @@ int pthread_create (pthread_t *tid,
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    if (!tid || !start)
+    if (!tid)
         return EINVAL;
 
     if (attr && attr->magic != PSE51_THREAD_ATTR_MAGIC)
@@ -134,6 +134,9 @@ int pthread_create (pthread_t *tid,
     
     if (thread->attr.fp)
         flags |= XNFPU;
+
+    if (!start)
+	flags |= XNSHADOW;	/* Note: no interrupt shield. */
     
     if (xnpod_init_thread(&thread->threadbase,
 			  name,
@@ -174,13 +177,13 @@ int pthread_create (pthread_t *tid,
 
     *tid = thread; /* Must be done before the thread is started. */
 
-    xnpod_start_thread(&thread->threadbase,
-                       flags,
-                       0,
-                       thread->attr.affinity,
-                       thread_trampoline,
-                       thread);
-
+    if (start)	/* Do not start shadow threads (i.e. start == NULL). */
+	xnpod_start_thread(&thread->threadbase,
+			   flags,
+			   0,
+			   thread->attr.affinity,
+			   thread_trampoline,
+			   thread);
     return 0;
 }
 
@@ -204,14 +207,17 @@ int pthread_detach (pthread_t thread)
 	}
 
     thread_setdetachstate(thread, PTHREAD_CREATE_DETACHED);
-    xnsynch_flush(&thread->join_synch, XNBREAK);
+
+    if (xnsynch_flush(&thread->join_synch, XNBREAK) == XNSYNCH_RESCHED)
+	xnpod_schedule();
+
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
 }
 
-int pthread_equal (pthread_t t1, pthread_t t2) {
-
+int pthread_equal (pthread_t t1, pthread_t t2)
+{
     return t1 == t2;
 }
 

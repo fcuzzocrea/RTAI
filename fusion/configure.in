@@ -1,11 +1,11 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 
-AC_INIT(fusion,0.7.5,rpm@xenomai.org)
+AC_INIT(fusion,0.7.99,rpm@xenomai.org)
 
 CONFIG_RTAI_VERSION_MAJOR=0
 CONFIG_RTAI_VERSION_MINOR=7
-CONFIG_RTAI_REVISION_LEVEL=5
+CONFIG_RTAI_REVISION_LEVEL=99
 
 AC_CONFIG_HEADERS(rtai_config.h)
 AC_CONFIG_AUX_DIR(config/autoconf)
@@ -1322,6 +1322,7 @@ AC_CONFIG_FILES([ \
         testsuite/switch/GNUmakefile \
 	skins/GNUmakefile \
        	skins/posix/GNUmakefile \
+       	skins/posix/lib/GNUmakefile \
        	skins/rtai/GNUmakefile \
        	skins/rtai/lib/GNUmakefile \
        	skins/psos+/GNUmakefile \

@@ -34,6 +34,12 @@ noinst_HEADERS = \
 	thread.h \
 	tsd.h
 
+if CONFIG_RTAI_OPT_FUSION
+libmodule_SRC += syscall.c
+noinst_HEADERS += syscall.h
+endif
+distfiles = syscall.c syscall.h
+
 rtai_posix$(modext): @RTAI_KBUILD_ENV@
 rtai_posix$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_TOP@ \
@@ -61,4 +67,8 @@ uninstall-local:
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild Kconfig
+EXTRA_DIST = $(distfiles) $(libmodule_SRC) doc Makefile.kbuild Kconfig
+
+if CONFIG_RTAI_OPT_FUSION
+SUBDIRS = lib
+endif

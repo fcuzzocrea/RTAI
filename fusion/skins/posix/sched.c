@@ -107,10 +107,8 @@ int pthread_setschedparam (pthread_t tid, int pol, const struct sched_param *par
     xnflags_t clrmask, setmask;
     spl_t s;
 
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
     if (!par)
-        return EINVAL;
+        return EFAULT;
     
     xnlock_get_irqsave(&nklock, s);
 

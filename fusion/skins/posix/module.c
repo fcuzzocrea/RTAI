@@ -16,6 +16,9 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#ifdef __KERNEL__
+#include <posix/syscall.h>
+#endif /* __KERNEL__ */
 #include <posix/internal.h>
 #include <posix/cond.h>
 #include <posix/mutex.h>
@@ -59,7 +62,7 @@ int __fusion_skin_init(void)
     u_long nstick;
     int err;
 
-    xnprintf("POSIX: Starting services.\n");
+    xnprintf("starting POSIX services.\n");
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     /* The POSIX skin is stacked over the fusion framework. */
@@ -91,6 +94,11 @@ int __fusion_skin_init(void)
                      xnpod_get_tickval() / 1000);
         }
 
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    if (!err)
+	err = __pse51_syscall_init();
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+    
     if (err != 0)
         {
         xnpod_shutdown(err);    
@@ -112,7 +120,10 @@ int __fusion_skin_init(void)
 
 void __fusion_skin_exit(void)
 {
-    xnprintf("POSIX: Stopping services.\n");
+    xnprintf("stopping POSIX services.\n");
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    __pse51_syscall_cleanup();
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     pse51_shutdown(XNPOD_NORMAL_EXIT);
 }
 

@@ -1,5 +1,23 @@
 2005-06-04  Philippe Gerum  <rpm@xenomai.org>
 
+	* scripts/rtai-config.in: Provide for --posix-* flags.
+
+	* include/nucleus/fusion.h: Refactor the fusion API namespace, so
+	that no conflict/confusion would arise with the incoming POSIX
+	support in user-space.
+
+	* skin/posix/lib: Start user-space POSIX support, provided as a
+	shadow layer ontop of the native NPTL/LinuxThreads routines.
+
+2005-06-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_start_thread), nucleus/shadow.c
+	(xnshadow_start): Improve init code sharing.
+
+	* skins/posix/thread_attr.c: Set default policy to SCHED_FIFO.
+
+2005-06-04  Philippe Gerum  <rpm@xenomai.org>
+
  	* RELEASE: fusion-0.7.5
 
 2005-05-30  Philippe Gerum  <rpm@xenomai.org>

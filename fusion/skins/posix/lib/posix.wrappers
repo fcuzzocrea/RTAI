@@ -1,0 +1,4 @@
+pthread_create
+pthread_detach
+pthread_setschedparam
+sched_yield

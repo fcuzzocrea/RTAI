@@ -24,7 +24,7 @@ static const pthread_attr_t default_thread_attr = {
     detachstate: PTHREAD_CREATE_JOINABLE,
     stacksize: PTHREAD_STACK_MIN,
     inheritsched: PTHREAD_EXPLICIT_SCHED,
-    policy: SCHED_RR,
+    policy: SCHED_FIFO,
     schedparam: {
         sched_priority: PSE51_MIN_PRIORITY
     },

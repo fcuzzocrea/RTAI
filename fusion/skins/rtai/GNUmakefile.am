@@ -19,7 +19,8 @@ distfiles = $(libmodule_SRC)
 
 if CONFIG_RTAI_OPT_FUSION
 libmodule_SRC += syscall.c
-include_HEADERS += syscall.h misc.h
+noinst_HEADERS = syscall.h
+include_HEADERS += misc.h
 endif
 distfiles += syscall.c syscall.h misc.h
 

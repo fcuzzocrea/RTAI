@@ -209,57 +209,22 @@ int __sem_init (struct task_struct *curr, struct pt_regs *regs)
 int __sem_post (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    unsigned long handle;
-    sem_t *sem;
-
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(handle)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,
-			&handle,
-			(void __user *)__xn_reg_arg1(regs),
-			sizeof(handle));
-
-    sem = (sem_t *)handle;
-
+    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
     return sem_post(sem) == 0 ? 0 : -thread_errno();
 }
 
 int __sem_wait (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    unsigned long handle;
-    sem_t *sem;
-
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(handle)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,
-			&handle,
-			(void __user *)__xn_reg_arg1(regs),
-			sizeof(handle));
-
-    sem = (sem_t *)handle;
-
+    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
     return sem_wait(sem) == 0 ? 0 : -thread_errno();
 }
 
 int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    unsigned long handle;
-    sem_t *sem;
+    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
     int err;
-
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(handle)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,
-			&handle,
-			(void __user *)__xn_reg_arg1(regs),
-			sizeof(handle));
-
-    sem = (sem_t *)handle;
 
     err = sem_destroy(sem);
 
@@ -270,8 +235,8 @@ int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
        (SHADOW_SEMAPHORE_MAGIC) before calling us with our internal
        handle, then the kernel skin did the same to validate our
        handle (PSE51_SEM_MAGIC), so at this point, if everything has
-       been ok so far, we can expect the sem block to be valid, so
-       let's free it. */
+       been ok so far, we can reasonably expect the sem block to be
+       valid, so let's free it. */
 
     xnfree(sem);
 

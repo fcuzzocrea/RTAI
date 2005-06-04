@@ -18,16 +18,13 @@
 
 #include <sys/types.h>
 #include <sys/mman.h>
-#include <memory.h>
-#include <malloc.h>
-#include <unistd.h>
-#include <limits.h>
+#include <stdio.h>
 #include <posix/posix.h>
 #include <posix/syscall.h>
 
 int __pse51_muxid = -1;
 
-int __init_skin (void)
+static __attribute__((constructor)) void __init_rtai_interface(void)
 
 {
     int muxid;
@@ -35,9 +32,11 @@ int __init_skin (void)
     muxid = XENOMAI_SYSCALL2(__xn_sys_bind,PSE51_SKIN_MAGIC,NULL); /* atomic */
 
     if (muxid < 0)
-	return -1;
+	{
+	fprintf(stderr,"RTAI/fusion: POSIX skin unavailable.\n");
+	fprintf(stderr,"(did you load the rtai_posix.ko module?)\n");
+	exit(1);
+	}
 
     __pse51_muxid = muxid;
-
-    return muxid;
 }

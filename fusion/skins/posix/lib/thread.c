@@ -25,8 +25,6 @@
 
 extern int __pse51_muxid;
 
-int __init_skin(void);
-
 struct pthread_jhash {
 
 #define PTHREAD_HASHBITS 8
@@ -229,9 +227,6 @@ int __wrap_pthread_create (pthread_t *tid,
     /* Ok, we are about to create a new real-time thread. First start
        a native POSIX thread, then associate a RTAI/fusion shadow to
        it. */
-
-    if (__pse51_muxid < 0 && __init_skin() < 0)
-	return ENOSYS;
 
     iargs.start = start;
     iargs.arg = arg;

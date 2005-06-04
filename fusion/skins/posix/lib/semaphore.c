@@ -22,20 +22,12 @@
 
 extern int __pse51_muxid;
 
-int __init_skin(void);
-
 int __wrap_sem_init (sem_t *sem,
 		     int pshared,
 		     unsigned value)
 {
     union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
-
-    if (__pse51_muxid < 0 && __init_skin() < 0)
-	{
-	err = ENOSYS;
-	goto fail;
-	}
 
     err = -XENOMAI_SKINCALL3(__pse51_muxid,
 			     __pse51_sem_init,
@@ -47,8 +39,6 @@ int __wrap_sem_init (sem_t *sem,
 	_sem->shadow_sem.magic = SHADOW_SEMAPHORE_MAGIC;
 	return 0;
 	}
-
- fail:
 
     errno = err;
 

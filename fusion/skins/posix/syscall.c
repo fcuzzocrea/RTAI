@@ -297,6 +297,59 @@ int __clock_gettime (struct task_struct *curr, struct pt_regs *regs)
     return -err;
 }
 
+int __clock_settime (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    struct timespec ts;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ts)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,
+			&ts,
+			(void __user *)__xn_reg_arg1(regs),
+			sizeof(ts));
+
+    return -clock_settime(CLOCK_MONOTONIC,&ts);
+}
+
+int __clock_nanosleep (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    struct timespec rqt, rmt, *rmtp = NULL;
+    int flags, err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(rqt)))
+	return -EFAULT;
+
+    if (__xn_reg_arg3(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(rmt)))
+	    return -EFAULT;
+
+	rmtp = &rmt;
+	}
+
+    flags = (int)__xn_reg_arg1(regs);
+
+    __xn_copy_from_user(curr,
+			&rqt,
+			(void __user *)__xn_reg_arg2(regs),
+			sizeof(rqt));
+
+    err = clock_nanosleep(CLOCK_MONOTONIC,flags,&rqt,rmtp);
+
+    if (err)
+	return -err;
+
+    if (rmtp)
+	__xn_copy_to_user(curr,
+			  (void __user *)__xn_reg_arg3(regs),
+			  rmtp,
+			  sizeof(*rmtp));
+    return 0;
+}
+
 static xnsysent_t __systab[] = {
     [__pse51_thread_create ] = { &__pthread_create, __xn_exec_init },
     [__pse51_thread_detach ] = { &__pthread_detach, __xn_exec_any },
@@ -309,6 +362,8 @@ static xnsysent_t __systab[] = {
     [__pse51_sem_post] = { &__sem_post, __xn_exec_any },
     [__pse51_sem_wait] = { &__sem_wait, __xn_exec_primary },
     [__pse51_clock_gettime] = { &__clock_gettime, __xn_exec_any },
+    [__pse51_clock_settime] = { &__clock_settime, __xn_exec_any },
+    [__pse51_clock_nanosleep] = { &__clock_nanosleep, __xn_exec_primary },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

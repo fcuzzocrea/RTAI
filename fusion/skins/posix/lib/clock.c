@@ -23,18 +23,39 @@
 
 extern int __pse51_muxid;
 
-int __init_skin(void);
-
 int __wrap_clock_gettime (clockid_t clock_id, struct timespec *tp)
 
 {
     if (clock_id != CLOCK_MONOTONIC)
         return clock_gettime(clock_id,tp);
 
-    if (__pse51_muxid < 0 && __init_skin() < 0)
-	return ENOSYS;
-
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_clock_gettime,
 			      tp);
+}
+
+int __wrap_clock_settime (clockid_t clock_id, const struct timespec *tp)
+
+{
+    if (clock_id != CLOCK_MONOTONIC)
+        return clock_settime(clock_id,tp);
+
+    return -XENOMAI_SKINCALL1(__pse51_muxid,
+			      __pse51_clock_settime,
+			      tp);
+}
+
+int __wrap_clock_nanosleep (clockid_t clock_id,
+			    int flags,
+			    const struct timespec *rqtp,
+			    struct timespec *rmtp)
+{
+    if (clock_id != CLOCK_MONOTONIC)
+        return clock_nanosleep(clock_id,flags,rqtp,rmtp);
+
+    return -XENOMAI_SKINCALL3(__pse51_muxid,
+			      __pse51_clock_nanosleep,
+			      flags,
+			      rqtp,
+			      rmtp);
 }

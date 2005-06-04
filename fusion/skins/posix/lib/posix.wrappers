@@ -7,3 +7,5 @@ sem_destroy
 sem_post
 sem_wait
 clock_gettime
+clock_settime
+clock_nanosleep

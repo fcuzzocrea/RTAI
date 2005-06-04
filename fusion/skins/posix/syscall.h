@@ -34,6 +34,8 @@
 #define __pse51_sem_post              8
 #define __pse51_sem_wait              9
 #define __pse51_clock_gettime         10
+#define __pse51_clock_settime         11
+#define __pse51_clock_nanosleep       12
 
 #ifdef __KERNEL__
 

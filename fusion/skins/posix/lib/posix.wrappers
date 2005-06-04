@@ -6,3 +6,4 @@ sem_init
 sem_destroy
 sem_post
 sem_wait
+clock_gettime

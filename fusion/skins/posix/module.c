@@ -32,7 +32,7 @@ MODULE_DESCRIPTION("POSIX/PSE51 interface");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
 MODULE_LICENSE("GPL");
 
-static u_long tick_hz_arg = 1000000000 / XNPOD_DEFAULT_TICK;
+static u_long tick_hz_arg = 0;
 module_param_named(tick_hz,tick_hz_arg,ulong,0444);
 MODULE_PARM_DESC(tick_hz,"Clock tick frequency (Hz), 0 for aperiodic mode");
 

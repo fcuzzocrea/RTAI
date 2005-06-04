@@ -22,16 +22,11 @@
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 int rt_sem_create (RT_SEM *sem,
 		   const char *name,
 		   unsigned long icount,
 		   int mode)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL4(__rtai_muxid,
 			     __rtai_sem_create,
 			     sem,
@@ -43,9 +38,6 @@ int rt_sem_create (RT_SEM *sem,
 int rt_sem_bind (RT_SEM *sem,
 		 const char *name)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_sem_bind,
 			     sem,

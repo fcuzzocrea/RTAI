@@ -23,15 +23,10 @@
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 int rt_misc_get_io_region (unsigned long start,
 			   unsigned long len,
 			   const char *label)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_misc_get_io_region,
 			     start,

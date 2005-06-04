@@ -28,8 +28,6 @@ extern pthread_key_t __rtai_tskey;
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 /* Public RTAI interface. */
 
 struct rt_task_iargs {
@@ -94,12 +92,6 @@ int rt_task_create (RT_TASK *task,
     pthread_attr_t thattr;
     pthread_t thid;
 
-    /* Try to attach to the in-kernel skin on-the-fly at the first
-       task creation. */
-
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     /* Migrate this thread to the Linux domain since we are about to
        issue a series of regular kernel syscalls in order to create
        the new Linux thread, which in turn will be mapped to a
@@ -152,9 +144,6 @@ int rt_task_shadow (RT_TASK *task,
 {
     struct rt_arg_bulk bulk;
 
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     bulk.a1 = (u_long)task;
     bulk.a2 = (u_long)name;
     bulk.a3 = (u_long)prio;
@@ -170,9 +159,6 @@ int rt_task_shadow (RT_TASK *task,
 int rt_task_bind (RT_TASK *task,
 		  const char *name)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_task_bind,
 			     task,
@@ -301,9 +287,6 @@ RT_TASK *rt_task_self (void)
 
 {
     RT_TASK *self;
-
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return NULL; /* Otherwise, __rtai_tskey must be valid. */
 
     self = (RT_TASK *)pthread_getspecific(__rtai_tskey);
 

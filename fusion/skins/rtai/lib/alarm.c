@@ -26,5 +26,3 @@
 #include <rtai/alarm.h>
 
 extern int __rtai_muxid;
-
-int __init_skin(void);

@@ -27,8 +27,6 @@
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 static int __map_queue_memory (RT_QUEUE *q, RT_QUEUE_PLACEHOLDER *php)
 
 {
@@ -77,9 +75,6 @@ int rt_queue_create (RT_QUEUE *q,
     RT_QUEUE_PLACEHOLDER ph;
     int err;
 
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     err = XENOMAI_SKINCALL5(__rtai_muxid,
 			    __rtai_queue_create,
 			    &ph,
@@ -106,9 +101,6 @@ int rt_queue_bind (RT_QUEUE *q,
 {
     RT_QUEUE_PLACEHOLDER ph;
     int err;
-
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
 
     err = XENOMAI_SKINCALL2(__rtai_muxid,
 			    __rtai_queue_bind,

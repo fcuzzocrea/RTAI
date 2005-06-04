@@ -21,15 +21,10 @@
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 int rt_pipe_create (RT_PIPE *pipe,
 		    const char *name,
 		    int minor)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_pipe_create,
 			     pipe,
@@ -40,9 +35,6 @@ int rt_pipe_create (RT_PIPE *pipe,
 int rt_pipe_bind (RT_PIPE *pipe,
 		  const char *name)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_pipe_bind,
 			     pipe,

@@ -22,14 +22,9 @@
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 int rt_timer_start (RTIME tickval)
 
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL1(__rtai_muxid,
 			     __rtai_timer_start,
 			     &tickval);
@@ -38,9 +33,6 @@ int rt_timer_start (RTIME tickval)
 void rt_timer_stop (void)
 
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return;
-
     XENOMAI_SKINCALL0(__rtai_muxid,
 		      __rtai_timer_stop);
 }
@@ -49,9 +41,6 @@ RTIME rt_timer_read (void)
 
 {
     RTIME now;
-
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return 0;
 
     XENOMAI_SKINCALL1(__rtai_muxid,
 		      __rtai_timer_read,
@@ -67,9 +56,6 @@ RTIME rt_timer_tsc (void)
 #ifdef CONFIG_RTAI_HW_DIRECT_TSC
     tsc = __xn_rdtsc();
 #else /* !CONFIG_RTAI_HW_DIRECT_TSC */
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return 0;
-
     XENOMAI_SKINCALL1(__rtai_muxid,
 		      __rtai_timer_tsc,
 		      &tsc);
@@ -83,9 +69,6 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
 {
     RTIME ticks;
 
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return 0;
-
     XENOMAI_SKINCALL2(__rtai_muxid,
 		      __rtai_timer_ns2ticks,
 		      &ticks,
@@ -97,9 +80,6 @@ SRTIME rt_timer_ticks2ns (SRTIME ticks)
 
 {
     SRTIME ns;
-
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return 0;
 
     XENOMAI_SKINCALL2(__rtai_muxid,
 		      __rtai_timer_ticks2ns,

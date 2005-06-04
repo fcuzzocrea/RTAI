@@ -27,8 +27,6 @@
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 static int __map_heap_memory (RT_HEAP *heap, RT_HEAP_PLACEHOLDER *php)
 
 {
@@ -76,9 +74,6 @@ int rt_heap_create (RT_HEAP *heap,
     RT_HEAP_PLACEHOLDER ph;
     int err;
 
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     err = XENOMAI_SKINCALL4(__rtai_muxid,
 			    __rtai_heap_create,
 			    &ph,
@@ -104,9 +99,6 @@ int rt_heap_bind (RT_HEAP *heap,
 {
     RT_HEAP_PLACEHOLDER ph;
     int err;
-
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
 
     err = XENOMAI_SKINCALL2(__rtai_muxid,
 			    __rtai_heap_bind,

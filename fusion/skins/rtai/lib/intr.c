@@ -23,15 +23,10 @@
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 int rt_intr_create (RT_INTR *intr,
 		    unsigned irq,
 		    int mode)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_intr_create,
 			     intr,
@@ -43,9 +38,6 @@ int rt_intr_bind (RT_INTR *intr,
 		  unsigned irq)
 {
     char name[XNOBJECT_NAME_LEN];
-
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
 
     snprintf(name,sizeof(name),"interrupt/%u",irq);
 

@@ -22,14 +22,9 @@
 
 extern int __rtai_muxid;
 
-int __init_skin(void);
-
 int rt_mutex_create (RT_MUTEX *mutex,
 		     const char *name)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_mutex_create,
 			     mutex,
@@ -39,9 +34,6 @@ int rt_mutex_create (RT_MUTEX *mutex,
 int rt_mutex_bind (RT_MUTEX *mutex,
 		   const char *name)
 {
-    if (__rtai_muxid < 0 && __init_skin() < 0)
-	return -ENOSYS;
-
     return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_mutex_bind,
 			     mutex,

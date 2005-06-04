@@ -1,3 +1,8 @@
+2005-06-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/lib: Use constructor section to connect to the
+	in-kernel skin.
+
 2005-06-04  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* testsuite/latency/latency.c: Warm-up times, for better accuracy,

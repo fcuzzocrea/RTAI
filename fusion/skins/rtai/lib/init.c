@@ -36,20 +36,24 @@ static void __flush_tsd (void *tsd)
     free(tsd);
 }
 
-int __init_skin (void)
+static __attribute__((constructor)) void __init_rtai_interface(void)
 
 {
     int muxid;
 
     muxid = XENOMAI_SYSCALL2(__xn_sys_bind,RTAI_SKIN_MAGIC,NULL); /* atomic */
 
+    if (muxid < 0)
+	{
+	fprintf(stderr,"RTAI/fusion: native skin unavailable.\n");
+	fprintf(stderr,"(did you load the rtai_native.ko module?)\n");
+	exit(1);
+	}
+
     /* Allocate a TSD key for indexing self task pointers. */
 
-    if (muxid >= 0 &&
-	pthread_key_create(&__rtai_tskey,&__flush_tsd) != 0)
+    if (pthread_key_create(&__rtai_tskey,&__flush_tsd) != 0)
 	return -1;
 
     __rtai_muxid = muxid;
-
-    return muxid;
 }

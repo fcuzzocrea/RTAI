@@ -61,7 +61,7 @@ libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 libpthread_rt_la_LIBADD =
 am_libpthread_rt_la_OBJECTS = libpthread_rt_la-init.lo \
-	libpthread_rt_la-thread.lo
+	libpthread_rt_la-thread.lo libpthread_rt_la-semaphore.lo
 libpthread_rt_la_OBJECTS = $(am_libpthread_rt_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
@@ -296,7 +296,8 @@ lib_LTLIBRARIES = libpthread_rt.la
 libpthread_rt_la_LDFLAGS = -module -version-info 0:0:0
 libpthread_rt_la_SOURCES = \
 	init.c \
-	thread.c
+	thread.c \
+	semaphore.c
 
 include_HEADERS = \
 	pthread.h \
@@ -379,6 +380,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-semaphore.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-thread.Plo@am__quote@
 
 .c.o:
@@ -415,6 +417,13 @@ libpthread_rt_la-thread.lo: thread.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='thread.c' object='libpthread_rt_la-thread.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libpthread_rt_la-thread.lo `test -f 'thread.c' || echo '$(srcdir)/'`thread.c
+
+libpthread_rt_la-semaphore.lo: semaphore.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libpthread_rt_la-semaphore.lo -MD -MP -MF "$(DEPDIR)/libpthread_rt_la-semaphore.Tpo" -c -o libpthread_rt_la-semaphore.lo `test -f 'semaphore.c' || echo '$(srcdir)/'`semaphore.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libpthread_rt_la-semaphore.Tpo" "$(DEPDIR)/libpthread_rt_la-semaphore.Plo"; else rm -f "$(DEPDIR)/libpthread_rt_la-semaphore.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='semaphore.c' object='libpthread_rt_la-semaphore.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libpthread_rt_la-semaphore.lo `test -f 'semaphore.c' || echo '$(srcdir)/'`semaphore.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

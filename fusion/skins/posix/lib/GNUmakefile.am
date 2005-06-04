@@ -6,7 +6,8 @@ libpthread_rt_la_LDFLAGS = -module -version-info 0:0:0
 
 libpthread_rt_la_SOURCES = \
 	init.c \
-	thread.c
+	thread.c \
+	semaphore.c
 
 include_HEADERS = \
 	pthread.h \

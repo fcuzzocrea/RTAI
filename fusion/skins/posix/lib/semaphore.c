@@ -29,7 +29,7 @@ int __wrap_sem_init (sem_t *sem,
 		     int pshared,
 		     unsigned value)
 {
-    struct __fusion_semaphore *_sem = (struct __fusion_semaphore *)sem;
+    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
 
     if (__pse51_muxid < 0 && __init_skin() < 0)
@@ -40,12 +40,12 @@ int __wrap_sem_init (sem_t *sem,
 
     err = -XENOMAI_SKINCALL3(__pse51_muxid,
 			     __pse51_sem_init,
-			     &_sem->handle,
+			     &_sem->shadow_sem.handle,
 			     pshared,
 			     value);
     if (!err)
 	{
-	_sem->magic = SHADOW_SEMAPHORE_MAGIC;
+	_sem->shadow_sem.magic = SHADOW_SEMAPHORE_MAGIC;
 	return 0;
 	}
 
@@ -59,15 +59,15 @@ int __wrap_sem_init (sem_t *sem,
 int __wrap_sem_destroy (sem_t *sem)
 
 {
-    struct __fusion_semaphore *_sem = (struct __fusion_semaphore *)sem;
+    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
 
     if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
 	return sem_destroy(sem);
 
-    err = -XENOMAI_SKINCALL2(__pse51_muxid,
+    err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_destroy,
-			     _sem->handle);
+			     _sem->shadow_sem.handle);
     if (!err)
 	return 0;
 
@@ -79,15 +79,15 @@ int __wrap_sem_destroy (sem_t *sem)
 int __wrap_sem_post (sem_t *sem)
 
 {
-    struct __fusion_semaphore *_sem = (struct __fusion_semaphore *)sem;
+    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
 
     if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
 	return sem_post(sem);
 
-    err = -XENOMAI_SKINCALL2(__pse51_muxid,
+    err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_post,
-			     _sem->handle);
+			     _sem->shadow_sem.handle);
     if (!err)
 	return 0;
 
@@ -99,15 +99,15 @@ int __wrap_sem_post (sem_t *sem)
 int __wrap_sem_wait (sem_t *sem)
 
 {
-    struct __fusion_semaphore *_sem = (struct __fusion_semaphore *)sem;
+    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
 
     if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
 	return sem_wait(sem);
 
-    err = -XENOMAI_SKINCALL2(__pse51_muxid,
+    err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_wait,
-			     _sem->handle);
+			     _sem->shadow_sem.handle);
     if (!err)
 	return 0;
 

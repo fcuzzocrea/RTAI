@@ -14,7 +14,7 @@ LDFLAGS_RT= $(shell rtai-config --posix-ldflags)
 # guarantees provided by fusion's POSIX skin in user-space
 # (accuracy_rt) compared to those available from the native
 # NPTL/LinuxThreads supports (accuracy). You need the rtai_hal.ko +
-# rtai_nucleus.ko + rtai_posix.ko modules loaded to run the
+# rtai_nucleus.ko + rtai_posix.ko modules to be loaded to run the
 # accuracy_rt test.
 
 all: accuracy accuracy_rt

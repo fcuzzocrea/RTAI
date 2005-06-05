@@ -9,3 +9,4 @@ sem_wait
 clock_gettime
 clock_settime
 clock_nanosleep
+nanosleep

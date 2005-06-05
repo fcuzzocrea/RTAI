@@ -21,6 +21,24 @@
 
 #include_next <pthread.h>
 
+union __fusion_mutex {
+    pthread_mutex_t native_mutex;
+    struct __shadow_mutex {
+#define SHADOW_MUTEX_MAGIC 0x0d140518
+	unsigned magic;
+	unsigned long handle;
+    } shadow_mutex;
+};
+
+union __fusion_cond {
+    pthread_cond_t native_cond;
+    struct __shadow_cond {
+#define SHADOW_COND_MAGIC 0x030f0e04
+	unsigned magic;
+	unsigned long handle;
+    } shadow_cond;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif

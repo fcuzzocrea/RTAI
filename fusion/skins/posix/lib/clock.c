@@ -23,6 +23,10 @@
 
 extern int __pse51_muxid;
 
+/* RTAI/fusion only deals with the CLOCK_MONOTONIC clock for
+   now. Calls referring to other clock types are simply routed to the
+   libc. */
+
 int __wrap_clock_gettime (clockid_t clock_id, struct timespec *tp)
 
 {
@@ -58,4 +62,10 @@ int __wrap_clock_nanosleep (clockid_t clock_id,
 			      flags,
 			      rqtp,
 			      rmtp);
+}
+
+int __wrap_nanosleep (const struct timespec *rqtp,
+		      struct timespec *rmtp)
+{
+    return __wrap_clock_nanosleep(CLOCK_MONOTONIC,0,rqtp,rmtp);
 }

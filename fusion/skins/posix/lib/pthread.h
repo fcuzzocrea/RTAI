@@ -39,6 +39,8 @@ union __fusion_cond {
     } shadow_cond;
 };
 
+struct timespec;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,16 +48,37 @@ extern "C" {
 int pthread_make_periodic_np(pthread_t thread,
 			     struct timespec *starttp,
 			     struct timespec *periodtp);
-
 int pthread_wait_np(void);
 
-int pthread_create_unwrapped(pthread_t *tid,
-			     const pthread_attr_t *attr,
-			     void *(*start) (void *),
-			     void *arg);
+int __real_pthread_create(pthread_t *tid,
+			  const pthread_attr_t *attr,
+			  void *(*start) (void *),
+			  void *arg);
 
-int pthread_mutex_init_unwrapped(pthread_mutex_t *mutex,
-				 const pthread_mutexattr_t *attr);
+int __real_pthread_detach(pthread_t thread);
+
+int __real_pthread_setschedparam(pthread_t thread,
+				 int policy,
+				 const struct sched_param *param);
+int __real_sched_yield(void);
+
+int __real_pthread_yield(void);
+
+int __real_pthread_mutex_init(pthread_mutex_t *mutex,
+			      const pthread_mutexattr_t *attr);
+
+int __real_pthread_mutex_destroy(pthread_mutex_t *mutex);
+
+int __real_pthread_mutex_destroy(pthread_mutex_t *mutex);
+
+int __real_pthread_mutex_lock(pthread_mutex_t *mutex);
+
+int __real_pthread_mutex_timedlock(pthread_mutex_t *mutex,
+				   const struct timespec *to);
+
+int __real_pthread_mutex_trylock(pthread_mutex_t *mutex);
+
+int __real_pthread_mutex_unlock(pthread_mutex_t *mutex);
 
 #ifdef __cplusplus
 }

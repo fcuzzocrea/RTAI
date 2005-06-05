@@ -34,9 +34,15 @@ union __fusion_semaphore {
 extern "C" {
 #endif
 
-int sem_init_unwrapped(sem_t *sem, /* The original libc routine. */
-		       int pshared,
-		       unsigned value);
+int __real_sem_init(sem_t *sem,
+		    int pshared,
+		    unsigned value);
+
+int __real_sem_destroy(sem_t *sem);
+
+int __real_sem_post(sem_t *sem);
+
+int __real_sem_wait(sem_t *sem);
 
 #ifdef __cplusplus
 }

@@ -80,10 +80,10 @@ static void __pthread_hash (pthread_t tid,
     slot->internal_tid = internal_tid;
     slot->tid = tid;
 
-    pthread_mutex_lock(&__jhash_lock);
+    __real_pthread_mutex_lock(&__jhash_lock);
     slot->next = *bucketp;
     *bucketp = slot;
-    pthread_mutex_unlock(&__jhash_lock);
+    __real_pthread_mutex_unlock(&__jhash_lock);
 }
 
 static void __pthread_unhash (pthread_t tid,
@@ -96,7 +96,7 @@ static void __pthread_unhash (pthread_t tid,
 		  sizeof(tid)/sizeof(uint32_t),
 		  0);
 
-    pthread_mutex_lock(&__jhash_lock);
+    __real_pthread_mutex_lock(&__jhash_lock);
 
     tail = &__jhash_buckets[hash&((1<<PTHREAD_HASHBITS)-1)];
     slot = *tail;
@@ -110,7 +110,7 @@ static void __pthread_unhash (pthread_t tid,
     if (slot)
 	*tail = slot->next;
 
-    pthread_mutex_unlock(&__jhash_lock);
+    __real_pthread_mutex_unlock(&__jhash_lock);
 
     if (slot)
 	free(slot);
@@ -127,7 +127,7 @@ static unsigned long __pthread_find (pthread_t tid)
 		  sizeof(tid)/sizeof(uint32_t),
 		  0);
 
-    pthread_mutex_lock(&__jhash_lock);
+    __real_pthread_mutex_lock(&__jhash_lock);
 
     slot = __jhash_buckets[hash&((1<<PTHREAD_HASHBITS)-1)];
 
@@ -136,7 +136,7 @@ static unsigned long __pthread_find (pthread_t tid)
 
     internal_tid = slot ? slot->internal_tid : 0;
 
-    pthread_mutex_unlock(&__jhash_lock);
+    __real_pthread_mutex_unlock(&__jhash_lock);
 
     return internal_tid;
 }
@@ -148,7 +148,7 @@ static void __pthread_cleanup_handler (void *arg)
     __pthread_unhash(slot->tid,slot->internal_tid);
 }
 
-void *__pthread_trampoline (void *arg)
+static void *__pthread_trampoline (void *arg)
 
 {
     struct pthread_iargs *iargs = (struct pthread_iargs *)arg;
@@ -162,7 +162,7 @@ void *__pthread_trampoline (void *arg)
        passed to pthread_create(3), so we force the scheduling policy
        once again here. */
     param.sched_priority = iargs->prio;
-    pthread_setschedparam(pthread_self(),SCHED_FIFO,&param);
+    __real_pthread_setschedparam(pthread_self(),SCHED_FIFO,&param);
 
     /* At this early point of the thread initialization process, we
        are already running in secondary mode, so using malloc() to get
@@ -175,7 +175,7 @@ void *__pthread_trampoline (void *arg)
     if (!slot)
 	{
 	iargs->ret = ENOMEM;
-	sem_post(&iargs->sync);
+	__real_sem_post(&iargs->sync);
 	pthread_exit((void *)ENOMEM);
 	}
 
@@ -183,7 +183,7 @@ void *__pthread_trampoline (void *arg)
 			    __pse51_thread_create,
 			    &internal_tid);
     iargs->ret = -err;
-    sem_post(&iargs->sync);
+    __real_sem_post(&iargs->sync);
 
     if (!err)
 	{
@@ -222,7 +222,7 @@ int __wrap_pthread_create (pthread_t *tid,
 	  (inherit == PTHREAD_INHERIT_SCHED &&
 	   !pthread_getschedparam(pthread_self(),&policy,&param) &&
 	   policy != SCHED_FIFO))))
-	return pthread_create(tid,attr,start,arg);
+	return __real_pthread_create(tid,attr,start,arg);
 
     /* Ok, we are about to create a new real-time thread. First start
        a native POSIX thread, then associate a RTAI/fusion shadow to
@@ -232,11 +232,11 @@ int __wrap_pthread_create (pthread_t *tid,
     iargs.arg = arg;
     iargs.prio = param.sched_priority;
     iargs.ret = EAGAIN;
-    sem_init(&iargs.sync,0,0);
+    __real_sem_init(&iargs.sync,0,0);
 
-    err = pthread_create(tid,attr,&__pthread_trampoline,&iargs);
-    sem_wait(&iargs.sync);
-    sem_destroy(&iargs.sync);
+    err = __real_pthread_create(tid,attr,&__pthread_trampoline,&iargs);
+    __real_sem_wait(&iargs.sync);
+    __real_sem_destroy(&iargs.sync);
 
     return err ?: iargs.ret;
 }
@@ -247,7 +247,7 @@ int __wrap_pthread_detach (pthread_t thread)
     unsigned long internal_tid = __pthread_find(thread);
 
     if (!internal_tid)
-	pthread_detach(thread);
+	__real_pthread_detach(thread);
     
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_thread_detach,
@@ -261,7 +261,7 @@ int __wrap_pthread_setschedparam (pthread_t thread,
     unsigned long internal_tid = __pthread_find(thread);
 
     if (!internal_tid)
-	return pthread_setschedparam(thread,policy,param);
+	return __real_pthread_setschedparam(thread,policy,param);
 
     return -XENOMAI_SKINCALL3(__pse51_muxid,
 			      __pse51_thread_setschedparam,
@@ -305,12 +305,4 @@ int pthread_wait_np (void)
 {
     return -XENOMAI_SKINCALL0(__pse51_muxid,
 			      __pse51_thread_wait);
-}
-
-int pthread_create_unwrapped (pthread_t *tid,
-			      const pthread_attr_t *attr,
-			      void *(*start) (void *),
-			      void *arg)
-{
-    return pthread_create(tid,attr,start,arg);
 }

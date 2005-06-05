@@ -17,6 +17,7 @@
  */
 
 #include <features.h>
+#include <stddef.h>
 #include <errno.h>
 #include <posix/syscall.h>
 #include <posix/lib/pthread.h>
@@ -50,7 +51,7 @@ int __wrap_pthread_mutex_destroy (pthread_mutex_t *mutex)
 	return 0;	/* Creation was never finalized. */
 
     if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-	return pthread_mutex_destroy(mutex);
+	return __real_pthread_mutex_destroy(mutex);
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_mutex_destroy,
@@ -72,7 +73,7 @@ int __wrap_pthread_mutex_lock (pthread_mutex_t *mutex)
 	    return err;
 	}
     else if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-	return pthread_mutex_lock(mutex);
+	return __real_pthread_mutex_lock(mutex);
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_mutex_lock,
@@ -93,7 +94,7 @@ int __wrap_pthread_mutex_timedlock (pthread_mutex_t *mutex,
 	}
     else if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
 #ifdef __USE_XOPEN2K
-	return pthread_mutex_timedlock(mutex,to);
+	return __real_pthread_mutex_timedlock(mutex,to);
 #else /* !__USE_XOPEN2K */
         return ENOSYS;
 #endif	/* __USE_XOPEN2K */
@@ -117,7 +118,7 @@ int __wrap_pthread_mutex_trylock (pthread_mutex_t *mutex)
 	    return err;
 	}
     else if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-	return pthread_mutex_trylock(mutex);
+	return __real_pthread_mutex_trylock(mutex);
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_mutex_trylock,
@@ -133,15 +134,9 @@ int __wrap_pthread_mutex_unlock (pthread_mutex_t *mutex)
 	return EPERM;	/* Unlocking an unlocked mutex? */
 
     if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-	return pthread_mutex_unlock(mutex);
+	return __real_pthread_mutex_unlock(mutex);
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_mutex_unlock,
 			      _mutex->shadow_mutex.handle);
-}
-
-int pthread_mutex_init_unwrapped (pthread_mutex_t *mutex,
-				  const pthread_mutexattr_t *attr)
-{
-    return pthread_mutex_init(mutex,attr);
 }

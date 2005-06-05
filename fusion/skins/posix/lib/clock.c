@@ -16,9 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
  */
 
-#include <sys/time.h>
-#include <time.h>
 #include <errno.h>
+#include <posix/lib/time.h>
 #include <posix/syscall.h>
 
 extern int __pse51_muxid;
@@ -31,7 +30,7 @@ int __wrap_clock_gettime (clockid_t clock_id, struct timespec *tp)
 
 {
     if (clock_id != CLOCK_MONOTONIC)
-        return clock_gettime(clock_id,tp);
+        return __real_clock_gettime(clock_id,tp);
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_clock_gettime,
@@ -42,7 +41,7 @@ int __wrap_clock_settime (clockid_t clock_id, const struct timespec *tp)
 
 {
     if (clock_id != CLOCK_MONOTONIC)
-        return clock_settime(clock_id,tp);
+        return __real_clock_settime(clock_id,tp);
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_clock_settime,
@@ -55,7 +54,7 @@ int __wrap_clock_nanosleep (clockid_t clock_id,
 			    struct timespec *rmtp)
 {
     if (clock_id != CLOCK_MONOTONIC)
-        return clock_nanosleep(clock_id,flags,rqtp,rmtp);
+        return __real_clock_nanosleep(clock_id,flags,rqtp,rmtp);
 
     return -XENOMAI_SKINCALL3(__pse51_muxid,
 			      __pse51_clock_nanosleep,

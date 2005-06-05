@@ -30,4 +30,16 @@ union __fusion_semaphore {
     } shadow_sem;
 };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int sem_init_unwrapped(sem_t *sem, /* The original libc routine. */
+		       int pshared,
+		       unsigned value);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _RTAI_POSIX_SEMAPHORE_H */

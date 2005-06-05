@@ -104,3 +104,10 @@ int __wrap_sem_wait (sem_t *sem)
 
     return -1;
 }
+
+int sem_init_unwrapped (sem_t *sem,
+			int pshared,
+			unsigned value)
+{
+    sem_init(sem,pshared,value);
+}

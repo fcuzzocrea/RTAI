@@ -17,7 +17,7 @@
  */
 
 #include <errno.h>
-#include <posix/lib/time.h>
+#include <posix/lib/pthread.h>
 #include <posix/syscall.h>
 
 extern int __pse51_muxid;

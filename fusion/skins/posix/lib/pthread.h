@@ -19,6 +19,7 @@
 #ifndef _RTAI_POSIX_PTHREAD_H
 #define _RTAI_POSIX_PTHREAD_H
 
+#include <time.h>
 #include_next <pthread.h>
 
 union __fusion_mutex {
@@ -79,6 +80,20 @@ int __real_pthread_mutex_timedlock(pthread_mutex_t *mutex,
 int __real_pthread_mutex_trylock(pthread_mutex_t *mutex);
 
 int __real_pthread_mutex_unlock(pthread_mutex_t *mutex);
+
+int __real_clock_gettime(clockid_t clock_id,
+			 struct timespec *tp);
+
+int __real_clock_settime(clockid_t clock_id,
+			 const struct timespec *tp);
+
+int __real_clock_nanosleep(clockid_t clock_id,
+			   int flags,
+			   const struct timespec *rqtp,
+			   struct timespec *rmtp);
+
+int __real_nanosleep(const struct timespec *rqtp,
+		     struct timespec *rmtp);
 
 #ifdef __cplusplus
 }

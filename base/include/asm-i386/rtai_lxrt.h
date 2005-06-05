@@ -155,6 +155,36 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 #define IN_INTERCEPT_IRQ_DISABLE()  do { } while (0)
 #endif
 
+#if 1 // optimised (?)
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->rtai_tskext(2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp, GFP_KERNEL);
+	*((struct thread_struct *)lnxtsk->rtai_tskext(2)) = lnxtsk->thread;
+//	memcpy(lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)), sizeof(struct thread_info));
+	memcpy(lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (void *)(lnxtsk->thread.esp), (lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp);
+}
+
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(2));
+//	memcpy((void *)(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), sizeof(struct thread_info));
+	memcpy((void *)lnxtsk->thread.esp, lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp);
+}
+#else  // brute force
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->rtai_tskext(2) = kmalloc(sizeof(struct thread_struct) + THREAD_SIZE, GFP_KERNEL);
+	*((struct thread_struct *)lnxtsk->rtai_tskext(2)) = lnxtsk->thread;
+	memcpy(lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)), THREAD_SIZE);
+}
+
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(2));
+	memcpy((void *)(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), THREAD_SIZE);
+}
+#endif
+
 #else /* !__KERNEL__ */
 
 /* NOTE: Keep the following routines unfold: this is a compiler

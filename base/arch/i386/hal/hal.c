@@ -81,10 +81,9 @@ MODULE_LICENSE("GPL");
 static unsigned long rtai_cpufreq_arg = RTAI_CALIBRATED_CPU_FREQ;
 MODULE_PARM(rtai_cpufreq_arg,"i");
 
-#ifdef CONFIG_X86_LOCAL_APIC
+#define RTAI_NR_IRQS  IPIPE_NR_XIRQS
 
-#undef  NR_IRQS
-#define NR_IRQS  IPIPE_NR_XIRQS
+#ifdef CONFIG_X86_LOCAL_APIC
 
 static unsigned long rtai_apicfreq_arg = RTAI_CALIBRATED_APIC_FREQ;
 
@@ -129,12 +128,12 @@ struct {
 	void *cookie;
 	int retmode;
 	int cpumask;
-} rtai_realtime_irq[NR_IRQS];
+} rtai_realtime_irq[RTAI_NR_IRQS];
 
 static struct {
 	unsigned long flags;
 	int count;
-} rtai_linux_irq[NR_IRQS];
+} rtai_linux_irq[RTAI_NR_IRQS];
 
 static struct {
 	void (*k_handler)(void);
@@ -202,7 +201,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 {
 	unsigned long flags;
 
-	if (handler == NULL || irq >= NR_IRQS) {
+	if (handler == NULL || irq >= RTAI_NR_IRQS) {
 		return -EINVAL;
 	}
 	if (rtai_realtime_irq[irq].handler != NULL) {
@@ -222,7 +221,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 int rt_release_irq (unsigned irq)
 {
 	unsigned long flags;
-	if (irq >= NR_IRQS || !rtai_realtime_irq[irq].handler) {
+	if (irq >= RTAI_NR_IRQS || !rtai_realtime_irq[irq].handler) {
 		return -EINVAL;
 	}
 	flags = rtai_critical_enter(NULL);
@@ -236,14 +235,14 @@ int rt_release_irq (unsigned irq)
 
 void rt_set_irq_cookie (unsigned irq, void *cookie)
 {
-	if (irq < NR_IRQS) {
+	if (irq < RTAI_NR_IRQS) {
 		rtai_realtime_irq[irq].cookie = cookie;
 	}
 }
 
 void rt_set_irq_retmode (unsigned irq, int retmode)
 {
-	if (irq < NR_IRQS) {
+	if (irq < RTAI_NR_IRQS) {
 		rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
 	}
 }
@@ -568,7 +567,7 @@ int rt_request_linux_irq (unsigned irq, irqreturn_t (*handler)(int irq, void *de
 {
 	unsigned long flags;
 
-	if (irq >= NR_IRQS || !handler) {
+	if (irq >= RTAI_NR_IRQS || !handler) {
 		return -EINVAL;
 	}
 
@@ -601,7 +600,7 @@ int rt_free_linux_irq (unsigned irq, void *dev_id)
 {
 	unsigned long flags;
 
-	if (irq >= NR_IRQS || rtai_linux_irq[irq].count == 0) {
+	if (irq >= RTAI_NR_IRQS || rtai_linux_irq[irq].count == 0) {
 		return -EINVAL;
 	}
 
@@ -1370,6 +1369,9 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 			rtai_cli();
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
+#ifdef CONFIG_SMP
+		__set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
+#endif /* CONFIG_SMP */
 		return 1;
         }
 	return 0;
@@ -1843,7 +1845,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
     
 	none = 1;
 	PROC_PRINT("\n** Real-time IRQs used by RTAI: ");
-    	for (i = 0; i < NR_IRQS; i++) {
+    	for (i = 0; i < RTAI_NR_IRQS; i++) {
 		if (rtai_realtime_irq[i].handler) {
 			if (none) {
 				PROC_PRINT("\n");
@@ -1859,8 +1861,6 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 
 	PROC_PRINT("** RTAI extension traps: \n\n");
 	PROC_PRINT("    SYSREQ=0x%x\n",RTAI_SYS_VECTOR);
-	PROC_PRINT("      LXRT=0x%x\n",RTAI_LXRT_VECTOR);
-	PROC_PRINT("       SHM=0x%x\n\n",RTAI_SHM_VECTOR);
 
 	none = 1;
 	PROC_PRINT("** RTAI SYSREQs in use: ");

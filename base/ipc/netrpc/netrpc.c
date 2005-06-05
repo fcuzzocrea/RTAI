@@ -123,7 +123,7 @@ static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
 static unsigned long this_node[2];
 
 #define PRTSRVNAME  0xFFFFFFFF
-struct portslot_t { struct portslot_t *p; int indx, socket[2], task, hard; unsigned long long owner; SEM sem; void *msg; struct sockaddr_in addr; MBX *mbx; unsigned long name; };
+struct portslot_t { struct portslot_t *p; long task; int indx, socket[2], hard; unsigned long long owner; SEM sem; void *msg; struct sockaddr_in addr; MBX *mbx; unsigned long name; };
 static spinlock_t portslot_lock = SPIN_LOCK_UNLOCKED;
 static volatile int portslotsp;
 static struct portslot_t *portslot;
@@ -290,11 +290,11 @@ int set_rtext(RT_TASK *, int, int, void(*)(void), unsigned int, void *);
 int clr_rtext(RT_TASK *);
 void rt_schedule_soft(RT_TASK *);
 
-struct fun_args { int a[10]; long long (*fun)(int, ...); };
+struct fun_args { long a[10]; long long (*fun)(int, ...); };
 
 static inline int soft_rt_fun_call(RT_TASK *task, void *fun, void *arg)
 {
-	task->fun_args[0] = (int)arg;
+	task->fun_args[0] = (long)arg;
 	((struct fun_args *)task->fun_args)->fun = fun;
 	rt_schedule_soft(task);
 	return (int)task->retval;
@@ -312,13 +312,13 @@ static void thread_fun(RT_TASK *task)
 {
 	if (!set_rtext(task, task->fun_args[3], 0, 0, get_min_tasks_cpuid(), 0)) {
 		sigfillset(&current->blocked);
-		rtai_set_linux_task_priority(current,SCHED_FIFO,MIN_LINUX_RTPRIO);
+		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);
 		soft_rt_fun_call(task, rt_task_suspend, task);
 		((void (*)(int))task->fun_args[1])(task->fun_args[2]);
 	}
 }
 
-static int soft_kthread_init(RT_TASK *task, int fun, int arg, int priority)
+static int soft_kthread_init(RT_TASK *task, long fun, long arg, int priority)
 {
 	task->magic = task->state = 0;
 	(task->fun_args = (long *)(task + 1))[1] = fun;
@@ -356,8 +356,9 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 	struct sockaddr *addr;
 	RT_TASK *task;
 	SEM *sem;
-        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; int a[1]; } *par;
-	int *a, wsize, w2size, sock;
+        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; long a[1]; } *par;
+	int wsize, w2size, sock;
+	long *a;
 	long long type;
 
 	addr = (struct sockaddr *)&portslotp->addr;
@@ -381,17 +382,17 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 		}
 		type = par->type;
 		if (par->rsize) {
-			a[USP_RBF1(type) - 1] = (int)((char *)a + par->argsize);
+			a[USP_RBF1(type) - 1] = (long)((char *)a + par->argsize);
 		}
 		if (NEED_TO_W(type)) {
 			wsize = USP_WSZ1(type);
-			wsize = wsize ? a[wsize - 1] : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(int));
+			wsize = wsize ? a[wsize - 1] : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(long));
 		} else {
 			wsize = 0;
 		}
 		if (NEED_TO_W2ND(type)) {
 			w2size = USP_WSZ2(type);
-			w2size = w2size ? a[w2size - 1] : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(int));
+			w2size = w2size ? a[w2size - 1] : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(long));
 		} else {
 			w2size = 0;
 		}
@@ -399,13 +400,13 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 			struct msg_t { int wsize, w2size; unsigned long long retval; char msg_buf[wsize], msg_buf2[w2size]; } arg;
 			if (wsize > 0) {
 				arg.wsize = wsize;
-				a[USP_WBF1(type) - 1] = (int)arg.msg_buf;
+				a[USP_WBF1(type) - 1] = (long)arg.msg_buf;
 			} else {
 				arg.wsize = 0;
 			}
 			if (w2size > 0) {
 				arg.w2size = w2size;
-				a[USP_WBF2(type) - 1] = (int)arg.msg_buf2;
+				a[USP_WBF2(type) - 1] = (long)arg.msg_buf2;
 			} else {
 				arg.w2size = 0;
 			}
@@ -425,8 +426,9 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	struct sockaddr *addr;
 	RT_TASK *task;
 	SEM *sem;
-        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; int a[1]; } *par;
-	int *a, wsize, w2size, sock;
+        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; long a[1]; } *par;
+	int wsize, w2size, sock;
+	long *a;
 	long long type;
 
 	addr = (struct sockaddr *)&portslotp->addr;
@@ -449,17 +451,17 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 		}
 		type = par->type;
 		if (par->rsize) {
-			a[USP_RBF1(type) - 1] = (int)((char *)a + par->argsize);
+			a[USP_RBF1(type) - 1] = (long)((char *)a + par->argsize);
 		}
 		if (NEED_TO_W(type)) {
 			wsize = USP_WSZ1(type);
-			wsize = wsize ? a[wsize - 1] : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(int));
+			wsize = wsize ? a[wsize - 1] : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(long));
 		} else {
 			wsize = 0;
 		}
 		if (NEED_TO_W2ND(type)) {
 			w2size = USP_WSZ2(type);
-			w2size = w2size ? a[w2size - 1] : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(int));
+			w2size = w2size ? a[w2size - 1] : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(long));
 		} else {
 			w2size = 0;
 		}
@@ -467,20 +469,20 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 			struct msg_t { int wsize, w2size; unsigned long long retval; char msg_buf[wsize], msg_buf2[w2size]; } arg;
 			if (wsize > 0) {
 				arg.wsize = wsize;
-				a[USP_WBF1(type) - 1] = (int)arg.msg_buf;
+				a[USP_WBF1(type) - 1] = (long)arg.msg_buf;
 			} else {
 				arg.wsize = 0;
 			}
 			if (w2size > 0) {
 				arg.w2size = w2size;
-				a[USP_WBF2(type) - 1] = (int)arg.msg_buf2;
+				a[USP_WBF2(type) - 1] = (long)arg.msg_buf2;
 			} else {
 				arg.w2size = 0;
 			}
 			if ((wsize = TIMED(par->fun_ext_timed) - 1) >= 0) {
 				*((long long *)(a + wsize)) = nano2count(*((long long *)(a + wsize)));
 			}
-			arg.retval = ((long long (*)(int, ...))rt_net_rpc_fun_ext[EXT(par->fun_ext_timed)][FUN(par->fun_ext_timed)].fun)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]);
+			arg.retval = ((long long (*)(long, ...))rt_net_rpc_fun_ext[EXT(par->fun_ext_timed)][FUN(par->fun_ext_timed)].fun)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]);
 			hard_rt_sendto(sock, &arg, encode ? encode(portslotp, &arg, sizeof(struct msg_t), RPC_RTR) : sizeof(struct msg_t), 0, addr, ADRSZ);
 		} while (0);
 	}
@@ -546,7 +548,7 @@ while (soft_rt_fun_call(port_server, rt_sem_wait, &portslot[0].sem) != SEM_ERR) 
 	}
 	if (!portslot[msg.port].task) {
 		if ((task = kmalloc(sizeof(RT_TASK) + 2*sizeof(struct fun_args), GFP_KERNEL))) {
-			if ((msg.hard ? rt_task_init(task, (void *)hard_stub_fun, (int)(portslot + msg.port), StackSize + 2*MAX_MSG_SIZE, msg.priority, 0, 0) : soft_kthread_init(task, (int)soft_stub_fun, (int)(portslot + msg.port), msg.priority < BASE_SOFT_PRIORITY ? msg.priority + BASE_SOFT_PRIORITY : msg.priority))) {
+			if ((msg.hard ? rt_task_init(task, (void *)hard_stub_fun, (long)(portslot + msg.port), StackSize + 2*MAX_MSG_SIZE, msg.priority, 0, 0) : soft_kthread_init(task, (long)soft_stub_fun, (long)(portslot + msg.port), msg.priority < BASE_SOFT_PRIORITY ? msg.priority + BASE_SOFT_PRIORITY : msg.priority))) {
 				kfree(task);
 				task = 0;
 			}
@@ -756,12 +758,12 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 	}
 	if (NEED_TO_R(type)) {			
 		rsize = USP_RSZ1(type);
-		rsize = rsize ? ((int *)args)[rsize - 1] : (USP_RSZ1LL(type) ? sizeof(long long) : sizeof(int));
+		rsize = rsize ? ((int *)args)[rsize - 1] : (USP_RSZ1LL(type) ? sizeof(long long) : sizeof(long));
 	} else {
 		rsize = 0;
 	}
 	do {
-		struct msg_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; int args[1]; } *arg;
+		struct msg_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; long args[1]; } *arg;
 		RT_TASK *task;
 
 		arg = (void *)msg;
@@ -774,12 +776,12 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 		memcpy(arg->args, args, argsize);
 		if (rsize > 0) {			
 			if (space) {
-				memcpy((char *)arg->args + argsize, (int *)((int *)args + USP_RBF1(type) - 1)[0], rsize);
+				memcpy((char *)arg->args + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
 			} else {
-				copy_from_user((char *)arg->args + argsize, (int *)((int *)args + USP_RBF1(type) - 1)[0], rsize);
+				copy_from_user((char *)arg->args + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
 			}
 		}
-		rsize = sizeof(struct msg_t) - sizeof(int) + argsize + rsize;
+		rsize = sizeof(struct msg_t) - sizeof(long) + argsize + rsize;
 		if (encode) {
 			rsize = encode(portslotp, msg, rsize, RPC_REQ);
 		}
@@ -798,16 +800,16 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 		}
 		if ((reply = (void *)msg)->wsize) {
 			if (space) {
-				memcpy((char *)(*((int *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
+				memcpy((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
 			} else {
-				copy_to_user((char *)(*((int *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
+				copy_to_user((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
 			}
 		}
 		if (reply->w2size) {
 			if (space) {
-				memcpy((char *)(*((int *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+				memcpy((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
 			} else {
-				copy_to_user((char *)(*((int *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+				copy_to_user((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
 			}
 		}
 		return reply->retval;
@@ -1307,8 +1309,8 @@ int __rtai_netrpc_init(void)
 	portslot[0].name = PRTSRVNAME;
 	portslot[0].owner = OWNER(this_node, (unsigned long)port_server);
 	port_server = kmalloc(sizeof(RT_TASK) + 3*sizeof(struct fun_args), GFP_KERNEL);
-	soft_kthread_init(port_server, (int)port_server_fun, (int)port_server, RT_SCHED_LOWEST_PRIORITY);
-	portslot[0].task = (int)port_server;
+	soft_kthread_init(port_server, (long)port_server_fun, (long)port_server, RT_SCHED_LOWEST_PRIORITY);
+	portslot[0].task = (long)port_server;
 	rt_task_resume(port_server);
 	rt_typed_sem_init(&timer_sem, 0, BIN_SEM | FIFO_Q);
 	init_timer(&timer);

@@ -30,9 +30,6 @@ union __fusion_mutex {
     } shadow_mutex;
 };
 
-#undef PTHREAD_MUTEX_INITIALIZER
-#define PTHREAD_MUTEX_INITIALIZER {~SHADOW_MUTEX_MAGIC,0}
-
 union __fusion_cond {
     pthread_cond_t native_cond;
     struct __shadow_cond {
@@ -41,9 +38,6 @@ union __fusion_cond {
 	unsigned long handle;
     } shadow_cond;
 };
-
-#undef PTHREAD_COND_INITIALIZER
-#define PTHREAD_COND_INITIALIZER {~SHADOW_COND_MAGIC,0}
 
 #ifdef __cplusplus
 extern "C" {

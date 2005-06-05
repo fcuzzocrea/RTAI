@@ -19,7 +19,7 @@ RT_SEM display_sem;
 #define ONE_BILLION  1000000000
 #define TEN_MILLION    10000000
 
-long minjitter, maxjitter, avgjitter, overrun;
+long minjitter, maxjitter, avgjitter;
 long gminjitter = TEN_MILLION,
     gmaxjitter = -TEN_MILLION,
     gavgjitter = 0,
@@ -36,6 +36,8 @@ int test_loops = 0;             /* outer loop count */
 #define MEASURE_PERIOD ONE_BILLION
 #define SAMPLE_COUNT (MEASURE_PERIOD / sampling_period)
 
+/* Warmup time : in order to avoid spurious cache effects on low-end machines. */
+#define WARMUP_TIME 1
 #define HISTOGRAM_CELLS 100
 int histogram_size = HISTOGRAM_CELLS;
 unsigned long *histogram_avg = NULL,
@@ -67,8 +69,8 @@ void latency (void *cookie)
 
     nsamples = ONE_BILLION / sampling_period;
     period = rt_timer_ns2ticks(sampling_period);
-    expected = rt_timer_tsc() + nsamples * period; /* start time: one second
-                                                      from now. */
+    expected = rt_timer_tsc() + 2 * period; /* start time: two periods
+                                               from now. */
     start = rt_timer_ticks2ns(expected);
     err = rt_task_set_periodic(NULL,start,sampling_period);
 
@@ -81,7 +83,7 @@ void latency (void *cookie)
     for (;;)
         {
         long minj = TEN_MILLION, maxj = -TEN_MILLION, dt, sumj;
-        overrun = 0;
+        long overrun = 0;
         test_loops++;
 
         for (count = sumj = 0; count < nsamples; count++)
@@ -106,12 +108,6 @@ void latency (void *cookie)
                 add_histogram(histogram_avg, dt);
             }
 
-        if(warmup && test_loops == 3)     /* Warmup: 2 loops, i.e. 2 seconds. */
-            {
-            test_loops = 1;
-            warmup = 0;
-            }
-
         if(!warmup)
             {
             if (!finished && (do_histogram || do_stats))
@@ -121,15 +117,23 @@ void latency (void *cookie)
                 }
 
             minjitter = minj;
-            if(minjitter < gminjitter)
-                gminjitter = minjitter;
+            if(minj < gminjitter)
+                gminjitter = minj;
 
             maxjitter = maxj;
-            if(maxjitter > gmaxjitter)
-                gmaxjitter = maxjitter;
+            if(maxj > gmaxjitter)
+                gmaxjitter = maxj;
 
             avgjitter = sumj / nsamples;
+            gavgjitter += avgjitter;
+            goverrun += overrun;
             rt_sem_v(&display_sem);
+            }
+
+        if(warmup && test_loops == WARMUP_TIME)
+            {
+            test_loops = 0;
+            warmup = 0;
             }
         }
 }
@@ -172,16 +176,13 @@ void display (void *cookie)
         maxj = rt_timer_ticks2ns(maxjitter);
         gmaxj = rt_timer_ticks2ns(gmaxjitter);
 
-        gavgjitter += avgj;
-        goverrun += overrun;
-
         if (!quiet)
             {
             if (data_lines && (n++ % data_lines)==0)
                 {
                 time_t now, dt;
                 time(&now);
-                dt = now - start;
+                dt = now - start - WARMUP_TIME;
                 printf("RTT|  %.2ld:%.2ld:%.2ld\n",
                        dt / 3600,(dt / 60) % 60,dt % 60);
                 printf("RTH|%12s|%12s|%12s|%8s|%12s|%12s\n",
@@ -274,7 +275,7 @@ void dump_hist_stats (void)
 void cleanup_upon_sig(int sig __attribute__((unused)))
 {
     time_t actual_duration;
-    long gmaxj, gminj;
+    long gmaxj, gminj, gavgj;
 
     if (finished)
         return;
@@ -287,18 +288,18 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
         dump_hist_stats();
 
     time(&test_end);
-    actual_duration = test_end - test_start;
+    actual_duration = test_end - test_start - WARMUP_TIME;
     if (!test_duration) test_duration = actual_duration;
     gavgjitter /= (test_loops ?: 2)-1;
 
     gminj = rt_timer_ticks2ns(gminjitter);
     gmaxj = rt_timer_ticks2ns(gmaxjitter);
-    
-    
+    gavgj = rt_timer_ticks2ns(gavgjitter);
+
     printf("---|------------|------------|------------|--------|-------------------------\n"
            "RTS|%12ld|%12ld|%12ld|%8ld|    %.2ld:%.2ld:%.2ld/%.2d:%.2d:%.2d\n",
            gminj,
-           gavgjitter,
+           gavgj,
            gmaxj,
            goverrun,
            actual_duration / 3600,
@@ -354,8 +355,8 @@ int main (int argc, char **argv)
 
             case 'T':
 
-                test_duration = atoi(optarg) + 3;
-                alarm(test_duration);
+                test_duration = atoi(optarg);
+                alarm(test_duration + WARMUP_TIME);
                 break;
 
             case 'q':

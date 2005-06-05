@@ -1,6 +1,7 @@
 pthread_create
 pthread_detach
 pthread_setschedparam
+pthread_yield
 sched_yield
 sem_init
 sem_destroy
@@ -10,3 +11,9 @@ clock_gettime
 clock_settime
 clock_nanosleep
 nanosleep
+pthread_mutex_init
+pthread_mutex_destroy
+pthread_mutex_lock
+pthread_mutex_trylock
+pthread_mutex_timedlock
+pthread_mutex_unlock

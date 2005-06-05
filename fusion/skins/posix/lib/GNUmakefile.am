@@ -8,7 +8,8 @@ libpthread_rt_la_SOURCES = \
 	init.c \
 	thread.c \
 	semaphore.c \
-	clock.c
+	clock.c \
+	mutex.c
 
 include_HEADERS = \
 	pthread.h \

@@ -277,6 +277,13 @@ int __wrap_sched_yield (void)
 			      __pse51_sched_yield);
 }
 
+int __wrap_pthread_yield (void)
+
+{
+    __wrap_sched_yield();
+    return 0;
+}
+
 int pthread_make_periodic_np (pthread_t thread,
 			      struct timespec *starttp,
 			      struct timespec *periodtp)
@@ -298,4 +305,12 @@ int pthread_wait_np (void)
 {
     return -XENOMAI_SKINCALL0(__pse51_muxid,
 			      __pse51_thread_wait);
+}
+
+int pthread_create_unwrapped (pthread_t *tid,
+			      const pthread_attr_t *attr,
+			      void *(*start) (void *),
+			      void *arg)
+{
+    return pthread_create(tid,attr,start,arg);
 }

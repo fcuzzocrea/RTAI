@@ -25,19 +25,6 @@
 
 static int __muxid;
 
-#if 0
-static pthread_t __pthread_get_current (struct task_struct *curr)
-
-{
-    xnthread_t *thread = xnshadow_thread(curr);
-
-    if (!thread || xnthread_get_magic(thread) != PSE51_SKIN_MAGIC)
-	return NULL;
-
-    return thread2pthread(thread); /* Convert TCB pointers. */
-}
-#endif
-
 int __pthread_create (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -315,6 +302,97 @@ int __clock_nanosleep (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
+int __mutex_init (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_mutexattr_t attr;
+    pthread_mutex_t *mutex;
+    unsigned long handle;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(handle)))
+	return -EFAULT;
+
+    mutex = (pthread_mutex_t *)xnmalloc(sizeof(*mutex));
+
+    if (!mutex)
+	return -ENOMEM;
+
+    /* Recursive + PIP forced. */
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_setprotocol(&attr,PTHREAD_PRIO_INHERIT);
+    err = pthread_mutex_init(mutex,&attr);
+
+    if (err)
+        return -err;
+
+    handle = (unsigned long)mutex;
+
+    __xn_copy_to_user(curr,
+		      (void __user *)__xn_reg_arg1(regs),
+		      &handle,
+		      sizeof(handle));
+    return 0;
+}
+
+int __mutex_destroy (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_mutex_t *mutex = (pthread_mutex_t *)__xn_reg_arg1(regs);
+    int err;
+
+    err = pthread_mutex_destroy(mutex);
+
+    if (err)
+	return -err;
+
+    /* Same comment as for sem_destroy(): if everything has been ok so
+       far, we can reasonably expect the mutex block to be valid, so
+       let's free it. */
+
+    xnfree(mutex);
+
+    return 0;
+}
+
+int __mutex_lock (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_mutex_t *mutex = (pthread_mutex_t *)__xn_reg_arg1(regs);
+    return -pthread_mutex_lock(mutex);
+}
+
+int __mutex_timedlock (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_mutex_t *mutex = (pthread_mutex_t *)__xn_reg_arg1(regs);
+    struct timespec ts;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(ts)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,
+			&ts,
+			(void __user *)__xn_reg_arg2(regs),
+			sizeof(ts));
+
+    return -pthread_mutex_timedlock(mutex,&ts);
+}
+
+int __mutex_trylock (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_mutex_t *mutex = (pthread_mutex_t *)__xn_reg_arg1(regs);
+    return -pthread_mutex_trylock(mutex);
+}
+
+int __mutex_unlock (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_mutex_t *mutex = (pthread_mutex_t *)__xn_reg_arg1(regs);
+    return -pthread_mutex_unlock(mutex);
+}
+
 static xnsysent_t __systab[] = {
     [__pse51_thread_create ] = { &__pthread_create, __xn_exec_init },
     [__pse51_thread_detach ] = { &__pthread_detach, __xn_exec_any },
@@ -329,6 +407,12 @@ static xnsysent_t __systab[] = {
     [__pse51_clock_gettime] = { &__clock_gettime, __xn_exec_any },
     [__pse51_clock_settime] = { &__clock_settime, __xn_exec_any },
     [__pse51_clock_nanosleep] = { &__clock_nanosleep, __xn_exec_primary },
+    [__pse51_mutex_init] = { &__mutex_init, __xn_exec_any },
+    [__pse51_mutex_destroy] = { &__mutex_destroy, __xn_exec_any },
+    [__pse51_mutex_lock] = { &__mutex_lock, __xn_exec_primary },
+    [__pse51_mutex_timedlock] = { &__mutex_timedlock, __xn_exec_primary },
+    [__pse51_mutex_trylock] = { &__mutex_trylock, __xn_exec_primary },
+    [__pse51_mutex_unlock] = { &__mutex_unlock, __xn_exec_primary },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

@@ -30,6 +30,9 @@ union __fusion_mutex {
     } shadow_mutex;
 };
 
+#undef PTHREAD_MUTEX_INITIALIZER
+#define PTHREAD_MUTEX_INITIALIZER {~SHADOW_MUTEX_MAGIC,0}
+
 union __fusion_cond {
     pthread_cond_t native_cond;
     struct __shadow_cond {
@@ -38,6 +41,9 @@ union __fusion_cond {
 	unsigned long handle;
     } shadow_cond;
 };
+
+#undef PTHREAD_COND_INITIALIZER
+#define PTHREAD_COND_INITIALIZER {~SHADOW_COND_MAGIC,0}
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +54,14 @@ int pthread_make_periodic_np(pthread_t thread,
 			     struct timespec *periodtp);
 
 int pthread_wait_np(void);
+
+int pthread_create_unwrapped(pthread_t *tid,
+			     const pthread_attr_t *attr,
+			     void *(*start) (void *),
+			     void *arg);
+
+int pthread_mutex_init_unwrapped(pthread_mutex_t *mutex,
+				 const pthread_mutexattr_t *attr);
 
 #ifdef __cplusplus
 }

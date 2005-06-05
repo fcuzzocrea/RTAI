@@ -141,6 +141,9 @@ int main (int argc, char **argv)
     signal(SIGTERM, cleanup_upon_sig);
     signal(SIGHUP, cleanup_upon_sig);
 
+    sem_init(&semA,0,0);
+    sem_init(&semB,0,0);
+
     pthread_attr_init(&thattrA);
     pthread_attr_setdetachstate(&thattrA,PTHREAD_CREATE_DETACHED);
     pthread_attr_setinheritsched(&thattrA,PTHREAD_EXPLICIT_SCHED);

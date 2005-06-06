@@ -67,6 +67,12 @@ case "$host" in
 	arch_supports_rtailab=y
 	wanted_kernel_arch=CONFIG_X86
         ;;
+ x86_64*-*)
+        RTAI_TARGET_ARCH=x86_64
+        arch_supports_lxrt=y
+        arch_supports_rtailab=n
+        wanted_kernel_arch=CONFIG_X86_64
+        ;;
  arm-*)
 	RTAI_TARGET_ARCH=arm
 	wanted_kernel_arch=CONFIG_ARM
@@ -1166,7 +1172,8 @@ dnl Whether Linux is using the Kbuild make system.
 AM_CONDITIONAL(CONFIG_KBUILD,[test "$CONFIG_KBUILD" = y])
 
 dnl CPU architecture
-AM_CONDITIONAL(CONFIG_X86,[test "$CONFIG_X86" = y])
+AM_CONDITIONAL(CONFIG_X86_64,[test "$CONFIG_X86_64" = y])
+AM_CONDITIONAL(CONFIG_X86,[test "$CONFIG_X86" = y -a "x$CONFIG_X86_64" != xy])
 AM_CONDITIONAL(CONFIG_PPC,[test "$CONFIG_PPC" = y])
 AM_CONDITIONAL(CONFIG_ARM,[test "$CONFIG_ARM" = y])
 AM_CONDITIONAL(CONFIG_ARCH_EP9301,[test "$CONFIG_ARCH_EP9301" = y])
@@ -1293,6 +1300,17 @@ case $RTAI_TARGET_ARCH in
 	   RTAI_FP_CFLAGS="-ffast-math -msoft-float"
 	fi
         ;;
+ x86_64)
+        RTAI_TARGET_SUBARCH=
+        RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe -fno-omit-frame-pointer"
+        RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
+        if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
+           RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+        else
+           RTAI_FP_CFLAGS="-ffast-math -msoft-float"
+        fi
+        ;;
+
  arm)
 	if test "$CONFIG_ARCH_EP9301" = y; then
                RTAI_TARGET_SUBARCH=ep9301
@@ -1456,6 +1474,10 @@ AC_CONFIG_FILES([ \
 	base/arch/i386/hal/GNUmakefile \
 	base/arch/i386/calibration/GNUmakefile \
 	base/include/asm-i386/GNUmakefile \
+	base/arch/x86_64/GNUmakefile \
+        base/arch/x86_64/hal/GNUmakefile \
+        base/arch/x86_64/calibration/GNUmakefile \
+        base/include/asm-x86_64/GNUmakefile \
         base/arch/arm/GNUmakefile \
 	base/arch/arm/hal/GNUmakefile \
 	base/include/asm-arm/GNUmakefile \

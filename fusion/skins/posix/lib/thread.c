@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <malloc.h>
+#include <nucleus/asm/atomic.h>
 #include <posix/syscall.h>
 #include <posix/lib/jhash.h>
 #include <posix/lib/pthread.h>
@@ -42,15 +43,9 @@ struct pthread_iargs {
     int ret;
 };
 
-/* We could use a rwlock for optimal concurrency here, but we want to
-   remain compatible with older pthread implementations, and we don't
-   want to depend on UNIX98 support. Scanning an entire slot queue for
-   any given bucket should be a fast operation anyway, if hash
-   collisions remain at an acceptable level, that is. */
+static volatile unsigned long __jhash_lock; /* Guaranteed zero */
 
-static pthread_mutex_t __jhash_lock = PTHREAD_MUTEX_INITIALIZER;
-
-static struct pthread_jhash *__jhash_buckets[1<<PTHREAD_HASHBITS]; /* Guaranteed zeroing */
+static struct pthread_jhash *__jhash_buckets[1<<PTHREAD_HASHBITS]; /* Guaranteed zero */
 
 /* We want to keep the native pthread_t token unmodified for
    RTAI/fusion mapped threads, and keep it pointing at a genuine
@@ -64,6 +59,33 @@ static struct pthread_jhash *__jhash_buckets[1<<PTHREAD_HASHBITS]; /* Guaranteed
    on using the former transparently. Semaphores and mutexes do not
    have this constraint, since we plan to fully override their
    respective interfaces with RTAI/fusion-based replacements. */
+
+#define __jhash_write_lock(lock) \
+do { \
+    while (atomic_cmpxchg(lock,0,(typeof(*lock))-1) != 0) \
+     cpu_relax(); \
+} while(0)
+
+#define __jhash_write_unlock(lock) \
+do { \
+    atomic_xchg(lock,0); \
+} while(0)
+
+#define __jhash_read_lock(lock) \
+for (;;) { \
+     unsigned long lval = *lock; \
+     if ((long)lval >= 0 && atomic_cmpxchg(lock,lval,(lval + 1)) == lval) \
+         break; \
+     cpu_relax(); \
+}
+
+#define __jhash_read_unlock(lock) \
+for (;;) { \
+     unsigned long lval = *lock; \
+     if (atomic_cmpxchg(lock,lval,(lval - 1)) == lval) \
+         break; \
+     cpu_relax(); \
+}
 
 static void __pthread_hash (pthread_t tid,
 			    unsigned long internal_tid,
@@ -80,10 +102,10 @@ static void __pthread_hash (pthread_t tid,
     slot->internal_tid = internal_tid;
     slot->tid = tid;
 
-    __real_pthread_mutex_lock(&__jhash_lock);
+    __jhash_write_lock(&__jhash_lock);
     slot->next = *bucketp;
     *bucketp = slot;
-    __real_pthread_mutex_unlock(&__jhash_lock);
+    __jhash_write_unlock(&__jhash_lock);
 }
 
 static void __pthread_unhash (pthread_t tid,
@@ -96,7 +118,7 @@ static void __pthread_unhash (pthread_t tid,
 		  sizeof(tid)/sizeof(uint32_t),
 		  0);
 
-    __real_pthread_mutex_lock(&__jhash_lock);
+    __jhash_write_lock(&__jhash_lock);
 
     tail = &__jhash_buckets[hash&((1<<PTHREAD_HASHBITS)-1)];
     slot = *tail;
@@ -110,7 +132,7 @@ static void __pthread_unhash (pthread_t tid,
     if (slot)
 	*tail = slot->next;
 
-    __real_pthread_mutex_unlock(&__jhash_lock);
+    __jhash_write_unlock(&__jhash_lock);
 
     if (slot)
 	free(slot);
@@ -127,7 +149,7 @@ static unsigned long __pthread_find (pthread_t tid)
 		  sizeof(tid)/sizeof(uint32_t),
 		  0);
 
-    __real_pthread_mutex_lock(&__jhash_lock);
+    __jhash_read_lock(&__jhash_lock);
 
     slot = __jhash_buckets[hash&((1<<PTHREAD_HASHBITS)-1)];
 
@@ -136,7 +158,7 @@ static unsigned long __pthread_find (pthread_t tid)
 
     internal_tid = slot ? slot->internal_tid : 0;
 
-    __real_pthread_mutex_unlock(&__jhash_lock);
+    __jhash_read_unlock(&__jhash_lock);
 
     return internal_tid;
 }
@@ -156,7 +178,7 @@ static void *__pthread_trampoline (void *arg)
     struct pthread_jhash *slot;
     struct sched_param param;
     void *status = NULL;
-    int err;
+    long err;
 
     /* Broken pthread libs ignore some of the thread attribute specs
        passed to pthread_create(3), so we force the scheduling policy

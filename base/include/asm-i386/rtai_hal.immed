@@ -176,10 +176,10 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #define RTAI_DOMAIN_ID  0x9ac15d93  // nam2num("rtai_d")
 #define RTAI_NR_SRQS    32
 
-#define RTAI_SMP_NOTIFY_VECTOR    RTAI_APIC1_VECTOR
-#define RTAI_SMP_NOTIFY_IPI       RTAI_APIC1_IPI
-#define RTAI_APIC_TIMER_VECTOR    RTAI_APIC2_VECTOR
-#define RTAI_APIC_TIMER_IPI       RTAI_APIC2_IPI
+#define RTAI_APIC_TIMER_VECTOR    RTAI_APIC_HIGH_VECTOR
+#define RTAI_APIC_TIMER_IPI       RTAI_APIC_HIGH_IPI
+#define RTAI_SMP_NOTIFY_VECTOR    RTAI_APIC_LOW_VECTOR
+#define RTAI_SMP_NOTIFY_IPI       RTAI_APIC_LOW_IPI
 
 #define RTAI_TIMER_8254_IRQ       0
 #define RTAI_FREQ_8254            1193180

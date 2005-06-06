@@ -72,16 +72,7 @@ int __pthread_create (struct task_struct *curr, struct pt_regs *regs)
 int __pthread_detach (struct task_struct *curr, struct pt_regs *regs)
 
 { 
-    pthread_t internal_tid;
-
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(internal_tid)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,
-			&internal_tid,
-			(void __user *)__xn_reg_arg1(regs),
-			sizeof(internal_tid));
-
+    pthread_t internal_tid = (pthread_t)__xn_reg_arg1(regs);
     return -pthread_detach(internal_tid);
 }
 
@@ -92,9 +83,6 @@ int __pthread_setschedparam (struct task_struct *curr, struct pt_regs *regs)
     pthread_t internal_tid;
     int policy;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(internal_tid)))
-	return -EFAULT;
-
     policy = __xn_reg_arg2(regs);
 
     if (policy != SCHED_FIFO)
@@ -104,10 +92,7 @@ int __pthread_setschedparam (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(param)))
 	return -EFAULT;
 
-    __xn_copy_from_user(curr,
-			&internal_tid,
-			(void __user *)__xn_reg_arg1(regs),
-			sizeof(internal_tid));
+    internal_tid = (pthread_t)__xn_reg_arg1(regs);
 
     __xn_copy_from_user(curr,
 			&param,
@@ -129,19 +114,13 @@ int __pthread_make_periodic_np (struct task_struct *curr, struct pt_regs *regs)
     struct timespec startt, periodt;
     pthread_t internal_tid;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(internal_tid)))
-	return -EFAULT;
-
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(startt)))
 	return -EFAULT;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(periodt)))
 	return -EFAULT;
 
-    __xn_copy_from_user(curr,
-			&internal_tid,
-			(void __user *)__xn_reg_arg1(regs),
-			sizeof(internal_tid));
+    internal_tid = (pthread_t)__xn_reg_arg1(regs);
 
     __xn_copy_from_user(curr,
 			&startt,

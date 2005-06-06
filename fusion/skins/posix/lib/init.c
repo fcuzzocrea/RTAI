@@ -17,6 +17,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <posix/posix.h>
 #include <posix/syscall.h>
 

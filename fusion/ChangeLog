@@ -1,3 +1,10 @@
+2005-06-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/cruncher: Convert to the new user-space POSIX support.
+
+	* include/nucleus/asm-*/atomic.h: Add cpu_relax() in user-space
+	context.
+
 005-06-05  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* testsuite/latency/latency.c (latency): Reduce warmup time again,

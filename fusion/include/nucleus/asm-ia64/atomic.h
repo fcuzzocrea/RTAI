@@ -73,6 +73,8 @@ static inline unsigned long atomic_cmpxchg (volatile void *ptr,
 
 #define xnarch_memory_barrier()  __asm__ __volatile__("": : :"memory")
 
+#define cpu_relax() asm volatile ("hint @pause" ::: "memory")
+
 /* Depollute the namespace a bit. */
 #undef ADDR
 

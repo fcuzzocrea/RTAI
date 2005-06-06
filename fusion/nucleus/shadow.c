@@ -70,8 +70,7 @@ static struct __lostagerq {
     struct {
 #define LO_START_REQ  0
 #define LO_WAKEUP_REQ 1
-#define LO_SIGNAL_REQ 2
-#define LO_RENICE_REQ 3
+#define LO_RENICE_REQ 2
 	int type;
 	struct task_struct *task;
 	int arg;
@@ -279,11 +278,6 @@ static void lostage_handler (void *cookie)
 		wake_up_process(task);
 		break;
 
-	    case LO_SIGNAL_REQ:
-
-		send_sig(rq->req[reqnum].arg,task,1);
-		break;
-
 	    case LO_RENICE_REQ:
 
 		set_linux_task_priority(task,rq->req[reqnum].arg);
@@ -311,14 +305,6 @@ static void schedule_linux_call (int type,
     splexit(s);
 
     rthal_apc_schedule(lostage_apc);
-}
-
-static void itimer_handler (void *cookie)
-
-{
-    xnthread_t *thread = (xnthread_t *)cookie;
-    struct task_struct *task = xnthread_archtcb(thread)->user_task;
-    schedule_linux_call(LO_SIGNAL_REQ,task,SIGALRM);
 }
 
 static int gatekeeper_thread (void *data)
@@ -892,7 +878,6 @@ void xnshadow_start (xnthread_t *thread)
 
     xnlock_get_irqsave(&nklock,s);
 
-    xntimer_init(&thread->atimer,&itimer_handler,thread);
     xnpod_resume_thread(thread,XNDORMANT);
     task = xnthread_archtcb(thread)->user_task;
     xnltt_log_event(rtai_ev_shadowstart,thread->name);
@@ -972,200 +957,11 @@ static int bind_to_interface (struct task_struct *curr,
     return ++muxid;
 }
 
-static int substitute_linux_syscall (struct task_struct *curr,
-				     struct pt_regs *regs)
+static inline int substitute_linux_syscall (struct task_struct *curr,
+					    struct pt_regs *regs)
 {
-    xnthread_t *thread = xnshadow_thread(curr);
-    int err;
-
-    switch (__xn_reg_mux(regs))
-	{
-	case __NR_nanosleep:
-	    
-	    {
-	    xnticks_t now, expire, delay;
-	    struct timespec t;
-
-	    if (!testbits(nkpod->status,XNTIMED))
-		return 0; /* No RT timer started -- Let Linux handle this. */
-
-	    if (!__xn_access_ok(curr,VERIFY_READ,(void *)__xn_reg_arg1(regs),sizeof(t)))
-		{
-		__xn_error_return(regs,-EFAULT);
-		return 1;
-		}
-
-	    __xn_copy_from_user(curr,&t,(void *)__xn_reg_arg1(regs),sizeof(t));
-
-	    if (t.tv_nsec >= 1000000000L || t.tv_nsec < 0 || t.tv_sec < 0)
-		{
-		__xn_error_return(regs,-EINVAL);
-		return 1;
-		}
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	    if (!testbits(nkpod->status,XNTMPER))
-		expire = xnpod_get_cpu_time();
-	    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-		expire = nkpod->jiffies;
-
-	    delay = xnshadow_ts2ticks(&t);
-	    expire += delay;
-
-	    if (!xnpod_shadow_p() && (err = xnshadow_harden()) != 0)
-		{
-		__xn_error_return(regs,err);
-		goto out_sleep;
-		}
-
-	    __xn_success_return(regs,-1);
-
-	    if (delay > 0)
-		{
-		xnpod_delay(delay);
-
-		if (signal_pending(curr))
-		    {
-		    __xn_error_return(regs,-EINTR);
-		    request_syscall_restart(thread,regs);
-		    }
-		}
-out_sleep:
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	    if (!testbits(nkpod->status,XNTMPER))
-		now = xnpod_get_cpu_time();
-	    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-		now = nkpod->jiffies;
-
-	    if (now >= expire)
-		__xn_success_return(regs,0);
-	    else
-		{
-		if (__xn_reg_arg2(regs))
-		    {
-		    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg2(regs),sizeof(t)))
-			{
-			__xn_error_return(regs,-EFAULT);
-			return 1;
-			}
-
-		    xnshadow_ticks2ts(expire - now,&t);
-		    __xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&t,sizeof(t));
-		    }
-		}
-
-	    return 1;
-	    }
-
-	case __NR_setitimer:
-
-	    {
-	    xnticks_t delay, interval;
-	    struct itimerval itv;
-
-	    if (!testbits(nkpod->status,XNTIMED) ||
-		__xn_reg_arg1(regs) != ITIMER_REAL)
-		return 0;
-
-	    if (__xn_reg_arg2(regs))
-		{
-		if (!__xn_access_ok(curr,VERIFY_READ,(void *)__xn_reg_arg2(regs),sizeof(itv)))
-		    {
-		    __xn_error_return(regs,-EFAULT);
-		    return 1;
-		    }
-
-		__xn_copy_from_user(curr,&itv,(void *)__xn_reg_arg2(regs),sizeof(itv));
-		}
-	    else
-		memset(&itv,0,sizeof(itv));
-
-	    xntimer_stop(&thread->atimer);
-
-	    delay = xnshadow_tv2ticks(&itv.it_value);
-	    interval = xnshadow_tv2ticks(&itv.it_interval);
-
-	    if (delay > 0 && xntimer_start(&thread->atimer,delay,interval) < 0)
-		{
-		__xn_error_return(regs,-ETIMEDOUT);
-		return 1;
-		}
-
-	    if (__xn_reg_arg3(regs))
-		{
-		if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg3(regs),sizeof(itv)))
-		    {
-		    __xn_error_return(regs,-EFAULT);
-		    return 1;
-		    }
-
-		interval = xntimer_interval(&thread->atimer);
-
-		if (xntimer_active_p(&thread->atimer))
-		    {
-		    delay = xntimer_get_timeout(&thread->atimer);
-
-		    if (delay == 0)
-			delay = 1;
-		    }
-		else
-		    delay = 0;
-
-		xnshadow_ticks2tv(delay,&itv.it_value);
-		xnshadow_ticks2tv(interval,&itv.it_interval);
-		__xn_copy_to_user(curr,(void *)__xn_reg_arg3(regs),&itv,sizeof(itv));
-		}
-
-	    __xn_success_return(regs,0);
-
-	    return 1;
-	    }
-
-	case __NR_getitimer:
-
-	    {
-	    xnticks_t delay, interval;
-	    struct itimerval itv;
-
-	    if (!testbits(nkpod->status,XNTIMED) ||
-		__xn_reg_arg1(regs) != ITIMER_REAL)
-		return 0;
-
-	    if (!__xn_reg_arg2(regs) ||
-		!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg2(regs),sizeof(itv)))
-		{
-		__xn_error_return(regs,-EFAULT);
-		return 1;
-		}
-
-	    interval = xntimer_interval(&thread->atimer);
-
-	    if (xntimer_active_p(&thread->atimer))
-		{
-		delay = xntimer_get_timeout(&thread->atimer);
-
-		if (delay == 0) /* Cannot be negative in this context. */
-		    delay = 1;
-		}
-	    else
-		delay = 0;
-
-	    xnshadow_ticks2tv(delay,&itv.it_value);
-	    xnshadow_ticks2tv(interval,&itv.it_interval);
-	    __xn_copy_to_user(curr,(void *)__xn_reg_arg3(regs),&itv,sizeof(itv));
-	    __xn_success_return(regs,0);
-
-	    return 1;
-	    }
-
-	default:
-
-	    /* No real-time replacement -- let Linux handle this call. */
-	    return 0;
-	}
+    /* No real-time replacement for now -- let Linux handle this call. */
+    return 0;
 }
 
 static void exec_nucleus_syscall (int muxop, struct pt_regs *regs)

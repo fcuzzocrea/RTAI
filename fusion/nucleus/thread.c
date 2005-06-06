@@ -52,7 +52,6 @@ int xnthread_init (xnthread_t *thread,
 {
     xntimer_init(&thread->rtimer,&xnthread_timeout_handler,thread);
     xntimer_set_priority(&thread->rtimer,XNTIMER_HIPRIO);
-    xntimer_init(&thread->atimer,NULL,NULL);
     xntimer_init(&thread->ptimer,&xnthread_periodic_handler,thread);
     xntimer_set_priority(&thread->ptimer,XNTIMER_HIPRIO);
     thread->poverrun = -1;

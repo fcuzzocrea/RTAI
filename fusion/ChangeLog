@@ -1,5 +1,11 @@
 2005-06-06  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (substitute_linux_syscall): No more syscall
+	substitution, since the POSIX skin now handles user-space
+	requests.
+	(lostage_handler): Discard now useless handling of LO_SIGNAL_REQ
+	request.
+
 	* testsuite/cruncher: Convert to the new user-space POSIX support.
 
 	* include/nucleus/asm-*/atomic.h: Add cpu_relax() in user-space

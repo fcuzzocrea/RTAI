@@ -1096,7 +1096,6 @@ void xnpod_delete_thread (xnthread_t *thread)
             removeq(&nkpod->suspendq,&thread->slink);
         }
 
-    xntimer_stop(&thread->atimer);
     xntimer_stop(&thread->ptimer);
 
     /* Ensure the rescheduling can take place if the deleted thread is

@@ -116,8 +116,6 @@ typedef struct xnthread {
 
     xntimer_t rtimer;		/* Resource timer */
 
-    xntimer_t atimer;		/* Asynchronous timer (shadow only) */
-
     xntimer_t ptimer;		/* Periodic timer */
 
     int poverrun;		/* Periodic timer overrun. */

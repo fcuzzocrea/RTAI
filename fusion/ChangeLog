@@ -1,4 +1,12 @@
+2005-06-06  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* nucleus/pipe.c (xnpipe_read_wait): Wake up a single reader upon
+	data availability.
+	
 2005-06-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/posix.h: Fix clockid_t enum so that its members
+	conform to the kernel defines.
 
 	* nucleus/shadow.c (substitute_linux_syscall): No more syscall
 	substitution, since the POSIX skin now handles user-space
@@ -56,7 +64,7 @@
 
 2005-06-04  Philippe Gerum  <rpm@xenomai.org>
 
- 	* RELEASE: fusion-0.7.5
+ 	* RELEASE: fusion-0.7.5 (Echo)
 
 2005-05-30  Philippe Gerum  <rpm@xenomai.org>
 
@@ -143,7 +151,7 @@
 	
 2005-05-17  Philippe Gerum  <rpm@xenomai.org>
 
- 	* RELEASE: fusion-0.7.4
+ 	* RELEASE: fusion-0.7.4 (Circles)
 
 2005-05-17  Philippe Gerum  <rpm@xenomai.org>
 
@@ -225,7 +233,7 @@
 
 2005-05-06  Philippe Gerum  <rpm@xenomai.org>
 
- 	* RELEASE: fusion-0.7.3
+ 	* RELEASE: fusion-0.7.3 (Mind Storm)
 
 2005-05-06 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
@@ -311,7 +319,7 @@
 
 2005-04-18  Philippe Gerum  <rpm@xenomai.org>
 
- 	* RELEASE: fusion-0.7.2
+ 	* RELEASE: fusion-0.7.2 (New Last Jam)
 
 2005-04-17  Philippe Gerum  <rpm@xenomai.org>
 
@@ -457,7 +465,7 @@
 	
 2005-04-03  Philippe Gerum  <rpm@xenomai.org>
 
- 	* RELEASE: fusion-0.7.1
+ 	* RELEASE: fusion-0.7.1 (Raspberry Jam Delta-V)
 
 2005-04-03  Philippe Gerum  <rpm@xenomai.org>
 
@@ -509,7 +517,7 @@
 
 2005-03-29  Philippe Gerum  <rpm@xenomai.org>
 
- 	* RELEASE: fusion-0.7
+ 	* RELEASE: fusion-0.7 (Crystal Planet)
 
 2005-03-29  Philippe Gerum  <rpm@xenomai.org>
 

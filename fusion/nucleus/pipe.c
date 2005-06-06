@@ -50,16 +50,16 @@ int xnpipe_wakeup_apc;
 
 /* Get nklock locked before using this macro */
 
-#define xnpipe_read_wait(state)						\
-do {									\
-    DEFINE_WAIT(__wait);						\
-									\
-    prepare_to_wait(&state->readq, &__wait, TASK_INTERRUPTIBLE);	\
-    xnpipe_enqueue_read(state);						\
-    xnlock_put_irqrestore(&nklock,s);					\
-    schedule();								\
-    xnlock_get_irqsave(&nklock,s);					\
-    finish_wait(&state->readq, &__wait);				\
+#define xnpipe_read_wait(state)							\
+do {										\
+    DEFINE_WAIT(__wait);							\
+										\
+    prepare_to_wait_exclusive(&state->readq, &__wait, TASK_INTERRUPTIBLE);	\
+    xnpipe_enqueue_read(state);							\
+    xnlock_put_irqrestore(&nklock,s);						\
+    schedule();									\
+    xnlock_get_irqsave(&nklock,s);						\
+    finish_wait(&state->readq, &__wait);					\
 } while (0)
 
 static inline void xnpipe_enqueue_read (xnpipe_state_t *state)

@@ -10,13 +10,13 @@
 #include <pthread.h>
 #include <nucleus/fusion.h>
 
-#define SAMPLING_PERIOD_US 500	/* 2Khz sampling period. */
+#define SAMPLING_PERIOD_US 1000	/* 1Khz sampling period. */
 
 static sem_t semX, semA, semB;
 
 static int sample_count;
 
-static int has_fusion, dim;
+static int dim;
 
 static double ref;
 
@@ -36,20 +36,9 @@ static inline void add_histogram (long addval)
 static inline void get_time_us (suseconds_t *tp)
 
 {
-    if (has_fusion)
-	{
-	/* We need a better resolution than the one gettimeofday()
-	   provides here. */
-	nanotime_t t;
-	fusion_timer_read(&t);
-	*tp = t / 1000;
-	}
-    else
-	{
-	struct timeval tv;
-	gettimeofday(&tv,NULL);
-	*tp = tv.tv_sec * 1000000 + tv.tv_usec;
-	}
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC,&ts);
+    *tp = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
 }
 
 static inline double compute (void)
@@ -86,16 +75,14 @@ void dump_histogram (void)
 void *cruncher_thread (void *arg)
 
 {
-    struct sched_param param;
+    struct sched_param param = { .sched_priority = 99 };
     double result;
 
-    param.sched_priority = 99;
-
     if (pthread_setschedparam(pthread_self(),SCHED_FIFO,&param) != 0)
-	perror("pthread_setschedparam()");
-
-    if (has_fusion)
-	fusion_thread_shadow("cruncher",NULL,NULL);
+	{
+	fprintf(stderr,"pthread_setschedparam() failed\n");
+	exit(EXIT_FAILURE);
+	}
 
     for (;;)
 	{
@@ -120,27 +107,21 @@ void *cruncher_thread (void *arg)
 void *sampler_thread (void *arg)
 
 {
+    struct sched_param param = { .sched_priority = 99 };
     suseconds_t mint1 = 10000000, maxt1 = 0, sumt1 = 0;
     suseconds_t mint2 = 10000000, maxt2 = 0, sumt2 = 0;
     suseconds_t t, t0, t1, ideal;
-    int count, policy, pass = 0;
-    struct sched_param param;
+    int count, pass = 0;
     struct timespec ts;
 
     dim = FIRST_DIM;
     ref = compute();
 
-    param.sched_priority = 99;
-
     if (pthread_setschedparam(pthread_self(),SCHED_FIFO,&param) != 0)
-	perror("pthread_setschedparam()");
-
-    /* Paranoid check. */
-    if (pthread_getschedparam(pthread_self(),&policy,&param) != 0)
-	perror("pthread_getschedparam()");
-
-    if (has_fusion)
-	fusion_thread_shadow("sampler",NULL,NULL);
+	{
+	fprintf(stderr,"pthread_setschedparam() failed\n");
+	exit(EXIT_FAILURE);
+	}
 
     printf("Calibrating cruncher...");
 
@@ -177,12 +158,10 @@ void *sampler_thread (void *arg)
 
     printf("done -- ideal computation time = %ld us.\n",ideal);
 
-    printf("%d samples, %d hz freq (pid=%d, policy=%s, prio=%d)\n",
+    printf("%d samples, %d hz freq (pid=%d, policy=SCHED_FIFO, prio=99)\n",
 	   sample_count,
-	   has_fusion ? 1000000 / SAMPLING_PERIOD_US : 1000,
-	   getpid(),
-	   policy == SCHED_FIFO ? "FIFO" : policy == SCHED_RR ? "RR" : "NORMAL",
-	   param.sched_priority);
+	   1000000 / SAMPLING_PERIOD_US,
+	   getpid());
 
     sleep(1);
 
@@ -200,11 +179,6 @@ void *sampler_thread (void *arg)
 	if (t < mint1) mint1 = t;
 	sumt1 += t;
 	
-	if (has_fusion)
-	    /* Not required, but ensures that we won't be charged for
-	       the cost of migrating to the Linux domain. */
-	    fusion_thread_migrate(FUSION_LINUX_DOMAIN);
-
 	/* Run the computational loop. */
 	get_time_us(&t0);
 	sem_post(&semA);
@@ -246,8 +220,6 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
 {
     finished = 1;
 
-    fusion_timer_stop();
-
     if (do_histogram)
 	dump_histogram();
 
@@ -257,6 +229,7 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
 int main (int ac, char **av)
 
 {
+    struct sched_param param = { .sched_priority = 99 };
     pthread_t sampler_thid, cruncher_thid;
     pthread_attr_t thattr;
     xnsysinfo_t info;
@@ -266,7 +239,10 @@ int main (int ac, char **av)
     signal(SIGHUP, cleanup_upon_sig);
 
     if (mlockall(MCL_CURRENT|MCL_FUTURE))
+	{
 	perror("mlockall");
+	exit(1);
+	}
 
     if (ac > 1)
 	{
@@ -287,16 +263,7 @@ int main (int ac, char **av)
 	sample_count = 1000;
 
     if (fusion_probe(&info) == 0)
-	{
 	printf("RTAI/fusion detected.\n");
-	has_fusion = 1;
-
-	if (fusion_timer_start(FUSION_APERIODIC_TIMER))
-	    {
-	    fprintf(stderr,"failed to start real-time timer.\n");
-	    exit(1);
-	    }
-	}
     else
 	{
 	FILE *fp = popen("grep 'cpu MHz' /proc/cpuinfo | cut -d: -f2","r");
@@ -310,21 +277,21 @@ int main (int ac, char **av)
 
 	pclose(fp);
 	printf("RTAI/fusion *not* detected.\n");
-	has_fusion = 0;
 	}
 
     sem_init(&semA,0,0);
     sem_init(&semB,0,0);
-    sem_init(&semX,0,0);
+    __real_sem_init(&semX,0,0);	/* We need a real NPTL sema4 here. */
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
+    pthread_attr_setinheritsched(&thattr,PTHREAD_EXPLICIT_SCHED);
+    pthread_attr_setschedpolicy(&thattr,SCHED_FIFO);
+    pthread_attr_setschedparam(&thattr,&param);
     pthread_create(&cruncher_thid,&thattr,&cruncher_thread,NULL);
     pthread_create(&sampler_thid,&thattr,&sampler_thread,NULL);
 
     sem_wait(&semX);
-
-    fusion_timer_stop();
 
     return 0;
 }

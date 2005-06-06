@@ -54,7 +54,8 @@ testPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(test_PROGRAMS)
 am_cruncher_OBJECTS = cruncher-cruncher.$(OBJEXT)
 cruncher_OBJECTS = $(am_cruncher_OBJECTS)
-cruncher_DEPENDENCIES = ../../nucleus/lib/libfusion.la
+cruncher_DEPENDENCIES = ../../nucleus/lib/libfusion.la \
+	../../skins/posix/lib/libpthread_rt.la
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -283,8 +284,12 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 testdir = $(prefix)/testsuite/cruncher
+posix_wrappers := $(shell cat $(top_srcdir)/skins/posix/lib/posix.wrappers | \
+		    while read symbol; do echo -n "-Wl,--wrap -Wl,$$symbol " ; done )
+
 cruncher_SOURCES = cruncher.c
 cruncher_CPPFLAGS = \
+	-I$(top_srcdir)/skins/posix/lib \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/skins \
 	-I../../include
@@ -293,9 +298,12 @@ cruncher_CFLAGS = \
 	@RTAI_USER_CFLAGS@ \
 	-funroll-loops
 
+cruncher_LDFLAGS = $(posix_wrappers)
 cruncher_LDADD = \
 	../../nucleus/lib/libfusion.la \
-	-lpthread
+	../../skins/posix/lib/libpthread_rt.la \
+	-lpthread \
+	-lrt
 
 EXTRA_DIST = runinfo
 all: all-am

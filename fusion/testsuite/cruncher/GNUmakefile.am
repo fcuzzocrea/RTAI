@@ -2,9 +2,13 @@ testdir = $(prefix)/testsuite/cruncher
 
 test_PROGRAMS = cruncher
 
+posix_wrappers := $(shell cat $(top_srcdir)/skins/posix/lib/posix.wrappers | \
+		    while read symbol; do echo -n "-Wl,--wrap -Wl,$$symbol " ; done )
+
 cruncher_SOURCES = cruncher.c
 
 cruncher_CPPFLAGS = \
+	-I$(top_srcdir)/skins/posix/lib \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/skins \
 	-I../../include
@@ -13,9 +17,13 @@ cruncher_CFLAGS = \
 	@RTAI_USER_CFLAGS@ \
 	-funroll-loops
 
+cruncher_LDFLAGS = $(posix_wrappers)
+
 cruncher_LDADD = \
 	../../nucleus/lib/libfusion.la \
-	-lpthread
+	../../skins/posix/lib/libpthread_rt.la \
+	-lpthread \
+	-lrt
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(testdir)

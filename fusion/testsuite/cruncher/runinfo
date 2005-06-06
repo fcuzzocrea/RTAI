@@ -1,1 +1,1 @@
-cruncher::!./cruncher;popall:control_c
+cruncher:posix:!./cruncher;popall:control_c

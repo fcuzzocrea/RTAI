@@ -42,6 +42,11 @@ union __fusion_cond {
 
 struct timespec;
 
+#ifndef CLOCK_MONOTONIC
+/* Some archs do not implement this, but fusion always does. */
+#define CLOCK_MONOTONIC 1
+#endif /* CLOCK_MONOTONIC */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

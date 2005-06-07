@@ -6173,7 +6173,7 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-adeos/kernel/sched.c
  # define finish_arch_switch(rq, next)	spin_unlock_irq(&(rq)->lock)
  # define task_running(rq, p)		((rq)->curr == (p))
  #endif
-@@ -1367,6 +1376,10 @@ asmlinkage void schedule_tail(task_t *pr
+@@ -1367,18 +1376,26 @@ asmlinkage void schedule_tail(task_t *pr
  
  	if (current->set_child_tid)
  		put_user(current->pid, current->set_child_tid);
@@ -6184,7 +6184,41 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-adeos/kernel/sched.c
  }
  
  /*
-@@ -2535,6 +2548,11 @@ asmlinkage void __sched schedule(void)
+  * context_switch - switch to the new MM and the new
+  * thread's register state.
+  */
+-static inline
++//static inline
+ task_t * context_switch(runqueue_t *rq, task_t *prev, task_t *next)
+ {
+ 	struct mm_struct *mm = next->mm;
+ 	struct mm_struct *oldmm = prev->active_mm;
+ 
++if (!rq) {
++	switch_mm(oldmm, next->active_mm, next);
++	if (!mm) enter_lazy_tlb(oldmm, next);
++} else {
+ 	if (unlikely(!mm)) {
+ 		next->active_mm = oldmm;
+ 		atomic_inc(&oldmm->mm_count);
+@@ -1391,13 +1408,15 @@ task_t * context_switch(runqueue_t *rq, 
+ 		WARN_ON(rq->prev_mm);
+ 		rq->prev_mm = oldmm;
+ 	}
+-
++}
+ 	/* Here we just switch the register state and the stack. */
+ 	switch_to(prev, next, prev);
+ 
+ 	return prev;
+ }
+ 
++EXPORT_SYMBOL(context_switch);
++
+ /*
+  * nr_running, nr_uninterruptible and nr_context_switches:
+  *
+@@ -2535,6 +2554,11 @@ asmlinkage void __sched schedule(void)
  	unsigned long run_time;
  	int cpu, idx;
  
@@ -6196,7 +6230,7 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-adeos/kernel/sched.c
  	/*
  	 * Test if we are atomic.  Since do_exit() needs to call into
  	 * schedule() atomically, we ignore that path for now.
-@@ -2684,10 +2702,30 @@ switch_tasks:
+@@ -2684,10 +2708,30 @@ switch_tasks:
  		rq->curr = next;
  		++*switch_count;
  
@@ -6228,7 +6262,7 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-adeos/kernel/sched.c
  		finish_task_switch(prev);
  	} else
  		spin_unlock_irq(&rq->lock);
-@@ -3159,6 +3197,21 @@ recheck:
+@@ -3159,6 +3203,21 @@ recheck:
  		task_rq_unlock(rq, &flags);
  		goto recheck;
  	}
@@ -6250,7 +6284,7 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-adeos/kernel/sched.c
  	array = p->array;
  	if (array)
  		deactivate_task(p, task_rq(p));
-@@ -4676,3 +4729,51 @@ void normalize_rt_tasks(void)
+@@ -4676,3 +4735,51 @@ void normalize_rt_tasks(void)
  }
  
  #endif /* CONFIG_MAGIC_SYSRQ */

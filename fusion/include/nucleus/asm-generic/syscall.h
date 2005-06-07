@@ -21,12 +21,15 @@
 #define _RTAI_ASM_GENERIC_SYSCALL_H
 
 /* RTAI/fusion multiplexer syscall. */
-#define __xn_sys_mux    555
+#define __xn_sys_mux        555
 /* RTAI/fusion nucleus syscalls. */
 #define __xn_sys_bind       0	/* muxid = bind_to_interface(magic,infp) */
 #define __xn_sys_completion 1	/* xnshadow_completion(&completion) */
 #define __xn_sys_migrate    2	/* switched = xnshadow_relax/harden() */
 #define __xn_sys_barrier    3	/* started = xnshadow_wait_barrier(&entry,&cookie) */
+
+#define XENOMAI_LINUX_DOMAIN  0
+#define XENOMAI_RTAI_DOMAIN   1
 
 typedef struct xnsysinfo {
 
@@ -51,7 +54,7 @@ typedef struct xninquiry {
 
 struct task_struct;
 
-#define XNARCH_MAX_SYSENT 255
+#define XENOMAI_MAX_SYSENT 255
 
 typedef struct _xnsysent {
 

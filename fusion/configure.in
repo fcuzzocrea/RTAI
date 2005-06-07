@@ -1250,6 +1250,7 @@ fi
 AC_CONFIG_LINKS(arch/$RTAI_TARGET_ARCH/hal/Makefile:arch/$RTAI_TARGET_ARCH/hal/Makefile.kbuild)
 AC_CONFIG_LINKS(arch/$RTAI_TARGET_ARCH/hal/generic.c:arch/generic/hal/generic.c)
 AC_CONFIG_LINKS(nucleus/Makefile:nucleus/Makefile.kbuild)
+AC_CONFIG_LINKS(skins/uvm/Makefile:skins/uvm/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/posix/Makefile:skins/posix/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/rtai/Makefile:skins/rtai/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/psos+/Makefile:skins/psos+/Makefile.kbuild)
@@ -1310,7 +1311,6 @@ AC_CONFIG_FILES([ \
 	include/nucleus/asm-ia64/GNUmakefile \
 	include/nucleus/asm-uvm/GNUmakefile \
 	nucleus/GNUmakefile \
-	nucleus/lib/GNUmakefile \
 	scripts/GNUmakefile \
 	scripts/rtai-config \
 	scripts/rtai-load \
@@ -1321,6 +1321,8 @@ AC_CONFIG_FILES([ \
 	testsuite/cruncher/GNUmakefile \
         testsuite/switch/GNUmakefile \
 	skins/GNUmakefile \
+       	skins/uvm/GNUmakefile \
+       	skins/uvm/lib/GNUmakefile \
        	skins/posix/GNUmakefile \
        	skins/posix/lib/GNUmakefile \
        	skins/rtai/GNUmakefile \

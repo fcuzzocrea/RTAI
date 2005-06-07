@@ -41,6 +41,7 @@ host_triplet = @host@
 @CONFIG_RTAI_SKIN_VXWORKS_TRUE@am__append_4 = vxworks
 @CONFIG_RTAI_SKIN_VRTX_TRUE@am__append_5 = vrtx
 @CONFIG_RTAI_SKIN_UITRON_TRUE@am__append_6 = uitron
+@CONFIG_RTAI_OPT_UVM_TRUE@am__append_7 = uvm
 subdir = skins
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -61,7 +62,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = rtai posix psos+ vxworks vrtx uitron
+DIST_SUBDIRS = rtai posix psos+ vxworks vrtx uitron uvm
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -275,7 +276,8 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__append_4) $(am__append_5) $(am__append_6)
+	$(am__append_4) $(am__append_5) $(am__append_6) \
+	$(am__append_7)
 SUBDIRS = $(OPTDIRS)
 EXTRA_DIST = Kconfig
 all: all-recursive

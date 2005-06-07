@@ -20,7 +20,6 @@ cruncher_CFLAGS = \
 cruncher_LDFLAGS = $(posix_wrappers)
 
 cruncher_LDADD = \
-	../../nucleus/lib/libfusion.la \
 	../../skins/posix/lib/libpthread_rt.la \
 	-lpthread \
 	-lrt

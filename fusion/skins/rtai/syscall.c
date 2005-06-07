@@ -878,8 +878,8 @@ static int __rt_timer_start (struct task_struct *curr, struct pt_regs *regs)
 
     if (testbits(nkpod->status,XNTIMED))
 	{
-	if ((tickval == FUSION_APERIODIC_TIMER && xnpod_get_tickval() == 1) ||
-	    (tickval != FUSION_APERIODIC_TIMER && xnpod_get_tickval() == tickval))
+	if ((tickval == XN_APERIODIC_TICK && xnpod_get_tickval() == 1) ||
+	    (tickval != XN_APERIODIC_TICK && xnpod_get_tickval() == tickval))
 	    return 0;
 
 	xnpod_stop_timer();

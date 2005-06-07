@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-SOURCES = $(cruncher_SOURCES)
+SOURCES = $(libuvm_la_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -22,7 +22,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../..
+top_builddir = ../../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -38,8 +38,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-test_PROGRAMS = cruncher$(EXEEXT)
-subdir = testsuite/cruncher
+subdir = skins/uvm/lib
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/autoconf/docbook.m4 \
@@ -49,12 +48,18 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/autoconf/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/rtai_config.h
 CONFIG_CLEAN_FILES =
-am__installdirs = "$(DESTDIR)$(testdir)"
-testPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
-PROGRAMS = $(test_PROGRAMS)
-am_cruncher_OBJECTS = cruncher-cruncher.$(OBJEXT)
-cruncher_OBJECTS = $(am_cruncher_OBJECTS)
-cruncher_DEPENDENCIES = ../../skins/posix/lib/libpthread_rt.la
+am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
+am__vpath_adj = case $$p in \
+    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
+    *) f=$$p;; \
+  esac;
+am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
+am__installdirs = "$(DESTDIR)$(libdir)"
+libLTLIBRARIES_INSTALL = $(INSTALL)
+LTLIBRARIES = $(lib_LTLIBRARIES)
+libuvm_la_LIBADD =
+am_libuvm_la_OBJECTS = libuvm_la-init.lo libuvm_la-uvm.lo
+libuvm_la_OBJECTS = $(am_libuvm_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -66,8 +71,8 @@ LTCOMPILE = $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link --tag=CC $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(cruncher_SOURCES)
-DIST_SOURCES = $(cruncher_SOURCES)
+SOURCES = $(libuvm_la_SOURCES)
+DIST_SOURCES = $(libuvm_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -282,28 +287,18 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-testdir = $(prefix)/testsuite/cruncher
-posix_wrappers := $(shell cat $(top_srcdir)/skins/posix/lib/posix.wrappers | \
-		    while read symbol; do echo -n "-Wl,--wrap -Wl,$$symbol " ; done )
+lib_LTLIBRARIES = libuvm.la
+libuvm_la_LDFLAGS = -module -version-info 0:0:0
+libuvm_la_SOURCES = \
+	init.c \
+	uvm.c
 
-cruncher_SOURCES = cruncher.c
-cruncher_CPPFLAGS = \
-	-I$(top_srcdir)/skins/posix/lib \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/skins \
-	-I../../include
-
-cruncher_CFLAGS = \
+libuvm_la_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ \
-	-funroll-loops
+	-I../../../include \
+	-I$(top_srcdir)/include \
+	-I$(srcdir)/../..
 
-cruncher_LDFLAGS = $(posix_wrappers)
-cruncher_LDADD = \
-	../../skins/posix/lib/libpthread_rt.la \
-	-lpthread \
-	-lrt
-
-EXTRA_DIST = runinfo
 all: all-am
 
 .SUFFIXES:
@@ -317,9 +312,9 @@ $(srcdir)/GNUmakefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/GNUmakefile.am  $(am_
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  testsuite/cruncher/GNUmakefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  skins/uvm/lib/GNUmakefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  testsuite/cruncher/GNUmakefile
+	  $(AUTOMAKE) --foreign  skins/uvm/lib/GNUmakefile
 .PRECIOUS: GNUmakefile
 GNUmakefile: $(srcdir)/GNUmakefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -337,37 +332,35 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-install-testPROGRAMS: $(test_PROGRAMS)
+install-libLTLIBRARIES: $(lib_LTLIBRARIES)
 	@$(NORMAL_INSTALL)
-	test -z "$(testdir)" || $(mkdir_p) "$(DESTDIR)$(testdir)"
-	@list='$(test_PROGRAMS)'; for p in $$list; do \
-	  p1=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  if test -f $$p \
-	     || test -f $$p1 \
-	  ; then \
-	    f=`echo "$$p1" | sed 's,^.*/,,;$(transform);s/$$/$(EXEEXT)/'`; \
-	   echo " $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(testPROGRAMS_INSTALL) '$$p' '$(DESTDIR)$(testdir)/$$f'"; \
-	   $(INSTALL_PROGRAM_ENV) $(LIBTOOL) --mode=install $(testPROGRAMS_INSTALL) "$$p" "$(DESTDIR)$(testdir)/$$f" || exit 1; \
+	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f=$(am__strip_dir) \
+	    echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
+	    $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
 	  else :; fi; \
 	done
 
-uninstall-testPROGRAMS:
+uninstall-libLTLIBRARIES:
 	@$(NORMAL_UNINSTALL)
-	@list='$(test_PROGRAMS)'; for p in $$list; do \
-	  f=`echo "$$p" | sed 's,^.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/'`; \
-	  echo " rm -f '$(DESTDIR)$(testdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(testdir)/$$f"; \
+	@set -x; list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  p=$(am__strip_dir) \
+	  echo " $(LIBTOOL) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$p'"; \
+	  $(LIBTOOL) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$p"; \
 	done
 
-clean-testPROGRAMS:
-	@list='$(test_PROGRAMS)'; for p in $$list; do \
-	  f=`echo $$p|sed 's/$(EXEEXT)$$//'`; \
-	  echo " rm -f $$p $$f"; \
-	  rm -f $$p $$f ; \
+clean-libLTLIBRARIES:
+	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
+	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
 	done
-cruncher$(EXEEXT): $(cruncher_OBJECTS) $(cruncher_DEPENDENCIES) 
-	@rm -f cruncher$(EXEEXT)
-	$(LINK) $(cruncher_LDFLAGS) $(cruncher_OBJECTS) $(cruncher_LDADD) $(LIBS)
+libuvm.la: $(libuvm_la_OBJECTS) $(libuvm_la_DEPENDENCIES) 
+	$(LINK) -rpath $(libdir) $(libuvm_la_LDFLAGS) $(libuvm_la_OBJECTS) $(libuvm_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -375,7 +368,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cruncher-cruncher.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libuvm_la-init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libuvm_la-uvm.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -398,19 +392,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
-cruncher-cruncher.o: cruncher.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cruncher_CPPFLAGS) $(CPPFLAGS) $(cruncher_CFLAGS) $(CFLAGS) -MT cruncher-cruncher.o -MD -MP -MF "$(DEPDIR)/cruncher-cruncher.Tpo" -c -o cruncher-cruncher.o `test -f 'cruncher.c' || echo '$(srcdir)/'`cruncher.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/cruncher-cruncher.Tpo" "$(DEPDIR)/cruncher-cruncher.Po"; else rm -f "$(DEPDIR)/cruncher-cruncher.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cruncher.c' object='cruncher-cruncher.o' libtool=no @AMDEPBACKSLASH@
+libuvm_la-init.lo: init.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libuvm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libuvm_la-init.lo -MD -MP -MF "$(DEPDIR)/libuvm_la-init.Tpo" -c -o libuvm_la-init.lo `test -f 'init.c' || echo '$(srcdir)/'`init.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libuvm_la-init.Tpo" "$(DEPDIR)/libuvm_la-init.Plo"; else rm -f "$(DEPDIR)/libuvm_la-init.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='init.c' object='libuvm_la-init.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cruncher_CPPFLAGS) $(CPPFLAGS) $(cruncher_CFLAGS) $(CFLAGS) -c -o cruncher-cruncher.o `test -f 'cruncher.c' || echo '$(srcdir)/'`cruncher.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libuvm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libuvm_la-init.lo `test -f 'init.c' || echo '$(srcdir)/'`init.c
 
-cruncher-cruncher.obj: cruncher.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cruncher_CPPFLAGS) $(CPPFLAGS) $(cruncher_CFLAGS) $(CFLAGS) -MT cruncher-cruncher.obj -MD -MP -MF "$(DEPDIR)/cruncher-cruncher.Tpo" -c -o cruncher-cruncher.obj `if test -f 'cruncher.c'; then $(CYGPATH_W) 'cruncher.c'; else $(CYGPATH_W) '$(srcdir)/cruncher.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/cruncher-cruncher.Tpo" "$(DEPDIR)/cruncher-cruncher.Po"; else rm -f "$(DEPDIR)/cruncher-cruncher.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cruncher.c' object='cruncher-cruncher.obj' libtool=no @AMDEPBACKSLASH@
+libuvm_la-uvm.lo: uvm.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libuvm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libuvm_la-uvm.lo -MD -MP -MF "$(DEPDIR)/libuvm_la-uvm.Tpo" -c -o libuvm_la-uvm.lo `test -f 'uvm.c' || echo '$(srcdir)/'`uvm.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libuvm_la-uvm.Tpo" "$(DEPDIR)/libuvm_la-uvm.Plo"; else rm -f "$(DEPDIR)/libuvm_la-uvm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='uvm.c' object='libuvm_la-uvm.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(cruncher_CPPFLAGS) $(CPPFLAGS) $(cruncher_CFLAGS) $(CFLAGS) -c -o cruncher-cruncher.obj `if test -f 'cruncher.c'; then $(CYGPATH_W) 'cruncher.c'; else $(CYGPATH_W) '$(srcdir)/cruncher.c'; fi`
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libuvm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libuvm_la-uvm.lo `test -f 'uvm.c' || echo '$(srcdir)/'`uvm.c
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -499,9 +493,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: GNUmakefile $(PROGRAMS)
+all-am: GNUmakefile $(LTLIBRARIES)
 installdirs:
-	for dir in "$(DESTDIR)$(testdir)"; do \
+	for dir in "$(DESTDIR)$(libdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -530,7 +524,7 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-testPROGRAMS \
+clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
 	mostlyclean-am
 
 distclean: distclean-am
@@ -549,9 +543,9 @@ info: info-am
 
 info-am:
 
-install-data-am: install-data-local install-testPROGRAMS
+install-data-am:
 
-install-exec-am:
+install-exec-am: install-libLTLIBRARIES
 
 install-info: install-info-am
 
@@ -577,33 +571,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-local uninstall-testPROGRAMS
+uninstall-am: uninstall-info-am uninstall-libLTLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-testPROGRAMS ctags distclean \
+	clean-libLTLIBRARIES clean-libtool ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am \
-	install-data-local install-exec install-exec-am install-info \
-	install-info-am install-man install-strip install-testPROGRAMS \
-	installcheck installcheck-am installdirs maintainer-clean \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am \
+	install-libLTLIBRARIES install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-info-am uninstall-local \
-	uninstall-testPROGRAMS
+	tags uninstall uninstall-am uninstall-info-am \
+	uninstall-libLTLIBRARIES
 
-
-install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(testdir)
-	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(testdir)/.runinfo
-	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" > $(DESTDIR)$(testdir)/run
-	@chmod +x $(DESTDIR)$(testdir)/run
-
-uninstall-local:
-	$(RM) $(DESTDIR)$(testdir)/.runinfo $(DESTDIR)$(testdir)/run
-
-run: all
-	@$(top_srcdir)/scripts/rtai-load --verbose
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

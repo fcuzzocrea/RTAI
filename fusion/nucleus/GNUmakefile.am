@@ -66,6 +66,7 @@ nodist_libnucleus_a_SOURCES = \
 libnucleus_a_CPPFLAGS = \
 	@RTAI_USER_CFLAGS@ -D__RTAI_UVM__ \
 	-I$(srcdir)/../include \
+	-I$(srcdir)/../skins \
 	-I../include
 
 libnucleus_a_AR = $(CROSS_COMPILE)ar cru
@@ -75,7 +76,3 @@ endif
 .PHONY: FORCE
 
 EXTRA_DIST = $(libmodule_SRC) ltt.c Makefile.kbuild Kconfig
-
-if CONFIG_RTAI_OPT_FUSION
-SUBDIRS = lib
-endif

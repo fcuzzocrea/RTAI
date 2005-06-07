@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <pthread.h>
-#include <nucleus/fusion.h>
 
 #define SAMPLING_PERIOD_US 1000	/* 1Khz sampling period. */
 
@@ -232,7 +231,6 @@ int main (int ac, char **av)
     struct sched_param param = { .sched_priority = 99 };
     pthread_t sampler_thid, cruncher_thid;
     pthread_attr_t thattr;
-    xnsysinfo_t info;
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
@@ -261,23 +259,6 @@ int main (int ac, char **av)
 
     if (sample_count == 0)
 	sample_count = 1000;
-
-    if (fusion_probe(&info) == 0)
-	printf("RTAI/fusion detected.\n");
-    else
-	{
-	FILE *fp = popen("grep 'cpu MHz' /proc/cpuinfo | cut -d: -f2","r");
-	char buf[BUFSIZ];
-
-	if (!fp || !fgets(buf,sizeof(buf),fp))
-	    {
-	    fprintf(stderr,"uhh? cannot determine CPU frequency reading /proc/cpuinfo?\n");
-	    exit(2);
-	    }
-
-	pclose(fp);
-	printf("RTAI/fusion *not* detected.\n");
-	}
 
     sem_init(&semA,0,0);
     sem_init(&semB,0,0);

@@ -1,3 +1,11 @@
+2005-06-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/fusion/lib: Deprecate the early fusion interface, which
+	is now superseded by the POSIX support in user-space.
+
+	* skins/uvm: Move the UVM portions of the deprecated fusion
+	interface to a separate skin.
+	
 2005-06-06  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* nucleus/pipe.c (xnpipe_read_wait): Wake up a single reader upon

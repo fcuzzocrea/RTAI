@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2001,2002,2003,2004,2005 Philippe Gerum <rpm@xenomai.org>.
+ * Copyright (C) 2005 Philippe Gerum <rpm@xenomai.org>.
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published
@@ -17,36 +17,34 @@
  * 02111-1307, USA.
  */
 
-#ifndef _RTAI_NUCLEUS_FUSION_H
-#define _RTAI_NUCLEUS_FUSION_H
+#include <nucleus/pod.h>
+#include <nucleus/fusion.h>
+#include <uvm/syscall.h>
 
-#include <rtai_config.h>
+MODULE_DESCRIPTION("UVM skin");
+MODULE_AUTHOR("rpm@xenomai.org");
+MODULE_LICENSE("GPL");
 
-/* Thread priority levels. */
-#define FUSION_LOW_PRIO     1
-#define FUSION_HIGH_PRIO    99
-/* Extra level for IRQ servers in user-space. */
-#define FUSION_IRQ_PRIO     (FUSION_HIGH_PRIO + 1)
+int __fusion_skin_init(void)
+{
+    int err = xnfusion_attach();
 
-#define FUSION_MIN_PRIO     FUSION_LOW_PRIO
-#define FUSION_MAX_PRIO     FUSION_IRQ_PRIO
+    if (!err)
+	err = __uvm_syscall_init();
 
-#ifdef __KERNEL__
+    if (err)
+        xnpod_shutdown(err);    
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+    xnprintf("starting UVM services.\n");
 
-int xnfusion_mount(void);
+    return err;
+}
 
-int xnfusion_umount(void);
+void __fusion_skin_exit(void)
+{
+    xnprintf("stopping UVM services.\n");
+    __uvm_syscall_cleanup();
+}
 
-int xnfusion_attach(void);
-
-#ifdef __cplusplus
-};
-#endif /* __cplusplus */
-
-#endif /* __KERNEL__ */
-
-#endif /* !_RTAI_NUCLEUS_FUSION_H */
+module_init(__fusion_skin_init);
+module_exit(__fusion_skin_exit);

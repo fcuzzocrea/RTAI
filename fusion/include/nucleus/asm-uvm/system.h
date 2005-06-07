@@ -30,9 +30,11 @@
 #include <stdio.h>
 #include <limits.h>
 #include <setjmp.h>
+#include <pthread.h>
 #include <rtai_config.h>
 #include <nucleus/asm/atomic.h>
-#include <nucleus/fusion.h>
+#include <nucleus/asm/syscall.h>
+#include <uvm/uvm.h>
 
 /* Module arg macros */
 #define vartype(var)               var ## _ ## tYpE
@@ -244,7 +246,7 @@ static inline void xnarch_unlock_irq (int x) {
     if (!x && uvm_irqlock)
 	{
 	if (xnarch_atomic_xchg(&uvm_irqpend,0))
-	    fusion_uvm_release(&uvm_irqlock);
+	    uvm_thread_release(&uvm_irqlock);
 	else
 	    uvm_irqlock = 0;
 	}
@@ -270,7 +272,7 @@ void xnarch_sync_irq (void)
 
 {
     if (uvm_irqlock)
-	fusion_uvm_hold(&uvm_irqpend);
+	uvm_thread_hold(&uvm_irqpend);
 }
 
 static inline int xnarch_hook_irq (unsigned irq,
@@ -381,7 +383,7 @@ int main (int argc, char *argv[])
     sigaction(XNARCH_SIG_RESTART,&sa,NULL);
 
     for (;;)
-	fusion_uvm_idle(&uvm_irqlock);
+	uvm_thread_idle(&uvm_irqlock);
 
     __fusion_user_exit();
     __fusion_skin_exit();
@@ -401,7 +403,7 @@ static inline void xnarch_program_timer_shot (unsigned long delay) {
 }
 
 static inline void xnarch_stop_timer (void) {
-    fusion_uvm_cancel(uvm_timer_handle,NULL);
+    uvm_thread_cancel(uvm_timer_handle,NULL);
 }
 
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
@@ -457,23 +459,23 @@ static void *xnarch_timer_thread (void *cookie)
     sched_setscheduler(0,SCHED_FIFO,&param);
 
     /* Copy the following values laid into our parent's stack before
-       it is unblocked from the completion by fusion_thread_create(). */
+       it is unblocked from the completion by uvm_thread_create(). */
     tickhandler = p->tickhandler;
     nstick = p->nstick;
 
-    fusion_thread_create("uvm-timer",NULL,&p->completion,&uvm_timer_handle);
+    uvm_thread_create("uvm-timer",NULL,&p->completion,&uvm_timer_handle);
 
-    err = fusion_thread_barrier();	/* Wait for start. */
+    err = uvm_thread_barrier();	/* Wait for start. */
 
     if (!err)
-	err = fusion_thread_set_periodic(0,nstick);
+	err = uvm_thread_set_periodic(0,nstick);
 
     if (err)
 	pthread_exit((void *)err);
 
     for (;;)
 	{
-	if (fusion_thread_wait_period() == -EWOULDBLOCK) /* Timer killed? */
+	if (uvm_thread_wait_period() == -EWOULDBLOCK) /* Timer killed? */
 	    break;
 
 	xnarch_sync_irq();
@@ -501,9 +503,9 @@ static inline int xnarch_start_timer (unsigned long nstick,
        wrt its jiffy-based timer. */
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    err = fusion_timer_start(0);
+    err = uvm_timer_start(0);
 #else /* !CONFIG_RTAI_HW_APERIODIC_TIMER */
-    err = fusion_timer_start(nstick);
+    err = uvm_timer_start(nstick);
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     if (err)
@@ -518,10 +520,10 @@ static inline int xnarch_start_timer (unsigned long nstick,
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
     pthread_create(&thid,&thattr,&xnarch_timer_thread,&parms);
 
-    err = fusion_thread_sync(&parms.completion);
+    err = uvm_thread_sync(&parms.completion);
 
     if (err == 0)
-	fusion_thread_start(uvm_timer_handle);
+	uvm_thread_start(uvm_timer_handle);
 
     return err;
 }
@@ -536,20 +538,20 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 				     xnarchtcb_t *in_tcb)
 {
     uvm_current = in_tcb;
-    fusion_uvm_activate(in_tcb->khandle,out_tcb->khandle);
+    uvm_thread_activate(in_tcb->khandle,out_tcb->khandle);
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
 					       xnarchtcb_t *next_tcb)
 {
     uvm_current = next_tcb;
-    fusion_uvm_cancel(dead_tcb->khandle,next_tcb->khandle);
+    uvm_thread_cancel(dead_tcb->khandle,next_tcb->khandle);
 }
 
 static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb)
 
 {
-    fusion_uvm_cancel(dead_tcb->khandle,NULL);
+    uvm_thread_cancel(dead_tcb->khandle,NULL);
 }
 
 static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
@@ -561,7 +563,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 
     param.sched_priority = sched_get_priority_min(SCHED_FIFO);
     sched_setscheduler(0,SCHED_FIFO,&param);
-    err = fusion_probe(&uvm_info);
+    err = uvm_system_info(&uvm_info);
 
     if (err)
 	{
@@ -569,7 +571,7 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 	exit(1);
 	}
 
-    fusion_thread_shadow("uvm-root",tcb,&tcb->khandle);
+    uvm_thread_shadow("uvm-root",tcb,&tcb->khandle);
     tcb->name = name;
     uvm_root = uvm_current = tcb;
 }
@@ -585,8 +587,8 @@ static void *xnarch_thread_trampoline (void *cookie)
 	{
 	param.sched_priority = sched_get_priority_min(SCHED_FIFO) + 1;
 	sched_setscheduler(0,SCHED_FIFO,&param);
-	fusion_thread_create(tcb->name,tcb,&tcb->completion,&tcb->khandle);
-	err = fusion_thread_barrier();	/* Wait for start. */
+	uvm_thread_create(tcb->name,tcb,&tcb->completion,&tcb->khandle);
+	err = uvm_thread_barrier();	/* Wait for start. */
 	if (err)
 	    pthread_exit((void *)err);
 	}
@@ -626,7 +628,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
     pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
-    fusion_thread_sync(&tcb->completion);
+    uvm_thread_sync(&tcb->completion);
 }
 
 static inline void xnarch_enable_fpu(xnarchtcb_t *current_tcb) {
@@ -689,20 +691,20 @@ extern xnsysinfo_t uvm_info;
 static inline unsigned long long xnarch_tsc_to_ns (unsigned long long tsc) {
 
     nanostime_t ns;
-    return fusion_timer_tsc2ns(tsc,&ns) ? 0 : ns;
+    return uvm_timer_tsc2ns(tsc,&ns) ? 0 : ns;
 }
 
 static inline unsigned long long xnarch_ns_to_tsc (unsigned long long ns) {
 
     nanostime_t tsc;
-    return fusion_timer_ns2tsc(ns,&tsc) ? 0 : tsc;
+    return uvm_timer_ns2tsc(ns,&tsc) ? 0 : tsc;
 }
 
 static inline unsigned long long xnarch_get_cpu_time (void)
 
 {
     nanotime_t t;
-    fusion_timer_read(&t);
+    uvm_timer_read(&t);
     return t;
 }
 
@@ -710,7 +712,7 @@ static inline unsigned long long xnarch_get_cpu_tsc (void)
 
 {
     nanotime_t t;
-    fusion_timer_tsc(&t);
+    uvm_timer_tsc(&t);
     return t;
 }
 

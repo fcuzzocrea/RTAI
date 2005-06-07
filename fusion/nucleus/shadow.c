@@ -1091,7 +1091,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
 	    if (!thread)	/* Not a shadow anyway. */
 		__xn_success_return(regs,-EPERM);
-	    else if (__xn_reg_arg1(regs) == FUSION_RTAI_DOMAIN) /* Linux => RTAI */
+	    else if (__xn_reg_arg1(regs) == XENOMAI_RTAI_DOMAIN) /* Linux => RTAI */
 		{
 		if (!xnthread_test_flags(thread,XNRELAX))
 		    __xn_success_return(regs,0);
@@ -1101,7 +1101,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 		       the Linux-level handler. */
 		    adeos_propagate_event(evinfo);
 		}
-	    else if (__xn_reg_arg1(regs) == FUSION_LINUX_DOMAIN) /* RTAI => Linux */
+	    else if (__xn_reg_arg1(regs) == XENOMAI_LINUX_DOMAIN) /* RTAI => Linux */
 		{
 		if (xnthread_test_flags(thread,XNRELAX))
 		    __xn_success_return(regs,0);
@@ -1511,7 +1511,7 @@ int xnshadow_register_interface (const char *name,
     /* We can only handle up to 256 syscalls per skin, check for over-
        and underflow (MKL). */
 
-    if (XNARCH_MAX_SYSENT < nrcalls || 0 > nrcalls)
+    if (XENOMAI_MAX_SYSENT < nrcalls || 0 > nrcalls)
 	return -EINVAL;
 
     xnlock_get_irqsave(&nklock,s);

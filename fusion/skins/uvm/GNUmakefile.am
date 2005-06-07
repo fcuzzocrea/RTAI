@@ -1,0 +1,47 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+includedir = $(prefix)/include/uvm
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_SRC = \
+	module.c \
+	syscall.c
+
+include_HEADERS = \
+	uvm.h
+
+noinst_HEADERS = \
+	syscall.h
+
+rtai_uvm$(modext): @RTAI_KBUILD_ENV@
+rtai_uvm$(modext): $(libmodule_SRC) FORCE
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
+	@RTAI_KBUILD_BOTTOM@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
+all-local: rtai_uvm$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_uvm$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+uninstall-local:
+	$(RM) $(moduledir)/rtai_uvm$(modext)
+
+.PHONY: FORCE
+
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild Kconfig
+
+SUBDIRS = lib

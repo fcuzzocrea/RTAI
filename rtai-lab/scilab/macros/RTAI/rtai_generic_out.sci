@@ -19,7 +19,7 @@ case 'set' then
   label=graphics.exprs;
   while %t do
     [ok,ip,name,lab]=..
-        getvalue('Set RTAI-mbx_send_if block parameters',..
+        getvalue('Set RTAI generic output block parameters',..
         ['input ports';
 	'Identifier'],..
          list('vec',-1,'str',1),label(1))

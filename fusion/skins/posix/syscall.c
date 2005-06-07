@@ -209,6 +209,25 @@ int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
+int __clock_getres (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    struct timespec ts;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ts)))
+	return -EFAULT;
+
+    err = clock_getres(CLOCK_MONOTONIC,&ts);
+
+    if (!err)
+	__xn_copy_to_user(curr,
+			  (void __user *)__xn_reg_arg1(regs),
+			  &ts,
+			  sizeof(ts));
+    return -err;
+}
+
 int __clock_gettime (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -383,6 +402,7 @@ static xnsysent_t __systab[] = {
     [__pse51_sem_destroy] = { &__sem_destroy, __xn_exec_any },
     [__pse51_sem_post] = { &__sem_post, __xn_exec_any },
     [__pse51_sem_wait] = { &__sem_wait, __xn_exec_primary },
+    [__pse51_clock_getres] = { &__clock_getres, __xn_exec_any },
     [__pse51_clock_gettime] = { &__clock_gettime, __xn_exec_any },
     [__pse51_clock_settime] = { &__clock_settime, __xn_exec_any },
     [__pse51_clock_nanosleep] = { &__clock_nanosleep, __xn_exec_primary },

@@ -109,6 +109,7 @@ int main (int argc, char **argv)
     struct sched_param paramB = { .sched_priority = 99 };
     pthread_attr_t thattrA, thattrB;
     pthread_t thidA, thidB;
+    struct timespec ts;
     time_t now;
     int err, c;
 
@@ -131,9 +132,11 @@ int main (int argc, char **argv)
 
     time(&now);
 
-    printf("Starting latency measurements at %sSampling period = %d us\nHit ^C to get the results.\n",
-	   ctime(&now),
-	   sampling_period);
+    clock_getres(CLOCK_MONOTONIC,&ts);
+    printf("Starting latency measurements at %s\n",ctime(&now));
+    printf("Sampling period = %d us\n",sampling_period);
+    printf("Clock resolution = %ld us\n",ts.tv_sec * 1000000 + ts.tv_nsec / 1000);
+    printf("Hit ^C to get the results.\n");
 
     mlockall(MCL_CURRENT|MCL_FUTURE);
 

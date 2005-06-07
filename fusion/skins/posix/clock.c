@@ -19,7 +19,7 @@
 
 #include "posix/thread.h"
 
-/* Only CLOCK_MONOTONIC is supported for the moment. */
+/* Only CLOCK_MONOTONIC is supported for the time being. */
 
 int clock_getres (clockid_t clock_id, struct timespec *res)
 

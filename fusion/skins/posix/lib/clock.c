@@ -26,6 +26,17 @@ extern int __pse51_muxid;
    now. Calls referring to other clock types are simply routed to the
    libc. */
 
+int __wrap_clock_getres (clockid_t clock_id, struct timespec *tp)
+
+{
+    if (clock_id != CLOCK_MONOTONIC)
+        return __real_clock_getres(clock_id,tp);
+
+    return -XENOMAI_SKINCALL1(__pse51_muxid,
+			      __pse51_clock_getres,
+			      tp);
+}
+
 int __wrap_clock_gettime (clockid_t clock_id, struct timespec *tp)
 
 {

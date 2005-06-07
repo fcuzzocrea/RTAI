@@ -86,6 +86,9 @@ int __real_pthread_mutex_trylock(pthread_mutex_t *mutex);
 
 int __real_pthread_mutex_unlock(pthread_mutex_t *mutex);
 
+int __real_clock_getres(clockid_t clock_id,
+			struct timespec *tp);
+
 int __real_clock_gettime(clockid_t clock_id,
 			 struct timespec *tp);
 

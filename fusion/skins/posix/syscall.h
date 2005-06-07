@@ -33,15 +33,16 @@
 #define __pse51_sem_destroy           7
 #define __pse51_sem_post              8
 #define __pse51_sem_wait              9
-#define __pse51_clock_gettime         10
-#define __pse51_clock_settime         11
-#define __pse51_clock_nanosleep       12
-#define __pse51_mutex_init            13
-#define __pse51_mutex_destroy         14
-#define __pse51_mutex_lock            15
-#define __pse51_mutex_timedlock       16
-#define __pse51_mutex_trylock         17
-#define __pse51_mutex_unlock          18
+#define __pse51_clock_getres          10
+#define __pse51_clock_gettime         11
+#define __pse51_clock_settime         12
+#define __pse51_clock_nanosleep       13
+#define __pse51_mutex_init            14
+#define __pse51_mutex_destroy         15
+#define __pse51_mutex_lock            16
+#define __pse51_mutex_timedlock       17
+#define __pse51_mutex_trylock         18
+#define __pse51_mutex_unlock          19
 
 #ifdef __KERNEL__
 

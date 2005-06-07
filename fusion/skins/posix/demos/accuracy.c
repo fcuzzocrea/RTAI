@@ -135,7 +135,7 @@ int main (int argc, char **argv)
     clock_getres(CLOCK_MONOTONIC,&ts);
     printf("Starting latency measurements at %s\n",ctime(&now));
     printf("Sampling period = %d us\n",sampling_period);
-    printf("Clock resolution = %ld us\n",ts.tv_sec * 1000000 + ts.tv_nsec / 1000);
+    printf("Clock resolution = %ld ns\n",ts.tv_sec * 1000000000 + ts.tv_nsec);
     printf("Hit ^C to get the results.\n");
 
     mlockall(MCL_CURRENT|MCL_FUTURE);

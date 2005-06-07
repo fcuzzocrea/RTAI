@@ -306,8 +306,8 @@ END_C_DECLS
 #undef CLOCK_MONOTONIC
 #undef CLOCK_REALTIME
 typedef enum pse51_clockid {
-    CLOCK_REALTIME  =0		/* For absolute timeouts. */
-    CLOCK_MONOTONIC =1,		/* For relative timeouts. */
+    CLOCK_REALTIME  =0,		/* For absolute timeouts. */
+    CLOCK_MONOTONIC =1		/* For relative timeouts. */
 } clockid_t;
 #endif /* __KERNEL__ */
 

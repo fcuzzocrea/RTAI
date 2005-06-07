@@ -73,7 +73,6 @@
 #endif /* CONFIG_X86_LOCAL_APIC */
 
 union rtai_lxrt_t {
-
     RTIME rt;
     int i[2];
     void *v[2];
@@ -94,22 +93,13 @@ extern "C" {
 #define __LXRT_GET_DATASEG(reg) "movl $" STR(__USER_DS) ",%" #reg "\n\t"
 #endif  /* KERNEL_VERSION < 2.6.0 */
 
-static inline void _lxrt_context_switch (struct task_struct *prev,
-					 struct task_struct *next,
-					 int cpuid)
+static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
-    struct mm_struct *oldmm = prev->active_mm;
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-    switch_mm(oldmm,next->active_mm,next,cpuid);
+	struct mm_struct *oldmm = prev->active_mm;
 
-    if (!next->mm)
-	enter_lazy_tlb(oldmm,next,cpuid);
-#else /* >= 2.6.0 */
-    switch_mm(oldmm,next->active_mm,next);
-
-    if (!next->mm) enter_lazy_tlb(oldmm,next);
-#endif /* < 2.6.0 */
+	switch_mm(oldmm,next->active_mm,next,cpuid);
+	if (!next->mm) enter_lazy_tlb(oldmm,next,cpuid);
 
 /* NOTE: Do not use switch_to() directly: this is a compiler
    compatibility issue. */
@@ -120,9 +110,9 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
    So let's experiment a bit more, simple Linux reuse is better (Paolo) */
 
 #if 1
-    switch_to(prev, next, prev);
+	switch_to(prev, next, prev);
 #else
-    __asm__ __volatile__(						\
+	__asm__ __volatile__(						\
 		 "pushfl\n\t"				       		\
 		 "cli\n\t"				       		\
 		 "pushl %%esi\n\t"				        \
@@ -144,7 +134,10 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 		  "a" (prev), "d" (next),				\
 		  "b" (prev));						
 #endif
-    barrier();
+#else /* >= 2.6.0 */
+	extern void context_switch(void *, void *, void *);
+	context_switch(0, prev, next);
+#endif /* < 2.6.0 */
 }
 
 #if 0

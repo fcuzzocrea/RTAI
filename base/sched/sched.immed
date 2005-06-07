@@ -689,11 +689,8 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 	return NULL;
 }
 
-
-static void lxrt_context_switch(struct task_struct *prev, struct task_struct *next, int cpuid)
-{
-	_lxrt_context_switch(prev, next, cpuid);
-}
+#define lxrt_context_switch(prev, next, cpuid) \
+	do { _lxrt_context_switch(prev, next, cpuid); barrier(); } while (0)
 
 #ifdef CONFIG_SMP
 static void rt_schedule_on_schedule_ipi(void)
@@ -1736,7 +1733,7 @@ static inline void lxrt_sigfillset(void)
 #endif
 }
 
-static void thread_fun(int cpuid) 
+static void kthread_fun(int cpuid) 
 {
 	void steal_from_linux(RT_TASK *);
 	void give_back_to_linux(RT_TASK *, int);
@@ -1754,30 +1751,22 @@ static void thread_fun(int cpuid)
 	while(1) {
 		rt_task_suspend(task);
 		current->comm[0] = 'U';
-		task = current->rtai_tskext(0);
+		if (!(task = current->rtai_tskext(0))->max_msg_size[0]) {
+			break;
+		}
 		task->exectime[1] = rdtsc();
 		((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
-#if 0
-		give_back_to_linux(task, 0);
-		rt_task_delete(task);
-		current->comm[0] = 'D';
-#else
 		current->comm[0] = 'F';
+		current->rtai_tskext(1) = 0;
 		rtai_cli();
-		if (taskidx[cpuid] < SpareKthreads) {;
+		if (taskidx[cpuid] < SpareKthreads) {
 			taskav[cpuid][taskidx[cpuid]++] = task->lnxtsk;
-		}	
+		}
 		rtai_sti();
-#endif
 	}
+	give_back_to_linux(task, 0);
+	clr_rtext(task);
 }
-
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7)
-#ifndef CONFIG_X86_64
-static inline _syscall3(pid_t,waitpid,pid_t,pid,int *,wait_stat,int,options)
-#endif
-#endif /* LINUX_VERSION_CODE > KERNEL_VERSION(2,6,7) */
-
 
 static void kthread_m(int cpuid)
 {
@@ -1804,22 +1793,23 @@ static void kthread_m(int cpuid)
 			flags = rt_global_save_flags_and_cli();
 			hard = (unsigned long)(lnxtsk = klistp->task[klistp->out & (MAX_WAKEUP_SRQ - 1)]);
 			if (hard > 1) {
-				lnxtsk->rtai_tskext(0) = NULL;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10)
-				lnxtsk->state = TASK_ZOMBIE;
-#endif
-				rt_global_sti();
-				force_sig(SIGKILL, lnxtsk);
-				rt_global_cli();
+				if (lnxtsk->rtai_tskext(2)) {
+					if (lnxtsk->rtai_tskext(1) && taskidx[cpuid] < SpareKthreads) {;
+						taskav[cpuid][taskidx[cpuid]++] = lnxtsk;
+						lnxtsk->comm[0] = 'F';
+					}
+					kthread_fun_long_jump(lnxtsk);
+				}
 			} else {
 				if (taskidx[cpuid] < Reservoir) {
 					task->suspdepth = task->state = 0;
 					rt_global_sti();
-					kernel_thread((void *)thread_fun, (void *)(long)cpuid, 0);
+					kernel_thread((void *)kthread_fun, (void *)(long)cpuid, 0);
 					while (task->state != (RT_SCHED_READY | RT_SCHED_SUSPENDED)) {
 						current->state = TASK_INTERRUPTIBLE;
 						schedule_timeout(2);
 					}
+					kthread_fun_set_jump(task->lnxtsk);
 					rt_global_cli();
 					taskav[cpuid][taskidx[cpuid]++] = (void *)task->lnxtsk;
 				}
@@ -2562,7 +2552,6 @@ static int lxrt_init(void)
 
     Reservoir = (Reservoir + NR_RT_CPUS - 1)/NR_RT_CPUS;
 
-#ifndef CONFIG_X86_64
     for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
 	{
 	taskav[cpuid] = (void *)kmalloc(SpareKthreads*sizeof(void *), GFP_KERNEL);
@@ -2572,7 +2561,6 @@ static int lxrt_init(void)
 	klistm[cpuid].in = (2*Reservoir) & (MAX_WAKEUP_SRQ - 1);
 	wake_up_process(kthreadm[cpuid]);
 	}
-#endif
 
     for (cpuid = 0; cpuid < MAX_LXRT_FUN; cpuid++)
 	{
@@ -2604,91 +2592,76 @@ static int lxrt_init(void)
 }
 
 static void lxrt_exit(void)
-
 {
-    unsigned long flags;
-    int cpuid;
+	RT_TASK *rt_task;
+	struct task_struct *kthread;
+	unsigned long flags;
+	int cpuid;
 
 #ifdef CONFIG_PROC_FS
-    rtai_proc_lxrt_unregister();
+	rtai_proc_lxrt_unregister();
 #endif
 
-#ifndef CONFIG_X86_64
-    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	{
-	struct klist_t *klistp;
-	struct task_struct *kthread;
-	klistp = &klistm[cpuid];
+	rt_task = kmalloc(sizeof(RT_TASK), GFP_KERNEL);
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
+		while ((kthread = __get_kthread(cpuid))) {
+			if (kthread->rtai_tskext(2)) {
+				kfree(kthread->rtai_tskext(2));
+			}
+			rt_task->magic = 0;
+			set_rtext(rt_task, 0, 0, 0, cpuid, kthread);
+			rt_task->max_msg_size[0] = 0;
+			rt_task_resume(rt_task);
+			while (rt_task->magic || rt_task->state) {
+				current->state = TASK_INTERRUPTIBLE;
+				schedule_timeout(2);
+			}
+		}
+	}
+	kfree(rt_task);
 
-	while ((kthread = __get_kthread(cpuid)))
-	    {
-	    klistp->task[klistp->in & (MAX_WAKEUP_SRQ - 1)] = kthread;
-	    klistp->in++;
-	    }
-	
-	wake_up_process(kthreadm[cpuid]);
-	
-	while (kthreadm[cpuid]->state != TASK_UNINTERRUPTIBLE)
-	    {
-	    current->state = TASK_INTERRUPTIBLE;
-	    schedule_timeout(2);
-	    }
+	endkthread = 1;
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
+		wake_up_process(kthreadm[cpuid]);
+		while (kthreadm[cpuid]) {
+			current->state = TASK_INTERRUPTIBLE;
+			schedule_timeout(2);
+		}
+		kfree(taskav[cpuid]);
 	}
 
-    endkthread = 1;
+	rt_set_rtai_trap_handler(lxrt_old_trap_handler);
 
-    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	{
-	wake_up_process(kthreadm[cpuid]);
+	adeos_virtualize_irq(wake_up_srq.srq, NULL, NULL, 0);
+	adeos_free_irq(wake_up_srq.srq);
 
-	while (kthreadm[cpuid])
-	    {
-	    current->state = TASK_INTERRUPTIBLE;
-	    schedule_timeout(2);
-	    }
-
-	kfree(taskav[cpuid]);
-	}
-#endif
-
-    rt_set_rtai_trap_handler(lxrt_old_trap_handler);
-
-    adeos_virtualize_irq(wake_up_srq.srq, NULL, NULL, 0);
-    adeos_free_irq(wake_up_srq.srq);
-
-    /* Must be called on behalf of the Linux domain. */
-    adeos_catch_event(ADEOS_SIGNAL_PROCESS, NULL);
-    adeos_catch_event(ADEOS_SCHEDULE_HEAD, NULL);
-    adeos_catch_event(ADEOS_SCHEDULE_TAIL, NULL);
-    adeos_catch_event(ADEOS_SYSCALL_PROLOGUE, NULL);
-    adeos_catch_event(ADEOS_SYSCALL_EPILOGUE, NULL);
-    adeos_catch_event(ADEOS_EXIT_PROCESS, NULL);
-    adeos_catch_event(ADEOS_KICK_PROCESS, NULL);
+	adeos_catch_event(ADEOS_SIGNAL_PROCESS, NULL);
+	adeos_catch_event(ADEOS_SCHEDULE_HEAD, NULL);
+	adeos_catch_event(ADEOS_SCHEDULE_TAIL, NULL);
+	adeos_catch_event(ADEOS_SYSCALL_PROLOGUE, NULL);
+	adeos_catch_event(ADEOS_SYSCALL_EPILOGUE, NULL);
+	adeos_catch_event(ADEOS_EXIT_PROCESS, NULL);
+	adeos_catch_event(ADEOS_KICK_PROCESS, NULL);
 	rtai_lxrt_dispatcher = NULL;
     
-    flags = rtai_critical_enter(NULL);
-
+	flags = rtai_critical_enter(NULL);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-    {
-    struct mmreq *p;
-
-    /* Flush the MM log for all processors */
-    for (p = lxrt_mmrqtab; p < lxrt_mmrqtab + NR_CPUS; p++)
-	{
-	while (p->out != p->in)
-	    {
-	    struct mm_struct *oldmm = p->mm[p->out];
-	    mmdrop(oldmm);
-	    bump_mmreq(p->out);
-	    p->count--;
-	    }
-	}
-    }
+	do {
+		struct mmreq *p;
+/* Flush the MM log for all processors */
+		for (p = lxrt_mmrqtab; p < lxrt_mmrqtab + NR_CPUS; p++) {
+			while (p->out != p->in) {
+				struct mm_struct *oldmm = p->mm[p->out];
+				mmdrop(oldmm);
+				bump_mmreq(p->out);
+				p->count--;
+			}
+		}
+	} while (0);
 #endif  /* KERNEL_VERSION < 2.6.0 */
+	rtai_critical_exit(flags);
 
-    rtai_critical_exit(flags);
-
-    reset_rt_fun_entries(rt_sched_entries);
+	reset_rt_fun_entries(rt_sched_entries);
 }
 
 #ifdef DECLR_8254_TSC_EMULATION

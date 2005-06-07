@@ -20,6 +20,7 @@
 #include <memory.h>
 #include <malloc.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <limits.h>
 #include <rtai/syscall.h>
 #include <rtai/task.h>
@@ -97,7 +98,7 @@ int rt_task_create (RT_TASK *task,
        the new Linux thread, which in turn will be mapped to a
        real-time shadow. */
 
-    XENOMAI_SYSCALL1(__xn_sys_migrate,FUSION_LINUX_DOMAIN);
+    XENOMAI_SYSCALL1(__xn_sys_migrate,XENOMAI_LINUX_DOMAIN);
 
     completion.syncflag = 0;
     completion.pid = -1;

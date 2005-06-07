@@ -19,6 +19,7 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include <rtai/syscall.h>
 #include <rtai/task.h>
 
@@ -50,7 +51,10 @@ static __attribute__((constructor)) void __init_rtai_interface(void)
     /* Allocate a TSD key for indexing self task pointers. */
 
     if (pthread_key_create(&__rtai_tskey,&__flush_tsd) != 0)
-	return -1;
+	{
+	fprintf(stderr,"RTAI/fusion: failed to allocate new TSD key?!\n");
+	exit(1);
+	}
 
     __rtai_muxid = muxid;
 }

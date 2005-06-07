@@ -1,5 +1,8 @@
 2005-06-07  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-uvm/system.h (main): Force
+	mlockall(MCL_CURRENT) after the user init coded has returned.
+
 	* nucleus/fusion/lib: Deprecate the early fusion interface, which
 	is now superseded by the POSIX support in user-space.
 

@@ -21,6 +21,7 @@
 #define _RTAI_ASM_UVM_SYSTEM_H
 
 #include <sys/time.h>
+#include <sys/mman.h>
 #include <errno.h>
 #include <malloc.h>
 #include <stdlib.h>
@@ -376,6 +377,13 @@ int main (int argc, char *argv[])
         fprintf(stderr,"user_init() failed: %s\n",strerror(-err));
         exit(4);
 	}
+
+    /* Lock all the memory space which has been allocated from the
+       user initialization code. We leave MCL_FUTURE in the hands of
+       the user, since use of mapped I/O memory might require
+       decoupling the locking operations as follows:
+       mlockall(MCL_CURRENT) + mmap() + mlockall(MCL_FUTURE). */
+    mlockall(MCL_CURRENT);
 
     sa.sa_handler = &xnarch_restart_handler;
     sigemptyset(&sa.sa_mask);

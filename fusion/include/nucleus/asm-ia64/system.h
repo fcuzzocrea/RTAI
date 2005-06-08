@@ -28,8 +28,8 @@
 #include <linux/config.h>
 #include <linux/ptrace.h>
 
-#if ADEOS_RELEASE_NUMBER < 0x0206070a
-#error "Adeos 2.6r7c10/ia64 or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x0206070b
+#error "Adeos 2.6r7c11/ia64 or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/ia64/"
 #endif
 

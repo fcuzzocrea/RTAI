@@ -3008,7 +3008,7 @@ diff -uNrp linux-2.6.11/arch/ia64/mm/fault.c linux-2.6.11-ia64-adeos/arch/ia64/m
  	 * If we're in an interrupt or have no user context, we must not take the fault..
 diff -uNrp linux-2.6.11/include/asm-ia64/adeos.h linux-2.6.11-ia64-adeos/include/asm-ia64/adeos.h
 --- linux-2.6.11/include/asm-ia64/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.11-ia64-adeos/include/asm-ia64/adeos.h	2005-05-27 19:14:33.000000000 +0200
++++ linux-2.6.11-ia64-adeos/include/asm-ia64/adeos.h	2005-06-08 19:52:26.000000000 +0200
 @@ -0,0 +1,479 @@
 +/*
 + *   include/asm-ia64/adeos.h
@@ -3042,9 +3042,9 @@ diff -uNrp linux-2.6.11/include/asm-ia64/adeos.h linux-2.6.11-ia64-adeos/include
 +#include <linux/list.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r7c10/ia64"
++#define ADEOS_ARCH_STRING     "r7c11/ia64"
 +#define ADEOS_MAJOR_NUMBER    7
-+#define ADEOS_MINOR_NUMBER    10
++#define ADEOS_MINOR_NUMBER    11
 +
 +extern int adp_pipelined;
 +
@@ -3640,7 +3640,7 @@ diff -uNrp linux-2.6.11/include/asm-ia64/system.h linux-2.6.11-ia64-adeos/includ
  
 diff -uNrp linux-2.6.11/include/linux/adeos.h linux-2.6.11-ia64-adeos/include/linux/adeos.h
 --- linux-2.6.11/include/linux/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.11-ia64-adeos/include/linux/adeos.h	2005-05-25 19:22:46.000000000 +0200
++++ linux-2.6.11-ia64-adeos/include/linux/adeos.h	2005-06-08 22:51:27.000000000 +0200
 @@ -0,0 +1,518 @@
 +/*
 + *   include/linux/adeos.h
@@ -3857,9 +3857,9 @@ diff -uNrp linux-2.6.11/include/linux/adeos.h linux-2.6.11-ia64-adeos/include/li
 +
 +void __adeos_schedule_back_root(struct task_struct *prev);
 +
-+void __adeos_setscheduler_root(struct task_struct *p,
-+			       int policy,
-+			       int prio);
++int __adeos_setscheduler_root(struct task_struct *p,
++			      int policy,
++			      int prio);
 +
 +void __adeos_reenter_root(struct task_struct *prev,
 +			  int policy,
@@ -5372,7 +5372,7 @@ diff -uNrp linux-2.6.11/kernel/printk.c linux-2.6.11-ia64-adeos/kernel/printk.c
   * If the console code is currently allowed to sleep, and
 diff -uNrp linux-2.6.11/kernel/sched.c linux-2.6.11-ia64-adeos/kernel/sched.c
 --- linux-2.6.11/kernel/sched.c	2005-03-02 08:38:19.000000000 +0100
-+++ linux-2.6.11-ia64-adeos/kernel/sched.c	2005-05-25 19:15:32.000000000 +0200
++++ linux-2.6.11-ia64-adeos/kernel/sched.c	2005-06-08 22:29:49.000000000 +0200
 @@ -292,7 +292,16 @@ static DEFINE_PER_CPU(struct runqueue, r
   * Default context-switch locking:
   */
@@ -5479,31 +5479,40 @@ diff -uNrp linux-2.6.11/kernel/sched.c linux-2.6.11-ia64-adeos/kernel/sched.c
  	array = p->array;
  	if (array)
  		deactivate_task(p, rq);
-@@ -5051,3 +5107,51 @@ void normalize_rt_tasks(void)
+@@ -5051,3 +5107,60 @@ void normalize_rt_tasks(void)
  }
  
  #endif /* CONFIG_MAGIC_SYSRQ */
 +
 +#ifdef CONFIG_ADEOS_CORE
 +
-+void __adeos_setscheduler_root (struct task_struct *p, int policy, int prio)
++int __adeos_setscheduler_root (struct task_struct *p, int policy, int prio)
 +{
 +	prio_array_t *array;
 +	unsigned long flags;
 +	runqueue_t *rq;
++	int oldprio;
 +
-+	read_lock_irq(&tasklist_lock);
++	if (prio < 1 || prio > MAX_RT_PRIO-1)
++	    return -EINVAL;
++
 +	rq = task_rq_lock(p, &flags);
 +	array = p->array;
 +	if (array)
-+	    deactivate_task(p, task_rq(p));
++		deactivate_task(p, rq);
++	oldprio = p->prio;
 +	__setscheduler(p, policy, prio);
 +	if (array) {
-+		__activate_task(p, task_rq(p));
-+		resched_task(rq->curr);
++		__activate_task(p, rq);
++		if (task_running(rq, p)) {
++			if (p->prio > oldprio)
++				resched_task(rq->curr);
++		} else if (TASK_PREEMPTS_CURR(p, rq))
++			resched_task(rq->curr);
 +	}
 +	task_rq_unlock(rq, &flags);
-+	read_unlock_irq(&tasklist_lock);
++
++	return 0;
 +}
 +
 +EXPORT_SYMBOL(__adeos_setscheduler_root);

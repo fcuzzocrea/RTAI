@@ -3,6 +3,8 @@
 	* arch/i386/patches: Upgrade to r11c1 which fixes a nasty bug in
 	__adeos_setscheduler_root().
 	
+	* arch/ia64/patches: Upgrade to r7c11; same reason as above.
+	
 	* include/nucleus/asm-i386/syscall.h: Use VSYSCALL support.
 
 2005-06-08  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

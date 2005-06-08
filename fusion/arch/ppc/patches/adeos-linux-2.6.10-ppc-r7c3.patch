@@ -3006,7 +3006,7 @@ diff -uNrp linux-2.6.10/arch/ppc/platforms/pmac_pic.c linux-2.6.10-ppc-adeos/arc
  	.mask		= CPU_MASK_NONE,
 diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h
 --- linux-2.6.10/include/asm-ppc/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h	2005-05-29 18:44:34.000000000 +0200
++++ linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h	2005-06-08 19:52:42.000000000 +0200
 @@ -0,0 +1,448 @@
 +/*
 + *   include/asm-ppc/adeos.h
@@ -3047,9 +3047,9 @@ diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/a
 +#include <linux/cpumask.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r7c2/ppc"
++#define ADEOS_ARCH_STRING     "r7c3/ppc"
 +#define ADEOS_MAJOR_NUMBER    7
-+#define ADEOS_MINOR_NUMBER    2
++#define ADEOS_MINOR_NUMBER    3
 +
 +#define ADEOS_IRQ_ACKED		0x1000
 +#define ADEOS_IRQ_ACKED_MASK	(ADEOS_IRQ_ACKED - 1)
@@ -3618,7 +3618,7 @@ diff -uNrp linux-2.6.10/include/asm-ppc/smp.h linux-2.6.10-ppc-adeos/include/asm
  
 diff -uNrp linux-2.6.10/include/linux/adeos.h linux-2.6.10-ppc-adeos/include/linux/adeos.h
 --- linux-2.6.10/include/linux/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/include/linux/adeos.h	2005-04-15 11:57:59.000000000 +0200
++++ linux-2.6.10-ppc-adeos/include/linux/adeos.h	2005-06-08 19:22:33.000000000 +0200
 @@ -0,0 +1,518 @@
 +/*
 + *   include/linux/adeos.h
@@ -3835,9 +3835,9 @@ diff -uNrp linux-2.6.10/include/linux/adeos.h linux-2.6.10-ppc-adeos/include/lin
 +
 +void __adeos_schedule_back_root(struct task_struct *prev);
 +
-+void __adeos_setscheduler_root(struct task_struct *p,
-+			       int policy,
-+			       int prio);
++int __adeos_setscheduler_root(struct task_struct *p,
++			      int policy,
++			      int prio);
 +
 +void __adeos_reenter_root(struct task_struct *prev,
 +			  int policy,
@@ -5317,7 +5317,7 @@ diff -uNrp linux-2.6.10/kernel/printk.c linux-2.6.10-ppc-adeos/kernel/printk.c
   * If the console code is currently allowed to sleep, and
 diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-ppc-adeos/kernel/sched.c
 --- linux-2.6.10/kernel/sched.c	2004-12-24 22:35:24.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/kernel/sched.c	2005-04-15 10:32:29.000000000 +0200
++++ linux-2.6.10-ppc-adeos/kernel/sched.c	2005-06-08 19:50:47.000000000 +0200
 @@ -302,7 +302,16 @@ static DEFINE_PER_CPU(struct runqueue, r
   * Default context-switch locking:
   */
@@ -5404,31 +5404,42 @@ diff -uNrp linux-2.6.10/kernel/sched.c linux-2.6.10-ppc-adeos/kernel/sched.c
  	/*
  	 * To be able to change p->policy safely, the apropriate
  	 * runqueue lock must be held.
-@@ -4676,3 +4722,51 @@ void normalize_rt_tasks(void)
+@@ -4676,3 +4722,62 @@ void normalize_rt_tasks(void)
  }
  
  #endif /* CONFIG_MAGIC_SYSRQ */
 +
 +#ifdef CONFIG_ADEOS_CORE
 +
-+void __adeos_setscheduler_root (struct task_struct *p, int policy, int prio)
++int __adeos_setscheduler_root (struct task_struct *p, int policy, int prio)
 +{
 +	prio_array_t *array;
 +	unsigned long flags;
 +	runqueue_t *rq;
++	int oldprio;
++
++	if (prio < 1 || prio > MAX_RT_PRIO-1)
++	    return -EINVAL;
 +
 +	read_lock_irq(&tasklist_lock);
 +	rq = task_rq_lock(p, &flags);
 +	array = p->array;
 +	if (array)
-+	    deactivate_task(p, task_rq(p));
++		deactivate_task(p, rq);
++	oldprio = p->prio;
 +	__setscheduler(p, policy, prio);
 +	if (array) {
-+		__activate_task(p, task_rq(p));
-+		resched_task(rq->curr);
++		__activate_task(p, rq);
++		if (task_running(rq, p)) {
++			if (p->prio > oldprio)
++				resched_task(rq->curr);
++		} else if (TASK_PREEMPTS_CURR(p, rq))
++			resched_task(rq->curr);
 +	}
 +	task_rq_unlock(rq, &flags);
 +	read_unlock_irq(&tasklist_lock);
++
++	return 0;
 +}
 +
 +EXPORT_SYMBOL(__adeos_setscheduler_root);

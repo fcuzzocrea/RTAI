@@ -27,8 +27,8 @@
 #include <linux/config.h>
 #include <linux/ptrace.h>
 
-#if ADEOS_RELEASE_NUMBER < 0x02060701
-#error "Adeos 2.6r7c1/ppc or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x02060703
+#error "Adeos 2.6r7c3/ppc or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/ppc/"
 #endif
 

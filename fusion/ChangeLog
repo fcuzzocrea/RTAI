@@ -5,6 +5,8 @@
 	
 	* arch/ia64/patches: Upgrade to r7c11; same reason as above.
 	
+	* arch/ppc/patches: Upgrade to r7c3; same reason as above.
+	
 	* include/nucleus/asm-i386/syscall.h: Use VSYSCALL support.
 
 2005-06-08  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

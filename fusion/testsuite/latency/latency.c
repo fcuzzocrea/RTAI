@@ -290,7 +290,7 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
     time(&test_end);
     actual_duration = test_end - test_start - WARMUP_TIME;
     if (!test_duration) test_duration = actual_duration;
-    gavgjitter /= (test_loops ?: 2)-1;
+    gavgjitter /= (test_loops > 1 ? test_loops : 2)-1;
 
     gminj = rt_timer_ticks2ns(gminjitter);
     gmaxj = rt_timer_ticks2ns(gmaxjitter);

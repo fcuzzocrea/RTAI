@@ -46,7 +46,7 @@ config RTAI_HW_SCHED_LATENCY
 	default value of 0 (recommended) will cause this value to be
 	estimated by the nucleus at startup.
 
-config RTAI_HW_STACK_POOL
+config RTAI_HW_IA64_STACK_POOL
         string "Number of pre-allocated kernel stacks"
         default 4
         help

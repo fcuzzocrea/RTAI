@@ -43,7 +43,7 @@
  *@{*/
 
 
-#define DONT_DISPATCH_CORE_IRQS  1
+#define DONT_DISPATCH_CORE_IRQS  0
 #define CHECK_STACK_IN_IRQ       0
 
 #include <linux/version.h>
@@ -85,10 +85,9 @@ MODULE_LICENSE("GPL");
 static unsigned long rtai_cpufreq_arg = RTAI_CALIBRATED_CPU_FREQ;
 MODULE_PARM(rtai_cpufreq_arg,"i");
 
-#ifdef CONFIG_X86_LOCAL_APIC
+#define RTAI_NR_IRQS  IPIPE_NR_XIRQS
 
-#undef  NR_IRQS
-#define NR_IRQS  IPIPE_NR_XIRQS
+#ifdef CONFIG_X86_LOCAL_APIC
 
 static unsigned long rtai_apicfreq_arg = RTAI_CALIBRATED_APIC_FREQ;
 
@@ -133,12 +132,12 @@ struct {
 	void *cookie;
 	int retmode;
 	int cpumask;
-} rtai_realtime_irq[NR_IRQS];
+} rtai_realtime_irq[RTAI_NR_IRQS];
 
 static struct {
 	unsigned long flags;
 	int count;
-} rtai_linux_irq[NR_IRQS];
+} rtai_linux_irq[RTAI_NR_IRQS];
 
 static struct {
 	void (*k_handler)(void);
@@ -208,7 +207,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 {
 	unsigned long flags;
 
-	if (handler == NULL || irq >= NR_IRQS) {
+	if (handler == NULL || irq >= RTAI_NR_IRQS) {
 		return -EINVAL;
 	}
 	if (rtai_realtime_irq[irq].handler != NULL) {
@@ -228,7 +227,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 int rt_release_irq (unsigned irq)
 {
 	unsigned long flags;
-	if (irq >= NR_IRQS || !rtai_realtime_irq[irq].handler) {
+	if (irq >= RTAI_NR_IRQS || !rtai_realtime_irq[irq].handler) {
 		return -EINVAL;
 	}
 	flags = rtai_critical_enter(NULL);
@@ -242,14 +241,14 @@ int rt_release_irq (unsigned irq)
 
 void rt_set_irq_cookie (unsigned irq, void *cookie)
 {
-	if (irq < NR_IRQS) {
+	if (irq < RTAI_NR_IRQS) {
 		rtai_realtime_irq[irq].cookie = cookie;
 	}
 }
 
 void rt_set_irq_retmode (unsigned irq, int retmode)
 {
-	if (irq < NR_IRQS) {
+	if (irq < RTAI_NR_IRQS) {
 		rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
 	}
 }
@@ -574,7 +573,7 @@ int rt_request_linux_irq (unsigned irq, irqreturn_t (*handler)(int irq, void *de
 {
 	unsigned long flags;
 
-	if (irq >= NR_IRQS || !handler) {
+	if (irq >= RTAI_NR_IRQS || !handler) {
 		return -EINVAL;
 	}
 
@@ -607,7 +606,7 @@ int rt_free_linux_irq (unsigned irq, void *dev_id)
 {
 	unsigned long flags;
 
-	if (irq >= NR_IRQS || rtai_linux_irq[irq].count == 0) {
+	if (irq >= RTAI_NR_IRQS || rtai_linux_irq[irq].count == 0) {
 		return -EINVAL;
 	}
 
@@ -800,6 +799,7 @@ void rtai_sched_on_ipi_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
         SYMBOL_NAME_STR(rtai_sched_on_ipi_handler) ":\n\t" \
+        "\n .p2align\n" \
 	"cld\n\t" \
         "pushq %rdi\n\t" \
         "pushq %rsi\n\t" \
@@ -846,7 +846,7 @@ void _rtai_apic_timer_handler(void)
 	rt_switch_to_linux(cpuid);
 }
 
-#if 1
+#if 0
 void rtai_apic_timer_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
@@ -965,6 +965,7 @@ void rtai_8254_timer_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
         SYMBOL_NAME_STR(rtai_8254_timer_handler) ":\n\t" \
+        "\n .p2align\n" \
 	"cld\n\t" \
         "pushq %rdi\n\t" \
         "pushq %rsi\n\t" \
@@ -1425,6 +1426,9 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 			rtai_cli();
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
+#ifdef CONFIG_SMP
+		__set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);	
+#endif
 		return 1;
         }
 	return 0;
@@ -1501,6 +1505,7 @@ void rtai_syscall_dispatcher (struct pt_regs *regs)
 	}
 }
 
+#if 0
 static void rtai_uvec_handler (void)
 {
 __asm__ ( \
@@ -1557,6 +1562,64 @@ __asm__ ( \
 	"addq $8, %rsp\n" \
         "iretq");
 }
+#else
+void rtai_uvec_handler (void);
+        __asm__ ( \
+        "\n" __ALIGN_STR"\n\t" \
+        SYMBOL_NAME_STR(rtai_uvec_handler) ":\n\t" \
+        "\n .p2align\n" \
+	"pushq $0\n" \
+	"cld\n" \
+	"pushq %rdi\n" \
+	"pushq %rsi\n" \
+	"pushq %rdx\n" \
+	"pushq %rcx\n" \
+	"pushq %rax\n" \
+	"pushq %r8\n" \
+	"pushq %r9\n" \
+	"pushq %r10\n" \
+	"pushq %r11\n" \
+	"pushq %rbx\n" \
+	"pushq %rbp\n" \
+	"pushq %r12\n" \
+	"pushq %r13\n" \
+	"pushq %r14\n" \
+	"pushq %r15\n" \
+	"movq %rsp, %rdi\n" \
+	"movq %rsp, %rbp\n" \
+	"testl $3, 136(%rdi)\n" \
+	"je 1f\n" \
+	"swapgs\n" \
+	"1: movq %gs:56, %rax\n" \
+	"cmoveq %rax, %rsp\n" \
+	"pushq %rdi\n" \
+	"sti\n" \
+	"call "SYMBOL_NAME_STR(rtai_syscall_dispatcher)"\n" \
+	"cli\n" \
+	"popq %rdi\n" \
+	"testl $3, 136(%rdi)\n" \
+        "je 2f\n" \
+	"swapgs\n" \
+	"2:\n" \
+	"movq %rdi, %rsp\n" \
+	"popq %r15\n" \
+	"popq %r14\n" \
+	"popq %r13\n" \
+	"popq %r12\n" \
+	"popq %rbp\n" \
+	"popq %rbx\n" \
+	"popq %r11\n" \
+	"popq %r10\n" \
+	"popq %r9\n" \
+	"popq %r8\n" \
+	"popq %rax\n" \
+	"popq %rcx\n" \
+	"popq %rdx\n" \
+	"popq %rsi\n" \
+	"popq %rdi\n" \
+	"addq $8, %rsp\n" \
+        "iretq");
+#endif
 
 struct gate_struct rtai_set_gate_vector (unsigned vector, int type, int dpl, void *handler)
 {
@@ -1686,7 +1749,7 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
     
 	none = 1;
 	PROC_PRINT("\n** Real-time IRQs used by RTAI: ");
-    	for (i = 0; i < NR_IRQS; i++) {
+    	for (i = 0; i < RTAI_NR_IRQS; i++) {
 		if (rtai_realtime_irq[i].handler) {
 			if (none) {
 				PROC_PRINT("\n");
@@ -1702,8 +1765,6 @@ static int rtai_read_proc (char *page, char **start, off_t off, int count, int *
 
 	PROC_PRINT("** RTAI extension traps: \n\n");
 	PROC_PRINT("    SYSREQ=0x%x\n",RTAI_SYS_VECTOR);
-	PROC_PRINT("      LXRT=0x%x\n",RTAI_LXRT_VECTOR);
-	PROC_PRINT("       SHM=0x%x\n\n",RTAI_SHM_VECTOR);
 
 	none = 1;
 	PROC_PRINT("** RTAI SYSREQs in use: ");

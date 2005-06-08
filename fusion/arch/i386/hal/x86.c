@@ -8,7 +8,7 @@
  *   Copyright &copy; 2000 Paolo Mantegazza, \n
  *   Copyright &copy; 2000 Steve Papacharalambous, \n
  *   Copyright &copy; 2000 Stuart Hughes, \n
- *   and others.
+
  *
  *   RTAI/x86 rewrite over Adeos: \n
  *   Copyright &copy; 2002 Philippe Gerum.
@@ -44,7 +44,6 @@
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/console.h>
-#include <linux/kallsyms.h>
 #include <asm/system.h>
 #include <asm/hw_irq.h>
 #include <asm/irq.h>
@@ -433,12 +432,6 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
     if (evinfo->domid == RTHAL_DOMAIN_ID)
 	{
 	rthal_realtime_faults[cpuid][evinfo->event]++;
-
-	if (evinfo->event == 7)
-	    {
-	    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
-            print_symbol("Invalid use of FPU in RTAI context at %s\n",regs->eip);
-	    }
 
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&

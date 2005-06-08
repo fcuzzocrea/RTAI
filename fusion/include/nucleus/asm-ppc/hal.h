@@ -123,7 +123,7 @@ static inline long long rthal_llimd (long long op,
 
 static inline  __attribute_const__ unsigned long ffnz (unsigned long ul) {
 
-    __asm__ __volatile__ ("cntlzw %0, %1" : "=r" (ul) : "r" (ul & (-ul)));
+    __asm__ ("cntlzw %0, %1" : "=r" (ul) : "r" (ul & (-ul)));
     return 31 - ul;
 }
 

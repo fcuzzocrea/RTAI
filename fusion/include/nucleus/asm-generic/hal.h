@@ -34,6 +34,7 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/interrupt.h>
+#include <linux/kallsyms.h>
 
 #define RTHAL_DOMAIN_ID  0x52544149
 

@@ -38,7 +38,6 @@
 #include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/console.h>
-#include <linux/kallsyms.h>
 #include <asm/system.h>
 #include <asm/hw_irq.h>
 #include <asm/irq.h>
@@ -152,15 +151,7 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
 
     if (evinfo->domid == RTHAL_DOMAIN_ID)
 	{
-	struct pt_regs *regs = ((ia64trapinfo_t *)evinfo->evdata)->regs;
-
 	rthal_realtime_faults[cpuid][evinfo->event]++;
-
-        if (evinfo->event == ADEOS_FPDIS_TRAP)/* (FPU) Device not available. */
-            {
-            unsigned long ip = regs->cr_iip + ia64_psr(regs)->ri;
-            print_symbol("Invalid use of FPU in RTAI domain at %s\n",ip);
-            }
 
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&

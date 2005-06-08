@@ -3,7 +3,7 @@
 	* nucleus/pod.c (xnpod_fault_handler): Initialize FPU on first use
 	of FPU of shadow threads in primary mode.
 
-	* include/nucleus/asm-*/hal.h: platform dependent support for
+	* include/nucleus/asm-*/system.h: platform dependent support for
 	the same feature.
 
 	* arch/x86/hal/x86.c, arch/ia64/hal/ia64.c: remove "invalid use of

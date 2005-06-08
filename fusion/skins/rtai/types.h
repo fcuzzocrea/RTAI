@@ -58,7 +58,7 @@ typedef long long SRTIME;
 
 #endif /* __KERNEL__ || __RTAI_SIM__ */
 
-typedef u_long rt_handle_t;
+typedef unsigned long rt_handle_t;
 
 #define RT_HANDLE_INVALID ((rt_handle_t)0)
 

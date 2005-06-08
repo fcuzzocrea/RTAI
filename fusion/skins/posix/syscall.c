@@ -393,7 +393,7 @@ int __mutex_unlock (struct task_struct *curr, struct pt_regs *regs)
 
 static xnsysent_t __systab[] = {
     [__pse51_thread_create ] = { &__pthread_create, __xn_exec_init },
-    [__pse51_thread_detach ] = { &__pthread_detach, __xn_exec_any },
+    [__pse51_thread_detach ] = { &__pthread_detach, __xn_exec_conforming },
     [__pse51_thread_setschedparam ] = { &__pthread_setschedparam, __xn_exec_any },
     [__pse51_sched_yield ] = { &__sched_yield, __xn_exec_primary },
     [__pse51_thread_make_periodic ] = { &__pthread_make_periodic_np, __xn_exec_primary },

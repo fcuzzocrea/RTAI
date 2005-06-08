@@ -21,7 +21,7 @@
 #define _RTAI_ASM_GENERIC_SYSCALL_H
 
 /* RTAI/fusion multiplexer syscall. */
-#define __xn_sys_mux        555
+#define __xn_sys_mux        555	/* Must fit within 15bit */
 /* RTAI/fusion nucleus syscalls. */
 #define __xn_sys_bind       0	/* muxid = bind_to_interface(magic,infp) */
 #define __xn_sys_completion 1	/* xnshadow_completion(&completion) */

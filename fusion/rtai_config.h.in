@@ -16,6 +16,9 @@
 #undef CONFIG_RTAI_HW_FPU
 
 /* Kconfig */
+#undef CONFIG_RTAI_HW_IA64_STACK_POOL
+
+/* Kconfig */
 #undef CONFIG_RTAI_HW_SCHED_LATENCY
 
 /* Kconfig */
@@ -52,10 +55,10 @@
 #undef CONFIG_RTAI_HW_SMI_WORKAROUND
 
 /* Kconfig */
-#undef CONFIG_RTAI_HW_STACK_POOL
+#undef CONFIG_RTAI_HW_TIMER_LATENCY
 
 /* Kconfig */
-#undef CONFIG_RTAI_HW_TIMER_LATENCY
+#undef CONFIG_RTAI_HW_X86_VSYSCALL
 
 /* Kconfig */
 #undef CONFIG_RTAI_OPT_DEBUG

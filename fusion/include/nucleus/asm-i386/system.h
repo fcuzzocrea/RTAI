@@ -29,8 +29,8 @@
 #include <linux/config.h>
 #include <linux/ptrace.h>
 
-#if ADEOS_RELEASE_NUMBER < 0x02060a03
-#error "Adeos 2.6r10c3/x86 or above is required to run this software; please upgrade."
+#if ADEOS_RELEASE_NUMBER < 0x02060b01
+#error "Adeos 2.6r11c1/x86 or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/i386/"
 #endif
 

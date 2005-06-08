@@ -24,6 +24,74 @@
 #include <asm/ptrace.h>
 #include <nucleus/asm-generic/syscall.h>
 
+#ifndef __KERNEL__
+
+#ifdef CONFIG_RTAI_HW_X86_VSYSCALL
+
+#include <asm/unistd.h>
+#include <sys/prctl.h>
+#include <errno.h>
+
+/* Make the syscall through the vsyscall support. In order to keep it
+   simple and efficient, we don't attempt to directly map and jump to
+   the vsyscall DSO, but we rather cheat the prctl(2) system call,
+   intercepting any invocation to it which bears a specific RTAI
+   signature in the "option" argument. Invocations that match the
+   signature are processed by RTAI, others are simply relayed
+   untouched to the Linux kernel.
+
+   If the glibc - real-time apps are linked against - actually uses
+   the vsyscall DSO, then the prctl() support routine will too, and
+   our syscalls will in turn be dispatched through the
+   sysenter/sysexit fast system call instructions. A few things to
+   note:
+
+   1) We make sure that the value mangled through __xn_mux_code(id,op)
+   cannot match any legitimate operation code Linux defines for its
+   prctl(2) service, so that the RTAI nucleus can always identify RTAI
+   system calls flowing among the regular Linux ones.
+
+   2) Calls with more than four args have two of them fetched from the
+   caller's memory instead of being conveyed into registers.
+   Fortunately, such calls are seldom. Would future benchmarks prove
+   that the performance gain using sysenter/sysexit is less than the
+   cost of fetching back those arguments, the five-args call form
+   would then be converted back to using "int 0x80", which is still
+   usable in parallel to the sysenter path. */
+   
+#define XENOMAI_SKIN_MUX(nr, id, op, args...) \
+  ({                                          \
+    int resultvar;                            \
+    ARGDCL_##nr(args);                        \
+    resultvar = prctl(__xn_mux_code(id,op) ARGFMT_##nr(args)); \
+    resultvar == -1 ? -errno : resultvar; })
+
+#define XENOMAI_SYS_MUX(nr, op, args...) XENOMAI_SKIN_MUX(nr, 0, op, args) 
+
+#define __ul(x)  ((unsigned long)(x))
+
+#define ARGDCL_0()
+#define ARGFMT_0() \
+        , 0, 0, 0, 0
+#define ARGDCL_1(arg1)
+#define ARGFMT_1(arg1) \
+        , 0, 0, 0, __ul(arg1)
+#define ARGDCL_2(arg1, arg2)
+#define ARGFMT_2(arg1, arg2) \
+        , __ul(arg2), 0, 0, __ul(arg1)
+#define ARGDCL_3(arg1, arg2, arg3)
+#define ARGFMT_3(arg1, arg2, arg3) \
+        , __ul(arg2), __ul(arg3), 0, __ul(arg1)
+#define ARGDCL_4(arg1, arg2, arg3, arg4)
+#define ARGFMT_4(arg1, arg2, arg3, arg4) \
+        , __ul(arg2), __ul(arg3), __ul(arg4), __ul(arg1)
+#define ARGDCL_5(arg1, arg2, arg3, arg4, arg5)	\
+        unsigned long xargs[2] = { __ul(arg1), __ul(arg5) }
+#define ARGFMT_5(arg1, arg2, arg3, arg4, arg5) \
+        | 0x8000, __ul(arg2), __ul(arg3), __ul(arg4), __ul(xargs)
+
+#else /* !CONFIG_RTAI_HW_X86_VSYSCALL -- use "int 0x80" */
+
 /*
  * Some of the following macros have been adapted from glibc's syscall
  * mechanism implementation:
@@ -123,6 +191,10 @@ asm (".L__X'%ebx = 1\n\t"
 #define ASMFMT_5(arg1, arg2, arg3, arg4, arg5) \
 	, "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5)
 
+#endif /* CONFIG_RTAI_HW_X86_VSYSCALL */
+
+#endif /* !__KERNEL__ */
+
 /* Register mapping for accessing syscall args. */
 
 #define __xn_reg_mux(regs)    ((regs)->orig_eax)
@@ -133,10 +205,10 @@ asm (".L__X'%ebx = 1\n\t"
 #define __xn_reg_arg4(regs)   ((regs)->esi)
 #define __xn_reg_arg5(regs)   ((regs)->edi)
 
-#define __xn_reg_mux_p(regs)        ((__xn_reg_mux(regs) & 0xffff) == __xn_sys_mux)
-#define __xn_mux_id(regs)           ((__xn_reg_mux(regs) >> 16) & 0xff)
-#define __xn_mux_op(regs)           ((__xn_reg_mux(regs) >> 24) & 0xff)
-#define __xn_mux_code(id,op)        ((op << 24)|((id << 16) & 0xff0000)|(__xn_sys_mux & 0xffff))
+#define __xn_reg_mux_p(regs)  ((__xn_reg_mux(regs) & 0x7fff) == __xn_sys_mux)
+#define __xn_mux_id(regs)     ((__xn_reg_mux(regs) >> 16) & 0xff)
+#define __xn_mux_op(regs)     ((__xn_reg_mux(regs) >> 24) & 0xff)
+#define __xn_mux_code(id,op)  ((op << 24)|((id << 16) & 0xff0000)|(__xn_sys_mux & 0x7fff))
 
 #define XENOMAI_SYSCALL0(op)                XENOMAI_SYS_MUX(0,op)
 #define XENOMAI_SYSCALL1(op,a1)             XENOMAI_SYS_MUX(1,op,a1)
@@ -205,6 +277,30 @@ static inline void __xn_status_return(struct pt_regs *regs, int v) {
 static inline int __xn_interrupted_p(struct pt_regs *regs) {
     return __xn_reg_rval(regs) == -EINTR;
 }
+
+#ifdef CONFIG_RTAI_HW_X86_VSYSCALL
+
+#define __xn_canonicalize_args(task,regs) \
+do { \
+ if (__xn_reg_mux(regs) == __NR_prctl && \
+     ((__xn_reg_arg1(regs) & 0x7fff) == __xn_sys_mux)) { \
+     __xn_reg_mux(regs) = __xn_reg_arg1(regs); \
+     if (__xn_reg_arg1(regs) & 0x8000) { \
+         unsigned long xargs[2]; \
+	 __xn_copy_from_user(task,xargs,(void *)__xn_reg_arg5(regs),sizeof(xargs)); \
+         __xn_reg_arg1(regs) = xargs[0];	\
+         __xn_reg_arg5(regs) = xargs[1];	\
+     } \
+     else \
+        __xn_reg_arg1(regs) = __xn_reg_arg5(regs); \
+ } \
+} while(0)
+
+#else /* !CONFIG_RTAI_HW_X86_VSYSCALL */
+
+#define __xn_canonicalize_args(task,regs) do { } while(0)
+
+#endif /* CONFIG_RTAI_HW_X86_VSYSCALL */
 
 #else /* !__KERNEL__ */
 

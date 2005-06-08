@@ -129,11 +129,8 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static inline void set_linux_task_priority (struct task_struct *task, int prio)
 
 {
-    if (prio < 1 || prio >= MAX_RT_PRIO)
-	/* FIXME: __adeos_setscheduler_root() should check this instead of us. */
+    if (__adeos_setscheduler_root(task,SCHED_FIFO,prio) < 0)
 	printk(KERN_WARNING "RTAI: invalid Linux priority level: %d, task=%s\n",prio,task->comm);
-    else
-	__adeos_setscheduler_root(task,SCHED_FIFO,prio);
 }
 
 static inline void engage_irq_shield (void)
@@ -1018,6 +1015,8 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     if (nkpod && !testbits(nkpod->status,XNPIDLE))
 	goto nucleus_loaded;
 
+    __xn_canonicalize_args(get_calling_task(evinfo),regs);
+
     if (__xn_reg_mux_p(regs))
 	{
 	if (__xn_reg_mux(regs) == __xn_mux_code(0,__xn_sys_bind))
@@ -1043,6 +1042,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
     task = get_calling_task(evinfo);
     thread = xnshadow_thread(task);
+    __xn_canonicalize_args(task,regs);
 
     if (__xn_reg_mux_p(regs))
 	goto xenomai_syscall;
@@ -1089,21 +1089,21 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	{
 	case __xn_sys_migrate:
 
-	    if (!thread)	/* Not a shadow anyway. */
-		__xn_success_return(regs,-EPERM);
-	    else if (__xn_reg_arg1(regs) == XENOMAI_RTAI_DOMAIN) /* Linux => RTAI */
+	    if (__xn_reg_arg1(regs) == XENOMAI_RTAI_DOMAIN) /* Linux => RTAI */
 		{
-		if (!xnthread_test_flags(thread,XNRELAX))
-		    __xn_success_return(regs,0);
-		else
-		    /* Migration to RTAI from the Linux domain must be
-		       done from the latter: propagate the request to
-		       the Linux-level handler. */
-		    adeos_propagate_event(evinfo);
+		if (!thread)	/* Not a shadow -- cannot migrate to RTAI. */
+		    __xn_error_return(regs,-EPERM);
+		else if (!xnthread_test_flags(thread,XNRELAX))
+			 __xn_success_return(regs,0);
+		     else
+			 /* Migration to RTAI from the Linux domain
+			    must be done from the latter: propagate
+			    the request to the Linux-level handler. */
+			 adeos_propagate_event(evinfo);
 		}
 	    else if (__xn_reg_arg1(regs) == XENOMAI_LINUX_DOMAIN) /* RTAI => Linux */
 		{
-		if (xnthread_test_flags(thread,XNRELAX))
+		if (!thread || xnthread_test_flags(thread,XNRELAX))
 		    __xn_success_return(regs,0);
 		else
 		    {

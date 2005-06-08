@@ -64,6 +64,24 @@ config RTAI_HW_SCHED_LATENCY
 	of 0 (recommended) will cause this value to be estimated by
 	the nucleus at startup.
 
+config RTAI_HW_X86_VSYSCALL
+	depends on RTAI_OPT_EXPERT
+	bool "Enable VSYSCALL support"
+	default y
+	help
+	When enabled, this option makes the real-time applications in
+	user-space rely on Linux's VSYSCALL support for issuing RTAI
+	system calls, instead of doing a "int 0x80" instruction.
+	VSYSCALL will in turn dispatch the system call the most
+	efficient way to the RTAI module running in kernel space.
+	When available, VSYSCALL makes use of the SYSENTER/SYSEXIT
+	fast system call instructions which have been introduced with
+	the Intel PPro, and also supported by recent AMD CPUs.
+	If unsure, just look at the flags reported by /proc/cpuinfo on
+	your x86 hardware: if "sep" is listed, then RTAI performances
+	would likely benefit from activating this option; if it is not
+	listed, then disable this option.
+
 menu "SMI workaround"
 
 config RTAI_HW_SMI_DETECT_DISABLE
@@ -92,7 +110,7 @@ config RTAI_HW_SMI_DETECT_DISABLE
         modules down. The detection code has no run-time space overhead,
         only disk-space overhead.
 
-+config RTAI_HW_SMI_DETECT
+config RTAI_HW_SMI_DETECT
         bool
         depends on !RTAI_OPT_EXPERT || !RTAI_HW_SMI_DETECT_DISABLE
         default y

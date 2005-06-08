@@ -710,7 +710,7 @@ void *xnarch_alloc_stack(unsigned long stacksize)
         return NULL;
 
     if (adp_current == adp_root &&
-        atomic_read(&xnarch_free_stacks_count) <= CONFIG_RTAI_HW_STACK_POOL)
+        atomic_read(&xnarch_free_stacks_count) <= CONFIG_RTAI_HW_IA64_STACK_POOL)
         {
         stack = (xnarch_stack_t *)
             __get_free_pages(GFP_KERNEL,KERNEL_STACK_SIZE_ORDER);
@@ -741,7 +741,7 @@ void xnarch_free_stack(void *block)
         return;
 
     if (adp_current == adp_root
-        && atomic_read(&xnarch_free_stacks_count) > CONFIG_RTAI_HW_STACK_POOL)
+        && atomic_read(&xnarch_free_stacks_count) > CONFIG_RTAI_HW_IA64_STACK_POOL)
         {
         atomic_dec(&xnarch_allocated_stacks);
             
@@ -760,7 +760,7 @@ void xnarch_free_stack(void *block)
 static int xnarch_stack_pool_init(void)
 
 {
-    while (atomic_read(&xnarch_free_stacks_count) < CONFIG_RTAI_HW_STACK_POOL)
+    while (atomic_read(&xnarch_free_stacks_count) < CONFIG_RTAI_HW_IA64_STACK_POOL)
         {
         void *stack = xnarch_alloc_stack(KERNEL_STACK_SIZE);
 

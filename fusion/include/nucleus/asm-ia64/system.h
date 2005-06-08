@@ -87,6 +87,8 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_trap(fi)  ((fi)->trap)
 #define xnarch_fault_code(fi)  ((fi)->ia64.isr)
 #define xnarch_fault_pc(fi)    ((fi)->ia64.regs->cr_iip)
+/* fault is caused by use FPU while FPU disabled. */
+#define xnarch_fault_fpu_p(fi) ((fi)->trap == ADEOS_FPDIS_TRAP)
 /* The following predicate is guaranteed to be called over a regular
    Linux stack context. */
 #define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
@@ -224,6 +226,8 @@ static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb)
     ((struct task_struct *)((char *) (faddr) -          \
                             (size_t) &((struct task_struct *) 0)->thread.fph[0]))
 
+#define xnarch_fpu_init_p(task) ((task)->thread.flags & IA64_THREAD_FPH_VALID)
+
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 
 {
@@ -269,7 +273,7 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
         {
         linux_fpu_owner = fph2task(tcb->fpup);
 
-        if((linux_fpu_owner->thread.flags & IA64_THREAD_FPH_VALID) == 0)
+        if(!xnarch_fpu_init_p(linux_fpu_owner))
             return;	/* Uninit fpu area -- do not restore. */
 
         /* Disable fph, if we are not switching back to the task which
@@ -293,6 +297,7 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
 static inline void xnarch_enable_fpu(xnarchtcb_t *tcb)
 {
+    ia64_fph_enable();
 }
 
 static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,

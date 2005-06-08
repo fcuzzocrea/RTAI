@@ -95,6 +95,8 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_code(fi)   ((fi)->regs->dar)
 #define xnarch_fault_pc(fi)     ((fi)->regs->nip)
 #define xnarch_fault_pc(fi)     ((fi)->regs->nip)
+/* FIXME: FPU faults ignored by the nanokernel on PPC. */
+#define xnarch_fault_fpu_p(fi)  (0)
 /* The following predicate is guaranteed to be called over a regular
    Linux stack context. */
 #define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
@@ -277,6 +279,9 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
     tcb->imask = imask;
     tcb->name = name;
 }
+
+/* No lazy FPU init on PPC. */
+#define xnarch_fpu_init_p(task) (1)
 
 static inline void xnarch_enable_fpu (xnarchtcb_t *current_tcb)
 

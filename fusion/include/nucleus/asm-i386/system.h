@@ -87,6 +87,8 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_trap(fi)   ((fi)->vector)
 #define xnarch_fault_code(fi)   ((fi)->errcode)
 #define xnarch_fault_pc(fi)     ((fi)->regs->eip)
+/* fault is caused by use FPU while FPU disabled. */
+#define xnarch_fault_fpu_p(fi)  ((fi)->vector == 7)
 /* The following predicate is guaranteed to be called over a regular
    Linux stack context. */
 #define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
@@ -341,6 +343,12 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 
 #ifdef CONFIG_RTAI_HW_FPU
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
+#define xnarch_fpu_init_p(task) ((task)->used_math)
+#else
+#define xnarch_fpu_init_p(task) tsk_used_math(task)
+#endif
+
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 
 {
@@ -386,11 +394,7 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
     if (task)
 	{
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
-	if (!tsk_used_math(task))
-#else
-	if (!task->used_math)
-#endif
+	if (!xnarch_fpu_init_p(task))
             {
             stts();
 	    return;	/* Uninit fpu area -- do not restore. */

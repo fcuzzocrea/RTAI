@@ -32,9 +32,6 @@
 
 #include <rtai_config.h>
 
-/* On Linux x86, Adeos reserves vectors from 0xdf-0xee for domain
-   usage. */
-
 #define RTAI_APIC_HIGH_VECTOR  ADEOS_SERVICE_VECTOR3
 #define RTAI_APIC_HIGH_IPI     (RTAI_APIC_HIGH_VECTOR - FIRST_EXTERNAL_VECTOR)
 

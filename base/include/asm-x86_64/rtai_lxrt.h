@@ -83,94 +83,10 @@ extern "C" {
 #include <asm/segment.h>
 #include <asm/mmu_context.h>
 
-#if 0
-#define switch_to_x86_64(prev,next,last) \
-	asm volatile( \
-        "cli\n" \
-                "pushfq\n" \
-                "pushq %%rdi\n" \
-                "pushq %%rsi\n" \
-                "pushq %%rdx\n" \
-                "pushq %%rcx\n" \
-                "pushq %%rax\n" \
-                "pushq %%r8\n" \
-                "pushq %%r9\n" \
-                "pushq %%r10\n" \
-                "pushq %%r11\n" \
-                "pushq %%rbx\n" \
-                "pushq %%rbp\n" \
-                "pushq %%r12\n" \
-                "pushq %%r13\n" \
-                "pushq %%r14\n" \
-                "pushq %%r15\n" \
-		"movq %%rsp,%P[threadrsp](%[prev])\n\t" /* save RSP */ \
-		"movq %P[threadrsp](%[next]),%%rsp\n\t" /* restore RSP */ \
-		"call __switch_to\n\t" \
-        "popq %%r15\n" \
-        "popq %%r14\n" \
-        "popq %%r13\n" \
-        "popq %%r12\n" \
-        "popq %%rbp\n" \
-        "popq %%rbx\n" \
-        "popq %%r11\n" \
-        "popq %%r10\n" \
-        "popq %%r9\n" \
-        "popq %%r8\n" \
-        "popq %%rax\n" \
-        "popq %%rcx\n" \
-        "popq %%rdx\n" \
-        "popq %%rsi\n" \
-        "popq %%rdi\n" \
-        "popfq\n" \
-        "sti\n" \
-		: "=a" (last) \
-		: [next] "S" (next), [prev] "D" (prev),  \
-		[threadrsp] "i" (offsetof(struct task_struct, thread.rsp)), \
-		[ti_flags] "i" (offsetof(struct thread_info, flags)), \
-		[tif_fork] "i" (TIF_FORK), \
-		[thread_info] "i" (offsetof(struct task_struct, thread_info)), \
-		[pda_pcurrent] "i" (offsetof(struct x8664_pda, pcurrent)) \
-		: "memory", "cc" __EXTRA_CLOBBER)
-#endif
-
-#define switch_to_x86_64(prev,next,last) \
-	asm volatile(SAVE_CONTEXT						    \
-		     "movq %%rsp,%P[threadrsp](%[prev])\n\t" /* save RSP */	  \
-		     "movq %P[threadrsp](%[next]),%%rsp\n\t" /* restore RSP */	  \
-		     "call __switch_to\n\t"					  \
-		     ".globl thread_return\n"					\
-		     "thread_return:\n\t"					    \
-		     "movq %%gs:%P[pda_pcurrent],%%rsi\n\t"			  \
-		     "movq %P[thread_info](%%rsi),%%r8\n\t"			  \
-		     "btr  %[tif_fork],%P[ti_flags](%%r8)\n\t"			  \
-		     "movq %%rax,%%rdi\n\t" 					  \
-		     RESTORE_CONTEXT						    \
-		     : "=a" (last)					  	  \
-		     : [next] "S" (next), [prev] "D" (prev),			  \
-		       [threadrsp] "i" (offsetof(struct task_struct, thread.rsp)), \
-		       [ti_flags] "i" (offsetof(struct thread_info, flags)),\
-		       [tif_fork] "i" (TIF_FORK),			  \
-		       [thread_info] "i" (offsetof(struct task_struct, thread_info)), \
-		       [pda_pcurrent] "i" (offsetof(struct x8664_pda, pcurrent))   \
-		     : "memory", "cc" __EXTRA_CLOBBER)
-#if 0		     
-#define fake_ret_from_fork  __asm__ __volatile__ (\
-	".global ret_from_fork\n" \
-	"ret_from_fork:" \
-	RESTORE_CONTEXT)
-#endif
-
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
-	struct mm_struct *oldmm = prev->active_mm;
-
-	switch_mm(oldmm,next->active_mm,next);
-	if (!next->mm) enter_lazy_tlb(oldmm,next);
-	switch_to_x86_64(prev, next, prev);
-//	switch_to(prev, next, prev);
-//	fake_ret_from_fork;
-	
-	barrier();
+	extern void context_switch(void *, void *, void *);
+	context_switch(0, prev, next);
 }
 
 #if 0
@@ -181,6 +97,35 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 #define IN_INTERCEPT_IRQ_DISABLE()  do { } while (0)
 #endif
 
+#if 1 // optimised (?)
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->rtai_tskext(2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.rsp, GFP_KERNEL);
+	*((struct thread_struct *)lnxtsk->rtai_tskext(2)) = lnxtsk->thread;
+//	memcpy(lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)), sizeof(struct thread_info));
+	memcpy(lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (void *)(lnxtsk->thread.rsp), (lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.rsp);
+}
+
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(2));
+//	memcpy((void *)(lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), sizeof(struct thread_info));
+	memcpy((void *)lnxtsk->thread.rsp, lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.rsp);
+}
+#else  // brute force
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->rtai_tskext(2) = kmalloc(sizeof(struct thread_struct) + THREAD_SIZE, GFP_KERNEL);
+	*((struct thread_struct *)lnxtsk->rtai_tskext(2)) = lnxtsk->thread;
+	memcpy(lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)), THREAD_SIZE);
+}
+
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(2));
+	memcpy((void *)(lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), THREAD_SIZE);
+}
+#endif
 #else /* !__KERNEL__ */
 
 /* NOTE: Keep the following routines unfold: this is a compiler

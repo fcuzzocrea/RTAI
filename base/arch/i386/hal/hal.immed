@@ -783,7 +783,7 @@ void _rtai_sched_on_ipi_handler(void)
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-	adp_root->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
+	ack_APIC_irq(); //adp_root->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
@@ -830,7 +830,7 @@ void _rtai_apic_timer_handler(void)
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-	adp_root->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
+	ack_APIC_irq(); //adp_root->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);

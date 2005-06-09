@@ -1,3 +1,8 @@
+2005-06-09  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* include/nucleus/pipe.h, skins/rtai/pipe.h: Move rt_pipe_write()
+	mode bits to a place also visible from user-space context.
+
 2005-06-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-i*/system.h (xnarch_init_fpu):

@@ -1427,7 +1427,7 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
 #ifdef CONFIG_SMP
-		__set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);	
+		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);	
 #endif
 		return 1;
         }

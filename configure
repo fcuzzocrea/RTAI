@@ -1589,7 +1589,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 CONFIG_RTAI_VERSION_MAJOR=3
-CONFIG_RTAI_VERSION_MINOR=1
+CONFIG_RTAI_VERSION_MINOR=3
 CONFIG_RTAI_REVISION_LEVEL=90
 
           ac_config_headers="$ac_config_headers rtai_config.h"
@@ -19898,14 +19898,35 @@ echo "$as_me: error: RTAI won't work on legacy i386 platforms (cmpxchg() is miss
    { (exit 1); exit 1; }; }
   fi
 else
-  # non-x86
-  test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
-  CONFIG_RTAI_SCHED_UP=y
-  test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
-  unset CONFIG_RTAI_SCHED_SMP
-  test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
-  unset CONFIG_RTAI_SCHED_MUP
-  CONFIG_RTAI_CPUS=1
+  if test "$CONFIG_X86_64" = y; then
+    if test "$CONFIG_SMP" = y; then
+      # x86_64 with SMP kernel
+      test x$CONFIG_RTAI_SCHED_SMP = x && smp_forced="(forced)"
+      CONFIG_RTAI_SCHED_SMP=y
+      test x$CONFIG_RTAI_SCHED_UP = xy && up_forced="(forced)"
+      unset CONFIG_RTAI_SCHED_UP
+    else
+      # x86_64 with UP kernel
+      if test "$CONFIG_RTAI_SCHED_MUP" = y -o "$CONFIG_RTAI_SCHED_SMP" = y; then
+        test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
+        unset CONFIG_RTAI_SCHED_SMP
+        test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
+        unset CONFIG_RTAI_SCHED_MUP
+      fi
+      test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
+      CONFIG_RTAI_SCHED_UP=y
+      CONFIG_RTAI_CPUS=1
+    fi
+  else
+    # non-x86
+    test x$CONFIG_RTAI_SCHED_UP = x && up_forced="(forced)"
+    CONFIG_RTAI_SCHED_UP=y
+    test x$CONFIG_RTAI_SCHED_SMP = xy && smp_forced="(forced)"
+    unset CONFIG_RTAI_SCHED_SMP
+    test x$CONFIG_RTAI_SCHED_MUP = xy && mup_forced="(forced)"
+    unset CONFIG_RTAI_SCHED_MUP
+    CONFIG_RTAI_CPUS=1
+  fi
 fi
 
 echo "$as_me:$LINENO: checking for UP scheduler support" >&5
@@ -24064,7 +24085,7 @@ case $RTAI_TARGET_ARCH in
         ;;
  x86_64)
         RTAI_TARGET_SUBARCH=
-        RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe -fno-omit-frame-pointer"
+        RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
         RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
         if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
            RTAI_FP_CFLAGS="-ffast-math -mhard-float"

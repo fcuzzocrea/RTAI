@@ -9,6 +9,10 @@
  *
  *   RTAI/x86 rewrite over Adeos:
  *   Copyright (C) 2002 Philippe Gerum.
+ * 
+ *   Porting to x86_64 architecture:
+ *   Copyright &copy; 2005 Paolo Mantegazza, \n
+ *   Copyright &copy; 2005 Daniele Gasperini \n
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -42,7 +46,7 @@ typedef union i387_union FPU_ENV;
 	do { init_xfpu(); tsk->used_math = 1; set_tsk_used_fpu(tsk); } while(0)
 
 #define restore_fpu(tsk) \
-	do { /*restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk);*/ } while (0)
+	do { restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk); } while (0)
 
 #define load_mxcsr(val) \
 	do { \
@@ -54,27 +58,20 @@ typedef union i387_union FPU_ENV;
 	do { \
 		x = read_cr0(); \
 		clts(); \
-		/* __asm__ __volatile__ ("movq %%cr0,%0; clts\n": "=r" (x)); */ \
 	} while (0)
 
 #define restore_cr0(x) \
 	do { \
 		if (x & 8) { \
-                       unsigned long flags; \
-                       rtai_hw_save_flags_and_cli(flags); \
-		       x = read_cr0(); \
-		       write_cr0(8 | x); \
-			/*
-			__asm__ __volatile__ ("movq %%cr0,%0\n": "=r" (x)); \
-			__asm__ __volatile__ ("movq %0,%%cr0\n": :"r" (8 | x)); */ \
-                       rtai_hw_restore_flags(flags); \
+			unsigned long flags; \
+			rtai_hw_save_flags_and_cli(flags); \
+			x = read_cr0(); \
+			write_cr0(8 | x); \
+			rtai_hw_restore_flags(flags); \
 		} \
 	} while (0)
 
-#define enable_fpu() \
-	do { \
-		__asm__ __volatile__ ("clts"); \
-	} while (0)
+#define enable_fpu() clts()
 
 #define init_xfpu() \
 	do { \
@@ -87,9 +84,9 @@ typedef union i387_union FPU_ENV;
 #define save_fpenv(x) \
 	do { \
 		if (cpu_has_fxsr) { \
-			__asm__ __volatile__ ("fxsave %0; fnclex": "=m" (x)); \
+			__asm__ __volatile__ ("rex64; fxsave %0; fnclex": "=m" (x)); \
 		} else { \
-			__asm__ __volatile__ ("fnsave %0; fwait": "=m" (x)); \
+			__asm__ __volatile__ ("rex64; fnsave %0; fwait": "=m" (x)); \
 		} \
 	} while (0)
 

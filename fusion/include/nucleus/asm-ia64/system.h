@@ -51,11 +51,11 @@ void xnarch_free_stack(void *block);
 struct xnthread;
 struct task_struct;
 
-typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
+typedef struct xnarchtcb {      /* Per-thread arch-dependent block */
 
     /* Kernel mode side */
 
-    unsigned long *espp;	/* Pointer to ESP backup area (&esp or
+    unsigned long *espp;        /* Pointer to ESP backup area (&esp or
                                    &user->thread.esp).
                                    DONT MOVE THIS MEMBER,
                                    switch_to depends on it. */
@@ -63,14 +63,14 @@ typedef struct xnarchtcb {	/* Per-thread arch-dependent block */
     struct ia64_fpreg fpuenv[96]; /* FIXME FPU: check if alignment constraints
                                      are needed. */
     
-    unsigned stacksize;		/* Aligned size of stack (bytes) */
-    unsigned long *stackbase;	/* Stack space */
-    unsigned long esp;		/* Saved ESP for kernel-based threads */
+    unsigned stacksize;         /* Aligned size of stack (bytes) */
+    unsigned long *stackbase;   /* Stack space */
+    unsigned long esp;          /* Saved ESP for kernel-based threads */
 
     /* User mode side */
 
-    struct task_struct *user_task;	/* Shadowed user-space task */
-    struct task_struct *active_task;	/* Active user-space task */
+    struct task_struct *user_task;      /* Shadowed user-space task */
+    struct task_struct *active_task;    /* Active user-space task */
 
     struct ia64_fpreg *fpup;
 #define xnarch_fpu_ptr(tcb)     ((tcb)->fpup)
@@ -92,7 +92,7 @@ typedef struct xnarch_fltinfo {
 /* The following predicate is guaranteed to be called over a regular
    Linux stack context. */
 #define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
-				 (fi)->trap != ADEOS_DEBUG_TRAP)
+                                 (fi)->trap != ADEOS_DEBUG_TRAP)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -101,7 +101,7 @@ static inline void *xnarch_sysalloc (u_long bytes)
 
 {
     if (bytes >= 128*1024)
-	return vmalloc(bytes);
+        return vmalloc(bytes);
 
     return kmalloc(bytes,GFP_KERNEL);
 }
@@ -110,9 +110,9 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes)
 
 {
     if (bytes >= 128*1024)
-	vfree(chunk);
+        vfree(chunk);
     else
-	kfree(chunk);
+        kfree(chunk);
 }
 
 static inline void xnarch_relay_tick (void)
@@ -132,7 +132,7 @@ void xnpod_welcome_thread(struct xnthread *);
 void xnpod_delete_thread(struct xnthread *);
 
 static inline int xnarch_start_timer (unsigned long ns,
-				      void (*tickhandler)(void))
+                                      void (*tickhandler)(void))
 {
     int err = rthal_timer_request(tickhandler,ns);
     adeos_declare_cpuid;
@@ -169,7 +169,7 @@ static inline void xnarch_enter_root (xnarchtcb_t *rootcb)
 }
 
 static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
-				     xnarchtcb_t *in_tcb)
+                                     xnarchtcb_t *in_tcb)
 {
     struct task_struct *outproc = out_tcb->active_task;
     struct task_struct *inproc = in_tcb->user_task;
@@ -204,14 +204,14 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
         ia64_setreg(_IA64_REG_GP, gp);
         ia64_stop();
 
-	/* fph will be enabled by xnarch_restore_fpu if needed, and
-	   returns the root thread in its usual mode. */
+        /* fph will be enabled by xnarch_restore_fpu if needed, and
+           returns the root thread in its usual mode. */
         ia64_fph_disable();
         }
 }
 
 static inline void xnarch_finalize_and_switch (xnarchtcb_t *dead_tcb,
-					       xnarchtcb_t *next_tcb)
+                                               xnarchtcb_t *next_tcb)
 {
     xnarch_switch_to(dead_tcb,next_tcb);
 }
@@ -231,12 +231,19 @@ static inline void xnarch_finalize_no_switch (xnarchtcb_t *dead_tcb)
 static inline void xnarch_init_fpu (xnarchtcb_t *tcb)
 
 {
-    /* Initialize the FPU for an emerging kernel-based RT thread. This
-       must be run on behalf of the emerging thread. */
+    struct task_struct *task = tcb->user_task;
+    /* Initialize the FPU for a task. This must be run on behalf of the
+       task. */
     ia64_fph_enable();
     __ia64_init_fpu();
     /* The mfh bit is automatically armed, since the init_fpu routine
        modifies the FPH registers. */
+
+    if(task)
+        /* Real-time shadow FPU initialization: setting the mfh bit in saved
+          registers, xnarch_save_fpu will finish the work. Since tcb is the tcb
+          of a shadow, no need to check: task == fph2task(tcb->fpup). */
+        ia64_psr(ia64_task_regs(task))->mfh = 1;
 }
 
 static inline void xnarch_save_fpu (xnarchtcb_t *tcb)
@@ -274,7 +281,7 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
         linux_fpu_owner = fph2task(tcb->fpup);
 
         if(!xnarch_fpu_init_p(linux_fpu_owner))
-            return;	/* Uninit fpu area -- do not restore. */
+            return;     /* Uninit fpu area -- do not restore. */
 
         /* Disable fph, if we are not switching back to the task which
            owns the FPU. */
@@ -301,8 +308,8 @@ static inline void xnarch_enable_fpu(xnarchtcb_t *tcb)
 }
 
 static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
-					 struct xnthread *thread,
-					 const char *name)
+                                         struct xnthread *thread,
+                                         const char *name)
 {
     tcb->user_task = current;
     tcb->active_task = NULL;
@@ -311,9 +318,9 @@ static inline void xnarch_init_root_tcb (xnarchtcb_t *tcb,
 }
 
 static void xnarch_thread_trampoline (struct xnthread *self,
-				      int imask,
-				      void(*entry)(void *),
-				      void *cookie)
+                                      int imask,
+                                      void(*entry)(void *),
+                                      void *cookie)
 {
     /* xnpod_welcome_thread() will do ia64_fpu_enable() if needed. */
     ia64_fph_disable();
@@ -325,11 +332,11 @@ static void xnarch_thread_trampoline (struct xnthread *self,
 }
 
 static inline void xnarch_init_thread (xnarchtcb_t *tcb,
-				       void (*entry)(void *),
-				       void *cookie,
-				       int imask,
-				       struct xnthread *thread,
-				       char *name)
+                                       void (*entry)(void *),
+                                       void *cookie,
+                                       int imask,
+                                       struct xnthread *thread,
+                                       char *name)
 {
     unsigned long rbs,bspstore,child_stack,child_rbs,rbs_size;
     unsigned long stackbase = (unsigned long) tcb->stackbase;
@@ -357,7 +364,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 
     memcpy((void *)child_rbs,(void *)rbs,rbs_size);
     swstack->ar_bspstore = child_rbs + rbs_size;
-    tcb->esp -= 16 ;	/* Provide for the (bloody) scratch area... */
+    tcb->esp -= 16 ;    /* Provide for the (bloody) scratch area... */
 }
 
 #ifdef CONFIG_SMP
@@ -469,13 +476,13 @@ static inline int xnarch_escalate (void)
     extern int xnarch_escalation_virq;
 
     if (adp_current == adp_root)
-	{
-	spl_t s;
-	splsync(s);
-	adeos_trigger_irq(xnarch_escalation_virq);
-	splexit(s);
-	return 1;
-	}
+        {
+        spl_t s;
+        splsync(s);
+        adeos_trigger_irq(xnarch_escalation_virq);
+        splexit(s);
+        return 1;
+        }
 
     return 0;
 }
@@ -506,8 +513,8 @@ static inline void xnarch_init_tcb (xnarchtcb_t *tcb)
 #ifdef XENO_SHADOW_MODULE
 
 static inline void xnarch_init_shadow_tcb (xnarchtcb_t *tcb,
-					   struct xnthread *thread,
-					   const char *name)
+                                           struct xnthread *thread,
+                                           const char *name)
 {
     struct task_struct *task = current;
 
@@ -524,10 +531,10 @@ static inline void xnarch_grab_xirqs (void (*handler)(unsigned irq))
     unsigned irq;
 
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	adeos_virtualize_irq(irq,
-			     handler,
-			     NULL,
-			     IPIPE_DYNAMIC_MASK);
+        adeos_virtualize_irq(irq,
+                             handler,
+                             NULL,
+                             IPIPE_DYNAMIC_MASK);
 }
 
 static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
@@ -536,25 +543,25 @@ static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
     unsigned irq;
 
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	{
-	unsigned vector = __ia64_local_vector_to_irq(irq);
+        {
+        unsigned vector = __ia64_local_vector_to_irq(irq);
 
-	switch (vector)
-	    {
+        switch (vector)
+            {
 #ifdef CONFIG_SMP
-	    case ADEOS_CRITICAL_VECTOR:
-	    case IA64_IPI_RESCHEDULE:
-	    case IA64_IPI_VECTOR:
+            case ADEOS_CRITICAL_VECTOR:
+            case IA64_IPI_RESCHEDULE:
+            case IA64_IPI_VECTOR:
 
-		/* Never lock out these ones. */
-		continue;
+                /* Never lock out these ones. */
+                continue;
 #endif /* CONFIG_SMP */
 
-	    default:
+            default:
 
-		__adeos_lock_irq(adp,cpuid,irq);
-	    }
-	}
+                __adeos_lock_irq(adp,cpuid,irq);
+            }
+        }
 }
 
 static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
@@ -563,24 +570,24 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
     unsigned irq;
 
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-	{
-	unsigned vector = local_vector_to_irq(irq);
+        {
+        unsigned vector = local_vector_to_irq(irq);
 
-	switch (vector)
-	    {
+        switch (vector)
+            {
 #ifdef CONFIG_SMP
-	    case ADEOS_CRITICAL_VECTOR:
-	    case IA64_IPI_RESCHEDULE:
-	    case IA64_IPI_VECTOR:
+            case ADEOS_CRITICAL_VECTOR:
+            case IA64_IPI_RESCHEDULE:
+            case IA64_IPI_VECTOR:
 
-		continue;
+                continue;
 #endif /* CONFIG_SMP */
 
-	    default:
+            default:
 
-		__adeos_unlock_irq(adp,irq);
-	    }
-	}
+                __adeos_unlock_irq(adp,irq);
+            }
+        }
 }
 
 #endif /* XENO_SHADOW_MODULE */
@@ -604,8 +611,8 @@ static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask)
 }
 
 static inline void xnarch_read_timings (unsigned long long *shot,
-					unsigned long long *delivery,
-					unsigned long long defval)
+                                        unsigned long long *delivery,
+                                        unsigned long long defval)
 {
 #ifdef CONFIG_ADEOS_PROFILING
     int cpuid = adeos_processor_id();
@@ -677,7 +684,7 @@ int xnarch_calibrate_sched (void)
     nktimerlat = xnarch_calibrate_timer();
 
     if (!nktimerlat)
-	return -ENODEV;
+        return -ENODEV;
 
     nkschedlat = xnarch_ns_to_tsc(xnarch_get_sched_latency());
 
@@ -811,18 +818,18 @@ static inline int xnarch_init (void)
     err = xnarch_calibrate_sched();
 
     if (err)
-	return err;
+        return err;
 
     xnarch_escalation_virq = adeos_alloc_irq();
 
     if (xnarch_escalation_virq == 0)
-	return -ENOSYS;
+        return -ENOSYS;
 
     adeos_virtualize_irq_from(&rthal_domain,
-			      xnarch_escalation_virq,
-			      (void (*)(unsigned))&xnpod_schedule_handler,
-			      NULL,
-			      IPIPE_HANDLE_MASK);
+                              xnarch_escalation_virq,
+                              (void (*)(unsigned))&xnpod_schedule_handler,
+                              NULL,
+                              IPIPE_HANDLE_MASK);
 
     xnarch_old_trap_handler = rthal_trap_catch(&xnarch_trap_fault);
 
@@ -831,12 +838,12 @@ static inline int xnarch_init (void)
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
     if (err)
-	goto release_trap;
+        goto release_trap;
 
     err = xnarch_stack_pool_init();
 
     if (!err)
-	return 0;
+        return 0;
 
 #ifdef CONFIG_RTAI_OPT_FUSION
     xnshadow_cleanup();

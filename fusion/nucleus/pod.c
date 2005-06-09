@@ -126,8 +126,23 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 
 #ifdef __KERNEL__
     if (xnarch_fault_fpu_p(fltinfo))
+        {
+#if defined(CONFIG_RTAI_OPT_FUSION) && defined(CONFIG_RTAI_HW_FPU)
+        xnarchtcb_t *tcb = xnthread_archtcb(xnpod_current_thread());
+        
+        if (xnpod_shadow_p() && !xnarch_fpu_init_p(tcb->user_task))
+            {
+            /* The faulting task is a shadow using the FPU for the first time,
+               initialize its FPU. Of course if RTAI is not compiled with
+               support for FPU, such use of the FPU is an error. */
+            xnarch_init_fpu(tcb);
+            return 1;
+            }
+#endif /* OPT_FUSION && HW_FPU */
+
         print_symbol("RTAI: Invalid use of FPU in RTAI context at %s\n",
                      xnarch_fault_pc(fltinfo));
+        }
 #endif /* __KERNEL__ */
 
     if (!xnpod_userspace_p())
@@ -529,7 +544,7 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
 
     if (testbits(threadin->status,XNROOT)) {
         xnpod_reset_watchdog();
-	xnfreesync();
+        xnfreesync();
         xnarch_enter_root(xnthread_archtcb(threadin));
     }
 
@@ -554,7 +569,7 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
     
     xnpod_fatal("zombie thread %s (%p) would not die...",threadout->name,threadout);
 }
- 
+
 /*! 
  * \fn void xnpod_init_thread(xnthread_t *thread,
                               const char *name,
@@ -1728,7 +1743,7 @@ int xnpod_migrate_thread (int cpu)
         return -EPERM;
 
     if (xnpod_locked_p())
-	return -EBUSY;
+        return -EBUSY;
 
     xnlock_get_irqsave(&nklock, s);
 
@@ -2317,7 +2332,7 @@ void xnpod_schedule (void)
         xnarch_leave_root(xnthread_archtcb(threadout));
     else if (testbits(threadin->status,XNROOT)) {
         xnpod_reset_watchdog();
-	xnfreesync();
+        xnfreesync();
         xnarch_enter_root(xnthread_archtcb(threadin));
     }
 
@@ -2473,7 +2488,7 @@ maybe_switch:
         xnarch_leave_root(xnthread_archtcb(runthread));
     else if (testbits(threadin->status,XNROOT)) {
         xnpod_reset_watchdog();
-	xnfreesync();
+        xnfreesync();
         xnarch_enter_root(xnthread_archtcb(threadin));
     }
 

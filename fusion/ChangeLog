@@ -1,3 +1,8 @@
+2005-06-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i*/system.h (xnarch_init_fpu):
+	Initialization of fusion threads in primary mode.
+
 2005-06-08  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to r11c1 which fixes a nasty bug in

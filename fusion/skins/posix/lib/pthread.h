@@ -86,6 +86,22 @@ int __real_pthread_mutex_trylock(pthread_mutex_t *mutex);
 
 int __real_pthread_mutex_unlock(pthread_mutex_t *mutex);
 
+int __real_pthread_cond_init (pthread_cond_t *cond,
+			      const pthread_condattr_t *attr);
+
+int __real_pthread_cond_destroy(pthread_cond_t *cond);
+
+int __real_pthread_cond_wait(pthread_cond_t *cond,
+			     pthread_mutex_t *mutex);
+
+int __real_pthread_cond_timedwait(pthread_cond_t *cond,
+				  pthread_mutex_t *mutex,
+				  const struct timespec *abstime);
+
+int __real_pthread_cond_signal(pthread_cond_t *cond);
+
+int __real_pthread_cond_broadcast(pthread_cond_t *cond);
+
 int __real_clock_getres(clockid_t clock_id,
 			struct timespec *tp);
 

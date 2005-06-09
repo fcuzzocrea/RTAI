@@ -62,7 +62,8 @@ LTLIBRARIES = $(lib_LTLIBRARIES)
 libpthread_rt_la_LIBADD =
 am_libpthread_rt_la_OBJECTS = libpthread_rt_la-init.lo \
 	libpthread_rt_la-thread.lo libpthread_rt_la-semaphore.lo \
-	libpthread_rt_la-clock.lo libpthread_rt_la-mutex.lo
+	libpthread_rt_la-clock.lo libpthread_rt_la-mutex.lo \
+	libpthread_rt_la-cond.lo
 libpthread_rt_la_OBJECTS = $(am_libpthread_rt_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
@@ -303,7 +304,8 @@ libpthread_rt_la_SOURCES = \
 	thread.c \
 	semaphore.c \
 	clock.c \
-	mutex.c
+	mutex.c \
+	cond.c
 
 include_HEADERS = \
 	pthread.h \
@@ -386,6 +388,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-clock.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-cond.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-mutex.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-semaphore.Plo@am__quote@
@@ -446,6 +449,13 @@ libpthread_rt_la-mutex.lo: mutex.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='mutex.c' object='libpthread_rt_la-mutex.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libpthread_rt_la-mutex.lo `test -f 'mutex.c' || echo '$(srcdir)/'`mutex.c
+
+libpthread_rt_la-cond.lo: cond.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libpthread_rt_la-cond.lo -MD -MP -MF "$(DEPDIR)/libpthread_rt_la-cond.Tpo" -c -o libpthread_rt_la-cond.lo `test -f 'cond.c' || echo '$(srcdir)/'`cond.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libpthread_rt_la-cond.Tpo" "$(DEPDIR)/libpthread_rt_la-cond.Plo"; else rm -f "$(DEPDIR)/libpthread_rt_la-cond.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='cond.c' object='libpthread_rt_la-cond.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libpthread_rt_la-cond.lo `test -f 'cond.c' || echo '$(srcdir)/'`cond.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

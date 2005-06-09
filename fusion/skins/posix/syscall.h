@@ -43,6 +43,12 @@
 #define __pse51_mutex_timedlock       17
 #define __pse51_mutex_trylock         18
 #define __pse51_mutex_unlock          19
+#define __pse51_cond_init             20
+#define __pse51_cond_destroy          21
+#define __pse51_cond_wait             22
+#define __pse51_cond_timedwait        23
+#define __pse51_cond_signal           24
+#define __pse51_cond_broadcast        25
 
 #ifdef __KERNEL__
 

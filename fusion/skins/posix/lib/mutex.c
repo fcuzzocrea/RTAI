@@ -30,7 +30,7 @@ int __wrap_pthread_mutex_init (pthread_mutex_t *mutex,
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
     int err;
 
-    /* Mutex attribute is ignored, since we always build recursive,
+    /* Mutex attributes are ignored, since we always build recursive,
        PIP-enabled mutexes. */
 
     err = -XENOMAI_SKINCALL1(__pse51_muxid,
@@ -47,11 +47,8 @@ int __wrap_pthread_mutex_destroy (pthread_mutex_t *mutex)
 {
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
 
-    if (_mutex->shadow_mutex.magic == ~SHADOW_MUTEX_MAGIC)
-	return 0;	/* Creation was never finalized. */
-
     if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-	return __real_pthread_mutex_destroy(mutex);
+	return EINVAL;
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_mutex_destroy,
@@ -63,17 +60,8 @@ int __wrap_pthread_mutex_lock (pthread_mutex_t *mutex)
 {
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
 
-    if (_mutex->shadow_mutex.magic == ~SHADOW_MUTEX_MAGIC)
-	{
-	/* Partially created mutex using a static initializer:
-	   finalize the creation. */
-	int err = __wrap_pthread_mutex_init(mutex,NULL);
-
-	if (err)
-	    return err;
-	}
-    else if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-	return __real_pthread_mutex_lock(mutex);
+    if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
+	return EINVAL;
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_mutex_lock,
@@ -85,19 +73,8 @@ int __wrap_pthread_mutex_timedlock (pthread_mutex_t *mutex,
 {
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
 
-    if (_mutex->shadow_mutex.magic == ~SHADOW_MUTEX_MAGIC)
-	{
-	int err = __wrap_pthread_mutex_init(mutex,NULL);
-
-	if (err)
-	    return err;
-	}
-    else if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-#ifdef __USE_XOPEN2K
-	return __real_pthread_mutex_timedlock(mutex,to);
-#else /* !__USE_XOPEN2K */
-        return ENOSYS;
-#endif	/* __USE_XOPEN2K */
+    if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
+        return EINVAL;
 
     return -XENOMAI_SKINCALL2(__pse51_muxid,
 			      __pse51_mutex_timedlock,
@@ -110,15 +87,8 @@ int __wrap_pthread_mutex_trylock (pthread_mutex_t *mutex)
 {
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
 
-    if (_mutex->shadow_mutex.magic == ~SHADOW_MUTEX_MAGIC)
-	{
-	int err = __wrap_pthread_mutex_init(mutex,NULL);
-
-	if (err)
-	    return err;
-	}
-    else if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-	return __real_pthread_mutex_trylock(mutex);
+    if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
+	return EINVAL;
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_mutex_trylock,
@@ -130,11 +100,8 @@ int __wrap_pthread_mutex_unlock (pthread_mutex_t *mutex)
 {
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
 
-    if (_mutex->shadow_mutex.magic == ~SHADOW_MUTEX_MAGIC)
-	return EPERM;	/* Unlocking an unlocked mutex? */
-
     if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
-	return __real_pthread_mutex_unlock(mutex);
+	return EINVAL;
 
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_mutex_unlock,

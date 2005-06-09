@@ -391,9 +391,94 @@ int __mutex_unlock (struct task_struct *curr, struct pt_regs *regs)
     return -pthread_mutex_unlock(mutex);
 }
 
+int __cond_init (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_cond_t *cond;
+    unsigned long handle;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(handle)))
+	return -EFAULT;
+
+    cond = (pthread_cond_t *)xnmalloc(sizeof(*cond));
+
+    if (!cond)
+	return -ENOMEM;
+
+    err = pthread_cond_init(cond,NULL);	/* Always use default attribute. */
+
+    if (err)
+        return -err;
+
+    handle = (unsigned long)cond;
+
+    __xn_copy_to_user(curr,
+		      (void __user *)__xn_reg_arg1(regs),
+		      &handle,
+		      sizeof(handle));
+    return 0;
+}
+
+int __cond_destroy (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_cond_t *cond = (pthread_cond_t *)__xn_reg_arg1(regs);
+    int err;
+
+    err = pthread_cond_destroy(cond);
+
+    if (err)
+	return -err;
+
+    xnfree(cond);
+
+    return 0;
+}
+
+int __cond_wait (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_cond_t *cond = (pthread_cond_t *)__xn_reg_arg1(regs);
+    pthread_mutex_t *mutex = (pthread_mutex_t *)__xn_reg_arg2(regs);
+    return -pthread_cond_wait(cond,mutex);
+}
+
+int __cond_timedwait (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_cond_t *cond = (pthread_cond_t *)__xn_reg_arg1(regs);
+    pthread_mutex_t *mutex = (pthread_mutex_t *)__xn_reg_arg2(regs);
+    struct timespec ts;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(ts)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,
+			&ts,
+			(void __user *)__xn_reg_arg3(regs),
+			sizeof(ts));
+
+    return -pthread_cond_timedwait(cond,mutex,&ts);
+}
+
+int __cond_signal (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_cond_t *cond = (pthread_cond_t *)__xn_reg_arg1(regs);
+    return -pthread_cond_signal(cond);
+}
+
+int __cond_broadcast (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    pthread_cond_t *cond = (pthread_cond_t *)__xn_reg_arg1(regs);
+    return -pthread_cond_broadcast(cond);
+}
+
 static xnsysent_t __systab[] = {
     [__pse51_thread_create ] = { &__pthread_create, __xn_exec_init },
-    [__pse51_thread_detach ] = { &__pthread_detach, __xn_exec_conforming },
+    [__pse51_thread_detach ] = { &__pthread_detach, __xn_exec_any },
     [__pse51_thread_setschedparam ] = { &__pthread_setschedparam, __xn_exec_any },
     [__pse51_sched_yield ] = { &__sched_yield, __xn_exec_primary },
     [__pse51_thread_make_periodic ] = { &__pthread_make_periodic_np, __xn_exec_primary },
@@ -412,6 +497,12 @@ static xnsysent_t __systab[] = {
     [__pse51_mutex_timedlock] = { &__mutex_timedlock, __xn_exec_primary },
     [__pse51_mutex_trylock] = { &__mutex_trylock, __xn_exec_primary },
     [__pse51_mutex_unlock] = { &__mutex_unlock, __xn_exec_primary },
+    [__pse51_cond_init] = { &__cond_init, __xn_exec_any },
+    [__pse51_cond_destroy] = { &__cond_destroy, __xn_exec_any },
+    [__pse51_cond_wait] = { &__cond_wait, __xn_exec_primary },
+    [__pse51_cond_timedwait] = { &__cond_timedwait, __xn_exec_primary },
+    [__pse51_cond_signal] = { &__cond_signal, __xn_exec_any },
+    [__pse51_cond_broadcast] = { &__cond_broadcast, __xn_exec_any },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

@@ -16,13 +16,60 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
  */
 
-#include <sys/types.h>
-#include <sys/mman.h>
-#include <memory.h>
-#include <malloc.h>
-#include <unistd.h>
-#include <limits.h>
 #include <rtai/syscall.h>
 #include <rtai/alarm.h>
 
 extern int __rtai_muxid;
+
+int rt_alarm_create (RT_ALARM *alarm, const char *name)
+
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_alarm_create,
+			     alarm,
+			     name);
+}
+
+int rt_alarm_delete (RT_ALARM *alarm)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_alarm_delete,
+			     alarm);
+}
+
+int rt_alarm_wait (RT_ALARM *alarm)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_alarm_wait,
+			     alarm);
+}
+
+int rt_alarm_start (RT_ALARM *alarm,
+		    RTIME value,
+		    RTIME interval)
+{
+    return XENOMAI_SKINCALL3(__rtai_muxid,
+			     __rtai_alarm_start,
+			     alarm,
+			     &value,
+			     &interval);
+}
+
+int rt_alarm_stop (RT_ALARM *alarm)
+
+{
+    return XENOMAI_SKINCALL1(__rtai_muxid,
+			     __rtai_alarm_stop,
+			     alarm);
+}
+
+int rt_alarm_inquire (RT_ALARM *alarm,
+		      RT_ALARM_INFO *info)
+{
+    return XENOMAI_SKINCALL2(__rtai_muxid,
+			     __rtai_alarm_inquire,
+			     alarm,
+			     info);
+}

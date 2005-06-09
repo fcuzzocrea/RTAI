@@ -1,3 +1,7 @@
+2005-06-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/lib/alarm.c: Implement the missing support.
+
 2005-06-09  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* include/nucleus/pipe.h, skins/rtai/pipe.h: Move rt_pipe_write()

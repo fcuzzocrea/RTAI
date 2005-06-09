@@ -25,6 +25,10 @@
 #include <nucleus/pipe.h>
 #include <rtai/types.h>
 
+/* Operation flags. */
+#define P_NORMAL  XNPIPE_NORMAL
+#define P_URGENT  XNPIPE_URGENT
+
 typedef struct rt_pipe_placeholder {
     rt_handle_t opaque;
 } RT_PIPE_PLACEHOLDER;
@@ -34,9 +38,6 @@ typedef struct rt_pipe_placeholder {
 #define RTAI_PIPE_MAGIC 0x55550202
 
 typedef xnpipe_mh_t RT_PIPE_MSG;
-
-#define P_NORMAL  XNPIPE_NORMAL
-#define P_URGENT  XNPIPE_URGENT
 
 #define P_MSGPTR(msg)  xnpipe_m_data(msg)
 #define P_MSGSIZE(msg) xnpipe_m_size(msg)

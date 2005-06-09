@@ -27,6 +27,9 @@
 #define XNPIPEIOC_GET_NRDEV   _IOW(XNPIPE_IOCTL_BASE,0,int)
 #define XNPIPEIOC_FLUSH       _IO(XNPIPE_IOCTL_BASE,1)
 
+#define XNPIPE_NORMAL 0x0
+#define XNPIPE_URGENT 0x1
+
 #ifdef __KERNEL__
 
 #include <nucleus/queue.h>
@@ -37,9 +40,6 @@
 
 #define XNPIPE_WAIT   0x0
 #define XNPIPE_NOWAIT 0x1
-
-#define XNPIPE_NORMAL 0x0
-#define XNPIPE_URGENT 0x1
 
 #define XNPIPE_KERN_CONN   0x1
 #define XNPIPE_USER_CONN   0x2

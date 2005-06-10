@@ -1,12 +1,12 @@
 Overview
 ========
 
-The PSE51 emulation module on top of RTAI/fusion aims at providing an
-(almost) POSIX compatible API. In order to help porting applications
+The POSIX emulation module on top of RTAI/fusion aims at providing an
+(almost) PSE51 compatible API. In order to help porting applications
 from other PSE51 compatible APIS (like RTLinux) it will contain some
 non portable extensions to the POSIX specification.
 
-This layer already contains most basic features :
+This skin already contains most basic features :
 - threads,
 - mutexes,
 - semaphores,
@@ -14,6 +14,9 @@ This layer already contains most basic features :
 - basic support for then "reliable" signals (not realtime ones),
 - cancellation, cancellation handlers
 - thread specific data.
+
+The POSIX skin creates real-time threads running either embodied into
+kernel modules, or inside regular applications in user-space.
 
 
 Known variations from the POSIX specification.
@@ -51,6 +54,50 @@ described in this specification. Here are the known ones :
 - most functions should be asynchronous signal safe.
 
 
+Use of the POSIX skin from user-space applications
+==================================================
+
+In user-space, deterministic replacements are provided for critical
+services of Linux's native POSIX interface. System calls to these
+services implemented in kernel space by the POSIX skin are contained
+into the libpthread_rt.so library built from the lib/ sub-directory
+contents, and are aimed at shadowing the original Linux calls for the
+application, either from the LinuxThreads or NPTL libraries.
+
+Native POSIX services which do not require any interaction with the
+Linux kernel (e.g. pthread_mutexattr_*) and/or do not involve
+time-critical issues for their callers (e.g. pthread_exit()), are not
+overriden by the POSIX support in user-space, but can instead be used
+directly and seamlessly by the application.
+
+The list of shadowed POSIX services is available from the file
+lib/posix.wrappers.
+
+--------------------------------------------------------------------
+Building an application which uses the real-time POSIX support
+requires using the proper compilation and link flags returned by the
+'rtai-config' script (default location is
+/usr/realtime/bin/rtai-config). You should have a look at the demos/
+sub-directory, which contains a small Makefile illustrating the use of
+such script on a simple code example.
+--------------------------------------------------------------------
+
+Original (i.e. un-shadowed) calls can still be invoked from the
+application, by prefixing their name with
+"__real_". E.g. __real_sem_init() calls the original initialization
+routine for semaphores as provided by the LinuxThreads/NPTL
+implementation. All services listed in lib/posix.wrappers are
+substituted with their RTAI replacement when invoked through their
+vanilla names.
+
+Caveat: Use of the static initializers PTHREAD_MUTEX_INITIALIZER and
+PTHREAD_COND_INITIALIZER in setting up mutex and condition variable
+replacements is invalid; dynamic initialization through the
+pthread_mutex_init() and pthread_cond_init() routines must be used
+instead, otherwise, mutex and condition variable-related calls would
+always return an error status (EINVAL).
+
+
 Undefined behaviour.
 =====================
 
@@ -86,4 +133,4 @@ Module parameters
 The following parameters can be passed at startup to the PSE51
 API emulation module:
 
-- "tick_hz_arg", clock tick period. Defaults to 100 Hz.
+- "tick_hz_arg", clock tick period. Defaults to aperiodic.

@@ -483,9 +483,6 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case MAKE_HARD_RT: {
-#ifdef CONFIG_X86_64
-return 0;
-#endif
 #ifndef USE_LINUX_SYSCALL
 			if (!(task = current->rtai_tskext(0)) || task->is_hard == 1) {
 				 return 0;

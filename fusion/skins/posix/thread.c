@@ -68,10 +68,10 @@ static void thread_delete_hook (xnthread_t *xnthread)
 
 	case PTHREAD_CREATE_JOINABLE:
 
-	    if (xnsynch_wakeup_one_sleeper(&thread->join_synch))
-		thread_setdetachstate(thread, PTHREAD_CREATE_DETACHED);
-
-	    /* The TCB will be freed by the last joiner. */
+            xnsynch_wakeup_one_sleeper(&thread->join_synch);
+            /* Do not call xnpod_schedule here, this thread will be dead soon,
+               so that xnpod_schedule will be called anyway. The TCB will be
+               freed by the last joiner. */
 	    break;
 
 	default:
@@ -234,6 +234,7 @@ void pthread_exit (void *value_ptr)
 int pthread_join (pthread_t thread, void **value_ptr)
 
 {
+    int is_last_joiner;
     pthread_t cur;
     spl_t s;
     
@@ -267,7 +268,9 @@ int pthread_join (pthread_t thread, void **value_ptr)
         /* if cur is NULL (joining from the root thread), xnsynch_sleep_on
            will cause a fatal error. */
         xnsynch_sleep_on(&thread->join_synch, XN_INFINITE);
-        
+
+        is_last_joiner = xnsynch_wakeup_one_sleeper(&thread->join_synch) == NULL;
+
         thread_cancellation_point(cur);
         
         /* In case another thread called pthread_detach. */
@@ -278,13 +281,17 @@ int pthread_join (pthread_t thread, void **value_ptr)
 	    }
 	}
 
+    /* If we reach this point, at least one joiner is going to succeed, we can
+       mark the joinee as detached. */
+    thread_setdetachstate(thread, PTHREAD_CREATE_DETACHED);
+
     if (value_ptr)
         *value_ptr = thread_exit_status(thread);
 
-    if(xnsynch_wakeup_one_sleeper(&thread->join_synch) != NULL)
-        xnpod_schedule();
-    else
+    if(is_last_joiner)
         thread_destroy(thread);
+    else
+        xnpod_schedule();
 
     xnlock_put_irqrestore(&nklock, s);
 

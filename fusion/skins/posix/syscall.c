@@ -62,9 +62,8 @@ int __pthread_create (struct task_struct *curr, struct pt_regs *regs)
 			  (void __user *)__xn_reg_arg1(regs),
 			  &internal_tid,
 			  sizeof(internal_tid));
-
-    /* FIXME: how are we supposed to delete the unmapped thread upon
-       error? */
+    else
+        pse51_thread_abort(internal_tid, NULL);
 	
     return err;
 }

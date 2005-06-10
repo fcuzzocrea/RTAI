@@ -28,18 +28,20 @@ struct pse51_thread {
     unsigned magic;
     xnthread_t threadbase;
 
-#define thread2pthread(taddr)                                                   \
-((taddr)                                                                        \
- ? ((xnthread_get_magic(taddr) == PSE51_SKIN_MAGIC)                                 \
-    ? ((pthread_t)(((char *)taddr)-(int)(&((pthread_t) 0)->threadbase)))        \
-    : NULL)                                                                     \
- : NULL)
+#define thread2pthread(taddr) ({                                             \
+    xnthread_t *_taddr = (taddr);                                            \
+    (_taddr                                                                  \
+    ? ((xnthread_get_magic(_taddr) == PSE51_SKIN_MAGIC)                      \
+       ? ((pthread_t)(((char *)_taddr)-(int)(&((pthread_t) 0)->threadbase))) \
+       : NULL)                                                               \
+    : NULL);                                                                 \
+})
 
 
     xnholder_t link;	/* Link in pse51_threadq */
     
 #define link2pthread(laddr) \
-((pthread_t)(((char *)laddr) - (int)(&((pthread_t)0)->link)))
+    ((pthread_t)(((char *)(laddr)) - (int)(&((pthread_t)0)->link)))
     
 
     pthread_attr_t attr;        /* creation attributes */
@@ -103,8 +105,7 @@ struct pse51_thread {
 
 void pse51_thread_abort(pthread_t thread, void *status);
 
-static inline void
-thread_cancellation_point(pthread_t thread)
+static inline void thread_cancellation_point (pthread_t thread)
 {
     if( (thread)->cancel_request
         && thread_getcancelstate(thread) == PTHREAD_CANCEL_ENABLE )

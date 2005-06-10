@@ -187,7 +187,7 @@ int pthread_mutex_trylock (pthread_mutex_t *mutex)
        && mutex->owner == cur)
 	{
         if (mutex->count == UINT_MAX)
-            err=EAGAIN;
+            err = EAGAIN;
         else
 	    {
             ++mutex->count;

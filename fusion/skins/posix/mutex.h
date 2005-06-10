@@ -26,15 +26,15 @@
 static inline int mutex_trylock_internal(pthread_mutex_t *mutex, pthread_t cur)
 
 {
-    if(!pse51_obj_active(mutex, PSE51_MUTEX_MAGIC, pthread_mutex_t))
+    if (!pse51_obj_active(mutex, PSE51_MUTEX_MAGIC, pthread_mutex_t))
         return EINVAL;
     
-    if(mutex->count)
+    if (mutex->count)
         return EBUSY;
 
     xnsynch_set_owner(&mutex->synchbase, &cur->threadbase);
-    mutex->owner=cur;
-    mutex->count=1;
+    mutex->owner = cur;
+    mutex->count = 1;
     return 0;
 }
 
@@ -48,13 +48,13 @@ static inline int mutex_timedlock_internal(pthread_mutex_t *mutex, xnticks_t to)
 
     err = mutex_trylock_internal(mutex, cur);
 
-    if(mutex->owner != cur)
+    if (mutex->owner != cur)
         while (err == EBUSY)
             {
             xnsynch_sleep_on(&mutex->synchbase,
                              to==XN_INFINITE?to:to-xnpod_get_time());
 
-            err=mutex_trylock_internal(mutex, cur);   
+            err = mutex_trylock_internal(mutex, cur);   
 
             if (err == EBUSY &&
                 xnthread_test_flags(&cur->threadbase, XNTIMEO))
@@ -69,15 +69,15 @@ static inline int mutex_timedlock_internal(pthread_mutex_t *mutex, xnticks_t to)
 static inline int mutex_unlock_internal(pthread_mutex_t *mutex)
 
 {
-    if(!pse51_obj_active(mutex, PSE51_MUTEX_MAGIC, pthread_mutex_t))
+    if (!pse51_obj_active(mutex, PSE51_MUTEX_MAGIC, pthread_mutex_t))
         return EINVAL;
     
-    if(mutex->owner != pse51_current_thread() || mutex->count != 1)
+    if (mutex->owner != pse51_current_thread() || mutex->count != 1)
         return EPERM;
     
     mutex->owner = NULL;
     mutex->count = 0;
-    if(xnsynch_wakeup_one_sleeper(&mutex->synchbase))
+    if (xnsynch_wakeup_one_sleeper(&mutex->synchbase))
         xnpod_schedule();
     else
         xnsynch_set_owner(&mutex->synchbase, NULL);
@@ -90,13 +90,13 @@ static inline int mutex_unlock_internal(pthread_mutex_t *mutex)
 static inline int mutex_save_count(pthread_mutex_t *mutex, unsigned *count_ptr)
 
 {
-    if(mutex->count == 0)       /* Mutex is not locked. */
+    if (mutex->count == 0)       /* Mutex is not locked. */
         return EINVAL;
 
     /* Save the count and force it to 1, so that mutex_unlock_internal can
        do its job. */
-    *count_ptr=mutex->count;
-    mutex->count=1;
+    *count_ptr = mutex->count;
+    mutex->count = 1;
 
     return mutex_unlock_internal(mutex);
 }

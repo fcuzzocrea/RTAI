@@ -1,3 +1,12 @@
+2005-06-10  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/syscall.c (__pthread_create): Destroy thread when
+	mapping fails.
+
+	* skins/posix/thread.c (thread_delete_hook): As required by the
+	specification, postpone marking the thread as detached until after
+	we are sure that a joiner was not canceled.
+
 2005-06-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/lib/alarm.c: Implement the missing support.

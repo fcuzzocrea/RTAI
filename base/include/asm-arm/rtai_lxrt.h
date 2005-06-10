@@ -112,6 +112,9 @@ _lxrt_context_switch(struct task_struct *prev, struct task_struct *next, int cpu
     ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled());
 }
 
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)  { }
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk) { }
+
 #else /* !__KERNEL__ */
 
 static inline union rtai_lxrt_t

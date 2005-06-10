@@ -329,7 +329,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-SUBDIRS = hal
+SUBDIRS = hal calibration
 EXTRA_DIST = Kconfig defconfig patches
 all: all-recursive
 

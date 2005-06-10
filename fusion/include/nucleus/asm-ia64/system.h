@@ -91,6 +91,7 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_fpu_p(fi) ((fi)->trap == ADEOS_FPDIS_TRAP)
 /* The following predicate is guaranteed to be called over a regular
    Linux stack context. */
+#define xnarch_fault_pf_p(fi)   ((fi)->trap == ADEOS_PF_TRAP)
 #define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
                                  (fi)->trap != ADEOS_DEBUG_TRAP)
 #ifdef __cplusplus

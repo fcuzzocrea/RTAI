@@ -130,6 +130,7 @@ typedef struct xnthread {
 
 	unsigned long psw;	/* Primary mode switch count */
 	unsigned long ssw;	/* Secondary mode switch count */
+	unsigned long pf;	/* Number of page faults */
 
     } stat;
 

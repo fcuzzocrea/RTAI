@@ -91,6 +91,7 @@ int xnthread_init (xnthread_t *thread,
 
     thread->stat.psw = 0;
     thread->stat.ssw = 0;
+    thread->stat.pf = 0;
 
     /* These will be filled by xnpod_start_thread() */
     thread->imask = 0;

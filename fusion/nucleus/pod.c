@@ -175,6 +175,12 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
                      xnarch_fault_trap(fltinfo),
                      xnarch_fault_pc(fltinfo));
 #endif /* CONFIG_RTAI_OPT_DEBUG */
+	if (xnarch_fault_pf_p(fltinfo))
+	    /* The page fault counter is not SMP-safe, but it's a
+	       simple indicator that something went wrong wrt memory
+	       locking anyway. */
+	    xnpod_current_thread()->stat.pf++;
+
         xnshadow_relax(xnarch_fault_notify(fltinfo));
         }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */

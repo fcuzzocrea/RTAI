@@ -192,8 +192,8 @@ static int stat_read_proc (char *page,
 
     xnlock_get_irqsave(&nklock, s);
 
-    p += sprintf(p,"%-3s   %-6s %-12s     %-12s\n",
-		 "CPU","PID","NAME","MODSW");
+    p += sprintf(p,"%-3s   %-6s %-12s     %-12s  %-6s\n",
+		 "CPU","PID","NAME","MODSW","PF");
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
@@ -209,13 +209,14 @@ static int stat_read_proc (char *page,
             if (thread->sched != sched)
                 continue;
 
-	    p += sprintf(p,"%3u   %-6d %-12s %6lu/%-6lu\n",
+	    p += sprintf(p,"%3u   %-6d %-12s %6lu/%-6lu %6lu\n",
                          cpu,
 			 !testbits(thread->status,XNROOT) && xnthread_user_task(thread) ?
 			 xnthread_user_task(thread)->pid : 0,
                          thread->name,
 			 thread->stat.psw,
-			 thread->stat.ssw);
+			 thread->stat.ssw,
+			 thread->stat.pf);
             }
         }
 

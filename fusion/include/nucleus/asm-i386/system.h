@@ -93,6 +93,8 @@ typedef struct xnarch_fltinfo {
    Linux stack context. */
 #define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
                                  ((fi)->vector != 1 && (fi)->vector != 3))
+#define xnarch_fault_pf_p(fi)   ((fi)->vector == 14)
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -32,6 +32,10 @@
 
 #endif /* __RTAI_SIM__ */
 
+#ifndef __KERNEL__
+#include <sys/types.h>
+#endif /* __KERNEL__ */
+
 #include <linux/errno.h>
 #include <nucleus/asm/system.h>
 

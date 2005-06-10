@@ -140,6 +140,37 @@ int __pthread_wait_np (struct task_struct *curr, struct pt_regs *regs)
     return -pthread_wait_np();
 }
 
+int __pthread_set_mode_np (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    xnflags_t clrmask, setmask;
+    pthread_t internal_tid;
+    spl_t s;
+    int err;
+
+    internal_tid = (pthread_t)__xn_reg_arg1(regs);
+    clrmask = __xn_reg_arg2(regs);
+    setmask = __xn_reg_arg3(regs);
+
+    if ((clrmask & ~(XNSHIELD|XNTRAPSW)) != 0 ||
+	(setmask & ~(XNSHIELD|XNTRAPSW)) != 0)
+	return -EINVAL;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (!pse51_obj_active(&internal_tid->threadbase, PSE51_THREAD_MAGIC, struct pse51_thread))
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return -ESRCH;
+	}
+
+    err = xnpod_set_thread_mode(&internal_tid->threadbase,clrmask,setmask);
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return err;
+}
+
 int __sem_init (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -482,6 +513,7 @@ static xnsysent_t __systab[] = {
     [__pse51_sched_yield ] = { &__sched_yield, __xn_exec_primary },
     [__pse51_thread_make_periodic ] = { &__pthread_make_periodic_np, __xn_exec_primary },
     [__pse51_thread_wait] = { &__pthread_wait_np, __xn_exec_primary },
+    [__pse51_thread_set_mode] = { &__pthread_set_mode_np, __xn_exec_any },
     [__pse51_sem_init] = { &__sem_init, __xn_exec_any },
     [__pse51_sem_destroy] = { &__sem_destroy, __xn_exec_any },
     [__pse51_sem_post] = { &__sem_post, __xn_exec_any },

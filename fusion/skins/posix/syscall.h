@@ -29,26 +29,27 @@
 #define __pse51_sched_yield           3
 #define __pse51_thread_make_periodic  4
 #define __pse51_thread_wait           5
-#define __pse51_sem_init              6
-#define __pse51_sem_destroy           7
-#define __pse51_sem_post              8
-#define __pse51_sem_wait              9
-#define __pse51_clock_getres          10
-#define __pse51_clock_gettime         11
-#define __pse51_clock_settime         12
-#define __pse51_clock_nanosleep       13
-#define __pse51_mutex_init            14
-#define __pse51_mutex_destroy         15
-#define __pse51_mutex_lock            16
-#define __pse51_mutex_timedlock       17
-#define __pse51_mutex_trylock         18
-#define __pse51_mutex_unlock          19
-#define __pse51_cond_init             20
-#define __pse51_cond_destroy          21
-#define __pse51_cond_wait             22
-#define __pse51_cond_timedwait        23
-#define __pse51_cond_signal           24
-#define __pse51_cond_broadcast        25
+#define __pse51_thread_set_mode       6
+#define __pse51_sem_init              7
+#define __pse51_sem_destroy           8
+#define __pse51_sem_post              9
+#define __pse51_sem_wait              10
+#define __pse51_clock_getres          11
+#define __pse51_clock_gettime         12
+#define __pse51_clock_settime         13
+#define __pse51_clock_nanosleep       14
+#define __pse51_mutex_init            15
+#define __pse51_mutex_destroy         16
+#define __pse51_mutex_lock            17
+#define __pse51_mutex_timedlock       18
+#define __pse51_mutex_trylock         19
+#define __pse51_mutex_unlock          20
+#define __pse51_cond_init             21
+#define __pse51_cond_destroy          22
+#define __pse51_cond_wait             23
+#define __pse51_cond_timedwait        24
+#define __pse51_cond_signal           25
+#define __pse51_cond_broadcast        26
 
 #ifdef __KERNEL__
 

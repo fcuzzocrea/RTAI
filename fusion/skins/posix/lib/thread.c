@@ -328,3 +328,13 @@ int pthread_wait_np (void)
     return -XENOMAI_SKINCALL0(__pse51_muxid,
 			      __pse51_thread_wait);
 }
+
+int pthread_set_mode_np (pthread_t thread,
+			 int clrmask,
+			 int setmask)
+{
+    return -XENOMAI_SKINCALL2(__pse51_muxid,
+			      __pse51_thread_set_mode,
+			      clrmask,
+			      setmask);
+}

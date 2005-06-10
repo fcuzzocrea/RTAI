@@ -21,6 +21,7 @@
 
 #include <time.h>
 #include_next <pthread.h>
+#include <nucleus/thread.h>
 
 union __fusion_mutex {
     pthread_mutex_t native_mutex;
@@ -47,6 +48,9 @@ struct timespec;
 #define CLOCK_MONOTONIC 1
 #endif /* CLOCK_MONOTONIC */
 
+#define PTHREAD_SHIELD  XNSHIELD
+#define PTHREAD_WARNSW  XNTRAPSW
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,6 +59,10 @@ int pthread_make_periodic_np(pthread_t thread,
 			     struct timespec *starttp,
 			     struct timespec *periodtp);
 int pthread_wait_np(void);
+
+int pthread_set_mode_np(pthread_t thread,
+			int clrmask,
+			int setmask);
 
 int __real_pthread_create(pthread_t *tid,
 			  const pthread_attr_t *attr,

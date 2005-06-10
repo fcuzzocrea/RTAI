@@ -24,6 +24,10 @@
  * RTAI/ARM over Adeos rewrite:
  *   Copyright (c) 2004-2005 Michael Neuhauser, Firmix Software GmbH (mike@firmix.at)
  *
+ * RTAI/ARM over Adeos rewrite for PXA255_2.6.7:
+ *   Copyright (c) 2005 Stefano Gafforelli (stefano.gafforelli@tiscali.it)
+ *   Copyright (c) 2005 Luca Pizzi (lucapizzi@hotmail.com)
+ *
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -133,14 +137,14 @@ rtai_imuldiv(int i, int mult, int div)
 #define RTAI_IFLAG			(7)
 
 #define rtai_cpuid()			adeos_processor_id()
-#define rtai_tskext(idx)                ptd[idx]
+#define rtai_tskext(idx)   		ptd[idx]
 
 /* Use these in hard real time code to achieve UP-atomicity. */
-#define rtai_cli()			adeos_stall_pipeline_from(&rtai_domain)
-#define rtai_sti()			adeos_unstall_pipeline_from(&rtai_domain)
-#define rtai_save_flags_and_cli(x)	((x) = adeos_test_and_stall_pipeline_from(&rtai_domain))
-#define rtai_restore_flags(x)		adeos_restore_pipeline_from(&rtai_domain,(x))
-#define rtai_save_flags(x)		((x) = adeos_test_pipeline_from(&rtai_domain))
+#define rtai_cli()			adeos_hw_cli()
+#define rtai_sti()			adeos_hw_sti()
+#define rtai_save_flags_and_cli(x)	adeos_hw_local_irq_save(x)
+#define rtai_restore_flags(x)		adeos_hw_local_irq_restore(x)
+#define rtai_save_flags(x)		adeos_hw_local_irq_flags(x)
 
 /* Use these when accessing the hardware. */
 #define rtai_hw_disable()		adeos_hw_cli()
@@ -155,7 +159,25 @@ rtai_imuldiv(int i, int mult, int div)
 #define rtai_hw_restore_flags(f)	rtai_hw_unlock(f)
 #define rtai_hw_save_flags(f)		rtai_hw_flags(f)
 
-#define __adeos_pend_uncond(irq, cpuid) adeos_propagate_irq(irq)
+#define __adeos_pend_uncond(irq, cpuid) \
+    do { \
+	ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled()); \
+	adp_root->cpudata[cpuid].irq_hits[irq]++; \
+	__set_bit(irq & IPIPE_IRQ_IMASK, &adp_root->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
+	__set_bit(irq >> IPIPE_IRQ_ISHIFT, &adp_root->cpudata[cpuid].irq_pending_hi); \
+    } while (0)
+
+#ifdef CONFIG_PREEMPT
+#define rtai_save_and_lock_preempt_count() \
+    do { \
+	int *prcntp, prcnt; prcnt = xchg(prcntp = &preempt_count(), 1);
+#define rtai_restore_preempt_count() \
+	*prcntp = prcnt; \
+    } while (0)
+#else
+#define rtai_save_and_lock_preempt_count()	do {
+#define rtai_restore_preempt_count()		} while (0)
+#endif
 
 struct calibration_data {
     unsigned long cpu_freq;		/* TSC (i.e. rtai_rdtsc()) clock frequency, set in hal.c */
@@ -182,37 +204,10 @@ extern struct rt_times			rt_smp_times[RTAI_NR_CPUS];
 extern volatile unsigned long		rtai_cpu_realtime;
 extern struct rtai_switch_data 		rtai_linux_context[RTAI_NR_CPUS];
 extern int				rtai_adeos_ptdbase;
-extern adomain_t			rtai_domain;
 
 /* type of rt irq handler (general + timer) */
 typedef void (*rt_irq_handler_t)(unsigned irq, void *cookie);
 typedef void (*rt_timer_irq_handler_t)(void);
-
-#ifdef CONFIG_ADEOS_THREADS
-
-/* rtai_get_current() is Adeos-specific. Since real-time interrupt
-   handlers are called on behalf of the RTAI domain stack, we cannot
-   infere the "current" Linux task address using a CPU-register. We must use the
-   suspended Linux domain's stack pointer instead. */
-extern inline struct task_struct *
-rtai_get_root_current(int cpuid)
-{
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-    return (struct task_struct *)(((u_long)adp_root->esp[cpuid]) & (~8191UL));
-#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-    return ((struct thread_info *)(((u_long)adp_root->esp[cpuid]) & (~((THREAD_SIZE)-1))))->task;
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
-}
-
-#else /* !CONFIG_ADEOS_THREADS */
-
-extern inline struct task_struct *
-rtai_get_root_current(int cpuid)
-{
-    return current;
-}
-
-#endif /* CONFIG_ADEOS_THREADS */
 
 /* following macros only valid for UP */
 
@@ -242,7 +237,7 @@ rt_switch_to_real_time(int cpuid)
     ADEOS_PARANOIA_ASSERT(adeos_hw_irqs_disabled());
     TRACE_RTAI_SWITCHTO_RT(cpuid);
     if (!rtai_linux_context[cpuid].depth++) {
-	rtai_linux_context[cpuid].oldflags = adeos_test_and_stall_pipeline_from(adp_root);
+	rtai_linux_context[cpuid].oldflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 	__set_bit(cpuid, &rtai_cpu_realtime);
     } else {
 	ADEOS_PARANOIA_ASSERT(test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status) != 0);
@@ -257,7 +252,7 @@ rt_switch_to_linux(int cpuid)
     if (rtai_linux_context[cpuid].depth) {
 	if (!--rtai_linux_context[cpuid].depth) {
 	    __clear_bit(cpuid, &rtai_cpu_realtime);
-	    adeos_restore_pipeline_nosync(adp_root, rtai_linux_context[cpuid].oldflags, cpuid);
+	    adp_root->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 	}
     }
 }
@@ -280,10 +275,11 @@ extern void		rtai_set_linux_task_priority(struct task_struct *task,
 #ifdef __KERNEL__
 
 #include <linux/kernel.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#include <linux/interrupt.h>
+#endif /* LINUX_VERSION_CODE >= 2.6.0 */
 
-/* printk is safe to use with Adeos */
-#define rt_printk	      		printk
-#define rtai_print_to_screen  		printk
+#define rtai_print_to_screen  		rt_printk
 
 #ifdef __cplusplus
 extern "C" {
@@ -318,6 +314,8 @@ extern RT_TRAP_HANDLER	rt_set_trap_handler(RT_TRAP_HANDLER handler);
 extern void		rt_mount(void);
 extern void		rt_umount(void);
 extern void		(*rt_set_ihook(void (*hookfn)(int)))(int);
+extern int		rt_printk(const char *format, ...)  __attribute__((format(printf, 1, 2)));
+
 
 /* deprecated calls */
 

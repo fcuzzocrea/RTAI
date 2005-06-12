@@ -234,7 +234,7 @@ void pthread_exit (void *value_ptr)
 int pthread_join (pthread_t thread, void **value_ptr)
 
 {
-    int is_last_joiner;
+    int is_last_joiner = 0;
     pthread_t cur;
     spl_t s;
     

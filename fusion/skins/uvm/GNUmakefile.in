@@ -292,7 +292,7 @@ include_HEADERS = \
 noinst_HEADERS = \
 	syscall.h
 
-EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild Kconfig
+EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild
 SUBDIRS = lib
 all: all-recursive
 

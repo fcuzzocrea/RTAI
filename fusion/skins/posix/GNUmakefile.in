@@ -295,7 +295,7 @@ include_HEADERS = \
 noinst_HEADERS = cancel.h cond.h internal.h mutex.h sem.h signal.h \
 	thread.h tsd.h $(am__append_2)
 distfiles = syscall.c syscall.h
-EXTRA_DIST = $(distfiles) $(libmodule_SRC) doc Makefile.kbuild Kconfig
+EXTRA_DIST = $(distfiles) $(libmodule_SRC) doc Makefile.kbuild Kconfig demos
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
 all: all-recursive
 

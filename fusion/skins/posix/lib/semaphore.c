@@ -52,7 +52,7 @@ int __wrap_sem_destroy (sem_t *sem)
     int err;
 
     if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
-	return __real_sem_destroy(sem);
+	return EINVAL;
 
     err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_destroy,
@@ -72,7 +72,7 @@ int __wrap_sem_post (sem_t *sem)
     int err;
 
     if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
-	return __real_sem_post(sem);
+	return EINVAL;
 
     err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_post,
@@ -92,7 +92,7 @@ int __wrap_sem_wait (sem_t *sem)
     int err;
 
     if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
-	return __real_sem_wait(sem);
+	return EINVAL;
 
     err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_wait,

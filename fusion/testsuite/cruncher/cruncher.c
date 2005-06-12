@@ -209,7 +209,7 @@ void *sampler_thread (void *arg)
     if (do_histogram)
 	dump_histogram();
 
-    sem_post(&semX);
+    __real_sem_post(&semX);
 
     return NULL;
 }
@@ -272,7 +272,7 @@ int main (int ac, char **av)
     pthread_create(&cruncher_thid,&thattr,&cruncher_thread,NULL);
     pthread_create(&sampler_thid,&thattr,&sampler_thread,NULL);
 
-    sem_wait(&semX);
+    __real_sem_wait(&semX);
 
     return 0;
 }

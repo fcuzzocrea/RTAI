@@ -73,7 +73,7 @@ directly and seamlessly by the application.
 The list of shadowed POSIX services is available from the file
 lib/posix.wrappers.
 
---------------------------------------------------------------------
+--------------------------BEWARE------------------------------------
 Building an application which uses the real-time POSIX support
 requires using the proper compilation and link flags returned by the
 'rtai-config' script (default location is
@@ -90,12 +90,21 @@ implementation. All services listed in lib/posix.wrappers are
 substituted with their RTAI replacement when invoked through their
 vanilla names.
 
-Caveat: Use of the static initializers PTHREAD_MUTEX_INITIALIZER and
+Caveats:
+
+- Use of the static initializers PTHREAD_MUTEX_INITIALIZER and
 PTHREAD_COND_INITIALIZER in setting up mutex and condition variable
 replacements is invalid; dynamic initialization through the
 pthread_mutex_init() and pthread_cond_init() routines must be used
 instead, otherwise, mutex and condition variable-related calls would
 always return an error status (EINVAL).
+
+- Currently, the POSIX skin only implements the CLOCK_MONOTONIC clock,
+which is fortunately sufficient to configure the application timings,
+retrieve accurate timestamps and so on. Do _not_ pass CLOCK_REALTIME,
+or anything different from CLOCK_MONOTONIC, to the shadowed clock_*()
+routines, unless you do want the real (i.e. un-shadowed) service to be
+invoked.
 
 
 Undefined behaviour.

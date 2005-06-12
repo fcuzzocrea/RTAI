@@ -126,9 +126,8 @@ TODO List
 
 The PSE51 skin is still a work in progress, it lacks some features which will be 
 added gradually :
-- RTLinux non portable extensions ;
 - CLOCK_REALTIME support (the only clock supported is CLOCK_MONOTONIC for now,
-  which does not make any difference as long as clock_gettime does not get 
+  which does not make any difference as long as clock_settime does not get 
   called);
 - spinlocks/rwlocks/barriers/message queues ;
 - SA_SIGINFO sigaction flag, realtime signals ;

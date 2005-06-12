@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <semaphore.h>
 
-static int sampling_period = 2000; /* Defaults to 2ms */
+static int sampling_period = SPERIOD;
 
 static sem_t semA, semB;
 

@@ -262,7 +262,7 @@ int main (int ac, char **av)
 
     sem_init(&semA,0,0);
     sem_init(&semB,0,0);
-    __real_sem_init(&semX,0,0);	/* We need a real NPTL sema4 here. */
+    __real_sem_init(&semX,0,0);	/* We need a real glibc sema4 here. */
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);

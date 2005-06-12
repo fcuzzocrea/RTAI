@@ -49,9 +49,13 @@ described in this specification. Here are the known ones :
 - priority ceiling protocol is not supported, use priority inheritance instead ;
 
 - simultaneous calls to pthread_join() specifying the same target thread simply
-  locks all the callers until the target thread exits, is canceled or killed.
+  locks all the callers until the target thread exits, is canceled or killed ;
 
-- most functions should be asynchronous signal safe.
+- all functions should be asynchronous signal safe ;
+
+- the skin supports the RTLinux non portable extensions pthread_make_periodic_np
+  and pthread_wait_np, as a convenience to help porting applications from this
+  OS.
 
 
 Use of the POSIX skin from user-space applications

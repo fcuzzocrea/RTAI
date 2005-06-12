@@ -203,8 +203,8 @@
 00253 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_WATCHDOG</span>
 00254 <span class="preprocessor"></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_reset_watchdog (<span class="keywordtype">void</span>)
 00255 {
-00256     nkpod-&gt;watchdog_trigger = xnarch_get_cpu_tsc() + nkpod-&gt;watchdog_reload;
-00257     nkpod-&gt;watchdog_armed = 0;
+00256     nkpod-&gt;<a class="code" href="structxnpod.html#o22">watchdog_trigger</a> = xnarch_get_cpu_tsc() + nkpod-&gt;<a class="code" href="structxnpod.html#o23">watchdog_reload</a>;
+00257     nkpod-&gt;<a class="code" href="structxnpod.html#o24">watchdog_armed</a> = 0;
 00258 }
 00259 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_RTAI_OPT_WATCHDOG */</span>
 00260 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_reset_watchdog (<span class="keywordtype">void</span>)
@@ -441,7 +441,7 @@
 00491 <span class="preprocessor">#endif</span>
 00492 <span class="preprocessor"></span>
 00495 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_POD_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:02 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jun 12 19:49:01 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

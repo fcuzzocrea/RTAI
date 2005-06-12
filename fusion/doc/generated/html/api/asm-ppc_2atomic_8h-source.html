@@ -226,15 +226,17 @@
 00216 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_set_mask(pflags,mask)    atomic_set_mask(mask,pflags)</span>
 00217 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_clear_mask(pflags,mask)  atomic_clear_mask(mask,pflags)</span>
 00218 <span class="preprocessor"></span>
-00219 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00220 
-00221 <span class="keyword">typedef</span> atomic_t atomic_counter_t;
-00222 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> atomic_flags_t;
-00223 
-00224 <span class="preprocessor">#define xnarch_atomic_xchg(ptr,x) atomic_xchg(ptr,x)</span>
-00225 <span class="preprocessor"></span>
-00226 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_ATOMIC_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:02 2005 for RTAI Fusion API by&nbsp;
+00219 <span class="preprocessor">#define cpu_relax()  xnarch_memory_barrier()</span>
+00220 <span class="preprocessor"></span>
+00221 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00222 
+00223 <span class="keyword">typedef</span> atomic_t atomic_counter_t;
+00224 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> atomic_flags_t;
+00225 
+00226 <span class="preprocessor">#define xnarch_atomic_xchg(ptr,x) atomic_xchg(ptr,x)</span>
+00227 <span class="preprocessor"></span>
+00228 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_ATOMIC_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jun 12 19:49:01 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

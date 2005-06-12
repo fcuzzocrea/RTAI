@@ -83,59 +83,61 @@
 00073 
 00074 <span class="preprocessor">#define xnarch_memory_barrier()  __asm__ __volatile__("": : :"memory")</span>
 00075 <span class="preprocessor"></span>
-00076 <span class="comment">/* Depollute the namespace a bit. */</span>
-00077 <span class="preprocessor">#undef ADDR</span>
-00078 <span class="preprocessor"></span>
-00079 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00080 
-00081 <span class="keyword">typedef</span> atomic_t atomic_counter_t;
-00082 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> atomic_flags_t;
-00083 
-00084 <span class="preprocessor">#define xnarch_atomic_set(pcounter,i)          atomic_set(pcounter,i)</span>
-00085 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_get(pcounter)            atomic_read(pcounter)</span>
-00086 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_inc(pcounter)            atomic_inc(pcounter)</span>
-00087 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_dec(pcounter)            atomic_dec(pcounter)</span>
-00088 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_inc_and_test(pcounter)   atomic_inc_and_test(pcounter)</span>
-00089 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_dec_and_test(pcounter)   atomic_dec_and_test(pcounter)</span>
-00090 <span class="preprocessor"></span>
-00091 <span class="comment">/* These functions actually only work on the first 32 bits word of the</span>
-00092 <span class="comment">   64 bits status word whose address is addr. But the bit fields used</span>
-00093 <span class="comment">   by the nucleus have to work on 32 bits architectures anyway. */</span>
-00094 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> atomic_set_mask(<span class="keywordtype">unsigned</span> mask, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *addr)
-00095 {
-00096     __u32 old, <span class="keyword">new</span>;
-00097     <span class="keyword">volatile</span> __u32 *m;
-00098     CMPXCHG_BUGCHECK_DECL
-00099         
-00100     m = (<span class="keyword">volatile</span> __u32 *) addr;
-00101     <span class="keywordflow">do</span> {
-00102         CMPXCHG_BUGCHECK(m);
-00103         old = *m;
-00104         <span class="keyword">new</span> = old | mask;
-00105     } <span class="keywordflow">while</span> (cmpxchg_acq(m, old, <span class="keyword">new</span>) != old);
-00106 }
-00107 
-00108 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> atomic_clear_mask(<span class="keywordtype">unsigned</span> mask, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *addr)
-00109 {
-00110     __u32 old, <span class="keyword">new</span>;
-00111     <span class="keyword">volatile</span> __u32 *m;
-00112     CMPXCHG_BUGCHECK_DECL
-00113         
-00114     m = (<span class="keyword">volatile</span> __u32 *) addr;
-00115     <span class="keywordflow">do</span> {
-00116         CMPXCHG_BUGCHECK(m);
-00117         old = *m;
-00118         <span class="keyword">new</span> = old &amp; ~mask;
-00119     } <span class="keywordflow">while</span> (cmpxchg_acq(m, old, <span class="keyword">new</span>) != old);
-00120 }
-00121 
-00122 <span class="preprocessor">#define xnarch_atomic_set_mask(pflags,mask)    atomic_set_mask(mask,pflags)</span>
-00123 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_clear_mask(pflags,mask)  atomic_clear_mask(mask,pflags)</span>
-00124 <span class="preprocessor"></span>
-00125 <span class="preprocessor">#define xnarch_atomic_xchg(ptr,x) atomic_xchg(ptr,x)</span>
+00076 <span class="preprocessor">#define cpu_relax() asm volatile ("hint @pause" ::: "memory")</span>
+00077 <span class="preprocessor"></span>
+00078 <span class="comment">/* Depollute the namespace a bit. */</span>
+00079 <span class="preprocessor">#undef ADDR</span>
+00080 <span class="preprocessor"></span>
+00081 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00082 
+00083 <span class="keyword">typedef</span> atomic_t atomic_counter_t;
+00084 <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> atomic_flags_t;
+00085 
+00086 <span class="preprocessor">#define xnarch_atomic_set(pcounter,i)          atomic_set(pcounter,i)</span>
+00087 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_get(pcounter)            atomic_read(pcounter)</span>
+00088 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_inc(pcounter)            atomic_inc(pcounter)</span>
+00089 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_dec(pcounter)            atomic_dec(pcounter)</span>
+00090 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_inc_and_test(pcounter)   atomic_inc_and_test(pcounter)</span>
+00091 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_dec_and_test(pcounter)   atomic_dec_and_test(pcounter)</span>
+00092 <span class="preprocessor"></span>
+00093 <span class="comment">/* These functions actually only work on the first 32 bits word of the</span>
+00094 <span class="comment">   64 bits status word whose address is addr. But the bit fields used</span>
+00095 <span class="comment">   by the nucleus have to work on 32 bits architectures anyway. */</span>
+00096 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> atomic_set_mask(<span class="keywordtype">unsigned</span> mask, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *addr)
+00097 {
+00098     __u32 old, <span class="keyword">new</span>;
+00099     <span class="keyword">volatile</span> __u32 *m;
+00100     CMPXCHG_BUGCHECK_DECL
+00101         
+00102     m = (<span class="keyword">volatile</span> __u32 *) addr;
+00103     <span class="keywordflow">do</span> {
+00104         CMPXCHG_BUGCHECK(m);
+00105         old = *m;
+00106         <span class="keyword">new</span> = old | mask;
+00107     } <span class="keywordflow">while</span> (cmpxchg_acq(m, old, <span class="keyword">new</span>) != old);
+00108 }
+00109 
+00110 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> atomic_clear_mask(<span class="keywordtype">unsigned</span> mask, <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *addr)
+00111 {
+00112     __u32 old, <span class="keyword">new</span>;
+00113     <span class="keyword">volatile</span> __u32 *m;
+00114     CMPXCHG_BUGCHECK_DECL
+00115         
+00116     m = (<span class="keyword">volatile</span> __u32 *) addr;
+00117     <span class="keywordflow">do</span> {
+00118         CMPXCHG_BUGCHECK(m);
+00119         old = *m;
+00120         <span class="keyword">new</span> = old &amp; ~mask;
+00121     } <span class="keywordflow">while</span> (cmpxchg_acq(m, old, <span class="keyword">new</span>) != old);
+00122 }
+00123 
+00124 <span class="preprocessor">#define xnarch_atomic_set_mask(pflags,mask)    atomic_set_mask(mask,pflags)</span>
+00125 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_atomic_clear_mask(pflags,mask)  atomic_clear_mask(mask,pflags)</span>
 00126 <span class="preprocessor"></span>
-00127 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_IA64_ATOMIC_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Jun 4 12:24:02 2005 for RTAI Fusion API by&nbsp;
+00127 <span class="preprocessor">#define xnarch_atomic_xchg(ptr,x) atomic_xchg(ptr,x)</span>
+00128 <span class="preprocessor"></span>
+00129 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_IA64_ATOMIC_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jun 12 19:49:01 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

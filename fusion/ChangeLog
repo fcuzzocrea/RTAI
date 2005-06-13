@@ -1,3 +1,7 @@
+2005-06-12  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: fusion-0.8 (Time Machine)
+
 2005-06-10  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/posix/thread.c: Add pthread_set_mode_np() for changing the

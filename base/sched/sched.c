@@ -1988,7 +1988,7 @@ struct prev_next_t { struct task_struct *prev, *next; };
 static int lxrt_intercept_schedule_head (unsigned long event, struct head_t *evdata)
 
 {
-    IN_INTERCEPT_IRQ_ENABLE();
+    IN_INTERCEPT_IRQ_ENABLE(); {
 
     struct task_struct *prev = evdata->prev;
 
@@ -2022,7 +2022,7 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct head_t *evd
 static int lxrt_intercept_schedule_tail (void)
 
 {
-	IN_INTERCEPT_IRQ_ENABLE();
+	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	int cpuid;
 	if (in_hrt_mode(cpuid = smp_processor_id())) {
@@ -2073,12 +2073,12 @@ static int lxrt_intercept_schedule_tail (void)
 #endif  /* KERNEL_VERSION < 2.6.0 */
 
     return 0;
-}
+} }
 
 struct task_sig_t { struct task_struct *task; int sig; };
 static int lxrt_intercept_signal (unsigned long event, struct task_sig_t *evdata)
 {
-	IN_INTERCEPT_IRQ_ENABLE();
+	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	struct task_struct *lnxtsk = evdata->task;
 	RT_TASK *task = lnxtsk->rtai_tskext(0);
@@ -2092,11 +2092,11 @@ static int lxrt_intercept_signal (unsigned long event, struct task_sig_t *evdata
 		}
 	}
 	return 0;
-}
+} }
 
 static int lxrt_intercept_exit (void)
 {
-	IN_INTERCEPT_IRQ_ENABLE();
+	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	extern void linux_process_termination(void);
 	RT_TASK *task = current->rtai_tskext(0);
@@ -2107,13 +2107,13 @@ static int lxrt_intercept_exit (void)
 		linux_process_termination();
 	}
 	return 0;
-}
+} }
 
 extern long long rtai_lxrt_invoke (unsigned long, void *);
 
 static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *r)
 {
-	IN_INTERCEPT_IRQ_ENABLE();
+	IN_INTERCEPT_IRQ_ENABLE(); {
 
 #ifdef USE_LINUX_SYSCALL
 	unsigned long syscall_nr;
@@ -2153,11 +2153,11 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 		}
 	}
 	return 0;
-}
+} }
 
 static int lxrt_intercept_syscall_epilogue(void)
 {
-	IN_INTERCEPT_IRQ_ENABLE();
+	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	RT_TASK *task;
 	if (current->rtai_tskext(0) && (task = (RT_TASK *)current->rtai_tskext(0))->is_hard > 1) {
@@ -2167,7 +2167,8 @@ static int lxrt_intercept_syscall_epilogue(void)
 		return 1;
 	}
 	return 0;
-}
+} }
+
 #else
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 

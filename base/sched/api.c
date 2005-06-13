@@ -546,7 +546,7 @@ void rt_gettimeorig(RTIME time_orig[])
 	struct timeval tv;
 	rtai_save_flags_and_cli(flags);
 	do_gettimeofday(&tv);
-	time_orig[0] = rdtsc();
+	time_orig[0] = rtai_rdtsc();
 	rtai_restore_flags(flags);
 	time_orig[0] = tv.tv_sec*(long long)tuned.cpu_freq + llimd(tv.tv_usec, tuned.cpu_freq, 1000000) - time_orig[0];
 	time_orig[1] = llimd(time_orig[0], 1000000000, tuned.cpu_freq);
@@ -687,9 +687,9 @@ int rt_task_wait_period(void)
 	if (rt_current->resync_frame) { // Request from watchdog
 	    	rt_current->resync_frame = 0;
 #ifdef CONFIG_SMP
-		rt_current->resume_time = oneshot_timer ? rdtsc() : rt_smp_times[cpuid].tick_time;
+		rt_current->resume_time = oneshot_timer ? rtai_rdtsc() : rt_smp_times[cpuid].tick_time;
 #else
-		rt_current->resume_time = oneshot_timer ? rdtsc() : rt_times.tick_time;
+		rt_current->resume_time = oneshot_timer ? rtai_rdtsc() : rt_times.tick_time;
 #endif
 	} else if ((rt_current->resume_time += rt_current->period) > rt_time_h) {
 		rt_current->state |= RT_SCHED_DELAYED;
@@ -807,8 +807,8 @@ RTIME next_period(void)
 void rt_busy_sleep(int ns)
 {
 	RTIME end_time;
-	end_time = rdtsc() + llimd(ns, tuned.cpu_freq, 1000000000);
-	while (rdtsc() < end_time);
+	end_time = rtai_rdtsc() + llimd(ns, tuned.cpu_freq, 1000000000);
+	while (rtai_rdtsc() < end_time);
 }
 
 /**
@@ -887,25 +887,27 @@ int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 		return -EINVAL;
 	}
 
-	flags = rt_global_save_flags_and_cli();
-	if (mask & RT_SCHED_DELAYED) {
-		rem_timed_task(task);
-	}
-	if (task->blocked_on && (mask & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN))) {
-		(task->queue.prev)->next = task->queue.next;
-		(task->queue.next)->prev = task->queue.prev;
-		if (task->state & RT_SCHED_SEMAPHORE) {
-			((SEM *)(task->blocked_on))->count++;
-			if (((SEM *)(task->blocked_on))->type && ((SEM *)(task->blocked_on))->count > 1) {
-				((SEM *)(task->blocked_on))->count = 1;
+	if (task->state && task->state != RT_SCHED_READY) {
+		flags = rt_global_save_flags_and_cli();
+		if (mask & RT_SCHED_DELAYED) {
+			rem_timed_task(task);
+		}
+		if (task->blocked_on && (mask & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN))) {
+			(task->queue.prev)->next = task->queue.next;
+			(task->queue.next)->prev = task->queue.prev;
+			if (task->state & RT_SCHED_SEMAPHORE) {
+				SEM *sem = (SEM *)task->blocked_on;
+				if (++sem->count > 1 && sem->type) {
+					sem->count = 1;
+				}
 			}
 		}
+		if (task->state != RT_SCHED_READY && (task->state &= ~mask) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			RT_SCHEDULE(task, rtai_cpuid());
+		}
+		rt_global_restore_flags(flags);
 	}
-	if (task->state != RT_SCHED_READY && (task->state &= ~mask) == RT_SCHED_READY) {
-		enq_ready_task(task);
-		RT_SCHEDULE(task, rtai_cpuid());
-	}
-	rt_global_restore_flags(flags);
 	return 0;
 }
 

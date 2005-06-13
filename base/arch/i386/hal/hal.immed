@@ -107,9 +107,11 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 
 #else /* !CONFIG_X86_LOCAL_APIC */
 
-#define rtai_setup_periodic_apic(count, vector);
+#define rtai_setup_periodic_apic(count, vector)
 
-#define rtai_setup_oneshot_apic(count, vector);
+#define rtai_setup_oneshot_apic(count, vector)
+
+#define ack_APIC_irq()
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 

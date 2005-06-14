@@ -1,3 +1,10 @@
+2004-06-14  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Corrected problem with
+	acivation from continous blocks. Better handling of "ode" functions
+        * rtai-lab/scilab/devices/rtai_comedi_dio.c: Corrected problem with
+	threshold in output block
+	
 2005-05-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/arch/x86_64/hal/hal.immed:

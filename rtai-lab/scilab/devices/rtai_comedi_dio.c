@@ -130,7 +130,7 @@ int inp_rtai_comedi_dio_init(int nch,char * sName)
   return(port);
 }
 
-int out_rtai_comedi_dio_init(int nch,char * sName,char * sParam,double threshold)
+int out_rtai_comedi_dio_init(int nch,char * sName,double threshold)
 {
   void *dev;
   int subdev;

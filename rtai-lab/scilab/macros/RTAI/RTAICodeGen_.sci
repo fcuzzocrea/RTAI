@@ -42,14 +42,20 @@ endfunction
 function Code=c_make_doit1(cpr,stalone)
 // produces the code for ddoit1, cdoit,edoit1, doit, odoit and ozdoit
 //Copyright INRIA
-
+  funtyp=cpr.sim.funtyp; 
   Code=[make_ddoit1()
-	make_cdoit(stalone)
 	make_edoit1(stalone)
-        make_doit(stalone)
-	make_odoit(stalone)
-	make_zdoit(stalone)
-        make_ozdoit(stalone)]  
+	make_odoit(stalone)]
+        if (find(funtyp < 0) <> []) then
+          Code=[Code
+	         make_ozdoit(stalone)]
+        end
+	if (~stalone) then	
+	  Code=[Code
+	        make_cdoit(stalone)
+                make_doit(stalone)
+	        make_zdoit(stalone)] 
+        end 
 endfunction
 
 //==========================================================================
@@ -109,7 +115,6 @@ function Code=make_ddoit1()
 endfunction
 
 //==========================================================================
-//nouveau
 
 function Code=make_cdoit(stalone)
 //les pointeurs de cpr :
@@ -130,7 +135,7 @@ function Code=make_cdoit(stalone)
 	 '     double  *z, *told,*outtb; ';
 	 '{'; 
 	 '  /* System generated locals */ '; 
-	 '  integer i2; '; 
+	 '  integer i2, ntvecm; '; 
 	 ' '; 
 	 '  /* Local variables */ '; 
 	 '  integer flag,nport,sz[100],ierr1,nevprt,ntvec;';
@@ -415,7 +420,6 @@ endfunction
 
 //==========================================================================
 
-//nouveau
 function Code=make_odoit(stalone)
 //les pointeurs de cpr :
   z=cpr.state.z;
@@ -467,30 +471,25 @@ if (x <> []) then
 	 ' '; 
 	 '  /* Function Body */ ';
 	 '  kiwa = 0; ';];
-end
+
  //////////////////////////////////////////////////
   
   for ii=1:noord
     fun=oord(ii,1);
     if outptr(fun+1)-outptr(fun)>0  then
       nclock=oord(ii,2);
-      if or(fun==act) | or(fun==cap) then
-	if stalone then
-	  Code=[Code;
-	        '  flag = 1 ;';
-	        '  nevprt='+string(nclock)+';';
-	        ' '+wfunclist(fun);
-	        ' ';
-	        ' '];
-        end     
-      else
-        Code=[Code;
-	      '  flag = 1 ;';
-	      '  nevprt='+string(nclock)+';';
-	      ' '+wfunclist(fun);
-	      ' ';
-	      ' '];
-      end 
+      Code=[Code;
+	    '  flag = 1 ;';
+	    '  nevprt='+string(nclock)+';';]
+      if stalone then
+	Code=[Code;
+	      '  block_'+rdnom+'['+string(fun-1)+'].x=&(xt['+string(xptr(fun)-1)+']);'
+              '  block_'+rdnom+'['+string(fun-1)+'].xd=&(xtd['+string(xptr(fun)-1)+']);']
+      end	
+      Code=[Code;
+	    ' '+wfunclist(fun);
+	    ' ';
+	    ' ']; 
       
     end
     ntvec=clkptr(fun+1)-clkptr(fun);
@@ -510,34 +509,16 @@ end
   for ii=1:noord
     fun=oord(ii,1);
     if xptr(fun+1)-xptr(fun)>0  then
-      nclock=oord(ii,2);
-      if or(fun==act) | or(fun==cap) then
-	if stalone then
-	  Code=[Code;
-	        '  flag = 0 ;';
-	        '  nevprt='+string(nclock)+';';
-                ' '+wfunclist(fun);
-	        ' ';
-	        ' '];          
-        end     
-      else
-        Code=[Code;
-	      '  flag = 0 ;';
-	      '  nevprt='+string(nclock)+';';]
-        if stalone then
-	  Code=[Code;
-	        '  block_'+rdnom+'['+string(fun-1)+'].x=&(xt['+string(xptr(fun)-1)+']);'
-                '  block_'+rdnom+'['+string(fun-1)+'].xd=&(xtd['+string(xptr(fun)-1)+']);']
-        end	
-        Code=[Code;
-	      ' '+wfunclist(fun);
-	      ' ';
-	      ' '];
-      end 
-      
+      nclock=oord(ii,2);     
+      Code=[Code;
+            '  flag = 0 ;';
+	    '  nevprt='+string(nclock)+';';
+            ' '+wfunclist(fun);
+	    ' ';
+	    ' '];
     end
   end
-  if (x <>[]) then
+
     Code=[Code;	
           '  for (i = 1; i <= kiwa; ++i) {';
 	  '    keve = iwa[i-1];';
@@ -561,13 +542,7 @@ end
           else
             Code=[Code;
 	          '  flag = 0 ;';
-	          '  nevprt='+string(nclock)+';';]
-            if stalone then
-	      Code=[Code;
-	            '  block_'+rdnom+'['+string(fun-1)+'].x=&(xt['+string(xptr(fun)-1)+']);'
-                    '  block_'+rdnom+'['+string(fun-1)+'].xd=&(xtd['+string(xptr(fun)-1)+']);']
-            end	
-            Code=[Code;
+	          '  nevprt='+string(nclock)+';';
 	          ' '+wfunclist(fun);
 	          ' ';
 	          ' '];          
@@ -580,18 +555,27 @@ end
     Code=[Code;
           '    }'; //switch
 	  '  }';]
-    end
-    Code=[Code;
-          '  return 0;'
-	  ' ';
-	  '} /* odoit */';
-	  '  '];
+  end
+
+  for ii=1:noord
+    fun=oord(ii,1);
+    nclock=oord(ii,2);
+    if stalone then
+      Code=[Code;
+	    '  block_'+rdnom+'['+string(fun-1)+'].x=&(x['+string(xptr(fun)-1)+']);'
+            '  block_'+rdnom+'['+string(fun-1)+'].xd=&(xd['+string(xptr(fun)-1)+']);']
+    end        
+  end
+  Code=[Code;
+        '  return 0;'
+	' ';
+	'} /* odoit */';
+	'  '];
 
 endfunction
 
 //==========================================================================
 
-//nouveau
 function Code=make_zdoit(stalone)
 //les pointeurs de cpr :
   z=cpr.state.z;zcptr=cpr.sim.zcptr;
@@ -625,7 +609,7 @@ function Code=make_zdoit(stalone)
 	 '  integer sz[100]; ';
 	 '  integer ierr1; '; 
 	 '  integer nevprt; '; 
-	 '  integer ntvec;'; 
+	 '  integer ntvec, ntvecm;'; 
 	 ' '; 
 	 '  /* Function Body */ ';
 	 '  kiwa = 0; ';];
@@ -653,18 +637,41 @@ function Code=make_zdoit(stalone)
 	      ' ';
 	      ' '];
       end 
-      
     end
     ntvec=clkptr(fun+1)-clkptr(fun);
     if ntvec >0  & funs(fun) <> 'bidon' then
-      if funtyp(fun)<0 then
+      nxx=lnkptr(inplnk(inpptr(fun)));
+      if funtyp(fun)==-1 then
+	  Code=[Code;
+	        '    if (phase==1){';
+		'      if (outtb['+string(nxx-1)+']>0) {';
+		'        ntvecm=1;';
+		'      }';
+		'      else {';
+		'        ntvecm=2;';
+		'      }';
+                '    }else {';
+                '      ntvecm=block_'+rdnom+'['+string(fun-1)+'].mode[0];';
+                '    }']
+	elseif funtyp(fun)==-2 then
+	  Code=[Code;
+                '    if (phase==1){';
+		'      ntvecm=(integer)outtb['+string(nxx-1)+'];';
+		'      if(ntvecm>'+string(ntvec)+'){ntvecm='+string(ntvec)+';}';
+		'      if(ntvecm<1){ntvecm=1;}';
+                '    }else {';
+                '      ntvecm=block_'+rdnom+'['+string(fun-1)+'].mode[0];';
+                '    }']
+	else
+	  message('Block '+fun+' has funtyp '+string(funtyp(fun))+': not allowed')
+	end
+	
         Code=[Code;
 	      '    i2 = ntvecm + clkptr['+string(fun-1)+'] - 1;';
 	      '    '+rdnom+'_putevs(told, &i2, &ierr1); ';
 	      '    if (ierr1 != 0) return 3;'
               cformatline('    '+rdnom+'ozdoit(told, outtb, iwa, &kiwa, phase);',70)]
       end
-    end
   end
   Code=[Code;
 	'  /*     .  update states derivatives */'];
@@ -699,9 +706,9 @@ function Code=make_zdoit(stalone)
 	         ' if ( block_'+rdnom+'['+string(fun-1)+'].ng > 0){']
       if funtyp(fun)==-1 then
 	  Code=[Code;
-	        '  g['+string(zcptr(fun))+']=outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+'];'
+	        '  g['+string(zcptr(fun)-1)+']=outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+'];'
 		'  if(phase==1 && block_'+rdnom+'['+string(fun-1)+'].nmode > 0){'
-		'    if (g['+string(zcptr(fun))+'] <= 0.){'
+		'    if (g['+string(zcptr(fun)-1)+'] <= 0.){'
 		'      block_'+rdnom+'['+string(fun-1)+'].mode[0] = 2;'
 		'    }'
 		'    else {'
@@ -760,9 +767,9 @@ function Code=make_zdoit(stalone)
       else
         if funtyp(fun)==-1 then
 	  Code=[Code;
-	        '  g['+string(zcptr(fun))+']=outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+'];'
+	        '  g['+string(zcptr(fun)-1)+']=outtb['+string(-1+lnkptr(inplnk(inpptr(fun))))+'];'
 		'  if(phase==1 && block_'+rdnom+'['+string(fun-1)+'].nmode > 0){'
-		'    if (g['+string(zcptr(fun))+'] <= 0.){'
+		'    if (g['+string(zcptr(fun)-1)+'] <= 0.){'
 		'      block_'+rdnom+'['+string(fun-1)+'].mode[0] = 2;'
 		'    }'
 		'    else {'
@@ -817,12 +824,12 @@ function Code=make_ozdoit(stalone)
   maxkeve=size(ordptr,1)-1;
   
   Code=[ '/*'+part('-',ones(1,40))+' ozdoit.c */ ';
-	 'int '
+        'int '
 	cformatline(rdnom+'ozdoit(told, outtb, iwa, kiwa, phase)',70)	 
 	'     double  *told, *outtb; ';
 	'     integer *iwa, *kiwa, phase; ';
-	'{ ';
-	'  /* System generated locals */ ';
+	'{ '; 
+        '  /* System generated locals */ ';
 	'  integer i2; ';
 	' ';
 	'  /* Local variables */ ';
@@ -1587,7 +1594,7 @@ if ok==%f then message('Sorry: problem in the pre-compilation step.'),return, en
       end
     end
     ///**********************************
-  end  
+  end 
   if szclkIN>1 then
     //replace the N Event inputs by a fictious block with 2^N as many event
     //outputs
@@ -1703,7 +1710,7 @@ zcptr=cpr.sim.zcptr;
   lnkptr=cpr.sim.lnkptr;
   ordclk=cpr.sim.ordclk;
   funtyp=cpr.sim.funtyp;cord=cpr.sim.cord;ncord=size(cord,1);
-  nblk=cpr.sim.nblk;ztyp=cpr.sim.ztyp;
+  nblk=cpr.sim.nb;ztyp=cpr.sim.ztyp;
   clkptr=cpr.sim.clkptr
   //taille totale de z : nztotal
   nztotal=size(z,1);
@@ -2225,9 +2232,11 @@ function Code=make_decl_standalone()
 		    ";',70);
 	''
 	cformatline('int '+rdnom+'ddoit1(double *, double *, double *, int *);',70);
-	' ';
-	cformatline('int '+rdnom+'cdoit(double *, double *, double *);',70);
 	' ';]
+	//cformatline('int '+rdnom+'cdoit(double *, double *, double *);',70);
+	//' ';
+	//cformatline('int '+rdnom+'doit(double *, double *, double *);',70);
+	//' ';]
 if x <> [] then
   Code=[Code
   	cformatline('int '+rdnom+'odoit(double *, double *, int* , int , double *, double *, double *);',70);
@@ -2237,16 +2246,15 @@ else
   	cformatline('int '+rdnom+'odoit(double *, double *, int* , int );',70);
 	' ';]
 end
+  //Code=[Code 
+	//cformatline('int '+rdnom+'zdoit(double *, double *, double *, int* , int );',70);
+	//' ';
   Code=[Code 
-	cformatline('int '+rdnom+'zdoit(double *, double *, double *, int* , int );',70);
-	' ';
-        cformatline('int '+rdnom+'ddoit2(double *, double *, double *, int *);',70);
+	cformatline('int '+rdnom+'ddoit2(double *, double *, double *, int *);',70);
 	' ';
 	cformatline('int '+rdnom+'edoit1(double *, double *, int *, int *);',70);	
 	' ';
 	cformatline('int '+rdnom+'ozdoit(double *,double *, int*, int *, int);',70);	
-	' ';
-        cformatline('int '+rdnom+'doit(double *, double *, double *);',70);
 	' ';
         cformatline('int '+rdnom+'_initi(double *, double *, int *);',70);
 	' ';
@@ -2314,7 +2322,6 @@ endfunction
 
 //==========================================================================
 
-//nouveau
 function Code=make_main0()
 //generate code for flag=0 case  
 //Copyright INRIA
@@ -2606,27 +2613,26 @@ end
   if (x ==[]) then
     Code=[Code	
 	'    set_nevprt(nevprt);'
-	'    '+rdnom+'main1(block_'+rdnom+',z,t);']
+	'    '+rdnom+'main1(block_'+rdnom+',z,t);'
+	'    '+rdnom+'main2(block_'+rdnom+',z,t);']
   else
     Code=[Code
 	'double tout,dt,he,h;'
 	''	     	
 	'    set_nevprt(nevprt);'
   	'    '+rdnom+'main1(block_'+rdnom+',z,t);'
-        '    neq= '+string(nX)+'; '
+  	'    '+rdnom+'main2(block_'+rdnom+',z,t);'
         '    tout=*t;'
 	'    dt=get_tsamp();'
         '    h=dt/'+odestep+';'
-        '    while (tout<*t+dt){'
+        '    while (tout+h<*t+dt){'
         '      '+odefun+'(C2F('+rdnom+'simblk),tout,h);'
         '      tout=tout+h;'
         '    }'
-        '    tout=tout-h;'
-        '    he=*t+dt-tout+h;'
+        '    he=*t+dt-tout;'
         '    '+odefun+'(C2F('+rdnom+'simblk),tout,he);']
   end
   Code=[Code	
-	'    '+rdnom+'main2(block_'+rdnom+',z,t);'
 	'}'
 	'' 
 	'/*'+part('-',ones(1,40))+'  Lapack messag function */ ';
@@ -2695,7 +2701,6 @@ Code=[Code
       '{ '
       '  /* int iwa[1]={0}; */'
       '  int phase=2;'
-      '  neq='+string(nX)+';'
       '  C2F(dset)(&neq, &c_b14,xcdot , &c__1);'
       '  '+rdnom+'odoit(t, '+rdnom+'_block_outtb,'+rdnom+'_iwa,phase,xcdot, xc, xcdot);'
       ' '
@@ -2838,6 +2843,7 @@ function Code=make_static_standalone()
   rpar=cpr.sim.rpar;ipar=cpr.sim.ipar;
   x=cpr.state.x;
   nbrpa=0;
+  nX=size(x,'*');
   
   Code=cg_sa_static();
   if x <> [] then
@@ -2846,7 +2852,7 @@ function Code=make_static_standalone()
          cformatline('double xd[]={'+strcat(string(x),',')+'};',70)
          'static integer c__1 = 1;'
          'static double c_b14 = 0.;'
-         'static integer neq;']	
+         'static integer neq='+string(nX)+';']	
   end
 
   Code=[Code;

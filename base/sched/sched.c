@@ -1866,9 +1866,7 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 		rt_task->base_priority += BASE_SOFT_PRIORITY;
 		rt_task->priority      += BASE_SOFT_PRIORITY;
 	} 
-	if (((rt_task->lnxtsk)->rt_priority = MAX_LINUX_RTPRIO - rt_task->priority) < 1) {
-		(rt_task->lnxtsk)->rt_priority = 1;
-	}
+	(rt_task->lnxtsk)->rt_priority = (MAX_LINUX_RTPRIO - rt_task->priority) < 1 ? 1 : MAX_LINUX_RTPRIO - rt_task->priority;
 	pend_wake_up_srq(rt_task->lnxtsk);
 	rt_schedule();
 	rt_task->is_hard = 0;

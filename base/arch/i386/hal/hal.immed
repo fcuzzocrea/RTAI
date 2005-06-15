@@ -2003,6 +2003,7 @@ void __rtai_hal_exit (void)
 module_init(__rtai_hal_init);
 module_exit(__rtai_hal_exit);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 asmlinkage int rt_printk(const char *fmt, ...)
 {
 	va_list args;
@@ -2028,6 +2029,7 @@ asmlinkage int rt_sync_printk(const char *fmt, ...)
 
 	return r;
 }
+#endif
 
 /*
  *  support for decoding long long numbers in kernel space.
@@ -2109,8 +2111,10 @@ EXPORT_SYMBOL(rtai_cpu_realtime);
 EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 EXPORT_SYMBOL(rt_printk);
 EXPORT_SYMBOL(rt_sync_printk);
+#endif
 EXPORT_SYMBOL(ll2a);
 
 EXPORT_SYMBOL(rtai_set_gate_vector);

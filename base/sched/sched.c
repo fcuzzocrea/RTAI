@@ -1931,7 +1931,9 @@ static void start_stop_kthread(RT_TASK *task, void (*rt_thread)(int), int data, 
 static void wake_up_srq_handler(void)
 {
 	void *task;
+#ifdef CONFIG_PREEMPT
 	preempt_disable();
+#endif
 	rt_global_cli();
         while (wake_up_srq.out != wake_up_srq.in) {
 		task = wake_up_srq.task[wake_up_srq.out & (MAX_WAKEUP_SRQ - 1)];
@@ -1942,7 +1944,9 @@ static void wake_up_srq_handler(void)
         }
 	rt_global_sti();
 	set_need_resched();
+#ifdef CONFIG_PREEMPT
 	preempt_enable();
+#endif
 }
 
 static unsigned long traptrans, systrans;
@@ -1985,7 +1989,7 @@ static struct mmreq {
 } lxrt_mmrqtab[NR_CPUS];
 
 struct prev_next_t { struct task_struct *prev, *next; };
-static int lxrt_intercept_schedule_head (unsigned long event, struct head_t *evdata)
+static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t *evdata)
 
 {
     IN_INTERCEPT_IRQ_ENABLE(); {
@@ -2015,7 +2019,7 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct head_t *evd
 	}
 
 	return 0;
-}
+} }
 
 #endif  /* KERNEL_VERSION < 2.6.0 */
 

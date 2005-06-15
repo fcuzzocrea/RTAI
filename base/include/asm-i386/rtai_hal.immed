@@ -537,8 +537,13 @@ static inline unsigned long rt_global_save_flags_and_cli(void)
 
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 int rt_printk(const char *format, ...);
 int rt_printk_sync(const char *format, ...);
+#else
+#define rt_printk  printk
+#define rt_printk_sync printk
+#endif
 
 extern adomain_t rtai_domain;
 

@@ -780,7 +780,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 	do { rtai_reset_gate_vector(vector, save); } while (0)
 
 #ifdef CONFIG_SMP
-void _rtai_sched_on_ipi_handler(void)
+int _rtai_sched_on_ipi_handler(void)
 {
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
@@ -789,29 +789,51 @@ void _rtai_sched_on_ipi_handler(void)
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
+	if (!test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
+		rtai_sti();
+		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
+			rtai_cli();
+			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
+		}
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
+#endif
+		return 1;
+        }
+	return 0;
 }
 
 void rtai_sched_on_ipi_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
         SYMBOL_NAME_STR(rtai_sched_on_ipi_handler) ":\n\t" \
+        "pushl $-1\n\t" \
 	"cld\n\t" \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
         "pushl %eax\n\t" \
         "pushl %ebp\n\t" \
+        "pushl %edi\n\t" \
+        "pushl %esi\n\t" \
         "pushl %edx\n\t" \
         "pushl %ecx\n\t" \
+        "pushl %ebx\n\t" \
 	__LXRT_GET_DATASEG(ecx) \
         "movl %ecx, %ds\n\t" \
         "movl %ecx, %es\n\t" \
         "call "SYMBOL_NAME_STR(_rtai_sched_on_ipi_handler)"\n\t" \
+        "testl %eax,%eax\n\t" \
+        "jnz  ret_from_intr\n\t" \
+        "popl %ebx\n\t" \
         "popl %ecx\n\t" \
         "popl %edx\n\t" \
+        "popl %esi\n\t" \
+        "popl %edi\n\t" \
         "popl %ebp\n\t" \
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+        "addl $4,%esp\n\t" \
         "iret");
 
 static struct desc_struct rtai_sched_on_ipi_sysvec;
@@ -827,7 +849,7 @@ void rt_reset_sched_ipi_gate(void)
 }
 #endif
 
-void _rtai_apic_timer_handler(void)
+int _rtai_apic_timer_handler(void)
 {
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
@@ -836,29 +858,51 @@ void _rtai_apic_timer_handler(void)
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
+	if (!test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
+		rtai_sti();
+		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
+			rtai_cli();
+			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
+		}
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
+#endif
+		return 1;
+        }
+	return 0;
 }
 
 void rtai_apic_timer_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
         SYMBOL_NAME_STR(rtai_apic_timer_handler) ":\n\t" \
+        "pushl $-1\n\t" \
 	"cld\n\t" \
         "pushl %es\n\t" \
         "pushl %ds\n\t" \
         "pushl %eax\n\t" \
         "pushl %ebp\n\t" \
+        "pushl %edi\n\t" \
+        "pushl %esi\n\t" \
         "pushl %edx\n\t" \
         "pushl %ecx\n\t" \
+        "pushl %ebx\n\t" \
 	__LXRT_GET_DATASEG(ecx) \
         "movl %ecx, %ds\n\t" \
         "movl %ecx, %es\n\t" \
         "call "SYMBOL_NAME_STR(_rtai_apic_timer_handler)"\n\t" \
+        "testl %eax,%eax\n\t" \
+        "jnz  ret_from_intr\n\t" \
+        "popl %ebx\n\t" \
         "popl %ecx\n\t" \
         "popl %edx\n\t" \
+        "popl %esi\n\t" \
+        "popl %edi\n\t" \
         "popl %ebp\n\t" \
         "popl %eax\n\t" \
         "popl %ds\n\t" \
         "popl %es\n\t" \
+        "addl $4,%esp\n\t" \
         "iret");
 
 static struct desc_struct rtai_apic_timer_sysvec;
@@ -886,6 +930,9 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 			rtai_cli();
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
+#endif
 		return 1;
         }
 	return 0;
@@ -1371,9 +1418,9 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 			rtai_cli();
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
-#endif /* CONFIG_SMP */
+#endif
 		return 1;
         }
 	return 0;

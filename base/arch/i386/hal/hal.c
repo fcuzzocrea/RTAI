@@ -2029,6 +2029,34 @@ asmlinkage int rt_sync_printk(const char *fmt, ...)
 
 	return r;
 }
+#else
+#define VSNPRINTF_BUF 256
+asmlinkage int rt_printk(const char *fmt, ...)
+{
+	char buf[VSNPRINTF_BUF];
+	va_list args;
+
+        va_start(args, fmt);
+        vsnprintf(buf, VSNPRINTF_BUF, fmt, args);
+        va_end(args);
+	return printk("%s", buf);
+}
+
+asmlinkage int rt_sync_printk(const char *fmt, ...)
+{
+	char buf[VSNPRINTF_BUF];
+	va_list args;
+	int r;
+
+        va_start(args, fmt);
+        vsnprintf(buf, VSNPRINTF_BUF, fmt, args);
+        va_end(args);
+	adeos_set_printk_sync(&rtai_domain);
+	r = printk("%s", buf);
+	adeos_set_printk_async(&rtai_domain);
+
+	return r;
+}
 #endif
 
 /*
@@ -2111,10 +2139,8 @@ EXPORT_SYMBOL(rtai_cpu_realtime);
 EXPORT_SYMBOL(rt_times);
 EXPORT_SYMBOL(rt_smp_times);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 EXPORT_SYMBOL(rt_printk);
 EXPORT_SYMBOL(rt_sync_printk);
-#endif
 EXPORT_SYMBOL(ll2a);
 
 EXPORT_SYMBOL(rtai_set_gate_vector);

@@ -148,6 +148,8 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 #define IN_INTERCEPT_IRQ_DISABLE()  do { } while (0)
 #endif
 
+#include <linux/slab.h>
+
 #if 1 // optimised (?)
 static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
 {

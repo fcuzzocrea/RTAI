@@ -1,3 +1,10 @@
+2005-06-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: direct vectoring of irqs to the
+	  CPU has its tail as for immediate dispatching, to help Linux in
+	  the non preemptible case, i.e. under 2.4.xx. It tend to starve
+	  otherwise under very very high soft real time load.
+
 2004-06-14  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Corrected problem with

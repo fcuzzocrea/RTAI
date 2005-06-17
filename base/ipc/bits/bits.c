@@ -22,10 +22,11 @@
 #include <linux/config.h>
 #include <linux/version.h>
 #include <asm/uaccess.h>
+
+#include <rtai_schedcore.h>
 #include <rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_bits.h>
-#include <rtai_schedcore.h>
 
 MODULE_LICENSE("GPL");
 

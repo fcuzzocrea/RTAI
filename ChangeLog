@@ -1,3 +1,10 @@
+2005-06-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: pend trasitions to soft mode
+	  directly, they are all atomic protected already.
+	* base/sched/sched.c: uses above and simplified the trasition to 
+	  soft mode handler.
+
 2005-06-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed: direct vectoring of irqs to the

@@ -81,6 +81,7 @@ RTIME rt_smp_time_h[NR_RT_CPUS];
 
 int rt_smp_oneshot_timer[NR_RT_CPUS];
 
+static spinlock_t wake_up_srq_lock = SPIN_LOCK_UNLOCKED;
 struct klist_t wake_up_srq;
 
 /* +++++++++++++++ END OF WHAT MUST BE AVAILABLE EVERYWHERE +++++++++++++++++ */
@@ -628,7 +629,7 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
         void rt_schedule(void);
         rt_current->force_soft = 0;
 	rt_current->state &= ~RT_SCHED_READY;;
-	pend_wake_up_srq(rt_current->lnxtsk);
+	pend_wake_up_srq(rt_current->lnxtsk, cpuid);
         (rt_current->rprev)->rnext = rt_current->rnext;
         (rt_current->rnext)->rprev = rt_current->rprev;
         rt_schedule();
@@ -1867,7 +1868,7 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 		rt_task->priority      += BASE_SOFT_PRIORITY;
 	} 
 	(rt_task->lnxtsk)->rt_priority = (MAX_LINUX_RTPRIO - rt_task->priority) < 1 ? 1 : MAX_LINUX_RTPRIO - rt_task->priority;
-	pend_wake_up_srq(rt_task->lnxtsk);
+	pend_wake_up_srq(rt_task->lnxtsk, rt_task->runnable_on_cpus);
 	rt_schedule();
 	rt_task->is_hard = 0;
 	rt_global_sti();
@@ -1892,7 +1893,7 @@ static struct task_struct *get_kthread(int get, int cpuid, void *lnxtsk)
 			klistp->in++;
 			klistp->task[klistp->in & (MAX_WAKEUP_SRQ - 1)] = (void *)this_task;
 			klistp->in++;
-			pend_wake_up_srq(kthreadm[cpuid]);
+			pend_wake_up_srq(kthreadm[cpuid], cpuid);
 			rt_global_sti();
         		if (hard) {
 				rt_task_suspend(this_task);
@@ -1910,7 +1911,7 @@ static struct task_struct *get_kthread(int get, int cpuid, void *lnxtsk)
 		klistp->task[klistp->in & (MAX_WAKEUP_SRQ - 1)] = lnxtsk;
 	}
 	klistp->in++;
-	pend_wake_up_srq(kthreadm[cpuid]);
+	pend_wake_up_srq(kthreadm[cpuid], cpuid);
 	rt_global_sti();
 	return kthread;
 }
@@ -1928,20 +1929,16 @@ static void start_stop_kthread(RT_TASK *task, void (*rt_thread)(int), int data, 
 
 static void wake_up_srq_handler(void)
 {
-	void *task;
 #ifdef CONFIG_PREEMPT
 	preempt_disable();
 #endif
-	rt_global_cli();
-        while (wake_up_srq.out != wake_up_srq.in) {
-		task = wake_up_srq.task[wake_up_srq.out & (MAX_WAKEUP_SRQ - 1)];
-                wake_up_srq.out++;
-		rt_global_sti();
-		wake_up_process(task);
-		rt_global_cli();
+	if (spin_trylock(&wake_up_srq_lock)) {
+        	while (wake_up_srq.out != wake_up_srq.in) {
+			wake_up_process(wake_up_srq.task[wake_up_srq.out++ & (MAX_WAKEUP_SRQ - 1)]);
+        	}
+                spin_unlock(&wake_up_srq_lock);
+		set_need_resched();
         }
-	rt_global_sti();
-	set_need_resched();
 #ifdef CONFIG_PREEMPT
 	preempt_enable();
 #endif
@@ -2038,8 +2035,8 @@ static int lxrt_intercept_schedule_tail (void)
 		while (klistp->out != klistp->in) {
 			rt_global_cli();
 			fast_schedule(klistp->task[klistp->out & (MAX_WAKEUP_SRQ - 1)], lnxtsk, cpuid);
-			rt_global_sti();
 			klistp->out++;
+			rt_global_sti();
 		}
 #ifdef CONFIG_PREEMPT
 		preempt_enable();

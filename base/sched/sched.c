@@ -279,6 +279,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->tprev = task->tnext = task->rprev = task->rnext = task;
 	task->blocked_on = NOTHING;        
 	task->signal = signal;
+	task->usp_signal = 0;
 	memset(task->task_trap_handler, 0, RTAI_NR_TRAPS*sizeof(void *));
 	task->linux_syscall_server = NULL;
 	task->trap_handler_data = NULL;
@@ -399,6 +400,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stac
 	task->rprev = task->rnext = task;
 	task->blocked_on = NOTHING;        
 	task->signal = signal;
+	task->usp_signal = 0;
 	for (i = 0; i < RTAI_NR_TRAPS; i++) {
 		task->task_trap_handler[i] = NULL;
 	}
@@ -1973,6 +1975,14 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 	return 0;
 }
 
+static inline void rt_signal_wake_up(RT_TASK *task)
+{
+	task->force_soft = task->is_hard;
+	if (task->state && task->state != RT_SCHED_READY) {
+		rt_task_masked_unblock(task, ~RT_SCHED_READY);
+	}
+}
+
 #ifdef UNWRAPPED_CATCH_EVENT
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
@@ -2074,23 +2084,14 @@ static int lxrt_intercept_schedule_tail (void)
     return 0;
 } }
 
-struct task_sig_t { struct task_struct *task; int sig; };
-static int lxrt_intercept_signal (unsigned long event, struct task_sig_t *evdata)
+struct sig_wakeup_t { struct task_struct *task; };
+static void lxrt_intercept_sig_wakeup (long event, struct sig_wakeup_t *evdata)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
-
-	struct task_struct *lnxtsk = evdata->task;
-	RT_TASK *task = lnxtsk->rtai_tskext(0);
-	if (task) {
-		if ((task->force_soft = task->is_hard == 1)) {
-			rt_do_force_soft(task);
-			return 1;
-		}
-		if (task->state) {
-			lnxtsk->state = TASK_INTERRUPTIBLE;
-		}
+	RT_TASK *task;
+	if ((task = (evdata->task)->rtai_tskext(0))) {
+		rt_signal_wake_up(task);
 	}
-	return 0;
 } }
 
 static int lxrt_intercept_exit (void)
@@ -2269,23 +2270,14 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
     adeos_propagate_event(evinfo);
 } }
 
-static void lxrt_intercept_signal (adevinfo_t *evinfo)
+struct sig_wakeup_t { struct task_struct *task; };
+static void lxrt_intercept_sig_wakeup (long event, struct sig_wakeup_t *evdata)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
-
-	struct { struct task_struct *task; int sig; } *evdata = (__typeof(evdata))evinfo->evdata;
-	struct task_struct *lnxtsk = evdata->task;
-	RT_TASK *task = lnxtsk->rtai_tskext(0);
-	if (task) {
-		if ((task->force_soft = task->is_hard == 1)) {
-			rt_do_force_soft(task);
-			return;
-		}
-		if (task->state) {
-			lnxtsk->state = TASK_INTERRUPTIBLE;
-		}
+	RT_TASK *task;
+	if ((task = (evdata->task)->rtai_tskext(0))) {
+		rt_signal_wake_up(task);
 	}
-	adeos_propagate_event(evinfo);
 } }
 
 static void lxrt_intercept_exit (adevinfo_t *evinfo)
@@ -2581,11 +2573,10 @@ static int lxrt_init(void)
     adeos_catch_event(ADEOS_SCHEDULE_HEAD, (void *)lxrt_intercept_schedule_head);
 #endif  /* KERNEL_VERSION < 2.6.0 */
     adeos_catch_event(ADEOS_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
-    adeos_catch_event(ADEOS_SIGNAL_PROCESS, (void *)lxrt_intercept_signal);
     adeos_catch_event(ADEOS_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall_prologue);
     adeos_catch_event(ADEOS_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
     adeos_catch_event(ADEOS_EXIT_PROCESS, (void *)lxrt_intercept_exit);
-    adeos_catch_event(ADEOS_KICK_PROCESS, (void *)lxrt_intercept_signal);
+    adeos_catch_event(ADEOS_KICK_PROCESS, (void *)lxrt_intercept_sig_wakeup);
 	rtai_lxrt_dispatcher = rtai_lxrt_invoke;
 
     return 0;
@@ -2635,7 +2626,6 @@ static void lxrt_exit(void)
 	adeos_virtualize_irq(wake_up_srq.srq, NULL, NULL, 0);
 	adeos_free_irq(wake_up_srq.srq);
 
-	adeos_catch_event(ADEOS_SIGNAL_PROCESS, NULL);
 	adeos_catch_event(ADEOS_SCHEDULE_HEAD, NULL);
 	adeos_catch_event(ADEOS_SCHEDULE_TAIL, NULL);
 	adeos_catch_event(ADEOS_SYSCALL_PROLOGUE, NULL);

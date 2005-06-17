@@ -380,7 +380,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case LXRT_TASK_DELETE: {
-			return __task_delete(arg0.rt_task ? arg0.rt_task : current->rtai_tskext(0));
+			return __task_delete(arg0.rt_task ? arg0.rt_task : task);
 		}
 
 		case LXRT_SEM_INIT: {
@@ -484,7 +484,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 
 		case MAKE_HARD_RT: {
 #ifndef USE_LINUX_SYSCALL
-			if (!(task = current->rtai_tskext(0)) || task->is_hard == 1) {
+			if (!task || task->is_hard == 1) {
 				 return 0;
 			}
 			steal_from_linux(task);
@@ -494,7 +494,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 
 		case MAKE_SOFT_RT: {
 #ifndef USE_LINUX_SYSCALL
-			if (!(task = current->rtai_tskext(0)) || task->is_hard <= 0) {
+			if (!task || task->is_hard <= 0) {
 				return 0;
 			}
 			if (task->is_hard > 1) {
@@ -523,9 +523,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case RT_BUDDY: {
-			return current->rtai_tskext(0) && 
-			       current->rtai_tskext(1) == current ?
-			       (unsigned long)(current->rtai_tskext(0)) : 0;
+			return task && current->rtai_tskext(1) == current ?
+			       (unsigned long)task : 0;
 		}
 
 		case HRT_USE_FPU: {
@@ -556,7 +555,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
                 }
 
                 case SET_USP_FLG_MSK: {
-                        (task = current->rtai_tskext(0))->usp_flags_mask = arg0.name;
+                        task->usp_flags_mask = arg0.name;
                         task->force_soft = (task->is_hard > 0) && (task->usp_flags & arg0.name & FORCE_SOFT);
                         return 0;
                 }
@@ -607,19 +606,20 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 }
 
 long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
-
 {
-    long long retval;
+	long long retval;
 
 #ifdef CONFIG_RTAI_TRACE
-    trace_true_lxrt_rtai_syscall_entry();
-#endif /* CONFIG_RTAI_TRACE */
-    retval = handle_lxrt_request(lxsrq,arg);
-#ifdef CONFIG_RTAI_TRACE
-    trace_true_lxrt_rtai_syscall_exit();
+	trace_true_lxrt_rtai_syscall_entry();
 #endif /* CONFIG_RTAI_TRACE */
 
-    return retval;
+	retval = handle_lxrt_request(lxsrq, arg);
+
+#ifdef CONFIG_RTAI_TRACE
+	trace_true_lxrt_rtai_syscall_exit();
+#endif /* CONFIG_RTAI_TRACE */
+
+	return retval;
 }
 
 int set_rt_fun_ext_index(struct rt_fun_entry *fun, int idx)

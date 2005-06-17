@@ -1837,7 +1837,7 @@ void steal_from_linux(RT_TASK *rt_task)
 	rtai_cli();
 	klistp->task[klistp->in & (MAX_WAKEUP_SRQ - 1)] = rt_task;
 	klistp->in++;
-	current->state = TASK_HARDREALTIME;
+	(rt_task->lnxtsk)->state = TASK_HARDREALTIME;
 	rtai_sti();
 	if ((rt_task->lnxtsk)->run_list.next != LIST_POISON1) {
 		schedule();
@@ -1851,8 +1851,8 @@ void steal_from_linux(RT_TASK *rt_task)
 		rt_task->priority      -= BASE_SOFT_PRIORITY;
 	}
 	rt_task->is_hard = 1;
-	if (current->used_math) {
-		restore_fpu(current);
+	if ((rt_task->lnxtsk)->used_math) {
+		restore_fpu(rt_task->lnxtsk);
 	}
 	rtai_sti();
 }

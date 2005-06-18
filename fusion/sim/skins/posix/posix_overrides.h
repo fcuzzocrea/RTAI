@@ -98,4 +98,16 @@ struct sigaction {
 #define clock_getres pse51_clock_getres
 #define clock_gettime pse51_clock_gettime
 #define clock_settime pse51_clock_settime
+#define mq_attr pse51_mq_attr
+#define mq_getattr pse51_mq_getattr
+#define mq_setattr pse51_mq_setattr
+#define mq_send pse51_mq_send
+#define mq_close pse51_mq_close
+#define mq_receive pse51_mq_receive
+#define mq_timedreceive pse51_mq_timedreceive
+#define mq_timedsend pse51_mq_timedsend
+#define mq_open pse51_mq_open
+#define mq_unlink pse51_mq_unlink
+#define mq_notify pse51_mq_notify
+
 #endif /*PSE51_OVERRIDE_LIBC_DEFINES_H*/

@@ -19,7 +19,8 @@ libmodule_SRC = \
 	once.c \
 	signal.c \
 	tsd.c \
-	clock.c 
+	clock.c \
+	mq.c
 
 include_HEADERS = \
 	posix.h

@@ -34,10 +34,13 @@
 #define PSE51_SEM_MAGIC         PSE51_MAGIC(06)
 #define PSE51_KEY_MAGIC         PSE51_MAGIC(07)
 #define PSE51_ONCE_MAGIC        PSE51_MAGIC(08)
+#define PSE51_MQ_MAGIC          PSE51_MAGIC(09)
+#define PSE51_MQD_MAGIC         PSE51_MAGIC(0A)
 
 #define PSE51_MIN_PRIORITY      FUSION_LOW_PRIO
 #define PSE51_MAX_PRIORITY      FUSION_HIGH_PRIO
 
+#define ONE_BILLION             1000000000
 
 #define pse51_obj_active(h,m,t) \
 ((h) && ((t *)(h))->magic == (m))
@@ -50,14 +53,15 @@
 static inline void ticks2ts(struct timespec *ts, xnticks_t ticks)
 {
     ts->tv_sec = xnarch_uldivrem(xnpod_ticks2ns(ticks),
-                                 1000000000, &ts->tv_nsec);
+                                 ONE_BILLION,
+                                 &ts->tv_nsec);
 }
 
 static inline xnticks_t ts2ticks_floor(const struct timespec *ts)
 {
     xntime_t nsecs = ts->tv_nsec;
     if(ts->tv_sec)
-        nsecs += (xntime_t) ts->tv_sec * 1000000000;
+        nsecs += (xntime_t) ts->tv_sec * ONE_BILLION;
     return xnpod_ns2ticks(nsecs);
 }
 
@@ -67,7 +71,7 @@ static inline xnticks_t ts2ticks_ceil(const struct timespec *ts)
     unsigned long rem;
     xnticks_t ticks;
     if(ts->tv_sec)
-        nsecs += (xntime_t) ts->tv_sec * 1000000000;
+        nsecs += (xntime_t) ts->tv_sec * ONE_BILLION;
     ticks = xnarch_ulldiv(nsecs, xnpod_get_tickval(), &rem);
     return rem ? ticks+1 : ticks;
 }

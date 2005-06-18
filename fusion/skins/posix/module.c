@@ -27,6 +27,7 @@
 #include <posix/signal.h>
 #include <posix/thread.h>
 #include <posix/tsd.h>
+#include <posix/mq.h>
 
 MODULE_DESCRIPTION("POSIX/PSE51 interface");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
@@ -110,6 +111,7 @@ int __fusion_skin_init(void)
     pse51_sem_obj_init();
     pse51_tsd_init();
     pse51_cond_obj_init();
+    pse51_mq_pkg_init();
 
     pse51_thread_init(module_param_value(time_slice_arg));
 

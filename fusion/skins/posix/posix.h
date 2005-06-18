@@ -31,6 +31,8 @@
 /* For INT_MAX in user-space, kernel space finds this in
    linux/kernel.h */
 #include <limits.h>
+#include <fcntl.h>             /* For O_RDONLY, etc... */
+typedef unsigned long mqd_t;
 #endif /* __KERNEL__ */
 
 #include <nucleus/xenomai.h>
@@ -544,6 +546,49 @@ int pthread_make_periodic_np(pthread_t thread,
 			     struct timespec *periodtp);
 
 int pthread_wait_np(void);
+
+END_C_DECLS
+
+
+/* Message queues. */
+struct mq_attr {
+    long    mq_flags;
+    long    mq_maxmsg;
+    long    mq_msgsize;
+    long    mq_curmsgs;
+};
+
+BEGIN_C_DECLS
+
+int mq_getattr(mqd_t qd, struct mq_attr *attr);
+
+int mq_setattr(mqd_t qd,
+               const struct mq_attr *__restrict__ attr,
+               struct mq_attr *__restrict__ oattr);
+
+int mq_send(mqd_t qd, const char *buffer, size_t len, unsigned prio);
+
+int mq_close(mqd_t qd);
+
+ssize_t  mq_receive(mqd_t q, char *buffer, size_t len, unsigned *prio);
+
+ssize_t  mq_timedreceive(mqd_t q,
+                         char *__restrict__ buffer,
+                         size_t len,
+                         unsigned *__restrict__ prio,
+                         const struct timespec *__restrict__ timeout);
+
+int mq_timedsend(mqd_t q,
+                 const char * buffer,
+                 size_t len,
+                 unsigned prio,
+                 const struct timespec *timeout);
+
+
+
+mqd_t mq_open(const char *, int, ...);
+
+int mq_unlink(const char *);
 
 END_C_DECLS
 

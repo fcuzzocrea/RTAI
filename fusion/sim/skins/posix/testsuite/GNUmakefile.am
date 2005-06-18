@@ -29,7 +29,8 @@ check_PROGRAMS= \
 	cancellation \
 	signals \
 	tsd \
-	clock
+	clock \
+	mq
 
 threads_DEPENDENCIES= ../libposix_s.a libtests.a
 semaphores_DEPENDENCIES= ../libposix_s.a libtests.a
@@ -39,6 +40,7 @@ cancellation_DEPENDENCIES=../libposix_s.a libtests.a
 signals_DEPENDENCIES=../libposix_s.a libtests.a
 tsd_DEPENDENCIES=../libposix_s.a libtests.a
 clock_DEPENDENCIES=../libposix_s.a libtests.a
+mq_DEPENDENCIES=../libposix_s.a libtests.a
 
 check_LIBRARIES=libtests.a
 
@@ -51,5 +53,6 @@ cancellation_SOURCES = cancellation.c
 signals_SOURCES = signals.c
 tsd_SOURCES = tsd.c
 clock_SOURCES = clock.c
+mq_SOURCES = mq.c
 
 EXTRA_DIST = skeleton.c

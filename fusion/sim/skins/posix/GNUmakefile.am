@@ -11,7 +11,7 @@ atomic_core := --no-inst -O2
 endif
 
 AM_CPPFLAGS = \
-	-D__IN_RTAI__ \
+	-D_GNU_SOURCE -D__IN_RTAI__ \
 	--gcic-backend=$(prefix)/libexec/gcic \
 	--skin-code \
 	$(atomic_core) \
@@ -36,7 +36,8 @@ nodist_libposix_s_a_SOURCES = \
 	once.c \
 	signal.c \
 	tsd.c \
-	clock.c 
+	clock.c \
+	mq.c
 
 include_HEADERS = \
 	posix_overrides.h

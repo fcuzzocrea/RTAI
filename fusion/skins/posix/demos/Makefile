@@ -1,4 +1,5 @@
-prefix := $(shell rtai-config --prefix)
+RTAI_CONFIG=rtai-config
+prefix := $(shell $(RTAI_CONFIG) --prefix)
 
 ifeq ($(prefix),)
 $(error Please add <rtai-install-path>/bin to your PATH variable)
@@ -7,8 +8,8 @@ endif
 CFLAGS_STD= -D_GNU_SOURCE -D_REENTRANT -Wstrict-prototypes -O2 -Wall -DSPERIOD=2000
 LDFLAGS_STD= -lpthread -lrt
 
-CFLAGS_RT= $(shell rtai-config --posix-cflags) -DSPERIOD=100
-LDFLAGS_RT= $(shell rtai-config --posix-ldflags)
+CFLAGS_RT= $(shell $(RTAI_CONFIG) --posix-cflags)
+LDFLAGS_RT= $(shell $(RTAI_CONFIG) --posix-ldflags)
 
 # Using a single source image, this demo illustrates the real-time
 # guarantees provided by fusion's POSIX skin in user-space

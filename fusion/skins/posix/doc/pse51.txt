@@ -57,6 +57,9 @@ described in this specification. Here are the known ones :
   and pthread_wait_np, as a convenience to help porting applications from this
   OS.
 
+- message queues: support for mq_notify is missing, message queues support an
+  "O_DIRECT" flag, which allows to copy messages directly from sender to
+  receiver when receiver was suspended before sender.
 
 Use of the POSIX skin from user-space applications
 ==================================================
@@ -133,7 +136,7 @@ added gradually :
 - CLOCK_REALTIME support (the only clock supported is CLOCK_MONOTONIC for now,
   which does not make any difference as long as clock_settime does not get 
   called);
-- spinlocks/rwlocks/barriers/message queues ;
+- spinlocks/rwlocks/barriers ;
 - SA_SIGINFO sigaction flag, realtime signals ;
 - timers.
 

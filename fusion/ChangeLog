@@ -1,3 +1,7 @@
+2005-06-18  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/posix.h: Added initial support for message queues.
+
 2005-06-12  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.8 (Time Machine)

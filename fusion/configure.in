@@ -213,7 +213,7 @@ if test -r $RTAI_LINUX_SRCDIR/include/linux/adeos.h; then
    AC_MSG_RESULT([ok])
    CONFIG_RTAI_ADEOS=y
 else
-     AC_MSG_ERROR([No Adeos support found in $RTAI_LINUX_DIR/include/linux/adeos.h -- Please remedy.])
+     AC_MSG_ERROR([No Adeos support found in $RTAI_LINUX_SRCDIR/include/linux/adeos.h -- Please remedy.])
 fi
 
 dnl

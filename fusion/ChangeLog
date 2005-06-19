@@ -1,3 +1,10 @@
+2005-06-20  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/mq.c: Rework creation and deletion of message queues
+	to avoid holding the nucleus lock while calling xnarch allocation
+	functions.
+	Add EXPORT_SYMBOL for all mq functions.
+
 2005-06-19  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c (xnpod_shutdown): Replace the flawed shutdown

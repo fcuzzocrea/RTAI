@@ -146,16 +146,20 @@ int pse51_mq_init(pse51_mq_t *mq, const struct mq_attr *attr)
 
 int pse51_mq_destroy(pse51_mq_t *mq)
 {
+    spl_t s;
     int rc;
 
+    xnlock_get_irqsave(&nklock, s);
     if(mq->refcount)
         {
         setbits(mq->flags, PSE51_MQ_UNLINKED);
+        xnlock_put_irqrestore(&nklock, s);
         return -1;
         }
 
     pse51_mark_deleted(mq);
     rc = (xnsynch_flush(&mq->synchbase, PSE51_IDRM) == XNSYNCH_RESCHED);
+    xnlock_put_irqrestore(&nklock, s);
     xnarch_sysfree(mq->mem, mq->memsize);
 
     return rc;
@@ -206,11 +210,16 @@ int mq_close(mqd_t fd)
     pse51_mark_deleted(qd);
     if(!--mq->refcount && testbits(mq->flags, PSE51_MQ_UNLINKED))
         {
-        if(pse51_mq_destroy(qd->mq))
-            xnpod_schedule();
+        int need_resched;
+        xnlock_put_irqrestore(&nklock, s);
+
+        need_resched = pse51_mq_destroy(qd->mq);
         xnfree(mq2nmq(mq));
+        if(need_resched)
+            xnpod_schedule();
         }
-    xnlock_put_irqrestore(&nklock, s);
+    else
+        xnlock_put_irqrestore(&nklock, s);
 
     return 0;
 }
@@ -599,15 +608,15 @@ static unsigned pse51_nmq_crunch (const char *key)
 {
     unsigned h = 0, g;
 
-#define HQON    24		/* Higher byte position */
-#define HBYTE   0xf0000000	/* Higher nibble on */
+#define HQON    24              /* Higher byte position */
+#define HBYTE   0xf0000000      /* Higher nibble on */
 
     while (*key)
-	{
-	h = (h << 4) + *key++;
-	if ((g = (h & HBYTE)) != 0)
-	    h = (h ^ (g >> HQON)) ^ g;
-	}
+        {
+        h = (h << 4) + *key++;
+        if ((g = (h & HBYTE)) != 0)
+            h = (h ^ (g >> HQON)) ^ g;
+        }
 
     return h % (sizeof(pse51_nmq_hash.buckets)/sizeof(xnqueue_t));
 }
@@ -632,10 +641,10 @@ static xnholder_t *pse51_mq_search_inner(xnqueue_t **bucketp, const char *name)
 
 mqd_t mq_open(const char *name, int oflags, ...)
 {
-    xnqueue_t *bucket;
+    pse51_nmq_t *nmq, *useless_nmq = NULL;
     xnholder_t *holder;
+    xnqueue_t *bucket;
     pse51_mqd_t *qd;
-    pse51_nmq_t *nmq;
     int err = 0;
     spl_t s;
 
@@ -649,67 +658,101 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
     xnlock_get_irqsave(&nklock, s);
     holder = pse51_mq_search_inner(&bucket, name);
+    nmq = (pse51_nmq_t *) holder;
 
-    if(holder && (oflags & (O_EXCL | O_CREAT)) == (O_EXCL | O_CREAT))
+    if(holder)
         {
-        err = EEXIST;
+        if((oflags & (O_EXCL | O_CREAT)) == (O_EXCL | O_CREAT))
+            {
+            err = EEXIST;
+            goto out_err_unlock_free_qd;
+            }
+        else
+            goto nmq_found;
+        }
+
+    if(!(oflags & O_CREAT))
+        {
+        err = ENOENT;
+out_err_unlock_free_qd:
+        xnlock_put_irqrestore(&nklock, s);
         goto out_err_free_qd;
         }
 
-    if(!holder)
-        if((oflags & O_CREAT))
+    /* We will have to create the queue, and since it involves allocating system
+       memory, release the global lock. */
+    xnlock_put_irqrestore(&nklock, s);
+
+    {
+    struct mq_attr *attr;
+    mode_t mode;
+    va_list ap;
+    
+    nmq = (pse51_nmq_t *) xnmalloc(sizeof(*nmq) + strlen(name)+1);
+
+    if(!nmq)
+        {
+        err = ENOSPC;
+        goto out_err_free_qd;
+        }
+
+    nmq->name = (char *) (nmq + 1);
+    strcpy((char *) nmq->name, name);
+    inith(&nmq->link);
+
+    va_start(ap, oflags);
+    mode = va_arg(ap, int); /* unused */
+    attr = va_arg(ap, struct mq_attr *);
+    va_end(ap);
+    
+    err = pse51_mq_init(&nmq->mq, attr);
+
+    if(err)
+        {
+        xnfree(nmq);
+        goto out_err_free_qd;
+        }
+    }
+
+    xnlock_get_irqsave(&nklock, s);
+    holder = pse51_mq_search_inner(&bucket, name);
+
+    if(holder)
+        {
+        useless_nmq = nmq;
+        if((oflags & (O_EXCL | O_CREAT)) == (O_EXCL | O_CREAT))
             {
-            struct mq_attr *attr;
-            mode_t mode;
-            va_list ap;
-
-            nmq = (pse51_nmq_t *) xnmalloc(sizeof(*nmq));
-            if(!nmq)
-                {
-                err = ENOSPC;
-                goto out_err_free_qd;
-                }
-
-            va_start(ap, oflags);
-            mode = va_arg(ap, int); /* unused */
-            attr = va_arg(ap, struct mq_attr *);
-            va_end(ap);
-
-            err = pse51_mq_init(&nmq->mq, attr);
-            if(err)
-                goto out_err_free_qd;
-        
-            nmq->name = xnmalloc(strlen(name)+1);
-            if(!nmq->name)
-                {
-                err = ENOSPC;
-                goto out_err_free_nmq;
-                }
-            strcpy((char *) nmq->name, name);
-            inith(&nmq->link);
-            appendq(bucket, &nmq->link);
+            err = EEXIST;
+            goto out_err_free_nmq;
             }
-        else
-            {
-            err = ENOENT;
-            goto out_err_free_qd;
-            }
-    else
         nmq = (pse51_nmq_t *) holder;
+        }
+
+    appendq(bucket, &nmq->link);
+
+  nmq_found:
+    pse51_mqd_bind(qd, &nmq->mq, oflags & ~(O_CREAT | O_EXCL));
 
     xnlock_put_irqrestore(&nklock, s);
 
-    pse51_mqd_bind(qd, &nmq->mq, oflags & ~(O_CREAT | O_EXCL));
-    
+    /* rollback allocation of nmq. */
+    if(useless_nmq)
+        {
+        pse51_mq_destroy(&useless_nmq->mq);
+        xnfree(useless_nmq);
+        }
+
     return (mqd_t) qd;
 
   out_err_free_nmq:
-    xnfree(nmq);
+    xnlock_put_irqrestore(&nklock, s);
+    pse51_mq_destroy(&useless_nmq->mq);
+    xnfree(useless_nmq);
+
   out_err_free_qd:
     xnfree(qd);
-    xnlock_put_irqrestore(&nklock, s);
-  out_err:
-    
+
+  out_err:  
     thread_errno() = err;
     return (mqd_t) -1;
 }
@@ -719,40 +762,42 @@ int mq_unlink(const char *name)
     xnqueue_t *bucket;
     xnholder_t *holder;
     pse51_nmq_t *nmq;
-    int err = 0;
+    int dest_status, err = 0;
     spl_t s;
 
     xnlock_get_irqsave(&nklock, s);
     holder = pse51_mq_search_inner(&bucket, name);
 
+    if(holder)
+        removeq(bucket, holder);
+    xnlock_put_irqrestore(&nklock, s);
+
     if(!holder)
         {
-        err = ENOENT;
-        goto out;
+        thread_errno() = ENOENT;
+        return -1;
         }
 
     nmq = (pse51_nmq_t *) holder;
-    err = pse51_mq_destroy(&nmq->mq);
-    removeq(bucket, holder);
-    xnfree((char *) nmq->name);
-    
-    if(err != -1)
+
+    dest_status = pse51_mq_destroy(&nmq->mq);
+
+    if(dest_status != -1)
         {
         xnfree(nmq);
-        if(err)
+        if(dest_status)
             xnpod_schedule();
-        }
-
-    err = 0;
-    
-  out:
-    xnlock_put_irqrestore(&nklock, s);
-
-    if(err)
-        {
-        thread_errno() = err;
-        return -1;
         }
 
     return 0;
 }
+
+EXPORT_SYMBOL(mq_open);
+EXPORT_SYMBOL(mq_getattr);
+EXPORT_SYMBOL(mq_setattr);
+EXPORT_SYMBOL(mq_send);
+EXPORT_SYMBOL(mq_timedsend);
+EXPORT_SYMBOL(mq_receive);
+EXPORT_SYMBOL(mq_timedreceive);
+EXPORT_SYMBOL(mq_close);
+EXPORT_SYMBOL(mq_unlink);

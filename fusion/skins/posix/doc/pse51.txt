@@ -11,9 +11,10 @@ This skin already contains most basic features :
 - mutexes,
 - semaphores,
 - condition variables,
-- basic support for then "reliable" signals (not realtime ones),
+- basic support for "reliable" signals (not realtime ones),
 - cancellation, cancellation handlers
-- thread specific data.
+- thread specific data
+- message queues.
 
 The POSIX skin creates real-time threads running either embodied into
 kernel modules, or inside regular applications in user-space.
@@ -57,9 +58,13 @@ described in this specification. Here are the known ones :
   and pthread_wait_np, as a convenience to help porting applications from this
   OS.
 
-- message queues: support for mq_notify is missing, message queues support an
-  "O_DIRECT" flag, which allows to copy messages directly from sender to
-  receiver when receiver was suspended before sender.
+- message queues:
+  . support for mq_notify is missing;
+  . message queues support an "O_DIRECT" flag, which allows to copy messages
+  directly from sender to receiver when receiver was suspended before
+  sender; 
+  . mq_open may only be called from module initialization context.
+
 
 Use of the POSIX skin from user-space applications
 ==================================================

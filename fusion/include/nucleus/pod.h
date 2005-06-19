@@ -195,12 +195,12 @@ struct xnpod {
 
     u_long tickvalue;           /*!< Tick duration (ns, 1 if aperiodic). */
 
-    u_long ticks2sec;   /*!< Number of ticks per second (1e9
+    u_long ticks2sec;		/*!< Number of ticks per second (1e9
                                   if aperiodic). */
+    int refcnt;			/*!< Reference count.  */
 
     struct {
         xnisr_t tickhandler; /*!< Clock tick handler. */
-        void (*shutdown)(int xtype); /*!< Shutdown hook. */
         void (*settime)(xnticks_t newtime); /*!< Clock setting hook. */
         int (*faulthandler)(xnarch_fltinfo_t *fltinfo); /*!< Trap/exception handler. */
         int (*unload)(void);    /*!< Unloading hook. */

@@ -57,9 +57,9 @@
 extern "C" {
 #endif
 
-int __pse51_syscall_init(void);
+int pse51_syscall_init(void);
 
-void __pse51_syscall_cleanup(void);
+void pse51_syscall_cleanup(void);
 
 #ifdef __cplusplus
 }

@@ -74,8 +74,6 @@ int __fusion_skin_init (void)
     wind_msgq_init();
     wind_task_init();
     
-    pod.svctable.shutdown = &wind_shutdown;
-
     xnprintf("starting VxWorks services.\n");
 
     return 0;

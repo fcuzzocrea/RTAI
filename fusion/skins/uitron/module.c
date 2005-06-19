@@ -67,8 +67,6 @@ int __fusion_skin_init (void)
         return err;
         }
 
-    pod.svctable.shutdown = &uitron_shutdown;
-
     uitask_init();
     uisem_init();
     uiflag_init();

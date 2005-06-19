@@ -311,8 +311,8 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->wallclock = 0;
     pod->tickvalue = XNARCH_DEFAULT_TICK;
     pod->ticks2sec = 1000000000/ XNARCH_DEFAULT_TICK;
+    pod->refcnt = 0;
 
-    pod->svctable.shutdown = &xnpod_shutdown;
     pod->svctable.settime = &xnpod_set_time;
     pod->svctable.tickhandler = NULL;
     pod->svctable.faulthandler = &xnpod_fault_handler;
@@ -429,7 +429,7 @@ static void xnpod_flush_heap (xnheap_t *heap,
 
 /*! 
  * \fn void xnpod_shutdown(int xtype)
- * \brief Default shutdown handler.
+ * \brief Shutdown the current pod.
  *
  * Forcibly shutdowns the active pod. All existing nucleus threads
  * (but the root one) are terminated, and the system heap is freed.
@@ -438,13 +438,9 @@ static void xnpod_flush_heap (xnheap_t *heap,
  * started the nucleus. Zero is always interpreted as a successful
  * return.
  *
- * The nucleus will not call this routine directly but rather use
- * the routine pointed to at by the pod.svctable.shutdown member in
- * the service table. This allows upper interfaces to interpose their
- * own shutdown handlers so that they have their word before any
- * action is taken. Usually, the interface-defined handlers should end
- * up calling xnpod_shutdown() after their own housekeeping chores
- * have been carried out.
+ * The nucleus never calls this routine directly. Skins should provide
+ * their own shutdown handlers which end up calling xnpod_shutdown()
+ * after their own housekeeping chores have been carried out.
  *
  * Environments:
  *
@@ -462,17 +458,23 @@ void xnpod_shutdown (int xtype)
     xnthread_t *thread;
     spl_t s;
 
+    xnlock_get_irqsave(&nklock,s);
+
+    if (!nkpod || testbits(nkpod->status,XNPIDLE) || nkpod->refcnt > 0)
+        goto unlock_and_exit; /* No-op */
+
+    /* FIXME: We must release the lock before stopping the timer, so
+       we accept a potential race due to another skin being pushed
+       while we remove the current pod, which is clearly not a common
+       situation anyway. */
+
+    xnlock_put_irqrestore(&nklock,s);
+
     xnpod_stop_timer();
 
     xnarch_notify_shutdown();
 
     xnlock_get_irqsave(&nklock,s);
-
-    if (!nkpod || testbits(nkpod->status,XNPIDLE))
-        {
-        xnlock_put_irqrestore(&nklock,s);
-        return; /* No-op */
-        }
 
     xntimer_destroy(&nkpod->htimer);
 
@@ -501,6 +503,8 @@ void xnpod_shutdown (int xtype)
     xnheap_destroy(&kheap,&xnpod_flush_heap,NULL);
 
     nkpod = NULL;
+
+ unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
 }

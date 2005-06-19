@@ -159,8 +159,6 @@ int __fusion_skin_init (void)
     vrtxmx_init();
     vrtxtask_init(module_param_value(task_stacksize_arg));
 
-    pod.svctable.shutdown = &vrtx_shutdown;
-
     xnprintf("starting VRTX services.\n");
 
     return 0;

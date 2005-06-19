@@ -54,6 +54,10 @@ static void pse51_shutdown(int xtype)
     pse51_cond_obj_cleanup();
     pse51_sem_obj_cleanup();
     pse51_mutex_obj_cleanup();
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    pse51_syscall_cleanup();
+    xnfusion_detach();
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     xnpod_shutdown(xtype);
 }
@@ -97,7 +101,7 @@ int __fusion_skin_init(void)
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     if (!err)
-	err = __pse51_syscall_init();
+	err = pse51_syscall_init();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     
     if (err != 0)
@@ -115,17 +119,12 @@ int __fusion_skin_init(void)
 
     pse51_thread_init(module_param_value(time_slice_arg));
 
-    nkpod->svctable.shutdown = &pse51_shutdown;
-
     return 0;
 }
 
 void __fusion_skin_exit(void)
 {
     xnprintf("stopping POSIX services.\n");
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    __pse51_syscall_cleanup();
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     pse51_shutdown(XNPOD_NORMAL_EXIT);
 }
 

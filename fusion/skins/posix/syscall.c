@@ -544,7 +544,7 @@ static void __shadow_delete_hook (xnthread_t *thread)
 	xnshadow_unmap(thread);
 }
 
-int __pse51_syscall_init (void)
+int pse51_syscall_init (void)
 
 {
     __muxid =
@@ -561,7 +561,7 @@ int __pse51_syscall_init (void)
     return 0;
 }
 
-void __pse51_syscall_cleanup (void)
+void pse51_syscall_cleanup (void)
 
 {
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,&__shadow_delete_hook);

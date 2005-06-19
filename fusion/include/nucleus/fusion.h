@@ -43,6 +43,8 @@ int xnfusion_umount(void);
 
 int xnfusion_attach(void);
 
+int xnfusion_detach(void);
+
 #ifdef __cplusplus
 };
 #endif /* __cplusplus */

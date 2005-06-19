@@ -96,6 +96,7 @@ static void rtai_shutdown (int xtype)
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     __rtai_syscall_cleanup();
+    xnfusion_detach();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
@@ -122,8 +123,6 @@ int __fusion_skin_init (void)
 
     if (err)
 	goto fail;
-
-    nkpod->svctable.shutdown = &rtai_shutdown;
 
 #ifdef CONFIG_RTAI_OPT_NATIVE_REGISTRY
     err = __registry_pkg_init();

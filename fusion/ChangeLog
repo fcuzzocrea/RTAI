@@ -1,3 +1,9 @@
+2005-06-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/pod.c (xnpod_shutdown): Replace the flawed shutdown
+	interposition handler by a reference count for handling multiple
+	skin attachments.
+
 2005-06-18  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/posix.h: Added initial support for message queues.

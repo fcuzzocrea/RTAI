@@ -99,8 +99,6 @@ int __fusion_skin_init (void)
     psostm_init();
     psostask_init(module_param_value(time_slice_arg));
 
-    pod.svctable.shutdown = &psos_shutdown;
-
     xnprintf("starting pSOS+ services.\n");
 
     return err;

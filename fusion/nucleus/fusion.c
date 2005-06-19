@@ -45,6 +45,8 @@ int xnfusion_attach (void)
 	if (nkpod != &__fusion_pod)
 	    return -ENOSYS;
 
+	++__fusion_pod.refcnt;
+
 	return 0;
 	}
 
@@ -52,8 +54,15 @@ int xnfusion_attach (void)
 	return -ENOSYS;
 
     __fusion_pod.svctable.unload = &xnfusion_unload_hook;
+    __fusion_pod.refcnt = 1;
 
     return 0;
+}
+
+int xnfusion_detach (void)
+
+{
+    return --__fusion_pod.refcnt;
 }
 
 int xnfusion_mount (void)
@@ -74,3 +83,4 @@ int xnfusion_umount (void)
 }
 
 EXPORT_SYMBOL(xnfusion_attach);
+EXPORT_SYMBOL(xnfusion_detach);

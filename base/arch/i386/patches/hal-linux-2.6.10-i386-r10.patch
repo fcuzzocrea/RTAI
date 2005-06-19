@@ -1846,7 +1846,7 @@ diff -uNrp linux-2.6.10/arch/i386/kernel/Makefile linux-2.6.10-adeos/arch/i386/k
 diff -uNrp linux-2.6.10/arch/i386/kernel/adeos.c linux-2.6.10-adeos/arch/i386/kernel/adeos.c
 --- linux-2.6.10/arch/i386/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.10-adeos/arch/i386/kernel/adeos.c	2005-05-26 11:27:34.000000000 +0200
-@@ -0,0 +1,768 @@
+@@ -0,0 +1,769 @@
 +/*
 + *   linux/arch/i386/kernel/adeos.c
 + *
@@ -2336,6 +2336,7 @@ diff -uNrp linux-2.6.10/arch/i386/kernel/adeos.c linux-2.6.10-adeos/arch/i386/ke
 +EXPORT_SYMBOL(__adeos_std_irq_dtype);
 +EXPORT_SYMBOL(io_apic_irqs);
 +EXPORT_SYMBOL(__adeos_tick_regs);
++EXPORT_SYMBOL(do_signal);
 +
 +int __adeos_handle_irq (struct pt_regs regs)
 +

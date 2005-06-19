@@ -25,7 +25,7 @@
 
 #include <asm/rtai_vectors.h>
 
-//#define USE_LINUX_SYSCALL
+//#define USE_LINUX_SYSCALL  0x80
 
 #define RTAI_SYSCALL_NR      orig_eax
 #define RTAI_SYSCALL_ARGS    ecx
@@ -189,7 +189,7 @@ static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
 #ifdef USE_LINUX_SYSCALL
-	RTAI_DO_TRAP(SYSCALL_VECTOR, retval, srq, arg);
+	RTAI_DO_TRAP(USE_LINUX_SYSCALL, retval, srq, arg);
 #else
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
 #endif

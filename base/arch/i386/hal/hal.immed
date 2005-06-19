@@ -1725,14 +1725,14 @@ static inline long long rtai_usrq_dispatcher (unsigned srq, unsigned label)
 }
 
 #include <asm/rtai_usi.h>
-long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long);
+long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long, void *);
 
 asmlinkage void rtai_syscall_dispatcher (long bx, unsigned long cx_args, long long *dx_retval, long si, long di, long bp, unsigned long ax_srq, long ds, long es, long orig_eax, long eip, long cs, unsigned long eflags)
 {
 #ifdef USI_SRQ_MASK
 	IF_IS_A_USI_SRQ_CALL_IT();
 #endif
-	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(ax_srq, cx_args) : rtai_usrq_dispatcher(ax_srq, cx_args);
+	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(ax_srq, cx_args, &bx) : rtai_usrq_dispatcher(ax_srq, cx_args);
 	if (!in_hrt_mode(rtai_cpuid())) {
 		local_irq_enable();
 		if (need_resched()) {

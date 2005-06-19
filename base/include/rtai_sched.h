@@ -46,6 +46,8 @@
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
 
+#define RT_EINTR  (0xFfff)
+
 #define RT_IRQ_TASK         0
 #define RT_IRQ_TASKLET      1
 #define RT_IRQ_TASK_ERR     0x7FFFFFFF

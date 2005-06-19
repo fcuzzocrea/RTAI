@@ -32,6 +32,7 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #include <linux/unistd.h>
 #include <linux/mman.h>
 #include <asm/uaccess.h>
+
 #include <rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_sem.h>
@@ -303,20 +304,7 @@ static int __task_delete(RT_TASK *rt_task)
 #define SYSW_DIAG_MSG(x)
 #endif
 
-#if 1
-static inline void __force_soft(RT_TASK *task)
-{
-	if (task && task->force_soft) {
-		task->force_soft = 0;
-		task->usp_flags &= ~FORCE_SOFT;
-		give_back_to_linux(task, 0);
-	}
-}
-#else 
-static inline void __force_soft(RT_TASK *task) { }
-#endif
-
-static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
+static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg, RT_TASK *task)
 
 {
 #define larg ((struct arg *)arg)
@@ -325,9 +313,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 
     union {unsigned long name; RT_TASK *rt_task; SEM *sem; MBX *mbx; RWL *rwl; SPL *spl; } arg0;
 	int srq;
-	RT_TASK *task;
 
-	__force_soft(task = current->rtai_tskext(0));
 	srq = SRQ(lxsrq);
 	if (srq < MAX_LXRT_FUN) {
 		int idx;
@@ -357,7 +343,6 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 			}
 			net_rpc = idx == 2 && !srq;
 			lxrt_resume(funcm[srq].fun, NARG(lxsrq), (long *)arg, net_rpc ? ((long long *)((int *)arg + 2))[0] : type, task, net_rpc);
-			__force_soft(task);
 			return task->retval;
 		} else {
 			return ((long long (*)(unsigned long, ...))funcm[srq].fun)(MANYARGS);
@@ -483,17 +468,14 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 		}
 
 		case MAKE_HARD_RT: {
-#ifndef USE_LINUX_SYSCALL
 			if (!task || task->is_hard == 1) {
 				 return 0;
 			}
 			steal_from_linux(task);
-#endif
 			return 0;
 		}
 
 		case MAKE_SOFT_RT: {
-#ifndef USE_LINUX_SYSCALL
 			if (!task || task->is_hard <= 0) {
 				return 0;
 			}
@@ -502,7 +484,6 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 			} else {
 				give_back_to_linux(task, 0);
 			}
-#endif
 			return 0;
 		}
 		case PRINT_TO_SCREEN: {
@@ -524,7 +505,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 
 		case RT_BUDDY: {
 			return task && current->rtai_tskext(1) == current ?
-			       (unsigned long)task : 0;
+			       (unsigned long)(task) : 0;
 		}
 
 		case HRT_USE_FPU: {
@@ -605,15 +586,63 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg)
 	return 0;
 }
 
-long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg)
+static inline void force_soft(RT_TASK *task)
+{
+	if (task->force_soft) {
+		task->force_soft = 0;
+		task->usp_flags &= ~FORCE_SOFT;
+		give_back_to_linux(task, 0);
+	}
+}
+
+static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
+{
+	if (task->usp_signal) {
+#ifdef USE_LINUX_SYSCALL
+		if (task->is_hard) {
+			give_back_to_linux(task, 0);
+			task->is_hard = 2;
+		}
+		task->usp_signal = 0;
+#else
+		unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
+		if (task->is_hard) {
+			give_back_to_linux(task, task->usp_signal = 0);
+		}
+		regs->LINUX_SYSCALL_RETREG = -EINTR;
+		do_signal(regs, NULL);
+		if (!task->usp_signal) {
+			steal_from_linux(task);
+		} else {
+			task->usp_signal = 0;
+		}
+		regs->LINUX_SYSCALL_RETREG = saved_eax;
+#endif
+		return 0;
+	}
+	return 1;
+}
+
+long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 {
 	long long retval;
+	RT_TASK *task;
 
 #ifdef CONFIG_RTAI_TRACE
 	trace_true_lxrt_rtai_syscall_entry();
 #endif /* CONFIG_RTAI_TRACE */
 
-	retval = handle_lxrt_request(lxsrq, arg);
+	if ((task = current->rtai_tskext(0))) {
+		force_soft(task);
+	}
+	retval = handle_lxrt_request(lxsrq, arg, task);
+	if (task) {
+		if (rt_do_signal(regs, task)) {
+			force_soft(task);
+		} else {
+			retval = -RT_EINTR;
+		}
+	}
 
 #ifdef CONFIG_RTAI_TRACE
 	trace_true_lxrt_rtai_syscall_exit();

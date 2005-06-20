@@ -599,6 +599,7 @@ extern int FASTCALL(do_signal(struct pt_regs *regs, sigset_t *oldset));
 static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
 	if (task->usp_signal) {
+		int retval = task->usp_signal < 0;
 #ifdef USE_LINUX_SYSCALL
 		if (task->is_hard) {
 			give_back_to_linux(task, 0);
@@ -619,7 +620,7 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 		}
 		regs->LINUX_SYSCALL_RETREG = saved_eax;
 #endif
-		return 0;
+		return retval;
 	}
 	return 1;
 }

@@ -1970,9 +1970,11 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 
 static inline void rt_signal_wake_up(RT_TASK *task)
 {
-	task->usp_signal = 1;
 	if (task->state && task->state != RT_SCHED_READY) {
+		task->usp_signal = 1;
 		rt_task_masked_unblock(task, ~RT_SCHED_READY);
+	} else {
+		task->usp_signal = -1;
 	}
 }
 

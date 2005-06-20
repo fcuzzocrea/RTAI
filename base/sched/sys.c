@@ -595,6 +595,7 @@ static inline void force_soft(RT_TASK *task)
 	}
 }
 
+extern int FASTCALL(do_signal(struct pt_regs *regs, sigset_t *oldset));
 static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
 	if (task->usp_signal) {

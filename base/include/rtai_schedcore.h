@@ -192,8 +192,7 @@ extern struct klist_t wake_up_srq;
 
 #define pend_wake_up_srq(lnxtsk, cpuid) \
 do { \
-	wake_up_srq.task[wake_up_srq.in & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
-	wake_up_srq.in++; \
+	wake_up_srq.task[wake_up_srq.in++ & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
 	adeos_pend_uncond(wake_up_srq.srq, cpuid); \
 } while (0)
 

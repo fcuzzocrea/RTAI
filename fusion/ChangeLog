@@ -1,3 +1,7 @@
+2005-06-20  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to r11 final.
+
 2005-06-20  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/mq.c: Rework creation and deletion of message queues

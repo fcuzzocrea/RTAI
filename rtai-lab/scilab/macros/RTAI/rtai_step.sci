@@ -20,7 +20,7 @@ case 'set' then
         getvalue('Set RTAI STEP block parameters',..
         ['Amplitude';
 	'Delay'],..
-         list('vec',1,'vec',1,'vec',1),label(1))
+         list('vec',1,'vec',1),label(1))
 
     if ~ok then break,end
     label(1)=lab

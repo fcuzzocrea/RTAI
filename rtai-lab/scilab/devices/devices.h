@@ -88,30 +88,6 @@ int out_rtai_sem_init(char * sNam,char * IPe);
 void out_rtai_sem_output(int port, double * u,double t);
 void out_rtai_sem_end(int port);
 
-int inp_cioquad4_init(int modul ,char * Addr,int reso, int prec, int Rot, int Reset);
-void inp_cioquad4_input(int port, double * y, double t);
-void inp_cioquad4_update(void);
-void inp_cioquad4_end(int port);
-
-int inp_pcan_init(char * can_id,int Kp, int Ki, int nTyp);
-void inp_pcan_input(int port, double * y, double t);
-void inp_pcan_update();
-void inp_pcan_end(int port);
-
-int out_pcan_init(char * can_id,int Kp, int Ki, int nTyp);
-void out_pcan_output(int port, double * u,double t);
-void out_pcan_end(int port);
-
-int inp_rtai_epp_init(int nch);
-void inp_rtai_epp_input(int port, double * y, double t);
-void inp_rtai_epp_update(void);
-void inp_rtai_epp_end(int port);
-
-int out_rtai_epp_init(int nch);
-void out_rtai_epp_output(int port, double * u,double t);
-void out_rtai_epp_end(int port);
-void rtai_epp_outb(unsigned char val, int port);
-
 
 
 

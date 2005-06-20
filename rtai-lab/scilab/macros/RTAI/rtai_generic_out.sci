@@ -19,7 +19,7 @@ case 'set' then
   label=graphics.exprs;
   while %t do
     [ok,ip,name,lab]=..
-        getvalue('Set RTAI-mbx_send_if block parameters',..
+        getvalue('Set RTAI generic output block parameters',..
         ['input ports';
 	'Identifier'],..
          list('vec',-1,'str',1),label(1))
@@ -42,7 +42,8 @@ case 'set' then
     dept=%f;
     dep_ut=[depu dept];
 
-    [ok,tt]=getCode(funam)
+    tt=label(2);
+    [ok,tt]=getCode(funam,tt)
     if ~ok then break,end
     [model,graphics,ok]=check_io(model,graphics,i,o,ci,co)
     if ok then
@@ -93,7 +94,7 @@ case 'define' then
 end
 endfunction
 
-function [ok,tt]=getCode(funam)
+function [ok,tt]=getCode(funam,tt)
 if tt==[] then
   
    textmp=[

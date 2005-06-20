@@ -58,7 +58,7 @@ typedef int spl_t;
 typedef unsigned long cpumask_t;
 
 #ifdef CONFIG_SMP
-#error "SMP not supported for UVM yet"
+#error "UVM over SMP not supported yet -- CONFIG_RTAI_OPT_UVM needs to be switched off"
 #endif /* CONFIG_SMP */
 
 extern int uvm_irqlock;
@@ -235,13 +235,13 @@ xnarch_read_environ (const char *name, const char **ptype, void *pvar)
     return 1;
 }
 
-static int inline xnarch_lock_irq (void) {
-
+static int inline xnarch_lock_irq (void)
+{
     return xnarch_atomic_xchg(&uvm_irqlock,1);
 }
 
-static inline void xnarch_unlock_irq (int x) {
-
+static inline void xnarch_unlock_irq (int x)
+{
     extern int uvm_irqpend;
 
     if (!x && uvm_irqlock)
@@ -265,14 +265,16 @@ void xnpod_welcome_thread(struct xnthread *);
 
 #ifdef XENO_INTR_MODULE
 
-int uvm_irqlock = 0;
+int uvm_irqlock = 0;	/* =1 whenever IRQs are off. */
 
-int uvm_irqpend = 0;
+int uvm_irqpend = 0;	/* =1 whenever IRQs are pending. */
 
-void xnarch_sync_irq (void)
+void xnarch_sync_irq (void) /* Synchronization point for IRQ servers. */
 
 {
     if (uvm_irqlock)
+	/* IRQs are off. Set the IRQ pending flag and go to sleep,
+	   waiting for the IRQs to be unmasked. */
 	uvm_thread_hold(&uvm_irqpend);
 }
 

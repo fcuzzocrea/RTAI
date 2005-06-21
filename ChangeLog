@@ -1,3 +1,8 @@
+2005-06-21  Bernd.Suessmilch  <Bernd.Suessmilch@uibk.ac.at>
+
+	* base/sched/sched.c:
+	* base/sched/sys.c: improved Linux signal catching and dispatching.
+	
 2005-06-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h: pend trasitions to soft mode

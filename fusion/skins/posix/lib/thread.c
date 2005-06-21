@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <malloc.h>
+#include <signal.h>
 #include <nucleus/asm/atomic.h>
 #include <posix/syscall.h>
 #include <posix/lib/jhash.h>
@@ -170,6 +171,11 @@ static void __pthread_cleanup_handler (void *arg)
     __pthread_unhash(slot->tid,slot->internal_tid);
 }
 
+static void __pthread_sigharden_handler (int sig)
+{
+    XENOMAI_SYSCALL1(__xn_sys_migrate,XENOMAI_RTAI_DOMAIN);
+}
+
 static void *__pthread_trampoline (void *arg)
 
 {
@@ -179,6 +185,8 @@ static void *__pthread_trampoline (void *arg)
     struct sched_param param;
     void *status = NULL;
     long err;
+
+    signal(SIGCHLD,&__pthread_sigharden_handler);
 
     /* Broken pthread libs ignore some of the thread attribute specs
        passed to pthread_create(3), so we force the scheduling policy

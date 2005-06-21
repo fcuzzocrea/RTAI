@@ -72,6 +72,8 @@ void xnshadow_relax(int notify);
 
 void xnshadow_renice(struct xnthread *thread);
 
+void xnshadow_suspend(struct xnthread *thread);
+
 int xnshadow_wait_barrier(struct pt_regs *regs);
 
 void xnshadow_start(struct xnthread *thread);

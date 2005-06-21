@@ -71,6 +71,7 @@ static struct __lostagerq {
 #define LO_START_REQ  0
 #define LO_WAKEUP_REQ 1
 #define LO_RENICE_REQ 2
+#define LO_SIGNAL_REQ 3
 	int type;
 	struct task_struct *task;
 	int arg;
@@ -278,6 +279,11 @@ static void lostage_handler (void *cookie)
 	    case LO_RENICE_REQ:
 
 		set_linux_task_priority(task,rq->req[reqnum].arg);
+		break;
+
+	    case LO_SIGNAL_REQ:
+
+		send_sig(rq->req[reqnum].arg,task,1);
 		break;
 	    }
 	}
@@ -546,7 +552,7 @@ void xnshadow_relax (int notify)
 	engage_irq_shield();
 
     if (current->state & TASK_UNINTERRUPTIBLE)
-	/* Just to avoid wrecking Linux's accoun_sigting of non-
+	/* Just to avoid wrecking Linux's accounting of non-
 	   interruptible tasks, move back kicked tasks to
 	   interruptible state, like schedule() saw them initially. */
 	set_current_state((current->state&~TASK_UNINTERRUPTIBLE)|TASK_INTERRUPTIBLE);
@@ -893,6 +899,14 @@ void xnshadow_renice (xnthread_t *thread)
     struct task_struct *task = xnthread_archtcb(thread)->user_task;
     int prio = thread->cprio < MAX_RT_PRIO ? thread->cprio : MAX_RT_PRIO-1;
     schedule_linux_call(LO_RENICE_REQ,task,prio);
+}
+
+void xnshadow_suspend (xnthread_t *thread)
+
+{
+  /* Called with nklock locked, RTAI interrupts off. */
+    struct task_struct *task = xnthread_archtcb(thread)->user_task;
+    schedule_linux_call(LO_SIGNAL_REQ,task,SIGCHLD);
 }
 
 static int bind_to_interface (struct task_struct *curr,
@@ -1423,7 +1437,7 @@ static void linux_kick_process (adevinfo_t *evinfo)
     xnthread_t *thread = xnshadow_thread(task);
     spl_t s;
 
-    if (!thread || testbits(thread->status,XNRELAX|XNROOT))
+    if (!thread || testbits(thread->status,XNROOT|XNRELAX))
 	return;
 
     xnlock_get_irqsave(&nklock,s);

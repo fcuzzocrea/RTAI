@@ -21,6 +21,7 @@
 #include <malloc.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 #include <limits.h>
 #include <rtai/syscall.h>
 #include <rtai/task.h>
@@ -39,6 +40,11 @@ struct rt_task_iargs {
     xncompletion_t *completionp;
 };
 
+static void rt_task_sigharden (int sig)
+{
+    XENOMAI_SYSCALL1(__xn_sys_migrate,XENOMAI_RTAI_DOMAIN);
+}
+
 static void *rt_task_trampoline (void *cookie)
 
 {
@@ -51,6 +57,8 @@ static void *rt_task_trampoline (void *cookie)
     /* Ok, this looks like weird, but we need this. */
     param.sched_priority = sched_get_priority_max(SCHED_FIFO);
     pthread_setschedparam(pthread_self(),SCHED_FIFO,&param);
+
+    signal(SIGCHLD,&rt_task_sigharden);
 
     bulk.a1 = (u_long)iargs->task;
     bulk.a2 = (u_long)iargs->name;
@@ -144,6 +152,8 @@ int rt_task_shadow (RT_TASK *task,
 		    int mode)
 {
     struct rt_arg_bulk bulk;
+
+    signal(SIGCHLD,&rt_task_sigharden);
 
     bulk.a1 = (u_long)task;
     bulk.a2 = (u_long)name;

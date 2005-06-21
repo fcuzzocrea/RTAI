@@ -1295,7 +1295,9 @@ void xnpod_suspend_thread (xnthread_t *thread,
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
         /* If attempting to suspend a runnable (shadow) thread which
            has received a Linux signal, just raise the break condition
-           and return immediately. */
+           and return immediately. Note: a relaxed shadow never has
+           the KICKED bit set, so that xnshadow_relax() is never
+           prevented from blocking the current thread. */
         if (testbits(thread->status,XNKICKED))
             {
             __clrbits(thread->status,XNRMID|XNTIMEO);
@@ -1353,6 +1355,44 @@ void xnpod_suspend_thread (xnthread_t *thread,
         /* If "thread" is runnning on another CPU, xnpod_schedule will
            just trigger the IPI. */
         xnpod_schedule();
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    /* Ok, this one is an interesting corner case, which requires a
+       bit of background first. Here, we handle the case of suspending
+       a _relaxed_ shadow which is _not_ the current thread.  The net
+       effect is that we are attempting to stop the shadow thread at
+       the nucleus level, whilst this thread is actually running some
+       code under the control of the Linux scheduler (i.e. it's
+       relaxed).  To make this possible, we force the target Linux
+       task to migrate back to the RTAI domain by sending it a
+       SIGCHLD signal the skin interface libraries trap for this
+       specific internal purpose, whose handler is expected to call
+       back the nucleus's migration service. By forcing this
+       migration, we make sure that the real-time nucleus controls,
+       hence properly stops, the target thread according to the
+       requested suspension condition. Otherwise, the shadow thread in
+       secondary mode would just keep running into the Linux domain,
+       thus breaking the most common assumptions regarding suspended
+       threads. We only care for threads that are not current, and for
+       XNSUSP and XNDELAY conditions, because:
+     
+       - skins are supposed to ask for primary mode switch when
+       processing any syscall which may block the caller; IOW,
+       __xn_exec_primary must be set in the mode flags for those. So
+       there is no need to deal specifically with the relax+suspend
+       issue when the about to be suspended thread is current, since
+       it must not be relaxed anyway.
+
+       - among all blocking bits (XNTHREAD_BLOCK_BITS), only XNSUSP
+       and XNDELAY may be applied by the current thread to a
+       non-current thread. XNPEND is always added by the caller to its
+       own state, XNDORMANT is a pre-runtime state, and XNRELAX has
+       special semantics escaping this issue.
+     */
+
+    else if (testbits(thread->status,XNSHADOW|XNRELAX) == (XNSHADOW|XNRELAX) &&
+	     (mask & (XNDELAY|XNSUSP)) != 0)
+	xnshadow_suspend(thread);
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
  unlock_and_exit:
 

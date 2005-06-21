@@ -1,3 +1,16 @@
+2005-06-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/uvm/module.c (__fusion_skin_exit): Detach from the fusion
+	core.
+
+	* nucleus/pod.c (xnpod_suspend_thread): Force any relaxed shadow
+	thread in the process of being suspended to harden itself. We do
+	this by sending the thread SIGSYS, which is trapped and causes the
+	proper migration into each interface library. By doing so, we make
+	sure to stop the target thread properly by moving it back under
+	the control of the nucleus. This solves a bad scheduling issue
+	with the UVM support.
+
 2005-06-20  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to r11 final.

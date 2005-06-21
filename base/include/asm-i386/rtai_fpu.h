@@ -38,10 +38,10 @@ typedef union i387_union FPU_ENV;
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 
 #define init_fpu(tsk) \
-	do { init_xfpu(); tsk->used_math = 1; set_tsk_used_fpu(tsk); } while(0)
+	do { init_xfpu(); set_tsk_inited_fpu(tsk); } while(0)
 
 #define restore_fpu(tsk) \
-	do { restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk); } while (0)
+	do { restore_fpenv_lxrt(tsk); set_stopped_child_used_math(tsk); } while (0)
 
 #define load_mxcsr(val) \
 	do { \
@@ -120,14 +120,32 @@ static void init_fpu(struct task_struct *tsk) { }
 
 #endif /* CONFIG_RTAI_FPU_SUPPORT */
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 11)
+
+#define tsk_used_math(t)  ((t)->used_math)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#define set_tsk_used_fpu(t)  do { \
-        (t)->flags |= PF_USEDFPU; \
-} while(0)
+#define set_stopped_child_used_math(t) \
+	do { (t)->flags |= PF_USEDFPU; } while(0)
+#define clear_stopped_child_used_math(t) \
+	do { (t)->flags &= ~PF_USEDFPU; } while(0)
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
-#define set_tsk_used_fpu(t)  do { \
-        (t)->thread_info->status |= TS_USEDFPU; \
-} while(0)
+#define set_stopped_child_used_math(t) \
+	do { (t)->thread_info->status |= TS_USEDFPU; } while(0)
+#define clear_stopped_child_used_math(t) \
+	do { (t)->thread_info->status |= ~TS_USEDFPU; } while(0)
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
+#define set_tsk_inited_fpu(t) \
+	do { (t)->used_math = 1; set_stopped_child_used_math(t); } while(0)
+#define clear_tsk_inited_fpu(t) \
+	do { (t)->used_math = 0; clear_stopped_child_used_math(t); } while(0)
+
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11) */
+
+#define set_tsk_inited_fpu(t) \
+	do { set_stopped_child_used_math(t); } while(0)
+#define clear_tsk_inited_fpu(t) \
+	do { clear_stopped_child_used_math(t); } while(0)
+
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
 
 #endif /* !_RTAI_ASM_I386_FPU_H */

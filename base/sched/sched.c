@@ -226,6 +226,7 @@ int get_min_tasks_cpuid(void)
 	return cpuid;
 }
 
+#ifdef CONFIG_SMP
 static void put_current_on_cpu(int cpuid)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
@@ -243,6 +244,9 @@ static void put_current_on_cpu(int cpuid)
 
 #endif  /* KERNEL_VERSION < 2.6.0 */
 }
+#else /* !CONFIG_SMP */
+define put_current_on_cpu(cpuid)
+#endif /* CONFIG_SMP */
 
 int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid, struct task_struct *relink)
 {
@@ -763,7 +767,7 @@ static void rt_schedule_on_schedule_ipi(void)
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX_IN_IRQ(cpuid);
-			} else if (prev->used_math) {
+			} else if (tsk_used_math(prev)) {
 				restore_fpu(prev);
 			}
 		}
@@ -858,7 +862,7 @@ void rt_schedule(void)
 					goto sched_soft;
 				}
 			} else {
-				if (prev->used_math) {
+				if (tsk_used_math(prev)) {
 					restore_fpu(prev);
 				}
 				if (rt_current->force_soft) {
@@ -1159,7 +1163,7 @@ static void rt_timer_handler(void)
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX_IN_IRQ(cpuid);
-			} else if (prev->used_math) {
+			} else if (tsk_used_math(prev)) {
 				restore_fpu(prev);
 			}
 		}
@@ -1848,7 +1852,7 @@ void steal_from_linux(RT_TASK *rt_task)
 		rt_task->priority      -= BASE_SOFT_PRIORITY;
 	}
 	rt_task->is_hard = 1;
-	if (lnxtsk->used_math) {
+	if (tsk_used_math(lnxtsk)) {
 		restore_fpu(lnxtsk);
 	}
 	rtai_sti();

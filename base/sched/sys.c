@@ -511,12 +511,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg, RT_T
 		case HRT_USE_FPU: {
 			struct arg { RT_TASK *task; int use_fpu; };
 			if(!larg->use_fpu) {
-				((larg->task)->lnxtsk)->used_math = 0;
-				set_tsk_used_fpu(((larg->task)->lnxtsk));
+				clear_tsk_inited_fpu((larg->task)->lnxtsk);
 			} else {
-				init_xfpu();
-				((larg->task)->lnxtsk)->used_math = 1;
-				set_tsk_used_fpu(((larg->task)->lnxtsk));
+				init_fpu((larg->task)->lnxtsk);
 			}
 			return 0;
 		}
@@ -600,25 +597,19 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
 	if (task->usp_signal) {
 		int retval = task->usp_signal < 0;
-#ifdef USE_LINUX_SYSCALL
-		if (task->is_hard) {
+		if (task->is_hard == 1) {
 			give_back_to_linux(task, 0);
 			task->is_hard = 2;
 		}
 		task->usp_signal = 0;
-#else
+#ifndef USE_LINUX_SYSCALL
 		unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
-		if (task->is_hard) {
-			give_back_to_linux(task, task->usp_signal = 0);
-		}
 		regs->LINUX_SYSCALL_RETREG = -EINTR;
 		do_signal(regs, NULL);
-		if (!task->usp_signal) {
-			steal_from_linux(task);
-		} else {
-			task->usp_signal = 0;
-		}
 		regs->LINUX_SYSCALL_RETREG = saved_eax;
+		if (task->is_hard == 2) {
+			steal_from_linux(task);
+		}
 #endif
 		return retval;
 	}
@@ -635,7 +626,9 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 #endif /* CONFIG_RTAI_TRACE */
 
 	if ((task = current->rtai_tskext(0))) {
-		force_soft(task);
+		if (rt_do_signal(regs, task)) {
+			force_soft(task);
+		}
 	}
 	retval = handle_lxrt_request(lxsrq, arg, task);
 	if (task) {

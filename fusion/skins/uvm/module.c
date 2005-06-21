@@ -44,6 +44,7 @@ void __fusion_skin_exit(void)
 {
     xnprintf("stopping UVM services.\n");
     __uvm_syscall_cleanup();
+    xnfusion_detach();
 }
 
 module_init(__fusion_skin_init);

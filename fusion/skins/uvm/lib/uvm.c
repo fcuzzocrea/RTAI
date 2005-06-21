@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <memory.h>
 #include <errno.h>
+#include <signal.h>
 #include <unistd.h>
 #include <limits.h>
 #include <pthread.h>
@@ -63,10 +64,16 @@ int uvm_system_info (xnsysinfo_t *infop)
     return 0;
 }
 
+static void uvm_sigharden (int sig)
+{
+    XENOMAI_SYSCALL1(__xn_sys_migrate,XENOMAI_RTAI_DOMAIN);
+}
+
 int uvm_thread_shadow (const char *name,
 			  void *uhandle,
 			  void **khandlep)
 {
+    signal(SIGCHLD,&uvm_sigharden);
     /* Move the current Linux task into the RTAI realm. */
     return XENOMAI_SKINCALL3(__uvm_muxid,
 			     __uvm_thread_shadow,
@@ -99,6 +106,8 @@ int uvm_thread_barrier (void)
 {
     void (*entry)(void *), *cookie;
     int err;
+
+    signal(SIGCHLD,&uvm_sigharden);
 
     /* Make the current Linux task wait on the barrier for its mated
        shadow thread to be started. The barrier could be released in

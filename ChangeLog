@@ -1,4 +1,24 @@
-2005-06-21  Bernd.Suessmilch  <Bernd.Suessmilch@uibk.ac.at>
+2005-06-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/ipc/fifos/fifos.c: avoid direct initialiasation of a 
+	  spinlock, conflicting with Linux 2.6.11.
+	* base/include/rtai_shm.h: conditinally define the arch independent 
+	  function "remap_page_range", that disappeared in Linux 2.6.11.
+
+2005-06-21  Jan Kiszka  <kiszka@rts.uni-hannover.de>
+
+	* base/include/asm-i386/rtai_fpu.h: FPU support must now care
+	  of different versions of Linux 2.6.xx also.
+	* base/include/asm-i386/rtai_shm.h: shared pages manipulation needs
+	  to care of different versions of Linux 2.6.xx also.
+	* base/arch/i386/hal/hal.immed: setting of Linux priority must now
+	  account for different versions of Linux 2.6.xx too; rare "device
+	  not available" traps updated to use new overhauled macros in 
+	  asm-i386/rtai_fpu.h.
+	* base/sched/sched.c and base/sched/sys.c: updated to use new
+	  overhauled macros in asm-i386/rtai_fpu.h.
+
+2005-06-21  Bernd Suessmilch  <Bernd.Suessmilch@uibk.ac.at>
 
 	* base/sched/sched.c:
 	* base/sched/sys.c: improved Linux signal catching and dispatching.

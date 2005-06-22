@@ -870,11 +870,7 @@ void rt_schedule(void)
 sched_soft:
 			UNLOCK_LINUX(cpuid);
 			rt_global_sti();
-#ifdef STALL_RTAI_DOMAIN
-			adeos_unstall_pipeline_from(&rtai_domain);
-#else
 			local_irq_enable();
-#endif
 			schedule();
 			rt_global_cli();
 			rt_current->state = (rt_current->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;

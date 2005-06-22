@@ -1,5 +1,7 @@
 2005-06-22  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Remove obsolete patches.
+
 	* skins/posix: Move u_tid -> k_tid mapping to kernel space.
 	
 	* nucleus/shadow.c (rtai_sysentry, linux_sysentry): Try to get

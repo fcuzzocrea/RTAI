@@ -8,7 +8,7 @@ endif
 CFLAGS_STD= -D_GNU_SOURCE -D_REENTRANT -Wstrict-prototypes -O2 -Wall -DSPERIOD=2000
 LDFLAGS_STD= -lpthread -lrt
 
-CFLAGS_RT= $(shell $(RTAI_CONFIG) --posix-cflags)
+CFLAGS_RT= $(shell $(RTAI_CONFIG) --posix-cflags) -DSPERIOD=100
 LDFLAGS_RT= $(shell $(RTAI_CONFIG) --posix-ldflags)
 
 # Using a single source image, this demo illustrates the real-time

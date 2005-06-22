@@ -1,5 +1,9 @@
 2005-06-22  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/ia64: Upgrade to r7 final.
+	
+	* arch/ppc: Upgrade to r7 final.
+
 	* arch/i386/patches: Remove obsolete patches.
 
 	* skins/posix: Move u_tid -> k_tid mapping to kernel space.

@@ -24,6 +24,14 @@
 
 typedef xnsigmask_t pse51_sigset_t;
 
+struct mm_struct;
+
+struct pse51_hkey {
+
+    unsigned long u_tid;
+    struct mm_struct *mm;
+};
+
 struct pse51_thread {
     unsigned magic;
     xnthread_t threadbase;
@@ -69,6 +77,10 @@ struct pse51_thread {
 
     /* For thread specific data. */
     const void *tsd [PTHREAD_KEYS_MAX];
+
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    struct pse51_hkey hkey;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 };
 
 #define PSE51_JOINEE_DETACHED XNTHREAD_SPARE0

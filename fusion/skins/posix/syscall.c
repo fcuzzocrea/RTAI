@@ -22,22 +22,143 @@
 #include <posix/syscall.h>
 #include <posix/posix.h>
 #include <posix/thread.h>
+#include <posix/jhash.h>
 
 static int __muxid;
+
+struct pthread_jhash {
+
+#define PTHREAD_HASHBITS 8
+
+    pthread_t k_tid;
+    struct pse51_hkey hkey;
+    struct pthread_jhash *next;
+};
+
+static struct pthread_jhash *__jhash_buckets[1<<PTHREAD_HASHBITS]; /* Guaranteed zero */
+
+/* We want to keep the native pthread_t token unmodified for
+   RTAI/fusion mapped threads, and keep it pointing at a genuine
+   NPTL/LinuxThreads descriptor, so that portions of the POSIX
+   interface which are not overriden by fusion fall back to the
+   original Linux services. If the latter invoke Linux system calls,
+   the associated shadow thread will simply switch to secondary exec
+   mode to perform them. For this reason, we need an external index to
+   map regular pthread_t values to fusion's internal thread ids used
+   in syscalling the POSIX skin, so that the outer interface can keep
+   on using the former transparently. Semaphores and mutexes do not
+   have this constraint, since we plan to fully override their
+   respective interfaces with RTAI/fusion-based replacements. */
+
+static inline struct pthread_jhash *__pthread_hash (const struct pse51_hkey *hkey,
+						    pthread_t k_tid)
+{
+    struct pthread_jhash **bucketp;
+    struct pthread_jhash *slot;
+    u32 hash;
+    spl_t s;
+
+    slot = (struct pthread_jhash *)xnmalloc(sizeof(*slot));
+
+    if (!slot)
+	return NULL;
+
+    slot->hkey = *hkey;
+    slot->k_tid = k_tid;
+
+    hash = jhash2((u32 *)&slot->hkey,
+		  sizeof(slot->hkey)/sizeof(u32),
+		  0);
+
+    bucketp = &__jhash_buckets[hash&((1<<PTHREAD_HASHBITS)-1)];
+
+    xnlock_get_irqsave(&nklock,s);
+    slot->next = *bucketp;
+    *bucketp = slot;
+    xnlock_put_irqrestore(&nklock,s);
+
+    return slot;
+}
+
+static inline void __pthread_unhash (const struct pse51_hkey *hkey)
+
+{
+    struct pthread_jhash **tail, *slot;
+    u32 hash;
+    spl_t s;
+
+    hash = jhash2((u32 *)hkey,
+		  sizeof(*hkey)/sizeof(u32),
+		  0);
+
+    tail = &__jhash_buckets[hash&((1<<PTHREAD_HASHBITS)-1)];
+
+    xnlock_get_irqsave(&nklock,s);
+
+    slot = *tail;
+
+    while (slot != NULL &&
+	   (slot->hkey.u_tid != hkey->u_tid ||
+	    slot->hkey.mm != hkey->mm))
+	{
+	tail = &slot->next;
+    	slot = *tail;
+	}
+
+    if (slot)
+	*tail = slot->next;
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    if (slot)
+	xnfree(slot);
+}
+
+static pthread_t __pthread_find (const struct pse51_hkey *hkey)
+
+{
+    struct pthread_jhash *slot;
+    pthread_t k_tid;
+    u32 hash;
+    spl_t s;
+
+    hash = jhash2((u32 *)hkey,
+		  sizeof(*hkey)/sizeof(u32),
+		  0);
+
+    xnlock_get_irqsave(&nklock,s);
+
+    slot = __jhash_buckets[hash&((1<<PTHREAD_HASHBITS)-1)];
+
+    while (slot != NULL &&
+	   (slot->hkey.u_tid != hkey->u_tid ||
+	    slot->hkey.mm != hkey->mm))
+    	slot = slot->next;
+
+    k_tid = slot ? slot->k_tid : NULL;
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    return k_tid;
+}
 
 int __pthread_create (struct task_struct *curr, struct pt_regs *regs)
 
 {
     struct sched_param param;
-    pthread_t internal_tid;
+    struct pse51_hkey hkey;
     pthread_attr_t attr;
+    pthread_t k_tid;
     int err;
 
     if (curr->policy != SCHED_FIFO) /* Only allow FIFO for now. */
 	return -EINVAL;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(internal_tid)))
-	return -EFAULT;
+    /* We have been passed the pthread_t identifier the user-space
+       POSIX library has assigned to our caller; we'll index our
+       internal pthread_t descriptor in kernel space on it. */
+    hkey.u_tid = __xn_reg_arg1(regs);
+    hkey.mm = curr->mm;
 
     /* Build a default thread attribute, then make sure that a few
        critical fields are set in a compatible fashion wrt to the
@@ -50,20 +171,20 @@ int __pthread_create (struct task_struct *curr, struct pt_regs *regs)
     attr.fp = 1;
     attr.name = curr->comm;
 
-    err = pthread_create(&internal_tid,&attr,NULL,NULL);
+    err = pthread_create(&k_tid,&attr,NULL,NULL);
 
     if (err)
 	return -err; /* Conventionally, our error codes are negative. */
 
-    err = xnshadow_map(&internal_tid->threadbase,NULL);
+    err = xnshadow_map(&k_tid->threadbase,NULL);
 
-    if (!err)
-	__xn_copy_to_user(curr,
-			  (void __user *)__xn_reg_arg1(regs),
-			  &internal_tid,
-			  sizeof(internal_tid));
+    if (!err && !__pthread_hash(&hkey,k_tid))
+	err = -ENOMEM;
+
+    if (err)
+        pse51_thread_abort(k_tid, NULL);
     else
-        pse51_thread_abort(internal_tid, NULL);
+	k_tid->hkey = hkey;
 	
     return err;
 }
@@ -71,15 +192,22 @@ int __pthread_create (struct task_struct *curr, struct pt_regs *regs)
 int __pthread_detach (struct task_struct *curr, struct pt_regs *regs)
 
 { 
-    pthread_t internal_tid = (pthread_t)__xn_reg_arg1(regs);
-    return -pthread_detach(internal_tid);
+    struct pse51_hkey hkey;
+    pthread_t k_tid;
+
+    hkey.u_tid = __xn_reg_arg1(regs);
+    hkey.mm = curr->mm;
+    k_tid = __pthread_find(&hkey);
+
+    return -pthread_detach(k_tid);
 }
 
 int __pthread_setschedparam (struct task_struct *curr, struct pt_regs *regs)
 
 { 
     struct sched_param param;
-    pthread_t internal_tid;
+    struct pse51_hkey hkey;
+    pthread_t k_tid;
     int policy;
 
     policy = __xn_reg_arg2(regs);
@@ -91,14 +219,16 @@ int __pthread_setschedparam (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(param)))
 	return -EFAULT;
 
-    internal_tid = (pthread_t)__xn_reg_arg1(regs);
+    hkey.u_tid = __xn_reg_arg1(regs);
+    hkey.mm = curr->mm;
+    k_tid = __pthread_find(&hkey);
 
     __xn_copy_from_user(curr,
 			&param,
 			(void __user *)__xn_reg_arg3(regs),
 			sizeof(param));
 
-    return -pthread_setschedparam(internal_tid,policy,&param);
+    return -pthread_setschedparam(k_tid,policy,&param);
 }
 
 int __sched_yield (struct task_struct *curr, struct pt_regs *regs)
@@ -111,7 +241,8 @@ int __pthread_make_periodic_np (struct task_struct *curr, struct pt_regs *regs)
 
 { 
     struct timespec startt, periodt;
-    pthread_t internal_tid;
+    struct pse51_hkey hkey;
+    pthread_t k_tid;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(startt)))
 	return -EFAULT;
@@ -119,7 +250,9 @@ int __pthread_make_periodic_np (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(periodt)))
 	return -EFAULT;
 
-    internal_tid = (pthread_t)__xn_reg_arg1(regs);
+    hkey.u_tid = __xn_reg_arg1(regs);
+    hkey.mm = curr->mm;
+    k_tid = __pthread_find(&hkey);
 
     __xn_copy_from_user(curr,
 			&startt,
@@ -131,7 +264,7 @@ int __pthread_make_periodic_np (struct task_struct *curr, struct pt_regs *regs)
 			(void __user *)__xn_reg_arg3(regs),
 			sizeof(periodt));
 
-    return -pthread_make_periodic_np(internal_tid,&startt,&periodt);
+    return -pthread_make_periodic_np(k_tid,&startt,&periodt);
 }
 
 int __pthread_wait_np (struct task_struct *curr, struct pt_regs *regs)
@@ -144,11 +277,14 @@ int __pthread_set_mode_np (struct task_struct *curr, struct pt_regs *regs)
 
 {
     xnflags_t clrmask, setmask;
-    pthread_t internal_tid;
+    struct pse51_hkey hkey;
+    pthread_t k_tid;
     spl_t s;
     int err;
 
-    internal_tid = (pthread_t)__xn_reg_arg1(regs);
+    hkey.u_tid = __xn_reg_arg1(regs);
+    hkey.mm = curr->mm;
+    k_tid = __pthread_find(&hkey);
     clrmask = __xn_reg_arg2(regs);
     setmask = __xn_reg_arg3(regs);
 
@@ -158,13 +294,13 @@ int __pthread_set_mode_np (struct task_struct *curr, struct pt_regs *regs)
 
     xnlock_get_irqsave(&nklock, s);
 
-    if (!pse51_obj_active(&internal_tid->threadbase, PSE51_THREAD_MAGIC, struct pse51_thread))
+    if (!pse51_obj_active(&k_tid->threadbase, PSE51_THREAD_MAGIC, struct pse51_thread))
 	{
         xnlock_put_irqrestore(&nklock, s);
         return -ESRCH;
 	}
 
-    err = xnpod_set_thread_mode(&internal_tid->threadbase,clrmask,setmask);
+    err = xnpod_set_thread_mode(&k_tid->threadbase,clrmask,setmask);
 
     xnlock_put_irqrestore(&nklock, s);
 
@@ -541,7 +677,11 @@ static void __shadow_delete_hook (xnthread_t *thread)
 {
     if (xnthread_get_magic(thread) == PSE51_SKIN_MAGIC &&
 	testbits(thread->status,XNSHADOW))
+	{
+	pthread_t k_tid = thread2pthread(thread);
+	__pthread_unhash(&k_tid->hkey);
 	xnshadow_unmap(thread);
+	}
 }
 
 int pse51_syscall_init (void)

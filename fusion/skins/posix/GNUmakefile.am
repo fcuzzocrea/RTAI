@@ -29,6 +29,7 @@ noinst_HEADERS = \
 	cancel.h \
 	cond.h \
 	internal.h \
+	jhash.h \
 	mutex.h \
 	sem.h \
 	signal.h \

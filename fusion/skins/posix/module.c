@@ -106,6 +106,9 @@ int __fusion_skin_init(void)
     
     if (err != 0)
         {
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+	xnfusion_detach();
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
         xnpod_shutdown(err);    
 	return err;
         }

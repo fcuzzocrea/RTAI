@@ -174,6 +174,11 @@ int pthread_create (pthread_t *tid,
     appendq(&pse51_threadq,&thread->link);
     xnlock_put_irqrestore(&nklock, s);
 
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    thread->hkey.u_tid = 0;
+    thread->hkey.mm = NULL;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
     *tid = thread; /* Must be done before the thread is started. */
 
     if (start)	/* Do not start shadow threads (i.e. start == NULL). */

@@ -762,7 +762,7 @@ int mq_unlink(const char *name)
     xnqueue_t *bucket;
     xnholder_t *holder;
     pse51_nmq_t *nmq;
-    int dest_status, err = 0;
+    int dest_status;
     spl_t s;
 
     xnlock_get_irqsave(&nklock, s);

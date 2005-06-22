@@ -1,3 +1,10 @@
+2005-06-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix: Move u_tid -> k_tid mapping to kernel space.
+	
+	* nucleus/shadow.c (rtai_sysentry, linux_sysentry): Try to get
+	branch prediction right.
+
 2005-06-21  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/uvm/module.c (__fusion_skin_exit): Detach from the fusion

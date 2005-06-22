@@ -1026,68 +1026,15 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     xnthread_t *thread;
     u_long sysflags;
 
-    if (nkpod && !testbits(nkpod->status,XNPIDLE))
-	goto nucleus_loaded;
-
-    __xn_canonicalize_args(get_calling_task(evinfo),regs);
-
-    if (__xn_reg_mux_p(regs))
-	{
-	if (__xn_reg_mux(regs) == __xn_mux_code(0,__xn_sys_bind))
-	    /* Valid exception case: we may be called to bind to a
-	       skin which will create its own pod through its callback
-	       routine before returning to user-space. */
-	    goto propagate_syscall;
-
-	xnlogwarn("Bad syscall %ld/%ld -- no skin loaded.\n",
-		  __xn_mux_id(regs),
-		  __xn_mux_op(regs));
-
-	__xn_error_return(regs,-ENOSYS);
-	}
-    else
-	/* Regular Linux syscall with no skin loaded -- propagate it
-	   to the Linux kernel. */
-	goto propagate_syscall;
-
-    return;
-
- nucleus_loaded:
+    if (!nkpod || testbits(nkpod->status,XNPIDLE))
+	goto no_skin;
 
     task = get_calling_task(evinfo);
     thread = xnshadow_thread(task);
     __xn_canonicalize_args(task,regs);
 
-    if (__xn_reg_mux_p(regs))
-	goto xenomai_syscall;
-
-    if (xnpod_root_p())
-	/* The call originates from the Linux domain, either from a
-	   relaxed shadow or from a regular Linux task; just propagate
-	   the event so that we will fall back to linux_sysentry(). */
-	   goto propagate_syscall;
-
-    /* From now on, we know that we have a valid shadow thread
-       pointer. */
-
-    if (substitute_linux_syscall(task,regs))
-	/* This is a Linux syscall issued on behalf of a shadow thread
-	   running inside the RTAI domain. This call has just been
-	   intercepted by the nucleus and a RTAI replacement has been
-	   substituted for it. */
-	return;
-
-    /* This syscall has not been substituted, let Linux handle
-       it. This will eventually fall back to the Linux syscall handler
-       if our Linux domain handler does not intercept it. Before we
-       let it go, ensure that our running thread has properly entered
-       the Linux domain. */
-
-    xnshadow_relax(1);
-
-    goto propagate_syscall;
-
- xenomai_syscall:
+    if (!__xn_reg_mux_p(regs))
+	goto linux_syscall;
 
     muxid = __xn_mux_id(regs);
     muxop = __xn_mux_op(regs);
@@ -1244,6 +1191,59 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	request_syscall_restart(thread,regs);
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
 	xnshadow_harden(); /* -EPERM will be trapped later if needed. */
+
+    return;
+
+ linux_syscall:
+
+    if (xnpod_root_p())
+	/* The call originates from the Linux domain, either from a
+	   relaxed shadow or from a regular Linux task; just propagate
+	   the event so that we will fall back to linux_sysentry(). */
+	   goto propagate_syscall;
+
+    /* From now on, we know that we have a valid shadow thread
+       pointer. */
+
+    if (substitute_linux_syscall(task,regs))
+	/* This is a Linux syscall issued on behalf of a shadow thread
+	   running inside the RTAI domain. This call has just been
+	   intercepted by the nucleus and a RTAI replacement has been
+	   substituted for it. */
+	return;
+
+    /* This syscall has not been substituted, let Linux handle
+       it. This will eventually fall back to the Linux syscall handler
+       if our Linux domain handler does not intercept it. Before we
+       let it go, ensure that our running thread has properly entered
+       the Linux domain. */
+
+    xnshadow_relax(1);
+
+    goto propagate_syscall;
+
+ no_skin:
+
+    __xn_canonicalize_args(get_calling_task(evinfo),regs);
+
+    if (__xn_reg_mux_p(regs))
+	{
+	if (__xn_reg_mux(regs) == __xn_mux_code(0,__xn_sys_bind))
+	    /* Valid exception case: we may be called to bind to a
+	       skin which will create its own pod through its callback
+	       routine before returning to user-space. */
+	    goto propagate_syscall;
+
+	xnlogwarn("Bad syscall %ld/%ld -- no skin loaded.\n",
+		  __xn_mux_id(regs),
+		  __xn_mux_op(regs));
+
+	__xn_error_return(regs,-ENOSYS);
+	}
+    else
+	/* Regular Linux syscall with no skin loaded -- propagate it
+	   to the Linux kernel. */
+	goto propagate_syscall;
 }
 
 static void linux_sysentry (adevinfo_t *evinfo)
@@ -1253,21 +1253,8 @@ static void linux_sysentry (adevinfo_t *evinfo)
     xnthread_t *thread = xnshadow_thread(current);
     int muxid, muxop, sysflags, switched, err;
 
-    if (__xn_reg_mux_p(regs))
-	goto xenomai_syscall;
-
-    if (thread && substitute_linux_syscall(current,regs))
-	/* This is a Linux syscall issued on behalf of a shadow thread
-	   running inside the Linux domain. If the call has been
-	   substituted with a RTAI replacement, do not let Linux know
-	   about it. */
-	return;
-
-    /* Fall back to Linux syscall handling. */
-    adeos_propagate_event(evinfo);
-    return;
-
- xenomai_syscall:
+    if (!__xn_reg_mux_p(regs))
+	goto linux_syscall;
 
     /* muxid and muxop have already been checked in the RTAI domain
        handler. */
@@ -1280,17 +1267,16 @@ static void linux_sysentry (adevinfo_t *evinfo)
 		    muxid,
 		    muxop);
 
-    if (muxid != 0)
-	goto skin_syscall;
+    if (muxid == 0)
+	{
+	/* These are special built-in services which must run on
+	   behalf of the Linux domain (over which we are currently
+	   running). */
+	exec_nucleus_syscall(muxop,regs);
+	return;
+	}
 
-    /* These are special built-in services which must run on behalf of
-       the Linux domain (over which we are currently running). */
-
-    exec_nucleus_syscall(muxop,regs);
-
-    return;
-
- skin_syscall:
+    /* Processing a real-time skin syscall. */
 
     sysflags = muxtable[muxid - 1].systab[muxop].flags;
 
@@ -1319,6 +1305,20 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	request_syscall_restart(xnshadow_thread(current),regs);
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
 	xnshadow_relax(0);
+
+    return;
+
+ linux_syscall:
+
+    if (thread && substitute_linux_syscall(current,regs))
+	/* This is a Linux syscall issued on behalf of a shadow thread
+	   running inside the Linux domain. If the call has been
+	   substituted with a RTAI replacement, do not let Linux know
+	   about it. */
+	return;
+
+    /* Fall back to Linux syscall handling. */
+    adeos_propagate_event(evinfo);
 }
 
 static void linux_task_exit (adevinfo_t *evinfo)

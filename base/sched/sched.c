@@ -177,7 +177,7 @@ do { \
 	barrier(); \
 } while (0)
 
-#if 1
+#if 0
 #include <asm/atomic.h>
 #define sched_release_global_lock(cpuid) \
 do { \
@@ -1641,7 +1641,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 		schedule();
 		rt_global_cli();
 	}
-	LOCK_LINUX(cpuid = rtai_cpuid());
+	LOCK_LINUX(cpuid = rt_task->runnable_on_cpus);
 	enq_soft_ready_task(rt_task);
 	rt_smp_current[cpuid] = rt_task;
 	rt_global_sti();

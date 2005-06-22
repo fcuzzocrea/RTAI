@@ -382,7 +382,7 @@ static inline void rt_get_global_lock(void)
 
 static inline void rt_release_global_lock(void)
 {
-#if 1
+#if 0
 	barrier();
 	rtai_cli();
 	atomic_clear_mask((0xFFFF0001 << adeos_processor_id()), (atomic_t *)&rtai_cpu_lock);

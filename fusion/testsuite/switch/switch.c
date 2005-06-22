@@ -26,7 +26,7 @@ long long minjitter = 10000000;
 long long maxjitter = -10000000;
 long long avgjitter = 0;
 long long lost = 0;
-long long nsamples = 10000;
+long long nsamples = 100000;
 long long sampling_period = 100000;
 
 #define HISTOGRAM_CELLS 100

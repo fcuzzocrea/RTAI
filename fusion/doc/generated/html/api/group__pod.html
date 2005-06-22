@@ -64,7 +64,7 @@ typedef <a class="el" href="structxnsched.html">xnsched</a>&nbsp;</td><td class=
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Stop the system timer.  <a href="#ga24"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga25">xnpod_shutdown</a> (int xtype)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Default shutdown handler.  <a href="#ga25"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Shutdown the current pod.  <a href="#ga25"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__pod.html#ga26">xnpod_init_thread</a> (xnthread_t *thread, const char *name, int prio, xnflags_t flags, unsigned stacksize)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initialize a new thread.  <a href="#ga26"></a><br></td></tr>
@@ -1243,7 +1243,7 @@ Rescheduling: never.     </td>
     <td>
 
 <p>
-Default shutdown handler. 
+Shutdown the current pod. 
 <p>
 Forcibly shutdowns the active pod. All existing nucleus threads (but the root one) are terminated, and the system heap is freed.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
@@ -1251,7 +1251,7 @@ Forcibly shutdowns the active pod. All existing nucleus threads (but the root on
     <tr><td valign="top"></td><td valign="top"><em>xtype</em>&nbsp;</td><td>An exit code passed to the host environment who started the nucleus. Zero is always interpreted as a successful return.</td></tr>
   </table>
 </dl>
-The nucleus will not call this routine directly but rather use the routine pointed to at by the pod.svctable.shutdown member in the service table. This allows upper interfaces to interpose their own shutdown handlers so that they have their word before any action is taken. Usually, the interface-defined handlers should end up calling <a class="el" href="group__pod.html#ga25">xnpod_shutdown()</a> after their own housekeeping chores have been carried out.<p>
+The nucleus never calls this routine directly. Skins should provide their own shutdown handlers which end up calling <a class="el" href="group__pod.html#ga25">xnpod_shutdown()</a> after their own housekeeping chores have been carried out.<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
@@ -1705,7 +1705,7 @@ This internal routine is called on behalf of a (re)starting thread's prologue be
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jun 12 19:58:17 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Wed Jun 22 18:45:29 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

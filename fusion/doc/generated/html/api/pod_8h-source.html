@@ -148,10 +148,10 @@
 00192         <a class="code" href="structxnpod.html#o12">maxpri</a>;                 
 <a name="l00194"></a><a class="code" href="structxnpod.html#o13">00194</a>     <span class="keywordtype">int</span> <a class="code" href="structxnpod.html#o13">root_prio_base</a>;         
 <a name="l00196"></a><a class="code" href="structxnpod.html#o14">00196</a>     u_long <a class="code" href="structxnpod.html#o14">tickvalue</a>;           
-<a name="l00198"></a><a class="code" href="structxnpod.html#o15">00198</a>     u_long <a class="code" href="structxnpod.html#o15">ticks2sec</a>;   
-00201     <span class="keyword">struct </span>{
-<a name="l00202"></a><a class="code" href="structxnpod.html#o16">00202</a>         xnisr_t <a class="code" href="structxnpod.html#o16">tickhandler</a>; 
-00203         void (*shutdown)(<span class="keywordtype">int</span> xtype); 
+<a name="l00198"></a><a class="code" href="structxnpod.html#o15">00198</a>     u_long <a class="code" href="structxnpod.html#o15">ticks2sec</a>;           
+<a name="l00200"></a><a class="code" href="structxnpod.html#o16">00200</a>     <span class="keywordtype">int</span> <a class="code" href="structxnpod.html#o16">refcnt</a>;                 
+00202     <span class="keyword">struct </span>{
+<a name="l00203"></a><a class="code" href="structxnpod.html#o17">00203</a>         xnisr_t <a class="code" href="structxnpod.html#o17">tickhandler</a>; 
 00204         void (*settime)(xnticks_t newtime); 
 00205         int (*faulthandler)(xnarch_fltinfo_t *fltinfo); 
 00206         int (*unload)(void);    
@@ -203,8 +203,8 @@
 00253 <span class="preprocessor">#ifdef CONFIG_RTAI_OPT_WATCHDOG</span>
 00254 <span class="preprocessor"></span><span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_reset_watchdog (<span class="keywordtype">void</span>)
 00255 {
-00256     nkpod-&gt;<a class="code" href="structxnpod.html#o22">watchdog_trigger</a> = xnarch_get_cpu_tsc() + nkpod-&gt;<a class="code" href="structxnpod.html#o23">watchdog_reload</a>;
-00257     nkpod-&gt;<a class="code" href="structxnpod.html#o24">watchdog_armed</a> = 0;
+00256     nkpod-&gt;watchdog_trigger = xnarch_get_cpu_tsc() + nkpod-&gt;watchdog_reload;
+00257     nkpod-&gt;watchdog_armed = 0;
 00258 }
 00259 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_RTAI_OPT_WATCHDOG */</span>
 00260 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnpod_reset_watchdog (<span class="keywordtype">void</span>)
@@ -441,7 +441,7 @@
 00491 <span class="preprocessor">#endif</span>
 00492 <span class="preprocessor"></span>
 00495 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_POD_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jun 12 19:58:15 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jun 22 18:44:54 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

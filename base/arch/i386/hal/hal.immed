@@ -1518,15 +1518,14 @@ static int rtai_trap_fault (unsigned event, void *evdata)
 	   does in math_state_restore anyhow, to stay on the safe side. 
 	   In any case we inform the user. */
 		rtai_hw_cli(); /* in task context, so we can be preempted */
-		if (!linux_task->used_math) {
-			init_xfpu();	/* Does clts(). */
-			linux_task->used_math = 1;
+		if (!tsk_used_math(linux_task)) {
+			init_fpu(linux_task);	/* Does clts(). */
 			rt_printk("\nUNEXPECTED FPU INITIALIZATION FROM PID = %d\n", linux_task->pid);
 		} else {	
 			rt_printk("\nUNEXPECTED FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
 		}
 		restore_task_fpenv(linux_task);	/* Does clts(). */
-		set_tsk_used_fpu(linux_task);
+		set_tsk_inited_fpu(linux_task);
 		rtai_hw_sti();
 		goto endtrap;
 	}
@@ -1846,9 +1845,12 @@ void (*rt_set_ihook (void (*hookfn)(int)))(int)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 }
 
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 static int errno;
 
 static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct sched_param *,param)
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
@@ -1860,15 +1862,20 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 #else /* KERNEL_VERSION >= 2.6.0 */
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
+	int rc;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 	struct sched_param __user param;
 	mm_segment_t old_fs;
-	int rc;
 
 	param.sched_priority = prio;
 	old_fs = get_fs();
 	set_fs(KERNEL_DS);
-	rc = sched_setscheduler(task->pid,policy,&param);
+	rc = sched_setscheduler(task->pid, policy, &param);
 	set_fs(old_fs);
+#else
+	struct sched_param param = { prio };
+	rc = sched_setscheduler(task, policy, &param);
+#endif
 
 	if (rc) {
 		printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n", policy, prio, rc, task->comm, task->pid);

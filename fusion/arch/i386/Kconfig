@@ -64,7 +64,7 @@ config RTAI_HW_SCHED_LATENCY
 	of 0 (recommended) will cause this value to be estimated by
 	the nucleus at startup.
 
-config RTAI_HW_X86_VSYSCALL
+config RTAI_HW_X86_EXPERT_VSYSCALL
 	depends on RTAI_OPT_EXPERT
 	bool "Enable VSYSCALL support"
 	default y
@@ -81,6 +81,11 @@ config RTAI_HW_X86_VSYSCALL
 	your x86 hardware: if "sep" is listed, then RTAI performances
 	would likely benefit from activating this option; if it is not
 	listed, then disable this option.
+
+config RTAI_HW_X86_VSYSCALL
+        bool
+        depends on !RTAI_OPT_EXPERT || RTAI_HW_X86_EXPERT_VSYSCALL
+        default y
 
 menu "SMI workaround"
 

@@ -19952,8 +19952,10 @@ if test x$CONFIG_RTAI_OPT_SCALABLE_PRIOS = x ; then
   # Use a reasonable default if unset
   CONFIG_RTAI_OPT_SCALABLE_PRIOS=256
 fi
+if test x$CONFIG_RTAI_OPT_SCALABLE_SCHED = xy; then
 echo "$as_me:$LINENO: result: $CONFIG_RTAI_OPT_SCALABLE_PRIOS" >&5
 echo "${ECHO_T}$CONFIG_RTAI_OPT_SCALABLE_PRIOS" >&6
+fi
 
 echo "$as_me:$LINENO: checking for debug support in nucleus" >&5
 echo $ECHO_N "checking for debug support in nucleus... $ECHO_C" >&6

@@ -380,7 +380,9 @@ if test x$CONFIG_RTAI_OPT_SCALABLE_PRIOS = x ; then
   # Use a reasonable default if unset
   CONFIG_RTAI_OPT_SCALABLE_PRIOS=256
 fi
+if test x$CONFIG_RTAI_OPT_SCALABLE_SCHED = xy; then
 AC_MSG_RESULT($CONFIG_RTAI_OPT_SCALABLE_PRIOS)
+fi
 
 AC_MSG_CHECKING(for debug support in nucleus)
 AC_ARG_ENABLE(nucleus-debug,

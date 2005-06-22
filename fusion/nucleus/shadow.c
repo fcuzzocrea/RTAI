@@ -1253,8 +1253,21 @@ static void linux_sysentry (adevinfo_t *evinfo)
     xnthread_t *thread = xnshadow_thread(current);
     int muxid, muxop, sysflags, switched, err;
 
-    if (!__xn_reg_mux_p(regs))
-	goto linux_syscall;
+    if (__xn_reg_mux_p(regs))
+	goto xenomai_syscall;
+
+    if (!thread || !substitute_linux_syscall(current,regs))
+	/* Fall back to Linux syscall handling. */
+	adeos_propagate_event(evinfo);
+
+    /* This is a Linux syscall issued on behalf of a shadow thread
+       running inside the Linux domain. If the call has been
+       substituted with a RTAI replacement, do not let Linux know
+       about it. */
+
+    return;
+
+ xenomai_syscall:
 
     /* muxid and muxop have already been checked in the RTAI domain
        handler. */
@@ -1305,20 +1318,6 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	request_syscall_restart(xnshadow_thread(current),regs);
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
 	xnshadow_relax(0);
-
-    return;
-
- linux_syscall:
-
-    if (thread && substitute_linux_syscall(current,regs))
-	/* This is a Linux syscall issued on behalf of a shadow thread
-	   running inside the Linux domain. If the call has been
-	   substituted with a RTAI replacement, do not let Linux know
-	   about it. */
-	return;
-
-    /* Fall back to Linux syscall handling. */
-    adeos_propagate_event(evinfo);
 }
 
 static void linux_task_exit (adevinfo_t *evinfo)

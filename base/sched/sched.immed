@@ -228,20 +228,21 @@ int get_min_tasks_cpuid(void)
 
 static void put_current_on_cpu(int cpuid)
 {
+#ifdef CONFIG_SMP
+	struct task_struct *task = current;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	current->cpus_allowed = 1 << cpuid;
+	task->cpus_allowed = 1 << cpuid;
 	while (cpuid != rtai_cpuid()) {
-		current->state = TASK_INTERRUPTIBLE;
+		task->state = TASK_INTERRUPTIBLE;
 		schedule_timeout(2);
 	}
 #else /* KERNEL_VERSION >= 2.6.0 */
-	if (set_cpus_allowed(current,cpumask_of_cpu(cpuid)))
-	    {
-	    ((RT_TASK *)(current->rtai_tskext(0)))->runnable_on_cpus = smp_processor_id();
-	    set_cpus_allowed(current,cpumask_of_cpu(smp_processor_id()));
-	    }
-
+	if (set_cpus_allowed(task, cpumask_of_cpu(cpuid))) {
+		((RT_TASK *)(task->rtai_tskext(0)))->runnable_on_cpus = smp_processor_id();
+		set_cpus_allowed(current, cpumask_of_cpu(smp_processor_id()));
+	}
 #endif  /* KERNEL_VERSION < 2.6.0 */
+#endif /* CONFIG_SMP */
 }
 
 int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid, struct task_struct *relink)
@@ -763,7 +764,7 @@ static void rt_schedule_on_schedule_ipi(void)
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX_IN_IRQ(cpuid);
-			} else if (prev->used_math) {
+			} else if (tsk_used_math(prev)) {
 				restore_fpu(prev);
 			}
 		}
@@ -858,7 +859,7 @@ void rt_schedule(void)
 					goto sched_soft;
 				}
 			} else {
-				if (prev->used_math) {
+				if (tsk_used_math(prev)) {
 					restore_fpu(prev);
 				}
 				if (rt_current->force_soft) {
@@ -1159,7 +1160,7 @@ static void rt_timer_handler(void)
                 	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX_IN_IRQ(cpuid);
-			} else if (prev->used_math) {
+			} else if (tsk_used_math(prev)) {
 				restore_fpu(prev);
 			}
 		}
@@ -1848,7 +1849,7 @@ void steal_from_linux(RT_TASK *rt_task)
 		rt_task->priority      -= BASE_SOFT_PRIORITY;
 	}
 	rt_task->is_hard = 1;
-	if (lnxtsk->used_math) {
+	if (tsk_used_math(lnxtsk)) {
 		restore_fpu(lnxtsk);
 	}
 	rtai_sti();

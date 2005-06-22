@@ -125,14 +125,13 @@ static inline int GENERIC_DELETE(int index, void *object)
 
 struct fun_args { long a0; long a1; long a2; long a3; long a4; long a5; long a6; long a7; long a8; long a9; long long (*fun)(long, ...); };
 
-static inline long long lxrt_resume(void *fun, int narg, long *arg, unsigned long long type, RT_TASK *rt_task, int net_rpc)
+static inline void lxrt_resume(void *fun, int narg, long *arg, unsigned long long type, RT_TASK *rt_task, int net_rpc)
 {
 	int wsize, w2size;
 	long *wmsg_adr, *w2msg_adr;
 	struct fun_args *funarg;
 
 	memcpy(funarg = (void *)rt_task->fun_args, arg, narg);
-	funarg->fun = fun;
 	if (net_rpc) {
 		memcpy((void *)(rt_task->fun_args[4] = (long)(funarg + 1)), (void *)arg[4], arg[5]);
 	}
@@ -220,9 +219,10 @@ static inline long long lxrt_resume(void *fun, int narg, long *arg, unsigned lon
 		rt_task->retval = ((long long (*)(long, ...))fun)(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
 		if (!rt_task->is_hard) {
 extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
-			rt_schedule_soft_tail(rt_task, hard_cpu_id());
+			rt_schedule_soft_tail(rt_task, rt_task->runnable_on_cpus);
 		}
 	} else {
+		funarg->fun = fun;
 		rt_schedule_soft(rt_task);
 	}
 /*
@@ -234,7 +234,6 @@ extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
 	if (w2size > 0 && w2msg_adr) {
 		copy_to_user(w2msg_adr, rt_task->msg_buf[1], w2size);
 	}
-	return rt_task->retval;
 }
 
 static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_size, int cpus_allowed)
@@ -337,7 +336,6 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, void *arg, RT_T
 			int net_rpc;
 			if (task->is_hard > 1) {
 				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
-				task->is_hard = 0;
 				steal_from_linux(task);
 				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
 			}

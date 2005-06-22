@@ -226,27 +226,24 @@ int get_min_tasks_cpuid(void)
 	return cpuid;
 }
 
-#ifdef CONFIG_SMP
 static void put_current_on_cpu(int cpuid)
 {
+#ifdef CONFIG_SMP
+	struct task_struct *task = current;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	current->cpus_allowed = 1 << cpuid;
+	task->cpus_allowed = 1 << cpuid;
 	while (cpuid != rtai_cpuid()) {
-		current->state = TASK_INTERRUPTIBLE;
+		task->state = TASK_INTERRUPTIBLE;
 		schedule_timeout(2);
 	}
 #else /* KERNEL_VERSION >= 2.6.0 */
-	if (set_cpus_allowed(current,cpumask_of_cpu(cpuid)))
-	    {
-	    ((RT_TASK *)(current->rtai_tskext(0)))->runnable_on_cpus = smp_processor_id();
-	    set_cpus_allowed(current,cpumask_of_cpu(smp_processor_id()));
-	    }
-
+	if (set_cpus_allowed(task, cpumask_of_cpu(cpuid))) {
+		((RT_TASK *)(task->rtai_tskext(0)))->runnable_on_cpus = smp_processor_id();
+		set_cpus_allowed(current, cpumask_of_cpu(smp_processor_id()));
+	}
 #endif  /* KERNEL_VERSION < 2.6.0 */
-}
-#else /* !CONFIG_SMP */
-define put_current_on_cpu(cpuid)
 #endif /* CONFIG_SMP */
+}
 
 int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid, struct task_struct *relink)
 {

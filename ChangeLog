@@ -1,5 +1,18 @@
 2005-06-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
+	* base/sched/sched.immed and sys.c: revised and improved managment 
+	  of RTAI syscalls, following revision of the encoding of msgs 
+	  read/writes.
+	* base/ipc/netrpc/netrpc.c: exploits the semplification of the 
+	  new encoding schedme for msgs read/writes.
+	* base/include/rtai_schedcore.h: unifies an ubiquitus declaration
+	  of RTAI syscalls arguments in a single place.
+	* base/include/rtai_lxrt.h: simplified encoding of msgs read/writes.
+	* base/include/rtai_netrpc.h: inheredits the encoding of rtai_lxrt.h,
+	  with all the changes to functions declarations related to it.
+
+2005-06-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
 	* base/ipc/fifos/fifos.c: avoid direct initialiasation of a 
 	  spinlock, conflicting with Linux 2.6.11.
 	* base/include/rtai_shm.h: conditinally define the arch independent 

@@ -1,3 +1,10 @@
+2005-06-23  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/hal/x86.c (rthal_timer_request): Fix cpuid mess in
+	IO_APIC over UP case.
+
+ 	* RELEASE: fusion-0.8.1 (Midnight)
+
 2005-06-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ia64: Upgrade to r7 final.

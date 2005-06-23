@@ -884,24 +884,26 @@ static int irq_read_proc (char *page,
 			  int *eof,
 			  void *data)
 {
-    int len = 0, cpuid, irq;
+    int len = 0, cpu, irq;
     char *p = page;
 
     p += sprintf(p,"IRQ ");
 
-    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	p += sprintf(p,"        CPU%d",cpuid);
+    for_each_online_cpu(cpu) {
+	p += sprintf(p,"        CPU%d",cpu);
+    }
 
-    for (irq = 0; irq < IPIPE_NR_IRQS; irq++)
-	{
+    for (irq = 0; irq < IPIPE_NR_IRQS; irq++) {
+
 	if (rthal_realtime_irq[irq].handler == NULL)
 	    continue;
 
 	p += sprintf(p,"\n%3d:",irq);
 
-	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	    p += sprintf(p,"%12lu",rthal_realtime_irq[irq].hits[cpuid]);
+	for_each_online_cpu(cpu) {
+	    p += sprintf(p,"%12lu",rthal_realtime_irq[irq].hits[cpu]);
 	}
+    }
 
     p += sprintf(p,"\n");
 
@@ -921,27 +923,29 @@ static int faults_read_proc (char *page,
 			     int *eof,
 			     void *data)
 {
-    int len = 0, cpuid, trap;
+    int len = 0, cpu, trap;
     char *p = page;
 
     p += sprintf(p,"TRAP ");
 
-    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	p += sprintf(p,"        CPU%d",cpuid);
+    for_each_online_cpu(cpu) {
+	p += sprintf(p,"        CPU%d",cpu);
+    }
 
-    for (trap = 0; rthal_fault_labels[trap] != NULL; trap++)
-	{
+    for (trap = 0; rthal_fault_labels[trap] != NULL; trap++) {
+
 	if (!*rthal_fault_labels[trap])
 	    continue;
 
 	p += sprintf(p,"\n%3d: ",trap);
 
-	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
+	for_each_online_cpu(cpu) {
 	    p += sprintf(p,"%12d",
-			 rthal_realtime_faults[cpuid][trap]);
+			 rthal_realtime_faults[cpu][trap]);
+	}
 
 	p += sprintf(p,"    (%s)",rthal_fault_labels[trap]);
-	}
+    }
 
     p += sprintf(p,"\n");
 

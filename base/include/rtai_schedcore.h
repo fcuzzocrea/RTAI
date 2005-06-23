@@ -122,6 +122,8 @@ void rtai_handle_isched_lock(int nesting);
 #define rt_linux_task (rt_smp_linux_task[0])
 #endif
 
+struct fun_args { long a[10]; long long (*fun)(int, ...); };
+
 #ifdef CONFIG_SMP
 
 static inline void send_sched_ipi(unsigned long dest)

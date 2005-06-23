@@ -290,8 +290,6 @@ int set_rtext(RT_TASK *, int, int, void(*)(void), unsigned int, void *);
 int clr_rtext(RT_TASK *);
 void rt_schedule_soft(RT_TASK *);
 
-struct fun_args { long a[10]; long long (*fun)(int, ...); };
-
 static inline int soft_rt_fun_call(RT_TASK *task, void *fun, void *arg)
 {
 	task->fun_args[0] = (long)arg;
@@ -356,10 +354,10 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 	struct sockaddr *addr;
 	RT_TASK *task;
 	SEM *sem;
-        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; long a[1]; } *par;
+        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; long a[1]; } *par;
 	int wsize, w2size, sock;
 	long *a;
-	long long type;
+	long type;
 
 	addr = (struct sockaddr *)&portslotp->addr;
 	sock = portslotp->socket[0];
@@ -386,13 +384,13 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 		}
 		if (NEED_TO_W(type)) {
 			wsize = USP_WSZ1(type);
-			wsize = wsize ? a[wsize - 1] : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(long));
+			wsize = wsize ? a[wsize - 1] : sizeof(long);
 		} else {
 			wsize = 0;
 		}
 		if (NEED_TO_W2ND(type)) {
 			w2size = USP_WSZ2(type);
-			w2size = w2size ? a[w2size - 1] : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(long));
+			w2size = w2size ? a[w2size - 1] : sizeof(long);
 		} else {
 			w2size = 0;
 		}
@@ -426,10 +424,10 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	struct sockaddr *addr;
 	RT_TASK *task;
 	SEM *sem;
-        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; long a[1]; } *par;
+        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; long a[1]; } *par;
 	int wsize, w2size, sock;
 	long *a;
-	long long type;
+	long type;
 
 	addr = (struct sockaddr *)&portslotp->addr;
 	sock = portslotp->socket[1];
@@ -455,13 +453,13 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 		}
 		if (NEED_TO_W(type)) {
 			wsize = USP_WSZ1(type);
-			wsize = wsize ? a[wsize - 1] : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(long));
+			wsize = wsize ? a[wsize - 1] : sizeof(long);
 		} else {
 			wsize = 0;
 		}
 		if (NEED_TO_W2ND(type)) {
 			w2size = USP_WSZ2(type);
-			w2size = w2size ? a[w2size - 1] : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(long));
+			w2size = w2size ? a[w2size - 1] : sizeof(long);
 		} else {
 			w2size = 0;
 		}
@@ -714,7 +712,7 @@ static inline void mbx_send_if(MBX *mbx, void *sendmsg, int msg_size)
 	}
 }
 
-unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int argsize, int space)
+unsigned long long rt_net_rpc(int fun_ext_timed, long type, void *args, int argsize, int space)
 {
 	char msg[MAX_MSG_SIZE];
 	struct reply_t { int wsize, w2size; unsigned long long retval; char msg[1]; } *reply;
@@ -758,12 +756,12 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 	}
 	if (NEED_TO_R(type)) {			
 		rsize = USP_RSZ1(type);
-		rsize = rsize ? ((int *)args)[rsize - 1] : (USP_RSZ1LL(type) ? sizeof(long long) : sizeof(long));
+		rsize = rsize ? ((int *)args)[rsize - 1] : sizeof(long);
 	} else {
 		rsize = 0;
 	}
 	do {
-		struct msg_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; long args[1]; } *arg;
+		struct msg_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; long args[1]; } *arg;
 		RT_TASK *task;
 
 		arg = (void *)msg;
@@ -804,12 +802,12 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 			} else {
 				copy_to_user((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
 			}
-		}
-		if (reply->w2size) {
-			if (space) {
-				memcpy((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
-			} else {
-				copy_to_user((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+			if (reply->w2size) {
+				if (space) {
+					memcpy((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+				} else {
+					copy_to_user((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+				}
 			}
 		}
 		return reply->retval;
@@ -875,14 +873,14 @@ unsigned long rt_set_this_node(const char *ddn, unsigned long node, int hard)
 /* +++++++++++++++++++++++++++ NETRPC ENTRIES +++++++++++++++++++++++++++++++ */
 
 struct rt_native_fun_entry rt_netrpc_entries[] = {
-        { { 1LL, rt_net_rpc           },	NETRPC },
-	{ { 1LL, rt_send_req_rel_port },	SEND_REQ_REL_PORT },
-	{ { 0LL, ddn2nl               },	DDN2NL },
-	{ { 0LL, rt_set_this_node     },	SET_THIS_NODE },
-	{ { 0LL, rt_find_asgn_stub    },	FIND_ASGN_STUB },
-	{ { 0LL, rt_rel_stub          },	REL_STUB },
-	{ { 0LL, rt_waiting_return    },	WAITING_RETURN },
-	{ { 0, 0 },                        	000 }
+        { { 1, rt_net_rpc           },	NETRPC },
+	{ { 1, rt_send_req_rel_port },	SEND_REQ_REL_PORT },
+	{ { 0, ddn2nl               },	DDN2NL },
+	{ { 0, rt_set_this_node     },	SET_THIS_NODE },
+	{ { 0, rt_find_asgn_stub    },	FIND_ASGN_STUB },
+	{ { 0, rt_rel_stub          },	REL_STUB },
+	{ { 0, rt_waiting_return    },	WAITING_RETURN },
+	{ { 0, 0 },                    	000 }
 };
 
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);

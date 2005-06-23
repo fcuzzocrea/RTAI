@@ -1610,8 +1610,6 @@ void rt_deregister_watchdog(RT_TASK *wd, int cpuid)
 
 static RT_TRAP_HANDLER lxrt_old_trap_handler;
 
-struct fun_args { long a0; long a1; long a2; long a3; long a4; long a5; long a6; long a7; long a8; long a9; long long (*fun)(long, ...); };
-
 static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 {
 	rt_global_cli();
@@ -1642,7 +1640,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	rt_smp_current[cpuid] = rt_task;
 	rt_global_sti();
 	funarg = (void *)rt_task->fun_args;
-	rt_task->retval = funarg->fun(funarg->a0, funarg->a1, funarg->a2, funarg->a3, funarg->a4, funarg->a5, funarg->a6, funarg->a7, funarg->a8, funarg->a9);
+	rt_task->retval = funarg->fun(funarg->a[0], funarg->a[1], funarg->a[2], funarg->a[3], funarg->a[4], funarg->a[5], funarg->a[6], funarg->a[7], funarg->a[8], funarg->a[9]);
 	_rt_schedule_soft_tail(rt_task, cpuid);
 }
 

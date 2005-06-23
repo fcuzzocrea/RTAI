@@ -417,31 +417,22 @@ arg  INDX   |||| .... .... .... .... .... .... ....
 */
 
 /*
-These USP (unsigned long long) type fields allow to read and write up to 2 arguments.  
+These USP (unsigned long) type fields allow to read and write up to 2 arguments.  
                                                
-RW marker .... .... .... .... .... .... .... ..|| .... .... .... .... .... .... .... ...|
+The high part of the unsigned long encodes writes
+W ARG1 BF .... .... ..|| |... .... .... .... ....
+W ARG1 SZ .... ...| ||.. .... .... .... .... ....
+W ARG2 BF .... |||. .... .... .... .... .... ....
+W ARG2 SZ .||| .... .... .... .... .... .... ....
 
-HIGH unsigned long encodes writes
-W ARG1 BF .... .... .... .... .... ...| |||| ||..
-W ARG1 SZ .... .... .... .... |||| |||. .... ....
-W ARG2 BF .... .... .||| |||| .... .... .... ....
-W ARG2 SZ ..|| |||| |... .... .... .... .... ....
-W 1st  LL .|.. .... .... .... .... .... .... ....
-W 2nd  LL |... .... .... .... .... .... .... ....
+The low part of the unsigned long encodes writes
+R ARG1 BF .... .... .... .... .... .... ..|| |...
+R ARG1 SZ .... .... .... .... .... ...| ||.. ....
+R ARG2 BF .... .... .... .... .... |||. .... ....
+R ARG2 SZ .... .... .... .... .||| .... .... ....
 
-LOW unsigned long encodes reads
-R ARG1 BF .... .... .... .... .... ...| |||| ||..
-R ARG1 SZ .... .... .... .... |||| |||. .... ....
-R ARG2 BF .... .... .||| |||| .... .... .... ....
-R ARG2 SZ ..|| |||| |... .... .... .... .... ....
-R 1st  LL .|.. .... .... .... .... .... .... ....
-R 2nd  LL |... .... .... .... .... .... .... ....
-
-LOW unsigned long encodes also
+The low part of the unsigned long encodes also
 RT Switch .... .... .... .... .... .... .... ...|
-
-and 
-Always 0  .... .... .... .... .... .... .... ..|.
 
 If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long long) is copied.
 */
@@ -450,66 +441,33 @@ If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long lon
 // them in fun entry type to obtain the desired encoding
 
 // for writes
-#define UW1(bf, sz)  ((((unsigned long long)((((bf) & 0x7F) <<  2) | (((sz) & 0x7F) <<  9))) << 32) | 0x300000001LL)
-#define UW2(bf, sz)  ((((unsigned long long)((((bf) & 0x7F) << 16) | (((sz) & 0x7F) << 23))) << 32) | 0x300000001LL)
-#define UWSZ1LL      (0x4000000300000001LL)
-#define UWSZ2LL      (0x8000000300000001LL)
+#define UW1(bf, sz)  ((((bf) & 0x7) << 19) | (((sz) & 0x7) << 22))
+#define UW2(bf, sz)  ((((bf) & 0x7) << 25) | (((sz) & 0x7) << 28))
 
 // for reads
-#define UR1(bf, sz)  ((((bf) & 0x7F) <<  2) | (((sz) & 0x7F) <<  9) | 0x300000001LL)
-#define UR2(bf, sz)  ((((bf) & 0x7F) << 16) | (((sz) & 0x7F) << 23) | 0x300000001LL)
-#define URSZ1LL      (0x340000001LL)
-#define URSZ2LL      (0x380000001LL)
+#define UR1(bf, sz)  ((((bf) & 0x7) << 3) | (((sz) & 0x7) <<  6))
+#define UR2(bf, sz)  ((((bf) & 0x7) << 9) | (((sz) & 0x7) << 12))
 
-// and these are for deciding what to do in lxrt.c
-#if 0
-#define	NEED_TO_RW(x)	(((unsigned long *)&(x))[HIGH])
+#define	NEED_TO_RW(x)	((x) & 0xFFFFFFFE)
 
-#define NEED_TO_R(x)	(((unsigned long *)&(x))[LOW]  & 0x0000FFFC)
-#define NEED_TO_W(x)	(((unsigned long *)&(x))[HIGH] & 0x0000FFFC)
+#define NEED_TO_W(x)	((x) & (0x3F << 19))
+#define NEED_TO_W2ND(x)	((x) & (0x3F << 25))
 
-#define NEED_TO_R2ND(x)	(((unsigned long *)&(x))[LOW]  & 0x3FFF0000)
-#define NEED_TO_W2ND(x)	(((unsigned long *)&(x))[HIGH] & 0x3FFF0000)
+#define NEED_TO_R(x)	((x) & (0x3F <<  3))
+#define NEED_TO_R2ND(x)	((x) & (0x3F <<  9))
 
-#define USP_RBF1(x)  	((((unsigned long *)&(x))[LOW] >>  2) & 0x7F)
-#define USP_RSZ1(x)    	((((unsigned long *)&(x))[LOW] >>  9) & 0x7F)
-#define USP_RBF2(x)    	((((unsigned long *)&(x))[LOW] >> 16) & 0x7F)
-#define USP_RSZ2(x)    	((((unsigned long *)&(x))[LOW] >> 23) & 0x7F)
-#define USP_RSZ1LL(x)  	(((unsigned long *)&(x))[LOW] & 0x40000000)
-#define USP_RSZ2LL(x)  	(((unsigned long *)&(x))[LOW] & 0x80000000)
+#define USP_WBF1(x)   	(((x) >> 19) & 0x7)
+#define USP_WSZ1(x)    	(((x) >> 22) & 0x7)
+#define USP_WBF2(x)    	(((x) >> 25) & 0x7)
+#define USP_WSZ2(x)    	(((x) >> 28) & 0x7)
 
-#define USP_WBF1(x)   	((((unsigned long *)&(x))[HIGH] >>  2) & 0x7F)
-#define USP_WSZ1(x)    	((((unsigned long *)&(x))[HIGH] >>  9) & 0x7F)
-#define USP_WBF2(x)    	((((unsigned long *)&(x))[HIGH] >> 16) & 0x7F)
-#define USP_WSZ2(x)    	((((unsigned long *)&(x))[HIGH] >> 23) & 0x7F)
-#define USP_WSZ1LL(x)   (((unsigned long *)&(x))[HIGH] & 0x40000000)
-#define USP_WSZ2LL(x)   (((unsigned long *)&(x))[HIGH] & 0x80000000)
-#else
-#define	NEED_TO_RW(x)	((x >> 32) & 0xFFFFFFFF)
-
-#define NEED_TO_R(x)	(x & 0x0000FFFC)
-#define NEED_TO_W(x)	((x >> 32) & 0x0000FFFC)
-
-#define NEED_TO_R2ND(x)	(x & 0x3FFF0000)
-#define NEED_TO_W2ND(x)	((x >> 32) & 0x3FFF0000)
-
-#define USP_RBF1(x)  	((x >> 2) & 0x7F)
-#define USP_RSZ1(x)    	((x >> 9) & 0x7F)
-#define USP_RBF2(x)    	((x >> 16) & 0x7F)
-#define USP_RSZ2(x)    	((x >> 23) & 0x7F)
-#define USP_RSZ1LL(x)  	(x & 0x40000000)
-#define USP_RSZ2LL(x)  	(x & 0x80000000)
-
-#define USP_WBF1(x)   	(((x >> 32) >>  2) & 0x7F)
-#define USP_WSZ1(x)    	(((x >> 32) >>  9) & 0x7F)
-#define USP_WBF2(x)    	(((x >> 32) >> 16) & 0x7F)
-#define USP_WSZ2(x)    	(((x >> 32) >> 23) & 0x7F)
-#define USP_WSZ1LL(x)   ((x >> 32) & 0x40000000)
-#define USP_WSZ2LL(x)   ((x >> 32) & 0x80000000)
-#endif
+#define USP_RBF1(x)  	(((x) >>  3) & 0x7)
+#define USP_RSZ1(x)    	(((x) >>  6) & 0x7)
+#define USP_RBF2(x)    	(((x) >>  9) & 0x7)
+#define USP_RSZ2(x)    	(((x) >> 12) & 0x7)
 
 struct rt_fun_entry {
-    unsigned long long type;
+    unsigned long type;
     void *fun;
 };
 

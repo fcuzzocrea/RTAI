@@ -183,7 +183,8 @@ int rthal_timer_request (void (*handler)(void),
     struct rthal_apic_data *p;
     long long sync_time;
     unsigned long flags;
-    int cpuid;
+    adeos_declare_cpuid;
+    int cpu;
 
     /* This code works both for UP+LAPIC and SMP configurations. */
 
@@ -206,9 +207,8 @@ int rthal_timer_request (void (*handler)(void),
        the visible interface if it happens to be really needed at some
        point in time. */
     
-    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++)
-	{
-	p = &rthal_timer_mode[cpuid];
+    for_each_online_cpu(cpu) {
+	p = &rthal_timer_mode[cpu];
 	p->mode = !!nstick;	/* 0=oneshot, 1=periodic */
 	p->count = nstick;
 
@@ -216,7 +216,7 @@ int rthal_timer_request (void (*handler)(void),
 	    p->count = rthal_imuldiv(p->count,RTHAL_TIMER_FREQ,1000000000);
 	else
 	    p->count = RTHAL_APIC_ICOUNT;
-	}
+    }
 
     adeos_load_cpuid();
 

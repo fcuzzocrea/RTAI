@@ -142,7 +142,7 @@ static inline void lxrt_resume(void *fun, int narg, long *arg, unsigned long typ
 		
 		fun_args = arg - 1;
 		rsize = r2size = 0;
-		if( NEED_TO_R(type)) {			
+		if (NEED_TO_R(type)) {			
 			rsize = USP_RSZ1(type);
 			rsize = rsize ? fun_args[rsize] : sizeof(long);
 		}
@@ -302,7 +302,6 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 
 	srq = SRQ(lxsrq);
 	if (srq < MAX_LXRT_FUN) {
-		int idx;
 		unsigned long type;
 		struct rt_fun_entry *funcm;
 /*
@@ -311,14 +310,10 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
  * hard real time. Concept contributed and copyrighted by: Giuseppe Renoldi 
  * (giuseppe@renoldi.org).
  */
-		idx   = INDX(lxsrq);
-		funcm = rt_fun_ext[idx];
-
-		if (!funcm) {
-			rt_printk("BAD: null rt_fun_ext[%d]\n", idx);
+		if (!unlikely(funcm = rt_fun_ext[INDX(lxsrq)])) {
+			rt_printk("BAD: null rt_fun_ext[%d]\n", INDX(lxsrq));
 			return -ENOSYS;
 		}
-
 		if ((type = funcm[srq].type)) {
 			if (task->is_hard > 1) {
 				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););

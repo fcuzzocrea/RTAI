@@ -1023,7 +1023,9 @@ int clr_rtext(RT_TASK *task)
 			frstk_srq.mp[frstk_srq.in++ & (MAX_FRESTK_SRQ - 1)] = task->stack_bottom;
 			rt_pend_linux_srq(frstk_srq.srq);
 		}
-		task->magic = task->state = 0;
+		task->magic = 0;
+		rem_ready_task(task);
+		task->state = 0;
 		atomic_dec((void *)(tasks_per_cpu + task->runnable_on_cpus));
 		if (task == rt_current) {
 			rt_schedule();

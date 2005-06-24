@@ -1676,7 +1676,7 @@ static int rsvr_cnt[NR_RT_CPUS];
 #endif
 static int Reservoir = RESERVOIR;
 MODULE_PARM(Reservoir, "i");
-static int SpareKthreads = 20;
+static int SpareKthreads = 100;
 MODULE_PARM(SpareKthreads, "i");
 
 static int taskidx[NR_RT_CPUS];

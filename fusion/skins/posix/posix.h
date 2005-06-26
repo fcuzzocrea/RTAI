@@ -560,17 +560,24 @@ struct mq_attr {
 
 BEGIN_C_DECLS
 
-int mq_getattr(mqd_t qd, struct mq_attr *attr);
+int mq_getattr(mqd_t qd,
+	       struct mq_attr *attr);
 
 int mq_setattr(mqd_t qd,
                const struct mq_attr *__restrict__ attr,
                struct mq_attr *__restrict__ oattr);
 
-int mq_send(mqd_t qd, const char *buffer, size_t len, unsigned prio);
+int mq_send(mqd_t qd,
+	    const char *buffer,
+	    size_t len,
+	    unsigned prio);
 
 int mq_close(mqd_t qd);
 
-ssize_t  mq_receive(mqd_t q, char *buffer, size_t len, unsigned *prio);
+ssize_t  mq_receive(mqd_t q,
+		    char *buffer,
+		    size_t len,
+		    unsigned *prio);
 
 ssize_t  mq_timedreceive(mqd_t q,
                          char *__restrict__ buffer,
@@ -584,11 +591,11 @@ int mq_timedsend(mqd_t q,
                  unsigned prio,
                  const struct timespec *timeout);
 
+mqd_t mq_open(const char *name,
+	      int oflags,
+	      ...);
 
-
-mqd_t mq_open(const char *, int, ...);
-
-int mq_unlink(const char *);
+int mq_unlink(const char *name);
 
 END_C_DECLS
 

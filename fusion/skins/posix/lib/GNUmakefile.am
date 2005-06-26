@@ -12,10 +12,12 @@ libpthread_rt_la_SOURCES = \
 	thread.c \
 	semaphore.c \
 	clock.c \
-	mutex.c \
-	cond.c
+	cond.c \
+	mq.c \
+	mutex.c
 
 include_HEADERS = \
+	mqueue.h \
 	pthread.h \
 	semaphore.h
 

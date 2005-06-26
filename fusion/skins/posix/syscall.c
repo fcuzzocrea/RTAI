@@ -642,6 +642,52 @@ int __cond_broadcast (struct task_struct *curr, struct pt_regs *regs)
     return -pthread_cond_broadcast(cond);
 }
 
+int __mq_open (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    return -ENOSYS;
+}
+
+int __mq_close (struct task_struct *curr, struct pt_regs *regs)
+{
+    return -ENOSYS;
+}
+
+int __mq_unlink (struct task_struct *curr, struct pt_regs *regs)
+{
+    return -ENOSYS;
+}
+
+int __mq_getattr (struct task_struct *curr, struct pt_regs *regs)
+{
+    return -ENOSYS;
+}
+
+int __mq_setattr (struct task_struct *curr, struct pt_regs *regs)
+{
+    return -ENOSYS;
+}
+
+int __mq_send (struct task_struct *curr, struct pt_regs *regs)
+{
+    return -ENOSYS;
+}
+
+int __mq_timedsend (struct task_struct *curr, struct pt_regs *regs)
+{
+    return -ENOSYS;
+}
+
+int __mq_receive (struct task_struct *curr, struct pt_regs *regs)
+{
+    return -ENOSYS;
+}
+
+int __mq_timedreceive (struct task_struct *curr, struct pt_regs *regs)
+{
+    return -ENOSYS;
+}
+
 static xnsysent_t __systab[] = {
     [__pse51_thread_create ] = { &__pthread_create, __xn_exec_init },
     [__pse51_thread_detach ] = { &__pthread_detach, __xn_exec_any },
@@ -670,6 +716,15 @@ static xnsysent_t __systab[] = {
     [__pse51_cond_timedwait] = { &__cond_timedwait, __xn_exec_primary },
     [__pse51_cond_signal] = { &__cond_signal, __xn_exec_any },
     [__pse51_cond_broadcast] = { &__cond_broadcast, __xn_exec_any },
+    [__pse51_mq_open] = { &__mq_open, __xn_exec_any },
+    [__pse51_mq_close] = { &__mq_close, __xn_exec_any },
+    [__pse51_mq_unlink] = { &__mq_unlink, __xn_exec_any },
+    [__pse51_mq_getattr] = { &__mq_getattr, __xn_exec_any },
+    [__pse51_mq_setattr] = { &__mq_setattr, __xn_exec_any },
+    [__pse51_mq_send] = { &__mq_send, __xn_exec_primary },
+    [__pse51_mq_timedsend] = { &__mq_timedsend, __xn_exec_primary },
+    [__pse51_mq_receive] = { &__mq_receive, __xn_exec_primary },
+    [__pse51_mq_timedreceive] = { &__mq_timedreceive, __xn_exec_primary },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

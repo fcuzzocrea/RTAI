@@ -24,3 +24,12 @@ pthread_cond_wait
 pthread_cond_timedwait
 pthread_cond_signal
 pthread_cond_broadcast
+mq_open
+mq_close
+mq_unlink
+mq_getattr
+mq_setattr
+mq_send
+mq_timedsend
+mq_receive
+mq_timedreceive

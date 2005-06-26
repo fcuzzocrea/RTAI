@@ -50,6 +50,15 @@
 #define __pse51_cond_timedwait        24
 #define __pse51_cond_signal           25
 #define __pse51_cond_broadcast        26
+#define __pse51_mq_open               27
+#define __pse51_mq_close              28
+#define __pse51_mq_unlink             29
+#define __pse51_mq_getattr            30
+#define __pse51_mq_setattr            31
+#define __pse51_mq_send               32
+#define __pse51_mq_timedsend          33
+#define __pse51_mq_receive            34
+#define __pse51_mq_timedreceive       35
 
 #ifdef __KERNEL__
 

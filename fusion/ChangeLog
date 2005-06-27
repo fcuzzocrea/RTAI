@@ -1,3 +1,7 @@
+2005-06-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to r12c1.
+
 2005-06-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/hal/x86.c (rthal_timer_request): Fix cpuid mess in

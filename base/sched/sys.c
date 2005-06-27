@@ -310,7 +310,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
  * hard real time. Concept contributed and copyrighted by: Giuseppe Renoldi 
  * (giuseppe@renoldi.org).
  */
-		if (!unlikely(funcm = rt_fun_ext[INDX(lxsrq)])) {
+		if (unlikely(!(funcm = rt_fun_ext[INDX(lxsrq)]))) {
 			rt_printk("BAD: null rt_fun_ext[%d]\n", INDX(lxsrq));
 			return -ENOSYS;
 		}

@@ -17,12 +17,14 @@
  */
 
 #include <errno.h>
+#include <stdarg.h>
 #include <posix/syscall.h>
 #include <posix/lib/pthread.h>
+#include <posix/lib/mqueue.h>
 
 extern int __pse51_muxid;
 
-mqd_t __wrap_mq_open (cont char *name,
+mqd_t __wrap_mq_open (const char *name,
 		      int oflags,
 		      ...)
 {
@@ -70,7 +72,7 @@ int __wrap_mq_close (mqd_t q)
     return -1;
 }
 
-int __wrap_mq_unlink (cont char *name)
+int __wrap_mq_unlink (const char *name)
 {
     int err;
 
@@ -181,7 +183,7 @@ ssize_t __wrap_mq_receive (mqd_t q,
     if (len != -1)
 	return len;
 
-    errno = -err;
+    errno = -len;
 
     return -1;
 }
@@ -190,11 +192,11 @@ ssize_t __wrap_mq_timedreceive (mqd_t q,
 				char *__restrict__ buffer,
 				size_t len,
 				unsigned *__restrict__ prio,
-				const struct timespec *__restrict__ timeout);
+				const struct timespec *__restrict__ timeout)
 {
     ssize_t len;
 
-    err = XENOMAI_SKINCALL5(__pse51_muxid,
+    len = XENOMAI_SKINCALL5(__pse51_muxid,
 			    __pse51_mq_timedreceive,
 			    &q,
 			    buffer,
@@ -204,7 +206,7 @@ ssize_t __wrap_mq_timedreceive (mqd_t q,
     if (len != -1)
 	return len;
 
-    errno = -err;
+    errno = -len;
 
     return -1;
 }

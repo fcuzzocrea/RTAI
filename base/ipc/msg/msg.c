@@ -43,18 +43,16 @@ MODULE_LICENSE("GPL");
 
 /* +++++++++++++++++++++++++++++ ASYNC SENDS ++++++++++++++++++++++++++++++++ */
 
-static inline int recover_task_prio(RT_TASK *task)
+static inline void reset_task_prio(RT_TASK *task)
 {
 	if (task->owndres & RPCHLF) {
 		task->owndres -= RPCINC;
 	}
 	if (!task->owndres) {
-		return renq_current(task, task->base_priority);
+		renq_ready_task(task, task->base_priority);
 	} else if (!(task->owndres & SEMHLF)) {
 		int priority;
-		return renq_ready_task(task, task->base_priority > (priority = ((task->msg_queue.next)->task)->priority) ? priority : task->base_priority);
-	} else {
-		return 0;
+		renq_ready_task(task, task->base_priority > (priority = ((task->msg_queue.next)->task)->priority) ? priority : task->base_priority);
 	}
 }
 
@@ -266,7 +264,7 @@ RT_TASK *rt_send_until(RT_TASK *task, unsigned long msg, RTIME time)
 	}
 	if (rt_current->msg_queue.task != rt_current) {
 		dequeue_blocked(rt_current);
-		recover_task_prio(task);
+		reset_task_prio(task);
 		rt_current->msg_queue.task = rt_current;
 		task = (RT_TASK *)0;
 	}
@@ -570,7 +568,7 @@ RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void *result, RTIME ti
 		*(unsigned long *)result = rt_current->msg;
 	} else {
 		dequeue_blocked(rt_current);
-		recover_task_prio(task);
+		reset_task_prio(task);
 		rt_current->msg_queue.task = rt_current;
 		task = (RT_TASK *)0;
 	}
@@ -844,7 +842,6 @@ RT_TASK *rt_receive(RT_TASK *task, void *msg)
 		if (task->state & RT_SCHED_SEND) {
 			int sched;
 			task->msg_queue.task = task;
-			dequeue_blocked(task);
 			sched = recover_current_prio(rt_current);
 			if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEND | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(task);
@@ -1022,7 +1019,6 @@ RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time)
 		if (task->state & RT_SCHED_SEND) {
 			int sched;
 			task->msg_queue.task = task;
-			dequeue_blocked(task);
 			sched = recover_current_prio(rt_current);
 			if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEND | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(task);

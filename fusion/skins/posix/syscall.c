@@ -645,17 +645,63 @@ int __cond_broadcast (struct task_struct *curr, struct pt_regs *regs)
 int __mq_open (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return -ENOSYS;
+    struct mq_attr attr;
+    char name[64];
+    mode_t mode;
+    int oflags;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(name)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
+    name[sizeof(name) - 1] = '\0';
+
+    oflags = __xn_reg_arg2(regs);
+    mode = __xn_reg_arg3(regs);
+
+    if (__xn_reg_arg4(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg4(regs),sizeof(attr)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,&attr,(struct mq_attr *)__xn_reg_arg4(regs),sizeof(attr));
+	}
+    else
+	{
+	/* Won't be used, but still, we make sure that it can't be
+	   used. */
+	attr.mq_flags = 0;
+	attr.mq_maxmsg = 0;
+	attr.mq_msgsize = 0;
+	attr.mq_curmsgs = 0;
+	}
+
+    return -mq_open(name,oflags,mode,&attr);
 }
 
 int __mq_close (struct task_struct *curr, struct pt_regs *regs)
 {
-    return -ENOSYS;
+    mqd_t q;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
+
+    return -mq_close(q);
 }
 
 int __mq_unlink (struct task_struct *curr, struct pt_regs *regs)
 {
-    return -ENOSYS;
+    char name[64];
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(name)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
+    name[sizeof(name) - 1] = '\0';
+
+    return -mq_unlink(name);
 }
 
 int __mq_getattr (struct task_struct *curr, struct pt_regs *regs)

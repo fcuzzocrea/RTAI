@@ -1,3 +1,7 @@
+2005-06-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to r12c2.
+
 2005-06-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to r12c1.

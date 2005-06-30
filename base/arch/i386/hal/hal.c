@@ -111,7 +111,7 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 
 #define rtai_setup_oneshot_apic(count, vector)
 
-#define ack_APIC_irq()
+#define __ack_APIC_irq()
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 
@@ -249,8 +249,23 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 	}
 }
 
-extern struct hw_interrupt_type __adeos_std_irq_dtype[];
 extern unsigned long io_apic_irqs;
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,11)
+
+#define rtai_irq_desc(irq) (irq_desc[irq].handler)
+#define BEGIN_PIC()
+#define END_PIC()
+#undef __adeos_lock_irq
+#undef __adeos_unlock_irq
+#define __adeos_lock_irq(x, y, z)
+#define __adeos_unlock_irq(x, y)
+
+#else
+
+#define __ack_APIC_irq  ack_APIC_irq
+extern struct hw_interrupt_type __adeos_std_irq_dtype[];
+#define rtai_irq_desc(irq) (&__adeos_std_irq_dtype[irq])
 
 #define BEGIN_PIC() \
 do { \
@@ -265,6 +280,8 @@ do { \
 	adp_root->cpudata[cpuid].status = pflags; \
 	rtai_restore_flags(flags); \
 } while (0)
+
+#endif
 
 /**
  * start and initialize the PIC to accept interrupt request irq.
@@ -299,7 +316,7 @@ unsigned rt_startup_irq (unsigned irq)
 
 	BEGIN_PIC();
 	__adeos_unlock_irq(adp_root, irq);
-	retval = __adeos_std_irq_dtype[irq].startup(irq);
+	retval = rtai_irq_desc(irq)->startup(irq);
 	END_PIC();
         return retval;
 }
@@ -336,7 +353,7 @@ unsigned rt_startup_irq (unsigned irq)
 void rt_shutdown_irq (unsigned irq)
 {
 	BEGIN_PIC();
-	__adeos_std_irq_dtype[irq].shutdown(irq);
+	rtai_irq_desc(irq)->shutdown(irq);
 	__adeos_clear_irq(adp_root, irq);
 	END_PIC();
 }
@@ -345,7 +362,7 @@ static inline void _rt_enable_irq (unsigned irq)
 {
 	BEGIN_PIC();
 	__adeos_unlock_irq(adp_root, irq);
-	__adeos_std_irq_dtype[irq].enable(irq);
+	rtai_irq_desc(irq)->enable(irq);
 	END_PIC();
 }
 
@@ -411,7 +428,7 @@ void rt_enable_irq (unsigned irq)
 void rt_disable_irq (unsigned irq)
 {
 	BEGIN_PIC();
-	__adeos_std_irq_dtype[irq].disable(irq);
+	rtai_irq_desc(irq)->disable(irq);
 	__adeos_lock_irq(adp_root, cpuid, irq);
 	END_PIC();
 }
@@ -462,7 +479,7 @@ static inline void _rt_end_irq (unsigned irq)
 	    !(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
 		__adeos_unlock_irq(adp_root, irq);
 	}
-	__adeos_std_irq_dtype[irq].end(irq);
+	rtai_irq_desc(irq)->end(irq);
 	END_PIC();
 }
 
@@ -785,7 +802,8 @@ int _rtai_sched_on_ipi_handler(void)
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-	ack_APIC_irq(); //adp_root->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
+	__ack_APIC_irq();
+//	adp_root->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
@@ -854,7 +872,8 @@ int _rtai_apic_timer_handler(void)
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-	ack_APIC_irq(); //adp_root->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
+	__ack_APIC_irq();
+//	adp_root->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);

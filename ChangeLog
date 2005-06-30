@@ -1,3 +1,13 @@
+2005-06-30  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.immed and api.c: implemnted new hashed registry
+	  support.
+	* /base/include/rtai_nam2num.h and rtai_registry.h: adapted to work 
+	* /base/ipc/shm/shm.c: adapted to work with the new hashed registry 
+	* /base/ipc/msg/msg.c: cancelled redundant dangerous dequeue_blocked.
+	* /base/arch/i386/hal/hal.immed: adapted to likely changes of future
+	  ADEOS patches.
+
 2005-06-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.immed and sys.c: revised and improved managment 

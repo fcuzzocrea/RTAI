@@ -2655,6 +2655,9 @@ static void timer_fun(unsigned long none)
 }
 #endif
 
+extern int rt_registry_alloc(void);
+extern void rt_registry_free(void);
+
 static int __rtai_lxrt_init(void)
 {
 	int cpuid, retval;
@@ -2665,6 +2668,7 @@ static int __rtai_lxrt_init(void)
 	}
 #endif
 	sched_mem_init();
+	rt_registry_alloc();
 
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
 		rt_linux_task.uses_fpu = 1;
@@ -2760,6 +2764,7 @@ proc_unregister:
 #endif
 mem_end:
 	sched_mem_end();
+	rt_registry_free();
 	goto exit;
 }
 
@@ -2784,6 +2789,7 @@ static void __rtai_lxrt_exit(void)
 	}
 	rt_free_sched_ipi();
 	sched_mem_end();
+	rt_registry_free();
 	current->state = TASK_INTERRUPTIBLE;
 	schedule_timeout(HZ/10);
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK

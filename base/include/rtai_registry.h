@@ -31,13 +31,14 @@
 
 struct task_struct;
 
-struct rt_registry_entry_struct {
-        unsigned long name;      // Numerical representation of resource name
-        void *adr;               // Physical rt memory address of resource
-        struct task_struct *tsk; // Linux task owner of the resource
-        int pid;                 // Linux task pid
-        int type;                // Type of resource
-        int count;               // Usage registry
+struct rt_registry_entry {
+	unsigned long name;	 // Numerical representation of resource name
+	void *adr;		 // Physical rt memory address of resource
+	struct task_struct *tsk; // Linux task owner of the resource
+	int type;		 // Type of resource
+        unsigned short count;	 // Usage registry
+	unsigned short alink;
+	unsigned short nlink;
 };
 
 #define MAX_SLOTS  CONFIG_RTAI_SCHED_LXRT_NUMSLOTS // Max number of registered objects
@@ -80,8 +81,7 @@ void *rt_get_adr_cnt(unsigned long name);
 int rt_get_type(unsigned long name);
 
 #ifdef CONFIG_PROC_FS
-int rt_get_registry_slot(int slot,
-			 struct rt_registry_entry_struct *entry);
+int rt_get_registry_slot(int slot, struct rt_registry_entry *entry);
 #endif /* CONFIG_PROC_FS */
 
 #ifdef __cplusplus

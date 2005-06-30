@@ -1037,9 +1037,378 @@ int rt_named_task_delete(RT_TASK *task)
 
 /* +++++++++++++++++++++++++++++++ REGISTRY +++++++++++++++++++++++++++++++++ */
 
-static volatile int max_slots;
-static struct rt_registry_entry_struct lxrt_list[MAX_SLOTS + 1] = { { 0, 0, 0, 0, 0 }, };
+#define HASHED_REGISTRY
+
+#ifdef HASHED_REGISTRY
+
+static int max_slots;
+static struct rt_registry_entry *lxrt_list;
 static spinlock_t list_lock = SPIN_LOCK_UNLOCKED;
+
+#define COLLISION_COUNT() do { col++; } while(0)
+static unsigned long long col;
+#ifndef COLLISION_COUNT
+#define COLLISION_COUNT()
+#endif
+
+#define NONAME  (1UL)
+#define NOADR   ((void *)1)
+
+#define PRIMES_TAB_GRANULARITY  100
+
+static unsigned short primes[ ] = { 1, 101, 211, 307, 401, 503, 601, 701, 809, 907, 1009, 1103, 1201, 1301, 1409, 1511, 1601, 1709, 1801, 1901, 2003, 2111, 2203, 2309, 2411, 2503, 2609, 2707, 2801, 2903, 3001, 3109, 3203, 3301, 3407, 3511,
+3607, 3701, 3803, 3907, 4001, 4111, 4201, 4327, 4409, 4507, 4603, 4703, 4801, 4903, 5003, 5101, 5209, 5303, 5407, 5501, 5623, 5701, 5801, 5903, 6007, 6101, 6203, 6301, 6421, 6521, 6607, 6703, 6803, 6907, 7001, 7103, 7207, 7307, 7411, 7507,
+7603, 7703, 7817, 7901, 8009, 8101, 8209, 8311, 8419, 8501, 8609, 8707, 8803, 8923, 9001, 9103, 9203, 9311, 9403, 9511, 9601, 9719, 9803, 9901, 10007, 10103, 10211, 10301, 10427, 10501, 10601, 10709, 10831, 10903, 11003, 11113, 11213, 11311, 11411, 11503, 11597, 11617, 11701, 11801, 11903, 12007, 12101, 12203, 12301, 12401, 12503, 12601, 12703, 12809, 12907, 13001, 13103, 13217, 13309, 13411, 13513, 13613, 13709, 13807, 13901, 14009, 14107, 14207, 14303, 14401, 14503, 14621,
+14713, 14813, 14923, 15013, 15101, 15217, 15307, 15401, 15511, 15601, 15727, 15803, 15901, 16001, 16103, 16217, 16301, 16411, 16519, 16603, 16703, 16811, 16901, 17011, 17107, 17203, 17317, 17401, 17509, 17609, 17707, 17807, 17903, 18013, 18119, 18211, 18301, 18401, 18503, 18617, 18701, 18803, 18911, 19001, 19121, 19207, 19301, 19403, 19501, 19603, 19709, 19801, 19913, 20011, 20101 };
+
+#define hash_fun(m, n) ((m)%(n) + 1)
+
+static int hash_ins_adr(void *adr, struct rt_registry_entry *list, int lstlen, int nlink)
+{
+	int i, k;
+	unsigned long flags;
+
+	i = hash_fun((unsigned long)adr, lstlen);
+	while (1) {
+		k = i;
+		while (list[k].adr > NOADR && list[k].adr != adr) {
+COLLISION_COUNT();
+			if (++k >= lstlen) {
+				k = 1;
+			}
+			if (k == i) {
+				return 0;
+			}
+		}
+		flags = rt_spin_lock_irqsave(&list_lock);
+		if (list[k].adr == adr) {
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			return -k;
+		} else if (list[k].adr <= NOADR) {
+			list[k].adr       = adr;
+			list[k].nlink     = nlink;
+			list[nlink].alink = k;
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			return k;
+		}
+	}
+}
+
+static int hash_ins_name(unsigned long name, void *adr, int type, struct task_struct *lnxtsk, struct rt_registry_entry *list, int lstlen, int inc)
+{
+	int i, k;
+	unsigned long flags;
+
+	i = hash_fun(name, lstlen);
+	while (1) {
+		k = i;
+		while (list[k].name > NONAME && list[k].name != name) {
+COLLISION_COUNT();
+			if (++k >= lstlen) {
+				k = 1;
+			}
+			if (k == i) {
+				return 0;
+			}
+		}
+		flags = rt_spin_lock_irqsave(&list_lock);
+		if (list[k].name == name) {
+			if (inc) {
+				list[k].count++;
+			}
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			return -k;
+		} else if (list[k].name <= NONAME) {
+			list[k].name  = name;
+			list[k].type  = type;
+			list[k].tsk   = lnxtsk;
+			list[k].count = 1;
+			list[k].alink = 0;
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+	                if (hash_ins_adr(adr, list, lstlen, k) <= 0) {
+				rt_spin_unlock_irqrestore(flags, &list_lock);
+        	                return 0;
+                	}
+			return k;
+		}
+	}
+}
+
+static void *hash_find_name(unsigned long name, struct rt_registry_entry *list, long lstlen, int inc, int *slot)
+{
+	int i, k;
+	unsigned long flags;
+
+	i = hash_fun(name, lstlen);
+	while (1) {
+		k = i;
+		while (list[k].name > NONAME && list[k].name != name) {
+COLLISION_COUNT();
+			if (++k >= lstlen) {
+				k = 1;
+			}
+			if (k == i) {
+				return NULL;
+			}
+		}
+		flags = rt_spin_lock_irqsave(&list_lock);
+		if (list[k].name == name) {
+			if (inc) {
+				list[k].count++;
+			}
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			if (slot) {
+				*slot = k;
+			}
+			return list[list[k].alink].adr;
+		} else if (list[k].name <= NONAME) {
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			return NULL;
+		}
+	}
+}
+
+static unsigned long hash_find_adr(void *adr, struct rt_registry_entry *list, long lstlen, int inc)
+{
+	int i, k;
+	unsigned long flags;
+
+	i = hash_fun((unsigned long)adr, lstlen);
+	while (1) {
+		k = i;
+		while (list[k].adr > NOADR && list[k].adr != adr) {
+COLLISION_COUNT();
+			if (++k >= lstlen) {
+				k = 1;
+			}
+			if (k == i) {
+				return 0;
+			}
+		}
+		flags = rt_spin_lock_irqsave(&list_lock);
+		if (list[k].adr == adr) {
+			if (inc) {
+				list[list[k].nlink].count++;
+			}
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			return list[list[k].nlink].name;
+		} else if (list[k].adr <= NOADR) {
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			return 0;
+		}
+	}
+}
+
+static int hash_rem_name(unsigned long name, struct rt_registry_entry *list, long lstlen, int dec)
+{
+	int i, k;
+	unsigned long flags;
+
+	k = i = hash_fun(name, lstlen);
+	while (list[k].name && list[k].name != name) {
+COLLISION_COUNT();
+		if (++k >= lstlen) {
+			k = 1;
+		}
+		if (k == i) {
+			return 0;
+		}
+	}
+	flags = rt_spin_lock_irqsave(&list_lock);
+	if (list[k].name == name) {
+		if (dec && list[k].count && !(dec = --list[k].count)) {
+			goto cancel;
+		} else {
+			int j;
+			dec = k;
+cancel:
+			if ((i = k + 1) >= lstlen) {
+				i = 1;
+			}
+			list[k].name = !list[i].name ? 0UL : NONAME;
+			if ((j = list[k].alink)) {
+				if ((i = j + 1) >= lstlen) {
+					i = 1;
+				}
+				list[j].adr = !list[i].adr ? NULL : NOADR;
+			}
+		}
+		rt_spin_unlock_irqrestore(flags, &list_lock);
+		return dec;
+	}
+	rt_spin_unlock_irqrestore(flags, &list_lock);
+	return dec;
+}
+
+static int hash_rem_adr(void *adr, struct rt_registry_entry *list, long lstlen, int dec)
+{
+	int i, k;
+	unsigned long flags;
+
+	k = i = hash_fun((unsigned long)adr, lstlen);
+	while (list[k].adr && list[k].adr != adr) {
+COLLISION_COUNT();
+		if (++k >= lstlen) {
+			k = 1;
+		}
+		if (k == i) {
+			return 0;
+		}
+	}
+	flags = rt_spin_lock_irqsave(&list_lock);
+	if (list[k].adr == adr) {
+		if (dec && list[list[k].nlink].count && !(dec = --list[list[k].nlink].count)) {
+			goto cancel;
+		} else {
+			int j;
+			dec = k;
+cancel:
+			if ((i = k + 1) >= lstlen) {
+				i = 1;
+			}
+			list[k].adr = !list[i].adr ? NULL : NOADR;
+			j = list[k].nlink;
+			if ((i = j + 1) >= lstlen) {
+				i = 1;
+			}
+			list[j].name = !list[i].name ? 0UL : NONAME;
+		}
+		rt_spin_unlock_irqrestore(flags, &list_lock);
+		return dec;
+	}
+	rt_spin_unlock_irqrestore(flags, &list_lock);
+	return dec;
+}
+
+static inline int registr(unsigned long name, void *adr, int type, struct task_struct *lnxtsk)
+{
+	return abs(hash_ins_name(name, adr, type, lnxtsk, lxrt_list, max_slots, 1));
+}
+
+static inline int drg_on_name(unsigned long name)
+{
+	return hash_rem_name(name, lxrt_list, max_slots, 0);
+} 
+
+static inline int drg_on_name_cnt(unsigned long name)
+{
+	return hash_rem_name(name, lxrt_list, max_slots, -EFAULT);
+} 
+
+static inline int drg_on_adr(void *adr)
+{
+	return hash_rem_adr(adr, lxrt_list, max_slots, 0);
+} 
+
+static inline int drg_on_adr_cnt(void *adr)
+{
+	return hash_rem_adr(adr, lxrt_list, max_slots, -EFAULT);
+} 
+
+static inline unsigned long get_name(void *adr)
+{
+	static unsigned long nameseed = 3518743764UL;
+	if (!adr) {
+		unsigned long flags;
+		unsigned long name;
+		flags = rt_spin_lock_irqsave(&list_lock);
+		if ((name = ++nameseed) == 0xFFFFFFFFUL) {
+			nameseed = 3518743764UL;
+		}
+		rt_spin_unlock_irqrestore(flags, &list_lock);
+		return name;
+	} else {
+		return hash_find_adr(adr, lxrt_list, max_slots, 0);
+	}
+	return 0;
+} 
+
+static inline void *get_adr(unsigned long name)
+{
+	return hash_find_name(name, lxrt_list, max_slots, 0, NULL);
+} 
+
+static inline void *get_adr_cnt(unsigned long name)
+{
+	return hash_find_name(name, lxrt_list, max_slots, 1, NULL);
+} 
+
+static inline int get_type(unsigned long name)
+{
+	int slot;
+
+	if (hash_find_name(name, lxrt_list, max_slots, 0, &slot)) {
+		return lxrt_list[slot].type;
+	}
+        return -EINVAL;
+}
+
+unsigned long is_process_registered(struct task_struct *lnxtsk)
+{
+	void *adr = lnxtsk->rtai_tskext(0);
+	return adr ? hash_find_adr(adr, lxrt_list, max_slots, 0) : 0;
+}
+
+int rt_get_registry_slot(int slot, struct rt_registry_entry *entry)
+{
+	if(entry) {
+        	if (slot > 0 && slot <= max_slots ) {
+			unsigned long flags;
+	        	flags = rt_spin_lock_irqsave(&list_lock);
+                	if (lxrt_list[slot].name > NONAME) {
+                        	*entry = lxrt_list[slot];
+				entry->adr = lxrt_list[entry->alink].adr;
+	                        rt_spin_unlock_irqrestore(flags, &list_lock);
+                	        return slot;
+	                }
+	        	rt_spin_unlock_irqrestore(flags, &list_lock);
+        	}
+	}
+        return 0;
+}
+
+int rt_registry_alloc(void)
+{
+	if ((max_slots = (MAX_SLOTS + PRIMES_TAB_GRANULARITY - 1)/(PRIMES_TAB_GRANULARITY)) >= sizeof(primes)/sizeof(primes[0])) {
+		printk("REGISTRY TABLE TOO LARGE FOR AVAILABLE PRIMES\n");
+                return -ENOMEM;
+        }
+	max_slots = primes[max_slots];
+	if (!(lxrt_list = vmalloc((max_slots + 1)*sizeof(struct rt_registry_entry)))) {
+		printk("NO MEMORY FOR REGISTRY TABLE\n");
+                return -ENOMEM;
+	}
+	memset(lxrt_list, 0, (max_slots + 1)*sizeof(struct rt_registry_entry));
+	return 0;
+}
+
+void rt_registry_free(void)
+{
+	if (lxrt_list) {
+		vfree(lxrt_list);
+	}
+}
+#else
+static volatile int max_slots;
+static struct rt_registry_entry *lxrt_list;
+static spinlock_t list_lock = SPIN_LOCK_UNLOCKED;
+
+int rt_registry_alloc(void)
+{
+	if (!(lxrt_list = vmalloc((MAX_SLOTS + 1)*sizeof(struct rt_registry_entry)))) {
+                printk("NO MEMORY FOR REGISTRY TABLE\n");
+                return -ENOMEM;
+        }
+        memset(lxrt_list, 0, (MAX_SLOTS + 1)*sizeof(struct rt_registry_entry));
+        return 0;
+}
+
+void rt_registry_free(void)
+{
+	if (lxrt_list) {
+		vfree(lxrt_list);
+	}
+}
 
 static inline int registr(unsigned long name, void *adr, int type, struct task_struct *tsk)
 {
@@ -1062,7 +1431,6 @@ static inline int registr(unsigned long name, void *adr, int type, struct task_s
                         lxrt_list[slot].name  = name;
                         lxrt_list[slot].adr   = adr;
                         lxrt_list[slot].tsk   = tsk;
-                        lxrt_list[slot].pid   = tsk ? tsk->pid : 0 ;
                         lxrt_list[slot].type  = type;
                         lxrt_list[slot].count = 1;
                         rt_spin_unlock_irqrestore(flags, &list_lock);
@@ -1159,13 +1527,15 @@ static inline int drg_on_adr_cnt(void *adr)
 
 static inline unsigned long get_name(void *adr)
 {
-	static unsigned long nameseed = 0xfacade;
+	static unsigned long nameseed = 3518743764UL;
 	int slot;
         if (!adr) {
 		unsigned long flags;
 		unsigned long name;
 		flags = rt_spin_lock_irqsave(&list_lock);
-		name = nameseed++;
+		if ((name = ++nameseed) == 0xFFFFFFFFUL) {
+			nameseed = 3518743764UL;
+		}
 		rt_spin_unlock_irqrestore(flags, &list_lock);
 		return name;
         }
@@ -1217,16 +1587,39 @@ static inline int get_type(unsigned long name)
 
 unsigned long is_process_registered(struct task_struct *tsk)
 {
-	int slot;
-	for (slot = 1; slot <= max_slots; slot++) {
-		if (lxrt_list[slot].tsk == tsk) {
-			if (lxrt_list[slot].pid == (tsk ? tsk->pid : 0)) {
+        void *adr;
+
+        if ((adr = tsk->rtai_tskext(0))) {
+		int slot;
+		for (slot = 1; slot <= max_slots; slot++) {
+			if (lxrt_list[slot].adr == adr) {
 				return lxrt_list[slot].name;
 			}
                 }
         }
         return 0;
 }
+
+int rt_get_registry_slot(int slot, struct rt_registry_entry *entry)
+{
+	unsigned long flags;
+
+	if(entry == 0) {
+		return 0;
+	}
+	flags = rt_spin_lock_irqsave(&list_lock);
+	if (slot > 0 && slot <= max_slots ) {
+		if (lxrt_list[slot].name != 0) {
+			*entry = lxrt_list[slot];
+			rt_spin_unlock_irqrestore(flags, &list_lock);
+			return slot;
+		}
+	}
+	rt_spin_unlock_irqrestore(flags, &list_lock);
+
+	return 0;
+}
+#endif
 
 /**
  * @ingroup lxrt
@@ -1322,7 +1715,7 @@ extern struct rt_fun_entry rt_fun_lxrt[];
 void krtai_objects_release(void)
 {
 	int slot;
-        struct rt_registry_entry_struct entry;
+        struct rt_registry_entry entry;
 	char name[8], *type;
 
 	for (slot = 1; slot <= max_slots; slot++) {
@@ -1521,32 +1914,12 @@ void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
 
 extern struct proc_dir_entry *rtai_proc_root;
 
-int rt_get_registry_slot(int slot, struct rt_registry_entry_struct* entry)
-{
-	unsigned long flags;
-
-	if(entry == 0) {
-		return 0;
-	}
-	flags = rt_spin_lock_irqsave(&list_lock);
-	if (slot > 0 && slot <= max_slots ) {
-		if (lxrt_list[slot].name != 0) {
-			*entry = lxrt_list[slot];
-			rt_spin_unlock_irqrestore(flags, &list_lock);
-			return slot;
-		}
-	}
-	rt_spin_unlock_irqrestore(flags, &list_lock);
-
-	return 0;
-}
-
 /* ----------------------< proc filesystem section >----------------------*/
 
 static int rtai_read_lxrt(char *page, char **start, off_t off, int count, int *eof, void *data)
 {
 	PROC_PRINT_VARS;
-	struct rt_registry_entry_struct entry;
+	struct rt_registry_entry entry;
 	char *type_name[] = { "TASK", "SEM", "RWL", "SPL", "MBX", "PRX", "BITS", "TBX", "HPCK" };
 	unsigned int i = 1;
 	char name[8];
@@ -1572,7 +1945,7 @@ static int rtai_read_lxrt(char *page, char **start, off_t off, int count, int *e
 			type_name[entry.type],	// the Type
 			entry.adr,		// The RT Handle
 			entry.tsk,   		// The Owner task pointer
-			entry.pid,   		// The Owner PID
+			entry.tsk ? entry.tsk->pid : 0,	// The Owner PID
 			entry.type == IS_TASK && ((RT_TASK *)entry.adr)->lnxtsk ? (((RT_TASK *)entry.adr)->lnxtsk)->pid : entry.type >= PAGE_SIZE ? entry.type : 0, entry.count);
 		 }
 	}

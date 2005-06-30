@@ -664,7 +664,7 @@ int __rtai_shm_init (void)
 void __rtai_shm_exit (void)
 {
         int slot;
-        struct rt_registry_entry_struct entry;
+        struct rt_registry_entry entry;
 
 	rt_drg_on_name_cnt(GLOBAL_HEAP_ID);
 	for (slot = 1; slot <= MAX_SLOTS; slot++) {

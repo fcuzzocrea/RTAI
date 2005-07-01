@@ -189,18 +189,26 @@ if test \! -r ${RTAI_LINUX_DIR}/Makefile; then
    AC_MSG_ERROR([No Linux kernel tree in ${RTAI_LINUX_DIR}])
 fi
 
-eval linux_`grep '^EXTRAVERSION =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
-eval linux_`grep '^PATCHLEVEL =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
-eval linux_`grep '^SUBLEVEL =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
-eval linux_`grep '^VERSION =' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'`
-
-dnl Load Linux kernel configuration now, before config symbols are tested.
-if test \! -r ${RTAI_LINUX_DIR}/.config; then
-   AC_MSG_RESULT([invalid])
-   AC_MSG_ERROR([$RTAI_LINUX_DIR is not configured -- --with-linux-dir sets linux-dir])
+if grep KERNELSRC $RTAI_LINUX_DIR/Makefile > /dev/null; then
+eval LINUX_`grep '^KERNELSRC' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'|sed -e 's,:,,g'`
+eval LINUX_`grep '^KERNELOUTPUT' $RTAI_LINUX_DIR/Makefile | sed -e 's, ,,g'|sed -e 's,:,,g'`
+else
+LINUX_KERNELOUTPUT=$RTAI_LINUX_DIR
+LINUX_KERNELSRC=$RTAI_LINUX_DIR
 fi
 
-. $RTAI_LINUX_DIR/.config
+eval linux_`grep '^EXTRAVERSION =' $LINUX_KERNELSRC/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^PATCHLEVEL =' $LINUX_KERNELSRC/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^SUBLEVEL =' $LINUX_KERNELSRC/Makefile | sed -e 's, ,,g'`
+eval linux_`grep '^VERSION =' $LINUX_KERNELSRC/Makefile | sed -e 's, ,,g'`
+
+dnl Load Linux kernel configuration now, before config symbols are tested.
+if test \! -r ${LINUX_KERNELOUTPUT}/.config; then
+   AC_MSG_RESULT([invalid])
+   AC_MSG_ERROR([$LINUX_KERNELOUTPUT is not configured -- --with-linux-dir sets linux-dir])
+fi
+
+. $LINUX_KERNELOUTPUT/.config
 
 RTAI_LINUX_VERSION="$linux_VERSION.$linux_PATCHLEVEL.$linux_SUBLEVEL"
 AC_MSG_RESULT([$RTAI_LINUX_DIR (kernel ${RTAI_LINUX_VERSION}${CONFIG_SMP:+-SMP})])
@@ -216,7 +224,7 @@ unset CONFIG_RTAI_ADEOS
 
 AC_MSG_CHECKING([for RTAI base technology])
 
-if test -r $RTAI_LINUX_DIR/include/linux/adeos.h; then
+if test -r $LINUX_KERNELSRC/include/linux/adeos.h; then
    AC_DEFINE(CONFIG_RTAI_ADEOS,1,[Use Adeos-based HAL])
    AC_MSG_RESULT([Adeos])
    CONFIG_RTAI_ADEOS=y
@@ -236,7 +244,7 @@ elif test x${CONFIG_RTHAL} = xy; then
     fi
 else
     echo
-    AC_MSG_ERROR([HAL patch not applied/enabled in $RTAI_LINUX_DIR])
+    AC_MSG_ERROR([HAL patch not applied/enabled in $LINUX_KERNELSRC])
 fi
 
 case "$RTAI_LINUX_VERSION" in
@@ -1308,7 +1316,7 @@ RTAI_COMPAT_CPPFLAGS=
 
 AC_MSG_CHECKING([for RTAI target architecture])
 
-RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include"
+RTAI_USER_CFLAGS="-I$RTAI_LINUX_DIR/include -I$LINUX_KERNELSRC/include "
 
 case $RTAI_TARGET_ARCH in
  i386)

@@ -1056,7 +1056,7 @@ static unsigned long long col;
 
 #define PRIMES_TAB_GRANULARITY  100
 
-static unsigned short primes[ ] = { 1, 101, 211, 307, 401, 503, 601, 701, 809, 907, 1009, 1103, 1201, 1301, 1409, 1511, 1601, 1709, 1801, 1901, 2003, 2111, 2203, 2309, 2411, 2503, 2609, 2707, 2801, 2903, 3001, 3109, 3203, 3301, 3407, 3511,
+static unsigned short primes[ ] = { 1, 103, 211, 307, 401, 503, 601, 701, 809, 907, 1009, 1103, 1201, 1301, 1409, 1511, 1601, 1709, 1801, 1901, 2003, 2111, 2203, 2309, 2411, 2503, 2609, 2707, 2801, 2903, 3001, 3109, 3203, 3301, 3407, 3511,
 3607, 3701, 3803, 3907, 4001, 4111, 4201, 4327, 4409, 4507, 4603, 4703, 4801, 4903, 5003, 5101, 5209, 5303, 5407, 5501, 5623, 5701, 5801, 5903, 6007, 6101, 6203, 6301, 6421, 6521, 6607, 6703, 6803, 6907, 7001, 7103, 7207, 7307, 7411, 7507,
 7603, 7703, 7817, 7901, 8009, 8101, 8209, 8311, 8419, 8501, 8609, 8707, 8803, 8923, 9001, 9103, 9203, 9311, 9403, 9511, 9601, 9719, 9803, 9901, 10007, 10103, 10211, 10301, 10427, 10501, 10601, 10709, 10831, 10903, 11003, 11113, 11213, 11311, 11411, 11503, 11597, 11617, 11701, 11801, 11903, 12007, 12101, 12203, 12301, 12401, 12503, 12601, 12703, 12809, 12907, 13001, 13103, 13217, 13309, 13411, 13513, 13613, 13709, 13807, 13901, 14009, 14107, 14207, 14303, 14401, 14503, 14621,
 14713, 14813, 14923, 15013, 15101, 15217, 15307, 15401, 15511, 15601, 15727, 15803, 15901, 16001, 16103, 16217, 16301, 16411, 16519, 16603, 16703, 16811, 16901, 17011, 17107, 17203, 17317, 17401, 17509, 17609, 17707, 17807, 17903, 18013, 18119, 18211, 18301, 18401, 18503, 18617, 18701, 18803, 18911, 19001, 19121, 19207, 19301, 19403, 19501, 19603, 19709, 19801, 19913, 20011, 20101 };
@@ -1073,7 +1073,7 @@ static int hash_ins_adr(void *adr, struct rt_registry_entry *list, int lstlen, i
 		k = i;
 		while (list[k].adr > NOADR && list[k].adr != adr) {
 COLLISION_COUNT();
-			if (++k >= lstlen) {
+			if (++k > lstlen) {
 				k = 1;
 			}
 			if (k == i) {
@@ -1104,7 +1104,7 @@ static int hash_ins_name(unsigned long name, void *adr, int type, struct task_st
 		k = i;
 		while (list[k].name > NONAME && list[k].name != name) {
 COLLISION_COUNT();
-			if (++k >= lstlen) {
+			if (++k > lstlen) {
 				k = 1;
 			}
 			if (k == i) {
@@ -1144,7 +1144,7 @@ static void *hash_find_name(unsigned long name, struct rt_registry_entry *list, 
 		k = i;
 		while (list[k].name > NONAME && list[k].name != name) {
 COLLISION_COUNT();
-			if (++k >= lstlen) {
+			if (++k > lstlen) {
 				k = 1;
 			}
 			if (k == i) {
@@ -1178,7 +1178,7 @@ static unsigned long hash_find_adr(void *adr, struct rt_registry_entry *list, lo
 		k = i;
 		while (list[k].adr > NOADR && list[k].adr != adr) {
 COLLISION_COUNT();
-			if (++k >= lstlen) {
+			if (++k > lstlen) {
 				k = 1;
 			}
 			if (k == i) {
@@ -1207,7 +1207,7 @@ static int hash_rem_name(unsigned long name, struct rt_registry_entry *list, lon
 	k = i = hash_fun(name, lstlen);
 	while (list[k].name && list[k].name != name) {
 COLLISION_COUNT();
-		if (++k >= lstlen) {
+		if (++k > lstlen) {
 			k = 1;
 		}
 		if (k == i) {
@@ -1222,12 +1222,12 @@ COLLISION_COUNT();
 			int j;
 			dec = k;
 cancel:
-			if ((i = k + 1) >= lstlen) {
+			if ((i = k + 1) > lstlen) {
 				i = 1;
 			}
 			list[k].name = !list[i].name ? 0UL : NONAME;
 			if ((j = list[k].alink)) {
-				if ((i = j + 1) >= lstlen) {
+				if ((i = j + 1) > lstlen) {
 					i = 1;
 				}
 				list[j].adr = !list[i].adr ? NULL : NOADR;
@@ -1248,7 +1248,7 @@ static int hash_rem_adr(void *adr, struct rt_registry_entry *list, long lstlen, 
 	k = i = hash_fun((unsigned long)adr, lstlen);
 	while (list[k].adr && list[k].adr != adr) {
 COLLISION_COUNT();
-		if (++k >= lstlen) {
+		if (++k > lstlen) {
 			k = 1;
 		}
 		if (k == i) {
@@ -1263,12 +1263,12 @@ COLLISION_COUNT();
 			int j;
 			dec = k;
 cancel:
-			if ((i = k + 1) >= lstlen) {
+			if ((i = k + 1) > lstlen) {
 				i = 1;
 			}
 			list[k].adr = !list[i].adr ? NULL : NOADR;
 			j = list[k].nlink;
-			if ((i = j + 1) >= lstlen) {
+			if ((i = j + 1) > lstlen) {
 				i = 1;
 			}
 			list[j].name = !list[i].name ? 0UL : NONAME;

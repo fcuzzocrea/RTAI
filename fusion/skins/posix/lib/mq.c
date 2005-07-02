@@ -173,18 +173,19 @@ ssize_t __wrap_mq_receive (mqd_t q,
 			   size_t len,
 			   unsigned *prio)
 {
-    ssize_t res;
+    ssize_t rlen = (ssize_t)len;
+    int err;
 
-    res = XENOMAI_SKINCALL4(__pse51_muxid,
+    err = XENOMAI_SKINCALL4(__pse51_muxid,
 			    __pse51_mq_receive,
 			    &q,
 			    buffer,
-			    len,
+			    &rlen,
 			    prio);
-    if (res != -1)
-	return res;
+    if (err != -1)
+	return rlen;
 
-    errno = -res;
+    errno = -err;
 
     return -1;
 }
@@ -195,19 +196,20 @@ ssize_t __wrap_mq_timedreceive (mqd_t q,
 				unsigned *__restrict__ prio,
 				const struct timespec *__restrict__ timeout)
 {
-    ssize_t res;
+    ssize_t rlen = (ssize_t)len;
+    int err;
 
-    res = XENOMAI_SKINCALL5(__pse51_muxid,
+    err = XENOMAI_SKINCALL5(__pse51_muxid,
 			    __pse51_mq_timedreceive,
 			    &q,
 			    buffer,
-			    len,
+			    &rlen,
 			    prio,
 			    timeout);
-    if (res != -1)
-	return res;
+    if (err != -1)
+	return rlen;
 
-    errno = -res;
+    errno = -err;
 
     return -1;
 }

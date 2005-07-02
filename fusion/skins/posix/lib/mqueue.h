@@ -73,6 +73,13 @@ ssize_t __real_mq_timedreceive(mqd_t q,
 
 typedef unsigned long mqd_t;
 
+struct mq_attr {
+    long    mq_flags;
+    long    mq_maxmsg;
+    long    mq_msgsize;
+    long    mq_curmsgs;
+};
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,3 +1,9 @@
+2005-07-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/syscalls.c: Finalize mq call wrappers.
+
+	* skins/vxworks/demos/koan.c: Add new VxWorks demo.
+
 2005-06-29  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to r12c2.

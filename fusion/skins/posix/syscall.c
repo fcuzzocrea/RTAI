@@ -23,6 +23,7 @@
 #include <posix/posix.h>
 #include <posix/thread.h>
 #include <posix/jhash.h>
+#include <posix/mq.h>
 
 static int __muxid;
 
@@ -649,6 +650,7 @@ int __mq_open (struct task_struct *curr, struct pt_regs *regs)
     char name[64];
     mode_t mode;
     int oflags;
+    mqd_t q;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(name)))
 	return -EFAULT;
@@ -676,24 +678,30 @@ int __mq_open (struct task_struct *curr, struct pt_regs *regs)
 	attr.mq_curmsgs = 0;
 	}
 
-    return -mq_open(name,oflags,mode,&attr);
+    q = mq_open(name,oflags,mode,&attr);
+    
+    return q == (mqd_t)-1 ? -thread_errno() : 0;
 }
 
 int __mq_close (struct task_struct *curr, struct pt_regs *regs)
 {
     mqd_t q;
+    int err;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
 	return -EFAULT;
 
     __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
 
-    return -mq_close(q);
+    err = mq_close(q);
+
+    return err ? -thread_errno() : 0;
 }
 
 int __mq_unlink (struct task_struct *curr, struct pt_regs *regs)
 {
     char name[64];
+    int err;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(name)))
 	return -EFAULT;
@@ -701,37 +709,318 @@ int __mq_unlink (struct task_struct *curr, struct pt_regs *regs)
     __xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
     name[sizeof(name) - 1] = '\0';
 
-    return -mq_unlink(name);
+    err = mq_unlink(name);
+
+    return err ? -thread_errno() : 0;
 }
 
 int __mq_getattr (struct task_struct *curr, struct pt_regs *regs)
 {
-    return -ENOSYS;
+    struct mq_attr attr;
+    mqd_t q;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(attr)))
+	return -EFAULT;
+
+    err = mq_getattr(q,&attr);
+
+    if (err)
+	return -thread_errno();
+
+    __xn_copy_to_user(curr,
+		      (void __user *)__xn_reg_arg2(regs),
+		      &attr,
+		      sizeof(attr));
+    return 0;
 }
 
 int __mq_setattr (struct task_struct *curr, struct pt_regs *regs)
 {
-    return -ENOSYS;
+    struct mq_attr attr, oattr;
+    mqd_t q;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(attr)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&attr,(struct mq_attr *)__xn_reg_arg2(regs),sizeof(attr));
+
+    if (__xn_reg_arg3(regs) &&
+	!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(oattr)))
+	return -EFAULT;
+
+    err = mq_setattr(q,&attr,&oattr);
+
+    if (err)
+	return -thread_errno();
+
+    if (__xn_reg_arg3(regs))
+	__xn_copy_to_user(curr,
+			  (void __user *)__xn_reg_arg3(regs),
+			  &oattr,
+			  sizeof(oattr));
+    return 0;
 }
 
 int __mq_send (struct task_struct *curr, struct pt_regs *regs)
 {
-    return -ENOSYS;
+    char tmp_buf[PSE51_MQ_FSTORE_LIMIT];
+    caddr_t tmp_area;
+    unsigned prio;
+    size_t len;
+    int err;
+    mqd_t q;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
+
+    len = (size_t)__xn_reg_arg3(regs);
+    prio = __xn_reg_arg4(regs);
+
+    if (len > 0)
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),len))
+	    return -EFAULT;
+
+	/* Try optimizing a bit here: if the message size can fit into
+	   our local buffer, use the latter; otherwise, take the slow
+	   path and fetch a larger buffer from the system heap. Most
+	   messages are expected to be short enough to fit on the
+	   stack anyway. */
+
+	if (len <= sizeof(tmp_buf))
+	    tmp_area = tmp_buf;
+	else
+	    {
+	    tmp_area = xnmalloc(len);
+
+	    if (!tmp_area)
+		return -ENOMEM;
+	    }
+
+	__xn_copy_from_user(curr,tmp_area,(void __user *)__xn_reg_arg2(regs),len);
+	}
+    else
+	tmp_area = NULL;
+
+    err = mq_send(q,tmp_area,len,prio);
+
+    if (tmp_area && tmp_area != tmp_buf)
+	xnfree(tmp_area);
+
+    return err ? -thread_errno() : 0;
 }
 
 int __mq_timedsend (struct task_struct *curr, struct pt_regs *regs)
 {
-    return -ENOSYS;
+    struct timespec timeout, *timeoutp;
+    char tmp_buf[PSE51_MQ_FSTORE_LIMIT];
+    caddr_t tmp_area;
+    unsigned prio;
+    size_t len;
+    int err;
+    mqd_t q;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
+	return -EFAULT;
+
+    if (__xn_reg_arg5(regs) &&
+	!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg5(regs),sizeof(timeout)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
+
+    len = (size_t)__xn_reg_arg3(regs);
+    prio = __xn_reg_arg4(regs);
+
+    if (len > 0)
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),len))
+	    return -EFAULT;
+
+	if (len <= sizeof(tmp_buf))
+	    tmp_area = tmp_buf;
+	else
+	    {
+	    tmp_area = xnmalloc(len);
+
+	    if (!tmp_area)
+		return -ENOMEM;
+	    }
+
+	__xn_copy_from_user(curr,tmp_area,(void __user *)__xn_reg_arg2(regs),len);
+	}
+    else
+	tmp_area = NULL;
+
+    if (__xn_reg_arg5(regs))
+	{
+	__xn_copy_from_user(curr,
+			    &timeout,
+			    (struct timespec __user *)__xn_reg_arg5(regs),
+			    sizeof(timeout));
+	timeoutp = &timeout;
+	}
+    else
+	timeoutp = NULL;
+
+    err = mq_timedsend(q,tmp_area,len,prio,timeoutp);
+
+    if (tmp_area && tmp_area != tmp_buf)
+	xnfree(tmp_area);
+
+    return err ? -thread_errno() : 0;
 }
 
 int __mq_receive (struct task_struct *curr, struct pt_regs *regs)
 {
-    return -ENOSYS;
+    char tmp_buf[PSE51_MQ_FSTORE_LIMIT];
+    caddr_t tmp_area;
+    unsigned prio;
+    ssize_t len;
+    mqd_t q;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(len)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&len,(ssize_t *)__xn_reg_arg3(regs),sizeof(len));
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg4(regs),sizeof(prio)))
+	return -EFAULT;
+
+    if (len > 0)
+	{
+	if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),len))
+	    return -EFAULT;
+
+	if (len <= sizeof(tmp_buf))
+	    tmp_area = tmp_buf;
+	else
+	    {
+	    tmp_area = xnmalloc(len);
+
+	    if (!tmp_area)
+		return -ENOMEM;
+	    }
+	}
+    else
+	tmp_area = NULL;
+
+    len = mq_receive(q,tmp_area,len,&prio);
+
+    if (len == -1)
+	return -thread_errno();
+
+    __xn_copy_to_user(curr,
+		      (void __user *)__xn_reg_arg3(regs),
+		      &len,
+		      sizeof(len));
+
+    if (len > 0)
+	__xn_copy_to_user(curr,
+			  (void __user *)__xn_reg_arg2(regs),
+			  tmp_area,
+			  len);
+
+    if (tmp_area && tmp_area != tmp_buf)
+	xnfree(tmp_area);
+
+    return 0;
 }
 
 int __mq_timedreceive (struct task_struct *curr, struct pt_regs *regs)
 {
-    return -ENOSYS;
+    struct timespec timeout, *timeoutp;
+    char tmp_buf[PSE51_MQ_FSTORE_LIMIT];
+    caddr_t tmp_area;
+    unsigned prio;
+    ssize_t len;
+    mqd_t q;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(len)))
+	return -EFAULT;
+
+    __xn_copy_from_user(curr,&len,(ssize_t *)__xn_reg_arg3(regs),sizeof(len));
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg4(regs),sizeof(prio)))
+	return -EFAULT;
+
+    if (__xn_reg_arg5(regs) &&
+	!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg5(regs),sizeof(timeout)))
+	return -EFAULT;
+
+    if (len > 0)
+	{
+	if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),len))
+	    return -EFAULT;
+
+	if (len <= sizeof(tmp_buf))
+	    tmp_area = tmp_buf;
+	else
+	    {
+	    tmp_area = xnmalloc(len);
+
+	    if (!tmp_area)
+		return -ENOMEM;
+	    }
+	}
+    else
+	tmp_area = NULL;
+
+    if (__xn_reg_arg5(regs))
+	{
+	__xn_copy_from_user(curr,
+			    &timeout,
+			    (struct timespec __user *)__xn_reg_arg5(regs),
+			    sizeof(timeout));
+	timeoutp = &timeout;
+	}
+    else
+	timeoutp = NULL;
+
+    len = mq_timedreceive(q,tmp_area,len,&prio,timeoutp);
+
+    if (len == -1)
+	return -thread_errno();
+
+    __xn_copy_to_user(curr,
+		      (void __user *)__xn_reg_arg3(regs),
+		      &len,
+		      sizeof(len));
+
+    if (len > 0)
+	__xn_copy_to_user(curr,
+			  (void __user *)__xn_reg_arg2(regs),
+			  tmp_area,
+			  len);
+
+    if (tmp_area && tmp_area != tmp_buf)
+	xnfree(tmp_area);
+
+    return 0;
 }
 
 static xnsysent_t __systab[] = {

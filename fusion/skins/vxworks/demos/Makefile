@@ -6,12 +6,12 @@ endif
 
 UVM_CFLAGS  := $(shell rtai-config --uvm-cflags)
 UVM_LDFLAGS := $(shell rtai-config --uvm-ldflags) -lvxworks
-UVM_TARGETS := satch
+UVM_TARGETS := satch koan
 
 GCIC := $(prefix)/bin/gcic
 SIM_CFLAGS  := -g
 SIM_LDFLAGS := -lvxworks_s
-SIM_TARGETS := satch_s
+SIM_TARGETS := satch_s koan_s
 
 # "uvm" makes all demos running over the UVM.
 # "sim" makes all demos running over the RTOS simulator.
@@ -23,11 +23,17 @@ sim: $(SIM_TARGETS)
 
 all: uvm sim
 
-$(UVM_TARGETS): $(UVM_TARGETS:%=%.c)
+satch: satch.c
 	$(CC) -o $@ $< $(UVM_CFLAGS) $(UVM_LDFLAGS)
 
-$(SIM_TARGETS): $(SIM_TARGETS:%_s=%_s.o)
+satch_s: satch_s.o
 	$(GCIC) -o $@ $< $(SIM_LDFLAGS)
+
+koan: koan.c
+	$(CC) -o $@ $< $(UVM_CFLAGS) $(UVM_LDFLAGS) -lrtai
+
+koan_s: koan_s.o
+	$(GCIC) -o $@ $< $(SIM_LDFLAGS) -lrtai_s
 
 %_s.o: %.c
 	$(GCIC) -o $@ -c $< $(SIM_CFLAGS)

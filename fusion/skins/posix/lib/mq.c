@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <stdarg.h>
+#include <fcntl.h>
 #include <posix/syscall.h>
 #include <posix/lib/pthread.h>
 #include <posix/lib/mqueue.h>

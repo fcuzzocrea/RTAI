@@ -2956,13 +2956,14 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i386_ksyms.c linux-2.6.11-adeos/arch/i3
  
 diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/kernel/i8259.c
 --- linux-2.6.11/arch/i386/kernel/i8259.c	2005-03-02 08:38:38.000000000 +0100
-+++ linux-2.6.11-adeos/arch/i386/kernel/i8259.c	2005-06-28 17:07:32.000000000 +0200
-@@ -93,13 +93,13 @@ void disable_8259A_irq(unsigned int irq)
++++ linux-2.6.11-adeos/arch/i386/kernel/i8259.c	2005-07-02 12:51:35.000000000 +0200
+@@ -93,13 +93,14 @@ void disable_8259A_irq(unsigned int irq)
  	unsigned int mask = 1 << irq;
  	unsigned long flags;
  
 -	spin_lock_irqsave(&i8259A_lock, flags);
 +	spin_lock_irqsave_hw(&i8259A_lock, flags);
++	pic_irq_lock(irq);
  	cached_irq_mask |= mask;
  	if (irq & 8)
  		outb(cached_slave_mask, PIC_SLAVE_IMR);
@@ -2973,7 +2974,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  }
  
  void enable_8259A_irq(unsigned int irq)
-@@ -107,13 +107,13 @@ void enable_8259A_irq(unsigned int irq)
+@@ -107,13 +108,14 @@ void enable_8259A_irq(unsigned int irq)
  	unsigned int mask = ~(1 << irq);
  	unsigned long flags;
  
@@ -2985,11 +2986,12 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  	else
  		outb(cached_master_mask, PIC_MASTER_IMR);
 -	spin_unlock_irqrestore(&i8259A_lock, flags);
++	pic_irq_unlock(irq);
 +	spin_unlock_irqrestore_hw(&i8259A_lock, flags);
  }
  
  int i8259A_irq_pending(unsigned int irq)
-@@ -122,12 +122,12 @@ int i8259A_irq_pending(unsigned int irq)
+@@ -122,12 +124,12 @@ int i8259A_irq_pending(unsigned int irq)
  	unsigned long flags;
  	int ret;
  
@@ -3004,7 +3006,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  
  	return ret;
  }
-@@ -174,7 +174,7 @@ void mask_and_ack_8259A(unsigned int irq
+@@ -174,7 +176,7 @@ void mask_and_ack_8259A(unsigned int irq
  	unsigned int irqmask = 1 << irq;
  	unsigned long flags;
  
@@ -3013,7 +3015,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  	/*
  	 * Lightweight spurious IRQ detection. We do not want
  	 * to overdo spurious IRQ handling - it's usually a sign
-@@ -192,6 +192,15 @@ void mask_and_ack_8259A(unsigned int irq
+@@ -192,6 +194,15 @@ void mask_and_ack_8259A(unsigned int irq
  	 */
  	if (cached_irq_mask & irqmask)
  		goto spurious_8259A_irq;
@@ -3029,7 +3031,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  	cached_irq_mask |= irqmask;
  
  handle_real_irq:
-@@ -205,7 +214,7 @@ handle_real_irq:
+@@ -205,7 +216,7 @@ handle_real_irq:
  		outb(cached_master_mask, PIC_MASTER_IMR);
  		outb(0x60+irq,PIC_MASTER_CMD);	/* 'Specific EOI to master */
  	}
@@ -3038,7 +3040,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  	return;
  
  spurious_8259A_irq:
-@@ -294,7 +303,7 @@ void init_8259A(int auto_eoi)
+@@ -294,7 +305,7 @@ void init_8259A(int auto_eoi)
  {
  	unsigned long flags;
  
@@ -3047,7 +3049,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  
  	outb(0xff, PIC_MASTER_IMR);	/* mask all of 8259A-1 */
  	outb(0xff, PIC_SLAVE_IMR);	/* mask all of 8259A-2 */
-@@ -328,7 +337,7 @@ void init_8259A(int auto_eoi)
+@@ -328,7 +339,7 @@ void init_8259A(int auto_eoi)
  	outb(cached_master_mask, PIC_MASTER_IMR); /* restore master IRQ mask */
  	outb(cached_slave_mask, PIC_SLAVE_IMR);	  /* restore slave IRQ mask */
  
@@ -3058,8 +3060,8 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  /*
 diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/kernel/io_apic.c
 --- linux-2.6.11/arch/i386/kernel/io_apic.c	2005-03-02 08:37:54.000000000 +0100
-+++ linux-2.6.11-adeos/arch/i386/kernel/io_apic.c	2005-06-28 16:09:49.000000000 +0200
-@@ -174,18 +174,18 @@ static void mask_IO_APIC_irq (unsigned i
++++ linux-2.6.11-adeos/arch/i386/kernel/io_apic.c	2005-07-02 13:01:55.000000000 +0200
+@@ -174,18 +174,20 @@ static void mask_IO_APIC_irq (unsigned i
  {
  	unsigned long flags;
  
@@ -3067,6 +3069,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
 +	spin_lock_irqsave_hw(&ioapic_lock, flags);
  	__mask_IO_APIC_irq(irq);
 -	spin_unlock_irqrestore(&ioapic_lock, flags);
++	pic_irq_lock(irq);
 +	spin_unlock_irqrestore_hw(&ioapic_lock, flags);
  }
  
@@ -3078,11 +3081,12 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
 +	spin_lock_irqsave_hw(&ioapic_lock, flags);
  	__unmask_IO_APIC_irq(irq);
 -	spin_unlock_irqrestore(&ioapic_lock, flags);
++	pic_irq_unlock(irq);
 +	spin_unlock_irqrestore_hw(&ioapic_lock, flags);
  }
  
  void clear_IO_APIC_pin(unsigned int apic, unsigned int pin)
-@@ -194,10 +194,10 @@ void clear_IO_APIC_pin(unsigned int apic
+@@ -194,10 +196,10 @@ void clear_IO_APIC_pin(unsigned int apic
  	unsigned long flags;
  	
  	/* Check delivery_mode to be sure we're not clearing an SMI pin */
@@ -3095,7 +3099,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  	if (entry.delivery_mode == dest_SMI)
  		return;
  
-@@ -206,10 +206,10 @@ void clear_IO_APIC_pin(unsigned int apic
+@@ -206,10 +208,10 @@ void clear_IO_APIC_pin(unsigned int apic
  	 */
  	memset(&entry, 0, sizeof(entry));
  	entry.mask = 1;
@@ -3108,7 +3112,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  }
  
  static void clear_IO_APIC (void)
-@@ -231,7 +231,7 @@ static void set_ioapic_affinity_irq(unsi
+@@ -231,7 +233,7 @@ static void set_ioapic_affinity_irq(unsi
  	apicid_value = cpu_mask_to_apicid(cpumask);
  	/* Prepare to do the io_apic_write */
  	apicid_value = apicid_value << 24;
@@ -3117,7 +3121,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  	for (;;) {
  		pin = entry->pin;
  		if (pin == -1)
-@@ -241,7 +241,7 @@ static void set_ioapic_affinity_irq(unsi
+@@ -241,7 +243,7 @@ static void set_ioapic_affinity_irq(unsi
  			break;
  		entry = irq_2_pin + entry->next;
  	}
@@ -3126,7 +3130,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  }
  
  #if defined(CONFIG_IRQBALANCE)
-@@ -1807,14 +1807,14 @@ static unsigned int startup_edge_ioapic_
+@@ -1807,14 +1809,15 @@ static unsigned int startup_edge_ioapic_
  	int was_pending = 0;
  	unsigned long flags;
  
@@ -3139,11 +3143,12 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  	}
  	__unmask_IO_APIC_irq(irq);
 -	spin_unlock_irqrestore(&ioapic_lock, flags);
++	pic_irq_unlock(irq);
 +	spin_unlock_irqrestore_hw(&ioapic_lock, flags);
  
  	return was_pending;
  }
-@@ -1824,6 +1824,26 @@ static unsigned int startup_edge_ioapic_
+@@ -1824,6 +1827,26 @@ static unsigned int startup_edge_ioapic_
   * interrupt for real. This prevents IRQ storms from unhandled
   * devices.
   */
@@ -3170,7 +3175,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  static void ack_edge_ioapic_irq(unsigned int irq)
  {
  	move_irq(irq);
-@@ -1833,6 +1853,8 @@ static void ack_edge_ioapic_irq(unsigned
+@@ -1833,6 +1856,8 @@ static void ack_edge_ioapic_irq(unsigned
  	ack_APIC_irq();
  }
  
@@ -3179,7 +3184,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  /*
   * Level triggered interrupts can just be masked,
   * and shutting down and starting up the interrupt
-@@ -1854,6 +1876,75 @@ static unsigned int startup_level_ioapic
+@@ -1854,6 +1879,77 @@ static unsigned int startup_level_ioapic
  	return 0; /* don't check for pending */
  }
  
@@ -3210,6 +3215,8 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
 +	}
 +    else
 +	__unmask_IO_APIC_irq(irq);
++
++    pic_irq_unlock(irq);
 +
 +    spin_unlock_irqrestore_hw(&ioapic_lock,flags);
 +}
@@ -3255,7 +3262,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  static void end_level_ioapic_irq (unsigned int irq)
  {
  	unsigned long v;
-@@ -1894,6 +1985,8 @@ static void end_level_ioapic_irq (unsign
+@@ -1894,6 +1990,8 @@ static void end_level_ioapic_irq (unsign
  	}
  }
  
@@ -3264,7 +3271,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  #ifdef CONFIG_PCI_MSI
  static unsigned int startup_edge_ioapic_vector(unsigned int vector)
  {
-@@ -2031,7 +2124,7 @@ static void disable_lapic_irq (unsigned 
+@@ -2031,7 +2129,7 @@ static void disable_lapic_irq (unsigned 
  
  static void ack_lapic_irq (unsigned int irq)
  {
@@ -3273,7 +3280,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  }
  
  static void end_lapic_irq (unsigned int i) { /* nothing */ }
-@@ -2304,12 +2397,12 @@ static int ioapic_suspend(struct sys_dev
+@@ -2304,12 +2402,12 @@ static int ioapic_suspend(struct sys_dev
  	
  	data = container_of(dev, struct sysfs_ioapic_data, dev);
  	entry = data->entry;
@@ -3288,7 +3295,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  
  	return 0;
  }
-@@ -2325,7 +2418,7 @@ static int ioapic_resume(struct sys_devi
+@@ -2325,7 +2423,7 @@ static int ioapic_resume(struct sys_devi
  	data = container_of(dev, struct sysfs_ioapic_data, dev);
  	entry = data->entry;
  
@@ -3297,7 +3304,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  	reg_00.raw = io_apic_read(dev->id, 0);
  	if (reg_00.bits.ID != mp_ioapics[dev->id].mpc_apicid) {
  		reg_00.bits.ID = mp_ioapics[dev->id].mpc_apicid;
-@@ -2335,7 +2428,7 @@ static int ioapic_resume(struct sys_devi
+@@ -2335,7 +2433,7 @@ static int ioapic_resume(struct sys_devi
  		io_apic_write(dev->id, 0x11+2*i, *(((int *)entry)+1));
  		io_apic_write(dev->id, 0x10+2*i, *(((int *)entry)+0));
  	}
@@ -3306,7 +3313,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  
  	return 0;
  }
-@@ -2530,12 +2623,38 @@ int io_apic_set_pci_routing (int ioapic,
+@@ -2530,12 +2628,38 @@ int io_apic_set_pci_routing (int ioapic,
  	if (!ioapic && (irq < 16))
  		disable_8259A_irq(irq);
  
@@ -3749,7 +3756,7 @@ diff -uNrp linux-2.6.11/arch/i386/mm/ioremap.c linux-2.6.11-adeos/arch/i386/mm/i
  		dir++;
 diff -uNrp linux-2.6.11/include/asm-i386/adeos.h linux-2.6.11-adeos/include/asm-i386/adeos.h
 --- linux-2.6.11/include/asm-i386/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.11-adeos/include/asm-i386/adeos.h	2005-06-28 16:04:35.000000000 +0200
++++ linux-2.6.11-adeos/include/asm-i386/adeos.h	2005-07-02 13:07:36.000000000 +0200
 @@ -0,0 +1,514 @@
 +/*
 + *   include/asm-i386/adeos.h
@@ -3781,9 +3788,9 @@ diff -uNrp linux-2.6.11/include/asm-i386/adeos.h linux-2.6.11-adeos/include/asm-
 +#include <linux/list.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING   "r12c2/x86"
++#define ADEOS_ARCH_STRING   "r12c3/x86"
 +#define ADEOS_MAJOR_NUMBER  12
-+#define ADEOS_MINOR_NUMBER  2
++#define ADEOS_MINOR_NUMBER  3
 +
 +extern int adp_pipelined;
 +
@@ -4466,8 +4473,8 @@ diff -uNrp linux-2.6.11/include/asm-i386/system.h linux-2.6.11-adeos/include/asm
   */
 diff -uNrp linux-2.6.11/include/linux/adeos.h linux-2.6.11-adeos/include/linux/adeos.h
 --- linux-2.6.11/include/linux/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.11-adeos/include/linux/adeos.h	2005-06-28 16:34:14.000000000 +0200
-@@ -0,0 +1,534 @@
++++ linux-2.6.11-adeos/include/linux/adeos.h	2005-07-02 13:30:57.000000000 +0200
+@@ -0,0 +1,551 @@
 +/*
 + *   include/linux/adeos.h
 + *
@@ -4992,12 +4999,29 @@ diff -uNrp linux-2.6.11/include/linux/adeos.h linux-2.6.11-adeos/include/linux/a
 +#define spin_lock_irqsave_hw_cond(lock,flags)      spin_lock_irqsave_hw(lock,flags)
 +#define spin_unlock_irqrestore_hw_cond(lock,flags) spin_unlock_irqrestore_hw(lock,flags)
 +
++#define pic_irq_lock(irq)	\
++	do {		\
++		adeos_declare_cpuid; \
++		adeos_load_cpuid();		\
++		__adeos_lock_irq(adp_cpu_current[cpuid], cpuid, irq); \
++	} while(0)
++
++#define pic_irq_unlock(irq)	\
++	do {		\
++		adeos_declare_cpuid; \
++		adeos_load_cpuid();	     \
++		__adeos_unlock_irq(adp_cpu_current[cpuid], irq); \
++	} while(0)
++
 +#else	/* !CONFIG_ADEOS_CORE */
 +
 +#define spin_lock_irqsave_hw(lock,flags)      spin_lock_irqsave(lock, flags)
 +#define spin_unlock_irqrestore_hw(lock,flags) spin_unlock_irqrestore(lock, flags)
 +#define spin_lock_irqsave_hw_cond(lock,flags)      do { flags = 0; spin_lock(lock); } while(0)
 +#define spin_unlock_irqrestore_hw_cond(lock,flags) spin_unlock(lock)
++
++#define pic_irq_lock(irq)	do { } while(0)
++#define pic_irq_unlock(irq)	do { } while(0)
 +
 +#endif	/* CONFIG_ADEOS_CORE */
 +

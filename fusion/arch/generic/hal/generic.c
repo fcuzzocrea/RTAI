@@ -807,7 +807,7 @@ int rthal_apc_schedule (int apc)
     if (apc < 0 || apc >= RTHAL_NR_APCS)
 	return -EINVAL;
 
-    adeos_load_cpuid();	/* Migration would harmless here. */
+    adeos_load_cpuid();	/* Migration would be harmless here. */
 
     if (!test_and_set_bit(apc,&rthal_apc_pending[cpuid]))
 	{

@@ -48,7 +48,7 @@
 00038 <span class="preprocessor">#ifdef CONFIG_X86_LOCAL_APIC</span>
 00039 <span class="preprocessor"></span><span class="comment">/* When the local APIC is enabled, we do not need to relay the host</span>
 00040 <span class="comment">   tick since 8254 interrupts are already flowing normally to Linux</span>
-00041 <span class="comment">   (i.e. the nucleus does not intercept it, but uses a dedicated</span>
+00041 <span class="comment">   (i.e. the nucleus does not intercept them, but uses a dedicated</span>
 00042 <span class="comment">   APIC-based timer interrupt instead, i.e. RTHAL_APIC_TIMER_IPI). */</span>
 00043 <span class="preprocessor">#define XNARCH_HOST_TICK             0</span>
 00044 <span class="preprocessor"></span><span class="preprocessor">#else </span><span class="comment">/* CONFIG_X86_LOCAL_APIC */</span>
@@ -854,7 +854,7 @@
 00844 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00845 
 00846 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_SYSTEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Wed Jun 22 18:44:54 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:14 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

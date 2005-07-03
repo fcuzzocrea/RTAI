@@ -93,9 +93,8 @@ extern int rt_smp_oneshot_timer[];
 
 #define MSG_ERR ((RT_TASK *)0xFfff)
 
-#define NOTHING ((void *)0)
-
-#define SOMETHING ((void *)1)
+#define NOTHING    ((void *)0)
+#define SOMETHING  ((void *)1)
 
 #define SEMHLF 0x0000FFFF
 #define RPCHLF 0xFFFF0000
@@ -214,11 +213,7 @@ static inline void enq_ready_task(RT_TASK *ready_task)
 		ready_task->rnext = task;
 	} else {
 		ready_task->state |= RT_SCHED_SFTRDY;
-#ifdef CONFIG_SMP
-		pend_wake_up_srq(ready_task->lnxtsk, ready_task->runnable_on_cpus);
-#else
-		pend_wake_up_srq(ready_task->lnxtsk, 0);
-#endif
+		pend_wake_up_srq(ready_task->lnxtsk, rtai_cpuid());
 	}
 }
 

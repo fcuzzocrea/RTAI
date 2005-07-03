@@ -203,9 +203,9 @@ static inline void lxrt_resume(void *fun, int narg, long *arg, unsigned long typ
 /*
  * End of messaging mess.
  */
-	if (rt_task->is_hard > 0) {
+	if (likely(rt_task->is_hard > 0)) {
 		rt_task->retval = ((long long (*)(unsigned long, ...))fun)(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8], arg[9]);
-		if (!rt_task->is_hard) {
+		if (unlikely(!rt_task->is_hard)) {
 extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
 			rt_schedule_soft_tail(rt_task, rt_task->runnable_on_cpus);
 		}
@@ -314,7 +314,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			rt_printk("BAD: null rt_fun_ext[%d]\n", INDX(lxsrq));
 			return -ENOSYS;
 		}
-		if ((type = funcm[srq].type)) {
+		if (likely((type = funcm[srq].type))) {
 			if (task->is_hard > 1) {
 				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 				steal_from_linux(task);
@@ -563,7 +563,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 
 static inline void force_soft(RT_TASK *task)
 {
-	if (task->force_soft) {
+	if (unlikely(task->force_soft)) {
 		task->force_soft = 0;
 		task->usp_flags &= ~FORCE_SOFT;
 		give_back_to_linux(task, 0);
@@ -573,7 +573,7 @@ static inline void force_soft(RT_TASK *task)
 extern int FASTCALL(do_signal(struct pt_regs *regs, sigset_t *oldset));
 static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
-	if (task->usp_signal) {
+	if (unlikely(task->usp_signal)) {
 		int retval = task->usp_signal < 0;
 		if (task->is_hard == 1) {
 			give_back_to_linux(task, 0);
@@ -603,14 +603,14 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 	trace_true_lxrt_rtai_syscall_entry();
 #endif /* CONFIG_RTAI_TRACE */
 
-	if ((task = current->rtai_tskext(0))) {
-		if (rt_do_signal(regs, task)) {
+	if (likely((task = current->rtai_tskext(0)))) {
+		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
 		}
 	}
 	retval = handle_lxrt_request(lxsrq, arg, task);
-	if (task) {
-		if (rt_do_signal(regs, task)) {
+	if (likely(task)) {
+		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
 		} else {
 			retval = -RT_EINTR;
@@ -686,7 +686,7 @@ void linux_process_termination(void)
 				lxrt_Proxy_detach(num);
 				break;
 			case IS_TASK:
-				rt_printk("LXRT deregisters task %s\n", name);
+				rt_printk("LXRT deregisters task %s %d\n", name, ((RT_TASK *)adr)->lnxtsk->pid);
 				break;
 		}
 	}

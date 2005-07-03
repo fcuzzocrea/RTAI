@@ -1,3 +1,7 @@
+2005-07-03  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: fusion-0.8.2 (Satch Boogie)
+
 2005-07-02  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to r12c3.

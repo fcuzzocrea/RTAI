@@ -263,7 +263,9 @@ RT_TASK *rt_send_until(RT_TASK *task, unsigned long msg, RTIME time)
 		}
 	}
 	if (rt_current->msg_queue.task != rt_current) {
-		dequeue_blocked(rt_current);
+		if ((void *)rt_current->blocked_on > SOMETHING) {
+			dequeue_blocked(rt_current);
+		}
 		reset_task_prio(task);
 		rt_current->msg_queue.task = rt_current;
 		task = (RT_TASK *)0;
@@ -567,7 +569,9 @@ RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void *result, RTIME ti
 	if (rt_current->msg_queue.task == rt_current) {
 		*(unsigned long *)result = rt_current->msg;
 	} else {
-		dequeue_blocked(rt_current);
+		if ((void *)rt_current->blocked_on > SOMETHING) {
+			dequeue_blocked(rt_current);
+		}
 		reset_task_prio(task);
 		rt_current->msg_queue.task = rt_current;
 		task = (RT_TASK *)0;

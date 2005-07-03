@@ -1,3 +1,19 @@
+2005-07-03  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: fixed wrong determination of the
+	  cpu to which a readied soft task is pended.
+	* base/sched/sched.immed: revised and improved managment 
+	  of RTAI syscalls, following revision of the encoding of msgs 
+	  read/writes.
+	* base/sched/sys.c: put likely/unlikely suggestions here and there.
+	* base/ipc/sem/sem.c: more consistent check in case of abnormal 
+	  wakeup from rt_schedule, avoid using sem.
+	* base/ipc/mbx/mbx.c: more consistent check in case of abnormal 
+	  wakeup from rt_schedule, avoid using anything related to mbx.
+	* base/ipc/msg/msg.c: consistent check in case of abnormal 
+	  wakeup from rt_schedule, avoid using anything related to the
+	  messaged task.
+
 2005-07-01  Panagiotis Issaris <takis@gna.org>
 	* configure.in: Fix the configure script when using an external Linux
 	build directory.

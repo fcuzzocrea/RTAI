@@ -970,6 +970,12 @@ void rtai_handle_isched_lock (int cpuid) /* Called with interrupts off */
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 
+void *rt_get_lxrt_fun_entry(int index);
+static inline void fun_entry_sem_signal(SEM *sem)
+{
+	((void (*)(SEM *))rt_get_lxrt_fun_entry(SEM_SIGNAL))(sem);
+}
+
 int clr_rtext(RT_TASK *task)
 {
 	DECLARE_RT_CURRENT;
@@ -985,14 +991,20 @@ int clr_rtext(RT_TASK *task)
 	if (!(task->owndres & SEMHLF) || task == rt_current || rt_current->priority == RT_SCHED_LINUX_PRIORITY) {
 		call_exit_handlers(task);
 		rem_timed_task(task);
-		if (task->blocked_on && (task->state & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN))) {
-			(task->queue.prev)->next = task->queue.next;
-			(task->queue.next)->prev = task->queue.prev;
-			if (task->state & RT_SCHED_SEMAPHORE) {
-				SEM *sem = (SEM *)(task->blocked_on);
-				if (++sem->count > 1 && sem->type) {
-					sem->count = 1;
+		if (task->blocked_on) {
+			if (task->state & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)) {
+				(task->queue.prev)->next = task->queue.next;
+				(task->queue.next)->prev = task->queue.prev;
+				if (task->state & RT_SCHED_SEMAPHORE) {
+					SEM *sem = (SEM *)(task->blocked_on);
+					if (++sem->count > 1 && sem->type) {
+						sem->count = 1;
+					}
 				}
+			} else if (task->state & RT_SCHED_MBXSUSP) {
+				MBX *mbx = (MBX *)task->blocked_on;
+				mbx->waiting_task = NOTHING;
+				fun_entry_sem_signal(!mbx->frbs ? &mbx->sndsem : &mbx->rcvsem);
 			}
 		}
 		q = &(task->msg_queue);
@@ -1001,7 +1013,7 @@ int clr_rtext(RT_TASK *task)
 			if ((q->task)->state != RT_SCHED_READY && ((q->task)->state &= ~(RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(q->task);
 			}       
-			(q->task)->blocked_on = 0;
+			(q->task)->blocked_on = SOMETHING;
 		}       
                 q = &(task->ret_queue);
                 while ((q = q->next) != &(task->ret_queue)) {
@@ -1009,7 +1021,7 @@ int clr_rtext(RT_TASK *task)
                        	if ((q->task)->state != RT_SCHED_READY && ((q->task)->state &= ~(RT_SCHED_RETURN | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(q->task);
 			}       
-			(q->task)->blocked_on = 0;
+			(q->task)->blocked_on = SOMETHING;
                	}
 		if (!((task->prev)->next = task->next)) {
 			rt_smp_linux_task[task->runnable_on_cpus].prev = task->prev;
@@ -1925,9 +1937,9 @@ static void wake_up_srq_handler(void)
 	preempt_disable();
 #endif
 	if (spin_trylock(&wake_up_srq_lock)) {
-        	while (wake_up_srq.out != wake_up_srq.in) {
+		while (wake_up_srq.out != wake_up_srq.in) {
 			wake_up_process(wake_up_srq.task[wake_up_srq.out++ & (MAX_WAKEUP_SRQ - 1)]);
-        	}
+		}
                 spin_unlock(&wake_up_srq_lock);
 		set_need_resched();
         }

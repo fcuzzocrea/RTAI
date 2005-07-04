@@ -2082,12 +2082,12 @@ pid_t rt_Name_attach(const char *argname)
 	RT_TASK *task;
 	task = current->rtai_tskext(0) ? (RT_TASK *)current->rtai_tskext(0) : _rt_whoami();
 	if (current->comm[0] != 'U' && current->comm[1] != ':') {
-	    	strncpy_from_user(task->task_name, argname, MAX_NAME_LENGTH);
+	    	strncpy_from_user(task->task_name, argname, RTAI_MAX_NAME_LENGTH);
 	} else {
-	    	strncpy(task->task_name, argname, MAX_NAME_LENGTH);
+	    	strncpy(task->task_name, argname, RTAI_MAX_NAME_LENGTH);
 	}
-    	task->task_name[MAX_NAME_LENGTH - 1] = 0;
-	return strnlen(task->task_name, MAX_NAME_LENGTH) > (MAX_NAME_LENGTH - 1) ? -EINVAL : task->lnxtsk ? ((struct task_struct *)current->rtai_tskext(1))->pid : (long)task;
+    	task->task_name[RTAI_MAX_NAME_LENGTH - 1] = 0;
+	return strnlen(task->task_name, RTAI_MAX_NAME_LENGTH) > (RTAI_MAX_NAME_LENGTH - 1) ? -EINVAL : task->lnxtsk ? ((struct task_struct *)current->rtai_tskext(1))->pid : (long)task;
 }
 
 pid_t rt_Name_locate(const char *arghost, const char *argname)
@@ -2098,7 +2098,7 @@ pid_t rt_Name_locate(const char *arghost, const char *argname)
         for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
                 task = &rt_smp_linux_task[cpuid];
                 while ((task = task->next)) {
-			if (!strncmp(argname, task->task_name, MAX_NAME_LENGTH - 1)) {
+			if (!strncmp(argname, task->task_name, RTAI_MAX_NAME_LENGTH - 1)) {
 				return (struct task_struct *)(task->lnxtsk) ?  ((struct task_struct *)(task->lnxtsk)->rtai_tskext(1))->pid : (long)task;
 
 			}

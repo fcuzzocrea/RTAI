@@ -1,3 +1,8 @@
+2005-07-04  Panagiotis Issaris  <takis@gna.org>
+
+	* base/include/{rtai_msg.h,rtai_names.h}, base/ipc/msg/msg.c: Prevent a name
+	  clash.
+
 2005-07-03  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h: fixed wrong determination of the
@@ -15,6 +20,7 @@
 	  messaged task.
 
 2005-07-01  Panagiotis Issaris <takis@gna.org>
+
 	* configure.in: Fix the configure script when using an external Linux
 	build directory.
 	

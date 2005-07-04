@@ -146,7 +146,7 @@ do { \
 } while(0)
 #define __xn_put_user(task,src,dstP)          __put_user(src,dstP)
 #define __xn_get_user(task,dst,srcP)          __get_user(dst,srcP)
-#define __xn_strncpy_from_user(dstP,srcP,n)   __strncpy_from_user(dstP,srcP,n)
+#define __xn_strncpy_from_user(task,dstP,srcP,n)   __strncpy_from_user(dstP,srcP,n)
 
 #define __xn_get_fs(task) (((task)->thread_info)->addr_limit)
 

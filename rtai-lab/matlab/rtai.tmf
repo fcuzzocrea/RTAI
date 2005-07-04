@@ -109,6 +109,9 @@ $(PROGRAM) : $(OBJS) $(LIBS)
 %.o : $(MATLAB_ROOT)/rtw/c/src/%.c
 	gcc -c $(CFLAGS) $<
 
+rtmain.o : $(MATLAB_ROOT)/rtw/c/rtai/rtmain.c $(MODEL).c 
+	gcc -c $(CFLAGS) $(RT_MAIN_DEFINES) $(MATLAB_ROOT)/rtw/c/rtai/rtmain.c
+
 %.o : $(MATLAB_ROOT)/rtw/c/rtai/%.c
 	gcc -c $(CFLAGS) $(RT_MAIN_DEFINES) $<
 

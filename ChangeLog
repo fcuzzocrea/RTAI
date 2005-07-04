@@ -1,7 +1,13 @@
+2005-07-04  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h,
+	* base/sched/sched.immed: reorganised and renamed optional busy wait 
+	  time alignments at return from schedules.
+
 2005-07-04  Panagiotis Issaris  <takis@gna.org>
 
-	* base/include/{rtai_msg.h,rtai_names.h}, base/ipc/msg/msg.c: Prevent a name
-	  clash.
+	* base/include/{rtai_msg.h, rtai_names.h}, base/ipc/msg/msg.c: Prevent 
+	  a name clash.
 
 2005-07-03  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

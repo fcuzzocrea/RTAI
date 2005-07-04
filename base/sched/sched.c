@@ -26,10 +26,10 @@ ACKNOWLEDGMENTS:
 */
 
 
-//#define USE_RTAI_TASKS  0
-#define ALLOW_RR        1
-#define ONE_SHOT        0
-#define BUSY_TIME_WAIT  0
+//#define USE_RTAI_TASKS   0
+#define ALLOW_RR         1
+#define ONE_SHOT         0
+#define BUSY_TIME_ALIGN  0
 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -771,7 +771,7 @@ static void rt_schedule_on_schedule_ipi(void)
 	}
 sched_exit:
 	rtai_cli();
-#if BUSY_TIME_WAIT
+#if BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
 		rt_current->trap_handler_data = 0;
 		while(rdtsc() < rt_current->resume_time);
@@ -882,7 +882,7 @@ sched_soft:
 sched_exit:
 	rtai_cli();
 	sched_get_global_lock(cpuid);
-#if BUSY_TIME_WAIT
+#if BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
 		rt_current->trap_handler_data = 0;
 		while(rdtsc() < rt_current->resume_time);
@@ -1143,9 +1143,6 @@ static void rt_timer_handler(void)
 
 	if (new_task != rt_current) {
 		rt_scheduling[cpuid].rqsted = 1;
-#if BUSY_TIME_WAIT
-		new_task->trap_handler_data = (void *)oneshot_timer;
-#endif
 		if (rt_scheduling[cpuid].locked) {
 			goto sched_exit;
 		}

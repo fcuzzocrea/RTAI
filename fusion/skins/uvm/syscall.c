@@ -73,7 +73,7 @@ static int __vm_shadow_helper (struct task_struct *curr,
 	    return -EFAULT;
 	    }
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	strncpy(curr->comm,name,sizeof(curr->comm));
 	curr->comm[sizeof(curr->comm) - 1] = '\0';

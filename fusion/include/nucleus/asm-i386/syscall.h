@@ -247,6 +247,7 @@ do { \
 } while(0)
 #define __xn_put_user(task,src,dstP)           __put_user(src,dstP)
 #define __xn_get_user(task,dst,srcP)           __get_user(dst,srcP)
+#define __xn_strncpy_from_user(dstP,srcP,n)    rthal_strncpy_from_user(dstP,srcP,n)
 
 #define __xn_range_ok(task,addr,size) ({ \
 	unsigned long flag,sum; \

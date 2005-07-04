@@ -1,3 +1,9 @@
+2005-07-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-*/syscall.h: Add __xn_strncpy_from_user().
+
+	* arch/i386/hal/x86.c (rthal_strncpy_from_user): Add.
+
 2005-07-03  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.8.2 (Satch Boogie)

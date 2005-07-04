@@ -655,7 +655,7 @@ int __mq_open (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(name)))
 	return -EFAULT;
 
-    __xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
+    __xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
     name[sizeof(name) - 1] = '\0';
 
     oflags = __xn_reg_arg2(regs);
@@ -706,7 +706,7 @@ int __mq_unlink (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(name)))
 	return -EFAULT;
 
-    __xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
+    __xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
     name[sizeof(name) - 1] = '\0';
 
     err = mq_unlink(name);

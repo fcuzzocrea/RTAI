@@ -67,7 +67,7 @@ static int __rt_bind_helper (struct task_struct *curr,
 	!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	return -EFAULT;
 
-    __xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+    __xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
     name[sizeof(name) - 1] = '\0';
 
     timeout = xnpod_unblockable_p() ? TM_NONBLOCK : TM_INFINITE;
@@ -146,7 +146,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,bulk.a2,sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)bulk.a2,sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)bulk.a2,sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	strncpy(curr->comm,name,sizeof(curr->comm));
 	curr->comm[sizeof(curr->comm) - 1] = '\0';
@@ -1002,7 +1002,7 @@ static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	}
     else
@@ -1218,7 +1218,7 @@ static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	}
     else
@@ -1462,7 +1462,7 @@ static int __rt_mutex_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	}
     else
@@ -1643,7 +1643,7 @@ static int __rt_cond_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	}
     else
@@ -1864,7 +1864,7 @@ static int __rt_queue_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	}
     else
@@ -2292,7 +2292,7 @@ static int __rt_heap_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	}
     else
@@ -2607,7 +2607,7 @@ static int __rt_alarm_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	}
     else
@@ -3092,7 +3092,7 @@ static int __rt_pipe_create (struct task_struct *curr, struct pt_regs *regs)
 	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	    return -EFAULT;
 
-	__xn_copy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+	__xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
 	name[sizeof(name) - 1] = '\0';
 	}
     else
@@ -3356,7 +3356,7 @@ static int __rt_misc_get_io_region (struct task_struct *curr, struct pt_regs *re
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(label)))
 	return -EFAULT;
 
-    __xn_copy_from_user(curr,label,(const char __user *)__xn_reg_arg3(regs),sizeof(label) - 1);
+    __xn_strncpy_from_user(curr,label,(const char __user *)__xn_reg_arg3(regs),sizeof(label) - 1);
     label[sizeof(label) - 1] = '\0';
 
     start = __xn_reg_arg1(regs);

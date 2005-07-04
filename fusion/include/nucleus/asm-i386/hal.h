@@ -288,6 +288,10 @@ static const char *const rthal_fault_labels[] = {
     [20] = NULL,
 };
 
+long rthal_strncpy_from_user(char *dst,
+			     const char __user *src,
+			     long count);
+
 #endif /* __KERNEL__ && !__cplusplus */
 
 /*@}*/

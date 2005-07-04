@@ -105,6 +105,10 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 	apic_write(APIC_TMICT, count);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+#define __ack_APIC_irq  ack_APIC_irq
+#endif
+
 #else /* !CONFIG_X86_LOCAL_APIC */
 
 #define rtai_setup_periodic_apic(count, vector)
@@ -263,7 +267,6 @@ extern unsigned long io_apic_irqs;
 
 #else
 
-#define __ack_APIC_irq  ack_APIC_irq
 extern struct hw_interrupt_type __adeos_std_irq_dtype[];
 #define rtai_irq_desc(irq) (&__adeos_std_irq_dtype[irq])
 

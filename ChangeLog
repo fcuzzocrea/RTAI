@@ -1,3 +1,8 @@
+2005-07-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_fpu.h: preliminary cleanup, before an 
+	  overall ovehauling.
+
 2005-07-04  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h,

@@ -41,7 +41,7 @@ typedef union i387_union FPU_ENV;
 	do { init_xfpu(); set_tsk_inited_fpu(tsk); } while(0)
 
 #define restore_fpu(tsk) \
-	do { restore_fpenv_lxrt(tsk); set_stopped_child_used_math(tsk); } while (0)
+	do { restore_task_fpenv(tsk); set_tsk_used_fpu(tsk); } while (0)
 
 #define load_mxcsr(val) \
 	do { \
@@ -57,11 +57,8 @@ typedef union i387_union FPU_ENV;
 #define restore_cr0(x) \
 	do { \
 		if (x & 8) { \
-                       unsigned long flags; \
-                       rtai_hw_save_flags_and_cli(flags); \
 			__asm__ __volatile__ ("movl %%cr0, %0": "=r" (x)); \
 			__asm__ __volatile__ ("movl %0, %%cr0": :"r" (8 | x)); \
-                       rtai_hw_restore_flags(flags); \
 		} \
 	} while (0)
 
@@ -81,28 +78,26 @@ typedef union i387_union FPU_ENV;
 #define save_fpenv(x) \
 	do { \
 		if (cpu_has_fxsr) { \
-			__asm__ __volatile__ ("fxsave %0; fnclex": "=m" (x)); \
+			__asm__ __volatile__ ("fxsave %0; fnclex": "=m" (x.fxsave)); \
 		} else { \
-			__asm__ __volatile__ ("fnsave %0; fwait": "=m" (x)); \
+			__asm__ __volatile__ ("fnsave %0; fwait": "=m" (x.fsave)); \
 		} \
 	} while (0)
 
 #define restore_fpenv(x) \
 	do { \
 		if (cpu_has_fxsr) { \
-			__asm__ __volatile__ ("fxrstor %0": : "m" (x)); \
+			__asm__ __volatile__ ("fxrstor %0": : "m" (x.fxsave)); \
 		} else { \
-			__asm__ __volatile__ ("frstor %0": : "m" (x)); \
+			__asm__ __volatile__ ("frstor %0": : "m" (x.fsave)); \
 		} \
 	} while (0)
 
 #define restore_task_fpenv(t) \
 	do { \
                clts(); \
-               restore_fpenv((t)->thread.i387.fsave); \
+               restore_fpenv((t)->thread.i387); \
 	} while (0)
-
-#define restore_fpenv_lxrt(t) restore_task_fpenv(t)
 
 #else /* !CONFIG_RTAI_FPU_SUPPORT */
 
@@ -124,11 +119,15 @@ static void init_fpu(struct task_struct *tsk) { }
 
 #define tsk_used_math(t)  ((t)->used_math)
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define set_tsk_used_fpu(t) \
+	 do { (t)->flags |= PF_USEDFPU; } while(0)
 #define set_stopped_child_used_math(t) \
 	do { (t)->flags |= PF_USEDFPU; } while(0)
 #define clear_stopped_child_used_math(t) \
 	do { (t)->flags &= ~PF_USEDFPU; } while(0)
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+#define set_tsk_used_fpu(t) \
+	do { (t)->thread_info->status |= TS_USEDFPU; } while(0)
 #define set_stopped_child_used_math(t) \
 	do { (t)->thread_info->status |= TS_USEDFPU; } while(0)
 #define clear_stopped_child_used_math(t) \
@@ -141,6 +140,8 @@ static void init_fpu(struct task_struct *tsk) { }
 
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11) */
 
+#define set_tsk_used_fpu(t) \
+	do { (t)->thread_info->status |= TS_USEDFPU; } while(0)
 #define set_tsk_inited_fpu(t) \
 	do { set_stopped_child_used_math(t); } while(0)
 #define clear_tsk_inited_fpu(t) \

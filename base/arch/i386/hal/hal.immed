@@ -1540,14 +1540,13 @@ static int rtai_trap_fault (unsigned event, void *evdata)
 	   does in math_state_restore anyhow, to stay on the safe side. 
 	   In any case we inform the user. */
 		rtai_hw_cli(); /* in task context, so we can be preempted */
-		if (!tsk_used_math(linux_task)) {
-			init_fpu(linux_task);	/* Does clts(). */
-			rt_printk("\nUNEXPECTED FPU INITIALIZATION FROM PID = %d\n", linux_task->pid);
-		} else {	
+		if (lnxtsk_uses_fpu(linux_task)) {
+			restore_fpu(linux_task);
 			rt_printk("\nUNEXPECTED FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
+		} else {
+			init_hard_fpu(linux_task);
+			rt_printk("\nUNEXPECTED FPU INITIALIZATION FROM HARD PID = %d\n", linux_task->pid);
 		}
-		restore_task_fpenv(linux_task);	/* Does clts(). */
-		set_tsk_inited_fpu(linux_task);
 		rtai_hw_sti();
 		goto endtrap;
 	}
@@ -1666,14 +1665,13 @@ static void rtai_trap_fault (adevinfo_t *evinfo)
 	   does in math_state_restore anyhow, to stay on the safe side. 
 	   In any case we inform the user. */
 		rtai_hw_cli(); /* in task context, so we can be preempted */
-		if (!tsk_used_math(linux_task)) {
-			init_fpu(linux_task);   /* Does clts(). */
-			rt_printk("\nUNEXPECTED FPU INITIALIZATION FROM PID = %d\n", linux_task->pid);
-		} else {	
+		if (lnxtsk_uses_fpu(linux_task)) {
+			restore_fpu(linux_task);
 			rt_printk("\nUNEXPECTED FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
+		} else {	
+			init_hard_fpu(linux_task);
+			rt_printk("\nUNEXPECTED FPU INITIALIZATION FROM HARD PID = %d\n", linux_task->pid);
 		}
-		restore_task_fpenv(linux_task);	/* Does clts(). */
-		set_tsk_inited_fpu(linux_task);
 		rtai_hw_sti();
 		goto endtrap;
 	}

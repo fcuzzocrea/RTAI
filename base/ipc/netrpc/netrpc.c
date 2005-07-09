@@ -480,7 +480,7 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 			if ((wsize = TIMED(par->fun_ext_timed) - 1) >= 0) {
 				*((long long *)(a + wsize)) = nano2count(*((long long *)(a + wsize)));
 			}
-			arg.retval = ((long long (*)(long, ...))rt_net_rpc_fun_ext[EXT(par->fun_ext_timed)][FUN(par->fun_ext_timed)].fun)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]);
+			arg.retval = ((long long (*)(long, ...))rt_net_rpc_fun_ext[EXT(par->fun_ext_timed)][FUN(par->fun_ext_timed)].fun)(RTAI_FUN_A);
 			hard_rt_sendto(sock, &arg, encode ? encode(portslotp, &arg, sizeof(struct msg_t), RPC_RTR) : sizeof(struct msg_t), 0, addr, ADRSZ);
 		} while (0);
 	}

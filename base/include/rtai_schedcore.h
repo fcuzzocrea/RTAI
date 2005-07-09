@@ -121,7 +121,11 @@ void rtai_handle_isched_lock(int nesting);
 #define rt_linux_task (rt_smp_linux_task[0])
 #endif
 
-struct fun_args { long a[10]; long long (*fun)(int, ...); };
+#define RTAI_MAX_FUN_ARGS  9
+struct fun_args { long a[RTAI_MAX_FUN_ARGS]; long long (*fun)(int, ...); };
+#define RTAI_FUN_ARGS  arg[0],arg[1],arg[2],arg[3],arg[4],arg[5],arg[6],arg[7],arg[RTAI_MAX_FUN_ARGS - 1]
+#define RTAI_FUNARGS   funarg->a[0],funarg->a[1],funarg->a[2],funarg->a[3],funarg->a[4],funarg->a[5],funarg->a[6],funarg->a[7],funarg->a[RTAI_MAX_FUN_ARGS - 1]
+#define RTAI_FUN_A     a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[RTAI_MAX_FUN_ARGS - 1]
 
 #ifdef CONFIG_SMP
 

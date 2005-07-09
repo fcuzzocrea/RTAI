@@ -123,88 +123,85 @@ static inline int GENERIC_DELETE(int index, void *object)
 #define lxrt_mbx_delete(mbx)        GENERIC_DELETE(MBX_DELETE, mbx)
 #define lxrt_named_mbx_delete(mbx)  GENERIC_DELETE(NAMED_MBX_DELETE, mbx)
 
-//struct fun_args { long a0; long a1; long a2; long a3; long a4; long a5; long a6; long a7; long a8; long a9; long long (*fun)(long, ...); };
-
 static inline void lxrt_resume(void *fun, int narg, long *arg, unsigned long type, RT_TASK *rt_task)
 {
-	int wsize, w2size;
-	long *wmsg_adr, *w2msg_adr;
-/*
- * Here type > 0 means any messaging with the need of copying from/to user
- * space. My knowledge of Linux memory menagment has led to this mess.
- * Whoever can do it better is warmly welcomed.
- */
-	wsize = w2size = 0 ;
-	wmsg_adr = w2msg_adr = 0;
 	if (NEED_TO_RW(type)) {
-		int msg_size, rsize, r2size;
-		long *fun_args;
+		int rsize, r2size, wsize, w2size, msg_size;
+		long *wmsg_adr, *w2msg_adr, *fun_args;
 		
+		rsize = r2size = wsize = w2size = 0 ;
+		wmsg_adr = w2msg_adr = NULL;
 		fun_args = arg - 1;
-		rsize = r2size = 0;
 		if (NEED_TO_R(type)) {			
 			rsize = USP_RSZ1(type);
 			rsize = rsize ? fun_args[rsize] : sizeof(long);
+			if (NEED_TO_R2ND(type)) {
+				r2size = USP_RSZ2(type);
+				r2size = r2size ? fun_args[r2size] : sizeof(long);
+			}
 		}
 		if (NEED_TO_W(type)) {
 			wsize = USP_WSZ1(type);
 			wsize = wsize ? fun_args[wsize] : sizeof(long);
+			if (NEED_TO_W2ND(type)) {
+				w2size = USP_WSZ2(type);
+				w2size = w2size ? fun_args[w2size] : sizeof(long);
+			}
 		}
 		if ((msg_size = rsize > wsize ? rsize : wsize) > 0) {
 			if (msg_size > rt_task->max_msg_size[0]) {
 				rt_free(rt_task->msg_buf[0]);
-				rt_task->max_msg_size[0] = (msg_size*120 + 50)/100;
+				rt_task->max_msg_size[0] = (msg_size << 7)/100;
 				rt_task->msg_buf[0] = rt_malloc(rt_task->max_msg_size[0]);
 			}
-			if (rsize > 0) {			
-				long *buf_arg;
-				buf_arg = fun_args + USP_RBF1(type);
-				copy_from_user(rt_task->msg_buf[0], (long *)(*buf_arg), rsize);
-				*(buf_arg) = (long)rt_task->msg_buf[0];
+			if (rsize) {			
+				long *buf_arg = fun_args + USP_RBF1(type);
+				copy_from_user(rt_task->msg_buf[0], (long *)buf_arg[0], rsize);
+				buf_arg[0] = (long)rt_task->msg_buf[0];
 			}
-			if (wsize > 0) {
-				long *buf_arg;
-				buf_arg = fun_args + USP_WBF1(type);
-				wmsg_adr = (long *)(*buf_arg);
-				*(buf_arg) = (long)rt_task->msg_buf[0];
+			if (wsize) {
+				long *buf_arg = fun_args + USP_WBF1(type);
+				wmsg_adr = (long *)buf_arg[0];
+				buf_arg[0] = (long)rt_task->msg_buf[0];
 			}
-		}
-/*
- * 2nd buffer next.
- */
-		if (NEED_TO_R2ND(type)) {
-			r2size = USP_RSZ2(type);
-			r2size = r2size ? fun_args[r2size] : sizeof(long);
-		}
-		if (NEED_TO_W2ND(type)) {
-			w2size = USP_WSZ2(type);
-			w2size = w2size ? fun_args[w2size] : sizeof(long);
 		}
 		if ((msg_size = r2size > w2size ? r2size : w2size) > 0) {
 			if (msg_size > rt_task->max_msg_size[1]) {
 				rt_free(rt_task->msg_buf[1]);
-				rt_task->max_msg_size[1] = (msg_size*120 + 50)/100;
+				rt_task->max_msg_size[1] = (msg_size << 7)/100;
 				rt_task->msg_buf[1] = rt_malloc(rt_task->max_msg_size[1]);
 			}
-			if (r2size > 0) {
-				long *buf_arg;
-				buf_arg = fun_args + USP_RBF2(type);
-				copy_from_user(rt_task->msg_buf[1], (long *)(*buf_arg), r2size);
-				*(buf_arg) = (long)rt_task->msg_buf[1];
+			if (r2size) {
+				long *buf_arg = fun_args + USP_RBF2(type);
+				copy_from_user(rt_task->msg_buf[1], (long *)buf_arg[0], r2size);
+				buf_arg[0] = (long)rt_task->msg_buf[1];
        			}
-			if (w2size > 0) {
-				long *buf_arg;
-				buf_arg = fun_args + USP_WBF2(type);
-				w2msg_adr = (long *)(*buf_arg);
-       		        	*(buf_arg) = (long)rt_task->msg_buf[1];
+			if (w2size) {
+				long *buf_arg = fun_args + USP_WBF2(type);
+				w2msg_adr = (long *)buf_arg[0];
+       		        	buf_arg[0] = (long)rt_task->msg_buf[1];
        			}
 		}
-	}
-/*
- * End of messaging mess.
- */
-	if (likely(rt_task->is_hard > 0)) {
-		rt_task->retval = ((long long (*)(unsigned long, ...))fun)(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8], arg[9]);
+		if (likely(rt_task->is_hard > 0)) {
+			rt_task->retval = ((long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
+			if (unlikely(!rt_task->is_hard)) {
+extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
+				rt_schedule_soft_tail(rt_task, rt_task->runnable_on_cpus);
+			}
+		} else {
+			struct fun_args *funarg;
+			memcpy(funarg = (void *)rt_task->fun_args, arg, narg);
+			funarg->fun = fun;
+			rt_schedule_soft(rt_task);
+		}
+		if (wsize) {
+			copy_to_user(wmsg_adr, rt_task->msg_buf[0], wsize);
+			if (w2size) {
+				copy_to_user(w2msg_adr, rt_task->msg_buf[1], w2size);
+			}
+		}
+	} else if (likely(rt_task->is_hard > 0)) {
+		rt_task->retval = ((long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
 		if (unlikely(!rt_task->is_hard)) {
 extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
 			rt_schedule_soft_tail(rt_task, rt_task->runnable_on_cpus);
@@ -214,15 +211,6 @@ extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
 		memcpy(funarg = (void *)rt_task->fun_args, arg, narg);
 		funarg->fun = fun;
 		rt_schedule_soft(rt_task);
-	}
-/*
- * A trashing of the comment about messaging mess at the beginning.
- */
-	if (wsize > 0) {
-		copy_to_user(wmsg_adr, rt_task->msg_buf[0], wsize);
-		if (w2size > 0) {
-			copy_to_user(w2msg_adr, rt_task->msg_buf[1], w2size);
-		}
 	}
 }
 
@@ -301,7 +289,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 	int srq;
 
 	srq = SRQ(lxsrq);
-	if (srq < MAX_LXRT_FUN) {
+	if (likely(srq < MAX_LXRT_FUN)) {
 		unsigned long type;
 		struct rt_fun_entry *funcm;
 /*
@@ -310,12 +298,14 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
  * hard real time. Concept contributed and copyrighted by: Giuseppe Renoldi 
  * (giuseppe@renoldi.org).
  */
-		if (unlikely(!(funcm = rt_fun_ext[INDX(lxsrq)]))) {
+		funcm = rt_fun_ext[INDX(lxsrq)];
+		if (unlikely(!funcm)) {
 			rt_printk("BAD: null rt_fun_ext[%d]\n", INDX(lxsrq));
 			return -ENOSYS;
 		}
-		if (likely((type = funcm[srq].type))) {
-			if (task->is_hard > 1) {
+		type = funcm[srq].type;
+		if (likely(type)) {
+			if (unlikely(task->is_hard > 1)) {
 				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 				steal_from_linux(task);
 				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
@@ -323,7 +313,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			lxrt_resume(funcm[srq].fun, NARG(lxsrq), arg, type, task);
 			return task->retval;
 		} else {
-			return ((long long (*)(unsigned long, ...))funcm[srq].fun)(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7], arg[8], arg[9]);
+			return ((long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
 	        }
 	}
 
@@ -489,7 +479,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		case HRT_USE_FPU: {
 			struct arg { RT_TASK *task; int use_fpu; };
 			if(!larg->use_fpu) {
-				clear_tsk_inited_fpu((larg->task)->lnxtsk);
+				clear_lnxtsk_uses_fpu((larg->task)->lnxtsk);
 			} else {
 				init_fpu((larg->task)->lnxtsk);
 			}

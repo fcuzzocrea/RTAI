@@ -419,7 +419,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stac
 	rt_linux_task.prev->next = task;
 	task->prev = rt_linux_task.prev;
 	rt_linux_task.prev = task;
-	init_fp_env(rt_linux_task.fpu_reg);
+	init_task_fpenv(task);
 	rt_global_restore_flags(flags);
 	return 0;
 }
@@ -657,7 +657,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 	if (rt_current->lnxtsk) {
 		LOCK_LINUX(cpuid);
 		rt_linux_task.prevp = rt_current;
-		save_cr0_and_clts(linux_cr0);
+		save_fpcr_and_enable_fpu(linux_cr0);
 		if (new_task->uses_fpu) {
 			save_fpenv(rt_linux_task.fpu_reg);
 			fpu_task = new_task;
@@ -665,7 +665,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 		}
 		KEXECTIME();
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
-		restore_cr0(linux_cr0);
+		restore_fpcr(linux_cr0);
 		UNLOCK_LINUX(cpuid);
 		if (rt_linux_task.nextp != rt_current) {
 			return rt_linux_task.nextp;
@@ -759,12 +759,9 @@ static void rt_schedule_on_schedule_ipi(void)
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-	                if (rt_current->signal) {
-                        	rt_current->signal();
-                	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX_IN_IRQ(cpuid);
-			} else if (tsk_used_math(prev)) {
+			} else if (lnxtsk_uses_fpu(prev)) {
 				restore_fpu(prev);
 			}
 		}
@@ -850,16 +847,13 @@ void rt_schedule(void)
 			}
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-	                if (rt_current->signal) {
-                        	rt_current->signal();
-                	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
 				if (rt_current->state != RT_SCHED_READY) {
 					goto sched_soft;
 				}
 			} else {
-				if (tsk_used_math(prev)) {
+				if (lnxtsk_uses_fpu(prev)) {
 					restore_fpu(prev);
 				}
 				if (rt_current->force_soft) {
@@ -971,7 +965,7 @@ void rtai_handle_isched_lock (int cpuid) /* Called with interrupts off */
 
 
 void *rt_get_lxrt_fun_entry(int index);
-static inline void fun_entry_sem_signal(SEM *sem)
+static inline void sched_sem_signal(SEM *sem)
 {
 	((void (*)(SEM *))rt_get_lxrt_fun_entry(SEM_SIGNAL))(sem);
 }
@@ -1004,7 +998,7 @@ int clr_rtext(RT_TASK *task)
 			} else if (task->state & RT_SCHED_MBXSUSP) {
 				MBX *mbx = (MBX *)task->blocked_on;
 				mbx->waiting_task = NOTHING;
-				fun_entry_sem_signal(!mbx->frbs ? &mbx->sndsem : &mbx->rcvsem);
+				sched_sem_signal(!mbx->frbs ? &mbx->sndsem : &mbx->rcvsem);
 			}
 		}
 		q = &(task->msg_queue);
@@ -1162,12 +1156,9 @@ static void rt_timer_handler(void)
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			if (rt_current->signal) {
-        	       	        rt_current->signal();
-                	}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX_IN_IRQ(cpuid);
-			} else if (tsk_used_math(prev)) {
+			} else if (lnxtsk_uses_fpu(prev)) {
 				restore_fpu(prev);
 			}
 		}
@@ -1651,7 +1642,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	rt_smp_current[cpuid] = rt_task;
 	rt_global_sti();
 	funarg = (void *)rt_task->fun_args;
-	rt_task->retval = funarg->fun(funarg->a[0], funarg->a[1], funarg->a[2], funarg->a[3], funarg->a[4], funarg->a[5], funarg->a[6], funarg->a[7], funarg->a[8], funarg->a[9]);
+	rt_task->retval = funarg->fun(RTAI_FUNARGS);
 	_rt_schedule_soft_tail(rt_task, cpuid);
 }
 
@@ -1854,7 +1845,7 @@ void steal_from_linux(RT_TASK *rt_task)
 		rt_task->priority      -= BASE_SOFT_PRIORITY;
 	}
 	rt_task->is_hard = 1;
-	if (tsk_used_math(lnxtsk)) {
+	if (lnxtsk_uses_fpu(lnxtsk)) {
 		restore_fpu(lnxtsk);
 	}
 	rtai_sti();
@@ -2053,8 +2044,8 @@ static int lxrt_intercept_schedule_tail (void)
 #endif
 	}
 
-#ifdef CONFIG_PREEMPT
-	current->cpus_allowed = cpumask_of_cpu(smp_processor_id());
+#if defined(CONFIG_SMP) && defined(CONFIG_PREEMPT)
+//	current->cpus_allowed = cpumask_of_cpu(smp_processor_id());
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)

@@ -49,12 +49,10 @@ Nov. 2001, Jan Kiszka (Jan.Kiszka@web.de) fix a tiny bug in __task_init.
 #define MAX_FUN_EXT  16
 static struct rt_fun_entry *rt_fun_ext[MAX_FUN_EXT];
 
-/*
- * WATCH OUT for the max expected size of messages and arguments of rtai funs;
+/* 
+ * WATCH OUT for the default max expected size of messages from/to user space.
  */
-
-#define MSG_SIZE    256  // Default max message size.
-#define MAX_ARGS    10   // Max number of 4 bytes args in rtai functions.
+#define USRLAND_MAX_MSG_SIZE  128  // Default max message size, used here only.
 
 #ifdef CONFIG_RTAI_TRACE
 /****************************************************************************/
@@ -226,7 +224,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 		prio = RT_SCHED_LOWEST_PRIORITY;
 	}
 	if (!max_msg_size) {
-		max_msg_size = MSG_SIZE;
+		max_msg_size = USRLAND_MAX_MSG_SIZE;
 	}
 	if (!(msg_buf = rt_malloc(2*max_msg_size))) {
 		return 0;

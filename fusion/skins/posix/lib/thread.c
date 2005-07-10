@@ -41,6 +41,7 @@ static void *__pthread_trampoline (void *arg)
 
 {
     struct pthread_iargs *iargs = (struct pthread_iargs *)arg;
+    void *(*start) (void *), *cookie;
     pthread_t tid = pthread_self();
     struct sched_param param;
     void *status = NULL;
@@ -60,10 +61,19 @@ static void *__pthread_trampoline (void *arg)
 			    __pse51_thread_create,
 			    tid);
     iargs->ret = -err;
+
+    /* We must save anything we'll need to use from *iargs on our own
+       stack now before posting the sync sema4, since our released
+       parent could unwind the stack space onto which the iargs struct
+       is laid on before we actually get the CPU back. */
+
+    start = iargs->start;
+    cookie = iargs->arg;
+
     __real_sem_post(&iargs->sync);
 
     if (!err)
-	status = iargs->start(iargs->arg);
+	status = start(cookie);
     else
 	status = (void *)-err;
 

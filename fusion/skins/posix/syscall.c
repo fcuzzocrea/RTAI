@@ -48,8 +48,8 @@ static struct pthread_jhash *__jhash_buckets[1<<PTHREAD_HASHBITS]; /* Guaranteed
    map regular pthread_t values to fusion's internal thread ids used
    in syscalling the POSIX skin, so that the outer interface can keep
    on using the former transparently. Semaphores and mutexes do not
-   have this constraint, since we plan to fully override their
-   respective interfaces with RTAI/fusion-based replacements. */
+   have this constraint, since we fully override their respective
+   interfaces with RTAI/fusion-based replacements. */
 
 static inline struct pthread_jhash *__pthread_hash (const struct pse51_hkey *hkey,
 						    pthread_t k_tid)
@@ -485,6 +485,7 @@ int __mutex_init (struct task_struct *curr, struct pt_regs *regs)
 
     /* Recursive + PIP forced. */
     pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE);
     pthread_mutexattr_setprotocol(&attr,PTHREAD_PRIO_INHERIT);
     err = pthread_mutex_init(mutex,&attr);
 
@@ -1030,7 +1031,7 @@ static xnsysent_t __systab[] = {
     [__pse51_sched_yield ] = { &__sched_yield, __xn_exec_primary },
     [__pse51_thread_make_periodic ] = { &__pthread_make_periodic_np, __xn_exec_primary },
     [__pse51_thread_wait] = { &__pthread_wait_np, __xn_exec_primary },
-    [__pse51_thread_set_mode] = { &__pthread_set_mode_np, __xn_exec_any },
+    [__pse51_thread_set_mode] = { &__pthread_set_mode_np, __xn_exec_primary },
     [__pse51_sem_init] = { &__sem_init, __xn_exec_any },
     [__pse51_sem_destroy] = { &__sem_destroy, __xn_exec_any },
     [__pse51_sem_post] = { &__sem_post, __xn_exec_any },

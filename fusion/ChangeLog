@@ -1,5 +1,11 @@
 2005-07-10  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/posix (pthread_join, mutex_timedlock_internal): Add
+	missing tests on XNBREAK and XNRMID conditions.
+
+	* include/nucleus/queue.h: Rework debug macros to give better
+	help upon bug detection.
+
 	* nucleus/intr.c (xnintr_init): 
 	* arch/generic/hal/generic.c (rthal_irq_request): Allow for
 	installing a user-defined acknowledge routine.

@@ -614,7 +614,7 @@ static void rt_timers_manager(int dummy)
 			if (!timer->task) {
 				if (!used_fpu && timer->uses_fpu) {
 					used_fpu = 1;
-					save_cr0_and_clts(linux_cr0);
+					save_fpcr_and_enable_fpu(linux_cr0);
 					save_fpenv(timers_manager.fpu_reg);
 				}
 				timer->handler(timer->data);
@@ -624,7 +624,7 @@ static void rt_timers_manager(int dummy)
 		}
 		if (used_fpu) {
 			restore_fpenv(timers_manager.fpu_reg);
-			restore_cr0(linux_cr0);
+			restore_fpcr(linux_cr0);
 		}
 // set next timers_manager priority according to the highest priority timer
 		asgn_min_prio();

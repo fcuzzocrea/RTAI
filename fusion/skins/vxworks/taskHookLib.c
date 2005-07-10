@@ -87,31 +87,23 @@ void wind_task_hooks_cleanup(void)
 }
 
 
-
-
-static inline STATUS hook_add( xnqueue_t * queue,
-                               int (*adder)( xnqueue_t *, xnholder_t * ),
-                               FUNCPTR wind_hook )
-{
-    wind_hook_t * hook = (wind_hook_t *) xnmalloc(sizeof(wind_hook_t));
-    spl_t s;
-
-    if(!hook)
-    {
-        wind_errnoset(S_taskLib_TASK_HOOK_TABLE_FULL);
-        return ERROR;
-    }
-
-    hook->function = wind_hook;
-    inith(&hook->link);
-    
-    xnlock_get_irqsave(&nklock, s);
-    adder(queue, &hook->link);
-    xnlock_put_irqrestore(&nklock, s);
-
-    return OK;
-}
-
+#define hook_add( queue,adder,wind_hook ) \
+({	\
+    wind_hook_t * hook = (wind_hook_t *) xnmalloc(sizeof(wind_hook_t)); \
+    spl_t s; \
+    int err = OK; \
+    if(!hook) { 					\
+        wind_errnoset(S_taskLib_TASK_HOOK_TABLE_FULL); \
+        err = ERROR; \
+        goto hook_done; \
+    } \
+    hook->function = wind_hook; \
+    inith(&hook->link); \
+    xnlock_get_irqsave(&nklock, s); \
+    adder(queue, &hook->link); \
+    xnlock_put_irqrestore(&nklock, s); \
+hook_done: \
+    err; })
 
 static inline STATUS hook_del(xnqueue_t * queue, FUNCPTR wind_hook)
 {

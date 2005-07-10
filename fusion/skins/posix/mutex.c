@@ -141,13 +141,25 @@ static inline int mutex_timedlock (pthread_mutex_t *mutex, xnticks_t to)
 	    {
 	    case PTHREAD_MUTEX_NORMAL:
 		/* Deadlock. */
-		do
+		for (;;) {
 		    xnsynch_sleep_on(&mutex->synchbase,
 				     (to == XN_INFINITE
                                       ? to : to - xnpod_get_time()));
-		while (!xnthread_test_flags(&cur->threadbase, XNTIMEO));
 
-            err = ETIMEDOUT;
+		    if (xnthread_test_flags(&cur->threadbase, XNBREAK)) {
+			    err = EINTR;
+			    break;
+		    }
+		    if (xnthread_test_flags(&cur->threadbase, XNTIMEO)) {
+			    err = ETIMEDOUT;
+			    break;
+		    }
+		    if (xnthread_test_flags(&cur->threadbase, XNRMID)) {
+			    err = EINVAL;
+			    break;
+		    }
+		}
+
             break;
 
         case PTHREAD_MUTEX_ERRORCHECK:

@@ -54,11 +54,17 @@ static inline int mutex_timedlock_internal(pthread_mutex_t *mutex, xnticks_t to)
             xnsynch_sleep_on(&mutex->synchbase,
                              to==XN_INFINITE?to:to-xnpod_get_time());
 
-            err = mutex_trylock_internal(mutex, cur);   
+	    if (xnthread_test_flags(&cur->threadbase, XNBREAK)) {
+		    err = EINTR;
+	    } else if (xnthread_test_flags(&cur->threadbase, XNRMID)) {
+		    err = EINVAL;
+	    } else {
+		err = mutex_trylock_internal(mutex, cur);   
 
-            if (err == EBUSY &&
-                xnthread_test_flags(&cur->threadbase, XNTIMEO))
-                return ETIMEDOUT;
+		if (err == EBUSY &&
+		    xnthread_test_flags(&cur->threadbase, XNTIMEO))
+		    return ETIMEDOUT;
+	    	}
             }
 
     return err;

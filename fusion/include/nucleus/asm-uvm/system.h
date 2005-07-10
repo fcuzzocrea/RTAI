@@ -163,8 +163,10 @@ static inline unsigned long long xnarch_ulldiv (unsigned long long ull,
     return ull / uld;
 }
 
-#define xnarch_stack_size(tcb)     ((tcb)->stacksize)
-#define xnarch_fpu_ptr(tcb)        (NULL)
+#define xnarch_stack_size(tcb)    ((tcb)->stacksize)
+#define xnarch_fpu_ptr(tcb)       (NULL)
+#define xnarch_user_task(tcb)     (NULL)
+#define xnarch_user_pid(tcb)      0
 
 struct xnthread;
 
@@ -281,6 +283,7 @@ void xnarch_sync_irq (void) /* Synchronization point for IRQ servers. */
 static inline int xnarch_hook_irq (unsigned irq,
 				   void (*handler)(unsigned irq,
 						   void *cookie),
+				   int (*ackfn)(unsigned irq),
 				   void *cookie)
 {
     return -ENOSYS;
@@ -419,14 +422,6 @@ static inline void xnarch_stop_timer (void) {
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
 
     return 0;
-}
-
-static inline void xnarch_read_timings (unsigned long long *shot,
-					unsigned long long *delivery,
-					unsigned long long defval)
-{
-    *shot = defval;
-    *delivery = defval;
 }
 
 #endif /* XENO_TIMER_MODULE */

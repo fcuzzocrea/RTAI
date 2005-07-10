@@ -276,9 +276,10 @@ static inline int xnarch_setimask (int imask)
 static inline int xnarch_hook_irq (unsigned irq,
 				   void (*handler)(unsigned irq,
 						   void *cookie),
+				   int (*ackfn)(unsigned irq),
 				   void *cookie)
 {
-    return rthal_irq_request(irq,handler,cookie);
+    return rthal_irq_request(irq,handler,ackfn,cookie);
 }
 
 static inline int xnarch_release_irq (unsigned irq)

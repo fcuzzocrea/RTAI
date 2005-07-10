@@ -172,8 +172,10 @@ static inline unsigned long ffnz (unsigned long word) {
     return ffs((int)word) - 1;
 }
 
-#define xnarch_stack_size(tcb)     ((tcb)->stacksize)
-#define xnarch_fpu_ptr(tcb)        (NULL)
+#define xnarch_stack_size(tcb)    ((tcb)->stacksize)
+#define xnarch_fpu_ptr(tcb)       (NULL)
+#define xnarch_user_task(tcb)     (NULL)
+#define xnarch_user_pid(tcb)      0
 
 /* Under the MVM, preemption only occurs at the C-source line level,
    so we just need plain C bitops and counter support. */
@@ -372,6 +374,7 @@ void mvm_tcl_build_pendq(mvm_tcl_listobj_t *tclist,
 static inline int xnarch_hook_irq (unsigned irq,
 				   void (*handler)(unsigned irq,
 						   void *cookie),
+				   int (*ackfn)(unsigned irq), /* Ignored. */
 				   void *cookie)
 {
     return mvm_hook_irq(irq,handler,cookie);
@@ -418,14 +421,6 @@ static inline void xnarch_stop_timer (void) {
 
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask) {
     return -1;
-}
-
-static inline void xnarch_read_timings (unsigned long long *shot,
-					unsigned long long *delivery,
-					unsigned long long defval)
-{
-    *shot = defval;
-    *delivery = defval;
 }
 
 #endif /* XENO_TIMER_MODULE */

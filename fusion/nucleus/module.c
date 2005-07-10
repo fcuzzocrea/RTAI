@@ -84,22 +84,6 @@ extern struct proc_dir_entry *rthal_proc_root;
 static struct proc_dir_entry *iface_proc_root;
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
-static inline xnticks_t __get_thread_timeout (xnthread_t *thread, xnticks_t now)
-
-{
-    xnticks_t timeout;
-
-    if (!testbits(thread->status,XNDELAY))
-	return 0LL;
-
-    timeout = (xntimer_get_date(&thread->rtimer) ? : xntimer_get_date(&thread->ptimer));
-
-    if (timeout <= now)
-	return 1;
-
-    return timeout - now;
-}
-
 static int sched_read_proc (char *page,
 			    char **start,
 			    off_t off,
@@ -148,11 +132,10 @@ static int sched_read_proc (char *page,
 
 	    p += sprintf(p,"%3u   %-6d %-12s %-4d  %-8Lu  0x%.8lx - %s\n",
                          cpu,
-			 !testbits(thread->status,XNROOT) && xnthread_user_task(thread) ?
-			 xnthread_user_task(thread)->pid : 0,
+			 xnthread_user_pid(thread),
                          thread->name,
 			 thread->cprio,
-			 __get_thread_timeout(thread, now),
+			 xnthread_get_timeout(thread, now),
 			 thread->status,
 			 xnthread_symbolic_status(thread->status,
                                                   buf,sizeof(buf)));

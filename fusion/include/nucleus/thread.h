@@ -201,6 +201,8 @@ typedef struct xnhook {
 #define xnthread_get_magic(thread)         ((thread)->magic)
 #define xnthread_signaled_p(thread)        ((thread)->signals != 0)
 #define xnthread_user_task(thread)         xnarch_user_task(xnthread_archtcb(thread))
+#define xnthread_user_pid(thread) \
+    (testbits((thread)->status,XNROOT) ? 0 : xnarch_user_pid(xnthread_archtcb(thread)))
 
 #ifdef __cplusplus
 extern "C" {
@@ -215,6 +217,21 @@ int xnthread_init(xnthread_t *thread,
 void xnthread_cleanup_tcb(xnthread_t *thread);
 
 char *xnthread_symbolic_status(xnflags_t status, char *buf, int size);
+
+static inline xnticks_t xnthread_get_timeout(xnthread_t *thread, xnticks_t now)
+{
+    xnticks_t timeout;
+
+    if (!testbits(thread->status,XNDELAY))
+	return 0LL;
+
+    timeout = (xntimer_get_date(&thread->rtimer) ? : xntimer_get_date(&thread->ptimer));
+
+    if (timeout <= now)
+	return 1;
+
+    return timeout - now;
+}
 
 #ifdef __cplusplus
 }

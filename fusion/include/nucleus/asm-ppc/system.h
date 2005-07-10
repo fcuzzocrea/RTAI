@@ -39,6 +39,7 @@
 
 #define xnarch_stack_size(tcb)  ((tcb)->stacksize)
 #define xnarch_user_task(tcb)   ((tcb)->user_task)
+#define xnarch_user_pid(tcb)    ((tcb)->user_task->pid)
 
 #define xnarch_alloc_stack xnmalloc
 #define xnarch_free_stack  xnfree
@@ -578,20 +579,6 @@ static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask)
 #else /* ! CONFIG_SMP */
     return 0;
 #endif /* CONFIG_SMP */
-}
-
-static inline void xnarch_read_timings (unsigned long long *shot,
-					unsigned long long *delivery,
-					unsigned long long defval)
-{
-#ifdef CONFIG_ADEOS_PROFILING
-    int cpuid = adeos_processor_id();
-    *shot = __adeos_profile_data[cpuid].irqs[RTHAL_TIMER_IRQ].t_handled;
-    *delivery = __adeos_profile_data[cpuid].irqs[RTHAL_TIMER_IRQ].t_synced;
-#else /* !CONFIG_ADEOS_PROFILING */
-    *shot = defval;
-    *delivery = defval;
-#endif /* CONFIG_ADEOS_PROFILING */
 }
 
 #endif /* XENO_TIMER_MODULE */

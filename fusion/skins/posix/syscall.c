@@ -629,7 +629,7 @@ int __cond_timedwait (struct task_struct *curr, struct pt_regs *regs)
 			(void __user *)__xn_reg_arg3(regs),
 			sizeof(ts));
 
-    return -pse51_cond_timedwait(cond,mutex,ts2ticks_ceil(&ts)+1);
+    return -pse51_cond_timedwait_internal(cond,mutex,ts2ticks_ceil(&ts)+1);
 }
 
 int __cond_signal (struct task_struct *curr, struct pt_regs *regs)

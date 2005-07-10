@@ -86,7 +86,7 @@ const char *xnpod_fatal_helper (const char *format, ...)
         now = nkpod->jiffies;
 
     p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-		  " %-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
+		  "\n %-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
 		 "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)

@@ -72,6 +72,7 @@ static struct __lostagerq {
 #define LO_WAKEUP_REQ 1
 #define LO_RENICE_REQ 2
 #define LO_SIGNAL_REQ 3
+#define LO_HARDEN_REQ 4
 	int type;
 	struct task_struct *task;
 	int arg;
@@ -101,7 +102,7 @@ void xnpod_declare_iface_proc(struct xnskentry *iface);
 
 void xnpod_discard_iface_proc(struct xnskentry *iface);
 
-static inline struct task_struct *get_calling_task (adevinfo_t *evinfo)
+static inline struct task_struct *get_calling_task (void)
 {
     return xnpod_shadow_p()
 	? current
@@ -285,6 +286,11 @@ static void lostage_handler (void *cookie)
 
 		send_sig(rq->req[reqnum].arg,task,1);
 		break;
+
+	    case LO_HARDEN_REQ:
+
+		wake_up_interruptible(&gatekeeper[task_cpu(task)].waitq);
+		break;
 	    }
 	}
 }
@@ -320,13 +326,7 @@ static int gatekeeper_thread (void *data)
     
     sigfillset(&this_task->blocked);
     set_cpus_allowed(this_task, cpumask_of_cpu(cpu));
-#ifdef CONFIG_PREEMPT_RT
-    /* FIXME -- PREEMPT_RT badly changes the semantics of
-       wake_up_interruptible_sync(), we need to work around this. */
-    set_linux_task_priority(this_task,1);
-#else /* CONFIG_PREEMPT_RT */
     set_linux_task_priority(this_task,MAX_RT_PRIO-1);
-#endif /* CONFIG_PREEMPT_RT */
 
     init_waitqueue_head(&gk->waitq);
     add_wait_queue_exclusive(&gk->waitq,&wait);
@@ -474,18 +474,22 @@ static int xnshadow_harden (void)
     /* Set up the request to move "current" from the Linux domain to
        the RTAI domain. This will cause the shadow thread to resume
        using the register state of the current Linux task. For this to
-       happen, we set up the migration data, prepare to suspend then
-       wake up the gatekeeper which will perform the actual
-       transition. */
+       happen, we set up the migration data, prepare to suspend the
+       current task then wake up the gatekeeper which will perform the
+       actual transition. An APC is scheduled to wake up the
+       gatekeeper thread before scheduling out the current task, so
+       that we are guaranteed to be pulled out of the Linux runqueue
+       before the gatekeeper starts processing our request, which is
+       critical for the proper execution of the migration protocol. */
 
     gk->thread = thread;
     set_current_state(TASK_INTERRUPTIBLE);
-    wake_up_interruptible_sync(&gk->waitq);
+    schedule_linux_call(LO_HARDEN_REQ,this_task,0);
     schedule();
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
     if (adp_current == adp_root)
-	xnpod_fatal("wake_up_interruptible_sync() not so synchronous?!");
+	xnpod_fatal("Shadow migration to primary mode failed?!");
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
 #ifdef CONFIG_RTAI_HW_FPU
@@ -1029,7 +1033,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	goto no_skin;
 
-    task = get_calling_task(evinfo);
+    task = get_calling_task();
     thread = xnshadow_thread(task);
     __xn_canonicalize_args(task,regs);
 
@@ -1224,7 +1228,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 
  no_skin:
 
-    __xn_canonicalize_args(get_calling_task(evinfo),regs);
+    __xn_canonicalize_args(get_calling_task(),regs);
 
     if (__xn_reg_mux_p(regs))
 	{

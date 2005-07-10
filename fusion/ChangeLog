@@ -1,3 +1,37 @@
+2005-07-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/intr.c (xnintr_init): 
+	* arch/generic/hal/generic.c (rthal_irq_request): Allow for
+	installing a user-defined acknowledge routine.
+
+2005-07-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Make -Wstrict-prototypes only part of the RTAI
+	build flags for user-space components, excluding it from the
+	common application flags returned by rtai-config.
+
+	* nucleus/pod.c (xnpod_fatal_helper): Add PID information.
+
+	* skins/posix/syscall.c (__mutex_init): Make all user-space
+	mutexes recursive.
+
+	* nucleus/shadow.c (xnshadow_harden): Make sure to be pulled out
+	of the Linux runqueue, before the gatekeeper starts processing the
+	shadow resumption request.
+
+	* skins/posix/lib/thread.c (__pthread_trampoline): Fix race window
+	between the parent release point and the actual use of the stacked
+	start/cookie args.
+
+2005-07-07  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-generic/hal.h: Discard Linux stage interrupt
+	state manipulators: they are unused and are better not needed.
+
+	* include/nucleus/asm-*/system.h: Discard unused
+	xnarch_read_timings(). LTT support is expected to help us
+	regarding this.
+
 2005-07-04  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-*/syscall.h: Add __xn_strncpy_from_user().

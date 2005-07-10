@@ -323,6 +323,7 @@ static int gatekeeper_thread (void *data)
     struct task_struct *this_task = current;
     DECLARE_WAITQUEUE(wait,this_task);
     int cpu = gk - &gatekeeper[0];
+    spl_t s;
     
     sigfillset(&this_task->blocked);
     set_cpus_allowed(this_task, cpumask_of_cpu(cpu));
@@ -342,21 +343,28 @@ static int gatekeeper_thread (void *data)
 	if (kthread_should_stop())
 	    break;
 
-#ifdef CONFIG_SMP
-	{
-	spl_t s;
-	/* If the fusion task changed its CPU while in secondary mode,
-           change the shadow CPU too. We do not migrate the thread
-           timers here, it would not work. For a "full" migration
-           comprising timers, using xnpod_migrate is required. */
 	xnlock_get_irqsave(&nklock, s);
-	gk->thread->sched = xnpod_sched_slot(cpu);
-	xnpod_resume_thread(gk->thread,XNRELAX);
-	xnlock_put_irqrestore(&nklock, s);
-	}
+
+	/* Safety guard: don't resume the shadow if Linux resumed the
+	   underlying task under our feet while the hardening request
+	   was propagated to us. */
+
+	if (xnthread_user_task(gk->thread)->state & TASK_INTERRUPTIBLE)
+	    {
+#ifdef CONFIG_SMP
+	    /* If the fusion task changed its CPU while in secondary
+	       mode, change the shadow CPU too. We do not migrate the
+	       thread timers here, it would not work. For a "full"
+	       migration comprising timers, using xnpod_migrate is
+	       required. */
+	    gk->thread->sched = xnpod_sched_slot(cpu);
+	    xnpod_resume_thread(gk->thread,XNRELAX);
 #else /* !CONFIG_SMP */
-	xnpod_resume_thread(gk->thread,XNRELAX);
+	    xnpod_resume_thread(gk->thread,XNRELAX);
 #endif /* CONFIG_SMP */
+	    }
+
+	xnlock_put_irqrestore(&nklock, s);
 	xnpod_renice_root(XNPOD_ROOT_PRIO_BASE);
 	xnpod_schedule();
     }
@@ -487,10 +495,10 @@ static int xnshadow_harden (void)
     schedule_linux_call(LO_HARDEN_REQ,this_task,0);
     schedule();
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
     if (adp_current == adp_root)
-	xnpod_fatal("Shadow migration to primary mode failed?!");
-#endif /* CONFIG_RTAI_OPT_DEBUG */
+	/* Failed resumption: we likely got a Linux signal while the
+	   hardening request was propagated to the gatekeeper. */
+	return signal_pending(this_task) ? -ERESTARTSYS : -EPERM;
 
 #ifdef CONFIG_RTAI_HW_FPU
     xnpod_switch_fpu(xnpod_current_sched());

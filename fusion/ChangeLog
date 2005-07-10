@@ -1,5 +1,8 @@
 2005-07-10  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (gatekeeper_thread): Add a safety guard to
+	prevent migrating Linux tasks just awaken by signals.
+
 	* skins/posix (pthread_join, mutex_timedlock_internal): Add
 	missing tests on XNBREAK and XNRMID conditions.
 

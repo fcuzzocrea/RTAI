@@ -54,14 +54,15 @@ u_long nkschedlat = 0;
 
 u_long nktimerlat = 0;
 
+char *nkmsgbuf = NULL;
+
 const char *xnpod_fatal_helper (const char *format, ...)
 
 {
     const unsigned nr_cpus = xnarch_num_online_cpus();
-    static char buf[256];
     xnholder_t *holder;
+    char *p = nkmsgbuf;
     xnticks_t now;
-    char sbuf[64];
     unsigned cpu;
     va_list ap;
     spl_t s;
@@ -69,7 +70,7 @@ const char *xnpod_fatal_helper (const char *format, ...)
     xnlock_get_irqsave(&nklock,s);
 
     va_start(ap,format);
-    vsprintf(buf,format,ap);
+    p += vsnprintf(p,XNPOD_FATAL_BUFSZ,format,ap);
     va_end(ap);
 
     if (!nkpod || testbits(nkpod->status,XNFATAL|XNPIDLE))
@@ -84,8 +85,9 @@ const char *xnpod_fatal_helper (const char *format, ...)
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
         now = nkpod->jiffies;
 
-    xnprintf("%-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
-	     "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
+    p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
+		  " %-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
+		 "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
@@ -101,15 +103,15 @@ const char *xnpod_fatal_helper (const char *format, ...)
             if (thread->sched != sched)
                 continue;
 
-	    xnprintf("%3u   %-6d %-12s %-4d  %-8Lu  0x%.8lx - %s\n",
-		     cpu,
-		     xnthread_user_pid(thread),
-		     thread->name,
-		     thread->cprio,
-		     xnthread_get_timeout(thread, now),
-		     thread->status,
-		     xnthread_symbolic_status(thread->status,
-					      sbuf,sizeof(sbuf)));
+	    p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
+			  "%c%3u   %-6d %-12s %-4d  %-8Lu  0x%.8lx\n",
+			  thread == sched->runthread ? '>' : ' ',
+			  cpu,
+			  xnthread_user_pid(thread),
+			  thread->name,
+			  thread->cprio,
+			  xnthread_get_timeout(thread, now),
+			  thread->status);
             }
         }
 
@@ -117,21 +119,23 @@ const char *xnpod_fatal_helper (const char *format, ...)
         {
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
         if (!testbits(nkpod->status,XNTMPER))
-            xnprintf("Aperiodic timer is running.\n");
+            p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
+			  "Aperiodic timer is running.\n");
         else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-            xnprintf("Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
-                     xnpod_get_tickval() / 1000,
-                     nkpod->jiffies);
+            p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
+			  "Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
+			  xnpod_get_tickval() / 1000,
+			  nkpod->jiffies);
         }
     else
-        xnprintf("No system timer.\n");
-
+        p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
+		      "No system timer.\n");
  out:
 
     xnlock_put_irqrestore(&nklock,s);
 
-    return buf;
+    return nkmsgbuf;
 }
 
 /*

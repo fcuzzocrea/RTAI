@@ -274,12 +274,6 @@ int pthread_join (pthread_t thread, void **value_ptr)
            will cause a fatal error. */
         xnsynch_sleep_on(&thread->join_synch, XN_INFINITE);
 
-        if (xnthread_test_flags(&cur->threadbase, XNBREAK))
-	    {
-            xnlock_put_irqrestore(&nklock, s);
-            return EINTR;
-	    }
-        
         is_last_joiner = xnsynch_wakeup_one_sleeper(&thread->join_synch) == NULL;
 
         thread_cancellation_point(cur);

@@ -54,17 +54,16 @@ static inline int mutex_timedlock_internal(pthread_mutex_t *mutex, xnticks_t to)
             xnsynch_sleep_on(&mutex->synchbase,
                              to==XN_INFINITE?to:to-xnpod_get_time());
 
-	    if (xnthread_test_flags(&cur->threadbase, XNBREAK)) {
-		    err = EINTR;
-	    } else if (xnthread_test_flags(&cur->threadbase, XNRMID)) {
-		    err = EINVAL;
-	    } else {
-		err = mutex_trylock_internal(mutex, cur);   
+            if (xnthread_test_flags(&cur->threadbase, XNBREAK))
+                return EINTR;
 
-		if (err == EBUSY &&
-		    xnthread_test_flags(&cur->threadbase, XNTIMEO))
-		    return ETIMEDOUT;
-	    	}
+            if (xnthread_test_flags(&cur->threadbase, XNRMID))
+                return EIDRM;
+
+            if (xnthread_test_flags(&cur->threadbase, XNTIMEO))
+                return ETIMEDOUT;
+
+            err = mutex_trylock_internal(mutex, cur);
             }
 
     return err;
@@ -119,9 +118,13 @@ static inline void mutex_restore_count(pthread_mutex_t *mutex, unsigned count)
     mutex->count = count;
 }
 
-
 void pse51_mutex_obj_init(void);
 
 void pse51_mutex_obj_cleanup(void);
-    
+
+/* Interruptible versions of pthread_mutex_*. Exposed for use by syscall.c. */
+int pthread_mutex_trylock_break (pthread_mutex_t *mutex, pthread_t cur);
+
+int pthread_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to);
+
 #endif /* !_POSIX_MUTEX_H */

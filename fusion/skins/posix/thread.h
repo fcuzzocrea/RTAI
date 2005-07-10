@@ -84,7 +84,6 @@ struct pse51_thread {
 };
 
 #define PSE51_JOINEE_DETACHED XNTHREAD_SPARE0
-#define PSE51_IDRM            XNTHREAD_SPARE1
 
 #define pse51_current_thread() thread2pthread(xnpod_current_thread())
 

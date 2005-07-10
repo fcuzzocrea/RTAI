@@ -72,7 +72,7 @@ int pthread_mutex_init (pthread_mutex_t *mutex, const pthread_mutexattr_t *attr)
 
     xnlock_get_irqsave(&nklock, s);
 
-    if (attr->magic!=PSE51_MUTEX_ATTR_MAGIC)
+    if (attr->magic != PSE51_MUTEX_ATTR_MAGIC)
 	{
         xnlock_put_irqrestore(&nklock, s);
         return EINVAL;
@@ -123,7 +123,7 @@ int pthread_mutex_destroy (pthread_mutex_t *mutex)
     return 0;
 }
 
-static inline int mutex_timedlock (pthread_mutex_t *mutex, xnticks_t to)
+int pthread_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to)
 
 {
     pthread_t cur = pse51_current_thread();
@@ -141,24 +141,30 @@ static inline int mutex_timedlock (pthread_mutex_t *mutex, xnticks_t to)
 	    {
 	    case PTHREAD_MUTEX_NORMAL:
 		/* Deadlock. */
-		for (;;) {
+		for (;;)
+                    {
 		    xnsynch_sleep_on(&mutex->synchbase,
 				     (to == XN_INFINITE
                                       ? to : to - xnpod_get_time()));
 
-		    if (xnthread_test_flags(&cur->threadbase, XNBREAK)) {
-			    err = EINTR;
-			    break;
-		    }
-		    if (xnthread_test_flags(&cur->threadbase, XNTIMEO)) {
-			    err = ETIMEDOUT;
-			    break;
-		    }
-		    if (xnthread_test_flags(&cur->threadbase, XNRMID)) {
-			    err = EINVAL;
-			    break;
-		    }
-		}
+		    if (xnthread_test_flags(&cur->threadbase, XNBREAK))
+                        {
+                        err = EINTR;
+                        break;
+                        }
+
+		    if (xnthread_test_flags(&cur->threadbase, XNTIMEO))
+                        {
+                        err = ETIMEDOUT;
+                        break;
+                        }
+
+		    if (xnthread_test_flags(&cur->threadbase, XNRMID))
+                        {
+                        err = EIDRM;
+                        break;
+                        }
+                    }
 
             break;
 
@@ -184,42 +190,70 @@ static inline int mutex_timedlock (pthread_mutex_t *mutex, xnticks_t to)
     return err;
 }
 
+int pthread_mutex_trylock_break (pthread_mutex_t *mutex, pthread_t cur)
+
+{
+    int err;
+
+    err = mutex_trylock_internal(mutex, cur);
+    
+    if (err == EBUSY && mutex->attr.type == PTHREAD_MUTEX_RECURSIVE
+        && mutex->owner == cur)
+        {
+            if (mutex->count == UINT_MAX)
+                err = EAGAIN;
+            else
+                {
+                    ++mutex->count;
+                    err = 0;
+                }
+        }
+
+    return err;
+}
+
 int pthread_mutex_trylock (pthread_mutex_t *mutex)
 
 {
-    pthread_t cur = pse51_current_thread();
+    pthread_t cur;
     int err;
     spl_t s;
     
     xnlock_get_irqsave(&nklock, s);
 
-    err = mutex_trylock_internal(mutex, cur);
+    cur = pse51_current_thread();
 
-    if (err == EBUSY && mutex->attr.type == PTHREAD_MUTEX_RECURSIVE
-       && mutex->owner == cur)
-	{
-        if (mutex->count == UINT_MAX)
-            err = EAGAIN;
-        else
-	    {
-            ++mutex->count;
-            err = 0;
-	    }
-    }
+    do {
+        err = pthread_mutex_trylock_break(mutex, cur);
+    } while(err == EINTR || err == EIDRM);
 
     xnlock_put_irqrestore(&nklock, s);
 
     return err;
 }
 
-int pthread_mutex_lock (pthread_mutex_t *mutex) {
+int pthread_mutex_lock (pthread_mutex_t *mutex)
 
-    return mutex_timedlock(mutex, XN_INFINITE);
+{
+    int err;
+
+    do {
+        err = pthread_mutex_timedlock_break(mutex, XN_INFINITE);
+    } while(err == EINTR || err == EIDRM);
+
+    return err;
 }
 
-int pthread_mutex_timedlock (pthread_mutex_t *mutex, const struct timespec *to) {
+int pthread_mutex_timedlock (pthread_mutex_t *mutex, const struct timespec *to)
 
-    return mutex_timedlock(mutex, ts2ticks_ceil(to)+1);
+{
+    int err;
+
+    do {
+        err = pthread_mutex_timedlock_break(mutex, ts2ticks_ceil(to)+1);
+    } while(err == EINTR || err == EIDRM);
+
+    return err;
 }
 
 int pthread_mutex_unlock (pthread_mutex_t *mutex)

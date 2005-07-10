@@ -22,6 +22,7 @@
 #include <posix/syscall.h>
 #include <posix/posix.h>
 #include <posix/thread.h>
+#include <posix/mutex.h>
 #include <posix/jhash.h>
 #include <posix/mq.h>
 
@@ -525,7 +526,7 @@ int __mutex_lock (struct task_struct *curr, struct pt_regs *regs)
 
 {
     pthread_mutex_t *mutex = (pthread_mutex_t *)__xn_reg_arg1(regs);
-    return -pthread_mutex_lock(mutex);
+    return -pthread_mutex_timedlock_break(mutex, XN_INFINITE);
 }
 
 int __mutex_timedlock (struct task_struct *curr, struct pt_regs *regs)
@@ -542,7 +543,7 @@ int __mutex_timedlock (struct task_struct *curr, struct pt_regs *regs)
 			(void __user *)__xn_reg_arg2(regs),
 			sizeof(ts));
 
-    return -pthread_mutex_timedlock(mutex,&ts);
+    return -pthread_mutex_timedlock_break(mutex,ts2ticks_ceil(&ts)+1);
 }
 
 int __mutex_trylock (struct task_struct *curr, struct pt_regs *regs)

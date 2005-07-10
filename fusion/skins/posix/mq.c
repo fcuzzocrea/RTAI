@@ -158,7 +158,7 @@ int pse51_mq_destroy(pse51_mq_t *mq)
         }
 
     pse51_mark_deleted(mq);
-    rc = (xnsynch_flush(&mq->synchbase, PSE51_IDRM) == XNSYNCH_RESCHED);
+    rc = (xnsynch_destroy(&mq->synchbase) == XNSYNCH_RESCHED);
     xnlock_put_irqrestore(&nklock, s);
     xnarch_sysfree(mq->mem, mq->memsize);
 
@@ -405,7 +405,7 @@ static int pse51_mq_timedsend_inner(pse51_mqd_t *qd,
         if (xnthread_test_flags(&cur->threadbase, XNTIMEO))
             return ETIMEDOUT;
 
-        if (xnthread_test_flags(&cur->threadbase, PSE51_IDRM))
+        if (xnthread_test_flags(&cur->threadbase, XNRMID))
             return EBADF;
         }
 
@@ -450,7 +450,7 @@ static int pse51_mq_timedrcv_inner(pse51_mqd_t *qd,
         if (direct & msg.used)
             return 0;
             
-        if (xnthread_test_flags(&cur->threadbase, PSE51_IDRM))
+        if (xnthread_test_flags(&cur->threadbase, XNRMID))
             return EBADF;
 
         if (xnthread_test_flags(&cur->threadbase, XNTIMEO))

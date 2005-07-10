@@ -1,3 +1,20 @@
+2005-07-10  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skin/posix/lib/cond.c skins/posix/cond.c 
+	(pse51_cond_timedwait_internal): Allow EINTR to be returned to
+	user-space wrappers.
+	(pthread_cond_*wait): Do not return EINTR to applications.
+
+	* skins/posix/thread.c (pthread_join): Do not return EINTR,
+	pthread_join is only called from kernel space.
+
+	* skins/posix/mutex.c, skin/posix/lib/mutex.c
+	(pthread_mutex_*lock): Do not let applications see the EINTR and
+	EIDRM error codes.
+
+	* skins/posix/mq.c (pse51_mq_timedsend_inner): Replace PSE51_RMID
+	with XNRMID.
+
 2005-07-10  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (gatekeeper_thread): Add a safety guard to

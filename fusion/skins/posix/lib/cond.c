@@ -57,15 +57,18 @@ int __wrap_pthread_cond_wait (pthread_cond_t *cond,
 {
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
     union __fusion_cond *_cond = (union __fusion_cond *)cond;
+    int err;
 
     if (_cond->shadow_cond.magic != SHADOW_COND_MAGIC ||
 	_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
 	return EINVAL;
 
-    return -XENOMAI_SKINCALL2(__pse51_muxid,
-			      __pse51_cond_wait,
-			      _cond->shadow_cond.handle,
-			      _mutex->shadow_mutex.handle);
+    err = XENOMAI_SKINCALL2(__pse51_muxid,
+                            __pse51_cond_wait,
+                            _cond->shadow_cond.handle,
+                            _mutex->shadow_mutex.handle);
+
+    return err == -EINTR ? 0 : -err;
 }
 
 int __wrap_pthread_cond_timedwait (pthread_cond_t *cond,
@@ -74,16 +77,19 @@ int __wrap_pthread_cond_timedwait (pthread_cond_t *cond,
 {
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
     union __fusion_cond *_cond = (union __fusion_cond *)cond;
+    int err;
 
     if (_cond->shadow_cond.magic != SHADOW_COND_MAGIC ||
 	_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
 	return EINVAL;
 
-    return -XENOMAI_SKINCALL3(__pse51_muxid,
-			      __pse51_cond_timedwait,
-			      _cond->shadow_cond.handle,
-			      _mutex->shadow_mutex.handle,
-			      abstime);
+    err = XENOMAI_SKINCALL3(__pse51_muxid,
+                            __pse51_cond_timedwait,
+                            _cond->shadow_cond.handle,
+                            _mutex->shadow_mutex.handle,
+                            abstime);
+
+    return err == -EINTR ? 0 : -err;
 }
 
 int __wrap_pthread_cond_signal (pthread_cond_t *cond)

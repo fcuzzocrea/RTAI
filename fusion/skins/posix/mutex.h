@@ -123,8 +123,6 @@ void pse51_mutex_obj_init(void);
 void pse51_mutex_obj_cleanup(void);
 
 /* Interruptible versions of pthread_mutex_*. Exposed for use by syscall.c. */
-int pthread_mutex_trylock_break (pthread_mutex_t *mutex, pthread_t cur);
-
-int pthread_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to);
+int pse51_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to);
 
 #endif /* !_POSIX_MUTEX_H */

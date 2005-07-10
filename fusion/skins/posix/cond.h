@@ -20,6 +20,10 @@
 #ifndef _POSIX_COND_H
 #define _POSIX_COND_H
 
+int pse51_cond_timedwait_internal(pthread_cond_t *cond,
+                                  pthread_mutex_t *mutex,
+                                  xnticks_t to);
+
 void pse51_cond_obj_init(void);
 
 void pse51_cond_obj_cleanup(void);

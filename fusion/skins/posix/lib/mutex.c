@@ -68,7 +68,7 @@ int __wrap_pthread_mutex_lock (pthread_mutex_t *mutex)
         err = XENOMAI_SKINCALL1(__pse51_muxid,
                                 __pse51_mutex_lock,
                                 _mutex->shadow_mutex.handle);
-    } while (err == EIDRM || err == EINTR);
+    } while (err == -EIDRM || err == -EINTR);
 
     return -err;
 }
@@ -87,7 +87,7 @@ int __wrap_pthread_mutex_timedlock (pthread_mutex_t *mutex,
                                 __pse51_mutex_timedlock,
                                 _mutex->shadow_mutex.handle,
                                 to);
-    } while (err == EIDRM || err == EINTR);
+    } while (err == -EIDRM || err == -EINTR);
 
     return -err;
 }
@@ -96,18 +96,13 @@ int __wrap_pthread_mutex_trylock (pthread_mutex_t *mutex)
 
 {
     union __fusion_mutex *_mutex = (union __fusion_mutex *)mutex;
-    int err;
 
     if (_mutex->shadow_mutex.magic != SHADOW_MUTEX_MAGIC)
 	return EINVAL;
 
-    do {
-        err = XENOMAI_SKINCALL1(__pse51_muxid,
-                                __pse51_mutex_trylock,
-                                _mutex->shadow_mutex.handle);
-    } while (err == EIDRM || err == EINTR);
-        
-    return -err;
+    return -XENOMAI_SKINCALL1(__pse51_muxid,
+                              __pse51_mutex_trylock,
+                              _mutex->shadow_mutex.handle);
 }
 
 int __wrap_pthread_mutex_unlock (pthread_mutex_t *mutex)

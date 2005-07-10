@@ -93,9 +93,9 @@ int pthread_cond_destroy (pthread_cond_t *cond)
     return 0;
 }
 
-static int cond_timedwait_internal (pthread_cond_t *cond,
-				    pthread_mutex_t *mutex,
-				    xnticks_t to)
+int pse51_cond_timedwait_internal(pthread_cond_t *cond,
+                                  pthread_mutex_t *mutex,
+                                  xnticks_t to)
 {
     int err;
     unsigned count;
@@ -143,23 +143,26 @@ static int cond_timedwait_internal (pthread_cond_t *cond,
        - timeout, the status XNTIMEO is set, and the function should return
          ETIMEDOUT ;
        - pthread_kill, the status bit XNBREAK is set, but ignored, the function
-         simply returns 0, causing a wakeup, spurious or not whether
+         simply returns EINTR (used only by the user-space interface, replaced
+         by 0 anywhere else), causing a wakeup, spurious or not whether
          pthread_cond_signal was called between pthread_kill and the moment
-         where xnsynch_sleep_on returns ;
+         when xnsynch_sleep_on returned ;
        - pthread_cancel, no status bit is set, but cancellation specific bits are
          set, and tested only once the mutex is reacquired, so that the
          cancellation handler can be called with the mutex locked, as required by
          the specification.
     */
 
+    err = 0;
+    
+    if (xnthread_test_flags(&cur->threadbase, XNBREAK))
+        err = EINTR;
+    else if (xnthread_test_flags(&cur->threadbase, XNTIMEO))
+        err = ETIMEDOUT;
+
     /* relock mutex */
     mutex_restore_count(mutex, count);
 
-    if (xnthread_test_flags(&cur->threadbase, XNTIMEO))
-        err = ETIMEDOUT;
-    else
-        err = 0;
-    
     /* Unbind mutex and cond, if no other thread is waiting is the job was not
        already done. */
     if (!xnsynch_nsleepers(&cond->synchbase) && cond->mutex != NULL)
@@ -175,14 +178,24 @@ static int cond_timedwait_internal (pthread_cond_t *cond,
     return err;
 }
 
-int pthread_cond_wait (pthread_cond_t *cond, pthread_mutex_t *mutex) {
-    return cond_timedwait_internal(cond, mutex, XN_INFINITE);
+int pthread_cond_wait (pthread_cond_t *cond, pthread_mutex_t *mutex)
+
+{
+    int err = pse51_cond_timedwait_internal(cond, mutex, XN_INFINITE);
+
+    return err == EINTR ? 0 : err;
 }
 
 int pthread_cond_timedwait (pthread_cond_t *cond,
 			    pthread_mutex_t *mutex,
-			    const struct timespec *abstime) {
-    return cond_timedwait_internal(cond, mutex, ts2ticks_ceil(abstime)+1);
+			    const struct timespec *abstime)
+
+{
+    int err;
+
+    err = pse51_cond_timedwait_internal(cond, mutex, ts2ticks_ceil(abstime)+1);
+
+    return err == EINTR ? 0 : err;
 }
 
 int pthread_cond_signal (pthread_cond_t *cond)

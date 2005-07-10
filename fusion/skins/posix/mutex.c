@@ -123,7 +123,7 @@ int pthread_mutex_destroy (pthread_mutex_t *mutex)
     return 0;
 }
 
-int pthread_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to)
+int pse51_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to)
 
 {
     pthread_t cur = pse51_current_thread();
@@ -190,10 +190,16 @@ int pthread_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to)
     return err;
 }
 
-int pthread_mutex_trylock_break (pthread_mutex_t *mutex, pthread_t cur)
+int pthread_mutex_trylock (pthread_mutex_t *mutex)
 
 {
+    pthread_t cur;
     int err;
+    spl_t s;
+    
+    xnlock_get_irqsave(&nklock, s);
+
+    cur = pse51_current_thread();
 
     err = mutex_trylock_internal(mutex, cur);
     
@@ -209,24 +215,6 @@ int pthread_mutex_trylock_break (pthread_mutex_t *mutex, pthread_t cur)
                 }
         }
 
-    return err;
-}
-
-int pthread_mutex_trylock (pthread_mutex_t *mutex)
-
-{
-    pthread_t cur;
-    int err;
-    spl_t s;
-    
-    xnlock_get_irqsave(&nklock, s);
-
-    cur = pse51_current_thread();
-
-    do {
-        err = pthread_mutex_trylock_break(mutex, cur);
-    } while(err == EINTR || err == EIDRM);
-
     xnlock_put_irqrestore(&nklock, s);
 
     return err;
@@ -238,7 +226,7 @@ int pthread_mutex_lock (pthread_mutex_t *mutex)
     int err;
 
     do {
-        err = pthread_mutex_timedlock_break(mutex, XN_INFINITE);
+        err = pse51_mutex_timedlock_break(mutex, XN_INFINITE);
     } while(err == EINTR || err == EIDRM);
 
     return err;
@@ -250,7 +238,7 @@ int pthread_mutex_timedlock (pthread_mutex_t *mutex, const struct timespec *to)
     int err;
 
     do {
-        err = pthread_mutex_timedlock_break(mutex, ts2ticks_ceil(to)+1);
+        err = pse51_mutex_timedlock_break(mutex, ts2ticks_ceil(to)+1);
     } while(err == EINTR || err == EIDRM);
 
     return err;

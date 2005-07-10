@@ -110,6 +110,8 @@ typedef xnpqueue_t xnsched_queue_t;
 #define sched_findpqh   findpqh
 #endif /* !CONFIG_RTAI_OPT_SCALABLE_SCHED */
 
+#define XNPOD_FATAL_BUFSZ  16384
+
 /*! 
  * \brief Scheduling information structure.
  */
@@ -229,6 +231,8 @@ extern xnlock_t nklock;
 extern u_long nkschedlat;
 
 extern u_long nktimerlat;
+
+extern char *nkmsgbuf;
 
 #define xnprintf(fmt,args...)  xnarch_printf(fmt , ##args)
 #define xnloginfo(fmt,args...) xnarch_loginfo(fmt , ##args)

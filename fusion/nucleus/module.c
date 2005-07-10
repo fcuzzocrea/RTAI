@@ -455,7 +455,17 @@ void xnpod_discard_iface_proc (struct xnskentry *iface)
 int __init __fusion_sys_init (void)
 
 {
-    int err = xnarch_init();
+    int err;
+
+    nkmsgbuf = xnarch_sysalloc(XNPOD_FATAL_BUFSZ);
+
+    if (!nkmsgbuf)
+	{
+	err = -ENOMEM;
+	goto fail;
+	}
+
+    err = xnarch_init();
 
     if (err)
 	goto fail;
@@ -550,6 +560,10 @@ void __exit __fusion_sys_exit (void)
     xnpod_delete_proc();
 #endif /* CONFIG_PROC_FS */
 #endif /* __KERNEL__ */
+
+    if (nkmsgbuf)
+	xnarch_sysfree(nkmsgbuf,XNPOD_FATAL_BUFSZ);
+
     xnloginfo("fusion core stopped.\n");
 }
 

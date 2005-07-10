@@ -2041,9 +2041,9 @@ int __rtai_hal_init (void)
 #endif
 
 #ifdef CONFIG_ADEOS_NOTHREADS
-	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-NOTHREADS, IMMEDIATE, ISOL_CPUS_MASK: %lx).\n", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-NOTHREADS, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
 #else
-	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-THREADS, IMMEDIATE, ISOL_CPUS_MASK: %lx).\n", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-THREADS, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
 #endif
 
 	return 0;

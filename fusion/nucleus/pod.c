@@ -57,9 +57,12 @@ u_long nktimerlat = 0;
 const char *xnpod_fatal_helper (const char *format, ...)
 
 {
+    const unsigned nr_cpus = xnarch_num_online_cpus();
     static char buf[256];
     xnholder_t *holder;
+    xnticks_t now;
     char sbuf[64];
+    unsigned cpu;
     va_list ap;
     spl_t s;
 
@@ -74,21 +77,40 @@ const char *xnpod_fatal_helper (const char *format, ...)
 
     setbits(nkpod->status,XNFATAL);
 
-    xnprintf("CPU  %-12s  PRI  STATUS\n","NAME");
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+        now = xnarch_get_cpu_time();
+    else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+        now = nkpod->jiffies;
 
-    holder = getheadq(&nkpod->threadq);
+    xnprintf("%-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
+	     "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
 
-    while (holder)
+    for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
-        xnthread_t *thread = link2thread(holder,glink);
-        xnprintf("%3d  %-12s %4d  0x%.8lx -- %s\n",
-                 (int)xnsched_cpu(xnthread_sched(thread)),
-                 thread->name,
-                 thread->cprio,
-                 thread->status,
-                 xnthread_symbolic_status(thread->status,
-                                          sbuf,sizeof(sbuf)));
-        holder = nextq(&nkpod->threadq,holder);
+        xnsched_t *sched = xnpod_sched_slot(cpu);
+
+        holder = getheadq(&nkpod->threadq);
+
+        while (holder)
+	    {
+	    xnthread_t *thread = link2thread(holder,glink);
+            holder = nextq(&nkpod->threadq,holder);
+
+            if (thread->sched != sched)
+                continue;
+
+	    xnprintf("%3u   %-6d %-12s %-4d  %-8Lu  0x%.8lx - %s\n",
+		     cpu,
+		     xnthread_user_pid(thread),
+		     thread->name,
+		     thread->cprio,
+		     xnthread_get_timeout(thread, now),
+		     thread->status,
+		     xnthread_symbolic_status(thread->status,
+					      sbuf,sizeof(sbuf)));
+            }
         }
 
     if (testbits(nkpod->status,XNTIMED))
@@ -2998,7 +3020,7 @@ unlock_and_exit:
        attached directly by the arch-dependent layer
        (xnarch_start_timer). */
 
-    xnintr_init(&nkclock,0,nkpod->svctable.tickhandler,0);
+    xnintr_init(&nkclock,0,nkpod->svctable.tickhandler,NULL,0);
 
     setbits(nkpod->status,XNTIMED);
 

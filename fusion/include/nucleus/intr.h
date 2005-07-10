@@ -36,6 +36,8 @@ typedef struct xnintr {
 
     xnisr_t isr;	/* !< Interrupt service routine. */
 
+    xniack_t iack;	/* !< Interrupt acknowledge routine. */
+
     unsigned long hits;	/* !< Number of receipts (since attachment). */
 
     void *cookie;	/* !< User-defined cookie value. */
@@ -55,6 +57,7 @@ void xnintr_clock_handler(void);
 int xnintr_init(xnintr_t *intr,
 		unsigned irq,
 		xnisr_t isr,
+		xniack_t iack,
 		xnflags_t flags);
 
 int xnintr_destroy(xnintr_t *intr);

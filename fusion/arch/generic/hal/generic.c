@@ -133,6 +133,7 @@ static void rthal_irq_trampoline (unsigned irq)
 /**
  * @fn int rthal_irq_request(unsigned irq,
                              void (*handler)(unsigned irq, void *cookie),
+			     int (*ackfn)(unsigned irq),
 			     void *cookie)
  *                           
  * @brief Install a real-time interrupt handler.
@@ -150,6 +151,14 @@ static void rthal_irq_trampoline (unsigned irq)
  * @param handler The address of a valid interrupt service routine.
  * This handler will be called each time the corresponding IRQ is
  * delivered, and will be passed the @a cookie value unmodified.
+ *
+ * @param ackfn The address of an optional interrupt acknowledge
+ * routine, aimed at replacing the one provided by Adeos. Only very
+ * specific situations actually require to override the default Adeos
+ * setting for this parameter, like having to acknowledge non-standard
+ * PIC hardware. @a ackfn should return a non-zero value to indicate
+ * that the interrupt has been properly acknowledged. If @a ackfn is
+ * NULL, the default Adeos routine will be used instead.
  *
  * @param cookie A user-defined opaque cookie the HAL will pass to the
  * interrupt handler as its sole argument.
@@ -175,6 +184,7 @@ static void rthal_irq_trampoline (unsigned irq)
 
 int rthal_irq_request (unsigned irq,
 		       void (*handler)(unsigned irq, void *cookie),
+		       int (*ackfn)(unsigned irq),
 		       void *cookie)
 {
     unsigned long flags;
@@ -194,7 +204,7 @@ int rthal_irq_request (unsigned irq,
     err = adeos_virtualize_irq_from(&rthal_domain,
 				    irq,
 				    &rthal_irq_trampoline,
-				    NULL,
+				    ackfn,
 				    IPIPE_DYNAMIC_MASK);
     if (!err)
 	{

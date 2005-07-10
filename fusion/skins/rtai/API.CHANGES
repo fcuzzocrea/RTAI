@@ -46,3 +46,11 @@ ___________________________________________________________________
 	taking raw data buffers instead of canned message buffers.
 
 ___________________________________________________________________
+
+0.8.2 -> 0.8.3
+
+	o Added "iack" parameter to rt_intr_create() from the
+	kernel-space API, so that a specific acknowledge routine for
+	the interrupt can be installed.
+
+___________________________________________________________________

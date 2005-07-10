@@ -237,6 +237,7 @@ int rthal_timer_request (void (*handler)(void),
 
     rthal_irq_request(RTHAL_APIC_TIMER_IPI,
 		      (rthal_irq_handler_t)handler,
+		      NULL,
 		      NULL);
 
     rthal_critical_exit(flags);
@@ -323,6 +324,7 @@ int rthal_timer_request (void (*handler)(void),
 
     err = rthal_irq_request(RTHAL_8254_IRQ,
 			    (rthal_irq_handler_t)handler,
+			    NULL,
 			    NULL);
 
     rthal_critical_exit(flags);

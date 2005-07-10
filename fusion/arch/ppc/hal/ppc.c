@@ -89,6 +89,7 @@ int rthal_timer_request (void (*handler)(void),
 
     err = rthal_irq_request(RTHAL_TIMER_IRQ,
 			    (rthal_irq_handler_t)handler,
+			    NULL,
 			    NULL);
 
     rthal_critical_exit(flags);

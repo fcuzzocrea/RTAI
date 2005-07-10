@@ -58,12 +58,6 @@
 #define rthal_hw_enable()               adeos_hw_sti()
 #define rthal_hw_disable()              adeos_hw_cli()
 
-#define rthal_linux_sti()                adeos_unstall_pipeline_from(adp_root)
-#define rthal_linux_cli()                adeos_stall_pipeline_from(adp_root)
-#define rthal_linux_local_irq_save(x)    ((x) = !!adeos_test_and_stall_pipeline_from(adp_root))
-#define rthal_linux_local_irq_restore(x) adeos_restore_pipeline_from(adp_root,x)
-#define rthal_linux_local_irq_restore_nosync(x,cpuid) adeos_restore_pipeline_nosync(adp_root,x,cpuid)
-
 #define rthal_spin_lock(lock)    adeos_spin_lock(lock)
 #define rthal_spin_unlock(lock)  adeos_spin_unlock(lock)
 
@@ -140,6 +134,7 @@ extern "C" {
 
 int rthal_irq_request(unsigned irq,
 		      void (*handler)(unsigned irq, void *cookie),
+		      int (*ackfn)(unsigned irq),
 		      void *cookie);
 
 int rthal_irq_release(unsigned irq);

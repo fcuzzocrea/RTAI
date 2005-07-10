@@ -45,6 +45,7 @@ static void xnintr_irq_handler(unsigned irq,
  * \fn int xnintr_init (xnintr_t *intr,
                         unsigned irq,
                         xnisr_t isr,
+                        xniack_t iack,
 			xnflags_t flags)
  * \brief Initialize an interrupt object.
  *
@@ -97,6 +98,14 @@ static void xnintr_irq_handler(unsigned irq,
  * interrupt context.  When called, the ISR is passed the descriptor
  * address of the interrupt object.
  *
+ * @param iack The address of an optional interrupt acknowledge
+ * routine, aimed at replacing the default one. Only very specific
+ * situations actually require to override the default setting for
+ * this parameter, like having to acknowledge non-standard PIC
+ * hardware. @a iack should return a non-zero value to indicate that
+ * the interrupt has been properly acknowledged. If @a iack is NULL,
+ * the default routine will be used instead.
+ *
  * @param flags A set of creation flags affecting the operation. Since
  * no flags are currently defined, zero should be passed for this
  * parameter.
@@ -117,10 +126,12 @@ static void xnintr_irq_handler(unsigned irq,
 int xnintr_init (xnintr_t *intr,
 		 unsigned irq,
 		 xnisr_t isr,
+		 xniack_t iack,
 		 xnflags_t flags)
 {
     intr->irq = irq;
     intr->isr = isr;
+    intr->iack = iack;
     intr->cookie = NULL;
     intr->hits = 0;
 
@@ -199,7 +210,7 @@ int xnintr_attach (xnintr_t *intr,
 {
     intr->hits = 0;
     intr->cookie = cookie;
-    return xnarch_hook_irq(intr->irq,&xnintr_irq_handler,intr);
+    return xnarch_hook_irq(intr->irq,&xnintr_irq_handler,intr->iack,intr);
 }
 
 /*! 

@@ -102,7 +102,8 @@ void __intr_pkg_cleanup(void);
 
 int rt_intr_create(RT_INTR *intr,
 		   unsigned irq,
-		   rt_isr_t isr);
+		   rt_isr_t isr,
+		   rt_iack_t iack);
 
 #ifdef __cplusplus
 }

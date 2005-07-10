@@ -188,8 +188,8 @@ int rt_uart_open (RT_UART *uart,
 
     err = rt_intr_create(&uart->intr_desc,
 			 config->port.irq,
-			 &__uart_isr);
-
+			 &__uart_isr,
+			 NULL);
     if (err)
 	goto unlock_and_exit;
 

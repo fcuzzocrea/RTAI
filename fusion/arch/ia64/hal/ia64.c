@@ -85,6 +85,7 @@ int rthal_timer_request (void (*handler)(void),
 
     if (rthal_irq_request(RTHAL_TIMER_IRQ,
                           (rthal_irq_handler_t) handler,
+			  NULL,
                           NULL) < 0)
         {
         rthal_critical_exit(flags);
@@ -93,6 +94,7 @@ int rthal_timer_request (void (*handler)(void),
 
     if (rthal_irq_request(RTHAL_HOST_TIMER_IRQ,
                           &rthal_adjust_before_relay,
+			  NULL,
                           NULL) < 0)
         {
         rthal_critical_exit(flags);

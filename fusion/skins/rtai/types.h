@@ -73,4 +73,6 @@ typedef void (*rt_alarm_t)(struct rt_alarm *alarm,
 
 typedef xnisr_t rt_isr_t;
 
+typedef xniack_t rt_iack_t;
+
 #endif /* !_RTAI_TYPES_H */

@@ -2854,7 +2854,7 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
     if (!intr)
 	return -ENOMEM;
 
-    err = rt_intr_create(intr,irq,&__rt_intr_handler);
+    err = rt_intr_create(intr,irq,&__rt_intr_handler,NULL);
 
     if (err == 0)
 	{

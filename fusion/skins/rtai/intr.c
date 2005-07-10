@@ -52,7 +52,8 @@ void __intr_pkg_cleanup (void)
 /*! 
  * \fn int rt_intr_create (RT_INTR *intr,
                            unsigned irq,
-                           rt_isr_t isr)
+                           rt_isr_t isr,
+			   rt_iack_t iack)
  * \brief Create an interrupt object from kernel space.
  *
  * Initializes and associates an interrupt object with an IRQ line. In
@@ -98,6 +99,14 @@ void __intr_pkg_cleanup (void)
  * can use it to retrieve the descriptor address of the associated
  * interrupt object through the I_DESC() macro.
  *
+ * @param iack The address of an optional interrupt acknowledge
+ * routine, aimed at replacing the default one. Only very specific
+ * situations actually require to override the default setting for
+ * this parameter, like having to acknowledge non-standard PIC
+ * hardware. @a iack should return a non-zero value to indicate that
+ * the interrupt has been properly acknowledged. If @a iack is NULL,
+ * the default routine will be used instead.
+ *
  * @return 0 is returned upon success. Otherwise:
  *
  * - -ENOMEM is returned if the system fails to get enough dynamic
@@ -125,7 +134,8 @@ void __intr_pkg_cleanup (void)
 
 int rt_intr_create (RT_INTR *intr,
 		    unsigned irq,
-		    rt_isr_t isr)
+		    rt_isr_t isr,
+		    rt_iack_t iack)
 {
     int err;
     spl_t s;
@@ -133,7 +143,7 @@ int rt_intr_create (RT_INTR *intr,
     if (xnpod_asynch_p())
 	return -EPERM;
 
-    xnintr_init(&intr->intr_base,irq,isr,0);
+    xnintr_init(&intr->intr_base,irq,isr,iack,0);
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     xnsynch_init(&intr->synch_base,XNSYNCH_PRIO);
     intr->pending = 0;

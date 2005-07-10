@@ -2,7 +2,7 @@
 
 	* base/include/asm/rtai_fpu.h: extensively revised/rewritten, 
 	  related conceptual changes and new names reflected in:
-	  asm-i386/rtai_sched.h, sched/sched.immed, sched/sys.c, 
+	  asm-i386/rtai_sched.h, sched/sched.immed, sched/sys.c, taslets.c,
 	  arch/i386/hal/hal.immed.
 	* base/include/rtai_schedcore.h: unified all definitions of 
 	  RTAI functions args from user space in a single place, 

@@ -940,6 +940,22 @@ static int __rt_timer_ns2ticks (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
+ * int __rt_timer_ns2tsc(SRTIME *ticksp, SRTIME *nsp)
+ */
+
+static int __rt_timer_ns2tsc (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    SRTIME ns, ticks;
+
+    __xn_copy_from_user(curr,&ns,(void __user *)__xn_reg_arg2(regs),sizeof(ns));
+    ticks = rt_timer_ns2tsc(ns);
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ticks,sizeof(ticks));
+
+    return 0;
+}
+
+/*
  * int __rt_timer_ticks2ns(SRTIME *nsp, SRTIME *ticksp)
  */
 
@@ -950,6 +966,22 @@ static int __rt_timer_ticks2ns (struct task_struct *curr, struct pt_regs *regs)
 
     __xn_copy_from_user(curr,&ticks,(void __user *)__xn_reg_arg2(regs),sizeof(ticks));
     ns = rt_timer_ticks2ns(ticks);
+    __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ns,sizeof(ns));
+
+    return 0;
+}
+
+/*
+ * int __rt_timer_tsc2ns(SRTIME *nsp, SRTIME *ticksp)
+ */
+
+static int __rt_timer_tsc2ns (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    SRTIME ticks, ns;
+
+    __xn_copy_from_user(curr,&ticks,(void __user *)__xn_reg_arg2(regs),sizeof(ticks));
+    ns = rt_timer_tsc2ns(ticks);
     __xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ns,sizeof(ns));
 
     return 0;
@@ -3478,6 +3510,8 @@ static xnsysent_t __systab[] = {
     [__rtai_pipe_stream ] = { &__rt_pipe_stream, __xn_exec_any },
     [__rtai_misc_get_io_region ] = { &__rt_misc_get_io_region, __xn_exec_lostage },
     [__rtai_misc_put_io_region ] = { &__rt_misc_put_io_region, __xn_exec_lostage },
+    [__rtai_timer_ns2tsc ] = { &__rt_timer_ns2tsc, __xn_exec_any },
+    [__rtai_timer_tsc2ns ] = { &__rt_timer_tsc2ns, __xn_exec_any },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)

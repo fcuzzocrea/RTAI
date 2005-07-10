@@ -38,7 +38,7 @@ int ignore = 5;
 
 static inline void add_histogram(long addval)
 {
-       long inabs = rt_timer_ticks2ns(addval >= 0 ? addval : -addval) / 1000;  /* usec steps */
+       long inabs = rt_timer_tsc2ns(addval >= 0 ? addval : -addval) / 1000;  /* usec steps */
        histogram[inabs < HISTOGRAM_CELLS ? inabs : HISTOGRAM_CELLS - 1]++;
 }
 
@@ -63,7 +63,9 @@ void event(void *cookie)
                return;
        }
 
-       err = rt_task_set_periodic(NULL, TM_NOW, sampling_period);
+       err = rt_task_set_periodic(NULL,
+                                  TM_NOW,
+                                  rt_timer_ns2ticks(sampling_period));
        if (err) {
                fprintf(stderr,"switch: failed to set periodic, code %d\n", err);
                return;
@@ -140,9 +142,9 @@ void worker(void *cookie)
                       "lat min", "lat avg", "lat max", "lost");
 
        printf("RTD|%12Ld|%12Ld|%12Ld|%12lld\n",
-                      rt_timer_ticks2ns(minjitter),
-                      rt_timer_ticks2ns(avgjitter),
-                      rt_timer_ticks2ns(maxjitter), lost);
+                      rt_timer_tsc2ns(minjitter),
+                      rt_timer_tsc2ns(avgjitter),
+                      rt_timer_tsc2ns(maxjitter), lost);
 
        if (do_histogram)
                dump_histogram();

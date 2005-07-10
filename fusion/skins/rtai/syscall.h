@@ -113,6 +113,8 @@
 #define __rtai_pipe_stream        87
 #define __rtai_misc_get_io_region 88
 #define __rtai_misc_put_io_region 89
+#define __rtai_timer_ns2tsc       90
+#define __rtai_timer_tsc2ns       91
 
 struct rt_arg_bulk {
 

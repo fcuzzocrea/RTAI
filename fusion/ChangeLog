@@ -1,5 +1,14 @@
 2005-07-10  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* skins/rtai/timer.c (rt_timer_ticks2ns, rt_timer_ns2ticks):
+	Change behaviour with regard to timer mode. Calling 
+	rt_task_sleep(rt_timer_ns2ticks(ns)) will sleep ns nanoseconds
+	whatever the timer mode.
+
+	(rt_timer_ns2tsc, rt_timer_tsc2ns): Add these two new functions to
+	get the behaviour rt_timer_ticks2ns and rt_timer_ns2ticks
+	previously had when timer was in aperiodic mode.
+
 	* skin/posix/lib/cond.c skins/posix/cond.c 
 	(pse51_cond_timedwait_internal): Allow EINTR to be returned to
 	user-space wrappers.

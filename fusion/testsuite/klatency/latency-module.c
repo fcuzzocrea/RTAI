@@ -35,9 +35,9 @@ void latency (void *cookie)
     RT_PIPE_MSG *msg;
     int  err, count;
 
-    period = rt_timer_ns2ticks(task_period_ns);
+    period = rt_timer_ns2tsc(task_period_ns);
     expected = rt_timer_tsc();
-    err = rt_task_set_periodic(NULL,TM_NOW,task_period_ns);
+    err = rt_task_set_periodic(NULL,TM_NOW,rt_timer_ns2ticks(task_period_ns));
 
     if (err)
 	{
@@ -78,9 +78,9 @@ void latency (void *cookie)
 	    }
 
 	s = (struct rtai_latency_stat *)P_MSGPTR(msg);
-	s->minjitter = rt_timer_ticks2ns(minjitter);
-	s->maxjitter = rt_timer_ticks2ns(maxjitter);
-	s->avgjitter = rt_timer_ticks2ns(avgjitter);
+	s->minjitter = rt_timer_tsc2ns(minjitter);
+	s->maxjitter = rt_timer_tsc2ns(maxjitter);
+	s->avgjitter = rt_timer_tsc2ns(avgjitter);
 	s->overrun = overrun;
 
 	/* Do not care if the user-space side of the pipe is not yet

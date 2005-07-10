@@ -87,6 +87,30 @@ SRTIME rt_timer_ticks2ns (SRTIME ticks)
     return ns;
 }
 
+SRTIME rt_timer_ns2tsc (SRTIME ns)
+
+{
+    RTIME ticks;
+
+    XENOMAI_SKINCALL2(__rtai_muxid,
+		      __rtai_timer_ns2tsc,
+		      &ticks,
+		      &ns);
+    return ticks;
+}
+
+SRTIME rt_timer_tsc2ns (SRTIME ticks)
+
+{
+    SRTIME ns;
+
+    XENOMAI_SKINCALL2(__rtai_muxid,
+		      __rtai_timer_tsc2ns,
+		      &ns,
+		      &ticks);
+    return ns;
+}
+
 int rt_timer_inquire (RT_TIMER_INFO *info)
 
 {

@@ -50,7 +50,7 @@ int bucketsize = 1000;  /* default = 1000ns, -B <size> to override */
 static inline void add_histogram (long *histogram, long addval)
 {
     /* bucketsize steps */
-    long inabs = rt_timer_ticks2ns(addval >= 0 ? addval : -addval) / bucketsize;
+    long inabs = rt_timer_tsc2ns(addval >= 0 ? addval : -addval) / bucketsize;
     histogram[inabs < histogram_size ? inabs : histogram_size-1]++;
 }
 
@@ -68,10 +68,10 @@ void latency (void *cookie)
         }
 
     nsamples = ONE_BILLION / sampling_period;
-    period = rt_timer_ns2ticks(sampling_period);
+    period = rt_timer_ns2tsc(sampling_period);
     expected = rt_timer_tsc() + 2 * period; /* start time: two periods
                                                from now. */
-    start = rt_timer_ticks2ns(expected);
+    start = rt_timer_ns2ticks(rt_timer_tsc2ns(expected));
     err = rt_task_set_periodic(NULL,start,sampling_period);
 
     if (err)
@@ -170,11 +170,11 @@ void display (void *cookie)
             }
 
         /* convert jitters to nanoseconds. */
-        minj = rt_timer_ticks2ns(minjitter);
-        gminj = rt_timer_ticks2ns(gminjitter);
-        avgj = rt_timer_ticks2ns(avgjitter);
-        maxj = rt_timer_ticks2ns(maxjitter);
-        gmaxj = rt_timer_ticks2ns(gmaxjitter);
+        minj = rt_timer_tsc2ns(minjitter);
+        gminj = rt_timer_tsc2ns(gminjitter);
+        avgj = rt_timer_tsc2ns(avgjitter);
+        maxj = rt_timer_tsc2ns(maxjitter);
+        gmaxj = rt_timer_tsc2ns(gmaxjitter);
 
         if (!quiet)
             {
@@ -292,9 +292,9 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
     if (!test_duration) test_duration = actual_duration;
     gavgjitter /= (test_loops > 1 ? test_loops : 2)-1;
 
-    gminj = rt_timer_ticks2ns(gminjitter);
-    gmaxj = rt_timer_ticks2ns(gmaxjitter);
-    gavgj = rt_timer_ticks2ns(gavgjitter);
+    gminj = rt_timer_tsc2ns(gminjitter);
+    gmaxj = rt_timer_tsc2ns(gmaxjitter);
+    gavgj = rt_timer_tsc2ns(gavgjitter);
 
     printf("---|------------|------------|------------|--------|-------------------------\n"
            "RTS|%12ld|%12ld|%12ld|%8ld|    %.2ld:%.2ld:%.2ld/%.2d:%.2d:%.2d\n",

@@ -53,4 +53,11 @@ ___________________________________________________________________
 	kernel-space API, so that a specific acknowledge routine for
 	the interrupt can be installed.
 
+        o Fix rt_timer_ns2ticks and rt_timer_ticks2ns behaviour, 
+        so that calling rt_task_sleep(rt_timer_ns2ticks(2000000000))
+        will sleep two seconds whatever the timer mode.
+
+        o Added rt_timer_ns2tsc and rt_timer_tsc2ns to convert 
+        between nanoseconds and values returned by rt_timer_tsc.
+
 ___________________________________________________________________

@@ -42,8 +42,7 @@
  *
  * @param ns The count of nanoseconds to convert.
  *
- * @return The corresponding value expressed in internal clock ticks
- * (see note).
+ * @return The corresponding value expressed in internal clock ticks.
  *
  * Environments:
  *
@@ -55,23 +54,41 @@
  * - User-space task
  *
  * Rescheduling: never.
- *
- * @note This service is sensitive to the current operation mode of
- * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are expressed as periodic jiffies. In
- * oneshot mode or if the system timer has not been started, clock
- * ticks are expressed as CPU ticks (e.g. TSC value).
  */
 
 SRTIME rt_timer_ns2ticks (SRTIME ns)
 
 {
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
+	return xnpod_ns2ticks(ns);
+}
+
+/**
+ * @fn SRTIME rt_timer_ns2tsc(SRTIME ns)
+ * @brief Convert nanoseconds to local CPU clock ticks.
+ *
+ * Convert a count of nanoseconds to local CPU clock ticks.
+ * This routine operates on signed nanosecond values.
+ *
+ * @param ns The count of nanoseconds to convert.
+ *
+ * @return The corresponding value expressed in CPU clock ticks.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
+SRTIME rt_timer_ns2tsc (SRTIME ns)
+
+{
 	return xnarch_ns_to_tsc(ns);
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	return ns >= 0 ? xnpod_ns2ticks(ns) : -xnpod_ns2ticks(-ns);
 }
 
 /*!
@@ -81,8 +98,7 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
  * Convert a count of internal clock ticks to nanoseconds.
  * This routine operates on signed tick values.
  *
- * @param ticks The count of internal clock ticks to convert (see
- * note).
+ * @param ticks The count of loca CPU clock ticks to convert.
  *
  * @return The corresponding value expressed in nanoseconds.
  *
@@ -96,23 +112,41 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
  * - User-space task
  *
  * Rescheduling: never.
- *
- * @note This service is sensitive to the current operation mode of
- * the system timer, as defined by the rt_timer_start() service. In
- * periodic mode, clock ticks are interpreted as periodic jiffies. In
- * oneshot mode or if the system timer has not been started, clock
- * ticks are interpreted as CPU ticks (e.g. TSC value).
  */
 
 SRTIME rt_timer_ticks2ns (SRTIME ticks)
 
 {
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
+	return xnpod_ticks2ns(ticks);
+}
+
+/*!
+ * @fn SRTIME rt_timer_tsc2ns(SRTIME ticks)
+ * @brief Convert local CPU clock ticks to nanoseconds.
+ *
+ * Convert a local CPU clock ticks to nanoseconds.
+ * This routine operates on signed tick values.
+ *
+ * @param ticks The count of internal clock ticks to convert.
+ *
+ * @return The corresponding value expressed in nanoseconds.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: never.
+ */
+
+SRTIME rt_timer_tsc2ns (SRTIME ticks)
+
+{
 	return xnarch_tsc_to_ns(ticks);
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	return ticks >= 0 ? xnpod_ticks2ns(ticks) : -xnpod_ticks2ns(-ticks);
 }
 
 /*!
@@ -351,6 +385,8 @@ void rt_timer_stop (void)
 
 EXPORT_SYMBOL(rt_timer_ns2ticks);
 EXPORT_SYMBOL(rt_timer_ticks2ns);
+EXPORT_SYMBOL(rt_timer_ns2tsc);
+EXPORT_SYMBOL(rt_timer_tsc2ns);
 EXPORT_SYMBOL(rt_timer_inquire);
 EXPORT_SYMBOL(rt_timer_read);
 EXPORT_SYMBOL(rt_timer_tsc);

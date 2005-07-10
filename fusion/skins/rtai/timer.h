@@ -43,6 +43,10 @@ SRTIME rt_timer_ns2ticks(SRTIME ns);
 
 SRTIME rt_timer_ticks2ns(SRTIME ticks);
 
+SRTIME rt_timer_ns2tsc(SRTIME ns);
+
+SRTIME rt_timer_tsc2ns(SRTIME ticks);
+
 int rt_timer_inquire(RT_TIMER_INFO *info);
 
 RTIME rt_timer_read(void);

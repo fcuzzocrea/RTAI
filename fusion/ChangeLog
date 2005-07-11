@@ -1,5 +1,8 @@
 2005-07-11  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* GNUmakefile.am (devices): If not root, try using sudo to install
+	devices, if sudo fails, issue a big fat warning and exit.
+
 	* **/*.[ch]: Upgrade comments for Debian sarge version of
 	doxygen. "fn" tag arguments need to be put on one line.
 

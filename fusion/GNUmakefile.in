@@ -288,6 +288,7 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 ACLOCAL_AMFLAGS = -I config/autoconf
+SUDO = sudo
 SUBDIRS = \
 	include \
 	nucleus \
@@ -785,7 +786,22 @@ dist-hook:
 	test -e $(srcdir)/doc || rm -rf $(distdir)/doc
 
 dev devices:
-	if test \! "x`type -t sudo`" = x; then sudo=sudo; else sudo=; fi; \
+	@if test x`id -u` = x0; then \
+	   sudo=; \
+	else if test \! "x`type $(SUDO)`" = x; then \
+	   echo "sudo found (sudo is $(SUDO)), testing it."; \
+	   $(SUDO) true && sudo="$(SUDO)" || { \
+echo '*** Warning: you are not super-user and sudo does not work, real-time\
+devices'; \
+echo '*** nodes will not be created.'; \
+echo '*** If you do not create these devices by hand, RTAI test programs will\
+not'; \
+echo '*** work.'; \
+echo '*** To create these devices please run "make devices" with super-user'; \
+echo '*** privileges.'; \
+	     exit 0; }; \
+	   fi; \
+	fi; \
 	$(mkinstalldirs) $(DESTDIR)/dev; \
 	for n in `seq 0 @RTAI_PIPE_NRDEV@`; do \
 	   f="$(DESTDIR)/dev/rtp$$n"; \

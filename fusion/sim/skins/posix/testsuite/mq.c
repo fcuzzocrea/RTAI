@@ -19,7 +19,7 @@
 #include <posix_test.h>
 
 struct mq_attr attr;
-pse51_mqd_t qd;
+mqd_t qd;
 pthread_t tid_writer, tid_reader;
 
 static const char *tunes[] = {
@@ -41,7 +41,7 @@ static const char *tunes[] = {
     "Engines Of Creation"
 };
 
-void qdflags_setbits(pse51_mqd_t qd, unsigned flags)
+void qdflags_setbits(mqd_t qd, unsigned flags)
 {
     struct mq_attr attr;
 
@@ -52,7 +52,7 @@ void qdflags_setbits(pse51_mqd_t qd, unsigned flags)
     TEST_ASSERT_OK(mq_setattr(qd, &attr, NULL));
 }
 
-void qdflags_clrbits(pse51_mqd_t qd, unsigned flags)
+void qdflags_clrbits(mqd_t qd, unsigned flags)
 {
     struct mq_attr attr;
 
@@ -67,11 +67,11 @@ void *writer(void *cookie)
 {
     struct sched_param par;
     unsigned i;
-    pse51_mqd_t qdf;
+    mqd_t qdf;
 
     qdf = mq_open("mq-test", O_RDONLY);
 
-    TEST_ASSERT(qdf != (pse51_mqd_t) -1);
+    TEST_ASSERT(qdf != (mqd_t) -1);
 
     TEST_ASSERT(-1 == mq_send(qdf, tunes[0], strlen(tunes[0])+1, 0) && errno == EPERM);
     TEST_ASSERT(0 == mq_close(qdf));
@@ -119,13 +119,13 @@ void *reader(void *cookie)
     struct sched_param par;
     struct mq_attr attr;
     unsigned i, prev;
-    pse51_mqd_t qdf;
+    mqd_t qdf;
     char buffer [42];
     ssize_t len;
 
     qdf = mq_open("mq-test", O_WRONLY);
 
-    TEST_ASSERT(qdf != (pse51_mqd_t) -1);
+    TEST_ASSERT(qdf != (mqd_t) -1);
 
     TEST_ASSERT(-1 == mq_receive(qdf, buffer, sizeof(buffer), 0) && errno == EPERM);
     TEST_ASSERT(0 == mq_close(qdf));
@@ -199,14 +199,14 @@ void *root_thread(void *cookie)
 
     TEST_START(0);
 
-    TEST_ASSERT((pse51_mqd_t) -1 == mq_open("mq-test", O_RDWR) && errno == ENOENT);
+    TEST_ASSERT((mqd_t) -1 == mq_open("mq-test", O_RDWR) && errno == ENOENT);
 
     TEST_ASSERT(-1 == mq_unlink("mq-test") && errno == ENOENT);
 
     attr.mq_maxmsg = 16;
     attr.mq_msgsize = 42;
 
-    TEST_ASSERT((pse51_mqd_t) -1 != (qd = mq_open("mq-test", O_RDWR | O_CREAT, 0, &attr)));
+    TEST_ASSERT((mqd_t) -1 != (qd = mq_open("mq-test", O_RDWR | O_CREAT, 0, &attr)));
 
     TEST_ASSERT(mq_getattr(qd, &gattr) == 0 &&
                 gattr.mq_msgsize == attr.mq_msgsize &&
@@ -227,7 +227,7 @@ void *root_thread(void *cookie)
 
     TEST_ASSERT_OK(mq_unlink("mq-test"));
 
-    TEST_ASSERT((pse51_mqd_t) -1 == mq_open("mq-test", O_RDWR) && errno == ENOENT);
+    TEST_ASSERT((mqd_t) -1 == mq_open("mq-test", O_RDWR) && errno == ENOENT);
 
     TEST_CHECK_SEQUENCE(SEQ("writer", 1),
                         SEQ("reader", 1),

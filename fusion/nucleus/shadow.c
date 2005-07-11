@@ -1355,6 +1355,12 @@ static void linux_task_exit (adevinfo_t *evinfo)
     xnltt_log_event(rtai_ev_shadowexit,thread->name);
 }
 
+void xnshadow_send_sig (xnthread_t *thread, int sig)
+
+{
+    schedule_linux_call(LO_SIGNAL_REQ,xnthread_user_task(thread),sig);
+}
+
 static inline void reset_shield (xnthread_t *thread)
 
 {
@@ -1400,13 +1406,20 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 	newrprio = thread->cprio;
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
-        if (testbits(thread->status,XNTHREAD_BLOCK_BITS & ~XNRELAX))
+	{
+	xnflags_t status = thread->status & ~XNRELAX;
+
+        if (testbits(status,XNTHREAD_BLOCK_BITS))
+	    {
+	    show_stack(xnthread_user_task(thread),NULL);
             xnpod_fatal("blocked thread %s[%d] rescheduled?! (status=0x%lx, prev=%s[%d])",
 			thread->name,
 			next->pid,
-			thread->status,
+			status,
 			prev->comm,
 			prev->pid);
+	    }
+	}
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
 	reset_shield(thread);

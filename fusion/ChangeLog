@@ -1,5 +1,8 @@
 2005-07-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (xnshadow_send_sig): Sends a signal to the
+	Linux task mated to a given real-time shadow.
+
 	* arch/i386/patches: Upgrade to r12c4.
 
 2005-07-11  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

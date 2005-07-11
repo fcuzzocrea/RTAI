@@ -3756,7 +3756,7 @@ diff -uNrp linux-2.6.11/arch/i386/mm/ioremap.c linux-2.6.11-adeos/arch/i386/mm/i
  		dir++;
 diff -uNrp linux-2.6.11/include/asm-i386/adeos.h linux-2.6.11-adeos/include/asm-i386/adeos.h
 --- linux-2.6.11/include/asm-i386/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.11-adeos/include/asm-i386/adeos.h	2005-07-02 13:07:36.000000000 +0200
++++ linux-2.6.11-adeos/include/asm-i386/adeos.h	2005-07-11 15:24:48.000000000 +0200
 @@ -0,0 +1,514 @@
 +/*
 + *   include/asm-i386/adeos.h
@@ -3788,9 +3788,9 @@ diff -uNrp linux-2.6.11/include/asm-i386/adeos.h linux-2.6.11-adeos/include/asm-
 +#include <linux/list.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING   "r12c3/x86"
++#define ADEOS_ARCH_STRING   "r12c4/x86"
 +#define ADEOS_MAJOR_NUMBER  12
-+#define ADEOS_MINOR_NUMBER  3
++#define ADEOS_MINOR_NUMBER  4
 +
 +extern int adp_pipelined;
 +
@@ -6121,8 +6121,8 @@ diff -uNrp linux-2.6.11/kernel/panic.c linux-2.6.11-adeos/kernel/panic.c
  	smp_send_stop();
 diff -uNrp linux-2.6.11/kernel/printk.c linux-2.6.11-adeos/kernel/printk.c
 --- linux-2.6.11/kernel/printk.c	2005-03-02 08:38:33.000000000 +0100
-+++ linux-2.6.11-adeos/kernel/printk.c	2005-06-28 14:02:54.000000000 +0200
-@@ -512,6 +512,64 @@ static void zap_locks(void)
++++ linux-2.6.11-adeos/kernel/printk.c	2005-07-11 15:22:54.000000000 +0200
+@@ -512,6 +512,66 @@ static void zap_locks(void)
   * then changes console_loglevel may break. This is because console_loglevel
   * is inspected when the actual printing occurs.
   */
@@ -6138,6 +6138,8 @@ diff -uNrp linux-2.6.11/kernel/printk.c linux-2.6.11-adeos/kernel/printk.c
 +{
 +	char *p = __adeos_printk_buf;
 +	int out = 0, len;
++
++	clear_bit(ADEOS_PPRINTK_FLAG,&adp_root->flags);
 +
 +	while (out < __adeos_printk_fill) {
 +		len = strlen(p) + 1;
@@ -6187,7 +6189,7 @@ diff -uNrp linux-2.6.11/kernel/printk.c linux-2.6.11-adeos/kernel/printk.c
  asmlinkage int printk(const char *fmt, ...)
  {
  	va_list args;
-@@ -523,6 +581,7 @@ asmlinkage int printk(const char *fmt, .
+@@ -523,6 +583,7 @@ asmlinkage int printk(const char *fmt, .
  
  	return r;
  }

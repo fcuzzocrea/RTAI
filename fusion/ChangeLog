@@ -1,3 +1,7 @@
+2005-07-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to r12c4.
+
 2005-07-11  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* GNUmakefile.am (devices): If not root, try using sudo to install

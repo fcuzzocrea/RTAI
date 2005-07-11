@@ -190,6 +190,7 @@ diff -uNrp linux-2.6.12/Makefile linux-2.6.12-adeos/Makefile
  vmlinux-dirs	:= $(patsubst %/,%,$(filter %/, $(init-y) $(init-m) \
  		     $(core-y) $(core-m) $(drivers-y) $(drivers-m) \
  		     $(net-y) $(net-m) $(libs-y) $(libs-m)))
+Binary files linux-2.6.12/__vmlinux and linux-2.6.12-adeos/__vmlinux differ
 diff -uNrp linux-2.6.12/adeos/Kconfig linux-2.6.12-adeos/adeos/Kconfig
 --- linux-2.6.12/adeos/Kconfig	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.12-adeos/adeos/Kconfig	2005-04-15 17:56:13.000000000 +0200
@@ -3773,7 +3774,7 @@ diff -uNrp linux-2.6.12/arch/i386/mm/ioremap.c linux-2.6.12-adeos/arch/i386/mm/i
  	flush_tlb_all();
 diff -uNrp linux-2.6.12/include/asm-i386/adeos.h linux-2.6.12-adeos/include/asm-i386/adeos.h
 --- linux-2.6.12/include/asm-i386/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.12-adeos/include/asm-i386/adeos.h	2005-07-02 13:07:36.000000000 +0200
++++ linux-2.6.12-adeos/include/asm-i386/adeos.h	2005-07-11 15:24:48.000000000 +0200
 @@ -0,0 +1,514 @@
 +/*
 + *   include/asm-i386/adeos.h
@@ -3805,9 +3806,9 @@ diff -uNrp linux-2.6.12/include/asm-i386/adeos.h linux-2.6.12-adeos/include/asm-
 +#include <linux/list.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING   "r12c3/x86"
++#define ADEOS_ARCH_STRING   "r12c4/x86"
 +#define ADEOS_MAJOR_NUMBER  12
-+#define ADEOS_MINOR_NUMBER  3
++#define ADEOS_MINOR_NUMBER  4
 +
 +extern int adp_pipelined;
 +
@@ -6135,8 +6136,8 @@ diff -uNrp linux-2.6.12/kernel/panic.c linux-2.6.12-adeos/kernel/panic.c
  	smp_send_stop();
 diff -uNrp linux-2.6.12/kernel/printk.c linux-2.6.12-adeos/kernel/printk.c
 --- linux-2.6.12/kernel/printk.c	2005-06-17 21:48:29.000000000 +0200
-+++ linux-2.6.12-adeos/kernel/printk.c	2005-06-28 14:02:35.000000000 +0200
-@@ -502,6 +502,64 @@ __setup("time", printk_time_setup);
++++ linux-2.6.12-adeos/kernel/printk.c	2005-07-11 15:23:02.000000000 +0200
+@@ -502,6 +502,66 @@ __setup("time", printk_time_setup);
   * is inspected when the actual printing occurs.
   */
  
@@ -6152,6 +6153,8 @@ diff -uNrp linux-2.6.12/kernel/printk.c linux-2.6.12-adeos/kernel/printk.c
 +{
 +	char *p = __adeos_printk_buf;
 +	int out = 0, len;
++
++	clear_bit(ADEOS_PPRINTK_FLAG,&adp_root->flags);
 +
 +	while (out < __adeos_printk_fill) {
 +		len = strlen(p) + 1;
@@ -6201,7 +6204,7 @@ diff -uNrp linux-2.6.12/kernel/printk.c linux-2.6.12-adeos/kernel/printk.c
  asmlinkage int printk(const char *fmt, ...)
  {
  	va_list args;
-@@ -513,6 +571,7 @@ asmlinkage int printk(const char *fmt, .
+@@ -513,6 +573,7 @@ asmlinkage int printk(const char *fmt, .
  
  	return r;
  }

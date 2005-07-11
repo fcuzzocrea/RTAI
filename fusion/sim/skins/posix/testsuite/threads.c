@@ -109,7 +109,8 @@ void *root_thread(void *cookie)
 
     TEST_MARK();                /* 7 */
 
-    /* Check round-robin scheduling. */
+#ifndef CONFIG_RTAI_HW_APERIODIC_TIMER
+    /* Check round-robin scheduling. Only works with period of 10 ms. */
     TEST_ASSERT_OK(pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED));
     TEST_ASSERT_OK(pthread_getschedparam(pthread_self(), &i, &p));
     TEST_ASSERT_OK(pthread_attr_setschedparam(&attr, &p));
@@ -126,12 +127,14 @@ void *root_thread(void *cookie)
     TEST_ASSERT(pthread_join(child2, &tmp) == 0 && tmp == &child2);
 
     TEST_MARK();
-
+#endif
+    
     TEST_CHECK_SEQUENCE(SEQ("root", 2),
                         SEQ("detached", 1),
                         SEQ("joinable", 1),
                         SEQ("detached", 1),
                         SEQ("joinable", 1),
+#ifndef CONFIG_RTAI_HW_APERIODIC_TIMER
                         SEQ("root", 2),
                         SEQ("slicer1", 1),
                         SEQ("slicer2", 1),
@@ -142,6 +145,7 @@ void *root_thread(void *cookie)
                         SEQ("slicer1", 1),
                         SEQ("slicer2", 1),
                         SEQ("root", 1),
+#endif
                         END_SEQ);
 
     TEST_FINISH();

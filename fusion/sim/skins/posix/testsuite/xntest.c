@@ -47,8 +47,8 @@ static inline xnholder_t *gettailq (xnqueue_t *qslot) {
     return holder;
 }
 
-/* 15 seconds */
-#define test_timeout 15000
+/* 30 seconds */
+#define test_timeout 30000
 
 static inline int strings_differ(const char *str1, const char *str2)
 {

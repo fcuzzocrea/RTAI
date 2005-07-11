@@ -40,7 +40,7 @@ void TaskTest(void)
 		rTempo = rt_timer_tsc() ;
 		if (st_rOldTempo == 0L) /* first time */
 			st_rOldTempo = rTempo ;
-		lTempo = rt_timer_ticks2ns(rTempo - st_rOldTempo);
+		lTempo = rt_timer_tsc2ns(rTempo - st_rOldTempo);
 		printf("Time = %ld ms. (%ld ns.)\n", lTempo / 1000000, lTempo);
 		st_rOldTempo = rTempo ;
 

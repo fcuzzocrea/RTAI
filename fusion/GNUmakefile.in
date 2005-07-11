@@ -789,7 +789,7 @@ dev devices:
 	@if test x`id -u` = x0; then \
 	   sudo=; \
 	else if test \! "x`type $(SUDO)`" = x; then \
-	   echo "sudo found (sudo is $(SUDO)), testing it."; \
+	   echo "sudo found (sudo is $(SUDO)), testing it..."; \
 	   $(SUDO) true && sudo="$(SUDO)" || { \
 echo '*** Warning: you are not super-user and sudo does not work, real-time\
 devices'; \
@@ -800,6 +800,7 @@ echo '*** work.'; \
 echo '*** To create these devices please run "make devices" with super-user'; \
 echo '*** privileges.'; \
 	     exit 0; }; \
+	   echo sudo is working.; \
 	   fi; \
 	fi; \
 	$(mkinstalldirs) $(DESTDIR)/dev; \
@@ -812,6 +813,9 @@ echo '*** privileges.'; \
 	if test \! -c /dev/rtheap; then \
 	  $$sudo mknod -m 666 /dev/rtheap c 10 254; \
 	fi
+
+install-nodev:
+	$(MAKE) SUDO=false install
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(pkgdatadir)/config-$(PACKAGE)-$(VERSION)

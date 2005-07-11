@@ -144,14 +144,25 @@ above will put the RTAI binary distribution under
 /mnt/target/usr/realtime.
 
 WARNING: running "make install" is required to run several standard
-RTAI programs correctly. RTAI 3.x enforces the actual split between
+RTAI programs correctly. RTAI/Fusion enforces the actual split between
 the source distribution tree, the build tree where RTAI is going to be
 compiled, and the final installation directory where RTAI programs can
 be run eventually. In any case, you should only rely on the
 installation directory contents to run RTAI programs.
 
-NOTE: Do not pay attention to the "*** Warning" messages appearing on
-module compilation output. They are harmless and will be fixed later.
+When installing RTAI/Fusion, a few devices nodes are created, using the
+"mknod" command. This command requires root privileges, so "make install"
+will try hard to get these privileges, using the sudo command if necessary. 
+If the "sudo" command is installed but will not grant root privileges to
+the current user, the devices nodes are not be created, a warning is 
+issued, and the installation will continue normally.
+
+To avoid the creation of these nodes, use :
+
+$ make install-nodev
+
+But be careful: RTAI tests and examples WILL NOT WORK if these devices 
+nodes do not exit.
 
 1.4 Compiling parts of the tree
 -------------------------------

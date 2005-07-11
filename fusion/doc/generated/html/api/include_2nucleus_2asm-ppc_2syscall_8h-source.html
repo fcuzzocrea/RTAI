@@ -143,64 +143,65 @@
 00133 <span class="preprocessor">} while(0)</span>
 00134 <span class="preprocessor"></span><span class="preprocessor">#define __xn_put_user(task,src,dstP)           __put_user(src,dstP)</span>
 00135 <span class="preprocessor"></span><span class="preprocessor">#define __xn_get_user(task,dst,srcP)           __get_user(dst,srcP)</span>
-00136 <span class="preprocessor"></span>
-00137 <span class="preprocessor">#define __xn_range_ok(task,addr,size) \</span>
-00138 <span class="preprocessor">        ((addr) &lt;= (task)-&gt;thread.fs.seg \</span>
-00139 <span class="preprocessor">         &amp;&amp; ((size) == 0 || (size) - 1 &lt;= (task)-&gt;thread.fs.seg - (addr)))</span>
-00140 <span class="preprocessor"></span>
-00141 <span class="preprocessor">#define __xn_access_ok(task,type,addr,size)  __xn_range_ok(task,(unsigned long)addr,size)</span>
-00142 <span class="preprocessor"></span>
-00143 <span class="comment">/* Purposedly used inlines and not macros for the following routines</span>
-00144 <span class="comment">   so that we don't risk spurious side-effects on the value arg. */</span>
-00145 
-00146 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_success_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
-00147     __xn_reg_rval(regs) = v;
-00148 }
-00149 
-00150 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_error_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
-00151     <span class="comment">/* We currently never set the SO bit for marking errors, even if</span>
-00152 <span class="comment">     * we always test it upon syscall return. */</span>
-00153     __xn_reg_rval(regs) = v;
-00154 }
-00155 
-00156 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_status_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
-00157     __xn_reg_rval(regs) = v;
-00158 }
-00159 
-00160 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> __xn_interrupted_p(<span class="keyword">struct</span> pt_regs *regs) {
-00161     <span class="keywordflow">return</span> __xn_reg_rval(regs) == -EINTR;
-00162 }
-00163 
-00164 <span class="preprocessor">#define __xn_canonicalize_args(task,regs) do { } while(0)</span>
-00165 <span class="preprocessor"></span>
-00166 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
-00167 
-00168 <span class="preprocessor">#define CONFIG_RTAI_HW_DIRECT_TSC 1</span>
-00169 <span class="preprocessor"></span>
-00170 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __xn_rdtsc (<span class="keywordtype">void</span>)
-00171 
-00172 {
-00173     <span class="keyword">union </span>{
-00174         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
-00175         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> v[2];
-00176     } u;
-00177     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __tbu;
-00178 
-00179     __asm__ __volatile__ (<span class="stringliteral">"1: mftbu %0\n"</span>
-00180                           <span class="stringliteral">"mftb %1\n"</span>
-00181                           <span class="stringliteral">"mftbu %2\n"</span>
-00182                           <span class="stringliteral">"cmpw %2,%0\n"</span>
-00183                           <span class="stringliteral">"bne- 1b\n"</span>
-00184                           :<span class="stringliteral">"=r"</span> (u.v[0]),
-00185                           <span class="stringliteral">"=r"</span> (u.v[1]),
-00186                           <span class="stringliteral">"=r"</span> (__tbu));
-00187     <span class="keywordflow">return</span> u.t;
-00188 }
-00189 
-00190 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00191 
-00192 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:14 2005 for RTAI Fusion API by&nbsp;
+00136 <span class="preprocessor"></span><span class="preprocessor">#define __xn_strncpy_from_user(task,dstP,srcP,n)    __strncpy_from_user(dstP,srcP,n)</span>
+00137 <span class="preprocessor"></span>
+00138 <span class="preprocessor">#define __xn_range_ok(task,addr,size) \</span>
+00139 <span class="preprocessor">        ((addr) &lt;= (task)-&gt;thread.fs.seg \</span>
+00140 <span class="preprocessor">         &amp;&amp; ((size) == 0 || (size) - 1 &lt;= (task)-&gt;thread.fs.seg - (addr)))</span>
+00141 <span class="preprocessor"></span>
+00142 <span class="preprocessor">#define __xn_access_ok(task,type,addr,size)  __xn_range_ok(task,(unsigned long)addr,size)</span>
+00143 <span class="preprocessor"></span>
+00144 <span class="comment">/* Purposedly used inlines and not macros for the following routines</span>
+00145 <span class="comment">   so that we don't risk spurious side-effects on the value arg. */</span>
+00146 
+00147 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_success_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
+00148     __xn_reg_rval(regs) = v;
+00149 }
+00150 
+00151 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_error_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
+00152     <span class="comment">/* We currently never set the SO bit for marking errors, even if</span>
+00153 <span class="comment">     * we always test it upon syscall return. */</span>
+00154     __xn_reg_rval(regs) = v;
+00155 }
+00156 
+00157 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_status_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
+00158     __xn_reg_rval(regs) = v;
+00159 }
+00160 
+00161 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> __xn_interrupted_p(<span class="keyword">struct</span> pt_regs *regs) {
+00162     <span class="keywordflow">return</span> __xn_reg_rval(regs) == -EINTR;
+00163 }
+00164 
+00165 <span class="preprocessor">#define __xn_canonicalize_args(task,regs) do { } while(0)</span>
+00166 <span class="preprocessor"></span>
+00167 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
+00168 
+00169 <span class="preprocessor">#define CONFIG_RTAI_HW_DIRECT_TSC 1</span>
+00170 <span class="preprocessor"></span>
+00171 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __xn_rdtsc (<span class="keywordtype">void</span>)
+00172 
+00173 {
+00174     <span class="keyword">union </span>{
+00175         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
+00176         <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> v[2];
+00177     } u;
+00178     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> __tbu;
+00179 
+00180     __asm__ __volatile__ (<span class="stringliteral">"1: mftbu %0\n"</span>
+00181                           <span class="stringliteral">"mftb %1\n"</span>
+00182                           <span class="stringliteral">"mftbu %2\n"</span>
+00183                           <span class="stringliteral">"cmpw %2,%0\n"</span>
+00184                           <span class="stringliteral">"bne- 1b\n"</span>
+00185                           :<span class="stringliteral">"=r"</span> (u.v[0]),
+00186                           <span class="stringliteral">"=r"</span> (u.v[1]),
+00187                           <span class="stringliteral">"=r"</span> (__tbu));
+00188     <span class="keywordflow">return</span> u.t;
+00189 }
+00190 
+00191 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00192 
+00193 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SYSCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:42 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

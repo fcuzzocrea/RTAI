@@ -27,7 +27,7 @@ Interrupt management.
 
 <p>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__intr.html#ga2">xnintr_init</a> (xnintr_t *intr, unsigned irq, xnisr_t isr, xnflags_t flags)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__intr.html#ga2">xnintr_init</a> (xnintr_t *intr, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Initialize an interrupt object.  <a href="#ga2"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__intr.html#ga3">xnintr_destroy</a> (xnintr_t *intr)</td></tr>
@@ -347,6 +347,12 @@ Rescheduling: never.     </td>
         <tr>
           <td class="md" nowrap align="right"></td>
           <td class="md"></td>
+          <td class="md" nowrap>xniack_t&nbsp;</td>
+          <td class="mdname" nowrap> <em>iack</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
           <td class="md" nowrap>xnflags_t&nbsp;</td>
           <td class="mdname" nowrap> <em>flags</em></td>
         </tr>
@@ -384,6 +390,7 @@ A count of interrupt receipts is tracked into the interrupt descriptor, and rese
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of a interrupt object descriptor the nucleus will use to store the object-specific data. This descriptor must always be valid while the object is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>irq</em>&nbsp;</td><td>The hardware interrupt channel associated with the interrupt object. This value is architecture-dependent. An interrupt object must then be attached to the hardware interrupt vector using the <a class="el" href="group__intr.html#ga4">xnintr_attach()</a> service for the associated IRQs to be directed to this object.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>isr</em>&nbsp;</td><td>The address of a valid low-level interrupt service routine if this parameter is non-zero. This handler will be called each time the corresponding IRQ is delivered on behalf of an interrupt context. When called, the ISR is passed the descriptor address of the interrupt object.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>iack</em>&nbsp;</td><td>The address of an optional interrupt acknowledge routine, aimed at replacing the default one. Only very specific situations actually require to override the default setting for this parameter, like having to acknowledge non-standard PIC hardware. <em>iack</em> should return a non-zero value to indicate that the interrupt has been properly acknowledged. If <em>iack</em> is NULL, the default routine will be used instead.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>flags</em>&nbsp;</td><td>A set of creation flags affecting the operation. Since no flags are currently defined, zero should be passed for this parameter.</td></tr>
   </table>
 </dl>
@@ -396,7 +403,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:14 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:43 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

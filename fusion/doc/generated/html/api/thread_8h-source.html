@@ -211,29 +211,46 @@
 00201 <span class="preprocessor"></span><span class="preprocessor">#define xnthread_get_magic(thread)         ((thread)-&gt;magic)</span>
 00202 <span class="preprocessor"></span><span class="preprocessor">#define xnthread_signaled_p(thread)        ((thread)-&gt;signals != 0)</span>
 00203 <span class="preprocessor"></span><span class="preprocessor">#define xnthread_user_task(thread)         xnarch_user_task(xnthread_archtcb(thread))</span>
-00204 <span class="preprocessor"></span>
-00205 <span class="preprocessor">#ifdef __cplusplus</span>
-00206 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00207 <span class="preprocessor">#endif</span>
-00208 <span class="preprocessor"></span>
-00209 <span class="keywordtype">int</span> xnthread_init(xnthread_t *thread,
-00210                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
-00211                   <span class="keywordtype">int</span> prio,
-00212                   xnflags_t flags,
-00213                   <span class="keywordtype">unsigned</span> stacksize);
-00214 
-00215 <span class="keywordtype">void</span> xnthread_cleanup_tcb(xnthread_t *thread);
+00204 <span class="preprocessor"></span><span class="preprocessor">#define xnthread_user_pid(thread) \</span>
+00205 <span class="preprocessor">    (testbits((thread)-&gt;status,XNROOT) ? 0 : xnarch_user_pid(xnthread_archtcb(thread)))</span>
+00206 <span class="preprocessor"></span>
+00207 <span class="preprocessor">#ifdef __cplusplus</span>
+00208 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00209 <span class="preprocessor">#endif</span>
+00210 <span class="preprocessor"></span>
+00211 <span class="keywordtype">int</span> xnthread_init(xnthread_t *thread,
+00212                   <span class="keyword">const</span> <span class="keywordtype">char</span> *name,
+00213                   <span class="keywordtype">int</span> prio,
+00214                   xnflags_t flags,
+00215                   <span class="keywordtype">unsigned</span> stacksize);
 00216 
-00217 <span class="keywordtype">char</span> *xnthread_symbolic_status(xnflags_t status, <span class="keywordtype">char</span> *buf, <span class="keywordtype">int</span> size);
+00217 <span class="keywordtype">void</span> xnthread_cleanup_tcb(xnthread_t *thread);
 00218 
-00219 <span class="preprocessor">#ifdef __cplusplus</span>
-00220 <span class="preprocessor"></span>}
-00221 <span class="preprocessor">#endif</span>
-00222 <span class="preprocessor"></span>
-00223 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00219 <span class="keywordtype">char</span> *xnthread_symbolic_status(xnflags_t status, <span class="keywordtype">char</span> *buf, <span class="keywordtype">int</span> size);
+00220 
+00221 <span class="keyword">static</span> <span class="keyword">inline</span> xnticks_t xnthread_get_timeout(xnthread_t *thread, xnticks_t now)
+00222 {
+00223     xnticks_t timeout;
 00224 
-00225 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_THREAD_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:14 2005 for RTAI Fusion API by&nbsp;
+00225     <span class="keywordflow">if</span> (!testbits(thread-&gt;status,XNDELAY))
+00226         return 0LL;
+00227 
+00228     timeout = (xntimer_get_date(&amp;thread-&gt;rtimer) ? : xntimer_get_date(&amp;thread-&gt;ptimer));
+00229 
+00230     if (timeout &lt;= now)
+00231         return 1;
+00232 
+00233     return timeout - now;
+00234 }
+00235 
+00236 #ifdef __cplusplus
+00237 }
+00238 #endif
+00239 
+00240 #endif <span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00241 
+00242 #endif <span class="comment">/* !_RTAI_NUCLEUS_THREAD_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:43 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

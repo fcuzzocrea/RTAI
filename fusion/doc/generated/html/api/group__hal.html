@@ -65,7 +65,7 @@ Real-time hardware abstraction layer used by the real-time nucleus.
 
 <p>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__hal.html#ga46">rthal_irq_request</a> (unsigned irq, void(*handler)(unsigned irq, void *cookie), void *cookie)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__hal.html#ga46">rthal_irq_request</a> (unsigned irq, void(*handler)(unsigned irq, void *cookie), int(*ackfn)(unsigned irq), void *cookie)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Install a real-time interrupt handler.  <a href="#ga46"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__hal.html#ga47">rthal_irq_release</a> (unsigned irq)</td></tr>
@@ -695,6 +695,12 @@ This service can be called from:<p>
         <tr>
           <td class="md" nowrap align="right"></td>
           <td class="md"></td>
+          <td class="md" nowrap>int(*)(unsigned irq)&nbsp;</td>
+          <td class="mdname" nowrap> <em>ackfn</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
           <td class="md" nowrap>void *&nbsp;</td>
           <td class="mdname" nowrap> <em>cookie</em></td>
         </tr>
@@ -722,6 +728,7 @@ Installs an interrupt handler for the specified IRQ line by requesting the appro
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>irq</em>&nbsp;</td><td>The hardware interrupt channel to install a handler on. This value is architecture-dependent.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>handler</em>&nbsp;</td><td>The address of a valid interrupt service routine. This handler will be called each time the corresponding IRQ is delivered, and will be passed the <em>cookie</em> value unmodified.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>ackfn</em>&nbsp;</td><td>The address of an optional interrupt acknowledge routine, aimed at replacing the one provided by Adeos. Only very specific situations actually require to override the default Adeos setting for this parameter, like having to acknowledge non-standard PIC hardware. <em>ackfn</em> should return a non-zero value to indicate that the interrupt has been properly acknowledged. If <em>ackfn</em> is NULL, the default Adeos routine will be used instead.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>cookie</em>&nbsp;</td><td>A user-defined opaque cookie the HAL will pass to the interrupt handler as its sole argument.</td></tr>
   </table>
 </dl>
@@ -920,7 +927,7 @@ x86-specific HAL services.     </td>
 PowerPC-specific HAL services.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:16 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:44 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

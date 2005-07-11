@@ -46,49 +46,52 @@
 00036 
 00037     xnisr_t isr;        <span class="comment">/* !&lt; Interrupt service routine. */</span>
 00038 
-00039     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> hits; <span class="comment">/* !&lt; Number of receipts (since attachment). */</span>
+00039     xniack_t iack;      <span class="comment">/* !&lt; Interrupt acknowledge routine. */</span>
 00040 
-00041     <span class="keywordtype">void</span> *cookie;       <span class="comment">/* !&lt; User-defined cookie value. */</span>
+00041     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> hits; <span class="comment">/* !&lt; Number of receipts (since attachment). */</span>
 00042 
-00043 } xnintr_t;
+00043     <span class="keywordtype">void</span> *cookie;       <span class="comment">/* !&lt; User-defined cookie value. */</span>
 00044 
-00045 <span class="keyword">extern</span> xnintr_t nkclock;
+00045 } xnintr_t;
 00046 
-00047 <span class="preprocessor">#ifdef __cplusplus</span>
-00048 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00049 <span class="preprocessor">#endif</span>
-00050 <span class="preprocessor"></span>
-00051 <span class="keywordtype">void</span> xnintr_clock_handler(<span class="keywordtype">void</span>);
-00052 
-00053     <span class="comment">/* Public interface. */</span>
+00047 <span class="keyword">extern</span> xnintr_t nkclock;
+00048 
+00049 <span class="preprocessor">#ifdef __cplusplus</span>
+00050 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00051 <span class="preprocessor">#endif</span>
+00052 <span class="preprocessor"></span>
+00053 <span class="keywordtype">void</span> xnintr_clock_handler(<span class="keywordtype">void</span>);
 00054 
-00055 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga2">xnintr_init</a>(xnintr_t *intr,
-00056                 <span class="keywordtype">unsigned</span> irq,
-00057                 xnisr_t isr,
-00058                 xnflags_t flags);
-00059 
-00060 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga3">xnintr_destroy</a>(xnintr_t *intr);
-00061 
-00062 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga4">xnintr_attach</a>(xnintr_t *intr,
-00063                   <span class="keywordtype">void</span> *cookie);
+00055     <span class="comment">/* Public interface. */</span>
+00056 
+00057 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga2">xnintr_init</a>(xnintr_t *intr,
+00058                 <span class="keywordtype">unsigned</span> irq,
+00059                 xnisr_t isr,
+00060                 xniack_t iack,
+00061                 xnflags_t flags);
+00062 
+00063 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga3">xnintr_destroy</a>(xnintr_t *intr);
 00064 
-00065 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga5">xnintr_detach</a>(xnintr_t *intr);
-00066 
-00067 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga6">xnintr_enable</a>(xnintr_t *intr);
-00068 
-00069 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga7">xnintr_disable</a>(xnintr_t *intr);
-00070     
-00071 xnarch_cpumask_t <a class="code" href="group__intr.html#ga8">xnintr_affinity</a>(xnintr_t *intr,
-00072                                  xnarch_cpumask_t cpumask);
-00073 
-00074 <span class="preprocessor">#ifdef __cplusplus</span>
-00075 <span class="preprocessor"></span>}
-00076 <span class="preprocessor">#endif</span>
-00077 <span class="preprocessor"></span>
-00078 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
-00079 
-00080 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_INTR_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:14 2005 for RTAI Fusion API by&nbsp;
+00065 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga4">xnintr_attach</a>(xnintr_t *intr,
+00066                   <span class="keywordtype">void</span> *cookie);
+00067 
+00068 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga5">xnintr_detach</a>(xnintr_t *intr);
+00069 
+00070 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga6">xnintr_enable</a>(xnintr_t *intr);
+00071 
+00072 <span class="keywordtype">int</span> <a class="code" href="group__intr.html#ga7">xnintr_disable</a>(xnintr_t *intr);
+00073     
+00074 xnarch_cpumask_t <a class="code" href="group__intr.html#ga8">xnintr_affinity</a>(xnintr_t *intr,
+00075                                  xnarch_cpumask_t cpumask);
+00076 
+00077 <span class="preprocessor">#ifdef __cplusplus</span>
+00078 <span class="preprocessor"></span>}
+00079 <span class="preprocessor">#endif</span>
+00080 <span class="preprocessor"></span>
+00081 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */</span>
+00082 
+00083 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_NUCLEUS_INTR_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:43 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

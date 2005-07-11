@@ -26,7 +26,7 @@ Collaboration diagram for Interrupt management services.:<center><table><tr><td>
 
 <p>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga3">rt_intr_create</a> (RT_INTR *intr, unsigned irq, rt_isr_t isr)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga3">rt_intr_create</a> (RT_INTR *intr, unsigned irq, rt_isr_t isr, rt_iack_t iack)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an interrupt object from kernel space.  <a href="#ga3"></a><br></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga4">rt_intr_delete</a> (RT_INTR *intr)</td></tr>
@@ -206,7 +206,13 @@ Rescheduling: possible.     </td>
           <td class="md" nowrap align="right"></td>
           <td class="md"></td>
           <td class="md" nowrap>rt_isr_t&nbsp;</td>
-          <td class="mdname" nowrap> <em>isr</em></td>
+          <td class="mdname" nowrap> <em>isr</em>, </td>
+        </tr>
+        <tr>
+          <td class="md" nowrap align="right"></td>
+          <td class="md"></td>
+          <td class="md" nowrap>rt_iack_t&nbsp;</td>
+          <td class="mdname" nowrap> <em>iack</em></td>
         </tr>
         <tr>
           <td class="md"></td>
@@ -242,6 +248,7 @@ A count of interrupt receipts is tracked into the interrupt descriptor, and rese
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of a interrupt object descriptor RTAI will use to store the object-specific data. This descriptor must always be valid while the object is active therefore it must be allocated in permanent memory.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>irq</em>&nbsp;</td><td>The hardware interrupt channel associated with the interrupt object. This value is architecture-dependent.</td></tr>
     <tr><td valign="top"></td><td valign="top"><em>isr</em>&nbsp;</td><td>The address of a valid interrupt service routine in kernel space. This handler will be called each time the corresponding IRQ is delivered on behalf of an interrupt context. A pointer to an internal information is passed to the routine which can use it to retrieve the descriptor address of the associated interrupt object through the I_DESC() macro.</td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>iack</em>&nbsp;</td><td>The address of an optional interrupt acknowledge routine, aimed at replacing the default one. Only very specific situations actually require to override the default setting for this parameter, like having to acknowledge non-standard PIC hardware. <em>iack</em> should return a non-zero value to indicate that the interrupt has been properly acknowledged. If <em>iack</em> is NULL, the default routine will be used instead.</td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
@@ -572,11 +579,11 @@ This service can be called from:<p>
 <li>User-space task</li></ul>
 <p>
 Rescheduling: always, unless an interrupt is already pending on entry.<p>
-<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga6">rt_timer_start()</a> service. In periodic mode, clock ticks are interpreted as periodic jiffies. In oneshot mode, clock ticks are interpreted as nanoseconds. </dd></dl>
+<dl compact><dt><b>Note:</b></dt><dd>This service is sensitive to the current operation mode of the system timer, as defined by the <a class="el" href="group__native__timer.html#ga8">rt_timer_start()</a> service. In periodic mode, clock ticks are interpreted as periodic jiffies. In oneshot mode, clock ticks are interpreted as nanoseconds. </dd></dl>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:17 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:46 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

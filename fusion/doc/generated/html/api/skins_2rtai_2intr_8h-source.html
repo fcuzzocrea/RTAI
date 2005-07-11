@@ -92,64 +92,65 @@
 00102 
 00103 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga3">rt_intr_create</a>(RT_INTR *intr,
 00104                    <span class="keywordtype">unsigned</span> irq,
-00105                    rt_isr_t isr);
-00106 
-00107 <span class="preprocessor">#ifdef __cplusplus</span>
-00108 <span class="preprocessor"></span>}
-00109 <span class="preprocessor">#endif</span>
-00110 <span class="preprocessor"></span>
-00111 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
-00112 
-00113 <span class="keyword">typedef</span> RT_INTR_PLACEHOLDER RT_INTR;
-00114 
-00115 <span class="preprocessor">#ifdef __cplusplus</span>
-00116 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00117 <span class="preprocessor">#endif</span>
-00118 <span class="preprocessor"></span>
-00119 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga10">rt_intr_bind</a>(RT_INTR *intr,
-00120                  <span class="keywordtype">unsigned</span> irq);
-00121 
-<a name="l00122"></a><a class="code" href="group__interrupt.html#ga11">00122</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga11">rt_intr_unbind</a> (RT_INTR *intr)
-00123 
-00124 {
-00125     intr-&gt;opaque = RT_HANDLE_INVALID;
-00126     <span class="keywordflow">return</span> 0;
-00127 }
-00128 
-00129 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga3">rt_intr_create</a>(RT_INTR *intr,
-00130                    <span class="keywordtype">unsigned</span> irq,
-00131                    <span class="keywordtype">int</span> mode);
-00132 
-00133 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga9">rt_intr_wait</a>(RT_INTR *intr,
-00134                  RTIME timeout);
-00135 
-00136 <span class="preprocessor">#ifdef __cplusplus</span>
-00137 <span class="preprocessor"></span>}
-00138 <span class="preprocessor">#endif</span>
-00139 <span class="preprocessor"></span>
-00140 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
-00141 
-00142 <span class="preprocessor">#ifdef __cplusplus</span>
-00143 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
-00144 <span class="preprocessor">#endif</span>
-00145 <span class="preprocessor"></span>
-00146 <span class="comment">/* Public interface. */</span>
-00147 
-00148 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga4">rt_intr_delete</a>(RT_INTR *intr);
-00149 
-00150 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga5">rt_intr_enable</a>(RT_INTR *intr);
-00151 
-00152 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga6">rt_intr_disable</a>(RT_INTR *intr);
-00153 
-00154 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga7">rt_intr_inquire</a>(RT_INTR *intr,
-00155                     RT_INTR_INFO *info);
-00156 
-00157 <span class="preprocessor">#ifdef __cplusplus</span>
-00158 <span class="preprocessor"></span>}
-00159 <span class="preprocessor">#endif</span>
-00160 <span class="preprocessor"></span>
-00161 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_INTR_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:14 2005 for RTAI Fusion API by&nbsp;
+00105                    rt_isr_t isr,
+00106                    rt_iack_t iack);
+00107 
+00108 <span class="preprocessor">#ifdef __cplusplus</span>
+00109 <span class="preprocessor"></span>}
+00110 <span class="preprocessor">#endif</span>
+00111 <span class="preprocessor"></span>
+00112 <span class="preprocessor">#else </span><span class="comment">/* !(__KERNEL__ || __RTAI_SIM__) */</span>
+00113 
+00114 <span class="keyword">typedef</span> RT_INTR_PLACEHOLDER RT_INTR;
+00115 
+00116 <span class="preprocessor">#ifdef __cplusplus</span>
+00117 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00118 <span class="preprocessor">#endif</span>
+00119 <span class="preprocessor"></span>
+00120 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga10">rt_intr_bind</a>(RT_INTR *intr,
+00121                  <span class="keywordtype">unsigned</span> irq);
+00122 
+<a name="l00123"></a><a class="code" href="group__interrupt.html#ga11">00123</a> <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga11">rt_intr_unbind</a> (RT_INTR *intr)
+00124 
+00125 {
+00126     intr-&gt;opaque = RT_HANDLE_INVALID;
+00127     <span class="keywordflow">return</span> 0;
+00128 }
+00129 
+00130 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga3">rt_intr_create</a>(RT_INTR *intr,
+00131                    <span class="keywordtype">unsigned</span> irq,
+00132                    <span class="keywordtype">int</span> mode);
+00133 
+00134 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga9">rt_intr_wait</a>(RT_INTR *intr,
+00135                  RTIME timeout);
+00136 
+00137 <span class="preprocessor">#ifdef __cplusplus</span>
+00138 <span class="preprocessor"></span>}
+00139 <span class="preprocessor">#endif</span>
+00140 <span class="preprocessor"></span>
+00141 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ || __RTAI_SIM__ */</span>
+00142 
+00143 <span class="preprocessor">#ifdef __cplusplus</span>
+00144 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00145 <span class="preprocessor">#endif</span>
+00146 <span class="preprocessor"></span>
+00147 <span class="comment">/* Public interface. */</span>
+00148 
+00149 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga4">rt_intr_delete</a>(RT_INTR *intr);
+00150 
+00151 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga5">rt_intr_enable</a>(RT_INTR *intr);
+00152 
+00153 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga6">rt_intr_disable</a>(RT_INTR *intr);
+00154 
+00155 <span class="keywordtype">int</span> <a class="code" href="group__interrupt.html#ga7">rt_intr_inquire</a>(RT_INTR *intr,
+00156                     RT_INTR_INFO *info);
+00157 
+00158 <span class="preprocessor">#ifdef __cplusplus</span>
+00159 <span class="preprocessor"></span>}
+00160 <span class="preprocessor">#endif</span>
+00161 <span class="preprocessor"></span>
+00162 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_INTR_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:43 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

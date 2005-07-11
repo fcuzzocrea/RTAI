@@ -286,90 +286,91 @@
 00276 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_hook_irq (<span class="keywordtype">unsigned</span> irq,
 00277                                    <span class="keywordtype">void</span> (*handler)(<span class="keywordtype">unsigned</span> irq,
 00278                                                    <span class="keywordtype">void</span> *cookie),
-00279                                    <span class="keywordtype">void</span> *cookie)
-00280 {
-00281     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga46">rthal_irq_request</a>(irq,handler,cookie);
-00282 }
-00283 
-00284 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_release_irq (<span class="keywordtype">unsigned</span> irq)
-00285 
-00286 {
-00287     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga47">rthal_irq_release</a>(irq);
-00288 }
-00289 
-00290 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_enable_irq (<span class="keywordtype">unsigned</span> irq)
-00291 
-00292 {
-00293     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga48">rthal_irq_enable</a>(irq);
-00294 }
-00295 
-00296 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_disable_irq (<span class="keywordtype">unsigned</span> irq)
-00297 
-00298 {
-00299     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga49">rthal_irq_disable</a>(irq);
-00300 }
-00301 
-00302 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_chain_irq (<span class="keywordtype">unsigned</span> irq)
-00303 
-00304 {
-00305     <a class="code" href="group__hal.html#ga52">rthal_irq_host_pend</a>(irq);
-00306 }
-00307 
-00308 <span class="keyword">static</span> <span class="keyword">inline</span> cpumask_t xnarch_set_irq_affinity (<span class="keywordtype">unsigned</span> irq,
-00309                                                  xnarch_cpumask_t affinity)
-00310 {
-00311     <span class="keywordflow">return</span> adeos_set_irq_affinity(irq,affinity);
-00312 }
-00313 
-00314 <span class="preprocessor">#endif </span><span class="comment">/* XENO_INTR_MODULE */</span>
-00315 
-00316 <span class="preprocessor">#ifdef XENO_HEAP_MODULE</span>
-00317 <span class="preprocessor"></span>
-00318 <span class="preprocessor">#include &lt;linux/mm.h&gt;</span>
-00319 
-00320 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_heapcb (xnarch_heapcb_t *hcb)
-00321 
-00322 {
-00323     atomic_set(&amp;hcb-&gt;numaps,0);
-00324     hcb-&gt;kmflags = 0;
-00325     hcb-&gt;heapbase = NULL;
-00326 }
-00327 
-00328 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_remap_page_range(<span class="keyword">struct</span> vm_area_struct *vma,
-00329                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> uvaddr,
-00330                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> paddr,
-00331                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> size,
-00332                                           pgprot_t prot)
-00333 {
-00334 <span class="preprocessor">#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,10)</span>
-00335 <span class="preprocessor"></span>    <span class="keywordflow">return</span> remap_pfn_range(vma,uvaddr,paddr &gt;&gt; PAGE_SHIFT,size,prot);
-00336 <span class="preprocessor">#else </span><span class="comment">/* Linux version &lt; 2.6.10 */</span>
-00337     <span class="keywordflow">return</span> remap_page_range(vma,uvaddr,paddr,size,prot);
-00338 <span class="preprocessor">#endif </span><span class="comment">/* Linux version &gt;= 2.6.10 */</span>
-00339 }
-00340 
-00341 <span class="preprocessor">#endif </span><span class="comment">/* XENO_HEAP_MODULE */</span>
-00342 
-00343 <span class="preprocessor">#ifdef __cplusplus</span>
-00344 <span class="preprocessor"></span>}
-00345 <span class="preprocessor">#endif</span>
-00346 <span class="preprocessor"></span>
-00347 <span class="comment">/* Dashboard and graph control. */</span>
-00348 <span class="preprocessor">#define XNARCH_DECL_DISPLAY_CONTEXT();</span>
-00349 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_init_display_context(obj)</span>
-00350 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_create_display(obj,name,tag)</span>
-00351 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_delete_display(obj)</span>
-00352 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_post_graph(obj,state)</span>
-00353 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_post_graph_if(obj,state,cond)</span>
-00354 <span class="preprocessor"></span>
-00355 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
-00356 
-00357 <span class="preprocessor">#include &lt;nucleus/system.h&gt;</span>
-00358 
-00359 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00360 
-00361 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_GENERIC_SYSTEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:14 2005 for RTAI Fusion API by&nbsp;
+00279                                    <span class="keywordtype">int</span> (*ackfn)(<span class="keywordtype">unsigned</span> irq),
+00280                                    <span class="keywordtype">void</span> *cookie)
+00281 {
+00282     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga46">rthal_irq_request</a>(irq,handler,ackfn,cookie);
+00283 }
+00284 
+00285 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_release_irq (<span class="keywordtype">unsigned</span> irq)
+00286 
+00287 {
+00288     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga47">rthal_irq_release</a>(irq);
+00289 }
+00290 
+00291 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_enable_irq (<span class="keywordtype">unsigned</span> irq)
+00292 
+00293 {
+00294     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga48">rthal_irq_enable</a>(irq);
+00295 }
+00296 
+00297 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_disable_irq (<span class="keywordtype">unsigned</span> irq)
+00298 
+00299 {
+00300     <span class="keywordflow">return</span> <a class="code" href="group__hal.html#ga49">rthal_irq_disable</a>(irq);
+00301 }
+00302 
+00303 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_chain_irq (<span class="keywordtype">unsigned</span> irq)
+00304 
+00305 {
+00306     <a class="code" href="group__hal.html#ga52">rthal_irq_host_pend</a>(irq);
+00307 }
+00308 
+00309 <span class="keyword">static</span> <span class="keyword">inline</span> cpumask_t xnarch_set_irq_affinity (<span class="keywordtype">unsigned</span> irq,
+00310                                                  xnarch_cpumask_t affinity)
+00311 {
+00312     <span class="keywordflow">return</span> adeos_set_irq_affinity(irq,affinity);
+00313 }
+00314 
+00315 <span class="preprocessor">#endif </span><span class="comment">/* XENO_INTR_MODULE */</span>
+00316 
+00317 <span class="preprocessor">#ifdef XENO_HEAP_MODULE</span>
+00318 <span class="preprocessor"></span>
+00319 <span class="preprocessor">#include &lt;linux/mm.h&gt;</span>
+00320 
+00321 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> xnarch_init_heapcb (xnarch_heapcb_t *hcb)
+00322 
+00323 {
+00324     atomic_set(&amp;hcb-&gt;numaps,0);
+00325     hcb-&gt;kmflags = 0;
+00326     hcb-&gt;heapbase = NULL;
+00327 }
+00328 
+00329 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> xnarch_remap_page_range(<span class="keyword">struct</span> vm_area_struct *vma,
+00330                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> uvaddr,
+00331                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> paddr,
+00332                                           <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> size,
+00333                                           pgprot_t prot)
+00334 {
+00335 <span class="preprocessor">#if LINUX_VERSION_CODE &gt;= KERNEL_VERSION(2,6,10)</span>
+00336 <span class="preprocessor"></span>    <span class="keywordflow">return</span> remap_pfn_range(vma,uvaddr,paddr &gt;&gt; PAGE_SHIFT,size,prot);
+00337 <span class="preprocessor">#else </span><span class="comment">/* Linux version &lt; 2.6.10 */</span>
+00338     <span class="keywordflow">return</span> remap_page_range(vma,uvaddr,paddr,size,prot);
+00339 <span class="preprocessor">#endif </span><span class="comment">/* Linux version &gt;= 2.6.10 */</span>
+00340 }
+00341 
+00342 <span class="preprocessor">#endif </span><span class="comment">/* XENO_HEAP_MODULE */</span>
+00343 
+00344 <span class="preprocessor">#ifdef __cplusplus</span>
+00345 <span class="preprocessor"></span>}
+00346 <span class="preprocessor">#endif</span>
+00347 <span class="preprocessor"></span>
+00348 <span class="comment">/* Dashboard and graph control. */</span>
+00349 <span class="preprocessor">#define XNARCH_DECL_DISPLAY_CONTEXT();</span>
+00350 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_init_display_context(obj)</span>
+00351 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_create_display(obj,name,tag)</span>
+00352 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_delete_display(obj)</span>
+00353 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_post_graph(obj,state)</span>
+00354 <span class="preprocessor"></span><span class="preprocessor">#define xnarch_post_graph_if(obj,state,cond)</span>
+00355 <span class="preprocessor"></span>
+00356 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
+00357 
+00358 <span class="preprocessor">#include &lt;nucleus/system.h&gt;</span>
+00359 
+00360 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00361 
+00362 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_GENERIC_SYSTEM_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:42 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

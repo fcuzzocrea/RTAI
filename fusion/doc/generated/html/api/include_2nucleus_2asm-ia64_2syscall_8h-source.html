@@ -154,56 +154,57 @@
 00144 <span class="preprocessor">    if (__copy_to_user_inatomic(dstP,srcP,n)) \</span>
 00145 <span class="preprocessor">        ; \</span>
 00146 <span class="preprocessor">} while(0)</span>
-00147 <span class="preprocessor"></span><span class="preprocessor">#define __xn_put_user(task,src,dstP)  __put_user(src,dstP)</span>
-00148 <span class="preprocessor"></span><span class="preprocessor">#define __xn_get_user(task,dst,srcP)  __get_user(dst,srcP)</span>
-00149 <span class="preprocessor"></span>
-00150 <span class="preprocessor">#define __xn_get_fs(task) (((task)-&gt;thread_info)-&gt;addr_limit)</span>
-00151 <span class="preprocessor"></span>
-00152 <span class="preprocessor">#define __xn_access_ok(task,type,addr,size) \</span>
-00153 <span class="preprocessor">    __access_ok((addr),(size), __xn_get_fs(task))</span>
-00154 <span class="preprocessor"></span>
-00155 <span class="comment">/* Purposedly used inlines and not macros for the following routines</span>
-00156 <span class="comment">   so that we don't risk spurious side-effects on the value arg. */</span>
-00157 
-00158 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_success_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
-00159     __xn_reg_err(regs) = 0;
-00160     __xn_reg_rval(regs) = v;
-00161 }
-00162 
-00163 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_error_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
-00164     __xn_reg_err(regs) = -1;
-00165     __xn_reg_rval(regs) = -v;
-00166 }
-00167 
-00168 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_status_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
-00169     <span class="keywordflow">if</span>(v &lt; 0)
-00170         __xn_error_return(regs, v);
-00171     <span class="keywordflow">else</span>
-00172         __xn_success_return(regs, v);
-00173 }
-00174 
-00175 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> __xn_interrupted_p(<span class="keyword">struct</span> pt_regs *regs) {
-00176     <span class="keywordflow">return</span> __xn_reg_err(regs) == -1 &amp;&amp; __xn_reg_rval(regs) == -EINTR;
-00177 }
-00178 
-00179 <span class="preprocessor">#define __xn_canonicalize_args(task,regs) do { } while(0)</span>
-00180 <span class="preprocessor"></span>
-00181 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
-00182 
-00183 <span class="preprocessor">#define CONFIG_RTAI_HW_DIRECT_TSC 1</span>
-00184 <span class="preprocessor"></span>
-00185 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __xn_rdtsc (<span class="keywordtype">void</span>)
-00186 
-00187 {
-00188     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
-00189     __asm__ __volatile__(<span class="stringliteral">"mov %0=ar.itc;;"</span> : <span class="stringliteral">"=r"</span>(t) :: <span class="stringliteral">"memory"</span>);
-00190     <span class="keywordflow">return</span> t;
-00191 }
-00192 
-00193 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00194 
-00195 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_IA64_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Jul 3 11:03:14 2005 for RTAI Fusion API by&nbsp;
+00147 <span class="preprocessor"></span><span class="preprocessor">#define __xn_put_user(task,src,dstP)          __put_user(src,dstP)</span>
+00148 <span class="preprocessor"></span><span class="preprocessor">#define __xn_get_user(task,dst,srcP)          __get_user(dst,srcP)</span>
+00149 <span class="preprocessor"></span><span class="preprocessor">#define __xn_strncpy_from_user(task,dstP,srcP,n)   __strncpy_from_user(dstP,srcP,n)</span>
+00150 <span class="preprocessor"></span>
+00151 <span class="preprocessor">#define __xn_get_fs(task) (((task)-&gt;thread_info)-&gt;addr_limit)</span>
+00152 <span class="preprocessor"></span>
+00153 <span class="preprocessor">#define __xn_access_ok(task,type,addr,size) \</span>
+00154 <span class="preprocessor">    __access_ok((addr),(size), __xn_get_fs(task))</span>
+00155 <span class="preprocessor"></span>
+00156 <span class="comment">/* Purposedly used inlines and not macros for the following routines</span>
+00157 <span class="comment">   so that we don't risk spurious side-effects on the value arg. */</span>
+00158 
+00159 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_success_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
+00160     __xn_reg_err(regs) = 0;
+00161     __xn_reg_rval(regs) = v;
+00162 }
+00163 
+00164 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_error_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
+00165     __xn_reg_err(regs) = -1;
+00166     __xn_reg_rval(regs) = -v;
+00167 }
+00168 
+00169 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> __xn_status_return(<span class="keyword">struct</span> pt_regs *regs, <span class="keywordtype">int</span> v) {
+00170     <span class="keywordflow">if</span>(v &lt; 0)
+00171         __xn_error_return(regs, v);
+00172     <span class="keywordflow">else</span>
+00173         __xn_success_return(regs, v);
+00174 }
+00175 
+00176 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> __xn_interrupted_p(<span class="keyword">struct</span> pt_regs *regs) {
+00177     <span class="keywordflow">return</span> __xn_reg_err(regs) == -1 &amp;&amp; __xn_reg_rval(regs) == -EINTR;
+00178 }
+00179 
+00180 <span class="preprocessor">#define __xn_canonicalize_args(task,regs) do { } while(0)</span>
+00181 <span class="preprocessor"></span>
+00182 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
+00183 
+00184 <span class="preprocessor">#define CONFIG_RTAI_HW_DIRECT_TSC 1</span>
+00185 <span class="preprocessor"></span>
+00186 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __xn_rdtsc (<span class="keywordtype">void</span>)
+00187 
+00188 {
+00189     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
+00190     __asm__ __volatile__(<span class="stringliteral">"mov %0=ar.itc;;"</span> : <span class="stringliteral">"=r"</span>(t) :: <span class="stringliteral">"memory"</span>);
+00191     <span class="keywordflow">return</span> t;
+00192 }
+00193 
+00194 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00195 
+00196 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_IA64_SYSCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jul 11 09:21:42 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.1 </small></address>
 </body>

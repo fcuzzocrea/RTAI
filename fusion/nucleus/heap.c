@@ -40,24 +40,27 @@
  *
  * The data structures hierarchy is as follows:
  *
- * HEAP {
- *      block_buckets[]
- *      extent_queue -------+
- * }                        |
- *                          V
- *                       EXTENT #1 {
- *                              {static header}
- *                              page_map[npages]
- *                              page_array[npages][pagesize]
- *                       } -+
- *                          |
- *                          |
- *                          V
- *                       EXTENT #n {
- *                              {static header}
- *                              page_map[npages]
- *                              page_array[npages][pagesize]
- *                       }
+ * <tt> @verbatim
+HEAP {
+     block_buckets[]
+     extent_queue -------+
+}                        |
+                         V
+                      EXTENT #1 {
+                             {static header}
+                             page_map[npages]
+                             page_array[npages][pagesize]
+                      } -+
+                         |
+                         |
+                         V
+                      EXTENT #n {
+                             {static header}
+                             page_map[npages]
+                             page_array[npages][pagesize]
+                      }
+@endverbatim </tt>
+ *
  *@{*/
 
 #define XENO_HEAP_MODULE 1
@@ -97,10 +100,7 @@ static void init_extent (xnheap_t *heap,
 }
 
 /*! 
- * \fn int xnheap_init(xnheap_t *heap,
-                       void *heapaddr,
-                       u_long heapsize,
-                       u_long pagesize)
+ * \fn xnheap_init(xnheap_t *heap,void *heapaddr,u_long heapsize,u_long pagesize)
  * \brief Initialize a memory heap.
  *
  * Initializes a memory heap suitable for time-bounded allocation
@@ -120,8 +120,9 @@ static void init_extent (xnheap_t *heap,
  * by @a heapaddr. @a heapsize must be a multiple of pagesize and
  * lower than 16 Mbytes. @a heapsize must be large enough to contain
  * an internal header. The following formula gives the size of this
- * header: hdrsize = (sizeof(xnextent_t) + ((heapsize -
- * sizeof(xnextent_t))) / (pagesize + 1) + 15) & ~15.
+ * header:\n
+ * hdrsize = (sizeof(xnextent_t) + ((heapsize -
+ * sizeof(xnextent_t))) / (pagesize + 1) + 15) & ~15.\n
  *
  * @param pagesize The size in bytes of the fundamental memory page
  * which will be used to subdivide the heap internally. Choosing the
@@ -226,12 +227,7 @@ int xnheap_init (xnheap_t *heap,
 }
 
 /*! 
- * \fn void xnheap_destroy(xnheap_t *heap,
-		           void (*flushfn)(xnheap_t *heap,
-			                   void *extaddr,
-				           u_long extsize,
-					   void *cookie),
-					   void *cookie)
+ * \fn void xnheap_destroy(xnheap_t *heap, void (*flushfn)(xnheap_t *heap, void *extaddr, u_long extsize, void *cookie), void *cookie)
  * \brief Destroys a memory heap.
  *
  * Destroys a memory heap.
@@ -498,9 +494,7 @@ release_and_exit:
 }
 
 /*! 
- * \fn int xnheap_test_and_free(xnheap_t *heap,
-                                void *block,
-                                int (*ckfn)(void *block))
+ * \fn int xnheap_test_and_free(xnheap_t *heap,void *block,int (*ckfn)(void *block))
  * \brief Test and release a memory block to a memory heap.
  *
  * Releases a memory region to the memory heap it was previously

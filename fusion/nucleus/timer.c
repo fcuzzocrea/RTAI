@@ -58,9 +58,7 @@
 #include <nucleus/timer.h>
 
 /*! 
- * \fn void xntimer_init(xntimer_t *timer,
-                         void (*handler)(void *cookie),
-                         void *cookie)
+ * \fn void xntimer_init(xntimer_t *timer,void (*handler)(void *cookie),void *cookie)
  * \brief Initialize a timer object.
  *
  * Creates a timer. When created, a timer is left disarmed; it must be
@@ -226,9 +224,7 @@ static inline void xntimer_next_remote_shot (xnsched_t *sched)
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 /*! 
- * \fn int xntimer_start(xntimer_t *timer,
-                   xnticks_t value,
-                   xnticks_t interval)
+ * \fn int xntimer_start(xntimer_t *timer,xnticks_t value,xnticks_t interval)
  * \brief Arm a timer.
  *
  * Activates a timer so that the associated timeout handler will be

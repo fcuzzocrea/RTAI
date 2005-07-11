@@ -131,10 +131,7 @@ static void rthal_irq_trampoline (unsigned irq)
 }
 
 /**
- * @fn int rthal_irq_request(unsigned irq,
-                             void (*handler)(unsigned irq, void *cookie),
-			     int (*ackfn)(unsigned irq),
-			     void *cookie)
+ * @fn int rthal_irq_request(unsigned irq,void (*handler)(unsigned irq, void *cookie),int (*ackfn)(unsigned irq),void *cookie)
  *                           
  * @brief Install a real-time interrupt handler.
  *
@@ -353,12 +350,7 @@ int rthal_irq_disable (unsigned irq)
 }
 
 /**
- * @fn int rthal_irq_host_request (unsigned irq,
-                                   irqreturn_t (*handler)(int irq,
-				                          void *dev_id,
-							  struct pt_regs *regs),
-				   char *name,
-				   void *dev_id)
+ * @fn int rthal_irq_host_request (unsigned irq,irqreturn_t (*handler)(int irq,void *dev_id,struct pt_regs *regs),char *name,void *dev_id)
  *                           
  * @brief Install a shared Linux interrupt handler.
  *
@@ -419,8 +411,7 @@ int rthal_irq_host_request (unsigned irq,
 }
 
 /**
- * @fn int rthal_irq_host_release (unsigned irq,
-				   void *dev_id)
+ * @fn int rthal_irq_host_release (unsigned irq,void *dev_id)
  *                           
  * @brief Uninstall a shared Linux interrupt handler.
  *
@@ -501,9 +492,7 @@ int rthal_irq_host_pend (unsigned irq)
 }
 
 /**
- * @fn int rthal_irq_affinity (unsigned irq,
-                               cpumask_t cpumask,
-			       cpumask_t *oldmask)
+ * @fn int rthal_irq_affinity (unsigned irq,cpumask_t cpumask,cpumask_t *oldmask)
  *                           
  * @brief Set/Get processor affinity for external interrupt.
  *
@@ -678,9 +667,7 @@ void rthal_apc_kicker (unsigned virq)
 #endif /* CONFIG_PREEMPT_RT */
 
 /**
- * @fn int rthal_apc_alloc (const char *name,
-                            void (*handler)(void *cookie),
-			    void *cookie)
+ * @fn int rthal_apc_alloc (const char *name,void (*handler)(void *cookie),void *cookie)
  *
  * @brief Allocate an APC slot.
  *
@@ -1230,8 +1217,7 @@ void __rthal_exit (void)
 }
 
 /*! 
- * \fn int rthal_timer_request(void (*handler)(void),
-                               unsigned long nstick)
+ * \fn int rthal_timer_request(void (*handler)(void),unsigned long nstick)
  * \brief Grab the hardware timer.
  *
  * rthal_timer_request() grabs and tunes the hardware timer so that a

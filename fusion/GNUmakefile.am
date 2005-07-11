@@ -92,6 +92,6 @@ dev devices:
 	fi
 
 uninstall-local:
-	$(RM) $(DESTDIR)$(pkgdatadir)/config-fusion-$(VERSION)
+	$(RM) $(DESTDIR)$(pkgdatadir)/config-$(PACKAGE)-$(VERSION)
 
 .PHONY: reconfig xconfig gconfig mconfig menuconfig config oldconfig clean-if-reconfigured dev devices

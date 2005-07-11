@@ -109,10 +109,7 @@ static RT_OBJECT_PROCNODE __event_pnode = {
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 /**
- * @fn int rt_event_create(RT_EVENT *event,
-                           const char *name,
-                           unsigned long ivalue,
-                           int mode)
+ * @fn int rt_event_create(RT_EVENT *event,const char *name,unsigned long ivalue,int mode)
  * @brief Create an event group.
  *
  * Event groups provide for task synchronization by allowing a set of
@@ -277,8 +274,7 @@ int rt_event_delete (RT_EVENT *event)
 }
 
 /**
- * @fn int rt_event_signal(RT_EVENT *event,
-                           unsigned long mask)
+ * @fn int rt_event_signal(RT_EVENT *event,unsigned long mask)
  * @brief Post an event group.
  *
  * Post a set of bits to the event mask. All tasks having their wait
@@ -359,11 +355,7 @@ int rt_event_signal (RT_EVENT *event,
 }
 
 /**
- * @fn int rt_event_wait(RT_EVENT *event,
-                         unsigned long mask,
-                         unsigned long *mask_r,
-                         int mode,
-                         RTIME timeout)
+ * @fn int rt_event_wait(RT_EVENT *event,unsigned long mask,unsigned long *mask_r,int mode,RTIME timeout)
  * @brief Pend on an event group.
  *
  * Waits for one or more events on the specified event group, either
@@ -517,9 +509,7 @@ int rt_event_wait (RT_EVENT *event,
 }
 
 /**
- * @fn int rt_event_clear(RT_EVENT *event,
-                          unsigned long mask,
-			  unsigned long *mask_r)
+ * @fn int rt_event_clear(RT_EVENT *event,unsigned long mask,unsigned long *mask_r)
  * @brief Clear an event group.
  *
  * Clears a set of flags from an event mask.
@@ -641,8 +631,7 @@ int rt_event_inquire (RT_EVENT *event,
 }
 
 /**
- * @fn int rt_event_bind(RT_EVENT *event,
-			const char *name)
+ * @fn int rt_event_bind(RT_EVENT *event,const char *name)
  * @brief Bind to an event flag group.
  *
  * This user-space only service retrieves the uniform descriptor of a

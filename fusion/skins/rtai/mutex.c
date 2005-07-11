@@ -116,8 +116,8 @@ static RT_OBJECT_PROCNODE __mutex_pnode = {
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 /**
- * @fn int rt_mutex_create(RT_MUTEX *mutex,
-                           const char *name)
+ * @fn int rt_mutex_create(RT_MUTEX *mutex,const char *name)
+ *
  * @brief Create a mutex.
  *
  * Create a mutual exclusion object that allows multiple tasks to
@@ -195,6 +195,7 @@ int rt_mutex_create (RT_MUTEX *mutex,
 
 /**
  * @fn int rt_mutex_delete(RT_MUTEX *mutex)
+ *
  * @brief Delete a mutex.
  *
  * Destroy a mutex and release all the tasks currently pending on it.
@@ -266,6 +267,7 @@ int rt_mutex_delete (RT_MUTEX *mutex)
 
 /**
  * @fn int rt_mutex_lock(RT_MUTEX *mutex)
+ *
  * @brief Acquire a mutex.
  *
  * Attempt to lock a mutex. The calling task is blocked until the
@@ -361,6 +363,7 @@ int rt_mutex_lock (RT_MUTEX *mutex)
 
 /**
  * @fn int rt_mutex_unlock(RT_MUTEX *mutex)
+ *
  * @brief Unlock mutex.
  *
  * Release a mutex. If the mutex is pended, the first waiting task (by
@@ -432,6 +435,7 @@ int rt_mutex_unlock (RT_MUTEX *mutex)
 
 /**
  * @fn int rt_mutex_inquire(RT_MUTEX *mutex, RT_MUTEX_INFO *info)
+ *
  * @brief Inquire about a mutex.
  *
  * Return various information about the status of a given mutex.
@@ -488,8 +492,8 @@ int rt_mutex_inquire (RT_MUTEX *mutex,
 }
 
 /**
- * @fn int rt_mutex_bind(RT_MUTEX *mutex,
-		         const char *name)
+ * @fn int rt_mutex_bind(RT_MUTEX *mutex,const char *name)
+ *
  * @brief Bind to a mutex.
  *
  * This user-space only service retrieves the uniform descriptor of a

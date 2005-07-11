@@ -10,4 +10,4 @@ if CONFIG_IA64
 ARCHDIR = ia64
 endif
 
-SUBDIRS = generic $(ARCHDIR)
+SUBDIRS = $(ARCHDIR)

@@ -31,10 +31,6 @@
  *   02111-1307, USA.
  */
 
-/**
- * @addtogroup hal
- *@{*/
-
 #ifndef _RTAI_ASM_PPC_HAL_H
 #define _RTAI_ASM_PPC_HAL_H
 
@@ -121,7 +117,7 @@ static inline long long rthal_llimd (long long op,
     return __rthal_ullimd(op, m, d);
 }
 
-static inline  __attribute_const__ unsigned long ffnz (unsigned long ul) {
+static inline __attribute_const__ unsigned long ffnz (unsigned long ul) {
 
     __asm__ ("cntlzw %0, %1" : "=r" (ul) : "r" (ul & (-ul)));
     return 31 - ul;
@@ -268,7 +264,5 @@ static const char *const rthal_fault_labels[] = {
 };
 
 #endif /* __KERNEL__ && !__cplusplus */
-
-/*@}*/
 
 #endif /* !_RTAI_ASM_PPC_HAL_H */

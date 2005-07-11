@@ -31,7 +31,7 @@
  */
 
 /**
- * \ingroup hal
+ * @addtogroup hal
  *
  * PowerPC-specific HAL services.
  *

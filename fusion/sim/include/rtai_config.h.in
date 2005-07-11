@@ -1,4 +1,4 @@
-/* rtai_config.h.in.  Generated from configure.in by autoheader.  */
+/* include/rtai_config.h.in.  Generated from configure.in by autoheader.  */
 
 /* Build system alias */
 #undef CONFIG_RTAI_MVM_BUILD_STRING

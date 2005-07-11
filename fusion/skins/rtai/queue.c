@@ -121,11 +121,8 @@ static void __queue_flush_private (xnheap_t *heap,
 }
 
 /**
- * @fn int rt_queue_create(RT_QUEUE *q,
-                           const char *name,
-			   size_t poolsize,
-			   size_t qlimit,
-			   int mode)
+ * @fn int rt_queue_create(RT_QUEUE *q,const char *name,size_t poolsize,size_t qlimit,int mode)
+ *
  * @brief Create a message queue.
  *
  * Create a message queue object that allows multiple tasks to
@@ -298,6 +295,7 @@ int rt_queue_create (RT_QUEUE *q,
 
 /**
  * @fn int rt_queue_delete(RT_QUEUE *q)
+ *
  * @brief Delete a message queue.
  *
  * Destroy a message queue and release all the tasks currently pending
@@ -377,8 +375,7 @@ int rt_queue_delete (RT_QUEUE *q)
 }
 
 /**
- * @fn void *rt_queue_alloc(RT_QUEUE *q,
-                            size_t size)
+ * @fn void *rt_queue_alloc(RT_QUEUE *q,size_t size)
  *
  * @brief Allocate a message queue buffer.
  *
@@ -453,8 +450,7 @@ static int __queue_check_msg (void *p)
 }
 
 /**
- * @fn int rt_queue_free(RT_QUEUE *q,
-                         void *buf)
+ * @fn int rt_queue_free(RT_QUEUE *q,void *buf)
  *
  * @brief Free a message queue buffer.
  *
@@ -520,10 +516,7 @@ int rt_queue_free (RT_QUEUE *q,
 }
 
 /**
- * @fn int rt_queue_send(RT_QUEUE *q,
-                         void *buf,
-			 size_t size,
-			 int mode)
+ * @fn int rt_queue_send(RT_QUEUE *q,void *buf,size_t size,int mode)
  *
  * @brief Send a message to a queue.
  *
@@ -661,9 +654,7 @@ int rt_queue_send (RT_QUEUE *q,
 }
 
 /**
- * @fn ssize_t rt_queue_recv(RT_QUEUE *q,
-                             void **bufp,
-			     RTIME timeout)
+ * @fn ssize_t rt_queue_recv(RT_QUEUE *q,void **bufp,RTIME timeout)
  *
  * @brief Receive a message from a queue.
  *
@@ -800,6 +791,7 @@ ssize_t rt_queue_recv (RT_QUEUE *q,
 
 /**
  * @fn int rt_queue_inquire(RT_QUEUE *q, RT_QUEUE_INFO *info)
+ *
  * @brief Inquire about a message queue.
  *
  * Return various information about the status of a given queue.
@@ -859,8 +851,8 @@ int rt_queue_inquire (RT_QUEUE *q,
 }
 
 /**
- * @fn int rt_queue_bind(RT_QUEUE *q,
-			const char *name)
+ * @fn int rt_queue_bind(RT_QUEUE *q,const char *name)
+ *
  * @brief Bind to a shared message queue.
  *
  * This user-space only service retrieves the uniform descriptor of a

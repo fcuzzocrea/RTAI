@@ -50,10 +50,7 @@ void __intr_pkg_cleanup (void)
 }
 
 /*! 
- * \fn int rt_intr_create (RT_INTR *intr,
-                           unsigned irq,
-                           rt_isr_t isr,
-			   rt_iack_t iack)
+ * \fn int rt_intr_create (RT_INTR *intr,unsigned irq,rt_isr_t isr,rt_iack_t iack)
  * \brief Create an interrupt object from kernel space.
  *
  * Initializes and associates an interrupt object with an IRQ line. In
@@ -431,9 +428,7 @@ int rt_intr_inquire (RT_INTR *intr,
 }
 
 /*! 
- * \fn int rt_intr_create (RT_INTR *intr,
-                           unsigned irq,
-                           int mode)
+ * \fn int rt_intr_create (RT_INTR *intr,unsigned irq,int mode)
  * \brief Create an interrupt object from user-space.
  *
  * Initializes and associates an interrupt object with an IRQ line
@@ -541,8 +536,7 @@ int rt_intr_inquire (RT_INTR *intr,
  */
 
 /**
- * @fn int rt_intr_bind(RT_INTR *intr,
-		        unsigned irq)
+ * @fn int rt_intr_bind(RT_INTR *intr,unsigned irq)
  * @brief Bind to an interrupt object.
  *
  * This user-space only service retrieves the uniform descriptor of a

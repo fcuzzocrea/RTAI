@@ -96,11 +96,7 @@ void __task_pkg_cleanup (void)
 }
 
 /**
- * @fn int rt_task_create(RT_TASK *task,
-		          const char *name,
-			  int stksize,
-			  int prio,
-			  int mode)
+ * @fn int rt_task_create(RT_TASK *task,const char *name,int stksize,int prio,int mode)
  * @brief Create a new real-time task.
  *
  * Creates a real-time task, either running in a kernel module or in
@@ -238,9 +234,7 @@ int rt_task_create (RT_TASK *task,
 }
 
 /**
- * @fn int rt_task_start(RT_TASK *task,
-                         void (*entry)(void *cookie),
-			 void *cookie)
+ * @fn int rt_task_start(RT_TASK *task,void (*entry)(void *cookie),void *cookie)
  * @brief Start a real-time task.
  *
  * Start a (newly) created task, scheduling it for the first
@@ -574,9 +568,7 @@ int rt_task_yield (void)
 }
 
 /**
- * @fn int rt_task_set_periodic(RT_TASK *task,
-                                RTIME idate,
-                                RTIME period)
+ * @fn int rt_task_set_periodic(RT_TASK *task,RTIME idate,RTIME period)
  * @brief Make a real-time task periodic.
  *
  * Make a task periodic by programing its first release point and its
@@ -712,8 +704,7 @@ int rt_task_wait_period (void)
 }
 
 /**
- * @fn int rt_task_set_priority(RT_TASK *task,
-                                int prio)
+ * @fn int rt_task_set_priority(RT_TASK *task,int prio)
  * @brief Change the base priority of a real-time task.
  *
  * Changing the base priority of a task does not affect the priority
@@ -1212,8 +1203,7 @@ int rt_task_catch (void (*handler)(rt_sigset_t))
 }
 
 /**
- * @fn int rt_task_notify(RT_TASK *task,
-                          rt_sigset_t signals)
+ * @fn int rt_task_notify(RT_TASK *task,rt_sigset_t signals)
  * @brief Send signals to a task.
  *
  * This service sends a set of signals to a given task.  A task can
@@ -1299,9 +1289,7 @@ int rt_task_notify (RT_TASK *task,
 }
 
 /**
- * @fn int rt_task_set_mode(int setmask,
-                            int clrmask,
-			    int *mode_r)
+ * @fn int rt_task_set_mode(int setmask,int clrmask,int *mode_r)
  * @brief Change task mode bits.
  *
  * Each RTAI task has a set of internal bits determining various
@@ -1532,10 +1520,8 @@ int rt_task_slice (RT_TASK *task, RTIME quantum)
 #ifdef CONFIG_RTAI_OPT_NATIVE_MPS
 
 /**
- * @fn int rt_task_send(RT_TASK *task,
-                        RT_TASK_MCB *mcb_s,
-                        RT_TASK_MCB *mcb_r,
-                        RTIME timeout)
+ * @fn int rt_task_send(RT_TASK *task,RT_TASK_MCB *mcb_s,RT_TASK_MCB *mcb_r,RTIME timeout)
+ *
  * @brief Send a message to a task.
  *
  * This service is part of the synchronous message passing support
@@ -1753,8 +1739,7 @@ ssize_t rt_task_send (RT_TASK *task,
 }
 
 /**
- * @fn int rt_task_receive(RT_TASK_MCB *mcb_r,
-                           RTIME timeout)
+ * @fn int rt_task_receive(RT_TASK_MCB *mcb_r,RTIME timeout)
  * @brief Receive a message from a task.
  *
  * This service is part of the synchronous message passing support
@@ -1916,8 +1901,7 @@ int rt_task_receive (RT_TASK_MCB *mcb_r,
 }
 
 /**
- * @fn int rt_task_reply(int flowid,
-                         RT_TASK_MCB *mcb_s)
+ * @fn int rt_task_reply(int flowid,RT_TASK_MCB *mcb_s)
  * @brief Reply to a task.
  *
  * This service is part of the synchronous message passing support
@@ -2064,13 +2048,7 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
 #endif /* CONFIG_RTAI_OPT_NATIVE_MPS */
 
 /**
- * @fn int rt_task_spawn(RT_TASK *task,
-		         const char *name,
-			 int stksize,
-			 int prio,
-			 int mode,
-			 void (*entry)(void *cookie),
-			 void *cookie)
+ * @fn int rt_task_spawn(RT_TASK *task,const char *name,int stksize,int prio,int mode,void (*entry)(void *cookie),void *cookie)
  * @brief Spawn a new real-time task.
  *
  * Creates and immediately starts a real-time task, either running in
@@ -2143,10 +2121,7 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
  */
 
 /**
- * @fn int rt_task_shadow(RT_TASK *task,
-		          const char *name,
-			  int prio,
-			  int mode)
+ * @fn int rt_task_shadow(RT_TASK *task,const char *name,int prio,int mode)
  * @brief Turns the current Linux task into a native RTAI task.
  *
  * Creates a real-time task running in the context of the calling
@@ -2214,8 +2189,7 @@ int rt_task_reply (int flowid, RT_TASK_MCB *mcb_s)
  */
 
 /**
- * @fn int rt_task_bind(RT_TASK *task,
-			const char *name)
+ * @fn int rt_task_bind(RT_TASK *task,const char *name)
  * @brief Bind to a real-time task.
  *
  * This user-space only service retrieves the uniform descriptor of a

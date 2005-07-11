@@ -42,11 +42,7 @@ static void xnintr_irq_handler(unsigned irq,
 			       void *cookie);
 
 /*! 
- * \fn int xnintr_init (xnintr_t *intr,
-                        unsigned irq,
-                        xnisr_t isr,
-                        xniack_t iack,
-			xnflags_t flags)
+ * \fn int xnintr_init (xnintr_t *intr,unsigned irq,xnisr_t isr,xniack_t iack,xnflags_t flags)
  * \brief Initialize an interrupt object.
  *
  * Associates an interrupt object with an IRQ line.

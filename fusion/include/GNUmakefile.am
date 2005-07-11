@@ -1,13 +1,8 @@
-install-data-local:
-	$(INSTALL_HEADER) $(CONFIG_HEADER) $(DESTDIR)$(includedir)/rtai_config.h
+include_HEADERS=$(CONFIG_HEADER)
 
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 distclean-local:
 	rm -f $(DESTDIR)$(includedir)/asm $(DESTDIR)$(includedir)/rtai_config.h
 endif
-
-uninstall-local:
-	$(RM) $(DESTDIR)$(pkgdatadir)/config-rtai-$(VERSION)
-	$(RM) $(DESTDIR)$(includedir)/rtai_config.h
 
 SUBDIRS = nucleus

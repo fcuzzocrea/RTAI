@@ -389,7 +389,7 @@ RECURSIVE              = YES
 # excluded from the INPUT source files. This way you can easily exclude a 
 # subdirectory from a directory tree whose root is specified with the INPUT tag.
 
-EXCLUDE                = 
+EXCLUDE                =
 
 # The EXCLUDE_SYMLINKS tag can be used select whether or not files or directories 
 # that are symbolic links (a Unix filesystem feature) are excluded from the input.
@@ -867,10 +867,12 @@ SEARCH_INCLUDES        = YES
 # contain include files that are not input files but should be processed by 
 # the preprocessor.
 
-# Added top_buildir here for the definition of RTAI_PROTO in rtai_confg.h
-INCLUDE_PATH           = @top_srcdir@/include \
+# Added top_buildir/include here for the definition of RTAI_PROTO in
+# rtai_config.h
+INCLUDE_PATH           = \
+@top_srcdir@/skins/rtai \
 @top_builddir@/include \
-@top_builddir@
+@top_srcdir@/include
 
 
 

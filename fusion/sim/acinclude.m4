@@ -116,7 +116,7 @@ else
 AC_MSG_RESULT(yes)
 fi
 AC_MSG_CHECKING([if C++ compiler supports -fnonnull-objects])
-CXXFLAGS="-fnonnull-objects -Werror"
+CXXFLAGS="-Werror -fnonnull-objects"
 AC_CACHE_VAL(ac_cv_cxx_mvm_nonnull,
 [AC_TRY_COMPILE([],
 [int i = 0; return i; ],

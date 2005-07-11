@@ -223,10 +223,7 @@ void xnpod_schedule_handler (void)
 }
 
 /*! 
- * \fn int xnpod_init(xnpod_t *pod,
-                      int minpri,
-                      int maxpri,
-                      xnflags_t flags)
+ * \fn int xnpod_init(xnpod_t *pod,int minpri,int maxpri,xnflags_t flags)
  * \brief Initialize a new pod.
  *
  * Initializes a new pod which can subsequently be used to start
@@ -607,11 +604,7 @@ static inline void xnpod_switch_zombie (xnthread_t *threadout,
 }
 
 /*! 
- * \fn void xnpod_init_thread(xnthread_t *thread,
-                              const char *name,
-                              int prio,
-                              xnflags_t flags,
-                              unsigned stacksize)
+ * \fn void xnpod_init_thread(xnthread_t *thread,const char *name,int prio,xnflags_t flags,unsigned stacksize)
  * \brief Initialize a new thread.
  *
  * Initializes a new thread attached to the active pod. The thread is
@@ -723,12 +716,7 @@ int xnpod_init_thread (xnthread_t *thread,
 }
 
 /*! 
- * \fn int xnpod_start_thread(xnthread_t *thread,
-                              xnflags_t mode,
-                              int imask,
-                              xnarch_cpumask_t affinity,
-                              void (*entry)(void *cookie),
-                              void *cookie)
+ * \fn int xnpod_start_thread(xnthread_t *thread,xnflags_t mode,int imask,xnarch_cpumask_t affinity,void (*entry)(void *cookie),void *cookie)
  * \brief Initial start of a newly created thread.
  *
  * Starts a (newly) created thread, scheduling it for the first
@@ -987,9 +975,7 @@ void xnpod_restart_thread (xnthread_t *thread)
 }
 
 /*! 
- * \fn void xnpod_set_thread_mode(xnthread_t *thread,
-                                  xnflags_t clrmask,
-                                  xnflags_t setmask)
+ * \fn void xnpod_set_thread_mode(xnthread_t *thread,xnflags_t clrmask,xnflags_t setmask)
  * \brief Change a thread's control mode.
  *
  * Change the control mode of a given thread. The control mode affects
@@ -1206,10 +1192,7 @@ void xnpod_delete_thread (xnthread_t *thread)
 }
 
 /*!
- * \fn void xnpod_suspend_thread(xnthread_t *thread,
-                                 xnflags_t mask,
-                                 xnticks_t timeout,
-                                 xnsynch_t *wchan)
+ * \fn void xnpod_suspend_thread(xnthread_t *thread,xnflags_t mask,xnticks_t timeout,xnsynch_t *wchan)
  *
  * \brief Suspend a thread.
  *
@@ -1426,8 +1409,7 @@ void xnpod_suspend_thread (xnthread_t *thread,
 }
 
 /*!
- * \fn void xnpod_resume_thread(xnthread_t *thread,
-                                xnflags_t mask)
+ * \fn void xnpod_resume_thread(xnthread_t *thread,xnflags_t mask)
  * \brief Resume a thread.
  *
  * Resumes the execution of a thread previously suspended by one or
@@ -1691,8 +1673,7 @@ int xnpod_unblock_thread (xnthread_t *thread)
 }
 
 /*!
- * \fn void xnpod_renice_thread(xnthread_t *thread,
-                                int prio)
+ * \fn void xnpod_renice_thread(xnthread_t *thread,int prio)
  * \brief Change the base priority of a thread.
  *
  * Changes the base priority of a thread.  If the XNDREORD flag has
@@ -2461,8 +2442,7 @@ void xnpod_schedule (void)
 
 /*! 
  * @internal
- * \fn void xnpod_schedule_runnable(xnthread_t *thread,
-                                    int flags)
+ * \fn void xnpod_schedule_runnable(xnthread_t *thread,int flags)
  * \brief Hidden rescheduling procedure.
  *
  * This internal routine should NEVER be used directly by the upper
@@ -2658,8 +2638,7 @@ xnticks_t xnpod_get_time (void)
 }
 
 /*! 
- * \fn int xnpod_add_hook(int type,
-                          void (*routine)(xnthread_t *))
+ * \fn int xnpod_add_hook(int type,void (*routine)(xnthread_t *))
  * \brief Install a nucleus hook.
  *
  * The nucleus allows to register user-defined routines which get
@@ -2754,8 +2733,7 @@ int xnpod_add_hook (int type, void (*routine)(xnthread_t *))
 }
 
 /*! 
- * \fn int xnpod_remove_hook(int type,
-                             void (*routine)(xnthread_t *))
+ * \fn int xnpod_remove_hook(int type,void (*routine)(xnthread_t *))
  * \brief Remove a nucleus hook.
  *
  * This service removes a nucleus hook previously registered using
@@ -2891,8 +2869,7 @@ int xnpod_trap_fault (void *fltinfo)
 }
 
 /*! 
- * \fn int xnpod_start_timer(u_long nstick,
-                             xnisr_t tickhandler)
+ * \fn int xnpod_start_timer(u_long nstick,xnisr_t tickhandler)
  * \brief Start the system timer.
  *
  * The nucleus needs a time source to provide the time-related
@@ -3231,9 +3208,7 @@ int xnpod_announce_tick (xnintr_t *intr)
 }
 
 /*! 
- * \fn int xnpod_set_thread_periodic(xnthread_t *thread,
-                                     xnticks_t idate,
-                                     xnticks_t period)
+ * \fn int xnpod_set_thread_periodic(xnthread_t *thread,xnticks_t idate,xnticks_t period)
  * \brief Make a thread periodic.
  *
  * Make a thread periodic by programming its first release point and

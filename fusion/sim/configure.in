@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ(2.59)
 
 AC_INIT(sim,0.8.3,rtai@rtai.org)
-AC_CONFIG_HEADERS(rtai_config.h)
+AC_CONFIG_HEADERS(include/rtai_config.h)
 AC_CONFIG_AUX_DIR(../config/autoconf)
 AC_CONFIG_SRCDIR(vm/thread.cc)
 AC_PREFIX_DEFAULT(/usr/realtime)
@@ -66,11 +66,11 @@ dnl properly installed thus do not check for it here. Otherwise, it's likely
 dnl an incremental build of the simulator alone, and we need to find
 dnl such link right away.
 
-if test -r $srcdir/../rtai_config.h.in; then
+if test -r $srcdir/../include/rtai_config.h.in; then
     RTAI_INSTALLDIR=`cd .. && pwd`
     test -d ../source || ln -sf `cd $srcdir/.. && pwd` ../source
     test -d ../build || ln -sf `pwd` ../build
-elif -h $CONFIG_RTAI_MVM_INSTALLDIR/source; then
+elif test -h $CONFIG_RTAI_MVM_INSTALLDIR/source; then
     RTAI_INSTALLDIR=${CONFIG_RTAI_MVM_INSTALLDIR}
 else
     AC_MSG_ERROR([Cannot infere sources location from installation directory])

@@ -1,3 +1,21 @@
+2005-07-11  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* **/*.[ch]: Upgrade comments for Debian sarge version of
+	doxygen. "fn" tag arguments need to be put on one line.
+
+	* README.INSTALL, autotools-files: upgrade to Debian sarge
+	versions of the auto-tools.
+
+	* configure.in, arch/GNUmakefile.am: Remove the recursion into the
+	"generic" directory, autoconf knows about the generic/generic.c
+	file through configure.in and generates correct rules in the top
+	GNUmakefile.
+
+	* configure.in, sim/configure.in, doc/doxygen/Doxyfile.in: Move
+	rtai_config.h.in in the include directory to avoid recursing in
+	the whole sim directory when building documentation and solve the
+	conflict between the simultator and doxygen documentation options.
+
 2005-07-10  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/rtai/timer.c (rt_timer_ticks2ns, rt_timer_ns2ticks):

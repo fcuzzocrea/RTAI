@@ -155,9 +155,7 @@ void __pipe_pkg_cleanup (void)
 }
 
 /**
- * @fn int rt_pipe_create(RT_PIPE *pipe,
-                          const char *name,
-			  int minor)
+ * @fn int rt_pipe_create(RT_PIPE *pipe,const char *name,int minor)
  * @brief Create a message pipe.
  *
  * This service opens a bi-directional communication channel allowing
@@ -347,9 +345,7 @@ int rt_pipe_delete (RT_PIPE *pipe)
 }
 
 /**
- * @fn ssize_t rt_pipe_receive(RT_PIPE *pipe,
-                               RT_PIPE_MSG **msgp,
-			       RTIME timeout)
+ * @fn ssize_t rt_pipe_receive(RT_PIPE *pipe,RT_PIPE_MSG **msgp,RTIME timeout)
  *
  * @brief Receive a message from a pipe.
  *
@@ -454,10 +450,7 @@ ssize_t rt_pipe_receive (RT_PIPE *pipe,
 }
 
 /**
- * @fn ssize_t rt_pipe_read(RT_PIPE *pipe,
-                            void *buf,
-                            size_t size,
-			    RTIME timeout)
+ * @fn ssize_t rt_pipe_read(RT_PIPE *pipe,void *buf,size_t size,RTIME timeout)
  *
  * @brief Read a message from a pipe.
  *
@@ -566,10 +559,7 @@ ssize_t rt_pipe_read (RT_PIPE *pipe,
 }
 
  /**
- * @fn ssize_t rt_pipe_send(RT_PIPE *pipe,
-                            RT_PIPE_MSG *msg,
-			    size_t size,
-			    int mode)
+ * @fn ssize_t rt_pipe_send(RT_PIPE *pipe,RT_PIPE_MSG *msg,size_t size,int mode)
  *
  * @brief Send a message through a pipe.
  *
@@ -677,10 +667,7 @@ ssize_t rt_pipe_send (RT_PIPE *pipe,
 }
 
  /**
- * @fn ssize_t rt_pipe_write(RT_PIPE *pipe,
-                             const void *buf,
-			     size_t size,
-			     int mode)
+ * @fn ssize_t rt_pipe_write(RT_PIPE *pipe,const void *buf,size_t size,int mode)
  *
  * @brief Write a message to a pipe.
  *
@@ -775,9 +762,7 @@ ssize_t rt_pipe_write (RT_PIPE *pipe,
 }
 
 /**
- * @fn ssize_t rt_pipe_stream(RT_PIPE *pipe,
-                              const void *buf,
-			      size_t size)
+ * @fn ssize_t rt_pipe_stream(RT_PIPE *pipe,const void *buf,size_t size)
  *
  * @brief Stream bytes to a pipe.
  *

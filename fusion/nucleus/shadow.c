@@ -673,8 +673,7 @@ void xnshadow_exit (void)
 }
 
 /*! 
- * \fn int xnshadow_map(xnthread_t *thread,
-                        xncompletion_t __user *u_completion);
+ * \fn int xnshadow_map(xnthread_t *thread, xncompletion_t __user *u_completion)
  * @internal
  * \brief Create a shadow thread context.
  *

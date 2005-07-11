@@ -59,10 +59,7 @@ static void __alarm_trampoline (void *cookie)
 }
 
 /**
- * @fn int rt_alarm_create(RT_ALARM *alarm,
-                           const char *name,
-                           rt_alarm_t handler,
-                           void *cookie)
+ * @fn int rt_alarm_create(RT_ALARM *alarm,const char *name,rt_alarm_t handler,void *cookie)
  * @brief Create an alarm object.
  *
  * Create an object triggering an alarm routine at a specified time in
@@ -219,9 +216,7 @@ int rt_alarm_delete (RT_ALARM *alarm)
 }
 
 /**
- * @fn int rt_alarm_start(RT_ALARM *alarm,
-                          RTIME value,
-                          RTIME interval)
+ * @fn int rt_alarm_start(RT_ALARM *alarm,RTIME value,RTIME interval)
  * @brief Start an alarm.
  *
  * Program the trigger date of an alarm object. An alarm can be either

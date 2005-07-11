@@ -110,10 +110,7 @@ static RT_OBJECT_PROCNODE __sem_pnode = {
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 /**
- * @fn int rt_sem_create(RT_SEM *sem,
-                         const char *name,
-                         unsigned long icount,
-                         int mode)
+ * @fn int rt_sem_create(RT_SEM *sem,const char *name,unsigned long icount,int mode)
  * @brief Create a counting semaphore.
  *
  * @param sem The address of a semaphore descriptor RTAI will use to
@@ -280,8 +277,7 @@ int rt_sem_delete (RT_SEM *sem)
 }
 
 /**
- * @fn int rt_sem_p(RT_SEM *sem,
-                    RTIME timeout)
+ * @fn int rt_sem_p(RT_SEM *sem,RTIME timeout)
  * @brief Pend on a semaphore.
  *
  * Acquire a semaphore unit. If the semaphore value is greater than
@@ -564,8 +560,7 @@ int rt_sem_inquire (RT_SEM *sem,
 }
 
 /**
- * @fn int rt_sem_bind(RT_SEM *sem,
-		       const char *name)
+ * @fn int rt_sem_bind(RT_SEM *sem,const char *name)
  * @brief Bind to a semaphore.
  *
  * This user-space only service retrieves the uniform descriptor of a

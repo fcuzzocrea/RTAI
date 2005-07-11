@@ -123,10 +123,7 @@ static void __heap_flush_private (xnheap_t *heap,
 }
 
 /*! 
- * \fn int rt_heap_create(RT_HEAP *heap,
-                          const char *name,
-                          size_t heapsize,
-                          int mode);
+ * \fn int rt_heap_create(RT_HEAP *heap,const char *name,size_t heapsize,int mode);
  * \brief Create a memory heap or a shared memory segment.
  *
  * Initializes a memory heap suitable for time-bounded allocation
@@ -304,6 +301,7 @@ int rt_heap_create (RT_HEAP *heap,
 
 /**
  * @fn int rt_heap_delete(RT_HEAP *heap)
+ *
  * @brief Delete a real-time heap.
  *
  * Destroy a heap and release all the tasks currently pending on it.
@@ -383,10 +381,7 @@ int rt_heap_delete (RT_HEAP *heap)
 }
 
 /**
- * @fn int rt_heap_alloc(RT_HEAP *heap,
-                         size_t size,
-                         RTIME timeout,
-                         void **blockp)
+ * @fn int rt_heap_alloc(RT_HEAP *heap,size_t size,RTIME timeout,void **blockp)
  *
  * @brief Allocate a block or return the shared memory base.
  *
@@ -555,8 +550,7 @@ int rt_heap_alloc (RT_HEAP *heap,
 }
 
 /**
- * @fn int rt_heap_free(RT_HEAP *heap,
-                        void *block)
+ * @fn int rt_heap_free(RT_HEAP *heap,void *block)
  *
  * @brief Free a block.
  *
@@ -652,6 +646,7 @@ int rt_heap_free (RT_HEAP *heap,
 
 /**
  * @fn int rt_heap_inquire(RT_HEAP *heap, RT_HEAP_INFO *info)
+ *
  * @brief Inquire about a heap.
  *
  * Return various information about the status of a given heap.
@@ -709,8 +704,8 @@ int rt_heap_inquire (RT_HEAP *heap,
 }
 
 /**
- * @fn int rt_heap_bind(RT_HEAP *heap,
-			const char *name)
+ * @fn int rt_heap_bind(RT_HEAP *heap,const char *name)
+ *
  * @brief Bind to a shared heap.
  *
  * This user-space only service retrieves the uniform descriptor of a

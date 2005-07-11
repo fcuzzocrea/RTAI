@@ -107,8 +107,7 @@ static RT_OBJECT_PROCNODE __cond_pnode = {
 #endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
 
 /**
- * @fn int rt_cond_create(RT_COND *cond,
-                          const char *name)
+ * @fn int rt_cond_create(RT_COND *cond, const char *name)
  * @brief Create a condition variable.
  *
  * Create a synchronization object that allows tasks to suspend
@@ -371,9 +370,7 @@ int rt_cond_broadcast (RT_COND *cond)
 }
 
 /**
- * @fn int rt_cond_wait(RT_COND *cond,
-                        RT_MUTEX *mutex,
-                        RTIME timeout)
+ * @fn int rt_cond_wait(RT_COND *cond, RT_MUTEX *mutex, RTIME timeout)
  * @brief Wait on a condition.
  *
  * This service atomically release the mutex and causes the calling
@@ -531,8 +528,7 @@ int rt_cond_inquire (RT_COND *cond,
 }
 
 /**
- * @fn int rt_cond_bind(RT_COND *cond,
-			const char *name)
+ * @fn int rt_cond_bind(RT_COND *cond, const char *name)
  * @brief Bind to a condition variable.
  *
  * This user-space only service retrieves the uniform descriptor of a

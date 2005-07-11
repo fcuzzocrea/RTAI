@@ -118,8 +118,7 @@ static inline void xnsynch_renice_thread (xnthread_t *thread, int prio)
 }
 
 /*! 
- * \fn void xnsynch_sleep_on(xnsynch_t *synch,
-                             xnticks_t timeout)
+ * \fn void xnsynch_sleep_on(xnsynch_t *synch,xnticks_t timeout)
  * \brief Sleep on a synchronization object.
  *
  * Makes the calling thread sleep on the specified synchronization

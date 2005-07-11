@@ -7,7 +7,7 @@ CONFIG_RTAI_VERSION_MAJOR=0
 CONFIG_RTAI_VERSION_MINOR=8
 CONFIG_RTAI_REVISION_LEVEL=3
 
-AC_CONFIG_HEADERS(rtai_config.h)
+AC_CONFIG_HEADERS(include/rtai_config.h)
 AC_CONFIG_AUX_DIR(config/autoconf)
 AC_CONFIG_SRCDIR(nucleus/module.c)
 AC_PREFIX_DEFAULT(/usr/realtime)
@@ -1249,10 +1249,6 @@ RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -D__IN_RTAI__ -Wstrict-prototypes"
 
 AC_CONFIG_LINKS(include/nucleus/asm:include/nucleus/asm-$RTAI_TARGET_ARCH)
 
-if test x$CONFIG_RTAI_OLD_FASHIONED_BUILD = xy; then
-   AC_CONFIG_LINKS(include/rtai_config.h:rtai_config.h)
-fi
-
 if test x$RTAI_TARGET_SUBARCH = x; then
    AC_MSG_RESULT([$RTAI_TARGET_ARCH])
 else
@@ -1308,7 +1304,6 @@ AC_CONFIG_FILES([ \
 	GNUmakefile \
 	config/GNUmakefile \
 	arch/GNUmakefile \
-	arch/generic/GNUmakefile \
         arch/i386/GNUmakefile \
 	arch/i386/hal/GNUmakefile \
         arch/ppc/GNUmakefile \

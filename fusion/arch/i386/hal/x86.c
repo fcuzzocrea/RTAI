@@ -8,7 +8,6 @@
  *   Copyright &copy; 2000 Paolo Mantegazza, \n
  *   Copyright &copy; 2000 Steve Papacharalambous, \n
  *   Copyright &copy; 2000 Stuart Hughes, \n
-
  *
  *   RTAI/x86 rewrite over Adeos: \n
  *   Copyright &copy; 2002 Philippe Gerum.
@@ -31,7 +30,7 @@
  */
 
 /**
- * \ingroup hal
+ * @addtogroup hal
  *
  * x86-specific HAL services.
  *

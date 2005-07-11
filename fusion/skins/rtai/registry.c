@@ -519,10 +519,7 @@ static unsigned __registry_wakeup_sleepers(const char *key)
 }
 
 /**
- * @fn int rt_registry_enter(const char *key,
-		             void *objaddr,
-			     rt_handle_t *phandle,
-			     RT_OBJECT_PROCNODE *pnode)
+ * @fn int rt_registry_enter(const char *key,void *objaddr,rt_handle_t *phandle,RT_OBJECT_PROCNODE *pnode)
  * @brief Register a real-time object.
  *
  * This service allocates a new registry slot for an associated
@@ -633,9 +630,7 @@ int rt_registry_enter (const char *key,
 }
 
 /**
- * @fn int rt_registry_bind(const char *key,
-                            RTIME timeout,
-			    rt_handle_t *phandle)
+ * @fn int rt_registry_bind(const char *key,RTIME timeout,rt_handle_t *phandle)
  * @brief Bind to a real-time object.
  *
  * This service retrieves the registry handle of a given object
@@ -840,8 +835,7 @@ int rt_registry_remove (rt_handle_t handle)
 }
 
 /**
- * @fn int rt_registry_remove_safe(rt_handle_t handle,
-                                   RTIME timeout)
+ * @fn int rt_registry_remove_safe(rt_handle_t handle,RTIME timeout)
  * @brief Unregister an idle real-time object.
  *
  * This service removes an object from the registry. The caller might

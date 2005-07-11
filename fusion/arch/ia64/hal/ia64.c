@@ -25,7 +25,7 @@
  */
 
 /**
- * \ingroup hal
+ * @addtogroup hal
  *
  * ia64-specific HAL services.
  *

@@ -32,10 +32,6 @@
  *   02111-1307, USA.
  */
 
-/**
- * @addtogroup hal
- *@{*/
-
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
@@ -293,7 +289,5 @@ long rthal_strncpy_from_user(char *dst,
 			     long count);
 
 #endif /* __KERNEL__ && !__cplusplus */
-
-/*@}*/
 
 #endif /* !_RTAI_ASM_I386_HAL_H */

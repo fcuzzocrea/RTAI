@@ -81,54 +81,57 @@ static inline void initq (xnqueue_t *qslot) {
 
 #if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
-#define XENO_DEBUG_CHECK_QUEUE() \
+#define XENO_DEBUG_CHECK_QUEUE(__qslot)		\
 do { \
     xnholder_t *curr; \
     spl_t s; \
     int nelems = 0; \
-    xnlock_get_irqsave(&qslot->lock,s); \
-    curr = qslot->head.last; \
-    while (curr != &qslot->head && nelems < qslot->elems) \
+    xnlock_get_irqsave(&(__qslot)->lock,s);	\
+    curr = (__qslot)->head.last;				  \
+    while (curr != &(__qslot)->head && nelems < (__qslot)->elems)	\
         curr = curr->last, nelems++; \
-    if (curr != &qslot->head || nelems != qslot->elems) \
-        xnpod_fatal("corrupted queue, qslot->elems=%d, qslot=%p", \
-                    qslot->elems, \
-                    qslot); \
-    xnlock_put_irqrestore(&qslot->lock,s); \
+    if (curr != &(__qslot)->head || nelems != (__qslot)->elems)	  \
+        xnpod_fatal("corrupted queue, qslot->elems=%d, qslot=%p at %s:%d", \
+                    (__qslot)->elems,				  \
+                    __qslot,					  \
+		    __FILE__,__LINE__);				  \
+    xnlock_put_irqrestore(&(__qslot)->lock,s);	\
 } while(0)
 
-#define XENO_DEBUG_INSERT_QUEUE() \
+#define XENO_DEBUG_INSERT_QUEUE(__qslot,__holder)		\
 do { \
     xnholder_t *curr; \
     spl_t s; \
-    xnlock_get_irqsave(&qslot->lock,s); \
-    curr = qslot->head.last; \
-    while (curr != &qslot->head && holder != curr) \
+    xnlock_get_irqsave(&(__qslot)->lock,s);	\
+    curr = (__qslot)->head.last;			   \
+    while (curr != &(__qslot)->head && (__holder) != curr)	\
         curr = curr->last; \
-    if (curr == holder) \
-        xnpod_fatal("inserting element twice, holder=%p, qslot=%p", \
-                    holder, \
-                    qslot); \
-    if (holder->last == NULL)   /* Just a guess. */ \
+    if (curr == (__holder))					    \
+        xnpod_fatal("inserting element twice, holder=%p, qslot=%p at %s:%d", \
+                    __holder, \
+                    __qslot, \
+		    __FILE__,__LINE__); \
+    if ((__holder)->last == NULL)				   \
         xnpod_fatal("holder=%p not initialized, qslot=%p", \
-                    holder, \
-                    qslot); \
-    xnlock_put_irqrestore(&qslot->lock,s); \
+                    __holder, \
+                    __qslot); \
+    xnlock_put_irqrestore(&(__qslot)->lock,s);	\
 } while(0)
 
-#define XENO_DEBUG_REMOVE_QUEUE() \
+#define XENO_DEBUG_REMOVE_QUEUE(__qslot,__holder)	\
 do { \
     xnholder_t *curr; \
     spl_t s; \
-    xnlock_get_irqsave(&qslot->lock,s); \
-    curr = qslot->head.last; \
-    while (curr != &qslot->head && holder != curr) \
+    xnlock_get_irqsave(&(__qslot)->lock,s);	\
+    curr = (__qslot)->head.last;			   \
+    while (curr != &(__qslot)->head && (__holder) != curr)	\
         curr = curr->last; \
-    if (curr == &qslot->head) \
-        xnpod_fatal("removing non-linked element, holder=%p, qslot=%p", \
-                    holder, \
-                    qslot); \
-    xnlock_put_irqrestore(&qslot->lock,s); \
+    if (curr == &(__qslot)->head)						\
+        xnpod_fatal("removing non-linked element, holder=%p, qslot=%p at %s:%d", \
+                    __holder, \
+                    __qslot,	\
+		    __FILE__,__LINE__); \
+    xnlock_put_irqrestore(&(__qslot)->lock,s);	\
 } while(0)
 
 #else /* !(__KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__) */
@@ -136,23 +139,46 @@ do { \
 /* Disable queue checks in user-space code which does not run as part
    of any virtual machine, e.g. skin syslibs. */
 
-#define XENO_DEBUG_CHECK_QUEUE()
-#define XENO_DEBUG_INSERT_QUEUE()
-#define XENO_DEBUG_REMOVE_QUEUE()
+#define XENO_DEBUG_CHECK_QUEUE(__qslot)
+#define XENO_DEBUG_INSERT_QUEUE(__qslot,__holder)
+#define XENO_DEBUG_REMOVE_QUEUE(__qslot,__holder)
 
 #endif /* __KERNEL__ || __RTAI_UVM__ || __RTAI_SIM__ */
 
-#endif /* CONFIG_RTAI_OPT_DEBUG */
+/* Write the following as macros so that line numbering information
+   keeps pointing at the real caller in diagnosis messages. */
+
+#define insertq(__qslot,__head,__holder)	\
+({ XENO_DEBUG_CHECK_QUEUE(__qslot);		\
+   XENO_DEBUG_INSERT_QUEUE(__qslot,__holder);	\
+   ath((__head)->last,__holder);		\
+   ++(__qslot)->elems; })
+
+#define prependq(__qslot,__holder)		\
+({ XENO_DEBUG_CHECK_QUEUE(__qslot);		\
+   XENO_DEBUG_INSERT_QUEUE(__qslot,__holder);	\
+   ath(&(__qslot)->head,__holder);		\
+   ++(__qslot)->elems; })
+
+#define appendq(__qslot,__holder)		\
+({ XENO_DEBUG_CHECK_QUEUE(__qslot);		\
+   XENO_DEBUG_INSERT_QUEUE(__qslot,__holder);	\
+   ath((__qslot)->head.last,__holder);		\
+   ++(__qslot)->elems; })
+
+#define removeq(__qslot,__holder)		\
+({ XENO_DEBUG_CHECK_QUEUE(__qslot);		\
+   XENO_DEBUG_REMOVE_QUEUE(__qslot,__holder);	\
+   dth(__holder);				\
+   --(__qslot)->elems; })
+
+#else /* !CONFIG_RTAI_OPT_DEBUG */
 
 static inline int insertq (xnqueue_t *qslot,
                            xnholder_t *head,
                            xnholder_t *holder)
 {
     /* Insert the <holder> element before <head> */
-#ifdef CONFIG_RTAI_OPT_DEBUG
-    XENO_DEBUG_CHECK_QUEUE();
-    XENO_DEBUG_INSERT_QUEUE();
-#endif /*CONFIG_RTAI_OPT_DEBUG */
     ath(head->last,holder);
     return ++qslot->elems;
 }
@@ -161,10 +187,6 @@ static inline int prependq (xnqueue_t *qslot,
                             xnholder_t *holder)
 {
     /* Prepend the element to the queue */
-#ifdef CONFIG_RTAI_OPT_DEBUG
-    XENO_DEBUG_CHECK_QUEUE();
-    XENO_DEBUG_INSERT_QUEUE();
-#endif /* CONFIG_RTAI_OPT_DEBUG */
     ath(&qslot->head,holder);
     return ++qslot->elems;
 }
@@ -173,10 +195,6 @@ static inline int appendq (xnqueue_t *qslot,
                            xnholder_t *holder)
 {
     /* Append the element to the queue */
-#ifdef CONFIG_RTAI_OPT_DEBUG
-    XENO_DEBUG_CHECK_QUEUE();
-    XENO_DEBUG_INSERT_QUEUE();
-#endif /* CONFIG_RTAI_OPT_DEBUG */
     ath(qslot->head.last,holder);
     return ++qslot->elems;
 }
@@ -184,13 +202,11 @@ static inline int appendq (xnqueue_t *qslot,
 static inline int removeq (xnqueue_t *qslot,
                            xnholder_t *holder)
 {
-#ifdef CONFIG_RTAI_OPT_DEBUG
-    XENO_DEBUG_CHECK_QUEUE();
-    XENO_DEBUG_REMOVE_QUEUE();
-#endif /* CONFIG_RTAI_OPT_DEBUG */
     dth(holder);
     return --qslot->elems;
 }
+
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 
 static inline xnholder_t *getheadq (xnqueue_t *qslot)
 {

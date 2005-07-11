@@ -33,7 +33,7 @@ void test_sigsets(void)
     TEST_ASSERT_OK(sigaddset(&sigmask, 1));
     TEST_ASSERT_OK(sigaddset(&sigmask, 15));
     TEST_ASSERT_OK(sigaddset(&sigmask, 32));
-    TEST_ASSERT(sigaddset(&sigmask, 33)==-1 && errno==EINVAL);
+    TEST_ASSERT(sigaddset(&sigmask, 34)==-1 && errno==EINVAL);
 
     TEST_ASSERT(sigismember(&sigmask, 0)==-1 && errno==EINVAL);
     TEST_ASSERT(sigismember(&sigmask, 1)==1);
@@ -43,7 +43,8 @@ void test_sigsets(void)
     TEST_ASSERT(sigismember(&sigmask, 16)==0);
     TEST_ASSERT(sigismember(&sigmask, 31)==0);
     TEST_ASSERT(sigismember(&sigmask, 32)==1);
-    TEST_ASSERT(sigismember(&sigmask, 33)==-1 && errno==EINVAL);
+    TEST_ASSERT(sigismember(&sigmask, 33)==0);
+    TEST_ASSERT(sigismember(&sigmask, 34)==-1 && errno==EINVAL);
 
     TEST_ASSERT_OK(sigfillset(&sigmask));
 

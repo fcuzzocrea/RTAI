@@ -569,6 +569,7 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 		}
 		task->usp_signal = 0;
 #ifndef USE_LINUX_SYSCALL
+{
 		unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
 		regs->LINUX_SYSCALL_RETREG = -EINTR;
 		do_signal(regs, NULL);
@@ -576,6 +577,7 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 		if (task->is_hard == 2) {
 			steal_from_linux(task);
 		}
+}
 #endif
 		return retval;
 	}

@@ -1,6 +1,4 @@
 # -*- makefile -*-
-SHELL=bash
-
 dbx_docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)
 
 dbx_top_distdir=$(doc_top_distdir)
@@ -71,13 +69,14 @@ DBX_SGML_CATALOG_FILES=$(DBX_BUILD_ROOT)/catalog
 # The pictures use by the HTML document have to be in the $DBX_SRC_ROOT/pictures
 %: %.xml %.xml.valid-stamp $(DBX_HTML_STYLESHEET)
 	@echo Generating $@
-	$(mkinstalldirs) $@ && \
-	deps=($^) && SGML_CATALOG_FILES=$(DBX_SGML_CATALOG_FILES) \
+	$(mkinstalldirs) $@
+	deps="$^"; set dummy $$deps; src=$$2; stylesheet=$$4; \
+	SGML_CATALOG_FILES=$(DBX_SGML_CATALOG_FILES) \
 	$(DBX_XSLTPROC) $(DBX_XSLTPROC_FLAGS) $(XSLTPROC_FLAGS) \
 	    --stringparam html.stylesheet $(html_srcroot)/css/$(DBX_HTML_CSS) \
 	    --stringparam navig.graphics.path $(html_srcroot)/pictures/ \
 	    --stringparam admon.graphics.path $(html_srcroot)/pictures/ \
-	    --stringparam base.dir $@/ $${deps[2]} $${deps[0]}
+	    --stringparam base.dir $@/ $$stylesheet $$src
 
 
 #
@@ -92,10 +91,11 @@ DBX_SGML_CATALOG_FILES=$(DBX_BUILD_ROOT)/catalog
 #
 %.fo: %.xml %.xml.valid-stamp $(DBX_FO_STYLESHEET)
 	@echo Generating $@
-	deps=($^) && SGML_CATALOG_FILES=$(DBX_SGML_CATALOG_FILES) \
+	deps="$^"; set dummy $$deps; src=$$2; stylesheet=$$4; \
+	SGML_CATALOG_FILES=$(DBX_SGML_CATALOG_FILES) \
 	$(DBX_XSLTPROC) $(DBX_XSLTPROC_FLAGS) $(XSLTPROC_FLAGS) --output $@ \
 		 --stringparam admon.graphics.path $(DBX_SRC_ROOT)/pictures/ \
-		 $${deps[2]} $${deps[0]}
+		 $$stylesheet $$src
 
 %.pdf: %.fo
 	@echo Generating $@...
@@ -126,7 +126,7 @@ install-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
 	    dest=$(DESTDIR)$(dbx_docdir)/html/`basename $$dir`; \
 	    $(mkinstalldirs) $$dest; \
 	    abs_dest=`cd $$dest && pwd` ; \
-            pushd $$dir; \
+            cd $$dir; \
 	    for f in * ; do \
 	        case $$f in \
 		    *~|CVS|[mM]akefile*|GNUmakefile*);; \
@@ -134,7 +134,7 @@ install-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
 		    *) $(INSTALL_DATA) $$f $$abs_dest/$$f;; \
 	        esac; \
 	    done; \
-	    popd; \
+	    cd ..; \
 	done
 
 dist-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
@@ -142,7 +142,7 @@ dist-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
 	for dir in $$docs; do \
 	    dest=$(DBX_DIST_ROOT)/html/`basename $$dir`; \
 	    $(mkinstalldirs) $$dest && abs_dest=`cd $$dest && pwd` && \
-            pushd $$dir && \
+            cd $$dir && \
 	    for f in * ; do \
 		case $$f in \
 		    *~|CVS|[mM]akefile*|GNUmakefile*);; \
@@ -150,7 +150,7 @@ dist-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
 		    *) $(INSTALL_DATA) $$f $$abs_dest/$$f;; \
 	        esac; \
 	    done; \
-	    popd ; \
+	    cd ..; \
 	done
 
 uninstall-dbx-htmldocs:

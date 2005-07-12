@@ -1,8 +1,13 @@
+
+2005-07-12  Paul <bdi-emc@ntlworld.com>
+
+	* /base/include/asm-i386/rtai_atomic.h: added likely/unlikely support to
+	  avoid problems with < gcc-2.96.
 2005-07-10  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm/rtai_fpu.h: extensively revised/rewritten, 
 	  related conceptual changes and new names reflected in:
-	  asm-i386/rtai_sched.h, sched/sched.immed, sched/sys.c, taslets.c,
+	  asm-i386/rtai_sched.h, sched/sched.immed, sched/sys.c, tasklets.c,
 	  arch/i386/hal/hal.immed.
 	* base/include/rtai_schedcore.h: unified all definitions of 
 	  RTAI functions args from user space in a single place, 

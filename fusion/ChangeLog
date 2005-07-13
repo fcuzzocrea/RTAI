@@ -1,5 +1,7 @@
 2005-07-13  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c: Make rt_task_delete() syscall conforming.
+
 	* skins/posix/syscall.c (__sem_trywait, __sem_getvalue): Add
 	missing calls.
 

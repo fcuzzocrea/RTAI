@@ -1,3 +1,8 @@
+2005-07-13  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/syscall.c (__sem_trywait, __sem_getvalue): Add
+	missing calls.
+
 2005-07-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_send_sig): Sends a signal to the

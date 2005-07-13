@@ -7,6 +7,8 @@ sem_init
 sem_destroy
 sem_post
 sem_wait
+sem_trywait
+sem_getvalue
 clock_getres
 clock_gettime
 clock_settime

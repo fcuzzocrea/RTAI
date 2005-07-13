@@ -104,3 +104,44 @@ int __wrap_sem_wait (sem_t *sem)
 
     return -1;
 }
+
+int __wrap_sem_trywait (sem_t *sem)
+
+{
+    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
+    int err;
+
+    if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
+	return EINVAL;
+
+    err = -XENOMAI_SKINCALL1(__pse51_muxid,
+			     __pse51_sem_trywait,
+			     _sem->shadow_sem.handle);
+    if (!err)
+	return 0;
+
+    errno = err;
+
+    return -1;
+}
+
+int __wrap_sem_getvalue (sem_t *sem, int *sval)
+
+{
+    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
+    int err;
+
+    if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
+	return EINVAL;
+
+    err = -XENOMAI_SKINCALL2(__pse51_muxid,
+			     __pse51_sem_getvalue,
+			     _sem->shadow_sem.handle,
+			     sval);
+    if (!err)
+	return 0;
+
+    errno = err;
+
+    return -1;
+}

@@ -355,6 +355,34 @@ int __sem_wait (struct task_struct *curr, struct pt_regs *regs)
     return sem_wait(sem) == 0 ? 0 : -thread_errno();
 }
 
+int __sem_trywait (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
+    return sem_trywait(sem) == 0 ? 0 : -thread_errno();
+}
+
+int __sem_getvalue (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
+    int err, sval;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(sval)))
+	return -EFAULT;
+
+    err = sem_getvalue(sem,&sval);
+
+    if (err)
+	return -thread_errno();
+
+    __xn_copy_to_user(curr,
+		      (void __user *)__xn_reg_arg2(regs),
+		      &sval,
+		      sizeof(sval));
+    return 0;
+}
+
 int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -1038,6 +1066,8 @@ static xnsysent_t __systab[] = {
     [__pse51_sem_destroy] = { &__sem_destroy, __xn_exec_any },
     [__pse51_sem_post] = { &__sem_post, __xn_exec_any },
     [__pse51_sem_wait] = { &__sem_wait, __xn_exec_primary },
+    [__pse51_sem_trywait] = { &__sem_trywait, __xn_exec_primary },
+    [__pse51_sem_getvalue] = { &__sem_getvalue, __xn_exec_primary },
     [__pse51_clock_getres] = { &__clock_getres, __xn_exec_any },
     [__pse51_clock_gettime] = { &__clock_gettime, __xn_exec_any },
     [__pse51_clock_settime] = { &__clock_settime, __xn_exec_any },

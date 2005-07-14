@@ -25,7 +25,7 @@
 
 #include <asm/rtai_vectors.h>
 
-//#define USE_LINUX_SYSCALL  0x80
+#define USE_LINUX_SYSCALL
 
 #define RTAI_SYSCALL_NR      orig_eax
 #define RTAI_SYSCALL_ARGS    ecx
@@ -185,11 +185,14 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 /* NOTE: Keep the following routines unfold: this is a compiler
    compatibility issue. */
 
+#include <sys/syscall.h>
+#include <unistd.h>
+
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
 #ifdef USE_LINUX_SYSCALL
-	RTAI_DO_TRAP(USE_LINUX_SYSCALL, retval, srq, arg);
+	syscall(srq, 0, arg, &retval);
 #else
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
 #endif

@@ -978,7 +978,7 @@ int soft_rt_recvfrom(int sock, void *msg, int msglen, unsigned int flags, struct
 #include <linux/poll.h>
 #include <linux/net.h>
 
-static int errno;
+int errno;
 
 static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
 

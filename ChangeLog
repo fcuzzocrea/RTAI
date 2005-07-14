@@ -1,8 +1,13 @@
+2005-07-14  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_lxrt.h: if using Linux syscall for RTAI 
+	  proper syscalls is enabled then we do exactly what Linux does.
 
 2005-07-12  Paul <bdi-emc@ntlworld.com>
 
 	* /base/include/asm-i386/rtai_atomic.h: added likely/unlikely support to
 	  avoid problems with < gcc-2.96.
+
 2005-07-10  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm/rtai_fpu.h: extensively revised/rewritten, 

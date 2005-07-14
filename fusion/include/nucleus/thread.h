@@ -202,7 +202,8 @@ typedef struct xnhook {
 #define xnthread_signaled_p(thread)        ((thread)->signals != 0)
 #define xnthread_user_task(thread)         xnarch_user_task(xnthread_archtcb(thread))
 #define xnthread_user_pid(thread) \
-    (testbits((thread)->status,XNROOT) ? 0 : xnarch_user_pid(xnthread_archtcb(thread)))
+    (testbits((thread)->status,XNROOT) || !xnthread_user_task(thread) ? \
+    0 : xnarch_user_pid(xnthread_archtcb(thread)))
 
 #ifdef __cplusplus
 extern "C" {

@@ -72,7 +72,6 @@ static struct __lostagerq {
 #define LO_WAKEUP_REQ 1
 #define LO_RENICE_REQ 2
 #define LO_SIGNAL_REQ 3
-#define LO_HARDEN_REQ 4
 	int type;
 	struct task_struct *task;
 	int arg;
@@ -286,11 +285,6 @@ static void lostage_handler (void *cookie)
 
 		send_sig(rq->req[reqnum].arg,task,1);
 		break;
-
-	    case LO_HARDEN_REQ:
-
-		wake_up_interruptible(&gatekeeper[task_cpu(task)].waitq);
-		break;
 	    }
 	}
 }
@@ -320,14 +314,21 @@ static int gatekeeper_thread (void *data)
 
 {
     struct __gatekeeper *gk = (struct __gatekeeper *)data;
-    struct task_struct *this_task = current;
+    struct task_struct *this_task = current, *p;
     DECLARE_WAITQUEUE(wait,this_task);
     int cpu = gk - &gatekeeper[0];
+    xnthread_t *thread;
     spl_t s;
     
     sigfillset(&this_task->blocked);
     set_cpus_allowed(this_task, cpumask_of_cpu(cpu));
+#ifdef CONFIG_PREEMPT_RT
+    /* FIXME -- PREEMPT_RT badly changes the semantics of
+       wake_up_interruptible_sync(), we need to work around this. */
+    set_linux_task_priority(this_task,1);
+#else /* CONFIG_PREEMPT_RT */
     set_linux_task_priority(this_task,MAX_RT_PRIO-1);
+#endif /* CONFIG_PREEMPT_RT */
 
     init_waitqueue_head(&gk->waitq);
     add_wait_queue_exclusive(&gk->waitq,&wait);
@@ -345,96 +346,23 @@ static int gatekeeper_thread (void *data)
 
 	xnlock_get_irqsave(&nklock, s);
 
-	/* Safety guard: don't resume the shadow if Linux resumed the
-	   underlying task under our feet while the hardening request
-	   was propagated to us. */
-
-	if (xnthread_user_task(gk->thread)->state & TASK_INTERRUPTIBLE)
-	    {
+	thread = gk->thread;
+	p = xnthread_user_task(thread);
+	set_task_state(p,TASK_INTERRUPTIBLE);
 #ifdef CONFIG_SMP
-	    /* If the fusion task changed its CPU while in secondary
-	       mode, change the shadow CPU too. We do not migrate the
-	       thread timers here, it would not work. For a "full"
-	       migration comprising timers, using xnpod_migrate is
-	       required. */
-	    gk->thread->sched = xnpod_sched_slot(cpu);
-	    xnpod_resume_thread(gk->thread,XNRELAX);
-#else /* !CONFIG_SMP */
-	    xnpod_resume_thread(gk->thread,XNRELAX);
+	/* If the fusion task changed its CPU while in secondary mode,
+	   change the shadow CPU too. We do not migrate the thread
+	   timers here, it would not work. For a "full" migration
+	   comprising timers, using xnpod_migrate is required. */
+	thread->sched = xnpod_sched_slot(cpu);
 #endif /* CONFIG_SMP */
-	    }
+	xnpod_resume_thread(thread,XNRELAX);
+	xnpod_schedule();
 
 	xnlock_put_irqrestore(&nklock, s);
-	xnpod_renice_root(XNPOD_ROOT_PRIO_BASE);
-	xnpod_schedule();
     }
 
     return 0;
-}
-
-/* timespec/timeval <-> ticks conversion routines -- Lifted and
-  adapted from include/linux/time.h. */
- 
-unsigned long long xnshadow_ts2ticks (const struct timespec *v)
-  
-{
-    u_long tickval = xnpod_get_tickval(), ticks;
-    u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
-    unsigned long long nsec;
-
-    if (tickval != 1)
-        {
-        /* save a division: we add to nsec the worst remainder of the division
-           of sec * 1e9 by tickval. nsec may not fit on 32 bits if v is not
-           normalized. */
-        nsec = v->tv_nsec + tickval - 1;
-        /* the result is expected to fit on 32 bits, we can hence use uldiv
-           instead of ulldiv. */
-        ticks = xnarch_uldiv(nsec, tickval);
-        }
-    else
-        ticks = v->tv_nsec;
-
-    return xnarch_ullmul(hz, v->tv_sec) + ticks;
-}
-
-void xnshadow_ticks2ts (unsigned long long ticks, struct timespec *v)
-
-{
-    u_long rem_ticks, tickval = xnpod_get_tickval();
-    u_long hz = xnpod_get_ticks2sec();
-    v->tv_sec = xnarch_uldivrem(ticks, hz, &rem_ticks);
-    v->tv_nsec = rem_ticks * tickval;
-}
-
-unsigned long long xnshadow_tv2ticks (const struct timeval *v)
-
-{
-    u_long tickval = xnpod_get_tickval();
-    u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
-    unsigned long long nsec, ticks;
-
-    if (tickval != 1)
-        {
-        nsec = xnarch_ullmul(v->tv_usec,1000UL) + tickval - 1;
-        /* If tickval is not 1, tickval is greater than 1000, so that 'ticks'
-           fit on 32 bits and we can again use uldiv instead of ulldiv. */
-        ticks = xnarch_uldiv(nsec, tickval);
-        }
-    else
-        /* ticks may need 64 bits if v is not normalized. */
-        ticks = xnarch_ullmul(v->tv_usec, 1000UL);
-
-    return xnarch_ullmul(hz, v->tv_sec) + ticks;
-}
-
-void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)
-
-{
-    u_long rem_ticks, tickval = xnpod_get_tickval();
-    u_long hz = xnpod_get_ticks2sec();
-    v->tv_sec = xnarch_uldivrem(ticks, hz, &rem_ticks);
-    v->tv_usec = rem_ticks * tickval / 1000UL;
 }
 
 /*! 
@@ -491,14 +419,16 @@ static int xnshadow_harden (void)
        critical for the proper execution of the migration protocol. */
 
     gk->thread = thread;
-    set_current_state(TASK_INTERRUPTIBLE);
-    schedule_linux_call(LO_HARDEN_REQ,this_task,0);
+    set_current_state(TASK_UNINTERRUPTIBLE);
+    wake_up_interruptible_sync(&gk->waitq);
     schedule();
 
+#ifdef CONFIG_RTAI_OPT_DEBUG
     if (adp_current == adp_root)
-	/* Failed resumption: we likely got a Linux signal while the
-	   hardening request was propagated to the gatekeeper. */
-	return signal_pending(this_task) ? -ERESTARTSYS : -EPERM;
+	xnpod_fatal("xnshadow_harden() failed for thread %s[%d]",
+		    thread->name,
+		    xnthread_user_pid(thread));
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 
 #ifdef CONFIG_RTAI_HW_FPU
     xnpod_switch_fpu(xnpod_current_sched());
@@ -573,6 +503,12 @@ void xnshadow_relax (int notify)
 
     xnpod_renice_root(thread->cprio);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
+#ifdef CONFIG_RTAI_OPT_DEBUG
+    if (adp_current != adp_root)
+	xnpod_fatal("xnshadow_relax() failed for thread %s[%d]",
+		    thread->name,
+		    xnthread_user_pid(thread));
+#endif /* CONFIG_RTAI_OPT_DEBUG */
     cprio = thread->cprio < MAX_RT_PRIO ? thread->cprio : MAX_RT_PRIO-1;
     __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,cprio);
 
@@ -1408,14 +1344,19 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 #ifdef CONFIG_RTAI_OPT_DEBUG
 	{
 	xnflags_t status = thread->status & ~XNRELAX;
+	int sigpending = signal_pending(next);
 
-        if (testbits(status,XNTHREAD_BLOCK_BITS))
+        if (!(next->ptrace & PT_PTRACED) &&
+	    /* Allow ptraced threads to run shortly in order to
+	       properly recover from a stopped state. */
+	    testbits(status,XNTHREAD_BLOCK_BITS))
 	    {
 	    show_stack(xnthread_user_task(thread),NULL);
-            xnpod_fatal("blocked thread %s[%d] rescheduled?! (status=0x%lx, prev=%s[%d])",
+            xnpod_fatal("blocked thread %s[%d] rescheduled?! (status=0x%lx, sig=%d, prev=%s[%d])",
 			thread->name,
 			next->pid,
 			status,
+			sigpending,
 			prev->comm,
 			prev->pid);
 	    }
@@ -1614,6 +1555,71 @@ int xnshadow_unregister_interface (int muxid)
     return err;
 }
 
+/* timespec/timeval <-> ticks conversion routines -- Lifted and
+  adapted from include/linux/time.h. */
+ 
+unsigned long long xnshadow_ts2ticks (const struct timespec *v)
+  
+{
+    u_long tickval = xnpod_get_tickval(), ticks;
+    u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
+    unsigned long long nsec;
+
+    if (tickval != 1)
+        {
+        /* save a division: we add to nsec the worst remainder of the division
+           of sec * 1e9 by tickval. nsec may not fit on 32 bits if v is not
+           normalized. */
+        nsec = v->tv_nsec + tickval - 1;
+        /* the result is expected to fit on 32 bits, we can hence use uldiv
+           instead of ulldiv. */
+        ticks = xnarch_uldiv(nsec, tickval);
+        }
+    else
+        ticks = v->tv_nsec;
+
+    return xnarch_ullmul(hz, v->tv_sec) + ticks;
+}
+
+void xnshadow_ticks2ts (unsigned long long ticks, struct timespec *v)
+
+{
+    u_long rem_ticks, tickval = xnpod_get_tickval();
+    u_long hz = xnpod_get_ticks2sec();
+    v->tv_sec = xnarch_uldivrem(ticks, hz, &rem_ticks);
+    v->tv_nsec = rem_ticks * tickval;
+}
+
+unsigned long long xnshadow_tv2ticks (const struct timeval *v)
+
+{
+    u_long tickval = xnpod_get_tickval();
+    u_long hz = xnpod_get_ticks2sec(); /* hz == 1000000000/tickval */
+    unsigned long long nsec, ticks;
+
+    if (tickval != 1)
+        {
+        nsec = xnarch_ullmul(v->tv_usec,1000UL) + tickval - 1;
+        /* If tickval is not 1, tickval is greater than 1000, so that 'ticks'
+           fit on 32 bits and we can again use uldiv instead of ulldiv. */
+        ticks = xnarch_uldiv(nsec, tickval);
+        }
+    else
+        /* ticks may need 64 bits if v is not normalized. */
+        ticks = xnarch_ullmul(v->tv_usec, 1000UL);
+
+    return xnarch_ullmul(hz, v->tv_sec) + ticks;
+}
+
+void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)
+
+{
+    u_long rem_ticks, tickval = xnpod_get_tickval();
+    u_long hz = xnpod_get_ticks2sec();
+    v->tv_sec = xnarch_uldivrem(ticks, hz, &rem_ticks);
+    v->tv_usec = rem_ticks * tickval / 1000UL;
+}
+
 void xnshadow_grab_events (void)
 
 {
@@ -1686,7 +1692,6 @@ void __exit xnshadow_cleanup (void)
 
     rthal_apc_free(lostage_apc);
     adeos_free_ptdkey(nkgkptd);
-
     adeos_unregister_domain(&irq_shield);
 }
 

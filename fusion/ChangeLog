@@ -1,3 +1,12 @@
+2005-07-14  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (linux_schedule_head): Prevent ptraced shadows
+	from triggering the debug check: running a ptraced thread
+	temporarily while it is blocked by the nucleus until it properly
+	recovers from the latest stopped state, is legitimate.
+	(gatekeeper_thread): Iron xnshadow_harden() -> gatekeeper
+	transitions.
+
 2005-07-13  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c: Make rt_task_delete() syscall conforming.

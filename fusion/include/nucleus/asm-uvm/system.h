@@ -353,7 +353,7 @@ int main (int argc, char *argv[])
     struct sigaction sa;
     int err;
 
-    if (geteuid() !=0)
+    if (geteuid() != 0)
 	{
         fprintf(stderr,"This program must be run with root privileges.\n");
 	exit(1);

@@ -7,6 +7,11 @@
 	(gatekeeper_thread): Iron xnshadow_harden() -> gatekeeper
 	transitions.
 
+	* nucleus/shadow.c (xnshadow_harden): Revert terminally broken
+	changes regarding the way the gatekeeper is woken up. Go back to
+	the previous sane way (i.e. call wake_up_interruptible_sync() from
+	xnshadow_harden() directly).
+
 2005-07-13  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c: Make rt_task_delete() syscall conforming.

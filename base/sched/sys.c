@@ -593,13 +593,13 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 	trace_true_lxrt_rtai_syscall_entry();
 #endif /* CONFIG_RTAI_TRACE */
 
-	if (likely((task = current->rtai_tskext(0)))) {
+	if (likely((task = current->rtai_tskext(0)) != NULL)) {
 		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
 		}
 	}
 	retval = handle_lxrt_request(lxsrq, arg, task);
-	if (likely(task)) {
+	if (likely(task != NULL)) {
 		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
 		} else {

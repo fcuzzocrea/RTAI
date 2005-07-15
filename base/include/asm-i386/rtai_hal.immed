@@ -203,16 +203,16 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 /* Use these to grant atomic protection when accessing the hardware */
 #define rtai_hw_cli()                  adeos_hw_cli()
 #define rtai_hw_sti()                  adeos_hw_sti()
-#define rtai_hw_save_flags_and_cli(x)  adeos_hw_local_irq_save(flags)
-#define rtai_hw_restore_flags(x)       adeos_hw_local_irq_restore(flags)
-#define rtai_hw_save_flags(x)          adeos_hw_local_irq_flags(flags)
+#define rtai_hw_save_flags_and_cli(x)  adeos_hw_local_irq_save(x)
+#define rtai_hw_restore_flags(x)       adeos_hw_local_irq_restore(x)
+#define rtai_hw_save_flags(x)          adeos_hw_local_irq_flags(x)
 
 /* Use these to grant atomic protection in hard real time code */
 #define rtai_cli()                  adeos_hw_cli()
 #define rtai_sti()                  adeos_hw_sti()
-#define rtai_save_flags_and_cli(x)  adeos_hw_local_irq_save(flags)
-#define rtai_restore_flags(x)       adeos_hw_local_irq_restore(flags)
-#define rtai_save_flags(x)          adeos_hw_local_irq_flags(flags)
+#define rtai_save_flags_and_cli(x)  adeos_hw_local_irq_save(x)
+#define rtai_restore_flags(x)       adeos_hw_local_irq_restore(x)
+#define rtai_save_flags(x)          adeos_hw_local_irq_flags(x)
 
 extern volatile unsigned long adeos_pended;
 

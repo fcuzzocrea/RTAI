@@ -127,7 +127,7 @@ void rtai_handle_isched_lock(int nesting);
  */
 
 #define RTAI_MAX_FUN_ARGS  9
-struct fun_args { long a[RTAI_MAX_FUN_ARGS]; long long (*fun)(int, ...); };
+struct fun_args { unsigned long a[RTAI_MAX_FUN_ARGS]; long long (*fun)(unsigned long, ...); };
 //used in sys.c
 #define RTAI_FUN_ARGS  arg[0],arg[1],arg[2],arg[3],arg[4],arg[5],arg[6],arg[7],arg[RTAI_MAX_FUN_ARGS - 1]
 //used in sched.c and netrpc.c (generalised calls from soft threads)

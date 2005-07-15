@@ -582,15 +582,14 @@ dist-dbx-htmldocs: $(DBX_ALL_HTML:%=$(HTML_DOCSDIR)%)
 	for dir in $$docs; do \
 	    dest=$(DBX_DIST_ROOT)/html/`basename $$dir`; \
 	    $(mkinstalldirs) $$dest && abs_dest=`cd $$dest && pwd` && \
-            cd $$dir && \
+            ( cd $$dir && \
 	    for f in * ; do \
 		case $$f in \
 		    *~|CVS|[mM]akefile*|GNUmakefile*);; \
 		    *.html|*.htm) $(DBX_HTML_TRANSFORM) $$f > $$abs_dest/$$f;; \
 		    *) $(INSTALL_DATA) $$f $$abs_dest/$$f;; \
 	        esac; \
-	    done; \
-	    cd ..; \
+	    done; ) \
 	done
 
 uninstall-dbx-htmldocs:

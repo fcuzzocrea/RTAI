@@ -1,6 +1,11 @@
+2005-07-15  Ignacio García Pérez <iggarpe@terra.es>
+
+	* base/include/asm-i386/rtai_hal.immed: fixed a very bad misnaming 
+	  in interrupt flags manipulating macros.
+
 2005-07-14  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-	* base/include/asm/rtai_lxrt.h: if using Linux syscall for RTAI 
+	* base/include/asm-i386/rtai_lxrt.h: if using Linux syscall for RTAI 
 	  proper syscalls is enabled then we do exactly what Linux does.
 
 2005-07-12  Paul <bdi-emc@ntlworld.com>

@@ -50,7 +50,6 @@ ACKNOWLEDGMENTS:
 
 #define __KERNEL_SYSCALLS__
 #include <linux/unistd.h>
-static int errno;
 
 #ifdef CONFIG_PROC_FS
 #include <linux/stat.h>
@@ -1742,7 +1741,7 @@ static void kthread_fun(int cpuid)
 	current->rtai_tskext(1) = task->lnxtsk = current;
 	lxrt_sigfillset();
 	put_current_on_cpu(cpuid);
-	init_fpu(current);
+	init_hard_fpu(current);
 	steal_from_linux(task);
 	while(1) {
 		rt_task_suspend(task);

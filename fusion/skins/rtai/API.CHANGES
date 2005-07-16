@@ -55,7 +55,7 @@ ___________________________________________________________________
 
         o Fix rt_timer_ns2ticks and rt_timer_ticks2ns behaviour, 
         so that calling rt_task_sleep(rt_timer_ns2ticks(2000000000))
-        will sleep two seconds whatever the timer mode.
+        will sleep two seconds whatever the timer mode is.
 
         o Added rt_timer_ns2tsc and rt_timer_tsc2ns to convert 
         between nanoseconds and values returned by rt_timer_tsc.

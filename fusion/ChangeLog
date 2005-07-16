@@ -1,3 +1,17 @@
+2005-07-16  Philippe Gerum  <rpm@xenomai.org>
+
+	* testsuite/cruncher/cruncher.c: Enable interrupt shield for test
+	threads.
+
+	* skins/posix/syscall.c (__pthread_set_mode_np): Fix check for
+	k_tid validity.
+
+	* arch/i386/patches: Upgrade to r12 final.
+
+	* arch/ppc/patches: Upgrade to r8c1.
+
+	* arch/ia64/patches: Upgrade to r8c1.
+
 2005-07-14  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (linux_schedule_head): Prevent ptraced shadows

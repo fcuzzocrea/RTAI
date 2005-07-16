@@ -83,6 +83,8 @@ void *cruncher_thread (void *arg)
 	exit(EXIT_FAILURE);
 	}
 
+    pthread_set_mode_np(pthread_self(),0,PTHREAD_SHIELD);
+
     for (;;)
 	{
 	sem_wait(&semA);
@@ -121,6 +123,8 @@ void *sampler_thread (void *arg)
 	fprintf(stderr,"pthread_setschedparam() failed\n");
 	exit(EXIT_FAILURE);
 	}
+
+    pthread_set_mode_np(pthread_self(),0,PTHREAD_SHIELD);
 
     printf("Calibrating cruncher...");
 

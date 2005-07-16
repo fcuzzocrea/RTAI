@@ -297,7 +297,7 @@ int __pthread_set_mode_np (struct task_struct *curr, struct pt_regs *regs)
 
     xnlock_get_irqsave(&nklock, s);
 
-    if (!pse51_obj_active(&k_tid->threadbase, PSE51_THREAD_MAGIC, struct pse51_thread))
+    if (!pse51_obj_active(k_tid, PSE51_THREAD_MAGIC, struct pse51_thread))
 	{
         xnlock_put_irqrestore(&nklock, s);
         return -ESRCH;

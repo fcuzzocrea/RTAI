@@ -1,8 +1,5 @@
 2005-07-16  Philippe Gerum  <rpm@xenomai.org>
 
-	* testsuite/cruncher/cruncher.c: Enable interrupt shield for test
-	threads.
-
 	* skins/posix/syscall.c (__pthread_set_mode_np): Fix check for
 	k_tid validity.
 

@@ -1,5 +1,9 @@
 2005-07-16  Philippe Gerum  <rpm@xenomai.org>
 
+ 	* RELEASE: fusion-0.8.3 (Traveler)
+
+2005-07-16  Philippe Gerum  <rpm@xenomai.org>
+
 	* skins/posix/syscall.c (__pthread_set_mode_np): Fix check for
 	k_tid validity.
 

@@ -53,6 +53,11 @@ case "$host" in
 	wanted_kernel_arch=CONFIG_PPC
 	arch_have_sim=y
         ;;
+ powerpc64-*|ppc64-*)
+	RTAI_TARGET_ARCH=ppc64
+	wanted_kernel_arch=CONFIG_PPC64
+	arch_have_sim=y
+        ;;
  ia64-*)
 	RTAI_TARGET_ARCH=ia64
 	wanted_kernel_arch=CONFIG_IA64
@@ -656,7 +661,7 @@ case $RTAI_TARGET_ARCH in
 	AC_MSG_RESULT(${CONFIG_RTAI_HW_X86_VSYSCALL:-no})
 	test \! x$CONFIG_RTAI_HW_X86_VSYSCALL = x && AC_DEFINE(CONFIG_RTAI_HW_X86_VSYSCALL,1,[Kconfig])
         ;;
- ppc)
+ ppc|ppc64)
 	timer_type=decrementer
         ;;
  ia64)
@@ -1121,6 +1126,7 @@ dnl
 dnl CPU architecture
 AM_CONDITIONAL(CONFIG_X86,[test "$CONFIG_X86" = y])
 AM_CONDITIONAL(CONFIG_PPC,[test "$CONFIG_PPC" = y])
+AM_CONDITIONAL(CONFIG_PPC64,[test "$CONFIG_PPC64" = y])
 AM_CONDITIONAL(CONFIG_IA64,[test "$CONFIG_IA64" = y])
 AM_CONDITIONAL(CONFIG_SMP,[test "$CONFIG_SMP" = y])
 AM_CONDITIONAL(CONFIG_LTT,[test "$CONFIG_LTT" = y])
@@ -1225,6 +1231,11 @@ case $RTAI_TARGET_ARCH in
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -pipe"
 	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
         ;;
+ ppc64)
+	RTAI_TARGET_SUBARCH=
+	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
+	RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+        ;;
  ia64)
 	RTAI_TARGET_SUBARCH=
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -pipe"
@@ -1308,6 +1319,8 @@ AC_CONFIG_FILES([ \
 	arch/i386/hal/GNUmakefile \
         arch/ppc/GNUmakefile \
 	arch/ppc/hal/GNUmakefile \
+        arch/ppc64/GNUmakefile \
+	arch/ppc64/hal/GNUmakefile \
         arch/ia64/GNUmakefile \
 	arch/ia64/hal/GNUmakefile \
 	include/GNUmakefile \
@@ -1315,6 +1328,7 @@ AC_CONFIG_FILES([ \
 	include/nucleus/asm-generic/GNUmakefile \
 	include/nucleus/asm-i386/GNUmakefile \
 	include/nucleus/asm-ppc/GNUmakefile \
+	include/nucleus/asm-ppc64/GNUmakefile \
 	include/nucleus/asm-ia64/GNUmakefile \
 	include/nucleus/asm-uvm/GNUmakefile \
 	nucleus/GNUmakefile \

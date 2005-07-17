@@ -10,6 +10,9 @@ i?86)
 ppc|powerpc)
     echo powerpc-unknown-linux-gnu
     ;;
+ppc64|powerpc64)
+    echo powerpc64-unknown-linux-gnu
+    ;;
 ia64|itanium)
     echo ia64-unknown-linux-gnu
     ;;

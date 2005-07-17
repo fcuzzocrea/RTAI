@@ -61,7 +61,7 @@ typedef unsigned long cpumask_t;
 #error "UVM over SMP not supported yet -- CONFIG_RTAI_OPT_UVM needs to be switched off"
 #endif /* CONFIG_SMP */
 
-extern int uvm_irqlock;
+extern unsigned long uvm_irqlock;
 
 #define splhigh(x)    ((x) = xnarch_lock_irq())
 #define splexit(x)    xnarch_unlock_irq(x)
@@ -244,7 +244,7 @@ static int inline xnarch_lock_irq (void)
 
 static inline void xnarch_unlock_irq (int x)
 {
-    extern int uvm_irqpend;
+    extern unsigned long uvm_irqpend;
 
     if (!x && uvm_irqlock)
 	{
@@ -267,9 +267,9 @@ void xnpod_welcome_thread(struct xnthread *);
 
 #ifdef XENO_INTR_MODULE
 
-int uvm_irqlock = 0;	/* =1 whenever IRQs are off. */
+unsigned long uvm_irqlock = 0;	/* =1 whenever IRQs are off. */
 
-int uvm_irqpend = 0;	/* =1 whenever IRQs are pending. */
+unsigned long uvm_irqpend = 0;	/* =1 whenever IRQs are pending. */
 
 void xnarch_sync_irq (void) /* Synchronization point for IRQ servers. */
 

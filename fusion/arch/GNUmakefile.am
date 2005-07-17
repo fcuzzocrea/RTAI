@@ -2,8 +2,12 @@ if CONFIG_X86
 ARCHDIR = i386
 endif
 
+if CONFIG_PPC64
+ARCHDIR = ppc64
+else
 if CONFIG_PPC
 ARCHDIR = ppc
+endif
 endif
 
 if CONFIG_IA64

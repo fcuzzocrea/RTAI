@@ -47,7 +47,7 @@ int uvm_thread_start(void *khandle);
 
 int uvm_thread_sync(xncompletion_t *completionp);
 
-int uvm_thread_idle(int *lockp);
+int uvm_thread_idle(unsigned long *lockp);
 
 int uvm_thread_cancel(void *deadhandle,
 		      void *nexthandle);
@@ -55,9 +55,9 @@ int uvm_thread_cancel(void *deadhandle,
 int uvm_thread_activate(void *nexthandle,
 			void *prevhandle);
 
-int uvm_thread_hold(int *pendp);
+int uvm_thread_hold(unsigned long *pendp);
 
-int uvm_thread_release(int *lockp);
+int uvm_thread_release(unsigned long *lockp);
 
 int uvm_thread_set_periodic(nanotime_t idate,
 			    nanotime_t period);

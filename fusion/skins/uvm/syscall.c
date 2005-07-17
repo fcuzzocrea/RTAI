@@ -238,7 +238,7 @@ static int __vm_thread_hold (struct task_struct *curr, struct pt_regs *regs)
     xnlock_get_irqsave(&nklock,s);
 
     /* Raise the 'irq pending' flag. */
-    __xn_put_user(curr,1,(int __user *)__xn_reg_arg1(regs));
+    __xn_put_user(curr,1,(unsigned long __user *)__xn_reg_arg1(regs));
 
     xnsynch_sleep_on(&__vm_thread_irqsync,XN_INFINITE);
 
@@ -259,7 +259,7 @@ static int __vm_thread_release (struct task_struct *curr, struct pt_regs *regs)
 
     xnlock_get_irqsave(&nklock,s);
 
-    __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the irqlock flag */
+    __xn_put_user(curr,0,(unsigned long __user *)__xn_reg_arg1(regs)); /* Clear the irqlock flag */
 
     if (xnsynch_flush(&__vm_thread_irqsync,XNBREAK) == XNSYNCH_RESCHED)
 	xnpod_schedule();
@@ -279,7 +279,7 @@ static int __vm_thread_idle (struct task_struct *curr, struct pt_regs *regs)
     xnlock_get_irqsave(&nklock,s);
 
     /* Emulate sti() for the UVM before returning to idle mode. */
-    __xn_put_user(curr,0,(int __user *)__xn_reg_arg1(regs)); /* Clear the irqlock flag */
+    __xn_put_user(curr,0,(unsigned long __user *)__xn_reg_arg1(regs)); /* Clear the irqlock flag */
 
     if (xnsynch_nsleepers(&__vm_thread_irqsync) > 0)
 	xnsynch_flush(&__vm_thread_irqsync,XNBREAK);

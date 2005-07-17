@@ -1,0 +1,34 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libhal_SRC = ppc64.c switch.S
+
+if CONFIG_RTAI_HW_FPU
+libhal_SRC += fpu.S
+endif
+
+rtai_hal.ko: @RTAI_KBUILD_ENV@
+rtai_hal.ko: $(libhal_SRC) generic.c FORCE
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
+	@RTAI_KBUILD_BOTTOM@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+all-local: rtai_hal$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_hal$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+.PHONY: FORCE
+
+EXTRA_DIST = $(libhal_SRC) fpu.S Makefile.kbuild

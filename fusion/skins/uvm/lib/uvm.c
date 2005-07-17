@@ -145,7 +145,7 @@ int uvm_thread_wait_period (void)
 			     __uvm_thread_wait_period);
 }
 
-int uvm_thread_idle (int *lockp)
+int uvm_thread_idle (unsigned long *lockp)
 {
     return XENOMAI_SKINCALL1(__uvm_muxid,
 			     __uvm_thread_idle,
@@ -168,14 +168,14 @@ int uvm_thread_activate (void *nexthandle, void *prevhandle)
 			     prevhandle);
 }
 
-int uvm_thread_hold (int *pendp)
+int uvm_thread_hold (unsigned long *pendp)
 {
     return XENOMAI_SKINCALL1(__uvm_muxid,
 			     __uvm_thread_hold,
 			     pendp);
 }
 
-int uvm_thread_release (int *lockp)
+int uvm_thread_release (unsigned long *lockp)
 {
     return XENOMAI_SKINCALL1(__uvm_muxid,
 			     __uvm_thread_release,

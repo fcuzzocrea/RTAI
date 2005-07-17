@@ -1,3 +1,17 @@
+2005-07-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc64, include/nucleus/asm-ppc64: Merge the ppc64 port, a
+	contribution of Taneli Vähäkangas and Heikki Lindholm.
+
+	* include/nucleus/asm-uvm/system.h: Use native long type for
+	variables passed to atomic ops for proper operations on 64bit
+	archs (uvm_irqpend, uvm_irqlock).
+
+2005-05-05  Jan Kiszka <jan.kiszka@web.de>
+
+	* skin/rtai/task.c (rt_task_sleep_until): Properly handle clock
+	wrap around case.
+
 2005-07-16  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.8.3 (Traveler)

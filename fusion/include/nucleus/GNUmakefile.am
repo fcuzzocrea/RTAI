@@ -8,6 +8,10 @@ if CONFIG_PPC
 ARCHDIR = asm-ppc
 endif
 
+if CONFIG_PPC64
+ARCHDIR = asm-ppc64
+endif
+
 if CONFIG_IA64
 ARCHDIR = asm-ia64
 endif

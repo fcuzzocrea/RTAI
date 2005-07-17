@@ -891,7 +891,7 @@ int rt_task_sleep_until (RTIME date)
 
 {
     int err = 0;
-    STIME delay;
+    SRTIME delay;
     spl_t s;
 
     if (xnpod_unblockable_p())

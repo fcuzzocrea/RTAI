@@ -67,7 +67,7 @@ static inline xnpipe_mh_t *link2mh (xnholder_t *laddr)
 
 typedef int xnpipe_io_handler(int minor,
 			      struct xnpipe_mh *mh,
-			      int onerror,
+			      int retval,
 			      void *cookie);
 
 typedef int xnpipe_session_handler(int minor,

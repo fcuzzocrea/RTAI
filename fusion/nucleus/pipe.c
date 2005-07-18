@@ -286,7 +286,7 @@ int xnpipe_disconnect (int minor)
 	while ((holder = getq(&state->inq)) != NULL)
 	    {
 	    if (state->input_handler != NULL)
-		state->input_handler(minor,link2mh(holder),1,state->cookie);
+		state->input_handler(minor,link2mh(holder),-EPIPE,state->cookie);
 	    else if (state->alloc_handler == NULL)
 		xnfree(link2mh(holder));
 	    }
@@ -589,7 +589,7 @@ static int xnpipe_release (struct inode *inode,
 	if (state->output_handler != NULL)
 	    {
 	    while ((holder = getq(&state->outq)) != NULL)
-		state->output_handler(minor,link2mh(holder),1,state->cookie);
+		state->output_handler(minor,link2mh(holder),-EPIPE,state->cookie);
 	    }
 
 	/* If a real-time kernel thread is waiting on this object,
@@ -695,7 +695,7 @@ static ssize_t xnpipe_read (struct file *file,
 	    ret = -ENOSPC;
 
 	if (handler != NULL)
-	    handler(xnminor_from_state(state),mh,ret < 0,cookie);
+	    ret = handler(xnminor_from_state(state),mh,ret,cookie);
 	}
     else /* Closed by peer. */
 	{
@@ -717,7 +717,6 @@ static ssize_t xnpipe_write (struct file *file,
     struct xnpipe_mh *mh;
     xnthread_t *sleeper;
     void *cookie;
-    int err;
     spl_t s;
 
     if (count == 0)
@@ -755,29 +754,27 @@ static ssize_t xnpipe_write (struct file *file,
     xnpipe_m_size(mh) = count;
     __copy_from_user(xnpipe_m_data(mh),buf,count);
 
+    xnlock_get_irqsave(&nklock,s);
+
+    appendq(&state->inq,&mh->link);
+
+    /* If a real-time kernel thread is waiting on this input queue,
+       wake it up now. */
+
+    if (xnsynch_nsleepers(&state->synchbase) > 0)
+	{
+	sleeper = xnsynch_wakeup_one_sleeper(&state->synchbase);
+	xnpod_schedule();
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+
     if (input_handler != NULL)
 	{
-	err = input_handler(xnminor_from_state(state),mh,0,cookie);
+	int err = input_handler(xnminor_from_state(state),mh,0,cookie);
 
 	if (err != 0)
 	    count = (size_t)err;
-	}
-    else
-	{
-	xnlock_get_irqsave(&nklock,s);
-
-	appendq(&state->inq,&mh->link);
-
-	/* If a real-time kernel thread is waiting on this input
-	   queue, wake it up now. */
-
-	if (xnsynch_nsleepers(&state->synchbase) > 0)
-	    {
-	    sleeper = xnsynch_wakeup_one_sleeper(&state->synchbase);
-	    xnpod_schedule();
-	    }
-
-	xnlock_put_irqrestore(&nklock,s);
 	}
 
     return (ssize_t)count;

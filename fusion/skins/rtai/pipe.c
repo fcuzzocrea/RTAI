@@ -150,7 +150,6 @@ int __pipe_pkg_init (void)
 void __pipe_pkg_cleanup (void)
 
 {
-    xnpipe_setup(NULL,NULL);
     rthal_apc_free(__pipe_flush_apc);
 }
 

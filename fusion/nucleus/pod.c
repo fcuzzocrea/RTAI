@@ -1345,14 +1345,8 @@ void xnpod_suspend_thread (xnthread_t *thread,
         /* Don't start the timer for a thread indefinitely delayed by
            a call to xnpod_suspend_thread(thread,XNDELAY,0,NULL). */
         __setbits(thread->status,XNDELAY);
-
         xntimer_set_sched(&thread->rtimer, thread->sched);
-        if (xntimer_start(&thread->rtimer,timeout,XN_INFINITE) < 0)
-            {
-            /* Bad timeout: rollback everything we've just done... */
-            xnpod_unblock_thread(thread);
-            goto unlock_and_exit;
-            }
+        xntimer_start(&thread->rtimer,timeout,XN_INFINITE);
         }
     
 #ifdef __RTAI_SIM__
@@ -3287,8 +3281,11 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
         {
         now = xnpod_get_time();
 
-        if (idate > now && xntimer_start(&thread->ptimer,idate - now,period) == 0)
+        if (idate > now)
+	    {
+	    xntimer_start(&thread->ptimer,idate - now,period);
             xnpod_suspend_thread(thread,XNDELAY,XN_INFINITE,NULL);
+	    }
         else
             err = -ETIMEDOUT;
         }

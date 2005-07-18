@@ -224,7 +224,7 @@ static inline void xntimer_next_remote_shot (xnsched_t *sched)
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 /*! 
- * \fn int xntimer_start(xntimer_t *timer,xnticks_t value,xnticks_t interval)
+ * \fn void xntimer_start(xntimer_t *timer,xnticks_t value,xnticks_t interval)
  * \brief Arm a timer.
  *
  * Activates a timer so that the associated timeout handler will be
@@ -262,11 +262,10 @@ static inline void xntimer_next_remote_shot (xnsched_t *sched)
  * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
-int xntimer_start (xntimer_t *timer,
-                   xnticks_t value,
-                   xnticks_t interval)
+void xntimer_start (xntimer_t *timer,
+		    xnticks_t value,
+		    xnticks_t interval)
 {
-    int err = 0;
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
@@ -313,8 +312,6 @@ int xntimer_start (xntimer_t *timer,
         }
 
     xnlock_put_irqrestore(&nklock,s);
-
-    return err;
 }
 
 void xntimer_stop_timer_inner (xntimer_t *timer)

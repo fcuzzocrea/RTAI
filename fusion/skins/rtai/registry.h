@@ -71,8 +71,6 @@ typedef struct rt_hash {
 
 } RT_HASH;
 
-extern RT_OBJECT __rtai_obj_slots[];
-
 #ifdef __cplusplus
 extern "C" {
 #endif

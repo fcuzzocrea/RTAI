@@ -1395,9 +1395,10 @@ void xnpod_suspend_thread (xnthread_t *thread,
     else if (testbits(thread->status,XNSHADOW|XNRELAX) == (XNSHADOW|XNRELAX) &&
 	     (mask & (XNDELAY|XNSUSP)) != 0)
 	xnshadow_suspend(thread);
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
  unlock_and_exit:
+
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     xnlock_put_irqrestore(&nklock,s);
 }

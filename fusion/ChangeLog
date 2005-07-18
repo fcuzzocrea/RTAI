@@ -1,3 +1,8 @@
+2005-07-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/timer.c (xntimer_start): Starting a timer cannot
+	fail: make this routine a void one.
+
 2005-07-17  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc64, include/nucleus/asm-ppc64: Merge the ppc64 port, a

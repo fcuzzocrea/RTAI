@@ -80,6 +80,8 @@ RTIME rt_smp_time_h[NR_RT_CPUS];
 
 int rt_smp_oneshot_timer[NR_RT_CPUS];
 
+volatile int rt_sched_timed;
+
 static spinlock_t wake_up_srq_lock = SPIN_LOCK_UNLOCKED;
 struct klist_t wake_up_srq;
 
@@ -644,7 +646,7 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
 	rt_current->state |= RT_SCHED_READY;
 	rt_smp_current[cpuid] = rt_current;
         if (rt_current->state != RT_SCHED_READY) {
-        	(rt_current->lnxtsk)->state = TASK_HARDREALTIME;
+        	(rt_current->lnxtsk)->state = TASK_SOFTREALTIME;
 		rt_schedule();
 	} else {
 		enq_soft_ready_task(rt_current);
@@ -1183,13 +1185,7 @@ static irqreturn_t recover_jiffies(int irq, void *dev_id, struct pt_regs *regs)
 
 int rt_is_hard_timer_running(void) 
 { 
-	int cpuid, running;
-	for (running = cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
-		if (rt_time_h) {
-			running |= (1 << cpuid);
-		}
-	}
-	return running;
+	return rt_sched_timed;
 }
 
 
@@ -1232,6 +1228,7 @@ void start_rt_apic_timers(struct apic_timer_setup_data *setup_data, unsigned int
 		rt_time_h = rt_times.tick_time + rt_half_tick;
 		shot_fired = 1;
 	}
+	rt_sched_timed = 1;
 	linux_times = rt_smp_times + (rcvr_jiffies_cpuid < NR_RT_CPUS ? rcvr_jiffies_cpuid : 0);
 	rt_global_restore_flags(flags);
 }
@@ -1252,13 +1249,16 @@ RTIME start_rt_timer(int period)
 
 void stop_rt_timer(void)
 {
-	unsigned long flags;
-	int cpuid;
+	unsigned long flags, cpuid;
+
 	rt_free_apic_timers();
-	flags = rt_global_save_flags_and_cli();
+	rt_sched_timed = 0;
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		oneshot_timer = oneshot_running = 0;
+		rt_time_h = RT_TIME_END;
+		oneshot_running = 0;
 	}
+	flags = rt_global_save_flags_and_cli();
+	RT_SCHEDULE_MAP_BOTH(0xFF & ~(1 << rtai_cpuid()));
 	rt_global_restore_flags(flags);
 }
 
@@ -1285,6 +1285,7 @@ RTIME start_rt_timer(int period)
 		rt_request_timer(rt_timer_handler, period > LATCH ? LATCH: period, TIMER_TYPE);
                 tuned.timers_tol[0] = rt_half_tick = (rt_times.periodic_tick + 1)>>1;
         }
+	rt_sched_timed = 1;
 	rt_smp_times[cpuid].linux_tick    = rt_times.linux_tick;
 	rt_smp_times[cpuid].tick_time     = rt_times.tick_time;
 	rt_smp_times[cpuid].intr_time     = rt_times.intr_time;
@@ -1329,12 +1330,15 @@ void start_rt_apic_timers(struct apic_timer_setup_data *setup_mode, unsigned int
 void stop_rt_timer(void)
 {
         unsigned long flags;
+
 #ifdef USE_LINUX_TIMER
 	rt_free_linux_irq(TIMER_8254_IRQ, recover_jiffies);
 #endif
         rt_free_timer();
+	rt_time_h = RT_TIME_END;
+	rt_sched_timed = rt_smp_oneshot_timer[0] = 0;
         flags = rt_global_save_flags_and_cli();
-	rt_smp_oneshot_timer[0] = rt_smp_oneshot_running[0] = 0;
+	rt_schedule();
         rt_global_restore_flags(flags);
 }
 
@@ -1631,7 +1635,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 	rt_global_cli();
 	rt_task->state |= RT_SCHED_READY;
 	while (rt_task->state != RT_SCHED_READY) {
-		current->state = TASK_HARDREALTIME;
+		current->state = TASK_SOFTREALTIME;
 		rt_global_sti();
 		schedule();
 		rt_global_cli();
@@ -2105,12 +2109,14 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
-#ifdef USE_LINUX_SYSCALL
-	unsigned long syscall_nr;
-	if ((syscall_nr = r->RTAI_SYSCALL_NR) >= GT_NR_SYSCALLS) {
-		long long retval = rtai_lxrt_invoke(syscall_nr, (void *)r->RTAI_SYSCALL_ARGS, r);
+#if 1 //def USE_LINUX_SYSCALL
+	if (unlikely(r->LINUX_SYSCALL_NR == RTAI_SYSCALL_NR)) {
+		long long retval = rtai_lxrt_invoke(r->RTAI_SYSCALL_CODE, (void *)r->RTAI_SYSCALL_ARGS, r);
 		SET_LXRT_RETVAL_IN_SYSCALL(retval);
 		if (!in_hrt_mode(rtai_cpuid())) {
+			if (unlikely((int)retval == -RT_EINTR)) {
+				r->LINUX_SYSCALL_NR = RTAI_FAKE_LINUX_SYSCALL;
+			}
 			return 0;
 		}
 		return 1;
@@ -2134,7 +2140,7 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 #ifdef ECHO_SYSW
 #endif
 			if (!systrans++) {
-				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR);
+				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->LINUX_SYSCALL_NR);
 			}
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
 			give_back_to_linux(task, 1);
@@ -2150,11 +2156,18 @@ static int lxrt_intercept_syscall_epilogue(void)
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	RT_TASK *task;
-	if (current->rtai_tskext(0) && (task = (RT_TASK *)current->rtai_tskext(0))->is_hard > 1) {
-		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
-		steal_from_linux(task);
-		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
-		return 1;
+	if ((task = (RT_TASK *)current->rtai_tskext(0))) {
+		if (task->system_data_ptr) {
+			struct pt_regs *r = task->system_data_ptr;
+			r->LINUX_SYSCALL_RETREG = -ERESTARTSYS;
+			r->LINUX_SYSCALL_NR = RTAI_SYSCALL_NR;
+			task->system_data_ptr = NULL;
+		} else if (task->is_hard > 1) {
+			SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
+			steal_from_linux(task);
+			SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
+			return 1;
+		}
 	}
 	return 0;
 } }
@@ -2814,5 +2827,6 @@ EXPORT_SYMBOL(get_min_tasks_cpuid);
 EXPORT_SYMBOL(rt_schedule_soft);
 EXPORT_SYMBOL(rt_do_force_soft);
 EXPORT_SYMBOL(rt_schedule_soft_tail);
+EXPORT_SYMBOL(rt_sched_timed);
 
 #endif /* CONFIG_KBUILD */

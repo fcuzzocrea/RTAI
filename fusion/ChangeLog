@@ -1,5 +1,19 @@
 2005-07-18  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-*/system.h: Make all user-space readers
+	include <bits/local_lim.h> to get PTHREAD_STACK_MIN defined, even
+	with weird glibc setups.
+
+	* skins/rtai/registry.h: Remove spurious external declaration of
+	__rtai_obj_slots[].
+
+	* nucleus/pipe.c (xnpipe_read): Allow the output handler to
+	override the return code.
+	(xnpipe_write): Always enqueue the incoming message regardless of
+	the presence of an input handler. This means that such handler
+	should call xnpipe_recv() to dequeue it first, if the message is
+	to be routed elsewhere.
+
 	* nucleus/timer.c (xntimer_start): Starting a timer cannot
 	fail: make this routine a void one.
 

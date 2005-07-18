@@ -603,6 +603,7 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
 		} else {
+			task->system_data_ptr = regs;
 			retval = -RT_EINTR;
 		}
 	}

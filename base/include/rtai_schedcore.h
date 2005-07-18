@@ -63,6 +63,8 @@ extern RTIME rt_smp_time_h[];
 
 extern int rt_smp_oneshot_timer[];
 
+extern volatile int rt_sched_timed;
+
 #ifdef CONFIG_RTAI_MALLOC
 #define sched_malloc(size)		rt_malloc((size))
 #define sched_free(adr)			rt_free((adr))
@@ -182,6 +184,7 @@ static inline void send_sched_ipi(unsigned long dest)
 #define BASE_SOFT_PRIORITY 1000000000
 
 #define TASK_HARDREALTIME  TASK_UNINTERRUPTIBLE
+#define TASK_SOFTREALTIME  TASK_INTERRUPTIBLE
 
 static inline void enq_ready_edf_task(RT_TASK *ready_task)
 {
@@ -259,7 +262,7 @@ static inline void rem_ready_task(RT_TASK *task)
 {
 	if (task->state == RT_SCHED_READY) {
 		if (!task->is_hard) {
-			(task->lnxtsk)->state = TASK_HARDREALTIME;
+			(task->lnxtsk)->state = TASK_SOFTREALTIME;
 		}
 		(task->rprev)->rnext = task->rnext;
 		(task->rnext)->rprev = task->rprev;
@@ -269,7 +272,7 @@ static inline void rem_ready_task(RT_TASK *task)
 static inline void rem_ready_current(RT_TASK *rt_current)
 {
 	if (!rt_current->is_hard) {
-		(rt_current->lnxtsk)->state = TASK_HARDREALTIME;
+		(rt_current->lnxtsk)->state = TASK_SOFTREALTIME;
 	}
 	(rt_current->rprev)->rnext = rt_current->rnext;
 	(rt_current->rnext)->rprev = rt_current->rprev;

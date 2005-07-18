@@ -27,9 +27,12 @@
 
 #define USE_LINUX_SYSCALL
 
-#define RTAI_SYSCALL_NR      orig_eax
+#define RTAI_SYSCALL_NR      0x7FFFFFFF
+#define RTAI_SYSCALL_CODE    ebx
 #define RTAI_SYSCALL_ARGS    ecx
 #define RTAI_SYSCALL_RETPNT  edx
+
+#define RTAI_FAKE_LINUX_SYSCALL  20
 
 #define LINUX_SYSCALL_NR      orig_eax
 #define LINUX_SYSCALL_REG1    ebx
@@ -191,9 +194,10 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
-#ifdef USE_LINUX_SYSCALL
-	syscall(srq, 0, arg, &retval);
-#else
+#if defined(USE_LINUX_SYSCALL) || defined(RTAI_USES_LINUX_SYSCALL)
+//	RTAI_DO_TRAP(USE_LINUX_SYSCALL, retval, srq, arg);
+	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
+#else 
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
 #endif
 	return retval;

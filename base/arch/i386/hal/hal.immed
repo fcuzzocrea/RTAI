@@ -105,7 +105,7 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 	apic_write(APIC_TMICT, count);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,9)
 #define __ack_APIC_irq  ack_APIC_irq
 #endif
 
@@ -255,7 +255,7 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 
 extern unsigned long io_apic_irqs;
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,11)
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,9)
 
 #define rtai_irq_desc(irq) (irq_desc[irq].handler)
 #define BEGIN_PIC()

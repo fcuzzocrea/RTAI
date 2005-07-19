@@ -128,12 +128,12 @@ static void *__pipe_alloc_handler (int bminor,
 
 static int __pipe_output_handler (int bminor,
 				  xnpipe_mh_t *mh,
-				  int onerror,
+				  int retval,
 				  void *cookie)
 {
     /* Free memory from output/discarded message. */
     xnheap_free(__pipe_heap,mh);
-    return 0;
+    return retval;
 }
 
 int __pipe_pkg_init (void)

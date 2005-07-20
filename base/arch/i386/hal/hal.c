@@ -2076,7 +2076,7 @@ void __rtai_hal_exit (void)
 module_init(__rtai_hal_init);
 module_exit(__rtai_hal_exit);
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,60,0)
 asmlinkage int rt_printk(const char *fmt, ...)
 {
 	va_list args;

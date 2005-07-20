@@ -41,7 +41,8 @@ host_triplet = @host@
 @CONFIG_RTAI_SKIN_VXWORKS_TRUE@am__append_4 = vxworks
 @CONFIG_RTAI_SKIN_VRTX_TRUE@am__append_5 = vrtx
 @CONFIG_RTAI_SKIN_UITRON_TRUE@am__append_6 = uitron
-@CONFIG_RTAI_OPT_UVM_TRUE@am__append_7 = uvm
+@CONFIG_RTAI_SKIN_RTDM_TRUE@am__append_7 = rtdm
+@CONFIG_RTAI_OPT_UVM_TRUE@am__append_8 = uvm
 subdir = skins
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -62,7 +63,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = rtai posix psos+ vxworks vrtx uitron uvm
+DIST_SUBDIRS = rtai posix psos+ vxworks vrtx uitron rtdm uvm
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -134,6 +135,8 @@ CONFIG_RTAI_SKIN_POSIX_FALSE = @CONFIG_RTAI_SKIN_POSIX_FALSE@
 CONFIG_RTAI_SKIN_POSIX_TRUE = @CONFIG_RTAI_SKIN_POSIX_TRUE@
 CONFIG_RTAI_SKIN_PSOS_FALSE = @CONFIG_RTAI_SKIN_PSOS_FALSE@
 CONFIG_RTAI_SKIN_PSOS_TRUE = @CONFIG_RTAI_SKIN_PSOS_TRUE@
+CONFIG_RTAI_SKIN_RTDM_FALSE = @CONFIG_RTAI_SKIN_RTDM_FALSE@
+CONFIG_RTAI_SKIN_RTDM_TRUE = @CONFIG_RTAI_SKIN_RTDM_TRUE@
 CONFIG_RTAI_SKIN_UITRON_FALSE = @CONFIG_RTAI_SKIN_UITRON_FALSE@
 CONFIG_RTAI_SKIN_UITRON_TRUE = @CONFIG_RTAI_SKIN_UITRON_TRUE@
 CONFIG_RTAI_SKIN_VRTX_FALSE = @CONFIG_RTAI_SKIN_VRTX_FALSE@
@@ -279,7 +282,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 OPTDIRS = $(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__append_6) \
-	$(am__append_7)
+	$(am__append_7) $(am__append_8)
 SUBDIRS = $(OPTDIRS)
 EXTRA_DIST = Kconfig
 all: all-recursive

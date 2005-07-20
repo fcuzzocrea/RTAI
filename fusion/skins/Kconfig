@@ -12,6 +12,8 @@ source "skins/vrtx/Kconfig"
 
 source "skins/vxworks/Kconfig"
 
+source "skins/rtdm/Kconfig"
+
 config RTAI_OPT_UVM
 	bool "User-space VM support"
 	depends on RTAI_OPT_FUSION

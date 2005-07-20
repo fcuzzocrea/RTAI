@@ -1,510 +1,1070 @@
-/**
- * @file
- * This file is part of the RTAI project.
+/*
+ * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
  *
- * @note Copyright (C) 2005 Philippe Gerum <rpm@xenomai.org> 
+ * RTAI/fusion is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * RTAI/fusion is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ * along with RTAI/fusion; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include <asm/io.h>
+#include <linux/module.h>
 #include <linux/ioport.h>
-#include <nucleus/pod.h>
-#include <16550A/16550A.h>
-#include <16550A/syscall.h>
 
-static DECLARE_XNQUEUE(__rtai_uart_q);
+#include <rtdm/rtserial.h>
+#include <rtdm/rtdm_driver.h>
 
-static inline int __do_stat (RT_UART *uart)
 
+#define MAX_DEVICES         8
+
+#define IN_BUFFER_SIZE      4096
+#define OUT_BUFFER_SIZE     4096
+
+#define DEFAULT_TX_FIFO     16
+
+#define BAUD_MASK           0xFFFF
+#define PARITY_MASK         0x03
+#define DATA_BITS_MASK      0x03
+#define STOP_BITS_MASK      0x01
+#define FIFO_MASK           0xC0
+#define EVENT_MASK          0x0F
+
+#define LCR_DLAB            0x80
+
+#define FCR_FIFO            0x01
+#define FCR_RESET           0x06
+
+#define IER_RX              0x01
+#define IER_TX              0x02
+#define IER_STAT            0x04
+#define IER_MODEM           0x08
+
+#define IIR_MODEM           0x00
+#define IIR_PIRQ            0x01
+#define IIR_TX              0x02
+#define IIR_RX              0x04
+#define IIR_STAT            0x06
+#define IIR_TMO             0x0C
+#define IIR_MASK            0x0F
+
+#define RHR(dev) (ioaddr[dev] + 0)  /* Receive Holding Buffer */
+#define THR(dev) (ioaddr[dev] + 0)  /* Transmit Holding Buffer */
+#define DLL(dev) (ioaddr[dev] + 0)  /* Divisor Latch LSB */
+#define IER(dev) (ioaddr[dev] + 1)  /* Interrupt Enable Register */
+#define DLM(dev) (ioaddr[dev] + 1)  /* Divisor Latch MSB */
+#define IIR(dev) (ioaddr[dev] + 2)  /* Interrupt Id Register */
+#define FCR(dev) (ioaddr[dev] + 2)  /* Fifo Control Register */
+#define LCR(dev) (ioaddr[dev] + 3)  /* Line Control Register */
+#define MCR(dev) (ioaddr[dev] + 4)  /* Modem Control Register */
+#define LSR(dev) (ioaddr[dev] + 5)  /* Line Status Register */
+#define MSR(dev) (ioaddr[dev] + 6)  /* Modem Status Register */
+
+
+struct rt_16550_context {
+    struct rtser_config     config;
+
+    rtdm_irq_t              irq_handle;
+    rtdm_lock_t             lock;
+
+    int                     dev_id;
+
+    int                     in_head;
+    int                     in_tail;
+    volatile size_t         in_npend;
+    int                     in_nwait;
+    rtdm_event_t            in_event;
+    char                    in_buf[IN_BUFFER_SIZE];
+    volatile unsigned long  in_lock;
+    u64                     *in_history;
+
+    int                     out_head;
+    int                     out_tail;
+    size_t                  out_npend;
+    rtdm_event_t            out_event;
+    char                    out_buf[OUT_BUFFER_SIZE];
+    rtdm_mutex_t            out_lock;
+
+    u64                     last_timestamp;
+    int                     ioc_event_mask;
+    volatile int            ioc_events;
+    rtdm_event_t            ioc_event;
+    volatile unsigned long  ioc_event_lock;
+
+    int                     ier_status;
+    int                     mcr_status;
+    int                     status;
+};
+
+
+static const struct rtser_config default_config = {
+    0xFFFF, RTSER_DEF_BAUD, RTSER_DEF_PARITY, RTSER_DEF_BITS,
+    RTSER_DEF_STOPB, RTSER_DEF_HAND, RTSER_DEF_FIFO_DEPTH, RTSER_DEF_TIMEOUT,
+    RTSER_DEF_TIMEOUT, RTSER_DEF_TIMEOUT, RTSER_DEF_TIMESTAMP_HISTORY
+};
+
+static struct rtdm_device   *device[MAX_DEVICES];
+
+static unsigned long        ioaddr[MAX_DEVICES];
+static int                  ioaddr_c;
+static unsigned int         irq[MAX_DEVICES];
+static int                  irq_c;
+static int                  tx_fifo[MAX_DEVICES];
+static int                  tx_fifo_c;
+static unsigned int         start_index;
+
+module_param_array(ioaddr, ulong, &ioaddr_c, 0400);
+MODULE_PARM_DESC(ioaddr, "I/O addresses of the serial devices");
+module_param_array(irq, uint, &irq_c, 0400);
+MODULE_PARM_DESC(irq, "IRQ numbers of the serial devices");
+module_param_array(tx_fifo, int, &tx_fifo_c, 0400);
+MODULE_PARM_DESC(tx_fifo, "Transmitter FIFO size");
+module_param(start_index, uint, 0400);
+MODULE_PARM_DESC(start_index, "First device instance number to be used");
+
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("jan.kiszka@web.de");
+
+
+static inline int rt_16550_rx_interrupt(struct rt_16550_context *ctx,
+                                        u64 *timestamp)
 {
-    int lsr = inb(LSR(uart)); /* Read line status. */
+    int dev_id = ctx->dev_id;
+    int rbytes = 0;
+    int lsr    = 0;
+    int c;
 
-    lsr &= (LSR_DATA|LSR_OE|LSR_PE|LSR_BI|LSR_FE);
 
-    if (lsr & ~LSR_DATA) /* Save any pending error status. */
-	{
-	uart->status &= ~(LSR_OE|LSR_PE|LSR_BI|LSR_FE);
-	uart->status |= (lsr & ~LSR_DATA);
-	}
+    do {
+        c = inb(RHR(dev_id));   /* read input character */
 
-    return lsr;
-}
+        ctx->in_buf[ctx->in_tail] = c;
+        if (ctx->in_history)
+            ctx->in_history[ctx->in_tail] = *timestamp;
+        ctx->in_tail = (ctx->in_tail + 1) & (IN_BUFFER_SIZE - 1);
 
-static inline void __do_modem (RT_UART *uart)
+        if (++ctx->in_npend > IN_BUFFER_SIZE) {
+            /*DBGIF(
+                if (!testbits(ctx->status, RTSER_SOFT_OVERRUN_ERR))
+                    rtdm_printk("%s: software buffer overrun!\n",
+                                device[dev_id]->device_name);
+                );*/
+            lsr |= RTSER_SOFT_OVERRUN_ERR;
+            ctx->in_npend--;
+        }
 
-{
-    /* Collect the CTS bits into the modem flags -- Fortunately, the
-       CTS bit value coming from the MSR does not clash with MCR bit
-       ones. Okay, it's not that elegant... */
-    uart->modem |= (inb(MSR(uart) & MSR_CTS));
-}
+        rbytes++;
+        lsr &= ~RTSER_LSR_DATA;
+        lsr |= (inb(LSR(dev_id)) &
+                (RTSER_LSR_DATA | RTSER_LSR_OVERRUN_ERR |
+                 RTSER_LSR_PARITY_ERR | RTSER_LSR_FRAMING_ERR |
+                 RTSER_LSR_BREAK_IND));
+    } while (testbits(lsr, RTSER_LSR_DATA));
 
-static inline void __do_rx (RT_UART *uart)
-
-{
-    int c, rbytes = 0;
-
-    do
-	{
-	c = inb(RHR(uart)); /* Read input character. */
-
-	uart->i_buf[uart->i_tail++] = c;
-	uart->i_tail &= (sizeof(uart->i_buf) - 1);
-
-	if (++uart->i_count > sizeof(uart->i_buf))
-	    {
-	    uart->status |= LSR_OE; /* Buffer overflow: notify overrun. */
-	    --uart->i_count;
-	    }
-
-	++rbytes;
-	}
-    while (__do_stat(uart) & LSR_DATA);	/* Collect error conditions. */
-
-    if (uart->i_nwait <= rbytes)
-	{
-	uart->i_nwait = 0;
-	rt_sem_v(&uart->i_pulse);
-	}
-    else if (uart->i_nwait > 0)
-	uart->i_nwait -= rbytes;
+    /* save new errors */
+    ctx->status |= lsr;
 
     /* If we are enforcing the RTSCTS control flow and the input
        buffer is busy above the specified high watermark, clear
        RTS. */
+/*    if (uart->i_count >= uart->config.rts_hiwm &&
+        (uart->config.handshake & RT_UART_RTSCTS) != 0 &&
+        (uart->modem & MCR_RTS) != 0) {
+        uart->modem &= ~MCR_RTS;
+        outb(uart->modem,MCR(uart));
+    }*/
 
-    if (uart->i_count >= uart->config.rts_hiwm &&
-	(uart->config.handshake & RT_UART_RTSCTS) != 0 &&
-	(uart->modem & MCR_RTS) != 0)
-	{
-	uart->modem &= ~MCR_RTS;
-	outb(uart->modem,MCR(uart));
-	}
+    return rbytes;
 }
 
-static inline void __do_tx (RT_UART *uart)
 
+static inline void rt_16550_tx_interrupt(struct rt_16550_context *ctx)
 {
-    int c, count;
+    int c;
+    int count;
+    int dev_id = ctx->dev_id;
 
-    /* If we are clear to send, output the buffered bytes until the
-       FIFO is full or all of them have been written out. */
 
-    if (uart->modem & MSR_CTS)
-	{
-	for (count = uart->config.fifo_depth;
-	     count > 0 && uart->o_count > 0;
-	     count--, uart->o_count--)
-	    {
-	    c = uart->o_buf[uart->o_head++];
-	    outb(c,THR(uart));
-	    uart->o_head &= (sizeof(uart->o_buf) - 1);
-	    }
-	}
-
-    if (uart->o_count == 0)
-	{
-	/* Mask transmitter empty interrupt. */
-	outb(IER_RX|IER_STAT|IER_MODEM,IER(uart));
-	/* Wake up the sending task. */
-	rt_sem_v(&uart->o_pulse);
-	}
-}
-
-static int __uart_isr (xnintr_t *cookie)
-
-{
-    RT_UART *uart = (RT_UART *)I_DESC(cookie)->private_data;
-    int iir, req = 0;
-
-    while (((iir = inb(IIR(uart))) & IIR_PIRQ) == 0)
-	{
-	switch (iir & IIR_MASK)
-	    {
-	    case IIR_RX:
-	    case IIR_TMO:
-
-		__do_rx(uart);
-		break;
-
-	    case IIR_TX:
-
-		__do_tx(uart);
-		break;
-
-	    case IIR_STAT:
-
-		__do_stat(uart);
-		break;
-
-	    case IIR_MODEM:
-
-		__do_modem(uart);
-		break;
-	    }
-
-	++req;
-	}
-
-    /* Allow sharing the interrupt line with some other device down in
-       the pipeline. */
-    return req > 0 ? RT_INTR_HANDLED|RT_INTR_ENABLE : RT_INTR_CHAINED;
-}
-
-int rt_uart_open (RT_UART *uart,
-		  RT_UART_CONFIG *config)
-{
-    int err;
-    spl_t s;
-
-    if (!xnpod_root_p())
-	return -EACCES;
-
-    if (!request_region(config->port.base,8,"RTAI 16550A"))
-	return -EBUSY;
-
-    /* Set default RTS watermarks if unspecified. */
-
-    if (config->rts_hiwm <= 0)
-	config->rts_hiwm = sizeof(uart->i_buf) * 9 / 10; /* 90% RX buf full */
-
-    if (config->rts_lowm <= 0)
-	config->rts_lowm = sizeof(uart->i_buf) / 10; /* 10% RX buf full */
-
-    xnlock_get_irqsave(&nklock,s);
-
-    err = rt_intr_create(&uart->intr_desc,
-			 config->port.irq,
-			 &__uart_isr,
-			 NULL);
-    if (err)
-	goto unlock_and_exit;
-
-    uart->intr_desc.private_data = uart;
-    uart->magic = RTAI_UART_MAGIC;
-    uart->handle = 0;
-    snprintf(uart->name,sizeof(uart->name),"uart@%x",config->port.base);
-
-    /* Mask all UART interrupts and clear pending ones. */
-    outb(0,IER(uart));
-    inb(IIR(uart));
-    inb(LSR(uart));
-    inb(RHR(uart));
-    inb(MSR(uart));
-
-    uart->config = *config;
-
-    uart->i_head = 0;
-    uart->i_tail = 0;
-    uart->i_nwait = 0;
-    uart->i_count = 0;
-    rt_sem_create(&uart->i_pulse,NULL,0,S_FIFO|S_PULSE);
-    rt_sem_create(&uart->i_lock,NULL,1,S_PRIO);
-
-    uart->o_head = 0;
-    uart->o_tail = 0;
-    uart->o_count = 0;
-    rt_sem_create(&uart->o_pulse,NULL,0,S_FIFO|S_PULSE);
-
-    uart->status = 0;
-
-    /* Set Baud rate. */
-    outb(LCR_DLAB,LCR(uart));
-    outb(config->speed & 0xff,DLL(uart));
-    outb(config->speed >> 8,DLM(uart));
-
-    /* Set parity, stop bits and character size. */
-    outb((config->parity << 3)|(config->stop_bits << 2)|config->data_bits,LCR(uart));
-
-    /* Reset FIFO and set triggers. */
-    outb(FCR_FIFO|FCR_RESET,FCR(uart));
-    outb(FCR_FIFO|config->fifo_depth,FCR(uart));
-
-    /* Enable UART interrupts (except TX). */
-    outb(IER_RX|IER_STAT|IER_MODEM,IER(uart));
-
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    uart->cpid = 0;
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
-
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
-    /* <!> Since rt_register_enter() may reschedule, only register
-       complete objects, so that the registry cannot return handles to
-       half-baked objects... */
-
-    err = rt_registry_enter(uart->name,uart,&uart->handle,NULL);
-
-    if (err)
-	{
-	rt_uart_close(uart);
-	goto unlock_and_exit;
-	}
-#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
-
-    /* Ready to receive. */
-    uart->modem = MCR_DTR|MCR_RTS|MCR_OP1|MCR_OP2;
-    outb(uart->modem,MCR(uart));
-
- unlock_and_exit:
-
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
-}
-
-int rt_uart_close (RT_UART *uart)
-
-{
-    int err = 0;
-    spl_t s;
-
-    if (!xnpod_root_p())
-	return -EACCES;
-
-    xnlock_get_irqsave(&nklock,s);
-
-    uart = rtai_h2obj_validate(uart,RTAI_UART_MAGIC,RT_UART);
-
-    if (!uart)
-        {
-        err = rtai_handle_error(uart,RTAI_UART_MAGIC,RT_UART);
-        goto unlock_and_exit;
+/*    if (uart->modem & MSR_CTS)*/
+    {
+        for (count = tx_fifo[dev_id];
+             (count > 0) && (ctx->out_npend > 0);
+             count--, ctx->out_npend--) {
+            c = ctx->out_buf[ctx->out_head++];
+            outb(c, THR(dev_id));
+            ctx->out_head &= (OUT_BUFFER_SIZE - 1);
         }
-    
-    rt_intr_delete(&uart->intr_desc);
-
-#if CONFIG_RTAI_OPT_NATIVE_REGISTRY
-    if (uart->handle)
-        rt_registry_remove(uart->handle);
-#endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
-
-    /* Mask all UART interrupts and clear pending ones. */
-    outb(0,IER(uart));
-    inb(IIR(uart));
-    inb(LSR(uart));
-    inb(RHR(uart));
-    inb(MSR(uart));
-
-    /* Port closed: clear RTS/DTR. */
-    outb(MCR_OP1|MCR_OP2,MCR(uart));
-
-    release_region(uart->config.port.base,8);
-
-    rt_sem_delete(&uart->o_pulse);
-    rt_sem_delete(&uart->i_pulse);
-    rt_sem_delete(&uart->i_lock);
-
-    rtai_mark_deleted(uart);
-
- unlock_and_exit:
-
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
+    }
 }
 
-ssize_t rt_uart_read (RT_UART *uart,
-		      void *buf,
-		      size_t nbytes,
-		      RTIME timeout)
+
+static inline void rt_16550_stat_interrupt(struct rt_16550_context *ctx)
 {
-    unsigned char *cp = (unsigned char *)buf;
-    int c, rbytes = 0;
-    ssize_t ret;
-    spl_t s;
+    ctx->status |= (inb(LSR(ctx->dev_id)) &
+                    (RTSER_LSR_OVERRUN_ERR | RTSER_LSR_PARITY_ERR |
+                     RTSER_LSR_FRAMING_ERR |RTSER_LSR_BREAK_IND));
+}
 
-    if (nbytes == 0)
-	return 0;
 
-    xnlock_get_irqsave(&nklock,s);
+static int rt_16550_interrupt(rtdm_irq_t *irq_context)
+{
+    struct rt_16550_context *ctx;
+    int                     dev_id;
+    int                     iir;
+    u64                     timestamp = rtdm_clock_read();
+    int                     rbytes = 0;
+    int                     events = 0;
+    int                     modem;
+    int                     ret = RTDM_IRQ_PROPAGATE;
+    rtdm_lockctx_t          lock_ctx;
 
-    uart = rtai_h2obj_validate(uart,RTAI_UART_MAGIC,RT_UART);
 
-    if (!uart)
-        {
-        ret = rtai_handle_error(uart,RTAI_UART_MAGIC,RT_UART);
-        goto unlock_and_exit;
+    ctx = rtdm_irq_get_arg(irq_context, struct rt_16550_context);
+    dev_id    = ctx->dev_id;
+
+    rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+    while (((iir = inb(IIR(dev_id))) & IIR_PIRQ) == 0) {
+        if (testbits(iir, IIR_RX | IIR_TMO)) {
+            rbytes += rt_16550_rx_interrupt(ctx, &timestamp);
+            events |= RTSER_EVENT_RXPEND;
         }
 
-    while (rbytes < nbytes)
-	{
-	if (uart->i_count > 0)
-	    {
-	    c = uart->i_buf[uart->i_head++];
-	    uart->i_head &= (sizeof(uart->i_buf) - 1);
-	    cp[rbytes++] = c;
-	    uart->i_count--;
+        if (testbits(iir, IIR_STAT))
+            rt_16550_stat_interrupt(ctx);
+
+        if (testbits(iir, IIR_TX))
+            rt_16550_tx_interrupt(ctx);
+
+        if (testbits(iir, IIR_MODEM)) {
+            modem = inb(MSR(dev_id));
+            if (modem & (modem << 4))
+                events |= RTSER_EVENT_MODEMHI;
+            if ((modem ^ 0xF0) & (modem << 4))
+                events |= RTSER_EVENT_MODEMLO;
+        }
+
+        ret = RTDM_IRQ_ENABLE;
+    }
+
+    if (ctx->in_nwait > 0) {
+        if ((ctx->in_nwait <= rbytes) || ctx->status) {
+            ctx->in_nwait = 0;
+            rtdm_event_signal(&ctx->in_event);
+        }
+        else
+            ctx->in_nwait -= rbytes;
+    }
+
+    if (ctx->status) {
+        events |= RTSER_EVENT_ERRPEND;
+        ctx->ier_status &= ~IER_STAT;
+    }
+
+    if (testbits(events, ctx->ioc_event_mask)) {
+        int old_events = ctx->ioc_events;
+
+        ctx->last_timestamp = timestamp;
+        ctx->ioc_events     = events;
+
+        if (!old_events)
+            rtdm_event_signal(&ctx->ioc_event);
+    }
+
+    if (testbits(ctx->ier_status, IER_TX) &&
+        (ctx->out_npend == 0)) {
+        /* mask transmitter empty interrupt */
+        ctx->ier_status &= ~IER_TX;
+
+        rtdm_event_signal(&ctx->out_event);
+    }
+
+    /* update interrupt mask */
+    outb(ctx->ier_status, IER(dev_id));
+
+    rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+    return ret;
+}
+
+
+static int rt_16550_set_config(struct rt_16550_context *ctx,
+                               const struct rtser_config *config,
+                               u64 **in_history_ptr)
+{
+    int dev_id;
+    int ret = 0;
+
+
+    dev_id = ctx->dev_id;
+
+    if (testbits(config->config_mask, RTSER_BAUD)) {
+        ctx->config.baud_rate = config->baud_rate & BAUD_MASK;
+
+        outb(LCR_DLAB,                           LCR(dev_id));
+        outb(ctx->config.baud_rate & 0xff, DLL(dev_id));
+        outb(ctx->config.baud_rate >> 8,   DLM(dev_id));
+    }
+
+    if (testbits(config->config_mask, RTSER_PARITY))
+        ctx->config.parity    = config->parity & PARITY_MASK;
+    if (testbits(config->config_mask, RTSER_DATA_BITS))
+        ctx->config.data_bits = config->data_bits & DATA_BITS_MASK;
+    if (testbits(config->config_mask, RTSER_STOP_BITS))
+        ctx->config.stop_bits = config->stop_bits & STOP_BITS_MASK;
+
+    if (testbits(config->config_mask, RTSER_PARITY | RTSER_DATA_BITS |
+                                      RTSER_STOP_BITS | RTSER_BAUD))
+        outb((ctx->config.parity << 3) | (ctx->config.stop_bits << 2) |
+             ctx->config.data_bits, LCR(dev_id));
+
+    if (testbits(config->config_mask, RTSER_FIFO_DEPTH)) {
+        ctx->config.fifo_depth = config->fifo_depth & FIFO_MASK;
+        outb(FCR_FIFO | FCR_RESET,                    FCR(dev_id));
+        outb(FCR_FIFO | ctx->config.fifo_depth, FCR(dev_id));
+    }
+
+    if (testbits(config->config_mask, RTSER_TIMEOUT_RX))
+        ctx->config.rx_timeout = config->rx_timeout;
+    if (testbits(config->config_mask, RTSER_TIMEOUT_TX))
+        ctx->config.tx_timeout = config->tx_timeout;
+    if (testbits(config->config_mask, RTSER_TIMEOUT_EVENT))
+        ctx->config.event_timeout = config->event_timeout;
+
+    if (testbits(config->config_mask, RTSER_TIMESTAMP_HISTORY)) {
+        if (testbits(config->timestamp_history, RTSER_RX_TIMESTAMP_HISTORY)) {
+            if (!ctx->in_history) {
+                ctx->in_history = *in_history_ptr;
+                *in_history_ptr = NULL;
+                if (!ctx->in_history)
+                    ret = -ENOMEM;
+            }
+        } else {
+            *in_history_ptr = ctx->in_history;
+            ctx->in_history = NULL;
+        }
+    }
+
+    if (testbits(config->config_mask, RTSER_HANDSHAKE)) {
+        ctx->config.handshake = config->handshake;
+        switch (ctx->config.handshake) {
+            case RTSER_RTSCTS_HAND:
+                // ...?
+
+            default: /* RTSER_NO_HAND */
+                ctx->mcr_status =
+                    RTSER_MCR_DTR | RTSER_MCR_RTS | RTSER_MCR_OUT2;
+                break;
+        }
+        outb(ctx->mcr_status, MCR(dev_id));
+    }
+
+    return ret;
+}
+
+
+int rt_16550_open(struct rtdm_dev_context *context,
+                  rtdm_user_info_t *user_info, int oflags)
+{
+    struct rt_16550_context *ctx;
+    int                     dev_id = context->device->device_id;
+    int                     ret;
+    __u64                   *dummy;
+
+
+    ctx = (struct rt_16550_context *)context->dev_private;
+
+    ret = rtdm_irq_request(&ctx->irq_handle, irq[dev_id], rt_16550_interrupt,
+                           0, context->device->proc_name, ctx);
+    if (ret < 0)
+        return ret;
+
+    /* IPC initialisation - cannot fail with used parameters */
+    rtdm_lock_init(&ctx->lock);
+    rtdm_event_init(&ctx->in_event, 0);
+    rtdm_event_init(&ctx->out_event, 0);
+    rtdm_event_init(&ctx->ioc_event, 0);
+    rtdm_mutex_init(&ctx->out_lock);
+
+    ctx->dev_id         = dev_id;
+
+    ctx->in_head        = 0;
+    ctx->in_tail        = 0;
+    ctx->in_npend       = 0;
+    ctx->in_nwait       = 0;
+    ctx->in_lock        = 0;
+    ctx->in_history     = NULL;
+
+    ctx->out_head       = 0;
+    ctx->out_tail       = 0;
+    ctx->out_npend      = 0;
+
+    ctx->ioc_event_mask = 0;
+    ctx->ioc_events     = 0;
+    ctx->ioc_event_lock = 0;
+    ctx->status         = 0;
+
+    /* Note: It is assumed that the security policy at least allows an
+             IRQ load of 960, i.e. the resulting value of the default
+             configuration. */
+    rt_16550_set_config(ctx, &default_config, &dummy);
+
+    /* enable IRQ interrupts */
+    ctx->ier_status = IER_RX;
+    outb(IER_RX, IER(dev_id));
+    rtdm_irq_enable(&ctx->irq_handle);
+
+    return 0;
+}
+
+
+int rt_16550_close(struct rtdm_dev_context *context,
+                   rtdm_user_info_t *user_info)
+{
+    struct rt_16550_context *ctx;
+    int                     dev_id;
+    rtdm_lockctx_t          lock_ctx;
+
+
+    ctx    = (struct rt_16550_context *)context->dev_private;
+    dev_id = ctx->dev_id;
+
+    rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+    /* reset DTR and RTS */
+    outb(0, MCR(dev_id));
+
+    /* mask all UART interrupts and clear pending ones. */
+    outb(0, IER(dev_id));
+    inb(IIR(dev_id));
+    inb(LSR(dev_id));
+    inb(RHR(dev_id));
+    inb(MSR(dev_id));
+
+    rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+    rtdm_irq_free(&ctx->irq_handle);
+
+    rtdm_event_destroy(&ctx->in_event);
+    rtdm_event_destroy(&ctx->out_event);
+    rtdm_event_destroy(&ctx->ioc_event);
+
+    rtdm_mutex_destroy(&ctx->out_lock);
+
+    if (ctx->in_history) {
+        if (testbits(context->context_flags, RTDM_CREATED_IN_NRT))
+            kfree(ctx->in_history);
+        else
+            rtdm_free(ctx->in_history);
+    }
+
+    return 0;
+}
+
+
+int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
+                      rtdm_user_info_t *user_info, int request, void *arg)
+{
+    struct rt_16550_context *ctx;
+    int                     ret = 0;
+
+
+    ctx = (struct rt_16550_context *)context->dev_private;
+
+    switch (request) {
+        case RTSER_RTIOC_GET_CONFIG:
+            if (user_info) {
+                if (!rtdm_rw_user_ok(user_info, arg,
+                                     sizeof(struct rtser_config)) ||
+                    rtdm_copy_to_user(user_info, arg, &ctx->config,
+                                      sizeof(struct rtser_config)))
+                    return -EFAULT;
+            } else
+                memcpy(arg, &ctx->config, sizeof(struct rtser_config));
+            break;
+
+
+        case RTSER_RTIOC_SET_CONFIG: {
+            struct rtser_config *config;
+            struct rtser_config config_buf;
+            __u64               *hist_buf = NULL;
+            rtdm_lockctx_t      lock_ctx;
+
+            config = (struct rtser_config *)arg;
+
+            if (user_info) {
+
+                if (!rtdm_read_user_ok(user_info, arg,
+                                       sizeof(struct rtser_config)) ||
+                    rtdm_copy_from_user(user_info, &config_buf, arg,
+                                        sizeof(struct rtser_config)))
+                    return -EFAULT;
+
+                config = &config_buf;
+            }
+
+            if (testbits(config->config_mask, RTSER_TIMESTAMP_HISTORY) &&
+                testbits(config->timestamp_history,
+                         RTSER_RX_TIMESTAMP_HISTORY)) {
+                if (testbits(context->context_flags, RTDM_CREATED_IN_NRT)) {
+                    if (rtdm_in_rt_context())
+                        return -EINVAL;
+
+                    hist_buf = kmalloc(IN_BUFFER_SIZE * sizeof(__u64),
+                                       GFP_KERNEL);
+                } else
+                    hist_buf =
+                        rtdm_malloc(IN_BUFFER_SIZE * sizeof(__u64));
+            }
+
+            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+            rt_16550_set_config(ctx, config, &hist_buf);
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+            if (hist_buf) {
+                if (testbits(context->context_flags, RTDM_CREATED_IN_NRT))
+                    kfree(hist_buf);
+                else
+                    rtdm_free(hist_buf);
+            }
+
+            break;
+        }
+
+        case RTSER_RTIOC_GET_STATUS: {
+            rtdm_lockctx_t lock_ctx;
+
+            if (user_info) {
+                struct rtser_status status_buf;
+
+                status_buf.line_status  = inb(LSR(ctx->dev_id));
+                status_buf.modem_status = inb(MSR(ctx->dev_id));
+
+                if (!rtdm_rw_user_ok(user_info, arg,
+                                     sizeof(struct rtser_status)) ||
+                    rtdm_copy_to_user(user_info, arg, &status_buf,
+                                      sizeof(struct rtser_status)))
+                    return -EFAULT;
+            } else {
+                ((struct rtser_status *)arg)->line_status  =
+                    inb(LSR(ctx->dev_id));
+                ((struct rtser_status *)arg)->modem_status =
+                    inb(MSR(ctx->dev_id));
+            }
+            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+            ctx->status = 0;
+            ctx->ioc_events &= ~RTSER_EVENT_ERRPEND;
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+            break;
+        }
+
+        case RTSER_RTIOC_GET_CONTROL:
+            if (user_info) {
+                if (!rtdm_rw_user_ok(user_info, arg, sizeof(int)) ||
+                    rtdm_copy_to_user(user_info, arg, &ctx->mcr_status,
+                                      sizeof(int)))
+                    ret = -EFAULT;
+            } else
+                *(int *)arg = ctx->mcr_status;
+
+            break;
+
+
+        case RTSER_RTIOC_SET_CONTROL: {
+            int             new_mcr;
+            rtdm_lockctx_t  lock_ctx;
+
+            new_mcr = (int)arg;
+
+            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+            ctx->mcr_status = new_mcr;
+            outb(new_mcr, MCR(ctx->dev_id));
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+            break;
+        }
+
+        case RTSER_RTIOC_SET_EVENT_MASK: {
+            int             new_mask;
+            rtdm_lockctx_t  lock_ctx;
+
+            new_mask = (int)arg;
+
+            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+            ctx->ioc_event_mask = new_mask & EVENT_MASK;
+            ctx->ioc_events     = 0;
+
+            if (testbits(new_mask, RTSER_EVENT_RXPEND) && (ctx->in_npend > 0))
+                ctx->ioc_events |= RTSER_EVENT_RXPEND;
+
+            if (testbits(new_mask, RTSER_EVENT_ERRPEND) && ctx->status)
+                ctx->ioc_events |= RTSER_EVENT_ERRPEND;
+
+            if (testbits(new_mask, RTSER_EVENT_MODEMHI | RTSER_EVENT_MODEMLO))
+                /* enable modem status interrupt */
+                ctx->ier_status |= IER_TX;
+            else
+                /* disable modem status interrupt */
+                ctx->ier_status &= ~IER_TX;
+            outb(ctx->ier_status, IER(ctx->dev_id));
+
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+            break;
+        }
+
+        case RTSER_RTIOC_WAIT_EVENT: {
+            struct rtser_event  ev = { rxpend_timestamp: 0 };
+            rtdm_lockctx_t      lock_ctx;
+            __u64               timeout;
+
+            /* only one waiter allowed, stop any further attempts here */
+            if (test_and_set_bit(0, &ctx->ioc_event_lock))
+                return -EBUSY;
+
+            timeout = rtdm_clock_read() + ctx->config.event_timeout;
+
+            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+            while (!ctx->ioc_events) {
+                /* enable error interrupt only when the user waits for it */
+                if (testbits(ctx->ioc_event_mask, RTSER_EVENT_ERRPEND)) {
+                    ctx->ier_status |= IER_STAT;
+                    outb(ctx->ier_status, IER(ctx->dev_id));
+                }
+
+                rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+                if (ctx->config.event_timeout > 0)
+                    ret = rtdm_event_wait_until(&ctx->ioc_event, timeout);
+                else
+                    ret = rtdm_event_wait(&ctx->ioc_event,
+                                          ctx->config.event_timeout);
+                if (ret < 0) {
+                    clear_bit(0, &ctx->ioc_event_lock);
+                    if (ret == -EIDRM)  /* device has been closed */
+                        ret = -EBADF;
+                    goto wait_unlock_out;
+                }
+
+                rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+            }
+
+            ev.events = ctx->ioc_events;
+            ctx->ioc_events &= ~(RTSER_EVENT_MODEMHI | RTSER_EVENT_MODEMLO);
+
+            ev.last_timestamp = ctx->last_timestamp;
+            ev.rx_pending     = ctx->in_npend;
+
+            if (ctx->in_history)
+                ev.rxpend_timestamp = ctx->in_history[ctx->in_head];
+
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+            if (user_info) {
+                if (!rtdm_rw_user_ok(user_info, arg,
+                                     sizeof(struct rtser_event)) ||
+                    rtdm_copy_to_user(user_info, arg, &ev,
+                                      sizeof(struct rtser_event)))
+                    ret = -EFAULT;
+            } else
+                memcpy(arg, &ev, sizeof(struct rtser_event));
+
+          wait_unlock_out:
+            /* release the simple event waiter lock */
+            clear_bit(0, &ctx->ioc_event_lock);
+            break;
+        }
+
+        default:
+            ret = -ENOTTY;
+    }
+
+    return ret;
+}
+
+
+int rt_16550_read(struct rtdm_dev_context *context,
+                  rtdm_user_info_t *user_info, void *buf, size_t nbyte)
+{
+    struct rt_16550_context *ctx;
+    int                     dev_id;
+    rtdm_lockctx_t          lock_ctx;
+    size_t                  read = 0;
+    int                     pending;
+    int                     block;
+    int                     subblock;
+    int                     in_pos;
+    char                    *out_pos = (char *)buf;
+    __u64                   abstimeout;
+    int                     ret = -EAGAIN;  /* for non-blocking read */
+    int                     nonblocking;
+
+
+    if (nbyte == 0)
+        return 0;
+
+    if (user_info && !rtdm_rw_user_ok(user_info, buf, nbyte))
+        return -EFAULT;
+
+    ctx    = (struct rt_16550_context *)context->dev_private;
+    dev_id = ctx->dev_id;
+
+    /* calculate timeout - even if we don't use it */
+    abstimeout  = rtdm_clock_read() + ctx->config.rx_timeout;
+    nonblocking = (ctx->config.rx_timeout < 0);
+
+    /* only one reader allowed, stop any further attempts here */
+    if (test_and_set_bit(0, &ctx->in_lock))
+        return -EBUSY;
+
+    while (read < nbyte) {
+        rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+        /* switch on error interrupt - the user is ready to listen */
+        if (!testbits(ctx->ier_status, IER_STAT)) {
+            ctx->ier_status |= IER_STAT;
+            outb(ctx->ier_status, IER(ctx->dev_id));
+        }
+
+        if (ctx->status) {
+            if (testbits(ctx->status, RTSER_LSR_BREAK_IND))
+                ret = -EPIPE;
+            else
+                ret = -EIO;
+            ctx->status = 0;
+            break;
+        }
+
+        pending = ctx->in_npend;
+
+        if (pending > 0) {
+            block = subblock = (pending <= nbyte) ? pending : nbyte;
+            in_pos = ctx->in_head;
+
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+            /* do we have to wrap around the buffer end? */
+            if (in_pos + subblock > IN_BUFFER_SIZE) {
+                /* treat the block between head and buffer end separately */
+                subblock = IN_BUFFER_SIZE - in_pos;
+
+                if (user_info) {
+                    if (rtdm_copy_to_user(user_info, out_pos,
+                                &ctx->in_buf[in_pos], subblock) != 0) {
+                        ret = -EFAULT;
+                        break;
+                    }
+                } else
+                    memcpy(out_pos, &ctx->in_buf[in_pos], subblock);
+
+                read    += subblock;
+                out_pos += subblock;
+
+                subblock = block - subblock;
+                in_pos   = 0;
+            }
+
+            if (user_info) {
+                if (rtdm_copy_to_user(user_info, out_pos,
+                                &ctx->in_buf[in_pos], subblock) != 0) {
+                    ret = -EFAULT;
+                    break;
+                }
+            } else
+                memcpy(out_pos, &ctx->in_buf[in_pos], subblock);
+
+            read    += subblock;
+            out_pos += subblock;
+
+            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+            ctx->in_head = (ctx->in_head + block) & (IN_BUFFER_SIZE - 1);
+            if ((ctx->in_npend -= block) == 0)
+                ctx->ioc_events &= ~RTSER_EVENT_RXPEND;
+
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
             continue;
-	    }
+        }
 
-	if (timeout == TM_NONBLOCK)
-	    {
-	    ret = -EWOULDBLOCK;
-	    goto do_handshake;
-	    }
+        if (nonblocking) {
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+            /* ret was set to EAGAIN in case of real non-blocking call or
+               contains the error returned by rtdm_event_wait[_until] */
+            break;
+        }
 
-	rt_sem_p(&uart->i_lock,TM_INFINITE);
-	uart->i_nwait = nbytes - rbytes;
-        ret = rt_sem_p(&uart->i_pulse,timeout);
-	rt_sem_v(&uart->i_lock);
+        ctx->in_nwait = nbyte - read;
 
-        if (ret)
-	    goto do_handshake;
-	}
+        rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
-    if (uart->status == 0)
-	ret = rbytes;
-    else
-	{
-	if (uart->status & LSR_BI) /* Break. */
-	    ret = -EPIPE;
-	else if (uart->status & LSR_OE)	/* Overrun error. */
-	    ret = -ENOSPC;
-	else
-	    ret = -EIO;	/*  Framing and Parity errors. */
+        if (ctx->config.rx_timeout == 0)
+            ret = rtdm_event_wait(&ctx->in_event, 0);
+        else
+            ret = rtdm_event_wait_until(&ctx->in_event, abstimeout);
 
-	uart->status = 0;
-	}
+        if (ret < 0) {
+            if (ret == -EIDRM) {
+                /* device has been closed - return immediately */
+                return -EBADF;
+            }
 
- do_handshake:
+            nonblocking = 1;
+            if (ctx->in_npend > 0)
+                continue; /* final turn: collect pending bytes before exit */
 
-    /* If we are enforcing the RTSCTS control flow and the input
-       buffer dropped below the specified low watermark, reassert
-       RTS. */
+            ctx->in_nwait = 0;
+            break;
+        }
+    }
 
-    if ((uart->modem & MCR_RTS) == 0 &&
-	(uart->config.handshake & RT_UART_RTSCTS) != 0 &&
-	uart->i_count <= uart->config.rts_lowm)
-	{
-	uart->modem |= MCR_RTS;
-	outb(uart->modem,MCR(uart));
-	}
+    /* release the simple reader lock */
+    clear_bit(0, &ctx->in_lock);
 
- unlock_and_exit:
-
-    xnlock_put_irqrestore(&nklock,s);
+    if ((read > 0) && ((ret == 0) || (ret == -EAGAIN) ||
+                       (ret == -ETIMEDOUT) || (ret == -EINTR)))
+        ret = read;
 
     return ret;
 }
 
-ssize_t rt_uart_write (RT_UART *uart,
-		       const void *buf,
-		       size_t nbytes)
+
+int rt_16550_write(struct rtdm_dev_context *context,
+                   rtdm_user_info_t *user_info, const void *buf, size_t nbyte)
 {
-    const unsigned char *cp = (const unsigned char *)buf;
-    int wbytes = 0;
-    ssize_t ret;
-    spl_t s;
+    struct rt_16550_context *ctx;
+    int                     dev_id;
+    rtdm_lockctx_t          lock_ctx;
+    size_t                  written = 0;
+    int                     free;
+    int                     block;
+    int                     subblock;
+    int                     out_pos;
+    char                    *in_pos = (char *)buf;
+    __u64                   abstimeout;
+    int                     ret;
 
-    if (nbytes == 0)
-	return 0;
 
-    xnlock_get_irqsave(&nklock,s);
+    if (nbyte == 0)
+        return 0;
 
-    uart = rtai_h2obj_validate(uart,RTAI_UART_MAGIC,RT_UART);
+    if (user_info &&
+        !rtdm_read_user_ok(user_info, buf, nbyte))
+        return -EFAULT;
 
-    if (!uart)
-        {
-        ret = rtai_handle_error(uart,RTAI_UART_MAGIC,RT_UART);
-        goto unlock_and_exit;
+    ctx    = (struct rt_16550_context *)context->dev_private;
+    dev_id = ctx->dev_id;
+
+    /* calculate timeout - even if we don't use it */
+    abstimeout = rtdm_clock_read() + ctx->config.rx_timeout;
+
+    /* make write operation atomic */
+    ret = rtdm_mutex_timedlock(&ctx->out_lock, ctx->config.rx_timeout);
+    if (ret)
+        return ret;
+
+    while (written < nbyte) {
+        rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+        free = OUT_BUFFER_SIZE - ctx->out_npend;
+
+        if (free > 0) {
+            block = subblock = (nbyte <= free) ? nbyte : free;
+            out_pos = ctx->out_tail;
+
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+            /* do we have to wrap around the buffer end? */
+            if (out_pos + subblock > OUT_BUFFER_SIZE) {
+                /* treat the block between head and buffer end separately */
+                subblock = OUT_BUFFER_SIZE - out_pos;
+
+                if (user_info) {
+                    if (rtdm_copy_from_user(user_info, &ctx->out_buf[out_pos],
+                                            in_pos, subblock) != 0) {
+                        ret = -EFAULT;
+                        break;
+                    }
+                } else
+                    memcpy(&ctx->out_buf[out_pos], in_pos, subblock);
+
+                written += subblock;
+                in_pos  += subblock;
+
+                subblock = block - subblock;
+                out_pos  = 0;
+            }
+
+            if (user_info) {
+                if (rtdm_copy_from_user(user_info, &ctx->out_buf[out_pos],
+                                        in_pos, subblock) != 0) {
+                    ret = -EFAULT;
+                    break;
+                }
+            } else
+                memcpy(&ctx->out_buf[out_pos], in_pos, block);
+
+            written += subblock;
+            in_pos  += subblock;
+
+            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+            ctx->out_tail = (ctx->out_tail + block) & (OUT_BUFFER_SIZE - 1);
+            ctx->out_npend += block;
+
+            /* unmask tx interrupt */
+            ctx->ier_status |= IER_TX;
+            outb(ctx->ier_status, IER(dev_id));
+
+            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+            continue;
         }
 
-    /* Enable transmitter empty interrupt. */
-    outb(IER_RX|IER_TX|IER_STAT|IER_MODEM,IER(uart));
+        rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
-    while (wbytes < nbytes)
-	{
-	if (uart->o_count < sizeof(uart->o_buf))
-	    {
-            uart->o_buf[uart->o_tail++] = cp[wbytes++];
-            uart->o_tail &= (sizeof(uart->o_buf) - 1);
-	    uart->o_count++;
-	    continue;
-	    }
+        /* check for non-blocking mode */
+        if (ctx->config.tx_timeout < 0) {
+            ret = -EAGAIN;
+            break;
+        }
 
-        ret = rt_sem_p(&uart->o_pulse,TM_INFINITE);
+        if (ctx->config.tx_timeout == 0)
+            ret = rtdm_event_wait(&ctx->out_event, 0);
+        else
+            ret = rtdm_event_wait_until(&ctx->out_event, abstimeout);
 
-        if (ret)
-	    goto unlock_and_exit;
-	}
+        if (ret < 0) {
+            if (ret == -EIDRM) {
+                /* device has been closed - return immediately */
+                return -EBADF;
+            }
+            break;
+        }
+    }
 
-    ret = wbytes;
+    rtdm_mutex_unlock(&ctx->out_lock);
 
- unlock_and_exit:
-
-    xnlock_put_irqrestore(&nklock,s);
+    if ((written > 0) &&
+        ((ret == 0) || (ret == -ETIMEDOUT) || (ret == -EINTR)))
+        ret = written;
 
     return ret;
 }
 
-int rt_uart_control (RT_UART *uart,
-		     int cmd,
-		     void *arg)
+
+static const struct rtdm_device device_tmpl = {
+    struct_version:     RTDM_DEVICE_STRUCT_VER,
+
+    device_flags:       RTDM_NAMED_DEVICE | RTDM_EXCLUSIVE,
+    context_size:       sizeof(struct rt_16550_context),
+    device_name:        "",
+
+    open_rt:            rt_16550_open,
+    open_nrt:           rt_16550_open,
+
+    ops: {
+        close_rt:       rt_16550_close,
+        close_nrt:      rt_16550_close,
+
+        ioctl_rt:       rt_16550_ioctl_rt,
+        ioctl_nrt:      rt_16550_ioctl_rt,
+
+        read_rt:        rt_16550_read,
+        read_nrt:       NULL,
+
+        write_rt:       rt_16550_write,
+        write_nrt:      NULL,
+
+        recvmsg_rt:     NULL,
+        recvmsg_nrt:    NULL,
+
+        sendmsg_rt:     NULL,
+        sendmsg_nrt:    NULL,
+    },
+
+    device_class:       RTDM_CLASS_SERIAL,
+    device_sub_class:   RTDM_SUBCLASS_16550A,
+    driver_name:        "rt_16550A",
+    peripheral_name:    "UART 16550A",
+    provider_name:      "Jan Kiszka",
+};
+
+int init_module(void)
 {
-    int err = 0;
-    spl_t s;
+    struct rtdm_device  *dev;
+    int                 ret;
+    int                 i;
 
-    xnlock_get_irqsave(&nklock,s);
 
-    uart = rtai_h2obj_validate(uart,RTAI_UART_MAGIC,RT_UART);
+    if (irq_c < ioaddr_c)
+        return -EINVAL;
 
-    if (!uart)
-        {
-        err = rtai_handle_error(uart,RTAI_UART_MAGIC,RT_UART);
-        goto unlock_and_exit;
+    for (i = 0; i < ioaddr_c; i++) {
+        dev = kmalloc(sizeof(struct rtdm_device), GFP_KERNEL);
+        ret = -ENOMEM;
+        if (!dev)
+            goto cleanup_out;
+
+        memcpy(dev, &device_tmpl, sizeof(struct rtdm_device));
+        snprintf(dev->device_name, RTDM_MAX_DEVNAME_LEN, "rtser%d",
+                 start_index+i);
+        dev->device_id = i;
+
+        dev->proc_name = dev->device_name;
+
+        ret = -EBUSY;
+        if (!request_region(ioaddr[i], 8, dev->device_name))
+            goto kfree_out;
+
+        if (tx_fifo[i] == 0)
+            tx_fifo[i] = DEFAULT_TX_FIFO;
+
+        /* Mask all UART interrupts and clear pending ones. */
+        outb(0, IER(i));
+        inb(IIR(i));
+        inb(LSR(i));
+        inb(RHR(i));
+        inb(MSR(i));
+
+        ret = rtdm_dev_register(dev);
+
+        if (ret < 0)
+            goto rel_region_out;
+
+        device[i] = dev;
+    }
+
+    return 0;
+
+
+ rel_region_out:
+    release_region(ioaddr[i], 8);
+
+ kfree_out:
+    kfree(dev);
+
+ cleanup_out:
+    cleanup_module();
+
+    return ret;
+}
+
+
+void cleanup_module(void)
+{
+    int i;
+
+
+    for (i = 0; i < MAX_DEVICES; i++)
+        if (device[i]) {
+            rtdm_dev_unregister(device[i]);
+            release_region(ioaddr[i], 8);
+            kfree(device[i]);
         }
-    
-    switch (cmd)
-	{
-	default:
-
-	    err = -EINVAL;
-	}
-
- unlock_and_exit:
-
-    xnlock_put_irqrestore(&nklock,s);
-
-    return err;
 }
-
-int __uart_pkg_init (void)
-
-{
-    int err = 0;
-
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    err = __uart_syscall_init();
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
-
-    return err;
-}
-
-void __uart_pkg_exit (void)
-
-{
-    xnholder_t *holder;
-
-#if defined (__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    __uart_syscall_cleanup();
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
-
-    while ((holder = getheadq(&__rtai_uart_q)) != NULL)
-	rt_uart_close(link2uart(holder));
-}
-
-module_init(__uart_pkg_init);
-module_exit(__uart_pkg_exit);

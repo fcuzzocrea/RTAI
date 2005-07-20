@@ -146,6 +146,8 @@ CONFIG_RTAI_SKIN_POSIX_FALSE = @CONFIG_RTAI_SKIN_POSIX_FALSE@
 CONFIG_RTAI_SKIN_POSIX_TRUE = @CONFIG_RTAI_SKIN_POSIX_TRUE@
 CONFIG_RTAI_SKIN_PSOS_FALSE = @CONFIG_RTAI_SKIN_PSOS_FALSE@
 CONFIG_RTAI_SKIN_PSOS_TRUE = @CONFIG_RTAI_SKIN_PSOS_TRUE@
+CONFIG_RTAI_SKIN_RTDM_FALSE = @CONFIG_RTAI_SKIN_RTDM_FALSE@
+CONFIG_RTAI_SKIN_RTDM_TRUE = @CONFIG_RTAI_SKIN_RTDM_TRUE@
 CONFIG_RTAI_SKIN_UITRON_FALSE = @CONFIG_RTAI_SKIN_UITRON_FALSE@
 CONFIG_RTAI_SKIN_UITRON_TRUE = @CONFIG_RTAI_SKIN_UITRON_TRUE@
 CONFIG_RTAI_SKIN_VRTX_FALSE = @CONFIG_RTAI_SKIN_VRTX_FALSE@
@@ -476,7 +478,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/arch/generic/hal $(distdir)/config/autoconf $(distdir)/doc/docbook $(distdir)/doc/docbook/custom-stylesheets/xsl/html $(distdir)/doc/doxygen $(distdir)/drivers/16550A $(distdir)/nucleus $(distdir)/scripts $(distdir)/skins/posix $(distdir)/skins/psos+ $(distdir)/skins/rtai $(distdir)/skins/uitron $(distdir)/skins/uvm $(distdir)/skins/vrtx $(distdir)/skins/vxworks $(distdir)/testsuite/klatency
+	$(mkdir_p) $(distdir)/arch/generic/hal $(distdir)/config/autoconf $(distdir)/doc/docbook $(distdir)/doc/docbook/custom-stylesheets/xsl/html $(distdir)/doc/doxygen $(distdir)/drivers/16550A $(distdir)/nucleus $(distdir)/scripts $(distdir)/skins/posix $(distdir)/skins/psos+ $(distdir)/skins/rtai $(distdir)/skins/rtdm $(distdir)/skins/uitron $(distdir)/skins/uvm $(distdir)/skins/vrtx $(distdir)/skins/vxworks $(distdir)/testsuite/klatency
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

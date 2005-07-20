@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Philippe Gerum <rpm@xenomai.org>.
+ * Copyright (C) 2005 Joerg Langenberg <joergel75.gmx.net>.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,22 +16,24 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
  */
 
-#include <sys/types.h>
-#include <unistd.h>
-#include <16550A/16550A.h>
-#include <16550A/syscall.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <rtdm/syscall.h>
 
-int __16550A_muxid = -1;
+int __rtdm_muxid = -1;
 
-int __init_skin (void)
+static __attribute__((constructor)) void __init_rtdm_interface(void)
 
 {
-    int muxid = XENOMAI_SYSCALL2(__xn_sys_bind,RTAI_UART_MAGIC,NULL); /* atomic */
+    int muxid;
 
-    if (muxid < 0)
-	return -1;
+    muxid = XENOMAI_SYSCALL2(__xn_sys_bind, RTDM_SKIN_MAGIC, NULL);
 
-    __16550A_muxid = muxid;
+    if (muxid < 0) {
+        fprintf(stderr,"RTAI/fusion: RTDM skin unavailable.\n");
+        fprintf(stderr,"(Did you load the rtai_rtdm.ko module?)\n");
+        exit(1);
+    }
 
-    return muxid;
+    __rtdm_muxid = muxid;
 }

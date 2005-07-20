@@ -2142,10 +2142,10 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 			if (!systrans++) {
 				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->LINUX_SYSCALL_NR);
 			}
-			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
+			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->LINUX_SYSCALL_NR););
 			give_back_to_linux(task, 1);
 			task->is_hard = 2;
-			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
+			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->LINUX_SYSCALL_NR););
 		}
 	} }
 	return 0;

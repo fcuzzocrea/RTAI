@@ -1289,7 +1289,7 @@ int rt_task_notify (RT_TASK *task,
 }
 
 /**
- * @fn int rt_task_set_mode(int setmask,int clrmask,int *mode_r)
+ * @fn int rt_task_set_mode(int clrmask,int setmask,int *mode_r)
  * @brief Change task mode bits.
  *
  * Each RTAI task has a set of internal bits determining various

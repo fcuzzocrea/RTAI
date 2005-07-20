@@ -546,7 +546,7 @@ static int __rt_task_set_mode (struct task_struct *curr, struct pt_regs *regs)
     clrmask = __xn_reg_arg1(regs);
     setmask = __xn_reg_arg2(regs);
 
-    err = rt_task_set_mode(setmask & ~T_PRIMARY,clrmask & ~T_PRIMARY,&mode_r);
+    err = rt_task_set_mode(clrmask & ~T_PRIMARY,setmask & ~T_PRIMARY,&mode_r);
 
     if (!err && __xn_reg_arg3(regs))
 	{

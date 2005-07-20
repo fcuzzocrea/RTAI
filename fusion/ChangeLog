@@ -1,5 +1,7 @@
 2005-07-20  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c (__rt_task_set_mode): Fix order of parameters.
+
 	* include/nucleus/asm-*/syscall.h: Propagate return values from
 	__xn_copy_from_user/__xn_copy_to_user.
 

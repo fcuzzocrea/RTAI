@@ -36,6 +36,7 @@
 
 /**
  * \ingroup hal
+ * @addtogroup hal 
  *
  * PowerPC64-specific HAL services.
  *

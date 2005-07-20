@@ -1,6 +1,9 @@
-/*
- * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
- * Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>.
+/**
+ * @file
+ * Real-Time Driver Model for RTAI, user API header
+ *
+ * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
+ * @note Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -15,7 +18,20 @@
  * You should have received a copy of the GNU General Public License
  * along with RTAI/fusion; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * @ingroup userapi
  */
+
+/*!
+ * @ingroup rtdm
+ * @defgroup userapi User API
+ *
+ * This is the upper interface of RTDM provided to application programs both
+ * in kernel and user space. Note that certain functions may not be
+ * implemented by every device. Refer to the @ref profiles "Device Profiles"
+ * for precise information.
+ *
+ * @{ */
 
 #ifndef _RTDM_H
 #define _RTDM_H
@@ -39,9 +55,14 @@ typedef struct task_struct          rtdm_user_info_t;
 #endif /* !__KERNEL__ */
 
 
+/** Maximum length of device names */
 #define RTDM_MAX_DEVNAME_LEN        31
 
 
+/*!
+ * @anchor RTDM_CLASS_xxx   @name RTDM_CLASS_xxx
+ * Device classes
+ * @{ */
 #define RTDM_CLASS_PARPORT          1
 #define RTDM_CLASS_SERIAL           2
 #define RTDM_CLASS_CAN              3
@@ -54,29 +75,33 @@ typedef struct task_struct          rtdm_user_info_t;
 #define RTDM_CLASS_PROFIBUS         ?
 #define ...
 */
-#define RTDM_CLASS_EXPERIMENTAL     224 /* up to 255 */
-
-
-/* sub-classes: RTDM_CLASS_SERIAL */
-#define RTDM_SUBCLASS_16550A        0
-
-
-/* sub-classes: RTDM_CLASS_NETWORK */
-#define RTDM_SUBCLASS_RTNET         0
-
-
-/* Sub-classes: RTDM_CLASS_RTMAC */
-#define RTDM_SUBCLASS_TDMA          0
-#define RTDM_SUBCLASS_UNMANAGED     1
+#define RTDM_CLASS_EXPERIMENTAL     224
+#define RTDM_CLASS_MAX              255
+/** @} */
 
 
 #define RTIOC_TYPE_COMMON           0
 
 
-#define RTIOC_PURGE                 _IOW(RTIOC_TYPE_COMMON, 0x10, int)
+/*!
+ * @name Common IOCTLs
+ * @{
+ */
 
-#define PURGE_RX_BUFFER             0x0001
-#define PURGE_TX_BUFFER             0x0002
+/**
+ * Purge internal device buffers.
+ * @param[in] arg Purge mask, see @ref RTDM_PURGE_xxx_BUFFER
+ */
+#define RTIOC_PURGE                 _IOW(RTIOC_TYPE_COMMON, 0x10, int)
+/** @} */
+
+/*!
+ * @anchor RTDM_PURGE_xxx_BUFFER   @name RTDM_PURGE_xxx_BUFFER
+ * Flags selecting buffers to be purged
+ * @{ */
+#define RTDM_PURGE_RX_BUFFER        0x0001
+#define RTDM_PURGE_TX_BUFFER        0x0002
+/** @} */
 
 
 /* Internally used for mapping socket functions on IOCTLs */
@@ -244,7 +269,7 @@ static inline int rt_dev_setsockopt(int fd, int level, int optname,
                                     const void *optval, socklen_t optlen)
 {
     struct _rtdm_setsockopt_args args =
-        {level, optname, (void *)optval, optlen};
+    {level, optname, (void *)optval, optlen};
 
     return rt_dev_ioctl(fd, _RTIOC_SETSOCKOPT, &args);
 }
@@ -300,6 +325,12 @@ static inline int rt_dev_getpeername(int fd, struct sockaddr *name,
     return rt_dev_ioctl(fd, _RTIOC_GETPEERNAME, &args);
 }
 
+static inline int rt_dev_shutdown(int fd, int how)
+{
+    return rt_dev_ioctl(fd, _RTIOC_SHUTDOWN, how);
+}
+
 #endif /* RTDM_NO_DEFAULT_USER_API */
+/** @} */
 
 #endif /* _RTDM_H */

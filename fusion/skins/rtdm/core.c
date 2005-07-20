@@ -1,6 +1,9 @@
-/*
- * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
- * Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>.
+/**
+ * @file
+ * Real-Time Driver Model for RTAI, device operation multiplexing
+ *
+ * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
+ * @note Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -15,6 +18,12 @@
  * You should have received a copy of the GNU General Public License
  * along with RTAI/fusion; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ */
+
+/*!
+ * @ingroup driverapi
+ * @defgroup interdrv Inter-Driver API
+ * @{
  */
 
 #include <linux/module.h>
@@ -45,6 +54,25 @@ static inline int get_fd(struct rtdm_fildes *fildes)
 }
 
 
+/**
+ * @brief Resolve file descriptor to device context
+ *
+ * @param[in] fd File descriptor
+ *
+ * @return Pointer to associated device context, or NULL on error
+ *
+ * @note The device context has to be unlocked using rtdm_context_unlock()
+ * when it is no longer referenced.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: never.
+ */
 struct rtdm_dev_context *rtdm_context_get(int fd)
 {
     struct rtdm_fildes      *fildes;
@@ -403,6 +431,929 @@ int __init rtdm_core_init(void)
 
     return 0;
 }
+
+
+#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+
+/**
+ * @brief Increment context reference counter
+ *
+ * @param[in] context Device context
+ *
+ * @note rtdm_context_get() automatically increments the lock counter. You
+ * only need to call this function in special scenrios.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: never.
+ */
+void rtdm_context_lock(struct rtdm_dev_context *context);
+
+/**
+ * @brief Decrement context reference counter
+ *
+ * @param[in] context Device context
+ *
+ * @note Every successful call to rtdm_context_get() must be matched by a
+ * rtdm_context_unlock() invocation.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: never.
+ */
+void rtdm_context_unlock(struct rtdm_dev_context *context);
+
+/**
+ * @brief Open a device
+ *
+ * Refer to rt_dev_open() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_open(const char *path, int oflag, ...);
+
+/**
+ * @brief Create a socket
+ *
+ * Refer to rt_dev_socket() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_socket(int protocol_family, int socket_type, int protocol);
+
+/**
+ * @brief Close a device or socket
+ *
+ * Refer to rt_dev_close() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_close(int fd);
+
+/**
+ * @brief Issue an IOCTL
+ *
+ * Refer to rt_dev_ioctl() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_ioctl(int fd, int request, ...);
+
+/**
+ * @brief Read from device
+ *
+ * Refer to rt_dev_read() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+ssize_t rtdm_read(int fd, void *buf, size_t nbyte);
+
+/**
+ * @brief Write to device
+ *
+ * Refer to rt_dev_write() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+ssize_t rtdm_write(int fd, const void *buf, size_t nbyte);
+
+/**
+ * @brief Receive message from socket
+ *
+ * Refer to rt_dev_recvmsg() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+ssize_t rtdm_recvmsg(int fd, struct msghdr *msg, int flags);
+
+/**
+ * @brief Receive message from socket
+ *
+ * Refer to rt_dev_recvfrom() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+ssize_t rtdm_recvfrom(int fd, void *buf, size_t len, int flags,
+                      struct sockaddr *from, socklen_t *fromlen);
+
+/**
+ * @brief Receive message from socket
+ *
+ * Refer to rt_dev_recv() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+ssize_t rtdm_recv(int fd, void *buf, size_t len, int flags);
+
+/**
+ * @brief Transmit message to socket
+ *
+ * Refer to rt_dev_sendmsg() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+ssize_t rtdm_sendmsg(int fd, const struct msghdr *msg, int flags);
+
+/**
+ * @brief Transmit message to socket
+ *
+ * Refer to rt_dev_sendto() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+ssize_t rtdm_sendto(int fd, const void *buf, size_t len, int flags,
+                    const struct sockaddr *to, socklen_t tolen);
+
+/**
+ * @brief Transmit message to socket
+ *
+ * Refer to rt_dev_send() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+ssize_t rtdm_send(int fd, const void *buf, size_t len, int flags);
+
+/**
+ * @brief Bind to local address
+ *
+ * Refer to rt_dev_bind() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_bind(int fd, const struct sockaddr *my_addr, socklen_t addrlen);
+
+/**
+ * @brief Connect to remote address
+ *
+ * Refer to rt_dev_connect() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_connect(int fd, const struct sockaddr *serv_addr, socklen_t addrlen);
+
+/**
+ * @brief Listen for incomming connection requests
+ *
+ * Refer to rt_dev_listen() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_listen(int fd, int backlog);
+
+/**
+ * @brief Accept a connection requests
+ *
+ * Refer to rt_dev_accept() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
+
+/**
+ * @brief Shut down parts of a connection
+ *
+ * Refer to rt_dev_shutdown() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_shutdown(int fd, int how);
+
+/**
+ * @brief Get socket option
+ *
+ * Refer to rt_dev_getsockopt() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_getsockopt(int fd, int level, int optname, void *optval,
+                    socklen_t *optlen);
+
+/**
+ * @brief Set socket option
+ *
+ * Refer to rt_dev_setsockopt() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_setsockopt(int fd, int level, int optname, const void *optval,
+                    socklen_t optlen);
+
+/**
+ * @brief Get local socket address
+ *
+ * Refer to rt_dev_getsockname() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_getsockname(int fd, struct sockaddr *name, socklen_t *namelen);
+
+/**
+ * @brief Get socket destination address
+ *
+ * Refer to rt_dev_getpeername() for parameters and return values
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_getpeername(int fd, struct sockaddr *name, socklen_t *namelen);
+
+/** @} */
+
+/*!
+ * @addtogroup userapi
+ * @{
+ */
+
+/**
+ * @brief Open a device
+ *
+ * @param[in] path Device name
+ * @param[in] oflag Open flags
+ * @param ... Further parameters will be ignored.
+ *
+ * @return Positive file descriptor value on success, otherwise a negative
+ * error code.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c open() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_open(const char *path, int oflag, ...);
+
+/**
+ * @brief Create a socket
+ *
+ * @param[in] protocol_family Protocol family (@c PF_xxx)
+ * @param[in] socket_type Socket type (@c SOCK_xxx)
+ * @param[in] protocol Protocol ID, 0 for default
+ *
+ * @return Positive file descriptor value on success, otherwise a negative
+ * error code.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c socket() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_socket(int protocol_family, int socket_type, int protocol);
+
+/**
+ * @brief Close a device or socket
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_open() or rt_dev_socket()
+ *
+ * @return 0 on success, otherwise a negative error code.
+ *
+ * @note If the matching rt_dev_open() or rt_dev_socket() call took place in
+ * non-real-time context, rt_dev_close() must be issued within non-real-time
+ * as well. Otherwise, the call will fail.
+ *
+ * @note Killing a real-time task that is blocked on some device operation can
+ * lead to stalled file descriptors. To avoid such scenarios, always close the
+ * device before explicitely terminating any real-time task which may use it.
+ * To cleanup a stalled file descriptor, send its number to the @c open_fildes
+ * /proc entry, e.g. via
+ * @code #> echo 3 > /proc/rtai/rtdm/open_fildes @endcode
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c close() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_close(int fd);
+
+/**
+ * @brief Issue an IOCTL
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_open() or rt_dev_socket()
+ * @param[in] request IOCTL code
+ * @param ... Optional third argument, depending on IOCTL function
+ * (@c void @c * or @c unsigned @c long)
+ *
+ * @return Positiv value on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c ioctl() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_ioctl(int fd, int request, ...);
+
+/**
+ * @brief Read from device
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_open()
+ * @param[out] buf Input buffer
+ * @param[in] nbyte Number of bytes to read
+ *
+ * @return Number of bytes read, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c read() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+ssize_t rt_dev_read(int fd, void *buf, size_t nbyte);
+
+/**
+ * @brief Write to device
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_open()
+ * @param[in] buf Output buffer
+ * @param[in] nbyte Number of bytes to write
+ *
+ * @return Number of bytes written, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c write() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+ssize_t rt_dev_write(int fd, const void *buf, size_t nbyte);
+
+/**
+ * @brief Receive message from socket
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in,out] msg Message descriptor
+ * @param[in] flags Message flags
+ *
+ * @return Number of bytes received, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c recvmsg() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+ssize_t rt_dev_recvmsg(int fd, struct msghdr *msg, int flags);
+
+/**
+ * @brief Receive message from socket
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[out] buf Message buffer
+ * @param[in] len Message buffer size
+ * @param[in] flags Message flags
+ * @param[out] from Buffer for message sender address
+ * @param[in,out] fromlen Address buffer size
+ *
+ * @return Number of bytes received, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c recvfrom() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
+                        struct sockaddr *from,
+                        socklen_t *fromlen);
+
+/**
+ * @brief Receive message from socket
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[out] buf Message buffer
+ * @param[in] len Message buffer size
+ * @param[in] flags Message flags
+ *
+ * @return Number of bytes received, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c recv() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+ssize_t rt_dev_recv(int fd, void *buf, size_t len, int flags);
+
+/**
+ * @brief Transmit message to socket
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] msg Message descriptor
+ * @param[in] flags Message flags
+ *
+ * @return Number of bytes sent, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c sendmsg() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags);
+
+/**
+ * @brief Transmit message to socket
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] buf Message buffer
+ * @param[in] len Message buffer size
+ * @param[in] flags Message flags
+ * @param[in] to Buffer for message destination address
+ * @param[in] tolen Address buffer size
+ *
+ * @return Number of bytes sent, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c sendto() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+ssize_t rt_dev_sendto(int fd, const void *buf, size_t len, int flags,
+                      const struct sockaddr *to, socklen_t tolen);
+
+/**
+ * @brief Transmit message to socket
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] buf Message buffer
+ * @param[in] len Message buffer size
+ * @param[in] flags Message flags
+ *
+ * @return Number of bytes sent, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c send() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+ssize_t rt_dev_send(int fd, const void *buf, size_t len, int flags);
+
+/**
+ * @brief Bind to local address
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] my_addr Address buffer
+ * @param[in] addrlen Address buffer size
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c bind() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_bind(int fd, const struct sockaddr *my_addr, socklen_t addrlen);
+
+/**
+ * @brief Connect to remote address
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] serv_addr Address buffer
+ * @param[in] addrlen Address buffer size
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c connect() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_connect(int fd, const struct sockaddr *serv_addr,
+                   socklen_t addrlen);
+
+/**
+ * @brief Listen for incomming connection requests
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] backlog Maximum queue length
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c lsiten() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_listen(int fd, int backlog);
+
+/**
+ * @brief Accept a connection requests
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[out] addr Buffer for remote address
+ * @param[in,out] addrlen Address buffer size
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c accept() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
+
+/**
+ * @brief Shut down parts of a connection
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] how Specifies the part to be shut down (@c SHUT_xxx)
+*
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c shutdown() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_shutdown(int fd, int how);
+
+/**
+ * @brief Get socket option
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] level Addressed stack level
+ * @param[in] optname Option name ID
+ * @param[out] optval Value buffer
+ * @param[in,out] optlen Value buffer size
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c getsockopt() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_getsockopt(int fd, int level, int optname, void *optval,
+                      socklen_t *optlen);
+
+/**
+ * @brief Set socket option
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[in] level Addressed stack level
+ * @param[in] optname Option name ID
+ * @param[in] optval Value buffer
+ * @param[in] optlen Value buffer size
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c setsockopt() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_setsockopt(int fd, int level, int optname, const void *optval,
+                      socklen_t optlen);
+
+/**
+ * @brief Get local socket address
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[out] name Address buffer
+ * @param[in,out] namelen Address buffer size
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c getsockname() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_getsockname(int fd, struct sockaddr *name, socklen_t *namelen);
+
+/**
+ * @brief Get socket destination address
+ *
+ * @param[in] fd File descriptor as returned by rt_dev_socket()
+ * @param[out] name Address buffer
+ * @param[in,out] namelen Address buffer size
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @see @c getpeername() in IEEE Std 1003.1,
+ * http://www.opengroup.org/onlinepubs/009695399
+ */
+int rt_dev_getpeername(int fd, struct sockaddr *name, socklen_t *namelen);
+/** @} */
+
+#endif /* DOXYGEN_CPP */
 
 
 EXPORT_SYMBOL(rtdm_context_get);

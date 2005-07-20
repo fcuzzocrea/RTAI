@@ -305,7 +305,7 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
 
     dev_id = ctx->dev_id;
 
-    if (testbits(config->config_mask, RTSER_BAUD)) {
+    if (testbits(config->config_mask, RTSER_SET_BAUD)) {
         ctx->config.baud_rate = config->baud_rate & BAUD_MASK;
 
         outb(LCR_DLAB,                           LCR(dev_id));
@@ -313,32 +313,32 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
         outb(ctx->config.baud_rate >> 8,   DLM(dev_id));
     }
 
-    if (testbits(config->config_mask, RTSER_PARITY))
+    if (testbits(config->config_mask, RTSER_SET_PARITY))
         ctx->config.parity    = config->parity & PARITY_MASK;
-    if (testbits(config->config_mask, RTSER_DATA_BITS))
+    if (testbits(config->config_mask, RTSER_SET_DATA_BITS))
         ctx->config.data_bits = config->data_bits & DATA_BITS_MASK;
-    if (testbits(config->config_mask, RTSER_STOP_BITS))
+    if (testbits(config->config_mask, RTSER_SET_STOP_BITS))
         ctx->config.stop_bits = config->stop_bits & STOP_BITS_MASK;
 
-    if (testbits(config->config_mask, RTSER_PARITY | RTSER_DATA_BITS |
-                                      RTSER_STOP_BITS | RTSER_BAUD))
+    if (testbits(config->config_mask, RTSER_SET_PARITY | RTSER_SET_DATA_BITS |
+                                      RTSER_SET_STOP_BITS | RTSER_SET_BAUD))
         outb((ctx->config.parity << 3) | (ctx->config.stop_bits << 2) |
              ctx->config.data_bits, LCR(dev_id));
 
-    if (testbits(config->config_mask, RTSER_FIFO_DEPTH)) {
+    if (testbits(config->config_mask, RTSER_SET_FIFO_DEPTH)) {
         ctx->config.fifo_depth = config->fifo_depth & FIFO_MASK;
         outb(FCR_FIFO | FCR_RESET,                    FCR(dev_id));
         outb(FCR_FIFO | ctx->config.fifo_depth, FCR(dev_id));
     }
 
-    if (testbits(config->config_mask, RTSER_TIMEOUT_RX))
+    if (testbits(config->config_mask, RTSER_SET_TIMEOUT_RX))
         ctx->config.rx_timeout = config->rx_timeout;
-    if (testbits(config->config_mask, RTSER_TIMEOUT_TX))
+    if (testbits(config->config_mask, RTSER_SET_TIMEOUT_TX))
         ctx->config.tx_timeout = config->tx_timeout;
-    if (testbits(config->config_mask, RTSER_TIMEOUT_EVENT))
+    if (testbits(config->config_mask, RTSER_SET_TIMEOUT_EVENT))
         ctx->config.event_timeout = config->event_timeout;
 
-    if (testbits(config->config_mask, RTSER_TIMESTAMP_HISTORY)) {
+    if (testbits(config->config_mask, RTSER_SET_TIMESTAMP_HISTORY)) {
         if (testbits(config->timestamp_history, RTSER_RX_TIMESTAMP_HISTORY)) {
             if (!ctx->in_history) {
                 ctx->in_history = *in_history_ptr;
@@ -352,7 +352,7 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
         }
     }
 
-    if (testbits(config->config_mask, RTSER_HANDSHAKE)) {
+    if (testbits(config->config_mask, RTSER_SET_HANDSHAKE)) {
         ctx->config.handshake = config->handshake;
         switch (ctx->config.handshake) {
             case RTSER_RTSCTS_HAND:
@@ -459,7 +459,7 @@ int rt_16550_close(struct rtdm_dev_context *context,
     rtdm_mutex_destroy(&ctx->out_lock);
 
     if (ctx->in_history) {
-        if (testbits(context->context_flags, RTDM_CREATED_IN_NRT))
+        if (test_bit(RTDM_CREATED_IN_NRT, &context->context_flags))
             kfree(ctx->in_history);
         else
             rtdm_free(ctx->in_history);
@@ -510,12 +510,12 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
                 config = &config_buf;
             }
 
-            if (testbits(config->config_mask, RTSER_TIMESTAMP_HISTORY) &&
+            if (testbits(config->config_mask, RTSER_SET_TIMESTAMP_HISTORY) &&
                 testbits(config->timestamp_history,
                          RTSER_RX_TIMESTAMP_HISTORY)) {
-                if (testbits(context->context_flags, RTDM_CREATED_IN_NRT)) {
+                if (test_bit(RTDM_CREATED_IN_NRT, &context->context_flags)) {
                     if (rtdm_in_rt_context())
-                        return -EINVAL;
+                        return -EPERM;
 
                     hist_buf = kmalloc(IN_BUFFER_SIZE * sizeof(__u64),
                                        GFP_KERNEL);
@@ -529,7 +529,7 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
             rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
             if (hist_buf) {
-                if (testbits(context->context_flags, RTDM_CREATED_IN_NRT))
+                if (test_bit(RTDM_CREATED_IN_NRT, &context->context_flags))
                     kfree(hist_buf);
                 else
                     rtdm_free(hist_buf);
@@ -622,13 +622,13 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
         case RTSER_RTIOC_WAIT_EVENT: {
             struct rtser_event  ev = { rxpend_timestamp: 0 };
             rtdm_lockctx_t      lock_ctx;
-            __u64               timeout;
+            __u64               abstimeout;
 
             /* only one waiter allowed, stop any further attempts here */
             if (test_and_set_bit(0, &ctx->ioc_event_lock))
                 return -EBUSY;
 
-            timeout = rtdm_clock_read() + ctx->config.event_timeout;
+            abstimeout = rtdm_clock_read() + ctx->config.event_timeout;
 
             rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
@@ -642,7 +642,7 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
                 rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
                 if (ctx->config.event_timeout > 0)
-                    ret = rtdm_event_wait_until(&ctx->ioc_event, timeout);
+                    ret = rtdm_event_wait_until(&ctx->ioc_event, abstimeout);
                 else
                     ret = rtdm_event_wait(&ctx->ioc_event,
                                           ctx->config.event_timeout);

@@ -1,6 +1,9 @@
-/*
- * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
- * Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>.
+/**
+ * @file
+ * Real-Time Driver Model for RTAI, device management
+ *
+ * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
+ * @note Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -17,10 +20,13 @@
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+/*!
+ * @addtogroup driverapi
+ * @{
+ */
+
 #include <linux/module.h>
 
-#include <nucleus/pod.h>
-#include <rtdm/rtdm_driver.h>
 #include <rtdm/device.h>
 #include <rtdm/proc.h>
 #include <rtdm/syscall.h>
@@ -148,6 +154,38 @@ struct rtdm_device *get_protocol_device(int protocol_family, int socket_type)
 }
 
 
+/*!
+ * @ingroup driverapi
+ * @defgroup devregister Device Registration Services
+ * @{
+ */
+
+/**
+ * @brief Register a RTDM device
+ *
+ * @param[in] device Pointer to structure describing the new device.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -EINVAL is returned if the device structure contains invalid entries.
+ * Check kernel log in this case.
+ *
+ * - -ENOMEM is returned if the context for an exclusive device cannot be
+ * allocated.
+ *
+ * - -EEXIST is returned if the specified device name of protocol ID is
+ * already in use.
+ *
+ * - -EAGAIN is returned if some /proc entry cannot be created.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ *
+ * Rescheduling: never.
+ */
 int rtdm_dev_register(struct rtdm_device* device)
 {
     int                 hashkey;
@@ -164,7 +202,7 @@ int rtdm_dev_register(struct rtdm_device* device)
         return -EINVAL;
     }
 
-    switch (device->device_flags & RTDM_DEVICE_TYPE) {
+    switch (device->device_flags & RTDM_DEVICE_TYPE_MASK) {
         case RTDM_NAMED_DEVICE:
             /* Sanity check: any open handler? */
             if (NO_HANDLER(*device, open)) {
@@ -220,7 +258,7 @@ int rtdm_dev_register(struct rtdm_device* device)
 
     down(&nrt_dev_lock);
 
-    if ((device->device_flags & RTDM_DEVICE_TYPE) == RTDM_NAMED_DEVICE) {
+    if ((device->device_flags & RTDM_DEVICE_TYPE_MASK) == RTDM_NAMED_DEVICE) {
         hashkey = get_name_hash(device->device_name, RTDM_MAX_DEVNAME_LEN,
                                 name_hashkey_mask);
 
@@ -285,13 +323,33 @@ int rtdm_dev_register(struct rtdm_device* device)
 }
 
 
+/**
+ * @brief Unregisters a RTDM device
+ *
+ * @param[in] device Pointer to structure describing the device to be
+ * unregistered.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -ENODEV is returned if the device was not registered.
+ *
+ * - -EAGAIN is returned if the device is busy with open instances.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ *
+ * Rescheduling: never.
+ */
 int rtdm_dev_unregister(struct rtdm_device* device)
 {
     spl_t               s;
     struct rtdm_device  *reg_dev;
 
 
-    if ((device->device_flags & RTDM_DEVICE_TYPE) == RTDM_NAMED_DEVICE)
+    if ((device->device_flags & RTDM_DEVICE_TYPE_MASK) == RTDM_NAMED_DEVICE)
         reg_dev = get_named_device(device->device_name);
     else
         reg_dev = get_protocol_device(device->protocol_family,
@@ -326,6 +384,7 @@ int rtdm_dev_unregister(struct rtdm_device* device)
 
     return 0;
 }
+/** @} */
 
 
 int __init rtdm_dev_init(void)
@@ -359,6 +418,7 @@ int __init rtdm_dev_init(void)
 
     return 0;
 }
+/*@}*/
 
 EXPORT_SYMBOL(rtdm_dev_register);
 EXPORT_SYMBOL(rtdm_dev_unregister);

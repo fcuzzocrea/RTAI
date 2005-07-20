@@ -1,9 +1,17 @@
 2005-07-20  Philippe Gerum  <rpm@xenomai.org>
 
+	* include/nucleus/asm-i386/system.h (__switch_threads): Make sure
+	we don't lose the thread i/o privileges across switches: save the
+	EFLAGS, damnit! This bug was raised in VSYSCALL mode only upon
+	primary -> secondary transitions, since the legacy mode always
+	restores the caller's IRET frame.
+
 	* skins/rtai/syscall.c (__rt_task_set_mode): Fix order of
 	parameters.
 	(__rt_task_set_mode): Properly switch to secondary mode if
 	T_PRIMARY in found in the clrmask.
+	(__rt_task_set_mode): Remove useless check for current shadow;
+	this call is already tagged as __xn_exec_primary.
 
 	* include/nucleus/asm-*/syscall.h: Propagate return values from
 	__xn_copy_from_user/__xn_copy_to_user.

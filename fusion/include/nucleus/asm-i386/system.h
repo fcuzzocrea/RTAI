@@ -170,6 +170,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
 #if __GNUC__ < 3 || __GNUC__ == 3 && __GNUC_MINOR__ < 2
 
     __asm__ __volatile__( \
+        "pushfl\n\t" \
         "pushl %%ecx\n\t" \
         "pushl %%edi\n\t" \
         "pushl %%ebp\n\t" \
@@ -187,6 +188,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
 "1:      popl %%ebp\n\t" \
         "popl %%edi\n\t" \
         "popl %%ecx\n\t" \
+        "popfl\n\t" \
       : /* no output */ \
       : "m" (out_tcb->espp), \
         "m" (out_tcb->eipp), \
@@ -202,6 +204,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
     long ebx_out, ecx_out, edi_out, esi_out;
     
     __asm__ __volatile__( \
+        "pushfl\n\t" \
         "pushl %%ebp\n\t" \
         "movl %6,%%ecx\n\t" \
         "movl %%esp,(%%ecx)\n\t" \
@@ -215,6 +218,7 @@ static inline void __switch_threads(xnarchtcb_t *out_tcb,
         "jne  __switch_to\n\t" \
         "ret\n\t" \
 "1:      popl %%ebp\n\t" \
+        "popfl\n\t" \
       : "=b" (ebx_out), \
         "=&c" (ecx_out), \
         "=S" (esi_out), \

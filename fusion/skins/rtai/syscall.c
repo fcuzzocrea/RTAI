@@ -536,9 +536,6 @@ static int __rt_task_set_mode (struct task_struct *curr, struct pt_regs *regs)
 {
     int err, setmask, clrmask, mode_r;
 
-    if (!__rt_task_current(curr))
-	return -ESRCH;
-
     if (__xn_reg_arg3(regs) &&
 	!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(int)))
 	return -EFAULT;

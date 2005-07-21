@@ -1216,12 +1216,9 @@ COLLISION_COUNT();
 	}
 	flags = rt_spin_lock_irqsave(&list_lock);
 	if (list[k].name == name) {
-		if (dec && list[k].count && !(dec = --list[k].count)) {
-			goto cancel;
-		} else {
+		if (!dec || (list[k].count && !(dec = --list[k].count))) {
 			int j;
 			dec = k;
-cancel:
 			if ((i = k + 1) > lstlen) {
 				i = 1;
 			}
@@ -1257,12 +1254,9 @@ COLLISION_COUNT();
 	}
 	flags = rt_spin_lock_irqsave(&list_lock);
 	if (list[k].adr == adr) {
-		if (dec && list[list[k].nlink].count && !(dec = --list[list[k].nlink].count)) {
-			goto cancel;
-		} else {
+		if (!dec || (list[list[k].nlink].count && !(dec = --list[list[k].nlink].count))) {
 			int j;
 			dec = k;
-cancel:
 			if ((i = k + 1) > lstlen) {
 				i = 1;
 			}

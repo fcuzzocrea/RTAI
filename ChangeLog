@@ -1,3 +1,8 @@
+2005-07-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	  sched/api.c: fixed a wrong test in function "hash_rem_adr" that
+	  caused an unconditional deletion of counted registrations also.
+
 2005-07-15  Ignacio García Pérez <iggarpe@terra.es>
 
 	* base/include/asm-i386/rtai_hal.immed: fixed a very bad misnaming 

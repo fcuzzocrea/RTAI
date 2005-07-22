@@ -1,5 +1,7 @@
 2005-07-22  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/shadow.c (xnshadow_harden): Export.
+
 	* include/nucleus/asm-generic/hal.h: Add RTHAL virtualization
 	level.
 

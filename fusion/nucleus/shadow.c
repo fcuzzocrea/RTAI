@@ -367,7 +367,7 @@ static int gatekeeper_thread (void *data)
 
 /*! 
  * @internal
- * \fn static int xnshadow_harden(void);
+ * \fn int xnshadow_harden(void);
  * \brief Migrate a Linux task to the RTAI domain.
  *
  * This service causes the transition of "current" from the Linux
@@ -385,7 +385,7 @@ static int gatekeeper_thread (void *data)
  * Rescheduling: always.
  */
 
-static int xnshadow_harden (void)
+int xnshadow_harden (void)
 
 {
     struct task_struct *this_task = current;
@@ -394,16 +394,14 @@ static int xnshadow_harden (void)
        number is constant in this context, despite the potential for
        preemption. */
     struct __gatekeeper *gk = &gatekeeper[task_cpu(this_task)];
-    xnthread_t *thread;
+    xnthread_t *thread = xnshadow_thread(this_task);
+
+    if (!thread)
+	return -EPERM;
 
     if (signal_pending(this_task) ||
 	down_interruptible(&gk->sync)) /* Grab the request token. */
 	return -ERESTARTSYS;
-
-    thread = xnshadow_thread(this_task);
-
-    if (!thread)
-	return -EPERM;
 
     xnltt_log_event(rtai_ev_primarysw,this_task->comm);
 
@@ -1707,6 +1705,7 @@ void __exit xnshadow_cleanup (void)
 
 EXPORT_SYMBOL(xnshadow_map);
 EXPORT_SYMBOL(xnshadow_register_interface);
+EXPORT_SYMBOL(xnshadow_harden);
 EXPORT_SYMBOL(xnshadow_relax);
 EXPORT_SYMBOL(xnshadow_start);
 EXPORT_SYMBOL(xnshadow_signal_completion);

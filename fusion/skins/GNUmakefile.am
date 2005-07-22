@@ -28,6 +28,10 @@ if CONFIG_RTAI_SKIN_RTDM
 OPTDIRS += rtdm
 endif
 
+if CONFIG_RTAI_SKIN_COMPAT
+OPTDIRS += compat
+endif
+
 if CONFIG_RTAI_OPT_UVM
 OPTDIRS += uvm
 endif

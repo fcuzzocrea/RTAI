@@ -1,0 +1,87 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+includedir = $(prefix)/include/compat
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_SRC = \
+	intr.c \
+	module.c \
+	task.c \
+	timer.c
+
+include_HEADERS = \
+		intr.h \
+		task.h \
+		timer.h \
+		types.h \
+		rtai.h \
+		rtai_fifos.h \
+		rtai_hal.h \
+		rtai_nam2num.h \
+		rtai_proc_fs.h \
+		rtai_sched.h \
+		rtai_sem.h \
+		rtai_shm.h \
+		rtai_types.h \
+		rt_mem_mgr.h
+
+distfiles = $(libmodule_SRC)
+
+if CONFIG_RTAI_OPT_COMPAT_FIFO
+libmodule_SRC += fifo.c
+include_HEADERS += fifo.h
+endif
+distfiles += fifo.c fifo.h
+
+if CONFIG_RTAI_OPT_COMPAT_SEM
+libmodule_SRC += sem.c
+include_HEADERS += sem.h
+endif
+distfiles += sem.c sem.h
+
+if CONFIG_RTAI_OPT_COMPAT_SHM
+libmodule_SRC += shm.c
+include_HEADERS += shm.h
+endif
+distfiles += shm.c shm.h
+
+if CONFIG_RTAI_OPT_FUSION
+libmodule_SRC += syscall.c
+noinst_HEADERS = syscall.h
+endif
+distfiles += syscall.c syscall.h
+
+rtai_compat$(modext): @RTAI_KBUILD_ENV@
+rtai_compat$(modext): $(libmodule_SRC) FORCE
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
+	@RTAI_KBUILD_BOTTOM@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
+all-local: rtai_compat$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_compat$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+uninstall-local:
+	$(RM) $(moduledir)/rtai_compat$(modext)
+
+.PHONY: FORCE
+
+EXTRA_DIST = $(distfiles) Makefile.kbuild Kconfig
+
+if CONFIG_RTAI_OPT_FUSION
+SUBDIRS = lib
+endif

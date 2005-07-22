@@ -1,0 +1,28 @@
+vpath %.c @RTAI_INSTALLDIR@/source/skins/compat
+
+CC = $(top_builddir)/gcic/gcic
+
+override CFLAGS = -g
+
+if CONFIG_RTAI_MVM_ATOMIC_CORE
+atomic_core := --no-inst -O2
+endif
+
+AM_CPPFLAGS = \
+	-D__IN_RTAI__ \
+	--gcic-backend=$(prefix)/libexec/gcic \
+	--skin-code \
+	$(atomic_core) \
+	-I$(srcdir)/.. \
+	-I$(top_srcdir)/include \
+	-I@RTAI_INSTALLDIR@/source/skins \
+	-I@RTAI_INSTALLDIR@/source/include
+
+lib_LIBRARIES = libcompat_s.a
+
+nodist_libcompat_s_a_SOURCES = \
+	intr.c \
+	module.c \
+	sem.c \
+	task.c \
+	timer.c

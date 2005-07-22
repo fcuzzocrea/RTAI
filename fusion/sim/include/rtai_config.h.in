@@ -10,6 +10,9 @@
 #undef CONFIG_RTAI_MVM_HOST_STRING
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_COMPAT_SEM
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_DEBUG
 
 /* Kconfig */

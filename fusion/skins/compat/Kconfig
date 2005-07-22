@@ -1,0 +1,25 @@
+config RTAI_SKIN_COMPAT
+	bool "RTAI/classic emulator"
+	default n
+	help
+
+	An emulator of RTAI/classic's API.
+
+config RTAI_OPT_COMPAT_FIFO
+	bool "Fifos"
+	depends on RTAI_OPT_PIPE && RTAI_SKIN_COMPAT
+	default y
+	help
+	
+	Fifos are uni-directional communication channels allowing data
+	exchange between real-time tasks in kernel-space and regular
+	user-space processes.
+
+config RTAI_OPT_COMPAT_SEM
+	bool "Semaphores"
+	depends on RTAI_SKIN_COMPAT
+	default y
+	help
+	
+	Semaphores are synchronization objects granting RTAI
+	tasks a concurrent access to a given number of resources.

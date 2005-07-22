@@ -644,6 +644,42 @@ AC_ARG_ENABLE(rtdm-skin,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_SKIN_RTDM:-no})
 
+AC_MSG_CHECKING(for RTAI/classic emulator)
+AC_ARG_ENABLE(compat-skin,
+	AS_HELP_STRING([--enable-compat-skin], [Build RTAI/classic skin]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_SKIN_COMPAT=y ;;
+	*) unset CONFIG_RTAI_SKIN_COMPAT ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_SKIN_COMPAT:-no})
+
+AC_MSG_CHECKING(for compat semaphore support)
+AC_ARG_ENABLE(compat-sem,
+	AS_HELP_STRING([--enable-compat-sem], [Enable semaphore support in compatibility skin]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_COMPAT_SEM=y ;;
+	*) unset CONFIG_RTAI_OPT_COMPAT_SEM ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_COMPAT_SEM:-no})
+
+AC_MSG_CHECKING(for compat FIFO support)
+AC_ARG_ENABLE(compat-fifo,
+	AS_HELP_STRING([--enable-compat-fifo], [Enable FIFO support in compatibility skin]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_COMPAT_FIFO=y ;;
+	*) unset CONFIG_RTAI_OPT_COMPAT_FIFO ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_COMPAT_FIFO:-no})
+
+AC_MSG_CHECKING(for compat shared memory support)
+AC_ARG_ENABLE(compat-shm,
+	AS_HELP_STRING([--enable-compat-shm], [Enable shared memory support in compatibility skin]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_COMPAT_SHM=y ;;
+	*) unset CONFIG_RTAI_OPT_COMPAT_SHM ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_COMPAT_SHM:-no})
+
 AC_MSG_CHECKING(for 16550A UART support)
 AC_ARG_ENABLE(uart-16550A,
 	AS_HELP_STRING([--enable-uart-16550A], [Build 16550A UART driver]),
@@ -1102,6 +1138,11 @@ test \! x$CONFIG_RTAI_OPT_NATIVE_ALARM = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_A
 test \! x$CONFIG_RTAI_OPT_NATIVE_MPS = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_MPS,1,[Kconfig])
 test \! x$CONFIG_RTAI_OPT_NATIVE_INTR = x && AC_DEFINE(CONFIG_RTAI_OPT_NATIVE_INTR,1,[Kconfig])
 
+dnl Compatibility skin options
+test \! x$CONFIG_RTAI_OPT_COMPAT_SEM = x && AC_DEFINE(CONFIG_RTAI_OPT_COMPAT_SEM,1,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_COMPAT_FIFO = x && AC_DEFINE(CONFIG_RTAI_OPT_COMPAT_FIFO,1,[Kconfig])
+test \! x$CONFIG_RTAI_OPT_COMPAT_SHM = x && AC_DEFINE(CONFIG_RTAI_OPT_COMPAT_SHM,1,[Kconfig])
+
 dnl CAUTION: We need to have the CONFIG_RTAI_XX symbols always defined when
 dnl the configuration header is read, but we want the Autoconf-produced
 dnl symbols to be defined only when compiling RTAI. This way, we won't
@@ -1156,6 +1197,7 @@ AM_CONDITIONAL(CONFIG_RTAI_SKIN_VXWORKS,[test x$CONFIG_RTAI_SKIN_VXWORKS = xy])
 AM_CONDITIONAL(CONFIG_RTAI_SKIN_VRTX,[test x$CONFIG_RTAI_SKIN_VRTX = xy])
 AM_CONDITIONAL(CONFIG_RTAI_SKIN_UITRON,[test x$CONFIG_RTAI_SKIN_UITRON = xy])
 AM_CONDITIONAL(CONFIG_RTAI_SKIN_RTDM,[test x$CONFIG_RTAI_SKIN_RTDM = xy])
+AM_CONDITIONAL(CONFIG_RTAI_SKIN_COMPAT,[test x$CONFIG_RTAI_SKIN_COMPAT = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_UVM,[test x$CONFIG_RTAI_OPT_UVM = xy])
 
 dnl Supported drivers
@@ -1172,6 +1214,11 @@ AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_QUEUE,[test x$CONFIG_RTAI_OPT_NATIVE_QUEUE
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_HEAP,[test x$CONFIG_RTAI_OPT_NATIVE_HEAP = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_ALARM,[test x$CONFIG_RTAI_OPT_NATIVE_ALARM = xy])
 AM_CONDITIONAL(CONFIG_RTAI_OPT_NATIVE_INTR,[test x$CONFIG_RTAI_OPT_NATIVE_INTR = xy])
+
+dnl Compat skin options
+AM_CONDITIONAL(CONFIG_RTAI_OPT_COMPAT_SEM,[test x$CONFIG_RTAI_OPT_COMPAT_SEM = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_COMPAT_FIFO,[test x$CONFIG_RTAI_OPT_COMPAT_FIFO = xy])
+AM_CONDITIONAL(CONFIG_RTAI_OPT_COMPAT_SHM,[test x$CONFIG_RTAI_OPT_COMPAT_SHM = xy])
 
 dnl Documentation.
 AM_CONDITIONAL(CONFIG_RTAI_DOC_DOX,[test "$CONFIG_RTAI_DOC_DOX" = y])
@@ -1287,6 +1334,7 @@ AC_CONFIG_LINKS(skins/uitron/Makefile:skins/uitron/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/vrtx/Makefile:skins/vrtx/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/vxworks/Makefile:skins/vxworks/Makefile.kbuild)
 AC_CONFIG_LINKS(skins/rtdm/Makefile:skins/rtdm/Makefile.kbuild)
+AC_CONFIG_LINKS(skins/compat/Makefile:skins/compat/Makefile.kbuild)
 AC_CONFIG_LINKS(testsuite/klatency/Makefile:testsuite/klatency/Makefile.kbuild)
 AC_CONFIG_LINKS(drivers/16550A/Makefile:drivers/16550A/Makefile.kbuild)
 
@@ -1365,6 +1413,8 @@ AC_CONFIG_FILES([ \
        	skins/vxworks/GNUmakefile \
        	skins/rtdm/GNUmakefile \
        	skins/rtdm/lib/GNUmakefile \
+       	skins/compat/GNUmakefile \
+       	skins/compat/lib/GNUmakefile \
        	drivers/GNUmakefile \
        	drivers/16550A/GNUmakefile \
 	])

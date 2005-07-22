@@ -30,8 +30,7 @@
  * in kernel and user space. Note that certain functions may not be
  * implemented by every device. Refer to the @ref profiles "Device Profiles"
  * for precise information.
- *
- * @{ */
+ */
 
 #ifndef _RTDM_H
 #define _RTDM_H
@@ -331,6 +330,5 @@ static inline int rt_dev_shutdown(int fd, int how)
 }
 
 #endif /* RTDM_NO_DEFAULT_USER_API */
-/** @} */
 
 #endif /* _RTDM_H */

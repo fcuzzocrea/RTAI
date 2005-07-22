@@ -466,13 +466,13 @@ __u64 rtdm_clock_read(void);
 
 /*!
  * @name Spinning Lock with Preemption Deactivation
- * @{
  */
 
 typedef spinlock_t                  rtdm_lock_t;
 typedef unsigned long               rtdm_lockctx_t;
 
 
+/** @{ */
 /**
  * Static lock initialisation
  */
@@ -489,6 +489,7 @@ typedef unsigned long               rtdm_lockctx_t;
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -504,7 +505,9 @@ typedef unsigned long               rtdm_lockctx_t;
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -520,7 +523,9 @@ typedef unsigned long               rtdm_lockctx_t;
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -537,7 +542,9 @@ typedef unsigned long               rtdm_lockctx_t;
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -555,7 +562,9 @@ typedef unsigned long               rtdm_lockctx_t;
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: possible.
  */
@@ -572,7 +581,9 @@ typedef unsigned long               rtdm_lockctx_t;
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -589,7 +600,9 @@ typedef unsigned long               rtdm_lockctx_t;
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: possible.
  */
@@ -682,11 +695,11 @@ typedef void (*rtdm_nrt_sig_handler_t)(rtdm_nrt_signal_t nrt_signal);
 static inline int rtdm_nrt_signal_init(rtdm_nrt_signal_t *nrt_sig,
                                        rtdm_nrt_sig_handler_t handler)
 {
-    *nrt_sig = adeos_alloc_irq();
+    *nrt_sig = rthal_alloc_virq();
 
     if (*nrt_sig > 0)
-        adeos_virtualize_irq_from(adp_root, *nrt_sig, handler, NULL,
-                                  IPIPE_HANDLE_MASK);
+        rthal_virtualize_irq(rthal_root_domain, *nrt_sig, handler, NULL,
+			     IPIPE_HANDLE_MASK);
     else
         *nrt_sig = -EBUSY;
 
@@ -695,12 +708,12 @@ static inline int rtdm_nrt_signal_init(rtdm_nrt_signal_t *nrt_sig,
 
 static inline void rtdm_nrt_signal_destroy(rtdm_nrt_signal_t *nrt_sig)
 {
-    adeos_free_irq(*nrt_sig);
+    rthal_free_virq(*nrt_sig);
 }
 
 static inline void rtdm_nrt_pend_signal(rtdm_nrt_signal_t *nrt_sig)
 {
-    adeos_trigger_irq(*nrt_sig);
+    rthal_trigger_irq(*nrt_sig);
 }
 /** @} */
 
@@ -918,7 +931,7 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 
 static inline int rtdm_in_rt_context(void)
 {
-    return (adp_current != adp_root);
+    return (rthal_current_domain != rthal_root_domain);
 }
 
 int rtdm_exec_in_rt(struct rtdm_dev_context *context,

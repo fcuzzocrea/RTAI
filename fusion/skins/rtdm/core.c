@@ -69,7 +69,9 @@ static inline int get_fd(struct rtdm_fildes *fildes)
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -448,7 +450,9 @@ int __init rtdm_core_init(void)
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -467,7 +471,9 @@ void rtdm_context_lock(struct rtdm_dev_context *context);
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -480,10 +486,7 @@ void rtdm_context_unlock(struct rtdm_dev_context *context);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -496,10 +499,7 @@ int rtdm_open(const char *path, int oflag, ...);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -512,10 +512,7 @@ int rtdm_socket(int protocol_family, int socket_type, int protocol);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -528,10 +525,7 @@ int rtdm_close(int fd);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -544,10 +538,7 @@ int rtdm_ioctl(int fd, int request, ...);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -560,10 +551,7 @@ ssize_t rtdm_read(int fd, void *buf, size_t nbyte);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -576,10 +564,7 @@ ssize_t rtdm_write(int fd, const void *buf, size_t nbyte);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -592,10 +577,7 @@ ssize_t rtdm_recvmsg(int fd, struct msghdr *msg, int flags);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -609,10 +591,7 @@ ssize_t rtdm_recvfrom(int fd, void *buf, size_t len, int flags,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -625,10 +604,7 @@ ssize_t rtdm_recv(int fd, void *buf, size_t len, int flags);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -641,10 +617,7 @@ ssize_t rtdm_sendmsg(int fd, const struct msghdr *msg, int flags);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -658,10 +631,7 @@ ssize_t rtdm_sendto(int fd, const void *buf, size_t len, int flags,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -674,10 +644,7 @@ ssize_t rtdm_send(int fd, const void *buf, size_t len, int flags);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -690,10 +657,7 @@ int rtdm_bind(int fd, const struct sockaddr *my_addr, socklen_t addrlen);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -706,10 +670,7 @@ int rtdm_connect(int fd, const struct sockaddr *serv_addr, socklen_t addrlen);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -722,10 +683,7 @@ int rtdm_listen(int fd, int backlog);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -738,10 +696,7 @@ int rtdm_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -754,10 +709,7 @@ int rtdm_shutdown(int fd, int how);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -771,10 +723,7 @@ int rtdm_getsockopt(int fd, int level, int optname, void *optval,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -788,10 +737,7 @@ int rtdm_setsockopt(int fd, int level, int optname, const void *optval,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -804,10 +750,7 @@ int rtdm_getsockname(int fd, struct sockaddr *name, socklen_t *namelen);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  */
@@ -832,11 +775,7 @@ int rtdm_getpeername(int fd, struct sockaddr *name, socklen_t *namelen);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -857,11 +796,7 @@ int rt_dev_open(const char *path, int oflag, ...);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -890,11 +825,7 @@ int rt_dev_socket(int protocol_family, int socket_type, int protocol);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -915,11 +846,7 @@ int rt_dev_close(int fd);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -939,11 +866,7 @@ int rt_dev_ioctl(int fd, int request, ...);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -963,11 +886,7 @@ ssize_t rt_dev_read(int fd, void *buf, size_t nbyte);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -987,11 +906,7 @@ ssize_t rt_dev_write(int fd, const void *buf, size_t nbyte);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1014,11 +929,7 @@ ssize_t rt_dev_recvmsg(int fd, struct msghdr *msg, int flags);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1041,11 +952,7 @@ ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1065,11 +972,7 @@ ssize_t rt_dev_recv(int fd, void *buf, size_t len, int flags);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1092,11 +995,7 @@ ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1118,11 +1017,7 @@ ssize_t rt_dev_sendto(int fd, const void *buf, size_t len, int flags,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1142,11 +1037,7 @@ ssize_t rt_dev_send(int fd, const void *buf, size_t len, int flags);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1166,11 +1057,7 @@ int rt_dev_bind(int fd, const struct sockaddr *my_addr, socklen_t addrlen);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1190,11 +1077,7 @@ int rt_dev_connect(int fd, const struct sockaddr *serv_addr,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1214,11 +1097,7 @@ int rt_dev_listen(int fd, int backlog);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1237,11 +1116,7 @@ int rt_dev_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1263,11 +1138,7 @@ int rt_dev_shutdown(int fd, int how);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1290,11 +1161,7 @@ int rt_dev_getsockopt(int fd, int level, int optname, void *optval,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1315,11 +1182,7 @@ int rt_dev_setsockopt(int fd, int level, int optname, const void *optval,
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *
@@ -1339,11 +1202,7 @@ int rt_dev_getsockname(int fd, struct sockaddr *name, socklen_t *namelen);
  *
  * Environments:
  *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task
+ * Depends on driver implementation, see @ref profiles "Device Profiles".
  *
  * Rescheduling: possible.
  *

@@ -44,6 +44,7 @@
 #ifndef _RTSERIAL_H
 #define _RTSERIAL_H
 
+#include <asm/types.h>
 #include <rtdm/rtdm.h>
 
 /*!
@@ -300,7 +301,7 @@ typedef struct rtser_event {
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -325,7 +326,7 @@ typedef struct rtser_event {
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
+ * - User-space task (RT, non-RT)
  *
  * @note If rtser_config contains a valid timestamp_history and the
  * addressed device has been opened in non-real-time context, this IOCTL must
@@ -350,7 +351,7 @@ typedef struct rtser_event {
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -371,7 +372,7 @@ typedef struct rtser_event {
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -391,7 +392,7 @@ typedef struct rtser_event {
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -411,7 +412,7 @@ typedef struct rtser_event {
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -436,7 +437,7 @@ typedef struct rtser_event {
  * This service can be called from:
  *
  * - Kernel-based task
- * - User-space task
+ * - User-space task (RT)
  *
  * Rescheduling: possible.
  */

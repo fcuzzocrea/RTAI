@@ -51,7 +51,9 @@
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -94,6 +96,7 @@ __u64 rtdm_clock_read(void)
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: possible.
  */
@@ -112,6 +115,7 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: never.
  */
@@ -129,7 +133,9 @@ void rtdm_task_destroy(rtdm_task_t *task);
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: possible.
  */
@@ -147,7 +153,9 @@ void rtdm_task_set_priority(rtdm_task_t *task, int priority);
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: possible.
  */
@@ -167,10 +175,10 @@ int rtdm_task_set_period(rtdm_task_t *task, __u64 period);
  *
  * This service can be called from:
  *
- * - Kernel module initialization/cleanup code
  * - Kernel-based task
+ * - User-space task (RT)
  *
- * Rescheduling: possible.
+ * Rescheduling: always, unless a timer overrun occured.
  */
 int rtdm_task_wait_period(void);
 
@@ -184,7 +192,9 @@ int rtdm_task_wait_period(void);
  * This service can be called from:
  *
  * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
  * - Kernel-based task
+ * - User-space task (RT, non-RT)
  *
  * Rescheduling: possible.
  */
@@ -193,7 +203,19 @@ int rtdm_task_unblock(rtdm_task_t *task);
 
 
 /**
- * Wait on real-time task termination
+ * @brief Wait on a real-time task to terminate
+ *
+ * @param task Task handle
+ * @param poll_delay Polling delay in milliseconds
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - User-space task (non-RT)
+ *
+ * Rescheduling: possible.
  */
 void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 {
@@ -215,7 +237,23 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 
 
 /**
- * Sleep a specified amount of time
+ * @brief Sleep a specified amount of time
+ *
+ * @param delay Delay in nanoseconds
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitely via rtdm_task_unblock().
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: always.
  */
 int rtdm_task_sleep(__u64 delay)
 {
@@ -229,7 +267,23 @@ int rtdm_task_sleep(__u64 delay)
 
 
 /**
- * Sleep until a specified absolute time
+ * @brief Sleep until a specified absolute time
+ *
+ * @param wakeup_time Absolute timeout in nanoseconds
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitely via rtdm_task_unblock().
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: always, unless the specified time already passed.
  */
 int rtdm_task_sleep_until(__u64 wakeup_time)
 {
@@ -257,7 +311,20 @@ int rtdm_task_sleep_until(__u64 wakeup_time)
 
 
 /**
- * Busy-wait a specified amount of time
+ * @brief Busy-wait a specified amount of time
+ *
+ * @param delay Delay in nanoseconds
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine (but you should rather avoid this...)
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: always.
  */
 void rtdm_task_busy_sleep(__u64 delay)
 {
@@ -298,24 +365,131 @@ void _rtdm_synch_flush(xnsynch_t *synch, unsigned long reason)
 
 #if DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
- * Initialise an event
+ * @brief Initialise an event
+ *
+ * @param[in,out] event Event handle
+ * @param[in] pending Non-zero if event shall be initialised as set, 0 otherwise
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 void rtdm_event_init(rtdm_event_t *event, unsigned long pending);
 
 /**
- * Destroy an event
+ * @brief Destroy an event
+ *
+ * @param[in,out] event Event handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible.
  */
 void rtdm_event_destroy(rtdm_event_t *event);
 
 /**
- * Signal an event only to currently listening waiters
+ * @brief Signal an event occurrence to currently listening waiters
+ *
+ * This function wakes up all current waiters of the given event, but it does
+ * not change the event state. Subsequently callers of rtdm_event_wait() or
+ * rtdm_event_wait_until() will therefore be blocked first.
+ *
+ * @param[in,out] event Event handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible.
  */
 void rtdm_event_pulse(rtdm_event_t *event);
 #endif /* DOXYGEN_CPP */
 
 
 /**
- * Wait on event occurrence
+ * @brief Signal an event occurrence
+ *
+ * This function sets the given event and wakes up all current waiters. If no
+ * waiter is presently registered, the next call to rtdm_event_wait() or
+ * rtdm_event_wait_until() will return immediately.
+ *
+ * @param[in,out] event Event handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible.
+ */
+void rtdm_event_signal(rtdm_event_t *event)
+{
+    spl_t s;
+
+
+    xnlock_get_irqsave(&nklock, s);
+
+    __set_bit(0, &event->pending);
+    if (xnsynch_flush(&event->synch_base, 0))
+        xnpod_schedule();
+
+    xnlock_put_irqrestore(&nklock, s);
+}
+
+
+/**
+ * @brief Wait on event occurrence
+ *
+ * This function waits or tests for the occurence of the given event. On
+ * successful return, the event is reset.
+ *
+ * @param[in,out] event Event handle
+ * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
+ * negative value for non-blocking (test for event occurrence)
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -ETIMEDOUT is return if the if the request has not been satisfied within
+ * the specified amount of time.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout is negative and the event is
+ * currently not set.
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitely via rtdm_task_unblock().
+ *
+ * - -EIDRM is returned if @a event was destroyed while the caller was
+ * sleeping on it.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: possible.
  */
 int rtdm_event_wait(rtdm_event_t *event, __s64 timeout)
 {
@@ -351,7 +525,33 @@ int rtdm_event_wait(rtdm_event_t *event, __s64 timeout)
 
 
 /**
- * Wait on event occurrence with absolute timeout
+ * @brief Wait on event occurrence with absolute timeout
+ *
+ * This function waits for the occurence of the given event. On successful
+ * return, the event is reset.
+ *
+ * @param[in,out] event Event handle
+ * @param[in] abstimeout Absolute timeout in nanoseconds
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -ETIMEDOUT is return if the if the request has not been satisfied until
+ * the specified time.
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitely via rtdm_task_unblock().
+ *
+ * - -EIDRM is returned if @a event was destroyed while the caller was
+ * sleeping on it.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: possible.
  */
 int rtdm_event_wait_until(rtdm_event_t *event, __u64 abstimeout)
 {
@@ -386,24 +586,6 @@ int rtdm_event_wait_until(rtdm_event_t *event, __u64 abstimeout)
 
     return err;
 }
-
-
-/**
- * Signal an event occurrence
- */
-void rtdm_event_signal(rtdm_event_t *event)
-{
-    spl_t s;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    __set_bit(0, &event->pending);
-    if (xnsynch_flush(&event->synch_base, 0))
-        xnpod_schedule();
-
-    xnlock_put_irqrestore(&nklock, s);
-}
 /** @} */
 
 
@@ -415,18 +597,74 @@ void rtdm_event_signal(rtdm_event_t *event)
 
 #if DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
- * Initialise a semaphore
+ * @brief Initialise a semaphore
+ *
+ * @param[in,out] sem Semaphore handle
+ * @param[in] value Initial value of the semaphore
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value);
 
 /**
- * Destroy a semaphore
+ * @brief Destroy a semaphore
+ *
+ * @param[in,out] sem Semaphore handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible.
  */
 void rtdm_sem_destroy(rtdm_sem_t *sem);
 #endif /* DOXYGEN_CPP */
 
 /**
- * Decrement a semaphore
+ * @brief Decrement a semaphore
+ *
+ * This function tries to decrement the given semphore's value if it is
+ * positive on entry. If not, the caller is blocked unless non-blocking
+ * operation was selected.
+ *
+ * @param[in,out] sem Semaphore handle
+ * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
+ * negative value for non-blocking operation
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -ETIMEDOUT is return if the if the request has not been satisfied within
+ * the specified amount of time.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout is negative and the semaphore
+ * value is currently not positive.
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitely via rtdm_task_unblock().
+ *
+ * - -EIDRM is returned if @a sem was destroyed while the caller was sleeping
+ * on it.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: possible.
  */
 int rtdm_sem_down(rtdm_sem_t *sem, __s64 timeout)
 {
@@ -463,7 +701,23 @@ int rtdm_sem_down(rtdm_sem_t *sem, __s64 timeout)
 
 
 /**
- * Increment a semaphore
+ * @brief Increment a semaphore
+ *
+ * This function increments the given semphore's value, waking up a potential
+ * waiter which was blocked upon rtdm_sem_down().
+ *
+ * @param[in,out] sem Semaphore handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible.
  */
 void rtdm_sem_up(rtdm_sem_t *sem)
 {
@@ -490,19 +744,66 @@ void rtdm_sem_up(rtdm_sem_t *sem)
 
 #if DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
- * Initialise a mutex
+ * @brief Initialise a mutex
+ *
+ * This function initalises a basic mutex with priority inversion protection.
+ * "Basic", as it does not allow a mutex owner to recursively lock the same
+ * mutex again.
+ *
+ * @param[in,out] mutex Mutex handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 void rtdm_mutex_init(rtdm_mutex_t *mutex);
 
 /**
- * Destroy a mutex
+ * @brief Destroy a mutex
+ *
+ * @param[in,out] mutex Mutex handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible.
  */
 void rtdm_mutex_destroy(rtdm_mutex_t *mutex);
 #endif /* DOXYGEN_CPP */
 
 
 /**
- * Request a mutex
+ * @brief Request a mutex
+ *
+ * This is the light-weight version of rtdm_mutex_timedlock(), implying an
+ * infinite timeout.
+ *
+ * @param[in,out] mutex Mutex handle
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EIDRM is returned if @a mutex was destroyed while the caller was
+ * sleeping on it.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: possible.
  */
 int rtdm_mutex_lock(rtdm_mutex_t *mutex)
 {
@@ -515,8 +816,10 @@ int rtdm_mutex_lock(rtdm_mutex_t *mutex)
     while (__test_and_set_bit(0, &mutex->locked)) {
         xnsynch_sleep_on(&mutex->synch_base, XN_INFINITE);
 
-        if (xnthread_test_flags(xnpod_current_thread(), XNRMID))
+        if (xnthread_test_flags(xnpod_current_thread(), XNRMID)) {
             err = -EIDRM;
+            break;
+        }
     }
 
     xnlock_put_irqrestore(&nklock, s);
@@ -526,7 +829,37 @@ int rtdm_mutex_lock(rtdm_mutex_t *mutex)
 
 
 /**
- * Request a mutex with timeout
+ * @brief Request a mutex with timeout
+ *
+ * This function tries to acquire the given mutex. If it is not available, the
+ * caller is blocked unless non-blocking operation was selected.
+ *
+ * @param[in,out] mutex Mutex handle
+ * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
+ * negative value for non-blocking operation
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -ETIMEDOUT is return if the if the request has not been satisfied within
+ * the specified amount of time.
+ *
+ * - -EWOULDBLOCK is returned if @a timeout is negative and the semaphore
+ * value is currently not positive.
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitely via rtdm_task_unblock().
+ *
+ * - -EIDRM is returned if @a mutex was destroyed while the caller was
+ * sleeping on it.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: possible.
  */
 int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout)
 {
@@ -562,7 +895,21 @@ int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout)
 
 
 /**
- * Release a mutex
+ * @brief Release a mutex
+ *
+ * This function releases the given mutex, waking up a potential waiter which
+ * was blocked upon rtdm_mutex_lock() or rtdm_mutex_timedlock().
+ *
+ * @param[in,out] mutex Mutex handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible.
  */
 void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
 {

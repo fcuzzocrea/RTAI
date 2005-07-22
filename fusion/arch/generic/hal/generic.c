@@ -106,12 +106,12 @@ volatile unsigned long rthal_cpu_realtime;
 unsigned long rthal_critical_enter (void (*synch)(void))
 
 {
-    unsigned long flags = adeos_critical_enter(synch);
+    unsigned long flags = rthal_grab_superlock(synch);
 
     if (atomic_dec_and_test(&rthal_sync_count))
 	rthal_sync_op = 0;
     else if (synch != NULL)
-	printk(KERN_WARNING "RTAI: Nested critical sync will fail.\n");
+	printk(KERN_WARNING "RTAI/fusion: Nested critical sync will fail.\n");
 
     return flags;
 }
@@ -120,13 +120,13 @@ void rthal_critical_exit (unsigned long flags)
 
 {
     atomic_inc(&rthal_sync_count);
-    adeos_critical_exit(flags);
+    rthal_release_superlock(flags);
 }
 
 static void rthal_irq_trampoline (unsigned irq)
 
 {
-    rthal_realtime_irq[irq].hits[adeos_processor_id()]++;
+    rthal_realtime_irq[irq].hits[rthal_processor_id()]++;
     rthal_realtime_irq[irq].handler(irq,rthal_realtime_irq[irq].cookie);
 }
 
@@ -201,11 +201,11 @@ int rthal_irq_request (unsigned irq,
 	goto unlock_and_exit;
 	}
 
-    err = adeos_virtualize_irq_from(&rthal_domain,
-				    irq,
-				    &rthal_irq_trampoline,
-				    ackfn,
-				    IPIPE_DYNAMIC_MASK);
+    err = rthal_virtualize_irq(&rthal_domain,
+			       irq,
+			       &rthal_irq_trampoline,
+			       ackfn,
+			       IPIPE_DYNAMIC_MASK);
     if (!err)
 	{
 	rthal_realtime_irq[irq].handler = handler;
@@ -253,11 +253,11 @@ int rthal_irq_release (unsigned irq)
     if (irq >= IPIPE_NR_IRQS)
 	return -EINVAL;
 
-    err = adeos_virtualize_irq_from(&rthal_domain,
-				    irq,
-				    NULL,
-				    NULL,
-				    IPIPE_PASS_MASK);
+    err = rthal_virtualize_irq(&rthal_domain,
+			       irq,
+			       NULL,
+			       NULL,
+			       IPIPE_PASS_MASK);
     if (!err)
         xchg(&rthal_realtime_irq[irq].handler,NULL);
 
@@ -491,7 +491,7 @@ int rthal_irq_host_release (unsigned irq, void *dev_id)
 int rthal_irq_host_pend (unsigned irq)
 
 {
-    return adeos_propagate_irq(irq);
+    return rthal_propagate_irq(irq);
 }
 
 /**
@@ -506,7 +506,7 @@ int rthal_irq_host_pend (unsigned irq)
  * @param irq The interrupt source whose processor affinity is
  * affected by the operation. Only external interrupts can have their
  * affinity changed/queried, thus virtual interrupt numbers allocated
- * by adeos_alloc_irq() are invalid values for this parameter.
+ * by rthal_alloc_virq() are invalid values for this parameter.
  *
  * @param cpumask A list of CPU identifiers passed as a bitmask
  * representing the new affinity for this interrupt. A zero value
@@ -539,7 +539,7 @@ int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
     if (irq >= IPIPE_NR_XIRQS)
 	return -EINVAL;
 
-    _oldmask = adeos_set_irq_affinity(irq,cpumask);
+    _oldmask = rthal_set_irq_affinity(irq,cpumask);
 
     if (oldmask)
 	*oldmask = _oldmask;
@@ -579,8 +579,8 @@ int rthal_irq_affinity (unsigned irq, cpumask_t cpumask, cpumask_t *oldmask)
  * - Any domain context.
  */
 
-rthal_trap_handler_t rthal_trap_catch (rthal_trap_handler_t handler) {
-
+rthal_trap_handler_t rthal_trap_catch (rthal_trap_handler_t handler)
+{
     return (rthal_trap_handler_t)xchg(&rthal_trap_handler,handler);
 }
 
@@ -588,9 +588,9 @@ static void rthal_apc_handler (unsigned virq)
 
 {
     void (*handler)(void *), *cookie;
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
-    adeos_load_cpuid();
+    rthal_load_cpuid();
 
     rthal_spin_lock(&rthal_apc_lock);
 
@@ -642,7 +642,7 @@ static int rthal_apc_thread (void *data)
     /* Use highest priority here, since some apc handlers might
        require to run as soon as possible after the request has been
        pended. */
-    __adeos_setscheduler_root(current,SCHED_FIFO,MAX_RT_PRIO-1);
+    rthal_setsched_root(current,SCHED_FIFO,MAX_RT_PRIO-1);
 
     while (!kthread_should_stop()) {
 	set_current_state(TASK_INTERRUPTIBLE);
@@ -802,16 +802,16 @@ int rthal_apc_free (int apc)
 int rthal_apc_schedule (int apc)
 
 {
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
     if (apc < 0 || apc >= RTHAL_NR_APCS)
 	return -EINVAL;
 
-    adeos_load_cpuid();	/* Migration would be harmless here. */
+    rthal_load_cpuid();	/* Migration would be harmless here. */
 
     if (!test_and_set_bit(apc,&rthal_apc_pending[cpuid]))
 	{
-	adeos_schedule_irq(rthal_apc_virq);
+	rthal_schedule_irq(rthal_apc_virq);
 	return 1;
 	}
 
@@ -1030,7 +1030,7 @@ static int rthal_proc_register (void)
 
     if (!rthal_proc_root)
 	{
-	printk(KERN_ERR "RTAI: Unable to initialize /proc/rtai.\n");
+	printk(KERN_ERR "RTAI/fusion: Unable to initialize /proc/rtai.\n");
 	return -1;
         }
 
@@ -1084,7 +1084,6 @@ static void rthal_proc_unregister (void)
 int __rthal_init (void)
 
 {
-    adattr_t attr;
     int err;
 
 #ifdef CONFIG_SMP
@@ -1105,22 +1104,23 @@ int __rthal_init (void)
 
     /* Allocate a virtual interrupt to handle apcs within the Linux
        domain. */
-    rthal_apc_virq = adeos_alloc_irq();
+    rthal_apc_virq = rthal_alloc_virq();
 
     if (!rthal_apc_virq)
     {
-        printk(KERN_ERR "RTAI: No virtual interrupt available.\n");
+        printk(KERN_ERR "RTAI/fusion: No virtual interrupt available.\n");
 	    err = -EBUSY;
         goto out_arch_cleanup;
     }
 
-    err = adeos_virtualize_irq(rthal_apc_virq,
+    err = rthal_virtualize_irq(rthal_current_domain,
+			       rthal_apc_virq,
 			       &rthal_apc_trampoline,
 			       NULL,
 			       IPIPE_HANDLE_MASK);
     if (err)
     {
-        printk(KERN_ERR "RTAI: Failed to virtualize IRQ.\n");
+        printk(KERN_ERR "RTAI/fusion: Failed to virtualize IRQ.\n");
         goto out_free_irq;
     }
 
@@ -1141,20 +1141,16 @@ int __rthal_init (void)
     rthal_proc_register();
 #endif /* CONFIG_PROC_FS */
 
-    /* Let Adeos do its magic for our real-time domain. */
-    adeos_init_attr(&attr);
-    attr.name = "RTAI";
-    attr.domid = RTHAL_DOMAIN_ID;
-    attr.entry = &rthal_domain_entry;
-    attr.priority = ADEOS_ROOT_PRI + 100; /* Precede Linux in the pipeline */
-
-    err = adeos_register_domain(&rthal_domain,&attr);
-
+    err = rthal_register_domain(&rthal_domain,
+				"RTAI",
+				RTHAL_DOMAIN_ID,
+				RTHAL_ROOT_PRIO + 100,
+				&rthal_domain_entry);
     if (!err)
     	rthal_init_done = 1;
     else 
     {
-        printk(KERN_ERR "RTAI: Domain registration failed.\n");
+        printk(KERN_ERR "RTAI/fusion: Domain registration failed.\n");
         goto out_proc_unregister;
     }
 
@@ -1174,10 +1170,10 @@ out_kthread_stop:
       }
     }
 #endif /* CONFIG_PREEMPT_RT */
-    adeos_virtualize_irq(rthal_apc_virq,NULL,NULL,0);
+    rthal_virtualize_irq(rthal_current_domain,rthal_apc_virq,NULL,NULL,0);
    
 out_free_irq:
-    adeos_free_irq(rthal_apc_virq);
+    rthal_free_virq(rthal_apc_virq);
 
  out_arch_cleanup:
     rthal_arch_cleanup();
@@ -1201,8 +1197,8 @@ void __rthal_exit (void)
 
     if (rthal_apc_virq)
 	{
-	adeos_virtualize_irq(rthal_apc_virq,NULL,NULL,0);
-	adeos_free_irq(rthal_apc_virq);
+	rthal_virtualize_irq(rthal_current_domain,rthal_apc_virq,NULL,NULL,0);
+	rthal_free_virq(rthal_apc_virq);
 #ifdef CONFIG_PREEMPT_RT
 	{
 	int cpu;
@@ -1214,7 +1210,7 @@ void __rthal_exit (void)
 	}
 
     if (rthal_init_done)
-	adeos_unregister_domain(&rthal_domain);
+	rthal_unregister_domain(&rthal_domain);
 
     rthal_arch_cleanup();
 }

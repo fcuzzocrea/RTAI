@@ -112,11 +112,11 @@ static inline  __attribute_const__ unsigned long ffnz (unsigned long ul) {
 
 static inline unsigned long long rthal_rdtsc (void) {
     unsigned long long t;
-    adeos_hw_tsc(t);
+    rthal_read_tsc(t);
     return t;
 }
 
-#if !defined(CONFIG_ADEOS_NOTHREADS)
+#if defined(CONFIG_ADEOS_CORE) && !defined(CONFIG_ADEOS_NOTHREADS)
 
 /* Since real-time interrupt handlers are called on behalf of the RTAI
    domain stack, we cannot infere the "current" Linux task address
@@ -124,14 +124,13 @@ static inline unsigned long long rthal_rdtsc (void) {
    instead. */
 
 static inline struct task_struct *rthal_root_host_task (int cpuid) {
-    return ((struct thread_info *)(adp_root->esp[cpuid] & (~(16384-1)UL)))->task;
+    return ((struct thread_info *)(rthal_root_domain->esp[cpuid] & (~(16384-1)UL)))->task;
 }
 
 static inline struct task_struct *rthal_current_host_task (int cpuid)
 
 {
     register unsigned long esp asm ("r1");
-    /* FIXME: r2 should be ok or even __adeos_current_threadinfo() - offsetof(THREAD) */
     
     if (esp >= rthal_domain.estackbase[cpuid] && esp < rthal_domain.estackbase[cpuid] + 16384)
 	return rthal_root_host_task(cpuid);
@@ -139,7 +138,7 @@ static inline struct task_struct *rthal_current_host_task (int cpuid)
     return current;
 }
 
-#else /* CONFIG_ADEOS_NOTHREADS */
+#else /* !CONFIG_ADEOS_CORE || CONFIG_ADEOS_NOTHREADS */
 
 static inline struct task_struct *rthal_root_host_task (int cpuid) {
     return current;
@@ -149,7 +148,7 @@ static inline struct task_struct *rthal_current_host_task (int cpuid) {
     return current;
 }
 
-#endif /* !CONFIG_ADEOS_NOTHREADS */
+#endif /* CONFIG_ADEOS_CORE && !CONFIG_ADEOS_NOTHREADS */
 
 static inline void rthal_timer_program_shot (unsigned long delay)
 {

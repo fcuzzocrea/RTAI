@@ -1,3 +1,10 @@
+2005-07-22  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-generic/hal.h: Add RTHAL virtualization
+	level.
+
+	* skins/rtdm: Merge RTDM patch level #4.
+
 2005-07-20  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/system.h (__switch_threads): Make sure

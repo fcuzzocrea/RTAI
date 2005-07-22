@@ -411,9 +411,6 @@ int rt_16550_open(struct rtdm_dev_context *context,
     ctx->ioc_event_lock = 0;
     ctx->status         = 0;
 
-    /* Note: It is assumed that the security policy at least allows an
-             IRQ load of 960, i.e. the resulting value of the default
-             configuration. */
     rt_16550_set_config(ctx, &default_config, &dummy);
 
     /* enable IRQ interrupts */

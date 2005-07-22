@@ -143,9 +143,9 @@ static inline int xnarch_start_timer (unsigned long ns,
 static inline void xnarch_leave_root (xnarchtcb_t *rootcb)
 
 {
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
-    adeos_load_cpuid();
+    rthal_load_cpuid();
 
     /* rthal_cpu_realtime is only tested for the current processor,
        and always inside a critical section. */
@@ -272,7 +272,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
         barrier();
 
         if (thread->io_bitmap_ptr) {
-            struct tss_struct *tss = &per_cpu(init_tss, adeos_processor_id());
+            struct tss_struct *tss = &per_cpu(init_tss, rthal_processor_id());
 
             if (tss->io_bitmap_base == INVALID_IO_BITMAP_OFFSET_LAZY) {
                 
@@ -465,131 +465,6 @@ static inline void xnarch_enable_fpu (xnarchtcb_t *tcb)
 
 #endif /* CONFIG_RTAI_HW_FPU */
 
-#ifdef CONFIG_SMP
-
-static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
-
-    return adeos_send_ipi(ADEOS_SERVICE_IPI0, cpumask);
-}
-
-static inline int xnarch_hook_ipi (void (*handler)(void))
-
-{
-    return adeos_virtualize_irq_from(&rthal_domain,
-                                     ADEOS_SERVICE_IPI0,
-                                     (void (*)(unsigned)) handler,
-                                     NULL,
-                                     IPIPE_HANDLE_MASK);
-}
-
-static inline int xnarch_release_ipi (void)
-
-{
-    return adeos_virtualize_irq_from(&rthal_domain,
-                                     ADEOS_SERVICE_IPI0,
-                                     NULL,
-                                     NULL,
-                                     IPIPE_PASS_MASK);
-}
-
-static struct linux_semaphore xnarch_finalize_sync;
-
-static void xnarch_finalize_cpu(unsigned irq)
-{
-    up(&xnarch_finalize_sync);
-}
-
-static inline void xnarch_notify_halt(void)
-    
-{
-    xnarch_cpumask_t other_cpus = cpu_online_map;
-    unsigned cpu, nr_cpus = num_online_cpus();
-    unsigned long flags;
-    adeos_declare_cpuid;
-
-    sema_init(&xnarch_finalize_sync,0);
-
-    /* Here adp_current is in fact root, since xnarch_notify_halt is
-       called from xnpod_shutdown, itself called from Linux
-       context. */
-    adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2,
-                              xnarch_finalize_cpu, NULL, IPIPE_HANDLE_MASK);
-
-    adeos_lock_cpu(flags);
-    cpu_clear(cpuid, other_cpus);
-    adeos_send_ipi(ADEOS_SERVICE_IPI2, other_cpus);
-    adeos_unlock_cpu(flags);
-
-    for(cpu=0; cpu < nr_cpus-1; ++cpu)
-        down(&xnarch_finalize_sync);
-    
-    adeos_virtualize_irq_from(adp_current, ADEOS_SERVICE_IPI2, NULL, NULL,
-                              IPIPE_PASS_MASK);
-}
-
-#else /* !CONFIG_SMP */
-
-static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
-
-    return 0;
-}
-
-static inline int xnarch_hook_ipi (void (*handler)(void)) {
-
-    return 0;
-}
-
-static inline int xnarch_release_ipi (void) {
-
-    return 0;
-}
-
-#define xnarch_notify_halt() /* Nullified */
-
-#endif /* CONFIG_SMP */
-
-static inline void xnarch_notify_shutdown(void)
-
-{
-#ifdef CONFIG_SMP
-    /* The HAL layer also sets the same CPU affinity so that both
-       modules keep their execution sequence on SMP boxen. */
-    set_cpus_allowed(current,cpumask_of_cpu(0));
-#endif /* CONFIG_SMP */
-#ifdef CONFIG_RTAI_OPT_FUSION
-    xnshadow_release_events();
-#endif /* CONFIG_RTAI_OPT_FUSION */
-    /* Wait for the currently processed events to drain. */
-    set_current_state(TASK_UNINTERRUPTIBLE);
-    schedule_timeout(50);
-    xnarch_release_ipi();
-}
-
-static inline int xnarch_escalate (void)
-
-{
-    extern int xnarch_escalation_virq;
-
-    if (adp_current == adp_root)
-        {
-        spl_t s;
-        splsync(s);
-        adeos_trigger_irq(xnarch_escalation_virq);
-        splexit(s);
-        return 1;
-        }
-
-    return 0;
-}
-
-static void xnarch_notify_ready (void)
-
-{
-#ifdef CONFIG_RTAI_OPT_FUSION    
-    xnshadow_grab_events();
-#endif /* CONFIG_RTAI_OPT_FUSION */
-}
-
 #endif /* XENO_POD_MODULE */
 
 #ifdef XENO_THREAD_MODULE
@@ -628,7 +503,8 @@ static inline void xnarch_grab_xirqs (void (*handler)(unsigned irq))
     unsigned irq;
 
     for (irq = 0; irq < IPIPE_NR_XIRQS; irq++)
-        adeos_virtualize_irq(irq,
+        rthal_virtualize_irq(rthal_current_domain,
+			     irq,
                              handler,
                              NULL,
                              IPIPE_DYNAMIC_MASK);
@@ -655,7 +531,7 @@ static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
 
             default:
 
-                __adeos_lock_irq(adp,cpuid,irq);
+                rthal_lock_irq(adp,cpuid,irq);
             }
         }
 }
@@ -680,7 +556,7 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 
             default:
 
-                __adeos_unlock_irq(adp,irq);
+                rthal_unlock_irq(adp,irq);
             }
         }
 }
@@ -689,7 +565,8 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 
 #ifdef XENO_TIMER_MODULE
 
-static inline void xnarch_program_timer_shot (unsigned long delay) {
+static inline void xnarch_program_timer_shot (unsigned long delay)
+{
     /* Even though some architectures may use a 64 bits delay here, we
        voluntarily limit to 32 bits, 4 billions ticks should be enough
        for now. Would a timer needs more, an extra call to the tick
@@ -697,15 +574,15 @@ static inline void xnarch_program_timer_shot (unsigned long delay) {
     rthal_timer_program_shot(rthal_imuldiv(delay,RTHAL_TIMER_FREQ,RTHAL_CPU_FREQ));
 }
 
-static inline void xnarch_stop_timer (void) {
+static inline void xnarch_stop_timer (void)
+{
     rthal_timer_release();
 }
 
 static inline int xnarch_send_timer_ipi (xnarch_cpumask_t mask)
-
 {
 #ifdef CONFIG_SMP
-    return adeos_send_ipi(RTHAL_APIC_TIMER_IPI, mask);
+    return rthal_send_ipi(RTHAL_APIC_TIMER_IPI, mask);
 #else /* ! CONFIG_SMP */
     return 0;
 #endif /* CONFIG_SMP */
@@ -730,13 +607,14 @@ void xnpod_schedule_handler(void);
 
 static rthal_trap_handler_t xnarch_old_trap_handler;
 
-static int xnarch_trap_fault (adevinfo_t *evinfo)
+static int xnarch_trap_fault (unsigned event, unsigned domid, void *data)
 {
+    struct pt_regs *regs = (struct pt_regs *)data;
     xnarch_fltinfo_t fltinfo;
 
-    fltinfo.vector = evinfo->event;
-    fltinfo.errcode = ((struct pt_regs *)evinfo->evdata)->orig_eax;
-    fltinfo.regs = (struct pt_regs *)evinfo->evdata;
+    fltinfo.vector = event;
+    fltinfo.errcode = regs->orig_eax;
+    fltinfo.regs = regs;
 
     return xnpod_trap_fault(&fltinfo);
 }
@@ -786,16 +664,16 @@ static inline int xnarch_init (void)
     if (err)
         return err;
 
-    xnarch_escalation_virq = adeos_alloc_irq();
+    xnarch_escalation_virq = rthal_alloc_virq();
 
     if (xnarch_escalation_virq == 0)
         return -ENOSYS;
 
-    adeos_virtualize_irq_from(&rthal_domain,
-                              xnarch_escalation_virq,
-                              (void (*)(unsigned))&xnpod_schedule_handler,
-                              NULL,
-                              IPIPE_HANDLE_MASK);
+    rthal_virtualize_irq(&rthal_domain,
+			 xnarch_escalation_virq,
+			 (void (*)(unsigned))&xnpod_schedule_handler,
+			 NULL,
+			 IPIPE_HANDLE_MASK);
 
     xnarch_old_trap_handler = rthal_trap_catch(&xnarch_trap_fault);
 
@@ -806,7 +684,7 @@ static inline int xnarch_init (void)
     if (err)
         {
         rthal_trap_catch(xnarch_old_trap_handler);
-        adeos_free_irq(xnarch_escalation_virq);
+        rthal_free_virq(xnarch_escalation_virq);
         }
 
     return err;
@@ -819,7 +697,7 @@ static inline void xnarch_exit (void)
     xnshadow_cleanup();
 #endif /* CONFIG_RTAI_OPT_FUSION */
     rthal_trap_catch(xnarch_old_trap_handler);
-    adeos_free_irq(xnarch_escalation_virq);
+    rthal_free_virq(xnarch_escalation_virq);
 }
 
 #endif /* XENO_MAIN_MODULE */

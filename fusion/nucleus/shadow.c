@@ -130,7 +130,7 @@ static inline void request_syscall_restart (xnthread_t *thread, struct pt_regs *
 static inline void set_linux_task_priority (struct task_struct *task, int prio)
 
 {
-    if (__adeos_setscheduler_root(task,SCHED_FIFO,prio) < 0)
+    if (rthal_setsched_root(task,SCHED_FIFO,prio) < 0)
 	printk(KERN_WARNING "RTAI: invalid Linux priority level: %d, task=%s\n",prio,task->comm);
 }
 
@@ -138,38 +138,38 @@ static inline void engage_irq_shield (void)
 
 {
     unsigned long flags;
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
-    adeos_lock_cpu(flags);
+    rthal_lock_cpu(flags);
 
     if (cpu_test_and_set(cpuid,shielded_cpus))
 	goto unmask_and_exit;
 
-    adeos_read_lock(&shield_lock);
+    rthal_read_lock(&shield_lock);
 
     cpu_clear(cpuid,unshielded_cpus);
 
     xnarch_lock_xirqs(&irq_shield,cpuid);
 
-    adeos_read_unlock(&shield_lock);
+    rthal_read_unlock(&shield_lock);
 
  unmask_and_exit:
     
-    adeos_unlock_cpu(flags);
+    rthal_unlock_cpu(flags);
 }
 
 static void disengage_irq_shield (void)
      
 {
     unsigned long flags;
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
-    adeos_lock_cpu(flags);
+    rthal_lock_cpu(flags);
 
     if (cpu_test_and_set(cpuid,unshielded_cpus))
 	goto unmask_and_exit;
 
-    adeos_write_lock(&shield_lock);
+    rthal_write_lock(&shield_lock);
 
     cpu_clear(cpuid,shielded_cpus);
 
@@ -179,7 +179,7 @@ static void disengage_irq_shield (void)
 
     if (!cpus_empty(shielded_cpus))
 	{
-	adeos_write_unlock(&shield_lock);
+	rthal_write_unlock(&shield_lock);
 	goto unmask_and_exit;
 	}
 
@@ -196,17 +196,17 @@ static void disengage_irq_shield (void)
     {
     cpumask_t other_cpus = xnarch_cpu_online_map;
     cpu_clear(cpuid,other_cpus);
-    adeos_send_ipi(ADEOS_SERVICE_IPI1,other_cpus);
+    rthal_send_ipi(ADEOS_SERVICE_IPI1,other_cpus);
     }
 #endif /* CONFIG_SMP */
 
-    adeos_write_unlock(&shield_lock);
+    rthal_write_unlock(&shield_lock);
 
-    adeos_unstall_pipeline_from(&irq_shield);
+    rthal_stage_irq_enable(&irq_shield);
 
  unmask_and_exit:
 
-    adeos_unlock_cpu(flags);
+    rthal_unlock_cpu(flags);
 }
 
 static void shield_handler (unsigned irq)
@@ -215,7 +215,7 @@ static void shield_handler (unsigned irq)
 #ifdef CONFIG_SMP
     if (irq != ADEOS_SERVICE_IPI1)
 #endif /* CONFIG_SMP */
-    adeos_propagate_irq(irq);
+    rthal_propagate_irq(irq);
 }
 
 static void shield_entry (int iflag)
@@ -226,7 +226,7 @@ static void shield_entry (int iflag)
 
 #ifndef CONFIG_ADEOS_NOTHREADS
     for (;;)
-	adeos_suspend_domain();
+	rthal_suspend_domain();
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
@@ -295,7 +295,7 @@ static void schedule_linux_call (int type,
 {
     /* Do _not_ use smp_processor_id() here so we don't trigger Linux
        preemption debug traps inadvertently (see lib/kernel_lock.c). */
-    int cpuid = adeos_processor_id(), reqnum;
+    int cpuid = rthal_processor_id(), reqnum;
     struct __lostagerq *rq = &lostagerq[cpuid];
     spl_t s;
 
@@ -424,7 +424,7 @@ static int xnshadow_harden (void)
     schedule();
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
-    if (adp_current == adp_root)
+    if (rthal_current_domain == rthal_root_domain)
 	xnpod_fatal("xnshadow_harden() failed for thread %s[%d]",
 		    thread->name,
 		    xnthread_user_pid(thread));
@@ -504,13 +504,13 @@ void xnshadow_relax (int notify)
     xnpod_renice_root(thread->cprio);
     xnpod_suspend_thread(thread,XNRELAX,XN_INFINITE,NULL);
 #ifdef CONFIG_RTAI_OPT_DEBUG
-    if (adp_current != adp_root)
+    if (rthal_current_domain != rthal_root_domain)
 	xnpod_fatal("xnshadow_relax() failed for thread %s[%d]",
 		    thread->name,
 		    xnthread_user_pid(thread));
 #endif /* CONFIG_RTAI_OPT_DEBUG */
     cprio = thread->cprio < MAX_RT_PRIO ? thread->cprio : MAX_RT_PRIO-1;
-    __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,cprio);
+    rthal_reenter_root(get_switch_lock_owner(),SCHED_FIFO,cprio);
 
     ++thread->stat.ssw;	/* Account for secondary mode switch. */
 
@@ -604,7 +604,7 @@ static int xnshadow_wait_completion (xncompletion_t __user *u_completion)
 void xnshadow_exit (void)
 
 {
-    __adeos_reenter_root(get_switch_lock_owner(),SCHED_FIFO,current->rt_priority);
+    rthal_reenter_root(get_switch_lock_owner(),SCHED_FIFO,current->rt_priority);
     do_exit(0);
 }
 
@@ -711,7 +711,7 @@ int xnshadow_map (xnthread_t *thread,
       kernel debug stuff to yell at us for calling it in a preemptible
       section of code. */
 
-   affinity = xnarch_cpumask_of_cpu(adeos_processor_id());
+   affinity = xnarch_cpumask_of_cpu(rthal_processor_id());
    set_cpus_allowed(current, affinity);
 
    mode = thread->rrperiod != XN_INFINITE ? XNRRB : 0;
@@ -964,10 +964,36 @@ static void exec_nucleus_syscall (int muxop, struct pt_regs *regs)
 	}
 }
 
-static void rtai_sysentry (adevinfo_t *evinfo)
+void xnshadow_send_sig (xnthread_t *thread, int sig)
 
 {
-    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
+    schedule_linux_call(LO_SIGNAL_REQ,xnthread_user_task(thread),sig);
+}
+
+static inline void reset_shield (xnthread_t *thread)
+
+{
+    if (testbits(thread->status,XNSHIELD))
+	engage_irq_shield();
+    else
+	disengage_irq_shield();
+}
+
+void xnshadow_reset_shield (void)
+
+{
+    xnthread_t *thread = xnshadow_thread(current);
+
+    if (!thread)
+	return; /* uh?! */
+
+    reset_shield(thread);
+}
+
+static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data)
+
+{
+    struct pt_regs *regs = (struct pt_regs *)data;
     int muxid, muxop, switched;
     struct task_struct *task;
     xnthread_t *thread;
@@ -1007,7 +1033,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 			 /* Migration to RTAI from the Linux domain
 			    must be done from the latter: propagate
 			    the request to the Linux-level handler. */
-			 adeos_propagate_event(evinfo);
+			 return 1;
 		}
 	    else if (__xn_reg_arg1(regs) == XENOMAI_LINUX_DOMAIN) /* RTAI => Linux */
 		{
@@ -1022,7 +1048,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	    else
 		__xn_error_return(regs,-EINVAL);
 
-	    return;
+	    return 0;
 
 	case __xn_sys_bind:
 	case __xn_sys_completion:
@@ -1040,29 +1066,24 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	     * boundary delimited by the calling RTAI stage for this
 	     * particular syscall instance. If the latter is still
 	     * unclear in your mind, have a look at the
-	     * adeos_catch_event() documentation and get back to this
+	     * rthal_catch_event() documentation and get back to this
 	     * later. */
 
-	    if (evinfo->domid == RTHAL_DOMAIN_ID)
+	    if (domid == RTHAL_DOMAIN_ID)
 	        {
 		xnshadow_relax(1);
 		exec_nucleus_syscall(muxop,regs);
-		return;
+		return 0;
 		}
 
-	    /* Falldown wanted. */
-
- propagate_syscall:
-
 	    /* Delegate the syscall handling to the Linux domain. */
-	    adeos_propagate_event(evinfo);
-	    return;
+	    return 1;
 
 	default:
 
  bad_syscall:
 	    __xn_error_return(regs,-ENOSYS);
-	    return;
+	    return 0;
 	}
 
  skin_syscall:
@@ -1076,7 +1097,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     if ((sysflags & __xn_exec_shadow) != 0 && !thread)
 	{
 	__xn_error_return(regs,-EPERM);
-	return;
+	return 0;
 	}
 
     if ((sysflags & __xn_exec_conforming) != 0)
@@ -1103,7 +1124,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	{
 	/* Syscall must run into the Linux domain. */
 
-	if (evinfo->domid == RTHAL_DOMAIN_ID)
+	if (domid == RTHAL_DOMAIN_ID)
 	    /* Request originates from the RTAI domain: just relax the
 	       caller and execute the syscall immediately after. */
 	    {
@@ -1121,7 +1142,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	/* Syscall must be processed either by RTAI, or by the calling
 	   domain. */
 
-	if (evinfo->domid != RTHAL_DOMAIN_ID)
+	if (domid != RTHAL_DOMAIN_ID)
 	    /* Request originates from the Linux domain: propagate the
 	       event to our Linux-based handler, so that the caller is
 	       hardened and the syscall is eventually executed from
@@ -1139,7 +1160,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
 	xnshadow_harden(); /* -EPERM will be trapped later if needed. */
 
-    return;
+    return 0;
 
  linux_syscall:
 
@@ -1157,7 +1178,7 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 	   running inside the RTAI domain. This call has just been
 	   intercepted by the nucleus and a RTAI replacement has been
 	   substituted for it. */
-	return;
+	return 0;
 
     /* This syscall has not been substituted, let Linux handle
        it. This will eventually fall back to the Linux syscall handler
@@ -1186,17 +1207,23 @@ static void rtai_sysentry (adevinfo_t *evinfo)
 		  __xn_mux_op(regs));
 
 	__xn_error_return(regs,-ENOSYS);
+	return 0;
 	}
-    else
-	/* Regular Linux syscall with no skin loaded -- propagate it
-	   to the Linux kernel. */
-	goto propagate_syscall;
+
+    /* Regular Linux syscall with no skin loaded -- propagate it
+       to the Linux kernel. */
+
+ propagate_syscall:
+
+    return 1;
 }
 
-static void linux_sysentry (adevinfo_t *evinfo)
+RTHAL_DECLARE_EVENT(hisyscall_event);
+
+static inline int do_losyscall_event (unsigned event, unsigned domid, void *data)
 
 {
-    struct pt_regs *regs = (struct pt_regs *)evinfo->evdata;
+    struct pt_regs *regs = (struct pt_regs *)data;
     xnthread_t *thread = xnshadow_thread(current);
     int muxid, muxop, sysflags, switched, err;
 
@@ -1205,14 +1232,14 @@ static void linux_sysentry (adevinfo_t *evinfo)
 
     if (!thread || !substitute_linux_syscall(current,regs))
 	/* Fall back to Linux syscall handling. */
-	adeos_propagate_event(evinfo);
+	return 1;
 
     /* This is a Linux syscall issued on behalf of a shadow thread
        running inside the Linux domain. If the call has been
        substituted with a RTAI replacement, do not let Linux know
        about it. */
 
-    return;
+    return 0;
 
  xenomai_syscall:
 
@@ -1233,7 +1260,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	   behalf of the Linux domain (over which we are currently
 	   running). */
 	exec_nucleus_syscall(muxop,regs);
-	return;
+	return 0;
 	}
 
     /* Processing a real-time skin syscall. */
@@ -1251,7 +1278,7 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	if ((err = xnshadow_harden()) != 0)
 	    {
 	    __xn_error_return(regs,err);
-	    return;
+	    return 0;
 	    }
 
 	switched = 1;
@@ -1265,18 +1292,19 @@ static void linux_sysentry (adevinfo_t *evinfo)
 	request_syscall_restart(xnshadow_thread(current),regs);
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
 	xnshadow_relax(0);
+
+    return 0;
 }
 
-static void linux_task_exit (adevinfo_t *evinfo)
+RTHAL_DECLARE_EVENT(losyscall_event);
+
+static inline int do_taskexit_event (unsigned event, unsigned domid, void *data)
 
 {
     xnthread_t *thread = xnshadow_thread(current);
 
     if (!thread)
-	{
-	adeos_propagate_event(evinfo);
-	return;
-	}
+	return 1;
 
     if (xnpod_shadow_p())
 	xnshadow_relax(0);
@@ -1289,50 +1317,26 @@ static void linux_task_exit (adevinfo_t *evinfo)
     xnpod_delete_thread(thread); /* Should indirectly call xnshadow_unmap(). */
 
     xnltt_log_event(rtai_ev_shadowexit,thread->name);
+
+    return 0;
 }
 
-void xnshadow_send_sig (xnthread_t *thread, int sig)
+RTHAL_DECLARE_EVENT(taskexit_event);
+
+static inline int do_schedule_event (unsigned event, unsigned domid, void *data)
 
 {
-    schedule_linux_call(LO_SIGNAL_REQ,xnthread_user_task(thread),sig);
-}
-
-static inline void reset_shield (xnthread_t *thread)
-
-{
-    if (testbits(thread->status,XNSHIELD))
-	engage_irq_shield();
-    else
-	disengage_irq_shield();
-}
-
-void xnshadow_reset_shield (void)
-
-{
-    xnthread_t *thread = xnshadow_thread(current);
-
-    if (!thread)
-	return; /* uh?! */
-
-    reset_shield(thread);
-}
-
-static void linux_schedule_head (adevinfo_t *evinfo)
-
-{
-    struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))evinfo->evdata;
+    struct { struct task_struct *prev, *next; } *evdata = (__typeof(evdata))data; /* FIXME: I-pipe */
     struct task_struct *next = evdata->next;
     struct task_struct *prev = evdata->prev;
     xnthread_t *thread = xnshadow_thread(next);
     int oldrprio, newrprio;
-    adeos_declare_cpuid;
-
-    adeos_propagate_event(evinfo);
+    rthal_declare_cpuid;
 
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
-	return;
+	return 1;
 
-    adeos_load_cpuid();	/* Linux is running in a migration-safe
+    rthal_load_cpuid();	/* Linux is running in a migration-safe
 			   portion of code. */
 
     set_switch_lock_owner(prev);
@@ -1371,7 +1375,7 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 	    disengage_irq_shield();
 	    }
         else
-	    return;
+	    return 1;
 
     /* Current nucleus thread must be the root one in this context, so
        we can safely renice the nucleus's runthread (i.e. as returned
@@ -1391,18 +1395,22 @@ static void linux_schedule_head (adevinfo_t *evinfo)
 	       let's call the rescheduling procedure ourselves. */
             xnpod_schedule();
         }
+
+    return 1;
 }
 
-static void linux_kick_process (adevinfo_t *evinfo)
+RTHAL_DECLARE_EVENT(schedule_event);
+
+static inline int do_sigwake_event (unsigned event, unsigned domid, void *data)
 
 {
-    struct { struct task_struct *task; } *evdata = (__typeof(evdata))evinfo->evdata;
+    struct { struct task_struct *task; } *evdata = (__typeof(evdata))data; /* FIXME: I-pipe */
     struct task_struct *task = evdata->task;
     xnthread_t *thread = xnshadow_thread(task);
     spl_t s;
 
     if (!thread || testbits(thread->status,XNROOT|XNRELAX))
-	return;
+	return 1;
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -1432,9 +1440,13 @@ static void linux_kick_process (adevinfo_t *evinfo)
     xnpod_schedule();
 
     xnlock_put_irqrestore(&nklock,s);
+
+    return 1;
 }
 
-static void linux_renice_process (adevinfo_t *evinfo)
+RTHAL_DECLARE_EVENT(sigwake_event);
+
+static inline int do_setsched_event (unsigned event, unsigned domid, void *data)
 
 {
     struct {
@@ -1444,20 +1456,15 @@ static void linux_renice_process (adevinfo_t *evinfo)
     } *evdata;
     xnthread_t *thread;
 
-    evdata = (__typeof(evdata))evinfo->evdata;
+    evdata = (__typeof(evdata))data;
     thread = xnshadow_thread(evdata->task);
 
     if (!thread)
-	{
-	adeos_propagate_event(evinfo);
-	return;	/* Not a shadow -- Let Linux handle this one. */
-	}
+	return 1;	/* Not a shadow -- Let Linux handle this one. */
 
     if (evdata->policy != SCHED_FIFO)
 	/* Bad policy -- Make Linux to ignore the change. */
-	return;
-
-    adeos_propagate_event(evinfo);
+	return 0;
 
     if (thread->cprio != evdata->param->sched_priority)
 	xnpod_renice_thread_inner(thread,evdata->param->sched_priority,0);
@@ -1467,7 +1474,11 @@ static void linux_renice_process (adevinfo_t *evinfo)
 
     if (xnsched_resched_p())
 	xnpod_schedule();
+
+    return 1;
 }
+
+RTHAL_DECLARE_EVENT(setsched_event);
 
 /*
  * xnshadow_register_interface() -- Register a new skin/interface.
@@ -1623,40 +1634,37 @@ void xnshadow_ticks2tv (unsigned long long ticks, struct timeval *v)
 void xnshadow_grab_events (void)
 
 {
-    adeos_catch_event(ADEOS_EXIT_PROCESS,&linux_task_exit);
-    adeos_catch_event(ADEOS_KICK_PROCESS,&linux_kick_process);
-    adeos_catch_event(ADEOS_SCHEDULE_HEAD,&linux_schedule_head);
-    adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,&linux_renice_process);
+    rthal_catch_taskexit(&taskexit_event);
+    rthal_catch_sigwake(&sigwake_event);
+    rthal_catch_schedule(&schedule_event);
+    rthal_catch_setsched(&setsched_event);
 }
 
 void xnshadow_release_events (void)
 
 {
-    adeos_catch_event(ADEOS_EXIT_PROCESS,NULL);
-    adeos_catch_event(ADEOS_KICK_PROCESS,NULL);
-    adeos_catch_event(ADEOS_SCHEDULE_HEAD,NULL);
-    adeos_catch_event_from(&rthal_domain,ADEOS_RENICE_PROCESS,NULL);
+    rthal_catch_taskexit(NULL);
+    rthal_catch_sigwake(NULL);
+    rthal_catch_schedule(NULL);
+    rthal_catch_setsched(NULL);
 }
 
 int __init xnshadow_mount (void)
 
 {
-    adattr_t attr;
     int cpu;
 
-    adeos_init_attr(&attr);
-    attr.name = "IShield";
-    attr.domid = 0x53484c44;
-    attr.entry = &shield_entry;
-    attr.priority = ADEOS_ROOT_PRI + 50;
-
-    if (adeos_register_domain(&irq_shield,&attr))
+    if (rthal_register_domain(&irq_shield,
+			      "IShield",
+			      0x53484c44,
+			      RTHAL_ROOT_PRIO + 50,
+			      &shield_entry))
 	return -EBUSY;
 
     shielded_cpus = CPU_MASK_NONE;
     unshielded_cpus = xnarch_cpu_online_map;
 
-    nkgkptd = adeos_alloc_ptdkey();
+    nkgkptd = rthal_alloc_ptdkey();
     lostage_apc = rthal_apc_alloc("lostage_handler",&lostage_handler,NULL);
 
     for_each_online_cpu(cpu) {
@@ -1669,8 +1677,8 @@ int __init xnshadow_mount (void)
     }
 
     /* We need to grab these ones right now. */
-    adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,&linux_sysentry);
-    adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,&rtai_sysentry);
+    rthal_catch_losyscall(&losyscall_event);
+    rthal_catch_hisyscall(&hisyscall_event);
 
     return 0;
 }
@@ -1680,8 +1688,8 @@ void __exit xnshadow_cleanup (void)
 {
     int cpu;
 
-    adeos_catch_event(ADEOS_SYSCALL_PROLOGUE,NULL);
-    adeos_catch_event_from(&rthal_domain,ADEOS_SYSCALL_PROLOGUE,NULL);
+    rthal_catch_losyscall(NULL);
+    rthal_catch_hisyscall(NULL);
 
     for_each_online_cpu(cpu) {
 	struct __gatekeeper *gk = &gatekeeper[cpu];
@@ -1691,8 +1699,8 @@ void __exit xnshadow_cleanup (void)
     }
 
     rthal_apc_free(lostage_apc);
-    adeos_free_ptdkey(nkgkptd);
-    adeos_unregister_domain(&irq_shield);
+    rthal_free_ptdkey(nkgkptd);
+    rthal_unregister_domain(&irq_shield);
 }
 
 /*@}*/

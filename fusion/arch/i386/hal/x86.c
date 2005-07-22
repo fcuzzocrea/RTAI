@@ -72,7 +72,7 @@ extern struct desc_struct idt_table[];
 
 static long long rthal_timers_sync_time;
 
-static struct rthal_apic_data rthal_timer_mode[ADEOS_NR_CPUS];
+static struct rthal_apic_data rthal_timer_mode[RTHAL_NR_CPUS];
 
 struct rthal_apic_data {
 
@@ -103,12 +103,12 @@ static void rthal_critical_sync (void)
 {
     struct rthal_apic_data *p;
     long long sync_time;
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
     switch (rthal_sync_op)
 	{
 	case 1:
-            adeos_load_cpuid();
+            rthal_load_cpuid();
 
 	    p = &rthal_timer_mode[cpuid];
 
@@ -142,10 +142,10 @@ irqreturn_t rthal_broadcast_to_local_timers (int irq,
 {
     unsigned long flags;
 
-    rthal_hw_lock(flags);
+    rthal_local_irq_save_hw(flags);
     apic_wait_icr_idle();
     apic_write_around(APIC_ICR,APIC_DM_FIXED|APIC_DEST_ALLINC|LOCAL_TIMER_VECTOR);
-    rthal_hw_unlock(flags);
+    rthal_local_irq_restore_hw(flags);
 
     return IRQ_HANDLED;
 }
@@ -182,7 +182,7 @@ int rthal_timer_request (void (*handler)(void),
     struct rthal_apic_data *p;
     long long sync_time;
     unsigned long flags;
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
     int cpu;
 
     /* This code works both for UP+LAPIC and SMP configurations. */
@@ -217,7 +217,7 @@ int rthal_timer_request (void (*handler)(void),
 	    p->count = RTHAL_APIC_ICOUNT;
     }
 
-    adeos_load_cpuid();
+    rthal_load_cpuid();
 
     p = &rthal_timer_mode[cpuid];
 
@@ -361,7 +361,7 @@ void rthal_setup_8254_tsc (void)
     unsigned long flags;
     int count;
 
-    rthal_hw_lock(flags);
+    rthal_local_irq_save_hw(flags);
 
     outb_p(0x0,PIT_MODE);
     count = inb_p(PIT_CH0);
@@ -374,7 +374,7 @@ void rthal_setup_8254_tsc (void)
     /* Gate high, disable speaker */
     outb_p((inb_p(0x61)&~0x2)|1,0x61);
 
-    rthal_hw_unlock(flags);
+    rthal_local_irq_restore_hw(flags);
 }
 
 rthal_time_t rthal_get_8254_tsc (void)
@@ -384,7 +384,7 @@ rthal_time_t rthal_get_8254_tsc (void)
     int delta, count;
     rthal_time_t t;
 
-    rthal_hw_lock(flags);
+    rthal_local_irq_save_hw(flags);
 
     outb(0xd8,PIT_MODE);
     count = inb(PIT_CH2);
@@ -393,17 +393,17 @@ rthal_time_t rthal_get_8254_tsc (void)
     rthal_tsc_8254 += (delta > 0 ? delta : delta + RTHAL_8254_COUNT2LATCH);
     t = rthal_tsc_8254;
 
-    rthal_hw_unlock(flags);
+    rthal_local_irq_restore_hw(flags);
 
     return t;
 }
 
 #endif /* !CONFIG_X86_TSC */
 
-static void rthal_trap_fault (adevinfo_t *evinfo)
+static inline int do_exception_event (unsigned event, unsigned domid, void *data)
 
 {
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
     /* Notes:
 
@@ -428,24 +428,22 @@ static void rthal_trap_fault (adevinfo_t *evinfo)
     a GPF.
     2) NMI is not pipelined by Adeos. */
 
-    adeos_load_cpuid();
+    rthal_load_cpuid();
 
-    if (evinfo->domid == RTHAL_DOMAIN_ID)
+    if (domid == RTHAL_DOMAIN_ID)
 	{
-	rthal_realtime_faults[cpuid][evinfo->event]++;
+	rthal_realtime_faults[cpuid][event]++;
 
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&
-	    rthal_trap_handler(evinfo) != 0)
-	    goto endtrap;
+	    rthal_trap_handler(event,domid,data) != 0)
+	    return 0;
 	}
 
-    adeos_propagate_event(evinfo);
-
- endtrap:
-
-    return;
+    return 1;
 }
+
+RTHAL_DECLARE_EVENT(exception_event);
 
 void rthal_domain_entry (int iflag)
 
@@ -459,7 +457,7 @@ void rthal_domain_entry (int iflag)
 
     /* Trap all faults. */
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
-	adeos_catch_event(trapnr,&rthal_trap_fault);
+	rthal_catch_exception(trapnr,&exception_event);
 
     printk(KERN_INFO "RTAI: hal/x86 loaded.\n");
 
@@ -467,7 +465,7 @@ void rthal_domain_entry (int iflag)
  spin:
 
     for (;;)
-	adeos_suspend_domain();
+	rthal_suspend_domain();
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
@@ -492,7 +490,7 @@ int rthal_arch_init (void)
 #ifdef CONFIG_X86_TSC
 	{
 	adsysinfo_t sysinfo;
-	adeos_get_sysinfo(&sysinfo);
+	rthal_get_sysinfo(&sysinfo);
 	/* FIXME: 4Ghz barrier is close... */
 	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
 	}

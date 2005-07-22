@@ -76,13 +76,13 @@ int rthal_timer_request (void (*handler)(void),
 	{
 	/* Periodic setup --
 	   Use the built-in Adeos service directly. */
-	err = adeos_tune_timer(nstick,0);
+	err = rthal_set_timer(nstick);
 	rthal_periodic_p = 1;
 	}
     else
 	{
 	/* Oneshot setup. */
-	disarm_decr[adeos_processor_id()] = 1;
+	disarm_decr[rthal_processor_id()] = 1;
 	rthal_periodic_p = 0;
 	rthal_timer_program_shot(tb_ticks_per_jiffy);
 	}
@@ -107,10 +107,10 @@ void rthal_timer_release (void)
     flags = rthal_critical_enter(NULL);
 
     if (rthal_periodic_p)
-	adeos_tune_timer(0,ADEOS_RESET_TIMER);
+	rthal_reset_timer();
     else
 	{
-	disarm_decr[adeos_processor_id()] = 0;
+	disarm_decr[rthal_processor_id()] = 0;
 	set_dec(tb_ticks_per_jiffy);
 	}
 
@@ -125,25 +125,27 @@ unsigned long rthal_timer_calibrate (void)
     return 1000000000 / RTHAL_CPU_FREQ;
 }
 
-static void rthal_trap_fault (adevinfo_t *evinfo)
+static inline int do_exception_event (unsigned event, unsigned domid, void *data)
 
 {
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
-    adeos_load_cpuid();
+    rthal_load_cpuid();
 
-    if (evinfo->domid == RTHAL_DOMAIN_ID)
+    if (domid == RTHAL_DOMAIN_ID)
 	{
-	rthal_realtime_faults[cpuid][evinfo->event]++;
+	rthal_realtime_faults[cpuid][event]++;
 
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&
-	    rthal_trap_handler(evinfo) != 0)
-	    return;
+	    rthal_trap_handler(event,domid,data) != 0)
+	    return 0;
 	}
 
-    adeos_propagate_event(evinfo);
+    return 1;
 }
+
+RTHAL_DECLARE_EVENT(exception_event);
 
 void rthal_domain_entry (int iflag)
 
@@ -157,7 +159,7 @@ void rthal_domain_entry (int iflag)
 
     /* Trap all faults. */
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
-	adeos_catch_event(trapnr,&rthal_trap_fault);
+	rthal_catch_exception(trapnr,&exception_event);
 
     printk(KERN_INFO "RTAI: hal/ppc64 loaded.\n");
 
@@ -165,7 +167,7 @@ void rthal_domain_entry (int iflag)
  spin:
 
     for (;;)
-	adeos_suspend_domain();
+	rthal_suspend_domain();
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
@@ -175,7 +177,7 @@ int rthal_arch_init (void)
     if (rthal_cpufreq_arg == 0)
 	{
 	adsysinfo_t sysinfo;
-	adeos_get_sysinfo(&sysinfo);
+	rthal_get_sysinfo(&sysinfo);
 	/* The CPU frequency is expressed as the timebase frequency
 	   for this port. */
 	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;

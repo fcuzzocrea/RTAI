@@ -48,7 +48,7 @@ typedef unsigned long spl_t;
 #else /* !CONFIG_SMP */
 #define splexit(x)  rthal_local_irq_restore(x)
 #endif /* CONFIG_SMP */
-#define splnone()   rthal_sti()
+#define splnone()   rthal_local_irq_enable()
 #define spltest()   rthal_local_irq_test()
 #define splget(x)   rthal_local_irq_flags(x)
 #define splsync(x)  rthal_local_irq_sync(x)
@@ -102,12 +102,12 @@ __xnlock_get_irqsave (xnlock_t *lock, const char *file, unsigned line, const cha
 static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
 {
 #endif /* CONFIG_RTAI_OPT_DEBUG */
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
     unsigned long flags;
 
     rthal_local_irq_save(flags);
 
-    adeos_load_cpuid();
+    rthal_load_cpuid();
 
     if (!test_and_set_bit(cpuid,&lock->lock))
 	{
@@ -121,7 +121,7 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
 #ifdef CONFIG_RTAI_OPT_DEBUG
                 if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
                     {
-                    adeos_set_printk_sync(adp_current);
+                    rthal_emergency_console();
                     printk(KERN_ERR
                            "RTAI: stuck on nucleus lock %p\n"
                            "      waiter = %s:%u (%s(), CPU #%d)\n"
@@ -153,11 +153,11 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 {
     if (!(flags & 2))
         {
-        adeos_declare_cpuid;
+        rthal_declare_cpuid;
 
-        rthal_cli();
+        rthal_local_irq_disable();
 
-        adeos_load_cpuid();
+        rthal_load_cpuid();
 
         if (test_and_clear_bit(cpuid,&lock->lock))
             clear_bit(BITS_PER_LONG - 1,&lock->lock);
@@ -171,8 +171,8 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 #define xnlock_init(lock)              do { } while(0)
 #define xnlock_get_irqsave(lock,x)     rthal_local_irq_save(x)
 #define xnlock_put_irqrestore(lock,x)  rthal_local_irq_restore(x)
-#define xnlock_clear_irqoff(lock)      rthal_cli()
-#define xnlock_clear_irqon(lock)       rthal_sti()
+#define xnlock_clear_irqoff(lock)      rthal_local_irq_disable()
+#define xnlock_clear_irqon(lock)       rthal_local_irq_enable()
 
 #endif /* CONFIG_SMP */
 
@@ -247,16 +247,16 @@ static inline unsigned long long xnarch_get_cpu_freq (void) {
 }
 
 static inline unsigned xnarch_current_cpu (void) {
-    return adeos_processor_id();
+    return rthal_processor_id();
 }
 
-#define xnarch_declare_cpuid  adeos_declare_cpuid
-#define xnarch_get_cpu(flags) adeos_get_cpu(flags)
-#define xnarch_put_cpu(flags) adeos_put_cpu(flags)
+#define xnarch_declare_cpuid  rthal_declare_cpuid
+#define xnarch_get_cpu(flags) rthal_get_cpu(flags)
+#define xnarch_put_cpu(flags) rthal_put_cpu(flags)
 
 #define xnarch_halt(emsg) \
 do { \
-    adeos_set_printk_sync(adp_current); \
+    rthal_emergency_console(); \
     xnarch_logerr("fatal: %s\n",emsg); \
     show_stack(NULL,NULL);			\
     for (;;) cpu_relax();			\
@@ -270,6 +270,142 @@ static inline int xnarch_setimask (int imask)
     splexit(!!imask);
     return !!s;
 }
+
+#ifdef XENO_POD_MODULE
+
+#ifdef CONFIG_SMP
+
+static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
+
+    return rthal_send_ipi(ADEOS_SERVICE_IPI0, cpumask);
+}
+
+static inline int xnarch_hook_ipi (void (*handler)(void))
+
+{
+    return rthal_virtualize_irq(&rthal_domain,
+				ADEOS_SERVICE_IPI0,
+				(void (*)(unsigned)) handler,
+				NULL,
+				IPIPE_HANDLE_MASK);
+}
+
+static inline int xnarch_release_ipi (void)
+
+{
+    return rthal_virtualize_irq(&rthal_domain,
+				ADEOS_SERVICE_IPI0,
+				NULL,
+				NULL,
+				IPIPE_PASS_MASK);
+}
+
+static struct linux_semaphore xnarch_finalize_sync;
+
+static void xnarch_finalize_cpu(unsigned irq)
+{
+    up(&xnarch_finalize_sync);
+}
+
+static inline void xnarch_notify_halt(void)
+    
+{
+    xnarch_cpumask_t other_cpus = cpu_online_map;
+    unsigned cpu, nr_cpus = num_online_cpus();
+    unsigned long flags;
+    rthal_declare_cpuid;
+
+    sema_init(&xnarch_finalize_sync,0);
+
+    /* Here rthal_current_domain is in fact root, since xnarch_notify_halt is
+       called from xnpod_shutdown, itself called from Linux
+       context. */
+
+    rthal_virtualize_irq(rthal_current_domain,
+			 ADEOS_SERVICE_IPI2,
+			 xnarch_finalize_cpu,
+			 NULL,
+			 IPIPE_HANDLE_MASK);
+
+    rthal_lock_cpu(flags);
+    cpu_clear(cpuid, other_cpus);
+    rthal_send_ipi(ADEOS_SERVICE_IPI2, other_cpus);
+    rthal_unlock_cpu(flags);
+
+    for(cpu=0; cpu < nr_cpus-1; ++cpu)
+        down(&xnarch_finalize_sync);
+    
+    rthal_virtualize_irq(rthal_current_domain,
+			 ADEOS_SERVICE_IPI2,
+			 NULL,
+			 NULL,
+			 IPIPE_PASS_MASK);
+}
+
+#else /* !CONFIG_SMP */
+
+static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
+
+    return 0;
+}
+
+static inline int xnarch_hook_ipi (void (*handler)(void)) {
+
+    return 0;
+}
+
+static inline int xnarch_release_ipi (void) {
+
+    return 0;
+}
+
+#define xnarch_notify_halt() /* Nullified */
+
+#endif /* CONFIG_SMP */
+
+static inline void xnarch_notify_shutdown(void)
+
+{
+#ifdef CONFIG_SMP
+    /* The HAL layer also sets the same CPU affinity so that both
+       modules keep their execution sequence on SMP boxen. */
+    set_cpus_allowed(current,cpumask_of_cpu(0));
+#endif /* CONFIG_SMP */
+#ifdef CONFIG_RTAI_OPT_FUSION
+    xnshadow_release_events();
+#endif /* CONFIG_RTAI_OPT_FUSION */
+    /* Wait for the currently processed events to drain. */
+    set_current_state(TASK_UNINTERRUPTIBLE);
+    schedule_timeout(50);
+    xnarch_release_ipi();
+}
+
+static inline int xnarch_escalate (void)
+
+{
+    extern int xnarch_escalation_virq;
+
+    if (rthal_current_domain == rthal_root_domain)
+        {
+        spl_t s;
+        splsync(s);
+        rthal_trigger_irq(xnarch_escalation_virq);
+        splexit(s);
+        return 1;
+        }
+
+    return 0;
+}
+
+static void xnarch_notify_ready (void)
+
+{
+#ifdef CONFIG_RTAI_OPT_FUSION    
+    xnshadow_grab_events();
+#endif /* CONFIG_RTAI_OPT_FUSION */
+}
+
+#endif /* XENO_POD_MODULE */
 
 #ifdef XENO_INTR_MODULE
 
@@ -309,7 +445,7 @@ static inline void xnarch_chain_irq (unsigned irq)
 static inline cpumask_t xnarch_set_irq_affinity (unsigned irq,
                                                  xnarch_cpumask_t affinity)
 {
-    return adeos_set_irq_affinity(irq,affinity);
+    return rthal_set_irq_affinity(irq,affinity);
 }
 
 #endif /* XENO_INTR_MODULE */

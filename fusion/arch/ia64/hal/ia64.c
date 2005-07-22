@@ -52,14 +52,14 @@
 
 static void rthal_adjust_before_relay (unsigned irq, void *cookie)
 {
-    __adeos_itm_next[adeos_processor_id()] = ia64_get_itc();
-    adeos_propagate_irq(irq);
+    rthal_itm_next[rthal_processor_id()] = ia64_get_itc();
+    rthal_propagate_irq(irq);
 }
 
 static void rthal_set_itv(void)
 {
-    __adeos_itm_next[adeos_processor_id()] = ia64_get_itc();
-    ia64_set_itv(irq_to_vector(__adeos_tick_irq));
+    rthal_itm_next[rthal_processor_id()] = ia64_get_itc();
+    ia64_set_itv(irq_to_vector(rthal_tick_irq));
 }
 
 static void rthal_timer_set_irq (unsigned tick_irq)
@@ -67,7 +67,7 @@ static void rthal_timer_set_irq (unsigned tick_irq)
     unsigned long flags;
 
     flags = rthal_critical_enter(&rthal_set_itv);
-    __adeos_tick_irq = tick_irq;
+    rthal_tick_irq = tick_irq;
     rthal_set_itv();
     rthal_critical_exit(flags);
 }
@@ -81,7 +81,7 @@ int rthal_timer_request (void (*handler)(void),
 
     rthal_irq_release(RTHAL_TIMER_IRQ);
     
-    adeos_tune_timer(nstick, nstick ? 0 : ADEOS_GRAB_TIMER);
+    rthal_set_timer(nstick);
 
     if (rthal_irq_request(RTHAL_TIMER_IRQ,
                           (rthal_irq_handler_t) handler,
@@ -114,7 +114,7 @@ void rthal_timer_release (void)
     unsigned long flags;
 
     rthal_timer_set_irq(RTHAL_HOST_TIMER_IRQ);
-    adeos_tune_timer(0, ADEOS_RESET_TIMER);
+    rthal_reset_timer();
     flags = rthal_critical_enter(NULL);        
     rthal_irq_release(RTHAL_TIMER_IRQ);
     rthal_irq_release(RTHAL_HOST_TIMER_IRQ);
@@ -144,25 +144,27 @@ unsigned long rthal_timer_calibrate (void)
     return rthal_imuldiv(dt,100000,RTHAL_CPU_FREQ);
 }
 
-static void rthal_trap_fault (adevinfo_t *evinfo)
+static inline int do_exception_event (unsigned event, unsigned domid, void *data)
 
 {
-    adeos_declare_cpuid;
+    rthal_declare_cpuid;
 
-    adeos_load_cpuid();
+    rthal_load_cpuid();
 
-    if (evinfo->domid == RTHAL_DOMAIN_ID)
+    if (domid == RTHAL_DOMAIN_ID)
 	{
-	rthal_realtime_faults[cpuid][evinfo->event]++;
+	rthal_realtime_faults[cpuid][event]++;
 
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&
-	    rthal_trap_handler(evinfo) != 0)
-	    return;
+	    rthal_trap_handler(event,domid,data) != 0)
+	    return 0;
 	}
 
-    adeos_propagate_event(evinfo);
+    return 1;
 }
+
+RTHAL_DECLARE_EVENT(exception_event);
 
 void rthal_domain_entry (int iflag)
 
@@ -176,7 +178,7 @@ void rthal_domain_entry (int iflag)
 
     /* Trap all faults. */
     for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
-	adeos_catch_event(trapnr,&rthal_trap_fault);
+	rthal_catch_exception(trapnr,&exception_event);
 
     printk(KERN_INFO "RTAI: hal/ia64 loaded.\n");
 
@@ -184,7 +186,7 @@ void rthal_domain_entry (int iflag)
  spin:
 
     for (;;)
-	adeos_suspend_domain();
+	rthal_suspend_domain();
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
@@ -194,7 +196,7 @@ int rthal_arch_init (void)
     if (rthal_cpufreq_arg == 0)
 	{
 	adsysinfo_t sysinfo;
-	adeos_get_sysinfo(&sysinfo);
+	rthal_get_sysinfo(&sysinfo);
 	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
 	}
 

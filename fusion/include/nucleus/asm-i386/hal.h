@@ -190,7 +190,7 @@ static inline __attribute_const__ unsigned long ffnz (unsigned long ul) {
 #ifdef CONFIG_X86_TSC
 static inline unsigned long long rthal_rdtsc (void) {
     unsigned long long t;
-    __asm__ __volatile__( "rdtsc" : "=A" (t));
+    rthal_read_tsc(t);
     return t;
 }
 #else  /* !CONFIG_X86_TSC */
@@ -200,7 +200,7 @@ rthal_time_t rthal_get_8254_tsc(void);
 #define rthal_rdtsc() rthal_get_8254_tsc()
 #endif /* CONFIG_X86_TSC */
 
-#if !defined(CONFIG_ADEOS_NOTHREADS)
+#if defined(CONFIG_ADEOS_CORE) && !defined(CONFIG_ADEOS_NOTHREADS)
 
 /* Since real-time interrupt handlers are called on behalf of the RTAI
    domain stack, we cannot infere the "current" Linux task address
@@ -208,7 +208,7 @@ rthal_time_t rthal_get_8254_tsc(void);
    instead. */
 
 static inline struct task_struct *rthal_root_host_task (int cpuid) {
-    u_long stack = (u_long)adp_root->esp[cpuid] & ~(THREAD_SIZE - 1);
+    u_long stack = (u_long)rthal_root_domain->esp[cpuid] & ~(THREAD_SIZE - 1);
     return ((struct thread_info *)(stack))->task;
 }
 
@@ -225,7 +225,7 @@ static inline struct task_struct *rthal_current_host_task (int cpuid)
     return get_current();
 }
 
-#else /* CONFIG_ADEOS_NOTHREADS */
+#else /* !CONFIG_ADEOS_CORE || CONFIG_ADEOS_NOTHREADS */
 
 static inline struct task_struct *rthal_root_host_task (int cpuid) {
     return current;
@@ -235,7 +235,7 @@ static inline struct task_struct *rthal_current_host_task (int cpuid) {
     return current;
 }
 
-#endif /* !CONFIG_ADEOS_NOTHREADS */
+#endif /* CONFIG_ADEOS_CORE && !CONFIG_ADEOS_NOTHREADS */
 
 static inline void rthal_timer_program_shot (unsigned long delay)
 {
@@ -244,7 +244,7 @@ static inline void rthal_timer_program_shot (unsigned long delay)
        upon receiving a null timer count, so don't let this
        happen. --rpm */
     if(!delay) delay = 1;
-    rthal_hw_lock(flags);
+    rthal_local_irq_save_hw(flags);
 #ifdef CONFIG_X86_LOCAL_APIC
     /* Note: reading before writing just to work around the Pentium
        APIC double write bug. apic_read_around() expands to nil
@@ -257,7 +257,7 @@ static inline void rthal_timer_program_shot (unsigned long delay)
     outb(delay & 0xff,0x40);
     outb(delay >> 8,0x40);
 #endif /* CONFIG_X86_LOCAL_APIC */
-    rthal_hw_unlock(flags);
+    rthal_local_irq_restore_hw(flags);
 }
 
 static const char *const rthal_fault_labels[] = {

@@ -96,11 +96,13 @@ static inline __attribute_const__ unsigned long ffnz (unsigned long ul)
 #define RTHAL_HOST_TIMER_IRQ    __ia64_local_vector_to_irq(IA64_TIMER_VECTOR)
 
 #define rthal_irq_descp(irq)  irq_descp(irq)
+#define rthal_itm_next        __adeos_itm_next
+#define rthal_tick_irq        __adeos_tick_irq
 
 static inline unsigned long long rthal_rdtsc (void)
 {
     unsigned long long t;
-    adeos_hw_tsc(t);
+    rthal_read_tsc(t);
     return t;
 }
 
@@ -118,9 +120,9 @@ static inline void rthal_timer_program_shot (unsigned long delay)
 {
     unsigned long flags;
     if (!delay) { delay = 10; }
-    rthal_hw_lock(flags);
+    rthal_local_irq_save_hw(flags);
     ia64_set_itm(ia64_get_itc() + delay);
-    rthal_hw_unlock(flags);
+    rthal_local_irq_restore_hw(flags);
 }
 
     /* Private interface -- Internal use only */

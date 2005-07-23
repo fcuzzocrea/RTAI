@@ -112,7 +112,8 @@ int rt_mutex_create(RT_MUTEX *mutex,
 
 int rt_mutex_delete(RT_MUTEX *mutex);
 
-int rt_mutex_lock(RT_MUTEX *mutex);
+int rt_mutex_lock(RT_MUTEX *mutex,
+		  RTIME timeout);
 
 int rt_mutex_unlock(RT_MUTEX *mutex);
 

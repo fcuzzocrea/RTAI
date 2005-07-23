@@ -458,7 +458,7 @@ int rt_cond_wait (RT_COND *cond,
     else if (xnthread_test_flags(&task->thread_base,XNBREAK))
 	err = -EINTR; /* Unblocked.*/
 
-    rt_mutex_lock(mutex);
+    rt_mutex_lock(mutex,TM_INFINITE);
 
  unlock_and_exit:
 

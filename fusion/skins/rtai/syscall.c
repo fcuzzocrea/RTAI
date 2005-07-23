@@ -1559,7 +1559,8 @@ static int __rt_mutex_delete (struct task_struct *curr, struct pt_regs *regs)
 }
 
 /*
- * int __rt_mutex_lock(RT_MUTEX_PLACEHOLDER *ph)
+ * int __rt_mutex_lock(RT_MUTEX_PLACEHOLDER *ph,
+ *                     RTIME *timeoutp)
  *
  */
 
@@ -1568,18 +1569,20 @@ static int __rt_mutex_lock (struct task_struct *curr, struct pt_regs *regs)
 {
     RT_MUTEX_PLACEHOLDER ph;
     RT_MUTEX *mutex;
+    RTIME timeout;
 
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ph)))
 	return -EFAULT;
 
     __xn_copy_from_user(curr,&ph,(void __user *)__xn_reg_arg1(regs),sizeof(ph));
+    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg2(regs),sizeof(timeout));
 
     mutex = (RT_MUTEX *)rt_registry_fetch(ph.opaque);
 
     if (!mutex)
 	return -ESRCH;
 
-    return rt_mutex_lock(mutex);
+    return rt_mutex_lock(mutex,timeout);
 }
 
 /*

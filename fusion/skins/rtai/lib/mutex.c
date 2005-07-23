@@ -47,12 +47,13 @@ int rt_mutex_delete (RT_MUTEX *mutex)
 			     mutex);
 }
 
-int rt_mutex_lock (RT_MUTEX *mutex)
-
+int rt_mutex_lock (RT_MUTEX *mutex,
+		   RTIME timeout)
 {
-    return XENOMAI_SKINCALL1(__rtai_muxid,
+    return XENOMAI_SKINCALL2(__rtai_muxid,
 			     __rtai_mutex_lock,
-			     mutex);
+			     mutex,
+			     &timeout);
 }
 
 int rt_mutex_unlock (RT_MUTEX *mutex)

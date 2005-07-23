@@ -53,7 +53,7 @@ ___________________________________________________________________
 	kernel-space API, so that a specific acknowledge routine for
 	the interrupt can be installed.
 
-        o Fix rt_timer_ns2ticks and rt_timer_ticks2ns behaviour, 
+        o Fixed rt_timer_ns2ticks and rt_timer_ticks2ns behaviour,
         so that calling rt_task_sleep(rt_timer_ns2ticks(2000000000))
         will sleep two seconds whatever the timer mode is.
 
@@ -61,3 +61,9 @@ ___________________________________________________________________
         between nanoseconds and values returned by rt_timer_tsc.
 
 ___________________________________________________________________
+
+0.8.3 -> 0.9
+
+	o Added a timeout parameter to rt_mutex_lock(). Calling
+	rt_mutex_lock(mutex,TM_INFINITE) is equivalent to the former
+	single-parameter syntax.

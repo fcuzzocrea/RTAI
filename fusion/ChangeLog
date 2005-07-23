@@ -1,3 +1,7 @@
+2005-07-23  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/mutex.c (rt_mutex_lock): Add timeout parameter.
+
 2005-07-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_harden): Export.
@@ -579,7 +583,7 @@
 
  	* RELEASE: fusion-0.7.3 (Mind Storm)
 
-2005-05-06 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+2005-05-06  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* include/nucleus/queue.h, nucleus/pod.c: Add optional scalable
 	scheduler support for large multi-threaded systems involving a lot
@@ -791,7 +795,7 @@
 	* skins/rtai/mutex.c (rt_mutex_unlock): Make sure -EPERM is
 	returned when applicable and fix the documentation.
 
-2005-04-09 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+2005-04-09  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* skins/rtai/syscalls.c (__rt_mutex_unlock): Force primary mode
 	switch so that a RT task currently running in secondary mode that
@@ -1111,7 +1115,7 @@
 
 	* arch/i386/patches: Upgrade to Adeos 2.6.9,10-i386-r9c5.
 	
-2005-02-24 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+2005-02-24  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* skin/rtai: Make C++ friendly.
 
@@ -1166,7 +1170,7 @@
 	provide more debugging info to chase spurious latencies induced by
 	fault recovery.
 
-2005-02-24 Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+2005-02-24  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 
 	* nucleus/timer.c (xntimer_set_sched): Remove superfluous check
 	for timer remoteness.
@@ -1353,7 +1357,7 @@
 	* nucleus/shadow.c (linux_renice_process): Optimize priority
 	tracking between Linux and RTAI.
 
-2005-02-10  Philippe Gerum  <rpm@localhost>
+2005-02-10  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/pod.c, nucleus/sync.c, nucleus/shadow.c: Rework the way
 	Linux priorities are updated on-the-fly when the nucleus changes
@@ -1762,7 +1766,7 @@
 	* nucleus/shadow.c (linux_schedule_head): Fix a subtle
 	rescheduling hole after downgrading the root thread priority.
 
-2004-12-29  Philippe Gerum  <rpm@localhost>
+2004-12-29  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/fusion.c: Add missing checks for XNBREAK and return
 	-EINTR appropriately.
@@ -1805,13 +1809,13 @@
 	* nucleus/shadow.c (xnshadow_substitute_syscall): Fix
 	__NR_getitimer.
 
-2004-12-27  Philippe Gerum  <rpm@localhost>
+2004-12-27  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_substitute_syscall): Discard useless
 	migration flag; in any case, we know that we should migrate
 	each time xnpod_shadow_p() is false.
 
-2004-12-25  Philippe Gerum  <rpm@localhost>
+2004-12-25  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/fusion.c (__pthread_start_timer_rt): Fix return code.
 

@@ -266,7 +266,7 @@ int rt_mutex_delete (RT_MUTEX *mutex)
 }
 
 /**
- * @fn int rt_mutex_lock(RT_MUTEX *mutex)
+ * @fn int rt_mutex_lock(RT_MUTEX *mutex, RTIME timeout)
  *
  * @brief Acquire a mutex.
  *
@@ -283,6 +283,13 @@ int rt_mutex_delete (RT_MUTEX *mutex)
  *
  * @param mutex The descriptor address of the mutex to acquire.
  *
+ * @param timeout The number of clock ticks to wait for the mutex to
+ * be available to the calling task (see note). Passing TM_INFINITE
+ * causes the caller to block indefinitely until the mutex is
+ * available. Passing TM_NONBLOCK causes the service to return
+ * immediately without waiting if the mutex is still locked by another
+ * task.
+ *
  * @return 0 is returned upon success. Otherwise:
  *
  * - -EINVAL is returned if @a mutex is not a mutex descriptor.
@@ -291,12 +298,18 @@ int rt_mutex_delete (RT_MUTEX *mutex)
  * including if the deletion occurred while the caller was sleeping on
  * it.
  *
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and the mutex is not immediately available.
+ *
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the mutex has become available.
  *
+ * - -ETIMEDOUT is returned if the mutex cannot be made available to
+ * the calling task within the specified amount of time.
+ *
  * - -EPERM is returned if this service was called from a context
- * which cannot sleep (e.g. interrupt, non-realtime or scheduler
- * locked).
+ * which cannot be given the ownership of the mutex (e.g. interrupt,
+ * non-realtime or scheduler locked).
  *
  * Environments:
  *
@@ -305,14 +318,19 @@ int rt_mutex_delete (RT_MUTEX *mutex)
  * - Kernel-based task
  * - User-space task (switches to primary mode)
  *
- * Rescheduling: always unless the request is immediately satisfied.
- * If the caller is blocked, the current owner's priority might be
- * temporarily raised as a consequence of the priority inheritance
- * protocol.
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.  If the caller is
+ * blocked, the current owner's priority might be temporarily raised
+ * as a consequence of the priority inheritance protocol.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
-int rt_mutex_lock (RT_MUTEX *mutex)
-
+int rt_mutex_lock (RT_MUTEX *mutex,
+		   RTIME timeout)
 {
     RT_TASK *task;
     int err = 0;
@@ -347,10 +365,18 @@ int rt_mutex_lock (RT_MUTEX *mutex)
 	goto unlock_and_exit;
 	}
 
-    xnsynch_sleep_on(&mutex->synch_base,XN_INFINITE);
+    if (timeout == TM_NONBLOCK)
+	{
+	err = -EWOULDBLOCK;
+	goto unlock_and_exit;
+	}
+
+    xnsynch_sleep_on(&mutex->synch_base,timeout);
         
     if (xnthread_test_flags(&task->thread_base,XNRMID))
 	err = -EIDRM; /* Mutex deleted while pending. */
+    else if (xnthread_test_flags(&task->thread_base,XNTIMEO))
+	err = -ETIMEDOUT; /* Timeout.*/
     else if (xnthread_test_flags(&task->thread_base,XNBREAK))
 	err = -EINTR; /* Unblocked.*/
 

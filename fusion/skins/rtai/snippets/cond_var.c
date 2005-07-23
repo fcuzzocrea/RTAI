@@ -21,7 +21,7 @@ void foo (void)
 
     /* Now, wait for some task to post the shared event... */
 
-    rt_mutex_lock(&mutex_desc);
+    rt_mutex_lock(&mutex_desc,TM_INFINITE);
 
     while (!shared_event && !err)
 	err = rt_cond_wait(&cond_desc,&mutex_desc,TM_INFINITE);
@@ -38,7 +38,7 @@ void bar (void)
 
     /* Post the shared event. */
 
-    rt_mutex_lock(&mutex_desc);
+    rt_mutex_lock(&mutex_desc,TM_INFINITE);
 
     shared_event = 1;
     rt_cond_signal(&cond_desc);

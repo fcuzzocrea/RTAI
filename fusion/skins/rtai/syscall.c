@@ -1007,6 +1007,22 @@ static int __rt_timer_inquire (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
+/*
+ * int __rt_timer_spin(RTIME *nsp)
+ */
+
+static int __rt_timer_spin (struct task_struct *curr, struct pt_regs *regs)
+
+{
+    RTIME ns;
+
+    __xn_copy_from_user(curr,&ns,(void __user *)__xn_reg_arg1(regs),sizeof(ns));
+
+    rt_timer_spin(ns);
+
+    return 0;
+}
+
 #ifdef CONFIG_RTAI_OPT_NATIVE_SEM
 
 /*
@@ -3458,6 +3474,7 @@ static xnsysent_t __systab[] = {
     [__rtai_timer_ns2ticks ] = { &__rt_timer_ns2ticks, __xn_exec_any },
     [__rtai_timer_ticks2ns ] = { &__rt_timer_ticks2ns, __xn_exec_any },
     [__rtai_timer_inquire ] = { &__rt_timer_inquire, __xn_exec_any },
+    [__rtai_timer_spin ] = { &__rt_timer_spin, __xn_exec_any },
     [__rtai_sem_create ] = { &__rt_sem_create, __xn_exec_any },
     [__rtai_sem_bind ] = { &__rt_sem_bind, __xn_exec_primary },
     [__rtai_sem_delete ] = { &__rt_sem_delete, __xn_exec_any },

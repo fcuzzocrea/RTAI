@@ -118,3 +118,11 @@ int rt_timer_inquire (RT_TIMER_INFO *info)
 			     __rtai_timer_inquire,
 			     info);
 }
+
+void rt_timer_spin (RTIME ns)
+
+{
+    XENOMAI_SKINCALL1(__rtai_muxid,
+		      __rtai_timer_spin,
+		      &ns);
+}

@@ -1,5 +1,7 @@
 2005-07-23  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/lib/timer.c (rt_timer_spin): Add.
+
 	* skins/rtai: Add timeout parameter to all rt_*_bind() services.
 
 	* skins/rtai/mutex.c (rt_mutex_lock): Add timeout parameter.

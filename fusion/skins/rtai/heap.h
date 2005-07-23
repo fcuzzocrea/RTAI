@@ -103,7 +103,8 @@ extern "C" {
 #endif
 
 int rt_heap_bind(RT_HEAP *heap,
-		 const char *name);
+		 const char *name,
+		 RTIME timeout);
 
 int rt_heap_unbind(RT_HEAP *heap);
 

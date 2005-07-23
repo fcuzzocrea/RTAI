@@ -20,7 +20,7 @@ int main (int argc, char *argv[])
        created with the H_SHARED mode set, which is implicit when
        creation takes place in user-space. */
 
-    err = rt_heap_bind(&heap_desc,"SomeShmName");
+    err = rt_heap_bind(&heap_desc,"SomeShmName",TM_NONBLOCK);
 
     if (err)
 	fail();

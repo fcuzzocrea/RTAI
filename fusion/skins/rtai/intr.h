@@ -118,7 +118,8 @@ extern "C" {
 #endif
 
 int rt_intr_bind(RT_INTR *intr,
-		 unsigned irq);
+		 unsigned irq,
+		 RTIME timeout);
 
 static inline int rt_intr_unbind (RT_INTR *intr)
 

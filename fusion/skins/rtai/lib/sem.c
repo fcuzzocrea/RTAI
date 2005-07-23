@@ -35,12 +35,14 @@ int rt_sem_create (RT_SEM *sem,
 }
 
 int rt_sem_bind (RT_SEM *sem,
-		 const char *name)
+		 const char *name,
+		 RTIME timeout)
 {
-    return XENOMAI_SKINCALL2(__rtai_muxid,
+    return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_sem_bind,
 			     sem,
-			     name);
+			     name,
+			     &timeout);
 }
 
 int rt_sem_delete (RT_SEM *sem)

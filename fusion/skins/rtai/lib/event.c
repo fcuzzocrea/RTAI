@@ -35,12 +35,14 @@ int rt_event_create (RT_EVENT *event,
 }
 
 int rt_event_bind (RT_EVENT *event,
-		   const char *name)
+		   const char *name,
+		   RTIME timeout)
 {
-    return XENOMAI_SKINCALL2(__rtai_muxid,
+    return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_event_bind,
 			     event,
-			     name);
+			     name,
+			     &timeout);
 }
 
 int rt_event_delete (RT_EVENT *event)

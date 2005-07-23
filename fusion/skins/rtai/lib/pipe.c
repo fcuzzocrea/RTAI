@@ -33,12 +33,14 @@ int rt_pipe_create (RT_PIPE *pipe,
 }
 
 int rt_pipe_bind (RT_PIPE *pipe,
-		  const char *name)
+		  const char *name,
+		  RTIME timeout)
 {
-    return XENOMAI_SKINCALL2(__rtai_muxid,
+    return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_pipe_bind,
 			     pipe,
-			     name);
+			     name,
+			     &timeout);
 }
 
 int rt_pipe_delete (RT_PIPE *pipe)

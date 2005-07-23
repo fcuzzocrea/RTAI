@@ -89,7 +89,8 @@ extern "C" {
 #endif
 
 int rt_sem_bind(RT_SEM *sem,
-		const char *name);
+		const char *name,
+		RTIME timeout);
 
 static inline int rt_sem_unbind (RT_SEM *sem)
 

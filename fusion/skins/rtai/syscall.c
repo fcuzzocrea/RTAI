@@ -69,8 +69,8 @@ static int __rt_bind_helper (struct task_struct *curr,
 
     __xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
     name[sizeof(name) - 1] = '\0';
+    __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg3(regs),sizeof(timeout));
 
-    timeout = xnpod_unblockable_p() ? TM_NONBLOCK : TM_INFINITE;
     err = rt_registry_bind(name,timeout,&ph.opaque);
 
     if (!err)
@@ -204,7 +204,8 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_task_bind(RT_TASK_PLACEHOLDER *ph,
- *                    const char *name)
+ *                    const char *name,
+ *                    RTIME *timeoutp)
  */
 
 static int __rt_task_bind (struct task_struct *curr, struct pt_regs *regs)
@@ -1065,7 +1066,8 @@ static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_sem_bind(RT_SEM_PLACEHOLDER *ph,
- *                   const char *name)
+ *                   const char *name,
+ *                   RTIME *timeoutp)
  */
 
 static int __rt_sem_bind (struct task_struct *curr, struct pt_regs *regs)
@@ -1281,7 +1283,8 @@ static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_event_bind(RT_EVENT_PLACEHOLDER *ph,
- *                     const char *name)
+ *                     const char *name,
+ *                     RTIME *timeoutp)
  */
 
 static int __rt_event_bind (struct task_struct *curr, struct pt_regs *regs)
@@ -1520,7 +1523,8 @@ static int __rt_mutex_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_mutex_bind(RT_MUTEX_PLACEHOLDER *ph,
- *                     const char *name)
+ *                     const char *name,
+ *                     RTIME *timeoutp)
  */
 
 static int __rt_mutex_bind (struct task_struct *curr, struct pt_regs *regs)
@@ -1704,7 +1708,8 @@ static int __rt_cond_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_cond_bind(RT_COND_PLACEHOLDER *ph,
- *                   const char *name)
+ *                    const char *name,
+ *                    RTIME *timeoutp)
  */
 
 static int __rt_cond_bind (struct task_struct *curr, struct pt_regs *regs)
@@ -1940,7 +1945,8 @@ static int __rt_queue_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_queue_bind(RT_QUEUE_PLACEHOLDER *ph,
- *                     const char *name)
+ *                     const char *name,
+ *                     RTIME *timeoutp)
  */
 
 static int __rt_queue_bind (struct task_struct *curr, struct pt_regs *regs)
@@ -2366,7 +2372,8 @@ static int __rt_heap_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_heap_bind(RT_HEAP_PLACEHOLDER *ph,
- *                    const char *name)
+ *                    const char *name,
+ *                    RTIME *timeoutp)
  */
 
 static int __rt_heap_bind (struct task_struct *curr, struct pt_regs *regs)
@@ -2905,7 +2912,8 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_intr_bind(RT_INTR_PLACEHOLDER *ph,
- *                    const char *name)
+ *                    const char *name,
+ *                    RTIME *timeoutp)
  */
 
 static int __rt_intr_bind (struct task_struct *curr, struct pt_regs *regs)
@@ -3156,7 +3164,8 @@ static int __rt_pipe_create (struct task_struct *curr, struct pt_regs *regs)
 
 /*
  * int __rt_pipe_bind(RT_PIPE_PLACEHOLDER *ph,
- *                    const char *name)
+ *                    const char *name,
+ *                    RTIME *timeoutp)
  */
 
 static int __rt_pipe_bind (struct task_struct *curr, struct pt_regs *regs)

@@ -31,12 +31,14 @@ int rt_mutex_create (RT_MUTEX *mutex,
 }
 
 int rt_mutex_bind (RT_MUTEX *mutex,
-		   const char *name)
+		   const char *name,
+		   RTIME timeout)
 {
-    return XENOMAI_SKINCALL2(__rtai_muxid,
+    return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_mutex_bind,
 			     mutex,
-			     name);
+			     name,
+			     &timeout);
 }
 
 int rt_mutex_delete (RT_MUTEX *mutex)

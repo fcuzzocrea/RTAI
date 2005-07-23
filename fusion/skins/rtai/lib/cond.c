@@ -32,12 +32,14 @@ int rt_cond_create (RT_COND *cond,
 }
 
 int rt_cond_bind (RT_COND *cond,
-		  const char *name)
+		  const char *name,
+		  RTIME timeout)
 {
-    return XENOMAI_SKINCALL2(__rtai_muxid,
+    return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_cond_bind,
 			     cond,
-			     name);
+			     name,
+			     &timeout);
 }
 
 int rt_cond_delete (RT_COND *cond)

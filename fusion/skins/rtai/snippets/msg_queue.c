@@ -24,7 +24,7 @@ void consumer (void *cookie)
        created with the Q_SHARED mode set, which is implicit when
        creation takes place in user-space. */
 
-    err = rt_queue_bind(&q_desc,"SomeQueueName");
+    err = rt_queue_bind(&q_desc,"SomeQueueName",TM_INFINITE);
 
     if (err)
 	fail();

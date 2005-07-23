@@ -86,7 +86,8 @@ extern "C" {
 #endif
 
 int rt_mutex_bind(RT_MUTEX *mutex,
-		  const char *name);
+		  const char *name,
+		  RTIME timeout);
 
 static inline int rt_mutex_unbind (RT_MUTEX *mutex)
 

@@ -67,3 +67,7 @@ ___________________________________________________________________
 	o Added a timeout parameter to rt_mutex_lock(). Calling
 	rt_mutex_lock(mutex,TM_INFINITE) is equivalent to the former
 	single-parameter syntax.
+
+	o Added a timeout parameter to all rt_*_bind()
+	services. Calling rt_*_bind(descp,name,TM_INFINITE) is equivalent
+	to the former syntax.

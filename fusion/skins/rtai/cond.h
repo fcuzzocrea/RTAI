@@ -78,7 +78,8 @@ extern "C" {
 #endif
 
 int rt_cond_bind(RT_COND *cond,
-		 const char *name);
+		 const char *name,
+		 RTIME timeout);
 
 static inline int rt_cond_unbind (RT_COND *cond)
 

@@ -560,7 +560,7 @@ int rt_sem_inquire (RT_SEM *sem,
 }
 
 /**
- * @fn int rt_sem_bind(RT_SEM *sem,const char *name)
+ * @fn int rt_sem_bind(RT_SEM *sem,const char *name,RTIME timeout)
  * @brief Bind to a semaphore.
  *
  * This user-space only service retrieves the uniform descriptor of a
@@ -574,6 +574,13 @@ int rt_sem_inquire (RT_SEM *sem,
  * @param sem The address of a semaphore descriptor retrieved by the
  * operation. Contents of this memory is undefined upon failure.
  *
+ * @param timeout The number of clock ticks to wait for the
+ * registration to occur (see note). Passing TM_INFINITE causes the
+ * caller to block indefinitely until the object is
+ * registered. Passing TM_NONBLOCK causes the service to return
+ * immediately without waiting if the object is not registered on
+ * entry.
+ *
  * @return 0 is returned upon success. Otherwise:
  *
  * - -EFAULT is returned if @a sem or @a name is referencing invalid
@@ -582,13 +589,29 @@ int rt_sem_inquire (RT_SEM *sem,
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the retrieval has completed.
  *
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and the searched object is not registered on entry.
+ *
+ * - -ETIMEDOUT is returned if the object cannot be retrieved within
+ * the specified amount of time.
+ *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
  * Environments:
  *
  * This service can be called from:
  *
  * - User-space task (switches to primary mode)
  *
- * Rescheduling: always unless the request is immediately satisfied.
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 /**

@@ -95,15 +95,17 @@ int rt_heap_create (RT_HEAP *heap,
 }
 
 int rt_heap_bind (RT_HEAP *heap,
-		  const char *name)
+		  const char *name,
+		  RTIME timeout)
 {
     RT_HEAP_PLACEHOLDER ph;
     int err;
 
-    err = XENOMAI_SKINCALL2(__rtai_muxid,
+    err = XENOMAI_SKINCALL3(__rtai_muxid,
 			    __rtai_heap_bind,
 			    &ph,
-			    name);
+			    name,
+			    &timeout);
 
     return err ?: __map_heap_memory(heap,&ph);
 }

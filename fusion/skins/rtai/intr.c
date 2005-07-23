@@ -536,13 +536,15 @@ int rt_intr_inquire (RT_INTR *intr,
  */
 
 /**
- * @fn int rt_intr_bind(RT_INTR *intr,unsigned irq)
+ * @fn int rt_intr_bind(RT_INTR *intr,unsigned irq,RTIME timeout)
  * @brief Bind to an interrupt object.
  *
  * This user-space only service retrieves the uniform descriptor of a
  * given RTAI interrupt object identified by its IRQ number. If the
  * object does not exist on entry, this service blocks the caller
- * until an interrupt object of the given number is created.
+ * until an interrupt object of the given number is created. An
+ * interrupt is registered whenever a kernel-space task invokes the
+ * rt_intr_create() service successfully for the given IRQ line.
  *
  * @param irq The hardware interrupt channel associated with the
  * interrupt object to search for. This value is
@@ -551,6 +553,13 @@ int rt_intr_inquire (RT_INTR *intr,
  * @param intr The address of an interrupt object descriptor retrieved
  * by the operation. Contents of this memory is undefined upon
  * failure.
+ *
+ * @param timeout The number of clock ticks to wait for the
+ * registration to occur (see note). Passing TM_INFINITE causes the
+ * caller to block indefinitely until the object is
+ * registered. Passing TM_NONBLOCK causes the service to return
+ * immediately without waiting if the object is not registered on
+ * entry.
  *
  * @return 0 is returned upon success. Otherwise:
  *
@@ -561,13 +570,29 @@ int rt_intr_inquire (RT_INTR *intr,
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the retrieval has completed.
  *
+ * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
+ * and the searched object is not registered on entry.
+ *
+ * - -ETIMEDOUT is returned if the object cannot be retrieved within
+ * the specified amount of time.
+ *
+ * - -EPERM is returned if this service should block, but was called
+ * from a context which cannot sleep (e.g. interrupt, non-realtime or
+ * scheduler locked).
+ *
  * Environments:
  *
  * This service can be called from:
  *
  * - User-space task (switches to primary mode)
  *
- * Rescheduling: always unless the request is immediately satisfied.
+ * Rescheduling: always unless the request is immediately satisfied or
+ * @a timeout specifies a non-blocking operation.
+ *
+ * @note This service is sensitive to the current operation mode of
+ * the system timer, as defined by the rt_timer_start() service. In
+ * periodic mode, clock ticks are interpreted as periodic jiffies. In
+ * oneshot mode, clock ticks are interpreted as nanoseconds.
  */
 
 /**

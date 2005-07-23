@@ -35,16 +35,18 @@ int rt_intr_create (RT_INTR *intr,
 }
 
 int rt_intr_bind (RT_INTR *intr,
-		  unsigned irq)
+		  unsigned irq,
+		  RTIME timeout)
 {
     char name[XNOBJECT_NAME_LEN];
 
     snprintf(name,sizeof(name),"interrupt/%u",irq);
 
-    return XENOMAI_SKINCALL2(__rtai_muxid,
+    return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_intr_bind,
 			     intr,
-			     name);
+			     name,
+			     &timeout);
 }
 
 int rt_intr_delete (RT_INTR *intr)

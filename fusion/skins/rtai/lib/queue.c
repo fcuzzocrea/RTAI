@@ -97,15 +97,17 @@ int rt_queue_create (RT_QUEUE *q,
 }
 
 int rt_queue_bind (RT_QUEUE *q,
-		   const char *name)
+		   const char *name,
+		   RTIME timeout)
 {
     RT_QUEUE_PLACEHOLDER ph;
     int err;
 
-    err = XENOMAI_SKINCALL2(__rtai_muxid,
+    err = XENOMAI_SKINCALL3(__rtai_muxid,
 			    __rtai_queue_bind,
 			    &ph,
-			    name);
+			    name,
+			    &timeout);
 
     return err ?: __map_queue_memory(q,&ph);
 }

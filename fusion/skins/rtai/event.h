@@ -90,7 +90,8 @@ extern "C" {
 #endif
 
 int rt_event_bind(RT_EVENT *event,
-		  const char *name);
+		  const char *name,
+		  RTIME timeout);
 
 static inline int rt_event_unbind (RT_EVENT *event)
 

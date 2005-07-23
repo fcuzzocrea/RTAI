@@ -122,7 +122,8 @@ void __pipe_pkg_cleanup(void);
 #else /* !__KERNEL__ */
 
 int rt_pipe_bind(RT_PIPE *pipe,
-		 const char *name);
+		 const char *name,
+		 RTIME timeout);
 
 static inline int rt_pipe_unbind (RT_PIPE *pipe)
 

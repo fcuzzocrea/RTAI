@@ -199,7 +199,8 @@ int rt_task_shadow(RT_TASK *task,
 		   int mode);
 
 int rt_task_bind(RT_TASK *task,
-		 const char *name);
+		 const char *name,
+		 RTIME timeout);
 
 static inline int rt_task_unbind (RT_TASK *task)
 

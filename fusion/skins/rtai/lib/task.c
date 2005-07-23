@@ -168,12 +168,14 @@ int rt_task_shadow (RT_TASK *task,
 }
 
 int rt_task_bind (RT_TASK *task,
-		  const char *name)
+		  const char *name,
+		  RTIME timeout)
 {
-    return XENOMAI_SKINCALL2(__rtai_muxid,
+    return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_task_bind,
 			     task,
-			     name);
+			     name,
+			     &timeout);
 }
 
 int rt_task_suspend (RT_TASK *task)

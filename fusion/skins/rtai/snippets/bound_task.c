@@ -15,7 +15,7 @@ int main (int argc, char *argv[])
        kernel or user-space. The call will block us until such task is
        created with the expected name.  */
 
-    err = rt_task_bind(&task_desc,"SomeTaskName");
+    err = rt_task_bind(&task_desc,"SomeTaskName",TM_NONBLOCK);
 
     if (!err)
 	/* Send signals to the bound task */

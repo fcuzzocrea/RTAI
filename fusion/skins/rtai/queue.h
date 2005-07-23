@@ -129,7 +129,8 @@ extern "C" {
 #endif
 
 int rt_queue_bind(RT_QUEUE *q,
-		  const char *name);
+		  const char *name,
+		  RTIME timeout);
 
 int rt_queue_unbind(RT_QUEUE *q);
 

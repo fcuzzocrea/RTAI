@@ -2127,18 +2127,16 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 	if (in_hrt_mode(cpuid = rtai_cpuid())) {
 		RT_TASK *task = rt_smp_current[cpuid];
 		if (task->is_hard == 1) {
-
 			if (task->linux_syscall_server) {
 #if 1
-				rt_exec_linux_syscall(task, (void *)task->linux_syscall_server, r);
+				task->linux_syscall_server = rt_exec_linux_syscall(task, (void *)task->linux_syscall_server, r);
 #else
-				((void (*)(RT_TASK *, void *, void *, int, int))rt_fun_lxrt[RPCX].fun)(task->linux_syscall_server, r, &r->LINUX_SYSCALL_RETREG, sizeof(struct pt_regs), sizeof(long));
+				if (((RT_TASK *(*)(RT_TASK *, void *, void *, int, int))rt_fun_lxrt[RPCX].fun)(task->linux_syscall_server, r, &r->LINUX_SYSCALL_RETREG, sizeof(struct pt_regs), sizeof(long)) != task->linux_syscall_server) {
+					task->linux_syscall_server = NULL;
+				}
 #endif
 				return 1;
 			}
-
-#ifdef ECHO_SYSW
-#endif
 			if (!systrans++) {
 				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->LINUX_SYSCALL_NR);
 			}

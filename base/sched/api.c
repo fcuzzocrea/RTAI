@@ -1824,7 +1824,7 @@ int rt_release_irq_task (unsigned irq)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
-void rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs)
+RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs)
 {
 	unsigned long flags;
 
@@ -1846,14 +1846,12 @@ void rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs)
 	rem_ready_current(rt_current);
 	rt_current->msg_queue.task = task;
 	rt_schedule();
-	if (rt_current->msg_queue.task != rt_current) {
-		rt_current->msg_queue.task = rt_current;
-	}
 	rt_global_restore_flags(flags);
+	return rt_current->msg_queue.task != rt_current ? NULL : task;
 }
 
 #include <asm/uaccess.h>
-void rt_receive_linux_syscall(RT_TASK *task, void *regs)
+RT_TASK *rt_receive_linux_syscall(RT_TASK *task, void *regs)
 {
 	unsigned long flags;
 	RT_TASK *rt_current;
@@ -1876,11 +1874,9 @@ void rt_receive_linux_syscall(RT_TASK *task, void *regs)
 //		copy_to_user(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
 		memcpy(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
 	}
-	if (rt_current->ret_queue.task) {
-		rt_current->ret_queue.task = NOTHING;
-	}
 	rt_current->msg_queue.task = rt_current;
 	rt_global_restore_flags(flags);
+	return rt_current->ret_queue.task ? NULL : task;
 }
 
 void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)

@@ -538,7 +538,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 
 		case LINUX_SERVER_INIT: {
 			arg0.rt_task->linux_syscall_server = __task_init((unsigned long)arg0.rt_task, arg0.rt_task->base_priority >= BASE_SOFT_PRIORITY ? arg0.rt_task->base_priority - BASE_SOFT_PRIORITY : arg0.rt_task->base_priority, 0, 0, 1 << arg0.rt_task->runnable_on_cpus);
-			return 0;
+			rt_task_resume(arg0.rt_task);
+			return (long)arg0.rt_task->linux_syscall_server;
 		}
 
 	        default: {

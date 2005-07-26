@@ -810,6 +810,7 @@ int _rtai_sched_on_ipi_handler(void)
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	if (!test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 		rtai_sti();
 		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
@@ -821,6 +822,7 @@ int _rtai_sched_on_ipi_handler(void)
 #endif
 		return 1;
         }
+#endif
 	return 0;
 }
 
@@ -880,6 +882,7 @@ int _rtai_apic_timer_handler(void)
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	if (!test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 		rtai_sti();
 		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
@@ -891,6 +894,7 @@ int _rtai_apic_timer_handler(void)
 #endif
 		return 1;
         }
+#endif
 	return 0;
 }
 

@@ -2,6 +2,8 @@
 
 	* include/rtai_lxrt.h: LXRT enc/decoding restructured to make room 
 	  for something else.
+	* base/sched/sys.c: made possible to mix different user space calls, 
+	  i.e.: both RTAI specific an Linux syscalls.
 
 2005-07-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

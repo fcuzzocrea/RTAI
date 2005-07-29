@@ -1033,6 +1033,7 @@ int clr_rtext(RT_TASK *task)
 		task->magic = 0;
 		rem_ready_task(task);
 		task->state = 0;
+		task->retval = 0;
 		atomic_dec((void *)(tasks_per_cpu + task->runnable_on_cpus));
 		if (task == rt_current) {
 			rt_schedule();

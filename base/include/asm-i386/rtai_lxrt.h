@@ -25,9 +25,9 @@
 
 #include <asm/rtai_vectors.h>
 
-#define USE_LINUX_SYSCALL
+//#define USE_LINUX_SYSCALL
 
-#define RTAI_SYSCALL_NR      0x7FFFFFFF
+#define RTAI_SYSCALL_NR      0x70000000
 #define RTAI_SYSCALL_CODE    ebx
 #define RTAI_SYSCALL_ARGS    ecx
 #define RTAI_SYSCALL_RETPNT  edx

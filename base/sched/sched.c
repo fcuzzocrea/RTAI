@@ -2110,7 +2110,7 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
 #if 1 //def USE_LINUX_SYSCALL
-	if (unlikely(r->LINUX_SYSCALL_NR == RTAI_SYSCALL_NR)) {
+	if (unlikely(r->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
 		long long retval = rtai_lxrt_invoke(r->RTAI_SYSCALL_CODE, (void *)r->RTAI_SYSCALL_ARGS, r);
 		SET_LXRT_RETVAL_IN_SYSCALL(retval);
 		if (!in_hrt_mode(rtai_cpuid())) {

@@ -18,25 +18,58 @@
  * along with RTAI/fusion; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * @warning
- *    This is a PRELIMINARY version of the common interface every
- *    RTDM-compliant serial device has to provide. This revision may still
- *    change until the final version. E.g., all definitions need to be
- *    reviewed if they do not contain too much 16550A-specifics or if
- *    significant features are missing.
- *
- * @b Fixme:
- *  - device name
- *  - supported operations
- *  - specific function return codes (if any)
- *  - other rtdm_device content
- *
  * @ingroup rtserial
  */
 
 /*!
  * @ingroup profiles
  * @defgroup rtserial Serial Devices
+ *
+ * This is a @b preliminary version of the common interface a RTDM-compliant
+ * serial device has to provide. This revision may still change until the
+ * final version. E.g., all definitions need to be reviewed if they do not
+ * contain too much 16550A-specifics or if significant features are missing.
+ * Feel free to comment on this profile via the RTAI mailing list
+ * (rtai@rtai.org) or directly to the author (jan.kiszka@web.de). @n
+ * @n
+ *
+ * @par Device Characteristics
+ * @ref rtdm_device.device_flags "Device Flags": @c RTDM_NAMED_DEVICE, @c RTDM_EXCLUSIVE @n
+ * @n
+ * @ref rtdm_device.device_name "Device Name": @c "rtser<N>", N >= 0 @n
+ * @n
+ * @ref rtdm_device.device_class "Device Class": @c RTDM_CLASS_SERIAL @n
+ * @n
+ *
+ * @par Supported Operations
+ * @b Open @n
+ * Environments: non-RT (RT optional)@n
+ * Specific return values: none @n
+ * @n
+ * @b Close @n
+ * Environments: non-RT (RT optional)@n
+ * Specific return values: none @n
+ * @n
+ * @b IOCTL @n
+ * Mandatory Environments: see @ref IOCTLs "below" @n
+ * Specific return values: see @ref IOCTLs "below" @n
+ * @n
+ * @b Read @n
+ * Environments: RT (non-RT optional)@n
+ * Specific return values:
+ * - -ETIMEDOUT
+ * - -EINTR (interrupted explicitly or by signal)
+ * - -EAGAIN (no data available in non-blocking mode)
+ * - -EBADF (device has been closed while reading)
+ * .
+ * @n
+ * @b Write @n
+ * Environments: RT (non-RT optional)@n
+ * Specific return values:
+ * - -ETIMEDOUT
+ * - -EINTR (interrupted explicitly or by signal)
+ * - -EAGAIN (no data written in non-blocking mode)
+ * - -EBADF (device has been closed while writing)
  *
  * @{
  */
@@ -284,7 +317,7 @@ typedef struct rtser_event {
 
 
 /*!
- * @name IOCTLs
+ * @anchor IOCTLs @name IOCTLs
  * Serial device IOCTLs
  * @{ */
 

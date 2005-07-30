@@ -107,7 +107,7 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
 /**
  * @brief Destroy a real-time task
  *
- * @param[in,out] task Task handle
+ * @param[in,out] task Task handle as returned by rtdm_task_init()
  *
  * Environments:
  *
@@ -124,7 +124,7 @@ void rtdm_task_destroy(rtdm_task_t *task);
 /**
  * @brief Adjust real-time task priority
  *
- * @param[in,out] task Task handle
+ * @param[in,out] task Task handle as returned by rtdm_task_init()
  * @param[in] priority New priority of the task, see also
  * @ref taskprio "Task Priority Range"
  *
@@ -144,7 +144,7 @@ void rtdm_task_set_priority(rtdm_task_t *task, int priority);
 /**
  * @brief Adjust real-time task period
  *
- * @param[in,out] task Task handle
+ * @param[in,out] task Task handle as returned by rtdm_task_init()
  * @param[in] period New period in nanosecons of a cyclic task, 0 for
  * non-cyclic mode
  *
@@ -205,8 +205,8 @@ int rtdm_task_unblock(rtdm_task_t *task);
 /**
  * @brief Wait on a real-time task to terminate
  *
- * @param task Task handle
- * @param poll_delay Polling delay in milliseconds
+ * @param[in,out] task Task handle as returned by rtdm_task_init()
+ * @param[in] poll_delay Polling delay in milliseconds
  *
  * Environments:
  *
@@ -239,7 +239,7 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 /**
  * @brief Sleep a specified amount of time
  *
- * @param delay Delay in nanoseconds
+ * @param[in] delay Delay in nanoseconds
  *
  * @return 0 on success, otherwise:
  *
@@ -269,7 +269,7 @@ int rtdm_task_sleep(__u64 delay)
 /**
  * @brief Sleep until a specified absolute time
  *
- * @param wakeup_time Absolute timeout in nanoseconds
+ * @param[in] wakeup_time Absolute timeout in nanoseconds
  *
  * @return 0 on success, otherwise:
  *
@@ -313,7 +313,7 @@ int rtdm_task_sleep_until(__u64 wakeup_time)
 /**
  * @brief Busy-wait a specified amount of time
  *
- * @param delay Delay in nanoseconds
+ * @param[in] delay Delay in nanoseconds
  *
  * Environments:
  *
@@ -385,7 +385,7 @@ void rtdm_event_init(rtdm_event_t *event, unsigned long pending);
 /**
  * @brief Destroy an event
  *
- * @param[in,out] event Event handle
+ * @param[in,out] event Event handle as returned by rtdm_event_init()
  *
  * Environments:
  *
@@ -406,7 +406,7 @@ void rtdm_event_destroy(rtdm_event_t *event);
  * not change the event state. Subsequently callers of rtdm_event_wait() or
  * rtdm_event_wait_until() will therefore be blocked first.
  *
- * @param[in,out] event Event handle
+ * @param[in,out] event Event handle as returned by rtdm_event_init()
  *
  * Environments:
  *
@@ -430,7 +430,7 @@ void rtdm_event_pulse(rtdm_event_t *event);
  * waiter is presently registered, the next call to rtdm_event_wait() or
  * rtdm_event_wait_until() will return immediately.
  *
- * @param[in,out] event Event handle
+ * @param[in,out] event Event handle as returned by rtdm_event_init()
  *
  * Environments:
  *
@@ -464,14 +464,14 @@ void rtdm_event_signal(rtdm_event_t *event)
  * This function waits or tests for the occurence of the given event. On
  * successful return, the event is reset.
  *
- * @param[in,out] event Event handle
+ * @param[in,out] event Event handle as returned by rtdm_event_init()
  * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
  * negative value for non-blocking (test for event occurrence)
  *
  * @return 0 on success, otherwise:
  *
- * - -ETIMEDOUT is return if the if the request has not been satisfied within
- * the specified amount of time.
+ * - -ETIMEDOUT is returned if the if the request has not been satisfied
+ * within the specified amount of time.
  *
  * - -EWOULDBLOCK is returned if @a timeout is negative and the event is
  * currently not set.
@@ -530,12 +530,12 @@ int rtdm_event_wait(rtdm_event_t *event, __s64 timeout)
  * This function waits for the occurence of the given event. On successful
  * return, the event is reset.
  *
- * @param[in,out] event Event handle
+ * @param[in,out] event Event handle as returned by rtdm_event_init()
  * @param[in] abstimeout Absolute timeout in nanoseconds
  *
  * @return 0 on success, otherwise:
  *
- * - -ETIMEDOUT is return if the if the request has not been satisfied until
+ * - -ETIMEDOUT is returned if the if the request has not been satisfied until
  * the specified time.
  *
  * - -EINTR is returned if calling task has been unblock by a signal or
@@ -617,7 +617,7 @@ void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value);
 /**
  * @brief Destroy a semaphore
  *
- * @param[in,out] sem Semaphore handle
+ * @param[in,out] sem Semaphore handle as returned by rtdm_sem_init()
  *
  * Environments:
  *
@@ -639,14 +639,14 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  * positive on entry. If not, the caller is blocked unless non-blocking
  * operation was selected.
  *
- * @param[in,out] sem Semaphore handle
+ * @param[in,out] sem Semaphore handle as returned by rtdm_sem_init()
  * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
  * negative value for non-blocking operation
  *
  * @return 0 on success, otherwise:
  *
- * - -ETIMEDOUT is return if the if the request has not been satisfied within
- * the specified amount of time.
+ * - -ETIMEDOUT is returned if the if the request has not been satisfied
+ * within the specified amount of time.
  *
  * - -EWOULDBLOCK is returned if @a timeout is negative and the semaphore
  * value is currently not positive.
@@ -706,7 +706,7 @@ int rtdm_sem_down(rtdm_sem_t *sem, __s64 timeout)
  * This function increments the given semphore's value, waking up a potential
  * waiter which was blocked upon rtdm_sem_down().
  *
- * @param[in,out] sem Semaphore handle
+ * @param[in,out] sem Semaphore handle as returned by rtdm_sem_init()
  *
  * Environments:
  *
@@ -767,7 +767,7 @@ void rtdm_mutex_init(rtdm_mutex_t *mutex);
 /**
  * @brief Destroy a mutex
  *
- * @param[in,out] mutex Mutex handle
+ * @param[in,out] mutex Mutex handle as returned by rtdm_mutex_init()
  *
  * Environments:
  *
@@ -789,7 +789,7 @@ void rtdm_mutex_destroy(rtdm_mutex_t *mutex);
  * This is the light-weight version of rtdm_mutex_timedlock(), implying an
  * infinite timeout.
  *
- * @param[in,out] mutex Mutex handle
+ * @param[in,out] mutex Mutex handle as returned by rtdm_mutex_init()
  *
  * @return 0 on success, otherwise:
  *
@@ -834,14 +834,14 @@ int rtdm_mutex_lock(rtdm_mutex_t *mutex)
  * This function tries to acquire the given mutex. If it is not available, the
  * caller is blocked unless non-blocking operation was selected.
  *
- * @param[in,out] mutex Mutex handle
+ * @param[in,out] mutex Mutex handle as returned by rtdm_mutex_init()
  * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
  * negative value for non-blocking operation
  *
  * @return 0 on success, otherwise:
  *
- * - -ETIMEDOUT is return if the if the request has not been satisfied within
- * the specified amount of time.
+ * - -ETIMEDOUT is returned if the if the request has not been satisfied
+ * within the specified amount of time.
  *
  * - -EWOULDBLOCK is returned if @a timeout is negative and the semaphore
  * value is currently not positive.
@@ -900,7 +900,7 @@ int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout)
  * This function releases the given mutex, waking up a potential waiter which
  * was blocked upon rtdm_mutex_lock() or rtdm_mutex_timedlock().
  *
- * @param[in,out] mutex Mutex handle
+ * @param[in,out] mutex Mutex handle as returned by rtdm_mutex_init()
  *
  * Environments:
  *
@@ -938,24 +938,95 @@ void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
  */
 
 /**
- * Register an interrupt handler
+ * @brief Register an interrupt handler
+ *
+ * @param[in,out] irq_handle IRQ handle
+ * @param[in] irq_no Line number of the addressed IRQ
+ * @param[in] handler Interrupt handler
+ * @param[in] flags Currently unused, pass 0
+ * @param[in] device_name Optional device name to show up in real-time IRQ
+ * lists (not yet implemented)
+ * @param[in] arg Pointer to be passed to the interrupt handler on invocation
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EINVAL is returned if an invalid parameter was passed.
+ *
+ * - -EBUSY is returned if the specified IRQ line is already in use.
+ *
+ * @note To receive interrupts on the requested line, you have to call
+ * rtdm_irq_enable() after registering the handler.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_irq_request(rtdm_irq_t *irq_handle, unsigned int irq_no,
                      rtdm_irq_handler_t handler, unsigned long flags,
                      const char *device_name, void *arg);
 
 /**
- * Release an interrupt handler
+ * @brief Release an interrupt handler
+ *
+ * @param[in,out] irq_handle IRQ handle as returned by rtdm_irq_request()
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_irq_free(rtdm_irq_t *irq_handle);
 
 /**
- * Enable interrupt line
+ * @brief Enable interrupt line
+ *
+ * @param[in,out] irq_handle IRQ handle as returned by rtdm_irq_request()
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible.
  */
 int rtdm_irq_enable(rtdm_irq_t *irq_handle);
 
 /**
- * Disable interrupt line
+ * @brief Disable interrupt line
+ *
+ * @param[in,out] irq_handle IRQ handle as returned by rtdm_irq_request()
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_irq_disable(rtdm_irq_t *irq_handle);
 /** @} */
@@ -964,22 +1035,69 @@ int rtdm_irq_disable(rtdm_irq_t *irq_handle);
 /*!
  * @ingroup driverapi
  * @defgroup nrtsignal Non-Real-Time Signalling Services
+ *
+ * These services provide a mechanism to request the execution of a specified
+ * handler in non-real-time context. The triggering can safely be performed in
+ * real-time context without suffering from unknown delays. The handler
+ * execution will be deferred until the next time the real-time subsystem
+ * releases the CPU to the non-real-time part.
  * @{
  */
 
 /**
- * Register a non-real-time signal handler
+ * @brief Register a non-real-time signal handler
+ *
+ * @param[in,out] nrt_sig Signal handle
+ * @param[in] handler Non-real-time signal handler
+ *
+ * @return 0 on success, otherwise negative error code
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+     * Rescheduling: never.
  */
 int rtdm_nrt_signal_init(rtdm_nrt_signal_t *nrt_sig,
                          rtdm_nrt_sig_handler_t handler);
 
 /**
- * Release a non-realtime signal handler
+ * @brief Release a non-realtime signal handler
+ *
+ * @param[in,out] nrt_sig Signal handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 void rtdm_nrt_signal_destroy(rtdm_nrt_signal_t *nrt_sig);
 
 /**
  * Trigger non-real-time signal
+ *
+ * @param[in,out] nrt_sig Signal handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never in real-time context, possible in non-real-time
+ * environments.
  */
 void rtdm_nrt_pend_signal(rtdm_nrt_signal_t *nrt_sig);
 /** @} */

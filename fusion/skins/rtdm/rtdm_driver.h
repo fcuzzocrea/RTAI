@@ -322,7 +322,7 @@ struct rtdm_operations {
  * device registration.
  */
 struct rtdm_dev_context {
-    /** Context flags, see @ref ctx_flags for details */
+    /** Context flags, see @ref ctx_flags "Context Flags" for details */
     unsigned long                   context_flags;
     /** Associated file descriptor */
     int                             fd;
@@ -352,10 +352,10 @@ struct rtdm_dev_reserved {
  */
 struct rtdm_device {
     /** Revision number of this structure, see
-     *  @ref versioning "versioning defines" */
+     *  @ref versioning "Versioning" defines */
     int                             struct_version;
 
-    /** Device flags, see @ref dev_flags for details */
+    /** Device flags, see @ref dev_flags "Device Flags" for details */
     int                             device_flags;
     /** Size of driver defined appendix to struct rtdm_dev_context */
     size_t                          context_size;
@@ -414,7 +414,7 @@ struct rtdm_device {
 /* --- device registration --- */
 
 int rtdm_dev_register(struct rtdm_device* device);
-int rtdm_dev_unregister(struct rtdm_device* device);
+int rtdm_dev_unregister(struct rtdm_device* device, unsigned int poll_delay);
 
 
 /* --- inter-driver API --- */
@@ -642,6 +642,26 @@ typedef int (*rtdm_irq_handler_t)(rtdm_irq_t *irq_handle);
 #define RTDM_IRQ_ENABLE             XN_ISR_ENABLE
 /** @} */
 
+/**
+ * Retrieve IRQ handler argument
+ *
+ * @param irq_handle IRQ handle
+ * @param type Type of the pointer to return
+ *
+ * @return The argument pointer registered on rtdm_irq_request() is returned,
+ * type-casted to the specified @a type.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Interrupt service routine
+ *
+ * Rescheduling: never.
+ */
+#define rtdm_irq_get_arg(irq_handle, type)  ((type *)irq_handle->cookie)
+/** @} */
+
 static inline int rtdm_irq_request(rtdm_irq_t *irq_handle,
                                    unsigned int irq_no,
                                    rtdm_irq_handler_t handler,
@@ -652,11 +672,6 @@ static inline int rtdm_irq_request(rtdm_irq_t *irq_handle,
     xnintr_init(irq_handle, irq_no, handler, NULL, flags);
     return xnintr_attach(irq_handle, arg);
 }
-
-/**
- * Retrieve IRQ handler argument
- */
-#define rtdm_irq_get_arg(irq_handle, type)  ((type *)irq_handle->cookie)
 
 static inline int rtdm_irq_free(rtdm_irq_t *irq_handle)
 {
@@ -672,7 +687,6 @@ static inline int rtdm_irq_disable(rtdm_irq_t *irq_handle)
 {
     return xnintr_disable(irq_handle);
 }
-/** @} */
 
 
 /* --- non-real-time signalling services --- */
@@ -688,8 +702,13 @@ typedef unsigned                    rtdm_nrt_signal_t;
  * Non-real-time signal handler
  *
  * @param[in] nrt_signal signal handle as returned by rtdm_nrt_signal_init()
+ *
+ * @note The signal handler will run in soft-IRQ context of the non-real-time
+ * subsystem. Note the implications of this context, e.g. no invocation of
+ * blocking operations.
  */
 typedef void (*rtdm_nrt_sig_handler_t)(rtdm_nrt_signal_t nrt_signal);
+/** @} */
 
 
 static inline int rtdm_nrt_signal_init(rtdm_nrt_signal_t *nrt_sig,
@@ -715,7 +734,6 @@ static inline void rtdm_nrt_pend_signal(rtdm_nrt_signal_t *nrt_sig)
 {
     rthal_trigger_irq(*nrt_sig);
 }
-/** @} */
 
 
 /* --- task and timing services --- */

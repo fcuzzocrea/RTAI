@@ -26,6 +26,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/delay.h>
 
 #include <rtdm/device.h>
 #include <rtdm/proc.h>
@@ -328,12 +329,15 @@ int rtdm_dev_register(struct rtdm_device* device)
  *
  * @param[in] device Pointer to structure describing the device to be
  * unregistered.
+ * @param[in] poll_delay Polling delay in milliseconds to check repeatedly for
+ * open instances of @a device, or 0 for non-blocking mode.
  *
  * @return 0 is returned upon success. Otherwise:
  *
  * - -ENODEV is returned if the device was not registered.
  *
- * - -EAGAIN is returned if the device is busy with open instances.
+ * - -EAGAIN is returned if the device is busy with open instances and 0 has
+ * been passed for @a poll_delay.
  *
  * Environments:
  *
@@ -343,10 +347,11 @@ int rtdm_dev_register(struct rtdm_device* device)
  *
  * Rescheduling: never.
  */
-int rtdm_dev_unregister(struct rtdm_device* device)
+int rtdm_dev_unregister(struct rtdm_device* device, unsigned int poll_delay)
 {
     spl_t               s;
     struct rtdm_device  *reg_dev;
+    unsigned long       warned = 0;
 
 
     if ((device->device_flags & RTDM_DEVICE_TYPE_MASK) == RTDM_NAMED_DEVICE)
@@ -366,12 +371,21 @@ int rtdm_dev_unregister(struct rtdm_device* device)
 
     xnlock_get_irqsave(&rt_dev_lock, s);
 
-    if (atomic_read(&reg_dev->reserved.refcount) > 1) {
+    while (atomic_read(&reg_dev->reserved.refcount) > 1) {
         xnlock_put_irqrestore(&rt_dev_lock, s);
-        up(&nrt_dev_lock);
 
-        rtdm_dereference_device(reg_dev);
-        return -EAGAIN;
+        if (!poll_delay) {
+            up(&nrt_dev_lock);
+            rtdm_dereference_device(reg_dev);
+            return -EAGAIN;
+        }
+
+        if (!__test_and_set_bit(0, &warned))
+            xnlogwarn("RTDM: device %s still in use - waiting for "
+                      "release...\n", reg_dev->device_name);
+        msleep(poll_delay);
+
+        xnlock_get_irqsave(&rt_dev_lock, s);
     }
 
     list_del(&reg_dev->reserved.entry);

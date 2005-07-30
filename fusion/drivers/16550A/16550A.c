@@ -947,15 +947,15 @@ int rt_16550_write(struct rtdm_dev_context *context,
 
     rtdm_mutex_unlock(&ctx->out_lock);
 
-    if ((written > 0) &&
-        ((ret == 0) || (ret == -ETIMEDOUT) || (ret == -EINTR)))
+    if ((written > 0) && ((ret == 0) || (ret == -EAGAIN) ||
+                          (ret == -ETIMEDOUT) || (ret == -EINTR)))
         ret = written;
 
     return ret;
 }
 
 
-static const struct rtdm_device device_tmpl = {
+static const struct rtdm_device __initdata device_tmpl = {
     struct_version:     RTDM_DEVICE_STRUCT_VER,
 
     device_flags:       RTDM_NAMED_DEVICE | RTDM_EXCLUSIVE,
@@ -992,7 +992,7 @@ static const struct rtdm_device device_tmpl = {
     provider_name:      "Jan Kiszka",
 };
 
-int init_module(void)
+int __init init_module(void)
 {
     struct rtdm_device  *dev;
     int                 ret;
@@ -1060,7 +1060,7 @@ void cleanup_module(void)
 
     for (i = 0; i < MAX_DEVICES; i++)
         if (device[i]) {
-            rtdm_dev_unregister(device[i]);
+            rtdm_dev_unregister(device[i], 1000);
             release_region(ioaddr[i], 8);
             kfree(device[i]);
         }

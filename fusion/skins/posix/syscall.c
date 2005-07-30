@@ -26,8 +26,11 @@
 #include <posix/cond.h>
 #include <posix/jhash.h>
 #include <posix/mq.h>
+#include <posix/intr.h>
 
 static int __muxid;
+
+int __pse51_errptd;
 
 struct pthread_jhash {
 
@@ -310,6 +313,39 @@ int __pthread_set_mode_np (struct task_struct *curr, struct pt_regs *regs)
     return err;
 }
 
+int __pthread_set_name_np (struct task_struct *curr, struct pt_regs *regs)
+
+{ 
+    char name[XNOBJECT_NAME_LEN];
+    struct pse51_hkey hkey;
+    pthread_t k_tid;
+    spl_t s;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
+	return -EFAULT;
+
+    __xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
+    name[sizeof(name) - 1] = '\0';
+
+    hkey.u_tid = __xn_reg_arg1(regs);
+    hkey.mm = curr->mm;
+    k_tid = __pthread_find(&hkey);
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (!pse51_obj_active(k_tid, PSE51_THREAD_MAGIC, struct pse51_thread))
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return -ESRCH;
+	}
+
+    strcpy(xnthread_name(&k_tid->threadbase),name);
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return 0;
+}
+
 int __sem_init (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -330,7 +366,7 @@ int __sem_init (struct task_struct *curr, struct pt_regs *regs)
     value = (unsigned)__xn_reg_arg3(regs);
 
     if (sem_init(sem,pshared,value) == -1)
-        return -thread_errno();
+        return -thread_get_errno();
 
     handle = (unsigned long)sem;
 
@@ -345,21 +381,21 @@ int __sem_post (struct task_struct *curr, struct pt_regs *regs)
 
 {
     sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
-    return sem_post(sem) == 0 ? 0 : -thread_errno();
+    return sem_post(sem) == 0 ? 0 : -thread_get_errno();
 }
 
 int __sem_wait (struct task_struct *curr, struct pt_regs *regs)
 
 {
     sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
-    return sem_wait(sem) == 0 ? 0 : -thread_errno();
+    return sem_wait(sem) == 0 ? 0 : -thread_get_errno();
 }
 
 int __sem_trywait (struct task_struct *curr, struct pt_regs *regs)
 
 {
     sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
-    return sem_trywait(sem) == 0 ? 0 : -thread_errno();
+    return sem_trywait(sem) == 0 ? 0 : -thread_get_errno();
 }
 
 int __sem_getvalue (struct task_struct *curr, struct pt_regs *regs)
@@ -374,7 +410,7 @@ int __sem_getvalue (struct task_struct *curr, struct pt_regs *regs)
     err = sem_getvalue(sem,&sval);
 
     if (err)
-	return -thread_errno();
+	return -thread_get_errno();
 
     __xn_copy_to_user(curr,
 		      (void __user *)__xn_reg_arg2(regs),
@@ -392,7 +428,7 @@ int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
     err = sem_destroy(sem);
 
     if (err)
-	return -thread_errno();
+	return -thread_get_errno();
 
     /* The caller first checked its own magic value
        (SHADOW_SEMAPHORE_MAGIC) before calling us with our internal
@@ -711,7 +747,7 @@ int __mq_open (struct task_struct *curr, struct pt_regs *regs)
 
     q = mq_open(name,oflags,mode,&attr);
     
-    return q == (mqd_t)-1 ? -thread_errno() : 0;
+    return q == (mqd_t)-1 ? -thread_get_errno() : 0;
 }
 
 int __mq_close (struct task_struct *curr, struct pt_regs *regs)
@@ -726,7 +762,7 @@ int __mq_close (struct task_struct *curr, struct pt_regs *regs)
 
     err = mq_close(q);
 
-    return err ? -thread_errno() : 0;
+    return err ? -thread_get_errno() : 0;
 }
 
 int __mq_unlink (struct task_struct *curr, struct pt_regs *regs)
@@ -742,7 +778,7 @@ int __mq_unlink (struct task_struct *curr, struct pt_regs *regs)
 
     err = mq_unlink(name);
 
-    return err ? -thread_errno() : 0;
+    return err ? -thread_get_errno() : 0;
 }
 
 int __mq_getattr (struct task_struct *curr, struct pt_regs *regs)
@@ -762,7 +798,7 @@ int __mq_getattr (struct task_struct *curr, struct pt_regs *regs)
     err = mq_getattr(q,&attr);
 
     if (err)
-	return -thread_errno();
+	return -thread_get_errno();
 
     __xn_copy_to_user(curr,
 		      (void __user *)__xn_reg_arg2(regs),
@@ -794,7 +830,7 @@ int __mq_setattr (struct task_struct *curr, struct pt_regs *regs)
     err = mq_setattr(q,&attr,&oattr);
 
     if (err)
-	return -thread_errno();
+	return -thread_get_errno();
 
     if (__xn_reg_arg3(regs))
 	__xn_copy_to_user(curr,
@@ -852,7 +888,7 @@ int __mq_send (struct task_struct *curr, struct pt_regs *regs)
     if (tmp_area && tmp_area != tmp_buf)
 	xnfree(tmp_area);
 
-    return err ? -thread_errno() : 0;
+    return err ? -thread_get_errno() : 0;
 }
 
 int __mq_timedsend (struct task_struct *curr, struct pt_regs *regs)
@@ -913,7 +949,7 @@ int __mq_timedsend (struct task_struct *curr, struct pt_regs *regs)
     if (tmp_area && tmp_area != tmp_buf)
 	xnfree(tmp_area);
 
-    return err ? -thread_errno() : 0;
+    return err ? -thread_get_errno() : 0;
 }
 
 int __mq_receive (struct task_struct *curr, struct pt_regs *regs)
@@ -958,7 +994,7 @@ int __mq_receive (struct task_struct *curr, struct pt_regs *regs)
     len = mq_receive(q,tmp_area,len,&prio);
 
     if (len == -1)
-	return -thread_errno();
+	return -thread_get_errno();
 
     __xn_copy_to_user(curr,
 		      (void __user *)__xn_reg_arg3(regs),
@@ -1035,7 +1071,7 @@ int __mq_timedreceive (struct task_struct *curr, struct pt_regs *regs)
     len = mq_timedreceive(q,tmp_area,len,&prio,timeoutp);
 
     if (len == -1)
-	return -thread_errno();
+	return -thread_get_errno();
 
     __xn_copy_to_user(curr,
 		      (void __user *)__xn_reg_arg3(regs),
@@ -1054,6 +1090,251 @@ int __mq_timedreceive (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
+static int __pse51_intr_handler (xnintr_t *cookie)
+
+{
+    struct pse51_interrupt *intr = PTHREAD_IDESC(cookie);
+
+    ++intr->pending;
+
+    if (xnsynch_nsleepers(&intr->synch_base) > 0)
+	xnsynch_flush(&intr->synch_base,0);
+
+    if (intr->mode & XN_ISR_CHAINED)
+	return XN_ISR_CHAINED|(intr->mode & XN_ISR_ENABLE);
+
+    return XN_ISR_HANDLED|(intr->mode & XN_ISR_ENABLE);
+}
+
+int __intr_attach (struct task_struct *curr, struct pt_regs *regs)
+{
+    struct pse51_interrupt *intr;
+    unsigned long handle;
+    int err, mode;
+    unsigned irq;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(handle)))
+	return -EFAULT;
+
+    /* Interrupt line number. */
+    irq = (unsigned)__xn_reg_arg2(regs);
+
+    /* Interrupt control mode. */
+    mode = (int)__xn_reg_arg3(regs);
+
+    if (mode & ~(XN_ISR_ENABLE|XN_ISR_CHAINED))
+	return -EINVAL;
+
+    intr = (struct pse51_interrupt *)xnmalloc(sizeof(*intr));
+
+    if (!intr)
+	return -ENOMEM;
+
+    err = pse51_intr_attach(intr,irq,&__pse51_intr_handler,NULL);
+
+    if (err == 0)
+	{
+	intr->mode = mode;
+	handle = (unsigned long)intr;
+	__xn_copy_to_user(curr,
+			  (void __user *)__xn_reg_arg1(regs),
+			  &handle,
+			  sizeof(handle));
+	}
+    else
+	xnfree(intr);
+
+    return -err;
+}
+
+int __intr_detach (struct task_struct *curr, struct pt_regs *regs)
+{
+    struct pse51_interrupt *intr = (struct pse51_interrupt *)__xn_reg_arg1(regs);
+    int err = pse51_intr_detach(intr);
+
+    if (!err)
+	xnfree(intr);
+
+    return -err;
+}
+
+int __intr_wait (struct task_struct *curr, struct pt_regs *regs)
+{
+    struct pse51_interrupt *intr = (struct pse51_interrupt *)__xn_reg_arg1(regs);
+    struct timespec ts;
+    xnticks_t timeout;
+    pthread_t thread;
+    int err = 0;
+    spl_t s;
+
+    if (__xn_reg_arg2(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(ts)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,
+			    &ts,
+			    (void __user *)__xn_reg_arg2(regs),
+			    sizeof(ts));
+
+	if (ts.tv_sec == 0 && ts.tv_nsec == 0)
+	    return -EINVAL;
+
+	timeout = ts2ticks_ceil(&ts)+1;
+	}
+    else
+	timeout = XN_INFINITE;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (!pse51_obj_active(intr, PSE51_INTR_MAGIC, struct pse51_interrupt))
+	{
+        xnlock_put_irqrestore(&nklock, s);
+        return -EINVAL;
+	}
+
+    if (!intr->pending)
+	{
+	thread = pse51_current_thread();
+
+	if (xnthread_base_priority(&thread->threadbase) != FUSION_IRQ_PRIO)
+	    /* Renice the waiter above all regular threads if needed. */
+	    xnpod_renice_thread(&thread->threadbase,FUSION_IRQ_PRIO);
+
+	xnsynch_sleep_on(&intr->synch_base,timeout);
+        
+	if (xnthread_test_flags(&thread->threadbase,XNRMID))
+	    err = -EIDRM; /* Interrupt object deleted while pending. */
+	else if (xnthread_test_flags(&thread->threadbase,XNTIMEO))
+	    err = -ETIMEDOUT; /* Timeout.*/
+	else if (xnthread_test_flags(&thread->threadbase,XNBREAK))
+	    err = -EINTR; /* Unblocked.*/
+	else
+	    err = intr->pending;
+	}
+    else
+	err = intr->pending;
+
+    intr->pending = 0;
+    
+    xnlock_put_irqrestore(&nklock,s);
+
+    return err;
+}
+
+int __intr_control (struct task_struct *curr, struct pt_regs *regs)
+{
+    struct pse51_interrupt *intr = (struct pse51_interrupt *)__xn_reg_arg1(regs);
+    int cmd = (int)__xn_reg_arg2(regs);
+
+    return pse51_intr_control(intr,cmd);
+}
+
+int __timer_create (struct task_struct *curr, struct pt_regs *regs)
+{
+    return 0;
+}
+
+int __timer_delete (struct task_struct *curr, struct pt_regs *regs)
+{
+    return 0;
+}
+
+int __timer_settime (struct task_struct *curr, struct pt_regs *regs)
+{
+    return 0;
+}
+
+int __timer_gettime (struct task_struct *curr, struct pt_regs *regs)
+{
+    return 0;
+}
+
+int __timer_getoverrun (struct task_struct *curr, struct pt_regs *regs)
+{
+    return 0;
+}
+
+#if 0
+int __itimer_set (struct task_struct *curr, struct pt_regs *regs)
+{
+    pthread_t thread = pse51_current_thread();
+    xnticks_t delay, interval;
+    struct itimerval itv;
+
+    if (__xn_reg_arg1(regs))
+	{
+	if (!__xn_access_ok(curr,VERIFY_READ,(void *)__xn_reg_arg1(regs),sizeof(itv)))
+	    return -EFAULT;
+
+	__xn_copy_from_user(curr,&itv,(void *)__xn_reg_arg1(regs),sizeof(itv));
+	}
+    else
+	memset(&itv,0,sizeof(itv));
+
+    if (__xn_reg_arg2(regs) &&
+	!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg2(regs),sizeof(itv)))
+	return -EFAULT;
+
+    xntimer_stop(&thread->itimer);
+
+    delay = xnshadow_tv2ticks(&itv.it_value);
+    interval = xnshadow_tv2ticks(&itv.it_interval);
+
+    if (delay > 0)
+	xntimer_start(&thread->itimer,delay,interval);
+
+    if (__xn_reg_arg2(regs))
+	{
+	interval = xntimer_interval(&thread->itimer);
+
+	if (xntimer_running_p(&thread->itimer))
+	    {
+	    delay = xntimer_get_timeout(&thread->itimer);
+	    
+	    if (delay == 0)
+		delay = 1;
+	    }
+	else
+	    delay = 0;
+
+	xnshadow_ticks2tv(delay,&itv.it_value);
+	xnshadow_ticks2tv(interval,&itv.it_interval);
+	__xn_copy_to_user(curr,(void *)__xn_reg_arg2(regs),&itv,sizeof(itv));
+	}
+
+    return 0;
+}
+
+int __itimer_get (struct task_struct *curr, struct pt_regs *regs)
+{
+    pthread_t thread = pse51_current_thread();
+    xnticks_t delay, interval;
+    struct itimerval itv;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,(void *)__xn_reg_arg1(regs),sizeof(itv)))
+	return -EFAULT;
+
+    interval = xntimer_interval(&thread->itimer);
+
+    if (xntimer_running_p(&thread->itimer))
+	{
+	delay = xntimer_get_timeout(&thread->itimer);
+	
+	if (delay == 0) /* Cannot be negative in this context. */
+	    delay = 1;
+	}
+    else
+	delay = 0;
+
+    xnshadow_ticks2tv(delay,&itv.it_value);
+    xnshadow_ticks2tv(interval,&itv.it_interval);
+    __xn_copy_to_user(curr,(void *)__xn_reg_arg1(regs),&itv,sizeof(itv));
+
+    return 0;
+}
+#endif
+
 static xnsysent_t __systab[] = {
     [__pse51_thread_create ] = { &__pthread_create, __xn_exec_init },
     [__pse51_thread_detach ] = { &__pthread_detach, __xn_exec_any },
@@ -1062,6 +1343,7 @@ static xnsysent_t __systab[] = {
     [__pse51_thread_make_periodic ] = { &__pthread_make_periodic_np, __xn_exec_primary },
     [__pse51_thread_wait] = { &__pthread_wait_np, __xn_exec_primary },
     [__pse51_thread_set_mode] = { &__pthread_set_mode_np, __xn_exec_primary },
+    [__pse51_thread_set_name] = { &__pthread_set_name_np, __xn_exec_any },
     [__pse51_sem_init] = { &__sem_init, __xn_exec_any },
     [__pse51_sem_destroy] = { &__sem_destroy, __xn_exec_any },
     [__pse51_sem_post] = { &__sem_post, __xn_exec_any },
@@ -1093,6 +1375,15 @@ static xnsysent_t __systab[] = {
     [__pse51_mq_timedsend] = { &__mq_timedsend, __xn_exec_primary },
     [__pse51_mq_receive] = { &__mq_receive, __xn_exec_primary },
     [__pse51_mq_timedreceive] = { &__mq_timedreceive, __xn_exec_primary },
+    [__pse51_intr_attach] = { &__intr_attach, __xn_exec_any },
+    [__pse51_intr_detach] = { &__intr_detach, __xn_exec_any },
+    [__pse51_intr_wait] = { &__intr_wait, __xn_exec_primary },
+    [__pse51_intr_control] = { &__intr_control, __xn_exec_any },
+    [__pse51_timer_create] = { &__timer_create, __xn_exec_any },
+    [__pse51_timer_delete] = { &__timer_delete, __xn_exec_any },
+    [__pse51_timer_settime] = { &__timer_settime, __xn_exec_any },
+    [__pse51_timer_gettime] = { &__timer_gettime, __xn_exec_any },
+    [__pse51_timer_getoverrun] = { &__timer_getoverrun, __xn_exec_any },
 };
 
 static void __shadow_delete_hook (xnthread_t *thread)
@@ -1120,6 +1411,8 @@ int pse51_syscall_init (void)
 	return -ENOSYS;
 
     xnpod_add_hook(XNHOOK_THREAD_DELETE,&__shadow_delete_hook);
+
+    __pse51_errptd = adeos_alloc_ptdkey();
     
     return 0;
 }
@@ -1129,4 +1422,5 @@ void pse51_syscall_cleanup (void)
 {
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,&__shadow_delete_hook);
     xnshadow_unregister_interface(__muxid);
+    adeos_free_ptdkey(__pse51_errptd);
 }

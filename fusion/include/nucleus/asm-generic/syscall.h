@@ -73,6 +73,8 @@ typedef struct _xnsysent {
 #define __xn_exec_current    0x10
 /* Exec in conforming domain, RTAI for fusion threads, Linux otherwise. */
 #define __xn_exec_conforming 0x20
+/* Attempt syscall restart in the opposite domain upon -ENOSYS. */
+#define __xn_exec_adaptive   0x40
 /* Context-agnostic syscall. */
 #define __xn_exec_any        0x0
 /* Short-hand for shadow init syscall. */

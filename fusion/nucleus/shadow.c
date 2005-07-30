@@ -432,7 +432,7 @@ int xnshadow_harden (void)
     xnpod_switch_fpu(xnpod_current_sched());
 #endif /* CONFIG_RTAI_HW_FPU */
 
-    ++thread->stat.psw;	/* Account for primary mode switch. */
+    xnthread_inc_psw(thread);	/* Account for primary mode switch. */
 
     xnltt_log_event(rtai_ev_primary,thread->name);
 
@@ -510,7 +510,7 @@ void xnshadow_relax (int notify)
     cprio = thread->cprio < MAX_RT_PRIO ? thread->cprio : MAX_RT_PRIO-1;
     rthal_reenter_root(get_switch_lock_owner(),SCHED_FIFO,cprio);
 
-    ++thread->stat.ssw;	/* Account for secondary mode switch. */
+    xnthread_inc_ssw(thread);	/* Account for secondary mode switch. */
 
     if (notify && testbits(thread->status,XNTRAPSW))
 	/* Help debugging spurious relaxes. */
@@ -992,7 +992,7 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 
 {
     struct pt_regs *regs = (struct pt_regs *)data;
-    int muxid, muxop, switched;
+    int muxid, muxop, switched, err;
     struct task_struct *task;
     xnthread_t *thread;
     u_long sysflags;
@@ -1118,6 +1118,9 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 
     switched = 0;
 
+ restart: /* Process adaptive syscalls by restarting them in the
+	     opposite domain. */
+
     if ((sysflags & __xn_exec_lostage) != 0)
 	{
 	/* Syscall must run into the Linux domain. */
@@ -1151,7 +1154,25 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 	   immediately. */
 	}
 
-    __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(task,regs));
+    err = muxtable[muxid - 1].systab[muxop].svc(task,regs);
+
+    if (err == -ENOSYS && (sysflags & __xn_exec_adaptive) != 0)
+	{
+	if (switched)
+	    {
+	    switched = 0;
+
+	    if ((err = xnshadow_harden()) != 0)
+		goto done;
+	    }
+
+	sysflags ^= (__xn_exec_lostage|__xn_exec_histage|__xn_exec_adaptive);
+	goto restart;
+	}
+
+ done:
+
+    __xn_status_return(regs,err);
 
     if (xnpod_shadow_p() && signal_pending(task))
 	request_syscall_restart(thread,regs);
@@ -1268,6 +1289,9 @@ static inline int do_losyscall_event (unsigned event, unsigned domid, void *data
     if ((sysflags & __xn_exec_conforming) != 0)
 	sysflags |= (thread ? __xn_exec_histage : __xn_exec_lostage);
 
+ restart: /* Process adaptive syscalls by restarting them in the
+	     opposite domain. */
+
     if ((sysflags & __xn_exec_histage) != 0)
 	{
 	/* This request originates from the Linux domain and must be
@@ -1284,7 +1308,21 @@ static inline int do_losyscall_event (unsigned event, unsigned domid, void *data
     else /* We want to run the syscall in the Linux domain.  */
 	switched = 0;
 
-    __xn_status_return(regs,muxtable[muxid - 1].systab[muxop].svc(current,regs));
+    err = muxtable[muxid - 1].systab[muxop].svc(current,regs);
+
+    if (err == -ENOSYS && (sysflags & __xn_exec_adaptive) != 0)
+	{
+	if (switched)
+	    {
+	    switched = 0;
+	    xnshadow_relax(1);
+	    }
+
+	sysflags ^= (__xn_exec_lostage|__xn_exec_histage|__xn_exec_adaptive);
+	goto restart;
+	}
+
+    __xn_status_return(regs,err);
 
     if (xnpod_shadow_p() && signal_pending(current))
 	request_syscall_restart(xnshadow_thread(current),regs);

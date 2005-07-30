@@ -86,7 +86,7 @@ const char *xnpod_fatal_helper (const char *format, ...)
         now = nkpod->jiffies;
 
     p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-		  "\n %-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
+		  "\n %-3s   %-6s %-24s %-4s  %-8s  %-8s\n",
 		 "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
@@ -104,7 +104,7 @@ const char *xnpod_fatal_helper (const char *format, ...)
                 continue;
 
 	    p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-			  "%c%3u   %-6d %-12s %-4d  %-8Lu  0x%.8lx\n",
+			  "%c%3u   %-6d %-24s %-4d  %-8Lu  0x%.8lx\n",
 			  thread == sched->runthread ? '>' : ' ',
 			  cpu,
 			  xnthread_user_pid(thread),
@@ -196,16 +196,17 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 #ifdef CONFIG_RTAI_OPT_DEBUG
         if (xnarch_fault_notify(fltinfo)) /* Don't report debug traps */
             xnprintf("Switching %s to secondary mode after exception #%u from "
-                     "user-space at 0x%lx\n",
+                     "user-space at 0x%lx (pid %d)\n",
                      xnpod_current_thread()->name,
                      xnarch_fault_trap(fltinfo),
-                     xnarch_fault_pc(fltinfo));
+                     xnarch_fault_pc(fltinfo),
+		     xnthread_user_pid(xnpod_current_thread()));
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 	if (xnarch_fault_pf_p(fltinfo))
 	    /* The page fault counter is not SMP-safe, but it's a
 	       simple indicator that something went wrong wrt memory
 	       locking anyway. */
-	    xnpod_current_thread()->stat.pf++;
+	    xnthread_inc_pf(xnpod_current_thread());
 
         xnshadow_relax(xnarch_fault_notify(fltinfo));
         }
@@ -2388,6 +2389,8 @@ void xnpod_schedule (void)
         xnarch_enter_root(xnthread_archtcb(threadin));
     }
 
+    xnthread_inc_csw(threadin);
+
     xnarch_switch_to(xnthread_archtcb(threadout),
                      xnthread_archtcb(threadin));
 
@@ -2548,6 +2551,8 @@ maybe_switch:
         nkpod->schedhook(runthread,XNREADY);
 #endif /* __RTAI_SIM__ */
 
+    xnthread_inc_csw(threadin);
+
     xnarch_switch_to(xnthread_archtcb(runthread),
                      xnthread_archtcb(threadin));
 
@@ -2625,8 +2630,8 @@ xnticks_t xnpod_get_time (void)
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
         /* In aperiodic mode, our idea of time is the same as the
-           CPU's. */
-        return xnpod_get_cpu_time(); /* Nanoseconds. */
+           CPU's, and a tick equals a nanosecond. */
+        return xnpod_get_cpu_time();
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     return nkpod->wallclock;
@@ -3268,7 +3273,7 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
 
     if (period == XN_INFINITE)
         {
-        if (xntimer_active_p(&thread->ptimer))
+        if (xntimer_running_p(&thread->ptimer))
             xntimer_stop(&thread->ptimer);
 
         goto unlock_and_exit;
@@ -3344,7 +3349,7 @@ int xnpod_wait_thread_period (void)
 
     xnlock_get_irqsave(&nklock,s);
 
-    if (!xntimer_active_p(&thread->ptimer))
+    if (!xntimer_running_p(&thread->ptimer))
         {
         err = -EWOULDBLOCK;
         goto unlock_and_exit;

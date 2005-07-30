@@ -1059,6 +1059,7 @@ Optional Features:
                           Enable scalable scheduler in nucleus
   --enable-nucleus-scalable-prios
                           Set maximum number of priority levels
+  --enable-stats          Enable statistics collection in nucleus
   --enable-nucleus-debug  Enable debug support in nucleus
   --enable-nucleus-watchdog
                           Enable watchdog support in nucleus
@@ -19967,6 +19968,19 @@ echo "$as_me:$LINENO: result: $CONFIG_RTAI_OPT_SCALABLE_PRIOS" >&5
 echo "${ECHO_T}$CONFIG_RTAI_OPT_SCALABLE_PRIOS" >&6
 fi
 
+echo "$as_me:$LINENO: checking for statistics collection in nucleus" >&5
+echo $ECHO_N "checking for statistics collection in nucleus... $ECHO_C" >&6
+# Check whether --enable-nucleus-stats or --disable-nucleus-stats was given.
+if test "${enable_nucleus_stats+set}" = set; then
+  enableval="$enable_nucleus_stats"
+  case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_STATS=y ;;
+	*) unset CONFIG_RTAI_OPT_STATS ;;
+	esac
+fi;
+echo "$as_me:$LINENO: result: ${CONFIG_RTAI_OPT_STATS:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_OPT_STATS:-no}" >&6
+
 echo "$as_me:$LINENO: checking for debug support in nucleus" >&5
 echo $ECHO_N "checking for debug support in nucleus... $ECHO_C" >&6
 # Check whether --enable-nucleus-debug or --disable-nucleus-debug was given.
@@ -20870,6 +20884,7 @@ else
     	export CONFIG_RTAI_MVM_GCC_TARBALL
     	export CONFIG_RTAI_MVM_ATOMIC_CORE
 	export CONFIG_RTAI_OPT_DEBUG
+	export CONFIG_RTAI_OPT_STATS
     else
 	RTAI_MAYBE_SIMDIR=sim
     fi
@@ -21541,6 +21556,11 @@ _ACEOF
 test x$CONFIG_RTAI_OPT_SCALABLE_SCHED = xy &&
 cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_OPT_SCALABLE_SCHED 1
+_ACEOF
+
+test x$CONFIG_RTAI_OPT_STATS = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_STATS 1
 _ACEOF
 
 test x$CONFIG_RTAI_OPT_DEBUG = xy &&

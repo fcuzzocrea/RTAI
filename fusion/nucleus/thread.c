@@ -89,9 +89,12 @@ int xnthread_init (xnthread_t *thread,
     thread->wchan = NULL;
     thread->magic = 0;
 
+#ifdef CONFIG_RTAI_OPT_STATS
     thread->stat.psw = 0;
     thread->stat.ssw = 0;
+    thread->stat.csw = 0;
     thread->stat.pf = 0;
+#endif /* CONFIG_RTAI_OPT_STATS */
 
     /* These will be filled by xnpod_start_thread() */
     thread->imask = 0;

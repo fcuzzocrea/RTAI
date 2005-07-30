@@ -140,6 +140,7 @@ void xntimer_destroy (xntimer_t *timer)
 {
     xntimer_stop(timer);
     __setbits(timer->status,XNTIMER_KILLED);
+    timer->sched = NULL;
 }
 
 static inline void xntimer_enqueue_periodic (xntimer_t *timer)
@@ -442,7 +443,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 xnticks_t xntimer_get_date (xntimer_t *timer)
 
 {
-    if (!xntimer_active_p(timer))
+    if (!xntimer_running_p(timer))
         return XN_INFINITE;
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
@@ -489,7 +490,7 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
 xnticks_t xntimer_get_timeout (xntimer_t *timer)
 
 {
-    if (!xntimer_active_p(timer))
+    if (!xntimer_running_p(timer))
         return XN_INFINITE;
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER

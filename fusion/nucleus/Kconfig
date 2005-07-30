@@ -42,6 +42,16 @@ config RTAI_OPT_SYS_HEAPSZ
 	the nucleus and the real-time skins. The size is expressed in
 	Kilobytes.
 
+config RTAI_OPT_STATS
+	bool "Statistics collection"
+	depends on RTAI_OPT_EXPERT
+	default y
+	help
+	
+	This option causes the real-time nucleus to collect various
+	per-thread runtime statistics, which are accessible through
+	the /proc/rtai/stats interface.
+
 config RTAI_OPT_DEBUG
 	bool "Debug support"
 	depends on RTAI_OPT_EXPERT

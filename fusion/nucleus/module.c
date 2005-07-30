@@ -37,6 +37,7 @@
 #include <nucleus/fusion.h>
 #endif /* CONFIG_RTAI_OPT_FUSION */
 #include <nucleus/ltt.h>
+#include <linux/seq_file.h>
 
 MODULE_DESCRIPTION("RTAI/fusion nucleus");
 MODULE_AUTHOR("rpm@xenomai.org");
@@ -84,137 +85,236 @@ extern struct proc_dir_entry *rthal_proc_root;
 static struct proc_dir_entry *iface_proc_root;
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
-static int sched_read_proc (char *page,
-			    char **start,
-			    off_t off,
-			    int count,
-			    int *eof,
-			    void *data)
-{
-    const unsigned nr_cpus = xnarch_num_online_cpus();
-    xnthread_t *thread;
-    xnholder_t *holder;
-    char *p = page;
-    xnticks_t now;
-    char buf[64];
-    unsigned cpu;
-    int len = 0;
+struct sched_seq_iterator {
+    xnticks_t start_time;
     spl_t s;
+};
 
-    if (!nkpod)
-	goto out;
+static void *sched_seq_start(struct seq_file *seq, loff_t *pos)
+{
+    struct sched_seq_iterator *iter = (struct sched_seq_iterator *)seq->private;
+    xnholder_t *holder;
+    loff_t off;
 
-    xnlock_get_irqsave(&nklock, s);
-
-    p += sprintf(p,"%-3s   %-6s %-12s %-4s  %-8s  %-8s\n",
-		 "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
+    xnlock_get_irqsave(&nklock, iter->s);
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
-        now = xnarch_get_cpu_time();
+        iter->start_time = xnarch_get_cpu_time();
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        now = nkpod->jiffies;
+        iter->start_time = nkpod->jiffies;
 
-    for (cpu = 0; cpu < nr_cpus; ++cpu)
-        {
-        xnsched_t *sched = xnpod_sched_slot(cpu);
+    if (*pos > countq(&nkpod->threadq))
+	return NULL;
 
-        holder = getheadq(&nkpod->threadq);
+    if (*pos == 0)
+	return SEQ_START_TOKEN;
 
-        while (holder)
-	    {
-	    thread = link2thread(holder,glink);
-            holder = nextq(&nkpod->threadq,holder);
+    for (holder = getheadq(&nkpod->threadq), off = 1;
+	 holder && off < *pos;
+	 holder = nextq(&nkpod->threadq,holder), off++)
+	;
 
-            if (thread->sched != sched)
-                continue;
-
-	    p += sprintf(p,"%3u   %-6d %-12s %-4d  %-8Lu  0x%.8lx - %s\n",
-                         cpu,
-			 xnthread_user_pid(thread),
-                         thread->name,
-			 thread->cprio,
-			 xnthread_get_timeout(thread, now),
-			 thread->status,
-			 xnthread_symbolic_status(thread->status,
-                                                  buf,sizeof(buf)));
-            }
-        }
-
-    xnlock_put_irqrestore(&nklock, s);
-
- out:
-
-    len = p - page - off;
-    if (len <= off + count) *eof = 1;
-    *start = page + off;
-    if (len > count) len = count;
-    if (len < 0) len = 0;
-
-    return len;
+    return holder;
 }
 
-static int stat_read_proc (char *page,
-			   char **start,
-			   off_t off,
-			   int count,
-			   int *eof,
-			   void *data)
+static void *sched_seq_next(struct seq_file *seq, void *v, loff_t *pos)
 {
-    const unsigned nr_cpus = xnarch_num_online_cpus();
+    ++*pos;
+
+    if (v == SEQ_START_TOKEN)
+	return getheadq(&nkpod->threadq);
+
+    return nextq(&nkpod->threadq,(xnholder_t *)v);
+}
+
+static void sched_seq_stop(struct seq_file *seq, void *v)
+{
+    struct sched_seq_iterator *iter = (struct sched_seq_iterator *)seq->private;
+    xnlock_put_irqrestore(&nklock, iter->s);
+}
+
+static int sched_seq_show(struct seq_file *seq, void *v)
+{
+    struct sched_seq_iterator *iter = (struct sched_seq_iterator *)seq->private;
     xnthread_t *thread;
-    xnholder_t *holder;
-    char *p = page;
-    unsigned cpu;
-    int len = 0;
-    spl_t s;
+    char buf[64];
+
+    if (v == SEQ_START_TOKEN)
+	seq_printf(seq,"%-3s   %-6s %-24s %-4s  %-8s  %-8s\n",
+		   "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
+    else
+	{
+	thread = link2thread((xnholder_t *)v,glink);
+	seq_printf(seq,"%3u   %-6d %-24s %-4d  %-8Lu  0x%.8lx - %s\n",
+		   xnsched_cpu(thread->sched),
+		   xnthread_user_pid(thread),
+		   thread->name,
+		   thread->cprio,
+		   xnthread_get_timeout(thread,iter->start_time),
+		   thread->status,
+		   xnthread_symbolic_status(thread->status,
+					    buf,sizeof(buf)));
+	}
+
+    return 0;
+}
+
+static struct seq_operations sched_op = {
+    .start = &sched_seq_start,
+    .next = &sched_seq_next,
+    .stop = &sched_seq_stop,
+    .show = &sched_seq_show
+};
+
+static int sched_seq_open(struct inode *inode, struct file *file)
+{
+    struct sched_seq_iterator *iter;
+    struct seq_file *seq;
+    int err;
 
     if (!nkpod)
-	goto out;
+	return -ESRCH;
 
-    xnlock_get_irqsave(&nklock, s);
+    iter = kmalloc(sizeof(*iter), GFP_KERNEL);
 
-    p += sprintf(p,"%-3s   %-6s %-12s     %-12s  %-6s\n",
-		 "CPU","PID","NAME","MODSW","PF");
+    if (!iter)
+	return -ENOMEM;
 
-    for (cpu = 0; cpu < nr_cpus; ++cpu)
-        {
-        xnsched_t *sched = xnpod_sched_slot(cpu);
+    err = seq_open(file, &sched_op);
 
-        holder = getheadq(&nkpod->threadq);
+    if (err)
+	{
+	kfree(iter);
+	return err;
+	}
 
-        while (holder)
-	    {
-	    thread = link2thread(holder,glink);
-            holder = nextq(&nkpod->threadq,holder);
+    seq = (struct seq_file *)file->private_data;
+    seq->private = iter;
 
-            if (thread->sched != sched)
-                continue;
-
-	    p += sprintf(p,"%3u   %-6d %-12s %6lu/%-6lu %6lu\n",
-                         cpu,
-			 !testbits(thread->status,XNROOT) && xnthread_user_task(thread) ?
-			 xnthread_user_task(thread)->pid : 0,
-                         thread->name,
-			 thread->stat.psw,
-			 thread->stat.ssw,
-			 thread->stat.pf);
-            }
-        }
-
-    xnlock_put_irqrestore(&nklock, s);
-
- out:
-
-    len = p - page - off;
-    if (len <= off + count) *eof = 1;
-    *start = page + off;
-    if (len > count) len = count;
-    if (len < 0) len = 0;
-
-    return len;
+    return 0;
 }
+
+static struct file_operations sched_seq_operations = {
+    .owner = THIS_MODULE,
+    .open = sched_seq_open,
+    .read = seq_read,
+    .llseek = seq_lseek,
+    .release = seq_release_private,
+};
+
+#ifdef CONFIG_RTAI_OPT_STATS
+
+struct stat_seq_iterator {
+    spl_t s;
+};
+
+static void *stat_seq_start(struct seq_file *seq, loff_t *pos)
+{
+    struct stat_seq_iterator *iter = (struct stat_seq_iterator *)seq->private;
+    xnholder_t *holder;
+    loff_t off;
+
+    xnlock_get_irqsave(&nklock, iter->s);
+
+    if (*pos > countq(&nkpod->threadq))
+	return NULL;
+
+    if (*pos == 0)
+	return SEQ_START_TOKEN;
+
+    for (holder = getheadq(&nkpod->threadq), off = 1;
+	 holder && off < *pos;
+	 holder = nextq(&nkpod->threadq,holder), off++)
+	;
+
+    return holder;
+}
+
+static void *stat_seq_next(struct seq_file *seq, void *v, loff_t *pos)
+{
+    ++*pos;
+
+    if (v == SEQ_START_TOKEN)
+	return getheadq(&nkpod->threadq);
+
+    return nextq(&nkpod->threadq,(xnholder_t *)v);
+}
+
+static void stat_seq_stop(struct seq_file *seq, void *v)
+{
+    struct stat_seq_iterator *iter = (struct stat_seq_iterator *)seq->private;
+    xnlock_put_irqrestore(&nklock, iter->s);
+}
+
+static int stat_seq_show(struct seq_file *seq, void *v)
+{
+    xnthread_t *thread;
+
+    if (v == SEQ_START_TOKEN)
+	seq_printf(seq,"%-3s   %-6s %-24s     %-12s  %-6s   %-6s\n",
+		   "CPU","PID","NAME","MODSW","CSW","PF");
+    else
+	{
+	thread = link2thread((xnholder_t *)v,glink);
+	seq_printf(seq,"%3u   %-6d %-24s %6lu/%-6lu  %6lu  %6lu\n",
+		   xnsched_cpu(thread->sched),
+		   xnthread_user_pid(thread),
+		   thread->name,
+		   thread->stat.psw,
+		   thread->stat.ssw,
+		   thread->stat.csw,
+		   thread->stat.pf);
+	}
+
+    return 0;
+}
+
+static struct seq_operations stat_op = {
+    .start = &stat_seq_start,
+    .next = &stat_seq_next,
+    .stop = &stat_seq_stop,
+    .show = &stat_seq_show
+};
+
+static int stat_seq_open(struct inode *inode, struct file *file)
+{
+    struct stat_seq_iterator *iter;
+    struct seq_file *seq;
+    int err;
+
+    if (!nkpod)
+	return -ESRCH;
+
+    iter = kmalloc(sizeof(*iter), GFP_KERNEL);
+
+    if (!iter)
+	return -ENOMEM;
+
+    err = seq_open(file, &stat_op);
+
+    if (err)
+	{
+	kfree(iter);
+	return err;
+	}
+
+    seq = (struct seq_file *)file->private_data;
+    seq->private = iter;
+
+    return 0;
+}
+
+static struct file_operations stat_seq_operations = {
+    .owner = THIS_MODULE,
+    .open = stat_seq_open,
+    .read = seq_read,
+    .llseek = seq_lseek,
+    .release = seq_release_private,
+};
+
+#endif /* CONFIG_RTAI_OPT_STATS */
 
 static int latency_read_proc (char *page,
 			      char **start,
@@ -347,23 +447,42 @@ static struct proc_dir_entry *add_proc_leaf (const char *name,
     return entry;
 }
 
+static struct proc_dir_entry *add_proc_seq (const char *name,
+					    struct file_operations *seq_ops,
+					    void *data,
+					    struct proc_dir_entry *parent)
+{
+    struct proc_dir_entry *entry;
+
+    entry = create_proc_entry(name,0,parent);
+
+    if (!entry)
+	return NULL;
+
+    entry->proc_fops = seq_ops;
+    entry->data = data;
+    entry->owner = THIS_MODULE;
+
+    return entry;
+}
+
 void xnpod_init_proc (void)
 
 {
     if (!rthal_proc_root)
 	return;
 
-    add_proc_leaf("sched",
-		  &sched_read_proc,
-		  NULL,
-		  NULL,
-		  rthal_proc_root);
+    add_proc_seq("sched",
+		 &sched_seq_operations,
+		 NULL,
+		 rthal_proc_root);
 
-    add_proc_leaf("stat",
-		  &stat_read_proc,
-		  NULL,
-		  NULL,
-		  rthal_proc_root);
+#ifdef CONFIG_RTAI_OPT_STATS
+    add_proc_seq("stat",
+		 &stat_seq_operations,
+		 NULL,
+		 rthal_proc_root);
+#endif /* CONFIG_RTAI_OPT_STATS */
 
     add_proc_leaf("latency",
 		  &latency_read_proc,
@@ -405,8 +524,10 @@ void xnpod_delete_proc (void)
     remove_proc_entry("timer",rthal_proc_root);
     remove_proc_entry("version",rthal_proc_root);
     remove_proc_entry("latency",rthal_proc_root);
-    remove_proc_entry("stat",rthal_proc_root);
     remove_proc_entry("sched",rthal_proc_root);
+#ifdef CONFIG_RTAI_OPT_STATS
+    remove_proc_entry("stat",rthal_proc_root);
+#endif /* CONFIG_RTAI_OPT_STATS */
 }
 
 #ifdef CONFIG_RTAI_OPT_FUSION

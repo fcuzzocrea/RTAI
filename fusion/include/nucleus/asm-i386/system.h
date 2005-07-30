@@ -238,6 +238,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
 {
     struct task_struct *outproc = out_tcb->active_task;
     struct task_struct *inproc = in_tcb->user_task;
+    unsigned long fs, gs;
 
     if (inproc && outproc->thread_info->status & TS_USEDFPU)
         /* __switch_to will try and use __unlazy_fpu, so we need to
@@ -256,9 +257,24 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
             enter_lazy_tlb(oldmm,inproc);
         }
 
+    if (out_tcb->user_task) {
+       /* Make sure that __switch_to() will always reload the correct
+	  %fs and %gs registers, even if we happen to migrate the task
+	  across domains in the meantime. */
+	asm volatile("mov %%fs,%0":"=m" (fs));
+	asm volatile("mov %%gs,%0":"=m" (gs));
+    }
+
     __switch_threads(out_tcb,in_tcb,outproc,inproc);
 
     if (xnarch_shadow_p(out_tcb,outproc)) {
+
+        struct thread_struct *thread = &outproc->thread;
+
+	loadsegment(fs, fs);
+	loadsegment(gs, gs);
+
+        barrier();
 
         /* Eagerly reinstate the I/O bitmap of any incoming shadow
            thread which has previously requested I/O permissions. We
@@ -267,12 +283,8 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
            explicitely told the kernel that they would need to perform
            raw I/O ops. */
 
-        struct thread_struct *thread = &outproc->thread;
-
-        barrier();
-
         if (thread->io_bitmap_ptr) {
-            struct tss_struct *tss = &per_cpu(init_tss, rthal_processor_id());
+            struct tss_struct *tss = &per_cpu(init_tss, adeos_processor_id());
 
             if (tss->io_bitmap_base == INVALID_IO_BITMAP_OFFSET_LAZY) {
                 

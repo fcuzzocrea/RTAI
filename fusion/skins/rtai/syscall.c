@@ -3021,9 +3021,12 @@ static int __rt_intr_wait (struct task_struct *curr, struct pt_regs *regs)
 	    err = -ETIMEDOUT; /* Timeout.*/
 	else if (xnthread_test_flags(&task->thread_base,XNBREAK))
 	    err = -EINTR; /* Unblocked.*/
+	else
+	    err = intr->pending;
 	}
+    else
+	err = intr->pending;
 
-    err = intr->pending;
     intr->pending = 0;
     
  unlock_and_exit:

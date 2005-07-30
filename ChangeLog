@@ -5,6 +5,20 @@
 	* base/sched/sys.c: made possible to mix different user space calls, 
 	  i.e.: both RTAI specific an Linux syscalls.
 
+2005-07-23  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* sched/sys.c: returns the pointer to the a newly initilised linux
+	  syscalls server and resume the server thread.
+	* sched/api.c: linux syscalls server support functions return a
+	  pointer to the appropriate task.
+	* sched/sched.c: reinitialise linux syscalls server at each call,
+	  as returned by the linux syscall server support function in api.c,
+	  so that it is not called again in case it has gone away.
+	* include/rtai_sched.h: redeclare linux syscall functions to comply
+	  with the above changes;
+	* include/rtai_lxrt.h: modify the user part of the syscall server to
+	  comply with the above changes.
+
 2005-07-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* sched/api.c: fixed a wrong test in function "hash_rem_adr" that

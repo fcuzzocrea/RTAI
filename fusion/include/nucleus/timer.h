@@ -89,6 +89,10 @@ typedef struct xntimer {
 #define xntimer_set_priority(t,p) ((t)->prio = (p))
 
 static inline int xntimer_active_p (xntimer_t *timer) {
+    return timer->sched != NULL;
+}
+
+static inline int xntimer_running_p (xntimer_t *timer) {
     return !testbits(timer->status,XNTIMER_DEQUEUED);
 }
 

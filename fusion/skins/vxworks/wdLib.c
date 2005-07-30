@@ -123,7 +123,7 @@ STATUS wdStart ( WDOG_ID handle,
     if(testbits(wd->timerbase.status, WIND_WD_INITIALIZED))
         clrbits(wd->timerbase.status, WIND_WD_INITIALIZED);
     else
-        if(xntimer_active_p(&wd->timerbase))
+        if(xntimer_running_p(&wd->timerbase))
             xntimer_stop(&wd->timerbase);
     
     xntimer_init(&wd->timerbase, (xntimer_handler) handler, (void *) (long)arg);
@@ -147,7 +147,7 @@ STATUS wdCancel ( WDOG_ID handle )
     
     xnlock_get_irqsave(&nklock, s);
     check_OBJ_ID_ERROR(handle, wind_wd_t, wd, WIND_WD_MAGIC, goto error);
-    if(xntimer_active_p(&wd->timerbase))
+    if(xntimer_running_p(&wd->timerbase))
         xntimer_stop(&wd->timerbase);
     xnlock_put_irqrestore(&nklock, s);
 

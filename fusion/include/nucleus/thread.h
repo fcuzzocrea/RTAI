@@ -126,13 +126,15 @@ typedef struct xnthread {
 
     xnticks_t rrcredit;		/* Remaining round-robin time credit (ticks) */
 
+#ifdef CONFIG_RTAI_OPT_STATS
     struct {
-
 	unsigned long psw;	/* Primary mode switch count */
 	unsigned long ssw;	/* Secondary mode switch count */
+	unsigned long csw;	/* Context switches (includes
+				   secondary -> primary switches) */
 	unsigned long pf;	/* Number of page faults */
-
     } stat;
+#endif /* CONFIG_RTAI_OPT_STATS */
 
     xnasr_t asr;		/* Asynchronous service routine */
 
@@ -204,6 +206,18 @@ typedef struct xnhook {
 #define xnthread_user_pid(thread) \
     (testbits((thread)->status,XNROOT) || !xnthread_user_task(thread) ? \
     0 : xnarch_user_pid(xnthread_archtcb(thread)))
+
+#ifdef CONFIG_RTAI_OPT_STATS
+#define xnthread_inc_psw(thread)     ++(thread)->stat.psw
+#define xnthread_inc_ssw(thread)     ++(thread)->stat.ssw
+#define xnthread_inc_csw(thread)     ++(thread)->stat.csw
+#define xnthread_inc_pf(thread)      ++(thread)->stat.pf
+#else /* CONFIG_RTAI_OPT_STATS */
+#define xnthread_inc_psw(thread)     do { } while(0)
+#define xnthread_inc_ssw(thread)     do { } while(0)
+#define xnthread_inc_csw(thread)     do { } while(0)
+#define xnthread_inc_pf(thread)      do { } while(0)
+#endif /* CONFIG_RTAI_OPT_STATS */
 
 #ifdef __cplusplus
 extern "C" {

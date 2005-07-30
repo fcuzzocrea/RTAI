@@ -461,7 +461,8 @@ int xnpod_wait_thread_period(void);
 
 xnticks_t xnpod_get_time(void);
 
-static inline xntime_t xnpod_get_cpu_time(void) {
+static inline xntime_t xnpod_get_cpu_time(void)
+{
     return xnarch_get_cpu_time();
 }
 

@@ -142,6 +142,9 @@
 #undef CONFIG_RTAI_OPT_SCALABLE_SCHED
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_STATS
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_SYS_HEAPSZ
 
 /* Kconfig */

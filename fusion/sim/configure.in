@@ -102,6 +102,15 @@ AC_ARG_ENABLE(mvm-atomic_core,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_MVM_ATOMIC_CORE:-no})
 
+AC_MSG_CHECKING(for statistics collection in nucleus)
+AC_ARG_ENABLE(nucleus-stats,
+	AS_HELP_STRING([--enable-stats], [Enable statistics collection in nucleus]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_STATS=y ;;
+	*) unset CONFIG_RTAI_OPT_STATS ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_OPT_STATS:-no})
+
 AC_MSG_CHECKING(for RTAI nucleus debug support)
 AC_ARG_ENABLE(nucleus-debug,
 	AS_HELP_STRING([--enable-nucleus-debug], [Enable RTAI nucleus debug]),
@@ -380,6 +389,10 @@ test $ac_cv_header_usleep = yes && AC_DEFINE(HAVE_USLEEP,1,[Kconfig])
 
 if test x$CONFIG_RTAI_MVM_DEBUG = xy; then
   AC_DEFINE(CONFIG_RTAI_MVM_DEBUG,1,[Kconfig])
+fi
+
+if test x$CONFIG_RTAI_OPT_STATS = xy; then
+  AC_DEFINE(CONFIG_RTAI_OPT_STATS,1,[Kconfig])
 fi
 
 if test x$CONFIG_RTAI_OPT_DEBUG = xy; then

@@ -1,3 +1,76 @@
+2005-07-31  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/module.c (xnpod_init_proc): Use a seqfile to dump sched
+	and stat information, in order to deal properly with reports
+	involving a huge number of RT threads.
+
+2005-07-30  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtdm: Merge RTDM patch level #5.
+
+2005-07-29  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/lib/thread.c (pthread_set_name_np): Add support for
+	changing the nucleus thread's name dynamically.
+	(pthread_make_periodic_np, pthread_detach, pthread_setschedparam):
+	Pass the user's thread argument to the syscall, stop forcing
+	pthread_self() by error.
+
+2005-07-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/timer.h: Rename xntimer_active_p() to
+	xntimer_running_p(), and redefine xntimer_active_p() for probing
+	for initialized timers.
+
+	* arch/i386/hal/x86.c (rthal_arch_init): Warn if
+	CONFIG_RTAI_HW_X86_VSYSCALL && !cpu_has_sep.
+
+	* configure.in, Kconfig: Make statistics collection optional.
+
+	* nucleus/module.c (stat_read_proc): Add context switch statistics.
+
+	* skins/posix/clock.c: Use CLOCK_MONOTONIC.
+
+2005-07-27  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/syscall.c: Add setitimer(), getitimer() support.
+
+	* skins/rtai/syscall.c (__rt_intr_wait): Fix return value upon
+	error.
+
+	* skins/posix/cond.c (pse51_cond_obj_cleanup): Leave object
+	dequeuing to cond_destroy_internal().
+
+2005-07-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/lib/thread.c (pthread_set_mode_np): Remove useless
+	pthread parameter; mode can only be set for the current thread
+	anyway.
+
+	* skins/posix/thread.c (pse51_errno_location): Make this call exec
+	mode-agnostic, so that relaxed or plain Linux threads can use it.
+
+2005-07-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/lib/interrupt.c: Add simple interrupt management
+	API.
+
+	* include/nucleus/asm-i386/system.h (xnarch_switch_to): Perform
+	manual saving and reloading of the %fs and %gs segment registers
+	when switching out a Linux task context, in order to handle the
+	corner cases caused by domain migrations of shadow threads
+	properly.
+
+	* skins/posix (*_destroy_internal): Make sure the internal
+	destructors are always called in atomic context by cleanup loops.
+
+2005-07-24  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (do_hisyscall_event, do_losyscall_event): Add
+	adaptive syscall handling (__xn_exec_adaptive), which attempts to
+	restart a syscall in the opposite domain upon -ENOSYS error from
+	the initial invocation.
+
 2005-07-23  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/lib/timer.c (rt_timer_spin): Add.

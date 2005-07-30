@@ -1047,6 +1047,7 @@ Optional Features:
   --enable-mvm-debug      Enable MVM debug
   --enable-mvm-atomic-core
                           Enable MVM atomic core mode
+  --enable-stats          Enable statistics collection in nucleus
   --enable-nucleus-debug  Enable RTAI nucleus debug
    --enable-tclwrap       Wrap Tcl scripts in the executable files
   --enable-psos           Build pSOS+ simulator
@@ -19565,6 +19566,19 @@ fi;
 echo "$as_me:$LINENO: result: ${CONFIG_RTAI_MVM_ATOMIC_CORE:-no}" >&5
 echo "${ECHO_T}${CONFIG_RTAI_MVM_ATOMIC_CORE:-no}" >&6
 
+echo "$as_me:$LINENO: checking for statistics collection in nucleus" >&5
+echo $ECHO_N "checking for statistics collection in nucleus... $ECHO_C" >&6
+# Check whether --enable-nucleus-stats or --disable-nucleus-stats was given.
+if test "${enable_nucleus_stats+set}" = set; then
+  enableval="$enable_nucleus_stats"
+  case "$enableval" in
+	y | yes) CONFIG_RTAI_OPT_STATS=y ;;
+	*) unset CONFIG_RTAI_OPT_STATS ;;
+	esac
+fi;
+echo "$as_me:$LINENO: result: ${CONFIG_RTAI_OPT_STATS:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_OPT_STATS:-no}" >&6
+
 echo "$as_me:$LINENO: checking for RTAI nucleus debug support" >&5
 echo $ECHO_N "checking for RTAI nucleus debug support... $ECHO_C" >&6
 # Check whether --enable-nucleus-debug or --disable-nucleus-debug was given.
@@ -24585,6 +24599,14 @@ if test x$CONFIG_RTAI_MVM_DEBUG = xy; then
 
 cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_MVM_DEBUG 1
+_ACEOF
+
+fi
+
+if test x$CONFIG_RTAI_OPT_STATS = xy; then
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_OPT_STATS 1
 _ACEOF
 
 fi

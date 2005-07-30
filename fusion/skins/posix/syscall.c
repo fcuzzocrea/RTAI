@@ -1412,7 +1412,7 @@ int pse51_syscall_init (void)
 
     xnpod_add_hook(XNHOOK_THREAD_DELETE,&__shadow_delete_hook);
 
-    __pse51_errptd = adeos_alloc_ptdkey();
+    __pse51_errptd = rthal_alloc_ptdkey();
     
     return 0;
 }
@@ -1422,5 +1422,5 @@ void pse51_syscall_cleanup (void)
 {
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,&__shadow_delete_hook);
     xnshadow_unregister_interface(__muxid);
-    adeos_free_ptdkey(__pse51_errptd);
+    rthal_free_ptdkey(__pse51_errptd);
 }

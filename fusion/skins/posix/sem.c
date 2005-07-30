@@ -35,11 +35,11 @@ static inline int sem_trywait_internal (sem_t *sem)
 static void sem_destroy_internal (sem_t *sem)
 
 {
+    removeq(&pse51_semq, &sem->link);    
     pse51_mark_deleted(sem);
     /* synchbase wait queue may not be empty only when this function is called
        from pse51_sem_obj_cleanup, hence the absence of xnpod_schedule(). */
     xnsynch_destroy(&sem->synchbase);
-    removeq(&pse51_semq, &sem->link);    
 }
 
 int sem_trywait (sem_t *sem)
@@ -61,7 +61,7 @@ int sem_trywait (sem_t *sem)
     
     if (err)
 	{
-        thread_errno() = err;
+        thread_set_errno(err);
         return -1;
 	}
 
@@ -80,7 +80,7 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
 
     if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
 	{
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         goto error;
 	}
 
@@ -96,13 +96,13 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
             
         if (xnthread_test_flags(&cur->threadbase, XNBREAK))
 	    {
-            thread_errno() = EINTR;
+            thread_set_errno(EINTR);
             goto error;
 	    }
         
         if (xnthread_test_flags(&cur->threadbase, XNTIMEO))
 	    {
-            thread_errno() = ETIMEDOUT;
+            thread_set_errno(ETIMEDOUT);
             goto error;
 	    }
 	}
@@ -139,13 +139,13 @@ int sem_post (sem_t *sem)
 
     if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
 	{
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         goto error;
 	}
 
     if (sem->value == SEM_VALUE_MAX)
         {
-        thread_errno() = EAGAIN;
+        thread_set_errno(EAGAIN);
         goto error;
 	}
 
@@ -177,7 +177,7 @@ int sem_getvalue (sem_t *sem, int *value)
     if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
 	{
         xnlock_put_irqrestore(&nklock, s);
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 
@@ -200,14 +200,14 @@ int sem_init (sem_t *sem, int pshared, unsigned int value)
     if (pshared)
 	{
         xnlock_put_irqrestore(&nklock, s);
-        thread_errno() = ENOSYS;
+        thread_set_errno(ENOSYS);
         return -1;
 	}
 
     if (value > SEM_VALUE_MAX)
 	{
         xnlock_put_irqrestore(&nklock, s);
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 
@@ -234,14 +234,14 @@ int sem_destroy (sem_t *sem)
     if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
 	{
         xnlock_put_irqrestore(&nklock, s);
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 
     if (xnsynch_nsleepers(&sem->synchbase) > 0)
 	{
         xnlock_put_irqrestore(&nklock, s);
-        thread_errno() = EBUSY;
+        thread_set_errno(EBUSY);
         return -1;
 	}
 
@@ -261,9 +261,14 @@ void pse51_sem_obj_cleanup (void)
 
 {
     xnholder_t *holder;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock, s);
 
     while ((holder = getheadq(&pse51_semq)) != NULL)
         sem_destroy_internal(link2sem(holder));
+
+    xnlock_put_irqrestore(&nklock, s);
 }
 
 EXPORT_SYMBOL(sem_init);

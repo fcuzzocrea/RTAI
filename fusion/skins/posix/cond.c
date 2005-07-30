@@ -30,11 +30,11 @@ static xnqueue_t pse51_condq;
 static void cond_destroy_internal (pthread_cond_t *cond)
 
 {
+    removeq(&pse51_condq, &cond->link);
     pse51_mark_deleted(cond);
     /* synchbase wait queue may not be empty only when this function is called
        from pse51_cond_obj_cleanup, hence the absence of xnpod_schedule(). */
     xnsynch_destroy(&cond->synchbase);
-    removeq(&pse51_condq, &cond->link);
 }
 
 int pthread_cond_init (pthread_cond_t *cond, const pthread_condattr_t *attr)
@@ -235,6 +235,7 @@ int pthread_cond_broadcast (pthread_cond_t *cond)
 
     if(xnsynch_flush(&cond->synchbase, 0) == XNSYNCH_RESCHED)
         xnpod_schedule();
+
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
@@ -251,9 +252,14 @@ void pse51_cond_obj_cleanup (void)
 
 {
     xnholder_t *holder;
+    spl_t s;
 
-    while ((holder = getq(&pse51_condq)) != NULL)
+    xnlock_get_irqsave(&nklock, s);
+
+    while ((holder = getheadq(&pse51_condq)) != NULL)
 	cond_destroy_internal(link2cond(holder));
+
+    xnlock_put_irqrestore(&nklock, s);
 }
 
 EXPORT_SYMBOL(pthread_cond_init);

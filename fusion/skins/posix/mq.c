@@ -194,7 +194,7 @@ int mq_close(mqd_t fd)
     /* In case qd is the result of a call to mq_open which failed. */
     if(qd == (pse51_mqd_t *) -1)
         {
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -202,7 +202,7 @@ int mq_close(mqd_t fd)
     if(!pse51_obj_active(qd, PSE51_MQD_MAGIC, struct pse51_mqd))
         {
         xnlock_put_irqrestore(&nklock, s);
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -232,7 +232,7 @@ int mq_getattr(mqd_t fd, struct mq_attr *attr)
     /* In case qd is the result of a call to mq_open which failed. */
     if(qd == (pse51_mqd_t *) -1)
         {
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -240,7 +240,7 @@ int mq_getattr(mqd_t fd, struct mq_attr *attr)
     if(!pse51_obj_active(qd, PSE51_MQD_MAGIC, struct pse51_mqd))
         {
         xnlock_put_irqrestore(&nklock, s);
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -262,7 +262,7 @@ int mq_setattr(mqd_t fd,
     /* In case qd is the result of a call to mq_open which failed. */
     if(qd == (pse51_mqd_t *) -1)
         {
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -270,7 +270,7 @@ int mq_setattr(mqd_t fd,
     if(!pse51_obj_active(qd, PSE51_MQD_MAGIC, struct pse51_mqd))
         {
         xnlock_put_irqrestore(&nklock, s);
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -476,14 +476,14 @@ int mq_timedsend(mqd_t fd,
 
     if(abs_timeout->tv_nsec < 0 || abs_timeout->tv_nsec > ONE_BILLION)
         {
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
         }
 
     /* In case qd is the result of a call to mq_open which failed. */
     if(qd == (pse51_mqd_t *) -1)
         {
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -495,7 +495,7 @@ int mq_timedsend(mqd_t fd,
 
     if(err)
         {
-        thread_errno() = err;
+        thread_set_errno(err);
         return -1;
         }
 
@@ -511,7 +511,7 @@ int mq_send(mqd_t fd, const char *buffer, size_t len, unsigned prio)
     /* In case qd is the result of a call to mq_open which failed. */
     if(qd == (pse51_mqd_t *) -1)
         {
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -521,7 +521,7 @@ int mq_send(mqd_t fd, const char *buffer, size_t len, unsigned prio)
 
     if(err)
         {
-        thread_errno() = err;
+        thread_set_errno(err);
         return -1;
         }
 
@@ -541,14 +541,14 @@ ssize_t mq_timedreceive(mqd_t fd,
 
     if(abs_timeout->tv_nsec < 0 || abs_timeout->tv_nsec > ONE_BILLION)
         {
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
         }
 
     /* In case qd is the result of a call to mq_open which failed. */
     if(qd == (pse51_mqd_t *) -1)
         {
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -560,7 +560,7 @@ ssize_t mq_timedreceive(mqd_t fd,
 
     if(err)
         {
-        thread_errno() = err;
+        thread_set_errno(err);
         return -1;
         }
 
@@ -576,7 +576,7 @@ ssize_t mq_receive(mqd_t fd, char *buffer, size_t len, unsigned *priop)
     /* In case qd is the result of a call to mq_open which failed. */
     if(qd == (pse51_mqd_t *) -1)
         {
-        thread_errno() = EBADF;
+        thread_set_errno(EBADF);
         return -1;
         }
 
@@ -586,7 +586,7 @@ ssize_t mq_receive(mqd_t fd, char *buffer, size_t len, unsigned *priop)
 
     if(err)
         {
-        thread_errno() = err;
+        thread_set_errno(err);
         return -1;
         }
 
@@ -753,7 +753,7 @@ out_err_unlock_free_qd:
     xnfree(qd);
 
   out_err:  
-    thread_errno() = err;
+    thread_set_errno(err);
     return (mqd_t) -1;
 }
 
@@ -774,7 +774,7 @@ int mq_unlink(const char *name)
 
     if(!holder)
         {
-        thread_errno() = ENOENT;
+        thread_set_errno(ENOENT);
         return -1;
         }
 

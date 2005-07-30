@@ -90,7 +90,7 @@ int sigaddset(sigset_t *user_set, int sig)
     
     if (sig < PSE51_SIGMIN || sig > PSE51_SIGMAX)
 	{
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 
@@ -109,7 +109,7 @@ int sigdelset (sigset_t *user_set, int sig)
     
     if (sig < PSE51_SIGMIN || sig > PSE51_SIGMAX)
 	{
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 
@@ -129,7 +129,7 @@ int sigismember (const sigset_t *user_set, int sig)
     
     if (sig < PSE51_SIGMIN || sig > PSE51_SIGMAX)
 	{
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 
@@ -150,13 +150,13 @@ int sigaction (int sig, const struct sigaction *action, struct sigaction *old)
 
     if (sig < PSE51_SIGMIN || sig > PSE51_SIGMAX || (!action && !old))
 	{
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 
     if (action && testbits(action->sa_flags, ~SIGACTION_FLAGS))
 	{
-        thread_errno() = ENOTSUP;
+        thread_set_errno(ENOTSUP);
         return -1;
 	}
 
@@ -306,7 +306,7 @@ int sigpending(sigset_t *user_set)
 
     if (!set)
 	{
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 

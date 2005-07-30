@@ -31,7 +31,7 @@ int sched_get_priority_min (int policy)
 
 	default:
 
-	    thread_errno() = EINVAL;
+	    thread_set_errno(EINVAL);
 	    return -1;
 	}
 }
@@ -49,7 +49,7 @@ int sched_get_priority_max (int policy)
 
 	default:
 
-	    thread_errno() = EINVAL;
+	    thread_set_errno(EINVAL);
 	    return -1;
 	}
 }
@@ -60,13 +60,13 @@ int sched_rr_get_interval (int pid, struct timespec *interval)
     /* The only valid pid is 0. */
     if (pid)
 	{
-        thread_errno() = ESRCH;
+        thread_set_errno(ESRCH);
         return -1;
 	}
 
     if (!interval)
 	{
-        thread_errno() = EINVAL;
+        thread_set_errno(EINVAL);
         return -1;
 	}
 

@@ -28,6 +28,8 @@
 #include <posix/thread.h>
 #include <posix/tsd.h>
 #include <posix/mq.h>
+#include <posix/intr.h>
+#include <posix/timer.h>
 
 MODULE_DESCRIPTION("POSIX/PSE51 interface");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
@@ -55,6 +57,8 @@ static void pse51_shutdown(int xtype)
     xnpod_stop_timer();
 
     pse51_thread_cleanup();
+    pse51_timer_obj_cleanup();
+    pse51_intr_obj_cleanup();
     pse51_tsd_cleanup();
     pse51_cond_obj_cleanup();
     pse51_sem_obj_cleanup();
@@ -124,6 +128,8 @@ int __fusion_skin_init(void)
     pse51_tsd_init();
     pse51_cond_obj_init();
     pse51_mq_pkg_init();
+    pse51_intr_obj_init();
+    pse51_timer_obj_init();
 
     pse51_thread_init(module_param_value(time_slice_arg));
 

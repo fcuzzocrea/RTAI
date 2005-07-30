@@ -19,8 +19,8 @@
 #ifndef _RTAI_SKIN_POSIX_H
 #define _RTAI_SKIN_POSIX_H
 
-#define PSE51_SKIN_VERSION_STRING  "0.1"
-#define PSE51_SKIN_VERSION_CODE    0x00000001
+#define PSE51_SKIN_VERSION_STRING  "1.0"
+#define PSE51_SKIN_VERSION_CODE    0x00010000
 #define PSE51_SKIN_MAGIC           0x50534531
 
 #if defined(__KERNEL__) || defined(__RTAI_SIM__)

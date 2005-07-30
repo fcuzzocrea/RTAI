@@ -19,9 +19,11 @@
 #ifndef _RTAI_POSIX_PTHREAD_H
 #define _RTAI_POSIX_PTHREAD_H
 
+#include <sys/time.h>
 #include <time.h>
 #include_next <pthread.h>
 #include <nucleus/thread.h>
+#include <nucleus/intr.h>
 
 union __fusion_mutex {
     pthread_mutex_t native_mutex;
@@ -43,6 +45,8 @@ union __fusion_cond {
 
 struct timespec;
 
+typedef unsigned long pthread_intr_t;
+
 #ifndef CLOCK_MONOTONIC
 /* Some archs do not implement this, but fusion always does. */
 #define CLOCK_MONOTONIC 1
@@ -50,6 +54,12 @@ struct timespec;
 
 #define PTHREAD_SHIELD  XNSHIELD
 #define PTHREAD_WARNSW  XNTRAPSW
+
+#define PTHREAD_IAUTOENA    XN_ISR_ENABLE
+#define PTHREAD_IPROPAGATE  XN_ISR_CHAINED
+
+#define PTHREAD_IENABLE     0
+#define PTHREAD_IDISABLE    1
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,9 +70,23 @@ int pthread_make_periodic_np(pthread_t thread,
 			     struct timespec *periodtp);
 int pthread_wait_np(void);
 
-int pthread_set_mode_np(pthread_t thread,
-			int clrmask,
+int pthread_set_mode_np(int clrmask,
 			int setmask);
+
+int pthread_set_name_np(pthread_t thread,
+			const char *name);
+
+int pthread_intr_attach_np(pthread_intr_t *intr,
+			   unsigned irq,
+			   int mode);
+
+int pthread_intr_detach_np(pthread_intr_t intr);
+
+int pthread_intr_wait_np(pthread_intr_t intr,
+			 const struct timespec *to);
+
+int pthread_intr_control_np(pthread_intr_t intr,
+			    int cmd);
 
 int __real_pthread_create(pthread_t *tid,
 			  const pthread_attr_t *attr,
@@ -126,6 +150,22 @@ int __real_clock_nanosleep(clockid_t clock_id,
 
 int __real_nanosleep(const struct timespec *rqtp,
 		     struct timespec *rmtp);
+
+int __real_timer_create (clockid_t clockid,
+			 struct sigevent *evp,
+			 timer_t *timerid);
+
+int __real_timer_delete (timer_t timerid);
+
+int __real_timer_settime(timer_t timerid,
+			 int flags,
+			 const struct itimerspec *value,
+			 struct itimerspec *ovalue);
+
+int __real_timer_gettime(timer_t timerid,
+			 struct itimerspec *value);
+
+int __real_timer_getoverrun(timer_t timerid);
 
 #ifdef __cplusplus
 }

@@ -109,9 +109,9 @@ int clock_nanosleep (clockid_t clock_id,
     return 0;
 }
 
-int nanosleep(const struct timespec *rqtp, struct timespec *rmtp) {
-
-    return clock_nanosleep(CLOCK_REALTIME, 0, rqtp, rmtp);
+int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
+{
+    return clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
 }
 
 EXPORT_SYMBOL(clock_getres);

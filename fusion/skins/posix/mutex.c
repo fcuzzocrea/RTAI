@@ -31,11 +31,11 @@ static xnqueue_t pse51_mutexq;
 static void pse51_mutex_destroy_internal (pthread_mutex_t *mutex)
 
 {
+    removeq(&pse51_mutexq, &mutex->link);
     pse51_mark_deleted(mutex);
     /* synchbase wait queue may not be empty only when this function is called
        from pse51_mutex_obj_cleanup, hence the absence of xnpod_schedule(). */
     xnsynch_destroy(&mutex->synchbase);
-    removeq(&pse51_mutexq, &mutex->link);
 }
 
 void pse51_mutex_obj_init (void)

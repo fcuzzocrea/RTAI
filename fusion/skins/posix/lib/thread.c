@@ -123,20 +123,18 @@ int __wrap_pthread_create (pthread_t *tid,
 int __wrap_pthread_detach (pthread_t thread)
 
 {
-    pthread_t tid = pthread_self();
     return -XENOMAI_SKINCALL1(__pse51_muxid,
 			      __pse51_thread_detach,
-			      tid); /* Do not inline. */
+			      thread);
 }
 
 int __wrap_pthread_setschedparam (pthread_t thread,
 				  int policy,
 				  const struct sched_param *param)
 {
-    pthread_t tid = pthread_self();
     return -XENOMAI_SKINCALL3(__pse51_muxid,
 			      __pse51_thread_setschedparam,
-			      tid, /* Do not inline. */
+			      thread,
 			      policy,
 			      param);
 }
@@ -159,10 +157,9 @@ int pthread_make_periodic_np (pthread_t thread,
 			      struct timespec *starttp,
 			      struct timespec *periodtp)
 {
-    pthread_t tid = pthread_self();
     return -XENOMAI_SKINCALL3(__pse51_muxid,
 			      __pse51_thread_make_periodic,
-			      tid, /* Do not inline. */
+			      thread,
 			      starttp,
 			      periodtp);
 }
@@ -174,8 +171,7 @@ int pthread_wait_np (void)
 			      __pse51_thread_wait);
 }
 
-int pthread_set_mode_np (pthread_t thread,
-			 int clrmask,
+int pthread_set_mode_np (int clrmask,
 			 int setmask)
 {
     pthread_t tid = pthread_self();
@@ -184,4 +180,13 @@ int pthread_set_mode_np (pthread_t thread,
 			      tid, /* Do not inline. */
 			      clrmask,
 			      setmask);
+}
+
+int pthread_set_name_np (pthread_t thread,
+			 const char *name)
+{
+    return -XENOMAI_SKINCALL2(__pse51_muxid,
+			      __pse51_thread_set_name,
+			      thread,
+			      name);
 }

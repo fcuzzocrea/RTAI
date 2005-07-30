@@ -10,11 +10,13 @@ libpthread_rt_la_LDFLAGS = $(posix_wrappers) -module -version-info 0:0:0
 libpthread_rt_la_SOURCES = \
 	init.c \
 	thread.c \
+	timer.c \
 	semaphore.c \
 	clock.c \
 	cond.c \
 	mq.c \
-	mutex.c
+	mutex.c \
+	interrupt.c
 
 include_HEADERS = \
 	mqueue.h \

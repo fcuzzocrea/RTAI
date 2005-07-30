@@ -380,6 +380,9 @@ void pse51_thread_cleanup (void)
 
 {
     xnholder_t *holder;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock, s);
 
     while ((holder = getheadq(&pse51_threadq)) != NULL)
 	{
@@ -396,14 +399,27 @@ void pse51_thread_cleanup (void)
             thread_destroy(thread);
 	}
 
+    xnlock_put_irqrestore(&nklock, s);
+
     xnpod_remove_hook(XNHOOK_THREAD_DELETE,thread_delete_hook);
 }
+
+extern int __pse51_errptd;
+#define pse51_errno_ptd(t)  ((current)->ptd[__pse51_errptd])
 
 int *pse51_errno_location (void)
 
 {
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-    return &thread_errno();
+    pthread_t thread = pse51_current_thread();
+
+    if (thread)
+	return &thread->err;
+
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    return (int *)&pse51_errno_ptd(current);
+#else /* !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
+    return NULL;
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 }
 
 EXPORT_SYMBOL(pthread_create);

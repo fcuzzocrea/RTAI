@@ -114,8 +114,9 @@ static void rthal_critical_sync (void)
 
             sync_time = rthal_timers_sync_time;
 
-            /* Stagger local timers on SMP systems, to avoid tick handler
-               stupidly spinning while running on other CPU. */
+            /* Stagger local timers on SMP systems, to prevent the
+               tick handler from stupidly spinning while running on
+               other CPU. */
             if(p->mode)
                 sync_time += rthal_imuldiv(p->count, cpuid, num_online_cpus());
 
@@ -479,12 +480,17 @@ int rthal_arch_init (void)
     if (!test_bit(X86_FEATURE_APIC,boot_cpu_data.x86_capability))
     {
         printk("RTAI: Local APIC absent or disabled!\n"
-	           "      Disable APIC support or pass \"lapic\" as bootparam.\n");
+	       "      Disable APIC support or pass \"lapic\" as bootparam.\n");
 	rthal_smi_restore();
         return -ENODEV;
     }
-
 #endif /* CONFIG_X86_LOCAL_APIC */
+
+#ifdef CONFIG_RTAI_HW_X86_VSYSCALL
+    if (!cpu_has_sep)
+        printk("RTAI: VSYSCALL enabled but CPU has no SEP support,\n"
+	       "      Disabling it would be slightly better performance-wise.\n");
+#endif /* CONFIG_RTAI_HW_X86_VSYSCALL */
 
     if (rthal_cpufreq_arg == 0)
 #ifdef CONFIG_X86_TSC

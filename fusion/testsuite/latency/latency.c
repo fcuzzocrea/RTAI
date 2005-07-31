@@ -58,6 +58,7 @@ void latency (void *cookie)
 {
     int err, count, nsamples, warmup = 1;
     RTIME expected_tsc, period_tsc, start_ticks;
+    RT_TIMER_INFO timer_info;
 
     err = rt_timer_start(TM_ONESHOT);
 
@@ -67,12 +68,20 @@ void latency (void *cookie)
         return;
         }
 
+    err = rt_timer_inquire(&timer_info);
+    
+    if (err)
+        {
+        fprintf(stderr,"latency: rt_timer_inquire, code %d\n",err);
+        return;
+        }
+
     nsamples = ONE_BILLION / period_ns;
     period_tsc = rt_timer_ns2tsc(period_ns);
-    start_ticks = rt_timer_read();
     /* start time: one millisecond from now. */
-    expected_tsc = rt_timer_tsc() + rt_timer_ns2tsc(1000000);
-    start_ticks += rt_timer_ns2ticks(1000000);
+    start_ticks = timer_info.date + rt_timer_ns2ticks(1000000);
+    expected_tsc = timer_info.tsc + rt_timer_ns2tsc(1000000);
+
     err = rt_task_set_periodic(NULL,start_ticks,period_ns);
 
     if (err)

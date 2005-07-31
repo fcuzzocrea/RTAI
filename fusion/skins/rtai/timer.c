@@ -189,7 +189,7 @@ SRTIME rt_timer_tsc2ns (SRTIME ticks)
 int rt_timer_inquire (RT_TIMER_INFO *info)
 
 {
-    RTIME period;
+    RTIME period, tsc;
 
     if (!testbits(nkpod->status,XNTIMED))
 	period = TM_UNSET;
@@ -198,9 +198,19 @@ int rt_timer_inquire (RT_TIMER_INFO *info)
     else
 	period = xnpod_get_tickval();
 
+    tsc = xnarch_get_cpu_tsc();
     info->period = period;
-    info->date = xnpod_get_time();
+    info->tsc = tsc;
 
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+    if (period == TM_ONESHOT)
+        /* In aperiodic mode, our idea of time is the same as the
+           CPU's, and a tick equals a nanosecond. */
+        info->date = xnarch_tsc_to_ns(tsc) + nkpod->wallclock_offset;
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+    else
+        info->date = nkpod->jiffies + nkpod->wallclock_offset;
+    
     return 0;
 }
 
@@ -294,7 +304,7 @@ void rt_timer_spin (RTIME ns)
     RTIME etime = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(ns);
 
     while (xnarch_get_cpu_tsc() < etime)
-	; /* Empty spinning loop */
+	cpu_relax();
 }
 
 /**

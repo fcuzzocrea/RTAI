@@ -1,3 +1,28 @@
+2005-07-31  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/rtdm/drvlib.c (rtdm_task_busy_sleep), 
+	skins/rtai/timer.c (rt_timer_spin): Call cpu_relax when busy
+	waiting.
+
+	* testsuite/latency/latency.c (latency): use rt_timer_inquire to
+	get a synchronized tsc value and tick count.
+
+	* skins/rtai/timer.c (rt_timer_inquire): Add a tsc member to the
+	rt_timer_info structure, the tsc returned by rt_timer_inquire is
+	synchronized with the date member.
+
+	* testsuite/latency/latency.c: Stop using rt_timer_tsc as a base
+	for rt_task_set_periodic, use rt_timer_read.
+	Rename variable by adding their unit (tsc, ticks, ns) to their
+	name.
+
+	* skins/rtai/lib/task.c (rt_task_set_periodic): Add a warning
+	about last change.
+
+	* nucleus/pod.c, nucleus/timer.c: Replace nkpod->wallclock with
+	nkpod->wallclock_offset initialiazed using Linux time base, so
+	that xnpod_get_time() use the same time base as Linux.
+
 2005-07-31  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/module.c (xnpod_init_proc): Use a seqfile to dump sched
@@ -183,6 +208,11 @@
 	Linux task mated to a given real-time shadow.
 
 	* arch/i386/patches: Upgrade to r12c4.
+
+2005-07-11  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* GNUmakefile.am (install-nodev): Add install-nodev target as a
+	shorthand for make SUDO=false install.
 
 2005-07-11  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 

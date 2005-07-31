@@ -74,3 +74,6 @@ ___________________________________________________________________
 
         o rt_task_set_periodic requires the value passed as a start time
         to be obtained using rt_timer_read().
+
+        o the timer rt_timer_info structure has a "tsc" member, whose value is
+         synchronized with the value of the date member.

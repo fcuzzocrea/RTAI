@@ -330,7 +330,8 @@ void rtdm_task_busy_sleep(__u64 delay)
 {
     xnticks_t wakeup = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(delay);
 
-    while (xnarch_get_cpu_tsc() < wakeup);
+    while (xnarch_get_cpu_tsc() < wakeup)
+        cpu_relax();
 }
 /** @} */
 

@@ -31,7 +31,8 @@
 typedef struct rt_timer_info {
 
     RTIME period;	/* !< Current status (unset, aperiodic, period). */
-    RTIME date;		/* !< Current date. */
+    RTIME date;		/* !< Current wallclock time. */
+    RTIME tsc;          /* !< Current tsc count. */
 
 } RT_TIMER_INFO;
 

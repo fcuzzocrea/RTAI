@@ -174,7 +174,8 @@ struct xnpod {
 
     xnticks_t jiffies;          /*!< Periodic ticks elapsed since boot. */
 
-    xnticks_t wallclock;        /*!< Wallclock time in ticks. */
+    xnticks_t wallclock_offset; /*!< Difference between wallclock time
+                                  and epoch in ticks. */
 
     xntimer_t htimer;           /*!< Host timer. */
 

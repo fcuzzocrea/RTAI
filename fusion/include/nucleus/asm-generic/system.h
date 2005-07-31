@@ -405,6 +405,13 @@ static void xnarch_notify_ready (void)
 #endif /* CONFIG_RTAI_OPT_FUSION */
 }
 
+static inline unsigned long long xnarch_get_sys_time(void)
+{
+    struct timespec ts;
+    do_gettimeofday(&ts);
+    return ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+}
+
 #endif /* XENO_POD_MODULE */
 
 #ifdef XENO_INTR_MODULE

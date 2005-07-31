@@ -70,7 +70,6 @@ RTIME rt_get_time_ns(void)
 {
 	RTIME ret;
 
-	/* FIXME: wallclock */
 	ret = xnpod_get_time();
 	
 	return __compat_oneshot ? count2nano(ret) : ret;

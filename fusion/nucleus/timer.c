@@ -555,10 +555,7 @@ void xntimer_do_timers (void)
 #ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
         if (sched == xnpod_sched_slot(XNTIMER_KEEPER_ID))
 #endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
-            {
             ++nkpod->jiffies;
-            ++nkpod->wallclock;
-            }
 
         timerq = &sched->timerwheel[nkpod->jiffies & XNTIMER_WHEELMASK];
         aperiodic = 0;

@@ -332,7 +332,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->minpri = minpri;
     pod->maxpri = maxpri;
     pod->jiffies = 0;
-    pod->wallclock = 0;
+    pod->wallclock_offset = 0;
     pod->tickvalue = XNARCH_DEFAULT_TICK;
     pod->ticks2sec = 1000000000/ XNARCH_DEFAULT_TICK;
     pod->refcnt = 0;
@@ -2572,10 +2572,9 @@ maybe_switch:
  *
  * The nucleus tracks the current time as a monotonously increasing
  * count of ticks announced by the timer source since the epoch. The
- * epoch is initially defined by the time the nucleus has started.
- * This service changes the epoch. Running timers use a different time
- * base thus are not affected by this operation. The nucleus time
- * is only accounted when the system timer runs in periodic mode.
+ * epoch is initially the same as the underlying architecture system
+ * time. This service changes the epoch. Running timers use a different
+ * time base thus are not affected by this operation.
  *
  * Environments:
  *
@@ -2596,7 +2595,7 @@ void xnpod_set_time (xnticks_t newtime)
 
     xnlock_get_irqsave(&nklock,s);
     xnltt_log_event(rtai_ev_timeset,newtime);
-    nkpod->wallclock = newtime;
+    nkpod->wallclock_offset = newtime - xnpod_get_time();
     setbits(nkpod->status,XNTMSET);
     xnlock_put_irqrestore(&nklock,s);
 }
@@ -2631,10 +2630,10 @@ xnticks_t xnpod_get_time (void)
     if (!testbits(nkpod->status,XNTMPER))
         /* In aperiodic mode, our idea of time is the same as the
            CPU's, and a tick equals a nanosecond. */
-        return xnpod_get_cpu_time();
+        return xnpod_get_cpu_time() + nkpod->wallclock_offset;
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
-    return nkpod->wallclock;
+    return nkpod->jiffies + nkpod->wallclock_offset;
 }
 
 /*! 
@@ -2937,6 +2936,7 @@ int xnpod_trap_fault (void *fltinfo)
 int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
 
 {
+    xnticks_t wallclock;
     int err, delta;
     spl_t s;
 
@@ -3024,6 +3024,10 @@ unlock_and_exit:
     if (delta < 0)
         return -ENODEV;
 
+    wallclock = xnpod_ns2ticks(xnarch_get_sys_time());
+    
+    xnpod_set_time(wallclock + XNARCH_HOST_TICK / nkpod->tickvalue - delta);
+    
     if (delta == 0)
         delta = XNARCH_HOST_TICK / nkpod->tickvalue;
 

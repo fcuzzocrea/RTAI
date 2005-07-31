@@ -17,6 +17,7 @@
  */
 
 #include <sys/types.h>
+#include <stdio.h>
 #include <memory.h>
 #include <malloc.h>
 #include <unistd.h>
@@ -218,11 +219,19 @@ int rt_task_set_periodic (RT_TASK *task,
 			  RTIME period)
 
 {
-    return XENOMAI_SKINCALL3(__rtai_muxid,
-			     __rtai_task_set_periodic,
-			     task,
-			     &idate,
-			     &period);
+    int err = XENOMAI_SKINCALL3(__rtai_muxid,
+                                __rtai_task_set_periodic,
+                                task,
+                                &idate,
+                                &period);
+
+    if(err == -ETIMEDOUT)
+        fprintf(stderr,
+                "WARNING: starting with RTAI/Fusion 0.8.4, the start time passed"
+                " to rt_task_set_periodic\nshould use rt_timer_read as a time"
+                " base.");
+
+    return err;
 }
 
 int rt_task_wait_period (void)

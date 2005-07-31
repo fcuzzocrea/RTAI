@@ -680,6 +680,19 @@ static inline int xnarch_release_ipi (void) {
 #define xnarch_notify_shutdown() /* Nullified */
 #define xnarch_notify_halt() /* Nullified */
 
+static inline unsigned long long xnarch_get_sys_time(void)
+{
+    struct timeval tv;
+
+    if(gettimeofday(&tv, NULL))
+        {
+        printf("Warning, gettimeofday failed, error %d\n", errno);
+        return 0;
+        }
+
+    return tv.tv_sec * 1000000000ULL + tv.tv_usec * 1000;
+}
+
 #endif /* XENO_POD_MODULE */
 
 #ifdef XENO_THREAD_MODULE

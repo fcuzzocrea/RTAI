@@ -64,7 +64,7 @@ __u64 rtdm_clock_read(void)
         return xnpod_get_cpu_time();
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        return xnpod_ticks2ns(nkpod->wallclock);
+        return xnpod_ticks2ns(nkpod->jiffies + nkpod->wallclock_offset);
 }
 /** @} */
 

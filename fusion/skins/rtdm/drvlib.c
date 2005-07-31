@@ -61,7 +61,7 @@ __u64 rtdm_clock_read(void)
 {
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
-        return xnpod_get_cpu_time();
+        return xnpod_get_cpu_time() + nkpod->wallclock_offset;
     else
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
         return xnpod_ticks2ns(nkpod->jiffies + nkpod->wallclock_offset);

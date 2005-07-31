@@ -136,6 +136,39 @@ static void hdlr (adevinfo_t *p) \
 	adeos_propagate_event(p); \
 }
 
+#define RTHAL_DECLARE_SCHEDULE_EVENT(hdlr) \
+static void hdlr (adevinfo_t *p) \
+{ \
+    struct { \
+	struct task_struct *prev; \
+	struct task_struct *next; \
+    } *ev = (__typeof(ev))(p)->evdata; \
+    do_##hdlr(ev->next);	\
+    adeos_propagate_event(p); \
+}
+
+#define RTHAL_DECLARE_SETSCHED_EVENT(hdlr) \
+static void hdlr (adevinfo_t *p) \
+{ \
+    struct { \
+	struct task_struct *task; \
+	int policy; \
+	struct sched_param *param; \
+    } *ev = (__typeof(ev))(p)->evdata; \
+    do_##hdlr(ev->task,ev->param->sched_priority);	\
+    adeos_propagate_event(p); \
+}
+
+#define RTHAL_DECLARE_SIGWAKE_EVENT(hdlr) \
+static void hdlr (adevinfo_t *p) \
+{ \
+    struct { \
+	struct task_struct *task; \
+    } *ev = (__typeof(ev))(p)->evdata; \
+    do_##hdlr(ev->task);	\
+    adeos_propagate_event(p); \
+}
+
 #define rthal_catch_taskexit(hdlr)	\
     adeos_catch_event_from(adp_root,ADEOS_EXIT_PROCESS,hdlr)
 #define rthal_catch_sigwake(hdlr)	\

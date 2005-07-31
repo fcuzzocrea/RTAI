@@ -131,11 +131,8 @@ static void rthal_irq_trampoline (unsigned irq)
 }
 
 /**
- * @fn int rthal_irq_request(unsigned irq,
-                             void (*handler)(unsigned irq, void *cookie),
-			     int (*ackfn)(unsigned irq),
-			     void *cookie)
- *                           
+ * @fn int rthal_irq_request(unsigned irq, void (*handler)(unsigned irq, void *cookie), int (*ackfn)(unsigned irq), void *cookie)
+ *
  * @brief Install a real-time interrupt handler.
  *
  * Installs an interrupt handler for the specified IRQ line by

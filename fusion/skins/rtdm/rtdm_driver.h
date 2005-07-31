@@ -472,7 +472,6 @@ typedef spinlock_t                  rtdm_lock_t;
 typedef unsigned long               rtdm_lockctx_t;
 
 
-/** @{ */
 /**
  * Static lock initialisation
  */
@@ -608,8 +607,6 @@ typedef unsigned long               rtdm_lockctx_t;
  */
 #define rtdm_lock_irqrestore(context)           \
     rthal_local_irq_restore(context)
-/** @} */
-
 /** @} */
 
 

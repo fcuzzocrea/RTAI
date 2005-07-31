@@ -407,9 +407,9 @@ static void xnarch_notify_ready (void)
 
 static inline unsigned long long xnarch_get_sys_time(void)
 {
-    struct timespec ts;
-    do_gettimeofday(&ts);
-    return ts.tv_sec * 1000000000ULL + ts.tv_nsec;
+    struct timeval tv;
+    do_gettimeofday(&tv);
+    return tv.tv_sec * 1000000000ULL + tv.tv_usec * 1000;
 }
 
 #endif /* XENO_POD_MODULE */

@@ -98,6 +98,12 @@ struct sigaction {
 #define clock_getres pse51_clock_getres
 #define clock_gettime pse51_clock_gettime
 #define clock_settime pse51_clock_settime
+#define clock_nanosleep pse51_clock_nanosleep
+#define timer_create pse51_timer_create
+#define timer_delete pse51_timer_delete
+#define timer_settime pse51_timer_settime
+#define timer_gettime pse51_timer_gettime
+#define timer_getoverrun pse51_timer_getoverrun
 #define mq_attr pse51_mq_attr
 #define mq_getattr pse51_mq_getattr
 #define mq_setattr pse51_mq_setattr

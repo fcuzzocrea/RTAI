@@ -20,6 +20,7 @@
 #define _POSIX_TIMER_H
 
 #include <nucleus/timer.h>
+#include <posix/posix.h>        /* For struct itimerspec. */
 
 #define PSE51_TIMER_MAX  128
 

@@ -2,5 +2,5 @@ base referer
 rect $cond_8c.html 365,22 482,46
 rect $cond_8h.html 188,109 305,133
 rect $skins_2rtai_2module_8c.html 357,96 490,120
-rect $syscall_8c.html 360,144 488,168
+rect $rtai_2syscall_8c.html 360,144 488,168
 rect $mutex_8c.html 184,208 309,232

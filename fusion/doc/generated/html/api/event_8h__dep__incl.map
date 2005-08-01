@@ -1,4 +1,4 @@
 base referer
-rect $event_8c.html 185,8 305,32
+rect $event_8c.html 184,8 306,32
 rect $skins_2rtai_2module_8c.html 178,56 312,80
-rect $syscall_8c.html 181,104 309,128
+rect $rtai_2syscall_8c.html 181,104 309,128

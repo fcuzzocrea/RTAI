@@ -1,4 +1,4 @@
 base referer
 rect $cond_8c.html 183,8 301,32
 rect $skins_2rtai_2module_8c.html 175,56 309,80
-rect $syscall_8c.html 178,104 306,128
+rect $rtai_2syscall_8c.html 178,104 306,128

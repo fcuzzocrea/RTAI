@@ -59,7 +59,7 @@ static inline int mutex_timedlock_internal(pthread_mutex_t *mutex,
             if (err)
                 return err;
 
-            xnsynch_sleep_on(&mutex->synchbase, to+1);
+            xnsynch_sleep_on(&mutex->synchbase, to);
 
             if (xnthread_test_flags(&cur->threadbase, XNBREAK))
                 return EINTR;

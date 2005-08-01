@@ -398,7 +398,7 @@ static int pse51_mq_timedsend_inner(pse51_mqd_t *qd,
         if (rc)
             return rc;
 
-        xnsynch_sleep_on(&qd->mq->synchbase, to+1);
+        xnsynch_sleep_on(&qd->mq->synchbase, to);
 
         cur = pse51_current_thread();
 
@@ -453,7 +453,7 @@ static int pse51_mq_timedrcv_inner(pse51_mqd_t *qd,
         if (rc)
             return rc;
 
-        xnsynch_sleep_on(&mq->synchbase, to+1);
+        xnsynch_sleep_on(&mq->synchbase, to);
 
         thread_cancellation_point(cur);
 

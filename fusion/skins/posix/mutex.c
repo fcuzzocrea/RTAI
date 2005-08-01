@@ -150,7 +150,7 @@ int pse51_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t abs_to)
                     if (err)
                         break;
                     
-		    xnsynch_sleep_on(&mutex->synchbase, to+1);
+		    xnsynch_sleep_on(&mutex->synchbase, to);
 
 		    if (xnthread_test_flags(&cur->threadbase, XNBREAK))
                         {
@@ -215,8 +215,8 @@ int pthread_mutex_trylock (pthread_mutex_t *mutex)
                 err = EAGAIN;
             else
                 {
-                    ++mutex->count;
-                    err = 0;
+                ++mutex->count;
+                err = 0;
                 }
         }
 

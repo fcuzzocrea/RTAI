@@ -138,7 +138,7 @@ int pse51_cond_timedwait_internal(pthread_cond_t *cond,
         goto unlock_and_return;
     
     /* Wait for another thread to signal the condition. */
-    xnsynch_sleep_on(&cond->synchbase, to+1);
+    xnsynch_sleep_on(&cond->synchbase, to);
 
     /* There are four possible wakeup conditions :
        - cond_signal / cond_broadcast, no status bit is set, and the function

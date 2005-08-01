@@ -94,7 +94,7 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
         if (err)
             return err;
 
-        xnsynch_sleep_on(&sem->synchbase, to+1);
+        xnsynch_sleep_on(&sem->synchbase, to);
             
         /* Handle cancellation requests. */
         thread_cancellation_point(cur);

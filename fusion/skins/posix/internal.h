@@ -77,4 +77,27 @@ static inline xnticks_t ts2ticks_ceil(const struct timespec *ts)
     return rem ? ticks+1 : ticks;
 }
 
+static inline xnticks_t clock_get_ticks(clockid_t clock_id)
+{
+    if(clock_id == CLOCK_REALTIME)
+        return xnpod_get_time();
+    else
+        return xnpod_ns2ticks(xnpod_get_cpu_time());
+}
+
+static inline int clock_adjust_timeout(xnticks_t *timeoutp, clockid_t clock_id)
+{
+    xnticks_t now;
+
+    if(*timeoutp == XN_INFINITE)
+        return 0;
+
+    now = clock_get_ticks(clock_id);
+    if(now > *timeoutp)
+        return ETIMEDOUT;
+
+    *timeoutp -= now;
+    return 0;
+}
+
 #endif /* !_POSIX_INTERNAL_H */

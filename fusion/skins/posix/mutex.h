@@ -40,19 +40,26 @@ static inline int mutex_trylock_internal(pthread_mutex_t *mutex, pthread_t cur)
 
 
 /* must be called with nklock locked, interrupts off. */
-static inline int mutex_timedlock_internal(pthread_mutex_t *mutex, xnticks_t to)
+static inline int mutex_timedlock_internal(pthread_mutex_t *mutex,
+                                           xnticks_t abs_to)
 
 {
     pthread_t cur = pse51_current_thread();
-    int err ;
+    int err;
 
     err = mutex_trylock_internal(mutex, cur);
 
     if (mutex->owner != cur)
         while (err == EBUSY)
             {
-            xnsynch_sleep_on(&mutex->synchbase,
-                             to==XN_INFINITE?to:to-xnpod_get_time());
+            xnticks_t to = abs_to;
+
+            err = clock_adjust_timeout(&to, CLOCK_REALTIME);
+
+            if (err)
+                return err;
+
+            xnsynch_sleep_on(&mutex->synchbase, to+1);
 
             if (xnthread_test_flags(&cur->threadbase, XNBREAK))
                 return EINTR;

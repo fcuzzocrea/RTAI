@@ -1,3 +1,24 @@
+2005-08-01  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/posix.h, 
+	  skins/posix/timer.h: 
+	  sim/skins/posix/posix_override.h,
+	  sim/skins/posix/GNUmakefile.am: Have timers compile with
+	simulator.
+
+	* skins/posix/thread.h (thread_set_errno, thread_get_errno):
+	Handle the interrupt case, to allow sem_post to be used from
+	interrupts.
+
+	* skins/posix (cond_timedwait, mutex_timedlock, sem_timedwait, 
+		mq_timed*): use clock_adjust_timeout.
+
+	* skins/posix/internal.h (clock_get_ticks, clock_adjust_timeout):
+	Factor the timeouts handling, treating correctly the case where
+	timeout has already passed.
+
+	* skins/posix/clock.c: Add support for CLOCK_REALTIME.
+
 2005-07-31  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/rtdm/drvlib.c (rtdm_task_busy_sleep), 

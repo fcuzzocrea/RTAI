@@ -73,6 +73,7 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
 {
     pthread_t cur;
     spl_t s;
+    int err;
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
@@ -88,8 +89,12 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
 
     if (sem_trywait_internal(sem) == EAGAIN)
 	{
-        xnsynch_sleep_on(&sem->synchbase,
-                         to == XN_INFINITE ? to:to - xnpod_get_time());
+        err = clock_adjust_timeout(&to, CLOCK_REALTIME);
+        
+        if (err)
+            return err;
+
+        xnsynch_sleep_on(&sem->synchbase, to+1);
             
         /* Handle cancellation requests. */
         thread_cancellation_point(cur);
@@ -133,8 +138,6 @@ int sem_post (sem_t *sem)
 {
     spl_t s;
     
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
     xnlock_get_irqsave(&nklock, s);
 
     if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))

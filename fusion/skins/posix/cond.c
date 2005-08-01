@@ -97,11 +97,10 @@ int pse51_cond_timedwait_internal(pthread_cond_t *cond,
                                   pthread_mutex_t *mutex,
                                   xnticks_t to)
 {
-    int err;
     unsigned count;
     pthread_t cur;
     spl_t s;
-
+    int err;
 
     if (!cond || !mutex)
         return EINVAL;
@@ -112,16 +111,16 @@ int pse51_cond_timedwait_internal(pthread_cond_t *cond,
     if (!pse51_obj_active(cond, PSE51_COND_MAGIC, pthread_cond_t)
        || (cond->mutex && cond->mutex != mutex))
 	{
-        xnlock_put_irqrestore(&nklock, s);
-        return EINVAL;
+        err = EINVAL;
+        goto unlock_and_return;
 	}
 
     /* Unlock mutex, with its previous recursive lock count stored
        in "count". */
     if(mutex_save_count(mutex, &count))
         {
-        xnlock_put_irqrestore(&nklock, s);
-        return EINVAL;
+        err = EINVAL;
+        goto unlock_and_return;
         }
 
     cur = pse51_current_thread();
@@ -133,9 +132,13 @@ int pse51_cond_timedwait_internal(pthread_cond_t *cond,
         ++mutex->condvars;
         }
 
+    err = clock_adjust_timeout(&to, cond->attr.clock);
+
+    if(err)
+        goto unlock_and_return;
+    
     /* Wait for another thread to signal the condition. */
-    xnsynch_sleep_on(&cond->synchbase,
-                     (to == XN_INFINITE ? to : to - xnpod_get_time()));
+    xnsynch_sleep_on(&cond->synchbase, to+1);
 
     /* There are four possible wakeup conditions :
        - cond_signal / cond_broadcast, no status bit is set, and the function
@@ -173,6 +176,7 @@ int pse51_cond_timedwait_internal(pthread_cond_t *cond,
 
     thread_cancellation_point(cur);
 
+  unlock_and_return:
     xnlock_put_irqrestore(&nklock, s);
 
     return err;

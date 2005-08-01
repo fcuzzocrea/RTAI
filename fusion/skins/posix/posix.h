@@ -31,7 +31,8 @@
 /* For INT_MAX in user-space, kernel space finds this in
    linux/kernel.h */
 #include <limits.h>
-#include <fcntl.h>             /* For O_RDONLY, etc... */
+#include <fcntl.h>              /* For O_RDONLY, etc... */
+#include <time.h>               /* For struct itimerspec */
 typedef unsigned long mqd_t;
 #endif /* __KERNEL__ */
 
@@ -546,6 +547,21 @@ int pthread_make_periodic_np(pthread_t thread,
 			     struct timespec *periodtp);
 
 int pthread_wait_np(void);
+
+int timer_create(clockid_t clockid,
+		 struct sigevent *evp,
+		 timer_t *timerid);
+
+int timer_delete(timer_t timerid);
+
+int timer_settime(timer_t timerid,
+		  int flags,
+		  const struct itimerspec *value,
+		  struct itimerspec *ovalue);
+
+int timer_gettime(timer_t timerid, struct itimerspec *value);
+
+int timer_getoverrun(timer_t timerid);
 
 END_C_DECLS
 

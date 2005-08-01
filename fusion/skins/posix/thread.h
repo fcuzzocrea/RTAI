@@ -91,12 +91,13 @@ int *pse51_errno_location(void);
 
 static inline void thread_set_errno (int err)
 {
-    *pse51_errno_location() = err;
+    if(!xnpod_interrupt_p())
+        *pse51_errno_location() = err;
 }
 
 static inline int thread_get_errno (void)
 {
-    return *pse51_errno_location();
+    return !xnpod_interrupt_p() ? *pse51_errno_location() : 0;
 }
 
 #define thread_name(thread) ((thread)->attr.name)

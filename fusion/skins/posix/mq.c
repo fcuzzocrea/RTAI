@@ -383,17 +383,22 @@ static int pse51_mq_timedsend_inner(pse51_mqd_t *qd,
                                     const char * buffer,
                                     size_t len,
                                     unsigned prio,
-                                    xnticks_t to)
+                                    xnticks_t abs_to)
 {
     int rc;
     
     while((rc = pse51_mq_trysend(qd, buffer, len, prio)) == EAGAIN
           && !testbits(qd->flags, O_NONBLOCK))
         {
+        xnticks_t to = abs_to;
         pthread_t cur;
 
-        xnsynch_sleep_on(&qd->mq->synchbase,
-                         to == XN_INFINITE ? to:to - xnpod_get_time());
+        rc = clock_adjust_timeout(&to, CLOCK_REALTIME);
+
+        if (rc)
+            return rc;
+
+        xnsynch_sleep_on(&qd->mq->synchbase, to+1);
 
         cur = pse51_current_thread();
 
@@ -416,7 +421,7 @@ static int pse51_mq_timedrcv_inner(pse51_mqd_t *qd,
                                    char *__restrict__ buffer,
                                    size_t *__restrict__ lenp,
                                    unsigned *__restrict__ priop,
-                                   xnticks_t to)
+                                   xnticks_t abs_to)
 {
     pthread_t cur;
     int rc;
@@ -428,6 +433,7 @@ static int pse51_mq_timedrcv_inner(pse51_mqd_t *qd,
         {
         pse51_mq_t *mq = qd->mq;
         pse51_direct_msg_t msg;
+        xnticks_t to = abs_to;
         int direct = 0;
 
         if(testbits(qd->flags, O_DIRECT))
@@ -442,8 +448,12 @@ static int pse51_mq_timedrcv_inner(pse51_mqd_t *qd,
         else
             cur->arg = NULL;
 
-        xnsynch_sleep_on(&mq->synchbase,
-                         to == XN_INFINITE ? to : to - xnpod_get_time());
+        rc = clock_adjust_timeout(&to, CLOCK_REALTIME);
+
+        if (rc)
+            return rc;
+
+        xnsynch_sleep_on(&mq->synchbase, to+1);
 
         thread_cancellation_point(cur);
 

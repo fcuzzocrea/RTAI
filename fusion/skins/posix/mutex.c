@@ -123,7 +123,7 @@ int pthread_mutex_destroy (pthread_mutex_t *mutex)
     return 0;
 }
 
-int pse51_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to)
+int pse51_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t abs_to)
 
 {
     pthread_t cur = pse51_current_thread();
@@ -134,7 +134,7 @@ int pse51_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to)
 
     xnlock_get_irqsave(&nklock, s);
 
-    err = mutex_timedlock_internal(mutex, to);
+    err = mutex_timedlock_internal(mutex, abs_to);
 
     if (err == EBUSY)
         switch (mutex->attr.type)
@@ -143,9 +143,14 @@ int pse51_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to)
 		/* Deadlock. */
 		for (;;)
                     {
-		    xnsynch_sleep_on(&mutex->synchbase,
-				     (to == XN_INFINITE
-                                      ? to : to - xnpod_get_time()));
+                    xnticks_t to = abs_to;
+
+                    err = clock_adjust_timeout(&to, CLOCK_REALTIME);
+
+                    if (err)
+                        break;
+                    
+		    xnsynch_sleep_on(&mutex->synchbase, to+1);
 
 		    if (xnthread_test_flags(&cur->threadbase, XNBREAK))
                         {

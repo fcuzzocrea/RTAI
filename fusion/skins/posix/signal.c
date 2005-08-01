@@ -18,7 +18,7 @@
 
 #include <posix/signal.h>
 
-static struct sigaction actions[PSE51_SIGMAX - PSE51_SIGMIN + 1];
+static struct sigaction actions[PSE51_SIGMAX - PSE51_SIGMIN];
 
 #define user2pse51_sigset(set) ((pse51_sigset_t *)(set))
 
@@ -126,7 +126,7 @@ int sigismember (const sigset_t *user_set, int sig)
     pse51_sigset_t *set=user2pse51_sigset(user_set);
     int result;
     spl_t s;
-    
+
     if (sig < PSE51_SIGMIN || sig > PSE51_SIGMAX)
 	{
         thread_set_errno(EINVAL);

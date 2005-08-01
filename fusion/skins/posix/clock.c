@@ -24,10 +24,11 @@
 int clock_getres (clockid_t clock_id, struct timespec *res)
 
 {
-    if (clock_id != CLOCK_MONOTONIC || !res)
+    if (clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME)
         return EINVAL;
 
-    ticks2ts(res, 1);
+    if(res)
+        ticks2ts(res, 1);
 
     return 0;
 }
@@ -35,10 +36,22 @@ int clock_getres (clockid_t clock_id, struct timespec *res)
 int clock_gettime (clockid_t clock_id, struct timespec *tp)
 
 {
-    if (clock_id != CLOCK_MONOTONIC || !tp)
-        return EINVAL;
+    xnticks_t cpu_time;
 
-    ticks2ts(tp, xnpod_get_time());
+    switch(clock_id)
+        {
+        case CLOCK_REALTIME:
+            ticks2ts(tp, xnpod_get_time());
+            break;
+
+        case CLOCK_MONOTONIC:
+            cpu_time = xnpod_get_cpu_time();
+            tp->tv_sec = xnarch_uldivrem(cpu_time, ONE_BILLION, &tp->tv_nsec);
+            break;
+
+        default:
+            return EINVAL;
+        }
 
     return 0;    
 }
@@ -46,12 +59,13 @@ int clock_gettime (clockid_t clock_id, struct timespec *tp)
 int clock_settime(clockid_t clock_id, const struct timespec *tp)
 
 {
-    if (clock_id != CLOCK_MONOTONIC || !tp || tp->tv_nsec > 1000000000)
+    if (!tp)
+        return EFAULT;
+
+    if (clock_id != CLOCK_REALTIME || tp->tv_nsec > ONE_BILLION)
         return EINVAL;
 
-    xnpod_set_time(ts2ticks_ceil(tp));
-
-    return 0;
+    return ENOTSUP;
 }
 
 int clock_nanosleep (clockid_t clock_id,
@@ -62,21 +76,31 @@ int clock_nanosleep (clockid_t clock_id,
     xnticks_t start, timeout;
     pthread_t cur;
     spl_t s;
+    int err = 0;
 
-    if (clock_id != CLOCK_MONOTONIC || !rqtp || rqtp->tv_nsec > 1000000000)
+    if ((clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME) ||
+        !rqtp || rqtp->tv_nsec > 1000000000)
         return EINVAL;
 
     cur = pse51_current_thread();
+
+    xnlock_get_irqsave(&nklock, s);
+
+    start = clock_get_ticks(clock_id);
     timeout = ts2ticks_ceil(rqtp);
-    start = xnpod_get_time();
 
     switch (flags)
 	{
 	default:
-
-	    return EINVAL;
+            err = EINVAL;
+            goto unlock_and_return;
 
 	case TIMER_ABSTIME:
+            if(timeout < start)
+                {
+                err = 0;
+                goto unlock_and_return;
+                }
 
 	    timeout -= start;
 	    break;
@@ -85,8 +109,6 @@ int clock_nanosleep (clockid_t clock_id,
 	    break;
 	}
 
-    xnlock_get_irqsave(&nklock, s);
-    
     xnpod_suspend_thread(&cur->threadbase, XNDELAY, timeout+1, NULL);
 
     thread_cancellation_point(cur);
@@ -95,23 +117,25 @@ int clock_nanosleep (clockid_t clock_id,
 	{
         xnlock_put_irqrestore(&nklock, s);
 
-        if (flags == 0 && rmtp) {
-            xnticks_t passed = xnpod_get_time() - start;
+        if (flags == 0 && rmtp)
+            {
+            xnticks_t passed = clock_get_ticks(clock_id);
 
             ticks2ts(rmtp, passed < timeout ? timeout-passed : 0);
-        }
+            }
 
         return EINTR;
 	}
 
+  unlock_and_return:
     xnlock_put_irqrestore(&nklock, s);
     
-    return 0;
+    return err;
 }
 
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
-    return clock_nanosleep(CLOCK_MONOTONIC, 0, rqtp, rmtp);
+    return clock_nanosleep(CLOCK_REALTIME, 0, rqtp, rmtp);
 }
 
 EXPORT_SYMBOL(clock_getres);

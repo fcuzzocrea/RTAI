@@ -21,7 +21,7 @@
 static pthread_condattr_t default_cond_attr = {
 
     magic: PSE51_COND_ATTR_MAGIC,
-    clock: CLOCK_MONOTONIC
+    clock: CLOCK_REALTIME
 };
 
 
@@ -95,11 +95,6 @@ int pthread_condattr_setclock (pthread_condattr_t *attr, clockid_t clk_id)
 	    return EINVAL;
 
 	case CLOCK_REALTIME:
-	    /* Not handled yet. */
-	    xnlock_put_irqrestore(&nklock, s);
-
-	    return ENOTSUP;
-
 	case CLOCK_MONOTONIC:
 	    break;
 	}

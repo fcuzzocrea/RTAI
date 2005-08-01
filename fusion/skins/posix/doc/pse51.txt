@@ -138,9 +138,6 @@ TODO List
 
 The PSE51 skin is still a work in progress, it lacks some features which will be 
 added gradually :
-- CLOCK_REALTIME support (the only clock supported is CLOCK_MONOTONIC for now,
-  which does not make any difference as long as clock_settime does not get 
-  called);
 - spinlocks/rwlocks/barriers ;
 - SA_SIGINFO sigaction flag, realtime signals ;
 - timers.

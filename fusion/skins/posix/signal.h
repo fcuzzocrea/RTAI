@@ -25,7 +25,7 @@
 #define SIGACTION_FLAGS (SA_ONESHOT|SA_NOMASK)
 
 #define PSE51_SIGMIN  1       /* 0 has a special meaning for pthread_kill. */
-#define PSE51_SIGMAX  (((int) (sizeof(pse51_sigset_t)*8)) + PSE51_SIGMIN)
+#define PSE51_SIGMAX  (((int) (sizeof(pse51_sigset_t)*8)) + PSE51_SIGMIN - 1)
 
 void pse51_signal_init_thread(pthread_t new, const pthread_t parent);
 

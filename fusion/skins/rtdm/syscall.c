@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
- * Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>.
+ * Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>.
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -124,14 +124,14 @@ static int sys_rtdm_sendmsg(struct task_struct *curr, struct pt_regs *regs)
 
 
 static xnsysent_t systab[] = {
-    [__rtdm_open]    = { sys_rtdm_open,    __xn_exec_current },
-    [__rtdm_socket]  = { sys_rtdm_socket,  __xn_exec_current },
-    [__rtdm_close]   = { sys_rtdm_close,   __xn_exec_current },
-    [__rtdm_ioctl]   = { sys_rtdm_ioctl,   __xn_exec_current },
-    [__rtdm_read]    = { sys_rtdm_read,    __xn_exec_current },
-    [__rtdm_write]   = { sys_rtdm_write,   __xn_exec_current },
-    [__rtdm_recvmsg] = { sys_rtdm_recvmsg, __xn_exec_current },
-    [__rtdm_sendmsg] = { sys_rtdm_sendmsg, __xn_exec_current },
+    [__rtdm_open]    = { sys_rtdm_open,    __xn_exec_current|__xn_exec_adaptive },
+    [__rtdm_socket]  = { sys_rtdm_socket,  __xn_exec_current|__xn_exec_adaptive },
+    [__rtdm_close]   = { sys_rtdm_close,   __xn_exec_current|__xn_exec_adaptive },
+    [__rtdm_ioctl]   = { sys_rtdm_ioctl,   __xn_exec_current|__xn_exec_adaptive },
+    [__rtdm_read]    = { sys_rtdm_read,    __xn_exec_current|__xn_exec_adaptive },
+    [__rtdm_write]   = { sys_rtdm_write,   __xn_exec_current|__xn_exec_adaptive },
+    [__rtdm_recvmsg] = { sys_rtdm_recvmsg, __xn_exec_current|__xn_exec_adaptive },
+    [__rtdm_sendmsg] = { sys_rtdm_sendmsg, __xn_exec_current|__xn_exec_adaptive },
 };
 
 

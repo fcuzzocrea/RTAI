@@ -3,7 +3,7 @@
  * Real-Time Driver Model for RTAI, driver library
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
- * @note Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>
+ * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
  * @{
  */
 
+#if DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Get system time
  *
@@ -57,15 +58,8 @@
  *
  * Rescheduling: never.
  */
-__u64 rtdm_clock_read(void)
-{
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-        return xnpod_get_cpu_time() + nkpod->wallclock_offset;
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        return xnpod_ticks2ns(nkpod->jiffies + nkpod->wallclock_offset);
-}
+__u64 rtdm_clock_read(void);
+#endif /* DOXYGEN_CPP */
 /** @} */
 
 
@@ -185,7 +179,8 @@ int rtdm_task_wait_period(void);
 /**
  * @brief Activate a blocked real-time task
  *
- * @return 0 on success, otherwise a negative error code
+ * @return Non-zero is returned if the task was actually unblocked from a
+ * pending wait state, 0 otherwise.
  *
  * Environments:
  *
@@ -199,6 +194,22 @@ int rtdm_task_wait_period(void);
  * Rescheduling: possible.
  */
 int rtdm_task_unblock(rtdm_task_t *task);
+
+/**
+ * @brief Get current real-time task
+ *
+ * @return Pointer to task handle
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
+ */
+rtdm_task_t *rtdm_task_current(void);
 #endif /* DOXYGEN_CPP */
 
 
@@ -338,12 +349,18 @@ void rtdm_task_busy_sleep(__u64 delay)
 
 
 /* --- IPC cleanup helper --- */
+
+#define SYNCH_DELETED   XNSYNCH_SPARE0
+
 void _rtdm_synch_flush(xnsynch_t *synch, unsigned long reason)
 {
     spl_t s;
 
 
     xnlock_get_irqsave(&nklock,s);
+
+    if (reason == XNRMID)
+        setbits(synch->status, SYNCH_DELETED);
 
     if (likely(xnsynch_flush(synch, reason) == XNSYNCH_RESCHED))
         xnpod_schedule();
@@ -358,6 +375,65 @@ void _rtdm_synch_flush(xnsynch_t *synch, unsigned long reason)
  * @defgroup rtdmsync Synchronisation Services
  * @{
  */
+
+/*!
+ * @name Timeout Sequence Management
+ * @{
+ */
+
+#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+/**
+ * @brief Initialise a timeout sequence
+ *
+ * This service initialises a timeout sequence handle according to the given
+ * timeout value. Timeout sequences allow to maintain a continuous @a timeout
+ * across multiple calls of blocking synchronisation services. A typical
+ * application scenario is given below.
+ *
+ * @param[in,out] timeout_seq Timeout sequence handle
+ * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
+ * negative value for non-blocking
+ *
+ * Application Scenario:
+ * @code
+int device_service_routine(...)
+{
+    rtdm_toseq_t timeout_seq;
+    ...
+
+    rtdm_toseq_init(&timeout_seq, timeout);
+    ...
+    while (received < requested) {
+        ret = rtdm_event_timedwait(&data_available, timeout, &timeout_seq);
+        if (ret < 0)    // including -ETIMEDOUT
+            break;
+
+        // receive some data
+        ...
+    }
+    ...
+}
+ * @endcode
+ * Using a timeout sequence in such a scenario avoids that the user-provided
+ * relative @c timeout is restarted on every call to rtdm_event_timedwait(),
+ * potentially causing an overall delay that is larger than specified by
+ * @c timeout. Moreover, all functions supporting timeout sequences also
+ * interpret special timeout values (infinite and non-blocking),
+ * disburdening the driver developer from handling them separately.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
+ */
+void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, __s64 timeout);
+#endif /* DOXYGEN_CPP */
+/** @} */
 
 /*!
  * @name Event Services
@@ -421,6 +497,24 @@ void rtdm_event_destroy(rtdm_event_t *event);
  * Rescheduling: possible.
  */
 void rtdm_event_pulse(rtdm_event_t *event);
+
+/**
+ * @brief Clear event state
+ *
+ * @param[in,out] event Event handle as returned by rtdm_event_init()
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
+ */
+void rtdm_event_clear(rtdm_event_t *event);
 #endif /* DOXYGEN_CPP */
 
 
@@ -462,26 +556,17 @@ void rtdm_event_signal(rtdm_event_t *event)
 /**
  * @brief Wait on event occurrence
  *
- * This function waits or tests for the occurence of the given event. On
- * successful return, the event is reset.
+ * This is the light-weight version of rtdm_event_timedwait(), implying an
+ * infinite timeout.
  *
  * @param[in,out] event Event handle as returned by rtdm_event_init()
- * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
- * negative value for non-blocking (test for event occurrence)
  *
  * @return 0 on success, otherwise:
- *
- * - -ETIMEDOUT is returned if the if the request has not been satisfied
- * within the specified amount of time.
- *
- * - -EWOULDBLOCK is returned if @a timeout is negative and the event is
- * currently not set.
  *
  * - -EINTR is returned if calling task has been unblock by a signal or
  * explicitely via rtdm_task_unblock().
  *
- * - -EIDRM is returned if @a event was destroyed while the caller was
- * sleeping on it.
+ * - -EIDRM is returned if @a event has been destroyed.
  *
  * Environments:
  *
@@ -492,7 +577,7 @@ void rtdm_event_signal(rtdm_event_t *event)
  *
  * Rescheduling: possible.
  */
-int rtdm_event_wait(rtdm_event_t *event, __s64 timeout)
+int rtdm_event_wait(rtdm_event_t *event)
 {
     spl_t   s;
     int     err = 0;
@@ -500,23 +585,19 @@ int rtdm_event_wait(rtdm_event_t *event, __s64 timeout)
 
     xnlock_get_irqsave(&nklock, s);
 
-    if (!__test_and_clear_bit(0, &event->pending)) {
+    if (testbits(event->synch_base.status, SYNCH_DELETED))
+        err = -EIDRM;
+    else if (!__test_and_clear_bit(0, &event->pending)) {
         xnthread_t  *thread = xnpod_current_thread();
 
-        if (timeout < 0)    /* non-blocking mode */
-            err = -EWOULDBLOCK;
-        else {
-            xnsynch_sleep_on(&event->synch_base, xnpod_ns2ticks(timeout));
+        xnsynch_sleep_on(&event->synch_base, XN_INFINITE);
 
-            if (!xnthread_test_flags(thread, XNTIMEO|XNRMID|XNBREAK))
-                __clear_bit(0, &event->pending);
-            else if (xnthread_test_flags(thread, XNTIMEO))
-                err = -ETIMEDOUT;
-            else if (xnthread_test_flags(thread, XNRMID))
-                err = -EIDRM;
-            else /* XNBREAK */
-                err = -EINTR;
-        }
+        if (!xnthread_test_flags(thread, XNRMID|XNBREAK))
+            __clear_bit(0, &event->pending);
+        else if (xnthread_test_flags(thread, XNRMID))
+            err = -EIDRM;
+        else /* XNBREAK */
+            err = -EINTR;
     }
 
     xnlock_put_irqrestore(&nklock, s);
@@ -526,24 +607,27 @@ int rtdm_event_wait(rtdm_event_t *event, __s64 timeout)
 
 
 /**
- * @brief Wait on event occurrence with absolute timeout
+ * @brief Wait on event occurrence with timeout
  *
- * This function waits for the occurence of the given event. On successful
- * return, the event is reset.
+ * This function waits or tests for the occurence of the given event, taking
+ * the provided timeout into account. On successful return, the event is
+ * reset.
  *
  * @param[in,out] event Event handle as returned by rtdm_event_init()
- * @param[in] abstimeout Absolute timeout in nanoseconds
+ * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
+ * negative value for non-blocking (test for event occurrence)
+ * @param[in,out] timeout_seq Handle of a timeout sequence as returned by
+ * rtdm_toseq_init() or rtdm_toseq_absinit(), or NULL
  *
  * @return 0 on success, otherwise:
  *
- * - -ETIMEDOUT is returned if the if the request has not been satisfied until
- * the specified time.
+ * - -ETIMEDOUT is returned if the if the request has not been satisfied
+ * within the specified amount of time.
  *
  * - -EINTR is returned if calling task has been unblock by a signal or
  * explicitely via rtdm_task_unblock().
  *
- * - -EIDRM is returned if @a event was destroyed while the caller was
- * sleeping on it.
+ * - -EIDRM is returned if @a event has been destroyed.
  *
  * Environments:
  *
@@ -554,35 +638,51 @@ int rtdm_event_wait(rtdm_event_t *event, __s64 timeout)
  *
  * Rescheduling: possible.
  */
-int rtdm_event_wait_until(rtdm_event_t *event, __u64 abstimeout)
+int rtdm_event_timedwait(rtdm_event_t *event, __s64 timeout,
+                         rtdm_toseq_t *timeout_seq)
 {
-    spl_t   s;
-    int     err = 0;
+    xnthread_t  *thread;
+    spl_t       s;
+    int         err = 0;
 
 
     xnlock_get_irqsave(&nklock, s);
 
-    if (!__test_and_clear_bit(0, &event->pending)) {
-        xnthread_t  *thread = xnpod_current_thread();
-        xnsticks_t  delay;
+    if (unlikely(testbits(event->synch_base.status, SYNCH_DELETED)))
+        err = -EIDRM;
+    else if (!__test_and_clear_bit(0, &event->pending)) {
+        /* non-blocking mode */
+        if (unlikely(timeout < 0)) {
+            err = -EWOULDBLOCK;
+            goto unlock_out;
+        }
 
-        delay = xnpod_ns2ticks(abstimeout) - xnpod_get_time();
-
-        if (likely(delay > 0)) {
-            xnsynch_sleep_on(&event->synch_base, delay);
-
-            if (!xnthread_test_flags(thread, XNTIMEO|XNRMID|XNBREAK))
-                __clear_bit(0, &event->pending);
-            else if (xnthread_test_flags(thread, XNTIMEO))
+        /* timeout sequence */
+        if (timeout_seq && (timeout > 0)) {
+            timeout = *timeout_seq - xnpod_get_time();
+            if (unlikely(timeout <= 0)) {
                 err = -ETIMEDOUT;
-            else if (xnthread_test_flags(thread, XNRMID))
-                err = -EIDRM;
-            else /* XNBREAK */
-                err = -EINTR;
-        } else
+                goto unlock_out;
+            }
+            xnsynch_sleep_on(&event->synch_base, timeout);
+        }
+        /* infinite or relative timeout */
+        else
+            xnsynch_sleep_on(&event->synch_base, xnpod_ns2ticks(timeout));
+
+        thread = xnpod_current_thread();
+
+        if (!xnthread_test_flags(thread, XNTIMEO|XNRMID|XNBREAK))
+            __clear_bit(0, &event->pending);
+        else if (xnthread_test_flags(thread, XNTIMEO))
             err = -ETIMEDOUT;
+        else if (xnthread_test_flags(thread, XNRMID))
+            err = -EIDRM;
+        else /* XNBREAK */
+            err = -EINTR;
     }
 
+ unlock_out:
     xnlock_put_irqrestore(&nklock, s);
 
     return err;
@@ -636,6 +736,61 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
 /**
  * @brief Decrement a semaphore
  *
+ * This is the light-weight version of rtdm_sem_timeddown(), implying an
+ * infinite timeout.
+ *
+ * @param[in,out] sem Semaphore handle as returned by rtdm_sem_init()
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EINTR is returned if calling task has been unblock by a signal or
+ * explicitely via rtdm_task_unblock().
+ *
+ * - -EIDRM is returned if @a sem has been destroyed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel-based task
+ * - User-space task (RT)
+ *
+ * Rescheduling: possible.
+ */
+int rtdm_sem_down(rtdm_sem_t *sem)
+{
+    spl_t   s;
+    int     err = 0;
+
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if (testbits(sem->synch_base.status, SYNCH_DELETED))
+        err = -EIDRM;
+    else if (sem->value > 0)
+        sem->value--;
+    else {
+        xnthread_t  *thread = xnpod_current_thread();
+
+        xnsynch_sleep_on(&sem->synch_base, XN_INFINITE);
+
+        if (xnthread_test_flags(thread, XNRMID|XNBREAK)) {
+            if (xnthread_test_flags(thread, XNRMID))
+                err = -EIDRM;
+            else /*  XNBREAK */
+                err = -EINTR;
+        }
+    }
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return err;
+}
+
+
+/**
+ * @brief Decrement a semaphore with timeout
+ *
  * This function tries to decrement the given semphore's value if it is
  * positive on entry. If not, the caller is blocked unless non-blocking
  * operation was selected.
@@ -643,6 +798,8 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  * @param[in,out] sem Semaphore handle as returned by rtdm_sem_init()
  * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
  * negative value for non-blocking operation
+ * @param[in,out] timeout_seq Handle of a timeout sequence as returned by
+ * rtdm_toseq_init() or rtdm_toseq_absinit(), or NULL
  *
  * @return 0 on success, otherwise:
  *
@@ -655,8 +812,7 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  * - -EINTR is returned if calling task has been unblock by a signal or
  * explicitely via rtdm_task_unblock().
  *
- * - -EIDRM is returned if @a sem was destroyed while the caller was sleeping
- * on it.
+ * - -EIDRM is returned if @a sem has been destroyed.
  *
  * Environments:
  *
@@ -667,23 +823,37 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  *
  * Rescheduling: possible.
  */
-int rtdm_sem_down(rtdm_sem_t *sem, __s64 timeout)
+int rtdm_sem_timeddown(rtdm_sem_t *sem, __s64 timeout,
+                       rtdm_toseq_t *timeout_seq)
 {
-    spl_t   s;
-    int     err = 0;
+    xnthread_t  *thread;
+    spl_t       s;
+    int         err = 0;
 
 
     xnlock_get_irqsave(&nklock, s);
 
-    if (sem->value > 0)
+    if (testbits(sem->synch_base.status, SYNCH_DELETED))
+        err = -EIDRM;
+    else if (sem->value > 0)
         sem->value--;
     else if (timeout < 0)   /* non-blocking mode */
         err = -EWOULDBLOCK;
     else {
-        xnthread_t  *thread = xnpod_current_thread();
+        /* timeout sequence */
+        if (timeout_seq && (timeout > 0)) {
+            timeout = *timeout_seq - xnpod_get_time();
+            if (unlikely(timeout <= 0)) {
+                err = -ETIMEDOUT;
+                goto unlock_out;
+            }
+            xnsynch_sleep_on(&sem->synch_base, timeout);
+        }
+        /* infinite or relative timeout */
+        else
+            xnsynch_sleep_on(&sem->synch_base, xnpod_ns2ticks(timeout));
 
-
-        xnsynch_sleep_on(&sem->synch_base, xnpod_ns2ticks(timeout));
+        thread = xnpod_current_thread();
 
         if (xnthread_test_flags(thread, XNTIMEO|XNRMID|XNBREAK)) {
             if (xnthread_test_flags(thread, XNTIMEO))
@@ -695,6 +865,7 @@ int rtdm_sem_down(rtdm_sem_t *sem, __s64 timeout)
         }
     }
 
+ unlock_out:
     xnlock_put_irqrestore(&nklock, s);
 
     return err;
@@ -794,8 +965,7 @@ void rtdm_mutex_destroy(rtdm_mutex_t *mutex);
  *
  * @return 0 on success, otherwise:
  *
- * - -EIDRM is returned if @a mutex was destroyed while the caller was
- * sleeping on it.
+ * - -EIDRM is returned if @a mutex has been destroyed.
  *
  * Environments:
  *
@@ -814,14 +984,17 @@ int rtdm_mutex_lock(rtdm_mutex_t *mutex)
 
     xnlock_get_irqsave(&nklock, s);
 
-    while (__test_and_set_bit(0, &mutex->locked)) {
-        xnsynch_sleep_on(&mutex->synch_base, XN_INFINITE);
+    if (testbits(mutex->synch_base.status, SYNCH_DELETED))
+        err = -EIDRM;
+    else
+        while (__test_and_set_bit(0, &mutex->locked)) {
+            xnsynch_sleep_on(&mutex->synch_base, XN_INFINITE);
 
-        if (xnthread_test_flags(xnpod_current_thread(), XNRMID)) {
-            err = -EIDRM;
-            break;
+            if (xnthread_test_flags(xnpod_current_thread(), XNRMID)) {
+                err = -EIDRM;
+                break;
+            }
         }
-    }
 
     xnlock_put_irqrestore(&nklock, s);
 
@@ -838,6 +1011,8 @@ int rtdm_mutex_lock(rtdm_mutex_t *mutex)
  * @param[in,out] mutex Mutex handle as returned by rtdm_mutex_init()
  * @param[in] timeout Relative timeout in nanoseconds, 0 for infinite, or any
  * negative value for non-blocking operation
+ * @param[in,out] timeout_seq Handle of a timeout sequence as returned by
+ * rtdm_toseq_init() or rtdm_toseq_absinit(), or NULL
  *
  * @return 0 on success, otherwise:
  *
@@ -850,8 +1025,7 @@ int rtdm_mutex_lock(rtdm_mutex_t *mutex)
  * - -EINTR is returned if calling task has been unblock by a signal or
  * explicitely via rtdm_task_unblock().
  *
- * - -EIDRM is returned if @a mutex was destroyed while the caller was
- * sleeping on it.
+ * - -EIDRM is returned if @a mutex has been destroyed.
  *
  * Environments:
  *
@@ -862,22 +1036,39 @@ int rtdm_mutex_lock(rtdm_mutex_t *mutex)
  *
  * Rescheduling: possible.
  */
-int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout)
+int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout,
+                         rtdm_toseq_t *timeout_seq)
 {
-    spl_t   s;
-    int     err = 0;
+    xnthread_t  *thread;
+    spl_t       s;
+    int         err = 0;
 
 
     xnlock_get_irqsave(&nklock, s);
 
-    while (__test_and_set_bit(0, &mutex->locked)) {
-        if (timeout < 0) {  /* non-blocking mode */
-            err = -EWOULDBLOCK;
-            break;
-        } else {
-            xnthread_t  *thread = xnpod_current_thread();
+    if (testbits(mutex->synch_base.status, SYNCH_DELETED))
+        err = -EIDRM;
+    else
+        while (__test_and_set_bit(0, &mutex->locked)) {
+            /* non-blocking mode */
+            if (timeout < 0) {
+                err = -EWOULDBLOCK;
+                break;
+            }
+            /* timeout sequence */
+            if (timeout_seq && (timeout > 0)) {
+                timeout = *timeout_seq - xnpod_get_time();
+                if (unlikely(timeout <= 0)) {
+                    err = -ETIMEDOUT;
+                    break;
+                }
+                xnsynch_sleep_on(&mutex->synch_base, timeout);
+            }
+            /* infinite or relative timeout */
+            else
+                xnsynch_sleep_on(&mutex->synch_base, xnpod_ns2ticks(timeout));
 
-            xnsynch_sleep_on(&mutex->synch_base, xnpod_ns2ticks(timeout));
+            thread = xnpod_current_thread();
 
             if (xnthread_test_flags(thread, XNTIMEO|XNRMID)) {
                 if (xnthread_test_flags(thread, XNTIMEO))
@@ -887,7 +1078,6 @@ int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout)
                 break;
             }
         }
-    }
 
     xnlock_put_irqrestore(&nklock, s);
 
@@ -1051,7 +1241,9 @@ int rtdm_irq_disable(rtdm_irq_t *irq_handle);
  * @param[in,out] nrt_sig Signal handle
  * @param[in] handler Non-real-time signal handler
  *
- * @return 0 on success, otherwise negative error code
+ * @return 0 on success, otherwise:
+ *
+ * - -EAGAIN is returned if no free signal slot is available.
  *
  * Environments:
  *
@@ -1061,10 +1253,9 @@ int rtdm_irq_disable(rtdm_irq_t *irq_handle);
  * - Kernel-based task
  * - User-space task (RT, non-RT)
  *
-     * Rescheduling: never.
+ * Rescheduling: never.
  */
-int rtdm_nrt_signal_init(rtdm_nrt_signal_t *nrt_sig,
-                         rtdm_nrt_sig_handler_t handler);
+int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig, rtdm_nrtsig_handler_t handler);
 
 /**
  * @brief Release a non-realtime signal handler
@@ -1081,7 +1272,7 @@ int rtdm_nrt_signal_init(rtdm_nrt_signal_t *nrt_sig,
  *
  * Rescheduling: never.
  */
-void rtdm_nrt_signal_destroy(rtdm_nrt_signal_t *nrt_sig);
+void rtdm_nrtsig_destroy(rtdm_nrtsig_t *nrt_sig);
 
 /**
  * Trigger non-real-time signal
@@ -1100,7 +1291,7 @@ void rtdm_nrt_signal_destroy(rtdm_nrt_signal_t *nrt_sig);
  * Rescheduling: never in real-time context, possible in non-real-time
  * environments.
  */
-void rtdm_nrt_pend_signal(rtdm_nrt_signal_t *nrt_sig);
+void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig);
 /** @} */
 
 
@@ -1112,16 +1303,63 @@ void rtdm_nrt_pend_signal(rtdm_nrt_signal_t *nrt_sig);
 
 /**
  * Real-time safe message printing on kernel console
+ *
+ * @param[in] format Format string (conforming standard @c printf())
+ * @param ... Arguments referred by @a format
+ *
+ * @return On success, this service returns the number of characters printed.
+ * Otherwise, a negative error code is returned.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine (consider the overhead!)
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never in real-time context, possible in non-real-time
+ * environments.
  */
 void rtdm_printk(const char *format, ...);
 
 /**
  * Allocate memory block in real-time context
+ *
+ * @param[in] size Requested size of the memory block
+ *
+ * @return The pointer to the allocated block is returned on success, NULL
+ * otherwise.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine (consider the overhead!)
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 void *rtdm_malloc(size_t size);
 
 /**
  * Release real-time memory block
+ *
+ * @param[in] ptr Pointer to memory block as returned by rtdm_malloc()
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine (consider the overhead!)
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 void rtdm_free(void *ptr);
 
@@ -1157,6 +1395,19 @@ int rtdm_strncpy_from_user(rtdm_user_info_t *user_info, char *dst,
 
 /**
  * Test if running in a real-time task
+ *
+ * @return Non-zero is returned if the caller resides in real-time context, 0
+ * otherwise.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_in_rt_context(void);
 
@@ -1165,16 +1416,16 @@ int rtdm_in_rt_context(void);
 #endif /* DOXYGEN_CPP */
 
 
-EXPORT_SYMBOL(rtdm_clock_read);
 EXPORT_SYMBOL(rtdm_task_join_nrt);
 EXPORT_SYMBOL(rtdm_task_sleep);
 EXPORT_SYMBOL(rtdm_task_sleep_until);
 EXPORT_SYMBOL(rtdm_task_busy_sleep);
 EXPORT_SYMBOL(_rtdm_synch_flush);
 EXPORT_SYMBOL(rtdm_event_wait);
-EXPORT_SYMBOL(rtdm_event_wait_until);
+EXPORT_SYMBOL(rtdm_event_timedwait);
 EXPORT_SYMBOL(rtdm_event_signal);
 EXPORT_SYMBOL(rtdm_sem_down);
+EXPORT_SYMBOL(rtdm_sem_timeddown);
 EXPORT_SYMBOL(rtdm_sem_up);
 EXPORT_SYMBOL(rtdm_mutex_lock);
 EXPORT_SYMBOL(rtdm_mutex_timedlock);

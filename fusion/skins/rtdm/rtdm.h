@@ -3,7 +3,7 @@
  * Real-Time Driver Model for RTAI, user API header
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
- * @note Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>
+ * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -214,6 +214,10 @@ static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
 
 #else  /* !__KERNEL__ */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int     rt_dev_open   (const char *path, int oflag, ...);
 int     rt_dev_socket (int protocol_family, int socket_type, int protocol);
 int     rt_dev_close  (int fd);
@@ -227,8 +231,15 @@ ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags,
                         struct sockaddr *from,
                         socklen_t *fromlen);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* __KERNEL__ */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static inline ssize_t rt_dev_recv(int fd, void *buf, size_t len, int flags)
 {
@@ -328,6 +339,10 @@ static inline int rt_dev_shutdown(int fd, int how)
 {
     return rt_dev_ioctl(fd, _RTIOC_SHUTDOWN, how);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* RTDM_NO_DEFAULT_USER_API */
 

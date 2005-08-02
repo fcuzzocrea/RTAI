@@ -427,6 +427,7 @@ int rt_16550_close(struct rtdm_dev_context *context,
 {
     struct rt_16550_context *ctx;
     int                     dev_id;
+    u64                     *in_history;
     rtdm_lockctx_t          lock_ctx;
 
 
@@ -445,6 +446,9 @@ int rt_16550_close(struct rtdm_dev_context *context,
     inb(RHR(dev_id));
     inb(MSR(dev_id));
 
+    in_history      = ctx->in_history;
+    ctx->in_history = NULL;
+
     rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
     rtdm_irq_free(&ctx->irq_handle);
@@ -455,11 +459,11 @@ int rt_16550_close(struct rtdm_dev_context *context,
 
     rtdm_mutex_destroy(&ctx->out_lock);
 
-    if (ctx->in_history) {
+    if (in_history) {
         if (test_bit(RTDM_CREATED_IN_NRT, &context->context_flags))
-            kfree(ctx->in_history);
+            kfree(in_history);
         else
-            rtdm_free(ctx->in_history);
+            rtdm_free(in_history);
     }
 
     return 0;
@@ -619,13 +623,13 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
         case RTSER_RTIOC_WAIT_EVENT: {
             struct rtser_event  ev = { rxpend_timestamp: 0 };
             rtdm_lockctx_t      lock_ctx;
-            __u64               abstimeout;
+            rtdm_toseq_t        timeout_seq;
 
             /* only one waiter allowed, stop any further attempts here */
             if (test_and_set_bit(0, &ctx->ioc_event_lock))
                 return -EBUSY;
 
-            abstimeout = rtdm_clock_read() + ctx->config.event_timeout;
+            rtdm_toseq_init(&timeout_seq, ctx->config.event_timeout);
 
             rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
@@ -638,11 +642,9 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
 
                 rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
-                if (ctx->config.event_timeout > 0)
-                    ret = rtdm_event_wait_until(&ctx->ioc_event, abstimeout);
-                else
-                    ret = rtdm_event_wait(&ctx->ioc_event,
-                                          ctx->config.event_timeout);
+                ret = rtdm_event_timedwait(&ctx->ioc_event,
+                                           ctx->config.event_timeout,
+                                           &timeout_seq);
                 if (ret < 0) {
                     clear_bit(0, &ctx->ioc_event_lock);
                     if (ret == -EIDRM)  /* device has been closed */
@@ -699,7 +701,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
     int                     subblock;
     int                     in_pos;
     char                    *out_pos = (char *)buf;
-    __u64                   abstimeout;
+    rtdm_toseq_t            timeout_seq;
     int                     ret = -EAGAIN;  /* for non-blocking read */
     int                     nonblocking;
 
@@ -713,8 +715,9 @@ int rt_16550_read(struct rtdm_dev_context *context,
     ctx    = (struct rt_16550_context *)context->dev_private;
     dev_id = ctx->dev_id;
 
-    /* calculate timeout - even if we don't use it */
-    abstimeout  = rtdm_clock_read() + ctx->config.rx_timeout;
+    rtdm_toseq_init(&timeout_seq, ctx->config.rx_timeout);
+
+    /* non-blocking is handled separately here */
     nonblocking = (ctx->config.rx_timeout < 0);
 
     /* only one reader allowed, stop any further attempts here */
@@ -801,11 +804,8 @@ int rt_16550_read(struct rtdm_dev_context *context,
 
         rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
-        if (ctx->config.rx_timeout == 0)
-            ret = rtdm_event_wait(&ctx->in_event, 0);
-        else
-            ret = rtdm_event_wait_until(&ctx->in_event, abstimeout);
-
+        ret = rtdm_event_timedwait(&ctx->in_event, ctx->config.rx_timeout,
+                                   &timeout_seq);
         if (ret < 0) {
             if (ret == -EIDRM) {
                 /* device has been closed - return immediately */
@@ -844,7 +844,7 @@ int rt_16550_write(struct rtdm_dev_context *context,
     int                     subblock;
     int                     out_pos;
     char                    *in_pos = (char *)buf;
-    __u64                   abstimeout;
+    rtdm_toseq_t            timeout_seq;
     int                     ret;
 
 
@@ -858,11 +858,11 @@ int rt_16550_write(struct rtdm_dev_context *context,
     ctx    = (struct rt_16550_context *)context->dev_private;
     dev_id = ctx->dev_id;
 
-    /* calculate timeout - even if we don't use it */
-    abstimeout = rtdm_clock_read() + ctx->config.rx_timeout;
+    rtdm_toseq_init(&timeout_seq, ctx->config.rx_timeout);
 
     /* make write operation atomic */
-    ret = rtdm_mutex_timedlock(&ctx->out_lock, ctx->config.rx_timeout);
+    ret = rtdm_mutex_timedlock(&ctx->out_lock, ctx->config.rx_timeout,
+                               &timeout_seq);
     if (ret)
         return ret;
 
@@ -925,21 +925,16 @@ int rt_16550_write(struct rtdm_dev_context *context,
 
         rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
-        /* check for non-blocking mode */
-        if (ctx->config.tx_timeout < 0) {
-            ret = -EAGAIN;
-            break;
-        }
-
-        if (ctx->config.tx_timeout == 0)
-            ret = rtdm_event_wait(&ctx->out_event, 0);
-        else
-            ret = rtdm_event_wait_until(&ctx->out_event, abstimeout);
-
+        ret = rtdm_event_timedwait(&ctx->out_event, ctx->config.tx_timeout,
+                                   &timeout_seq);
         if (ret < 0) {
             if (ret == -EIDRM) {
                 /* device has been closed - return immediately */
                 return -EBADF;
+            }
+            if (ret == -EWOULDBLOCK) {
+                /* fix error code for non-blocking mode */
+                ret = -EAGAIN;
             }
             break;
         }

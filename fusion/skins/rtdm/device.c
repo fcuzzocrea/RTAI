@@ -3,7 +3,7 @@
  * Real-Time Driver Model for RTAI, device management
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
- * @note Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>
+ * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by

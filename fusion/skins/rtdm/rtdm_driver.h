@@ -3,7 +3,7 @@
  * Real-Time Driver Model for RTAI, driver API header
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
- * @note Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>
+ * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ struct rtdm_dev_context;
 
 
 /*!
+ * @ingroup devregister
  * @anchor dev_flags @name Device Flags
  * Static flags describing a RTDM device
  * @{
@@ -86,7 +87,9 @@ struct rtdm_dev_context;
 
 
 /*!
+ * @ingroup devregister
  * @anchor versioning @name Versioning
+ * Current revisions of RTDM structures and interfaces.
  * @{
  */
 /** Version of struct rtdm_device */
@@ -107,6 +110,7 @@ struct rtdm_dev_context;
 
 
 /*!
+ * @ingroup devregister
  * @name Operation Handler Prototypes
  * @{
  */
@@ -268,6 +272,7 @@ typedef
 
 
 /**
+ * @ingroup devregister
  * Device operations
  */
 struct rtdm_operations {
@@ -344,6 +349,7 @@ struct rtdm_dev_reserved {
 };
 
 /**
+ * @ingroup devregister
  * @brief RTDM device
  *
  * This structure specifies a RTDM device. As some fields, especially the
@@ -454,8 +460,10 @@ static inline void rtdm_context_unlock(struct rtdm_dev_context *context)
 
 
 /* --- clock services --- */
-
-__u64 rtdm_clock_read(void);
+static inline __u64 rtdm_clock_read(void)
+{
+    return xnpod_ticks2ns(xnpod_get_time());
+}
 
 
 /* --- spin lock services --- */
@@ -465,17 +473,65 @@ __u64 rtdm_clock_read(void);
  */
 
 /*!
- * @name Spinning Lock with Preemption Deactivation
+ * @name Global Lock across Scheduler Invocation
+ * @{
  */
 
-typedef spinlock_t                  rtdm_lock_t;
-typedef unsigned long               rtdm_lockctx_t;
+/**
+ * @brief Execute code block atomically
+ *
+ * Generally, it is illegal to suspend the current task by calling
+ * rtdm_task_sleep(), rtdm_event_wait(), etc. while holding a spinlock. In
+ * contrast, this macro allows to combine several operations including
+ * potentially rescheduling calls to an atomic code block with respect to
+ * other RTDM_EXECUTE_ATOMICALLY() blocks. The macro is a light-weight
+ * alternative for protecting code blocks via mutexes, and it can even be used
+ * to synchronise real-time and non-real-time contexts.
+ *
+ * @param code_block Commands to be executed atomically
+ *
+ * @note It is not allowed to leave the code block explicitely by using
+ * @c break, @c return, @c goto, etc. This would leave the global lock held
+ * during the code block execution in an inconsistent state. Moreover, do not
+ * embed complex operations into the code bock. Consider that they will be
+ * executed under preemption lock with interrupts switched-off.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Interrupt service routine
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: possible, depends on functions called within @a code_block.
+ */
+#define RTDM_EXECUTE_ATOMICALLY(code_block)                                 \
+{                                                                           \
+    spl_t   s;                                                              \
+                                                                            \
+    xnlock_get_irqsave(&nklock, s);                                         \
+    code_block;                                                             \
+    xnlock_put_irqrestore(&nklock, s);                                      \
+}
+/** @} */
 
+/*!
+ * @name Spinlock with Preemption Deactivation
+ * @{
+ */
 
 /**
  * Static lock initialisation
  */
 #define RTDM_LOCK_UNLOCKED          SPIN_LOCK_UNLOCKED
+
+/** Lock variable */
+typedef spinlock_t                  rtdm_lock_t;
+
+/** Variable to save the context while holding a lock */
+typedef unsigned long               rtdm_lockctx_t;
 
 /**
  * Dynamic lock initialisation
@@ -609,6 +665,8 @@ typedef unsigned long               rtdm_lockctx_t;
     rthal_local_irq_restore(context)
 /** @} */
 
+/** @} */
+
 
 /* --- Interrupt management services --- */
 /*!
@@ -693,41 +751,40 @@ static inline int rtdm_irq_disable(rtdm_irq_t *irq_handle)
  * @{
  */
 
-typedef unsigned                    rtdm_nrt_signal_t;
+typedef unsigned                    rtdm_nrtsig_t;
 
 /**
  * Non-real-time signal handler
  *
- * @param[in] nrt_signal signal handle as returned by rtdm_nrt_signal_init()
+ * @param[in] nrt_sig signal handle as returned by rtdm_nrtsig_init()
  *
  * @note The signal handler will run in soft-IRQ context of the non-real-time
  * subsystem. Note the implications of this context, e.g. no invocation of
  * blocking operations.
  */
-typedef void (*rtdm_nrt_sig_handler_t)(rtdm_nrt_signal_t nrt_signal);
+typedef void (*rtdm_nrtsig_handler_t)(rtdm_nrtsig_t nrt_sig);
 /** @} */
 
 
-static inline int rtdm_nrt_signal_init(rtdm_nrt_signal_t *nrt_sig,
-                                       rtdm_nrt_sig_handler_t handler)
+static inline int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig,
+                                   rtdm_nrtsig_handler_t handler)
 {
     *nrt_sig = rthal_alloc_virq();
 
-    if (*nrt_sig > 0)
-        rthal_virtualize_irq(rthal_root_domain, *nrt_sig, handler, NULL,
-			     IPIPE_HANDLE_MASK);
-    else
-        *nrt_sig = -EBUSY;
+    if (*nrt_sig == 0)
+        return -EAGAIN;
 
-    return *nrt_sig;
+    rthal_virtualize_irq(rthal_root_domain, *nrt_sig, handler, NULL,
+                         IPIPE_HANDLE_MASK);
+    return 0;
 }
 
-static inline void rtdm_nrt_signal_destroy(rtdm_nrt_signal_t *nrt_sig)
+static inline void rtdm_nrtsig_destroy(rtdm_nrtsig_t *nrt_sig)
 {
     rthal_free_virq(*nrt_sig);
 }
 
-static inline void rtdm_nrt_pend_signal(rtdm_nrt_signal_t *nrt_sig)
+static inline void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig)
 {
     rthal_trigger_irq(*nrt_sig);
 }
@@ -809,6 +866,11 @@ static inline int rtdm_task_unblock(rtdm_task_t *task)
     return res;
 }
 
+static inline rtdm_task_t *rtdm_task_current(void)
+{
+    return xnpod_current_thread();
+}
+
 static inline int rtdm_task_wait_period(void)
 {
     return xnpod_wait_thread_period();
@@ -817,6 +879,16 @@ static inline int rtdm_task_wait_period(void)
 int rtdm_task_sleep(__u64 delay);
 int rtdm_task_sleep_until(__u64 wakeup_time);
 void rtdm_task_busy_sleep(__u64 delay);
+
+
+/* --- timeout sequences */
+
+typedef __u64                       rtdm_toseq_t;
+
+static inline void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, __s64 timeout)
+{
+    *timeout_seq = xnpod_get_time() + xnpod_ns2ticks(timeout);
+}
 
 
 /* --- event services --- */
@@ -839,13 +911,19 @@ static inline void rtdm_event_destroy(rtdm_event_t *event)
     _rtdm_synch_flush(&event->synch_base, XNRMID);
 }
 
-int rtdm_event_wait(rtdm_event_t *event, __s64 timeout);
-int rtdm_event_wait_until(rtdm_event_t *event, __u64 timeout);
+int rtdm_event_wait(rtdm_event_t *event);
+int rtdm_event_timedwait(rtdm_event_t *event, __s64 timeout,
+                         rtdm_toseq_t *timeout_seq);
 void rtdm_event_signal(rtdm_event_t *event);
 
 static inline void rtdm_event_pulse(rtdm_event_t *event)
 {
     _rtdm_synch_flush(&event->synch_base, 0);
+}
+
+static inline void rtdm_event_clear(rtdm_event_t *event)
+{
+    event->pending = 0;
 }
 
 
@@ -867,7 +945,9 @@ static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
     _rtdm_synch_flush(&sem->synch_base, XNRMID);
 }
 
-int rtdm_sem_down(rtdm_sem_t *sem, __s64 timeout);
+int rtdm_sem_down(rtdm_sem_t *sem);
+int rtdm_sem_timeddown(rtdm_sem_t *sem, __s64 timeout,
+                       rtdm_toseq_t *timeout_seq);
 void rtdm_sem_up(rtdm_sem_t *sem);
 
 
@@ -890,7 +970,8 @@ static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
 }
 
 int rtdm_mutex_lock(rtdm_mutex_t *mutex);
-int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout);
+int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout,
+                         rtdm_toseq_t *timeout_seq);
 void rtdm_mutex_unlock(rtdm_mutex_t *mutex);
 
 

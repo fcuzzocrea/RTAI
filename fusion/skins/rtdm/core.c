@@ -3,7 +3,7 @@
  * Real-Time Driver Model for RTAI, device operation multiplexing
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
- * @note Copyright (C) 2005 Joerg Langenberg <joergel75@gmx.net>
+ * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
  * RTAI/fusion is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
@@ -389,27 +389,27 @@ int _rtdm_ioctl(rtdm_user_info_t *user_info, int fd, int request, ...)
 }
 
 
-int _rtdm_read(rtdm_user_info_t *user_info, int fd, void *buf, size_t nbyte)
+ssize_t _rtdm_read(rtdm_user_info_t *user_info, int fd, void *buf, size_t nbyte)
 {
     MAJOR_FUNCTION_WRAPPER(read, buf, nbyte);
 }
 
 
-int _rtdm_write(rtdm_user_info_t *user_info, int fd, const void *buf,
+ssize_t _rtdm_write(rtdm_user_info_t *user_info, int fd, const void *buf,
                 size_t nbyte)
 {
     MAJOR_FUNCTION_WRAPPER(write, buf, nbyte);
 }
 
 
-int _rtdm_recvmsg(rtdm_user_info_t *user_info, int fd, struct msghdr *msg,
+ssize_t _rtdm_recvmsg(rtdm_user_info_t *user_info, int fd, struct msghdr *msg,
                   int flags)
 {
     MAJOR_FUNCTION_WRAPPER(recvmsg, msg, flags);
 }
 
 
-int _rtdm_sendmsg(rtdm_user_info_t *user_info, int fd,
+ssize_t _rtdm_sendmsg(rtdm_user_info_t *user_info, int fd,
                   const struct msghdr *msg, int flags)
 {
     MAJOR_FUNCTION_WRAPPER(sendmsg, msg, flags);

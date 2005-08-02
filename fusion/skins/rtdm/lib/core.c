@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Joerg Langenberg <joergel75.gmx.net>.
+ * Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>.
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -63,7 +63,7 @@ int rt_dev_ioctl(int fd, int request, ...)
                             arg);
 }
 
-int rt_dev_read(int fd, void *buf, size_t nbyte)
+ssize_t rt_dev_read(int fd, void *buf, size_t nbyte)
 {
   return XENOMAI_SKINCALL3( __rtdm_muxid,
                             __rtdm_read,
@@ -72,7 +72,7 @@ int rt_dev_read(int fd, void *buf, size_t nbyte)
                             nbyte);
 }
 
-int rt_dev_write(int fd, const void *buf, size_t nbyte)
+ssize_t rt_dev_write(int fd, const void *buf, size_t nbyte)
 {
   return XENOMAI_SKINCALL3( __rtdm_muxid,
                             __rtdm_write,
@@ -81,7 +81,7 @@ int rt_dev_write(int fd, const void *buf, size_t nbyte)
                             nbyte);
 }
 
-int rt_dev_recvmsg(int fd, struct msghdr *msg, int flags)
+ssize_t rt_dev_recvmsg(int fd, struct msghdr *msg, int flags)
 {
   return XENOMAI_SKINCALL3( __rtdm_muxid,
                             __rtdm_recvmsg,
@@ -90,7 +90,7 @@ int rt_dev_recvmsg(int fd, struct msghdr *msg, int flags)
                             flags);
 }
 
-int rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags)
+ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags)
 {
   return XENOMAI_SKINCALL3( __rtdm_muxid,
                             __rtdm_sendmsg,

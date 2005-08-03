@@ -1870,7 +1870,7 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 	(lnxtsk = rt_task->lnxtsk)->rt_priority = (MAX_LINUX_RTPRIO - rt_task->priority) < 1 ? 1 : MAX_LINUX_RTPRIO - rt_task->priority;
 	pend_wake_up_srq(rt_task->lnxtsk, rt_task->runnable_on_cpus);
 	rt_schedule();
-	rt_task->is_hard = 0;
+	rt_task->is_hard = keeprio;
 	rt_global_sti();
 	/* Perform Linux's scheduling tail now since we woke up
 	   outside the regular schedule() point. */
@@ -1956,13 +1956,12 @@ static int lxrt_handle_trap(int vec, int signo, struct pt_regs *regs, void *dumm
 		return 1;
 	}
 
-	if (rt_task->is_hard == 1) {
+	if (rt_task->is_hard > 0) {
 		if (!traptrans++) {
 			rt_printk("\nLXRT CHANGED MODE (TRAP), PID = %d, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, vec, signo);
 		}
 		SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (TRAP), PID = %d, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, vec, signo););
-		give_back_to_linux(rt_task, 1);
-		rt_task->is_hard = 2;
+		give_back_to_linux(rt_task, -1);
 		SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (TRAP), PID = %d, VEC = %d, SIGNO = %d.\n", (rt_task->lnxtsk)->pid, vec, signo););
 	}
 
@@ -2096,7 +2095,7 @@ static int lxrt_intercept_exit (void)
 	extern void linux_process_termination(void);
 	RT_TASK *task = current->rtai_tskext(0);
 	if (task) {
-		if (task->is_hard == 1) {
+		if (task->is_hard > 0) {
 			give_back_to_linux(task, 0);
 		}
 		linux_process_termination();
@@ -2127,7 +2126,7 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 
 	if (in_hrt_mode(cpuid = rtai_cpuid())) {
 		RT_TASK *task = rt_smp_current[cpuid];
-		if (task->is_hard == 1) {
+		if (task->is_hard > 0) {
 			if (task->linux_syscall_server) {
 #if 1
 				task->linux_syscall_server = rt_exec_linux_syscall(task, (void *)task->linux_syscall_server, r);
@@ -2142,8 +2141,7 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->LINUX_SYSCALL_NR);
 			}
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->LINUX_SYSCALL_NR););
-			give_back_to_linux(task, 1);
-			task->is_hard = 2;
+			give_back_to_linux(task, -1);
 			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %d.\n", (task->lnxtsk)->pid, r->LINUX_SYSCALL_NR););
 		}
 	} }
@@ -2161,7 +2159,7 @@ static int lxrt_intercept_syscall_epilogue(void)
 			r->LINUX_SYSCALL_RETREG = -ERESTARTSYS;
 			r->LINUX_SYSCALL_NR = RTAI_SYSCALL_NR;
 			task->system_data_ptr = NULL;
-		} else if (task->is_hard > 1) {
+		} else if (task->is_hard < 0) {
 			SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 			steal_from_linux(task);
 			SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
@@ -2288,7 +2286,7 @@ static void lxrt_intercept_exit (adevinfo_t *evinfo)
 	extern void linux_process_termination(void);
 	RT_TASK *task = current->rtai_tskext(0);
 	if (task) {
-		if (task->is_hard == 1) {
+		if (task->is_hard > 0) {
 			give_back_to_linux(task, 0);
 		}
 		linux_process_termination();
@@ -2321,7 +2319,7 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 		struct pt_regs *r = (struct pt_regs *)evinfo->evdata;
 #endif
 		RT_TASK *task = rt_smp_current[cpuid];
-		if (task->is_hard == 1) {
+		if (task->is_hard > 0) {
 
 			if (task->linux_syscall_server) {
 #if 1
@@ -2337,8 +2335,7 @@ static void lxrt_intercept_syscall_prologue(adevinfo_t *evinfo)
 				rt_printk("\nLXRT CHANGED MODE (SYSCALL), PID = %d, SYSCALL = %lu.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR);
 			}
 			SYSW_DIAG_MSG(rt_printk("\nFORCING IT SOFT (SYSCALL), PID = %d, SYSCALL = %ld.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
-			give_back_to_linux(task, 1);
-			task->is_hard = 2;
+			give_back_to_linux(task, -1);
 			SYSW_DIAG_MSG(rt_printk("FORCED IT SOFT (SYSCALL), PID = %d, SYSCALL = %ld.\n", (task->lnxtsk)->pid, r->RTAI_SYSCALL_NR););
 		}
 	} }
@@ -2350,7 +2347,7 @@ static void lxrt_intercept_syscall_epilogue(adevinfo_t *evinfo)
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	RT_TASK *task;
-	if (current->rtai_tskext(0) && (task = (RT_TASK *)current->rtai_tskext(0))->is_hard > 1) {
+	if (current->rtai_tskext(0) && (task = (RT_TASK *)current->rtai_tskext(0))->is_hard < 0) {
 		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 		steal_from_linux(task);
 		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););

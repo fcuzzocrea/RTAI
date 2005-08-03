@@ -200,7 +200,7 @@ int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*ha
 		tasklet->task = 0;
 	} else {
 		(tasklet->task)->priority = priority;
-		copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	}
 // tasklet insertion tasklets_list
 	flags = rt_spin_lock_irqsave(&tasklets_lock);
@@ -309,7 +309,7 @@ int rt_set_tasklet_handler(struct rt_tasklet_struct *tasklet, void (*handler)(un
 	}
 	tasklet->handler = handler;
 	if (tasklet->task) {
-		copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	}
 	return 0;
 }
@@ -318,7 +318,7 @@ void rt_set_tasklet_data(struct rt_tasklet_struct *tasklet, unsigned long data)
 {
 	tasklet->data = data;
 	if (tasklet->task) {
-		copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	}
 }
 
@@ -432,7 +432,7 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
 		timer->task = 0;
 	} else {
 		(timer->task)->priority = priority;
-		copy_to_user(timer->usptasklet, timer, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(timer->usptasklet, timer, sizeof(struct rt_tasklet_struct));
 	}
 // timer insertion in timers_list
 	tmr = &timers_list;
@@ -657,7 +657,7 @@ void rt_register_task(struct rt_tasklet_struct *tasklet, struct rt_tasklet_struc
 {
 	tasklet->task = task;
 	tasklet->usptasklet = usptasklet;
-	copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+	rt_copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 }
 
 void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
@@ -690,7 +690,7 @@ int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 
 	rt_remove_tasklet(tasklet);
 	tasklet->handler = 0;
-	copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+	rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	rt_task_resume(tasklet->task);
 	thread = tasklet->thread;	
 	sched_free(tasklet);

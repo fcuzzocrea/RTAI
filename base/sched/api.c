@@ -1860,7 +1860,7 @@ RT_TASK *rt_receive_linux_syscall(RT_TASK *task, void *regs)
 	rt_current = rt_smp_current[rtai_cpuid()];
 	if ((task->state & RT_SCHED_RPC) && task->msg_queue.task == rt_current) {
 		dequeue_blocked(task);
-//		copy_to_user(regs, (void *)task->msg, sizeof(struct pt_regs));
+//		rt_copy_to_user(regs, (void *)task->msg, sizeof(struct pt_regs));
 		memcpy(regs, (void *)task->msg, sizeof(struct pt_regs));
 		rt_current->msg_queue.task = task;
 		enqueue_blocked(task, &rt_current->ret_queue, 1);
@@ -1871,7 +1871,7 @@ RT_TASK *rt_receive_linux_syscall(RT_TASK *task, void *regs)
 		rem_ready_current(rt_current);
 		rt_current->msg_queue.task = task != rt_current ? task : NULL;
 		rt_schedule();
-//		copy_to_user(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
+//		rt_copy_to_user(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
 		memcpy(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
 	}
 	rt_current->msg_queue.task = rt_current;

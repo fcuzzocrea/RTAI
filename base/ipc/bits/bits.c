@@ -290,7 +290,7 @@ int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun,
 		if (space) {
 			*resulting_mask = mask;
 		} else {
-			copy_to_user(resulting_mask, &mask, sizeof(mask));
+			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
 	return 0;
@@ -316,7 +316,7 @@ int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long testmasks, int exitf
 		if (space) {
 			*resulting_mask = mask;
 		} else {
-			copy_to_user(resulting_mask, &mask, sizeof(mask));
+			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
 	return 0;
@@ -365,7 +365,7 @@ int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int ex
 		if (space) {
 			*resulting_mask = mask;
 		} else {
-			copy_to_user(resulting_mask, &mask, sizeof(mask));
+			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
 	return 0;

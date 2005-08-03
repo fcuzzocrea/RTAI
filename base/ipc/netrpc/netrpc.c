@@ -776,7 +776,7 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long type, void *args, int args
 			if (space) {
 				memcpy((char *)arg->args + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
 			} else {
-				copy_from_user((char *)arg->args + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
+				rt_copy_from_user((char *)arg->args + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
 			}
 		}
 		rsize = sizeof(struct msg_t) - sizeof(long) + argsize + rsize;
@@ -800,13 +800,13 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long type, void *args, int args
 			if (space) {
 				memcpy((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
 			} else {
-				copy_to_user((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
+				rt_copy_to_user((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
 			}
 			if (reply->w2size) {
 				if (space) {
 					memcpy((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
 				} else {
-					copy_to_user((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+					rt_copy_to_user((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
 				}
 			}
 		}

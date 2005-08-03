@@ -202,7 +202,7 @@ static int mbxput(MBX *mbx, char **msg, int msg_size, int space)
 		if (space) {
 			memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		} else {
-			copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+			rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		}
 		flags = rt_spin_lock_irqsave(&(mbx->lock));
 		mbx->frbs -= tocpy;
@@ -235,7 +235,7 @@ static int mbxovrwrput(MBX *mbx, char **msg, int msg_size, int space)
 			if (space) {
 				memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 			} else {
-				copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+				rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 			}
 			flags = rt_spin_lock_irqsave(&(mbx->lock));
 			mbx->frbs -= tocpy;
@@ -279,7 +279,7 @@ static int mbxget(MBX *mbx, char **msg, int msg_size, int space)
 		if (space) {
 			memcpy(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		} else {
-			copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+			rt_copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		}
 		flags = rt_spin_lock_irqsave(&(mbx->lock));
 		mbx->frbs  += tocpy;
@@ -308,7 +308,7 @@ static int mbxevdrp(MBX *mbx, char **msg, int msg_size, int space)
 		if (space) {
 			memcpy(*msg, mbx->bufadr + fbyte, tocpy);
 		} else {
-			copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+			rt_copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		}
 		avbs     -= tocpy;
 		msg_size -= tocpy;

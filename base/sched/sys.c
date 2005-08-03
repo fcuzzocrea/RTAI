@@ -154,7 +154,7 @@ static inline void lxrt_resume(void *fun, int narg, long *arg, unsigned long typ
 			}
 			if (rsize) {			
 				long *buf_arg = fun_args + USP_RBF1(type);
-				copy_from_user(rt_task->msg_buf[0], (long *)buf_arg[0], rsize);
+				rt_copy_from_user(rt_task->msg_buf[0], (long *)buf_arg[0], rsize);
 				buf_arg[0] = (long)rt_task->msg_buf[0];
 			}
 			if (wsize) {
@@ -171,7 +171,7 @@ static inline void lxrt_resume(void *fun, int narg, long *arg, unsigned long typ
 			}
 			if (r2size) {
 				long *buf_arg = fun_args + USP_RBF2(type);
-				copy_from_user(rt_task->msg_buf[1], (long *)buf_arg[0], r2size);
+				rt_copy_from_user(rt_task->msg_buf[1], (long *)buf_arg[0], r2size);
 				buf_arg[0] = (long)rt_task->msg_buf[1];
        			}
 			if (w2size) {
@@ -193,9 +193,9 @@ extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
 			rt_schedule_soft(rt_task);
 		}
 		if (wsize) {
-			copy_to_user(wmsg_adr, rt_task->msg_buf[0], wsize);
+			rt_copy_to_user(wmsg_adr, rt_task->msg_buf[0], wsize);
 			if (w2size) {
-				copy_to_user(w2msg_adr, rt_task->msg_buf[1], w2size);
+				rt_copy_to_user(w2msg_adr, rt_task->msg_buf[1], w2size);
 			}
 		}
 	} else if (likely(rt_task->is_hard > 0)) {
@@ -214,7 +214,7 @@ extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
 
 static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_size, int cpus_allowed)
 {
-	void *msg_buf;
+	void *msg_buf0, *msg_buf1;
 	RT_TASK *rt_task;
 
 	if (rt_get_adr(name)) {
@@ -226,7 +226,11 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	if (!max_msg_size) {
 		max_msg_size = USRLAND_MAX_MSG_SIZE;
 	}
-	if (!(msg_buf = rt_malloc(2*max_msg_size))) {
+	if (!(msg_buf0 = rt_malloc(max_msg_size))) {
+		return 0;
+	}
+	if (!(msg_buf1 = rt_malloc(max_msg_size))) {
+		rt_free(msg_buf0);
 		return 0;
 	}
 	rt_task = rt_malloc(sizeof(RT_TASK) + 3*sizeof(struct fun_args)); 
@@ -239,8 +243,8 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	    }
 	    if (!set_rtext(rt_task, prio, 0, 0, cpus_allowed, 0)) {
 	        rt_task->fun_args = (long *)((struct fun_args *)(rt_task + 1));
-		rt_task->msg_buf[0] = msg_buf;
-		rt_task->msg_buf[1] = msg_buf + max_msg_size;
+		rt_task->msg_buf[0] = msg_buf0;
+		rt_task->msg_buf[1] = msg_buf1;
 		rt_task->max_msg_size[0] =
 		rt_task->max_msg_size[1] = max_msg_size;
 		if (rt_register(name, rt_task, IS_TASK, 0)) {
@@ -251,20 +255,22 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	    }
 	    rt_free(rt_task);
 	}
-	rt_free(msg_buf);
+	rt_free(msg_buf0);
+	rt_free(msg_buf1);
 	return 0;
 }
 
 static int __task_delete(RT_TASK *rt_task)
 {
 	struct task_struct *process;
-	if (current == rt_task->lnxtsk && rt_task->is_hard == 1) {
+	if (current == rt_task->lnxtsk && rt_task->is_hard > 0) {
 		give_back_to_linux(rt_task, 0);
 	}
 	if (clr_rtext(rt_task)) {
 		return -EFAULT;
 	}
 	rt_free(rt_task->msg_buf[0]);
+	rt_free(rt_task->msg_buf[1]);
 	rt_free(rt_task);
 	if ((process = rt_task->lnxtsk)) {
 		process->rtai_tskext(0) = process->rtai_tskext(1) = 0;
@@ -303,7 +309,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 		type = funcm[srq].type;
 		if (likely(type)) {
-			if (unlikely(task->is_hard > 1)) {
+			if (unlikely(task->is_hard < 0)) {
 				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 				steal_from_linux(task);
 				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
@@ -434,7 +440,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case MAKE_HARD_RT: {
-			if (!task || task->is_hard == 1) {
+			if (!task || task->is_hard) {
 				 return 0;
 			}
 			steal_from_linux(task);
@@ -442,10 +448,10 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case MAKE_SOFT_RT: {
-			if (!task || task->is_hard <= 0) {
+			if (!task || !task->is_hard) {
 				return 0;
 			}
-			if (task->is_hard > 1) {
+			if (task->is_hard < 0) {
 				task->is_hard = 0;
 			} else {
 				give_back_to_linux(task, 0);
@@ -519,7 +525,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
                 }
 
 		case IS_HARD: {
-			return arg0.rt_task->is_hard > 0;
+			return arg0.rt_task->is_hard;
 		}
 		case GET_EXECTIME: {
 			struct arg { RT_TASK *task; RTIME *exectime; };
@@ -564,9 +570,8 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
 	if (unlikely(task->usp_signal)) {
 		int retval = task->usp_signal < 0;
-		if (task->is_hard == 1) {
-			give_back_to_linux(task, 0);
-			task->is_hard = 2;
+		if (task->is_hard > 0) {
+			give_back_to_linux(task, -1);
 		}
 		task->usp_signal = 0;
 		if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
@@ -574,7 +579,7 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 			regs->LINUX_SYSCALL_RETREG = -EINTR;
 			do_signal(regs, NULL);
 			regs->LINUX_SYSCALL_RETREG = saved_eax;
-			if (task->is_hard == 2) {
+			if (task->is_hard < 0) {
 				steal_from_linux(task);
 			}
 		}

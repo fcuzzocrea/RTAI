@@ -87,16 +87,16 @@ static inline xnticks_t clock_get_ticks(clockid_t clock_id)
 
 static inline int clock_adjust_timeout(xnticks_t *timeoutp, clockid_t clock_id)
 {
-    xnticks_t now;
+    xnsticks_t delay;
 
     if(*timeoutp == XN_INFINITE)
         return 0;
 
-    now = clock_get_ticks(clock_id);
-    if(now > *timeoutp)
+    delay = *timeoutp - clock_get_ticks(clock_id);
+    if(delay < 0)
         return ETIMEDOUT;
 
-    *timeoutp -= now;
+    *timeoutp = delay;
     return 0;
 }
 

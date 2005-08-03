@@ -1,3 +1,8 @@
+2005-08-03  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/internal.h (clock_adjust_timeout): Correct behaviour
+	in clock wrap case.
+
 2005-08-01  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/posix.h, 

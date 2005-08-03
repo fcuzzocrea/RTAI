@@ -38,6 +38,7 @@ nodist_libposix_s_a_SOURCES = \
 	tsd.c \
 	clock.c \
 	timer.c \
+	intr.c \
 	mq.c
 
 include_HEADERS = \

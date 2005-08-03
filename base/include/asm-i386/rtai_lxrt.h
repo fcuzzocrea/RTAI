@@ -183,6 +183,10 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 }
 #endif
 
+#define rt_copy_from_user  __copy_from_user_inatomic
+#define rt_copy_to_user    __copy_to_user_inatomic
+#define rt_put_user        __put_user
+
 #else /* !__KERNEL__ */
 
 /* NOTE: Keep the following routines unfold: this is a compiler
@@ -194,8 +198,7 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
-#if defined(USE_LINUX_SYSCALL) || defined(RTAI_USES_LINUX_SYSCALL)
-//	RTAI_DO_TRAP(USE_LINUX_SYSCALL, retval, srq, arg);
+#ifdef USE_LINUX_SYSCALL
 	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
 #else 
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);

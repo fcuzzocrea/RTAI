@@ -1,3 +1,18 @@
+2005-08-03  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* asm/rtai_lxrt.h: defined rt_copy-from/to and rt_put/get (for user 
+	  space data exchange) as arch dependent.
+	* ipc/bits.c-mbx.c-netrpc.c-tbx.c-tasklet.c: used rt_copy-from/to, 
+	  rt_put/get (for user space data exchange) defined as arch dependent 
+	  in asm/rtai_lxrt.
+	* base/sched/api.c: used rt_copy-from/to, rt_put/get (for user space 
+	  data exchange) defined as arch dependent in asm/rtai_lxrt.
+	* base/sched/sched.c: modified the way is_hard is used, 0-soft, 1-hard,
+	* base/sched/sys.c: used rt_copy-from/to, rt_put/get (for user space
+	  data exchange) defined as arch dependent in asm/rtai_lxrt; modified 
+	  the way is_hard is used, 0-soft, 1-hard, -1-tobehard; fixed a bug in 
+	  the resizing of per task intertask messaging buffers.
+
 2005-07-27  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* include/rtai_lxrt.h: LXRT enc/decoding restructured to make room 

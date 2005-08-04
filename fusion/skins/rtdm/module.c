@@ -85,7 +85,7 @@ int __init rtdm_skin_init(void)
     err = xnfusion_attach();
 #else /* !(__KERNEL__ && CONFIG_RTAI_OPT_FUSION) */
     /* The RTDM skin is standalone. */
-    err = xnpod_init(&pod, FUSION_LOW_PRIO, FUSION_HIGH_PRIO, 0);
+    err = xnpod_init(&__rtai_pod, FUSION_LOW_PRIO, FUSION_HIGH_PRIO, 0);
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     if (err)

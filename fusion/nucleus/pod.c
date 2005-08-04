@@ -3367,6 +3367,7 @@ int xnpod_wait_thread_period (void)
 
         if (xnthread_test_flags(thread,XNBREAK))
             {
+	    thread->poverrun = -1;
             err = -EINTR;
             goto unlock_and_exit;
             }

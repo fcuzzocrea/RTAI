@@ -2635,12 +2635,14 @@ static int __rt_heap_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #ifdef CONFIG_RTAI_OPT_NATIVE_ALARM
 
-static void __rt_alarm_handler (RT_ALARM *alarm, void *cookie)
+void rt_alarm_handler (RT_ALARM *alarm, void *cookie)
 
 {
     /* Wake up all tasks waiting for the alarm. */
     xnsynch_flush(&alarm->synch_base,0);
 }
+
+EXPORT_SYMBOL(rt_alarm_handler);
 
 /*
  * int __rt_alarm_create(RT_ALARM_PLACEHOLDER *ph,
@@ -2674,7 +2676,7 @@ static int __rt_alarm_create (struct task_struct *curr, struct pt_regs *regs)
     if (!alarm)
 	return -ENOMEM;
 
-    err = rt_alarm_create(alarm,name,&__rt_alarm_handler,NULL);
+    err = rt_alarm_create(alarm,name,&rt_alarm_handler,NULL);
 
     if (err == 0)
 	{
@@ -2863,7 +2865,7 @@ static int __rt_alarm_inquire (struct task_struct *curr, struct pt_regs *regs)
 
 #ifdef CONFIG_RTAI_OPT_NATIVE_INTR
 
-static int __rt_intr_handler (xnintr_t *cookie)
+int rt_intr_handler (xnintr_t *cookie)
 
 {
     RT_INTR *intr = I_DESC(cookie);
@@ -2878,6 +2880,8 @@ static int __rt_intr_handler (xnintr_t *cookie)
 
     return XN_ISR_HANDLED|(intr->mode & XN_ISR_ENABLE);
 }
+
+EXPORT_SYMBOL(rt_intr_handler);
 
 /*
  * int __rt_intr_create(RT_INTR_PLACEHOLDER *ph,
@@ -2910,7 +2914,7 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
     if (!intr)
 	return -ENOMEM;
 
-    err = rt_intr_create(intr,irq,&__rt_intr_handler,NULL);
+    err = rt_intr_create(intr,irq,&rt_intr_handler,NULL);
 
     if (err == 0)
 	{

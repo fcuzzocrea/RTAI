@@ -53,31 +53,30 @@ static int __muxid;
 
 static int __rt_bind_helper (struct task_struct *curr,
 			     struct pt_regs *regs,
+			     rt_handle_t *handlep,
 			     unsigned magic,
 			     void **objaddrp)
 {
     char name[XNOBJECT_NAME_LEN];
-    RT_TASK_PLACEHOLDER ph;
     RTIME timeout;
     void *objaddr;
     spl_t s;
     int err;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)) ||
-	!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(name)))
 	return -EFAULT;
 
     __xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg2(regs),sizeof(name) - 1);
     name[sizeof(name) - 1] = '\0';
     __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg3(regs),sizeof(timeout));
 
-    err = rt_registry_bind(name,timeout,&ph.opaque);
+    err = rt_registry_bind(name,timeout,handlep);
 
     if (!err)
 	{
 	xnlock_get_irqsave(&nklock,s);
 
-	objaddr = rt_registry_fetch(ph.opaque);
+	objaddr = rt_registry_fetch(*handlep);
 	
 	/* Also validate the type of the bound object. */
 
@@ -85,8 +84,6 @@ static int __rt_bind_helper (struct task_struct *curr,
 	    {
 	    if (objaddrp)
 		*objaddrp = objaddr;
-	    else
-		__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
 	    }
 	else
 	    err = -EACCES;
@@ -211,7 +208,18 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_task_bind (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return __rt_bind_helper(curr,regs,RTAI_TASK_MAGIC,NULL);
+    RT_TASK_PLACEHOLDER ph;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_TASK_MAGIC,NULL);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return err;
 }
 
 /*
@@ -1089,7 +1097,18 @@ static int __rt_sem_create (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_sem_bind (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return __rt_bind_helper(curr,regs,RTAI_SEM_MAGIC,NULL);
+    RT_SEM_PLACEHOLDER ph;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_SEM_MAGIC,NULL);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return err;
 }
 
 /*
@@ -1306,8 +1325,18 @@ static int __rt_event_create (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_event_bind (struct task_struct *curr, struct pt_regs *regs)
 
 {
+    RT_EVENT_PLACEHOLDER ph;
+    int err;
 
-    return __rt_bind_helper(curr,regs,RTAI_EVENT_MAGIC,NULL);
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_EVENT_MAGIC,NULL);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return err;
 }
 
 /*
@@ -1546,7 +1575,18 @@ static int __rt_mutex_create (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_mutex_bind (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return __rt_bind_helper(curr,regs,RTAI_MUTEX_MAGIC,NULL);
+    RT_MUTEX_PLACEHOLDER ph;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_MUTEX_MAGIC,NULL);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return err;
 }
 
 /*
@@ -1731,7 +1771,18 @@ static int __rt_cond_create (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_cond_bind (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return __rt_bind_helper(curr,regs,RTAI_COND_MAGIC,NULL);
+    RT_COND_PLACEHOLDER ph;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_COND_MAGIC,NULL);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return err;
 }
 
 /*
@@ -1973,11 +2024,14 @@ static int __rt_queue_bind (struct task_struct *curr, struct pt_regs *regs)
     int err;
     spl_t s;
 
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
     xnlock_get_irqsave(&nklock,s);
 
     /* First, wait for the queue to appear in the registry. */
 
-    err = __rt_bind_helper(curr,regs,RTAI_QUEUE_MAGIC,(void **)&q);
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_QUEUE_MAGIC,(void **)&q);
 
     if (err)
 	goto unlock_and_exit;
@@ -1995,12 +2049,11 @@ static int __rt_queue_bind (struct task_struct *curr, struct pt_regs *regs)
     /* Search for the queue again since we released the lock while
        migrating. */
 
-    err = __rt_bind_helper(curr,regs,RTAI_QUEUE_MAGIC,(void **)&q);
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_QUEUE_MAGIC,(void **)&q);
 
     if (err)
 	goto unlock_and_exit;
 
-    ph.opaque = q->handle;
     ph.opaque2 = &q->bufpool;
     ph.mapsize = xnheap_size(&q->bufpool);
 
@@ -2400,11 +2453,14 @@ static int __rt_heap_bind (struct task_struct *curr, struct pt_regs *regs)
     int err;
     spl_t s;
 
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
     xnlock_get_irqsave(&nklock,s);
 
     /* First, wait for the heap to appear in the registry. */
 
-    err = __rt_bind_helper(curr,regs,RTAI_HEAP_MAGIC,(void **)&heap);
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_HEAP_MAGIC,(void **)&heap);
 
     if (err)
 	goto unlock_and_exit;
@@ -2422,12 +2478,11 @@ static int __rt_heap_bind (struct task_struct *curr, struct pt_regs *regs)
     /* Search for the heap again since we released the lock while
        migrating. */
 
-    err = __rt_bind_helper(curr,regs,RTAI_HEAP_MAGIC,(void **)&heap);
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_HEAP_MAGIC,(void **)&heap);
 
     if (err)
 	goto unlock_and_exit;
 
-    ph.opaque = heap->handle;
     ph.opaque2 = &heap->heap_base;
     ph.mapsize = xnheap_size(&heap->heap_base);
 
@@ -2939,7 +2994,18 @@ static int __rt_intr_create (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_intr_bind (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return __rt_bind_helper(curr,regs,RTAI_INTR_MAGIC,NULL);
+    RT_INTR_PLACEHOLDER ph;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_INTR_MAGIC,NULL);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return err;
 }
 
 /*
@@ -3194,7 +3260,18 @@ static int __rt_pipe_create (struct task_struct *curr, struct pt_regs *regs)
 static int __rt_pipe_bind (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    return __rt_bind_helper(curr,regs,RTAI_PIPE_MAGIC,NULL);
+    RT_PIPE_PLACEHOLDER ph;
+    int err;
+
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ph)))
+	return -EFAULT;
+
+    err = __rt_bind_helper(curr,regs,&ph.opaque,RTAI_PIPE_MAGIC,NULL);
+
+    if (!err)
+	__xn_copy_to_user(curr,(void __user *)__xn_reg_arg1(regs),&ph,sizeof(ph));
+
+    return err;
 }
 
 /*

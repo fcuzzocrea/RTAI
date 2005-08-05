@@ -3,6 +3,8 @@
 	* skins/rtai/syscall.c (rt_intr_handler, rt_alarm_handler): Export
 	so that kernel-based ISR or alarm handlers can synchronize with
 	user-space waiters through rt_intr/alarm_wait().
+	(__rt_bind_helper): Rewrite so that we use the proper placeholder
+	type.
 
 	* skins/rtai/intr.c (__intr_read_proc): Add /proc export
 	information.

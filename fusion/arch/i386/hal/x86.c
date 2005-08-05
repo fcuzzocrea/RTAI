@@ -438,37 +438,27 @@ static inline int do_exception_event (unsigned event, unsigned domid, void *data
 	if (rthal_trap_handler != NULL &&
 	    test_bit(cpuid,&rthal_cpu_realtime) &&
 	    rthal_trap_handler(event,domid,data) != 0)
-	    return 0;
+	    return RTHAL_EVENT_STOP;
 	}
 
-    return 1;
+    return RTHAL_EVENT_PROPAGATE;
 }
 
 RTHAL_DECLARE_EVENT(exception_event);
 
-void rthal_domain_entry (int iflag)
+static inline void do_rthal_domain_entry (void)
 
 {
     unsigned trapnr;
 
-#if !defined(CONFIG_ADEOS_NOTHREADS)
-    if (!iflag)
-	goto spin;
-#endif /* !CONFIG_ADEOS_NOTHREADS */
-
     /* Trap all faults. */
-    for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
+    for (trapnr = 0; trapnr < RTHAL_NR_FAULTS; trapnr++)
 	rthal_catch_exception(trapnr,&exception_event);
 
     printk(KERN_INFO "RTAI: hal/x86 loaded.\n");
-
-#if !defined(CONFIG_ADEOS_NOTHREADS)
- spin:
-
-    for (;;)
-	rthal_suspend_domain();
-#endif /* !CONFIG_ADEOS_NOTHREADS */
 }
+
+RTHAL_DECLARE_DOMAIN(rthal_domain_entry);
 
 int rthal_arch_init (void)
 
@@ -494,12 +484,8 @@ int rthal_arch_init (void)
 
     if (rthal_cpufreq_arg == 0)
 #ifdef CONFIG_X86_TSC
-	{
-	adsysinfo_t sysinfo;
-	rthal_get_sysinfo(&sysinfo);
 	/* FIXME: 4Ghz barrier is close... */
-	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
-	}
+	rthal_cpufreq_arg = rthal_get_cpufreq();
 #else /* ! CONFIG_X86_TSC */
     rthal_cpufreq_arg = CLOCK_TICK_RATE;
     rthal_setup_8254_tsc();

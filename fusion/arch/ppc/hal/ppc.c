@@ -150,41 +150,27 @@ static inline int do_exception_event (unsigned event, unsigned domid, void *data
 
 RTHAL_DECLARE_EVENT(exception_event);
 
-void rthal_domain_entry (int iflag)
+static inline void do_rthal_domain_entry (void)
 
 {
     unsigned trapnr;
 
-#if !defined(CONFIG_ADEOS_NOTHREADS)
-    if (!iflag)
-	goto spin;
-#endif /* !CONFIG_ADEOS_NOTHREADS */
-
     /* Trap all faults. */
-    for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++)
+    for (trapnr = 0; trapnr < RTHAL_NR_FAULTS; trapnr++)
 	rthal_catch_exception(trapnr,&exception_event);
 
     printk(KERN_INFO "RTAI: hal/ppc loaded.\n");
-
-#if !defined(CONFIG_ADEOS_NOTHREADS)
- spin:
-
-    for (;;)
-	rthal_suspend_domain();
-#endif /* !CONFIG_ADEOS_NOTHREADS */
 }
+
+RTHAL_DECLARE_DOMAIN(rthal_domain_entry);
 
 int rthal_arch_init (void)
 
 {
     if (rthal_cpufreq_arg == 0)
-	{
-	adsysinfo_t sysinfo;
-	rthal_get_sysinfo(&sysinfo);
 	/* The CPU frequency is expressed as the timebase frequency
 	   for this port. */
-	rthal_cpufreq_arg = (unsigned long)sysinfo.cpufreq;
-	}
+	rthal_cpufreq_arg = (unsigned long)rthal_get_cpufreq();
 
     if (rthal_timerfreq_arg == 0)
 	rthal_timerfreq_arg = rthal_tunables.cpu_freq;

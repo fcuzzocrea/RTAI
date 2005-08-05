@@ -209,16 +209,26 @@ AC_MSG_CHECKING([for Linux source tree])
 AC_MSG_RESULT([$RTAI_LINUX_SRCDIR])
 
 dnl
-dnl Check the kernel has been Adeos-enabled.
+dnl Check for an interrupt pipeline extension.
 dnl
 
-AC_MSG_CHECKING([for Adeos support])
+AC_MSG_CHECKING([for interrupt pipeline extension])
 
-if test -r $RTAI_LINUX_SRCDIR/include/linux/adeos.h; then
-   AC_MSG_RESULT([ok])
-   CONFIG_RTAI_ADEOS=y
+if test -r $RTAI_LINUX_SRCDIR/include/linux/ipipe.h; then
+   v=`grep '^#define.*IPIPE_ARCH_STRING.*"' $RTAI_LINUX_SRCDIR/include/linux/ipipe.h|sed -e 's,.*"\(.*\)"$,\1,'`
+   AC_MSG_RESULT([I-pipe ($v)])
+   if test x${CONFIG_IPIPE} = x; then
+      AC_MSG_ERROR([Please activate the I-pipe support in $RTAI_LINUX_DIR and rebuild your kernel])
+   fi
+elif test -r $RTAI_LINUX_SRCDIR/include/linux/adeos.h; then
+   v=`grep '^#define.*ADEOS_ARCH_STRING.*"' $RTAI_LINUX_SRCDIR/include/asm-*/adeos.h|sed -e 's,.*"\(.*\)"$,\1,'`
+   AC_MSG_RESULT([Adeos ($v)])
+   if test x${CONFIG_ADEOS_CORE} = x; then
+      AC_MSG_ERROR([Please activate the Adeos support in $RTAI_LINUX_DIR and rebuild your kernel])
+   fi
 else
-     AC_MSG_ERROR([No Adeos support found in $RTAI_LINUX_SRCDIR/include/linux/adeos.h -- Please remedy.])
+   AC_MSG_ERROR([No interrupt pipeline extension enabled in your kernel.
+	You need to apply one of the I-pipe or Adeos patches first.])
 fi
 
 dnl
@@ -249,10 +259,6 @@ fi
 
 if test x${CONFIG_MODULES} = x ; then
   AC_MSG_ERROR([Please set CONFIG_MODULES for $RTAI_LINUX_DIR and rebuild your kernel])
-fi
-
-if test x${CONFIG_ADEOS_CORE} = x; then
-   AC_MSG_ERROR([Please activate the Adeos support in $RTAI_LINUX_DIR and rebuild your kernel])
 fi
 
 CONFIG_RTAI_LINUXDIR=$RTAI_LINUX_DIR

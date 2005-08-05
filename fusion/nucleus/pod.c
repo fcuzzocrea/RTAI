@@ -338,7 +338,6 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->refcnt = 0;
 
     pod->svctable.settime = &xnpod_set_time;
-    pod->svctable.tickhandler = NULL;
     pod->svctable.faulthandler = &xnpod_fault_handler;
     pod->svctable.unload = NULL;
 #ifdef __RTAI_SIM__
@@ -2993,15 +2992,13 @@ unlock_and_exit:
 
     xnltt_log_event(rtai_ev_tmstart,nstick);
 
-    nkpod->svctable.tickhandler = tickhandler;
-
     /* The clock interrupt does not need to be attached since the
        timer service will handle the arch-dependent setup. The IRQ
        number (arg #2) is not used since the IRQ source will be
        attached directly by the arch-dependent layer
        (xnarch_start_timer). */
 
-    xnintr_init(&nkclock,0,nkpod->svctable.tickhandler,NULL,0);
+    xnintr_init(&nkclock,0,tickhandler,NULL,0);
 
     setbits(nkpod->status,XNTIMED);
 
@@ -3323,7 +3320,7 @@ int xnpod_set_thread_periodic (xnthread_t *thread,
  *
  * - -EINTR is returned if xnpod_unblock_thread() has been called for
  * the waiting thread before the next periodic release point has been
- * reached.
+ * reached. In this case, the overrun counter is reset too.
  *
  * - -ETIMEDOUT is returned if a timer overrun occurred, which
  * indicates that a previous release point has been missed by the

@@ -80,7 +80,7 @@ static struct __lostagerq {
 
 } lostagerq[XNARCH_NR_CPUS];
 
-static adomain_t irq_shield;
+static rthal_pipeline_stage_t irq_shield;
 
 static cpumask_t shielded_cpus,
                  unshielded_cpus;
@@ -196,7 +196,7 @@ static void disengage_irq_shield (void)
     {
     cpumask_t other_cpus = xnarch_cpu_online_map;
     cpu_clear(cpuid,other_cpus);
-    rthal_send_ipi(ADEOS_SERVICE_IPI1,other_cpus);
+    rthal_send_ipi(RTHAL_SERVICE_IPI1,other_cpus);
     }
 #endif /* CONFIG_SMP */
 
@@ -213,22 +213,18 @@ static void shield_handler (unsigned irq)
 
 {
 #ifdef CONFIG_SMP
-    if (irq != ADEOS_SERVICE_IPI1)
+    if (irq != RTHAL_SERVICE_IPI1)
 #endif /* CONFIG_SMP */
     rthal_propagate_irq(irq);
 }
 
-static void shield_entry (int iflag)
+static inline void do_shield_domain_entry (void)
 
 {
-    if (iflag)
-	xnarch_grab_xirqs(&shield_handler);
-
-#ifndef CONFIG_ADEOS_NOTHREADS
-    for (;;)
-	rthal_suspend_domain();
-#endif /* !CONFIG_ADEOS_NOTHREADS */
+    xnarch_grab_xirqs(&shield_handler);
 }
+
+RTHAL_DECLARE_DOMAIN(shield_domain_entry);
 
 static void lostage_handler (void *cookie)
 
@@ -1031,7 +1027,7 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 			 /* Migration to RTAI from the Linux domain
 			    must be done from the latter: propagate
 			    the request to the Linux-level handler. */
-			 return 1;
+			 return RTHAL_EVENT_PROPAGATE;
 		}
 	    else if (__xn_reg_arg1(regs) == XENOMAI_LINUX_DOMAIN) /* RTAI => Linux */
 		{
@@ -1046,7 +1042,7 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 	    else
 		__xn_error_return(regs,-EINVAL);
 
-	    return 0;
+	    return RTHAL_EVENT_STOP;
 
 	case __xn_sys_bind:
 	case __xn_sys_completion:
@@ -1064,24 +1060,24 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 	     * boundary delimited by the calling RTAI stage for this
 	     * particular syscall instance. If the latter is still
 	     * unclear in your mind, have a look at the
-	     * rthal_catch_event() documentation and get back to this
-	     * later. */
+	     * ipipe/adeos_catch_event() documentation and get back to
+	     * this later. */
 
 	    if (domid == RTHAL_DOMAIN_ID)
 	        {
 		xnshadow_relax(1);
 		exec_nucleus_syscall(muxop,regs);
-		return 0;
+		return RTHAL_EVENT_STOP;
 		}
 
 	    /* Delegate the syscall handling to the Linux domain. */
-	    return 1;
+	    return RTHAL_EVENT_PROPAGATE;
 
 	default:
 
  bad_syscall:
 	    __xn_error_return(regs,-ENOSYS);
-	    return 0;
+	    return RTHAL_EVENT_STOP;
 	}
 
  skin_syscall:
@@ -1095,7 +1091,7 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
     if ((sysflags & __xn_exec_shadow) != 0 && !thread)
 	{
 	__xn_error_return(regs,-EPERM);
-	return 0;
+	return RTHAL_EVENT_STOP;
 	}
 
     if ((sysflags & __xn_exec_conforming) != 0)
@@ -1179,7 +1175,7 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
 	xnshadow_harden(); /* -EPERM will be trapped later if needed. */
 
-    return 0;
+    return RTHAL_EVENT_STOP;
 
  linux_syscall:
 
@@ -1197,7 +1193,7 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 	   running inside the RTAI domain. This call has just been
 	   intercepted by the nucleus and a RTAI replacement has been
 	   substituted for it. */
-	return 0;
+	return RTHAL_EVENT_STOP;
 
     /* This syscall has not been substituted, let Linux handle
        it. This will eventually fall back to the Linux syscall handler
@@ -1226,7 +1222,7 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 		  __xn_mux_op(regs));
 
 	__xn_error_return(regs,-ENOSYS);
-	return 0;
+	return RTHAL_EVENT_STOP;
 	}
 
     /* Regular Linux syscall with no skin loaded -- propagate it
@@ -1234,7 +1230,7 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 
  propagate_syscall:
 
-    return 1;
+    return RTHAL_EVENT_PROPAGATE;
 }
 
 RTHAL_DECLARE_EVENT(hisyscall_event);
@@ -1251,14 +1247,14 @@ static inline int do_losyscall_event (unsigned event, unsigned domid, void *data
 
     if (!thread || !substitute_linux_syscall(current,regs))
 	/* Fall back to Linux syscall handling. */
-	return 1;
+	return RTHAL_EVENT_PROPAGATE;
 
     /* This is a Linux syscall issued on behalf of a shadow thread
        running inside the Linux domain. If the call has been
        substituted with a RTAI replacement, do not let Linux know
        about it. */
 
-    return 0;
+    return RTHAL_EVENT_STOP;
 
  xenomai_syscall:
 
@@ -1279,7 +1275,7 @@ static inline int do_losyscall_event (unsigned event, unsigned domid, void *data
 	   behalf of the Linux domain (over which we are currently
 	   running). */
 	exec_nucleus_syscall(muxop,regs);
-	return 0;
+	return RTHAL_EVENT_STOP;
 	}
 
     /* Processing a real-time skin syscall. */
@@ -1300,7 +1296,7 @@ static inline int do_losyscall_event (unsigned event, unsigned domid, void *data
 	if ((err = xnshadow_harden()) != 0)
 	    {
 	    __xn_error_return(regs,err);
-	    return 0;
+	    return RTHAL_EVENT_STOP;
 	    }
 
 	switched = 1;
@@ -1329,18 +1325,18 @@ static inline int do_losyscall_event (unsigned event, unsigned domid, void *data
     else if ((sysflags & __xn_exec_switchback) != 0 && switched)
 	xnshadow_relax(0);
 
-    return 0;
+    return RTHAL_EVENT_STOP;
 }
 
 RTHAL_DECLARE_EVENT(losyscall_event);
 
-static inline int do_taskexit_event (unsigned event, unsigned domid, void *data)
+static inline void do_taskexit_event (struct task_struct *p)
 
 {
-    xnthread_t *thread = xnshadow_thread(current);
+    xnthread_t *thread = xnshadow_thread(p); /* p == current */
 
     if (!thread)
-	return 1;
+	return;
 
     if (xnpod_shadow_p())
 	xnshadow_relax(0);
@@ -1348,16 +1344,14 @@ static inline int do_taskexit_event (unsigned event, unsigned domid, void *data)
     /* So that we won't attempt to further wakeup the exiting task in
        xnshadow_unmap(). */
 
-    xnshadow_ptd(current) = NULL;
+    xnshadow_ptd(p) = NULL;
     xnthread_archtcb(thread)->user_task = NULL;
     xnpod_delete_thread(thread); /* Should indirectly call xnshadow_unmap(). */
 
     xnltt_log_event(rtai_ev_shadowexit,thread->name);
-
-    return 0;
 }
 
-RTHAL_DECLARE_EVENT(taskexit_event);
+RTHAL_DECLARE_EXIT_EVENT(taskexit_event);
 
 static inline void do_schedule_event (struct task_struct *next)
 
@@ -1672,7 +1666,7 @@ int __init xnshadow_mount (void)
 			      "IShield",
 			      0x53484c44,
 			      RTHAL_ROOT_PRIO + 50,
-			      &shield_entry))
+			      &shield_domain_entry))
 	return -EBUSY;
 
     shielded_cpus = CPU_MASK_NONE;

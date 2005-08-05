@@ -28,7 +28,6 @@
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/errno.h>
-#include <linux/adeos.h>
 #include <linux/vmalloc.h>
 #include <asm/uaccess.h>
 #include <asm/param.h>
@@ -277,14 +276,14 @@ static inline int xnarch_setimask (int imask)
 
 static inline int xnarch_send_ipi (xnarch_cpumask_t cpumask) {
 
-    return rthal_send_ipi(ADEOS_SERVICE_IPI0, cpumask);
+    return rthal_send_ipi(RTHAL_SERVICE_IPI0, cpumask);
 }
 
 static inline int xnarch_hook_ipi (void (*handler)(void))
 
 {
     return rthal_virtualize_irq(&rthal_domain,
-				ADEOS_SERVICE_IPI0,
+				RTHAL_SERVICE_IPI0,
 				(void (*)(unsigned)) handler,
 				NULL,
 				IPIPE_HANDLE_MASK);
@@ -294,7 +293,7 @@ static inline int xnarch_release_ipi (void)
 
 {
     return rthal_virtualize_irq(&rthal_domain,
-				ADEOS_SERVICE_IPI0,
+				RTHAL_SERVICE_IPI0,
 				NULL,
 				NULL,
 				IPIPE_PASS_MASK);
@@ -322,21 +321,21 @@ static inline void xnarch_notify_halt(void)
        context. */
 
     rthal_virtualize_irq(rthal_current_domain,
-			 ADEOS_SERVICE_IPI2,
+			 RTHAL_SERVICE_IPI2,
 			 xnarch_finalize_cpu,
 			 NULL,
 			 IPIPE_HANDLE_MASK);
 
     rthal_lock_cpu(flags);
     cpu_clear(cpuid, other_cpus);
-    rthal_send_ipi(ADEOS_SERVICE_IPI2, other_cpus);
+    rthal_send_ipi(RTHAL_SERVICE_IPI2, other_cpus);
     rthal_unlock_cpu(flags);
 
     for(cpu=0; cpu < nr_cpus-1; ++cpu)
         down(&xnarch_finalize_sync);
     
     rthal_virtualize_irq(rthal_current_domain,
-			 ADEOS_SERVICE_IPI2,
+			 RTHAL_SERVICE_IPI2,
 			 NULL,
 			 NULL,
 			 IPIPE_PASS_MASK);

@@ -91,13 +91,13 @@ static raw_spinlock_t rthal_apc_lock = RAW_SPIN_LOCK_UNLOCKED;
 
 static atomic_t rthal_sync_count = ATOMIC_INIT(1);
 
-adomain_t rthal_domain;
+rthal_pipeline_stage_t rthal_domain;
 
 struct rthal_calibration_data rthal_tunables;
 
 rthal_trap_handler_t rthal_trap_handler;
 
-int rthal_realtime_faults[ADEOS_NR_CPUS][ADEOS_NR_FAULTS];
+int rthal_realtime_faults[RTHAL_NR_CPUS][RTHAL_NR_FAULTS];
 
 volatile int rthal_sync_op;
 
@@ -828,6 +828,11 @@ static int hal_read_proc (char *page,
 {
     int len, major, minor, patchlevel;
 
+#ifdef CONFIG_IPIPE
+    major = IPIPE_MAJOR_NUMBER;
+    minor = IPIPE_MINOR_NUMBER;
+    patchlevel = IPIPE_PATCH_NUMBER;
+#else /* !CONFIG_IPIPE */
     /* Canonicalize the Adeos relno-candidate information to some
        major.minor.patchlevel format to be parser-friendly. */
 
@@ -844,6 +849,7 @@ static int hal_read_proc (char *page,
 	minor = 0;
 	patchlevel = 0;
 	}
+#endif /* CONFIG_IPIPE */
 
     len = sprintf(page,"%d.%d.%d\n",major,minor,patchlevel);
     len -= off;

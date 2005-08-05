@@ -29,10 +29,12 @@
 #include <linux/config.h>
 #include <linux/ptrace.h>
 
+#ifdef CONFIG_ADEOS_CORE
 #if ADEOS_RELEASE_NUMBER < 0x02060b01
 #error "Adeos 2.6r11c1/x86 or above is required to run this software; please upgrade."
 #error "See http://download.gna.org/adeos/patches/v2.6/i386/"
 #endif
+#endif /* CONFIG_ADEOS_CORE */
 
 #define XNARCH_DEFAULT_TICK          1000000 /* ns, i.e. 1ms */
 #ifdef CONFIG_X86_LOCAL_APIC
@@ -90,7 +92,7 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_pc(fi)     ((fi)->regs->eip)
 /* fault is caused by use FPU while FPU disabled. */
 #define xnarch_fault_fpu_p(fi)  ((fi)->vector == 7)
-/* The following predicate is guaranteed to be called over a regular
+/* The following predicates are guaranteed to be used over a regular
    Linux stack context. */
 #define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
                                  ((fi)->vector != 1 && (fi)->vector != 3))
@@ -284,7 +286,7 @@ static inline void xnarch_switch_to (xnarchtcb_t *out_tcb,
            raw I/O ops. */
 
         if (thread->io_bitmap_ptr) {
-            struct tss_struct *tss = &per_cpu(init_tss, adeos_processor_id());
+            struct tss_struct *tss = &per_cpu(init_tss, rthal_processor_id());
 
             if (tss->io_bitmap_base == INVALID_IO_BITMAP_OFFSET_LAZY) {
                 
@@ -522,7 +524,7 @@ static inline void xnarch_grab_xirqs (void (*handler)(unsigned irq))
                              IPIPE_DYNAMIC_MASK);
 }
 
-static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
+static inline void xnarch_lock_xirqs (rthal_pipeline_stage_t *ipd, int cpuid)
 
 {
     unsigned irq;
@@ -532,7 +534,7 @@ static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
         switch (irq)
             {
 #ifdef CONFIG_SMP
-            case ADEOS_CRITICAL_IPI:
+            case RTHAL_CRITICAL_IPI:
             case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
             case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
             case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
@@ -543,12 +545,12 @@ static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
 
             default:
 
-                rthal_lock_irq(adp,cpuid,irq);
+                rthal_lock_irq(ipd,cpuid,irq);
             }
         }
 }
 
-static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
+static inline void xnarch_unlock_xirqs (rthal_pipeline_stage_t *ipd, int cpuid)
 
 {
     unsigned irq;
@@ -558,7 +560,7 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
         switch (irq)
             {
 #ifdef CONFIG_SMP
-            case ADEOS_CRITICAL_IPI:
+            case RTHAL_CRITICAL_IPI:
             case INVALIDATE_TLB_VECTOR - FIRST_EXTERNAL_VECTOR:
             case CALL_FUNCTION_VECTOR - FIRST_EXTERNAL_VECTOR:
             case RESCHEDULE_VECTOR - FIRST_EXTERNAL_VECTOR:
@@ -568,7 +570,7 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 
             default:
 
-                rthal_unlock_irq(adp,irq);
+                rthal_unlock_irq(ipd,irq);
             }
         }
 }

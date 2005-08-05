@@ -1,7 +1,36 @@
+2005-08-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/syscall.c (rt_intr_handler, rt_alarm_handler): Export
+	so that kernel-based ISR or alarm handlers can synchronize with
+	user-space waiters through rt_intr/alarm_wait().
+
+	* skins/rtai/intr.c (__intr_read_proc): Add /proc export
+	information.
+
+	* skins/rtai/lib/intr.c (rt_intr_bind): Fix binding key.
+
+2005-08-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtdm/module.c (rtdm_skin_init): Fix compilation in
+	!CONFIG_RTAI_OPT_FUSION case.
+
+	* include/nucleus/pod.h: Discard the useless tick handler callback
+	from the service table.
+
+	* nucleus/pod.c (xnpod_wait_thread_period): Reset the overrun
+	count upon XNBREAK condition.
+
 2005-08-03  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/internal.h (clock_adjust_timeout): Correct behaviour
 	in clock wrap case.
+
+2005-08-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386, include/nucleus: Finalize dual I-pipe/Adeos support
+	for x86.
+
+	* skins/rtdm: Merge RTDM patch level #6.
 
 2005-08-01  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
@@ -50,6 +79,10 @@
 	that xnpod_get_time() use the same time base as Linux.
 
 2005-07-31  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (do_setsched_event): Let the POSIX skin prevent
+	scheduling policy of shadow threads from being changed from
+	user-space to anything else than SCHED_FIFO.
 
 	* nucleus/module.c (xnpod_init_proc): Use a seqfile to dump sched
 	and stat information, in order to deal properly with reports

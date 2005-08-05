@@ -177,6 +177,9 @@ struct xnpod {
     xnticks_t wallclock_offset; /*!< Difference between wallclock time
                                   and epoch in ticks. */
 
+    xnticks_t frozen_time;	/*!< Copy of the current time value
+				  before entering a break state. */
+
     xntimer_t htimer;           /*!< Host timer. */
 
     xnsched_t sched[XNARCH_NR_CPUS]; /*!< Per-cpu scheduler slots. */
@@ -203,7 +206,6 @@ struct xnpod {
     int refcnt;			/*!< Reference count.  */
 
     struct {
-        xnisr_t tickhandler; /*!< Clock tick handler. */
         void (*settime)(xnticks_t newtime); /*!< Clock setting hook. */
         int (*faulthandler)(xnarch_fltinfo_t *fltinfo); /*!< Trap/exception handler. */
         int (*unload)(void);    /*!< Unloading hook. */

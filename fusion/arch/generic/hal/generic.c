@@ -851,7 +851,7 @@ static int hal_read_proc (char *page,
 	}
 #endif /* CONFIG_IPIPE */
 
-    len = sprintf(page,"%d.%d.%d\n",major,minor,patchlevel);
+    len = sprintf(page,"%d.%d-%.2d\n",major,minor,patchlevel);
     len -= off;
     if (len <= off + count) *eof = 1;
     *start = page + off;

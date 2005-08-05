@@ -673,7 +673,7 @@ int rt_task_set_periodic (RT_TASK *task,
  *
  * - -EINTR is returned if rt_task_unblock() has been called for the
  * waiting task before the next periodic release point has been
- * reached.
+ * reached. In this case, the overrun counter is reset too.
  *
  * - -ETIMEDOUT is returned if a timer overrun occurred, which indicates
  * that a previous release point has been missed by the calling task.

@@ -49,6 +49,71 @@ void __intr_pkg_cleanup (void)
 	rt_intr_delete(link2intr(holder));
 }
 
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+
+static int __intr_read_proc (char *page,
+			     char **start,
+			     off_t off,
+			     int count,
+			     int *eof,
+			     void *data)
+{
+    RT_INTR *intr = (RT_INTR *)data;
+    xnpholder_t *holder;
+    char *p = page;
+    int len;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+#ifdef CONFIG_RTAI_OPT_FUSION
+
+    p += sprintf(p,"pending=%u, mode=0x%x\n",
+		 intr->pending,
+		 intr->mode);
+
+    /* Pended interrupt -- dump waiters. */
+
+    holder = getheadpq(xnsynch_wait_queue(&intr->synch_base));
+
+    while (holder)
+	{
+	xnthread_t *sleeper = link2thread(holder,plink);
+	p += sprintf(p,"+%s\n",xnthread_name(sleeper));
+	holder = nextpq(xnsynch_wait_queue(&intr->synch_base),holder);
+	}
+
+#endif /* CONFIG_RTAI_OPT_FUSION */
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    len = (p - page) - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
+}
+
+static RT_OBJECT_PROCNODE __intr_pnode = {
+
+    .dir = NULL,
+    .type = "interrupts",
+    .entries = 0,
+    .read_proc = &__intr_read_proc,
+    .write_proc = NULL
+};
+
+#elif CONFIG_RTAI_OPT_NATIVE_REGISTRY
+
+static RT_OBJECT_PROCNODE __intr_pnode = {
+
+    .type = "interrupts"
+};
+
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
+
 /*! 
  * \fn int rt_intr_create (RT_INTR *intr,unsigned irq,rt_isr_t isr,rt_iack_t iack)
  * \brief Create an interrupt object from kernel space.
@@ -145,6 +210,7 @@ int rt_intr_create (RT_INTR *intr,
     xnsynch_init(&intr->synch_base,XNSYNCH_PRIO);
     intr->pending = 0;
     intr->cpid = 0;
+    intr->mode = 0;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     intr->magic = RTAI_INTR_MAGIC;
     intr->handle = 0;    /* i.e. (still) unregistered interrupt. */
@@ -152,7 +218,7 @@ int rt_intr_create (RT_INTR *intr,
     xnlock_get_irqsave(&nklock,s);
     appendq(&__rtai_intr_q,&intr->link);
     xnlock_put_irqrestore(&nklock,s);
-    snprintf(intr->name,sizeof(intr->name),"interrupt@%u",irq);
+    snprintf(intr->name,sizeof(intr->name),"irq%u",irq);
 
     err = xnintr_attach(&intr->intr_base,intr);
 
@@ -162,7 +228,7 @@ int rt_intr_create (RT_INTR *intr,
        half-baked objects... */
 
     if (!err)
-	err = rt_registry_enter(intr->name,intr,&intr->handle,NULL);
+	err = rt_registry_enter(intr->name,intr,&intr->handle,&__intr_pnode);
 #endif /* CONFIG_RTAI_OPT_NATIVE_REGISTRY */
 
     if (err)

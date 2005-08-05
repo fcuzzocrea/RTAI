@@ -40,7 +40,7 @@ int rt_intr_bind (RT_INTR *intr,
 {
     char name[XNOBJECT_NAME_LEN];
 
-    snprintf(name,sizeof(name),"interrupt/%u",irq);
+    snprintf(name,sizeof(name),"irq%u",irq);
 
     return XENOMAI_SKINCALL3(__rtai_muxid,
 			     __rtai_intr_bind,

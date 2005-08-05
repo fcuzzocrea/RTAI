@@ -33,7 +33,7 @@ static __attribute__((constructor)) void __init_rtai_interface(void)
 
     if (muxid < 0)
 	{
-	fprintf(stderr,"RTAI/fusion: UVM skin unavailable.\n");
+	fprintf(stderr,"RTAI/fusion: UVM skin or user-space support unavailable.\n");
 	fprintf(stderr,"(did you load the rtai_uvm.ko module?)\n");
 	exit(1);
 	}

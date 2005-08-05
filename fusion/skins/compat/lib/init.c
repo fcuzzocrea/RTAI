@@ -31,7 +31,7 @@ static __attribute__((constructor)) void __init_compat_interface(void)
 
     if (muxid < 0)
 	{
-	fprintf(stderr,"RTAI/fusion: compatibility skin unavailable.\n");
+	fprintf(stderr,"RTAI/fusion: compatibility skin or user-space support unavailable.\n");
 	fprintf(stderr,"(did you load the rtai_compat.ko module?)\n");
 	exit(1);
 	}

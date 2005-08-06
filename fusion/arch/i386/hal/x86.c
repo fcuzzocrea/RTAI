@@ -427,7 +427,7 @@ static inline int do_exception_event (unsigned event, unsigned domid, void *data
     dropped. Since the default LDT is only 5 entries long, any attempt
     to refer to an LDT-indexed descriptor above this value would cause
     a GPF.
-    2) NMI is not pipelined by Adeos. */
+    2) NMI is not pipelined. */
 
     rthal_load_cpuid();
 

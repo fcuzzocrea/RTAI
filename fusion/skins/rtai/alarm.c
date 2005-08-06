@@ -60,11 +60,13 @@ static void __alarm_trampoline (void *cookie)
 
 /**
  * @fn int rt_alarm_create(RT_ALARM *alarm,const char *name,rt_alarm_t handler,void *cookie)
- * @brief Create an alarm object.
+ * @brief Create an alarm object from kernel space.
  *
  * Create an object triggering an alarm routine at a specified time in
  * the future. Alarms can be made periodic or oneshot, depending on
- * the reload interval value passed to rt_alarm_start() for them.
+ * the reload interval value passed to rt_alarm_start() for them. In
+ * kernel space, alarms are immediately notified on behalf of the
+ * timer interrupt to a user-defined handler.
  *
  * @param alarm The address of an alarm descriptor RTAI will use to
  * store the alarm-related data.  This descriptor must always be valid
@@ -101,9 +103,16 @@ static void __alarm_trampoline (void *cookie)
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: possible.
+ *
+ * @note It is possible to combine kernel-based alarm handling with
+ * waiter threads pending on the same alarm object from user-space
+ * through the rt_alarm_wait() service. For this purpose, the
+ * rt_alarm_handler() routine which is internally invoked to wake up
+ * alarm servers in user-space is accessible to user-provided alarm
+ * handlers in kernel space, and should be called from there in order
+ * to unblock any thread sleeping on the rt_alarm_wait() service.
  */
 
 int rt_alarm_create (RT_ALARM *alarm,
@@ -404,6 +413,56 @@ int rt_alarm_inquire (RT_ALARM *alarm,
 
     return err;
 }
+
+/**
+ * @fn int rt_alarm_create(RT_ALARM *alarm,const char *name)
+ * @brief Create an alarm object from user-space.
+ *
+ * Initializes an alarm object from a user-space application.  Alarms
+ * can be made periodic or oneshot, depending on the reload interval
+ * value passed to rt_alarm_start() for them. In this mode, the basic
+ * principle is to define some alarm server task which routinely waits
+ * for the next incoming alarm event through the rt_alarm_wait()
+ * syscall.
+ *
+ * @param alarm The address of an alarm descriptor RTAI will use to
+ * store the alarm-related data.  This descriptor must always be valid
+ * while the alarm is active therefore it must be allocated in
+ * permanent memory.
+ *
+ * @param name An ASCII string standing for the symbolic name of the
+ * alarm. When non-NULL and non-empty, this string is copied to a safe
+ * place into the descriptor, and passed to the registry package if
+ * enabled for indexing the created alarm.
+ *
+ * @return 0 is returned upon success. Otherwise:
+ *
+ * - -ENOMEM is returned if the system fails to get enough dynamic
+ * memory from the global real-time heap in order to register the
+ * alarm.
+ *
+ * - -EEXIST is returned if the @a name is already in use by some
+ * registered object.
+ *
+ * - -EPERM is returned if this service was called from an
+ * asynchronous context.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - User-space task
+ *
+ * Rescheduling: possible.
+ *
+ * @note It is possible to combine kernel-based alarm handling with
+ * waiter threads pending on the same alarm object from user-space
+ * through the rt_alarm_wait() service. For this purpose, the
+ * rt_alarm_handler() routine which is internally invoked to wake up
+ * alarm servers in user-space is accessible to user-provided alarm
+ * handlers in kernel space, and should be called from there in order
+ * to unblock any thread sleeping on the rt_alarm_wait() service.
+ */
 
 /**
  * @fn int rt_alarm_wait(RT_ALARM *alarm)

@@ -83,6 +83,13 @@ int rt_alarm_create(RT_ALARM *alarm,
 		    rt_alarm_t handler,
 		    void *cookie);
 
+#ifdef CONFIG_RTAI_OPT_FUSION
+
+void rt_alarm_handler(RT_ALARM *alarm,
+		      void *cookie);
+
+#endif /* CONFIG_RTAI_OPT_FUSION */
+
 #ifdef __cplusplus
 }
 #endif

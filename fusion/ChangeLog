@@ -1,3 +1,11 @@
+2005-08-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/timer.c (xntimer_lock_timers): Do not elapse outstanding
+	timers while undergoing a debugging break state; this makes using
+	GDB breakpoints on timed threads much more easier.
+
+	* skins/rtai/alarm.c: Fix rt_alarm_create() documentation.
+
 2005-08-05  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c (rt_intr_handler, rt_alarm_handler): Export

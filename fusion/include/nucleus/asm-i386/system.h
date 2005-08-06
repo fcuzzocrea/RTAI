@@ -92,11 +92,12 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_pc(fi)     ((fi)->regs->eip)
 /* fault is caused by use FPU while FPU disabled. */
 #define xnarch_fault_fpu_p(fi)  ((fi)->vector == 7)
-/* The following predicates are guaranteed to be used over a regular
-   Linux stack context. */
-#define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
-                                 ((fi)->vector != 1 && (fi)->vector != 3))
+/* The following predicates are only usable over a regular Linux stack
+   context. */
 #define xnarch_fault_pf_p(fi)   ((fi)->vector == 14)
+#define xnarch_fault_bp_p(fi)   ((current->ptrace & PT_PTRACED) && \
+                                 ((fi)->vector == 1 || (fi)->vector == 3))
+#define xnarch_fault_notify(fi) (!xnarch_fault_bp_p(fi))
 
 #ifdef __cplusplus
 extern "C" {

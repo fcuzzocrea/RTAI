@@ -1356,26 +1356,49 @@ RTHAL_DECLARE_EXIT_EVENT(taskexit_event);
 static inline void do_schedule_event (struct task_struct *next)
 
 {
-    xnthread_t *thread = xnshadow_thread(next);
-    struct task_struct *prev = current;
+    struct task_struct *prev;
     int oldrprio, newrprio;
+    xnthread_t *threadin;
     rthal_declare_cpuid;
 
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
 	return;
+
+    prev = current;
+    threadin = xnshadow_thread(next);
 
     rthal_load_cpuid();	/* Linux is running in a migration-safe
 			   portion of code. */
 
     set_switch_lock_owner(prev);
 
-    if (thread)
+    if (threadin)
 	{
-	newrprio = thread->cprio;
+	/* Check whether we need to unlock the timer manager, each
+	   time a Linux task resumes from a stopped state, excluding
+	   tasks resuming shortly for entering a stopped state asap
+	   due to ptracing. To identify the latter, we are only
+	   interested by SIGSTOP as sent to a process for ptracing
+	   purpose, so we don't check the shared pending queue since
+	   we don't care for group sending (XNDEBUG is only set for
+	   ptraced processes). */
+
+        if (testbits(threadin->status,XNDEBUG) &&
+	    (!signal_pending(next) ||
+	     !sigismember(&next->pending.signal,SIGSTOP)))
+            {
+	    /* A shadow thread has been found resuming from a debug
+	       break state: ask all CPUs to resync their timers when
+	       the next tick is announced. */
+	    clrbits(threadin->status,XNDEBUG);
+	    xntimer_unlock_timers();
+            }
+
+	newrprio = threadin->cprio;
 
 #ifdef CONFIG_RTAI_OPT_DEBUG
 	{
-	xnflags_t status = thread->status & ~XNRELAX;
+	xnflags_t status = threadin->status & ~XNRELAX;
 	int sigpending = signal_pending(next);
 
         if (!(next->ptrace & PT_PTRACED) &&
@@ -1383,9 +1406,9 @@ static inline void do_schedule_event (struct task_struct *next)
 	       properly recover from a stopped state. */
 	    testbits(status,XNTHREAD_BLOCK_BITS))
 	    {
-	    show_stack(xnthread_user_task(thread),NULL);
+	    show_stack(xnthread_user_task(threadin),NULL);
             xnpod_fatal("blocked thread %s[%d] rescheduled?! (status=0x%lx, sig=%d, prev=%s[%d])",
-			thread->name,
+			threadin->name,
 			next->pid,
 			status,
 			sigpending,
@@ -1395,7 +1418,7 @@ static inline void do_schedule_event (struct task_struct *next)
 	}
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
-	reset_shield(thread);
+	reset_shield(threadin);
 	}
     else if (next != gatekeeper[cpuid].server)
 	    {
@@ -1433,10 +1456,22 @@ static inline void do_sigwake_event (struct task_struct *p)
     xnthread_t *thread = xnshadow_thread(p);
     spl_t s;
 
-    if (!thread || testbits(thread->status,XNROOT|XNRELAX))
+    if (!thread || testbits(thread->status,XNROOT)) /* Eh? root as shadow? */
 	return;
 
     xnlock_get_irqsave(&nklock,s);
+
+    if ((p->ptrace & PT_PTRACED) &&
+	!testbits(thread->status,XNDEBUG) &&
+	(sigismember(&p->pending.signal,SIGTRAP) ||
+	 (sigismember(&p->pending.signal,SIGSTOP))))
+	{
+	__setbits(thread->status,XNDEBUG);
+	xntimer_lock_timers();
+	}
+
+    if (testbits(thread->status,XNRELAX))
+	goto unlock_and_exit;
 
     if (thread == thread->sched->runthread)
 	xnsched_set_resched(thread->sched);
@@ -1462,6 +1497,8 @@ static inline void do_sigwake_event (struct task_struct *p)
 	set_task_state(p,(p->state&~TASK_INTERRUPTIBLE)|TASK_UNINTERRUPTIBLE);
 
     xnpod_schedule();
+
+ unlock_and_exit:
 
     xnlock_put_irqrestore(&nklock,s);
 }

@@ -145,8 +145,10 @@ const char *xnpod_fatal_helper (const char *format, ...)
 static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
 
 {
+    xnthread_t *thread = xnpod_current_thread();
+
     xnltt_log_event(rtai_ev_fault,
-                    xnpod_current_thread()->name,
+                    thread->name,
                     xnarch_fault_pc(fltinfo),
                     xnarch_fault_trap(fltinfo));
 
@@ -154,7 +156,7 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
     if (xnarch_fault_fpu_p(fltinfo))
         {
 #if defined(CONFIG_RTAI_OPT_FUSION) && defined(CONFIG_RTAI_HW_FPU)
-        xnarchtcb_t *tcb = xnthread_archtcb(xnpod_current_thread());
+        xnarchtcb_t *tcb = xnthread_archtcb(thread);
         
         if (xnpod_shadow_p() && !xnarch_fpu_init_p(tcb->user_task))
             {
@@ -174,12 +176,12 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
     if (!xnpod_userspace_p())
         {
         xnprintf("RTAI: suspending kernel thread %p ('%s') at 0x%lx after exception #%u\n",
-                 xnpod_current_thread(),
-                 xnpod_current_thread()->name,
+                 thread,
+                 thread->name,
                  xnarch_fault_pc(fltinfo),
                  xnarch_fault_trap(fltinfo));
 
-        xnpod_suspend_thread(xnpod_current_thread(),XNSUSP,XN_INFINITE,NULL);
+        xnpod_suspend_thread(thread,XNSUSP,XN_INFINITE,NULL);
 
         return 1;
         }
@@ -197,16 +199,16 @@ static int xnpod_fault_handler (xnarch_fltinfo_t *fltinfo)
         if (xnarch_fault_notify(fltinfo)) /* Don't report debug traps */
             xnprintf("Switching %s to secondary mode after exception #%u from "
                      "user-space at 0x%lx (pid %d)\n",
-                     xnpod_current_thread()->name,
+                     thread->name,
                      xnarch_fault_trap(fltinfo),
                      xnarch_fault_pc(fltinfo),
-		     xnthread_user_pid(xnpod_current_thread()));
+		     xnthread_user_pid(thread));
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 	if (xnarch_fault_pf_p(fltinfo))
 	    /* The page fault counter is not SMP-safe, but it's a
 	       simple indicator that something went wrong wrt memory
 	       locking anyway. */
-	    xnthread_inc_pf(xnpod_current_thread());
+	    xnthread_inc_pf(thread);
 
         xnshadow_relax(xnarch_fault_notify(fltinfo));
         }
@@ -336,6 +338,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->tickvalue = XNARCH_DEFAULT_TICK;
     pod->ticks2sec = 1000000000/ XNARCH_DEFAULT_TICK;
     pod->refcnt = 0;
+    pod->tlock_depth = 0;
 
     pod->svctable.settime = &xnpod_set_time;
     pod->svctable.faulthandler = &xnpod_fault_handler;

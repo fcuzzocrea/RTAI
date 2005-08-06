@@ -510,6 +510,88 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
 
 /*!
  * @internal
+ * \fn void xntimer_resync_timers(void)
+ *
+ * \brief Resynchronize timers after a lock state.
+ *
+ * @param sched The scheduler slot holding the timer wheel to
+ * resynchronize.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Interrupt service routine, nklock locked, interrupts off
+ *
+ * Rescheduling: never.
+ *
+ * @note This routine is called when exiting a break state, so we
+ * don't bother for performance here.
+ */
+
+static void xntimer_resync_timers (xnsched_t *sched)
+
+{
+    xnholder_t *holder, *nextholder;
+    xnqueue_t *timerq;
+    xntimer_t *timer;
+    int slot;
+
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+    if (!testbits(nkpod->status,XNTMPER))
+        {
+	xnticks_t delta_tsc = xnarch_ns_to_tsc(sched->ltime);
+
+        timerq = &sched->timerwheel[0];
+
+	for (holder = getheadq(timerq); holder; holder = nextholder)
+	    {
+	    nextholder = nextq(timerq,holder);
+	    timer = link2timer(holder);
+	    if (timer != &nkpod->htimer)
+		{
+		xntimer_dequeue_aperiodic(timer);
+		timer->date += delta_tsc;
+		xntimer_enqueue_aperiodic(timer);
+		}
+	    }
+        }
+    else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+        {
+	xnqueue_t resyncq;
+
+	initq(&resyncq);
+
+	for (slot = 0; slot < XNTIMER_WHEELSIZE; ++slot)
+	    {
+	    timerq = &sched->timerwheel[slot];
+
+	    for (holder = getheadq(timerq); holder; holder = nextholder)
+		{
+		nextholder = nextq(timerq,holder);
+		timer = link2timer(holder);
+		if (timer != &nkpod->htimer)
+		    {
+		    xntimer_dequeue_periodic(timer);
+		    appendq(&resyncq,&timer->link);
+		    }
+		}
+	    }
+
+	while ((holder = getq(&resyncq)) != NULL)
+	    {
+	    timer = link2timer(holder);
+	    timer->date += sched->ltime;
+	    xntimer_enqueue_periodic(timer);
+	    }
+        }
+
+    __clrbits(sched->status,XNTSYNC|XNTLOCK);
+}
+
+/*!
+ * @internal
  * \fn void xntimer_do_timers(void)
  *
  * \brief Process a timer tick.
@@ -561,6 +643,9 @@ void xntimer_do_timers (void)
         aperiodic = 0;
         }
 
+    if (testbits(sched->status,XNTSYNC))
+	xntimer_resync_timers(sched);
+
     nextholder = getheadq(timerq);
 
     while ((holder = nextholder) != NULL)
@@ -586,26 +671,44 @@ void xntimer_do_timers (void)
             else
                 xntimer_dequeue_periodic(timer);
 
-        if (timer == &nkpod->htimer)
+        if (timer != &nkpod->htimer)
+	    {
+	    if (!testbits(sched->status,XNTLOCK))
+		{
+		timer->handler(timer->cookie);
+
+		if (timer->interval == XN_INFINITE ||
+		    !testbits(timer->status,XNTIMER_DEQUEUED) ||
+		    testbits(timer->status,XNTIMER_KILLED))
+		    /* The elapsed timer has no reload value, or has
+		       been re-enqueued likely as a result of a call
+		       to xntimer_start() from the timeout handler, or
+		       has been killed by the handler. In all cases,
+		       don't attempt to re-enqueue it for the next
+		       shot. */
+		    continue;
+		}
+	    else
+		{
+		/* Timers are locked; just re-enqueue the elapsed
+		   timer with no date change, without firing the
+		   handler, and waiting for the final resync. */
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+		if (aperiodic)
+		    xntimer_enqueue_aperiodic(timer);
+		else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+		    xntimer_enqueue_periodic(timer);
+
+		continue;
+		}
+            }
+	else
             /* By postponing the propagation of the low-priority host
                tick to the interrupt epilogue (see
                xnintr_irq_handler()), we save some I-cache, which
                translates into precious microsecs on low-end hw. */
             __setbits(sched->status,XNHTICK);
-        else
-            {
-            timer->handler(timer->cookie);
-
-            if (timer->interval == XN_INFINITE ||
-                !testbits(timer->status,XNTIMER_DEQUEUED) ||
-                testbits(timer->status,XNTIMER_KILLED))
-                /* The elapsed timer has no reload value, or has been
-                   re-enqueued likely as a result of a call to
-                   xntimer_start() from the timeout handler, or has
-                   been killed by the handler. In all cases, don't
-                   attept to re-enqueue it for the next shot. */
-                continue;
-            }
 
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
         if (aperiodic)
@@ -625,6 +728,112 @@ void xntimer_do_timers (void)
     if (aperiodic)
         xntimer_next_local_shot(sched);
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+}
+
+/*!
+ * @internal
+ * \fn void xntimer_lock_timers(void)
+ *
+ * \brief Lock timers.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any context initiating a lock state.
+ *
+ * Rescheduling: never.
+ */
+
+void xntimer_lock_timers (void)
+
+{
+    xnticks_t ltime;
+    spl_t s;
+    int cpu;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (nkpod->tlock_depth++ == 0)
+	{
+	/* We don't want any wallclock offset when computing
+	   time deltas. */
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+	if (!testbits(nkpod->status,XNTMPER))
+	    ltime = xnpod_get_cpu_time();
+	else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+	    ltime = nkpod->jiffies;
+
+	for_each_online_cpu(cpu) {
+
+	   xnsched_t *sched = xnpod_sched_slot(cpu);
+	   
+	   if (!testbits(sched->status,XNTSYNC))
+	       {
+	       sched->ltime = ltime;
+	       setbits(sched->status,XNTLOCK);
+	       }
+	   else
+	       clrbits(sched->status,XNTSYNC);
+	   }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+}
+
+/*!
+ * @internal
+ * \fn void xntimer_unlock_timers(void)
+ *
+ * \brief Unlock timers.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any context clearing a lock state.
+ *
+ * Rescheduling: never.
+ */
+
+void xntimer_unlock_timers (void)
+
+{
+    xnticks_t now, delta;
+    spl_t s;
+    int cpu;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (--nkpod->tlock_depth == 0)
+	{
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+	if (!testbits(nkpod->status,XNTMPER))
+	    /* Use ns, so delta doesn't depend on CPU freq. */
+	    now = xnpod_get_cpu_time();
+	else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+	    now = nkpod->jiffies;
+
+	for_each_online_cpu(cpu) {
+
+           xnsched_t *sched = xnpod_sched_slot(cpu);
+
+	   delta = now - sched->ltime;
+
+	   if (delta > now)
+	       delta = ~delta + 1;
+
+	   sched->ltime = delta;
+
+	   /* xntimer_do_timers() will resync the timers and
+	      remove the lock in the same move, on each CPU. */
+	   setbits(sched->status,XNTSYNC);
+	   }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
 }
 
 /*!

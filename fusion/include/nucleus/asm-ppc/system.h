@@ -100,13 +100,15 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_pc(fi)     ((fi)->regs->nip)
 /* FIXME: FPU faults ignored by the nanokernel on PPC. */
 #define xnarch_fault_fpu_p(fi)  (0)
-/* The following predicate is guaranteed to be called over a regular
-   Linux stack context. */
+/* The following predicates are only usable over a regular Linux stack
+   context. */
 #define xnarch_fault_pf_p(fi)   ((fi)->exception == IPIPE_TRAP_ACCESS)
-#define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
-				 ((fi)->exception != IPIPE_TRAP_IABR && \
-				  (fi)->exception != IPIPE_TRAP_SSTEP && \
-				  (fi)->exception != IPIPE_TRAP_DEBUG))
+#define xnarch_fault_bp_p(fi)   ((current->ptrace & PT_PTRACED) && \
+				 ((fi)->exception == IPIPE_TRAP_IABR || \
+				  (fi)->exception == IPIPE_TRAP_SSTEP || \
+				  (fi)->exception == IPIPE_TRAP_DEBUG))
+#define xnarch_fault_notify(fi) (!xnarch_fault_bp_p(fi))
+
 #ifdef __cplusplus
 extern "C" {
 #endif

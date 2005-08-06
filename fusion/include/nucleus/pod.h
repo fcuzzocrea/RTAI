@@ -45,8 +45,10 @@
 #define XNPIDLE  0x00000040     /* Pod is unavailable (initializing/shutting down) */
 
 /* Sched status flags */
-#define XNKCOUT      0x80000000 /* Sched callout context */
-#define XNHTICK      0x40000000 /* Host tick pending  */
+#define XNKCOUT  0x80000000	/* Sched callout context */
+#define XNHTICK  0x40000000	/* Host tick pending  */
+#define XNTLOCK  0x20000000	/* Timer lock pending */
+#define XNTSYNC  0x10000000	/* Timer resync pending */
 
 /* These flags are available to the real-time interfaces */
 #define XNPOD_SPARE0  0x01000000
@@ -136,6 +138,8 @@ typedef struct xnsched {
 
     xnthread_t rootcb;          /*!< Root thread control block. */
 
+    xnticks_t ltime;		/*!< Lock time date/delta. */
+
 } xnsched_t;
 
 #define xnsched_cpu(__sched__) \
@@ -177,9 +181,6 @@ struct xnpod {
     xnticks_t wallclock_offset; /*!< Difference between wallclock time
                                   and epoch in ticks. */
 
-    xnticks_t frozen_time;	/*!< Copy of the current time value
-				  before entering a break state. */
-
     xntimer_t htimer;           /*!< Host timer. */
 
     xnsched_t sched[XNARCH_NR_CPUS]; /*!< Per-cpu scheduler slots. */
@@ -203,7 +204,10 @@ struct xnpod {
 
     u_long ticks2sec;		/*!< Number of ticks per second (1e9
                                   if aperiodic). */
+
     int refcnt;			/*!< Reference count.  */
+
+    int tlock_depth;		/*!< Timer lock depth.  */
 
     struct {
         void (*settime)(xnticks_t newtime); /*!< Clock setting hook. */

@@ -119,8 +119,8 @@ static RT_OBJECT_PROCNODE __intr_pnode = {
  * \brief Create an interrupt object from kernel space.
  *
  * Initializes and associates an interrupt object with an IRQ line. In
- * kernel space, interrupts are immediately notified through a
- * user-defined handler or ISR (interrupt service routine).
+ * kernel space, interrupts are immediately notified to a user-defined
+ * handler or ISR (interrupt service routine).
  *
  * When an interrupt occurs on the given @a irq line, the ISR is fired
  * in order to deal with the hardware event. The interrupt service
@@ -189,7 +189,6 @@ static RT_OBJECT_PROCNODE __intr_pnode = {
  *
  * - Kernel module initialization/cleanup code
  * - Kernel-based task
- * - User-space task
  *
  * Rescheduling: possible.
  */
@@ -500,8 +499,7 @@ int rt_intr_inquire (RT_INTR *intr,
  * Initializes and associates an interrupt object with an IRQ line
  * from a user-space application. In this mode, the basic principle is
  * to define some interrupt server task which routinely waits for the
- * next incoming IRQ event through the specialized rt_intr_wait()
- * syscall.
+ * next incoming IRQ event through the rt_intr_wait() syscall.
  *
  * When an interrupt occurs on the given @a irq line, any task pending
  * on the interrupt object through rt_intr_wait() is imediately awaken
@@ -531,6 +529,10 @@ int rt_intr_inquire (RT_INTR *intr,
  * interrupt handler.
  *
  * @return 0 is returned upon success. Otherwise:
+ *
+ * - -ENOMEM is returned if the system fails to get enough dynamic
+ * memory from the global real-time heap in order to register the
+ * interrupt object.
  *
  * - -EBUSY is returned if the interrupt line is already in use by
  * another interrupt object. Only a single interrupt object can be

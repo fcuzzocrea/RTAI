@@ -105,6 +105,10 @@ int rt_intr_create(RT_INTR *intr,
 		   rt_isr_t isr,
 		   rt_iack_t iack);
 
+#ifdef CONFIG_RTAI_OPT_FUSION
+int rt_intr_handler(xnintr_t *cookie);
+#endif /* CONFIG_RTAI_OPT_FUSION */
+
 #ifdef __cplusplus
 }
 #endif

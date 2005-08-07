@@ -62,12 +62,12 @@ LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 libposix_s_a_AR = $(AR) $(ARFLAGS)
 libposix_s_a_LIBADD =
-nodist_libposix_s_a_OBJECTS = module.$(OBJEXT) sched.$(OBJEXT) \
-	thread_attr.$(OBJEXT) thread.$(OBJEXT) mutex_attr.$(OBJEXT) \
-	mutex.$(OBJEXT) cond_attr.$(OBJEXT) cond.$(OBJEXT) \
-	sem.$(OBJEXT) cancel.$(OBJEXT) once.$(OBJEXT) signal.$(OBJEXT) \
-	tsd.$(OBJEXT) clock.$(OBJEXT) timer.$(OBJEXT) intr.$(OBJEXT) \
-	mq.$(OBJEXT)
+nodist_libposix_s_a_OBJECTS = sched.$(OBJEXT) thread_attr.$(OBJEXT) \
+	thread.$(OBJEXT) mutex_attr.$(OBJEXT) mutex.$(OBJEXT) \
+	cond_attr.$(OBJEXT) cond.$(OBJEXT) sem.$(OBJEXT) \
+	cancel.$(OBJEXT) once.$(OBJEXT) signal.$(OBJEXT) tsd.$(OBJEXT) \
+	clock.$(OBJEXT) timer.$(OBJEXT) intr.$(OBJEXT) \
+	registry.$(OBJEXT) mq.$(OBJEXT) module.$(OBJEXT)
 libposix_s_a_OBJECTS = $(nodist_libposix_s_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/../config/autoconf/depcomp
@@ -268,7 +268,6 @@ AM_CPPFLAGS = \
 
 lib_LIBRARIES = libposix_s.a
 nodist_libposix_s_a_SOURCES = \
-	module.c \
 	sched.c \
 	thread_attr.c \
 	thread.c \
@@ -284,7 +283,9 @@ nodist_libposix_s_a_SOURCES = \
 	clock.c \
 	timer.c \
 	intr.c \
-	mq.c
+	registry.c \
+	mq.c \
+	module.c
 
 include_HEADERS = \
 	posix_overrides.h
@@ -373,6 +374,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex_attr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/once.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/registry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sched.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/signal.Po@am__quote@

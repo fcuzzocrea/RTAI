@@ -18,15 +18,19 @@
 
 #include <stdarg.h>
 
+#include <nucleus/queue.h>
+
+#include <posix/registry.h>
 #include <posix/internal.h>     /* Magics, time conversion */
 #include <posix/thread.h>       /* errno. */
 
-#define PSE51_MQ_UNLINKED 1
-#define PSE51_PERMS_MASK  (O_RDONLY | O_WRONLY | O_RDWR)
-
 /* Temporary definitions. */
 struct pse51_mq {
-    unsigned magic;
+    pse51_node_t nodebase;
+
+#define node2mq(naddr) \
+    ((pse51_mq_t *)((char *)(naddr) - (int)(&((pse51_mq_t *)0)->nodebase)))
+
     unsigned long flags;
 
     xnpqueue_t queued;
@@ -37,17 +41,11 @@ struct pse51_mq {
 
 #define synch2mq(saddr) \
     ((pse51_mq_t *)((char *)(saddr) - (int)(&((pse51_mq_t *)0)->synchbase)))
-    
-    unsigned refcount;          /* # Descriptors referencing this queue. */
-    struct mq_attr attr;
-};
 
-struct pse51_mqd {
-    unsigned magic;
-    long flags;
-    struct pse51_mq *mq;
+    struct mq_attr attr;
+
+    xnholder_t link;            /* link in mqq */
 };
-typedef struct pse51_mqd pse51_mqd_t;
 
 typedef struct pse51_mq pse51_mq_t;
 
@@ -67,19 +65,7 @@ typedef struct pse51_direct_msg {
     int used;
 } pse51_direct_msg_t;
 
-
-/* Handling named message queues. */
-static struct {
-    xnqueue_t buckets [211];
-} pse51_nmq_hash;
-
-typedef struct pse51_nmq {
-    xnholder_t link;
-    const char *name;
-    pse51_mq_t mq;
-#define mq2nmq(laddr) \
-    ((pse51_nmq_t *)((char *)(laddr) - (int)(&((pse51_nmq_t *)0)->mq)))
-} pse51_nmq_t;
+xnqueue_t pse51_mqq;
 
 pse51_msg_t *pse51_mq_msg_alloc(pse51_mq_t *mq)
 {
@@ -103,7 +89,6 @@ int pse51_mq_init(pse51_mq_t *mq, const struct mq_attr *attr)
 {
     unsigned i, msgsize, memsize;
     char *mem;
-    spl_t s;
 
     if(!attr->mq_maxmsg)
         return EINVAL;
@@ -111,18 +96,17 @@ int pse51_mq_init(pse51_mq_t *mq, const struct mq_attr *attr)
     msgsize = attr->mq_msgsize + sizeof(pse51_msg_t);
 
     /* Align msgsize on natural boundary. */
-    msgsize += sizeof(unsigned long) - (msgsize % sizeof(unsigned long));
+    if ((msgsize % sizeof(unsigned long)))
+        msgsize += sizeof(unsigned long) - (msgsize % sizeof(unsigned long));
 
     memsize = msgsize * attr->mq_maxmsg;
     memsize = PAGE_ALIGN(memsize);
 
     mem = xnarch_sysalloc(memsize);
 
-    if(!mem)
+    if (!mem)
         return ENOSPC;
 
-    xnlock_get_irqsave(&nklock, s);
-    mq->magic = PSE51_MQ_MAGIC;
     mq->flags = 0;
     mq->memsize = memsize;
     initpq(&mq->queued, xnqueue_down, 0);
@@ -131,122 +115,54 @@ int pse51_mq_init(pse51_mq_t *mq, const struct mq_attr *attr)
 
     /* Fill the pool. */
     initq(&mq->avail);
-    for(i = 0; i < attr->mq_maxmsg; i++)
+    for (i = 0; i < attr->mq_maxmsg; i++)
         {
         pse51_msg_t *msg = (pse51_msg_t *) (mem + i * msgsize);
         pse51_mq_msg_free(mq, msg);
         }
 
-    mq->refcount = 0;
     mq->attr = *attr;
-    xnlock_put_irqrestore(&nklock, s);
 
     return 0;
 }
 
-int pse51_mq_destroy(pse51_mq_t *mq)
+static void pse51_mq_destroy(pse51_mq_t *mq)
 {
+    int need_resched;
     spl_t s;
-    int rc;
 
     xnlock_get_irqsave(&nklock, s);
-    if(mq->refcount)
-        {
-        setbits(mq->flags, PSE51_MQ_UNLINKED);
-        xnlock_put_irqrestore(&nklock, s);
-        return -1;
-        }
-
-    pse51_mark_deleted(mq);
-    rc = (xnsynch_destroy(&mq->synchbase) == XNSYNCH_RESCHED);
+    need_resched = (xnsynch_destroy(&mq->synchbase) == XNSYNCH_RESCHED);
+    removeq(&pse51_mqq, &mq->link);
     xnlock_put_irqrestore(&nklock, s);
     xnarch_sysfree(mq->mem, mq->memsize);
 
-    return rc;
-}
-
-static int pse51_mqd_bind(pse51_mqd_t *qd, pse51_mq_t *mq, long flags)
-{
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock, s);
-    if(!pse51_obj_active(mq, PSE51_MQ_MAGIC, pse51_mq_t))
-        {
-        xnlock_put_irqrestore(&nklock, s);
-        return EINVAL;
-        }
-
-    qd->magic = PSE51_MQD_MAGIC;
-    qd->mq = mq;
-    ++mq->refcount;
-    qd->flags = flags;
-    xnlock_put_irqrestore(&nklock, s);
-
-    return 0;
-}
-
-int mq_close(mqd_t fd)
-{
-    pse51_mqd_t *qd = (pse51_mqd_t *) fd;
-    pse51_mq_t *mq;
-    spl_t s;
-
-    /* In case qd is the result of a call to mq_open which failed. */
-    if(qd == (pse51_mqd_t *) -1)
-        {
-        thread_set_errno(EBADF);
-        return -1;
-        }
-
-    xnlock_get_irqsave(&nklock, s);
-    if(!pse51_obj_active(qd, PSE51_MQD_MAGIC, struct pse51_mqd))
-        {
-        xnlock_put_irqrestore(&nklock, s);
-        thread_set_errno(EBADF);
-        return -1;
-        }
-
-    mq = qd->mq;
-    pse51_mark_deleted(qd);
-    if(!--mq->refcount && testbits(mq->flags, PSE51_MQ_UNLINKED))
-        {
-        int need_resched;
-        xnlock_put_irqrestore(&nklock, s);
-
-        need_resched = pse51_mq_destroy(qd->mq);
-        xnfree(mq2nmq(mq));
-        if(need_resched)
-            xnpod_schedule();
-        }
-    else
-        xnlock_put_irqrestore(&nklock, s);
-
-    return 0;
+    if (need_resched)
+        xnpod_schedule();
 }
 
 int mq_getattr(mqd_t fd, struct mq_attr *attr)
 {
-    pse51_mqd_t *qd = (pse51_mqd_t *) fd;
+    pse51_desc_t *desc;
+    pse51_mq_t *mq;
     spl_t s;
-
-    /* In case qd is the result of a call to mq_open which failed. */
-    if(qd == (pse51_mqd_t *) -1)
-        {
-        thread_set_errno(EBADF);
-        return -1;
-        }
+    int err;
 
     xnlock_get_irqsave(&nklock, s);
-    if(!pse51_obj_active(qd, PSE51_MQD_MAGIC, struct pse51_mqd))
+
+    err = pse51_desc_get(&desc, fd, PSE51_MQ_MAGIC);
+
+    if(err)
         {
         xnlock_put_irqrestore(&nklock, s);
-        thread_set_errno(EBADF);
+        thread_set_errno(err);
         return -1;
         }
-
-    *attr = qd->mq->attr;
-    attr->mq_flags = qd->flags;
-    attr->mq_curmsgs = countpq(&qd->mq->queued);
+    
+    mq = node2mq(pse51_desc_node(desc));
+    *attr = mq->attr;
+    attr->mq_flags = pse51_desc_getflags(desc);
+    attr->mq_curmsgs = countpq(&mq->queued);
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
@@ -256,51 +172,50 @@ int mq_setattr(mqd_t fd,
                const struct mq_attr *__restrict__ attr,
                struct mq_attr *__restrict__ oattr)
 {
-    pse51_mqd_t *qd = (pse51_mqd_t *) fd;
+    pse51_desc_t *desc;
+    pse51_mq_t *mq;
+    long flags;
     spl_t s;
-
-    /* In case qd is the result of a call to mq_open which failed. */
-    if(qd == (pse51_mqd_t *) -1)
-        {
-        thread_set_errno(EBADF);
-        return -1;
-        }
+    int err;
 
     xnlock_get_irqsave(&nklock, s);
-    if(!pse51_obj_active(qd, PSE51_MQD_MAGIC, struct pse51_mqd))
+
+    err = pse51_desc_get(&desc, fd, PSE51_MQ_MAGIC);
+
+    if(err)
         {
         xnlock_put_irqrestore(&nklock, s);
-        thread_set_errno(EBADF);
+        thread_set_errno(err);
         return -1;
         }
 
+    mq = node2mq(pse51_desc_node(desc));
     if(oattr)
-        oattr->mq_flags = qd->flags;
-    qd->flags =
-        (qd->flags & PSE51_PERMS_MASK) | (attr->mq_flags & ~PSE51_PERMS_MASK);
+        oattr->mq_flags = pse51_desc_getflags(desc);
+    flags = (pse51_desc_getflags(desc) & PSE51_PERMS_MASK)
+        | (attr->mq_flags & ~PSE51_PERMS_MASK);
+    pse51_desc_setflags(desc, flags);
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
 }
 
-static int pse51_mq_trysend(pse51_mqd_t *qd,
+static int pse51_mq_trysend(pse51_desc_t *desc,
                             const char *buffer,
                             size_t len,
                             unsigned prio)
 {
     pthread_t reader;
     pse51_mq_t *mq;
-    unsigned perm;
+    unsigned flags;
+    int err;
 
-    if(!pse51_obj_active(qd, PSE51_MQD_MAGIC, struct pse51_mqd))
-        return EBADF;
+    mq = node2mq(pse51_desc_node(desc));
+    flags = pse51_desc_getflags(desc) & PSE51_PERMS_MASK;
 
-    perm = qd->flags & PSE51_PERMS_MASK;
-    if(perm != O_WRONLY && perm!= O_RDWR)
+    if(flags != O_WRONLY && flags != O_RDWR)
         return EPERM;
 
-    mq = qd->mq;
-    
     if(len > mq->attr.mq_msgsize)
         return EMSGSIZE;
 
@@ -323,7 +238,7 @@ static int pse51_mq_trysend(pse51_mqd_t *qd,
         }
     else
         {
-        pse51_msg_t *msg = pse51_mq_msg_alloc(qd->mq);
+        pse51_msg_t *msg = pse51_mq_msg_alloc(mq);
 
         if(!msg)
             return EAGAIN;
@@ -339,7 +254,7 @@ static int pse51_mq_trysend(pse51_mqd_t *qd,
     return 0;
 }
 
-static int pse51_mq_tryrcv(pse51_mqd_t *qd,
+static int pse51_mq_tryrcv(pse51_desc_t *desc,
                            char *__restrict__ buffer,
                            size_t *__restrict__ lenp,
                            unsigned *__restrict__ priop)
@@ -347,17 +262,15 @@ static int pse51_mq_tryrcv(pse51_mqd_t *qd,
     xnpholder_t *holder;
     pse51_msg_t *msg;
     pse51_mq_t *mq;
-    unsigned perm;
+    unsigned flags;
+    int err;
 
-    if(!pse51_obj_active(qd, PSE51_MQD_MAGIC, struct pse51_mqd))
-        return EBADF;
+    mq = node2mq(pse51_desc_node(desc));
+    flags = pse51_desc_getflags(desc) & PSE51_PERMS_MASK;
 
-    perm = qd->flags & PSE51_PERMS_MASK;
-    if(perm != O_RDONLY && perm != O_RDWR)
+    if(flags != O_RDONLY && flags != O_RDWR)
         return EPERM;
 
-    mq = qd->mq;
-    
     if(*lenp < mq->attr.mq_msgsize)
         return EMSGSIZE;
 
@@ -379,26 +292,35 @@ static int pse51_mq_tryrcv(pse51_mqd_t *qd,
 }
 
 
-static int pse51_mq_timedsend_inner(pse51_mqd_t *qd,
+static int pse51_mq_timedsend_inner(mqd_t fd,
                                     const char * buffer,
                                     size_t len,
                                     unsigned prio,
                                     xnticks_t abs_to)
 {
     int rc;
-    
-    while((rc = pse51_mq_trysend(qd, buffer, len, prio)) == EAGAIN
-          && !testbits(qd->flags, O_NONBLOCK))
-        {
+
+    for (;;) {
         xnticks_t to = abs_to;
+        pse51_desc_t *desc;
+        pse51_mq_t *mq;
         pthread_t cur;
+        
+        if ((rc = pse51_desc_get(&desc, fd, PSE51_MQ_MAGIC)))
+            break;
 
-        rc = clock_adjust_timeout(&to, CLOCK_REALTIME);
+        if ((rc = pse51_mq_trysend(desc, buffer, len, prio)) != EAGAIN)
+            break;
 
-        if (rc)
-            return rc;
+        if ((pse51_desc_getflags(desc) & O_NONBLOCK))
+            break;
 
-        xnsynch_sleep_on(&qd->mq->synchbase, to);
+        if ((rc = clock_adjust_timeout(&to, CLOCK_REALTIME)))
+            break;
+
+        mq = node2mq(pse51_desc_node(desc));
+
+        xnsynch_sleep_on(&mq->synchbase, to);
 
         cur = pse51_current_thread();
 
@@ -417,26 +339,35 @@ static int pse51_mq_timedsend_inner(pse51_mqd_t *qd,
     return rc;
 }
 
-static int pse51_mq_timedrcv_inner(pse51_mqd_t *qd,
+static int pse51_mq_timedrcv_inner(mqd_t fd,
                                    char *__restrict__ buffer,
                                    size_t *__restrict__ lenp,
                                    unsigned *__restrict__ priop,
                                    xnticks_t abs_to)
 {
-    pthread_t cur;
+    pthread_t cur = pse51_current_thread();
     int rc;
-    
-    cur = pse51_current_thread();
 
-    while((rc = pse51_mq_tryrcv(qd, buffer, lenp, priop)) == EAGAIN
-          && !testbits(qd->flags, O_NONBLOCK))
+    for (;;)
         {
-        pse51_mq_t *mq = qd->mq;
         pse51_direct_msg_t msg;
         xnticks_t to = abs_to;
+        pse51_desc_t *desc;
+        pse51_mq_t *mq;
         int direct = 0;
+        
+        if ((rc = pse51_desc_get(&desc, fd, PSE51_MQ_MAGIC)))
+            break;
 
-        if(testbits(qd->flags, O_DIRECT))
+        if ((rc = pse51_mq_tryrcv(desc, buffer, lenp, priop)) != EAGAIN)
+            break;
+
+        if ((pse51_desc_getflags(desc) & O_NONBLOCK))
+            break;
+
+        mq = node2mq(pse51_desc_node(desc));
+
+        if(testbits(pse51_desc_getflags(desc), O_DIRECT))
             {
             msg.buf = buffer;
             msg.lenp = lenp;
@@ -448,10 +379,8 @@ static int pse51_mq_timedrcv_inner(pse51_mqd_t *qd,
         else
             cur->arg = NULL;
 
-        rc = clock_adjust_timeout(&to, CLOCK_REALTIME);
-
-        if (rc)
-            return rc;
+        if((rc = clock_adjust_timeout(&to, CLOCK_REALTIME)))
+            break;
 
         xnsynch_sleep_on(&mq->synchbase, to);
 
@@ -479,28 +408,20 @@ int mq_timedsend(mqd_t fd,
                  unsigned prio,
                  const struct timespec *abs_timeout)
 {
-    pse51_mqd_t *qd = (pse51_mqd_t *) fd;
     xnticks_t timeout;
     int err;
     spl_t s;
 
-    if(abs_timeout->tv_nsec < 0 || abs_timeout->tv_nsec > ONE_BILLION)
+    if((unsigned) abs_timeout->tv_nsec > ONE_BILLION)
         {
         thread_set_errno(EINVAL);
-        return -1;
-        }
-
-    /* In case qd is the result of a call to mq_open which failed. */
-    if(qd == (pse51_mqd_t *) -1)
-        {
-        thread_set_errno(EBADF);
         return -1;
         }
 
     timeout = ts2ticks_ceil(abs_timeout) + 1;
 
     xnlock_get_irqsave(&nklock, s);
-    err = pse51_mq_timedsend_inner(qd, buffer, len, prio, timeout);
+    err = pse51_mq_timedsend_inner(fd, buffer, len, prio, timeout);
     xnlock_put_irqrestore(&nklock, s);
 
     if(err)
@@ -514,19 +435,11 @@ int mq_timedsend(mqd_t fd,
 
 int mq_send(mqd_t fd, const char *buffer, size_t len, unsigned prio)
 {
-    pse51_mqd_t *qd = (pse51_mqd_t *) fd;
     int err;
     spl_t s;
 
-    /* In case qd is the result of a call to mq_open which failed. */
-    if(qd == (pse51_mqd_t *) -1)
-        {
-        thread_set_errno(EBADF);
-        return -1;
-        }
-
     xnlock_get_irqsave(&nklock, s);
-    err = pse51_mq_timedsend_inner(qd, buffer, len, prio, XN_INFINITE);
+    err = pse51_mq_timedsend_inner(fd, buffer, len, prio, XN_INFINITE);
     xnlock_put_irqrestore(&nklock, s);
 
     if(err)
@@ -544,28 +457,20 @@ ssize_t mq_timedreceive(mqd_t fd,
                         unsigned *__restrict__ priop,
                         const struct timespec *__restrict__ abs_timeout)
 {
-    pse51_mqd_t *qd = (pse51_mqd_t *) fd;
     xnticks_t timeout;
     int err;
     spl_t s;
 
-    if(abs_timeout->tv_nsec < 0 || abs_timeout->tv_nsec > ONE_BILLION)
+    if((unsigned) abs_timeout->tv_nsec > ONE_BILLION)
         {
         thread_set_errno(EINVAL);
-        return -1;
-        }
-
-    /* In case qd is the result of a call to mq_open which failed. */
-    if(qd == (pse51_mqd_t *) -1)
-        {
-        thread_set_errno(EBADF);
         return -1;
         }
 
     timeout = ts2ticks_ceil(abs_timeout) + 1;
 
     xnlock_get_irqsave(&nklock, s);
-    err = pse51_mq_timedrcv_inner(qd, buffer, &len, priop, timeout);
+    err = pse51_mq_timedrcv_inner(fd, buffer, &len, priop, timeout);
     xnlock_put_irqrestore(&nklock, s);
 
     if(err)
@@ -579,19 +484,11 @@ ssize_t mq_timedreceive(mqd_t fd,
 
 ssize_t mq_receive(mqd_t fd, char *buffer, size_t len, unsigned *priop)
 {
-    pse51_mqd_t *qd = (pse51_mqd_t *) fd;
     int err;
     spl_t s;
 
-    /* In case qd is the result of a call to mq_open which failed. */
-    if(qd == (pse51_mqd_t *) -1)
-        {
-        thread_set_errno(EBADF);
-        return -1;
-        }
-
     xnlock_get_irqsave(&nklock, s);
-    err = pse51_mq_timedrcv_inner(qd, buffer, &len, priop, XN_INFINITE);
+    err = pse51_mq_timedrcv_inner(fd, buffer, &len, priop, XN_INFINITE);
     xnlock_put_irqrestore(&nklock, s);
 
     if(err)
@@ -604,201 +501,174 @@ ssize_t mq_receive(mqd_t fd, char *buffer, size_t len, unsigned *priop)
 }
 
 
-int pse51_mq_pkg_init(void)
-{
-    unsigned i;
-
-    for(i = 0; i < sizeof(pse51_nmq_hash.buckets)/sizeof(xnqueue_t); i++)
-        initq(&pse51_nmq_hash.buckets[i]);
-
-    return 0;
-}
-
-static unsigned pse51_nmq_crunch (const char *key)
-{
-    unsigned h = 0, g;
-
-#define HQON    24              /* Higher byte position */
-#define HBYTE   0xf0000000      /* Higher nibble on */
-
-    while (*key)
-        {
-        h = (h << 4) + *key++;
-        if ((g = (h & HBYTE)) != 0)
-            h = (h ^ (g >> HQON)) ^ g;
-        }
-
-    return h % (sizeof(pse51_nmq_hash.buckets)/sizeof(xnqueue_t));
-}
-
-static xnholder_t *pse51_mq_search_inner(xnqueue_t **bucketp, const char *name)
-{
-    xnholder_t *holder;
-    xnqueue_t *queue;
-
-    queue = &pse51_nmq_hash.buckets[pse51_nmq_crunch(name)];
-
-    for(holder = getheadq(queue); holder; holder = nextq(queue, holder))
-        {
-        pse51_nmq_t *nmq = (pse51_nmq_t *) holder;
-        if(!strcmp(nmq->name, name))
-            break;
-        }
-
-    *bucketp = queue;
-    return holder;
-}
-
 mqd_t mq_open(const char *name, int oflags, ...)
 {
-    pse51_nmq_t *nmq, *useless_nmq = NULL;
-    xnholder_t *holder;
-    xnqueue_t *bucket;
-    pse51_mqd_t *qd;
-    int err = 0;
-    spl_t s;
-
-    qd = xnmalloc(sizeof(*qd));
-
-    if(!qd)
-        {
-        err = ENOSPC;
-        goto out_err;
-        }
-
-    xnlock_get_irqsave(&nklock, s);
-    holder = pse51_mq_search_inner(&bucket, name);
-    nmq = (pse51_nmq_t *) holder;
-
-    if(holder)
-        {
-        if((oflags & (O_EXCL | O_CREAT)) == (O_EXCL | O_CREAT))
-            {
-            err = EEXIST;
-            goto out_err_unlock_free_qd;
-            }
-        else
-            goto nmq_found;
-        }
-
-    if(!(oflags & O_CREAT))
-        {
-        err = ENOENT;
-out_err_unlock_free_qd:
-        xnlock_put_irqrestore(&nklock, s);
-        goto out_err_free_qd;
-        }
-
-    /* We will have to create the queue, and since it involves allocating system
-       memory, release the global lock. */
-    xnlock_put_irqrestore(&nklock, s);
-
-    {
     struct mq_attr *attr;
+    xnsynch_t done_synch;
+    pse51_node_t *node;
+    pse51_desc_t *desc;
+    pse51_mq_t *mq;
     mode_t mode;
     va_list ap;
-    
-    nmq = (pse51_nmq_t *) xnmalloc(sizeof(*nmq) + strlen(name)+1);
+    int err;
+    spl_t s;
 
-    if(!nmq)
+    xnlock_get_irqsave(&nklock, s);
+
+    err = pse51_node_get(&node, name, PSE51_MQ_MAGIC, oflags);
+
+    if(err)
+        goto error;
+
+    if(node)
         {
-        err = ENOSPC;
-        goto out_err_free_qd;
+        mq = node2mq(node);
+        goto got_mq;
         }
 
-    nmq->name = (char *) (nmq + 1);
-    strcpy((char *) nmq->name, name);
-    inith(&nmq->link);
+    /* Here, we know that we must create a message queue. */
+    mq = xnmalloc(sizeof(*mq));
+    
+    if(!mq)
+        {
+        err = ENOMEM;
+        goto error;
+        }
 
+    err = pse51_node_add_start(&mq->nodebase, name, PSE51_MQ_MAGIC, &done_synch);
+    if(err)
+        goto error;
+    xnlock_put_irqrestore(&nklock, s);
+
+    /* Release the global lock while creating the message queue. */
     va_start(ap, oflags);
     mode = va_arg(ap, int); /* unused */
     attr = va_arg(ap, struct mq_attr *);
-    va_end(ap);
-    
-    err = pse51_mq_init(&nmq->mq, attr);
+    va_end(ap);    
 
-    if(err)
-        {
-        xnfree(nmq);
-        goto out_err_free_qd;
-        }
-    }
+    err = pse51_mq_init(mq, attr);
 
     xnlock_get_irqsave(&nklock, s);
-    holder = pse51_mq_search_inner(&bucket, name);
-
-    if(holder)
+    pse51_node_add_finished(&mq->nodebase, err);
+    if(err)
         {
-        useless_nmq = nmq;
-        if((oflags & (O_EXCL | O_CREAT)) == (O_EXCL | O_CREAT))
-            {
-            err = EEXIST;
-            goto out_err_free_nmq;
-            }
-        nmq = (pse51_nmq_t *) holder;
+        xnlock_put_irqrestore(&nklock, s);
+        goto err_free_mq;
         }
 
-    appendq(bucket, &nmq->link);
+    inith(&mq->link);
+    appendq(&pse51_mqq, &mq->link);
+    
+    /* Whether found or created, here we have a valid message queue. */
+  got_mq:
+    err = pse51_desc_create(&desc, &mq->nodebase);
 
-  nmq_found:
-    pse51_mqd_bind(qd, &nmq->mq, oflags & ~(O_CREAT | O_EXCL));
+    if(err)
+        goto err_put_mq;
+
+    pse51_desc_setflags(desc, oflags & (O_NONBLOCK | PSE51_PERMS_MASK));
 
     xnlock_put_irqrestore(&nklock, s);
 
-    /* rollback allocation of nmq. */
-    if(useless_nmq)
+    /* FIXME: need a cancellation point in the case we blocked and were resumed
+     * with XNBREAK set. */
+    
+    return (mqd_t) pse51_desc_fd(desc);
+
+
+  err_put_mq:
+    pse51_node_put(&mq->nodebase);
+    if(!pse51_ref_p(&mq->nodebase))
         {
-        pse51_mq_destroy(&useless_nmq->mq);
-        xnfree(useless_nmq);
+        /* mq is no longer referenced, we may destroy it. */
+        xnlock_put_irqrestore(&nklock, s);
+
+        pse51_mq_destroy(mq);
+  err_free_mq:
+        xnfree(mq);
         }
+    else
+  error:
+        xnlock_put_irqrestore(&nklock, s);
 
-    return (mqd_t) qd;
-
-  out_err_free_nmq:
-    xnlock_put_irqrestore(&nklock, s);
-    pse51_mq_destroy(&useless_nmq->mq);
-    xnfree(useless_nmq);
-
-  out_err_free_qd:
-    xnfree(qd);
-
-  out_err:  
     thread_set_errno(err);
+
     return (mqd_t) -1;
+}
+
+int mq_close(mqd_t fd)
+{
+    pse51_desc_t *desc;
+    pse51_mq_t *mq;
+    spl_t s;
+    int err;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    err = pse51_desc_get(&desc, fd, PSE51_MQ_MAGIC);
+
+    if(err)
+        goto error;
+
+    mq = node2mq(pse51_desc_node(desc));
+    
+    err = pse51_desc_destroy(desc);
+
+    if(err)
+        goto error;
+
+    pse51_node_put(&mq->nodebase);
+    if(!pse51_ref_p(&mq->nodebase))
+        {
+        xnlock_put_irqrestore(&nklock, s);
+
+        pse51_mq_destroy(mq);
+        xnfree(mq);
+        }
+    else
+        xnlock_put_irqrestore(&nklock, s);
+
+    return 0;
+
+  error:
+    xnlock_put_irqrestore(&nklock, s);
+    thread_set_errno(err);
+    return -1;
 }
 
 int mq_unlink(const char *name)
 {
-    xnqueue_t *bucket;
-    xnholder_t *holder;
-    pse51_nmq_t *nmq;
-    int dest_status;
+    pse51_node_t *node;
+    pse51_mq_t *mq;
+    int err;
     spl_t s;
 
     xnlock_get_irqsave(&nklock, s);
-    holder = pse51_mq_search_inner(&bucket, name);
 
-    if(holder)
-        removeq(bucket, holder);
+    err = pse51_node_remove(&node, name, PSE51_MQ_MAGIC);
+
     xnlock_put_irqrestore(&nklock, s);
 
-    if(!holder)
+    if(err)
         {
-        thread_set_errno(ENOENT);
+        thread_set_errno(err);
         return -1;
         }
 
-    nmq = (pse51_nmq_t *) holder;
-
-    dest_status = pse51_mq_destroy(&nmq->mq);
-
-    if(dest_status != -1)
+    mq = node2mq(node);
+        
+    if(!pse51_ref_p(&mq->nodebase))
         {
-        xnfree(nmq);
-        if(dest_status)
-            xnpod_schedule();
+        pse51_mq_destroy(mq);
+        xnfree(mq);
         }
 
+    return 0;
+}
+
+int pse51_mq_pkg_init(void)
+{
+    initq(&pse51_mqq);
     return 0;
 }
 

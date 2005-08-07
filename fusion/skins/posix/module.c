@@ -30,6 +30,7 @@
 #include <posix/mq.h>
 #include <posix/intr.h>
 #include <posix/timer.h>
+#include <posix/registry.h>
 
 MODULE_DESCRIPTION("POSIX/PSE51 interface");
 MODULE_AUTHOR("gilles.chanteperdrix@laposte.net");
@@ -67,6 +68,7 @@ static void pse51_shutdown(int xtype)
     pse51_syscall_cleanup();
     xnfusion_detach();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+    pse51_reg_pkg_cleanup();
 
     xnpod_shutdown(xtype);
 }
@@ -122,6 +124,7 @@ int __fusion_skin_init(void)
 	return err;
         }
 
+    pse51_reg_pkg_init(64, 128); /* FIXME: replace with compilation constants. */
     pse51_signal_init();
     pse51_mutex_obj_init();
     pse51_sem_obj_init();

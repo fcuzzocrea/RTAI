@@ -18,7 +18,7 @@
 
 #include <posix/signal.h>
 
-static struct sigaction actions[PSE51_SIGMAX - PSE51_SIGMIN];
+static struct sigaction actions[PSE51_SIGMAX - PSE51_SIGMIN + 1];
 
 #define user2pse51_sigset(set) ((pse51_sigset_t *)(set))
 
@@ -429,7 +429,7 @@ void pse51_signal_init (void)
 {
     int i;
 
-    for (i = PSE51_SIGMIN; i < PSE51_SIGMAX; i++)
+    for (i = PSE51_SIGMIN; i <= PSE51_SIGMAX; i++)
 	{
         actions[i].sa_handler = SIG_DFL;
         emptyset(user2pse51_sigset(&actions[i].sa_mask));

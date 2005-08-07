@@ -1,3 +1,14 @@
+2005-08-08  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/mq.c: Use registry.c functions.
+
+	* skins/posix/registry.c: attempt of generic support for
+	open/close/unlink factored-out of mqueues implementation.
+
+	* skins/posix/clock.c: remove check for NULL pointers.
+	(clock_nanosleep): better error statuses, handle timer nucleus
+	clock wrap-around correctly.
+
 2005-08-07  Philippe Gerum  <rpm@xenomai.org>
 
 	* include/nucleus/asm-i386/syscall.h: Add forced fast syscall

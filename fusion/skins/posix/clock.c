@@ -19,8 +19,6 @@
 
 #include "posix/thread.h"
 
-/* Only CLOCK_MONOTONIC is supported for the time being. */
-
 int clock_getres (clockid_t clock_id, struct timespec *res)
 
 {
@@ -59,9 +57,6 @@ int clock_gettime (clockid_t clock_id, struct timespec *tp)
 int clock_settime(clockid_t clock_id, const struct timespec *tp)
 
 {
-    if (!tp)
-        return EFAULT;
-
     if (clock_id != CLOCK_REALTIME || tp->tv_nsec > ONE_BILLION)
         return EINVAL;
 
@@ -78,8 +73,10 @@ int clock_nanosleep (clockid_t clock_id,
     spl_t s;
     int err = 0;
 
-    if ((clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME) ||
-        !rqtp || rqtp->tv_nsec > 1000000000)
+    if (clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME)
+        return ENOTSUP;
+    
+    if ((unsigned) rqtp->tv_nsec > ONE_BILLION)
         return EINVAL;
 
     cur = pse51_current_thread();
@@ -96,13 +93,13 @@ int clock_nanosleep (clockid_t clock_id,
             goto unlock_and_return;
 
 	case TIMER_ABSTIME:
-            if(timeout < start)
+	    timeout -= start;
+            if((xnsticks_t) timeout < 0)
                 {
                 err = 0;
                 goto unlock_and_return;
                 }
 
-	    timeout -= start;
 	    break;
 
 	case 0:
@@ -119,9 +116,9 @@ int clock_nanosleep (clockid_t clock_id,
 
         if (flags == 0 && rmtp)
             {
-            xnticks_t passed = clock_get_ticks(clock_id);
+            xnsticks_t rem  = timeout - clock_get_ticks(clock_id);
 
-            ticks2ts(rmtp, passed < timeout ? timeout-passed : 0);
+            ticks2ts(rmtp, rem > 0 ? rem : 0);
             }
 
         return EINTR;

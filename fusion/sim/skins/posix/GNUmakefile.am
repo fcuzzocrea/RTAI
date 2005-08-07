@@ -23,7 +23,6 @@ AM_CPPFLAGS = \
 lib_LIBRARIES = libposix_s.a
 
 nodist_libposix_s_a_SOURCES = \
-	module.c \
 	sched.c \
 	thread_attr.c \
 	thread.c \
@@ -39,7 +38,9 @@ nodist_libposix_s_a_SOURCES = \
 	clock.c \
 	timer.c \
 	intr.c \
-	mq.c
+	registry.c \
+	mq.c \
+	module.c
 
 include_HEADERS = \
 	posix_overrides.h

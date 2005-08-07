@@ -6,7 +6,6 @@ modext = @RTAI_MODULE_EXT@
 CROSS_COMPILE = @CROSS_COMPILE@
 
 libmodule_SRC = \
-	module.c \
 	sched.c \
 	thread_attr.c \
 	thread.c \
@@ -21,7 +20,9 @@ libmodule_SRC = \
 	tsd.c \
 	clock.c \
 	timer.c \
-	mq.c
+	registry.c \
+	mq.c \
+	module.c
 
 include_HEADERS = \
 	posix.h
@@ -29,7 +30,6 @@ include_HEADERS = \
 noinst_HEADERS = \
 	cancel.h \
 	cond.h \
-	internal.h \
 	jhash.h \
 	mutex.h \
 	mq.h \
@@ -37,7 +37,8 @@ noinst_HEADERS = \
 	signal.h \
 	thread.h \
 	timer.h \
-	tsd.h
+	tsd.h \
+	internal.h
 
 if CONFIG_RTAI_OPT_FUSION
 libmodule_SRC += syscall.c intr.c

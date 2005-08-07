@@ -13,7 +13,7 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
-SOURCES = $(libtests_a_SOURCES) $(cancellation_SOURCES) $(clock_SOURCES) $(condvars_SOURCES) $(mq_SOURCES) $(mutexes_SOURCES) $(semaphores_SOURCES) $(signals_SOURCES) $(threads_SOURCES) $(tsd_SOURCES)
+SOURCES = $(libtests_a_SOURCES) $(tcancel_SOURCES) $(tclock_SOURCES) $(tcond_SOURCES) $(tmq_SOURCES) $(tmutex_SOURCES) $(tsem_SOURCES) $(tsignal_SOURCES) $(tthread_SOURCES) $(ttsd_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -37,9 +37,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-check_PROGRAMS = threads$(EXEEXT) semaphores$(EXEEXT) mutexes$(EXEEXT) \
-	condvars$(EXEEXT) cancellation$(EXEEXT) signals$(EXEEXT) \
-	tsd$(EXEEXT) clock$(EXEEXT) mq$(EXEEXT)
+check_PROGRAMS = tthread$(EXEEXT) tsem$(EXEEXT) tmutex$(EXEEXT) \
+	tcond$(EXEEXT) tcancel$(EXEEXT) tsignal$(EXEEXT) ttsd$(EXEEXT) \
+	tclock$(EXEEXT) tmq$(EXEEXT)
 subdir = skins/posix/testsuite
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -55,33 +55,33 @@ libtests_a_AR = $(AR) $(ARFLAGS)
 libtests_a_LIBADD =
 am_libtests_a_OBJECTS = xntest.$(OBJEXT) posix_test.$(OBJEXT)
 libtests_a_OBJECTS = $(am_libtests_a_OBJECTS)
-am_cancellation_OBJECTS = cancellation.$(OBJEXT)
-cancellation_OBJECTS = $(am_cancellation_OBJECTS)
-cancellation_LDADD = $(LDADD)
-am_clock_OBJECTS = clock.$(OBJEXT)
-clock_OBJECTS = $(am_clock_OBJECTS)
-clock_LDADD = $(LDADD)
-am_condvars_OBJECTS = condvars.$(OBJEXT)
-condvars_OBJECTS = $(am_condvars_OBJECTS)
-condvars_LDADD = $(LDADD)
-am_mq_OBJECTS = mq.$(OBJEXT)
-mq_OBJECTS = $(am_mq_OBJECTS)
-mq_LDADD = $(LDADD)
-am_mutexes_OBJECTS = mutexes.$(OBJEXT)
-mutexes_OBJECTS = $(am_mutexes_OBJECTS)
-mutexes_LDADD = $(LDADD)
-am_semaphores_OBJECTS = semaphores.$(OBJEXT)
-semaphores_OBJECTS = $(am_semaphores_OBJECTS)
-semaphores_LDADD = $(LDADD)
-am_signals_OBJECTS = signals.$(OBJEXT)
-signals_OBJECTS = $(am_signals_OBJECTS)
-signals_LDADD = $(LDADD)
-am_threads_OBJECTS = threads.$(OBJEXT)
-threads_OBJECTS = $(am_threads_OBJECTS)
-threads_LDADD = $(LDADD)
-am_tsd_OBJECTS = tsd.$(OBJEXT)
-tsd_OBJECTS = $(am_tsd_OBJECTS)
-tsd_LDADD = $(LDADD)
+am_tcancel_OBJECTS = tcancel.$(OBJEXT)
+tcancel_OBJECTS = $(am_tcancel_OBJECTS)
+tcancel_LDADD = $(LDADD)
+am_tclock_OBJECTS = tclock.$(OBJEXT)
+tclock_OBJECTS = $(am_tclock_OBJECTS)
+tclock_LDADD = $(LDADD)
+am_tcond_OBJECTS = tcond.$(OBJEXT)
+tcond_OBJECTS = $(am_tcond_OBJECTS)
+tcond_LDADD = $(LDADD)
+am_tmq_OBJECTS = tmq.$(OBJEXT)
+tmq_OBJECTS = $(am_tmq_OBJECTS)
+tmq_LDADD = $(LDADD)
+am_tmutex_OBJECTS = tmutex.$(OBJEXT)
+tmutex_OBJECTS = $(am_tmutex_OBJECTS)
+tmutex_LDADD = $(LDADD)
+am_tsem_OBJECTS = tsem.$(OBJEXT)
+tsem_OBJECTS = $(am_tsem_OBJECTS)
+tsem_LDADD = $(LDADD)
+am_tsignal_OBJECTS = tsignal.$(OBJEXT)
+tsignal_OBJECTS = $(am_tsignal_OBJECTS)
+tsignal_LDADD = $(LDADD)
+am_tthread_OBJECTS = tthread.$(OBJEXT)
+tthread_OBJECTS = $(am_tthread_OBJECTS)
+tthread_LDADD = $(LDADD)
+am_ttsd_OBJECTS = ttsd.$(OBJEXT)
+ttsd_OBJECTS = $(am_ttsd_OBJECTS)
+ttsd_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/../config/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -93,14 +93,14 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libtests_a_SOURCES) $(cancellation_SOURCES) \
-	$(clock_SOURCES) $(condvars_SOURCES) $(mq_SOURCES) \
-	$(mutexes_SOURCES) $(semaphores_SOURCES) $(signals_SOURCES) \
-	$(threads_SOURCES) $(tsd_SOURCES)
-DIST_SOURCES = $(libtests_a_SOURCES) $(cancellation_SOURCES) \
-	$(clock_SOURCES) $(condvars_SOURCES) $(mq_SOURCES) \
-	$(mutexes_SOURCES) $(semaphores_SOURCES) $(signals_SOURCES) \
-	$(threads_SOURCES) $(tsd_SOURCES)
+SOURCES = $(libtests_a_SOURCES) $(tcancel_SOURCES) $(tclock_SOURCES) \
+	$(tcond_SOURCES) $(tmq_SOURCES) $(tmutex_SOURCES) \
+	$(tsem_SOURCES) $(tsignal_SOURCES) $(tthread_SOURCES) \
+	$(ttsd_SOURCES)
+DIST_SOURCES = $(libtests_a_SOURCES) $(tcancel_SOURCES) \
+	$(tclock_SOURCES) $(tcond_SOURCES) $(tmq_SOURCES) \
+	$(tmutex_SOURCES) $(tsem_SOURCES) $(tsignal_SOURCES) \
+	$(tthread_SOURCES) $(ttsd_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -285,26 +285,26 @@ INCLUDES = \
 	-I@RTAI_INSTALLDIR@/source/skins/posix \
 	-I$(top_srcdir)/include
 
-threads_DEPENDENCIES = ../libposix_s.a libtests.a
-semaphores_DEPENDENCIES = ../libposix_s.a libtests.a
-mutexes_DEPENDENCIES = ../libposix_s.a libtests.a
-condvars_DEPENDENCIES = ../libposix_s.a libtests.a
-cancellation_DEPENDENCIES = ../libposix_s.a libtests.a
-signals_DEPENDENCIES = ../libposix_s.a libtests.a
-tsd_DEPENDENCIES = ../libposix_s.a libtests.a
-clock_DEPENDENCIES = ../libposix_s.a libtests.a
-mq_DEPENDENCIES = ../libposix_s.a libtests.a
+tthread_DEPENDENCIES = ../libposix_s.a libtests.a
+tsem_DEPENDENCIES = ../libposix_s.a libtests.a
+tmutex_DEPENDENCIES = ../libposix_s.a libtests.a
+tcond_DEPENDENCIES = ../libposix_s.a libtests.a
+tcancel_DEPENDENCIES = ../libposix_s.a libtests.a
+tsignal_DEPENDENCIES = ../libposix_s.a libtests.a
+ttsd_DEPENDENCIES = ../libposix_s.a libtests.a
+tclock_DEPENDENCIES = ../libposix_s.a libtests.a
+tmq_DEPENDENCIES = ../libposix_s.a libtests.a
 check_LIBRARIES = libtests.a
 libtests_a_SOURCES = xntest.c xntest.h posix_test.c posix_test.h
-threads_SOURCES = threads.c
-semaphores_SOURCES = semaphores.c
-mutexes_SOURCES = mutexes.c
-condvars_SOURCES = condvars.c
-cancellation_SOURCES = cancellation.c
-signals_SOURCES = signals.c
-tsd_SOURCES = tsd.c
-clock_SOURCES = clock.c
-mq_SOURCES = mq.c
+tthread_SOURCES = tthread.c
+tsem_SOURCES = tsem.c
+tmutex_SOURCES = tmutex.c
+tcond_SOURCES = tcond.c
+tcancel_SOURCES = tcancel.c
+tsignal_SOURCES = tsignal.c
+ttsd_SOURCES = ttsd.c
+tclock_SOURCES = tclock.c
+tmq_SOURCES = tmq.c
 EXTRA_DIST = skeleton.c
 all: all-am
 
@@ -353,33 +353,33 @@ clean-checkPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-cancellation$(EXEEXT): $(cancellation_OBJECTS) $(cancellation_DEPENDENCIES) 
-	@rm -f cancellation$(EXEEXT)
-	$(LINK) $(cancellation_LDFLAGS) $(cancellation_OBJECTS) $(cancellation_LDADD) $(LIBS)
-clock$(EXEEXT): $(clock_OBJECTS) $(clock_DEPENDENCIES) 
-	@rm -f clock$(EXEEXT)
-	$(LINK) $(clock_LDFLAGS) $(clock_OBJECTS) $(clock_LDADD) $(LIBS)
-condvars$(EXEEXT): $(condvars_OBJECTS) $(condvars_DEPENDENCIES) 
-	@rm -f condvars$(EXEEXT)
-	$(LINK) $(condvars_LDFLAGS) $(condvars_OBJECTS) $(condvars_LDADD) $(LIBS)
-mq$(EXEEXT): $(mq_OBJECTS) $(mq_DEPENDENCIES) 
-	@rm -f mq$(EXEEXT)
-	$(LINK) $(mq_LDFLAGS) $(mq_OBJECTS) $(mq_LDADD) $(LIBS)
-mutexes$(EXEEXT): $(mutexes_OBJECTS) $(mutexes_DEPENDENCIES) 
-	@rm -f mutexes$(EXEEXT)
-	$(LINK) $(mutexes_LDFLAGS) $(mutexes_OBJECTS) $(mutexes_LDADD) $(LIBS)
-semaphores$(EXEEXT): $(semaphores_OBJECTS) $(semaphores_DEPENDENCIES) 
-	@rm -f semaphores$(EXEEXT)
-	$(LINK) $(semaphores_LDFLAGS) $(semaphores_OBJECTS) $(semaphores_LDADD) $(LIBS)
-signals$(EXEEXT): $(signals_OBJECTS) $(signals_DEPENDENCIES) 
-	@rm -f signals$(EXEEXT)
-	$(LINK) $(signals_LDFLAGS) $(signals_OBJECTS) $(signals_LDADD) $(LIBS)
-threads$(EXEEXT): $(threads_OBJECTS) $(threads_DEPENDENCIES) 
-	@rm -f threads$(EXEEXT)
-	$(LINK) $(threads_LDFLAGS) $(threads_OBJECTS) $(threads_LDADD) $(LIBS)
-tsd$(EXEEXT): $(tsd_OBJECTS) $(tsd_DEPENDENCIES) 
-	@rm -f tsd$(EXEEXT)
-	$(LINK) $(tsd_LDFLAGS) $(tsd_OBJECTS) $(tsd_LDADD) $(LIBS)
+tcancel$(EXEEXT): $(tcancel_OBJECTS) $(tcancel_DEPENDENCIES) 
+	@rm -f tcancel$(EXEEXT)
+	$(LINK) $(tcancel_LDFLAGS) $(tcancel_OBJECTS) $(tcancel_LDADD) $(LIBS)
+tclock$(EXEEXT): $(tclock_OBJECTS) $(tclock_DEPENDENCIES) 
+	@rm -f tclock$(EXEEXT)
+	$(LINK) $(tclock_LDFLAGS) $(tclock_OBJECTS) $(tclock_LDADD) $(LIBS)
+tcond$(EXEEXT): $(tcond_OBJECTS) $(tcond_DEPENDENCIES) 
+	@rm -f tcond$(EXEEXT)
+	$(LINK) $(tcond_LDFLAGS) $(tcond_OBJECTS) $(tcond_LDADD) $(LIBS)
+tmq$(EXEEXT): $(tmq_OBJECTS) $(tmq_DEPENDENCIES) 
+	@rm -f tmq$(EXEEXT)
+	$(LINK) $(tmq_LDFLAGS) $(tmq_OBJECTS) $(tmq_LDADD) $(LIBS)
+tmutex$(EXEEXT): $(tmutex_OBJECTS) $(tmutex_DEPENDENCIES) 
+	@rm -f tmutex$(EXEEXT)
+	$(LINK) $(tmutex_LDFLAGS) $(tmutex_OBJECTS) $(tmutex_LDADD) $(LIBS)
+tsem$(EXEEXT): $(tsem_OBJECTS) $(tsem_DEPENDENCIES) 
+	@rm -f tsem$(EXEEXT)
+	$(LINK) $(tsem_LDFLAGS) $(tsem_OBJECTS) $(tsem_LDADD) $(LIBS)
+tsignal$(EXEEXT): $(tsignal_OBJECTS) $(tsignal_DEPENDENCIES) 
+	@rm -f tsignal$(EXEEXT)
+	$(LINK) $(tsignal_LDFLAGS) $(tsignal_OBJECTS) $(tsignal_LDADD) $(LIBS)
+tthread$(EXEEXT): $(tthread_OBJECTS) $(tthread_DEPENDENCIES) 
+	@rm -f tthread$(EXEEXT)
+	$(LINK) $(tthread_LDFLAGS) $(tthread_OBJECTS) $(tthread_LDADD) $(LIBS)
+ttsd$(EXEEXT): $(ttsd_OBJECTS) $(ttsd_DEPENDENCIES) 
+	@rm -f ttsd$(EXEEXT)
+	$(LINK) $(ttsd_LDFLAGS) $(ttsd_OBJECTS) $(ttsd_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -387,16 +387,16 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cancellation.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clock.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/condvars.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mq.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutexes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/posix_test.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/semaphores.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/signals.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/threads.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tsd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcancel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tclock.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tcond.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tmq.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tmutex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tsem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tsignal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tthread.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ttsd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xntest.Po@am__quote@
 
 .c.o:
@@ -597,6 +597,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-info-am
 
+
+override CFLAGS=-g
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

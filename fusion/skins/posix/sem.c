@@ -255,12 +255,12 @@ int sem_destroy (sem_t *sem)
     return 0;
 }
 
-void pse51_sem_obj_init (void) {
+void pse51_sem_pkg_init (void) {
 
     initq(&pse51_semq);
 }
 
-void pse51_sem_obj_cleanup (void)
+void pse51_sem_pkg_cleanup (void)
 
 {
     xnholder_t *holder;

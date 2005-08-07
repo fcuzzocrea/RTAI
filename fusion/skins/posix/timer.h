@@ -38,8 +38,8 @@ struct pse51_timer {
 ((struct pse51_timer *)(((char *)laddr) - (int)(&((struct pse51_timer *)0)->link)))
 };
 
-int pse51_timer_obj_init(void);
+int pse51_timer_pkg_init(void);
 
-void pse51_timer_obj_cleanup(void);
+void pse51_timer_pkg_cleanup(void);
 
 #endif /* !_POSIX_TIMER_H */

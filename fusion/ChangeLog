@@ -1,5 +1,8 @@
 2005-08-08  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* skins/posix/*.[ch]: Rename initialization and cleanup functions 
+	_pkg_init/_pkg_cleanup for consistency with native skin.
+
 	* skins/posix/mq.c: Use registry.c functions.
 
 	* skins/posix/registry.c: attempt of generic support for

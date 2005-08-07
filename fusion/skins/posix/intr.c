@@ -116,12 +116,12 @@ int pse51_intr_control (struct pse51_interrupt *intr, int cmd)
     return err;
 }
 
-void pse51_intr_obj_init (void)
+void pse51_intr_pkg_init (void)
 {
     initq(&pse51_intrq);
 }
 
-void pse51_intr_obj_cleanup (void)
+void pse51_intr_pkg_cleanup (void)
 
 {
     xnholder_t *holder;

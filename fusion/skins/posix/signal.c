@@ -424,7 +424,7 @@ void pse51_signal_init_thread (pthread_t newthread, const pthread_t parent)
     newthread->threadbase.asrimask = 0;
 }
 
-void pse51_signal_init (void)
+void pse51_signal_pkg_init (void)
 
 {
     int i;

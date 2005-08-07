@@ -29,8 +29,8 @@
 ((sem_t *)(((char *)saddr) - (int)(&((sem_t *)0)->synchbase)))
 
 
-void pse51_sem_obj_init(void);
+void pse51_sem_pkg_init(void);
 
-void pse51_sem_obj_cleanup(void);
+void pse51_sem_pkg_cleanup(void);
 
 #endif /* !_POSIX_SEM_H */

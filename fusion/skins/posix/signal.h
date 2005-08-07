@@ -29,6 +29,6 @@
 
 void pse51_signal_init_thread(pthread_t new, const pthread_t parent);
 
-void pse51_signal_init(void);
+void pse51_signal_pkg_init(void);
 
 #endif /* !_POSIX_SIGNAL_H */

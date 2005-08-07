@@ -38,14 +38,14 @@ static void pse51_mutex_destroy_internal (pthread_mutex_t *mutex)
     xnsynch_destroy(&mutex->synchbase);
 }
 
-void pse51_mutex_obj_init (void)
+void pse51_mutex_pkg_init (void)
 
 {
     initq(&pse51_mutexq);
     pthread_mutexattr_init(&default_attr);
 }
 
-void pse51_mutex_obj_cleanup (void)
+void pse51_mutex_pkg_cleanup (void)
 
 {
     xnholder_t *holder;

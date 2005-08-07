@@ -367,7 +367,7 @@ void pse51_thread_abort (pthread_t thread, void *status)
     xnpod_delete_thread(&thread->threadbase);
 }
 
-void pse51_thread_init (u_long rrperiod)
+void pse51_thread_pkg_init (u_long rrperiod)
 
 {
     initq(&pse51_threadq);
@@ -376,7 +376,7 @@ void pse51_thread_init (u_long rrperiod)
     xnpod_add_hook(XNHOOK_THREAD_DELETE,thread_delete_hook);
 }
 
-void pse51_thread_cleanup (void)
+void pse51_thread_pkg_cleanup (void)
 
 {
     xnholder_t *holder;

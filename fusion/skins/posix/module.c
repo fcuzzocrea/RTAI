@@ -57,13 +57,13 @@ static void pse51_shutdown(int xtype)
 {
     xnpod_stop_timer();
 
-    pse51_thread_cleanup();
-/*     pse51_timer_obj_cleanup(); */
-/*     pse51_intr_obj_cleanup(); */
+    pse51_thread_pkg_cleanup();
+/*     pse51_timer_pkg_cleanup(); */
+/*     pse51_intr_pkg_cleanup(); */
     pse51_tsd_cleanup();
-    pse51_cond_obj_cleanup();
-    pse51_sem_obj_cleanup();
-    pse51_mutex_obj_cleanup();
+    pse51_cond_pkg_cleanup();
+    pse51_sem_pkg_cleanup();
+    pse51_mutex_pkg_cleanup();
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     pse51_syscall_cleanup();
     xnfusion_detach();
@@ -125,16 +125,16 @@ int __fusion_skin_init(void)
         }
 
     pse51_reg_pkg_init(64, 128); /* FIXME: replace with compilation constants. */
-    pse51_signal_init();
-    pse51_mutex_obj_init();
-    pse51_sem_obj_init();
+    pse51_signal_pkg_init();
+    pse51_mutex_pkg_init();
+    pse51_sem_pkg_init();
     pse51_tsd_init();
-    pse51_cond_obj_init();
+    pse51_cond_pkg_init();
     pse51_mq_pkg_init();
-    pse51_intr_obj_init();
-    pse51_timer_obj_init();
+    pse51_intr_pkg_init();
+    pse51_timer_pkg_init();
 
-    pse51_thread_init(module_param_value(time_slice_arg));
+    pse51_thread_pkg_init(module_param_value(time_slice_arg));
 
     return 0;
 }

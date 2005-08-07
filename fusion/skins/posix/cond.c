@@ -245,14 +245,14 @@ int pthread_cond_broadcast (pthread_cond_t *cond)
     return 0;
 }
 
-void pse51_cond_obj_init (void)
+void pse51_cond_pkg_init (void)
 
 {
     initq(&pse51_condq);
     pthread_condattr_init(&default_cond_attr);
 }
 
-void pse51_cond_obj_cleanup (void)
+void pse51_cond_pkg_cleanup (void)
 
 {
     xnholder_t *holder;

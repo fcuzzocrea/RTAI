@@ -210,7 +210,7 @@ int timer_getoverrun(timer_t timerid)
     return overruns;
 }
 
-int pse51_timer_obj_init(void)
+int pse51_timer_pkg_init(void)
 {
     int n;
 
@@ -227,7 +227,7 @@ int pse51_timer_obj_init(void)
     return 0;
 }
 
-void pse51_timer_obj_cleanup(void)
+void pse51_timer_pkg_cleanup(void)
 {
     xnholder_t *holder;
     spl_t s;

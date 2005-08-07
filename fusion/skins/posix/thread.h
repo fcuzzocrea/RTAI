@@ -135,9 +135,9 @@ static inline void thread_cancellation_point (pthread_t thread)
         pse51_thread_abort(thread, PTHREAD_CANCELED);
 }
 
-void pse51_thread_init(u_long rrperiod);
+void pse51_thread_pkg_init(u_long rrperiod);
 
-void pse51_thread_cleanup(void);
+void pse51_thread_pkg_cleanup(void);
 
 /* round-robin period. */
 extern xnticks_t pse51_time_slice;

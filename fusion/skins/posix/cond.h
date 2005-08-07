@@ -24,8 +24,8 @@ int pse51_cond_timedwait_internal(pthread_cond_t *cond,
                                   pthread_mutex_t *mutex,
                                   xnticks_t to);
 
-void pse51_cond_obj_init(void);
+void pse51_cond_pkg_init(void);
 
-void pse51_cond_obj_cleanup(void);
+void pse51_cond_pkg_cleanup(void);
 
 #endif /* !_POSIX_COND_H */

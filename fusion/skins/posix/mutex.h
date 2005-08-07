@@ -125,9 +125,9 @@ static inline void mutex_restore_count(pthread_mutex_t *mutex, unsigned count)
     mutex->count = count;
 }
 
-void pse51_mutex_obj_init(void);
+void pse51_mutex_pkg_init(void);
 
-void pse51_mutex_obj_cleanup(void);
+void pse51_mutex_pkg_cleanup(void);
 
 /* Interruptible versions of pthread_mutex_*. Exposed for use by syscall.c. */
 int pse51_mutex_timedlock_break (pthread_mutex_t *mutex, xnticks_t to);

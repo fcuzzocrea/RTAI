@@ -57,9 +57,9 @@ struct pse51_interrupt {
 extern "C" {
 #endif
 
-void pse51_intr_obj_init(void);
+void pse51_intr_pkg_init(void);
 
-void pse51_intr_obj_cleanup(void);
+void pse51_intr_pkg_cleanup(void);
 
 int pse51_intr_attach(struct pse51_interrupt *intr,
 		      unsigned irq,

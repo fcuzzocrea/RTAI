@@ -61,6 +61,9 @@
 #undef CONFIG_RTAI_HW_X86_VSYSCALL
 
 /* Kconfig */
+#undef CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_COMPAT_FIFO
 
 /* Kconfig */

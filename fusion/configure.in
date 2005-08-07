@@ -720,6 +720,15 @@ case $RTAI_TARGET_ARCH in
 	esac])
 	AC_MSG_RESULT(${CONFIG_RTAI_HW_X86_VSYSCALL:-no})
 	test \! x$CONFIG_RTAI_HW_X86_VSYSCALL = x && AC_DEFINE(CONFIG_RTAI_HW_X86_VSYSCALL,1,[Kconfig])
+	AC_MSG_CHECKING(for hardwired VSYSCALL support)
+	AC_ARG_ENABLE(x86-force-vsyscall,
+	AS_HELP_STRING([--enable-x86-force-vsyscall],	[Force VSYSCALL support]),
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED=y ;;
+	*) unset CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED ;;
+	esac])
+	AC_MSG_RESULT(${CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED:-no})
+	test \! x$CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED = x && AC_DEFINE(CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED,1,[Kconfig])
         ;;
  ppc|ppc64)
 	timer_type=decrementer

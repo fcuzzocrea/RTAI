@@ -26,19 +26,20 @@
 
 #ifndef __KERNEL__
 
-#ifdef CONFIG_RTAI_HW_X86_VSYSCALL
+#if defined(CONFIG_RTAI_HW_X86_VSYSCALL) && \
+    !defined(CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED)
 
 #include <asm/unistd.h>
 #include <sys/prctl.h>
 #include <errno.h>
 
-/* Make the syscall through the vsyscall support. In order to keep it
-   simple and efficient, we don't attempt to directly map and jump to
-   the vsyscall DSO, but we rather cheat the prctl(2) system call,
-   intercepting any invocation to it which bears a specific RTAI
-   signature in the "option" argument. Invocations that match the
-   signature are processed by RTAI, others are simply relayed
-   untouched to the Linux kernel.
+/* Make the syscall through the vsyscall support in an adaptive
+   fashion. In order to keep it compatible with non-NPTL setups, we
+   don't attempt to directly map and jump to the vsyscall DSO, but we
+   rather cheat the prctl(2) system call, intercepting any invocation
+   to it which bears a specific RTAI signature in the "option"
+   argument. Invocations that match the signature are processed by
+   RTAI, others are simply relayed untouched to the Linux kernel.
 
    If the glibc - real-time apps are linked against - actually uses
    the vsyscall DSO, then the prctl() support routine will too, and
@@ -90,7 +91,7 @@
 #define ARGFMT_5(arg1, arg2, arg3, arg4, arg5) \
         | 0x8000, __ul(arg2), __ul(arg3), __ul(arg4), __ul(xargs)
 
-#else /* !CONFIG_RTAI_HW_X86_VSYSCALL -- use "int 0x80" */
+#else /* !CONFIG_RTAI_HW_X86_VSYSCALL || !CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
 
 /*
  * Some of the following macros have been adapted from glibc's syscall
@@ -102,6 +103,15 @@
  * RTAI/fusion's real-time interfaces to invoke the skin module services
  * in kernel space.
  */
+
+#ifdef CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED
+/* Hardwired vsyscall access is identical to the legacy int80 form wrt
+   loading and canonicalizing arguments; what differs is that we
+   branch to the vsyscall DSO instead of issuing a trap. */
+#define DOSYSCALL  "call *%%gs:0x10\n\t"
+#else /* CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
+#define DOSYSCALL  "int $0x80\n\t"
+#endif /* CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
 
 asm (".L__X'%ebx = 1\n\t"
      ".L__X'%ecx = 2\n\t"
@@ -143,7 +153,7 @@ asm (".L__X'%ebx = 1\n\t"
     asm volatile (						      \
     LOADARGS_##nr						      \
     "movl %1, %%eax\n\t"					      \
-    "int $0x80\n\t"						      \
+    DOSYSCALL							      \
     RESTOREARGS_##nr						      \
     : "=a" (resultvar)						      \
     : "i" (__xn_mux_code(0,op)) ASMFMT_##nr(args) : "memory", "cc");  \
@@ -156,7 +166,7 @@ asm (".L__X'%ebx = 1\n\t"
     asm volatile (						      \
     LOADARGS_##nr						      \
     "movl %1, %%eax\n\t"					      \
-    "int $0x80\n\t"						      \
+    DOSYSCALL							      \
     RESTOREARGS_##nr						      \
     : "=a" (resultvar)						      \
     : "m" (muxcode) ASMFMT_##nr(args) : "memory", "cc");	      \
@@ -191,7 +201,7 @@ asm (".L__X'%ebx = 1\n\t"
 #define ASMFMT_5(arg1, arg2, arg3, arg4, arg5) \
 	, "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5)
 
-#endif /* CONFIG_RTAI_HW_X86_VSYSCALL */
+#endif /* CONFIG_RTAI_HW_X86_VSYSCALL && !CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
 
 #endif /* !__KERNEL__ */
 
@@ -271,7 +281,8 @@ static inline int __xn_interrupted_p(struct pt_regs *regs) {
     return __xn_reg_rval(regs) == -EINTR;
 }
 
-#ifdef CONFIG_RTAI_HW_X86_VSYSCALL
+#if defined(CONFIG_RTAI_HW_X86_VSYSCALL) && \
+    !defined(CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED)
 
 #define __xn_canonicalize_args(task,regs) \
 do { \
@@ -289,11 +300,11 @@ do { \
  } \
 } while(0)
 
-#else /* !CONFIG_RTAI_HW_X86_VSYSCALL */
+#else /* !CONFIG_RTAI_HW_X86_VSYSCALL || CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
 
 #define __xn_canonicalize_args(task,regs) do { } while(0)
 
-#endif /* CONFIG_RTAI_HW_X86_VSYSCALL */
+#endif /* CONFIG_RTAI_HW_X86_VSYSCALL && !CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
 
 #else /* !__KERNEL__ */
 

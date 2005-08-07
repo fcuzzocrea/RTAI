@@ -508,6 +508,8 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
     return xntimer_date(timer) - nkpod->jiffies;
 }
 
+#ifdef __KERNEL__
+
 /*!
  * @internal
  * \fn void xntimer_lock_timers(void)
@@ -616,7 +618,7 @@ void xntimer_unlock_timers (void)
 
 /*!
  * @internal
- * \fn void xntimer_retsyncrs(void)
+ * \fn void xntimer_resync_timers(void)
  *
  * \brief Resynchronize timers after a lock state.
  *
@@ -635,7 +637,7 @@ void xntimer_unlock_timers (void)
  * don't bother for performance here.
  */
 
-static void xntimer_retsyncrs (xnsched_t *sched)
+static void xntimer_resync_timers (xnsched_t *sched)
 
 {
     xnholder_t *holder, *nextholder;
@@ -696,6 +698,8 @@ static void xntimer_retsyncrs (xnsched_t *sched)
     clrbits(sched->status,XNTSYNC|XNTLOCK);
 }
 
+#endif /* __KERNEL__ */
+
 /*!
  * @internal
  * \fn void xntimer_do_timers(void)
@@ -749,8 +753,10 @@ void xntimer_do_timers (void)
         aperiodic = 0;
         }
 
+#ifdef __KERNEL__
     if (testbits(sched->status,XNTSYNC))
-	xntimer_retsyncrs(sched);
+	xntimer_resync_timers(sched);
+#endif /* __KERNEL__ */
 
     nextholder = getheadq(timerq);
 

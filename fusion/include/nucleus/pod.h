@@ -138,8 +138,8 @@ typedef struct xnsched {
 
     xnthread_t rootcb;          /*!< Root thread control block. */
 
-    xnticks_t ltime;		/*!< Lock time date/delta. */
-
+    xnticks_t tsync;		/*!< Lock time date/delta for
+				  synchronization. */
 } xnsched_t;
 
 #define xnsched_cpu(__sched__) \

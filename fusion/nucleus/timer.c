@@ -510,7 +510,113 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
 
 /*!
  * @internal
- * \fn void xntimer_resync_timers(void)
+ * \fn void xntimer_lock_timers(void)
+ *
+ * \brief Lock timers.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any context initiating a lock state.
+ *
+ * Rescheduling: never.
+ */
+
+void xntimer_lock_timers (void)
+
+{
+    xnticks_t tsync;
+    spl_t s;
+    int cpu;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (nkpod->tlock_depth++ == 0)
+	{
+	/* We don't want any wallclock offset when computing
+	   time deltas. */
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+	if (!testbits(nkpod->status,XNTMPER))
+	    tsync = xnpod_get_cpu_time();
+	else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+	    tsync = nkpod->jiffies;
+
+	for_each_online_cpu(cpu) {
+
+	   xnsched_t *sched = xnpod_sched_slot(cpu);
+	   
+	   if (!testbits(sched->status,XNTSYNC))
+	       {
+	       sched->tsync = tsync;
+	       setbits(sched->status,XNTLOCK);
+	       }
+	   else
+	       clrbits(sched->status,XNTSYNC);
+	   }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+}
+
+/*!
+ * @internal
+ * \fn void xntimer_unlock_timers(void)
+ *
+ * \brief Unlock timers.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Any context clearing a lock state.
+ *
+ * Rescheduling: never.
+ */
+
+void xntimer_unlock_timers (void)
+
+{
+    xnticks_t now, delta;
+    spl_t s;
+    int cpu;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    if (--nkpod->tlock_depth == 0)
+	{
+#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+	if (!testbits(nkpod->status,XNTMPER))
+	    /* Use ns, so delta doesn't depend on CPU freq. */
+	    now = xnpod_get_cpu_time();
+	else
+#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+	    now = nkpod->jiffies;
+
+	for_each_online_cpu(cpu) {
+
+           xnsched_t *sched = xnpod_sched_slot(cpu);
+
+	   delta = now - sched->tsync;
+
+	   if (delta > now)
+	       delta = ~delta + 1;
+
+	   sched->tsync = delta;
+
+	   /* xntimer_do_timers() will resync the timers and
+	      remove the lock in the same move, on each CPU. */
+	   setbits(sched->status,XNTSYNC);
+	   }
+	}
+
+    xnlock_put_irqrestore(&nklock,s);
+}
+
+/*!
+ * @internal
+ * \fn void xntimer_retsyncrs(void)
  *
  * \brief Resynchronize timers after a lock state.
  *
@@ -529,7 +635,7 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
  * don't bother for performance here.
  */
 
-static void xntimer_resync_timers (xnsched_t *sched)
+static void xntimer_retsyncrs (xnsched_t *sched)
 
 {
     xnholder_t *holder, *nextholder;
@@ -540,7 +646,7 @@ static void xntimer_resync_timers (xnsched_t *sched)
 #ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     if (!testbits(nkpod->status,XNTMPER))
         {
-	xnticks_t delta_tsc = xnarch_ns_to_tsc(sched->ltime);
+	xnticks_t delta_tsc = xnarch_ns_to_tsc(sched->tsync);
 
         timerq = &sched->timerwheel[0];
 
@@ -582,12 +688,12 @@ static void xntimer_resync_timers (xnsched_t *sched)
 	while ((holder = getq(&resyncq)) != NULL)
 	    {
 	    timer = link2timer(holder);
-	    timer->date += sched->ltime;
+	    timer->date += sched->tsync;
 	    xntimer_enqueue_periodic(timer);
 	    }
         }
 
-    __clrbits(sched->status,XNTSYNC|XNTLOCK);
+    clrbits(sched->status,XNTSYNC|XNTLOCK);
 }
 
 /*!
@@ -644,7 +750,7 @@ void xntimer_do_timers (void)
         }
 
     if (testbits(sched->status,XNTSYNC))
-	xntimer_resync_timers(sched);
+	xntimer_retsyncrs(sched);
 
     nextholder = getheadq(timerq);
 
@@ -728,112 +834,6 @@ void xntimer_do_timers (void)
     if (aperiodic)
         xntimer_next_local_shot(sched);
 #endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-}
-
-/*!
- * @internal
- * \fn void xntimer_lock_timers(void)
- *
- * \brief Lock timers.
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Any context initiating a lock state.
- *
- * Rescheduling: never.
- */
-
-void xntimer_lock_timers (void)
-
-{
-    xnticks_t ltime;
-    spl_t s;
-    int cpu;
-
-    xnlock_get_irqsave(&nklock,s);
-
-    if (nkpod->tlock_depth++ == 0)
-	{
-	/* We don't want any wallclock offset when computing
-	   time deltas. */
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
-	    ltime = xnpod_get_cpu_time();
-	else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    ltime = nkpod->jiffies;
-
-	for_each_online_cpu(cpu) {
-
-	   xnsched_t *sched = xnpod_sched_slot(cpu);
-	   
-	   if (!testbits(sched->status,XNTSYNC))
-	       {
-	       sched->ltime = ltime;
-	       setbits(sched->status,XNTLOCK);
-	       }
-	   else
-	       clrbits(sched->status,XNTSYNC);
-	   }
-	}
-
-    xnlock_put_irqrestore(&nklock,s);
-}
-
-/*!
- * @internal
- * \fn void xntimer_unlock_timers(void)
- *
- * \brief Unlock timers.
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Any context clearing a lock state.
- *
- * Rescheduling: never.
- */
-
-void xntimer_unlock_timers (void)
-
-{
-    xnticks_t now, delta;
-    spl_t s;
-    int cpu;
-
-    xnlock_get_irqsave(&nklock,s);
-
-    if (--nkpod->tlock_depth == 0)
-	{
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
-	    /* Use ns, so delta doesn't depend on CPU freq. */
-	    now = xnpod_get_cpu_time();
-	else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    now = nkpod->jiffies;
-
-	for_each_online_cpu(cpu) {
-
-           xnsched_t *sched = xnpod_sched_slot(cpu);
-
-	   delta = now - sched->ltime;
-
-	   if (delta > now)
-	       delta = ~delta + 1;
-
-	   sched->ltime = delta;
-
-	   /* xntimer_do_timers() will resync the timers and
-	      remove the lock in the same move, on each CPU. */
-	   setbits(sched->status,XNTSYNC);
-	   }
-	}
-
-    xnlock_put_irqrestore(&nklock,s);
 }
 
 /*!

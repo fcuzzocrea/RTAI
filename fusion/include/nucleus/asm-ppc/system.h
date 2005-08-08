@@ -102,11 +102,20 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_fpu_p(fi)  (0)
 /* The following predicates are only usable over a regular Linux stack
    context. */
+#ifdef CONFIG_ADEOS_CORE
+#define xnarch_fault_pf_p(fi)   ((fi)->exception == ADEOS_ACCESS_TRAP)
+#define xnarch_fault_bp_p(fi)   ((current->ptrace & PT_PTRACED) && \
+				 ((fi)->exception == ADEOS_IABR_TRAP || \
+				  (fi)->exception == ADEOS_SSTEP_TRAP || \
+				  (fi)->exception == ADEOS_DEBUG_TRAP))
+#else /* !CONFIG_ADEOS_CORE */
 #define xnarch_fault_pf_p(fi)   ((fi)->exception == IPIPE_TRAP_ACCESS)
 #define xnarch_fault_bp_p(fi)   ((current->ptrace & PT_PTRACED) && \
 				 ((fi)->exception == IPIPE_TRAP_IABR || \
 				  (fi)->exception == IPIPE_TRAP_SSTEP || \
 				  (fi)->exception == IPIPE_TRAP_DEBUG))
+#endif /* CONFIG_ADEOS_CORE */
+
 #define xnarch_fault_notify(fi) (!xnarch_fault_bp_p(fi))
 
 #ifdef __cplusplus
@@ -411,7 +420,7 @@ static inline void xnarch_grab_xirqs (void (*handler)(unsigned irq))
 			 IPIPE_DYNAMIC_MASK);
 }
 
-static inline void xnarch_lock_xirqs (struct ipipe_domain *ipd, int cpuid)
+static inline void xnarch_lock_xirqs (rthal_pipeline_stage_t *ipd, int cpuid)
 
 {
     unsigned irq;
@@ -436,7 +445,7 @@ static inline void xnarch_lock_xirqs (struct ipipe_domain *ipd, int cpuid)
     rthal_lock_irq(ipd,cpuid,RTHAL_TIMER_IRQ);
 }
 
-static inline void xnarch_unlock_xirqs (struct ipipe_domain *ipd, int cpuid)
+static inline void xnarch_unlock_xirqs (rthal_pipeline_stage_t *ipd, int cpuid)
 
 {
     unsigned irq;

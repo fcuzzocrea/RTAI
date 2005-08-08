@@ -48,8 +48,6 @@ int sem_trywait (sem_t *sem)
     int err;
     spl_t s;
     
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
     xnlock_get_irqsave(&nklock, s);
 
     if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
@@ -172,8 +170,6 @@ int sem_getvalue (sem_t *sem, int *value)
 
 {
     spl_t s;
-
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
     xnlock_get_irqsave(&nklock, s);
 

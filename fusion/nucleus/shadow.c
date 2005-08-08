@@ -1461,13 +1461,16 @@ static inline void do_sigwake_event (struct task_struct *p)
 
     xnlock_get_irqsave(&nklock,s);
 
-    if ((p->ptrace & PT_PTRACED) &&
-	!testbits(thread->status,XNDEBUG) &&
-	(sigismember(&p->pending.signal,SIGTRAP) ||
-	 (sigismember(&p->pending.signal,SIGSTOP))))
+    if (testbits(nkpod->status,XNTMPER)) /* FIXME */
 	{
-	__setbits(thread->status,XNDEBUG);
-	xntimer_lock_timers();
+	if ((p->ptrace & PT_PTRACED) &&
+	    !testbits(thread->status,XNDEBUG) &&
+	    (sigismember(&p->pending.signal,SIGTRAP) ||
+	     (sigismember(&p->pending.signal,SIGSTOP))))
+	    {
+	    __setbits(thread->status,XNDEBUG);
+	    xntimer_lock_timers();
+	    }
 	}
 
     if (testbits(thread->status,XNRELAX))

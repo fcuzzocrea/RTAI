@@ -23,7 +23,10 @@ int clock_getres (clockid_t clock_id, struct timespec *res)
 
 {
     if (clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME)
-        return EINVAL;
+        {
+        thread_set_errno(EINVAL);
+        return -1;
+        }
 
     if(res)
         ticks2ts(res, 1);
@@ -48,7 +51,8 @@ int clock_gettime (clockid_t clock_id, struct timespec *tp)
             break;
 
         default:
-            return EINVAL;
+            thread_set_errno(EINVAL);
+            return -1;
         }
 
     return 0;    
@@ -58,9 +62,13 @@ int clock_settime(clockid_t clock_id, const struct timespec *tp)
 
 {
     if (clock_id != CLOCK_REALTIME || tp->tv_nsec > ONE_BILLION)
-        return EINVAL;
+        {
+        thread_set_errno(EINVAL);
+        return -1;
+        }
 
-    return ENOTSUP;
+    thread_set_errno(ENOTSUP);
+    return -1;
 }
 
 int clock_nanosleep (clockid_t clock_id,
@@ -132,7 +140,13 @@ int clock_nanosleep (clockid_t clock_id,
 
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
 {
-    return clock_nanosleep(CLOCK_REALTIME, 0, rqtp, rmtp);
+    int err = clock_nanosleep(CLOCK_REALTIME, 0, rqtp, rmtp);
+
+    if(!err)
+        return 0;
+
+    thread_set_errno(err);
+    return -1;
 }
 
 EXPORT_SYMBOL(clock_getres);

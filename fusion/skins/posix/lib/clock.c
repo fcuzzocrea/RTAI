@@ -37,7 +37,7 @@ int __wrap_clock_getres (clockid_t clock_id, struct timespec *tp)
     if(!err)
         return 0;
 
-    errno = -err;
+    errno = err;
     return -1;
 }
 
@@ -52,7 +52,7 @@ int __wrap_clock_gettime (clockid_t clock_id, struct timespec *tp)
     if(!err)
         return 0;
 
-    errno = -err;
+    errno = err;
     return -1;
 }
 
@@ -67,7 +67,7 @@ int __wrap_clock_settime (clockid_t clock_id, const struct timespec *tp)
     if(!err)
         return 0;
 
-    errno = -err;
+    errno = err;
     return -1;
 }
 
@@ -83,15 +83,17 @@ int __wrap_clock_nanosleep (clockid_t clock_id,
                                  rqtp,
                                  rmtp);
 
-    if(!err)
-        return 0;
-
-    errno = -err;
-    return -1;
+    return err;
 }
 
 int __wrap_nanosleep (const struct timespec *rqtp,
 		      struct timespec *rmtp)
 {
-    return __wrap_clock_nanosleep(CLOCK_REALTIME,0,rqtp,rmtp);
+    int err = __wrap_clock_nanosleep(CLOCK_REALTIME,0,rqtp,rmtp);
+
+    if(!err)
+        return 0;
+
+    errno = err;
+    return -1;
 }

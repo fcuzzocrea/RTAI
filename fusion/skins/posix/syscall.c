@@ -534,15 +534,15 @@ int __clock_nanosleep (struct task_struct *curr, struct pt_regs *regs)
 
     err = clock_nanosleep(clock_id,flags,&rqt,rmtp);
 
-    if (err)
-	return -thread_get_errno();
+    if (err != EINTR)
+	return -err;
 
     if (rmtp)
 	__xn_copy_to_user(curr,
 			  (void __user *)__xn_reg_arg4(regs),
 			  rmtp,
 			  sizeof(*rmtp));
-    return 0;
+    return -EINTR;
 }
 
 int __mutex_init (struct task_struct *curr, struct pt_regs *regs)

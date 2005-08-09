@@ -461,7 +461,7 @@ int __clock_getres (struct task_struct *curr, struct pt_regs *regs)
 			  (void __user *)__xn_reg_arg2(regs),
 			  &ts,
 			  sizeof(ts));
-    return -thread_get_errno();
+    return err ? -thread_get_errno() : 0;
 }
 
 int __clock_gettime (struct task_struct *curr, struct pt_regs *regs)
@@ -483,7 +483,7 @@ int __clock_gettime (struct task_struct *curr, struct pt_regs *regs)
 			  (void __user *)__xn_reg_arg2(regs),
 			  &ts,
 			  sizeof(ts));
-    return -thread_get_errno();
+    return err ? -thread_get_errno() : 0;
 }
 
 int __clock_settime (struct task_struct *curr, struct pt_regs *regs)

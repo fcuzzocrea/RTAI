@@ -2597,7 +2597,7 @@ void xnpod_set_time (xnticks_t newtime)
 
     xnlock_get_irqsave(&nklock,s);
     xnltt_log_event(rtai_ev_timeset,newtime);
-    nkpod->wallclock_offset = newtime - xnpod_get_time();
+    nkpod->wallclock_offset += newtime - xnpod_get_time();
     setbits(nkpod->status,XNTMSET);
     xnlock_put_irqrestore(&nklock,s);
 }

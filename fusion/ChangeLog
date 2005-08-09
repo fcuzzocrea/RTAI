@@ -1,3 +1,8 @@
+2005-08-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_set_time): Do not assume that
+	nkpod->wallclock_offset is 0.
+
 2005-08-08  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/*.[ch]: Rename initialization and cleanup functions 

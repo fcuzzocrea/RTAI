@@ -446,88 +446,100 @@ int __clock_getres (struct task_struct *curr, struct pt_regs *regs)
 
 {
     struct timespec ts;
+    clockid_t clock_id;
     int err;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ts)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(ts)))
 	return -EFAULT;
 
-    err = clock_getres(CLOCK_MONOTONIC,&ts);
+    clock_id = __xn_reg_arg1(regs);
+
+    err = clock_getres(clock_id,&ts);
 
     if (!err)
 	__xn_copy_to_user(curr,
-			  (void __user *)__xn_reg_arg1(regs),
+			  (void __user *)__xn_reg_arg2(regs),
 			  &ts,
 			  sizeof(ts));
-    return -err;
+    return -thread_get_errno();
 }
 
 int __clock_gettime (struct task_struct *curr, struct pt_regs *regs)
 
 {
     struct timespec ts;
+    clockid_t clock_id;
     int err;
 
-    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg1(regs),sizeof(ts)))
+    if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(ts)))
 	return -EFAULT;
 
-    err = clock_gettime(CLOCK_MONOTONIC,&ts);
+    clock_id = __xn_reg_arg1(regs);
+
+    err = clock_gettime(clock_id,&ts);
 
     if (!err)
 	__xn_copy_to_user(curr,
-			  (void __user *)__xn_reg_arg1(regs),
+			  (void __user *)__xn_reg_arg2(regs),
 			  &ts,
 			  sizeof(ts));
-    return -err;
+    return -thread_get_errno();
 }
 
 int __clock_settime (struct task_struct *curr, struct pt_regs *regs)
 
 {
     struct timespec ts;
+    clockid_t clock_id;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(ts)))
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(ts)))
 	return -EFAULT;
+
+    clock_id = __xn_reg_arg1(regs);
 
     __xn_copy_from_user(curr,
 			&ts,
-			(void __user *)__xn_reg_arg1(regs),
+			(void __user *)__xn_reg_arg2(regs),
 			sizeof(ts));
 
-    return -clock_settime(CLOCK_MONOTONIC,&ts);
+    return clock_settime(clock_id,&ts) ? -thread_get_errno() : 0;
 }
 
 int __clock_nanosleep (struct task_struct *curr, struct pt_regs *regs)
 
 {
     struct timespec rqt, rmt, *rmtp = NULL;
+    clockid_t clock_id;
     int flags, err;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(rqt)))
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(rqt)))
 	return -EFAULT;
 
     if (__xn_reg_arg3(regs))
 	{
-	if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(rmt)))
+	if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg4(regs),sizeof(rmt)))
 	    return -EFAULT;
 
 	rmtp = &rmt;
 	}
 
-    flags = (int)__xn_reg_arg1(regs);
+    clock_id = __xn_reg_arg1(regs);
+
+    flags = (int)__xn_reg_arg2(regs);
 
     __xn_copy_from_user(curr,
 			&rqt,
-			(void __user *)__xn_reg_arg2(regs),
+			(void __user *)__xn_reg_arg3(regs),
 			sizeof(rqt));
 
-    err = clock_nanosleep(CLOCK_MONOTONIC,flags,&rqt,rmtp);
+    err = clock_nanosleep(clock_id,flags,&rqt,rmtp);
 
     if (err)
-	return -err;
+	return -thread_get_errno();
 
     if (rmtp)
 	__xn_copy_to_user(curr,
-			  (void __user *)__xn_reg_arg3(regs),
+			  (void __user *)__xn_reg_arg4(regs),
 			  rmtp,
 			  sizeof(*rmtp));
     return 0;

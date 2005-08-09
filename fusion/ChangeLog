@@ -1,5 +1,8 @@
 2005-08-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
+	* skins/posix/syscall.c, skins/posix/lib/clock.c: Allow
+	CLOCK_REALTIME to be used. Fix error handling.
+
 	* nucleus/pod.c (xnpod_set_time): Do not assume that
 	nkpod->wallclock_offset is 0.
 

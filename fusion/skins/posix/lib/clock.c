@@ -29,34 +29,46 @@ extern int __pse51_muxid;
 int __wrap_clock_getres (clockid_t clock_id, struct timespec *tp)
 
 {
-    if (clock_id != CLOCK_MONOTONIC)
-        return __real_clock_getres(clock_id,tp);
+    int err = -XENOMAI_SKINCALL2(__pse51_muxid,
+                                 __pse51_clock_getres,
+                                 clock_id,
+                                 tp);
 
-    return -XENOMAI_SKINCALL1(__pse51_muxid,
-			      __pse51_clock_getres,
-			      tp);
+    if(!err)
+        return 0;
+
+    errno = -err;
+    return -1;
 }
 
 int __wrap_clock_gettime (clockid_t clock_id, struct timespec *tp)
 
 {
-    if (clock_id != CLOCK_MONOTONIC)
-        return __real_clock_gettime(clock_id,tp);
+    int err = -XENOMAI_SKINCALL2(__pse51_muxid,
+                                 __pse51_clock_gettime,
+                                 clock_id,
+                                 tp);
 
-    return -XENOMAI_SKINCALL1(__pse51_muxid,
-			      __pse51_clock_gettime,
-			      tp);
+    if(!err)
+        return 0;
+
+    errno = -err;
+    return -1;
 }
 
 int __wrap_clock_settime (clockid_t clock_id, const struct timespec *tp)
 
 {
-    if (clock_id != CLOCK_MONOTONIC)
-        return __real_clock_settime(clock_id,tp);
+    int err = -XENOMAI_SKINCALL2(__pse51_muxid,
+                                 __pse51_clock_settime,
+                                 clock_id,
+                                 tp);
 
-    return -XENOMAI_SKINCALL1(__pse51_muxid,
-			      __pse51_clock_settime,
-			      tp);
+    if(!err)
+        return 0;
+
+    errno = -err;
+    return -1;
 }
 
 int __wrap_clock_nanosleep (clockid_t clock_id,
@@ -64,18 +76,22 @@ int __wrap_clock_nanosleep (clockid_t clock_id,
 			    const struct timespec *rqtp,
 			    struct timespec *rmtp)
 {
-    if (clock_id != CLOCK_MONOTONIC)
-        return __real_clock_nanosleep(clock_id,flags,rqtp,rmtp);
+    int err = -XENOMAI_SKINCALL4(__pse51_muxid,
+                                 __pse51_clock_nanosleep,
+                                 clock_id,
+                                 flags,
+                                 rqtp,
+                                 rmtp);
 
-    return -XENOMAI_SKINCALL3(__pse51_muxid,
-			      __pse51_clock_nanosleep,
-			      flags,
-			      rqtp,
-			      rmtp);
+    if(!err)
+        return 0;
+
+    errno = -err;
+    return -1;
 }
 
 int __wrap_nanosleep (const struct timespec *rqtp,
 		      struct timespec *rmtp)
 {
-    return __wrap_clock_nanosleep(CLOCK_MONOTONIC,0,rqtp,rmtp);
+    return __wrap_clock_nanosleep(CLOCK_REALTIME,0,rqtp,rmtp);
 }

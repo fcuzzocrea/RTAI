@@ -134,7 +134,16 @@ int __registry_pkg_init (void)
     getq(&__rtai_obj_freeq); /* Slot #0 is reserved/invalid. */
     
     __rtai_hash_entries = primes[obj_hash_max(CONFIG_RTAI_OPT_NATIVE_REGISTRY_NRSLOTS / 100)];
-    __rtai_hash_table = (RT_HASH **)xnmalloc(sizeof(RT_HASH *) * __rtai_hash_entries);
+    __rtai_hash_table = (RT_HASH **)xnarch_sysalloc(sizeof(RT_HASH *) * __rtai_hash_entries);
+
+    if (!__rtai_hash_table)
+	{
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+	rthal_apc_free(registry_proc_apc);
+	remove_proc_entry("registry",rthal_proc_root);
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
+	return -ENOMEM;
+	}
 
     for (n = 0; n < __rtai_hash_entries; n++)
 	__rtai_hash_table[n] = NULL;
@@ -174,7 +183,7 @@ void __registry_pkg_cleanup (void)
 	    }
 	}
 
-    xnfree(__rtai_hash_table);
+    xnarch_sysfree(__rtai_hash_table,sizeof(RT_HASH *) * __rtai_hash_entries);
 
     xnsynch_destroy(&__rtai_hash_synch);
 

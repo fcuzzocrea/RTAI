@@ -1,3 +1,13 @@
+2005-08-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/registry.c: Alloc hash-table from host memory and
+	properly check for failure.
+
+2005-08-08  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc, include/nucleus: Finalize dual I-pipe/Adeos support
+	for ppc.
+
 2005-08-09  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/syscall.c, skins/posix/lib/clock.c: Allow

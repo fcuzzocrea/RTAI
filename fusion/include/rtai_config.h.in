@@ -10,13 +10,13 @@
 #undef CONFIG_RTAI_HOST_STRING
 
 /* Kconfig */
-#undef CONFIG_RTAI_HW_APERIODIC_TIMER
-
-/* Kconfig */
 #undef CONFIG_RTAI_HW_FPU
 
 /* Kconfig */
 #undef CONFIG_RTAI_HW_IA64_STACK_POOL
+
+/* Kconfig */
+#undef CONFIG_RTAI_HW_PERIODIC_TIMER
 
 /* Kconfig */
 #undef CONFIG_RTAI_HW_SCHED_LATENCY

@@ -59,7 +59,7 @@ config RTAI_MVM_ATOMIC_CORE
 	code from being debugged interactively using the Xenoscope
 	though.
 
-config RTAI_HW_APERIODIC_TIMER
+config RTAI_HW_PERIODIC_TIMER
 	bool
 	default y
 

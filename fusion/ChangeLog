@@ -1,3 +1,10 @@
+2005-08-10  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/timer.c: Refactor using function tables for periodic and
+	aperiodic modes. Aperiodic mode is now the built-in one, and
+	periodic has become optional, which is more consistent wrt the hw
+	situation.
+
 2005-08-09  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/registry.c: Alloc hash-table from host memory and

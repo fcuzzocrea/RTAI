@@ -202,14 +202,14 @@ int rt_timer_inquire (RT_TIMER_INFO *info)
     info->period = period;
     info->tsc = tsc;
 
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (period == TM_ONESHOT)
+#ifdef CONFIG_RTAI_HW_PERIODIC_TIMER
+    if (period != TM_ONESHOT && period != TM_UNSET)
+        info->date = nkpod->jiffies + nkpod->wallclock_offset;
+    else
+#endif /* CONFIG_RTAI_HW_PERIODIC_TIMER */
         /* In aperiodic mode, our idea of time is the same as the
            CPU's, and a tick equals a nanosecond. */
         info->date = xnarch_tsc_to_ns(tsc) + nkpod->wallclock_offset;
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-    else
-        info->date = nkpod->jiffies + nkpod->wallclock_offset;
     
     return 0;
 }
@@ -348,8 +348,8 @@ void rt_timer_spin (RTIME ns)
  * rt_timer_stop() must be issued before rt_timer_start() is called
  * again.
  *
- * - -ENOSYS is returned if the underlying architecture does not
- * support the requested oneshot timing.
+ * - -ENODEV is returned if the underlying architecture does not
+ * support the requested periodic timing.
  *
  * Environments:
  *

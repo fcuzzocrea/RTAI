@@ -501,17 +501,11 @@ static inline int xnarch_start_timer (unsigned long nstick,
     if (nstick == 0) /* UVM does not provide oneshot timing. */
         return -ENODEV;
 
-    /* However, if oneshot timing is available at system level, use it
-       so that we can provide a better resolution for virtual machine
-       ticks. Otherwise, ask for plain periodic mode, hoping that the
-       period given will be compatible with Linux's own requirements
-       wrt its jiffy-based timer. */
+    /* However, if we use the oneshot timing which is always available
+       at kernel level so that we can provide a better resolution for
+       virtual machine. */
 
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
     err = uvm_timer_start(0);
-#else /* !CONFIG_RTAI_HW_APERIODIC_TIMER */
-    err = uvm_timer_start(nstick);
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
     if (err)
 	return err;

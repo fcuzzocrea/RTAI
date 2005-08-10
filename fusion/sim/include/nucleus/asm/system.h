@@ -747,6 +747,6 @@ while(0)
 
 /* Pre-set config switches. */
 
-#define CONFIG_RTAI_HW_APERIODIC_TIMER 1
+#define CONFIG_RTAI_HW_PERIODIC_TIMER 1
 
 #endif /* !_RTAI_NUCLEUS_SIM_SYSTEM_H */

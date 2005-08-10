@@ -18,22 +18,22 @@ config RTAI_HW_FPU
 	enabling FPU support when the hardware is available may
 	greatly improve	performance.
 
-config RTAI_HW_APERIODIC_TIMER
-	bool "Enable aperiodic timer support"
+config RTAI_HW_PERIODIC_TIMER
+	bool "Enable periodic timer support"
 	default y
 	help
-	The nucleus can handle aperiodic timers that can be
-	programmed in one-shot mode on this architecture. In this
-	mode, timing accuracy is higher - since it is not rounded to a
-	constant time slice - at the expense of a lesser efficicency
-	when many timers are simultaneously active. The aperiodic mode
-	gives better results in configuration involving a few threads
-	requesting timing services over different time scales that
-	cannot be easily expressed as multiples of a single base tick,
-	or would lead to a waste of high frequency periodical
-	ticks. You can disable this support for this architecture to
-	save a few hundreds bytes if you plan to use the system timer
-	in periodic mode only.
+	On this architecture, the nucleus provides both aperiodic and
+	periodic timing modes. In aperiodic mode, timing accuracy is
+	higher - since it is not rounded to a constant time slice - at
+	the expense of a lesser efficicency when many timers are
+	simultaneously active. The aperiodic mode gives better results
+	in configuration involving a few threads requesting timing
+	services over different time scales that cannot be easily
+	expressed as multiples of a single base tick, or would lead to
+	a waste of high frequency periodic ticks. You can disable
+	the periodic support for this architecture to save a few
+	hundreds bytes if you plan to use the system timer in
+	aperiodic mode only.
 
 config RTAI_HW_TIMER_LATENCY
 	depends on RTAI_OPT_EXPERT

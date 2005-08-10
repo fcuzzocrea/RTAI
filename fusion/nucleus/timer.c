@@ -57,6 +57,489 @@
 #include <nucleus/thread.h>
 #include <nucleus/timer.h>
 
+static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
+
+{
+    xnqueue_t *q = &timer->sched->timerwheel[0];
+    xnholder_t *p;
+
+    /* Insert the new timer at the proper place in the single
+       queue managed when running in aperiodic mode. O(N) here,
+       but users of the aperiodic mode need to pay a price for
+       the increased flexibility... */
+
+    for (p = q->head.last; p != &q->head; p = p->last)
+        if (timer->date > link2timer(p)->date ||
+            (timer->date == link2timer(p)->date &&
+             timer->prio <= link2timer(p)->prio))
+            break;
+        
+    insertq(q,p->next,&timer->link);
+    __clrbits(timer->status,XNTIMER_DEQUEUED);
+}
+
+static inline void xntimer_dequeue_aperiodic (xntimer_t *timer)
+
+{
+    removeq(&timer->sched->timerwheel[0],&timer->link);
+    __setbits(timer->status,XNTIMER_DEQUEUED);
+}
+
+static inline void xntimer_next_local_shot (xnsched_t *this_sched)
+
+{
+    xnholder_t *holder = getheadq(&this_sched->timerwheel[0]);
+    xnticks_t now, delay, xdate;
+    xntimer_t *timer;
+
+    if (!holder)
+        return; /* No pending timer. */
+
+    timer = link2timer(holder);
+    now = xnarch_get_cpu_tsc();
+    xdate = now + nkschedlat + nktimerlat;
+
+    if (xdate >= timer->date)
+        delay = 0;
+    else
+        delay = timer->date - xdate;
+
+    xnarch_program_timer_shot(delay <= ULONG_MAX ? delay : ULONG_MAX);
+}
+
+static inline int xntimer_heading_p (xntimer_t *timer)
+{
+    return getheadq(&timer->sched->timerwheel[0]) == &timer->link;
+}
+        
+static inline void xntimer_next_remote_shot (xnsched_t *sched)
+{
+    xnarch_send_timer_ipi(xnarch_cpumask_of_cpu(xnsched_cpu(sched)));
+}
+
+void xntimer_do_start_aperiodic (xntimer_t *timer,
+				 xnticks_t value,
+				 xnticks_t interval)
+{
+    if (!testbits(timer->status,XNTIMER_DEQUEUED))
+	xntimer_dequeue_aperiodic(timer);
+
+    if (value != XN_INFINITE)
+        {
+	timer->date = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(value);
+	timer->interval = xnarch_ns_to_tsc(interval);
+	xntimer_enqueue_aperiodic(timer);
+
+	if (xntimer_heading_p(timer))
+	    {
+	    if(xntimer_sched(timer) != xnpod_current_sched())
+		xntimer_next_remote_shot(xntimer_sched(timer));
+	    else
+		xntimer_next_local_shot(xntimer_sched(timer));
+            }
+        }
+    else
+        {
+        timer->date = XN_INFINITE;
+        timer->interval = XN_INFINITE;
+        }
+}
+
+void xntimer_do_stop_aperiodic (xntimer_t *timer)
+
+{
+    int heading;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    heading = xntimer_heading_p(timer);
+    xntimer_dequeue_aperiodic(timer);
+
+    /* If we removed the heading timer, reprogram the next shot if
+       any. If the timer was running on another CPU, let it tick. */
+    if (heading && xntimer_sched(timer) == xnpod_current_sched())
+	xntimer_next_local_shot(xntimer_sched(timer));
+
+    xnlock_put_irqrestore(&nklock,s);
+}
+
+xnticks_t xntimer_get_date_aperiodic (xntimer_t *timer)
+
+{
+    return xnarch_tsc_to_ns(xntimer_date(timer));
+}
+
+xnticks_t xntimer_get_timeout_aperiodic (xntimer_t *timer)
+
+{
+    xnticks_t tsc = xnarch_get_cpu_tsc();
+
+    if (xntimer_date(timer) < tsc)
+	return 1; /* Will elapse shortly. */
+
+    return xnarch_tsc_to_ns(xntimer_date(timer) - tsc);
+}
+
+static xnticks_t xntimer_get_jiffies_aperiodic (void)
+{
+    /* In aperiodic mode, our idea of time is the same as the CPU's,
+       and a jiffy equals a nanosecond. */
+    return xnpod_get_cpu_time();
+}
+
+static const char *xntimer_get_type_aperiodic (void)
+{
+    return "oneshot";
+}
+
+#ifdef __KERNEL__
+
+static void xntimer_resync_timers_aperiodic (xnsched_t *sched)
+
+{
+    xnticks_t delta_tsc = xnarch_ns_to_tsc(sched->tsync);
+    xnholder_t *holder, *nextholder;
+    xnqueue_t *timerq;
+    xntimer_t *timer;
+
+    timerq = &sched->timerwheel[0];
+
+    for (holder = getheadq(timerq); holder; holder = nextholder)
+	{
+	nextholder = nextq(timerq,holder);
+	timer = link2timer(holder);
+	
+	if (timer != &nkpod->htimer)
+	    {
+	    xntimer_dequeue_aperiodic(timer);
+	    timer->date += delta_tsc;
+	    xntimer_enqueue_aperiodic(timer);
+	    }
+	}
+
+    clrbits(sched->status,XNTSYNC|XNTLOCK);
+}
+
+#endif /* __KERNEL__ */
+
+/*!
+ * @internal
+ * \fn void xntimer_do_tick_aperiodic(void)
+ *
+ * \brief Process a timer tick in aperiodic mode.
+ *
+ * This routine informs all active timers that the clock has been
+ * updated by processing the outstanding timer list. Elapsed timer
+ * actions will be fired.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Interrupt service routine, nklock locked, interrupts off
+ *
+ * Rescheduling: never.
+ *
+ * @note Only active timers are inserted into the timer wheel.
+ */
+
+void xntimer_do_tick_aperiodic (void)
+
+{
+    xnsched_t *sched = xnpod_current_sched();
+    xnqueue_t *timerq = &sched->timerwheel[0];
+    xnholder_t *nextholder, *holder;
+    xntimer_t *timer;
+
+#ifdef __KERNEL__
+    if (testbits(sched->status,XNTSYNC))
+	xntimer_resync_timers_aperiodic(sched);
+#endif /* __KERNEL__ */
+
+    nextholder = getheadq(timerq);
+
+    while ((holder = nextholder) != NULL)
+        {
+        nextholder = nextq(timerq,holder);
+        timer = link2timer(holder);
+
+	if (timer->date - nkschedlat > xnarch_get_cpu_tsc())
+	    /* No need to continue in aperiodic mode since timeout
+	       dates are ordered by increasing values. */
+	    break;
+
+	xntimer_dequeue_aperiodic(timer);
+
+        if (timer != &nkpod->htimer)
+	    {
+	    if (!testbits(sched->status,XNTLOCK))
+		{
+		timer->handler(timer->cookie);
+
+		if (timer->interval == XN_INFINITE ||
+		    !testbits(timer->status,XNTIMER_DEQUEUED) ||
+		    testbits(timer->status,XNTIMER_KILLED))
+		    /* The elapsed timer has no reload value, or has
+		       been re-enqueued likely as a result of a call
+		       to xntimer_start() from the timeout handler, or
+		       has been killed by the handler. In all cases,
+		       don't attempt to re-enqueue it for the next
+		       shot. */
+		    continue;
+		}
+	    else
+		{
+		/* Timers are locked; just re-enqueue the elapsed
+		   timer with no date change, without firing the
+		   handler, and waiting for the final resync. */
+		xntimer_enqueue_aperiodic(timer);
+		continue;
+		}
+            }
+	else
+            /* By postponing the propagation of the low-priority host
+               tick to the interrupt epilogue (see
+               xnintr_irq_handler()), we save some I-cache, which
+               translates into precious microsecs on low-end hw. */
+            __setbits(sched->status,XNHTICK);
+
+	timer->date += timer->interval;
+	xntimer_enqueue_aperiodic(timer);
+        }
+
+    xntimer_next_local_shot(sched);
+}
+
+void xntimer_set_remote_aperiodic (xntimer_t *timer)
+
+{
+    xntimer_enqueue_aperiodic(timer);
+
+    if (xntimer_heading_p(timer))
+	xntimer_next_remote_shot(timer->sched);
+}
+
+#ifdef CONFIG_RTAI_HW_PERIODIC_TIMER
+
+static inline void xntimer_enqueue_periodic (xntimer_t *timer)
+
+{
+    xnsched_t *sched = timer->sched;
+    /* Just prepend the new timer to the proper slot. */
+    prependq(&sched->timerwheel[timer->date & XNTIMER_WHEELMASK],&timer->link);
+    __clrbits(timer->status,XNTIMER_DEQUEUED);
+}
+
+static inline void xntimer_dequeue_periodic (xntimer_t *timer)
+
+{
+    unsigned slot = (timer->date & XNTIMER_WHEELMASK);
+    removeq(&timer->sched->timerwheel[slot],&timer->link);
+    __setbits(timer->status,XNTIMER_DEQUEUED);
+}
+
+void xntimer_do_start_periodic (xntimer_t *timer,
+				xnticks_t value,
+				xnticks_t interval)
+{
+    if (!testbits(timer->status,XNTIMER_DEQUEUED))
+	xntimer_dequeue_periodic(timer);
+
+    if (value != XN_INFINITE)
+        {
+	timer->date = nkpod->jiffies + value;
+	timer->interval = interval;
+	xntimer_enqueue_periodic(timer);
+        }
+    else
+        {
+        timer->date = XN_INFINITE;
+        timer->interval = XN_INFINITE;
+        }
+}
+
+void xntimer_do_stop_periodic (xntimer_t *timer)
+
+{
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+    xntimer_dequeue_periodic(timer);
+    xnlock_put_irqrestore(&nklock,s);
+}
+
+xnticks_t xntimer_get_date_periodic (xntimer_t *timer)
+
+{
+    return xntimer_date(timer);
+}
+
+xnticks_t xntimer_get_timeout_periodic (xntimer_t *timer)
+
+{
+    return xntimer_date(timer) - nkpod->jiffies;
+}
+
+static xnticks_t xntimer_get_jiffies_periodic (void)
+{
+    return nkpod->jiffies;
+}
+
+static const char *xntimer_get_type_periodic (void)
+{
+    return "periodic";
+}
+
+#ifdef __KERNEL__
+
+static void xntimer_resync_timers_periodic (xnsched_t *sched)
+
+{
+    xnholder_t *holder, *nextholder;
+    xnqueue_t resyncq;
+    xnqueue_t *timerq;
+    xntimer_t *timer;
+    int slot;
+
+    initq(&resyncq);
+
+    for (slot = 0; slot < XNTIMER_WHEELSIZE; ++slot)
+	{
+	timerq = &sched->timerwheel[slot];
+
+	for (holder = getheadq(timerq); holder; holder = nextholder)
+	    {
+	    nextholder = nextq(timerq,holder);
+	    timer = link2timer(holder);
+
+	    if (timer != &nkpod->htimer)
+		{
+		xntimer_dequeue_periodic(timer);
+		appendq(&resyncq,&timer->link);
+		}
+	    }
+	}
+
+    while ((holder = getq(&resyncq)) != NULL)
+	{
+	timer = link2timer(holder);
+	timer->date += sched->tsync;
+	xntimer_enqueue_periodic(timer);
+	}
+
+    clrbits(sched->status,XNTSYNC|XNTLOCK);
+}
+
+#endif /* __KERNEL__ */
+
+/*!
+ * @internal
+ * \fn void xntimer_do_tick_periodic(void)
+ *
+ * \brief Process a timer tick in periodic mode.
+ *
+ * This routine informs all active timers that the clock has been
+ * updated by processing the timer wheel. Elapsed timer actions will
+ * be fired.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Interrupt service routine, nklock locked, interrupts off
+ *
+ * Rescheduling: never.
+ *
+ * @note Only active timers are inserted into the timer wheel.
+ */
+
+void xntimer_do_tick_periodic (void)
+
+{
+    xnsched_t *sched = xnpod_current_sched();
+    xnholder_t *nextholder, *holder;
+    xnqueue_t *timerq;
+    xntimer_t *timer;
+
+    /* Update the periodic clocks keeping the things strictly
+       monotonous (when the per-cpu timer option is enabled, this
+       routine is run on every cpu, so that only CPU XNTIMER_KEEPER_ID
+       should do this). */
+#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+    if (sched == xnpod_sched_slot(XNTIMER_KEEPER_ID))
+#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+	++nkpod->jiffies;
+
+    timerq = &sched->timerwheel[nkpod->jiffies & XNTIMER_WHEELMASK];
+
+#ifdef __KERNEL__
+    if (testbits(sched->status,XNTSYNC))
+	xntimer_resync_timers_periodic(sched);
+#endif /* __KERNEL__ */
+
+    nextholder = getheadq(timerq);
+
+    while ((holder = nextholder) != NULL)
+        {
+        nextholder = nextq(timerq,holder);
+        timer = link2timer(holder);
+
+	if (timer->date > nkpod->jiffies)
+	    continue;
+
+	xntimer_dequeue_periodic(timer);
+
+        if (timer != &nkpod->htimer)
+	    {
+	    if (!testbits(sched->status,XNTLOCK))
+		{
+		timer->handler(timer->cookie);
+
+		if (timer->interval == XN_INFINITE ||
+		    !testbits(timer->status,XNTIMER_DEQUEUED) ||
+		    testbits(timer->status,XNTIMER_KILLED))
+		    continue;
+		}
+	    else
+		{
+		xntimer_enqueue_periodic(timer);
+		continue;
+		}
+            }
+	else
+            __setbits(sched->status,XNHTICK);
+
+	timer->date = nkpod->jiffies + timer->interval;
+	xntimer_enqueue_periodic(timer);
+        }
+}
+
+void xntimer_set_remote_periodic (xntimer_t *timer)
+
+{
+    xntimer_enqueue_periodic(timer);
+}
+
+static xntmops_t timer_ops_periodic = {
+
+    .do_tick = &xntimer_do_tick_periodic,
+    .get_jiffies = &xntimer_get_jiffies_periodic,
+    .do_timer_start = &xntimer_do_start_periodic,
+    .do_timer_stop = &xntimer_do_stop_periodic,
+    .get_timer_date = &xntimer_get_date_periodic,
+    .get_timer_timeout = &xntimer_get_timeout_periodic,
+    .set_timer_remote = &xntimer_set_remote_periodic,
+    .get_type = &xntimer_get_type_periodic,
+};
+
+void xntimer_set_periodic_mode (void)
+{
+    nktimer = &timer_ops_periodic;
+}
+
+#endif /* CONFIG_RTAI_HW_PERIODIC_TIMER */
+
 /*! 
  * \fn void xntimer_init(xntimer_t *timer,void (*handler)(void *cookie),void *cookie)
  * \brief Initialize a timer object.
@@ -143,87 +626,6 @@ void xntimer_destroy (xntimer_t *timer)
     timer->sched = NULL;
 }
 
-static inline void xntimer_enqueue_periodic (xntimer_t *timer)
-
-{
-    xnsched_t *sched = timer->sched;
-    /* Just prepend the new timer to the proper slot. */
-    prependq(&sched->timerwheel[timer->date & XNTIMER_WHEELMASK],&timer->link);
-    __clrbits(timer->status,XNTIMER_DEQUEUED);
-}
-
-static inline void xntimer_dequeue_periodic (xntimer_t *timer)
-
-{
-    unsigned slot = (timer->date & XNTIMER_WHEELMASK);
-    removeq(&timer->sched->timerwheel[slot],&timer->link);
-    __setbits(timer->status,XNTIMER_DEQUEUED);
-}
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-
-static inline void xntimer_enqueue_aperiodic (xntimer_t *timer)
-
-{
-    xnqueue_t *q = &timer->sched->timerwheel[0];
-    xnholder_t *p;
-
-    /* Insert the new timer at the proper place in the single
-       queue managed when running in aperiodic mode. O(N) here,
-       but users of the aperiodic mode need to pay a price for
-       the increased flexibility... */
-
-    for (p = q->head.last; p != &q->head; p = p->last)
-        if (timer->date > link2timer(p)->date ||
-            (timer->date == link2timer(p)->date &&
-             timer->prio <= link2timer(p)->prio))
-            break;
-        
-    insertq(q,p->next,&timer->link);
-    __clrbits(timer->status,XNTIMER_DEQUEUED);
-}
-
-static inline void xntimer_dequeue_aperiodic (xntimer_t *timer)
-
-{
-    removeq(&timer->sched->timerwheel[0],&timer->link);
-    __setbits(timer->status,XNTIMER_DEQUEUED);
-}
-
-static inline void xntimer_next_local_shot (xnsched_t *this_sched)
-
-{
-    xnholder_t *holder = getheadq(&this_sched->timerwheel[0]);
-    xnticks_t now, delay, xdate;
-    xntimer_t *timer;
-
-    if (!holder)
-        return; /* No pending timer. */
-
-    timer = link2timer(holder);
-    now = xnarch_get_cpu_tsc();
-    xdate = now + nkschedlat + nktimerlat;
-
-    if (xdate >= timer->date)
-        delay = 0;
-    else
-        delay = timer->date - xdate;
-
-    xnarch_program_timer_shot(delay <= ULONG_MAX ? delay : ULONG_MAX);
-}
-
-static inline int xntimer_heading_p (xntimer_t *timer) {
-
-    return getheadq(&timer->sched->timerwheel[0]) == &timer->link;
-}
-        
-static inline void xntimer_next_remote_shot (xnsched_t *sched)
-{
-    xnarch_send_timer_ipi(xnarch_cpumask_of_cpu(xnsched_cpu(sched)));
-}
-
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-
 /*! 
  * \fn void xntimer_start(xntimer_t *timer,xnticks_t value,xnticks_t interval)
  * \brief Arm a timer.
@@ -270,73 +672,7 @@ void xntimer_start (xntimer_t *timer,
     spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
-
-    if (!testbits(timer->status,XNTIMER_DEQUEUED))
-        {
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-        if (!testbits(nkpod->status,XNTMPER))
-            xntimer_dequeue_aperiodic(timer);
-        else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-            xntimer_dequeue_periodic(timer);
-        }
-
-    if (value != XN_INFINITE)
-        {
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-        if (!testbits(nkpod->status,XNTMPER))
-            {
-            timer->date = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(value);
-            timer->interval = xnarch_ns_to_tsc(interval);
-            xntimer_enqueue_aperiodic(timer);
-
-            if (xntimer_heading_p(timer))
-                {
-                if(xntimer_sched(timer) != xnpod_current_sched())
-                    xntimer_next_remote_shot(xntimer_sched(timer));
-                else
-                    xntimer_next_local_shot(xntimer_sched(timer));
-                }
-            }
-        else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-            {
-            timer->date = nkpod->jiffies + value;
-            timer->interval = interval;
-            xntimer_enqueue_periodic(timer);
-            }
-        }
-    else
-        {
-        timer->date = XN_INFINITE;
-        timer->interval = XN_INFINITE;
-        }
-
-    xnlock_put_irqrestore(&nklock,s);
-}
-
-void xntimer_stop_timer_inner (xntimer_t *timer)
-
-{
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-        {
-        int heading = xntimer_heading_p(timer);
-        xntimer_dequeue_aperiodic(timer);
-        /* If we removed the heading timer, reprogram the next
-           shot if any. If the timer was running on another CPU, let it
-           tick. */
-        if (heading && xntimer_sched(timer) == xnpod_current_sched())
-            xntimer_next_local_shot(xntimer_sched(timer));
-        }
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        xntimer_dequeue_periodic(timer);
-
+    nktimer->do_timer_start(timer,value,interval);
     xnlock_put_irqrestore(&nklock,s);
 }
 
@@ -381,25 +717,13 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
             goto unlock_and_exit;
         }
 
-        xntimer_stop(timer);
+	nktimer->do_timer_stop(timer);
     }
 
     timer->sched = sched;
 
     if (queued)
-        {
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-        if (!testbits(nkpod->status,XNTMPER))
-            {
-            xntimer_enqueue_aperiodic(timer);
-
-            if (xntimer_heading_p(timer))
-                xntimer_next_remote_shot(sched);
-            }
-        else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-            xntimer_enqueue_periodic(timer);
-        }
+	nktimer->set_timer_remote(timer);
 
  unlock_and_exit:
 
@@ -446,12 +770,7 @@ xnticks_t xntimer_get_date (xntimer_t *timer)
     if (!xntimer_running_p(timer))
         return XN_INFINITE;
 
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-        return xnarch_tsc_to_ns(xntimer_date(timer));
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-
-    return xntimer_date(timer);
+    return nktimer->get_timer_date(timer);
 }
 
 /*!
@@ -493,37 +812,10 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
     if (!xntimer_running_p(timer))
         return XN_INFINITE;
 
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-        {
-        xnticks_t tsc = xnarch_get_cpu_tsc();
-
-        if (xntimer_date(timer) < tsc)
-            return 1; /* Will elapse shortly. */
-
-        return xnarch_tsc_to_ns(xntimer_date(timer) - tsc);
-        }
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-
-    return xntimer_date(timer) - nkpod->jiffies;
+    return nktimer->get_timer_timeout(timer);
 }
 
 #ifdef __KERNEL__
-
-/*!
- * @internal
- * \fn void xntimer_lock_timers(void)
- *
- * \brief Lock timers.
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Any context initiating a lock state.
- *
- * Rescheduling: never.
- */
 
 void xntimer_lock_timers (void)
 
@@ -536,14 +828,7 @@ void xntimer_lock_timers (void)
 
     if (nkpod->tlock_depth++ == 0)
 	{
-	/* We don't want any wallclock offset when computing
-	   time deltas. */
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
-	    tsync = xnpod_get_cpu_time();
-	else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    tsync = nkpod->jiffies;
+	tsync = xnpod_get_time();
 
 	for_each_online_cpu(cpu) {
 
@@ -562,21 +847,6 @@ void xntimer_lock_timers (void)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-/*!
- * @internal
- * \fn void xntimer_unlock_timers(void)
- *
- * \brief Unlock timers.
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Any context clearing a lock state.
- *
- * Rescheduling: never.
- */
-
 void xntimer_unlock_timers (void)
 
 {
@@ -588,13 +858,7 @@ void xntimer_unlock_timers (void)
 
     if (--nkpod->tlock_depth == 0)
 	{
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
-	    /* Use ns, so delta doesn't depend on CPU freq. */
-	    now = xnpod_get_cpu_time();
-	else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    now = nkpod->jiffies;
+	now = nktimer->get_jiffies();
 
 	for_each_online_cpu(cpu) {
 
@@ -607,8 +871,8 @@ void xntimer_unlock_timers (void)
 
 	   sched->tsync = delta;
 
-	   /* xntimer_do_timers() will resync the timers and
-	      remove the lock in the same move, on each CPU. */
+	   /* xntimer_do_tick() will resync the timers and remove the
+	      lock in the same move, on each CPU. */
 	   setbits(sched->status,XNTSYNC);
 	   }
 	}
@@ -616,231 +880,7 @@ void xntimer_unlock_timers (void)
     xnlock_put_irqrestore(&nklock,s);
 }
 
-/*!
- * @internal
- * \fn void xntimer_resync_timers(void)
- *
- * \brief Resynchronize timers after a lock state.
- *
- * @param sched The scheduler slot holding the timer wheel to
- * resynchronize.
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Interrupt service routine, nklock locked, interrupts off
- *
- * Rescheduling: never.
- *
- * @note This routine is called when exiting a break state, so we
- * don't bother for performance here.
- */
-
-static void xntimer_resync_timers (xnsched_t *sched)
-
-{
-    xnholder_t *holder, *nextholder;
-    xnqueue_t *timerq;
-    xntimer_t *timer;
-    int slot;
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-        {
-	xnticks_t delta_tsc = xnarch_ns_to_tsc(sched->tsync);
-
-        timerq = &sched->timerwheel[0];
-
-	for (holder = getheadq(timerq); holder; holder = nextholder)
-	    {
-	    nextholder = nextq(timerq,holder);
-	    timer = link2timer(holder);
-	    if (timer != &nkpod->htimer)
-		{
-		xntimer_dequeue_aperiodic(timer);
-		timer->date += delta_tsc;
-		xntimer_enqueue_aperiodic(timer);
-		}
-	    }
-        }
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        {
-	xnqueue_t resyncq;
-
-	initq(&resyncq);
-
-	for (slot = 0; slot < XNTIMER_WHEELSIZE; ++slot)
-	    {
-	    timerq = &sched->timerwheel[slot];
-
-	    for (holder = getheadq(timerq); holder; holder = nextholder)
-		{
-		nextholder = nextq(timerq,holder);
-		timer = link2timer(holder);
-		if (timer != &nkpod->htimer)
-		    {
-		    xntimer_dequeue_periodic(timer);
-		    appendq(&resyncq,&timer->link);
-		    }
-		}
-	    }
-
-	while ((holder = getq(&resyncq)) != NULL)
-	    {
-	    timer = link2timer(holder);
-	    timer->date += sched->tsync;
-	    xntimer_enqueue_periodic(timer);
-	    }
-        }
-
-    clrbits(sched->status,XNTSYNC|XNTLOCK);
-}
-
 #endif /* __KERNEL__ */
-
-/*!
- * @internal
- * \fn void xntimer_do_timers(void)
- *
- * \brief Process a timer tick.
- *
- * This routine informs all active timers that the clock has been
- * updated by processing the timer wheel. Elapsed timer actions will
- * be fired.
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Interrupt service routine, nklock locked, interrupts off
- *
- * Rescheduling: never.
- *
- * @note Only active timers are inserted into the timer wheel.
- */
-
-void xntimer_do_timers (void)
-
-{
-    xnsched_t *sched = xnpod_current_sched();
-    xnholder_t *nextholder, *holder;
-    xnqueue_t *timerq;
-    xntimer_t *timer;
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    int aperiodic;
-
-    if (!testbits(nkpod->status,XNTMPER))
-        {
-        /* Only use slot #0 in aperiodic mode. */
-        timerq = &sched->timerwheel[0];
-        aperiodic = 1;
-        }
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        {
-        /* Update the periodic clocks keeping the things strictly
-           monotonous (when the per-cpu timer option is enabled,
-           this routine is run on every cpu, so that only
-           CPU XNTIMER_KEEPER_ID should do this). */
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
-        if (sched == xnpod_sched_slot(XNTIMER_KEEPER_ID))
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
-            ++nkpod->jiffies;
-
-        timerq = &sched->timerwheel[nkpod->jiffies & XNTIMER_WHEELMASK];
-        aperiodic = 0;
-        }
-
-#ifdef __KERNEL__
-    if (testbits(sched->status,XNTSYNC))
-	xntimer_resync_timers(sched);
-#endif /* __KERNEL__ */
-
-    nextholder = getheadq(timerq);
-
-    while ((holder = nextholder) != NULL)
-        {
-        nextholder = nextq(timerq,holder);
-        timer = link2timer(holder);
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-        if (aperiodic)
-            {
-            if (timer->date - nkschedlat > xnarch_get_cpu_tsc())
-                /* No need to continue in aperiodic mode since
-                   timeout dates are ordered by increasing
-                   values. */
-                break;
-
-            xntimer_dequeue_aperiodic(timer);
-            }
-        else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-            if (timer->date > nkpod->jiffies)
-                continue;
-            else
-                xntimer_dequeue_periodic(timer);
-
-        if (timer != &nkpod->htimer)
-	    {
-	    if (!testbits(sched->status,XNTLOCK))
-		{
-		timer->handler(timer->cookie);
-
-		if (timer->interval == XN_INFINITE ||
-		    !testbits(timer->status,XNTIMER_DEQUEUED) ||
-		    testbits(timer->status,XNTIMER_KILLED))
-		    /* The elapsed timer has no reload value, or has
-		       been re-enqueued likely as a result of a call
-		       to xntimer_start() from the timeout handler, or
-		       has been killed by the handler. In all cases,
-		       don't attempt to re-enqueue it for the next
-		       shot. */
-		    continue;
-		}
-	    else
-		{
-		/* Timers are locked; just re-enqueue the elapsed
-		   timer with no date change, without firing the
-		   handler, and waiting for the final resync. */
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-		if (aperiodic)
-		    xntimer_enqueue_aperiodic(timer);
-		else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-		    xntimer_enqueue_periodic(timer);
-
-		continue;
-		}
-            }
-	else
-            /* By postponing the propagation of the low-priority host
-               tick to the interrupt epilogue (see
-               xnintr_irq_handler()), we save some I-cache, which
-               translates into precious microsecs on low-end hw. */
-            __setbits(sched->status,XNHTICK);
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-        if (aperiodic)
-            {
-            timer->date += timer->interval;
-            xntimer_enqueue_aperiodic(timer);
-            }
-        else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-            {
-            timer->date = nkpod->jiffies + timer->interval;
-            xntimer_enqueue_periodic(timer);
-            }
-        }
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (aperiodic)
-        xntimer_next_local_shot(sched);
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-}
 
 /*!
  * @internal
@@ -902,15 +942,34 @@ void xntimer_freeze (void)
     xnlock_put_irqrestore(&nklock,s);
 }
 
+static xntmops_t timer_ops_aperiodic = {
+
+    .do_tick = &xntimer_do_tick_aperiodic,
+    .get_jiffies = &xntimer_get_jiffies_aperiodic,
+    .do_timer_start = &xntimer_do_start_aperiodic,
+    .do_timer_stop = &xntimer_do_stop_aperiodic,
+    .get_timer_date = &xntimer_get_date_aperiodic,
+    .get_timer_timeout = &xntimer_get_timeout_aperiodic,
+    .set_timer_remote = &xntimer_set_remote_aperiodic,
+    .get_type = &xntimer_get_type_aperiodic,
+};
+
+void xntimer_set_aperiodic_mode (void)
+{
+    nktimer = &timer_ops_aperiodic;
+}
+
+xntmops_t *nktimer = &timer_ops_aperiodic;
+
 /*@}*/
 
 EXPORT_SYMBOL(xntimer_init);
 EXPORT_SYMBOL(xntimer_destroy);
 EXPORT_SYMBOL(xntimer_start);
-EXPORT_SYMBOL(xntimer_stop_timer_inner);
 #if defined(CONFIG_SMP) && defined(CONFIG_OPT_PERCPU_TIMER)
 EXPORT_SYMBOL(xntimer_set_sched);
 #endif /* CONFIG_SMP && CONFIG_OPT_PERCPU_TIMER */
 EXPORT_SYMBOL(xntimer_freeze);
 EXPORT_SYMBOL(xntimer_get_date);
 EXPORT_SYMBOL(xntimer_get_timeout);
+EXPORT_SYMBOL(nktimer);

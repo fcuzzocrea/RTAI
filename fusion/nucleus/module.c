@@ -28,6 +28,7 @@
 #include <rtai_config.h>
 #include <nucleus/module.h>
 #include <nucleus/pod.h>
+#include <nucleus/timer.h>
 #include <nucleus/heap.h>
 #include <nucleus/version.h>
 #ifdef CONFIG_RTAI_OPT_PIPE
@@ -98,12 +99,7 @@ static void *sched_seq_start(struct seq_file *seq, loff_t *pos)
 
     xnlock_get_irqsave(&nklock, iter->s);
 
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-        iter->start_time = xnarch_get_cpu_time();
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        iter->start_time = nkpod->jiffies;
+    iter->start_time = nktimer->get_jiffies();
 
     if (*pos > countq(&nkpod->threadq))
 	return NULL;
@@ -392,20 +388,9 @@ static int timer_read_proc (char *page,
 
     if (nkpod && testbits(nkpod->status,XNTIMED))
 	{
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-	if (!testbits(nkpod->status,XNTMPER))
-	    {
-	    status = "oneshot";
-	    tickval = 1;
-	    jiffies = xnarch_get_cpu_tsc();
-	    }
-	else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-	    {
-	    status = "periodic";
-	    tickval = xnpod_get_tickval();
-	    jiffies = nkpod->jiffies;
-	    }
+	status = nktimer->get_type();
+	tickval = xnpod_get_tickval();
+	jiffies = nktimer->get_jiffies();
 	}
 
     len = sprintf(page,

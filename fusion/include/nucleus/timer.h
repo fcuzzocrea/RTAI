@@ -96,9 +96,26 @@ static inline int xntimer_running_p (xntimer_t *timer) {
     return !testbits(timer->status,XNTIMER_DEQUEUED);
 }
 
+typedef struct xntmops {
+
+    void (*do_tick)(void);
+    xnticks_t (*get_jiffies)(void);
+    void (*do_timer_start)(xntimer_t *timer,
+			   xnticks_t value,
+			   xnticks_t interval);
+    void (*do_timer_stop)(xntimer_t *timer);
+    xnticks_t (*get_timer_date)(xntimer_t *timer);
+    xnticks_t (*get_timer_timeout)(xntimer_t *timer);
+    void (*set_timer_remote)(xntimer_t *timer);
+    const char *(*get_type)(void);
+
+} xntmops_t;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern xntmops_t *nktimer;
 
 void xntimer_init(xntimer_t *timer,
 		  void (*handler)(void *cookie),
@@ -106,13 +123,9 @@ void xntimer_init(xntimer_t *timer,
 
 void xntimer_destroy(xntimer_t *timer);
 
-void xntimer_do_timers(void);
-
 void xntimer_start(xntimer_t *timer,
 		   xnticks_t value,
 		   xnticks_t interval);
-
-void xntimer_stop_timer_inner(xntimer_t *timer);
 
 /*!
  * \fn int xntimer_stop(xntimer_t *timer)
@@ -140,7 +153,7 @@ void xntimer_stop_timer_inner(xntimer_t *timer);
 static inline void xntimer_stop(xntimer_t *timer)
 {
     if (!testbits(timer->status,XNTIMER_DEQUEUED))
-	xntimer_stop_timer_inner(timer);
+	nktimer->do_timer_stop(timer);
 }
 
 void xntimer_lock_timers(void);
@@ -152,6 +165,10 @@ void xntimer_freeze(void);
 xnticks_t xntimer_get_date(xntimer_t *timer);
 
 xnticks_t xntimer_get_timeout(xntimer_t *timer);
+
+void xntimer_set_periodic_mode(void);
+
+void xntimer_set_aperiodic_mode(void);
 
 #if defined(CONFIG_SMP) && defined(CONFIG_RTAI_OPT_PERCPU_TIMER)
 int xntimer_set_sched(xntimer_t *timer, struct xnsched *sched);

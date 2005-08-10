@@ -35,6 +35,7 @@
 
 #include <stdarg.h>
 #include <nucleus/pod.h>
+#include <nucleus/timer.h>
 #include <nucleus/synch.h>
 #include <nucleus/heap.h>
 #include <nucleus/intr.h>
@@ -77,13 +78,7 @@ const char *xnpod_fatal_helper (const char *format, ...)
         goto out;
 
     setbits(nkpod->status,XNFATAL);
-
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-        now = xnarch_get_cpu_time();
-    else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-        now = nkpod->jiffies;
+    now = nktimer->get_jiffies();
 
     p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
 		  "\n %-3s   %-6s %-24s %-4s  %-8s  %-8s\n",
@@ -116,21 +111,14 @@ const char *xnpod_fatal_helper (const char *format, ...)
         }
 
     if (testbits(nkpod->status,XNTIMED))
-        {
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-        if (!testbits(nkpod->status,XNTMPER))
-            p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-			  "Aperiodic timer is running.\n");
-        else
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-            p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-			  "Periodic timer is running [tickval=%lu us, elapsed=%Lu]\n",
-			  xnpod_get_tickval() / 1000,
-			  nkpod->jiffies);
-        }
+	p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
+		      "Timer: %s [tickval=%lu us, elapsed=%Lu]\n",
+		      nktimer->get_type(),
+		      xnpod_get_tickval() / 1000 ?: 1,
+		      nktimer->get_jiffies());
     else
         p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-		      "No system timer.\n");
+		      "Timer: none\n");
  out:
 
     xnlock_put_irqrestore(&nklock,s);
@@ -2628,14 +2616,9 @@ void xnpod_set_time (xnticks_t newtime)
 xnticks_t xnpod_get_time (void)
 
 {
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (!testbits(nkpod->status,XNTMPER))
-        /* In aperiodic mode, our idea of time is the same as the
-           CPU's, and a tick equals a nanosecond. */
-        return xnpod_get_cpu_time() + nkpod->wallclock_offset;
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
-
-    return nkpod->jiffies + nkpod->wallclock_offset;
+    /* Return an adjusted value of the monotonic time with the
+       wallclock offset as defined in xnpod_set_time(). */
+    return nktimer->get_jiffies() + nkpod->wallclock_offset;
 }
 
 /*! 
@@ -2916,7 +2899,7 @@ int xnpod_trap_fault (void *fltinfo)
  * a single host tick.
  *
  * - -ENODEV is returned if the underlying architecture does not
- * support the requested aperiodic timing.
+ * support the requested periodic timing.
  *
  * - -ENOSYS is returned if no active pod exists.
  *
@@ -2945,10 +2928,10 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
     if (tickhandler == NULL)
         return -EINVAL;
 
-#ifndef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (nstick == XN_APERIODIC_TICK)
-        return -ENODEV; /* No aperiodic support */
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+#ifndef CONFIG_RTAI_HW_PERIODIC_TIMER
+    if (nstick != XN_APERIODIC_TICK)
+        return -ENODEV; /* No periodic support */
+#endif /* CONFIG_RTAI_HW_PERIODIC_TIMER */
         
     xnlock_get_irqsave(&nklock,s);
 
@@ -2964,20 +2947,22 @@ int xnpod_start_timer (u_long nstick, xnisr_t tickhandler)
         goto unlock_and_exit;
         }
 
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
-    if (nstick == XN_APERIODIC_TICK) /* Aperiodic mode. */
-        {
-        clrbits(nkpod->status,XNTMPER);
-        nkpod->tickvalue = 1; /* Virtually the highest precision: 1ns */
-        nkpod->ticks2sec = 1000000000;
-        }
-    else /* Periodic setup. */
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+#ifdef CONFIG_RTAI_HW_PERIODIC_TIMER
+    if (nstick != XN_APERIODIC_TICK) /* Periodic mode. */
         {
         setbits(nkpod->status,XNTMPER);
         /* Pre-calculate the number of ticks per second. */
         nkpod->tickvalue = nstick;
         nkpod->ticks2sec = 1000000000 / nstick;
+	xntimer_set_periodic_mode();
+        }
+    else /* Periodic setup. */
+#endif /* CONFIG_RTAI_HW_PERIODIC_TIMER */
+        {
+        clrbits(nkpod->status,XNTMPER);
+        nkpod->tickvalue = 1; /* Virtually the highest precision: 1ns */
+        nkpod->ticks2sec = 1000000000;
+	xntimer_set_aperiodic_mode();
         }
 
     if (XNARCH_HOST_TICK > 0 && XNARCH_HOST_TICK < nkpod->tickvalue)
@@ -3080,11 +3065,11 @@ void xnpod_stop_timer (void)
     if (testbits(nkpod->status,XNTIMED))
         {
         clrbits(nkpod->status,XNTIMED|XNTMPER);
-
         /* NOTE: The nkclock interrupt object is not destroyed on
            purpose since this would be redundant with
            xnarch_stop_timer() called when freezing timers. In any
            case, no resource is associated with this object. */
+	xntimer_set_aperiodic_mode();
         }
 
  unlock_and_exit:
@@ -3159,15 +3144,15 @@ int xnpod_announce_tick (xnintr_t *intr)
     nkpod->watchdog_armed = !xnpod_root_p();
 #endif /* CONFIG_RTAI_OPT_WATCHDOG */
 
-    xntimer_do_timers(); /* Fire the timeouts, if any. */
+    nktimer->do_tick(); /* Fire the timeouts, if any. */
 
     /* Do the round-robin processing. */
 
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
+#ifdef CONFIG_RTAI_HW_PERIODIC_TIMER
+
     /* Round-robin in aperiodic mode makes no sense. */
     if (!testbits(nkpod->status,XNTMPER))
         goto unlock_and_exit;
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
 
 #ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
     nr_cpus = xnarch_num_online_cpus();
@@ -3202,9 +3187,9 @@ int xnpod_announce_tick (xnintr_t *intr)
             }
         }
 
-#ifdef CONFIG_RTAI_HW_APERIODIC_TIMER
  unlock_and_exit:
-#endif /* CONFIG_RTAI_HW_APERIODIC_TIMER */
+
+#endif /* CONFIG_RTAI_HW_PERIODIC_TIMER */
 
     xnlock_put_irqrestore(&nklock,s);
 

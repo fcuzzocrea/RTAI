@@ -20,6 +20,7 @@
 #define _RTAI_POSIX_PTHREAD_H
 
 #include <sys/time.h>
+#include <sys/socket.h>
 #include <time.h>
 #include_next <pthread.h>
 #include <nucleus/thread.h>
@@ -166,6 +167,53 @@ int __real_timer_gettime(timer_t timerid,
 			 struct itimerspec *value);
 
 int __real_timer_getoverrun(timer_t timerid);
+
+int __real_open(const char *path, int oflag, ...);
+
+int __real_socket(int protocol_family, int socket_type, int protocol);
+
+int __real_close(int fd);
+
+int __real_ioctl(int fd, int request, ...);
+
+ssize_t __real_read(int fd, void *buf, size_t nbyte);
+
+ssize_t __real_write(int fd, const void *buf, size_t nbyte);
+
+ssize_t __real_recvmsg(int fd, struct msghdr *msg, int flags);
+
+ssize_t __real_sendmsg(int fd, const struct msghdr *msg, int flags);
+
+ssize_t __real_recvfrom(int fd, void *buf, size_t len, int flags,
+                        struct sockaddr *from, socklen_t *fromlen);
+
+ssize_t __real_sendto(int fd, const void *buf, size_t len, int flags,
+                      const struct sockaddr *to, socklen_t tolen);
+
+ssize_t __real_recv(int fd, void *buf, size_t len, int flags);
+
+ssize_t __real_send(int fd, const void *buf, size_t len, int flags);
+
+int __real_getsockopt(int fd, int level, int optname, void *optval,
+                      socklen_t *optlen);
+
+int __real_setsockopt(int fd, int level, int optname, const void *optval,
+                      socklen_t optlen);
+
+int __real_bind(int fd, const struct sockaddr *my_addr, socklen_t addrlen);
+
+int __real_connect(int fd, const struct sockaddr *serv_addr,
+                   socklen_t addrlen);
+
+int __real_listen(int fd, int backlog);
+
+int __real_accept(int fd, struct sockaddr *addr, socklen_t *addrlen);
+
+int __real_getsockname(int fd, struct sockaddr *name, socklen_t *namelen);
+
+int __real_getpeername(int fd, struct sockaddr *name, socklen_t *namelen);
+
+int __real_shutdown(int fd, int how);
 
 #ifdef __cplusplus
 }

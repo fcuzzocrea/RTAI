@@ -652,7 +652,7 @@ AC_MSG_RESULT(${CONFIG_RTAI_OPT_UVM:-no})
 
 AC_MSG_CHECKING(for RTDM skin)
 AC_ARG_ENABLE(rtdm-skin,
-	AS_HELP_STRING([--enable-rtdm],	[Build Real-Time Driver Model skin]),
+	AS_HELP_STRING([--enable-rtdm-skin], [Build Real-Time Driver Model skin]),
 	[case "$enableval" in
 	y | yes) CONFIG_RTAI_SKIN_RTDM=y ;;
 	*) unset CONFIG_RTAI_SKIN_RTDM ;;

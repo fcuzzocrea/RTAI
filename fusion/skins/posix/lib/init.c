@@ -20,8 +20,11 @@
 #include <stdlib.h>
 #include <posix/posix.h>
 #include <posix/syscall.h>
+#include <rtdm/syscall.h>
 
 int __pse51_muxid = -1;
+int __rtdm_muxid  = -1;
+int __rtdm_fd_start;
 
 static __attribute__((constructor)) void __init_rtai_interface(void)
 
@@ -38,4 +41,13 @@ static __attribute__((constructor)) void __init_rtai_interface(void)
 	}
 
     __pse51_muxid = muxid;
+
+    muxid = XENOMAI_SYSCALL2(__xn_sys_bind,RTDM_SKIN_MAGIC,NULL); /* atomic */
+
+    if (muxid > 0)
+        {
+        __rtdm_muxid    = muxid;
+        __rtdm_fd_start = FD_SETSIZE - XENOMAI_SKINCALL0(__rtdm_muxid,
+                                                         __rtdm_fdcount);
+        }
 }

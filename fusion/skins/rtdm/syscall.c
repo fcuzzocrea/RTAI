@@ -19,6 +19,7 @@
 
 #include <nucleus/shadow.h>
 #include <rtdm/rtdm_driver.h>
+#include <rtdm/core.h>
 #include <rtdm/syscall.h>
 
 
@@ -28,6 +29,12 @@ int __rtdm_muxid;
 int rtdm_no_support(void)
 {
     return -ENOSYS;
+}
+
+
+static int sys_rtdm_fdcount(struct task_struct *curr, struct pt_regs *regs)
+{
+    return fd_count;
 }
 
 
@@ -124,6 +131,7 @@ static int sys_rtdm_sendmsg(struct task_struct *curr, struct pt_regs *regs)
 
 
 static xnsysent_t systab[] = {
+    [__rtdm_fdcount] = { sys_rtdm_fdcount, __xn_exec_any },
     [__rtdm_open]    = { sys_rtdm_open,    __xn_exec_current|__xn_exec_adaptive },
     [__rtdm_socket]  = { sys_rtdm_socket,  __xn_exec_current|__xn_exec_adaptive },
     [__rtdm_close]   = { sys_rtdm_close,   __xn_exec_current|__xn_exec_adaptive },

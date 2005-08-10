@@ -16,7 +16,8 @@ libpthread_rt_la_SOURCES = \
 	cond.c \
 	mq.c \
 	mutex.c \
-	interrupt.c
+	interrupt.c \
+	rtdm.c
 
 include_HEADERS = \
 	mqueue.h \

@@ -208,7 +208,6 @@ static int pse51_mq_trysend(pse51_desc_t *desc,
     pthread_t reader;
     pse51_mq_t *mq;
     unsigned flags;
-    int err;
 
     mq = node2mq(pse51_desc_node(desc));
     flags = pse51_desc_getflags(desc) & PSE51_PERMS_MASK;
@@ -263,7 +262,6 @@ static int pse51_mq_tryrcv(pse51_desc_t *desc,
     pse51_msg_t *msg;
     pse51_mq_t *mq;
     unsigned flags;
-    int err;
 
     mq = node2mq(pse51_desc_node(desc));
     flags = pse51_desc_getflags(desc) & PSE51_PERMS_MASK;

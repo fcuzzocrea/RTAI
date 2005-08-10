@@ -1,5 +1,9 @@
 2005-08-10  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtdm: Merge RTDM patch level #8.
+
+	* include/nucleus/asm-uvm/system.h (main): Mlockall MCL_FUTURE too.
+
 	* skins/posix/lib/thread.c (__pthread_trampoline): Switch to
 	primary mode before entering the thread body.
 

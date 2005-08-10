@@ -1365,30 +1365,136 @@ void rtdm_free(void *ptr);
 
 /**
  * Check if read access to user-space memory block is safe
+ *
+ * @param[in] user_info User information pointer as passed to the invoked
+ * device operation handler
+ * @param[in] ptr Address of the user-provided memory block
+ * @param[in] size Size of the memory block
+ *
+ * @return Non-zero is return when it is safe to read from the specified
+ * memory block, 0 otherwise.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_read_user_ok(rtdm_user_info_t *user_info, const void __user *ptr,
                       size_t size);
 
 /**
  * Check if read/write access to user-space memory block is safe
+ *
+ * @param[in] user_info User information pointer as passed to the invoked
+ * device operation handler
+ * @param[in] ptr Address of the user-provided memory block
+ * @param[in] size Size of the memory block
+ *
+ * @return Non-zero is return when it is safe to read from or write to the
+ * specified memory block, 0 otherwise.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_rw_user_ok(rtdm_user_info_t *user_info, const void __user *ptr,
                     size_t size);
 
 /**
  * Copy user-space memory block to specified buffer
+ *
+ * @param[in] user_info User information pointer as passed to the invoked
+ * device operation handler
+ * @param[in] dst Destination buffer address
+ * @param[in] src Address of the user-space memory block
+ * @param[in] size Size of the memory block
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EFAULT is returned if an invalid memory area was accessed.
+ *
+ * @note Before invoking this service, verify via rtdm_read_user_ok() that the
+ * provided user-space address can securely be accessed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_copy_from_user(rtdm_user_info_t *user_info, void *dst,
                         const void __user *src, size_t size);
 
 /**
  * Copy specified buffer to user-space memory block
+ *
+ * @param[in] user_info User information pointer as passed to the invoked
+ * device operation handler
+ * @param[in] dst Address of the user-space memory block
+ * @param[in] src Source buffer address
+ * @param[in] size Size of the memory block
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EFAULT is returned if an invalid memory area was accessed.
+ *
+ * @note Before invoking this service, verify via rtdm_rw_user_ok() that the
+ * provided user-space address can securely be accessed.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_copy_to_user(rtdm_user_info_t *user_info, void __user *dst,
                       const void *src, size_t size);
 
 /**
  * Copy user-space string to specified buffer
+ *
+ * @param[in] user_info User information pointer as passed to the invoked
+ * device operation handler
+ * @param[in] dst Destination buffer address
+ * @param[in] src Address of the user-space string
+ * @param[in] count Maximum number of bytes to copy, including the trailing
+ * '0'
+ *
+ * @return 0 on success, otherwise:
+ *
+ * - -EFAULT is returned if an invalid memory area was accessed.
+ *
+ * @note This services already includes a check of the source address,
+ * calling rtdm_read_user_ok() for @a src explicitly is not required.
+ *
+ * Environments:
+ *
+ * This service can be called from:
+ *
+ * - Kernel module initialization/cleanup code
+ * - Kernel-based task
+ * - User-space task (RT, non-RT)
+ *
+ * Rescheduling: never.
  */
 int rtdm_strncpy_from_user(rtdm_user_info_t *user_info, char *dst,
                            const char __user *src, size_t count);

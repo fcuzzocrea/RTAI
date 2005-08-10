@@ -218,9 +218,14 @@ static int proc_read_dev_info(char* buf, char** start, off_t offset,
     if (down_interruptible(&nrt_dev_lock))
         return -ERESTARTSYS;
 
-    if (!RTDM_PROC_PRINT("driver:\t\t%s\nperipheral:\t%s\nprovider:\t%s\n",
-                         device->driver_name, device->peripheral_name,
-                         device->provider_name))
+    if (!RTDM_PROC_PRINT("driver:\t\t%s\nversion:\t%d.%d.%d\n",
+                         device->driver_name,
+                         RTDM_DRIVER_MAJOR_VER(device->driver_version),
+                         RTDM_DRIVER_MINOR_VER(device->driver_version),
+                         RTDM_DRIVER_BUGFIX_VER(device->driver_version)))
+        goto done;
+    if (!RTDM_PROC_PRINT("peripheral:\t%s\nprovider:\t%s\n",
+                         device->peripheral_name, device->provider_name))
         goto done;
     if (!RTDM_PROC_PRINT("class:\t\t%d\nsub-class:\t%d\n",
                          device->device_class, device->device_sub_class))

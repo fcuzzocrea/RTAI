@@ -1,5 +1,11 @@
 2005-08-10  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/posix/lib/thread.c (__pthread_trampoline): Switch to
+	primary mode before entering the thread body.
+
+	* skins/posix/syscall.c (__pthread_set_mode_np): Add primary mode
+	switch through PTHREAD_PRIMARY.
+
 	* skins/rtdm: Merge RTDM patch level #7.
 
 	* nucleus/timer.c: Refactor using function tables for periodic and

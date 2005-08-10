@@ -73,7 +73,10 @@ static void *__pthread_trampoline (void *arg)
     __real_sem_post(&iargs->sync);
 
     if (!err)
+	{
+	XENOMAI_SYSCALL1(__xn_sys_migrate,XENOMAI_RTAI_DOMAIN);
 	status = start(cookie);
+	}
     else
 	status = (void *)-err;
 

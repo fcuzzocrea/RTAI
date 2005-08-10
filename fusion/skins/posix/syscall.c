@@ -285,30 +285,26 @@ int __pthread_set_mode_np (struct task_struct *curr, struct pt_regs *regs)
     xnflags_t clrmask, setmask;
     struct pse51_hkey hkey;
     pthread_t k_tid;
-    spl_t s;
     int err;
 
-    hkey.u_tid = __xn_reg_arg1(regs);
+    hkey.u_tid = __xn_reg_arg1(regs); /* always pthread_self() */
     hkey.mm = curr->mm;
     k_tid = __pthread_find(&hkey);
     clrmask = __xn_reg_arg2(regs);
     setmask = __xn_reg_arg3(regs);
 
-    if ((clrmask & ~(XNSHIELD|XNTRAPSW)) != 0 ||
-	(setmask & ~(XNSHIELD|XNTRAPSW)) != 0)
+    /* XNTHREAD_SPARE1 is used for primary mode switch. */
+
+    if ((clrmask & ~(XNSHIELD|XNTRAPSW|XNTHREAD_SPARE1)) != 0 ||
+	(setmask & ~(XNSHIELD|XNTRAPSW|XNTHREAD_SPARE1)) != 0)
 	return -EINVAL;
 
-    xnlock_get_irqsave(&nklock, s);
+    err = xnpod_set_thread_mode(&k_tid->threadbase,
+				clrmask & ~XNTHREAD_SPARE1,
+				setmask & ~XNTHREAD_SPARE1);
 
-    if (!pse51_obj_active(k_tid, PSE51_THREAD_MAGIC, struct pse51_thread))
-	{
-        xnlock_put_irqrestore(&nklock, s);
-        return -ESRCH;
-	}
-
-    err = xnpod_set_thread_mode(&k_tid->threadbase,clrmask,setmask);
-
-    xnlock_put_irqrestore(&nklock, s);
+    if ((clrmask & XNTHREAD_SPARE1) != 0)
+	xnshadow_relax(0);
 
     return err;
 }

@@ -24,9 +24,13 @@
 
 #if defined(__KERNEL__) || defined(__RTAI_UVM__) || defined(__RTAI_SIM__)
 
+#ifdef CONFIG_RTAI_HW_PERIODIC_TIMER
 /* Number of outstanding timers (hint only) -- must be ^2 */
 #define XNTIMER_WHEELSIZE 64
 #define XNTIMER_WHEELMASK (XNTIMER_WHEELSIZE - 1)
+#else /* !CONFIG_RTAI_HW_PERIODIC_TIMER */
+#define XNTIMER_WHEELSIZE 1
+#endif /* CONFIG_RTAI_HW_PERIODIC_TIMER */
 
 #define XNTIMER_ENABLED   0x00000001
 #define XNTIMER_DEQUEUED  0x00000002

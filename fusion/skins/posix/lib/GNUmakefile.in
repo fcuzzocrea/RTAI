@@ -64,7 +64,8 @@ am_libpthread_rt_la_OBJECTS = libpthread_rt_la-init.lo \
 	libpthread_rt_la-thread.lo libpthread_rt_la-timer.lo \
 	libpthread_rt_la-semaphore.lo libpthread_rt_la-clock.lo \
 	libpthread_rt_la-cond.lo libpthread_rt_la-mq.lo \
-	libpthread_rt_la-mutex.lo libpthread_rt_la-interrupt.lo
+	libpthread_rt_la-mutex.lo libpthread_rt_la-interrupt.lo \
+	libpthread_rt_la-rtdm.lo
 libpthread_rt_la_OBJECTS = $(am_libpthread_rt_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
@@ -321,7 +322,8 @@ libpthread_rt_la_SOURCES = \
 	cond.c \
 	mq.c \
 	mutex.c \
-	interrupt.c
+	interrupt.c \
+	rtdm.c
 
 include_HEADERS = \
 	mqueue.h \
@@ -410,6 +412,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-interrupt.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-mq.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-mutex.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-rtdm.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-semaphore.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-thread.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-timer.Plo@am__quote@
@@ -497,6 +500,13 @@ libpthread_rt_la-interrupt.lo: interrupt.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='interrupt.c' object='libpthread_rt_la-interrupt.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libpthread_rt_la-interrupt.lo `test -f 'interrupt.c' || echo '$(srcdir)/'`interrupt.c
+
+libpthread_rt_la-rtdm.lo: rtdm.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libpthread_rt_la-rtdm.lo -MD -MP -MF "$(DEPDIR)/libpthread_rt_la-rtdm.Tpo" -c -o libpthread_rt_la-rtdm.lo `test -f 'rtdm.c' || echo '$(srcdir)/'`rtdm.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libpthread_rt_la-rtdm.Tpo" "$(DEPDIR)/libpthread_rt_la-rtdm.Plo"; else rm -f "$(DEPDIR)/libpthread_rt_la-rtdm.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rtdm.c' object='libpthread_rt_la-rtdm.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libpthread_rt_la-rtdm.lo `test -f 'rtdm.c' || echo '$(srcdir)/'`rtdm.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

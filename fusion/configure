@@ -1090,7 +1090,7 @@ Optional Features:
   --enable-vrtx-skin      Build VRTX emulator
   --enable-uitron-skin    Build uITRON API skin
   --enable-user-vm        Build user-space VMs
-  --enable-rtdm           Build Real-Time Driver Model skin
+  --enable-rtdm-skin      Build Real-Time Driver Model skin
   --enable-compat-skin    Build RTAI/classic skin
   --enable-compat-sem     Enable semaphore support in compatibility skin
   --enable-compat-fifo    Enable FIFO support in compatibility skin

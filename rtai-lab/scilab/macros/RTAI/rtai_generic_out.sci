@@ -43,7 +43,7 @@ case 'set' then
     dep_ut=[depu dept];
 
     tt=label(2);
-    [ok,tt]=getCode(funam,tt)
+    [ok,tt]=getCode_generic_out(funam,tt)
     if ~ok then break,end
     [model,graphics,ok]=check_io(model,graphics,i,o,ci,co)
     if ok then
@@ -94,7 +94,7 @@ case 'define' then
 end
 endfunction
 
-function [ok,tt]=getCode(funam,tt)
+function [ok,tt]=getCode_generic_out(funam,tt)
 if tt==[] then
   
    textmp=[

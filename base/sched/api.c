@@ -1803,7 +1803,11 @@ static int rt_irq_task_handler(unsigned irq, RT_TASK *irq_task)
 int rt_request_irq_task (unsigned irq, void *handler, int type, int affine2task)
 {
 	RT_TASK *task;
-	task = type == RT_IRQ_TASKLET ? ((struct rt_tasklet_struct *)handler)->task : handler;
+	if (!handler) {
+		task = _rt_whoami();
+	} else {
+		task = type == RT_IRQ_TASKLET ? ((struct rt_tasklet_struct *)handler)->task : handler;
+	}
 	if (affine2task) {
 		rt_assign_irq_to_cpu(irq, (1 << task->runnable_on_cpus));
 	}

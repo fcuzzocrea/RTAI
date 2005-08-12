@@ -55,125 +55,30 @@ typedef unsigned long spl_t;
 typedef struct {
 
     volatile unsigned long lock;
-#ifdef CONFIG_RTAI_OPT_DEBUG
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(CONFIG_RTAI_OPT_STATS)
     const char *file;
     const char *function;
     unsigned line;
     int cpu;
+    unsigned long long spin_time;
+    unsigned long long lock_date;
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 } xnlock_t;
 
-#ifndef CONFIG_RTAI_OPT_DEBUG
+#if !defined(CONFIG_RTAI_OPT_DEBUG) && !defined(CONFIG_RTAI_OPT_STATS)
 #define XNARCH_LOCK_UNLOCKED (xnlock_t) { 0 }
-#else
+#else /* CONFIG_RTAI_OPT_DEBUG || CONFIG_RTAI_OPT_STATS */
 #define XNARCH_LOCK_UNLOCKED (xnlock_t) {       \
         0,                                      \
         NULL,                                   \
+        NULL,                                   \
         0,                                      \
-        -1                                      \
-        }
-#endif /* !CONFIG_RTAI_OPT_DEBUG */
-
-#ifdef CONFIG_SMP
-
-#ifndef CONFIG_RTAI_OPT_DEBUG
-#define xnlock_get_irqsave(lock,x)  ((x) = __xnlock_get_irqsave(lock))
-#else /* !CONFIG_RTAI_OPT_DEBUG */
-#define xnlock_get_irqsave(lock,x) \
-    ((x) = __xnlock_get_irqsave(lock, __FILE__, __LINE__,__FUNCTION__))
-#endif /* CONFIG_RTAI_OPT_DEBUG */
-#define xnlock_clear_irqoff(lock)   xnlock_put_irqrestore(lock,1)
-#define xnlock_clear_irqon(lock)    xnlock_put_irqrestore(lock,0)
-
-static inline void xnlock_init (xnlock_t *lock) {
-
-    *lock = XNARCH_LOCK_UNLOCKED;
+        -1,                                     \
+        0LL,                                    \
+        0LL,                                    \
 }
+#endif /* CONFIG_RTAI_OPT_DEBUG || CONFIG_RTAI_OPT_STATS */
 
-#ifdef CONFIG_RTAI_OPT_DEBUG
-#define XNARCH_DEBUG_SPIN_LIMIT 3000000
-
-static inline spl_t
-__xnlock_get_irqsave (xnlock_t *lock, const char *file, unsigned line, const char *function)
-{
-    unsigned spin_count = 0;
-#else /* !CONFIG_RTAI_OPT_DEBUG */
-static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
-{
-#endif /* CONFIG_RTAI_OPT_DEBUG */
-    rthal_declare_cpuid;
-    unsigned long flags;
-
-    rthal_local_irq_save(flags);
-
-    rthal_load_cpuid();
-
-    if (!test_and_set_bit(cpuid,&lock->lock))
-	{
-        while (test_and_set_bit(BITS_PER_LONG - 1,&lock->lock))
-            /* Use an non-locking test in the inner loop, as Linux'es
-               bit_spin_lock. */
-            while (test_bit(BITS_PER_LONG - 1,&lock->lock))
-                {
-                cpu_relax();
-
-#ifdef CONFIG_RTAI_OPT_DEBUG
-                if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
-                    {
-                    rthal_emergency_console();
-                    printk(KERN_ERR
-                           "RTAI: stuck on nucleus lock %p\n"
-                           "      waiter = %s:%u (%s(), CPU #%d)\n"
-                           "      owner  = %s:%u (%s(), CPU #%d)\n",
-                           lock,file,line,function,cpuid,
-                           lock->file,lock->line,lock->function,lock->cpu);
-                    show_stack(NULL,NULL);
-                    for (;;)
-                        cpu_relax();
-                    }
-#endif /* CONFIG_RTAI_OPT_DEBUG */
-                }
-
-#ifdef CONFIG_RTAI_OPT_DEBUG
-	lock->file = file;
-	lock->function = function;
-	lock->line = line;
-	lock->cpu = cpuid;
-#endif /* CONFIG_RTAI_OPT_DEBUG */
-	}
-    else
-        flags |= 2;
-
-    return flags;
-}
-
-static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
-
-{
-    if (!(flags & 2))
-        {
-        rthal_declare_cpuid;
-
-        rthal_local_irq_disable();
-
-        rthal_load_cpuid();
-
-        if (test_and_clear_bit(cpuid,&lock->lock))
-            clear_bit(BITS_PER_LONG - 1,&lock->lock);
-        }
-
-    rthal_local_irq_restore(flags & 1);
-}
-
-#else /* !CONFIG_SMP */
-
-#define xnlock_init(lock)              do { } while(0)
-#define xnlock_get_irqsave(lock,x)     rthal_local_irq_save(x)
-#define xnlock_put_irqrestore(lock,x)  rthal_local_irq_restore(x)
-#define xnlock_clear_irqoff(lock)      rthal_local_irq_disable()
-#define xnlock_clear_irqon(lock)       rthal_local_irq_enable()
-
-#endif /* CONFIG_SMP */
 
 #define XNARCH_NR_CPUS               RTHAL_NR_CPUS
 
@@ -269,6 +174,156 @@ static inline int xnarch_setimask (int imask)
     splexit(!!imask);
     return !!s;
 }
+
+#ifdef CONFIG_SMP
+
+#if !defined(CONFIG_RTAI_OPT_DEBUG) && !defined(CONFIG_RTAI_OPT_STATS)
+#define xnlock_get_irqsave(lock,x)  ((x) = __xnlock_get_irqsave(lock))
+#else /* CONFIG_RTAI_OPT_DEBUG || CONFIG_RTAI_OPT_STATS */
+#define xnlock_get_irqsave(lock,x) \
+    ((x) = __xnlock_get_irqsave(lock, __FILE__, __LINE__,__FUNCTION__))
+#endif /* CONFIG_RTAI_OPT_DEBUG || CONFIG_RTAI_OPT_STATS */
+#define xnlock_clear_irqoff(lock)   xnlock_put_irqrestore(lock,1)
+#define xnlock_clear_irqon(lock)    xnlock_put_irqrestore(lock,0)
+
+static inline void xnlock_init (xnlock_t *lock) {
+
+    *lock = XNARCH_LOCK_UNLOCKED;
+}
+
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(CONFIG_RTAI_OPT_STATS)
+#define XNARCH_DEBUG_SPIN_LIMIT 3000000
+
+static inline spl_t __xnlock_get_irqsave (xnlock_t *lock,
+                                          const char *file,
+                                          unsigned line,
+                                          const char *function)
+{
+#ifdef CONFIG_RTAI_OPT_DEBUG
+    unsigned spin_count = 0;
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+#else /* !CONFIG_RTAI_OPT_DEBUG && !CONFIG_RTAI_OPT_STATS */
+static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
+{
+#endif /* !CONFIG_RTAI_OPT_DEBUG && !CONFIG_RTAI_OPT_STATS */
+    rthal_declare_cpuid;
+    unsigned long flags;
+
+    rthal_local_irq_save(flags);
+
+    rthal_load_cpuid();
+
+    if (!test_and_set_bit(cpuid,&lock->lock))
+        {
+#ifdef CONFIG_RTAI_OPT_STATS
+        unsigned long long lock_date = rthal_rdtsc();
+#endif /* CONFIG_RTAI_OPT_STATS */
+        while (test_and_set_bit(BITS_PER_LONG - 1,&lock->lock))
+            /* Use an non-locking test in the inner loop, as Linux'es
+               bit_spin_lock. */
+            while (test_bit(BITS_PER_LONG - 1,&lock->lock))
+                {
+                cpu_relax();
+
+#ifdef CONFIG_RTAI_OPT_DEBUG
+                if (++spin_count == XNARCH_DEBUG_SPIN_LIMIT)
+                    {
+                    rthal_emergency_console();
+                    printk(KERN_ERR
+                           "RTAI: stuck on nucleus lock %p\n"
+                           "      waiter = %s:%u (%s(), CPU #%d)\n"
+                           "      owner  = %s:%u (%s(), CPU #%d)\n",
+                           lock,file,line,function,cpuid,
+                           lock->file,lock->line,lock->function,lock->cpu);
+                    show_stack(NULL,NULL);
+                    for (;;)
+                        cpu_relax();
+                    }
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+                }
+
+#ifdef CONFIG_RTAI_OPT_STATS
+        lock->spin_time = rthal_rdtsc() - lock_date;
+        lock->lock_date = lock_date;
+#endif /* CONFIG_RTAI_OPT_STATS */
+#if defined(CONFIG_RTAI_OPT_DEBUG) || defined(CONFIG_RTAI_OPT_STATS)
+        lock->file = file;
+        lock->function = function;
+        lock->line = line;
+        lock->cpu = cpuid;
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+        }
+    else
+        flags |= 2;
+
+    return flags;
+}
+
+static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
+
+{
+
+    if (!(flags & 2))
+        {
+#ifdef CONFIG_RTAI_OPT_STATS
+        unsigned long long spin_time = 0ULL, lock_time = 0ULL;
+        const char *file = NULL, *function = NULL;
+        int line = 0;
+#endif /* CONFIG_RTAI_OPT_STATS */
+        rthal_declare_cpuid;
+
+        rthal_local_irq_disable();
+
+        rthal_load_cpuid();
+
+        if (test_and_clear_bit(cpuid,&lock->lock))
+            {
+#ifdef CONFIG_RTAI_OPT_STATS
+            lock_time = rthal_rdtsc() - lock->lock_date;
+            spin_time = lock->spin_time;
+            file = lock->file;
+            function = lock->function;
+            line = lock->line;
+#endif /* CONFIG_RTAI_OPT_STATS */
+            clear_bit(BITS_PER_LONG - 1,&lock->lock);
+            }
+
+        rthal_local_irq_restore(flags & 1);
+
+#ifdef CONFIG_RTAI_OPT_STATS
+        if (lock_time)
+            {
+            lock_time = xnarch_tsc_to_ns(lock_time);
+            spin_time = xnarch_tsc_to_ns(spin_time);
+
+            rthal_spin_lock_irqsave(&xnlock_stats_lock, flags);
+        
+            if (lock_time > xnlock_stats[cpuid].lock_time)
+                {
+                xnlock_stats[cpuid].lock_time = lock_time;
+                xnlock_stats[cpuid].spin_time = spin_time;
+                xnlock_stats[cpuid].file = file;
+                xnlock_stats[cpuid].function = function;
+                xnlock_stats[cpuid].line = line;
+                }
+
+            rthal_spin_unlock_irqrestore(&xnlock_stats_lock, flags);
+            }
+#endif /* CONFIG_RTAI_OPT_STATS */
+        }
+    else
+        rthal_local_irq_restore(flags & 1);
+}
+
+#else /* !CONFIG_SMP */
+
+#define xnlock_init(lock)              do { } while(0)
+#define xnlock_get_irqsave(lock,x)     rthal_local_irq_save(x)
+#define xnlock_put_irqrestore(lock,x)  rthal_local_irq_restore(x)
+#define xnlock_clear_irqoff(lock)      rthal_local_irq_disable()
+#define xnlock_clear_irqon(lock)       rthal_local_irq_enable()
+
+#endif /* CONFIG_SMP */
 
 #ifdef XENO_POD_MODULE
 

@@ -1,3 +1,8 @@
+2005-08-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* arch/generic/hal/generic.c (xnlock_read_proc): Add spinlock
+	locking duration statistics.
+
 2005-08-10  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtdm: Merge RTDM patch level #8.

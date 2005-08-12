@@ -384,7 +384,20 @@ void entry (int iflag)	\
 
 extern void rthal_domain_entry(int iflag);
 
-#endif /* CONFIG_IPIPE */
+#endif /* !CONFIG_IPIPE */
+
+#ifdef CONFIG_RTAI_OPT_STATS
+typedef struct {
+        unsigned long long spin_time;
+        unsigned long long lock_time;
+        const char *file;
+        const char *function;
+        unsigned line;
+} rthal_lock_stats_t [RTHAL_NR_CPUS];
+
+extern spinlock_t xnlock_stats_lock;
+extern rthal_lock_stats_t xnlock_stats;
+#endif /* !CONFIG_RTAI_OPT_STATS */
 
 #define rthal_spin_lock_irq(lock) \
 do {  \

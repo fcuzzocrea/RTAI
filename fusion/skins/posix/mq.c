@@ -642,9 +642,9 @@ int mq_close(mqd_t fd)
 int mq_unlink(const char *name)
 {
     pse51_node_t *node;
-    int err, removed;
     pse51_mq_t *mq;
     spl_t s;
+    int err;
 
     xnlock_get_irqsave(&nklock, s);
 

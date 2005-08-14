@@ -644,7 +644,7 @@ int mq_unlink(const char *name)
     pse51_node_t *node;
     pse51_mq_t *mq;
     spl_t s;
-    int err;
+    int err,;
 
     xnlock_get_irqsave(&nklock, s);
 
@@ -654,6 +654,7 @@ int mq_unlink(const char *name)
         {
         xnlock_put_irqrestore(&nklock, s);
 
+        mq = node2mq(node);
         pse51_mq_destroy(mq);
         xnfree(mq);
         }
@@ -666,8 +667,6 @@ int mq_unlink(const char *name)
         return -1;
         }
 
-    mq = node2mq(node);
-        
     return 0;
 }
 

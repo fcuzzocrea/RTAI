@@ -78,6 +78,9 @@ struct sigaction {
 #define sem_wait pse51_sem_wait
 #define sem_timedwait pse51_sem_timedwait
 #define sem_getvalue pse51_sem_getvalue
+#define sem_open pse51_sem_open
+#define sem_close pse51_sem_close
+#define sem_unlink pse51_sem_unlink
 #define pthread_cancel pse51_cancel
 #define pthread_cleanup_pop pse51_cleanup_pop
 #define pthread_setcancelstate pse51_setcancelstate

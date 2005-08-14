@@ -16,14 +16,31 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "posix/thread.h"
-#include "posix/sem.h"
+#include <stddef.h>
+#include <stdarg.h>
+
+#include <posix/registry.h>     /* For named semaphores. */
+#include <posix/thread.h>
+#include <posix/sem.h>
+
+typedef struct pse51_named_sem {
+    sem_t sembase;
+#define sem2named_sem(saddr) ((nsem_t *) (saddr))
+    
+    pse51_node_t nodebase;
+#define node2sem(naddr) \
+    ((nsem_t *)(((char *)naddr) - offsetof(nsem_t, nodebase)))
+
+} nsem_t;
 
 static xnqueue_t pse51_semq;
 
 static inline int sem_trywait_internal (sem_t *sem)
 
 {
+    if (sem->magic != PSE51_SEM_MAGIC && sem->magic != PSE51_NAMED_SEM_MAGIC)
+        return EINVAL;
+    
     if (sem->value == 0)
         return EAGAIN;
 
@@ -36,10 +53,16 @@ static void sem_destroy_internal (sem_t *sem)
 
 {
     removeq(&pse51_semq, &sem->link);    
-    pse51_mark_deleted(sem);
     /* synchbase wait queue may not be empty only when this function is called
        from pse51_sem_obj_cleanup, hence the absence of xnpod_schedule(). */
     xnsynch_destroy(&sem->synchbase);
+    if(sem->magic == PSE51_NAMED_SEM_MAGIC)
+        {
+        pse51_mark_deleted(sem);
+        xnfree(sem2named_sem(sem));
+        }
+    else
+        pse51_mark_deleted(sem);
 }
 
 int sem_trywait (sem_t *sem)
@@ -50,10 +73,7 @@ int sem_trywait (sem_t *sem)
     
     xnlock_get_irqsave(&nklock, s);
 
-    if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
-        err = EINVAL;
-    else
-        err = sem_trywait_internal(sem);
+    err = sem_trywait_internal(sem);
 
     xnlock_put_irqrestore(&nklock, s);
     
@@ -70,26 +90,13 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
 
 {
     pthread_t cur;
-    spl_t s;
     int err;
-
-    xnpod_check_context(XNPOD_THREAD_CONTEXT);
-
-    xnlock_get_irqsave(&nklock, s);
-
-    if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
-	{
-        thread_set_errno(EINVAL);
-        goto error;
-	}
 
     cur = pse51_current_thread();
 
-    if (sem_trywait_internal(sem) == EAGAIN)
+    if ((err = sem_trywait_internal(sem)) == EAGAIN)
 	{
-        err = clock_adjust_timeout(&to, CLOCK_REALTIME);
-        
-        if (err)
+        if((err = clock_adjust_timeout(&to, CLOCK_REALTIME)))
             return err;
 
         xnsynch_sleep_on(&sem->synchbase, to);
@@ -98,37 +105,55 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
         thread_cancellation_point(cur);
             
         if (xnthread_test_flags(&cur->threadbase, XNBREAK))
-	    {
-            thread_set_errno(EINTR);
-            goto error;
-	    }
+            return EINTR;
         
         if (xnthread_test_flags(&cur->threadbase, XNTIMEO))
-	    {
-            thread_set_errno(ETIMEDOUT);
-            goto error;
-	    }
+            return ETIMEDOUT;
 	}
 
+    return err;
+}
+
+int sem_wait (sem_t *sem)
+
+{
+    spl_t s;
+    int err;
+
+    xnpod_check_context(XNPOD_THREAD_CONTEXT);
+
+    xnlock_get_irqsave(&nklock, s);
+    err = sem_timedwait_internal(sem, XN_INFINITE);
     xnlock_put_irqrestore(&nklock, s);
 
+    if(err)
+        {
+        thread_set_errno(err);
+        return -1;
+        }
+    
     return 0;
-
- error:
-
-    xnlock_put_irqrestore(&nklock, s);    
-
-    return -1;
 }
 
-int sem_wait (sem_t *sem) {
+int sem_timedwait (sem_t *sem, const struct timespec *abs_timeout)
 
-    return sem_timedwait_internal(sem, XN_INFINITE);
-}
+{
+    spl_t s;
+    int err;
 
-int sem_timedwait (sem_t *sem, const struct timespec *abs_timeout) {
+    xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    return sem_timedwait_internal(sem, ts2ticks_ceil(abs_timeout)+1);
+    xnlock_get_irqsave(&nklock, s);
+    err = sem_timedwait_internal(sem, ts2ticks_ceil(abs_timeout)+1);
+    xnlock_put_irqrestore(&nklock, s);
+
+    if(err)
+        {
+        thread_set_errno(err);
+        return -1;
+        }
+    
+    return 0;
 }
 
 int sem_post (sem_t *sem)
@@ -138,7 +163,7 @@ int sem_post (sem_t *sem)
     
     xnlock_get_irqsave(&nklock, s);
 
-    if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
+    if (sem->magic != PSE51_SEM_MAGIC && sem->magic != PSE51_NAMED_SEM_MAGIC)
 	{
         thread_set_errno(EINVAL);
         goto error;
@@ -173,7 +198,7 @@ int sem_getvalue (sem_t *sem, int *value)
 
     xnlock_get_irqsave(&nklock, s);
 
-    if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
+    if (sem->magic != PSE51_SEM_MAGIC && sem->magic != PSE51_NAMED_SEM_MAGIC)
 	{
         xnlock_put_irqrestore(&nklock, s);
         thread_set_errno(EINVAL);
@@ -198,16 +223,14 @@ int sem_init (sem_t *sem, int pshared, unsigned int value)
 
     if (pshared)
 	{
-        xnlock_put_irqrestore(&nklock, s);
         thread_set_errno(ENOSYS);
-        return -1;
+        goto error;
 	}
 
     if (value > SEM_VALUE_MAX)
 	{
-        xnlock_put_irqrestore(&nklock, s);
         thread_set_errno(EINVAL);
-        return -1;
+        goto error;
 	}
 
     sem->magic = PSE51_SEM_MAGIC;
@@ -219,6 +242,12 @@ int sem_init (sem_t *sem, int pshared, unsigned int value)
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
+
+  error:
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return -1;
 }
 
 int sem_destroy (sem_t *sem)
@@ -230,18 +259,16 @@ int sem_destroy (sem_t *sem)
 
     xnlock_get_irqsave(&nklock, s);
 
-    if (!pse51_obj_active(sem, PSE51_SEM_MAGIC, sem_t))
+    if (sem->magic != PSE51_SEM_MAGIC)
 	{
-        xnlock_put_irqrestore(&nklock, s);
         thread_set_errno(EINVAL);
-        return -1;
+        goto error;
 	}
 
     if (xnsynch_nsleepers(&sem->synchbase) > 0)
 	{
-        xnlock_put_irqrestore(&nklock, s);
         thread_set_errno(EBUSY);
-        return -1;
+        goto error;
 	}
 
     sem_destroy_internal(sem);
@@ -249,7 +276,156 @@ int sem_destroy (sem_t *sem)
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
+
+  error:
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return -1;
 }
+
+sem_t *sem_open(const char *name, int oflags, ...)
+{
+    nsem_t *named_sem;
+    pse51_node_t *node;
+    spl_t s;
+    int err;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    err = pse51_node_get(&node, name, PSE51_NAMED_SEM_MAGIC, oflags);
+
+    if (err)
+        goto error;
+
+    if (!node)
+        {
+        unsigned value;
+        mode_t mode;
+        va_list ap;
+
+        named_sem = (nsem_t *) xnmalloc(sizeof(*named_sem));
+
+        if (!named_sem)
+            {
+            err = ENOMEM;
+            goto error;
+            }
+        
+        va_start(ap, oflags);
+        mode = va_arg(ap, int); /* unused */
+        value = va_arg(ap, unsigned);
+        va_end(ap);
+
+        if (sem_init(&named_sem->sembase, 0, value))
+            {
+            xnfree(named_sem);
+            err = thread_get_errno();
+            goto error;
+            }
+
+        /* Changed the magic. */
+        named_sem->sembase.magic = PSE51_NAMED_SEM_MAGIC;
+
+        err = pse51_node_add(&named_sem->nodebase, name, PSE51_NAMED_SEM_MAGIC);
+
+        if (err)
+            goto error;
+        }
+    else
+        named_sem = node2sem(node);
+    
+    xnlock_put_irqrestore(&nklock, s);
+
+    return &named_sem->sembase;
+
+  error:
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    thread_set_errno(err);
+
+    return SEM_FAILED;
+}
+
+int sem_close(sem_t *sem)
+{
+    nsem_t *named_sem;
+    spl_t s;
+    int err;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    if(sem->magic != PSE51_NAMED_SEM_MAGIC)
+        {
+        err = EINVAL;
+        goto error;
+        }
+
+    if (xnsynch_nsleepers(&sem->synchbase) > 0)
+	{
+        err = EBUSY;
+        goto error;
+	}
+
+    named_sem = sem2named_sem(sem);
+    
+    err = pse51_node_put(&named_sem->nodebase);
+
+    if (err)
+        goto error;
+    
+    if (pse51_node_removed_p(&named_sem->nodebase))
+        /* unlink was called, and this semaphore is no longer referenced. */
+        sem_destroy_internal(&named_sem->sembase);
+    else if (!pse51_node_ref_p(&named_sem->nodebase))
+        /* this semaphore is closed, but not unlinked. */
+        pse51_mark_deleted(&named_sem->sembase);
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return 0;
+
+  error:
+    xnlock_put_irqrestore(&nklock, s);
+
+    thread_set_errno(err);
+
+    return -1;
+}
+
+int sem_unlink(const char *name)
+{
+    pse51_node_t *node;
+    nsem_t *named_sem;
+    spl_t s;
+    int err;
+
+    xnlock_get_irqsave(&nklock, s);
+
+    err = pse51_node_remove(&node, name, PSE51_NAMED_SEM_MAGIC);
+
+    if (err == EINVAL)
+        err = ENOENT;
+
+    if (err)
+        goto error;
+
+    named_sem = node2sem(node);
+    
+    if (pse51_node_removed_p(&named_sem->nodebase))
+        sem_destroy_internal(&named_sem->sembase);
+
+    xnlock_put_irqrestore(&nklock, s);
+
+    return 0;
+
+  error:
+    thread_set_errno(err);
+
+    return -1;
+}
+
 
 void pse51_sem_pkg_init (void) {
 
@@ -277,3 +453,7 @@ EXPORT_SYMBOL(sem_trywait);
 EXPORT_SYMBOL(sem_wait);
 EXPORT_SYMBOL(sem_timedwait);
 EXPORT_SYMBOL(sem_getvalue);
+EXPORT_SYMBOL(sem_open);
+EXPORT_SYMBOL(sem_close);
+EXPORT_SYMBOL(sem_unlink);
+

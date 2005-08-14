@@ -576,7 +576,8 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
   err_put_mq:
     pse51_node_put(&mq->nodebase);
-    if(!pse51_ref_p(&mq->nodebase))
+
+    if(pse51_node_removed_p(&mq->nodebase))
         {
         /* mq is no longer referenced, we may destroy it. */
         xnlock_put_irqrestore(&nklock, s);
@@ -615,8 +616,12 @@ int mq_close(mqd_t fd)
     if(err)
         goto error;
 
-    pse51_node_put(&mq->nodebase);
-    if(!pse51_ref_p(&mq->nodebase))
+    err = pse51_node_put(&mq->nodebase);
+
+    if(err)
+        goto error;
+    
+    if(pse51_node_removed_p(&mq->nodebase))
         {
         xnlock_put_irqrestore(&nklock, s);
 
@@ -637,15 +642,23 @@ int mq_close(mqd_t fd)
 int mq_unlink(const char *name)
 {
     pse51_node_t *node;
+    int err, removed;
     pse51_mq_t *mq;
-    int err;
     spl_t s;
 
     xnlock_get_irqsave(&nklock, s);
 
     err = pse51_node_remove(&node, name, PSE51_MQ_MAGIC);
 
-    xnlock_put_irqrestore(&nklock, s);
+    if(!err && pse51_node_removed_p(&mq->nodebase))
+        {
+        xnlock_put_irqrestore(&nklock, s);
+
+        pse51_mq_destroy(mq);
+        xnfree(mq);
+        }
+    else
+        xnlock_put_irqrestore(&nklock, s);
 
     if(err)
         {
@@ -655,12 +668,6 @@ int mq_unlink(const char *name)
 
     mq = node2mq(node);
         
-    if(!pse51_ref_p(&mq->nodebase))
-        {
-        pse51_mq_destroy(mq);
-        xnfree(mq);
-        }
-
     return 0;
 }
 

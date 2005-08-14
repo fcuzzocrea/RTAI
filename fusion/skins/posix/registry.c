@@ -161,7 +161,7 @@ int pse51_node_add (pse51_node_t *node,
 
     node->magic = magic;
     node->flags = 0;
-    node->refcount = 2;         /* 1 for close, 1 for unlink. */
+    node->refcount = 1;
     node->completion_synch = NULL;
 
     /* Insertion in hash table. */
@@ -174,10 +174,13 @@ int pse51_node_add (pse51_node_t *node,
     return 0;
 }
 
-void pse51_node_put(pse51_node_t *node)
+int pse51_node_put(pse51_node_t *node)
 {
-    if (!--node->refcount && node->prev)
-        pse51_node_unbind(node);
+    if (!pse51_node_ref_p(node))
+        return EINVAL;
+
+    --node->refcount;
+    return 0;
 }
 
 int pse51_node_remove(pse51_node_t **nodep, const char *name, unsigned magic)
@@ -197,8 +200,8 @@ int pse51_node_remove(pse51_node_t **nodep, const char *name, unsigned magic)
 
     *nodep = node;
     node->magic = ~node->magic;
+    node->flags |= PSE51_NODE_REMOVED;
     pse51_node_unbind(node);
-    pse51_node_put(node);
     return 0;
 }
 

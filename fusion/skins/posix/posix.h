@@ -364,6 +364,7 @@ END_C_DECLS
 
 /* Semaphores */
 #define SEM_VALUE_MAX (INT_MAX)
+#define SEM_FAILED    NULL
 
 typedef struct pse51_sem {
     unsigned magic;
@@ -391,6 +392,12 @@ int sem_timedwait(sem_t *sem,
 
 int sem_getvalue(sem_t *sem,
 		 int *value);
+
+sem_t *sem_open(const char *name, int oflag, ...);
+
+int sem_close(sem_t *sem);
+
+int sem_unlink(const char *name);
 
 END_C_DECLS
 

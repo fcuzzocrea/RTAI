@@ -46,7 +46,7 @@
 #define SET_LXRT_RETVAL_IN_SYSCALL(retval) \
 	do { \
                 if (r->RTAI_SYSCALL_RETPNT) { \
-			copy_to_user((void *)r->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
+			rt_copy_to_user((void *)r->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
 		} \
 	} while (0)
 

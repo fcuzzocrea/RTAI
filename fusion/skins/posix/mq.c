@@ -650,7 +650,7 @@ int mq_unlink(const char *name)
 
     err = pse51_node_remove(&node, name, PSE51_MQ_MAGIC);
 
-    if(!err && pse51_node_removed_p(&mq->nodebase))
+    if(!err && pse51_node_removed_p(node))
         {
         xnlock_put_irqrestore(&nklock, s);
 

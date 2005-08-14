@@ -204,12 +204,12 @@ static inline void enq_ready_edf_task(RT_TASK *ready_task)
 #define MAX_WAKEUP_SRQ (2 << 6)
 
 struct klist_t { int srq; volatile unsigned long in, out; void *task[MAX_WAKEUP_SRQ]; };
-extern struct klist_t wake_up_srq;
+extern struct klist_t wake_up_srq[];
 
 #define pend_wake_up_srq(lnxtsk, cpuid) \
 do { \
-	wake_up_srq.task[wake_up_srq.in++ & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
-	adeos_pend_uncond(wake_up_srq.srq, cpuid); \
+	wake_up_srq[cpuid].task[wake_up_srq[cpuid].in++ & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
+	adeos_pend_uncond(wake_up_srq[cpuid].srq, cpuid); \
 } while (0)
 
 static inline void enq_ready_task(RT_TASK *ready_task)

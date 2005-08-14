@@ -82,8 +82,7 @@ int rt_smp_oneshot_timer[NR_RT_CPUS];
 
 volatile int rt_sched_timed;
 
-static spinlock_t wake_up_srq_lock = SPIN_LOCK_UNLOCKED;
-struct klist_t wake_up_srq;
+struct klist_t wake_up_srq[NR_RT_CPUS];
 
 /* +++++++++++++++ END OF WHAT MUST BE AVAILABLE EVERYWHERE +++++++++++++++++ */
 
@@ -1033,7 +1032,6 @@ int clr_rtext(RT_TASK *task)
 		task->magic = 0;
 		rem_ready_task(task);
 		task->state = 0;
-		task->retval = 0;
 		atomic_dec((void *)(tasks_per_cpu + task->runnable_on_cpus));
 		if (task == rt_current) {
 			rt_schedule();
@@ -1839,6 +1837,9 @@ void steal_from_linux(RT_TASK *rt_task)
 	rtai_sti();
 	if (lnxtsk->run_list.next != LIST_POISON1) {
 		schedule();
+		if (rt_task->state != RT_SCHED_READY) {
+			wake_up_process(kthreadm[rt_task->runnable_on_cpus]);
+		}
 	}
 	if (!rt_task->exectime[1]) {
 		rt_task->exectime[1] = rdtsc();
@@ -1923,20 +1924,21 @@ static void start_stop_kthread(RT_TASK *task, void (*rt_thread)(int), int data, 
 	}
 }
 
-static void wake_up_srq_handler(void)
+static void wake_up_srq_handler(unsigned srq)
 {
 #ifdef CONFIG_PREEMPT
-	preempt_disable();
+	preempt_disable(); {
 #endif
-	if (spin_trylock(&wake_up_srq_lock)) {
-		while (wake_up_srq.out != wake_up_srq.in) {
-			wake_up_process(wake_up_srq.task[wake_up_srq.out++ & (MAX_WAKEUP_SRQ - 1)]);
-		}
-                spin_unlock(&wake_up_srq_lock);
+	int wokn, cpuid = srq - wake_up_srq[0].srq;
+	while ((wokn = wake_up_srq[cpuid].out != wake_up_srq[cpuid].in)) {
+		wake_up_process(wake_up_srq[cpuid].task[wake_up_srq[cpuid].out++ & (MAX_WAKEUP_SRQ - 1)]);
+	}
+	if (wokn) {
+		wake_up_process(kthreadm[cpuid]);
 		set_need_resched();
-        }
+	}
 #ifdef CONFIG_PREEMPT
-	preempt_enable();
+	} preempt_enable();
 #endif
 }
 
@@ -2109,11 +2111,16 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
-#if 1 //def USE_LINUX_SYSCALL
 	if (unlikely(r->LINUX_SYSCALL_NR >= RTAI_SYSCALL_NR)) {
-		long long retval = rtai_lxrt_invoke(r->RTAI_SYSCALL_CODE, (void *)r->RTAI_SYSCALL_ARGS, r);
-		SET_LXRT_RETVAL_IN_SYSCALL(retval);
-		if (!in_hrt_mode(rtai_cpuid())) {
+		long long retval;
+	        if (likely(r->LINUX_SYSCALL_NR == RTAI_SYSCALL_NR)) {
+			retval = rtai_lxrt_invoke(r->RTAI_SYSCALL_CODE, (void *)r->RTAI_SYSCALL_ARGS, r);
+			SET_LXRT_RETVAL_IN_SYSCALL(retval);
+	        } else {
+        	        unsigned long args[2] = { (unsigned long)current, (unsigned long)r };
+			retval = r->LINUX_SYSCALL_RETREG = rtai_lxrt_invoke(r->LINUX_SYSCALL_NR, args, r);
+	        }
+		if (unlikely(!in_hrt_mode(rtai_cpuid()))) {
 			if (unlikely((int)retval == -RT_EINTR)) {
 				r->LINUX_SYSCALL_NR = RTAI_FAKE_LINUX_SYSCALL;
 			}
@@ -2121,7 +2128,7 @@ static int lxrt_intercept_syscall_prologue(unsigned long event, struct pt_regs *
 		}
 		return 1;
 	}
-#endif
+
 	{ int cpuid;
 
 	if (in_hrt_mode(cpuid = rtai_cpuid())) {
@@ -2532,7 +2539,10 @@ static int lxrt_init(void)
 
     init_fun_ext();
 	
-    adeos_virtualize_irq(wake_up_srq.srq = adeos_alloc_irq(), (void *)wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG);
+
+    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
+    	adeos_virtualize_irq(wake_up_srq[cpuid].srq = adeos_alloc_irq(), wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG);
+    }
 
     /* We will start stealing Linux tasks as soon as the reservoir is
        instantiated, so create the migration service now. */
@@ -2621,8 +2631,10 @@ static void lxrt_exit(void)
 
 	rt_set_rtai_trap_handler(lxrt_old_trap_handler);
 
-	adeos_virtualize_irq(wake_up_srq.srq, NULL, NULL, 0);
-	adeos_free_irq(wake_up_srq.srq);
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
+		adeos_virtualize_irq(wake_up_srq[cpuid].srq, NULL, NULL, 0);
+		adeos_free_irq(wake_up_srq[cpuid].srq);
+	}
 
 	adeos_catch_event(ADEOS_SCHEDULE_HEAD, NULL);
 	adeos_catch_event(ADEOS_SCHEDULE_TAIL, NULL);

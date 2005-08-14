@@ -3,6 +3,20 @@
 	* skins/posix/sem.c (sem_open, sem_close, sem_unlink): Add support
 	for named semaphores.
 
+2005-08-13  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/pod.h (xnsched_cpu): Provide an efficient UP
+	implementation.
+
+	* nucleus/pod.c (xnpod_schedule): Add diagnostic for missing
+	rescheduling bit when in debug mode.
+
+	* nucleus/shadow.c: Get rid of xnshadow_ticks2t[sv] and
+	xnshadow_t[sv]2ticks which are no longer in use.
+
+	* include/nucleus/pod.h (xnpod_ns2ticks, xnpod_ticks2ns): Avoid
+	useless operations when system only supports aperiodic timer.
+
 2005-08-12  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* arch/generic/hal/generic.c (xnlock_read_proc): Add spinlock

@@ -418,7 +418,7 @@ fail:
                              xnthread_name(&sched->rootcb));
 
         sched->rootcb.sched = sched;
-        
+
         sched->rootcb.affinity = xnarch_cpumask_of_cpu(cpu);
         }
 
@@ -2265,6 +2265,9 @@ void xnpod_schedule (void)
 {
     xnthread_t *threadout, *threadin, *runthread;
     xnsched_t *sched;
+#if defined(CONFIG_SMP) || defined(CONFIG_RTAI_OPT_DEBUG)
+    int need_resched;
+#endif /* CONFIG_SMP || CONFIG_RTAI_OPT_DEBUG */
     spl_t s;
 #ifdef __KERNEL__
 #ifdef CONFIG_RTAI_OPT_FUSION
@@ -2285,13 +2288,13 @@ void xnpod_schedule (void)
 
     xnlock_get_irqsave(&nklock,s);
 
-#ifdef CONFIG_SMP
-    {
-    int need_resched;
-
     sched = xnpod_current_sched();
-    need_resched = xnsched_tst_resched(sched);
+    runthread = sched->runthread;
 
+#if defined(CONFIG_SMP) || defined(CONFIG_RTAI_OPT_DEBUG)
+    need_resched = xnsched_tst_resched(sched);
+#endif
+#ifdef CONFIG_SMP
     if (need_resched)
         xnsched_clr_resched(sched);
 
@@ -2301,16 +2304,16 @@ void xnpod_schedule (void)
         xnsched_clr_mask(sched);
         }
 
-    runthread = sched->runthread;
-
+#ifndef CONFIG_RTAI_OPT_DEBUG
     if (!need_resched)
         goto signal_unlock_and_exit;
 
     xnsched_set_resched(sched);
-    }
-#else /*! CONFIG_SMP */
-    runthread = xnpod_current_thread();
-    sched = runthread->sched;
+#else /* !CONFIG_RTAI_OPT_DEBUG */
+    if (need_resched)
+        xnsched_set_resched(sched);
+#endif /* !CONFIG_RTAI_OPT_DEBUG */
+
 #endif /* CONFIG_SMP */
 
     if (testbits(runthread->status,XNLOCK))
@@ -2352,6 +2355,19 @@ void xnpod_schedule (void)
 
     threadout = runthread;
     threadin = link2thread(sched_getpq(&sched->readyq),rlink);
+
+#ifdef CONFIG_RTAI_OPT_DEBUG
+    if (!need_resched)
+        {
+        xnprintf("xnpod_schedule: scheduler state changed without rescheduling"
+                 "bit set\nwhen switching from %s to %s\n",
+                 runthread->name,
+                 threadin->name);
+#ifdef __KERNEL__
+        show_stack(NULL, NULL);
+#endif
+        }
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 
     __clrbits(threadin->status,XNREADY);
 

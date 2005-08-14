@@ -142,8 +142,12 @@ typedef struct xnsched {
 				  synchronization. */
 } xnsched_t;
 
-#define xnsched_cpu(__sched__) \
+#ifdef CONFIG_SMP
+#define xnsched_cpu(__sched__)                  \
     ((__sched__) - &nkpod->sched[0])
+#else /* !CONFIG_SMP */
+#define xnsched_cpu(__sched__) (0)
+#endif /* CONFIG_SMP */
 
 #define xnsched_resched_mask() \
     (xnpod_current_sched()->resched)
@@ -377,11 +381,19 @@ static inline u_long xnpod_get_tickval (void) {
 
 static inline xntime_t xnpod_ticks2ns (xnticks_t ticks) {
     /* Convert a count of ticks in nanoseconds */
+#ifdef CONFIG_RTAI_HW_PERIODIC_TIMER
     return ticks * xnpod_get_tickval();
+#else /* !CONFIG_RTAI_HW_PERIODIC_TIMER */
+    return ticks;
+#endif /* !CONFIG_RTAI_HW_PERIODIC_TIMER */
 }
 
 static inline xnticks_t xnpod_ns2ticks (xntime_t t) {
+#ifdef CONFIG_RTAI_HW_PERIODIC_TIMER
     return xnarch_ulldiv(t,xnpod_get_tickval(),NULL);
+#else /* !CONFIG_RTAI_HW_PERIODIC_TIMER */
+    return t;
+#endif /* !CONFIG_RTAI_HW_PERIODIC_TIMER */
 }
 
 int xnpod_init(xnpod_t *pod,

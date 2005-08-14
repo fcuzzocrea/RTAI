@@ -324,9 +324,6 @@ sem_t *sem_open(const char *name, int oflags, ...)
             goto error;
             }
 
-        /* Changed the magic. */
-        named_sem->sembase.magic = PSE51_NAMED_SEM_MAGIC;
-
         err = pse51_node_add(&named_sem->nodebase, name, PSE51_NAMED_SEM_MAGIC);
 
         if (err)
@@ -335,6 +332,10 @@ sem_t *sem_open(const char *name, int oflags, ...)
     else
         named_sem = node2sem(node);
     
+    /* Set the magic, needed both at creation and when re-opening a semaphore
+       that was closed but not unlinked. */
+    named_sem->sembase.magic = PSE51_NAMED_SEM_MAGIC;
+
     xnlock_put_irqrestore(&nklock, s);
 
     return &named_sem->sembase;

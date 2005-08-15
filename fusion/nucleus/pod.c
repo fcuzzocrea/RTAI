@@ -112,9 +112,9 @@ const char *xnpod_fatal_helper (const char *format, ...)
 
     if (testbits(nkpod->status,XNTIMED))
 	p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-		      "Timer: %s [tickval=%lu us, elapsed=%Lu]\n",
+		      "Timer: %s [tickval=%lu ns, elapsed=%Lu]\n",
 		      nktimer->get_type(),
-		      xnpod_get_tickval() / 1000 ?: 1,
+		      xnpod_get_tickval(),
 		      nktimer->get_jiffies());
     else
         p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),

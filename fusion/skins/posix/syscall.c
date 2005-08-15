@@ -511,7 +511,7 @@ int __clock_nanosleep (struct task_struct *curr, struct pt_regs *regs)
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(rqt)))
 	return -EFAULT;
 
-    if (__xn_reg_arg3(regs))
+    if (__xn_reg_arg4(regs))
 	{
 	if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg4(regs),sizeof(rmt)))
 	    return -EFAULT;

@@ -828,7 +828,7 @@ void xntimer_lock_timers (void)
 
     if (nkpod->tlock_depth++ == 0)
 	{
-	tsync = xnpod_get_time();
+	tsync = nktimer->get_jiffies();
 
 	for_each_online_cpu(cpu) {
 

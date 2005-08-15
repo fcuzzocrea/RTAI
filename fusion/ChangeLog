@@ -1,3 +1,7 @@
+2005-08-15  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Add ltt-enabled r12 patch.
+
 2005-08-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/sem.c (sem_open, sem_close, sem_unlink): Add support

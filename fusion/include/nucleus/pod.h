@@ -43,12 +43,11 @@
 #define XNTMPER  0x00000010     /* Periodic timing */
 #define XNFATAL  0x00000020     /* Pod encountered a fatal error */
 #define XNPIDLE  0x00000040     /* Pod is unavailable (initializing/shutting down) */
+#define XNTLOCK  0x00000080	/* Timer lock pending */
 
 /* Sched status flags */
 #define XNKCOUT  0x80000000	/* Sched callout context */
 #define XNHTICK  0x40000000	/* Host tick pending  */
-#define XNTLOCK  0x20000000	/* Timer lock pending */
-#define XNTSYNC  0x10000000	/* Timer resync pending */
 
 /* These flags are available to the real-time interfaces */
 #define XNPOD_SPARE0  0x01000000
@@ -138,8 +137,6 @@ typedef struct xnsched {
 
     xnthread_t rootcb;          /*!< Root thread control block. */
 
-    xnticks_t tsync;		/*!< Lock time date/delta for
-				  synchronization. */
 } xnsched_t;
 
 #ifdef CONFIG_SMP

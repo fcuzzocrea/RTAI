@@ -193,36 +193,6 @@ static const char *xntimer_get_type_aperiodic (void)
     return "oneshot";
 }
 
-#ifdef __KERNEL__
-
-static void xntimer_resync_timers_aperiodic (xnsched_t *sched)
-
-{
-    xnticks_t delta_tsc = xnarch_ns_to_tsc(sched->tsync);
-    xnholder_t *holder, *nextholder;
-    xnqueue_t *timerq;
-    xntimer_t *timer;
-
-    timerq = &sched->timerwheel[0];
-
-    for (holder = getheadq(timerq); holder; holder = nextholder)
-	{
-	nextholder = nextq(timerq,holder);
-	timer = link2timer(holder);
-	
-	if (timer != &nkpod->htimer)
-	    {
-	    xntimer_dequeue_aperiodic(timer);
-	    timer->date += delta_tsc;
-	    xntimer_enqueue_aperiodic(timer);
-	    }
-	}
-
-    clrbits(sched->status,XNTSYNC|XNTLOCK);
-}
-
-#endif /* __KERNEL__ */
-
 /*!
  * @internal
  * \fn void xntimer_do_tick_aperiodic(void)
@@ -252,11 +222,6 @@ void xntimer_do_tick_aperiodic (void)
     xnholder_t *nextholder, *holder;
     xntimer_t *timer;
 
-#ifdef __KERNEL__
-    if (testbits(sched->status,XNTSYNC))
-	xntimer_resync_timers_aperiodic(sched);
-#endif /* __KERNEL__ */
-
     nextholder = getheadq(timerq);
 
     while ((holder = nextholder) != NULL)
@@ -273,7 +238,7 @@ void xntimer_do_tick_aperiodic (void)
 
         if (timer != &nkpod->htimer)
 	    {
-	    if (!testbits(sched->status,XNTLOCK))
+	    if (!testbits(nkpod->status,XNTLOCK))
 		{
 		timer->handler(timer->cookie);
 
@@ -288,12 +253,9 @@ void xntimer_do_tick_aperiodic (void)
 		       shot. */
 		    continue;
 		}
-	    else
+	    else if (timer->interval == XN_INFINITE)
 		{
-		/* Timers are locked; just re-enqueue the elapsed
-		   timer with no date change, without firing the
-		   handler, and waiting for the final resync. */
-		xntimer_enqueue_aperiodic(timer);
+		timer->date += nkpod->htimer.interval;
 		continue;
 		}
             }
@@ -391,48 +353,6 @@ static const char *xntimer_get_type_periodic (void)
     return "periodic";
 }
 
-#ifdef __KERNEL__
-
-static void xntimer_resync_timers_periodic (xnsched_t *sched)
-
-{
-    xnholder_t *holder, *nextholder;
-    xnqueue_t resyncq;
-    xnqueue_t *timerq;
-    xntimer_t *timer;
-    int slot;
-
-    initq(&resyncq);
-
-    for (slot = 0; slot < XNTIMER_WHEELSIZE; ++slot)
-	{
-	timerq = &sched->timerwheel[slot];
-
-	for (holder = getheadq(timerq); holder; holder = nextholder)
-	    {
-	    nextholder = nextq(timerq,holder);
-	    timer = link2timer(holder);
-
-	    if (timer != &nkpod->htimer)
-		{
-		xntimer_dequeue_periodic(timer);
-		appendq(&resyncq,&timer->link);
-		}
-	    }
-	}
-
-    while ((holder = getq(&resyncq)) != NULL)
-	{
-	timer = link2timer(holder);
-	timer->date += sched->tsync;
-	xntimer_enqueue_periodic(timer);
-	}
-
-    clrbits(sched->status,XNTSYNC|XNTLOCK);
-}
-
-#endif /* __KERNEL__ */
-
 /*!
  * @internal
  * \fn void xntimer_do_tick_periodic(void)
@@ -473,11 +393,6 @@ void xntimer_do_tick_periodic (void)
 
     timerq = &sched->timerwheel[nkpod->jiffies & XNTIMER_WHEELMASK];
 
-#ifdef __KERNEL__
-    if (testbits(sched->status,XNTSYNC))
-	xntimer_resync_timers_periodic(sched);
-#endif /* __KERNEL__ */
-
     nextholder = getheadq(timerq);
 
     while ((holder = nextholder) != NULL)
@@ -492,7 +407,7 @@ void xntimer_do_tick_periodic (void)
 
         if (timer != &nkpod->htimer)
 	    {
-	    if (!testbits(sched->status,XNTLOCK))
+	    if (!testbits(nkpod->status,XNTLOCK))
 		{
 		timer->handler(timer->cookie);
 
@@ -501,9 +416,9 @@ void xntimer_do_tick_periodic (void)
 		    testbits(timer->status,XNTIMER_KILLED))
 		    continue;
 		}
-	    else
+	    else if (timer->interval == XN_INFINITE)
 		{
-		xntimer_enqueue_periodic(timer);
+		timer->date = nkpod->jiffies + nkpod->htimer.interval;
 		continue;
 		}
             }
@@ -820,29 +735,12 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
 void xntimer_lock_timers (void)
 
 {
-    xnticks_t tsync;
     spl_t s;
-    int cpu;
 
     xnlock_get_irqsave(&nklock,s);
 
     if (nkpod->tlock_depth++ == 0)
-	{
-	tsync = nktimer->get_jiffies();
-
-	for_each_online_cpu(cpu) {
-
-	   xnsched_t *sched = xnpod_sched_slot(cpu);
-	   
-	   if (!testbits(sched->status,XNTSYNC))
-	       {
-	       sched->tsync = tsync;
-	       setbits(sched->status,XNTLOCK);
-	       }
-	   else
-	       clrbits(sched->status,XNTSYNC);
-	   }
-	}
+	setbits(nkpod->status,XNTLOCK);
 
     xnlock_put_irqrestore(&nklock,s);
 }
@@ -850,32 +748,12 @@ void xntimer_lock_timers (void)
 void xntimer_unlock_timers (void)
 
 {
-    xnticks_t now, delta;
     spl_t s;
-    int cpu;
 
     xnlock_get_irqsave(&nklock,s);
 
     if (--nkpod->tlock_depth == 0)
-	{
-	now = nktimer->get_jiffies();
-
-	for_each_online_cpu(cpu) {
-
-           xnsched_t *sched = xnpod_sched_slot(cpu);
-
-	   delta = now - sched->tsync;
-
-	   if (delta > now)
-	       delta = ~delta + 1;
-
-	   sched->tsync = delta;
-
-	   /* xntimer_do_tick() will resync the timers and remove the
-	      lock in the same move, on each CPU. */
-	   setbits(sched->status,XNTSYNC);
-	   }
-	}
+	clrbits(nkpod->status,XNTLOCK);
 
     xnlock_put_irqrestore(&nklock,s);
 }

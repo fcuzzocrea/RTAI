@@ -208,7 +208,7 @@ struct xnpod {
 
     int refcnt;			/*!< Reference count.  */
 
-    int tlock_depth;		/*!< Timer lock depth.  */
+    atomic_counter_t timerlck;	/*!< Timer lock depth.  */
 
     struct {
         void (*settime)(xnticks_t newtime); /*!< Clock setting hook. */
@@ -445,20 +445,32 @@ void xnpod_rotate_readyq(int prio);
 
 void xnpod_schedule(void);
 
-static inline void xnpod_lock_sched (void) {
-
+static inline void xnpod_lock_sched (void)
+{
     /* Don't swap these two lines... */
     xnarch_atomic_inc(&nkpod->schedlck);
     __setbits(xnpod_current_sched()->runthread->status,XNLOCK);
 }
 
-static inline void xnpod_unlock_sched (void) {
-
+static inline void xnpod_unlock_sched (void)
+{
     if (xnarch_atomic_dec_and_test(&nkpod->schedlck))
         {
         __clrbits(xnpod_current_sched()->runthread->status,XNLOCK);
         xnpod_schedule();
         }
+}
+
+static inline void xnpod_lock_timers (void)
+{
+    xnarch_atomic_inc(&nkpod->timerlck);
+    setbits(nkpod->status,XNTLOCK);
+}
+
+static inline void xnpod_unlock_timers (void)
+{
+    if (xnarch_atomic_dec_and_test(&nkpod->timerlck))
+	clrbits(nkpod->status,XNTLOCK);
 }
 
 int xnpod_announce_tick(struct xnintr *intr);

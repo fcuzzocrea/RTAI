@@ -730,36 +730,6 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
     return nktimer->get_timer_timeout(timer);
 }
 
-#ifdef __KERNEL__
-
-void xntimer_lock_timers (void)
-
-{
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-
-    if (nkpod->tlock_depth++ == 0)
-	setbits(nkpod->status,XNTLOCK);
-
-    xnlock_put_irqrestore(&nklock,s);
-}
-
-void xntimer_unlock_timers (void)
-
-{
-    spl_t s;
-
-    xnlock_get_irqsave(&nklock,s);
-
-    if (--nkpod->tlock_depth == 0)
-	clrbits(nkpod->status,XNTLOCK);
-
-    xnlock_put_irqrestore(&nklock,s);
-}
-
-#endif /* __KERNEL__ */
-
 /*!
  * @internal
  * \fn void xntimer_freeze(void)

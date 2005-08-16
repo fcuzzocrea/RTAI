@@ -1391,7 +1391,7 @@ static inline void do_schedule_event (struct task_struct *next)
 	       break state: ask all CPUs to resync their timers when
 	       the next tick is announced. */
 	    clrbits(threadin->status,XNDEBUG);
-	    xntimer_unlock_timers();
+	    xnpod_unlock_timers();
             }
 
 	newrprio = threadin->cprio;
@@ -1467,7 +1467,7 @@ static inline void do_sigwake_event (struct task_struct *p)
 	 (sigismember(&p->pending.signal,SIGSTOP))))
 	{
 	__setbits(thread->status,XNDEBUG);
-	xntimer_lock_timers();
+	xnpod_lock_timers();
 	}
 
     if (testbits(thread->status,XNRELAX))

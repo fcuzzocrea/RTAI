@@ -326,7 +326,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     pod->tickvalue = XNARCH_DEFAULT_TICK;
     pod->ticks2sec = 1000000000/ XNARCH_DEFAULT_TICK;
     pod->refcnt = 0;
-    pod->tlock_depth = 0;
+    xnarch_atomic_set(&pod->timerlck,0);
 
     pod->svctable.settime = &xnpod_set_time;
     pod->svctable.faulthandler = &xnpod_fault_handler;

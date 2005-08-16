@@ -160,10 +160,6 @@ static inline void xntimer_stop(xntimer_t *timer)
 	nktimer->do_timer_stop(timer);
 }
 
-void xntimer_lock_timers(void);
-
-void xntimer_unlock_timers(void);
-
 void xntimer_freeze(void);
 
 xnticks_t xntimer_get_date(xntimer_t *timer);

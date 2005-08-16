@@ -2562,6 +2562,10 @@ maybe_switch:
     xnarch_switch_to(xnthread_archtcb(runthread),
                      xnthread_archtcb(threadin));
 
+#ifdef CONFIG_SMP
+    /* If runthread migrated while suspended, sched is no longer correct. */
+    sched = xnpod_current_sched();
+#endif
 #ifdef CONFIG_RTAI_HW_FPU
     __xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */

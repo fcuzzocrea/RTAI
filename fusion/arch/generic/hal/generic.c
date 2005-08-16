@@ -103,12 +103,12 @@ volatile int rthal_sync_op;
 
 volatile unsigned long rthal_cpu_realtime;
 
-#ifdef CONFIG_RTAI_OPT_STATS
+#if defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP)
 spinlock_t xnlock_stats_lock = SPIN_LOCK_UNLOCKED;
 rthal_lock_stats_t xnlock_stats;
 EXPORT_SYMBOL(xnlock_stats_lock);
 EXPORT_SYMBOL(xnlock_stats);
-#endif
+#endif /* CONFIG_RTAI_OPT_STATS && CONFIG_SMP */
 
 unsigned long rthal_critical_enter (void (*synch)(void))
 
@@ -1010,7 +1010,7 @@ static int apc_read_proc (char *page,
     return len;
 }
 
-#ifdef CONFIG_RTAI_OPT_STATS
+#if defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP)
 static int xnlock_read_proc (char *page,
 			     char **start,
 			     off_t off,
@@ -1053,7 +1053,7 @@ static int xnlock_read_proc (char *page,
 
     return len;
 }
-#endif /* CONFIG_RTAI_OPT_STATS */
+#endif /* CONFIG_RTAI_OPT_STATS && CONFIG_SMP */
 
 static struct proc_dir_entry *add_proc_leaf (const char *name,
 					     read_proc_t rdproc,
@@ -1121,13 +1121,13 @@ static int rthal_proc_register (void)
 		  NULL,
 		  rthal_proc_root);
 
-#ifdef CONFIG_RTAI_OPT_STATS
+#if defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP)
     add_proc_leaf("xnlock",
 		  &xnlock_read_proc,
 		  NULL,
 		  NULL,
 		  rthal_proc_root);
-#endif /* CONFIG_RTAI_OPT_STATS */
+#endif /* CONFIG_RTAI_OPT_STATS && CONFIG_SMP */
     
     return 0;
 }

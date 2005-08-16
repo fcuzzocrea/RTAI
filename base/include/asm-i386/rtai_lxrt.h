@@ -100,43 +100,9 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	struct mm_struct *oldmm = prev->active_mm;
-
-	switch_mm(oldmm,next->active_mm,next,cpuid);
-	if (!next->mm) enter_lazy_tlb(oldmm,next,cpuid);
-
-/* NOTE: Do not use switch_to() directly: this is a compiler
-   compatibility issue. */
-
-/* It might be so but, with 2.6.xx at least, only for the inlined case. 
-   Compiler compatibility issues related to inlines can appear anywhere.
-   This case seems to be solved by staticalising without inlining, see LXRT.
-   So let's experiment a bit more, simple Linux reuse is better (Paolo) */
-
-#if 1
+	switch_mm(oldmm, next->active_mm, next, cpuid);
+	if (!next->mm) enter_lazy_tlb(oldmm, next, cpuid);
 	switch_to(prev, next, prev);
-#else
-	__asm__ __volatile__(						\
-		 "pushfl\n\t"				       		\
-		 "cli\n\t"				       		\
-		 "pushl %%esi\n\t"				        \
-		 "pushl %%edi\n\t"					\
-		 "pushl %%ebp\n\t"					\
-		 "movl %%esp,%0\n\t"	/* save ESP */			\
-		 "movl %3,%%esp\n\t"	/* restore ESP */		\
-		 "movl $1f,%1\n\t"	/* save EIP */			\
-		 "pushl %4\n\t"		/* restore EIP */		\
-		 "jmp "SYMBOL_NAME_STR(__switch_to)"\n"			\
-		 "1:\t"							\
-		 "popl %%ebp\n\t"					\
-		 "popl %%edi\n\t"					\
-		 "popl %%esi\n\t"					\
-		 "popfl\n\t"						\
-		 :"=m" (prev->thread.esp),"=m" (prev->thread.eip),	\
-		  "=b" (prev)						\
-		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
-		  "a" (prev), "d" (next),				\
-		  "b" (prev));						
-#endif
 #else /* >= 2.6.0 */
 	extern void context_switch(void *, void *, void *);
 	context_switch(0, prev, next);

@@ -1835,12 +1835,9 @@ void steal_from_linux(RT_TASK *rt_task)
 	klistp->task[klistp->in++ & (MAX_WAKEUP_SRQ - 1)] = rt_task;
 	(lnxtsk = rt_task->lnxtsk)->state = TASK_HARDREALTIME;
 	rtai_sti();
-	if (lnxtsk->run_list.next != LIST_POISON1) {
+	do {
 		schedule();
-		if (rt_task->state != RT_SCHED_READY) {
-			wake_up_process(kthreadm[rt_task->runnable_on_cpus]);
-		}
-	}
+	} while (rt_task->state != RT_SCHED_READY);
 	if (!rt_task->exectime[1]) {
 		rt_task->exectime[1] = rdtsc();
 	}
@@ -1929,14 +1926,12 @@ static void wake_up_srq_handler(unsigned srq)
 #ifdef CONFIG_PREEMPT
 	preempt_disable(); {
 #endif
-	int wokn, cpuid = srq - wake_up_srq[0].srq;
-	while ((wokn = wake_up_srq[cpuid].out != wake_up_srq[cpuid].in)) {
+	int cpuid = srq - wake_up_srq[0].srq;
+	while (wake_up_srq[cpuid].out != wake_up_srq[cpuid].in) {
 		wake_up_process(wake_up_srq[cpuid].task[wake_up_srq[cpuid].out++ & (MAX_WAKEUP_SRQ - 1)]);
 	}
-	if (wokn) {
-		wake_up_process(kthreadm[cpuid]);
-		set_need_resched();
-	}
+	wake_up_process(kthreadm[cpuid]);
+	set_need_resched();
 #ifdef CONFIG_PREEMPT
 	} preempt_enable();
 #endif

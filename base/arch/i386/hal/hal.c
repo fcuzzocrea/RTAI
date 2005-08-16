@@ -1407,9 +1407,9 @@ void rt_setup_8254_tsc (void)
 #define CHECK_KERCTX();
 #endif
 
-static int rtai_hirq_dispatcher (struct pt_regs *regs)
+static int rtai_hirq_dispatcher (struct pt_regs regs)
 {
-	unsigned long cpuid, irq = regs->orig_eax & 0xFF;
+	unsigned long cpuid, irq = regs.orig_eax & 0xFF;
 
 	CHECK_KERCTX();
 
@@ -1433,11 +1433,11 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 		rtai_sti();
 		if (irq == __adeos_tick_irq) {
-			ADEOS_TICK_REGS.eflags = regs->eflags;
-			ADEOS_TICK_REGS.eip    = regs->eip;
-			ADEOS_TICK_REGS.xcs    = regs->xcs;
+			ADEOS_TICK_REGS.eflags = regs.eflags;
+			ADEOS_TICK_REGS.eip    = regs.eip;
+			ADEOS_TICK_REGS.xcs    = regs.xcs;
 #if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
-			ADEOS_TICK_REGS.ebp    = regs->ebp;
+			ADEOS_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
         	}
 		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
@@ -1996,6 +1996,7 @@ static void rtai_domain_entry (int iflag)
 #endif /* !CONFIG_ADEOS_NOTHREADS */
 }
 
+static void *adeos_handle_irq;
 extern void *adeos_extern_irq_handler;
 
 int __rtai_hal_init (void)
@@ -2015,6 +2016,7 @@ int __rtai_hal_init (void)
 		return 1;
 	}
 	adeos_virtualize_irq(rtai_sysreq_virq, &rtai_lsrq_dispatcher, NULL, IPIPE_HANDLE_MASK);
+	adeos_handle_irq = adeos_extern_irq_handler;
 	adeos_extern_irq_handler = rtai_hirq_dispatcher;
 
 	rtai_install_archdep();
@@ -2059,7 +2061,7 @@ void __rtai_hal_exit (void)
 #ifdef CONFIG_PROC_FS
 	rtai_proc_unregister();
 #endif
-	adeos_extern_irq_handler = NULL;
+	adeos_extern_irq_handler = adeos_handle_irq;
 	adeos_unregister_domain(&rtai_domain);
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++) {
 		adeos_catch_event(trapnr, NULL);

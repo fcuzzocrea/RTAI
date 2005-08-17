@@ -310,7 +310,7 @@ static int gatekeeper_thread (void *data)
 
 {
     struct __gatekeeper *gk = (struct __gatekeeper *)data;
-    struct task_struct *this_task = current, *p;
+    struct task_struct *this_task = current;
     DECLARE_WAITQUEUE(wait,this_task);
     int cpu = gk - &gatekeeper[0];
     xnthread_t *thread;
@@ -343,8 +343,6 @@ static int gatekeeper_thread (void *data)
 	xnlock_get_irqsave(&nklock, s);
 
 	thread = gk->thread;
-	p = xnthread_user_task(thread);
-	set_task_state(p,TASK_INTERRUPTIBLE);
 #ifdef CONFIG_SMP
 	/* If the fusion task changed its CPU while in secondary mode,
 	   change the shadow CPU too. We do not migrate the thread
@@ -406,14 +404,10 @@ int xnshadow_harden (void)
        using the register state of the current Linux task. For this to
        happen, we set up the migration data, prepare to suspend the
        current task then wake up the gatekeeper which will perform the
-       actual transition. An APC is scheduled to wake up the
-       gatekeeper thread before scheduling out the current task, so
-       that we are guaranteed to be pulled out of the Linux runqueue
-       before the gatekeeper starts processing our request, which is
-       critical for the proper execution of the migration protocol. */
+       actual transition. */
 
     gk->thread = thread;
-    set_current_state(TASK_UNINTERRUPTIBLE);
+    set_current_state(TASK_INTERRUPTIBLE);
     wake_up_interruptible_sync(&gk->waitq);
     schedule();
 
@@ -1383,16 +1377,30 @@ static inline void do_schedule_event (struct task_struct *next)
 	   we don't care for group sending (XNDEBUG is only set for
 	   ptraced processes). */
 
-        if (testbits(threadin->status,XNDEBUG) &&
-	    (!signal_pending(next) ||
-	     !sigismember(&next->pending.signal,SIGSTOP)))
-            {
-	    /* A shadow thread has been found resuming from a debug
-	       break state: ask all CPUs to resync their timers when
-	       the next tick is announced. */
+        if (testbits(threadin->status,XNDEBUG))
+	    {
+	    if (signal_pending(next))
+		{
+		sigset_t pending;
+
+		spin_lock(&next->sighand->siglock); /* Already interrupt-safe. */
+
+		sigorsets(&pending,
+			  &next->pending.signal,
+			  &next->signal->shared_pending.signal);
+
+		spin_unlock(&next->sighand->siglock);
+
+		if (sigismember(&pending,SIGSTOP) ||
+		    sigismember(&pending,SIGINT))
+		    goto no_ptrace;
+		}
+
 	    clrbits(threadin->status,XNDEBUG);
 	    xnpod_unlock_timers();
-            }
+	    }
+
+ no_ptrace:
 
 	newrprio = threadin->cprio;
 
@@ -1461,13 +1469,21 @@ static inline void do_sigwake_event (struct task_struct *p)
 
     xnlock_get_irqsave(&nklock,s);
 
-    if ((p->ptrace & PT_PTRACED) &&
-	!testbits(thread->status,XNDEBUG) &&
-	(sigismember(&p->pending.signal,SIGTRAP) ||
-	 (sigismember(&p->pending.signal,SIGSTOP))))
+    if ((p->ptrace & PT_PTRACED) && !testbits(thread->status,XNDEBUG))
 	{
-	__setbits(thread->status,XNDEBUG);
-	xnpod_lock_timers();
+	sigset_t pending;
+
+	sigorsets(&pending,	/* We already own the siglock. */
+		  &p->pending.signal,
+		  &p->signal->shared_pending.signal);
+
+	if (sigismember(&pending,SIGTRAP) ||
+	    sigismember(&pending,SIGSTOP) ||
+	    sigismember(&pending,SIGINT))
+	    {
+	    __setbits(thread->status,XNDEBUG);
+	    xnpod_lock_timers();
+	    }
 	}
 
     if (testbits(thread->status,XNRELAX))

@@ -1,3 +1,11 @@
+2005-08-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c (xnshadow_harden): Wait in TASK_INTERRUPTIBLE
+	state instead of TASK_UNINTERRUPTIBLE, so that we don't mess with
+	the runqueue's counter of uninterruptible tasks.
+	(do_sigwake_event): Fix debug break state detection for
+	LinuxThreads setups.
+
 2005-08-17  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
 	
 	* nucleus/pipe.c: Various cleanups.

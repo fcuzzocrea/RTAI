@@ -38,9 +38,6 @@
 #include <linux/types.h>
 #include <linux/poll.h>
 
-#define XNPIPE_WAIT   0x0
-#define XNPIPE_NOWAIT 0x1
-
 #define XNPIPE_KERN_CONN   0x1
 #define XNPIPE_USER_CONN   0x2
 #define XNPIPE_USER_SIGIO  0x4

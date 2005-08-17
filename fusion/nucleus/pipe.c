@@ -42,9 +42,7 @@ static xnpipe_session_handler *xnpipe_open_handler,
 
 xnpipe_state_t xnpipe_states[XNPIPE_NDEVS];
 
-xnqueue_t xnpipe_sleepq;
-
-xnqueue_t xnpipe_asyncq;
+xnqueue_t xnpipe_sleepq, xnpipe_asyncq;
 
 int xnpipe_wakeup_apc;
 
@@ -154,10 +152,11 @@ static void xnpipe_wakeup_proc (void *cookie)
     /* Scan the async queue, sending the proper signal to
        subscribers. */
 
-    holder = getheadq(&xnpipe_asyncq);
+    nholder = getheadq(&xnpipe_asyncq);
 
-    while (holder != NULL)
+    while ((holder = nholder) != NULL)
 	{
+	nholder = nextq(&xnpipe_asyncq,holder);
 	state = link2xnpipe(holder,alink);
 
 	if (testbits(state->status,XNPIPE_USER_SIGIO))
@@ -172,12 +171,8 @@ static void xnpipe_wakeup_proc (void *cookie)
 	       	       
 #if defined(CONFIG_PREEMPT_RT) || defined (CONFIG_SMP)
 	    holder = getheadq(&xnpipe_sleepq);
-#else /* !(CONFIG_PREEMPT_RT || CONFIG_SMP) */
-	    holder = nextq(&xnpipe_asyncq,holder);
 #endif /* CONFIG_PREEMPT_RT || CONFIG_SMP */
 	    }
-	else
-	    holder = nextq(&xnpipe_asyncq,holder);
 	}
 
     xnlock_put_irqrestore(&nklock,s);
@@ -205,6 +200,7 @@ int xnpipe_connect (int minor,
 		    void *cookie)
 {
     xnpipe_state_t *state;
+    int need_sched = 0;
     spl_t s;
 
     if (minor < 0 || minor >= XNPIPE_NDEVS)
@@ -233,8 +229,6 @@ int xnpipe_connect (int minor,
 
     if (testbits(state->status,XNPIPE_USER_CONN))
 	{
-	int need_sched = 0;
-	
 	if (testbits(state->status,XNPIPE_USER_WREAD))
 	    {
 	    /* Wake up the userland thread waiting for the nucleus
@@ -248,12 +242,12 @@ int xnpipe_connect (int minor,
 	    setbits(state->status,XNPIPE_USER_SIGIO);
 	    need_sched = 1;
 	    }
-	    
-	if (need_sched)
-	    xnpipe_schedule_request();
 	}
 
     xnlock_put_irqrestore(&nklock,s);
+
+    if (need_sched)
+        xnpipe_schedule_request();
 
     return 0;
 }
@@ -263,6 +257,7 @@ int xnpipe_disconnect (int minor)
 {
     xnpipe_state_t *state;
     xnholder_t *holder;
+    int need_sched = 0;
     spl_t s;
 
     if (minor < 0 || minor >= XNPIPE_NDEVS)
@@ -300,17 +295,20 @@ int xnpipe_disconnect (int minor)
 	    
 	    /* Wake up the userland thread waiting for some operation
 	       from the kernel side (read/write or poll). */
-	    xnpipe_schedule_request();
+	    need_sched = 1;
 	    }
 
 	if (state->asyncq) /* Schedule asynch sig. */
 	    {
 	    setbits(state->status,XNPIPE_USER_SIGIO);
-	    xnpipe_schedule_request();
+	    need_sched = 1;
 	    }
 	}
 
     xnlock_put_irqrestore(&nklock,s);
+
+    if (need_sched)
+        xnpipe_schedule_request();
 
     return 0;
 }
@@ -321,6 +319,7 @@ ssize_t xnpipe_send (int minor,
 		     int flags)
 {
     xnpipe_state_t *state;
+    int need_sched = 0;
     spl_t s;
 
     if (minor < 0 || minor >= XNPIPE_NDEVS)
@@ -356,8 +355,6 @@ ssize_t xnpipe_send (int minor,
 
     if (testbits(state->status,XNPIPE_USER_CONN))
 	{
-	int need_sched = 0;
-	
 	if (testbits(state->status,XNPIPE_USER_WREAD))
 	    {
 	    /* Wake up the userland thread waiting for input
@@ -371,12 +368,12 @@ ssize_t xnpipe_send (int minor,
 	    setbits(state->status,XNPIPE_USER_SIGIO);
 	    need_sched = 1;
 	    }
-	    
-	if (need_sched)
-	    xnpipe_schedule_request();
 	}
 
     xnlock_put_irqrestore(&nklock,s);
+
+    if (need_sched)
+        xnpipe_schedule_request();
 
     return (ssize_t)size;
 }

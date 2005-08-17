@@ -170,7 +170,7 @@ static void xnpipe_wakeup_proc (void *cookie)
 	       for the sleep queue */
 	       	       
 #if defined(CONFIG_PREEMPT_RT) || defined (CONFIG_SMP)
-	    holder = getheadq(&xnpipe_sleepq);
+	    nholder = getheadq(&xnpipe_sleepq);
 #endif /* CONFIG_PREEMPT_RT || CONFIG_SMP */
 	    }
 	}

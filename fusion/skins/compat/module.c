@@ -25,6 +25,7 @@
 #endif /* __KERNEL__ */
 #include <compat/task.h>
 #include <compat/sem.h>
+#include <compat/shm.h>
 
 MODULE_DESCRIPTION("RTAI/classic API emulator");
 MODULE_AUTHOR("rpm@xenomai.org");
@@ -37,6 +38,10 @@ static xnpod_t __rtai_pod;
 static void compat_shutdown (int xtype)
 
 {
+#ifdef CONFIG_RTAI_OPT_COMPAT_SHM
+    __shm_pkg_cleanup();
+#endif /* CONFIG_RTAI_OPT_COMPAT_SHM */
+
 #ifdef CONFIG_RTAI_OPT_COMPAT_FIFO
     __fifo_pkg_cleanup();
 #endif /* CONFIG_RTAI_OPT_COMPAT_FIFO */
@@ -91,11 +96,18 @@ int __fusion_skin_init (void)
 	goto cleanup_sem;
 #endif /* CONFIG_RTAI_OPT_COMPAT_FIFO */
 
+#ifdef CONFIG_RTAI_OPT_COMPAT_SHM
+    err = __shm_pkg_init();
+
+    if (err)
+	goto cleanup_fifo;
+#endif /* CONFIG_RTAI_OPT_COMPAT_SHM */
+
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     err = __compat_syscall_init();
 
     if (err)
-	goto cleanup_fifo;
+	goto cleanup_shm;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     
     xnprintf("starting RTAI/classic emulator.\n");
@@ -103,14 +115,20 @@ int __fusion_skin_init (void)
     return 0;	/* SUCCESS. */
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
- cleanup_fifo:
+ cleanup_shm:
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
+#ifdef CONFIG_RTAI_OPT_COMPAT_SHM
+    __shm_pkg_cleanup();
+
+ cleanup_fifo:
+#endif /* CONFIG_RTAI_OPT_COMPAT_SHM */
 
 #ifdef CONFIG_RTAI_OPT_COMPAT_FIFO
     __fifo_pkg_cleanup();
 
  cleanup_sem:
-#endif /* CONFIG_RTAI_OPT_COMPAT_SEM */
+#endif /* CONFIG_RTAI_OPT_COMPAT_FIFO */
 
 #ifdef CONFIG_RTAI_OPT_COMPAT_SEM
     __sem_pkg_cleanup();

@@ -20,43 +20,135 @@
 
 #include <nucleus/pod.h>
 #include <nucleus/heap.h>
+#include <nucleus/queue.h>
 #include <compat/shm.h>
 
 
-void *rt_shm_alloc(unsigned long name, int size, int suprt)
+typedef struct xnshm_a {
+
+	xnholder_t link;
+	unsigned ref;
+	void *shm;
+	unsigned long name;
+	int size;
+
+} xnshm_a_t;
+
+static inline xnshm_a_t *link2shma (xnholder_t *laddr)
 {
-	void *p;
+	return laddr ? ((xnshm_a_t *)(((char *)laddr) - (int)(&((xnshm_a_t *)0)->link))) : 0;
+}
 
-	/* FIXME(really shared):
-	 * 	lookup name in list, and if exists return pointer 
-	 * 	and inc usage count.
-	 *	If not in list, alloc and add in the list.
-	 */
-	p = xnheap_alloc(&kheap,size);
+xnqueue_t xnshm_allocq;
 
-	if (p)
-		memset(p, 0, size);
+
+static xnshm_a_t* alloc_new_shm(unsigned long name, int size)
+{
+	xnshm_a_t *p;
+
+	p = xnheap_alloc(&kheap,sizeof(xnshm_a_t));
+	if (!p)
+		return NULL;
+
+	p->shm = xnheap_alloc(&kheap,size);
+	if (!p->shm) {
+		xnheap_free(&kheap,p);
+		return NULL;
+	}
+	memset(p->shm, 0, size);
+
+	inith(&p->link);
+	p->ref = 1;
+	p->name = name;
+	p->size = size;
 
 	return p;
+}
+
+/*
+ * This version of rt_shm_alloc works only inter-intra kernel modules.
+ * So far, there's no support for user-land Linux processes.
+ * The suprt argument is not honored.
+ * The shared memory is allocated from the Fusion kheap.
+ */
+void *rt_shm_alloc(unsigned long name, int size, int suprt)
+{
+	void *ret = NULL;
+	xnholder_t *holder;
+	xnshm_a_t *p;
+	spl_t s;
+
+	xnlock_get_irqsave(&nklock,s);
+
+	holder = getheadq(&xnshm_allocq);
+
+	while (holder != NULL) {
+		p = link2shma(holder);
+
+		if (p->name == name) {
+			/* assert(size==p->size); */
+
+			p->ref++;
+			ret = p->shm;
+			goto unlock_and_exit;
+		}
+
+		holder = nextq(&xnshm_allocq,holder);
+	}
+
+	p = alloc_new_shm(name, size);
+	if (!p)
+		goto unlock_and_exit;
+
+	appendq(&xnshm_allocq, &p->link);
+
+	ret = p->shm;
+
+ unlock_and_exit:
+
+	xnlock_put_irqrestore(&nklock,s);
+
+	return ret;
 }
 
 
 int rt_shm_free(unsigned long name)
 {
-	/* FIXME (memleak):
-	 * 	lookup name in list, and if doesn't exist,
-	 * 	return 0. Otherwise, decrement usage count.
-	 * 	If usage count is 0, do xnheap_free(&kheap,p).
-	 * 	return size freed.
-	 */
+	int ret = 0;
+	xnholder_t *holder;
+	xnshm_a_t *p;
+	spl_t s;
 
-	return 0;
+	xnlock_get_irqsave(&nklock,s);
+
+	holder = getheadq(&xnshm_allocq);
+
+	while (holder != NULL) {
+		p = link2shma(holder);
+
+		if (p->name == name && --p->ref == 0) {
+
+			removeq(&xnshm_allocq, &p->link);
+			ret = p->size;
+			xnheap_free(&kheap,p->shm);
+			xnheap_free(&kheap,p);
+			break;
+		}
+
+		holder = nextq(&xnshm_allocq,holder);
+	}
+
+	xnlock_put_irqrestore(&nklock,s);
+
+	return ret;
 }
 
 
 int __shm_pkg_init (void)
 
 {
+    initq(&xnshm_allocq);
+
     return 0;
 }
 

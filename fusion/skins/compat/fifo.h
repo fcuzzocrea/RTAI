@@ -83,6 +83,8 @@ int rtf_get(unsigned minor,
 int rtf_create_handler(unsigned minor,
 		       int (*handler)(unsigned minor));
 
+#define X_FIFO_HANDLER(handler) ((int (*)(unsigned int))(handler))
+
 int rtf_reset(unsigned minor);
 
 #ifdef __cplusplus

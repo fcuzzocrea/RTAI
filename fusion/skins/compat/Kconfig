@@ -23,3 +23,11 @@ config RTAI_OPT_COMPAT_SEM
 	
 	Semaphores are synchronization objects granting RTAI
 	tasks a concurrent access to a given number of resources.
+
+config RTAI_OPT_COMPAT_SHM
+	bool "Shared Memory"
+	depends on RTAI_SKIN_COMPAT
+	default y
+	help
+	
+	SHM are Shared Memory objects across RTAI tasks.

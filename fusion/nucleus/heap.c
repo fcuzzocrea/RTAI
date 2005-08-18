@@ -977,11 +977,11 @@ static int xnheap_mmap (struct file *file,
 }
 
 static struct file_operations xnheap_fops = {
-    owner:   THIS_MODULE,
-    open:    &xnheap_open,
-    release: &xnheap_release,
-    ioctl:   &xnheap_ioctl,
-    mmap:    &xnheap_mmap
+    .owner =	THIS_MODULE,
+    .open =	&xnheap_open,
+    .release =	&xnheap_release,
+    .ioctl =	&xnheap_ioctl,
+    .mmap =	&xnheap_mmap
 };
 
 static struct miscdevice xnheap_dev = {

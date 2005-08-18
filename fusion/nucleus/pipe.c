@@ -920,14 +920,14 @@ static unsigned xnpipe_poll (struct file *file,
 }
 
 static struct file_operations xnpipe_fops = {
-	owner:		THIS_MODULE,
-	read:		xnpipe_read,
-	write:		xnpipe_write,
-	poll:		xnpipe_poll,
-	ioctl:		xnpipe_ioctl,
-	open:		xnpipe_open,
-	release:	xnpipe_release,
-	fasync:		xnpipe_fasync
+	.owner =	THIS_MODULE,
+	.read =		xnpipe_read,
+	.write =	xnpipe_write,
+	.poll =		xnpipe_poll,
+	.ioctl =	xnpipe_ioctl,
+	.open =		xnpipe_open,
+	.release =	xnpipe_release,
+	.fasync =	xnpipe_fasync
 };
 
 int xnpipe_mount (void)

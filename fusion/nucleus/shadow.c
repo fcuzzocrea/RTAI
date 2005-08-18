@@ -343,15 +343,23 @@ static int gatekeeper_thread (void *data)
 	xnlock_get_irqsave(&nklock, s);
 
 	thread = gk->thread;
+
+	/* In the very rare case where the requestor has been awaken
+	   by a signal before we have been able to process the
+	   pending request, just ignore the latter. */
+
+	if (xnthread_user_task(thread)->state == TASK_INTERRUPTIBLE) {
 #ifdef CONFIG_SMP
-	/* If the fusion task changed its CPU while in secondary mode,
-	   change the shadow CPU too. We do not migrate the thread
-	   timers here, it would not work. For a "full" migration
-	   comprising timers, using xnpod_migrate is required. */
-	thread->sched = xnpod_sched_slot(cpu);
+	    /* If the fusion task changed its CPU while in secondary
+	       mode, change the shadow CPU too. We do not migrate the
+	       thread timers here, it would not work. For a "full"
+	       migration comprising timers, using xnpod_migrate is
+	       required. */
+	    thread->sched = xnpod_sched_slot(cpu);
 #endif /* CONFIG_SMP */
-	xnpod_resume_thread(thread,XNRELAX);
-	xnpod_schedule();
+	    xnpod_resume_thread(thread,XNRELAX);
+	    xnpod_schedule();
+	}
 
 	xnlock_put_irqrestore(&nklock, s);
     }
@@ -411,12 +419,21 @@ int xnshadow_harden (void)
     wake_up_interruptible_sync(&gk->waitq);
     schedule();
 
+    /* Rare case: we have been awaken by a signal before the
+       gatekeeper sent us to primary mode. Since TASK_UNINTERRUPTIBLE
+       is unavailable to us without wrecking the runqueue's count of
+       uniniterruptible tasks, we just notice the issue and gracefully
+       fail; the caller will have to process this signal anyway. */
+
+    if (rthal_current_domain == rthal_root_domain) {
 #ifdef CONFIG_RTAI_OPT_DEBUG
-    if (rthal_current_domain == rthal_root_domain)
-	xnpod_fatal("xnshadow_harden() failed for thread %s[%d]",
-		    thread->name,
-		    xnthread_user_pid(thread));
+	if (!signal_pending(this_task))
+	    xnpod_fatal("xnshadow_harden() failed for thread %s[%d]",
+			thread->name,
+			xnthread_user_pid(thread));
 #endif /* CONFIG_RTAI_OPT_DEBUG */
+	return -ERESTARTSYS;
+    }
 
 #ifdef CONFIG_RTAI_HW_FPU
     xnpod_switch_fpu(xnpod_current_sched());
@@ -1368,14 +1385,12 @@ static inline void do_schedule_event (struct task_struct *next)
 
     if (threadin)
 	{
-	/* Check whether we need to unlock the timer manager, each
-	   time a Linux task resumes from a stopped state, excluding
-	   tasks resuming shortly for entering a stopped state asap
-	   due to ptracing. To identify the latter, we are only
-	   interested by SIGSTOP as sent to a process for ptracing
-	   purpose, so we don't check the shared pending queue since
-	   we don't care for group sending (XNDEBUG is only set for
-	   ptraced processes). */
+	/* Check whether we need to unlock the timers, each time a
+	   Linux task resumes from a stopped state, excluding tasks
+	   resuming shortly for entering a stopped state asap due to
+	   ptracing. To identify the latter, we need to check for
+	   SIGSTOP and SIGINT in order to encompass both the NPTL and
+	   LinuxThreads behaviours. */
 
         if (testbits(threadin->status,XNDEBUG))
 	    {

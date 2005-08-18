@@ -63,6 +63,8 @@ static void __fifo_flush_handler (void *cookie)
     xnlock_put_irqrestore(&nklock,s);
 }
 
+#define X_FIFO_HANDLER2(handler) ((int (*)(int, ...))(handler))
+
 static int __fifo_exec_handler (int minor,
 				struct xnpipe_mh *mh,
 				int retval,
@@ -73,7 +75,7 @@ static int __fifo_exec_handler (int minor,
 
     if (retval >= 0 &&
 	fifo->handler != NULL &&
-	(err = fifo->handler(minor)) < 0)
+	(err = X_FIFO_HANDLER2(fifo->handler)(minor, 'w') < 0))
 	retval = err;
 
     return retval;
@@ -84,8 +86,17 @@ static int __fifo_output_handler (int minor,
 				  int retval,
 				  void *cookie)
 {
+    RT_FIFO *fifo = __fifo_table + minor;
+    int err;
+
     xnfree(mh);
-    return __fifo_exec_handler(minor,mh,retval,cookie);
+
+    if (retval >= 0 &&
+	fifo->handler != NULL &&
+	(err = X_FIFO_HANDLER2(fifo->handler)(minor, 'r') < 0))
+	retval = err;
+
+    return retval;
 }
 
 int __fifo_pkg_init (void)

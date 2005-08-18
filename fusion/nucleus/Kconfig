@@ -58,8 +58,11 @@ config RTAI_OPT_DEBUG
 	default n
 	help
 	
-	This option activates runtime checking of the real-time
-	nucleus state.
+	This option activates various debugging checks inside the core
+	system. Doing so adds a significant runtime overhead,
+	worsening the latency figures especially on SMP kernels.
+	Do not switch this option on unless you really know what you
+	are doing.
 
 config RTAI_OPT_WATCHDOG
 	bool "Watchdog support"

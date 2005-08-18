@@ -604,8 +604,7 @@ static void rthal_apc_handler (unsigned virq)
        unloading any module that may contain apc handlers. We keep the
        handler affinity with the poster's CPU, so that the handler is
        invoked on the same CPU than the code which called
-       rthal_apc_schedule(). We spinlock for handling the CPU
-       migration case; we might get rid of this some day. */
+       rthal_apc_schedule(). */
 
     while (rthal_apc_pending[cpuid] != 0)
 	{
@@ -1011,12 +1010,12 @@ static int apc_read_proc (char *page,
 }
 
 #if defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP)
-static int xnlock_read_proc (char *page,
-			     char **start,
-			     off_t off,
-			     int count,
-			     int *eof,
-			     void *data)
+static int lock_read_proc (char *page,
+			   char **start,
+			   off_t off,
+			   int count,
+			   int *eof,
+			   void *data)
 {
     int cpu, len = 0;
     char *p = page;
@@ -1031,16 +1030,14 @@ static int xnlock_read_proc (char *page,
 
         rthal_spin_lock_irqsave(&xnlock_stats_lock, flags);
         p += sprintf(p,
-                     "  max xnlock duration: %lluns\n"
-                     "  including spinning:  %lluns\n"
-                     "  in file:             %s\n"
-                     "  function:            %s\n"
-                     "  line:                %d\n",
+                     "  longest locked section: %llu ns\n"
+                     "  spinning time: %llu ns\n"
+                     "  section entry: %s:%d (%s)\n",
                      xnlock_stats[cpu].lock_time,
                      xnlock_stats[cpu].spin_time,
                      xnlock_stats[cpu].file,
-                     xnlock_stats[cpu].function,
-                     xnlock_stats[cpu].line);
+                     xnlock_stats[cpu].line,
+                     xnlock_stats[cpu].function);
         rthal_spin_unlock_irqrestore(&xnlock_stats_lock, flags);
     }
 
@@ -1122,8 +1119,8 @@ static int rthal_proc_register (void)
 		  rthal_proc_root);
 
 #if defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP)
-    add_proc_leaf("xnlock",
-		  &xnlock_read_proc,
+    add_proc_leaf("lock",
+		  &lock_read_proc,
 		  NULL,
 		  NULL,
 		  rthal_proc_root);
@@ -1136,7 +1133,7 @@ static void rthal_proc_unregister (void)
 
 {
 #ifdef CONFIG_RTAI_OPT_STATS
-    remove_proc_entry("xnlock", rthal_proc_root);
+    remove_proc_entry("lock", rthal_proc_root);
 #endif /* CONFIG_RTAI_OPT_STATS */
     remove_proc_entry("hal",rthal_proc_root);
     remove_proc_entry("compiler",rthal_proc_root);

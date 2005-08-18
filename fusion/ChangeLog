@@ -1,3 +1,11 @@
+2005-08-18  Fillod Stephane <stephane.fillod@thomson.net>
+	
+	* nucleus/heap.c, nucleus/pipe.c: Use C99 initializers.
+
+	* skins/compat/shm.c: Add shared memory support.
+
+	* skins/compat/fifo.c: Pass read/write flag to fifo handlers.
+
 2005-08-17  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/shadow.c (xnshadow_harden): Wait in TASK_INTERRUPTIBLE

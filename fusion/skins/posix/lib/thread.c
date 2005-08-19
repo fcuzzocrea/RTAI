@@ -135,11 +135,14 @@ int __wrap_pthread_setschedparam (pthread_t thread,
 				  int policy,
 				  const struct sched_param *param)
 {
-    return -XENOMAI_SKINCALL3(__pse51_muxid,
+    pthread_t myself = pthread_self();
+
+    return -XENOMAI_SKINCALL4(__pse51_muxid,
 			      __pse51_thread_setschedparam,
 			      thread,
 			      policy,
-			      param);
+			      param,
+			      myself);
 }
 
 int __wrap_sched_yield (void)

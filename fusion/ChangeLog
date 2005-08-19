@@ -1,5 +1,8 @@
 2005-08-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/posix/syscall.c (__pthread_setschedparam): Automatically
+	shadow the calling thread when applicable.
+
 	* testsuite/latency/latency.c (main): Fix overflow for periods > 2
 	ms (period_ns).
 

@@ -1,5 +1,9 @@
 2005-08-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c: Make all *bind() calls conforming, so that
+	we do not attempt to switch the caller to primary mode if it
+	happens to be a unshadowed thread, but we do so otherwise.
+
 	* skins/posix/syscall.c (__pthread_setschedparam): Automatically
 	shadow the calling thread when applicable.
 

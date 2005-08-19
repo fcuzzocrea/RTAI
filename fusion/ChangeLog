@@ -1,3 +1,8 @@
+2005-08-19  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ia64/hal/ia64.c, arch/ppc64/hal/ppc64.c
+	(do_exception_event): Fix propagation code.
+
 2005-08-18  Fillod Stephane <stephane.fillod@thomson.net>
 	
 	* nucleus/heap.c, nucleus/pipe.c: Use C99 initializers.

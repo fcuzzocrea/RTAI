@@ -25,7 +25,7 @@ long gminjitter = TEN_MILLION,
     gavgjitter = 0,
     goverrun = 0;
 
-int period_ns = 0;
+long long period_ns = 0;
 int test_duration = 0;  /* sec of testing, via -T <sec>, 0 is inf */
 int data_lines = 21;    /* data lines per header line, -l <lines> to change */
 int quiet = 0;          /* suppress printing of RTH, RTD lines when -T given */
@@ -355,7 +355,7 @@ int main (int argc, char **argv)
 
             case 'p':
 
-                period_ns = atoi(optarg) * 1000;
+                period_ns = atoi(optarg) * 1000LL;
                 break;
 
             case 'l':
@@ -404,7 +404,7 @@ int main (int argc, char **argv)
         cleanup_upon_sig(0);
 
     if (period_ns == 0)
-        period_ns = 100000; /* ns */
+        period_ns = 100000LL; /* ns */
 
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
@@ -413,7 +413,7 @@ int main (int argc, char **argv)
 
     setlinebuf(stdout);
 
-    printf("== Sampling period: %d us\n",period_ns / 1000);
+    printf("== Sampling period: %Ld us\n",period_ns / 1000);
 
     mlockall(MCL_CURRENT|MCL_FUTURE);
 

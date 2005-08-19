@@ -1,5 +1,8 @@
 2005-08-19  Philippe Gerum  <rpm@xenomai.org>
 
+	* testsuite/latency/latency.c (main): Fix overflow for periods > 2
+	ms (period_ns).
+
 	* arch/ia64/hal/ia64.c, arch/ppc64/hal/ppc64.c
 	(do_exception_event): Fix propagation code.
 

@@ -175,7 +175,7 @@ static inline void do_rthal_domain_entry (void)
     for (trapnr = 0; trapnr < RTHAL_NR_FAULTS; trapnr++)
 	rthal_catch_exception(trapnr,&exception_event);
 
-    printk(KERN_INFO "RTAI: hal/ppc64 loaded.\n");
+    printk(KERN_INFO "RTAI: hal/ia64 loaded.\n");
 }
 
 RTHAL_DECLARE_DOMAIN(rthal_domain_entry);

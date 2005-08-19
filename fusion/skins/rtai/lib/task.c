@@ -224,12 +224,11 @@ int rt_task_set_periodic (RT_TASK *task,
                                 task,
                                 &idate,
                                 &period);
-
     if(err == -ETIMEDOUT)
         fprintf(stderr,
-                "WARNING: starting with RTAI/Fusion 0.8.4, the start time passed"
-                " to rt_task_set_periodic\nshould use rt_timer_read as a time"
-                " base.");
+                "WARNING: starting with RTAI/fusion 0.9, the start time passed\n"
+                "to rt_task_set_periodic() should use rt_timer_read() as a time"
+                "base.\n");
 
     return err;
 }

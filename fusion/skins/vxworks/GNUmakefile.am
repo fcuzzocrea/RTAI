@@ -1,4 +1,5 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 includedir = $(prefix)/include/vxworks
 
 modext = @RTAI_MODULE_EXT@
@@ -59,12 +60,15 @@ endif
 install-exec-local: rtai_vxworks$(modext)
 	$(mkinstalldirs) $(moduledir) $(DESTDIR)$(includedir)
 	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(symboldir)
+	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_vxworks.mod $(symboldir)
 	for f in $(HEADER_SYMLINKS); do \
 		$(LN_S) -f vxworks.h $(DESTDIR)$(includedir)/$$f; \
 	done
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_vxworks$(modext)
+	$(RM) $(symboldir)/rtai_vxworks.mod
 	for f in $(HEADER_SYMLINKS); do \
 		$(RM) $(DESTDIR)$(includedir)/$$f; \
 	done

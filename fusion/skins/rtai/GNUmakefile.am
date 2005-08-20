@@ -1,4 +1,5 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 includedir = $(prefix)/include/rtai
 
 modext = @RTAI_MODULE_EXT@
@@ -105,9 +106,12 @@ endif
 install-exec-local: rtai_native$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(symboldir)
+	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_native.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_native$(modext)
+	$(RM) $(symboldir)/rtai_native.mod
 
 .PHONY: FORCE
 

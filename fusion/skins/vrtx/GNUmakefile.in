@@ -263,6 +263,7 @@ RTAI_MAYBE_SIMDIR = @RTAI_MAYBE_SIMDIR@
 RTAI_MODULE_DIR = @RTAI_MODULE_DIR@
 RTAI_MODULE_EXT = @RTAI_MODULE_EXT@
 RTAI_PIPE_NRDEV = @RTAI_PIPE_NRDEV@
+RTAI_SYMBOL_DIR = @RTAI_SYMBOL_DIR@
 RTAI_TARGET_ARCH = @RTAI_TARGET_ARCH@
 RTAI_TARGET_SUBARCH = @RTAI_TARGET_SUBARCH@
 RTAI_USER_APP_CFLAGS = @RTAI_USER_APP_CFLAGS@
@@ -316,6 +317,7 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = \
 	event.c \
@@ -829,9 +831,12 @@ all-local: rtai_vrtx$(modext)
 install-exec-local: rtai_vrtx$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(symboldir)
+	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_vrtx.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_vrtx$(modext)
+	$(RM) $(symboldir)/rtai_vrtx.mod
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

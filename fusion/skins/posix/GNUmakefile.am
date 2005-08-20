@@ -1,4 +1,5 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 includedir = $(prefix)/include/posix
 
 modext = @RTAI_MODULE_EXT@
@@ -67,9 +68,12 @@ endif
 install-exec-local: rtai_posix$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(symboldir)
+	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_posix.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_posix$(modext)
+	$(RM) $(symboldir)/rtai_posix.mod
 
 .PHONY: FORCE
 

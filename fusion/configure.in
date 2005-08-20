@@ -114,8 +114,11 @@ AC_ARG_WITH(module-dir,
 	RTAI_MODULE_DIR="$withval"
     ])
 
+top_builddir=`pwd`
+
 dnl Are we building into the source tree?
-if test "$srcdir" = `pwd`; then
+
+if test "$srcdir" = $top_builddir; then
    CONFIG_RTAI_OLD_FASHIONED_BUILD=y
 else
    CONFIG_RTAI_OLD_FASHIONED_BUILD=
@@ -130,7 +133,9 @@ else
 fi
 
 AC_MSG_RESULT([$RTAI_MODULE_DIR])
-CONFIG_RTAI_MODULE_DIR=$RTAI_MODULE_DIR
+
+dnl A place to export module symbols
+RTAI_SYMBOL_DIR='${exec_prefix}/symbols'
 
 dnl
 dnl Process the Linux kernel configuration
@@ -218,7 +223,10 @@ if test -r $RTAI_LINUX_SRCDIR/include/linux/ipipe.h; then
    v=`grep '^#define.*IPIPE_ARCH_STRING.*"' $RTAI_LINUX_SRCDIR/include/linux/ipipe.h|sed -e 's,.*"\(.*\)"$,\1,'`
    AC_MSG_RESULT([I-pipe ($v)])
    if test x${CONFIG_IPIPE} = x; then
-      AC_MSG_ERROR([Please activate the I-pipe support in $RTAI_LINUX_DIR and rebuild your kernel])
+      AC_MSG_ERROR([Please activate the extended I-pipe support in $RTAI_LINUX_DIR and rebuild your kernel])
+   fi
+   if test x${CONFIG_IPIPE_EXTENDED} = x; then
+      AC_MSG_ERROR([Please re-patch your kernel with the extended I-pipe support])
    fi
 elif test -r $RTAI_LINUX_SRCDIR/include/linux/adeos.h; then
    v=`grep '^#define.*ADEOS_ARCH_STRING.*"' $RTAI_LINUX_SRCDIR/include/asm-*/adeos.h|sed -e 's,.*"\(.*\)"$,\1,'`
@@ -1261,11 +1269,11 @@ dnl
 
 RTAI_MODULE_EXT=.ko
 RTAI_KBUILD_ENV='src2obj = $(patsubst %.$(1),%.o,$(filter %.$(1),$(call notdir,$(2))))'
-RTAI_KBUILD_TOP="@if test -e $RTAI_LINUX_DIR/Module.symvers; then mv -f $RTAI_LINUX_DIR/Module.symvers $RTAI_LINUX_DIR/__Module.symvers; fi; if test -e $RTAI_LINUX_DIR/vmlinux; then mv -f $RTAI_LINUX_DIR/vmlinux $RTAI_LINUX_DIR/__vmlinux; fi; "
-RTAI_KBUILD_BOTTOM="&& if test -e $RTAI_LINUX_DIR/__Module.symvers; then mv -f $RTAI_LINUX_DIR/__Module.symvers $RTAI_LINUX_DIR/Module.symvers; fi && if test -e $RTAI_LINUX_DIR/__vmlinux; then mv -f $RTAI_LINUX_DIR/__vmlinux $RTAI_LINUX_DIR/vmlinux; fi"
+RTAI_KBUILD_TOP=@
+RTAI_KBUILD_BOTTOM=
 RTAI_KBUILD_CMD="for src in \$(filter-out FORCE, \$^); do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=$RTAI_TARGET_ARCH \
-		    M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
+		    M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) MODVERDIR=$top_builddir/symbols modules \
 		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
 
 RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
@@ -1388,6 +1396,7 @@ AC_SUBST(RTAI_LINUX_DIR)
 AC_SUBST(RTAI_LINUX_VERSION)
 AC_SUBST(RTAI_MODULE_DIR)
 AC_SUBST(RTAI_MODULE_EXT)
+AC_SUBST(RTAI_SYMBOL_DIR)
 AC_SUBST(RTAI_KBUILD_ENV)
 AC_SUBST(RTAI_KBUILD_TOP)
 AC_SUBST(RTAI_KBUILD_BOTTOM)

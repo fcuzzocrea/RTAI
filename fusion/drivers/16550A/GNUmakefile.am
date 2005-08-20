@@ -1,4 +1,5 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 
 modext = @RTAI_MODULE_EXT@
 
@@ -29,9 +30,12 @@ endif
 install-exec-local: rtai_16550A$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(symboldir)
+	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_16550A.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_16550A$(modext)
+	$(RM) $(symboldir)/rtai_16550A.mod
 
 .PHONY: FORCE
 

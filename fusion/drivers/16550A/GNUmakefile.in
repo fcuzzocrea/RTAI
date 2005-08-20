@@ -220,6 +220,7 @@ RTAI_MAYBE_SIMDIR = @RTAI_MAYBE_SIMDIR@
 RTAI_MODULE_DIR = @RTAI_MODULE_DIR@
 RTAI_MODULE_EXT = @RTAI_MODULE_EXT@
 RTAI_PIPE_NRDEV = @RTAI_PIPE_NRDEV@
+RTAI_SYMBOL_DIR = @RTAI_SYMBOL_DIR@
 RTAI_TARGET_ARCH = @RTAI_TARGET_ARCH@
 RTAI_TARGET_SUBARCH = @RTAI_TARGET_SUBARCH@
 RTAI_USER_APP_CFLAGS = @RTAI_USER_APP_CFLAGS@
@@ -273,6 +274,7 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = 16550A.c
 distfiles = $(libmodule_SRC)
@@ -459,9 +461,12 @@ all-local: rtai_16550A$(modext)
 install-exec-local: rtai_16550A$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(symboldir)
+	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_16550A.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_16550A$(modext)
+	$(RM) $(symboldir)/rtai_16550A.mod
 
 .PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

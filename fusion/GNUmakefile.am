@@ -4,8 +4,8 @@ SUDO=sudo
 
 SUBDIRS = \
 	include \
-	nucleus \
 	arch \
+	nucleus \
 	skins \
 	drivers \
 	testsuite \

@@ -1,4 +1,5 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 includedir = $(prefix)/include/compat
 
 modext = @RTAI_MODULE_EXT@
@@ -74,9 +75,12 @@ endif
 install-exec-local: rtai_compat$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(symboldir)
+	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_compat.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_compat$(modext)
+	$(RM) $(symboldir)/rtai_compat.mod
 
 .PHONY: FORCE
 

@@ -320,7 +320,6 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = module.c task.c timer.c $(am__append_1) \
 	$(am__append_3) $(am__append_5) $(am__append_7) \
@@ -679,12 +678,9 @@ all-local: rtai_native$(modext)
 install-exec-local: rtai_native$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
-	$(mkinstalldirs) $(symboldir)
-	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_native.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_native$(modext)
-	$(RM) $(symboldir)/rtai_native.mod
 
 .PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -1,5 +1,4 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 includedir = $(prefix)/include/uvm
 
 modext = @RTAI_MODULE_EXT@
@@ -37,12 +36,9 @@ endif
 install-exec-local: rtai_uvm$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
-	$(mkinstalldirs) $(symboldir)
-	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_uvm.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_uvm$(modext)
-	$(RM) $(symboldir)/rtai_uvm.mod
 
 .PHONY: FORCE
 

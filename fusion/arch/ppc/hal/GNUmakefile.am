@@ -1,5 +1,4 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 
 modext = @RTAI_MODULE_EXT@
 
@@ -29,8 +28,6 @@ endif
 install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
-	$(mkinstalldirs) $(symboldir)
-	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_hal.mod $(symboldir)
 
 .PHONY: FORCE
 

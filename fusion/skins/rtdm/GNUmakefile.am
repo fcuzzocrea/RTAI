@@ -1,5 +1,4 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 includedir = $(prefix)/include/rtdm
 
 modext = @RTAI_MODULE_EXT@
@@ -45,12 +44,9 @@ endif
 install-exec-local: rtai_rtdm$(modext)
 	$(mkinstalldirs) $(moduledir) $(DESTDIR)$(includedir)
 	$(INSTALL_DATA) $< $(moduledir)
-	$(mkinstalldirs) $(symboldir)
-	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_rtdm.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_rtdm$(modext)
-	$(RM) $(symboldir)/rtai_rtdm.mod
 
 .PHONY: FORCE
 

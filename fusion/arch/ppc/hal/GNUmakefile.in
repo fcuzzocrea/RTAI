@@ -274,7 +274,6 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 modext = @RTAI_MODULE_EXT@
 libhal_SRC = ppc.c switch.S $(am__append_1)
 EXTRA_DIST = $(libhal_SRC) fpu.S Makefile.kbuild
@@ -456,8 +455,6 @@ all-local: rtai_hal$(modext)
 install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
-	$(mkinstalldirs) $(symboldir)
-	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_hal.mod $(symboldir)
 
 .PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

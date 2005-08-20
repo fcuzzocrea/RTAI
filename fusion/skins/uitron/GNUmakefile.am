@@ -1,5 +1,4 @@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 includedir = $(prefix)/include/uitron
 
 modext = @RTAI_MODULE_EXT@
@@ -44,12 +43,9 @@ endif
 install-exec-local: rtai_uitron$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
-	$(mkinstalldirs) $(symboldir)
-	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_uitron.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_uitron$(modext)
-	$(RM) $(symboldir)/rtai_uitron.mod
 
 if CONFIG_RTAI_OPT_UVM
 

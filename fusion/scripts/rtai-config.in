@@ -18,6 +18,7 @@ RTAI_LINUX_DIR="@RTAI_LINUX_DIR@"
 RTAI_LINUX_VERSION="@RTAI_LINUX_VERSION@"
 RTAI_KERNEL_CFLAGS="-I. -I${staging}${includedir} @RTAI_KMOD_APP_CFLAGS@ @RTAI_FP_CFLAGS@"
 RTAI_MODULE_DIR="${staging}@RTAI_MODULE_DIR@"
+RTAI_SYMBOL_DIR="${staging}@RTAI_SYMBOL_DIR@"
 RTAI_FUSION_CFLAGS="-I. -I${staging}${includedir} @RTAI_USER_APP_CFLAGS@"
 RTAI_FUSION_LDFLAGS="-L${staging}${libdir} -lpthread"
 RTAI_POSIX_CFLAGS="-I. -I${staging}${includedir} -I${staging}${includedir}/posix @RTAI_USER_APP_CFLAGS@"
@@ -54,6 +55,7 @@ Options :
         --linux-dir
         --linux-version
         --module-dir
+        --symbol-dir
         --library-dir
 EOF
     exit $1
@@ -117,6 +119,9 @@ while test $# -gt 0; do
             ;;
         --mod*-dir)
             echo $RTAI_MODULE_DIR
+            ;;
+        --sym*-dir)
+            echo $RTAI_SYMBOL_DIR
             ;;
         --lib*-dir|--libdir|--user-libdir)
             echo $RTAI_LIBRARY_DIR

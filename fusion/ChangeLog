@@ -1,5 +1,7 @@
 2005-08-20  Philippe Gerum  <rpm@xenomai.org>
 
+	* scripts/rtai-config.in: Add --symbol-dir.
+
 	* include/nucleus/asm-i386/syscall.h: Simplify the configuration
 	by removing the adaptive VSYSCALL support: this made little sense,
 	since RT users will/must know which capabilities their respective

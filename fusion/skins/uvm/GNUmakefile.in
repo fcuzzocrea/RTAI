@@ -294,7 +294,6 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
-symboldir = $(DESTDIR)@RTAI_SYMBOL_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = \
 	module.c \
@@ -648,12 +647,9 @@ all-local: rtai_uvm$(modext)
 install-exec-local: rtai_uvm$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
-	$(mkinstalldirs) $(symboldir)
-	$(INSTALL_DATA) $(top_builddir)/symbols/rtai_uvm.mod $(symboldir)
 
 uninstall-local:
 	$(RM) $(moduledir)/rtai_uvm$(modext)
-	$(RM) $(symboldir)/rtai_uvm.mod
 
 .PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

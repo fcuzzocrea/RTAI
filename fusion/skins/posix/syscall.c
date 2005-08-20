@@ -243,10 +243,10 @@ static int __pthread_shadow (struct task_struct *curr,
 int __pthread_setschedparam (struct task_struct *curr, struct pt_regs *regs)
 
 { 
+    int policy, err, promoted = 0;
     struct sched_param param;
     struct pse51_hkey hkey;
     pthread_t k_tid;
-    int policy;
 
     policy = __xn_reg_arg2(regs);
 
@@ -267,11 +267,19 @@ int __pthread_setschedparam (struct task_struct *curr, struct pt_regs *regs)
     k_tid = __pthread_find(&hkey);
 
     if (!k_tid && __xn_reg_arg1(regs) == __xn_reg_arg4(regs))
+	{
 	/* If the syscall applies to "current", and the latter is not
 	   a fusion thread already, then shadow it. */
-	return __pthread_shadow(curr,&hkey,&param);
+	err = __pthread_shadow(curr,&hkey,&param);
+	promoted = 1;
+	}
+    else
+	err = -pthread_setschedparam(k_tid,policy,&param);
 
-    return -pthread_setschedparam(k_tid,policy,&param);
+    if (!err)
+	__xn_put_user(curr,promoted,(int __user *)__xn_reg_arg5(regs));
+
+    return err;
 }
 
 int __sched_yield (struct task_struct *curr, struct pt_regs *regs)

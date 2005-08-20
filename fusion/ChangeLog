@@ -1,5 +1,8 @@
 2005-08-20  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/posix/syscall.c: Set __pthread_setschedparam as
+	conforming.
+
 	* fusion: Following Jan's proposal, export module symbols to a
 	central repository, and get rid of the former ugly hack
 	circumventing the Kbuild warnings in the same move.

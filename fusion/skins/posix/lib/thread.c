@@ -136,13 +136,22 @@ int __wrap_pthread_setschedparam (pthread_t thread,
 				  const struct sched_param *param)
 {
     pthread_t myself = pthread_self();
+    int err, promoted;
 
-    return -XENOMAI_SKINCALL4(__pse51_muxid,
-			      __pse51_thread_setschedparam,
-			      thread,
-			      policy,
-			      param,
-			      myself);
+    err = -XENOMAI_SKINCALL5(__pse51_muxid,
+			     __pse51_thread_setschedparam,
+			     thread,
+			     policy,
+			     param,
+			     myself,
+			     &promoted);
+    if (!err && promoted)
+	{
+	signal(SIGCHLD,&__pthread_sigharden_handler);
+	XENOMAI_SYSCALL1(__xn_sys_migrate,XENOMAI_RTAI_DOMAIN);
+	}
+
+    return err;
 }
 
 int __wrap_sched_yield (void)

@@ -1096,9 +1096,7 @@ Optional Features:
   --enable-compat-fifo    Enable FIFO support in compatibility skin
   --enable-compat-shm     Enable shared memory support in compatibility skin
   --enable-uart-16550A    Build 16550A UART driver
-  --enable-x86-vsyscall   Enable VSYSCALL support
-  --enable-x86-force-vsyscall
-                          Force VSYSCALL support
+  --enable-x86-sep        Enable SEP instructions for syscalls
   --enable-ia64-kernel-stacks
                           Set number of pre-allocated kernel stacks
   --enable-timer-latency  Set timer tuning latency
@@ -3836,7 +3834,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 3839 "configure"' > conftest.$ac_ext
+  echo '#line 3837 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5408,7 +5406,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5411:" \
+echo "$as_me:5409:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6458,11 +6456,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6461: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6459: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6465: \$? = $ac_status" >&5
+   echo "$as_me:6463: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -6701,11 +6699,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6704: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6702: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6708: \$? = $ac_status" >&5
+   echo "$as_me:6706: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -6761,11 +6759,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6764: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6762: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6768: \$? = $ac_status" >&5
+   echo "$as_me:6766: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8946,7 +8944,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 8949 "configure"
+#line 8947 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9044,7 +9042,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9047 "configure"
+#line 9045 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11233,11 +11231,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11236: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11234: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11240: \$? = $ac_status" >&5
+   echo "$as_me:11238: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -11293,11 +11291,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11296: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11294: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11300: \$? = $ac_status" >&5
+   echo "$as_me:11298: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12654,7 +12652,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12657 "configure"
+#line 12655 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12752,7 +12750,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12755 "configure"
+#line 12753 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13589,11 +13587,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13592: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13590: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13596: \$? = $ac_status" >&5
+   echo "$as_me:13594: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -13649,11 +13647,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13652: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13650: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13656: \$? = $ac_status" >&5
+   echo "$as_me:13654: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15684,11 +15682,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15687: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15685: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15691: \$? = $ac_status" >&5
+   echo "$as_me:15689: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -15927,11 +15925,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15930: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15928: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:15934: \$? = $ac_status" >&5
+   echo "$as_me:15932: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -15987,11 +15985,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:15990: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15988: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:15994: \$? = $ac_status" >&5
+   echo "$as_me:15992: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18172,7 +18170,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18175 "configure"
+#line 18173 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18270,7 +18268,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18273 "configure"
+#line 18271 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20440,38 +20438,21 @@ case $RTAI_TARGET_ARCH in
 	else
 	   timer_type="8254 PIT"
 	fi
-	echo "$as_me:$LINENO: checking for VSYSCALL support" >&5
-echo $ECHO_N "checking for VSYSCALL support... $ECHO_C" >&6
-	# Check whether --enable-x86-vsyscall or --disable-x86-vsyscall was given.
-if test "${enable_x86_vsyscall+set}" = set; then
-  enableval="$enable_x86_vsyscall"
+	echo "$as_me:$LINENO: checking for SEP support" >&5
+echo $ECHO_N "checking for SEP support... $ECHO_C" >&6
+	# Check whether --enable-x86-sep or --disable-x86-sep was given.
+if test "${enable_x86_sep+set}" = set; then
+  enableval="$enable_x86_sep"
   case "$enableval" in
-	y | yes) CONFIG_RTAI_HW_X86_VSYSCALL=y ;;
-	*) unset CONFIG_RTAI_HW_X86_VSYSCALL ;;
+	y | yes) CONFIG_RTAI_HW_X86_SEP=y ;;
+	*) unset CONFIG_RTAI_HW_X86_SEP ;;
 	esac
 fi;
-	echo "$as_me:$LINENO: result: ${CONFIG_RTAI_HW_X86_VSYSCALL:-no}" >&5
-echo "${ECHO_T}${CONFIG_RTAI_HW_X86_VSYSCALL:-no}" >&6
-	test \! x$CONFIG_RTAI_HW_X86_VSYSCALL = x &&
+	echo "$as_me:$LINENO: result: ${CONFIG_RTAI_HW_X86_SEP:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_HW_X86_SEP:-no}" >&6
+	test \! x$CONFIG_RTAI_HW_X86_SEP = x &&
 cat >>confdefs.h <<\_ACEOF
-#define CONFIG_RTAI_HW_X86_VSYSCALL 1
-_ACEOF
-
-	echo "$as_me:$LINENO: checking for hardwired VSYSCALL support" >&5
-echo $ECHO_N "checking for hardwired VSYSCALL support... $ECHO_C" >&6
-	# Check whether --enable-x86-force-vsyscall or --disable-x86-force-vsyscall was given.
-if test "${enable_x86_force_vsyscall+set}" = set; then
-  enableval="$enable_x86_force_vsyscall"
-  case "$enableval" in
-	y | yes) CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED=y ;;
-	*) unset CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED ;;
-	esac
-fi;
-	echo "$as_me:$LINENO: result: ${CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED:-no}" >&5
-echo "${ECHO_T}${CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED:-no}" >&6
-	test \! x$CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED = x &&
-cat >>confdefs.h <<\_ACEOF
-#define CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED 1
+#define CONFIG_RTAI_HW_X86_SEP 1
 _ACEOF
 
         ;;

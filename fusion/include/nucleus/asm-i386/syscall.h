@@ -26,73 +26,6 @@
 
 #ifndef __KERNEL__
 
-#if defined(CONFIG_RTAI_HW_X86_VSYSCALL) && \
-    !defined(CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED)
-
-#include <asm/unistd.h>
-#include <sys/prctl.h>
-#include <errno.h>
-
-/* Make the syscall through the vsyscall support in an adaptive
-   fashion. In order to keep it compatible with non-NPTL setups, we
-   don't attempt to directly map and jump to the vsyscall DSO, but we
-   rather cheat the prctl(2) system call, intercepting any invocation
-   to it which bears a specific RTAI signature in the "option"
-   argument. Invocations that match the signature are processed by
-   RTAI, others are simply relayed untouched to the Linux kernel.
-
-   If the glibc - real-time apps are linked against - actually uses
-   the vsyscall DSO, then the prctl() support routine will too, and
-   our syscalls will in turn be dispatched through the
-   sysenter/sysexit fast system call instructions. A few things to
-   note:
-
-   1) We make sure that the value mangled through __xn_mux_code(id,op)
-   cannot match any legitimate operation code Linux defines for its
-   prctl(2) service, so that the RTAI nucleus can always identify RTAI
-   system calls flowing among the regular Linux ones.
-
-   2) Calls with more than four args have two of them fetched from the
-   caller's memory instead of being conveyed into registers.
-   Fortunately, such calls are seldom. Would future benchmarks prove
-   that the performance gain using sysenter/sysexit is less than the
-   cost of fetching back those arguments, the five-args call form
-   would then be converted back to using "int 0x80", which is still
-   usable in parallel to the sysenter path. */
-   
-#define XENOMAI_SKIN_MUX(nr, id, op, args...) \
-  ({                                          \
-    int resultvar;                            \
-    ARGDCL_##nr(args);                        \
-    resultvar = prctl(__xn_mux_code(id,op) ARGFMT_##nr(args)); \
-    resultvar == -1 ? -errno : resultvar; })
-
-#define XENOMAI_SYS_MUX(nr, op, args...) XENOMAI_SKIN_MUX(nr, 0, op, args) 
-
-#define __ul(x)  ((unsigned long)(x))
-
-#define ARGDCL_0()
-#define ARGFMT_0() \
-        , 0, 0, 0, 0
-#define ARGDCL_1(arg1)
-#define ARGFMT_1(arg1) \
-        , 0, 0, 0, __ul(arg1)
-#define ARGDCL_2(arg1, arg2)
-#define ARGFMT_2(arg1, arg2) \
-        , __ul(arg2), 0, 0, __ul(arg1)
-#define ARGDCL_3(arg1, arg2, arg3)
-#define ARGFMT_3(arg1, arg2, arg3) \
-        , __ul(arg2), __ul(arg3), 0, __ul(arg1)
-#define ARGDCL_4(arg1, arg2, arg3, arg4)
-#define ARGFMT_4(arg1, arg2, arg3, arg4) \
-        , __ul(arg2), __ul(arg3), __ul(arg4), __ul(arg1)
-#define ARGDCL_5(arg1, arg2, arg3, arg4, arg5)	\
-        unsigned long xargs[2] = { __ul(arg1), __ul(arg5) }
-#define ARGFMT_5(arg1, arg2, arg3, arg4, arg5) \
-        | 0x8000, __ul(arg2), __ul(arg3), __ul(arg4), __ul(xargs)
-
-#else /* !CONFIG_RTAI_HW_X86_VSYSCALL || !CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
-
 /*
  * Some of the following macros have been adapted from glibc's syscall
  * mechanism implementation:
@@ -104,14 +37,15 @@
  * in kernel space.
  */
 
-#ifdef CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED
-/* Hardwired vsyscall access is identical to the legacy int80 form wrt
-   loading and canonicalizing arguments; what differs is that we
-   branch to the vsyscall DSO instead of issuing a trap. */
+#ifdef CONFIG_RTAI_HW_X86_SEP
+/* This form relies on the kernel's vsyscall support in order to use
+   the SEP instructions which must be supported by the hardware. We
+   also depend on the NPTL providing us a pointer to the vsyscall DSO
+   entry point, to which we branch to instead of issuing a trap. */
 #define DOSYSCALL  "call *%%gs:0x10\n\t"
-#else /* CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
+#else /* CONFIG_RTAI_HW_X86_SEP */
 #define DOSYSCALL  "int $0x80\n\t"
-#endif /* CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
+#endif /* CONFIG_RTAI_HW_X86_SEP */
 
 asm (".L__X'%ebx = 1\n\t"
      ".L__X'%ecx = 2\n\t"
@@ -201,8 +135,6 @@ asm (".L__X'%ebx = 1\n\t"
 #define ASMFMT_5(arg1, arg2, arg3, arg4, arg5) \
 	, "a" (arg1), "c" (arg2), "d" (arg3), "S" (arg4), "D" (arg5)
 
-#endif /* CONFIG_RTAI_HW_X86_VSYSCALL && !CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
-
 #endif /* !__KERNEL__ */
 
 /* Register mapping for accessing syscall args. */
@@ -280,31 +212,6 @@ static inline void __xn_status_return(struct pt_regs *regs, int v) {
 static inline int __xn_interrupted_p(struct pt_regs *regs) {
     return __xn_reg_rval(regs) == -EINTR;
 }
-
-#if defined(CONFIG_RTAI_HW_X86_VSYSCALL) && \
-    !defined(CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED)
-
-#define __xn_canonicalize_args(task,regs) \
-do { \
- if (__xn_reg_mux(regs) == __NR_prctl && \
-     ((__xn_reg_arg1(regs) & 0x7fff) == __xn_sys_mux)) { \
-     __xn_reg_mux(regs) = __xn_reg_arg1(regs); \
-     if (__xn_reg_arg1(regs) & 0x8000) { \
-         unsigned long xargs[2]; \
-	 __xn_copy_from_user(task,xargs,(void *)__xn_reg_arg5(regs),sizeof(xargs)); \
-         __xn_reg_arg1(regs) = xargs[0];	\
-         __xn_reg_arg5(regs) = xargs[1];	\
-     } \
-     else \
-        __xn_reg_arg1(regs) = __xn_reg_arg5(regs); \
- } \
-} while(0)
-
-#else /* !CONFIG_RTAI_HW_X86_VSYSCALL || CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
-
-#define __xn_canonicalize_args(task,regs) do { } while(0)
-
-#endif /* CONFIG_RTAI_HW_X86_VSYSCALL && !CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED */
 
 #else /* !__KERNEL__ */
 

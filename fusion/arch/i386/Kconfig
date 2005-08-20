@@ -64,65 +64,29 @@ config RTAI_HW_SCHED_LATENCY
 	of 0 (recommended) will cause this value to be estimated by
 	the nucleus at startup.
 
-config  RTAI_HW_X86_VSYSCALL_ENABLE
+config  RTAI_HW_X86_SEP
 	depends on RTAI_OPT_EXPERT
-	bool "Enable VSYSCALL support"
-	default y
+	bool "Enable SEP instructions for syscalls"
+	default n
 	help
+
 	When enabled, this option makes the real-time applications in
 	user-space rely on Linux's VSYSCALL support for issuing
-	RTAI/fusion system calls, instead of doing a "int 0x80"
-	instruction. VSYSCALL will in turn dispatch the system call
-	the most efficient way to the proper RTAI/fusion module
-	running in kernel space.
-	When available, VSYSCALL makes use of the SYSENTER/SYSEXIT
-	fast system call instructions which have been introduced with
+	RTAI/fusion system calls through the Pentium's SEP
+	instructions, instead of doing a "int 0x80" trap.
+	VSYSCALL in turn makes use of the SYSENTER/SYSEXIT
+	fast system call instructions (i.e. faster than the
+	traditional "int 0x80" trap) which have been introduced with
 	the Intel PPro, and are also supported by recent AMD CPUs.
 	If unsure, just look at the flags reported by /proc/cpuinfo on
 	your x86 hardware: if "sep" is listed, then RTAI performances
 	would likely benefit from activating this option; if it is not
 	listed, then disable this option.
 
-if RTAI_HW_X86_VSYSCALL_ENABLE
-
-choice
-	prompt "VSYSCALL access"
-	help
-	Only NPTL-based glibc can actually make use of the VSYSCALL
-	support; this choice controls whether RTAI/fusion should
-	follow an adaptive approach so that it would work over
-	LinuxThreads and NPTL indifferently, or if it should force the
-	use of VSYSCALL. The former approach is more conservative and
-	slightly less efficient if your runtime environment is always
-	NTPL-based, whilst the latter is a bit faster but will not
-	work with LinuxThreads.
-
-config RTAI_HW_X86_VSYSCALL_ADAPTIVE
-	bool "Adaptive"
-	help
-	Conservative VSYSCALL access; will work on both LinuxThreads
-	and NPTL-based setups, adapting to the underlying system call
-	invocation mechanism.
-
-config RTAI_HW_X86_VSYSCALL_FORCED
-	bool "Forced"
-	help
-	Hardwired VSYSCALL access; will work on NPTL-based setups
-	only.
-
-endchoice
-
-endif
-
-config RTAI_HW_X86_VSYSCALL
-        bool
-        depends on !RTAI_OPT_EXPERT || RTAI_HW_X86_VSYSCALL_ENABLE
-        default y
-
-config RTAI_HW_X86_VSYSCALL_HARDWIRED
-        bool
-        depends on RTAI_OPT_EXPERT && RTAI_HW_X86_VSYSCALL_ENABLE && RTAI_HW_X86_VSYSCALL_FORCED
-        default y
+	WARNING: Only NPTL-based setups can actually make use of the
+	VSYSCALL support; do _NOT_ activate this option with
+	LinuxThreads-based setups, even if your CPU supports the SEP
+	instructions: this would cause the application to crash.
 
 menu "SMI workaround"
 

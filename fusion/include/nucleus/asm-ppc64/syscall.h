@@ -157,8 +157,6 @@ static inline int __xn_interrupted_p(struct pt_regs *regs) {
     return __xn_reg_rval(regs) == -EINTR;
 }
 
-#define __xn_canonicalize_args(task,regs) do { } while(0)
-
 #else /* !__KERNEL__ */
 
 #define CONFIG_RTAI_HW_DIRECT_TSC 1

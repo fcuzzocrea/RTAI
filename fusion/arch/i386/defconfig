@@ -2,7 +2,7 @@
 # Automatically generated make config: don't edit
 #
 CONFIG_MODULES=y
-CONFIG_RTAI_VERSION="0.8.1 (fusion)"
+CONFIG_RTAI_VERSION="0.9 (fusion)"
 
 #
 # General
@@ -61,6 +61,8 @@ CONFIG_RTAI_SKIN_POSIX=y
 # CONFIG_RTAI_SKIN_UITRON is not set
 # CONFIG_RTAI_SKIN_VRTX is not set
 # CONFIG_RTAI_SKIN_VXWORKS is not set
+CONFIG_RTAI_SKIN_RTDM=y
+# CONFIG_RTAI_SKIN_COMPAT is not set
 CONFIG_RTAI_OPT_UVM=y
 
 #

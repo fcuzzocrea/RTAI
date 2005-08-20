@@ -719,24 +719,15 @@ case $RTAI_TARGET_ARCH in
 	else
 	   timer_type="8254 PIT"
 	fi
-	AC_MSG_CHECKING(for VSYSCALL support)
-	AC_ARG_ENABLE(x86-vsyscall,
-	AS_HELP_STRING([--enable-x86-vsyscall],	[Enable VSYSCALL support]),
+	AC_MSG_CHECKING(for SEP support)
+	AC_ARG_ENABLE(x86-sep,
+	AS_HELP_STRING([--enable-x86-sep],	[Enable SEP instructions for syscalls]),
 	[case "$enableval" in
-	y | yes) CONFIG_RTAI_HW_X86_VSYSCALL=y ;;
-	*) unset CONFIG_RTAI_HW_X86_VSYSCALL ;;
+	y | yes) CONFIG_RTAI_HW_X86_SEP=y ;;
+	*) unset CONFIG_RTAI_HW_X86_SEP ;;
 	esac])
-	AC_MSG_RESULT(${CONFIG_RTAI_HW_X86_VSYSCALL:-no})
-	test \! x$CONFIG_RTAI_HW_X86_VSYSCALL = x && AC_DEFINE(CONFIG_RTAI_HW_X86_VSYSCALL,1,[Kconfig])
-	AC_MSG_CHECKING(for hardwired VSYSCALL support)
-	AC_ARG_ENABLE(x86-force-vsyscall,
-	AS_HELP_STRING([--enable-x86-force-vsyscall],	[Force VSYSCALL support]),
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED=y ;;
-	*) unset CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED ;;
-	esac])
-	AC_MSG_RESULT(${CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED:-no})
-	test \! x$CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED = x && AC_DEFINE(CONFIG_RTAI_HW_X86_VSYSCALL_HARDWIRED,1,[Kconfig])
+	AC_MSG_RESULT(${CONFIG_RTAI_HW_X86_SEP:-no})
+	test \! x$CONFIG_RTAI_HW_X86_SEP = x && AC_DEFINE(CONFIG_RTAI_HW_X86_SEP,1,[Kconfig])
         ;;
  ppc|ppc64)
 	timer_type=decrementer

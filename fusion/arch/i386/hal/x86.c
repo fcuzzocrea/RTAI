@@ -476,11 +476,11 @@ int rthal_arch_init (void)
     }
 #endif /* CONFIG_X86_LOCAL_APIC */
 
-#ifdef CONFIG_RTAI_HW_X86_VSYSCALL
+#ifdef CONFIG_RTAI_HW_X86_SEP
     if (!cpu_has_sep)
-        printk("RTAI: VSYSCALL enabled but CPU has no SEP support,\n"
+        printk("RTAI: SEP enabled for syscalls but CPU has no SEP support,\n"
 	       "      Disabling it would be slightly better performance-wise.\n");
-#endif /* CONFIG_RTAI_HW_X86_VSYSCALL */
+#endif /* CONFIG_RTAI_HW_X86_SEP */
 
     if (rthal_cpufreq_arg == 0)
 #ifdef CONFIG_X86_TSC

@@ -1009,7 +1009,6 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 
     p = get_calling_task();
     thread = xnshadow_thread(p);
-    __xn_canonicalize_args(p,regs);
 
     if (!__xn_reg_mux_p(regs))
 	goto linux_syscall;
@@ -1217,8 +1216,6 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
     goto propagate_syscall;
 
  no_skin:
-
-    __xn_canonicalize_args(get_calling_task(),regs);
 
     if (__xn_reg_mux_p(regs))
 	{

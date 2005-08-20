@@ -68,8 +68,7 @@ configuration switches can be listed by running ./configure
  --enable-latex-doc	Build LaTeX documentation
  --enable-verbose-latex Uses LaTeX non-stop mode
 
- --enable-x86-vsyscall		Enable VSYSCALL support
- --enable-x86-force-vsyscall	Use hardwired VSYSCALL support (NPTL-only)
+ --enable-x86-sep		Enable SEP instructions for syscalls
 
 1.1.3 Recycling a configuration file
 ------------------------------------

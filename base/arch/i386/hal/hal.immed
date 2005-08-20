@@ -821,7 +821,7 @@ int _rtai_sched_on_ipi_handler(void)
 		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
 #endif
 		return 1;
-        }
+	}
 #endif
 	return 0;
 }
@@ -893,7 +893,7 @@ int _rtai_apic_timer_handler(void)
 		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
 #endif
 		return 1;
-        }
+	}
 #endif
 	return 0;
 }
@@ -956,11 +956,11 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 			rtai_cli();
 			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
 		}
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
 #endif
 		return 1;
-        }
+	}
 	return 0;
 }
 
@@ -1448,7 +1448,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
 #endif
 		return 1;
-        }
+	}
 	return 0;
 }
 

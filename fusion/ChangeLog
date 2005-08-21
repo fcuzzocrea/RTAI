@@ -1,5 +1,7 @@
 2005-08-21  Philippe Gerum  <rpm@xenomai.org>
 
+	* CREDITS: Add.
+
 	* arch/ppc/patches: Upgrade to Adeos/ppc r8c2.
 
 2005-08-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

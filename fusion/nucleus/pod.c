@@ -2402,9 +2402,8 @@ void xnpod_schedule (void)
 
 #ifdef CONFIG_SMP
     /* If threadout migrated while suspended, sched is no longer correct. */
-    sched = xnpod_current_sched();
+    sched = runthread->sched;
 #endif
-    runthread = sched->runthread;
 
 #ifdef CONFIG_RTAI_HW_FPU
     __xnpod_switch_fpu(sched);
@@ -2564,7 +2563,7 @@ maybe_switch:
 
 #ifdef CONFIG_SMP
     /* If runthread migrated while suspended, sched is no longer correct. */
-    sched = xnpod_current_sched();
+    sched = runthread->sched;
 #endif
 #ifdef CONFIG_RTAI_HW_FPU
     __xnpod_switch_fpu(sched);

@@ -1,7 +1,21 @@
+2005-08-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* include/asm-i386/rtai_lxrt.h: got rid of the long time unused local
+          copy of switch_to, everything kept only as in Linux now.
+	* base/sched/sched.c: rework of hard/soft/hard transitions, to help 
+          2.4.xx have them better too.
+	* include/rtai_schedcore.h: modified Linux tasks pending macro to 
+	  support hard/soft/hard transition changes.
+	* base/arch/i386/patches: all changed with immediate indirection to
+	  the RTAI hard interrupt dispatcher in hal.c; verified that 
+	  improvements are a bit beyond the mere us slicing in long terms 
+	  usage.
+	* base/arch/i386/hal/hal.c: adapted to changed patches.
+
 2005-08-03  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-	* asm/rtai_lxrt.h: defined rt_copy-from/to and rt_put/get (for user 
-	  space data exchange) as arch dependent.
+	* include/asm/rtai_lxrt.h: defined rt_copy-from/to and rt_put/get (for 
+	  user space data exchange) as arch dependent.
 	* ipc/bits.c-mbx.c-netrpc.c-tbx.c-tasklet.c: used rt_copy-from/to, 
 	  rt_put/get (for user space data exchange) defined as arch dependent 
 	  in asm/rtai_lxrt.

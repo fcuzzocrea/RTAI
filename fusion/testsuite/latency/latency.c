@@ -82,7 +82,7 @@ void latency (void *cookie)
     start_ticks = timer_info.date + rt_timer_ns2ticks(1000000);
     expected_tsc = timer_info.tsc + rt_timer_ns2tsc(1000000);
 
-    err = rt_task_set_periodic(NULL,start_ticks,period_ns);
+    err = rt_task_set_periodic(NULL,start_ticks,rt_timer_ns2ticks(period_ns));
 
     if (err)
         {

@@ -30,14 +30,28 @@ long minjitter = TEN_MILLION,
 void latency (void *cookie)
 
 {
+    RTIME expected_tsc, period_tsc, start_ticks;
     struct rtai_latency_stat *s;
-    RTIME expected, period;
+    RT_TIMER_INFO timer_info;
     RT_PIPE_MSG *msg;
     int  err, count;
 
-    period = rt_timer_ns2tsc(task_period_ns);
-    expected = rt_timer_tsc();
-    err = rt_task_set_periodic(NULL,TM_NOW,rt_timer_ns2ticks(task_period_ns));
+    err = rt_timer_inquire(&timer_info);
+    
+    if (err)
+        {
+        xnarch_logerr("latency: rt_timer_inquire, code %d\n",err);
+        return;
+        }
+
+    period_tsc = rt_timer_ns2tsc(task_period_ns);
+    /* start time: one millisecond from now. */
+    start_ticks = timer_info.date + rt_timer_ns2ticks(1000000);
+    expected_tsc = timer_info.tsc + rt_timer_ns2tsc(1000000);
+
+    err = rt_task_set_periodic(NULL,
+                               start_ticks,
+                               rt_timer_ns2ticks(task_period_ns));
 
     if (err)
 	{
@@ -53,13 +67,13 @@ void latency (void *cookie)
 
 	for (count = sumj = 0; count < sample_count; count++)
 	    {
-	    expected += period;
+	    expected_tsc += period_tsc;
 	    err = rt_task_wait_period();
 
 	    if (err)
 	        overrun++;
 
-	    dt = (long)(rt_timer_tsc() - expected);
+	    dt = (long)(rt_timer_tsc() - expected_tsc);
 	    if (dt > maxj)	maxj = dt;
 	    if (dt < minj)	minj = dt;
 	    sumj += dt;

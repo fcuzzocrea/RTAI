@@ -36,7 +36,6 @@ CONFIG_RTAI_OPT_STATS=y
 # Scalability
 #
 # CONFIG_RTAI_OPT_SCALABLE_SCHED is not set
-CONFIG_RTAI_OPT_PERCPU_TIMER=y
 
 #
 # LTT tracepoints filtering

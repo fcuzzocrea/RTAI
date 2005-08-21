@@ -366,16 +366,6 @@ if test x$CONFIG_RTAI_OPT_SYS_HEAPSZ = x ; then
 fi
 AC_MSG_RESULT([$CONFIG_RTAI_OPT_SYS_HEAPSZ Kbytes])
 
-AC_MSG_CHECKING(for per-CPU timer list)
-AC_ARG_ENABLE(percpu-timer,
-	AS_HELP_STRING([--enable-percpu-timer], 
-                        [Enable per-CPU timer support in nucleus]),
-	[case "$enableval" in
-	y | yes) CONFIG_RTAI_OPT_PERCPU_TIMER=y ;;
-	*) unset CONFIG_RTAI_OPT_PERCPU_TIMER ;;
-	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_OPT_PERCPU_TIMER:-no})
-
 AC_MSG_CHECKING(for scalable scheduler)
 AC_ARG_ENABLE(nucleus-scalable-sched,
 	AS_HELP_STRING([--enable-nucleus-scalable-sched], 
@@ -1134,7 +1124,6 @@ AC_DEFINE_UNQUOTED(CONFIG_RTAI_HW_SCHED_LATENCY,$CONFIG_RTAI_HW_SCHED_LATENCY,[K
 test \! x$CONFIG_RTAI_HW_FPU = x && AC_DEFINE(CONFIG_RTAI_HW_FPU,1,[Kconfig])
 test \! x$CONFIG_RTAI_HW_PERIODIC_TIMER = x && AC_DEFINE(CONFIG_RTAI_HW_PERIODIC_TIMER,1,[Kconfig])
 
-test x$CONFIG_RTAI_OPT_PERCPU_TIMER = xy && AC_DEFINE(CONFIG_RTAI_OPT_PERCPU_TIMER,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_SCALABLE_SCHED = xy && AC_DEFINE(CONFIG_RTAI_OPT_SCALABLE_SCHED,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_STATS = xy && AC_DEFINE(CONFIG_RTAI_OPT_STATS,1,[Kconfig])
 test x$CONFIG_RTAI_OPT_DEBUG = xy && AC_DEFINE(CONFIG_RTAI_OPT_DEBUG,1,[Kconfig])

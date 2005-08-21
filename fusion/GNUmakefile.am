@@ -70,8 +70,8 @@ install-data-local: .rtai_config
 	$(LN_S) @abs_top_builddir@ $(DESTDIR)$(prefix)/build
 	rm -f $(DESTDIR)$(prefix)/source
 	$(LN_S) @abs_srcdir@ $(DESTDIR)$(prefix)/source
-	rm -Rf $(DESTDIR)$(prefix)/symbols
-	$(LN_S) build/symbols $(DESTDIR)$(prefix)/symbols
+	rm -f $(DESTDIR)$(prefix)/symbols
+	$(LN_S) @abs_builddir@/symbols $(DESTDIR)$(prefix)/symbols
 
 install-exec-local: devices
 

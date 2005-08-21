@@ -1,3 +1,7 @@
+2005-08-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc/patches: Upgrade to Adeos/ppc r8c2.
+
 2005-08-21  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* nucleus/pod.c (xnpod_schedule, xnpod_schedule_runnable): Avoid
@@ -311,6 +315,9 @@
 
 2005-07-24  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/compat: Compatibility skin mimicking the RTAI/classic API;
+	contributed by Nextream France S.A.
+	
 	* nucleus/shadow.c (do_hisyscall_event, do_losyscall_event): Add
 	adaptive syscall handling (__xn_exec_adaptive), which attempts to
 	restart a syscall in the opposite domain upon -ENOSYS error from

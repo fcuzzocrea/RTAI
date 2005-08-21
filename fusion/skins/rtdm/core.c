@@ -82,7 +82,7 @@ struct rtdm_dev_context *rtdm_context_get(int fd)
     spl_t                   s;
 
 
-    if (fd >= fd_count)
+    if ((unsigned int)fd >= fd_count)
         return NULL;
 
     fildes = &fildes_table[fd];
@@ -291,7 +291,7 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 
 
     ret = -EBADF;
-    if (unlikely(fd >= fd_count))
+    if (unlikely((unsigned int)fd >= fd_count))
         goto err_out;
 
     fildes = &fildes_table[fd];
@@ -352,6 +352,7 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 
 
 #define MAJOR_FUNCTION_WRAPPER(operation, args...)                          \
+{                                                                           \
     struct rtdm_dev_context *context;                                       \
     struct rtdm_operations  *ops;                                           \
     int                     ret;                                            \
@@ -372,7 +373,8 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
     rtdm_context_unlock(context);                                           \
                                                                             \
  err_out:                                                                   \
-    return ret
+    return ret;                                                             \
+}
 
 
 int _rtdm_ioctl(rtdm_user_info_t *user_info, int fd, int request, ...)

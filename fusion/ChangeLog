@@ -1,5 +1,7 @@
 2005-08-21  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtdm: Merge RTDM patch level #9.
+
 	* CREDITS: Add.
 
 	* arch/ppc/patches: Upgrade to Adeos/ppc r8c2.

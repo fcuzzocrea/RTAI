@@ -109,8 +109,8 @@ struct rtdm_dev_context;
 #define RTDM_SECURE_DEVICE          0x80000000
 
 /** Version code constructor for driver revisions */
-#define RTDM_DRIVER_VER(major, minor, bugfix) \
-    (((major & 0xFF) << 16) | ((minor & 0xFF) << 8) | (bugfix & 0xFF))
+#define RTDM_DRIVER_VER(major, minor, patch) \
+    (((major & 0xFF) << 16) | ((minor & 0xFF) << 8) | (patch & 0xFF))
 
 /** Get major version number from driver revision code */
 #define RTDM_DRIVER_MAJOR_VER(ver)  (((ver) >> 16) & 0xFF)
@@ -118,8 +118,8 @@ struct rtdm_dev_context;
 /** Get minor version number from driver revision code */
 #define RTDM_DRIVER_MINOR_VER(ver)  (((ver) >> 8) & 0xFF)
 
-/** Get bug fix version number from driver revision code */
-#define RTDM_DRIVER_BUGFIX_VER(ver) ((ver) & 0xFF)
+/** Get patch version number from driver revision code */
+#define RTDM_DRIVER_PATCH_VER(ver) ((ver) & 0xFF)
 /** @} */
 
 

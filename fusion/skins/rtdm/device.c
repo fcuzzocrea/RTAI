@@ -109,7 +109,7 @@ struct rtdm_device *get_named_device(const char *name)
     list_for_each(entry, &rtdm_named_devices[hashkey]) {
         device = list_entry(entry, struct rtdm_device, reserved.entry);
 
-        if (strcmp(device->device_name, device->device_name) == 0) {
+        if (strcmp(name, device->device_name) == 0) {
             rtdm_reference_device(device);
 
             xnlock_put_irqrestore(&rt_dev_lock, s);

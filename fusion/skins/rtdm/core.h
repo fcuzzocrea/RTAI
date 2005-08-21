@@ -24,7 +24,7 @@
 #include <rtdm/rtdm_driver.h>
 
 
-#define DEF_FILDES_COUNT    32  /* default number of file descriptors */
+#define DEF_FILDES_COUNT    64  /* default number of file descriptors */
 
 
 struct rtdm_fildes {
@@ -33,7 +33,9 @@ struct rtdm_fildes {
 };
 
 
+#ifdef CONFIG_SMP
 extern xnlock_t             rt_fildes_lock;
+#endif /* CONFIG_SMP */
 
 extern unsigned int         fd_count;
 extern struct rtdm_fildes   *fildes_table;

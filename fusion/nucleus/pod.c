@@ -310,11 +310,7 @@ int xnpod_init (xnpod_t *pod, int minpri, int maxpri, xnflags_t flags)
     initq(&pod->tswitchq);
     initq(&pod->tdeleteq);
 
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     for (cpu = 0; cpu < xnarch_num_online_cpus(); cpu++)
-#else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
-        cpu = XNTIMER_KEEPER_ID;
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
         for (n = 0; n < XNTIMER_WHEELSIZE; n++)
             initq(&pod->sched[cpu].timerwheel[n]);
 
@@ -3129,21 +3125,11 @@ void xnpod_stop_timer (void)
 int xnpod_announce_tick (xnintr_t *intr)
 
 {
-#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
-    unsigned nr_cpus;
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
+    xnthread_t *runthread;
     unsigned cpu;
     spl_t s;
 
     cpu = xnarch_current_cpu();
-
-#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
-    /* On SMP machines using a single global timer list, the timers
-       may tick on several CPUs, in which case, only one must be
-       used. */
-    if(cpu != XNTIMER_KEEPER_ID)
-        return XN_ISR_HANDLED;
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -3173,37 +3159,30 @@ int xnpod_announce_tick (xnintr_t *intr)
     if (!testbits(nkpod->status,XNTMPER))
         goto unlock_and_exit;
 
-#ifndef CONFIG_RTAI_OPT_PERCPU_TIMER
-    nr_cpus = xnarch_num_online_cpus();
+    runthread = xnpod_sched_slot(cpu)->runthread;
 
-    for (cpu = 0; cpu < nr_cpus; ++cpu)
-#endif /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
+    if (testbits(runthread->status,XNRRB) &&
+        runthread->rrcredit != XN_INFINITE &&
+        !testbits(runthread->status,XNLOCK))
         {
-        xnthread_t *runthread = xnpod_sched_slot(cpu)->runthread;
-
-        if (testbits(runthread->status,XNRRB) &&
-            runthread->rrcredit != XN_INFINITE &&
-            !testbits(runthread->status,XNLOCK))
+        /* The thread can be preempted and undergoes a round-robin
+           scheduling. Round-robin time credit is only consumed by a
+           running thread. Thus, if a higher priority thread outside
+           the priority group which started the time slicing grabs the
+           processor, the current time credit of the preempted thread
+           is kept unchanged, and will not be reset when this thread
+           resumes execution. */
+        
+        if (runthread->rrcredit <= 1)
             {
-            /* The thread can be preempted and undergoes a round-robin
-               scheduling. Round-robin time credit is only consumed by a
-               running thread. Thus, if a higher priority thread outside
-               the priority group which started the time slicing grabs the
-               processor, the current time credit of the preempted thread
-               is kept unchanged, and will not be reset when this thread
-               resumes execution. */
-
-            if (runthread->rrcredit <= 1)
-                {
-                /* If the time slice is exhausted for the running thread,
-                   put it back on the ready queue (in last position) and
-                   reset its credit for the next run. */
-                runthread->rrcredit = runthread->rrperiod;
-                xnpod_resume_thread(runthread,0);
-                }
-            else
-                runthread->rrcredit--;
+            /* If the time slice is exhausted for the running thread,
+               put it back on the ready queue (in last position) and
+               reset its credit for the next run. */
+            runthread->rrcredit = runthread->rrperiod;
+            xnpod_resume_thread(runthread,0);
             }
+        else
+            runthread->rrcredit--;
         }
 
  unlock_and_exit:

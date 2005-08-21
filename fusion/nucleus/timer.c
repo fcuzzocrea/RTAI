@@ -383,12 +383,9 @@ void xntimer_do_tick_periodic (void)
     xntimer_t *timer;
 
     /* Update the periodic clocks keeping the things strictly
-       monotonous (when the per-cpu timer option is enabled, this
-       routine is run on every cpu, so that only CPU XNTIMER_KEEPER_ID
-       should do this). */
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
+       monotonous (this routine is run on every cpu, but only CPU
+       XNTIMER_KEEPER_ID should do this). */
     if (sched == xnpod_sched_slot(XNTIMER_KEEPER_ID))
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
 	++nkpod->jiffies;
 
     timerq = &sched->timerwheel[nkpod->jiffies & XNTIMER_WHEELMASK];
@@ -501,11 +498,7 @@ void xntimer_init (xntimer_t *timer,
     timer->interval = 0;
     timer->date = XN_INFINITE;
     timer->prio = XNTIMER_STDPRIO;
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     timer->sched = xnpod_current_sched();
-#else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
-    timer->sched = xnpod_sched_slot(XNTIMER_KEEPER_ID);
-#endif  /* CONFIG_RTAI_OPT_PERCPU_TIMER */
     
     xnarch_init_display_context(timer);
 }
@@ -591,7 +584,7 @@ void xntimer_start (xntimer_t *timer,
     xnlock_put_irqrestore(&nklock,s);
 }
 
-#if defined(CONFIG_SMP) && defined(CONFIG_RTAI_OPT_PERCPU_TIMER)
+#if defined(CONFIG_SMP)
 /**
  * Migrate a timer.
  *
@@ -646,7 +639,7 @@ int xntimer_set_sched(xntimer_t *timer, xnsched_t *sched)
 
     return err;
 }
-#endif /* CONFIG_SMP && CONFIG_RTAI_OPT_PERCPU_TIMER */
+#endif /* CONFIG_SMP */
 
 /*!
  * \fn xnticks_t xntimer_get_date(xntimer_t *timer)
@@ -754,9 +747,7 @@ xnticks_t xntimer_get_timeout (xntimer_t *timer)
 void xntimer_freeze (void)
 
 {
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     int nr_cpus;
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
     int n, cpu;
     spl_t s;
 
@@ -767,12 +758,8 @@ void xntimer_freeze (void)
     if (!nkpod || testbits(nkpod->status,XNPIDLE))
         goto unlock_and_exit;
 
-#ifdef CONFIG_RTAI_OPT_PERCPU_TIMER
     nr_cpus = xnarch_num_online_cpus();
     for (cpu = 0; cpu < nr_cpus; cpu++)
-#else /* !CONFIG_RTAI_OPT_PERCPU_TIMER */
-        cpu = XNTIMER_KEEPER_ID;
-#endif /* CONFIG_RTAI_OPT_PERCPU_TIMER */
         for (n = 0; n < XNTIMER_WHEELSIZE; n++)
             {
             xnqueue_t *timerq = &xnpod_sched_slot(cpu)->timerwheel[n];
@@ -814,9 +801,9 @@ xntmops_t *nktimer = &timer_ops_aperiodic;
 EXPORT_SYMBOL(xntimer_init);
 EXPORT_SYMBOL(xntimer_destroy);
 EXPORT_SYMBOL(xntimer_start);
-#if defined(CONFIG_SMP) && defined(CONFIG_OPT_PERCPU_TIMER)
+#if defined(CONFIG_SMP)
 EXPORT_SYMBOL(xntimer_set_sched);
-#endif /* CONFIG_SMP && CONFIG_OPT_PERCPU_TIMER */
+#endif /* CONFIG_SMP */
 EXPORT_SYMBOL(xntimer_freeze);
 EXPORT_SYMBOL(xntimer_get_date);
 EXPORT_SYMBOL(xntimer_get_timeout);

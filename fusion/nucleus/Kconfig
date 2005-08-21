@@ -81,17 +81,6 @@ config RTAI_OPT_WATCHDOG
 menu "Scalability"
 	depends on RTAI_OPT_EXPERT
 
-config RTAI_OPT_EXPERT_PERCPU_TIMER
-        bool "Per-cpu timers list"
-        default y
-        help
-
-        This option make the nucleus timer module use one timers list
-        by CPU, this reduces the need for inter-CPU communication and
-        should significantly reduce the scheduling latency on other CPUs
-        than the first one. This option has no effect on uniprocessor
-        machines.
-
 config RTAI_OPT_SCALABLE_SCHED
 	bool "O(1) scheduler"
 	default n
@@ -120,11 +109,6 @@ config RTAI_OPT_SCALABLE_PRIOS
 	hundred priority levels.
 
 endmenu
-
-config RTAI_OPT_PERCPU_TIMER
-        bool
-        depends on !RTAI_OPT_EXPERT || RTAI_OPT_EXPERT_PERCPU_TIMER
-        default y
 
 menu "LTT tracepoints filtering"
 	depends on RTAI_OPT_EXPERT

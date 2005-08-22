@@ -33,6 +33,7 @@
 #include <rtdm/rtdm_driver.h>
 #include <rtdm/core.h>
 #include <rtdm/device.h>
+#include <rtdm/syscall.h>
 
 
 unsigned int                fd_count = DEF_FILDES_COUNT;
@@ -314,7 +315,12 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 
     if (rtdm_in_rt_context()) {
         ret = -ENOTSUPP;
-        if (unlikely(test_bit(RTDM_CREATED_IN_NRT, &context->context_flags))) {
+        /* Warn about asymmetric open/close, but only if there is really a
+           close_rt handler. Otherwise, we will be switched to nrt
+           automatically. */
+        if (unlikely(test_bit(RTDM_CREATED_IN_NRT, &context->context_flags) &&
+                     (context->ops->close_rt !=
+                         (rtdm_close_handler_t)rtdm_no_support))) {
             xnprintf("RTDM: closing device in real-time mode while creation "
                      "ran in non-real-time - this is not supported!\n");
             goto unlock_out;

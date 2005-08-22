@@ -120,7 +120,6 @@ static int proc_read_open_fildes(char* buf, char** start, off_t offset,
                                  int count, int* eof, void* data)
 {
     int                     i;
-    struct rtdm_fildes      fildes;
     int                     close_lock_count;
     struct rtdm_device      *device;
     spl_t                   s;
@@ -136,15 +135,14 @@ static int proc_read_open_fildes(char* buf, char** start, off_t offset,
     for (i = 0; i < fd_count; i++) {
         xnlock_get_irqsave(&rt_fildes_lock, s);
 
-        memcpy(&fildes, &fildes_table[i], sizeof(fildes));
-
-        if (!fildes.context) {
+        if (!fildes_table[i].context) {
             xnlock_put_irqrestore(&rt_fildes_lock, s);
             continue;
         }
 
-        close_lock_count = atomic_read(&fildes.context->close_lock_count);
-        device           = (struct rtdm_device *)fildes.context->device;
+        close_lock_count =
+            atomic_read(&fildes_table[i].context->close_lock_count);
+        device = (struct rtdm_device *)fildes_table[i].context->device;
 
         xnlock_put_irqrestore(&rt_fildes_lock, s);
 

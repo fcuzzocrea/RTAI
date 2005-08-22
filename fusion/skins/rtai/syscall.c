@@ -70,6 +70,9 @@ static int __rt_bind_helper (struct task_struct *curr,
     name[sizeof(name) - 1] = '\0';
     __xn_copy_from_user(curr,&timeout,(void __user *)__xn_reg_arg3(regs),sizeof(timeout));
 
+    if (xnpod_unblockable_p())
+	timeout = TM_NONBLOCK;
+
     err = rt_registry_bind(name,timeout,handlep);
 
     if (!err)

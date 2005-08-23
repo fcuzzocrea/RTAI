@@ -1926,7 +1926,11 @@ static void wake_up_srq_handler(unsigned srq)
 #ifdef CONFIG_PREEMPT
 	preempt_disable(); {
 #endif
+#ifdef CONFIG_X86_64
+	int cpuid = rtai_cpuid(); // something to fix, must return as below
+#else
 	int cpuid = srq - wake_up_srq[0].srq;
+#endif
 	while (wake_up_srq[cpuid].out != wake_up_srq[cpuid].in) {
 		wake_up_process(wake_up_srq[cpuid].task[wake_up_srq[cpuid].out++ & (MAX_WAKEUP_SRQ - 1)]);
 	}

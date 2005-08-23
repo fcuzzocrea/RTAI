@@ -1,3 +1,9 @@
+2005-08-23  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+
+	* skins/rtai/registry.c (rt_registry_bind): Allow unblockable
+	contexts to try-and-fail binding to a non-registered object,
+	instead of always bail out on -EPERM error.
+
 2005-08-22  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c (__rt_bind_helper): As a special exception

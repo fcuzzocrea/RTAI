@@ -670,14 +670,13 @@ int rt_registry_enter (const char *key,
  * waiting task before the retrieval has completed.
  *
  * - -EWOULDBLOCK is returned if @a timeout is equal to TM_NONBLOCK
- * and the searched object is not registered on entry.
+ * and the searched object is not registered on entry. As a special
+ * exception, this error is also returned if this service should
+ * block, but was called from a context which cannot sleep
+ * (e.g. interrupt, non-realtime or scheduler locked).
  *
  * - -ETIMEDOUT is returned if the object cannot be retrieved within
  * the specified amount of time.
- *
- * - -EPERM is returned if this service should block, but was called
- * from a context which cannot sleep (e.g. interrupt, non-realtime or
- * scheduler locked).
  *
  * Environments:
  *
@@ -712,11 +711,6 @@ int rt_registry_bind (const char *key,
     if (!key)
 	return -EINVAL;
 
-    if (timeout != TM_NONBLOCK && xnpod_unblockable_p())
-	return -EPERM;
-
-    task = rtai_current_task();
-
     xnlock_get_irqsave(&nklock,s);
 
     stime = xnpod_get_time();
@@ -731,7 +725,7 @@ int rt_registry_bind (const char *key,
 	    goto unlock_and_exit;
 	    }
 
-	if (timeout == TM_NONBLOCK)
+	if (timeout == TM_NONBLOCK || xnpod_unblockable_p())
 	    {
 	    err = -EWOULDBLOCK;
 	    goto unlock_and_exit;
@@ -748,6 +742,7 @@ int rt_registry_bind (const char *key,
 	    stime = now;
 	    }
 
+	task = rtai_current_task();
 	task->wait_args.registry.key = key;
 	xnsynch_sleep_on(&__rtai_hash_synch,timeout);
 

@@ -185,8 +185,8 @@ int rt_bits_delete(BITS *bits)
 	return 0;
 }
 
-#define TEST_FUN(x)   ((int *)&(x)->retval)[0]
-#define TEST_MASK(x)  ((unsigned long *)&(x)->retval)[1]
+#define TEST_FUN(x)   ((x)->fun_args[0])
+#define TEST_MASK(x)  ((x)->fun_args[1])
 
 unsigned long rt_get_bits(BITS *bits)
 {

@@ -185,8 +185,9 @@ int rt_bits_delete(BITS *bits)
 	return 0;
 }
 
-#define TEST_FUN(x)   ((x)->fun_args[0])
-#define TEST_MASK(x)  ((x)->fun_args[1])
+#define TEST_BUF(x, y)  ((x)->retval = (unsigned long)(y))
+#define TEST_FUN(x)     ((long *)(&(x)->retval))[0]
+#define TEST_MASK(x)    ((unsigned long *)(&(x)->retval))[1]
 
 unsigned long rt_get_bits(BITS *bits)
 {
@@ -268,7 +269,9 @@ int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun,
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
+		long bits_test[2];	
 		rt_current = RT_CURRENT;
+		TEST_BUF(rt_current, bits_test);
 		TEST_FUN(rt_current)  = testfun;
 		TEST_MASK(rt_current) = testmasks;
 		rt_current->state |= RT_SCHED_SEMAPHORE;
@@ -333,7 +336,9 @@ int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int ex
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
+		long bits_test[2];
 		rt_current = RT_CURRENT;
+		TEST_BUF(rt_current, bits_test);
 		TEST_FUN(rt_current)  = testfun;
 		TEST_MASK(rt_current) = testmasks;
 		rt_current->blocked_on = &bits->queue;

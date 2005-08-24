@@ -29,7 +29,7 @@ MODULE_LICENSE("GPL");
 /*
  * Command line parameters
  */
-int ntasks = 30;
+int ntasks = 10;
 MODULE_PARM(ntasks, "i");
 MODULE_PARM_DESC(ntasks, "Number of tasks to switch (default: 30)");
 

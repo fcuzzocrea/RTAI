@@ -1,8 +1,8 @@
 2005-08-24  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/ipc/bits/bits.c: changed during function execution storage
-	  place of bits: fun and mask, from retval to available free fun_args
-	  elements, to avoid trouble with 64 bits.
+	  place of bits: fun and mask, from retval to a local stack buffer,
+	  to avoid trouble with 64 bits.
 
 2005-08-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

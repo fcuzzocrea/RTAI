@@ -185,7 +185,7 @@ int rt_bits_delete(BITS *bits)
 	return 0;
 }
 
-#define TEST_BUF(x, y)  ((x)->retval = (unsigned long)(y))
+#define TEST_BUF(x, y)  do { (x)->retval = (unsigned long)(y); } while (0)
 #define TEST_FUN(x)     ((long *)((unsigned long)(x)->retval))[0]
 #define TEST_MASK(x)    ((unsigned long *)((unsigned long)(x)->retval))[1]
 

@@ -1,4 +1,8 @@
-2005-08-23  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+2005-08-24  Jim Cromie <jcromie@divsol.com>
+
+	* scripts/rtai-test.in: Extend with pre & post load-tests.
+
+2005-08-23  Dmitry Adamushko  <dmitry.adamushko@gmail.com>
 
 	* skins/rtai/registry.c (rt_registry_bind): Allow unblockable
 	contexts to try-and-fail binding to a non-registered object,
@@ -8,7 +12,7 @@
 
 	* skins/rtdm: Merge RTDM patch level #10 and #11.
 
-2005-08-22  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+2005-08-22  Dmitry Adamushko  <dmitry.adamushko@gmail.com>
 
 	* skins/rtdm/proc (proc_read_open_fildes): Don't uselessly copy
 	the fildes struct while iterating.

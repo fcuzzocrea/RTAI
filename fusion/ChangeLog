@@ -6,9 +6,6 @@
 
 2005-08-22  Philippe Gerum  <rpm@xenomai.org>
 
-	* skins/rtai/syscall.c (__rt_bind_helper): As a special exception
-	for the binding op, force TM_NONBLOCK for unblockable contexts.
-
 	* skins/rtdm: Merge RTDM patch level #10 and #11.
 
 2005-08-22  Dmitry Adamushko  <dmitry.adamushko@datacon.at>

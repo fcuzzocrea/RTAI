@@ -308,6 +308,9 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 
 static inline void xnarch_enable_fpu(xnarchtcb_t *tcb)
 {
+    if (tcb->user_task && tcb->fpup && fph2task(tcb->fpup) != tcb->user_task)
+        return;
+
     ia64_fph_enable();
 }
 

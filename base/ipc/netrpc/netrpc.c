@@ -992,6 +992,11 @@ static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 	return retval;
 }
 
+#ifdef CONFIG_X86_64
+// ad interim crap
+#define __NR_socketcall 41
+#endif
+
 static _syscall2(int, socketcall, int, call, void *, args)
 
 static inline int ksocketcall(int call, void *args)

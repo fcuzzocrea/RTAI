@@ -43,7 +43,7 @@
  *@{*/
 
 
-#define DONT_DISPATCH_CORE_IRQS  0
+#define DONT_DISPATCH_CORE_IRQS  1
 #define CHECK_STACK_IN_IRQ       0
 
 #include <linux/version.h>
@@ -109,11 +109,17 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 	apic_write(APIC_TMICT, count);
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+#define __ack_APIC_irq  ack_APIC_irq
+#endif
+
 #else /* !CONFIG_X86_LOCAL_APIC */
 
 #define rtai_setup_periodic_apic(count, vector);
 
 #define rtai_setup_oneshot_apic(count, vector);
+
+#define __ack_APIC_irq()
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 
@@ -253,8 +259,22 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 	}
 }
 
-extern struct hw_interrupt_type __adeos_std_irq_dtype[];
 extern unsigned long io_apic_irqs;
+
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,11)
+
+#define rtai_irq_desc(irq) (irq_desc[irq].handler)
+#define BEGIN_PIC()
+#define END_PIC()
+#undef __adeos_lock_irq
+#undef __adeos_unlock_irq
+#define __adeos_lock_irq(x, y, z)
+#define __adeos_unlock_irq(x, y)
+
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
+
+extern struct hw_interrupt_type __adeos_std_irq_dtype[];
+#define rtai_irq_desc(irq) (&__adeos_std_irq_dtype[irq])
 
 #define BEGIN_PIC() \
 do { \
@@ -269,6 +289,8 @@ do { \
 	adp_root->cpudata[cpuid].status = pflags; \
 	rtai_restore_flags(flags); \
 } while (0)
+
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
 
 /**
  * start and initialize the PIC to accept interrupt request irq.
@@ -303,7 +325,7 @@ unsigned rt_startup_irq (unsigned irq)
 
 	BEGIN_PIC();
 	__adeos_unlock_irq(adp_root, irq);
-	retval = __adeos_std_irq_dtype[irq].startup(irq);
+	retval = rtai_irq_desc(irq)->startup(irq);
 	END_PIC();
         return retval;
 }
@@ -340,7 +362,7 @@ unsigned rt_startup_irq (unsigned irq)
 void rt_shutdown_irq (unsigned irq)
 {
 	BEGIN_PIC();
-	__adeos_std_irq_dtype[irq].shutdown(irq);
+	rtai_irq_desc(irq)->shutdown(irq);
 	__adeos_clear_irq(adp_root, irq);
 	END_PIC();
 }
@@ -349,7 +371,7 @@ static inline void _rt_enable_irq (unsigned irq)
 {
 	BEGIN_PIC();
 	__adeos_unlock_irq(adp_root, irq);
-	__adeos_std_irq_dtype[irq].enable(irq);
+	rtai_irq_desc(irq)->enable(irq);
 	END_PIC();
 }
 
@@ -415,7 +437,7 @@ void rt_enable_irq (unsigned irq)
 void rt_disable_irq (unsigned irq)
 {
 	BEGIN_PIC();
-	__adeos_std_irq_dtype[irq].disable(irq);
+	rtai_irq_desc(irq)->disable(irq);
 	__adeos_lock_irq(adp_root, cpuid, irq);
 	END_PIC();
 }
@@ -466,7 +488,7 @@ static inline void _rt_end_irq (unsigned irq)
 	    !(irq_desc[irq].status & (IRQ_DISABLED | IRQ_INPROGRESS))) {
 		__adeos_unlock_irq(adp_root, irq);
 	}
-	__adeos_std_irq_dtype[irq].end(irq);
+	rtai_irq_desc(irq)->end(irq);
 	END_PIC();
 }
 
@@ -789,7 +811,7 @@ void _rtai_sched_on_ipi_handler(void)
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-	adp_root->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
+	__ack_APIC_irq();
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
@@ -799,28 +821,49 @@ void rtai_sched_on_ipi_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
         SYMBOL_NAME_STR(rtai_sched_on_ipi_handler) ":\n\t" \
-        "\n .p2align\n" \
-	"cld\n\t" \
-        "pushq %rdi\n\t" \
-        "pushq %rsi\n\t" \
-        "pushq %rdx\n\t" \
-        "pushq %rcx\n\t" \
-        "pushq %rax\n\t" \
-        "pushq %r8\n\t" \
-        "pushq %r9\n\t" \
-        "pushq %r10\n\t" \
-        "pushq %r11\n\t" \
+	"\n .p2align\n" \
+	"pushq $0\n" \
+	"cld\n" \
+	"sub    $0x48,%rsp\n" \
+	"mov    %rdi,0x40(%rsp)\n" \
+	"mov    %rsi,0x38(%rsp)\n" \
+	"mov    %rdx,0x30(%rsp)\n" \
+	"mov    %rcx,0x28(%rsp)\n" \
+	"mov    %rax,0x20(%rsp)\n" \
+	"mov    %r8,0x18(%rsp)\n" \
+	"mov    %r9,0x10(%rsp)\n" \
+	"mov    %r10,0x8(%rsp)\n" \
+	"mov    %r11,(%rsp)\n" \
+	"lea    0xffffffffffffffd0(%rsp),%rdi\n" \
+	"testl  $0x3,0x88(%rdi)\n" \
+	"je 1f\n" \
+	"swapgs\n" \
+	"1:addl   $0x1,%gs:0x30\n" \
+	"mov    %gs:0x38,%rax\n" \
+	"cmove  %rax,%rsp\n" \
+	"push   %rdi\n" \
         "call "SYMBOL_NAME_STR(_rtai_sched_on_ipi_handler)"\n\t" \
-        "popq %r11\n\t" \
-        "popq %r10\n\t" \
-        "popq %r9\n\t" \
-        "popq %r8\n\t" \
-        "popq %rax\n\t" \
-        "popq %rcx\n\t" \
-        "popq %rdx\n\t" \
-        "popq %rsi\n\t" \
-        "popq %rdi\n\t" \
-        "iretq");
+	"pop    %rdi\n" \
+	"cli\n" \
+	"subl   $0x1,%gs:0x30\n" \
+	"lea    0x30(%rdi),%rsp\n" \
+	"mov    %gs:0x18,%rcx\n" \
+	"sub    $0x1fd8,%rcx\n" \
+	"testl  $0x3,0x58(%rsp)\n" \
+	"je 2f\n" \
+	"swapgs\n" \
+	"2:mov    (%rsp),%r11\n" \
+	"mov    0x8(%rsp),%r10\n" \
+	"mov    0x10(%rsp),%r9\n" \
+	"mov    0x18(%rsp),%r8\n" \
+	"mov    0x20(%rsp),%rax\n" \
+	"mov    0x28(%rsp),%rcx\n" \
+	"mov    0x30(%rsp),%rdx\n" \
+	"mov    0x38(%rsp),%rsi\n" \
+	"mov    0x40(%rsp),%rdi\n" \
+	"add    $0x50,%rsp\n" \
+	"iretq");
+
 
 static struct gate_struct rtai_sched_on_ipi_sysvec;
 
@@ -840,94 +883,58 @@ void _rtai_apic_timer_handler(void)
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-	adp_root->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
+	__ack_APIC_irq();
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
 }
 
-#if 0
 void rtai_apic_timer_handler (void);
 	__asm__ ( \
-        "\n" __ALIGN_STR"\n\t" \
-        SYMBOL_NAME_STR(rtai_apic_timer_handler) ":\n\t" \
-	"cld\n\t" \
-        "pushq %rdi\n\t" \
-        "pushq %rsi\n\t" \
-        "pushq %rdx\n\t" \
-        "pushq %rcx\n\t" \
-        "pushq %rax\n\t" \
-        "pushq %r8\n\t" \
-        "pushq %r9\n\t" \
-        "pushq %r10\n\t" \
-        "pushq %r11\n\t" \
-        "call "SYMBOL_NAME_STR(_rtai_apic_timer_handler)"\n\t" \
-        "popq %r11\n\t" \
-        "popq %r10\n\t" \
-        "popq %r9\n\t" \
-        "popq %r8\n\t" \
-        "popq %rax\n\t" \
-        "popq %rcx\n\t" \
-        "popq %rdx\n\t" \
-        "popq %rsi\n\t" \
-        "popq %rdi\n\t" \
-        "iretq");
-#else
-static void rtai_apic_timer_handler (void)
-{
-__asm__ ( \
-        "\n .p2align\n" \
+	"\n" __ALIGN_STR"\n\t" \
+	SYMBOL_NAME_STR(rtai_apic_timer_handler) ":\n\t" \
+	"\n .p2align\n" \
 	"pushq $0\n" \
 	"cld\n" \
-	"pushq %rdi\n" \
-	"pushq %rsi\n" \
-	"pushq %rdx\n" \
-	"pushq %rcx\n" \
-	"pushq %rax\n" \
-	"pushq %r8\n" \
-	"pushq %r9\n" \
-	"pushq %r10\n" \
-	"pushq %r11\n" \
-	"pushq %rbx\n" \
-	"pushq %rbp\n" \
-	"pushq %r12\n" \
-	"pushq %r13\n" \
-	"pushq %r14\n" \
-	"pushq %r15\n" \
-	"movq %rsp, %rdi\n" \
-	"movq %rsp, %rbp\n" \
-	"testl $3, 136(%rdi)\n" \
+	"sub    $0x48,%rsp\n" \
+	"mov    %rdi,0x40(%rsp)\n" \
+	"mov    %rsi,0x38(%rsp)\n" \
+	"mov    %rdx,0x30(%rsp)\n" \
+	"mov    %rcx,0x28(%rsp)\n" \
+	"mov    %rax,0x20(%rsp)\n" \
+	"mov    %r8,0x18(%rsp)\n" \
+	"mov    %r9,0x10(%rsp)\n" \
+	"mov    %r10,0x8(%rsp)\n" \
+	"mov    %r11,(%rsp)\n" \
+	"lea    0xffffffffffffffd0(%rsp),%rdi\n" \
+	"testl  $0x3,0x88(%rdi)\n" \
 	"je 1f\n" \
 	"swapgs\n" \
-	"1: movq %gs:56, %rax\n" \
-	"cmoveq %rax, %rsp\n" \
-	"pushq %rdi\n" \
-	"call _rtai_apic_timer_handler\n" \
-	"popq %rdi\n" \
-	"testl $3, 136(%rdi)\n" \
-        "je 2f\n" \
+	"1:addl   $0x1,%gs:0x30\n" \
+	"mov    %gs:0x38,%rax\n" \
+	"cmove  %rax,%rsp\n" \
+	"push   %rdi\n" \
+	"call "SYMBOL_NAME_STR(_rtai_apic_timer_handler)"\n\t" \
+	"pop    %rdi\n" \
+	"cli\n" \
+	"subl   $0x1,%gs:0x30\n" \
+	"lea    0x30(%rdi),%rsp\n" \
+	"mov    %gs:0x18,%rcx\n" \
+	"sub    $0x1fd8,%rcx\n" \
+	"testl  $0x3,0x58(%rsp)\n" \
+	"je 2f\n" \
 	"swapgs\n" \
-	"2:\n" \
-	"movq %rdi, %rsp\n" \
-	"popq %r15\n" \
-	"popq %r14\n" \
-	"popq %r13\n" \
-	"popq %r12\n" \
-	"popq %rbp\n" \
-	"popq %rbx\n" \
-	"popq %r11\n" \
-	"popq %r10\n" \
-	"popq %r9\n" \
-	"popq %r8\n" \
-	"popq %rax\n" \
-	"popq %rcx\n" \
-	"popq %rdx\n" \
-	"popq %rsi\n" \
-	"popq %rdi\n" \
-	"addq $8, %rsp\n" \
-        "iretq");
-}
-#endif
+	"2:mov    (%rsp),%r11\n" \
+	"mov    0x8(%rsp),%r10\n" \
+	"mov    0x10(%rsp),%r9\n" \
+	"mov    0x18(%rsp),%r8\n" \
+	"mov    0x20(%rsp),%rax\n" \
+	"mov    0x28(%rsp),%rcx\n" \
+	"mov    0x30(%rsp),%rdx\n" \
+	"mov    0x38(%rsp),%rsi\n" \
+	"mov    0x40(%rsp),%rdi\n" \
+	"add    $0x50,%rsp\n" \
+	"iretq");
 
 static struct gate_struct rtai_apic_timer_sysvec;
 
@@ -965,28 +972,50 @@ void rtai_8254_timer_handler (void);
 	__asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
         SYMBOL_NAME_STR(rtai_8254_timer_handler) ":\n\t" \
-        "\n .p2align\n" \
-	"cld\n\t" \
-        "pushq %rdi\n\t" \
-        "pushq %rsi\n\t" \
-        "pushq %rdx\n\t" \
-        "pushq %rcx\n\t" \
-        "pushq %rax\n\t" \
-        "pushq %r8\n\t" \
-        "pushq %r9\n\t" \
-        "pushq %r10\n\t" \
-        "pushq %r11\n\t" \
-        "call "SYMBOL_NAME_STR(_rtai_8254_timer_handler)"\n\t" \
-        "popq %r11\n\t" \
-        "popq %r10\n\t" \
-        "popq %r9\n\t" \
-        "popq %r8\n\t" \
-        "popq %rax\n\t" \
-        "popq %rcx\n\t" \
-        "popq %rdx\n\t" \
-        "popq %rsi\n\t" \
-        "popq %rdi\n\t" \
-        "iretq");
+	"\n .p2align\n" \
+	"pushq $0\n" \
+	"cld\n" \
+	"sub    $0x48,%rsp\n" \
+	"mov    %rdi,0x40(%rsp)\n" \
+	"mov    %rsi,0x38(%rsp)\n" \
+	"mov    %rdx,0x30(%rsp)\n" \
+	"mov    %rcx,0x28(%rsp)\n" \
+	"mov    %rax,0x20(%rsp)\n" \
+	"mov    %r8,0x18(%rsp)\n" \
+	"mov    %r9,0x10(%rsp)\n" \
+	"mov    %r10,0x8(%rsp)\n" \
+	"mov    %r11,(%rsp)\n" \
+	"lea    0xffffffffffffffd0(%rsp),%rdi\n" \
+	"testl  $0x3,0x88(%rdi)\n" \
+	"je 1f\n" \
+	"swapgs\n" \
+	"1:addl   $0x1,%gs:0x30\n" \
+	"mov    %gs:0x38,%rax\n" \
+	"cmove  %rax,%rsp\n" \
+	"push   %rdi\n" \
+	"call "SYMBOL_NAME_STR(_rtai_8254_timer_handler)"\n\t" \
+	"test   %rax,%rax\n" \
+	"jnz  ret_from_intr\n" \
+	"pop    %rdi\n" \
+	"cli\n" \
+	"subl   $0x1,%gs:0x30\n" \
+	"lea    0x30(%rdi),%rsp\n" \
+	"mov    %gs:0x18,%rcx\n" \
+	"sub    $0x1fd8,%rcx\n" \
+	"testl  $0x3,0x58(%rsp)\n" \
+	"je 2f\n" \
+	"swapgs\n" \
+	"2:mov    (%rsp),%r11\n" \
+	"mov    0x8(%rsp),%r10\n" \
+	"mov    0x10(%rsp),%r9\n" \
+	"mov    0x18(%rsp),%r8\n" \
+	"mov    0x20(%rsp),%rax\n" \
+	"mov    0x28(%rsp),%rcx\n" \
+	"mov    0x30(%rsp),%rdx\n" \
+	"mov    0x38(%rsp),%rsi\n" \
+	"mov    0x40(%rsp),%rdi\n" \
+	"add    $0x50,%rsp\n" \
+	"iretq");
 
 static struct gate_struct rtai_8254_timer_sysvec;
 
@@ -1018,7 +1047,7 @@ static void rtai_critical_sync (void)
 	switch (rtai_sync_level) {
 		case 1: {
 			p = &rtai_timer_mode[rtai_cpuid()];
-			while (rtai_rdtsc() < rtai_timers_sync_time) ;
+			while (rtai_rdtsc() < rtai_timers_sync_time);
 			if (p->mode) {
 				rtai_setup_periodic_apic(p->count, RTAI_APIC_TIMER_VECTOR);
 			} else {
@@ -1489,14 +1518,14 @@ static inline long long rtai_usrq_dispatcher (unsigned srq, unsigned long label)
 }
 
 #include <asm/rtai_usi.h>
-long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long);
+long long (*rtai_lxrt_dispatcher)(unsigned long, unsigned long, void *);
 
 void rtai_syscall_dispatcher (struct pt_regs *regs)
 {
 #ifdef USI_SRQ_MASK
 	IF_IS_A_USI_SRQ_CALL_IT();
 #endif
-	*((unsigned long long *)regs->rdx) = (long)regs->rax > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs->rax, regs->rcx) : rtai_usrq_dispatcher(regs->rax, regs->rcx);
+	*((unsigned long long *)regs->rdx) = (long)regs->rax > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(regs->rax, regs->rcx, regs) : rtai_usrq_dispatcher(regs->rax, regs->rcx);
 	if (!in_hrt_mode(rtai_cpuid())) {
 		local_irq_enable();
 		if (need_resched()) {
@@ -1505,63 +1534,54 @@ void rtai_syscall_dispatcher (struct pt_regs *regs)
 	}
 }
 
-#if 0
-static void rtai_uvec_handler (void)
-{
-__asm__ ( \
-        "\n .p2align\n" \
+#if 1
+void rtai_uvec_handler (void);
+        __asm__ ( \
+        "\n" __ALIGN_STR"\n\t" \
+        SYMBOL_NAME_STR(rtai_uvec_handler) ":\n\t" \
+	"\n .p2align\n" \
 	"pushq $0\n" \
 	"cld\n" \
-	"pushq %rdi\n" \
-	"pushq %rsi\n" \
-	"pushq %rdx\n" \
-	"pushq %rcx\n" \
-	"pushq %rax\n" \
-	"pushq %r8\n" \
-	"pushq %r9\n" \
-	"pushq %r10\n" \
-	"pushq %r11\n" \
-	"pushq %rbx\n" \
-	"pushq %rbp\n" \
-	"pushq %r12\n" \
-	"pushq %r13\n" \
-	"pushq %r14\n" \
-	"pushq %r15\n" \
-	"movq %rsp, %rdi\n" \
-	"movq %rsp, %rbp\n" \
-	"testl $3, 136(%rdi)\n" \
+	"sub    $0x48,%rsp\n" \
+	"mov    %rdi,0x40(%rsp)\n" \
+	"mov    %rsi,0x38(%rsp)\n" \
+	"mov    %rdx,0x30(%rsp)\n" \
+	"mov    %rcx,0x28(%rsp)\n" \
+	"mov    %rax,0x20(%rsp)\n" \
+	"mov    %r8,0x18(%rsp)\n" \
+	"mov    %r9,0x10(%rsp)\n" \
+	"mov    %r10,0x8(%rsp)\n" \
+	"mov    %r11,(%rsp)\n" \
+	"lea    0xffffffffffffffd0(%rsp),%rdi\n" \
+	"testl  $0x3,0x88(%rdi)\n" \
 	"je 1f\n" \
 	"swapgs\n" \
-	"1: movq %gs:56, %rax\n" \
-	"cmoveq %rax, %rsp\n" \
-	"pushq %rdi\n" \
+	"1:addl   $0x1,%gs:0x30\n" \
+	"mov    %gs:0x38,%rax\n" \
+	"cmove  %rax,%rsp\n" \
 	"sti\n" \
-	"call rtai_syscall_dispatcher\n" \
+	"push   %rdi\n" \
+	"call "SYMBOL_NAME_STR(rtai_syscall_dispatcher)"\n" \
+	"pop    %rdi\n" \
 	"cli\n" \
-	"popq %rdi\n" \
-	"testl $3, 136(%rdi)\n" \
-        "je 2f\n" \
+	"subl   $0x1,%gs:0x30\n" \
+	"lea    0x30(%rdi),%rsp\n" \
+	"mov    %gs:0x18,%rcx\n" \
+	"sub    $0x1fd8,%rcx\n" \
+	"testl  $0x3,0x58(%rsp)\n" \
+	"je 2f\n" \
 	"swapgs\n" \
-	"2:\n" \
-	"movq %rdi, %rsp\n" \
-	"popq %r15\n" \
-	"popq %r14\n" \
-	"popq %r13\n" \
-	"popq %r12\n" \
-	"popq %rbp\n" \
-	"popq %rbx\n" \
-	"popq %r11\n" \
-	"popq %r10\n" \
-	"popq %r9\n" \
-	"popq %r8\n" \
-	"popq %rax\n" \
-	"popq %rcx\n" \
-	"popq %rdx\n" \
-	"popq %rsi\n" \
-	"popq %rdi\n" \
-	"addq $8, %rsp\n" \
-        "iretq");
-}
+	"2:mov    (%rsp),%r11\n" \
+	"mov    0x8(%rsp),%r10\n" \
+	"mov    0x10(%rsp),%r9\n" \
+	"mov    0x18(%rsp),%r8\n" \
+	"mov    0x20(%rsp),%rax\n" \
+	"mov    0x28(%rsp),%rcx\n" \
+	"mov    0x30(%rsp),%rdx\n" \
+	"mov    0x38(%rsp),%rsi\n" \
+	"mov    0x40(%rsp),%rdi\n" \
+	"add    $0x50,%rsp\n" \
+	"iretq");
 #else
 void rtai_uvec_handler (void);
         __asm__ ( \
@@ -1694,32 +1714,35 @@ void (*rt_set_ihook (void (*hookfn)(int)))(int)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
 static int errno;
 
 static inline _syscall3(int, sched_setscheduler, pid_t,pid, int,policy, struct sched_param *,param)
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
-
 {
     task->policy = policy;
     task->rt_priority = prio;
     set_tsk_need_resched(current);
 }
 #else /* KERNEL_VERSION >= 2.6.0 */
-void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
-
-{
-	return;
+void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio) {
+    int rc;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
     struct sched_param __user param;
     mm_segment_t old_fs;
-    int rc;
 
     param.sched_priority = prio;
     old_fs = get_fs();
     set_fs(KERNEL_DS);
     rc = sched_setscheduler(task->pid,policy,&param);
     set_fs(old_fs);
+#else
+	struct sched_param param = { prio };
+	rc = sched_setscheduler(task, policy, &param);
+#endif
 
     if (rc)
 	printk("RTAI[hal]: sched_setscheduler(policy=%d,prio=%d) failed, code %d (%s -- pid=%d)\n",
@@ -1863,10 +1886,12 @@ int __rtai_hal_init (void)
 	attr.estacksz = PAGE_SIZE;
 	attr.priority = 2000000000;
 	adeos_register_domain(&rtai_domain, &attr);
+
+/*
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++) {
 		adeos_catch_event(trapnr, (void *)rtai_trap_fault);
 	}
-	
+*/	
 #ifdef CONFIG_SMP
 	if (IsolCpusMask) {
 		for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {
@@ -1878,9 +1903,9 @@ int __rtai_hal_init (void)
 #endif
 
 #ifdef CONFIG_ADEOS_NOTHREADS
-	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-NOTHREADS, IMMEDIATE, ISOL_CPUS_MASK: %lx).\n", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-NOTHREADS, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
 #else
-	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-THREADS, IMMEDIATE, ISOL_CPUS_MASK: %lx).\n", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-THREADS, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
 #endif
 
 	return 0;

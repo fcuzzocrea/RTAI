@@ -88,53 +88,51 @@ static struct proc_dir_entry *iface_proc_root;
 
 struct sched_seq_iterator {
     xnticks_t start_time;
-    spl_t s;
+    int nentries;
+    struct sched_seq_info {
+	int cpu;
+	pid_t pid;
+	const char *name;
+	int cprio;
+	xnticks_t timeout;
+	xnflags_t status;
+    } sched_info[1];
 };
 
 static void *sched_seq_start(struct seq_file *seq, loff_t *pos)
 {
     struct sched_seq_iterator *iter = (struct sched_seq_iterator *)seq->private;
-    xnholder_t *holder;
-    loff_t off;
 
-    xnlock_get_irqsave(&nklock, iter->s);
-
-    iter->start_time = nktimer->get_jiffies();
-
-    if (*pos > countq(&nkpod->threadq))
+    if (*pos > iter->nentries)
 	return NULL;
 
     if (*pos == 0)
 	return SEQ_START_TOKEN;
 
-    for (holder = getheadq(&nkpod->threadq), off = 1;
-	 holder && off < *pos;
-	 holder = nextq(&nkpod->threadq,holder), off++)
-	;
-
-    return holder;
+    return iter->sched_info + *pos - 1;
 }
 
 static void *sched_seq_next(struct seq_file *seq, void *v, loff_t *pos)
 {
+    struct sched_seq_iterator *iter = (struct sched_seq_iterator *)seq->private;
+
     ++*pos;
 
     if (v == SEQ_START_TOKEN)
-	return getheadq(&nkpod->threadq);
+	return &iter->sched_info[0];
 
-    return nextq(&nkpod->threadq,(xnholder_t *)v);
+    if (*pos > iter->nentries)
+	return NULL;
+
+    return iter->sched_info + *pos - 1;
 }
 
 static void sched_seq_stop(struct seq_file *seq, void *v)
 {
-    struct sched_seq_iterator *iter = (struct sched_seq_iterator *)seq->private;
-    xnlock_put_irqrestore(&nklock, iter->s);
 }
 
 static int sched_seq_show(struct seq_file *seq, void *v)
 {
-    struct sched_seq_iterator *iter = (struct sched_seq_iterator *)seq->private;
-    xnthread_t *thread;
     char buf[64];
 
     if (v == SEQ_START_TOKEN)
@@ -142,15 +140,15 @@ static int sched_seq_show(struct seq_file *seq, void *v)
 		   "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
     else
 	{
-	thread = link2thread((xnholder_t *)v,glink);
+	struct sched_seq_info *p = (struct sched_seq_info *)v;
 	seq_printf(seq,"%3u   %-6d %-24s %-4d  %-8Lu  0x%.8lx - %s\n",
-		   xnsched_cpu(thread->sched),
-		   xnthread_user_pid(thread),
-		   thread->name,
-		   thread->cprio,
-		   xnthread_get_timeout(thread,iter->start_time),
-		   thread->status,
-		   xnthread_symbolic_status(thread->status,
+		   p->cpu,
+		   p->pid,
+		   p->name,
+		   p->cprio,
+		   p->timeout,
+		   p->status,
+		   xnthread_symbolic_status(p->status,
 					    buf,sizeof(buf)));
 	}
 
@@ -168,13 +166,18 @@ static int sched_seq_open(struct inode *inode, struct file *file)
 {
     struct sched_seq_iterator *iter;
     struct seq_file *seq;
-    int err;
+    xnholder_t *holder;
+    int err, count;
+    spl_t s;
 
     if (!nkpod)
 	return -ESRCH;
 
-    iter = kmalloc(sizeof(*iter), GFP_KERNEL);
+    count = countq(&nkpod->threadq);	/* Cannot be empty (ROOT) */
 
+    iter = kmalloc(sizeof(*iter)
+		   + (count - 1) * sizeof(struct sched_seq_info),
+		   GFP_KERNEL);
     if (!iter)
 	return -ENOMEM;
 
@@ -185,6 +188,33 @@ static int sched_seq_open(struct inode *inode, struct file *file)
 	kfree(iter);
 	return err;
 	}
+
+    iter->nentries = 0;
+
+    /* Take a snapshot and release the nucleus lock immediately after,
+       so that dumping /proc/rtai/sched with lots of entries won't
+       cause massive jittery. */
+
+    xnlock_get_irqsave(&nklock,s);
+
+    iter->start_time = nktimer->get_jiffies();
+
+    for (holder = getheadq(&nkpod->threadq);
+	 holder && count > 0;
+	 holder = nextq(&nkpod->threadq,holder), count--)
+	{
+	xnthread_t *thread = link2thread(holder,glink);
+	int n = iter->nentries++;
+
+	iter->sched_info[n].cpu = xnsched_cpu(thread->sched);
+	iter->sched_info[n].pid = xnthread_user_pid(thread);
+	iter->sched_info[n].name = thread->name;
+	iter->sched_info[n].cprio = thread->cprio;
+	iter->sched_info[n].timeout = xnthread_get_timeout(thread,iter->start_time);
+	iter->sched_info[n].status = thread->status;
+	}
+    
+    xnlock_put_irqrestore(&nklock,s);
 
     seq = (struct seq_file *)file->private_data;
     seq->private = iter;
@@ -203,65 +233,61 @@ static struct file_operations sched_seq_operations = {
 #ifdef CONFIG_RTAI_OPT_STATS
 
 struct stat_seq_iterator {
-    spl_t s;
+    int nentries;
+    struct stat_seq_info {
+	int cpu;
+	pid_t pid;
+	const char *name;
+	unsigned long psw;
+	unsigned long ssw;
+	unsigned long csw;
+	unsigned long pf;
+    } stat_info[1];
 };
 
 static void *stat_seq_start(struct seq_file *seq, loff_t *pos)
 {
     struct stat_seq_iterator *iter = (struct stat_seq_iterator *)seq->private;
-    xnholder_t *holder;
-    loff_t off;
 
-    xnlock_get_irqsave(&nklock, iter->s);
-
-    if (*pos > countq(&nkpod->threadq))
+    if (*pos > iter->nentries)
 	return NULL;
 
     if (*pos == 0)
 	return SEQ_START_TOKEN;
 
-    for (holder = getheadq(&nkpod->threadq), off = 1;
-	 holder && off < *pos;
-	 holder = nextq(&nkpod->threadq,holder), off++)
-	;
-
-    return holder;
+    return iter->stat_info + *pos - 1;
 }
 
 static void *stat_seq_next(struct seq_file *seq, void *v, loff_t *pos)
 {
+    struct stat_seq_iterator *iter = (struct stat_seq_iterator *)seq->private;
+
     ++*pos;
 
     if (v == SEQ_START_TOKEN)
-	return getheadq(&nkpod->threadq);
+	return &iter->stat_info[0];
 
-    return nextq(&nkpod->threadq,(xnholder_t *)v);
+    if (*pos > iter->nentries)
+	return NULL;
+
+    return iter->stat_info + *pos - 1;
 }
 
 static void stat_seq_stop(struct seq_file *seq, void *v)
 {
-    struct stat_seq_iterator *iter = (struct stat_seq_iterator *)seq->private;
-    xnlock_put_irqrestore(&nklock, iter->s);
 }
 
 static int stat_seq_show(struct seq_file *seq, void *v)
 {
-    xnthread_t *thread;
-
     if (v == SEQ_START_TOKEN)
 	seq_printf(seq,"%-3s   %-6s %-24s     %-12s  %-6s   %-6s\n",
 		   "CPU","PID","NAME","MODSW","CSW","PF");
     else
 	{
-	thread = link2thread((xnholder_t *)v,glink);
+	struct stat_seq_info *p = (struct stat_seq_info *)v;
 	seq_printf(seq,"%3u   %-6d %-24s %6lu/%-6lu  %6lu  %6lu\n",
-		   xnsched_cpu(thread->sched),
-		   xnthread_user_pid(thread),
-		   thread->name,
-		   thread->stat.psw,
-		   thread->stat.ssw,
-		   thread->stat.csw,
-		   thread->stat.pf);
+		   p->cpu, p->pid, p->name,
+		   p->psw, p->ssw, p->csw, p->pf);
 	}
 
     return 0;
@@ -278,13 +304,17 @@ static int stat_seq_open(struct inode *inode, struct file *file)
 {
     struct stat_seq_iterator *iter;
     struct seq_file *seq;
-    int err;
+    xnholder_t *holder;
+    int err, count;
 
     if (!nkpod)
 	return -ESRCH;
 
-    iter = kmalloc(sizeof(*iter), GFP_KERNEL);
+    count = countq(&nkpod->threadq);	/* Cannot be empty (ROOT) */
 
+    iter = kmalloc(sizeof(*iter)
+		   + (count - 1) * sizeof(struct stat_seq_info),
+		   GFP_KERNEL);
     if (!iter)
 	return -ENOMEM;
 
@@ -295,6 +325,32 @@ static int stat_seq_open(struct inode *inode, struct file *file)
 	kfree(iter);
 	return err;
 	}
+
+    iter->nentries = 0;
+
+    /* Take a snapshot and release the nucleus lock immediately after,
+       so that dumping /proc/rtai/stat with lots of entries won't
+       cause massive jittery. */
+
+    xnlock_get_irqsave(&nklock,s);
+
+    for (holder = getheadq(&nkpod->threadq);
+	 holder && count > 0;
+	 holder = nextq(&nkpod->threadq,holder), count--)
+	{
+	xnthread_t *thread = link2thread(holder,glink);
+	int n = iter->nentries++;
+
+	iter->stat_info[n].cpu = xnsched_cpu(thread->sched);
+	iter->stat_info[n].pid = xnthread_user_pid(thread);
+	iter->stat_info[n].name = thread->name;
+	iter->stat_info[n].psw = thread->stat.psw;
+	iter->stat_info[n].ssw = thread->stat.ssw;
+	iter->stat_info[n].csw = thread->stat.csw;
+	iter->stat_info[n].pf = thread->stat.pf;
+	}
+    
+    xnlock_put_irqrestore(&nklock,s);
 
     seq = (struct seq_file *)file->private_data;
     seq->private = iter;

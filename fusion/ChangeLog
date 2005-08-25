@@ -1,3 +1,10 @@
+2005-08-25  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/module.c (sched_seq_open, stat_seq_open): Make sure that
+	the nklock is being held for the shortest possible time, so that
+	dumping the associated /proc files with lots of entries won't
+	cause massive jittery.
+
 2005-08-24  Jim Cromie <jcromie@divsol.com>
 
 	* scripts/rtai-test.in: Extend with pre & post load-tests.

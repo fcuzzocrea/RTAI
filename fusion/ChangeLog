@@ -1,3 +1,8 @@
+2005-08-25  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
+ 
+ 	* skins/rtai/alarm.c (__alarm_read_proc): Add /proc export
+ 	information.
+ 
 2005-08-25  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/module.c (sched_seq_open, stat_seq_open): Make sure that

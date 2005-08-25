@@ -39,6 +39,72 @@
 #include <rtai/alarm.h>
 #include <rtai/registry.h>
 
+#ifdef CONFIG_RTAI_NATIVE_EXPORT_REGISTRY
+
+#include <rtai/timer.h>
+
+static int __alarm_read_proc (char *page,
+			      char **start,
+			      off_t off,
+			      int count,
+			      int *eof,
+			      void *data)
+{
+    RT_ALARM *alarm = (RT_ALARM *)data;
+    xnpholder_t *holder;
+    char *p = page;
+    int len;
+    spl_t s;
+
+    xnlock_get_irqsave(&nklock,s);
+
+    p += sprintf(p,"interval=%Lu:expiries=%lu\n",
+	rt_timer_tsc2ns(xntimer_interval(&alarm->timer_base)),
+	alarm->expiries);
+
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+
+    holder = getheadpq(xnsynch_wait_queue(&alarm->synch_base));
+    
+    while (holder)
+        {
+        xnthread_t *sleeper = link2thread(holder,plink);
+        p += sprintf(p,"+%s\n",xnthread_name(sleeper));
+        holder = nextpq(xnsynch_wait_queue(&alarm->synch_base),holder);
+        }
+
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
+    xnlock_put_irqrestore(&nklock,s);
+
+    len = (p - page) - off;
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if(len > count) len = count;
+    if(len < 0) len = 0;
+
+    return len;
+}
+
+static RT_OBJECT_PROCNODE __alarm_pnode = {
+
+    .dir = NULL,
+    .type = "alarms",
+    .entries = 0,
+    .read_proc = &__alarm_read_proc,
+    .write_proc = NULL
+};
+
+#elif CONFIG_RTAI_OPT_NATIVE_REGISTRY
+
+static RT_OBJECT_PROCNODE __alarm_pnode = {
+
+    .type = "alarms"
+};
+
+#endif /* CONFIG_RTAI_NATIVE_EXPORT_REGISTRY */
+
+
 int __alarm_pkg_init (void)
 
 {
@@ -145,7 +211,7 @@ int rt_alarm_create (RT_ALARM *alarm,
 
     if (name && *name)
         {
-        err = rt_registry_enter(alarm->name,alarm,&alarm->handle,NULL);
+        err = rt_registry_enter(alarm->name,alarm,&alarm->handle,&__alarm_pnode);
 
         if (err)
             rt_alarm_delete(alarm);

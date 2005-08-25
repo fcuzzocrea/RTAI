@@ -452,6 +452,11 @@ static inline void xnarch_restore_fpu (xnarchtcb_t *tcb)
 static inline void xnarch_enable_fpu(xnarchtcb_t *tcb)
 
 {
+    struct task_struct *task = tcb->user_task;
+
+    if(task &&  !(task->thread_info->status & TS_USEDFPU))
+        return;
+
     clts();
 
     if(!cpu_has_fxsr && tcb->user_task)

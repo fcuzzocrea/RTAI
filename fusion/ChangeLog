@@ -1,3 +1,8 @@
+2005-08-25  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i386/system.h (xnarch_enable_fpu): Do not
+	enable FPU when reentering a root thread which had not use FPU.
+
 2005-08-25  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
  
  	* skins/rtai/alarm.c (__alarm_read_proc): Add /proc export

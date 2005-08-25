@@ -23,23 +23,28 @@
 
 #include <asm/rtai_vectors.h>
 
-#define RTAI_SYSCALL_NR      rax
-#define RTAI_SYSCALL_ARGS    rcx
+//#define USE_LINUX_SYSCALL
+
+#define RTAI_SYSCALL_NR      0x70000000
+#define RTAI_SYSCALL_CODE    rdi
+#define RTAI_SYSCALL_ARGS    rsi
 #define RTAI_SYSCALL_RETPNT  rdx
 
-#define LINUX_SYSCALL_NR      rax
+#define RTAI_FAKE_LINUX_SYSCALL  39
+
+#define LINUX_SYSCALL_NR      orig_rax
 #define LINUX_SYSCALL_REG1    rdi
 #define LINUX_SYSCALL_REG2    rsi
 #define LINUX_SYSCALL_REG3    rdx
-#define LINUX_SYSCALL_REG4    r8
-#define LINUX_SYSCALL_REG5    r10
+#define LINUX_SYSCALL_REG4    r10
+#define LINUX_SYSCALL_REG5    r8
 #define LINUX_SYSCALL_REG6    r9
 #define LINUX_SYSCALL_RETREG  rax
 
 #define SET_LXRT_RETVAL_IN_SYSCALL(retval) \
 	do { \
                 if (r->RTAI_SYSCALL_RETPNT) { \
-			copy_to_user((void *)r->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
+			rt_copy_to_user((void *)r->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
 		} \
 	} while (0)
 
@@ -97,7 +102,7 @@ static inline void _lxrt_context_switch (struct task_struct *prev, struct task_s
 #define IN_INTERCEPT_IRQ_DISABLE()  do { } while (0)
 #endif
 
-#if 1 // optimised (?)
+#if 0 // optimised (?)
 static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
 {
 	lnxtsk->rtai_tskext(2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.rsp, GFP_KERNEL);
@@ -126,16 +131,24 @@ static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
 	memcpy((void *)(lnxtsk->thread.rsp & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(2) + sizeof(struct thread_struct), THREAD_SIZE);
 }
 #endif
+
+#define rt_copy_from_user  __copy_from_user_inatomic
+#define rt_copy_to_user    __copy_to_user_inatomic
+#define rt_put_user        __put_user
+
 #else /* !__KERNEL__ */
 
 /* NOTE: Keep the following routines unfold: this is a compiler
    compatibility issue. */
 
+#include <sys/syscall.h>
+#include <unistd.h>
+
 static union rtai_lxrt_t _rtai_lxrt(long srq, void *arg)
 {
 	union rtai_lxrt_t retval;
 #ifdef USE_LINUX_SYSCALL
-	RTAI_DO_TRAP(SYSCALL_VECTOR, retval, srq, arg);
+	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
 #else
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
 #endif

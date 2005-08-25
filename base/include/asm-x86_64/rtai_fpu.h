@@ -35,89 +35,114 @@
 
 #ifndef __cplusplus
 #include <asm/processor.h>
-#include <asm/i387.h>
 #endif /* !__cplusplus */
 
 typedef union i387_union FPU_ENV;
    
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 
-#define init_fpu(tsk) \
-	do { init_xfpu(); tsk->used_math = 1; set_tsk_used_fpu(tsk); } while(0)
-
-#define restore_fpu(tsk) \
-	do { restore_fpenv_lxrt((tsk)); set_tsk_used_fpu(tsk); } while (0)
-
-#define load_mxcsr(val) \
-	do { \
-        	unsigned long __mxcsr = ((unsigned long)(val) & 0xffbf); \
-	        __asm__ __volatile__ ("ldmxcsr %0": : "m" (__mxcsr)); \
-	} while (0)
-
-#define save_cr0_and_clts(x) \
-	do { \
-		x = read_cr0(); \
-		clts(); \
-	} while (0)
-
-#define restore_cr0(x) \
-	do { \
-		if (x & 8) { \
-			unsigned long flags; \
-			rtai_hw_save_flags_and_cli(flags); \
-			x = read_cr0(); \
-			write_cr0(8 | x); \
-			rtai_hw_restore_flags(flags); \
-		} \
-	} while (0)
-
 #define enable_fpu() clts()
 
-#define init_xfpu() \
-	do { \
-		__asm__ __volatile__ ("clts; fninit"); \
-		if (cpu_has_xmm) { \
-			load_mxcsr(0x1f80); \
-		} \
-	} while (0)
+#define save_fpcr_and_enable_fpu(fpcr)  do { \
+	fpcr = read_cr0(); \
+	enable_fpu(); \
+} while (0)
 
-#define save_fpenv(x) \
-	do { \
-		if (cpu_has_fxsr) { \
-			__asm__ __volatile__ ("rex64; fxsave %0; fnclex": "=m" (x)); \
-		} else { \
-			__asm__ __volatile__ ("rex64; fnsave %0; fwait": "=m" (x)); \
-		} \
-	} while (0)
+#define restore_fpcr(fpcr)  do { \
+	if (fpcr & 8) { \
+		unsigned long flags; \
+		rtai_hw_save_flags_and_cli(flags); \
+		fpcr = read_cr0(); \
+		write_cr0(8 | fpcr); \
+		rtai_hw_restore_flags(flags); \
+	} \
+} while (0)
 
-#define restore_fpenv(x) restore_fpu_checking((void *)&(x))
+// initialise the hard fpu unit directly
+#define init_hard_fpenv() do { \
+        __asm__ __volatile__ ("clts; fninit"); \
+        if (cpu_has_xmm) { \
+                unsigned long __mxcsr = (0xffbfu & 0x1f80u); \
+                __asm__ __volatile__ ("ldmxcsr %0": : "m" (__mxcsr)); \
+        } \
+} while (0)
 
-#define restore_task_fpenv(t) \
-	do { \
-               clts(); \
-               restore_fpenv((t)->thread.i387.fxsave); \
-	} while (0)
+// initialise the given fpenv union, without touching the related hard fpu unit
+#define init_fpenv(fpenv)  do { \
+        memset(&(fpenv).fxsave, 0, sizeof(struct i387_fxsave_struct)); \
+        (fpenv).fxsave.cwd = 0x37f; \
+        if (cpu_has_xmm) { \
+	        (fpenv).fxsave.mxcsr = 0x1f80; \
+        } \
+} while (0)
 
-#define restore_fpenv_lxrt(t) restore_task_fpenv(t)
+#define save_fpenv(fpenv)  do { \
+	__asm__ __volatile__ ("rex64; fxsave %0; fnclex": "=m" ((fpenv).fxsave)); \
+} while (0)
+
+#define restore_fpenv(fpenv)  do { \
+        __asm__ __volatile__ ("fxrstor %0": : "m" ((fpenv).fxsave)); \
+} while (0)
+
+// FPU MANAGEMENT DRESSED FOR IN KTHREAD/THREAD/PROCESS FPU USAGE FROM RTAI
+
+#define init_hard_fpu(lnxtsk)  do { \
+        init_hard_fpenv(); \
+        set_lnxtsk_uses_fpu(lnxtsk); \
+        set_lnxtsk_using_fpu(lnxtsk); \
+} while (0)
+
+#define init_fpu(lnxtsk)  do { \
+        init_fpenv((lnxtsk)->thread.i387); \
+        set_lnxtsk_uses_fpu(lnxtsk); \
+} while (0)
+
+#define restore_fpu(lnxtsk)  do { \
+        enable_fpu(); \
+        restore_fpenv((lnxtsk)->thread.i387); \
+        set_lnxtsk_using_fpu(lnxtsk); \
+} while (0)
 
 #else /* !CONFIG_RTAI_FPU_SUPPORT */
 
-static void init_fpu(struct task_struct *tsk) { }
-#define restore_fpu(tsk)
-#define save_cr0_and_clts(x)
-#define restore_cr0(x)
 #define enable_fpu()
-#define load_mxcsr(val)
-#define init_xfpu()
-#define save_fpenv(x)
-#define restore_fpenv(x)
-#define restore_task_fpenv(t)
-#define restore_fpenv_lxrt(t)
+#define save_fpcr_and_enable_fpu(fpcr)
+#define restore_fpcr(fpcr)
+#define init_hard_fpenv()
+#define init_fpenv(fpenv)
+#define save_fpenv(fpenv)
+#define restore_fpenv(fpenv)
+#define init_hard_fpu(lnxtsk)
+#define init_fpu(lnxtsk)
+#define restore_fpu(lnxtsk)
 
 #endif /* CONFIG_RTAI_FPU_SUPPORT */
 
-#define set_tsk_used_fpu(t)  do { \
-        (t)->thread_info->status |= TS_USEDFPU; \
-} while(0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
+
+#define set_lnxtsk_uses_fpu(lnxtsk) \
+        do { (lnxtsk)->used_math = 1; } while(0)
+#define clear_lnxtsk_uses_fpu(lnxtsk) \
+        do { (lnxtsk)->used_math = 0; } while(0)
+#define lnxtsk_uses_fpu(lnxtsk)  ((lnxtsk)->used_math)
+
+#define set_lnxtsk_using_fpu(lnxtsk) \
+        do { (lnxtsk)->thread_info->status |= TS_USEDFPU; } while(0)
+
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11) */
+
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11)
+
+#define set_lnxtsk_uses_fpu(lnxtsk) \
+        do { set_stopped_child_used_math(lnxtsk); } while(0)
+#define clear_lnxtsk_uses_fpu(lnxtsk) \
+        do { clear_stopped_child_used_math(lnxtsk); } while(0)
+#define lnxtsk_uses_fpu(lnxtsk)  (tsk_used_math(lnxtsk))
+
+#define set_lnxtsk_using_fpu(lnxtsk) \
+        do { (lnxtsk)->thread_info->status |= TS_USEDFPU; } while(0)
+
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,11) */
 
 #endif /* !_RTAI_ASM_X8664_FPU_H */

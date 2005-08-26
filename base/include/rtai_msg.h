@@ -467,7 +467,7 @@ RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, void *msglen
 
 RTAI_PROTO(pid_t, rt_Creceive,(pid_t pid, void *msg, size_t maxsize, size_t *msglen, RTIME delay))
 {
-	struct { long pid; void *msg; long maxsize, *msglen; RTIME delay;} arg = { pid, msg, maxsize, msglen, delay };
+	struct { long pid; void *msg; long maxsize; size_t *msglen; RTIME delay;} arg = { pid, msg, maxsize, msglen, delay };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_CRECEIVE, &arg).i[LOW];
 }
 
@@ -615,7 +615,7 @@ RTAI_PROTO(int, rt_qSync,(void))
 
 RTAI_PROTO(pid_t, rt_qReceive,(pid_t target, void *buf, size_t maxlen, size_t *msglen))
 {
-	struct {pid_t target; void *buf; long maxlen, *msglen; } arg = { target, buf, maxlen, msglen };
+	struct { long target; void *buf; long maxlen; size_t *msglen; } arg = { target, buf, maxlen, msglen };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_QRECEIVE, &arg).i[LOW];
 }
 

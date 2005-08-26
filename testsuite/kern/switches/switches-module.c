@@ -61,7 +61,7 @@ static SEM sem;
 
 static volatile int change;
 
-static void pend_task (int t)
+static void pend_task (long t)
 {
 	while(1) {
 		if (change) {
@@ -73,7 +73,7 @@ static void pend_task (int t)
 	}
 }
 
-static void sched_task(int t) {
+static void sched_task(long t) {
 	int i, k;
 	change = 0;
 	t = rdtsc();

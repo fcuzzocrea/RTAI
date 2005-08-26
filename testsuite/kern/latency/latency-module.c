@@ -133,7 +133,7 @@ static int proc_read(char *page, char **start, off_t off,
  */
  
 void
-fun(int thread)
+fun(long thread)
 {
 
 	int diff = 0;

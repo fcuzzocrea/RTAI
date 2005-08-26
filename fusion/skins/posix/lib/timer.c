@@ -26,11 +26,6 @@ int __wrap_timer_create (clockid_t clockid,
 			 struct sigevent *evp,
 			 timer_t *timerid)
 {
-#if 0
-    if (clockid != CLOCK_MONOTONIC)
-	return __real_timer_create(clockid,evp,timerid);
-#endif
-
     return -XENOMAI_SKINCALL2(__pse51_muxid,
 			      __pse51_timer_create,
 			      evp,

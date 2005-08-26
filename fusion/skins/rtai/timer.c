@@ -59,7 +59,7 @@
 SRTIME rt_timer_ns2ticks (SRTIME ns)
 
 {
-	return xnpod_ns2ticks(ns);
+    return xnpod_ns2ticks(ns);
 }
 
 /**
@@ -88,7 +88,7 @@ SRTIME rt_timer_ns2ticks (SRTIME ns)
 SRTIME rt_timer_ns2tsc (SRTIME ns)
 
 {
-	return xnarch_ns_to_tsc(ns);
+    return xnarch_ns_to_tsc(ns);
 }
 
 /*!
@@ -117,7 +117,7 @@ SRTIME rt_timer_ns2tsc (SRTIME ns)
 SRTIME rt_timer_ticks2ns (SRTIME ticks)
 
 {
-	return xnpod_ticks2ns(ticks);
+    return xnpod_ticks2ns(ticks);
 }
 
 /*!
@@ -146,7 +146,7 @@ SRTIME rt_timer_ticks2ns (SRTIME ticks)
 SRTIME rt_timer_tsc2ns (SRTIME ticks)
 
 {
-	return xnarch_tsc_to_ns(ticks);
+    return xnarch_tsc_to_ns(ticks);
 }
 
 /*!

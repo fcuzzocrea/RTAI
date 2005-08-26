@@ -11,10 +11,11 @@ This skin already contains most basic features :
 - mutexes,
 - semaphores,
 - condition variables,
-- basic support for "reliable" signals (not realtime ones),
+- support for real-time signals,
 - cancellation, cancellation handlers
 - thread specific data
-- message queues.
+- message queues
+- timers support.
 
 The POSIX skin creates real-time threads running either embodied into
 kernel modules, or inside regular applications in user-space.
@@ -65,6 +66,9 @@ described in this specification. Here are the known ones :
   sender; 
   . mq_open may only be called from module initialization context.
 
+- timers:
+  . the SIGEV_THREAD notification mechanism is not implemented, nor is intended
+  to be. If you need this, post a mail to rtai@rtai.org.
 
 Use of the POSIX skin from user-space applications
 ==================================================
@@ -111,12 +115,8 @@ pthread_mutex_init() and pthread_cond_init() routines must be used
 instead, otherwise, mutex and condition variable-related calls would
 always return an error status (EINVAL).
 
-- Currently, the POSIX skin only implements the CLOCK_MONOTONIC clock,
-which is fortunately sufficient to configure the application timings,
-retrieve accurate timestamps and so on. Do _not_ pass CLOCK_REALTIME,
-or anything different from CLOCK_MONOTONIC, to the shadowed clock_*()
-routines, unless you do want the real (i.e. un-shadowed) service to be
-invoked.
+- Setting time through clock_settime(CLOCK_REALTIME) is not yet supported, but
+the CLOCK_REALTIME clock is aligned on Linux clock at POSIX skin startup.
 
 
 Undefined behaviour.
@@ -139,9 +139,9 @@ TODO List
 The PSE51 skin is still a work in progress, it lacks some features which will be 
 added gradually :
 - spinlocks/rwlocks/barriers ;
-- SA_SIGINFO sigaction flag, realtime signals ;
-- timers.
-
+- add suport for mq_notify, now that real-time signals are working ;
+- dimensioning constants are scattered all over the skin sources, they should be
+  centralized, and made configurable through configure.
 
 
 Module parameters

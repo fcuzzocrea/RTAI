@@ -8,7 +8,6 @@ INCLUDES = \
 	-I$(srcdir)/.. \
 	-I@RTAI_INSTALLDIR@/source/include \
 	-I@RTAI_INSTALLDIR@/source/skins \
-	-I@RTAI_INSTALLDIR@/source/skins/posix \
 	-I$(top_srcdir)/include
 
 LDFLAGS = \

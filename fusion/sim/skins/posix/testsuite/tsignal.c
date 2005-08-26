@@ -26,14 +26,14 @@ void test_sigsets(void)
 
     TEST_ASSERT_OK(sigemptyset(&sigmask));
 
-    for(i=1; i<=32; i++)
+    for(i=1; i<=SIGRTMAX; i++)
         TEST_ASSERT(!sigismember(&sigmask, i));
 
     TEST_ASSERT(sigaddset(&sigmask, 0)==-1 && errno==EINVAL);
     TEST_ASSERT_OK(sigaddset(&sigmask, 1));
     TEST_ASSERT_OK(sigaddset(&sigmask, 15));
-    TEST_ASSERT_OK(sigaddset(&sigmask, 32));
-    TEST_ASSERT(sigaddset(&sigmask, 33)==-1 && errno==EINVAL);
+    TEST_ASSERT_OK(sigaddset(&sigmask, SIGRTMAX));
+    TEST_ASSERT(sigaddset(&sigmask, SIGRTMAX+1)==-1 && errno==EINVAL);
 
     TEST_ASSERT(sigismember(&sigmask, 0)==-1 && errno==EINVAL);
     TEST_ASSERT(sigismember(&sigmask, 1)==1);
@@ -41,13 +41,13 @@ void test_sigsets(void)
     TEST_ASSERT(sigismember(&sigmask, 14)==0);
     TEST_ASSERT(sigismember(&sigmask, 15)==1);
     TEST_ASSERT(sigismember(&sigmask, 16)==0);
-    TEST_ASSERT(sigismember(&sigmask, 31)==0);
-    TEST_ASSERT(sigismember(&sigmask, 32)==1);
-    TEST_ASSERT(sigismember(&sigmask, 33)==-1 && errno==EINVAL);
+    TEST_ASSERT(sigismember(&sigmask, SIGRTMAX-1)==0);
+    TEST_ASSERT(sigismember(&sigmask, SIGRTMAX)==1);
+    TEST_ASSERT(sigismember(&sigmask, SIGRTMAX+1)==-1 && errno==EINVAL);
 
     TEST_ASSERT_OK(sigfillset(&sigmask));
 
-    for(i=1; i<=32; i++)
+    for(i=1; i<=SIGRTMAX; i++)
         TEST_ASSERT(sigismember(&sigmask, i));
 }
 
@@ -65,21 +65,35 @@ void test_sigpending(void)
 
 void *wait_sig(void *cookie)
 {
+    sigset_t *parent = (sigset_t *) cookie;
     sigset_t sigmask, saved;
-    sigset_t *parent=(sigset_t *) cookie;
+    struct timespec timeout;
+    siginfo_t info;
     int sig;
 
     TEST_ASSERT_OK(sigemptyset(&sigmask));
-    TEST_ASSERT_OK(sigaddset(&sigmask, 16));
+    TEST_ASSERT_OK(sigaddset(&sigmask, SIGRTMIN));
+    TEST_ASSERT_OK(sigaddset(&sigmask, SIGRTMIN+1));
     TEST_ASSERT_OK(pthread_sigmask(SIG_BLOCK, &sigmask, &saved));
 
-    for(sig=1; sig<=32; sig++)
+    for(sig=1; sig<=SIGRTMAX; sig++)
         TEST_ASSERT(sigismember(&saved, sig) == sigismember(parent,sig));
 
-    TEST_ASSERT(sigwait(&sigmask, &sig) == 0 && sig == 16);
+    TEST_ASSERT(sigwait(&sigmask, &sig) == 0 && sig == SIGRTMIN);
+    TEST_ASSERT(sigwaitinfo(&sigmask, &info) == 0 &&
+                info.si_signo == SIGRTMIN+1 &&
+                info.si_code == SI_QUEUE &&
+                info.si_value.sival_int == 42);
+    
+
+    timeout.tv_nsec = 10000000;
+    timeout.tv_sec = 0;
+    /* either status is admitted by POSIX. */
+    TEST_ASSERT(sigtimedwait(&sigmask, &info, &timeout) == -1 &&
+                (errno == EINTR || errno == EAGAIN));
 
     TEST_MARK();
-    
+
     return NULL;
 }
 
@@ -93,19 +107,20 @@ void test_sigwait(void)
     void *status;
 
     TEST_ASSERT_OK(sigemptyset(&sigmask));
-    TEST_ASSERT_OK(sigaddset(&sigmask, 17));
+    TEST_ASSERT_OK(sigaddset(&sigmask, SIGRTMIN + 2));
     TEST_ASSERT_OK(pthread_sigmask(SIG_BLOCK, &sigmask, &saved));
-    TEST_ASSERT_OK(sigaddset(&saved, 17));
+    TEST_ASSERT_OK(sigaddset(&saved, SIGRTMIN + 2));
     
     TEST_ASSERT_OK(pthread_attr_init(&tattr));
-    TEST_ASSERT_OK(pthread_getschedparam(pthread_self(), &policy, &prio));
-    ++prio.sched_priority;
-    TEST_ASSERT_OK(pthread_attr_setschedparam(&tattr, &prio));
+    TEST_ASSERT_OK(pthread_attr_setinheritsched(&tattr, 1));
     TEST_ASSERT_OK(pthread_attr_setname_np(&tattr, "sigwait"));
     TEST_ASSERT_OK(pthread_create(&thread, &tattr, wait_sig, &saved));
+    sched_yield();
     TEST_ASSERT_OK(pthread_attr_destroy(&tattr));
 
-    TEST_ASSERT_OK(pthread_kill(thread, 16));
+    TEST_ASSERT_OK(sigqueue(thread, SIGRTMIN+1, (union sigval) 42));
+    TEST_ASSERT_OK(pthread_kill(thread, SIGRTMIN));
+    TEST_ASSERT_OK(pthread_kill(thread, SIGRTMIN+2));
 
     TEST_ASSERT_OK(pthread_join(thread, &status));
 

@@ -1,3 +1,11 @@
+2005-08-26  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/timer.c: Finished POSIX timers implementation.
+
+	* skins/posix/signal.c: Replace "reliable" POSIX signals with
+	"real-time" POSIX signals, add support for sigqueue, sigtimedwait,
+	sigwaitinfo and SA_SIGINFO sigaction flag.
+
 2005-08-25  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* include/nucleus/asm-ppc/system.h (xnarch_enable_fpu): Already

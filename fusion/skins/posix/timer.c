@@ -17,32 +17,70 @@
  */
 
 
-#include "posix/thread.h"
-#include "posix/timer.h"
+#include <nucleus/timer.h>
+#include <posix/thread.h>
+#include <posix/timer.h>
+
+#define PSE51_TIMER_MAX  128
+
+struct pse51_timer {
+
+    xntimer_t timerbase;
+
+    int overruns;
+
+    xnholder_t link;
+
+#define link2tm(laddr) \
+    ((struct pse51_timer *)(((char *)laddr) - offsetof(struct pse51_timer, link)))
+    pse51_siginfo_t si;
+
+#define si2tm(saddr) \
+    ((struct pse51_timer *)(((char *)saddr) - offsetof(struct pse51_timer, si)))
+
+    clockid_t clockid;
+    pthread_t owner;
+};
+
 
 static xnqueue_t pse51_timerq,
                  timer_freeq;
 
 static struct pse51_timer timer_pool[PSE51_TIMER_MAX];
 
-void base_timer_handler (void *cookie)
+static void pse51_base_timer_handler (void *cookie)
 {
     struct pse51_timer *timer = (struct pse51_timer *)cookie;
+
+    if(timer->overruns < DELAYTIMER_MAX)
+        ++timer->overruns;
+    
+    if(timer->overruns == 1)
+        pse51_sigqueue_inner(timer->owner, &timer->si);
 }
 
-int timer_create(clockid_t clockid,
-		 struct sigevent *evp,
-		 timer_t *timerid)
+void pse51_timer_notified (pse51_siginfo_t *si)
+{
+    struct pse51_timer *timer = si2tm(si);
+
+    --timer->overruns;
+}
+
+int timer_create (clockid_t clockid,
+                  struct sigevent *__restrict__ evp,
+                  timer_t *__restrict__ timerid)
 {
     struct pse51_timer *timer;
     spl_t s;
 
-    if (clockid != CLOCK_MONOTONIC)
-	{
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+    if (clockid != CLOCK_MONOTONIC && clockid != CLOCK_REALTIME)
+        goto einval;
 
+    /* We only support notification via signals. */
+    if (evp && (evp->sigev_notify != SIGEV_SIGNAL ||
+                (unsigned) (evp->sigev_signo - 1) > SIGRTMAX))
+        goto einval;
+    
     xnlock_get_irqsave(&nklock, s);
     
     timer = (struct pse51_timer *)getq(&timer_freeq);
@@ -54,19 +92,36 @@ int timer_create(clockid_t clockid,
 	return -1;
 	}
 
+    if (evp)
+        {
+        timer->si.info.si_signo = evp->sigev_signo;
+        timer->si.info.si_code = SI_TIMER;
+        timer->si.info.si_value = evp->sigev_value;
+        }
+    else
+        {
+        timer->si.info.si_signo = SIGALRM;
+        timer->si.info.si_code = SI_TIMER;
+        timer->si.info.si_value = (union sigval) (timer - timer_pool);
+        }
+
+    xntimer_init(&timer->timerbase, &pse51_base_timer_handler, timer);
+
+    timer->overruns = 0;
+    timer->owner = pthread_self();
+    timer->clockid = clockid;
+
     appendq(&pse51_timerq,&timer->link);
 
     xnlock_put_irqrestore(&nklock, s);
 
-    xntimer_init(&timer->timerbase,
-		 &base_timer_handler,
-		 timer);
-
-    timer->overruns = 0;
-
     *timerid = timer - timer_pool;
 
     return 0;
+
+  einval:
+    thread_set_errno(EINVAL);
+    return -1;
 }
 
 int timer_delete(timer_t timerid)
@@ -74,22 +129,15 @@ int timer_delete(timer_t timerid)
     struct pse51_timer *timer;
     spl_t s;
 
-    if (timerid < 0 || timerid >= PSE51_TIMER_MAX)
-	{
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+    if ((unsigned) timerid >= PSE51_TIMER_MAX)
+        goto einval;
 
     xnlock_get_irqsave(&nklock, s);
 
     timer = &timer_pool[timerid];
 
     if (!xntimer_active_p(&timer->timerbase))
-	{
-	xnlock_put_irqrestore(&nklock, s);
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+        goto unlock_and_einval;
 
     xntimer_destroy(&timer->timerbase);
     removeq(&pse51_timerq,&timer->link);
@@ -98,86 +146,113 @@ int timer_delete(timer_t timerid)
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
+
+  unlock_and_einval:
+    xnlock_put_irqrestore(&nklock, s);
+  einval:
+    thread_set_errno(EINVAL);
+    return -1;
 }
 
-int timer_settime(timer_t timerid,
-		  int flags,
-		  const struct itimerspec *value,
-		  struct itimerspec *ovalue)
+static void pse51_timer_gettime_inner (struct pse51_timer *__restrict__ timer,
+                                       struct itimerspec *__restrict__ value)
 {
-    xnticks_t timeout, delay, interval;
+    if (xntimer_running_p(&timer->timerbase))
+        {
+        ticks2ts(&value->it_value, xntimer_get_timeout(&timer->timerbase));
+        ticks2ts(&value->it_interval,xntimer_interval(&timer->timerbase));
+        }
+    else
+        {
+        value->it_value.tv_sec = 0;
+        value->it_value.tv_nsec = 0;
+        value->it_interval.tv_sec = 0;
+        value->it_interval.tv_nsec = 0;
+        }
+}
+
+int timer_settime (timer_t timerid,
+                   int flags,
+                   const struct itimerspec *__restrict__ value,
+                   struct itimerspec *__restrict__ ovalue)
+{
     struct pse51_timer *timer;
+    xnticks_t start;
     spl_t s;
 
-    if (timerid < 0 || timerid >= PSE51_TIMER_MAX)
-	{
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+    if ((unsigned) timerid >= PSE51_TIMER_MAX)
+        goto einval;
+
+    if ((unsigned) value->it_value.tv_nsec >= ONE_BILLION ||
+        ((unsigned) value->it_interval.tv_nsec >= ONE_BILLION &&
+         (value->it_value.tv_sec != 0 || value->it_value.tv_nsec != 0)))
+        goto einval;
 
     xnlock_get_irqsave(&nklock, s);
 
     timer = &timer_pool[timerid];
 
     if (!xntimer_active_p(&timer->timerbase))
-	{
-	xnlock_put_irqrestore(&nklock, s);
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+        goto unlock_and_einval;
 
-    timeout = ts2ticks_ceil(&value->it_value);
+    if (value->it_value.tv_nsec != 0 || value->it_value.tv_sec != 0)
+        {
+        start = ts2ticks_ceil(&value->it_value) + 1;
+    
+        if (flags & TIMER_ABSTIME)
+            /* If the initial delay has already passed, the call shall suceed. */
+            if (clock_adjust_timeout(&start, timer->clockid))
+                start = 1;          /* FIXME: when passing 0 tick, xntimer_start
+                                       disables the timer. */
+        }
 
-    if (flags & TIMER_ABSTIME)
-	delay = timeout - xnpod_get_time();
-    else
-	delay = timeout;
-
-    interval = ts2ticks_ceil(&value->it_interval);
-
-    xntimer_start(&timer->timerbase,
-		  delay <= timeout ? delay : delay - timeout,
-		  interval);
     if (ovalue)
-	*ovalue = timer->value;
+        pse51_timer_gettime_inner(timer, ovalue);    
 
-    timer->value = *value;
+    if (value->it_value.tv_nsec == 0 && value->it_value.tv_sec == 0)
+        xntimer_stop(&timer->timerbase);
+    else
+        xntimer_start(&timer->timerbase,
+                      start,
+                      ts2ticks_ceil(&value->it_interval));
 
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
+
+  unlock_and_einval:
+    xnlock_put_irqrestore(&nklock, s);
+  einval:
+    thread_set_errno(EINVAL);
+    return -1;
 }
 
 int timer_gettime(timer_t timerid, struct itimerspec *value)
 {
     struct pse51_timer *timer;
-    xnticks_t timeout;
     spl_t s;
 
-    if (timerid < 0 || timerid >= PSE51_TIMER_MAX)
-	{
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+    if ((unsigned) timerid >= PSE51_TIMER_MAX)
+        goto einval;
 
     xnlock_get_irqsave(&nklock, s);
 
     timer = &timer_pool[timerid];
 
     if (!xntimer_active_p(&timer->timerbase))
-	{
-	xnlock_put_irqrestore(&nklock, s);
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+        goto unlock_and_einval;
 
-    timeout = xntimer_get_timeout(&timer->timerbase); /* relative only? */
-    ticks2ts(&value->it_value,timeout);
-    ticks2ts(&value->it_interval,xntimer_interval(&timer->timerbase));
+    pse51_timer_gettime_inner(timer, value);
 
     xnlock_put_irqrestore(&nklock, s);
 
     return 0;
+
+  unlock_and_einval:
+    xnlock_put_irqrestore(&nklock, s);
+  einval:
+    thread_set_errno(EINVAL);
+    return -1;
 }
 
 int timer_getoverrun(timer_t timerid)
@@ -186,28 +261,28 @@ int timer_getoverrun(timer_t timerid)
     int overruns;
     spl_t s;
 
-    if (timerid < 0 || timerid >= PSE51_TIMER_MAX)
-	{
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+    if ((unsigned) timerid >= PSE51_TIMER_MAX)
+        goto einval;
 
     xnlock_get_irqsave(&nklock, s);
 
     timer = &timer_pool[timerid];
 
     if (!xntimer_active_p(&timer->timerbase))
-	{
-	xnlock_put_irqrestore(&nklock, s);
-        thread_set_errno(EINVAL);
-	return -1;
-	}
+        goto unlock_and_einval;
 
-    overruns = timer->overruns;	/* FIXME: delay_max? */
+    overruns = timer->overruns;
 
     xnlock_put_irqrestore(&nklock, s);
 
     return overruns;
+
+
+  unlock_and_einval:
+    xnlock_put_irqrestore(&nklock, s);
+  einval:
+    thread_set_errno(EINVAL);
+    return -1;
 }
 
 int pse51_timer_pkg_init(void)

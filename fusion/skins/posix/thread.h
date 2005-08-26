@@ -20,9 +20,9 @@
 #ifndef _POSIX_THREAD_H
 #define _POSIX_THREAD_H
 
-#include "posix/internal.h"
+#include <posix/internal.h>
 
-typedef xnsigmask_t pse51_sigset_t;
+typedef unsigned long long pse51_sigset_t;
 
 struct mm_struct;
 
@@ -31,6 +31,11 @@ struct pse51_hkey {
     unsigned long u_tid;
     struct mm_struct *mm;
 };
+
+typedef struct {
+    pse51_sigset_t mask;
+    xnpqueue_t list;
+} pse51_sigqueue_t;
 
 struct pse51_thread {
     unsigned magic;
@@ -72,8 +77,9 @@ struct pse51_thread {
     int err;
 
     /* For signals handling. */
-    pse51_sigset_t sigmask;          /* signals mask. */
-    pse51_sigset_t blocked_received; /* blocked signals received. */
+    pse51_sigset_t sigmask;     /* signals mask. */
+    pse51_sigqueue_t pending;   /* Pending signals */
+    pse51_sigqueue_t blocked_received; /* Blocked signals received. */
 
     /* For thread specific data. */
     const void *tsd [PTHREAD_KEYS_MAX];

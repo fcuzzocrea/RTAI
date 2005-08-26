@@ -16,9 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#include "posix/internal.h"
-#include "posix/thread.h"
-#include "posix/mutex.h"
+#include <posix/mutex.h>
 
 #define link2mutex(laddr) \
 ((pthread_mutex_t *)(((char *)laddr)-(int)(&((pthread_mutex_t *)0)->link)))

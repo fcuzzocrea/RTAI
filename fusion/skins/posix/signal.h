@@ -20,12 +20,21 @@
 #ifndef _POSIX_SIGNAL_H
 #define _POSIX_SIGNAL_H
 
-#include "posix/thread.h"
+#include <posix/thread.h>
 
-#define SIGACTION_FLAGS (SA_ONESHOT|SA_NOMASK)
+#define SIGACTION_FLAGS (SA_ONESHOT|SA_NOMASK|SA_SIGINFO)
 
-#define PSE51_SIGMIN  1       /* 0 has a special meaning for pthread_kill. */
-#define PSE51_SIGMAX  (((int) (sizeof(pse51_sigset_t)*8)) + PSE51_SIGMIN - 1)
+typedef struct {
+    siginfo_t info;
+    xnpholder_t link;
+
+#define link2siginfo(iaddr) \
+    ((pse51_siginfo_t *)((char *) iaddr - offsetof(pse51_siginfo_t, link)))
+
+} pse51_siginfo_t;
+
+/* Must be called with nklock lock, irqs off, may reschedule. */
+void pse51_sigqueue_inner(pthread_t thread, pse51_siginfo_t *si);
 
 void pse51_signal_init_thread(pthread_t new, const pthread_t parent);
 

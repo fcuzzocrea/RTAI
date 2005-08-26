@@ -38,6 +38,7 @@
 #define PSE51_MQD_MAGIC         PSE51_MAGIC(0A)
 #define PSE51_INTR_MAGIC        PSE51_MAGIC(0B)
 #define PSE51_NAMED_SEM_MAGIC   PSE51_MAGIC(0C)
+#define PSE51_TIMER_MAGIC       PSE51_MAGIC(0D)
 
 #define PSE51_MIN_PRIORITY      FUSION_LOW_PRIO
 #define PSE51_MAX_PRIORITY      FUSION_HIGH_PRIO
@@ -86,6 +87,7 @@ static inline xnticks_t clock_get_ticks(clockid_t clock_id)
         return xnpod_ns2ticks(xnpod_get_cpu_time());
 }
 
+/* Convert an absolute timeout for clock clock_id to a relative timeout. */
 static inline int clock_adjust_timeout(xnticks_t *timeoutp, clockid_t clock_id)
 {
     xnsticks_t delay;
@@ -94,7 +96,7 @@ static inline int clock_adjust_timeout(xnticks_t *timeoutp, clockid_t clock_id)
         return 0;
 
     delay = *timeoutp - clock_get_ticks(clock_id);
-    if(delay < 0)
+    if(delay <= 0)
         return ETIMEDOUT;
 
     *timeoutp = delay;

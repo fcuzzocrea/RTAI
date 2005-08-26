@@ -19,7 +19,7 @@
 #ifndef _POSIX_SEM_H
 #define _POSIX_SEM_H
 
-#include "posix/thread.h"       /* For pse51_current_thread and
+#include <posix/thread.h>       /* For pse51_current_thread and
                                    pse51_thread_t definition. */
 
 #define link2sem(laddr) \

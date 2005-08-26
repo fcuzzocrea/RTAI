@@ -22,7 +22,7 @@
 
 #include <string.h>             /* For strerror */
 #include "xntest.h"
-#include <posix.h>
+#include <posix/posix.h>
 
 #ifdef TEST_ASSERT_OK
 #undef TEST_ASSERT_OK
@@ -34,9 +34,10 @@ do {                                                            \
     xnarch_printf(__FILE__ ":%d " #expr " == 0\n", __LINE__);   \
     if(!xntest_assert(((err=(expr))==0), #expr "== 0\n" ,       \
                       __FILE__, __LINE__ ))                     \
-        strerror(err==-1?errno:err);                            \
+        xnarch_printf(__FILE__":%d: %s\n",                      \
+                      __LINE__,                                 \
+                      strerror(err == -1 ? errno : err));       \
 } while (0)
-
 
 void *root_thread(void *self);
 

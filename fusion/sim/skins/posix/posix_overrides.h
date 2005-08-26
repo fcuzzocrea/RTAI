@@ -12,14 +12,9 @@ struct sched_param {
 #define clockid_t pse51_clockid_t
 #define pthread_condattr_t pse51_condattr_t
 #define pthread_cond_t pse51_cond_t
-struct sigaction {
-    sighandler_t *sa_handler;
-    sigset_t sa_mask;
-    int sa_flags;
-};
+
 #define pthread_key_t pse51_key_t
 #define pthread_once_t pse51_once_t
-
 
 #define pthread_attr_init pse51_threadattr_init
 #define pthread_attr_destroy pse51_threadattr_destroy
@@ -86,15 +81,12 @@ struct sigaction {
 #define pthread_setcancelstate pse51_setcancelstate
 #define pthread_setcanceltype pse51_setcanceltype
 #define pthread_testcancel pse51_testcancel
-#define sigemptyset pse51_sigemptyset
-#define sigfillset pse51_sigfillset
-#define sigaddset pse51_sigaddset
-#define sigdelset pse51_sigdelset
-#define sigismember pse51_sigismember
 #define pthread_kill pse51_kill
 #define pthread_sigmask pse51_thread_sigmask
 #define sigpending pse51_sigpending
 #define sigwait pse51_sigwait
+#define sigtimedwait pse51_sigtimedwait
+#define sigwaitinfo pse51_sigwaitinfo
 #define pthread_key_delete pse51_key_delete
 #define pthread_getspecific pse51_getspecific
 #define pthread_setspecific pse51_setspecific

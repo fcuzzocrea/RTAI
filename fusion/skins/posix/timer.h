@@ -19,24 +19,9 @@
 #ifndef _POSIX_TIMER_H
 #define _POSIX_TIMER_H
 
-#include <nucleus/timer.h>
-#include <posix/posix.h>        /* For struct itimerspec. */
+#include <posix/signal.h>        /* For struct itimerspec. */
 
-#define PSE51_TIMER_MAX  128
-
-struct pse51_timer {
-
-    xntimer_t timerbase;
-
-    struct itimerspec value;
-
-    int overruns;
-
-    xnholder_t link;
-
-#define link2tm(laddr) \
-((struct pse51_timer *)(((char *)laddr) - (int)(&((struct pse51_timer *)0)->link)))
-};
+void pse51_timer_notified (pse51_siginfo_t *si);
 
 int pse51_timer_pkg_init(void);
 

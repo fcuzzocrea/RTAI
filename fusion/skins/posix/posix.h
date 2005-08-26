@@ -27,14 +27,18 @@
 
 #ifdef __KERNEL__
 #include <linux/version.h>
+#include <linux/signal.h>
 #else /* !__KERNEL__ */
 /* For INT_MAX in user-space, kernel space finds this in
    linux/kernel.h */
 #include <limits.h>
 #include <fcntl.h>              /* For O_RDONLY, etc... */
 #include <time.h>               /* For struct itimerspec */
-typedef unsigned long mqd_t;
-#endif /* __KERNEL__ */
+/* Include libc headers so that we are unable to redefine their contents, and
+   avoid any side effect if they were included by users. */
+#include <signal.h>
+typedef unsigned mqd_t;
+#endif /* !__KERNEL__ */
 
 #include <nucleus/xenomai.h>
 
@@ -48,8 +52,6 @@ typedef unsigned long mqd_t;
 #endif
 #endif
 
-typedef void sighandler_t (int sig);
-
 #undef PTHREAD_STACK_MIN
 #undef PTHREAD_DESTRUCTOR_ITERATIONS
 #undef PTHREAD_KEYS_MAX
@@ -62,13 +64,9 @@ typedef void sighandler_t (int sig);
 #undef sigdelset
 #undef sigismember
 #undef sigaction
-#undef SA_ONESHOT
-#undef SA_RESETHAND
-#undef SA_NOMASK
-#undef SA_NODEFER
-#undef SIG_DFL
-#undef SIG_ERR
-#undef SIG_IGN
+#undef sigqueue
+#undef SIGRTMIN
+#undef SIGRTMAX
 #undef TIMER_ABSTIME
 
 #ifdef __RTAI_SIM__
@@ -430,33 +428,27 @@ void pthread_testcancel(void);
 END_C_DECLS
 
 /* Signals. */
+
+#ifdef __KERNEL__
+/* These are not defined in kernel-space headers. */
+#define sa_sigaction sa_handler
+typedef void (*sighandler_t) (int sig);
+typedef unsigned long sig_atomic_t;
+#define DELAYTIMER_MAX INT_MAX
+#endif /* __KERNEL__ */
+
 #define sigaction(sig, action, old) pse51_sigaction(sig, action, old)
 #define sigemptyset pse51_sigemptyset
 #define sigfillset pse51_sigfillset
 #define sigaddset pse51_sigaddset
 #define sigdelset pse51_sigdelset
 #define sigismember pse51_sigismember
+#define sigqueue pse51_sigqueue
 
-/* Copy-pasted from Linux asm/signal.h */
-#define SIG_BLOCK          0	/* for blocking signals */
-#define SIG_UNBLOCK        1	/* for unblocking signals */
-#define SIG_SETMASK        2	/* for setting the signal mask */
-
-/* SA_NOCLDSTOP, SA_ONSTACK, SA_SIGINFO, SA_NOCLDWAIT are not supported. */
-#define SA_ONESHOT         1
-#define SA_RESETHAND SA_ONESHOT
-#define SA_NOMASK          2
-#define SA_NODEFER   SA_NOMASK
-
-#define SIG_DFL (pse51_default_handler)
-#define SIG_ERR ((sighandler_t *) -1)
-#define SIG_IGN ((sighandler_t *) -2)
-
-typedef unsigned sig_atomic_t;
+#define SIGRTMIN 33
+#define SIGRTMAX 64
 
 BEGIN_C_DECLS
-
-sighandler_t pse51_default_handler;
 
 int sigemptyset(sigset_t *set);
 
@@ -486,6 +478,17 @@ int sigpending(sigset_t *set);
 
 int sigwait(const sigset_t *set,
 	    int *sig);
+
+/* Real-time signals. */
+int sigwaitinfo(const sigset_t *__restrict__ set,
+                siginfo_t *__restrict__ info);
+
+int sigtimedwait(const sigset_t *__restrict__ user_set,
+                 siginfo_t *__restrict__ info,
+                 const struct timespec *__restrict__ timeout);
+
+/* Depart from POSIX here, we use a thread id instead of a process id. */
+int sigqueue (pthread_t thread, int sig, union sigval value);
 
 END_C_DECLS
 
@@ -556,8 +559,8 @@ int pthread_make_periodic_np(pthread_t thread,
 int pthread_wait_np(void);
 
 int timer_create(clockid_t clockid,
-		 struct sigevent *evp,
-		 timer_t *timerid);
+		 struct sigevent *__restrict__ evp,
+		 timer_t *__restrict__ timerid);
 
 int timer_delete(timer_t timerid);
 

@@ -74,7 +74,7 @@ static RT_TASK rtask;
 static int period;
 static RTIME expected;
 
-static void spv(int loops)
+static void spv(long loops)
 {
 	int skip, average = 0;
 	for (skip = 0; skip < loops; skip++) {

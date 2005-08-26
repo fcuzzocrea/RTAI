@@ -263,7 +263,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	}
 	task->uses_fpu = uses_fpu ? 1 : 0;
 	task->runnable_on_cpus = cpuid;
-	(task->stack_bottom = (int *)&task->fpu_reg)[0] = 0;
+	(task->stack_bottom = (long *)&task->fpu_reg)[0] = 0;
 	task->magic = RT_TASK_MAGIC; 
 	task->policy = 0;
 	task->owndres = 0;
@@ -316,9 +316,9 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 }
 
 
-static void start_stop_kthread(RT_TASK *, void (*)(int), int, int, int, void(*)(void), int);
+static void start_stop_kthread(RT_TASK *, void (*)(long), long, int, int, void(*)(void), int);
 
-int rt_kthread_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data,
+int rt_kthread_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data,
 			int stack_size, int priority, int uses_fpu,
 			void(*signal)(void), unsigned int cpuid)
 {
@@ -327,7 +327,7 @@ int rt_kthread_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data,
 }
 
 
-int rt_kthread_init(RT_TASK *task, void (*rt_thread)(int), int data,
+int rt_kthread_init(RT_TASK *task, void (*rt_thread)(long), long data,
 			int stack_size, int priority, int uses_fpu,
 			void(*signal)(void))
 {
@@ -338,7 +338,7 @@ int rt_kthread_init(RT_TASK *task, void (*rt_thread)(int), int data,
 
 #if USE_RTAI_TASKS
 
-asmlinkage static void rt_startup(void(*rt_thread)(int), int data)
+asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
 {
 	extern int rt_task_delete(RT_TASK *);
 	RT_TASK *rt_current = rt_smp_current[rtai_cpuid()];
@@ -350,9 +350,9 @@ asmlinkage static void rt_startup(void(*rt_thread)(int), int data)
 }
 
 
-int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stack_size, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid)
+int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int stack_size, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid)
 {
-	int *st, i;
+	long *st, i;
 	unsigned long flags;
 
 	if (num_online_cpus() <= 1) {
@@ -361,7 +361,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stac
 	if (task->magic == RT_TASK_MAGIC || cpuid >= NR_RT_CPUS || priority < 0) {
 		return -EINVAL;
 	} 
-	if (!(st = (int *)sched_malloc(stack_size))) {
+	if (!(st = (long *)sched_malloc(stack_size))) {
 		return -ENOMEM;
 	}
 	if (lxrt_wdog_task[cpuid] && lxrt_wdog_task[cpuid] != task 
@@ -370,7 +370,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stac
 		 return -EBUSY;
 	}
 
-	task->bstack = task->stack = (int *)(((unsigned long)st + stack_size - 0x10) & ~0xF);
+	task->bstack = task->stack = (long *)(((unsigned long)st + stack_size - 0x10) & ~0xF);
 	task->stack[0] = 0;
 	task->uses_fpu = uses_fpu ? 1 : 0;
 	task->runnable_on_cpus = cpuid;
@@ -424,7 +424,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stac
 	return 0;
 }
 
-int rt_task_init(RT_TASK *task, void (*rt_thread)(int), int data,
+int rt_task_init(RT_TASK *task, void (*rt_thread)(long), long data,
 			int stack_size, int priority, int uses_fpu,
 			void(*signal)(void))
 {
@@ -434,12 +434,12 @@ int rt_task_init(RT_TASK *task, void (*rt_thread)(int), int data,
 
 #else /* !USE_RTAI_TASKS */
 
-int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(int), int data, int stack_size, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid)
+int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int stack_size, int priority, int uses_fpu, void(*signal)(void), unsigned int cpuid)
 {
 	return rt_kthread_init_cpuid(task, rt_thread, data, stack_size, priority, uses_fpu, signal, cpuid);
 }
 
-int rt_task_init(RT_TASK *task, void (*rt_thread)(int), int data, int stack_size, int priority, int uses_fpu, void(*signal)(void))
+int rt_task_init(RT_TASK *task, void (*rt_thread)(long), long data, int stack_size, int priority, int uses_fpu, void(*signal)(void))
 {
 	return rt_kthread_init(task, rt_thread, data, stack_size, priority, uses_fpu, signal);
 }
@@ -1753,7 +1753,7 @@ static void kthread_fun(int cpuid)
 			break;
 		}
 		task->exectime[1] = rdtsc();
-		((void (*)(int))task->max_msg_size[0])(task->max_msg_size[1]);
+		((void (*)(long))task->max_msg_size[0])(task->max_msg_size[1]);
 		current->comm[0] = 'F';
 		current->rtai_tskext(1) = 0;
 		rtai_cli();
@@ -1910,7 +1910,7 @@ static struct task_struct *get_kthread(int get, int cpuid, void *lnxtsk)
 	return kthread;
 }
 
-static void start_stop_kthread(RT_TASK *task, void (*rt_thread)(int), int data, int priority, int uses_fpu, void(*signal)(void), int runnable_on_cpus)
+static void start_stop_kthread(RT_TASK *task, void (*rt_thread)(long), long data, int priority, int uses_fpu, void(*signal)(void), int runnable_on_cpus)
 {
 	if (rt_thread) {
 		task->retval = set_rtext(task, priority, uses_fpu, signal, runnable_on_cpus, get_kthread(1, runnable_on_cpus, 0));

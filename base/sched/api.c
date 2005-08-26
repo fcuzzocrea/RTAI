@@ -991,7 +991,7 @@ int rt_renq_current(RT_TASK *rt_current, int priority)
 
 /* ++++++++++++++++++++++++ NAMED TASK INIT/DELETE ++++++++++++++++++++++++++ */
 
-RT_TASK *rt_named_task_init(const char *task_name, void (*thread)(int), int data, int stack_size, int prio, int uses_fpu, void(*signal)(void))
+RT_TASK *rt_named_task_init(const char *task_name, void (*thread)(long), long data, int stack_size, int prio, int uses_fpu, void(*signal)(void))
 {
 	RT_TASK *task;
 	unsigned long name;
@@ -1009,7 +1009,7 @@ RT_TASK *rt_named_task_init(const char *task_name, void (*thread)(int), int data
 	return (RT_TASK *)0;
 }
 
-RT_TASK *rt_named_task_init_cpuid(const char *task_name, void (*thread)(int), int data, int stack_size, int prio, int uses_fpu, void(*signal)(void), unsigned int run_on_cpu)
+RT_TASK *rt_named_task_init_cpuid(const char *task_name, void (*thread)(long), long data, int stack_size, int prio, int uses_fpu, void(*signal)(void), unsigned int run_on_cpu)
 {
 	RT_TASK *task;
 	unsigned long name;

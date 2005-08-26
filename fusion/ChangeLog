@@ -13,7 +13,8 @@
 	and reentering user-space.
 
 	* include/nucleus/asm-i*/system.h (xnarch_enable_fpu): Do not
-	enable FPU when reentering a root thread which had not use FPU.
+	enable FPU when reentering a root thread which had not used the
+	FPU.
 
 2005-08-25  Dmitry Adamushko  <dmitry.adamushko@datacon.at>
  

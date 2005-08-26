@@ -27,7 +27,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 // Create a generic proxy task.
-RT_TASK *__rt_proxy_attach(void (*func)(int),
+RT_TASK *__rt_proxy_attach(void (*func)(long),
 			   RT_TASK *task,
 			   void *msg,
 			   int nbytes,

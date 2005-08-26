@@ -135,19 +135,19 @@ static inline void *RT_get_adr(unsigned long node, int port, const char *sname)
 	return rt_get_adr(nam2num(sname));
 } 
 
-static inline RT_TASK *RT_named_task_init(unsigned long node, int port, const char *task_name, void (*thread)(int), int data, int stack_size, int prio, int uses_fpu, void(*signal)(void))
+static inline RT_TASK *RT_named_task_init(unsigned long node, int port, const char *task_name, void (*thread)(long), long data, int stack_size, int prio, int uses_fpu, void(*signal)(void))
 {
 	if (node) {
-		struct { const char *task_name; void (*thread)(int); int data; int stack_size; int prio; int uses_fpu; void(*signal)(void); int namelen; } arg = { task_name, thread, data, stack_size, prio, uses_fpu, signal, strlen(task_name) };
+		struct { const char *task_name; void (*thread)(long); long data; int stack_size; int prio; int uses_fpu; void(*signal)(void); int namelen; } arg = { task_name, thread, data, stack_size, prio, uses_fpu, signal, strlen(task_name) };
 		return (RT_TASK *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, NAMED_TASK_INIT, 0), UR1(1, 8), &arg, SIZARG, 1);
 	}
 	return rt_named_task_init(task_name, thread, data, stack_size, prio, uses_fpu, signal);
 }
 
-static inline RT_TASK *RT_named_task_init_cpuid(unsigned long node, int port, const char *task_name, void (*thread)(int), int data, int stack_size, int prio, int uses_fpu, void(*signal)(void), unsigned int run_on_cpu)
+static inline RT_TASK *RT_named_task_init_cpuid(unsigned long node, int port, const char *task_name, void (*thread)(long), long data, int stack_size, int prio, int uses_fpu, void(*signal)(void), unsigned int run_on_cpu)
 {
 	if (node) {
-		struct { const char *task_name; void (*thread)(int); int data; int stack_size; int prio; int uses_fpu; void(*signal)(void); unsigned int run_on_cpu; int namelen; } arg = { task_name, thread, data, stack_size, prio, uses_fpu, signal, run_on_cpu, strlen(task_name) };
+		struct { const char *task_name; void (*thread)(long); long data; int stack_size; int prio; int uses_fpu; void(*signal)(void); unsigned int run_on_cpu; int namelen; } arg = { task_name, thread, data, stack_size, prio, uses_fpu, signal, run_on_cpu, strlen(task_name) };
 		return (RT_TASK *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, NAMED_TASK_INIT_CPUID, 0), UR1(1, 9), &arg, SIZARG, 1);
 	}
 	return rt_named_task_init_cpuid(task_name, thread, data, stack_size, prio, uses_fpu, signal, run_on_cpu);

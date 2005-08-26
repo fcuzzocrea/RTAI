@@ -533,16 +533,16 @@ static inline void rtai_cleanup_features (void) {
 int rt_check_current_stack(void);
 
 int rt_kthread_init(RT_TASK *task,
-		    void (*rt_thread)(int),
-		    int data,
+		    void (*rt_thread)(long),
+		    long data,
 		    int stack_size,
 		    int priority,
 		    int uses_fpu,
 		    void(*signal)(void));
 
 int rt_kthread_init_cpuid(RT_TASK *task,
-			  void (*rt_thread)(int),
-			  int data,
+			  void (*rt_thread)(long),
+			  long data,
 			  int stack_size,
 			  int priority,
 			  int uses_fpu,

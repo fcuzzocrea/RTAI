@@ -91,12 +91,12 @@ struct rt_heap_t { void *heap, *kadr, *uadr; };
 
 typedef struct rt_task_struct {
 
-    int *stack __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
+    long *stack __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
     int uses_fpu;
     int magic;
     volatile int state, running;
     unsigned long runnable_on_cpus;
-    int *stack_bottom;
+    long *stack_bottom;
     volatile int priority;
     int base_priority;
     int policy;
@@ -126,7 +126,7 @@ typedef struct rt_task_struct {
 
     /* Appended for calls from LINUX. */
     long *fun_args;
-    int *bstack;
+    long *bstack;
     struct task_struct *lnxtsk;
     long long retval;
     char *msg_buf[2];
@@ -170,16 +170,16 @@ extern "C" {
 #endif /* !__cplusplus */
 
 int rt_task_init(struct rt_task_struct *task,
-		 void (*rt_thread)(int),
-		 int data,
+		 void (*rt_thread)(long),
+		 long data,
 		 int stack_size,
 		 int priority,
 		 int uses_fpu,
 		 void(*signal)(void));
 
 int rt_task_init_cpuid(struct rt_task_struct *task,
-		       void (*rt_thread)(int),
-		       int data,
+		       void (*rt_thread)(long),
+		       long data,
 		       int stack_size,
 		       int priority,
 		       int uses_fpu,
@@ -335,16 +335,16 @@ int rt_task_masked_unblock(struct rt_task_struct *task, unsigned long mask);
 #define rt_task_wakeup_sleeping(t)  rt_task_masked_unblock(t, RT_SCHED_DELAYED)
 
 struct rt_task_struct *rt_named_task_init(const char *task_name,
-					  void (*thread)(int),
-					  int data,
+					  void (*thread)(long),
+					  long data,
 					  int stack_size,
 					  int prio,
 					  int uses_fpu,
 					  void(*signal)(void));
 
 struct rt_task_struct *rt_named_task_init_cpuid(const char *task_name,
-						void (*thread)(int),
-						int data,
+						void (*thread)(long),
+						long data,
 						int stack_size,
 						int prio,
 						int uses_fpu,

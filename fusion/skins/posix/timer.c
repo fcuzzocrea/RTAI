@@ -59,11 +59,13 @@ static void pse51_base_timer_handler (void *cookie)
         pse51_sigqueue_inner(timer->owner, &timer->si);
 }
 
+/* Must be called with nklock locked, irq off. */
 void pse51_timer_notified (pse51_siginfo_t *si)
 {
     struct pse51_timer *timer = si2tm(si);
 
-    --timer->overruns;
+    if (xntimer_active_p(&timer->timerbase))
+        --timer->overruns;
 }
 
 int timer_create (clockid_t clockid,

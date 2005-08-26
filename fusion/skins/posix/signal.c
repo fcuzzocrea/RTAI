@@ -219,9 +219,9 @@ void pse51_sigqueue_inner (pthread_t thread, pse51_siginfo_t *si)
 
 /* Unqueue any siginfo of "queue" whose signal number is member of "set",
    starting from "start". If "start" is NULL, start from the list head. */
-pse51_siginfo_t *pse51_getsigq(pse51_sigqueue_t *queue,
-                               pse51_sigset_t *set,
-                               pse51_siginfo_t **start)
+static pse51_siginfo_t *pse51_getsigq(pse51_sigqueue_t *queue,
+                                      pse51_sigset_t *set,
+                                      pse51_siginfo_t **start)
 {
     xnpholder_t *holder, *next;
     pse51_siginfo_t *si;
@@ -469,9 +469,9 @@ int pthread_sigmask (int how, const sigset_t *user_set, sigset_t *user_oset)
     return 0;
 }
 
-int pse51_sigtimedwait_inner (const sigset_t *user_set,
-                              siginfo_t *si,
-                              xnticks_t to)
+static int pse51_sigtimedwait_inner (const sigset_t *user_set,
+                                     siginfo_t *si,
+                                     xnticks_t to)
 {
     pse51_sigset_t non_blocked, *set = user2pse51_sigset(user_set);
     pse51_siginfo_t *received;
@@ -525,6 +525,8 @@ int pse51_sigtimedwait_inner (const sigset_t *user_set,
         *si = received->info;
         if (si->si_code == SI_QUEUE || si->si_code == SI_USER)
             pse51_delete_siginfo(received);
+        else if (si->info.si_code == SI_TIMER)
+            pse51_timer_notified(si);
         }
 
   unlock_and_ret:
@@ -706,8 +708,14 @@ static void pse51_dispatch_shadow_signals (xnsigmask_t sigs)
         pse51_siginfo_t *si = link2siginfo(holder);
         
         if (si->info.si_code == SI_TIMER)
+            {
+            spl_t s;
+
+            xnlock_get_irqsave(&nklock, s);
             pse51_timer_notified(si);
-        
+            xnlock_put_irqrestore(&nklock, s);
+            }
+
         send_sig_info(si->info.si_signo, &si->info, task);
         
         if (si->info.si_code == SI_QUEUE || si->info.si_code == SI_USER)

@@ -48,17 +48,18 @@ int xnpipe_wakeup_apc;
 
 /* Get nklock locked before using this macro */
 
-#define xnpipe_read_wait(state)							\
-do {										\
+#define xnpipe_read_wait(state,flags)						\
+    ({										\
+    int __sigpending;								\
     DEFINE_WAIT(__wait);							\
-										\
-    prepare_to_wait_exclusive(&state->readq, &__wait, TASK_INTERRUPTIBLE);	\
     xnpipe_enqueue_read(state);							\
-    xnlock_put_irqrestore(&nklock,s);						\
+    xnlock_put_irqrestore(&nklock,flags);					\
+    prepare_to_wait_exclusive(&(state)->readq, &__wait, TASK_INTERRUPTIBLE);	\
     schedule();									\
-    xnlock_get_irqsave(&nklock,s);						\
-    finish_wait(&state->readq, &__wait);					\
-} while (0)
+    finish_wait(&(state)->readq, &__wait);					\
+    __sigpending = signal_pending(current);					\
+    xnlock_get_irqsave(&nklock,flags);						\
+    __sigpending; })
 
 static inline void xnpipe_enqueue_read (xnpipe_state_t *state)
 {
@@ -482,8 +483,8 @@ int xnpipe_inquire (int minor)
 static int xnpipe_open (struct inode *inode,
 			struct file *file)
 {
+    int minor, err = 0, sigpending;
     xnpipe_state_t *state;
-    int minor, err = 0;
     spl_t s;
 
     minor = MINOR(inode->i_rdev);
@@ -537,9 +538,9 @@ static int xnpipe_open (struct inode *inode,
             return -EWOULDBLOCK;
 	    }
 
-	xnpipe_read_wait(state);
+	sigpending = xnpipe_read_wait(state,s);
 
-	if (signal_pending(current) && !testbits(state->status,XNPIPE_KERN_CONN))
+	if (sigpending && !testbits(state->status,XNPIPE_KERN_CONN))
 	    {
 	    clrbits(state->status,XNPIPE_USER_CONN);
     	    xnlock_put_irqrestore(&nklock,s);
@@ -632,6 +633,7 @@ static ssize_t xnpipe_read (struct file *file,
     xnpipe_state_t *state = (xnpipe_state_t *)file->private_data;
     struct xnpipe_mh *mh;
     xnholder_t *holder;
+    int sigpending;
     ssize_t ret;
     spl_t s;
 
@@ -660,12 +662,11 @@ static ssize_t xnpipe_read (struct file *file,
 	    return -EAGAIN;
 	    }
 
-	xnpipe_read_wait(state);
-
+	sigpending = xnpipe_read_wait(state,s);
 	holder = getq(&state->outq);
 	mh = link2mh(holder);
 
-	if (signal_pending(current) && !mh)
+	if (sigpending && !mh)
 	    {
     	    xnlock_put_irqrestore(&nklock,s);
 	    return -ERESTARTSYS;

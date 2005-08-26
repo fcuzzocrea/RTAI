@@ -494,36 +494,28 @@ static RT_OBJECT *__registry_hash_find (const char *key)
     return NULL;
 }
 
-static unsigned __registry_wakeup_sleepers(const char *key)
+static inline unsigned __registry_wakeup_sleepers(const char *key)
 {
+    xnpholder_t *holder, *nholder;
     unsigned cnt = 0;
-    spl_t s;
-    
-    xnlock_get_irqsave(&nklock,s);
-    
-    if (xnsynch_nsleepers(&__rtai_hash_synch) > 0)
-        {
-        xnpholder_t *holder, *nholder;
 
-        nholder = getheadpq(xnsynch_wait_queue(&__rtai_hash_synch));
+    nholder = getheadpq(xnsynch_wait_queue(&__rtai_hash_synch));
 					
-        while ((holder = nholder) != NULL)
-            {
-	    RT_TASK *sleeper = thread2rtask(link2thread(holder,plink));
+    while ((holder = nholder) != NULL)
+	{
+	RT_TASK *sleeper = thread2rtask(link2thread(holder,plink));
 
-	    if (!strcmp(key, sleeper->wait_args.registry.key))
-		{
-		sleeper->wait_args.registry.key = NULL;
-		nholder = xnsynch_wakeup_this_sleeper(&__rtai_hash_synch,holder);
-		++cnt;
-		}
-	    else
-		nholder = nextpq(xnsynch_wait_queue(&__rtai_hash_synch),holder);
-            }
+	if (*key == *sleeper->wait_args.registry.key &&
+	    !strcmp(key, sleeper->wait_args.registry.key))
+	    {
+	    sleeper->wait_args.registry.key = NULL;
+	    nholder = xnsynch_wakeup_this_sleeper(&__rtai_hash_synch,holder);
+	    ++cnt;
+	    }
+	else
+	    nholder = nextpq(xnsynch_wait_queue(&__rtai_hash_synch),holder);
         }
 													    
-    xnlock_put_irqrestore(&nklock,s);
-
     return cnt;
 }
 

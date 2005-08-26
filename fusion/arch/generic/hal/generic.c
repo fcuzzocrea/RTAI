@@ -103,13 +103,6 @@ volatile int rthal_sync_op;
 
 volatile unsigned long rthal_cpu_realtime;
 
-#if defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP)
-spinlock_t xnlock_stats_lock = SPIN_LOCK_UNLOCKED;
-rthal_lock_stats_t xnlock_stats;
-EXPORT_SYMBOL(xnlock_stats_lock);
-EXPORT_SYMBOL(xnlock_stats);
-#endif /* CONFIG_RTAI_OPT_STATS && CONFIG_SMP */
-
 unsigned long rthal_critical_enter (void (*synch)(void))
 
 {
@@ -1009,49 +1002,6 @@ static int apc_read_proc (char *page,
     return len;
 }
 
-#if defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP)
-static int lock_read_proc (char *page,
-			   char **start,
-			   off_t off,
-			   int count,
-			   int *eof,
-			   void *data)
-{
-    int cpu, len = 0;
-    char *p = page;
-
-    for_each_online_cpu(cpu) {
-        unsigned long flags;
-
-        if(cpu > 0)
-            p += sprintf(p, "\n");
-
-        p += sprintf(p, "CPU%d:\n", cpu);
-
-        rthal_spin_lock_irqsave(&xnlock_stats_lock, flags);
-        p += sprintf(p,
-                     "  longest locked section: %llu ns\n"
-                     "  spinning time: %llu ns\n"
-                     "  section entry: %s:%d (%s)\n",
-                     xnlock_stats[cpu].lock_time,
-                     xnlock_stats[cpu].spin_time,
-                     xnlock_stats[cpu].file,
-                     xnlock_stats[cpu].line,
-                     xnlock_stats[cpu].function);
-        rthal_spin_unlock_irqrestore(&xnlock_stats_lock, flags);
-    }
-
-    len = p - page - off;
-
-    if (len <= off + count) *eof = 1;
-    *start = page + off;
-    if (len > count) len = count;
-    if (len < 0) len = 0;
-
-    return len;
-}
-#endif /* CONFIG_RTAI_OPT_STATS && CONFIG_SMP */
-
 static struct proc_dir_entry *add_proc_leaf (const char *name,
 					     read_proc_t rdproc,
 					     write_proc_t wrproc,
@@ -1117,24 +1067,12 @@ static int rthal_proc_register (void)
 		  NULL,
 		  NULL,
 		  rthal_proc_root);
-
-#if defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP)
-    add_proc_leaf("lock",
-		  &lock_read_proc,
-		  NULL,
-		  NULL,
-		  rthal_proc_root);
-#endif /* CONFIG_RTAI_OPT_STATS && CONFIG_SMP */
-    
     return 0;
 }
 
 static void rthal_proc_unregister (void)
 
 {
-#ifdef CONFIG_RTAI_OPT_STATS
-    remove_proc_entry("lock", rthal_proc_root);
-#endif /* CONFIG_RTAI_OPT_STATS */
     remove_proc_entry("hal",rthal_proc_root);
     remove_proc_entry("compiler",rthal_proc_root);
     remove_proc_entry("irq",rthal_proc_root);

@@ -1,3 +1,18 @@
+2005-08-26  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/rtai/registry.c (rt_registry_enter): Add a few
+	micro-optimizations.
+
+	* arch/generic/hal/generic.c: Move locking statistics support to
+	the nucleus where it actually belongs to.
+
+	* include/nucleus/asm-generic/system.h (xnlock_put_irqrestore):
+	Simplify locking scheme used to collect hotspots.
+
+	* nucleus/pipe.c (xnpipe_read_wait): Do not hold the nucleus lock
+	across preemptible sections that may reschedule on exit,
+	specifically with SMP configurations.
+
 2005-08-26  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/timer.c: Finished POSIX timers implementation.

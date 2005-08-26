@@ -52,20 +52,31 @@ typedef unsigned long spl_t;
 #define splget(x)   rthal_local_irq_flags(x)
 #define splsync(x)  rthal_local_irq_sync(x)
 
+#if defined(CONFIG_SMP) && \
+    (defined(CONFIG_RTAI_OPT_STATS) || defined(CONFIG_RTAI_OPT_DEBUG))
+
+typedef struct {
+
+        unsigned long long spin_time;
+        unsigned long long lock_time;
+        const char *file;
+        const char *function;
+        unsigned line;
+
+} xnlockinfo_t;
+
 typedef struct {
 
     volatile unsigned long lock;
-#ifdef CONFIG_RTAI_SPINLOCK_DEBUG
     const char *file;
     const char *function;
     unsigned line;
     int cpu;
     unsigned long long spin_time;
     unsigned long long lock_date;
-#endif /* CONFIG_RTAI_SPINLOCK_DEBUG */
+
 } xnlock_t;
 
-#ifdef CONFIG_RTAI_SPINLOCK_DEBUG
 #define XNARCH_LOCK_UNLOCKED (xnlock_t) {       \
         0,                                      \
         NULL,                                   \
@@ -75,9 +86,16 @@ typedef struct {
         0LL,                                    \
         0LL,                                    \
 }
-#else /* CONFIG_RTAI_SPINLOCK_DEBUG */
+
+#define CONFIG_RTAI_SPINLOCK_DEBUG  1
+
+#else /* !(CONFIG_RTAI_OPT_STATS && CONFIG_SMP) */
+
+typedef struct { volatile unsigned long lock; } xnlock_t;
+
 #define XNARCH_LOCK_UNLOCKED (xnlock_t) { 0 }
-#endif /* CONFIG_RTAI_SPINLOCK_DEBUG */
+
+#endif /* CONFIG_RTAI_OPT_STATS && CONFIG_SMP */
 
 #define XNARCH_NR_CPUS               RTHAL_NR_CPUS
 
@@ -258,14 +276,8 @@ static inline spl_t __xnlock_get_irqsave (xnlock_t *lock)
 static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 
 {
-
     if (!(flags & 2))
         {
-#ifdef CONFIG_RTAI_SPINLOCK_DEBUG
-        unsigned long long spin_time = 0ULL, lock_time = 0ULL;
-        const char *file = NULL, *function = NULL;
-        int line = 0;
-#endif /* CONFIG_RTAI_SPINLOCK_DEBUG */
         rthal_declare_cpuid;
 
         rthal_local_irq_disable();
@@ -273,42 +285,27 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
         rthal_load_cpuid();
 
         if (test_and_clear_bit(cpuid,&lock->lock))
-            {
-#ifdef CONFIG_RTAI_SPINLOCK_DEBUG
-            lock_time = rthal_rdtsc() - lock->lock_date;
-            spin_time = lock->spin_time;
-            file = lock->file;
-            function = lock->function;
-            line = lock->line;
-#endif /* CONFIG_RTAI_SPINLOCK_DEBUG */
-            clear_bit(BITS_PER_LONG - 1,&lock->lock);
-            }
+	    {
+#ifdef CONFIG_RTAI_OPT_STATS
+	    extern xnlockinfo_t xnlock_stats[];
 
-        rthal_local_irq_restore(flags & 1);
+            unsigned long long lock_time = rthal_rdtsc() - lock->lock_date;
 
-#ifdef CONFIG_RTAI_SPINLOCK_DEBUG
-        if (lock_time)
-            {
-            lock_time = xnarch_tsc_to_ns(lock_time);
-            spin_time = xnarch_tsc_to_ns(spin_time);
-
-            rthal_spin_lock_irqsave(&xnlock_stats_lock, flags);
-        
             if (lock_time > xnlock_stats[cpuid].lock_time)
                 {
                 xnlock_stats[cpuid].lock_time = lock_time;
-                xnlock_stats[cpuid].spin_time = spin_time;
-                xnlock_stats[cpuid].file = file;
-                xnlock_stats[cpuid].function = function;
-                xnlock_stats[cpuid].line = line;
+                xnlock_stats[cpuid].spin_time = lock->spin_time;
+                xnlock_stats[cpuid].file = lock->file;
+                xnlock_stats[cpuid].function = lock->function;
+                xnlock_stats[cpuid].line = lock->line;
                 }
+#endif /* CONFIG_RTAI_OPT_STATS */
 
-            rthal_spin_unlock_irqrestore(&xnlock_stats_lock, flags);
-            }
-#endif /* CONFIG_RTAI_SPINLOCK_DEBUG */
+            clear_bit(BITS_PER_LONG - 1,&lock->lock);
+	    }
         }
-    else
-        rthal_local_irq_restore(flags & 1);
+
+    rthal_local_irq_restore(flags & 1);
 }
 
 #else /* !CONFIG_SMP */

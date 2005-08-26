@@ -367,6 +367,58 @@ static struct file_operations stat_seq_operations = {
     .release = seq_release_private,
 };
 
+#ifdef CONFIG_SMP
+
+xnlockinfo_t xnlock_stats[RTHAL_NR_CPUS];
+
+static int lock_read_proc (char *page,
+			   char **start,
+			   off_t off,
+			   int count,
+			   int *eof,
+			   void *data)
+{
+    xnlockinfo_t lockinfo;
+    int cpu, len = 0;
+    char *p = page;
+    spl_t s;
+
+    for_each_online_cpu(cpu) {
+
+        xnlock_get_irqsave(&nklock,s);
+	lockinfo = xnlock_stats[cpu];
+        xnlock_put_irqrestore(&nklock,s);
+
+        if(cpu > 0)
+            p += sprintf(p, "\n");
+
+        p += sprintf(p, "CPU%d:\n", cpu);
+
+        p += sprintf(p,
+                     "  longest locked section: %llu ns\n"
+                     "  spinning time: %llu ns\n"
+                     "  section entry: %s:%d (%s)\n",
+                     xnarch_tsc_to_ns(lockinfo.lock_time),
+                     xnarch_tsc_to_ns(lockinfo.spin_time),
+                     lockinfo.file,
+                     lockinfo.line,
+                     lockinfo.function);
+    }
+
+    len = p - page - off;
+
+    if (len <= off + count) *eof = 1;
+    *start = page + off;
+    if (len > count) len = count;
+    if (len < 0) len = 0;
+
+    return len;
+}
+
+EXPORT_SYMBOL(xnlock_stats);
+
+#endif /* CONFIG_SMP */
+
 #endif /* CONFIG_RTAI_OPT_STATS */
 
 static int latency_read_proc (char *page,
@@ -524,6 +576,14 @@ void xnpod_init_proc (void)
 		 &stat_seq_operations,
 		 NULL,
 		 rthal_proc_root);
+#ifdef CONFIG_SMP
+    add_proc_leaf("lock",
+		  &lock_read_proc,
+		  NULL,
+		  NULL,
+		  rthal_proc_root);
+#endif /* CONFIG_SMP */
+
 #endif /* CONFIG_RTAI_OPT_STATS */
 
     add_proc_leaf("latency",
@@ -569,6 +629,9 @@ void xnpod_delete_proc (void)
     remove_proc_entry("sched",rthal_proc_root);
 #ifdef CONFIG_RTAI_OPT_STATS
     remove_proc_entry("stat",rthal_proc_root);
+#ifdef CONFIG_SMP
+    remove_proc_entry("lock",rthal_proc_root);
+#endif /* CONFIG_SMP */
 #endif /* CONFIG_RTAI_OPT_STATS */
 }
 

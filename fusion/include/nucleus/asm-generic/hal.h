@@ -386,24 +386,6 @@ extern void rthal_domain_entry(int iflag);
 
 #endif /* !CONFIG_IPIPE */
 
-#if defined(CONFIG_RTAI_OPT_DEBUG) || \
-    (defined(CONFIG_RTAI_OPT_STATS) && defined(CONFIG_SMP))
-#define CONFIG_RTAI_SPINLOCK_DEBUG  1
-#endif /* CONFIG_RTAI_OPT_DEBUG || (CONFIG_RTAI_OPT_STATS && CONFIG_SMP) */
-
-#ifdef CONFIG_RTAI_SPINLOCK_DEBUG
-typedef struct {
-        unsigned long long spin_time;
-        unsigned long long lock_time;
-        const char *file;
-        const char *function;
-        unsigned line;
-} rthal_lock_stats_t [RTHAL_NR_CPUS];
-
-extern spinlock_t xnlock_stats_lock;
-extern rthal_lock_stats_t xnlock_stats;
-#endif /* CONFIG_RTAI_SPINLOCK_DEBUG */
-
 #define rthal_spin_lock_irq(lock) \
 do {  \
     rthal_local_irq_disable(); \

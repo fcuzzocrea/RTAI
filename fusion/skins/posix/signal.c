@@ -525,8 +525,8 @@ static int pse51_sigtimedwait_inner (const sigset_t *user_set,
         *si = received->info;
         if (si->si_code == SI_QUEUE || si->si_code == SI_USER)
             pse51_delete_siginfo(received);
-        else if (si->info.si_code == SI_TIMER)
-            pse51_timer_notified(si);
+        else if (si->si_code == SI_TIMER)
+            pse51_timer_notified(received);
         }
 
   unlock_and_ret:

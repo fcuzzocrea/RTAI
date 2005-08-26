@@ -54,7 +54,7 @@ static RTIME expected;
 
 static int cpu_used[NR_RT_CPUS];
 
-static void Slow_Thread(int dummy)
+static void Slow_Thread(long dummy)
 {
 	int jit;
 	RTIME svt, t;
@@ -70,7 +70,7 @@ static void Slow_Thread(int dummy)
         }
 }                                        
 
-static void Fast_Thread(int dummy) 
+static void Fast_Thread(long dummy) 
 {                             
 	int jit;
 	RTIME svt, t;
@@ -86,7 +86,7 @@ static void Fast_Thread(int dummy)
         }                      
 }
 
-static void fun(int thread) {
+static void fun(long thread) {
 
 	struct sample { long min, max, avrg, jitters[2]; } samp;
 	int diff;

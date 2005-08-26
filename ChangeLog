@@ -1,3 +1,16 @@
+2005-08-26  Daniele Gasperini  <gasperin@elet.polimi.it> and
+            Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h,rtai_proxies.h,rtai_sched.h,
+	  rtai_schedcore.h: argument for kernel tasks/threads passed from 
+	  int to long, to countinue allowing address passing in x86_64.
+	* base/sched/api.c,sched.c,sched.immed,sys.c: made to comply using
+	  a long arg for kernel tasks/threads.
+	* base/tasklets/tasklets.c; made to comply using a long arg for 
+	  kernel tasks/threads
+	* base/ipc/msg/msg.c: made to comply using a long arg for kernel 
+	  tasks/threads
+
 2005-08-25  Daniele Gasperini  <gasperin@elet.polimi.it> and
             Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

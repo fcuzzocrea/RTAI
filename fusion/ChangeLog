@@ -51,7 +51,7 @@
 
 	* skins/rtai/registry.c (rt_registry_bind): Allow unblockable
 	contexts to try-and-fail binding to a non-registered object,
-	instead of always bail out on -EPERM error.
+	instead of always bailing out on -EPERM error.
 
 2005-08-22  Philippe Gerum  <rpm@xenomai.org>
 
@@ -88,7 +88,7 @@
 	since RT users will/must know which capabilities their respective
 	targets have. Replace all the hairy VSYSCALL-related switches by a
 	single SEP-related one: i.e., either one activates SEP and has
-	NPTL, or disables them. No middle choice anymore.
+	NPTL, or disables it. No middle choice anymore.
 
 	* skins/posix/syscall.c: Set __pthread_setschedparam as
 	conforming.

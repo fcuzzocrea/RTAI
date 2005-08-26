@@ -576,7 +576,7 @@ void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period)
 
 // the timers_manager task function
 
-static void rt_timers_manager(int dummy)
+static void rt_timers_manager(long dummy)
 {
 	RTIME now;
 	struct rt_tasklet_struct *tmr, *timer;

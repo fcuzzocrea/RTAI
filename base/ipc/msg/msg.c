@@ -1857,7 +1857,7 @@ static void proxy_task(RT_TASK *me)
 }
 
 // Create a raw proxy agent task.
-RT_TASK *__rt_proxy_attach(void (*agent)(int), RT_TASK *task, void *msg, int nbytes, int priority)
+RT_TASK *__rt_proxy_attach(void (*agent)(long), RT_TASK *task, void *msg, int nbytes, int priority)
 {
 	RT_TASK *proxy, *rt_current;
 	struct proxy_t *my;

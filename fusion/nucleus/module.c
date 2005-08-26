@@ -306,6 +306,7 @@ static int stat_seq_open(struct inode *inode, struct file *file)
     struct seq_file *seq;
     xnholder_t *holder;
     int err, count;
+    spl_t s;
 
     if (!nkpod)
 	return -ESRCH;

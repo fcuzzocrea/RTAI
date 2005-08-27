@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.1 2004/12/09 09:19:56 rpm Exp $
+ * ID: @(#)$Id: wd.c,v 1.2 2005/08/27 14:07:26 mante Exp $
  *
  *******************************************************************************/
 
@@ -137,7 +137,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.1 $";
+static char version[] = "$Revision: 1.2 $";
 static char ver[10];
 
 // User friendly policy names
@@ -471,7 +471,7 @@ static void handle_badtask(int wd, RT_TASK *t, BAD_RT_TASK *bt, RTIME overrun)
 }
 
 // -------------------------- THE MAIN WATCHDOG TASK ---------------------------
-static void watchdog(int wd)
+static void watchdog(long wd)
 {
 #ifdef WDBUG
     int 	 led    = 0;
@@ -557,7 +557,7 @@ static void watchdog(int wd)
 }
 
 // -------------------------- DUMMY WATCHDOG TASK ------------------------------
-static void dummy(int wd)
+static void dummy(long wd)
 {
     // Go straight back to sleep - see SMP proof suspend and delete
     while (1) {

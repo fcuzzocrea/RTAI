@@ -980,17 +980,25 @@ int soft_rt_recvfrom(int sock, void *msg, int msglen, unsigned int flags, struct
 
 int errno;
 
+#define SYSCALL_BGN() \
+	do { int retval; mm_segment_t svdfs = get_fs(); set_fs(KERNEL_DS)
+#define SYSCALL_END() \
+	set_fs(svdfs); return retval; } while (0)
+
 static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
 
 static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = poll(ufds, nfds, timeout);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
+
+/* It would be much simpler using the available sys_... functions, but Linux 
+   does not export them and I do not want to patch for adding the missing 
+   EXPORT_SYMBOLs. Moreover it is likely __ARCH_WANT_SYS_SOCKETCALL is 
+   available wherever we'd need it, so socketcall would be more than enough,
+   but we keep specific calls for archs having them (some overhead less). */
 
 #ifdef __NR_socketcall
 
@@ -998,12 +1006,9 @@ static _syscall2(int, socketcall, int, call, void *, args)
 
 static inline int ksocketcall(int call, void *args)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = socketcall(call, args);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static inline int ksocket(int family, int type, int protocol)
@@ -1112,7 +1117,7 @@ static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
 
 #else
 
-#if 0
+#if 0  // just for checking
 #define __NR_socket        1
 #define __NR_bind          2
 #define __NR_connect       3
@@ -1133,166 +1138,121 @@ static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
 static _syscall3(int, socket, int, family, int, type, int, protocol)
 static inline int ksocket(int family, int type, int protocol)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = socket(family, type, protocol);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall3(int, bind, int, fd, struct sockaddr *, umyaddr, int, addrlen)
 static inline int kbind(int fd, struct sockaddr *umyaddr, int addrlen)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = bind(fd, umyaddr, addrlen);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall3(int, connect, int, fd, struct sockaddr *, serv_addr, int, addrlen)
 static inline int kconnect(int fd, struct sockaddr *serv_addr, int addrlen)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = connect(fd, serv_addr, addrlen);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall2(int, listen, int, fd, int, backlog)
 static inline int klisten(int fd, int backlog)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = listen(fd, backlog);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall3(int, accept, int, fd, struct sockaddr *, upeer_sockaddr, int *, upeer_addrlen)
 static inline int kaccept(int fd, struct sockaddr *upeer_sockaddr, int *upeer_addrlen)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = accept(fd, upeer_sockaddr, upeer_addrlen);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall3(int, getsockname, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
 static inline int kgetsockname(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = getsockname(fd, usockaddr, usockaddr_len);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
  
 static _syscall3(int, getpeername, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
 static inline int kgetpeername(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = getpeername(fd, usockaddr, usockaddr_len);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
  
 static _syscall4(int, socketpair, int, family, int, type, int, protocol, int, usockvec[2])
 static inline int ksocketpair(int family, int type, int protocol, int usockvec[2])
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = socketpair(family, type, protocol, usockvec);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
  
 static _syscall6(int, sendto, int, fd, void *, ubuf, size_t, len, unsigned, flags, struct sockaddr *, addr, int, addr_len)
 static inline int ksendto(int fd, void *buff, size_t len, unsigned flags, struct sockaddr *addr, int addr_len)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = sendto(fd, buff, len, flags, addr, addr_len);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall6(int, recvfrom, int, fd, void *, ubuf, size_t, len, unsigned, flags, struct sockaddr *, addr, int *, addr_len)
 static inline int krecvfrom(int fd, void *ubuf, size_t len, unsigned flags, struct sockaddr *addr, int *addr_len)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = recvfrom(fd, ubuf, len, flags, addr, addr_len);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall2(int, shutdown, int, fd, int, how)
 static inline int kshutdown(int fd, int how)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = shutdown(fd, how);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall5(int, setsockopt, int, fd, int, level, int, optname, void *, optval, int, optlen)
 static inline int ksetsockopt(int fd, int level, int optname, void *optval, int optlen)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = setsockopt(fd, level, optname, optval, optlen);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall5(int, getsockopt, int, fd, int, level, int, optname, char *, optval, int *, optlen)
 static inline int kgetsockopt(int fd, int level, int optname, char *optval, int *optlen)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = getsockopt(fd, level, optname, optval, optlen);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall3(int, sendmsg, int, fd, struct msghdr *, msg, unsigned, flags)
 static inline int ksendmsg(int fd, struct msghdr *msg, unsigned flags)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = sendmsg(fd, msg, flags);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall3(int, recvmsg, int, fd, struct msghdr *, msg, unsigned, flags)
 static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
 	retval = recvmsg(fd, msg, flags);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 #endif

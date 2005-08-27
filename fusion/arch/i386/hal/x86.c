@@ -72,13 +72,13 @@ extern struct desc_struct idt_table[];
 
 static long long rthal_timers_sync_time;
 
-static struct rthal_apic_data rthal_timer_mode[RTHAL_NR_CPUS];
-
 struct rthal_apic_data {
 
     int mode;
     unsigned long count;
 };
+
+static struct rthal_apic_data rthal_timer_mode[RTHAL_NR_CPUS];
 
 static inline void rthal_setup_periodic_apic (unsigned count,
 					      unsigned vector)

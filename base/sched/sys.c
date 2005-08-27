@@ -638,50 +638,52 @@ void reset_rt_fun_ext_index( struct rt_fun_entry *fun, int idx)
 void linux_process_termination(void)
 
 {
-	unsigned long num;
-	void *adr;
-	int type;
+	unsigned long numid;
 	char name[8];
 	RT_TASK *task2delete;
+	struct rt_registry_entry entry;
+	int slot;
 /*
  * Linux is just about to schedule current out of existence. With this feature, 
  * LXRT frees the real time resources allocated to it.
 */
-	while ((num = is_process_registered(current))) {
-		rt_global_cli();
-		adr = rt_get_adr(num);
-		type = rt_get_type(num);
-		rt_drg_on_adr(adr); 
-		rt_global_sti();
-		num2nam(num, name);
-       		switch (type) {
+	if (!(numid = is_process_registered(current))) {
+		return;
+	}
+	for (slot = 1; slot <= MAX_SLOTS; slot++) {
+		if (!rt_get_registry_slot(slot, &entry) || entry.tsk != current || rt_drg_on_adr_cnt(entry.adr) <= 0) {
+			continue;
+		}
+		num2nam(entry.name, name);
+		entry.tsk = 0;
+       		switch (entry.type) {
 			case IS_SEM:
 				rt_printk("LXRT releases SEM %s\n", name);
-				lxrt_sem_delete(adr);
-				rt_free(adr);
+				lxrt_sem_delete(entry.adr);
+				rt_free(entry.adr);
 				break;
 			case IS_RWL:
 				rt_printk("LXRT releases RWL %s\n", name);
-				lxrt_rwl_delete(adr);
-				rt_free(adr);
+				lxrt_rwl_delete(entry.adr);
+				rt_free(entry.adr);
 				break;
 			case IS_SPL:
 				rt_printk("LXRT releases SPL %s\n", name);
-				lxrt_spl_delete(adr);
-				rt_free(adr);
+				lxrt_spl_delete(entry.adr);
+				rt_free(entry.adr);
 				break;
 			case IS_MBX:
 				rt_printk("LXRT releases MBX %s\n", name);
-				lxrt_mbx_delete(adr);
-				rt_free(adr);
+				lxrt_mbx_delete(entry.adr);
+				rt_free(entry.adr);
 				break;
 			case IS_PRX:
-				num = rttask2pid(adr);
-				rt_printk("LXRT releases PROXY PID %lu\n", num);
-				lxrt_Proxy_detach(num);
+				numid = rttask2pid(entry.adr);
+				rt_printk("LXRT releases PROXY PID %lu\n", numid);
+				lxrt_Proxy_detach(numid);
 				break;
 			case IS_TASK:
-				rt_printk("LXRT deregisters task %s %d\n", name, ((RT_TASK *)adr)->lnxtsk->pid);
+				rt_printk("LXRT deregisters task %s %d\n", name, ((RT_TASK *)entry.adr)->lnxtsk->pid);
 				break;
 		}
 	}

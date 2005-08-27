@@ -31,7 +31,8 @@ check_PROGRAMS= \
 	tsignal \
 	ttsd \
 	tclock \
-	tmq
+	tmq \
+	ttimers
 
 tthread_DEPENDENCIES= ../libposix_s.a libtests.a
 tsem_DEPENDENCIES= ../libposix_s.a libtests.a
@@ -42,6 +43,7 @@ tsignal_DEPENDENCIES=../libposix_s.a libtests.a
 ttsd_DEPENDENCIES=../libposix_s.a libtests.a
 tclock_DEPENDENCIES=../libposix_s.a libtests.a
 tmq_DEPENDENCIES=../libposix_s.a libtests.a
+ttimers_DEPENDENCIES=../libposix_s.a libtests.a
 
 check_LIBRARIES=libtests.a
 
@@ -55,5 +57,6 @@ tsignal_SOURCES = tsignal.c
 ttsd_SOURCES = ttsd.c
 tclock_SOURCES = tclock.c
 tmq_SOURCES = tmq.c
+ttimers_SOURCES = ttimers.c
 
 EXTRA_DIST = skeleton.c

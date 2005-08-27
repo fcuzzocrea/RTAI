@@ -13,7 +13,7 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
-SOURCES = $(libtests_a_SOURCES) $(tcancel_SOURCES) $(tclock_SOURCES) $(tcond_SOURCES) $(tmq_SOURCES) $(tmutex_SOURCES) $(tsem_SOURCES) $(tsignal_SOURCES) $(tthread_SOURCES) $(ttsd_SOURCES)
+SOURCES = $(libtests_a_SOURCES) $(tcancel_SOURCES) $(tclock_SOURCES) $(tcond_SOURCES) $(tmq_SOURCES) $(tmutex_SOURCES) $(tsem_SOURCES) $(tsignal_SOURCES) $(tthread_SOURCES) $(ttimers_SOURCES) $(ttsd_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -39,7 +39,7 @@ build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = tthread$(EXEEXT) tsem$(EXEEXT) tmutex$(EXEEXT) \
 	tcond$(EXEEXT) tcancel$(EXEEXT) tsignal$(EXEEXT) ttsd$(EXEEXT) \
-	tclock$(EXEEXT) tmq$(EXEEXT)
+	tclock$(EXEEXT) tmq$(EXEEXT) ttimers$(EXEEXT)
 subdir = skins/posix/testsuite
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -79,6 +79,9 @@ tsignal_LDADD = $(LDADD)
 am_tthread_OBJECTS = tthread.$(OBJEXT)
 tthread_OBJECTS = $(am_tthread_OBJECTS)
 tthread_LDADD = $(LDADD)
+am_ttimers_OBJECTS = ttimers.$(OBJEXT)
+ttimers_OBJECTS = $(am_ttimers_OBJECTS)
+ttimers_LDADD = $(LDADD)
 am_ttsd_OBJECTS = ttsd.$(OBJEXT)
 ttsd_OBJECTS = $(am_ttsd_OBJECTS)
 ttsd_LDADD = $(LDADD)
@@ -96,11 +99,11 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 SOURCES = $(libtests_a_SOURCES) $(tcancel_SOURCES) $(tclock_SOURCES) \
 	$(tcond_SOURCES) $(tmq_SOURCES) $(tmutex_SOURCES) \
 	$(tsem_SOURCES) $(tsignal_SOURCES) $(tthread_SOURCES) \
-	$(ttsd_SOURCES)
+	$(ttimers_SOURCES) $(ttsd_SOURCES)
 DIST_SOURCES = $(libtests_a_SOURCES) $(tcancel_SOURCES) \
 	$(tclock_SOURCES) $(tcond_SOURCES) $(tmq_SOURCES) \
 	$(tmutex_SOURCES) $(tsem_SOURCES) $(tsignal_SOURCES) \
-	$(tthread_SOURCES) $(ttsd_SOURCES)
+	$(tthread_SOURCES) $(ttimers_SOURCES) $(ttsd_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -293,6 +296,7 @@ tsignal_DEPENDENCIES = ../libposix_s.a libtests.a
 ttsd_DEPENDENCIES = ../libposix_s.a libtests.a
 tclock_DEPENDENCIES = ../libposix_s.a libtests.a
 tmq_DEPENDENCIES = ../libposix_s.a libtests.a
+ttimers_DEPENDENCIES = ../libposix_s.a libtests.a
 check_LIBRARIES = libtests.a
 libtests_a_SOURCES = xntest.c xntest.h posix_test.c posix_test.h
 tthread_SOURCES = tthread.c
@@ -304,6 +308,7 @@ tsignal_SOURCES = tsignal.c
 ttsd_SOURCES = ttsd.c
 tclock_SOURCES = tclock.c
 tmq_SOURCES = tmq.c
+ttimers_SOURCES = ttimers.c
 EXTRA_DIST = skeleton.c
 all: all-am
 
@@ -376,6 +381,9 @@ tsignal$(EXEEXT): $(tsignal_OBJECTS) $(tsignal_DEPENDENCIES)
 tthread$(EXEEXT): $(tthread_OBJECTS) $(tthread_DEPENDENCIES) 
 	@rm -f tthread$(EXEEXT)
 	$(LINK) $(tthread_LDFLAGS) $(tthread_OBJECTS) $(tthread_LDADD) $(LIBS)
+ttimers$(EXEEXT): $(ttimers_OBJECTS) $(ttimers_DEPENDENCIES) 
+	@rm -f ttimers$(EXEEXT)
+	$(LINK) $(ttimers_LDFLAGS) $(ttimers_OBJECTS) $(ttimers_LDADD) $(LIBS)
 ttsd$(EXEEXT): $(ttsd_OBJECTS) $(ttsd_DEPENDENCIES) 
 	@rm -f ttsd$(EXEEXT)
 	$(LINK) $(ttsd_LDFLAGS) $(ttsd_OBJECTS) $(ttsd_LDADD) $(LIBS)
@@ -395,6 +403,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tsem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tsignal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tthread.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ttimers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ttsd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xntest.Po@am__quote@
 

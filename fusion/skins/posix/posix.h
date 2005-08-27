@@ -435,7 +435,9 @@ END_C_DECLS
 typedef void (*sighandler_t) (int sig);
 typedef unsigned long sig_atomic_t;
 #define DELAYTIMER_MAX INT_MAX
-#endif /* __KERNEL__ */
+#else /* ! __KERNEL__ */
+#define sigev_notify_thread_id _sigev_un._tid
+#endif /* ! __KERNEL__ */
 
 #define sigaction(sig, action, old) pse51_sigaction(sig, action, old)
 #define sigemptyset pse51_sigemptyset

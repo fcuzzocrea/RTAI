@@ -73,26 +73,29 @@ int timer_create (clockid_t clockid,
                   timer_t *__restrict__ timerid)
 {
     struct pse51_timer *timer;
+    xnholder_t *holder;
     spl_t s;
 
     if (clockid != CLOCK_MONOTONIC && clockid != CLOCK_REALTIME)
         goto einval;
 
     /* We only support notification via signals. */
-    if (evp && (evp->sigev_notify != SIGEV_SIGNAL ||
+    if (evp && ((evp->sigev_notify & ~SIGEV_THREAD_ID) != SIGEV_SIGNAL ||
                 (unsigned) (evp->sigev_signo - 1) > SIGRTMAX))
         goto einval;
     
     xnlock_get_irqsave(&nklock, s);
-    
-    timer = (struct pse51_timer *)getq(&timer_freeq);
 
-    if (!timer)
+    holder = getq(&timer_freeq);
+    
+    if (!holder)
 	{
 	xnlock_put_irqrestore(&nklock, s);
         thread_set_errno(EAGAIN);
 	return -1;
 	}
+
+    timer = link2tm(holder);
 
     if (evp)
         {
@@ -104,13 +107,16 @@ int timer_create (clockid_t clockid,
         {
         timer->si.info.si_signo = SIGALRM;
         timer->si.info.si_code = SI_TIMER;
-        timer->si.info.si_value = (union sigval) (timer - timer_pool);
+        timer->si.info.si_value.sival_int = (timer - timer_pool);
         }
 
     xntimer_init(&timer->timerbase, &pse51_base_timer_handler, timer);
 
     timer->overruns = 0;
-    timer->owner = pthread_self();
+    if (evp && (evp->sigev_notify & SIGEV_THREAD_ID))
+        timer->owner = (pthread_t) evp->sigev_notify_thread_id;
+    else
+        timer->owner = pthread_self();
     timer->clockid = clockid;
 
     appendq(&pse51_timerq,&timer->link);
@@ -162,7 +168,7 @@ static void pse51_timer_gettime_inner (struct pse51_timer *__restrict__ timer,
     if (xntimer_running_p(&timer->timerbase))
         {
         ticks2ts(&value->it_value, xntimer_get_timeout(&timer->timerbase));
-        ticks2ts(&value->it_interval,xntimer_interval(&timer->timerbase));
+        ticks2ts(&value->it_interval, xntimer_interval(&timer->timerbase));
         }
     else
         {
@@ -204,8 +210,12 @@ int timer_settime (timer_t timerid,
         if (flags & TIMER_ABSTIME)
             /* If the initial delay has already passed, the call shall suceed. */
             if (clock_adjust_timeout(&start, timer->clockid))
-                start = 1;          /* FIXME: when passing 0 tick, xntimer_start
-                                       disables the timer. */
+                /* clock_adjust timeout returns an error if start time has
+                   already passed, in which case timer_settime is expectet not
+                   to return an error but schedule the timer ASAP. */
+                /* FIXME: when passing 0 tick, xntimer_start disables the
+                   timer, we pass 1.*/
+                start = 1;
         }
 
     if (ovalue)

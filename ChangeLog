@@ -9,6 +9,7 @@
 	* base/tasklets/tasklets.c; made to comply using a long arg for 
 	  kernel tasks/threads
 	* base/ipc/msg/msg.c: made to comply using a long arg for kernel 
+	* base/wd/wd.c: made to comply using a long arg for kernel 
 	  tasks/threads
 
 2005-08-25  Daniele Gasperini  <gasperin@elet.polimi.it> and

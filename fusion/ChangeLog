@@ -1,3 +1,8 @@
+2005-08-27  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_schedule): Reread the value of the running
+	thread after context switches (this fixes a broken optimization).
+
 2005-08-26  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/registry.c (rt_registry_enter): Add a few

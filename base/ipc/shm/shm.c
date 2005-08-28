@@ -663,12 +663,13 @@ int __rtai_shm_init (void)
 
 void __rtai_shm_exit (void)
 {
+	extern int max_slots;
         int slot;
         struct rt_registry_entry entry;
 
 	rt_drg_on_name_cnt(GLOBAL_HEAP_ID);
-	for (slot = 1; slot <= MAX_SLOTS; slot++) {
-		if (rt_get_registry_slot(slot, &entry) && entry.adr) {
+	for (slot = 1; slot <= max_slots; slot++) {
+		if (rt_get_registry_slot(slot, &entry)) {
 			if (abs(entry.type) >= PAGE_SIZE) {
         			char name[8];
 				while (_rt_shm_free(entry.name, entry.type));

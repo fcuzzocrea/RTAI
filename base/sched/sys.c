@@ -638,6 +638,7 @@ void reset_rt_fun_ext_index( struct rt_fun_entry *fun, int idx)
 void linux_process_termination(void)
 
 {
+	extern int max_slots;
 	unsigned long numid;
 	char name[8];
 	RT_TASK *task2delete;
@@ -650,8 +651,8 @@ void linux_process_termination(void)
 	if (!(numid = is_process_registered(current))) {
 		return;
 	}
-	for (slot = 1; slot <= MAX_SLOTS; slot++) {
-		if (!rt_get_registry_slot(slot, &entry) || entry.tsk != current || rt_drg_on_adr_cnt(entry.adr) <= 0) {
+	for (slot = 1; slot <= max_slots; slot++) {
+		if (!rt_get_registry_slot(slot, &entry) || entry.tsk != current || rt_drg_on_name_cnt(entry.name) <= 0) {
 			continue;
 		}
 		num2nam(entry.name, name);

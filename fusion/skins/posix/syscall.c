@@ -275,9 +275,9 @@ int __pthread_setschedparam (struct task_struct *curr, struct pt_regs *regs)
 	promoted = 1;
 	}
     else
-	err = -pthread_setschedparam(k_tid,policy,&param);
+	err = -pse51_setschedparam_intr(k_tid,policy,&param);
 
-    if (!err)
+    if (!err || err == EINTR)
 	__xn_put_user(curr,promoted,(int __user *)__xn_reg_arg5(regs));
 
     return err;

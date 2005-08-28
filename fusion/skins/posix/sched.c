@@ -64,12 +64,6 @@ int sched_rr_get_interval (int pid, struct timespec *interval)
         return -1;
 	}
 
-    if (!interval)
-	{
-        thread_set_errno(EINVAL);
-        return -1;
-	}
-
     ticks2ts(interval, pse51_time_slice);
 
     return 0;
@@ -82,9 +76,6 @@ int pthread_getschedparam (pthread_t tid, int *pol, struct sched_param *par)
 
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    if (!pol || !par)
-        return EINVAL;
-    
     xnlock_get_irqsave(&nklock, s);
 
     if (!pse51_obj_active(tid, PSE51_THREAD_MAGIC, struct pse51_thread))
@@ -101,15 +92,17 @@ int pthread_getschedparam (pthread_t tid, int *pol, struct sched_param *par)
     return 0;
 }
 
-int pthread_setschedparam (pthread_t tid, int pol, const struct sched_param *par)
+/* A version of pthread_setschedparam which may return EINTR, useful for
+   syscall.c */
+int pse51_setschedparam_intr (pthread_t tid,
+                              int pol,
+                              const struct sched_param *par)
 
 {
     xnflags_t clrmask, setmask;
     spl_t s;
+    int err;
 
-    if (!par)
-        return EFAULT;
-    
     xnlock_get_irqsave(&nklock, s);
 
     if (!pse51_obj_active(tid, PSE51_THREAD_MAGIC, struct pse51_thread))
@@ -157,10 +150,24 @@ int pthread_setschedparam (pthread_t tid, int pol, const struct sched_param *par
 
     xnpod_schedule();
 
+    if (testbits(tid->threadbase.status, XNBREAK))
+        err = EINTR;
+    else
+        err = 0;
+    
     xnlock_put_irqrestore(&nklock, s);
 
-    return 0;
+    return err;
 }
+
+int pthread_setschedparam (pthread_t tid, int pol, const struct sched_param *par)
+{
+    int err = pse51_setschedparam_intr(tid, pol, par);
+
+    return err == EINTR ? 0 : err;
+}
+
+
 
 EXPORT_SYMBOL(sched_get_priority_min);
 EXPORT_SYMBOL(sched_get_priority_max);

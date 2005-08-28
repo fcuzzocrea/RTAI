@@ -145,6 +145,9 @@ int __wrap_pthread_setschedparam (pthread_t thread,
 			     param,
 			     myself,
 			     &promoted);
+    if (err == EINTR)
+        err = 0;
+    
     if (!err && promoted)
 	{
 	signal(SIGCHLD,&__pthread_sigharden_handler);

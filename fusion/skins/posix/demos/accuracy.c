@@ -37,7 +37,7 @@ void *threadA (void *arg)
 
     for (;;)
 	{
-	sem_wait(&semA);
+        sem_wait(&semA);
 	ts.tv_sec = 0;
 	ts.tv_nsec = sampling_period * 1000;
         get_time_us(&t0);
@@ -125,8 +125,9 @@ int main (int argc, char **argv)
 
             default:
 
-                fprintf(stderr, "usage: xx [options]\n"
-                        "  [-p <period_us>]             # sampling period\n");
+                fprintf(stderr, "usage: %s [options]\n"
+                        "  [-p <period_us>]             # sampling period\n",
+                        argv[0]);
                 exit(2);
 	    }
 
@@ -144,8 +145,17 @@ int main (int argc, char **argv)
     signal(SIGTERM, cleanup_upon_sig);
     signal(SIGHUP, cleanup_upon_sig);
 
-    sem_init(&semA,0,0);
-    sem_init(&semB,0,0);
+    if (sem_init(&semA,0,0))
+        {
+        perror("sem_init");
+        exit(EXIT_FAILURE);
+        }
+
+    if (sem_init(&semB,0,0))
+        {
+        perror("sem_init");
+        exit(EXIT_FAILURE);
+        }
 
     pthread_attr_init(&thattrA);
     pthread_attr_setdetachstate(&thattrA,PTHREAD_CREATE_DETACHED);

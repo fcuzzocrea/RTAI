@@ -393,7 +393,7 @@ static sem_t *__sem_get_ptr(struct task_struct *task, sem_t *sem)
     /* address of semaphores obtained with sem_init is stored in user-space.
        address of semaphores obtained with sem_open is returned to user-space
        as-is. */
-    if (__xn_range_ok(task,sem,sizeof(&sem)))
+    if (__xn_range_ok(task,sem,sizeof(&sem)) == 0)
         {
         if (!__xn_access_ok(task, VERIFY_READ, sem, sizeof(&sem)))
             return ERR_PTR(-EFAULT);
@@ -424,7 +424,10 @@ int __sem_init (struct task_struct *curr, struct pt_regs *regs)
     value = (unsigned)__xn_reg_arg3(regs);
 
     if (sem_init(sem,pshared,value) == -1)
+        {
+        xnfree(sem);
         return -thread_get_errno();
+        }
 
     handle = (unsigned long)sem;
 
@@ -432,6 +435,7 @@ int __sem_init (struct task_struct *curr, struct pt_regs *regs)
 		      (void __user *)__xn_reg_arg1(regs),
 		      &handle,
 		      sizeof(handle));
+
     return 0;
 }
 
@@ -439,6 +443,10 @@ int __sem_post (struct task_struct *curr, struct pt_regs *regs)
 
 {
     sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
+
+    if (IS_ERR(sem))
+        return PTR_ERR(sem);
+
     return sem_post(sem) == 0 ? 0 : -thread_get_errno();
 }
 
@@ -446,6 +454,10 @@ int __sem_wait (struct task_struct *curr, struct pt_regs *regs)
 
 {
     sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
+
+    if (IS_ERR(sem))
+        return PTR_ERR(sem);
+
     return sem_wait(sem) == 0 ? 0 : -thread_get_errno();
 }
 
@@ -453,6 +465,10 @@ int __sem_trywait (struct task_struct *curr, struct pt_regs *regs)
 
 {
     sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
+
+    if (IS_ERR(sem))
+        return PTR_ERR(sem);
+
     return sem_trywait(sem) == 0 ? 0 : -thread_get_errno();
 }
 
@@ -461,6 +477,9 @@ int __sem_getvalue (struct task_struct *curr, struct pt_regs *regs)
 {
     sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
     int err, sval;
+
+    if (IS_ERR(sem))
+        return PTR_ERR(sem);
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(sval)))
 	return -EFAULT;
@@ -482,6 +501,10 @@ int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
 {
     sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
     int err;
+
+    
+    if (IS_ERR(sem))
+        return PTR_ERR(sem);
 
     err = sem_destroy(sem);
 
@@ -508,7 +531,10 @@ int __sem_open (struct task_struct *curr, struct pt_regs *regs)
     sem_t *sem;
     long len;
     
-    len = strncpy_from_user(name, (char *) __xn_reg_arg2(regs), sizeof(name));
+    len = __xn_strncpy_from_user(curr,
+                                 name,
+                                 (char *) __xn_reg_arg2(regs),
+                                 sizeof(name));
 
     if (len < 0)
         return len;
@@ -538,6 +564,10 @@ int __sem_open (struct task_struct *curr, struct pt_regs *regs)
 int __sem_close (struct task_struct *curr, struct pt_regs *regs)
 {
     sem_t *sem = (sem_t *) __xn_reg_arg1(regs);
+    
+    if (IS_ERR(sem))
+        return PTR_ERR(sem);
+
     return sem_close(sem) == 0 ? 0 : -thread_get_errno();
 }
 
@@ -546,7 +576,10 @@ int __sem_unlink (struct task_struct *curr, struct pt_regs *regs)
     char name[PSE51_MAXNAME];
     long len;
     
-    len = strncpy_from_user(name, (char *) __xn_reg_arg1(regs), sizeof(name));
+    len = __xn_strncpy_from_user(curr,
+                                 name,
+                                 (char *) __xn_reg_arg1(regs),
+                                 sizeof(name));
 
     if (len < 0)
         return len;

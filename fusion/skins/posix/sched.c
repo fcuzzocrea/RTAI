@@ -92,16 +92,11 @@ int pthread_getschedparam (pthread_t tid, int *pol, struct sched_param *par)
     return 0;
 }
 
-/* A version of pthread_setschedparam which may return EINTR, useful for
-   syscall.c */
-int pse51_setschedparam_intr (pthread_t tid,
-                              int pol,
-                              const struct sched_param *par)
+int pthread_setschedparam (pthread_t tid, int pol, const struct sched_param *par)
 
 {
     xnflags_t clrmask, setmask;
     spl_t s;
-    int err;
 
     xnlock_get_irqsave(&nklock, s);
 
@@ -150,23 +145,10 @@ int pse51_setschedparam_intr (pthread_t tid,
 
     xnpod_schedule();
 
-    if (testbits(tid->threadbase.status, XNBREAK))
-        err = EINTR;
-    else
-        err = 0;
-    
     xnlock_put_irqrestore(&nklock, s);
 
-    return err;
+    return 0;
 }
-
-int pthread_setschedparam (pthread_t tid, int pol, const struct sched_param *par)
-{
-    int err = pse51_setschedparam_intr(tid, pol, par);
-
-    return err == EINTR ? 0 : err;
-}
-
 
 
 EXPORT_SYMBOL(sched_get_priority_min);

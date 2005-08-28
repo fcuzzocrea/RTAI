@@ -141,10 +141,6 @@ static inline void thread_cancellation_point (pthread_t thread)
         pse51_thread_abort(thread, PTHREAD_CANCELED);
 }
 
-int pse51_setschedparam_intr(pthread_t tid,
-                             int policy,
-                             const struct sched_param *param);
-
 void pse51_thread_pkg_init(u_long rrperiod);
 
 void pse51_thread_pkg_cleanup(void);

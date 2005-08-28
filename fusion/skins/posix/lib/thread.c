@@ -117,7 +117,8 @@ int __wrap_pthread_create (pthread_t *tid,
     __real_sem_init(&iargs.sync,0,0);
 
     err = __real_pthread_create(tid,attr,&__pthread_trampoline,&iargs);
-    __real_sem_wait(&iargs.sync);
+    while (__real_sem_wait(&iargs.sync) && errno == EINTR)
+        ;
     __real_sem_destroy(&iargs.sync);
 
     return err ?: iargs.ret;
@@ -145,9 +146,6 @@ int __wrap_pthread_setschedparam (pthread_t thread,
 			     param,
 			     myself,
 			     &promoted);
-    if (err == EINTR)
-        err = 0;
-    
     if (!err && promoted)
 	{
 	signal(SIGCHLD,&__pthread_sigharden_handler);

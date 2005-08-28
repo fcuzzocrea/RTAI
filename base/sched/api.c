@@ -1041,7 +1041,7 @@ int rt_named_task_delete(RT_TASK *task)
 
 #ifdef HASHED_REGISTRY
 
-static int max_slots;
+int max_slots;
 static struct rt_registry_entry *lxrt_list;
 static spinlock_t list_lock = SPIN_LOCK_UNLOCKED;
 
@@ -1345,19 +1345,15 @@ unsigned long is_process_registered(struct task_struct *lnxtsk)
 
 int rt_get_registry_slot(int slot, struct rt_registry_entry *entry)
 {
-	if(entry) {
-        	if (slot > 0 && slot <= max_slots ) {
-			unsigned long flags;
-	        	flags = rt_spin_lock_irqsave(&list_lock);
-                	if (lxrt_list[slot].name > NONAME) {
-                        	*entry = lxrt_list[slot];
-				entry->adr = lxrt_list[entry->alink].adr;
-	                        rt_spin_unlock_irqrestore(flags, &list_lock);
-                	        return slot;
-	                }
-	        	rt_spin_unlock_irqrestore(flags, &list_lock);
-        	}
-	}
+	unsigned long flags;
+       	flags = rt_spin_lock_irqsave(&list_lock);
+	if (lxrt_list[slot].name > NONAME) {
+		*entry = lxrt_list[slot];
+		entry->adr = lxrt_list[entry->alink].adr;
+		rt_spin_unlock_irqrestore(flags, &list_lock);
+		return slot;
+       	}
+        rt_spin_unlock_irqrestore(flags, &list_lock);
         return 0;
 }
 
@@ -1383,7 +1379,7 @@ void rt_registry_free(void)
 	}
 }
 #else
-static volatile int max_slots;
+volatile int max_slots;
 static struct rt_registry_entry *lxrt_list;
 static spinlock_t list_lock = SPIN_LOCK_UNLOCKED;
 
@@ -1689,19 +1685,6 @@ void *rt_get_adr_cnt(unsigned long name)
 	return get_adr_cnt(name);
 }
 
-#if 0
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
-void rtai_handle_isched_lock (int nesting) /* Called with interrupts off */
-
-{
-    if (nesting == 0)		/* Leaving interrupt context (inner one processed) */
-	rt_sched_unlock();
-    else
-	rt_sched_lock();	/* Entering interrupt context */
-}
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
-#endif
-
 #include <rtai_lxrt.h>
 
 extern struct rt_fun_entry rt_fun_lxrt[];
@@ -1713,7 +1696,7 @@ void krtai_objects_release(void)
 	char name[8], *type;
 
 	for (slot = 1; slot <= max_slots; slot++) {
-                if (rt_get_registry_slot(slot, &entry) && entry.adr) {
+                if (rt_get_registry_slot(slot, &entry)) {
 			switch (entry.type) {
 	                       	case IS_TASK:
 					type = "TASK";
@@ -2070,6 +2053,7 @@ EXPORT_SYMBOL(set_rt_fun_entries);
 EXPORT_SYMBOL(reset_rt_fun_entries);
 EXPORT_SYMBOL(set_rt_fun_ext_index);
 EXPORT_SYMBOL(reset_rt_fun_ext_index);
+EXPORT_SYMBOL(max_slots);
 
 #ifdef CONFIG_SMP
 #endif /* CONFIG_SMP */

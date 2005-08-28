@@ -1,3 +1,8 @@
+2005-08-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-i386/syscall.h (__xn_range_ok): Same meaning
+	as on other arches.
+
 2005-08-27  Jan Kiszka <jan.kiszka@web.de>
 	
 	* fusion: Fix compilation issues with gcc 4.0.1.

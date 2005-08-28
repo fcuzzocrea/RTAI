@@ -3129,7 +3129,6 @@ void xnpod_stop_timer (void)
 int xnpod_announce_tick (xnintr_t *intr)
 
 {
-    xnthread_t *runthread;
     unsigned cpu;
     spl_t s;
 
@@ -3158,6 +3157,8 @@ int xnpod_announce_tick (xnintr_t *intr)
     /* Do the round-robin processing. */
 
 #ifdef CONFIG_RTAI_HW_PERIODIC_TIMER
+    {
+    xnthread_t *runthread;
 
     /* Round-robin in aperiodic mode makes no sense. */
     if (!testbits(nkpod->status,XNTMPER))
@@ -3188,6 +3189,7 @@ int xnpod_announce_tick (xnintr_t *intr)
         else
             runthread->rrcredit--;
         }
+    }
 
  unlock_and_exit:
 

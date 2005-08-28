@@ -69,7 +69,7 @@ void pse51_timer_notified (pse51_siginfo_t *si)
 }
 
 int timer_create (clockid_t clockid,
-                  struct sigevent *__restrict__ evp,
+                  const struct sigevent *__restrict__ evp,
                   timer_t *__restrict__ timerid)
 {
     struct pse51_timer *timer;
@@ -80,7 +80,7 @@ int timer_create (clockid_t clockid,
         goto einval;
 
     /* We only support notification via signals. */
-    if (evp && ((evp->sigev_notify & ~SIGEV_THREAD_ID) != SIGEV_SIGNAL ||
+    if (evp && (evp->sigev_notify != SIGEV_SIGNAL ||
                 (unsigned) (evp->sigev_signo - 1) > SIGRTMAX))
         goto einval;
     
@@ -113,10 +113,7 @@ int timer_create (clockid_t clockid,
     xntimer_init(&timer->timerbase, &pse51_base_timer_handler, timer);
 
     timer->overruns = 0;
-    if (evp && (evp->sigev_notify & SIGEV_THREAD_ID))
-        timer->owner = (pthread_t) evp->sigev_notify_thread_id;
-    else
-        timer->owner = pthread_self();
+    timer->owner = NULL;
     timer->clockid = clockid;
 
     appendq(&pse51_timerq,&timer->link);
@@ -222,11 +219,17 @@ int timer_settime (timer_t timerid,
         pse51_timer_gettime_inner(timer, ovalue);    
 
     if (value->it_value.tv_nsec == 0 && value->it_value.tv_sec == 0)
+        {
         xntimer_stop(&timer->timerbase);
+        timer->owner = NULL;
+        }
     else
+        {
+        timer->owner = pse51_current_thread();
         xntimer_start(&timer->timerbase,
                       start,
                       ts2ticks_ceil(&value->it_interval));
+        }
 
     xnlock_put_irqrestore(&nklock, s);
 

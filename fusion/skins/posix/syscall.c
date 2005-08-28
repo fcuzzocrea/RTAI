@@ -27,6 +27,7 @@
 #include <posix/jhash.h>
 #include <posix/mq.h>
 #include <posix/intr.h>
+#include <posix/registry.h>     /* For PSE51_MAXNAME. */
 
 static int __muxid;
 
@@ -387,6 +388,22 @@ int __pthread_set_name_np (struct task_struct *curr, struct pt_regs *regs)
     return 0;
 }
 
+static sem_t *__sem_get_ptr(struct task_struct *task, sem_t *sem)
+{
+    /* address of semaphores obtained with sem_init is stored in user-space.
+       address of semaphores obtained with sem_open is returned to user-space
+       as-is. */
+    if (__xn_range_ok(task,sem,sizeof(&sem)))
+        {
+        if (!__xn_access_ok(task, VERIFY_READ, sem, sizeof(&sem)))
+            return ERR_PTR(-EFAULT);
+
+        __xn_copy_from_user(task, &sem, sem, sizeof(&sem));
+        }
+
+    return sem;
+}
+
 int __sem_init (struct task_struct *curr, struct pt_regs *regs)
 
 {
@@ -421,28 +438,28 @@ int __sem_init (struct task_struct *curr, struct pt_regs *regs)
 int __sem_post (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
+    sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
     return sem_post(sem) == 0 ? 0 : -thread_get_errno();
 }
 
 int __sem_wait (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
+    sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
     return sem_wait(sem) == 0 ? 0 : -thread_get_errno();
 }
 
 int __sem_trywait (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
+    sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
     return sem_trywait(sem) == 0 ? 0 : -thread_get_errno();
 }
 
 int __sem_getvalue (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
+    sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
     int err, sval;
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(sval)))
@@ -463,7 +480,7 @@ int __sem_getvalue (struct task_struct *curr, struct pt_regs *regs)
 int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
 
 {
-    sem_t *sem = (sem_t *)__xn_reg_arg1(regs);
+    sem_t *sem = __sem_get_ptr(curr, (sem_t *)__xn_reg_arg1(regs));
     int err;
 
     err = sem_destroy(sem);
@@ -481,6 +498,63 @@ int __sem_destroy (struct task_struct *curr, struct pt_regs *regs)
     xnfree(sem);
 
     return 0;
+}
+
+int __sem_open (struct task_struct *curr, struct pt_regs *regs)
+{
+    char name[PSE51_MAXNAME];
+    unsigned long handle;
+    int oflags;
+    sem_t *sem;
+    long len;
+    
+    len = strncpy_from_user(name, (char *) __xn_reg_arg2(regs), sizeof(name));
+
+    if (len < 0)
+        return len;
+
+    if (len >= sizeof(name))
+        return -ENAMETOOLONG;
+
+    oflags = __xn_reg_arg3(regs);
+
+    if (!(oflags & O_CREAT))
+        sem = sem_open(name, oflags);
+    else
+        sem = sem_open(name,
+                       oflags,
+                       (mode_t) __xn_reg_arg4(regs),
+                       (unsigned) __xn_reg_arg5(regs));
+
+    handle = (unsigned long) sem;
+    
+    __xn_copy_to_user(curr,
+		      (void __user *)__xn_reg_arg1(regs),
+		      &handle,
+		      sizeof(handle));
+    return 0;
+}
+
+int __sem_close (struct task_struct *curr, struct pt_regs *regs)
+{
+    sem_t *sem = (sem_t *) __xn_reg_arg1(regs);
+    return sem_close(sem) == 0 ? 0 : -thread_get_errno();
+}
+
+int __sem_unlink (struct task_struct *curr, struct pt_regs *regs)
+{
+    char name[PSE51_MAXNAME];
+    long len;
+    
+    len = strncpy_from_user(name, (char *) __xn_reg_arg1(regs), sizeof(name));
+
+    if (len < 0)
+        return len;
+
+    if (len >= sizeof(name))
+        return -ENAMETOOLONG;
+
+    return sem_unlink(name) == 0 ? 0 : -thread_get_errno();
 }
 
 int __clock_getres (struct task_struct *curr, struct pt_regs *regs)
@@ -1285,27 +1359,103 @@ int __intr_control (struct task_struct *curr, struct pt_regs *regs)
 
 int __timer_create (struct task_struct *curr, struct pt_regs *regs)
 {
-    return 0;
+    struct sigevent sev;
+    timer_t tm;
+    int rc;
+
+    if (!__xn_access_ok(curr, VERIFY_READ, __xn_reg_arg2(regs), sizeof(sev)))
+        return -EFAULT;
+
+    __xn_copy_from_user(curr, &sev, (char *) __xn_reg_arg2(regs), sizeof(sev));
+
+    rc = timer_create((clockid_t) __xn_reg_arg1(regs), &sev, &tm);
+
+    if(!rc)
+        {
+        if (!__xn_access_ok(curr, VERIFY_WRITE, __xn_reg_arg3(regs), sizeof(tm)))
+            {
+            timer_delete(tm);
+            return -EFAULT;
+            }
+
+        __xn_copy_to_user(curr, (char *) __xn_reg_arg3(regs), &tm, sizeof(tm));
+        }
+
+    return rc == 0 ? 0 : -thread_get_errno();
 }
 
 int __timer_delete (struct task_struct *curr, struct pt_regs *regs)
 {
-    return 0;
+    int rc;
+
+    rc = timer_delete((timer_t) __xn_reg_arg1(regs));
+
+    return rc == 0 ? 0 : -thread_get_errno();
 }
 
 int __timer_settime (struct task_struct *curr, struct pt_regs *regs)
 {
-    return 0;
+    struct itimerspec newv, oldv, *oldvp;
+    int rc;
+
+    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg3(regs),sizeof(newv)))
+        return -EFAULT;
+
+    oldvp = __xn_reg_arg4(regs) == 0 ? NULL : &oldv;
+
+    __xn_copy_from_user(curr, &newv, (char *) __xn_reg_arg3(regs), sizeof(newv));
+
+    rc = timer_settime((timer_t) __xn_reg_arg1(regs),
+                       (int) __xn_reg_arg2(regs),
+                       &newv,
+                       oldvp);
+
+    if (!rc && oldvp)
+        {
+        if(!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg4(regs),sizeof(oldv)))
+            {
+            timer_settime((timer_t) __xn_reg_arg1(regs),
+                          (int) __xn_reg_arg2(regs),
+                          oldvp,
+                          NULL);
+
+            return -EFAULT;
+            }
+
+        __xn_copy_to_user(curr,
+                          (char *) __xn_reg_arg4(regs),
+                          oldvp,
+                          sizeof(oldv));
+        }
+
+    return rc == 0 ? 0 : -thread_get_errno();
 }
 
 int __timer_gettime (struct task_struct *curr, struct pt_regs *regs)
 {
-    return 0;
+    struct itimerspec val;
+    int rc;
+
+    rc = timer_gettime((timer_t) __xn_reg_arg1(regs), &val);
+
+    if (!rc)
+        {
+        if(!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(val)))
+            return -EFAULT;
+
+        __xn_copy_to_user(curr, (char *) __xn_reg_arg2(regs), &val, sizeof(val));
+        }
+    
+    return rc == 0 ? 0 : -thread_get_errno();
 }
 
 int __timer_getoverrun (struct task_struct *curr, struct pt_regs *regs)
 {
-    return 0;
+    int rc;
+
+    rc = timer_getoverrun((timer_t) __xn_reg_arg1(regs));
+
+    return rc >= 0 ? rc : -thread_get_errno();
 }
 
 #if 0
@@ -1403,6 +1553,9 @@ static xnsysent_t __systab[] = {
     [__pse51_sem_wait] = { &__sem_wait, __xn_exec_primary },
     [__pse51_sem_trywait] = { &__sem_trywait, __xn_exec_primary },
     [__pse51_sem_getvalue] = { &__sem_getvalue, __xn_exec_primary },
+    [__pse51_sem_open] = { &__sem_open, __xn_exec_any },
+    [__pse51_sem_close] = { &__sem_close, __xn_exec_any },
+    [__pse51_sem_unlink] = { &__sem_unlink, __xn_exec_any },
     [__pse51_clock_getres] = { &__clock_getres, __xn_exec_any },
     [__pse51_clock_gettime] = { &__clock_gettime, __xn_exec_any },
     [__pse51_clock_settime] = { &__clock_settime, __xn_exec_any },
@@ -1419,9 +1572,9 @@ static xnsysent_t __systab[] = {
     [__pse51_cond_timedwait] = { &__cond_timedwait, __xn_exec_primary },
     [__pse51_cond_signal] = { &__cond_signal, __xn_exec_any },
     [__pse51_cond_broadcast] = { &__cond_broadcast, __xn_exec_any },
-    [__pse51_mq_open] = { &__mq_open, __xn_exec_any },
-    [__pse51_mq_close] = { &__mq_close, __xn_exec_any },
-    [__pse51_mq_unlink] = { &__mq_unlink, __xn_exec_any },
+    [__pse51_mq_open] = { &__mq_open, __xn_exec_secondary },
+    [__pse51_mq_close] = { &__mq_close, __xn_exec_secondary },
+    [__pse51_mq_unlink] = { &__mq_unlink, __xn_exec_secondary },
     [__pse51_mq_getattr] = { &__mq_getattr, __xn_exec_any },
     [__pse51_mq_setattr] = { &__mq_setattr, __xn_exec_any },
     [__pse51_mq_send] = { &__mq_send, __xn_exec_primary },

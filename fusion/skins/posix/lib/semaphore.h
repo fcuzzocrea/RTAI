@@ -23,11 +23,7 @@
 
 union __fusion_semaphore {
     sem_t native_sem;
-    struct __shadow_sem {
-#define SHADOW_SEMAPHORE_MAGIC 0x13010d01
-	unsigned magic;
-	unsigned long handle;
-    } shadow_sem;
+    unsigned long handle;
 };
 
 #ifdef __cplusplus
@@ -43,6 +39,12 @@ int __real_sem_destroy(sem_t *sem);
 int __real_sem_post(sem_t *sem);
 
 int __real_sem_wait(sem_t *sem);
+
+sem_t *__real_sem_open(const char *name, int oflags, ...);
+
+int __real_sem_close(sem_t *sem);
+
+int __real_sem_unlink(const char *name);
 
 #ifdef __cplusplus
 }

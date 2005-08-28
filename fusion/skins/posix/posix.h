@@ -435,8 +435,6 @@ END_C_DECLS
 typedef void (*sighandler_t) (int sig);
 typedef unsigned long sig_atomic_t;
 #define DELAYTIMER_MAX INT_MAX
-#else /* ! __KERNEL__ */
-#define sigev_notify_thread_id _sigev_un._tid
 #endif /* ! __KERNEL__ */
 
 #define sigaction(sig, action, old) pse51_sigaction(sig, action, old)
@@ -561,15 +559,15 @@ int pthread_make_periodic_np(pthread_t thread,
 int pthread_wait_np(void);
 
 int timer_create(clockid_t clockid,
-		 struct sigevent *__restrict__ evp,
+		 const struct sigevent *__restrict__ evp,
 		 timer_t *__restrict__ timerid);
 
 int timer_delete(timer_t timerid);
 
 int timer_settime(timer_t timerid,
 		  int flags,
-		  const struct itimerspec *value,
-		  struct itimerspec *ovalue);
+		  const struct itimerspec *__restrict__ value,
+		  struct itimerspec *__restrict__ ovalue);
 
 int timer_gettime(timer_t timerid, struct itimerspec *value);
 

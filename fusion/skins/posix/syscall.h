@@ -71,6 +71,9 @@
 #define __pse51_timer_settime         45
 #define __pse51_timer_gettime         46
 #define __pse51_timer_getoverrun      47
+#define __pse51_sem_open              48
+#define __pse51_sem_close             49
+#define __pse51_sem_unlink            50
 
 #ifdef __KERNEL__
 

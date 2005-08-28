@@ -102,7 +102,7 @@ int pse51_mq_init(pse51_mq_t *mq, const struct mq_attr *attr)
     memsize = msgsize * attr->mq_maxmsg;
     memsize = PAGE_ALIGN(memsize);
 
-    mem = xnarch_sysalloc(memsize);
+    mem = (char *) xnarch_sysalloc(memsize);
 
     if (!mem)
         return ENOSPC;

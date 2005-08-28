@@ -21,6 +21,7 @@
 
 #include <sys/time.h>
 #include <sys/socket.h>
+#include <signal.h>
 #include <time.h>
 #include_next <pthread.h>
 #include <nucleus/thread.h>

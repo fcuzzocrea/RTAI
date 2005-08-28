@@ -16,6 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
  */
 
+#include <fcntl.h>              /* For O_CREAT. */
+#include <stdarg.h>
 #include <errno.h>
 #include <posix/syscall.h>
 #include <posix/lib/semaphore.h>
@@ -31,14 +33,11 @@ int __wrap_sem_init (sem_t *sem,
 
     err = -XENOMAI_SKINCALL3(__pse51_muxid,
 			     __pse51_sem_init,
-			     &_sem->shadow_sem.handle,
+			     &_sem->handle,
 			     pshared,
 			     value);
     if (!err)
-	{
-	_sem->shadow_sem.magic = SHADOW_SEMAPHORE_MAGIC;
 	return 0;
-	}
 
     errno = err;
 
@@ -48,15 +47,11 @@ int __wrap_sem_init (sem_t *sem,
 int __wrap_sem_destroy (sem_t *sem)
 
 {
-    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
-
-    if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
-	return EINVAL;
 
     err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_destroy,
-			     _sem->shadow_sem.handle);
+			     sem);
     if (!err)
 	return 0;
 
@@ -68,15 +63,11 @@ int __wrap_sem_destroy (sem_t *sem)
 int __wrap_sem_post (sem_t *sem)
 
 {
-    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
-
-    if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
-	return EINVAL;
 
     err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_post,
-			     _sem->shadow_sem.handle);
+			     sem);
     if (!err)
 	return 0;
 
@@ -88,15 +79,11 @@ int __wrap_sem_post (sem_t *sem)
 int __wrap_sem_wait (sem_t *sem)
 
 {
-    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
-
-    if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
-	return EINVAL;
 
     err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_wait,
-			     _sem->shadow_sem.handle);
+			     sem);
     if (!err)
 	return 0;
 
@@ -108,15 +95,11 @@ int __wrap_sem_wait (sem_t *sem)
 int __wrap_sem_trywait (sem_t *sem)
 
 {
-    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
-
-    if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
-	return EINVAL;
 
     err = -XENOMAI_SKINCALL1(__pse51_muxid,
 			     __pse51_sem_trywait,
-			     _sem->shadow_sem.handle);
+			     sem);
     if (!err)
 	return 0;
 
@@ -128,18 +111,83 @@ int __wrap_sem_trywait (sem_t *sem)
 int __wrap_sem_getvalue (sem_t *sem, int *sval)
 
 {
-    union __fusion_semaphore *_sem = (union __fusion_semaphore *)sem;
     int err;
-
-    if (_sem->shadow_sem.magic != SHADOW_SEMAPHORE_MAGIC)
-	return EINVAL;
 
     err = -XENOMAI_SKINCALL2(__pse51_muxid,
 			     __pse51_sem_getvalue,
-			     _sem->shadow_sem.handle,
+			     sem,
 			     sval);
     if (!err)
 	return 0;
+
+    errno = err;
+
+    return -1;
+}
+
+sem_t *__wrap_sem_open (const char *name, int oflags, ...)
+{
+    unsigned long handle;
+    int err;
+
+    if(!(oflags & O_CREAT))
+        err = -XENOMAI_SKINCALL3(__pse51_muxid,
+                                 __pse51_sem_open,
+                                 &handle,
+                                 name,
+                                 oflags);
+    else
+        {
+        unsigned value;
+        mode_t mode;
+        va_list ap;
+
+        va_start(ap, oflags);
+        mode = va_arg(ap, int);
+        value = va_arg(ap, unsigned);
+        va_end(ap);
+
+        err = -XENOMAI_SKINCALL5(__pse51_muxid,
+                                 __pse51_sem_open,
+                                 &handle,
+                                 name,
+                                 oflags,
+                                 mode,
+                                 value);
+        }
+
+    if (!err)
+        return (sem_t *) handle;
+
+    errno = err;
+
+    return SEM_FAILED;
+}
+
+int __wrap_sem_close (sem_t *sem)
+{
+    int err;
+
+    err = -XENOMAI_SKINCALL1(__pse51_muxid,
+                             __pse51_sem_close,
+                             sem);
+
+    if (!err)
+        return 0;
+
+    errno = err;
+
+    return -1;
+}
+
+int __wrap_sem_unlink (const char *name)
+{
+    int err;
+
+    err = -XENOMAI_SKINCALL1(__pse51_muxid, __pse51_sem_unlink, name);
+
+    if (!err)
+        return 0;
 
     errno = err;
 

@@ -393,7 +393,7 @@ static sem_t *__sem_get_ptr(struct task_struct *task, sem_t *sem)
     /* address of semaphores obtained with sem_init is stored in user-space.
        address of semaphores obtained with sem_open is returned to user-space
        as-is. */
-    if (__xn_range_ok(task,sem,sizeof(&sem)) == 0)
+    if (__xn_range_ok(task,sem,sizeof(&sem)))
         {
         if (!__xn_access_ok(task, VERIFY_READ, sem, sizeof(&sem)))
             return ERR_PTR(-EFAULT);
@@ -1586,9 +1586,9 @@ static xnsysent_t __systab[] = {
     [__pse51_sem_wait] = { &__sem_wait, __xn_exec_primary },
     [__pse51_sem_trywait] = { &__sem_trywait, __xn_exec_primary },
     [__pse51_sem_getvalue] = { &__sem_getvalue, __xn_exec_primary },
-    [__pse51_sem_open] = { &__sem_open, __xn_exec_any },
-    [__pse51_sem_close] = { &__sem_close, __xn_exec_any },
-    [__pse51_sem_unlink] = { &__sem_unlink, __xn_exec_any },
+    [__pse51_sem_open] = { &__sem_open, __xn_exec_shadow },
+    [__pse51_sem_close] = { &__sem_close, __xn_exec_shadow },
+    [__pse51_sem_unlink] = { &__sem_unlink, __xn_exec_shadow },
     [__pse51_clock_getres] = { &__clock_getres, __xn_exec_any },
     [__pse51_clock_gettime] = { &__clock_gettime, __xn_exec_any },
     [__pse51_clock_settime] = { &__clock_settime, __xn_exec_any },
@@ -1620,7 +1620,7 @@ static xnsysent_t __systab[] = {
     [__pse51_intr_control] = { &__intr_control, __xn_exec_any },
     [__pse51_timer_create] = { &__timer_create, __xn_exec_any },
     [__pse51_timer_delete] = { &__timer_delete, __xn_exec_any },
-    [__pse51_timer_settime] = { &__timer_settime, __xn_exec_any },
+    [__pse51_timer_settime] = { &__timer_settime, __xn_exec_shadow },
     [__pse51_timer_gettime] = { &__timer_gettime, __xn_exec_any },
     [__pse51_timer_getoverrun] = { &__timer_getoverrun, __xn_exec_any },
 };

@@ -188,11 +188,11 @@ asm (".L__X'%ebx = 1\n\t"
 	asm("addl %3,%1 ; sbbl %0,%0; cmpl %1,%4; sbbl $0,%0" \
 		:"=&r" (flag), "=r" (sum) \
 	        :"1" (addr),"g" ((int)(size)),"g" ((task)->thread_info->addr_limit.seg)); \
-	flag; })
+	flag == 0; })
 
 /* WP bit must work for using the shadow support, so we only need
    trivial range checking here. */
-#define __xn_access_ok(task,type,addr,size)    (__xn_range_ok(task,addr,size) == 0)
+#define __xn_access_ok(task,type,addr,size)    (__xn_range_ok(task,addr,size))
 
 /* Purposedly used inlines and not macros for the following routines
    so that we don't risk spurious side-effects on the value arg. */

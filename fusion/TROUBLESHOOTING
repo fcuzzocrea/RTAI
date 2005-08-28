@@ -106,9 +106,6 @@ stale memory.
 The cure is simple: just make sure to stop all RTAI/fusion activities
 before the tracedaemon exits.
 
-______________________________________________________________________
-
-
 ======================================================================
 
                              x86
@@ -120,11 +117,11 @@ Q: When inserting rtai_hal.ko, I get a message in the console saying :
 encounter high interrupt latencies." What should I do ?
 
 A: First you should run the latency test under some load and see if
-you experience any high latency ("high" meaning more than, say, 100
-micro-seconds). If you do not observe any such latency, then this
-warning is harmless, and if you find it annoying, you may disable "SMI
-detection" in RTAI configuration menu. You can skip the rest of this
-section.
+you experience any pathological latency ("pathological" meaning more
+than, say, 100 micro-seconds). If you do not observe any such latency,
+then this warning is harmless, and if you find it annoying, you may
+disable "SMI detection" in RTAI configuration menu. You can skip the
+rest of this section.
 
 If you observe any high latency then you have a problem with SMI, and
 this warning was intended for you. But the RTAI configuration menu 

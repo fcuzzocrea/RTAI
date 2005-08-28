@@ -1,3 +1,14 @@
+2005-08-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: modified inlined calls for more across
+	  archiectures consisency.
+	* base/ipc/netrpc/netrpc.c: added ksocket services for architectures
+	  not exporting socketcall.
+	* base/ipc/shm/shm.c and base/sched/sys.c: use max_slots variable and
+	  not MAX_SLOTS macro, they differ in hashed registry.
+	* base/sched/api.c: added a missing loop over registered objects to be
+	  released at task existing, export max_slots, clean unused code.
+
 2005-08-26  Daniele Gasperini  <gasperin@elet.polimi.it> and
             Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
@@ -8,7 +19,7 @@
 	  a long arg for kernel tasks/threads.
 	* base/tasklets/tasklets.c; made to comply using a long arg for 
 	  kernel tasks/threads
-	* base/ipc/msg/msg.c: made to comply using a long arg for kernel 
+	* base/ipc/msg/msg.c: made to comply using a long arg for kernel
 	* base/wd/wd.c: made to comply using a long arg for kernel 
 	  tasks/threads
 

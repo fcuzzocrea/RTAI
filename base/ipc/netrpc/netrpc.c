@@ -312,7 +312,7 @@ static void thread_fun(RT_TASK *task)
 		sigfillset(&current->blocked);
 		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);
 		soft_rt_fun_call(task, rt_task_suspend, task);
-		((void (*)(int))task->fun_args[1])(task->fun_args[2]);
+		((void (*)(long))task->fun_args[1])(task->fun_args[2]);
 	}
 }
 
@@ -583,6 +583,7 @@ int rt_send_req_rel_port(unsigned long node, int op, unsigned long id, MBX *mbx,
 	struct portslot_t *portslotp;
 	struct req_rel_msg msg;
 
+
 	if (!node || (op && (op < MaxStubs || op >= MaxSocks))) {
 		return -EINVAL;
 	}
@@ -756,7 +757,7 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long type, void *args, int args
 	}
 	if (NEED_TO_R(type)) {			
 		rsize = USP_RSZ1(type);
-		rsize = rsize ? ((int *)args)[rsize - 1] : sizeof(long);
+		rsize = rsize ? ((long *)args)[rsize - 1] : sizeof(long);
 	} else {
 		rsize = 0;
 	}
@@ -941,7 +942,6 @@ static spinlock_t sysrq_lock = SPIN_LOCK_UNLOCKED;
 int soft_rt_sendto(int sock, const void *msg, int msglen, unsigned int sflags, struct sockaddr *to, int tolen)
 {
 	unsigned long flags;
-
 	if (sock >= 0 && sock < MaxSocks) {
 		if (msglen > MAX_MSG_SIZE) {
 			msglen = MAX_MSG_SIZE;
@@ -985,6 +985,14 @@ int errno;
 #define SYSCALL_END() \
 	set_fs(svdfs); return retval; } while (0)
 
+/* It would be much simpler using the available sys_... functions, but Linux 
+   does not export them and I do not want to patch for adding the missing 
+   EXPORT_SYMBOLs. Moreover it is likely __ARCH_WANT_SYS_SOCKETCALL is 
+   available wherever we'd need it, so socketcall would be more than enough,
+   but we keep specific calls for archs having them (some overhead less). */
+
+#ifdef __NR_socketcall
+
 static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
 
 static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
@@ -993,14 +1001,6 @@ static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 	retval = poll(ufds, nfds, timeout);
 	SYSCALL_END();
 }
-
-/* It would be much simpler using the available sys_... functions, but Linux 
-   does not export them and I do not want to patch for adding the missing 
-   EXPORT_SYMBOLs. Moreover it is likely __ARCH_WANT_SYS_SOCKETCALL is 
-   available wherever we'd need it, so socketcall would be more than enough,
-   but we keep specific calls for archs having them (some overhead less). */
-
-#ifdef __NR_socketcall
 
 static _syscall2(int, socketcall, int, call, void *, args)
 
@@ -1135,11 +1135,24 @@ static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
 #define __NR_recvmsg      15
 #endif
 
+typedef void (*sys_call_ptr_t)(void);
+extern sys_call_ptr_t sys_call_table[];
+
+static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
+static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(void *, unsigned int, int))sys_call_table[__NR_poll])(ufds, nfds, timeout);
+//	retval = poll(ufds, nfds, timeout);
+	SYSCALL_END();
+}
+
 static _syscall3(int, socket, int, family, int, type, int, protocol)
 static inline int ksocket(int family, int type, int protocol)
 {
 	SYSCALL_BGN();
-	retval = socket(family, type, protocol);
+	retval = ((int (*)(int, int, int))sys_call_table[__NR_socket])(family, type, protocol);
+//	retval = socket(family, type, protocol);
 	SYSCALL_END();
 }
 
@@ -1147,7 +1160,8 @@ static _syscall3(int, bind, int, fd, struct sockaddr *, umyaddr, int, addrlen)
 static inline int kbind(int fd, struct sockaddr *umyaddr, int addrlen)
 {
 	SYSCALL_BGN();
-	retval = bind(fd, umyaddr, addrlen);
+	retval = ((int (*)(int, struct sockaddr *, int))sys_call_table[__NR_bind])(fd, umyaddr, addrlen);
+//	retval = bind(fd, umyaddr, addrlen);
 	SYSCALL_END();
 }
 
@@ -1203,7 +1217,8 @@ static _syscall6(int, sendto, int, fd, void *, ubuf, size_t, len, unsigned, flag
 static inline int ksendto(int fd, void *buff, size_t len, unsigned flags, struct sockaddr *addr, int addr_len)
 {
 	SYSCALL_BGN();
-	retval = sendto(fd, buff, len, flags, addr, addr_len);
+	retval = ((int (*)(int, void *, size_t, unsigned, struct sockaddr *, int))sys_call_table[__NR_sendto])(fd, buff, len, flags, addr, addr_len);
+//	retval = sendto(fd, buff, len, flags, addr, addr_len);
 	SYSCALL_END();
 }
 
@@ -1211,7 +1226,8 @@ static _syscall6(int, recvfrom, int, fd, void *, ubuf, size_t, len, unsigned, fl
 static inline int krecvfrom(int fd, void *ubuf, size_t len, unsigned flags, struct sockaddr *addr, int *addr_len)
 {
 	SYSCALL_BGN();
-	retval = recvfrom(fd, ubuf, len, flags, addr, addr_len);
+	retval = ((int (*)(int, void *, size_t, unsigned, struct sockaddr *, int *))sys_call_table[__NR_recvfrom])(fd, ubuf, len, flags, addr, addr_len);
+//	retval = recvfrom(fd, ubuf, len, flags, addr, addr_len);
 	SYSCALL_END();
 }
 
@@ -1219,7 +1235,8 @@ static _syscall2(int, shutdown, int, fd, int, how)
 static inline int kshutdown(int fd, int how)
 {
 	SYSCALL_BGN();
-	retval = shutdown(fd, how);
+	retval = ((int (*)(int, int))sys_call_table[__NR_shutdown])(fd, how);
+//	retval = shutdown(fd, how);
 	SYSCALL_END();
 }
 

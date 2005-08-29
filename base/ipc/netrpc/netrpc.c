@@ -713,7 +713,7 @@ static inline void mbx_send_if(MBX *mbx, void *sendmsg, int msg_size)
 	}
 }
 
-unsigned long long rt_net_rpc(int fun_ext_timed, long type, void *args, int argsize, int space)
+unsigned long long rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space)
 {
 	char msg[MAX_MSG_SIZE];
 	struct reply_t { int wsize, w2size; unsigned long long retval; char msg[1]; } *reply;
@@ -985,28 +985,24 @@ int errno;
 #define SYSCALL_END() \
 	set_fs(svdfs); return retval; } while (0)
 
-/* It would be much simpler using the available sys_... functions, but Linux 
-   does not export them and I do not want to patch for adding the missing 
-   EXPORT_SYMBOLs. Moreover it is likely __ARCH_WANT_SYS_SOCKETCALL is 
-   available wherever we'd need it, so socketcall would be more than enough,
-   but we keep specific calls for archs having them (some overhead less). */
-
 #ifdef __NR_socketcall
 
-static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
+//extern void *sys_call_table[];
 
+static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
 static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 {
 	SYSCALL_BGN();
+//	retval = ((int (*)(struct pollfd *, unsigned int, int))sys_call_table[__NR_poll])(ufds, nfds, timeout);
 	retval = poll(ufds, nfds, timeout);
 	SYSCALL_END();
 }
 
 static _syscall2(int, socketcall, int, call, void *, args)
-
 static inline int ksocketcall(int call, void *args)
 {
 	SYSCALL_BGN();
+//	retval = ((int (*)(int, void *))sys_call_table[__NR_socketcall])(call, args);
 	retval = socketcall(call, args);
 	SYSCALL_END();
 }
@@ -1053,26 +1049,12 @@ static inline int kgetpeername(int fd, struct sockaddr *usockaddr, int *usockadd
 	return ksocketcall(SYS_GETPEERNAME, &args);
 }
  
-static inline int ksocketpair(int family, int type, int protocol, int usockvec[2])
+static inline int ksocketpair(int family, int type, int protocol, int *usockvec)
 {
-	struct { int family; int type; int protocol; int usockvec[2]; } args = { family, type, protocol, { usockvec[1], usockvec[2] } };
+	struct { int family; int type; int protocol; int *usockvec; } args = { family, type, protocol, usockvec };
 	return ksocketcall(SYS_SOCKETPAIR, &args);
 }
  
-/*
-static inline int ksend(int fd, void *buff, size_t len, unsigned flags)
-{
-	struct { int fd; void *buff; size_t len; unsigned flags; } args = { fd, buff, len, flags };
-	return ksocketcall(SYS_SEND, &args);
-}
-
-static inline int krecv(int fd, void *ubuf, size_t len, unsigned flags)
-{
-	struct { int fd; void *ubuf; size_t len; unsigned flags; } args = { fd, ubuf, len, flags };
-	return ksocketcall(SYS_RECV, &args);
-}
-*/
-
 static inline int ksendto(int fd, void *buff, size_t len, unsigned flags, struct sockaddr *addr, int addr_len)
 {
 	struct { int fd; void *buff; size_t len; unsigned flags; struct sockaddr *addr; int addr_len; } args = { fd, buff, len, flags, addr, addr_len };
@@ -1117,28 +1099,27 @@ static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
 
 #else
 
-#if 0  // just for checking
-#define __NR_socket        1
-#define __NR_bind          2
-#define __NR_connect       3
-#define __NR_accept        4
-#define __NR_listen        5
-#define __NR_getsockname   6
-#define __NR_getpeername   7
-#define __NR_socketpair    8
-#define __NR_sendto        9
-#define __NR_recvfrom     10
-#define __NR_shutdown     11
-#define __NR_setsockopt   12
-#define __NR_getsockopt   13
-#define __NR_sendmsg      14
-#define __NR_recvmsg      15
+#if 0  // just for compiling
+#define __NR_socket       1
+#define __NR_bind         1
+#define __NR_connect      1
+#define __NR_accept       1
+#define __NR_listen       1
+#define __NR_getsockname  1
+#define __NR_getpeername  1
+#define __NR_socketpair   1
+#define __NR_sendto       1
+#define __NR_recvfrom     1
+#define __NR_shutdown     1
+#define __NR_setsockopt   1
+#define __NR_getsockopt   1
+#define __NR_sendmsg      1
+#define __NR_recvmsg      1
 #endif
 
-typedef void (*sys_call_ptr_t)(void);
-extern sys_call_ptr_t sys_call_table[];
+extern void *sys_call_table[];
 
-static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
+//static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
 static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 {
 	SYSCALL_BGN();
@@ -1147,7 +1128,7 @@ static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 	SYSCALL_END();
 }
 
-static _syscall3(int, socket, int, family, int, type, int, protocol)
+//static _syscall3(int, socket, int, family, int, type, int, protocol)
 static inline int ksocket(int family, int type, int protocol)
 {
 	SYSCALL_BGN();
@@ -1156,7 +1137,7 @@ static inline int ksocket(int family, int type, int protocol)
 	SYSCALL_END();
 }
 
-static _syscall3(int, bind, int, fd, struct sockaddr *, umyaddr, int, addrlen)
+//static _syscall3(int, bind, int, fd, struct sockaddr *, umyaddr, int, addrlen)
 static inline int kbind(int fd, struct sockaddr *umyaddr, int addrlen)
 {
 	SYSCALL_BGN();
@@ -1165,55 +1146,61 @@ static inline int kbind(int fd, struct sockaddr *umyaddr, int addrlen)
 	SYSCALL_END();
 }
 
-static _syscall3(int, connect, int, fd, struct sockaddr *, serv_addr, int, addrlen)
+//static _syscall3(int, connect, int, fd, struct sockaddr *, serv_addr, int, addrlen)
 static inline int kconnect(int fd, struct sockaddr *serv_addr, int addrlen)
 {
 	SYSCALL_BGN();
-	retval = connect(fd, serv_addr, addrlen);
+	retval = ((int (*)(int, struct sockaddr *, int))sys_call_table[__NR_connect])(fd, serv_addr, addrlen);
+//	retval = connect(fd, serv_addr, addrlen);
 	SYSCALL_END();
 }
 
-static _syscall2(int, listen, int, fd, int, backlog)
+//static _syscall2(int, listen, int, fd, int, backlog)
 static inline int klisten(int fd, int backlog)
 {
 	SYSCALL_BGN();
-	retval = listen(fd, backlog);
+	retval = ((int (*)(int, int))sys_call_table[__NR_listen])(fd, backlog);
+//	retval = listen(fd, backlog);
 	SYSCALL_END();
 }
 
-static _syscall3(int, accept, int, fd, struct sockaddr *, upeer_sockaddr, int *, upeer_addrlen)
+//static _syscall3(int, accept, int, fd, struct sockaddr *, upeer_sockaddr, int *, upeer_addrlen)
 static inline int kaccept(int fd, struct sockaddr *upeer_sockaddr, int *upeer_addrlen)
 {
 	SYSCALL_BGN();
-	retval = accept(fd, upeer_sockaddr, upeer_addrlen);
+	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_accept])(fd, upeer_sockaddr, upeer_addrlen);
+//	retval = accept(fd, upeer_sockaddr, upeer_addrlen);
 	SYSCALL_END();
 }
 
-static _syscall3(int, getsockname, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
+//static _syscall3(int, getsockname, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
 static inline int kgetsockname(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
 {
 	SYSCALL_BGN();
-	retval = getsockname(fd, usockaddr, usockaddr_len);
+	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_getsockname])(fd, usockaddr, usockaddr_len);
+//	retval = getsockname(fd, usockaddr, usockaddr_len);
 	SYSCALL_END();
 }
  
-static _syscall3(int, getpeername, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
+//static _syscall3(int, getpeername, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
 static inline int kgetpeername(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
 {
 	SYSCALL_BGN();
-	retval = getpeername(fd, usockaddr, usockaddr_len);
+	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_getpeername])(fd, usockaddr, usockaddr_len);
+//	retval = getpeername(fd, usockaddr, usockaddr_len);
 	SYSCALL_END();
 }
  
-static _syscall4(int, socketpair, int, family, int, type, int, protocol, int, usockvec[2])
-static inline int ksocketpair(int family, int type, int protocol, int usockvec[2])
+//static _syscall4(int, socketpair, int, family, int, type, int, protocol, int, usockvec[2])
+static inline int ksocketpair(int family, int type, int protocol, int *usockvec)
 {
 	SYSCALL_BGN();
-	retval = socketpair(family, type, protocol, usockvec);
+	retval = ((int (*)(int, int, int, int *))sys_call_table[__NR_socketpair])(family, type, protocol, usockvec);
+//	retval = socketpair(family, type, protocol, usockvec);
 	SYSCALL_END();
 }
  
-static _syscall6(int, sendto, int, fd, void *, ubuf, size_t, len, unsigned, flags, struct sockaddr *, addr, int, addr_len)
+//static _syscall6(int, sendto, int, fd, void *, ubuf, size_t, len, unsigned, flags, struct sockaddr *, addr, int, addr_len)
 static inline int ksendto(int fd, void *buff, size_t len, unsigned flags, struct sockaddr *addr, int addr_len)
 {
 	SYSCALL_BGN();
@@ -1222,7 +1209,7 @@ static inline int ksendto(int fd, void *buff, size_t len, unsigned flags, struct
 	SYSCALL_END();
 }
 
-static _syscall6(int, recvfrom, int, fd, void *, ubuf, size_t, len, unsigned, flags, struct sockaddr *, addr, int *, addr_len)
+//static _syscall6(int, recvfrom, int, fd, void *, ubuf, size_t, len, unsigned, flags, struct sockaddr *, addr, int *, addr_len)
 static inline int krecvfrom(int fd, void *ubuf, size_t len, unsigned flags, struct sockaddr *addr, int *addr_len)
 {
 	SYSCALL_BGN();
@@ -1231,7 +1218,7 @@ static inline int krecvfrom(int fd, void *ubuf, size_t len, unsigned flags, stru
 	SYSCALL_END();
 }
 
-static _syscall2(int, shutdown, int, fd, int, how)
+//static _syscall2(int, shutdown, int, fd, int, how)
 static inline int kshutdown(int fd, int how)
 {
 	SYSCALL_BGN();
@@ -1240,35 +1227,39 @@ static inline int kshutdown(int fd, int how)
 	SYSCALL_END();
 }
 
-static _syscall5(int, setsockopt, int, fd, int, level, int, optname, void *, optval, int, optlen)
+//static _syscall5(int, setsockopt, int, fd, int, level, int, optname, void *, optval, int, optlen)
 static inline int ksetsockopt(int fd, int level, int optname, void *optval, int optlen)
 {
 	SYSCALL_BGN();
-	retval = setsockopt(fd, level, optname, optval, optlen);
+	retval = ((int (*)(int, int, int, void *, int))sys_call_table[__NR_setsockopt])(fd, level, optname, optval, optlen);
+//	retval = setsockopt(fd, level, optname, optval, optlen);
 	SYSCALL_END();
 }
 
-static _syscall5(int, getsockopt, int, fd, int, level, int, optname, char *, optval, int *, optlen)
+//static _syscall5(int, getsockopt, int, fd, int, level, int, optname, char *, optval, int *, optlen)
 static inline int kgetsockopt(int fd, int level, int optname, char *optval, int *optlen)
 {
 	SYSCALL_BGN();
-	retval = getsockopt(fd, level, optname, optval, optlen);
+	retval = ((int (*)(int, int, int, void *, int *))sys_call_table[__NR_getsockopt])(fd, level, optname, optval, optlen);
+//	retval = getsockopt(fd, level, optname, optval, optlen);
 	SYSCALL_END();
 }
 
-static _syscall3(int, sendmsg, int, fd, struct msghdr *, msg, unsigned, flags)
+//static _syscall3(int, sendmsg, int, fd, struct msghdr *, msg, unsigned, flags)
 static inline int ksendmsg(int fd, struct msghdr *msg, unsigned flags)
 {
 	SYSCALL_BGN();
-	retval = sendmsg(fd, msg, flags);
+	retval = ((int (*)(int, struct msghdr *, unsigned))sys_call_table[__NR_sendmsg])(fd, msg, flags);
+//	retval = sendmsg(fd, msg, flags);
 	SYSCALL_END();
 }
 
-static _syscall3(int, recvmsg, int, fd, struct msghdr *, msg, unsigned, flags)
+//static _syscall3(int, recvmsg, int, fd, struct msghdr *, msg, unsigned, flags)
 static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
 {
 	SYSCALL_BGN();
-	retval = recvmsg(fd, msg, flags);
+	retval = ((int (*)(int, struct msghdr *, unsigned))sys_call_table[__NR_recvmsg])(fd, msg, flags);
+//	retval = recvmsg(fd, msg, flags);
 	SYSCALL_END();
 }
 

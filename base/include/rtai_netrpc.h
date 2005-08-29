@@ -82,7 +82,7 @@ int __rtai_netrpc_init(void);
 
 void __rtai_netrpc_exit(void);
 
-unsigned long long rt_net_rpc(int fun_ext_timed,
+unsigned long long rt_net_rpc(long fun_ext_timed,
                               long type,
 			      void *args,
 			      int argsize,

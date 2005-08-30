@@ -132,7 +132,7 @@ int rt_spset_fifotrig(unsigned int tty,
 
 int rt_spget_err(unsigned int tty);
 
-int rt_spset_callback_fun(unsigned int tty,
+long rt_spset_callback_fun(unsigned int tty,
 			  void (*callback_fun)(int, int),
 			  int rxthrs,
 			  int txthrs);
@@ -141,7 +141,7 @@ int rt_spset_thrs(unsigned int tty,
 		  int rxthrs,
 		  int txthrs);
 
-int rt_spset_err_callback_fun(unsigned int tty,
+long rt_spset_err_callback_fun(unsigned int tty,
 			      void (*err_callback_fun)(int));
 
 int rt_spset_callback_fun_usr(unsigned int tty,

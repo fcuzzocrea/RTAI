@@ -43,7 +43,7 @@
  *@{*/
 
 
-#define DONT_DISPATCH_CORE_IRQS  1
+#define DONT_DISPATCH_CORE_IRQS  0
 #define CHECK_STACK_IN_IRQ       0
 
 #include <linux/version.h>
@@ -1534,7 +1534,7 @@ void rtai_syscall_dispatcher (struct pt_regs *regs)
 	}
 }
 
-#if 1
+#if 0
 void rtai_uvec_handler (void);
         __asm__ ( \
         "\n" __ALIGN_STR"\n\t" \
@@ -1887,11 +1887,9 @@ int __rtai_hal_init (void)
 	attr.priority = 2000000000;
 	adeos_register_domain(&rtai_domain, &attr);
 
-/*
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++) {
 		adeos_catch_event(trapnr, (void *)rtai_trap_fault);
 	}
-*/	
 #ifdef CONFIG_SMP
 	if (IsolCpusMask) {
 		for (trapnr = 0; trapnr < IPIPE_NR_XIRQS; trapnr++) {

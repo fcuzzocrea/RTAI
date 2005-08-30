@@ -143,8 +143,8 @@ static struct {
 
 static struct {
 	void (*k_handler)(void);
-	long long (*u_handler)(unsigned);
-	unsigned label;
+	long long (*u_handler)(unsigned long);
+	unsigned long label;
 } rtai_sysreq_table[RTAI_NR_SRQS];
 
 static unsigned rtai_sysreq_virq;
@@ -675,7 +675,7 @@ void rt_pend_linux_irq (unsigned irq)
  * @retval EINVAL if @a k_handler is @c NULL.
  * @retval EBUSY if no free srq slot is available.
  */
-int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handler)(unsigned))
+int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handler)(unsigned long))
 {
 	unsigned long flags;
 	int srq;
@@ -1730,7 +1730,7 @@ static void rtai_lsrq_dispatcher (unsigned virq)
 	spin_unlock(&rtai_lsrq_lock);
 }
 
-static inline long long rtai_usrq_dispatcher (unsigned srq, unsigned label)
+static inline long long rtai_usrq_dispatcher (unsigned long srq, unsigned long label)
 {
 	TRACE_RTAI_SRQ_ENTRY(srq);
 	if (srq > 0 && srq < RTAI_NR_SRQS && test_bit(srq, &rtai_sysreq_map) && rtai_sysreq_table[srq].u_handler) {

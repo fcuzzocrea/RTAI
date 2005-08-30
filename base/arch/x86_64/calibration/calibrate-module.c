@@ -74,7 +74,7 @@ static RT_TASK rtask;
 static int period;
 static RTIME expected;
 
-static void spv(int loops)
+static void spv(long loops)
 {
 	int skip, average = 0;
 	for (skip = 0; skip < loops; skip++) {
@@ -124,12 +124,12 @@ static int rt_timer_tick_ext(int irq, unsigned long data)
 	return 1;
 }
 
-static long long user_srq(unsigned int whatever)
+static long long user_srq(unsigned long whatever)
 {
 	extern int calibrate_8254(void);
 	unsigned long args[MAXARGS];
 
-	copy_from_user(args, (unsigned int *)whatever, MAXARGS*sizeof(unsigned long));
+	copy_from_user(args, (unsigned long *)whatever, MAXARGS*sizeof(unsigned long));
 	switch (args[0]) {
 		case CAL_8254: {
 			return calibrate_8254();

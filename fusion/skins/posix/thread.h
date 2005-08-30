@@ -41,20 +41,21 @@ struct pse51_thread {
     unsigned magic;
     xnthread_t threadbase;
 
-#define thread2pthread(taddr) ({                                             \
-    xnthread_t *_taddr = (taddr);                                            \
-    (_taddr                                                                  \
-    ? ((xnthread_get_magic(_taddr) == PSE51_SKIN_MAGIC)                      \
-       ? ((pthread_t)(((char *)_taddr)-(int)(&((pthread_t) 0)->threadbase))) \
-       : NULL)                                                               \
-    : NULL);                                                                 \
+#define thread2pthread(taddr) ({                                        \
+    xnthread_t *_taddr = (taddr);                                       \
+    (_taddr                                                             \
+    ? ((xnthread_get_magic(_taddr) == PSE51_SKIN_MAGIC)                 \
+       ? ((pthread_t)(((char *)_taddr)- offsetof(struct pse51_thread,   \
+                                                 threadbase)))          \
+       : NULL)                                                          \
+    : NULL);                                                            \
 })
 
 
     xnholder_t link;	/* Link in pse51_threadq */
     
 #define link2pthread(laddr) \
-    ((pthread_t)(((char *)(laddr)) - (int)(&((pthread_t)0)->link)))
+    ((pthread_t)(((char *)laddr) - offsetof(struct pse51_thread, link)))
     
 
     pthread_attr_t attr;        /* creation attributes */
@@ -84,6 +85,9 @@ struct pse51_thread {
     /* For thread specific data. */
     const void *tsd [PTHREAD_KEYS_MAX];
 
+    /* For timers. */
+    xnqueue_t timersq;
+    
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
     struct pse51_hkey hkey;
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */

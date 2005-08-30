@@ -25,7 +25,6 @@ int pse51_reg_pkg_init(unsigned objects_count, unsigned maxfds);
 
 void pse51_reg_pkg_cleanup(void);
 
-
 /* Get an existing node: oflags are POSIX open style flags.
    If 0 is returned and (*nodep) is NULL, then a new node should be added
    with node_add*. */

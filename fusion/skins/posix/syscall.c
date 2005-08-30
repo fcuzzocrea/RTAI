@@ -390,7 +390,8 @@ int __pthread_set_name_np (struct task_struct *curr, struct pt_regs *regs)
 
 static sem_t *__sem_get_ptr(struct task_struct *task, sem_t *sem)
 {
-    /* address of semaphores obtained with sem_init is stored in user-space.
+    /* A truly ugly hack:
+       address of semaphores obtained with sem_init is stored in user-space.
        address of semaphores obtained with sem_open is returned to user-space
        as-is. */
     if (__xn_range_ok(task,sem,sizeof(&sem)))
@@ -553,7 +554,7 @@ int __sem_open (struct task_struct *curr, struct pt_regs *regs)
                        (unsigned) __xn_reg_arg5(regs));
 
     handle = (unsigned long) sem;
-    
+
     __xn_copy_to_user(curr,
 		      (void __user *)__xn_reg_arg1(regs),
 		      &handle,
@@ -873,18 +874,23 @@ int __cond_broadcast (struct task_struct *curr, struct pt_regs *regs)
 int __mq_open (struct task_struct *curr, struct pt_regs *regs)
 
 {
+    char name[PSE51_MAXNAME];
     struct mq_attr attr;
-    char name[64];
+    unsigned len;
     mode_t mode;
     int oflags;
     mqd_t q;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(name)))
-	return -EFAULT;
-
-    __xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
-    name[sizeof(name) - 1] = '\0';
-
+    len = __xn_strncpy_from_user(curr,
+                                 name,
+                                 (const char __user *)__xn_reg_arg1(regs),
+                                 sizeof(name));
+    if (len <= 0)
+        return -EFAULT;
+    
+    if (len >= sizeof(name))
+        return -ENAMETOOLONG;
+    
     oflags = __xn_reg_arg2(regs);
     mode = __xn_reg_arg3(regs);
 
@@ -906,20 +912,16 @@ int __mq_open (struct task_struct *curr, struct pt_regs *regs)
 	}
 
     q = mq_open(name,oflags,mode,&attr);
-    
-    return q == (mqd_t)-1 ? -thread_get_errno() : 0;
+
+    return q == (mqd_t)-1 ? -thread_get_errno() : q;
 }
 
 int __mq_close (struct task_struct *curr, struct pt_regs *regs)
 {
     mqd_t q;
     int err;
-
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
-
+    
+    q = (mqd_t) __xn_reg_arg1(regs);
     err = mq_close(q);
 
     return err ? -thread_get_errno() : 0;
@@ -927,15 +929,20 @@ int __mq_close (struct task_struct *curr, struct pt_regs *regs)
 
 int __mq_unlink (struct task_struct *curr, struct pt_regs *regs)
 {
-    char name[64];
+    char name[PSE51_MAXNAME];
+    unsigned len;
     int err;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(name)))
-	return -EFAULT;
-
-    __xn_strncpy_from_user(curr,name,(const char __user *)__xn_reg_arg1(regs),sizeof(name) - 1);
-    name[sizeof(name) - 1] = '\0';
-
+    len = __xn_strncpy_from_user(curr,
+                                 name,
+                                 (const char __user *)__xn_reg_arg1(regs),
+                                 sizeof(name));
+    if (len <= 0)
+        return -EFAULT;
+    
+    if (len >= sizeof(name))
+        return -ENAMETOOLONG;
+    
     err = mq_unlink(name);
 
     return err ? -thread_get_errno() : 0;
@@ -947,13 +954,10 @@ int __mq_getattr (struct task_struct *curr, struct pt_regs *regs)
     mqd_t q;
     int err;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
-
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg2(regs),sizeof(attr)))
 	return -EFAULT;
+
+    q = (mqd_t) __xn_reg_arg1(regs);
 
     err = mq_getattr(q,&attr);
 
@@ -973,13 +977,10 @@ int __mq_setattr (struct task_struct *curr, struct pt_regs *regs)
     mqd_t q;
     int err;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
-
     if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg2(regs),sizeof(attr)))
 	return -EFAULT;
+
+    q = (mqd_t) __xn_reg_arg1(regs);
 
     __xn_copy_from_user(curr,&attr,(struct mq_attr *)__xn_reg_arg2(regs),sizeof(attr));
 
@@ -1009,12 +1010,8 @@ int __mq_send (struct task_struct *curr, struct pt_regs *regs)
     int err;
     mqd_t q;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
-
-    len = (size_t)__xn_reg_arg3(regs);
+    q = (mqd_t) __xn_reg_arg1(regs);
+    len = (size_t) __xn_reg_arg3(regs);
     prio = __xn_reg_arg4(regs);
 
     if (len > 0)
@@ -1061,15 +1058,11 @@ int __mq_timedsend (struct task_struct *curr, struct pt_regs *regs)
     int err;
     mqd_t q;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
-	return -EFAULT;
-
     if (__xn_reg_arg5(regs) &&
 	!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg5(regs),sizeof(timeout)))
 	return -EFAULT;
 
-    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
-
+    q = (mqd_t) __xn_reg_arg1(regs);
     len = (size_t)__xn_reg_arg3(regs);
     prio = __xn_reg_arg4(regs);
 
@@ -1120,11 +1113,6 @@ int __mq_receive (struct task_struct *curr, struct pt_regs *regs)
     ssize_t len;
     mqd_t q;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
-
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(len)))
 	return -EFAULT;
 
@@ -1132,6 +1120,8 @@ int __mq_receive (struct task_struct *curr, struct pt_regs *regs)
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg4(regs),sizeof(prio)))
 	return -EFAULT;
+
+    q = (mqd_t) __xn_reg_arg1(regs);
 
     if (len > 0)
 	{
@@ -1154,7 +1144,12 @@ int __mq_receive (struct task_struct *curr, struct pt_regs *regs)
     len = mq_receive(q,tmp_area,len,&prio);
 
     if (len == -1)
+        {
+        if (tmp_area && tmp_area != tmp_buf)
+            xnfree(tmp_area);
+
 	return -thread_get_errno();
+        }
 
     __xn_copy_to_user(curr,
 		      (void __user *)__xn_reg_arg3(regs),
@@ -1182,10 +1177,7 @@ int __mq_timedreceive (struct task_struct *curr, struct pt_regs *regs)
     ssize_t len;
     mqd_t q;
 
-    if (!__xn_access_ok(curr,VERIFY_READ,__xn_reg_arg1(regs),sizeof(q)))
-	return -EFAULT;
-
-    __xn_copy_from_user(curr,&q,(mqd_t *)__xn_reg_arg1(regs),sizeof(q));
+    q = (mqd_t) __xn_reg_arg1(regs);
 
     if (!__xn_access_ok(curr,VERIFY_WRITE,__xn_reg_arg3(regs),sizeof(len)))
 	return -EFAULT;
@@ -1231,7 +1223,12 @@ int __mq_timedreceive (struct task_struct *curr, struct pt_regs *regs)
     len = mq_timedreceive(q,tmp_area,len,&prio,timeoutp);
 
     if (len == -1)
+        {
+        if (tmp_area && tmp_area != tmp_buf)
+            xnfree(tmp_area);
+        
 	return -thread_get_errno();
+        }
 
     __xn_copy_to_user(curr,
 		      (void __user *)__xn_reg_arg3(regs),
@@ -1586,9 +1583,9 @@ static xnsysent_t __systab[] = {
     [__pse51_sem_wait] = { &__sem_wait, __xn_exec_primary },
     [__pse51_sem_trywait] = { &__sem_trywait, __xn_exec_primary },
     [__pse51_sem_getvalue] = { &__sem_getvalue, __xn_exec_primary },
-    [__pse51_sem_open] = { &__sem_open, __xn_exec_shadow },
-    [__pse51_sem_close] = { &__sem_close, __xn_exec_shadow },
-    [__pse51_sem_unlink] = { &__sem_unlink, __xn_exec_shadow },
+    [__pse51_sem_open] = { &__sem_open, __xn_exec_any },
+    [__pse51_sem_close] = { &__sem_close, __xn_exec_any },
+    [__pse51_sem_unlink] = { &__sem_unlink, __xn_exec_any },
     [__pse51_clock_getres] = { &__clock_getres, __xn_exec_any },
     [__pse51_clock_gettime] = { &__clock_gettime, __xn_exec_any },
     [__pse51_clock_settime] = { &__clock_settime, __xn_exec_any },
@@ -1605,9 +1602,9 @@ static xnsysent_t __systab[] = {
     [__pse51_cond_timedwait] = { &__cond_timedwait, __xn_exec_primary },
     [__pse51_cond_signal] = { &__cond_signal, __xn_exec_any },
     [__pse51_cond_broadcast] = { &__cond_broadcast, __xn_exec_any },
-    [__pse51_mq_open] = { &__mq_open, __xn_exec_secondary },
-    [__pse51_mq_close] = { &__mq_close, __xn_exec_secondary },
-    [__pse51_mq_unlink] = { &__mq_unlink, __xn_exec_secondary },
+    [__pse51_mq_open] = { &__mq_open, __xn_exec_lostage },
+    [__pse51_mq_close] = { &__mq_close, __xn_exec_lostage },
+    [__pse51_mq_unlink] = { &__mq_unlink, __xn_exec_lostage },
     [__pse51_mq_getattr] = { &__mq_getattr, __xn_exec_any },
     [__pse51_mq_setattr] = { &__mq_setattr, __xn_exec_any },
     [__pse51_mq_send] = { &__mq_send, __xn_exec_primary },
@@ -1618,9 +1615,9 @@ static xnsysent_t __systab[] = {
     [__pse51_intr_detach] = { &__intr_detach, __xn_exec_any },
     [__pse51_intr_wait] = { &__intr_wait, __xn_exec_primary },
     [__pse51_intr_control] = { &__intr_control, __xn_exec_any },
-    [__pse51_timer_create] = { &__timer_create, __xn_exec_any },
+    [__pse51_timer_create] = { &__timer_create, __xn_exec_primary },
     [__pse51_timer_delete] = { &__timer_delete, __xn_exec_any },
-    [__pse51_timer_settime] = { &__timer_settime, __xn_exec_shadow },
+    [__pse51_timer_settime] = { &__timer_settime, __xn_exec_any },
     [__pse51_timer_gettime] = { &__timer_gettime, __xn_exec_any },
     [__pse51_timer_getoverrun] = { &__timer_getoverrun, __xn_exec_any },
 };

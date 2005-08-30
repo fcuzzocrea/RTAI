@@ -21,7 +21,11 @@
 
 #include <posix/signal.h>        /* For struct itimerspec. */
 
-void pse51_timer_notified (pse51_siginfo_t *si);
+void pse51_timer_notified(pse51_siginfo_t *si);
+
+void pse51_timer_init_thread(pthread_t new);
+
+void pse51_timer_cleanup_thread(pthread_t zombie);
 
 int pse51_timer_pkg_init(void);
 

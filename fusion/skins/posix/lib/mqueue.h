@@ -20,6 +20,7 @@
 #define _RTAI_POSIX_MQUEUE_H
 
 #include <rtai_config.h>
+#include <fcntl.h>              /* For mq_open flags. */
 
 #ifdef HAVE_MQUEUE_H
 

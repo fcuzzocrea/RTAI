@@ -21,7 +21,7 @@
 #include "posix/cond.h"
 
 #define link2cond(laddr) \
-((pthread_cond_t *)(((char *)laddr)-(int)(&((pthread_cond_t *)0)->link)))
+    ((pthread_cond_t *)(((char *)laddr) - offsetof(pthread_cond_t, link)))
 
 static pthread_condattr_t default_cond_attr;
 
@@ -261,7 +261,13 @@ void pse51_cond_pkg_cleanup (void)
     xnlock_get_irqsave(&nklock, s);
 
     while ((holder = getheadq(&pse51_condq)) != NULL)
-	cond_destroy_internal(link2cond(holder));
+        {
+#ifdef CONFIG_RTAI_OPT_DEBUG
+        xnprintf("Posix condition variable %p was not destroyed, destroying"
+                 " now.\n", link2cond(holder));
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+        cond_destroy_internal(link2cond(holder));
+        }
 
     xnlock_put_irqrestore(&nklock, s);
 }

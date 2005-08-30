@@ -9,7 +9,7 @@ non portable extensions to the POSIX specification.
 This skin already contains most basic features :
 - threads,
 - mutexes,
-- semaphores,
+- semaphores (anonymous and named),
 - condition variables,
 - support for real-time signals,
 - cancellation, cancellation handlers
@@ -67,8 +67,9 @@ described in this specification. Here are the known ones :
   . mq_open may only be called from module initialization context.
 
 - timers:
-  . the SIGEV_THREAD notification mechanism is not implemented, nor is intended
-  to be. If you need this, post a mail to rtai@rtai.org.
+  . the SIGEV_THREAD and SIGEV_NONE notification mechanism are not implemented.
+  . timer_create attaches the created timer to the caller, in the future, the
+  Linux/Glibc SIGEV_THREAD_ID may be implemented.
 
 Use of the POSIX skin from user-space applications
 ==================================================
@@ -118,6 +119,8 @@ always return an error status (EINVAL).
 - Setting time through clock_settime(CLOCK_REALTIME) is not yet supported, but
 the CLOCK_REALTIME clock is aligned on Linux clock at POSIX skin startup.
 
+- Real-time signals sent to user-space threads cause migration to secondary
+  mode.
 
 Undefined behaviour.
 =====================
@@ -139,7 +142,8 @@ TODO List
 The PSE51 skin is still a work in progress, it lacks some features which will be 
 added gradually :
 - spinlocks/rwlocks/barriers ;
-- add suport for mq_notify, now that real-time signals are working ;
+- add support for mq_notify, now that real-time signals are working ;
+- add support for real-time signals for user-space threads.
 - dimensioning constants are scattered all over the skin sources, they should be
   centralized, and made configurable through configure.
 

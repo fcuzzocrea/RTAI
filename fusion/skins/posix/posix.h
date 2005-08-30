@@ -434,7 +434,7 @@ END_C_DECLS
 #define sa_sigaction sa_handler
 typedef void (*sighandler_t) (int sig);
 typedef unsigned long sig_atomic_t;
-#define DELAYTIMER_MAX INT_MAX
+#define DELAYTIMER_MAX UINT_MAX
 #endif /* ! __KERNEL__ */
 
 #define sigaction(sig, action, old) pse51_sigaction(sig, action, old)
@@ -612,7 +612,7 @@ ssize_t  mq_timedreceive(mqd_t q,
                          const struct timespec *__restrict__ timeout);
 
 int mq_timedsend(mqd_t q,
-                 const char * buffer,
+                 const char *buffer,
                  size_t len,
                  unsigned prio,
                  const struct timespec *timeout);

@@ -37,7 +37,7 @@ static xnlock_t pse51_infos_lock;
 #endif
 static xnpqueue_t pse51_infos_free_list;
 
-static pse51_siginfo_t *pse51_new_siginfo(int sig, int code, union sigval value)
+static pse51_siginfo_t *pse51_new_siginfo (int sig, int code, union sigval value)
 {
     xnpholder_t *holder;
     pse51_siginfo_t *si;
@@ -58,11 +58,12 @@ static pse51_siginfo_t *pse51_new_siginfo(int sig, int code, union sigval value)
     return si;
 }
 
-static void pse51_delete_siginfo(pse51_siginfo_t *si)
+static void pse51_delete_siginfo (pse51_siginfo_t *si)
 {
     spl_t s;
 
     initph(&si->link);
+    si->info.si_signo = 0;      /* Used for debugging. */
 
     xnlock_get_irqsave(&pse51_infos_lock, s);
     insertpql(&pse51_infos_free_list, &si->link, 0);
@@ -94,28 +95,28 @@ static inline int ismember (const pse51_sigset_t *set, int sig) {
     return (*set & ((pse51_sigset_t) 1 << (sig - 1))) != 0;
 }
 
-static inline int isemptyset(const pse51_sigset_t *set)
+static inline int isemptyset (const pse51_sigset_t *set)
 {
     return (*set) == 0ULL;
 }
 
-static inline void andset(pse51_sigset_t *set,
-                          const pse51_sigset_t *left,
-                          const pse51_sigset_t *right)
+static inline void andset (pse51_sigset_t *set,
+                           const pse51_sigset_t *left,
+                           const pse51_sigset_t *right)
 {
     *set = (*left) & (*right);
 }
 
-static inline void orset(pse51_sigset_t *set,
-                         const pse51_sigset_t *left,
-                         const pse51_sigset_t *right)
+static inline void orset (pse51_sigset_t *set,
+                          const pse51_sigset_t *left,
+                          const pse51_sigset_t *right)
 {
     *set = (*left) | (*right);
 }
 
-static inline void andnotset(pse51_sigset_t *set,
-                             const pse51_sigset_t *left,
-                             const pse51_sigset_t *right)
+static inline void nandset (pse51_sigset_t *set,
+                            const pse51_sigset_t *left,
+                            const pse51_sigset_t *right)
 {
     *set = (*left) & ~(*right);
 }
@@ -131,7 +132,7 @@ int sigemptyset (sigset_t *user_set)
     return 0;
 }
 
-int sigfillset(sigset_t *user_set)
+int sigfillset (sigset_t *user_set)
 
 {
     pse51_sigset_t *set = user2pse51_sigset(user_set);
@@ -141,7 +142,7 @@ int sigfillset(sigset_t *user_set)
     return 0;
 }
 
-int sigaddset(sigset_t *user_set, int sig)
+int sigaddset (sigset_t *user_set, int sig)
 
 {
     pse51_sigset_t *set = user2pse51_sigset(user_set);
@@ -212,16 +213,46 @@ void pse51_sigqueue_inner (pthread_t thread, pse51_siginfo_t *si)
         thread->threadbase.signals = 1;
         }
 
+#ifdef __KERNEL__
+    /* POSIX shadow signals ping: in order to send a signal to a user-space
+       POSIX thread, we get it back to primary mode. */
+    if (testbits(thread->threadbase.status, XNRELAX) &&
+         xnthread_user_task(&thread->threadbase))
+        xnshadow_suspend(&thread->threadbase);
+#endif /* __KERNEL__ */
+
     if (thread == pse51_current_thread()
         || xnpod_unblock_thread(&thread->threadbase))
         xnpod_schedule();
 }
 
+void pse51_sigunqueue (pthread_t thread, pse51_siginfo_t *si)
+{
+    pse51_sigqueue_t *queue;
+    xnpholder_t *next;
+
+    if (ismember(&thread->sigmask, si->info.si_signo))
+        queue = &thread->blocked_received;
+    else
+        queue = &thread->pending;
+
+    /* If si is the only signal queued with its signal number, clear the
+       mask. We do not have "prevpq", we hence use findpq, even though this is
+       much less efficient. */
+    next = nextpq(&queue->list, &si->link);
+    if ((!next || next->prio != si->link.prio)
+       && findpqh(&queue->list, si->link.prio) == &si->link)
+        delset(&queue->mask, si->info.si_signo);
+
+    removepq(&queue->list, &si->link);
+}
+
+
 /* Unqueue any siginfo of "queue" whose signal number is member of "set",
-   starting from "start". If "start" is NULL, start from the list head. */
-static pse51_siginfo_t *pse51_getsigq(pse51_sigqueue_t *queue,
-                                      pse51_sigset_t *set,
-                                      pse51_siginfo_t **start)
+   starting with "start". If "start" is NULL, start from the list head. */
+static pse51_siginfo_t *pse51_getsigq (pse51_sigqueue_t *queue,
+                                       pse51_sigset_t *set,
+                                       pse51_siginfo_t **start)
 {
     xnpholder_t *holder, *next;
     pse51_siginfo_t *si;
@@ -356,7 +387,7 @@ int pthread_kill (pthread_t thread, int sig)
     return 0;
 }
 
-int sigpending(sigset_t *user_set)
+int sigpending (sigset_t *user_set)
 
 {
     pse51_sigset_t *set = user2pse51_sigset(user_set);
@@ -364,15 +395,9 @@ int sigpending(sigset_t *user_set)
     
     xnpod_check_context(XNPOD_THREAD_CONTEXT);
 
-    if (!set)
-	{
-        thread_set_errno(EINVAL);
-        return -1;
-	}
-
-    xnlock_get_irqsave(&nklock, s);    /* To prevent pthread_kill from modifying
-                                          blocked_received while we are reading.
-                                       */ 
+    /* Lock nklock, in order to prevent pthread_kill from modifying
+     * blocked_received while we are reading */
+    xnlock_get_irqsave(&nklock, s);  
 
     *set = pse51_current_thread()->blocked_received.mask;
 
@@ -421,12 +446,12 @@ int pthread_sigmask (int how, const sigset_t *user_set, sigset_t *user_oset)
 	    /* Mark as pending any signal which was received while
 	       blocked and is going to be unblocked. */
             andset(&unblocked, set, &cur->blocked_received.mask);
-            andnotset(&cur->sigmask, &cur->pending.mask, &unblocked);
+            nandset(&cur->sigmask, &cur->pending.mask, &unblocked);
 	    break;
 
 	case SIG_SETMASK:
 
-            andnotset(&unblocked, &cur->blocked_received.mask, set);
+            nandset(&unblocked, &cur->blocked_received.mask, set);
             cur->sigmask = *set;
 	    break;
 
@@ -440,7 +465,8 @@ int pthread_sigmask (int how, const sigset_t *user_set, sigset_t *user_oset)
     if (!isemptyset(&unblocked))
         {
         pse51_siginfo_t *si, *next = NULL;
-        int pending = 0;
+
+        cur->threadbase.signals = 0;
 
         while ((si = pse51_getsigq(&cur->blocked_received, &unblocked, &next)))
             {
@@ -450,15 +476,14 @@ int pthread_sigmask (int how, const sigset_t *user_set, sigset_t *user_oset)
             prio = sig < SIGRTMIN ? sig + SIGRTMAX : sig;
             addset(&cur->pending.mask, si->info.si_signo);
             insertpqf(&cur->pending.list, &si->link, prio);
-            pending = 1;
+            cur->threadbase.signals = 1;
 
             if (!next)
                 break;
             }
 
         /* Let pse51_dispatch_signals do the job. */
-        cur->threadbase.signals = pending;
-        if (pending)
+        if (cur->threadbase.signals)
             xnpod_schedule();
 	}
 
@@ -485,7 +510,7 @@ static int pse51_sigtimedwait_inner (const sigset_t *user_set,
 
     /* All signals in "set" must be blocked in order for sigwait to
        work reliably. */
-    andnotset(&non_blocked, set, &thread->sigmask);
+    nandset(&non_blocked, set, &thread->sigmask);
     if (!isemptyset(&non_blocked))
         return EINVAL;
 
@@ -552,8 +577,8 @@ int sigwait (const sigset_t *user_set, int *sig)
     return err;
 }
 
-int sigwaitinfo(const sigset_t *__restrict__ user_set,
-                siginfo_t *__restrict__ info)
+int sigwaitinfo (const sigset_t *__restrict__ user_set,
+                 siginfo_t *__restrict__ info)
 {
     siginfo_t loc_info;
     int err;
@@ -567,7 +592,7 @@ int sigwaitinfo(const sigset_t *__restrict__ user_set,
         }
     while (err == EINTR);
 
-    /* Sigwaitinfo does not have the same behaviour as sigwait, error are
+    /* Sigwaitinfo does not have the same behaviour as sigwait, errors are
        returned through errno. */
     if (err)
         {
@@ -578,9 +603,9 @@ int sigwaitinfo(const sigset_t *__restrict__ user_set,
     return 0;
 }
 
-int sigtimedwait(const sigset_t *__restrict__ user_set,
-                 siginfo_t *__restrict__ info,
-                 const struct timespec *__restrict__ timeout)
+int sigtimedwait (const sigset_t *__restrict__ user_set,
+                  siginfo_t *__restrict__ info,
+                  const struct timespec *__restrict__ timeout)
 {
     xnticks_t abs_timeout;
     int err;
@@ -631,6 +656,13 @@ static void pse51_dispatch_signals (xnsigmask_t sigs)
     while ((si = pse51_getsigq(&thread->pending, &thread->pending.mask, &next)))
         {
         struct sigaction *action = &actions[si->info.si_signo - 1];
+        siginfo_t info = si->info;
+
+        if (si->info.si_code == SI_TIMER)
+            pse51_timer_notified(si);
+
+        if (si->info.si_code == SI_QUEUE || si->info.si_code == SI_USER)
+            pse51_delete_siginfo(si);
 
         if (action->sa_handler != SIG_IGN)
             {
@@ -641,22 +673,16 @@ static void pse51_dispatch_signals (xnsigmask_t sigs)
             if (handler == SIG_DFL)
                 handler = pse51_default_handler;
 
-            if (si->info.si_code == SI_TIMER)
-                pse51_timer_notified(si);
-
             thread->sigmask = *user2pse51_sigset(&action->sa_mask);
 
             if (testbits(action->sa_flags, SA_ONESHOT))
                 action->sa_handler = SIG_DFL;
 
             if (!testbits(action->sa_flags, SA_SIGINFO) || handler == SIG_DFL)
-                handler(si->info.si_signo);
+                handler(info.si_signo);
             else
-                info_handler(si->info.si_signo, &si->info, NULL);
+                info_handler(info.si_signo, &info, NULL);
             }
-
-        if (si->info.si_code == SI_QUEUE || si->info.si_code == SI_USER)
-            pse51_delete_siginfo(si);
 
         if (!next)
             break;
@@ -670,60 +696,55 @@ static void pse51_dispatch_signals (xnsigmask_t sigs)
 
 #ifdef __KERNEL__
 /* The way signals are handled for shadows has not much in common with the way
-   they are handled for kernel-space threads. We hence use two functions. */
+   they are handled for kernel-space threads. We hence use a different
+   function. */
 static void pse51_dispatch_shadow_signals (xnsigmask_t sigs)
 {
-    pse51_siginfo_t *si, *next = NULL;
-    struct task_struct *task;
-    xnpholder_t *holder;
-    xnpqueue_t pending;
+    pse51_siginfo_t *si;
     pthread_t thread;
     spl_t s;
 
-    initpq(&pending, xnqueue_up, 1);
+    thread = pse51_current_thread();
+    
+    __setbits(thread->threadbase.status, XNASDI);
+
+    /* POSIX shadow signals pong: to get the signals dispatch function executed,
+       we migrated the shadow to primary mode, we are going to migrate back to
+       secondary mode in order to get the signals delivered by Linux. */
+    xnshadow_relax(1);
 
     xnlock_get_irqsave(&nklock, s);
     
-    thread = pse51_current_thread();
-    
+    thread->threadbase.signals = 0;
+
     while ((si = pse51_getsigq(&thread->pending,
                                &thread->pending.mask,
-                               &next)))
+                               NULL)))
         {
-        insertpqf(&pending, &si->link, 0);
-        if (!next)
-            break;
-        }
-    
-    xnlock_put_irqrestore(&nklock, s);
-    
-    __setbits(thread->threadbase.status, XNASDI);
-    
-    xnshadow_relax(1);
-    
-    task = xnthread_user_task(&thread->threadbase);
-    
-    while ((holder = getpq(&pending)))
-        {
-        pse51_siginfo_t *si = link2siginfo(holder);
-        
+        siginfo_t info = si->info;
+        spl_t ignored;
+
         if (si->info.si_code == SI_TIMER)
-            {
-            spl_t s;
-
-            xnlock_get_irqsave(&nklock, s);
             pse51_timer_notified(si);
-            xnlock_put_irqrestore(&nklock, s);
-            }
-
-        send_sig_info(si->info.si_signo, &si->info, task);
         
         if (si->info.si_code == SI_QUEUE || si->info.si_code == SI_USER)
             pse51_delete_siginfo(si);
+
+        /* Release the big lock, before calling a function which may
+           reschedule. */
+        xnlock_clear_irqon(&nklock);
+
+        send_sig_info(info.si_signo, &info, current);
+
+        xnlock_get_irqsave(&nklock, ignored);
+
+        thread->threadbase.signals = 0;
         }
-    
+
+    xnlock_put_irqrestore(&nklock, s);
+
     __clrbits(thread->threadbase.status, XNASDI);
-    
+
     return;
 }
 #endif /* __KERNEL__ */
@@ -753,6 +774,28 @@ void pse51_signal_init_thread (pthread_t newthread, const pthread_t parent)
     newthread->threadbase.asrimask = 0;
 }
 
+/* Unqueue, and free any pending siginfo structure. Assume we are called nklock
+   locked, IRQ off. */
+void pse51_signal_cleanup_thread (pthread_t thread)
+{
+    pse51_sigqueue_t *queue = &thread->pending;
+    pse51_siginfo_t *si;
+
+    while (queue)
+        {
+        while ((si = pse51_getsigq(queue, &queue->mask, NULL)))
+            {
+            if (si->info.si_code == SI_TIMER)
+                pse51_timer_notified(si);
+            
+            if (si->info.si_code == SI_QUEUE || si->info.si_code == SI_USER)
+                pse51_delete_siginfo(si);
+            }
+
+        queue = (queue == &thread->pending ? &thread->blocked_received : NULL);
+        }
+}
+
 void pse51_signal_pkg_init (void)
 
 {
@@ -763,12 +806,25 @@ void pse51_signal_pkg_init (void)
     for (i = 0; i < PSE51_SIGQUEUE_MAX; i++)
         pse51_delete_siginfo(&pse51_infos_pool[i]);
 
-    for (i = 0; i < SIGRTMAX; i++)
+    for (i = 1; i <= SIGRTMAX; i++)
 	{
-        actions[i].sa_handler = SIG_DFL;
-        emptyset(user2pse51_sigset(&actions[i].sa_mask));
-        actions[i].sa_flags = 0;
+        actions[i-1].sa_handler = SIG_DFL;
+        emptyset(user2pse51_sigset(&actions[i-1].sa_mask));
+        actions[i-1].sa_flags = 0;
 	}
+}
+
+void pse51_signal_pkg_cleanup (void)
+
+{
+#ifdef CONFIG_RTAI_OPT_DEBUG
+    int i;
+
+    for (i = 0; i < PSE51_SIGQUEUE_MAX; i++)
+        if (pse51_infos_pool[i].info.si_signo)
+            xnprintf("Posix siginfo structure %p was not freed, freeing now.\n",
+                     &pse51_infos_pool[i].info);
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 }
 
 static void pse51_default_handler (int sig)
@@ -789,6 +845,7 @@ EXPORT_SYMBOL(pthread_kill);
 EXPORT_SYMBOL(pthread_sigmask);
 EXPORT_SYMBOL(pse51_sigaction);
 EXPORT_SYMBOL(pse51_sigqueue);
+
 EXPORT_SYMBOL(sigpending);
 EXPORT_SYMBOL(sigwait);
 EXPORT_SYMBOL(sigwaitinfo);

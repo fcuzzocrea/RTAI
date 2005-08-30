@@ -445,6 +445,8 @@ void xnpod_rotate_readyq(int prio);
 
 void xnpod_schedule(void);
 
+void xnpod_dispatch_signals(void);
+
 static inline void xnpod_lock_sched (void)
 {
     /* Don't swap these two lines... */

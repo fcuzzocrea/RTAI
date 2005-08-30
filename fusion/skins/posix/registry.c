@@ -63,7 +63,7 @@ int pse51_reg_pkg_init (unsigned buckets_count, unsigned maxfds)
     pse51_reg.maxfds = maxfds;
     pse51_reg.mapsz = mapsize;
 
-    /* Initialize fds map. Bit set to 1 means descriptor free. */
+    /* Initialize fds map. Bit set means "descriptor free". */
     for(i = 0; i < maxfds / BITS_PER_LONG; i++)
         pse51_reg.fdsmap[i] = ~0;
     if(maxfds % BITS_PER_LONG)
@@ -72,15 +72,28 @@ int pse51_reg_pkg_init (unsigned buckets_count, unsigned maxfds)
     return 0;
 }
 
-
 void pse51_reg_pkg_cleanup (void)
 {
     unsigned i;
-    /* FIXME: print the non deallocated descriptors. */
-
     for(i = 0; i < pse51_reg.maxfds; i++)
         if(pse51_reg.descs[i])
+            {
+#ifdef CONFIG_RTAI_OPT_DEBUG
+            xnprintf("Posix descriptor %d was not destroyed, destroying now.\n",
+                     i);
+#endif /* CONFIG_RTAI_OPT_DEBUG */
             pse51_desc_destroy(pse51_reg.descs[i]);
+            }
+
+#ifdef CONFIG_RTAI_OPT_DEBUG
+    for (i = 0; i < pse51_reg.buckets_count; i++)
+        {
+        pse51_node_t *node;
+        for (node = pse51_reg.node_buckets[i]; node; node = node->next)
+            xnprintf("Posix node \"%s\" was not unlinked, NOT unlinking now.\n",
+                     node->name);
+        }
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 
     xnfree(pse51_reg.node_buckets);
 }
@@ -222,8 +235,8 @@ int pse51_node_get(pse51_node_t **nodep,
             return err;
         
         node = *node_link;
-    
-        if (node && (oflags & (O_CREAT | O_EXCL)))
+
+        if (node && (oflags & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL))
             return EEXIST;
 
         if (!node && !(oflags & O_CREAT))

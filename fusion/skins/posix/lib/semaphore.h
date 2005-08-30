@@ -19,6 +19,7 @@
 #ifndef _RTAI_POSIX_SEMAPHORE_H
 #define _RTAI_POSIX_SEMAPHORE_H
 
+#include <fcntl.h>              /* For sem_open flags. */
 #include_next <semaphore.h>
 
 union __fusion_semaphore {

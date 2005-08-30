@@ -9,6 +9,9 @@ sem_post
 sem_wait
 sem_trywait
 sem_getvalue
+sem_open
+sem_close
+sem_unlink
 clock_getres
 clock_gettime
 clock_settime
@@ -56,3 +59,8 @@ accept
 getsockname
 getpeername
 shutdown
+timer_create
+timer_delete
+timer_settime
+timer_getoverrun
+timer_gettime

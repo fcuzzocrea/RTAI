@@ -2015,7 +2015,7 @@ void xnpod_deactivate_rr (void)
  * asynchronous service routine (ASR) if any.
  */
 
-static void xnpod_dispatch_signals (void)
+void xnpod_dispatch_signals (void)
 
 {
     xnthread_t *thread = xnpod_current_thread();

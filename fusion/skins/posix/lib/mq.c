@@ -32,8 +32,8 @@ mqd_t __wrap_mq_open (const char *name,
     struct mq_attr *attr = NULL;
     mode_t mode = 0;
     va_list ap;
-    mqd_t q;
     int err;
+    int q;
 
     if ((oflags & O_CREAT) != 0)
 	{
@@ -41,21 +41,21 @@ mqd_t __wrap_mq_open (const char *name,
 	mode = va_arg(ap, int); /* unused */
 	attr = va_arg(ap, struct mq_attr *);
 	va_end(ap);
-	}
+        }
+    
+    q = XENOMAI_SKINCALL4(__pse51_muxid,
+                          __pse51_mq_open,
+                          name,
+                          oflags,
+                          mode,
+                          attr);
 
-    err = XENOMAI_SKINCALL5(__pse51_muxid,
-			    __pse51_mq_open,
-			    &q,
-			    name,
-			    oflags,
-			    mode,
-			    attr);
-    if (!err)
-	return q;
+    if (q >= 0)
+	return (mqd_t) q;
 
-    errno = -err;
+    errno = -q;
 
-    return (mqd_t)-1;
+    return (mqd_t) -1;
 }
 
 int __wrap_mq_close (mqd_t q)
@@ -64,7 +64,7 @@ int __wrap_mq_close (mqd_t q)
 
     err = XENOMAI_SKINCALL1(__pse51_muxid,
 			    __pse51_mq_close,
-			    &q);
+			    q);
     if (!err)
 	return 0;
 
@@ -95,7 +95,7 @@ int __wrap_mq_getattr (mqd_t q,
 
     err = XENOMAI_SKINCALL2(__pse51_muxid,
 			    __pse51_mq_getattr,
-			    &q,
+			    q,
 			    attr);
     if (!err)
 	return 0;
@@ -113,7 +113,7 @@ int __wrap_mq_setattr (mqd_t q,
 
     err = XENOMAI_SKINCALL3(__pse51_muxid,
 			    __pse51_mq_setattr,
-			    &q,
+			    q,
 			    attr,
 			    oattr);
     if (!err)
@@ -133,7 +133,7 @@ int __wrap_mq_send (mqd_t q,
 
     err = XENOMAI_SKINCALL4(__pse51_muxid,
 			    __pse51_mq_send,
-			    &q,
+			    q,
 			    buffer,
 			    len,
 			    prio);
@@ -155,7 +155,7 @@ int __wrap_mq_timedsend (mqd_t q,
 
     err = XENOMAI_SKINCALL5(__pse51_muxid,
 			    __pse51_mq_timedsend,
-			    &q,
+			    q,
 			    buffer,
 			    len,
 			    prio,
@@ -178,11 +178,11 @@ ssize_t __wrap_mq_receive (mqd_t q,
 
     err = XENOMAI_SKINCALL4(__pse51_muxid,
 			    __pse51_mq_receive,
-			    &q,
+			    q,
 			    buffer,
 			    &rlen,
 			    prio);
-    if (err != -1)
+    if (!err)
 	return rlen;
 
     errno = -err;
@@ -201,12 +201,12 @@ ssize_t __wrap_mq_timedreceive (mqd_t q,
 
     err = XENOMAI_SKINCALL5(__pse51_muxid,
 			    __pse51_mq_timedreceive,
-			    &q,
+			    q,
 			    buffer,
 			    &rlen,
 			    prio,
 			    timeout);
-    if (err != -1)
+    if (!err)
 	return rlen;
 
     errno = -err;

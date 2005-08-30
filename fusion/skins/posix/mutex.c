@@ -19,7 +19,7 @@
 #include <posix/mutex.h>
 
 #define link2mutex(laddr) \
-((pthread_mutex_t *)(((char *)laddr)-(int)(&((pthread_mutex_t *)0)->link)))
+    ((pthread_mutex_t *)(((char *)laddr) - offsetof(pthread_mutex_t, link)))
 
 
 static pthread_mutexattr_t default_attr;
@@ -52,7 +52,13 @@ void pse51_mutex_pkg_cleanup (void)
     xnlock_get_irqsave(&nklock, s);
 
     while ((holder = getheadq(&pse51_mutexq)) != NULL)
+        {
+#ifdef CONFIG_RTAI_OPT_DEBUG
+        xnprintf("Posix mutex %p was not destroyed, destroying now.\n",
+                 link2mutex(holder));
+#endif /* CONFIG_RTAI_OPT_DEBUG */
 	pse51_mutex_destroy_internal(link2mutex(holder));
+        }
 
     xnlock_put_irqrestore(&nklock, s);
 }

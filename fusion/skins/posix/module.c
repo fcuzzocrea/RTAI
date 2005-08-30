@@ -54,9 +54,9 @@ static void pse51_shutdown(int xtype)
     xnpod_stop_timer();
 
     pse51_thread_pkg_cleanup();
-/*     pse51_timer_pkg_cleanup(); */
+    pse51_timer_pkg_cleanup();
 /*     pse51_intr_pkg_cleanup(); */
-    pse51_tsd_cleanup();
+    pse51_tsd_pkg_cleanup();
     pse51_cond_pkg_cleanup();
     pse51_sem_pkg_cleanup();
     pse51_mutex_pkg_cleanup();
@@ -65,6 +65,8 @@ static void pse51_shutdown(int xtype)
     xnfusion_detach();
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
     pse51_reg_pkg_cleanup();
+    pse51_mq_pkg_cleanup();
+    pse51_signal_pkg_cleanup();
 
     xnpod_shutdown(xtype);
 }
@@ -124,7 +126,7 @@ int __fusion_skin_init(void)
     pse51_signal_pkg_init();
     pse51_mutex_pkg_init();
     pse51_sem_pkg_init();
-    pse51_tsd_init();
+    pse51_tsd_pkg_init();
     pse51_cond_pkg_init();
     pse51_mq_pkg_init();
     pse51_intr_pkg_init();

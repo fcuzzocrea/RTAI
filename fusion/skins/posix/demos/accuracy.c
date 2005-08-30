@@ -1,18 +1,23 @@
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+#include <errno.h>
+#include <fcntl.h>
+
 #include <sys/mman.h>
 #include <sys/time.h>
-#include <time.h>
-#include <stdio.h>
 #include <getopt.h>
 #include <signal.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <string.h>
-#include <stdlib.h>
 #include <semaphore.h>
+
+#define SEMB_NAME "/semB"
 
 static int sampling_period = SPERIOD;
 
-static sem_t semA, semB;
+static sem_t semA;
 
 suseconds_t t0, t1, t2, tschedmin = 99999999, tschedmax = -99999999,
                         tsleepmin = 99999999, tsleepmax = -99999999;
@@ -32,18 +37,26 @@ void *threadA (void *arg)
 {
     struct sched_param param = { .sched_priority = 98 };
     struct timespec ts;
+    sem_t *semB;
+
+    if ((semB = sem_open(SEMB_NAME, O_CREAT, 0, 0)) == SEM_FAILED)
+        {
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+        }
 
     pthread_setschedparam(pthread_self(),SCHED_FIFO,&param);
 
     for (;;)
 	{
-        sem_wait(&semA);
+        while (sem_wait(&semA) == -1 && errno == EINTR)
+            ;
 	ts.tv_sec = 0;
 	ts.tv_nsec = sampling_period * 1000;
         get_time_us(&t0);
 	clock_nanosleep(CLOCK_MONOTONIC,0,&ts,NULL);
         get_time_us(&t1);
-	sem_post(&semB);
+	sem_post(semB);
 	}
 
     pthread_exit(NULL);
@@ -54,6 +67,13 @@ void *threadB (void *arg)
 {
     struct sched_param param = { .sched_priority = 99 };
     suseconds_t dt;
+    sem_t *semB;
+
+    if ((semB = sem_open(SEMB_NAME, O_CREAT, 0, 0)) == SEM_FAILED)
+        {
+        perror("sem_open");
+        exit(EXIT_FAILURE);
+        }
 
     pthread_setschedparam(pthread_self(),SCHED_FIFO,&param);
 
@@ -62,7 +82,8 @@ void *threadB (void *arg)
     for (;;)
 	{
 	sem_post(&semA);
-	sem_wait(&semB);
+	while (sem_wait(semB) == -1 && errno == EINTR)
+            ;
         get_time_us(&t2);
 	
 	dt = t2 - t1;
@@ -85,6 +106,23 @@ void *threadB (void *arg)
     pthread_exit(NULL);
 }
 
+void cleanup(void)
+{
+    /* This is more a test than an example, in your application "sem_open" semB
+       only once and make it visible from threaA(), threadB() and cleanup(). */
+    sem_t *semB = sem_open(SEMB_NAME, 0);
+
+    if (semB != SEM_FAILED)
+        {
+        sem_close(semB);
+        sem_close(semB);
+        sem_close(semB);
+        sem_unlink(SEMB_NAME);
+        }
+
+    sem_destroy(&semA);
+}
+
 void cleanup_upon_sig(int sig __attribute__((unused)))
 
 {
@@ -99,7 +137,8 @@ void cleanup_upon_sig(int sig __attribute__((unused)))
     printf("   semaphore wakeup: switch min = %ld us, switch max = %ld us\n",
 	   tschedmin,tschedmax);
 
-    exit(0);
+    /* exit will call cleanup, registered with atexit. */
+    exit(EXIT_SUCCESS);
 }
 
 int main (int argc, char **argv)
@@ -141,17 +180,13 @@ int main (int argc, char **argv)
 
     mlockall(MCL_CURRENT|MCL_FUTURE);
 
+    atexit(cleanup);
+    
     signal(SIGINT, cleanup_upon_sig);
     signal(SIGTERM, cleanup_upon_sig);
     signal(SIGHUP, cleanup_upon_sig);
 
     if (sem_init(&semA,0,0))
-        {
-        perror("sem_init");
-        exit(EXIT_FAILURE);
-        }
-
-    if (sem_init(&semB,0,0))
         {
         perror("sem_init");
         exit(EXIT_FAILURE);

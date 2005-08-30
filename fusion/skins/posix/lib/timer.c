@@ -26,8 +26,9 @@ int __wrap_timer_create (clockid_t clockid,
 			 const struct sigevent *__restrict__ evp,
 			 timer_t *__restrict__ timerid)
 {
-    int err = -XENOMAI_SKINCALL2(__pse51_muxid,
+    int err = -XENOMAI_SKINCALL3(__pse51_muxid,
                                  __pse51_timer_create,
+                                 clockid,
                                  evp,
                                  timerid);
 

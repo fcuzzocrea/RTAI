@@ -20,6 +20,7 @@
 #include <posix/thread.h>
 #include <posix/cancel.h>
 #include <posix/signal.h>
+#include <posix/timer.h>
 #include <posix/tsd.h>
 
 xnticks_t pse51_time_slice;
@@ -58,6 +59,8 @@ static void thread_delete_hook (xnthread_t *xnthread)
     pse51_cancel_cleanup_thread(thread);
     pse51_tsd_cleanup_thread(thread);
     pse51_mark_deleted(thread);
+    pse51_signal_cleanup_thread(thread);
+    pse51_timer_cleanup_thread(thread);
 
     switch (thread_getdetachstate(thread))
 	{
@@ -161,6 +164,7 @@ int pthread_create (pthread_t *tid,
     pse51_cancel_init_thread(thread);
     pse51_signal_init_thread(thread, cur);
     pse51_tsd_init_thread(thread);
+    pse51_timer_init_thread(thread);
     
     if (thread->attr.policy == SCHED_RR)
 	{
@@ -395,8 +399,15 @@ void pse51_thread_pkg_cleanup (void)
             pse51_thread_abort(thread, NULL);
 	    }
 	else
+            {
             /* Remaining TCB (joinable thread, which was never joined). */
+#ifdef CONFIG_RTAI_OPT_DEBUG
+            xnprintf("Posix thread %p(\"%s\") was created joinable, died, but"
+                     " was not joined, destroying it now.\n",
+                     thread, thread->threadbase.name);
+#endif /* CONFIG_RTAI_OPT_DEBUG */
             thread_destroy(thread);
+            }
 	}
 
     xnlock_put_irqrestore(&nklock, s);

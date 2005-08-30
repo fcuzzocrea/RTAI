@@ -363,12 +363,6 @@ int sem_close(sem_t *sem)
         goto error;
         }
 
-    if (xnsynch_nsleepers(&sem->synchbase) > 0)
-	{
-        err = EBUSY;
-        goto error;
-	}
-
     named_sem = sem2named_sem(sem);
     
     err = pse51_node_put(&named_sem->nodebase);
@@ -442,7 +436,18 @@ void pse51_sem_pkg_cleanup (void)
     xnlock_get_irqsave(&nklock, s);
 
     while ((holder = getheadq(&pse51_semq)) != NULL)
-        sem_destroy_internal(link2sem(holder));
+        {
+        sem_t *sem = link2sem(holder);
+#ifdef CONFIG_RTAI_OPT_DEBUG
+        if (sem->magic == PSE51_SEM_MAGIC)
+            xnprintf("Posix semaphore %p was not destroyed, destroying now.\n",
+                     sem);
+        else
+            xnprintf("Posix semaphore \"%s\" was not destroyed, destroying"
+                     " now.\n", sem2named_sem(sem)->nodebase.name);
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+        sem_destroy_internal(sem);
+        }
 
     xnlock_put_irqrestore(&nklock, s);
 }

@@ -441,8 +441,10 @@ int xnshadow_harden (void)
 
     xnthread_inc_psw(thread);	/* Account for primary mode switch. */
 
-    xnltt_log_event(rtai_ev_primary,thread->name);
+    if (xnthread_signaled_p(thread))
+        xnpod_dispatch_signals();
 
+    xnltt_log_event(rtai_ev_primary,thread->name);
     xnlock_clear_irqon(&nklock);
 
     /* "current" is now running into the RTAI domain. */
@@ -1722,4 +1724,5 @@ EXPORT_SYMBOL(xnshadow_signal_completion);
 EXPORT_SYMBOL(xnshadow_unmap);
 EXPORT_SYMBOL(xnshadow_unregister_interface);
 EXPORT_SYMBOL(xnshadow_wait_barrier);
+EXPORT_SYMBOL(xnshadow_suspend);
 EXPORT_SYMBOL(nkgkptd);

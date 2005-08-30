@@ -128,34 +128,26 @@ int __wrap_sem_getvalue (sem_t *sem, int *sval)
 sem_t *__wrap_sem_open (const char *name, int oflags, ...)
 {
     unsigned long handle;
+    unsigned value = 0;
+    mode_t mode = 0;
+    va_list ap;
     int err;
 
-    if(!(oflags & O_CREAT))
-        err = -XENOMAI_SKINCALL3(__pse51_muxid,
-                                 __pse51_sem_open,
-                                 &handle,
-                                 name,
-                                 oflags);
-    else
+    if((oflags & O_CREAT))
         {
-        unsigned value;
-        mode_t mode;
-        va_list ap;
-
         va_start(ap, oflags);
         mode = va_arg(ap, int);
         value = va_arg(ap, unsigned);
         va_end(ap);
-
-        err = -XENOMAI_SKINCALL5(__pse51_muxid,
-                                 __pse51_sem_open,
-                                 &handle,
-                                 name,
-                                 oflags,
-                                 mode,
-                                 value);
         }
 
+    err = -XENOMAI_SKINCALL5(__pse51_muxid,
+                             __pse51_sem_open,
+                             &handle,
+                             name,
+                             oflags,
+                             mode,
+                             value);
     if (!err)
         return (sem_t *) handle;
 

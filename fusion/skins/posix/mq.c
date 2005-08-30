@@ -29,7 +29,7 @@ struct pse51_mq {
     pse51_node_t nodebase;
 
 #define node2mq(naddr) \
-    ((pse51_mq_t *)((char *)(naddr) - (int)(&((pse51_mq_t *)0)->nodebase)))
+    ((pse51_mq_t *) (((char *)naddr) - offsetof(pse51_mq_t, nodebase)))
 
     unsigned long flags;
 
@@ -40,21 +40,24 @@ struct pse51_mq {
     xnqueue_t avail;
 
 #define synch2mq(saddr) \
-    ((pse51_mq_t *)((char *)(saddr) - (int)(&((pse51_mq_t *)0)->synchbase)))
+    ((pse51_mq_t *) (((char *)saddr) - offsetof(pse51_mq_t, synchbase)))
 
     struct mq_attr attr;
 
     xnholder_t link;            /* link in mqq */
+
+#define link2mq(laddr) \
+    ((pse51_mq_t *) (((char *)laddr) - offsetof(pse51_mq_t, link)))
 };
 
 typedef struct pse51_mq pse51_mq_t;
 
 typedef struct pse51_msg {
-    xnpholder_t holder;
+    xnpholder_t link;
     size_t len;
 
 #define link2msg(laddr) \
-    ((pse51_msg_t *)((char *)(laddr) - (int)(&((pse51_msg_t *)0)->holder)))
+    ((pse51_msg_t *)(((char *)laddr) - offsetof(pse51_msg_t, link)))
     char data[0];
 } pse51_msg_t;
 
@@ -80,7 +83,7 @@ pse51_msg_t *pse51_mq_msg_alloc(pse51_mq_t *mq)
 
 void pse51_mq_msg_free(pse51_mq_t *mq, pse51_msg_t *msg)
 {
-    xnholder_t *holder = (xnholder_t *) (&msg->holder);
+    xnholder_t *holder = (xnholder_t *) (&msg->link);
     inith(holder);
     prependq(&mq->avail, holder); /* For earliest re-use of the block. */
 }
@@ -92,7 +95,7 @@ int pse51_mq_init(pse51_mq_t *mq, const struct mq_attr *attr)
 
     if(!attr->mq_maxmsg)
         return EINVAL;
-    
+
     msgsize = attr->mq_msgsize + sizeof(pse51_msg_t);
 
     /* Align msgsize on natural boundary. */
@@ -244,7 +247,7 @@ static int pse51_mq_trysend(pse51_desc_t *desc,
 
         memcpy(&msg->data[0], buffer, len);
         msg->len = len;
-        insertpqf(&mq->queued, &msg->holder, prio);
+        insertpqf(&mq->queued, &msg->link, prio);
         }
 
     if(reader)
@@ -556,7 +559,7 @@ mqd_t mq_open(const char *name, int oflags, ...)
 
     inith(&mq->link);
     appendq(&pse51_mqq, &mq->link);
-    
+
     /* Whether found or created, here we have a valid message queue. */
   got_mq:
     err = pse51_desc_create(&desc, &mq->nodebase);
@@ -674,6 +677,27 @@ int pse51_mq_pkg_init(void)
 {
     initq(&pse51_mqq);
     return 0;
+}
+
+void pse51_mq_pkg_cleanup(void)
+{
+    xnholder_t *holder;
+
+    while ((holder = getheadq(&pse51_mqq)))
+        {
+        pse51_mq_t *mq = link2mq(holder);
+        pse51_node_t *node;
+#ifdef CONFIG_RTAI_OPT_DEBUG
+        xnprintf("Posix message queue %s was not unlinked, unlinking now.\n",
+                 mq->nodebase.name);
+#endif /* CONFIG_RTAI_OPT_DEBUG */
+        pse51_node_remove(&node, mq->nodebase.name, PSE51_MQ_MAGIC);
+        if(node == &mq->nodebase)
+            {
+            pse51_mq_destroy(mq);
+            xnfree(mq);
+            }
+        }
 }
 
 EXPORT_SYMBOL(mq_open);

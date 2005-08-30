@@ -29,9 +29,16 @@ struct pse51_key {
     pse51_key_destructor_t destructor;
     xnholder_t link;            /* link in the list of free keys or
                                    destructors. */
-#define link2key(laddr) (!laddr ? NULL : \
-((pthread_key_t) (((void *)laddr) - (int)(&((pthread_key_t)0)->link))))
+#define link2key(laddr) ({                                              \
+        void *_laddr = laddr;                                           \
+        (!_laddr                                                        \
+         ? NULL :                                                       \
+         ((pthread_key_t) (((void *)_laddr) - offsetof(struct pse51_key, \
+                                                       link))));        \
+})
+
 };
+    
 
 static xnqueue_t free_keys,
                  valid_keys;
@@ -220,14 +227,14 @@ void pse51_tsd_cleanup_thread (pthread_t thread)
     xnlock_put_irqrestore(&nklock, s);
 }
 
-void pse51_tsd_init (void)
+void pse51_tsd_pkg_init (void)
 
 {
     initq(&free_keys);
     initq(&valid_keys);    
 }
 
-void pse51_tsd_cleanup (void)
+void pse51_tsd_pkg_cleanup (void)
 
 {
     pthread_key_t key;

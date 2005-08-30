@@ -5,4 +5,6 @@
 
 int pse51_mq_pkg_init(void);
 
+void pse51_mq_pkg_cleanup(void);
+
 #endif /* POSIX_MQ_H */

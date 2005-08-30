@@ -1,4 +1,32 @@
+2005-08-30  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/demos/accuracy.c: Use both sem_open and sem_init.
+
+	* skins/posix/timer.c: Conform to POSIX for overrun handling.
+
+2005-08-29  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/demos/satch.c: Add the satch example, as a demo of
+	the timer_* and mq_* functions.
+
+	* skins/posix/signal.c (pse51_signal_cleanup_thread): Collect the
+	siginfo structs queued to a dying thread. 
+	(pse51_dispatch_shadow_signals): Avoid storing siginfo structs on
+	temporary list, in order to avoid leaking these structs.
+
+	* skins/posix/*.c (*_pkg_cleanup): Noisy gargage collection,
+	when debug is activated.
+
 2005-08-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/signal.c (pse51_sigqueue_inner): Call
+	xnshadow_suspend to cause migration of the target thread to
+	primary mode, in order to get the signals dispatch function
+	called;
+
+	* nucleus/shadow.c (xnshadow_harden): Dispatch signals when
+	hardening a thread. Export "xnshadow_suspend" for use by the POSIX
+	skin.
 
 	* include/nucleus/asm-i386/syscall.h (__xn_range_ok): Same meaning
 	as on other arches.

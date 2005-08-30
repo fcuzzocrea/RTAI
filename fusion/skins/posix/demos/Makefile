@@ -19,7 +19,9 @@ LDFLAGS_RT:= $(shell $(RTAI_CONFIG) --posix-ldflags)
 # rtai_nucleus.ko + rtai_posix.ko modules to be loaded to run the
 # accuracy_rt test.
 
-all: accuracy accuracy_rt
+EXES = accuracy accuracy_rt satch_rt
+
+all: $(EXES)
 
 accuracy: accuracy.c
 	$(CC) $(CFLAGS_STD) $< -o $@ $(LDFLAGS_STD)
@@ -27,5 +29,8 @@ accuracy: accuracy.c
 accuracy_rt: accuracy.c
 	$(CC) $(CFLAGS_RT) $< -o $@ $(LDFLAGS_RT)
 
+satch_rt: satch.c
+	$(CC) $(CFLAGS_RT) $< -o $@ $(LDFLAGS_RT)
+
 clean:
-	rm -f accuracy accuracy_rt
+	$(RM) $(EXES)

@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
 	polls[1].fd = fifo;
 
 	args[0] = GET_PARAMS;
-	rtai_srq(srq, (unsigned int)args);
+	rtai_srq(srq, (unsigned long)args);
 	read(fifo, &params, sizeof(params));
 	printf("\n*** NUMBER OF REQUESTS: %d. ***\n", ncommands);
 
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
 
 			case 'r': {
 				args[0] = CAL_8254;
-			 	printf("\n*** '#define SETUP_TIME_8254 %lu', IN USE %lu ***\n\n", (unsigned long) rtai_srq(srq, (unsigned int)args), params.setup_time_8254);
+			 	printf("\n*** '#define SETUP_TIME_8254 %lu', IN USE %lu ***\n\n", (unsigned long) rtai_srq(srq, (unsigned long)args), params.setup_time_8254);
 				break;
 			}
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 				printf("\n*** KERNEL SPACE LATENCY CALIBRATION, wait %lu seconds for it ... ***\n", args[2]);
 				args[2] = (1000000*args[2])/args[1];
 				args[1] *= 1000;
-				rtai_srq(srq, (unsigned int)args);
+				rtai_srq(srq, (unsigned long)args);
 				read(fifo, &average, sizeof(average));
 				average /= (int)args[2];
 			        if (params.mp) {
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 					printf("\n*** '#define LATENCY_8254 %d' (IN USE %lu)\n\n", (int)params.latency_8254 + average, params.latency_8254);
 				}
 				args[0] = END_KLATENCY;
-				rtai_srq(srq, (unsigned int)args);
+				rtai_srq(srq, (unsigned long)args);
 				break;
 			}
 
@@ -241,14 +241,14 @@ int main(int argc, char *argv[])
 				args[0] = FREQ_CAL;
 				args[1] = duration;
 				printf("\n->>> FREQ CALIB (PRINTING EVERY %lu SECONDS, press enter to end calibrating) <<<-\n\n", args[1]);
-				rtai_srq(srq, (unsigned int)args);
+				rtai_srq(srq, (unsigned long)args);
 				time = 0;
 				while (1) {
 					time += args[1];
 					if (poll(polls, 2, 1000*duration) > 0 &&polls[0].revents) {
 						getchar();
 						args[0] = END_FREQ_CAL;
-						rtai_srq(srq, (unsigned int)args);
+						rtai_srq(srq, (unsigned long)args);
 						if (command == 'c' || command == 'b') {
 				 			printf("\n*** '#define CPU_FREQ %lu', IN USE %lu ***\n\n", cpu_freq, params.cpu_freq);
 						}
@@ -280,14 +280,14 @@ int main(int argc, char *argv[])
 				printf("\n->>> INTERRUPT LATENCY CHECK (press enter to end check) <<<-\n\n");
 				args[1] *= 1000;
 				args[2] *= 1000;
-				rtai_srq(srq, (unsigned int)args);
+				rtai_srq(srq, (unsigned long)args);
 				while (1) {
 					int maxj;
 					if (poll(polls, 2, 100) > 0) {
 						if (polls[0].revents) {
 							getchar();
 							args[0] = END_BUS_CHECK;
-							rtai_srq(srq, (unsigned int)args);
+							rtai_srq(srq, (unsigned long)args);
 							break;
 						}
 						read(fifo, &maxj, sizeof(maxj));

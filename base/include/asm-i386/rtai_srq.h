@@ -30,7 +30,7 @@ static inline long long rtai_srq(int srq, unsigned long args)
 	return retval;
 }
 
-static inline int rtai_open_srq(unsigned int label)
+static inline int rtai_open_srq(unsigned long label)
 {
 	return (int)rtai_srq(0, label);
 }

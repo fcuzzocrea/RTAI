@@ -673,7 +673,7 @@ void rt_pend_linux_srq(unsigned srq);
 
 int rt_request_srq(unsigned label,
 		   void (*k_handler)(void),
-		   long long (*u_handler)(unsigned));
+		   long long (*u_handler)(unsigned long));
 
 int rt_free_srq(unsigned srq);
 

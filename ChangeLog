@@ -1,3 +1,7 @@
+2005-09-01  Pierangelo Masarati <masarati@aero.polimi.it>
+
+        * addons/fusion/*: first import of rtdm support
+
 2005-09-01  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/sched/sched.c: modified startup of RTAI proper kernel tasks.

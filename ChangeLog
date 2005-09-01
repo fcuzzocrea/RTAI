@@ -5,6 +5,8 @@
 2005-09-01  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/sched/sched.c: modified startup of RTAI proper kernel tasks.
+        * base/ipc/netrpc/netrpc.c: modified local mbx_send_if specific 
+	  support, used in async rpcing.
 
 2005-08-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 

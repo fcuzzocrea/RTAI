@@ -1,0 +1,21 @@
+includedir = $(prefix)/include/nucleus
+
+if CONFIG_X86
+ARCHDIR = asm-i386
+endif
+
+if CONFIG_X86_64
+ARCHDIR = asm-x86_64
+endif
+
+include_HEADERS = \
+		fusion.h \
+		heap.h \
+		pod.h \
+		shadow.h \
+		synch.h \
+		xn.h
+
+SUBDIRS = $(ARCHDIR)
+
+DISTCLEANFILES = asm

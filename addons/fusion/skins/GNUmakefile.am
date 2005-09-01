@@ -1,0 +1,9 @@
+OPTDIRS =
+
+if CONFIG_RTAI_SKIN_RTDM
+OPTDIRS += rtdm
+endif
+
+SUBDIRS = $(OPTDIRS)
+
+EXTRA_DIST = Kconfig

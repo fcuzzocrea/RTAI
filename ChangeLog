@@ -1,3 +1,7 @@
+2005-09-01  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/sched/sched.c: modified startup of RTAI proper kernel tasks.
+
 2005-08-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: modified inlined calls for more across

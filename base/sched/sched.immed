@@ -344,7 +344,11 @@ asmlinkage static void rt_startup(void(*rt_thread)(long), long data)
 	RT_TASK *rt_current = rt_smp_current[rtai_cpuid()];
 	rt_global_sti();
 	rt_current->exectime[1] = rdtsc();
+#if 1 
+	((void (*)(long))rt_current->max_msg_size[0])(rt_current->max_msg_size[1]);
+#else
 	rt_thread(data);
+#endif
 	rt_task_delete(rt_current);
 	rt_printk("LXRT: task %p returned but could not be delated.\n", rt_current); 
 }
@@ -412,6 +416,8 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	task->exectime[0] = task->exectime[1] = 0;
 	task->system_data_ptr = 0;
 
+	task->max_msg_size[0] = (long)rt_thread;
+	task->max_msg_size[1] = data;
 	init_arch_stack();
 
 	flags = rt_global_save_flags_and_cli();

@@ -311,7 +311,8 @@ include_HEADERS = \
 noinst_HEADERS = \
 	core.h \
 	device.h \
-	proc.h
+	proc.h \
+	syscall.h
 
 EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild Kconfig
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib

@@ -67,7 +67,8 @@ am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
 am__installdirs = "$(DESTDIR)$(includedir)"
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 am__noinst_HEADERS_DIST = cancel.h cond.h jhash.h mutex.h mq.h sem.h \
-	signal.h thread.h timer.h tsd.h internal.h syscall.h intr.h
+	signal.h thread.h timer.h tsd.h internal.h registry.h \
+	syscall.h intr.h
 HEADERS = $(include_HEADERS) $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -306,7 +307,7 @@ include_HEADERS = \
 	posix.h
 
 noinst_HEADERS = cancel.h cond.h jhash.h mutex.h mq.h sem.h signal.h \
-	thread.h timer.h tsd.h internal.h $(am__append_2)
+	thread.h timer.h tsd.h internal.h registry.h $(am__append_2)
 distfiles = syscall.c syscall.h intr.c intr.h
 EXTRA_DIST = $(distfiles) $(libmodule_SRC) doc Makefile.kbuild Kconfig demos
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib

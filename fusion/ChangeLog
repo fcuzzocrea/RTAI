@@ -1,3 +1,23 @@
+2005-08-31  Stéphane Fillod  <stephane.fillod@thomson.net>
+
+	* skins/compat/fifo.c (__fifo_pkg_init): fix missing init of flush
+	queue handles.
+
+2005-08-31  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/lib/init.c: Use INT_MAX as a default value for
+	__rtdm_fd_start, in order to have syscalls working even when RTDM
+	skin is not loaded.
+
+	* skins/posix/lib/rtdm.c (__wrap_accept): Handle return value
+	the way __wrap_open and __wrap_socket handle it.
+
+2005-08-31  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/lib/rtdm.c (__wrap_open, __wrap_socket): Divert the
+	syscall to Linux in case -ENOSYS is returned, which may happen if
+	the RTDM module is not loaded.
+
 2005-08-30  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/demos/accuracy.c: Use both sem_open and sem_init.

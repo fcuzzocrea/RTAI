@@ -128,10 +128,10 @@
 #define __xn_strncpy_from_user(task,dstP,srcP,n)    __strncpy_from_user(dstP,srcP,n)
 
 #define __xn_range_ok(task,addr,size) \
-        ((addr) <= (task)->thread.fs.seg \
-	 && ((size) == 0 || (size) - 1 <= (task)->thread.fs.seg - (addr)))
+        ((unsigned long)(addr) <= (task)->thread.fs.seg \
+	 && ((size) == 0 || (size) - 1 <= (task)->thread.fs.seg - (unsigned long)(addr)))
 
-#define __xn_access_ok(task,type,addr,size)  __xn_range_ok(task,(unsigned long)addr,size)
+#define __xn_access_ok(task,type,addr,size)  __xn_range_ok((task),(addr),(size))
 
 /* Purposedly used inlines and not macros for the following routines
    so that we don't risk spurious side-effects on the value arg. */

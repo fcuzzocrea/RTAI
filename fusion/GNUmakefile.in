@@ -780,6 +780,7 @@ reconfig xconfig gconfig mconfig menuconfig config oldconfig:
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	$(MAKE) -C $(top_builddir)/config/kconfig \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	-f @abs_srcdir@/config/kconfig/Makefile.kconfig distclean \
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	srctree=@abs_srcdir@ || :
+@CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@	$(RM) $(top_builddir)/symbols/*.mod
 
 install-data-local: .rtai_config
 	$(mkinstalldirs) $(DESTDIR)$(pkgdatadir)
@@ -825,15 +826,17 @@ echo '*** privileges.'; \
 	      $$sudo mknod -m 666 $$f c 150 $$n; \
 	   fi; \
 	done ; \
-	if test \! -c /dev/rtheap; then \
-	  $$sudo mknod -m 666 /dev/rtheap c 10 254; \
+	if test \! -c $(DESTDIR)/dev/rtheap; then \
+	  $$sudo mknod -m 666 $(DESTDIR)/dev/rtheap c 10 254; \
 	fi
 
 install-nodev:
 	$(MAKE) SUDO=false install
 
 uninstall-local:
-	$(RM) $(DESTDIR)$(pkgdatadir)/config-$(PACKAGE)-$(VERSION)
+	$(RM) $(DESTDIR)$(pkgdatadir)/config-$(PACKAGE)-$(VERSION) \
+	$(DESTDIR)$(prefix)/build $(DESTDIR)$(prefix)/source \
+	$(DESTDIR)$(prefix)/symbols
 
 .PHONY: reconfig xconfig gconfig mconfig menuconfig config oldconfig clean-if-reconfigured dev devices
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

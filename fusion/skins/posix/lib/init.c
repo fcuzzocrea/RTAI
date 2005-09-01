@@ -18,13 +18,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 #include <posix/posix.h>
 #include <posix/syscall.h>
 #include <rtdm/syscall.h>
 
 int __pse51_muxid = -1;
 int __rtdm_muxid  = -1;
-int __rtdm_fd_start;
+int __rtdm_fd_start = INT_MAX;
 
 static __attribute__((constructor)) void __init_rtai_interface(void)
 

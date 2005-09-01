@@ -10,4 +10,7 @@ include_HEADERS = \
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(includedir)
 	rm -f $(DESTDIR)$(includedir)/../asm
-	$(LN_S) asm-i386 $(DESTDIR)$(includedir)/../asm
+	$(LN_S) asm-ia64 $(DESTDIR)$(includedir)/../asm
+
+uninstall-local:
+	$(RM) $(DESTDIR)$(includedir)/../asm

@@ -48,7 +48,7 @@ int __wrap_open(const char *path, int oflag, ...)
                             oflag);
     if (ret >= 0)
         ret += __rtdm_fd_start;
-    else if (ret == -ENODEV) {
+    else if (ret == -ENODEV || ret == -ENOSYS) {
         va_list ap;
 
         va_start(ap, oflag);
@@ -83,7 +83,7 @@ int __wrap_socket(int protocol_family, int socket_type, int protocol)
                             protocol);
     if (ret >= 0)
         ret += __rtdm_fd_start;
-    else if (ret == -EAFNOSUPPORT) {
+    else if (ret == -EAFNOSUPPORT || ret == -ENOSYS) {
         ret = __real_socket(protocol_family, socket_type, protocol);
 
         if (ret >= __rtdm_fd_start) {
@@ -342,13 +342,24 @@ int __wrap_accept(int fd, struct sockaddr *addr, socklen_t *addrlen)
     if (fd >= __rtdm_fd_start) {
         struct _rtdm_getsockaddr_args args = {addr, addrlen};
 
-        return set_errno(XENOMAI_SKINCALL3(__rtdm_muxid,
-                                           __rtdm_ioctl,
-                                           fd - __rtdm_fd_start,
-                                           _RTIOC_ACCEPT,
-                                           &args));
-    } else
-        return __real_accept(fd, addr, addrlen);
+        fd = XENOMAI_SKINCALL3(__rtdm_muxid,
+                               __rtdm_ioctl,
+                               fd - __rtdm_fd_start,
+                               _RTIOC_ACCEPT,
+                               &args);
+
+        if (fd >= 0)
+            fd += __rtdm_fd_start;
+    } else {
+        fd = __real_accept(fd, addr, addrlen);
+
+        if (fd >= __rtdm_fd_start) {
+            __real_close(fd);
+            fd = -EMFILE;
+        }
+    }       
+
+    return set_errno(fd);
 }
 
 

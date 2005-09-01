@@ -38,7 +38,8 @@ noinst_HEADERS = \
 	thread.h \
 	timer.h \
 	tsd.h \
-	internal.h
+	internal.h \
+	registry.h
 
 if CONFIG_RTAI_OPT_FUSION
 libmodule_SRC += syscall.c intr.c

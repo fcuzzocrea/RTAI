@@ -32,7 +32,6 @@ mqd_t __wrap_mq_open (const char *name,
     struct mq_attr *attr = NULL;
     mode_t mode = 0;
     va_list ap;
-    int err;
     int q;
 
     if ((oflags & O_CREAT) != 0)

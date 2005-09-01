@@ -102,7 +102,13 @@ static int __fifo_output_handler (int minor,
 int __fifo_pkg_init (void)
 
 {
+    int i;
+
     __fifo_flush_apc = rthal_apc_alloc("fifo_flush",&__fifo_flush_handler,NULL);
+
+    for (i=0; i < CONFIG_RTAI_OPT_PIPE_NRDEV; i++) {
+	inith(&__fifo_table[i].link);
+    }
 
     if (__fifo_flush_apc < 0)
 	return __fifo_flush_apc;

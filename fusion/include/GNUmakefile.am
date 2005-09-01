@@ -1,5 +1,4 @@
-install-data-local:
-	$(INSTALL_HEADER) $(CONFIG_HEADER) $(DESTDIR)$(includedir)/rtai_config.h
+nodist_include_HEADERS=$(CONFIG_HEADER)
 
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 distclean-local:

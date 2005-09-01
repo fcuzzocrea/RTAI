@@ -21,7 +21,8 @@ include_HEADERS = \
 noinst_HEADERS = \
 	core.h \
 	device.h \
-	proc.h
+	proc.h \
+	syscall.h
 
 rtai_rtdm$(modext): @RTAI_KBUILD_ENV@
 rtai_rtdm$(modext): $(libmodule_SRC) FORCE

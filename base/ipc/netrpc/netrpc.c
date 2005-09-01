@@ -668,6 +668,8 @@ int rt_waiting_return(unsigned long node, int port)
 	return portslotp->task < 0 && !portslotp->sem.count;
 }
 
+#if 0
+
 static inline void mbx_send_if(MBX *mbx, void *sendmsg, int msg_size)
 {
 #define MOD_SIZE(indx) ((indx) < mbx->size ? (indx) : (indx) - mbx->size)
@@ -713,6 +715,121 @@ static inline void mbx_send_if(MBX *mbx, void *sendmsg, int msg_size)
 	}
 }
 
+#else
+
+static inline void mbx_signal(MBX *mbx)
+{
+	unsigned long flags;
+	RT_TASK *task;
+	int tosched;
+
+	flags = rt_global_save_flags_and_cli();
+	if ((task = mbx->waiting_task)) {
+		rem_timed_task(task);
+		task->blocked_on  = NOTHING;
+		task->prio_passed_to = mbx->waiting_task = NOTHING;
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			if (mbx->sndsem.type <= 0) {
+				RT_SCHEDULE(task, rtai_cpuid());
+				rt_global_restore_flags(flags);
+				return;
+			}
+			tosched = 1;
+			goto res;
+		}
+	}
+	tosched = 0;
+res:	if (mbx->sndsem.type > 0) {
+		DECLARE_RT_CURRENT;
+		int sched;
+		ASSIGN_RT_CURRENT;
+		mbx->owndby = 0;
+		if (rt_current->owndres & SEMHLF) {
+			--rt_current->owndres;
+		}
+		if (!rt_current->owndres) {
+			sched = renq_current(rt_current, rt_current->base_priority);
+		} else if (!(rt_current->owndres & SEMHLF)) {
+			int priority;
+			sched = renq_current(rt_current, rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority);
+		} else {
+			sched = 0;
+		}
+		if (rt_current->suspdepth) {
+			if (rt_current->suspdepth > 0) {
+				rt_current->state |= RT_SCHED_SUSPENDED;
+				rem_ready_current(rt_current);
+                        	sched = 1;
+			} else {
+				rt_task_delete(rt_current);
+			}
+		}
+		if (sched) {
+			if (tosched) {
+				RT_SCHEDULE_BOTH(task, cpuid);
+			} else {
+				rt_schedule();
+			}
+		} else if (tosched) {
+			RT_SCHEDULE(task, cpuid);
+		}
+	}
+	rt_global_restore_flags(flags);
+}
+
+#define MOD_SIZE(indx) ((indx) < mbx->size ? (indx) : (indx) - mbx->size)
+
+static inline int mbxput(MBX *mbx, char **msg, int msg_size)
+{
+	unsigned long flags;
+	int tocpy;
+
+	while (msg_size > 0 && mbx->frbs) {
+		if ((tocpy = mbx->size - mbx->lbyte) > msg_size) {
+			tocpy = msg_size;
+		}
+		if (tocpy > mbx->frbs) {
+			tocpy = mbx->frbs;
+		}
+		memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+		flags = rt_spin_lock_irqsave(&(mbx->lock));
+		mbx->frbs -= tocpy;
+		mbx->avbs += tocpy;
+		rt_spin_unlock_irqrestore(flags, &(mbx->lock));
+		msg_size -= tocpy;
+		*msg     += tocpy;
+		mbx->lbyte = MOD_SIZE(mbx->lbyte + tocpy);
+	}
+	return msg_size;
+}
+
+static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
+{
+	unsigned long flags;
+	RT_TASK *rt_current;
+
+	if (!mbx || mbx->magic != RT_MBX_MAGIC) {
+		return;
+	}
+
+	flags = rt_global_save_flags_and_cli();
+	rt_current = RT_CURRENT;
+	if (mbx->sndsem.count && msg_size <= mbx->frbs) {
+		mbx->sndsem.count = 0;
+		if (mbx->sndsem.type > 0) {
+			(mbx->sndsem.owndby = mbx->owndby = rt_current)->owndres += 2;
+		}
+		rt_global_restore_flags(flags);
+		mbxput(mbx, (char **)(&msg), msg_size);
+		mbx_signal(mbx);
+		rt_sem_signal(&mbx->sndsem);
+	}
+	rt_global_restore_flags(flags);
+}
+
+#endif
+
 unsigned long long rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space)
 {
 	char msg[MAX_MSG_SIZE];
@@ -729,7 +846,7 @@ unsigned long long rt_net_rpc(long fun_ext_timed, long type, void *args, int arg
 				if (decode) {
 					rsize = decode(portslotp, msg, rsize, RPC_RCV);
 				}
-				mbx_send_if(portslotp->mbx, msg, rsize); 
+				mbx_send_if(portslotp->mbx, msg, rsize);
 			}
 			portslotp->task = 1;
 		}

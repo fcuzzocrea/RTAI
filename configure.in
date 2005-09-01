@@ -719,6 +719,15 @@ AC_ARG_ENABLE(serial,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_SERIAL:-no})
 
+AC_MSG_CHECKING(for fusion support)
+AC_ARG_ENABLE(fusion,
+	[ --enable-fusion	Enable fusion support],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_FUSION=y ;;
+	*) unset CONFIG_RTAI_FUSION ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_FUSION:-no})
+
 AC_MSG_CHECKING(for testsuite)
 AC_ARG_ENABLE(testsuite,
 	[ --enable-testsuite	Build RTAI testsuite],
@@ -1113,6 +1122,8 @@ test \! x$CONFIG_RTAI_USI = x && AC_DEFINE(CONFIG_RTAI_USI,1,[Kconfig])
 test \! x$CONFIG_RTAI_WD = x && AC_DEFINE(CONFIG_RTAI_WD,1,[Kconfig])
 test \! x$CONFIG_RTAI_LEDS = x && AC_DEFINE(CONFIG_RTAI_LEDS,1,[Kconfig])
 test \! x$CONFIG_RTAI_SERIAL = x && AC_DEFINE(CONFIG_RTAI_SERIAL,1,[Kconfig])
+test \! x$CONFIG_RTAI_FUSION = x && AC_DEFINE(CONFIG_RTAI_FUSION,1,[Kconfig])
+test \! x$CONFIG_RTAI_SKIN_RTDM = x && AC_DEFINE(CONFIG_RTAI_SKIN_RTDM,1,[Kconfig])
 
 test x$CONFIG_RTAI_MATH = xy && AC_DEFINE(CONFIG_RTAI_MATH_BUILTIN,1,[Kconfig])
 test x$CONFIG_RTAI_BITS = xy && AC_DEFINE(CONFIG_RTAI_BITS_BUILTIN,1,[Kconfig])
@@ -1252,6 +1263,11 @@ dnl Non-core packages.
 AM_CONDITIONAL(CONFIG_RTAI_COMEDI_LXRT,[test x$CONFIG_RTAI_COMEDI_LXRT = xy])
 AM_CONDITIONAL(CONFIG_RTAI_CPLUSPLUS,[test x$CONFIG_RTAI_CPLUSPLUS = xy])
 AM_CONDITIONAL(CONFIG_RTAI_SERIAL,[test x$CONFIG_RTAI_SERIAL = xy])
+AM_CONDITIONAL(CONFIG_RTAI_FUSION,[test x$CONFIG_RTAI_FUSION = xy])
+	dnl Supported skins
+	AM_CONDITIONAL(CONFIG_RTAI_SKIN_RTDM,[test x$CONFIG_RTAI_SKIN_RTDM = xy])
+	dnl Supported drivers
+	AM_CONDITIONAL(CONFIG_RTAI_DRIVERS_16550A,[test x$CONFIG_RTAI_DRIVERS_16550A = xy])
 
 AM_CONDITIONAL(CONFIG_RTAI_LAB,[test x$CONFIG_RTAI_LAB = xy])
 AM_CONDITIONAL(CONFIG_RTAI_MVM,[test x$CONFIG_RTAI_MVM = xy])
@@ -1295,6 +1311,7 @@ if test x$CONFIG_KBUILD = x; then
    RTAI_KBUILD_TOP=
    RTAI_KBUILD_BOTTOM=
    RTAI_KBUILD_CLEAN=
+   RTAI_KBUILD_DISTCLEAN=
 else
    RTAI_MODULE_EXT=.ko
    RTAI_KBUILD_ENV='src2obj = $(patsubst %.$(1),%.o,$(filter %.$(1),$(call notdir,$(2))))'
@@ -1306,6 +1323,7 @@ else
 		    SUBDIRS=\$\$PWD M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) modules \
 		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
    RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
+   RTAI_KBUILD_DISTCLEAN='rm -Rf .tmp_versions'
 fi
 
 AC_MSG_CHECKING([for kernel module extension])
@@ -1415,6 +1433,9 @@ RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CXXFLAGS -D__IN_RTAI__"
 RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -D__IN_RTAI__"
 
 AC_CONFIG_LINKS(base/include/asm:base/include/asm-$RTAI_TARGET_ARCH)
+if test x$CONFIG_RTAI_FUSION = xy; then
+   AC_CONFIG_LINKS(addons/fusion/include/nucleus/asm:addons/fusion/include/nucleus/asm-$RTAI_TARGET_ARCH)
+fi
 
 if test x$CONFIG_RTAI_OLD_FASHIONED_BUILD = xy; then
    AC_CONFIG_LINKS(base/include/rtai_config.h:rtai_config.h)
@@ -1449,6 +1470,8 @@ if test x$CONFIG_KBUILD = xy; then
    AC_CONFIG_LINKS(base/sched/Makefile:base/sched/Makefile.kbuild)
    AC_CONFIG_LINKS(addons/serial/Makefile:addons/serial/Makefile.kbuild)
    AC_CONFIG_LINKS(addons/comedi/Makefile:addons/comedi/Makefile.kbuild)
+   AC_CONFIG_LINKS(addons/fusion/drivers/16550A/Makefile:addons/fusion/drivers/16550A/Makefile.kbuild)
+   AC_CONFIG_LINKS(addons/fusion/skins/rtdm/Makefile:addons/fusion/skins/rtdm/Makefile.kbuild)
    AC_CONFIG_LINKS(testsuite/kern/latency/Makefile:testsuite/kern/latency/Makefile.kbuild)
    AC_CONFIG_LINKS(testsuite/kern/preempt/Makefile:testsuite/kern/preempt/Makefile.kbuild)
    AC_CONFIG_LINKS(testsuite/kern/switches/Makefile:testsuite/kern/switches/Makefile.kbuild)
@@ -1490,6 +1513,7 @@ AC_SUBST(RTAI_KBUILD_TOP)
 AC_SUBST(RTAI_KBUILD_BOTTOM)
 AC_SUBST(RTAI_KBUILD_CMD)
 AC_SUBST(RTAI_KBUILD_CLEAN)
+AC_SUBST(RTAI_KBUILD_DISTCLEAN)
 
 AC_SUBST(CONFIG_RTAI_LINUXDIR)
 
@@ -1536,7 +1560,7 @@ AC_CONFIG_FILES([ \
 	base/leds/GNUmakefile \
 	])
 
-build_addons=$CONFIG_RTAI_CPLUSPLUS$CONFIG_RTAI_SERIAL$CONFIG_RTAI_COMEDI_LXRT
+build_addons=$CONFIG_RTAI_CPLUSPLUS$CONFIG_RTAI_COMEDI_LXRT$CONFIG_RTAI_SERIAL$CONFIG_RTAI_FUSION
 
 if test -d $srcdir/addons; then
   AC_CONFIG_FILES([ \
@@ -1544,6 +1568,16 @@ if test -d $srcdir/addons; then
        addons/cpp/GNUmakefile \
        addons/comedi/GNUmakefile \
        addons/serial/GNUmakefile \
+       addons/fusion/GNUmakefile \
+       addons/fusion/drivers/GNUmakefile \
+       addons/fusion/drivers/16550A/GNUmakefile \
+       addons/fusion/include/GNUmakefile \
+       addons/fusion/include/nucleus/GNUmakefile \
+       addons/fusion/include/nucleus/asm-i386/GNUmakefile \
+       addons/fusion/include/nucleus/asm-x86_64/GNUmakefile \
+       addons/fusion/skins/GNUmakefile \
+       addons/fusion/skins/rtdm/GNUmakefile \
+       addons/fusion/skins/rtdm/lib/GNUmakefile \
        ])
 elif test \! x$build_addons = x; then
      AC_MSG_ERROR([addons package is missing])

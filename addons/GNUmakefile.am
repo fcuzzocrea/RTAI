@@ -12,4 +12,8 @@ if CONFIG_RTAI_SERIAL
 OPTDIRS += serial
 endif
 
+if CONFIG_RTAI_FUSION
+OPTDIRS += fusion
+endif
+
 SUBDIRS = $(OPTDIRS)

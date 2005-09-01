@@ -37,6 +37,9 @@
 #undef CONFIG_RTAI_FPU_SUPPORT
 
 /* Kconfig */
+#undef CONFIG_RTAI_FUSION
+
+/* Kconfig */
 #undef CONFIG_RTAI_HAL_PREEMPT
 
 /* Host system alias */
@@ -164,6 +167,9 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_SHM_BUILTIN
+
+/* Kconfig */
+#undef CONFIG_RTAI_SKIN_RTDM
 
 /* Kconfig */
 #undef CONFIG_RTAI_TASKLETS

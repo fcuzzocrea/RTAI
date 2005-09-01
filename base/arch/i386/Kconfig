@@ -679,6 +679,41 @@ config RTAI_SERIAL
 
 	The module will be called rtai_serial.o.
 
+menu "Fusion support"
+
+config RTAI_FUSION
+	bool "Fusion support"
+	default n
+	help
+
+	RTAI provides support for fusion.
+
+menu "Skins"
+
+config RTAI_SKIN_RTDM
+	bool "RTDM support"
+	depends on RTAI_FUSION
+	default n
+	help
+
+	Real-Time Device Manager?
+
+endmenu
+
+menu "Drivers"
+
+config RTAI_DRIVERS_16550A
+	bool "16550A driver support"
+	depends on RTAI_FUSION
+	default n
+	help
+
+	Driver 16550A
+
+endmenu
+
+endmenu
+
 endmenu
 
 menu "RTAI Lab"

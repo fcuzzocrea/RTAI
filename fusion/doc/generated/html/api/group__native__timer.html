@@ -315,7 +315,7 @@ This service defines the time unit which will be relevant when specifying time i
 <li>-EBUSY is returned if the timer has already been set. <a class="el" href="group__native__timer.html#ga9">rt_timer_stop()</a> must be issued before <a class="el" href="group__native__timer.html#ga8">rt_timer_start()</a> is called again.</li></ul>
 <p>
 <ul>
-<li>-ENOSYS is returned if the underlying architecture does not support the requested oneshot timing.</li></ul>
+<li>-ENODEV is returned if the underlying architecture does not support the requested periodic timing.</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -482,7 +482,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:36 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:40 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

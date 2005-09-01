@@ -55,9 +55,9 @@ The source of all Xenomai magic.
 
 <tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnpod.html#o16">refcnt</a></td></tr>
 
-<tr><td class="memItemLeft" nowrap>struct {</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">atomic_counter_t&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="structxnpod.html#o17">timerlck</a></td></tr>
 
-<tr><td class="memItemLeft" nowrap>&nbsp;&nbsp;&nbsp;xnisr_t&nbsp;&nbsp;&nbsp;<a class="el" href="structxnpod.html#o17">tickhandler</a></td></tr>
+<tr><td class="memItemLeft" nowrap>struct {</td></tr>
 
 <tr><td class="memItemLeft" nowrap>&nbsp;&nbsp;&nbsp;void(*&nbsp;&nbsp;&nbsp;<a class="el" href="structxnpod.html#o18">settime</a> )(xnticks_t newtime)</td></tr>
 
@@ -414,29 +414,6 @@ Thread start hook queue. Thread switch hook queue. Thread delete hook queue.    
 All existing threads.     </td>
   </tr>
 </table>
-<a class="anchor" name="o17" doxytag="xnpod::tickhandler"></a><p>
-<table class="mdTable" cellpadding="2" cellspacing="0">
-  <tr>
-    <td class="mdRow">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td class="md" nowrap valign="top">xnisr_t <a class="el" href="structxnpod.html#o17">xnpod::tickhandler</a>          </td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-<table cellspacing="5" cellpadding="0" border="0">
-  <tr>
-    <td>
-      &nbsp;
-    </td>
-    <td>
-
-<p>
-Clock tick handler.     </td>
-  </tr>
-</table>
 <a class="anchor" name="o15" doxytag="xnpod::ticks2sec"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
@@ -481,6 +458,29 @@ Number of ticks per second (1e9 if aperiodic).     </td>
 
 <p>
 Tick duration (ns, 1 if aperiodic).     </td>
+  </tr>
+</table>
+<a class="anchor" name="o17" doxytag="xnpod::timerlck"></a><p>
+<table class="mdTable" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">atomic_counter_t <a class="el" href="structxnpod.html#o17">xnpod::timerlck</a>          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Timer lock depth.     </td>
   </tr>
 </table>
 <a class="anchor" name="o8" doxytag="xnpod::tstartq"></a><p>
@@ -577,7 +577,7 @@ Difference between wallclock time and epoch in ticks.     </td>
 </table>
 <hr>The documentation for this struct was generated from the following file:<ul>
 <li>include/nucleus/<a class="el" href="pod_8h-source.html">pod.h</a></ul>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:26 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:33 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

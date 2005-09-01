@@ -1860,7 +1860,7 @@ Make the current task wait for the next periodic release point in the processor 
 <li>-EINVAL is returned if <a class="el" href="group__task.html#ga10">rt_task_set_periodic()</a> has not previously been called for the calling task.</li></ul>
 <p>
 <ul>
-<li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before the next periodic release point has been reached.</li></ul>
+<li>-EINTR is returned if <a class="el" href="group__task.html#ga15">rt_task_unblock()</a> has been called for the waiting task before the next periodic release point has been reached. In this case, the overrun counter is reset too.</li></ul>
 <p>
 <ul>
 <li>-ETIMEDOUT is returned if a timer overrun occurred, which indicates that a previous release point has been missed by the calling task.</li></ul>
@@ -1916,7 +1916,7 @@ This service can be called from:<p>
 Rescheduling: always if a next equal-priority task is ready to run, otherwise, this service leads to a no-op.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:36 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:40 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

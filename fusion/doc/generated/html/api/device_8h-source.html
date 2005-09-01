@@ -10,7 +10,7 @@
 <a class="el" href="dir_000018.html">skins</a>&nbsp;/&nbsp;<a class="el" href="dir_000020.html">rtdm</a></div>
 <h1>device.h</h1><div class="fragment"><pre class="fragment">00001 <span class="comment">/*</span>
 00002 <span class="comment"> * Copyright (C) 2005 Jan Kiszka &lt;jan.kiszka@web.de&gt;.</span>
-00003 <span class="comment"> * Copyright (C) 2005 Joerg Langenberg &lt;joergel75@gmx.net&gt;.</span>
+00003 <span class="comment"> * Copyright (C) 2005 Joerg Langenberg &lt;joerg.langenberg@gmx.net&gt;.</span>
 00004 <span class="comment"> *</span>
 00005 <span class="comment"> * RTAI/fusion is free software; you can redistribute it and/or modify it</span>
 00006 <span class="comment"> * under the terms of the GNU General Public License as published by</span>
@@ -55,7 +55,7 @@
 00045 
 00046 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rtdm_dereference_device(<span class="keyword">struct</span> <a class="code" href="structrtdm__device.html">rtdm_device</a> *device)
 00047 {
-00048     atomic_dec(&amp;device-&gt;<a class="code" href="structrtdm__device.html#o19">reserved</a>.refcount);
+00048     atomic_dec(&amp;device-&gt;<a class="code" href="structrtdm__device.html#o20">reserved</a>.refcount);
 00049 }
 00050 
 00051 <span class="keywordtype">int</span> __init rtdm_dev_init(<span class="keywordtype">void</span>);
@@ -67,7 +67,7 @@
 00057 }
 00058 
 00059 <span class="preprocessor">#endif </span><span class="comment">/* _RTDM_DEVICE_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:26 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:33 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

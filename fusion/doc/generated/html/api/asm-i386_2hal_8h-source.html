@@ -157,8 +157,8 @@
 00180 <span class="preprocessor">#define RTHAL_8254_IRQ    0</span>
 00181 <span class="preprocessor"></span>
 00182 <span class="preprocessor">#ifdef CONFIG_X86_LOCAL_APIC</span>
-00183 <span class="preprocessor"></span><span class="preprocessor">#define RTHAL_APIC_TIMER_VECTOR    ADEOS_SERVICE_VECTOR3</span>
-00184 <span class="preprocessor"></span><span class="preprocessor">#define RTHAL_APIC_TIMER_IPI       ADEOS_SERVICE_IPI3</span>
+00183 <span class="preprocessor"></span><span class="preprocessor">#define RTHAL_APIC_TIMER_VECTOR    RTHAL_SERVICE_VECTOR3</span>
+00184 <span class="preprocessor"></span><span class="preprocessor">#define RTHAL_APIC_TIMER_IPI       RTHAL_SERVICE_IPI3</span>
 00185 <span class="preprocessor"></span><span class="preprocessor">#define RTHAL_APIC_ICOUNT          ((RTHAL_TIMER_FREQ + HZ/2)/HZ)</span>
 00186 <span class="preprocessor"></span><span class="preprocessor">#endif </span><span class="comment">/* CONFIG_X86_LOCAL_APIC */</span>
 00187 
@@ -268,7 +268,7 @@
 00291 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
 00292 
 00293 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:25 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:33 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

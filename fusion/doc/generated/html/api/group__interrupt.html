@@ -26,36 +26,36 @@ Collaboration diagram for Interrupt management services.:<center><table><tr><td>
 
 <p>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga3">rt_intr_create</a> (RT_INTR *intr, unsigned irq, rt_isr_t isr, rt_iack_t iack)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga4">rt_intr_create</a> (RT_INTR *intr, unsigned irq, rt_isr_t isr, rt_iack_t iack)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an interrupt object from kernel space.  <a href="#ga3"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga4">rt_intr_delete</a> (RT_INTR *intr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an interrupt object from kernel space.  <a href="#ga4"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga5">rt_intr_delete</a> (RT_INTR *intr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete an interrupt object.  <a href="#ga4"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga5">rt_intr_enable</a> (RT_INTR *intr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Delete an interrupt object.  <a href="#ga5"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga6">rt_intr_enable</a> (RT_INTR *intr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Enable an interrupt object.  <a href="#ga5"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga6">rt_intr_disable</a> (RT_INTR *intr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Enable an interrupt object.  <a href="#ga6"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga7">rt_intr_disable</a> (RT_INTR *intr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Disable an interrupt object.  <a href="#ga6"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga7">rt_intr_inquire</a> (RT_INTR *intr, RT_INTR_INFO *info)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Disable an interrupt object.  <a href="#ga7"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga8">rt_intr_inquire</a> (RT_INTR *intr, RT_INTR_INFO *info)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Inquire about an interrupt object.  <a href="#ga7"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga8">rt_intr_create</a> (RT_INTR *intr, unsigned irq, int mode)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Inquire about an interrupt object.  <a href="#ga8"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga9">rt_intr_create</a> (RT_INTR *intr, unsigned irq, int mode)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an interrupt object from user-space.  <a href="#ga8"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga9">rt_intr_wait</a> (RT_INTR *intr, RTIME timeout)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Create an interrupt object from user-space.  <a href="#ga9"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga10">rt_intr_wait</a> (RT_INTR *intr, RTIME timeout)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Wait for the next interrupt.  <a href="#ga9"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga10">rt_intr_bind</a> (RT_INTR *intr, unsigned irq, RTIME timeout)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Wait for the next interrupt.  <a href="#ga10"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga11">rt_intr_bind</a> (RT_INTR *intr, unsigned irq, RTIME timeout)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to an interrupt object.  <a href="#ga10"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">static int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga11">rt_intr_unbind</a> (RT_INTR *intr)</td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Bind to an interrupt object.  <a href="#ga11"></a><br></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">static int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__interrupt.html#ga12">rt_intr_unbind</a> (RT_INTR *intr)</td></tr>
 
-<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from an interrupt object.  <a href="#ga11"></a><br></td></tr>
+<tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Unbind from an interrupt object.  <a href="#ga12"></a><br></td></tr>
 </table>
 <hr><h2>Function Documentation</h2>
-<a class="anchor" name="ga10" doxytag="intr.h::rt_intr_bind"></a><p>
+<a class="anchor" name="ga11" doxytag="intr.h::rt_intr_bind"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -97,7 +97,7 @@ Collaboration diagram for Interrupt management services.:<center><table><tr><td>
 <p>
 Bind to an interrupt object. 
 <p>
-This user-space only service retrieves the uniform descriptor of a given RTAI interrupt object identified by its IRQ number. If the object does not exist on entry, this service blocks the caller until an interrupt object of the given number is created. An interrupt is registered whenever a kernel-space task invokes the <a class="el" href="group__interrupt.html#ga3">rt_intr_create()</a> service successfully for the given IRQ line.<p>
+This user-space only service retrieves the uniform descriptor of a given RTAI interrupt object identified by its IRQ number. If the object does not exist on entry, this service blocks the caller until an interrupt object of the given number is created. An interrupt is registered whenever a kernel-space task invokes the <a class="el" href="group__interrupt.html#ga4">rt_intr_create()</a> service successfully for the given IRQ line.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>irq</em>&nbsp;</td><td>The hardware interrupt channel associated with the interrupt object to search for. This value is architecture-dependent.</td></tr>
@@ -134,7 +134,7 @@ Rescheduling: always unless the request is immediately satisfied or <em>timeout<
     </td>
   </tr>
 </table>
-<a class="anchor" name="ga8" doxytag="intr.h::rt_intr_create"></a><p>
+<a class="anchor" name="ga9" doxytag="intr.h::rt_intr_create"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -176,8 +176,8 @@ Rescheduling: always unless the request is immediately satisfied or <em>timeout<
 <p>
 Create an interrupt object from user-space. 
 <p>
-Initializes and associates an interrupt object with an IRQ line from a user-space application. In this mode, the basic principle is to define some interrupt server task which routinely waits for the next incoming IRQ event through the specialized <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a> syscall.<p>
-When an interrupt occurs on the given <em>irq</em> line, any task pending on the interrupt object through <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a> is imediately awaken in order to deal with the hardware event. The interrupt service code may then call any RTAI service available from user-space.<p>
+Initializes and associates an interrupt object with an IRQ line from a user-space application. In this mode, the basic principle is to define some interrupt server task which routinely waits for the next incoming IRQ event through the <a class="el" href="group__interrupt.html#ga10">rt_intr_wait()</a> syscall.<p>
+When an interrupt occurs on the given <em>irq</em> line, any task pending on the interrupt object through <a class="el" href="group__interrupt.html#ga10">rt_intr_wait()</a> is imediately awaken in order to deal with the hardware event. The interrupt service code may then call any RTAI service available from user-space.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of a interrupt object descriptor RTAI will use to store the object-specific data. This descriptor must always be valid while the object is active therefore it must be allocated in permanent memory.</td></tr>
@@ -193,7 +193,10 @@ When an interrupt occurs on the given <em>irq</em> line, any task pending on the
 <p>
 <dl compact><dt><b>Returns:</b></dt><dd>0 is returned upon success. Otherwise:</dd></dl>
 <ul>
-<li>-EBUSY is returned if the interrupt line is already in use by another interrupt object. Only a single interrupt object can be associated to any given interrupt line using <a class="el" href="group__interrupt.html#ga3">rt_intr_create()</a> at any time, regardless of the caller's execution space (kernel or user).</li></ul>
+<li>-ENOMEM is returned if the system fails to get enough dynamic memory from the global real-time heap in order to register the interrupt object.</li></ul>
+<p>
+<ul>
+<li>-EBUSY is returned if the interrupt line is already in use by another interrupt object. Only a single interrupt object can be associated to any given interrupt line using <a class="el" href="group__interrupt.html#ga4">rt_intr_create()</a> at any time, regardless of the caller's execution space (kernel or user).</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -203,7 +206,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga3" doxytag="intr.c::rt_intr_create"></a><p>
+<a class="anchor" name="ga4" doxytag="intr.c::rt_intr_create"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -251,7 +254,7 @@ Rescheduling: possible.     </td>
 <p>
 Create an interrupt object from kernel space. 
 <p>
-Initializes and associates an interrupt object with an IRQ line. In kernel space, interrupts are immediately notified through a user-defined handler or ISR (interrupt service routine).<p>
+Initializes and associates an interrupt object with an IRQ line. In kernel space, interrupts are immediately notified to a user-defined handler or ISR (interrupt service routine).<p>
 When an interrupt occurs on the given <em>irq</em> line, the ISR is fired in order to deal with the hardware event. The interrupt service code may call any non-suspensive RTAI service.<p>
 Upon receipt of an IRQ, the ISR is immediately called on behalf of the interrupted stack context, the rescheduling procedure is locked, and the interrupt source is masked at hardware level. The status value returned by the ISR is then checked for the following bits:<p>
 <ul>
@@ -274,7 +277,7 @@ A count of interrupt receipts is tracked into the interrupt descriptor, and rese
 <li>-ENOMEM is returned if the system fails to get enough dynamic memory from the global real-time heap in order to register the interrupt object.</li></ul>
 <p>
 <ul>
-<li>-EBUSY is returned if the interrupt line is already in use by another interrupt object. Only a single interrupt object can be associated to any given interrupt line using <a class="el" href="group__interrupt.html#ga3">rt_intr_create()</a> at any time.</li></ul>
+<li>-EBUSY is returned if the interrupt line is already in use by another interrupt object. Only a single interrupt object can be associated to any given interrupt line using <a class="el" href="group__interrupt.html#ga4">rt_intr_create()</a> at any time.</li></ul>
 <p>
 <ul>
 <li>-EPERM is returned if this service was called from an asynchronous context.</li></ul>
@@ -282,12 +285,12 @@ A count of interrupt receipts is tracked into the interrupt descriptor, and rese
 Environments:<p>
 This service can be called from:<p>
 <ul>
-<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li><li>User-space task</li></ul>
+<li>Kernel module initialization/cleanup code</li><li>Kernel-based task</li></ul>
 <p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga4" doxytag="intr.c::rt_intr_delete"></a><p>
+<a class="anchor" name="ga5" doxytag="intr.c::rt_intr_delete"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -314,8 +317,8 @@ Rescheduling: possible.     </td>
 <p>
 Delete an interrupt object. 
 <p>
-Destroys an interrupt object. An interrupt exists in the system since <a class="el" href="group__interrupt.html#ga3">rt_intr_create()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
-Any user-space task which might be currently pending on the interrupt object through the <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a> service will be awaken as a result of the deletion, and return with the -EIDRM status.<p>
+Destroys an interrupt object. An interrupt exists in the system since <a class="el" href="group__interrupt.html#ga4">rt_intr_create()</a> has been called to create it, so this service must be called in order to destroy it afterwards.<p>
+Any user-space task which might be currently pending on the interrupt object through the <a class="el" href="group__interrupt.html#ga10">rt_intr_wait()</a> service will be awaken as a result of the deletion, and return with the -EIDRM status.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The descriptor address of the affected interrupt object.</td></tr>
@@ -339,7 +342,7 @@ This service can be called from:<p>
 Rescheduling: possible.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga6" doxytag="intr.c::rt_intr_disable"></a><p>
+<a class="anchor" name="ga7" doxytag="intr.c::rt_intr_disable"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -366,7 +369,7 @@ Rescheduling: possible.     </td>
 <p>
 Disable an interrupt object. 
 <p>
-Disables the hardware interrupt line associated with an interrupt object. This operation invalidates further interrupt requests from the given source until the IRQ line is re-enabled anew through <a class="el" href="group__interrupt.html#ga5">rt_intr_enable()</a>.<p>
+Disables the hardware interrupt line associated with an interrupt object. This operation invalidates further interrupt requests from the given source until the IRQ line is re-enabled anew through <a class="el" href="group__interrupt.html#ga6">rt_intr_enable()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The descriptor address of the interrupt object to enable.</td></tr>
@@ -387,7 +390,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga5" doxytag="intr.c::rt_intr_enable"></a><p>
+<a class="anchor" name="ga6" doxytag="intr.c::rt_intr_enable"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -435,7 +438,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga7" doxytag="intr.c::rt_intr_inquire"></a><p>
+<a class="anchor" name="ga8" doxytag="intr.c::rt_intr_inquire"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -493,7 +496,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga11" doxytag="intr.h::rt_intr_unbind"></a><p>
+<a class="anchor" name="ga12" doxytag="intr.h::rt_intr_unbind"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -520,7 +523,7 @@ Rescheduling: never.     </td>
 <p>
 Unbind from an interrupt object. 
 <p>
-This user-space only service unbinds the calling task from the interrupt object previously retrieved by a call to <a class="el" href="group__interrupt.html#ga10">rt_intr_bind()</a>.<p>
+This user-space only service unbinds the calling task from the interrupt object previously retrieved by a call to <a class="el" href="group__interrupt.html#ga11">rt_intr_bind()</a>.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The address of a interrupt object descriptor to unbind from.</td></tr>
@@ -534,7 +537,7 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga9" doxytag="intr.h::rt_intr_wait"></a><p>
+<a class="anchor" name="ga10" doxytag="intr.h::rt_intr_wait"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
@@ -570,8 +573,8 @@ Rescheduling: never.     </td>
 <p>
 Wait for the next interrupt. 
 <p>
-This user-space only call allows the current task to suspend execution until the associated interrupt event triggers. The priority of the current task is raised above all other RTAI tasks - except those also undergoing an interrupt or alarm wait (see <a class="el" href="group__alarm.html#ga8">rt_alarm_wait()</a>) - so that it would preempt any of them under normal circumstances (i.e. no scheduler lock).<p>
-Interrupt receipts are logged if they cannot be delivered immediately to some interrupt server task, so that a call to <a class="el" href="group__interrupt.html#ga9">rt_intr_wait()</a> might return immediately if an IRQ is already pending on entry of the service.<p>
+This user-space only call allows the current task to suspend execution until the associated interrupt event triggers. The priority of the current task is raised above all other RTAI tasks - except those also undergoing an interrupt or alarm wait (see <a class="el" href="group__alarm.html#ga10">rt_alarm_wait()</a>) - so that it would preempt any of them under normal circumstances (i.e. no scheduler lock).<p>
+Interrupt receipts are logged if they cannot be delivered immediately to some interrupt server task, so that a call to <a class="el" href="group__interrupt.html#ga10">rt_intr_wait()</a> might return immediately if an IRQ is already pending on entry of the service.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>intr</em>&nbsp;</td><td>The descriptor address of the awaited interrupt.</td></tr>
@@ -601,7 +604,7 @@ Rescheduling: always, unless an interrupt is already pending on entry.<p>
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:32 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:36 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

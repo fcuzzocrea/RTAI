@@ -167,25 +167,23 @@
 00157     <span class="keywordflow">return</span> __xn_reg_rval(regs) == -EINTR;
 00158 }
 00159 
-00160 <span class="preprocessor">#define __xn_canonicalize_args(task,regs) do { } while(0)</span>
-00161 <span class="preprocessor"></span>
-00162 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
-00163 
-00164 <span class="preprocessor">#define CONFIG_RTAI_HW_DIRECT_TSC 1</span>
-00165 <span class="preprocessor"></span>
-00166 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __xn_rdtsc (<span class="keywordtype">void</span>)
-00167 
-00168 {
-00169     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
-00170 
-00171     __asm__ __volatile__ (<span class="stringliteral">"mftb %0\n"</span> : <span class="stringliteral">"=r"</span> (t));
-00172     <span class="keywordflow">return</span> t;
-00173 }
+00160 <span class="preprocessor">#else </span><span class="comment">/* !__KERNEL__ */</span>
+00161 
+00162 <span class="preprocessor">#define CONFIG_RTAI_HW_DIRECT_TSC 1</span>
+00163 <span class="preprocessor"></span>
+00164 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> __xn_rdtsc (<span class="keywordtype">void</span>)
+00165 
+00166 {
+00167     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
+00168 
+00169     __asm__ __volatile__ (<span class="stringliteral">"mftb %0\n"</span> : <span class="stringliteral">"=r"</span> (t));
+00170     <span class="keywordflow">return</span> t;
+00171 }
+00172 
+00173 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00174 
-00175 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00176 
-00177 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SYSCALL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:25 2005 for RTAI Fusion API by&nbsp;
+00175 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC_SYSCALL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:33 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

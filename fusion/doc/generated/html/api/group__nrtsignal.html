@@ -21,28 +21,28 @@ These services provide a mechanism to request the execution of a specified handl
 <table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 <tr><td colspan="2"><br><h2>Typedefs</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">typedef void(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__nrtsignal.html#ga1">rtdm_nrt_sig_handler_t</a> )(rtdm_nrt_signal_t nrt_signal)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">typedef void(*&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__nrtsignal.html#ga1">rtdm_nrtsig_handler_t</a> )(rtdm_nrtsig_t nrt_sig)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Non-real-time signal handler.  <a href="#ga1"></a><br></td></tr>
 <tr><td colspan="2"><br><h2>Functions</h2></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__nrtsignal.html#ga2">rtdm_nrt_signal_init</a> (rtdm_nrt_signal_t *nrt_sig, <a class="el" href="group__nrtsignal.html#ga1">rtdm_nrt_sig_handler_t</a> handler)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">int&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__nrtsignal.html#ga2">rtdm_nrtsig_init</a> (rtdm_nrtsig_t *nrt_sig, <a class="el" href="group__nrtsignal.html#ga1">rtdm_nrtsig_handler_t</a> handler)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Register a non-real-time signal handler.  <a href="#ga2"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__nrtsignal.html#ga3">rtdm_nrt_signal_destroy</a> (rtdm_nrt_signal_t *nrt_sig)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__nrtsignal.html#ga3">rtdm_nrtsig_destroy</a> (rtdm_nrtsig_t *nrt_sig)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Release a non-realtime signal handler.  <a href="#ga3"></a><br></td></tr>
-<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__nrtsignal.html#ga4">rtdm_nrt_pend_signal</a> (rtdm_nrt_signal_t *nrt_sig)</td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top">void&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__nrtsignal.html#ga4">rtdm_nrtsig_pend</a> (rtdm_nrtsig_t *nrt_sig)</td></tr>
 
 <tr><td class="mdescLeft">&nbsp;</td><td class="mdescRight">Trigger non-real-time signal.  <a href="#ga4"></a><br></td></tr>
 </table>
 <hr><h2>Typedef Documentation</h2>
-<a class="anchor" name="ga1" doxytag="rtdm_driver.h::rtdm_nrt_sig_handler_t"></a><p>
+<a class="anchor" name="ga1" doxytag="rtdm_driver.h::rtdm_nrtsig_handler_t"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">typedef void(* <a class="el" href="group__nrtsignal.html#ga1">rtdm_nrt_sig_handler_t</a>)(rtdm_nrt_signal_t nrt_signal)          </td>
+          <td class="md" nowrap valign="top">typedef void(* <a class="el" href="group__nrtsignal.html#ga1">rtdm_nrtsig_handler_t</a>)(rtdm_nrtsig_t nrt_sig)          </td>
         </tr>
       </table>
     </td>
@@ -60,7 +60,7 @@ Non-real-time signal handler.
 <p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"><tt>[in]</tt>&nbsp;</td><td valign="top"><em>nrt_signal</em>&nbsp;</td><td>signal handle as returned by <a class="el" href="group__nrtsignal.html#ga2">rtdm_nrt_signal_init()</a></td></tr>
+    <tr><td valign="top"><tt>[in]</tt>&nbsp;</td><td valign="top"><em>nrt_sig</em>&nbsp;</td><td>signal handle as returned by <a class="el" href="group__nrtsignal.html#ga2">rtdm_nrtsig_init()</a></td></tr>
   </table>
 </dl>
 <dl compact><dt><b>Note:</b></dt><dd>The signal handler will run in soft-IRQ context of the non-real-time subsystem. Note the implications of this context, e.g. no invocation of blocking operations. </dd></dl>
@@ -68,55 +68,15 @@ Non-real-time signal handler.
   </tr>
 </table>
 <hr><h2>Function Documentation</h2>
-<a class="anchor" name="ga4" doxytag="drvlib.c::rtdm_nrt_pend_signal"></a><p>
+<a class="anchor" name="ga3" doxytag="drvlib.c::rtdm_nrtsig_destroy"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">void rtdm_nrt_pend_signal           </td>
+          <td class="md" nowrap valign="top">void rtdm_nrtsig_destroy           </td>
           <td class="md" valign="top">(&nbsp;</td>
-          <td class="md" nowrap valign="top">rtdm_nrt_signal_t *&nbsp;</td>
-          <td class="mdname1" valign="top" nowrap> <em>nrt_sig</em>          </td>
-          <td class="md" valign="top">&nbsp;)&nbsp;</td>
-          <td class="md" nowrap></td>
-        </tr>
-      </table>
-    </td>
-  </tr>
-</table>
-<table cellspacing="5" cellpadding="0" border="0">
-  <tr>
-    <td>
-      &nbsp;
-    </td>
-    <td>
-
-<p>
-Trigger non-real-time signal. 
-<p>
-<dl compact><dt><b>Parameters:</b></dt><dd>
-  <table border="0" cellspacing="2" cellpadding="0">
-    <tr><td valign="top"><tt>[in,out]</tt>&nbsp;</td><td valign="top"><em>nrt_sig</em>&nbsp;</td><td>Signal handle</td></tr>
-  </table>
-</dl>
-Environments:<p>
-This service can be called from:<p>
-<ul>
-<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task (RT, non-RT)</li></ul>
-<p>
-Rescheduling: never in real-time context, possible in non-real-time environments.     </td>
-  </tr>
-</table>
-<a class="anchor" name="ga3" doxytag="drvlib.c::rtdm_nrt_signal_destroy"></a><p>
-<table class="mdTable" cellpadding="2" cellspacing="0">
-  <tr>
-    <td class="mdRow">
-      <table cellpadding="0" cellspacing="0" border="0">
-        <tr>
-          <td class="md" nowrap valign="top">void rtdm_nrt_signal_destroy           </td>
-          <td class="md" valign="top">(&nbsp;</td>
-          <td class="md" nowrap valign="top">rtdm_nrt_signal_t *&nbsp;</td>
+          <td class="md" nowrap valign="top">rtdm_nrtsig_t *&nbsp;</td>
           <td class="mdname1" valign="top" nowrap> <em>nrt_sig</em>          </td>
           <td class="md" valign="top">&nbsp;)&nbsp;</td>
           <td class="md" nowrap></td>
@@ -148,21 +108,21 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<a class="anchor" name="ga2" doxytag="drvlib.c::rtdm_nrt_signal_init"></a><p>
+<a class="anchor" name="ga2" doxytag="drvlib.c::rtdm_nrtsig_init"></a><p>
 <table class="mdTable" cellpadding="2" cellspacing="0">
   <tr>
     <td class="mdRow">
       <table cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td class="md" nowrap valign="top">int rtdm_nrt_signal_init           </td>
+          <td class="md" nowrap valign="top">int rtdm_nrtsig_init           </td>
           <td class="md" valign="top">(&nbsp;</td>
-          <td class="md" nowrap valign="top">rtdm_nrt_signal_t *&nbsp;</td>
+          <td class="md" nowrap valign="top">rtdm_nrtsig_t *&nbsp;</td>
           <td class="mdname" nowrap> <em>nrt_sig</em>, </td>
         </tr>
         <tr>
           <td class="md" nowrap align="right"></td>
           <td class="md"></td>
-          <td class="md" nowrap><a class="el" href="group__nrtsignal.html#ga1">rtdm_nrt_sig_handler_t</a>&nbsp;</td>
+          <td class="md" nowrap><a class="el" href="group__nrtsignal.html#ga1">rtdm_nrtsig_handler_t</a>&nbsp;</td>
           <td class="mdname" nowrap> <em>handler</em></td>
         </tr>
         <tr>
@@ -190,7 +150,10 @@ Register a non-real-time signal handler.
     <tr><td valign="top"><tt>[in]</tt>&nbsp;</td><td valign="top"><em>handler</em>&nbsp;</td><td>Non-real-time signal handler</td></tr>
   </table>
 </dl>
-<dl compact><dt><b>Returns:</b></dt><dd>0 on success, otherwise negative error code</dd></dl>
+<dl compact><dt><b>Returns:</b></dt><dd>0 on success, otherwise:</dd></dl>
+<ul>
+<li>-EAGAIN is returned if no free signal slot is available.</li></ul>
+<p>
 Environments:<p>
 This service can be called from:<p>
 <ul>
@@ -199,7 +162,47 @@ This service can be called from:<p>
 Rescheduling: never.     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:39 2005 for RTAI Fusion API by&nbsp;
+<a class="anchor" name="ga4" doxytag="drvlib.c::rtdm_nrtsig_pend"></a><p>
+<table class="mdTable" cellpadding="2" cellspacing="0">
+  <tr>
+    <td class="mdRow">
+      <table cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td class="md" nowrap valign="top">void rtdm_nrtsig_pend           </td>
+          <td class="md" valign="top">(&nbsp;</td>
+          <td class="md" nowrap valign="top">rtdm_nrtsig_t *&nbsp;</td>
+          <td class="mdname1" valign="top" nowrap> <em>nrt_sig</em>          </td>
+          <td class="md" valign="top">&nbsp;)&nbsp;</td>
+          <td class="md" nowrap></td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<table cellspacing="5" cellpadding="0" border="0">
+  <tr>
+    <td>
+      &nbsp;
+    </td>
+    <td>
+
+<p>
+Trigger non-real-time signal. 
+<p>
+<dl compact><dt><b>Parameters:</b></dt><dd>
+  <table border="0" cellspacing="2" cellpadding="0">
+    <tr><td valign="top"><tt>[in,out]</tt>&nbsp;</td><td valign="top"><em>nrt_sig</em>&nbsp;</td><td>Signal handle</td></tr>
+  </table>
+</dl>
+Environments:<p>
+This service can be called from:<p>
+<ul>
+<li>Kernel module initialization/cleanup code</li><li>Interrupt service routine</li><li>Kernel-based task</li><li>User-space task (RT, non-RT)</li></ul>
+<p>
+Rescheduling: never in real-time context, possible in non-real-time environments.     </td>
+  </tr>
+</table>
+<hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:42 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

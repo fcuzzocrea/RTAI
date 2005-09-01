@@ -168,125 +168,140 @@
 00214 
 00215 <span class="preprocessor">#else  </span><span class="comment">/* !__KERNEL__ */</span>
 00216 
-00217 <span class="keywordtype">int</span>     <a class="code" href="group__userapi.html#ga0">rt_dev_open</a>   (<span class="keyword">const</span> <span class="keywordtype">char</span> *path, <span class="keywordtype">int</span> oflag, ...);
-00218 <span class="keywordtype">int</span>     <a class="code" href="group__userapi.html#ga1">rt_dev_socket</a> (<span class="keywordtype">int</span> protocol_family, <span class="keywordtype">int</span> socket_type, <span class="keywordtype">int</span> protocol);
-00219 <span class="keywordtype">int</span>     <a class="code" href="group__userapi.html#ga2">rt_dev_close</a>  (<span class="keywordtype">int</span> fd);
-00220 <span class="keywordtype">int</span>     <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>  (<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> request, ...);
-00221 ssize_t <a class="code" href="group__userapi.html#ga4">rt_dev_read</a>   (<span class="keywordtype">int</span> fd, <span class="keywordtype">void</span> *buf, size_t nbyte);
-00222 ssize_t <a class="code" href="group__userapi.html#ga5">rt_dev_write</a>  (<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keywordtype">void</span> *buf, size_t nbyte);
-00223 ssize_t <a class="code" href="group__userapi.html#ga6">rt_dev_recvmsg</a>(<span class="keywordtype">int</span> fd, <span class="keyword">struct</span> msghdr *msg, <span class="keywordtype">int</span> flags);
-00224 ssize_t <a class="code" href="group__userapi.html#ga9">rt_dev_sendmsg</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keyword">struct</span> msghdr *msg, <span class="keywordtype">int</span> flags);
-00225 
-00226 ssize_t <a class="code" href="group__userapi.html#ga7">rt_dev_recvfrom</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">void</span> *buf, size_t len, <span class="keywordtype">int</span> flags,
-00227                         <span class="keyword">struct</span> sockaddr *from,
-00228                         socklen_t *fromlen);
+00217 <span class="preprocessor">#ifdef __cplusplus</span>
+00218 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00219 <span class="preprocessor">#endif</span>
+00220 <span class="preprocessor"></span>
+00221 <span class="keywordtype">int</span>     <a class="code" href="group__userapi.html#ga0">rt_dev_open</a>   (<span class="keyword">const</span> <span class="keywordtype">char</span> *path, <span class="keywordtype">int</span> oflag, ...);
+00222 <span class="keywordtype">int</span>     <a class="code" href="group__userapi.html#ga1">rt_dev_socket</a> (<span class="keywordtype">int</span> protocol_family, <span class="keywordtype">int</span> socket_type, <span class="keywordtype">int</span> protocol);
+00223 <span class="keywordtype">int</span>     <a class="code" href="group__userapi.html#ga2">rt_dev_close</a>  (<span class="keywordtype">int</span> fd);
+00224 <span class="keywordtype">int</span>     <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>  (<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> request, ...);
+00225 ssize_t <a class="code" href="group__userapi.html#ga4">rt_dev_read</a>   (<span class="keywordtype">int</span> fd, <span class="keywordtype">void</span> *buf, size_t nbyte);
+00226 ssize_t <a class="code" href="group__userapi.html#ga5">rt_dev_write</a>  (<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keywordtype">void</span> *buf, size_t nbyte);
+00227 ssize_t <a class="code" href="group__userapi.html#ga6">rt_dev_recvmsg</a>(<span class="keywordtype">int</span> fd, <span class="keyword">struct</span> msghdr *msg, <span class="keywordtype">int</span> flags);
+00228 ssize_t <a class="code" href="group__userapi.html#ga9">rt_dev_sendmsg</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keyword">struct</span> msghdr *msg, <span class="keywordtype">int</span> flags);
 00229 
-00230 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
-00231 
-00232 
-00233 <span class="keyword">static</span> <span class="keyword">inline</span> ssize_t <a class="code" href="group__userapi.html#ga8">rt_dev_recv</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">void</span> *buf, size_t len, <span class="keywordtype">int</span> flags)
-00234 {
-00235     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga7">rt_dev_recvfrom</a>(fd, buf, len, flags, NULL, NULL);
-00236 }
-00237 
-00238 
-00239 <span class="keyword">static</span> <span class="keyword">inline</span> ssize_t <a class="code" href="group__userapi.html#ga10">rt_dev_sendto</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keywordtype">void</span> *buf, size_t len,
-00240                                     <span class="keywordtype">int</span> flags, <span class="keyword">const</span> <span class="keyword">struct</span> sockaddr *to,
-00241                                     socklen_t tolen)
-00242 {
-00243     <span class="keyword">struct </span>iovec    iov = {(<span class="keywordtype">void</span> *)buf, len};
-00244     <span class="keyword">struct </span>msghdr   msg =
-00245         {(<span class="keyword">struct </span>sockaddr *)to, tolen, &amp;iov, 1, NULL, 0};
-00246 
-00247     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga9">rt_dev_sendmsg</a>(fd, &amp;msg, flags);
-00248 }
+00230 ssize_t <a class="code" href="group__userapi.html#ga7">rt_dev_recvfrom</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">void</span> *buf, size_t len, <span class="keywordtype">int</span> flags,
+00231                         <span class="keyword">struct</span> sockaddr *from,
+00232                         socklen_t *fromlen);
+00233 
+00234 <span class="preprocessor">#ifdef __cplusplus</span>
+00235 <span class="preprocessor"></span>}
+00236 <span class="preprocessor">#endif</span>
+00237 <span class="preprocessor"></span>
+00238 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
+00239 
+00240 <span class="preprocessor">#ifdef __cplusplus</span>
+00241 <span class="preprocessor"></span><span class="keyword">extern</span> <span class="stringliteral">"C"</span> {
+00242 <span class="preprocessor">#endif</span>
+00243 <span class="preprocessor"></span>
+00244 <span class="keyword">static</span> <span class="keyword">inline</span> ssize_t <a class="code" href="group__userapi.html#ga8">rt_dev_recv</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">void</span> *buf, size_t len, <span class="keywordtype">int</span> flags)
+00245 {
+00246     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga7">rt_dev_recvfrom</a>(fd, buf, len, flags, NULL, NULL);
+00247 }
+00248 
 00249 
-00250 
-00251 <span class="keyword">static</span> <span class="keyword">inline</span> ssize_t <a class="code" href="group__userapi.html#ga11">rt_dev_send</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keywordtype">void</span> *buf, size_t len,
-00252                                   <span class="keywordtype">int</span> flags)
+00250 <span class="keyword">static</span> <span class="keyword">inline</span> ssize_t <a class="code" href="group__userapi.html#ga10">rt_dev_sendto</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keywordtype">void</span> *buf, size_t len,
+00251                                     <span class="keywordtype">int</span> flags, <span class="keyword">const</span> <span class="keyword">struct</span> sockaddr *to,
+00252                                     socklen_t tolen)
 00253 {
-00254     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga10">rt_dev_sendto</a>(fd, buf, len, flags, NULL, 0);
-00255 }
-00256 
+00254     <span class="keyword">struct </span>iovec    iov = {(<span class="keywordtype">void</span> *)buf, len};
+00255     <span class="keyword">struct </span>msghdr   msg =
+00256         {(<span class="keyword">struct </span>sockaddr *)to, tolen, &amp;iov, 1, NULL, 0};
 00257 
-00258 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga17">rt_dev_getsockopt</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> level, <span class="keywordtype">int</span> optname,
-00259                                     <span class="keywordtype">void</span> *optval, socklen_t *optlen)
-00260 {
-00261     <span class="keyword">struct </span>_rtdm_getsockopt_args args = {level, optname, optval, optlen};
-00262 
-00263     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_GETSOCKOPT, &amp;args);
-00264 }
-00265 
-00266 
-00267 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga18">rt_dev_setsockopt</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> level, <span class="keywordtype">int</span> optname,
-00268                                     <span class="keyword">const</span> <span class="keywordtype">void</span> *optval, socklen_t optlen)
-00269 {
-00270     <span class="keyword">struct </span>_rtdm_setsockopt_args args =
-00271     {level, optname, (<span class="keywordtype">void</span> *)optval, optlen};
-00272 
-00273     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_SETSOCKOPT, &amp;args);
-00274 }
-00275 
+00258     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga9">rt_dev_sendmsg</a>(fd, &amp;msg, flags);
+00259 }
+00260 
+00261 
+00262 <span class="keyword">static</span> <span class="keyword">inline</span> ssize_t <a class="code" href="group__userapi.html#ga11">rt_dev_send</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keywordtype">void</span> *buf, size_t len,
+00263                                   <span class="keywordtype">int</span> flags)
+00264 {
+00265     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga10">rt_dev_sendto</a>(fd, buf, len, flags, NULL, 0);
+00266 }
+00267 
+00268 
+00269 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga17">rt_dev_getsockopt</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> level, <span class="keywordtype">int</span> optname,
+00270                                     <span class="keywordtype">void</span> *optval, socklen_t *optlen)
+00271 {
+00272     <span class="keyword">struct </span>_rtdm_getsockopt_args args = {level, optname, optval, optlen};
+00273 
+00274     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_GETSOCKOPT, &amp;args);
+00275 }
 00276 
-00277 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga12">rt_dev_bind</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keyword">struct</span> sockaddr *my_addr,
-00278                               socklen_t addrlen)
-00279 {
-00280     <span class="keyword">struct </span>_rtdm_setsockaddr_args args = {my_addr, addrlen};
-00281 
-00282     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_BIND, &amp;args);
-00283 }
-00284 
-00285 
-00286 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga13">rt_dev_connect</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keyword">struct</span> sockaddr *serv_addr,
-00287                                  socklen_t addrlen)
-00288 {
-00289     <span class="keyword">struct </span>_rtdm_setsockaddr_args args = {serv_addr, addrlen};
-00290 
-00291     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_CONNECT, &amp;args);
-00292 }
-00293 
-00294 
-00295 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga14">rt_dev_listen</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> backlog)
-00296 {
-00297     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_LISTEN, backlog);
-00298 }
-00299 
-00300 
-00301 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga15">rt_dev_accept</a>(<span class="keywordtype">int</span> fd, <span class="keyword">struct</span> sockaddr *addr,
-00302                                 socklen_t *addrlen)
-00303 {
-00304     <span class="keyword">struct </span>_rtdm_getsockaddr_args args = {addr, addrlen};
+00277 
+00278 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga18">rt_dev_setsockopt</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> level, <span class="keywordtype">int</span> optname,
+00279                                     <span class="keyword">const</span> <span class="keywordtype">void</span> *optval, socklen_t optlen)
+00280 {
+00281     <span class="keyword">struct </span>_rtdm_setsockopt_args args =
+00282     {level, optname, (<span class="keywordtype">void</span> *)optval, optlen};
+00283 
+00284     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_SETSOCKOPT, &amp;args);
+00285 }
+00286 
+00287 
+00288 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga12">rt_dev_bind</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keyword">struct</span> sockaddr *my_addr,
+00289                               socklen_t addrlen)
+00290 {
+00291     <span class="keyword">struct </span>_rtdm_setsockaddr_args args = {my_addr, addrlen};
+00292 
+00293     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_BIND, &amp;args);
+00294 }
+00295 
+00296 
+00297 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga13">rt_dev_connect</a>(<span class="keywordtype">int</span> fd, <span class="keyword">const</span> <span class="keyword">struct</span> sockaddr *serv_addr,
+00298                                  socklen_t addrlen)
+00299 {
+00300     <span class="keyword">struct </span>_rtdm_setsockaddr_args args = {serv_addr, addrlen};
+00301 
+00302     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_CONNECT, &amp;args);
+00303 }
+00304 
 00305 
-00306     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_ACCEPT, &amp;args);
-00307 }
-00308 
-00309 
-00310 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga19">rt_dev_getsockname</a>(<span class="keywordtype">int</span> fd, <span class="keyword">struct</span> sockaddr *name,
-00311                                      socklen_t *namelen)
-00312 {
-00313     <span class="keyword">struct </span>_rtdm_getsockaddr_args args = {name, namelen};
-00314 
-00315     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_GETSOCKNAME, &amp;args);
-00316 }
-00317 
-00318 
-00319 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga20">rt_dev_getpeername</a>(<span class="keywordtype">int</span> fd, <span class="keyword">struct</span> sockaddr *name,
-00320                                      socklen_t *namelen)
-00321 {
-00322     <span class="keyword">struct </span>_rtdm_getsockaddr_args args = {name, namelen};
-00323 
-00324     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_GETPEERNAME, &amp;args);
-00325 }
-00326 
-00327 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga16">rt_dev_shutdown</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> how)
-00328 {
-00329     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_SHUTDOWN, how);
-00330 }
-00331 
-00332 <span class="preprocessor">#endif </span><span class="comment">/* RTDM_NO_DEFAULT_USER_API */</span>
-00333 
-00334 <span class="preprocessor">#endif </span><span class="comment">/* _RTDM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:26 2005 for RTAI Fusion API by&nbsp;
+00306 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga14">rt_dev_listen</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> backlog)
+00307 {
+00308     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_LISTEN, backlog);
+00309 }
+00310 
+00311 
+00312 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga15">rt_dev_accept</a>(<span class="keywordtype">int</span> fd, <span class="keyword">struct</span> sockaddr *addr,
+00313                                 socklen_t *addrlen)
+00314 {
+00315     <span class="keyword">struct </span>_rtdm_getsockaddr_args args = {addr, addrlen};
+00316 
+00317     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_ACCEPT, &amp;args);
+00318 }
+00319 
+00320 
+00321 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga19">rt_dev_getsockname</a>(<span class="keywordtype">int</span> fd, <span class="keyword">struct</span> sockaddr *name,
+00322                                      socklen_t *namelen)
+00323 {
+00324     <span class="keyword">struct </span>_rtdm_getsockaddr_args args = {name, namelen};
+00325 
+00326     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_GETSOCKNAME, &amp;args);
+00327 }
+00328 
+00329 
+00330 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga20">rt_dev_getpeername</a>(<span class="keywordtype">int</span> fd, <span class="keyword">struct</span> sockaddr *name,
+00331                                      socklen_t *namelen)
+00332 {
+00333     <span class="keyword">struct </span>_rtdm_getsockaddr_args args = {name, namelen};
+00334 
+00335     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_GETPEERNAME, &amp;args);
+00336 }
+00337 
+00338 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">int</span> <a class="code" href="group__userapi.html#ga16">rt_dev_shutdown</a>(<span class="keywordtype">int</span> fd, <span class="keywordtype">int</span> how)
+00339 {
+00340     <span class="keywordflow">return</span> <a class="code" href="group__userapi.html#ga3">rt_dev_ioctl</a>(fd, _RTIOC_SHUTDOWN, how);
+00341 }
+00342 
+00343 <span class="preprocessor">#ifdef __cplusplus</span>
+00344 <span class="preprocessor"></span>}
+00345 <span class="preprocessor">#endif</span>
+00346 <span class="preprocessor"></span>
+00347 <span class="preprocessor">#endif </span><span class="comment">/* RTDM_NO_DEFAULT_USER_API */</span>
+00348 
+00349 <span class="preprocessor">#endif </span><span class="comment">/* _RTDM_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:33 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

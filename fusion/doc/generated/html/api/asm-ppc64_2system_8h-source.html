@@ -153,7 +153,7 @@
 00143 
 00144 <span class="preprocessor">#ifdef XENO_POD_MODULE</span>
 00145 <span class="preprocessor"></span>
-00146 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga65">xnpod_welcome_thread</a>(<span class="keyword">struct</span> xnthread *);
+00146 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga67">xnpod_welcome_thread</a>(<span class="keyword">struct</span> xnthread *);
 00147 
 00148 <span class="keywordtype">void</span> <a class="code" href="group__pod.html#ga31">xnpod_delete_thread</a>(<span class="keyword">struct</span> xnthread *);
 00149 
@@ -269,7 +269,7 @@
 00259 
 00260 {
 00261     rthal_local_irq_restore(!!tcb-&gt;imask);
-00262     <a class="code" href="group__pod.html#ga65">xnpod_welcome_thread</a>(tcb-&gt;self);
+00262     <a class="code" href="group__pod.html#ga67">xnpod_welcome_thread</a>(tcb-&gt;self);
 00263     tcb-&gt;entry(tcb-&gt;cookie);
 00264     <a class="code" href="group__pod.html#ga31">xnpod_delete_thread</a>(tcb-&gt;self);
 00265 }
@@ -527,7 +527,7 @@
 00517 
 00518 <span class="keywordtype">int</span> xnarch_escalation_virq;
 00519 
-00520 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga68">xnpod_trap_fault</a>(xnarch_fltinfo_t *fltinfo);
+00520 <span class="keywordtype">int</span> <a class="code" href="group__pod.html#ga70">xnpod_trap_fault</a>(xnarch_fltinfo_t *fltinfo);
 00521 
 00522 <span class="keywordtype">void</span> xnpod_schedule_handler(<span class="keywordtype">void</span>);
 00523 
@@ -538,7 +538,7 @@
 00528     xnarch_fltinfo_t fltinfo;
 00529     fltinfo.exception = event;
 00530     fltinfo.regs = (<span class="keyword">struct </span>pt_regs *)data;
-00531     <span class="keywordflow">return</span> <a class="code" href="group__pod.html#ga68">xnpod_trap_fault</a>(&amp;fltinfo);
+00531     <span class="keywordflow">return</span> <a class="code" href="group__pod.html#ga70">xnpod_trap_fault</a>(&amp;fltinfo);
 00532 }
 00533 
 00534 <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> xnarch_calibrate_timer (<span class="keywordtype">void</span>)
@@ -632,7 +632,7 @@
 00622 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ */</span>
 00623 
 00624 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC64_SYSTEM_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Aug 1 07:27:25 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Thu Sep 1 23:09:33 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

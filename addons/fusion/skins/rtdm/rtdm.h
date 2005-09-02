@@ -1,3 +1,5 @@
+
+#ifndef SHOWROOM  //temporary trick to do some basic elementary test quickly
 /**
  * @file
  * Real-Time Driver Model for RTAI, user API header
@@ -347,3 +349,119 @@ static inline int rt_dev_shutdown(int fd, int how)
 #endif /* RTDM_NO_DEFAULT_USER_API */
 
 #endif /* _RTDM_H */
+
+#else
+
+/*
+ * Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+ */
+
+
+#ifndef _RTAI_URTDM_H
+#define _RTAI_URTDM_H
+
+#include <sys/socket.h>
+#include <sys/syscall.h>
+#include <sys/ioctl.h>
+
+#include <rtai_lxrt.h>
+
+//struct msghdr { unsigned long something; };
+
+#define RTDM_INDX     5
+#define RTDM_ENC(op)  (RTAI_SYSCALL_NR | ENCODE_LXRT_REQ(RTDM_INDX, op, 2*sizeof(unsigned long *)))
+
+#define RTDM_CLASS_SERIAL  2
+
+#define __rtdm_fdcount          0
+#define __rtdm_open             1
+#define __rtdm_socket           2
+#define __rtdm_close            3
+#define __rtdm_ioctl            4
+#define __rtdm_read             5
+#define __rtdm_write            6
+#define __rtdm_recvmsg          7
+#define __rtdm_sendmsg          8
+
+static inline int rt_dev_no_support(void)
+{
+    return -ENOSYS;
+}
+
+static inline int rt_dev_fdcount(void)
+{
+	return syscall(RTDM_ENC(__rtdm_fdcount));
+}
+
+static inline int rt_dev_open(const char *path, int oflag, ...)
+{
+	return syscall(RTDM_ENC(__rtdm_open), path, oflag);
+}
+
+static inline int rt_dev_socket(int protocol_family, int socket_type, int protocol)
+{
+	return syscall(RTDM_ENC(__rtdm_socket), protocol_family, socket_type, protocol);
+}
+
+static inline int rt_dev_close(int fd)
+{
+	return syscall(RTDM_ENC(__rtdm_close), fd);
+}
+
+static inline int rt_dev_ioctl(int fd, int request, ...)
+{
+	va_list ap;
+	va_start(ap, request);
+	void *arg = va_arg(ap, void*);
+	va_end(ap);
+	return syscall(RTDM_ENC(__rtdm_ioctl), fd, request, arg);
+}
+
+static inline ssize_t rt_dev_read(int fd, void *buf, size_t nbyte)
+{
+	return syscall(RTDM_ENC(__rtdm_read), fd, buf, nbyte);
+}
+
+ssize_t rt_dev_write(int fd, const void *buf, size_t nbyte)
+{
+	return syscall(RTDM_ENC(__rtdm_write), fd, buf, nbyte);
+}
+
+static inline ssize_t rt_dev_recvmsg(int fd, struct msghdr *msg, int flags)
+{
+	return syscall(RTDM_ENC(__rtdm_recvmsg), fd, msg, flags);
+}
+
+static inline ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags)
+{
+	return syscall(RTDM_ENC(__rtdm_sendmsg), fd, msg, flags);
+}
+
+static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
+{
+	int ret;
+	struct iovec iov = { buf, len };
+	struct msghdr msg = { from, (from != NULL) ? *fromlen : 0, &iov, 1, NULL, 0 };
+	if ((ret = syscall(RTDM_ENC(__rtdm_recvmsg), fd, &msg, flags)) && (from != NULL)) {
+	        *fromlen = msg.msg_namelen;
+	}
+	return ret;
+}
+
+#endif /* !_RTAI_URTDM_H */
+
+#endif

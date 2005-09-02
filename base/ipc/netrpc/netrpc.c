@@ -338,7 +338,7 @@ static int soft_kthread_delete(RT_TASK *task)
 		return -EFAULT;
 	} else {
 		struct task_struct *lnxtsk = task->lnxtsk;
-		lnxtsk->rtai_tskext(0) = lnxtsk->rtai_tskext(1) = 0;
+//		lnxtsk->rtai_tskext(0) = lnxtsk->rtai_tskext(1) = 0;
 		sigemptyset(&lnxtsk->blocked);
 		lnxtsk->state = TASK_INTERRUPTIBLE;
 		kill_proc(lnxtsk->pid, SIGTERM, 0);
@@ -415,7 +415,7 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 			soft_rt_sendto(sock, &arg, encode ? encode(portslotp, &arg, sizeof(struct msg_t), RPC_RTR) : sizeof(struct msg_t), 0, addr, ADRSZ);
 		} while (0);
 	}
-	soft_rt_fun_call(task, rt_task_suspend, task);
+//	soft_rt_fun_call(task, rt_task_suspend, task);
 }
 
 static void hard_stub_fun(struct portslot_t *portslotp) 
@@ -571,7 +571,7 @@ ret:
 		soft_rt_sendto(portslot[0].socket[0], &msg, encode ? encode(&portslot[0], &msg, sizeof(msg), PRT_RTR) : sizeof(msg), 0, addr, ADRSZ);
 	}
 }
-soft_rt_fun_call(port_server, rt_task_suspend, port_server);
+//soft_rt_fun_call(port_server, rt_task_suspend, port_server);
 }
 
 static int mod_timer_srq;

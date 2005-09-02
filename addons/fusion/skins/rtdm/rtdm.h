@@ -374,13 +374,14 @@ static inline int rt_dev_shutdown(int fd, int how)
 #ifndef _RTAI_URTDM_H
 #define _RTAI_URTDM_H
 
+#include <stdarg.h>
 #include <sys/socket.h>
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
 
+#ifndef FUSION
 #include <rtai_lxrt.h>
-
-//struct msghdr { unsigned long something; };
+#endif
 
 #define RTDM_INDX     5
 #define RTDM_ENC(op)  (RTAI_SYSCALL_NR | ENCODE_LXRT_REQ(RTDM_INDX, op, 2*sizeof(unsigned long *)))

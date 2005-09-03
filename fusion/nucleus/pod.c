@@ -81,8 +81,8 @@ const char *xnpod_fatal_helper (const char *format, ...)
     now = nktimer->get_jiffies();
 
     p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-		  "\n %-3s   %-6s %-24s %-4s  %-8s  %-8s\n",
-		 "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
+	          "\n %-3s  %-6s %-4s %-8s %-8s  %s\n",
+		  "CPU","PID","PRI","TIMEOUT","STAT","NAME");
 
     for (cpu = 0; cpu < nr_cpus; ++cpu)
         {
@@ -99,14 +99,14 @@ const char *xnpod_fatal_helper (const char *format, ...)
                 continue;
 
 	    p += snprintf(p,XNPOD_FATAL_BUFSZ - (p - nkmsgbuf),
-			  "%c%3u   %-6d %-24s %-4d  %-8Lu  0x%.8lx\n",
+			  "%c%3u  %-6d %-4d %-8Lu %.8lx  %s\n",
 			  thread == sched->runthread ? '>' : ' ',
 			  cpu,
 			  xnthread_user_pid(thread),
-			  thread->name,
 			  thread->cprio,
 			  xnthread_get_timeout(thread, now),
-			  thread->status);
+			  thread->status,
+			  thread->name);
             }
         }
 
@@ -3360,6 +3360,9 @@ int xnpod_wait_thread_period (void)
             err = -EINTR;
             goto unlock_and_exit;
             }
+
+	if (thread->poverrun > 0)
+	    err = -ETIMEDOUT;
         }
     else
         err = -ETIMEDOUT;

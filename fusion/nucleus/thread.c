@@ -135,15 +135,66 @@ void xnthread_cleanup_tcb (xnthread_t *thread)
 
 char *xnthread_symbolic_status (xnflags_t status, char *buf, int size)
 {
-    static const char *labels[] = XNTHREAD_SLABEL_INIT;
+    static const char labels[] = XNTHREAD_SLABEL_INIT;
+    xnflags_t mask;
+    int pos, c;
     char *wp;
-    int pos;
 
-    for (status &= ~(XNTHREAD_SPARES|XNROOT|XNSTARTED), pos = 0, wp = buf;
-	 status != 0 && wp - buf < size - 5; /* 3-letters label + SPC + \0 */
-	 status >>= 1, pos++)
-	if (status & 1)
-	    wp += sprintf(wp,"%s ",labels[pos]);
+    for (mask = status & ~(XNTHREAD_SPARES|XNROOT|XNSTARTED), pos = 0, wp = buf;
+	 mask != 0 && wp - buf < size - 2; /* 1-letter label + \0 */
+	 mask >>= 1, pos++)
+	{
+	c = labels[pos];
+
+	if (mask & 1)
+	    {
+	    switch (1 << pos)
+		{
+		case XNFPU:
+		
+		    /* Only output the FPU flag for kernel-based
+		       threads; Others get the same level of fp
+		       support than any user-space tasks on the
+		       current platform. */
+
+		    if (status & (XNSHADOW|XNROOT))
+			continue;
+
+		    break;
+
+		case XNROOT:
+
+		    c = 'R';	/* Always mark root as runnable. */
+		    break;
+
+		case XNDELAY:
+
+		    /* Only report genuine delays here, not timed
+		       waits for resources. */
+
+		    if (status & XNPEND)
+			continue;
+
+		    break;
+
+		case XNPEND:
+
+		    /* Report timed waits with lowercase symbol. */
+
+		    if (status & XNDELAY)
+			c |= 0x20;
+
+		    break;
+
+		default:
+
+		    if (c == '.')
+			continue;
+		}
+
+	    *wp++ = c;
+	    }
+	}
 
     *wp = '\0';
 

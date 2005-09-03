@@ -136,20 +136,18 @@ static int sched_seq_show(struct seq_file *seq, void *v)
     char buf[64];
 
     if (v == SEQ_START_TOKEN)
-	seq_printf(seq,"%-3s   %-6s %-24s %-4s  %-8s  %-8s\n",
-		   "CPU","PID","NAME","PRI","TIMEOUT","STATUS");
+	seq_printf(seq,"%-3s  %-6s %-4s %-8s %-10s %s\n",
+		   "CPU","PID","PRI","TIMEOUT","STAT","NAME");
     else
 	{
 	struct sched_seq_info *p = (struct sched_seq_info *)v;
-	seq_printf(seq,"%3u   %-6d %-24s %-4d  %-8Lu  0x%.8lx - %s\n",
+	seq_printf(seq,"%3u  %-6d %-4d %-8Lu %-10s %s\n",
 		   p->cpu,
 		   p->pid,
-		   p->name,
 		   p->cprio,
 		   p->timeout,
-		   p->status,
-		   xnthread_symbolic_status(p->status,
-					    buf,sizeof(buf)));
+		   xnthread_symbolic_status(p->status,buf,sizeof(buf)),
+		   p->name);
 	}
 
     return 0;
@@ -237,6 +235,7 @@ struct stat_seq_iterator {
     struct stat_seq_info {
 	int cpu;
 	pid_t pid;
+	xnflags_t status;
 	const char *name;
 	unsigned long psw;
 	unsigned long ssw;
@@ -279,15 +278,19 @@ static void stat_seq_stop(struct seq_file *seq, void *v)
 
 static int stat_seq_show(struct seq_file *seq, void *v)
 {
+    char msw[64];
+
     if (v == SEQ_START_TOKEN)
-	seq_printf(seq,"%-3s   %-6s %-24s     %-12s  %-6s   %-6s\n",
-		   "CPU","PID","NAME","MODSW","CSW","PF");
+	seq_printf(seq,"%-3s  %-6s %-10s  %-6s  %-4s  %-8s  %s\n",
+		   "CPU","PID","MSW","CSW","PF","STAT","NAME");
     else
 	{
 	struct stat_seq_info *p = (struct stat_seq_info *)v;
-	seq_printf(seq,"%3u   %-6d %-24s %6lu/%-6lu  %6lu  %6lu\n",
-		   p->cpu, p->pid, p->name,
-		   p->psw, p->ssw, p->csw, p->pf);
+	snprintf(msw,sizeof(msw),"%lu/%lu",p->psw, p->ssw);
+	seq_printf(seq,"%3u  %-6d %-10s  %-6lu  %-4lu  %.8lx  %s\n",
+		   p->cpu, p->pid,
+		   msw, p->csw, p->pf,
+		   p->status, p->name);
 	}
 
     return 0;
@@ -341,10 +344,10 @@ static int stat_seq_open(struct inode *inode, struct file *file)
 	{
 	xnthread_t *thread = link2thread(holder,glink);
 	int n = iter->nentries++;
-
 	iter->stat_info[n].cpu = xnsched_cpu(thread->sched);
 	iter->stat_info[n].pid = xnthread_user_pid(thread);
 	iter->stat_info[n].name = thread->name;
+	iter->stat_info[n].status = thread->status;
 	iter->stat_info[n].psw = thread->stat.psw;
 	iter->stat_info[n].ssw = thread->stat.ssw;
 	iter->stat_info[n].csw = thread->stat.csw;

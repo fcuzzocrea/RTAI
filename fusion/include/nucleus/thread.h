@@ -51,13 +51,29 @@
 #define XNSHADOW  0x00200000	/* Shadow thread */
 #define XNROOT    0x00400000	/* Root thread (i.e. Linux/IDLE) */
 
-/* Must follow the declaration order of the above bits. */
+/*
+  Must follow the declaration order of the above bits. Status symbols
+  are defined as follows:
+  'S' -> forcibly suspended.
+  'w'/'W' -> waiting for a resource, with or without timeout.
+  'D' -> delayed (without any other wait condition).
+  'R' -> runnable.
+  'U' -> unstarted or dormant.
+  'X' -> Relaxed shadow.
+  'b' -> Priority boost undergoing.
+  'T' -> ptraced and stopped.
+  'l' -> locks scheduler.
+  'r' -> undergoes round-robin .
+  's' -> interrupt shield enabled.
+  't' -> mode switches trapped.
+  'f' -> FPU enabled (for kernel threads).
+*/
 #define XNTHREAD_SLABEL_INIT { \
-  "ssp", "pnd", "dly", "rdy", "dor", \
-  "zom", "rst", "sta", "rlx", "tmo", \
-  "rmi", "brk", "sig", "pip", "stp", \
-  "lck", "rrb", "asd", "shl", "tsw", \
-  "fpu", "usr", "idl" \
+  'S', 'W', 'D', 'R', 'U', \
+  '.', '.', '.', 'X', '.', \
+  '.', '.', '.', 'b', 'T', \
+  'l', 'r', '.', 's', 't', \
+  'f', '.', '.' \
 }
 
 #define XNTHREAD_BLOCK_BITS   (XNSUSP|XNPEND|XNDELAY|XNDORMANT|XNRELAX)

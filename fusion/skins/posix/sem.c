@@ -102,7 +102,10 @@ static inline int sem_timedwait_internal (sem_t *sem, xnticks_t to)
             
         /* Handle cancellation requests. */
         thread_cancellation_point(cur);
-            
+
+        if (xnthread_test_flags(&cur->threadbase, XNRMID))
+            return EINVAL;
+
         if (xnthread_test_flags(&cur->threadbase, XNBREAK))
             return EINTR;
         

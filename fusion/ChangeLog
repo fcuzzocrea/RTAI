@@ -1,3 +1,7 @@
+2005-09-03  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/shadow.c: Make the interrupt shield support optional.
+
 2005-09-03  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/sem.c (sem_destroy, sem_timedwait_internal): Allow

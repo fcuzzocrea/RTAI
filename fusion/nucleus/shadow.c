@@ -80,13 +80,6 @@ static struct __lostagerq {
 
 } lostagerq[XNARCH_NR_CPUS];
 
-static rthal_pipeline_stage_t irq_shield;
-
-static cpumask_t shielded_cpus,
-                 unshielded_cpus;
-
-static raw_rwlock_t shield_lock = RAW_RW_LOCK_UNLOCKED;
-
 #define get_switch_lock_owner() \
 switch_lock_owner[task_cpu(current)]
 
@@ -133,6 +126,15 @@ static inline void set_linux_task_priority (struct task_struct *p, int prio)
     if (rthal_setsched_root(p,SCHED_FIFO,prio) < 0)
 	printk(KERN_WARNING "RTAI: invalid Linux priority level: %d, task=%s\n",prio,p->comm);
 }
+
+#ifdef CONFIG_RTAI_OPT_ISHIELD
+
+static rthal_pipeline_stage_t irq_shield;
+
+static cpumask_t shielded_cpus,
+                 unshielded_cpus;
+
+static raw_rwlock_t shield_lock = RAW_RW_LOCK_UNLOCKED;
 
 static inline void engage_irq_shield (void)
 
@@ -209,6 +211,15 @@ static void disengage_irq_shield (void)
     rthal_unlock_cpu(flags);
 }
 
+static inline void reset_shield (xnthread_t *thread)
+
+{
+    if (testbits(thread->status,XNSHIELD))
+	engage_irq_shield();
+    else
+	disengage_irq_shield();
+}
+
 static void shield_handler (unsigned irq)
 
 {
@@ -225,6 +236,19 @@ static inline void do_shield_domain_entry (void)
 }
 
 RTHAL_DECLARE_DOMAIN(shield_domain_entry);
+
+void xnshadow_reset_shield (void)
+
+{
+    xnthread_t *thread = xnshadow_thread(current);
+
+    if (!thread)
+	return; /* uh?! */
+
+    reset_shield(thread);
+}
+
+#endif /* CONFIG_RTAI_OPT_ISHIELD */
 
 static void lostage_handler (void *cookie)
 
@@ -265,9 +289,11 @@ static void lostage_handler (void *cookie)
 
  do_wakeup:
 
+#ifdef CONFIG_RTAI_OPT_ISHIELD
 		if (xnshadow_thread(p) &&
 		    testbits(xnshadow_thread(p)->status,XNSHIELD))
 		    engage_irq_shield();
+#endif /* CONFIG_RTAI_OPT_ISHIELD */
 
 		wake_up_process(p);
 		break;
@@ -497,8 +523,10 @@ void xnshadow_relax (int notify)
 
     xnltt_log_event(rtai_ev_secondarysw,thread->name);
 
+#ifdef CONFIG_RTAI_OPT_ISHIELD
     if (testbits(thread->status,XNSHIELD))
 	engage_irq_shield();
+#endif /* CONFIG_RTAI_OPT_ISHIELD */
 
     if (current->state & TASK_UNINTERRUPTIBLE)
 	/* Just to avoid wrecking Linux's accounting of non-
@@ -977,26 +1005,6 @@ void xnshadow_send_sig (xnthread_t *thread, int sig)
     schedule_linux_call(LO_SIGNAL_REQ,xnthread_user_task(thread),sig);
 }
 
-static inline void reset_shield (xnthread_t *thread)
-
-{
-    if (testbits(thread->status,XNSHIELD))
-	engage_irq_shield();
-    else
-	disengage_irq_shield();
-}
-
-void xnshadow_reset_shield (void)
-
-{
-    xnthread_t *thread = xnshadow_thread(current);
-
-    if (!thread)
-	return; /* uh?! */
-
-    reset_shield(thread);
-}
-
 static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data)
 
 {
@@ -1440,12 +1448,16 @@ static inline void do_schedule_event (struct task_struct *next)
 	}
 #endif /* CONFIG_RTAI_OPT_DEBUG */
 
+#ifdef CONFIG_RTAI_OPT_ISHIELD
 	reset_shield(threadin);
+#endif /* CONFIG_RTAI_OPT_ISHIELD */
 	}
     else if (next != gatekeeper[cpuid].server)
 	    {
 	    newrprio = XNPOD_ROOT_PRIO_BASE;
+#ifdef CONFIG_RTAI_OPT_ISHIELD
 	    disengage_irq_shield();
+#endif /* CONFIG_RTAI_OPT_ISHIELD */
 	    }
         else
 	    return;
@@ -1664,6 +1676,7 @@ int __init xnshadow_mount (void)
 {
     int cpu;
 
+#ifdef CONFIG_RTAI_OPT_ISHIELD
     if (rthal_register_domain(&irq_shield,
 			      "IShield",
 			      0x53484c44,
@@ -1673,6 +1686,7 @@ int __init xnshadow_mount (void)
 
     shielded_cpus = CPU_MASK_NONE;
     unshielded_cpus = xnarch_cpu_online_map;
+#endif /* CONFIG_RTAI_OPT_ISHIELD */
 
     nkgkptd = rthal_alloc_ptdkey();
     lostage_apc = rthal_apc_alloc("lostage_handler",&lostage_handler,NULL);
@@ -1710,7 +1724,9 @@ void __exit xnshadow_cleanup (void)
 
     rthal_apc_free(lostage_apc);
     rthal_free_ptdkey(nkgkptd);
+#ifdef CONFIG_RTAI_OPT_ISHIELD
     rthal_unregister_domain(&irq_shield);
+#endif /* CONFIG_RTAI_OPT_ISHIELD */
 }
 
 /*@}*/

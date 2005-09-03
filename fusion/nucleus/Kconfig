@@ -42,6 +42,23 @@ config RTAI_OPT_SYS_HEAPSZ
 	the nucleus and the real-time skins. The size is expressed in
 	Kilobytes.
 
+config RTAI_OPT_ISHIELD
+	bool "Interrupt shield support"
+	depends on RTAI_OPT_EXPERT && RTAI_OPT_FUSION
+	default y
+	help
+	
+	This option builds in the interrupt shield support, which can
+	be further enabled on a thread-by-thread basis. When enabled
+	for a thread, the interrupt shield prevents it from being
+	preempted by Linux interrupt handlers when it executes in the
+	secondary domain (i.e. under the control of the Linux
+	scheduler), thus increasing the execution time accuracy for
+	CPU-bound tasks. Note: this option has no additional effect on
+	threads running in the primary RTAI domain, for which
+	preemption by any kind of Linux kernel activities is already
+	prevented by design.
+
 config RTAI_OPT_STATS
 	bool "Statistics collection"
 	depends on RTAI_OPT_EXPERT

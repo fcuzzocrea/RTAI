@@ -683,6 +683,10 @@ int xnpod_init_thread (xnthread_t *thread,
     if (flags & ~(XNFPU|XNSHADOW|XNSHIELD|XNSUSP))
         return -EINVAL;
 
+#ifndef CONFIG_RTAI_OPT_ISHIELD
+    flags &= ~XNSHIELD;
+#endif /* !CONFIG_RTAI_OPT_ISHIELD */
+
     if (stacksize == 0)
         stacksize = XNARCH_THREAD_STACKSZ;
 
@@ -809,6 +813,10 @@ int xnpod_start_thread (xnthread_t *thread,
         err = -EBUSY;
         goto unlock_and_exit;
         }
+
+#ifndef CONFIG_RTAI_OPT_ISHIELD
+    mode &= ~XNSHIELD;
+#endif /* !CONFIG_RTAI_OPT_ISHIELD */
 
     __setbits(thread->status,(mode & (XNTHREAD_MODE_BITS|XNSUSP))|XNSTARTED);
     thread->imask = imask;
@@ -998,7 +1006,8 @@ void xnpod_restart_thread (xnthread_t *thread)
  * running in secondary mode from any preemption by the regular Linux
  * interrupt handlers, without delaying in any way the RTAI interrupt
  * handling. The shield is operated on a per-task basis at each
- * context switch, depending on the setting of this bit.
+ * context switch, depending on the setting of this bit. This flag is
+ * ignored whenever the interrupt shield support is not compiled in.
  *
  * Environments:
  *
@@ -1024,6 +1033,9 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
 
     xnltt_log_event(rtai_ev_thrsetmode,thread->name,clrmask,setmask);
 
+#ifndef CONFIG_RTAI_OPT_ISHIELD
+    setmask &= ~XNSHIELD;
+#endif /* !CONFIG_RTAI_OPT_ISHIELD */
     oldmode = (thread->status & XNTHREAD_MODE_BITS);
     __clrbits(thread->status,clrmask & XNTHREAD_MODE_BITS);
     __setbits(thread->status,setmask & XNTHREAD_MODE_BITS);
@@ -1045,7 +1057,7 @@ xnflags_t xnpod_set_thread_mode (xnthread_t *thread,
 
     xnlock_put_irqrestore(&nklock,s);
 
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION) && defined(CONFIG_RTAI_OPT_ISHIELD)
     if (runthread == thread &&
         testbits(thread->status,XNSHADOW) &&
         ((clrmask|setmask) & XNSHIELD) != 0)

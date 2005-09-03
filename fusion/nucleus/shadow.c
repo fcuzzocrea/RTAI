@@ -142,12 +142,12 @@ static inline void engage_irq_shield (void)
 
     rthal_lock_cpu(flags);
 
-    if (cpu_test_and_set(cpuid,shielded_cpus))
+    if (xnarch_cpu_test_and_set(cpuid,shielded_cpus))
 	goto unmask_and_exit;
 
     rthal_read_lock(&shield_lock);
 
-    cpu_clear(cpuid,unshielded_cpus);
+    xnarch_cpu_clear(cpuid,unshielded_cpus);
 
     xnarch_lock_xirqs(&irq_shield,cpuid);
 
@@ -166,12 +166,12 @@ static void disengage_irq_shield (void)
 
     rthal_lock_cpu(flags);
 
-    if (cpu_test_and_set(cpuid,unshielded_cpus))
+    if (xnarch_cpu_test_and_set(cpuid,unshielded_cpus))
 	goto unmask_and_exit;
 
     rthal_write_lock(&shield_lock);
 
-    cpu_clear(cpuid,shielded_cpus);
+    xnarch_cpu_clear(cpuid,shielded_cpus);
 
     /* We want the shield to be either engaged on all CPUs (i.e. if at
        least one CPU asked for shielding), or disengaged on all
@@ -195,7 +195,7 @@ static void disengage_irq_shield (void)
 #ifdef CONFIG_SMP
     {
     cpumask_t other_cpus = xnarch_cpu_online_map;
-    cpu_clear(cpuid,other_cpus);
+    xnarch_cpu_clear(cpuid,other_cpus);
     rthal_send_ipi(RTHAL_SERVICE_IPI1,other_cpus);
     }
 #endif /* CONFIG_SMP */
@@ -259,7 +259,7 @@ static void lostage_handler (void *cookie)
                    change the CPU of its Linux counter-part (this is a cheap
                    operation, since the said Linux counter-part is suspended
                    from Linux point of view). */
-		if (!cpu_isset(cpuid, p->cpus_allowed))
+		if (!xnarch_cpu_isset(cpuid, p->cpus_allowed))
 		    set_cpus_allowed(p, cpumask_of_cpu(cpuid));
 #endif /* CONFIG_SMP */
 
@@ -1134,9 +1134,9 @@ static inline int do_hisyscall_event (unsigned event, unsigned domid, void *data
 	/* Syscall must run into the Linux domain. */
 
 	if (domid == RTHAL_DOMAIN_ID)
+	    {
 	    /* Request originates from the RTAI domain: just relax the
 	       caller and execute the syscall immediately after. */
-	    {
 	    xnshadow_relax(1);
 	    switched = 1;
 	    }

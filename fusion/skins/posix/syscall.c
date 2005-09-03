@@ -174,6 +174,7 @@ int __pthread_create (struct task_struct *curr, struct pt_regs *regs)
     pthread_attr_init(&attr);
     attr.policy = curr->policy;
     param.sched_priority = curr->rt_priority;
+    attr.detachstate = PTHREAD_CREATE_DETACHED;
     attr.schedparam = param;
     attr.fp = 1;
     attr.name = curr->comm;

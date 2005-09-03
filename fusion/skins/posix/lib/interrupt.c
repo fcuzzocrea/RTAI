@@ -31,10 +31,10 @@ int pthread_intr_attach_np (pthread_intr_t *intr,
     int err;
 
     err = -XENOMAI_SKINCALL3(__pse51_muxid,
-			    __pse51_intr_attach,
-			    intr,
-			    irq,
-			    mode);
+			     __pse51_intr_attach,
+			     intr,
+			     irq,
+			     mode);
     if (!err)
 	return 0;
 

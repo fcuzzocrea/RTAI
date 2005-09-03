@@ -13,7 +13,8 @@
 
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 
+  USA.
  */
 
 #include <errno.h>
@@ -277,7 +278,7 @@ int __wrap_getsockopt(int fd, int level, int optname, void *optval,
 
 
 int __wrap_setsockopt(int fd, int level, int optname, const void *optval,
-                      socklen_t optlen)
+		      socklen_t optlen)
 {
     if (fd >= __rtdm_fd_start) {
         struct _rtdm_setsockopt_args args =
@@ -363,7 +364,8 @@ int __wrap_accept(int fd, struct sockaddr *addr, socklen_t *addrlen)
 }
 
 
-int __wrap_getsockname(int fd, struct sockaddr *name, socklen_t *namelen)
+int __wrap_getsockname(int fd, struct sockaddr *name, socklen_t *namelen
+ )
 {
     if (fd >= __rtdm_fd_start) {
         struct _rtdm_getsockaddr_args args = {name, namelen};
@@ -378,7 +380,8 @@ int __wrap_getsockname(int fd, struct sockaddr *name, socklen_t *namelen)
 }
 
 
-int __wrap_getpeername(int fd, struct sockaddr *name, socklen_t *namelen)
+int __wrap_getpeername(int fd, struct sockaddr *name, socklen_t *namelen
+ )
 {
     if (fd >= __rtdm_fd_start) {
         struct _rtdm_getsockaddr_args args = {name, namelen};

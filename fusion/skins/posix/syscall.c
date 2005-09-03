@@ -395,13 +395,8 @@ static sem_t *__sem_get_ptr(struct task_struct *task, sem_t *sem)
        address of semaphores obtained with sem_init is stored in user-space.
        address of semaphores obtained with sem_open is returned to user-space
        as-is. */
-    if (__xn_range_ok(task,sem,sizeof(&sem)))
-        {
-        if (!__xn_access_ok(task, VERIFY_READ, sem, sizeof(&sem)))
-            return ERR_PTR(-EFAULT);
-
+    if (__xn_access_ok(task,VERIFY_READ, sem, sizeof(&sem)))
         __xn_copy_from_user(task, &sem, sem, sizeof(&sem));
-        }
 
     return sem;
 }

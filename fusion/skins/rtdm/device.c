@@ -250,7 +250,7 @@ int rtdm_dev_register(struct rtdm_device* device)
                     GFP_KERNEL);
         if (!device->reserved.exclusive_context) {
             xnlogerr("RTDM: no memory for exclusive context (context size: "
-                     "%d)\n", device->context_size);
+                     "%ld)\n", (long) device->context_size);
             return -ENOMEM;
         }
         /* mark exclusive context as unused */

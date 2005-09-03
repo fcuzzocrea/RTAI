@@ -1,3 +1,7 @@
+2005-09-02  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/module.c: Revamp /proc/rtai/{sched,stat} output format.
+
 2005-08-31  Stéphane Fillod  <stephane.fillod@thomson.net>
 
 	* skins/compat/fifo.c (__fifo_pkg_init): fix missing init of flush
@@ -13,6 +17,9 @@
 	the way __wrap_open and __wrap_socket handle it.
 
 2005-08-31  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Add fusion's signature to base CFLAGS
+	(-D__FUSION__).
 
 	* skins/posix/lib/rtdm.c (__wrap_open, __wrap_socket): Divert the
 	syscall to Linux in case -ENOSYS is returned, which may happen if
@@ -37,8 +44,6 @@
 	* skins/posix/*.c (*_pkg_cleanup): Noisy gargage collection,
 	when debug is activated.
 
-2005-08-28  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
-
 	* skins/posix/signal.c (pse51_sigqueue_inner): Call
 	xnshadow_suspend to cause migration of the target thread to
 	primary mode, in order to get the signals dispatch function
@@ -47,9 +52,14 @@
 	* nucleus/shadow.c (xnshadow_harden): Dispatch signals when
 	hardening a thread. Export "xnshadow_suspend" for use by the POSIX
 	skin.
-
+  
 	* include/nucleus/asm-i386/syscall.h (__xn_range_ok): Same meaning
 	as on other arches.
+
+2005-08-28  Philippe Gerum  <rpm@xenomai.org>
+
+	* pod.c (xnpod_wait_thread_period): Catch earlier overruns
+	occurring due to scheduling delays.
 
 2005-08-27  Jan Kiszka <jan.kiszka@web.de>
 	

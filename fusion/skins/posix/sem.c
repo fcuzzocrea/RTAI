@@ -53,9 +53,8 @@ static void sem_destroy_internal (sem_t *sem)
 
 {
     removeq(&pse51_semq, &sem->link);    
-    /* synchbase wait queue may not be empty only when this function is called
-       from pse51_sem_obj_cleanup, hence the absence of xnpod_schedule(). */
-    xnsynch_destroy(&sem->synchbase);
+    if (xnsynch_destroy(&sem->synchbase) == XNSYNCH_RESCHED)
+        xnpod_schedule();
     if(sem->magic == PSE51_NAMED_SEM_MAGIC)
         {
         pse51_mark_deleted(sem);
@@ -265,12 +264,6 @@ int sem_destroy (sem_t *sem)
         goto error;
 	}
 
-    if (xnsynch_nsleepers(&sem->synchbase) > 0)
-	{
-        thread_set_errno(EBUSY);
-        goto error;
-	}
-
     sem_destroy_internal(sem);
 
     xnlock_put_irqrestore(&nklock, s);
@@ -440,10 +433,10 @@ void pse51_sem_pkg_cleanup (void)
         sem_t *sem = link2sem(holder);
 #ifdef CONFIG_RTAI_OPT_DEBUG
         if (sem->magic == PSE51_SEM_MAGIC)
-            xnprintf("Posix semaphore %p was not destroyed, destroying now.\n",
+            xnprintf("Posix semaphore %p was NOT destroyed, destroying now.\n",
                      sem);
         else
-            xnprintf("Posix semaphore \"%s\" was not destroyed, destroying"
+            xnprintf("Posix semaphore \"%s\" was NOT destroyed, destroying"
                      " now.\n", sem2named_sem(sem)->nodebase.name);
 #endif /* CONFIG_RTAI_OPT_DEBUG */
         sem_destroy_internal(sem);

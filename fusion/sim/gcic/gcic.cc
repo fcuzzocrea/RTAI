@@ -841,7 +841,7 @@ int main (int argc, char **argv)
 	// Add the instrumenter signatures to the definitions.
 
 	argStage0.append(new LString("-D__GCIC__"));
-	argStage0.append(new LString("-D__RTAI_SIM__"));
+	argStage0.append(new LString("-D__RTAI_SIM__ -D__FUSION__"));
 
 	// Automatically add Xenomai's system and MVM include
 	// directories.

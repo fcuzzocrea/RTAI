@@ -88,6 +88,9 @@
 #undef CONFIG_RTAI_OPT_FUSION
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_ISHIELD
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_NATIVE_ALARM
 
 /* Kconfig */

@@ -7,8 +7,8 @@ CONFIG_RTAI_VERSION="0.9 (fusion)"
 #
 # General
 #
-CONFIG_RTAI_INSTALLDIR="/home/rpm/install/icecube"
-CONFIG_RTAI_LINUXDIR="/home/rpm/kbuild/adeos/linuxppc-mpc52xx-adeos"
+CONFIG_RTAI_INSTALLDIR="/usr/realtime"
+CONFIG_RTAI_LINUXDIR="/lib/modules/`uname -r`/build"
 
 #
 # Documentation

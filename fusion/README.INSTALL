@@ -28,45 +28,47 @@ use the provided GNU configure script for this purpose. The available
 configuration switches can be listed by running ./configure
 --help. The RTAI-specific switches are:
 
- --enable-fusion        Enable real-time support in user-space
- --enable-native-skin	Build native RTAI skin
+ --enable-fusion        	Enable real-time support in user-space
+ --enable-native-skin		Build native RTAI skin
  --enable-native-registry-slots=<val> Set maximum number of registry slots
- --enable-native-pipe	 Enable pipe support in native skin
+ --enable-native-pipe	 	Enable pipe support in native skin
  --enable-native-pipe-bufsz	Set the size of the pipe fill space
- --enable-native-sem	Enable semaphore support in native skin
- --enable-native-event	Enable event flag support in native skin
- --enable-native-mutex	Enable mutex support in native skin
- --enable-native-cond	Enable condition variable support in native skin
- --enable-native-heap	Enable heap support in native skin
- --enable-native-queue	Enable queue support in native skin
- --enable-native-alarm	Enable alarm support in native skin
- --enable-native-mps	Enable message passing support in native skin
- --enable-native-intr	Enable interrupt API in native skin
- --enable-uart-16550A	Build 16550A UART driver
- --enable-psos-skin	Build pSOS+ emulator
- --enable-posix-skin	Build POSIX skin
- --enable-vxworks-skin	Build VxWorks emulator
- --enable-vrtx-skin	Build VRTX emulator
- --enable-uitron-skin	Build uITRON API skin
- --enable-user-vm	Build user-space VMs
+ --enable-native-sem		Enable semaphore support in native skin
+ --enable-native-event		Enable event flag support in native skin
+ --enable-native-mutex		Enable mutex support in native skin
+ --enable-native-cond		Enable condition variable support in native skin
+ --enable-native-heap		Enable heap support in native skin
+ --enable-native-queue		Enable queue support in native skin
+ --enable-native-alarm		Enable alarm support in native skin
+ --enable-native-mps		Enable message passing support in native skin
+ --enable-native-intr		Enable interrupt API in native skin
+ --enable-uart-16550A		Build 16550A UART driver
+ --enable-psos-skin		Build pSOS+ emulator
+ --enable-posix-skin		Build POSIX skin
+ --enable-vxworks-skin		Build VxWorks emulator
+ --enable-vrtx-skin		Build VRTX emulator
+ --enable-uitron-skin		Build uITRON API skin
+ --enable-user-vm		Build user-space VMs
  --enable-nucleus-heap-size	Set the size of the system heap (Kb)
- --enable-nucleus-debug	Enable debug support in nucleus
+ --enable-nucleus-stats		Enable nucleus statistics collection
+ --enable-nucleus-ishield	Enable interrupt shield
+ --enable-nucleus-debug		Enable debug support in nucleus
  --enable-nucleus-watchdog	Enable nucleus watchdog support
  --enable-nucleus-scalable-sched	Enable the scalable O(1) scheduler
  --enable-nucleus-scalable-prios	Set the maximum number of priority levels
- --enable-fpu		Enable FPU support
- --enable-periodic_timer Enable periodic timer support
- --enable-module-debug	Enable debug information in kernel modules
- --enable-user-debug	Enable debug information in user-space programs
- --enable-timer-latency	Set timer tuning latency (0=autocalibrate)
- --enable-sched-latency	Set scheduling latency (0=autocalibrate)
- --enable-sim		Build RTAI simulator
- --enable-dox-doc	Build Doxygen documentation
- --enable-dbx		Build Docbook XML documentation.
- --enable-dbx-network	Access Docbook DTD and XSL stylesheets through
-			the network
- --enable-latex-doc	Build LaTeX documentation
- --enable-verbose-latex Uses LaTeX non-stop mode
+ --enable-fpu			Enable FPU support
+ --enable-periodic_timer	Enable periodic timer support
+ --enable-module-debug		Enable debug information in kernel modules
+ --enable-user-debug		Enable debug information in user-space programs
+ --enable-timer-latency		Set timer tuning latency (0=autocalibrate)
+ --enable-sched-latency		Set scheduling latency (0=autocalibrate)
+ --enable-sim			Build RTAI simulator
+ --enable-dox-doc		Build Doxygen documentation
+ --enable-dbx			Build Docbook XML documentation.
+ --enable-dbx-network		Access Docbook DTD and XSL stylesheets through
+				the network
+ --enable-latex-doc		Build LaTeX documentation
+ --enable-verbose-latex 	Uses LaTeX non-stop mode
 
  --enable-x86-sep		Enable SEP instructions for syscalls
 

@@ -166,7 +166,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
     /* Force FPU support in user-space. This will lead to a no-op if
        the platform does not support it. */
 
-    err = rt_task_create(task,name,0,prio,XNFPU|XNSHADOW|XNSHIELD|affinity);
+    err = rt_task_create(task,name,0,prio,XNFPU|XNSHADOW|affinity);
 
     if (err == 0)
 	{

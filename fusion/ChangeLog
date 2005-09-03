@@ -1,5 +1,11 @@
 2005-09-03  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c (__rt_task_create): Don't enable the
+	interrupt shield by default since this has a penalty for threads
+	only running in the primary domain. Leave the enabling on a
+	thread-by-thread basis, for CPU-bound tasks mostly executing in
+	the secondary domain, through the rt_task_set_mode() interface.
+
 	* nucleus/shadow.c: Make the interrupt shield support optional.
 
 2005-09-03  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>

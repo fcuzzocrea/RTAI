@@ -55,7 +55,7 @@ static void pse51_shutdown(int xtype)
 
     pse51_thread_pkg_cleanup();
     pse51_timer_pkg_cleanup();
-/*     pse51_intr_pkg_cleanup(); */
+    pse51_intr_pkg_cleanup();
     pse51_tsd_pkg_cleanup();
     pse51_cond_pkg_cleanup();
     pse51_sem_pkg_cleanup();

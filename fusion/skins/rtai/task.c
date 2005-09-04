@@ -1323,8 +1323,10 @@ int rt_task_notify (RT_TASK *task,
  * running in secondary mode from any preemption by the regular Linux
  * interrupt handlers, without delaying in any way the RTAI interrupt
  * handling. The shield is operated on a per-task basis at each
- * context switch, depending on the setting of this bit. This bit is
- * set by default upon user-space task creation.
+ * context switch, depending on the setting of this flag. This flag is
+ * set by default upon user-space task creation. This feature is only
+ * available if the CONFIG_RTAI_OPT_ISHIELD option has been enabled at
+ * configuration time; otherwise, this flag is simply ignored.
  *
  * - When set, T_WARNSW causes the SIGXCPU signal to be sent to the
  * current user-space task whenever it switches to the secondary

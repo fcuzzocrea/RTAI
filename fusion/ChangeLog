@@ -1,3 +1,11 @@
+2005-09-04  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/ppc/patches: Upgrade to Adeos/ppc r8c3.
+
+	* arch/i386/patches: Upgrade to Adeos/x86 r13c2.
+
+	* arch/ia64/patches: Upgrade to Adeos/ia64 r8c2.
+
 2005-09-03  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/syscall.c (__rt_task_create): Don't enable the

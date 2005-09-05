@@ -26,10 +26,13 @@ ACKNOWLEDGMENTS:
 */
 
 
-//#define USE_RTAI_TASKS   0
-#define ALLOW_RR         1
-#define ONE_SHOT         0
-#define BUSY_TIME_ALIGN  0
+#define MONITOR_EXECTIME  1
+#define ALLOW_RR          1
+#define ONE_SHOT          0
+#define BUSY_TIME_ALIGN   0
+#define CAL_FREQS_FACT    0
+
+//#define USE_RTAI_TASKS    0
 
 #include <linux/module.h>
 #include <linux/kernel.h>
@@ -584,8 +587,7 @@ do { \
 #define UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
 #endif
 
-#define EXECTIME
-#ifdef EXECTIME
+#if MONITOR_EXECTIME
 static RTIME switch_time[NR_RT_CPUS];
 #define KEXECTIME() \
 do { \
@@ -737,6 +739,7 @@ static void rt_schedule_on_schedule_ipi(void)
 				delay = tuned.setup_time_TIMER_UNIT;
 				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
 			}
+			shot_fired = 1;
 			rt_set_timer_delay(delay);
 		}
 	} else {
@@ -811,12 +814,11 @@ void rt_schedule(void)
 			linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
 			if (linux_intr_time < rt_times.intr_time) {
 				rt_times.intr_time = linux_intr_time;
-				shot_fired = 1;
 				preempt = 1;
 			}
 		}
 #endif
-		if (preempt) {
+		if (preempt || (prio == RT_SCHED_LINUX_PRIORITY && !shot_fired)) {
 			RTIME now;
 			int delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
@@ -825,6 +827,7 @@ void rt_schedule(void)
 				delay = tuned.setup_time_TIMER_UNIT;
 				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
 			}
+			shot_fired = 1;
 			rt_set_timer_delay(delay);
 		}
 	} else {
@@ -1110,7 +1113,7 @@ static void rt_timer_handler(void)
 			}
 		}
 #ifndef USE_LINUX_TIMER
-		if (preempt) {
+		if (preempt || prio == RT_SCHED_LINUX_PRIORITY) {
 			RTIME now;
 			int delay;
 #else
@@ -1122,7 +1125,6 @@ static void rt_timer_handler(void)
 				linux_intr_time = rt_times.linux_time > rt_times.tick_time ? rt_times.linux_time : rt_times.tick_time + rt_times.linux_tick;
 				if (linux_intr_time < rt_times.intr_time) {
 					rt_times.intr_time = linux_intr_time;
-					shot_fired = 1;
 				}
 			}
 #endif
@@ -1133,6 +1135,7 @@ static void rt_timer_handler(void)
 				delay = tuned.setup_time_TIMER_UNIT;
 				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
 			}
+			shot_fired = 1;
 			rt_set_timer_delay(delay);
 		}
 	} else {
@@ -2763,7 +2766,7 @@ static int __rtai_lxrt_init(void)
 #else
 	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (IMMEDIATE, UP, KERNEL%s SPACE).\n", USE_RTAI_TASKS ? "" : "/USER");
 #endif
-	printk(KERN_INFO "RTAI[sched_lxrt]: timer=%s (%s),.\n",
+	printk(KERN_INFO "RTAI[sched_lxrt]: timer=%s (%s).\n",
 	       OneShot ? "oneshot" : "periodic", TIMER_NAME);
 	printk(KERN_INFO "RTAI[sched_lxrt]: standard tick=%d hz, CPU freq=%lu hz.\n",
 	       HZ,

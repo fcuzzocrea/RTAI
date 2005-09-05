@@ -4363,8 +4363,8 @@ diff -uNrp linux-2.6.11/include/asm-i386/mach-visws/do_timer.h linux-2.6.11-adeo
  	if (i & 0x01) {
 diff -uNrp linux-2.6.11/include/asm-i386/mmu_context.h linux-2.6.11-adeos/include/asm-i386/mmu_context.h
 --- linux-2.6.11/include/asm-i386/mmu_context.h	2005-03-02 08:38:34.000000000 +0100
-+++ linux-2.6.11-adeos/include/asm-i386/mmu_context.h	2005-09-03 14:54:20.000000000 +0200
-@@ -66,7 +66,19 @@ static inline void switch_mm(struct mm_s
++++ linux-2.6.11-adeos/include/asm-i386/mmu_context.h	2005-09-05 14:38:58.000000000 +0200
+@@ -66,7 +66,17 @@ static inline void switch_mm(struct mm_s
  #define deactivate_mm(tsk, mm) \
  	asm("movl %0,%%fs ; movl %0,%%gs": :"r" (0))
  
@@ -4380,8 +4380,6 @@ diff -uNrp linux-2.6.11/include/asm-i386/mmu_context.h linux-2.6.11-adeos/includ
  #define activate_mm(prev, next) \
  	switch_mm((prev),(next),NULL)
 +#endif /* CONFIG_ADEOS_CORE */
-+
-+#endif
  
  #endif
 diff -uNrp linux-2.6.11/include/asm-i386/pgalloc.h linux-2.6.11-adeos/include/asm-i386/pgalloc.h

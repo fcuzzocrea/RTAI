@@ -1,3 +1,10 @@
+2005-09-05  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-generic/system.h (xnarch_escalate): Get rid
+	of splsync there; this is useless and used to induce high jittery
+	in SMP configs, due to interrupt storm hitting the gatekeeper in
+	the middle of a thread hardening sequence.
+
 2005-09-05  Heikki Lindholm <holindho@cs.helsinki.fi>
 
 	* arch/ppc64/patches: Upgrade to Adeos/ppc64 r2c2.

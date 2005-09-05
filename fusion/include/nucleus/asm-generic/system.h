@@ -437,10 +437,7 @@ static inline int xnarch_escalate (void)
 
     if (rthal_current_domain == rthal_root_domain)
         {
-        spl_t s;
-        splsync(s);
         rthal_trigger_irq(xnarch_escalation_virq);
-        splexit(s);
         return 1;
         }
 

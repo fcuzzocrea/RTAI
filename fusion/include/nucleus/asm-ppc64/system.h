@@ -102,13 +102,17 @@ typedef struct xnarch_fltinfo {
 #define xnarch_fault_pc(fi)     ((fi)->regs->nip)
 /* FIXME: FPU faults ignored by the nanokernel on PPC. */
 #define xnarch_fault_fpu_p(fi)  (0)
-/* The following predicate is guaranteed to be called over a regular
-   Linux stack context. */
+
+/* The following predicates are only usable over a regular Linux stack
+ *    context. */
 #define xnarch_fault_pf_p(fi)   ((fi)->exception == ADEOS_ACCESS_TRAP)
-#define xnarch_fault_notify(fi) (!(current->ptrace & PT_PTRACED) || \
-				 ((fi)->exception != ADEOS_IABR_TRAP && \
-				  (fi)->exception != ADEOS_SSTEP_TRAP && \
-				  (fi)->exception != ADEOS_PERFMON_TRAP))
+#define xnarch_fault_bp_p(fi)   ((current->ptrace & PT_PTRACED) && \
+				((fi)->exception == ADEOS_IABR_TRAP || \
+				(fi)->exception == ADEOS_SSTEP_TRAP || \
+				(fi)->exception == ADEOS_PERFMON_TRAP))
+
+#define xnarch_fault_notify(fi) (!xnarch_fault_bp_p(fi))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -138,7 +142,7 @@ static inline void xnarch_sysfree (void *chunk, u_long bytes)
 static inline void xnarch_relay_tick (void)
 
 {
-    rthal_irq_host_pend(ADEOS_TIMER_VIRQ);
+    rthal_irq_host_pend(RTHAL_TIMER_IRQ);
 }
 
 #ifdef XENO_POD_MODULE
@@ -421,13 +425,13 @@ static inline void xnarch_grab_xirqs (void (*handler)(unsigned irq))
        individually. */
 
     rthal_virtualize_irq(rthal_current_domain,
-			 ADEOS_TIMER_VIRQ,
+			 RTHAL_TIMER_IRQ,
 			 handler,
 			 NULL,
 			 IPIPE_DYNAMIC_MASK);
 }
 
-static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
+static inline void xnarch_lock_xirqs (rthal_pipeline_stage_t *ipd, int cpuid)
 
 {
     unsigned irq;
@@ -437,7 +441,7 @@ static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
 	switch (irq)
 	    {
 #ifdef CONFIG_SMP
-	    case ADEOS_CRITICAL_IPI:
+	    case RTHAL_CRITICAL_IPI:
 
 		/* Never lock out this one. */
 		continue;
@@ -445,14 +449,14 @@ static inline void xnarch_lock_xirqs (adomain_t *adp, int cpuid)
 
 	    default:
 
-		rthal_lock_irq(adp,cpuid,irq);
+		rthal_lock_irq(ipd,cpuid,irq);
 	    }
 	}
 
-    rthal_lock_irq(adp,cpuid,ADEOS_TIMER_VIRQ);
+    rthal_lock_irq(ipd,cpuid,RTHAL_TIMER_IRQ);
 }
 
-static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
+static inline void xnarch_unlock_xirqs (rthal_pipeline_stage_t *ipd, int cpuid)
 
 {
     unsigned irq;
@@ -462,18 +466,18 @@ static inline void xnarch_unlock_xirqs (adomain_t *adp, int cpuid)
 	switch (irq)
 	    {
 #ifdef CONFIG_SMP
-	    case ADEOS_CRITICAL_IPI:
+	    case RTHAL_CRITICAL_IPI:
 
 		continue;
 #endif /* CONFIG_SMP */
 
 	    default:
 
-		rthal_unlock_irq(adp,irq);
+		rthal_unlock_irq(ipd,irq);
 	    }
 	}
 
-    rthal_unlock_irq(adp,ADEOS_TIMER_VIRQ);
+    rthal_unlock_irq(ipd,RTHAL_TIMER_IRQ);
 }
 
 #endif /* XENO_SHADOW_MODULE */

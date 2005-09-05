@@ -1,3 +1,12 @@
+2005-09-05  Heikki Lindholm <holindho@cs.helsinki.fi>
+
+	* arch/ppc64/patches: Upgrade to Adeos/ppc64 r2c2.
+
+	* include/nucleus/asm-ppc64/atomic.h (atomic_set_mask,
+	atomic_clear_mask): Fix.
+
+	* fusion: Adapt to RTHAL virtualization.
+	
 2005-09-04  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/ppc/patches: Upgrade to Adeos/ppc r8c3.

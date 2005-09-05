@@ -108,7 +108,7 @@ static inline  __attribute_const__ unsigned long ffnz (unsigned long ul) {
 
 #define RTHAL_TIMER_IRQ   ADEOS_TIMER_VIRQ
 
-#define rthal_irq_descp(irq)  (irq_desc + irq)
+#define rthal_irq_descp(irq)	(&irq_desc[(irq)])
 
 static inline unsigned long long rthal_rdtsc (void) {
     unsigned long long t;

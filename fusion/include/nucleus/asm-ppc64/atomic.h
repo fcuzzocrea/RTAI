@@ -30,9 +30,9 @@ static __inline__ void atomic_set_mask(unsigned long mask,
 				       unsigned long *ptr)
 {
     __asm__ __volatile__ ("\n\
-1:	lwarx	5,0,%0 \n\
+1:	ldarx	5,0,%0 \n\
 	or	5,5,%1\n"
-"	stwcx.	5,0,%0 \n\
+"	stdcx.	5,0,%0 \n\
 	bne-	1b"
 	: /*no output*/
 	: "r" (ptr), "r" (mask)
@@ -43,9 +43,9 @@ static __inline__ void atomic_clear_mask(unsigned long mask,
 					 unsigned long *ptr)
 {
     __asm__ __volatile__ ("\n\
-1:	lwarx	5,0,%0 \n\
+1:	ldarx	5,0,%0 \n\
 	andc	5,5,%1\n"
-"	stwcx.	5,0,%0 \n\
+"	stdcx.	5,0,%0 \n\
 	bne-	1b"
 	: /*no output*/
 	: "r" (ptr), "r" (mask)

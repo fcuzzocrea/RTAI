@@ -1,3 +1,8 @@
+2005-09-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Add initial release of the next generation
+	Adeos support.
+
 2005-09-06  Heikki Lindholm <holindho@cs.helsinki.fi>
 	
 	* skins/posix/lib/wrappers.c: Provide necessary support for use

@@ -384,6 +384,7 @@ static int gatekeeper_thread (void *data)
 	    thread->sched = xnpod_sched_slot(cpu);
 #endif /* CONFIG_SMP */
 	    xnpod_resume_thread(thread,XNRELAX);
+	    xnpod_renice_root(XNPOD_ROOT_PRIO_BASE);
 	    xnpod_schedule();
 	}
 

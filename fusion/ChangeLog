@@ -1,4 +1,12 @@
+2005-09-06  Heikki Lindholm <holindho@cs.helsinki.fi>
+	
+	* skins/posix/lib/wrappers.c: Provide necessary support for use
+	with shared libs.
+	
 2005-09-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/lib/GNUmakefile.am (libpthread_rt_la_LDFLAGS):
+	Remove spurious wrapping flags.
 
 	* skins/posix/demos/accuracy.c (threadA, threadB): Make sem_wait()
 	check for errors.

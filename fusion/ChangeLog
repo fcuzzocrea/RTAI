@@ -1,14 +1,18 @@
 2005-09-06  Philippe Gerum  <rpm@xenomai.org>
 
-	* arch/i386/patches: Add initial release of the next generation
-	Adeos support.
+ 	* RELEASE: fusion-0.9 (Ice Nice)
 
 2005-09-06  Heikki Lindholm <holindho@cs.helsinki.fi>
 	
-	* skins/posix/lib/wrappers.c: Provide necessary support for use
-	with shared libs.
+	* skins/posix/lib/wrappers.c: Solve shared lib issues with the
+	--wrap directive.
 	
 2005-09-06  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Add initial release of the next generation
+	Adeos support.
+
+	* drivers/16550A/16550A.c: Include missing asm/io.h.
 
 	* skins/posix/lib/GNUmakefile.am (libpthread_rt_la_LDFLAGS):
 	Remove spurious wrapping flags.

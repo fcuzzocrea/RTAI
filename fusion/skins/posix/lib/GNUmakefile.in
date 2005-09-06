@@ -65,7 +65,7 @@ am_libpthread_rt_la_OBJECTS = libpthread_rt_la-init.lo \
 	libpthread_rt_la-semaphore.lo libpthread_rt_la-clock.lo \
 	libpthread_rt_la-cond.lo libpthread_rt_la-mq.lo \
 	libpthread_rt_la-mutex.lo libpthread_rt_la-interrupt.lo \
-	libpthread_rt_la-rtdm.lo
+	libpthread_rt_la-rtdm.lo libpthread_rt_la-wrappers.lo
 libpthread_rt_la_OBJECTS = $(am_libpthread_rt_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/config/autoconf/depcomp
@@ -310,9 +310,6 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 lib_LTLIBRARIES = libpthread_rt.la
-posix_wrappers := $(shell cat $(srcdir)/posix.wrappers | \
-		    while read symbol; do echo -n "-Wl,--wrap -Wl,$$symbol " ; done )
-
 libpthread_rt_la_LDFLAGS = -module -version-info 0:0:0
 libpthread_rt_la_SOURCES = \
 	init.c \
@@ -324,7 +321,8 @@ libpthread_rt_la_SOURCES = \
 	mq.c \
 	mutex.c \
 	interrupt.c \
-	rtdm.c
+	rtdm.c \
+	wrappers.c
 
 include_HEADERS = \
 	mqueue.h \
@@ -417,6 +415,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-semaphore.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-thread.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-timer.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpthread_rt_la-wrappers.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -508,6 +507,13 @@ libpthread_rt_la-rtdm.lo: rtdm.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='rtdm.c' object='libpthread_rt_la-rtdm.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libpthread_rt_la-rtdm.lo `test -f 'rtdm.c' || echo '$(srcdir)/'`rtdm.c
+
+libpthread_rt_la-wrappers.lo: wrappers.c
+@am__fastdepCC_TRUE@	if $(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libpthread_rt_la-wrappers.lo -MD -MP -MF "$(DEPDIR)/libpthread_rt_la-wrappers.Tpo" -c -o libpthread_rt_la-wrappers.lo `test -f 'wrappers.c' || echo '$(srcdir)/'`wrappers.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libpthread_rt_la-wrappers.Tpo" "$(DEPDIR)/libpthread_rt_la-wrappers.Plo"; else rm -f "$(DEPDIR)/libpthread_rt_la-wrappers.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='wrappers.c' object='libpthread_rt_la-wrappers.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libpthread_rt_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libpthread_rt_la-wrappers.lo `test -f 'wrappers.c' || echo '$(srcdir)/'`wrappers.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

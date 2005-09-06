@@ -49,8 +49,10 @@ void *threadA (void *arg)
 
     for (;;)
 	{
-        while (sem_wait(&semA) == -1 && errno == EINTR)
-            ;
+        while (sem_wait(&semA) == -1)
+	    if (errno != EINTR)
+		pthread_exit(NULL);
+
 	ts.tv_sec = 0;
 	ts.tv_nsec = sampling_period * 1000;
         get_time_us(&t0);
@@ -82,8 +84,11 @@ void *threadB (void *arg)
     for (;;)
 	{
 	sem_post(&semA);
-	while (sem_wait(semB) == -1 && errno == EINTR)
-            ;
+
+        while (sem_wait(&semB) == -1)
+	    if (errno != EINTR)
+		pthread_exit(NULL);
+
         get_time_us(&t2);
 	
 	dt = t2 - t1;

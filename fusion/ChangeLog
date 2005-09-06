@@ -1,5 +1,8 @@
 2005-09-06  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/posix/demos/accuracy.c (threadA, threadB): Make sem_wait()
+	check for errors.
+
 	* nucleus/shadow.c (gatekeeper_thread): Clear the root thread's
 	priority boost after the current gatekeeping request has been
 	processed.

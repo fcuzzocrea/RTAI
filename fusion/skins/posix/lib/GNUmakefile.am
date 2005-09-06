@@ -5,7 +5,7 @@ lib_LTLIBRARIES = libpthread_rt.la
 posix_wrappers := $(shell cat $(srcdir)/posix.wrappers | \
 		    while read symbol; do echo -n "-Wl,--wrap -Wl,$$symbol " ; done )
 
-libpthread_rt_la_LDFLAGS = $(posix_wrappers) -module -version-info 0:0:0
+libpthread_rt_la_LDFLAGS = -module -version-info 0:0:0
 
 libpthread_rt_la_SOURCES = \
 	init.c \

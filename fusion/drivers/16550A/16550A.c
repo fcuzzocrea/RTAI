@@ -18,6 +18,7 @@
 
 #include <linux/module.h>
 #include <linux/ioport.h>
+#include <asm/io.h>
 
 #include <rtdm/rtserial.h>
 #include <rtdm/rtdm_driver.h>

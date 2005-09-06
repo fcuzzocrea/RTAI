@@ -471,8 +471,9 @@ int xnshadow_harden (void)
     if (xnthread_signaled_p(thread))
         xnpod_dispatch_signals();
 
-    xnltt_log_event(rtai_ev_primary,thread->name);
     xnlock_clear_irqon(&nklock);
+
+    xnltt_log_event(rtai_ev_primary,thread->name);
 
     /* "current" is now running into the RTAI domain. */
 

@@ -1,6 +1,7 @@
 all: install
 
-SCILAB_DIR = /usr/local/scilab-3.1.1
+SCILAB_VERSION = 3.1.1
+SCILAB_DIR = /usr/local/scilab-$(SCILAB_VERSION)
 MACROS_DIR = $(PWD)
 
 install:
@@ -8,5 +9,5 @@ install:
 	(cd $(SCILAB_DIR)/macros/RTAI ; make)
 
 user:
-	cat scilab >> ~/.Scilab/scilab-3.1.1/.scilab
-
+	mkdir -p ~/.Scilab/scilab-$(SCILAB_VERSION)
+	cat scilab >> ~/.Scilab/scilab-$(SCILAB_VERSION)/.scilab

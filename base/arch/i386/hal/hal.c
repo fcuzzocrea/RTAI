@@ -1394,7 +1394,7 @@ void rt_setup_8254_tsc (void)
 	rtai_critical_exit(flags);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if 0 && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 #define CHECK_KERCTX() \
 	if (CHECK_STACK_IN_IRQ) { \
 		long esp; \
@@ -1409,13 +1409,14 @@ void rt_setup_8254_tsc (void)
 
 static int rtai_hirq_dispatcher (struct pt_regs regs)
 {
-	unsigned long cpuid, irq = regs.orig_eax & 0xFF;
+	unsigned long cpuid, irq;
 
 	CHECK_KERCTX();
 
-	rt_switch_to_real_time(cpuid = rtai_cpuid());
-	adp_root->irqs[irq].acknowledge(irq); mb();
-	if (rtai_realtime_irq[irq].handler) {
+	cpuid = rtai_cpuid();
+	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
+		rt_switch_to_real_time(cpuid);
+		adp_root->irqs[irq].acknowledge(irq); mb();
 		RTAI_SCHED_ISR_LOCK();
 		if (rtai_realtime_irq[irq].retmode && rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie)) {
 			RTAI_SCHED_ISR_UNLOCK();
@@ -1424,32 +1425,38 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
                 } else {
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 			RTAI_SCHED_ISR_UNLOCK();
+			rt_switch_to_linux(cpuid);
+			if (!test_and_clear_bit(cpuid, &adeos_pended) || test_bit(IPIPE_STALL_FLAG, &rtai_linux_context[cpuid].oldflags)) {
+				return 0;
+			}
 		}
 	} else {
+		unsigned long lflags;
+		lflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+		adp_root->irqs[irq].acknowledge(irq); mb();
 		adeos_pend_uncond(irq, cpuid);
-	}
-	rt_switch_to_linux(cpuid);
-
-	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
-		rtai_sti();
-		if (irq == __adeos_tick_irq) {
-			ADEOS_TICK_REGS.eflags = regs.eflags;
-			ADEOS_TICK_REGS.eip    = regs.eip;
-			ADEOS_TICK_REGS.xcs    = regs.xcs;
-#if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
-			ADEOS_TICK_REGS.ebp    = regs.ebp;
-#endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
-        	}
-		if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
-			rtai_cli();
-			__adeos_sync_stage(IPIPE_IRQMASK_ANY);
+		adp_root->cpudata[cpuid].status = lflags;
+		if (test_bit(IPIPE_STALL_FLAG, &lflags)) {
+			return 0;
 		}
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-		set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
-#endif
-		return 1;
 	}
-	return 0;
+	rtai_sti();
+	if (irq == __adeos_tick_irq) {
+		ADEOS_TICK_REGS.eflags = regs.eflags;
+		ADEOS_TICK_REGS.eip    = regs.eip;
+		ADEOS_TICK_REGS.xcs    = regs.xcs;
+#if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
+		ADEOS_TICK_REGS.ebp    = regs.ebp;
+#endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
+        }
+	if (adp_root->cpudata[cpuid].irq_pending_hi != 0) {
+		rtai_cli();
+		__adeos_sync_stage(IPIPE_IRQMASK_ANY);
+	}
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+	set_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status);
+#endif
+	return 1;
 }
 
 //#define HINT_DIAG_ECHO

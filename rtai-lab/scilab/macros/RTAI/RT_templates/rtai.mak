@@ -4,13 +4,14 @@
 all: ../$$MODEL$$
 
 RTAIDIR = $(shell rtai-config --prefix)
+C_FLAGS = $(shell rtai-config --lxrt-cflags)
 SCIDIR = $$SCILAB_DIR$$
 
 RM = rm -f
 FILES_TO_CLEAN = *.o ../$$MODEL$$
 
 CC = gcc
-CC_OPTIONS = -O -DNDEBUG -Dlinux -fwritable-strings -DNARROWPROTO 
+CC_OPTIONS = -O -DNDEBUG -Dlinux -DNARROWPROTO 
 
 MODEL = $$MODEL$$
 OBJSSTAN = $$OBJ$$
@@ -19,7 +20,7 @@ SCILIBS = $(SCIDIR)/libs/scicos.a $(SCIDIR)/libs/lapack.a $(SCIDIR)/libs/poly.a 
 OTHERLIBS = 
 ULIBRARY = $(RTAIDIR)/lib/libsciblk.a $(RTAIDIR)/lib/liblxrt.a
 
-CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/routines -I$(RTAIDIR)/include -I$(RTAIDIR)/include/scicos -DMODEL=$(MODEL)
+CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/routines $(C_FLAGS) -I$(RTAIDIR)/include/scicos -DMODEL=$(MODEL)
 
 rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL)_standalone.c $(MODEL)_io.c
 	cp $< .

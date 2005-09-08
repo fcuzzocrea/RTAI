@@ -51,7 +51,6 @@ static int __alarm_read_proc (char *page,
 			      void *data)
 {
     RT_ALARM *alarm = (RT_ALARM *)data;
-    xnpholder_t *holder;
     char *p = page;
     int len;
     spl_t s;
@@ -63,8 +62,8 @@ static int __alarm_read_proc (char *page,
 	alarm->expiries);
 
 #if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-
-    holder = getheadpq(xnsynch_wait_queue(&alarm->synch_base));
+    {
+    xnpholder_t *holder = getheadpq(xnsynch_wait_queue(&alarm->synch_base));
     
     while (holder)
         {
@@ -72,7 +71,7 @@ static int __alarm_read_proc (char *page,
         p += sprintf(p,"+%s\n",xnthread_name(sleeper));
         holder = nextpq(xnsynch_wait_queue(&alarm->synch_base),holder);
         }
-
+    }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
     xnlock_put_irqrestore(&nklock,s);

@@ -658,7 +658,7 @@ RTAI_PROTO(int, rt_thread_join, (int thread))
 static inline RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
 {
 	struct { RT_TASK *task; struct pt_regs *regs; } arg = { task, regs };
-	return rtai_lxrt(BIDX, SIZARG, RECEIVE_LINUX_SYSCALL, &arg).v[LOW];
+	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, RECEIVE_LINUX_SYSCALL, &arg).v[LOW];
 }
 
 static inline void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)

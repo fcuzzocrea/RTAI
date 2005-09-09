@@ -27,9 +27,7 @@ endif
 
 rtai_nucleus$(modext): @RTAI_KBUILD_ENV@
 rtai_nucleus$(modext): $(libmodule_SRC) FORCE
-	@RTAI_KBUILD_TOP@ \
-	@RTAI_KBUILD_CMD@ fusion_extradef="@RTAI_KMOD_CFLAGS@" \
-	@RTAI_KBUILD_BOTTOM@
+	@RTAI_KBUILD_CMD@ fusion_extradef="@RTAI_KMOD_CFLAGS@"
 
 all-local: rtai_nucleus$(modext)
 if CONFIG_RTAI_OLD_FASHIONED_BUILD

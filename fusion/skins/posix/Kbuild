@@ -4,6 +4,6 @@ EXTRA_CFLAGS += -I$(fusion_srctree)/include \
 		-I$(src)/../.. \
 		$(fusion_extradef)
 
-obj-m += $(rtai_target).o
+obj-m += $(fusion_target).o
 
-$(rtai_target)-objs := $(fusion_objs)
+$(fusion_target)-objs := $(fusion_objs)

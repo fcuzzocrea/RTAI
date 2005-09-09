@@ -1259,12 +1259,10 @@ dnl
 
 RTAI_MODULE_EXT=.ko
 RTAI_KBUILD_ENV='src2obj = $(patsubst %.$(1),%.o,$(filter %.$(1),$(call notdir,$(2))))'
-RTAI_KBUILD_TOP=@
-RTAI_KBUILD_BOTTOM=
-RTAI_KBUILD_CMD="for src in \$(filter-out FORCE, \$^); do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
+RTAI_KBUILD_CMD="@for src in \$(filter-out FORCE, \$^); do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=$RTAI_TARGET_ARCH \
 		    M=\$\$PWD fusion_srctree=\`cd \$(top_srcdir) && pwd\` fusion_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) MODVERDIR=$top_builddir/symbols modules \
-		    fusion_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
+		    fusion_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' fusion_target=\$(basename \$@)"
 
 RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
 RTAI_KBUILD_DISTCLEAN='rm -Rf .tmp_versions'
@@ -1391,8 +1389,6 @@ AC_SUBST(RTAI_MODULE_DIR)
 AC_SUBST(RTAI_MODULE_EXT)
 AC_SUBST(RTAI_SYMBOL_DIR)
 AC_SUBST(RTAI_KBUILD_ENV)
-AC_SUBST(RTAI_KBUILD_TOP)
-AC_SUBST(RTAI_KBUILD_BOTTOM)
 AC_SUBST(RTAI_KBUILD_CMD)
 AC_SUBST(RTAI_KBUILD_CLEAN)
 AC_SUBST(RTAI_KBUILD_DISTCLEAN)

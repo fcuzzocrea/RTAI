@@ -1,6 +1,7 @@
 2005-09-09  Philippe Gerum  <rpm@xenomai.org>
 
-	* fusion: Makefile.kbuild -> Kbuild.
+	* fusion: Makefile.kbuild -> Kbuild; remove top and bottom Kbuild
+	commands.
 
 	* fusion/makefile: Rename srctree to fusion_srctree to prevent
 	conflicts with Kbuild.

@@ -49,9 +49,7 @@ distfiles = syscall.c syscall.h intr.c intr.h
 
 rtai_posix$(modext): @RTAI_KBUILD_ENV@
 rtai_posix$(modext): $(libmodule_SRC) FORCE
-	@RTAI_KBUILD_TOP@ \
-	@RTAI_KBUILD_CMD@ fusion_extradef="@RTAI_KMOD_CFLAGS@" \
-	@RTAI_KBUILD_BOTTOM@
+	@RTAI_KBUILD_CMD@ fusion_extradef="@RTAI_KMOD_CFLAGS@"
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

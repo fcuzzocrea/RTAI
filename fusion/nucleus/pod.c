@@ -3052,7 +3052,7 @@ unlock_and_exit:
     /* When no host ticking service is required for the underlying
        arch, the host timer exists but simply never ticks since
        xntimer_start() is passed a null interval value. CAUTION:
-       kernel timers over aperiodic mode can be started by
+       kernel timers over aperiodic mode may be started by
        xntimer_start() only _after_ the hw timer has been set up
        through xnarch_start_timer(). */
 

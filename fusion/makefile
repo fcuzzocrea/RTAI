@@ -2,22 +2,22 @@ KCONFIG_DIR=./config/kconfig
 CC := gcc
 
 ifneq ($(MAKECMDGOALS),help)
-ifeq ($(srctree),)
+ifeq ($(fusion_srctree),)
 ifneq ($(MAKEFILE_LIST),)
 # Since 3.80, we can find out which Makefile is currently processed,
 # and infere the location of the source tree using MAKEFILE_LIST.
-srctree := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
+fusion_srctree := $(dir $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 else
-ifeq ($(srctree),)
-srctree := $(shell test -d config && pwd)
-ifeq ($(srctree),)
-$(error Please specify the location of your source tree: make srctree=...)
+ifeq ($(fusion_srctree),)
+fusion_srctree := $(shell test -d config && pwd)
+ifeq ($(fusion_srctree),)
+$(error Please specify the location of your source tree: make fusion_srctree=...)
 endif
 endif
 endif
 endif
-build_alias := $(shell $(srctree)/config/autoconf/config.guess)
-host_alias := $(shell  $(srctree)/config/autoconf/arch2host.sh $(ARCH) $(build_alias))
+build_alias := $(shell $(fusion_srctree)/config/autoconf/config.guess)
+host_alias := $(shell  $(fusion_srctree)/config/autoconf/arch2host.sh $(ARCH) $(build_alias))
 override ARCH := $(shell echo $(host_alias)|cut -f1 -d-|sed -e s/^i.86/i386/ -e s/^powerpc/ppc/)
 endif
 
@@ -26,7 +26,7 @@ confgui = $(shell test $(TERM) = emacs && echo xconfig || echo menuconfig)
 forceconf = $(shell test -r .rtai_config -a -r .cfok || echo $(confgui))
 endif
 
-override srctree := $(shell cd $(srctree) && pwd)
+override fusion_srctree := $(shell cd $(fusion_srctree) && pwd)
 
 all:: $(forceconf)
 	@/bin/true
@@ -53,7 +53,7 @@ config.status: .rtai_config
 	eval `grep ^CONFIG_RTAI_INSTALLDIR $<`; \
 	eval `grep ^CONFIG_RTAI_MAINT $<`; \
 	test x$$CONFIG_RTAI_MAINT_AUTOTOOLS = xy && confopts=--enable-maintainer-mode; \
-	$(srctree)/configure \
+	$(fusion_srctree)/configure \
 	CROSS_COMPILE=$(CROSS_COMPILE) \
 	CC=$(CROSS_COMPILE)$(CC) \
 	CXX=$(CROSS_COMPILE)$(CXX) \
@@ -79,41 +79,41 @@ config.status: .rtai_config
 
 qconf: $(KCONFIG_DIR)
 	@$(MAKE) -C $(KCONFIG_DIR) \
-	-f $(srctree)/$(KCONFIG_DIR)/Makefile.kconfig xconfig \
-	srctree=$(srctree) ARCH=$(ARCH)
+	-f $(fusion_srctree)/$(KCONFIG_DIR)/Makefile.kconfig xconfig \
+	srctree=$(fusion_srctree) ARCH=$(ARCH)
 
 gconf: $(KCONFIG_DIR)
 	@$(MAKE) -C $(KCONFIG_DIR) \
-	-f $(srctree)/$(KCONFIG_DIR)/Makefile.kconfig gconfig \
-	srctree=$(srctree) ARCH=$(ARCH)
+	-f $(fusion_srctree)/$(KCONFIG_DIR)/Makefile.kconfig gconfig \
+	srctree=$(fusion_srctree) ARCH=$(ARCH)
 
 mconf: $(KCONFIG_DIR)
 	@$(MAKE) -C $(KCONFIG_DIR) \
-	-f $(srctree)/$(KCONFIG_DIR)/Makefile.kconfig menuconfig \
-	srctree=$(srctree) ARCH=$(ARCH)
+	-f $(fusion_srctree)/$(KCONFIG_DIR)/Makefile.kconfig menuconfig \
+	srctree=$(fusion_srctree) ARCH=$(ARCH)
 
 conf: $(KCONFIG_DIR)
 	@$(MAKE) -C $(KCONFIG_DIR) \
-	-f $(srctree)/$(KCONFIG_DIR)/Makefile.kconfig config \
-	srctree=$(srctree) ARCH=$(ARCH)
+	-f $(fusion_srctree)/$(KCONFIG_DIR)/Makefile.kconfig config \
+	srctree=$(fusion_srctree) ARCH=$(ARCH)
 
 oldconf: $(KCONFIG_DIR)
 	@$(MAKE) -C $(KCONFIG_DIR) \
-	-f $(srctree)/$(KCONFIG_DIR)/Makefile.kconfig oldconfig \
-	srctree=$(srctree) ARCH=$(ARCH)
+	-f $(fusion_srctree)/$(KCONFIG_DIR)/Makefile.kconfig oldconfig \
+	srctree=$(fusion_srctree) ARCH=$(ARCH)
 
 $(KCONFIG_DIR):
 	@test -d $@ || mkdir -p $@
 
 help:
-	@echo ; echo "This is RTAI's build bootstrapping Makefile. In order to build RTAI," ; \
+	@echo ; echo "This is RTAI/fusion's build bootstrapping Makefile. In order to build RTAI/fusion," ; \
 	echo 'you first need to configure it. Proceed as follows:' ; \
 	echo ; echo '$$ cd $$your_builddir' ; echo ; \
 	echo '# Configuration using a KDE-based, GTK-based or Dialog-based GUI' ; \
-	echo '$$ make -f $$rtai_srcdir/makefile srctree=$$rtai_srcdir {xconfig,gconfig,menuconfig}' ; \
+	echo '$$ make -f $$fusion_srcdir/makefile fusion_srctree=$$fusion_srcdir {xconfig,gconfig,menuconfig}' ; \
 	echo '                            OR,' ; \
 	echo '# Configuration using a text-based interface' ; \
-	echo '$$ make -f $$rtai_srcdir/makefile srctree=$$rtai_srcdir {config,oldconfig}' ; \
+	echo '$$ make -f $$fusion_srcdir/makefile fusion_srctree=$$fusion_srcdir {config,oldconfig}' ; \
 	echo ; echo 'In case a configuration error occurs, re-run the command above to fix the' ; \
 	echo 'faulty parameter. Once the configuration is successful, type:' ; echo ; \
 	echo '$$ make [all]' ; \
@@ -125,14 +125,14 @@ clean distclean:
 	$(MAKE) -C $(KCONFIG_DIR) -f Makefile.kconfig clean ; fi
 	if test -r GNUmakefile ; then \
 	$(MAKE) -f GNUmakefile $@ ; else \
-	$(MAKE) -C $(KCONFIG_DIR) -f $(srctree)/$(KCONFIG_DIR)/Makefile.kconfig clean ; \
+	$(MAKE) -C $(KCONFIG_DIR) -f $(fusion_srctree)/$(KCONFIG_DIR)/Makefile.kconfig clean ; \
 	fi
 	@find . -name autom4te.cache | xargs rm -fr
 
 all %::
 	@if test -r GNUmakefile ; then \
 	$(MAKE) -f GNUmakefile $@ ; else \
-	echo "*** Please configure RTAI first (running 'make help' in RTAI's toplevel dir might help)." ; \
+	echo "*** Please configure RTAI/fusion first (running 'make help' in RTAI/fusion's toplevel dir might help)." ; \
 	exit 1; fi
 
 .PHONY: config-script reconfig xconfig gconfig mconfig menuconfig config oldconfig qconf mconf conf clean distclean help

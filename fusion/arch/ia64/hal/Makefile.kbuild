@@ -1,14 +1,14 @@
-EXTRA_CFLAGS += -I$(rtai_srctree)/include \
+EXTRA_CFLAGS += -I$(fusion_srctree)/include \
 		-I$(src)/../../../include \
 		-I$(src)/../../.. \
-		$(rtai_extradef)
+		$(fusion_extradef)
 
-EXTRA_AFLAGS += -I$(rtai_srctree)/include \
+EXTRA_AFLAGS += -I$(fusion_srctree)/include \
 		-I$(src)/../../../include \
 		-I$(src)/../../.. \
 		-Iarch/ia64/kernel \
-		$(rtai_extradef)
+		$(fusion_extradef)
 
 obj-m += rtai_hal.o
 
-rtai_hal-objs := $(rtai_objs)
+rtai_hal-objs := $(fusion_objs)

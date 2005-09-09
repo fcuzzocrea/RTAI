@@ -1,3 +1,8 @@
+2005-09-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* fusion/makefile: Rename srctree to fusion_srctree to prevent
+	conflicts with Kbuild.
+
 2005-09-06  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.9 (Ice Nice)
@@ -4174,7 +4179,7 @@
 
 2004-05-01  Philippe Gerum  <rpm@xenomai.org>
 
-	* configure.in: Ensure that rtai_srctree and rtai_srcdir are
+	* configure.in: Ensure that fusion_srctree and fusion_srcdir are
 	always absolute paths. This fixes out-of-tree builds when
 	executing the configure script by hand.
 

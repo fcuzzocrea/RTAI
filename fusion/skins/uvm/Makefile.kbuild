@@ -1,9 +1,9 @@
-EXTRA_CFLAGS += -I$(rtai_srctree)/include \
-		-I$(rtai_srcdir)/.. \
+EXTRA_CFLAGS += -I$(fusion_srctree)/include \
+		-I$(fusion_srcdir)/.. \
 		-I$(src)/../../include \
 		-I$(src)/../.. \
-		$(rtai_extradef)
+		$(fusion_extradef)
 
 obj-m += $(rtai_target).o
 
-$(rtai_target)-objs := $(rtai_objs)
+$(rtai_target)-objs := $(fusion_objs)

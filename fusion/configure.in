@@ -1263,8 +1263,8 @@ RTAI_KBUILD_TOP=@
 RTAI_KBUILD_BOTTOM=
 RTAI_KBUILD_CMD="for src in \$(filter-out FORCE, \$^); do if test \\! -r \`basename \$\$src\`; then \$(LN_S) \$\$src; fi; done; \
                     \$(MAKE) -C $RTAI_LINUX_DIR CROSS_COMPILE=\$(CROSS_COMPILE) CC=$CC ARCH=$RTAI_TARGET_ARCH \
-		    M=\$\$PWD rtai_srctree=\`cd \$(top_srcdir) && pwd\` rtai_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) MODVERDIR=$top_builddir/symbols modules \
-		    rtai_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
+		    M=\$\$PWD fusion_srctree=\`cd \$(top_srcdir) && pwd\` fusion_srcdir=\`cd \$(srcdir) && pwd\` V=\$(V) MODVERDIR=$top_builddir/symbols modules \
+		    fusion_objs='\$(call src2obj,c,\$^) \$(call src2obj,S,\$^) \$(call src2obj,cc,\$^) \$(call src2obj,cpp,\$^)' rtai_target=\$(basename \$@)"
 
 RTAI_KBUILD_CLEAN='rm -f *.ko *.mod.c .*.cmd *.o'
 RTAI_KBUILD_DISTCLEAN='rm -Rf .tmp_versions'

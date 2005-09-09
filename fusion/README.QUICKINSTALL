@@ -27,8 +27,8 @@ RTAI/fusion against the resulting kernel tree. Here is how to do this:
     $ cd build 
     $ make -f <fusion-src-dir>/makefile menuconfig (or 'xconfig' or 'gconfig')
 
-    In case you get error about missing 'srctree' (gmake version < 3.80) you should
-    add "srctree=<fusion-src-dir>" to the command line.
+    In case you get error about missing 'fusion_srctree' (gmake version < 3.80)
+    you should add "fusion_srctree=<fusion-src-dir>" to the command line.
 
 
 >4. a GUI should pop up, allowing you to configure RTAI:

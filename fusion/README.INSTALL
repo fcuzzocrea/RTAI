@@ -17,7 +17,7 @@ $ make -f $source_tree/makefile gconfig # (GTK-based)
 $ make -f $source_tree/makefile menuconfig # (Dialog-based)
 
 If "make" complains about not being able to locate the source tree
-(make_version < 3.80), simply add "srctree=$source_tree" to the
+(make_version < 3.80), simply add "fusion_srctree=$source_tree" to the
 command above.
 
 1.1.2 Non-interactive configuration
@@ -80,7 +80,7 @@ build by running:
 
 $ cp -p $old_builddir/.rtai_config $new_builddir
 $ cd $new_builddir
-$ make -f $source_tree/makefile srctree=$source_tree oldconfig
+$ make -f $source_tree/makefile fusion_srctree=$source_tree oldconfig
 
 1.1.4 Selecting alternate compilers
 -----------------------------------

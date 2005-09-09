@@ -41,7 +41,7 @@ clean-if-reconfigured:
 
 reconfig xconfig gconfig mconfig menuconfig config oldconfig:
 	@$(MAKE) -f $(srcdir)/makefile $@ \
-	srctree=$(srcdir) ARCH=@RTAI_HOST_STRING@ CROSS_COMPILE=@CROSS_COMPILE@
+	fusion_srctree=$(srcdir) ARCH=@RTAI_HOST_STRING@ CROSS_COMPILE=@CROSS_COMPILE@
 
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 clean-local:

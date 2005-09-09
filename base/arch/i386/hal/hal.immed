@@ -1426,7 +1426,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 			RTAI_SCHED_ISR_UNLOCK();
 			rt_switch_to_linux(cpuid);
-			if (!test_and_clear_bit(cpuid, &adeos_pended) || test_bit(IPIPE_STALL_FLAG, &rtai_linux_context[cpuid].oldflags)) {
+			if (!test_and_clear_bit(cpuid, &adeos_pended) || test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 				return 0;
 			}
 		}

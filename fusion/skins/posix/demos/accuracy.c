@@ -85,7 +85,7 @@ void *threadB (void *arg)
 	{
 	sem_post(&semA);
 
-        while (sem_wait(&semB) == -1)
+        while (sem_wait(semB) == -1)
 	    if (errno != EINTR)
 		pthread_exit(NULL);
 

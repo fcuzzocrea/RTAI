@@ -42,7 +42,7 @@ host_triplet = @host@
 test_PROGRAMS = latency$(EXEEXT)
 subdir = testsuite/klatency
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/GNUmakefile.am \
-	$(srcdir)/GNUmakefile.in $(srcdir)/Makefile.kbuild
+	$(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/autoconf/docbook.m4 \
 	$(top_srcdir)/configure.in
@@ -50,7 +50,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/rtai_config.h
-CONFIG_CLEAN_FILES = Makefile
+CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(testdir)"
 testPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(test_PROGRAMS)

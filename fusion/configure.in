@@ -1348,20 +1348,22 @@ else
    AC_MSG_RESULT([$RTAI_TARGET_ARCH ($RTAI_TARGET_SUBARCH)])
 fi
 
-AC_CONFIG_LINKS(arch/$RTAI_TARGET_ARCH/hal/Makefile:arch/$RTAI_TARGET_ARCH/hal/Makefile.kbuild)
 AC_CONFIG_LINKS(arch/$RTAI_TARGET_ARCH/hal/generic.c:arch/generic/hal/generic.c)
-AC_CONFIG_LINKS(nucleus/Makefile:nucleus/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/uvm/Makefile:skins/uvm/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/posix/Makefile:skins/posix/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/rtai/Makefile:skins/rtai/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/psos+/Makefile:skins/psos+/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/uitron/Makefile:skins/uitron/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/vrtx/Makefile:skins/vrtx/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/vxworks/Makefile:skins/vxworks/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/rtdm/Makefile:skins/rtdm/Makefile.kbuild)
-AC_CONFIG_LINKS(skins/compat/Makefile:skins/compat/Makefile.kbuild)
-AC_CONFIG_LINKS(testsuite/klatency/Makefile:testsuite/klatency/Makefile.kbuild)
-AC_CONFIG_LINKS(drivers/16550A/Makefile:drivers/16550A/Makefile.kbuild)
+if test "x$CONFIG_RTAI_OLD_FASHIONED_BUILD" = x; then
+   AC_CONFIG_LINKS(arch/$RTAI_TARGET_ARCH/hal/Kbuild)
+   AC_CONFIG_LINKS(nucleus/Kbuild)
+   AC_CONFIG_LINKS(skins/uvm/Kbuild)
+   AC_CONFIG_LINKS(skins/posix/Kbuild)
+   AC_CONFIG_LINKS(skins/rtai/Kbuild)
+   AC_CONFIG_LINKS(skins/psos+/Kbuild)
+   AC_CONFIG_LINKS(skins/uitron/Kbuild)
+   AC_CONFIG_LINKS(skins/vrtx/Kbuild)
+   AC_CONFIG_LINKS(skins/vxworks/Kbuild)
+   AC_CONFIG_LINKS(skins/rtdm/Kbuild)
+   AC_CONFIG_LINKS(skins/compat/Kbuild)
+   AC_CONFIG_LINKS(testsuite/klatency/Kbuild)
+   AC_CONFIG_LINKS(drivers/16550A/Kbuild)
+fi
 
 dnl
 dnl Build the Makefiles

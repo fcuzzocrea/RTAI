@@ -139,7 +139,8 @@ void xnpod_welcome_thread(struct xnthread *);
 void xnpod_delete_thread(struct xnthread *);
 
 static inline int xnarch_start_timer (unsigned long ns,
-                                      void (*tickhandler)(void)) {
+                                      void (*tickhandler)(void))
+{
     return rthal_timer_request(tickhandler,ns);
 }
 

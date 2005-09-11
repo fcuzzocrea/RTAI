@@ -1,5 +1,13 @@
 2005-09-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c (__rt_queue_bind, __rt_heap_bind): Check
+	whether we actually run in primary mode before attempting to relax
+	the caller.
+	__rt_heap_alloc: Make conforming.
+
+	* skins/rtai/heap.c (__heap_read_proc): Swap used and total size
+	values.
+
 	* include/nucleus/asm-i386/hal.h (rthal_timer_program_shot): Kick
 	the timer IRQ immediately upon null delay using the HAL's internal
 	interrupt trigger service.

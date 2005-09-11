@@ -2038,11 +2038,12 @@ static int __rt_queue_bind (struct task_struct *curr, struct pt_regs *regs)
 
     xnlock_put_irqrestore(&nklock,s);
 
-    /* We need to migrate to secondary mode now for mapping the pool
-       memory to user-space; we must have entered this syscall in
-       primary mode. */
+    /* We might need to migrate to secondary mode now for mapping the
+       pool memory to user-space; since this syscall is conforming, we
+       might have entered it in primary mode. */
 
-    xnshadow_relax(0);
+    if (xnpod_primary_p())
+	xnshadow_relax(0);
 
     xnlock_get_irqsave(&nklock,s);
 
@@ -2467,11 +2468,12 @@ static int __rt_heap_bind (struct task_struct *curr, struct pt_regs *regs)
 
     xnlock_put_irqrestore(&nklock,s);
 
-    /* We need to migrate to secondary mode now for mapping the heap
-       memory to user-space; we must have entered this syscall in
-       primary mode. */
+    /* We might need to migrate to secondary mode now for mapping the
+       heap memory to user-space; since this syscall is conforming, we
+       might have entered it in primary mode. */
 
-    xnshadow_relax(0);
+    if (xnpod_primary_p())
+	xnshadow_relax(0);
 
     xnlock_get_irqsave(&nklock,s);
 

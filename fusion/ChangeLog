@@ -1,3 +1,7 @@
+2005-09-12  Philippe Gerum  <rpm@xenomai.org>
+
+ 	* RELEASE: fusion-0.9.1 (Not Of This Earth)
+
 2005-09-11  Philippe Gerum  <rpm@xenomai.org>
 
 	* arch/i386/patches: Upgrade to Adeos oldgen r13c3 and newgen

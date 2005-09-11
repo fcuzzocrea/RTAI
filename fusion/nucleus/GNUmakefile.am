@@ -73,4 +73,4 @@ endif
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(libmodule_SRC) ltt.c Makefile.kbuild Kconfig
+EXTRA_DIST = $(libmodule_SRC) ltt.c Kbuild Kconfig

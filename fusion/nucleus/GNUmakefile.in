@@ -331,7 +331,7 @@ libmodule_SRC = heap.c intr.c module.c pod.c synch.c thread.c timer.c \
 @CONFIG_RTAI_OPT_UVM_TRUE@	-I../include
 
 @CONFIG_RTAI_OPT_UVM_TRUE@libnucleus_a_AR = $(CROSS_COMPILE)ar cru
-EXTRA_DIST = $(libmodule_SRC) ltt.c Makefile.kbuild Kconfig
+EXTRA_DIST = $(libmodule_SRC) ltt.c Kbuild Kconfig
 all: all-am
 
 .SUFFIXES:

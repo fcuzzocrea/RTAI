@@ -37,4 +37,4 @@ uninstall-local:
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(libhal_SRC) Makefile.kbuild
+EXTRA_DIST = $(libhal_SRC) Kbuild

@@ -362,7 +362,7 @@ noinst_HEADERS = \
 @CONFIG_RTAI_OPT_UVM_TRUE@	-I@RTAI_LINUX_DIR@/include
 
 @CONFIG_RTAI_OPT_UVM_TRUE@libvrtx_a_AR = $(CROSS_COMPILE)ar cru
-EXTRA_DIST = $(libmodule_SRC) doc Makefile.kbuild Kconfig
+EXTRA_DIST = $(libmodule_SRC) doc Kbuild Kconfig
 all: all-am
 
 .SUFFIXES:

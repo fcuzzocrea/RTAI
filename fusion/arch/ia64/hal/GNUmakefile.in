@@ -273,7 +273,7 @@ target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libhal_SRC = ia64.c switch.S
-EXTRA_DIST = $(libhal_SRC) Makefile.kbuild
+EXTRA_DIST = $(libhal_SRC) Kbuild
 all: all-am
 
 .SUFFIXES:

@@ -311,7 +311,7 @@ noinst_HEADERS = \
 	proc.h \
 	syscall.h
 
-EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild Kconfig
+EXTRA_DIST = $(libmodule_SRC) Kbuild Kconfig
 @CONFIG_RTAI_OPT_FUSION_TRUE@SUBDIRS = lib
 all: all-recursive
 

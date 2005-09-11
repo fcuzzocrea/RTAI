@@ -310,7 +310,7 @@ latency_CPPFLAGS = \
 latency_LDADD = \
 	-lpthread -lm
 
-EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild runinfo
+EXTRA_DIST = $(libmodule_SRC) Kbuild runinfo
 all: all-am
 
 .SUFFIXES:

@@ -274,7 +274,7 @@ moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = 16550A.c
 distfiles = $(libmodule_SRC)
-EXTRA_DIST = $(distfiles) Makefile.kbuild Kconfig
+EXTRA_DIST = $(distfiles) Kbuild Kconfig
 all: all-am
 
 .SUFFIXES:

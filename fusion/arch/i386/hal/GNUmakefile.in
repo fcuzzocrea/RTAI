@@ -275,7 +275,7 @@ moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 abs_srcdir = @abs_srcdir@
 libhal_SRC = x86.c usercopy.c $(am__append_1)
-EXTRA_DIST = $(libhal_SRC) Makefile.kbuild
+EXTRA_DIST = $(libhal_SRC) Kbuild
 all: all-am
 
 .SUFFIXES:

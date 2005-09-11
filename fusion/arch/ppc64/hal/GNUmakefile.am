@@ -29,4 +29,4 @@ install-exec-local: rtai_hal$(modext)
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(libhal_SRC) fpu.S Makefile.kbuild
+EXTRA_DIST = $(libhal_SRC) fpu.S Kbuild

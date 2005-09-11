@@ -25,4 +25,4 @@ install-exec-local: rtai_hal$(modext)
 
 .PHONY: FORCE
 
-EXTRA_DIST = $(libhal_SRC) Makefile.kbuild
+EXTRA_DIST = $(libhal_SRC) Kbuild

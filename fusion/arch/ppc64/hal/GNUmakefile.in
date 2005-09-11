@@ -274,7 +274,7 @@ target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libhal_SRC = ppc64.c switch.S $(am__append_1)
-EXTRA_DIST = $(libhal_SRC) fpu.S Makefile.kbuild
+EXTRA_DIST = $(libhal_SRC) fpu.S Kbuild
 all: all-am
 
 .SUFFIXES:

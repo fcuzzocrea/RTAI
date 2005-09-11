@@ -78,7 +78,7 @@
 00108 
 00109 <span class="preprocessor">#define RTHAL_TIMER_IRQ   ADEOS_TIMER_VIRQ</span>
 00110 <span class="preprocessor"></span>
-00111 <span class="preprocessor">#define rthal_irq_descp(irq)  (irq_desc + irq)</span>
+00111 <span class="preprocessor">#define rthal_irq_descp(irq)    (&amp;irq_desc[(irq)])</span>
 00112 <span class="preprocessor"></span>
 00113 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> rthal_rdtsc (<span class="keywordtype">void</span>) {
 00114     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> t;
@@ -204,7 +204,7 @@
 00234 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
 00235 
 00238 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC64_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Sep 3 12:32:46 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Sep 11 17:19:53 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

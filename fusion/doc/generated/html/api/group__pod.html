@@ -1117,7 +1117,7 @@ Change the control mode of a given thread. The control mode affects the behaviou
 <li>XNASDI disables the asynchronous signal handling for this thread. See <a class="el" href="group__pod.html#ga39">xnpod_schedule()</a> for more on this.</li></ul>
 <p>
 <ul>
-<li>XNSHIELD enables the interrupt shield for the current user-space task. When engaged, the interrupt shield protects the shadow task running in secondary mode from any preemption by the regular Linux interrupt handlers, without delaying in any way the RTAI interrupt handling. The shield is operated on a per-task basis at each context switch, depending on the setting of this bit.</li></ul>
+<li>XNSHIELD enables the interrupt shield for the current user-space task. When engaged, the interrupt shield protects the shadow task running in secondary mode from any preemption by the regular Linux interrupt handlers, without delaying in any way the RTAI interrupt handling. The shield is operated on a per-task basis at each context switch, depending on the setting of this flag. This feature is only available if the CONFIG_RTAI_OPT_ISHIELD option has been enabled at configuration time; otherwise, this flag is simply ignored.</li></ul>
 <p>
 Environments:<p>
 This service can be called from:<p>
@@ -1717,7 +1717,7 @@ This internal routine is called on behalf of a (re)starting thread's prologue be
     </td>
   </tr>
 </table>
-<hr size="1"><address style="align: right;"><small>Generated on Sat Sep 3 12:32:52 2005 for RTAI Fusion API by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Sun Sep 11 17:19:58 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

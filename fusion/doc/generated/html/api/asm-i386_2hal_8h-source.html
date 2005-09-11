@@ -214,61 +214,67 @@
 00237 
 00238 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_ADEOS_CORE &amp;&amp; !CONFIG_ADEOS_NOTHREADS */</span>
 00239 
-00240 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rthal_timer_program_shot (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> delay)
-00241 {
-00242     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
-00243     <span class="comment">/* Neither the 8254 nor most APICs won't trigger any interrupt</span>
-00244 <span class="comment">       upon receiving a null timer count, so don't let this</span>
-00245 <span class="comment">       happen. --rpm */</span>
-00246     <span class="keywordflow">if</span>(!delay) delay = 1;
-00247     rthal_local_irq_save_hw(flags);
-00248 <span class="preprocessor">#ifdef CONFIG_X86_LOCAL_APIC</span>
-00249 <span class="preprocessor"></span>    <span class="comment">/* Note: reading before writing just to work around the Pentium</span>
-00250 <span class="comment">       APIC double write bug. apic_read_around() expands to nil</span>
-00251 <span class="comment">       whenever CONFIG_X86_GOOD_APIC is set. --rpm */</span>
-00252     apic_read_around(APIC_LVTT);
-00253     apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
-00254     apic_read_around(APIC_TMICT);
-00255     apic_write_around(APIC_TMICT,delay);
-00256 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_X86_LOCAL_APIC */</span>
-00257     outb(delay &amp; 0xff,0x40);
-00258     outb(delay &gt;&gt; 8,0x40);
-00259 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_X86_LOCAL_APIC */</span>
-00260     rthal_local_irq_restore_hw(flags);
-00261 }
-00262 
-00263 <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">char</span> *<span class="keyword">const</span> rthal_fault_labels[] = {
-00264     [0] = <span class="stringliteral">"Divide error"</span>,
-00265     [1] = <span class="stringliteral">"Debug"</span>,
-00266     [2] = <span class="stringliteral">""</span>,   <span class="comment">/* NMI is not pipelined. */</span>
-00267     [3] = <span class="stringliteral">"Int3"</span>,
-00268     [4] = <span class="stringliteral">"Overflow"</span>,
-00269     [5] = <span class="stringliteral">"Bounds"</span>,
-00270     [6] = <span class="stringliteral">"Invalid opcode"</span>,
-00271     [7] = <span class="stringliteral">"FPU not available"</span>,
-00272     [8] = <span class="stringliteral">"Double fault"</span>,
-00273     [9] = <span class="stringliteral">"FPU segment overrun"</span>,
-00274     [10] = <span class="stringliteral">"Invalid TSS"</span>,
-00275     [11] = <span class="stringliteral">"Segment not present"</span>,
-00276     [12] = <span class="stringliteral">"Stack segment"</span>,
-00277     [13] = <span class="stringliteral">"General protection"</span>,
-00278     [14] = <span class="stringliteral">"Page fault"</span>,
-00279     [15] = <span class="stringliteral">"Spurious interrupt"</span>,
-00280     [16] = <span class="stringliteral">"FPU error"</span>,
-00281     [17] = <span class="stringliteral">"Alignment check"</span>,
-00282     [18] = <span class="stringliteral">"Machine check"</span>,
-00283     [19] = <span class="stringliteral">"SIMD error"</span>,
-00284     [20] = NULL,
-00285 };
-00286 
-00287 <span class="keywordtype">long</span> rthal_strncpy_from_user(<span class="keywordtype">char</span> *dst,
-00288                              <span class="keyword">const</span> <span class="keywordtype">char</span> __user *src,
-00289                              <span class="keywordtype">long</span> count);
-00290 
-00291 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
+00240 <span class="keyword">extern</span> <span class="keywordtype">unsigned</span> rthal_null_shots;
+00241 
+00242 <span class="keyword">static</span> <span class="keyword">inline</span> <span class="keywordtype">void</span> rthal_timer_program_shot (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> delay)
+00243 {
+00244     <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> flags;
+00245     <span class="comment">/* Neither the 8254 nor most APICs won't trigger any interrupt</span>
+00246 <span class="comment">       upon receiving a null timer count, so don't let this</span>
+00247 <span class="comment">       happen. --rpm */</span>
+00248     <span class="keywordflow">if</span>(!delay)
+00249         {
+00250         delay = 1;
+00251         ++rthal_null_shots;
+00252         }
+00253     rthal_local_irq_save_hw(flags);
+00254 <span class="preprocessor">#ifdef CONFIG_X86_LOCAL_APIC</span>
+00255 <span class="preprocessor"></span>    <span class="comment">/* Note: reading before writing just to work around the Pentium</span>
+00256 <span class="comment">       APIC double write bug. apic_read_around() expands to nil</span>
+00257 <span class="comment">       whenever CONFIG_X86_GOOD_APIC is set. --rpm */</span>
+00258     apic_read_around(APIC_LVTT);
+00259     apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
+00260     apic_read_around(APIC_TMICT);
+00261     apic_write_around(APIC_TMICT,delay);
+00262 <span class="preprocessor">#else </span><span class="comment">/* !CONFIG_X86_LOCAL_APIC */</span>
+00263     outb(delay &amp; 0xff,0x40);
+00264     outb(delay &gt;&gt; 8,0x40);
+00265 <span class="preprocessor">#endif </span><span class="comment">/* CONFIG_X86_LOCAL_APIC */</span>
+00266     rthal_local_irq_restore_hw(flags);
+00267 }
+00268 
+00269 <span class="keyword">static</span> <span class="keyword">const</span> <span class="keywordtype">char</span> *<span class="keyword">const</span> rthal_fault_labels[] = {
+00270     [0] = <span class="stringliteral">"Divide error"</span>,
+00271     [1] = <span class="stringliteral">"Debug"</span>,
+00272     [2] = <span class="stringliteral">""</span>,   <span class="comment">/* NMI is not pipelined. */</span>
+00273     [3] = <span class="stringliteral">"Int3"</span>,
+00274     [4] = <span class="stringliteral">"Overflow"</span>,
+00275     [5] = <span class="stringliteral">"Bounds"</span>,
+00276     [6] = <span class="stringliteral">"Invalid opcode"</span>,
+00277     [7] = <span class="stringliteral">"FPU not available"</span>,
+00278     [8] = <span class="stringliteral">"Double fault"</span>,
+00279     [9] = <span class="stringliteral">"FPU segment overrun"</span>,
+00280     [10] = <span class="stringliteral">"Invalid TSS"</span>,
+00281     [11] = <span class="stringliteral">"Segment not present"</span>,
+00282     [12] = <span class="stringliteral">"Stack segment"</span>,
+00283     [13] = <span class="stringliteral">"General protection"</span>,
+00284     [14] = <span class="stringliteral">"Page fault"</span>,
+00285     [15] = <span class="stringliteral">"Spurious interrupt"</span>,
+00286     [16] = <span class="stringliteral">"FPU error"</span>,
+00287     [17] = <span class="stringliteral">"Alignment check"</span>,
+00288     [18] = <span class="stringliteral">"Machine check"</span>,
+00289     [19] = <span class="stringliteral">"SIMD error"</span>,
+00290     [20] = NULL,
+00291 };
 00292 
-00293 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Sep 3 12:32:46 2005 for RTAI Fusion API by&nbsp;
+00293 <span class="keywordtype">long</span> rthal_strncpy_from_user(<span class="keywordtype">char</span> *dst,
+00294                              <span class="keyword">const</span> <span class="keywordtype">char</span> __user *src,
+00295                              <span class="keywordtype">long</span> count);
+00296 
+00297 <span class="preprocessor">#endif </span><span class="comment">/* __KERNEL__ &amp;&amp; !__cplusplus */</span>
+00298 
+00299 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_I386_HAL_H */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Sep 11 17:19:53 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

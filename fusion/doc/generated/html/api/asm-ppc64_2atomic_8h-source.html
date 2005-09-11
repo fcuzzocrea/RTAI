@@ -40,9 +40,9 @@
 00030                                        <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *ptr)
 00031 {
 00032     __asm__ __volatile__ (<span class="stringliteral">"\n\</span>
-00033 <span class="stringliteral">1:      lwarx   5,0,%0 \n\</span>
+00033 <span class="stringliteral">1:      ldarx   5,0,%0 \n\</span>
 00034 <span class="stringliteral">        or      5,5,%1\n"</span>
-00035 <span class="stringliteral">"       stwcx.  5,0,%0 \n\</span>
+00035 <span class="stringliteral">"       stdcx.  5,0,%0 \n\</span>
 00036 <span class="stringliteral">        bne-    1b"</span>
 00037         : <span class="comment">/*no output*/</span>
 00038         : <span class="stringliteral">"r"</span> (ptr), <span class="stringliteral">"r"</span> (mask)
@@ -53,9 +53,9 @@
 00043                                          <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> *ptr)
 00044 {
 00045     __asm__ __volatile__ (<span class="stringliteral">"\n\</span>
-00046 <span class="stringliteral">1:      lwarx   5,0,%0 \n\</span>
+00046 <span class="stringliteral">1:      ldarx   5,0,%0 \n\</span>
 00047 <span class="stringliteral">        andc    5,5,%1\n"</span>
-00048 <span class="stringliteral">"       stwcx.  5,0,%0 \n\</span>
+00048 <span class="stringliteral">"       stdcx.  5,0,%0 \n\</span>
 00049 <span class="stringliteral">        bne-    1b"</span>
 00050         : <span class="comment">/*no output*/</span>
 00051         : <span class="stringliteral">"r"</span> (ptr), <span class="stringliteral">"r"</span> (mask)
@@ -166,7 +166,7 @@
 00156 <span class="preprocessor">#define xnarch_atomic_xchg(ptr,x) atomic_xchg(ptr,x)</span>
 00157 <span class="preprocessor"></span>
 00158 <span class="preprocessor">#endif </span><span class="comment">/* !_RTAI_ASM_PPC64_ATOMIC_H */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sat Sep 3 12:32:47 2005 for RTAI Fusion API by&nbsp;
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Sun Sep 11 17:19:54 2005 for RTAI Fusion API by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.2 </small></address>
 </body>

@@ -258,8 +258,12 @@ static inline void rthal_timer_program_shot (unsigned long delay)
     apic_write_around(APIC_TMICT,delay);
     }
 #else /* !CONFIG_X86_LOCAL_APIC */
-    outb(delay & 0xff,0x40);
-    outb(delay >> 8,0x40);
+    if (!delay)
+	rthal_trigger_irq(RTHAL_8254_IRQ);
+    else {
+    	outb(delay & 0xff,0x40);
+	outb(delay >> 8,0x40);
+    }
 #endif /* CONFIG_X86_LOCAL_APIC */
     rthal_local_irq_restore_hw(flags);
 }

@@ -1,4 +1,12 @@
+2005-09-11  Philippe Gerum  <rpm@xenomai.org>
+
+	* include/nucleus/asm-i386/hal.h (rthal_timer_program_shot): Kick
+	the timer IRQ immediately upon null delay using the HAL's internal
+	interrupt trigger service.
+
 2005-09-09  Philippe Gerum  <rpm@xenomai.org>
+
+	* skins/posix/demos/accuracy.c (threadB): Fix sem_wait() arg.
 
 	* fusion: Makefile.kbuild -> Kbuild; remove top and bottom Kbuild
 	commands.

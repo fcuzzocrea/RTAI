@@ -188,7 +188,8 @@ static inline __attribute_const__ unsigned long ffnz (unsigned long ul) {
 #define rthal_irq_descp(irq)  (irq_desc + irq)
 
 #ifdef CONFIG_X86_TSC
-static inline unsigned long long rthal_rdtsc (void) {
+static inline unsigned long long rthal_rdtsc (void)
+{
     unsigned long long t;
     rthal_read_tsc(t);
     return t;
@@ -213,7 +214,6 @@ static inline struct task_struct *rthal_root_host_task (int cpuid) {
 }
 
 static inline struct task_struct *rthal_current_host_task (int cpuid)
-
 {
     int *esp;
 
@@ -227,11 +227,13 @@ static inline struct task_struct *rthal_current_host_task (int cpuid)
 
 #else /* !CONFIG_ADEOS_CORE || CONFIG_ADEOS_NOTHREADS */
 
-static inline struct task_struct *rthal_root_host_task (int cpuid) {
+static inline struct task_struct *rthal_root_host_task (int cpuid)
+{
     return current;
 }
 
-static inline struct task_struct *rthal_current_host_task (int cpuid) {
+static inline struct task_struct *rthal_current_host_task (int cpuid)
+{
     return current;
 }
 
@@ -240,12 +242,13 @@ static inline struct task_struct *rthal_current_host_task (int cpuid) {
 static inline void rthal_timer_program_shot (unsigned long delay)
 {
     unsigned long flags;
-    /* Neither the 8254 nor most APICs won't trigger any interrupt
-       upon receiving a null timer count, so don't let this
-       happen. --rpm */
-    if(!delay) delay = 1;
+
     rthal_local_irq_save_hw(flags);
 #ifdef CONFIG_X86_LOCAL_APIC
+    if (!delay) {
+        /* Kick the timer interrupt immediately. */
+    	rthal_trigger_irq(RTHAL_APIC_TIMER_IPI);
+    } else {
     /* Note: reading before writing just to work around the Pentium
        APIC double write bug. apic_read_around() expands to nil
        whenever CONFIG_X86_GOOD_APIC is set. --rpm */
@@ -253,6 +256,7 @@ static inline void rthal_timer_program_shot (unsigned long delay)
     apic_write_around(APIC_LVTT,RTHAL_APIC_TIMER_VECTOR);
     apic_read_around(APIC_TMICT);
     apic_write_around(APIC_TMICT,delay);
+    }
 #else /* !CONFIG_X86_LOCAL_APIC */
     outb(delay & 0xff,0x40);
     outb(delay >> 8,0x40);

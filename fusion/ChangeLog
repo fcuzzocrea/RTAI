@@ -1,5 +1,10 @@
 2005-09-11  Philippe Gerum  <rpm@xenomai.org>
 
+	* arch/i386/patches: Upgrade to Adeos oldgen r13c3 and newgen
+	1.0-02.
+
+	* arch/ppc/patches: Upgrade to Adeos oldgen r8c4.
+
 	* skins/rtai/syscall.c (__rt_queue_bind, __rt_heap_bind): Check
 	whether we actually run in primary mode before attempting to relax
 	the caller.

@@ -19760,22 +19760,22 @@ echo $ECHO_N "checking for interrupt pipeline extension... $ECHO_C" >&6
 
 if test -r $RTAI_LINUX_SRCDIR/include/linux/ipipe.h; then
    v=`grep '^#define.*IPIPE_ARCH_STRING.*"' $RTAI_LINUX_SRCDIR/include/linux/ipipe.h|sed -e 's,.*"\(.*\)"$,\1,'`
-   echo "$as_me:$LINENO: result: I-pipe ($v)" >&5
-echo "${ECHO_T}I-pipe ($v)" >&6
+   echo "$as_me:$LINENO: result: Adeos newgen (I-pipe $v)" >&5
+echo "${ECHO_T}Adeos newgen (I-pipe $v)" >&6
    if test x${CONFIG_IPIPE} = x; then
-      { { echo "$as_me:$LINENO: error: Please activate the extended I-pipe support in $RTAI_LINUX_DIR and rebuild your kernel" >&5
-echo "$as_me: error: Please activate the extended I-pipe support in $RTAI_LINUX_DIR and rebuild your kernel" >&2;}
+      { { echo "$as_me:$LINENO: error: Please activate the Adeos support in $RTAI_LINUX_DIR and rebuild your kernel" >&5
+echo "$as_me: error: Please activate the Adeos support in $RTAI_LINUX_DIR and rebuild your kernel" >&2;}
    { (exit 1); exit 1; }; }
    fi
    if test x${CONFIG_IPIPE_EXTENDED} = x; then
-      { { echo "$as_me:$LINENO: error: Please re-patch your kernel with the extended I-pipe support" >&5
-echo "$as_me: error: Please re-patch your kernel with the extended I-pipe support" >&2;}
+      { { echo "$as_me:$LINENO: error: Please re-patch your kernel with the Adeos support" >&5
+echo "$as_me: error: Please re-patch your kernel with the Adeos support" >&2;}
    { (exit 1); exit 1; }; }
    fi
 elif test -r $RTAI_LINUX_SRCDIR/include/linux/adeos.h; then
    v=`grep '^#define.*ADEOS_ARCH_STRING.*"' $RTAI_LINUX_SRCDIR/include/asm-*/adeos.h|sed -e 's,.*"\(.*\)"$,\1,'`
-   echo "$as_me:$LINENO: result: Adeos ($v)" >&5
-echo "${ECHO_T}Adeos ($v)" >&6
+   echo "$as_me:$LINENO: result: Adeos oldgen ($v)" >&5
+echo "${ECHO_T}Adeos oldgen ($v)" >&6
    if test x${CONFIG_ADEOS_CORE} = x; then
       { { echo "$as_me:$LINENO: error: Please activate the Adeos support in $RTAI_LINUX_DIR and rebuild your kernel" >&5
 echo "$as_me: error: Please activate the Adeos support in $RTAI_LINUX_DIR and rebuild your kernel" >&2;}
@@ -19783,9 +19783,9 @@ echo "$as_me: error: Please activate the Adeos support in $RTAI_LINUX_DIR and re
    fi
 else
    { { echo "$as_me:$LINENO: error: No interrupt pipeline extension enabled in your kernel.
-	You need to apply one of the I-pipe or Adeos patches first." >&5
+	You need to apply an Adeos patch first." >&5
 echo "$as_me: error: No interrupt pipeline extension enabled in your kernel.
-	You need to apply one of the I-pipe or Adeos patches first." >&2;}
+	You need to apply an Adeos patch first." >&2;}
    { (exit 1); exit 1; }; }
 fi
 

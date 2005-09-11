@@ -192,8 +192,8 @@ diff -uNrp linux-2.6.10/Makefile linux-2.6.10-ppc-adeos/Makefile
  		     $(net-y) $(net-m) $(libs-y) $(libs-m)))
 diff -uNrp linux-2.6.10/adeos/Kconfig linux-2.6.10-ppc-adeos/adeos/Kconfig
 --- linux-2.6.10/adeos/Kconfig	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/adeos/Kconfig	2005-08-21 10:33:24.000000000 +0200
-@@ -0,0 +1,39 @@
++++ linux-2.6.10-ppc-adeos/adeos/Kconfig	2005-09-07 15:02:32.000000000 +0200
+@@ -0,0 +1,36 @@
 +menu "Adeos support"
 +
 +config ADEOS
@@ -228,9 +228,6 @@ diff -uNrp linux-2.6.10/adeos/Kconfig linux-2.6.10-ppc-adeos/adeos/Kconfig
 +	  This option activates the profiling code which collects the
 +	  timestamps needed to measure the propagation time of
 +	  interrupts through the pipeline. Say N if unsure.
-+
-+config ADEOS_PREEMPT_RT
-+	def_bool PREEMPT_NONE || PREEMPT_VOLUNTARY || PREEMPT_DESKTOP || PREEMPT_RT
 +
 +endmenu
 diff -uNrp linux-2.6.10/adeos/Makefile linux-2.6.10-ppc-adeos/adeos/Makefile
@@ -2841,7 +2838,7 @@ diff -uNrp linux-2.6.10/arch/ppc/platforms/pmac_pic.c linux-2.6.10-ppc-adeos/arc
  	.mask		= CPU_MASK_NONE,
 diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h
 --- linux-2.6.10/include/asm-ppc/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h	2005-09-03 16:54:29.000000000 +0200
++++ linux-2.6.10-ppc-adeos/include/asm-ppc/adeos.h	2005-09-11 22:10:23.000000000 +0200
 @@ -0,0 +1,451 @@
 +/*
 + *   include/asm-ppc/adeos.h
@@ -2882,9 +2879,9 @@ diff -uNrp linux-2.6.10/include/asm-ppc/adeos.h linux-2.6.10-ppc-adeos/include/a
 +#include <linux/cpumask.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING     "r8c3/ppc"
++#define ADEOS_ARCH_STRING     "r8c4/ppc"
 +#define ADEOS_MAJOR_NUMBER    8
-+#define ADEOS_MINOR_NUMBER    3
++#define ADEOS_MINOR_NUMBER    4
 +
 +#define ADEOS_IRQ_ACKED		0x1000
 +#define ADEOS_IRQ_ACKED_MASK	(ADEOS_IRQ_ACKED - 1)
@@ -4082,8 +4079,8 @@ diff -uNrp linux-2.6.10/kernel/Makefile linux-2.6.10-ppc-adeos/kernel/Makefile
  obj-$(CONFIG_SMP) += cpu.o spinlock.o
 diff -uNrp linux-2.6.10/kernel/adeos.c linux-2.6.10-ppc-adeos/kernel/adeos.c
 --- linux-2.6.10/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.10-ppc-adeos/kernel/adeos.c	2005-09-01 19:39:06.000000000 +0200
-@@ -0,0 +1,826 @@
++++ linux-2.6.10-ppc-adeos/kernel/adeos.c	2005-09-10 19:20:07.000000000 +0200
+@@ -0,0 +1,828 @@
 +/*
 + *   linux/kernel/adeos.c
 + *
@@ -4260,7 +4257,8 @@ diff -uNrp linux-2.6.10/kernel/adeos.c linux-2.6.10-ppc-adeos/kernel/adeos.c
 +		}
 +	    }
 +
-+	if (next_domain->cpudata[cpuid].irq_pending_hi != 0 &&
++	if (next_domain != adp_root && /* NEVER sync the root stage here. */
++	    next_domain->cpudata[cpuid].irq_pending_hi != 0 &&
 +	    !test_bit(IPIPE_STALL_FLAG,&next_domain->cpudata[cpuid].status))
 +	    {
 +	    if (next_domain != this_domain)
@@ -4326,7 +4324,8 @@ diff -uNrp linux-2.6.10/kernel/adeos.c linux-2.6.10-ppc-adeos/kernel/adeos.c
 +	    propagate = evinfo.propagate;
 +	    }
 +
-+	if (next_domain->cpudata[cpuid].irq_pending_hi != 0 &&
++	if (next_domain != adp_root && /* NEVER sync the root stage here. */
++	    next_domain->cpudata[cpuid].irq_pending_hi != 0 &&
 +	    !test_bit(IPIPE_STALL_FLAG,&next_domain->cpudata[cpuid].status))
 +	    {
 +	    adp_cpu_current[cpuid] = next_domain;

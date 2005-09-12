@@ -1,5 +1,8 @@
 2005-09-12  Philippe Gerum  <rpm@xenomai.org>
 
+	* skins/rtai/syscall.c (__rt_task_create): Propagate T_SUSP if
+	present to the actual syscall.
+
  	* RELEASE: fusion-0.9.1 (Not Of This Earth)
 
 2005-09-11  Philippe Gerum  <rpm@xenomai.org>

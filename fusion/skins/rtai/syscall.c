@@ -125,8 +125,8 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
     xncompletion_t __user *u_completion;
     char name[XNOBJECT_NAME_LEN];
     struct rt_arg_bulk bulk;
-    int err, prio, affinity;
     RT_TASK_PLACEHOLDER ph;
+    int err, prio, mode;
     RT_TASK *task;
     spl_t s;
 
@@ -153,8 +153,8 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
 
     /* Task priority. */
     prio = bulk.a3;
-    /* CPU affinity. */
-    affinity = bulk.a4 & T_CPUMASK;
+    /* Task init mode & CPU affinity. */
+    mode = bulk.a4 & (T_CPUMASK|T_SUSP);
     /* Completion descriptor our parent thread is pending on -- may be NULL. */
     u_completion = (xncompletion_t __user *)__xn_reg_arg2(regs);
 
@@ -166,7 +166,7 @@ static int __rt_task_create (struct task_struct *curr, struct pt_regs *regs)
     /* Force FPU support in user-space. This will lead to a no-op if
        the platform does not support it. */
 
-    err = rt_task_create(task,name,0,prio,XNFPU|XNSHADOW|affinity);
+    err = rt_task_create(task,name,0,prio,XNFPU|XNSHADOW|mode);
 
     if (err == 0)
 	{

@@ -98,6 +98,22 @@ config RTAI_OPT_WATCHDOG
 	behalf of the timer tick handler, thus is only active after
 	the timer has been started.
 
+config RTAI_OPT_CONFIG_GZ
+	bool "Wrapped configuration file"
+	depends on RTAI_OPT_EXPERT
+	default n
+	help
+	
+	This option enables the complete RTAI/fusion ".rtai_config"
+	file contents to be saved in the nucleus. It provides
+	documentation of which options are used in a running system or
+	in an on-disk nucleus image.  This information can be
+	extracted from the nucleus image file with the regular Linux
+	kernel script "scripts/extract-ikconfig" and used as input to
+	rebuild the current RTAI/fusion system or to build another
+	system.  It can also be extracted from a running system by
+	reading /proc/rtai/config.gz if enabled.
+
 menu "Scalability"
 	depends on RTAI_OPT_EXPERT
 

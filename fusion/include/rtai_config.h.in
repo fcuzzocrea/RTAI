@@ -70,6 +70,9 @@
 #undef CONFIG_RTAI_OPT_COMPAT_SHM
 
 /* Kconfig */
+#undef CONFIG_RTAI_OPT_CONFIG_GZ
+
+/* Kconfig */
 #undef CONFIG_RTAI_OPT_DEBUG
 
 /* Kconfig */

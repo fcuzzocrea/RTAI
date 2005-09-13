@@ -424,6 +424,32 @@ EXPORT_SYMBOL(xnlock_stats);
 
 #endif /* CONFIG_RTAI_OPT_STATS */
 
+#ifdef CONFIG_RTAI_OPT_CONFIG_GZ
+
+extern int fusion_config_data_size;
+
+int config_copy_data(char *buf, size_t len, loff_t pos);
+
+static ssize_t config_read_proc (struct file *file,
+				 char *buf,
+				 size_t len,
+				 loff_t *offp)
+{
+    ssize_t count = config_copy_data(buf,len,*offp);
+
+    if (count > 0)
+	*offp += count;
+
+    return count;
+}
+
+static struct file_operations config_file_operations = {
+    .owner = THIS_MODULE,
+    .read = config_read_proc
+};
+
+#endif /* CONFIG_RTAI_OPT_CONFIG_GZ */
+
 static int latency_read_proc (char *page,
 			      char **start,
 			      off_t off,
@@ -544,10 +570,10 @@ static struct proc_dir_entry *add_proc_leaf (const char *name,
     return entry;
 }
 
-static struct proc_dir_entry *add_proc_seq (const char *name,
-					    struct file_operations *seq_ops,
-					    void *data,
-					    struct proc_dir_entry *parent)
+static struct proc_dir_entry *add_proc_fops (const char *name,
+					     struct file_operations *fops,
+					     size_t size,
+					     struct proc_dir_entry *parent)
 {
     struct proc_dir_entry *entry;
 
@@ -556,9 +582,11 @@ static struct proc_dir_entry *add_proc_seq (const char *name,
     if (!entry)
 	return NULL;
 
-    entry->proc_fops = seq_ops;
-    entry->data = data;
+    entry->proc_fops = fops;
     entry->owner = THIS_MODULE;
+
+    if (size)
+	entry->size = size;
 
     return entry;
 }
@@ -569,16 +597,16 @@ void xnpod_init_proc (void)
     if (!rthal_proc_root)
 	return;
 
-    add_proc_seq("sched",
-		 &sched_seq_operations,
-		 NULL,
-		 rthal_proc_root);
+    add_proc_fops("sched",
+		  &sched_seq_operations,
+		  0,
+		  rthal_proc_root);
 
 #ifdef CONFIG_RTAI_OPT_STATS
-    add_proc_seq("stat",
-		 &stat_seq_operations,
-		 NULL,
-		 rthal_proc_root);
+    add_proc_fops("stat",
+		  &stat_seq_operations,
+		  0,
+		  rthal_proc_root);
 #ifdef CONFIG_SMP
     add_proc_leaf("lock",
 		  &lock_read_proc,
@@ -588,6 +616,13 @@ void xnpod_init_proc (void)
 #endif /* CONFIG_SMP */
 
 #endif /* CONFIG_RTAI_OPT_STATS */
+
+#ifdef CONFIG_RTAI_OPT_CONFIG_GZ
+    add_proc_fops("config.gz",
+		  &config_file_operations,
+		  fusion_config_data_size,
+		  rthal_proc_root);
+#endif /* CONFIG_RTAI_OPT_CONFIG_GZ */
 
     add_proc_leaf("latency",
 		  &latency_read_proc,
@@ -626,6 +661,9 @@ void xnpod_delete_proc (void)
 
     remove_proc_entry("interfaces",rthal_proc_root);
 #endif /* CONFIG_RTAI_OPT_FUSION */
+#ifdef CONFIG_RTAI_OPT_CONFIG_GZ
+    remove_proc_entry("config.gz",rthal_proc_root);
+#endif /* CONFIG_RTAI_OPT_CONFIG_GZ */
     remove_proc_entry("timer",rthal_proc_root);
     remove_proc_entry("version",rthal_proc_root);
     remove_proc_entry("latency",rthal_proc_root);

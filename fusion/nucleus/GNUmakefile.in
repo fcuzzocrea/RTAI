@@ -41,6 +41,7 @@ host_triplet = @host@
 @CONFIG_RTAI_OPT_FUSION_TRUE@am__append_1 = shadow.c fusion.c
 @CONFIG_RTAI_OPT_PIPE_TRUE@am__append_2 = pipe.c
 @CONFIG_LTT_TRUE@am__append_3 = ltt.c
+@CONFIG_RTAI_OPT_CONFIG_GZ_TRUE@am__append_4 = config.c
 subdir = nucleus
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in \
 	COPYING
@@ -132,6 +133,8 @@ CONFIG_RTAI_OPT_COMPAT_SEM_FALSE = @CONFIG_RTAI_OPT_COMPAT_SEM_FALSE@
 CONFIG_RTAI_OPT_COMPAT_SEM_TRUE = @CONFIG_RTAI_OPT_COMPAT_SEM_TRUE@
 CONFIG_RTAI_OPT_COMPAT_SHM_FALSE = @CONFIG_RTAI_OPT_COMPAT_SHM_FALSE@
 CONFIG_RTAI_OPT_COMPAT_SHM_TRUE = @CONFIG_RTAI_OPT_COMPAT_SHM_TRUE@
+CONFIG_RTAI_OPT_CONFIG_GZ_FALSE = @CONFIG_RTAI_OPT_CONFIG_GZ_FALSE@
+CONFIG_RTAI_OPT_CONFIG_GZ_TRUE = @CONFIG_RTAI_OPT_CONFIG_GZ_TRUE@
 CONFIG_RTAI_OPT_FUSION_FALSE = @CONFIG_RTAI_OPT_FUSION_FALSE@
 CONFIG_RTAI_OPT_FUSION_TRUE = @CONFIG_RTAI_OPT_FUSION_TRUE@
 CONFIG_RTAI_OPT_NATIVE_ALARM_FALSE = @CONFIG_RTAI_OPT_NATIVE_ALARM_FALSE@
@@ -313,7 +316,8 @@ target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libmodule_SRC = heap.c intr.c module.c pod.c synch.c thread.c timer.c \
-	$(am__append_1) $(am__append_2) $(am__append_3)
+	$(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__append_4)
 @CONFIG_RTAI_OPT_UVM_TRUE@lib_LIBRARIES = libnucleus.a
 @CONFIG_RTAI_OPT_UVM_TRUE@nodist_libnucleus_a_SOURCES = \
 @CONFIG_RTAI_OPT_UVM_TRUE@			heap.c \
@@ -714,11 +718,20 @@ uninstall-am: uninstall-info-am uninstall-libLIBRARIES uninstall-local
 	uninstall-libLIBRARIES uninstall-local
 
 
+@CONFIG_RTAI_OPT_CONFIG_GZ_TRUE@bin2c: $(top_srcdir)/config/kconfig/bin2c.c
+@CONFIG_RTAI_OPT_CONFIG_GZ_TRUE@	$(CC) -O2 -o $@ $<
+
+@CONFIG_RTAI_OPT_CONFIG_GZ_TRUE@config_data.h: $(top_builddir)/.rtai_config
+@CONFIG_RTAI_OPT_CONFIG_GZ_TRUE@	@(echo "static const char fusion_config_data[] = FUSION_MAGIC_START"; gzip -c $< | ./bin2c; echo "FUSION_MAGIC_END;") > $@
+
+@CONFIG_RTAI_OPT_CONFIG_GZ_TRUE@config_gz: bin2c config_data.h
+@CONFIG_RTAI_OPT_CONFIG_GZ_FALSE@config_gz:
+
 rtai_nucleus$(modext): @RTAI_KBUILD_ENV@
 rtai_nucleus$(modext): $(libmodule_SRC) FORCE
 	@RTAI_KBUILD_CMD@ fusion_extradef="@RTAI_KMOD_CFLAGS@"
 
-all-local: rtai_nucleus$(modext)
+all-local: config_gz rtai_nucleus$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
@@ -727,6 +740,7 @@ clean-local:
 
 distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@
+	@rm -f config_data.h
 
 install-exec-local: rtai_nucleus$(modext)
 	$(mkinstalldirs) $(moduledir)
@@ -735,7 +749,7 @@ install-exec-local: rtai_nucleus$(modext)
 uninstall-local: 
 	$(RM) $(moduledir)/rtai_nucleus$(modext)
 
-.PHONY: FORCE
+.PHONY: FORCE config_gz
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -1,5 +1,8 @@
 2005-09-12  Philippe Gerum  <rpm@xenomai.org>
 
+	* nucleus/config.c: Add support for wrapping the configuration
+	file into the nucleus image (ala IKCONFIG).
+
 	* skins/rtai/syscall.c (__rt_task_create): Propagate T_SUSP if
 	present to the actual syscall.
 

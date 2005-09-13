@@ -56,6 +56,7 @@ configuration switches can be listed by running ./configure
  --enable-nucleus-watchdog	Enable nucleus watchdog support
  --enable-nucleus-scalable-sched	Enable the scalable O(1) scheduler
  --enable-nucleus-scalable-prios	Set the maximum number of priority levels
+ --enable-nucleus-config-gz	Make gzipped config file available from /proc
  --enable-fpu			Enable FPU support
  --enable-periodic_timer	Enable periodic timer support
  --enable-module-debug		Enable debug information in kernel modules

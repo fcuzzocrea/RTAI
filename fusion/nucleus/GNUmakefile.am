@@ -46,7 +46,7 @@ rtai_nucleus$(modext): $(libmodule_SRC) FORCE
 all-local: config_gz rtai_nucleus$(modext)
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 	$(mkinstalldirs) $(top_srcdir)/modules
-	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+	$(INSTALL_DATA) rtai_nucleus$(modext) $(top_srcdir)/modules
 endif
 
 clean-local:

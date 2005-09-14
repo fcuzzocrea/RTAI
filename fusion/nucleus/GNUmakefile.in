@@ -733,7 +733,7 @@ rtai_nucleus$(modext): $(libmodule_SRC) FORCE
 
 all-local: config_gz rtai_nucleus$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) rtai_nucleus$(modext) $(top_srcdir)/modules
 
 clean-local:
 	@RTAI_KBUILD_CLEAN@

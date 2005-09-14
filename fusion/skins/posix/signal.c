@@ -702,7 +702,7 @@ static void pse51_dispatch_shadow_signals (xnsigmask_t sigs)
 {
     pse51_siginfo_t *si;
     pthread_t thread;
-    spl_t s;
+    spl_t ignored;
 
     thread = pse51_current_thread();
     
@@ -710,10 +710,13 @@ static void pse51_dispatch_shadow_signals (xnsigmask_t sigs)
 
     /* POSIX shadow signals pong: to get the signals dispatch function executed,
        we migrated the shadow to primary mode, we are going to migrate back to
-       secondary mode in order to get the signals delivered by Linux. */
+       secondary mode in order to get the signals delivered by Linux.
+       Release the big lock, we do not want to hold it during migration.
+    */
+    xnlock_clear_irqon(&nklock);
     xnshadow_relax(1);
 
-    xnlock_get_irqsave(&nklock, s);
+    xnlock_get_irqsave(&nklock, ignored);
     
     thread->threadbase.signals = 0;
 
@@ -722,7 +725,6 @@ static void pse51_dispatch_shadow_signals (xnsigmask_t sigs)
                                NULL)))
         {
         siginfo_t info = si->info;
-        spl_t ignored;
 
         if (si->info.si_code == SI_TIMER)
             pse51_timer_notified(si);
@@ -740,8 +742,6 @@ static void pse51_dispatch_shadow_signals (xnsigmask_t sigs)
 
         thread->threadbase.signals = 0;
         }
-
-    xnlock_put_irqrestore(&nklock, s);
 
     __clrbits(thread->threadbase.status, XNASDI);
 

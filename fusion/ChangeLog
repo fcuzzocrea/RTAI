@@ -1,3 +1,8 @@
+2005-09-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* skins/posix/signal.c (pse51_dispatch_shadow_signals): Do not
+	hold nklock while migrating to user-space for signal handling.
+
 2005-09-14  Jan Kiszka <jan.kiszka@web.de>
 
 	* configure.in: Fix handling of recent CONFIG_RTAI_OPT_CONFIG_GZ

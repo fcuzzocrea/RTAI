@@ -1,3 +1,11 @@
+2005-09-14  Jan Kiszka <jan.kiszka@web.de>
+
+	* configure.in: Fix handling of recent CONFIG_RTAI_OPT_CONFIG_GZ
+	option.
+
+	* drivers/16550A: Clear the internal error state after changing
+	the serial line setup.
+
 2005-09-12  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/config.c: Add support for wrapping the configuration

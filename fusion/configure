@@ -21845,7 +21845,7 @@ fi
 
 
 
-if test x$CONFIG_RTAI_OPT_PIPE = xy; then
+if test x$CONFIG_RTAI_OPT_CONFIG_GZ = xy; then
   CONFIG_RTAI_OPT_CONFIG_GZ_TRUE=
   CONFIG_RTAI_OPT_CONFIG_GZ_FALSE='#'
 else

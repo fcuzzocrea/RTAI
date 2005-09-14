@@ -287,7 +287,7 @@ extern volatile unsigned long rtai_cpu_realtime;
 
 extern volatile unsigned long rtai_cpu_lock;
 
-#define RTAI_TASKPRI 0xf0
+#define RTAI_TASKPRI 0x00
 extern struct rtai_switch_data {
     volatile unsigned long depth;
     volatile unsigned long oldflags;

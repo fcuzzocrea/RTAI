@@ -322,9 +322,12 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
         ctx->config.stop_bits = config->stop_bits & STOP_BITS_MASK;
 
     if (testbits(config->config_mask, RTSER_SET_PARITY | RTSER_SET_DATA_BITS |
-                                      RTSER_SET_STOP_BITS | RTSER_SET_BAUD))
+                                      RTSER_SET_STOP_BITS | RTSER_SET_BAUD)) {
         outb((ctx->config.parity << 3) | (ctx->config.stop_bits << 2) |
              ctx->config.data_bits, LCR(dev_id));
+        ctx->status = 0;
+        ctx->ioc_events &= ~RTSER_EVENT_ERRPEND;
+    }
 
     if (testbits(config->config_mask, RTSER_SET_FIFO_DEPTH)) {
         ctx->config.fifo_depth = config->fifo_depth & FIFO_MASK;

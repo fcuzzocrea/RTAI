@@ -6,6 +6,12 @@
 	* drivers/16550A: Clear the internal error state after changing
 	the serial line setup.
 
+2005-09-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* nucleus/pod.c (xnpod_schedule): Skip xnpod_schedule epilogue
+	when relaxing a thread, we need Linux' schedule tail
+	(rthal_reenter_root) instead.
+
 2005-09-12  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/config.c: Add support for wrapping the configuration

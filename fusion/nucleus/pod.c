@@ -2418,23 +2418,25 @@ void xnpod_schedule (void)
      * relaxed/hardened transitions. */
     runthread = sched->runthread;
 
+#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
+    /* Test whether we are relaxing a thread. In such a case, we are here the
+       epilogue of Linux' schedule, and should skip xnpod_schedule epilogue. */
+    if (shadow && testbits(runthread->status, XNROOT))
+        {
+        /* Shadow on entry and root without shadow extension on exit? 
+           Mmmm... This must be the user-space mate of a deleted real-time
+           shadow we've just rescheduled in the Linux domain to have it
+           exit properly.  Reap it now. */
+        if (xnshadow_ptd(current) == NULL)
+            xnshadow_exit();
+        /* No need to unlock nklock here, it is not locked. */
+        return;
+        }
+#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
+
 #ifdef CONFIG_RTAI_HW_FPU
     __xnpod_switch_fpu(sched);
 #endif /* CONFIG_RTAI_HW_FPU */
-
-#if defined(__KERNEL__) && defined(CONFIG_RTAI_OPT_FUSION)
-    /* Shadow on entry and root without shadow extension on exit? 
-       Mmmm... This must be the user-space mate of a deleted real-time
-       shadow we've just rescheduled in the Linux domain to have it
-       exit properly.  Reap it now. */
-    if (shadow &&
-        testbits(runthread->status,XNROOT) &&
-        xnshadow_ptd(current) == NULL)
-        {
-        xnlock_clear_irqon(&nklock);
-        xnshadow_exit();
-        }
-#endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */
 
 #ifdef __RTAI_SIM__
     if (nkpod->schedhook)

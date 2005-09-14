@@ -287,11 +287,11 @@ extern volatile unsigned long rtai_cpu_realtime;
 
 extern volatile unsigned long rtai_cpu_lock;
 
-#define RTAI_TASKPRI 0
+#define RTAI_TASKPRI 0xf0
 extern struct rtai_switch_data {
     volatile unsigned long depth;
     volatile unsigned long oldflags;
-#if RTAI_TASKPRI
+#if defined(CONFIG_X86_APIC) && RTAI_TASKPRI
     volatile unsigned long taskpri;
 #endif
 } rtai_linux_context[RTAI_NR_CPUS];
@@ -552,6 +552,10 @@ static inline void rt_switch_to_real_time(int cpuid)
 	if (!rtai_linux_context[cpuid].depth++) {
 		rtai_linux_context[cpuid].oldflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 		adp_cpu_current[cpuid] = &rtai_domain;
+#if defined(CONFIG_X86_APIC) && !defined(NO_RTAI_TASKPRI) && RTAI_TASKPRI
+		rtai_linux_context[cpuid].taskpri = apic_read(APIC_TASKPRI);
+        	apic_write_around(APIC_TASKPRI, RTAI_TASKPRI);
+#endif
 //		test_and_set_bit(cpuid, &rtai_cpu_realtime);
 	}
 }
@@ -564,48 +568,14 @@ static inline void rt_switch_to_linux(int cpuid)
 //			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
 			adp_cpu_current[cpuid] = adp_root;
 			adp_root->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
-		}
-		return;
-	}
-	rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n");
-}
-
-#if RTAI_TASKPRI
-
-static inline void rt_switch_to_real_time_taskpri(int cpuid)
-{
-	TRACE_RTAI_SWITCHTO_RT(cpuid);
-	if (!rtai_linux_context[cpuid].depth++) {
-		rtai_linux_context[cpuid].taskpri = apic_read(APIC_TASKPRI);
-        	apic_write_around(APIC_TASKPRI, RTAI_TASKPRI);
-		rtai_linux_context[cpuid].oldflags = xchg(&adp_root->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
-		adp_cpu_current[cpuid] = &rtai_domain;
-//		test_and_set_bit(cpuid, &rtai_cpu_realtime);
-	}
-}
-
-static inline void rt_switch_to_linux_taskpri(int cpuid)
-{
-	TRACE_RTAI_SWITCHTO_LINUX(cpuid);
-	if (rtai_linux_context[cpuid].depth) {
-		if (!--rtai_linux_context[cpuid].depth) {
-//			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
-			adp_cpu_current[cpuid] = adp_root;
-			adp_root->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
+#if defined(CONFIG_X86_APIC) && !defined(NO_RTAI_TASKPRI) && RTAI_TASKPRI
 	        	apic_write_around(APIC_TASKPRI, rtai_linux_context[cpuid].taskpri);
+#endif
 		}
 		return;
 	}
 	rt_printk("*** ERROR: EXCESS LINUX_UNLOCK ***\n");
 }
-
-#else 
-
-#define rt_switch_to_real_time_taskpri  rt_switch_to_real_time
-
-#define rt_switch_to_linux_taskpri      rt_switch_to_linux
-
-#endif
 
 //#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
 #define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].depth)

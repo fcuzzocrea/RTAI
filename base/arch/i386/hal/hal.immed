@@ -803,13 +803,13 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 int _rtai_sched_on_ipi_handler(void)
 {
 	unsigned long cpuid = rtai_cpuid();
-	rt_switch_to_real_time_taskpri(cpuid);
+	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
 	__ack_APIC_irq();
 //	adp_root->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
-	rt_switch_to_linux_taskpri(cpuid);
+	rt_switch_to_linux(cpuid);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	if (!test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 		rtai_sti();
@@ -875,13 +875,13 @@ void rt_reset_sched_ipi_gate(void)
 int _rtai_apic_timer_handler(void)
 {
 	unsigned long cpuid = rtai_cpuid();
-	rt_switch_to_real_time_taskpri(cpuid);
+	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
 	__ack_APIC_irq();
 //	adp_root->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
-	rt_switch_to_linux_taskpri(cpuid);
+	rt_switch_to_linux(cpuid);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	if (!test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 		rtai_sti();
@@ -937,12 +937,12 @@ static struct desc_struct rtai_apic_timer_sysvec;
 int _rtai_8254_timer_handler(struct pt_regs regs)
 {
 	unsigned long cpuid = rtai_cpuid();
-	rt_switch_to_real_time_taskpri(cpuid);
+	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
 	adp_root->irqs[RTAI_TIMER_8254_IRQ].acknowledge(RTAI_TIMER_8254_IRQ);
 	((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
-	rt_switch_to_linux_taskpri(cpuid);
+	rt_switch_to_linux(cpuid);
 	if (test_and_clear_bit(cpuid, &adeos_pended) && !test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 		rtai_sti();
 /* specific for the Linux tick, do not cre in a generic handler */
@@ -1415,17 +1415,17 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 
 	cpuid = rtai_cpuid();
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
-		rt_switch_to_real_time_taskpri(cpuid);
+		rt_switch_to_real_time(cpuid);
 		adp_root->irqs[irq].acknowledge(irq); mb();
 		RTAI_SCHED_ISR_LOCK();
 		if (rtai_realtime_irq[irq].retmode && rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie)) {
 			RTAI_SCHED_ISR_UNLOCK();
-			rt_switch_to_linux_taskpri(cpuid);
+			rt_switch_to_linux(cpuid);
 			return 0;
                 } else {
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 			RTAI_SCHED_ISR_UNLOCK();
-			rt_switch_to_linux_taskpri(cpuid);
+			rt_switch_to_linux(cpuid);
 			if (!test_and_clear_bit(cpuid, &adeos_pended) || test_bit(IPIPE_STALL_FLAG, &adp_root->cpudata[cpuid].status)) {
 				return 0;
 			}

@@ -1668,12 +1668,23 @@ static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, 
 	new_task->state |= RT_SCHED_READY;
 	enq_soft_ready_task(new_task);
 	sched_release_global_lock(cpuid);
+if (!new_task->is_hard) {
 	LOCK_LINUX(cpuid);
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
 	UEXECTIME();
 	rt_smp_current[cpuid] = new_task;
 	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
 	UNLOCK_LINUX(cpuid);
+} else {
+#define NO_RTAI_TASKPRI
+	LOCK_LINUX(cpuid);
+	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
+	UEXECTIME();
+	rt_smp_current[cpuid] = new_task;
+	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
+	UNLOCK_LINUX(cpuid);
+#undef  NO_RTAI_TASKPRI
+}
 }
 
 

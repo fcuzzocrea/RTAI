@@ -180,6 +180,9 @@ static RT_OBJECT_PROCNODE __intr_pnode = {
  * associated to any given interrupt line using rt_intr_create() at
  * any time.
  *
+ * - -EEXIST is returned if @a irq is already associated to an
+ * existing interrupt object.
+ *
  * - -EPERM is returned if this service was called from an
  * asynchronous context.
  *

@@ -286,7 +286,6 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
         rthal_local_irq_disable();
 
         rthal_load_cpuid();
-
         if (test_and_clear_bit(cpuid,&lock->lock))
 	    {
 #ifdef CONFIG_RTAI_OPT_STATS
@@ -306,6 +305,19 @@ static inline void xnlock_put_irqrestore (xnlock_t *lock, spl_t flags)
 
             clear_bit(BITS_PER_LONG - 1,&lock->lock);
 	    }
+#ifdef CONFIG_RTAI_SPINLOCK_DEBUG
+        else
+            {
+            rthal_emergency_console();
+            printk(KERN_ERR
+                   "RTAI: unlocking unlocked nucleus lock %p\n"
+                   "      owner  = %s:%u (%s(), CPU #%d)\n",
+                   lock,lock->file,lock->line,lock->function,lock->cpu);
+            show_stack(NULL,NULL);
+            for (;;)
+                cpu_relax();
+            }
+#endif
         }
 
     rthal_local_irq_restore(flags & 1);

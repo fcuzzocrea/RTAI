@@ -2423,13 +2423,18 @@ void xnpod_schedule (void)
        epilogue of Linux' schedule, and should skip xnpod_schedule epilogue. */
     if (shadow && testbits(runthread->status, XNROOT))
         {
+        spl_t ignored;
         /* Shadow on entry and root without shadow extension on exit? 
            Mmmm... This must be the user-space mate of a deleted real-time
            shadow we've just rescheduled in the Linux domain to have it
            exit properly.  Reap it now. */
         if (xnshadow_ptd(current) == NULL)
             xnshadow_exit();
-        /* No need to unlock nklock here, it is not locked. */
+
+        /* We need to relock nklock here, since it is not locked and the caller
+           may expect it to be locked. */
+        xnlock_get_irqsave(&nklock, ignored);
+        xnlock_put_irqrestore(&nklock, s);
         return;
         }
 #endif /* __KERNEL__ && CONFIG_RTAI_OPT_FUSION */

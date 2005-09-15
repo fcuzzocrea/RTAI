@@ -1,3 +1,12 @@
+2005-09-15  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
+
+	* include/nucleus/asm-generic/system.h (xnlock_put_irqrestore):
+	Catch attempts of unlocking locks which are already unlocked.
+
+	* nucleus/pod.c (xnpod_schedule): Acquire nklock after thread
+	relaxation so as to restore the state expected by xnpod_schedule
+	caller.
+
 2005-09-14  Gilles Chanteperdrix  <gilles.chanteperdrix@laposte.net>
 
 	* skins/posix/signal.c (pse51_dispatch_shadow_signals): Do not

@@ -3,6 +3,7 @@
 myusage() {
     cat >&1 <<EOF
 rtai-test [options]
+  runs latency and klatency tests
   -w <number>	spawn N workloads (dd if=/dev/zero of=/dev/null) default=1
   -d <device>	used as alternate src in workload (dd if=$device ..)
 		The device must be mounted, and (unfortunately) cannot
@@ -11,21 +12,23 @@ rtai-test [options]
   -W <script>   script is an alternate workload.  If you need to pass args
 		to your program, use quotes.  The program must clean
 		up its children when it gets a SIGTERM
-  -p <cmd>	cmd is run pre & post load-tests, (ex 'ntpq -p')
+  -p <cmd>	cmd is run before, between and after latency, klatency tests
+		(forex: 'ntpdate -b <host>' or 'ntpq -p')
   -L	     	writes to logfile (default "test-`uname -r`") (via script)
   -N <name>	same as -L, but prepend "$name-" (without -L, logname="$name-")
 		prepending allows you to give a full path.
 
   # following options are passed thru to latency, klatency
-  -s	print statistics of sampled data
-  -h	print histogram of sampled data
-  -q	quiet, no print 1 sec sampled data
-  -T <sec test>
+  -s	print statistics of sampled data (default on)
+  -h	print histogram of sampled data (default on)
+  -q	quiet, dont print 1 sec sampled data (default on, off if !-T)
+  -T <sec test>	(default: 10 sec, for demo purposes)
   -l <data/header lines>
   -H <bucketcount>
   -B <bucketsize ns>
 EOF
-exit 1
+    # NB: many defaults are coded in latency, klatency
+    exit 1
 }
 
 #set -e	# ctrl-C's should end everything, not just subshells. 
@@ -36,10 +39,9 @@ set -o notify	# see dd's finish immediately.(or not!)
 loudly() {
     # run task after announcing it
     echo;  date;
-    echo running $PWD: $*
+    echo running: $*
     $* &
-    top -bn1c | head -$(( 12 + $workload ))
-    wait
+    wait $!
 }
 
 # defaults for cpu workload 
@@ -72,14 +74,20 @@ cleanup_load() {
     unset dd_jobs;
 }
 
+boxinfo() {
+    # static info, show once
+    loudly cat /proc/cpuinfo | egrep -v 'bug|wp'
+    loudly cat /proc/meminfo
+    [ -d /proc/adeos ] && for f in /proc/adeos/*; do loudly cat $f; done
+    [ -d /proc/ipipe ] && for f in /proc/ipipe/*; do loudly cat $f; done
+}
+
 boxstatus() {
     # get dynamic status (bogomips, cpuMhz change with CPU_FREQ)
-    cat /proc/cpuinfo | egrep -v 'bug|wp'
-    cat /proc/meminfo
-    cat /proc/interrupts
-    echo -n loadavg:
-    cat /proc/loadavg
+    loudly cat /proc/interrupts
+    loudly cat /proc/loadavg
     [ -n "$prepost" ] && $prepost
+    loudly top -bn1c | head -$(( 12 + $workload ))
 }
 
 
@@ -87,12 +95,15 @@ run_w_load() {
     local opts="$*";
     [ "$opts"  = '' ] && opts='-q -s -T 10'
 
-    boxstatus
+    boxinfo
     generate_loads $workload
+    boxstatus
     (
 	cd ../testsuite/latency
 	#loudly ./run -- -T 10 -s -l 5
 	loudly ./run -- -h $opts
+
+	[ -n "$prepost" ] && $prepost
 	
 	cd ../klatency
 	#loudly ./run -- -T 10 -s -l 5
@@ -196,12 +207,16 @@ Also, if it spawns subtasks, it should end them all when it gets SIGTERM.
 2. added timestamp to the output filename to avoid overwriting
    previous results.
 
+3. added -p 'command', which runs command before, between, and after
+   the latency and klatency tests.
+
 
 TODO:
 
 1. get workload child reaper to work when child is killed from
 separate window, or when it finishes.  Forex, 'dd if=/dev/hda ...'
 will eventually finish, and should be restarted to keep the load up.
+Figure out why killall didnt work properly.
 
 2. Much more testing.  Heres a weak start..
 

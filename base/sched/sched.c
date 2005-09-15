@@ -576,6 +576,18 @@ do { \
 	} \
 } while (0)
 
+#ifdef RTAI_TASKPRI
+#define LOCK_LINUX_NOTSKPRI(cpuid) \
+	do { rt_switch_to_real_time_notskpri(cpuid); } while (0)
+#define UNLOCK_LINUX_NOTSKPRI(cpuid) \
+	do { rt_switch_to_linux_notskpri(cpuid);     } while (0)
+#else
+#define LOCK_LINUX_NOTSKPRI(cpuid) \
+	do { rt_switch_to_real_time(cpuid); } while (0)
+#define UNLOCK_LINUX_NOTSKPRI(cpuid) \
+	do { rt_switch_to_linux(cpuid);     } while (0)
+#endif
+
 #define LOCK_LINUX(cpuid)    do { rt_switch_to_real_time(cpuid); } while (0)
 #define UNLOCK_LINUX(cpuid)  do { rt_switch_to_linux(cpuid);     } while (0)
 
@@ -649,7 +661,7 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
         __adeos_schedule_back_root(rt_current->lnxtsk);
 // now make it as if it was scheduled soft, the tail is cared in sys_lxrt.c
 	rt_global_cli();
-	LOCK_LINUX(cpuid);
+	LOCK_LINUX_NOTSKPRI(cpuid);
 	rt_current->state |= RT_SCHED_READY;
 	rt_smp_current[cpuid] = rt_current;
         if (rt_current->state != RT_SCHED_READY) {
@@ -871,13 +883,13 @@ void rt_schedule(void)
 			}
 		} else if (rt_current->state != RT_SCHED_READY) {
 sched_soft:
-			UNLOCK_LINUX(cpuid);
+			UNLOCK_LINUX_NOTSKPRI(cpuid);
 			rt_global_sti();
 			local_irq_enable();
 			schedule();
 			rt_global_cli();
 			rt_current->state = (rt_current->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;
-			LOCK_LINUX(cpuid);
+			LOCK_LINUX_NOTSKPRI(cpuid);
 			enq_soft_ready_task(rt_current);
 			rt_smp_current[cpuid] = rt_current;
 		}
@@ -1631,7 +1643,7 @@ static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_smp_current[cpuid] = &rt_linux_task;
 	rt_schedule();
-	UNLOCK_LINUX(cpuid);
+	UNLOCK_LINUX_NOTSKPRI(cpuid);
 	rt_global_sti();
 }
 
@@ -1648,7 +1660,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 		schedule();
 		rt_global_cli();
 	}
-	LOCK_LINUX(cpuid = rt_task->runnable_on_cpus);
+	LOCK_LINUX_NOTSKPRI(cpuid = rt_task->runnable_on_cpus);
 	enq_soft_ready_task(rt_task);
 	rt_smp_current[cpuid] = rt_task;
 	rt_global_sti();
@@ -1676,14 +1688,12 @@ if (!new_task->is_hard) {
 	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
 	UNLOCK_LINUX(cpuid);
 } else {
-#define NO_RTAI_TASKPRI
-	LOCK_LINUX(cpuid);
+	LOCK_LINUX_NOTSKPRI(cpuid);
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
 	UEXECTIME();
 	rt_smp_current[cpuid] = new_task;
 	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
-	UNLOCK_LINUX(cpuid);
-#undef  NO_RTAI_TASKPRI
+	UNLOCK_LINUX_NOTSKPRI(cpuid);
 }
 }
 

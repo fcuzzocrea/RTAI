@@ -703,7 +703,7 @@ void rthal_apc_kicker (unsigned virq)
  *
  * This service can be called from:
  *
- * - Any domain context.
+ * - Linux domain context.
  */
 
 int rthal_apc_alloc (const char *name,

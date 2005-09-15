@@ -14,6 +14,7 @@
  *   Copyright &copy; 2002,2003 Philippe Gerum.
  *   Major refactoring for RTAI/fusion: \n
  *   Copyright &copy; 2004 Philippe Gerum.
+ *   Copyright (C) 2005 Gilles Chanteperdrix <gilles.chanteperdrix@laposte.net>.
  *
  *   RTAI/fusion is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License as

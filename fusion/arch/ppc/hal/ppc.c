@@ -42,12 +42,10 @@
 #include <linux/errno.h>
 #include <linux/module.h>
 #include <linux/interrupt.h>
-#include <linux/irq.h>
 #include <linux/console.h>
 #include <linux/kallsyms.h>
 #include <asm/system.h>
-#include <asm/hw_irq.h>
-#include <asm/irq.h>
+#include <asm/hardirq.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/unistd.h>

@@ -37,7 +37,7 @@
 #include <linux/console.h>
 #include <linux/kallsyms.h>
 #include <asm/system.h>
-#include <asm/hw_irq.h>
+#include <asm/hardirq.h>
 #include <asm/irq.h>
 #include <asm/uaccess.h>
 #include <asm/unistd.h>

@@ -52,8 +52,10 @@ int rt_dev_close(int fd)
 int rt_dev_ioctl(int fd, int request, ...)
 {
   va_list ap;
+  void *arg;
+
   va_start(ap, request);
-  void *arg = va_arg(ap, void*);
+  arg = va_arg(ap, void*);
   va_end(ap);
 
   return XENOMAI_SKINCALL3( __rtdm_muxid,

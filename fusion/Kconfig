@@ -91,6 +91,13 @@ config RTAI_DBX_XSL_ROOT
 
 endmenu
 
+config RTAI_OPT_UDEV
+	bool "Enable UDEV support"
+	default y
+	help
+	This options enables the UDEV support. Depends on
+	CONFIG_HOTPLUG availability from the kernel.
+
 config RTAI_OPT_EXPERT
 	bool "Enable expert configuration mode"
 	default n

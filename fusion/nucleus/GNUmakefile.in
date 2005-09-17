@@ -159,6 +159,8 @@ CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
 CONFIG_RTAI_OPT_NATIVE_SEM_TRUE = @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@
 CONFIG_RTAI_OPT_PIPE_FALSE = @CONFIG_RTAI_OPT_PIPE_FALSE@
 CONFIG_RTAI_OPT_PIPE_TRUE = @CONFIG_RTAI_OPT_PIPE_TRUE@
+CONFIG_RTAI_OPT_UDEV_FALSE = @CONFIG_RTAI_OPT_UDEV_FALSE@
+CONFIG_RTAI_OPT_UDEV_TRUE = @CONFIG_RTAI_OPT_UDEV_TRUE@
 CONFIG_RTAI_OPT_UVM_FALSE = @CONFIG_RTAI_OPT_UVM_FALSE@
 CONFIG_RTAI_OPT_UVM_TRUE = @CONFIG_RTAI_OPT_UVM_TRUE@
 CONFIG_RTAI_SKIN_COMPAT_FALSE = @CONFIG_RTAI_SKIN_COMPAT_FALSE@
@@ -335,7 +337,7 @@ libmodule_SRC = heap.c intr.c module.c pod.c synch.c thread.c timer.c \
 @CONFIG_RTAI_OPT_UVM_TRUE@	-I../include
 
 @CONFIG_RTAI_OPT_UVM_TRUE@libnucleus_a_AR = $(CROSS_COMPILE)ar cru
-EXTRA_DIST = $(libmodule_SRC) ltt.c Kbuild Kconfig
+EXTRA_DIST = $(libmodule_SRC) ltt.c Kbuild Kconfig udev
 all: all-am
 
 .SUFFIXES:
@@ -749,7 +751,26 @@ install-exec-local: rtai_nucleus$(modext)
 uninstall-local: 
 	$(RM) $(moduledir)/rtai_nucleus$(modext)
 
-.PHONY: FORCE config_gz
+devices:
+@CONFIG_RTAI_OPT_UDEV_TRUE@	if test -r $(DESTDIR)/etc/udev/udev.rules; then \
+@CONFIG_RTAI_OPT_UDEV_TRUE@	   for f in $(srcdir)/udev/*.rules; do \
+@CONFIG_RTAI_OPT_UDEV_TRUE@	   b=`basename $$f` ; \
+@CONFIG_RTAI_OPT_UDEV_TRUE@	   grep -q fusion:`basename $$b .rules` $(DESTDIR)/etc/udev/udev.rules || \
+@CONFIG_RTAI_OPT_UDEV_TRUE@	   $$sudo sh -c "( echo ; cat $$f ) >> $(DESTDIR)/etc/udev/udev.rules" ; \
+@CONFIG_RTAI_OPT_UDEV_TRUE@	   done ; \
+@CONFIG_RTAI_OPT_UDEV_TRUE@	fi
+@CONFIG_RTAI_OPT_UDEV_FALSE@	$(mkinstalldirs) $(DESTDIR)/dev; \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	for n in `seq 0 @RTAI_PIPE_NRDEV@`; do \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	   f="$(DESTDIR)/dev/rtp$$n"; \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	   if test \! -c $$f; then \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	      $$sudo mknod -m 666 $$f c 150 $$n; \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	   fi; \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	done ; \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	if test \! -c $(DESTDIR)/dev/rtheap; then \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	  $$sudo mknod -m 666 $(DESTDIR)/dev/rtheap c 10 254; \
+@CONFIG_RTAI_OPT_UDEV_FALSE@	fi
+
+.PHONY: FORCE config_gz devices
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

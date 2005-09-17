@@ -93,3 +93,7 @@ W: http://www.rtai.org/
 N: Evgeny Sinelnikov
 E: linux4sin@mail.ru
 D: Autoconf-related fixes.
+
+N: Frederic Villeneuve
+E: frederic.villeneuve@laposte.net
+D: udev support for message pipes.

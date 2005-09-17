@@ -15,4 +15,4 @@ uninstall-local:
 	$(RM) $(DESTDIR)$(bindir)/rtai-config
 	$(RM) $(DESTDIR)$(bindir)/rtai-test
 
-EXTRA_DIST = rtai-info bootstrap $(wildcard postinstall.sh)
+EXTRA_DIST = rtai-info bootstrap udev $(wildcard postinstall.sh)

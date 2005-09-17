@@ -146,6 +146,8 @@ CONFIG_RTAI_OPT_NATIVE_SEM_FALSE = @CONFIG_RTAI_OPT_NATIVE_SEM_FALSE@
 CONFIG_RTAI_OPT_NATIVE_SEM_TRUE = @CONFIG_RTAI_OPT_NATIVE_SEM_TRUE@
 CONFIG_RTAI_OPT_PIPE_FALSE = @CONFIG_RTAI_OPT_PIPE_FALSE@
 CONFIG_RTAI_OPT_PIPE_TRUE = @CONFIG_RTAI_OPT_PIPE_TRUE@
+CONFIG_RTAI_OPT_UDEV_FALSE = @CONFIG_RTAI_OPT_UDEV_FALSE@
+CONFIG_RTAI_OPT_UDEV_TRUE = @CONFIG_RTAI_OPT_UDEV_TRUE@
 CONFIG_RTAI_OPT_UVM_FALSE = @CONFIG_RTAI_OPT_UVM_FALSE@
 CONFIG_RTAI_OPT_UVM_TRUE = @CONFIG_RTAI_OPT_UVM_TRUE@
 CONFIG_RTAI_SKIN_COMPAT_FALSE = @CONFIG_RTAI_SKIN_COMPAT_FALSE@
@@ -798,7 +800,7 @@ dev devices:
 echo '*** Warning: you are not super-user and sudo does not work, real-time\
 devices'; \
 echo '*** nodes will not be created.'; \
-echo '*** If you do not create these devices by hand, RTAI test programs will\
+echo '*** If you do not create these devices by hand, RTAI/fusion test programs will\
 not'; \
 echo '*** work.'; \
 echo '*** To create these devices please run "make devices" with super-user'; \
@@ -807,16 +809,7 @@ echo '*** privileges.'; \
 	   echo sudo is working.; \
 	   fi; \
 	fi; \
-	$(mkinstalldirs) $(DESTDIR)/dev; \
-	for n in `seq 0 @RTAI_PIPE_NRDEV@`; do \
-	   f="$(DESTDIR)/dev/rtp$$n"; \
-	   if test \! -c $$f; then \
-	      $$sudo mknod -m 666 $$f c 150 $$n; \
-	   fi; \
-	done ; \
-	if test \! -c $(DESTDIR)/dev/rtheap; then \
-	  $$sudo mknod -m 666 $(DESTDIR)/dev/rtheap c 10 254; \
-	fi
+	$(MAKE) -C nucleus/ DESTDIR=$(DESTDIR) sudo=$$sudo devices
 
 install-nodev:
 	$(MAKE) SUDO=false install

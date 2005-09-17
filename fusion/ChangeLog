@@ -1,3 +1,11 @@
+2005-09-17  Philippe Gerum  <rpm@xenomai.org>
+
+	* nucleus/heap.c: Extend udev support.
+
+2005-09-17  Frederic Villeneuve <frederic.villeneuve@laposte.net>
+
+	* nucleus/pipe.c: Add udev support.
+
 2005-09-16  Jan Kiszka <jan.kiszka@web.de>
 
 	* skins/rtdm/lib/core.c (rt_dev_ioctl): Fix issue w/ GCC 2.95.
@@ -37,6 +45,8 @@
 
 	* skins/rtai/syscall.c (__rt_task_create): Propagate T_SUSP if
 	present to the actual syscall.
+
+2005-09-12  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: fusion-0.9.1 (Not Of This Earth)
 

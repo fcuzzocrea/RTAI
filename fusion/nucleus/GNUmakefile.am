@@ -63,6 +63,28 @@ install-exec-local: rtai_nucleus$(modext)
 uninstall-local: 
 	$(RM) $(moduledir)/rtai_nucleus$(modext)
 
+devices:
+if CONFIG_RTAI_OPT_UDEV
+	if test -r $(DESTDIR)/etc/udev/udev.rules; then \
+	   for f in $(srcdir)/udev/*.rules; do \
+	   b=`basename $$f` ; \
+	   grep -q fusion:`basename $$b .rules` $(DESTDIR)/etc/udev/udev.rules || \
+	   $$sudo sh -c "( echo ; cat $$f ) >> $(DESTDIR)/etc/udev/udev.rules" ; \
+	   done ; \
+	fi
+else
+	$(mkinstalldirs) $(DESTDIR)/dev; \
+	for n in `seq 0 @RTAI_PIPE_NRDEV@`; do \
+	   f="$(DESTDIR)/dev/rtp$$n"; \
+	   if test \! -c $$f; then \
+	      $$sudo mknod -m 666 $$f c 150 $$n; \
+	   fi; \
+	done ; \
+	if test \! -c $(DESTDIR)/dev/rtheap; then \
+	  $$sudo mknod -m 666 $(DESTDIR)/dev/rtheap c 10 254; \
+	fi
+endif
+
 if CONFIG_RTAI_OPT_UVM
 
 lib_LIBRARIES = libnucleus.a
@@ -86,6 +108,6 @@ libnucleus_a_AR = $(CROSS_COMPILE)ar cru
 
 endif
 
-.PHONY: FORCE config_gz
+.PHONY: FORCE config_gz devices
 
-EXTRA_DIST = $(libmodule_SRC) ltt.c Kbuild Kconfig
+EXTRA_DIST = $(libmodule_SRC) ltt.c Kbuild Kconfig udev

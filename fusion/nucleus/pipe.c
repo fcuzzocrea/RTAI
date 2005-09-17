@@ -28,6 +28,7 @@
 #include <linux/termios.h>
 #include <linux/proc_fs.h>
 #include <linux/spinlock.h>
+#include <linux/device.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <asm/system.h>
@@ -45,6 +46,18 @@ xnpipe_state_t xnpipe_states[XNPIPE_NDEVS];
 xnqueue_t xnpipe_sleepq, xnpipe_asyncq;
 
 int xnpipe_wakeup_apc;
+
+#ifdef CONFIG_RTAI_OPT_UDEV
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,13)
+   static struct class *xnpipe_class;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+   static struct class_simple *xnpipe_class;
+   #define class_create class_simple_create
+   #define class_device_create class_simple_device_add
+   #define class_device_destroy(a,b) class_simple_device_remove(b)
+   #define class_destroy class_simple_destroy
+#endif
+#endif /* CONFIG_RTAI_OPT_UDEV */
 
 /* Get nklock locked before using this macro */
 
@@ -953,11 +966,38 @@ int xnpipe_mount (void)
     initq(&xnpipe_sleepq);
     initq(&xnpipe_asyncq);
 
+#ifdef CONFIG_RTAI_OPT_UDEV
+    {
+    int i;
+
+    xnpipe_class = class_create(THIS_MODULE, "rtpipe");
+    if(IS_ERR(xnpipe_class))
+    {
+       xnlogerr("Error creating rtpipe class, err=%ld.\n",PTR_ERR(xnpipe_class));
+       return -EBUSY; 
+    }
+
+    for (i = 0; i < XNPIPE_NDEVS; i++)
+    {
+       struct class_device* cldev;
+       cldev = class_device_create(xnpipe_class, MKDEV(XNPIPE_DEV_MAJOR, i),
+                                   NULL, "rtp%d", i);
+       if(IS_ERR(cldev))
+       {
+          xnlogerr("Can't add device class, major=%d, minor=%d, err=%ld\n", 
+		   XNPIPE_DEV_MAJOR, i, PTR_ERR(cldev));
+          class_destroy(xnpipe_class);
+          return -EBUSY;
+       }
+    }
+    }
+#endif /* CONFIG_RTAI_OPT_UDEV */
+
     if (register_chrdev(XNPIPE_DEV_MAJOR,"rtpipe",&xnpipe_fops))
 	{
 	xnlogerr("Unable to reserve major #%d for message pipe support.\n",
 		 XNPIPE_DEV_MAJOR);
-	return -EPIPE;
+	return -EBUSY;
 	}
 
     xnpipe_wakeup_apc = rthal_apc_alloc("pipe_wakeup",&xnpipe_wakeup_proc,NULL);
@@ -970,6 +1010,16 @@ void xnpipe_umount (void)
 {
     rthal_apc_free(xnpipe_wakeup_apc);
     unregister_chrdev(XNPIPE_DEV_MAJOR,"rtpipe");
+#ifdef CONFIG_RTAI_OPT_UDEV
+    {
+    int i;
+
+    for (i = 0; i < XNPIPE_NDEVS; i ++)
+        class_device_destroy(xnpipe_class, MKDEV(XNPIPE_DEV_MAJOR, i));
+
+    class_destroy(xnpipe_class);
+    }
+#endif /* CONFIG_RTAI_OPT_UDEV */
 }
 
 EXPORT_SYMBOL(xnpipe_connect);

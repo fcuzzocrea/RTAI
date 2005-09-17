@@ -798,8 +798,21 @@ void xnheap_finalize_free_inner (xnheap_t *heap)
 
 #include <asm/io.h>
 #include <linux/miscdevice.h>
+#include <linux/device.h>
 #include <linux/vmalloc.h>
 #include <linux/mm.h>
+
+#ifdef CONFIG_RTAI_OPT_UDEV
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,13)
+   static struct class *xnheap_class;
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+   static struct class_simple *xnheap_class;
+   #define class_create class_simple_create
+   #define class_device_create class_simple_device_add
+   #define class_device_destroy(a,b) class_simple_device_remove(b)
+   #define class_destroy class_simple_destroy
+#endif
+#endif /* CONFIG_RTAI_OPT_UDEV */
 
 static DECLARE_XNQUEUE(kheapq);	/* Shared heap queue. */
 
@@ -991,6 +1004,30 @@ static struct miscdevice xnheap_dev = {
 int xnheap_mount (void)
 
 {
+#ifdef CONFIG_RTAI_OPT_UDEV
+    {
+    struct class_device* cldev;
+
+    xnheap_class = class_create(THIS_MODULE, "rtheap");
+
+    if(IS_ERR(xnheap_class))
+    {
+       xnlogerr("Error creating rtheap class, err=%ld.\n",PTR_ERR(xnheap_class));
+       return -EBUSY; 
+    }
+
+    cldev = class_device_create(xnheap_class, MKDEV(MISC_MAJOR, XNHEAP_DEV_MINOR),
+				NULL, "rtheap");
+    if(IS_ERR(cldev))
+	{
+	xnlogerr("Can't add device class, major=%d, minor=%d, err=%ld\n", 
+		 MISC_MAJOR, XNHEAP_DEV_MINOR, PTR_ERR(cldev));
+	class_destroy(xnheap_class);
+	return -EBUSY;
+	}
+    }
+#endif /* CONFIG_RTAI_OPT_UDEV */
+
     if (misc_register(&xnheap_dev) < 0)
 	return -EBUSY;
 
@@ -1001,6 +1038,12 @@ void xnheap_umount (void)
 
 {
     misc_deregister(&xnheap_dev);
+#ifdef CONFIG_RTAI_OPT_UDEV
+    {
+    class_device_destroy(xnheap_class, MKDEV(MISC_MAJOR, XNHEAP_DEV_MINOR));
+    class_destroy(xnheap_class);
+    }
+#endif /* CONFIG_RTAI_OPT_UDEV */
 }
 
 static inline void *__alloc_and_reserve_heap (size_t size, int kmflags)

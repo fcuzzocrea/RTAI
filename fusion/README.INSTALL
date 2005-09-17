@@ -58,6 +58,7 @@ configuration switches can be listed by running ./configure
  --enable-nucleus-scalable-prios	Set the maximum number of priority levels
  --enable-nucleus-config-gz	Make gzipped config file available from /proc
  --enable-fpu			Enable FPU support
+ --enable-udev			Enable UDEV support
  --enable-periodic_timer	Enable periodic timer support
  --enable-module-debug		Enable debug information in kernel modules
  --enable-user-debug		Enable debug information in user-space programs

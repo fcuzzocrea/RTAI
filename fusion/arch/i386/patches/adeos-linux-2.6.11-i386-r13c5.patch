@@ -1706,8 +1706,8 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/Makefile linux-2.6.11-adeos/arch/i386/k
  obj-$(CONFIG_MCA)		+= mca.o
 diff -uNrp linux-2.6.11/arch/i386/kernel/adeos.c linux-2.6.11-adeos/arch/i386/kernel/adeos.c
 --- linux-2.6.11/arch/i386/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.11-adeos/arch/i386/kernel/adeos.c	2005-08-05 18:53:51.000000000 +0200
-@@ -0,0 +1,783 @@
++++ linux-2.6.11-adeos/arch/i386/kernel/adeos.c	2005-09-17 22:49:30.000000000 +0200
+@@ -0,0 +1,789 @@
 +/*
 + *   linux/arch/i386/kernel/adeos.c
 + *
@@ -2268,6 +2268,12 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/adeos.c linux-2.6.11-adeos/arch/i386/ke
 +	/* Linux profiling code needs this. */
 +	__adeos_tick_regs[cpuid].ebp = regs.ebp;
 +#endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
++	if (__adeos_pipeline_head_p(adp_root) &&
++	    adp_root->cpudata[cpuid].irq_hits[irq] > 1)
++	    /* Emulate a loss of clock ticks if Linux is owning the
++	     * time source. The drift will be compensated by the timer
++	     * support code. */
++	    adp_root->cpudata[cpuid].irq_hits[irq] = 1;
 +	}
 +
 +    /* Now walk the pipeline, yielding control to the highest priority
@@ -3062,7 +3068,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/i8259.c linux-2.6.11-adeos/arch/i386/ke
  /*
 diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/kernel/io_apic.c
 --- linux-2.6.11/arch/i386/kernel/io_apic.c	2005-03-02 08:37:54.000000000 +0100
-+++ linux-2.6.11-adeos/arch/i386/kernel/io_apic.c	2005-07-02 13:01:55.000000000 +0200
++++ linux-2.6.11-adeos/arch/i386/kernel/io_apic.c	2005-09-17 19:46:06.000000000 +0200
 @@ -174,18 +174,20 @@ static void mask_IO_APIC_irq (unsigned i
  {
  	unsigned long flags;
@@ -3150,7 +3156,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  
  	return was_pending;
  }
-@@ -1824,6 +1827,26 @@ static unsigned int startup_edge_ioapic_
+@@ -1824,6 +1827,32 @@ static unsigned int startup_edge_ioapic_
   * interrupt for real. This prevents IRQ storms from unhandled
   * devices.
   */
@@ -3160,7 +3166,6 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
 +static void ack_edge_ioapic_irq (unsigned irq)
 +
 +{
-+    move_irq(irq);
 +    if ((irq_desc[irq].status & (IRQ_PENDING | IRQ_DISABLED)) == (IRQ_PENDING | IRQ_DISABLED))
 +	{
 +	unsigned long flags;
@@ -3172,12 +3177,19 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
 +    __ack_APIC_irq();
 +}
 +
++#ifdef CONFIG_IRQBALANCE
++static void end_edge_ioapic_irq (unsigned irq)
++{
++	move_irq(irq);
++}
++#endif /* CONFIG_IRQBALANCE */
++
 +#else /* !CONFIG_ADEOS_CORE */
 +
  static void ack_edge_ioapic_irq(unsigned int irq)
  {
  	move_irq(irq);
-@@ -1833,6 +1856,8 @@ static void ack_edge_ioapic_irq(unsigned
+@@ -1833,6 +1862,8 @@ static void ack_edge_ioapic_irq(unsigned
  	ack_APIC_irq();
  }
  
@@ -3186,7 +3198,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  /*
   * Level triggered interrupts can just be masked,
   * and shutting down and starting up the interrupt
-@@ -1854,6 +1879,77 @@ static unsigned int startup_level_ioapic
+@@ -1854,6 +1885,87 @@ static unsigned int startup_level_ioapic
  	return 0; /* don't check for pending */
  }
  
@@ -3249,6 +3261,16 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
 +
 +#ifdef CONFIG_PCI_MSI
 +
++#ifdef CONFIG_IRQBALANCE
++static inline void end_edge_ioapic_vector(unsigned int vector)
++
++{
++	int irq = vector_to_irq(vector);
++
++	end_edge_ioapic_irq(irq);
++}
++#endif /* CONFIG_IRQBALANCE */
++ 
 +static inline void mask_and_ack_level_ioapic_vector(unsigned int vector)
 +
 +{
@@ -3264,7 +3286,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  static void end_level_ioapic_irq (unsigned int irq)
  {
  	unsigned long v;
-@@ -1894,6 +1990,8 @@ static void end_level_ioapic_irq (unsign
+@@ -1894,6 +2006,8 @@ static void end_level_ioapic_irq (unsign
  	}
  }
  
@@ -3273,7 +3295,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  #ifdef CONFIG_PCI_MSI
  static unsigned int startup_edge_ioapic_vector(unsigned int vector)
  {
-@@ -2031,7 +2129,7 @@ static void disable_lapic_irq (unsigned 
+@@ -2031,7 +2145,7 @@ static void disable_lapic_irq (unsigned 
  
  static void ack_lapic_irq (unsigned int irq)
  {
@@ -3282,7 +3304,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  }
  
  static void end_lapic_irq (unsigned int i) { /* nothing */ }
-@@ -2304,12 +2402,12 @@ static int ioapic_suspend(struct sys_dev
+@@ -2304,12 +2418,12 @@ static int ioapic_suspend(struct sys_dev
  	
  	data = container_of(dev, struct sysfs_ioapic_data, dev);
  	entry = data->entry;
@@ -3297,7 +3319,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  
  	return 0;
  }
-@@ -2325,7 +2423,7 @@ static int ioapic_resume(struct sys_devi
+@@ -2325,7 +2439,7 @@ static int ioapic_resume(struct sys_devi
  	data = container_of(dev, struct sysfs_ioapic_data, dev);
  	entry = data->entry;
  
@@ -3306,7 +3328,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  	reg_00.raw = io_apic_read(dev->id, 0);
  	if (reg_00.bits.ID != mp_ioapics[dev->id].mpc_apicid) {
  		reg_00.bits.ID = mp_ioapics[dev->id].mpc_apicid;
-@@ -2335,7 +2433,7 @@ static int ioapic_resume(struct sys_devi
+@@ -2335,7 +2449,7 @@ static int ioapic_resume(struct sys_devi
  		io_apic_write(dev->id, 0x11+2*i, *(((int *)entry)+1));
  		io_apic_write(dev->id, 0x10+2*i, *(((int *)entry)+0));
  	}
@@ -3315,7 +3337,7 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/io_apic.c linux-2.6.11-adeos/arch/i386/
  
  	return 0;
  }
-@@ -2530,12 +2628,38 @@ int io_apic_set_pci_routing (int ioapic,
+@@ -2530,12 +2644,38 @@ int io_apic_set_pci_routing (int ioapic,
  	if (!ioapic && (irq < 16))
  		disable_8259A_irq(irq);
  
@@ -3583,42 +3605,28 @@ diff -uNrp linux-2.6.11/arch/i386/kernel/timers/timer_pit.c linux-2.6.11-adeos/a
  	outb_p(0x00, PIT_MODE);	/* latch the count ASAP */
 diff -uNrp linux-2.6.11/arch/i386/kernel/timers/timer_tsc.c linux-2.6.11-adeos/arch/i386/kernel/timers/timer_tsc.c
 --- linux-2.6.11/arch/i386/kernel/timers/timer_tsc.c	2005-03-02 08:38:13.000000000 +0100
-+++ linux-2.6.11-adeos/arch/i386/kernel/timers/timer_tsc.c	2005-06-29 12:23:29.000000000 +0200
-@@ -349,6 +349,12 @@ static void mark_offset_tsc(void)
++++ linux-2.6.11-adeos/arch/i386/kernel/timers/timer_tsc.c	2005-09-17 22:46:51.000000000 +0200
+@@ -348,6 +348,20 @@ static void mark_offset_tsc(void)
+ 
  	rdtsc(last_tsc_low, last_tsc_high);
  
- 	spin_lock(&i8253_lock);
 +#ifdef CONFIG_ADEOS_CORE
 +	if (!__adeos_pipeline_head_p(adp_root)) {
-+		count = 0;
-+		goto noadj;	/* We don't really own the PIT. */
++		/* If Linux does not actually own the timer, clock
++		   ticks will be posted by some higher level domain to
++		   us, and we expect it to do this right and never
++		   lose any of them; so we just need to update the
++		   monotonic base here. */
++		this_offset = ((unsigned long long)last_tsc_high<<32)|last_tsc_low;
++		monotonic_base += cycles_2_ns(this_offset - last_offset);
++		write_sequnlock(&monotonic_lock);
++		return;
 +	}
 +#endif /* CONFIG_ADEOS_CORE */
++
+ 	spin_lock(&i8253_lock);
  	outb_p(0x00, PIT_MODE);     /* latch the count ASAP */
  
- 	count = inb_p(PIT_CH0);    /* read the latched count */
-@@ -365,6 +371,9 @@ static void mark_offset_tsc(void)
- 		count = LATCH - 1;
- 	}
- 
-+#ifdef CONFIG_ADEOS_CORE
-+ noadj:
-+#endif /* CONFIG_ADEOS_CORE */
- 	spin_unlock(&i8253_lock);
- 
- 	if (pit_latch_buggy) {
-@@ -420,9 +429,11 @@ static void mark_offset_tsc(void)
- 	monotonic_base += cycles_2_ns(this_offset - last_offset);
- 	write_sequnlock(&monotonic_lock);
- 
-+#ifndef CONFIG_ADEOS_CORE
- 	/* calculate delay_at_last_interrupt */
- 	count = ((LATCH-1) - count) * TICK_SIZE;
- 	delay_at_last_interrupt = (count + LATCH/2) / LATCH;
-+#endif /* CONFIG_ADEOS_CORE */
- 
- 	/* catch corner case where tick rollover occured
- 	 * between tsc and pit reads (as noted when
 diff -uNrp linux-2.6.11/arch/i386/kernel/traps.c linux-2.6.11-adeos/arch/i386/kernel/traps.c
 --- linux-2.6.11/arch/i386/kernel/traps.c	2005-03-02 08:37:49.000000000 +0100
 +++ linux-2.6.11-adeos/arch/i386/kernel/traps.c	2005-04-13 19:50:25.000000000 +0200
@@ -3758,7 +3766,7 @@ diff -uNrp linux-2.6.11/arch/i386/mm/ioremap.c linux-2.6.11-adeos/arch/i386/mm/i
  		dir++;
 diff -uNrp linux-2.6.11/include/asm-i386/adeos.h linux-2.6.11-adeos/include/asm-i386/adeos.h
 --- linux-2.6.11/include/asm-i386/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.6.11-adeos/include/asm-i386/adeos.h	2005-09-10 16:42:42.000000000 +0200
++++ linux-2.6.11-adeos/include/asm-i386/adeos.h	2005-09-17 22:50:43.000000000 +0200
 @@ -0,0 +1,511 @@
 +/*
 + *   include/asm-i386/adeos.h
@@ -3790,9 +3798,9 @@ diff -uNrp linux-2.6.11/include/asm-i386/adeos.h linux-2.6.11-adeos/include/asm-
 +#include <linux/list.h>
 +#include <linux/threads.h>
 +
-+#define ADEOS_ARCH_STRING   "r13c3/x86"
++#define ADEOS_ARCH_STRING   "r13c5/x86"
 +#define ADEOS_MAJOR_NUMBER  13
-+#define ADEOS_MINOR_NUMBER  3
++#define ADEOS_MINOR_NUMBER  5
 +
 +extern int adp_pipelined;
 +
@@ -4290,27 +4298,37 @@ diff -uNrp linux-2.6.11/include/asm-i386/apic.h linux-2.6.11-adeos/include/asm-i
  	 * ack_APIC_irq() actually gets compiled as a single instruction:
 diff -uNrp linux-2.6.11/include/asm-i386/io_apic.h linux-2.6.11-adeos/include/asm-i386/io_apic.h
 --- linux-2.6.11/include/asm-i386/io_apic.h	2005-03-02 08:38:13.000000000 +0100
-+++ linux-2.6.11-adeos/include/asm-i386/io_apic.h	2005-03-24 14:04:33.000000000 +0100
-@@ -16,7 +16,9 @@
++++ linux-2.6.11-adeos/include/asm-i386/io_apic.h	2005-09-16 17:55:00.000000000 +0200
+@@ -16,8 +16,14 @@
  #ifdef CONFIG_PCI_MSI
  static inline int use_pci_vector(void)	{return 1;}
  static inline void disable_edge_ioapic_vector(unsigned int vector) { }
-+#ifndef CONFIG_ADEOS_CORE
++#ifdef CONFIG_ADEOS_CORE
++#ifndef CONFIG_IRQBALANCE
++static inline void end_edge_ioapic_vector (unsigned int vector) { }
++#endif /* !CONFIG_IRQBALANCE */
++#else /* !CONFIG_ADEOS_CORE */
  static inline void mask_and_ack_level_ioapic_vector(unsigned int vector) { }
-+#endif /* !CONFIG_ADEOS_CORE */
  static inline void end_edge_ioapic_vector (unsigned int vector) { }
++#endif /* CONFIG_ADEOS_CORE */
  #define startup_level_ioapic	startup_level_ioapic_vector
  #define shutdown_level_ioapic	mask_IO_APIC_vector
-@@ -35,7 +37,9 @@ static inline void end_edge_ioapic_vecto
+ #define enable_level_ioapic	unmask_IO_APIC_vector
+@@ -35,8 +41,14 @@ static inline void end_edge_ioapic_vecto
  #else
  static inline int use_pci_vector(void)	{return 0;}
  static inline void disable_edge_ioapic_irq(unsigned int irq) { }
-+#ifndef CONFIG_ADEOS_CORE
++#ifdef CONFIG_ADEOS_CORE
++#ifndef CONFIG_IRQBALANCE
++static inline void end_edge_ioapic_irq (unsigned int irq) { }
++#endif /* !CONFIG_IRQBALANCE */
++#else /* CONFIG_ADEOS_CORE */
  static inline void mask_and_ack_level_ioapic_irq(unsigned int irq) { }
-+#endif /* !CONFIG_ADEOS_CORE */
  static inline void end_edge_ioapic_irq (unsigned int irq) { }
++#endif /* CONFIG_ADEOS_CORE */
  #define startup_level_ioapic	startup_level_ioapic_irq
  #define shutdown_level_ioapic	mask_IO_APIC_irq
+ #define enable_level_ioapic	unmask_IO_APIC_irq
 diff -uNrp linux-2.6.11/include/asm-i386/mach-default/do_timer.h linux-2.6.11-adeos/include/asm-i386/mach-default/do_timer.h
 --- linux-2.6.11/include/asm-i386/mach-default/do_timer.h	2005-03-02 08:38:26.000000000 +0100
 +++ linux-2.6.11-adeos/include/asm-i386/mach-default/do_timer.h	2005-06-28 16:37:20.000000000 +0200

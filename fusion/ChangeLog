@@ -1,3 +1,8 @@
+2005-09-18  Philippe Gerum  <rpm@xenomai.org>
+
+	* arch/i386/patches: Upgrade to Adeos oldgen r13c5 and newgen
+	1.0-04.
+
 2005-09-17  Philippe Gerum  <rpm@xenomai.org>
 
 	* nucleus/heap.c: Extend udev support.

@@ -47,7 +47,6 @@ xnqueue_t xnpipe_sleepq, xnpipe_asyncq;
 
 int xnpipe_wakeup_apc;
 
-#ifdef CONFIG_RTAI_OPT_UDEV
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,13)
    static struct class *xnpipe_class;
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
@@ -57,7 +56,6 @@ int xnpipe_wakeup_apc;
    #define class_device_destroy(a,b) class_simple_device_remove(b)
    #define class_destroy class_simple_destroy
 #endif
-#endif /* CONFIG_RTAI_OPT_UDEV */
 
 /* Get nklock locked before using this macro */
 
@@ -947,6 +945,8 @@ static struct file_operations xnpipe_fops = {
 int xnpipe_mount (void)
 
 {
+    int i;
+
     xnpipe_state_t *state;
 
     for (state = &xnpipe_states[0];
@@ -965,10 +965,6 @@ int xnpipe_mount (void)
 
     initq(&xnpipe_sleepq);
     initq(&xnpipe_asyncq);
-
-#ifdef CONFIG_RTAI_OPT_UDEV
-    {
-    int i;
 
     xnpipe_class = class_create(THIS_MODULE, "rtpipe");
     if(IS_ERR(xnpipe_class))
@@ -990,8 +986,6 @@ int xnpipe_mount (void)
           return -EBUSY;
        }
     }
-    }
-#endif /* CONFIG_RTAI_OPT_UDEV */
 
     if (register_chrdev(XNPIPE_DEV_MAJOR,"rtpipe",&xnpipe_fops))
 	{
@@ -1008,18 +1002,15 @@ int xnpipe_mount (void)
 void xnpipe_umount (void)
 
 {
+    int i;
+
     rthal_apc_free(xnpipe_wakeup_apc);
     unregister_chrdev(XNPIPE_DEV_MAJOR,"rtpipe");
-#ifdef CONFIG_RTAI_OPT_UDEV
-    {
-    int i;
 
     for (i = 0; i < XNPIPE_NDEVS; i ++)
         class_device_destroy(xnpipe_class, MKDEV(XNPIPE_DEV_MAJOR, i));
 
     class_destroy(xnpipe_class);
-    }
-#endif /* CONFIG_RTAI_OPT_UDEV */
 }
 
 EXPORT_SYMBOL(xnpipe_connect);

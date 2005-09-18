@@ -945,9 +945,8 @@ static struct file_operations xnpipe_fops = {
 int xnpipe_mount (void)
 
 {
-    int i;
-
     xnpipe_state_t *state;
+    int i;
 
     for (state = &xnpipe_states[0];
 	 state < &xnpipe_states[XNPIPE_NDEVS]; state++)

@@ -512,7 +512,11 @@ static inline int xnarch_start_timer (unsigned long nstick,
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
-    pthread_create(&thid,&thattr,&xnarch_timer_thread,&parms);
+
+    err = pthread_create(&thid,&thattr,&xnarch_timer_thread,&parms);
+
+    if (err)
+	return -err;
 
     err = uvm_thread_sync(&parms.completion);
 
@@ -604,6 +608,7 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 				       char *name)
 {
     pthread_attr_t thattr;
+    int err;
 
     if (tcb->khandle)	/* Restarting thread */
 	{
@@ -621,8 +626,13 @@ static inline void xnarch_init_thread (xnarchtcb_t *tcb,
 
     pthread_attr_init(&thattr);
     pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED);
-    pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
-    uvm_thread_sync(&tcb->completion);
+
+    err = pthread_create(&tcb->thid,&thattr,&xnarch_thread_trampoline,tcb);
+
+    if (!err)
+	uvm_thread_sync(&tcb->completion);
+    else
+	xnarch_logerr("pthread_create() failed for thread %s (err %d)\n",name,err);
 }
 
 static inline void xnarch_enable_fpu(xnarchtcb_t *current_tcb) {

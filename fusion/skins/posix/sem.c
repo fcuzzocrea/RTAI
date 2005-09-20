@@ -436,11 +436,11 @@ void pse51_sem_pkg_cleanup (void)
         sem_t *sem = link2sem(holder);
 #ifdef CONFIG_RTAI_OPT_DEBUG
         if (sem->magic == PSE51_SEM_MAGIC)
-            xnprintf("Posix semaphore %p was NOT destroyed, destroying now.\n",
+            xnprintf("POSIX semaphore %p discarded.\n",
                      sem);
         else
-            xnprintf("Posix semaphore \"%s\" was NOT destroyed, destroying"
-                     " now.\n", sem2named_sem(sem)->nodebase.name);
+            xnprintf("POSIX semaphore \"%s\" discarded.\n"
+                     sem2named_sem(sem)->nodebase.name);
 #endif /* CONFIG_RTAI_OPT_DEBUG */
         sem_destroy_internal(sem);
         }

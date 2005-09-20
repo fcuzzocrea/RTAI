@@ -90,7 +90,7 @@ void pse51_reg_pkg_cleanup (void)
         {
         pse51_node_t *node;
         for (node = pse51_reg.node_buckets[i]; node; node = node->next)
-            xnprintf("Posix node \"%s\" was not unlinked, NOT unlinking now.\n",
+            xnprintf("POSIX node \"%s\" left aside.\n",
                      node->name);
         }
 #endif /* CONFIG_RTAI_OPT_DEBUG */

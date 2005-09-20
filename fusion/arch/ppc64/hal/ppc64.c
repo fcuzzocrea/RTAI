@@ -8,13 +8,6 @@
  *   Copyright (C) 2005 Taneli Vähäkangas and Heikki Lindholm
  *   based on previous work:
  *  
- *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000 Paolo Mantegazza, \n
- *   Copyright &copy; 2000 Steve Papacharalambous, \n
- *   Copyright &copy; 2000 Stuart Hughes, \n
- *   and others.
- *
- *   RTAI/x86 rewrite over Adeos: \n
  *   Copyright &copy; 2002 Philippe Gerum.
  *
  *   RTAI/fusion is free software; you can redistribute it and/or

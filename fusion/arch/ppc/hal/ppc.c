@@ -4,15 +4,6 @@
  *
  *   Adeos-based Real-Time Abstraction Layer for PPC.
  *
- *   Original RTAI/x86 layer implementation: \n
- *   Copyright &copy; 2000 Paolo Mantegazza, \n
- *   Copyright &copy; 2000 Steve Papacharalambous, \n
- *   Copyright &copy; 2000 Stuart Hughes, \n
- *   and others.
- *
- *   RTAI/x86 rewrite over Adeos: \n
- *   Copyright &copy; 2002 Philippe Gerum.
- *
  *   RTAI/fusion is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU General Public License as
  *   published by the Free Software Foundation, Inc., 675 Mass Ave,

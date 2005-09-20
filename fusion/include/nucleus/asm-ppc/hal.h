@@ -4,14 +4,6 @@
  *
  *   Real-Time Hardware Abstraction Layer for PowerPC.
  *
- *   Original RTAI/ppc HAL services from: \n
- *   Copyright &copy; 2000 Paolo Mantegazza, \n
- *   Copyright &copy; 2001 David Schleef, \n
- *   Copyright &copy; 2001 Lineo, Inc, \n
- *   Copyright &copy; 2004 Wolfgang Grandegger, \n
- *   and others.
- *
- *   Adeos support: \n
  *   Copyright &copy; 2002-2004 Philippe Gerum.
  *
  *   RTAI/fusion is free software; you can redistribute it and/or

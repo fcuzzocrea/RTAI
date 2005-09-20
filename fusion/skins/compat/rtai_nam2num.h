@@ -1,12 +1,4 @@
 /**
- * Conversion between characters strings and unsigned long identifiers.
- * 
- * Convert a 6 characters string to un unsigned long, and vice versa, to be used
- * as an identifier for RTAI services symmetrically available in user and kernel
- * space, e.g. @ref shm "shared memory" and @ref lxrt "LXRT and LXRT-INFORMED".
- *
- * @author Paolo Mantegazza
- *
  * @note Copyright &copy; 1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
@@ -29,22 +21,6 @@
 
 #include <compat/rtai_types.h>
 
-/**
- * Convert a 6 characters string to an unsigned long.
- *
- * Converts a 6 characters string name containing an alpha numeric
- * identifier to its corresponding unsigned long identifier.
- *
- * @param name is the name to be converted.
- *
- * Allowed characters are:
- * -  english letters (no difference between upper and lower case);
- * -  decimal digits;
- * -  underscore (_) and another character of your choice. The latter will be
- * always converted back to a $ by num2nam().
- *
- * @return the unsigned long associated with @a name.
- */
 static inline unsigned long nam2num (const char *name)
 {
         unsigned long retval = 0;
@@ -70,15 +46,6 @@ static inline unsigned long nam2num (const char *name)
 		return 0xFFFFFFFF;
 }
 
-/**
- * Convert an unsigned long to a 6 characters string.
- *
- * @param num is the unsigned long identifier whose alphanumeric name string has
- * to be evaluated;
- * 
- * @param name is a pointer to a 6 characters buffer where the identifier will
- * be returned.
- */
 static inline void num2nam (unsigned long num, char *name)
 {
         int c, i, k, q; 

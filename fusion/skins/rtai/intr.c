@@ -59,16 +59,18 @@ static int __intr_read_proc (char *page,
 			     void *data)
 {
     RT_INTR *intr = (RT_INTR *)data;
-    xnpholder_t *holder;
     char *p = page;
     int len;
-    spl_t s;
 
 #ifdef CONFIG_RTAI_OPT_FUSION
+    {
+    xnpholder_t *holder;
+    spl_t s;
 
     xnlock_get_irqsave(&nklock,s);
 
-    p += sprintf(p,"pending=%u, mode=0x%x\n",
+    p += sprintf(p,"hits=%lu, pending=%u, mode=0x%x\n",
+		 intr->intr_base.hits,
 		 intr->pending,
 		 intr->mode);
 
@@ -84,7 +86,9 @@ static int __intr_read_proc (char *page,
 	}
 
     xnlock_put_irqrestore(&nklock,s);
-
+    }
+#else /* !CONFIG_RTAI_OPT_FUSION */
+    p += sprintf(p,"hits=%lu\n",intr->intr_base.hits);
 #endif /* CONFIG_RTAI_OPT_FUSION */
 
     len = (p - page) - off;

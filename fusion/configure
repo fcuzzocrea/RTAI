@@ -19657,12 +19657,6 @@ fi;
 top_builddir=`pwd`
 
 
-if test "$srcdir" = $top_builddir; then
-   CONFIG_RTAI_OLD_FASHIONED_BUILD=y
-else
-   CONFIG_RTAI_OLD_FASHIONED_BUILD=
-fi
-
 if test "x" = "x$RTAI_MODULE_DIR"
 then
    RTAI_MODULE_DIR='${exec_prefix}/modules'
@@ -19672,6 +19666,17 @@ fi
 
 echo "$as_me:$LINENO: result: $RTAI_MODULE_DIR" >&5
 echo "${ECHO_T}$RTAI_MODULE_DIR" >&6
+
+echo "$as_me:$LINENO: checking for build directory" >&5
+echo $ECHO_N "checking for build directory... $ECHO_C" >&6
+abs_srcdir=`cd "$srcdir" && pwd`
+if test "$abs_srcdir" = $top_builddir; then
+   CONFIG_RTAI_OLD_FASHIONED_BUILD=y
+else
+   CONFIG_RTAI_OLD_FASHIONED_BUILD=
+fi
+echo "$as_me:$LINENO: result: $top_builddir $abs_srcdir $CONFIG_RTAI_OLD_FASHIONED_BUILD" >&5
+echo "${ECHO_T}$top_builddir $abs_srcdir $CONFIG_RTAI_OLD_FASHIONED_BUILD" >&6
 
 RTAI_SYMBOL_DIR='${exec_prefix}/symbols'
 

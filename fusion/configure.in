@@ -118,12 +118,6 @@ top_builddir=`pwd`
 
 dnl Are we building into the source tree?
 
-if test "$srcdir" = $top_builddir; then
-   CONFIG_RTAI_OLD_FASHIONED_BUILD=y
-else
-   CONFIG_RTAI_OLD_FASHIONED_BUILD=
-fi
-
 dnl Set a default module dir if unspecified
 if test "x" = "x$RTAI_MODULE_DIR"
 then
@@ -136,6 +130,15 @@ AC_MSG_RESULT([$RTAI_MODULE_DIR])
 
 dnl A place to export module symbols
 RTAI_SYMBOL_DIR='${exec_prefix}/symbols'
+
+dnl Determine whether we are building in the source tree; we will
+dnl need this info later.
+abs_srcdir=`cd "$srcdir" && pwd`
+if test "$abs_srcdir" = $top_builddir; then
+   CONFIG_RTAI_OLD_FASHIONED_BUILD=y
+else
+   CONFIG_RTAI_OLD_FASHIONED_BUILD=
+fi
 
 dnl
 dnl Process the Linux kernel configuration

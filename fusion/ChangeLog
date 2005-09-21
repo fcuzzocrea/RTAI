@@ -1,3 +1,7 @@
+2005-09-21  Philippe Gerum  <rpm@xenomai.org>
+
+	* configure.in: Fix CONFIG_RTAI_OLD_FASHIONED_BUILD.
+
 2005-09-19  Philippe Gerum  <rpm@xenomai.org>
 
 	* skins/rtai/intr.c (__intr_read_proc): Fix output in

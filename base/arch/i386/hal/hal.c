@@ -1477,8 +1477,8 @@ static int rtai_trap_fault (unsigned event, void *evdata)
                 unsigned long flags;
                 rtai_save_flags_and_cli(flags);
                 if (!test_bit(RTAI_IFLAG, &flags)) {
-                        if (!test_and_set_bit(evinfo->event, &traps_in_hard_intr)) {
-                                HINT_DIAG_MSG(rt_printk("TRAP %d HAS INTERRUPT DISABLED (TRAPS PICTURE %lx).\n", evinfo->event, traps_in_hard_intr););
+                        if (!test_and_set_bit(event, &traps_in_hard_intr)) {
+                                HINT_DIAG_MSG(rt_printk("TRAP %d HAS INTERRUPT DISABLED (TRAPS PICTURE %lx).\n", event, traps_in_hard_intr););
                         }
                 }
         } while (0);

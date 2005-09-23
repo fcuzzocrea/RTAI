@@ -742,14 +742,16 @@ static void rt_schedule_on_schedule_ipi(void)
 			}
 		}
 		if (preempt) {
-			RTIME now;
+//			RTIME now;
 			int delay;
-			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
+//			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
+			delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
 				delay = imuldiv(delay, TIMER_FREQ, tuned.cpu_freq);
 			} else {
 				delay = tuned.setup_time_TIMER_UNIT;
-				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
+//				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
+				rt_times.intr_time = rt_time_h + (tuned.setup_time_TIMER_CPUNIT);
 			}
 			shot_fired = 1;
 			rt_set_timer_delay(delay);
@@ -831,13 +833,16 @@ void rt_schedule(void)
 		}
 #endif
 		if (preempt || (prio == RT_SCHED_LINUX_PRIORITY && !shot_fired)) {
-			RTIME now;
-			int delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
+//			RTIME now;
+			int delay;
+//			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
+			delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
 				delay = imuldiv(delay, TIMER_FREQ, tuned.cpu_freq);
 			} else {
 				delay = tuned.setup_time_TIMER_UNIT;
-				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
+//				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
+				rt_times.intr_time = rt_time_h + (tuned.setup_time_TIMER_CPUNIT);
 			}
 			shot_fired = 1;
 			rt_set_timer_delay(delay);
@@ -2275,7 +2280,7 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 	}
 
 #ifdef CONFIG_PREEMPT
-	current->cpus_allowed = cpumask_of_cpu(smp_processor_id());
+//	current->cpus_allowed = cpumask_of_cpu(smp_processor_id());
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)

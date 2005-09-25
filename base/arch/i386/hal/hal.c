@@ -2042,6 +2042,7 @@ int __rtai_hal_init (void)
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++) {
 		adeos_catch_event(trapnr, (void *)rtai_trap_fault);
 	}
+	rtai_init_taskpri_irqs();
 
 #ifdef CONFIG_SMP
 	if (IsolCpusMask) {

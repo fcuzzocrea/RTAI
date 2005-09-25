@@ -1,3 +1,13 @@
+2005-09-25  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_hal.h: added conditional support for 
+	  x86 task priority registers: in switching back and forth Linux, 
+	  inline and macro for anything a user might want to do on her/his
+	  own, utility to initialise high irqs Linux does not know; requires
+	  local APIC.
+	* base/arch/i386/hal/hal.*: uses taskpri when enabled.
+	* base/sched/sched.c: uses taskpri when enabled.
+
 2005-09-06  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: changed oneshot programming to improve 

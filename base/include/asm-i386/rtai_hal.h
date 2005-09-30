@@ -613,6 +613,7 @@ static inline void rt_switch_to_linux(int cpuid)
 //#define in_hrt_mode(cpuid)  (test_bit(cpuid, &rtai_cpu_realtime))
 #define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].depth)
 
+#if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
 static inline unsigned long save_and_set_taskpri(unsigned long taskpri)
 {
 	unsigned long saved_taskpri = apic_read(APIC_TASKPRI);
@@ -622,6 +623,7 @@ static inline unsigned long save_and_set_taskpri(unsigned long taskpri)
 
 #define restore_taskpri(taskpri) \
 	do { apic_write_around(APIC_TASKPRI, taskpri); } while (0)
+#endif
 
 static inline void rt_set_timer_delay (int delay) {
 

@@ -439,7 +439,7 @@ void pse51_sem_pkg_cleanup (void)
             xnprintf("POSIX semaphore %p discarded.\n",
                      sem);
         else
-            xnprintf("POSIX semaphore \"%s\" discarded.\n"
+            xnprintf("POSIX semaphore \"%s\" discarded.\n",
                      sem2named_sem(sem)->nodebase.name);
 #endif /* CONFIG_RTAI_OPT_DEBUG */
         sem_destroy_internal(sem);

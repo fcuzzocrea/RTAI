@@ -32,7 +32,7 @@
 #define HAL_SCHEDULE_HEAD     ADEOS_SCHEDULE_HEAD
 #define HAL_SCHEDULE_TAIL     ADEOS_SCHEDULE_TAIL
 #define HAL_SYSCALL_PROLOGUE  ADEOS_SYSCALL_PROLOGUE
-#define HAL_SYSCALL_EPILOGUE  ADEOS_SYSCALL_EPILOGUE
+#define HAL_SYSCALL_EPILOGUE  1000000 // invalid for sure, will be rejected, OK
 #define HAL_EXIT_PROCESS      ADEOS_EXIT_PROCESS
 #define HAL_KICK_PROCESS      ADEOS_KICK_PROCESS
 
@@ -60,6 +60,8 @@
 #define hal_propagate_event  adeos_propagate_event
 
 #define hal_get_sysinfo  adeos_get_sysinfo
+
+#define INTERCEPT_WAKE_UP_TASK(data)  (((struct sig_wakeup_t *)data)->task)
 
 #define FIRST_LINE_OF_RTAI_DOMAIN_ENTRY  static void rtai_domain_entry(int iflag) { if (iflag)
 #define LAST_LINE_OF_RTAI_DOMAIN_ENTRY   }

@@ -1,3 +1,11 @@
+2005-10-04  Jan Kiszka <jan.kiszka@web.de>
+
+	* drivers/16550A (rt_16550_interrupt): Fix locking issue.
+
+	* drivers/16550A (rt_read/rt_write): Fix spurious byte count upon
+	incomplete read/write op on entry. Various cleanups in the IOCTL
+	interface.
+
 2005-09-21  Philippe Gerum  <rpm@xenomai.org>
 
 	* configure.in: Fix CONFIG_RTAI_OLD_FASHIONED_BUILD.

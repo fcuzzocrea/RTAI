@@ -410,19 +410,19 @@ struct rtdm_device {
     /** Device sub-class, see RTDM_SUBCLASS_xxx definition in the
      *  @ref profiles "Device Profiles" */
     int                             device_sub_class;
-    /** Informational driver name (reported via /proc e.g.) */
+    /** Informational driver name (reported via /proc) */
     const char                      *driver_name;
     /** Driver version, see @ref versioning "Versioning" defines */
     int                             driver_version;
     /** Informational peripheral name the device is attached to
-     *  (reported via /proc e.g.) */
+     *  (reported via /proc) */
     const char                      *peripheral_name;
-    /** Informational driver provider name (reported via /proc e.g.) */
+    /** Informational driver provider name (reported via /proc) */
     const char                      *provider_name;
 
     /** Name of /proc entry for the device, must not be NULL */
     const char                      *proc_name;
-    /** Set to device's /proc root entry after registration, no not modify */
+    /** Set to device's /proc root entry after registration, do not modify */
     struct proc_dir_entry           *proc_entry;
 
     /** Driver definable device ID */

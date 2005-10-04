@@ -180,6 +180,17 @@
 #define RTSER_DEF_TIMESTAMP_HISTORY 0x00
 /** @} */
 
+/*!
+ * @anchor RTSER_EVENT_xxx   @name RTSER_EVENT_xxx
+ * Events bits
+ * @{ */
+#define RTSER_EVENT_RXPEND          0x01
+#define RTSER_EVENT_ERRPEND         0x02
+#define RTSER_EVENT_MODEMHI         0x04
+#define RTSER_EVENT_MODEMLO         0x08
+#define RTSER_DEF_EVENT_MASK        0x00
+/** @} */
+
 
 /*!
  * @anchor RTSER_SET_xxx   @name RTSER_SET_xxx
@@ -195,6 +206,7 @@
 #define RTSER_SET_TIMEOUT_TX        0x0200
 #define RTSER_SET_TIMEOUT_EVENT     0x0400
 #define RTSER_SET_TIMESTAMP_HISTORY 0x0800
+#define RTSER_SET_EVENT_MASK        0x1000
 /** @} */
 
 
@@ -241,17 +253,6 @@
 /** @} */
 
 
-/*!
- * @anchor RTSER_EVENT_xxx   @name RTSER_EVENT_xxx
- * Events bits
- * @{ */
-#define RTSER_EVENT_RXPEND          0x01
-#define RTSER_EVENT_ERRPEND         0x02
-#define RTSER_EVENT_MODEMHI         0x04
-#define RTSER_EVENT_MODEMLO         0x08
-/** @} */
-
-
 /**
  * Serial device configuration
  */
@@ -280,6 +281,9 @@ typedef struct rtser_config {
                                  *   values */
     int     timestamp_history;  /**< enable timestamp history, see
                                  *   @ref RTSER_xxx_TIMESTAMP_HISTORY */
+    int     event_mask;         /**< event mask to be used with
+                                 *   @ref RTSER_RTIOC_WAIT_EVENT, see
+                                 *   @ref RTSER_EVENT_xxx */
 } rtser_config_t;
 
 /**
@@ -433,26 +437,6 @@ typedef struct rtser_event {
     _IOW(RTIOC_TYPE_SERIAL, 0x04, int)
 
 /**
- * Set mask of serial device events
- *
- * @param[in] arg New event mask (int, see @ref RTSER_EVENT_xxx)
- *
- * @return 0 on success, otherwise negative error code
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task (RT, non-RT)
- *
- * Rescheduling: never.
- */
-#define RTSER_RTIOC_SET_EVENT_MASK  \
-    _IOW(RTIOC_TYPE_SERIAL, 0x05, int)
-
-/**
  * Wait on serial device events according to previously set mask
  *
  * @param[out] arg Pointer to event information buffer (struct rtser_event)
@@ -475,7 +459,7 @@ typedef struct rtser_event {
  * Rescheduling: possible.
  */
 #define RTSER_RTIOC_WAIT_EVENT      \
-    _IOR(RTIOC_TYPE_SERIAL, 0x06, struct rtser_event)
+    _IOR(RTIOC_TYPE_SERIAL, 0x05, struct rtser_event)
 /** @} */
 
 /** @} */

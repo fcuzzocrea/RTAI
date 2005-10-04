@@ -94,7 +94,6 @@ struct rt_16550_context {
     rtdm_mutex_t            out_lock;
 
     u64                     last_timestamp;
-    int                     ioc_event_mask;
     volatile int            ioc_events;
     rtdm_event_t            ioc_event;
     volatile unsigned long  ioc_event_lock;
@@ -108,7 +107,8 @@ struct rt_16550_context {
 static const struct rtser_config default_config = {
     0xFFFF, RTSER_DEF_BAUD, RTSER_DEF_PARITY, RTSER_DEF_BITS,
     RTSER_DEF_STOPB, RTSER_DEF_HAND, RTSER_DEF_FIFO_DEPTH, RTSER_DEF_TIMEOUT,
-    RTSER_DEF_TIMEOUT, RTSER_DEF_TIMEOUT, RTSER_DEF_TIMESTAMP_HISTORY
+    RTSER_DEF_TIMEOUT, RTSER_DEF_TIMEOUT, RTSER_DEF_TIMESTAMP_HISTORY,
+    RTSER_DEF_EVENT_MASK
 };
 
 static struct rtdm_device   *device[MAX_DEVICES];
@@ -268,7 +268,7 @@ static int rt_16550_interrupt(rtdm_irq_t *irq_context)
         ctx->ier_status &= ~IER_STAT;
     }
 
-    if (testbits(events, ctx->ioc_event_mask)) {
+    if (testbits(events, ctx->config.event_mask)) {
         int old_events = ctx->ioc_events;
 
         ctx->last_timestamp = timestamp;
@@ -299,11 +299,15 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
                                const struct rtser_config *config,
                                u64 **in_history_ptr)
 {
-    int dev_id;
-    int ret = 0;
+    rtdm_lockctx_t  lock_ctx;
+    int             dev_id;
+    int             ret = 0;
 
 
     dev_id = ctx->dev_id;
+
+    /* make line configuration atomic and IRQ-safe */
+    rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
     if (testbits(config->config_mask, RTSER_SET_BAUD)) {
         ctx->config.baud_rate = config->baud_rate & BAUD_MASK;
@@ -334,6 +338,10 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
         outb(FCR_FIFO | ctx->config.fifo_depth, FCR(dev_id));
     }
 
+    rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+    /* Timeout manipulation is not atomic. The user is supposed to take care
+     * not to use and change timeouts at the same time. */
     if (testbits(config->config_mask, RTSER_SET_TIMEOUT_RX))
         ctx->config.rx_timeout = config->rx_timeout;
     if (testbits(config->config_mask, RTSER_SET_TIMEOUT_TX))
@@ -342,6 +350,9 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
         ctx->config.event_timeout = config->event_timeout;
 
     if (testbits(config->config_mask, RTSER_SET_TIMESTAMP_HISTORY)) {
+        /* change timestamp history atomically */
+        rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
         if (testbits(config->timestamp_history, RTSER_RX_TIMESTAMP_HISTORY)) {
             if (!ctx->in_history) {
                 ctx->in_history = *in_history_ptr;
@@ -353,9 +364,40 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
             *in_history_ptr = ctx->in_history;
             ctx->in_history = NULL;
         }
+
+        rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+    }
+
+    if (testbits(config->config_mask, RTSER_SET_EVENT_MASK)) {
+        /* change event mask atomically */
+        rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+        ctx->config.event_mask = config->event_mask & EVENT_MASK;
+        ctx->ioc_events = 0;
+
+        if (testbits(config->event_mask, RTSER_EVENT_RXPEND) &&
+            (ctx->in_npend > 0))
+            ctx->ioc_events |= RTSER_EVENT_RXPEND;
+
+        if (testbits(config->event_mask, RTSER_EVENT_ERRPEND) && ctx->status)
+            ctx->ioc_events |= RTSER_EVENT_ERRPEND;
+
+        if (testbits(config->event_mask,
+                     RTSER_EVENT_MODEMHI | RTSER_EVENT_MODEMLO))
+            /* enable modem status interrupt */
+            ctx->ier_status |= IER_TX;
+        else
+            /* disable modem status interrupt */
+            ctx->ier_status &= ~IER_TX;
+        outb(ctx->ier_status, IER(ctx->dev_id));
+
+        rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
     }
 
     if (testbits(config->config_mask, RTSER_SET_HANDSHAKE)) {
+        /* change handshake atomically */
+        rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
         ctx->config.handshake = config->handshake;
         switch (ctx->config.handshake) {
             case RTSER_RTSCTS_HAND:
@@ -367,6 +409,8 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
                 break;
         }
         outb(ctx->mcr_status, MCR(dev_id));
+
+        rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
     }
 
     return ret;
@@ -409,7 +453,6 @@ int rt_16550_open(struct rtdm_dev_context *context,
     ctx->out_tail       = 0;
     ctx->out_npend      = 0;
 
-    ctx->ioc_event_mask = 0;
     ctx->ioc_events     = 0;
     ctx->ioc_event_lock = 0;
     ctx->status         = 0;
@@ -499,7 +542,6 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
             struct rtser_config *config;
             struct rtser_config config_buf;
             __u64               *hist_buf = NULL;
-            rtdm_lockctx_t      lock_ctx;
 
             config = (struct rtser_config *)arg;
 
@@ -528,9 +570,7 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
                         rtdm_malloc(IN_BUFFER_SIZE * sizeof(__u64));
             }
 
-            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
             rt_16550_set_config(ctx, config, &hist_buf);
-            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
             if (hist_buf) {
                 if (test_bit(RTDM_CREATED_IN_NRT, &context->context_flags))
@@ -594,35 +634,6 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
             break;
         }
 
-        case RTSER_RTIOC_SET_EVENT_MASK: {
-            int             new_mask;
-            rtdm_lockctx_t  lock_ctx;
-
-            new_mask = (int)arg;
-
-            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
-
-            ctx->ioc_event_mask = new_mask & EVENT_MASK;
-            ctx->ioc_events     = 0;
-
-            if (testbits(new_mask, RTSER_EVENT_RXPEND) && (ctx->in_npend > 0))
-                ctx->ioc_events |= RTSER_EVENT_RXPEND;
-
-            if (testbits(new_mask, RTSER_EVENT_ERRPEND) && ctx->status)
-                ctx->ioc_events |= RTSER_EVENT_ERRPEND;
-
-            if (testbits(new_mask, RTSER_EVENT_MODEMHI | RTSER_EVENT_MODEMLO))
-                /* enable modem status interrupt */
-                ctx->ier_status |= IER_TX;
-            else
-                /* disable modem status interrupt */
-                ctx->ier_status &= ~IER_TX;
-            outb(ctx->ier_status, IER(ctx->dev_id));
-
-            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
-            break;
-        }
-
         case RTSER_RTIOC_WAIT_EVENT: {
             struct rtser_event  ev = { rxpend_timestamp: 0 };
             rtdm_lockctx_t      lock_ctx;
@@ -638,7 +649,7 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
 
             while (!ctx->ioc_events) {
                 /* enable error interrupt only when the user waits for it */
-                if (testbits(ctx->ioc_event_mask, RTSER_EVENT_ERRPEND)) {
+                if (testbits(ctx->config.event_mask, RTSER_EVENT_ERRPEND)) {
                     ctx->ier_status |= IER_STAT;
                     outb(ctx->ier_status, IER(ctx->dev_id));
                 }
@@ -727,7 +738,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
     if (test_and_set_bit(0, &ctx->in_lock))
         return -EBUSY;
 
-    while (read < nbyte) {
+    while (nbyte > 0) {
         rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
         /* switch on error interrupt - the user is ready to listen */
@@ -785,6 +796,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
 
             read    += subblock;
             out_pos += subblock;
+            nbyte   -= block;
 
             rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
@@ -803,7 +815,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
             break;
         }
 
-        ctx->in_nwait = nbyte - read;
+        ctx->in_nwait = nbyte;
 
         rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
@@ -869,7 +881,7 @@ int rt_16550_write(struct rtdm_dev_context *context,
     if (ret)
         return ret;
 
-    while (written < nbyte) {
+    while (nbyte > 0) {
         rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
         free = OUT_BUFFER_SIZE - ctx->out_npend;
@@ -912,6 +924,7 @@ int rt_16550_write(struct rtdm_dev_context *context,
 
             written += subblock;
             in_pos  += subblock;
+            nbyte   -= block;
 
             rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
@@ -986,7 +999,7 @@ static const struct rtdm_device __initdata device_tmpl = {
     device_class:       RTDM_CLASS_SERIAL,
     device_sub_class:   RTDM_SUBCLASS_16550A,
     driver_name:        "rt_16550A",
-    driver_version:     RTDM_DRIVER_VER(1, 0, 0),
+    driver_version:     RTDM_DRIVER_VER(1, 1, 0),
     peripheral_name:    "UART 16550A",
     provider_name:      "Jan Kiszka",
 };

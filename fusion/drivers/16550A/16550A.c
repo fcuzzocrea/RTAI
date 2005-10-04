@@ -224,13 +224,12 @@ static int rt_16550_interrupt(rtdm_irq_t *irq_context)
     int                     events = 0;
     int                     modem;
     int                     ret = RTDM_IRQ_PROPAGATE;
-    rtdm_lockctx_t          lock_ctx;
 
 
     ctx = rtdm_irq_get_arg(irq_context, struct rt_16550_context);
     dev_id    = ctx->dev_id;
 
-    rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+    rtdm_lock_get(&ctx->lock);
 
     while (((iir = inb(IIR(dev_id))) & IIR_PIRQ) == 0) {
         if (testbits(iir, IIR_RX | IIR_TMO)) {
@@ -290,7 +289,7 @@ static int rt_16550_interrupt(rtdm_irq_t *irq_context)
     /* update interrupt mask */
     outb(ctx->ier_status, IER(dev_id));
 
-    rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+    rtdm_lock_put(&ctx->lock);
 
     return ret;
 }

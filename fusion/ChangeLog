@@ -1,3 +1,7 @@
+2005-10-06  Heikki Lindholm <holindho@cs.helsinki.fi>
+
+	* arch/ppc64/patches: Upgrade to Adeos/ppc64 r2.
+
 2005-10-04  Jan Kiszka <jan.kiszka@web.de>
 
 	* drivers/16550A (rt_16550_interrupt): Fix locking issue.

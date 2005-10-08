@@ -1,3 +1,8 @@
+2005-10-08  Philippe Gerum  <rpm@xenomai.org>
+
+	* fusion: final commit. Branch closed and development moved to
+	http://www.gna.org/projects/xenomai/.
+
 2005-10-06  Heikki Lindholm <holindho@cs.helsinki.fi>
 
 	* arch/ppc64/patches: Upgrade to Adeos/ppc64 r2.

@@ -19499,10 +19499,11 @@ echo "$as_me: error: The legacy RTHAL/x86 has been obsoleted - Please use Adeos 
 echo "${ECHO_T}RTHAL" >&6
     fi
 else
+#???
     echo
-    { { echo "$as_me:$LINENO: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&5
-echo "$as_me: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&2;}
-   { (exit 1); exit 1; }; }
+#    { { echo "$as_me:$LINENO: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&5
+#echo "$as_me: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&2;}
+#   { (exit 1); exit 1; }; }
 fi
 
 case "$RTAI_LINUX_VERSION" in

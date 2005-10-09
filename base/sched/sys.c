@@ -543,6 +543,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case LINUX_SERVER_INIT: {
+extern RT_TASK *lxrt_init_linux_server(RT_TASK *master_task);
+//return (long)lxrt_init_linux_server(arg0.rt_task);
 			arg0.rt_task->linux_syscall_server = __task_init((unsigned long)arg0.rt_task, arg0.rt_task->base_priority >= BASE_SOFT_PRIORITY ? arg0.rt_task->base_priority - BASE_SOFT_PRIORITY : arg0.rt_task->base_priority, 0, 0, 1 << arg0.rt_task->runnable_on_cpus);
 			rt_task_resume(arg0.rt_task);
 			return (long)arg0.rt_task->linux_syscall_server;
@@ -574,7 +576,7 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 			give_back_to_linux(task, -1);
 		}
 		task->usp_signal = 0;
-		if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
+		if (1 || likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
 			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
 			regs->LINUX_SYSCALL_RETREG = -EINTR;
 			do_signal(regs, NULL);
@@ -693,6 +695,7 @@ void linux_process_termination(void)
 			rt_drg_on_adr(task2delete); 
 			rt_printk("LXRT releases PID %d (ID: %s).\n", current->pid, current->comm);
 			rt_free(task2delete->msg_buf[0]);
+			rt_free(task2delete->msg_buf[1]);
 			rt_free(task2delete);
 			current->rtai_tskext(0) = current->rtai_tskext(1) = 0;
 		}

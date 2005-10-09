@@ -209,7 +209,7 @@ extern struct klist_t wake_up_srq[];
 #define pend_wake_up_srq(lnxtsk, cpuid) \
 do { \
 	wake_up_srq[cpuid].task[wake_up_srq[cpuid].in++ & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
-	adeos_pend_uncond(wake_up_srq[cpuid].srq, cpuid); \
+	hal_pend_uncond(wake_up_srq[cpuid].srq, cpuid); \
 } while (0)
 
 static inline void enq_ready_task(RT_TASK *ready_task)

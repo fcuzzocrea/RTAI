@@ -40,7 +40,7 @@
 #define hard_save_flags_and_cli(x)   rtai_save_flags_and_cli(x)
 #define hard_restore_flags(x)        rtai_restore_flags(x)
 #define hard_save_flags(x)           rtai_save_flags(x)
-#define hard_cpu_id                  adeos_processor_id
+#define hard_cpu_id                  hal_processor_id
 
 #endif /* __KERNEL__ */
 
@@ -78,8 +78,6 @@
 #define imuldiv(a,b,c)  rtai_imuldiv(a,b,c)
 #define llimd(a,b,c)    rtai_llimd(a,b,c)
 #define u64div32(a,b,c) rtai_u64div32c(a,b,c)
-
-#define RTAI_NR_TRAPS         ADEOS_NR_FAULTS
 
 #ifndef __cplusplus
 

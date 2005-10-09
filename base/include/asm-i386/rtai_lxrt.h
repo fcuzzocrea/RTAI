@@ -43,10 +43,10 @@
 #define LINUX_SYSCALL_REG6    ebp
 #define LINUX_SYSCALL_RETREG  eax
 
-#define SET_LXRT_RETVAL_IN_SYSCALL(retval) \
+#define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
 	do { \
-                if (r->RTAI_SYSCALL_RETPNT) { \
-			rt_copy_to_user((void *)r->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
+                if (regs->RTAI_SYSCALL_RETPNT) { \
+			rt_copy_to_user((void *)regs->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
 		} \
 	} while (0)
 

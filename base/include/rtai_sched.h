@@ -137,7 +137,7 @@ typedef struct rt_task_struct {
     struct rt_task_struct *prevp;
 
     /* Added to support user specific trap handlers. */
-    RT_TRAP_HANDLER task_trap_handler[ADEOS_NR_FAULTS];
+    RT_TRAP_HANDLER task_trap_handler[HAL_NR_FAULTS];
 
     /* Added from rtai-22. */
     long usp_signal;
@@ -281,9 +281,9 @@ int rt_task_suspend_timed(struct rt_task_struct *task, RTIME delay);
 
 int rt_task_resume(struct rt_task_struct *task);
 
-RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs);
+RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_regs *regs);
 
-RT_TASK *rt_receive_linux_syscall(RT_TASK *task, void *regs);
+RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs);
 
 void rt_return_linux_syscall(RT_TASK *task, unsigned long retval);
 

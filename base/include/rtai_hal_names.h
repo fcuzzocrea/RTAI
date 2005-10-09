@@ -20,6 +20,8 @@
 #ifndef _RTAI_HAL_NAMES_H
 #define _RTAI_HAL_NAMES_H
 
+#include <linux/version.h>
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13)
 
 #define HAL_VERSION_STRING   ADEOS_VERSION_STRING

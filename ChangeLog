@@ -1,3 +1,10 @@
+2005-10-09  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* overall update to support both ipipe and adeos. Details will follow
+	  after testing on more than a single machine. Configure file to be
+	  fixed ASAP. Ipipe patch for linux2.6.13 will follow after more
+	  testing changes for RTAI.
+
 2005-09-25  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_hal.h: added conditional support for 

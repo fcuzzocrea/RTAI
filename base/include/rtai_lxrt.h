@@ -674,17 +674,9 @@ static void linux_syscall_server_fun(RT_TASK *task)
 	if (rtai_lxrt(BIDX, sizeof(RT_TASK *), LINUX_SERVER_INIT, &task).i[LOW]) {
 //		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &task);
 		for (;;) {
-#if 1
 			if (rt_receive_linux_syscall(task, &regs) == task) {
 				rt_return_linux_syscall(task, syscall(regs.LINUX_SYSCALL_NR, regs.LINUX_SYSCALL_REG1, regs.LINUX_SYSCALL_REG2, regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_REG4, regs.LINUX_SYSCALL_REG5, regs.LINUX_SYSCALL_REG6));
 			}
-#else
-			int retval;
-			if (rt_receivex(task, &regs, sizeof(struct pt_regs), &retval) == task) {
-				retval = syscall(regs.LINUX_SYSCALL_NR, regs.LINUX_SYSCALL_REG1, regs.LINUX_SYSCALL_REG2, regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_REG4, regs.LINUX_SYSCALL_REG5, regs.LINUX_SYSCALL_REG6);
-				rt_returnx(task, &retval, sizeof(retval));
-			}
-#endif
 		}
         }
 }
@@ -695,7 +687,6 @@ RTAI_PROTO(int, rt_linux_syscall_server_create, (RT_TASK * task))
 {
 	if (task || (task = (RT_TASK *)rtai_lxrt(BIDX, sizeof(RT_TASK *), RT_BUDDY, &task).v[LOW])) {
 		if (rt_thread_create((void *)linux_syscall_server_fun, task, 0) > 0) {
-//			printf(" \b");
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
 			return 0;
 		}

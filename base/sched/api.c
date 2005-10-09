@@ -1811,7 +1811,7 @@ int rt_release_irq_task (unsigned irq)
 
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
-RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs)
+RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_regs *regs)
 {
 	unsigned long flags;
 
@@ -1838,7 +1838,7 @@ RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs)
 }
 
 #include <asm/uaccess.h>
-RT_TASK *rt_receive_linux_syscall(RT_TASK *task, void *regs)
+RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
 {
 	unsigned long flags;
 	RT_TASK *rt_current;
@@ -1847,8 +1847,7 @@ RT_TASK *rt_receive_linux_syscall(RT_TASK *task, void *regs)
 	rt_current = rt_smp_current[rtai_cpuid()];
 	if ((task->state & RT_SCHED_RPC) && task->msg_queue.task == rt_current) {
 		dequeue_blocked(task);
-//		rt_copy_to_user(regs, (void *)task->msg, sizeof(struct pt_regs));
-		memcpy(regs, (void *)task->msg, sizeof(struct pt_regs));
+		*regs = *((struct pt_regs *)task->msg);
 		rt_current->msg_queue.task = task;
 		enqueue_blocked(task, &rt_current->ret_queue, 1);
 		task->state = (task->state & ~RT_SCHED_RPC) | RT_SCHED_RETURN;
@@ -1858,8 +1857,7 @@ RT_TASK *rt_receive_linux_syscall(RT_TASK *task, void *regs)
 		rem_ready_current(rt_current);
 		rt_current->msg_queue.task = task != rt_current ? task : NULL;
 		rt_schedule();
-//		rt_copy_to_user(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
-		memcpy(regs, (void *)rt_current->msg, sizeof(struct pt_regs));
+		*regs = *((struct pt_regs *)rt_current->msg);
 	}
 	rt_current->msg_queue.task = rt_current;
 	rt_global_restore_flags(flags);

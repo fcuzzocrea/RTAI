@@ -263,6 +263,9 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 static int __task_delete(RT_TASK *rt_task)
 {
 	struct task_struct *process;
+	if (rt_task->linux_syscall_server) {
+		rt_task_masked_unblock(rt_task->linux_syscall_server, ~RT_SCHED_READY);
+	}
 	if (current == rt_task->lnxtsk && rt_task->is_hard > 0) {
 		give_back_to_linux(rt_task, 0);
 	}

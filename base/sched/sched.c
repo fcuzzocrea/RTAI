@@ -2148,7 +2148,11 @@ static RT_TASK *server_task_init(int prio, int cpus_allowed)
 		tsk->magic = 0;
 		if (!set_rtext(tsk, prio, 0, 0, cpus_allowed, 0)) {
 			tsk->fun_args = (long *)((struct fun_args *)(tsk + 1));
-			return tsk;
+			if (rt_register((unsigned long)tsk, tsk, IS_TASK, 0)) {
+				return tsk;
+			} else {
+				clr_rtext(tsk);
+			}
 		}
 		rt_free(tsk);
 	}
@@ -2179,9 +2183,13 @@ static void linux_syscall_server_fun(RT_TASK *master_task)
 RT_TASK *lxrt_init_linux_server(RT_TASK *master_task)
 {
 	int is_hard;
-	if (!master_task && current->rtai_tskext(0)) {
+	if (!master_task) {
+		if (!current->rtai_tskext(0)) {
+			return NULL;
+		}
 		master_task = current->rtai_tskext(0);
-	} else {
+	}
+	if (!master_task->lnxtsk) {
 		return NULL;
 	}
 	if ((is_hard = master_task->is_hard) > 0) {

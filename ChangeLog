@@ -1,3 +1,8 @@
+2005-10-11  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* fix configure.in to auto-detect RTAI HAL (old/newgen)
+	  to be used.
+
 2005-10-09  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
 	* overall update to support both ipipe and adeos. Details will follow

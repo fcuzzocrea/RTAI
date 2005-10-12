@@ -54,6 +54,9 @@
 /* Kconfig */
 #undef CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
 
+/* Use RTAI Adeos-newgen HAL */
+#undef CONFIG_RTAI_IPIPE
+
 /* Kconfig */
 #undef CONFIG_RTAI_LEDS
 

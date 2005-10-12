@@ -221,27 +221,20 @@ dnl Identify the base technology used.
 dnl
 
 unset CONFIG_RTAI_ADEOS
+unset CONFIG_RTAI_IPIPE
 
 AC_MSG_CHECKING([for RTAI base technology])
 
+dnl we simply check for {adeos,ipipe}.h; whatever is available
+dnl is used, regardless of the version of the Linux sources.
 if test -r $LINUX_KERNELSRC/include/linux/adeos.h; then
-   AC_DEFINE(CONFIG_RTAI_ADEOS,1,[Use Adeos-based HAL])
-   AC_MSG_RESULT([Adeos])
+   AC_DEFINE(CONFIG_RTAI_ADEOS,1,[Use RTAI Adeos-oldgen HAL])
+   AC_MSG_RESULT([RTAI Adeos-oldgen HAL])
    CONFIG_RTAI_ADEOS=y
-elif test x${CONFIG_RTHAL} = xy; then
-    dnl This test has a flaw. CONFIG_RTHAL could be undefined even for
-    dnl a patched kernel if the RTAI support has been configured out.
-    dnl This is the reason why the error message remains ambiguous.
-    dnl We should definitely have _one_ common way of identifying the
-    dnl RTHAL signature inside a kernel tree, that does not rely on
-    dnl the Makefile's EXTRAVERSION variable, because it happened that
-    dnl some people change its value manually to suit their needs...
-    if test "$CONFIG_X86" = y; then
-       echo
-       AC_MSG_ERROR([The legacy RTHAL/x86 has been obsoleted - Please use Adeos instead])
-    else
-       AC_MSG_RESULT([RTHAL])
-    fi
+elif test -r $LINUX_KERNELSRC/include/linux/ipipe.h; then
+   AC_DEFINE(CONFIG_RTAI_IPIPE,1,[Use RTAI Adeos-newgen HAL])
+   AC_MSG_RESULT([RTAI Adeos-newgen HAL])
+   CONFIG_RTAI_IPIPE=y
 else
     echo
     AC_MSG_ERROR([HAL patch not applied/enabled in $LINUX_KERNELSRC])
@@ -249,9 +242,12 @@ fi
 
 case "$RTAI_LINUX_VERSION" in
   2.4.*)
+	dnl by design, only RTAI Adeos-oldgen HAL is available with 2.4
 	unset CONFIG_KBUILD
     ;;
   2.6.*)
+	dnl by design, RTAI Adeos-oldgen HAL is supported up to 2.6.12 included,
+	dnl and RTAI Adeos-newgen HAL is supported since 2.6.13 included
 	CONFIG_KBUILD=y
     ;;
   *) 

@@ -19475,6 +19475,7 @@ fi
 
 
 unset CONFIG_RTAI_ADEOS
+unset CONFIG_RTAI_IPIPE
 
 echo "$as_me:$LINENO: checking for RTAI base technology" >&5
 echo $ECHO_N "checking for RTAI base technology... $ECHO_C" >&6
@@ -19485,33 +19486,31 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_ADEOS 1
 _ACEOF
 
-   echo "$as_me:$LINENO: result: Adeos" >&5
-echo "${ECHO_T}Adeos" >&6
+   echo "$as_me:$LINENO: result: RTAI Adeos-oldgen HAL" >&5
+echo "${ECHO_T}RTAI Adeos-oldgen HAL" >&6
    CONFIG_RTAI_ADEOS=y
-elif test x${CONFIG_RTHAL} = xy; then
-                                if test "$CONFIG_X86" = y; then
-       echo
-       { { echo "$as_me:$LINENO: error: The legacy RTHAL/x86 has been obsoleted - Please use Adeos instead" >&5
-echo "$as_me: error: The legacy RTHAL/x86 has been obsoleted - Please use Adeos instead" >&2;}
-   { (exit 1); exit 1; }; }
-    else
-       echo "$as_me:$LINENO: result: RTHAL" >&5
-echo "${ECHO_T}RTHAL" >&6
-    fi
+elif test -r $LINUX_KERNELSRC/include/linux/ipipe.h; then
+
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_IPIPE 1
+_ACEOF
+
+   echo "$as_me:$LINENO: result: RTAI Adeos-newgen HAL" >&5
+echo "${ECHO_T}RTAI Adeos-newgen HAL" >&6
+   CONFIG_RTAI_IPIPE=y
 else
-#???
     echo
-#    { { echo "$as_me:$LINENO: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&5
-#echo "$as_me: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&2;}
-#   { (exit 1); exit 1; }; }
+    { { echo "$as_me:$LINENO: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&5
+echo "$as_me: error: HAL patch not applied/enabled in $LINUX_KERNELSRC" >&2;}
+   { (exit 1); exit 1; }; }
 fi
 
 case "$RTAI_LINUX_VERSION" in
   2.4.*)
-	unset CONFIG_KBUILD
+		unset CONFIG_KBUILD
     ;;
   2.6.*)
-	CONFIG_KBUILD=y
+			CONFIG_KBUILD=y
     ;;
   *)
     { { echo "$as_me:$LINENO: error: Unsupported kernel version $RTAI_LINUX_VERSION" >&5

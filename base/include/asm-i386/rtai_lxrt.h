@@ -71,7 +71,7 @@
 #define TIMER_LATENCY RTAI_LATENCY_8254
 #define TIMER_SETUP_TIME RTAI_SETUP_TIME_8254
 #define ONESHOT_SPAN ((0x7FFF*(CPU_FREQ/TIMER_FREQ))/(CAL_FREQS_FACT + 1)) //(0x7FFF*(CPU_FREQ/TIMER_FREQ))
-#define update_linux_timer(cpuid) adeos_pend_uncond(TIMER_8254_IRQ, cpuid)
+#define update_linux_timer(cpuid)  hal_pend_uncond(TIMER_8254_IRQ, cpuid)
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 

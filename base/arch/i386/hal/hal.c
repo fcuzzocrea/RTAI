@@ -820,11 +820,7 @@ int _rtai_sched_on_ipi_handler(void)
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#ifdef STALL_RTAI_DOMAIN
-	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status) && !test_bit(IPIPE_STALL_FLAG, &rtai_domain.cpudata[cpuid].status)) {
-#else
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
-#endif
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
@@ -893,11 +889,7 @@ int _rtai_apic_timer_handler(void)
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-#ifdef STALL_RTAI_DOMAIN
-	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status) && !test_bit(IPIPE_STALL_FLAG, &rtai_domain.cpudata[cpuid].status)) {
-#else
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
-#endif
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
@@ -947,25 +939,14 @@ static struct desc_struct rtai_apic_timer_sysvec;
 /* this can be a prototy for the cse of a handler pending something for Linux */
 int _rtai_8254_timer_handler(struct pt_regs regs)
 {
-	unsigned long lflags;
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-#ifdef STALL_RTAI_DOMAIN
-	lflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 	hal_root_domain->irqs[RTAI_TIMER_8254_IRQ].acknowledge(RTAI_TIMER_8254_IRQ);
-	hal_root_domain->cpudata[cpuid].status = lflags;
-#else
-	hal_root_domain->irqs[RTAI_TIMER_8254_IRQ].acknowledge(RTAI_TIMER_8254_IRQ);
-#endif
 	((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
-#ifdef STALL_RTAI_DOMAIN
-	if (!test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status) && !test_bit(IPIPE_STALL_FLAG, &rtai_domain.cpudata[cpuid].status)) {
-#else
 	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
-#endif
 		rtai_sti();
 /* specific for the Linux tick, do not cre in a generic handler */
 		HAL_TICK_REGS.eflags = regs.eflags;
@@ -1434,15 +1415,8 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 
 	cpuid = rtai_cpuid();
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
-		unsigned long lflags;
 		rt_switch_to_real_time(cpuid);
-#ifdef STALL_RTAI_DOMAIN
-		lflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 		hal_root_domain->irqs[irq].acknowledge(irq); mb();
-		hal_root_domain->cpudata[cpuid].status = lflags;
-#else
-		hal_root_domain->irqs[irq].acknowledge(irq); mb();
-#endif
 		RTAI_SCHED_ISR_LOCK();
 		if (rtai_realtime_irq[irq].retmode && rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie)) {
 			RTAI_SCHED_ISR_UNLOCK();
@@ -1452,11 +1426,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 			RTAI_SCHED_ISR_UNLOCK();
 			rt_switch_to_linux(cpuid);
-#ifdef STALL_RTAI_DOMAIN
-			if (!test_and_clear_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status) || test_bit(IPIPE_STALL_FLAG, &rtai_domain.cpudata[cpuid].status)) {
-#else
 			if (!test_and_clear_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
-#endif
 				return 0;
 			}
 		}
@@ -1466,11 +1436,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 		hal_root_domain->irqs[irq].acknowledge(irq); mb();
 		hal_pend_uncond(irq, cpuid);
 		hal_root_domain->cpudata[cpuid].status = lflags;
-#ifdef STALL_RTAI_DOMAIN
-		if (test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status) || test_bit(IPIPE_STALL_FLAG, &rtai_domain.cpudata[cpuid].status)) {
-#else
 		if (test_bit(IPIPE_STALL_FLAG, &lflags)) {
-#endif
 			return 0;
 		}
 	}
@@ -1797,9 +1763,6 @@ asmlinkage int rtai_syscall_dispatcher (long bx, unsigned long cx_args, long lon
 	*dx_retval = ax_srq > RTAI_NR_SRQS ? rtai_lxrt_dispatcher(ax_srq, cx_args, &bx) : rtai_usrq_dispatcher(ax_srq, cx_args);
 	if (!in_hrt_mode(cpuid = rtai_cpuid())) {
 		hal_test_and_fast_flush_pipeline(cpuid);
-		if (need_resched()) {
-			schedule();
-		}
 		return 1;
 	}
 	return 0;

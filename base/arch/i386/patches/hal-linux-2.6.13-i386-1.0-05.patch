@@ -26,7 +26,7 @@ diff -uNrp 2.6.13/include/linux/hardirq.h 2.6.13-ipipe/include/linux/hardirq.h
 diff -uNrp 2.6.13/include/linux/ipipe.h 2.6.13-ipipe/include/linux/ipipe.h
 --- 2.6.13/include/linux/ipipe.h	1970-01-01 01:00:00.000000000 +0100
 +++ 2.6.13-ipipe/include/linux/ipipe.h	2005-10-03 21:42:33.000000000 +0200
-@@ -0,0 +1,743 @@
+@@ -0,0 +1,744 @@
 +/*   -*- linux-c -*-
 + *   include/linux/ipipe.h
 + *
@@ -135,6 +135,7 @@ diff -uNrp 2.6.13/include/linux/ipipe.h 2.6.13-ipipe/include/linux/ipipe.h
 +#else /* !CONFIG_SMP */
 +
 +#define IPIPE_NR_CPUS           1
++#define ipipe_processor_id()    0
 +#define ipipe_declare_cpuid     const int cpuid = 0
 +#define ipipe_load_cpuid()	do { } while(0)
 +#define ipipe_lock_cpu(flags)   local_irq_save_hw(flags)
@@ -4842,7 +4843,7 @@ diff -uNrp 2.6.13/mm/vmalloc.c 2.6.13-ipipe/mm/vmalloc.c
  #define enable_level_ioapic	unmask_IO_APIC_irq
 --- 2.6.13/include/asm-i386/ipipe.h	1970-01-01 01:00:00.000000000 +0100
 +++ 2.6.13-ipipe/include/asm-i386/ipipe.h	2005-10-03 21:30:36.000000000 +0200
-@@ -0,0 +1,200 @@
+@@ -0,0 +1,202 @@
 +/*   -*- linux-c -*-
 + *   include/asm-i386/ipipe.h
 + *
@@ -4949,6 +4950,8 @@ diff -uNrp 2.6.13/mm/vmalloc.c 2.6.13-ipipe/mm/vmalloc.c
 +} while(0)
 +
 +#else	/* !CONFIG_SMP */
++
++#define ipipe_processor_id()    0
 +
 +#define ipipe_note_apicid(apicid,cpu)  do { } while(0)
 +

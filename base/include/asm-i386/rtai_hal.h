@@ -38,7 +38,7 @@
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
-#define STALL_RTAI_DOMAIN
+//#define STALL_RTAI_DOMAIN
 #define LOCKED_LINUX_IN_IRQ_HANDLER
 #define UNWRAPPED_CATCH_EVENT
 
@@ -584,7 +584,6 @@ static inline void rt_switch_to_real_time_notskpri(int cpuid)
 #ifdef STALL_RTAI_DOMAIN
 		rtai_linux_context[cpuid].oldflags = xchg(&rtai_domain.cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 #else
-
 		rtai_linux_context[cpuid].oldflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 #endif
 		hal_current_domain[cpuid] = &rtai_domain;

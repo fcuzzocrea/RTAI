@@ -936,7 +936,7 @@ void rtai_apic_timer_handler (void);
 
 static struct desc_struct rtai_apic_timer_sysvec;
 
-/* this can be a prototy for the cse of a handler pending something for Linux */
+/* this can be a prototype for a handler pending something for Linux */
 int _rtai_8254_timer_handler(struct pt_regs regs)
 {
 	unsigned long cpuid = rtai_cpuid();

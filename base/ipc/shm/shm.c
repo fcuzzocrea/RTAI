@@ -373,7 +373,7 @@ void rt_named_free(void *adr)
 #define RTAI_TASK(return_instr) \
 do { \
 	if (!(task = _rt_whoami())->is_hard) { \
-		if (!(task = current->rtai_tskext(0))) { \
+		if (!(task = current->rtai_tskext(TSKEXT0))) { \
 			return_instr; \
 		} \
 	} \

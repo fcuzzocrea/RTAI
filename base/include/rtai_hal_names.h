@@ -22,6 +22,10 @@
 
 #include <linux/version.h>
 
+#define TSKEXT0  (0)
+#define TSKEXT1  (1)
+#define TSKEXT2  (2)
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,13)
 
 #define HAL_VERSION_STRING   ADEOS_VERSION_STRING

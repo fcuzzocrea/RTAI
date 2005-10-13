@@ -490,7 +490,7 @@ extern "C" {
  
 static inline struct rt_task_struct *pid2rttask(long pid)
 {
-        return ((unsigned long)pid) > PID_MAX_LIMIT ? (struct rt_task_struct *)pid : find_task_by_pid(pid)->rtai_tskext(0);
+        return ((unsigned long)pid) > PID_MAX_LIMIT ? (struct rt_task_struct *)pid : find_task_by_pid(pid)->rtai_tskext(TSKEXT0);
 }
 
 static inline long rttask2pid(struct rt_task_struct * task)

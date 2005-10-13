@@ -276,7 +276,7 @@ static int __task_delete(RT_TASK *rt_task)
 	rt_free(rt_task->msg_buf[1]);
 	rt_free(rt_task);
 	if ((process = rt_task->lnxtsk)) {
-		process->rtai_tskext(0) = process->rtai_tskext(1) = 0;
+		process->rtai_tskext(TSKEXT0) = process->rtai_tskext(TSKEXT1) = 0;
 	}
 	return (!rt_drg_on_adr(rt_task)) ? -ENODEV : 0;
 }
@@ -479,8 +479,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 
 		case RT_BUDDY: {
-			return task && current->rtai_tskext(1) == current ?
-			       (unsigned long)(task) : 0;
+			return task && current->rtai_tskext(TSKEXT1) == current ? (unsigned long)(task) : 0;
 		}
 
 		case HRT_USE_FPU: {
@@ -517,7 +516,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			extern void rt_do_force_soft(RT_TASK *rt_task);
                         struct task_struct *ltsk;
                         if ((ltsk = find_task_by_pid(arg0.name)))  {
-                                if ((arg0.rt_task = ltsk->rtai_tskext(0))) {
+                                if ((arg0.rt_task = ltsk->rtai_tskext(TSKEXT0))) {
 					if ((arg0.rt_task->force_soft = (arg0.rt_task->is_hard > 0) && FORCE_SOFT)) {
 						rt_do_force_soft(arg0.rt_task);
 					}
@@ -602,7 +601,7 @@ long long rtai_lxrt_invoke (unsigned int lxsrq, void *arg, struct pt_regs *regs)
 	trace_true_lxrt_rtai_syscall_entry();
 #endif /* CONFIG_RTAI_TRACE */
 
-	if (likely((task = current->rtai_tskext(0)) != NULL)) {
+	if (likely((task = current->rtai_tskext(TSKEXT0)) != NULL)) {
 		if (unlikely(rt_do_signal(regs, task))) {
 			force_soft(task);
 		}
@@ -693,14 +692,14 @@ void linux_process_termination(void)
 				break;
 		}
 	}
-	if ((task2delete = current->rtai_tskext(0))) {
+	if ((task2delete = current->rtai_tskext(TSKEXT0))) {
 		if (!clr_rtext(task2delete)) {
 			rt_drg_on_adr(task2delete); 
 			rt_printk("LXRT releases PID %d (ID: %s).\n", current->pid, current->comm);
 			rt_free(task2delete->msg_buf[0]);
 			rt_free(task2delete->msg_buf[1]);
 			rt_free(task2delete);
-			current->rtai_tskext(0) = current->rtai_tskext(1) = 0;
+			current->rtai_tskext(TSKEXT0) = current->rtai_tskext(TSKEXT1) = 0;
 		}
 	}
 }

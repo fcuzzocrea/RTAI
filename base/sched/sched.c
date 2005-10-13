@@ -241,7 +241,7 @@ static void put_current_on_cpu(int cpuid)
 	}
 #else /* KERNEL_VERSION >= 2.6.0 */
 	if (set_cpus_allowed(task, cpumask_of_cpu(cpuid))) {
-		((RT_TASK *)(task->rtai_tskext(0)))->runnable_on_cpus = smp_processor_id();
+		((RT_TASK *)(task->rtai_tskext(TSKEXT0)))->runnable_on_cpus = smp_processor_id();
 		set_cpus_allowed(current, cpumask_of_cpu(smp_processor_id()));
 	}
 #endif  /* KERNEL_VERSION < 2.6.0 */
@@ -298,14 +298,14 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 		task->priority = task->base_priority = priority;
 		task->suspdepth = task->is_hard = 1;
 		task->state = RT_SCHED_READY | RT_SCHED_SUSPENDED;
-		relink->rtai_tskext(0) = task;
+		relink->rtai_tskext(TSKEXT0) = task;
 		task->lnxtsk = relink;
 	} else {
 		task->priority = task->base_priority = BASE_SOFT_PRIORITY + priority;
 		task->suspdepth = task->is_hard = 0;
 		task->state = RT_SCHED_READY;
-		current->rtai_tskext(0) = task;
-		current->rtai_tskext(1) = task->lnxtsk = current;
+		current->rtai_tskext(TSKEXT0) = task;
+		current->rtai_tskext(TSKEXT1) = task->lnxtsk = current;
 		put_current_on_cpu(cpuid);
 	}
 	flags = rt_global_save_flags_and_cli();
@@ -1774,8 +1774,8 @@ static void kthread_fun(int cpuid)
 	detach_kthread();
 	rtai_set_linux_task_priority(current, SCHED_FIFO, KTHREAD_F_PRIO);
 	sprintf(current->comm, "F:HARD:%d:%d", cpuid, ++rsvr_cnt[cpuid]);
-	current->rtai_tskext(0) = task = &thread_task[cpuid];
-	current->rtai_tskext(1) = task->lnxtsk = current;
+	current->rtai_tskext(TSKEXT0) = task = &thread_task[cpuid];
+	current->rtai_tskext(TSKEXT1) = task->lnxtsk = current;
 	lxrt_sigfillset();
 	put_current_on_cpu(cpuid);
 	init_hard_fpu(current);
@@ -1783,13 +1783,13 @@ static void kthread_fun(int cpuid)
 	while(1) {
 		rt_task_suspend(task);
 		current->comm[0] = 'U';
-		if (!(task = current->rtai_tskext(0))->max_msg_size[0]) {
+		if (!(task = current->rtai_tskext(TSKEXT0))->max_msg_size[0]) {
 			break;
 		}
 		task->exectime[1] = rdtsc();
 		((void (*)(long))task->max_msg_size[0])(task->max_msg_size[1]);
 		current->comm[0] = 'F';
-		current->rtai_tskext(1) = 0;
+		current->rtai_tskext(TSKEXT1) = 0;
 		rtai_cli();
 		if (taskidx[cpuid] < SpareKthreads) {
 			taskav[cpuid][taskidx[cpuid]++] = task->lnxtsk;
@@ -1825,8 +1825,8 @@ static void kthread_m(int cpuid)
 			flags = rt_global_save_flags_and_cli();
 			hard = (unsigned long)(lnxtsk = klistp->task[klistp->out++ & (MAX_WAKEUP_SRQ - 1)]);
 			if (hard > 1) {
-				if (lnxtsk->rtai_tskext(2)) {
-					if (lnxtsk->rtai_tskext(1) && taskidx[cpuid] < SpareKthreads) {;
+				if (lnxtsk->rtai_tskext(TSKEXT2)) {
+					if (lnxtsk->rtai_tskext(TSKEXT1) && taskidx[cpuid] < SpareKthreads) {;
 						taskav[cpuid][taskidx[cpuid]++] = lnxtsk;
 						lnxtsk->comm[0] = 'F';
 					}
@@ -2118,7 +2118,7 @@ static void lxrt_intercept_sig_wakeup (long event, void *data)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
 	RT_TASK *task;
-	if ((task = INTERCEPT_WAKE_UP_TASK(data)->rtai_tskext(0))) {
+	if ((task = INTERCEPT_WAKE_UP_TASK(data)->rtai_tskext(TSKEXT0))) {
 		rt_signal_wake_up(task);
 	}
 } }
@@ -2129,7 +2129,7 @@ static void lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_ta
 
 	extern void linux_process_termination(void);
 	RT_TASK *task;
-	if ((task = lnx_task->rtai_tskext(0))) {
+	if ((task = lnx_task->rtai_tskext(TSKEXT0))) {
 		if (task->is_hard > 0) {
 			give_back_to_linux(task, 0);
 		}
@@ -2184,10 +2184,10 @@ RT_TASK *lxrt_init_linux_server(RT_TASK *master_task)
 {
 	int is_hard;
 	if (!master_task) {
-		if (!current->rtai_tskext(0)) {
+		if (!current->rtai_tskext(TSKEXT0)) {
 			return NULL;
 		}
-		master_task = current->rtai_tskext(0);
+		master_task = current->rtai_tskext(TSKEXT0);
 	}
 	if (!master_task->lnxtsk) {
 		return NULL;
@@ -2260,7 +2260,7 @@ static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	RT_TASK *task;
-	if ((task = (RT_TASK *)current->rtai_tskext(0))) {
+	if ((task = (RT_TASK *)current->rtai_tskext(TSKEXT0))) {
 		if (task->system_data_ptr) {
 			struct pt_regs *r = task->system_data_ptr;
 			r->LINUX_SYSCALL_RETREG = -ERESTARTSYS;
@@ -2381,7 +2381,7 @@ static void lxrt_intercept_sig_wakeup (long event, struct sig_wakeup_t *evdata)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
 	RT_TASK *task;
-	if ((task = (evdata->task)->rtai_tskext(0))) {
+	if ((task = (evdata->task)->rtai_tskext(TSKEXT0))) {
 		rt_signal_wake_up(task);
 	}
 } }
@@ -2391,7 +2391,7 @@ static void lxrt_intercept_exit (adevinfo_t *evinfo)
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	extern void linux_process_termination(void);
-	RT_TASK *task = current->rtai_tskext(0);
+	RT_TASK *task = current->rtai_tskext(TSKEXT0);
 	if (task) {
 		if (task->is_hard > 0) {
 			give_back_to_linux(task, 0);
@@ -2454,7 +2454,7 @@ static void lxrt_intercept_syscall_epilogue(adevinfo_t *evinfo)
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
 	RT_TASK *task;
-	if (current->rtai_tskext(0) && (task = (RT_TASK *)current->rtai_tskext(0))->is_hard < 0) {
+	if (current->rtai_tskext(TSKEXT0) && (task = (RT_TASK *)current->rtai_tskext(TSKEXT0))->is_hard < 0) {
 		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
 		steal_from_linux(task);
 		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
@@ -2704,8 +2704,8 @@ static void lxrt_exit(void)
 	rt_task = kmalloc(sizeof(RT_TASK), GFP_KERNEL);
 	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
 		while ((kthread = __get_kthread(cpuid))) {
-			if (kthread->rtai_tskext(2)) {
-				kfree(kthread->rtai_tskext(2));
+			if (kthread->rtai_tskext(TSKEXT2)) {
+				kfree(kthread->rtai_tskext(TSKEXT2));
 			}
 			rt_task->magic = 0;
 			set_rtext(rt_task, 0, 0, 0, cpuid, kthread);

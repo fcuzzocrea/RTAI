@@ -43,6 +43,7 @@ ACKNOWLEDGMENTS:
 #include <linux/sched.h>
 #include <linux/irq.h>
 #include <linux/reboot.h>
+#include <linux/sys.h>
 
 #include <asm/param.h>
 #include <asm/system.h>

@@ -2114,16 +2114,18 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 } }
 
 struct sig_wakeup_t { struct task_struct *task; };
-static void lxrt_intercept_sig_wakeup (long event, void *data)
+static int lxrt_intercept_sig_wakeup (long event, void *data)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
 	RT_TASK *task;
 	if ((task = INTERCEPT_WAKE_UP_TASK(data)->rtai_tskext(TSKEXT0))) {
 		rt_signal_wake_up(task);
+		return 1;
 	}
+	return 0;
 } }
 
-static void lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_task)
+static int lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_task)
 {
 	IN_INTERCEPT_IRQ_ENABLE(); {
 
@@ -2134,7 +2136,9 @@ static void lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_ta
 			give_back_to_linux(task, 0);
 		}
 		linux_process_termination();
+		return 1;
 	}
+	return 0;
 } }
 
 extern long long rtai_lxrt_invoke (unsigned long, void *, void *);

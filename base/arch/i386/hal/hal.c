@@ -318,7 +318,7 @@ unsigned rt_startup_irq (unsigned irq)
         int retval;
 
 	BEGIN_PIC();
-	hal_unlock_irq(hal_root_domain_root, irq);
+	hal_unlock_irq(hal_root_domain, irq);
 	retval = rtai_irq_desc(irq)->startup(irq);
 	END_PIC();
         return retval;

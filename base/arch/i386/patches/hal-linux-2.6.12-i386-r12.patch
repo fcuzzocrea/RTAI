@@ -1700,7 +1700,7 @@ diff -uNrp linux-2.6.12/arch/i386/kernel/Makefile linux-2.6.12-adeos/arch/i386/k
 diff -uNrp linux-2.6.12/arch/i386/kernel/adeos.c linux-2.6.12-adeos/arch/i386/kernel/adeos.c
 --- linux-2.6.12/arch/i386/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
 +++ linux-2.6.12-adeos/arch/i386/kernel/adeos.c	2005-07-16 10:54:37.000000000 +0200
-@@ -0,0 +1,786 @@
+@@ -0,0 +1,788 @@
 +/*
 + *   linux/arch/i386/kernel/adeos.c
 + *
@@ -2297,6 +2297,8 @@ diff -uNrp linux-2.6.12/arch/i386/kernel/adeos.c linux-2.6.12-adeos/arch/i386/ke
 +EXPORT_SYMBOL(io_apic_irqs);
 +EXPORT_SYMBOL(__adeos_tick_regs);
 +EXPORT_SYMBOL(do_signal);
++extern void *sys_call_table;
++EXPORT_SYMBOL(sys_call_table);
 +
 +/* adeos_trigger_irq() -- Push the interrupt to the pipeline entry
 +   just like if it has been actually received from a hw source. This

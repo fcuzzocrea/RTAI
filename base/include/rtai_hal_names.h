@@ -45,6 +45,7 @@
 #define HAL_EXIT_PROCESS      ADEOS_EXIT_PROCESS
 #define HAL_KICK_PROCESS      ADEOS_KICK_PROCESS
 
+#define hal_pipeline        __adeos_pipeline
 #define hal_domain_struct   adomain 
 #define hal_root_domain     adp_root 
 #define hal_current_domain  adp_cpu_current 
@@ -133,6 +134,7 @@
 #define HAL_EXIT_PROCESS      IPIPE_EVENT_EXIT
 #define HAL_KICK_PROCESS      IPIPE_EVENT_SIGWAKE
 
+#define hal_pipeline        __ipipe_pipeline
 #define hal_domain_struct   ipipe_domain 
 #define hal_root_domain     ipipe_root_domain 
 #define hal_current_domain  ipipe_percpu_domain 

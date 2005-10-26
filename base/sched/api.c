@@ -589,7 +589,9 @@ int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME pe
 {
 	long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
+	if (!task) {
+		task = RT_CURRENT;
+	} else if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
 	}
 	start_delay = nano2count_cpuid(start_delay, task->runnable_on_cpus);
@@ -646,7 +648,9 @@ int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
 {
 	long flags;
 
-	if (task->magic != RT_TASK_MAGIC) {
+	if (!task) {
+		task = RT_CURRENT;
+	} else if (task->magic != RT_TASK_MAGIC) {
 		return -EINVAL;
 	}
 	flags = rt_global_save_flags_and_cli();

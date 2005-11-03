@@ -39,7 +39,7 @@
  *@{*/
 
 #include <asm/rtai_hal.h>
-#ifdef RTAI_BIOSS
+#ifdef RTAI_DUOSS
 #include "hal.immed"
 #else
 #include "hal.piped"

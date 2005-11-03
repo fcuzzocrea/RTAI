@@ -2002,6 +2002,11 @@ FIRST_LINE_OF_RTAI_DOMAIN_ENTRY
 }
 LAST_LINE_OF_RTAI_DOMAIN_ENTRY
 
+int rtai_catch_event (struct ipipe_domain *ipd, unsigned long event, int (*handler)(unsigned long, void *))
+{
+	return hal_catch_event(&rtai_domain, event, (void *)handler);
+}
+
 static void *saved_hal_irq_handler;
 extern void *hal_irq_handler;
 
@@ -2011,7 +2016,7 @@ int __rtai_hal_init (void)
 	struct hal_attr_struct attr;
 
 	for (halinv = trapnr = 0; trapnr < HAL_NR_EVENTS; trapnr++) {
-		if (hal_root_domain->hal_event_handler(trapnr)) {
+		if (hal_root_domain->hal_event_handler_fun(trapnr)) {
 			halinv = 1;
 			printk("EVENT %d INVALID\n", trapnr);
 		}
@@ -2236,6 +2241,7 @@ EXPORT_SYMBOL(ll2a);
 
 EXPORT_SYMBOL(rtai_set_gate_vector);
 EXPORT_SYMBOL(rtai_reset_gate_vector);
+EXPORT_SYMBOL(rtai_catch_event);
 
 EXPORT_SYMBOL(rtai_lxrt_dispatcher);
 EXPORT_SYMBOL(rt_scheduling);

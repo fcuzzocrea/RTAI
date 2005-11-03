@@ -39,8 +39,8 @@
  *@{*/
 
 #include <asm/rtai_hal.h>
-#ifdef RTAI_TRIOSS
-#include "hal.piped"
-#else
+#ifdef RTAI_BIOSS
 #include "hal.immed"
+#else
+#include "hal.piped"
 #endif

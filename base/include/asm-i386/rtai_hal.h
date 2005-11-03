@@ -38,8 +38,8 @@
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
-#define RTAI_BIOSS
-#ifndef RTAI_BIOSS
+#define RTAI_DUOSS
+#ifndef RTAI_DUOSS
 #define RTAI_TRIOSS
 #endif
 #define LOCKED_LINUX_IN_IRQ_HANDLER

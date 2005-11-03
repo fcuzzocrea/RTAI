@@ -88,13 +88,14 @@
 #define hal_free_irq        adeos_free_irq
 #define hal_virtualize_irq  adeos_virtualize_irq_from
 
-#define hal_sysinfo_struct     adsysinfo
-#define hal_attr_struct        adattr
-#define hal_init_attr          adeos_init_attr
-#define hal_register_domain    adeos_register_domain
-#define hal_unregister_domain  adeos_unregister_domain
-#define hal_catch_event        adeos_catch_event_from
-#define hal_event_handler      adeos_event_handler
+#define hal_sysinfo_struct         adsysinfo
+#define hal_attr_struct            adattr
+#define hal_init_attr              adeos_init_attr
+#define hal_register_domain        adeos_register_domain
+#define hal_unregister_domain      adeos_unregister_domain
+#define hal_catch_event            adeos_catch_event_from
+#define hal_event_handler          adeos_event_handler
+#define hal_event_handler_fun(e)   events[e].handler
 
 #define hal_set_printk_sync   adeos_set_printk_sync
 #define hal_set_printk_async  adeos_set_printk_async
@@ -175,13 +176,14 @@
 #define hal_free_irq        ipipe_free_virq
 #define hal_virtualize_irq  ipipe_virtualize_irq
 
-#define hal_sysinfo_struct     ipipe_sysinfo
-#define hal_attr_struct        ipipe_domain_attr
-#define hal_init_attr          ipipe_init_attr
-#define hal_register_domain    ipipe_register_domain
-#define hal_unregister_domain  ipipe_unregister_domain
-#define hal_event_handler      ipipe_event_handler
-#define hal_catch_event        ipipe_catch_event
+#define hal_sysinfo_struct         ipipe_sysinfo
+#define hal_attr_struct            ipipe_domain_attr
+#define hal_init_attr              ipipe_init_attr
+#define hal_register_domain        ipipe_register_domain
+#define hal_unregister_domain      ipipe_unregister_domain
+#define hal_catch_event            ipipe_catch_event
+#define hal_event_handler          ipipe_event_handler
+#define hal_event_handler_fun(e)   evhand[e]
 
 #define hal_set_printk_sync   ipipe_set_printk_sync
 #define hal_set_printk_async  ipipe_set_printk_async

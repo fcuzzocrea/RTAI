@@ -38,7 +38,10 @@
 #ifndef _RTAI_ASM_I386_HAL_H
 #define _RTAI_ASM_I386_HAL_H
 
-//#define STALL_RTAI_DOMAIN
+#define RTAI_BIOSS
+#ifndef RTAI_BIOSS
+#define RTAI_TRIOSS
+#endif
 #define LOCKED_LINUX_IN_IRQ_HANDLER
 #define UNWRAPPED_CATCH_EVENT
 
@@ -219,6 +222,29 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 
 extern volatile unsigned long hal_pended;
 
+static inline struct hal_domain_struct *get_domain_pointer(int n)
+{
+	struct list_head *p = hal_pipeline.next;
+	struct hal_domain_struct *d;
+	int i = 0;
+	while (p != &hal_pipeline) {
+			d = list_entry(p, struct hal_domain_struct, p_link);
+		if (++i == n) {
+			return d;
+		}
+		p = d->p_link.next;
+	}
+	return (struct hal_domain_struct *)i;
+}
+
+#define hal_pend_domain_uncond(irq, domain, cpuid) \
+do { \
+        domain->cpudata[cpuid].irq_hits[irq]++; \
+        __set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
+        __set_bit(irq >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
+        test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
+} while (0)
+
 #define hal_pend_uncond(irq, cpuid) \
 do { \
         hal_root_domain->cpudata[cpuid].irq_hits[irq]++; \
@@ -235,18 +261,18 @@ do { \
 	} \
 } while (0)
 
-#ifdef STALL_RTAI_DOMAIN
+#ifdef RTAI_TRIOSS
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-        if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status) && !test_bit(IPIPE_STALL_FLAG, &rtai_domain.cpudata[cpuid].status)) { \
-		hal_fast_flush_pipeline(cpuid); \
+       	if (!test_bit(IPIPE_STALL_FLAG, &rtai_domain.cpudata[cpuid].status)) { \
 		rtai_sti(); \
+		hal_unstall_pipeline_from(&rtai_domain); \
 	} \
 } while (0)
 #else
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-        if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) { \
+       	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) { \
 		hal_fast_flush_pipeline(cpuid); \
 		rtai_sti(); \
 	} \
@@ -321,6 +347,9 @@ extern volatile unsigned long rtai_cpu_lock;
 extern struct rtai_switch_data {
 	volatile unsigned long depth;
 	volatile unsigned long oldflags;
+#ifdef RTAI_TRIOSS
+	volatile struct hal_domain_struct *oldomain;
+#endif
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
 	volatile unsigned long pridepth;
 //	volatile unsigned long taskpri;
@@ -576,13 +605,15 @@ int rt_printk(const char *format, ...);
 int rt_printk_sync(const char *format, ...);
 
 extern struct hal_domain_struct rtai_domain;
+extern struct hal_domain_struct *fusion_domain;
 
 static inline void rt_switch_to_real_time_notskpri(int cpuid)
 {
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].depth++) {
-#ifdef STALL_RTAI_DOMAIN
+#ifdef RTAI_TRIOSS
 		rtai_linux_context[cpuid].oldflags = xchg(&rtai_domain.cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+		rtai_linux_context[cpuid].oldomain = hal_current_domain[cpuid];
 #else
 		rtai_linux_context[cpuid].oldflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 #endif
@@ -597,10 +628,11 @@ static inline void rt_switch_to_linux_notskpri(int cpuid)
 	if (rtai_linux_context[cpuid].depth) {
 		if (!--rtai_linux_context[cpuid].depth) {
 //			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
-			hal_current_domain[cpuid] = hal_root_domain;
-#ifdef STALL_RTAI_DOMAIN
+#ifdef RTAI_TRIOSS
+			hal_current_domain[cpuid] = (void *)rtai_linux_context[cpuid].oldomain;
 			rtai_domain.cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 #else
+			hal_current_domain[cpuid] = hal_root_domain;
 			hal_root_domain->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 #endif
 		}
@@ -690,6 +722,8 @@ int rtai_calibrate_8254(void);
 void rtai_set_linux_task_priority(struct task_struct *task,
 				  int policy,
 				  int prio);
+
+int rtai_catch_event (struct hal_domain_struct *ipd, unsigned long event, int (*handler)(unsigned long, void *));
 
 #endif /* __KERNEL__ && !__cplusplus */
 
@@ -842,3 +876,31 @@ static inline int rt_free_global_irq(unsigned irq)
 /*@}*/
 
 #endif /* !_RTAI_ASM_I386_HAL_H */
+
+
+#ifndef _RTAI_HAL_XN_H
+#define _RTAI_HAL_XN_H
+
+// this is now a bit misplaced, to be moved where it should belong
+#ifdef RTAI_TRIOSS
+
+extern void xnpod_schedule(void);
+
+#define FUSIONEXT  (0)
+
+#define NON_RTAI_SCHEDULE(cpuid) \
+do { \
+	if (hal_current_domain[cpuid] == hal_root_domain) { \
+		schedule(); \
+	} else { \
+		xnpod_schedule(); \
+	} \
+} while (0)
+
+#else /* !RTAI_TRIOSS */
+
+#define NON_RTAI_SCHEDULE(cpuid)  do { schedule(); } while (0)
+
+#endif /* END RTAI_TRIOSS */
+
+#endif /* !_RTAI_HAL_XN_H */

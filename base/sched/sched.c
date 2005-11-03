@@ -181,7 +181,7 @@ do { \
 	barrier(); \
 } while (0)
 
-#if 1
+#if 0
 #include <asm/atomic.h>
 #define sched_release_global_lock(cpuid) \
 do { \
@@ -892,7 +892,7 @@ sched_soft:
 			UNLOCK_LINUX_NOTSKPRI(cpuid);
 			rt_global_sti();
 			hal_test_and_fast_flush_pipeline(cpuid);
-			schedule();
+			NON_RTAI_SCHEDULE(cpuid);
 			rt_global_cli();
 			rt_current->state = (rt_current->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;
 			LOCK_LINUX_NOTSKPRI(cpuid);
@@ -1959,7 +1959,7 @@ static void start_stop_kthread(RT_TASK *task, void (*rt_thread)(long), long data
 static void wake_up_srq_handler(unsigned srq)
 {
 #ifdef CONFIG_PREEMPT
-	preempt_disable(); {
+//	preempt_disable(); {
 #endif
 #ifdef CONFIG_X86_64
 	int cpuid = rtai_cpuid(); // something to fix, must return as below
@@ -1972,7 +1972,7 @@ static void wake_up_srq_handler(unsigned srq)
 	wake_up_process(kthreadm[cpuid]);
 	set_need_resched();
 #ifdef CONFIG_PREEMPT
-	} preempt_enable();
+//	} preempt_enable();
 #endif
 }
 
@@ -2071,7 +2071,7 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 		struct klist_t *klistp = &klistb[cpuid];
 		struct task_struct *lnxtsk = current;
 #ifdef CONFIG_PREEMPT
-		preempt_disable();
+//		preempt_disable();
 #endif
 		while (klistp->out != klistp->in) {
 			rt_global_cli();
@@ -2079,7 +2079,7 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 			rt_global_sti();
 		}
 #ifdef CONFIG_PREEMPT
-		preempt_enable();
+//		preempt_enable();
 #endif
 	}
 
@@ -2636,6 +2636,8 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 
 extern void *rtai_lxrt_dispatcher;
 
+DECLARE_FUSION_WAKE_UP_STUFF;
+
 static int lxrt_init(void)
 
 {
@@ -2643,11 +2645,8 @@ static int lxrt_init(void)
     int cpuid;
 
     init_fun_ext();
-	
 
-    for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
-    	hal_virtualize_irq(hal_root_domain, wake_up_srq[cpuid].srq = hal_alloc_irq(), wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG);
-    }
+    REQUEST_RESUME_SRQs_STUFF();
 
     /* We will start stealing Linux tasks as soon as the reservoir is
        instantiated, so create the migration service now. */
@@ -2683,13 +2682,13 @@ static int lxrt_init(void)
 
     /* Must be called on behalf of the Linux domain. */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-    hal_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, (void *)lxrt_intercept_schedule_head);
+    rtai_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, (void *)lxrt_intercept_schedule_head);
 #endif  /* KERNEL_VERSION < 2.6.0 */
-    hal_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
-    hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall_prologue);
-    hal_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
-    hal_catch_event(hal_root_domain, HAL_EXIT_PROCESS, (void *)lxrt_intercept_exit);
-    hal_catch_event(hal_root_domain, HAL_KICK_PROCESS, (void *)lxrt_intercept_sig_wakeup);
+    rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
+    rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall_prologue);
+    rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
+    rtai_catch_event(hal_root_domain, HAL_EXIT_PROCESS, (void *)lxrt_intercept_exit);
+    rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, (void *)lxrt_intercept_sig_wakeup);
 	rtai_lxrt_dispatcher = rtai_lxrt_invoke;
 
     return 0;
@@ -2736,17 +2735,14 @@ static void lxrt_exit(void)
 
 	rt_set_rtai_trap_handler(lxrt_old_trap_handler);
 
-	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) {
-		hal_virtualize_irq(hal_root_domain, wake_up_srq[cpuid].srq, NULL, NULL, 0);
-		hal_free_irq(wake_up_srq[cpuid].srq);
-	}
+	RELEASE_RESUME_SRQs_STUFF();
 
-	hal_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, NULL);
-	hal_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, NULL);
-	hal_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, NULL);
-	hal_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, NULL);
-	hal_catch_event(hal_root_domain, HAL_EXIT_PROCESS, NULL);
-	hal_catch_event(hal_root_domain, HAL_KICK_PROCESS, NULL);
+	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, NULL);
+	rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, NULL);
+	rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, NULL);
+	rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, NULL);
+	rtai_catch_event(hal_root_domain, HAL_EXIT_PROCESS, NULL);
+	rtai_catch_event(hal_root_domain, HAL_KICK_PROCESS, NULL);
 	rtai_lxrt_dispatcher = NULL;
     
 	flags = rtai_critical_enter(NULL);

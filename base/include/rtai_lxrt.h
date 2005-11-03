@@ -685,6 +685,7 @@ static void linux_syscall_server_fun(RT_TASK *task)
 
 RTAI_PROTO(int, rt_linux_syscall_server_create, (RT_TASK * task))
 {
+//return rtai_lxrt(BIDX, sizeof(RT_TASK *), LINUX_SERVER_INIT, &task).i[LOW];
 	if (task || (task = (RT_TASK *)rtai_lxrt(BIDX, sizeof(RT_TASK *), RT_BUDDY, &task).v[LOW])) {
 		if (rt_thread_create((void *)linux_syscall_server_fun, task, 0) > 0) {
 			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);

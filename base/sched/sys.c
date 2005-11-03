@@ -239,7 +239,7 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	    if (num_online_cpus() > 1 && cpus_allowed) {
 	    cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
 	    } else {
-	    cpus_allowed = 0;
+	    cpus_allowed = smp_processor_id();
 	    }
 	    if (!set_rtext(rt_task, prio, 0, 0, cpus_allowed, 0)) {
 	        rt_task->fun_args = (long *)((struct fun_args *)(rt_task + 1));

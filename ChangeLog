@@ -1,3 +1,7 @@
+2005-11-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* overall update to support RTAI duo and trio operating modes.
+
 2005-10-11  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* fix configure.in to auto-detect RTAI HAL (old/newgen)

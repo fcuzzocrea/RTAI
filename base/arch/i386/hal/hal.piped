@@ -2137,13 +2137,13 @@ LAST_LINE_OF_RTAI_DOMAIN_ENTRY
 int (*event_handler[HAL_NR_EVENTS])(unsigned long, void *);
 extern int (**hal_event_handler)(unsigned long, void *);
 
-static int rtai_propagate_event(unsigned long event, struct hal_domain_struct *ipd, void *data)
+static int rtai_propagate_event(unsigned long event, struct hal_domain_struct *from, void *data)
 {
 //	rtai_sti();
 	return 0;
 }
 
-int rtai_catch_event (struct ipipe_domain *ipd, unsigned long event, int (*handler)(unsigned long, void *))
+int rtai_catch_event (struct ipipe_domain *from, unsigned long event, int (*handler)(unsigned long, void *))
 {
 	if (event >= HAL_NR_EVENTS) {
 		return -EINVAL;

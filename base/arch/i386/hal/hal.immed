@@ -2004,7 +2004,7 @@ LAST_LINE_OF_RTAI_DOMAIN_ENTRY
 
 int rtai_catch_event (struct ipipe_domain *ipd, unsigned long event, int (*handler)(unsigned long, void *))
 {
-	return hal_catch_event(&rtai_domain, event, (void *)handler);
+	return hal_catch_event(ipd, event, (void *)handler);
 }
 
 static void *saved_hal_irq_handler;

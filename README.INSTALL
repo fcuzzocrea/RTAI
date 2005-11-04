@@ -1,34 +1,33 @@
 Installing RTAI-3.x
 ===================
 
-0. Interrupt dispatching mode
-=============================
+0. RTAI duo/trio operating modes
+================================
 
-It is important to note that RTAI comes with ADEOS, or "piped",
-dispatching by default and that the "immediate" variant builds
-upon a given version of an official ADEOS patch but departs from
-there by adding 3.x-specific support.
+RTAI can work both as a duo (RTAI_DUOSS) and as a trio (RTAI_TRIOSS).
+At the moment the choice must be done by hand, as described here below.
 
-In "piped" mode, interrupts are dispatched by ADEOS while in
-"immediate" mode RTAI dispatches real time interrupts by itself
-and defers other interrupts to ADEOS. The "immediate" mode will
-likely be worth having only on low end CPUs, e.g.: 486, small ARM;
-on which it has proven useful already.
+RTAI_DUOSS is for the standard, leanest and fastest, RTAI+Linux combination,
+usable with both Linux 2.4.xx and 2.6.xx. To set it up use the patches
+hal-linux-whatever-version, found within this distribution only, and
+enable the definition of the macro RTAI_DUOSS in "include/asm-i386/rtai_hal.h".
 
-Once such a choice has been made go to the base/scripts directory
-and type:
-- "./mode-control immed" for immediate dispatching;
-- "./mode-control piped" for piped dispatching;
-- "./mode-control check" to check the current mode;
-then go on with the configuration/installation.
+RTAI_TRIOSS is the newest relase that allows to work with and integrate
+RTAI+FUSION+Linux (notice that FUSION has been renamed XENOMAI recently).
+It is usable with Linux 2.6.xx only and to set it up you must use the patches
+hal-trioss-whatever-version, found within this distribution only. Then you
+must disable the definition of the macro RTAI_DUOSS in 
+"include/asm-i386/rtai_hal.h". However if you disable both RTAI_DUOSS and 
+RTAI_TRIOSS, found in the ame header file, you fall back to the duo RTAI,
+i.e. just for RTAI+Linux.
 
-This procedure must be done in full conscience, so it is likely it
-will never become part of the configuration process described below.
-It is important to note that RTAI comes with "piped" dispatching by
-default and that the "immediate" mode requires the mentioned minimal
-change to ADEOS which, nonetheless, imposes using only ADEOS
-patches accompanying RTAI (and not from the ADEOS CVS or any other
-source).
+The difference between a duo RTAI obtained just by enabling RTAI_DUOSS and
+the one obtained by disabling both RTAI_DUOSS and RTAI_TRIOSS is just a bit
+more overhead and latency for the latter combination due to many sstacked
+pipes in ADEOS. So use just hal-linux-whatever patches and set RTAI_DUOSS if 
+you have no need to work with the trio.
+
+It is important to note that RTAI comes with duo version set by default.
 
 1. How to build
 ===============

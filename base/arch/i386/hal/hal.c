@@ -39,6 +39,8 @@
  *@{*/
 
 #include <asm/rtai_hal.h>
+
+#include "rtc.c"
 #ifdef RTAI_DUOSS
 #include "hal.immed"
 #else

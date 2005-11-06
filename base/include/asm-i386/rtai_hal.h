@@ -825,6 +825,10 @@ void rt_free_timer(void);
 
 RT_TRAP_HANDLER rt_set_trap_handler(RT_TRAP_HANDLER handler);
 
+void rt_release_rtc(void);
+
+void rt_request_rtc(int rtc_freq, void *handler);
+
 #define rt_mount()
 
 #define rt_umount()

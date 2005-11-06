@@ -314,8 +314,10 @@
 #define PEND_LINUX_IRQ		       211
 #define RECEIVE_LINUX_SYSCALL          212
 #define RETURN_LINUX_SYSCALL           213
+#define REQUEST_RTC                    214
+#define RELEASE_RTC                    215
 
-#define MAX_LXRT_FUN                   215
+#define MAX_LXRT_FUN                   220
 
 // not recovered yet 
 // Qblk's 
@@ -938,6 +940,18 @@ RTAI_PROTO(void, stop_rt_timer,(void))
 {
 	struct { unsigned long dummy; } arg;
 	rtai_lxrt(BIDX, SIZARG, STOP_TIMER, &arg);
+}
+
+RTAI_PROTO(void, rt_request_rtc,(int rtc_freq, void *handler))
+{
+	struct { long rtc_freq; void *handler; } arg = { rtc_freq, handler };
+	return rtai_lxrt(BIDX, SIZARG, REQUEST_RTC, &arg).rt;
+}
+
+RTAI_PROTO(void, rt_release_rtc,(void))
+{
+	struct { unsigned long dummy; } arg;
+	rtai_lxrt(BIDX, SIZARG, RELEASE_RTC, &arg);
 }
 
 RTAI_PROTO(RTIME,rt_get_time,(void))

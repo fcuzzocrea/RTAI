@@ -62,6 +62,8 @@
 
 #ifdef RTAI_TRIOSS
 
+#define FUSIONEXT  (0)
+
 // provisional, to be replaced by appropriate headers declarations
 #define XNSUSP   (0x00000001)
 #define XNRELAX  (0x00000100)

@@ -945,7 +945,7 @@ RTAI_PROTO(void, stop_rt_timer,(void))
 RTAI_PROTO(void, rt_request_rtc,(int rtc_freq, void *handler))
 {
 	struct { long rtc_freq; void *handler; } arg = { rtc_freq, handler };
-	return rtai_lxrt(BIDX, SIZARG, REQUEST_RTC, &arg).rt;
+	rtai_lxrt(BIDX, SIZARG, REQUEST_RTC, &arg);
 }
 
 RTAI_PROTO(void, rt_release_rtc,(void))

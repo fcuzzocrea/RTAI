@@ -886,7 +886,18 @@ static inline int rt_free_global_irq(unsigned irq)
 
 extern void xnpod_schedule(void);
 
-#define FUSIONEXT  (0)
+#define XNTIMED  0x00000004
+
+extern unsigned long *nkpod;
+extern int fusion_timer_running;
+
+#define SET_FUSION_TIMER_RUNNING() \
+	 do { fusion_timer_running = !!(*nkpod & XNTIMED); } while (0)
+
+#define CLEAR_FUSION_TIMER_RUNNING() \
+	 do { fusion_timer_running = 0; } while (0)
+
+#define IS_FUSION_TIMER_RUNNING()  (fusion_timer_running)
 
 #define NON_RTAI_SCHEDULE(cpuid) \
 do { \
@@ -898,6 +909,12 @@ do { \
 } while (0)
 
 #else /* !RTAI_TRIOSS */
+
+#define SET_FUSION_TIMER_RUNNING()
+
+#define CLEAR_FUSION_TIMER_RUNNING()
+
+#define IS_FUSION_TIMER_RUNNING()  (0)
 
 #define NON_RTAI_SCHEDULE(cpuid)  do { schedule(); } while (0)
 

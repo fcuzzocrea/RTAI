@@ -1,3 +1,7 @@
+2005-11-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* added support for RTC clock.
+
 2005-11-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* overall update to support RTAI duo and trio operating modes.

@@ -112,8 +112,29 @@ disabled, while RTAI should be compiled for a Linux copy with the APIC
 enabled. In such a way FUSION will use the 8254 timer and RTAI the APIC 
 timer. Thus applications will be able to run in both modes 1/2 above with 
 independent hard time source. 
-Other solutions will be provided, as time allows, but you are welcome in
-helping with your own.
+Another general solution is available to allow independent timing of RTAI
+and FUSION. It is based on using the RTC, available on all x86 archs.
+It imposes a contraint though i.e.: FUSION must work in periodic mode only
+and with ticks at frequencies that are a power of 2 and do not exceed 8182 Hz.
+For our needs that is not a problem as precise timing is afforded by RTAI
+and the FUSION timing is used just for timeouts, e.g. in sems and other 
+APIs using timouts guards. To use the RTC timing for FUSION simply:
+- start the fusion own timer, caring to assign a tick that can be match
+by RTC;
+- call rt_request_rtc(rtc_freq, NULL); setting rtc_freq to power of 2 
+frequency corresponding to the tick you used for the periodic fusion timer;
+- set and start the RTAI timer the way you like.
+In such a way your TRIOSS application will have FUSION functions timed in
+periodic mode with the assigned tick, while the RTAI services will be timed
+independently as you chose. For the kind of magic behind it se rtc.c., it
+is trivial though.
+Other solutions could be provided, as further needs will demand, but you are 
+welcome in helping with your own.
+
+The implementation has been teted and procen to work well. The major
+problem in using it is in setting the correct header file and links to make
+what is needed. More examples will be added in showroom to show what to
+do, ASAP.
 
 Paolo.
 

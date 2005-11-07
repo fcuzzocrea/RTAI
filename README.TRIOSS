@@ -97,6 +97,12 @@ For that patch Linux with the due patch and simply disable the RTAI_DUOSS
 macro in "base/include/asm-i386/rtai_hal.h", it is at the very beginning 
 of the file.
 Then go on with the usual making, recall also to modify xenomai as said above.
+Note that it is possible to disable both RTAI_DUOSS and RTAI_TRIOSS macros. 
+In such a way you recover an RTAI that is close to RTAI_DUOSS on a Linux
+kernel patched for TRIOSS. The term "close" has been used to remark that it
+will be a bit less efficient because of the piping that will allow ADEOS
+to increase jitter/latency by waking the pipe and keeping interrupt disabled
+more than it does with DUOSS.
 See README.INSTALL also. Hopefully it will be all configurable and 
 made automatically in a better way soon.
 
@@ -131,10 +137,9 @@ is trivial though.
 Other solutions could be provided, as further needs will demand, but you are 
 welcome in helping with your own.
 
-The implementation has been teted and procen to work well. The major
+The implementation has been tested and proven to work well. The major
 problem in using it is in setting the correct header file and links to make
 what is needed. More examples will be added in showroom to show what to
 do, ASAP.
 
 Paolo.
-

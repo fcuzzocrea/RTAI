@@ -593,7 +593,7 @@ typedef struct _trace_rtai_lxrti
 #define TRACE_RTAI_OWN_IRQ_EXIT()
 #define TRACE_RTAI_TRAP_ENTRY(ID,ADDR)
 #define TRACE_RTAI_TRAP_EXIT()
-#if CONFIG_PPC || CONFIG_ARM
+#if defined(CONFIG_PPC) && defined(CONFIG_ARM) && (CONFIG_PPC || CONFIG_ARM)
 #define TRACE_RTAI_SRQ_ENTRY(ID,KERNEL)
 #else
 #define TRACE_RTAI_SRQ_ENTRY(a)

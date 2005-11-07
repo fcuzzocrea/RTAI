@@ -434,7 +434,7 @@ static inline void wake_up_timed_tasks(int cpuid)
 			} else {
 				enq_ready_task(task);
 			}
-#if BUSY_TIME_ALIGN
+#if defined(BUSY_TIME_ALIGN) && BUSY_TIME_ALIGN
                 	task->trap_handler_data = (void *)oneshot_timer;
 #endif
 		}

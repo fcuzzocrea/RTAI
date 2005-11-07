@@ -2151,7 +2151,7 @@ static int rtai_propagate_event(unsigned long event, struct hal_domain_struct *f
 	return 0;
 }
 
-int rtai_catch_event (struct ipipe_domain *from, unsigned long event, int (*handler)(unsigned long, void *))
+int rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int (*handler)(unsigned long, void *))
 {
 	if (event >= HAL_NR_EVENTS) {
 		return -EINVAL;

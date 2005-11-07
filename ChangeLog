@@ -1,3 +1,10 @@
+2005-11-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* added rtai_fusion.h to support some basic FUSION stuff needed by
+	  RTAI_TRIOSS avoiding name clashes. As a side note RTAI_TRIOSS has
+ 	  demonstrated to work in a not so trivial integration test using 
+	  native FUSION, RTDM and, naturally, RTAI.
+
 2005-11-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* added support for RTC clock.

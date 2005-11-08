@@ -155,13 +155,12 @@ typedef FTASK_PLACEHOLDER FTASK;
 extern "C" {
 #endif
 
+#define FPRIO ((prio = T_HIPRIO - prio) < 1 ? 1 : prio)
+
 int rt_task_create(FTASK *task, const char *name, int stksize, int prio, int mode);
 static inline int ftask_create(FTASK *task, const char *name, int stksize, int prio, int mode)
 {
-        if ((prio = T_HIPRIO - prio) < 1) {
-                prio = 1;
-        }
-	return rt_task_create(task, name, stksize, prio, mode);
+	return rt_task_create(task, name, stksize, FPRIO, mode);
 }
 
 int rt_task_start(FTASK *task, void (*fun)(void *cookie), void *cookie);
@@ -179,16 +178,13 @@ static inline int ftask_spawn(FTASK *task, const char *name, int stksize, int pr
 int rt_task_shadow(FTASK *task, const char *name, int prio, int mode);
 static inline int ftask_shadow(FTASK *task, const char *name, int prio, int mode)
 {
-        if ((prio = T_HIPRIO - prio) < 1) {
-                prio = 1;
-        }
-	return rt_task_shadow(task, name, prio, mode);
+	return rt_task_shadow(task, name, FPRIO, mode);
 }
 
 int rt_task_set_priority(FTASK *task, int prio);
 static inline int ftask_set_priority(FTASK *task, int prio)
 {
-	return rt_task_set_priority(task, prio);
+	return rt_task_set_priority(task, FPRIO);
 }
 
 int rt_task_bind(FTASK *task, const char *name, FTIME timeout);

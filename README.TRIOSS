@@ -41,10 +41,10 @@ That said, point 1 above can be useful "per se" already, but clearly point 2
 should be the most appealing. In fact point 1 might appear almost useless 
 at first, if one needs timing both RTAI and FUSION independently. The reason 
 being they use the same hardware timers. Simply think about the fact that 
-both RTAI and FUSION can keep Linux timing alive but will not care of being 
-helpful to each either, since they grab the same hard timers for themselves. 
-Since a possible solution to this problem will be seen later on, point 1 is
-also definetely useful.
+both RTAI and FUSION can keep Linux timing alive, even when they steal its
+driver, but will not care of being helpful to each other, since they grab 
+the same hard timers for themselves. Since a possible solution to this 
+problem will be seen later on, point 1 is also definetely useful.
 
 How does it work? The answer is simple: as usual. It is just the same 
 RTAI LXRT coscheduler scheme on ADEOS. Simply and shortly: FUSION and Linux 

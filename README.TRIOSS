@@ -55,18 +55,25 @@ number of OSes, working on the ADEOS stack, just with a trivial
 generalisation.
 
 In such a view a FUSION task has to do just what a Linux task does to use
-RTAI APIs, i.e.: call rtai_task_init, or any of its flavours, and then use 
-whatever API it wants, be it for RTAI, FUSION or Linux. Notice that you must 
-not make the task hard real time, in FUSION it will be so automatically, 
-again at a priority just below that of RTAI. Clearly you must have hardened 
-your task for FUSION by using: rt_task_schadow. In short you have to call both 
-rt_task_schadow and rtai_task_init, in whatever order, but not 
-rt_make_hard_real_time, FUSION tasks are soft real time for RTAI, much as
-those of Linux. Doing so you will be able to have FUSION hard real time while 
-using both RTAI and FUSION.
+RTAI APIs, i.e.: call rtai_task_init_schmod and then use whatever API it 
+wants, be it for RTAI, FUSION or Linux. Notice that you must not make the 
+task hard real time, in FUSION it will be so automatically, again at a 
+priority just below that of RTAI. Clearly you must have hardened your 
+task for FUSION by using: ftask_shadow. In short you have to call both 
+ftask_shadow and rt_task_init_schmod, in that order and with the cpus mask
+in rt_task_init_schmod set to zero, but not rt_make_hard_real_time, FUSION 
+tasks are soft real time for RTAI, much as those of Linux. Doing so you will 
+be able to have FUSION hard real time while using both RTAI and FUSION. 
+What just said is for the case in which you want to interoperate with FUSION 
+native skin as you do with RTAI. With other skins, and by using the 
+combination rt_task_create/rt_task_start in the native skin as well, you are 
+just requested to create your tasks as the skin demand and call 
+rt_task_init_schmod within the task body. 
+Functions ftask_make_hard/soft_real_time are nonetheless provided to allow
+your own control of the hard/soft status of the FUSION support.
 
 The stuff is new and fun, improvements and further extensions of the idea
-can be envisaged easily, thoug they have still to come. Notice also that, 
+can be envisaged easily, though they have still to come. Notice also that, 
 since RTAI can preempt anything anywhere, as already hinted, there is the 
 need to protect FUSION context switches by hard disabling interrupts. 
 Since it is unlikely that FUSION (aka xenomai) will ever care of adding 
@@ -88,8 +95,8 @@ of RTAI and then use them as usual. As said it is new (likely the first time
 you can run 2 real time OSes toghether in Linux?) and may need to mature. 
 In any case the idea is simple and embedded in the RTAI LXRT coscheduler. 
 That should make it not too difficult to be rubustified and improved. 
-At the moment we use it as a useful way to stress test RTAI in an anusual 
-evironment.
+At the moment we use it inensively as a useful way to stress test RTAI in 
+an anusual evironment.
 
 As it is now, i.e magma CVS, RTAI comes structured without any specific 
 RTAI_TRIOSS making support. So you'll have to set up RTAI_TRIOSS by hand. 
@@ -101,14 +108,10 @@ Note that it is possible to disable both RTAI_DUOSS and RTAI_TRIOSS macros.
 In such a way you recover an RTAI that is close to RTAI_DUOSS on a Linux
 kernel patched for TRIOSS. The term "close" has been used to remark that it
 will be a bit less efficient because of the piping that will allow ADEOS
-to increase jitter/latency by waking the pipe and keeping interrupt disabled
-more than it does with DUOSS.
-See README.INSTALL also. Hopefully it will be all configurable and 
-made automatically in a better way soon.
-
-Anybody interested can see a simple application in:
-"showroom/v3.x/user/trioss". Follow what suggested in the README found
-there to use it.
+to increase jitter/latency when walking down the pipe with interrupts disabled
+for a longer time than it happens with DUOSS.
+See README.INSTALL also. Hopefully it will be all configurable and made 
+automatically in a better way soon.
 
 Back to the independent timings for RTAI and FUSION it is possible to say
 that we can envisage many solutions. At the moment an easy one is available
@@ -121,11 +124,12 @@ independent hard time source.
 Another general solution is available to allow independent timing of RTAI
 and FUSION. It is based on using the RTC, available on all x86 archs.
 It imposes a contraint though i.e.: FUSION must work in periodic mode only
-and with ticks at frequencies that are a power of 2 and do not exceed 8182 Hz.
-For our needs that is not a problem as precise timing is afforded by RTAI
-and the FUSION timing is used just for timeouts, e.g. in sems and other 
-APIs using timouts guards. To use the RTC timing for FUSION simply:
-- start the fusion own timer, caring to assign a tick that can be match
+and with ticks at frequencies that are a power of 2 and do not exceed 8192 Hz.
+For our needs that is not a problem as precise timing is afforded by and to
+RTAI anyhow and the FUSION timing is used just for its internal timeouts, 
+e.g.: in sems and other APIs using timouts guards. To use the RTC timing for 
+FUSION simply:
+- start the fusion own timer, caring to assign a tick that can be matched
 by RTC;
 - call rt_request_rtc(rtc_freq, NULL); setting rtc_freq to power of 2 
 frequency corresponding to the tick you used for the periodic fusion timer;
@@ -133,13 +137,20 @@ frequency corresponding to the tick you used for the periodic fusion timer;
 In such a way your TRIOSS application will have FUSION functions timed in
 periodic mode with the assigned tick, while the RTAI services will be timed
 independently as you chose. For the kind of magic behind it se rtc.c., it
-is trivial though.
+is trivial though. For an application of such a scheme see the RTDM example
+suggested below.
 Other solutions could be provided, as further needs will demand, but you are 
 welcome in helping with your own.
 
+Anybody interested can see a simple application in:
+"showroom/v3.x/user/trioss". Follow what suggested in the README found
+there to use it.
+A further, self contained, example with double independent timings and
+a realistic application is provided "showroom/v3.x/user/rtdm".
+
 The implementation has been tested and proven to work well. The major
 problem in using it is in setting the correct header file and links to make
-what is needed. More examples will be added in showroom to show what to
-do, ASAP.
+what is needed. More examples will be added in showroom to show what can
+be done, ASAP.
 
 Paolo.

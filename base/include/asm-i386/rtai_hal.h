@@ -55,6 +55,7 @@
 #define RTAI_NR_CPUS  1
 #endif /* CONFIG_SMP */
 
+#ifndef _RTAI_FUSION_H
 static __inline__ unsigned long ffnz (unsigned long word) {
     /* Derived from bitops.h's ffs() */
     __asm__("bsfl %1, %0"
@@ -62,6 +63,7 @@ static __inline__ unsigned long ffnz (unsigned long word) {
 	    : "r"  (word));
     return word;
 }
+#endif
 
 static inline unsigned long long rtai_ulldiv (unsigned long long ull,
 					      unsigned long uld,

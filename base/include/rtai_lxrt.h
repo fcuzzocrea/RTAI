@@ -760,6 +760,12 @@ RTAI_PROTO(RT_TASK *,rt_task_init,(unsigned long name, int priority, int stack_s
 	return rt_task_init_schmod(name, priority, 0, max_msg_size, SCHED_FIFO, 0xFF);
 }
 
+RTAI_PROTO(RT_TASK *,ftask_init,(unsigned long name, int priority))
+{
+	struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, 0, 0, 0 };
+	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
+}
+
 RTAI_PROTO(void,rt_set_sched_policy,(RT_TASK *task, int policy, int rr_quantum_ns))
 {
 	struct { RT_TASK *task; long policy; long rr_quantum_ns; } arg = { task, policy, rr_quantum_ns };

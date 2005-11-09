@@ -44,6 +44,7 @@
 #endif
 #define LOCKED_LINUX_IN_IRQ_HANDLER
 #define UNWRAPPED_CATCH_EVENT
+#define DOMAIN_TO_STALL  (fusion_domain)
 
 #include <asm/rtai_vectors.h>
 #include <rtai_types.h>
@@ -266,9 +267,9 @@ do { \
 #ifdef RTAI_TRIOSS
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-       	if (!test_bit(IPIPE_STALL_FLAG, &rtai_domain.cpudata[cpuid].status)) { \
+       	if (!test_bit(IPIPE_STALL_FLAG, &DOMAIN_TO_STALL->cpudata[cpuid].status)) { \
 		rtai_sti(); \
-		hal_unstall_pipeline_from(&rtai_domain); \
+		hal_unstall_pipeline_from(DOMAIN_TO_STALL); \
 	} \
 } while (0)
 #else
@@ -614,7 +615,7 @@ static inline void rt_switch_to_real_time_notskpri(int cpuid)
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].depth++) {
 #ifdef RTAI_TRIOSS
-		rtai_linux_context[cpuid].oldflags = xchg(&rtai_domain.cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+		rtai_linux_context[cpuid].oldflags = xchg(&DOMAIN_TO_STALL->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 		rtai_linux_context[cpuid].oldomain = hal_current_domain[cpuid];
 #else
 		rtai_linux_context[cpuid].oldflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
@@ -632,7 +633,7 @@ static inline void rt_switch_to_linux_notskpri(int cpuid)
 //			test_and_clear_bit(cpuid, &rtai_cpu_realtime);
 #ifdef RTAI_TRIOSS
 			hal_current_domain[cpuid] = (void *)rtai_linux_context[cpuid].oldomain;
-			rtai_domain.cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
+			DOMAIN_TO_STALL->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 #else
 			hal_current_domain[cpuid] = hal_root_domain;
 			hal_root_domain->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;

@@ -62,7 +62,8 @@
 
 #ifdef RTAI_TRIOSS
 
-#define FUSIONEXT  (0)
+extern int nkgkptd;
+#define FUSIONEXT  (nkgkptd)
 
 // provisional, to be replaced by appropriate headers declarations
 #define XNSUSP   (0x00000001)
@@ -150,6 +151,8 @@ do { \
 } while (0)
 
 #else /* !RTAI_TRIOSS */
+
+#define FUSIONEXT  (0)
 
 #define DECLARE_FUSION_WAKE_UP_STUFF
 

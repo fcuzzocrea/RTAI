@@ -55,20 +55,19 @@ number of OSes, working on the ADEOS stack, just with a trivial
 generalisation.
 
 In such a view a FUSION task has to do just what a Linux task does to use
-RTAI APIs, i.e.: call rtai_task_init_schmod and then use whatever API it 
-wants, be it for RTAI, FUSION or Linux. Notice that you must not make the 
-task hard real time, in FUSION it will be so automatically, again at a 
-priority just below that of RTAI. Clearly you must have hardened your 
-task for FUSION by using: ftask_shadow. In short you have to call both 
-ftask_shadow and rt_task_init_schmod, in that order and with the cpus mask
-in rt_task_init_schmod set to zero, but not rt_make_hard_real_time, FUSION 
-tasks are soft real time for RTAI, much as those of Linux. Doing so you will 
-be able to have FUSION hard real time while using both RTAI and FUSION. 
-What just said is for the case in which you want to interoperate with FUSION 
-native skin as you do with RTAI. With other skins, and by using the 
-combination rt_task_create/rt_task_start in the native skin as well, you are 
-just requested to create your tasks as the skin demand and call 
-rt_task_init_schmod within the task body. 
+RTAI APIs, i.e.: call ftask_init and then use whatever API it wants, be it 
+for RTAI, FUSION or Linux. Notice that you must not make the task hard real 
+time, in FUSION it will be so automatically, again at a priority just below 
+that of RTAI. Clearly you must have hardened your task for FUSION by using: 
+ftask_shadow. In short you have to call both ftask_shadow and ftask_init, 
+in that order, but not rt_make_hard_real_time, FUSION tasks are soft real 
+time for RTAI, much as those of Linux. Doing so you will be able to have 
+FUSION hard real time while using both RTAI and FUSION. What just said is 
+for the case in which you want to interoperate with FUSION native skin as 
+you do with RTAI. With other skins, and by using the combination 
+rt_task_create/rt_task_start in the native skin as well, you should be just 
+requested to create your tasks as the skin demands and call ftask_init 
+within the task body. That has to be tested yet.
 Functions ftask_make_hard/soft_real_time are nonetheless provided to allow
 your own control of the hard/soft status of the FUSION support.
 

@@ -1425,7 +1425,7 @@ static void recv_thread(void)
 	rtai_set_linux_task_priority(current,SCHED_RR,MAX_LINUX_RTPRIO);
 	sigfillset(&current->blocked);
 	while (!end_softrtnet) {
-		if ((nevents = kpoll(pollv, MaxSocks, -1)) > 0) {
+		if ((nevents = kpoll(pollv, MaxSocks, 1000)) > 0) {
 			i = -1;
 			do {
 				while (!pollv[++i].revents);
@@ -1502,8 +1502,8 @@ static void cleanup_softrtnet(void)
 	rt_free_srq(sysrq.srq);
 	end_softrtnet = 1;
 /* watch out: dirty trick, but we are sure the thread will do nothing more. */
-	sigemptyset(&recv_handle->blocked);
-	send_sig(SIGKILL, recv_handle, 1);
+//	sigemptyset(&recv_handle->blocked);
+//	send_sig(SIGKILL, recv_handle, 1);
 /* watch out: end of the dirty trick. */
 	softrtnet_hdl();
 	while (end_softrtnet < 7) {

@@ -135,8 +135,8 @@ static inline void ftimer_stop(void)
 /* <!> High bits must not conflict with XNFPU|XNSHADOW|XNSHIELD|XNSUSP. */
 #define T_CPU(cpu) (1 << (24 + (cpu & 7))) /* Up to 8 cpus [0-7] */
 
-#define T_LOPRIO  XNCORE_LOW_PRIO
-#define T_HIPRIO  XNCORE_HIGH_PRIO
+#define T_LOPRIO  1
+#define T_HIPRIO  99
 
 typedef struct ftask_placeholder 
 	{ unsigned long opaque, opaque2; } FTASK_PLACEHOLDER;
@@ -155,7 +155,7 @@ typedef FTASK_PLACEHOLDER FTASK;
 extern "C" {
 #endif
 
-#define FPRIO ((prio = T_HIPRIO - prio) < 1 ? 1 : prio)
+#define FPRIO ((prio = T_HIPRIO - prio) < T_LOPRIO ? 1 : prio)
 
 int rt_task_create(FTASK *task, const char *name, int stksize, int prio, int mode);
 static inline int ftask_create(FTASK *task, const char *name, int stksize, int prio, int mode)

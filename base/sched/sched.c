@@ -2137,7 +2137,6 @@ static int lxrt_intercept_exit (unsigned long event, struct task_struct *lnx_tas
 			give_back_to_linux(task, 0);
 		}
 		linux_process_termination();
-		return 1;
 	}
 	return 0;
 } }

@@ -45,6 +45,8 @@
 #define HAL_EXIT_PROCESS      ADEOS_EXIT_PROCESS
 #define HAL_KICK_PROCESS      ADEOS_KICK_PROCESS
 
+extern struct list_head __adeos_pipeline;
+
 #define hal_pipeline        __adeos_pipeline
 #define hal_domain_struct   adomain 
 #define hal_root_domain     adp_root 

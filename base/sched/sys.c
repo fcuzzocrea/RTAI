@@ -578,7 +578,7 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 			give_back_to_linux(task, -1);
 		}
 		task->usp_signal = 0;
-		if (1 || likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
+		if (0 && likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
 			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
 			regs->LINUX_SYSCALL_RETREG = -EINTR;
 			do_signal(regs, NULL);

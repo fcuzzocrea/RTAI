@@ -5238,11 +5238,13 @@ diff -uNrp linux-2.4.31/kernel/fork.c linux-2.4.31.bak/kernel/fork.c
 diff -uNrp linux-2.4.31/kernel/ksyms.c linux-2.4.31.bak/kernel/ksyms.c
 --- linux-2.4.31/kernel/ksyms.c	2004-02-18 14:36:32.000000000 +0100
 +++ linux-2.4.31.bak/kernel/ksyms.c	2005-10-17 12:29:49.000000000 +0200
-@@ -59,6 +59,38 @@
+@@ -59,6 +59,40 @@
  #include <linux/kmod.h>
  #endif
  
 +#ifdef CONFIG_ADEOS_CORE
++extern void context_switch(void *, void *);
++EXPORT_SYMBOL(context_switch);
 +EXPORT_SYMBOL(adeos_suspend_domain);
 +EXPORT_SYMBOL(adeos_alloc_irq);
 +EXPORT_SYMBOL(adp_cpu_current);
@@ -5407,7 +5409,21 @@ diff -uNrp linux-2.4.31/kernel/sched.c linux-2.4.31.bak/kernel/sched.c
  }
  
  /*
-@@ -551,6 +554,10 @@ asmlinkage void schedule(void)
+@@ -544,6 +547,13 @@ asmlinkage void schedule_tail(struct tas
+  * tasks can run. It can not be killed, and it cannot sleep. The 'state'
+  * information in task[0] is never used.
+  */
++
++struct task_struct *context_switch(struct task_struct *prev, struct task_struct *next)
++{
++	switch_to(prev, next, prev);
++	return prev;
++}
++
+ asmlinkage void schedule(void)
+ {
+ 	struct schedule_data * sched_data;
+@@ -551,6 +561,10 @@ asmlinkage void schedule(void)
  	struct list_head *tmp;
  	int this_cpu, c;
  
@@ -5418,7 +5434,7 @@ diff -uNrp linux-2.4.31/kernel/sched.c linux-2.4.31.bak/kernel/sched.c
  
  	spin_lock_prefetch(&runqueue_lock);
  
-@@ -668,7 +675,11 @@ repeat_schedule:
+@@ -668,7 +682,11 @@ repeat_schedule:
  	 * but prev is set to (the just run) 'last' process by switch_to().
  	 * This might sound slightly confusing but makes tons of sense.
  	 */
@@ -5430,10 +5446,12 @@ diff -uNrp linux-2.4.31/kernel/sched.c linux-2.4.31.bak/kernel/sched.c
  	{
  		struct mm_struct *mm = next->mm;
  		struct mm_struct *oldmm = prev->active_mm;
-@@ -693,6 +704,12 @@ repeat_schedule:
+@@ -692,7 +710,13 @@ repeat_schedule:
+ 	 * This just switches the register state and the
  	 * stack.
  	 */
- 	switch_to(prev, next, prev);
+-	switch_to(prev, next, prev);
++	prev = context_switch(prev, next);
 +#ifdef CONFIG_ADEOS_CORE
 +	if (__adeos_schedule_tail(prev) > 0)
 +	    /* Some event handler asked for a truncated
@@ -5443,7 +5461,7 @@ diff -uNrp linux-2.4.31/kernel/sched.c linux-2.4.31.bak/kernel/sched.c
  	__schedule_tail(prev);
  
  same_process:
-@@ -702,6 +719,20 @@ same_process:
+@@ -702,6 +726,20 @@ same_process:
  	return;
  }
  
@@ -5464,7 +5482,7 @@ diff -uNrp linux-2.4.31/kernel/sched.c linux-2.4.31.bak/kernel/sched.c
  /*
   * The core wakeup function.  Non-exclusive wakeups (nr_exclusive == 0) just wake everything
   * up.  If it's an exclusive wakeup (nr_exclusive == small +ve number) then we wake all the
-@@ -989,6 +1020,13 @@ static int setscheduler(pid_t pid, int p
+@@ -989,6 +1027,13 @@ static int setscheduler(pid_t pid, int p
  		goto out_unlock;
  
  	retval = 0;

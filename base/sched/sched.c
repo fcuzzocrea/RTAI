@@ -1865,6 +1865,9 @@ void steal_from_linux(RT_TASK *rt_task)
 	struct klist_t *klistp;
 	struct task_struct *lnxtsk;
 
+	if (signal_pending(rt_task->lnxtsk)) {
+		return;
+	}
 	klistp = &klistb[rt_task->runnable_on_cpus];
 	rtai_cli();
 	klistp->task[klistp->in++ & (MAX_WAKEUP_SRQ - 1)] = rt_task;

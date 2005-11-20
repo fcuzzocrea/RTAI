@@ -1,23 +1,24 @@
 /*
  * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
  *
- * RTAI/fusion is free software; you can redistribute it and/or modify it
+ * RAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI/fusion is distributed in the hope that it will be useful, but
+ * RAI is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI/fusion; if not, write to the Free Software Foundation,
+ * along with RAI; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
 #include <linux/module.h>
 #include <linux/ioport.h>
+#include <asm/io.h>
 
 #include <rtdm/rtserial.h>
 #include <rtdm/rtdm_driver.h>
@@ -28,9 +29,9 @@
 #define IN_BUFFER_SIZE      4096
 #define OUT_BUFFER_SIZE     4096
 
+#define DEFAULT_BAUD_BASE   115200
 #define DEFAULT_TX_FIFO     16
 
-#define BAUD_MASK           0xFFFF
 #define PARITY_MASK         0x03
 #define DATA_BITS_MASK      0x03
 #define STOP_BITS_MASK      0x01
@@ -83,7 +84,7 @@ struct rt_16550_context {
     rtdm_event_t            in_event;
     char                    in_buf[IN_BUFFER_SIZE];
     volatile unsigned long  in_lock;
-    u64                     *in_history;
+    uint64_t                *in_history;
 
     int                     out_head;
     int                     out_tail;
@@ -92,8 +93,7 @@ struct rt_16550_context {
     char                    out_buf[OUT_BUFFER_SIZE];
     rtdm_mutex_t            out_lock;
 
-    u64                     last_timestamp;
-    int                     ioc_event_mask;
+    uint64_t                last_timestamp;
     volatile int            ioc_events;
     rtdm_event_t            ioc_event;
     volatile unsigned long  ioc_event_lock;
@@ -107,7 +107,8 @@ struct rt_16550_context {
 static const struct rtser_config default_config = {
     0xFFFF, RTSER_DEF_BAUD, RTSER_DEF_PARITY, RTSER_DEF_BITS,
     RTSER_DEF_STOPB, RTSER_DEF_HAND, RTSER_DEF_FIFO_DEPTH, RTSER_DEF_TIMEOUT,
-    RTSER_DEF_TIMEOUT, RTSER_DEF_TIMEOUT, RTSER_DEF_TIMESTAMP_HISTORY
+    RTSER_DEF_TIMEOUT, RTSER_DEF_TIMEOUT, RTSER_DEF_TIMESTAMP_HISTORY,
+    RTSER_DEF_EVENT_MASK
 };
 
 static struct rtdm_device   *device[MAX_DEVICES];
@@ -116,16 +117,23 @@ static unsigned long        ioaddr[MAX_DEVICES];
 static int                  ioaddr_c;
 static unsigned int         irq[MAX_DEVICES];
 static int                  irq_c;
+static unsigned int         baud_base[MAX_DEVICES];
+static int                  baud_base_c;
 static int                  tx_fifo[MAX_DEVICES];
 static int                  tx_fifo_c;
 static unsigned int         start_index;
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 module_param_array(ioaddr, ulong, &ioaddr_c, 0400);
 MODULE_PARM_DESC(ioaddr, "I/O addresses of the serial devices");
 module_param_array(irq, uint, &irq_c, 0400);
 MODULE_PARM_DESC(irq, "IRQ numbers of the serial devices");
+module_param_array(baud_base, uint, &baud_base_c, 0400);
+MODULE_PARM_DESC(baud_base,
+    "Maximum baud rate of the serial device (internal clock rate / 16)");
 module_param_array(tx_fifo, int, &tx_fifo_c, 0400);
 MODULE_PARM_DESC(tx_fifo, "Transmitter FIFO size");
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 module_param(start_index, uint, 0400);
 MODULE_PARM_DESC(start_index, "First device instance number to be used");
 
@@ -134,7 +142,7 @@ MODULE_AUTHOR("jan.kiszka@web.de");
 
 
 static inline int rt_16550_rx_interrupt(struct rt_16550_context *ctx,
-                                        u64 *timestamp)
+                                        uint64_t *timestamp)
 {
     int dev_id = ctx->dev_id;
     int rbytes = 0;
@@ -218,18 +226,17 @@ static int rt_16550_interrupt(rtdm_irq_t *irq_context)
     struct rt_16550_context *ctx;
     int                     dev_id;
     int                     iir;
-    u64                     timestamp = rtdm_clock_read();
+    uint64_t                timestamp = rtdm_clock_read();
     int                     rbytes = 0;
     int                     events = 0;
     int                     modem;
     int                     ret = RTDM_IRQ_PROPAGATE;
-    rtdm_lockctx_t          lock_ctx;
 
 
     ctx = rtdm_irq_get_arg(irq_context, struct rt_16550_context);
     dev_id    = ctx->dev_id;
 
-    rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+    rtdm_lock_get(&ctx->lock);
 
     while (((iir = inb(IIR(dev_id))) & IIR_PIRQ) == 0) {
         if (testbits(iir, IIR_RX | IIR_TMO)) {
@@ -268,7 +275,7 @@ static int rt_16550_interrupt(rtdm_irq_t *irq_context)
         ctx->ier_status &= ~IER_STAT;
     }
 
-    if (testbits(events, ctx->ioc_event_mask)) {
+    if (testbits(events, ctx->config.event_mask)) {
         int old_events = ctx->ioc_events;
 
         ctx->last_timestamp = timestamp;
@@ -289,7 +296,7 @@ static int rt_16550_interrupt(rtdm_irq_t *irq_context)
     /* update interrupt mask */
     outb(ctx->ier_status, IER(dev_id));
 
-    rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+    rtdm_lock_put(&ctx->lock);
 
     return ret;
 }
@@ -297,20 +304,26 @@ static int rt_16550_interrupt(rtdm_irq_t *irq_context)
 
 static int rt_16550_set_config(struct rt_16550_context *ctx,
                                const struct rtser_config *config,
-                               u64 **in_history_ptr)
+                               uint64_t **in_history_ptr)
 {
-    int dev_id;
-    int ret = 0;
+    rtdm_lockctx_t  lock_ctx;
+    int             dev_id;
+    int             ret = 0;
+    int             baud_div = 0;
 
 
     dev_id = ctx->dev_id;
 
-    if (testbits(config->config_mask, RTSER_SET_BAUD)) {
-        ctx->config.baud_rate = config->baud_rate & BAUD_MASK;
+    /* make line configuration atomic and IRQ-safe */
+    rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
-        outb(LCR_DLAB,                           LCR(dev_id));
-        outb(ctx->config.baud_rate & 0xff, DLL(dev_id));
-        outb(ctx->config.baud_rate >> 8,   DLM(dev_id));
+    if (testbits(config->config_mask, RTSER_SET_BAUD)) {
+        ctx->config.baud_rate = config->baud_rate;
+        baud_div = (baud_base[dev_id] + (ctx->config.baud_rate >> 1)) /
+                   ctx->config.baud_rate;
+        outb(LCR_DLAB,        LCR(dev_id));
+        outb(baud_div & 0xff, DLL(dev_id));
+        outb(baud_div >> 8,   DLM(dev_id));
     }
 
     if (testbits(config->config_mask, RTSER_SET_PARITY))
@@ -321,9 +334,12 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
         ctx->config.stop_bits = config->stop_bits & STOP_BITS_MASK;
 
     if (testbits(config->config_mask, RTSER_SET_PARITY | RTSER_SET_DATA_BITS |
-                                      RTSER_SET_STOP_BITS | RTSER_SET_BAUD))
+                                      RTSER_SET_STOP_BITS | RTSER_SET_BAUD)) {
         outb((ctx->config.parity << 3) | (ctx->config.stop_bits << 2) |
              ctx->config.data_bits, LCR(dev_id));
+        ctx->status = 0;
+        ctx->ioc_events &= ~RTSER_EVENT_ERRPEND;
+    }
 
     if (testbits(config->config_mask, RTSER_SET_FIFO_DEPTH)) {
         ctx->config.fifo_depth = config->fifo_depth & FIFO_MASK;
@@ -331,6 +347,10 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
         outb(FCR_FIFO | ctx->config.fifo_depth, FCR(dev_id));
     }
 
+    rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+
+    /* Timeout manipulation is not atomic. The user is supposed to take care
+     * not to use and change timeouts at the same time. */
     if (testbits(config->config_mask, RTSER_SET_TIMEOUT_RX))
         ctx->config.rx_timeout = config->rx_timeout;
     if (testbits(config->config_mask, RTSER_SET_TIMEOUT_TX))
@@ -339,6 +359,9 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
         ctx->config.event_timeout = config->event_timeout;
 
     if (testbits(config->config_mask, RTSER_SET_TIMESTAMP_HISTORY)) {
+        /* change timestamp history atomically */
+        rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
         if (testbits(config->timestamp_history, RTSER_RX_TIMESTAMP_HISTORY)) {
             if (!ctx->in_history) {
                 ctx->in_history = *in_history_ptr;
@@ -350,9 +373,40 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
             *in_history_ptr = ctx->in_history;
             ctx->in_history = NULL;
         }
+
+        rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
+    }
+
+    if (testbits(config->config_mask, RTSER_SET_EVENT_MASK)) {
+        /* change event mask atomically */
+        rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
+        ctx->config.event_mask = config->event_mask & EVENT_MASK;
+        ctx->ioc_events = 0;
+
+        if (testbits(config->event_mask, RTSER_EVENT_RXPEND) &&
+            (ctx->in_npend > 0))
+            ctx->ioc_events |= RTSER_EVENT_RXPEND;
+
+        if (testbits(config->event_mask, RTSER_EVENT_ERRPEND) && ctx->status)
+            ctx->ioc_events |= RTSER_EVENT_ERRPEND;
+
+        if (testbits(config->event_mask,
+                     RTSER_EVENT_MODEMHI | RTSER_EVENT_MODEMLO))
+            /* enable modem status interrupt */
+            ctx->ier_status |= IER_TX;
+        else
+            /* disable modem status interrupt */
+            ctx->ier_status &= ~IER_TX;
+        outb(ctx->ier_status, IER(ctx->dev_id));
+
+        rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
     }
 
     if (testbits(config->config_mask, RTSER_SET_HANDSHAKE)) {
+        /* change handshake atomically */
+        rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+
         ctx->config.handshake = config->handshake;
         switch (ctx->config.handshake) {
             case RTSER_RTSCTS_HAND:
@@ -364,6 +418,8 @@ static int rt_16550_set_config(struct rt_16550_context *ctx,
                 break;
         }
         outb(ctx->mcr_status, MCR(dev_id));
+
+        rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
     }
 
     return ret;
@@ -376,7 +432,7 @@ int rt_16550_open(struct rtdm_dev_context *context,
     struct rt_16550_context *ctx;
     int                     dev_id = context->device->device_id;
     int                     ret;
-    __u64                   *dummy;
+    uint64_t                *dummy;
 
 
     ctx = (struct rt_16550_context *)context->dev_private;
@@ -406,7 +462,6 @@ int rt_16550_open(struct rtdm_dev_context *context,
     ctx->out_tail       = 0;
     ctx->out_npend      = 0;
 
-    ctx->ioc_event_mask = 0;
     ctx->ioc_events     = 0;
     ctx->ioc_event_lock = 0;
     ctx->status         = 0;
@@ -427,7 +482,7 @@ int rt_16550_close(struct rtdm_dev_context *context,
 {
     struct rt_16550_context *ctx;
     int                     dev_id;
-    u64                     *in_history;
+    uint64_t                *in_history;
     rtdm_lockctx_t          lock_ctx;
 
 
@@ -470,11 +525,12 @@ int rt_16550_close(struct rtdm_dev_context *context,
 }
 
 
-int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
-                      rtdm_user_info_t *user_info, int request, void *arg)
+int rt_16550_ioctl(struct rtdm_dev_context *context,
+                   rtdm_user_info_t *user_info, int request, void *arg)
 {
     struct rt_16550_context *ctx;
     int                     ret = 0;
+    int                     dev_id = context->device->device_id;
 
 
     ctx = (struct rt_16550_context *)context->dev_private;
@@ -495,8 +551,7 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
         case RTSER_RTIOC_SET_CONFIG: {
             struct rtser_config *config;
             struct rtser_config config_buf;
-            __u64               *hist_buf = NULL;
-            rtdm_lockctx_t      lock_ctx;
+            uint64_t            *hist_buf = NULL;
 
             config = (struct rtser_config *)arg;
 
@@ -511,23 +566,36 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
                 config = &config_buf;
             }
 
-            if (testbits(config->config_mask, RTSER_SET_TIMESTAMP_HISTORY) &&
-                testbits(config->timestamp_history,
-                         RTSER_RX_TIMESTAMP_HISTORY)) {
-                if (test_bit(RTDM_CREATED_IN_NRT, &context->context_flags)) {
-                    if (rtdm_in_rt_context())
-                        return -EPERM;
-
-                    hist_buf = kmalloc(IN_BUFFER_SIZE * sizeof(__u64),
-                                       GFP_KERNEL);
-                } else
-                    hist_buf =
-                        rtdm_malloc(IN_BUFFER_SIZE * sizeof(__u64));
+            if (testbits(config->config_mask, RTSER_SET_BAUD) &&
+                (config->baud_rate > baud_base[dev_id])) {
+                /* the baudrate is to high for this port */
+                return -EINVAL;
             }
 
-            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
+            if (testbits(config->config_mask, RTSER_SET_TIMESTAMP_HISTORY)) {
+                if (test_bit(RTDM_CREATED_IN_NRT, &context->context_flags) &&
+                    rtdm_in_rt_context()) {
+                    /* already fail if we MAY allocate or release a non-RT
+                     * buffer in RT context */
+                    return -EPERM;
+                }
+
+                if (testbits(config->timestamp_history,
+                             RTSER_RX_TIMESTAMP_HISTORY)) {
+                    if (test_bit(RTDM_CREATED_IN_NRT,
+                                 &context->context_flags))
+                        hist_buf = kmalloc(IN_BUFFER_SIZE * sizeof(uint64_t),
+                                           GFP_KERNEL);
+                    else
+                        hist_buf =
+                            rtdm_malloc(IN_BUFFER_SIZE * sizeof(uint64_t));
+                }
+
+                if (!hist_buf)
+                    return -ENOMEM;
+            }
+
             rt_16550_set_config(ctx, config, &hist_buf);
-            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
             if (hist_buf) {
                 if (test_bit(RTDM_CREATED_IN_NRT, &context->context_flags))
@@ -591,39 +659,13 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
             break;
         }
 
-        case RTSER_RTIOC_SET_EVENT_MASK: {
-            int             new_mask;
-            rtdm_lockctx_t  lock_ctx;
-
-            new_mask = (int)arg;
-
-            rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
-
-            ctx->ioc_event_mask = new_mask & EVENT_MASK;
-            ctx->ioc_events     = 0;
-
-            if (testbits(new_mask, RTSER_EVENT_RXPEND) && (ctx->in_npend > 0))
-                ctx->ioc_events |= RTSER_EVENT_RXPEND;
-
-            if (testbits(new_mask, RTSER_EVENT_ERRPEND) && ctx->status)
-                ctx->ioc_events |= RTSER_EVENT_ERRPEND;
-
-            if (testbits(new_mask, RTSER_EVENT_MODEMHI | RTSER_EVENT_MODEMLO))
-                /* enable modem status interrupt */
-                ctx->ier_status |= IER_TX;
-            else
-                /* disable modem status interrupt */
-                ctx->ier_status &= ~IER_TX;
-            outb(ctx->ier_status, IER(ctx->dev_id));
-
-            rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
-            break;
-        }
-
         case RTSER_RTIOC_WAIT_EVENT: {
             struct rtser_event  ev = { rxpend_timestamp: 0 };
             rtdm_lockctx_t      lock_ctx;
             rtdm_toseq_t        timeout_seq;
+
+            if (!rtdm_in_rt_context())
+                return -ENOSYS;
 
             /* only one waiter allowed, stop any further attempts here */
             if (test_and_set_bit(0, &ctx->ioc_event_lock))
@@ -635,7 +677,7 @@ int rt_16550_ioctl_rt(struct rtdm_dev_context *context,
 
             while (!ctx->ioc_events) {
                 /* enable error interrupt only when the user waits for it */
-                if (testbits(ctx->ioc_event_mask, RTSER_EVENT_ERRPEND)) {
+                if (testbits(ctx->config.event_mask, RTSER_EVENT_ERRPEND)) {
                     ctx->ier_status |= IER_STAT;
                     outb(ctx->ier_status, IER(ctx->dev_id));
                 }
@@ -724,7 +766,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
     if (test_and_set_bit(0, &ctx->in_lock))
         return -EBUSY;
 
-    while (read < nbyte) {
+    while (nbyte > 0) {
         rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
         /* switch on error interrupt - the user is ready to listen */
@@ -782,6 +824,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
 
             read    += subblock;
             out_pos += subblock;
+            nbyte   -= block;
 
             rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
@@ -800,7 +843,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
             break;
         }
 
-        ctx->in_nwait = nbyte - read;
+        ctx->in_nwait = nbyte;
 
         rtdm_lock_put_irqrestore(&ctx->lock, lock_ctx);
 
@@ -866,7 +909,7 @@ int rt_16550_write(struct rtdm_dev_context *context,
     if (ret)
         return ret;
 
-    while (written < nbyte) {
+    while (nbyte > 0) {
         rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
         free = OUT_BUFFER_SIZE - ctx->out_npend;
@@ -909,6 +952,7 @@ int rt_16550_write(struct rtdm_dev_context *context,
 
             written += subblock;
             in_pos  += subblock;
+            nbyte   -= block;
 
             rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
 
@@ -964,8 +1008,8 @@ static const struct rtdm_device __initdata device_tmpl = {
         close_rt:       rt_16550_close,
         close_nrt:      rt_16550_close,
 
-        ioctl_rt:       rt_16550_ioctl_rt,
-        ioctl_nrt:      rt_16550_ioctl_rt,
+        ioctl_rt:       rt_16550_ioctl,
+        ioctl_nrt:      rt_16550_ioctl,
 
         read_rt:        rt_16550_read,
         read_nrt:       NULL,
@@ -983,10 +1027,12 @@ static const struct rtdm_device __initdata device_tmpl = {
     device_class:       RTDM_CLASS_SERIAL,
     device_sub_class:   RTDM_SUBCLASS_16550A,
     driver_name:        "rt_16550A",
-    driver_version:     RTDM_DRIVER_VER(1, 0, 0),
+    driver_version:     RTDM_DRIVER_VER(1, 2, 0),
     peripheral_name:    "UART 16550A",
     provider_name:      "Jan Kiszka",
 };
+
+void cleanup_module(void);
 
 int __init init_module(void)
 {
@@ -1014,6 +1060,9 @@ int __init init_module(void)
         ret = -EBUSY;
         if (!request_region(ioaddr[i], 8, dev->device_name))
             goto kfree_out;
+
+        if (baud_base[i] == 0)
+            baud_base[i] = DEFAULT_BAUD_BASE;
 
         if (tx_fifo[i] == 0)
             tx_fifo[i] = DEFAULT_TX_FIFO;

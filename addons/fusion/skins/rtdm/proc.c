@@ -2,18 +2,18 @@
  * Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>.
  * Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>.
  *
- * RTAI/fusion is free software; you can redistribute it and/or modify it
+ * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI/fusion is distributed in the hope that it will be useful, but
+ * RTAI is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI/fusion; if not, write to the Free Software Foundation,
+ * along with RTAI; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -120,7 +120,6 @@ static int proc_read_open_fildes(char* buf, char** start, off_t offset,
                                  int count, int* eof, void* data)
 {
     int                     i;
-    struct rtdm_fildes      fildes;
     int                     close_lock_count;
     struct rtdm_device      *device;
     spl_t                   s;
@@ -136,15 +135,14 @@ static int proc_read_open_fildes(char* buf, char** start, off_t offset,
     for (i = 0; i < fd_count; i++) {
         xnlock_get_irqsave(&rt_fildes_lock, s);
 
-        memcpy(&fildes, &fildes_table[i], sizeof(fildes));
-
-        if (!fildes.context) {
+        if (!fildes_table[i].context) {
             xnlock_put_irqrestore(&rt_fildes_lock, s);
             continue;
         }
 
-        close_lock_count = atomic_read(&fildes.context->close_lock_count);
-        device           = (struct rtdm_device *)fildes.context->device;
+        close_lock_count =
+            atomic_read(&fildes_table[i].context->close_lock_count);
+        device = (struct rtdm_device *)fildes_table[i].context->device;
 
         xnlock_put_irqrestore(&rt_fildes_lock, s);
 
@@ -222,7 +220,7 @@ static int proc_read_dev_info(char* buf, char** start, off_t offset,
                          device->driver_name,
                          RTDM_DRIVER_MAJOR_VER(device->driver_version),
                          RTDM_DRIVER_MINOR_VER(device->driver_version),
-                         RTDM_DRIVER_BUGFIX_VER(device->driver_version)))
+                         RTDM_DRIVER_PATCH_VER(device->driver_version)))
         goto done;
     if (!RTDM_PROC_PRINT("peripheral:\t%s\nprovider:\t%s\n",
                          device->peripheral_name, device->provider_name))

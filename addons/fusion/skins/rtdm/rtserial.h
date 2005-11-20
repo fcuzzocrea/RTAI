@@ -4,18 +4,18 @@
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  *
- * RTAI/fusion is free software; you can redistribute it and/or modify it
+ * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI/fusion is distributed in the hope that it will be useful, but
+ * RTAI is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI/fusion; if not, write to the Free Software Foundation,
+ * along with RTAI; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * @ingroup rtserial
@@ -77,43 +77,18 @@
 #ifndef _RTSERIAL_H
 #define _RTSERIAL_H
 
-#include <asm/types.h>
 #include <rtdm/rtdm.h>
 
 /*!
- * @anchor RTSER_xxx_BAUD   @name RTSER_xxx_BAUD
- * Baud rates
+ * @anchor RTSER_DEF_BAUD   @name RTSER_DEF_BAUD
+ * Default baud rate
  * @{ */
-#define RTSER_50_BAUD               2304
-#define RTSER_75_BAUD               1536
-#define RTSER_110_BAUD              1047
-#define RTSER_134_5_BAUD            857
-#define RTSER_150_BAUD              768
-#define RTSER_300_BAUD              384
-#define RTSER_600_BAUD              192
-#define RTSER_1200_BAUD             96
-#define RTSER_2400_BAUD             48
-#define RTSER_3600_BAUD             32
-#define RTSER_4800_BAUD             24
-#define RTSER_7200_BAUD             16
-#define RTSER_9600_BAUD             12
-#define RTSER_19200_BAUD            6
-#define RTSER_38400_BAUD            3
-#define RTSER_57600_BAUD            2
-#define RTSER_115200_BAUD           1
-#define RTSER_DEF_BAUD              RTSER_9600_BAUD
-
-/** Generate customised baud rate code
- * @param base UART clock base
- * @param rate baud rate
- */
-#define RTSER_CUSTOM_BAUD(base, rate) \
-    ((base + (rate >> 1)) / rate)
+#define RTSER_DEF_BAUD              9600
 /** @} */
 
 /*!
  * @anchor RTSER_xxx_PARITY   @name RTSER_xxx_PARITY
- * Number of parity bits @anchor RTSER_xxx_PARITY
+ * Number of parity bits
  * @{ */
 #define RTSER_NO_PARITY             0x00
 #define RTSER_ODD_PARITY            0x01
@@ -180,6 +155,17 @@
 #define RTSER_DEF_TIMESTAMP_HISTORY 0x00
 /** @} */
 
+/*!
+ * @anchor RTSER_EVENT_xxx   @name RTSER_EVENT_xxx
+ * Events bits
+ * @{ */
+#define RTSER_EVENT_RXPEND          0x01
+#define RTSER_EVENT_ERRPEND         0x02
+#define RTSER_EVENT_MODEMHI         0x04
+#define RTSER_EVENT_MODEMLO         0x08
+#define RTSER_DEF_EVENT_MASK        0x00
+/** @} */
+
 
 /*!
  * @anchor RTSER_SET_xxx   @name RTSER_SET_xxx
@@ -195,6 +181,7 @@
 #define RTSER_SET_TIMEOUT_TX        0x0200
 #define RTSER_SET_TIMEOUT_EVENT     0x0400
 #define RTSER_SET_TIMESTAMP_HISTORY 0x0800
+#define RTSER_SET_EVENT_MASK        0x1000
 /** @} */
 
 
@@ -241,24 +228,13 @@
 /** @} */
 
 
-/*!
- * @anchor RTSER_EVENT_xxx   @name RTSER_EVENT_xxx
- * Events bits
- * @{ */
-#define RTSER_EVENT_RXPEND          0x01
-#define RTSER_EVENT_ERRPEND         0x02
-#define RTSER_EVENT_MODEMHI         0x04
-#define RTSER_EVENT_MODEMLO         0x08
-/** @} */
-
-
 /**
  * Serial device configuration
  */
 typedef struct rtser_config {
     int     config_mask;        /**< mask specifying valid fields,
                                  *   see @ref RTSER_SET_xxx */
-    int     baud_rate;          /**< baud rate, see @ref RTSER_xxx_BAUD */
+    int     baud_rate;          /**< baud rate, default @ref RTSER_DEF_BAUD */
     int     parity;             /**< number of parity bits, see
                                  *   @ref RTSER_xxx_PARITY */
     int     data_bits;          /**< number of data bits, see
@@ -269,17 +245,20 @@ typedef struct rtser_config {
                                  *   @ref RTSER_xxx_HAND */
     int     fifo_depth;         /**< reception FIFO interrupt threshold, see
                                  *   @ref RTSER_FIFO_xxx */
-    __s64   rx_timeout;         /**< reception timeout in ns, see
+    int64_t rx_timeout;         /**< reception timeout in ns, see
                                  *   @ref RTSER_TIMEOUT_xxx for special
                                  *   values */
-    __s64   tx_timeout;         /**< transmission timeout in ns, see
+    int64_t tx_timeout;         /**< transmission timeout in ns, see
                                  *   @ref RTSER_TIMEOUT_xxx for special
                                  *   values */
-    __s64   event_timeout;      /**< event timeout in ns, see
+    int64_t event_timeout;      /**< event timeout in ns, see
                                  *   @ref RTSER_TIMEOUT_xxx for special
                                  *   values */
     int     timestamp_history;  /**< enable timestamp history, see
                                  *   @ref RTSER_xxx_TIMESTAMP_HISTORY */
+    int     event_mask;         /**< event mask to be used with
+                                 *   @ref RTSER_RTIOC_WAIT_EVENT, see
+                                 *   @ref RTSER_EVENT_xxx */
 } rtser_config_t;
 
 /**
@@ -299,9 +278,9 @@ typedef struct rtser_event {
     int     events;             /**< signalled events, see
                                  *   @ref RTSER_EVENT_xxx */
     int     rx_pending;         /**< number of pending input characters */
-    __u64   last_timestamp;     /**< last interrupt timestamp (absolute time
+    uint64_t last_timestamp;    /**< last interrupt timestamp (absolute time
                                  *   in ns) */
-    __u64   rxpend_timestamp;   /**< reception timestamp (absolute time in ns)
+    uint64_t rxpend_timestamp;  /**< reception timestamp (absolute time in ns)
                                  *   of oldest character in input queue */
 } rtser_event_t;
 
@@ -433,26 +412,6 @@ typedef struct rtser_event {
     _IOW(RTIOC_TYPE_SERIAL, 0x04, int)
 
 /**
- * Set mask of serial device events
- *
- * @param[in] arg New event mask (int, see @ref RTSER_EVENT_xxx)
- *
- * @return 0 on success, otherwise negative error code
- *
- * Environments:
- *
- * This service can be called from:
- *
- * - Kernel module initialization/cleanup code
- * - Kernel-based task
- * - User-space task (RT, non-RT)
- *
- * Rescheduling: never.
- */
-#define RTSER_RTIOC_SET_EVENT_MASK  \
-    _IOW(RTIOC_TYPE_SERIAL, 0x05, int)
-
-/**
  * Wait on serial device events according to previously set mask
  *
  * @param[out] arg Pointer to event information buffer (struct rtser_event)
@@ -475,7 +434,7 @@ typedef struct rtser_event {
  * Rescheduling: possible.
  */
 #define RTSER_RTIOC_WAIT_EVENT      \
-    _IOR(RTIOC_TYPE_SERIAL, 0x06, struct rtser_event)
+    _IOR(RTIOC_TYPE_SERIAL, 0x05, struct rtser_event)
 /** @} */
 
 /** @} */

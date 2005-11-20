@@ -5,18 +5,18 @@
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
- * RTAI/fusion is free software; you can redistribute it and/or modify it
+ * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI/fusion is distributed in the hope that it will be useful, but
+ * RTAI is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI/fusion; if not, write to the Free Software Foundation,
+ * along with RTAI; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -30,7 +30,6 @@
 
 #include <rtdm/device.h>
 #include <rtdm/proc.h>
-#include <rtdm/syscall.h>
 
 
 #define SET_DEFAULT_OP(device, operation)                               \
@@ -66,6 +65,12 @@ DECLARE_MUTEX(nrt_dev_lock);
 #ifdef CONFIG_SMP
 xnlock_t             rt_dev_lock = XNARCH_LOCK_UNLOCKED;
 #endif /* CONFIG_SMP */
+
+
+int rtdm_no_support(void)
+{
+    return -ENOSYS;
+}
 
 
 static inline int get_name_hash(const char *str, int limit, int hashkey_mask)
@@ -109,7 +114,7 @@ struct rtdm_device *get_named_device(const char *name)
     list_for_each(entry, &rtdm_named_devices[hashkey]) {
         device = list_entry(entry, struct rtdm_device, reserved.entry);
 
-        if (strcmp(device->device_name, device->device_name) == 0) {
+        if (strcmp(name, device->device_name) == 0) {
             rtdm_reference_device(device);
 
             xnlock_put_irqrestore(&rt_dev_lock, s);
@@ -250,7 +255,7 @@ int rtdm_dev_register(struct rtdm_device* device)
                     GFP_KERNEL);
         if (!device->reserved.exclusive_context) {
             xnlogerr("RTDM: no memory for exclusive context (context size: "
-                     "%d)\n", device->context_size);
+                     "%ld)\n", (long) device->context_size);
             return -ENOMEM;
         }
         /* mark exclusive context as unused */

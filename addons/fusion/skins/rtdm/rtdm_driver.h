@@ -4,19 +4,20 @@
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
+ * @note Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
- * RTAI/fusion is free software; you can redistribute it and/or modify it
+ * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI/fusion is distributed in the hope that it will be useful, but
+ * RTAI is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI/fusion; if not, write to the Free Software Foundation,
+ * along with RTAI; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
  * @ingroup driverapi
@@ -33,15 +34,13 @@
 #include <asm/atomic.h>
 #include <linux/list.h>
 
-#include <nucleus/fusion.h>
-#include <nucleus/heap.h>
-#include <nucleus/pod.h>
-#include <nucleus/synch.h>
+#include <rtai_schedcore.h>
+#include <rtai_sched.h>
+#include "xn.h"
 #include <rtdm/rtdm.h>
 
 
 struct rtdm_dev_context;
-
 
 /*!
  * @ingroup devregister
@@ -109,8 +108,8 @@ struct rtdm_dev_context;
 #define RTDM_SECURE_DEVICE          0x80000000
 
 /** Version code constructor for driver revisions */
-#define RTDM_DRIVER_VER(major, minor, bugfix) \
-    (((major & 0xFF) << 16) | ((minor & 0xFF) << 8) | (bugfix & 0xFF))
+#define RTDM_DRIVER_VER(major, minor, patch) \
+    (((major & 0xFF) << 16) | ((minor & 0xFF) << 8) | (patch & 0xFF))
 
 /** Get major version number from driver revision code */
 #define RTDM_DRIVER_MAJOR_VER(ver)  (((ver) >> 16) & 0xFF)
@@ -118,8 +117,8 @@ struct rtdm_dev_context;
 /** Get minor version number from driver revision code */
 #define RTDM_DRIVER_MINOR_VER(ver)  (((ver) >> 8) & 0xFF)
 
-/** Get bug fix version number from driver revision code */
-#define RTDM_DRIVER_BUGFIX_VER(ver) ((ver) & 0xFF)
+/** Get patch version number from driver revision code */
+#define RTDM_DRIVER_PATCH_VER(ver) ((ver) & 0xFF)
 /** @} */
 
 
@@ -380,7 +379,7 @@ struct rtdm_device {
     /** Size of driver defined appendix to struct rtdm_dev_context */
     size_t                          context_size;
 
-    /** Named device identification */
+    /** Named device identification (orthogonal to Linux device name space) */
     char                            device_name[RTDM_MAX_DEVNAME_LEN+1];
 
     /** Protocol device identification: protocol family (PF_xxx) */
@@ -410,19 +409,19 @@ struct rtdm_device {
     /** Device sub-class, see RTDM_SUBCLASS_xxx definition in the
      *  @ref profiles "Device Profiles" */
     int                             device_sub_class;
-    /** Informational driver name (reported via /proc e.g.) */
+    /** Informational driver name (reported via /proc) */
     const char                      *driver_name;
     /** Driver version, see @ref versioning "Versioning" defines */
     int                             driver_version;
     /** Informational peripheral name the device is attached to
-     *  (reported via /proc e.g.) */
+     *  (reported via /proc) */
     const char                      *peripheral_name;
-    /** Informational driver provider name (reported via /proc e.g.) */
+    /** Informational driver provider name (reported via /proc) */
     const char                      *provider_name;
 
     /** Name of /proc entry for the device, must not be NULL */
     const char                      *proc_name;
-    /** Set to device's /proc root entry after registration, no not modify */
+    /** Set to device's /proc root entry after registration, do not modify */
     struct proc_dir_entry           *proc_entry;
 
     /** Driver definable device ID */
@@ -476,9 +475,9 @@ static inline void rtdm_context_unlock(struct rtdm_dev_context *context)
 
 
 /* --- clock services --- */
-static inline __u64 rtdm_clock_read(void)
+static inline uint64_t rtdm_clock_read(void)
 {
-    return xnpod_ticks2ns(xnpod_get_time());
+    return count2nano(rt_get_time());
 }
 
 
@@ -499,7 +498,7 @@ static inline __u64 rtdm_clock_read(void)
  * Generally, it is illegal to suspend the current task by calling
  * rtdm_task_sleep(), rtdm_event_wait(), etc. while holding a spinlock. In
  * contrast, this macro allows to combine several operations including
- * potentially rescheduling calls to an atomic code block with respect to
+ * a potentially rescheduling call to an atomic code block with respect to
  * other RTDM_EXECUTE_ATOMICALLY() blocks. The macro is a light-weight
  * alternative for protecting code blocks via mutexes, and it can even be used
  * to synchronise real-time and non-real-time contexts.
@@ -510,7 +509,9 @@ static inline __u64 rtdm_clock_read(void)
  * @c break, @c return, @c goto, etc. This would leave the global lock held
  * during the code block execution in an inconsistent state. Moreover, do not
  * embed complex operations into the code bock. Consider that they will be
- * executed under preemption lock with interrupts switched-off.
+ * executed under preemption lock with interrupts switched-off. Also note that
+ * invocation of rescheduling calls may break the atomicity until the task
+ * gains the CPU again.
  *
  * Environments:
  *
@@ -582,7 +583,7 @@ typedef unsigned long               rtdm_lockctx_t;
  *
  * Rescheduling: never.
  */
-#define rtdm_lock_get(lock)         rthal_spin_lock(lock)
+#define rtdm_lock_get(lock)         rt_spin_lock(lock)
 
 /**
  * Release lock without preemption restoration
@@ -600,7 +601,7 @@ typedef unsigned long               rtdm_lockctx_t;
  *
  * Rescheduling: never.
  */
-#define rtdm_lock_put(lock)         rthal_spin_unlock(lock)
+#define rtdm_lock_put(lock)         rt_spin_unlock(lock)
 
 /**
  * Acquire lock and disable preemption
@@ -620,7 +621,7 @@ typedef unsigned long               rtdm_lockctx_t;
  * Rescheduling: never.
  */
 #define rtdm_lock_get_irqsave(lock, context)    \
-    rthal_spin_lock_irqsave(lock, context)
+    do { context = rt_spin_lock_irqsave(lock); } while (0)
 
 /**
  * Release lock and restore preemption state
@@ -640,7 +641,7 @@ typedef unsigned long               rtdm_lockctx_t;
  * Rescheduling: possible.
  */
 #define rtdm_lock_put_irqrestore(lock, context) \
-    rthal_spin_unlock_irqrestore(lock, context)
+    rt_spin_unlock_irqrestore(context, lock)
 
 /**
  * Disable preemption locally
@@ -659,7 +660,7 @@ typedef unsigned long               rtdm_lockctx_t;
  * Rescheduling: never.
  */
 #define rtdm_lock_irqsave(context)              \
-    rthal_local_irq_save(context)
+    rtai_save_flags_and_cli(context)
 
 /**
  * Restore preemption state
@@ -678,7 +679,7 @@ typedef unsigned long               rtdm_lockctx_t;
  * Rescheduling: possible.
  */
 #define rtdm_lock_irqrestore(context)           \
-    rthal_local_irq_restore(context)
+    rtai_restore_flags(context)
 /** @} */
 
 /** @} */
@@ -785,24 +786,24 @@ typedef void (*rtdm_nrtsig_handler_t)(rtdm_nrtsig_t nrt_sig);
 static inline int rtdm_nrtsig_init(rtdm_nrtsig_t *nrt_sig,
                                    rtdm_nrtsig_handler_t handler)
 {
-    *nrt_sig = rthal_alloc_virq();
+    *nrt_sig = hal_alloc_irq();
 
     if (*nrt_sig == 0)
         return -EAGAIN;
 
-    rthal_virtualize_irq(rthal_root_domain, *nrt_sig, handler, NULL,
-                         IPIPE_HANDLE_MASK);
+    hal_virtualize_irq(hal_root_domain, *nrt_sig, handler, NULL,
+                       IPIPE_HANDLE_MASK);
     return 0;
 }
 
 static inline void rtdm_nrtsig_destroy(rtdm_nrtsig_t *nrt_sig)
 {
-    rthal_free_virq(*nrt_sig);
+    hal_free_irq(*nrt_sig);
 }
 
 static inline void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig)
 {
-    rthal_trigger_irq(*nrt_sig);
+    hal_pend_uncond(*nrt_sig, rtai_cpuid());
 }
 
 
@@ -812,7 +813,7 @@ static inline void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig)
  * @{
  */
 
-typedef xnthread_t                  rtdm_task_t;
+typedef struct rt_task_struct       rtdm_task_t;
 
 /**
  * Real-time task procedure
@@ -826,84 +827,72 @@ typedef void (*rtdm_task_proc_t)(void *arg);
  * @anchor taskprio @name Task Priority Range
  * Maximum and minimum task priorities
  * @{ */
-#define RTDM_TASK_LOWEST_PRIORITY   FUSION_LOW_PRIO
-#define RTDM_TASK_HIGHEST_PRIORITY  FUSION_HIGH_PRIO
+#define RTDM_TASK_LOWEST_PRIORITY   999999999
+#define RTDM_TASK_HIGHEST_PRIORITY  0
+/** @} */
+
+/*!
+ * @anchor changetaskprio @name Task Priority Modification
+ * Raise or lower task priorities by one level
+ * @{ */
+#define RTDM_TASK_RAISE_PRIORITY    (-1)
+#define RTDM_TASK_LOWER_PRIORITY    (+1)
 /** @} */
 
 /** @} */
 
-static inline int rtdm_task_init(rtdm_task_t *task, const char *name,
-                                 rtdm_task_proc_t task_proc, void *arg,
-                                 int priority, __u64 period)
-{
-    int res;
-
-    res = xnpod_init_thread(task, name, priority, 0, 0);
-    if (res)
-        goto done;
-
-    if (!__builtin_constant_p(period) || (period != XN_INFINITE)) {
-        res = xnpod_set_thread_periodic(task, XN_INFINITE,
-                                        xnpod_ns2ticks(period));
-        if (res)
-            goto done;
-    }
-
-    res = xnpod_start_thread(task, 0, 0, XNPOD_ALL_CPUS, task_proc, arg);
-
-  done:
-    return res;
-}
+int rtdm_task_init(rtdm_task_t *task, const char *name,
+                   rtdm_task_proc_t task_proc, void *arg,
+                   int priority, uint64_t period);
 
 static inline void rtdm_task_destroy(rtdm_task_t *task)
 {
-    xnpod_delete_thread(task);
+    rt_task_delete(task);
 }
 
 void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay);
 
 static inline void rtdm_task_set_priority(rtdm_task_t *task, int priority)
 {
-    xnpod_renice_thread(task, priority);
-    xnpod_schedule();
+    rt_change_prio(task, priority);
 }
 
-static inline int rtdm_task_set_period(rtdm_task_t *task, __u64 period)
+static inline int rtdm_task_set_period(rtdm_task_t *task, uint64_t period)
 {
-    return xnpod_set_thread_periodic(task, XN_INFINITE,
-                                     xnpod_ns2ticks(period));
+    return rt_task_make_periodic_relative_ns(task, period > 0 ? 0 : RT_TIME_END, period > 0 ? period : 0);
+
 }
 
 static inline int rtdm_task_unblock(rtdm_task_t *task)
 {
-    int res = xnpod_unblock_thread(task);
-
-    xnpod_schedule();
-    return res;
+    if (!_rt_whoami()->period) {
+	return -EINVAL;
+    }
+    return rt_task_masked_unblock(task, ~RT_SCHED_READY);
 }
 
 static inline rtdm_task_t *rtdm_task_current(void)
 {
-    return xnpod_current_thread();
+    return _rt_whoami();
 }
 
 static inline int rtdm_task_wait_period(void)
 {
-    return xnpod_wait_thread_period();
+    return !rt_task_wait_period() ? 0 : -ETIMEDOUT ;
 }
 
-int rtdm_task_sleep(__u64 delay);
-int rtdm_task_sleep_until(__u64 wakeup_time);
-void rtdm_task_busy_sleep(__u64 delay);
+int rtdm_task_sleep(uint64_t delay);
+int rtdm_task_sleep_until(uint64_t wakeup_time);
+void rtdm_task_busy_sleep(uint64_t delay);
 
 
 /* --- timeout sequences */
 
-typedef __u64                       rtdm_toseq_t;
+typedef uint64_t                    rtdm_toseq_t;
 
-static inline void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, __s64 timeout)
+static inline void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, int64_t timeout)
 {
-    *timeout_seq = xnpod_get_time() + xnpod_ns2ticks(timeout);
+    *timeout_seq = rt_get_time() + nano2count(timeout);
 }
 
 
@@ -911,30 +900,28 @@ static inline void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, __s64 timeout)
 
 typedef struct {
     unsigned long                   pending;
-    xnsynch_t                       synch_base;
+    struct rt_semaphore             synch_base;
 } rtdm_event_t;
 
 static inline void rtdm_event_init(rtdm_event_t *event, unsigned long pending)
 {
     event->pending = pending;
-    xnsynch_init(&event->synch_base, XNSYNCH_PRIO);
+    rt_typed_sem_init(&event->synch_base, 0, BIN_SEM | PRIO_Q);
 }
-
-void _rtdm_synch_flush(xnsynch_t *synch, unsigned long reason);
 
 static inline void rtdm_event_destroy(rtdm_event_t *event)
 {
-    _rtdm_synch_flush(&event->synch_base, XNRMID);
+    rt_sem_delete(&event->synch_base);
 }
 
 int rtdm_event_wait(rtdm_event_t *event);
-int rtdm_event_timedwait(rtdm_event_t *event, __s64 timeout,
+int rtdm_event_timedwait(rtdm_event_t *event, int64_t timeout,
                          rtdm_toseq_t *timeout_seq);
 void rtdm_event_signal(rtdm_event_t *event);
 
 static inline void rtdm_event_pulse(rtdm_event_t *event)
 {
-    _rtdm_synch_flush(&event->synch_base, 0);
+    rt_sem_broadcast(&event->synch_base);
 }
 
 static inline void rtdm_event_clear(rtdm_event_t *event)
@@ -943,50 +930,87 @@ static inline void rtdm_event_clear(rtdm_event_t *event)
 }
 
 
+/* --- common to sem and mtx --- */
+
+static inline int _sem_wait(void *sem)
+{
+	if (rt_sem_wait(sem) < SEM_TIMOUT) {
+		return 0;
+	} else {
+		return _rt_whoami()->unblocked ? -EINTR : EIDRM;
+	}
+}
+
+static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *timeout_seq)
+{
+	int ret;
+
+	if (unlikely(timeout < 0)) {
+		return -EWOULDBLOCK;
+	}
+	/* timeout sequence */
+	if (timeout_seq && timeout > 0) {
+		timeout = *timeout_seq - rt_get_time();
+		if (unlikely(timeout <= 0)) {
+			return -ETIMEDOUT;
+		}
+		ret = rt_sem_wait_timed(sem, timeout);
+	} else {
+		/* infinite or relative timeout */
+		ret = !timeout ? rt_sem_wait(sem) : rt_sem_wait_timed(sem, nano2count(timeout)); 
+	}
+	if (ret < SEM_TIMOUT) {
+		return 0;
+	} else if (ret == SEM_TIMOUT) {
+		return -ETIMEDOUT;
+	} else {
+       	    return _rt_whoami()->unblocked ? -EINTR : EIDRM;
+	}
+
+	return 0;
+}
+
+static inline void _sem_signal(void *sem)
+{
+	rt_sem_signal(sem);
+}
+
 /* --- semaphore services --- */
 
-typedef struct {
-    unsigned long                   value;
-    xnsynch_t                       synch_base;
-} rtdm_sem_t;
+typedef struct rt_semaphore  rtdm_sem_t;
 
 static inline void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value)
 {
-    sem->value = value;
-    xnsynch_init(&sem->synch_base, XNSYNCH_PRIO);
+    rt_typed_sem_init(sem, 0, BIN_SEM | PRIO_Q);
 }
 
 static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
 {
-    _rtdm_synch_flush(&sem->synch_base, XNRMID);
+    rt_sem_delete(sem);
 }
 
 int rtdm_sem_down(rtdm_sem_t *sem);
-int rtdm_sem_timeddown(rtdm_sem_t *sem, __s64 timeout,
+int rtdm_sem_timeddown(rtdm_sem_t *sem, int64_t timeout,
                        rtdm_toseq_t *timeout_seq);
 void rtdm_sem_up(rtdm_sem_t *sem);
 
 
 /* --- mutex services --- */
 
-typedef struct {
-    unsigned long                   locked;
-    xnsynch_t                       synch_base;
-} rtdm_mutex_t;
+typedef SEM rtdm_mutex_t;
 
 static inline void rtdm_mutex_init(rtdm_mutex_t *mutex)
 {
-    mutex->locked = 0;
-    xnsynch_init(&mutex->synch_base, XNSYNCH_PRIO|XNSYNCH_PIP);
+    rt_typed_sem_init(mutex, 0, RES_SEM);
 }
 
 static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
 {
-    _rtdm_synch_flush(&mutex->synch_base, XNRMID);
+	rt_sem_delete(mutex);
 }
 
 int rtdm_mutex_lock(rtdm_mutex_t *mutex);
-int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout,
+int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, int64_t timeout,
                          rtdm_toseq_t *timeout_seq);
 void rtdm_mutex_unlock(rtdm_mutex_t *mutex);
 
@@ -1043,7 +1067,7 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 
 static inline int rtdm_in_rt_context(void)
 {
-    return (rthal_current_domain != rthal_root_domain);
+    return (hal_current_domain[rtai_cpuid()] != hal_root_domain);
 }
 
 int rtdm_exec_in_rt(struct rtdm_dev_context *context,

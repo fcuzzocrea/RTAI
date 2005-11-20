@@ -5,18 +5,18 @@
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
  *
- * RTAI/fusion is free software; you can redistribute it and/or modify it
+ * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI/fusion is distributed in the hope that it will be useful, but
+ * RTAI is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI/fusion; if not, write to the Free Software Foundation,
+ * along with RTAI; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -28,12 +28,9 @@
 
 #include <linux/module.h>
 
-#include <nucleus/pod.h>
-#include <nucleus/heap.h>
 #include <rtdm/rtdm_driver.h>
 #include <rtdm/core.h>
 #include <rtdm/device.h>
-
 
 unsigned int                fd_count = DEF_FILDES_COUNT;
 module_param(fd_count, uint, 0400);
@@ -82,7 +79,7 @@ struct rtdm_dev_context *rtdm_context_get(int fd)
     spl_t                   s;
 
 
-    if (fd >= fd_count)
+    if ((unsigned int)fd >= fd_count)
         return NULL;
 
     fildes = &fildes_table[fd];
@@ -291,7 +288,7 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 
 
     ret = -EBADF;
-    if (unlikely(fd >= fd_count))
+    if (unlikely((unsigned int)fd >= fd_count))
         goto err_out;
 
     fildes = &fildes_table[fd];
@@ -314,7 +311,12 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 
     if (rtdm_in_rt_context()) {
         ret = -ENOTSUPP;
-        if (unlikely(test_bit(RTDM_CREATED_IN_NRT, &context->context_flags))) {
+        /* Warn about asymmetric open/close, but only if there is really a
+           close_rt handler. Otherwise, we will be switched to nrt
+           automatically. */
+        if (unlikely(test_bit(RTDM_CREATED_IN_NRT, &context->context_flags) &&
+                     (context->ops->close_rt !=
+                         (rtdm_close_handler_t)rtdm_no_support))) {
             xnprintf("RTDM: closing device in real-time mode while creation "
                      "ran in non-real-time - this is not supported!\n");
             goto unlock_out;
@@ -352,6 +354,7 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
 
 
 #define MAJOR_FUNCTION_WRAPPER(operation, args...)                          \
+{                                                                           \
     struct rtdm_dev_context *context;                                       \
     struct rtdm_operations  *ops;                                           \
     int                     ret;                                            \
@@ -372,7 +375,8 @@ int _rtdm_close(rtdm_user_info_t *user_info, int fd, int forced)
     rtdm_context_unlock(context);                                           \
                                                                             \
  err_out:                                                                   \
-    return ret
+    return ret;                                                             \
+}
 
 
 int _rtdm_ioctl(rtdm_user_info_t *user_info, int fd, int request, ...)
@@ -435,7 +439,7 @@ int __init rtdm_core_init(void)
 }
 
 
-#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 
 /**
  * @brief Increment context reference counter
@@ -821,7 +825,6 @@ int rt_dev_socket(int protocol_family, int socket_type, int protocol);
  * device before explicitely terminating any real-time task which may use it.
  * To cleanup a stalled file descriptor, send its number to the @c open_fildes
  * /proc entry, e.g. via
- * @code #> echo 3 > /proc/rtai/rtdm/open_fildes @endcode
  *
  * Environments:
  *

@@ -4,19 +4,20 @@
  *
  * @note Copyright (C) 2005 Jan Kiszka <jan.kiszka@web.de>
  * @note Copyright (C) 2005 Joerg Langenberg <joerg.langenberg@gmx.net>
+ * @note Copyright (C) 2005 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
- * RTAI/fusion is free software; you can redistribute it and/or modify it
+ * RTAI is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
  *
- * RTAI/fusion is distributed in the hope that it will be useful, but
+ * RTAI is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with RTAI/fusion; if not, write to the Free Software Foundation,
+ * along with RTAI; if not, write to the Free Software Foundation,
  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
@@ -32,8 +33,8 @@
 
 #include <linux/delay.h>
 
+#include <rtai_sched.h>
 #include <rtdm/rtdm_driver.h>
-
 
 /*!
  * @ingroup driverapi
@@ -41,7 +42,7 @@
  * @{
  */
 
-#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Get system time
  *
@@ -58,7 +59,7 @@
  *
  * Rescheduling: never.
  */
-__u64 rtdm_clock_read(void);
+uint64_t rtdm_clock_read(void);
 #endif /* DOXYGEN_CPP */
 /** @} */
 
@@ -69,7 +70,6 @@ __u64 rtdm_clock_read(void);
  * @{
  */
 
-#if DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Intialise and start a real-time task
  *
@@ -96,8 +96,24 @@ __u64 rtdm_clock_read(void);
  */
 int rtdm_task_init(rtdm_task_t *task, const char *name,
                    rtdm_task_proc_t task_proc, void *arg,
-                   int priority, __u64 period);
+                   int priority, uint64_t period)
+{
 
+	if (rt_task_init(task, (void *)task_proc, (long)arg, 0, priority, 0, 0)) {
+        	return -ENOMEM;
+	}
+	if (period) {
+		rt_task_make_periodic_relative_ns(task, 0, period);
+	} else {
+		rt_task_resume(task);
+	}
+	return 0;
+}
+
+EXPORT_SYMBOL(rtdm_task_init);
+
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Destroy a real-time task
  *
@@ -153,7 +169,7 @@ void rtdm_task_set_priority(rtdm_task_t *task, int priority);
  *
  * Rescheduling: possible.
  */
-int rtdm_task_set_period(rtdm_task_t *task, __u64 period);
+int rtdm_task_set_period(rtdm_task_t *task, uint64_t period);
 
 /**
  * @brief Wait on next real-time task period
@@ -230,21 +246,12 @@ rtdm_task_t *rtdm_task_current(void);
  */
 void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 {
-    spl_t s;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    while (!xnthread_test_flags(task, XNZOMBIE)) {
-        xnlock_put_irqrestore(&nklock, s);
-
-        msleep(poll_delay);
-
-        xnlock_get_irqsave(&nklock, s);
-    }
-
-    xnlock_put_irqrestore(&nklock, s);
+	while (task->magic) {
+		msleep(poll_delay);
+	}
 }
+
+EXPORT_SYMBOL(rtdm_task_join_nrt);
 
 
 /**
@@ -266,15 +273,12 @@ void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
  *
  * Rescheduling: always.
  */
-int rtdm_task_sleep(__u64 delay)
+int rtdm_task_sleep(uint64_t delay)
 {
-    xnthread_t  *thread = xnpod_current_thread();
-
-
-    xnpod_suspend_thread(thread, XNDELAY, xnpod_ns2ticks(delay), NULL);
-
-    return xnthread_test_flags(thread, XNBREAK) ? -EINTR : 0;
+	return !rt_sleep(nano2count(delay)) ? 0 : -EINTR;
 }
+
+EXPORT_SYMBOL(rtdm_task_sleep);
 
 
 /**
@@ -296,29 +300,12 @@ int rtdm_task_sleep(__u64 delay)
  *
  * Rescheduling: always, unless the specified time already passed.
  */
-int rtdm_task_sleep_until(__u64 wakeup_time)
+int rtdm_task_sleep_until(uint64_t wakeup_time)
 {
-    xnthread_t  *thread = xnpod_current_thread();
-    xnsticks_t  delay;
-    spl_t       s;
-    int         err = 0;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    delay = xnpod_ns2ticks(wakeup_time) - xnpod_get_time();
-
-    if (likely(delay > 0)) {
-        xnpod_suspend_thread(thread, XNDELAY, delay, NULL);
-
-        if (xnthread_test_flags(thread, XNBREAK))
-            err = -EINTR;
-    }
-
-    xnlock_put_irqrestore(&nklock, s);
-
-    return err;
+	return !rt_sleep_until(nano2count(wakeup_time)) ? 0 : -EINTR;
 }
+
+EXPORT_SYMBOL(rtdm_task_sleep_until);
 
 
 /**
@@ -335,39 +322,15 @@ int rtdm_task_sleep_until(__u64 wakeup_time)
  * - Kernel-based task
  * - User-space task (RT, non-RT)
  *
- * Rescheduling: always.
+ * Rescheduling: never.
  */
-void rtdm_task_busy_sleep(__u64 delay)
+void rtdm_task_busy_sleep(uint64_t delay)
 {
-    xnticks_t wakeup = xnarch_get_cpu_tsc() + xnarch_ns_to_tsc(delay);
-
-    while (xnarch_get_cpu_tsc() < wakeup)
-        cpu_relax();
+	rt_busy_sleep(delay);
 }
+
+EXPORT_SYMBOL(rtdm_task_busy_sleep);
 /** @} */
-
-
-
-/* --- IPC cleanup helper --- */
-
-#define SYNCH_DELETED   XNSYNCH_SPARE0
-
-void _rtdm_synch_flush(xnsynch_t *synch, unsigned long reason)
-{
-    spl_t s;
-
-
-    xnlock_get_irqsave(&nklock,s);
-
-    if (reason == XNRMID)
-        setbits(synch->status, SYNCH_DELETED);
-
-    if (likely(xnsynch_flush(synch, reason) == XNSYNCH_RESCHED))
-        xnpod_schedule();
-
-    xnlock_put_irqrestore(&nklock, s);
-}
-
 
 
 /*!
@@ -381,7 +344,7 @@ void _rtdm_synch_flush(xnsynch_t *synch, unsigned long reason)
  * @{
  */
 
-#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Initialise a timeout sequence
  *
@@ -431,7 +394,7 @@ int device_service_routine(...)
  *
  * Rescheduling: never.
  */
-void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, __s64 timeout);
+void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, int64_t timeout);
 #endif /* DOXYGEN_CPP */
 /** @} */
 
@@ -440,7 +403,7 @@ void rtdm_toseq_init(rtdm_toseq_t *timeout_seq, __s64 timeout);
  * @{
  */
 
-#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Initialise an event
  *
@@ -542,15 +505,15 @@ void rtdm_event_signal(rtdm_event_t *event)
 {
     spl_t s;
 
-
     xnlock_get_irqsave(&nklock, s);
 
     __set_bit(0, &event->pending);
-    if (xnsynch_flush(&event->synch_base, 0))
-        xnpod_schedule();
+    rt_sem_broadcast(&event->synch_base);
 
     xnlock_put_irqrestore(&nklock, s);
 }
+
+EXPORT_SYMBOL(rtdm_event_signal);
 
 
 /**
@@ -579,31 +542,23 @@ void rtdm_event_signal(rtdm_event_t *event)
  */
 int rtdm_event_wait(rtdm_event_t *event)
 {
-    spl_t   s;
-    int     err = 0;
+	spl_t s;
+	int ret;
 
+	xnlock_get_irqsave(&nklock, s);
+	if (!__test_and_clear_bit(0, &event->pending)) {
+		if (!(ret = _sem_wait(&event->synch_base))) {
+			__clear_bit(0, &event->pending);
+		}
+	} else {
+		ret = 0;
+	}
+	xnlock_put_irqrestore(&nklock, s);
 
-    xnlock_get_irqsave(&nklock, s);
-
-    if (testbits(event->synch_base.status, SYNCH_DELETED))
-        err = -EIDRM;
-    else if (!__test_and_clear_bit(0, &event->pending)) {
-        xnthread_t  *thread = xnpod_current_thread();
-
-        xnsynch_sleep_on(&event->synch_base, XN_INFINITE);
-
-        if (!xnthread_test_flags(thread, XNRMID|XNBREAK))
-            __clear_bit(0, &event->pending);
-        else if (xnthread_test_flags(thread, XNRMID))
-            err = -EIDRM;
-        else /* XNBREAK */
-            err = -EINTR;
-    }
-
-    xnlock_put_irqrestore(&nklock, s);
-
-    return err;
+	return ret;
 }
+
+EXPORT_SYMBOL(rtdm_event_wait);
 
 
 /**
@@ -638,55 +593,26 @@ int rtdm_event_wait(rtdm_event_t *event)
  *
  * Rescheduling: possible.
  */
-int rtdm_event_timedwait(rtdm_event_t *event, __s64 timeout,
+int rtdm_event_timedwait(rtdm_event_t *event, int64_t timeout,
                          rtdm_toseq_t *timeout_seq)
 {
-    xnthread_t  *thread;
-    spl_t       s;
-    int         err = 0;
+	spl_t s;
+	int ret = 0;
 
+	xnlock_get_irqsave(&nklock, s);
+	if (!__test_and_clear_bit(0, &event->pending)) {
+		if (!(ret = _sem_wait_timed(&event->synch_base, timeout, timeout_seq))) {
+			__clear_bit(0, &event->pending);
+		}
+	} else {
+		ret = 0;
+	}
+	xnlock_put_irqrestore(&nklock, s);
 
-    xnlock_get_irqsave(&nklock, s);
-
-    if (unlikely(testbits(event->synch_base.status, SYNCH_DELETED)))
-        err = -EIDRM;
-    else if (!__test_and_clear_bit(0, &event->pending)) {
-        /* non-blocking mode */
-        if (unlikely(timeout < 0)) {
-            err = -EWOULDBLOCK;
-            goto unlock_out;
-        }
-
-        /* timeout sequence */
-        if (timeout_seq && (timeout > 0)) {
-            timeout = *timeout_seq - xnpod_get_time();
-            if (unlikely(timeout <= 0)) {
-                err = -ETIMEDOUT;
-                goto unlock_out;
-            }
-            xnsynch_sleep_on(&event->synch_base, timeout);
-        }
-        /* infinite or relative timeout */
-        else
-            xnsynch_sleep_on(&event->synch_base, xnpod_ns2ticks(timeout));
-
-        thread = xnpod_current_thread();
-
-        if (!xnthread_test_flags(thread, XNTIMEO|XNRMID|XNBREAK))
-            __clear_bit(0, &event->pending);
-        else if (xnthread_test_flags(thread, XNTIMEO))
-            err = -ETIMEDOUT;
-        else if (xnthread_test_flags(thread, XNRMID))
-            err = -EIDRM;
-        else /* XNBREAK */
-            err = -EINTR;
-    }
-
- unlock_out:
-    xnlock_put_irqrestore(&nklock, s);
-
-    return err;
+	return ret;
 }
+
+EXPORT_SYMBOL(rtdm_event_timedwait);
 /** @} */
 
 
@@ -696,7 +622,7 @@ int rtdm_event_timedwait(rtdm_event_t *event, __s64 timeout,
  * @{
  */
 
-#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Initialise a semaphore
  *
@@ -759,33 +685,10 @@ void rtdm_sem_destroy(rtdm_sem_t *sem);
  */
 int rtdm_sem_down(rtdm_sem_t *sem)
 {
-    spl_t   s;
-    int     err = 0;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    if (testbits(sem->synch_base.status, SYNCH_DELETED))
-        err = -EIDRM;
-    else if (sem->value > 0)
-        sem->value--;
-    else {
-        xnthread_t  *thread = xnpod_current_thread();
-
-        xnsynch_sleep_on(&sem->synch_base, XN_INFINITE);
-
-        if (xnthread_test_flags(thread, XNRMID|XNBREAK)) {
-            if (xnthread_test_flags(thread, XNRMID))
-                err = -EIDRM;
-            else /*  XNBREAK */
-                err = -EINTR;
-        }
-    }
-
-    xnlock_put_irqrestore(&nklock, s);
-
-    return err;
+	return _sem_wait(sem);
 }
+
+EXPORT_SYMBOL(rtdm_sem_down);
 
 
 /**
@@ -823,53 +726,13 @@ int rtdm_sem_down(rtdm_sem_t *sem)
  *
  * Rescheduling: possible.
  */
-int rtdm_sem_timeddown(rtdm_sem_t *sem, __s64 timeout,
+int rtdm_sem_timeddown(rtdm_sem_t *sem, int64_t timeout,
                        rtdm_toseq_t *timeout_seq)
 {
-    xnthread_t  *thread;
-    spl_t       s;
-    int         err = 0;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    if (testbits(sem->synch_base.status, SYNCH_DELETED))
-        err = -EIDRM;
-    else if (sem->value > 0)
-        sem->value--;
-    else if (timeout < 0)   /* non-blocking mode */
-        err = -EWOULDBLOCK;
-    else {
-        /* timeout sequence */
-        if (timeout_seq && (timeout > 0)) {
-            timeout = *timeout_seq - xnpod_get_time();
-            if (unlikely(timeout <= 0)) {
-                err = -ETIMEDOUT;
-                goto unlock_out;
-            }
-            xnsynch_sleep_on(&sem->synch_base, timeout);
-        }
-        /* infinite or relative timeout */
-        else
-            xnsynch_sleep_on(&sem->synch_base, xnpod_ns2ticks(timeout));
-
-        thread = xnpod_current_thread();
-
-        if (xnthread_test_flags(thread, XNTIMEO|XNRMID|XNBREAK)) {
-            if (xnthread_test_flags(thread, XNTIMEO))
-                err = -ETIMEDOUT;
-            else if (xnthread_test_flags(thread, XNRMID))
-                err = -EIDRM;
-            else /*  XNBREAK */
-                err = -EINTR;
-        }
-    }
-
- unlock_out:
-    xnlock_put_irqrestore(&nklock, s);
-
-    return err;
+	return _sem_wait_timed(sem, timeout, timeout_seq);
 }
+
+EXPORT_SYMBOL(rtdm_sem_timeddown);
 
 
 /**
@@ -893,18 +756,10 @@ int rtdm_sem_timeddown(rtdm_sem_t *sem, __s64 timeout,
  */
 void rtdm_sem_up(rtdm_sem_t *sem)
 {
-    spl_t s;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    if (xnsynch_wakeup_one_sleeper(&sem->synch_base))
-        xnpod_schedule();
-    else
-        sem->value++;
-
-    xnlock_put_irqrestore(&nklock, s);
+	_sem_signal(sem);
 }
+
+EXPORT_SYMBOL(rtdm_sem_up);
 /** @} */
 
 
@@ -914,7 +769,7 @@ void rtdm_sem_up(rtdm_sem_t *sem)
  * @{
  */
 
-#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 /**
  * @brief Initialise a mutex
  *
@@ -978,28 +833,10 @@ void rtdm_mutex_destroy(rtdm_mutex_t *mutex);
  */
 int rtdm_mutex_lock(rtdm_mutex_t *mutex)
 {
-    spl_t   s;
-    int     err = 0;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    if (testbits(mutex->synch_base.status, SYNCH_DELETED))
-        err = -EIDRM;
-    else
-        while (__test_and_set_bit(0, &mutex->locked)) {
-            xnsynch_sleep_on(&mutex->synch_base, XN_INFINITE);
-
-            if (xnthread_test_flags(xnpod_current_thread(), XNRMID)) {
-                err = -EIDRM;
-                break;
-            }
-        }
-
-    xnlock_put_irqrestore(&nklock, s);
-
-    return err;
+	return _sem_wait(mutex);
 }
+
+EXPORT_SYMBOL(rtdm_mutex_lock);
 
 
 /**
@@ -1036,53 +873,13 @@ int rtdm_mutex_lock(rtdm_mutex_t *mutex)
  *
  * Rescheduling: possible.
  */
-int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout,
+int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, int64_t timeout,
                          rtdm_toseq_t *timeout_seq)
 {
-    xnthread_t  *thread;
-    spl_t       s;
-    int         err = 0;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    if (testbits(mutex->synch_base.status, SYNCH_DELETED))
-        err = -EIDRM;
-    else
-        while (__test_and_set_bit(0, &mutex->locked)) {
-            /* non-blocking mode */
-            if (timeout < 0) {
-                err = -EWOULDBLOCK;
-                break;
-            }
-            /* timeout sequence */
-            if (timeout_seq && (timeout > 0)) {
-                timeout = *timeout_seq - xnpod_get_time();
-                if (unlikely(timeout <= 0)) {
-                    err = -ETIMEDOUT;
-                    break;
-                }
-                xnsynch_sleep_on(&mutex->synch_base, timeout);
-            }
-            /* infinite or relative timeout */
-            else
-                xnsynch_sleep_on(&mutex->synch_base, xnpod_ns2ticks(timeout));
-
-            thread = xnpod_current_thread();
-
-            if (xnthread_test_flags(thread, XNTIMEO|XNRMID)) {
-                if (xnthread_test_flags(thread, XNTIMEO))
-                    err = -ETIMEDOUT;
-                else /*  XNRMID */
-                    err = -EIDRM;
-                break;
-            }
-        }
-
-    xnlock_put_irqrestore(&nklock, s);
-
-    return err;
+	return _sem_wait_timed(mutex, timeout, timeout_seq);
 }
+
+EXPORT_SYMBOL(rtdm_mutex_timedlock);
 
 
 /**
@@ -1104,23 +901,16 @@ int rtdm_mutex_timedlock(rtdm_mutex_t *mutex, __s64 timeout,
  */
 void rtdm_mutex_unlock(rtdm_mutex_t *mutex)
 {
-    spl_t s;
-
-
-    xnlock_get_irqsave(&nklock, s);
-
-    __clear_bit(0, &mutex->locked);
-    if (likely(xnsynch_wakeup_one_sleeper(&mutex->synch_base)))
-        xnpod_schedule();
-
-    xnlock_put_irqrestore(&nklock, s);
+	_sem_signal(mutex);
 }
+
+EXPORT_SYMBOL(rtdm_mutex_unlock);
 /** @} */
 
 /** @} Synchronisation services */
 
 
-#if DOXYGEN_CPP /* Only used for doxygen doc generation */
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 
 /*!
  * @ingroup driverapi
@@ -1520,19 +1310,3 @@ int rtdm_in_rt_context(void);
 /** @} */
 
 #endif /* DOXYGEN_CPP */
-
-
-EXPORT_SYMBOL(rtdm_task_join_nrt);
-EXPORT_SYMBOL(rtdm_task_sleep);
-EXPORT_SYMBOL(rtdm_task_sleep_until);
-EXPORT_SYMBOL(rtdm_task_busy_sleep);
-EXPORT_SYMBOL(_rtdm_synch_flush);
-EXPORT_SYMBOL(rtdm_event_wait);
-EXPORT_SYMBOL(rtdm_event_timedwait);
-EXPORT_SYMBOL(rtdm_event_signal);
-EXPORT_SYMBOL(rtdm_sem_down);
-EXPORT_SYMBOL(rtdm_sem_timeddown);
-EXPORT_SYMBOL(rtdm_sem_up);
-EXPORT_SYMBOL(rtdm_mutex_lock);
-EXPORT_SYMBOL(rtdm_mutex_timedlock);
-EXPORT_SYMBOL(rtdm_mutex_unlock);

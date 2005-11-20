@@ -760,12 +760,6 @@ RTAI_PROTO(RT_TASK *,rt_task_init,(unsigned long name, int priority, int stack_s
 	return rt_task_init_schmod(name, priority, 0, max_msg_size, SCHED_FIFO, 0xFF);
 }
 
-RTAI_PROTO(RT_TASK *,ftask_init,(unsigned long name, int priority))
-{
-	struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, 0, 0, 0 };
-	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
-}
-
 RTAI_PROTO(void,rt_set_sched_policy,(RT_TASK *task, int policy, int rr_quantum_ns))
 {
 	struct { RT_TASK *task; long policy; long rr_quantum_ns; } arg = { task, policy, rr_quantum_ns };
@@ -1306,6 +1300,31 @@ RTAI_PROTO(void,rt_gettimeorig,(RTIME time_orig[]))
 {
 	struct { RTIME *time_orig; } arg = { time_orig };
 	rtai_lxrt(BIDX, SIZARG, GET_TIMEORIG, &arg);
+}
+
+RTAI_PROTO(RT_TASK *,ftask_init,(unsigned long name, int priority))
+{
+	struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, 0, 0, 0 };
+	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
+}
+
+RTAI_PROTO(RTIME, start_ftimer,(long period, long ftick_freq))
+{
+	struct { long ftick_freq; void *handler; } arg = { ftick_freq, NULL };
+	if (!period) {
+		rtai_lxrt(BIDX, sizeof(long), SET_ONESHOT_MODE, &period);
+	} else {
+		rtai_lxrt(BIDX, sizeof(long), SET_PERIODIC_MODE, &period);
+	}
+	rtai_lxrt(BIDX, SIZARG, REQUEST_RTC, &arg);
+	return rtai_lxrt(BIDX, sizeof(long), START_TIMER, &period).rt;
+}
+
+RTAI_PROTO(RTIME, stop_ftimer,(void))
+{
+	struct { long dummy; } arg;
+	rtai_lxrt(BIDX, SIZARG, RELEASE_RTC, &arg);
+	return rtai_lxrt(BIDX, SIZARG, STOP_TIMER, &arg).rt;
 }
 
 #ifdef __cplusplus

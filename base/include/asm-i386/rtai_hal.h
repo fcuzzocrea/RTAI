@@ -889,7 +889,7 @@ static inline int rt_free_global_irq(unsigned irq)
 #define _RTAI_HAL_XN_H
 
 // this is now a bit misplaced, to be moved where it should belong
-#ifdef RTAI_TRIOSS
+#if defined(__KERNEL__) && defined(RTAI_TRIOSS)
 
 extern void xnpod_schedule(void);
 

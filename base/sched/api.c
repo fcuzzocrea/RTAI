@@ -911,7 +911,7 @@ int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 			RT_SCHEDULE(task, rtai_cpuid());
 		}
 		rt_global_restore_flags(flags);
-		return rt_current->unblocked = 1;
+		return task->unblocked = 1;
 	}
 	return 0;
 }

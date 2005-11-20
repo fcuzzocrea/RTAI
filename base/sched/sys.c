@@ -572,12 +572,12 @@ static inline void force_soft(RT_TASK *task)
 extern int FASTCALL(do_signal(struct pt_regs *regs, sigset_t *oldset));
 static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
-	if (unlikely(task->usp_signal)) {
-		int retval = task->usp_signal < 0;
+	if (unlikely(task->unblocked)) {
+		int retval = task->unblocked < 0;
 		if (task->is_hard > 0) {
 			give_back_to_linux(task, -1);
 		}
-		task->usp_signal = 0;
+		task->unblocked = 0;
 		if (0 && likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
 			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
 			regs->LINUX_SYSCALL_RETREG = -EINTR;

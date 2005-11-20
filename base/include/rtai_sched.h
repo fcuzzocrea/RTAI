@@ -140,7 +140,7 @@ typedef struct rt_task_struct {
     RT_TRAP_HANDLER task_trap_handler[HAL_NR_FAULTS];
 
     /* Added from rtai-22. */
-    long usp_signal;
+    long unblocked;
     volatile unsigned long pstate;
     unsigned long usp_flags;
     unsigned long usp_flags_mask;

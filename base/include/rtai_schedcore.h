@@ -393,6 +393,7 @@ static inline void rem_ready_task(RT_TASK *task)
 		if (!task->is_hard) {
 			NON_RTAI_TASK_SUSPEND(task);
 		}
+		task->unblocked = 0;
 		(task->rprev)->rnext = task->rnext;
 		(task->rnext)->rprev = task->rprev;
 	}
@@ -403,6 +404,7 @@ static inline void rem_ready_current(RT_TASK *rt_current)
 	if (!rt_current->is_hard) {
 		NON_RTAI_TASK_SUSPEND(rt_current);
 	}
+	rt_current->unblocked = 0;
 	(rt_current->rprev)->rnext = rt_current->rnext;
 	(rt_current->rnext)->rprev = rt_current->rprev;
 }

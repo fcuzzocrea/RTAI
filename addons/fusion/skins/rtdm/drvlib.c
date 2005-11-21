@@ -275,7 +275,14 @@ EXPORT_SYMBOL(rtdm_task_join_nrt);
  */
 int rtdm_task_sleep(uint64_t delay)
 {
-	return !rt_sleep(nano2count(delay)) ? 0 : -EINTR;
+	if (!rt_sleep(nano2count(delay))) {
+		return 0;
+	}
+	if (_rt_whoami()->unblocked) {
+		return -EINTR;
+	}
+	return rt_sched_timed ? -ETIMEDOUT : -EIDRM;
+
 }
 
 EXPORT_SYMBOL(rtdm_task_sleep);
@@ -302,7 +309,13 @@ EXPORT_SYMBOL(rtdm_task_sleep);
  */
 int rtdm_task_sleep_until(uint64_t wakeup_time)
 {
-	return !rt_sleep_until(nano2count(wakeup_time)) ? 0 : -EINTR;
+	if (!rt_sleep_until(nano2count(wakeup_time))) {
+		return 0;
+	}
+	if (_rt_whoami()->unblocked) {
+		return -EINTR;
+	}
+	return rt_sched_timed ? -ETIMEDOUT : -EIDRM;
 }
 
 EXPORT_SYMBOL(rtdm_task_sleep_until);

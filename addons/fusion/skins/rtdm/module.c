@@ -48,9 +48,10 @@
 #include <rtdm/rtdm_driver.h>
 
 MODULE_DESCRIPTION("Real-Time Driver Model");
+MODULE_AUTHOR("jan.kiszka@web.de");
 MODULE_LICENSE("GPL");
 
-static int rtdm_fdcount(void)
+static int _rtdm_fdcount(void)
 {
 	return fd_count;
 }
@@ -58,7 +59,7 @@ static int rtdm_fdcount(void)
 #ifdef TRUE_LXRT_WAY
 
 static struct rt_fun_entry rtdm[] = {
-	[__rtdm_fdcount] = { 1, rtdm_fdcount },
+	[__rtdm_fdcount] = { 1, _rtdm_fdcount },
 	[__rtdm_open]    = { 1, _rtdm_open },
 	[__rtdm_socket]  = { 1, _rtdm_socket },
 	[__rtdm_close]   = { 1, _rtdm_close },
@@ -66,10 +67,10 @@ static struct rt_fun_entry rtdm[] = {
 	[__rtdm_read]    = { 1, _rtdm_read },
 	[__rtdm_write]   = { 1, _rtdm_write },
 	[__rtdm_recvmsg] = { 1, _rtdm_recvmsg },
-	[__rtdm_sendmsg] = { 1, _rtdm_sendmsg },
+	[__rtdm_sendmsg] = { 1, _rtdm_sendmsg }
 };
 
-#else
+#else /* !TRUE_LXRT_WAY */
 
 static int sys_rtdm_open(const char *path, int oflag)
 {
@@ -149,20 +150,20 @@ static struct rt_fun_entry rtdm[] = {
 	[__rtdm_sendmsg] = { 1, sys_rtdm_sendmsg },
 };
 
-#endif
+#endif /* TRUE_LXRT_WAY */
 
 xnlock_t nklock = XNARCH_LOCK_UNLOCKED;
 
-// this is difficult to inline; needed mostly because RTDM isr does not care of
-// the PIC; WARNING: the RTAI dispatcher might have cared of the ack already
+// needed mostly because RTDM isr does not care of the PIC
+// REMINDER: the RTAI dispatcher might have cared of the ack already
 int xnintr_irq_handler(unsigned long irq, xnintr_t *intr)
 {
         int retval = ((int (*)(void *))intr->isr)(intr);
         ++intr->hits;
-        if (retval & XN_ISR_ENABLE) {
+        if (retval & RTDM_IRQ_ENABLE) {
                 xnintr_enable(intr);
         }
-        if (retval & XN_ISR_CHAINED) {
+        if (retval & RTDM_IRQ_PROPAGATE) {
                 rt_pend_linux_irq(intr->irq);
         }
         return 0;
@@ -175,10 +176,9 @@ int __init rtdm_skin_init(void)
 	int err;
 
         if(set_rt_fun_ext_index(rtdm, RTDM_INDX)) {
-                printk("Recompile your module with a different index\n");
+                printk("LXRT extension %d already in use. Recompile RTDM with a different extension index\n", RTDM_INDX);
                 return -EACCES;
         }
-
 	if ((err = rtdm_dev_init())) {
 	        goto fail;
 	}
@@ -190,8 +190,8 @@ int __init rtdm_skin_init(void)
 	        goto cleanup_core;
 	}
 #endif /* CONFIG_PROC_FS */
-	xnprintf("starting RTDM services.\n");
 
+	printk("RTDM started.\n");
 	return 0;
 
 #ifdef CONFIG_PROC_FS
@@ -207,13 +207,13 @@ fail:
 
 void rtdm_skin_exit(void)
 {
-	xnprintf("stopping RTDM services.\n");
 	rtdm_core_cleanup();
 	rtdm_dev_cleanup();
         reset_rt_fun_ext_index(rtdm, RTDM_INDX);
 #ifdef CONFIG_PROC_FS
 	rtdm_proc_cleanup();
 #endif /* CONFIG_PROC_FS */
+	printk("RTDM stopped.\n");
 }
 
 module_init(rtdm_skin_init);

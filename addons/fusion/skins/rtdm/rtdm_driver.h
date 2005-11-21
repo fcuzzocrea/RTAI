@@ -36,6 +36,7 @@
 
 #include <rtai_schedcore.h>
 #include <rtai_sched.h>
+
 #include "xn.h"
 #include <rtdm/rtdm.h>
 
@@ -709,9 +710,9 @@ typedef int (*rtdm_irq_handler_t)(rtdm_irq_t *irq_handle);
  * @{
  */
 /** Propagate unhandled interrupt to possible other handlers */
-#define RTDM_IRQ_PROPAGATE          XN_ISR_CHAINED
+#define RTDM_IRQ_PROPAGATE          1
 /** Re-enable interrupt line on return */
-#define RTDM_IRQ_ENABLE             XN_ISR_ENABLE
+#define RTDM_IRQ_ENABLE             2
 /** @} */
 
 /**
@@ -865,9 +866,6 @@ static inline int rtdm_task_set_period(rtdm_task_t *task, uint64_t period)
 
 static inline int rtdm_task_unblock(rtdm_task_t *task)
 {
-    if (!_rt_whoami()->period) {
-	return -EINVAL;
-    }
     return rt_task_masked_unblock(task, ~RT_SCHED_READY);
 }
 
@@ -878,7 +876,16 @@ static inline rtdm_task_t *rtdm_task_current(void)
 
 static inline int rtdm_task_wait_period(void)
 {
-    return !rt_task_wait_period() ? 0 : -ETIMEDOUT ;
+    if (!_rt_whoami()->period) {
+	return -EINVAL;
+    }
+    if (!rt_task_wait_period()) {
+	return 0;
+    }
+    if (_rt_whoami()->unblocked) {
+	return -EINTR;
+    }
+    return rt_sched_timed ? -ETIMEDOUT : -EIDRM;
 }
 
 int rtdm_task_sleep(uint64_t delay);
@@ -936,9 +943,8 @@ static inline int _sem_wait(void *sem)
 {
 	if (rt_sem_wait(sem) < SEM_TIMOUT) {
 		return 0;
-	} else {
-		return _rt_whoami()->unblocked ? -EINTR : EIDRM;
 	}
+	return _rt_whoami()->unblocked ? -EINTR : EIDRM;
 }
 
 static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *timeout_seq)
@@ -961,13 +967,11 @@ static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *time
 	}
 	if (ret < SEM_TIMOUT) {
 		return 0;
-	} else if (ret == SEM_TIMOUT) {
-		return -ETIMEDOUT;
-	} else {
-       	    return _rt_whoami()->unblocked ? -EINTR : EIDRM;
 	}
-
-	return 0;
+	if (ret == SEM_TIMOUT) {
+		return -ETIMEDOUT;
+	}
+	return _rt_whoami()->unblocked ? -EINTR : EIDRM;
 }
 
 static inline void _sem_signal(void *sem)
@@ -1001,7 +1005,7 @@ typedef SEM rtdm_mutex_t;
 
 static inline void rtdm_mutex_init(rtdm_mutex_t *mutex)
 {
-    rt_typed_sem_init(mutex, 0, RES_SEM);
+    rt_typed_sem_init(mutex, 0, RES_SEM | PRIO_Q);
 }
 
 static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)

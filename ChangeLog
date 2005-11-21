@@ -1,9 +1,8 @@
-2005-11-20  Paolo Mantegazza <mantegazza@aero.polimi.it>
+2005-11-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/rtai_sched.h, rtai_schecore.h: renamed variable 
-	  usp_signal, in unblocked. It is always zeroed at rem_ready_task
-	  and rem_ready_current.
-	* base/sched/api.c: set unblocked flags in the corrsponding function.
+	* base/addons/fusion/*: updated to the latest.
+	* base/addons/fusion/skins/rtdm: reworked RTAI support, user space
+	  syscalls make an LXRT extension and coded as usual.
 
 2005-11-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

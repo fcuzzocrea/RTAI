@@ -17,13 +17,16 @@
  */
 
 
+// A few wrappers and inlines to avoid too much an editing. 
+// The core stuff is just RTAI in disguise.
+
 #ifndef _RTAI_XNSTUFF_H
 #define _RTAI_XNSTUFF_H
 
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
 
-// atomicity stuff
+//recursive smp locks, as for RTAI global stuff + a name
 
 #define XNARCH_LOCK_UNLOCKED  (xnlock_t) { 0 }
 
@@ -94,15 +97,15 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 #define xnmalloc  rt_malloc
 #define xnfree    rt_free
 
-// in kernel printing (copied from fusion)
+// in kernel printing (taken from fusion)
 
 #define XNARCH_PROMPT "RTDM: "
 
 #define xnprintf(fmt, args...)  printk(KERN_INFO XNARCH_PROMPT fmt, ##args)
-#define xnlogerr(fmt, args...)  printk(KERN_ERR XNARCH_PROMPT fmt, ##args)
+#define xnlogerr(fmt, args...)  printk(KERN_ERR  XNARCH_PROMPT fmt, ##args)
 #define xnlogwarn               xnlogerr
 
-// user space access, from Linux
+// user space access, taken from Linux
 
 #define __xn_access_ok(task, type, addr, size) \
 	(likely(__range_ok(addr, size) == 0))
@@ -121,8 +124,10 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 struct xnintr_struct {
 	unsigned long irq; void *isr; void *iack; unsigned long hits; void *cookie; 
 };
+
 typedef struct xnintr_struct xnintr_t;
-#define xnflags_t   long
+
+#define xnflags_t long
 
 extern int xnintr_irq_handler(unsigned long irq, xnintr_t *intr);
 

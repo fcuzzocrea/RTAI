@@ -2573,7 +2573,7 @@ static void rtai_proc_sched_unregister(void)
 
 /* ++++++++++++++ SCHEDULER ENTRIES AND RELATED INITIALISATION ++++++++++++++ */
 
-extern void rt_request_rtc(int, void *);
+extern void usp_request_rtc(int, void *);
 extern void rt_release_rtc(void);
 
 static struct rt_native_fun_entry rt_sched_entries[] = {
@@ -2636,7 +2636,7 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_pend_linux_irq },		    PEND_LINUX_IRQ },
 	{ { 1, rt_return_linux_syscall  },          RETURN_LINUX_SYSCALL  },
 	{ { 1, rt_receive_linux_syscall },          RECEIVE_LINUX_SYSCALL },
-	{ { 0, rt_request_rtc },                    REQUEST_RTC },
+	{ { 0, usp_request_rtc },                   REQUEST_RTC },
 	{ { 0, rt_release_rtc },                    RELEASE_RTC },
 	{ { 0, 0 },			            000 }
 };

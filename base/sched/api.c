@@ -1814,6 +1814,13 @@ int rt_release_irq_task (unsigned irq)
 	return retval;
 }
 
+extern void usp_request_rtc(int, void *);
+void usp_request_rtc(int rtc_freq, void *handler)
+{
+	rt_request_rtc(rtc_freq, !handler || (handler && handler == (void *)1) ? handler : rt_irq_signal);
+		
+}
+
 /* +++++++++++++++++ SUPPORT FOR THE LINUX SYSCALL SERVER +++++++++++++++++++ */
 
 RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_regs *regs)

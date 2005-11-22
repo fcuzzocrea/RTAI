@@ -1,0 +1,20 @@
+LXRT has 16 extensions slots.
+
+Those already used by modules found in this distributions are:
+0  - RTAI itself (hardwired),
+1  - tasklets    (hardwired),
+9  - comedi,
+10 - fifos,
+14 - serial,
+15 - rtdm.
+
+So you can reuse the above slots only if you are not using the related modules
+found in this distribution. 
+In any case check the value returned by: set_rt_fun_ext_index.
+
+N.B. (hardwired) above means they are assumed as basic RTAI proper extensions.
+Nonetheless extension 1 do check if it can install in its hardwired slot,
+exiting their installation in error, by using back doors installed in LXRT. 
+So you can use the related slot if tasklets is not being used by your 
+applications, __NEVER__ use 0. In any case you'd better use the other many 
+free slots available to avoid any trouble.

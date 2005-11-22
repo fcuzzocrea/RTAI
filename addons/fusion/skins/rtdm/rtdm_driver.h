@@ -937,7 +937,7 @@ static inline void rtdm_event_clear(rtdm_event_t *event)
 }
 
 
-/* --- common to sem and mtx --- */
+/* --- common to events, sems and mtxes --- */
 
 static inline int _sem_wait(void *sem)
 {

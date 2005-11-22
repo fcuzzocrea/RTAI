@@ -1,3 +1,9 @@
+2005-11-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and api.c: added a generic support for RTC 
+	  interrupts from user space, to allow having an easy to use hard
+	  periodic timer for many useful things.
+
 2005-11-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/addons/fusion/*: updated to the latest.

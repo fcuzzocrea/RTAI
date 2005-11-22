@@ -38,7 +38,7 @@
 
 #define TRUE_LXRT_WAY
 
-#define RTDM_INDX  5
+#define RTDM_INDX  15
 
 #define __rtdm_fdcount          0
 #define __rtdm_open             1

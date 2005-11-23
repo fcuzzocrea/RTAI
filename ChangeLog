@@ -1,3 +1,9 @@
+2005-11-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /addons/fusion/drivers/16550A: 16550A.c fixed a likely bug in
+	  config setting (this could turn to just a reminder for something 
+	  else).
+
 2005-11-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c and api.c: added a generic support for RTC 

@@ -36,7 +36,7 @@
 #ifndef _RTDM_H
 #define _RTDM_H
 
-#define TRUE_LXRT_WAY
+//#define TRUE_LXRT_WAY
 
 #define RTDM_INDX  15
 
@@ -296,7 +296,7 @@ static inline ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags
 	return rtai_lxrt(RTDM_INDX, SIZARG, __rtdm_sendmsg, &arg).i[LOW];
 }
 
-#else
+#else /* !TRUE_LXRT_WAY */
 
 static inline int rt_dev_open(const char *path, int oflag, ...)
 {
@@ -350,7 +350,7 @@ static inline ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags
 	return rtai_lxrt(RTDM_INDX, SIZARG, __rtdm_sendmsg, &arg).i[LOW];
 }
 
-#endif
+#endif /* TRUE_LXRT_WAY */
 
 static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
 {

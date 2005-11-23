@@ -516,14 +516,12 @@ void rtdm_event_clear(rtdm_event_t *event);
  */
 void rtdm_event_signal(rtdm_event_t *event)
 {
-    spl_t s;
+	unsigned long flags;
 
-    xnlock_get_irqsave(&nklock, s);
-
-    __set_bit(0, &event->pending);
-    rt_sem_broadcast(&event->synch_base);
-
-    xnlock_put_irqrestore(&nklock, s);
+	flags = rt_global_save_flags_and_cli();
+	__set_bit(0, &event->pending);
+	rt_sem_broadcast(&event->synch_base);
+	rt_global_restore_flags(flags);
 }
 
 EXPORT_SYMBOL(rtdm_event_signal);
@@ -555,10 +553,10 @@ EXPORT_SYMBOL(rtdm_event_signal);
  */
 int rtdm_event_wait(rtdm_event_t *event)
 {
-	spl_t s;
+	unsigned long flags;
 	int ret;
 
-	xnlock_get_irqsave(&nklock, s);
+	flags = rt_global_save_flags_and_cli();
 	if (!__test_and_clear_bit(0, &event->pending)) {
 		if (!(ret = _sem_wait(&event->synch_base))) {
 			__clear_bit(0, &event->pending);
@@ -566,7 +564,7 @@ int rtdm_event_wait(rtdm_event_t *event)
 	} else {
 		ret = 0;
 	}
-	xnlock_put_irqrestore(&nklock, s);
+	rt_global_restore_flags(flags);
 
 	return ret;
 }
@@ -609,10 +607,10 @@ EXPORT_SYMBOL(rtdm_event_wait);
 int rtdm_event_timedwait(rtdm_event_t *event, int64_t timeout,
                          rtdm_toseq_t *timeout_seq)
 {
-	spl_t s;
+	unsigned long flags;
 	int ret = 0;
 
-	xnlock_get_irqsave(&nklock, s);
+	flags = rt_global_save_flags_and_cli();
 	if (!__test_and_clear_bit(0, &event->pending)) {
 		if (!(ret = _sem_wait_timed(&event->synch_base, timeout, timeout_seq))) {
 			__clear_bit(0, &event->pending);
@@ -620,7 +618,7 @@ int rtdm_event_timedwait(rtdm_event_t *event, int64_t timeout,
 	} else {
 		ret = 0;
 	}
-	xnlock_put_irqrestore(&nklock, s);
+	rt_global_restore_flags(flags);
 
 	return ret;
 }

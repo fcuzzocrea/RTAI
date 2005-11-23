@@ -525,14 +525,13 @@ static inline uint64_t rtdm_clock_read(void)
  *
  * Rescheduling: possible, depends on functions called within @a code_block.
  */
-#define RTDM_EXECUTE_ATOMICALLY(code_block)                                 \
-{                                                                           \
-    spl_t   s;                                                              \
-                                                                            \
-    xnlock_get_irqsave(&nklock, s);                                         \
-    code_block;                                                             \
-    xnlock_put_irqrestore(&nklock, s);                                      \
-}
+#define RTDM_EXECUTE_ATOMICALLY(code_block)	\
+do {						\
+        unsigned long flags;			\
+	flags = rt_global_save_flags_and_cli();	\
+	code_block;				\
+	rt_global_restore_flags(flags);		\
+} while (0)
 /** @} */
 
 /*!
@@ -981,7 +980,7 @@ typedef struct rt_semaphore  rtdm_sem_t;
 
 static inline void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value)
 {
-    rt_typed_sem_init(sem, 0, BIN_SEM | PRIO_Q);
+    rt_typed_sem_init(sem, value, BIN_SEM | PRIO_Q);
 }
 
 static inline void rtdm_sem_destroy(rtdm_sem_t *sem)
@@ -1001,7 +1000,7 @@ typedef SEM rtdm_mutex_t;
 
 static inline void rtdm_mutex_init(rtdm_mutex_t *mutex)
 {
-    rt_typed_sem_init(mutex, 0, RES_SEM | PRIO_Q);
+    rt_typed_sem_init(mutex, 1, RES_SEM | PRIO_Q);
 }
 
 static inline void rtdm_mutex_destroy(rtdm_mutex_t *mutex)
@@ -1067,7 +1066,8 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 
 static inline int rtdm_in_rt_context(void)
 {
-    return (hal_current_domain[rtai_cpuid()] != hal_root_domain);
+	return in_hrt_mode(rtai_cpuid());
+//	return (hal_current_domain[rtai_cpuid()] != hal_root_domain);
 }
 
 int rtdm_exec_in_rt(struct rtdm_dev_context *context,

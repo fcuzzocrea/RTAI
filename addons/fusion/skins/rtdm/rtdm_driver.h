@@ -955,11 +955,11 @@ static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *time
 		return -EWOULDBLOCK;
 	}
 	/* timeout sequence, i.e. absolute timeout */
-	if (timeout_seq) {
-		ret = rt_sem_wait_until(sem, *timeout_seq);
+	if (!timeout) {
+		ret = rt_sem_wait(sem);
 	} else {
 		/* infinite or relative timeout */
-		ret = !timeout ? rt_sem_wait(sem) : rt_sem_wait_timed(sem, nano2count(timeout)); 
+		ret = timeout_seq ? rt_sem_wait_until(sem, *timeout_seq) : rt_sem_wait_timed(sem, nano2count(timeout)); 
 	}
 	if (ret < SEM_TIMOUT) {
 		return 0;

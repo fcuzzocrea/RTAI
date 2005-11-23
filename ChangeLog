@@ -5,6 +5,9 @@
 	  else).
 	* /addons/fusion/skins/rtdm/rtdm_driver.h: simplified useless code
 	  for absolute timeouts.
+	* /addons/fusion/skins/rtdm/xn.h: use RTAI proper kernel lock in
+	  place of nklock; needed for events to be atomic with their own
+	  sem calls.
 
 2005-11-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

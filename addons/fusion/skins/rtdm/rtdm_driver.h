@@ -954,11 +954,11 @@ static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *time
 	if (unlikely(timeout < 0)) {
 		return -EWOULDBLOCK;
 	}
-	/* timeout sequence, i.e. absolute timeout */
 	if (!timeout) {
+		/* infinite timeout */
 		ret = rt_sem_wait(sem);
 	} else {
-		/* infinite or relative timeout */
+		/* timeout sequence, i.e. abs timeout, or relative timeout */
 		ret = timeout_seq ? rt_sem_wait_until(sem, *timeout_seq) : rt_sem_wait_timed(sem, nano2count(timeout)); 
 	}
 	if (ret < SEM_TIMOUT) {

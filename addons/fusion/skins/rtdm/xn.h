@@ -60,10 +60,15 @@ static inline spl_t __xnlock_get_irqsave(xnlock_t *lock)
 	return flags;
 }
 
-#define xnlock_get_irqsave(lock, flags)  ((flags) = __xnlock_get_irqsave(lock))
+#define xnlock_get_irqsave(lock, flags)  \
+	do { flags = lock != &nklock ? rt_global_save_flags_and_cli() : __xnlock_get_irqsave(lock); } while (0)
 
 static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 {
+	if (lock != &nklock) {
+		rt_global_restore_flags(flags);
+		return;
+	}
 	barrier();
 	rtai_cli();
 	if (test_and_clear_bit(0, &flags)) {

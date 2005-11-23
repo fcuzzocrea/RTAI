@@ -139,7 +139,7 @@ static int sys_rtdm_sendmsg(int fd, const struct msghdr *msg, int flags)
 }
 
 static struct rt_fun_entry rtdm[] = {
-	[__rtdm_fdcount] = { 1, rtdm_fdcount },
+	[__rtdm_fdcount] = { 1, _rtdm_fdcount },
 	[__rtdm_open]    = { 1, sys_rtdm_open },
 	[__rtdm_socket]  = { 1, sys_rtdm_socket },
 	[__rtdm_close]   = { 1, sys_rtdm_close },

@@ -3,6 +3,8 @@
 	* /addons/fusion/drivers/16550A: 16550A.c fixed a likely bug in
 	  config setting (this could turn to just a reminder for something 
 	  else).
+	* /addons/fusion/skins/rtdm/rtdm_driver.h: simplified useless code
+	  for absolute timeouts.
 
 2005-11-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -607,7 +607,7 @@ int rtdm_event_timedwait(rtdm_event_t *event, int64_t timeout,
                          rtdm_toseq_t *timeout_seq)
 {
 	unsigned long flags;
-	int ret = 0;
+	int ret;
 
 	flags = rt_global_save_flags_and_cli();
 	if (!__test_and_clear_bit(0, &event->pending)) {

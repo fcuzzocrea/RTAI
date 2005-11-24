@@ -592,7 +592,7 @@ int rt_16550_ioctl(struct rtdm_dev_context *context,
                     if (!hist_buf)
                         return -ENOMEM;
                 }
-/* this 2 lines must go immediately befeore, i.e. where you can see them now.
+/* this 2 lines must go immediately before, i.e. where you can see them now.
                 if (!hist_buf)
                     return -ENOMEM;
 */

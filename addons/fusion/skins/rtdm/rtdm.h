@@ -36,7 +36,7 @@
 #ifndef _RTDM_H
 #define _RTDM_H
 
-#define TRUE_LXRT_WAY
+//#define TRUE_LXRT_WAY
 
 #define RTDM_INDX  15
 
@@ -242,7 +242,7 @@ static inline int rt_dev_fdcount(void)
         return rtai_lxrt(RTDM_INDX, SIZARG, __rtdm_fdcount, &arg).i[LOW];
 }
 
-//#ifdef TRUE_LXRT_WAY
+#ifdef TRUE_LXRT_WAY
 
 #define UINFO (void *)0xabcdef
 

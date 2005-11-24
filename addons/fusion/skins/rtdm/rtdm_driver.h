@@ -1066,7 +1066,8 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 
 static inline int rtdm_in_rt_context(void)
 {
-	return in_hrt_mode(rtai_cpuid());
+	return 1;
+//	return in_hrt_mode(rtai_cpuid());
 //	return (hal_current_domain[rtai_cpuid()] != hal_root_domain);
 }
 

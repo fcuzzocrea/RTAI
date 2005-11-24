@@ -98,8 +98,7 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
                    rtdm_task_proc_t task_proc, void *arg,
                    int priority, uint64_t period)
 {
-
-	if (rt_task_init(task, (void *)task_proc, (long)arg, 0, priority, 0, 0)) {
+	if (rt_task_init(task, (void *)task_proc, (long)arg, 4096, priority, 0, 0)) {
         	return -ENOMEM;
 	}
 	if (period) {

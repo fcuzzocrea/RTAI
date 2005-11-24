@@ -123,7 +123,7 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 // interrupt setup/management
 
 struct xnintr_struct {
-	unsigned long irq; void *isr; void *iack; unsigned long hits; void *cookie; 
+	unsigned long irq; int (*isr)(void *); void *iack; unsigned long hits; void *cookie; 
 };
 
 typedef struct xnintr_struct xnintr_t;

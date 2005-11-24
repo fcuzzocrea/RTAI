@@ -158,15 +158,15 @@ xnlock_t nklock = XNARCH_LOCK_UNLOCKED;
 // REMINDER: the RTAI dispatcher might have cared of the ack already
 int xnintr_irq_handler(unsigned long irq, xnintr_t *intr)
 {
-        int retval = ((int (*)(void *))intr->isr)(intr);
-        ++intr->hits;
-        if (retval & RTDM_IRQ_ENABLE) {
-                xnintr_enable(intr);
-        }
-        if (retval & RTDM_IRQ_PROPAGATE) {
-                rt_pend_linux_irq(intr->irq);
-        }
-        return 0;
+	int retval = intr->isr(intr);
+	++intr->hits;
+	if (retval & RTDM_IRQ_ENABLE) {
+		rt_enable_irq(intr->irq);
+	}
+	if (retval & RTDM_IRQ_PROPAGATE) {
+		rt_pend_linux_irq(intr->irq);
+	}
+	return 0;
 }
 
 EXPORT_SYMBOL(xnintr_irq_handler);

@@ -72,7 +72,7 @@ static struct rt_fun_entry rtdm[] = {
 
 #else /* !TRUE_LXRT_WAY */
 
-static int sys_rtdm_open(const char *path, int oflag)
+static int sys_rtdm_open(const char *path, long oflag)
 {
 	char krnl_path[RTDM_MAX_DEVNAME_LEN + 1];
 	struct task_struct *curr = current;
@@ -85,32 +85,32 @@ static int sys_rtdm_open(const char *path, int oflag)
 	return _rtdm_open(curr, (const char *)krnl_path, oflag);
 }
 
-static int sys_rtdm_socket(int protocol_family, int socket_type, int protocol)
+static int sys_rtdm_socket(long protocol_family, long socket_type, long protocol)
 {
 	return _rtdm_socket(current, protocol_family, socket_type, protocol);
 }
 
-static int sys_rtdm_close(int fd)
+static int sys_rtdm_close(long fd, long forced)
 {
-	return _rtdm_close(current, fd, 0);
+	return _rtdm_close(current, fd, forced);
 }
 
-static int sys_rtdm_ioctl(int fd, int request, void *arg)
+static int sys_rtdm_ioctl(long fd, long request, void *arg)
 {
 	return _rtdm_ioctl(current, fd, request, arg);
 }
 
-static int sys_rtdm_read(int fd, void *buf, size_t nbytes)
+static int sys_rtdm_read(long fd, void *buf, long nbytes)
 {
 	return _rtdm_read(current, fd, buf, nbytes);
 }
 
-static int sys_rtdm_write(int fd, void *buf, size_t nbytes)
+static int sys_rtdm_write(long fd, void *buf, long nbytes)
 {
 	return _rtdm_write(current, fd, buf, nbytes);
 }
 
-static int sys_rtdm_recvmsg(int fd, struct msghdr *msg, int flags)
+static int sys_rtdm_recvmsg(long fd, struct msghdr *msg, long flags)
 {
 	struct msghdr krnl_msg;
 	struct task_struct *curr = current;
@@ -126,7 +126,7 @@ static int sys_rtdm_recvmsg(int fd, struct msghdr *msg, int flags)
 	return ret;
 }
 
-static int sys_rtdm_sendmsg(int fd, const struct msghdr *msg, int flags)
+static int sys_rtdm_sendmsg(long fd, const struct msghdr *msg, long flags)
 {
 	struct msghdr krnl_msg;
 	struct task_struct *curr = current;
@@ -154,19 +154,54 @@ static struct rt_fun_entry rtdm[] = {
 
 xnlock_t nklock = XNARCH_LOCK_UNLOCKED;
 
-// needed mostly because RTDM isr does not care of the PIC
-// REMINDER: the RTAI dispatcher might have cared of the ack already
+/* This is needed because RTDM interrupt handlers:
+ * - do no want immediate in handler rescheduling, RTAI can be configured
+ *   to act in the same way but might not have been enabled to do so; 
+ * - may not reenable the PIC directly, assuming it will be done here;
+ * - may not propagate, assuming it will be done here as well.
+ * REMINDER: the RTAI dispatcher has cared of the mask/ack anyhow. */
+
+#ifndef CONFIG_RTAI_SCHED_ISR_LOCK
+extern struct { volatile int locked, rqsted; } rt_scheduling[];
+extern void rtai_handle_isched_lock(int);
+
+#define RTAI_SCHED_ISR_LOCK() \
+        do { \
+                if (!rt_scheduling[cpuid].locked++) { \
+                        rt_scheduling[cpuid].rqsted = 0; \
+                } \
+        } while (0)
+#define RTAI_SCHED_ISR_UNLOCK() \
+        do { \
+                rtai_cli(); \
+                if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
+                        if (rt_scheduling[cpuid].rqsted > 0) { \
+                                rtai_handle_isched_lock(cpuid); \
+                        } \
+                } \
+        } while (0)
+#else /* !CONFIG_RTAI_SCHED_ISR_LOCK */
+#define RTAI_SCHED_ISR_LOCK() \
+        do {             } while (0)
+#define RTAI_SCHED_ISR_UNLOCK() \
+        do { rtai_cli(); } while (0)
+#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+
 int xnintr_irq_handler(unsigned long irq, xnintr_t *intr)
 {
-	int retval = intr->isr(intr);
-	++intr->hits;
-	if (retval & RTDM_IRQ_ENABLE) {
-		rt_enable_irq(intr->irq);
-	}
-	if (retval & RTDM_IRQ_PROPAGATE) {
-		rt_pend_linux_irq(intr->irq);
-	}
-	return 0;
+        int cpuid, retval;
+	cpuid = rtai_cpuid();
+	RTAI_SCHED_ISR_LOCK();
+        retval = intr->isr(intr);
+	RTAI_SCHED_ISR_UNLOCK();
+        ++intr->hits;
+        if (retval & RTDM_IRQ_ENABLE) {
+                xnintr_enable(intr);
+        }
+        if (retval & RTDM_IRQ_PROPAGATE) {
+                rt_pend_linux_irq(intr->irq);
+        }
+        return 0;
 }
 
 EXPORT_SYMBOL(xnintr_irq_handler);

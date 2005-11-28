@@ -98,7 +98,7 @@ int rtdm_task_init(rtdm_task_t *task, const char *name,
                    rtdm_task_proc_t task_proc, void *arg,
                    int priority, uint64_t period)
 {
-	if (rt_task_init(task, (void *)task_proc, (long)arg, 4096, priority, 0, 0)) {
+	if (rt_task_init(task, (void *)task_proc, (long)arg, PAGE_SIZE, priority, 0, 0)) {
         	return -ENOMEM;
 	}
 	if (period) {
@@ -395,6 +395,30 @@ int device_service_routine(...)
  * @c timeout. Moreover, all functions supporting timeout sequences also
  * interpret special timeout values (infinite and non-blocking),
  * disburdening the driver developer from handling them separately.
+ *
+ * RTAI REMARK: 
+ * This is just a confusing set of words to patch missing APIs with absolute
+ * deadlines in xenomai. In short a timeout_seq is nothing but the absolute 
+ * deadline and so should be used in any related RTAI API that does it so
+ * natively already. Thus the same code in RTAI would simply be: 
+ * @code
+int device_service_routine(...)
+{
+    ...
+    while (received < requested) {
+        ret = rtdm_event_wait_until(&event->synch_base, rt_get_time()+timeout);
+        if (ret < 0)    // including -ETIMEDOUT
+            break;
+        ...
+        // receive some data
+        ...
+    }
+    ...
+}
+ * @endcode
+ * though it is not so because of an easier porting. Nonetheless the RTAI 
+ * implementation takes care of using its simpler native way anyhow.
+ * END OF RTAI REMARK.
  *
  * Environments:
  *

@@ -478,7 +478,7 @@ static inline void rtdm_context_unlock(struct rtdm_dev_context *context)
 /* --- clock services --- */
 static inline uint64_t rtdm_clock_read(void)
 {
-    return count2nano(rt_get_time());
+    return rt_get_time_ns();
 }
 
 
@@ -943,7 +943,7 @@ static inline int _sem_wait(void *sem)
 	if (rt_sem_wait(sem) < SEM_TIMOUT) {
 		return 0;
 	}
-	return _rt_whoami()->unblocked ? -EINTR : EIDRM;
+	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
 }
 
 static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *timeout_seq)
@@ -966,7 +966,7 @@ static inline int _sem_wait_timed(void *sem, int64_t timeout, rtdm_toseq_t *time
 	if (ret == SEM_TIMOUT) {
 		return -ETIMEDOUT;
 	}
-	return _rt_whoami()->unblocked ? -EINTR : EIDRM;
+	return _rt_whoami()->unblocked ? -EINTR : -EIDRM;
 }
 
 static inline void _sem_signal(void *sem)
@@ -1067,8 +1067,6 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 static inline int rtdm_in_rt_context(void)
 {
 	return 1;
-//	return in_hrt_mode(rtai_cpuid());
-//	return (hal_current_domain[rtai_cpuid()] != hal_root_domain);
 }
 
 int rtdm_exec_in_rt(struct rtdm_dev_context *context,

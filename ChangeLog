@@ -1,3 +1,9 @@
+2005-11-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /addons/fusion/skins/rtdm/module.c: force deferred rescheduling
+	  from within RTDM interrupt handlers. They are unsuitable for
+	  immediate mode.
+
 2005-11-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /addons/fusion/drivers/16550A: 16550A.c fixed a likely bug in

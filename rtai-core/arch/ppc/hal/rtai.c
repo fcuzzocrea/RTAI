@@ -90,6 +90,8 @@ static void rtai_proc_unregister(void);
 
 #define IRQ_DESC irq_desc
 
+#define SOFT_ENABLED(cpuid) ((1 << IFLAG) | (1 << (cpuid)))
+
 /*
  * This allows LINUX to handle IRQs requested with the function 
  * rt_request_global_irq(). By default it's off for compatibility  
@@ -344,7 +346,7 @@ static void linux_soft_sti(void)
        	struct cpu_own_status *cpu;
 
 	cpu = processor + (cpuid = hard_cpu_id());
-	set_intr_flag(cpu->intr_flag,(1 << IFLAG) | (1 << cpuid));
+	set_intr_flag(cpu->intr_flag, SOFT_ENABLED(cpuid));
 }
 #endif
 
@@ -354,7 +356,7 @@ static void run_pending_irqs(void)
        	struct cpu_own_status *cpu;
 
 	cpuid = hard_cpu_id();
-	if (!test_and_set_bit(cpuid, &global.cpu_in_sti)) {			
+	while (!test_and_set_bit(cpuid, &global.cpu_in_sti)) {			
 
 		cpu = processor + cpuid;
 		while (global.pending_irqs | cpu->pending_irqs | global.pending_srqs) {
@@ -374,6 +376,7 @@ static void run_pending_irqs(void)
 					printk("WHY HERE? AT THE MOMENT IT IS JUST UP, SO NO LOCAL IRQs.\n");
 				}
 				clear_bit(irq, &cpu->activ_irqs);
+				set_intr_flag(cpu->intr_flag, SOFT_ENABLED(cpuid));
 	       		} else {
 				hard_sti();
 			}
@@ -409,11 +412,14 @@ static void run_pending_irqs(void)
 				}
 #endif
 				clear_bit(irq, &global.activ_irqs);
+				set_intr_flag(cpu->intr_flag, SOFT_ENABLED(cpuid));
 			} else {
 				rt_spin_unlock_irq(&(global.data_lock));
 			}
 		}
 		clear_bit(cpuid, &global.cpu_in_sti);
+		if (!(global.pending_irqs | cpu->pending_irqs | global.pending_srqs))
+			break;
 	} 
 	/* We _should_ do this, but it doesn't work correctly */
 	//if(atomic_read(&ppc_n_lost_interrupts))do_lost_interrupts(MSR_EE);
@@ -421,9 +427,8 @@ static void run_pending_irqs(void)
 
 static void linux_sti(void)
 {
+	set_intr_flag(processor[hard_cpu_id()].intr_flag, SOFT_ENABLED(hard_cpu_id()));
 	run_pending_irqs();
-	set_intr_flag(processor[hard_cpu_id()].intr_flag,
-		      (1 << IFLAG) | (1 << hard_cpu_id()));
 }
 
 static void linux_save_flags(unsigned long *flags)
@@ -1106,8 +1111,10 @@ static void uninstall_patch(void)
 
 void __rt_mount_rtai(void)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,4,4)
 #define MSR(x) ((struct pt_regs *)((x)->thread.ksp + STACK_FRAME_OVERHEAD))->msr
 	struct task_struct *task;
+#endif
      	unsigned long flags, i;
 
 	printk("rtai: mounting\n");
@@ -1142,6 +1149,10 @@ void __rt_mount_rtai(void)
 		}
 	}
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(2,4,4)
+	/*
+	 * Fix MSR_EE. This seem to be required for Linux 2.4.4.
+	 */
 	task = &init_task;
 	MSR(task) |= MSR_EE;
 	if (task->thread.regs) {
@@ -1153,10 +1164,26 @@ void __rt_mount_rtai(void)
 			(task->thread.regs)->msr |= MSR_EE;
 		}
 	}
+#endif
 
 	hard_unlock_all(flags);
 	//printk("\n***** RTAI NEWLY MOUNTED (MOUNT COUNT %d) ******\n\n", rtai_mounted);
 	printk("rtai: mount done\n");
+}
+
+static inline RTIME let_dec_expire(void)
+{
+	RTIME t;
+	do {
+		t = rdtsc();
+#if defined(CONFIG_40x)
+	} while (get_dec_4xx() > 0);
+#elif defined(CONFIG_44x)
+        } while (get_dec() > 0);
+#else
+        } while (get_dec() <= tb_ticks_per_jiffy);
+#endif
+	return t;
 }
 
 // Simple, now we can simply block other processors and copy original data back
@@ -1188,15 +1215,15 @@ void __rt_umount_rtai(void)
 	global_irq[HARD_LOCK_IPI].handler = 0;
 	global_irq[HARD_LOCK_IPI].dest_status = 0;
 #endif
-#ifdef CONFIG_4xx
+#ifdef CONFIG_40x
         /* Reenable auto-reload mode used by Linux */
         if ((mfspr(SPRN_TCR) & TCR_ARE) == 0) {
-		while (get_dec_4xx() > 0);
+		let_dec_expire();
 		mtspr(SPRN_TCR,  mfspr(SPRN_TCR) | TCR_ARE);
 		set_dec_4xx(tb_ticks_per_jiffy);
         }
 #else
-	while (get_dec() <= tb_ticks_per_jiffy);
+	let_dec_expire();
 	set_dec(tb_ticks_per_jiffy);
 #endif
 	/* XXX We probably should change the per-process soft
@@ -1281,8 +1308,8 @@ int init_module(void)
       	spin_lock_init(&global.global.ic_lock);
 
 	for (i = 0; i < NR_RT_CPUS; i++) {
-		processor[i].intr_flag         = (1 << IFLAG) | (1 << i);
-		processor[i].linux_intr_flag   = (1 << IFLAG) | (1 << i);
+		processor[i].intr_flag         = SOFT_ENABLED(i);
+		processor[i].linux_intr_flag   = SOFT_ENABLED(i);
 		processor[i].pending_irqs      = 0;
 		processor[i].activ_irqs        = 0;
 		processor[i].rt_timer_handler  = 0;
@@ -1446,17 +1473,11 @@ void rt_request_timer(void (*handler)(void), unsigned int tick, int unused)
 	}
 	flags = hard_lock_all();
 
-#ifdef CONFIG_4xx
+#ifdef CONFIG_40x
 	/* Disable auto-reload mode used by Linux */
 	mtspr(SPRN_TCR,  mfspr(SPRN_TCR) & ~TCR_ARE);
-	do {
-		t = rdtsc();
-	} while (get_dec_4xx() > 0);
-#else
-	do {
-		t = rdtsc();
-	} while (get_dec() <= tb_ticks_per_jiffy);
 #endif
+	t = let_dec_expire();
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,2)
 	disarm_decr[cpuid]=1;
@@ -1481,7 +1502,7 @@ void rt_free_timer(void)
 	TRACE_RTAI_TIMER(TRACE_RTAI_EV_TIMER_FREE, 0, 0);
 
 	flags = hard_lock_all();
-#ifdef CONFIG_4xx
+#ifdef CONFIG_40x
 	/* Restore auto-reload mode for Linux */
 	mtspr(SPRN_TCR, mfspr(SPRN_TCR) | TCR_ARE);
 
@@ -1509,9 +1530,7 @@ void rt_request_apic_timers(void (*handler)(void), struct apic_timer_setup_data 
 	TRACE_RTAI_TIMER(TRACE_RTAI_EV_TIMER_REQUEST_APIC, handler, 0);
 
 	flags = hard_lock_all();
-	do {
-		t = rdtsc();
-	} while (get_dec());
+	t = let_dec_expire();
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
 		*(p = apic_timer_data + cpuid) = apic_timer_data[cpuid];
 		rt_times = rt_smp_times + cpuid;

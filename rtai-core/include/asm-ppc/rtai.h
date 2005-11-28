@@ -413,7 +413,7 @@ static inline void set_dec(unsigned int val)
 	mtspr(SPRN_DEC, val);
 }
 #endif
-#ifdef CONFIG_4xx
+#ifdef CONFIG_40x
 static inline unsigned int get_dec_4xx(void)
 {
 	return (mfspr(SPRN_PIT));
@@ -449,7 +449,7 @@ static inline void rt_set_decrementer_count(int delay)
 	if(!delay)delay = rt_times.intr_time - rdtsc();
 
 	if(delay<1){RT_BUG();}
-#ifdef CONFIG_4xx
+#ifdef CONFIG_40x
 	set_dec_4xx(delay);
 #else
         set_dec(delay);

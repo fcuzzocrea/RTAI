@@ -1,3 +1,11 @@
+2005-11-27  Wolfgang Grandegger <wg@grandegger.com>
+
+	* rtai-core/arch/ppc/hal/rtai.c: Fix various known problems with PPC
+	in the kilauea tree. They have already been fixed in the stromboli tree
+	some time ago.
+	
+	* rtai-core/include/asm-ppc/rtai.h: See above.
+	
 2005-01-20  Philippe Gerum  <rpm@xenomai.org>
 
  	* RELEASE: rtai-3.0 rev #5

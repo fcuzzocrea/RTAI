@@ -981,14 +981,14 @@ void rt_sched_unlock(void)
 }
 
 
-#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
+//#ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 void rtai_handle_isched_lock (int cpuid) /* Called with interrupts off */
 {
 	sched_get_global_lock(cpuid);
 	rt_schedule();
 	sched_release_global_lock(cpuid);
 }
-#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
+//#endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 
 void *rt_get_lxrt_fun_entry(int index);
@@ -2945,5 +2945,6 @@ EXPORT_SYMBOL(rt_schedule_soft);
 EXPORT_SYMBOL(rt_do_force_soft);
 EXPORT_SYMBOL(rt_schedule_soft_tail);
 EXPORT_SYMBOL(rt_sched_timed);
+EXPORT_SYMBOL(rtai_handle_isched_lock);
 
 #endif /* CONFIG_KBUILD */

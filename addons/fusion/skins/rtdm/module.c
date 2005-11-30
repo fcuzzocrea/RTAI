@@ -41,6 +41,8 @@
  * to extend a device profile with more hardware-specific functions.
  */
 
+#include <linux/module.h>
+
 #include <rtdm/rtdm.h>
 #include <rtdm/core.h>
 #include <rtdm/device.h>

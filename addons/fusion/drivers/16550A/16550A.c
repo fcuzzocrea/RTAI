@@ -592,10 +592,6 @@ int rt_16550_ioctl(struct rtdm_dev_context *context,
                     if (!hist_buf)
                         return -ENOMEM;
                 }
-/* this 2 lines must go immediately before, i.e. where you can see them now.
-                if (!hist_buf)
-                    return -ENOMEM;
-*/
             }
 
             rt_16550_set_config(ctx, config, &hist_buf);
@@ -1030,7 +1026,7 @@ static const struct rtdm_device __initdata device_tmpl = {
     device_class:       RTDM_CLASS_SERIAL,
     device_sub_class:   RTDM_SUBCLASS_16550A,
     driver_name:        "rt_16550A",
-    driver_version:     RTDM_DRIVER_VER(1, 2, 0),
+    driver_version:     RTDM_DRIVER_VER(1, 2, 1),
     peripheral_name:    "UART 16550A",
     provider_name:      "Jan Kiszka",
 };

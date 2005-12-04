@@ -1376,15 +1376,22 @@ int rt_sched_type(void)
 }
 
 
-void rt_preempt_always(int yes_no)
+int rt_hard_timer_tick_count(void)
 {
-	return;
+	int cpuid = rtai_cpuid();
+	if (rt_sched_timed) {
+		return oneshot_timer ? 0 : rt_smp_times[cpuid].periodic_tick;
+	}
+	return -1;
 }
 
 
-void rt_preempt_always_cpuid(int yes_no, unsigned int cpuid)
+int rt_hard_timer_tick_count_cpuid(int cpuid)
 {
-	return;
+	if (rt_sched_timed) {
+		return oneshot_timer ? 0 : rt_smp_times[cpuid].periodic_tick;
+	}
+	return -1;
 }
 
 
@@ -2598,14 +2605,14 @@ static struct rt_native_fun_entry rt_sched_entries[] = {
 	{ { 0, rt_task_signal_handler },	    SIGNAL_HANDLER  },
 	{ { 0, rt_task_use_fpu },		    TASK_USE_FPU },
 	{ { 0, rt_linux_use_fpu },		    LINUX_USE_FPU },
-	{ { 0, rt_preempt_always },		    PREEMPT_ALWAYS_GEN },
+	{ { 0, rt_hard_timer_tick_count },	    PREEMPT_ALWAYS_GEN },
 	{ { 0, rt_get_time_ns },		    GET_TIME_NS },
 	{ { 0, rt_get_cpu_time_ns },		    GET_CPU_TIME_NS },
 	{ { 0, rt_set_runnable_on_cpus },	    SET_RUNNABLE_ON_CPUS },
 	{ { 0, rt_set_runnable_on_cpuid },	    SET_RUNNABLE_ON_CPUID },
 	{ { 0, rt_get_timer_cpu },		    GET_TIMER_CPU },
 	{ { 0, start_rt_apic_timers },		    START_RT_APIC_TIMERS },
-	{ { 0, rt_preempt_always_cpuid },	    PREEMPT_ALWAYS_CPUID },
+	{ { 0, rt_hard_timer_tick_count_cpuid },    PREEMPT_ALWAYS_CPUID },
 	{ { 0, count2nano_cpuid },		    COUNT2NANO_CPUID },
 	{ { 0, nano2count_cpuid },		    NANO2COUNT_CPUID },
 	{ { 0, rt_get_time_cpuid },		    GET_TIME_CPUID },

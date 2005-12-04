@@ -231,10 +231,9 @@ int rt_task_use_fpu(struct rt_task_struct *task,
   
 void rt_linux_use_fpu(int use_fpu_flag);
 
-void rt_preempt_always(int yes_no);
+int rt_hard_timer_tick_count(void);
 
-void rt_preempt_always_cpuid(int yes_no,
-			     unsigned cpuid);
+int rt_hard_timer_tick_count_cpuid(int cpuid);
 
 RTIME count2nano(RTIME timercounts);
 

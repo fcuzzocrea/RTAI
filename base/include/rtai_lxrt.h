@@ -88,14 +88,14 @@
 #define SIGNAL_HANDLER	 		15
 #define TASK_USE_FPU			16
 #define LINUX_USE_FPU			17
-#define PREEMPT_ALWAYS_GEN		18
+#define HARD_TIMER_COUNT		18
 #define GET_TIME_NS			19
 #define GET_CPU_TIME_NS			20
 #define SET_RUNNABLE_ON_CPUS		21 
 #define SET_RUNNABLE_ON_CPUID		22	 
 #define GET_TIMER_CPU			23	 
 #define START_RT_APIC_TIMERS		24
-#define PREEMPT_ALWAYS_CPUID		25
+#define HARD_TIMER_COUNT_CPUID		25
 #define COUNT2NANO_CPUID		26
 #define NANO2COUNT_CPUID		27
 #define GET_TIME_CPUID			28
@@ -1022,10 +1022,10 @@ RTAI_PROTO(int,rt_linux_use_fpu,(int use_fpu_flag))
 	return rtai_lxrt(BIDX, SIZARG, LINUX_USE_FPU, &arg).i[LOW];
 }
 
-RTAI_PROTO(void,rt_preempt_always,(int yes_no))
+RTAI_PROTO(int, rt_hard_timer_tick, (void))
 {
-	struct { long yes_no; } arg = { yes_no };
-	rtai_lxrt(BIDX, SIZARG, PREEMPT_ALWAYS_GEN, &arg);
+	struct { long dummy; } arg;
+	return rtai_lxrt(BIDX, SIZARG, HARD_TIMER_COUNT, &arg).i[LOW];
 }
 
 RTAI_PROTO(RTIME,rt_get_time_ns,(void))
@@ -1070,10 +1070,10 @@ RTAI_PROTO(void,start_rt_apic_timers,(struct apic_timer_setup_data *setup_mode, 
 	rtai_lxrt(BIDX, SIZARG, START_RT_APIC_TIMERS, &arg);
 }
 
-RTAI_PROTO(void,rt_preempt_always_cpuid,(int yes_no, unsigned int cpuid))
+RTAI_PROTO(int, rt_hard_timer_tick_cpuid, (int cpuid))
 {
-	struct { long yes_no; unsigned long cpuid; } arg = { yes_no, cpuid };
-	rtai_lxrt(BIDX, SIZARG, PREEMPT_ALWAYS_CPUID, &arg);
+	struct { unsigned long cpuid; } arg = { cpuid };
+	return rtai_lxrt(BIDX, SIZARG, HARD_TIMER_COUNT_CPUID, &arg).i[LOW];
 }
 
 RTAI_PROTO(RTIME,count2nano_cpuid,(RTIME count, unsigned int cpuid))

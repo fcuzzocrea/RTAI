@@ -97,7 +97,9 @@ int main(int argc, char *argv[])
 		} else {
 			rt_set_oneshot_mode();
 		}
-		start_rt_timer(nano2count(PERIOD));
+		period = start_rt_timer(nano2count(PERIOD));
+	} else {
+		period = nano2count(PERIOD);
 	}
 
         for(i = 0; i < MAXDIM; i++) {
@@ -108,8 +110,7 @@ int main(int argc, char *argv[])
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
 	rt_make_hard_real_time();
-	period = nano2count(PERIOD);
-	rt_task_make_periodic(task, expected = rt_get_time() + 5*period, period);
+	rt_task_make_periodic(task, expected = rt_get_time() + 10*period, period);
 
 #ifdef OVERALL
 	min_diff = 1000000000;

@@ -1,3 +1,9 @@
+2005-12-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: added inquiries for hard timer tick count.
+	* /base/include/rtai_sched.h and rtai_lxrt.h: added declaration for
+	  inquiries of hard timer tick count.
+
 2005-11-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /addons/fusion/skins/rtdm/module.c: force deferred rescheduling

@@ -193,16 +193,16 @@ endmenu
 menu "Machine (x86)"
 
 config RTAI_DONT_DISPATCH_CORE_IRQS
-	bool "Direct IDT vectoring of RTAI native interrupt"
+	bool "Direct vectoring of RTAI native interrupts"
 	depends on RTAI_EXTENDED
 	default y
 	help
 	RTAI dispatches real time interrupts immediately to achieve as a
-	low overhead as possible, a very important on low end CPUs. By
+	low overhead as possible. Very important on low end CPUs. By
 	setting this option it is possible to achieve a further improvement
-	by allowing RTAI internal timer and SMP scheduling interrupts to
-	be vectored directly to their handlers, i.e without any dispatching
-	overhead. A must on low end CPUs.
+	by allowing hard RTAI internal timers and SMP interprocessor 
+	scheduling interrupts to be vectored directly to their handlers, 
+	i.e without any dispatching overhead. A must on low end CPUs.
 
 config RTAI_FPU_SUPPORT
 	bool "Enable FPU support"

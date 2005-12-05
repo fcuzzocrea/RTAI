@@ -46,7 +46,7 @@ int main(void)
 		exit(1);
 	}
 
-  	printf("RTAI Testsuite - LXRT latency (all data in nanoseconds)\n");
+  	printf("RTAI Testsuite - USER latency (all data in nanoseconds)\n");
 	while (1) {
   		if ((n++ % 21) == 0) {
   			printf("RTH|%11s|%11s|%11s|%11s|%11s|%11s\n", "lat min", "ovl min", "lat avg","lat max","ovl max", "overruns");

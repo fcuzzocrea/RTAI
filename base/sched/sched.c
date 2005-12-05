@@ -26,11 +26,13 @@ ACKNOWLEDGMENTS:
 */
 
 
-#define MONITOR_EXECTIME  1
-#define ALLOW_RR          1
-#define ONE_SHOT          0
-#define BUSY_TIME_ALIGN   0
-#define CAL_FREQS_FACT    0
+#if 0	/* moved to rtai_config.h */
+#define CONFIG_RTAI_MONITOR_EXECTIME  1
+#define CONFIG_RTAI_ALLOW_RR          1
+#define CONFIG_RTAI_ONE_SHOT          0
+#define CONFIG_RTAI_BUSY_TIME_ALIGN   0
+#define CONFIG_RTAI_CAL_FREQS_FACT    0
+#endif
 
 //#define USE_RTAI_TASKS    0
 
@@ -536,7 +538,7 @@ int rt_check_current_stack(void)
 
 
 #define RR_YIELD() \
-if (ALLOW_RR && rt_current->policy > 0) { \
+if (CONFIG_RTAI_ALLOW_RR && rt_current->policy > 0) { \
 	if (rt_current->yield_time <= rt_times.tick_time) { \
 		rt_current->rr_remaining = rt_current->rr_quantum; \
 		if (rt_current->state == RT_SCHED_READY) { \
@@ -560,14 +562,14 @@ if (ALLOW_RR && rt_current->policy > 0) { \
 #define TASK_TO_SCHEDULE() \
 do { \
 	prio = (new_task = rt_linux_task.rnext)->priority; \
-	if (ALLOW_RR && new_task->policy > 0) { \
+	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
 		new_task->yield_time = rt_times.tick_time + new_task->rr_remaining; \
 	} \
 } while (0)
 
 #define RR_INTR_TIME() \
 do { \
-	if (ALLOW_RR && new_task->policy > 0) { \
+	if (CONFIG_RTAI_ALLOW_RR && new_task->policy > 0) { \
 		preempt = 1; \
 		if (new_task->yield_time < rt_times.intr_time) { \
 			rt_times.intr_time = new_task->yield_time; \
@@ -600,7 +602,7 @@ do { \
 #define UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
 #endif
 
-#if MONITOR_EXECTIME
+#if CONFIG_RTAI_MONITOR_EXECTIME
 static RTIME switch_time[NR_RT_CPUS];
 #define KEXECTIME() \
 do { \
@@ -792,7 +794,7 @@ static void rt_schedule_on_schedule_ipi(void)
 	}
 sched_exit:
 	rtai_cli();
-#if BUSY_TIME_ALIGN
+#if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
 		rt_current->trap_handler_data = 0;
 		while(rdtsc() < rt_current->resume_time);
@@ -903,7 +905,7 @@ sched_soft:
 sched_exit:
 	rtai_cli();
 	sched_get_global_lock(cpuid);
-#if BUSY_TIME_ALIGN
+#if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
 		rt_current->trap_handler_data = 0;
 		while(rdtsc() < rt_current->resume_time);
@@ -1407,7 +1409,7 @@ RT_TRAP_HANDLER rt_set_task_trap_handler( RT_TASK *task, unsigned int vec, RT_TR
 	return old_handler;
 }
 
-static int OneShot = ONE_SHOT;
+static int OneShot = CONFIG_RTAI_ONE_SHOT;
 MODULE_PARM(OneShot, "i");
 
 static int Latency = TIMER_LATENCY;

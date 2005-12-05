@@ -710,19 +710,19 @@ AC_MSG_CHECKING(for real-time serial driver)
 AC_ARG_ENABLE(serial,
 	[ --enable-serial	Build real-time serial driver],
 	[case "$enableval" in
-	y | yes) CONFIG_RTAI_SERIAL=y ;;
-	*) unset CONFIG_RTAI_SERIAL ;;
+	y | yes) CONFIG_RTAI_DRIVERS_SERIAL=y ;;
+	*) unset CONFIG_RTAI_DRIVERS_SERIAL ;;
 	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_SERIAL:-no})
+AC_MSG_RESULT(${CONFIG_RTAI_DRIVERS_SERIAL:-no})
 
-AC_MSG_CHECKING(for fusion support)
-AC_ARG_ENABLE(fusion,
-	[ --enable-fusion	Enable fusion support],
+AC_MSG_CHECKING(for real-time serial driver)
+AC_ARG_ENABLE(16550a,
+	[ --enable-16550a Build real-time serial driver],
 	[case "$enableval" in
-	y | yes) CONFIG_RTAI_FUSION=y ;;
-	*) unset CONFIG_RTAI_FUSION ;;
+	y | yes) CONFIG_RTAI_DRIVERS_16550A=y ;;
+	*) unset CONFIG_RTAI_DRIVERS_16550A;;
 	esac])
-AC_MSG_RESULT(${CONFIG_RTAI_FUSION:-no})
+AC_MSG_RESULT(${CONFIG_RTAI_DRIVERS_16550A:-no})
 
 AC_MSG_CHECKING(for testsuite)
 AC_ARG_ENABLE(testsuite,
@@ -1117,9 +1117,9 @@ test \! x$CONFIG_RTAI_TASKLETS = x && AC_DEFINE(CONFIG_RTAI_TASKLETS,1,[Kconfig]
 test \! x$CONFIG_RTAI_USI = x && AC_DEFINE(CONFIG_RTAI_USI,1,[Kconfig])
 test \! x$CONFIG_RTAI_WD = x && AC_DEFINE(CONFIG_RTAI_WD,1,[Kconfig])
 test \! x$CONFIG_RTAI_LEDS = x && AC_DEFINE(CONFIG_RTAI_LEDS,1,[Kconfig])
-test \! x$CONFIG_RTAI_SERIAL = x && AC_DEFINE(CONFIG_RTAI_SERIAL,1,[Kconfig])
-test \! x$CONFIG_RTAI_FUSION = x && AC_DEFINE(CONFIG_RTAI_FUSION,1,[Kconfig])
-test \! x$CONFIG_RTAI_SKIN_RTDM = x && AC_DEFINE(CONFIG_RTAI_SKIN_RTDM,1,[Kconfig])
+test \! x$CONFIG_RTAI_DRIVERS_SERIAL = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_SERIAL,1,[Kconfig])
+test \! x$CONFIG_RTAI_DRIVERS_16550A = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_16550A,1,[Kconfig])
+test \! x$CONFIG_RTAI_RTDM = x && AC_DEFINE(CONFIG_RTAI_RTDM,1,[Kconfig])
 
 test x$CONFIG_RTAI_MATH = xy && AC_DEFINE(CONFIG_RTAI_MATH_BUILTIN,1,[Kconfig])
 test x$CONFIG_RTAI_BITS = xy && AC_DEFINE(CONFIG_RTAI_BITS_BUILTIN,1,[Kconfig])
@@ -1140,6 +1140,43 @@ test x$CONFIG_RTAI_SCHED_ISR_LOCK = xy && AC_DEFINE(CONFIG_RTAI_SCHED_ISR_LOCK,1
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_8254_LATENCY,$CONFIG_RTAI_SCHED_8254_LATENCY,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_APIC_LATENCY,$CONFIG_RTAI_SCHED_APIC_LATENCY,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,[Kconfig])
+
+case $CONFIG_RTAI_MONITOR_EXECTIME in
+	y) CONFIG_RTAI_MONITOR_EXECTIME=1 ;;
+	n|*) CONFIG_RTAI_MONITOR_EXECTIME=0 ;;
+esac
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_MONITOR_EXECTIME,$CONFIG_RTAI_MONITOR_EXECTIME,[Kconfig])
+
+case $CONFIG_RTAI_ALLOW_RR in
+	y) CONFIG_RTAI_ALLOW_RR=1 ;;
+	n|*) CONFIG_RTAI_ALLOW_RR=0 ;;
+esac
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_ALLOW_RR,$CONFIG_RTAI_ALLOW_RR,[Kconfig])
+
+case $CONFIG_RTAI_ONE_SHOT in
+	y) CONFIG_RTAI_ONE_SHOT=1 ;;
+	n|*) CONFIG_RTAI_ONE_SHOT=0 ;;
+esac
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_ONE_SHOT,$CONFIG_RTAI_ONE_SHOT,[Kconfig])
+
+case $CONFIG_RTAI_BUSY_TIME_ALIGN in
+	y) CONFIG_RTAI_BUSY_TIME_ALIGN=1 ;;
+	n|*) CONFIG_RTAI_BUSY_TIME_ALIGN=0 ;;
+esac
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_BUSY_TIME_ALIGN,$CONFIG_RTAI_BUSY_TIME_ALIGN,[Kconfig])
+
+case $CONFIG_RTAI_CAL_FREQS_FACT in
+	y) CONFIG_RTAI_CAL_FREQS_FACT=1 ;;
+	n|*) CONFIG_RTAI_CAL_FREQS_FACT=0 ;;
+esac
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_CAL_FREQS_FACT,$CONFIG_RTAI_CAL_FREQS_FACT,[Kconfig])
+
+case $CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS in
+	y) CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS=1 ;;
+	n|*) CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS=0 ;;
+esac
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS,$CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS,[Kconfig])
+
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_MALLOC_HEAPSZ,$CONFIG_RTAI_MALLOC_HEAPSZ,[Kconfig])
 if test x$CONFIG_DEVFS_FS = xy; then
    fifos_template="/dev/rtf/%d"
@@ -1258,12 +1295,11 @@ AM_CONDITIONAL(CONFIG_RTAI_LEDS_BUILTIN,[test x$CONFIG_RTAI_LEDS = xy])
 dnl Non-core packages.
 AM_CONDITIONAL(CONFIG_RTAI_COMEDI_LXRT,[test x$CONFIG_RTAI_COMEDI_LXRT = xy])
 AM_CONDITIONAL(CONFIG_RTAI_CPLUSPLUS,[test x$CONFIG_RTAI_CPLUSPLUS = xy])
-AM_CONDITIONAL(CONFIG_RTAI_SERIAL,[test x$CONFIG_RTAI_SERIAL = xy])
-AM_CONDITIONAL(CONFIG_RTAI_FUSION,[test x$CONFIG_RTAI_FUSION = xy])
-	dnl Supported skins
-	AM_CONDITIONAL(CONFIG_RTAI_SKIN_RTDM,[test x$CONFIG_RTAI_SKIN_RTDM = xy])
-	dnl Supported drivers
-	AM_CONDITIONAL(CONFIG_RTAI_DRIVERS_16550A,[test x$CONFIG_RTAI_DRIVERS_16550A = xy])
+dnl Supported skins
+AM_CONDITIONAL(CONFIG_RTAI_RTDM,[test x$CONFIG_RTAI_RTDM = xy])
+dnl Supported drivers
+AM_CONDITIONAL(CONFIG_RTAI_DRIVERS_SERIAL,[test x$CONFIG_RTAI_DRIVERS_SERIAL = xy])
+AM_CONDITIONAL(CONFIG_RTAI_DRIVERS_16550A,[test x$CONFIG_RTAI_DRIVERS_16550A = xy])
 
 AM_CONDITIONAL(CONFIG_RTAI_LAB,[test x$CONFIG_RTAI_LAB = xy])
 AM_CONDITIONAL(CONFIG_RTAI_MVM,[test x$CONFIG_RTAI_MVM = xy])
@@ -1429,9 +1465,6 @@ RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CXXFLAGS -D__IN_RTAI__"
 RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -D__IN_RTAI__"
 
 AC_CONFIG_LINKS(base/include/asm:base/include/asm-$RTAI_TARGET_ARCH)
-if test x$CONFIG_RTAI_FUSION = xy; then
-   AC_CONFIG_LINKS(addons/fusion/include/nucleus/asm:addons/fusion/include/nucleus/asm-$RTAI_TARGET_ARCH)
-fi
 
 if test x$CONFIG_RTAI_OLD_FASHIONED_BUILD = xy; then
    AC_CONFIG_LINKS(base/include/rtai_config.h:rtai_config.h)
@@ -1464,10 +1497,10 @@ if test x$CONFIG_KBUILD = xy; then
    AC_CONFIG_LINKS(base/usi/Makefile:base/usi/Makefile.kbuild)
    AC_CONFIG_LINKS(base/math/Makefile:base/math/Makefile.kbuild)
    AC_CONFIG_LINKS(base/sched/Makefile:base/sched/Makefile.kbuild)
-   AC_CONFIG_LINKS(addons/serial/Makefile:addons/serial/Makefile.kbuild)
+   AC_CONFIG_LINKS(addons/drivers/serial/Makefile:addons/drivers/serial/Makefile.kbuild)
    AC_CONFIG_LINKS(addons/comedi/Makefile:addons/comedi/Makefile.kbuild)
-   AC_CONFIG_LINKS(addons/fusion/drivers/16550A/Makefile:addons/fusion/drivers/16550A/Makefile.kbuild)
-   AC_CONFIG_LINKS(addons/fusion/skins/rtdm/Makefile:addons/fusion/skins/rtdm/Makefile.kbuild)
+   AC_CONFIG_LINKS(addons/drivers/16550A/Makefile:addons/drivers/16550A/Makefile.kbuild)
+   AC_CONFIG_LINKS(addons/rtdm/Makefile:addons/rtdm/Makefile.kbuild)
    AC_CONFIG_LINKS(testsuite/kern/latency/Makefile:testsuite/kern/latency/Makefile.kbuild)
    AC_CONFIG_LINKS(testsuite/kern/preempt/Makefile:testsuite/kern/preempt/Makefile.kbuild)
    AC_CONFIG_LINKS(testsuite/kern/switches/Makefile:testsuite/kern/switches/Makefile.kbuild)
@@ -1556,24 +1589,18 @@ AC_CONFIG_FILES([ \
 	base/leds/GNUmakefile \
 	])
 
-build_addons=$CONFIG_RTAI_CPLUSPLUS$CONFIG_RTAI_COMEDI_LXRT$CONFIG_RTAI_SERIAL$CONFIG_RTAI_FUSION
+build_addons=$CONFIG_RTAI_CPLUSPLUS$CONFIG_RTAI_COMEDI_LXRT$CONFIG_RTAI_DRIVERS$CONFIG_RTAI_RTDM
 
 if test -d $srcdir/addons; then
   AC_CONFIG_FILES([ \
        addons/GNUmakefile \
        addons/cpp/GNUmakefile \
        addons/comedi/GNUmakefile \
-       addons/serial/GNUmakefile \
-       addons/fusion/GNUmakefile \
-       addons/fusion/drivers/GNUmakefile \
-       addons/fusion/drivers/16550A/GNUmakefile \
-       addons/fusion/include/GNUmakefile \
-       addons/fusion/include/nucleus/GNUmakefile \
-       addons/fusion/include/nucleus/asm-i386/GNUmakefile \
-       addons/fusion/include/nucleus/asm-x86_64/GNUmakefile \
-       addons/fusion/skins/GNUmakefile \
-       addons/fusion/skins/rtdm/GNUmakefile \
-       addons/fusion/skins/rtdm/lib/GNUmakefile \
+       addons/drivers/GNUmakefile \
+       addons/drivers/serial/GNUmakefile \
+       addons/drivers/16550A/GNUmakefile \
+       addons/rtdm/GNUmakefile \
+       addons/rtdm/lib/GNUmakefile \
        ])
 elif test \! x$build_addons = x; then
      AC_MSG_ERROR([addons package is missing])

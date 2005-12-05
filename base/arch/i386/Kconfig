@@ -191,8 +191,8 @@ endmenu
 
 menu "Machine (x86)"
 
-config RTAI_HAL_PREEMPT
-	bool "Preemptible interrupt dispatching"
+config RTAI_DONT_DISPATCH_CORE_IRQS
+	bool "Direct IDT vectoring of RTAI native interrupt"
 	depends on RTAI_EXTENDED
 	default y
 
@@ -318,6 +318,38 @@ config RTAI_SCHED_APIC_LATENCY
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of LXRT slots"
 	default 100
+
+config RTAI_MONITOR_EXECTIME
+	bool "Display RTAI task execution time (per thousands)"
+	default y
+	help
+
+config RTAI_ALLOW_RR
+	bool "Allow round-robin scheduling"
+	default y
+	help
+
+config RTAI_ONE_SHOT
+	bool "One-shot timer mode"
+	default n
+	help
+	Set to enable one-shot timer mode as the default.
+	If not set, the hard timer will run in periodic mode
+	according to the period used in start_rt_timer().
+	Any setting can be overridden by the user application
+	by calling rt_set_oneshot_mode() or rt_set_periodic_mode().
+
+config RTAI_BUSY_TIME_ALIGN
+	bool "Busy wait to ensure resume time alignment"
+	default n
+	help
+	Busy wait in case of scheduling anticipation
+
+config RTAI_CAL_FREQS_FACT
+	bool "Cure loosely calibrated frequencies - see help"
+	default n
+	help
+	... TODO
 
 endmenu
 
@@ -670,8 +702,18 @@ config RTAI_CPLUSPLUS
 
 	The module will be called rtai_cpp.o.
 
-config RTAI_SERIAL
-	bool "Serial line driver"
+config RTAI_RTDM
+	bool "Real-Time Driver Model over RTAI"
+	depends on RTAI_SCHED_LXRT
+	default n
+	help
+
+	WRITEME.
+
+menu "Drivers"
+
+config RTAI_DRIVERS_SERIAL
+	bool "RTAI serial line driver"
 	default y
 	help
 
@@ -679,32 +721,9 @@ config RTAI_SERIAL
 
 	The module will be called rtai_serial.o.
 
-menu "Fusion support"
-
-config RTAI_FUSION
-	bool "Fusion support"
-	default n
-	help
-
-	RTAI provides support for fusion.
-
-menu "Skins"
-
-config RTAI_SKIN_RTDM
-	bool "RTDM support"
-	depends on RTAI_FUSION
-	default n
-	help
-
-	Real-Time Device Manager?
-
-endmenu
-
-menu "Drivers"
-
 config RTAI_DRIVERS_16550A
-	bool "16550A driver support"
-	depends on RTAI_FUSION
+	bool "RTDM base 16550A driver support"
+	depends on RTAI_RTDM
 	default n
 	help
 

@@ -85,9 +85,9 @@ pci.ids database, ICH5-M ?)
 #define BIOS_EN_BIT         (0x01 << 2)
 #define GBL_SMI_EN_BIT      (0x01) /* This is reset by a PCI reset event! */
 
-static const unsigned rthal_smi_masked_bits = 0 |
+static const unsigned rthal_smi_masked_bits = 0
 #if CONFIG_RTAI_HW_SMI_ALL
-    GBL_SMI_EN_BIT
+    | GBL_SMI_EN_BIT
 #else
 #if CONFIG_RTAI_HW_SMI_INTEL_USB2
     | INTEL_USB2_EN_BIT
@@ -103,7 +103,7 @@ static const unsigned rthal_smi_masked_bits = 0 |
 #endif
 #if CONFIG_RTAI_HW_SMI_MC
     | MCSMI_EN_BIT
-#endi
+#endif
 #if CONFIG_RTAI_HW_SMI_APMC
     | APMC_EN_BIT
 #endif
@@ -113,7 +113,8 @@ static const unsigned rthal_smi_masked_bits = 0 |
 #if CONFIG_RTAI_HW_SMI_BIOS
     | BIOS_EN_BIT
 #endif
-#endif;
+#endif
+;
 
 static unsigned rthal_smi_saved_bits;
 static unsigned short rthal_smi_en_addr;

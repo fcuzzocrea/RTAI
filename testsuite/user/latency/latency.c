@@ -128,14 +128,21 @@ int main(int argc, char *argv[])
 		samp.cnt = 0;
 		for (skip = 0; skip < SKIP; skip++) {
 			expected += period;
-			samp.ovrn += rt_task_wait_period();
 			samp.cnt++;
 
-			if (TIMER_MODE) {
-				diff = (int) ((t = rt_get_cpu_time_ns()) - svt - PERIOD);
-				svt = t;
+			if (!rt_task_wait_period()) {
+				if (TIMER_MODE) {
+					diff = (int) ((t = rt_get_cpu_time_ns()) - svt - PERIOD);
+					svt = t;
+				} else {
+					diff = (int) count2nano(rt_get_time() - expected);
+				}
 			} else {
-				diff = (int) count2nano(rt_get_time() - expected);
+				samp.ovrn++;
+				diff = 0;
+				if (TIMER_MODE) {
+					svt = rt_get_cpu_time_ns();
+				}
 			}
 
 			if (diff < min_diff) {

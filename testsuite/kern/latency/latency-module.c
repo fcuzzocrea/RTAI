@@ -156,6 +156,7 @@ fun(long thread)
 		}
 	}
 #endif
+
 	svt = rt_get_cpu_time_ns();
 	samp.ovrn = 0;
 	while (1) {
@@ -172,14 +173,21 @@ fun(long thread)
 		for (i = 0; i < loops; i++) {
 			cpu_used[hard_cpu_id()]++;
 			expected += period_counts;
-			samp.ovrn += rt_task_wait_period();
 			samp.cnt++;
 
-			if (timer_mode) {
-				diff = (int) ((t = rt_get_cpu_time_ns()) - svt - period);
-				svt = t;
+			if (!rt_task_wait_period()) {
+				if (timer_mode) {
+					diff = (int) ((t = rt_get_cpu_time_ns()) - svt - period);
+					svt = t;
+				} else {
+					diff = (int) count2nano(rt_get_time() - expected);
+				}
 			} else {
-				diff = (int) count2nano(rt_get_time() - expected);
+				samp.ovrn++;
+				diff = 0;
+				if (timer_mode) {
+					svt = rt_get_cpu_time_ns();
+				}
 			}
 
 			if (diff < min_diff) { min_diff = diff; }

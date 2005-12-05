@@ -1269,7 +1269,7 @@ RTIME start_rt_timer(int period)
 		setup_data[cpuid].count = count2nano(period);
 	}
 	start_rt_apic_timers(setup_data, rtai_cpuid());
-	return setup_data[0].count;
+	return setup_data[0].mode ? setup_data[0].count : period;
 }
 
 

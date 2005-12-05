@@ -96,7 +96,8 @@ config RTAI_TESTSUITE
 	help
 	Once you are done with the building process of RTAI, it may be
 	safe to run the testsuite to make sure your RTAI system is
-	functional.
+	functional. However if it does not it is possible that RTAI is not
+	he only one to blame, check your kernel config also.
 
 config RTAI_COMPAT
 	bool "Enable source compatibility mode"
@@ -195,6 +196,13 @@ config RTAI_DONT_DISPATCH_CORE_IRQS
 	bool "Direct IDT vectoring of RTAI native interrupt"
 	depends on RTAI_EXTENDED
 	default y
+	help
+	RTAI dispatches real time interrupts immediately to achieve as a
+	low overhead as possible, a very important on low end CPUs. By
+	setting this option it is possible to achieve a further improvement
+	by allowing RTAI internal timer and SMP scheduling interrupts to
+	be vectored directly to their handlers, i.e without any dispatching
+	overhead. A must on low end CPUs.
 
 config RTAI_FPU_SUPPORT
 	bool "Enable FPU support"
@@ -306,23 +314,45 @@ menu "Scheduler options"
 config RTAI_SCHED_ISR_LOCK
 	bool "Disable rescheduling from ISRs"
 	default n
+	help
+	RTAI schedules as soon as a higher priority task is awaken in an 
+	interrupt handler, i.e. it does not wait to exit the handler itself.
+	This is the best way as a user hat does not want it as just to care
+	of calling any scheduling API at the very end of her/his handler.
+	Those not wanting to care when/where to call any scheduling API
+	in their handler should enable this options to be happy.
 
 config RTAI_SCHED_8254_LATENCY
 	string "8254 tuning latency (ns)"
 	default 4700
+	help
+	The anticipation time to be used to program the hard timer, in oneshot
+	mode, for the next scheduling shot in order to compensate for the 
+	programming overhead need to determine the right firing time.
 
 config RTAI_SCHED_APIC_LATENCY
 	string "APIC tuning latency (ns)"
 	default 3944
+        help
+        The anticipation time to be used to program the hard timer, in oneshot
+        mode, for the next scheduling shot in order to compensate for the
+        programming overhead need to determine the right firing time.
 
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of LXRT slots"
 	default 100
+	help
+	The number of registerable objects in RTAI.
 
 config RTAI_MONITOR_EXECTIME
 	bool "Display RTAI task execution time (per thousands)"
 	default y
 	help
+	If this option is enabled it is possible to see the time consumed by
+	hard real time tasks, in per thousands of the total time available, 
+	by using the RTAI scheduler proc file, e.g. "cat /proc/rtai/scheduler".
+	Since this option uses the TSC it is better to avoid it in production
+	for x86 CPUs not having TSCs, i.e. 486s and some untrue 586s.
 
 config RTAI_ALLOW_RR
 	bool "Allow round-robin scheduling"
@@ -343,13 +373,32 @@ config RTAI_BUSY_TIME_ALIGN
 	bool "Busy wait to ensure resume time alignment"
 	default n
 	help
-	Busy wait in case of scheduling anticipation
+	In oneshot mode there is a calibrated anticipation of the timer
+	firing to compensate for the time consumed in scheduling. 
+	Sometimes, either because of a bad calibration or purposely, it is
+	possibile to anticipate the scheduling by setting a larger than needed
+	anticipation. In such cases with this option one can be sure to
+	achieve the desired scheduling time at the expense of waisting
+	processor time. Useful when there is enough computational power to 
+	waist in favour of precise schedule deadlines.
 
 config RTAI_CAL_FREQS_FACT
 	bool "Cure loosely calibrated frequencies - see help"
 	default n
 	help
-	... TODO
+	In oneshot mode using the APIC timer, i.e. always for SMP, a precise 
+	scheduling time depends also on the ratio cpu_freq/apic_freq, as
+	achievable by using the RTAI calibration tool. If no calibration is 
+	run one will rely on what Linux makes available by default, which can 
+	be in error by a few parts per thousands.
+ 	That leads to large and systematic latencies, especially in the case
+	of low frequency schedules. By setting this option to a suitable
+	value one can be sure that a certain firing frequency is granted 
+	even when relatively large idle periods are enconuntered, thus
+	limiting the overall latency with which long sleeping tasks might
+	be awaken in case of unprecise calibrations of the above cited
+	frequencies.
+
 
 endmenu
 
@@ -403,6 +452,11 @@ config RTAI_NETRPC_RTNET
 	bool "Emulate RTNet"
 	depends on RTAI_NETRPC
 	default y
+	help
+	This enable RTNet like usage, using Linux soft networking support,
+	even when no RTNet is available. It can be used also when RTNet is
+	available. In such a case soft real time RTAI tasks will avoid loading
+	the real time networking.
 
 config RTAI_SHM
 	tristate "Shared memory"
@@ -442,6 +496,13 @@ config RTAI_MSG
 	tristate "Message"
 	default m
 	help
+	Direct synchronization by direct interask messaging, either in fast
+	single unsigned long messages or in extended mode arbitrarely sized
+	messages. Both sync and async messages with replies can be used.
+	Blocking messages exploit priority inheritance, dynamic ceiling in
+	the case of mixing inheritances with resource sems.
+	QNX styled APIs are also possible.
+
 	The module will be called rtai_msg.o.
 
 config RTAI_MBX
@@ -707,8 +768,8 @@ config RTAI_RTDM
 	depends on RTAI_SCHED_LXRT
 	default n
 	help
-
-	WRITEME.
+	Real Time Drive Model specific implementation for RTAI.
+	The module is called rtai_rtdm.xx.
 
 menu "Drivers"
 
@@ -727,7 +788,9 @@ config RTAI_DRIVERS_16550A
 	default n
 	help
 
-	Driver 16550A
+	RTAI provides an alternate real-time serial driver based on RTDM.
+
+	The module is called rtai_16550A.xx.
 
 endmenu
 

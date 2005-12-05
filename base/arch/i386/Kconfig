@@ -383,8 +383,8 @@ config RTAI_BUSY_TIME_ALIGN
 	waist in favour of precise schedule deadlines.
 
 config RTAI_CAL_FREQS_FACT
-	bool "Cure loosely calibrated frequencies - see help"
-	default n
+	string "Cure loosely calibrated frequencies - see help"
+	default 0
 	help
 	In oneshot mode using the APIC timer, i.e. always for SMP, a precise 
 	scheduling time depends also on the ratio cpu_freq/apic_freq, as
@@ -397,8 +397,8 @@ config RTAI_CAL_FREQS_FACT
 	even when relatively large idle periods are enconuntered, thus
 	limiting the overall latency with which long sleeping tasks might
 	be awaken in case of unprecise calibrations of the above cited
-	frequencies.
-
+	frequencies. The granted firing interval will roughly be equal to:
+	1.0/(RTAI_CAL_FREQS_FACT + 2.0) (seconds).
 
 endmenu
 

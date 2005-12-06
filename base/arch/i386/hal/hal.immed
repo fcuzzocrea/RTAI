@@ -39,7 +39,9 @@
  *@{*/
 
 
-#define DONT_DISPATCH_CORE_IRQS  1
+#if 0	/* defined & set in rtai_config.h */
+#define CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS  1
+#endif
 #define CHECK_STACK_IN_IRQ  0
 
 #include <linux/version.h>
@@ -801,7 +803,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define SYMBOL_NAME_STR(X) #X
 #endif
 
-#if DONT_DISPATCH_CORE_IRQS
+#if CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
 
 #define SET_INTR_GATE(vector, handler, save) \
 	do { save = rtai_set_gate_vector(vector, 14, 0, handler); } while (0)
@@ -2067,7 +2069,7 @@ int __rtai_hal_init (void)
 	IsolCpusMask = 0;
 #endif
 
-	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", HAL_TYPE, DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", HAL_TYPE, CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
 
 	return 0;
 }

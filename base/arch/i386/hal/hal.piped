@@ -797,7 +797,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 	do { rtai_cli(); } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
 #define HAL_TICK_REGS hal_tick_regs[cpuid]
 #else
 #define HAL_TICK_REGS hal_tick_regs

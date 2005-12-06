@@ -12,7 +12,7 @@ usable with both Linux 2.4.xx and 2.6.xx. To set it up use the patches
 hal-linux-whatever-version, found within this distribution only, and
 enable the definition of the macro RTAI_DUOSS in "include/asm-i386/rtai_hal.h".
 
-RTAI_TRIOSS is the newest relase that allows to work with and integrate
+RTAI_TRIOSS is a relase that allows to work with and integrate
 RTAI+FUSION+Linux (notice that FUSION has been renamed XENOMAI recently).
 It is usable with Linux 2.6.xx only and to set it up you must use the patches
 hal-trioss-whatever-version, found within this distribution only. Then you
@@ -23,7 +23,7 @@ i.e. just for RTAI+Linux.
 
 The difference between a duo RTAI obtained just by enabling RTAI_DUOSS and
 the one obtained by disabling both RTAI_DUOSS and RTAI_TRIOSS is just a bit
-more overhead and latency for the latter combination due to many sstacked
+more overhead and latency for the latter combination due to many stacked
 pipes in ADEOS. So use just hal-linux-whatever patches and set RTAI_DUOSS if 
 you have no need to work with the trio.
 

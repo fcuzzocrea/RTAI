@@ -73,9 +73,15 @@ calibration_helper_LDADD = \
 
 all-local: calibrate_rt$(modext) smi_rt$(modext)
 
-install-exec-local: calibrate_rt$(modext)
+RT_MODULES = calibrate_rt$(modext) smi_rt$(modext)
+
+install-exec-local: $(RT_MODULES)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
-	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)/rtai_calibrate.ko
+	@for m in $(RT_MODULES) ; do \
+		k="rtai_$$m" ; \
+		echo "installing module $$m as $$k in $(DESTDIR)$(moduledir)" ; \
+		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$k ; \
+	done
 
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)

@@ -27,6 +27,9 @@
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 
+int smiReset = 0;
+MODULE_PARM(smiReset, "i");
+
 /* set these as you need */
 #define CONFIG_RTAI_HW_SMI_ALL		0
 #define CONFIG_RTAI_HW_SMI_INTEL_USB2	0
@@ -182,8 +185,12 @@ int init_module(void)
 
 void cleanup_module(void)         
 {
-	rthal_smi_restore();
-	printk("SMI module unloaded\n");
+	if (smiReset) {
+		rthal_smi_restore();
+		printk("SMI module unloaded and reset\n");
+	} else {
+		printk("SMI module unloaded but not reset\n");
+	}
 }
 
 MODULE_LICENSE("GPL");

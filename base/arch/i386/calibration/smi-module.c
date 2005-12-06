@@ -27,7 +27,7 @@
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 
-int smiReset = 0;
+int smiReset = 1;
 MODULE_PARM(smiReset, "i");
 
 /* set these as you need */

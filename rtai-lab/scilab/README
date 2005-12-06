@@ -4,3 +4,8 @@ and monitered with RTAI-Lab.
 
 Please refer to the "scilab-howto" manual which contains a detailed description
 about installing RTAI, RTAI-LAb and the Scilab/Scicos addons.
+
+Old RTAI Scicos block diagram are no more supported with the new approach implemented in this new release. I'm sorry for this (little) problem.
+
+The user can now implement his own "template makefile" under "<scilab_dir>/macros/RTAI/RT_templates. The new scicos menu "Set Target"  allows to link a template makefile to a scicos block diagram. The name of the "target" is the same as the template makefile (rtai.mak -> rtai).
+

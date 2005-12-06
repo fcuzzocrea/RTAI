@@ -22,10 +22,11 @@
 #include <linux/config.h>
 #include <linux/version.h>
 #include <asm/uaccess.h>
+
+#include <rtai_schedcore.h>
 #include <rtai_sched.h>
 #include <rtai_lxrt.h>
 #include <rtai_bits.h>
-#include <rtai_schedcore.h>
 
 MODULE_LICENSE("GPL");
 
@@ -184,8 +185,9 @@ int rt_bits_delete(BITS *bits)
 	return 0;
 }
 
-#define TEST_FUN(x)   ((int *)&(x)->retval)[0]
-#define TEST_MASK(x)  ((unsigned long *)&(x)->retval)[1]
+#define TEST_BUF(x, y)  do { (x)->retval = (unsigned long)(y); } while (0)
+#define TEST_FUN(x)     ((long *)((unsigned long)(x)->retval))[0]
+#define TEST_MASK(x)    ((unsigned long *)((unsigned long)(x)->retval))[1]
 
 unsigned long rt_get_bits(BITS *bits)
 {
@@ -267,7 +269,9 @@ int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun,
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
+		long bits_test[2];	
 		rt_current = RT_CURRENT;
+		TEST_BUF(rt_current, bits_test);
 		TEST_FUN(rt_current)  = testfun;
 		TEST_MASK(rt_current) = testmasks;
 		rt_current->state |= RT_SCHED_SEMAPHORE;
@@ -289,7 +293,7 @@ int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun,
 		if (space) {
 			*resulting_mask = mask;
 		} else {
-			copy_to_user(resulting_mask, &mask, sizeof(mask));
+			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
 	return 0;
@@ -315,7 +319,7 @@ int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long testmasks, int exitf
 		if (space) {
 			*resulting_mask = mask;
 		} else {
-			copy_to_user(resulting_mask, &mask, sizeof(mask));
+			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
 	return 0;
@@ -332,7 +336,9 @@ int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int ex
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
+		long bits_test[2];
 		rt_current = RT_CURRENT;
+		TEST_BUF(rt_current, bits_test);
 		TEST_FUN(rt_current)  = testfun;
 		TEST_MASK(rt_current) = testmasks;
 		rt_current->blocked_on = &bits->queue;
@@ -364,7 +370,7 @@ int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int ex
 		if (space) {
 			*resulting_mask = mask;
 		} else {
-			copy_to_user(resulting_mask, &mask, sizeof(mask));
+			rt_copy_to_user(resulting_mask, &mask, sizeof(mask));
 		}
 	}
 	return 0;
@@ -406,21 +412,21 @@ int rt_named_bits_delete(BITS *bits)
 	return rt_drg_on_adr(bits);
 }
 
-int rt_bits_init_u(unsigned long name, unsigned long mask)
+void *rt_bits_init_u(unsigned long name, unsigned long mask)
 {
 	BITS *bits;
 	if (rt_get_adr(name)) {
-		return 0;
+		return NULL;
 	}
 	if ((bits = rt_malloc(sizeof(BITS)))) {
 		rt_bits_init(bits, mask);
 		if (rt_register(name, bits, IS_BIT, current)) {
-			return (int)bits;
+			return bits;
 		} else {
 			rt_free(bits);
 		}
 	}
-	return 0;
+	return NULL;
 }
 
 int rt_bits_delete_u(BITS *bits)

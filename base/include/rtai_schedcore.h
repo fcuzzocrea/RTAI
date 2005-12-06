@@ -16,6 +16,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+
 #ifndef _RTAI_SCHEDCORE_H
 #define _RTAI_SCHEDCORE_H
 
@@ -55,6 +56,134 @@
 #include <asm/system.h>
 #include <asm/io.h>
 
+
+#ifndef _RTAI_SCHED_XN_H
+#define _RTAI_SCHED_XN_H
+
+#ifdef RTAI_TRIOSS
+
+extern int nkgkptd;
+#define FUSIONEXT  (nkgkptd)
+
+// provisional, to be replaced by appropriate headers declarations
+#define XNSUSP   (0x00000001)
+#define XNRELAX  (0x00000100)
+
+typedef struct xnarchtcb {
+    union i387_union fpuenv __attribute__ ((aligned (16)));
+    unsigned stacksize;
+    unsigned long *stackbase;
+    unsigned long esp; 
+    unsigned long eip;
+    struct task_struct *user_task;
+    struct task_struct *active_task;
+    unsigned long *espp; 
+    unsigned long *eipp;
+    union i387_union *fpup; 
+} xnarchtcb_t;
+
+typedef struct xnthread { xnarchtcb_t tcb; unsigned long status; } xnthread_t;
+
+extern void xnpod_resume_thread(void *, unsigned long);
+extern void xnpod_schedule(void);
+// end of provisional
+
+extern struct hal_domain_struct *fusion_domain;
+
+extern struct klist_t fusion_wake_up_srq[];
+
+#define NON_RTAI_TASK_SUSPEND(task) \
+do { \
+	xnthread_t *thread; \
+	if ((thread = (task->lnxtsk)->rtai_tskext(FUSIONEXT)) && !(thread->status & XNRELAX)) { \
+		atomic_set_mask(XNSUSP, (atomic_t *)&thread->status); \
+	} else { \
+		(task->lnxtsk)->state = TASK_SOFTREALTIME; \
+	} \
+} while (0)
+
+#define pend_fusion_wake_up_srq(lnxtsk, cpuid) \
+do { \
+	fusion_wake_up_srq[cpuid].task[fusion_wake_up_srq[cpuid].in++ & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
+	hal_pend_domain_uncond(fusion_wake_up_srq[cpuid].srq, fusion_domain, cpuid); \
+} while (0)
+
+#define NON_RTAI_TASK_RESUME(ready_task) \
+do { \
+	xnthread_t *thread; \
+	if ((thread = (ready_task->lnxtsk)->rtai_tskext(FUSIONEXT)) && !(thread->status & XNRELAX)) { \
+		pend_fusion_wake_up_srq(ready_task->lnxtsk, rtai_cpuid()); \
+	} else { \
+               	pend_wake_up_srq(ready_task->lnxtsk, rtai_cpuid()); \
+	} \
+} while (0)
+
+#define DECLARE_FUSION_WAKE_UP_STUFF \
+struct klist_t fusion_wake_up_srq[MAX_WAKEUP_SRQ]; \
+static void fusion_wake_up_srq_handler(unsigned srq) \
+{ \
+	int cpuid = srq - fusion_wake_up_srq[0].srq; \
+	while (fusion_wake_up_srq[cpuid].out != fusion_wake_up_srq[cpuid].in) { \
+		xnpod_resume_thread(((struct task_struct *)fusion_wake_up_srq[cpuid].task[fusion_wake_up_srq[cpuid].out++ & (MAX_WAKEUP_SRQ - 1)])->rtai_tskext(FUSIONEXT), XNSUSP); \
+	} \
+	xnpod_schedule(); \
+} \
+EXPORT_SYMBOL(fusion_wake_up_srq);
+
+#define REQUEST_RESUME_SRQs_STUFF() \
+do { \
+	int cpuid; \
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) { \
+        	hal_virtualize_irq(hal_root_domain, wake_up_srq[cpuid].srq = hal_alloc_irq(), wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
+        	hal_virtualize_irq(fusion_domain, fusion_wake_up_srq[cpuid].srq = hal_alloc_irq(), fusion_wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
+	} \
+} while (0)
+
+#define RELEASE_RESUME_SRQs_STUFF() \
+do { \
+	int cpuid; \
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) { \
+		hal_virtualize_irq(hal_root_domain, wake_up_srq[cpuid].srq, NULL, NULL, 0); \
+		hal_free_irq(wake_up_srq[cpuid].srq); \
+		hal_virtualize_irq(fusion_domain, fusion_wake_up_srq[cpuid].srq, NULL, NULL, 0); \
+		hal_free_irq(fusion_wake_up_srq[cpuid].srq); \
+	} \
+} while (0)
+
+#else /* !RTAI_TRIOSS */
+
+#define FUSIONEXT  (0)
+
+#define DECLARE_FUSION_WAKE_UP_STUFF
+
+#define NON_RTAI_TASK_SUSPEND(task) \
+	do { (task->lnxtsk)->state = TASK_SOFTREALTIME; } while (0)
+
+#define NON_RTAI_TASK_RESUME(ready_task) \
+	do { pend_wake_up_srq(ready_task->lnxtsk, rtai_cpuid()); } while (0)
+
+#define REQUEST_RESUME_SRQs_STUFF() \
+do { \
+	int cpuid; \
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) { \
+        	hal_virtualize_irq(hal_root_domain, wake_up_srq[cpuid].srq = hal_alloc_irq(), wake_up_srq_handler, NULL, IPIPE_HANDLE_FLAG); \
+	} \
+} while (0)
+
+#define RELEASE_RESUME_SRQs_STUFF() \
+do { \
+	int cpuid; \
+	for (cpuid = 0; cpuid < num_online_cpus(); cpuid++) { \
+		hal_virtualize_irq(hal_root_domain, wake_up_srq[cpuid].srq, NULL, NULL, 0); \
+		hal_free_irq(wake_up_srq[cpuid].srq); \
+	} \
+} while (0)
+
+#endif /* END RTAI_TRIOSS */
+
+#endif /* !_RTAI_SCHED_XN_H */
+
+
 extern RT_TASK rt_smp_linux_task[];
 
 extern RT_TASK *rt_smp_current[];
@@ -62,6 +191,8 @@ extern RT_TASK *rt_smp_current[];
 extern RTIME rt_smp_time_h[];
 
 extern int rt_smp_oneshot_timer[];
+
+extern volatile int rt_sched_timed;
 
 #ifdef CONFIG_RTAI_MALLOC
 #define sched_malloc(size)		rt_malloc((size))
@@ -93,9 +224,8 @@ extern int rt_smp_oneshot_timer[];
 
 #define MSG_ERR ((RT_TASK *)0xFfff)
 
-#define NOTHING ((void *)0)
-
-#define SOMETHING ((void *)1)
+#define NOTHING    ((void *)0)
+#define SOMETHING  ((void *)1)
 
 #define SEMHLF 0x0000FFFF
 #define RPCHLF 0xFFFF0000
@@ -121,6 +251,20 @@ void rtai_handle_isched_lock(int nesting);
 #define oneshot_timer (rt_smp_oneshot_timer[0])
 #define rt_linux_task (rt_smp_linux_task[0])
 #endif
+
+/*
+ * WATCH OUT for the max expected number of arguments of rtai funs and 
+ * their scattered around different calling ways.
+ */
+
+#define RTAI_MAX_FUN_ARGS  9
+struct fun_args { unsigned long a[RTAI_MAX_FUN_ARGS]; long long (*fun)(unsigned long, ...); };
+//used in sys.c
+#define RTAI_FUN_ARGS  arg[0],arg[1],arg[2],arg[3],arg[4],arg[5],arg[6],arg[7],arg[RTAI_MAX_FUN_ARGS - 1]
+//used in sched.c and netrpc.c (generalised calls from soft threads)
+#define RTAI_FUNARGS   funarg->a[0],funarg->a[1],funarg->a[2],funarg->a[3],funarg->a[4],funarg->a[5],funarg->a[6],funarg->a[7],funarg->a[RTAI_MAX_FUN_ARGS - 1]
+//used in netrpc.c
+#define RTAI_FUN_A     a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[RTAI_MAX_FUN_ARGS - 1]
 
 #ifdef CONFIG_SMP
 
@@ -169,6 +313,7 @@ static inline void send_sched_ipi(unsigned long dest)
 #define BASE_SOFT_PRIORITY 1000000000
 
 #define TASK_HARDREALTIME  TASK_UNINTERRUPTIBLE
+#define TASK_SOFTREALTIME  TASK_INTERRUPTIBLE
 
 static inline void enq_ready_edf_task(RT_TASK *ready_task)
 {
@@ -187,8 +332,14 @@ static inline void enq_ready_edf_task(RT_TASK *ready_task)
 
 #define MAX_WAKEUP_SRQ (2 << 6)
 
-struct klist_t { volatile int srq, in, out; void *task[MAX_WAKEUP_SRQ]; };
-extern struct klist_t wake_up_srq;
+struct klist_t { int srq; volatile unsigned long in, out; void *task[MAX_WAKEUP_SRQ]; };
+extern struct klist_t wake_up_srq[];
+
+#define pend_wake_up_srq(lnxtsk, cpuid) \
+do { \
+	wake_up_srq[cpuid].task[wake_up_srq[cpuid].in++ & (MAX_WAKEUP_SRQ - 1)] = lnxtsk; \
+	hal_pend_uncond(wake_up_srq[cpuid].srq, cpuid); \
+} while (0)
 
 static inline void enq_ready_task(RT_TASK *ready_task)
 {
@@ -206,9 +357,7 @@ static inline void enq_ready_task(RT_TASK *ready_task)
 		ready_task->rnext = task;
 	} else {
 		ready_task->state |= RT_SCHED_SFTRDY;
-		wake_up_srq.task[wake_up_srq.in] = ready_task->lnxtsk;
-		wake_up_srq.in = (wake_up_srq.in + 1) & (MAX_WAKEUP_SRQ - 1);
-		rt_pend_linux_srq(wake_up_srq.srq);
+		NON_RTAI_TASK_RESUME(ready_task);
 	}
 }
 
@@ -242,8 +391,9 @@ static inline void rem_ready_task(RT_TASK *task)
 {
 	if (task->state == RT_SCHED_READY) {
 		if (!task->is_hard) {
-			(task->lnxtsk)->state = TASK_HARDREALTIME;
+			NON_RTAI_TASK_SUSPEND(task);
 		}
+		task->unblocked = 0;
 		(task->rprev)->rnext = task->rnext;
 		(task->rnext)->rprev = task->rprev;
 	}
@@ -252,8 +402,9 @@ static inline void rem_ready_task(RT_TASK *task)
 static inline void rem_ready_current(RT_TASK *rt_current)
 {
 	if (!rt_current->is_hard) {
-		(rt_current->lnxtsk)->state = TASK_HARDREALTIME;
+		NON_RTAI_TASK_SUSPEND(rt_current);
 	}
+	rt_current->unblocked = 0;
 	(rt_current->rprev)->rnext = rt_current->rnext;
 	(rt_current->rnext)->rprev = rt_current->rprev;
 }
@@ -288,6 +439,9 @@ static inline void wake_up_timed_tasks(int cpuid)
 			} else {
 				enq_ready_task(task);
 			}
+#if defined(BUSY_TIME_ALIGN) && BUSY_TIME_ALIGN
+                	task->trap_handler_data = (void *)oneshot_timer;
+#endif
 		}
 		task = task->tnext;
 	}
@@ -510,16 +664,16 @@ static inline void rtai_cleanup_features (void) {
 int rt_check_current_stack(void);
 
 int rt_kthread_init(RT_TASK *task,
-		    void (*rt_thread)(int),
-		    int data,
+		    void (*rt_thread)(long),
+		    long data,
 		    int stack_size,
 		    int priority,
 		    int uses_fpu,
 		    void(*signal)(void));
 
 int rt_kthread_init_cpuid(RT_TASK *task,
-			  void (*rt_thread)(int),
-			  int data,
+			  void (*rt_thread)(long),
+			  long data,
 			  int stack_size,
 			  int priority,
 			  int uses_fpu,

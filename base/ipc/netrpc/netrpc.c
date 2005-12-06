@@ -123,7 +123,7 @@ static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];
 static unsigned long this_node[2];
 
 #define PRTSRVNAME  0xFFFFFFFF
-struct portslot_t { struct portslot_t *p; int indx, socket[2], task, hard; unsigned long long owner; SEM sem; void *msg; struct sockaddr_in addr; MBX *mbx; unsigned long name; };
+struct portslot_t { struct portslot_t *p; long task; int indx, socket[2], hard; unsigned long long owner; SEM sem; void *msg; struct sockaddr_in addr; MBX *mbx; unsigned long name; };
 static spinlock_t portslot_lock = SPIN_LOCK_UNLOCKED;
 static volatile int portslotsp;
 static struct portslot_t *portslot;
@@ -290,11 +290,9 @@ int set_rtext(RT_TASK *, int, int, void(*)(void), unsigned int, void *);
 int clr_rtext(RT_TASK *);
 void rt_schedule_soft(RT_TASK *);
 
-struct fun_args { int a[10]; long long (*fun)(int, ...); };
-
 static inline int soft_rt_fun_call(RT_TASK *task, void *fun, void *arg)
 {
-	task->fun_args[0] = (int)arg;
+	task->fun_args[0] = (long)arg;
 	((struct fun_args *)task->fun_args)->fun = fun;
 	rt_schedule_soft(task);
 	return (int)task->retval;
@@ -312,16 +310,16 @@ static void thread_fun(RT_TASK *task)
 {
 	if (!set_rtext(task, task->fun_args[3], 0, 0, get_min_tasks_cpuid(), 0)) {
 		sigfillset(&current->blocked);
-		rtai_set_linux_task_priority(current,SCHED_FIFO,MIN_LINUX_RTPRIO);
+		rtai_set_linux_task_priority(current, SCHED_FIFO, MIN_LINUX_RTPRIO);
 		soft_rt_fun_call(task, rt_task_suspend, task);
-		((void (*)(int))task->fun_args[1])(task->fun_args[2]);
+		((void (*)(long))task->fun_args[1])(task->fun_args[2]);
 	}
 }
 
-static int soft_kthread_init(RT_TASK *task, int fun, int arg, int priority)
+static int soft_kthread_init(RT_TASK *task, long fun, long arg, int priority)
 {
 	task->magic = task->state = 0;
-	(task->fun_args = (int *)(task + 1))[1] = fun;
+	(task->fun_args = (long *)(task + 1))[1] = fun;
 	task->fun_args[2] = arg;
 	task->fun_args[3] = priority;
 	if (kernel_thread((void *)thread_fun, task, 0) > 0) {
@@ -340,7 +338,7 @@ static int soft_kthread_delete(RT_TASK *task)
 		return -EFAULT;
 	} else {
 		struct task_struct *lnxtsk = task->lnxtsk;
-		lnxtsk->rtai_tskext(0) = lnxtsk->rtai_tskext(1) = 0;
+//		lnxtsk->rtai_tskext(TSKEXT0) = lnxtsk->rtai_tskext(TSKEXT1) = 0;
 		sigemptyset(&lnxtsk->blocked);
 		lnxtsk->state = TASK_INTERRUPTIBLE;
 		kill_proc(lnxtsk->pid, SIGTERM, 0);
@@ -356,9 +354,10 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 	struct sockaddr *addr;
 	RT_TASK *task;
 	SEM *sem;
-        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; int a[1]; } *par;
-	int *a, wsize, w2size, sock;
-	long long type;
+        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; long a[1]; } *par;
+	int wsize, w2size, sock;
+	long *a;
+	long type;
 
 	addr = (struct sockaddr *)&portslotp->addr;
 	sock = portslotp->socket[0];
@@ -381,17 +380,17 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 		}
 		type = par->type;
 		if (par->rsize) {
-			a[USP_RBF1(type) - 1] = (int)((char *)a + par->argsize);
+			a[USP_RBF1(type) - 1] = (long)((char *)a + par->argsize);
 		}
 		if (NEED_TO_W(type)) {
 			wsize = USP_WSZ1(type);
-			wsize = wsize ? a[wsize - 1] : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(int));
+			wsize = wsize ? a[wsize - 1] : sizeof(long);
 		} else {
 			wsize = 0;
 		}
 		if (NEED_TO_W2ND(type)) {
 			w2size = USP_WSZ2(type);
-			w2size = w2size ? a[w2size - 1] : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(int));
+			w2size = w2size ? a[w2size - 1] : sizeof(long);
 		} else {
 			w2size = 0;
 		}
@@ -399,13 +398,13 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 			struct msg_t { int wsize, w2size; unsigned long long retval; char msg_buf[wsize], msg_buf2[w2size]; } arg;
 			if (wsize > 0) {
 				arg.wsize = wsize;
-				a[USP_WBF1(type) - 1] = (int)arg.msg_buf;
+				a[USP_WBF1(type) - 1] = (long)arg.msg_buf;
 			} else {
 				arg.wsize = 0;
 			}
 			if (w2size > 0) {
 				arg.w2size = w2size;
-				a[USP_WBF2(type) - 1] = (int)arg.msg_buf2;
+				a[USP_WBF2(type) - 1] = (long)arg.msg_buf2;
 			} else {
 				arg.w2size = 0;
 			}
@@ -416,7 +415,7 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 			soft_rt_sendto(sock, &arg, encode ? encode(portslotp, &arg, sizeof(struct msg_t), RPC_RTR) : sizeof(struct msg_t), 0, addr, ADRSZ);
 		} while (0);
 	}
-	soft_rt_fun_call(task, rt_task_suspend, task);
+//	soft_rt_fun_call(task, rt_task_suspend, task);
 }
 
 static void hard_stub_fun(struct portslot_t *portslotp) 
@@ -425,9 +424,10 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	struct sockaddr *addr;
 	RT_TASK *task;
 	SEM *sem;
-        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; int a[1]; } *par;
-	int *a, wsize, w2size, sock;
-	long long type;
+        struct par_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; long a[1]; } *par;
+	int wsize, w2size, sock;
+	long *a;
+	long type;
 
 	addr = (struct sockaddr *)&portslotp->addr;
 	sock = portslotp->socket[1];
@@ -449,17 +449,17 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 		}
 		type = par->type;
 		if (par->rsize) {
-			a[USP_RBF1(type) - 1] = (int)((char *)a + par->argsize);
+			a[USP_RBF1(type) - 1] = (long)((char *)a + par->argsize);
 		}
 		if (NEED_TO_W(type)) {
 			wsize = USP_WSZ1(type);
-			wsize = wsize ? a[wsize - 1] : (USP_WSZ1LL(type) ? sizeof(long long) : sizeof(int));
+			wsize = wsize ? a[wsize - 1] : sizeof(long);
 		} else {
 			wsize = 0;
 		}
 		if (NEED_TO_W2ND(type)) {
 			w2size = USP_WSZ2(type);
-			w2size = w2size ? a[w2size - 1] : (USP_WSZ2LL(type) ? sizeof(long long) : sizeof(int));
+			w2size = w2size ? a[w2size - 1] : sizeof(long);
 		} else {
 			w2size = 0;
 		}
@@ -467,20 +467,20 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 			struct msg_t { int wsize, w2size; unsigned long long retval; char msg_buf[wsize], msg_buf2[w2size]; } arg;
 			if (wsize > 0) {
 				arg.wsize = wsize;
-				a[USP_WBF1(type) - 1] = (int)arg.msg_buf;
+				a[USP_WBF1(type) - 1] = (long)arg.msg_buf;
 			} else {
 				arg.wsize = 0;
 			}
 			if (w2size > 0) {
 				arg.w2size = w2size;
-				a[USP_WBF2(type) - 1] = (int)arg.msg_buf2;
+				a[USP_WBF2(type) - 1] = (long)arg.msg_buf2;
 			} else {
 				arg.w2size = 0;
 			}
 			if ((wsize = TIMED(par->fun_ext_timed) - 1) >= 0) {
 				*((long long *)(a + wsize)) = nano2count(*((long long *)(a + wsize)));
 			}
-			arg.retval = ((long long (*)(int, ...))rt_net_rpc_fun_ext[EXT(par->fun_ext_timed)][FUN(par->fun_ext_timed)].fun)(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]);
+			arg.retval = ((long long (*)(long, ...))rt_net_rpc_fun_ext[EXT(par->fun_ext_timed)][FUN(par->fun_ext_timed)].fun)(RTAI_FUN_A);
 			hard_rt_sendto(sock, &arg, encode ? encode(portslotp, &arg, sizeof(struct msg_t), RPC_RTR) : sizeof(struct msg_t), 0, addr, ADRSZ);
 		} while (0);
 	}
@@ -546,7 +546,7 @@ while (soft_rt_fun_call(port_server, rt_sem_wait, &portslot[0].sem) != SEM_ERR) 
 	}
 	if (!portslot[msg.port].task) {
 		if ((task = kmalloc(sizeof(RT_TASK) + 2*sizeof(struct fun_args), GFP_KERNEL))) {
-			if ((msg.hard ? rt_task_init(task, (void *)hard_stub_fun, (int)(portslot + msg.port), StackSize + 2*MAX_MSG_SIZE, msg.priority, 0, 0) : soft_kthread_init(task, (int)soft_stub_fun, (int)(portslot + msg.port), msg.priority < BASE_SOFT_PRIORITY ? msg.priority + BASE_SOFT_PRIORITY : msg.priority))) {
+			if ((msg.hard ? rt_task_init(task, (void *)hard_stub_fun, (long)(portslot + msg.port), StackSize + 2*MAX_MSG_SIZE, msg.priority, 0, 0) : soft_kthread_init(task, (long)soft_stub_fun, (long)(portslot + msg.port), msg.priority < BASE_SOFT_PRIORITY ? msg.priority + BASE_SOFT_PRIORITY : msg.priority))) {
 				kfree(task);
 				task = 0;
 			}
@@ -571,7 +571,7 @@ ret:
 		soft_rt_sendto(portslot[0].socket[0], &msg, encode ? encode(&portslot[0], &msg, sizeof(msg), PRT_RTR) : sizeof(msg), 0, addr, ADRSZ);
 	}
 }
-soft_rt_fun_call(port_server, rt_task_suspend, port_server);
+//soft_rt_fun_call(port_server, rt_task_suspend, port_server);
 }
 
 static int mod_timer_srq;
@@ -582,6 +582,7 @@ int rt_send_req_rel_port(unsigned long node, int op, unsigned long id, MBX *mbx,
 	int i, msgsize;
 	struct portslot_t *portslotp;
 	struct req_rel_msg msg;
+
 
 	if (!node || (op && (op < MaxStubs || op >= MaxSocks))) {
 		return -EINVAL;
@@ -667,6 +668,8 @@ int rt_waiting_return(unsigned long node, int port)
 	return portslotp->task < 0 && !portslotp->sem.count;
 }
 
+#if 0
+
 static inline void mbx_send_if(MBX *mbx, void *sendmsg, int msg_size)
 {
 #define MOD_SIZE(indx) ((indx) < mbx->size ? (indx) : (indx) - mbx->size)
@@ -712,7 +715,122 @@ static inline void mbx_send_if(MBX *mbx, void *sendmsg, int msg_size)
 	}
 }
 
-unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int argsize, int space)
+#else
+
+static inline void mbx_signal(MBX *mbx)
+{
+	unsigned long flags;
+	RT_TASK *task;
+	int tosched;
+
+	flags = rt_global_save_flags_and_cli();
+	if ((task = mbx->waiting_task)) {
+		rem_timed_task(task);
+		task->blocked_on  = NOTHING;
+		task->prio_passed_to = mbx->waiting_task = NOTHING;
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			if (mbx->sndsem.type <= 0) {
+				RT_SCHEDULE(task, rtai_cpuid());
+				rt_global_restore_flags(flags);
+				return;
+			}
+			tosched = 1;
+			goto res;
+		}
+	}
+	tosched = 0;
+res:	if (mbx->sndsem.type > 0) {
+		DECLARE_RT_CURRENT;
+		int sched;
+		ASSIGN_RT_CURRENT;
+		mbx->owndby = 0;
+		if (rt_current->owndres & SEMHLF) {
+			--rt_current->owndres;
+		}
+		if (!rt_current->owndres) {
+			sched = renq_current(rt_current, rt_current->base_priority);
+		} else if (!(rt_current->owndres & SEMHLF)) {
+			int priority;
+			sched = renq_current(rt_current, rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority);
+		} else {
+			sched = 0;
+		}
+		if (rt_current->suspdepth) {
+			if (rt_current->suspdepth > 0) {
+				rt_current->state |= RT_SCHED_SUSPENDED;
+				rem_ready_current(rt_current);
+                        	sched = 1;
+			} else {
+				rt_task_delete(rt_current);
+			}
+		}
+		if (sched) {
+			if (tosched) {
+				RT_SCHEDULE_BOTH(task, cpuid);
+			} else {
+				rt_schedule();
+			}
+		} else if (tosched) {
+			RT_SCHEDULE(task, cpuid);
+		}
+	}
+	rt_global_restore_flags(flags);
+}
+
+#define MOD_SIZE(indx) ((indx) < mbx->size ? (indx) : (indx) - mbx->size)
+
+static inline int mbxput(MBX *mbx, char **msg, int msg_size)
+{
+	unsigned long flags;
+	int tocpy;
+
+	while (msg_size > 0 && mbx->frbs) {
+		if ((tocpy = mbx->size - mbx->lbyte) > msg_size) {
+			tocpy = msg_size;
+		}
+		if (tocpy > mbx->frbs) {
+			tocpy = mbx->frbs;
+		}
+		memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+		flags = rt_spin_lock_irqsave(&(mbx->lock));
+		mbx->frbs -= tocpy;
+		mbx->avbs += tocpy;
+		rt_spin_unlock_irqrestore(flags, &(mbx->lock));
+		msg_size -= tocpy;
+		*msg     += tocpy;
+		mbx->lbyte = MOD_SIZE(mbx->lbyte + tocpy);
+	}
+	return msg_size;
+}
+
+static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
+{
+	unsigned long flags;
+	RT_TASK *rt_current;
+
+	if (!mbx || mbx->magic != RT_MBX_MAGIC) {
+		return;
+	}
+
+	flags = rt_global_save_flags_and_cli();
+	rt_current = RT_CURRENT;
+	if (mbx->sndsem.count && msg_size <= mbx->frbs) {
+		mbx->sndsem.count = 0;
+		if (mbx->sndsem.type > 0) {
+			(mbx->sndsem.owndby = mbx->owndby = rt_current)->owndres += 2;
+		}
+		rt_global_restore_flags(flags);
+		mbxput(mbx, (char **)(&msg), msg_size);
+		mbx_signal(mbx);
+		rt_sem_signal(&mbx->sndsem);
+	}
+	rt_global_restore_flags(flags);
+}
+
+#endif
+
+unsigned long long rt_net_rpc(long fun_ext_timed, long type, void *args, int argsize, int space)
 {
 	char msg[MAX_MSG_SIZE];
 	struct reply_t { int wsize, w2size; unsigned long long retval; char msg[1]; } *reply;
@@ -728,7 +846,7 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 				if (decode) {
 					rsize = decode(portslotp, msg, rsize, RPC_RCV);
 				}
-				mbx_send_if(portslotp->mbx, msg, rsize); 
+				mbx_send_if(portslotp->mbx, msg, rsize);
 			}
 			portslotp->task = 1;
 		}
@@ -756,12 +874,12 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 	}
 	if (NEED_TO_R(type)) {			
 		rsize = USP_RSZ1(type);
-		rsize = rsize ? ((int *)args)[rsize - 1] : (USP_RSZ1LL(type) ? sizeof(long long) : sizeof(int));
+		rsize = rsize ? ((long *)args)[rsize - 1] : sizeof(long);
 	} else {
 		rsize = 0;
 	}
 	do {
-		struct msg_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long long type; int args[1]; } *arg;
+		struct msg_t { int priority, base_priority, argsize, rsize, fun_ext_timed; long type; long args[1]; } *arg;
 		RT_TASK *task;
 
 		arg = (void *)msg;
@@ -774,12 +892,12 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 		memcpy(arg->args, args, argsize);
 		if (rsize > 0) {			
 			if (space) {
-				memcpy((char *)arg->args + argsize, (int *)((int *)args + USP_RBF1(type) - 1)[0], rsize);
+				memcpy((char *)arg->args + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
 			} else {
-				copy_from_user((char *)arg->args + argsize, (int *)((int *)args + USP_RBF1(type) - 1)[0], rsize);
+				rt_copy_from_user((char *)arg->args + argsize, (void *)((long *)args + USP_RBF1(type) - 1)[0], rsize);
 			}
 		}
-		rsize = sizeof(struct msg_t) - sizeof(int) + argsize + rsize;
+		rsize = sizeof(struct msg_t) - sizeof(long) + argsize + rsize;
 		if (encode) {
 			rsize = encode(portslotp, msg, rsize, RPC_REQ);
 		}
@@ -798,16 +916,16 @@ unsigned long long rt_net_rpc(int fun_ext_timed, long long type, void *args, int
 		}
 		if ((reply = (void *)msg)->wsize) {
 			if (space) {
-				memcpy((char *)(*((int *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
+				memcpy((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
 			} else {
-				copy_to_user((char *)(*((int *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
+				rt_copy_to_user((char *)(*((long *)args + USP_WBF1(type) - 1)), reply->msg, reply->wsize);
 			}
-		}
-		if (reply->w2size) {
-			if (space) {
-				memcpy((char *)(*((int *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
-			} else {
-				copy_to_user((char *)(*((int *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+			if (reply->w2size) {
+				if (space) {
+					memcpy((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+				} else {
+					rt_copy_to_user((char *)(*((long *)args + USP_WBF2(type) - 1)), reply->msg + reply->wsize, reply->w2size);
+				}
 			}
 		}
 		return reply->retval;
@@ -873,14 +991,14 @@ unsigned long rt_set_this_node(const char *ddn, unsigned long node, int hard)
 /* +++++++++++++++++++++++++++ NETRPC ENTRIES +++++++++++++++++++++++++++++++ */
 
 struct rt_native_fun_entry rt_netrpc_entries[] = {
-        { { 1LL, rt_net_rpc           },	NETRPC },
-	{ { 1LL, rt_send_req_rel_port },	SEND_REQ_REL_PORT },
-	{ { 0LL, ddn2nl               },	DDN2NL },
-	{ { 0LL, rt_set_this_node     },	SET_THIS_NODE },
-	{ { 0LL, rt_find_asgn_stub    },	FIND_ASGN_STUB },
-	{ { 0LL, rt_rel_stub          },	REL_STUB },
-	{ { 0LL, rt_waiting_return    },	WAITING_RETURN },
-	{ { 0, 0 },                        	000 }
+        { { 1, rt_net_rpc           },	NETRPC },
+	{ { 1, rt_send_req_rel_port },	SEND_REQ_REL_PORT },
+	{ { 0, ddn2nl               },	DDN2NL },
+	{ { 0, rt_set_this_node     },	SET_THIS_NODE },
+	{ { 0, rt_find_asgn_stub    },	FIND_ASGN_STUB },
+	{ { 0, rt_rel_stub          },	REL_STUB },
+	{ { 0, rt_waiting_return    },	WAITING_RETURN },
+	{ { 0, 0 },                    	000 }
 };
 
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
@@ -941,7 +1059,6 @@ static spinlock_t sysrq_lock = SPIN_LOCK_UNLOCKED;
 int soft_rt_sendto(int sock, const void *msg, int msglen, unsigned int sflags, struct sockaddr *to, int tolen)
 {
 	unsigned long flags;
-
 	if (sock >= 0 && sock < MaxSocks) {
 		if (msglen > MAX_MSG_SIZE) {
 			msglen = MAX_MSG_SIZE;
@@ -978,30 +1095,33 @@ int soft_rt_recvfrom(int sock, void *msg, int msglen, unsigned int flags, struct
 #include <linux/poll.h>
 #include <linux/net.h>
 
-static int errno;
+int errno;
+
+#define SYSCALL_BGN() \
+	do { int retval; mm_segment_t svdfs = get_fs(); set_fs(KERNEL_DS)
+#define SYSCALL_END() \
+	set_fs(svdfs); return retval; } while (0)
+
+#ifdef __NR_socketcall
+
+//extern void *sys_call_table[];
 
 static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
-
 static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
+//	retval = ((int (*)(struct pollfd *, unsigned int, int))sys_call_table[__NR_poll])(ufds, nfds, timeout);
 	retval = poll(ufds, nfds, timeout);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static _syscall2(int, socketcall, int, call, void *, args)
-
 static inline int ksocketcall(int call, void *args)
 {
-	int retval;
-	mm_segment_t svdfs = get_fs();
-	set_fs(KERNEL_DS);
+	SYSCALL_BGN();
+//	retval = ((int (*)(int, void *))sys_call_table[__NR_socketcall])(call, args);
 	retval = socketcall(call, args);
-	set_fs(svdfs);
-	return retval;
+	SYSCALL_END();
 }
 
 static inline int ksocket(int family, int type, int protocol)
@@ -1046,24 +1166,12 @@ static inline int kgetpeername(int fd, struct sockaddr *usockaddr, int *usockadd
 	return ksocketcall(SYS_GETPEERNAME, &args);
 }
  
-static inline int ksocketpair(int family, int type, int protocol, int usockvec[2])
+static inline int ksocketpair(int family, int type, int protocol, int *usockvec)
 {
-	struct { int family; int type; int protocol; int usockvec[2]; } args = { family, type, protocol, { usockvec[1], usockvec[2] } };
+	struct { int family; int type; int protocol; int *usockvec; } args = { family, type, protocol, usockvec };
 	return ksocketcall(SYS_SOCKETPAIR, &args);
 }
  
-static inline int ksend(int fd, void *buff, size_t len, unsigned flags)
-{
-	struct { int fd; void *buff; size_t len; unsigned flags; } args = { fd, buff, len, flags };
-	return ksocketcall(SYS_SEND, &args);
-}
-
-static inline int krecv(int fd, void *ubuf, size_t len, unsigned flags)
-{
-	struct { int fd; void *ubuf; size_t len; unsigned flags; } args = { fd, ubuf, len, flags };
-	return ksocketcall(SYS_RECV, &args);
-}
-
 static inline int ksendto(int fd, void *buff, size_t len, unsigned flags, struct sockaddr *addr, int addr_len)
 {
 	struct { int fd; void *buff; size_t len; unsigned flags; struct sockaddr *addr; int addr_len; } args = { fd, buff, len, flags, addr, addr_len };
@@ -1106,6 +1214,184 @@ static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
 	return ksocketcall(SYS_RECVMSG, &args);
 }
 
+#else
+
+#if 0  // just for compiling
+#define __NR_socket       1
+#define __NR_bind         1
+#define __NR_connect      1
+#define __NR_accept       1
+#define __NR_listen       1
+#define __NR_getsockname  1
+#define __NR_getpeername  1
+#define __NR_socketpair   1
+#define __NR_sendto       1
+#define __NR_recvfrom     1
+#define __NR_shutdown     1
+#define __NR_setsockopt   1
+#define __NR_getsockopt   1
+#define __NR_sendmsg      1
+#define __NR_recvmsg      1
+#endif
+
+extern void *sys_call_table[];
+
+//static _syscall3(int, poll, struct pollfd *, ufds, unsigned int, nfds, int, timeout)
+static inline int kpoll(struct pollfd *ufds, unsigned int nfds, int timeout)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(void *, unsigned int, int))sys_call_table[__NR_poll])(ufds, nfds, timeout);
+//	retval = poll(ufds, nfds, timeout);
+	SYSCALL_END();
+}
+
+//static _syscall3(int, socket, int, family, int, type, int, protocol)
+static inline int ksocket(int family, int type, int protocol)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, int, int))sys_call_table[__NR_socket])(family, type, protocol);
+//	retval = socket(family, type, protocol);
+	SYSCALL_END();
+}
+
+//static _syscall3(int, bind, int, fd, struct sockaddr *, umyaddr, int, addrlen)
+static inline int kbind(int fd, struct sockaddr *umyaddr, int addrlen)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, struct sockaddr *, int))sys_call_table[__NR_bind])(fd, umyaddr, addrlen);
+//	retval = bind(fd, umyaddr, addrlen);
+	SYSCALL_END();
+}
+
+//static _syscall3(int, connect, int, fd, struct sockaddr *, serv_addr, int, addrlen)
+static inline int kconnect(int fd, struct sockaddr *serv_addr, int addrlen)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, struct sockaddr *, int))sys_call_table[__NR_connect])(fd, serv_addr, addrlen);
+//	retval = connect(fd, serv_addr, addrlen);
+	SYSCALL_END();
+}
+
+//static _syscall2(int, listen, int, fd, int, backlog)
+static inline int klisten(int fd, int backlog)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, int))sys_call_table[__NR_listen])(fd, backlog);
+//	retval = listen(fd, backlog);
+	SYSCALL_END();
+}
+
+//static _syscall3(int, accept, int, fd, struct sockaddr *, upeer_sockaddr, int *, upeer_addrlen)
+static inline int kaccept(int fd, struct sockaddr *upeer_sockaddr, int *upeer_addrlen)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_accept])(fd, upeer_sockaddr, upeer_addrlen);
+//	retval = accept(fd, upeer_sockaddr, upeer_addrlen);
+	SYSCALL_END();
+}
+
+//static _syscall3(int, getsockname, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
+static inline int kgetsockname(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_getsockname])(fd, usockaddr, usockaddr_len);
+//	retval = getsockname(fd, usockaddr, usockaddr_len);
+	SYSCALL_END();
+}
+ 
+//static _syscall3(int, getpeername, int, fd, struct sockaddr *, usockaddr, int *, uaddr_len)
+static inline int kgetpeername(int fd, struct sockaddr *usockaddr, int *usockaddr_len)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, struct sockaddr *, int *))sys_call_table[__NR_getpeername])(fd, usockaddr, usockaddr_len);
+//	retval = getpeername(fd, usockaddr, usockaddr_len);
+	SYSCALL_END();
+}
+ 
+//static _syscall4(int, socketpair, int, family, int, type, int, protocol, int, usockvec[2])
+static inline int ksocketpair(int family, int type, int protocol, int *usockvec)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, int, int, int *))sys_call_table[__NR_socketpair])(family, type, protocol, usockvec);
+//	retval = socketpair(family, type, protocol, usockvec);
+	SYSCALL_END();
+}
+ 
+//static _syscall6(int, sendto, int, fd, void *, ubuf, size_t, len, unsigned, flags, struct sockaddr *, addr, int, addr_len)
+static inline int ksendto(int fd, void *buff, size_t len, unsigned flags, struct sockaddr *addr, int addr_len)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, void *, size_t, unsigned, struct sockaddr *, int))sys_call_table[__NR_sendto])(fd, buff, len, flags, addr, addr_len);
+//	retval = sendto(fd, buff, len, flags, addr, addr_len);
+	SYSCALL_END();
+}
+
+//static _syscall6(int, recvfrom, int, fd, void *, ubuf, size_t, len, unsigned, flags, struct sockaddr *, addr, int *, addr_len)
+static inline int krecvfrom(int fd, void *ubuf, size_t len, unsigned flags, struct sockaddr *addr, int *addr_len)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, void *, size_t, unsigned, struct sockaddr *, int *))sys_call_table[__NR_recvfrom])(fd, ubuf, len, flags, addr, addr_len);
+//	retval = recvfrom(fd, ubuf, len, flags, addr, addr_len);
+	SYSCALL_END();
+}
+
+//static _syscall2(int, shutdown, int, fd, int, how)
+static inline int kshutdown(int fd, int how)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, int))sys_call_table[__NR_shutdown])(fd, how);
+//	retval = shutdown(fd, how);
+	SYSCALL_END();
+}
+
+//static _syscall5(int, setsockopt, int, fd, int, level, int, optname, void *, optval, int, optlen)
+static inline int ksetsockopt(int fd, int level, int optname, void *optval, int optlen)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, int, int, void *, int))sys_call_table[__NR_setsockopt])(fd, level, optname, optval, optlen);
+//	retval = setsockopt(fd, level, optname, optval, optlen);
+	SYSCALL_END();
+}
+
+//static _syscall5(int, getsockopt, int, fd, int, level, int, optname, char *, optval, int *, optlen)
+static inline int kgetsockopt(int fd, int level, int optname, char *optval, int *optlen)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, int, int, void *, int *))sys_call_table[__NR_getsockopt])(fd, level, optname, optval, optlen);
+//	retval = getsockopt(fd, level, optname, optval, optlen);
+	SYSCALL_END();
+}
+
+//static _syscall3(int, sendmsg, int, fd, struct msghdr *, msg, unsigned, flags)
+static inline int ksendmsg(int fd, struct msghdr *msg, unsigned flags)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, struct msghdr *, unsigned))sys_call_table[__NR_sendmsg])(fd, msg, flags);
+//	retval = sendmsg(fd, msg, flags);
+	SYSCALL_END();
+}
+
+//static _syscall3(int, recvmsg, int, fd, struct msghdr *, msg, unsigned, flags)
+static inline int krecvmsg(int fd, struct msghdr *msg, unsigned flags)
+{
+	SYSCALL_BGN();
+	retval = ((int (*)(int, struct msghdr *, unsigned))sys_call_table[__NR_recvmsg])(fd, msg, flags);
+//	retval = recvmsg(fd, msg, flags);
+	SYSCALL_END();
+}
+
+#endif
+
+static inline int ksend(int fd, void *buff, size_t len, unsigned flags)
+{
+        return ksendto(fd, buff, len, flags, NULL, 0);
+}
+
+static inline int krecv(int fd, void *ubuf, size_t size, unsigned flags)
+{
+	return krecvfrom(fd, ubuf, size, flags, NULL, NULL);
+}
+
 static DECLARE_MUTEX_LOCKED(mtx);
 static unsigned long end_softrtnet;
 
@@ -1139,7 +1425,7 @@ static void recv_thread(void)
 	rtai_set_linux_task_priority(current,SCHED_RR,MAX_LINUX_RTPRIO);
 	sigfillset(&current->blocked);
 	while (!end_softrtnet) {
-		if ((nevents = kpoll(pollv, MaxSocks, -1)) > 0) {
+		if ((nevents = kpoll(pollv, MaxSocks, 1000)) > 0) {
 			i = -1;
 			do {
 				while (!pollv[++i].revents);
@@ -1216,8 +1502,8 @@ static void cleanup_softrtnet(void)
 	rt_free_srq(sysrq.srq);
 	end_softrtnet = 1;
 /* watch out: dirty trick, but we are sure the thread will do nothing more. */
-	sigemptyset(&recv_handle->blocked);
-	send_sig(SIGKILL, recv_handle, 1);
+//	sigemptyset(&recv_handle->blocked);
+//	send_sig(SIGKILL, recv_handle, 1);
 /* watch out: end of the dirty trick. */
 	softrtnet_hdl();
 	while (end_softrtnet < 7) {
@@ -1307,8 +1593,8 @@ int __rtai_netrpc_init(void)
 	portslot[0].name = PRTSRVNAME;
 	portslot[0].owner = OWNER(this_node, (unsigned long)port_server);
 	port_server = kmalloc(sizeof(RT_TASK) + 3*sizeof(struct fun_args), GFP_KERNEL);
-	soft_kthread_init(port_server, (int)port_server_fun, (int)port_server, RT_SCHED_LOWEST_PRIORITY);
-	portslot[0].task = (int)port_server;
+	soft_kthread_init(port_server, (long)port_server_fun, (long)port_server, RT_SCHED_LOWEST_PRIORITY);
+	portslot[0].task = (long)port_server;
 	rt_task_resume(port_server);
 	rt_typed_sem_init(&timer_sem, 0, BIN_SEM | FIFO_Q);
 	init_timer(&timer);

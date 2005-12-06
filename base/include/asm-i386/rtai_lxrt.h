@@ -27,9 +27,12 @@
 
 //#define USE_LINUX_SYSCALL
 
-#define RTAI_SYSCALL_NR      orig_eax
+#define RTAI_SYSCALL_NR      0x70000000
+#define RTAI_SYSCALL_CODE    ebx
 #define RTAI_SYSCALL_ARGS    ecx
 #define RTAI_SYSCALL_RETPNT  edx
+
+#define RTAI_FAKE_LINUX_SYSCALL  20
 
 #define LINUX_SYSCALL_NR      orig_eax
 #define LINUX_SYSCALL_REG1    ebx
@@ -40,10 +43,10 @@
 #define LINUX_SYSCALL_REG6    ebp
 #define LINUX_SYSCALL_RETREG  eax
 
-#define SET_LXRT_RETVAL_IN_SYSCALL(retval) \
+#define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
 	do { \
-                if (r->RTAI_SYSCALL_RETPNT) { \
-			copy_to_user((void *)r->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
+                if (regs->RTAI_SYSCALL_RETPNT) { \
+			rt_copy_to_user((void *)regs->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
 		} \
 	} while (0)
 
@@ -57,7 +60,7 @@
 #define TIMER_FREQ RTAI_FREQ_APIC
 #define TIMER_LATENCY RTAI_LATENCY_APIC
 #define TIMER_SETUP_TIME RTAI_SETUP_TIME_APIC
-#define ONESHOT_SPAN (0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
+#define ONESHOT_SPAN (CPU_FREQ/(CONFIG_RTAI_CAL_FREQS_FACT + 2)) //(0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
 #define update_linux_timer(cpuid)
 
 #else /* !CONFIG_X86_LOCAL_APIC */
@@ -67,13 +70,17 @@
 #define TIMER_FREQ RTAI_FREQ_8254
 #define TIMER_LATENCY RTAI_LATENCY_8254
 #define TIMER_SETUP_TIME RTAI_SETUP_TIME_8254
-#define ONESHOT_SPAN (0x7FFF*(CPU_FREQ/TIMER_FREQ))
-#define update_linux_timer(cpuid) adeos_pend_uncond(TIMER_8254_IRQ, cpuid)
+#define ONESHOT_SPAN ((0x7FFF*(CPU_FREQ/TIMER_FREQ))/(CONFIG_RTAI_CAL_FREQS_FACT + 1)) //(0x7FFF*(CPU_FREQ/TIMER_FREQ))
+#define update_linux_timer(cpuid) \
+do { \
+	if (!IS_FUSION_TIMER_RUNNING()) { \
+		hal_pend_uncond(TIMER_8254_IRQ, cpuid); \
+	} \
+} while (0)
 
 #endif /* CONFIG_X86_LOCAL_APIC */
 
 union rtai_lxrt_t {
-
     RTIME rt;
     int i[2];
     void *v[2];
@@ -94,57 +101,18 @@ extern "C" {
 #define __LXRT_GET_DATASEG(reg) "movl $" STR(__USER_DS) ",%" #reg "\n\t"
 #endif  /* KERNEL_VERSION < 2.6.0 */
 
-static inline void _lxrt_context_switch (struct task_struct *prev,
-					 struct task_struct *next,
-					 int cpuid)
+static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
-    struct mm_struct *oldmm = prev->active_mm;
-
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-    switch_mm(oldmm,next->active_mm,next,cpuid);
-
-    if (!next->mm)
-	enter_lazy_tlb(oldmm,next,cpuid);
+	struct mm_struct *oldmm = prev->active_mm;
+	switch_mm(oldmm, next->active_mm, next, cpuid);
+	if (!next->mm) enter_lazy_tlb(oldmm, next, cpuid);
+	extern void context_switch(void *, void *);
+	context_switch(prev, next); // was switch_to(prev, next, prev);
 #else /* >= 2.6.0 */
-    switch_mm(oldmm,next->active_mm,next);
-
-    if (!next->mm) enter_lazy_tlb(oldmm,next);
+	extern void context_switch(void *, void *, void *);
+	context_switch(0, prev, next);
 #endif /* < 2.6.0 */
-
-/* NOTE: Do not use switch_to() directly: this is a compiler
-   compatibility issue. */
-
-/* It might be so but, with 2.6.xx at least, only for the inlined case. 
-   Compiler compatibility issues related to inlines can appear anywhere.
-   This case seems to be solved by staticalising without inlining, see LXRT.
-   So let's experiment a bit more, simple Linux reuse is better (Paolo) */
-
-#if 1
-    switch_to(prev, next, prev);
-#else
-    __asm__ __volatile__(						\
-		 "pushfl\n\t"				       		\
-		 "cli\n\t"				       		\
-		 "pushl %%esi\n\t"				        \
-		 "pushl %%edi\n\t"					\
-		 "pushl %%ebp\n\t"					\
-		 "movl %%esp,%0\n\t"	/* save ESP */			\
-		 "movl %3,%%esp\n\t"	/* restore ESP */		\
-		 "movl $1f,%1\n\t"	/* save EIP */			\
-		 "pushl %4\n\t"		/* restore EIP */		\
-		 "jmp "SYMBOL_NAME_STR(__switch_to)"\n"			\
-		 "1:\t"							\
-		 "popl %%ebp\n\t"					\
-		 "popl %%edi\n\t"					\
-		 "popl %%esi\n\t"					\
-		 "popfl\n\t"						\
-		 :"=m" (prev->thread.esp),"=m" (prev->thread.eip),	\
-		  "=b" (prev)						\
-		 :"m" (next->thread.esp),"m" (next->thread.eip),	\
-		  "a" (prev), "d" (next),				\
-		  "b" (prev));						
-#endif
-    barrier();
 }
 
 #if 0
@@ -155,17 +123,61 @@ static inline void _lxrt_context_switch (struct task_struct *prev,
 #define IN_INTERCEPT_IRQ_DISABLE()  do { } while (0)
 #endif
 
+#include <linux/slab.h>
+
+#if 1 // optimised (?)
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/ + (lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp, GFP_KERNEL);
+	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
+//	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)), sizeof(struct thread_info));
+	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (void *)(lnxtsk->thread.esp), (lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp);
+}
+
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
+//	memcpy((void *)(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), sizeof(struct thread_info));
+	memcpy((void *)lnxtsk->thread.esp, lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct)/* + sizeof(struct thread_info)*/, (lnxtsk->thread.esp & ~(THREAD_SIZE - 1)) + THREAD_SIZE - lnxtsk->thread.esp);
+}
+#else  // brute force
+static inline void kthread_fun_set_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->rtai_tskext(TSKEXT2) = kmalloc(sizeof(struct thread_struct) + THREAD_SIZE, GFP_KERNEL);
+	*((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2)) = lnxtsk->thread;
+	memcpy(lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), (void *)(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)), THREAD_SIZE);
+}
+
+static inline void kthread_fun_long_jump(struct task_struct *lnxtsk)
+{
+	lnxtsk->thread = *((struct thread_struct *)lnxtsk->rtai_tskext(TSKEXT2));
+	memcpy((void *)(lnxtsk->thread.esp & ~(THREAD_SIZE - 1)), lnxtsk->rtai_tskext(TSKEXT2) + sizeof(struct thread_struct), THREAD_SIZE);
+}
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define rt_copy_from_user  __copy_from_user
+#define rt_copy_to_user    __copy_to_user
+#else
+#define rt_copy_from_user  __copy_from_user_inatomic
+#define rt_copy_to_user    __copy_to_user_inatomic
+#endif
+#define rt_put_user        __put_user
+
 #else /* !__KERNEL__ */
 
 /* NOTE: Keep the following routines unfold: this is a compiler
    compatibility issue. */
 
+#include <sys/syscall.h>
+#include <unistd.h>
+
 static union rtai_lxrt_t _rtai_lxrt(int srq, void *arg)
 {
 	union rtai_lxrt_t retval;
 #ifdef USE_LINUX_SYSCALL
-	RTAI_DO_TRAP(SYSCALL_VECTOR, retval, srq, arg);
-#else
+	syscall(RTAI_SYSCALL_NR, srq, arg, &retval);
+#else 
 	RTAI_DO_TRAP(RTAI_SYS_VECTOR, retval, srq, arg);
 #endif
 	return retval;

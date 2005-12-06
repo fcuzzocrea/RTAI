@@ -1,523 +1,429 @@
+2005-12-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: added inquiries for hard timer tick count.
+	* /base/include/rtai_sched.h and rtai_lxrt.h: added declaration for
+	  inquiries of hard timer tick count.
+
+2005-11-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /addons/fusion/skins/rtdm/module.c: force deferred rescheduling
+	  from within RTDM interrupt handlers. They are unsuitable for
+	  immediate mode.
+
+2005-11-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /addons/fusion/drivers/16550A: 16550A.c fixed a likely bug in
+	  config setting (this could turn to just a reminder for something 
+	  else).
+	* /addons/fusion/skins/rtdm/rtdm_driver.h: simplified useless code
+	  for absolute timeouts.
+	* /addons/fusion/skins/rtdm/xn.h: use RTAI proper kernel lock in
+	  place of nklock; needed for events to be atomic with their own
+	  sem calls.
+
+2005-11-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c and api.c: added a generic support for RTC 
+	  interrupts from user space, to allow having an easy to use hard
+	  periodic timer for many useful things.
+
+2005-11-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/addons/fusion/*: updated to the latest.
+	* base/addons/fusion/skins/rtdm: reworked RTAI support, user space
+	  syscalls make an LXRT extension and coded as usual.
+
+2005-11-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* added rtai_fusion.h to support some basic FUSION stuff needed by
+	  RTAI_TRIOSS avoiding name clashes. As a side note RTAI_TRIOSS has
+ 	  demonstrated to work in a not so trivial integration test using 
+	  native FUSION, RTDM and, naturally, RTAI.
+
+2005-11-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* added support for RTC clock.
+
+2005-11-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* overall update to support RTAI duo and trio operating modes.
+
+2005-10-11  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* fix configure.in to auto-detect RTAI HAL (old/newgen)
+	  to be used.
+
+2005-10-09  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* overall update to support both ipipe and adeos. Details will follow
+	  after testing on more than a single machine. Configure file to be
+	  fixed ASAP. Ipipe patch for linux2.6.13 will follow after more
+	  testing changes for RTAI.
+
+2005-09-25  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_hal.h: added conditional support for 
+	  x86 task priority registers: in switching back and forth Linux, 
+	  inline and macro for anything a user might want to do on her/his
+	  own, utility to initialise high irqs Linux does not know; requires
+	  local APIC.
+	* base/arch/i386/hal/hal.*: uses taskpri when enabled.
+	* base/sched/sched.c: uses taskpri when enabled.
+
+2005-09-06  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: changed oneshot programming to improve 
+	  latencies for relatively long time span firings with uncalibrated 
+	  frequencies, by introducing sub time steps also when the APIC 
+	  timer is used.
+	* base/include/asm-i386/rtai_lxrt.h: changed value of the 
+	  ONESHOT_SPAN macro to support what above.
+
+2005-09-01  Pierangelo Masarati <masarati@aero.polimi.it>
+
+        * addons/fusion/*: first import of rtdm support
+
+2005-09-01  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+        * base/sched/sched.c: modified startup of RTAI proper kernel tasks.
+        * base/ipc/netrpc/netrpc.c: modified local mbx_send_if specific 
+	  support, used in async rpcing.
+
+2005-08-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h: modified inlined calls for more across
+	  archiectures consisency.
+	* base/ipc/netrpc/netrpc.c: added ksocket services for architectures
+	  not exporting socketcall.
+	* base/ipc/shm/shm.c and base/sched/sys.c: use max_slots variable and
+	  not MAX_SLOTS macro, they differ in hashed registry.
+	* base/sched/api.c: added a missing loop over registered objects to be
+	  released at task existing, export max_slots, clean unused code.
+
+2005-08-26  Daniele Gasperini  <gasperin@elet.polimi.it> and
+            Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_netrpc.h,rtai_proxies.h,rtai_sched.h,rtai_msg.h,
+	  rtai_schedcore.h: argument for kernel tasks/threads passed from 
+	  int to long, to countinue allowing address passing in x86_64.
+	* base/sched/api.c,sched.c,sched.immed,sys.c: made to comply using
+	  a long arg for kernel tasks/threads.
+	* base/tasklets/tasklets.c; made to comply using a long arg for 
+	  kernel tasks/threads
+	* base/ipc/msg/msg.c: made to comply using a long arg for kernel
+	* base/wd/wd.c: made to comply using a long arg for kernel 
+	  tasks/threads
+
+2005-08-25  Daniele Gasperini  <gasperin@elet.polimi.it> and
+            Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch-x86_64/hal/hal.c: updated to the latest non arch dependent
+	  improvments, made direct interrupt at the gate level work.
+	* base/include/asm-x86_64/*.*: as above.
+
+2005-08-24  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/ipc/bits/bits.c: changed during function execution storage
+	  place of bits: fun and mask, from retval to a local stack buffer,
+	  to avoid trouble with 64 bits.
+
+2005-08-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* include/asm-i386/rtai_lxrt.h: got rid of the long time unused local
+          copy of switch_to, everything kept only as in Linux now.
+	* base/sched/sched.c: rework of hard/soft/hard transitions, to help 
+          2.4.xx have them better too.
+	* include/rtai_schedcore.h: modified Linux tasks pending macro to 
+	  support hard/soft/hard transition changes.
+	* base/arch/i386/patches: all changed with immediate indirection to
+	  the RTAI hard interrupt dispatcher in hal.c; verified that 
+	  improvements are a bit beyond the mere us slicing in long terms 
+	  usage.
+	* base/arch/i386/hal/hal.c: adapted to changed patches.
+
+2005-08-03  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* include/asm/rtai_lxrt.h: defined rt_copy-from/to and rt_put/get (for 
+	  user space data exchange) as arch dependent.
+	* ipc/bits.c-mbx.c-netrpc.c-tbx.c-tasklet.c: used rt_copy-from/to, 
+	  rt_put/get (for user space data exchange) defined as arch dependent 
+	  in asm/rtai_lxrt.
+	* base/sched/api.c: used rt_copy-from/to, rt_put/get (for user space 
+	  data exchange) defined as arch dependent in asm/rtai_lxrt.
+	* base/sched/sched.c: modified the way is_hard is used, 0-soft, 1-hard,
+	* base/sched/sys.c: used rt_copy-from/to, rt_put/get (for user space
+	  data exchange) defined as arch dependent in asm/rtai_lxrt; modified 
+	  the way is_hard is used, 0-soft, 1-hard, -1-tobehard; fixed a bug in 
+	  the resizing of per task intertask messaging buffers.
+
+2005-07-27  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* include/rtai_lxrt.h: LXRT enc/decoding restructured to make room 
+	  for something else.
+	* base/sched/sys.c: made possible to mix different user space calls, 
+	  i.e.: both RTAI specific an Linux syscalls.
+
+2005-07-23  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* sched/sys.c: returns the pointer to the a newly initilised linux
+	  syscalls server and resume the server thread.
+	* sched/api.c: linux syscalls server support functions return a
+	  pointer to the appropriate task.
+	* sched/sched.c: reinitialise linux syscalls server at each call,
+	  as returned by the linux syscall server support function in api.c,
+	  so that it is not called again in case it has gone away.
+	* include/rtai_sched.h: redeclare linux syscall functions to comply
+	  with the above changes;
+	* include/rtai_lxrt.h: modify the user part of the syscall server to
+	  comply with the above changes.
+
+2005-07-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* sched/api.c: fixed a wrong test in function "hash_rem_adr" that
+	  caused an unconditional deletion of counted registrations also.
+
+2005-07-15  Ignacio García Pérez <iggarpe@terra.es>
+
+	* base/include/asm-i386/rtai_hal.immed: fixed a very bad misnaming 
+	  in interrupt flags manipulating macros.
+
+2005-07-14  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_lxrt.h: if using Linux syscall for RTAI 
+	  proper syscalls is enabled then we do exactly what Linux does.
+
+2005-07-12  Paul <bdi-emc@ntlworld.com>
+
+	* /base/include/asm-i386/rtai_atomic.h: added likely/unlikely support to
+	  avoid problems with < gcc-2.96.
+
+2005-07-10  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_fpu.h: extensively revised/rewritten, 
+	  related conceptual changes and new names reflected in:
+	  asm-i386/rtai_sched.h, sched/sched.immed, sched/sys.c, tasklets.c,
+	  arch/i386/hal/hal.immed.
+	* base/include/rtai_schedcore.h: unified all definitions of 
+	  RTAI functions args from user space in a single place, 
+	  changes and new names reflected in:
+	  sched/sched.immed, sched/sys.c, ipc/netrpc/netrpc.c.
+	* base/sched/sys.c: revised intertask messages exchanges from 
+	  user space.
+
+2005-07-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_fpu.h: preliminary cleanup, before an 
+	  overall ovehauling.
+
+2005-07-04  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h,
+	* base/sched/sched.immed: reorganised and renamed optional busy wait 
+	  time alignments at return from schedules.
+
+2005-07-04  Panagiotis Issaris  <takis@gna.org>
+
+	* base/include/{rtai_msg.h, rtai_names.h}, base/ipc/msg/msg.c: Prevent 
+	  a name clash.
+
+2005-07-03  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: fixed wrong determination of the
+	  cpu to which a readied soft task is pended.
+	* base/sched/sched.immed: revised and improved managment 
+	  of RTAI syscalls, following revision of the encoding of msgs 
+	  read/writes.
+	* base/sched/sys.c: put likely/unlikely suggestions here and there.
+	* base/ipc/sem/sem.c: more consistent check in case of abnormal 
+	  wakeup from rt_schedule, avoid using sem.
+	* base/ipc/mbx/mbx.c: more consistent check in case of abnormal 
+	  wakeup from rt_schedule, avoid using anything related to mbx.
+	* base/ipc/msg/msg.c: consistent check in case of abnormal 
+	  wakeup from rt_schedule, avoid using anything related to the
+	  messaged task.
+
+2005-07-01  Panagiotis Issaris <takis@gna.org>
+
+	* configure.in: Fix the configure script when using an external Linux
+	build directory.
+	
+2005-06-30  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.immed and api.c: implemnted new hashed registry
+	  support.
+	* /base/include/rtai_nam2num.h and rtai_registry.h: adapted to work 
+	* /base/ipc/shm/shm.c: adapted to work with the new hashed registry 
+	* /base/ipc/msg/msg.c: cancelled redundant dangerous dequeue_blocked.
+	* /base/arch/i386/hal/hal.immed: adapted to likely changes of future
+	  ADEOS patches.
+
+2005-06-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.immed and sys.c: revised and improved managment 
+	  of RTAI syscalls, following revision of the encoding of msgs 
+	  read/writes.
+	* base/ipc/netrpc/netrpc.c: exploits the semplification of the 
+	  new encoding schedme for msgs read/writes.
+	* base/include/rtai_schedcore.h: unifies an ubiquitus declaration
+	  of RTAI syscalls arguments in a single place.
+	* base/include/rtai_lxrt.h: simplified encoding of msgs read/writes.
+	* base/include/rtai_netrpc.h: inheredits the encoding of rtai_lxrt.h,
+	  with all the changes to functions declarations related to it.
+
+2005-06-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/ipc/fifos/fifos.c: avoid direct initialiasation of a 
+	  spinlock, conflicting with Linux 2.6.11.
+	* base/include/rtai_shm.h: conditinally define the arch independent 
+	  function "remap_page_range", that disappeared in Linux 2.6.11.
+
+2005-06-21  Jan Kiszka  <kiszka@rts.uni-hannover.de>
+
+	* base/include/asm-i386/rtai_fpu.h: FPU support must now care
+	  of different versions of Linux 2.6.xx also.
+	* base/include/asm-i386/rtai_shm.h: shared pages manipulation needs
+	  to care of different versions of Linux 2.6.xx also.
+	* base/arch/i386/hal/hal.immed: setting of Linux priority must now
+	  account for different versions of Linux 2.6.xx too; rare "device
+	  not available" traps updated to use new overhauled macros in 
+	  asm-i386/rtai_fpu.h.
+	* base/sched/sched.c and base/sched/sys.c: updated to use new
+	  overhauled macros in asm-i386/rtai_fpu.h.
+
+2005-06-21  Bernd Suessmilch  <Bernd.Suessmilch@uibk.ac.at>
+
+	* base/sched/sched.c:
+	* base/sched/sys.c: improved Linux signal catching and dispatching.
+	
+2005-06-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: pend trasitions to soft mode
+	  directly, they are all atomic protected already.
+	* base/sched/sched.c: uses above and simplified the trasition to 
+	  soft mode handler.
+
+2005-06-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: direct vectoring of irqs to the
+	  CPU has its tail as for immediate dispatching, to help Linux in
+	  the non preemptible case, i.e. under 2.4.xx. It tend to starve
+	  otherwise under very very high soft real time load.
+
+2004-06-14  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Corrected problem with
+	acivation from continous blocks. Better handling of "ode" functions
+        * rtai-lab/scilab/devices/rtai_comedi_dio.c: Corrected problem with
+	threshold in output block
+	
+2005-05-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch/x86_64/hal/hal.immed:
+	  and
+	* base/include/asm-x86_64/rtai_hal.immed: all features of the 
+	  latest i386 version.
+
+2005-05-30  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: rt_printk uses printk directly, 
+	  a sync version added also.
+	  
+2005-05-30  Daniele Gasperini  <gasperin@elet.polimi.it>
+
+	* first port of what needed to use x*6_64.
+
+2005-05-25  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: trap handler modified to use 
+	  unwrapped ADEOS event catching.
+	* base/sched/sched.immed: all event handlers modified to use
+          unwrapped ADEOS event catching; depends on the definition of the
+	  macro "UNWRAPPED_CATCH_EVENT", to be defined in rtai_hal.h.
+	* base/include/asm-i386/rtai_hal.immed: enabled macro to use 
+	  unwrapped event catching.
+	* base/arch/i386/patches: modified handle_event to avoid wrapping
+	  event and related data.
+
+2004-05-25  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Added checks for the
+	dialog box values
+        * rtai-lab/scilab/macros/RTAI/SetTarget_.sci: Added checks for the
+	dialog box values
+	
+
+2005-05-24  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_hal.immed: do not double marking in hard 
+	  real time, in cpu_realtime, the depth count is more than enough.
+	* base/arch/i386/hal/hal.immed: lock out Linux directly from 
+	  interrupt handlers; avoid dispatching irqs completely.
+	* base/sched/sched.immed: care of avoiding Linux locking when done
+	  in irq handler already, enable immediate sched on ipi without
+	  dispatching.
+
+2004-05-23  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/scilab/rtmain.c: Support for continous blocks
+        * rtai-lab/scilab/macros/RTAI/*: RTAICodeGen_.sci modified and compatible with 
+	  Scilab-3.1 CVS with support for continous blocks
+	  Added subdirectory "RT_templates" for tmemplate Makefiles
+	  Added New function "SetTarget_.sci" to handle template Makefile and
+	  continous code generation.
+
 2005-05-18  Philippe Gerum  <rpm@xenomai.org>
 
 	* configure.in: stop configuring if Linux REGPARMS is set.
-	
+
 2005-05-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-        * base/include/rtai_malloc.h: practically break any constraint in 
+	* base/include/rtai_malloc.h: practically break any constraint in
 	  dynamic memory allocation.
 
-2005-05-10  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+2004-05-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-        * base/arch/i386/hal.*: fixed ire affinity saved old state.
-        * base/arch/i386/hal.immed: possibility of exploting isolated CPUs
-	  for RTAI only.
-        * base/sched/api.c: care of removing a task to be suspended from the
-	  timed list also.
+        * base/sched/sched.immed: 
+	  - changed coding of circular pending lists,
+	  - pending wake up macro transferred to rtai_schedcore.h,
+	  - parametrised give_back_to_linux to distinguish between raw
+	    use and internal hard/soft transitions following Linux use,
+	  - use ADEOS virq directly for waking up Linux tasks from RTAI.
+        * base/sched/api.c: sleeping tasks wake up substituted with the more
+	  general rt_task_masked_unblock, so that it becomes just a #define 
+	  subcase of it.
+        * base/sched/sys.c: cares of the paremetrised give_back_to_linux.
+        * base/arch/i386/hal.immed: 
+	  - cleaned unused/useless stuff,
+	  - layout restyling,
+	  - old cpu affinity state is saved no more, as it could wrongly 
+	    restate an unintended mask in case of repeated calls, user must
+	    care of it; to such an aim the set affinity function return the
+	    previous state,
+	  - optional stalling of the RTAI domain in hard mode, under control
+	    of the STALL_RTAI_DOMAIN macro,
+        * base/include/asm-i386/rtai_hal.immed: changes to support consistency 
+	  when STALL_RTAI_DOMAIN is used.
+        * base/include/rtai_schedcore.h: defines pending wake up macros for
+	  any need. 
+        * testsuite/kern/latency/, testsuite/user/latency/: output conforming
+	  to 3.2, i.e with overall count of periodic reschedules displayed
+	  also.
 
-2005-05-09  Michael Neuhauser  <mike@firmix.at>
+2004-05-03  Roberto Bucher  <roberto.bucher@supsi.ch>
 
-	* base/arch/arm/patches/ep9301_hal17_2.4.21-rmk1-crus1.4.2.patch,
-	  base/arch/arm/patches/ep9301_hal17_2.4.21-rmk1-crus1.4.2.ChangeLog:
-	  new Adeos patch (r17c3) see
-	  ep9301_hal17_2.4.21-rmk1-crus1.4.2.ChangeLog for changes (short
-	  summary: Adeos can be loaded as module again; fixed bug in fix
-	  for mlockall() & mmap() problem)
-
-2005-05-08  Michael Neuhauser  <mike@firmix.at>
-
-	* base/include/asm-arm/rtai_hal.immed: added change of ADEOS domain
-	  in switching to/from Linux (copied from i386).
-	* base/include/asm-arm/rtai_hal.*: made RTAI_CPU_FREQ &
-	  RTAI_TSC_FREQ visible in user-space.
-	* configure, configure.in: tuned RTAI_USER_CFLAGS
-	  - added cpu flags (-march=armv4 -mtune=arm9tdmi) for EP9301
-	  - added -fomit-frame-pointer if not debugging (all ARM sub-archs)
-
-2005-04-28  Alexey Zhelezov  <zhelezov@mail.desy.de>
-
-        * base/include/rtai_scb.h: fixed wrong free space calculation in
-	  rt_scb_put.
-
-2005-04-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-        * base/arch/i386/hal.*: made compatible back to gcc 2.95.xx.
-        * base/include/rtai_tbx.h: made compatible back to gcc 2.95.xx.
+        * rtai-lab/scilab/macros/RTAI/*: Added new blocks
 
 2005-04-27  Panagiotis Issaris <panagiotis.issaris@mech.kuleuven.ac.be>
+	* testsuite/{user,kernel}/{latency,preempt}/display.c: output is now 
+	in tabular format and output uses the same units for each test.
+	* testsuite/user/latency/display.c: show overall maximum latency.
 
-        * testsuite/{user,kernel}/{latency,preempt}/display.c: output is now 
-	  in tabular format and output uses the same units for each test.
+2004-04-20  Roberto Bucher  <roberto.bucher@supsi.ch>
 
-2005-04-27  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+        * rtai-lab/scilab/macros/RTAI/*: Scicos ports are now set automatically
+	* rtai-lab/scilab/devices/*: library files modified for port set automatically
+	* rtai-lab/scilab/example/tes.cos: Modifies with the new scicos blocks
 
-        * base/sched/api.c: timing functions return an integer to indicate
-	  posssible overruns.
-        * base/include/rtai_lxrt.h, rtai_sched.h: changed declarations to
-	  reflect above changes in api.c.
-        * base/include/asm/rtai_hal.immed: added change of ADEOS domain in
-	  switching to/from Linux.
-        * base/arch/i386/patches: modified to allow triggering ADEOS virqs 
-	  in immediate mode also.
+2004-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-2005-04-22  Christian Körner <ckoerner@sysgo.com> (first suggestion)
-            Michael Neuhauser  <mike@firmix.at> (final suggestion)
-
-	* base/include/rtai_sched.h: forced a few conservative alignements
-	  in rt_task_struct.
-
-2005-04-21  Michael Neuhauser  <mike@firmix.at>
-
-	* base/arch/arm/patches/README: added note that pxa255_2.6.7-bk6-karo
-	  only works in immediate mode
-
-2005-04-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-        * base/include/ipc/msg/msg.c: backported the previous version, the
-	  new one needs some more testing.
-
-2005-04-21  Luca Pizzi  <lucapizzi@hotmail.it>
-	    Stefano Gafforelli  <Stefano.Gafforelli@tiscali.it>
-	
-	* base/arch/arm/Kconfig: added support for COMEDI on ARM.
-
-2005-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-        * base/include/asm-i386/rtai_emulate_tsc.h: fixed a mixing symbol 
-	  when TSC emulation is used with 2.6.xx; it is simply not needed.
-
-2005-04-08  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-        * base/sched/sched.*: avoid useless passes through Linux schedule() 
-	  in soft mode.
-
-2005-03-31  Michael Neuhauser  <mike@firmix.at>
-
-	* base/arch/arm/hal/GNUmakefile.*, base/include/asm-arm/GNUmakefile.*:
-	  added piped/immed files to distribution
-
-2005-03-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-        * base/include/asm-i386/rtai_hal.*: rt_restore_global_flags
-          rewritten.
-
-2005-03-30  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/scilab/devices/mbx_send_if: Corrected problem with remote
-	  IP number
-	* rtai-lab/scilab/devices/rtai_sem: Added support for scicos semaphores
-	* rtai-mab/scilab/macros/RTAI: Forced code regeneration for scicos 
-	  blocks (new version of the interface to the libsciblk.a library)
-
-2005-03-30  Michael Neuhauser  <mike@firmix.at>
-
-	* base/sched/sched.*: fixed an improper programming of the timer
-	  in oneshot mode, when Linux timer is used.
-
-2005-03-30  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/scilab/devices/mbx_receive_if: Corrected problem with remote
-	IP number
-
-2005-03-23  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/scilab/macros/RTAI: Modified text in some blocks
-
-2005-03-23  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/sched/sched.c: keep ended hard kthreads pooled for reuse.
-
-2005-03-22  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/headers-with_magic_numbers: changed definition of all 
-	  magic numbers, now defined by using nam2num. All of them taken away
-	  from modules coding and put in the related header.
-
-2005-03-22  Michael Neuhauser  <mike@firmix.at>
-
-	* base/scripts/mode-control: new script to change and check the
-	  interrupt dispatching mode (immediate/piped)
-	* base/scripts/GNUmakefile.*: added mode-control to EXTRA_DIST
-
-2005-03-22  Michael Neuhauser  <mike@firmix.at>
-
-	* testsuite/kern/latency/{latency-module.c, latency.c,
-	  preempt-module.c, preempt.c}: use larger DEFAULT_PERIOD/TICK_TIME
-	  for ARM systems (assumption: ARM => low-end system)
-	* testsuite/kern/switches/switches-module.c: set stack-size to 4096 to
-	  minimize waste and check if task creation has worked (both changes
-	  were done to make this test work smoother on low-memory systems)
-	* testsuite/user/latency/{display.c, switches.c, switches.pthread,
-	  switches.rthread}: replaced select() with poll() as some
-	  glibc-versions on ARM have a serious problem with syscalls that
-	  have more than 4 arguments (and poll() is nicer anyway).
-
-2005-03-15  Jan Kiszka  <kiszka@rts.uni-hannover.de>
-
-	* base/include/asm-i386/rtai_oldnames: fixed legacy names macros
-	   related to interrupt flags handling.
-
-2005-03-21  Michael Neuhauser  <mike@firmix.at>
-
-	* base/include/asm-arm/rtai_hal.*: made rtai_hw_*() on ARM fully
-	  compatible to x86 names (i.e. added rtai_hw_cli() and rtai_hw_sti())
-
-2005-03-19  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/ipc/msg/msg.c: added priority inheritance to rt_send/until/timed
-	  in the case the sending blocks waiting for the rendes vous; care in
-	  recovering priorities in case of timeouts. 
-
-2005-03-16  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/asm-ppc: a few updates here and there, at least it
-          now makes itself.
-
-2005-03-15  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/asm-ppc/rtai_usi.h: added the copy from ARM, just to
-	  avoid complaints for the moment. In any case it should be the 
-	  closest to PPC.
-	* base/arch/ppc/hal.c: made to compile in full.
-
-2005-03-15  Jan Kiszka  <kiszka@rts.uni-hannover.de>
-
-	* base/include/asm-i386: fixed a conditional compilation depending
-	  upon the CONFIG_VT parameter.
-
-2005-03-15  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/asm-ppc: committed reworked header files for compiling
-	  PPC in magma.
-	* base/arch/ppc/hal.c: committed reworked HAL for compiling PPC 
-	  in magma.
-	* base/sched/sched.*: added busy wait, optional, to avoid anticipating
-	  scheduling resume time in oneshot mode.
-
-2005-03-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/ipc/tbx/tbx.c: fixed a misused sem_wait, sem_wait_if needed 
-	  instead, and added rt_msg_evdrp support.
-	* base/include/rtai_tbx.h: added declarations to support rt_msg_evdrp.
-
-2005-03-01  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/ipc/tbx/tbx.c: totally rewritten as RTAI own messages queue,
-	  legacy tbx support comes through compatibility wrappers in 
-	  rtai_tbx.h.
-	* base/include/rtai_tbx.h: totally rewritten as said above, related
-	  header file chaged accordingly.
-	* base/include/rtai_lxrt.h: get full IO permissions when you extend
-	  a linux process to RTAI by using any LXRT task init.
-
-2005-02-28  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/sched/sched.immed: optionally force alignement to resume time, 
-	  setting a macro by hand.
-
-2005-02-22  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/scilab: Added semaphores blocks
-
-2005-02-22  Michael Neuhauser  <mike@firmix.at>
-
-	* base/arch/arm/patches/README: info about patches (what boards are
-	  supported & what they are based on)
-	* base/arch/arm/patches/pxa255_2.6.7-rmk1-karo.patch: renamed to
-	  base/arch/arm/patches/pxa255_2.6.7-bk6-karo.patch to better reflect
-	  patch chain
-
-2005-02-22  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/*: Scicos block icon + version change
-
-2005-02-21  Luca Pizzi  <lucapizzi@hotmail.it>
-	    Stefano Gafforelli  <Stefano.Gafforelli@tiscali.it>
-
-	* base/arch/arm/hal/mach-pxa/pxa-timer.c (rt_request_timer): fixed
-	return and argument type
-	* base/arch/arm/patches/pxa255_2.6.7-rmk1-karo.patch: added
-	CONFIG_ADEOS_THREADS
-
-2005-02-21  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/ipc/mq/mq.c: cleaned of unused stuff and revised for some
-	  added efficiency, no more searches for free node/slotc.
-	* base/include/rtai_mq.h: cleaned and revised to support changes in
-	  mq.c.
-
-2005-02-18  Michael Neuhauser  <mike@firmix.at>
-
-	* base/include/asm-arm/rtai_hal.*: added alternative names for
-	  rtai_hw_*() (compatibility to x86)
-
-2005-02-18  Luca Pizzi  <lucapizzi@hotmail.it>
-	    Stefano Gafforelli  <Stefano.Gafforelli@tiscali.it>
-
-	* configure, configure.in: added CONFIG_ARCH_PXA
-	* base/arch/arm/hal/GNUmakefile.am: 2.6 support
-	* base/include/asm-arm/GNUmakefile.am: arch-{pxa,ep9301} support
-	* all GNUmakefile.in: regenerated because of above changes
-	* base/arch/arm/hal/Makefile.kbuild: new
-	* base/arch/arm/hal/hal.immed: 2.6/pxa support
-	* base/include/asm-arm/rtai_atomic.h: 2.6/pxa support
-	* base/include/asm-arm/rtai_hal.immmed: 2.6/pxa support
-	* base/include/asm-arm/rtai_sched.h: 2.6/pxa support
-	* base/include/asm-arm/rtai_vectors.h: 2.6/pxa support
-	* base/include/asm-arm/rtai_fpu.h: set_tsk_used_fpu() was moved here
-	from base/include/rtai_wrappers.h (because it is arch specific)
-
-2005-02-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/rtai_sched.h: cleaned up unused stuff and added 
-	  linux_syscall_server declaration in task_struct.
-	* base/sched/sched.c and sys.c: cleaning up following the above
-	  task_struct changes and using linux_syscall_server in place of 
-	  the provisional variable used for testing.
-
-2005-02-17  Luca Pizzi, (lucapizzi@hotmail.it) and
-	    Stefano Gafforelli, (Stefano.Gafforelli@tiscali.it)
-
-	* base/arch/arm/hal/mach_pxa/pxa-timer.c: added and exported a
-	  volatile union for rtai_tsc (thanks to a Michael suggestion).
-
-2005-02-17  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/rtai_wrappers.h: cancelled defines for testing if
-	  a process used the FPU, it depends on archs and has been brought 
-	  to arch specific asm rtai_fpu.h.
-	* base/include/asm-i386/rtai_fpu.h: included test of a process use 
-	  of the FPU since it depends on archs.
-	* base/sched/sys.c: included arch specific rtai_fpu.h.
-	* base/sched/sched.h: cancelled a useles include that annoying PXA.
-
-2005-02-16  Luca Pizzi, (lucapizzi@hotmail.it) and
-	    Stefano Gafforelli, (Stefano.Gafforelli@tiscali.it)
-
-	* base/include/asm-arm/arch-pxa/rtai_arch.h, rtai_exports.h,
-	  rtai_timer.h: PXA specific headers
-	* base/arch/arm/hal/mach_pxa/pxa-timer.c: PXA specific timer support
-	* base/arch/arm/patches/pxa255_2.6.7-rmk1-karo.patch: PXA specific
-	  patch for Linux-2.6.7
-	* NB: it is just the beginning, Luca and Stefano must agree changes
-	  to common files with Michael.
-
-2005-02-14  Michael Neuhauser  <mike@firmix.at>
-
-	* base/include/asm-arm/rtai_lxrt.h: fixed LINUX_SYSCALL_* (a little,
-	  will only work for syscalls with 4 or less arguments)
-
-2005-02-14  Michael Neuhauser  <mike@firmix.at>
-
-	* base/include/asm-arm/GNUmakefile.*: added rtai_usi.h
-	* base/arch/arm/hal/hal.*: include asm/rtai_usi.h
-	* base/arch/arm/hal/hal.*: re-added "retmode" to rtai_realtime_irq[]
-	  (sched/api.c has extern decl with retmode, so we need it here)
-
-2005-02-15  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/rtai_lxrt.h: added thread support for Linux server,
-	  supporting Linux syscalls while remaining in hard real time.
-	* base/include/rtai_sched.h: added declaration of light
-	  rpc/receive/return to support the Linux syscall server.
-	* base/include/asm-arm/rtai_lxrt.h and asm-i386/rtai_lxrt.h: added
-	  declarations for Linux syscall registers.
-	* base/sched/sched.*: added support to rpc to the Linux syscall
-	  server, if installed.
-	* base/sched/api.c: added specific light rpc/receive/return to
-	  support the syscall server.
-	* base/sched/sys.c: added an entry to create and init the Linux 
-	  syscall server.
-
-2005-02-14  Michael Neuhauser  <mike@firmix.at>
-
-	* base/arch/arm/hal/hal.*: define rt_scheduling[] unconditionally,
-	  i.e. not depending on CONFIG_RTAI_SCHED_ISR_LOCK
-	* base/arch/arm/hal/hal.* (rtai_syscall_trampoline): added USI SRQ call
-	* base/include/asm-arm/rtai_hal.*: added RTAI_IFLAG
-
-2005-02-14  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/asm-arm/rtai_use.h: added the new arch specific USI.
-	* base/arch/i386/hal.*: modified deferred scheduling in interrupt 
-	  handlers to avoid too many indirections, related variables
-	  declared here instead than in sched.c.
-	* base/arch/arm/hal.*: modified deferred scheduling in interrupt 
-	  handlers to avoid too many indirections, as in i386.
-	* base/sched/sched.*: sched locking variables from hal.c, added
-	  hook for deferred scheduling in isr.
-	* base/sched/api.c: removed hook for deferred scheduling in isr.
-
-2005-02-06  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/rtai_use.h: reworked to use srq instead of LXRT for
-	  calling USI related services, so that they do not depend from the
-	  scheduler anymore.
-	* base/include/asm/rtai_use.h: added the new arch specific USI 
-	  support, so that it should be easy to have USI on non x86 also.
-	* base/arch/i386/hal.*: user space syscall extended to support USI 
-	* base/tasklets.c: ensure interrupt are enabled at exiting the support
-	  tasklet thread.
-	* base/usi/README: updated to the new USI setup; this is the only
-	  file of interest; the rest of all the usi directory content is of
-	  no use anymore.
-
-2005-02-04  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/scripts/rtai_load.in: extended to allow to execute an 
-	  application with a user command list.
-
-2005-01-31  Michael Neuhauser  <mike@firmix.at>
-
-	* base/arch/arm/patches/ep9301_hal17_2.4.21-rmk1-crus1.4.2.patch:
-	  new Adeos patch, replaces ep9301_hal16_2.4.21-rmk1-crus1.4.2.patch;
-	  see ep9301_hal17_2.4.21-rmk1-crus1.4.2.ChangeLog for changes (short
-	  summary: the new version (r17c1) is a lot better than the previous
-	  version (r16c255))
-	* base/arch/arm/hal/hal.{c,immed,piped}: align rtai_realtime_irq[]
-	  on L1_CACHE_BYTES; removed "hard irq in trap handler" warning (this
-	  can't happen, hw-irqs are now enabled for all event handlers)
-	* base/include/asm-arm/rtai_lxrt.h (_lxrt_context_switch): use Linux
-	  switch_to() (which is no longer changed by Adeos patch)
-
-2005-01-25  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/xrtailab.cpp: Fixed problem with rt_VECTOR type in
-	matlab7
-	* rtai-lab/matlab/rtmain.c: Fixed problem with rt_VECTOR type in
-	matlab7
-	
-2005-01-24  Michael Neuhauser  <mike@firmix.at>
-
-	* configure.in: allow CONFIG_RTAI_SCHED_LXRT to be enabled for ARM,
-	  removed old ARM sub-architectures (SA1110, CLPS711X, PXA), added new
-	  ARM sub-architecture (EP9301)
-	* configure, all GNUmakefile.in: regenerated because of above change
-
-2005-01-24  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/xrtailab.cpp: Fixed problem with the counter by parameter
-	batch download.
-	
-2005-01-23  Michael Neuhauser  <mike@firmix.at>
-
-	* base/arch/arm, base/include/asm-arm: RTAI/ARM over Adeos rewrite,
-	  supports kernel and user-space. Only sub-architecture supported is
-	  EP9301 (ARM920T, ARMv5). Old stuff was tagged with
-	  "before_arm_over_adeos".
-
-2005-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/matlab/ptinfo.tlc: new <matlab7>rtw/c/tlc/mw/ptinfo.tlc
-	which correct problems with simulink block names in Matlab 7 (R14).
-	This new ptinfo.tlc file has been provided by Mathworks and fix the 
-	problem
-
-2005-01-18  Philippe Gerum  <rpm@xenomai.org>
-
-	* doc: Fix generation and rebuild.
-
-2005-01-18  Roberto Bucher  <roberto.bucher@supsi.ch>
-
-	* rtai-lab/matlab/rtmain.c: new version compatible with Matlab7 and
-	Matlab 6.5.
-	* rtai-lab/scilab/rtmain.c: Better handling of Ctrl-C.
-	* rtai-lab/scilab/devices/*: Implemented new interface.
-	* rtai-lab/scilab/macros/RTAI/*: Implemented new interface.
-	
-
-2005-01-18  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/sched/sched.*: use gobal syncranisation to protect a possible
-	scheduling.
-	* base/arch/i386/hal/hal.*: reallow use of frame pointers in kernel
-	configuration (hacking section);
-
-2005-01-07  Michael Neuhauser  <mike@firmix.at>
-
-	* testsuite/user/switches.c: set stack size of the threads herd to
-	  a reasonable size, to allow execution with relatively small RAM
-	  availability (Paolo Mantegazza added a copy using of RTAI proper
-	  user space threads).
-
-2005-01-07  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/sched/sched.c, base/include/asm-i38/rtai_lxrt.h: modified
-	  support for using Linux syscalls to have it arch independent
-	  (specific remarks from Michael Neuhauser).
-	* base/include/rtai_lxrt.h: added inlines to create RTAI proper
-	  user space threads.
-	* base/tasklets/tasklets.c, base/include/rtai_tasklets.h: modified 
-	  to use RTAI proper user space threads.
-	* base/usi/usi.c, base/include/rtai_usi.h: modified to use native 
-	  user irq tasks (found in api.c).
-
-2005-01-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/sched/sched.c: modified support for TSC emulation on 486s,
-	  to avoid clashes against non x86 archs (specific remarks from 
-	  Michael Neuhauser)
-
-2005-01-05  Michael Neuhauser  <mike@firmix.at>
-
-	* base/sched/sched.c: minidemonisation of LXRT support kernel threads,
-	  some code reordering in RR_YIELD.
-
-2005-01-05  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/arch/i386/hal/hal.c: do not load RTAI support if the local
-	  APIC has been configured in Linux but is not available.
-	* base/sched/sched.immed: inserted a macro call to enable hard 
-	  interrupts in all ADEOS events intercept functions; the macro is
-	  arch dependent and must be defined in the arch specific 
-	  rtai_lxrt.h.
-
-2004-12-31  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* base/include/asm-i386/rtai_hal.h, rtai_lxrt.h: got rid of 
-	  __USE_APIC__, by referring to CONFIG_X86_LOCAL_APIC directly.
-	* base/arch/i386/hal.c: fixed definition of NR_IRQS for the 
-	 UP local APIC usage without IO-APIC.
-
-2004-12-29  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-        * base/include/asm-i386/rtai_emulate_tsc.h: to help forcing TSC
-	  emulation on machines that have it.
-        * base/include/asm-i386/rtai_hal.h: modified rdtsc from inline
-	  to define to allow undefinition when TSC emulation is forced;
-	  added inclusion of "rtai_emulate_tsc.h".
-        * base/sched/sched.c: added the possibility of simulating non TSC 
-	  machines on TSC ones, it helps developping 486 embedded systems
-	  without having one available yet.
-
-2004-12-29  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* First big real commit with the structuring needed for a fully 
-	LXRT based release. Changes to the starting baseline:
-	- The scheduler should have no x86 specific feature in it 
-          anymore, all the arch dependent parts should be in appropriate
-	  arch specific header files;
-	- Kernel space only operation maintained within LXRT;
-	- Use of the APIC timer, when enabled, with UP also;
-	- All RTAI ways from user to kernel space, i.e. srq and LXRT,
-	  unified in a single call; x86 verified, all other archs should
-	  follow suite;
-	- Possibility of using the standard Linux syscall for LXRT,
-	  arch independent hopefully;
-	- Restated automatic hard/soft/hard switches when a Linux
-	  syscall is made while RTAI is in hard real time mode, recovery
-	  to hard mode in the syscall return path also;
-	- IRQ specific tasks native within the scheduler, so the USI way
-	  is now simmetrically available in kernel/user space; USI is
-	  kept for compatibility only, its use should be avoided;
-	- The suspend API has been expanded in the standard RTAI way, i.e.:
-	  suspend/suspend_if/suspend_until/suspend_timed, to support RTAI
-	  IRQ tasks; available independently also;
-	- Prepared to have real time irqs either dispatched "immediately" 
-	  or "piped" ("immed"-"piped" mode); "piped" will be the default.
-	* Only a rough preliminary testing of the all stuff has been carried 
-	  out and, at the moment it is i386 only.
-
-2004-12-09  Paolo Mantegazza  <mantegazza@aero.polimi.it>
-
-	* Started: baseline from 3.1r2.
+        * begin new development cycle, aligning to stable vulcano.

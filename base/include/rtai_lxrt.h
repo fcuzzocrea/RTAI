@@ -88,14 +88,14 @@
 #define SIGNAL_HANDLER	 		15
 #define TASK_USE_FPU			16
 #define LINUX_USE_FPU			17
-#define PREEMPT_ALWAYS_GEN		18
+#define HARD_TIMER_COUNT		18
 #define GET_TIME_NS			19
 #define GET_CPU_TIME_NS			20
 #define SET_RUNNABLE_ON_CPUS		21 
 #define SET_RUNNABLE_ON_CPUID		22	 
 #define GET_TIMER_CPU			23	 
 #define START_RT_APIC_TIMERS		24
-#define PREEMPT_ALWAYS_CPUID		25
+#define HARD_TIMER_COUNT_CPUID		25
 #define COUNT2NANO_CPUID		26
 #define NANO2COUNT_CPUID		27
 #define GET_TIME_CPUID			28
@@ -314,8 +314,10 @@
 #define PEND_LINUX_IRQ		       211
 #define RECEIVE_LINUX_SYSCALL          212
 #define RETURN_LINUX_SYSCALL           213
+#define REQUEST_RTC                    214
+#define RELEASE_RTC                    215
 
-#define MAX_LXRT_FUN                   215
+#define MAX_LXRT_FUN                   220
 
 // not recovered yet 
 // Qblk's 
@@ -397,12 +399,12 @@
 
 // Keep LXRT call enc/decoding together, so you are sure to act consistently.
 // This is the encoding, note " | GT_NR_SYSCALLS" to ensure not a Linux syscall, ...
-#define GT_NR_SYSCALLS  (1 << 15)
-#define ENCODE_LXRT_REQ(dynx, srq, lsize)  (((dynx) << 28) | (((srq) & 0xFFF) << 16) | GT_NR_SYSCALLS | (lsize))
+#define GT_NR_SYSCALLS  (1 << 11)
+#define ENCODE_LXRT_REQ(dynx, srq, lsize)  (((dynx) << 24) | ((srq) << 12) | GT_NR_SYSCALLS | (lsize))
 // ... and this is the decoding.
-#define SRQ(x)   (((x) >> 16) & 0xFFF)
+#define SRQ(x)   (((x) >> 12) & 0xFFF)
 #define NARG(x)  ((x) & (GT_NR_SYSCALLS - 1))
-#define INDX(x)  (((x) >> 28) & 0xF)
+#define INDX(x)  (((x) >> 24) & 0xF)
 
 #ifdef __KERNEL__
 
@@ -417,31 +419,22 @@ arg  INDX   |||| .... .... .... .... .... .... ....
 */
 
 /*
-These USP (unsigned long long) type fields allow to read and write up to 2 arguments.  
+These USP (unsigned long) type fields allow to read and write up to 2 arguments.  
                                                
-RW marker .... .... .... .... .... .... .... ..|| .... .... .... .... .... .... .... ...|
+The high part of the unsigned long encodes writes
+W ARG1 BF .... .... ..|| |... .... .... .... ....
+W ARG1 SZ .... ...| ||.. .... .... .... .... ....
+W ARG2 BF .... |||. .... .... .... .... .... ....
+W ARG2 SZ .||| .... .... .... .... .... .... ....
 
-HIGH unsigned long encodes writes
-W ARG1 BF .... .... .... .... .... ...| |||| ||..
-W ARG1 SZ .... .... .... .... |||| |||. .... ....
-W ARG2 BF .... .... .||| |||| .... .... .... ....
-W ARG2 SZ ..|| |||| |... .... .... .... .... ....
-W 1st  LL .|.. .... .... .... .... .... .... ....
-W 2nd  LL |... .... .... .... .... .... .... ....
+The low part of the unsigned long encodes writes
+R ARG1 BF .... .... .... .... .... .... ..|| |...
+R ARG1 SZ .... .... .... .... .... ...| ||.. ....
+R ARG2 BF .... .... .... .... .... |||. .... ....
+R ARG2 SZ .... .... .... .... .||| .... .... ....
 
-LOW unsigned long encodes reads
-R ARG1 BF .... .... .... .... .... ...| |||| ||..
-R ARG1 SZ .... .... .... .... |||| |||. .... ....
-R ARG2 BF .... .... .||| |||| .... .... .... ....
-R ARG2 SZ ..|| |||| |... .... .... .... .... ....
-R 1st  LL .|.. .... .... .... .... .... .... ....
-R 2nd  LL |... .... .... .... .... .... .... ....
-
-LOW unsigned long encodes also
+The low part of the unsigned long encodes also
 RT Switch .... .... .... .... .... .... .... ...|
-
-and 
-Always 0  .... .... .... .... .... .... .... ..|.
 
 If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long long) is copied.
 */
@@ -450,42 +443,33 @@ If SZ is zero sizeof(int) is copied by default, if LL bit is set sizeof(long lon
 // them in fun entry type to obtain the desired encoding
 
 // for writes
-#define UW1(bf, sz)  ((((unsigned long long)((((bf) & 0x7F) <<  2) | (((sz) & 0x7F) <<  9))) << 32) | 0x300000001LL)
-#define UW2(bf, sz)  ((((unsigned long long)((((bf) & 0x7F) << 16) | (((sz) & 0x7F) << 23))) << 32) | 0x300000001LL)
-#define UWSZ1LL      (0x4000000300000001LL)
-#define UWSZ2LL      (0x8000000300000001LL)
+#define UW1(bf, sz)  ((((bf) & 0x7) << 19) | (((sz) & 0x7) << 22))
+#define UW2(bf, sz)  ((((bf) & 0x7) << 25) | (((sz) & 0x7) << 28))
 
 // for reads
-#define UR1(bf, sz)  ((((bf) & 0x7F) <<  2) | (((sz) & 0x7F) <<  9) | 0x300000001LL)
-#define UR2(bf, sz)  ((((bf) & 0x7F) << 16) | (((sz) & 0x7F) << 23) | 0x300000001LL)
-#define URSZ1LL      (0x340000001LL)
-#define URSZ2LL      (0x380000001LL)
+#define UR1(bf, sz)  ((((bf) & 0x7) << 3) | (((sz) & 0x7) <<  6))
+#define UR2(bf, sz)  ((((bf) & 0x7) << 9) | (((sz) & 0x7) << 12))
 
-// and these are for deciding what to do in lxrt.c
-#define	NEED_TO_RW(x)	(((unsigned long *)&(x))[HIGH])
+#define	NEED_TO_RW(x)	((x) & 0xFFFFFFFE)
 
-#define NEED_TO_R(x)	(((unsigned long *)&(x))[LOW]  & 0x0000FFFC)
-#define NEED_TO_W(x)	(((unsigned long *)&(x))[HIGH] & 0x0000FFFC)
+#define NEED_TO_W(x)	((x) & (0x3F << 19))
+#define NEED_TO_W2ND(x)	((x) & (0x3F << 25))
 
-#define NEED_TO_R2ND(x)	(((unsigned long *)&(x))[LOW]  & 0x3FFF0000)
-#define NEED_TO_W2ND(x)	(((unsigned long *)&(x))[HIGH] & 0x3FFF0000)
+#define NEED_TO_R(x)	((x) & (0x3F <<  3))
+#define NEED_TO_R2ND(x)	((x) & (0x3F <<  9))
 
-#define USP_RBF1(x)  	((((unsigned long *)&(x))[LOW] >>  2) & 0x7F)
-#define USP_RSZ1(x)    	((((unsigned long *)&(x))[LOW] >>  9) & 0x7F)
-#define USP_RBF2(x)    	((((unsigned long *)&(x))[LOW] >> 16) & 0x7F)
-#define USP_RSZ2(x)    	((((unsigned long *)&(x))[LOW] >> 23) & 0x7F)
-#define USP_RSZ1LL(x)  	(((unsigned long *)&(x))[LOW] & 0x40000000)
-#define USP_RSZ2LL(x)  	(((unsigned long *)&(x))[LOW] & 0x80000000)
+#define USP_WBF1(x)   	(((x) >> 19) & 0x7)
+#define USP_WSZ1(x)    	(((x) >> 22) & 0x7)
+#define USP_WBF2(x)    	(((x) >> 25) & 0x7)
+#define USP_WSZ2(x)    	(((x) >> 28) & 0x7)
 
-#define USP_WBF1(x)   	((((unsigned long *)&(x))[HIGH] >>  2) & 0x7F)
-#define USP_WSZ1(x)    	((((unsigned long *)&(x))[HIGH] >>  9) & 0x7F)
-#define USP_WBF2(x)    	((((unsigned long *)&(x))[HIGH] >> 16) & 0x7F)
-#define USP_WSZ2(x)    	((((unsigned long *)&(x))[HIGH] >> 23) & 0x7F)
-#define USP_WSZ1LL(x)   (((unsigned long *)&(x))[HIGH] & 0x40000000)
-#define USP_WSZ2LL(x)   (((unsigned long *)&(x))[HIGH] & 0x80000000)
+#define USP_RBF1(x)  	(((x) >>  3) & 0x7)
+#define USP_RSZ1(x)    	(((x) >>  6) & 0x7)
+#define USP_RBF2(x)    	(((x) >>  9) & 0x7)
+#define USP_RSZ2(x)    	(((x) >> 12) & 0x7)
 
 struct rt_fun_entry {
-    unsigned long long type;
+    unsigned long type;
     void *fun;
 };
 
@@ -506,14 +490,14 @@ extern "C" {
 
 #if CONFIG_RTAI_INTERNAL_LXRT_SUPPORT
  
-static inline struct rt_task_struct *pid2rttask(pid_t pid)
+static inline struct rt_task_struct *pid2rttask(long pid)
 {
-        return ((unsigned long)pid) > PID_MAX_LIMIT ? (struct rt_task_struct *)pid : find_task_by_pid(pid)->rtai_tskext(0);
+        return ((unsigned long)pid) > PID_MAX_LIMIT ? (struct rt_task_struct *)pid : find_task_by_pid(pid)->rtai_tskext(TSKEXT0);
 }
 
-static inline pid_t rttask2pid(struct rt_task_struct * task)
+static inline long rttask2pid(struct rt_task_struct * task)
 {
-    return task->lnxtsk ? task->lnxtsk->pid : (int) task;
+    return task->lnxtsk ? task->lnxtsk->pid : (long)task;
 }
 
 #else /* !CONFIG_RTAI_INTERNAL_LXRT_SUPPORT */
@@ -527,7 +511,7 @@ static inline struct rt_task_struct *pid2rttask(pid_t pid)
 // buddies also.
 static inline pid_t rttask2pid(struct rt_task_struct * task)
 {
-    return (int) task;
+    return (long) task;
 }
 
 #endif /* CONFIG_RTAI_INTERNAL_LXRT_SUPPORT */
@@ -584,9 +568,9 @@ extern "C" {
  *
  * @return the address associated to @a name on success, 0 on failure
  */
-RTAI_PROTO(void *,rt_get_adr,(unsigned long name))
+RTAI_PROTO(void *, rt_get_adr, (unsigned long name))
 {
-	struct { int name; } arg = { name };
+	struct { unsigned long name; } arg = { name };
 	return rtai_lxrt(BIDX, SIZARG, LXRT_GET_ADR, &arg).v[LOW];
 } 
 
@@ -598,16 +582,16 @@ RTAI_PROTO(void *,rt_get_adr,(unsigned long name))
  * @return the identifier pointed by the address @a adr on success, 0 on
  * failure.
  */
-RTAI_PROTO(unsigned long,rt_get_name,(void *adr))
+RTAI_PROTO(unsigned long, rt_get_name, (void *adr))
 {
 	struct { void *adr; } arg = { adr };
 	return rtai_lxrt(BIDX, SIZARG, LXRT_GET_NAME, &arg).i[LOW];
 }
 
-RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
+RTAI_PROTO(RT_TASK *, rt_task_init_schmod, (unsigned long name, int priority, int stack_size, int max_msg_size, int policy, int cpus_allowed))
 {
         struct sched_param mysched;
-        struct { int name, priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, stack_size, max_msg_size, cpus_allowed };
+        struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, stack_size, max_msg_size, cpus_allowed };
 
         mysched.sched_priority = sched_get_priority_max(policy) - priority;
         if (mysched.sched_priority < 1 ) {
@@ -621,7 +605,7 @@ RTAI_PROTO(RT_TASK *,rt_task_init_schmod,(int name, int priority, int stack_size
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
 }
 
-#define RT_THREAD_STACK_MIN 64*1024
+#define RT_THREAD_STACK_MIN  64*1024
 
 #if 1
 #include <pthread.h>
@@ -673,10 +657,10 @@ RTAI_PROTO(int, rt_thread_join, (int thread))
 #include <asm/ptrace.h>
 #include <unistd.h>
 
-static inline void rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
+static inline RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
 {
 	struct { RT_TASK *task; struct pt_regs *regs; } arg = { task, regs };
-	rtai_lxrt(BIDX, SIZARG, RECEIVE_LINUX_SYSCALL, &arg);
+	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, RECEIVE_LINUX_SYSCALL, &arg).v[LOW];
 }
 
 static inline void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
@@ -689,18 +673,13 @@ static inline void rt_return_linux_syscall(RT_TASK *task, unsigned long retval)
 static void linux_syscall_server_fun(RT_TASK *task)
 {
         struct pt_regs regs;
-	rtai_lxrt(BIDX, sizeof(RT_TASK *), LINUX_SERVER_INIT, &task);
-	rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &task);
-        for (;;) {
-#if 1
-                rt_receive_linux_syscall(task, &regs);
-		rt_return_linux_syscall(task, syscall(regs.LINUX_SYSCALL_NR, regs.LINUX_SYSCALL_REG1, regs.LINUX_SYSCALL_REG2, regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_REG4, regs.LINUX_SYSCALL_REG5, regs.LINUX_SYSCALL_REG6));
-#else
-		int retval;
-		rt_receivex(task, &regs, sizeof(struct pt_regs), &retval);
-		retval = syscall(regs.LINUX_SYSCALL_NR, regs.LINUX_SYSCALL_REG1, regs.LINUX_SYSCALL_REG2, regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_REG4, regs.LINUX_SYSCALL_REG5, regs.LINUX_SYSCALL_REG6);
-		rt_returnx(task, &retval, sizeof(retval));
-#endif
+	if (rtai_lxrt(BIDX, sizeof(RT_TASK *), LINUX_SERVER_INIT, &task).i[LOW]) {
+//		rtai_lxrt(BIDX, sizeof(RT_TASK *), RESUME, &task);
+		for (;;) {
+			if (rt_receive_linux_syscall(task, &regs) == task) {
+				rt_return_linux_syscall(task, syscall(regs.LINUX_SYSCALL_NR, regs.LINUX_SYSCALL_REG1, regs.LINUX_SYSCALL_REG2, regs.LINUX_SYSCALL_REG3, regs.LINUX_SYSCALL_REG4, regs.LINUX_SYSCALL_REG5, regs.LINUX_SYSCALL_REG6));
+			}
+		}
         }
 }
 
@@ -708,15 +687,17 @@ static void linux_syscall_server_fun(RT_TASK *task)
 
 RTAI_PROTO(int, rt_linux_syscall_server_create, (RT_TASK * task))
 {
-	if (rt_thread_create((void *)linux_syscall_server_fun, task, 0) > 0) {
-		printf(" \b");
-		rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
-		return 0;
+//return rtai_lxrt(BIDX, sizeof(RT_TASK *), LINUX_SERVER_INIT, &task).i[LOW];
+	if (task || (task = (RT_TASK *)rtai_lxrt(BIDX, sizeof(RT_TASK *), RT_BUDDY, &task).v[LOW])) {
+		if (rt_thread_create((void *)linux_syscall_server_fun, task, 0) > 0) {
+			rtai_lxrt(BIDX, sizeof(RT_TASK *), SUSPEND, &task);
+			return 0;
+		}
 	}
 	return -1;
 }
 
-RTAI_PROTO(RT_TASK *, rt_thread_init, (int name, int priority, int max_msg_size, int policy, int cpus_allowed))
+RTAI_PROTO(RT_TASK *, rt_thread_init, (unsigned long name, int priority, int max_msg_size, int policy, int cpus_allowed))
 {
 	return rt_task_init_schmod(name, priority, 0, max_msg_size, policy, cpus_allowed);
 }
@@ -774,20 +755,20 @@ RTAI_PROTO(RT_TASK *, rt_thread_init, (int name, int priority, int max_msg_size,
  * @return On failure a 0 value is returned if it was not possible to setup the
  * buddy task or something using the same name was found.
  */
-RTAI_PROTO(RT_TASK *,rt_task_init,(int name, int priority, int stack_size, int max_msg_size))
+RTAI_PROTO(RT_TASK *,rt_task_init,(unsigned long name, int priority, int stack_size, int max_msg_size))
 {
 	return rt_task_init_schmod(name, priority, 0, max_msg_size, SCHED_FIFO, 0xFF);
 }
 
 RTAI_PROTO(void,rt_set_sched_policy,(RT_TASK *task, int policy, int rr_quantum_ns))
 {
-	struct { RT_TASK *task; int policy; int rr_quantum_ns; } arg = { task, policy, rr_quantum_ns };
+	struct { RT_TASK *task; long policy; long rr_quantum_ns; } arg = { task, policy, rr_quantum_ns };
 	rtai_lxrt(BIDX, SIZARG, SET_SCHED_POLICY, &arg);
 }
 
 RTAI_PROTO(int,rt_change_prio,(RT_TASK *task, int priority))
 {
-	struct { RT_TASK *task; int priority; } arg = { task, priority };
+	struct { RT_TASK *task; long priority; } arg = { task, priority };
 	return rtai_lxrt(BIDX, SIZARG, CHANGE_TASK_PRIO, &arg).i[LOW];
 }
 
@@ -902,7 +883,7 @@ RTAI_PROTO(int, rt_irq_signal, (unsigned irq))
 
 RTAI_PROTO(int, rt_request_irq_task, (unsigned irq, void *handler, int type, int affine2task))
 {
-	struct { unsigned irq; void *handler; int type, affine2task; } arg = { irq, handler, type, affine2task };
+	struct { unsigned irq; void *handler; long type, affine2task; } arg = { irq, handler, type, affine2task };
 	return rtai_lxrt(BIDX, SIZARG, REQUEST_IRQ_TASK, &arg).i[LOW];
 }
 
@@ -925,19 +906,19 @@ RTAI_PROTO(int,rt_task_make_periodic_relative_ns,(RT_TASK *task, RTIME start_del
 	return rtai_lxrt(BIDX, SIZARG, MAKE_PERIODIC_NS, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_task_wait_period,(void))
+RTAI_PROTO(int,rt_task_wait_period,(void))
 {
 	struct { unsigned long dummy; } arg;
 	return rtai_lxrt(BIDX, SIZARG, WAIT_PERIOD, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_sleep,(RTIME delay))
+RTAI_PROTO(int,rt_sleep,(RTIME delay))
 {
 	struct { RTIME delay; } arg = { delay };
 	return rtai_lxrt(BIDX, SIZARG, SLEEP, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_sleep_until,(RTIME time))
+RTAI_PROTO(int,rt_sleep_until,(RTIME time))
 {
 	struct { RTIME time; } arg = { time };
 	return rtai_lxrt(BIDX, SIZARG, SLEEP_UNTIL, &arg).i[LOW];
@@ -951,7 +932,7 @@ RTAI_PROTO(int,rt_is_hard_timer_running,(void))
 
 RTAI_PROTO(RTIME, start_rt_timer,(int period))
 {
-	struct { int period; } arg = { period };
+	struct { long period; } arg = { period };
 	return rtai_lxrt(BIDX, SIZARG, START_TIMER, &arg).rt;
 }
 
@@ -959,6 +940,18 @@ RTAI_PROTO(void, stop_rt_timer,(void))
 {
 	struct { unsigned long dummy; } arg;
 	rtai_lxrt(BIDX, SIZARG, STOP_TIMER, &arg);
+}
+
+RTAI_PROTO(void, rt_request_rtc,(int rtc_freq, void *handler))
+{
+	struct { long rtc_freq; void *handler; } arg = { rtc_freq, handler };
+	rtai_lxrt(BIDX, SIZARG, REQUEST_RTC, &arg);
+}
+
+RTAI_PROTO(void, rt_release_rtc,(void))
+{
+	struct { unsigned long dummy; } arg;
+	rtai_lxrt(BIDX, SIZARG, RELEASE_RTC, &arg);
 }
 
 RTAI_PROTO(RTIME,rt_get_time,(void))
@@ -981,7 +974,7 @@ RTAI_PROTO(RTIME,nano2count,(RTIME nanos))
 
 RTAI_PROTO(void,rt_busy_sleep,(int ns))
 {
-	struct { int ns; } arg = { ns };
+	struct { long ns; } arg = { ns };
 	rtai_lxrt(BIDX, SIZARG, BUSY_SLEEP, &arg);
 }
 
@@ -1005,7 +998,7 @@ RTAI_PROTO(int,rt_task_signal_handler,(RT_TASK *task, void (*handler)(void)))
 
 RTAI_PROTO(int,rt_task_use_fpu,(RT_TASK *task, int use_fpu_flag))
 {
-        struct { RT_TASK *task; int use_fpu_flag; } arg = { task, use_fpu_flag };
+        struct { RT_TASK *task; long use_fpu_flag; } arg = { task, use_fpu_flag };
         if (rtai_lxrt(BIDX, SIZARG, RT_BUDDY, &arg).v[LOW] != task) {
                 return rtai_lxrt(BIDX, SIZARG, TASK_USE_FPU, &arg).i[LOW];
         } else {
@@ -1019,20 +1012,20 @@ RTAI_PROTO(int,rt_task_use_fpu,(RT_TASK *task, int use_fpu_flag))
 
 RTAI_PROTO(int,rt_buddy_task_use_fpu,(RT_TASK *task, int use_fpu_flag))
 {
-	struct { RT_TASK *task; int use_fpu_flag; } arg = { task, use_fpu_flag };
+	struct { RT_TASK *task; long use_fpu_flag; } arg = { task, use_fpu_flag };
 	return rtai_lxrt(BIDX, SIZARG, TASK_USE_FPU, &arg).i[LOW];
 }
 
 RTAI_PROTO(int,rt_linux_use_fpu,(int use_fpu_flag))
 {
-	struct { int use_fpu_flag; } arg = { use_fpu_flag };
+	struct { long use_fpu_flag; } arg = { use_fpu_flag };
 	return rtai_lxrt(BIDX, SIZARG, LINUX_USE_FPU, &arg).i[LOW];
 }
 
-RTAI_PROTO(void,rt_preempt_always,(int yes_no))
+RTAI_PROTO(int, rt_hard_timer_tick, (void))
 {
-	struct { int yes_no; } arg = { yes_no };
-	rtai_lxrt(BIDX, SIZARG, PREEMPT_ALWAYS_GEN, &arg);
+	struct { long dummy; } arg;
+	return rtai_lxrt(BIDX, SIZARG, HARD_TIMER_COUNT, &arg).i[LOW];
 }
 
 RTAI_PROTO(RTIME,rt_get_time_ns,(void))
@@ -1061,7 +1054,7 @@ RTAI_PROTO(void,rt_set_runnable_on_cpus,(RT_TASK *task, unsigned long cpu_mask))
 
 RTAI_PROTO(void,rt_set_runnable_on_cpuid,(RT_TASK *task, unsigned int cpuid))
 {
-	struct { RT_TASK *task; unsigned int cpuid; } arg = { task, cpuid };
+	struct { RT_TASK *task; unsigned long cpuid; } arg = { task, cpuid };
 	rtai_lxrt(BIDX, SIZARG, SET_RUNNABLE_ON_CPUID, &arg);
 }
 
@@ -1073,37 +1066,37 @@ RTAI_PROTO(int,rt_get_timer_cpu,(void))
 
 RTAI_PROTO(void,start_rt_apic_timers,(struct apic_timer_setup_data *setup_mode, unsigned int rcvr_jiffies_cpuid))
 {
-	struct { struct apic_timer_setup_data *setup_mode; unsigned int rcvr_jiffies_cpuid; } arg = { setup_mode, rcvr_jiffies_cpuid };
+	struct { struct apic_timer_setup_data *setup_mode; unsigned long rcvr_jiffies_cpuid; } arg = { setup_mode, rcvr_jiffies_cpuid };
 	rtai_lxrt(BIDX, SIZARG, START_RT_APIC_TIMERS, &arg);
 }
 
-RTAI_PROTO(void,rt_preempt_always_cpuid,(int yes_no, unsigned int cpuid))
+RTAI_PROTO(int, rt_hard_timer_tick_cpuid, (int cpuid))
 {
-	struct { int yes_no; unsigned int cpuid; } arg = { yes_no, cpuid };
-	rtai_lxrt(BIDX, SIZARG, PREEMPT_ALWAYS_CPUID, &arg);
+	struct { unsigned long cpuid; } arg = { cpuid };
+	return rtai_lxrt(BIDX, SIZARG, HARD_TIMER_COUNT_CPUID, &arg).i[LOW];
 }
 
 RTAI_PROTO(RTIME,count2nano_cpuid,(RTIME count, unsigned int cpuid))
 {
-	struct { RTIME count; unsigned int cpuid; } arg = { count, cpuid };
+	struct { RTIME count; unsigned long cpuid; } arg = { count, cpuid };
 	return rtai_lxrt(BIDX, SIZARG, COUNT2NANO_CPUID, &arg).rt;
 }
 
 RTAI_PROTO(RTIME,nano2count_cpuid,(RTIME nanos, unsigned int cpuid))
 {
-	struct { RTIME nanos; unsigned int cpuid; } arg = { nanos, cpuid };
+	struct { RTIME nanos; unsigned long cpuid; } arg = { nanos, cpuid };
 	return rtai_lxrt(BIDX, SIZARG, NANO2COUNT_CPUID, &arg).rt;
 }
 
 RTAI_PROTO(RTIME,rt_get_time_cpuid,(unsigned int cpuid))
 {
-	struct { unsigned int cpuid; } arg = { cpuid };
+	struct { unsigned long cpuid; } arg = { cpuid };
 	return rtai_lxrt(BIDX, SIZARG, GET_TIME_CPUID, &arg).rt;
 }
 
 RTAI_PROTO(RTIME,rt_get_time_ns_cpuid,(unsigned int cpuid))
 {
-	struct { unsigned int cpuid; } arg = { cpuid };
+	struct { unsigned long cpuid; } arg = { cpuid };
 	return rtai_lxrt(BIDX, SIZARG, GET_TIME_NS_CPUID, &arg).rt;
 }
 
@@ -1146,7 +1139,7 @@ RTAI_PROTO(int,rt_set_linux_signal_handler,(RT_TASK *task, void (*handler)(int s
 RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))
 {
 	char display[256];
-	struct { const char *display; int nch; } arg = { display, 0 };
+	struct { const char *display; long nch; } arg = { display, 0 };
 	va_list args;
 
 	va_start(args, format);
@@ -1159,7 +1152,7 @@ RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))
 RTAI_PROTO(int,rt_printk,(const char *format, ...))
 {
 	char display[256];
-	struct { const char *display; int nch; } arg = { display, 0 };
+	struct { const char *display; long nch; } arg = { display, 0 };
 	va_list args;
 
 	va_start(args, format);
@@ -1201,7 +1194,7 @@ RTAI_PROTO(void,rt_set_usp_flags_mask,(unsigned long flags_mask))
 
 RTAI_PROTO(RT_TASK *,rt_force_task_soft,(int pid))
 {
-	struct { int pid; } arg = { pid };
+	struct { long pid; } arg = { pid };
 	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, FORCE_TASK_SOFT, &arg).v[LOW];
 }
 
@@ -1283,15 +1276,17 @@ RTAI_PROTO(int,rt_set_period,(RT_TASK *rt_task, RTIME new_period))
 
 RTAI_PROTO(void,rt_spv_RMS,(int cpuid))
 {
-	struct { int cpuid; } arg = { cpuid };
+	struct { long cpuid; } arg = { cpuid };
 	rtai_lxrt(BIDX, SIZARG, SPV_RMS, &arg);
 }
 
-RTAI_PROTO(int,rt_task_wakeup_sleeping,(RT_TASK *task))
+RTAI_PROTO(int, rt_task_masked_unblock,(RT_TASK *task, unsigned long mask))
 {
-	struct { RT_TASK *task; } arg = { task };
+	struct { RT_TASK *task; unsigned long mask; } arg = { task, mask };
 	return rtai_lxrt(BIDX, SIZARG, WAKEUP_SLEEPING, &arg).i[LOW];
 }
+
+#define rt_task_wakeup_sleeping(task, mask)  rt_task_masked_unblock(task, RT_SCHED_DELAYED)
 
 RTAI_PROTO(void,rt_get_exectime,(RT_TASK *task, RTIME *exectime))
 {
@@ -1305,6 +1300,31 @@ RTAI_PROTO(void,rt_gettimeorig,(RTIME time_orig[]))
 {
 	struct { RTIME *time_orig; } arg = { time_orig };
 	rtai_lxrt(BIDX, SIZARG, GET_TIMEORIG, &arg);
+}
+
+RTAI_PROTO(RT_TASK *,ftask_init,(unsigned long name, int priority))
+{
+	struct { unsigned long name; int priority, stack_size, max_msg_size, cpus_allowed; } arg = { name, priority, 0, 0, 0 };
+	return (RT_TASK *)rtai_lxrt(BIDX, SIZARG, LXRT_TASK_INIT, &arg).v[LOW];
+}
+
+RTAI_PROTO(RTIME, start_ftimer,(long period, long ftick_freq))
+{
+	struct { long ftick_freq; void *handler; } arg = { ftick_freq, NULL };
+	if (!period) {
+		rtai_lxrt(BIDX, sizeof(long), SET_ONESHOT_MODE, &period);
+	} else {
+		rtai_lxrt(BIDX, sizeof(long), SET_PERIODIC_MODE, &period);
+	}
+	rtai_lxrt(BIDX, SIZARG, REQUEST_RTC, &arg);
+	return rtai_lxrt(BIDX, sizeof(long), START_TIMER, &period).rt;
+}
+
+RTAI_PROTO(RTIME, stop_ftimer,(void))
+{
+	struct { long dummy; } arg;
+	rtai_lxrt(BIDX, SIZARG, RELEASE_RTC, &arg);
+	return rtai_lxrt(BIDX, SIZARG, STOP_TIMER, &arg).rt;
 }
 
 #ifdef __cplusplus

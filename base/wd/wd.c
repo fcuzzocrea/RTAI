@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.3 2005/03/18 09:29:59 rpm Exp $
+ * ID: @(#)$Id: wd.c,v 1.4 2005/12/06 17:26:18 ando Exp $
  *
  *******************************************************************************/
 
@@ -137,7 +137,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.3 $";
+static char version[] = "$Revision: 1.4 $";
 static char ver[10];
 
 // User friendly policy names
@@ -471,7 +471,7 @@ static void handle_badtask(int wd, RT_TASK *t, BAD_RT_TASK *bt, RTIME overrun)
 }
 
 // -------------------------- THE MAIN WATCHDOG TASK ---------------------------
-static void watchdog(int wd)
+static void watchdog(long wd)
 {
 #ifdef WDBUG
     int 	 led    = 0;
@@ -557,7 +557,7 @@ static void watchdog(int wd)
 }
 
 // -------------------------- DUMMY WATCHDOG TASK ------------------------------
-static void dummy(int wd)
+static void dummy(long wd)
 {
     // Go straight back to sleep - see SMP proof suspend and delete
     while (1) {
@@ -583,7 +583,7 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
     PROC_PRINT(  "--------------------\n");
     PROC_PRINT("%d Watchdog task%s running @ %dHz in %s mode\n", 
 	       num_wdogs, num_wdogs > 1 ? "s" : "",
-	       imuldiv(NSECS_PER_SEC, 1, TickPeriod), 
+	       (int)imuldiv(NSECS_PER_SEC, 1, TickPeriod), 
 	       wd_OneShot ? "oneshot" : "periodic");
 #ifdef MY_ALLOC
     PROC_PRINT("Using static memory management (%d entries)\n", BAD_TASK_MAX);
@@ -640,12 +640,12 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
 		asec  = ulldiv( count2nano_cpuid(task->period, cpuid),
 			        NSECS_PER_SEC, 
 			        &ansec);
-		PROC_PRINT( "0x%08x %-2d "
+		PROC_PRINT( "0x%08lx %-2d "
 			    "%s%-2d%s "
 			    "%-8d 0x%-3x %-5d "
 			    "%02ds %09dns %02ds %09dns "
 			    "%s\n",
-			    (int)task, id, 
+			    (long)task, id, 
 			    (sched == RT_SCHED_SMP) ?  "0x" : "",
 			    (sched == RT_SCHED_UP)  ?
 			        0 : (int)task->runnable_on_cpus,

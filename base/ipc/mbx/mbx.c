@@ -36,6 +36,26 @@ MODULE_LICENSE("GPL");
 
 /* +++++++++++++++++++++++++++++ MAIL BOXES ++++++++++++++++++++++++++++++++ */
 
+static void mbx_delete_signal(MBX *mbx)
+{
+	unsigned long flags;
+	RT_TASK *task;
+
+	flags = rt_global_save_flags_and_cli();
+	if ((task = mbx->waiting_task)) {
+		rem_timed_task(task);
+		task->blocked_on = SOMETHING;
+		task->prio_passed_to = mbx->waiting_task = NOTHING;
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			enq_ready_task(task);
+			RT_SCHEDULE(task, rtai_cpuid());
+			rt_global_restore_flags(flags);
+			return;
+		}
+	}
+	rt_global_restore_flags(flags);
+}
+
 static void mbx_signal(MBX *mbx)
 {
 	unsigned long flags;
@@ -45,8 +65,8 @@ static void mbx_signal(MBX *mbx)
 	flags = rt_global_save_flags_and_cli();
 	if ((task = mbx->waiting_task)) {
 		rem_timed_task(task);
-		mbx->waiting_task = NOTHING;
-		task->prio_passed_to = NOTHING;
+		task->blocked_on  = NOTHING;
+		task->prio_passed_to = mbx->waiting_task = NOTHING;
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			if (mbx->sndsem.type <= 0) {
@@ -111,12 +131,13 @@ static int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)
 		}
 		rt_current->state |= RT_SCHED_MBXSUSP;
 		rem_ready_current(rt_current);
+		rt_current->blocked_on = (void *)mbx;
 		mbx->waiting_task = rt_current;
 		RT_SCHEDULE_MAP_BOTH(schedmap);
-		if (mbx->waiting_task == rt_current || mbx->magic != RT_MBX_MAGIC) {
+		if (rt_current->blocked_on) {
 			rt_current->prio_passed_to = NOTHING;
 			rt_global_restore_flags(flags);
-			return -1;
+			return SEM_ERR;
 		}
 	}
 	if (mbx->sndsem.type > 0) {
@@ -132,6 +153,7 @@ static int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current
 
 	flags = rt_global_save_flags_and_cli();
 	if (!(*fravbs)) {
+		rt_current->blocked_on = (void *)mbx;
 		mbx->waiting_task = rt_current;
 		if ((rt_current->resume_time = time) > rt_smp_time_h[rtai_cpuid()]) {
 			unsigned long schedmap;
@@ -145,16 +167,15 @@ static int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current
 			enq_timed_task(rt_current);
 			RT_SCHEDULE_MAP_BOTH(schedmap);
 		}
-		if (mbx->magic != RT_MBX_MAGIC) {
+		if (rt_current->blocked_on) {
 			rt_current->prio_passed_to = NOTHING;
+			if ((void *)rt_current->blocked_on > SOMETHING) {
+				mbx->waiting_task = NOTHING;
+				rt_global_restore_flags(flags);
+				return SEM_TIMOUT;
+			}
 			rt_global_restore_flags(flags);
-			return -1;
-		}
-		if (mbx->waiting_task == rt_current) {
-			mbx->waiting_task = NOTHING;
-			rt_current->prio_passed_to = NOTHING;
-			rt_global_restore_flags(flags);
-			return -1;
+			return SEM_ERR;
 		}
 	}
 	if (mbx->sndsem.type > 0) {
@@ -181,7 +202,7 @@ static int mbxput(MBX *mbx, char **msg, int msg_size, int space)
 		if (space) {
 			memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		} else {
-			copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+			rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		}
 		flags = rt_spin_lock_irqsave(&(mbx->lock));
 		mbx->frbs -= tocpy;
@@ -214,9 +235,9 @@ static int mbxovrwrput(MBX *mbx, char **msg, int msg_size, int space)
 			if (space) {
 				memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 			} else {
-				copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+				rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 			}
-	        	flags = rt_spin_lock_irqsave(&(mbx->lock));
+			flags = rt_spin_lock_irqsave(&(mbx->lock));
 			mbx->frbs -= tocpy;
 			mbx->avbs += tocpy;
         		rt_spin_unlock_irqrestore(flags, &(mbx->lock));
@@ -258,7 +279,7 @@ static int mbxget(MBX *mbx, char **msg, int msg_size, int space)
 		if (space) {
 			memcpy(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		} else {
-			copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+			rt_copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		}
 		flags = rt_spin_lock_irqsave(&(mbx->lock));
 		mbx->frbs  += tocpy;
@@ -287,7 +308,7 @@ static int mbxevdrp(MBX *mbx, char **msg, int msg_size, int space)
 		if (space) {
 			memcpy(*msg, mbx->bufadr + fbyte, tocpy);
 		} else {
-			copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+			rt_copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		}
 		avbs     -= tocpy;
 		msg_size -= tocpy;
@@ -422,7 +443,7 @@ int rt_mbx_delete(MBX *mbx)
 		return -EFAULT;
 	}
 	while (mbx->waiting_task) {
-		mbx_signal(mbx);
+		mbx_delete_signal(mbx);
 	}
 	sched_free(mbx->bufadr); 
 	return 0;
@@ -578,8 +599,11 @@ int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 		return msg_size;
 	}
 	while (msg_size) {
-		if (mbx_wait_until(mbx, &mbx->frbs, time, rt_current)) {
-			rt_sem_signal(&mbx->sndsem);
+		int retval;
+		if ((retval = mbx_wait_until(mbx, &mbx->frbs, time, rt_current))) {
+			if (retval != SEM_ERR) {
+				rt_sem_signal(&mbx->sndsem);
+			}
 			return msg_size;
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
@@ -770,8 +794,11 @@ int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, RTIME time, int spa
 		return msg_size;
 	}
 	while (msg_size) {
-		if (mbx_wait_until(mbx, &mbx->avbs, time, rt_current)) {
-			rt_sem_signal(&mbx->rcvsem);
+		int retval;
+		if ((retval = mbx_wait_until(mbx, &mbx->avbs, time, rt_current))) {
+			if (retval != SEM_ERR) {
+				rt_sem_signal(&mbx->rcvsem);
+			}
 			return msg_size;
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);

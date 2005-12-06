@@ -595,7 +595,7 @@ static inline void mbx_init(F_MBX *mbx, int size, char *bufadr)
 	mbx->size = mbx->frbs = size;
 	mbx->fbyte = mbx->lbyte = mbx->avbs = 0;
 #ifdef CONFIG_SMP
-        mbx->buflock.lock = 0;
+        spin_lock_init(&mbx->buflock);
 #endif
 	spin_lock_init(&(mbx->buflock));
 }

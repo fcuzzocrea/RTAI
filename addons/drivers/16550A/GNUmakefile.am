@@ -1,0 +1,38 @@
+moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+
+modext = @RTAI_MODULE_EXT@
+
+CROSS_COMPILE = @CROSS_COMPILE@
+
+libmodule_SRC = 16550A.c
+
+distfiles = $(libmodule_SRC)
+
+rtai_16550A$(modext): @RTAI_KBUILD_ENV@
+rtai_16550A$(modext): $(libmodule_SRC) FORCE
+	@RTAI_KBUILD_TOP@ \
+	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
+	@RTAI_KBUILD_BOTTOM@
+
+clean-local:
+	@RTAI_KBUILD_CLEAN@
+
+distclean-local:
+	@RTAI_KBUILD_DISTCLEAN@
+
+all-local: rtai_16550A$(modext)
+if CONFIG_RTAI_OLD_FASHIONED_BUILD
+	$(mkinstalldirs) $(top_srcdir)/modules
+	$(INSTALL_DATA) $^ $(top_srcdir)/modules
+endif
+
+install-exec-local: rtai_16550A$(modext)
+	$(mkinstalldirs) $(moduledir)
+	$(INSTALL_DATA) $< $(moduledir)
+
+uninstall-local:
+	$(RM) $(moduledir)/rtai_16550A$(modext)
+
+.PHONY: FORCE
+
+EXTRA_DIST = $(distfiles) Makefile.kbuild Kconfig

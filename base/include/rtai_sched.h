@@ -46,6 +46,8 @@
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
 
+#define RT_EINTR  (0xFff0)
+
 #define RT_IRQ_TASK         0
 #define RT_IRQ_TASKLET      1
 #define RT_IRQ_TASK_ERR     0x7FFFFFFF
@@ -56,8 +58,6 @@ struct rt_task_struct;
 
 #include <linux/time.h>
 #include <linux/errno.h>
-
-#include <asm/cache.h>
 
 #define RT_TASK_MAGIC 0x9ad25f6f  // nam2num("rttask")
 
@@ -91,12 +91,12 @@ struct rt_heap_t { void *heap, *kadr, *uadr; };
 
 typedef struct rt_task_struct {
 
-    int *stack __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
+    long *stack __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
     int uses_fpu;
     int magic;
     volatile int state, running;
     unsigned long runnable_on_cpus;
-    int *stack_bottom;
+    long *stack_bottom;
     volatile int priority;
     int base_priority;
     int policy;
@@ -113,7 +113,7 @@ typedef struct rt_task_struct {
     struct rt_queue *blocked_on;
     struct rt_queue msg_queue;
     int tid;	/* trace ID */
-    unsigned msg;
+    unsigned long msg;
     struct rt_queue ret_queue;
     void (*signal)(void);
     FPU_ENV fpu_reg __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
@@ -125,21 +125,22 @@ typedef struct rt_task_struct {
     struct rt_task_struct *rnext;
 
     /* Appended for calls from LINUX. */
-    int *fun_args, *bstack;
+    long *fun_args;
+    long *bstack;
     struct task_struct *lnxtsk;
     long long retval;
     char *msg_buf[2];
-    int max_msg_size[2];
+    long max_msg_size[2];
     char task_name[16];
     void *system_data_ptr;
     struct rt_task_struct *nextp;
     struct rt_task_struct *prevp;
 
     /* Added to support user specific trap handlers. */
-    RT_TRAP_HANDLER task_trap_handler[RTAI_NR_TRAPS];
+    RT_TRAP_HANDLER task_trap_handler[HAL_NR_FAULTS];
 
     /* Added from rtai-22. */
-    void (*usp_signal)(void);
+    long unblocked;
     volatile unsigned long pstate;
     unsigned long usp_flags;
     unsigned long usp_flags_mask;
@@ -161,6 +162,7 @@ typedef struct rt_task_struct {
     /* Real time heaps. */
     struct rt_heap_t heap[2];
 
+    volatile int scheduler;
 } RT_TASK __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
 
 #else /* __cplusplus */
@@ -168,16 +170,16 @@ extern "C" {
 #endif /* !__cplusplus */
 
 int rt_task_init(struct rt_task_struct *task,
-		 void (*rt_thread)(int),
-		 int data,
+		 void (*rt_thread)(long),
+		 long data,
 		 int stack_size,
 		 int priority,
 		 int uses_fpu,
 		 void(*signal)(void));
 
 int rt_task_init_cpuid(struct rt_task_struct *task,
-		       void (*rt_thread)(int),
-		       int data,
+		       void (*rt_thread)(long),
+		       long data,
 		       int stack_size,
 		       int priority,
 		       int uses_fpu,
@@ -229,10 +231,9 @@ int rt_task_use_fpu(struct rt_task_struct *task,
   
 void rt_linux_use_fpu(int use_fpu_flag);
 
-void rt_preempt_always(int yes_no);
+int rt_hard_timer_tick_count(void);
 
-void rt_preempt_always_cpuid(int yes_no,
-			     unsigned cpuid);
+int rt_hard_timer_tick_count_cpuid(int cpuid);
 
 RTIME count2nano(RTIME timercounts);
 
@@ -279,9 +280,9 @@ int rt_task_suspend_timed(struct rt_task_struct *task, RTIME delay);
 
 int rt_task_resume(struct rt_task_struct *task);
 
-void rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, void *regs);
+RT_TASK *rt_exec_linux_syscall(RT_TASK *rt_current, RT_TASK *task, struct pt_regs *regs);
 
-void rt_receive_linux_syscall(RT_TASK *task, void *regs);
+RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs);
 
 void rt_return_linux_syscall(RT_TASK *task, unsigned long retval);
 
@@ -328,19 +329,21 @@ int rt_sleep(RTIME delay);
 
 int rt_sleep_until(RTIME time);
 
-int rt_task_wakeup_sleeping(struct rt_task_struct *task);
+int rt_task_masked_unblock(struct rt_task_struct *task, unsigned long mask);
+
+#define rt_task_wakeup_sleeping(t)  rt_task_masked_unblock(t, RT_SCHED_DELAYED)
 
 struct rt_task_struct *rt_named_task_init(const char *task_name,
-					  void (*thread)(int),
-					  int data,
+					  void (*thread)(long),
+					  long data,
 					  int stack_size,
 					  int prio,
 					  int uses_fpu,
 					  void(*signal)(void));
 
 struct rt_task_struct *rt_named_task_init_cpuid(const char *task_name,
-						void (*thread)(int),
-						int data,
+						void (*thread)(long),
+						long data,
 						int stack_size,
 						int prio,
 						int uses_fpu,
@@ -360,7 +363,7 @@ static inline RTIME timeval2count(struct timeval *t)
 
 static inline void count2timeval(RTIME rt, struct timeval *t)
 {
-        t->tv_sec = ulldiv(count2nano(rt), 1000000000, (unsigned long *)&t->tv_usec);
+        t->tv_sec = rtai_ulldiv(count2nano(rt), 1000000000, (unsigned long *)&t->tv_usec);
         t->tv_usec /= 1000;
 }
 
@@ -371,7 +374,7 @@ static inline RTIME timespec2count(const struct timespec *t)
 
 static inline void count2timespec(RTIME rt, struct timespec *t)
 {
-        t->tv_sec = ulldiv(count2nano(rt), 1000000000, (unsigned long *)&t->tv_nsec);
+        t->tv_sec = rtai_ulldiv(count2nano(rt), 1000000000, (unsigned long *)&t->tv_nsec);
 }
 
 static inline RTIME timespec2nanos(const struct timespec *t)
@@ -381,7 +384,7 @@ static inline RTIME timespec2nanos(const struct timespec *t)
 
 static inline void nanos2timespec(RTIME rt, struct timespec *t)
 {
-        t->tv_sec = ulldiv(rt, 1000000000, (unsigned long *)&t->tv_nsec);
+        t->tv_sec = rtai_ulldiv(rt, 1000000000, (unsigned long *)&t->tv_nsec);
 }
 
 #ifdef __cplusplus

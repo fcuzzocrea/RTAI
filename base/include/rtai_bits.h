@@ -152,43 +152,31 @@ RTAI_PROTO(int, rt_bits_reset,(struct rt_bits_struct *bits, unsigned long mask))
 
 RTAI_PROTO(unsigned long, rt_bits_signal,(struct rt_bits_struct *bits, int setfun, unsigned long masks))
 {
-	struct { struct rt_bits_struct *bits; int setfun; unsigned long masks; } arg = { bits, setfun, masks };
+	struct { struct rt_bits_struct *bits; long setfun; unsigned long masks; } arg = { bits, setfun, masks };
 	return rtai_lxrt(BITSIDX, SIZARG, BITS_SIGNAL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_bits_wait,(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun,
-			      unsigned long exitmasks, unsigned long *resulting_mask))
+RTAI_PROTO(int, rt_bits_wait,(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask))
 {
-	struct { struct rt_bits_struct *bits; int testfun; unsigned long testmasks; int exitfun;
-	    unsigned long exitmasks; unsigned long *resulting_mask; int space; } arg =
-		{ bits, testfun, testmasks, exitfun, exitmasks, resulting_mask, 0 };
+	struct { struct rt_bits_struct *bits; long testfun; unsigned long testmasks; long exitfun; unsigned long exitmasks; unsigned long *resulting_mask; long space; } arg = { bits, testfun, testmasks, exitfun, exitmasks, resulting_mask, 0 };
 	return rtai_lxrt(BITSIDX, SIZARG, BITS_WAIT, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_bits_wait_if,(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun,
-				 unsigned long exitmasks, unsigned long *resulting_mask))
+RTAI_PROTO(int, rt_bits_wait_if,(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, unsigned long *resulting_mask))
 {
-	struct { struct rt_bits_struct *bits; int testfun; unsigned long testmasks; int exitfun;
-	    unsigned long exitmasks; unsigned long *resulting_mask; int space; } arg =
-		{ bits, testfun, testmasks, exitfun, exitmasks, resulting_mask, 0 };
+	struct { struct rt_bits_struct *bits; long testfun; unsigned long testmasks; long exitfun; unsigned long exitmasks; unsigned long *resulting_mask; long space; } arg = { bits, testfun, testmasks, exitfun, exitmasks, resulting_mask, 0 };
 	return rtai_lxrt(BITSIDX, SIZARG, BITS_WAIT_IF, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_bits_wait_until,(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun,
-				    unsigned long exitmasks, RTIME time, unsigned long *resulting_mask))
+RTAI_PROTO(int, rt_bits_wait_until,(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME time, unsigned long *resulting_mask))
 {
-	struct { struct rt_bits_struct *bits; int testfun; unsigned long testmasks; int exitfun;
-	    unsigned long exitmasks; RTIME time; unsigned long *resulting_mask; int space; } arg =
-		{ bits, testfun, testmasks, exitfun, exitmasks, time, resulting_mask, 0 };
+	struct { struct rt_bits_struct *bits; long testfun; unsigned long testmasks; long exitfun; unsigned long exitmasks; RTIME time; unsigned long *resulting_mask; long space; } arg = { bits, testfun, testmasks, exitfun, exitmasks, time, resulting_mask, 0 };
 	return rtai_lxrt(BITSIDX, SIZARG, BITS_WAIT_UNTIL, &arg).i[LOW];
 }
 
-RTAI_PROTO(int, rt_bits_wait_timed,(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun,
-				    unsigned long exitmasks, RTIME delay, unsigned long *resulting_mask))
+RTAI_PROTO(int, rt_bits_wait_timed,(struct rt_bits_struct *bits, int testfun, unsigned long testmasks, int exitfun, unsigned long exitmasks, RTIME delay, unsigned long *resulting_mask))
 {
-	struct { struct rt_bits_struct *bits; int testfun; unsigned long testmasks; int exitfun;
-	    unsigned long exitmasks; RTIME delay; unsigned long *resulting_mask; int space; } arg =
-		{ bits, testfun, testmasks, exitfun, exitmasks, delay, resulting_mask, 0 };
+	struct { struct rt_bits_struct *bits; long testfun; unsigned long testmasks; long exitfun; unsigned long exitmasks; RTIME delay; unsigned long *resulting_mask; long space; } arg = { bits, testfun, testmasks, exitfun, exitmasks, delay, resulting_mask, 0 };
 	return rtai_lxrt(BITSIDX, SIZARG, BITS_WAIT_TIMED, &arg).i[LOW];
 }
 

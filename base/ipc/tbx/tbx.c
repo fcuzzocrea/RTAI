@@ -135,7 +135,7 @@ static int _send(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
 	if (space) {
 		memcpy(p ? p : msg_ptr->msg, msg, msg_size);
 	} else {
-		copy_from_user(p ? p : msg_ptr->msg, msg, msg_size);
+		rt_copy_from_user(p ? p : msg_ptr->msg, msg, msg_size);
 	}
 	flags = rt_spin_lock_irqsave(&mq->lock);
 	enq_msg(mq, &msg_ptr->hdr);
@@ -199,9 +199,9 @@ static int _receive(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int space
 			*msgpri = msg_ptr->hdr.priority;
 		}
 	} else {
-		copy_to_user(msg, (p = msg_ptr->hdr.malloc) ? p : msg_ptr->msg, size);
+		rt_copy_to_user(msg, (p = msg_ptr->hdr.malloc) ? p : msg_ptr->msg, size);
 		if (msgpri) {
-			put_user(msg_ptr->hdr.priority, msgpri);
+			rt_put_user(msg_ptr->hdr.priority, msgpri);
 		}
 	}
 
@@ -283,9 +283,9 @@ int _rt_msg_evdrp(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int space)
 			*msgpri = msg_ptr->hdr.priority;
 		}
 	} else {
-		copy_to_user(msg, (p = msg_ptr->hdr.malloc) ? p : msg_ptr->msg, size);
+		rt_copy_to_user(msg, (p = msg_ptr->hdr.malloc) ? p : msg_ptr->msg, size);
 		if (msgpri) {
-			put_user(msg_ptr->hdr.priority, msgpri);
+			rt_put_user(msg_ptr->hdr.priority, msgpri);
 		}
 	}
 	return 0;
@@ -315,7 +315,7 @@ static int _broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int broa
 	if (space) {
 		memcpy(p ? p : msg_ptr->msg, msg, msg_size);
 	} else {
-		copy_from_user(p ? p : msg_ptr->msg, msg, msg_size);
+		rt_copy_from_user(p ? p : msg_ptr->msg, msg, msg_size);
 	}
 	rt_typed_sem_init(&mq->broadcast, broadcast + 1, CNT_SEM | PRIO_Q);
 	msg_ptr->hdr.broadcast = broadcast; 

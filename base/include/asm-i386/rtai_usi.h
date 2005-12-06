@@ -78,7 +78,7 @@ static unsigned long (*usi_fun_entry[ ])(unsigned long, unsigned long *) = {
 #define IF_IS_A_USI_SRQ_CALL_IT() \
         if (ax_srq > USI_SRQ_MASK) { \
                	*dx_retval = usi_fun_entry[ax_srq & ~USI_SRQ_MASK](cx_args, &eflags); \
-                return 1; \
+                return 0; \
        	} \
 
 #endif /* __KERNEL__ */

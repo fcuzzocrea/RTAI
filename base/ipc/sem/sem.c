@@ -190,6 +190,7 @@ int rt_sem_delete(SEM *sem)
 	while ((q = q->next) != &(sem->queue) && (task = q->task)) {
 		rem_timed_task(task);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			task->blocked_on = SOMETHING;
 			enq_ready_task(task);
 			set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 		}
@@ -457,7 +458,7 @@ int rt_sem_wait(SEM *sem)
 		rem_ready_current(rt_current);
 		enqueue_blocked(rt_current, &sem->queue, sem->qtype);
 		RT_SCHEDULE_MAP_BOTH(schedmap);
-		if (rt_current->blocked_on || sem->magic != RT_SEM_MAGIC) {
+		if (rt_current->blocked_on) {
 			rt_current->prio_passed_to = NOTHING;
 			rt_global_restore_flags(flags);
 			return SEM_ERR;
@@ -594,21 +595,19 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 			sem->count--;
 			rt_current->queue.prev = rt_current->queue.next = &rt_current->queue;
 		}
-		if (sem->magic != RT_SEM_MAGIC) {
+		if (!rt_current->blocked_on) {
+			count = sem->count;
+		} else if ((void *)rt_current->blocked_on > SOMETHING) { 
+			dequeue_blocked(rt_current);
+			if(++sem->count > 1 && sem->type) {
+				sem->count = 1;
+			}
+			rt_global_restore_flags(flags);
+			return SEM_TIMOUT;
+		} else {
 			rt_current->prio_passed_to = NOTHING;
 			rt_global_restore_flags(flags);
 			return SEM_ERR;
-		} else {
-			if (rt_current->blocked_on) {
-				dequeue_blocked(rt_current);
-				if(++sem->count > 1 && sem->type) {
-					sem->count = 1;
-				}
-				rt_global_restore_flags(flags);
-				return SEM_TIMOUT;
-			} else {
-				count = sem->count;
-			}
 		}
 	} else {
 		sem->count--;
@@ -683,14 +682,15 @@ int rt_sem_wait_barrier(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!sem->owndby) {
-		sem->owndby = (void *)(sem->count < 1 ? 1 : sem->count);
+		sem->owndby = (void *)(long)(sem->count < 1 ? 1 : sem->count);
 		sem->count = sem->type = 0;
 	}
-	if ((1 - sem->count) < (int)sem->owndby) {
-		rt_sem_wait(sem);
-	} else {
-		rt_sem_broadcast(sem);
+	if ((1 - sem->count) < (long)sem->owndby) {
+		int retval = rt_sem_wait(sem);
+		rt_global_restore_flags(flags);
+		return retval;
 	}
+	rt_sem_broadcast(sem);
 	rt_global_restore_flags(flags);
 	return 0;
 }
@@ -804,7 +804,7 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
 	rem_ready_current(rt_current);
 	enqueue_blocked(rt_current, &cnd->queue, cnd->qtype);
 	type = rt_cndmtx_signal(mtx, rt_current);
-	if (rt_current->blocked_on || cnd->magic != RT_SEM_MAGIC) {
+	if (rt_current->blocked_on) {
 		retval = SEM_ERR;
 	}
 	rt_global_restore_flags(flags);
@@ -855,14 +855,15 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 		enqueue_blocked(rt_current, &cnd->queue, cnd->qtype);
 		enq_timed_task(rt_current);
 		type = rt_cndmtx_signal(mtx, rt_current);
-		if (cnd->magic != RT_SEM_MAGIC) {
-			retval = SEM_ERR;
+
+
+		if (!rt_current->blocked_on) {
+			retval = 0;
+		} else if ((void *)rt_current->blocked_on > SOMETHING) { 
+			dequeue_blocked(rt_current);
+			retval = SEM_TIMOUT;
 		} else {
-			if (rt_current->blocked_on) {
-				dequeue_blocked(rt_current);
-			} else {
-				retval = 0;
-			}
+			retval = SEM_ERR;
 		}
 	} else {
 		rt_global_restore_flags(flags);

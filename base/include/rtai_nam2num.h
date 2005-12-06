@@ -70,7 +70,7 @@ static inline unsigned long nam2num (const char *name)
 		retval = retval*39 + c;
 	}
 	if (i > 0)
-		return retval;
+		return retval + 2;
 	else
 		return 0xFFFFFFFF;
 }
@@ -92,6 +92,7 @@ static inline void num2nam (unsigned long num, char *name)
 		return;
 	}
         i = 5; 
+	num -= 2;
 	while (num && i >= 0) {
 		q = num/39;
 		c = num - q*39;

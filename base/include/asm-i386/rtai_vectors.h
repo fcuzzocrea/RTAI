@@ -32,18 +32,18 @@
 
 #include <rtai_config.h>
 
-/* On Linux x86, Adeos reserves vectors from 0xdf-0xee for domain
-   usage. */
+#ifdef CONFIG_X86_LOCAL_APIC
+#define RTAI_APIC_HIGH_VECTOR  HAL_APIC_HIGH_VECTOR
+#define RTAI_APIC_LOW_VECTOR   HAL_APIC_LOW_VECTOR
+#else 
+#define RTAI_APIC_HIGH_VECTOR  0xff
+#define RTAI_APIC_LOW_VECTOR   0xff
+#endif
 
-#define RTAI_APIC1_VECTOR  0xe1
-#define RTAI_APIC2_VECTOR  0xe9
+#define RTAI_APIC_HIGH_IPI     (RTAI_APIC_HIGH_VECTOR - FIRST_EXTERNAL_VECTOR)
+#define RTAI_APIC_LOW_IPI      (RTAI_APIC_LOW_VECTOR - FIRST_EXTERNAL_VECTOR)
 
-#define RTAI_APIC1_IPI     193
-#define RTAI_APIC2_IPI     201
-
-#define RTAI_SYS_VECTOR    0xe2
-#define RTAI_LXRT_VECTOR   0xe3
-#define RTAI_SHM_VECTOR    0xe4
+#define RTAI_SYS_VECTOR        0xf6
 
 #define __rtai_stringize0(_s_) #_s_
 #define __rtai_stringize(_s_)  __rtai_stringize0(_s_)

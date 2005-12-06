@@ -29,8 +29,10 @@ int main(void)
 {
 	unsigned int msg;
 	MBX *mbx;
-	struct sample { long long min; long long max; int index, ovrn, cnt; } samp;
- 	long long max = 0;
+	struct sample { long long min; long long max; int index, ovrn; } samp;
+	time_t timestamp;
+	struct tm *tm_timestamp;
+	long long max = -1000000000, min = 1000000000;
  	int n = 0;
 	struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 
@@ -46,13 +48,20 @@ int main(void)
 		exit(1);
 	}
 
-  	printf("RTAI Testsuite - LXRT latency (all data in nanoseconds)\n");
+  	printf("RTAI Testsuite - USER latency (all data in nanoseconds)\n");
 	while (1) {
-  		if ((n++ % 21)==0)
-  			printf("RTH|%11s|%11s|%11s|%11s|%11s|%11s\n", "lat min","lat avg","lat max","ovl max", "overruns", "freq.cntr");
+  		if ((n++ % 21) == 0) {
+#if 1
+			time(&timestamp); 
+			tm_timestamp=localtime(&timestamp);
+			printf("%04d/%02d/%0d %02d:%02d:%02d\n", tm_timestamp->tm_year+1900, tm_timestamp->tm_mon+1, tm_timestamp->tm_mday, tm_timestamp->tm_hour, tm_timestamp->tm_min, tm_timestamp->tm_sec);
+#endif
+  			printf("RTH|%11s|%11s|%11s|%11s|%11s|%11s\n", "lat min", "ovl min", "lat avg","lat max","ovl max", "overruns");
+		}
 		rt_mbx_receive(mbx, &samp, sizeof(samp));
+		if (min > samp.min) min = samp.min;
  		if (max < samp.max) max = samp.max;
-  		printf("RTD|%11lld|%11d|%11lld|%11lld|%11d|%11d\n", samp.min, samp.index, samp.max, max, samp.ovrn, samp.cnt);
+  		printf("RTD|%11lld|%11lld|%11d|%11lld|%11lld|%11d\n", samp.min, min, samp.index, samp.max, max, samp.ovrn);
 		if (poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN|POLLERR|POLLHUP)) != 0)
 		    break;
 	}

@@ -200,7 +200,7 @@ int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*ha
 		tasklet->task = 0;
 	} else {
 		(tasklet->task)->priority = priority;
-		copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	}
 // tasklet insertion tasklets_list
 	flags = rt_spin_lock_irqsave(&tasklets_lock);
@@ -309,7 +309,7 @@ int rt_set_tasklet_handler(struct rt_tasklet_struct *tasklet, void (*handler)(un
 	}
 	tasklet->handler = handler;
 	if (tasklet->task) {
-		copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	}
 	return 0;
 }
@@ -318,7 +318,7 @@ void rt_set_tasklet_data(struct rt_tasklet_struct *tasklet, unsigned long data)
 {
 	tasklet->data = data;
 	if (tasklet->task) {
-		copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	}
 }
 
@@ -432,7 +432,7 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
 		timer->task = 0;
 	} else {
 		(timer->task)->priority = priority;
-		copy_to_user(timer->usptasklet, timer, sizeof(struct rt_tasklet_struct));
+		rt_copy_to_user(timer->usptasklet, timer, sizeof(struct rt_tasklet_struct));
 	}
 // timer insertion in timers_list
 	tmr = &timers_list;
@@ -576,7 +576,7 @@ void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period)
 
 // the timers_manager task function
 
-static void rt_timers_manager(int dummy)
+static void rt_timers_manager(long dummy)
 {
 	RTIME now;
 	struct rt_tasklet_struct *tmr, *timer;
@@ -614,7 +614,7 @@ static void rt_timers_manager(int dummy)
 			if (!timer->task) {
 				if (!used_fpu && timer->uses_fpu) {
 					used_fpu = 1;
-					save_cr0_and_clts(linux_cr0);
+					save_fpcr_and_enable_fpu(linux_cr0);
 					save_fpenv(timers_manager.fpu_reg);
 				}
 				timer->handler(timer->data);
@@ -624,7 +624,7 @@ static void rt_timers_manager(int dummy)
 		}
 		if (used_fpu) {
 			restore_fpenv(timers_manager.fpu_reg);
-			restore_cr0(linux_cr0);
+			restore_fpcr(linux_cr0);
 		}
 // set next timers_manager priority according to the highest priority timer
 		asgn_min_prio();
@@ -657,7 +657,7 @@ void rt_register_task(struct rt_tasklet_struct *tasklet, struct rt_tasklet_struc
 {
 	tasklet->task = task;
 	tasklet->usptasklet = usptasklet;
-	copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+	rt_copy_to_user(usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 }
 
 void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
@@ -690,7 +690,7 @@ int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 
 	rt_remove_tasklet(tasklet);
 	tasklet->handler = 0;
-	copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
+	rt_copy_to_user(tasklet->usptasklet, tasklet, sizeof(struct rt_tasklet_struct));
 	rt_task_resume(tasklet->task);
 	thread = tasklet->thread;	
 	sched_free(tasklet);

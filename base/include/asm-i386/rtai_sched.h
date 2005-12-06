@@ -58,15 +58,7 @@ do { \
 
 #define DEFINE_LINUX_SMP_CR0  static unsigned long linux_smp_cr0[NR_RT_CPUS];
 
-#define init_fp_env(spare_fpu_reg) \
-do { \
-        save_cr0_and_clts(linux_cr0);	\
-        save_fpenv(spare_fpu_reg);	\
-        init_xfpu();			\
-        save_fpenv(task->fpu_reg);    	\
-        restore_fpenv(spare_fpu_reg);	\
-        restore_cr0(linux_cr0);		\
-} while(0)
+#define init_task_fpenv(task)  do { init_fpenv((task)->fpu_reg); } while(0)
 
 static inline void *get_stack_pointer(void)
 {

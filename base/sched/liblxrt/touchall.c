@@ -46,7 +46,7 @@ void touch_area(void *begin, size_t len, int writeable) {
 
 int touch_all(void) {
 	FILE *maps;
-	unsigned int start,end,flags,size;
+	unsigned long start,end,flags,size;
 	char perms[STR_SIZE],dev[STR_SIZE];
 	char buf[TOUCH_BUFSIZE];
 	
@@ -56,7 +56,7 @@ int touch_all(void) {
 		return -1;
 	}
 	while(fgets(buf,TOUCH_BUFSIZE-1,maps)) {
-		if(sscanf(buf,"%8x-%8x %15s %x %15s %d",&start,&end,perms,&flags,dev,&size)<2)
+		if(sscanf(buf,"%8lx-%8lx %15s %lx %15s %lu",&start,&end,perms,&flags,dev,&size)<2)
 			continue;
 		if(perms[1] == 'w')
 			touch_area((void*)start,end-start,1);
@@ -70,7 +70,7 @@ int touch_all(void) {
 int lock_all(int stk, int heap) {
 	extern void dump_malloc_stats(void);
 	int err, n, i;
-	unsigned *pt;
+	unsigned long *pt;
 	char stack[stk ? stk : GROW_STACK];
 	stack[0] = ' ';
 
@@ -112,9 +112,9 @@ int lock_all(int stk, int heap) {
 
 	touch_all();
 
-    pt = (unsigned *) stack;
-	for(i=0; i<n ; i++, pt++) *pt = (unsigned) malloc(65536);
-    pt = (unsigned *) stack;
+    pt = (unsigned long *) stack;
+	for(i=0; i<n ; i++, pt++) *pt = (unsigned long) malloc(65536);
+    pt = (unsigned long *) stack;
 	for(i=0; i<n ; i++, pt++) free((void *) *pt);
 
 	return 0;

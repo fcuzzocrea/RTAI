@@ -24,7 +24,7 @@
 
 #define MSG_ERR ((RT_TASK *)0xFfff)
 
-#define MAX_NAME_LENGTH  32
+#define RTAI_MAX_NAME_LENGTH  32
 
 struct rt_task_struct;
 struct QueueBlock;
@@ -62,58 +62,58 @@ int __rtai_msg_init(void);
 void __rtai_msg_exit(void);
 
 struct rt_task_struct *rt_send(struct rt_task_struct *task,
-			       unsigned msg);
+			       unsigned long msg);
 
 struct rt_task_struct *rt_send_if(struct rt_task_struct *task,
-				  unsigned msg);
+				  unsigned long msg);
 
 struct rt_task_struct *rt_send_until(struct rt_task_struct *task,
-				     unsigned msg,
+				     unsigned long msg,
 				     RTIME time);
     
 struct rt_task_struct *rt_send_timed(struct rt_task_struct *task,
-				     unsigned msg,
+				     unsigned long msg,
 				     RTIME delay);
 
 struct rt_task_struct *rt_evdrp(struct rt_task_struct *task,
-				unsigned *msg);
+				void *msg);
 
 struct rt_task_struct *rt_receive(struct rt_task_struct *task,
-				  unsigned *msg);
+				  void *msg);
 
 struct rt_task_struct *rt_receive_if(struct rt_task_struct *task,
-				     unsigned *msg);
+				     void *msg);
 
 struct rt_task_struct *rt_receive_until(struct rt_task_struct *task,
-					unsigned *msg,
+					void *msg,
 					RTIME time);
 
 struct rt_task_struct *rt_receive_timed(struct rt_task_struct *task,
-					unsigned *msg,
+					void *msg,
 					RTIME delay);
 
 struct rt_task_struct *rt_rpc(struct rt_task_struct *task,
-			      unsigned to_do,
-			      unsigned *result);
+			      unsigned long to_do,
+			      void *result);
 
 struct rt_task_struct *rt_rpc_if(struct rt_task_struct *task,
-				 unsigned to_do,
-				 unsigned *result);
+				 unsigned long to_do,
+				 void *result);
 
 struct rt_task_struct *rt_rpc_until(struct rt_task_struct *task,
-				    unsigned to_do,
-				    unsigned *result,
+				    unsigned long to_do,
+				    void *result,
 				    RTIME time);
 
 struct rt_task_struct *rt_rpc_timed(struct rt_task_struct *task,
-				    unsigned to_do,
-				    unsigned *result,
+				    unsigned long to_do,
+				    void *result,
 				    RTIME delay);
 
 int rt_isrpc(struct rt_task_struct *task);
 
 struct rt_task_struct *rt_return(struct rt_task_struct *task,
-				 unsigned result);
+				 unsigned long result);
 
 struct rt_task_struct *rt_rpcx(struct rt_task_struct *task,
 			       void *smsg,
@@ -192,7 +192,7 @@ struct rt_task_struct *rt_receivex_timed(struct rt_task_struct *task,
 					 int *len,
 					 RTIME delay);
 
-struct rt_task_struct *__rt_proxy_attach(void (*func)(int),
+struct rt_task_struct *__rt_proxy_attach(void (*func)(long),
 					 struct rt_task_struct *task,
 					 void *msg,
 					 int nbytes,
@@ -258,81 +258,81 @@ int rt_Name_detach(pid_t pid);
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_PROTO(struct rt_task_struct *,rt_send,(struct rt_task_struct *task, unsigned msg))
+RTAI_PROTO(struct rt_task_struct *,rt_send,(struct rt_task_struct *task, unsigned long msg))
 {
-	struct { struct rt_task_struct *task; unsigned msg; } arg = { task, msg };
+	struct { struct rt_task_struct *task; unsigned long msg; } arg = { task, msg };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, SENDMSG, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_send_if,(struct rt_task_struct *task, unsigned msg))
+RTAI_PROTO(struct rt_task_struct *,rt_send_if,(struct rt_task_struct *task, unsigned long msg))
 {
-	struct { struct rt_task_struct *task; unsigned msg; } arg = { task, msg };
+	struct { struct rt_task_struct *task; unsigned long msg; } arg = { task, msg };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, SEND_IF, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_send_until,(struct rt_task_struct *task, unsigned msg, RTIME time))
+RTAI_PROTO(struct rt_task_struct *,rt_send_until,(struct rt_task_struct *task, unsigned long msg, RTIME time))
 {
-	struct { struct rt_task_struct *task; unsigned msg; RTIME time; } arg = { task, msg, time };
+	struct { struct rt_task_struct *task; unsigned long msg; RTIME time; } arg = { task, msg, time };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, SEND_UNTIL, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_send_timed,(struct rt_task_struct *task, unsigned msg, RTIME delay))
+RTAI_PROTO(struct rt_task_struct *,rt_send_timed,(struct rt_task_struct *task, unsigned long msg, RTIME delay))
 {
-	struct { struct rt_task_struct *task; unsigned msg; RTIME delay; } arg = { task, msg, delay };
+	struct { struct rt_task_struct *task; unsigned long msg; RTIME delay; } arg = { task, msg, delay };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, SEND_TIMED, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_evdrp,(struct rt_task_struct *task, unsigned *msg))
+RTAI_PROTO(struct rt_task_struct *,rt_evdrp,(struct rt_task_struct *task, void *msg))
 {
-	struct { struct rt_task_struct *task; unsigned *msg; } arg = { task, msg };
+	struct { struct rt_task_struct *task; void *msg; } arg = { task, msg };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, EVDRP, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_receive,(struct rt_task_struct *task, unsigned *msg))
+RTAI_PROTO(struct rt_task_struct *,rt_receive,(struct rt_task_struct *task, void *msg))
 {
-	struct { struct rt_task_struct *task; unsigned *msg; } arg = { task, msg };
+	struct { struct rt_task_struct *task; void *msg; } arg = { task, msg };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEMSG, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_receive_if,(struct rt_task_struct *task, unsigned *msg))
+RTAI_PROTO(struct rt_task_struct *,rt_receive_if,(struct rt_task_struct *task, void *msg))
 {
-	struct { struct rt_task_struct *task; unsigned *msg; } arg = { task, msg };
+	struct { struct rt_task_struct *task; void *msg; } arg = { task, msg };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVE_IF, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_receive_until,(struct rt_task_struct *task, unsigned *msg, RTIME time))
+RTAI_PROTO(struct rt_task_struct *,rt_receive_until,(struct rt_task_struct *task, void *msg, RTIME time))
 {
-	struct { struct rt_task_struct *task; unsigned *msg; RTIME time; } arg = { task, msg, time };
+	struct { struct rt_task_struct *task; void *msg; RTIME time; } arg = { task, msg, time };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVE_UNTIL, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_receive_timed,(struct rt_task_struct *task, unsigned *msg, RTIME delay))
+RTAI_PROTO(struct rt_task_struct *,rt_receive_timed,(struct rt_task_struct *task, void *msg, RTIME delay))
 {
-	struct { struct rt_task_struct *task; unsigned *msg; RTIME delay; } arg = { task, msg, delay };
+	struct { struct rt_task_struct *task; void *msg; RTIME delay; } arg = { task, msg, delay };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVE_TIMED, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_rpc,(struct rt_task_struct *task, unsigned to_do, unsigned *result))
+RTAI_PROTO(struct rt_task_struct *,rt_rpc,(struct rt_task_struct *task, unsigned long to_do, void *result))
 {
-	struct { struct rt_task_struct *task; unsigned to_do; unsigned *result; } arg = { task, to_do, result };
+	struct { struct rt_task_struct *task; unsigned long to_do; void *result; } arg = { task, to_do, result };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RPCMSG, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_rpc_if,(struct rt_task_struct *task, unsigned to_do, unsigned *result))
+RTAI_PROTO(struct rt_task_struct *,rt_rpc_if,(struct rt_task_struct *task, unsigned long to_do, void *result))
 {
-	struct { struct rt_task_struct *task; unsigned to_do; unsigned *result; } arg = { task, to_do, result };
+	struct { struct rt_task_struct *task; unsigned long to_do; void *result; } arg = { task, to_do, result };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RPC_IF, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_rpc_until,(struct rt_task_struct *task, unsigned to_do, unsigned *result, RTIME time))
+RTAI_PROTO(struct rt_task_struct *,rt_rpc_until,(struct rt_task_struct *task, unsigned long to_do, void *result, RTIME time))
 {
-	struct { struct rt_task_struct *task; unsigned to_do; unsigned *result; RTIME time; } arg = { task, to_do, result, time };
+	struct { struct rt_task_struct *task; unsigned long to_do; void *result; RTIME time; } arg = { task, to_do, result, time };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RPC_UNTIL, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_rpc_timed,(struct rt_task_struct *task, unsigned to_do, unsigned *result, RTIME delay))
+RTAI_PROTO(struct rt_task_struct *,rt_rpc_timed,(struct rt_task_struct *task, unsigned long to_do, void *result, RTIME delay))
 {
-	struct { struct rt_task_struct *task; unsigned to_do; unsigned *result; RTIME delay; } arg = { task, to_do, result, delay };
+	struct { struct rt_task_struct *task; unsigned long to_do; void *result; RTIME delay; } arg = { task, to_do, result, delay };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RPC_TIMED, &arg).v[LOW];
 }
 
@@ -342,63 +342,63 @@ RTAI_PROTO(int, rt_isrpc,(struct rt_task_struct *task))
 	return (int)rtai_lxrt(BIDX, SIZARG, ISRPC, &arg).i[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_return,(struct rt_task_struct *task, unsigned result))
+RTAI_PROTO(struct rt_task_struct *,rt_return,(struct rt_task_struct *task, unsigned long result))
 {
-	struct { struct rt_task_struct *task; unsigned result; } arg = { task, result };
+	struct { struct rt_task_struct *task; unsigned long result; } arg = { task, result };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RETURNMSG, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_rpcx,(struct rt_task_struct *task, void *smsg, void *rmsg, int ssize, int rsize))
 {
-	struct { struct rt_task_struct *task; void *smsg; void *rmsg; int ssize; int rsize; } arg = { task, smsg, rmsg, ssize, rsize };
+	struct { struct rt_task_struct *task; void *smsg; void *rmsg; long ssize; long rsize; } arg = { task, smsg, rmsg, ssize, rsize };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RPCX, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_rpcx_if,(struct rt_task_struct *task, void *smsg, void *rmsg, int ssize, int rsize))
 {
-	struct { struct rt_task_struct *task; void *smsg; void *rmsg; int ssize; int rsize; } arg = { task, smsg, rmsg, ssize, rsize };
+	struct { struct rt_task_struct *task; void *smsg; void *rmsg; long ssize; long rsize; } arg = { task, smsg, rmsg, ssize, rsize };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RPCX_IF, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_rpcx_until,(struct rt_task_struct *task, void *smsg, void *rmsg, int ssize, int rsize, RTIME time))
 {
-	struct { struct rt_task_struct *task; void *smsg; void *rmsg; int ssize; int rsize; RTIME time; } arg = { task, smsg, rmsg, ssize, rsize, time };
+	struct { struct rt_task_struct *task; void *smsg; void *rmsg; long ssize; long rsize; RTIME time; } arg = { task, smsg, rmsg, ssize, rsize, time };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RPCX_UNTIL, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_rpcx_timed,(struct rt_task_struct *task, void *smsg, void *rmsg, int ssize, int rsize, RTIME delay))
 {
-	struct { struct rt_task_struct *task; void *smsg; void *rmsg; int ssize; int rsize; RTIME delay; } arg = { task, smsg, rmsg, ssize, rsize, delay };
+	struct { struct rt_task_struct *task; void *smsg; void *rmsg; long ssize; long rsize; RTIME delay; } arg = { task, smsg, rmsg, ssize, rsize, delay };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RPCX_TIMED, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_sendx,(struct rt_task_struct *task, void *msg, int size))
 {
-	struct { struct rt_task_struct *task; void *msg; int size; } arg = { task, msg, size };
+	struct { struct rt_task_struct *task; void *msg; long size; } arg = { task, msg, size };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, SENDX, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_sendx_if,(struct rt_task_struct *task, void *msg, int size))
 {
-	struct { struct rt_task_struct *task; void *msg; int size; } arg = { task, msg, size };
+	struct { struct rt_task_struct *task; void *msg; long size; } arg = { task, msg, size };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, SENDX_IF, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_sendx_until,(struct rt_task_struct *task, void *msg, int size, RTIME time))
 {
-	struct { struct rt_task_struct *task; void *msg; int size; RTIME time; } arg = { task, msg, size, time };
+	struct { struct rt_task_struct *task; void *msg; long size; RTIME time; } arg = { task, msg, size, time };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, SENDX_UNTIL, &arg).v[LOW];
 }
 
-RTAI_PROTO(struct rt_task_struct *,rt_sendx_timed,(struct rt_task_struct *task, void *msg, int size, RTIME delay))
+RTAI_PROTO(struct rt_task_struct *,rt_sendx_timed,(struct rt_task_struct *task, void *msg, long size, RTIME delay))
 {
-	struct { struct rt_task_struct *task; void *msg; int size; RTIME delay; } arg = { task, msg, size, delay };
+	struct { struct rt_task_struct *task; void *msg; long size; RTIME delay; } arg = { task, msg, size, delay };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, SENDX_TIMED, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_returnx,(struct rt_task_struct *task, void *msg, int size))
 {
-	struct { struct rt_task_struct *task; void *msg; int size; } arg = { task, msg, size };
+	struct { struct rt_task_struct *task; void *msg; long size; } arg = { task, msg, size };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RETURNX, &arg).v[LOW];
 }
 
@@ -406,37 +406,37 @@ RTAI_PROTO(struct rt_task_struct *,rt_returnx,(struct rt_task_struct *task, void
 
 RTAI_PROTO(struct rt_task_struct *,rt_evdrpx,(struct rt_task_struct *task, void *msg, int size, int *len))
 {
-	struct { struct rt_task_struct *task; void *msg; int size, *len; } arg = { task, msg, size, len };
+	struct { struct rt_task_struct *task; void *msg; long size; int *len; } arg = { task, msg, size, len };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, EVDRPX, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_receivex,(struct rt_task_struct *task, void *msg, int size, int *len))
 {
-	struct { struct rt_task_struct *task; void *msg; int size, *len; } arg = { task, msg, size, len };
+	struct { struct rt_task_struct *task; void *msg; long size; int *len; } arg = { task, msg, size, len };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEX, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_receivex_if,(struct rt_task_struct *task, void *msg, int size, int *len))
 {
-	struct { struct rt_task_struct *task; void *msg; int size, *len; } arg = { task, msg, size, len };
+	struct { struct rt_task_struct *task; void *msg; long size; int *len; } arg = { task, msg, size, len };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEX_IF, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_receivex_until,(struct rt_task_struct *task, void *msg, int size, int *len, RTIME time))
 {
-	struct { struct rt_task_struct *task; void *msg; int size, *len; RTIME time; } arg = { task, msg, size, len, time };
+	struct { struct rt_task_struct *task; void *msg; long size; int *len; RTIME time; } arg = { task, msg, size, len, time };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEX_UNTIL, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_receivex_timed,(struct rt_task_struct *task, void *msg, int size, int *len, RTIME delay))
 {
-	struct { struct rt_task_struct *task; void *msg; int size, *len; RTIME delay; } arg = { task, msg, size, len, delay };
+	struct { struct rt_task_struct *task; void *msg; long size; int *len; RTIME delay; } arg = { task, msg, size, len, delay };
 	return (struct rt_task_struct *)rtai_lxrt(BIDX, SIZARG, RECEIVEX_TIMED, &arg).v[LOW];
 }
 
 RTAI_PROTO(struct rt_task_struct *,rt_proxy_attach,(struct rt_task_struct *proxy, void *msg, int nbytes, int priority))
 {
-	struct { struct rt_task_struct *proxy; void *msg; int nbytes, priority;} arg = { proxy, msg, nbytes, priority };
+	struct { struct rt_task_struct *proxy; void *msg; long nbytes, priority;} arg = { proxy, msg, nbytes, priority };
 	return (struct rt_task_struct *) rtai_lxrt(BIDX, SIZARG, PROXY_ATTACH, &arg).v[LOW];
 }
 
@@ -454,44 +454,44 @@ RTAI_PROTO(struct rt_task_struct *,rt_trigger,(struct rt_task_struct *proxy))
 
 RTAI_PROTO(int, rt_Send,(pid_t pid, void *smsg, void *rmsg, size_t ssize, size_t rsize ))
 {
-	struct { pid_t pid; void *smsg; void *rmsg; size_t ssize, rsize;} arg = { pid, smsg, rmsg, ssize, rsize };
+	struct { long pid; void *smsg; void *rmsg; long ssize, rsize;} arg = { pid, smsg, rmsg, ssize, rsize };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_SEND, &arg).i[LOW];
 }
 
-RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, size_t *msglen))
+RTAI_PROTO(pid_t, rt_Receive,(pid_t pid, void *msg, size_t maxsize, void *msglen))
 {
-	struct { pid_t pid; void *msg; size_t maxsize, *msglen;}
+	struct { long pid; void *msg; long maxsize; void *msglen;}
 	arg = { pid, msg, maxsize, msglen };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_RECEIVE, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_Creceive,(pid_t pid, void *msg, size_t maxsize, size_t *msglen, RTIME delay))
 {
-	struct { pid_t pid; void *msg; size_t maxsize, *msglen; RTIME delay;} arg = { pid, msg, maxsize, msglen, delay };
+	struct { long pid; void *msg; long maxsize; size_t *msglen; RTIME delay;} arg = { pid, msg, maxsize, msglen, delay };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_CRECEIVE, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_Reply,(pid_t pid, void *msg, size_t size))
 {
-	struct { pid_t pid; void *msg; size_t size;} arg = { pid, msg, size };
+	struct { long pid; void *msg; long size;} arg = { pid, msg, size };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_REPLY, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_Proxy_attach,(pid_t pid, void *msg, int nbytes, int priority))
 {
-	struct { pid_t pid; void *msg; int nbytes, priority;} arg = { pid, msg, nbytes, priority };
+	struct { long pid; void *msg; long nbytes, priority;} arg = { pid, msg, nbytes, priority };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_PROXY_ATTACH, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_Proxy_detach,(pid_t pid))
 {
-	struct { pid_t pid; } arg = { pid };
+	struct { long pid; } arg = { pid };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_PROXY_DETACH, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_Trigger,(pid_t pid))
 {
-	struct { pid_t pid; } arg = { pid };
+	struct { long pid; } arg = { pid };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_TRIGGER, &arg).i[LOW];
 }
 
@@ -509,7 +509,7 @@ RTAI_PROTO(pid_t, rt_Name_locate,(const char *host, const char *name))
 
 RTAI_PROTO(int, rt_Name_detach,(pid_t pid))
 {
-	struct { pid_t pid; } arg = { pid };
+	struct { long pid; } arg = { pid };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_NAME_DETACH, &arg).i[LOW];
 }
 
@@ -525,23 +525,23 @@ RTAI_PROTO(void, rt_ReleaseTickQueue,(void))
 	rtai_lxrt(BIDX, SIZARG, RT_RELEASETICKQUEUE, &arg);
 }
 
-RTAI_PROTO(unsigned, rt_qDynAlloc,(unsigned n))
+RTAI_PROTO(unsigned long, rt_qDynAlloc,(unsigned long n))
 {
-	struct { unsigned n; } arg = { n };
-	return (unsigned) rtai_lxrt(BIDX, SIZARG, RT_QDYNALLOC, &arg).i[LOW];
+	struct { unsigned long n; } arg = { n };
+	return (unsigned long) rtai_lxrt(BIDX, SIZARG, RT_QDYNALLOC, &arg).i[LOW];
 } 
 
-RTAI_PROTO(unsigned, rt_qDynFree,(int n))
+RTAI_PROTO(unsigned long, rt_qDynFree,(int n))
 {
-	struct { unsigned n; } arg = { n };
-	return (unsigned) rtai_lxrt(BIDX, SIZARG, RT_QDYNFREE, &arg).i[LOW];
+	struct { unsigned long n; } arg = { n };
+	return (unsigned long) rtai_lxrt(BIDX, SIZARG, RT_QDYNFREE, &arg).i[LOW];
 }
 
 RTAI_PROTO(struct QueueBlock *,rt_qDynInit,(struct QueueBlock **q, void (*fun)(void *, int), void *data, int evn ))
 {
 	struct QueueBlock *r;
 
-	struct { struct QueueBlock **q; void (*fun)(void *, int), *data; int evn; } arg = { 0, fun, data, evn };
+	struct { struct QueueBlock **q; void (*fun)(void *, int), *data; long evn; } arg = { 0, fun, data, evn };
 	r  = (struct QueueBlock *) rtai_lxrt(BIDX, SIZARG, RT_QDYNINIT, &arg).v[LOW];
 	if (q) *q = r;
 	return r;
@@ -609,13 +609,13 @@ RTAI_PROTO(void, rt_qBlkComplete,(struct QueueBlock *q))
 
 RTAI_PROTO(int, rt_qSync,(void))
 {
-	struct { unsigned long dummy; } arg;
+	struct { unsigned long long dummy; } arg;
 	return rtai_lxrt(BIDX, SIZARG, RT_QSYNC, &arg).i[LOW];
 }
 
 RTAI_PROTO(pid_t, rt_qReceive,(pid_t target, void *buf, size_t maxlen, size_t *msglen))
 {
-	struct {pid_t target; void *buf; size_t maxlen, *msglen; } arg = { target, buf, maxlen, msglen };
+	struct { long target; void *buf; long maxlen; size_t *msglen; } arg = { target, buf, maxlen, msglen };
 	return (pid_t) rtai_lxrt(BIDX, SIZARG, RT_QRECEIVE, &arg).i[LOW];
 }
 
@@ -684,13 +684,13 @@ RTAI_PROTO(pid_t, rt_vc_reserve,( void ))
 
 RTAI_PROTO(int, rt_vc_attach,(pid_t pid))
 {
-	struct { pid_t pid; } arg = { pid };
+	struct { long pid; } arg = { pid };
 	return rtai_lxrt(BIDX, SIZARG, RT_VC_ATTACH, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rt_vc_release,(pid_t pid))
 {
-	struct { pid_t pid; } arg = { pid };
+	struct { long pid; } arg = { pid };
 	return rtai_lxrt(BIDX, SIZARG, RT_VC_RELEASE, &arg).i[LOW];
 }
 

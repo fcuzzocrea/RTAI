@@ -19,7 +19,7 @@
 #ifndef _RTAI_NAMES_H
 #define _RTAI_NAMES_H
 
-#define	MAX_NAME_LENGTH	 32
+#define	RTAI_MAX_NAME_LENGTH	 32
 
 #ifdef __cplusplus
 extern "C" {

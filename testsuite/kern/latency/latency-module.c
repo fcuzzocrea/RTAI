@@ -38,11 +38,6 @@ MODULE_AUTHOR("Paolo Mantegazza <mantegazza@aero.polimi.it>, Robert Schwebel <ro
  *	command line parameters
  */
 
-int overall = 1;
-MODULE_PARM(overall, "i");
-MODULE_PARM_DESC(overall,
-		 "Calculate overall (1) or per-loop (0) statistics (default: 1)");
-
 #if defined(CONFIG_UCLINUX) || defined(CONFIG_ARM)
 #define DEFAULT_PERIOD 1000000
 #else
@@ -85,7 +80,7 @@ int period_counts;
 struct sample {
 	long long min;
 	long long max;
-	int index, ovrn, cnt;
+	int index, ovrn;
 } samp;
 double dotres;
 
@@ -118,7 +113,6 @@ static int proc_read(char *page, char **start, off_t off,
 	PROC_PRINT("\n## RTAI latency calibration tool ##\n");
 	PROC_PRINT("# period = %i (ns) \n", period);
 	PROC_PRINT("# avrgtime = %i (s)\n", avrgtime);
-	PROC_PRINT("# check %s worst case\n", overall ? "overall" : "each average");
 	PROC_PRINT("#%suse the FPU\n", use_fpu ? " " : " do not " );
 	PROC_PRINT("#%sstart the timer\n", start_timer ? " " : " do not ");
 	PROC_PRINT("# timer_mode is %s\n", timer_mode ? "periodic" : "oneshot");
@@ -133,7 +127,7 @@ static int proc_read(char *page, char **start, off_t off,
  */
  
 void
-fun(int thread)
+fun(long thread)
 {
 
 	int diff = 0;
@@ -143,12 +137,6 @@ fun(int thread)
 	int max_diff = 0;
 	RTIME t, svt;
 
-	/* If we want to make overall statistics */
-	/* we have to reset min/max here         */
-	if (overall) {
-		min_diff =  1000000000;
-		max_diff = -1000000000;
-	}
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 	if (use_fpu) {
 		for(i = 0; i < MAXDIM; i++) {
@@ -156,30 +144,33 @@ fun(int thread)
 		}
 	}
 #endif
+
 	svt = rt_get_cpu_time_ns();
 	samp.ovrn = 0;
 	while (1) {
 
-		/* Not overall statistics: reset min/max */
-		if (!overall) {
-			min_diff =  1000000000;
-			max_diff = -1000000000;
-		}
+		min_diff =  1000000000;
+		max_diff = -1000000000;
 
 		average = 0;
 
-		samp.cnt = 0;
 		for (i = 0; i < loops; i++) {
 			cpu_used[hard_cpu_id()]++;
 			expected += period_counts;
-			samp.ovrn += rt_task_wait_period();
-			samp.cnt++;
 
-			if (timer_mode) {
-				diff = (int) ((t = rt_get_cpu_time_ns()) - svt - period);
-				svt = t;
+			if (!rt_task_wait_period()) {
+				if (timer_mode) {
+					diff = (int) ((t = rt_get_cpu_time_ns()) - svt - period);
+					svt = t;
+				} else {
+					diff = (int) count2nano(rt_get_time() - expected);
+				}
 			} else {
-				diff = (int) count2nano(rt_get_time() - expected);
+				samp.ovrn++;
+				diff = 0;
+				if (timer_mode) {
+					svt = rt_get_cpu_time_ns();
+				}
 			}
 
 			if (diff < min_diff) { min_diff = diff; }

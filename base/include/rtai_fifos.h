@@ -309,20 +309,20 @@ extern "C" {
 
 RTAI_PROTO(int, rtf_create,(unsigned int fifo, int size))
 {
-	struct { unsigned int fifo, size; } arg = { fifo, size }; 
+	struct { unsigned long fifo, size; } arg = { fifo, size }; 
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _CREATE, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_destroy,(unsigned int fifo))
 {
-	struct { unsigned int fifo; } arg = { fifo };
+	struct { unsigned long fifo; } arg = { fifo };
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _DESTROY, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_put,(unsigned int fifo, const void *buf, int count))
 {
 	char lbuf[count];
-	struct { unsigned int fifo; void *buf; int count; } arg = { fifo, lbuf, count };
+	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
 	memcpy(lbuf, buf, count);
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _PUT, &arg).i[LOW];
 }
@@ -330,7 +330,7 @@ RTAI_PROTO(int, rtf_put,(unsigned int fifo, const void *buf, int count))
 RTAI_PROTO(int, rtf_put_if,(unsigned int fifo, const void *buf, int count))
 {
 	char lbuf[count];
-	struct { unsigned int fifo; void *buf; int count; } arg = { fifo, lbuf, count };
+	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
 	memcpy(lbuf, buf, count);
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _PUT_IF, &arg).i[LOW];
 }
@@ -339,7 +339,7 @@ RTAI_PROTO(int, rtf_get,(unsigned int fifo, void *buf, int count))
 {
 	int retval;
 	char lbuf[count];
-	struct { unsigned int fifo; void *buf; int count; } arg = { fifo, lbuf, count };
+	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
 	retval = rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _GET, &arg).i[LOW];
 	if (retval > 0) {
 		memcpy(buf, lbuf, retval);
@@ -351,7 +351,7 @@ RTAI_PROTO(int, rtf_get_if,(unsigned int fifo, void *buf, int count))
 {
 	int retval;
 	char lbuf[count];
-	struct { unsigned int fifo; void *buf; int count; } arg = { fifo, lbuf, count };
+	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
 	retval = rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _GET_IF, &arg).i[LOW];
 	if (retval > 0) {
 		memcpy(buf, lbuf, retval);
@@ -361,37 +361,37 @@ RTAI_PROTO(int, rtf_get_if,(unsigned int fifo, void *buf, int count))
 
 RTAI_PROTO(int, rtf_reset_lxrt,(unsigned int fifo))
 {
-	struct { unsigned int fifo; } arg = { fifo };
+	struct { unsigned long fifo; } arg = { fifo };
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _RESET, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_resize_lxrt,(unsigned int fifo, int size))
 {
-	struct { unsigned int fifo, size; } arg = { fifo, size }; 
+	struct { unsigned long fifo, size; } arg = { fifo, size }; 
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _RESIZE, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_sem_init_lxrt,(unsigned int fifo, int value))
 {
-	struct { unsigned int fifo, value; } arg = { fifo, value }; 
+	struct { unsigned long fifo, value; } arg = { fifo, value }; 
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _SEM_INIT, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_sem_post_lxrt,(unsigned int fifo))
 {
-	struct { unsigned int fifo; } arg = { fifo }; 
+	struct { unsigned long fifo; } arg = { fifo }; 
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _SEM_POST, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_sem_trywait_lxrt,(unsigned int fifo))
 {
-	struct { unsigned int fifo; } arg = { fifo }; 
+	struct { unsigned long fifo; } arg = { fifo }; 
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _SEM_TRY, &arg).i[LOW];
 }
 
 RTAI_PROTO(int, rtf_sem_destroy_lxrt,(unsigned int fifo))
 {
-	struct { unsigned int fifo; } arg = { fifo }; 
+	struct { unsigned long fifo; } arg = { fifo }; 
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _SEM_DESTRY, &arg).i[LOW];
 }
 
@@ -399,7 +399,7 @@ RTAI_PROTO(int, rtf_named_create_lxrt,(const char *name, int size))
 {
 	int len;
 	char lname[len = strlen(name)];
-	struct { char * name; int size; } arg = { lname, size };
+	struct { char * name; long size; } arg = { lname, size };
 	strncpy(lname, name, len);
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _NAMED_CREATE, &arg).i[LOW];
 }
@@ -425,7 +425,7 @@ RTAI_PROTO(int, rtf_getfifobyname_lxrt,(const char *name))
 RTAI_PROTO(int, rtf_ovrwr_put,(unsigned int fifo, const void *buf, int count))
 {
 	char lbuf[count];
-	struct { unsigned int fifo; void *buf; int count; } arg = { fifo, lbuf, count };
+	struct { unsigned long fifo; void *buf; long count; } arg = { fifo, lbuf, count };
 	memcpy(lbuf, buf, count);
 	return rtai_lxrt(FUN_FIFOS_LXRT_INDX, SIZARG, _OVERWRITE, &arg).i[LOW];
 }
@@ -512,7 +512,7 @@ RTAI_PROTO(int, rtf_open_sized,(const char *dev, int perm, int size))
 
 RTAI_PROTO(int, rtf_evdrp,(int fd, void *buf, int count))
 {
-	struct { void *buf; int count; } args = { buf, count };
+	struct { void *buf; long count; } args = { buf, count };
 	int ret = ioctl(fd, EAVESDROP, &args);
 	return ret < 0 ? -errno : ret;
 }
@@ -535,7 +535,7 @@ RTAI_PROTO(int, rtf_evdrp,(int fd, void *buf, int count))
  */
 RTAI_PROTO(int, rtf_read_all_at_once,(int fd, void *buf, int count))
 {
-	struct { void *buf; int count; } args = { buf, count };
+	struct { void *buf; long count; } args = { buf, count };
 	int ret = ioctl(fd, READ_ALL_AT_ONCE, &args);
 	return ret < 0 ? -errno : ret;
 }
@@ -563,14 +563,14 @@ RTAI_PROTO(int, rtf_read_all_at_once,(int fd, void *buf, int count))
  */
 RTAI_PROTO(int, rtf_read_timed,(int fd, void *buf, int count, int ms_delay))
 {
-	struct { void *buf; int count, delay; } args = { buf, count, ms_delay };
+	struct { void *buf; long count, delay; } args = { buf, count, ms_delay };
 	int ret = ioctl(fd, READ_TIMED, &args);
 	return ret < 0 ? -errno : ret;
 }
 
 RTAI_PROTO(int, rtf_read_if,(int fd, void *buf, int count))
 {
-	struct { void *buf; int count; } args = { buf, count };
+	struct { void *buf; long count; } args = { buf, count };
 	int ret = ioctl(fd, READ_IF, &args);
 	return ret < 0 ? -errno : ret;
 }
@@ -598,21 +598,21 @@ RTAI_PROTO(int, rtf_read_if,(int fd, void *buf, int count))
  */
 RTAI_PROTO(int, rtf_write_timed,(int fd, void *buf, int count, int ms_delay))
 {
-	struct { void *buf; int count, delay; } args = { buf, count, ms_delay };
+	struct { void *buf; long count, delay; } args = { buf, count, ms_delay };
 	int ret = ioctl(fd, WRITE_TIMED, &args);
 	return ret < 0 ? -errno : ret;
 }
 
 RTAI_PROTO(int, rtf_overwrite,(int fd, void *buf, int count))
 {
-	struct { void *buf; int count; } args = { buf, count };
+	struct { void *buf; long count; } args = { buf, count };
 	int ret = ioctl(fd, OVRWRITE, &args);
 	return ret < 0 ? -errno : ret;
 }
 
 RTAI_PROTO(int, rtf_write_if,(int fd, void *buf, int count))
 {
-	struct { void *buf; int count; } args = { buf, count };
+	struct { void *buf; long count; } args = { buf, count };
 	int ret = ioctl(fd, WRITE_IF, &args);
 	return ret < 0 ? -errno : ret;
 }

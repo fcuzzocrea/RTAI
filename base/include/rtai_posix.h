@@ -600,7 +600,7 @@ RTAI_PROTO(sem_t *,sem_open_rt,(const char *name, int oflags, int value, int typ
 		close(fd); 
         	atomic_inc((atomic_t *)(&((int *)sem)[1]));
 	} else {
-	        struct { int name, value, type; } arg = { nam2num(name), value, (type == SEM_BINARY ? BIN_SEM : CNT_SEM) | PRIO_Q };
+	        struct { unsigned long name, value, type; } arg = { nam2num(name), value, (type == SEM_BINARY ? BIN_SEM : CNT_SEM) | PRIO_Q };
 		sem = (sem_t *)malloc(sizeof(sem_t));
 	        if ((((int *)sem)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).i[LOW]) && (fd = open(name, O_WRONLY | O_CREAT))) {
 			write(fd, &sem, sizeof(int));
@@ -619,7 +619,7 @@ RTAI_PROTO(int, sem_init_rt,(sem_t *sem, int pshared, unsigned int value))
 {
 	int hs;
 	if (value <= SEM_VALUE_MAX) {
-	        struct { int name, value, type; } arg = { rt_get_name(0), value, (pshared == SEM_BINARY ? BIN_SEM : CNT_SEM) | PRIO_Q };
+	        struct { unsigned long name, value, type; } arg = { rt_get_name(0), value, (pshared == SEM_BINARY ? BIN_SEM : CNT_SEM) | PRIO_Q };
 		hs = MAKE_SOFT();
 		((int *)sem)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).i[LOW];
        		((int *)sem)[1] = 0;
@@ -744,7 +744,7 @@ RTAI_PROTO(pthread_mutex_t *, pthread_mutex_open_rt,(const char *name))
 		close(fd); 
         	atomic_inc((atomic_t *)(&((int *)mutex)[1]));
 	} else {
-	        struct { int name, value, type; } arg = { nam2num(name), 1, RES_SEM };
+	        struct { unsigned long name, value, type; } arg = { nam2num(name), 1, RES_SEM };
 		mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
         	if ((((int *)mutex)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).i[LOW]) && (fd = open(name, O_WRONLY | O_CREAT))) {
 			write(fd, &mutex, sizeof(int));
@@ -762,7 +762,7 @@ RTAI_PROTO(pthread_mutex_t *, pthread_mutex_open_rt,(const char *name))
 RTAI_PROTO(int, pthread_mutex_init_rt,(pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr))
 {
 	int hs;
-	struct { int name, value, type; } arg = { rt_get_name(0), 1, RES_SEM };
+	struct { unsigned long name, value, type; } arg = { rt_get_name(0), 1, RES_SEM };
 	hs = MAKE_SOFT();
 	((int *)mutex)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).i[LOW];
         ((int *)mutex)[1] = 0;
@@ -1054,7 +1054,7 @@ RTAI_PROTO(pthread_rwlock_t *, pthread_rwlock_open_rt,(const char *name))
 		close(fd); 
         	atomic_inc((atomic_t *)(&((int *)rwlock)[1]));
 	} else {
-	        struct { int name, value, type; } arg = { nam2num(name), 1, RES_SEM };
+	        struct { unsigned long name, value, type; } arg = { nam2num(name), 1, RES_SEM };
 		rwlock = (pthread_rwlock_t *)malloc(sizeof(pthread_rwlock_t));
         	if ((((int *)rwlock)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_RWL_INIT, &arg).i[LOW]) && (fd = open(name, O_WRONLY | O_CREAT))) {
 			write(fd, &rwlock, sizeof(int));
@@ -1073,7 +1073,7 @@ RTAI_PROTO(pthread_rwlock_t *, pthread_rwlock_open_rt,(const char *name))
 RTAI_PROTO(int, pthread_rwlock_init_rt,(pthread_rwlock_t *rwlock, pthread_rwlockattr_t *attr))
 {
 	int hs;
-	struct { int name; } arg = { rt_get_name(0) };
+	struct { unsigned long name; } arg = { rt_get_name(0) };
 	hs = MAKE_SOFT();
 	((int *)rwlock)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_RWL_INIT, &arg).i[LOW];
         ((int *)rwlock)[1] = 0;

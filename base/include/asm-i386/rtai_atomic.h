@@ -20,16 +20,26 @@
 #define _RTAI_ASM_I386_ATOMIC_H
 
 #include <linux/bitops.h>
-#include <asm/atomic.h>
 
 #ifdef __KERNEL__
 
+#include <asm/atomic.h>
 #include <asm/system.h>
 
 #define atomic_xchg(ptr,v)      xchg(ptr,v)
 #define atomic_cmpxchg(ptr,o,n) cmpxchg(ptr,o,n)
 
 #else /* !__KERNEL__ */
+
+#ifndef likely
+#if __GNUC__ == 2 && __GNUC_MINOR__ < 96
+#define __builtin_expect(x, expected_value) (x)
+#endif
+#define likely(x)	__builtin_expect(!!(x), 1)
+#define unlikely(x)	__builtin_expect(!!(x), 0)
+#endif /* !likely */
+
+#include <asm/atomic.h>
 
 struct __rtai_xchg_dummy { unsigned long a[100]; };
 #define __rtai_xg(x) ((struct __rtai_xchg_dummy *)(x))

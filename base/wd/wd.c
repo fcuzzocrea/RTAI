@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.4 2005/12/06 17:26:18 ando Exp $
+ * ID: @(#)$Id: wd.c,v 1.5 2005/12/06 19:38:55 mante Exp $
  *
  *******************************************************************************/
 
@@ -137,7 +137,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.4 $";
+static char version[] = "$Revision: 1.5 $";
 static char ver[10];
 
 // User friendly policy names
@@ -700,14 +700,14 @@ int __rtai_wd_init(void)
 	    apic_data[dog].mode  = !wd_OneShot;	 // <--- This bit...
 	    apic_data[dog].count = TickPeriod;
 	    if (wd_OneShot) {
-		rt_preempt_always_cpuid(1, dog); // <--- ...and this!
+//		rt_preempt_always_cpuid(1, dog); // <--- ...and this!
 	    }
 	}
 	start_rt_apic_timers(apic_data, 0);
     } else {
 	if (wd_OneShot) {
 	    rt_set_oneshot_mode();
-	    rt_preempt_always(1);
+//	    rt_preempt_always(1);
 	} else {
 	    rt_set_periodic_mode();
 	}

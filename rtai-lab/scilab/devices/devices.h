@@ -87,12 +87,3 @@ void inp_rtai_sem_end(int port);
 int out_rtai_sem_init(char * sNam,char * IPe);
 void out_rtai_sem_output(int port, double * u,double t);
 void out_rtai_sem_end(int port);
-
-
-
-
-
-
-
-
-

@@ -42,7 +42,7 @@ case 'set' then
 
     funam='i_sinus_' + string(%kk);
 
-    [ok,tt]=getCode(funam)
+    [ok,tt]=getCode_sinus(funam)
     if ~ok then break,end
     [model,graphics,ok]=check_io(model,graphics,i,o,ci,co)
     if ok then
@@ -92,7 +92,7 @@ case 'define' then
 end
 endfunction
 
-function [ok,tt]=getCode(funam)
+function [ok,tt]=getCode_sinus(funam)
   textmp=[
 	  '#ifndef MODEL'
 	  '#include <math.h>';

@@ -38,4 +38,4 @@ INCLUDES = \
 	-I$(top_srcdir)/addons/comedi \
 	-I@COMEDI_DIR@/include
 
-EXTRA_DIST = template.c README.devices devtmpl.h cioquad4.c
+EXTRA_DIST = template.c README.devices devtmpl.h

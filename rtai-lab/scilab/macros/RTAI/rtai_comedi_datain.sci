@@ -40,7 +40,7 @@ case 'set' then
     dept=%f;
     dep_ut=[depu dept];
 
-    [ok,tt]=getCode(funam)
+    [ok,tt]=getCode_comedi_datain(funam)
     if ~ok then break,end
     [model,graphics,ok]=check_io(model,graphics,i,o,ci,co)
     if ok then
@@ -89,7 +89,7 @@ case 'define' then
 end
 endfunction
 
-function [ok,tt]=getCode(funam)
+function [ok,tt]=getCode_comedi_datain(funam)
    textmp=[
           '#ifndef MODEL'
           '#include <math.h>';

@@ -2052,7 +2052,7 @@ int __rtai_hal_init (void)
 	attr.name     = "RTAI";
 	attr.domid    = RTAI_DOMAIN_ID;
 	attr.entry    = (void *)rtai_domain_entry;
-	attr.priority = 2000000000;
+	attr.priority = get_domain_pointer(1)->priority + 100;
 	hal_register_domain(&rtai_domain, &attr);
 	for (trapnr = 0; trapnr < HAL_NR_FAULTS; trapnr++) {
 		hal_catch_event(hal_root_domain, trapnr, (void *)rtai_trap_fault);
@@ -2070,6 +2070,14 @@ int __rtai_hal_init (void)
 #endif
 
 	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", HAL_TYPE, CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
+
+	printk("PIPELINE layers:\n");
+	for (trapnr = 1; ; trapnr++) {
+		struct hal_domain_struct *next_domain;
+		next_domain = get_domain_pointer(trapnr);
+		if ((unsigned long)next_domain < 10) break;
+		printk("%p %x %s %d\n", next_domain, next_domain->domid, next_domain->name, next_domain->priority);
+	}
 
 	return 0;
 }

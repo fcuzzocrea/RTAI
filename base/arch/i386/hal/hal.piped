@@ -2221,6 +2221,7 @@ int __rtai_hal_init (void)
 
 	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\nINSTALLED PIPELINES (adr, id, name, prio):\n", HAL_TYPE, CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
 
+	printk("PIPELINE layers:\n");
 	for (trapnr = 1; ; trapnr++) {
 		struct hal_domain_struct *next_domain = get_domain_pointer(trapnr);
 		if ((unsigned long)next_domain < 10) break;

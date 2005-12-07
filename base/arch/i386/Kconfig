@@ -282,7 +282,7 @@ config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of registrable RTAI objects"
 	default 100
 	help
-	The number of registerable objects in RTAI.
+	The maximum number of registrable objects in RTAI.
 
 config RTAI_MONITOR_EXECTIME
 	bool "Display RTAI task execution time (per thousands)"

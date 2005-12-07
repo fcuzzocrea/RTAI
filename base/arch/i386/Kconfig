@@ -687,6 +687,7 @@ config RTAI_DRIVERS_SERIAL
 	default y
 	help
 	The RTAI real-time serial driver.
+	The module will be called rtai_serial.o.
 
 config RTAI_DRIVERS_16550A
 	bool "RTDM base 16550A driver support"
@@ -694,6 +695,7 @@ config RTAI_DRIVERS_16550A
 	default n
 	help
 	An alternate RTAI real-time serial driver based on RTDM.
+	The module will be called rtai_16550A.o.
 
 endmenu
 

@@ -153,7 +153,7 @@ static long long user_srq(unsigned long whatever)
 
 		case FREQ_CAL: {
 			times.intrs = -1;
-			reset_count = args[1]*100;
+			reset_count = args[1]*HZ;
 			count = 0;
 			rt_assign_irq_to_cpu(TIMER_8254_IRQ, 1 << hard_cpu_id());
 			rt_request_timer(just_ret, COUNT, 1);

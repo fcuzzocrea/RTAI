@@ -231,7 +231,7 @@ endmenu
 menu "Base system"
 
 config RTAI_KTASKS_SCHED_LXRT
-	bool "Kernel/User space scheduler with RTAI own kernel tasks (keep)"
+	bool "Kernel/User space scheduler   with  RTAI own kernel tasks (keep)"
 	default y
 	help
 	This scheduler supports hard real time for all Linux schedulable

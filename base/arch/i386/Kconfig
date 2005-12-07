@@ -127,8 +127,8 @@ config RTAI_USER_DEBUG
 	depends on RTAI_EXTENDED
 	default n
 	help
-	This options adds the -g flag when compiling user-space
-	programs. LXRT inlining is also implicitely disabled.
+	This options adds the -g flag when compiling user-space programs. 
+	User space RTAI syscall by simple inlining is implicitely disabled.
 
 config RTAI_MAINTAINER
 	bool "Enable maintainer mode"
@@ -170,7 +170,7 @@ choice
 	  of compiler's optimization switch;
 	- Never inline:         i.e. user-space services are linked to 
 	  programs against the appropriate support library (e.g. liblxrt.a 
-	  for LXRT services).
+	  for user space RTAI syscall services).
 
 config RTAI_LXRT_EXTERN_INLINE
 	bool "Conditional inlining"
@@ -279,7 +279,7 @@ config RTAI_SCHED_APIC_LATENCY
         programming overhead needed to determine the right firing time.
 
 config RTAI_SCHED_LXRT_NUMSLOTS
-	string "Number of LXRT slots"
+	string "Number of registrable RTAI objects"
 	default 100
 	help
 	The number of registerable objects in RTAI.
@@ -310,8 +310,8 @@ config RTAI_ONE_SHOT
 	hard timer will run in periodic mode according to the period used 
 	in start_rt_timer().
 	Notice that whatever the default setting chosen it is possible to
-	override it by calling specifically calling either 
-	rt_set_oneshot_mode() or rt_set_periodic_mode() at run time.
+	override it by specifically calling either rt_set_oneshot_mode() or 
+	rt_set_periodic_mode() at run time.
 
 config RTAI_BUSY_TIME_ALIGN
 	bool "Busy wait to ensure resume time alignment"
@@ -335,8 +335,8 @@ config RTAI_CAL_FREQS_FACT
 	scheduling time depends also on the ratio cpu_freq/apic_freq. The best
 	results can be achieved by using the RTAI calibration tool. 
 	If no calibration is run one will rely on what Linux makes available 
-	by default, which could be not precise enough, especially for 
-	for not so short timed intervals.
+	by default, which could be not precise enough, especially for not so 
+	short timed intervals.
  	That leads to large and systematic latencies, especially in the case
 	of low frequency schedules. By setting this option to a suitable
 	value one can be sure that a certain firing frequency is granted 
@@ -354,27 +354,29 @@ config RTAI_BITS
 	tristate "Event flags"
 	default m
 	help
-	Event flags are used to synchronize a task with the occurrence
-	of multiple events. This synchronization may be disjunctive
-	when any of the events have occurred or conjunctive when all
-	events have occured. The former corresponds to a logical OR
-	whereas the latter is associated to a logical AND.  Their use
-	is similar to semaphores' except that signal/waits are not
-	related to just a simple counter but depends on the
-	combination of set of bits.
+	Event flags are used to synchronize a task to the occurrence of 
+	multiple events. RTAI ues the term "bits" to stress the fact that
+	events are just logical objects, i.e. a kind of digital I/O, 
+	nothing else being associated to them, e.g a count. 
+	So any synchronization based on them may be disjunctive, when any 
+	of the events have occurred, or conjunctive, when all events have 
+	occured. The former corresponds to a logical OR whereas the latter 
+	is associated to a logical AND. Their use is similar to semaphores 
+	except that signal/waits are not related to just a simple counter 
+	but depends on the combination of set of bits.
 	The module will be called rtai_bits.o.
 
 config RTAI_FIFOS
 	tristate "Fifo"
 	default m
 	help
-	Originally fifos were used to allow communication between
-	kernel-space modules and user-space application. Even if
-	fifos are strictly no more required in RTAI, because of the
-	availability of LXRT, fifos are kept for both compatibility
-	reasons and because they are very useful tools to be used to
-	communicate with interrupt handlers, since they do not require
-	any scheduler to be installed.
+	Originally fifos were used to allow communication between 
+	kernel-space modules and user-space application. Even if fifos are 
+	strictly no more required in RTAI, because of the native availability 
+	of symmetric inter/intra kernel RTAI services, fifos are kept both 
+	for compatibility reasons and because they are very useful tools to be
+	used to communicate with interrupt handlers only based applications,
+	since they do not require any scheduler to be installed.
 	The module will be called rtai_fifos.o.
 
 config RTAI_NETRPC
@@ -389,9 +391,9 @@ config RTAI_NETRPC
 	distributed or not.  Using NetRPC makes from RTAI a
 	distributed system, both for kernel and user space
 	applications.
-
-	NetRPC depends on the messaging support.
-
+	NetRPC depends on a messaging support, if none is provided it relies
+	on Linux network services, thus loosing strict real time. See the
+	RTNet emulation option.
 	The NetRPC module will be called rtai_netrpc.o.
 
 config RTAI_NETRPC_RTNET
@@ -401,8 +403,8 @@ config RTAI_NETRPC_RTNET
 	help
 	This enable RTNet like usage, using Linux soft networking support,
 	even when no RTNet is available. It can be used also when RTNet is
-	available. In such a case soft real time RTAI tasks will avoid loading
-	the real time networking.
+	available. In such a case soft real time RTAI tasks will avoid 
+	loading the hard real time networking layer.
 
 config RTAI_SHM
 	tristate "Shared memory"
@@ -420,35 +422,30 @@ config RTAI_SEM
 	tristate "Semaphores"
 	default m
 	help
-
 	A semaphore is a protocol mechanism offered to:
 	  - control access to a shared resource (mutual exclusion);
 	  - signal the occurrence of an event;
 	  - allow two tasks to synchronize their activities.
-
 	Resource semaphores can be recursively nested and support full
 	priority inheritance, both among semaphore resources and
 	intertask messages, for a singly owned resource.
-
 	Priority inheritance becomes an adaptive priority ceiling when
 	a task owns multiple resources, including messages sent to it.
 	Both binary and counting semaphores are able to queue tasks
 	either in FIFO or priority order and this can be chosen
 	dynamically at run time.
-
 	The module will be called rtai_sem.o.
 
 config RTAI_MSG
 	tristate "Message"
 	default m
 	help
-	Direct synchronization by direct interask messaging, either in fast
-	single unsigned long messages or in extended mode arbitrarely sized
-	messages. Both sync and async messages with replies can be used.
-	Blocking messages exploit priority inheritance, dynamic ceiling in
-	the case of mixing inheritances with resource sems.
-	QNX styled APIs are also possible.
-
+	Direct synchronization by direct interask messaging, either as fast
+	single unsigned long messages or as extended arbitrarely sized
+	messages. Both async and sync messages with replies can be used.
+	QNX styled APIs are also avaible. Blocking messages exploit priority 
+	inheritance, which becomes a dynamic ceiling when inheritances are 
+	mixed with resource sems.
 	The module will be called rtai_msg.o.
 
 config RTAI_MBX
@@ -457,44 +454,37 @@ config RTAI_MBX
 	default y if RTAI_SEM=y
 	default m if RTAI_SEM=m
 	help
-
 	A mailbox corresponds to a pointer-size variable which is
 	associated to a service provided by the kernel. It allows a
 	task or an ISR to deposit a message (the pointer) into this
 	mailbox.
-
 	The RTAI mailbox implementation is very flexible as it allows
 	to send any message size by using any mailbox buffer
 	size. They are based on the First In First Out (FIFO)
 	principle and on Last In First Out (LIFO) for urgent delivery.
-
 	Mailboxes depend on semaphores.
-
 	The module will be called rtai_mbx.o.
 
 
 config RTAI_TBX
-	tristate "Typed mailboxes"
+	tristate "RTAI message queues and typed mailboxes"
 	depends on RTAI_SEM
 	default y if RTAI_SEM=y
 	default m if RTAI_SEM=m
 	help
-
-	Typed mailboxes (TBX) are an alternative to the default RTAI
-	mailboxes. They offer:
-
-	1- message broadcasting allowing to send a message to all the
-	   tasks that are pending on the same TBX;
-
-	2- urgent sending of messages: these messages are not
-	   enqueued, but inserted in the head of the queue, bypassing all
-	   the other messages already present in TBX;
-
-	3- a priority or fifo wakeup policy that may be set at runtime
-	when creating the typed mailbox.
-
+	RTAI message queues (msgq) are intertask processor messages that allow 
+	exchanging prioritised messages of anysize. Broadcasting of messages
+	to all the waiing tasks is also possible.
+	Legacy typed mailbox (TBX) services are recovered by using RTAI msgqs
+	and afford a precanned example of their use offering:
+	1 - message broadcasting allowing to send a message to all the tasks 
+	   that are pending on the same TBX;
+	2 - urgent sending of messages: these messages are not enqueued, but 
+	    inserted in the head of the queue, bypassing all the other 
+	    messages already present in TBX;
+	3 - a priority or fifo wakeup policy that may be set at runtime when 
+	    creating the typed mailbox.
 	Typed mailboxes depend on semaphores.
-
 	The module will be called rtai_tbx.o.
 
 
@@ -503,12 +493,10 @@ config RTAI_MQ
 	depends on RTAI_SEM
 	default y if RTAI_SEM=y
 	default m if RTAI_SEM=m
-
 	help
-	RTAI pqueues implements the message queues section
-	of the Posix 1003.1d API. They provide kernel-safe message
-	queues.	Message queues depend on semaphores.
-
+	RTAI pqueues implements the message queues section of Posix 1003.1d. 
+	They provide kernel-safe message queues. Message queues depend on 
+	semaphores.
 	The module will be called rtai_mq.o.
 
 endmenu
@@ -529,9 +517,9 @@ config RTAI_MALLOC
 	tristate "Real-time malloc support"
 	default y
 	help
-	RTAI provides a real-time implementation of malloc().
-	This allows real-time tasks to allocate and to
-	free memory safely whilst executing in the real-time domain.
+	RTAI provides a real-time implementation of malloc(). This allows 
+	real-time tasks to allocate and to free memory safely whilst executing
+	in the real-time domain.
 	The module will be called rtai_malloc.o.
 
 config RTAI_MALLOC_VMALLOC
@@ -539,18 +527,15 @@ config RTAI_MALLOC_VMALLOC
 	depends on RTAI_MALLOC
 	default y
 	help
-	RTAI's malloc support offers two different ways to allocate
-	memory chunks.
-
+	RTAI's malloc support offers two different ways to allocate memory 
+	chunks, i.e. kmalloc and vmalloc.
 	The reasons for using vmalloc:
 	- it is simpler to share allocated buffers with user space;
-	- it doesn't have the size restriction of kmalloc.
-
+	- it doesn't have the size restrictions of kmalloc.
 	The reasons for using kmalloc:
-	- it is faster;
-	- it exhibits contiguous buffer addressing needed for DMA
-	  controllers which don't have scattering/gathering capability.
-
+	- it is faster (not important since it as to be used in sof real time);
+	- it exhibits contiguous buffer addressing needed for DMA controllers 
+	  which don't have scattering/gathering capability.
 	The default is using kmalloc()
 
 config RTAI_MALLOC_HEAPSZ
@@ -572,31 +557,25 @@ config RTAI_TASKLETS
 	services inter-intra kernel and user space for both soft and
 	hard real-time. The new services provided can be useful when
 	you have many tasks, both in kernel and user space, that must
-	execute in hard real-time but do not need any RTAI scheduler
-	services that could lead to a task block.
-
-	Such tasks are called tasklets and can be of two kinds:
+	needs to execute some specific functions. Such tasks are called 
+	tasklets and can be of two kinds:
         - a simple tasklet;
         - timed tasklets (timers).
-
 	The tasklets implementation of timed tasklets relies on a
 	server support task that executes the related timer functions,
 	either in oneshot or periodic mode, on the base of their time
 	deadline and according to their user assigned priority.
-
 	As explained above, plain tasklets are just functions executed
-	from kernel space. Their execution needs no server and is
-	simply triggered by calling the user specified tasklet
+	depending on user defined events. Their execution needs no server 
+	and is simply triggered by calling the user specified tasklet
 	function at due time, either from a kernel task or interrupt
 	handler in charge of their execution when they are needed.
-
 	The module will be called rtai_tasklets.o.
 
 config RTAI_TRACE
 	bool "LTT support"
 	default n
 	help
-
 	Originally, the Linux Trace Toolkit is a suite of tools
 	designed to extract program execution details from the Linux
 	operating system and interpret them. Specifically, it enables
@@ -615,17 +594,13 @@ config RTAI_USI
 	default y if RTAI_SEM=y || RTAI_TASKLETS=y
 	default m if RTAI_SEM=m || RTAI_TASKLETS=m
 	help
-
 	RTAI already contains some examples hinting at managing
 	interrupts in user space, e.g: resumefromintr in lxrt-net_rpc,
 	pressa in lxrt, but all of them require installing a proper
 	handler in kernel space to wake up a hard real-time
 	LXRT/NEWLXRT task.
-
-	The user space interrupt support does the same but adds
-	something that permits you to avoid writing anything in kernel
-	space.
-
+	The user space interrupt support does the same but adds something 
+	that permits you to avoid writing anything in kernel space.
 	The module will be called rtai_usi.o.
 	
 
@@ -633,11 +608,9 @@ config RTAI_WD
 	bool "Watchdog support"
 	default y
 	help
-
 	The purpose of the watchdog is to provide protection services
 	to RTAI thereby protecting it (and the host Linux OS) against
 	programming errors in RTAI applications.
-
 	The RTAI module and a scheduler should be mounted to use the
 	watchdog and once mounted, it will constantly monitor periodic
 	real-time tasks that already exist, or that are created later.
@@ -646,7 +619,6 @@ config RTAI_WD
 	the same whether or not you have the watchdog mounted. The
 	overhead imposed by the watchdog depends on the speed that you
 	run it, but in most cases should be minimal.
-
 	The following watchdog policies are possible:
 	- do nothing other than log some messages and keep a record of
 	  the bad task; 
@@ -659,14 +631,12 @@ config RTAI_WD
 	  percentage of its period; 
 	- suspend the offending task so that it no longer threaten the system;
 	- kill the offending task and remove all traces.
-
 	The module will be called rtai_wd.o.
 
 config RTAI_LEDS
 	tristate "LEDS-based debugging support"
 	default m
 	help
-
 	The module will be called rtai_leds.o.
 
 endmenu
@@ -680,19 +650,16 @@ config RTAI_COMEDI_LXRT
 	depends on RTAI_SCHED_LXRT
 	default n
 	help
-
-	RTAI offers the kcomedilib interface to LXRT real-time
-	applications. A kernel module will be built and a library will
-	be provided. The kernel modules is called rtai_comedi.o and
-	must be loaded if you want to use the libkcomedilxrt.a
-	library.
+	RTAI offers a unified kcomedilib interface to kernel/user space 
+	real-time applications. A kernel module will be built and a library 
+	will be provided. The kernel modules is called rtai_comedi.o and
+	must be loaded if you want to use the libkcomedilxrt.a library.
 
 config RTAI_COMEDI_DIR
 	depends on RTAI_COMEDI_LXRT
 	string "COMEDI installation directory"
 	default "/usr/local"
 	help
-
 	You need the COMEDI support for data acquisition to build
 	applications such as RTAILab.
 	You can set the path to this package's installation
@@ -703,10 +670,8 @@ config RTAI_CPLUSPLUS
 	bool "In-kernel C++ support"
 	default y
 	help
-
-	RTAI offers a C++ framework if you want to develop C++
-	real-time applications.
-
+	RTAI offers a C++ framework if you want to develop C++ real-time 
+	applications.
 	The module will be called rtai_cpp.o.
 
 config RTAI_RTDM
@@ -742,7 +707,6 @@ config RTAI_LAB
 	bool "RTAI Lab"
 	default n
 	help
-
 	RTAI-Lab is a tool that allows the execution of any suite of
 	real-time controllers/simulators automatically generated by
 	Matlab/Simulink/RTW, hereafter addressed as RTW, and/or
@@ -757,7 +721,6 @@ config RTAI_EFLTK_DIR
 	string "EFLTK installation directory"
 	default "/usr/local"
 	help
-
 	You need the Extended Fast Light Toolkit (EFLTK) to build
 	RTAILab. You can set the path to this package's installation
 	directory here.

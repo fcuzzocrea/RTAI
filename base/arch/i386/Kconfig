@@ -230,7 +230,7 @@ endmenu
 
 menu "Base system"
 
-config RTAI_SCHED_OWN_KTASKS
+config RTAI_KTASKS_SCHED_LXRT
 	bool "Kernel/User space scheduler with RTAI own kernel tasks (keep)"
 	default y
 	help
@@ -711,11 +711,9 @@ config RTAI_CPLUSPLUS
 
 config RTAI_RTDM
 	bool "Real-Time Driver Model over RTAI"
-#	depends on RTAI_SCHED_LXRT
 	default n
 	help
 	Real Time Drive Model specific implementation for RTAI.
-	The module is called rtai_rtdm.xx.
 
 menu "Drivers"
 
@@ -723,20 +721,14 @@ config RTAI_DRIVERS_SERIAL
 	bool "RTAI serial line driver"
 	default y
 	help
-
-	RTAI provides a real-time serial driver.
-
-	The module will be called rtai_serial.o.
+	The RTAI real-time serial driver.
 
 config RTAI_DRIVERS_16550A
 	bool "RTDM base 16550A driver support"
 	depends on RTAI_RTDM
 	default n
 	help
-
-	RTAI provides an alternate real-time serial driver based on RTDM.
-
-	The module is called rtai_16550A.xx.
+	An alternate RTAI real-time serial driver based on RTDM.
 
 endmenu
 

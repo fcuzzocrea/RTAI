@@ -18,7 +18,7 @@ It is usable with Linux 2.6.xx only and to set it up you must use the patches
 hal-trioss-whatever-version, found within this distribution only. Then you
 must disable the definition of the macro RTAI_DUOSS in 
 "include/asm-i386/rtai_hal.h". However if you disable both RTAI_DUOSS and 
-RTAI_TRIOSS, found in the ame header file, you fall back to the duo RTAI,
+RTAI_TRIOSS, found in the same header file, you fall back to the duo RTAI,
 i.e. just for RTAI+Linux.
 
 The difference between a duo RTAI obtained just by enabling RTAI_DUOSS and

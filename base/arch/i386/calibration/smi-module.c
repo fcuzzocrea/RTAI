@@ -28,7 +28,7 @@
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 
-int smiReset = 1;
+int smiReset = 0;
 MODULE_PARM(smiReset, "i");
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
@@ -157,7 +157,7 @@ static unsigned short __devinit get_smi_en_addr(struct pci_dev *dev)
 	return SMI_CTRL_ADDR + (((byte1 << 1) | (byte0 >> 7)) << 7); //bits 7-15
 }
 
-void __devinit rthal_smi_init(void)
+int __devinit rthal_smi_init(void)
 {
 	struct pci_dev *dev = NULL;
 	struct pci_device_id *id;
@@ -173,20 +173,23 @@ void __devinit rthal_smi_init(void)
 	if (dev == NULL || dev->bus->number || dev->devfn != DEVFN) {
 		pci_dev_put(dev);
 		printk("RTAI: Intel chipset not found.\n");
-  		return;
+  		return -ENODEV;
         }
 
 	printk("RTAI: Intel chipset found, enabling SMI workaround.\n");
 	rthal_smi_en_addr = get_smi_en_addr(dev);
 	smi_dev = dev;
+  	return 0;
 }
 
 /************************************************************************/
 int init_module(void)
 {
-	rthal_smi_init();
-	printk("SMI module loaded\n");
-	return 0;
+	int retval;
+	if (!(retval = rthal_smi_init())) {
+		printk("SMI module loaded\n");
+	}
+	return retval;
 }
 
 void cleanup_module(void)         

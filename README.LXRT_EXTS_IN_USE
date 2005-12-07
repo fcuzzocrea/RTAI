@@ -18,3 +18,19 @@ exiting their installation in error, by using back doors installed in LXRT.
 So you can use the related slot if tasklets is not being used by your 
 applications, __NEVER__ use 0. In any case you'd better use the other many 
 free slots available to avoid any trouble.
+
+If in doubt about already engaged slots use something like the following piece
+of code to discover them:
+
+#define MAX_LXRT_EXT 16
+do {
+	int i;
+	struct rt_fun_entry fun;
+	for (i = 0; i < MAX_LXRT_EXT; i++) {
+		if (set_rt_fun_ext_index(&fun, i) < 0) {
+			rt_printk("< LXRT SLOT %d ENGAGED >\n", i);
+		} else {
+			reset_rt_fun_ext_index(&fun, i);
+		}
+	}
+} while (0);

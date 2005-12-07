@@ -230,80 +230,22 @@ endmenu
 
 menu "Base system"
 
-config RTAI_SCHED_UP
-	bool "Scheduler for uniprocessor machine (kernel tasks only)"
-	depends on RTAI_SCHED_SMP=n && RTAI_SCHED_MUP=n
+config RTAI_SCHED_OWN_KTASKS
+	bool "Kernel/User space scheduler with RTAI own kernel tasks (keep)"
 	default y
-
 	help
-	This option allows you to select the UP realtime scheduler to
-	be interfaced to the RTAI module. This type of scheduler don't
-	have to be used on a MP machine.
-
-config RTAI_SCHED_SMP
-	bool "Scheduler for SMP machine (kernel tasks only)"
-	default n
-
-	help
-	This options corresponds to the Multi-Processing realtime
-	scheduler. It can use either the 8254 or the local APIC
-	timer. Be warned that the APIC based scheduler cannot be used
-	for UP, unless you have the local APIC enabled, i.e. an SMP
-	machine with just one CPU mounted on the motherboard.  It is a
-	fully symmetric scheduler, where at task init all real time
-	tasks default to using any available cpu.
-
-config RTAI_SCHED_MUP
-	bool "Multi-UP scheduler for SMP machine (kernel tasks only)"
-	default n
-
-	help
-	Multi-Uniprocessor is a pseudo-SMP implementation where
-	several virtual processors are going to be served by a single
-	physical CPU. The system is therefore able to support several
-	scheduling queues or pseudo-timers.
-
-	RTAI offers an implementation of an MultiUniProcessor (MUP)
-	realtime scheduler to be interfaced to the RTAI module. It is
-	based on the local APIC timers. It can be profitably used on
-	MP machines with just one CPU mounted on the motherboard.
-
-	The advantage of using the MUP scheduler comes mainly from the
-	possibility of using mixed timers simultaneously,
-	i.e. periodic and oneshot, where periodic timers can be based
-	on different periods, and of possibly forcing critical tasks
-	on the CPU cache
-
-	All the fuctions of UP and SMP schedulers are available in the
-	MUP scheduler, as well as MUP specific functions can be used
-	under UP-SMP.
+	This scheduler supports hard real time for all Linux schedulable
+	objects, i.e. processes/threads/kthreads, plus RTAI own kernel 
+	tasks. All of RTAI APIs are available simmetrically inter/intra 
+	kernel and user space.
 
 config RTAI_SCHED_LXRT
-	bool "LXRT scheduler (kernel and user-space tasks)"
+	bool "Kernel/User space scheduler without RTAI own kernel tasks (keep)"
 	default y
 	help
-
-	LXRT is a user-space interface providing a symmetric API that
-	may be used by both real-time RTAI tasks and linux
-	processes. The full range of Linux system calls is then
-	available and transitions between "soft" real-time and "hard"
-	real-time can be performed.
-
-	As far as scheduling is concerned, LXRT requires the use of
-	SCHED_FIFO scheduling policy with statically assigned process
-	priorities to achieve "soft" real-time performance whilst in
-	user-space. Since LXRT provides the faculty to switch an
-	application process to real-time, a real-time agent task is
-	created and executes the real-time services on behalf of the
-	LXRT process. 
-	
-	The NEWLXRT scheduler unifies U/MP and kernel/user space by
-	scheduling Linux tasks/kernel threads natively, along with
-	RTAI kernel tasks, all in one. In fact, NEWLXRT brings
-	something new: a linux hard real-time application interface
-	that is totally based on the scheduling of Linux tasks and
-	kernel threads only. The NEWLXRT implementation doesn't need
-	any RTAI proper task to be supported.
+	This scheduler supports hard real time for all Linux schedulable
+	objects, i.e. processes/threads/kthreads. All of RTAI APIs are 
+	available simmetrically inter/intra kernel and user space.
 
 menu "Scheduler options"
 
@@ -769,7 +711,7 @@ config RTAI_CPLUSPLUS
 
 config RTAI_RTDM
 	bool "Real-Time Driver Model over RTAI"
-	depends on RTAI_SCHED_LXRT
+#	depends on RTAI_SCHED_LXRT
 	default n
 	help
 	Real Time Drive Model specific implementation for RTAI.

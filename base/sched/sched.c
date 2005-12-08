@@ -1279,6 +1279,9 @@ void stop_rt_timer(void)
 {
 	unsigned long flags, cpuid;
 
+	if (!rt_sched_timed) {
+		return;
+	}
 	rt_free_apic_timers();
 	rt_sched_timed = 0;
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
@@ -1359,6 +1362,9 @@ void stop_rt_timer(void)
 {
 	unsigned long flags;
 
+	if (!rt_sched_timed) {
+		return;
+	}
 #ifdef USE_LINUX_TIMER
 	rt_free_linux_irq(TIMER_8254_IRQ, recover_jiffies);
 #endif

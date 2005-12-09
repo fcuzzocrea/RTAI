@@ -1,15 +1,2 @@
-Being it useless to duplicate ADEOS patches, easily found at ADEOS home site:
-
-http://download.gna.org/adeos/patches/
-
-they are not to be found in RTAI distributions anymore.
-
-The version of ADEOS is not critical. Any of the recent versions should
-work, but in regard to stability and bug-fixes, it is recommended to use
-the latest version available.
-
-Accordingly here you'll find just the latest modified ADEOS versions needed 
-to use RTAI immediate mode for interrupts dispatching.
-
-It must be noticed that the patches found here allow to work in standard 
-piped ADEOS mode also.
+These are RTAI own patches but they can be used also as any of their standard 
+ADEOS counterpart, he opposite being not true.

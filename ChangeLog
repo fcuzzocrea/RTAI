@@ -313,7 +313,7 @@
 	  the non preemptible case, i.e. under 2.4.xx. It tend to starve
 	  otherwise under very very high soft real time load.
 
-2004-06-14  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-06-14  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Corrected problem with
 	acivation from continous blocks. Better handling of "ode" functions
@@ -348,7 +348,7 @@
 	* base/arch/i386/patches: modified handle_event to avoid wrapping
 	  event and related data.
 
-2004-05-25  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-05-25  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Added checks for the
 	dialog box values
@@ -366,7 +366,7 @@
 	  in irq handler already, enable immediate sched on ipi without
 	  dispatching.
 
-2004-05-23  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-05-23  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/rtmain.c: Support for continous blocks
         * rtai-lab/scilab/macros/RTAI/*: RTAICodeGen_.sci modified and compatible with 
@@ -384,7 +384,7 @@
 	* base/include/rtai_malloc.h: practically break any constraint in
 	  dynamic memory allocation.
 
-2004-05-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+2005-05-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/sched/sched.immed: 
 	  - changed coding of circular pending lists,
@@ -413,7 +413,7 @@
 	  to 3.2, i.e with overall count of periodic reschedules displayed
 	  also.
 
-2004-05-03  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-05-03  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/*: Added new blocks
 
@@ -422,12 +422,12 @@
 	in tabular format and output uses the same units for each test.
 	* testsuite/user/latency/display.c: show overall maximum latency.
 
-2004-04-20  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-04-20  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/*: Scicos ports are now set automatically
 	* rtai-lab/scilab/devices/*: library files modified for port set automatically
 	* rtai-lab/scilab/example/tes.cos: Modifies with the new scicos blocks
 
-2004-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+2005-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-        * begin new development cycle, aligning to stable vulcano.
+        * begin new development cycle, aligning to stable vulcano, i.e. 3.2.

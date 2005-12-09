@@ -1,33 +1,18 @@
 Installing RTAI-3.x
 ===================
 
-0. RTAI duo/trio operating modes
+0. RTAI 3.3
 ================================
 
-RTAI can work both as a duo (RTAI_DUOSS) and as a trio (RTAI_TRIOSS).
-At the moment the choice must be done by hand, as described here below.
-
-RTAI_DUOSS is for the standard, leanest and fastest, RTAI+Linux combination,
-usable with both Linux 2.4.xx and 2.6.xx. To set it up use the patches
-hal-linux-whatever-version, found within this distribution only, and
-enable the definition of the macro RTAI_DUOSS in "include/asm-i386/rtai_hal.h".
-
-RTAI_TRIOSS is a relase that allows to work with and integrate
-RTAI+FUSION+Linux (notice that FUSION has been renamed XENOMAI recently).
-It is usable with Linux 2.6.xx only and to set it up you must use the patches
-hal-trioss-whatever-version, found within this distribution only. Then you
-must disable the definition of the macro RTAI_DUOSS in 
-"include/asm-i386/rtai_hal.h". However if you disable both RTAI_DUOSS and 
-RTAI_TRIOSS, found in the same header file, you fall back to the duo RTAI,
-i.e. just for RTAI+Linux.
-
-The difference between a duo RTAI obtained just by enabling RTAI_DUOSS and
-the one obtained by disabling both RTAI_DUOSS and RTAI_TRIOSS is just a bit
-more overhead and latency for the latter combination due to many stacked
-pipes in ADEOS. So use just hal-linux-whatever patches and set RTAI_DUOSS if 
-you have no need to work with the trio.
-
-It is important to note that RTAI comes with duo version set by default.
+RTAI uses only the leanest and fastest RTAI+Linux combination now, i.e. it 
+dispatches real time interrupts immediately. Moreover within such a scheme 
+i386 has the possibility of completely avoiding the dispatching of critical 
+internal timers and interprocessor scheduling interrupts by vectoring them 
+directly to their handlers. Such an option strongly enhances performances
+on low end machines and comes by default. You can disable it while configuring 
+RTAI though. See the related configuration helper.
+What above requires you to patch Linux just with patches found wihin this 
+distribution. Notice also tha this release is for use with i386s only.
 
 1. How to build
 ===============
@@ -35,7 +20,7 @@ It is important to note that RTAI comes with duo version set by default.
 1.1 Standard procedure
 ----------------------
 
-The new RTAI build system is a merge of Linux's Kconfig with
+The RTAI build system is a merge of Linux's Kconfig with
 autoconf/automake/libtool. Therefore, you can either build RTAI:
 
 1.1.1 Interactive configuration

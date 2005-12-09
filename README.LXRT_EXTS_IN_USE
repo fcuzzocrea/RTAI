@@ -1,4 +1,8 @@
-LXRT has 16 extensions slots.
+User space RTAI syscalls have 16 extensions slots. They allow any user to
+extend RTAI with her/his own user space callable APIs without touching
+RTAI itself. For the most efficient inline usage of any extension user slots 
+must be assigned statically. RTAI itself uses a few extension slots for some
+of its native addons, as listed below.
 
 Those already used by modules found in this distributions are:
 0  - RTAI itself (hardwired),
@@ -9,18 +13,18 @@ Those already used by modules found in this distributions are:
 15 - rtdm.
 
 So you can reuse the above slots only if you are not using the related modules
-found in this distribution. 
-In any case check the value returned by: set_rt_fun_ext_index.
+found in this distribution. In any case check the value returned by: 
+set_rt_fun_ext_index.
 
 N.B. (hardwired) above means they are assumed as basic RTAI proper extensions.
 Nonetheless extension 1 do check if it can install in its hardwired slot,
 exiting their installation in error, by using back doors installed in LXRT. 
-So you can use the related slot if tasklets is not being used by your 
+So you can make the related slot yours if tasklets are not being used by your 
 applications, __NEVER__ use 0. In any case you'd better use the other many 
 free slots available to avoid any trouble.
 
-If in doubt about already engaged slots use something like the following piece
-of code to discover them:
+If in doubt about slots engaged already use something like the following piece
+of code in your extension module to discover them:
 
 #define MAX_LXRT_EXT 16
 do {
@@ -34,3 +38,4 @@ do {
 		}
 	}
 } while (0);
+

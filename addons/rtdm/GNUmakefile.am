@@ -33,7 +33,7 @@ rtai_rtdm$(modext): $(libmodule_SRC) FORCE
 clean-local:
 	@RTAI_KBUILD_CLEAN@
 
-istclean-local:
+distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@
 
 all-local: rtai_rtdm$(modext)

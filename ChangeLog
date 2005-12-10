@@ -1,3 +1,8 @@
+2005-12-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: added a missing test on the CPU to run a task 
+	  on for UP in start_stop_kthread.
+
 2005-12-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/sched/sched.c: avoid stopping hard timers if not running yet.

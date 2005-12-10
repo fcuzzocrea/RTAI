@@ -1965,6 +1965,9 @@ static struct task_struct *get_kthread(int get, int cpuid, void *lnxtsk)
 
 static void start_stop_kthread(RT_TASK *task, void (*rt_thread)(long), long data, int priority, int uses_fpu, void(*signal)(void), int runnable_on_cpus)
 {
+	if (num_online_cpus() == 1) {
+		runnable_on_cpus = 0;
+	}
 	if (rt_thread) {
 		task->retval = set_rtext(task, priority, uses_fpu, signal, runnable_on_cpus, get_kthread(1, runnable_on_cpus, 0));
 		task->max_msg_size[0] = (long)rt_thread;

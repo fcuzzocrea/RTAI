@@ -2881,9 +2881,9 @@ static int __rtai_lxrt_init(void)
 	register_reboot_notifier(&lxrt_notifier_reboot);
 
 #ifdef CONFIG_SMP
-	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (IMMEDIATE, SMP, KERNEL%s SPACE).\n", USE_RTAI_TASKS ? "" : "/USER");
+	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (IMMEDIATE, SMP, KERNEL/USER SPACE%s).\n", USE_RTAI_TASKS ? " <with RTAI TASKs>" : "");
 #else
-	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (IMMEDIATE, UP, KERNEL%s SPACE).\n", USE_RTAI_TASKS ? "" : "/USER");
+	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (IMMEDIATE, UP, KERNEL/USER SPACE%s).\n", USE_RTAI_TASKS ? " <with RTAI TASKs>" : "");
 #endif
 	printk(KERN_INFO "RTAI[sched_lxrt]: timer=%s (%s).\n",
 	       OneShot ? "oneshot" : "periodic", TIMER_NAME);

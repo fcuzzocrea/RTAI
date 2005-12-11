@@ -1215,7 +1215,7 @@ void rtai_8254_timer_handler (void);
 static struct desc_struct rtai_8254_timer_sysvec;
 #endif
 
-#else
+#else /* !CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS */
 
 #define SET_INTR_GATE(vector, handler, save) 
 #define RESET_INTR_GATE(vector, save)
@@ -1223,7 +1223,7 @@ static struct desc_struct rtai_8254_timer_sysvec;
 void rt_set_sched_ipi_gate(void) { }
 void rt_reset_sched_ipi_gate(void) { }
 
-#endif
+#endif /* CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS */
 
 #ifdef CONFIG_SMP
 

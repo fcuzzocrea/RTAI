@@ -46,6 +46,8 @@ librtdm_a_AR = $(CROSS_COMPILE)ar cru
 INCLUDES = \
 	@RTAI_KMOD_CFLAGS@ \
 	-I$(top_srcdir)/base/include \
+	-I$(top_srcdir)/addons \
+	-I../../base/include \
 	-I../.. \
 	-I..
 

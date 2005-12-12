@@ -123,7 +123,8 @@ static int                  tx_fifo[MAX_DEVICES];
 static int                  tx_fifo_c;
 static unsigned int         start_index;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#else
 module_param_array(ioaddr, ulong, &ioaddr_c, 0400);
 MODULE_PARM_DESC(ioaddr, "I/O addresses of the serial devices");
 module_param_array(irq, uint, &irq_c, 0400);
@@ -133,9 +134,9 @@ MODULE_PARM_DESC(baud_base,
     "Maximum baud rate of the serial device (internal clock rate / 16)");
 module_param_array(tx_fifo, int, &tx_fifo_c, 0400);
 MODULE_PARM_DESC(tx_fifo, "Transmitter FIFO size");
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 module_param(start_index, uint, 0400);
 MODULE_PARM_DESC(start_index, "First device instance number to be used");
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("jan.kiszka@web.de");

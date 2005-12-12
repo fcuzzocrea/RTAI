@@ -701,8 +701,6 @@ endmenu
 
 endmenu
 
-endmenu
-
 menu "RTAI Lab"
 
 config RTAI_LAB

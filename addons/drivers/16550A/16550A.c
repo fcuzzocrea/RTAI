@@ -137,7 +137,6 @@ MODULE_PARM(start_index, "int");
 module_param_array(ioaddr, ulong, &ioaddr_c, 0400);
 module_param_array(irq, uint, &irq_c, 0400);
 module_param_array(baud_base, uint, &baud_base_c, 0400);
-a=
 module_param_array(tx_fifo, int, &tx_fifo_c, 0400);
 module_param(start_index, uint, 0400);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */

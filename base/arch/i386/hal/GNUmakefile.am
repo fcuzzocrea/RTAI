@@ -4,7 +4,7 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
-libhal_a_SOURCES = hal.c
+libhal_a_SOURCES = hal.c hal.immed hal.piped rtc.c
 
 if CONFIG_KBUILD
 rtai_hal.ko: @RTAI_KBUILD_ENV@

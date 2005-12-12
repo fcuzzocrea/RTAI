@@ -2037,7 +2037,7 @@ static inline void rt_signal_wake_up(RT_TASK *task)
 
 #ifdef UNWRAPPED_CATCH_EVENT
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
 static struct mmreq {
     int in, out, count;
 #define MAX_MM 32  /* Should be more than enough (must be a power of 2). */
@@ -2078,7 +2078,7 @@ static int lxrt_intercept_schedule_head (unsigned long event, struct prev_next_t
 	return 0;
 } }
 
-#endif  /* KERNEL_VERSION < 2.6.0 */
+#endif  /* KERNEL_VERSION < 2.4.32 */
 
 static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 
@@ -2108,7 +2108,7 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
 //	current->cpus_allowed = cpumask_of_cpu(smp_processor_id());
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
     {
     struct mmreq *p;
 
@@ -2130,7 +2130,7 @@ static int lxrt_intercept_schedule_tail (unsigned event, void *nothing)
     preempt_enable();
 #endif /* CONFIG_PREEMPT */
     }
-#endif  /* KERNEL_VERSION < 2.6.0 */
+#endif  /* KERNEL_VERSION < 2.4.32 */
 
     return 0;
 } }
@@ -2302,7 +2302,7 @@ static int lxrt_intercept_syscall_epilogue(unsigned long event, void *nothing)
 } }
 
 #else
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
 
 static struct mmreq {
     int in, out, count;
@@ -2344,7 +2344,7 @@ static void lxrt_intercept_schedule_head (adevinfo_t *evinfo)
     hal_propagate_event(evinfo);
 } }
 
-#endif  /* KERNEL_VERSION < 2.6.0 */
+#endif  /* KERNEL_VERSION < 2.4.32 */
 
 static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 
@@ -2374,7 +2374,7 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
 //	current->cpus_allowed = cpumask_of_cpu(smp_processor_id());
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
     {
     struct mmreq *p;
 
@@ -2396,7 +2396,7 @@ static void lxrt_intercept_schedule_tail (adevinfo_t *evinfo)
     preempt_enable();
 #endif /* CONFIG_PREEMPT */
     }
-#endif  /* KERNEL_VERSION < 2.6.0 */
+#endif  /* KERNEL_VERSION < 2.4.32 */
 
     hal_propagate_event(evinfo);
 } }
@@ -2706,9 +2706,9 @@ static int lxrt_init(void)
 #endif
 
     /* Must be called on behalf of the Linux domain. */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
     rtai_catch_event(hal_root_domain, HAL_SCHEDULE_HEAD, (void *)lxrt_intercept_schedule_head);
-#endif  /* KERNEL_VERSION < 2.6.0 */
+#endif  /* KERNEL_VERSION < 2.4.32 */
     rtai_catch_event(hal_root_domain, HAL_SCHEDULE_TAIL, (void *)lxrt_intercept_schedule_tail);
     rtai_catch_event(hal_root_domain, HAL_SYSCALL_PROLOGUE, (void *)lxrt_intercept_syscall_prologue);
     rtai_catch_event(hal_root_domain, HAL_SYSCALL_EPILOGUE, (void *)lxrt_intercept_syscall_epilogue);
@@ -2771,7 +2771,7 @@ static void lxrt_exit(void)
 	rtai_lxrt_dispatcher = NULL;
     
 	flags = rtai_critical_enter(NULL);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32)
 	do {
 		struct mmreq *p;
 /* Flush the MM log for all processors */
@@ -2784,7 +2784,7 @@ static void lxrt_exit(void)
 			}
 		}
 	} while (0);
-#endif  /* KERNEL_VERSION < 2.6.0 */
+#endif  /* KERNEL_VERSION < 2.4.32 */
 	rtai_critical_exit(flags);
 
 	reset_rt_fun_entries(rt_sched_entries);

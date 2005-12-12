@@ -54,9 +54,9 @@ MODULE_PARM(devname_hashtab_size, "uint");
 MODULE_PARM(protocol_hashtab_size, "uint");
 #else
 module_param(devname_hashtab_size, uint, 0400);
-module_param(protocol_hashtab_size, uint, 0400);
 MODULE_PARM_DESC(devname_hashtab_size,
    "Size of hash table for named devices (must be power of 2)");
+module_param(protocol_hashtab_size, uint, 0400);
 MODULE_PARM_DESC(protocol_hashtab_size,
    "Size of hash table for protocol devices (must be power of 2)");
 #endif

@@ -17,7 +17,8 @@ libmodule_SRC = \
 include_HEADERS = \
 	rtdm.h \
 	rtdm_driver.h \
-	rtserial.h
+	rtserial.h \
+	xn.h
 
 noinst_HEADERS = \
 	core.h \

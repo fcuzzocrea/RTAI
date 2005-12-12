@@ -351,7 +351,8 @@ libmodule_SRC = \
 include_HEADERS = \
 	rtdm.h \
 	rtdm_driver.h \
-	rtserial.h
+	rtserial.h \
+	xn.h
 
 noinst_HEADERS = \
 	core.h \
@@ -532,7 +533,7 @@ clean-am: clean-generic clean-libtool clean-local mostlyclean-am
 distclean: distclean-am
 	-rm -f GNUmakefile
 distclean-am: clean-am distclean-generic distclean-libtool \
-	distclean-tags
+	distclean-local distclean-tags
 
 dvi: dvi-am
 
@@ -575,12 +576,12 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
 	clean-generic clean-libtool clean-local ctags distclean \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-exec install-exec-am \
-	install-exec-local install-includeHEADERS install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	distclean-generic distclean-libtool distclean-local \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-exec-local install-includeHEADERS \
+	install-info install-info-am install-man install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic \
 	mostlyclean-libtool pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
@@ -596,7 +597,7 @@ rtai_rtdm$(modext): $(libmodule_SRC) FORCE
 clean-local:
 	@RTAI_KBUILD_CLEAN@
 
-istclean-local:
+distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@
 
 all-local: rtai_rtdm$(modext)

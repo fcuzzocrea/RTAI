@@ -111,11 +111,19 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 #define __xn_access_ok(task, type, addr, size) \
 	(likely(__range_ok(addr, size) == 0))
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define __xn_copy_from_user(task, dstP, srcP, n) \
+	({ long err = __copy_from_user(dstP, srcP, n); err; })
+
+#define __xn_copy_to_user(task, dstP, srcP, n) \
+	({ long err = __copy_to_user(dstP, srcP, n); err; })
+#else
 #define __xn_copy_from_user(task, dstP, srcP, n) \
 	({ long err = __copy_from_user_inatomic(dstP, srcP, n); err; })
 
 #define __xn_copy_to_user(task, dstP, srcP, n) \
 	({ long err = __copy_to_user_inatomic(dstP, srcP, n); err; })
+#endif
 
 #define __xn_strncpy_from_user(task, dstP, srcP, n) \
 	({ long err = __strncpy_from_user(dstP, srcP, n); err; })

@@ -578,7 +578,7 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 			give_back_to_linux(task, -1);
 		}
 		task->unblocked = 0;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(1,6,0)
 		if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
 			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
 			regs->LINUX_SYSCALL_RETREG = -EINTR;

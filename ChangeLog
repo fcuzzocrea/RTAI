@@ -1,3 +1,9 @@
+2005-12-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c and sys.c: kernel versions dependence for
+	   2.4.xx split at 2.4.32 now.
+	* /base/arch/i386/hal/hal.immed: as above.
+
 2005-12-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/sched/sched.c: added a missing test on the CPU to run a task 

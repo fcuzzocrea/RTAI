@@ -37,8 +37,8 @@ unsigned int                fd_count = DEF_FILDES_COUNT;
 MODULE_PARM(fd_count, "uint");
 #else
 module_param(fd_count, uint, 0400);
-MODULE_PARM_DESC(fd_count, "Maximum number of file descriptors");
 #endif
+MODULE_PARM_DESC(fd_count, "Maximum number of file descriptors");
 
 struct rtdm_fildes          *fildes_table;  /* allocated on init */
 static struct rtdm_fildes   *free_fildes;   /* chain of free descriptors */

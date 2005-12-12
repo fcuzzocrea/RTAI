@@ -33,8 +33,12 @@
 #include <rtdm/device.h>
 
 unsigned int                fd_count = DEF_FILDES_COUNT;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+MODULE_PARM(fd_count, "uint");
+#else
 module_param(fd_count, uint, 0400);
 MODULE_PARM_DESC(fd_count, "Maximum number of file descriptors");
+#endif
 
 struct rtdm_fildes          *fildes_table;  /* allocated on init */
 static struct rtdm_fildes   *free_fildes;   /* chain of free descriptors */

@@ -5,7 +5,7 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
-libmodule_SRC = \
+librtdm_a_SOURCES = \
 	core.c \
 	device.c \
 	drvlib.c \
@@ -25,8 +25,9 @@ noinst_HEADERS = \
 	device.h \
 	proc.h
 
+if CONFIG_KBUILD
 rtai_rtdm$(modext): @RTAI_KBUILD_ENV@
-rtai_rtdm$(modext): $(libmodule_SRC) FORCE
+rtai_rtdm$(modext): $(librtdm_a_SOURCES) FORCE
 	@RTAI_KBUILD_TOP@ \
 	@RTAI_KBUILD_CMD@ rtai_extradef="@RTAI_KMOD_CFLAGS@" \
 	@RTAI_KBUILD_BOTTOM@
@@ -36,6 +37,21 @@ clean-local:
 
 distclean-local:
 	@RTAI_KBUILD_DISTCLEAN@
+else
+noinst_LIBRARIES = librtdm.a
+
+
+librtdm_a_AR = $(CROSS_COMPILE)ar cru
+
+INCLUDES = \
+	@RTAI_KMOD_CFLAGS@ \
+	-I$(top_srcdir)/base/include \
+	-I../.. \
+	-I..
+
+rtai_rtdm.o: librtdm.a
+	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
+endif
 
 all-local: rtai_rtdm$(modext)
 if CONFIG_RTAI_OLD_FASHIONED_BUILD

@@ -48,12 +48,18 @@
 
 unsigned int        devname_hashtab_size  = DEF_DEVNAME_HASHTAB_SIZE;
 unsigned int        protocol_hashtab_size = DEF_PROTO_HASHTAB_SIZE;
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+MODULE_PARM(devname_hashtab_size, "uint");
+MODULE_PARM(protocol_hashtab_size, "uint");
+#else
 module_param(devname_hashtab_size, uint, 0400);
 module_param(protocol_hashtab_size, uint, 0400);
 MODULE_PARM_DESC(devname_hashtab_size,
    "Size of hash table for named devices (must be power of 2)");
 MODULE_PARM_DESC(protocol_hashtab_size,
    "Size of hash table for protocol devices (must be power of 2)");
+#endif
 
 struct list_head     *rtdm_named_devices;    /* hash table */
 struct list_head     *rtdm_protocol_devices; /* hash table */

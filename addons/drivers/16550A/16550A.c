@@ -17,6 +17,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/ioport.h>
 #include <asm/io.h>
 
@@ -124,27 +125,33 @@ static int                  tx_fifo_c;
 static unsigned int         start_index;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-MODULE_PARM(ioaddr_c, "uint");
-MODULE_PARM(ioaddr, "1-"__MODULE_STRING(MAX_DEVICES)"ulong");
-MODULE_PARM(irq_c, "uint");
-MODULE_PARM(irq, "1-"__MODULE_STRING(MAX_DEVICES)"uint");
-MODULE_PARM(baud_base_c, "uint");
-MODULE_PARM(baud_base, "1-"__MODULE_STRING(MAX_DEVICES)"uint");
-MODULE_PARM(tx_fifo_c, "uint");
-MODULE_PARM(tx_fifo, "1-"__MODULE_STRING(MAX_DEVICES)"int");
-MODULE_PARM(start_index, "int");
+MODULE_PARM(ioaddr, "1-"__MODULE_STRING(MAX_DEVICES)"i");
+MODULE_PARM(irq, "1-"__MODULE_STRING(MAX_DEVICES)"i");
+MODULE_PARM(baud_base, "1-"__MODULE_STRING(MAX_DEVICES)"i");
+MODULE_PARM(tx_fifo, "1-"__MODULE_STRING(MAX_DEVICES)"i");
+#define COUNT_DEV() \
+do { \
+	for (ioaddr_c = 0; ioaddr_c < MAX_DEVICES; ioaddr_c++) { \
+		if (!ioaddr[ioaddr_c]) break; \
+	} \
+	if (!ioaddr_c) { \
+		return -EINVAL; \
+	} \
+	tx_fifo_c = baud_base_c = irq_c = ioaddr_c; \
+} while (0)
 #else
 module_param_array(ioaddr, ulong, &ioaddr_c, 0400);
 module_param_array(irq, uint, &irq_c, 0400);
 module_param_array(baud_base, uint, &baud_base_c, 0400);
 module_param_array(tx_fifo, int, &tx_fifo_c, 0400);
-module_param(start_index, uint, 0400);
+#define COUNT_DEV()
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 MODULE_PARM_DESC(ioaddr, "I/O addresses of the serial devices");
 MODULE_PARM_DESC(irq, "IRQ numbers of the serial devices");
 MODULE_PARM_DESC(baud_base,
     "Maximum baud rate of the serial device (internal clock rate / 16)");
 MODULE_PARM_DESC(tx_fifo, "Transmitter FIFO size");
+module_param(start_index, uint, 0400);
 MODULE_PARM_DESC(start_index, "First device instance number to be used");
 
 MODULE_LICENSE("GPL");
@@ -1049,7 +1056,7 @@ int __init init_module(void)
     int                 ret;
     int                 i;
 
-
+    COUNT_DEV();
     if (irq_c < ioaddr_c)
         return -EINVAL;
 

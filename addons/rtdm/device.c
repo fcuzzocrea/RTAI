@@ -26,6 +26,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/delay.h>
 
 #include <rtdm/device.h>
@@ -49,13 +50,8 @@
 unsigned int        devname_hashtab_size  = DEF_DEVNAME_HASHTAB_SIZE;
 unsigned int        protocol_hashtab_size = DEF_PROTO_HASHTAB_SIZE;
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-MODULE_PARM(devname_hashtab_size, "uint");
-MODULE_PARM(protocol_hashtab_size, "uint");
-#else
 module_param(devname_hashtab_size, uint, 0400);
 module_param(protocol_hashtab_size, uint, 0400);
-#endif
 MODULE_PARM_DESC(devname_hashtab_size,
    "Size of hash table for named devices (must be power of 2)");
 MODULE_PARM_DESC(protocol_hashtab_size,

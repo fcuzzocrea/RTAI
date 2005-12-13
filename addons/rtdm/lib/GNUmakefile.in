@@ -36,6 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@CONFIG_RTAI_DRIVERS_16550A_TRUE@am__append_1 = -I$(top_srcdir)/addons/drivers/16550A
 subdir = addons/rtdm/lib
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -58,7 +59,7 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 librtdm_la_LIBADD =
-am_librtdm_la_OBJECTS = librtdm_la-core.lo librtdm_la-init.lo
+am_librtdm_la_OBJECTS = core.lo init.lo services.lo
 librtdm_la_OBJECTS = $(am_librtdm_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
@@ -353,14 +354,12 @@ lib_LTLIBRARIES = librtdm.la
 librtdm_la_LDFLAGS = -module -version-info 0:0:0
 librtdm_la_SOURCES = \
 	core.c \
-	init.c
+	init.c \
+	services.c
 
-librtdm_la_CPPFLAGS = \
-	@RTAI_USER_CFLAGS@ \
-	-I../../../include \
-	-I$(top_srcdir)/base/include \
-	-I$(srcdir)/../..
-
+INCLUDES = @RTAI_USER_CFLAGS@ -fno-inline -I../../../base/include \
+	-I$(top_srcdir)/base/include -I$(top_srcdir)/addons \
+	-I$(srcdir)/../.. $(am__append_1)
 all: all-am
 
 .SUFFIXES:
@@ -430,8 +429,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtdm_la-core.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/librtdm_la-init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/core.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/services.Plo@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -453,20 +453,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-librtdm_la-core.lo: core.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtdm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtdm_la-core.lo -MD -MP -MF "$(DEPDIR)/librtdm_la-core.Tpo" -c -o librtdm_la-core.lo `test -f 'core.c' || echo '$(srcdir)/'`core.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtdm_la-core.Tpo" "$(DEPDIR)/librtdm_la-core.Plo"; else rm -f "$(DEPDIR)/librtdm_la-core.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='core.c' object='librtdm_la-core.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtdm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtdm_la-core.lo `test -f 'core.c' || echo '$(srcdir)/'`core.c
-
-librtdm_la-init.lo: init.c
-@am__fastdepCC_TRUE@	if $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtdm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT librtdm_la-init.lo -MD -MP -MF "$(DEPDIR)/librtdm_la-init.Tpo" -c -o librtdm_la-init.lo `test -f 'init.c' || echo '$(srcdir)/'`init.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/librtdm_la-init.Tpo" "$(DEPDIR)/librtdm_la-init.Plo"; else rm -f "$(DEPDIR)/librtdm_la-init.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='init.c' object='librtdm_la-init.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(librtdm_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o librtdm_la-init.lo `test -f 'init.c' || echo '$(srcdir)/'`init.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

@@ -72,6 +72,9 @@ uninstall-local:
 
 EXTRA_DIST = $(libmodule_SRC) Makefile.kbuild Kconfig
 
-#if CONFIG_RTAI_OPT_FUSION
-#SUBDIRS = lib
-#endif
+# Always build if CONFIG_RTAI_RTDM is enabled
+if CONFIG_RTAI_RTDM
+OPTDIRS = lib
+endif
+
+SUBDIRS = $(OPTDIRS)

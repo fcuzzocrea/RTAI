@@ -59,7 +59,7 @@ am__installdirs = "$(DESTDIR)$(libdir)"
 libLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(lib_LTLIBRARIES)
 librtdm_la_LIBADD =
-am_librtdm_la_OBJECTS = core.lo init.lo services.lo
+am_librtdm_la_OBJECTS = services.lo
 librtdm_la_OBJECTS = $(am_librtdm_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
@@ -353,8 +353,6 @@ target_alias = @target_alias@
 lib_LTLIBRARIES = librtdm.la
 librtdm_la_LDFLAGS = -module -version-info 0:0:0
 librtdm_la_SOURCES = \
-	core.c \
-	init.c \
 	services.c
 
 INCLUDES = @RTAI_USER_CFLAGS@ -fno-inline -I../../../base/include \
@@ -429,8 +427,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/core.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/services.Plo@am__quote@
 
 .c.o:

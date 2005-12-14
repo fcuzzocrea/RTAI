@@ -356,7 +356,7 @@ distfiles = $(lib16550A_a_SOURCES)
 @CONFIG_KBUILD_FALSE@	-I../../../base/include \
 @CONFIG_KBUILD_FALSE@	-I../..
 
-EXTRA_DIST = $(distfiles) Makefile.kbuild Kconfig
+EXTRA_DIST = $(distfiles) Makefile.kbuild
 all: all-am
 
 .SUFFIXES:

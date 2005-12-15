@@ -1816,6 +1816,11 @@ static void kthread_fun(int cpuid)
 	clr_rtext(task);
 }
 
+#define WAKE_UP_TASKS_GOING_SOFT() \
+	while (wake_up_srq[cpuid].out != wake_up_srq[cpuid].in) { \
+		wake_up_process(wake_up_srq[cpuid].task[wake_up_srq[cpuid].out++ & (MAX_WAKEUP_SRQ - 1)]); \
+	}
+
 static void kthread_m(int cpuid)
 {
 	struct task_struct *lnxtsk;
@@ -1836,6 +1841,9 @@ static void kthread_m(int cpuid)
 	while (!endkthread) {
 		current->state = TASK_UNINTERRUPTIBLE;
 		schedule();
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+		WAKE_UP_TASKS_GOING_SOFT();
+#endif
 		while (klistp->out != klistp->in) {
 			unsigned long hard, flags;
 			flags = rt_global_save_flags_and_cli();
@@ -1987,9 +1995,9 @@ static void wake_up_srq_handler(unsigned srq)
 #else
 	int cpuid = srq - wake_up_srq[0].srq;
 #endif
-	while (wake_up_srq[cpuid].out != wake_up_srq[cpuid].in) {
-		wake_up_process(wake_up_srq[cpuid].task[wake_up_srq[cpuid].out++ & (MAX_WAKEUP_SRQ - 1)]);
-	}
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+	WAKE_UP_TASKS_GOING_SOFT();
+#endif
 	wake_up_process(kthreadm[cpuid]);
 	set_need_resched();
 #ifdef CONFIG_PREEMPT

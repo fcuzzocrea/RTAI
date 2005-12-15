@@ -1995,7 +1995,7 @@ static void wake_up_srq_handler(unsigned srq)
 #else
 	int cpuid = srq - wake_up_srq[0].srq;
 #endif
-#if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || (!defined(CONFIG_SMP) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0))
 	WAKE_UP_TASKS_GOING_SOFT();
 #endif
 	wake_up_process(kthreadm[cpuid]);

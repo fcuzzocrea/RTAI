@@ -822,11 +822,11 @@ int _rtai_sched_on_ipi_handler(void)
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(1,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(1,6,0)
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 		return 1;
@@ -891,11 +891,11 @@ int _rtai_apic_timer_handler(void)
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(1,6,0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(1,6,0)
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 		return 1;
@@ -959,7 +959,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(1,6,0)
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 		return 1;
@@ -1453,7 +1453,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
         }
 	hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 	set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 	return 1;

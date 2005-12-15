@@ -1,3 +1,8 @@
+2005-12-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: in 2.4.xx SMP reuse the old way of waking
+	   up tasks going soft by using the RTAI threads manager (thread_m).
+
 2005-12-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/sched/sched.c and sys.c: kernel versions dependence for

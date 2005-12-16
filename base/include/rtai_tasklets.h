@@ -278,7 +278,7 @@ static int support_tasklet(void *tasklet)
 {
 	RT_TASK *task;
 	struct rt_tasklet_struct usptasklet;
-	struct { struct rt_tasklet_struct *tasklet; void *handler; } arg = { tasklet, };
+	struct { struct rt_tasklet_struct *tasklet; void *handler; } arg = { (struct rt_tasklet_struct *)tasklet, };
 
 	if (!(task = rt_thread_init((unsigned long)arg.tasklet, 98, 0, SCHED_FIFO, 0xF))) {
 		printf("CANNOT INIT SUPPORT TASKLET\n");
@@ -313,10 +313,10 @@ extern "C" {
 
 RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 {
-	struct { void *tasklet; long thread; } arg;
+	struct { struct rt_tasklet_struct *tasklet; long thread; } arg;
 
 	arg.tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
-	arg.thread = rt_thread_create(support_tasklet, arg.tasklet, TASKLET_STACK_SIZE);
+	arg.thread = rt_thread_create((void *)support_tasklet, arg.tasklet, TASKLET_STACK_SIZE);
 //	arg.thread = clone(support_tasklet, sp + TASKLET_STACK_SIZE - 1, CLONE_VM | CLONE_FS | CLONE_FILES, arg.tasklet);
 	rtai_lxrt(TSKIDX, SIZARG, WAIT_IS_HARD, &arg);
 

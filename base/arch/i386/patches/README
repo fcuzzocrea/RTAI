@@ -16,3 +16,11 @@ problem.
 
 The COMEDI "configure" file is looking for "CONFIG_RTHAL" or "CONFIG_ADEOS" in 
 the ".config" kernel file."
+
+Note also that Andreas Leuner <al14@inf.tu-dresden.de> has pointed out that
+the most recent snapshots of COMEDI CVS do care of using the latest patches
+(IPIPEd) natively. To such an aim he suggests that those not wanting to 
+modify .config in Linux should use what found in COMEDI CVS newer than
+2005-12-14.
+
+Paolo.

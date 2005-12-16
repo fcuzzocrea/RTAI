@@ -1,3 +1,8 @@
+2005-12-16  Marcel Groothuis <marcelg-rtai@scintilla.utwente.nl>
+
+	* /base/include/rtai_tasklets.h: fixed type clashes in tighter
+	  C++ checks.
+
 2005-12-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/sched/sched.c: in 2.4.xx SMP reuse the old way of waking

@@ -1066,7 +1066,7 @@ static inline int rtdm_strncpy_from_user(rtdm_user_info_t *user_info,
 
 static inline int rtdm_in_rt_context(void)
 {
-	return 1;
+	return _rt_whoami()->is_hard > 0;
 }
 
 int rtdm_exec_in_rt(struct rtdm_dev_context *context,

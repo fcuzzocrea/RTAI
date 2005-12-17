@@ -1997,8 +1997,9 @@ static void wake_up_srq_handler(unsigned srq)
 #endif
 #if !defined(CONFIG_SMP) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 	WAKE_UP_TASKS_GOING_SOFT();
-#endif
+#else
 	wake_up_process(kthreadm[cpuid]);
+#endif
 	set_need_resched();
 #ifdef CONFIG_PREEMPT
 //	} preempt_enable();
@@ -2544,7 +2545,7 @@ static int rtai_read_sched(char *page, char **start, off_t off, int count,
 			PROC_PRINT("%-10d %-11lu %-4s %-3s 0x%-3x  %1lu:%1lu   %-4d   %-4d %-4d  %p   %-lu\n",
                                task->priority,
                                (unsigned long)count2nano_cpuid(task->period, task->runnable_on_cpus),
-                               task->uses_fpu ? "Yes" : "No",
+                               task->uses_fpu || task->lnxtsk ? "Yes" : "No",
                                task->signal ? "Yes" : "No",
                                task->state,
 			       task->runnable_on_cpus, // cpuid,

@@ -1,0 +1,64 @@
+                      *** EXPLOITING CPUs ISOLATION ***
+
+RTAI can take advantage of the possibility Linux affords of isolating CPUs from
+any of its scheduling activity on MultiProcessors (MP) machines. 
+There should be no better way of explaining what it is than the following
+excerpts from Linux "Documentation/kernel-parameters.txt":
+        isolcpus=       [KNL,SMP] Isolate CPUs from the general scheduler.
+                        Format: <cpu number>,...,<cpu number>
+                        This option can be used to specify one or more CPUs
+                        to isolate from the general SMP balancing and scheduling                        algorithms. The only way to move a process onto or off
+                        an "isolated" CPU is via the CPU affinity syscalls.
+                        <cpu number> begins at 0 and the maximum value is
+                        "number of CPUs in system - 1".
+
+                        This option is the preferred way to isolate CPUs. The
+                        alternative -- manually setting the CPU mask of all
+                        tasks in the system -- can cause problems and
+                        suboptimal load balancer performance.
+To the above add the following, from the very same source:
+        noirqbalance    [IA-32,SMP,KNL] Disable kernel irq balancing
+Irq balancing can be disabled directly at kernel configuration and as little
+effect on what will follow. Nonetheless RTAI prefers to be sure that Linux 
+does not manipulate hardware related stuff on its own. So if you forgot to 
+disable irq balancing when you made your kernel there is no need to remake it,
+just boot with the above parameter set.
+
+It is thus easy to infer from what above that by using "isolcpus" you can be
+sure that Linux will have none of its processes running on the isolated cpus.
+That is not entirely true since many kernel threads (deamons) will have a
+copy of each deamon repeated and assigned to all available CPUs. Nonetheless 
+they will do nothing if no interrupt arrives on the isolated CPUs. Thus if 
+RTAI will care of avoiding any hard interrupt on the isolated CPUs they will 
+be forbidden to Linux _completely_. Finally, combining all of the above with
+the possibility of forcing RTAI enabled Linux process/thread/kthreads to
+stay on the isolated CPUs the laters will find themselves processing just 
+RTAI real time stuff, thus allowing a greater reduction of latencies and 
+jitters. In the case of many RTAI tasks running on the isolated CPUs all 
+the issues producing latency/jitter will still have an effect, but it will 
+be reduced to the least possible, without added bus/pipe/cache interferences 
+from Linux.
+
+Then what you have to do on the RTAI side is to load the core RTAI HAL module
+iusing something like: "insmod rtai_hal.ko IsolCpusMask=<xxx>", where <xxx> 
+is the mask of isolated CPUs. Please notice that Linux uses a list if isolated
+CPUs while RTAI requires the related mask (I'm lazy and let you do it).
+
+What will happen next is that RTAI will divert all of Linux interrupts away
+from isolated CPUs, caring of keeping those requested for RTAI (rt_request_irq)
+on the isolated CPUs, without you having to care for it. In such a way there 
+will be no Linux activity whatsoever on the isolated CPUs and they will remain 
+in complete RAI ownership.
+Finally it is up to you to exploit such a feature by assigning all of your
+tasks to the isolated CPUs according to your needs, by using: 
+"rt_task_init_cpuid", "rt_thread_init_cpuid", "rt_task_init_schmod".
+
+Notice that you have also the possibility of further specialising your CPUs 
+isolation scheme by diverting any real time interrupt you use to a single 
+specific CPU or cluster within the isolated CPUs by using the RTAI function:
+rt_assign_irq_to_cpu.
+
+By appropriately exploiting what illustrated above it is mostly possible to 
+reduce latencies to single us digit figures.
+
+Paolo.

@@ -39,7 +39,8 @@ build_triplet = @build@
 host_triplet = @host@
 calibration_PROGRAMS = calibrate$(EXEEXT) calibration_helper$(EXEEXT)
 subdir = base/arch/i386/calibration
-DIST_COMMON = README $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in
+DIST_COMMON = README $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in \
+	$(srcdir)/setsmi.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/base/config/autoconf/acinclude.m4 \
 	$(top_srcdir)/base/config/autoconf/docbook.m4 \
@@ -49,7 +50,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) \
 	$(top_srcdir)/base/config/autoconf/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/rtai_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = setsmi
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libcalibrate_rt_a_LIBADD =
@@ -431,6 +432,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+setsmi: $(top_builddir)/config.status $(srcdir)/setsmi.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
@@ -775,16 +778,18 @@ all-local: calibrate_rt$(modext) smi_rt$(modext)
 install-exec-local: $(RT_MODULES)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
 	@for m in $(RT_MODULES) ; do \
-		k="rtai_$$m" ; \
+		k="rtai_`echo $$m | sed 's;_rt\.;.;'`" ; \
 		echo "installing module $$m as $$k in $(DESTDIR)$(moduledir)" ; \
 		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$k ; \
 	done
 
 install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)
+	$(mkinstalldirs) $(DESTDIR)$(calibrationdir) $(DESTDIR)$(bindir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
 	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" > $(DESTDIR)$(calibrationdir)/run
 	@chmod +x $(DESTDIR)$(calibrationdir)/run
+	$(INSTALL_SCRIPT) -m 755 setsmi $(DESTDIR)$(bindir)
+	@$(LN_S) -f $(DESTDIR)$(bindir)/setsmi $(DESTDIR)$(bindir)/rstsmi
 
 run: all
 	@$(top_srcdir)/rtai-scripts/rtai-load --verbose

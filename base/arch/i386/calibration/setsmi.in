@@ -1,0 +1,44 @@
+#!/bin/sh
+
+MODULENAMENOEXT=rtai_smi
+MODULENAME="${MODULENAMENOEXT}@RTAI_MODULE_EXT@"
+
+MODULEDIR=`rtai-config --module-dir`
+if test $? != 0 ; then
+	echo "cannot find rtai-config (hint: make sure it's in the path; usual location: \$PREFIX/bin)"
+	exit 1
+fi
+
+if test x"$MODULEDIR" = x ; then
+	echo "cannot find module dir"
+	exit 1
+fi
+
+case `basename $0` in
+setsmi)
+	SMIRESET=0
+	;;
+rstsmi)
+	SMIRESET=1
+	;;
+*)
+	echo "invalid script name \"$0\""
+	exit 1
+	;;
+esac
+
+insmod "$MODULEDIR/$MODULENAME" smiReset=$SMIRESET
+RC=$?
+if test $RC != 0 ; then
+	echo "insmod $MODULEDIR/$MODULENAME failed"
+	exit $RC
+fi
+
+rmmod "$MODULENAMENOEXT"
+RC=$?
+if test $RC != 0 ; then
+	echo "rmmod $MODULENAMENOEXT failed"
+	exit $RC
+fi
+
+exit 0

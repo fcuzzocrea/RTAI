@@ -78,16 +78,18 @@ RT_MODULES = calibrate_rt$(modext) smi_rt$(modext)
 install-exec-local: $(RT_MODULES)
 	$(mkinstalldirs) $(DESTDIR)$(moduledir)
 	@for m in $(RT_MODULES) ; do \
-		k="rtai_$$m" ; \
+		k="rtai_`echo $$m | sed 's;_rt\.;.;'`" ; \
 		echo "installing module $$m as $$k in $(DESTDIR)$(moduledir)" ; \
 		$(INSTALL_DATA) $$m $(DESTDIR)$(moduledir)/$$k ; \
 	done
 
 install-data-local:
-	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)
+	$(mkinstalldirs) $(DESTDIR)$(calibrationdir) $(DESTDIR)$(bindir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
 	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" > $(DESTDIR)$(calibrationdir)/run
 	@chmod +x $(DESTDIR)$(calibrationdir)/run
+	$(INSTALL_SCRIPT) -m 755 setsmi $(DESTDIR)$(bindir)
+	@$(LN_S) -f $(DESTDIR)$(bindir)/setsmi $(DESTDIR)$(bindir)/rstsmi
 
 run: all
 	@$(top_srcdir)/rtai-scripts/rtai-load --verbose

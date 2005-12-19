@@ -1552,6 +1552,7 @@ AC_CONFIG_FILES([ \
         base/arch/i386/GNUmakefile \
 	base/arch/i386/hal/GNUmakefile \
 	base/arch/i386/calibration/GNUmakefile \
+	base/arch/i386/calibration/setsmi \
 	base/include/asm-i386/GNUmakefile \
         base/arch/arm/GNUmakefile \
 	base/arch/arm/hal/GNUmakefile \

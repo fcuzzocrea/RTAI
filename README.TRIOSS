@@ -1,9 +1,0 @@
-                         - RTAI_TRIOSS, what is it? -
-
-It is the name of the macro RTAI_TRIOSS that, if set, enables RTAI to run 3
-OSes altoghether, i.e:
-- RTAI
-- FUSION (aka xenomai now)
-- Linux
-
-Not ported to 3.x yet, if it interests you use MAGMA CVS.

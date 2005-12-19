@@ -1,11 +1,11 @@
 REMARK!!!
 all of what found below should be in smi-module.c.
 
-To install the module, run setsmi
-To remove it, run rstsmi
+To fix SMI problems run: setsmi
+To reset SMI to its previous state run: rstsmi
 
 Both scripts are located in $PREFIX/bin/ and they assume that directory
-is in the $PATH.
+is in your $PATH.
 
 
 HISTORY and EXPLANATION of SMI INTERFERENCE with RTAI and RELATED TECH LINKs.

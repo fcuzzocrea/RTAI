@@ -16,13 +16,13 @@ excerpts from Linux "Documentation/kernel-parameters.txt":
                         alternative -- manually setting the CPU mask of all
                         tasks in the system -- can cause problems and
                         suboptimal load balancer performance.
-Add the following to the above , from the very same source:
+Add the following to the above, from the very same source:
         noirqbalance    [IA-32,SMP,KNL] Disable kernel irq balancing
 Irq balancing can be disabled directly at kernel configuration and has little
 effect on what will follow. Nonetheless RTAI prefers to be sure that Linux 
 does not manipulate hardware related stuff on its own. So if you forgot to 
 disable irq balancing when you made your kernel there is no need to remake it,
-just boot with the above parameter set.
+just set "noirqbalance" at boot time.
 
 From what above it should be easy to infer that by using "isolcpus" you can 
 be sure that Linux will have none of its tasks running on the isolated cpus.
@@ -36,7 +36,7 @@ to stay on the isolated CPUs the latter will find themselves processing just
 RTAI real time stuff, with a significant reduction of latencies/jitters. 
 In the case of many RTAI tasks running on the isolated CPUs all issues 
 producing latency/jitter will still have an effect, but it will be reduced 
-to the least possible, without any added bus/pipe/cache interferences from 
+to the least possible, without any added bus/pipe/cache interference from 
 Linux.
 
 It should be noticed however that there will remain a single interrupt still

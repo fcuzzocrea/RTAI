@@ -63,7 +63,7 @@ tasks to the isolated CPUs, according to your needs, by using:
 
 Notice that you have also the possibility of further specialising your CPUs 
 isolation scheme by diverting any real time interrupt you use to a single 
-specific CPU, or CPU cluster within he isolated CPUs, by using the RTAI 
+specific CPU, or CPU cluster within the isolated CPUs, by using the RTAI 
 function: rt_assign_irq_to_cpu.
 
 Naturally you can set RTAI "IsolCpusMask" even without setting the Linux 

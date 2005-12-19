@@ -238,6 +238,10 @@ config RTAI_SCHED_LXRT_DUMMY
 	objects, i.e. processes/threads/kthreads. All of RTAI APIs are 
 	available simmetrically inter/intra kernel and user space.
 
+	This configuration parameter should be kept as it is, if you'll
+	disable it nothing will happen and this scheduler will be made
+	anyhow, along with the related lliblxrt.
+
 config RTAI_KTASKS_SCHED_LXRT_DUMMY
 	bool "Kernel/User space scheduler   with  RTAI own kernel tasks (KEEP)"
 	default y
@@ -254,6 +258,10 @@ config RTAI_KTASKS_SCHED_LXRT_DUMMY
 	Users wanting to use both RTAI own tasks and real time hardened
 	Linux kernel threads must specifically use rt_task_init for the 
 	former and rt_thread_init for the latter.
+
+	This configuration parameter should be kept as it is, if you'll
+	disable it nothing will happen and this scheduler will be made
+	anyhow, along with the related lliblxrt.
 
 menu "Scheduler options"
 

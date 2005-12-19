@@ -1,3 +1,8 @@
+2005-12-19  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/arch/i386/calibration/setsmi.in:
+	   added scripts to set/reset the smi calibration module
+
 2005-12-16  Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
 
 	* /base/arch/i386/patches/hal-linux-2.4.32-i386-1.0-00.patch: fixed 

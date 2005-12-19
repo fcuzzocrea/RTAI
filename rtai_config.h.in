@@ -177,6 +177,9 @@
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_ISR_LOCK
 
+/* define to enable LXRT scheduler support */
+#undef CONFIG_RTAI_SCHED_LXRT
+
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_LXRT_NUMSLOTS
 

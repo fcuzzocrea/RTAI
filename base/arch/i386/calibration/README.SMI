@@ -1,6 +1,12 @@
 REMARK!!!
 what found below should all be in smi-module.c.
 
+To install the module, run setsmi
+To remove it, run rstsmi
+
+Both scripts are located in $PREFIX/bin/ and they assume that directory
+is in the $PATH.
+
 From - Thu Apr 17 15:00:00 2003
 Delivered-To: mante@aero.polimi.it
 Return-Path: <vitor@ead.eee.ufmg.br>

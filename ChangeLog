@@ -7,7 +7,7 @@
 
 	* /base/arch/i386/patches/hal-linux-2.4.32-i386-1.0-00.patch: fixed 
 	   a missing header files in include/linux/ipipe.h that breaks 
-	   Linux making when ipipe statitistics are collected.
+	   Linux making when ipipe statistics are collected.
 
 2005-12-16  Marcel Groothuis <marcelg-rtai@scintilla.utwente.nl>
 

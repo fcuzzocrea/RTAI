@@ -1,5 +1,5 @@
 REMARK!!!
-all of what found below should be in smi-module.c.
+all of what found in the explanation below should be in smi-module.c.
 
 To fix SMI problems run: setsmi
 To reset SMI to its previous state run: rstsmi

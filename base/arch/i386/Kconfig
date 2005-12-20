@@ -271,8 +271,8 @@ config RTAI_SCHED_ISR_LOCK
 	help
 	RTAI schedules as soon as a higher priority task is awaken in an 
 	interrupt handler, i.e. it does not wait to exit the handler itself.
-	This is the best way as a user that does not want it as just to care
-	of calling any scheduling API at the very end of her/his handler.
+	This is the best way since a user that does not want it has just to 
+	care of calling any scheduling API at the very end of her/his handler.
 	Those not wanting to care when/where to call any scheduling API
 	in their handler should enable this options to be happy.
 

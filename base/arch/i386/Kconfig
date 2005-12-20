@@ -658,9 +658,9 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	default n
 	help
 	With this option enabled, LXRT uses the Linux syscall mechanism
-	for service calls. This may improve signal handling (and therefore
-	debugging of LXRT applications), but has the drawback of a slight
-	overhead.
+	for service calls, as provided by libc "syscall".  This may improve 
+	signal handling (and therefore debugging of LXRT applications), but 
+	has the drawback of a slight overhead. 
 	
 	If in doubt, say no.
 

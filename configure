@@ -467,7 +467,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all rtai-sim"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL CCAS CCASFLAGS X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS GL_CFLAGS GL_LIBS RTAI_MAYBE_DOCDIR DOXYGEN DOXYGEN_HAVE_DOT DBX_DOC_ROOT DBX_DOC_TRUE DBX_DOC_FALSE DBX_GEN_DOC_ROOT DBX_LINT DBX_XSLTPROC DBX_FOP DBX_MAYBE_NONET DBX_ROOT DBX_XSL_ROOT DBX_ABS_SRCDIR_TRUE DBX_ABS_SRCDIR_FALSE RTAI_MAYBE_SIMDIR CONFIG_X86_LOCAL_APIC_TRUE CONFIG_X86_LOCAL_APIC_FALSE CONFIG_KBUILD_TRUE CONFIG_KBUILD_FALSE CONFIG_X86_TRUE CONFIG_X86_FALSE CONFIG_PPC_TRUE CONFIG_PPC_FALSE CONFIG_ARM_TRUE CONFIG_ARM_FALSE CONFIG_ARCH_EP9301_TRUE CONFIG_ARCH_EP9301_FALSE CONFIG_ARCH_PXA_TRUE CONFIG_ARCH_PXA_FALSE CONFIG_UCLINUX_TRUE CONFIG_UCLINUX_FALSE CONFIG_SMP_TRUE CONFIG_SMP_FALSE CONFIG_RTAI_SCHED_UP_TRUE CONFIG_RTAI_SCHED_UP_FALSE CONFIG_RTAI_SCHED_MUP_TRUE CONFIG_RTAI_SCHED_MUP_FALSE CONFIG_RTAI_SCHED_SMP_TRUE CONFIG_RTAI_SCHED_SMP_FALSE CONFIG_RTAI_SCHED_LXRT_TRUE CONFIG_RTAI_SCHED_LXRT_FALSE CONFIG_RTAI_TRACE_TRUE CONFIG_RTAI_TRACE_FALSE CONFIG_RTAI_MATH_TRUE CONFIG_RTAI_MATH_FALSE CONFIG_RTAI_BITS_TRUE CONFIG_RTAI_BITS_FALSE CONFIG_RTAI_FIFOS_TRUE CONFIG_RTAI_FIFOS_FALSE CONFIG_RTAI_NETRPC_TRUE CONFIG_RTAI_NETRPC_FALSE CONFIG_RTAI_SEM_TRUE CONFIG_RTAI_SEM_FALSE CONFIG_RTAI_MSG_TRUE CONFIG_RTAI_MSG_FALSE CONFIG_RTAI_MBX_TRUE CONFIG_RTAI_MBX_FALSE CONFIG_RTAI_TBX_TRUE CONFIG_RTAI_TBX_FALSE CONFIG_RTAI_MQ_TRUE CONFIG_RTAI_MQ_FALSE CONFIG_RTAI_SHM_TRUE CONFIG_RTAI_SHM_FALSE CONFIG_RTAI_MALLOC_TRUE CONFIG_RTAI_MALLOC_FALSE CONFIG_RTAI_TASKLETS_TRUE CONFIG_RTAI_TASKLETS_FALSE CONFIG_RTAI_USI_TRUE CONFIG_RTAI_USI_FALSE CONFIG_RTAI_WD_TRUE CONFIG_RTAI_WD_FALSE CONFIG_RTAI_LEDS_TRUE CONFIG_RTAI_LEDS_FALSE CONFIG_RTAI_MATH_BUILTIN_TRUE CONFIG_RTAI_MATH_BUILTIN_FALSE CONFIG_RTAI_BITS_BUILTIN_TRUE CONFIG_RTAI_BITS_BUILTIN_FALSE CONFIG_RTAI_FIFOS_BUILTIN_TRUE CONFIG_RTAI_FIFOS_BUILTIN_FALSE CONFIG_RTAI_NETRPC_BUILTIN_TRUE CONFIG_RTAI_NETRPC_BUILTIN_FALSE CONFIG_RTAI_SEM_BUILTIN_TRUE CONFIG_RTAI_SEM_BUILTIN_FALSE CONFIG_RTAI_MSG_BUILTIN_TRUE CONFIG_RTAI_MSG_BUILTIN_FALSE CONFIG_RTAI_MBX_BUILTIN_TRUE CONFIG_RTAI_MBX_BUILTIN_FALSE CONFIG_RTAI_TBX_BUILTIN_TRUE CONFIG_RTAI_TBX_BUILTIN_FALSE CONFIG_RTAI_MQ_BUILTIN_TRUE CONFIG_RTAI_MQ_BUILTIN_FALSE CONFIG_RTAI_SHM_BUILTIN_TRUE CONFIG_RTAI_SHM_BUILTIN_FALSE CONFIG_RTAI_MALLOC_BUILTIN_TRUE CONFIG_RTAI_MALLOC_BUILTIN_FALSE CONFIG_RTAI_TASKLETS_BUILTIN_TRUE CONFIG_RTAI_TASKLETS_BUILTIN_FALSE CONFIG_RTAI_USI_BUILTIN_TRUE CONFIG_RTAI_USI_BUILTIN_FALSE CONFIG_RTAI_LEDS_BUILTIN_TRUE CONFIG_RTAI_LEDS_BUILTIN_FALSE CONFIG_RTAI_COMEDI_LXRT_TRUE CONFIG_RTAI_COMEDI_LXRT_FALSE CONFIG_RTAI_CPLUSPLUS_TRUE CONFIG_RTAI_CPLUSPLUS_FALSE CONFIG_RTAI_RTDM_TRUE CONFIG_RTAI_RTDM_FALSE CONFIG_RTAI_DRIVERS_SERIAL_TRUE CONFIG_RTAI_DRIVERS_SERIAL_FALSE CONFIG_RTAI_DRIVERS_16550A_TRUE CONFIG_RTAI_DRIVERS_16550A_FALSE CONFIG_RTAI_LAB_TRUE CONFIG_RTAI_LAB_FALSE CONFIG_RTAI_MVM_TRUE CONFIG_RTAI_MVM_FALSE CONFIG_RTAI_TESTSUITE_TRUE CONFIG_RTAI_TESTSUITE_FALSE CONFIG_RTAI_ADEOS_TRUE CONFIG_RTAI_ADEOS_FALSE CONFIG_RTAI_MATH_C99_TRUE CONFIG_RTAI_MATH_C99_FALSE CONFIG_RTAI_DOX_DOC_TRUE CONFIG_RTAI_DOX_DOC_FALSE CONFIG_RTAI_MAINTAINER_TRUE CONFIG_RTAI_MAINTAINER_FALSE CONFIG_RTAI_MAINTAINER_PMA_TRUE CONFIG_RTAI_MAINTAINER_PMA_FALSE CONFIG_RTAI_MAINTAINER_PGM_TRUE CONFIG_RTAI_MAINTAINER_PGM_FALSE CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE CROSS_COMPILE DOXYGEN_SHOW_INCLUDE_FILES LATEX_BATCHMODE LATEX_MODE EFLTK_DIR COMEDI_DIR RTAI_BUILD_STRING RTAI_HOST_STRING RTAI_TARGET_ARCH RTAI_TARGET_SUBARCH RTAI_BUILTIN_MODLIST RTAI_KMOD_CFLAGS RTAI_KMOD_CXXFLAGS RTAI_COMPAT_CPPFLAGS RTAI_USER_CFLAGS RTAI_KMOD_APP_CFLAGS RTAI_KMOD_APP_CXXFLAGS RTAI_USER_APP_CFLAGS RTAI_LXRT_LDADD RTAI_FP_CFLAGS RTAI_LINUX_DIR RTAI_LINUX_VERSION RTAI_MODULE_DIR RTAI_MODULE_EXT RTAI_KBUILD_ENV RTAI_KBUILD_TOP RTAI_KBUILD_BOTTOM RTAI_KBUILD_CMD RTAI_KBUILD_CLEAN RTAI_KBUILD_DISTCLEAN CONFIG_RTAI_SCHED_LXRT CONFIG_RTAI_LINUXDIR CONFIG_RTAI_ADDONS_TRUE CONFIG_RTAI_ADDONS_FALSE subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT EGREP LN_S ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL CCAS CCASFLAGS X_CFLAGS X_PRE_LIBS X_LIBS X_EXTRA_LIBS GL_CFLAGS GL_LIBS RTAI_MAYBE_DOCDIR DOXYGEN DOXYGEN_HAVE_DOT DBX_DOC_ROOT DBX_DOC_TRUE DBX_DOC_FALSE DBX_GEN_DOC_ROOT DBX_LINT DBX_XSLTPROC DBX_FOP DBX_MAYBE_NONET DBX_ROOT DBX_XSL_ROOT DBX_ABS_SRCDIR_TRUE DBX_ABS_SRCDIR_FALSE RTAI_MAYBE_SIMDIR CONFIG_X86_LOCAL_APIC_TRUE CONFIG_X86_LOCAL_APIC_FALSE CONFIG_KBUILD_TRUE CONFIG_KBUILD_FALSE CONFIG_X86_TRUE CONFIG_X86_FALSE CONFIG_PPC_TRUE CONFIG_PPC_FALSE CONFIG_ARM_TRUE CONFIG_ARM_FALSE CONFIG_ARCH_EP9301_TRUE CONFIG_ARCH_EP9301_FALSE CONFIG_ARCH_PXA_TRUE CONFIG_ARCH_PXA_FALSE CONFIG_UCLINUX_TRUE CONFIG_UCLINUX_FALSE CONFIG_SMP_TRUE CONFIG_SMP_FALSE CONFIG_RTAI_SCHED_UP_TRUE CONFIG_RTAI_SCHED_UP_FALSE CONFIG_RTAI_SCHED_MUP_TRUE CONFIG_RTAI_SCHED_MUP_FALSE CONFIG_RTAI_SCHED_SMP_TRUE CONFIG_RTAI_SCHED_SMP_FALSE CONFIG_RTAI_SCHED_LXRT_TRUE CONFIG_RTAI_SCHED_LXRT_FALSE CONFIG_RTAI_TRACE_TRUE CONFIG_RTAI_TRACE_FALSE CONFIG_RTAI_MATH_TRUE CONFIG_RTAI_MATH_FALSE CONFIG_RTAI_BITS_TRUE CONFIG_RTAI_BITS_FALSE CONFIG_RTAI_FIFOS_TRUE CONFIG_RTAI_FIFOS_FALSE CONFIG_RTAI_NETRPC_TRUE CONFIG_RTAI_NETRPC_FALSE CONFIG_RTAI_SEM_TRUE CONFIG_RTAI_SEM_FALSE CONFIG_RTAI_MSG_TRUE CONFIG_RTAI_MSG_FALSE CONFIG_RTAI_MBX_TRUE CONFIG_RTAI_MBX_FALSE CONFIG_RTAI_TBX_TRUE CONFIG_RTAI_TBX_FALSE CONFIG_RTAI_MQ_TRUE CONFIG_RTAI_MQ_FALSE CONFIG_RTAI_SHM_TRUE CONFIG_RTAI_SHM_FALSE CONFIG_RTAI_MALLOC_TRUE CONFIG_RTAI_MALLOC_FALSE CONFIG_RTAI_TASKLETS_TRUE CONFIG_RTAI_TASKLETS_FALSE CONFIG_RTAI_USI_TRUE CONFIG_RTAI_USI_FALSE CONFIG_RTAI_WD_TRUE CONFIG_RTAI_WD_FALSE CONFIG_RTAI_LEDS_TRUE CONFIG_RTAI_LEDS_FALSE CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE CONFIG_RTAI_MATH_BUILTIN_TRUE CONFIG_RTAI_MATH_BUILTIN_FALSE CONFIG_RTAI_BITS_BUILTIN_TRUE CONFIG_RTAI_BITS_BUILTIN_FALSE CONFIG_RTAI_FIFOS_BUILTIN_TRUE CONFIG_RTAI_FIFOS_BUILTIN_FALSE CONFIG_RTAI_NETRPC_BUILTIN_TRUE CONFIG_RTAI_NETRPC_BUILTIN_FALSE CONFIG_RTAI_SEM_BUILTIN_TRUE CONFIG_RTAI_SEM_BUILTIN_FALSE CONFIG_RTAI_MSG_BUILTIN_TRUE CONFIG_RTAI_MSG_BUILTIN_FALSE CONFIG_RTAI_MBX_BUILTIN_TRUE CONFIG_RTAI_MBX_BUILTIN_FALSE CONFIG_RTAI_TBX_BUILTIN_TRUE CONFIG_RTAI_TBX_BUILTIN_FALSE CONFIG_RTAI_MQ_BUILTIN_TRUE CONFIG_RTAI_MQ_BUILTIN_FALSE CONFIG_RTAI_SHM_BUILTIN_TRUE CONFIG_RTAI_SHM_BUILTIN_FALSE CONFIG_RTAI_MALLOC_BUILTIN_TRUE CONFIG_RTAI_MALLOC_BUILTIN_FALSE CONFIG_RTAI_TASKLETS_BUILTIN_TRUE CONFIG_RTAI_TASKLETS_BUILTIN_FALSE CONFIG_RTAI_USI_BUILTIN_TRUE CONFIG_RTAI_USI_BUILTIN_FALSE CONFIG_RTAI_LEDS_BUILTIN_TRUE CONFIG_RTAI_LEDS_BUILTIN_FALSE CONFIG_RTAI_COMEDI_LXRT_TRUE CONFIG_RTAI_COMEDI_LXRT_FALSE CONFIG_RTAI_CPLUSPLUS_TRUE CONFIG_RTAI_CPLUSPLUS_FALSE CONFIG_RTAI_RTDM_TRUE CONFIG_RTAI_RTDM_FALSE CONFIG_RTAI_DRIVERS_SERIAL_TRUE CONFIG_RTAI_DRIVERS_SERIAL_FALSE CONFIG_RTAI_DRIVERS_16550A_TRUE CONFIG_RTAI_DRIVERS_16550A_FALSE CONFIG_RTAI_LAB_TRUE CONFIG_RTAI_LAB_FALSE CONFIG_RTAI_MVM_TRUE CONFIG_RTAI_MVM_FALSE CONFIG_RTAI_TESTSUITE_TRUE CONFIG_RTAI_TESTSUITE_FALSE CONFIG_RTAI_ADEOS_TRUE CONFIG_RTAI_ADEOS_FALSE CONFIG_RTAI_MATH_C99_TRUE CONFIG_RTAI_MATH_C99_FALSE CONFIG_RTAI_DOX_DOC_TRUE CONFIG_RTAI_DOX_DOC_FALSE CONFIG_RTAI_MAINTAINER_TRUE CONFIG_RTAI_MAINTAINER_FALSE CONFIG_RTAI_MAINTAINER_PMA_TRUE CONFIG_RTAI_MAINTAINER_PMA_FALSE CONFIG_RTAI_MAINTAINER_PGM_TRUE CONFIG_RTAI_MAINTAINER_PGM_FALSE CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE CROSS_COMPILE DOXYGEN_SHOW_INCLUDE_FILES LATEX_BATCHMODE LATEX_MODE EFLTK_DIR COMEDI_DIR RTAI_BUILD_STRING RTAI_HOST_STRING RTAI_TARGET_ARCH RTAI_TARGET_SUBARCH RTAI_BUILTIN_MODLIST RTAI_KMOD_CFLAGS RTAI_KMOD_CXXFLAGS RTAI_COMPAT_CPPFLAGS RTAI_USER_CFLAGS RTAI_KMOD_APP_CFLAGS RTAI_KMOD_APP_CXXFLAGS RTAI_USER_APP_CFLAGS RTAI_LXRT_LDADD RTAI_FP_CFLAGS RTAI_LINUX_DIR RTAI_LINUX_VERSION RTAI_MODULE_DIR RTAI_MODULE_EXT RTAI_KBUILD_ENV RTAI_KBUILD_TOP RTAI_KBUILD_BOTTOM RTAI_KBUILD_CMD RTAI_KBUILD_CLEAN RTAI_KBUILD_DISTCLEAN CONFIG_RTAI_SCHED_LXRT CONFIG_RTAI_LINUXDIR CONFIG_RTAI_ADDONS_TRUE CONFIG_RTAI_ADDONS_FALSE subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1069,6 +1069,7 @@ Optional Features:
  --enable-usi		Enable user-space interrupt support
  --enable-watchdog	Enable watchdog support
  --enable-leds		Enable leds-based debugging support
+ --enable-lxrt-use-linux-syscall		Wrap LXRT service calls throug Linux syscall mechanism
  --enable-sched-up	Enable UP scheduler support
  --enable-sched-smp	Enable SMP scheduler support
  --enable-sched-mup	Enable MUP scheduler support
@@ -4285,7 +4286,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4288 "configure"' > conftest.$ac_ext
+  echo '#line 4289 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5400,7 +5401,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5403:" \
+echo "$as_me:5404:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6498,11 +6499,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6501: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6502: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6505: \$? = $ac_status" >&5
+   echo "$as_me:6506: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6760,11 +6761,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6763: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6764: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:6767: \$? = $ac_status" >&5
+   echo "$as_me:6768: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -6822,11 +6823,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:6825: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:6826: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:6829: \$? = $ac_status" >&5
+   echo "$as_me:6830: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -9062,7 +9063,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9065 "configure"
+#line 9066 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9160,7 +9161,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9163 "configure"
+#line 9164 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11408,11 +11409,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11411: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11412: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:11415: \$? = $ac_status" >&5
+   echo "$as_me:11416: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -11470,11 +11471,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:11473: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:11474: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:11477: \$? = $ac_status" >&5
+   echo "$as_me:11478: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12839,7 +12840,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12842 "configure"
+#line 12843 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12937,7 +12938,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 12940 "configure"
+#line 12941 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13822,11 +13823,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13825: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13826: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13829: \$? = $ac_status" >&5
+   echo "$as_me:13830: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13884,11 +13885,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13887: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13888: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13891: \$? = $ac_status" >&5
+   echo "$as_me:13892: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16006,11 +16007,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16009: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16010: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16013: \$? = $ac_status" >&5
+   echo "$as_me:16014: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16268,11 +16269,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16271: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16272: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16275: \$? = $ac_status" >&5
+   echo "$as_me:16276: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16330,11 +16331,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16333: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16334: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16337: \$? = $ac_status" >&5
+   echo "$as_me:16338: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18570,7 +18571,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18573 "configure"
+#line 18574 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18668,7 +18669,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 18671 "configure"
+#line 18672 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20281,6 +20282,19 @@ if test x$CONFIG_RTAI_LEDS = xy ; then
   RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST leds"
 fi
 
+echo "$as_me:$LINENO: checking whether LXRT wraps service calls through Linux syscalls" >&5
+echo $ECHO_N "checking whether LXRT wraps service calls through Linux syscalls... $ECHO_C" >&6
+# Check whether --enable-lxrt-use-linux-syscall or --disable-lxrt-use-linux-syscall was given.
+if test "${enable_lxrt_use_linux_syscall+set}" = set; then
+  enableval="$enable_lxrt_use_linux_syscall"
+  case "$enableval" in
+	y | yes) CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL=y ;;
+	*) unset CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL ;;
+	esac
+fi;
+echo "$as_me:$LINENO: result: ${CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL:-no}" >&5
+echo "${ECHO_T}${CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL:-no}" >&6
+
 # Check whether --enable-sched-up or --disable-sched-up was given.
 if test "${enable_sched_up+set}" = set; then
   enableval="$enable_sched_up"
@@ -20410,13 +20424,13 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_SCHED_LXRT 1
 _ACEOF
 
-if test x"$CONFIG_RTAI_SCHED_LXRT_" != y ; then
+if test x"$CONFIG_RTAI_SCHED_LXRT_" != xy ; then
 	echo ""
 	echo "	warning: RTAI_SCHED_LXRT must always be enabled; forced"
 	echo ""
 fi
 CONFIG_RTAI_KTASKS_SCHED_LXRT=y
-if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_" != y ; then
+if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_" != xy ; then
 	echo ""
 	echo "	warning: RTAI_KTASKS_SCHED_LXRT must always be enabled; forced"
 	echo ""
@@ -23805,6 +23819,11 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_LEDS 1
 _ACEOF
 
+test \! x$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL = x &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL 1
+_ACEOF
+
 test \! x$CONFIG_RTAI_DRIVERS_SERIAL = x &&
 cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_DRIVERS_SERIAL 1
@@ -24311,6 +24330,16 @@ if test -n "$CONFIG_RTAI_LEDS"; then
 else
   CONFIG_RTAI_LEDS_TRUE='#'
   CONFIG_RTAI_LEDS_FALSE=
+fi
+
+
+
+if test -n "$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL"; then
+  CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE=
+  CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE='#'
+else
+  CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE='#'
+  CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE=
 fi
 
 
@@ -25233,6 +25262,13 @@ if test -z "${CONFIG_RTAI_LEDS_TRUE}" && test -z "${CONFIG_RTAI_LEDS_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"CONFIG_RTAI_LEDS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"CONFIG_RTAI_LEDS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE}" && test -z "${CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -26230,6 +26266,8 @@ s,@CONFIG_RTAI_WD_TRUE@,$CONFIG_RTAI_WD_TRUE,;t t
 s,@CONFIG_RTAI_WD_FALSE@,$CONFIG_RTAI_WD_FALSE,;t t
 s,@CONFIG_RTAI_LEDS_TRUE@,$CONFIG_RTAI_LEDS_TRUE,;t t
 s,@CONFIG_RTAI_LEDS_FALSE@,$CONFIG_RTAI_LEDS_FALSE,;t t
+s,@CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE@,$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE,;t t
+s,@CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE@,$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE,;t t
 s,@CONFIG_RTAI_MATH_BUILTIN_TRUE@,$CONFIG_RTAI_MATH_BUILTIN_TRUE,;t t
 s,@CONFIG_RTAI_MATH_BUILTIN_FALSE@,$CONFIG_RTAI_MATH_BUILTIN_FALSE,;t t
 s,@CONFIG_RTAI_BITS_BUILTIN_TRUE@,$CONFIG_RTAI_BITS_BUILTIN_TRUE,;t t

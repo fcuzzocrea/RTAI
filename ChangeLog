@@ -1,3 +1,8 @@
+2005-12-20  Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+
+	* Kconfig/configure.in:
+	   configuration support for using Linux syscall within LXRT
+
 2005-12-20  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* configure.in:

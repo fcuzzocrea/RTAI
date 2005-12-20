@@ -97,6 +97,9 @@
 
 
 /* Kconfig */
+#undef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
+
+/* Kconfig */
 #undef CONFIG_RTAI_MAINTAINER
 
 /* Kconfig */

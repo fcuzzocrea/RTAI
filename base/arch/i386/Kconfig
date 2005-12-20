@@ -653,6 +653,17 @@ config RTAI_LEDS
 	help
 	The module will be called rtai_leds.o.
 
+config RTAI_LXRT_USE_LINUX_SYSCALL
+	bool "Wrap LXRT service calls through Linux syscall mechanism"
+	default n
+	help
+	With this option enabled, LXRT uses the Linux syscall mechanism
+	for service calls. This may improve signal handling (and therefore
+	debugging of LXRT applications), but has the drawback of a slight
+	overhead.
+	
+	If in doubt, say no.
+
 endmenu
 
 endmenu

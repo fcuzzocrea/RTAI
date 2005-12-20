@@ -515,6 +515,15 @@ if test x$CONFIG_RTAI_LEDS = xy ; then
   RTAI_BUILTIN_MODLIST="$RTAI_BUILTIN_MODLIST leds"
 fi
 
+AC_MSG_CHECKING(whether LXRT wraps service calls through Linux syscalls)
+AC_ARG_ENABLE(lxrt-use-linux-syscall,
+	[ --enable-lxrt-use-linux-syscall		Wrap LXRT service calls throug Linux syscall mechanism],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL=y ;;
+	*) unset CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL ;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL:-no})
+
 AC_ARG_ENABLE(sched-up,
 	[ --enable-sched-up	Enable UP scheduler support],
 	[case "$enableval" in
@@ -624,13 +633,13 @@ AC_MSG_RESULT([${CONFIG_RTAI_KTASKS_SCHED_LXRT:-no} $lxrt_forced])
 dnl they must be always enabled
 CONFIG_RTAI_SCHED_LXRT=y
 AC_DEFINE(CONFIG_RTAI_SCHED_LXRT,1,[define to enable LXRT scheduler support])
-if test x"$CONFIG_RTAI_SCHED_LXRT_" != y ; then
+if test x"$CONFIG_RTAI_SCHED_LXRT_" != xy ; then
 	echo ""
 	echo "	warning: RTAI_SCHED_LXRT must always be enabled; forced"
 	echo ""
 fi
 CONFIG_RTAI_KTASKS_SCHED_LXRT=y
-if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_" != y ; then
+if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_" != xy ; then
 	echo ""
 	echo "	warning: RTAI_KTASKS_SCHED_LXRT must always be enabled; forced"
 	echo ""
@@ -1152,6 +1161,7 @@ test \! x$CONFIG_RTAI_TASKLETS = x && AC_DEFINE(CONFIG_RTAI_TASKLETS,1,[Kconfig]
 test \! x$CONFIG_RTAI_USI = x && AC_DEFINE(CONFIG_RTAI_USI,1,[Kconfig])
 test \! x$CONFIG_RTAI_WD = x && AC_DEFINE(CONFIG_RTAI_WD,1,[Kconfig])
 test \! x$CONFIG_RTAI_LEDS = x && AC_DEFINE(CONFIG_RTAI_LEDS,1,[Kconfig])
+test \! x$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL = x && AC_DEFINE(CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL,1,[Kconfig])
 test \! x$CONFIG_RTAI_DRIVERS_SERIAL = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_SERIAL,1,[Kconfig])
 test \! x$CONFIG_RTAI_DRIVERS_16550A = x && AC_DEFINE(CONFIG_RTAI_DRIVERS_16550A,1,[Kconfig])
 test \! x$CONFIG_RTAI_RTDM = x && AC_DEFINE(CONFIG_RTAI_RTDM,1,[Kconfig])
@@ -1305,6 +1315,7 @@ AM_CONDITIONAL(CONFIG_RTAI_TASKLETS,[test -n "$CONFIG_RTAI_TASKLETS"])
 AM_CONDITIONAL(CONFIG_RTAI_USI,[test -n "$CONFIG_RTAI_USI"])
 AM_CONDITIONAL(CONFIG_RTAI_WD,[test -n "$CONFIG_RTAI_WD"])
 AM_CONDITIONAL(CONFIG_RTAI_LEDS,[test -n "$CONFIG_RTAI_LEDS"])
+AM_CONDITIONAL(CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL,[test -n "$CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL"])
 
 AM_CONDITIONAL(CONFIG_RTAI_MATH_BUILTIN,[test x$CONFIG_RTAI_MATH = xy])
 AM_CONDITIONAL(CONFIG_RTAI_BITS_BUILTIN,[test x$CONFIG_RTAI_BITS = xy])

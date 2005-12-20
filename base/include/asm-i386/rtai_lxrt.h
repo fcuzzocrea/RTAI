@@ -25,7 +25,11 @@
 
 #include <asm/rtai_vectors.h>
 
-//#define USE_LINUX_SYSCALL
+#ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
+#define USE_LINUX_SYSCALL
+#else
+#undef USE_LINUX_SYSCALL
+#endif
 
 #define RTAI_SYSCALL_NR      0x70000000
 #define RTAI_SYSCALL_CODE    ebx

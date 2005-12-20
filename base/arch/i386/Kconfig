@@ -230,7 +230,7 @@ endmenu
 
 menu "Base system"
 
-config RTAI_SCHED_LXRT_DUMMY
+config RTAI_SCHED_LXRT_
 	bool "Kernel/User space scheduler without RTAI own kernel tasks (KEEP)"
 	default y
 	help
@@ -238,12 +238,11 @@ config RTAI_SCHED_LXRT_DUMMY
 	objects, i.e. processes/threads/kthreads. All of RTAI APIs are 
 	available simmetrically inter/intra kernel and user space.
 
-	This configuration parameter should be kept as it is, if you'll
-	disable it nothing will happen and this scheduler will be made
-	anyhow, along with the related lliblxrt.
+	This configuration parameter is ignored by the build process and
+	this scheduler will be made anyhow, along with the related liblxrt.
 
-config RTAI_KTASKS_SCHED_LXRT_DUMMY
-	bool "Kernel/User space scheduler   with  RTAI own kernel tasks (KEEP)"
+config RTAI_KTASKS_SCHED_LXRT_
+	bool "Kernel/User space scheduler with RTAI own kernel tasks (KEEP)"
 	default y
 	help
 	After enabling this option, the scheduler supports not only hard
@@ -259,9 +258,8 @@ config RTAI_KTASKS_SCHED_LXRT_DUMMY
 	Linux kernel threads must specifically use rt_task_init for the 
 	former and rt_thread_init for the latter.
 
-	This configuration parameter should be kept as it is, if you'll
-	disable it nothing will happen and this scheduler will be made
-	anyhow, along with the related lliblxrt.
+	This configuration parameter is ignored by the build process and
+	this scheduler will be made anyhow, along with the related liblxrt.
 
 menu "Scheduler options"
 
@@ -663,7 +661,6 @@ menu "Add-ons"
 
 config RTAI_COMEDI_LXRT
 	bool "Comedi support over LXRT"
-	depends on RTAI_SCHED_LXRT_DUMMY
 	default n
 	help
 	RTAI offers a unified kcomedilib interface to kernel/user space 

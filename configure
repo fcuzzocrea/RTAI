@@ -20312,8 +20312,8 @@ fi;
 if test "${enable_sched_lxrt+set}" = set; then
   enableval="$enable_sched_lxrt"
   case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_LXRT_DUMMY=y ;;
-	*) echo "--enable-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_SCHED_LXRT_DUMMY=y ;;
+	y | yes | m | mod | module) CONFIG_RTAI_SCHED_LXRT_=y ;;
+	*) echo "--enable-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_SCHED_LXRT_=y ;;
 	esac
 fi;
 
@@ -20321,8 +20321,8 @@ fi;
 if test "${enable_ktasks_sched_lxrt+set}" = set; then
   enableval="$enable_ktasks_sched_lxrt"
   case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_KTASKS_SCHED_LXRT_DUMMY=y ;;
-	*) echo "--enable-ktasks-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_KTASKS_SCHED_LXRT_DUMMY=y ;;
+	y | yes | m | mod | module) CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
+	*) echo "--enable-ktasks-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
 	esac
 fi;
 
@@ -20410,13 +20410,13 @@ cat >>confdefs.h <<\_ACEOF
 #define CONFIG_RTAI_SCHED_LXRT 1
 _ACEOF
 
-if test x"$CONFIG_RTAI_SCHED_LXRT_DUMMY" != y ; then
+if test x"$CONFIG_RTAI_SCHED_LXRT_" != y ; then
 	echo ""
 	echo "	warning: RTAI_SCHED_LXRT must always be enabled; forced"
 	echo ""
 fi
 CONFIG_RTAI_KTASKS_SCHED_LXRT=y
-if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_DUMMY" != y ; then
+if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_" != y ; then
 	echo ""
 	echo "	warning: RTAI_KTASKS_SCHED_LXRT must always be enabled; forced"
 	echo ""

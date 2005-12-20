@@ -540,16 +540,16 @@ dnl CONFIG_RTAI_SCHED_LXRT has to be forced
 AC_ARG_ENABLE(sched-lxrt,
 	[ --enable-sched-lxrt	Enable LXRT scheduler support],
 	[case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_SCHED_LXRT_DUMMY=y ;;
-	*) echo "--enable-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_SCHED_LXRT_DUMMY=y ;;
+	y | yes | m | mod | module) CONFIG_RTAI_SCHED_LXRT_=y ;;
+	*) echo "--enable-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_SCHED_LXRT_=y ;;
 	esac])
 
 dnl CONFIG_RTAI_KTASTS_SCHED_LXRT has to be forced
 AC_ARG_ENABLE(ktasks-sched-lxrt,
 	[ --enable-ktasks-sched-lxrt	Enable LXRT scheduler with kernel tasks support],
 	[case "$enableval" in
-	y | yes | m | mod | module) CONFIG_RTAI_KTASKS_SCHED_LXRT_DUMMY=y ;;
-	*) echo "--enable-ktasks-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_KTASKS_SCHED_LXRT_DUMMY=y ;;
+	y | yes | m | mod | module) CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
+	*) echo "--enable-ktasks-sched-lxrt forced to \"yes\"" ; CONFIG_RTAI_KTASKS_SCHED_LXRT_=y ;;
 	esac])
 
 dnl Some sanity checks for scheduler settings. We are only rearranging
@@ -624,13 +624,13 @@ AC_MSG_RESULT([${CONFIG_RTAI_KTASKS_SCHED_LXRT:-no} $lxrt_forced])
 dnl they must be always enabled
 CONFIG_RTAI_SCHED_LXRT=y
 AC_DEFINE(CONFIG_RTAI_SCHED_LXRT,1,[define to enable LXRT scheduler support])
-if test x"$CONFIG_RTAI_SCHED_LXRT_DUMMY" != y ; then
+if test x"$CONFIG_RTAI_SCHED_LXRT_" != y ; then
 	echo ""
 	echo "	warning: RTAI_SCHED_LXRT must always be enabled; forced"
 	echo ""
 fi
 CONFIG_RTAI_KTASKS_SCHED_LXRT=y
-if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_DUMMY" != y ; then
+if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_" != y ; then
 	echo ""
 	echo "	warning: RTAI_KTASKS_SCHED_LXRT must always be enabled; forced"
 	echo ""

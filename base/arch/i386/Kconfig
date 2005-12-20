@@ -667,9 +667,15 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	the Linux syscall mechanism, even if this configuration parameter 
 	has not been set. The only thing to do is to add:
 	#define USE_LINUX_SYSCALL
-	by hand in any source file in which we want to use the Linux syscall
-	mechanism. RTAI will then operate in mixed mode by using its own
-	syscall mechanism along with the selectively enforced Linux ones.
+	before any RTAI header inclusion, in any source file in which you
+	want to use the Linux syscall mechanism. In the same way when this
+	parameter is set you can selectively revert to LXRT own syscall
+	mechanism by defining:
+	#undef USE_LINUX_SYSCALL
+	before any RTAI header inclusion, in any source file in which you
+	want to use the LXRT syscall mechanism.
+	RTAI will then operate in mixed mode selectively by using both 
+	its own and Linux syscall mechanisms.
 	
 	If in doubt, say no.
 

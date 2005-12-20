@@ -1098,12 +1098,7 @@ static void rt_timer_handler(void)
 	DO_TIMER_PROPER_OP();
 	rt_current = rt_smp_current[cpuid = rtai_cpuid()];
 
-#ifdef CONFIG_X86_REMOTE_DEBUG
-	if (oneshot_timer) {    // Resync after possibly hitting a breakpoint
-		rt_times.intr_time = rdtsc();
-	}
-#endif
-	rt_times.tick_time = rt_times.intr_time;
+	rt_times.tick_time = oneshot_timer ? rdtsc() : rt_times.intr_time;
 	rt_time_h = rt_times.tick_time + rt_half_tick;
 #ifdef USE_LINUX_TIMER
 	if (rt_times.tick_time >= rt_times.linux_time) {
@@ -1134,11 +1129,11 @@ static void rt_timer_handler(void)
 		}
 #ifndef USE_LINUX_TIMER
 		if (preempt || prio == RT_SCHED_LINUX_PRIORITY) {
-			RTIME now;
+//			RTIME now;
 			int delay;
 #else
 		if ((islnx = (prio == RT_SCHED_LINUX_PRIORITY)) || preempt) {
-			RTIME now;
+//			RTIME now;
 			int delay;
 			if (islnx) {
 				RTIME linux_intr_time;
@@ -1148,12 +1143,14 @@ static void rt_timer_handler(void)
 				}
 			}
 #endif
-			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
+//			delay = (int)(rt_times.intr_time - (now = rdtsc())) - tuned.latency;
+			delay = (int)(rt_times.intr_time - rt_time_h) - tuned.latency;
 			if (delay >= tuned.setup_time_TIMER_CPUNIT) {
 				delay = imuldiv(delay, TIMER_FREQ, tuned.cpu_freq);
 			} else {
 				delay = tuned.setup_time_TIMER_UNIT;
-				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
+//				rt_times.intr_time = now + (tuned.setup_time_TIMER_CPUNIT);
+				rt_times.intr_time = rt_time_h + (tuned.setup_time_TIMER_CPUNIT);
 			}
 			shot_fired = 1;
 			rt_set_timer_delay(delay);

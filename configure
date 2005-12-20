@@ -20411,11 +20411,15 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 if test x"$CONFIG_RTAI_SCHED_LXRT_DUMMY" != y ; then
-	echo "RTAI_SCHED_LXRT must always be enabled; overriding"
+	echo ""
+	echo "	warning: RTAI_SCHED_LXRT must always be enabled; forced"
+	echo ""
 fi
 CONFIG_RTAI_KTASKS_SCHED_LXRT=y
 if test x"$CONFIG_RTAI_KTASKS_SCHED_LXRT_DUMMY" != y ; then
-	echo "RTAI_KTASKS_SCHED_LXRT must always be enabled; overriding"
+	echo ""
+	echo "	warning: RTAI_KTASKS_SCHED_LXRT must always be enabled; forced"
+	echo ""
 fi
 
 echo "$as_me:$LINENO: checking for scheduler lock in ISRs" >&5

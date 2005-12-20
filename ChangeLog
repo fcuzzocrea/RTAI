@@ -1,3 +1,9 @@
+2005-12-20  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in:
+	   reworked scheduler configuration to note that there are only
+	   two schedulers, and they must always be enabled
+
 2005-12-19  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* base/arch/i386/calibration/setsmi.in:

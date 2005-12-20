@@ -1,3 +1,8 @@
+2005-12-20  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: in oneshot mode read the interrupt time 
+	   immediately and just once upon entering the timer_handler.
+
 2005-12-20  Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
 
 	* Kconfig/configure.in:

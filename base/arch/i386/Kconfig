@@ -249,7 +249,7 @@ config RTAI_KTASKS_SCHED_LXRT_
 	real time for all Linux schedulable objects, i.e.
 	processes/threads/kthreads, but also for RTAI own kernel tasks.
 
-	A secondary effect is, that rt_task_init() will generate RTAI
+	A secondary effect is that rt_task_init() will generate RTAI
 	own kernel tasks instead of real time hardened Linux kernel threads.
 	This will reduce task switching time, with noticeable effects on
 	low end CPUs.

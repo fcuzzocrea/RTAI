@@ -661,6 +661,15 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	for service calls, as provided by libc "syscall".  This may improve 
 	signal handling (and therefore debugging of LXRT applications), but 
 	has the drawback of a slight overhead. 
+
+	When direct inlining of RTAI syscalls is enabled, see the related
+	configuration options, it is still possible to force the use of 
+	the Linux syscall mechanism, even if this configuration parameter 
+	has not been set. The only thing to do is to add:
+	#define USE_LINUX_SYSCALL
+	by hand in any source file in which we want to use the Linux syscall
+	mechanism. RTAI will then operate in mixed mode by using its own
+	syscall mechanism along with the selectively enforced Linux ones.
 	
 	If in doubt, say no.
 

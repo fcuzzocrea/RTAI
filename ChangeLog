@@ -1,3 +1,10 @@
+2005-12-22  Marco Morandini  <morandini@aero.polimi.it>
+
+        * addons/rtdm/*: RTAI based RTDM support verified against all of 
+	  the RTAI examples available within the latest RTNet SVN. This 
+	  completes base RTDM testing, that has been already verified to 
+	  work also with RTDM based 16550A.
+
 2005-12-22  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/matlab/rtmain.c: Applied patch from Marco Romagnoli and

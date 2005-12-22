@@ -1,3 +1,8 @@
+2005-12-22  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/matlab/rtmain.c: Applied patch from Marco Romagnoli and
+	modificotion from Paolo Mantegazza.
+
 2005-12-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /addons/rtdm/module.c: all functions made 0 type, RTDM cares to

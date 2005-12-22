@@ -845,7 +845,6 @@ static int_T rt_Main(RT_MODEL * (*model_name)(void), int_T priority)
 			hard_timers_cnt = rt_sem_init(nam2num("HTMRCN"), 0);
 		} else {
 			rt_BaseRateTick = nano2count(rt_BaseTaskPeriod);
-			hard_timers_cnt = rt_get_adr(nam2num("HTMRCN"));
 			rt_sem_signal(hard_timers_cnt);
 		}
 	} else {

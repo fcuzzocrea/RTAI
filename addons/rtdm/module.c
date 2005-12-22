@@ -61,10 +61,10 @@ static int _rtdm_fdcount(void)
 #ifdef TRUE_LXRT_WAY
 
 static struct rt_fun_entry rtdm[] = {
-	[__rtdm_fdcount] = { 1, _rtdm_fdcount },
-	[__rtdm_open]    = { 1, _rtdm_open },
-	[__rtdm_socket]  = { 1, _rtdm_socket },
-	[__rtdm_close]   = { 1, _rtdm_close },
+	[__rtdm_fdcount] = { 0, _rtdm_fdcount },
+	[__rtdm_open]    = { 0, _rtdm_open },
+	[__rtdm_socket]  = { 0, _rtdm_socket },
+	[__rtdm_close]   = { 0, _rtdm_close },
 	[__rtdm_ioctl]   = { 1, _rtdm_ioctl },
 	[__rtdm_read]    = { 1, _rtdm_read },
 	[__rtdm_write]   = { 1, _rtdm_write },

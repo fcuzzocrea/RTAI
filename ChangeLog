@@ -1,3 +1,10 @@
+2005-12-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /addons/rtdm/module.c: all functions made 0 type, RTDM cares to
+	  act according to hard/soft mode appropriately (Jan sweared it).
+	* /base/sched/sys.c: add recovery of hard mode also before direct 
+	   LXRT calls.
+
 2005-12-20  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/sched/sched.c: in oneshot mode read the interrupt time 

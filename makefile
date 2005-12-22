@@ -1,5 +1,6 @@
 KCONFIG_DIR=./base/config/kconfig
 CC := gcc
+#CC := gcc -Wall -pedantic
 
 ifneq ($(MAKECMDGOALS),help)
 ifeq ($(srctree),)
@@ -54,10 +55,10 @@ config.status: .rtai_config
 	eval `grep ^CONFIG_RTAI_MAINTAINER $<`; \
 	test x$$CONFIG_RTAI_MAINTAINER_AUTOTOOLS = xy && confopts=--enable-maintainer-mode; \
 	CROSS_COMPILE=$(CROSS_COMPILE) \
-	CC=$(CROSS_COMPILE)$(CC) \
-	CXX=$(CROSS_COMPILE)$(CXX) \
-	LD=$(CROSS_COMPILE)$(LD) \
-	AR=$(CROSS_COMPILE)$(AR) \
+	CC="$(CROSS_COMPILE)$(CC)" \
+	CXX="$(CROSS_COMPILE)$(CXX)" \
+	LD="$(CROSS_COMPILE)$(LD)" \
+	AR="$(CROSS_COMPILE)$(AR)" \
 	RANLIB=$(CROSS_COMPILE)ranlib \
 	STRIP=$(CROSS_COMPILE)strip \
 	NM=$(CROSS_COMPILE)nm \

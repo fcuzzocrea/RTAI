@@ -313,7 +313,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		type = funcm[srq].type;
 		if (likely(type)) {
 			if (unlikely(task->is_hard < 0)) {
-				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
+				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, RESUME), PID = %d.\n", current->pid););
 				steal_from_linux(task);
 				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
 			}
@@ -321,7 +321,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			return task->retval;
 		} else {
 			if (unlikely(task && task->is_hard < 0)) {
-				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD BEFORE A DIRECT LXRT CALL (SYSLXRT), PID = %d.\n", current->pid););
+				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, DIRECT), PID = %d.\n", current->pid););
 				steal_from_linux(task);
 				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
 			}

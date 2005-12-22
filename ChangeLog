@@ -1,3 +1,8 @@
+2005-12-22  Roberto Bucher  <roberto.bucher@supsi.ch>
+
+        * rtai-lab/matlab/rtmain.c: Applied patch from Marco Romagnoli and
+	modification from Paolo Mantegazza.
+
 2005-12-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* /base/sched/sched.c: added inquiries for hard timer tick count.

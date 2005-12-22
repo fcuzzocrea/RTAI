@@ -320,6 +320,11 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 			lxrt_resume(funcm[srq].fun, NARG(lxsrq), arg, type, task);
 			return task->retval;
 		} else {
+			if (unlikely(task && task->is_hard < 0)) {
+				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD BEFORE A DIRECT LXRT CALL (SYSLXRT), PID = %d.\n", current->pid););
+				steal_from_linux(task);
+				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
+			}
 			return ((long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
 	        }
 	}

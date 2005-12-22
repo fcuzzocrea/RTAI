@@ -65,11 +65,11 @@ static struct rt_fun_entry rtdm[] = {
 	[__rtdm_open]    = { 0, _rtdm_open },
 	[__rtdm_socket]  = { 0, _rtdm_socket },
 	[__rtdm_close]   = { 0, _rtdm_close },
-	[__rtdm_ioctl]   = { 1, _rtdm_ioctl },
-	[__rtdm_read]    = { 1, _rtdm_read },
-	[__rtdm_write]   = { 1, _rtdm_write },
-	[__rtdm_recvmsg] = { 1, _rtdm_recvmsg },
-	[__rtdm_sendmsg] = { 1, _rtdm_sendmsg }
+	[__rtdm_ioctl]   = { 0, _rtdm_ioctl },
+	[__rtdm_read]    = { 0, _rtdm_read },
+	[__rtdm_write]   = { 0, _rtdm_write },
+	[__rtdm_recvmsg] = { 0, _rtdm_recvmsg },
+	[__rtdm_sendmsg] = { 0, _rtdm_sendmsg }
 };
 
 #else /* !TRUE_LXRT_WAY */
@@ -145,11 +145,11 @@ static struct rt_fun_entry rtdm[] = {
 	[__rtdm_open]    = { 0, sys_rtdm_open },
 	[__rtdm_socket]  = { 0, sys_rtdm_socket },
 	[__rtdm_close]   = { 0, sys_rtdm_close },
-	[__rtdm_ioctl]   = { 1, sys_rtdm_ioctl },
-	[__rtdm_read]    = { 1, sys_rtdm_read },
-	[__rtdm_write]   = { 1, sys_rtdm_write },
-	[__rtdm_recvmsg] = { 1, sys_rtdm_recvmsg },
-	[__rtdm_sendmsg] = { 1, sys_rtdm_sendmsg },
+	[__rtdm_ioctl]   = { 0, sys_rtdm_ioctl },
+	[__rtdm_read]    = { 0, sys_rtdm_read },
+	[__rtdm_write]   = { 0, sys_rtdm_write },
+	[__rtdm_recvmsg] = { 0, sys_rtdm_recvmsg },
+	[__rtdm_sendmsg] = { 0, sys_rtdm_sendmsg },
 };
 
 #endif /* TRUE_LXRT_WAY */

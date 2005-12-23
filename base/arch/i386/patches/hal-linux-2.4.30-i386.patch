@@ -1,6 +1,6 @@
-diff -uNrp linux-2.4.30/Documentation/adeos.txt linux-2.4.30.bak/Documentation/adeos.txt
---- linux-2.4.30/Documentation/adeos.txt	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.bak/Documentation/adeos.txt	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/Documentation/adeos.txt linux-2.4.31.bak/Documentation/adeos.txt
+--- linux-2.4.31/Documentation/adeos.txt	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31.bak/Documentation/adeos.txt	2005-10-17 12:29:49.000000000 +0200
 @@ -0,0 +1,172 @@
 +
 +The Adeos nanokernel is based on research and publications made in the
@@ -174,9 +174,9 @@ diff -uNrp linux-2.4.30/Documentation/adeos.txt linux-2.4.30.bak/Documentation/a
 +http://citeseer.nj.nec.com/engler95exokernel.html
 +ftp://ftp.cag.lcs.mit.edu/multiscale/exokernel.ps.Z
 +----------------------------------------------------------------------
-diff -uNrp linux-2.4.30/Makefile linux-2.4.30.bak/Makefile
---- linux-2.4.30/Makefile	2005-04-04 03:42:20.000000000 +0200
-+++ linux-2.4.30.bak/Makefile	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/Makefile linux-2.4.31.bak/Makefile
+--- linux-2.4.31/Makefile	2005-06-01 02:56:56.000000000 +0200
++++ linux-2.4.31.bak/Makefile	2005-10-17 12:29:49.000000000 +0200
 @@ -1,7 +1,7 @@
  VERSION = 2
  PATCHLEVEL = 4
@@ -211,9 +211,9 @@ diff -uNrp linux-2.4.30/Makefile linux-2.4.30.bak/Makefile
  DRIVERS-$(CONFIG_ACPI_BOOT) += drivers/acpi/acpi.o
  DRIVERS-$(CONFIG_PARPORT) += drivers/parport/driver.o
  DRIVERS-y += drivers/char/char.o \
-diff -uNrp linux-2.4.30/adeos/Makefile linux-2.4.30.bak/adeos/Makefile
---- linux-2.4.30/adeos/Makefile	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.bak/adeos/Makefile	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/adeos/Makefile linux-2.4.31.bak/adeos/Makefile
+--- linux-2.4.31/adeos/Makefile	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31.bak/adeos/Makefile	2005-10-17 12:29:49.000000000 +0200
 @@ -0,0 +1,32 @@
 +#
 +# Makefile for the Adeos layer.
@@ -247,9 +247,9 @@ diff -uNrp linux-2.4.30/adeos/Makefile linux-2.4.30.bak/adeos/Makefile
 +
 +adeos.o: $(adeos-objs)
 +	$(LD) -r -o $@ $(adeos-objs)
-diff -uNrp linux-2.4.30/adeos/generic.c linux-2.4.30.bak/adeos/generic.c
---- linux-2.4.30/adeos/generic.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.bak/adeos/generic.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/adeos/generic.c linux-2.4.31.bak/adeos/generic.c
+--- linux-2.4.31/adeos/generic.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31.bak/adeos/generic.c	2005-10-17 12:29:49.000000000 +0200
 @@ -0,0 +1,721 @@
 +/*
 + *   linux/adeos/generic.c
@@ -972,9 +972,9 @@ diff -uNrp linux-2.4.30/adeos/generic.c linux-2.4.30.bak/adeos/generic.c
 +EXPORT_SYMBOL(adeos_destroy_mutex);
 +EXPORT_SYMBOL(adeos_lock_mutex);
 +EXPORT_SYMBOL(adeos_unlock_mutex);
-diff -uNrp linux-2.4.30/adeos/x86.c linux-2.4.30.bak/adeos/x86.c
---- linux-2.4.30/adeos/x86.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.bak/adeos/x86.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/adeos/x86.c linux-2.4.31.bak/adeos/x86.c
+--- linux-2.4.31/adeos/x86.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31.bak/adeos/x86.c	2005-10-17 12:29:49.000000000 +0200
 @@ -0,0 +1,1002 @@
 +/*
 + *   linux/adeos/x86.c
@@ -1978,9 +1978,9 @@ diff -uNrp linux-2.4.30/adeos/x86.c linux-2.4.30.bak/adeos/x86.c
 +
 +    return 0;
 +}
-diff -uNrp linux-2.4.30/arch/i386/config.in linux-2.4.30.bak/arch/i386/config.in
---- linux-2.4.30/arch/i386/config.in	2004-11-17 12:54:21.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/config.in	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/config.in linux-2.4.31.bak/arch/i386/config.in
+--- linux-2.4.31/arch/i386/config.in	2004-11-17 12:54:21.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/config.in	2005-10-17 12:29:49.000000000 +0200
 @@ -267,6 +267,10 @@ mainmenu_option next_comment
  comment 'General setup'
  
@@ -1992,9 +1992,9 @@ diff -uNrp linux-2.4.30/arch/i386/config.in linux-2.4.30.bak/arch/i386/config.in
  
  # Visual Workstation support is utterly broken.
  # If you want to see it working mail an VW540 to hch@infradead.org 8)
-diff -uNrp linux-2.4.30/arch/i386/kernel/Makefile linux-2.4.30.bak/arch/i386/kernel/Makefile
---- linux-2.4.30/arch/i386/kernel/Makefile	2005-04-04 03:42:19.000000000 +0200
-+++ linux-2.4.30.bak/arch/i386/kernel/Makefile	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/Makefile linux-2.4.31.bak/arch/i386/kernel/Makefile
+--- linux-2.4.31/arch/i386/kernel/Makefile	2005-04-04 03:42:19.000000000 +0200
++++ linux-2.4.31.bak/arch/i386/kernel/Makefile	2005-10-17 12:29:49.000000000 +0200
 @@ -14,7 +14,7 @@ all: kernel.o head.o init_task.o
  
  O_TARGET := kernel.o
@@ -2012,9 +2012,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/Makefile linux-2.4.30.bak/arch/i386/ker
  obj-$(CONFIG_MCA)		+= mca.o
  obj-$(CONFIG_MTRR)		+= mtrr.o
  obj-$(CONFIG_X86_MSR)		+= msr.o
-diff -uNrp linux-2.4.30/arch/i386/kernel/adeos.c linux-2.4.30.bak/arch/i386/kernel/adeos.c
---- linux-2.4.30/arch/i386/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/kernel/adeos.c	2005-10-17 12:51:50.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/adeos.c linux-2.4.31.bak/arch/i386/kernel/adeos.c
+--- linux-2.4.31/arch/i386/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/kernel/adeos.c	2005-10-17 12:53:34.000000000 +0200
 @@ -0,0 +1,604 @@
 +/*
 + *   linux/arch/i386/kernel/adeos.c
@@ -2620,9 +2620,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/adeos.c linux-2.4.30.bak/arch/i386/kern
 +
 +    adeos_put_cpu(flags);
 +}
-diff -uNrp linux-2.4.30/arch/i386/kernel/apic.c linux-2.4.30.bak/arch/i386/kernel/apic.c
---- linux-2.4.30/arch/i386/kernel/apic.c	2004-11-17 12:54:21.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/kernel/apic.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/apic.c linux-2.4.31.bak/arch/i386/kernel/apic.c
+--- linux-2.4.31/arch/i386/kernel/apic.c	2004-11-17 12:54:21.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/kernel/apic.c	2005-10-17 12:29:49.000000000 +0200
 @@ -1096,7 +1096,7 @@ inline void smp_local_timer_interrupt(st
  	 * Currently this isn't too much of an issue (performance wise),
  	 * we can take more than 100K local irqs per second on a 100 MHz P5.
@@ -2654,9 +2654,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/apic.c linux-2.4.30.bak/arch/i386/kerne
  	ack_APIC_irq();
  	atomic_inc(&irq_err_count);
  
-diff -uNrp linux-2.4.30/arch/i386/kernel/entry.S linux-2.4.30.bak/arch/i386/kernel/entry.S
---- linux-2.4.30/arch/i386/kernel/entry.S	2003-06-13 16:51:29.000000000 +0200
-+++ linux-2.4.30.bak/arch/i386/kernel/entry.S	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/entry.S linux-2.4.31.bak/arch/i386/kernel/entry.S
+--- linux-2.4.31/arch/i386/kernel/entry.S	2003-06-13 16:51:29.000000000 +0200
++++ linux-2.4.31.bak/arch/i386/kernel/entry.S	2005-10-17 12:29:49.000000000 +0200
 @@ -84,6 +84,11 @@ processor	= 52
  ENOSYS = 38
  
@@ -2771,9 +2771,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/entry.S linux-2.4.30.bak/arch/i386/kern
  	testl $(VM_MASK),EFLAGS(%esp)
  	movl %esp,%eax
  	jne v86_signal_return
-diff -uNrp linux-2.4.30/arch/i386/kernel/i386_ksyms.c linux-2.4.30.bak/arch/i386/kernel/i386_ksyms.c
---- linux-2.4.30/arch/i386/kernel/i386_ksyms.c	2004-04-14 15:05:25.000000000 +0200
-+++ linux-2.4.30.bak/arch/i386/kernel/i386_ksyms.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/i386_ksyms.c linux-2.4.31.bak/arch/i386/kernel/i386_ksyms.c
+--- linux-2.4.31/arch/i386/kernel/i386_ksyms.c	2004-04-14 15:05:25.000000000 +0200
++++ linux-2.4.31.bak/arch/i386/kernel/i386_ksyms.c	2005-10-17 12:29:49.000000000 +0200
 @@ -33,6 +33,71 @@
  extern void dump_thread(struct pt_regs *, struct user *);
  extern spinlock_t rtc_lock;
@@ -2846,9 +2846,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/i386_ksyms.c linux-2.4.30.bak/arch/i386
  #if defined(CONFIG_APM) || defined(CONFIG_APM_MODULE)
  extern void machine_real_restart(unsigned char *, int);
  EXPORT_SYMBOL(machine_real_restart);
-diff -uNrp linux-2.4.30/arch/i386/kernel/i8259.c linux-2.4.30.bak/arch/i386/kernel/i8259.c
---- linux-2.4.30/arch/i386/kernel/i8259.c	2004-08-08 01:26:04.000000000 +0200
-+++ linux-2.4.30.bak/arch/i386/kernel/i8259.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/i8259.c linux-2.4.31.bak/arch/i386/kernel/i8259.c
+--- linux-2.4.31/arch/i386/kernel/i8259.c	2004-08-08 01:26:04.000000000 +0200
++++ linux-2.4.31.bak/arch/i386/kernel/i8259.c	2005-10-17 12:29:49.000000000 +0200
 @@ -266,6 +266,36 @@ static inline int i8259A_irq_real(unsign
   */
  void mask_and_ack_8259A(unsigned int irq)
@@ -2894,9 +2894,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/i8259.c linux-2.4.30.bak/arch/i386/kern
  
  spurious_8259A_irq:
  	/*
-diff -uNrp linux-2.4.30/arch/i386/kernel/io_apic.c linux-2.4.30.bak/arch/i386/kernel/io_apic.c
---- linux-2.4.30/arch/i386/kernel/io_apic.c	2004-11-17 12:54:21.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/kernel/io_apic.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/io_apic.c linux-2.4.31.bak/arch/i386/kernel/io_apic.c
+--- linux-2.4.31/arch/i386/kernel/io_apic.c	2004-11-17 12:54:21.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/kernel/io_apic.c	2005-10-17 12:29:49.000000000 +0200
 @@ -1250,6 +1250,25 @@ static unsigned int startup_edge_ioapic_
   * interrupt for real. This prevents IRQ storms from unhandled
   * devices.
@@ -3007,9 +3007,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/io_apic.c linux-2.4.30.bak/arch/i386/ke
  #ifndef CONFIG_SMP
  
  void fastcall send_IPI_self(int vector)
-diff -uNrp linux-2.4.30/arch/i386/kernel/irq.c linux-2.4.30.bak/arch/i386/kernel/irq.c
---- linux-2.4.30/arch/i386/kernel/irq.c	2003-11-28 19:26:19.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/kernel/irq.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/irq.c linux-2.4.31.bak/arch/i386/kernel/irq.c
+--- linux-2.4.31/arch/i386/kernel/irq.c	2003-11-28 19:26:19.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/kernel/irq.c	2005-10-17 12:29:49.000000000 +0200
 @@ -595,6 +595,9 @@ asmlinkage unsigned int do_IRQ(struct pt
  
  	kstat.irqs[cpu][irq]++;
@@ -3067,9 +3067,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/irq.c linux-2.4.30.bak/arch/i386/kernel
  		register_irq_proc(i);
  }
 -
-diff -uNrp linux-2.4.30/arch/i386/kernel/nmi.c linux-2.4.30.bak/arch/i386/kernel/nmi.c
---- linux-2.4.30/arch/i386/kernel/nmi.c	2003-06-13 16:51:29.000000000 +0200
-+++ linux-2.4.30.bak/arch/i386/kernel/nmi.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/nmi.c linux-2.4.31.bak/arch/i386/kernel/nmi.c
+--- linux-2.4.31/arch/i386/kernel/nmi.c	2003-06-13 16:51:29.000000000 +0200
++++ linux-2.4.31.bak/arch/i386/kernel/nmi.c	2005-10-17 12:29:49.000000000 +0200
 @@ -363,6 +363,9 @@ void nmi_watchdog_tick (struct pt_regs *
  			bust_spinlocks(1);
  			printk("NMI Watchdog detected LOCKUP on CPU%d, eip %08lx, registers:\n", cpu, regs->eip);
@@ -3080,9 +3080,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/nmi.c linux-2.4.30.bak/arch/i386/kernel
  			printk("console shuts up ...\n");
  			console_silent();
  			spin_unlock(&nmi_print_lock);
-diff -uNrp linux-2.4.30/arch/i386/kernel/process.c linux-2.4.30.bak/arch/i386/kernel/process.c
---- linux-2.4.30/arch/i386/kernel/process.c	2004-11-17 12:54:21.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/kernel/process.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/process.c linux-2.4.31.bak/arch/i386/kernel/process.c
+--- linux-2.4.31/arch/i386/kernel/process.c	2004-11-17 12:54:21.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/kernel/process.c	2005-10-17 12:29:49.000000000 +0200
 @@ -134,6 +134,9 @@ void cpu_idle (void)
  		void (*idle)(void) = pm_idle;
  		if (!idle)
@@ -3093,9 +3093,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/process.c linux-2.4.30.bak/arch/i386/ke
  		while (!current->need_resched)
  			idle();
  		schedule();
-diff -uNrp linux-2.4.30/arch/i386/kernel/smp.c linux-2.4.30.bak/arch/i386/kernel/smp.c
---- linux-2.4.30/arch/i386/kernel/smp.c	2004-11-17 12:54:21.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/kernel/smp.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/smp.c linux-2.4.31.bak/arch/i386/kernel/smp.c
+--- linux-2.4.31/arch/i386/kernel/smp.c	2004-11-17 12:54:21.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/kernel/smp.c	2005-10-17 12:29:49.000000000 +0200
 @@ -134,6 +134,11 @@ static inline void __send_IPI_shortcut(u
  	 */
  	unsigned int cfg;
@@ -3217,9 +3217,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/smp.c linux-2.4.30.bak/arch/i386/kernel
 +}
 +
 +#endif /* CONFIG_ADEOS_CORE */
-diff -uNrp linux-2.4.30/arch/i386/kernel/smpboot.c linux-2.4.30.bak/arch/i386/kernel/smpboot.c
---- linux-2.4.30/arch/i386/kernel/smpboot.c	2004-04-14 15:05:25.000000000 +0200
-+++ linux-2.4.30.bak/arch/i386/kernel/smpboot.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/smpboot.c linux-2.4.31.bak/arch/i386/kernel/smpboot.c
+--- linux-2.4.31/arch/i386/kernel/smpboot.c	2004-04-14 15:05:25.000000000 +0200
++++ linux-2.4.31.bak/arch/i386/kernel/smpboot.c	2005-10-17 12:29:49.000000000 +0200
 @@ -1012,6 +1012,9 @@ void __init smp_boot_cpus(void)
  	else
  		boot_cpu_logical_apicid = logical_smp_processor_id();
@@ -3230,9 +3230,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/smpboot.c linux-2.4.30.bak/arch/i386/ke
  
  	global_irq_holder = 0;
  	current->processor = 0;
-diff -uNrp linux-2.4.30/arch/i386/kernel/time.c linux-2.4.30.bak/arch/i386/kernel/time.c
---- linux-2.4.30/arch/i386/kernel/time.c	2004-02-18 14:36:30.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/kernel/time.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/time.c linux-2.4.31.bak/arch/i386/kernel/time.c
+--- linux-2.4.31/arch/i386/kernel/time.c	2004-02-18 14:36:30.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/kernel/time.c	2005-10-17 12:29:49.000000000 +0200
 @@ -211,13 +211,22 @@ static unsigned long do_slow_gettimeoffs
  
  			int i;
@@ -3293,9 +3293,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/time.c linux-2.4.30.bak/arch/i386/kerne
  	}
  
  	do_timer_interrupt(irq, NULL, regs);
-diff -uNrp linux-2.4.30/arch/i386/kernel/traps.c linux-2.4.30.bak/arch/i386/kernel/traps.c
---- linux-2.4.30/arch/i386/kernel/traps.c	2002-11-29 00:53:09.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/kernel/traps.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/kernel/traps.c linux-2.4.31.bak/arch/i386/kernel/traps.c
+--- linux-2.4.31/arch/i386/kernel/traps.c	2002-11-29 00:53:09.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/kernel/traps.c	2005-10-17 12:29:49.000000000 +0200
 @@ -754,6 +754,10 @@ asmlinkage void do_spurious_interrupt_bu
   */
  asmlinkage void math_state_restore(struct pt_regs regs)
@@ -3317,9 +3317,9 @@ diff -uNrp linux-2.4.30/arch/i386/kernel/traps.c linux-2.4.30.bak/arch/i386/kern
  }
  
  #ifndef CONFIG_MATH_EMULATION
-diff -uNrp linux-2.4.30/arch/i386/mm/fault.c linux-2.4.30.bak/arch/i386/mm/fault.c
---- linux-2.4.30/arch/i386/mm/fault.c	2004-08-08 01:26:04.000000000 +0200
-+++ linux-2.4.30.bak/arch/i386/mm/fault.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/mm/fault.c linux-2.4.31.bak/arch/i386/mm/fault.c
+--- linux-2.4.31/arch/i386/mm/fault.c	2004-08-08 01:26:04.000000000 +0200
++++ linux-2.4.31.bak/arch/i386/mm/fault.c	2005-10-17 12:29:49.000000000 +0200
 @@ -153,7 +153,11 @@ asmlinkage void do_page_fault(struct pt_
  
  	/* It's safe to allow irq's after cr2 has been saved */
@@ -3333,9 +3333,9 @@ diff -uNrp linux-2.4.30/arch/i386/mm/fault.c linux-2.4.30.bak/arch/i386/mm/fault
  
  	tsk = current;
  
-diff -uNrp linux-2.4.30/arch/i386/mm/ioremap.c linux-2.4.30.bak/arch/i386/mm/ioremap.c
---- linux-2.4.30/arch/i386/mm/ioremap.c	2003-11-28 19:26:19.000000000 +0100
-+++ linux-2.4.30.bak/arch/i386/mm/ioremap.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/arch/i386/mm/ioremap.c linux-2.4.31.bak/arch/i386/mm/ioremap.c
+--- linux-2.4.31/arch/i386/mm/ioremap.c	2003-11-28 19:26:19.000000000 +0100
++++ linux-2.4.31.bak/arch/i386/mm/ioremap.c	2005-10-17 12:29:49.000000000 +0200
 @@ -81,6 +81,9 @@ static int remap_area_pages(unsigned lon
  		if (remap_area_pmd(pmd, address, end - address,
  					 phys_addr + address, flags))
@@ -3346,9 +3346,9 @@ diff -uNrp linux-2.4.30/arch/i386/mm/ioremap.c linux-2.4.30.bak/arch/i386/mm/ior
  		error = 0;
  		address = (address + PGDIR_SIZE) & PGDIR_MASK;
  		dir++;
-diff -uNrp linux-2.4.30/include/asm-i386/adeos.h linux-2.4.30.bak/include/asm-i386/adeos.h
---- linux-2.4.30/include/asm-i386/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.bak/include/asm-i386/adeos.h	2005-10-17 12:21:09.000000000 +0200
+diff -uNrp linux-2.4.31/include/asm-i386/adeos.h linux-2.4.31.bak/include/asm-i386/adeos.h
+--- linux-2.4.31/include/asm-i386/adeos.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31.bak/include/asm-i386/adeos.h	2005-10-17 12:31:10.000000000 +0200
 @@ -0,0 +1,472 @@
 +/*
 + *   include/asm-i386/adeos.h
@@ -3822,9 +3822,9 @@ diff -uNrp linux-2.4.30/include/asm-i386/adeos.h linux-2.4.30.bak/include/asm-i3
 +#include <linux/irq.h>
 +
 +#endif /* !__I386_ADEOS_H */
-diff -uNrp linux-2.4.30/include/asm-i386/hw_irq.h linux-2.4.30.bak/include/asm-i386/hw_irq.h
---- linux-2.4.30/include/asm-i386/hw_irq.h	2003-08-25 13:44:43.000000000 +0200
-+++ linux-2.4.30.bak/include/asm-i386/hw_irq.h	2005-10-17 12:21:09.000000000 +0200
+diff -uNrp linux-2.4.31/include/asm-i386/hw_irq.h linux-2.4.31.bak/include/asm-i386/hw_irq.h
+--- linux-2.4.31/include/asm-i386/hw_irq.h	2003-08-25 13:44:43.000000000 +0200
++++ linux-2.4.31.bak/include/asm-i386/hw_irq.h	2005-10-17 12:31:10.000000000 +0200
 @@ -56,7 +56,12 @@
   * levels. (0x80 is the syscall vector)
   */
@@ -3838,9 +3838,9 @@ diff -uNrp linux-2.4.30/include/asm-i386/hw_irq.h linux-2.4.30.bak/include/asm-i
  
  extern int irq_vector[NR_IRQS];
  #define IO_APIC_VECTOR(irq)	irq_vector[irq]
-diff -uNrp linux-2.4.30/include/asm-i386/pgalloc.h linux-2.4.30.bak/include/asm-i386/pgalloc.h
---- linux-2.4.30/include/asm-i386/pgalloc.h	2003-08-25 13:44:43.000000000 +0200
-+++ linux-2.4.30.bak/include/asm-i386/pgalloc.h	2005-10-17 12:21:09.000000000 +0200
+diff -uNrp linux-2.4.31/include/asm-i386/pgalloc.h linux-2.4.31.bak/include/asm-i386/pgalloc.h
+--- linux-2.4.31/include/asm-i386/pgalloc.h	2003-08-25 13:44:43.000000000 +0200
++++ linux-2.4.31.bak/include/asm-i386/pgalloc.h	2005-10-17 12:31:10.000000000 +0200
 @@ -139,6 +139,42 @@ static __inline__ void pte_free_slow(pte
  	free_page((unsigned long)pte);
  }
@@ -3884,9 +3884,9 @@ diff -uNrp linux-2.4.30/include/asm-i386/pgalloc.h linux-2.4.30.bak/include/asm-
  #define pte_free(pte)		pte_free_fast(pte)
  #define pgd_free(pgd)		free_pgd_slow(pgd)
  #define pgd_alloc(mm)		get_pgd_fast()
-diff -uNrp linux-2.4.30/include/asm-i386/smp.h linux-2.4.30.bak/include/asm-i386/smp.h
---- linux-2.4.30/include/asm-i386/smp.h	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30.bak/include/asm-i386/smp.h	2005-10-17 12:21:09.000000000 +0200
+diff -uNrp linux-2.4.31/include/asm-i386/smp.h linux-2.4.31.bak/include/asm-i386/smp.h
+--- linux-2.4.31/include/asm-i386/smp.h	2004-11-17 12:54:22.000000000 +0100
++++ linux-2.4.31.bak/include/asm-i386/smp.h	2005-10-17 12:31:10.000000000 +0200
 @@ -81,7 +81,11 @@ extern void smp_store_cpu_info(int id);	
   * so this is correct in the x86 case.
   */
@@ -3899,9 +3899,9 @@ diff -uNrp linux-2.4.30/include/asm-i386/smp.h linux-2.4.30.bak/include/asm-i386
  
  static __inline int hard_smp_processor_id(void)
  {
-diff -uNrp linux-2.4.30/include/asm-i386/system.h linux-2.4.30.bak/include/asm-i386/system.h
---- linux-2.4.30/include/asm-i386/system.h	2004-04-14 15:05:40.000000000 +0200
-+++ linux-2.4.30.bak/include/asm-i386/system.h	2005-10-17 12:21:06.000000000 +0200
+diff -uNrp linux-2.4.31/include/asm-i386/system.h linux-2.4.31.bak/include/asm-i386/system.h
+--- linux-2.4.31/include/asm-i386/system.h	2004-04-14 15:05:40.000000000 +0200
++++ linux-2.4.31.bak/include/asm-i386/system.h	2005-10-17 12:31:09.000000000 +0200
 @@ -12,6 +12,34 @@
  struct task_struct;	/* one of the stranger aspects of C forward declarations.. */
  extern void FASTCALL(__switch_to(struct task_struct *prev, struct task_struct *next));
@@ -3995,9 +3995,9 @@ diff -uNrp linux-2.4.30/include/asm-i386/system.h linux-2.4.30.bak/include/asm-i
  #ifdef CONFIG_SMP
  
  extern void __global_cli(void);
-diff -uNrp linux-2.4.30/include/linux/adeos.h linux-2.4.30.bak/include/linux/adeos.h
---- linux-2.4.30/include/linux/adeos.h	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.bak/include/linux/adeos.h	2005-10-17 12:21:09.000000000 +0200
+diff -uNrp linux-2.4.31/include/linux/adeos.h linux-2.4.31.bak/include/linux/adeos.h
+--- linux-2.4.31/include/linux/adeos.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31.bak/include/linux/adeos.h	2005-10-17 12:31:10.000000000 +0200
 @@ -0,0 +1,335 @@
 +/*
 + *   include/linux/adeos.h
@@ -4334,9 +4334,9 @@ diff -uNrp linux-2.4.30/include/linux/adeos.h linux-2.4.30.bak/include/linux/ade
 +}
 +
 +#endif /* !__LINUX_ADEOS_H */
-diff -uNrp linux-2.4.30/include/linux/sched.h linux-2.4.30.bak/include/linux/sched.h
---- linux-2.4.30/include/linux/sched.h	2005-01-19 15:10:12.000000000 +0100
-+++ linux-2.4.30.bak/include/linux/sched.h	2005-10-17 12:21:09.000000000 +0200
+diff -uNrp linux-2.4.31/include/linux/sched.h linux-2.4.31.bak/include/linux/sched.h
+--- linux-2.4.31/include/linux/sched.h	2005-01-19 15:10:12.000000000 +0100
++++ linux-2.4.31.bak/include/linux/sched.h	2005-10-17 12:31:10.000000000 +0200
 @@ -125,6 +125,10 @@ struct completion;
  
  #include <linux/spinlock.h>
@@ -4419,9 +4419,9 @@ diff -uNrp linux-2.4.30/include/linux/sched.h linux-2.4.30.bak/include/linux/sch
  
  
  #ifndef INIT_TASK_SIZE
-diff -uNrp linux-2.4.30/init/main.c linux-2.4.30.bak/init/main.c
---- linux-2.4.30/init/main.c	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30.bak/init/main.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/init/main.c linux-2.4.31.bak/init/main.c
+--- linux-2.4.31/init/main.c	2004-11-17 12:54:22.000000000 +0100
++++ linux-2.4.31.bak/init/main.c	2005-10-17 12:29:49.000000000 +0200
 @@ -370,6 +370,9 @@ asmlinkage void __init start_kernel(void
  	parse_options(command_line);
  	trap_init();
@@ -4442,9 +4442,9 @@ diff -uNrp linux-2.4.30/init/main.c linux-2.4.30.bak/init/main.c
  
  	/* Networking initialization needs a process context */ 
  	sock_init();
-diff -uNrp linux-2.4.30/kernel/Makefile linux-2.4.30.bak/kernel/Makefile
---- linux-2.4.30/kernel/Makefile	2001-09-17 06:22:40.000000000 +0200
-+++ linux-2.4.30.bak/kernel/Makefile	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/Makefile linux-2.4.31.bak/kernel/Makefile
+--- linux-2.4.31/kernel/Makefile	2001-09-17 06:22:40.000000000 +0200
++++ linux-2.4.31.bak/kernel/Makefile	2005-10-17 12:29:49.000000000 +0200
 @@ -9,7 +9,7 @@
  
  O_TARGET := kernel.o
@@ -4462,9 +4462,9 @@ diff -uNrp linux-2.4.30/kernel/Makefile linux-2.4.30.bak/kernel/Makefile
  
  ifneq ($(CONFIG_IA64),y)
  # According to Alan Modra <alan@linuxcare.com.au>, the -fno-omit-frame-pointer is
-diff -uNrp linux-2.4.30/kernel/adeos.c linux-2.4.30.bak/kernel/adeos.c
---- linux-2.4.30/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
-+++ linux-2.4.30.bak/kernel/adeos.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/adeos.c linux-2.4.31.bak/kernel/adeos.c
+--- linux-2.4.31/kernel/adeos.c	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.31.bak/kernel/adeos.c	2005-10-17 12:29:49.000000000 +0200
 @@ -0,0 +1,706 @@
 +/*
 + *   linux/kernel/adeos.c
@@ -5172,9 +5172,9 @@ diff -uNrp linux-2.4.30/kernel/adeos.c linux-2.4.30.bak/kernel/adeos.c
 +
 +    adeos_unlock_cpu(flags);
 +}
-diff -uNrp linux-2.4.30/kernel/exit.c linux-2.4.30.bak/kernel/exit.c
---- linux-2.4.30/kernel/exit.c	2002-11-29 00:53:15.000000000 +0100
-+++ linux-2.4.30.bak/kernel/exit.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/exit.c linux-2.4.31.bak/kernel/exit.c
+--- linux-2.4.31/kernel/exit.c	2002-11-29 00:53:15.000000000 +0100
++++ linux-2.4.31.bak/kernel/exit.c	2005-10-17 12:29:49.000000000 +0200
 @@ -439,6 +439,9 @@ fake_volatile:
  #ifdef CONFIG_BSD_PROCESS_ACCT
  	acct_process(code);
@@ -5185,9 +5185,9 @@ diff -uNrp linux-2.4.30/kernel/exit.c linux-2.4.30.bak/kernel/exit.c
  	__exit_mm(tsk);
  
  	lock_kernel();
-diff -uNrp linux-2.4.30/kernel/fork.c linux-2.4.30.bak/kernel/fork.c
---- linux-2.4.30/kernel/fork.c	2005-01-19 15:10:13.000000000 +0100
-+++ linux-2.4.30.bak/kernel/fork.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/fork.c linux-2.4.31.bak/kernel/fork.c
+--- linux-2.4.31/kernel/fork.c	2005-01-19 15:10:13.000000000 +0100
++++ linux-2.4.31.bak/kernel/fork.c	2005-10-17 12:29:49.000000000 +0200
 @@ -235,7 +235,13 @@ static struct mm_struct * mm_init(struct
  	atomic_set(&mm->mm_count, 1);
  	init_rwsem(&mm->mmap_sem);
@@ -5235,14 +5235,16 @@ diff -uNrp linux-2.4.30/kernel/fork.c linux-2.4.30.bak/kernel/fork.c
  	if (p->ptrace & PT_PTRACED)
  		send_sig(SIGSTOP, p, 1);
  
-diff -uNrp linux-2.4.30/kernel/ksyms.c linux-2.4.30.bak/kernel/ksyms.c
---- linux-2.4.30/kernel/ksyms.c	2004-02-18 14:36:32.000000000 +0100
-+++ linux-2.4.30.bak/kernel/ksyms.c	2005-10-17 12:00:13.000000000 +0200
-@@ -59,6 +59,38 @@
+diff -uNrp linux-2.4.31/kernel/ksyms.c linux-2.4.31.bak/kernel/ksyms.c
+--- linux-2.4.31/kernel/ksyms.c	2004-02-18 14:36:32.000000000 +0100
++++ linux-2.4.31.bak/kernel/ksyms.c	2005-10-17 12:29:49.000000000 +0200
+@@ -59,6 +59,40 @@
  #include <linux/kmod.h>
  #endif
  
 +#ifdef CONFIG_ADEOS_CORE
++extern void context_switch(void *, void *);
++EXPORT_SYMBOL(context_switch);
 +EXPORT_SYMBOL(adeos_suspend_domain);
 +EXPORT_SYMBOL(adeos_alloc_irq);
 +EXPORT_SYMBOL(adp_cpu_current);
@@ -5277,9 +5279,9 @@ diff -uNrp linux-2.4.30/kernel/ksyms.c linux-2.4.30.bak/kernel/ksyms.c
  extern void set_device_ro(kdev_t dev,int flag);
  
  extern void *sys_call_table;
-diff -uNrp linux-2.4.30/kernel/panic.c linux-2.4.30.bak/kernel/panic.c
---- linux-2.4.30/kernel/panic.c	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30.bak/kernel/panic.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/panic.c linux-2.4.31.bak/kernel/panic.c
+--- linux-2.4.31/kernel/panic.c	2004-11-17 12:54:22.000000000 +0100
++++ linux-2.4.31.bak/kernel/panic.c	2005-10-17 12:29:49.000000000 +0200
 @@ -68,6 +68,9 @@ NORET_TYPE void panic(const char * fmt, 
  		printk(KERN_EMERG "In idle task - not syncing\n");
  	else
@@ -5290,9 +5292,9 @@ diff -uNrp linux-2.4.30/kernel/panic.c linux-2.4.30.bak/kernel/panic.c
  	bust_spinlocks(0);
  
  #ifdef CONFIG_SMP
-diff -uNrp linux-2.4.30/kernel/printk.c linux-2.4.30.bak/kernel/printk.c
---- linux-2.4.30/kernel/printk.c	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30.bak/kernel/printk.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/printk.c linux-2.4.31.bak/kernel/printk.c
+--- linux-2.4.31/kernel/printk.c	2004-11-17 12:54:22.000000000 +0100
++++ linux-2.4.31.bak/kernel/printk.c	2005-10-17 12:29:49.000000000 +0200
 @@ -29,6 +29,17 @@
  
  #include <asm/uaccess.h>
@@ -5394,9 +5396,9 @@ diff -uNrp linux-2.4.30/kernel/printk.c linux-2.4.30.bak/kernel/printk.c
  /** console_conditional_schedule - yield the CPU if required
   *
   * If the console code is currently allowed to sleep, and
-diff -uNrp linux-2.4.30/kernel/sched.c linux-2.4.30.bak/kernel/sched.c
---- linux-2.4.30/kernel/sched.c	2004-11-17 12:54:22.000000000 +0100
-+++ linux-2.4.30.bak/kernel/sched.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/sched.c linux-2.4.31.bak/kernel/sched.c
+--- linux-2.4.31/kernel/sched.c	2004-11-17 12:54:22.000000000 +0100
++++ linux-2.4.31.bak/kernel/sched.c	2005-10-17 12:29:49.000000000 +0200
 @@ -532,6 +532,9 @@ needs_resched:
  asmlinkage void schedule_tail(struct task_struct *prev)
  {
@@ -5407,7 +5409,21 @@ diff -uNrp linux-2.4.30/kernel/sched.c linux-2.4.30.bak/kernel/sched.c
  }
  
  /*
-@@ -551,6 +554,10 @@ asmlinkage void schedule(void)
+@@ -544,6 +547,13 @@ asmlinkage void schedule_tail(struct tas
+  * tasks can run. It can not be killed, and it cannot sleep. The 'state'
+  * information in task[0] is never used.
+  */
++
++struct task_struct *context_switch(struct task_struct *prev, struct task_struct *next)
++{
++	switch_to(prev, next, prev);
++	return prev;
++}
++
+ asmlinkage void schedule(void)
+ {
+ 	struct schedule_data * sched_data;
+@@ -551,6 +561,10 @@ asmlinkage void schedule(void)
  	struct list_head *tmp;
  	int this_cpu, c;
  
@@ -5418,7 +5434,7 @@ diff -uNrp linux-2.4.30/kernel/sched.c linux-2.4.30.bak/kernel/sched.c
  
  	spin_lock_prefetch(&runqueue_lock);
  
-@@ -668,7 +675,11 @@ repeat_schedule:
+@@ -668,7 +682,11 @@ repeat_schedule:
  	 * but prev is set to (the just run) 'last' process by switch_to().
  	 * This might sound slightly confusing but makes tons of sense.
  	 */
@@ -5430,10 +5446,12 @@ diff -uNrp linux-2.4.30/kernel/sched.c linux-2.4.30.bak/kernel/sched.c
  	{
  		struct mm_struct *mm = next->mm;
  		struct mm_struct *oldmm = prev->active_mm;
-@@ -693,6 +704,12 @@ repeat_schedule:
+@@ -692,7 +710,13 @@ repeat_schedule:
+ 	 * This just switches the register state and the
  	 * stack.
  	 */
- 	switch_to(prev, next, prev);
+-	switch_to(prev, next, prev);
++	prev = context_switch(prev, next);
 +#ifdef CONFIG_ADEOS_CORE
 +	if (__adeos_schedule_tail(prev) > 0)
 +	    /* Some event handler asked for a truncated
@@ -5443,7 +5461,7 @@ diff -uNrp linux-2.4.30/kernel/sched.c linux-2.4.30.bak/kernel/sched.c
  	__schedule_tail(prev);
  
  same_process:
-@@ -702,6 +719,20 @@ same_process:
+@@ -702,6 +726,20 @@ same_process:
  	return;
  }
  
@@ -5464,7 +5482,7 @@ diff -uNrp linux-2.4.30/kernel/sched.c linux-2.4.30.bak/kernel/sched.c
  /*
   * The core wakeup function.  Non-exclusive wakeups (nr_exclusive == 0) just wake everything
   * up.  If it's an exclusive wakeup (nr_exclusive == small +ve number) then we wake all the
-@@ -989,6 +1020,13 @@ static int setscheduler(pid_t pid, int p
+@@ -989,6 +1027,13 @@ static int setscheduler(pid_t pid, int p
  		goto out_unlock;
  
  	retval = 0;
@@ -5478,9 +5496,9 @@ diff -uNrp linux-2.4.30/kernel/sched.c linux-2.4.30.bak/kernel/sched.c
  	p->policy = policy;
  	p->rt_priority = lp.sched_priority;
  
-diff -uNrp linux-2.4.30/kernel/signal.c linux-2.4.30.bak/kernel/signal.c
---- linux-2.4.30/kernel/signal.c	2004-02-18 14:36:32.000000000 +0100
-+++ linux-2.4.30.bak/kernel/signal.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/signal.c linux-2.4.31.bak/kernel/signal.c
+--- linux-2.4.31/kernel/signal.c	2004-02-18 14:36:32.000000000 +0100
++++ linux-2.4.31.bak/kernel/signal.c	2005-10-17 12:29:49.000000000 +0200
 @@ -496,6 +496,13 @@ static inline void signal_wake_up(struct
  {
  	t->sigpending = 1;
@@ -5513,9 +5531,9 @@ diff -uNrp linux-2.4.30/kernel/signal.c linux-2.4.30.bak/kernel/signal.c
  	spin_lock_irqsave(&t->sigmask_lock, flags);
  	handle_stop_signal(sig, t);
  
-diff -uNrp linux-2.4.30/kernel/sysctl.c linux-2.4.30.bak/kernel/sysctl.c
---- linux-2.4.30/kernel/sysctl.c	2005-01-19 15:10:13.000000000 +0100
-+++ linux-2.4.30.bak/kernel/sysctl.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/kernel/sysctl.c linux-2.4.31.bak/kernel/sysctl.c
+--- linux-2.4.31/kernel/sysctl.c	2005-01-19 15:10:13.000000000 +0100
++++ linux-2.4.31.bak/kernel/sysctl.c	2005-10-17 12:29:49.000000000 +0200
 @@ -365,6 +365,9 @@ void __init sysctl_init(void)
  #ifdef CONFIG_PROC_FS
  	register_proc_table(root_table, proc_sys_root);
@@ -5526,9 +5544,9 @@ diff -uNrp linux-2.4.30/kernel/sysctl.c linux-2.4.30.bak/kernel/sysctl.c
  #endif
  }
  
-diff -uNrp linux-2.4.30/mm/vmalloc.c linux-2.4.30.bak/mm/vmalloc.c
---- linux-2.4.30/mm/vmalloc.c	2004-04-14 15:05:41.000000000 +0200
-+++ linux-2.4.30.bak/mm/vmalloc.c	2005-10-17 12:00:13.000000000 +0200
+diff -uNrp linux-2.4.31/mm/vmalloc.c linux-2.4.31.bak/mm/vmalloc.c
+--- linux-2.4.31/mm/vmalloc.c	2004-04-14 15:05:41.000000000 +0200
++++ linux-2.4.31.bak/mm/vmalloc.c	2005-10-17 12:29:49.000000000 +0200
 @@ -165,6 +165,9 @@ static inline int __vmalloc_area_pages (
  	dir = pgd_offset_k(address);
  	spin_lock(&init_mm.page_table_lock);

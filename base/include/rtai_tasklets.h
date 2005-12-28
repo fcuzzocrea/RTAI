@@ -30,6 +30,8 @@
  * @addtogroup tasklets
  *@{*/
 
+#include <linux/rbtree.h>
+
 #include <rtai_types.h>
 
 #define TSKIDX  1
@@ -63,6 +65,10 @@ struct rt_tasklet_struct {
     int thread;
     struct rt_task_struct *task;
     struct rt_tasklet_struct *usptasklet;
+#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+    struct rb_root rbr;
+    struct rb_node rbn;
+#endif
 };
 
 #define TASKLET_STACK_SIZE  8196

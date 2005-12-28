@@ -1301,7 +1301,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(tick >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
 		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
-			SET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_handler, rtai_8254_timer_sysvec);
+			SET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	} else {
 		rt_times.linux_tick = rtai_imuldiv(LATCH,rtai_tunables.cpu_freq,RTAI_FREQ_8254);
@@ -1321,7 +1321,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(LATCH >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
 			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
-			SET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_handler, rtai_8254_timer_sysvec);
+			SET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	}
 	rtai_restore_flags(flags);
@@ -1351,7 +1351,7 @@ void rt_free_timer (void)
 		outb(LATCH & 0xff, 0x40);
 		outb(LATCH >> 8,0x40);
 		if (!rt_release_irq(RTAI_TIMER_8254_IRQ)) {
-			RESET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_sysvec);
+			RESET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_sysvec);
 		}
 	}
 	rtai_restore_flags(flags);

@@ -276,6 +276,45 @@ config RTAI_SCHED_ISR_LOCK
 	Those not wanting to care when/where to call any scheduling API in
 	their handler should enable this options to be happy.
 
+config RTAI_RTC_FREQ
+	string "Set RTC clock tick frequency and use it as the only timer"
+	default 0
+	help
+	1 - Are you happy of working in periodic mode?
+	2 - If so, is it accepable to resolve your timing needs with a 
+	    tick within a frequency that can be varied just in powers of
+	    2, from 2 to 8192 Hz?
+	If both your answers are YES than it might be worth setting your 
+	tick frequency of choice here and let RTAI schedulers work with 
+	it using the Real Time Clock (RTC). Be careful though as:
+	- you must not have configured the RTC as available to Linux;
+	- RTC will be the only available timer and its tick frequency 
+	  can be modified only here, so you must reconfigure this param 
+	  to change it, setting it to zero to return using the other 
+	  RTAI timers.
+	The main advantage of using the RTC, if constraints 1 and 2 can be
+	accepted, is that you will not touch any of the hard timing sources
+	used by Linux (8254 especially and APIC too). In fact if an APIC 
+	timer is available (SMP and recent machines) it is possible to avoid
+	the most important interference with Linux timing by not using the 
+	8254. However such a possibilty is not available on low end CPUs and 
+	and embedded systems. Thus in such cases, 1-2 above being acceptable 
+	once more, setting this config param might be a good choice.
+
+config RTAI_LONG_TIMED_LIST
+	bool "Use a binary tree ordering for RTAI schedulers timed lists.
+	default n
+	help
+	RTAI schedulers use a simple ordered linear list for suspended timed
+	tasks by default. By enabling this option a binary sort type ordering 
+	is used. Such a scheme requires far less, albeit far more complex, 
+	operations to set up a time ordered list of wake up times. So when 
+	one has not so many tasks on the timed lists this option might not 
+	be worth having. The actual threshold value depends on many factors,
+	CPU power being the main factor. So it is up to you to make a choice.
+	For sure if you have many tens or even hundreds of timed tasks then 
+	it is likely that it might be worth enabling this option.
+
 config RTAI_SCHED_8254_LATENCY
 	string "8254 tuning latency (ns)"
 	default 4700
@@ -283,6 +322,7 @@ config RTAI_SCHED_8254_LATENCY
 	The anticipation time to be used to program the hard timer, in oneshot
 	mode, for the next scheduling shot in order to compensate for the 
 	programming overhead needed to determine the right firing time.
+	This parameter has no effect when the periodic mode is used.
 
 config RTAI_SCHED_APIC_LATENCY
 	string "APIC tuning latency (ns)"
@@ -291,6 +331,7 @@ config RTAI_SCHED_APIC_LATENCY
         The anticipation time to be used to program the hard timer, in oneshot
         mode, for the next scheduling shot in order to compensate for the
         programming overhead needed to determine the right firing time.
+	This parameter has no effect when the periodic mode is used.
 
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of registrable RTAI objects"

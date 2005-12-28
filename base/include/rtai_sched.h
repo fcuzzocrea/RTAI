@@ -163,6 +163,9 @@ typedef struct rt_task_struct {
     struct rt_heap_t heap[2];
 
     volatile int scheduler;
+
+    struct rb_root rbr;
+    struct rb_node rbn;
 } RT_TASK __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
 
 #else /* __cplusplus */

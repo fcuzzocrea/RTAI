@@ -1,3 +1,10 @@
+2005-12-29  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklets.h: extended to support binary tree
+	  for long timed lists.
+        * base/tasklet/tasklets.c: extended to support binary tree ordering 
+	  for long timed lists.
+
 2005-12-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * base/arch/i386/Kconfig: added new config parameters for rtc and 

@@ -156,6 +156,61 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_register_task },	  	//  15
 };
 
+#ifdef CONFIG_RTAI_LONG_TIMED_LIST
+
+/* BINARY TREE */
+static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
+{
+	struct rt_tasklet_struct *timerh, *tmrnxt, *timer;
+	rb_node_t **rbtn, *rbtpn = NULL;
+	timer = timerh = &timers_list;
+	rbtn = &timerh->rbr.rb_node;
+
+	while (*rbtn) {
+		rbtpn = *rbtn;
+		tmrnxt = rb_entry(rbtpn, struct rt_tasklet_struct, rbn);
+		if (timer->firing_time > tmrnxt->firing_time) {
+			rbtn = &(rbtpn)->rb_right;
+		} else {
+			rbtn = &(rbtpn)->rb_left;
+			timer = tmrnxt;
+		}
+	}
+	rb_link_node(&timed_timer->rbn, rbtpn, rbtn);
+	rb_insert_color(&timed_timer->rbn, &timerh->rbr);
+	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
+	timed_timer->next = timer;
+}
+
+static inline void rem_timer(struct rt_tasklet_struct *timer)
+{
+	(timer->next)->prev = timer->prev;
+	(timer->prev)->next = timer->next;
+	timer->next = timer->prev = timer;
+	rb_erase(&timer->rbn, &timers_list.rbr);
+}
+
+#else /* !CONFIG_RTAI_LONG_TIMED_LIST */
+
+/* LINEAR */
+static inline void enq_timer(struct rt_tasklet_struct *timer)
+{
+	struct rt_tasklet_struct *tmr;
+        tmr = &timers_list;
+        while (timer->firing_time >= (tmr = tmr->next)->firing_time);
+	tmr->prev = (timer->prev = tmr->prev)->next = timer;
+	timer->next = tmr;
+}
+
+static inline void rem_timer(struct rt_tasklet_struct *timer)
+{
+	(timer->next)->prev = timer->prev;
+	(timer->prev)->next = timer->next;
+	timer->next = timer->prev = timer;
+}
+
+#endif /* CONFIG_RTAI_LONG_TIMED_LIST */
+
 /**
  * Insert a tasklet in the list of tasklets to be processed.
  *
@@ -347,6 +402,8 @@ static inline void asgn_min_prio(void)
 		if (timer->priority < priority) {
 			priority = timer->priority;
 		}
+		rt_spin_unlock_irqrestore(flags, &timers_lock);
+		flags = rt_spin_lock_irqsave(&timers_lock);
 	}
 	rt_spin_unlock_irqrestore(flags, &timers_lock);
 	flags = rt_global_save_flags_and_cli();
@@ -364,18 +421,11 @@ static inline void set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME 
 {
 	if (timer->next != timer && timer->prev != timer) {
 		unsigned long flags;
-		struct rt_tasklet_struct *tmr;
 
-		tmr = &timers_list;
 		timer->firing_time = firing_time;
 		flags = rt_spin_lock_irqsave(&timers_lock);
-		(timer->next)->prev = timer->prev;
-		(timer->prev)->next = timer->next;
-		while (firing_time >= (tmr = tmr->next)->firing_time);
-		timer->next     = tmr;
-		timer->prev     = tmr->prev;
-		(tmr->prev)->next = timer;
-		tmr->prev         = timer;
+		rem_timer(timer);
+		enq_timer(timer);
 		rt_spin_unlock_irqrestore(flags, &timers_lock);
 	}
 }
@@ -420,7 +470,6 @@ static inline void set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME 
 int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data, int pid)
 {
 	unsigned long flags;
-	struct rt_tasklet_struct *tmr;
 
 // timer initialization
 	if (!handler) {
@@ -439,13 +488,8 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
 		rt_copy_to_user(timer->usptasklet, timer, sizeof(struct rt_tasklet_struct));
 	}
 // timer insertion in timers_list
-	tmr = &timers_list;
 	flags = rt_spin_lock_irqsave(&timers_lock);
-	while (firing_time >= (tmr = tmr->next)->firing_time);
-	timer->next     = tmr;
-	timer->prev     = tmr->prev;
-	(tmr->prev)->next = timer;
-	tmr->prev         = timer;
+	enq_timer(timer);
 	rt_spin_unlock_irqrestore(flags, &timers_lock);
 // timers_manager priority inheritance
 	if (timer->priority < timers_manager.priority) {
@@ -478,9 +522,7 @@ void rt_remove_timer(struct rt_tasklet_struct *timer)
 	if (timer->next != timer && timer->prev != timer) {
 		unsigned long flags;
 		flags = rt_spin_lock_irqsave(&timers_lock);
-		(timer->next)->prev = timer->prev;
-		(timer->prev)->next = timer->next;
-		timer->next = timer->prev = timer;
+		rem_timer(timer);
 		rt_spin_unlock_irqrestore(flags, &timers_lock);
 		asgn_min_prio();
 	}
@@ -608,9 +650,7 @@ static void rt_timers_manager(long dummy)
 			}
 			if (!timer->period) {
 				flags = rt_spin_lock_irqsave(&timers_lock);
-				(timer->next)->prev = timer->prev;
-				(timer->prev)->next = timer->next;
-				timer->next = timer->prev = timer;
+				rem_timer(timer);
 				rt_spin_unlock_irqrestore(flags, &timers_lock);
 			} else {
 				set_timer_firing_time(timer, timer->firing_time + timer->period);

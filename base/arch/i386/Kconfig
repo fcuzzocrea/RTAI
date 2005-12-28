@@ -300,7 +300,8 @@ config RTAI_RTC_FREQ
 	8254. However such a possibilty is not available on low end CPUs 
 	and embedded systems for which the only way to avoid interfering with
 	the Linux timer might be this option. Thus in such cases, 1-2 above 
-	being acceptable once more, setting this config param might be a 		good choice.
+	being acceptable once more, setting this config param might be a
+	good choice.
 
 config RTAI_LONG_TIMED_LIST
 	bool "Use a binary tree ordering for RTAI schedulers timed lists."

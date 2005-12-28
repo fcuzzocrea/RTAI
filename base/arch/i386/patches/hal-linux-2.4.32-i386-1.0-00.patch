@@ -1217,7 +1217,7 @@ diff -uNrp 2.4.31/arch/i386/kernel/ipipe-core.c 2.4.31-i386-ipipe/arch/i386/kern
 diff -uNrp 2.4.31/arch/i386/kernel/ipipe-root.c 2.4.31-i386-ipipe/arch/i386/kernel/ipipe-root.c
 --- 2.4.31/arch/i386/kernel/ipipe-root.c	1970-01-01 01:00:00.000000000 +0100
 +++ 2.4.31-i386-ipipe/arch/i386/kernel/ipipe-root.c	2005-11-26 17:06:34.000000000 +0100
-@@ -0,0 +1,573 @@
+@@ -0,0 +1,578 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/i386/kernel/ipipe-root.c
 + *
@@ -1564,9 +1564,14 @@ diff -uNrp 2.4.31/arch/i386/kernel/ipipe-root.c 2.4.31-i386-ipipe/arch/i386/kern
 +
 +typedef __ipipe_exhandler *__ipipe_exptr;
 +
++extern asmlinkage void do_debug(struct pt_regs *regs, long error_code);
++extern asmlinkage void do_int3(struct pt_regs *regs, long error_code);
++
 +static __ipipe_exptr __ipipe_std_extable[] = {
 +
 +	[ex_do_divide_error] = &do_divide_error,
++	[ex_do_debug] = &do_debug,
++	[ex_do_int3] = &do_int3,
 +	[ex_do_overflow] = &do_overflow,
 +	[ex_do_bounds] = &do_bounds,
 +	[ex_do_invalid_op] = &do_invalid_op,

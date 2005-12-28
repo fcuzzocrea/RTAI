@@ -57,7 +57,6 @@
 #define LOW  0
 #define HIGH 1
 
-//#define CONFIG_RTAI_RTC_FREQ  8192
 #if defined(CONFIG_RTAI_RTC_FREQ) && CONFIG_RTAI_RTC_FREQ >= 2
 
 #define TIMER_NAME        "RTC"

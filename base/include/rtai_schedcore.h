@@ -409,8 +409,7 @@ static inline void rem_ready_current(RT_TASK *rt_current)
 	(rt_current->rnext)->rprev = rt_current->rprev;
 }
 
-#define CONFIG_RTAI_LONG_TIMED_LIST
-#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+#ifdef CONFIG_RTAI_LONG_TIMED_LIST
 
 /* BINARY TREE */
 static inline void enq_timed_task(RT_TASK *timed_task)
@@ -544,7 +543,7 @@ static inline void rem_timed_task(RT_TASK *task)
 	}
 }
 
-#endif /* CONFIG_RTAI_LONG_TIMED_LIST */
+#endif /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
 #define get_time() rt_get_time()
 #if 0

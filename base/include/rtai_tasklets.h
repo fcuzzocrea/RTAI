@@ -30,9 +30,8 @@
  * @addtogroup tasklets
  *@{*/
 
-#include <linux/rbtree.h>
-
 #include <rtai_types.h>
+#include <rtai_sched.h>
 
 #define TSKIDX  1
 
@@ -66,8 +65,8 @@ struct rt_tasklet_struct {
     struct rt_task_struct *task;
     struct rt_tasklet_struct *usptasklet;
 #ifdef  CONFIG_RTAI_LONG_TIMED_LIST
-    struct rb_root rbr;
-    struct rb_node rbn;
+    rb_root_t rbr;
+    rb_node_t rbn;
 #endif
 };
 

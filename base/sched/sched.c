@@ -2947,7 +2947,9 @@ static int __rtai_lxrt_init(void)
                 rt_linux_task.resume_time = RT_TIME_END;
                 rt_linux_task.tprev = rt_linux_task.tnext =
                 rt_linux_task.rprev = rt_linux_task.rnext = &rt_linux_task;
+#ifdef CONFIG_RTAI_LONG_TIMED_LIST
 		rt_linux_task.rbr.rb_node = NULL;
+#endif
 		rt_linux_task.next = 0;
 		rt_linux_task.lnxtsk = current;
 		rt_smp_current[cpuid] = &rt_linux_task;

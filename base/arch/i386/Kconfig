@@ -302,7 +302,7 @@ config RTAI_RTC_FREQ
 	once more, setting this config param might be a good choice.
 
 config RTAI_LONG_TIMED_LIST
-	bool "Use a binary tree ordering for RTAI schedulers timed lists.
+	bool "Use a binary tree ordering for RTAI schedulers timed lists."
 	default n
 	help
 	RTAI schedulers use a simple ordered linear list for suspended timed

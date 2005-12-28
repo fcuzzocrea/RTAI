@@ -78,6 +78,9 @@
 /* Kconfig */
 #undef CONFIG_RTAI_LEDS_BUILTIN
 
+/* Kconfig */
+#undef CONFIG_RTAI_LONG_TIMED_LIST
+
 
 #ifndef CONFIG_RTAI_LXRT_INLINE
 #define CONFIG_RTAI_LXRT_INLINE CONFIG_RTAI_INTERNAL_LXRT_INLINE
@@ -167,6 +170,9 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_REVISION_LEVEL
+
+/* Kconfig */
+#undef CONFIG_RTAI_RTC_FREQ
 
 /* Kconfig */
 #undef CONFIG_RTAI_RTDM

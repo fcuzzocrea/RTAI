@@ -654,6 +654,30 @@ AC_ARG_ENABLE(sched-lock-isr,
 	esac])
 AC_MSG_RESULT(${CONFIG_RTAI_SCHED_ISR_LOCK:-no})
 
+AC_MSG_CHECKING(for RTC freq)
+AC_ARG_ENABLE(rtc-freq,
+	[ --enable-rtc-freq Enable RTC freq],
+	[case "$enableval" in
+ changequote(,)dnl add a test for 0 or power of 2, <2-8192>
+	[0-9]*) CONFIG_RTAI_RTC_FREQ=$enableval ;;
+ changequote([,])dnl
+	*) AC_MSG_ERROR([Bad argument to option: --enable-rtc-freq=<power of 2>]) ;;
+	esac])
+if test x$CONFIG_RTAI_RTC_FREQ = x ; then
+  # Use a reasonable default if unset
+  CONFIG_RTAI_RTC_FREQ=0
+fi
+AC_MSG_RESULT($CONFIG_RTAI_RTC_FREQ)
+
+AC_MSG_CHECKING(for long timed lists)
+AC_ARG_ENABLE(long-timed-lists,
+	[ --enable-long-timed-lists	Enable long timed lists],
+	[case "$enableval" in
+	y | yes) CONFIG_RTAI_LONG_TIMED_LIST=y ;;
+	*) unset CONFIG_RTAI_LONG_TIMED_LIST;;
+	esac])
+AC_MSG_RESULT(${CONFIG_RTAI_LONG_TIMED_LIST:-no})
+
 AC_MSG_CHECKING(for 8254 tuning latency)
 AC_ARG_ENABLE(sched-8254-latency,
 	[ --enable-sched-8254-latency	Set 8254 tuning latency],
@@ -1182,6 +1206,8 @@ test x$CONFIG_RTAI_USI = xy && AC_DEFINE(CONFIG_RTAI_USI_BUILTIN,1,[Kconfig])
 test x$CONFIG_RTAI_LEDS = xy && AC_DEFINE(CONFIG_RTAI_LEDS_BUILTIN,1,[Kconfig])
 
 test x$CONFIG_RTAI_SCHED_ISR_LOCK = xy && AC_DEFINE(CONFIG_RTAI_SCHED_ISR_LOCK,1,[Kconfig])
+AC_DEFINE_UNQUOTED(CONFIG_RTAI_RTC_FREQ,$CONFIG_RTAI_RTC_FREQ,[Kconfig])
+test x$CONFIG_RTAI_LONG_TIMED_LIST = xy && AC_DEFINE(CONFIG_RTAI_LONG_TIMED_LIST,1,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_8254_LATENCY,$CONFIG_RTAI_SCHED_8254_LATENCY,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_APIC_LATENCY,$CONFIG_RTAI_SCHED_APIC_LATENCY,[Kconfig])
 AC_DEFINE_UNQUOTED(CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS,[Kconfig])

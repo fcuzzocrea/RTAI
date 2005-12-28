@@ -156,8 +156,6 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_register_task },	  	//  15
 };
 
-#include "timers"
-
 /**
  * Insert a tasklet in the list of tasklets to be processed.
  *

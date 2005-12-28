@@ -123,7 +123,11 @@ MODULE_LICENSE("GPL");
 DEFINE_LINUX_CR0
 
 static struct rt_tasklet_struct timers_list =
-{ &timers_list, &timers_list, RT_SCHED_LOWEST_PRIORITY, 0, RT_TIME_END, 0LL, 0, 0, 0 };
+{ &timers_list, &timers_list, RT_SCHED_LOWEST_PRIORITY, 0, RT_TIME_END, 0LL, 0, 0, 0, 
+#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+/**/0, NULL, NULL, { NULL } 
+#endif
+};
 
 static struct rt_tasklet_struct tasklets_list =
 { &tasklets_list, &tasklets_list, };
@@ -151,6 +155,8 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_set_tasklet_priority },  	//  14
 	{ 0, rt_register_task },	  	//  15
 };
+
+#include "timers"
 
 /**
  * Insert a tasklet in the list of tasklets to be processed.

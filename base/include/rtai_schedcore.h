@@ -415,7 +415,7 @@ static inline void rem_ready_current(RT_TASK *rt_current)
 static inline void enq_timed_task(RT_TASK *timed_task)
 {
 	RT_TASK *taskh, *tsknxt, *task;
-	struct rb_node **rbtn, *rbtpn = NULL;
+	rb_node_t **rbtn, *rbtpn = NULL;
 #ifdef CONFIG_SMP
 	task = taskh = &rt_smp_linux_task[timed_task->runnable_on_cpus];
 #else

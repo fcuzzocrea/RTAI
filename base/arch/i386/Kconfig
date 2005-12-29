@@ -297,9 +297,11 @@ config RTAI_RTC_FREQ
 	used by Linux (8254 especially and APIC too). In fact if an APIC 
 	timer is available (SMP and recent machines) it is possible to avoid
 	the most important interference with Linux timing by not using the 
-	8254. However such a possibilty is not available on low end CPUs and 
-	and embedded systems. Thus in such cases, 1-2 above being acceptable 
-	once more, setting this config param might be a good choice.
+	8254. However such a possibilty is not available on low end CPUs 
+	and embedded systems for which the only way to avoid interfering with
+	the Linux timer might be this option. Thus in such cases, 1-2 above 
+	being acceptable once more, setting this config param might be a
+	good choice.
 
 config RTAI_LONG_TIMED_LIST
 	bool "Use a binary tree ordering for RTAI schedulers timed lists."

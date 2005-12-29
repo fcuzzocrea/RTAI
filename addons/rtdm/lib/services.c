@@ -16,11 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
  */
 
-#define CONFIG_RTAI_LXRT_INLINE 0
-#include <malloc.h>
-#include <rtai_lxrt.h>
-#include <rtai_schedcore.h>
-#include <rtai_posix.h>
-#ifdef CONFIG_RTAI_DRIVERS_SERIAL
-#include <rtai_serial.h>
-#endif /* CONFIG_RTAI_DRIVERS_SERIAL */
+//#define CONFIG_RTAI_LXRT_INLINE 0
+#include <rtdm/rtdm.h>
+//#ifdef CONFIG_RTAI_DRIVERS_16550A
+//#include <rtdm/rtserial.h>
+//#endif /* CONFIG_RTAI_DRIVERS_16550A */

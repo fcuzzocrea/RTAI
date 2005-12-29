@@ -134,6 +134,8 @@ CONFIG_RTAI_LEDS_BUILTIN_TRUE = @CONFIG_RTAI_LEDS_BUILTIN_TRUE@
 CONFIG_RTAI_LEDS_FALSE = @CONFIG_RTAI_LEDS_FALSE@
 CONFIG_RTAI_LEDS_TRUE = @CONFIG_RTAI_LEDS_TRUE@
 CONFIG_RTAI_LINUXDIR = @CONFIG_RTAI_LINUXDIR@
+CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE = @CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_FALSE@
+CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE = @CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL_TRUE@
 CONFIG_RTAI_MAINTAINER_FALSE = @CONFIG_RTAI_MAINTAINER_FALSE@
 CONFIG_RTAI_MAINTAINER_PGM_FALSE = @CONFIG_RTAI_MAINTAINER_PGM_FALSE@
 CONFIG_RTAI_MAINTAINER_PGM_TRUE = @CONFIG_RTAI_MAINTAINER_PGM_TRUE@
@@ -172,6 +174,7 @@ CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE = @CONFIG_RTAI_OLD_FASHIONED_BUILD_FALSE@
 CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE = @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@
 CONFIG_RTAI_RTDM_FALSE = @CONFIG_RTAI_RTDM_FALSE@
 CONFIG_RTAI_RTDM_TRUE = @CONFIG_RTAI_RTDM_TRUE@
+CONFIG_RTAI_SCHED_LXRT = @CONFIG_RTAI_SCHED_LXRT@
 CONFIG_RTAI_SCHED_LXRT_FALSE = @CONFIG_RTAI_SCHED_LXRT_FALSE@
 CONFIG_RTAI_SCHED_LXRT_TRUE = @CONFIG_RTAI_SCHED_LXRT_TRUE@
 CONFIG_RTAI_SCHED_MUP_FALSE = @CONFIG_RTAI_SCHED_MUP_FALSE@
@@ -567,7 +570,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/addons/comedi $(distdir)/addons/drivers/16550A $(distdir)/addons/drivers/serial $(distdir)/addons/rtdm $(distdir)/base/config/autoconf $(distdir)/base/ipc/bits $(distdir)/base/ipc/fifos $(distdir)/base/ipc/mbx $(distdir)/base/ipc/mq $(distdir)/base/ipc/msg $(distdir)/base/ipc/netrpc $(distdir)/base/ipc/sem $(distdir)/base/ipc/shm $(distdir)/base/ipc/tbx $(distdir)/base/leds $(distdir)/base/malloc $(distdir)/base/math $(distdir)/base/sched $(distdir)/base/scripts $(distdir)/base/tasklets $(distdir)/base/usi $(distdir)/base/wd $(distdir)/doc/docbook $(distdir)/doc/docbook/custom-stylesheets/xsl/html $(distdir)/doc/doxygen $(distdir)/testsuite/kern/latency $(distdir)/testsuite/kern/preempt $(distdir)/testsuite/kern/switches
+	$(mkdir_p) $(distdir)/. $(distdir)/addons/comedi $(distdir)/addons/drivers/16550A $(distdir)/addons/drivers/serial $(distdir)/addons/rtdm $(distdir)/base/arch/i386/calibration $(distdir)/base/config/autoconf $(distdir)/base/ipc/bits $(distdir)/base/ipc/fifos $(distdir)/base/ipc/mbx $(distdir)/base/ipc/mq $(distdir)/base/ipc/msg $(distdir)/base/ipc/netrpc $(distdir)/base/ipc/sem $(distdir)/base/ipc/shm $(distdir)/base/ipc/tbx $(distdir)/base/leds $(distdir)/base/malloc $(distdir)/base/math $(distdir)/base/sched $(distdir)/base/scripts $(distdir)/base/tasklets $(distdir)/base/usi $(distdir)/base/wd $(distdir)/doc/docbook $(distdir)/doc/docbook/custom-stylesheets/xsl/html $(distdir)/doc/doxygen $(distdir)/testsuite/kern/latency $(distdir)/testsuite/kern/preempt $(distdir)/testsuite/kern/switches
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

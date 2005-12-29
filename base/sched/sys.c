@@ -313,13 +313,18 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		type = funcm[srq].type;
 		if (likely(type)) {
 			if (unlikely(task->is_hard < 0)) {
-				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT), PID = %d.\n", current->pid););
+				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, RESUME), PID = %d.\n", current->pid););
 				steal_from_linux(task);
 				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
 			}
 			lxrt_resume(funcm[srq].fun, NARG(lxsrq), arg, type, task);
 			return task->retval;
 		} else {
+			if (unlikely(task && task->is_hard < 0)) {
+				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, DIRECT), PID = %d.\n", current->pid););
+				steal_from_linux(task);
+				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
+			}
 			return ((long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
 	        }
 	}
@@ -578,7 +583,8 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 			give_back_to_linux(task, -1);
 		}
 		task->unblocked = 0;
-		if (0 && likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(0,0,0)
+		if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
 			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
 			regs->LINUX_SYSCALL_RETREG = -EINTR;
 			do_signal(regs, NULL);
@@ -587,6 +593,7 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 				steal_from_linux(task);
 			}
 		}
+#endif
 		return retval;
 	}
 	return 1;

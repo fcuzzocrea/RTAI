@@ -1,5 +1,14 @@
 REMARK!!!
-what found below should all be in smi-module.c.
+all of what found in the explanation below should be in smi-module.c.
+
+To fix SMI problems run: setsmi
+To reset SMI to its previous state run: rstsmi
+
+Both scripts are located in $PREFIX/bin/ and they assume that directory
+is in your $PATH.
+
+
+HISTORY and EXPLANATION of SMI INTERFERENCE with RTAI and RELATED TECH LINKs.
 
 From - Thu Apr 17 15:00:00 2003
 Delivered-To: mante@aero.polimi.it

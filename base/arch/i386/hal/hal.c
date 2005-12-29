@@ -42,9 +42,9 @@
 
 #undef INCLUDED_BY_HAL_C
 #define INCLUDED_BY_HAL_C
-#include "rtc.c"
 #ifdef RTAI_DUOSS
 #include "hal.immed"
 #else
 #include "hal.piped"
 #endif
+#include "rtc.c"

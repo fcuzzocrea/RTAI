@@ -250,8 +250,13 @@ rtdm_task_t *rtdm_task_current(void);
  */
 void rtdm_task_join_nrt(rtdm_task_t *task, unsigned int poll_delay)
 {
-	while (task->magic) {
+#define JOIN_TIMEOUT 1000 // in millisecs
+	int t;
+	for (t = 0; task->magic && t < JOIN_TIMEOUT; t += poll_delay) {
 		msleep(poll_delay);
+	}
+	if (task->magic) {
+		rt_task_delete(task);
 	}
 }
 

@@ -40,11 +40,11 @@ static void calibrate(void)
 	static unsigned long apic_tbase;
 
 	times.cpu_time = rd_CPU_ts();
-#ifdef CONFIG_SMP
+#ifdef CONFIG_X86_LOCAL_APIC
 	if (params.mp) {
 		times.apic_time = apic_read(APIC_TMCCT);
 	}
-#endif /* CONFIG_SMP */
+#endif /* CONFIG_X86_LOCAL_APIC */
 	if (times.intrs < 0) {
 		cpu_tbase  = times.cpu_time;
 		apic_tbase = times.apic_time;
@@ -57,12 +57,12 @@ static void calibrate(void)
 		rtf_put(0, &times, sizeof(times));
 	}
 	rt_pend_linux_irq(TIMER_8254_IRQ);
-#ifdef CONFIG_SMP
+#ifdef CONFIG_X86_LOCAL_APIC
 	if (params.mp) {
 	        unsigned temp = (apic_read(APIC_ICR) & (~0xCDFFF)) | (APIC_DM_FIXED | APIC_DEST_ALLINC | LOCAL_TIMER_VECTOR);
 		apic_write(APIC_ICR, temp);
 	}
-#endif /* CONFIG_SMP */
+#endif /* CONFIG_X86_LOCAL_APIC */
 }
 
 static void just_ret(void)
@@ -153,7 +153,7 @@ static long long user_srq(unsigned long whatever)
 
 		case FREQ_CAL: {
 			times.intrs = -1;
-			reset_count = args[1]*100;
+			reset_count = args[1]*HZ;
 			count = 0;
 			rt_assign_irq_to_cpu(TIMER_8254_IRQ, 1 << hard_cpu_id());
 			rt_request_timer(just_ret, COUNT, 1);
@@ -196,7 +196,9 @@ static int srq;
 
 int init_module(void)
 {
-	params.mp        = num_online_cpus() > 1;
+#ifdef CONFIG_X86_LOCAL_APIC
+	params.mp        = 1;
+#endif /* CONFIG_X86_LOCAL_APIC */
 	params.freq_apic = RTAI_FREQ_APIC;
 	params.cpu_freq  = RTAI_CPU_FREQ;
 	rtf_create(0, FIFOBUFSIZE);

@@ -63,6 +63,8 @@ static int spbufull;	// threshold for receive buffer to have the
 
 #define CHECK_SPINDX(indx)  do { if (indx >= spcnt) return -ENODEV; } while (0)
 
+static void mbx_init(struct rt_spmbx *mbx);
+
 /*
  * rt_spclear_rx
  *
@@ -79,7 +81,7 @@ static int spbufull;	// threshold for receive buffer to have the
  */ 
 int rt_spclear_rx(unsigned int tty)
 {
-	static void mbx_init(struct rt_spmbx *mbx);
+//	static void mbx_init(struct rt_spmbx *mbx);
 	unsigned long flags;
  	struct rt_spct_t *p;
 
@@ -117,7 +119,7 @@ int rt_spclear_rx(unsigned int tty)
  */ 
 int rt_spclear_tx(unsigned int tty)
 {
-	static void mbx_init(struct rt_spmbx *mbx);
+//	static void mbx_init(struct rt_spmbx *mbx);
 	unsigned long flags;
 	struct rt_spct_t *p;
 

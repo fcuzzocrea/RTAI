@@ -27,6 +27,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 
 #include <rtdm/rtdm_driver.h>
 #include <rtdm/core.h>

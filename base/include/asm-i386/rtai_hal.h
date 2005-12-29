@@ -181,6 +181,30 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
+/* 
+ * Linux has this information in io_apic.c, but it does not export it; 
+ * on the other hand it should be fairly stable this way and so we try 
+ * to avoid putting something else in our patch.
+ */
+
+#ifdef CONFIG_X86_IO_APIC
+static inline int ext_irq_vector(int irq) 
+{
+	if (irq != 2) {
+		return (FIRST_DEVICE_VECTOR + 8*(irq < 2 ? irq : irq - 1)); 
+	}
+	return -EINVAL;
+}
+#else
+static inline int ext_irq_vector(int irq) 
+{
+	if (irq != 2) {
+		return (FIRST_EXTERNAL_VECTOR + irq); 
+	}
+	return -EINVAL;
+}
+#endif
+
 #define RTAI_DOMAIN_ID  0x9ac15d93  // nam2num("rtai_d")
 #define RTAI_NR_TRAPS   HAL_NR_FAULTS
 #define RTAI_NR_SRQS    32

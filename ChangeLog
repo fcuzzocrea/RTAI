@@ -1,7 +1,88 @@
+2005-12-28  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/arch/i386/Kconfig: added new config parameter for rtc and 
+	  long timed lists.
+	* base/arch/i386/hal/hal.immed: care of external pic in setting
+	  gates for direct ectoring of interrupts.
+	* base/arch/i386/hal/rtc.c: added dispatch/dontdispatch support
+	  to use the RTC as a periodic timer for RTAI schedulers.
+	* base/include/rtai_schedcore.h: extended to support binary tree
+	  ordering for long timed lists.
+	* base/include/asm-i386/rtai_lxrt.h: added definitions for using
+	  the RTC.
+	* base/sched/sched.c: split plain soft hard/soft transitions
+	  wake ups; added starting/stopping of RTC timers.
+
+2005-12-22  Marco Morandini  <morandini@aero.polimi.it>
+
+        * addons/rtdm/*: RTAI based RTDM support verified against all of 
+	  the RTAI examples available within the latest RTNet SVN. This 
+	  completes base RTDM testing, that has been already verified to 
+	  work also with RTDM based 16550A.
+
 2005-12-22  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/matlab/rtmain.c: Applied patch from Marco Romagnoli and
-	modification from Paolo Mantegazza.
+	  modification from Paolo Mantegazza.
+
+2005-12-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/module.c: all functions made 0 type, RTDM cares to
+	  act according to hard/soft mode appropriately (Jan sweared it).
+	* base/sched/sys.c: add recovery of hard mode also before direct 
+	  LXRT calls.
+
+2005-12-20  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: in oneshot mode read the interrupt time 
+	  immediately and just once upon entering the timer_handler.
+
+2005-12-20  Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+
+	* Kconfig/configure.in:
+	   configuration support for using Linux syscall within LXRT
+
+2005-12-20  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* configure.in:
+	   reworked scheduler configuration to note that there are only
+	   two schedulers, and they must always be enabled
+
+2005-12-19  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* base/arch/i386/calibration/setsmi.in:
+	   added scripts to set/reset the smi calibration module
+
+2005-12-16  Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+
+	* /base/arch/i386/patches/hal-linux-2.4.32-i386-1.0-00.patch: fixed 
+	   a missing header files in include/linux/ipipe.h that breaks 
+	   Linux making when ipipe statistics are collected.
+
+2005-12-16  Marcel Groothuis <marcelg-rtai@scintilla.utwente.nl>
+
+	* /base/include/rtai_tasklets.h: fixed type clashes in tighter
+	  C++ checks.
+
+2005-12-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: in 2.4.xx SMP reuse the old way of waking
+	   up tasks going soft by using the RTAI threads manager (thread_m).
+
+2005-12-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c and sys.c: kernel versions dependence for
+	   2.4.xx split at 2.4.32 now.
+	* /base/arch/i386/hal/hal.immed: as above.
+
+2005-12-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: added a missing test on the CPU to run a task 
+	  on for UP in start_stop_kthread.
+
+2005-12-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* /base/sched/sched.c: avoid stopping hard timers if not running yet.
 
 2005-12-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
@@ -314,7 +395,7 @@
 	  the non preemptible case, i.e. under 2.4.xx. It tend to starve
 	  otherwise under very very high soft real time load.
 
-2004-06-14  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-06-14  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Corrected problem with
 	acivation from continous blocks. Better handling of "ode" functions
@@ -349,7 +430,7 @@
 	* base/arch/i386/patches: modified handle_event to avoid wrapping
 	  event and related data.
 
-2004-05-25  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-05-25  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/RTAICodeGen_.sci: Added checks for the
 	dialog box values
@@ -367,7 +448,7 @@
 	  in irq handler already, enable immediate sched on ipi without
 	  dispatching.
 
-2004-05-23  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-05-23  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/rtmain.c: Support for continous blocks
         * rtai-lab/scilab/macros/RTAI/*: RTAICodeGen_.sci modified and compatible with 
@@ -385,7 +466,7 @@
 	* base/include/rtai_malloc.h: practically break any constraint in
 	  dynamic memory allocation.
 
-2004-05-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+2005-05-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
         * base/sched/sched.immed: 
 	  - changed coding of circular pending lists,
@@ -414,7 +495,7 @@
 	  to 3.2, i.e with overall count of periodic reschedules displayed
 	  also.
 
-2004-05-03  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-05-03  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/*: Added new blocks
 
@@ -423,12 +504,12 @@
 	in tabular format and output uses the same units for each test.
 	* testsuite/user/latency/display.c: show overall maximum latency.
 
-2004-04-20  Roberto Bucher  <roberto.bucher@supsi.ch>
+2005-04-20  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/*: Scicos ports are now set automatically
 	* rtai-lab/scilab/devices/*: library files modified for port set automatically
 	* rtai-lab/scilab/example/tes.cos: Modifies with the new scicos blocks
 
-2004-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
+2005-04-13  Paolo Mantegazza  <mantegazza@aero.polimi.it>
 
-        * begin new development cycle, aligning to stable vulcano.
+        * begin new development cycle, aligning to stable vulcano, i.e. 3.2.

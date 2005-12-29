@@ -22,9 +22,84 @@
 #include <linux/mc146818rtc.h>
 
 //#define TEST_RTC
+#define MIN_RTC_FREQ  2
 #define MAX_RTC_FREQ  8192
-#define MIN_RTC_FREQ  256
 #define RTC_FREQ      MAX_RTC_FREQ
+
+static void rt_broadcast_rtc_interrupt(void)
+{
+#ifdef CONFIG_SMP
+	apic_wait_icr_idle();
+	apic_write_around(APIC_ICR, APIC_DM_FIXED | APIC_DEST_ALLINC | RTAI_APIC_TIMER_VECTOR | APIC_DEST_LOGICAL);
+#endif
+}
+
+static void (*usr_rtc_handler)(void);
+
+#if CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS // && defined(CONFIG_RTAI_RTC_FREQ) && CONFIG_RTAI_RTC_FREQ
+
+int _rtai_rtc_timer_handler(void)
+{
+	unsigned long cpuid = rtai_cpuid();
+	rt_switch_to_real_time(cpuid);
+	RTAI_SCHED_ISR_LOCK();
+
+	rt_mask_and_ack_irq(RTC_IRQ);
+ 	CMOS_READ(RTC_INTR_FLAGS);
+	rt_enable_irq(RTC_IRQ);
+	usr_rtc_handler();
+
+	RTAI_SCHED_ISR_UNLOCK();
+	rt_switch_to_linux(cpuid);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
+		rtai_sti();
+		hal_fast_flush_pipeline(cpuid);
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
+		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
+#endif
+		return 1;
+	}
+#endif
+	return 0;
+}
+
+void rtai_rtc_timer_handler (void);
+	__asm__ ( \
+        "\n" __ALIGN_STR"\n\t" \
+        SYMBOL_NAME_STR(rtai_rtc_timer_handler) ":\n\t" \
+        "pushl $-1\n\t" \
+	"cld\n\t" \
+        "pushl %es\n\t" \
+        "pushl %ds\n\t" \
+        "pushl %eax\n\t" \
+        "pushl %ebp\n\t" \
+        "pushl %edi\n\t" \
+        "pushl %esi\n\t" \
+        "pushl %edx\n\t" \
+        "pushl %ecx\n\t" \
+        "pushl %ebx\n\t" \
+	__LXRT_GET_DATASEG(ecx) \
+        "movl %ecx, %ds\n\t" \
+        "movl %ecx, %es\n\t" \
+        "call "SYMBOL_NAME_STR(_rtai_rtc_timer_handler)"\n\t" \
+        "testl %eax,%eax\n\t" \
+        "jnz  ret_from_intr\n\t" \
+        "popl %ebx\n\t" \
+        "popl %ecx\n\t" \
+        "popl %edx\n\t" \
+        "popl %esi\n\t" \
+        "popl %edi\n\t" \
+        "popl %ebp\n\t" \
+        "popl %eax\n\t" \
+        "popl %ds\n\t" \
+        "popl %es\n\t" \
+        "addl $4,%esp\n\t" \
+        "iret");
+
+static struct desc_struct rtai_rtc_timer_sysvec;
+
+#endif /* CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS */
 
 /* 
  * NOTE FOR USE IN RTAI_TRIOSS.
@@ -34,7 +109,6 @@
  * to the very same power of 2 that best fits your needs.
  */ 
 
-static void (*usr_rtc_handler)(void);
 static void rtc_handler(int irq, int rtc_freq)
 {
 #ifdef TEST_RTC
@@ -51,8 +125,8 @@ static void rtc_handler(int irq, int rtc_freq)
 	}
 }
 
-#ifdef RTAI_TRIOSS
 int fusion_timer_running;
+#ifdef RTAI_TRIOSS
 static void fusion_rtc_handler(void)
 {
 #ifdef CONFIG_X86_LOCAL_APIC
@@ -105,13 +179,14 @@ void rt_request_rtc(int rtc_freq, void *handler)
 #ifdef RTAI_TRIOSS
 	usr_rtc_handler = fusion_rtc_handler;
 #else
-	usr_rtc_handler = handler;
+	usr_rtc_handler = handler ? handler : rt_broadcast_rtc_interrupt;
 #endif
 	SET_FUSION_TIMER_RUNNING();
 #ifdef TEST_RTC
 	rt_printk("<%s>\n", fusion_timer_running ? "FUSION TIMER RUNNING" : "");
 #endif
 	rt_request_irq(RTC_IRQ, (void *)rtc_handler, (void *)rtc_freq, 0);
+	SET_INTR_GATE(ext_irq_vector(RTC_IRQ), rtai_rtc_timer_handler, rtai_rtc_timer_sysvec);
 	rt_enable_irq(RTC_IRQ);
 	CMOS_READ(RTC_INTR_FLAGS);
 	return;
@@ -122,6 +197,7 @@ void rt_release_rtc(void)
 	rt_disable_irq(RTC_IRQ);
 	usr_rtc_handler = NULL;
 	CLEAR_FUSION_TIMER_RUNNING();
+	RESET_INTR_GATE(ext_irq_vector(RTC_IRQ), rtai_rtc_timer_sysvec);
 	rt_release_irq(RTC_IRQ);
 	rtai_cli();
 	CMOS_WRITE(CMOS_READ(RTC_FREQ_SELECT), RTC_FREQ_SELECT);
@@ -134,4 +210,3 @@ EXPORT_SYMBOL(rt_request_rtc);
 EXPORT_SYMBOL(rt_release_rtc);
 
 #endif /* INCLUDED_BY_HAL_C */
-

@@ -78,6 +78,9 @@
 /* Kconfig */
 #undef CONFIG_RTAI_LEDS_BUILTIN
 
+/* Kconfig */
+#undef CONFIG_RTAI_LONG_TIMED_LIST
+
 
 #ifndef CONFIG_RTAI_LXRT_INLINE
 #define CONFIG_RTAI_LXRT_INLINE CONFIG_RTAI_INTERNAL_LXRT_INLINE
@@ -95,6 +98,9 @@
 #define RTAI_PROTO_ALWAYS_INLINE(type,name,arglist) static inline type name arglist
 #define RTAI_PROTO_NEVER_INLINE(type,name,arglist) type name arglist; static inline type __hidefun(name) arglist
 
+
+/* Kconfig */
+#undef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
 
 /* Kconfig */
 #undef CONFIG_RTAI_MAINTAINER
@@ -166,6 +172,9 @@
 #undef CONFIG_RTAI_REVISION_LEVEL
 
 /* Kconfig */
+#undef CONFIG_RTAI_RTC_FREQ
+
+/* Kconfig */
 #undef CONFIG_RTAI_RTDM
 
 /* Kconfig */
@@ -176,6 +185,9 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_ISR_LOCK
+
+/* define to enable LXRT scheduler support */
+#undef CONFIG_RTAI_SCHED_LXRT
 
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_LXRT_NUMSLOTS

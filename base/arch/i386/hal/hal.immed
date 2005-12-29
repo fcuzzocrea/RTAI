@@ -13,6 +13,7 @@
  *
  *   RTAI/x86 rewrite over Adeos: \n
  *   Copyright &copy 2002 Philippe Gerum.
+ *   Copyright &copy 2005 Paolo Mantegazza.
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -107,7 +108,7 @@ static inline void rtai_setup_oneshot_apic (unsigned count, unsigned vector)
 	apic_write(APIC_TMICT, count);
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,9)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,4,32) || (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,9))
 #define __ack_APIC_irq  ack_APIC_irq
 #endif
 
@@ -257,7 +258,7 @@ void rt_set_irq_retmode (unsigned irq, int retmode)
 
 extern unsigned long io_apic_irqs;
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,9)
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
 
 #define rtai_irq_desc(irq) (irq_desc[irq].handler)
 #define BEGIN_PIC()
@@ -788,7 +789,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 	do { rtai_cli(); } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9)
+#if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9) 
 #define HAL_TICK_REGS hal_tick_regs[cpuid]
 #else
 #define HAL_TICK_REGS hal_tick_regs
@@ -825,7 +826,7 @@ int _rtai_sched_on_ipi_handler(void)
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 		return 1;
@@ -894,7 +895,7 @@ int _rtai_apic_timer_handler(void)
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 		return 1;
@@ -958,7 +959,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 		hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 		return 1;
@@ -1001,7 +1002,7 @@ void rtai_8254_timer_handler (void);
 
 static struct desc_struct rtai_8254_timer_sysvec;
 
-#else
+#else /* !CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS */
 
 #define SET_INTR_GATE(vector, handler, save) 
 #define RESET_INTR_GATE(vector, save)
@@ -1009,7 +1010,7 @@ static struct desc_struct rtai_8254_timer_sysvec;
 void rt_set_sched_ipi_gate(void) { }
 void rt_reset_sched_ipi_gate(void) { }
 
-#endif
+#endif /* CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS */
 
 #ifdef CONFIG_SMP
 
@@ -1300,7 +1301,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(tick >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
 		    	retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
-			SET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_handler, rtai_8254_timer_sysvec);
+			SET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	} else {
 		rt_times.linux_tick = rtai_imuldiv(LATCH,rtai_tunables.cpu_freq,RTAI_FREQ_8254);
@@ -1320,7 +1321,7 @@ int rt_request_timer (void (*handler)(void), unsigned tick, int use_apic)
 			outb(LATCH >> 8, 0x40);
 			rt_release_irq(RTAI_TIMER_8254_IRQ);
 			retval = rt_request_irq(RTAI_TIMER_8254_IRQ, (rt_irq_handler_t)handler, NULL, 0);
-			SET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_handler, rtai_8254_timer_sysvec);
+			SET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_handler, rtai_8254_timer_sysvec);
 		}
 	}
 	rtai_restore_flags(flags);
@@ -1350,7 +1351,7 @@ void rt_free_timer (void)
 		outb(LATCH & 0xff, 0x40);
 		outb(LATCH >> 8,0x40);
 		if (!rt_release_irq(RTAI_TIMER_8254_IRQ)) {
-			RESET_INTR_GATE(FIRST_EXTERNAL_VECTOR + RTAI_TIMER_8254_IRQ, rtai_8254_timer_sysvec);
+			RESET_INTR_GATE(ext_irq_vector(RTAI_TIMER_8254_IRQ), rtai_8254_timer_sysvec);
 		}
 	}
 	rtai_restore_flags(flags);
@@ -1452,7 +1453,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
         }
 	hal_fast_flush_pipeline(cpuid);
-#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 	set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 	return 1;
@@ -2052,7 +2053,7 @@ int __rtai_hal_init (void)
 	attr.name     = "RTAI";
 	attr.domid    = RTAI_DOMAIN_ID;
 	attr.entry    = (void *)rtai_domain_entry;
-	attr.priority = 2000000000;
+	attr.priority = get_domain_pointer(1)->priority + 100;
 	hal_register_domain(&rtai_domain, &attr);
 	for (trapnr = 0; trapnr < HAL_NR_FAULTS; trapnr++) {
 		hal_catch_event(hal_root_domain, trapnr, (void *)rtai_trap_fault);
@@ -2069,7 +2070,15 @@ int __rtai_hal_init (void)
 	IsolCpusMask = 0;
 #endif
 
-	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", HAL_TYPE, CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (%s, IMMEDIATE (INTERNAL IRQs %s), ISOL_CPUS_MASK: %lx).\n", HAL_TYPE, CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
+
+	printk("PIPELINE layers:\n");
+	for (trapnr = 1; ; trapnr++) {
+		struct hal_domain_struct *next_domain;
+		next_domain = get_domain_pointer(trapnr);
+		if ((unsigned long)next_domain < 10) break;
+		printk("%p %x %s %d\n", next_domain, next_domain->domid, next_domain->name, next_domain->priority);
+	}
 
 	return 0;
 }

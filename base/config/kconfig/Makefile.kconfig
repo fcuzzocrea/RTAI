@@ -1,6 +1,8 @@
 # We want these to be the native ones.
 override CC := gcc
 override CXX := g++
+#override CC := gcc -Wall -pedantic
+#override CXX := g++ -Wall -pedantic
 
 ifeq ($(MAKECMDGOALS),qbuild)
 -include .qtinst

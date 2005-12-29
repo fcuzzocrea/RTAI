@@ -26,6 +26,7 @@
  */
 
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/delay.h>
 
 #include <rtdm/device.h>
@@ -48,6 +49,7 @@
 
 unsigned int        devname_hashtab_size  = DEF_DEVNAME_HASHTAB_SIZE;
 unsigned int        protocol_hashtab_size = DEF_PROTO_HASHTAB_SIZE;
+
 module_param(devname_hashtab_size, uint, 0400);
 module_param(protocol_hashtab_size, uint, 0400);
 MODULE_PARM_DESC(devname_hashtab_size,

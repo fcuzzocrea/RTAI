@@ -123,7 +123,11 @@ MODULE_LICENSE("GPL");
 DEFINE_LINUX_CR0
 
 static struct rt_tasklet_struct timers_list =
-{ &timers_list, &timers_list, RT_SCHED_LOWEST_PRIORITY, 0, RT_TIME_END, 0LL, 0, 0, 0 };
+{ &timers_list, &timers_list, RT_SCHED_LOWEST_PRIORITY, 0, RT_TIME_END, 0LL, 0, 0, 0, 
+#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+/**/0, NULL, NULL, { NULL } 
+#endif
+};
 
 static struct rt_tasklet_struct tasklets_list =
 { &tasklets_list, &tasklets_list, };

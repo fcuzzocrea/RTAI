@@ -40,6 +40,8 @@
 
 #include <asm/rtai_hal.h>
 
+#undef INCLUDED_BY_HAL_C
+#define INCLUDED_BY_HAL_C
 #include "rtc.c"
 #ifdef RTAI_DUOSS
 #include "hal.immed"

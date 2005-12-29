@@ -1,8 +1,7 @@
 EXTRA_CFLAGS += -I$(rtai_srctree)/base/include \
-		-I$(rtai_srctree)/addons/fusion/skins \
-		-I$(rtai_srcdir)/.. \
-		-I$(src)/../../include \
-		-I$(src)/../.. \
+		-I$(rtai_srcdir)/../.. \
+		-I$(src)/../../../base/include \
+		-I$(src)/../../.. \
 		$(rtai_extradef)
 
 obj-m += $(rtai_target).o

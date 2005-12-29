@@ -10,6 +10,9 @@
 #undef CONFIG_RTAI_ADEOS
 
 /* Kconfig */
+#undef CONFIG_RTAI_ALLOW_RR
+
+/* Kconfig */
 #undef CONFIG_RTAI_BITS
 
 /* Kconfig */
@@ -18,11 +21,26 @@
 /* Build system alias */
 #undef CONFIG_RTAI_BUILD_STRING
 
+/* Kconfig */
+#undef CONFIG_RTAI_BUSY_TIME_ALIGN
+
+/* Kconfig */
+#undef CONFIG_RTAI_CAL_FREQS_FACT
+
 /* Compiler */
 #undef CONFIG_RTAI_COMPILER
 
 /* Kconfig */
 #undef CONFIG_RTAI_CPUS
+
+/* Kconfig */
+#undef CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
+
+/* Kconfig */
+#undef CONFIG_RTAI_DRIVERS_16550A
+
+/* Kconfig */
+#undef CONFIG_RTAI_DRIVERS_SERIAL
 
 /* Kconfig */
 #undef CONFIG_RTAI_FIFOS
@@ -35,9 +53,6 @@
 
 /* Kconfig */
 #undef CONFIG_RTAI_FPU_SUPPORT
-
-/* Kconfig */
-#undef CONFIG_RTAI_FUSION
 
 /* Kconfig */
 #undef CONFIG_RTAI_HAL_PREEMPT
@@ -117,6 +132,9 @@
 /* Kconfig */
 #undef CONFIG_RTAI_MBX_BUILTIN
 
+/* Kconfig */
+#undef CONFIG_RTAI_MONITOR_EXECTIME
+
 /* Legacy */
 #undef CONFIG_RTAI_MOUNT_ON_LOAD
 
@@ -142,7 +160,13 @@
 #undef CONFIG_RTAI_NETRPC_RTNET
 
 /* Kconfig */
+#undef CONFIG_RTAI_ONE_SHOT
+
+/* Kconfig */
 #undef CONFIG_RTAI_REVISION_LEVEL
+
+/* Kconfig */
+#undef CONFIG_RTAI_RTDM
 
 /* Kconfig */
 #undef CONFIG_RTAI_SCHED_8254_LATENCY
@@ -163,16 +187,10 @@
 #undef CONFIG_RTAI_SEM_BUILTIN
 
 /* Kconfig */
-#undef CONFIG_RTAI_SERIAL
-
-/* Kconfig */
 #undef CONFIG_RTAI_SHM
 
 /* Kconfig */
 #undef CONFIG_RTAI_SHM_BUILTIN
-
-/* Kconfig */
-#undef CONFIG_RTAI_SKIN_RTDM
 
 /* Kconfig */
 #undef CONFIG_RTAI_TASKLETS

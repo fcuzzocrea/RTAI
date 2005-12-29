@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
+#ifdef INCLUDED_BY_HAL_C
 
 #include <linux/mc146818rtc.h>
 
@@ -131,3 +132,6 @@ void rt_release_rtc(void)
 
 EXPORT_SYMBOL(rt_request_rtc);
 EXPORT_SYMBOL(rt_release_rtc);
+
+#endif /* INCLUDED_BY_HAL_C */
+

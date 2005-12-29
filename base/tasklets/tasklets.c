@@ -193,13 +193,13 @@ static inline void rem_timer(struct rt_tasklet_struct *timer)
 #else /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
 /* LINEAR */
-static inline void enq_timer(struct rt_tasklet_struct *timer)
+static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 {
-	struct rt_tasklet_struct *tmr;
-        tmr = &timers_list;
-        while (timer->firing_time >= (tmr = tmr->next)->firing_time);
-	tmr->prev = (timer->prev = tmr->prev)->next = timer;
-	timer->next = tmr;
+	struct rt_tasklet_struct *timer;
+	timer = &timers_list;
+        while (timed_timer->firing_time >= (timer = timer->next)->firing_time);
+	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
+	timed_timer->next = timer;
 }
 
 static inline void rem_timer(struct rt_tasklet_struct *timer)

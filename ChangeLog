@@ -1,3 +1,15 @@
+2005-01-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklets.h: separate but consistent definitions
+	  of the tasklet structure in kernel and user space, to avoid problems
+	  with long timed lists types.
+	* base/include/rtai_sched.h, rtai_types.h: moved types definitions
+	  for long timed lists from types.h to sched.h.
+	* base/include/rtai_schedcore.h: simplified inlines for timed lists
+	  management, unifying as far as possible.
+	* base/tasklets/tasklets.c: simplified inlines for timed lists
+	  management, unifying as far as possible.
+
 2005-12-29  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_tasklets.h: extended to support binary tree

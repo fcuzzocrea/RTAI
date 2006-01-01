@@ -439,15 +439,40 @@ static inline void enq_timed_task(RT_TASK *timed_task)
 	timed_task->tnext = task;
 }
 
+#define	rb_erase_task(task, cpuid) \
+	rb_erase(&(task)->rbn, &rt_smp_linux_task[cpuid].rbr);
+
+#else /* !CONFIG_RTAI_LONG_TIMED_LIST */
+
+/* LINEAR */
+static inline void enq_timed_task(RT_TASK *timed_task)
+{
+	RT_TASK *task;
+#ifdef CONFIG_SMP
+	task = rt_smp_linux_task[timed_task->runnable_on_cpus].tnext;
+#else
+	task = rt_smp_linux_task[0].tnext;
+#endif
+	while (timed_task->resume_time > task->resume_time) {
+		task = task->tnext;
+	}
+	task->tprev = (timed_task->tprev = task->tprev)->tnext = timed_task;
+	timed_task->tnext = task;
+}
+
+#define	rb_erase_task(task, cpuid)
+
+#endif /* !CONFIG_RTAI_LONG_TIMED_LIST */
+
 static inline void rem_timed_task(RT_TASK *task)
 {
 	if ((task->state & RT_SCHED_DELAYED)) {
                 (task->tprev)->tnext = task->tnext;
                 (task->tnext)->tprev = task->tprev;
 #ifdef CONFIG_SMP
-		rb_erase(&task->rbn, &rt_smp_linux_task[task->runnable_on_cpus].rbr);
+		rb_erase_task(task, task->runnable_on_cpus);
 #else
-		rb_erase(&task->rbn, &rt_smp_linux_task[0].rbr);
+		rb_erase(task, 0);
 #endif
 	}
 }
@@ -472,7 +497,7 @@ static inline void wake_up_timed_tasks(int cpuid)
 	                        task->trap_handler_data = (void *)oneshot_timer;
 #endif
         	        }
-			rb_erase(&task->rbn, &taskh->rbr);
+			rb_erase_task(task, cpuid);
 			task = task->tnext;
 		} while (task->resume_time <= rt_time_h);
 #ifdef CONFIG_SMP
@@ -484,66 +509,6 @@ static inline void wake_up_timed_tasks(int cpuid)
 #endif
 	}
 }
-
-#else /* !CONFIG_RTAI_LONG_TIMED_LIST */
-
-/* LINEAR */
-static inline void enq_timed_task(RT_TASK *timed_task)
-{
-	RT_TASK *task;
-#ifdef CONFIG_SMP
-	task = rt_smp_linux_task[timed_task->runnable_on_cpus].tnext;
-#else
-	task = rt_smp_linux_task[0].tnext;
-#endif
-	while (timed_task->resume_time > task->resume_time) {
-		task = task->tnext;
-	}
-	task->tprev = (timed_task->tprev = task->tprev)->tnext = timed_task;
-	timed_task->tnext = task;
-}
-
-static inline void wake_up_timed_tasks(int cpuid)
-{
-	RT_TASK *task;
-#ifdef CONFIG_SMP
-	task = rt_smp_linux_task[cpuid].tnext;
-#else
-	task = rt_smp_linux_task[0].tnext;
-#endif
-	if (task->resume_time <= rt_time_h) {
-		do {
-			if ((task->state &= ~(RT_SCHED_DELAYED | RT_SCHED_SUSPENDED | RT_SCHED_SEMAPHORE | RT_SCHED_RECEIVE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_MBXSUSP)) == RT_SCHED_READY) {
-				if (task->policy < 0) {
-					enq_ready_edf_task(task);
-				} else {
-					enq_ready_task(task);
-				}
-#if defined(CONFIG_RTAI_BUSY_TIME_ALIGN) && CONFIG_RTAI_BUSY_TIME_ALIGN
-	                	task->trap_handler_data = (void *)oneshot_timer;
-#endif
-			}
-			task = task->tnext;
-		} while (task->resume_time <= rt_time_h);
-#ifdef CONFIG_SMP
-		rt_smp_linux_task[cpuid].tnext = task;
-		task->tprev = &rt_smp_linux_task[cpuid];
-#else
-		rt_smp_linux_task[0].tnext = task;
-		task->tprev = &rt_smp_linux_task[0];
-#endif
-	}
-}
-
-static inline void rem_timed_task(RT_TASK *task)
-{
-	if ((task->state & RT_SCHED_DELAYED)) {
-		(task->tprev)->tnext = task->tnext;
-		(task->tnext)->tprev = task->tprev;
-	}
-}
-
-#endif /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
 #define get_time() rt_get_time()
 #if 0

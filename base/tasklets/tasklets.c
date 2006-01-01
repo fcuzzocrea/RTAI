@@ -182,13 +182,7 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 	timed_timer->next = timer;
 }
 
-static inline void rem_timer(struct rt_tasklet_struct *timer)
-{
-	(timer->next)->prev = timer->prev;
-	(timer->prev)->next = timer->next;
-	timer->next = timer->prev = timer;
-	rb_erase(&timer->rbn, &timers_list.rbr);
-}
+#define rb_erase_timer(timer)  rb_erase(&(timer)->rbn, &timers_list.rbr)
 
 #else /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
@@ -202,14 +196,17 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 	timed_timer->next = timer;
 }
 
+#define rb_erase_timer(timer)
+
+#endif /* CONFIG_RTAI_LONG_TIMED_LIST */
+
 static inline void rem_timer(struct rt_tasklet_struct *timer)
 {
 	(timer->next)->prev = timer->prev;
 	(timer->prev)->next = timer->next;
 	timer->next = timer->prev = timer;
+	rb_erase_timer(timer);
 }
-
-#endif /* CONFIG_RTAI_LONG_TIMED_LIST */
 
 /**
  * Insert a tasklet in the list of tasklets to be processed.

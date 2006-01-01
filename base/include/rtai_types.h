@@ -49,11 +49,4 @@ struct rt_times {
 	RTIME intr_time;
 };
 
-#include <linux/version.h>
-#include <linux/rbtree.h>
-#if defined(CONFIG_RTAI_LONG_TIMED_LIST) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
-typedef struct rb_node rb_node_t;
-typedef struct rb_root rb_root_t;
-#endif
-
 #endif /* !_RTAI_TYPES_H */

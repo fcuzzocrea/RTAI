@@ -288,6 +288,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->blocked_on = NOTHING;        
 	task->signal = signal;
 	task->unblocked = 0;
+	task->rt_signals = NULL;
 	memset(task->task_trap_handler, 0, RTAI_NR_TRAPS*sizeof(void *));
 	task->linux_syscall_server = NULL;
 	task->trap_handler_data = NULL;
@@ -413,6 +414,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	task->blocked_on = NOTHING;        
 	task->signal = signal;
 	task->unblocked = 0;
+	task->rt_signals = NULL;
 	for (i = 0; i < RTAI_NR_TRAPS; i++) {
 		task->task_trap_handler[i] = NULL;
 	}

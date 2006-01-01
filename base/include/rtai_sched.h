@@ -59,6 +59,12 @@ struct rt_task_struct;
 #include <linux/time.h>
 #include <linux/errno.h>
 
+#if defined(CONFIG_RTAI_LONG_TIMED_LIST) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
+#include <linux/rbtree.h>
+typedef struct rb_node rb_node_t;
+typedef struct rb_root rb_root_t;
+#endif
+
 #define RT_TASK_MAGIC 0x9ad25f6f  // nam2num("rttask")
 
 #ifndef __cplusplus
@@ -141,6 +147,7 @@ typedef struct rt_task_struct {
 
     /* Added from rtai-22. */
     long unblocked;
+    void *rt_signals;
     volatile unsigned long pstate;
     unsigned long usp_flags;
     unsigned long usp_flags_mask;

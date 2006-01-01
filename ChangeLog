@@ -9,6 +9,8 @@
 	  management, unifying as far as possible.
 	* base/tasklets/tasklets.c: simplified inlines for timed lists
 	  management, unifying as far as possible.
+	* base/sched/sched.c: enforce oneshot timer mode when a zero period
+	  is passed to start_rt_timer.
 
 2005-12-29  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

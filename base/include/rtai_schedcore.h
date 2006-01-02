@@ -472,7 +472,7 @@ static inline void rem_timed_task(RT_TASK *task)
 #ifdef CONFIG_SMP
 		rb_erase_task(task, task->runnable_on_cpus);
 #else
-		rb_erase(task, 0);
+		rb_erase_task(task, 0);
 #endif
 	}
 }

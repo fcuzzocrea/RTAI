@@ -253,9 +253,9 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 {
 	struct list_head *p = hal_pipeline.next;
 	struct hal_domain_struct *d;
-	int i = 0;
+	unsigned long i = 0;
 	while (p != &hal_pipeline) {
-			d = list_entry(p, struct hal_domain_struct, p_link);
+		d = list_entry(p, struct hal_domain_struct, p_link);
 		if (++i == n) {
 			return d;
 		}

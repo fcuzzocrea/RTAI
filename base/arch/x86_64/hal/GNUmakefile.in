@@ -51,7 +51,7 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
 libhal_a_LIBADD =
-am_libhal_a_OBJECTS = hal.$(OBJEXT)
+am_libhal_a_OBJECTS = hal.$(OBJEXT) rtc.$(OBJEXT)
 libhal_a_OBJECTS = $(am_libhal_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
@@ -349,7 +349,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
-libhal_a_SOURCES = hal.c
+libhal_a_SOURCES = hal.c hal.immed hal.piped rtc.c
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libhal.a
 @CONFIG_KBUILD_FALSE@libhal_a_AR = $(CROSS_COMPILE)ar cru
 @CONFIG_KBUILD_FALSE@INCLUDES = \
@@ -406,6 +406,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hal.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rtc.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

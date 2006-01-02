@@ -2080,6 +2080,7 @@ EXPORT_SYMBOL(rt_printk);
 
 EXPORT_SYMBOL(rtai_set_gate_vector);
 EXPORT_SYMBOL(rtai_reset_gate_vector);
+EXPORT_SYMBOL(rtai_catch_event);
 
 EXPORT_SYMBOL(rtai_lxrt_dispatcher);
 EXPORT_SYMBOL(rt_scheduling);

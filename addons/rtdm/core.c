@@ -126,7 +126,7 @@ static int create_instance(struct rtdm_device *device,
 
     xnlock_put_irqrestore(&rt_fildes_lock, s);
 
-    *context_ptr = context = device->reserved.exclusive_context;
+    context = device->reserved.exclusive_context;
     if (context) {
         xnlock_get_irqsave(&rt_dev_lock, s);
 
@@ -137,6 +137,8 @@ static int create_instance(struct rtdm_device *device,
         context->device = device;
 
         xnlock_put_irqrestore(&rt_dev_lock, s);
+
+        *context_ptr = context;
     } else {
         if (nrt_mem)
             context = kmalloc(sizeof(struct rtdm_dev_context) +

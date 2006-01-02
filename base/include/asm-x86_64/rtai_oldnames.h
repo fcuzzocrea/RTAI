@@ -120,10 +120,7 @@ static inline int rt_free_cpu_own_irq (unsigned irq) {
 }
 
 static inline void *get_intr_handler (unsigned vector) {
-
-    return (void *)((unsigned long)idt_table[vector].offset_low + \
-			(((unsigned long)idt_table[vector].offset_middle) << 16) + \
-			(((unsigned long)idt_table[vector].offset_high) << 32));
+    return (void *)((unsigned long)idt_table[vector].offset_low + (((unsigned long)idt_table[vector].offset_middle) << 16) + (((unsigned long)idt_table[vector].offset_high) << 32));
 }
 
 static inline void set_intr_vect (unsigned vector,

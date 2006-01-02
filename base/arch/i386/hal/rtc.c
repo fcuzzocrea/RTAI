@@ -146,7 +146,7 @@ static void fusion_rtc_handler(void)
 EXPORT_SYMBOL(fusion_timer_running);
 #endif
 
-void rt_request_rtc(int rtc_freq, void *handler)
+void rt_request_rtc(long rtc_freq, void *handler)
 {
 	int pwr2;
 

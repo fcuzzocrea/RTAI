@@ -236,10 +236,10 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
-        domain->cpudata[cpuid].irq_hits[irq]++; \
-        __set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
+	domain->cpudata[cpuid].irq_hits[irq]++; \
+	__set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
 	__set_bit(irq >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
-        test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
+	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 
 #define hal_pend_uncond(irq, cpuid) \
@@ -263,7 +263,7 @@ do { \
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) { \
 		hal_fast_flush_pipeline(cpuid); \
 		rtai_sti(); \
-        } \
+	} \
 } while (0)
 
 #ifdef CONFIG_PREEMPT
@@ -316,11 +316,11 @@ extern volatile unsigned long rtai_cpu_lock;
 
 //#define RTAI_TASKPRI 0xf0  // simplest usage without changing Linux code base
 extern struct rtai_switch_data {
-    volatile unsigned long depth;
-    volatile unsigned long oldflags;
+	volatile unsigned long depth;
+	volatile unsigned long oldflags;
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
-        volatile unsigned long pridepth;
-//      volatile unsigned long taskpri;
+	volatile unsigned long pridepth;
+//	volatile unsigned long taskpri;
 #endif
 } rtai_linux_context[RTAI_NR_CPUS];
 
@@ -335,9 +335,9 @@ irqreturn_t rtai_broadcast_to_local_timers(int irq,
 
 #define _send_sched_ipi(dest) \
 do { \
-        apic_wait_icr_idle(); \
-        apic_write_around(APIC_ICR2, SET_APIC_DEST_FIELD(dest)); \
-        apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
+	apic_wait_icr_idle(); \
+	apic_write_around(APIC_ICR2, SET_APIC_DEST_FIELD(dest)); \
+	apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
 } while (0)
 
 #ifdef CONFIG_PREEMPT
@@ -415,11 +415,11 @@ static inline void rt_get_global_lock(void)
 static inline void rt_release_global_lock(void)
 {
 #if 0
-        barrier(); 
+	barrier();
 	rtai_cli();
-        atomic_clear_mask((0xFFFF0001 << hal_processor_id()), (atomic_t *)&rtai_cpu_lock);
-        cpu_relax();
-        barrier();
+	atomic_clear_mask((0xFFFF0001 << hal_processor_id()), (atomic_t *)&rtai_cpu_lock);
+	cpu_relax();
+	barrier();
 #else
 	barrier();
 	rtai_cli();
@@ -649,7 +649,7 @@ static inline unsigned long save_and_set_taskpri(unsigned long taskpri)
 }
 
 #define restore_taskpri(taskpri) \
-        do { apic_write_around(APIC_TASKPRI, taskpri); } while (0)
+	do { apic_write_around(APIC_TASKPRI, taskpri); } while (0)
 #endif
 
 static inline void rt_set_timer_delay (int delay) {

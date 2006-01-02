@@ -349,7 +349,7 @@ sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
-libhal_a_SOURCES = hal.c hal.immed hal.piped rtc.c
+libhal_a_SOURCES = hal.c hal.immed rtc.c
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libhal.a
 @CONFIG_KBUILD_FALSE@libhal_a_AR = $(CROSS_COMPILE)ar cru
 @CONFIG_KBUILD_FALSE@INCLUDES = \
@@ -357,7 +357,7 @@ libhal_a_SOURCES = hal.c hal.immed hal.piped rtc.c
 @CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
 @CONFIG_KBUILD_FALSE@	-I../../../include
 
-EXTRA_DIST = Makefile.kbuild hal.piped hal.immed
+EXTRA_DIST = Makefile.kbuild hal.immed
 all: all-am
 
 .SUFFIXES:

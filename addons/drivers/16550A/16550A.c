@@ -663,10 +663,10 @@ int rt_16550_ioctl(struct rtdm_dev_context *context,
 
 
         case RTSER_RTIOC_SET_CONTROL: {
-            int             new_mcr;
+            long             new_mcr;
             rtdm_lockctx_t  lock_ctx;
 
-            new_mcr = (int)arg;
+            new_mcr = (long)arg;
 
             rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
             ctx->mcr_status = new_mcr;
@@ -747,7 +747,7 @@ int rt_16550_ioctl(struct rtdm_dev_context *context,
 }
 
 
-int rt_16550_read(struct rtdm_dev_context *context,
+ssize_t rt_16550_read(struct rtdm_dev_context *context,
                   rtdm_user_info_t *user_info, void *buf, size_t nbyte)
 {
     struct rt_16550_context *ctx;
@@ -891,7 +891,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
 }
 
 
-int rt_16550_write(struct rtdm_dev_context *context,
+ssize_t rt_16550_write(struct rtdm_dev_context *context,
                    rtdm_user_info_t *user_info, const void *buf, size_t nbyte)
 {
     struct rt_16550_context *ctx;

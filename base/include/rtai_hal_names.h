@@ -69,6 +69,8 @@ extern struct list_head __adeos_pipeline;
 
 #define hal_set_irq_affinity  adeos_set_irq_affinity
 
+#define hal_set_irq_handler   adeos_set_irq_handler
+
 #define hal_propagate_event  adeos_propagate_event
 
 #define hal_get_sysinfo  adeos_get_sysinfo

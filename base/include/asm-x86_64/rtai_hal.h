@@ -784,7 +784,7 @@ RT_TRAP_HANDLER rt_set_trap_handler(RT_TRAP_HANDLER handler);
 
 void rt_release_rtc(void);
 
-void rt_request_rtc(int rtc_freq, void *handler);
+void rt_request_rtc(long rtc_freq, void *handler);
 
 #define rt_mount()
 
@@ -840,6 +840,8 @@ static inline int rt_free_global_irq(unsigned irq)
 
 #ifndef _RTAI_HAL_XN_H
 #define _RTAI_HAL_XN_H
+
+#define __range_ok(addr, size) (__range_not_ok(addr,size) == 0)
 
 #define NON_RTAI_SCHEDULE(cpuid)  do { schedule(); } while (0)
 

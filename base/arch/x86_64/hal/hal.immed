@@ -43,7 +43,9 @@
  *@{*/
 
 
-#define DONT_DISPATCH_CORE_IRQS  0
+#if 0	/* defined & set in rtai_config.h */
+#define CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS  0
+#endif
 #define CHECK_STACK_IN_IRQ       0
 
 #include <linux/version.h>
@@ -151,7 +153,7 @@ static struct {
 	unsigned label;
 } rtai_sysreq_table[RTAI_NR_SRQS];
 
-adeos_handle_irq_t adeos_default_irq_handler;
+adeos_handle_irq_t hal_default_irq_handler;
 
 static unsigned rtai_sysreq_virq;
 
@@ -658,7 +660,7 @@ void rt_pend_linux_irq (unsigned irq)
 {
 	unsigned long flags;
 	rtai_save_flags_and_cli(flags);
-	adeos_pend_uncond(irq, rtai_cpuid());
+	hal_pend_uncond(irq, rtai_cpuid());
 	rtai_restore_flags(flags);
 }
 
@@ -733,7 +735,7 @@ void rt_pend_linux_srq (unsigned srq)
 		unsigned long flags;
 		set_bit(srq, &rtai_sysreq_pending);
 		rtai_save_flags_and_cli(flags);
-		adeos_pend_uncond(rtai_sysreq_virq, rtai_cpuid());
+		hal_pend_uncond(rtai_sysreq_virq, rtai_cpuid());
 		rtai_restore_flags(flags);
 	}
 }
@@ -798,7 +800,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #define ADEOS_TICK_REGS __adeos_tick_regs
 #endif
 
-#if DONT_DISPATCH_CORE_IRQS
+#if CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS
 
 #define SET_INTR_GATE(vector, handler, save) \
 	do { save = rtai_set_gate_vector(vector, GATE_INTERRUPT, 0, handler); } while (0)
@@ -1436,7 +1438,7 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 			RTAI_SCHED_ISR_UNLOCK();
 		}
 	} else {
-		adeos_pend_uncond(irq, cpuid);
+		hal_pend_uncond(irq, cpuid);
 	}
 	rt_switch_to_linux(cpuid);
 
@@ -1866,7 +1868,7 @@ int __rtai_hal_init (void)
 	}
 
 	flags = rtai_critical_enter(NULL);
-	adeos_default_irq_handler = adeos_set_irq_handler(rtai_hirq_dispatcher);
+	hal_default_irq_handler = hal_set_irq_handler(rtai_hirq_dispatcher);
 	adeos_virtualize_irq(rtai_sysreq_virq, rtai_lsrq_dispatcher, NULL, IPIPE_HANDLE_MASK);
 	rtai_critical_exit(flags);
 
@@ -1879,16 +1881,16 @@ int __rtai_hal_init (void)
 	rtai_sysreq_table[RT_PRINTK_SRQ].k_handler = rt_printk_srq_handler;
 	set_bit(RT_PRINTK_SRQ, &rtai_sysreq_map);
 
-	adeos_init_attr(&attr);
+	hal_init_attr(&attr);
 	attr.name     = "RTAI";
 	attr.domid    = RTAI_DOMAIN_ID;
 	attr.entry    = rtai_domain_entry;
 	attr.estacksz = PAGE_SIZE;
 	attr.priority = 2000000000;
-	adeos_register_domain(&rtai_domain, &attr);
+	hal_register_domain(&rtai_domain, &attr);
 
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++) {
-		adeos_catch_event(trapnr, (void *)rtai_trap_fault);
+		hal_catch_event(hal_root_domain, trapnr, (void *)rtai_trap_fault);
 	}
 #ifdef CONFIG_SMP
 	if (IsolCpusMask) {
@@ -1901,9 +1903,9 @@ int __rtai_hal_init (void)
 #endif
 
 #ifdef CONFIG_ADEOS_NOTHREADS
-	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-NOTHREADS, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-NOTHREADS, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
 #else
-	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-THREADS, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
+	printk(KERN_INFO "RTAI[hal]: mounted (ADEOS-THREADS, IMMEDIATE (INTERNAL TIMING IRQs %s), ISOL_CPUS_MASK: %lx).\n", CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS ? "VECTORED" : "DISPATCHED", IsolCpusMask);
 #endif
 
 	return 0;
@@ -1916,17 +1918,17 @@ void __rtai_hal_exit (void)
 #ifdef CONFIG_PROC_FS
 	rtai_proc_unregister();
 #endif
-	adeos_unregister_domain(&rtai_domain);
+	hal_unregister_domain(&rtai_domain);
 	flags = rtai_critical_enter(NULL);
 	for (trapnr = 0; trapnr < ADEOS_NR_FAULTS; trapnr++) {
-		adeos_catch_event(trapnr, NULL);
+		hal_catch_event(hal_root_domain, trapnr, NULL);
 	}
-	adeos_set_irq_handler(adeos_default_irq_handler);
+	hal_set_irq_handler(hal_default_irq_handler);
 	rtai_critical_exit(flags);
 	
 	clear_bit(RT_PRINTK_SRQ, &rtai_sysreq_map);
-	adeos_virtualize_irq(rtai_sysreq_virq, NULL, NULL, 0);
-	adeos_free_irq(rtai_sysreq_virq);
+	hal_virtualize_irq(hal_root_domain, rtai_sysreq_virq, NULL, NULL, 0);
+	hal_free_irq(rtai_sysreq_virq);
 	rtai_uninstall_archdep();
 
 	if (IsolCpusMask) {
@@ -2068,7 +2070,7 @@ EXPORT_SYMBOL(rtai_reset_gate_vector);
 
 EXPORT_SYMBOL(rtai_lxrt_dispatcher);
 EXPORT_SYMBOL(rt_scheduling);
-EXPORT_SYMBOL(adeos_pended);
+EXPORT_SYMBOL(hal_pended);
 #ifdef CONFIG_SMP
 EXPORT_SYMBOL(rt_set_sched_ipi_gate);
 EXPORT_SYMBOL(rt_reset_sched_ipi_gate);

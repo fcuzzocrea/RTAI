@@ -4,7 +4,7 @@ modext = @RTAI_MODULE_EXT@
 
 CROSS_COMPILE = @CROSS_COMPILE@
 
-libhal_a_SOURCES = hal.c hal.immed hal.piped rtc.c
+libhal_a_SOURCES = hal.c hal.immed rtc.c
 
 if CONFIG_KBUILD
 rtai_hal.ko: @RTAI_KBUILD_ENV@
@@ -39,4 +39,4 @@ install-exec-local: rtai_hal$(modext)
 	$(mkinstalldirs) $(moduledir)
 	$(INSTALL_DATA) $< $(moduledir)
 
-EXTRA_DIST = Makefile.kbuild hal.piped hal.immed
+EXTRA_DIST = Makefile.kbuild hal.immed

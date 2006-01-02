@@ -1,3 +1,14 @@
+diff -uNrp 2.4.31/arch/i386/defconfig 2.4.31-i386-ipipe/arch/i386/defconfig
+--- 2.4.31/arch/i386/defconfig	2004-11-17 12:54:21.000000000 +0100
++++ 2.4.31-i386-ipipe/arch/i386/defconfig	2005-11-25 15:41:33.000000000 +0100
+@@ -74,6 +74,7 @@ CONFIG_HAVE_DEC_LOCK=y
+ #
+ # General setup
+ #
++CONFIG_IPIPE=y
+ CONFIG_NET=y
+ CONFIG_X86_IO_APIC=y
+ CONFIG_X86_LOCAL_APIC=y
 diff -uNrp 2.4.31/arch/i386/config.in 2.4.31-i386-ipipe/arch/i386/config.in
 --- 2.4.31/arch/i386/config.in	2004-11-17 12:54:21.000000000 +0100
 +++ 2.4.31-i386-ipipe/arch/i386/config.in	2005-11-25 15:41:33.000000000 +0100

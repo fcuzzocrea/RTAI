@@ -21,9 +21,15 @@
 #ifndef _RTAI_ASM_X8664_LXRT_H
 #define _RTAI_ASM_X8664_LXRT_H
 
+#include <linux/version.h>
+
 #include <asm/rtai_vectors.h>
 
-//#define USE_LINUX_SYSCALL
+#ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
+#define USE_LINUX_SYSCALL
+#else
+#undef USE_LINUX_SYSCALL
+#endif
 
 #define RTAI_SYSCALL_NR      0x70000000
 #define RTAI_SYSCALL_CODE    rdi
@@ -31,6 +37,8 @@
 #define RTAI_SYSCALL_RETPNT  rdx
 
 #define RTAI_FAKE_LINUX_SYSCALL  39
+
+#define NR_syscalls __NR_syscall_max
 
 #define LINUX_SYSCALL_NR      orig_rax
 #define LINUX_SYSCALL_REG1    rdi
@@ -41,37 +49,49 @@
 #define LINUX_SYSCALL_REG6    r9
 #define LINUX_SYSCALL_RETREG  rax
 
-#define SET_LXRT_RETVAL_IN_SYSCALL(retval) \
+#define SET_LXRT_RETVAL_IN_SYSCALL(regs, retval) \
 	do { \
-                if (r->RTAI_SYSCALL_RETPNT) { \
-			rt_copy_to_user((void *)r->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
+                if (regs->RTAI_SYSCALL_RETPNT) { \
+			rt_copy_to_user((void *)regs->RTAI_SYSCALL_RETPNT, &retval, sizeof(retval)); \
 		} \
 	} while (0)
 
 #define LOW  0
 #define HIGH 1
 
+#if defined(CONFIG_RTAI_RTC_FREQ) && CONFIG_RTAI_RTC_FREQ >= 2
+
+#define TIMER_NAME        "RTC"
+#define TIMER_FREQ        CONFIG_RTAI_RTC_FREQ
+#define TIMER_LATENCY     0
+#define TIMER_SETUP_TIME  0
+#define ONESHOT_SPAN      0
+
+#else /* CONFIG_RTAI_RTC_FREQ == 0 */
+
 #ifdef CONFIG_X86_LOCAL_APIC
 
-#define TIMER_NAME "APIC"
+#define TIMER_NAME        "APIC"
 #define FAST_TO_READ_TSC
-#define TIMER_FREQ RTAI_FREQ_APIC
-#define TIMER_LATENCY RTAI_LATENCY_APIC
-#define TIMER_SETUP_TIME RTAI_SETUP_TIME_APIC
-#define ONESHOT_SPAN (0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
+#define TIMER_FREQ        RTAI_FREQ_APIC
+#define TIMER_LATENCY     RTAI_LATENCY_APIC
+#define TIMER_SETUP_TIME  RTAI_SETUP_TIME_APIC
+#define ONESHOT_SPAN      (CPU_FREQ/(CONFIG_RTAI_CAL_FREQS_FACT + 2)) //(0x7FFFFFFFLL*(CPU_FREQ/TIMER_FREQ))
 #define update_linux_timer(cpuid)
 
 #else /* !CONFIG_X86_LOCAL_APIC */
 
 #define USE_LINUX_TIMER
-#define TIMER_NAME "8254-PIT"
-#define TIMER_FREQ RTAI_FREQ_8254
-#define TIMER_LATENCY RTAI_LATENCY_8254
-#define TIMER_SETUP_TIME RTAI_SETUP_TIME_8254
-#define ONESHOT_SPAN (0x7FFF*(CPU_FREQ/TIMER_FREQ))
-#define update_linux_timer(cpuid) adeos_pend_uncond(TIMER_8254_IRQ, cpuid)
+#define TIMER_NAME        "8254-PIT"
+#define TIMER_FREQ        RTAI_FREQ_8254
+#define TIMER_LATENCY     RTAI_LATENCY_8254
+#define TIMER_SETUP_TIME  RTAI_SETUP_TIME_8254
+#define ONESHOT_SPAN      ((0x7FFF*(CPU_FREQ/TIMER_FREQ))/(CONFIG_RTAI_CAL_FREQS_FACT + 1)) //(0x7FFF*(CPU_FREQ/TIMER_FREQ))
+#define update_linux_timer(cpuid)  hal_pend_uncond(TIMER_8254_IRQ, cpuid)
 
 #endif /* CONFIG_X86_LOCAL_APIC */
+
+#endif /* CONFIG_RTAI_RTC_FREQ != 0 */
 
 union rtai_lxrt_t {
     RTIME rt;

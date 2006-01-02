@@ -46,7 +46,6 @@
 #if 0	/* defined & set in rtai_config.h */
 #define CONFIG_RTAI_DONT_DISPATCH_CORE_IRQS  0
 #endif
-#define CHECK_STACK_IN_IRQ       0
 
 #include <linux/version.h>
 #include <linux/slab.h>
@@ -956,7 +955,7 @@ int _rtai_8254_timer_handler(struct pt_regs *regs)
 		HAL_TICK_REGS.eflags = regs->eflags;
 		HAL_TICK_REGS.rip    = regs->rip;
 		HAL_TICK_REGS.cs     = regs->cs;
-		HAL_TICK_REGS.rsp    = regs-> rsp;
+		HAL_TICK_REGS.rsp    = regs->rsp;
 #if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
 		HAL_TICK_REGS.rbp    = regs->rbp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
@@ -1412,13 +1411,9 @@ void rt_setup_8254_tsc (void)
 	rtai_critical_exit(flags);
 }
 
-#define CHECK_KERCTX()
-
 static int rtai_hirq_dispatcher (struct pt_regs *regs)
 {
 	unsigned long cpuid, irq;
-
-	CHECK_KERCTX();
 
 	cpuid = rtai_cpuid();
 	if (rtai_realtime_irq[irq = regs->orig_rax & 0xFF].handler) {
@@ -1459,7 +1454,7 @@ static int rtai_hirq_dispatcher (struct pt_regs *regs)
 	}
 	hal_fast_flush_pipeline(cpuid);
 #ifdef CONFIG_SMP
-	set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);	
+	set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
 #endif
 	return 1;
 }
@@ -1480,7 +1475,7 @@ static int rtai_trap_fault (unsigned event, void *evdata)
 }
 #else
 static void rtai_trap_fault (adevinfo_t *evinfo) {
-    adeos_propagate_event(evinfo);
+	hal_propagate_event(evinfo);
 }
 #endif
 
@@ -1676,7 +1671,7 @@ static void rtai_install_archdep (void)
 #endif /* CONFIG_X86_LOCAL_APIC */
 }
 
-static void rtai_uninstall_archdep (void)
+static void rtai_uninstall_archdep(void)
 {
 	unsigned long flags;
 
@@ -1728,7 +1723,7 @@ void rtai_set_linux_task_priority (struct task_struct *task, int policy, int pri
 	set_tsk_need_resched(current);
 }
 #else /* KERNEL_VERSION >= 2.6.0 */
-void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio) 
+void rtai_set_linux_task_priority (struct task_struct *task, int policy, int prio)
 {
 	int rc;
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,11)
@@ -1832,11 +1827,11 @@ static void rtai_proc_unregister (void)
 
 FIRST_LINE_OF_RTAI_DOMAIN_ENTRY
 {
-        {
-                rt_printk(KERN_INFO "RTAI[hal]: <%s> mounted over %s %s.\n", PACKAGE_VERSION, HAL_TYPE, HAL_VERSION_STRING);
-                rt_printk(KERN_INFO "RTAI[hal]: compiled with %s.\n", CONFIG_RTAI_COMPILER);
-        }
-        for (;;) hal_suspend_domain();
+	{
+		rt_printk(KERN_INFO "RTAI[hal]: <%s> mounted over %s %s.\n", PACKAGE_VERSION, HAL_TYPE, HAL_VERSION_STRING);
+		rt_printk(KERN_INFO "RTAI[hal]: compiled with %s.\n", CONFIG_RTAI_COMPILER);
+	}
+	for (;;) hal_suspend_domain();
 }
 LAST_LINE_OF_RTAI_DOMAIN_ENTRY
 

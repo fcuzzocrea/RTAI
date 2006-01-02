@@ -1029,14 +1029,14 @@ static void rtai_critical_sync (void)
 
 	switch (rtai_sync_level) {
 		case 1: {
-	    		p = &rtai_timer_mode[rtai_cpuid()];
+			p = &rtai_timer_mode[rtai_cpuid()];
 			while (rtai_rdtsc() < rtai_timers_sync_time);
 			if (p->mode) {
 				rtai_setup_periodic_apic(p->count, RTAI_APIC_TIMER_VECTOR);
 			} else {
 				rtai_setup_oneshot_apic(p->count, RTAI_APIC_TIMER_VECTOR);
 			}
-	    		break;
+			break;
 		}
 		case 2: {
 			rtai_setup_oneshot_apic(0, RTAI_APIC_TIMER_VECTOR);
@@ -1096,7 +1096,7 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 			rtimes->tick_time = rtai_llimd(rtai_timers_sync_time, RTAI_FREQ_APIC, rtai_tunables.cpu_freq);
 			rtimes->periodic_tick = rtai_imuldiv(p->count, RTAI_FREQ_APIC, 1000000000);
 			p->count = rtimes->periodic_tick;
-	    } else {
+		} else {
 			rtimes->linux_tick = rtai_imuldiv(LATCH, rtai_tunables.cpu_freq, RTAI_FREQ_8254);
 			rtimes->tick_time = rtai_timers_sync_time;
 			rtimes->periodic_tick = rtimes->linux_tick;
@@ -1242,14 +1242,14 @@ void rt_request_apic_timers (void (*handler)(void), struct apic_timer_setup_data
 	return;
 }
 
-void rt_free_apic_timers(void) 
+void rt_free_apic_timers(void)
 {
 	rt_free_timer();
 }
 
 int rt_assign_irq_to_cpu (int irq, unsigned long cpus_mask)
 {
-    return 0;
+	return 0;
 }
 
 int rt_reset_irq_to_sym_mode (int irq)
@@ -1451,7 +1451,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #if defined(CONFIG_SMP) && defined(CONFIG_FRAME_POINTER)
 		HAL_TICK_REGS.ebp    = regs.ebp;
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
-        }
+	}
 	hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
 	set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
@@ -1841,7 +1841,7 @@ static void rtai_install_archdep (void)
 #endif /* CONFIG_X86_LOCAL_APIC */
 }
 
-static void rtai_uninstall_archdep (void) 
+static void rtai_uninstall_archdep(void)
 {
 	unsigned long flags;
 

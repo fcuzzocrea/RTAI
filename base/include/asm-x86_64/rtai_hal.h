@@ -599,7 +599,7 @@ static inline void rt_switch_to_linux_notskpri(int cpuid)
 }
 
 #define rtai_get_intr_handler(v) \
-	((idt_table[v].b & 0xFFFF0000) | (idt_table[v].a & 0x0000FFFF))
+	(((unsigned long)idt_table[v].offset_high << 32) | ((unsigned long)idt_table[v].offset_middle << 16) | (unsigned long)idt_table[v].offset_low)
 #define ack_bad_irq hal_ack_system_irq // linux does not export ack_bad_irq
 
 #define rtai_init_taskpri_irqs() \

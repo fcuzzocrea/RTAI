@@ -689,7 +689,7 @@ int rt_request_srq (unsigned label, void (*k_handler)(void), long long (*u_handl
 
 	rtai_save_flags_and_cli(flags);
 	if (rtai_sysreq_map != ~0) {
-		set_bit(srq  = ffz(rtai_sysreq_map), &rtai_sysreq_map);
+		set_bit(srq = ffz(rtai_sysreq_map), &rtai_sysreq_map);
 		rtai_sysreq_table[srq].k_handler = k_handler;
 		rtai_sysreq_table[srq].u_handler = u_handler;
 		rtai_sysreq_table[srq].label = label;

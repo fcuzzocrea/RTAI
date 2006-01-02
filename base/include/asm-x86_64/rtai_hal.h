@@ -223,7 +223,7 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 {
 	struct list_head *p = hal_pipeline.next;
 	struct hal_domain_struct *d;
-	int i = 0;
+	unsigned long i = 0;
 	while (p != &hal_pipeline) {
 		d = list_entry(p, struct hal_domain_struct, p_link);
 		if (++i == n) {
@@ -256,6 +256,14 @@ do { \
 		rtai_cli(); \
 		hal_sync_stage(IPIPE_IRQMASK_ANY); \
 	} \
+} while (0)
+
+#define hal_test_and_fast_flush_pipeline(cpuid) \
+do { \
+	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) { \
+		hal_fast_flush_pipeline(cpuid); \
+		rtai_sti(); \
+        } \
 } while (0)
 
 #ifdef CONFIG_PREEMPT
@@ -829,3 +837,11 @@ static inline int rt_free_global_irq(unsigned irq)
 /*@}*/
 
 #endif /* !_RTAI_ASM_X8664_HAL_H */
+
+#ifndef _RTAI_HAL_XN_H
+#define _RTAI_HAL_XN_H
+
+#define NON_RTAI_SCHEDULE(cpuid)  do { schedule(); } while (0)
+
+#endif /* !_RTAI_HAL_XN_H */
+

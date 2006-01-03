@@ -490,11 +490,12 @@ void rt_set_runnable_on_cpuid(RT_TASK *task, unsigned int cpuid)
 	} else {
 		(task->next)->prev = task->prev;
 	}
-	task->runnable_on_cpus = cpuid;
 	if ((task->state & RT_SCHED_DELAYED)) {
-		(task->tprev)->tnext = task->tnext;
-		(task->tnext)->tprev = task->tprev;
+		rem_timed_task(task);
+		task->runnable_on_cpus = cpuid;
 		enq_timed_task(task);
+	} else {
+		task->runnable_on_cpus = cpuid;
 	}
 	task->next = 0;
 	(linux_task = rt_smp_linux_task + cpuid)->prev->next = task;

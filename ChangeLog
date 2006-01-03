@@ -1,4 +1,4 @@
-2005-01-02  Paolo Mantegazza <mantegazza@aero.polimi.it>
+2005-01-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_tasklets.h, rtai_sched.h, rtai_types.h: redefined
 	  types to support long timed list for both 2.4.xx and 2.6.xx. The

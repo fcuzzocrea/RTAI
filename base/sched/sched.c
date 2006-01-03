@@ -488,11 +488,12 @@ void rt_set_runnable_on_cpuid(RT_TASK *task, unsigned int cpuid)
 	} else {
 		(task->next)->prev = task->prev;
 	}
-	task->runnable_on_cpus = cpuid;
 	if ((task->state & RT_SCHED_DELAYED)) {
-		(task->tprev)->tnext = task->tnext;
-		(task->tnext)->tprev = task->tprev;
+		rem_timed_task(task);
+		task->runnable_on_cpus = cpuid;
 		enq_timed_task(task);
+	} else {
+		task->runnable_on_cpus = cpuid;
 	}
 	task->next = 0;
 	(linux_task = rt_smp_linux_task + cpuid)->prev->next = task;
@@ -1359,6 +1360,9 @@ RTIME start_rt_timer(int period)
 {
 	int cpuid;
 	struct apic_timer_setup_data setup_data[NR_RT_CPUS];
+	if (period <= 0) {
+		rt_set_oneshot_mode();
+	}
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
 		setup_data[cpuid].mode = oneshot_timer ? 0 : 1;
 		setup_data[cpuid].count = count2nano(period);
@@ -1400,6 +1404,9 @@ RTIME start_rt_timer(int period)
 #undef rt_times
 
         unsigned long flags;
+	if (period <= 0) {
+		rt_set_oneshot_mode();
+	}
         flags = rt_global_save_flags_and_cli();
         if (oneshot_timer) {
 		rt_request_timer(rt_timer_handler, 0, TIMER_TYPE);

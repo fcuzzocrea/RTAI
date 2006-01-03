@@ -54,25 +54,24 @@
 
 struct rt_task_struct;
 
-struct rt_tasklet_struct {
-
-    struct rt_tasklet_struct *next, *prev;
-    int priority, uses_fpu;
-    RTIME firing_time, period;
-    void (*handler)(unsigned long);
-    unsigned long data, id;
-    int thread;
-    struct rt_task_struct *task;
-    struct rt_tasklet_struct *usptasklet;
-#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
-    rb_root_t rbr;
-    rb_node_t rbn;
-#endif
-};
-
 #define TASKLET_STACK_SIZE  8196
 
 #ifdef __KERNEL__
+
+struct rt_tasklet_struct {
+	struct rt_tasklet_struct *next, *prev;
+	int priority, uses_fpu;
+	RTIME firing_time, period;
+	void (*handler)(unsigned long);
+	unsigned long data, id;
+	int thread;
+	struct rt_task_struct *task;
+	struct rt_tasklet_struct *usptasklet;
+#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+	rb_root_t rbr;
+	rb_node_t rbn;
+#endif
+};
 
 #ifdef __cplusplus
 extern "C" {
@@ -275,6 +274,21 @@ void rt_register_task(struct rt_tasklet_struct *tasklet,
 
 #include <rtai_usi.h>
 #include <rtai_lxrt.h>
+
+struct rt_tasklet_struct {
+	struct rt_tasklet_struct *next, *prev;
+	int priority, uses_fpu;
+	RTIME firing_time, period;
+	void (*handler)(unsigned long);
+	unsigned long data, id;
+	int thread;
+	struct rt_task_struct *task;
+	struct rt_tasklet_struct *usptasklet;
+#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+	struct { void *rb_parent; int rb_color; void *rb_right, *rb_left; } rbn;
+	struct { void *rb_node; } rbr;
+#endif
+};
 
 #ifndef __SUPPORT_TASKLET__
 #define __SUPPORT_TASKLET__

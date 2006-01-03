@@ -663,10 +663,10 @@ int rt_16550_ioctl(struct rtdm_dev_context *context,
 
 
         case RTSER_RTIOC_SET_CONTROL: {
-            int             new_mcr;
+            long             new_mcr;
             rtdm_lockctx_t  lock_ctx;
 
-            new_mcr = (int)arg;
+            new_mcr = (long)arg;
 
             rtdm_lock_get_irqsave(&ctx->lock, lock_ctx);
             ctx->mcr_status = new_mcr;
@@ -747,7 +747,7 @@ int rt_16550_ioctl(struct rtdm_dev_context *context,
 }
 
 
-int rt_16550_read(struct rtdm_dev_context *context,
+ssize_t rt_16550_read(struct rtdm_dev_context *context,
                   rtdm_user_info_t *user_info, void *buf, size_t nbyte)
 {
     struct rt_16550_context *ctx;
@@ -891,7 +891,7 @@ int rt_16550_read(struct rtdm_dev_context *context,
 }
 
 
-int rt_16550_write(struct rtdm_dev_context *context,
+ssize_t rt_16550_write(struct rtdm_dev_context *context,
                    rtdm_user_info_t *user_info, const void *buf, size_t nbyte)
 {
     struct rt_16550_context *ctx;
@@ -1043,7 +1043,7 @@ static const struct rtdm_device __initdata device_tmpl = {
     device_class:       RTDM_CLASS_SERIAL,
     device_sub_class:   RTDM_SUBCLASS_16550A,
     driver_name:        "rt_16550A",
-    driver_version:     RTDM_DRIVER_VER(1, 2, 1),
+    driver_version:     RTDM_DRIVER_VER(1, 2, 3),
     peripheral_name:    "UART 16550A",
     provider_name:      "Jan Kiszka",
 };

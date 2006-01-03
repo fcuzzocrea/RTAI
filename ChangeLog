@@ -1,3 +1,15 @@
+2005-01-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklets.h, rtai_sched.h, rtai_types.h: redefined
+	  types to support long timed list for both 2.4.xx and 2.6.xx. The
+	  previous layout broke C++ usage for the use of "new" in a Linux
+	  header (remarked by Roberto Bucher).
+	* base/addons/rtdm/core.c, device.c: aligned to the latest.
+	* base/addons/drivers/16550A/16550A.c: better types for a few
+	  declarations.
+	* base/sched/sched.c: cpu assignment should care of long timed lists;
+	  force oneshot mode if period is zero.
+
 2005-01-03  Roberto Bucher  <roberto.bucher@supsi.ch>
 
         * rtai-lab/scilab/macros/RTAI/rtai_square.sci: Solved problem with "bias".

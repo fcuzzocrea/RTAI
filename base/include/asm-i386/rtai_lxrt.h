@@ -120,10 +120,10 @@ extern "C" {
 static inline void _lxrt_context_switch (struct task_struct *prev, struct task_struct *next, int cpuid)
 {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+	extern void context_switch(void *, void *);
 	struct mm_struct *oldmm = prev->active_mm;
 	switch_mm(oldmm, next->active_mm, next, cpuid);
 	if (!next->mm) enter_lazy_tlb(oldmm, next, cpuid);
-	extern void context_switch(void *, void *);
 	context_switch(prev, next); // was switch_to(prev, next, prev);
 #else /* >= 2.6.0 */
 	extern void context_switch(void *, void *, void *);

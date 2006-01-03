@@ -540,9 +540,10 @@ static volatile inline unsigned long rtai_save_flags_irqbit_and_cli(void)
  */
 static inline int rt_global_save_flags_and_cli(void)
 {
-	barrier();
-	unsigned long flags = rtai_save_flags_irqbit_and_cli();
+	unsigned long flags;
 
+	barrier();
+	flags = rtai_save_flags_irqbit_and_cli();
 	if (!test_and_set_bit(hal_processor_id(), &rtai_cpu_lock)) {
 		while (test_and_set_bit(31, &rtai_cpu_lock)) {
 			cpu_relax();

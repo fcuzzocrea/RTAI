@@ -27,7 +27,7 @@
 
 MODULE_LICENSE("GPL");
 
-#undef ONESHOT_MODE
+#define ONESHOT_MODE
 
 #define FIFO 0
 

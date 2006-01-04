@@ -1,3 +1,10 @@
+2005-01-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_lxrt.h   and 
+	* base/include/asm-x86_64/rtai_lxrt.h and
+	* base/sched/sched.c: make using immediate syscalls in hard/soft 
+	  switches arch dependent.
+
 2005-01-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_tasklets.h, rtai_sched.h, rtai_types.h: redefined

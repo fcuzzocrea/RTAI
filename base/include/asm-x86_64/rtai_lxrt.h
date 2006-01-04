@@ -39,6 +39,7 @@
 #define RTAI_FAKE_LINUX_SYSCALL  39
 
 #define NR_syscalls __NR_syscall_max
+#define SKIP_IMMEDIATE_LINUX_SYSCALL()  do { return 0; } while (0)
 
 #define LINUX_SYSCALL_NR      orig_rax
 #define LINUX_SYSCALL_REG1    rdi

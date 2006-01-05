@@ -1,3 +1,8 @@
+2005-01-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: care of the timer type when checking LATCH
+	  at starting the UP periodic timer.
+
 2005-01-03  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_tasklets.h, rtai_sched.h, rtai_types.h: redefined

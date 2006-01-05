@@ -109,7 +109,7 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 // user space access, taken from Linux
 
 #define __xn_access_ok(task, type, addr, size) \
-	(likely(__range_ok(addr, size) == 0))
+	(access_ok(type, addr, size))
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 #define __xn_copy_from_user(task, dstP, srcP, n) \

@@ -1413,7 +1413,7 @@ RTIME start_rt_timer(int period)
                 tuned.timers_tol[0] = rt_half_tick = (tuned.latency + 1)>>1;
                 oneshot_running = shot_fired = 1;
         } else {
-		rt_request_timer(rt_timer_handler, period > LATCH ? LATCH: period, TIMER_TYPE);
+		rt_request_timer(rt_timer_handler, !TIMER_TYPE && period > LATCH ? LATCH: period, TIMER_TYPE);
                 tuned.timers_tol[0] = rt_half_tick = (rt_times.periodic_tick + 1)>>1;
         }
 	rt_sched_timed = 1;

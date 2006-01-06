@@ -266,19 +266,13 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
-	domain->cpudata[cpuid].irq_hits[irq]++; \
+	hal_irq_hits_pp(irq, domain, cpuid); \
 	__set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
 	__set_bit(irq >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
 	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 
-#define hal_pend_uncond(irq, cpuid) \
-do { \
-	hal_root_domain->cpudata[cpuid].irq_hits[irq]++; \
-	__set_bit(irq & IPIPE_IRQ_IMASK, &hal_root_domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-	__set_bit(irq >> IPIPE_IRQ_ISHIFT, &hal_root_domain->cpudata[cpuid].irq_pending_hi); \
-	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
-} while (0)
+#define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)
 
 #define hal_fast_flush_pipeline(cpuid) \
 do { \

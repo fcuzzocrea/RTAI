@@ -1781,7 +1781,7 @@ void __rtai_fifos_exit(void)
 {
 	unregister_lxrt_fifos_support();
 
-#if CONFIG_DEVFS_FS
+#if defined(CONFIG_DEVFS_FS) && CONFIG_DEVFS_FS
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)
 	devfs_remove("rtf");
 	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");

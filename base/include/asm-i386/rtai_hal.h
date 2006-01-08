@@ -182,24 +182,24 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #include <rtai_trace.h>
 
 /* 
- * Linux has this information in io_apic.c, but it does not export it; 
- * on the other hand it should be fairly stable this way and so we try 
+ * Linux has this information in io_apic.c, but it does not export it;
+ * on the other hand it should be fairly stable this way and so we try
  * to avoid putting something else in our patch.
  */
 
 #ifdef CONFIG_X86_IO_APIC
-static inline int ext_irq_vector(int irq) 
+static inline int ext_irq_vector(int irq)
 {
 	if (irq != 2) {
-		return (FIRST_DEVICE_VECTOR + 8*(irq < 2 ? irq : irq - 1)); 
+		return (FIRST_DEVICE_VECTOR + 8*(irq < 2 ? irq : irq - 1));
 	}
 	return -EINVAL;
 }
 #else
-static inline int ext_irq_vector(int irq) 
+static inline int ext_irq_vector(int irq)
 {
 	if (irq != 2) {
-		return (FIRST_EXTERNAL_VECTOR + irq); 
+		return (FIRST_EXTERNAL_VECTOR + irq);
 	}
 	return -EINVAL;
 }
@@ -253,9 +253,9 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 {
 	struct list_head *p = hal_pipeline.next;
 	struct hal_domain_struct *d;
-	int i = 0;
+	unsigned long i = 0;
 	while (p != &hal_pipeline) {
-			d = list_entry(p, struct hal_domain_struct, p_link);
+		d = list_entry(p, struct hal_domain_struct, p_link);
 		if (++i == n) {
 			return d;
 		}
@@ -266,19 +266,13 @@ static inline struct hal_domain_struct *get_domain_pointer(int n)
 
 #define hal_pend_domain_uncond(irq, domain, cpuid) \
 do { \
-        domain->cpudata[cpuid].irq_hits[irq]++; \
-        __set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-        __set_bit(irq >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
-        test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
+	hal_irq_hits_pp(irq, domain, cpuid); \
+	__set_bit(irq & IPIPE_IRQ_IMASK, &domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
+	__set_bit(irq >> IPIPE_IRQ_ISHIFT, &domain->cpudata[cpuid].irq_pending_hi); \
+	test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
 } while (0)
 
-#define hal_pend_uncond(irq, cpuid) \
-do { \
-        hal_root_domain->cpudata[cpuid].irq_hits[irq]++; \
-        __set_bit(irq & IPIPE_IRQ_IMASK, &hal_root_domain->cpudata[cpuid].irq_pending_lo[irq >> IPIPE_IRQ_ISHIFT]); \
-        __set_bit(irq >> IPIPE_IRQ_ISHIFT, &hal_root_domain->cpudata[cpuid].irq_pending_hi); \
-        test_and_set_bit(cpuid, &hal_pended); /* cautious, cautious */ \
-} while (0)
+#define hal_pend_uncond(irq, cpuid)  hal_pend_domain_uncond(irq, hal_root_domain, cpuid)
 
 #define hal_fast_flush_pipeline(cpuid) \
 do { \
@@ -291,7 +285,7 @@ do { \
 #ifdef RTAI_TRIOSS
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-       	if (!test_bit(IPIPE_STALL_FLAG, &DOMAIN_TO_STALL->cpudata[cpuid].status)) { \
+	if (!test_bit(IPIPE_STALL_FLAG, &DOMAIN_TO_STALL->cpudata[cpuid].status)) { \
 		rtai_sti(); \
 		hal_unstall_pipeline_from(DOMAIN_TO_STALL); \
 	} \
@@ -394,9 +388,9 @@ irqreturn_t rtai_broadcast_to_local_timers(int irq,
 
 #define _send_sched_ipi(dest) \
 do { \
-        apic_wait_icr_idle(); \
-        apic_write_around(APIC_ICR2, SET_APIC_DEST_FIELD(dest)); \
-        apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
+	apic_wait_icr_idle(); \
+	apic_write_around(APIC_ICR2, SET_APIC_DEST_FIELD(dest)); \
+	apic_write_around(APIC_ICR, APIC_DEST_LOGICAL | SCHED_VECTOR); \
 } while (0)
 
 #ifdef CONFIG_PREEMPT
@@ -687,7 +681,7 @@ static inline void rt_switch_to_real_time(int cpuid)
 	TRACE_RTAI_SWITCHTO_RT(cpuid);
 	if (!rtai_linux_context[cpuid].pridepth++) {
 //		rtai_linux_context[cpuid].taskpri = apic_read(APIC_TASKPRI);
-        	apic_write_around(APIC_TASKPRI, RTAI_TASKPRI);
+		apic_write_around(APIC_TASKPRI, RTAI_TASKPRI);
 	}
 	rt_switch_to_real_time_notskpri(cpuid);
 }
@@ -697,8 +691,8 @@ static inline void rt_switch_to_linux(int cpuid)
 	TRACE_RTAI_SWITCHTO_LINUX(cpuid);
 	if (rtai_linux_context[cpuid].pridepth) {
 		if (!--rtai_linux_context[cpuid].pridepth) {
-//	        	apic_write_around(APIC_TASKPRI, rtai_linux_context[cpuid].taskpri);
-	        	apic_write_around(APIC_TASKPRI, 0);
+//			apic_write_around(APIC_TASKPRI, rtai_linux_context[cpuid].taskpri);
+			apic_write_around(APIC_TASKPRI, 0);
 		}
 	}
 	rt_switch_to_linux_notskpri(cpuid);
@@ -855,7 +849,7 @@ RT_TRAP_HANDLER rt_set_trap_handler(RT_TRAP_HANDLER handler);
 
 void rt_release_rtc(void);
 
-void rt_request_rtc(int rtc_freq, void *handler);
+void rt_request_rtc(long rtc_freq, void *handler);
 
 #define rt_mount()
 

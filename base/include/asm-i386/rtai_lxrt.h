@@ -38,6 +38,8 @@
 
 #define RTAI_FAKE_LINUX_SYSCALL  20
 
+#define SKIP_IMMEDIATE_LINUX_SYSCALL()
+
 #define LINUX_SYSCALL_NR      orig_eax
 #define LINUX_SYSCALL_REG1    ebx
 #define LINUX_SYSCALL_REG2    ecx

@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #include <unistd.h>
 #include <fcntl.h>
 #include <sched.h>
+#include <signal.h>
 #include <sys/mman.h>
 #include <asm/io.h>
 
@@ -52,6 +53,9 @@ static double dot(double *a, double *b, int n)
 	return s;
 }
 
+static volatile int end;
+void endme(int sig) { end = 1; }
+
 int main(int argc, char *argv[])
 {
 	int diff;
@@ -67,6 +71,12 @@ int main(int argc, char *argv[])
 	RT_TASK *task;
 	struct sample { long long min; long long max; int index, ovrn; } samp;
 	double s;
+
+	signal(SIGHUP,  endme);
+	signal(SIGINT,  endme);
+	signal(SIGKILL, endme);
+	signal(SIGTERM, endme);
+	signal(SIGALRM, endme);
 
  	if (!(mbx = rt_mbx_init(nam2num("LATMBX"), 20*sizeof(samp)))) {
 		printf("CANNOT CREATE MAILBOX\n");
@@ -109,12 +119,12 @@ int main(int argc, char *argv[])
 
 	svt = rt_get_cpu_time_ns();
 	samp.ovrn = i = 0;
-	while (1) {
+	while (!end) {
 		min_diff = 1000000000;
 		max_diff = -1000000000;
 		average = 0;
 
-		for (skip = 0; skip < SKIP; skip++) {
+		for (skip = 0; skip < SKIP && !end; skip++) {
 			expected += period;
 
 			if (!rt_task_wait_period()) {
@@ -146,7 +156,7 @@ int main(int argc, char *argv[])
 		samp.max = max_diff;
 		samp.index = average/SKIP;
 		rt_mbx_send_if(mbx, &samp, sizeof(samp));
-		if (rt_receive_if(rt_get_adr(nam2num("LATCHK")), (unsigned int *)&average)) {
+		if (rt_get_adr(nam2num("LATCHK")) && rt_receive_if(rt_get_adr(nam2num("LATCHK")), (unsigned int *)&average)) {
 			rt_return(rt_get_adr(nam2num("LATCHK")), (unsigned int)average);
 			break;
 		}

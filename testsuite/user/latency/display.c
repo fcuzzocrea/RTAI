@@ -19,11 +19,16 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <sys/poll.h>
+
 #include <rtai_mbx.h>
 #include <rtai_msg.h>
 
 static RT_TASK *task;
+
+static volatile int end;
+void sig_handler(int sig) { end = 1; }
 
 int main(void)
 {
@@ -36,6 +41,11 @@ int main(void)
  	int n = 0;
 	struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 
+        signal(SIGHUP,  sig_handler);
+        signal(SIGINT,  sig_handler);
+        signal(SIGKILL, sig_handler);
+        signal(SIGTERM, sig_handler);
+        signal(SIGALRM, sig_handler);
  	setlinebuf(stdout);
 
  	if (!(task = rt_task_init(nam2num("LATCHK"), 20, 0, 0))) {
@@ -49,7 +59,7 @@ int main(void)
 	}
 
   	printf("RTAI Testsuite - USER latency (all data in nanoseconds)\n");
-	while (1) {
+	while (!end) {
   		if ((n++ % 21) == 0) {
 #if 1
 			time(&timestamp); 

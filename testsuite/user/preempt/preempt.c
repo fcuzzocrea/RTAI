@@ -163,7 +163,6 @@ int main(void)
 	int fifo;
 
 	signal(SIGHUP,  endme);
-	signal(SIGINT,  endme);
 	signal(SIGKILL, endme);
 	signal(SIGTERM, endme);
 	signal(SIGALRM, endme);

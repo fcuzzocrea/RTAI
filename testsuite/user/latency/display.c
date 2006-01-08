@@ -41,12 +41,12 @@ int main(void)
  	int n = 0;
 	struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 
-        signal(SIGHUP,  endme);
-        signal(SIGINT,  endme);
-        signal(SIGKILL, endme);
-        signal(SIGTERM, endme);
-        signal(SIGALRM, endme);
- 	setlinebuf(stdout);
+	signal(SIGHUP,  endme);
+	signal(SIGINT,  endme);
+	signal(SIGKILL, endme);
+	signal(SIGTERM, endme);
+	signal(SIGALRM, endme);
+	setlinebuf(stdout);
 
  	if (!(task = rt_task_init(nam2num("LATCHK"), 20, 0, 0))) {
 		printf("CANNOT INIT MASTER TASK\n");
@@ -72,11 +72,14 @@ int main(void)
 		if (min > samp.min) min = samp.min;
  		if (max < samp.max) max = samp.max;
   		printf("RTD|%11lld|%11lld|%11d|%11lld|%11lld|%11d\n", samp.min, min, samp.index, samp.max, max, samp.ovrn);
-		if (poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN|POLLERR|POLLHUP)) != 0)
+		if (poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN | POLLERR | POLLHUP)) || end) {
 		    break;
+		}
 	}
 
-	rt_rpc(rt_get_adr(nam2num("LATCAL")), msg, &msg);
+	if (rt_get_adr(nam2num("LATCAL"))) {
+		rt_rpc(rt_get_adr(nam2num("LATCAL")), msg, &msg);
+	}
 	rt_task_delete(task);
 	exit(0);
 }

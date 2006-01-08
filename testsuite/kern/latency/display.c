@@ -41,8 +41,6 @@ int main(int argc, char *argv[])
 	char line[256];
 	char nm[RTF_NAMELEN+1];
 	FILE *procfile;
-	time_t timestamp;
-	struct tm *tm_timestamp;
 	long long max = -1000000000, min = 1000000000;
 	struct sample { long long min; long long max; int index, ovrn; } samp;
 	int n = 0;

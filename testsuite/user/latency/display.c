@@ -72,7 +72,7 @@ int main(void)
 		if (min > samp.min) min = samp.min;
  		if (max < samp.max) max = samp.max;
   		printf("RTD|%11lld|%11lld|%11d|%11lld|%11lld|%11d\n", samp.min, min, samp.index, samp.max, max, samp.ovrn);
-		if (poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN | POLLERR | POLLHUP)) || end) {
+		if ((poll(&pfd, 1, 20) > 0 && (pfd.revents & (POLLIN | POLLERR | POLLHUP))) || end) {
 		    break;
 		}
 	}

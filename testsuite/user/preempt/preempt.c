@@ -19,6 +19,8 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 #include <sys/mman.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <signal.h>
+
 #include <rtai_fifos.h>
 #include <rtai_sem.h>
 
@@ -42,10 +44,13 @@ static RT_TASK *Latency_Task;
 static RT_TASK *Slow_Task;
 static RT_TASK *Fast_Task;
 
-static int period, end, slowjit, fastjit;
+static int period, slowjit, fastjit;
 static RTIME expected;
 
 static SEM *barrier;
+
+static volatile int end;
+static void endme (int dummy) { end = 1; }
 
 static void *slow_fun(void *arg)
 {
@@ -157,6 +162,12 @@ int main(void)
 	RT_TASK *Main_Task;
 	int fifo;
 
+	signal(SIGHUP,  endme);
+	signal(SIGINT,  endme);
+	signal(SIGKILL, endme);
+	signal(SIGTERM, endme);
+	signal(SIGALRM, endme);
+
         if (!(Main_Task = rt_task_init_schmod(nam2num("MNTSK"), 0, 0, 0, SCHED_FIFO, 1))) {
                 printf("CANNOT INIT MAIN TASK\n");
                 exit(1);
@@ -182,9 +193,6 @@ int main(void)
 	rtf_sem_wait(fifo);
 	end = 1;
 	rt_sem_wait_barrier(barrier);
-	pthread_join(latency_thread, NULL);
-	pthread_join(fast_thread, NULL);
-	pthread_join(slow_thread, NULL);
 	stop_rt_timer();	
 	rtf_sem_destroy(fifo);
 	rtf_destroy(FIFO);

@@ -30,7 +30,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 
 #include <rtai_fifos.h>
 
-static int end;
+static volatile int end;
 
 static void endme (int dummy) { end = 1; }
 
@@ -53,7 +53,11 @@ int main(int argc,char *argv[])
 
 	printf("RTAI Testsuite - LXRT preempt (all data in nanoseconds)\n");
 
-	signal (SIGINT, endme);
+	signal(SIGHUP,  endme);
+	signal(SIGINT,  endme);
+	signal(SIGKILL, endme);
+	signal(SIGTERM, endme);
+	signal(SIGALRM, endme);
 
 	while (!end) {
 		if ((n++ % 21)==0)

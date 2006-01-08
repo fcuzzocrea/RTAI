@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 static RT_TASK *task;
 
 static volatile int end;
-void sig_handler(int sig) { end = 1; }
+void endme(int sig) { end = 1; }
 
 int main(void)
 {
@@ -41,11 +41,11 @@ int main(void)
  	int n = 0;
 	struct pollfd pfd = { fd: 0, events: POLLIN|POLLERR|POLLHUP, revents: 0 };
 
-        signal(SIGHUP,  sig_handler);
-        signal(SIGINT,  sig_handler);
-        signal(SIGKILL, sig_handler);
-        signal(SIGTERM, sig_handler);
-        signal(SIGALRM, sig_handler);
+        signal(SIGHUP,  endme);
+        signal(SIGINT,  endme);
+        signal(SIGKILL, endme);
+        signal(SIGTERM, endme);
+        signal(SIGALRM, endme);
  	setlinebuf(stdout);
 
  	if (!(task = rt_task_init(nam2num("LATCHK"), 20, 0, 0))) {

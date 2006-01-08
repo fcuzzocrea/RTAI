@@ -73,7 +73,6 @@ int main(int argc, char *argv[])
 	double s;
 
 	signal(SIGHUP,  endme);
-	signal(SIGINT,  endme);
 	signal(SIGKILL, endme);
 	signal(SIGTERM, endme);
 	signal(SIGALRM, endme);
@@ -110,7 +109,7 @@ int main(int argc, char *argv[])
         for(i = 0; i < MAXDIM; i++) {
                 a[i] = b[i] = 3.141592;
         }
-	dot(a, b, MAXDIM);
+	s = dot(a, b, MAXDIM);
 
 	mlockall(MCL_CURRENT | MCL_FUTURE);
 
@@ -156,7 +155,7 @@ int main(int argc, char *argv[])
 		samp.max = max_diff;
 		samp.index = average/SKIP;
 		rt_mbx_send_if(mbx, &samp, sizeof(samp));
-		if (rt_get_adr(nam2num("LATCHK")) && rt_receive_if(rt_get_adr(nam2num("LATCHK")), (unsigned int *)&average)) {
+		if (rt_receive_if(rt_get_adr(nam2num("LATCHK")), (unsigned int *)&average) || end) {
 			rt_return(rt_get_adr(nam2num("LATCHK")), (unsigned int)average);
 			break;
 		}

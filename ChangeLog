@@ -1,3 +1,9 @@
+2005-01-09  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_hal_names.h: detailed conditional compilation to
+	  keep legacy compatibility with older patches for 2.6.14 amd 2.4.32,
+	  i.e. IPIPE-1.0.xx.
+
 2005-01-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/asm-i386/rtai_atomic.h: modified to solve the name

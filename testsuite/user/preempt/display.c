@@ -70,6 +70,5 @@ int main(int argc,char *argv[])
 			break;
                 }
         }
-	rtf_sem_post(fd0);
 	return 0;
 }

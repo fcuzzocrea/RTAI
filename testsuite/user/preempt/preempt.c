@@ -129,7 +129,7 @@ static void *latency_fun(void *arg)
 	rt_sem_wait_barrier(barrier);
         while (!end) {  
 		average = 0;
-		for (skip = 0; skip < NAVRG; skip++) {
+		for (skip = 0; skip < NAVRG && !end; skip++) {
 			expected += period;
 			rt_task_wait_period();
 			diff = (int)count2nano(rt_get_time() - expected);
@@ -163,6 +163,7 @@ int main(void)
 	int fifo;
 
 	signal(SIGHUP,  endme);
+	signal(SIGINT,  endme);
 	signal(SIGKILL, endme);
 	signal(SIGTERM, endme);
 	signal(SIGALRM, endme);
@@ -177,7 +178,6 @@ int main(void)
                 printf("ERROR OPENING FIFO %s\n",nm);
                 exit(1);
         }
-	rtf_sem_init(fifo, 0);
 	barrier = rt_sem_init(nam2num("PREMSM"), 4);
 	pthread_create(&latency_thread, NULL, latency_fun, NULL);
 	pthread_create(&fast_thread, NULL, fast_fun, NULL);
@@ -189,11 +189,13 @@ int main(void)
 	rt_task_make_periodic(Latency_Task, expected, period);
 	rt_task_make_periodic(Fast_Task, expected, FASTMUL*period);
 	rt_task_make_periodic(Slow_Task, expected, SLOWMUL*period);
-	rtf_sem_wait(fifo);
+	pause();
 	end = 1;
 	rt_sem_wait_barrier(barrier);
+	rt_thread_join(latency_thread);
+	rt_thread_join(fast_thread);
+	rt_thread_join(slow_thread);
 	stop_rt_timer();	
-	rtf_sem_destroy(fifo);
 	rtf_destroy(FIFO);
 	rt_sem_delete(barrier);
 	rt_task_delete(Main_Task);

@@ -51,7 +51,7 @@ int _rtai_rtc_timer_handler(void)
 
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#if 1 //LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);

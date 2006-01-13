@@ -109,6 +109,9 @@ int main(void)
 		exit(1);
 	}
 
+	sem = rt_sem_init(nam2num("SEMAPH"), 1); 
+	change =  0;
+	
 	for (i = 0; i < NR_RT_TASKS; i++) {
 		indx[i] = i;
 		if (pthread_create(thread + i, &attr, thread_fun, indx + i)) {
@@ -118,9 +121,6 @@ int main(void)
  	} 
 	pthread_attr_destroy(&attr);
 
-	sem = rt_sem_init(nam2num("SEMAPH"), 1); 
-	change =  0;
-	
 	do {
 		msleep(50);
 		s = 0;	

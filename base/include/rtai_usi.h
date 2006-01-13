@@ -22,7 +22,7 @@
 #ifndef __KERNEL__
 
 #include <asm/rtai_usi.h>
-#include <asm/rtai_atomic.h>
+//#include <asm/rtai_atomic.h>
 #include <asm/rtai_srq.h>
 
 #ifdef __cplusplus
@@ -65,8 +65,22 @@ static inline int rt_startup_irq(unsigned int irq)
 	do { rtai_srq(USI_SRQ_MASK | _RESTORE_FLAGS, flags); } while (0)
 
 #ifdef CONFIG_SMP
+
+struct __usi_xchg_dummy { unsigned long a[100]; };
+#define __usi_xg(x) ((struct __usi_xchg_dummy *)(x))
+
+static inline unsigned long usi_atomic_cmpxchg(volatile void *ptr, unsigned long o, unsigned long n)
+{
+	unsigned long prev;
+	__asm__ __volatile__	("lock; cmpxchgl %1, %2"
+				: "=a" (prev)
+				: "q"(n), "m" (*__usi_xg(ptr)), "0" (o)
+				: "memory");
+	return prev;
+}
+
 #define rt_spin_lock(lock) \
-	do { while (atomic_cmpxchg(lock, 0, 1)); } while (0)
+	do { while (usi_atomic_cmpxchg(lock, 0, 1)); } while (0)
  
 #define rt_spin_unlock(lock) \
 	do { *(volatile int *)lock = 0; } while (0)

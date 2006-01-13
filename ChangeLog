@@ -1,3 +1,7 @@
+2005-01-13  Bernd Suessmilch <Bernd.Suessmilch@uibk.ac.at>
+
+	* testsuite/user/switches/switch.c: fixed a misplaced sem creation.
+
 2005-01-09  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_hal_names.h: detailed conditional compilation to 

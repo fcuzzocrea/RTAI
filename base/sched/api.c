@@ -1291,7 +1291,8 @@ static inline int drg_on_name(unsigned long name)
 
 static inline int drg_on_name_cnt(unsigned long name)
 {
-	return hash_rem_name(name, lxrt_list, max_slots, -EFAULT);
+	int slot;
+	return (slot = hash_rem_name(name, lxrt_list, max_slots, -EFAULT)) > 0 ? lxrt_list[slot].count : slot;
 } 
 
 static inline int drg_on_adr(void *adr)
@@ -1301,7 +1302,8 @@ static inline int drg_on_adr(void *adr)
 
 static inline int drg_on_adr_cnt(void *adr)
 {
-	return hash_rem_adr(adr, lxrt_list, max_slots, -EFAULT);
+	int slot;
+	return (slot = hash_rem_adr(adr, lxrt_list, max_slots, -EFAULT)) > 0 ? lxrt_list[slot].count : slot;
 } 
 
 static inline unsigned long get_name(void *adr)

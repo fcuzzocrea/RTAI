@@ -147,6 +147,7 @@ typedef struct rt_task_struct {
 
     /* Added from rtai-22. */
     long unblocked;
+    void *rt_signals;
     volatile unsigned long pstate;
     unsigned long usp_flags;
     unsigned long usp_flags_mask;

@@ -1,3 +1,10 @@
+2005-01-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: return the registration count when a named and
+	  counted object is deregistered; before this fix the registration
+	  index was returned (N.B: error introduced with the new hashed
+	  registration).
+
 2005-01-13  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_usi.h: coded atomic_cmpxchg specifically for 

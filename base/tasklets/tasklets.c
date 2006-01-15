@@ -240,8 +240,8 @@ static inline void rem_timer(struct rt_tasklet_struct *timer)
  * @return a negative number to indicate that an invalid handler address has
  * been passed.
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*handler)(unsigned long), unsigned long data, unsigned long id, int pid)
 {
 	unsigned long flags;
@@ -279,8 +279,8 @@ int rt_insert_tasklet(struct rt_tasklet_struct *tasklet, int priority, void (*ha
  * @param tasklet is the pointer to the tasklet structure to be used to manage
  * the tasklet at hand.
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 void rt_remove_tasklet(struct rt_tasklet_struct *tasklet)
 {
 	if (tasklet->next != tasklet && tasklet->prev != tasklet) {
@@ -305,8 +305,8 @@ void rt_remove_tasklet(struct rt_tasklet_struct *tasklet)
  * @retval 0 to indicate that @a id is not a valid identifier so that the
  * related tasklet was not found.
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 struct rt_tasklet_struct *rt_find_tasklet_by_id(unsigned long id)
 {
 	struct rt_tasklet_struct *tasklet;
@@ -338,8 +338,8 @@ struct rt_tasklet_struct *rt_find_tasklet_by_id(unsigned long id)
  * calling rt_find_tasklet_by_id() to get the tasklet address to be used
  * in rt_tasklet_exec().
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 int rt_exec_tasklet(struct rt_tasklet_struct *tasklet)
 {
 	if (tasklet && tasklet->next != tasklet && tasklet->prev != tasklet) {
@@ -465,8 +465,8 @@ static inline void set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME 
  * @retval 0 on success
  * @retval EINVAL if @a handler is an invalid handler address
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data, int pid)
 {
 	unsigned long flags;
@@ -515,8 +515,8 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
  * @param timer is the pointer to the timer structure to be used to manage the
  * timer at hand.
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 void rt_remove_timer(struct rt_tasklet_struct *timer)
 {
 	if (timer->next != timer && timer->prev != timer) {
@@ -542,8 +542,8 @@ void rt_remove_timer(struct rt_tasklet_struct *timer)
  *
  * This function can be used within the timer handler.
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
 {
 	timer->priority = priority;
@@ -571,8 +571,8 @@ void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
  *
  * @retval 0 on success.
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time)
 {
 	unsigned long flags;
@@ -610,8 +610,8 @@ void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time
  *
  * @retval 0 on success.
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period)
 {
 	unsigned long flags;
@@ -726,8 +726,8 @@ void rt_wait_tasklet_is_hard(struct rt_tasklet_struct *tasklet, int thread)
  * it is just an empty macro, as the user can, and must  allocate the related
  * structure directly, either statically or dynamically.
  *
- * @note To be used only with RTAI24.x.xx.
  */
+
 int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 {
 	int thread;

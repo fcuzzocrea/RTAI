@@ -1,3 +1,12 @@
+2005-01-16  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/Kconfig: some layout reordering, tasklets help
+	  scripts extended extended to explain signals.
+	* base/include/rtai_signal.h: header for the new added support of
+	  async signals.
+	* base/tasklets/signal.c: new added support for async signals,
+	  kernel/user space alike.
+
 2005-01-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: return the registration count when a named and 

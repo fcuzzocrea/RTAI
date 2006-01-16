@@ -1,7 +1,7 @@
 2005-01-16  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/Kconfig: some layout reordering, tasklets help
-	  scripts extended extended to explain signals.
+	  scripts extended to explain signals.
 	* base/include/rtai_signal.h: header for the new added support of
 	  async signals.
 	* base/tasklets/signal.c: new added support for async signals,

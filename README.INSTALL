@@ -29,6 +29,16 @@ you have no need to work with the trio.
 
 It is important to note that RTAI comes with duo version set by default.
 
+In both versions RTAI uses only the leanest and fastest RTAI+Linux combination 
+now, i.e. it dispatches real time interrupts immediately. Moreover within such 
+a scheme i386 has the possibility of completely avoiding the dispatching of 
+critical internal timers and interprocessor scheduling interrupts by vectoring 
+them directly to their handlers. Such an option strongly enhances performances
+on low end machines and comes by default. You can disable it while configuring
+RTAI though. See the related configuration helper.
+What above requires you to patch Linux just with patches found wihin this
+distribution. Notice also that this release is for use with i386s only.
+
 1. How to build
 ===============
 

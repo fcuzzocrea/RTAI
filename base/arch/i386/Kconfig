@@ -591,9 +591,9 @@ config RTAI_TASKLETS
 	line, pioneered by RTAI, of a symmetric usage of all its
 	services inter-intra kernel and user space for both soft and
 	hard real-time. The new services provided can be useful when
-	you have many tasks, both in kernel and user space, that must
-	needs to execute some specific functions. Such tasks are called 
-	tasklets and can be of two kinds:
+	you have many tasks, both in kernel and user space, needing to
+	execute specific functions. Such tasks are called tasklets and 
+	can be of two kinds:
         - a simple tasklet;
         - timed tasklets (timers).
 	The tasklets implementation of timed tasklets relies on a
@@ -610,7 +610,7 @@ config RTAI_TASKLETS
 	Signals are much the same as tasklets and execute their handler
 	function whenever they are triggered by any task, including their
 	parent task. The notable difference against tasklets is that the
-	task they serve is blocked till one of its signal handler is 
+	task they serve is blocked till any of its signal handler is 
 	executing. So they behave as standard signal handlers but without
 	the need to restart a blocked signalled task, since there is no
 	need to have it resumed to catch a signal. In fact signals can be 

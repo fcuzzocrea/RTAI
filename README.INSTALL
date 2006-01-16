@@ -12,7 +12,7 @@ directly to their handlers. Such an option strongly enhances performances
 on low end machines and comes by default. You can disable it while configuring 
 RTAI though. See the related configuration helper.
 What above requires you to patch Linux just with patches found wihin this 
-distribution. Notice also tha this release is for use with i386s only.
+distribution. Notice also that this release is for use with i386s only.
 
 1. How to build
 ===============

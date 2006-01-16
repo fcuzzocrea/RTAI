@@ -384,6 +384,32 @@ config RTAI_BUSY_TIME_ALIGN
 	waist in favour of precise schedule deadlines.
 	Do not set it if a hard periodic timer is to be used.
 
+config RTAI_LXRT_USE_LINUX_SYSCALL
+	bool "Wrap LXRT service calls through Linux syscall mechanism"
+	default n
+	help
+	With this option enabled, LXRT uses the Linux syscall mechanism
+	for service calls, as provided by libc "syscall".  This may improve 
+	signal handling (and therefore debugging of LXRT applications), but 
+	has the drawback of a slight overhead. 
+
+	When direct inlining of RTAI syscalls is enabled, see the related
+	configuration options, it is still possible to force the use of 
+	the Linux syscall mechanism, even if this configuration parameter 
+	has not been set. The only thing to do is to add:
+	#define USE_LINUX_SYSCALL
+	before any RTAI header inclusion, in any source file in which you
+	want to use the Linux syscall mechanism. In the same way when this
+	parameter is set you can selectively revert to LXRT own syscall
+	mechanism by defining:
+	#undef USE_LINUX_SYSCALL
+	before any RTAI header inclusion, in any source file in which you
+	want to use the LXRT syscall mechanism.
+	RTAI will then operate in mixed mode selectively by using both 
+	its own and Linux syscall mechanisms.
+	
+	If in doubt, say no.
+
 config RTAI_CAL_FREQS_FACT
 	string "Cure loosely calibrated frequencies - see help"
 	default 0
@@ -405,7 +431,7 @@ config RTAI_CAL_FREQS_FACT
 
 endmenu
 
-menu "IPC support"
+menu "Supported services"
 
 config RTAI_BITS
 	tristate "Event flags"
@@ -556,6 +582,47 @@ config RTAI_MQ
 	semaphores.
 	The module will be called rtai_mq.o.
 
+config RTAI_TASKLETS
+	tristate "Tasklets and async signals"
+	default m
+	help
+
+	The tasklets module adds an interesting new feature along the
+	line, pioneered by RTAI, of a symmetric usage of all its
+	services inter-intra kernel and user space for both soft and
+	hard real-time. The new services provided can be useful when
+	you have many tasks, both in kernel and user space, that must
+	needs to execute some specific functions. Such tasks are called 
+	tasklets and can be of two kinds:
+        - a simple tasklet;
+        - timed tasklets (timers).
+	The tasklets implementation of timed tasklets relies on a
+	server support task that executes the related timer functions,
+	either in oneshot or periodic mode, on the base of their time
+	deadline and according to their user assigned priority.
+	As explained above, plain tasklets are just functions executed
+	depending on user defined events. Their execution needs no server 
+	and is simply triggered by calling the user specified tasklet
+	function at due time, either from a kernel task or interrupt
+	handler in charge of their execution when they are needed.
+	The module will be called rtai_tasklets.o.
+
+	Signals are much the same as tasklets and execute their handler
+	function whenever they are triggered by any task, including their
+	parent task. The notable difference against tasklets is that the
+	task they serve is blocked till one of its signal handler is 
+	executing. So they behave as standard signal handlers but without
+	the need to restart a blocked signalled task, since there is no
+	need to have it resumed to catch a signal. In fact signals can be 
+	seen as much as software generated interrupts. See their APIs
+	documentation in the code.
+	The module will be called rtai_signal.o.
+
+	Notice that, if the module version is chosen, this option activates
+	the making of two different modules. At the moment the related
+	services from user space are seen as LXRT expansions using slots
+	1 and 2 respectively.
+
 endmenu
 
 menu "Other features"
@@ -603,31 +670,6 @@ config RTAI_MALLOC_HEAPSZ
 	RTAI pre-allocates a global heap as part of its initialization
 	chores. This parameter allows to define its size (in
 	kilobytes).
-
-config RTAI_TASKLETS
-	tristate "Tasklets"
-	default m
-	help
-
-	The tasklets module adds an interesting new feature along the
-	line, pioneered by RTAI, of a symmetric usage of all its
-	services inter-intra kernel and user space for both soft and
-	hard real-time. The new services provided can be useful when
-	you have many tasks, both in kernel and user space, that must
-	needs to execute some specific functions. Such tasks are called 
-	tasklets and can be of two kinds:
-        - a simple tasklet;
-        - timed tasklets (timers).
-	The tasklets implementation of timed tasklets relies on a
-	server support task that executes the related timer functions,
-	either in oneshot or periodic mode, on the base of their time
-	deadline and according to their user assigned priority.
-	As explained above, plain tasklets are just functions executed
-	depending on user defined events. Their execution needs no server 
-	and is simply triggered by calling the user specified tasklet
-	function at due time, either from a kernel task or interrupt
-	handler in charge of their execution when they are needed.
-	The module will be called rtai_tasklets.o.
 
 config RTAI_TRACE
 	bool "LTT support"
@@ -695,32 +737,6 @@ config RTAI_LEDS
 	default m
 	help
 	The module will be called rtai_leds.o.
-
-config RTAI_LXRT_USE_LINUX_SYSCALL
-	bool "Wrap LXRT service calls through Linux syscall mechanism"
-	default n
-	help
-	With this option enabled, LXRT uses the Linux syscall mechanism
-	for service calls, as provided by libc "syscall".  This may improve 
-	signal handling (and therefore debugging of LXRT applications), but 
-	has the drawback of a slight overhead. 
-
-	When direct inlining of RTAI syscalls is enabled, see the related
-	configuration options, it is still possible to force the use of 
-	the Linux syscall mechanism, even if this configuration parameter 
-	has not been set. The only thing to do is to add:
-	#define USE_LINUX_SYSCALL
-	before any RTAI header inclusion, in any source file in which you
-	want to use the Linux syscall mechanism. In the same way when this
-	parameter is set you can selectively revert to LXRT own syscall
-	mechanism by defining:
-	#undef USE_LINUX_SYSCALL
-	before any RTAI header inclusion, in any source file in which you
-	want to use the LXRT syscall mechanism.
-	RTAI will then operate in mixed mode selectively by using both 
-	its own and Linux syscall mechanisms.
-	
-	If in doubt, say no.
 
 endmenu
 

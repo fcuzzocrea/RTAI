@@ -40,6 +40,7 @@ nobase_include_HEADERS = \
 		rtai_schedcore.h \
 		rtai_sem.h \
 		rtai_shm.h \
+		rtai_signal.h \
 		rtai_spl.h \
 		rtai_tasklets.h \
 		rtai_tbx.h \

@@ -613,7 +613,7 @@ static inline int rt_clone(void *fun, void *args, long stack_size, unsigned long
 	}
 	memset(sp = malloc(stack_size), 0, stack_size);
 	sp = (void *)(((unsigned long)sp + stack_size - 16) & ~0xF);
-	return clone(fun, sp, flags, args);
+	return clone((int (*)(void *))fun, sp, flags, args);
 }
 
 #define RT_THREAD_STACK_MIN  64*1024

@@ -53,10 +53,10 @@ struct rtdm_dev_context;
  *  application. */
 #define RTDM_EXCLUSIVE              0x0001
 
-/** If set, the device is addresses via a clear-text name. */
+/** If set, the device is addressed via a clear-text name. */
 #define RTDM_NAMED_DEVICE           0x0010
 
-/** If set, the device is addresses via a combination of protocol ID and
+/** If set, the device is addressed via a combination of protocol ID and
  *  socket type. */
 #define RTDM_PROTOCOL_DEVICE        0x0020
 
@@ -292,11 +292,9 @@ typedef
 struct rtdm_operations {
     /*! @name Common Operations
      * @{ */
-    /** Close handler for real-time contexts,
-     *  optional if \a close_nrt is non-NULL */
+    /** Close handler for real-time contexts (optional) */
     rtdm_close_handler_t            close_rt;
-    /** Close handler for non-real-time contexts,
-     *  optional if \a close_rt is non-NULL */
+    /** Close handler for non-real-time contexts (required) */
     rtdm_close_handler_t            close_nrt;
     /** IOCTL from real-time context (optional) */
     rtdm_ioctl_handler_t            ioctl_rt;

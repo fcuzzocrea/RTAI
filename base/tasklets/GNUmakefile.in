@@ -550,9 +550,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@CONFIG_RTAI_TASKLETS_BUILTIN_TRUE@install-exec-local:
 @CONFIG_KBUILD_FALSE@clean-local:
 @CONFIG_RTAI_TASKLETS_BUILTIN_TRUE@clean-local:
+@CONFIG_RTAI_TASKLETS_BUILTIN_TRUE@install-exec-local:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-local \
@@ -642,21 +642,13 @@ uninstall-am: uninstall-info-am
 @CONFIG_KBUILD_FALSE@rtai_signal.o: libsignal.a
 @CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 
-all-local: rtai_tasklets$(modext)
+all-local: rtai_tasklets$(modext) rtai_signal$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(mkinstalldirs) $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
-@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@install-exec-local: rtai_tasklets$(modext)
+@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@install-exec-local: rtai_tasklets$(modext) rtai_signal$(modext)
 @CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(mkinstalldirs) $(moduledir)
-@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $< $(moduledir)
-
-all-local: rtai_signal$(modext)
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(mkinstalldirs) $(top_srcdir)/modules
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
-
-@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@install-exec-local: rtai_signal$(modext)
-@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(mkinstalldirs) $(moduledir)
-@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $< $(moduledir)
+@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $^ $(moduledir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

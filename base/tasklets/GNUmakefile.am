@@ -46,28 +46,16 @@ rtai_signal.o: libsignal.a
 	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@
 endif
 
-all-local: rtai_tasklets$(modext)
+all-local: rtai_tasklets$(modext) rtai_signal$(modext)
 if !CONFIG_RTAI_TASKLETS_BUILTIN
 if CONFIG_RTAI_OLD_FASHIONED_BUILD
 	$(mkinstalldirs) $(top_srcdir)/modules
 	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 endif
 
-install-exec-local: rtai_tasklets$(modext)
+install-exec-local: rtai_tasklets$(modext) rtai_signal$(modext)
 	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $< $(moduledir)
-endif
-
-all-local: rtai_signal$(modext)
-if !CONFIG_RTAI_TASKLETS_BUILTIN
-if CONFIG_RTAI_OLD_FASHIONED_BUILD
-	$(mkinstalldirs) $(top_srcdir)/modules
-	$(INSTALL_DATA) $^ $(top_srcdir)/modules
-endif
-
-install-exec-local: rtai_signal$(modext)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $< $(moduledir)
+	$(INSTALL_DATA) $^ $(moduledir)
 endif
 
 EXTRA_DIST = Makefile.kbuild

@@ -195,8 +195,8 @@ config RTAI_DONT_DISPATCH_CORE_IRQS
 	depends on RTAI_EXTENDED
 	default y
 	help
-	RTAI dispatches real time interrupts immediately to achieve as a
-	low overhead as possible. Very important on low end CPUs. By
+	RTAI dispatches real time interrupts immediately to achieve as
+	low a overhead as possible. Very important on low end CPUs. By
 	setting this option it is possible to achieve a further improvement
 	by allowing hard RTAI internal timers and SMP interprocessor 
 	scheduling interrupts to be vectored directly to their handlers, 
@@ -342,11 +342,11 @@ config RTAI_SCHED_LXRT_NUMSLOTS
 	The maximum number of registrable objects in RTAI.
 
 config RTAI_MONITOR_EXECTIME
-	bool "Display RTAI task execution time (per thousands)"
+	bool "Display RTAI task execution time (per thousand)"
 	default y
 	help
 	If this option is enabled it is possible to see the time consumed by
-	hard real time tasks, in per thousands of the total time available, 
+	hard real time tasks, in per thousand of the total time available, 
 	by using the RTAI scheduler proc file, e.g. "cat /proc/rtai/scheduler".
 	Since this option uses the TSC it is better to avoid it in production
 	for x86 CPUs not having TSCs, i.e. 486s and some untrue 586s.

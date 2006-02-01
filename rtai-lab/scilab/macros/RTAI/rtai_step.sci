@@ -100,7 +100,6 @@ function [ok,tt]=getCode_step(funam)
 	  'void '+funam+'(scicos_block *block,int flag)';
 	 ];
   textmp($+1)='{'
-  textmp($+1)='  double v;'
   textmp($+1)='  double t = get_scicos_time();'
   textmp($+1)='  switch(flag) {'
   textmp($+1)='  case 4:'

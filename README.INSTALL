@@ -267,12 +267,12 @@ OPTIONS:
   -s<y/n>, --scope<y/n>
       toggle parport bit to monitor scheduling on a scope, default y(es)
 
-2. Bootstrapping with magma in 7 steps
+2. Bootstrapping with vulcano in 7 steps
 ========================================
 
 >1. patch and build a vanilla Linux kernel tree with the RTAI support as
     usual. Patches for x86 are available from
-    magma/base/arch/i386/patches/. Apply only one of them
+    vulcano/base/arch/i386/patches/. Apply only one of them
     that matches the Linux kernel version ("hal" selects Adeos,
     "legacy" selects the old RTHAL), like this:
     $ cd $linux-src-dir
@@ -280,7 +280,7 @@ OPTIONS:
 
 >2. $ mkdir $builddir && cd $builddir
 
->3. $ make -f ../magma/makefile srctree=../magma
+>3. $ make -f ../vulcano/makefile srctree=../vulcano
 
 >4. a GUI should pop up, allowing you to configure RTAI:
     o default settings should be ok for most platforms

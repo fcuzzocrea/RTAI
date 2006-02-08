@@ -2,9 +2,7 @@
 
         * rtai-lab/scilab/macros/RTAI/RT_templates/rtai.mak: Added flag
         "-D_GNU_SOURCE" to CFLAGS.
-
         * rtai-lab/matlab/rtai.tmf: Added flag "-D_GNU_SOURCE" to CFLAGS.
-
        * rtai-lab/scilab/macros/RTAI/rtai_step: Eliminated an unused variable
 
 2005-01-31  Paolo Mantegazza <mantegazza@aero.polimi.it>

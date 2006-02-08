@@ -4,101 +4,153 @@
 
 @page sched_overview An overview of RTAI schedulers.
 
-RTAI has a UniProcessor (UP) specific scheduler and two for MultiProcessors
-(MP).   In the latter case you can chose between a  symmetricMultiProcessor
-(SMP) and a MultiUniProcessor (MUP) scheduler.
+RTAI uses a MultiUniProcessor (MUP) scheduling scheme. MUP simply means that 
+all schedulable objects are forced on a CPU, either as a user specifies or as 
+RTAI wants, if no specific CPU request is stated at RTAI tasks initialisation.
+Clearly all of the tasks can communicate and synchronise independently from 
+where they are, scheduling each other inter/intra all the available CPUs. 
+It should be trivial to understand that there is no need to explain what 
+happens for a single CPU system.
 
-The UP scheduler can be timed only by the 8254 timer and cannot be used with
-MPs.
+RTAI tasks can use infinite priority levels. Well it is not entirely true as
+a user should care of keeping priorities below 1000000000, but that should be
+like infinite for all practical porpuses. 
 
-The SMP scheduler can be timed either by the 8254 or by a local APIC timer.
-In SMP/8254 tasks are defaulted to work on any CPU but you can assign them to
-any subset, or to a single CPU, by using the function
-"rt_set_runnable_on_cpus".
-It is also possible to assign any real time interrupt service to a specific cpu
-by using "rt_assign_irq_to_cpu" and "rt_reset_irq_to_sym_mode".
-Thus a user can statically optimize his/her application if he/she believes that
-it can be better done than using a symmetric load distribution.
-The possibility of forcing any interrupts to a specific CPU is clearly not
-related to the SMP scheduler and can be used also with interrupt handlers
-alone.
-Note that only the real time interrupt handling is forced to a specific CPU.
-That means that if you check this feature by using "cat /proc/interrupts" for a
-real time interrupt that is chained to Linux, e.g. the timer when rtai_sched is
-installed, you can still see some interrupts distributed to all the CPUs, even
-if they are mostly on the assigned one.   That is because Linux interrupts are
-kept symmetric by the RTAI dispatcher of Linux irqs.
-For the SMP/APIC based scheduler if you want to statically optimize the load
-distribution by binding tasks to specific CPUs it can be useful to use
-"rt_get_timer_cpu()" just after having installed the timer, to know which CPU
-is using its local APIC timer to pace the scheduler.   Note that for the
-oneshot  case that will be the main timing CPU but not the only one.   In fact
-which local APIC is shot depends on the task scheduling out, as that will
-determine the next shooting.
+That said RTAI schedulers use a ready and timed list for each CPU. The ready
+list is a simple ordered linear list. If you are worried about scalability
+problems for such a way of keeping ready to run tasks then you should know that
+there is a version of RTAI somewhere that has a fully scalable ready list, for 
+up to the 1024 most prioritary tasks. Its use does not show any advantage with 
+respect to the simple linear list; the reason? If you are in hard real time 
+and it happens to have more than some 10-20 ready tasks there is no chance they 
+can satisfy their time constraints, if any of them has something barely serious
+to do. Below 10-20 tasks no noticeable difference appears by using a linearly
+ordered list or a direct priority mapping combined with lists for equal 
+priorities ready tasks.
 
-SMP schedulers allow to chose between a periodic and a oneshot timer, not  to
-be used together.    The periodic ticking is less flexible but, with the usual
-PC hardware much more efficient. So it is up to you which one to choose in
-relation to the applications at hand.
-It should be noted that in the oneshot mode the time is measured on the base of
-the CPU time stamp clock (TSC) and neither on the 8254 chip nor on the local
-APIC timer, which are used only to generate oneshot interrupts.   The periodic
-mode is instead timed by either the 8254 or the local APIC timers.
-If the 8254 is used slow I/Os to the ISA bus are limited as much as possible
-with a sizable gain in efficiency. The oneshot mode has just about 15-20% more
-overhead than the periodic one.   The use of the local APIC timers leads to a
-further improvement and substantially less jitter.
-Remember that local APICs are hard disabled on UPs, unless you are using just
-one CPU on an MP motherboard.   Experience with local APIC timers shows that
-there is no performance improvement for a periodic scheduling, except for a
-marginal reduced jitter, while the oneshot case gain is the sizable 10-15%
-mentioned above.
-In fact by using the TSC just two outb are required to reprogram the 8254, i.e.
-approximately 3 us, against almost nothing for the APIC timer.
-However you have to broadcast a message to all the CPUs in any case, and that
-is at least about more than 3 us, the APIC bus is an open drain 2 wires one and
-is not lightning like.
-Note that the performance loss of the 8254 is just a fraction of the overall
-task switching procedure, which is always substantially heavier in the oneshot
-case than in periodic mode.
-No doubt however that if you have an SMP motherboard, or a local APIC enabled
-anyhow, you should use the APIC SMP scheduler.   Note however that in this case
-we have chosen not to bound the timer to a specific CPU.   Nonetheless, as
-recalled above, you can still optimise the static binding of your task by using
-the function "rt_get_timer_cpu()" which allows you to know which local APIC is
-timing your application so that you can "rt_set_runnable_on_cpus" any task
-accordingly.
-See README in "smpscheduler".
+Much the same can be said for timed tasks lists, but there things might be
+different. In fact it is perfectly feasible to be able to satisfy time 
+constraints even with thousands of blocked timed tasks, provided they are 
+separated appropriately in time. In such a case there is no doubt that a 
+linear time ordered list will become a bottleneck. Such a situation, albeit 
+with less then thousands tasks, showed up recently to a user. It did not cause 
+really dramatic problems but did hinted the need of a better support. So a 
+binary ordered timed task list has been added as an option a user can set. 
+The related work has been quite simple, as anybody can check by diffing the 
+related before and after codes.
+Notice however that such an option is likely not needed by many applications 
+as, if it is true that binary tree ordering scales better, it requires more 
+complex operations to manage such a list. So it is likely that for a few tens 
+of timed tasks, the actual figure will depend on many things, CPU power being 
+likely the most important factor, linearly ordered timed tasks lists might 
+still be worth using. So the choice is up to you, the related choice is 
+available at RTAI config time; as usual we provide mechanisms, policies are 
+your matter.
 
-Since the TSC is not available on 486 machines for them we use a form of
-emulation of the "read time stamp clock" (rdtsc) assembler instruction based on
-counter2 of the 8254. So you can use RTAI also on such machines.   Be warned
-that the oneshot timer on 486 is a performance overkill because of the need of
-reading the tsc, i.e. 8254 counter2 in this case, 2/3 times.   That can take 6-
-8 us, i.e. more than it takes for a full switch among many tasks while using a
-periodic timer.   Thus only a few khz period is viable, at most, for real time
-tasks if you want to keep Linux alive.
-No similar problems exist for the periodic timer that needs not to use any TSC
-at all. So, compared to the 20% cited above, the real time performance ratio of
-the oneshot/periodic timer efficiency ratio can be very low on 486 machines.
-Moreover it will produce far worse jitters than those caused on Pentiums and
-upward machines.   If you really need a oneshot timer buy at least a Pentium.
-Instead, for a periodic timing 486s can still be more than adequate for many
-applications.
+Applications using RTAI schedulers can be timed by three type of hard timers:
+1 - 8254
+2 - APIC
+3 - Real Time Clock (RTC).
 
-The MUP scheduler instead derives its name by the fact that real time tasks
-MUST be bound to a single CPU at the very task initialization.   They can be
-afterward moved by using functions rt_set_runnable_on_cpus and
-rt_set_runnable_on_cpuid.   The MUP scheduler can however use inter CPUs
-services related to semaphores, messages and mailboxes.   The advantage of
-using the MUP scheduler  comes mainly from the possibility of using mixed
-timers simultaneously, i.e. periodic and oneshot, where periodic timers can be
-based on different periods, and of possibly forcing critical task on the CPU
-cache.
-With dual SMP machines we cannot say that there is a noticeable difference in
-efficiency.
-MUP has been developed primarily for our, not so fast, a few khz, PWM
-actuators, BANG-BANG air jet thrusters, coupled to a periodic scheduler.
-All the functions of UP and SMP schedulers are available in the MUP scheduler.
+RTC allows just a periodic ticking at a frequency that must be set when
+configuring RTAI. Such a frequency can range from 2 to 8192 Hz in power of 2
+always. So to use RTC you must:
+1 - be happy of working in periodic mode; moreover
+2 - it must be accepable to resolve your timing needs with a tick within 
+a frequency that can be varied just in powers of 2, from 2 to 8192 Hz.
+If both of the above constraints are OK for you then it might be worth setting
+your tick frequency of choice here and let RTAI schedulers use the RTC.
+Be careful though as:
+- you must not have configured the RTC as available to Linux;
+- RTC will be the only available timer and its tick frequency can be modified 
+only by reconfiguring RTAI.
+The main advantage of using the RTC, if constraints 1 and 2 can be accepted, 
+is that you will not touch any of the hard timing sources used by Linux 
+(8254 especially and APIC too). In fact if an APIC timer is available (MP and 
+recent machines) it is possible to avoid the most important interference with 
+Linux timing by not using the 8254. However such a possibilty is not available 
+on low end CPUs and embedded systems for which the only way to avoid 
+interfering with the Linux timer might be this option. Thus in such cases, 
+1-2 above being acceptable once more, configuring RTAI to use the RTC might 
+be a good choice.
 
-*/
+We have just seen that RTC allows just a periodic ticking, instead 8254 and 
+APIC timers can support both periodic and oneshot mode.
+
+The periodic mode is just the same as RTC, with the important difference of
+both a finer granularity in chosing the period of the ticking and no power of
+2 constraints. 
+It should be remarked that the periodic mode is the one used on most operating
+systems, Linux included. In fact 2.4.xx versions have a ticking of 100 Hz, 
+while 2.6.xx can now chose among: 100/250/1000 Hz at config time.
+With any periodic scheduler there is no better resolution than the period and
+RTAI makes no difference when timed in periodic mode, except for the fact that
+is lean enough to allow periods of 10 us, while leaving Linux still well alive
+on machine running upward of 500 MHz.
+There is however a peculiar difference of RTAI with respect to both other OSes
+and an RTC based periodic tick. In fact when using 8254/APIC in periodic mode
+RTAI does not count each tick as one but as the counter value needed to tick
+with an assigned period. Such a solution has the advantage that RTAI tries to
+satisfy time constraints falling in between two ticks by rounding instead of
+truncating. In turn that imposes to a user to care of setting her/his timed
+deadlines in exact multiple of the count granting the period if no timing
+oscillation, within the period of the tick, should be allowed. To such an 
+aim the value returned by the API starting the periodic timer must be used. 
+Saying it again: you will be able to use a resolution related to the frequency 
+of the used timer (8254/APIC) but will be able to meet timing constraint 
+exactly only if you assign them as multiple of the count requested for a tick,
+as returned by the function starting the periodic mode. Care is taken to 
+satisfying Linux timing also when the 8254 timer is used, as that is its hard
+timing source and the user should care to assign a real time period that it is
+and integer fraction of Linux ticking, otherwise the timing of Linux will
+suffer of oscillations, albeit without loosing its overall rithm.
+When the APIC timer is available, for sure with Multi Processors (MP) but with 
+Uni Processors (UP) on recent machines also, the problem does not exist as 
+Linux uses the APIC just for monitoring pursposes and RTAI maintains such a 
+service by substituting the APIC timer interrupt, which is at the same 
+frequency as the Linux 8254 interrupt, by triggering its handler with a 
+broadcasted interrupt generated at the end of the Linux 8254 timer interrupt
+itself. In such a way there is almost no interference between RTAI and Linux 
+timing.
+
+8254 and APIC allow using the oneshot mode also. In such a mode the timer is
+fired aperiodically as needed to wake up any timed test with a priority higher 
+or equal to the running task. Special care is taken in maintaining Linux
+timing also when the 8254 is used. Again if an APIC is available it will be 
+used and Linux will be affected the least by RTAI timing. The oneshot mode
+needs a continuous running timer to be read to compute the aperiodic counts to
+be loaded into the used timer counter. In the APIC case it is granted that
+a Time Stamp Clock (TSC), running at the CPU frequency on x86s, is always
+available and the oneshot mode will be highly effective thanks to the very
+short overhead needed to program the APIC oneshot counter. So, conversions from
+the TSC to the APIC timer frequency apart, the oneshot mode with APIC is the 
+most effective and flexible way to time an RTAI application, mostly at a 
+submicrosec resolution (in theory). When the 8254 is used instead and a TSC 
+is at hand the situation is not much different in relation to the resolution
+available in theory, 119318? Hz vs 10s of MHz are still a fine grained timing.
+However their is the need to output two bytes to the 8254, through the ISA bus,
+to load its counter and such an operation is slow, sometime slower on today
+fast machines than it was on older and slower ones. Moreover it is more jitter
+prone than programming the APIC oneshot counter. Nonetheless it is believed
+that if a TSC can be used the oneshot mode remains a very flexible and useful
+timing mode even with 8254 timers.
+Care and judgment are needed instead when there is no TSC as maintaining
+oneshot flexibility will incur in a substantial overhead. In fact when a true
+TSC is not available, as on 486s and false 586s, RTAI uses a form of
+emulation of the TSC based on counter2 of the 8254. So you can use RTAI also 
+on such machines but must be warned that the oneshot timer on 486s is a bit
+of a performance killer, because of the need of reading the emulated TSC, 
+i.e. 8254 counter2 in this case. That can take more time than it takes for 
+a full switch among many tasks while using a periodic timer, thus only a few 
+KHz period could be viable. So the real time performance ratio of the 
+oneshot/periodic timer efficiency ratio can be very low on 486 machines.
+Moreover it will produce far worse jitters than those caused on machine having 
+a true TSC, while with a periodic timing 486s can still be more than adequate 
+for many applications at relatively high frequencies.
+
+Notice that a still unique feature of RTAI on MP is the possibility of using 
+mixed timers simultaneously, i.e. periodic and oneshot, where periodic timers 
+can be based on different periods. A possibility that combined with CPUs
+isolation for real time, i.e. RTAI usage, only can allow very accurate high
+frequency time resolutions mated to low latencies and jitter (see 
+README.ISOLCPUS in the main RTAI directory).

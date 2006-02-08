@@ -10,7 +10,7 @@ Pierre Cloutiers: How does LXRT works?
 schedulers to have the real picture of what RTAI does now. So one might ask: 
 why is it kept in the docs? 
 There are two answers:
-- it is a good witness of how an RTAI first, i.e. a way of using Linux user 
+- it is a good witness on how an RTAI first, i.e. a way of using Linux user 
 space for hard real time, aka LXRT, was born;
 - it pays a tribute to somebody that did a lot to improve and complement LXRT 
 with a better integration into Linux; Pierre's extension of basic LXRT ideas 

@@ -1,3 +1,10 @@
+2006-02-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/include/rtai_tasklets.h and base/tasklets/tasklets.c: added per
+	  cpu timers managers and lists for better MP scalability.
+        * base/sched/sched.c: force suspension of released kthreads even if 
+	  they own resources, this makes them behave as RTAI own kernel tasks.
+
 2006-02-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
         * doc/doxygen/*.dox: everything revised or rewritten.

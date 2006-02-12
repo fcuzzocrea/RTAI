@@ -1908,6 +1908,7 @@ static void kthread_fun(int cpuid)
 		}
 		task->exectime[1] = rdtsc();
 		((void (*)(long))task->max_msg_size[0])(task->max_msg_size[1]);
+		task->owndres = 0;
 		current->comm[0] = 'F';
 		current->rtai_tskext(TSKEXT1) = 0;
 		rtai_cli();

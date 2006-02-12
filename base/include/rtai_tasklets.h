@@ -60,7 +60,7 @@ struct rt_task_struct;
 
 struct rt_tasklet_struct {
 	struct rt_tasklet_struct *next, *prev;
-	int priority, uses_fpu;
+	int priority, uses_fpu, cpuid;
 	RTIME firing_time, period;
 	void (*handler)(unsigned long);
 	unsigned long data, id;
@@ -277,7 +277,7 @@ void rt_register_task(struct rt_tasklet_struct *tasklet,
 
 struct rt_tasklet_struct {
 	struct rt_tasklet_struct *next, *prev;
-	int priority, uses_fpu;
+	int priority, uses_fpu, cpuid;
 	RTIME firing_time, period;
 	void (*handler)(unsigned long);
 	unsigned long data, id;

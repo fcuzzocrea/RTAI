@@ -122,18 +122,18 @@ MODULE_LICENSE("GPL");
 
 DEFINE_LINUX_CR0
 
-static struct rt_tasklet_struct timers_list =
-{ &timers_list, &timers_list, RT_SCHED_LOWEST_PRIORITY, 0, RT_TIME_END, 0LL, 0, 0, 0, 
+static struct rt_tasklet_struct timers_list[RTAI_NR_CPUS] =
+{ { &timers_list[0], &timers_list[0], RT_SCHED_LOWEST_PRIORITY, 0, 0, RT_TIME_END, 0LL, 0, 0, 0, 
 #ifdef  CONFIG_RTAI_LONG_TIMED_LIST
-/**/0, NULL, NULL, { NULL } 
+0, NULL, NULL, { NULL } 
 #endif
-};
+}, };
 
 static struct rt_tasklet_struct tasklets_list =
 { &tasklets_list, &tasklets_list, };
 
 static spinlock_t tasklets_lock = SPIN_LOCK_UNLOCKED;
-static spinlock_t timers_lock   = SPIN_LOCK_UNLOCKED;
+static spinlock_t timers_lock[RTAI_NR_CPUS] = { SPIN_LOCK_UNLOCKED, };
 
 static struct rt_fun_entry rt_tasklet_fun[]  __attribute__ ((__unused__));
 
@@ -156,14 +156,14 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_register_task },	  	//  15
 };
 
-#ifdef CONFIG_RTAI_LONG_TIMED_LIST
+#ifdef _CONFIG_RTAI_LONG_TIMED_LIST
 
 /* BINARY TREE */
 static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 {
 	struct rt_tasklet_struct *timerh, *tmrnxt, *timer;
 	rb_node_t **rbtn, *rbtpn = NULL;
-	timer = timerh = &timers_list;
+	timer = timerh = &timers_list[timed_timer->cpuid];
 	rbtn = &timerh->rbr.rb_node;
 
 	while (*rbtn) {
@@ -182,7 +182,7 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 	timed_timer->next = timer;
 }
 
-#define rb_erase_timer(timer)  rb_erase(&(timer)->rbn, &timers_list.rbr)
+#define rb_erase_timer(timer)  rb_erase(&(timer)->rbn, &timers_list[(timer)->cpuid].rbr)
 
 #else /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
@@ -190,7 +190,7 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 {
 	struct rt_tasklet_struct *timer;
-	timer = &timers_list;
+	timer = &timers_list[timed_timer->cpuid];
         while (timed_timer->firing_time >= (timer = timer->next)->firing_time);
 	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
 	timed_timer->next = timer;
@@ -384,31 +384,33 @@ RT_TASK *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet, int use_fpu)
 	return tasklet->task;
 }
 
-static RT_TASK timers_manager;
+static RT_TASK timers_manager[RTAI_NR_CPUS];
 
-static inline void asgn_min_prio(void)
+static inline void asgn_min_prio(int cpuid)
 {
 // find minimum priority in timers_struct 
-	struct rt_tasklet_struct *timer;
+	RT_TASK *timer_manager;
+	struct rt_tasklet_struct *timer, *timerl;
+	spinlock_t *lock;
 	unsigned long flags;
 	int priority;
 
-	priority = (timer = timers_list.next)->priority;
-	flags = rt_spin_lock_irqsave(&timers_lock);
-	while ((timer = timer->next) != &timers_list) {
+	priority = (timer = (timerl = &timers_list[cpuid])->next)->priority;
+	flags = rt_spin_lock_irqsave(lock = &timers_lock[timer->cpuid]);
+	while ((timer = timer->next) != timerl) {
 		if (timer->priority < priority) {
 			priority = timer->priority;
 		}
-		rt_spin_unlock_irqrestore(flags, &timers_lock);
-		flags = rt_spin_lock_irqsave(&timers_lock);
+		rt_spin_unlock_irqrestore(flags, lock);
+		flags = rt_spin_lock_irqsave(lock);
 	}
-	rt_spin_unlock_irqrestore(flags, &timers_lock);
+	rt_spin_unlock_irqrestore(flags, lock);
 	flags = rt_global_save_flags_and_cli();
-	if (timers_manager.priority > priority) {
-		timers_manager.priority = priority;
-		if (timers_manager.state == RT_SCHED_READY) {
-			rem_ready_task(&timers_manager);
-			enq_ready_task(&timers_manager);
+	if ((timer_manager = &timers_manager[cpuid])->priority > priority) {
+		timer_manager->priority = priority;
+		if (timer_manager->state == RT_SCHED_READY) {
+			rem_ready_task(timer_manager);
+			enq_ready_task(timer_manager);
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -417,13 +419,14 @@ static inline void asgn_min_prio(void)
 static inline void set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time)
 {
 	if (timer->next != timer && timer->prev != timer) {
+		spinlock_t *lock;
 		unsigned long flags;
 
 		timer->firing_time = firing_time;
-		flags = rt_spin_lock_irqsave(&timers_lock);
+		flags = rt_spin_lock_irqsave(lock = &timers_lock[timer->cpuid]);
 		rem_timer(timer);
 		enq_timer(timer);
-		rt_spin_unlock_irqrestore(flags, &timers_lock);
+		rt_spin_unlock_irqrestore(flags, lock);
 	}
 }
 
@@ -466,7 +469,9 @@ static inline void set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME 
 
 int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data, int pid)
 {
+	spinlock_t *lock;
 	unsigned long flags;
+	RT_TASK *timer_manager;
 
 // timer initialization
 	if (!handler) {
@@ -480,24 +485,26 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
 	timer->data        = data;
 	if (!pid) {
 		timer->task = 0;
+		timer->cpuid = rtai_cpuid();
 	} else {
+		timer->cpuid = (timer->task)->runnable_on_cpus;
 		(timer->task)->priority = priority;
 		rt_copy_to_user(timer->usptasklet, timer, sizeof(struct rt_tasklet_struct));
 	}
 // timer insertion in timers_list
-	flags = rt_spin_lock_irqsave(&timers_lock);
+	flags = rt_spin_lock_irqsave(lock = &timers_lock[timer->cpuid]);
 	enq_timer(timer);
-	rt_spin_unlock_irqrestore(flags, &timers_lock);
+	rt_spin_unlock_irqrestore(flags, lock);
 // timers_manager priority inheritance
-	if (timer->priority < timers_manager.priority) {
-		timers_manager.priority = timer->priority;
+	if (timer->priority < (timer_manager = &timers_manager[timer->cpuid])->priority) {
+		timer_manager->priority = timer->priority;
 	}
 // timers_task deadline inheritance
 	flags = rt_global_save_flags_and_cli();
-	if (timers_list.next == timer && (timers_manager.state & RT_SCHED_DELAYED) && firing_time < timers_manager.resume_time) {
-		timers_manager.resume_time = firing_time;
-		rem_timed_task(&timers_manager);
-		enq_timed_task(&timers_manager);
+	if (timers_list[timer->cpuid].next == timer && (timer_manager->state & RT_SCHED_DELAYED) && firing_time < timer_manager->resume_time) {
+		timer_manager->resume_time = firing_time;
+		rem_timed_task(timer_manager);
+		enq_timed_task(timer_manager);
 		rt_schedule();
 	}
 	rt_global_restore_flags(flags);
@@ -517,11 +524,12 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
 void rt_remove_timer(struct rt_tasklet_struct *timer)
 {
 	if (timer->next != timer && timer->prev != timer) {
+		spinlock_t *lock;
 		unsigned long flags;
-		flags = rt_spin_lock_irqsave(&timers_lock);
+		flags = rt_spin_lock_irqsave(lock = &timers_lock[timer->cpuid]);
 		rem_timer(timer);
-		rt_spin_unlock_irqrestore(flags, &timers_lock);
-		asgn_min_prio();
+		rt_spin_unlock_irqrestore(flags, lock);
+		asgn_min_prio(timer->cpuid);
 	}
 }
 
@@ -547,7 +555,7 @@ void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
 	if (timer->task) {
 		(timer->task)->priority = priority;
 	}
-	asgn_min_prio();
+	asgn_min_prio(timer->cpuid);
 }
 
 /**
@@ -573,13 +581,14 @@ void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
 void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time)
 {
 	unsigned long flags;
+	RT_TASK *timer_manager;
 
 	set_timer_firing_time(timer, firing_time);
 	flags = rt_global_save_flags_and_cli();
-	if (timers_list.next == timer && (timers_manager.state & RT_SCHED_DELAYED) && firing_time < timers_manager.resume_time) {
-		timers_manager.resume_time = firing_time;
-		rem_timed_task(&timers_manager);
-		enq_timed_task(&timers_manager);
+	if (timers_list[timer->cpuid].next == timer && ((timer_manager = &timers_manager[timer->cpuid])->state & RT_SCHED_DELAYED) && firing_time < timer_manager->resume_time) {
+		timer_manager->resume_time = firing_time;
+		rem_timed_task(timer_manager);
+		enq_timed_task(timer_manager);
 		rt_schedule();
 	}
 	rt_global_restore_flags(flags);
@@ -611,44 +620,51 @@ void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time
 
 void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period)
 {
+	spinlock_t *lock;
 	unsigned long flags;
-	flags = rt_spin_lock_irqsave(&timers_lock);
+	flags = rt_spin_lock_irqsave(lock = &timers_lock[timer->cpuid]);
 	timer->period = period;
-	rt_spin_unlock_irqrestore(flags, &timers_lock);
+	rt_spin_unlock_irqrestore(flags, lock);
 }
 
 // the timers_manager task function
 
-static void rt_timers_manager(long dummy)
+static void rt_timers_manager(long cpuid)
 {
 	RTIME now;
-	struct rt_tasklet_struct *tmr, *timer;
+	RT_TASK *timer_manager;
+	struct rt_tasklet_struct *tmr, *timer, *timerl;
+	spinlock_t *lock;
 	unsigned long flags;
 	int priority, used_fpu;
 
+	timer_manager = &timers_manager[cpuid];
+	timerl = &timers_list[cpuid];
+	lock = &timers_lock[cpuid];
+
 	while (1) {
-		rt_sleep_until((timers_list.next)->firing_time);
-		now = timers_manager.resume_time + tuned.timers_tol[0];
+		rt_sleep_until((timerl->next)->firing_time);
+		now = timer_manager->resume_time + tuned.timers_tol[0];
 // find all the timers to be fired, in priority order
 		while (1) {
 			used_fpu = 0;
-			tmr = timer = &timers_list;
+			tmr = timer = timerl;
 			priority = RT_SCHED_LOWEST_PRIORITY;
-			flags = rt_spin_lock_irqsave(&timers_lock);
+			flags = rt_spin_lock_irqsave(lock);
 			while ((tmr = tmr->next)->firing_time <= now) {
 				if (tmr->priority < priority) {
 					priority = (timer = tmr)->priority;
 				}
 			}
-			timers_manager.priority = priority;
-			rt_spin_unlock_irqrestore(flags, &timers_lock);
-			if (timer == &timers_list) {
+			timer_manager->priority = priority;
+			rt_spin_unlock_irqrestore(flags, lock);
+			if (timer == timerl) {
 				break;
 			}
 			if (!timer->period) {
-				flags = rt_spin_lock_irqsave(&timers_lock);
+				flags = rt_spin_lock_irqsave(lock);
 				rem_timer(timer);
-				rt_spin_unlock_irqrestore(flags, &timers_lock);
+				rt_spin_unlock_irqrestore(flags, lock);
 			} else {
 				set_timer_firing_time(timer, timer->firing_time + timer->period);
 			}
@@ -656,7 +672,7 @@ static void rt_timers_manager(long dummy)
 				if (!used_fpu && timer->uses_fpu) {
 					used_fpu = 1;
 					save_fpcr_and_enable_fpu(linux_cr0);
-					save_fpenv(timers_manager.fpu_reg);
+					save_fpenv(timer_manager->fpu_reg);
 				}
 				timer->handler(timer->data);
 			} else {
@@ -664,11 +680,11 @@ static void rt_timers_manager(long dummy)
 			}
 		}
 		if (used_fpu) {
-			restore_fpenv(timers_manager.fpu_reg);
+			restore_fpenv(timer_manager->fpu_reg);
 			restore_fpcr(linux_cr0);
 		}
 // set next timers_manager priority according to the highest priority timer
-		asgn_min_prio();
+		asgn_min_prio(cpuid);
 // if no more timers in timers_struct remove timers_manager from tasks list
 	}
 }
@@ -746,9 +762,11 @@ static RT_TASK *rt_base_linux_task;
 int __rtai_tasklets_init(void)
 {
 	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
+	int cpuid;
+
 	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
 	if (rt_sched_type() == RT_SCHED_MUP) {
-		tuned.timers_tol[0] = tuned.timers_tol[timers_manager.runnable_on_cpus];
+		tuned.timers_tol[0] = tuned.timers_tol[0];
 	}
         if(rt_base_linux_task->task_trap_handler[0]) {
                 if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rt_tasklet_fun, TSKIDX)) {
@@ -756,15 +774,24 @@ int __rtai_tasklets_init(void)
                         return -EACCES;
                 }
         }
-	rt_task_init(&timers_manager, rt_timers_manager, 0, tasklets_stacksize, RT_SCHED_LOWEST_PRIORITY, 0, 0);
-	rt_task_resume(&timers_manager);
+	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
+		timers_lock[cpuid] = timers_lock[0];
+		timers_list[cpuid] = timers_list[0];
+		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
+		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, tasklets_stacksize, RT_SCHED_LOWEST_PRIORITY, 0, 0, cpuid);
+		rt_task_resume(&timers_manager[cpuid]);
+	printk(KERN_INFO "RTAI[tasklets]: loaded.\n");
+	}
 	printk(KERN_INFO "RTAI[tasklets]: loaded.\n");
 	return 0;
 }
 
 void __rtai_tasklets_exit(void)
 {
-	rt_task_delete(&timers_manager);
+	int cpuid;
+	for (cpuid = 0; cpuid < RTAI_NR_CPUS; cpuid++) {
+		rt_task_delete(&timers_manager[cpuid]);
+	}
         if(rt_base_linux_task->task_trap_handler[1]) {
                 ((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rt_tasklet_fun, TSKIDX);
         }

@@ -38,41 +38,46 @@ longer you can verify that more and more digits remain stable. In about a
 quarter of an hour you should get a precision to the least significant
 digit. For a very precise and safe calibration let it run for an hour or so.
 
-Such a high precision is not strictly required for RTAI to work
-appropriately, in fact RTAI is enough with Linux calibration values it
-uses as defaults. However we (DIAPM) always use the most precise calibration 
-obtainable by running it for an appropriate amount of time. The highest 
-precision is needed for periodic timers, if you want to minimize the drift from real time.
+Such a high precision is not strictly required for RTAI to work appropriately, 
+in fact RTAI is enough with Linux calibration values it uses as defaults. 
+However we (DIAPM) always use the most precise calibration obtainable by 
+running it for an appropriate amount of time. The highest precision is needed 
+for periodic timers, if you want to minimize the drift from real time.
+Notice also that in oneshot mode using the APIC timer a precise scheduling 
+time depends also on the ratio cpu_freq/apic_freq.
+
 
 
 Latency Calibration
 ===================
 
 Calibrates the scheduling latency of RTAI schedulers with oneshot timers, to
-allow a more precise of timed tasks. Chose the one (kernel/user space) more
-appropriate to the scheduler you want to use.
+allow a more precise scheduling of timed tasks. Chose the one (kernel/user 
+space) more appropriate to the applications mix you are using.
 
 
 Interrupt Delays Caused by Bus Hardware Arbitrations and Locks
 ==============================================================
 
 More and more motherboards are being sold with chipsets that have hardware
-optimizations allowing locking the bus, maybe up to few millisecs. 
+optimizations allowing locking the bus, even up to few millisecs. 
 Without judging if such a way of working is acceptable, maybe it makes it 
 appear to improve overall average performances in general applications, it 
 surely dooms real time usage.
 Often what RTAI users see are large scheduling jitters and they start hinting 
 at bugs that likely do not exist.
-This check is aimed at helping in tracking such a problem. It measures interruptlatency by using the TSC on the timer interrupt, machines without TSCs are old
-enough to have no optimising chipsets. Thus they do not have such a problem.
+This check is aimed at helping in tracking such a problem. It measures the
+timer interrupt latency by using the Time Stamp Clock (TSC). Mchines without 
+TSCs are old enough to have no optimising chipsets. Thus they do not have 
+such a problem.
 The only module implied is rtai.c, there is thus no scheduling but just
-interrupt dispatching, that should have latencies in the range of 20/30 us
-worst case. So if you'll see something too much higher play with its
-configuration parameters, with those of Linux as well, to end in buying
-another board eventually.
+an immediate dispatching of the timer interrupt, that should have latencies 
+in the range of 20/30 us worst case. So if you'll see something too much 
+higher play with your system configuration parameters and with those of Linux 
+as well, to end in buying another board eventually.
 The worst interrupt latency is displayed at the end of the run, which comes
-when you type "Ctrl-C".
-Note that it is possible to check it also on a scope by defining using "-sy" 
+when you type "Ctrl-C". Worsening latencies are displayed as they happen.
+Notice that is possible to check it also on a scope by defining using "-sy" 
 and connecting the scope to the first output bit of the parallel port.
 See also README.SMI in this directory for some clues that might help with
 some INTEL chipsets.

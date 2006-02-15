@@ -23,7 +23,13 @@ DIST_SUBDIRS = \
 	addons \
 	rtai-lab
 
-EXTRA_DIST = makefile README.INSTALL @RTAI_MAYBE_SIMDIR@
+EXTRA_DIST = \
+makefile \
+README.INSTALL \
+README.ISOLCPUS \
+README.LXRT_EXTS_IN_USE \
+README.SMI \
+@RTAI_MAYBE_SIMDIR@
 
 DISTCLEANFILES = .rtai_config .rtai_config.old .cfok .cfchanged
 

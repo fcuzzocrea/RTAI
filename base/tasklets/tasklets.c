@@ -122,7 +122,6 @@ MODULE_LICENSE("GPL");
 
 DEFINE_LINUX_CR0
 
-#undef CONFIG_SMP
 #ifdef CONFIG_SMP
 #define NUM_CPUS           RTAI_NR_CPUS
 #define TIMED_TIMER_CPUID  (timed_timer->cpuid)

@@ -1021,6 +1021,12 @@ static inline void *rtdm_malloc(size_t size)
     return xnmalloc(size);
 }
 
+int rtdm_mmap_to_user(rtdm_user_info_t *user_info, void *src_addr, size_t len,
+		      int prot, void **pptr,
+                      struct vm_operations_struct *vm_ops,
+                      void *vm_private_data);
+int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len);
+
 static inline void rtdm_free(void *ptr)
 {
     xnfree(ptr);

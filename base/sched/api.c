@@ -2058,6 +2058,7 @@ EXPORT_SYMBOL(count2nano_cpuid);
 EXPORT_SYMBOL(nano2count_cpuid);
 
 EXPORT_SYMBOL(rt_kthread_init);
+EXPORT_SYMBOL(rt_kthread_init_cpuid);
 EXPORT_SYMBOL(rt_smp_linux_task);
 EXPORT_SYMBOL(rt_smp_current);
 EXPORT_SYMBOL(rt_smp_time_h);

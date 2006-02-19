@@ -1927,10 +1927,11 @@ static void kthread_fun(int cpuid)
 do { \
 	struct klist_t *p = &klist[cpuid]; \
 	struct task_struct *lnxtsk; \
+	RT_TASK *rt_task; \
 	int euid, rt_priority; \
 	while (p->out != p->in) { \
-		if ((lnxtsk = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]) != SCHED_NORMAL) { \
-			if ((rt_priority = ((RT_TASK *)lnxtsk->rtai_tskext(TSKEXT0))->priority) >= BASE_SOFT_PRIORITY) { \
+		if ((lnxtsk = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]) != SCHED_NORMAL && (rt_task = lnxtsk->rtai_tskext(TSKEXT0))) { \
+			if ((rt_priority = rt_task->priority) >= BASE_SOFT_PRIORITY) { \
 				rt_priority -= BASE_SOFT_PRIORITY; \
 			} \
 			if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority) < 1 ? 1 : MAX_LINUX_RTPRIO - rt_priority) != lnxtsk->rt_priority) { \

@@ -1,20 +1,24 @@
+2006-02-19  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/drvlib.c and rtdm_drvlib.h: aligned to the latest.
+
 2006-02-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/sched/sched.c: WAKE_UP_TASKs macro takes care of keeping Linux
+	* base/sched/sched.c: WAKE_UP_TASKs macro takes care of keeping Linux
 	  and RTAI task rt_priority consistently. It affect give_back_to_linux
 	  also. For the moment otionally settable with the hidden internal
 	  macro NEW_WAKE_UP_TASKs.
 
 2006-02-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * base/include/rtai_tasklets.h and base/tasklets/tasklets.c: added per
+	* base/include/rtai_tasklets.h and base/tasklets/tasklets.c: added per
 	  cpu timers managers and lists for better MP scalability.
-        * base/sched/sched.c: force suspension of released kthreads even if 
+	* base/sched/sched.c: force suspension of released kthreads even if 
 	  they own resources, this makes them behave as RTAI own kernel tasks.
 
 2006-02-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-        * doc/doxygen/*.dox: everything revised or rewritten.
+	* doc/doxygen/*.dox: everything revised or rewritten.
 
 2006-02-03 RTAI-3.3 released.
 

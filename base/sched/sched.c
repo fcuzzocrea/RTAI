@@ -1921,6 +1921,29 @@ static void kthread_fun(int cpuid)
 	clr_rtext(task);
 }
 
+#define NEW_WAKE_UP_TASKs
+#ifdef NEW_WAKE_UP_TASKs
+#define WAKE_UP_TASKs(klist) \
+do { \
+	struct klist_t *p = &klist[cpuid]; \
+	struct task_struct *lnxtsk; \
+	int euid, rt_priority; \
+	while (p->out != p->in) { \
+		if ((lnxtsk = p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]) != SCHED_NORMAL) { \
+			if ((rt_priority = ((RT_TASK *)lnxtsk->rtai_tskext(TSKEXT0))->priority) >= BASE_SOFT_PRIORITY) { \
+				rt_priority -= BASE_SOFT_PRIORITY; \
+			} \
+			if ((rt_priority = (MAX_LINUX_RTPRIO - rt_priority) < 1 ? 1 : MAX_LINUX_RTPRIO - rt_priority) != lnxtsk->rt_priority) { \
+	                	euid = lnxtsk->euid; \
+	        	        lnxtsk->euid = current->euid; \
+				rtai_set_linux_task_priority(lnxtsk, lnxtsk->policy, rt_priority); \
+	        	        lnxtsk->euid = euid; \
+			} \
+		} \
+		wake_up_process(lnxtsk); \
+	} \
+} while (0)
+#else
 #define WAKE_UP_TASKs(klist) \
 do { \
 	struct klist_t *p = &klist[cpuid]; \
@@ -1928,13 +1951,13 @@ do { \
 		wake_up_process(p->task[p->out++ & (MAX_WAKEUP_SRQ - 1)]); \
 	} \
 } while (0)
+#endif
 
 static void kthread_m(int cpuid)
 {
 	struct task_struct *lnxtsk;
 	struct klist_t *klistp;
 	RT_TASK *task;
-
 	
 	detach_kthread();
 	(task = &thread_task[cpuid])->magic = RT_TASK_MAGIC;
@@ -2039,8 +2062,12 @@ void give_back_to_linux(RT_TASK *rt_task, int keeprio)
 		rt_task->base_priority += BASE_SOFT_PRIORITY;
 		rt_task->priority      += BASE_SOFT_PRIORITY;
 	} 
+#ifdef NEW_WAKE_UP_TASKs
+	pend_wake_up_hts(lnxtsk = rt_task->lnxtsk, rt_task->runnable_on_cpus);
+#else
 	(lnxtsk = rt_task->lnxtsk)->rt_priority = (MAX_LINUX_RTPRIO - rt_task->priority) < 1 ? 1 : MAX_LINUX_RTPRIO - rt_task->priority;
-	pend_wake_up_hts(rt_task->lnxtsk, rt_task->runnable_on_cpus);
+	pend_wake_up_hts(lnxtsk, rt_task->runnable_on_cpus);
+#endif
 	rt_schedule();
 	rt_task->is_hard = keeprio;
 	rt_global_sti();

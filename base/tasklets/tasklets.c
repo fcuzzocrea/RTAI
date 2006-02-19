@@ -26,70 +26,47 @@
 /**
  * @defgroup tasklets mini RTAI LXRT tasklets module
  *
- * The MINI_RTAI_LXRT tasklets module adds an interesting new feature along the
- * line, pioneered by RTAI, of a symmetric usage of all its services inter-intra
- * kernel and user space, both for soft and hard real time applications.   In
- * such a way you have opened a whole spectrum of development and implementation
+ * The tasklets module adds an interesting feature along the line, pioneered
+ * by RTAI, of a symmetric usage of all its services inter-intra kernel and 
+ * user space, both for soft and hard real time applications.   In such a way 
+ * you have opened a whole spectrum of development and implementation
  * lanes, allowing maximum flexibility with uncompromized performances.
  *
- * The new services provided can be useful when you have many tasks, both in
- * kernel and user space, that must execute in soft/hard real time but do not
- * need any RTAI scheduler service that could lead to a task block. Such tasks
- * are here called tasklets and can be of two kinds: normal tasklets and timed
- * tasklets (timers).
+ * The new services provided can be useful when you have many tasks, both 
+ * in * kernel and user space, that must execute simple, often ripetitive, 
+ * functions, both in soft and hard real time, asynchronously within their 
+ * parent application. Such tasks are here called tasklets and can be of 
+ * two kinds: normal tasklets and timed tasklets (timers).
  *
  * It must be noted that only timers should need to be made available both in
  * user and kernel space.   In fact normal tasklets in kernel space are nothing
  * but standard functions that can be directly executed by calling them, so
  * there would be no need for any special treatment.   However to maintain full
- * usage symmetry, and to ease any possible porting from one address space to
- * the other, also normal tasklet functions can be used in whatever address
- * space.
+ * usage symmetry and to ease any possible porting from one address space to
+ * the other, plain tasklets can be used in whatever address space.
  *
- * Note that if, at this point, you are reminded to similar Linux kernel
- * services you are not totally wrong.  They are not exactly the same, because
- * of their symmetric availability in kernel and user space, but the basic idea
- * behind them  is clearly fairly similar.
- *
- * Tasklets should be used whenever the standard hard real time tasks available
- * with RTAI and LXRT schedulers can be a waist of resources and the execution
- * of simple, possibly timed, functions could often be more than
- * enough. Instances of such applications are timed polling and simple
- * Programmable Logic Controllers (PLC) like sequences of services.   Obviously
- * there are many others instances that can make it sufficient the use of
- * tasklets, either normal or timers.   In general such an approach can be a
- * very useful complement to fully featured tasks in controlling complex
+ * Tasklets should be used where and whenever the standard hard real time 
+ * RTAI tasks are used.  Instances of such applications are timed polling and 
+ * simple Programmable Logic Controllers (PLC) like sequences of services.   
+ * Obviously there are many others instances that can make it sufficient the 
+ * use of tasklets, either normal or timers.   In general such an approach can 
+ * be a very useful complement to fully featured tasks in controlling complex
  * machines and systems, both for basic and support services.
  *
  * It is remarked that the implementation found here for timed tasklets rely on
- * a server support task that executes the related timer functions, either in
- * oneshot or periodic mode, on the base of their time deadline and according to
- * their, user assigned, priority. Instead, as told above, plain tasklets are
- * just functions executed from kernel space; their execution needs no server
- * and is simply triggered by calling a given service function at due time,
- * either from a kernel task or interrupt handler requiring, or in charge of,
- * their execution when they are needed. Once more it is important to recall
- * that all non blocking RTAI scheduler services can be used in any tasklet
- * function.   Blocking services must absolutely be avoided.   They will
- * deadlock the timers server task, executing task or interrupt handler,
- * whichever applies, so that no more tasklet functions will be executed.
- *
- * User and kernel space MINI_RTAI_LXRT applications can cooperate and
- * synchronize by using shared memory. It has been called MINI_RTAI_LXRT because
- * it is a kind of light soft/hard real time server that can partially
- * substitute RTAI and LXRT in simple applications, i.e. if the constraints
- * hinted above are wholly satisfied. So MINI_RTAI_LXRT can be used in kernel
- * and user space, with any RTAI scheduler. Its implementations has been very
- * easy, as it is nothing but what its name implies.   LXRT made all the needed
- * tools already available.   In fact it duplicates a lot of LXRT so that its
- * final production version will be fully integrated with it, ASAP.   However,
- * at the moment, it cannot work with LXRT yet.
+ * server support tasks, one per cpu, that execute the related timer functions, 
+ * either in oneshot or periodic mode, on the base of their time deadline and 
+ * according to their, user assigned, priority. Instead, as told above, plain 
+ * tasklets are just functions executed from kernel space; their execution 
+ * needs no server and is simply triggered by calling a given service function 
+ * at due time, either from a kernel task or interrupt handler requiring, or in
+ * charge of, their execution when they are needed.
  *
  * Note that in user space you run within the memory of the process owning the
  * tasklet function so you MUST lock all of your processes memory in core, by
- * using mlockall, to prevent it being swapped out.   Also abundantly pre grow
- * your stack to the largest size needed during the execution of your
- * application, see mlockall usage in Linux manuals.
+ * using mlockall, to prevent it being swapped out.   Also pre grow your stack 
+ * to the largest size needed during the execution of your application, see 
+ * mlockall usage in Linux manuals.
  *
  * The RTAI distribution contains many useful examples that demonstrate the use
  * of most services, both in kernel and user space.

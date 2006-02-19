@@ -198,6 +198,23 @@ int rt_task_init_cpuid(struct rt_task_struct *task,
 		       void(*signal)(void),
 		       unsigned run_on_cpu);
 
+int rt_kthread_init(struct rt_task_struct *task,
+		    void (*rt_thread)(long),
+		    long data,
+		    int stack_size,
+		    int priority,
+		    int uses_fpu,
+		    void(*signal)(void));
+
+int rt_kthread_init_cpuid(struct rt_task_struct *task,
+		          void (*rt_thread)(long),
+		          long data,
+		          int stack_size,
+		          int priority,
+		          int uses_fpu,
+		          void(*signal)(void),
+		          unsigned run_on_cpu);
+
 void rt_set_runnable_on_cpus(struct rt_task_struct *task,
 			     unsigned long cpu_mask);
 

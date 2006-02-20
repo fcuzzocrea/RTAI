@@ -5,9 +5,9 @@
 2006-02-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: WAKE_UP_TASKs macro takes care of keeping Linux
-	  and RTAI task rt_priority consistently. It affect give_back_to_linux
-	  also. For the moment otionally settable with the hidden internal
-	  macro NEW_WAKE_UP_TASKs.
+	  and RTAI task rt_priority consistently. It affects give_back_to_linux
+	  also. For the moment optionally settable with the hidden internal
+	  macro: NEW_WAKE_UP_TASKs.
 
 2006-02-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

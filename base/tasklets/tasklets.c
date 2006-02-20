@@ -2,11 +2,11 @@
  * @ingroup tasklets
  * @file
  *
- * Implementation of the @ref tasklets "mini LXRT RTAI tasklets module".
+ * Implementation of the @ref tasklets "RTAI tasklets module".
  *
  * @author Paolo Mantegazza
  *
- * @note Copyright &copy;1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright &copy; 1999-2006 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,7 +24,7 @@
  */
 
 /**
- * @defgroup tasklets mini RTAI LXRT tasklets module
+ * @defgroup tasklets module
  *
  * The tasklets module adds an interesting feature along the line, pioneered
  * by RTAI, of a symmetric usage of all its services inter-intra kernel and 
@@ -33,7 +33,7 @@
  * lanes, allowing maximum flexibility with uncompromized performances.
  *
  * The new services provided can be useful when you have many tasks, both 
- * in * kernel and user space, that must execute simple, often ripetitive, 
+ * in kernel and user space, that must execute simple, often ripetitive, 
  * functions, both in soft and hard real time, asynchronously within their 
  * parent application. Such tasks are here called tasklets and can be of 
  * two kinds: normal tasklets and timed tasklets (timers).
@@ -43,7 +43,8 @@
  * but standard functions that can be directly executed by calling them, so
  * there would be no need for any special treatment.   However to maintain full
  * usage symmetry and to ease any possible porting from one address space to
- * the other, plain tasklets can be used in whatever address space.
+ * the other, plain tasklets can be used in the same way from whatever address 
+ * space.
  *
  * Tasklets should be used where and whenever the standard hard real time 
  * RTAI tasks are used.  Instances of such applications are timed polling and 
@@ -60,16 +61,16 @@
  * tasklets are just functions executed from kernel space; their execution 
  * needs no server and is simply triggered by calling a given service function 
  * at due time, either from a kernel task or interrupt handler requiring, or in
- * charge of, their execution when they are needed.
+ * charge of, their execution whenever they are needed.
  *
  * Note that in user space you run within the memory of the process owning the
- * tasklet function so you MUST lock all of your processes memory in core, by
- * using mlockall, to prevent it being swapped out.   Also pre grow your stack 
+ * tasklet function so you MUST lock all of your tasks memory in core, by
+ * using mlockall, to prevent it being swapped out.   Pre grow also your stack 
  * to the largest size needed during the execution of your application, see 
- * mlockall usage in Linux manuals.
+ * mlockall usage in Linux mans.
  *
  * The RTAI distribution contains many useful examples that demonstrate the use
- * of most services, both in kernel and user space.
+ * of most tasklets services, both in kernel and user space.
  *
  *@{*/
 

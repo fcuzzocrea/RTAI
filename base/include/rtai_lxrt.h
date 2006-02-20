@@ -542,6 +542,7 @@ void reset_rt_fun_ext_index(struct rt_fun_entry *fun,
 #include <sched.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <asm/rtai_lxrt.h>
 

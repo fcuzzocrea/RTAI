@@ -513,13 +513,13 @@ static inline void rt_global_sti(void)
     rtai_sti();
 }
 
-static volatile inline unsigned long rtai_save_flags_irqbit(void)
+static inline unsigned long rtai_save_flags_irqbit(void)
 {
 	unsigned long flags;
 	rtai_save_flags(flags);
 	return flags & (1 << RTAI_IFLAG);
 }
-static volatile inline unsigned long rtai_save_flags_irqbit_and_cli(void)
+static inline unsigned long rtai_save_flags_irqbit_and_cli(void)
 {
 	unsigned long flags;
 	rtai_save_flags_and_cli(flags);

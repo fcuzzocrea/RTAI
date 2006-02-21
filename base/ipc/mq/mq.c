@@ -455,8 +455,8 @@ size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgp
 			memcpy(msg_buffer, &msg_ptr->data, size);
 			*msgprio = msg_ptr->hdr.priority;
 		} else {
-			copy_to_user(msg_buffer, &msg_ptr->data, size);
-			copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
+			rt_copy_to_user(msg_buffer, &msg_ptr->data, size);
+			rt_copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
 		}
 	} else {
 		size = ERROR;
@@ -498,7 +498,7 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 		if (is_blocking(q)) {
 			struct timespec time;
 			if (!space) {
-				copy_from_user(&time, abstime, sizeof(struct timespec));
+				rt_copy_from_user(&time, abstime, sizeof(struct timespec));
 				abstime = &time;
 			}
 			if (rt_cond_wait_until(&q->emp_cond, &q->mutex, timespec2count(abstime)) > 1) {
@@ -520,8 +520,8 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 			memcpy(msg_buffer, &msg_ptr->data, size);
 			*msgprio = msg_ptr->hdr.priority;
 		} else {
-			copy_to_user(msg_buffer, &msg_ptr->data, size);
-			copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
+			rt_copy_to_user(msg_buffer, &msg_ptr->data, size);
+			rt_copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
 		}
 	} else {
 		size = ERROR;
@@ -586,7 +586,7 @@ int _mq_send(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio, int
 	if (space) {
 		memcpy(&((MQMSG *)this_msg)->data, msg, msglen);
 	} else {
-		copy_from_user(&((MQMSG *)this_msg)->data, msg, msglen);
+		rt_copy_from_user(&((MQMSG *)this_msg)->data, msg, msglen);
 	}
 	insert_message(&q->data, this_msg);
 	pthread_cond_signal(&q->emp_cond);
@@ -629,7 +629,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 		if (is_blocking(q)) {
 			struct timespec time;
 			if (!space) {
-				copy_from_user(&time, abstime, sizeof(struct timespec));
+				rt_copy_from_user(&time, abstime, sizeof(struct timespec));
 				abstime = &time;
 			}
 			if (rt_cond_wait_until(&q->full_cond, &q->mutex, timespec2count(abstime)) > 1) {
@@ -656,7 +656,7 @@ int _mq_timedsend(mqd_t mq, const char *msg, size_t msglen, unsigned int msgprio
 	if (space) {
 		memcpy(&((MQMSG *)this_msg)->data, msg, msglen);
 	} else {
-		copy_from_user(&((MQMSG *)this_msg)->data, msg, msglen);
+		rt_copy_from_user(&((MQMSG *)this_msg)->data, msg, msglen);
 	}
 	insert_message(&q->data, this_msg);
 	pthread_cond_signal(&q->emp_cond);

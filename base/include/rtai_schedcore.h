@@ -543,7 +543,7 @@ static inline void dequeue_blocked(RT_TASK *task)
         task->blocked_on         = NOTHING;
 }
 
-static __volatile__ inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
+static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
 {
         QUEUE *q;
 #ifdef CONFIG_SMP

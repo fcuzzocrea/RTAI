@@ -442,7 +442,7 @@ static inline int mbx_put(F_MBX *mbx, char **msg, int msg_size, int lnx)
 			tocpy = mbx->frbs;
 		}
 		if (lnx) {
-			copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+			rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		} else {
 			memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		}
@@ -475,7 +475,7 @@ static inline int mbx_ovrwr_put(F_MBX *mbx, char **msg, int msg_size, int lnx)
 				tocpy = mbx->frbs;
 			}
 			if (lnx) {
-				copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+				rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 			} else {
 				memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 			}
@@ -519,7 +519,7 @@ static inline int mbx_get(F_MBX *mbx, char **msg, int msg_size, int lnx)
 			tocpy = mbx->avbs;
 		}
 		if (lnx) {
-			copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+			rt_copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		} else {
 			memcpy(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		}
@@ -548,7 +548,7 @@ static inline int mbx_evdrp(F_MBX *mbx, char **msg, int msg_size, int lnx)
 			tocpy = avbs;
 		}
 		if (lnx) {
-			copy_to_user(*msg, mbx->bufadr + fbyte, tocpy);
+			rt_copy_to_user(*msg, mbx->bufadr + fbyte, tocpy);
 		} else {
 			memcpy(*msg, mbx->bufadr + fbyte, tocpy);
 		}
@@ -1433,7 +1433,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			struct { char *buf; int count; } args;
 			int handler_ret;
 			TRACE_RTAI_FIFO(TRACE_RTAI_EV_FIFO_READ_ALLATONCE, 0, 0);
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			args.count -= mbx_receive(&(fifop->mbx), args.buf, args.count, 1);
 			if (args.count) {
 				inode->i_atime = CURRENT_TIME;
@@ -1446,13 +1446,13 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		}
 		case EAVESDROP: {
 			struct { char *buf; int count; } args;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			return args.count - mbx_evdrp(&(fifop->mbx), (char **)&args.buf, args.count, 1);
 		}
 		case READ_TIMED: {
 			struct { char *buf; int count, delay; } args;
 			int handler_ret;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			TRACE_RTAI_FIFO(TRACE_RTAI_EV_FIFO_READ_TIMED, args.count, DELAY(args.delay));
 			if (!args.delay) {
 				args.count -= mbx_receive_wp(&(fifop->mbx), args.buf, args.count, 1);
@@ -1475,7 +1475,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		case READ_IF: {
 			struct { char *buf; int count; } args;
 			int handler_ret;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			args.count -= mbx_receive_if(&(fifop->mbx), args.buf, args.count, 1);
 			if (args.count) {
 				inode->i_atime = CURRENT_TIME;
@@ -1489,7 +1489,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		case WRITE_TIMED: {
 			struct { char *buf; int count, delay; } args;
 			int handler_ret;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			TRACE_RTAI_FIFO(TRACE_RTAI_EV_FIFO_WRITE_TIMED, args.count, DELAY(args.delay));
 			if (!args.delay) {
 				args.count -= mbx_send_wp(&(fifop->mbx), args.buf, args.count, 1);
@@ -1509,7 +1509,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		case WRITE_IF: {
 			struct { char *buf; int count, delay; } args;
 			int handler_ret;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			if (args.count) {
 				args.count -= mbx_send_wp(&(fifop->mbx), args.buf, args.count, 1);
 				if (!args.count) {
@@ -1524,7 +1524,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		}
 		case OVRWRITE: {
 			struct { char *buf; int count; } args;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			return mbx_ovrwr_send(&(fifop->mbx), (char **)&args.buf, args.count, 1);
 		}
 		case RTF_SEM_INIT: {
@@ -1573,7 +1573,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			struct rt_fifo_get_info_struct req;
 			int i, n;
 
-			copy_from_user(&req, (void *)arg, sizeof(req));
+			rt_copy_from_user(&req, (void *)arg, sizeof(req));
 			for ( i = req.fifo, n = 0; 
 			      i < MAX_FIFOS && n < req.n; 
 			      i++, n++
@@ -1584,26 +1584,26 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 				info.size        = fifo[i].mbx.size;
 				info.opncnt      = fifo[i].opncnt;
 				strncpy(info.name, fifo[i].name, RTF_NAMELEN+1);
-				copy_to_user(req.ptr + n, &info, sizeof(info));
+				rt_copy_to_user(req.ptr + n, &info, sizeof(info));
 			}
 			return n;
 		}
 		case RTF_NAMED_CREATE: {
 			struct { char name[RTF_NAMELEN+1]; int size; } args;
 
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			return rtf_named_create(args.name, args.size);
 	        }
 		case RTF_CREATE_NAMED: {
 			char name[RTF_NAMELEN+1];
 
-			copy_from_user(name, (void *)arg, RTF_NAMELEN+1);
+			rt_copy_from_user(name, (void *)arg, RTF_NAMELEN+1);
 			return rtf_create_named(name);
 	        }
 		case RTF_NAME_LOOKUP: {
 			char name[RTF_NAMELEN+1];
 
-			copy_from_user(name, (void *)arg, RTF_NAMELEN+1);
+			rt_copy_from_user(name, (void *)arg, RTF_NAMELEN+1);
 			return rtf_getfifobyname(name);
 		}
 	        case TCGETS:

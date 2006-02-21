@@ -2082,7 +2082,7 @@ pid_t rt_Name_attach(const char *argname)
 	RT_TASK *task;
 	task = current->rtai_tskext(TSKEXT0) ? (RT_TASK *)current->rtai_tskext(TSKEXT0) : _rt_whoami();
 	if (current->comm[0] != 'U' && current->comm[1] != ':') {
-	    	strncpy_from_user(task->task_name, argname, RTAI_MAX_NAME_LENGTH);
+	    	rt_strncpy_from_user(task->task_name, argname, RTAI_MAX_NAME_LENGTH);
 	} else {
 	    	strncpy(task->task_name, argname, RTAI_MAX_NAME_LENGTH);
 	}

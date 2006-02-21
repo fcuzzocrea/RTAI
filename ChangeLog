@@ -1,3 +1,14 @@
+2006-02-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sanity.h: gcc-4.x.x is allowed now.
+	* base/include/rtai_schedcore.h and base/include/asm-i386/rtai_hal.h:
+	  cleared volatiles in inlined functions to avoid gcc-4 warnings.
+	* base/include/asm-i386/rtai_lxrt.h: macros for copy_to/from reworked
+	  to avoid gcc-4 warnings.
+	* base/ipc/fifos/fifos.c, base/ipc/mq/mq.c and base/ipc/msg/msg.c:
+	  use copy_from/to macros in base/include/asm-i386/rtai_lxrt.h to 
+	  avoid gcc-4 warnings.
+
 2006-02-19  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/drvlib.c and rtdm_drvlib.h: aligned to the latest.

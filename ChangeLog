@@ -1,20 +1,22 @@
 2006-02-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/arch/i386/calibartion/calibrate-module.c, calibrate.c and
+	* base/arch/i386/calibration/calibrate-module.c, calibrate.c and
 	  calibrate.h: added in kernel calibration for both RTAI own tasks 
 	  and hardened kthreads.
-	* base/arch/i386/calibartion/runinfo: use ksched always.
+	* base/arch/i386/calibration/runinfo: use ksched always, i.e. the
+	  overall RTAI scheduler.
 
 2006-02-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sanity.h: gcc-4.x.x is allowed now.
 	* base/include/rtai_schedcore.h and base/include/asm-i386/rtai_hal.h:
-	  cleared volatiles in inlined functions to avoid gcc-4 warnings.
+	  cleared volatiles in inlined functions declaration to avoid gcc-4 
+	  warnings.
 	* base/include/asm-i386/rtai_lxrt.h: macros for copy_to/from reworked
 	  to avoid gcc-4 warnings.
 	* base/ipc/fifos/fifos.c, base/ipc/mq/mq.c and base/ipc/msg/msg.c:
-	  use copy_from/to macros in base/include/asm-i386/rtai_lxrt.h to 
-	  avoid gcc-4 warnings.
+	  use copy_from/to macros found in base/include/asm-i386/rtai_lxrt.h 
+	  to avoid gcc-4 warnings.
 
 2006-02-19  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

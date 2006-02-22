@@ -1,3 +1,10 @@
+2006-02-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/calibartion/calibrate-module.c, calibrate.c and
+	  calibrate.h: added in kernel calibration for both RTAI own tasks 
+	  and hardened kthreads.
+	* base/arch/i386/calibartion/runinfo: use ksched always.
+
 2006-02-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sanity.h: gcc-4.x.x is allowed now.

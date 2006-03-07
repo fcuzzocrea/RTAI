@@ -1,16 +1,16 @@
+2006-03-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-CVS: ----------------------------------------------------------------------
-CVS: Enter Log.  Lines beginning with `CVS:' are removed automatically
-CVS:
-CVS: Committing in .
-CVS:
-CVS: Modified Files:
-CVS:    base/arch/i386/Kconfig base/include/rtai_sched.h
-CVS:    base/include/rtai_sem.h base/ipc/mbx/mbx.c base/ipc/msg/msg.c
-CVS:    base/ipc/netrpc/netrpc.c base/ipc/sem/sem.c base/sched/sched.c
-CVS: Added Files:
-CVS:    base/include/rtai_prinher.h
-CVS: ----------------------------------------------------------------------
+	* base/include/rtai_prinher.h: inlines to support full priority
+	  inheritance and dynamic ceiling.
+	* base/include/rtai_sem.h, rtai_sched.h: added queue element for
+	  resources queue.
+	* base/arch/i386/Kconfig: added parameter to configure either
+	  priority inheritance or ceiling.
+	* base/sched/sched.c: added res queue initialisations.
+	* base/ipc/sem/sem.c: support priority inheritance/ceiling.
+	* base/ipc/msg/msg.c: support priority inheritance/ceiling.
+	* base/ipc/mbx/mbx.c: revised and semplified.
+	* base/ipc/netrpc/netrpc.c: revised the async mbx use as for mbx.c.
 
 2006-02-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -30,11 +30,13 @@
  *@{*/
 
 #include <rtai_schedcore.h>
+#include <rtai_prinher.h>
 #include <rtai_sem.h>
 #include <rtai_rwl.h>
 #include <rtai_spl.h>
 
 MODULE_LICENSE("GPL");
+
 
 /* +++++++++++++++++++++ ALL SEMAPHORES TYPES SUPPORT +++++++++++++++++++++++ */
 
@@ -112,7 +114,10 @@ void rt_typed_sem_init(SEM *sem, int value, int type)
 	}
 	sem->queue.prev = &(sem->queue);
 	sem->queue.next = &(sem->queue);
-	sem->queue.task = sem->owndby = 0;
+	sem->queue.task = sem->owndby = NULL;
+
+	sem->resq.prev = sem->resq.next = &sem->resq;
+	sem->resq.task = (void *)&sem->queue;
 }
 
 
@@ -198,15 +203,7 @@ int rt_sem_delete(SEM *sem)
 	sched = schedmap;
 	clear_bit(rtai_cpuid(), &schedmap);
 	if ((task = sem->owndby) && sem->type > 0) {
-		if (task->owndres & SEMHLF) {
-			--task->owndres;
-		}
-		if (!task->owndres) {
-			sched |= renq_ready_task(task, task->base_priority);
-		} else if (!(task->owndres & SEMHLF)) {
-			int priority;
-                        sched |= renq_ready_task(task, task->base_priority > (priority = ((task->msg_queue.next)->task)->priority) ? priority : task->base_priority);
-		}
+		sched |= dequeue_resqel_reset_task_priority(&sem->resq, task);
 		if (task->suspdepth) {
 			if (task->suspdepth > 0) {
 				task->state |= RT_SCHED_SUSPENDED;
@@ -302,17 +299,7 @@ res:	if (sem->type > 0) {
 		int sched;
 		ASSIGN_RT_CURRENT;
 		sem->owndby = 0;
-		if (rt_current->owndres & SEMHLF) {
-			--rt_current->owndres;
-		}
-		if (!rt_current->owndres) {
-			sched = renq_current(rt_current, rt_current->base_priority);
-		} else if (!(rt_current->owndres & SEMHLF)) {
-			int priority;
-			sched = renq_current(rt_current, rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority);
-		} else {
-			sched = 0;
-		}
+		sched = dequeue_resqel_reset_current_priority(&sem->resq, rt_current);
 		if (rt_current->suspdepth) {
 			if (rt_current->suspdepth > 0) {
 				rt_current->state |= RT_SCHED_SUSPENDED;
@@ -469,7 +456,7 @@ int rt_sem_wait(SEM *sem)
 		sem->count--;
 	}
 	if (sem->type > 0) {
-		(sem->owndby = rt_current)->owndres++;
+		enqueue_resqel(&sem->resq, sem->owndby = rt_current);
 	}
 	rt_global_restore_flags(flags);
 	return count;
@@ -517,7 +504,7 @@ int rt_sem_wait_if(SEM *sem)
 	} else {
 		sem->count--;
 		if (sem->type > 0) {
-			(sem->owndby = RT_CURRENT)->owndres++;
+			enqueue_resqel(&sem->resq, sem->owndby = RT_CURRENT);
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -613,7 +600,7 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 		sem->count--;
 	}
 	if (sem->type > 0) {
-		(sem->owndby = rt_current)->owndres++;
+		enqueue_resqel(&sem->resq, sem->owndby = rt_current);
 	}
 	rt_global_restore_flags(flags);
 	return count;
@@ -749,17 +736,9 @@ static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
 		}
-	} else {
-		task = 0;
 	}
 	mtx->owndby = 0;
-	if (rt_current->owndres & SEMHLF) {
-		--rt_current->owndres;
-	}
-	if (!(rt_current->owndres & SEMHLF)) {
-		int priority;
-		rt_current->priority = rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority;
-	}
+	dequeue_resqel_reset_current_priority(&mtx->resq, rt_current);
 	if (task) {
 		 RT_SCHEDULE_BOTH(task, rtai_cpuid());
 	} else {

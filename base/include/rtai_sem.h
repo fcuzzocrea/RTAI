@@ -43,6 +43,7 @@ typedef struct rt_semaphore {
     int count;
     struct rt_task_struct *owndby;
     int qtype;
+    struct rt_queue resq;
 } SEM;
 
 #else /* !__KERNEL__ || __cplusplus */

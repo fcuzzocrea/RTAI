@@ -261,7 +261,7 @@ config RTAI_KTASKS_SCHED_LXRT_
 	This configuration parameter is ignored by the build process and
 	this scheduler will be made anyhow, along with the related liblxrt.
 
-menu "Scheduler options"
+menu "Scheduling options"
 
 	depends on RTAI_EXTENDED
 
@@ -359,16 +359,29 @@ config RTAI_ALLOW_RR
 	in RTAI, after enabling such a mode on a task by task basis through a
 	call to a suitable scheduler function.
 
-config RTAI_ONE_SHOT
-	bool "One-shot timer mode"
+config RTAI_CONFIG_FULL_PRINHER
+	bool "Enable full priority inheritance"
 	default n
 	help
-	Set to enable one-shot timer mode as the default. If not set, the 
-	hard timer will run in periodic mode according to the period used 
-	in start_rt_timer().
-	Notice that whatever the default setting chosen it is possible to
-	override it by specifically calling either rt_set_oneshot_mode() or 
-	rt_set_periodic_mode() at run time.
+	In RTAI resource semaphores can be recursively nested and support 
+	full priority inheritance, both among themselves and intertask 
+	messages sent to the task owning a resource, but for a singly owned 
+	resource only. Notice that the task itself becomes a kind of resource 
+	when tasks block on it to exchange messages. For multi ownerships 
+	priority inheritance becomes an adaptive or dynamic priority ceiling. 
+	In such a case in fact the task priority is returned to its base one 
+	only when all owned resources are released. This is a compromise 
+	design choice aimed at avoiding searches for the new priority to be 
+	inheredited across multiply owned resources and blocked tasks sending 
+	messages to a task.
+	By enabling this configuration option you'll allows full priority
+	inheritance instead, so that when a task releases any resource it
+	owns it will acquire the priority of the most prioritary task, either
+	waiting on any resource that it is still owned by the task or blocked
+	sending to it.
+	The choice is mostly dependent on your needs. Just take into account
+	that the default dynamic priority ceiling is simpler, a bit more 
+	effective and less deadlock prone than full priority inheritance.
 
 config RTAI_BUSY_TIME_ALIGN
 	bool "Busy wait to ensure resume time alignment"
@@ -409,6 +422,17 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	its own and Linux syscall mechanisms.
 	
 	If in doubt, say no.
+
+config RTAI_ONE_SHOT
+	bool "One-shot timer mode"
+	default n
+	help
+	Set to enable one-shot timer mode as the default. If not set, the 
+	hard timer will run in periodic mode according to the period used 
+	in start_rt_timer().
+	Notice that whatever the default setting chosen it is possible to
+	override it by specifically calling either rt_set_oneshot_mode() or 
+	rt_set_periodic_mode() at run time.
 
 config RTAI_CAL_FREQS_FACT
 	string "Cure loosely calibrated frequencies - see help"

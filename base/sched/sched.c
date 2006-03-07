@@ -320,6 +320,9 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	rt_linux_task.prev = task;
 	rt_global_restore_flags(flags);
 
+	task->resq.prev = task->resq.next = &task->resq;
+	task->resq.task = NULL;
+
 	return 0;
 }
 
@@ -436,6 +439,10 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	rt_linux_task.prev = task;
 	init_task_fpenv(task);
 	rt_global_restore_flags(flags);
+
+	task->resq.prev = task->resq.next = &task->resq;
+	task->resq.task = NULL;
+
 	return 0;
 }
 
@@ -1023,7 +1030,7 @@ int clr_rtext(RT_TASK *task)
 
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
-	if (!(task->owndres & SEMHLF) || task == rt_current || rt_current->priority == RT_SCHED_LINUX_PRIORITY) {
+	if ((task->resq.next == &task->resq && !(task->owndres & SEMHLF)) || task == rt_current || rt_current->priority == RT_SCHED_LINUX_PRIORITY) {
 		call_exit_handlers(task);
 		rem_timed_task(task);
 		if (task->blocked_on) {
@@ -3001,6 +3008,8 @@ static int __rtai_lxrt_init(void)
 		oneshot_timer = OneShot ? 1 : 0;
 		oneshot_running = 0;
 		linux_cr0 = 0;
+		rt_linux_task.resq.prev = rt_linux_task.resq.next = &rt_linux_task.resq;
+		rt_linux_task.resq.task = NULL;
 	}
 	tuned.latency = imuldiv(Latency, tuned.cpu_freq, 1000000000);
 	tuned.setup_time_TIMER_CPUNIT = imuldiv( SetupTimeTIMER, 

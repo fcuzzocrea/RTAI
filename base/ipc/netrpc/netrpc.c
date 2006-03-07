@@ -28,6 +28,7 @@
 #include <net/ip.h>
 
 #include <rtai_schedcore.h>
+#include <rtai_prinher.h>
 #include <rtai_netrpc.h>
 #include <rtai_sem.h>
 #include <rtai_mbx.h>
@@ -721,58 +722,16 @@ static inline void mbx_signal(MBX *mbx)
 {
 	unsigned long flags;
 	RT_TASK *task;
-	int tosched;
 
 	flags = rt_global_save_flags_and_cli();
 	if ((task = mbx->waiting_task)) {
 		rem_timed_task(task);
 		task->blocked_on  = NOTHING;
-		task->prio_passed_to = mbx->waiting_task = NOTHING;
+		mbx->waiting_task = NOTHING;
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 			enq_ready_task(task);
-			if (mbx->sndsem.type <= 0) {
-				RT_SCHEDULE(task, rtai_cpuid());
-				rt_global_restore_flags(flags);
-				return;
-			}
-			tosched = 1;
-			goto res;
-		}
-	}
-	tosched = 0;
-res:	if (mbx->sndsem.type > 0) {
-		DECLARE_RT_CURRENT;
-		int sched;
-		ASSIGN_RT_CURRENT;
-		mbx->owndby = 0;
-		if (rt_current->owndres & SEMHLF) {
-			--rt_current->owndres;
-		}
-		if (!rt_current->owndres) {
-			sched = renq_current(rt_current, rt_current->base_priority);
-		} else if (!(rt_current->owndres & SEMHLF)) {
-			int priority;
-			sched = renq_current(rt_current, rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority);
-		} else {
-			sched = 0;
-		}
-		if (rt_current->suspdepth) {
-			if (rt_current->suspdepth > 0) {
-				rt_current->state |= RT_SCHED_SUSPENDED;
-				rem_ready_current(rt_current);
-                        	sched = 1;
-			} else {
-				rt_task_delete(rt_current);
-			}
-		}
-		if (sched) {
-			if (tosched) {
-				RT_SCHEDULE_BOTH(task, cpuid);
-			} else {
-				rt_schedule();
-			}
-		} else if (tosched) {
-			RT_SCHEDULE(task, cpuid);
+			RT_SCHEDULE(task, rtai_cpuid());
+			rt_global_restore_flags(flags);
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -818,7 +777,8 @@ static void mbx_send_if(MBX *mbx, void *msg, int msg_size)
 	if (mbx->sndsem.count && msg_size <= mbx->frbs) {
 		mbx->sndsem.count = 0;
 		if (mbx->sndsem.type > 0) {
-			(mbx->sndsem.owndby = mbx->owndby = rt_current)->owndres += 2;
+			mbx->sndsem.owndby = rt_current;
+			enqueue_resqel(&mbx->sndsem.resq, rt_current);
 		}
 		rt_global_restore_flags(flags);
 		mbxput(mbx, (char **)(&msg), msg_size);

@@ -671,7 +671,7 @@ static inline int rtai_init_features (void)
     __rtai_mbx_init();
 #endif /* CONFIG_RTAI_MBX_BUILTIN */
 #ifdef CONFIG_RTAI_TBX_BUILTIN
-    __rtai_tbx_init();
+    __rtai_msg_queue_init();
 #endif /* CONFIG_RTAI_TBX_BUILTIN */
 #ifdef CONFIG_RTAI_MQ_BUILTIN
     __rtai_mq_init();
@@ -728,7 +728,7 @@ static inline void rtai_cleanup_features (void) {
     __rtai_mq_exit();
 #endif /* CONFIG_RTAI_MQ_BUILTIN */
 #ifdef CONFIG_RTAI_TBX_BUILTIN
-    __rtai_tbx_exit();
+    __rtai_msg_queue_exit();
 #endif /* CONFIG_RTAI_TBX_BUILTIN */
 #ifdef CONFIG_RTAI_MBX_BUILTIN
     __rtai_mbx_exit();

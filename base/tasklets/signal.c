@@ -266,7 +266,7 @@ static struct rt_fun_entry rtai_signals_fun[] = {
 	[SIGNAL_TRIGGER] = { 1, rt_trigger_signal  }
 };
 
-int init_module(void)
+int __rtai_signals_init(void)
 {
 	if (set_rt_fun_ext_index(rtai_signals_fun, RTAI_SIGNALS_IDX)) {
 		printk("Wrong or already used LXRT extension: %d.\n", RTAI_SIGNALS_IDX);
@@ -276,8 +276,13 @@ int init_module(void)
 	return 0;
 }
 
-void cleanup_module(void)
+void __rtai_signals_exit(void)
 {
 	reset_rt_fun_ext_index(rtai_signals_fun, RTAI_SIGNALS_IDX);
 	printk("%s: unloaded.\n", MODULE_NAME);
 }
+
+#ifndef CONFIG_RTAI_TASKLETS_BUILTIN
+module_init(__rtai_signals_init);
+module_exit(__rtai_signals_exit);
+#endif /* !CONFIG_RTAI_TASKLETS_BUILTIN */

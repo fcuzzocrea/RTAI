@@ -978,7 +978,7 @@ typedef struct rt_semaphore  rtdm_sem_t;
 
 static inline void rtdm_sem_init(rtdm_sem_t *sem, unsigned long value)
 {
-    rt_typed_sem_init(sem, value, BIN_SEM | PRIO_Q);
+    rt_typed_sem_init(sem, value, CNT_SEM | PRIO_Q);
 }
 
 static inline void rtdm_sem_destroy(rtdm_sem_t *sem)

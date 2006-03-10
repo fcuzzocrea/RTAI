@@ -910,7 +910,7 @@ typedef struct {
 static inline void rtdm_event_init(rtdm_event_t *event, unsigned long pending)
 {
     event->pending = pending;
-    rt_typed_sem_init(&event->synch_base, 0, BIN_SEM | PRIO_Q);
+    rt_typed_sem_init(&event->synch_base, 0, CNT_SEM | PRIO_Q);
 }
 
 static inline void rtdm_event_destroy(rtdm_event_t *event)

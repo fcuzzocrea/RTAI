@@ -417,7 +417,7 @@ void __rtai_msg_queue_exit(void)
 	printk(KERN_INFO "RTAI[rtai_msgq]: unloaded.\n");
 }
 
-#ifndef CONFIG_RTAI_MQ_BUILTIN
+#ifndef CONFIG_RTAI_TBX_BUILTIN
 module_init(__rtai_msg_queue_init);
 module_exit(__rtai_msg_queue_exit);
 #endif /* !CONFIG_RTAI_MQ_BUILTIN */

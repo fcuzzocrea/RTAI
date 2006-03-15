@@ -359,7 +359,7 @@ config RTAI_ALLOW_RR
 	in RTAI, after enabling such a mode on a task by task basis through a
 	call to a suitable scheduler function.
 
-config RTAI_CONFIG_FULL_PRINHER
+config RTAI_FULL_PRINHER
 	bool "Enable full priority inheritance"
 	default n
 	help

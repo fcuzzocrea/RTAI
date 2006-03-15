@@ -24007,6 +24007,12 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+test x$CONFIG_RTAI_FULL_PRINHER = xy &&
+cat >>confdefs.h <<\_ACEOF
+#define CONFIG_RTAI_FULL_PRINHER 1
+_ACEOF
+
+
 case $CONFIG_RTAI_ONE_SHOT in
 	y) CONFIG_RTAI_ONE_SHOT=1 ;;
 	n|*) CONFIG_RTAI_ONE_SHOT=0 ;;

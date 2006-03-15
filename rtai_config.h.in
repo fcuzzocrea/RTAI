@@ -55,6 +55,9 @@
 #undef CONFIG_RTAI_FPU_SUPPORT
 
 /* Kconfig */
+#undef CONFIG_RTAI_FULL_PRINHER
+
+/* Kconfig */
 #undef CONFIG_RTAI_HAL_PREEMPT
 
 /* Host system alias */

@@ -592,8 +592,8 @@ config RTAI_TASKLETS
 	services inter-intra kernel and user space for both soft and
 	hard real-time. The new services provided can be useful when
 	you have many tasks, both in kernel and user space, needing to
-	execute specific functions. Such tasks are called tasklets and 
-	can be of two kinds:
+	execute specific functions. Such functions are called tasklets 
+	and can be of two kinds:
         - a simple tasklet;
         - timed tasklets (timers).
 	The tasklets implementation of timed tasklets relies on a

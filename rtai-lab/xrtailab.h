@@ -2,6 +2,7 @@
 COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
 		    Paolo Mantegazza (mantegazza@aero.polimi.it)
 		    Roberto Bucher (roberto.bucher@supsi.ch)
+		    Peter Brier (pbrier@dds.nl)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -21,7 +22,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #ifndef _XRTAILAB_H_
 #define _XRTAILAB_H_
 
-#define XRTAILAB_VERSION	"3.0.7"
+#define XRTAILAB_VERSION	"3.1.0alpha"
 
 #define MAX_NHOSTS		100
 #define MAX_NAMES_SIZE		256
@@ -197,10 +198,15 @@ struct Profile_Struct
 	int S_Mgr_PSave[MAX_RTAI_SCOPES];	/* scope n points to save */
 	float S_Mgr_TSave[MAX_RTAI_SCOPES];	/* scope n seconds to save */
 	char *S_Mgr_File[MAX_RTAI_SCOPES];	/* scopes manager save file name */
+	int S_Mgr_Flags[MAX_RTAI_SCOPES];	/* scopes Flags  */
+	int S_Mgr_Trigger[MAX_RTAI_SCOPES];	/* scopes Trigger mode  */
 	int S_Mgr_T_Show[MAX_TRACES_PER_SCOPE][MAX_RTAI_SCOPES];	/* scopes manager trace show-hide buttons */
 	float S_Mgr_T_UnitDiv[MAX_TRACES_PER_SCOPE][MAX_RTAI_SCOPES];	/* scope trace units per division value */
 	RGB_Color_T S_Trace_C[MAX_TRACES_PER_SCOPE][MAX_RTAI_SCOPES];	/* scope trace color */
+	float S_Mgr_T_Width[MAX_TRACES_PER_SCOPE][MAX_RTAI_SCOPES];	/* scope trace width */
 	float S_Mgr_T_Offset[MAX_TRACES_PER_SCOPE][MAX_RTAI_SCOPES];	/* scope trace offset */
+	int S_Mgr_T_Options[MAX_TRACES_PER_SCOPE][MAX_RTAI_SCOPES];	/* scope trace options */
+
 	int n_traces[MAX_RTAI_SCOPES];
 
 	W_Geometry_T Log_Mgr_W;			/* logs manager geometry */

@@ -1,5 +1,7 @@
 /*
 COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
+		    Roberto Bucher (roberto.bucher@supsi.ch)
+		    Peter Brier (pbrier@dds.nl)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -26,6 +28,9 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <GL/glu.h>
 #include <stdlib.h>
 #include <math.h>
+
+/* Meter styles */
+enum { MS_DIAL=1, MS_VALUE=2, MS_BAR=4, MS_BARCENTER=8, MS_ANGLE=16, MS_GRID=32 };
 
 class Fl_Meter : public Fl_Gl_Window
 {
@@ -56,6 +61,8 @@ class Fl_Meter : public Fl_Gl_Window
 		float arrow_b();
 		Fl_Color arrow_color();
 		void arrow_free_color();
+		int meter_style(void);
+		void meter_style(int);
 	private:
 		int Start_Deg, End_Deg;
 		float Start_Rad, End_Rad;
@@ -67,7 +74,7 @@ class Fl_Meter : public Fl_Gl_Window
 		float Small_Ticks_Angle;
 		float Minimum_Value;
 		float Maximum_Value;
-		float Value;
+		float Value, Unclipped_Value;
 		int overload;
 		float Bg_rgb[3];
 		Fl_Color Bg_Color;
@@ -75,6 +82,7 @@ class Fl_Meter : public Fl_Gl_Window
 		Fl_Color Grid_Color;
 		float Arrow_rgb[3];
 		Fl_Color Arrow_Color;
+		int Meter_Style;
 	protected:
 		void initgl();
 		void drawgrid();

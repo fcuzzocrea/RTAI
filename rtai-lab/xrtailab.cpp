@@ -2,6 +2,7 @@
 COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
 		    Paolo Mantegazza (mantegazza@aero.polimi.it)
 		    Roberto Bucher (roberto.bucher@supsi.ch)
+		    Peter Brier (pbrier@dds.nl)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -331,6 +332,11 @@ void rlg_read_pref(int p_type, const char *c_file, int p_idx)
 					App.read(buf, Profile[p_idx].S_Trace_C[j][i].b, 1.0);
 					sprintf(buf, "scope widget n.%d trace %d offset", i + 1, j + 1);
 					App.read(buf, Profile[p_idx].S_Mgr_T_Offset[j][i], 1.0);
+					sprintf(buf, "scope widget n.%d trace %d width", i + 1, j + 1);
+					App.read(buf, Profile[p_idx].S_Mgr_T_Width[j][i], 0.1);
+					sprintf(buf, "scope widget n.%d trace %d options", i + 1, j + 1);
+					App.read(buf, Profile[p_idx].S_Mgr_T_Options[j][i], 0);
+
 				}
 				sprintf(buf, "scope widget n.%d show", i + 1);
 				App.read(buf, Profile[p_idx].S_Mgr_Show[i], 0);
@@ -366,6 +372,11 @@ void rlg_read_pref(int p_type, const char *c_file, int p_idx)
 				App.read(buf, Profile[p_idx].S_Mgr_PSave[i], 1000);
 				sprintf(buf, "scope widget n.%d save time", i + 1);
 				App.read(buf, Profile[p_idx].S_Mgr_TSave[i], 1.0);
+				sprintf(buf, "scope widget n.%d trigger", i + 1);
+				App.read(buf, Profile[p_idx].S_Mgr_Trigger[i], 1);
+				sprintf(buf, "scope widget n.%d flags", i + 1);
+				App.read(buf, Profile[p_idx].S_Mgr_Flags[i], 1);
+
 			}
 			App.set_section("Logs Manager");
 			App.read("x", Profile[p_idx].Log_Mgr_W.x, 480);
@@ -558,6 +569,11 @@ void rlg_write_pref(int p_type, const char *c_file)
 						App.write(buf, Scopes_Manager->t_color(i, j, B_COLOR));
 						sprintf(buf, "scope widget n.%d trace %d offset", i + 1, j + 1);
 						App.write(buf, Scopes_Manager->trace_offset(i, j));
+						sprintf(buf, "scope widget n.%d trace %d width", i + 1, j + 1);
+						App.write(buf, Scopes_Manager->trace_width(i, j));
+						sprintf(buf, "scope widget n.%d trace %d options", i + 1, j + 1);
+						App.write(buf, Scopes_Manager->Scope_Windows[i]->Plot->trace_flags(j) );
+
 					}
 					sprintf(buf, "scope widget n.%d show", i + 1);
 					App.write(buf, Scopes_Manager->show_hide(i));
@@ -593,6 +609,10 @@ void rlg_write_pref(int p_type, const char *c_file)
 					App.write(buf, Scopes_Manager->p_save(i));
 					sprintf(buf, "scope widget n.%d save time", i + 1);
 					App.write(buf, Scopes_Manager->t_save(i));
+					sprintf(buf, "scope widget n.%d flags", i + 1);
+					App.write(buf, Scopes_Manager->Scope_Windows[i]->Plot->scope_flags() );
+					sprintf(buf, "scope widget n.%d trigger", i + 1);
+					App.write(buf, Scopes_Manager->Scope_Windows[i]->Plot->trigger_mode() );
 				}
 			}
 			if (Logs_Manager) {
@@ -1428,7 +1448,7 @@ static void *rt_get_scope_data(void *arg)
 			}
 			js++;
 		}
-		if (Scope_Win->is_visible() && (!stop_draw && !Scope_Win->Plot->pause())) {
+		if (Scope_Win->is_visible() && (!stop_draw)) {
 			Scope_Win->Plot->redraw();
 		}
 		if (Scopes_Manager->start_saving(index)) {
@@ -2114,6 +2134,10 @@ static void *rt_target_interface(void *args)
 					Scopes_Manager->p_save(n, Profile[p_idx].S_Mgr_PSave[n]);
 					Scopes_Manager->t_save(n, Profile[p_idx].S_Mgr_TSave[n]);
 					Scopes_Manager->file_name(n, Profile[p_idx].S_Mgr_File[n]);
+					Scopes_Manager->Scope_Windows[n]->Plot->trigger_mode( Profile[p_idx].S_Mgr_Trigger[n]);
+					Scopes_Manager->Scope_Windows[n]->Plot->scope_flags( Profile[p_idx].S_Mgr_Flags[n]);
+					
+
 					for (int t = 0; t < Scopes[n].ntraces; t++) {
 						if (!Profile[p_idx].S_Mgr_T_Show[t][n]) {
 							Scopes_Manager->trace_show_hide(n, t, false);
@@ -2121,6 +2145,8 @@ static void *rt_target_interface(void *args)
 						Scopes_Manager->trace_unit_div(n, t, Profile[p_idx].S_Mgr_T_UnitDiv[t][n]);
 						Scopes_Manager->t_color(n, t, Profile[p_idx].S_Trace_C[t][n]);
 						Scopes_Manager->trace_offset(n, t, Profile[p_idx].S_Mgr_T_Offset[t][n]);
+						Scopes_Manager->trace_width(n, t, Profile[p_idx].S_Mgr_T_Width[t][n]);
+ 						Scopes_Manager->trace_flags(n, t, Profile[p_idx].S_Mgr_T_Options[t][n]);
 					}
 				}
 				if (Num_Logs > 0) Get_Log_Data_Thread = new pthread_t [Num_Logs];
@@ -2751,9 +2777,10 @@ int main(int argc, char **argv)
 		RT_RPC(Target_Interface_Task, CONNECT_TO_TARGET_WITH_PROFILE, 0);
 	}
 
-	while (!End_All) Fl::wait(FLTK_EVENTS_TICK);
+	while (!End_All)  Fl::wait(FLTK_EVENTS_TICK);
 
 	rt_task_delete(RLG_Main_Task);
+
 
 	setenv("LANG", lang_env, 1);
 

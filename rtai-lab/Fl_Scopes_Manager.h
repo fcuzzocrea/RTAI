@@ -1,5 +1,7 @@
 /*
 COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
+                    RobertoBucher (roberto.bucher@supsi.ch)
+		    Peter Brier (pbrier@dds.nl)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -78,6 +80,9 @@ class Fl_Scopes_Manager
 		void trace_unit_div(int, int, float);
 		float trace_offset(int, int);
 		void trace_offset(int, int, float);
+		float trace_width(int, int);
+		void trace_width(int, int, float);
+		void trace_flags(int, int, int);
 		int p_save(int);
 		void p_save(int, int);
 		float t_save(int);
@@ -94,9 +99,9 @@ class Fl_Scopes_Manager
 		Fl_Browser *Scopes_Tree;
 		Fl_Tabs **Scopes_Tabs;
 		Fl_Check_Button **Scope_Show;
-		Fl_Check_Button **Scope_Pause;
+		Fl_Button **Scope_Pause;
 		Fl_Check_Button **Scope_OneShot;
-		Fl_Check_Button **Grid_On;
+		Fl_Menu_Button **Scope_Options;
 		Fl_Button **Grid_Color, **Bg_Color;
 		Fl_Input_Browser **Sec_Div;
 		Fl_Check_Button **Save_Type;
@@ -106,22 +111,24 @@ class Fl_Scopes_Manager
 		Fl_Light_Button **Save;
 		int *Save_Flag;
 		FILE **Save_File_Pointer;
+		Fl_Choice **Trigger_Mode;
 		Fl_Group ***Trace_Page;
 		Fl_Check_Button ***Trace_Show;
 		Fl_Input_Browser ***Units_Div;
 		Fl_Button ***Trace_Color;
 		Fl_Dial ***Trace_Pos;
+		Fl_Dial ***Trace_Width;
+		Fl_Menu_Button ***Trace_Options;
+
 		Fl_Button *Help, *Close;
 		inline void select_scope_i(Fl_Browser *, void *);
 		static void select_scope(Fl_Browser *, void *);
 		inline void show_scope_i(Fl_Check_Button *, void *);
 		static void show_scope(Fl_Check_Button *, void *);
-		inline void pause_scope_i(Fl_Check_Button *, void *);
-		static void pause_scope(Fl_Check_Button *, void *);
+		inline void pause_scope_i(Fl_Button *, void *);
+		static void pause_scope(Fl_Button *, void *);
 		inline void oneshot_scope_i(Fl_Check_Button *, void *);
 		static void oneshot_scope(Fl_Check_Button *, void *);
-		inline void show_grid_i(Fl_Check_Button *, void *);
-		static void show_grid(Fl_Check_Button *, void *);
 		inline void select_grid_color_i(Fl_Button *, void *);
 		static void select_grid_color(Fl_Button *, void *);
 		inline void select_bg_color_i(Fl_Button *, void *);
@@ -136,10 +143,16 @@ class Fl_Scopes_Manager
 		static void show_trace(Fl_Check_Button *, void *);
 		inline void enter_unitsdiv_i(Fl_Input_Browser *, void *);
 		static void enter_unitsdiv(Fl_Input_Browser *, void *);
+		inline void enter_trigger_mode_i(Fl_Choice *, void *);
+		static void enter_trigger_mode(Fl_Choice *, void *);
 		inline void select_trace_color_i(Fl_Button *, void *);
+		inline void enter_options_i(Fl_Menu_Button *, void *);
+		static void enter_options(Fl_Menu_Button *, void *);
 		static void select_trace_color(Fl_Button *, void *);
 		inline void change_trace_pos_i(Fl_Dial *, void *);
 		static void change_trace_pos(Fl_Dial *, void *);
+		inline void change_trace_width_i(Fl_Dial *, void *);
+		static void change_trace_width(Fl_Dial *, void *);
 		inline void close_i(Fl_Button *, void *);
 		static void close(Fl_Button *, void *);
 };

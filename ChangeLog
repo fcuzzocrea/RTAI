@@ -1,8 +1,15 @@
+2006-03-17  Albert Veli A <Albert.Veli@afconsult.com>
+
+	* base/include/rtai_wrappers.h: wrapping macros to support sysfs in
+	  RTAI fifos.c
+	* base/ipc/fifos/fifos.c: support sysfs to avoid redifining fifos devs
+	  at each reboot.
+
 2006-03-17  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/*: Introduced some nice new features from Peter Brier.
 	* rtai-lab/scilab/*: Substituted the general structure "devstruct" 
-	with a specific struct for each scicos block.
+	  with a specific struct for each scicos block.
 
 2006-03-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

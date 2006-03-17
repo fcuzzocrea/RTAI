@@ -16,7 +16,6 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
-#include "devstruct.h"
 #include "rtmain.h"
 
 #include <stdio.h>
@@ -29,218 +28,202 @@
 #include <rtai_lxrt.h>
 #include <rtai_comedi.h>
 #include <string.h>
+#include <stdlib.h>
 
 extern void *ComediDev[];
 extern int ComediDev_InUse[];
 extern int ComediDev_DIOInUse[];
 
-extern devStr inpDevStr[];
-extern devStr outDevStr[];
-extern int pinp_cnt;
-extern int pout_cnt;
-
-int inp_rtai_comedi_dio_init(int nch,char * sName)
-{
-  void *dev;
-  int subdev_type = -1;
+struct DCOMDev{
+  int channel;
+  char devName[20];
+  void * dev;
   int subdev;
+  int subdev_type;
+  double threshold;
+};
+
+void * inp_rtai_comedi_dio_init(int nch,char * sName)
+{
+  struct DCOMDev * comdev = (struct DCOMDev *) malloc(sizeof(struct DCOMDev));
+  comdev->subdev_type = -1;
   int len, index;
 
-  int port=pinp_cnt++;
-
-  unsigned int channel;
   int n_channels;
   char board[50];
 
-  inpDevStr[port].nch=nch;
-  sprintf(inpDevStr[port].sName,"/dev/%s",sName);
-  strcpy(inpDevStr[port].IOName,"Comedi DIO input");
+  comdev->channel=nch;
+  sprintf(comdev->devName,"/dev/%s",sName);
 
-  channel = nch;
-  len=strlen(inpDevStr[port].sName);
-  index = inpDevStr[port].sName[len-1]-'0';
+  len=strlen(comdev->devName);
+  index = comdev->devName[len-1]-'0';
 
   if (!ComediDev[index]) {
-    dev = comedi_open(inpDevStr[port].sName);
-    if (!dev) {
+    comdev->dev = comedi_open(comdev->devName);
+    if (!(comdev->dev)) {
       fprintf(stderr, "Comedi open failed\n");
       exit_on_error();
     }
-    rt_comedi_get_board_name(dev, board);
-    printf("COMEDI %s (%s) opened.\n\n", inpDevStr[port].sName, board);
-    ComediDev[index] = dev;
+    rt_comedi_get_board_name(comdev->dev, board);
+    printf("COMEDI %s (%s) opened.\n\n", comdev->devName, board);
+    ComediDev[index] = comdev->dev;
 
-    if ((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DI, 0)) < 0) {
+    if ((comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_DI, 0)) < 0) {
       fprintf(stderr, "Comedi find_subdevice failed (No digital Input)\n");
     }else {
-      subdev_type = COMEDI_SUBD_DI;
+      comdev->subdev_type = COMEDI_SUBD_DI;
     }  
-    if(subdev == -1){
-      if ((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DIO, 0)) < 0) {
+    if(comdev->subdev == -1){
+      if ((comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_DIO, 0)) < 0) {
 	fprintf(stderr, "Comedi find_subdevice failed (No digital I/O)\n");
-	comedi_close(dev);
-	return;
+	comedi_close(comdev->dev);
+	exit_on_error();
       }else{
-	subdev_type = COMEDI_SUBD_DIO;
+	comdev->subdev_type = COMEDI_SUBD_DIO;
       }  
     }
 
-    if ((comedi_lock(dev, subdev)) < 0) {
-      fprintf(stderr, "Comedi lock failed for subdevice %d\n", subdev);
-      comedi_close(dev);
+    if ((comedi_lock(comdev->dev,comdev-> subdev)) < 0) {
+      fprintf(stderr, "Comedi lock failed for subdevice %d\n", comdev->subdev);
+      comedi_close(comdev->dev);
       exit_on_error();
     }
   } else {
-    dev = ComediDev[index];
+    comdev->dev = ComediDev[index];
 
-    if((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DI, 0)) < 0){
-      subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DIO, 0);
-      subdev_type =COMEDI_SUBD_DIO;
-    }else subdev_type =COMEDI_SUBD_DI; 
+    if((comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_DI, 0)) < 0){
+      comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_DIO, 0);
+      comdev->subdev_type =COMEDI_SUBD_DIO;
+    }else comdev->subdev_type =COMEDI_SUBD_DI; 
   }
-  if ((n_channels = comedi_get_n_channels(dev, subdev)) < 0) {
-    fprintf(stderr, "Comedi get_n_channels failed for subdevice %d\n", subdev);
-    comedi_unlock(dev, subdev);
-    comedi_close(dev);
+  if ((n_channels = comedi_get_n_channels(comdev->dev, comdev->subdev)) < 0) {
+    fprintf(stderr, "Comedi get_n_channels failed for subdevice %d\n", comdev->subdev);
+    comedi_unlock(comdev->dev, comdev->subdev);
+    comedi_close(comdev->dev);
     exit_on_error();
   }
-  if (channel >= n_channels) {
-    fprintf(stderr, "Comedi channel not available for subdevice %d\n", subdev);
-    comedi_unlock(dev, subdev);
-    comedi_close(dev);
+  if (comdev->channel >= n_channels) {
+    fprintf(stderr, "Comedi channel not available for subdevice %d\n", comdev->subdev);
+    comedi_unlock(comdev->dev, comdev->subdev);
+    comedi_close(comdev->dev);
     exit_on_error();
   }
 
-  if(subdev_type == COMEDI_SUBD_DIO){
-    if ((comedi_dio_config(dev, subdev, channel, COMEDI_INPUT)) < 0) {
-      fprintf(stderr, "Comedi DIO config failed for subdevice %d\n", subdev);
-      comedi_unlock(dev, subdev);
-      comedi_close(dev);
-      return;
+  if(comdev->subdev_type == COMEDI_SUBD_DIO){
+    if ((comedi_dio_config(comdev->dev, comdev->subdev, comdev->channel, COMEDI_INPUT)) < 0) {
+      fprintf(stderr, "Comedi DIO config failed for subdevice %d\n", comdev->subdev);
+      comedi_unlock(comdev->dev, comdev->subdev);
+      comedi_close(comdev->dev);
+      exit_on_error();
     }	
   }	
 
   ComediDev_InUse[index]++;
   ComediDev_DIOInUse[index]++;
-  comedi_dio_write(dev, subdev, channel, 0);
+  comedi_dio_write(comdev->dev, comdev->subdev, comdev->channel, 0);
 
-  inpDevStr[port].ptr1 = (void *)dev;
-  inpDevStr[port].dParam[2]  = (double) subdev;
-
-  return(port);
+  return((void *) comdev);
 }
 
-int out_rtai_comedi_dio_init(int nch,char * sName,double threshold)
+void * out_rtai_comedi_dio_init(int nch,char * sName,double threshold)
 {
-  void *dev;
-  int subdev;
-  int subdev_type = -1;
+  struct DCOMDev * comdev = (struct DCOMDev *) malloc(sizeof(struct DCOMDev));
+  comdev->subdev_type = -1;
 
-  unsigned int channel;
   int n_channels;
   char board[50];
   int len, index;
-  int port=pout_cnt++;
 
-  outDevStr[port].nch=nch;
-  strcpy(outDevStr[port].IOName,"Comedi DIO output");
-  sprintf(outDevStr[port].sName,"/dev/%s",sName);
-  outDevStr[port].dParam[0]=threshold;
+  comdev->channel=nch;
+  sprintf(comdev->devName,"/dev/%s",sName);
+  comdev->threshold=threshold;
 
-  len=strlen(outDevStr[port].sName);
-  index = outDevStr[port].sName[len-1]-'0';
-  channel = nch;
+  len=strlen(comdev->devName);
+  index = comdev->devName[len-1]-'0';
+
   if (!ComediDev[index]) {
-    dev = comedi_open(outDevStr[port].sName);
-    if (!dev) {
+    comdev->dev = comedi_open(comdev->devName);
+    if (!(comdev->dev)) {
       fprintf(stderr, "Comedi open failed\n");
       exit_on_error();
     }
-    rt_comedi_get_board_name(dev, board);
-    printf("COMEDI %s (%s) opened.\n\n", outDevStr[port].sName, board);
-    ComediDev[index] = dev;
+    rt_comedi_get_board_name(comdev->dev, board);
+    printf("COMEDI %s (%s) opened.\n\n", comdev->devName, board);
+    ComediDev[index] = comdev->dev;
 
-    if ((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DO, 0)) < 0) {
+    if ((comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_DO, 0)) < 0) {
       //      fprintf(stderr, "Comedi find_subdevice failed (No digital I/O)\n");
     }else {
-      subdev_type = COMEDI_SUBD_DO;
+      comdev->subdev_type = COMEDI_SUBD_DO;
     }
-    if(subdev == -1){
-      if ((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DIO, 0)) < 0) {
+    if(comdev->subdev == -1){
+      if ((comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_DIO, 0)) < 0) {
 	fprintf(stderr, "Comedi find_subdevice failed (No digital Output)\n");
-	comedi_close(dev);
-	return;
+	comedi_close(comdev->dev);
+	exit_on_error();
       }else{
-	subdev_type = COMEDI_SUBD_DIO;
+	comdev->subdev_type = COMEDI_SUBD_DIO;
       }  
     }  
 
-    if ((comedi_lock(dev, subdev)) < 0) {
-      fprintf(stderr, "Comedi lock failed for subdevice %d\n", subdev);
-      comedi_close(dev);
+    if ((comedi_lock(comdev->dev, comdev->subdev)) < 0) {
+      fprintf(stderr, "Comedi lock failed for subdevice %d\n",comdev-> subdev);
+      comedi_close(comdev->dev);
       exit_on_error();
     }
   } else {
-    dev = ComediDev[index];
-    if((subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DO, 0)) < 0){
-      subdev = comedi_find_subdevice_by_type(dev, COMEDI_SUBD_DIO, 0);
-      subdev_type =COMEDI_SUBD_DIO;
-    }else subdev_type =COMEDI_SUBD_DO; 
+    comdev->dev = ComediDev[index];
+    if((comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_DO, 0)) < 0){
+      comdev->subdev = comedi_find_subdevice_by_type(comdev->dev, COMEDI_SUBD_DIO, 0);
+      comdev->subdev_type =COMEDI_SUBD_DIO;
+    }else comdev->subdev_type =COMEDI_SUBD_DO; 
   }
-  if ((n_channels = comedi_get_n_channels(dev, subdev)) < 0) {
-    fprintf(stderr, "Comedi get_n_channels failed for subdevice %d\n", subdev);
-    comedi_unlock(dev, subdev);
-    comedi_close(dev);
+  if ((n_channels = comedi_get_n_channels(comdev->dev, comdev->subdev)) < 0) {
+    fprintf(stderr, "Comedi get_n_channels failed for subdevice %d\n", comdev->subdev);
+    comedi_unlock(comdev->dev, comdev->subdev);
+    comedi_close(comdev->dev);
     exit_on_error();
   }
-  if (channel >= n_channels) {
-    fprintf(stderr, "Comedi channel not available for subdevice %d\n", subdev);
-    comedi_unlock(dev, subdev);
-    comedi_close(dev);
+  if (comdev->channel >= n_channels) {
+    fprintf(stderr, "Comedi channel not available for subdevice %d\n",comdev-> subdev);
+    comedi_unlock(comdev->dev, comdev->subdev);
+    comedi_close(comdev->dev);
     exit_on_error();
   }
 
-  if(subdev_type == COMEDI_SUBD_DIO){
-    if ((comedi_dio_config(dev, subdev, channel, COMEDI_OUTPUT)) < 0) {
-      fprintf(stderr, "Comedi DIO config failed for subdevice %d\n", subdev);
-      comedi_unlock(dev, subdev);
-      comedi_close(dev);
-      return;
+  if(comdev->subdev_type == COMEDI_SUBD_DIO){
+    if ((comedi_dio_config(comdev->dev,comdev->subdev, comdev->channel, COMEDI_OUTPUT)) < 0) {
+      fprintf(stderr, "Comedi DIO config failed for subdevice %d\n", comdev->subdev);
+      comedi_unlock(comdev->dev, comdev->subdev);
+      comedi_close(comdev->dev);
+      exit_on_error();
     }
   }
 
   ComediDev_InUse[index]++;
   ComediDev_DIOInUse[index]++;
-  comedi_dio_write(dev, subdev, channel, 0);
+  comedi_dio_write(comdev->dev, comdev->subdev, comdev->channel, 0);
 
-  outDevStr[port].ptr1 = (void *)dev;
-  outDevStr[port].dParam[2]  = (double) subdev;
-
-  return(port);
+  return((void *)comdev);
 }
 
-void out_rtai_comedi_dio_output(int port, double * u,double t)
+void out_rtai_comedi_dio_output(void * ptr, double * u,double t)
 { 
-  unsigned int channel = (unsigned int) outDevStr[port].nch;
-  void *dev        = (void *) outDevStr[port].ptr1;
-  int subdev       = (int) outDevStr[port].dParam[2];
+  struct DCOMDev * comdev = (struct DCOMDev *) ptr;
   unsigned int bit = 0;
-  double threshold = outDevStr[port].dParam[0];
 
-  if (*u >= threshold) {
+  if (*u >= comdev->threshold) {
     bit=1;
   }
-  comedi_dio_write(dev, subdev, channel, bit);
+  comedi_dio_write(comdev->dev,comdev->subdev, comdev->channel, bit);
 }
 
-void inp_rtai_comedi_dio_input(int port, double * y, double t)
+void inp_rtai_comedi_dio_input(void * ptr, double * y, double t)
 {
-  unsigned int channel = (unsigned int) inpDevStr[port].nch;
-  void *dev        = (void *) inpDevStr[port].ptr1;
-  int subdev       = (int) inpDevStr[port].dParam[2];
+  struct DCOMDev * comdev = (struct DCOMDev *) ptr;
   unsigned int bit;
 
-  comedi_dio_read(dev, subdev, channel, &bit);
+  comedi_dio_read(comdev->dev, comdev->subdev, comdev->channel, &bit);
   *y = (double)bit;
 }
 
@@ -248,48 +231,47 @@ void inp_rtai_comedi_dio_update(void)
 {
 }
 
-void out_rtai_comedi_dio_end(int port)
+void out_rtai_comedi_dio_end(void * ptr)
 {
-  unsigned int channel = (unsigned int) outDevStr[port].nch;
-  void *dev        = (void *) outDevStr[port].ptr1;
-  int subdev       = (int) outDevStr[port].dParam[2];
+  struct DCOMDev * comdev = (struct DCOMDev *) ptr;
   int len, index;
 
-  len=strlen(outDevStr[port].sName);
-  index = outDevStr[port].sName[len-1]-'0';
+  len=strlen(comdev->devName);
+  index = comdev->devName[len-1]-'0';
 
-  comedi_dio_write(dev, subdev, channel, 0);
+  comedi_dio_write(comdev->dev, comdev->subdev, comdev->channel, 0);
   ComediDev_InUse[index]--;
   ComediDev_DIOInUse[index]--;
   if (!ComediDev_DIOInUse[index]) {
-    comedi_unlock(dev, subdev);
+    comedi_unlock(comdev->dev, comdev->subdev);
   }
   if (!ComediDev_InUse[index]) {
-    comedi_close(dev);
-    printf("\nCOMEDI %s closed.\n\n", outDevStr[port].sName);
+    comedi_close(comdev->dev);
+    printf("\nCOMEDI %s closed.\n\n", comdev->devName);
     ComediDev[index] = NULL;
   }
+  free(comdev);
 }
 
-void inp_rtai_comedi_dio_end(int port)
+void inp_rtai_comedi_dio_end(void * ptr)
 {
-  void *dev        = (void *) inpDevStr[port].ptr1;
-  int subdev       = (int) inpDevStr[port].dParam[2];
+  struct DCOMDev * comdev = (struct DCOMDev *) ptr;
   int len, index;
 
-  len=strlen(inpDevStr[port].sName);
-  index = inpDevStr[port].sName[len-1]-'0';
+  len=strlen(comdev->devName);
+  index = comdev->devName[len-1]-'0';
 
   ComediDev_InUse[index]--;
   ComediDev_DIOInUse[index]--;
   if (!ComediDev_DIOInUse[index]) {
-    comedi_unlock(dev, subdev);
+    comedi_unlock(comdev->dev, comdev->subdev);
   }
   if (!ComediDev_InUse[index]) {
-    comedi_close(dev);
-    printf("\nCOMEDI %s closed.\n\n", inpDevStr[port].sName);
+    comedi_close(comdev->dev);
+    printf("\nCOMEDI %s closed.\n\n", comdev->devName);
     ComediDev[index] = NULL;
   }
+  free(comdev);
 }
 
 

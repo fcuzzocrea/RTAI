@@ -16,7 +16,10 @@
   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 
+#include "rtmain.h"
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <netinet/in.h>
@@ -25,49 +28,46 @@
 #include <rtai_netrpc.h>
 #include <rtai_sem.h>
 
-#include "devstruct.h"
-
-extern devStr inpDevStr[];
-extern devStr outDevStr[];
-extern int pinp_cnt;
-extern int pout_cnt;
-
-int inp_rtai_sem_init(char * sName,char * IP)
-{
-  long Target_Node;
-  long Target_Port=0;
+struct Sem{
+  char semName[20];
   SEM * sem;
+  long tNode;
+  long tPort;
+};
+
+void * inp_rtai_sem_init(char * sName,char * IP)
+{
+  struct Sem * sem = (struct Sem *) malloc(sizeof(struct Sem));
+  strcpy(sem->semName,sName);
+
   struct sockaddr_in addr;
 
-  int port=pinp_cnt++;
-  strcpy(inpDevStr[port].IOName,"rtai_sem inp");
-
   if(!strcmp(IP,"0")) {
-    Target_Node = 0;
-    Target_Port = 0;
+    sem->tNode = 0;
+    sem->tPort = 0;
   }
   else {
     inet_aton(IP, &addr.sin_addr);
-    Target_Node = addr.sin_addr.s_addr;
-    while ((Target_Port = rt_request_port_id(Target_Node,nam2num(sName))) <= 0
-	   && Target_Port != -EINVAL);
+    sem->tNode = addr.sin_addr.s_addr;
+    while ((sem->tPort = rt_request_port_id(sem->tNode,nam2num(sName))) <= 0
+	   && sem->tPort != -EINVAL);
   }
 
-  sem = RT_typed_named_sem_init(Target_Node,Target_Port,sName, 0, CNT_SEM);
+  sem->sem = RT_typed_named_sem_init(sem->tNode,sem->tPort,sem->semName, 0, CNT_SEM);
+  if(sem->sem == NULL) {
+    fprintf(stderr, "Error in getting %s semaphore address\n", sem->semName);
+    exit_on_error();
+  }
 
-  inpDevStr[port].ptr1 = (void *) sem;
-  inpDevStr[port].l1 = Target_Node;
-  inpDevStr[port].l2 = Target_Port;
-
-  return(port);
+  return((void *) sem);
 }
 
-void inp_rtai_sem_input(int port, double * y, double t)
+void inp_rtai_sem_input(void * ptr, double * y, double t)
 {
+  struct Sem * sem = (struct Sem *) ptr;
   int ret;
 
-  SEM *sem = (SEM *) inpDevStr[port].ptr1;
-  ret = RT_sem_wait(inpDevStr[port].l1, inpDevStr[port].l2,sem);
+  ret = RT_sem_wait(sem->tNode, sem->tPort,sem->sem);
   y[0]=0.0;
 }
 
@@ -75,60 +75,59 @@ void inp_rtai_sem_update(void)
 {
 }
 
-void inp_rtai_sem_end(int port)
+void inp_rtai_sem_end(void * ptr)
 {
-  SEM *sem = (SEM *) inpDevStr[port].ptr1;
-  RT_named_sem_delete(inpDevStr[port].l1, inpDevStr[port].l2,sem);
-  if(inpDevStr[port].l1){
-    rt_release_port(inpDevStr[port].l1, inpDevStr[port].l2);
+  struct Sem * sem = (struct Sem *) ptr;
+  RT_named_sem_delete(sem->tNode, sem->tPort,sem->sem);
+  if(sem->tNode){
+    rt_release_port(sem->tNode, sem->tPort);
   }
+  printf("SEM %s closed\n",sem->semName);
+  free(sem);
 }
 
-int out_rtai_sem_init(char * sName,char * IP)
+void * out_rtai_sem_init(char * sName,char * IP)
 {
-  long Target_Node;
-  long Target_Port=0;
-  SEM * sem;
+  struct Sem * sem = (struct Sem *) malloc(sizeof(struct Sem));
+  strcpy(sem->semName,sName);
   struct sockaddr_in addr;
 
-  int port=pout_cnt++;
-  strcpy(outDevStr[port].IOName,"rtai_sem out");
-
   if(!strcmp(IP,"0")) {
-    Target_Node = 0;
-    Target_Port = 0;
+    sem->tNode = 0;
+    sem->tPort = 0;
   }
   else {
     inet_aton(IP, &addr.sin_addr);
-    Target_Node = addr.sin_addr.s_addr;
-    while ((Target_Port = rt_request_port_id(Target_Node,nam2num(sName))) <= 0
-	   && Target_Port != -EINVAL);
+    sem->tNode = addr.sin_addr.s_addr;
+    while ((sem->tPort = rt_request_port_id(sem->tNode,nam2num(sName))) <= 0
+	   && sem->tPort != -EINVAL);
   }
 
-  sem = RT_typed_named_sem_init(Target_Node,Target_Port,sName, 0, CNT_SEM);
+  sem->sem = RT_typed_named_sem_init(sem->tNode,sem->tPort,sem->semName, 0, CNT_SEM);
+  if(sem->sem == NULL) {
+    fprintf(stderr, "Error in getting %s semaphore address\n", sem->semName);
+    exit_on_error();
+  }
 
-  outDevStr[port].ptr1 = (void *) sem;
-  outDevStr[port].l1 = Target_Node;
-  outDevStr[port].l2 = Target_Port;
-
-  return(port);
+  return((void *) sem);
 }
 
-void out_rtai_sem_output(int port, double * u,double t)
+void out_rtai_sem_output(void * ptr, double * u,double t)
 {
+  struct Sem * sem = (struct Sem *) ptr;
   int ret; 
-  SEM *sem = (SEM *) outDevStr[port].ptr1;
-  if(*u > 0.0) ret = RT_sem_signal(outDevStr[port].l1, outDevStr[port].l2,sem);
+  if(*u > 0.0) ret = RT_sem_signal(sem->tNode, sem->tPort,sem->sem);
 }
 
-void out_rtai_sem_end(int port)
+void out_rtai_sem_end(void * ptr)
 {
-  SEM *sem = (SEM *) outDevStr[port].ptr1;
-  RT_named_sem_delete(outDevStr[port].l1, outDevStr[port].l2,sem);
-  printf("%s closed\n",outDevStr[port].IOName);
-  if(outDevStr[port].l1){
-    rt_release_port(outDevStr[port].l1, outDevStr[port].l2);
+  struct Sem * sem = (struct Sem *) ptr;
+  RT_named_sem_delete(sem->tNode, sem->tPort,sem->sem);
+  if(sem->tNode){
+    rt_release_port(sem->tNode, sem->tPort);
   }
+  printf("SEM %s closed\n",sem->semName);
+  free(sem);
 }
 
 

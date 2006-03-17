@@ -19,53 +19,53 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "devstruct.h"
 #include "rtmain.h"
 
-extern devStr inpDevStr[];
-extern int pinp_cnt;
+struct extData{
+  int nData;
+  double * pData;
+  int cnt;
+};
 
-int inp_extdata_init(int nch,char * sName)
+void * inp_extdata_init(int nch,char * sName)
 {
   FILE * fp;
-  double * pData;
   int i;
-  int port=pinp_cnt++;
 
   if(nch==0) {
     fprintf(stderr, "Error - Data length is 0!\n");
     exit_on_error();
   }
-  strcpy(inpDevStr[port].IOName,"extdata");
-  inpDevStr[port].ptr1=(void *)calloc(nch,sizeof(double));
-  pData=(double *) inpDevStr[port].ptr1;
+
+  struct extData * data;
+  data=(struct extData *) malloc(sizeof(struct extData));
+
+  data->pData=(double *) calloc(nch,sizeof(double));
   fp=fopen(sName,"r");
   if(fp!=NULL){
-    inpDevStr[port].i1=0;
+    data->cnt=0;
     for(i=0;i<nch;i++) {
       if(feof(fp)) break;
-      fscanf(fp,"%lf",&pData[i]);
+      fscanf(fp,"%lf",&(data->pData[i]));
     }
-    inpDevStr[port].nch=i;
+    data->nData=nch;
     fclose(fp);
   }
   else{
     fprintf(stderr, "File %s not found!\n",sName);
-    inpDevStr[port].i1=-1;
+    data->cnt=-1;
     exit_on_error();
   }
 
-  return(port);
+  return((void *) data);
 }
 
-void inp_extdata_input(int port, double * y, double t)
+void inp_extdata_input(void * ptr, double * y, double t)
 {
-  int index=inpDevStr[port].i1;
-  if(index>=0) {
-    double * pData=(double *) inpDevStr[port].ptr1;
-    y[0]=pData[index];
-    index=(index+1) % inpDevStr[port].nch;
-    inpDevStr[port].i1=index;
+  struct extData * data = (struct extData *) ptr;
+  if(data->nData>=0) {
+    y[0]=data->pData[data->cnt];
+    data->cnt = data->cnt % data->nData;
   }
   else y[0]=0.0;
 }
@@ -74,9 +74,12 @@ void inp_extdata_update(void)
 {
 }
 
-void inp_extdata_end(int port)
+void inp_extdata_end(void * ptr)
 {
-  printf("%s closed\n",inpDevStr[port].IOName);
+  struct extData * data = (struct extData *) ptr;
+  free(data->pData);
+  free(data);
+  printf("EXTDATA closed\n");
 }
 
 

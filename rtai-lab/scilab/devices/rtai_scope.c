@@ -17,46 +17,47 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <rtai_netrpc.h>
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
 #include <string.h>
 #include "rtmain.h"
-#include "devstruct.h"
 
 #define MAX_RTAI_SCOPES               1000
 #define MBX_RTAI_SCOPE_SIZE           5000
 
-extern char *TargetMbxID;
-extern devStr outDevStr[];
-extern int pout_cnt;
-
-int out_rtai_scope_init(int nch,char * sName)
-{
+struct scope{
+  int nch;
+  char scopeName[20];
   MBX * mbx;
-  int port=pout_cnt++;
-  outDevStr[port].nch=nch;
-  strcpy(outDevStr[port].IOName,"Scope");
+};
+
+extern char *TargetMbxID;
+
+void * out_rtai_scope_init(int nch,char * sName)
+{
+  struct scope * scp = (struct scope *) malloc(sizeof(struct scope));
+  scp->nch=nch;
+  strcpy(scp->scopeName,sName);
   char name[7];
   int nt=nch + 1;
   rtRegisterScope(sName,nch);
   get_a_name(TargetMbxID,name);
 
-  mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(5000/(nt*sizeof(float)))*(nt*sizeof(float)),FIFO_Q);
-  if(mbx == NULL) {
+  scp->mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(5000/(nt*sizeof(float)))*(nt*sizeof(float)),FIFO_Q);
+  if(scp->mbx == NULL) {
     fprintf(stderr, "Cannot init mailbox\n");
     exit_on_error();
   }
-  outDevStr[port].ptr1 = (void *) mbx;
 
-  return(port);
+  return((void *) scp);
 }
 
-void out_rtai_scope_output(int port, double * u, double t)
+void out_rtai_scope_output(void * ptr, double * u, double t)
 {
-
-  MBX *mbx = (MBX *) outDevStr[port].ptr1;
-  int ntraces=outDevStr[port].nch;
+  struct scope * scp = (struct scope *) ptr;
+  int ntraces=scp->nch;
   struct {
     float t;
     float u[ntraces];
@@ -67,14 +68,15 @@ void out_rtai_scope_output(int port, double * u, double t)
   for (i = 0; i < ntraces; i++) {
     data.u[i] = (float) u[i];
   }
-  RT_mbx_send_if(0, 0, mbx, &data, sizeof(data));
+  RT_mbx_send_if(0, 0, scp->mbx, &data, sizeof(data));
 }
 
-void out_rtai_scope_end(int port)
+void out_rtai_scope_end(void * ptr)
 {
-  MBX *mbx = (MBX *) outDevStr[port].ptr1;
-  RT_named_mbx_delete(0, 0, mbx);
-  printf("%s closed\n",outDevStr[port].IOName);
+  struct scope * scp = (struct scope *) ptr;
+  RT_named_mbx_delete(0, 0, scp->mbx);
+  printf("Scope %s closed\n",scp->scopeName);
+  free(scp);
 }
 
 

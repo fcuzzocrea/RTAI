@@ -28,8 +28,7 @@ libsciblk_a_AR = $(CROSS_COMPILE)ar cru
 includedir=$(prefix)/include/scicos
 
 include_HEADERS = \
-	devices.h \
-	devstruct.h
+	devices.h 
 
 INCLUDES = \
 	@RTAI_USER_CFLAGS@ \

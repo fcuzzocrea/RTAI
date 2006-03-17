@@ -20,26 +20,21 @@
 #include <string.h>
 #include <stdlib.h>
 #include <rtai_fifos.h>
-#include "devstruct.h"
 
 #define FIFO_SIZE   50000
 
-extern devStr inpDevStr[];
-extern devStr outDevStr[];
-extern int pinp_cnt;
-extern int pout_cnt;
+struct Fifo{
+  int nch;
+  int fifon;
+};
 
-int inp_rtai_fifo_init(int nch,char * sName,char * sParam,double p1,
+void * inp_rtai_fifo_init(int nch,char * sName,char * sParam,double p1,
 		       double p2, double p3, double p4, double p5)
 {
-  int port=pinp_cnt++;
-  inpDevStr[port].nch=nch;
-  strcpy(inpDevStr[port].IOName,"rtai_fifo inp");
-
-  return(port);
+  return(NULL);
 }
 
-void inp_rtai_fifo_input(int port, double * y, double t)
+void inp_rtai_fifo_input(void * ptr, double * y, double t)
 {
   /*     *y=XXXX; */
 }
@@ -48,29 +43,26 @@ void inp_rtai_fifo_update(void)
 {
 }
 
-void inp_rtai_fifo_end(int port)
+void inp_rtai_fifo_end(void * ptr)
 {
-  printf("%s closed\n",inpDevStr[port].IOName);
 }
 
-int out_rtai_fifo_init(int nch, int fifon)
+void * out_rtai_fifo_init(int nch, int fifon)
 {
-  int port=pout_cnt++;
-  outDevStr[port].nch=nch;
-  outDevStr[port].i1=fifon;
-
-  strcpy(outDevStr[port].IOName,"rtai_fifo out");
+  struct Fifo * fifo = (struct Fifo *) malloc(sizeof(struct Fifo));
+  fifo->nch=nch;
+  fifo->fifon=fifon;
 
   rtf_create(fifon,FIFO_SIZE);
   rtf_reset(fifon);
 
-  return(port);
+  return((void *) fifo);
 }
 
-void out_rtai_fifo_output(int port, double * u,double t)
+void out_rtai_fifo_output(void * ptr, double * u,double t)
 {
-  int fifo_id=outDevStr[port].i1;
-  int ntraces=outDevStr[port].nch;
+  struct Fifo * fifo = (struct Fifo *) ptr;
+  int ntraces=fifo->nch;
   struct {
     float t;
     float u[ntraces];
@@ -81,13 +73,15 @@ void out_rtai_fifo_output(int port, double * u,double t)
   for (i = 0; i < ntraces; i++) {
     data.u[i] = (float) u[i];
   }
-  rtf_put(fifo_id,&data, sizeof(data));
+  rtf_put(fifo->fifon,&data, sizeof(data));
 }
 
-void out_rtai_fifo_end(int port)
+void out_rtai_fifo_end(void * ptr)
 {
-  rtf_destroy(outDevStr[port].i1);
-  printf("%s closed\n",outDevStr[port].IOName);
+  struct Fifo * fifo = (struct Fifo *) ptr;
+  rtf_destroy(fifo->fifon);
+  printf("FIFO %d closed\n",fifo->fifon);
+  free(fifo);
 }
 
 

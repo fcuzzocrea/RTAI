@@ -38,10 +38,7 @@
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
 
-#include <devstruct.h>
-#include <devices.h>
-
-#define RTAILAB_VERSION   "3.2.1"
+#define RTAILAB_VERSION   "3.3.1"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -87,7 +84,6 @@ static volatile int verbose      = 0;
 static volatile int endBaseRate  = 0;
 static volatile int endInterface = 0;
 static volatile int stackinc     = 100000;
-static volatile int NUPAR1       = 0;
 static volatile int ClockTick    = 0;
 static volatile int InternTimer  = 1;
 static RTIME rt_BaseRateTick;
@@ -95,7 +91,7 @@ static float FinalTime           = 0.0;
 
 static volatile int endex;
 
-static double TIME, *UPAR1;
+static double TIME;
 static struct { char name[MAX_NAME_SIZE]; int ntraces; } rtaiScope[MAX_SCOPES];
 static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiLogData[MAX_LOGS];
 static struct { char name[MAX_NAME_SIZE]; int nleds; } rtaiLed[MAX_LEDS];
@@ -113,11 +109,6 @@ int ComediDev_InUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AIInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AOInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_DIOInUse[MAX_COMEDI_DEVICES] = {0};
-
-devStr inpDevStr[40];
-devStr outDevStr[40];
-int pinp_cnt = 0;
-int pout_cnt = 0;
 
 static void DummyWait(void) { }
 static void DummySend(void) { }
@@ -149,15 +140,6 @@ char *get_a_name(const char *root, char *name)
 	if (!rt_get_adr(nam2num(name))) {
 	    return name;
 	}
-    }
-    return 0;
-}
-
-static unsigned long get_an_id(const char *root)
-{
-    char name[7];
-    if (get_a_name(root, name)) {
-	return nam2num(name);
     }
     return 0;
 }
@@ -214,40 +196,6 @@ static int rtRegisterLogData(const char *name, int nrow, int ncol)
     }
     return -1;
 }
-
-#if 0  // this avoids annoying libc functions
-static unsigned long udn2nl(double dudn)
-{
-    char ip[16];
-    unsigned long r0, r1, r2, r3;
-
-    if (!(r0 = dudn/1000000000.0)) {;
-    return 0;
-    }
-    r1 = ((unsigned long)(dudn/1000000.0))%1000;
-    r2 = (r3 = (unsigned long)(dudn/1000.0))%1000;
-    r3 = dudn - (double)r3*1000.0;
-    sprintf(ip, "%lu.%lu.%lu.%lu", r0, r1, r2, r3);
-    return ddn2nl(ip);
-}
-#else  // this avoids using much FP
-static unsigned long udn2nl(double dudn)
-{
-    char ip[16];
-    unsigned long long udn;
-    unsigned long r0, r1, r2, r3;
-
-    udn = dudn;
-    if (!(r0 = udn/1000000000)) {
-	return 0;
-    }
-    r1 = ((unsigned long)(udn/1000000))%1000;
-    r2 = (r3 = (unsigned long)(udn/1000))%1000;
-    r3 = udn - r3*1000ULL;
-    sprintf(ip, "%lu.%lu.%lu.%lu", r0, r1, r2, r3);
-    return ddn2nl(ip);
-}
-#endif
 
 static void grow_and_lock_stack(int inc)
 {
@@ -350,9 +298,6 @@ static void *rt_HostInterface(void *args)
   RT_TASK *task;
   unsigned int Request;
   int Reply, len;
-  int totRPar = 0;
-  int totIPar = 0;
-  int i;
 
     if (!(rt_HostInterfaceTask = rt_task_init_schmod(nam2num(HostInterfaceTaskName), rt_HostInterfaceTaskPriority, 0, 0, SCHED_RR, 0xFF))) {
 	fprintf(stderr,"Cannot init rt_HostInterfaceTask.\n");

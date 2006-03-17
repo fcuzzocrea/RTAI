@@ -152,6 +152,9 @@ ACKNOWLEDGEMENTS:
 #include <linux/devfs_fs_kernel.h>
 #include <linux/stat.h>
 #include <linux/proc_fs.h>
+#ifdef CONFIG_SYSFS
+#include <linux/device.h>
+#endif
 
 #include <rtai_fifos.h>
 #include <rtai_trace.h>
@@ -217,6 +220,10 @@ typedef struct rt_fifo_struct {
 	F_SEM sem;
 	char name[RTF_NAMELEN+1];
 } FIFO;
+
+#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+static class_t *fifo_class = NULL;
+#endif
 
 static int fifo_srq, async_sig;
 static spinlock_t rtf_lock = SPIN_LOCK_UNLOCKED;
@@ -1707,6 +1714,17 @@ int __rtai_fifos_init(void)
 {
 	int minor;
 
+#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+	fifo_class = class_create(THIS_MODULE, "rtai_fifos");
+	if (!fifo_class) {
+		printk("RTAI-FIFO: cannot register major %d.\n", RTAI_FIFOS_MAJOR);
+		return -EIO;
+	}
+	for (minor = 0; minor < MAX_FIFOS; minor++) {
+		CLASS_DEVICE_CREATE(fifo_class, MKDEV(RTAI_FIFOS_MAJOR, minor), NULL, "rtf%d", minor);
+	}
+#endif /* CONFIG_SYSFS && !CONFIG_DEVFS_FS */
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS
 	if (register_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo",&rtf_fops)) {
 #else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) && CONFIG_DEVFS_FS */
@@ -1790,6 +1808,15 @@ void __rtai_fifos_exit(void)
 	devfs_unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
 #endif  /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS */
 #else /* !CONFIG_DEVFS_FS */
+#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+	{
+		int minor;
+		for (minor = 0; minor < MAX_FIFOS; minor++) {
+			class_device_destroy(fifo_class, MKDEV(RTAI_FIFOS_MAJOR, minor));
+		}
+	}
+	class_destroy(fifo_class);
+#endif /* CONFIG_SYSFS */
 	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
 #endif /* CONFIG_DEVFS_FS */
 

@@ -66,6 +66,25 @@ typedef void irqreturn_t;
 
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
 
+/* Basic class macros */
+#ifdef CONFIG_SYSFS
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
+typedef struct class class_t;
+#define CLASS_DEVICE_CREATE(cls, devt, device, fmt, arg...) class_device_create(cls, NULL, devt, device, fmt, ## arg)
+#else /* LINUX 2.6.0 - 2.6.14 */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,13) /* LINUX 2.6.13 - 2.6.14 */
+typedef struct class class_t;
+#define CLASS_DEVICE_CREATE class_device_create
+#else /* LINUX 2.6.0 - 2.6.12, class_simple */
+typedef struct class_simple class_t;
+#define CLASS_DEVICE_CREATE class_simple_device_add
+#define class_create class_simple_create
+#define class_destroy class_simple_destroy
+#define class_device_destroy(a, b) class_simple_device_remove(b)
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,13) */
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
+#endif
+
 #define mm_remap_page_range(vma,from,to,size,prot) remap_page_range(vma,from,to,size,prot)
 
 #define get_tsk_addr_limit(t) ((t)->thread_info->addr_limit.seg)

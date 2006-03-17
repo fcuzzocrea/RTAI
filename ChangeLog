@@ -1,3 +1,9 @@
+2006-03-17  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/*: Introduced some nice new features from Peter Brier.
+	* rtai-lab/scilab/*: Substituted the general structure "devstruct" 
+	with a specific struct for each scicos block.
+
 2006-03-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_prinher.h: inlines to support full priority

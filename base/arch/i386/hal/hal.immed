@@ -137,6 +137,7 @@ struct {
 	void *cookie;
 	int retmode;
 	int cpumask;
+	int (*irq_ack)(unsigned int);
 } rtai_realtime_irq[RTAI_NR_IRQS];
 
 static struct {
@@ -220,6 +221,7 @@ int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), vo
 	rtai_realtime_irq[irq].handler = (void *)handler;
 	rtai_realtime_irq[irq].cookie  = cookie;
 	rtai_realtime_irq[irq].retmode = retmode ? 1 : 0;
+	rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
 	rtai_critical_exit(flags);
 	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
 		rtai_realtime_irq[irq].cpumask = rt_assign_irq_to_cpu(irq, IsolCpusMask);
@@ -235,10 +237,34 @@ int rt_release_irq (unsigned irq)
 	}
 	flags = rtai_critical_enter(NULL);
 	rtai_realtime_irq[irq].handler = NULL;
+	rtai_realtime_irq[irq].irq_ack = hal_root_domain->irqs[irq].acknowledge;
 	rtai_critical_exit(flags);
 	if (IsolCpusMask && irq < IPIPE_NR_XIRQS) {
 		rt_assign_irq_to_cpu(irq, rtai_realtime_irq[irq].cpumask);
 	}
+	return 0;
+}
+
+static int ack_8259A_irq(unsigned int irq)
+{
+	extern spinlock_t i8259A_lock;
+	spin_lock(&i8259A_lock);
+	if (irq & 8) {
+		outb(0x62,0x20);
+		outb(0x20,0xA0);
+	} else {
+		outb(0x20,0x20);
+	}
+	spin_unlock(&i8259A_lock);
+	return 0;
+}
+
+int rt_set_irq_ack(unsigned irq, int (*irq_ack)(unsigned int))
+{
+	if (irq >= RTAI_NR_IRQS) {
+		return -EINVAL;
+	}
+	rtai_realtime_irq[irq].irq_ack = irq_ack ? irq_ack : (void *)ack_8259A_irq;
 	return 0;
 }
 
@@ -945,7 +971,8 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-	hal_root_domain->irqs[RTAI_TIMER_8254_IRQ].acknowledge(RTAI_TIMER_8254_IRQ);
+	ack_8259A_irq(RTAI_TIMER_8254_IRQ);
+//	hal_root_domain->irqs[RTAI_TIMER_8254_IRQ].acknowledge(RTAI_TIMER_8254_IRQ);
 	((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
@@ -1419,7 +1446,8 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 	cpuid = rtai_cpuid();
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
 		rt_switch_to_real_time(cpuid);
-		hal_root_domain->irqs[irq].acknowledge(irq); mb();
+		rtai_realtime_irq[irq].irq_ack(irq); mb();
+//		hal_root_domain->irqs[irq].acknowledge(irq); mb();
 		RTAI_SCHED_ISR_LOCK();
 		if (rtai_realtime_irq[irq].retmode && rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie)) {
 			RTAI_SCHED_ISR_UNLOCK();
@@ -1436,7 +1464,8 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 	} else {
 		unsigned long lflags;
 		lflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
-		hal_root_domain->irqs[irq].acknowledge(irq); mb();
+		rtai_realtime_irq[irq].irq_ack(irq); mb();
+//		hal_root_domain->irqs[irq].acknowledge(irq); mb();
 		hal_pend_uncond(irq, cpuid);
 		hal_root_domain->cpudata[cpuid].status = lflags;
 		if (test_bit(IPIPE_STALL_FLAG, &lflags)) {
@@ -2035,6 +2064,11 @@ int __rtai_hal_init (void)
 		return -1;
 	}
 #endif
+
+	for (trapnr = 0; trapnr < RTAI_NR_IRQS; trapnr++) {
+		rtai_realtime_irq[trapnr].irq_ack = hal_root_domain->irqs[trapnr].acknowledge;
+	}
+
 	if (!(rtai_sysreq_virq = hal_alloc_irq())) {
 		printk(KERN_ERR "RTAI[hal]: no virtual interrupt available.\n");
 		return 1;
@@ -2230,6 +2264,7 @@ EXPORT_SYMBOL(rt_set_trap_handler);
 EXPORT_SYMBOL(rd_8254_ts);
 EXPORT_SYMBOL(rt_setup_8254_tsc);
 EXPORT_SYMBOL(rt_set_ihook);
+EXPORT_SYMBOL(rt_set_irq_ack);
 
 EXPORT_SYMBOL(rtai_calibrate_8254);
 EXPORT_SYMBOL(rtai_broadcast_to_local_timers);

@@ -1,3 +1,12 @@
+2006-03-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm/rtai_hal.h: added declarations to support simple 
+	  acks for the 8259A PIC.
+	* base/arch/i386/hal/hal.immed: added support for simple acks of the 
+	  8259A PIC
+	* base/arch/i386/patches/hal-linux-2.6.15-i386-1.2-01.patch, 
+	  hal-linux-2.4.32-i386-1.1-01.patch: export i8259 spinlock.
+
 2006-03-20  Jan Kiszka  <kiszka@rts.uni-hannover.de>
 
 	* addons/rtdm/drvlib.c: fixed incongrencies in sleep and sleep_until

@@ -770,6 +770,17 @@ int rt_request_irq(unsigned irq,
 
 int rt_release_irq(unsigned irq);
 
+int rt_set_irq_ack(unsigned int irq, int (*irq_ack)(unsigned int));
+
+static inline int rt_request_irq_wack(unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode, int (*irq_ack)(unsigned int))
+{
+	int retval;
+	if ((retval = rt_request_irq(irq, handler, cookie, retmode)) < 0) {
+		return retval;
+	}
+	return rt_set_irq_ack(irq, irq_ack);
+}
+
 void rt_set_irq_cookie(unsigned irq, void *cookie);
 
 void rt_set_irq_retmode(unsigned irq, int fastret);

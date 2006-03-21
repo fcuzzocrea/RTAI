@@ -46,7 +46,46 @@
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
 
-#define RT_EINTR  (0xFff0)
+#define RT_RWLINV   (6)
+#define RT_OBJINV   (5)
+#define RT_OBJREM   (4)
+#define RT_TIMOUT   (3)
+#define RT_UNBLKD   (2)
+#define RT_TMROVRN  (1)
+#define RTP_RWLINV  ((void *)RT_RWLINV)
+#define RTP_OBJINV  ((void *)RT_OBJINV)
+#define RTP_OBJREM  ((void *)RT_OBJREM)
+#define RTP_TIMOUT  ((void *)RT_TIMOUT)
+#define RTP_UNBLKD  ((void *)RT_UNBLKD)
+#define RTP_TMROVRN ((void *)RT_TMROVRN)
+#define RTP_HIGERR  (RTP_RWLINV)
+#define RTP_LOWERR  (RTP_TMROVRN)
+#define CONFIG_RTAI_USE_NEWERR 1
+#if CONFIG_RTAI_USE_NEWERR
+#define RTE_BASE     (0x3FFFFF00)
+#define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
+#define RTE_OBJINV   (RTE_BASE + RT_OBJINV)
+#define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
+#define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)
+#define RTE_UNBLKD   (RTE_BASE + RT_UNBLKD)
+#define RTE_TMROVRN  (RTE_BASE + RT_TMROVRN)
+#define RTE_HIGERR   (RTE_RWLINV)
+#define RTE_LOWERR   (RTE_TMROVRN)
+#else
+#define RTE_BASE     (0xFFFB)
+#define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
+#define RTE_OBJINV   (RTE_BASE + RT_OBJREM)
+#define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
+#define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)
+#define RTE_UNBLKD   (RTE_BASE + RT_UNBLKD)
+#define RTE_TMROVRN  (RTE_BASE + RT_TMROVRN)
+#define RTE_HIGERR   (RTE_RWLINV)
+#define RTE_LOWERR   (RTE_TMROVRN)
+#endif
+
+#define RT_EINTR    (RTE_UNBLKD)
+
+#define rt_is_reterr(i)  (i >= RTE_LOWERR)
 
 #define RT_IRQ_TASK         0
 #define RT_IRQ_TASKLET      1

@@ -22,7 +22,7 @@
 
 #include <rtai_types.h>
 
-#define MSG_ERR ((RT_TASK *)0xFfff)
+#define MSG_ERR ((RT_TASK *)RTE_OBJINV)
 
 #define RTAI_MAX_NAME_LENGTH  32
 

@@ -47,8 +47,8 @@
 #define SET_CLR_BITS          2
 #define NOP_BITS              3
 
-#define BITS_ERR     0xFfff  // same as semaphores
-#define BITS_TIMOUT  0xFffe  // same as semaphores
+#define BITS_ERR     (RTE_OBJINV)  // same as semaphores
+#define BITS_TIMOUT  (RTE_TIMOUT)  // same as semaphores
 
 struct rt_bits_struct;
 

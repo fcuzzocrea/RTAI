@@ -218,14 +218,7 @@ extern volatile int rt_sched_timed;
 #define set_exit_handler(task, fun, arg1, arg2)
 #endif /* CONFIG_RTAI_MALLOC */
 
-#define RT_SEM_MAGIC 0x3f83ebb  // nam2num("rtsem")
-
-#define SEM_ERR (0xFfff)
-
-#define MSG_ERR ((RT_TASK *)0xFfff)
-
-#define NOTHING    ((void *)0)
-#define SOMETHING  ((void *)1)
+#define NOTHING  NULL
 
 #define SEMHLF 0x0000FFFF
 #define RPCHLF 0xFFFF0000
@@ -393,7 +386,7 @@ static inline void rem_ready_task(RT_TASK *task)
 		if (!task->is_hard) {
 			NON_RTAI_TASK_SUSPEND(task);
 		}
-		task->unblocked = 0;
+//		task->unblocked = 0;
 		(task->rprev)->rnext = task->rnext;
 		(task->rnext)->rprev = task->rprev;
 	}
@@ -404,7 +397,7 @@ static inline void rem_ready_current(RT_TASK *rt_current)
 	if (!rt_current->is_hard) {
 		NON_RTAI_TASK_SUSPEND(rt_current);
 	}
-	rt_current->unblocked = 0;
+//	rt_current->lnx_signald = 0;
 	(rt_current->rprev)->rnext = rt_current->rnext;
 	(rt_current->rnext)->rprev = rt_current->rprev;
 }
@@ -560,7 +553,7 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
 #ifdef CONFIG_SMP
                         set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
 #endif
-                } else if ((q = to->blocked_on) && !((to->state & RT_SCHED_SEMAPHORE) &&
+                } else if ((void *)(q = to->blocked_on) > RTP_HIGERR && !((to->state & RT_SCHED_SEMAPHORE) &&
  ((SEM *)q)->qtype)) {
                         (to->queue.prev)->next = to->queue.next;
                         (to->queue.next)->prev = to->queue.prev;

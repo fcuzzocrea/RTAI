@@ -245,7 +245,8 @@ int rt_release_irq (unsigned irq)
 	return 0;
 }
 
-static int ack_8259A_irq(unsigned int irq)
+#ifndef CONFIG_X86_IO_APIC
+int ack_8259A_irq(unsigned int irq)
 {
 	extern spinlock_t i8259A_lock;
 	spin_lock(&i8259A_lock);
@@ -258,13 +259,19 @@ static int ack_8259A_irq(unsigned int irq)
 	spin_unlock(&i8259A_lock);
 	return 0;
 }
+#else
+int ack_8259A_irq(unsigned int irq)
+{
+	return rtai_realtime_irq[irq].irq_ack(irq);
+}
+#endif
 
 int rt_set_irq_ack(unsigned irq, int (*irq_ack)(unsigned int))
 {
 	if (irq >= RTAI_NR_IRQS) {
 		return -EINVAL;
 	}
-	rtai_realtime_irq[irq].irq_ack = irq_ack ? irq_ack : (void *)ack_8259A_irq;
+	rtai_realtime_irq[irq].irq_ack = irq_ack ? irq_ack : hal_root_domain->irqs[irq].acknowledge;
 	return 0;
 }
 
@@ -844,6 +851,7 @@ int _rtai_sched_on_ipi_handler(void)
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
 	__ack_APIC_irq();
+//	rtai_realtime_irq[SCHED_IPI].irq_ack(SCHED_IPI);
 //	hal_root_domain->irqs[SCHED_IPI].acknowledge(SCHED_IPI);
 	((void (*)(void))rtai_realtime_irq[SCHED_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
@@ -913,6 +921,7 @@ int _rtai_apic_timer_handler(void)
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
 	__ack_APIC_irq();
+//	rtai_realtime_irq[RTAI_APIC_TIMER_IPI].irq_ack(RTAI_APIC_TIMER_IPI);
 //	hal_root_domain->irqs[RTAI_APIC_TIMER_IPI].acknowledge(RTAI_APIC_TIMER_IPI);
 	((void (*)(void))rtai_realtime_irq[RTAI_APIC_TIMER_IPI].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
@@ -971,8 +980,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 	unsigned long cpuid = rtai_cpuid();
 	rt_switch_to_real_time(cpuid);
 	RTAI_SCHED_ISR_LOCK();
-	ack_8259A_irq(RTAI_TIMER_8254_IRQ);
-//	hal_root_domain->irqs[RTAI_TIMER_8254_IRQ].acknowledge(RTAI_TIMER_8254_IRQ);
+	rtai_realtime_irq[RTAI_TIMER_8254_IRQ].irq_ack(RTAI_TIMER_8254_IRQ);
 	((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
@@ -2068,6 +2076,7 @@ int __rtai_hal_init (void)
 	for (trapnr = 0; trapnr < RTAI_NR_IRQS; trapnr++) {
 		rtai_realtime_irq[trapnr].irq_ack = hal_root_domain->irqs[trapnr].acknowledge;
 	}
+	rtai_realtime_irq[0].irq_ack = ack_8259A_irq;
 
 	if (!(rtai_sysreq_virq = hal_alloc_irq())) {
 		printk(KERN_ERR "RTAI[hal]: no virtual interrupt available.\n");
@@ -2265,6 +2274,7 @@ EXPORT_SYMBOL(rd_8254_ts);
 EXPORT_SYMBOL(rt_setup_8254_tsc);
 EXPORT_SYMBOL(rt_set_ihook);
 EXPORT_SYMBOL(rt_set_irq_ack);
+EXPORT_SYMBOL(ack_8259A_irq);
 
 EXPORT_SYMBOL(rtai_calibrate_8254);
 EXPORT_SYMBOL(rtai_broadcast_to_local_timers);

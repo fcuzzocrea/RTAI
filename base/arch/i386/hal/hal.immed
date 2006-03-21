@@ -179,6 +179,8 @@ struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS];
 
+static unsigned long *ipipe_status[RTAI_NR_CPUS];
+
 struct calibration_data rtai_tunables;
 
 volatile unsigned long rtai_cpu_realtime;
@@ -245,7 +247,12 @@ int rt_release_irq (unsigned irq)
 	return 0;
 }
 
-#ifndef CONFIG_X86_IO_APIC
+#ifdef CONFIG_X86_IO_APIC
+int ack_8259A_irq(unsigned int irq)
+{
+	return 0;
+}
+#else
 int ack_8259A_irq(unsigned int irq)
 {
 	extern spinlock_t i8259A_lock;
@@ -259,15 +266,15 @@ int ack_8259A_irq(unsigned int irq)
 	spin_unlock(&i8259A_lock);
 	return 0;
 }
-#else
-int ack_8259A_irq(unsigned int irq)
-{
-	return rtai_realtime_irq[irq].irq_ack(irq);
-}
 #endif
 
 int rt_set_irq_ack(unsigned irq, int (*irq_ack)(unsigned int))
 {
+#ifdef CONFIG_X86_IO_APIC
+	if (irq_ack == ack_8259A_irq) {
+		return -ENODEV;
+	}
+#endif
 	if (irq >= RTAI_NR_IRQS) {
 		return -EINVAL;
 	}
@@ -311,12 +318,12 @@ do { \
         unsigned long flags, pflags, cpuid; \
 	rtai_save_flags_and_cli(flags); \
 	cpuid = rtai_cpuid(); \
-	pflags = xchg(&hal_root_domain->cpudata[cpuid].status, 1 << IPIPE_STALL_FLAG); \
+	pflags = xchg(ipipe_status[cpuid], 1 << IPIPE_STALL_FLAG); \
 	rtai_save_and_lock_preempt_count()
 
 #define END_PIC() \
 	rtai_restore_preempt_count(); \
-	hal_root_domain->cpudata[cpuid].status = pflags; \
+	*ipipe_status[cpuid] = pflags; \
 	rtai_restore_flags(flags); \
 } while (0)
 
@@ -857,11 +864,11 @@ int _rtai_sched_on_ipi_handler(void)
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
 #if 1 //LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
+	if (!test_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid])) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
+		set_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid]);
 #endif
 		return 1;
 	}
@@ -927,11 +934,11 @@ int _rtai_apic_timer_handler(void)
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
 #if 1 //LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
-	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
+	if (!test_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid])) {
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
+		set_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid]);
 #endif
 		return 1;
 	}
@@ -984,7 +991,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 	((void (*)(void))rtai_realtime_irq[RTAI_TIMER_8254_IRQ].handler)();
 	RTAI_SCHED_ISR_UNLOCK();
 	rt_switch_to_linux(cpuid);
-	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
+	if (test_and_clear_bit(cpuid, &hal_pended) && !test_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid])) {
 		rtai_sti();
 /* specific for the Linux tick, do not cre in a generic handler */
 		HAL_TICK_REGS.eflags = regs.eflags;
@@ -995,7 +1002,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
+		set_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid]);
 #endif
 		return 1;
 	}
@@ -1465,17 +1472,17 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 			rtai_realtime_irq[irq].handler(irq, rtai_realtime_irq[irq].cookie);
 			RTAI_SCHED_ISR_UNLOCK();
 			rt_switch_to_linux(cpuid);
-			if (!test_and_clear_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
+			if (!test_and_clear_bit(cpuid, &hal_pended) || test_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid])) {
 				return 0;
 			}
 		}
 	} else {
 		unsigned long lflags;
-		lflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+		lflags = xchg(ipipe_status[cpuid], (1 << IPIPE_STALL_FLAG));
 		rtai_realtime_irq[irq].irq_ack(irq); mb();
 //		hal_root_domain->irqs[irq].acknowledge(irq); mb();
 		hal_pend_uncond(irq, cpuid);
-		hal_root_domain->cpudata[cpuid].status = lflags;
+		*ipipe_status[cpuid] = lflags;
 		if (test_bit(IPIPE_STALL_FLAG, &lflags)) {
 			return 0;
 		}
@@ -1491,7 +1498,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 	}
 	hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-	set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
+	set_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid]);
 #endif
 	return 1;
 }
@@ -2073,14 +2080,18 @@ int __rtai_hal_init (void)
 	}
 #endif
 
-	for (trapnr = 0; trapnr < RTAI_NR_IRQS; trapnr++) {
-		rtai_realtime_irq[trapnr].irq_ack = hal_root_domain->irqs[trapnr].acknowledge;
-	}
-
 	if (!(rtai_sysreq_virq = hal_alloc_irq())) {
 		printk(KERN_ERR "RTAI[hal]: no virtual interrupt available.\n");
 		return 1;
 	}
+
+	for (trapnr = 0; trapnr < RTAI_NR_IRQS; trapnr++) {
+		rtai_realtime_irq[trapnr].irq_ack = hal_root_domain->irqs[trapnr].acknowledge;
+	}
+	for (trapnr = 0; trapnr < RTAI_NR_CPUS; trapnr++) {
+		ipipe_status[trapnr] = &hal_root_domain->cpudata[trapnr].status;
+	}
+
 	hal_virtualize_irq(hal_root_domain, rtai_sysreq_virq, &rtai_lsrq_dispatcher, NULL, IPIPE_HANDLE_MASK);
 	saved_hal_irq_handler = hal_irq_handler;
 	hal_irq_handler = rtai_hirq_dispatcher;

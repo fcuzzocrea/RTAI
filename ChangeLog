@@ -11,11 +11,9 @@
 	* base/sched/sys.c: new configurable error returns and revision of 
 	  the LXRT function calls layout.
 	* base/sched/sched.c: new configurable error returns support.
-	* base/ipc/bits/bits.c base/ipc/mbx/mbx.c base/ipc/msg/msg.c
-CVS:    base/ipc/netrpc/netrpc.c base/ipc/sem/sem.c base/ipc/tbx/tbx.c
-
-
-
+	* base/ipc/bits/bits.c, ipc/mbx/mbx.c, ipc/msg/msg.c, ipc/sem/sem.c,
+	  ipc/netrpc/netrpc.c, base/ipc/tbx/tbx.c: new configurable error 
+	  returns.
 
 2006-03-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

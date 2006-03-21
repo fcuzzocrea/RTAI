@@ -56,7 +56,7 @@ do { \
 
 static void mbx_delete_signal(MBX *mbx)
 {
-	_mbx_signal(mbx, SOMETHING);
+	_mbx_signal(mbx, RTP_OBJREM);
 }
 
 static void mbx_signal(MBX *mbx)
@@ -70,14 +70,16 @@ static int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!(*fravbs)) {
+		unsigned long retval;
 		rt_current->state |= RT_SCHED_MBXSUSP;
 		rem_ready_current(rt_current);
 		rt_current->blocked_on = (void *)mbx;
 		mbx->waiting_task = rt_current;
 		rt_schedule();
-		if (rt_current->blocked_on) {
+		if (unlikely(retval = (unsigned long)rt_current->blocked_on)) {
+			mbx->waiting_task = NULL;
 			rt_global_restore_flags(flags);
-			return SEM_ERR;
+			return retval;
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -90,6 +92,7 @@ static int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current
 
 	flags = rt_global_save_flags_and_cli();
 	if (!(*fravbs)) {
+		void *retp;
 		rt_current->blocked_on = (void *)mbx;
 		mbx->waiting_task = rt_current;
 		if ((rt_current->resume_time = time) > rt_smp_time_h[rtai_cpuid()]) {
@@ -98,14 +101,10 @@ static int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current
 			enq_timed_task(rt_current);
 			rt_schedule();
 		}
-		if (rt_current->blocked_on) {
-			if ((void *)rt_current->blocked_on > SOMETHING) {
-				mbx->waiting_task = NOTHING;
-				rt_global_restore_flags(flags);
-				return SEM_TIMOUT;
-			}
+		if (unlikely(retp = rt_current->blocked_on)) {
+			mbx->waiting_task = NULL;
 			rt_global_restore_flags(flags);
-			return SEM_ERR;
+			return likely(retp > RTP_HIGERR) ? RTE_TIMOUT : (retp == RTP_UNBLKD ? RTE_UNBLKD : RTE_OBJREM);
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -270,8 +269,11 @@ int _rt_mbx_evdrp(MBX *mbx, void *msg, int msg_size, int space)
 }
 
 
-#define CHK_MBX_MAGIC { if (mbx->magic != RT_MBX_MAGIC) { return -EINVAL; } }
+#define CHK_MBX_MAGIC { if (mbx->magic != RT_MBX_MAGIC) \
+	{ return CONFIG_RTAI_USE_NEWERR ? RTE_OBJINV : -EINVAL; } }
 
+#define MBX_RET(msg_size, retval) \
+	(CONFIG_RTAI_USE_NEWERR ? retval : msg_size)
 
 /**
  * @brief Initializes a fully typed mailbox queueing tasks
@@ -402,15 +404,18 @@ int rt_mbx_delete(MBX *mbx)
 int _rt_mbx_send(MBX *mbx, void *msg, int msg_size, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
+	int retval;
 
 	CHK_MBX_MAGIC;
-	if (rt_sem_wait(&mbx->sndsem) > 1) {
-		return msg_size;
+	if ((retval = rt_sem_wait(&mbx->sndsem)) > 1) {
+		return MBX_RET(msg_size, retval);
 	}
 	while (msg_size) {
-		if (mbx_wait(mbx, &mbx->frbs, rt_current)) {
-			rt_sem_signal(&mbx->sndsem);
-			return msg_size;
+		if ((retval = mbx_wait(mbx, &mbx->frbs, rt_current))) {
+			if (retval >= RTE_LOWERR) {
+				rt_sem_signal(&mbx->sndsem);
+			}
+			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
@@ -523,17 +528,18 @@ int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int space)
 int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
+	int retval;
+
 	CHK_MBX_MAGIC;
-	if (rt_sem_wait_until(&mbx->sndsem, time) > 1) {
-		return msg_size;
+	if ((retval = rt_sem_wait_until(&mbx->sndsem, time)) > 1) {
+		return MBX_RET(msg_size, retval);
 	}
 	while (msg_size) {
-		int retval;
 		if ((retval = mbx_wait_until(mbx, &mbx->frbs, time, rt_current))) {
-			if (retval != SEM_ERR) {
+			if (retval >= RTE_LOWERR) {
 				rt_sem_signal(&mbx->sndsem);
 			}
-			return msg_size;
+			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
@@ -594,14 +600,18 @@ int _rt_mbx_send_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int space
 int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
+	int retval;
+
 	CHK_MBX_MAGIC;
-	if (rt_sem_wait(&mbx->rcvsem) > 1) {
+	if ((retval = rt_sem_wait(&mbx->rcvsem)) > 1) {
 		return msg_size;
 	}
 	while (msg_size) {
-		if (mbx_wait(mbx, &mbx->avbs, rt_current)) {
-			rt_sem_signal(&mbx->rcvsem);
-			return msg_size;
+		if ((retval = mbx_wait(mbx, &mbx->avbs, rt_current))) {
+			if (retval >= RTE_LOWERR) {
+				rt_sem_signal(&mbx->rcvsem);
+			}
+			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
@@ -720,17 +730,18 @@ int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int space)
 int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
+	int retval;
+
 	CHK_MBX_MAGIC;
-	if (rt_sem_wait_until(&mbx->rcvsem, time) > 1) {
-		return msg_size;
+	if ((retval = rt_sem_wait_until(&mbx->rcvsem, time)) > 1) {
+		return MBX_RET(msg_size, retval);
 	}
 	while (msg_size) {
-		int retval;
 		if ((retval = mbx_wait_until(mbx, &mbx->avbs, time, rt_current))) {
-			if (retval != SEM_ERR) {
+			if (retval >= RTE_LOWERR) {
 				rt_sem_signal(&mbx->rcvsem);
 			}
-			return msg_size;
+			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);

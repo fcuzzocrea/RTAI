@@ -145,14 +145,19 @@ static int _send(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
 	return 0;
 }
 
+#define TBX_RET(msg_size, retval) \
+        (CONFIG_RTAI_USE_NEWERR ? retval : msg_size)
+
 int _rt_msg_send(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
 {
-	if (rt_sem_wait(&mq->senders) >= SEM_TIMOUT) {
-                return msg_size;
+	int retval;
+
+	if ((retval = rt_sem_wait(&mq->senders)) >= RTE_LOWERR) {
+		return TBX_RET(msg_size, retval);
         }
-	if (rt_sem_wait(&mq->freslots) >= SEM_TIMOUT) {
+	if (rt_sem_wait(&mq->freslots) >= RTE_LOWERR) {
 		rt_sem_signal(&mq->senders);
-		return msg_size;
+		return TBX_RET(msg_size, retval);
 	}
 	return _send(mq, msg, msg_size, msgpri, space);
 }
@@ -171,12 +176,13 @@ int _rt_msg_send_if(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
 
 int _rt_msg_send_until(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME until, int space)
 {
-	if (rt_sem_wait_until(&mq->senders, until) >= SEM_TIMOUT) {
-                return msg_size;
+	int retval;
+	if ((retval = rt_sem_wait_until(&mq->senders, until)) >= RTE_LOWERR) {
+		return TBX_RET(msg_size, retval);
         }
-	if (rt_sem_wait_until(&mq->freslots, until) >= SEM_TIMOUT) {
+	if ((retval = rt_sem_wait_until(&mq->freslots, until)) >= RTE_LOWERR) {
 		rt_sem_signal(&mq->senders);
-		return msg_size;
+		return TBX_RET(msg_size, retval);
 	}
 	return _send(mq, msg, msg_size, msgpri, space);
 }
@@ -231,12 +237,13 @@ relslot:	flags = rt_spin_lock_irqsave(&mq->lock);
 
 int _rt_msg_receive(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int space)
 {
-	if (rt_sem_wait(&mq->receivers) >= SEM_TIMOUT) {
-		return msg_size;
+	int retval;
+	if ((retval = rt_sem_wait(&mq->receivers)) >= RTE_LOWERR) {
+		return TBX_RET(msg_size, retval);
 	}
-	if (rt_sem_wait(&mq->received) >= SEM_TIMOUT) { ;
+	if ((retval = rt_sem_wait(&mq->received)) >= RTE_LOWERR) { ;
 		rt_sem_signal(&mq->receivers);
-		return msg_size;
+		return TBX_RET(msg_size, retval);
 	}
 	return _receive(mq, msg, msg_size, msgpri, space);
 }
@@ -255,12 +262,13 @@ int _rt_msg_receive_if(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, int sp
 
 int _rt_msg_receive_until(RT_MSGQ *mq, void *msg, int msg_size, int *msgpri, RTIME until, int space)
 {
-	if (rt_sem_wait_until(&mq->receivers, until) >= SEM_TIMOUT) {
-		return msg_size;
+	int retval;
+	if ((retval = rt_sem_wait_until(&mq->receivers, until)) >= RTE_LOWERR) {
+		return TBX_RET(msg_size, retval);
 	}
-	if (rt_sem_wait_until(&mq->received, until) >= SEM_TIMOUT) { ;
+	if ((retval = rt_sem_wait_until(&mq->received, until)) >= RTE_LOWERR) {
 		rt_sem_signal(&mq->receivers);
-		return msg_size;
+		return TBX_RET(msg_size, retval);
 	}
 	return _receive(mq, msg, msg_size, msgpri, space);
 }
@@ -330,16 +338,18 @@ static int _broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int broa
 
 int _rt_msg_broadcast(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int space)
 {
-	if (rt_sem_wait(&mq->senders) >= SEM_TIMOUT) {
-                return 0;
+	int retval;
+
+	if ((retval = rt_sem_wait(&mq->senders)) >= RTE_LOWERR) {
+		return TBX_RET(0, retval);
         }
 	if (mq->received.count >= 0) {
 		rt_sem_signal(&mq->senders);
 		return 0;
 	}
-	if (rt_sem_wait(&mq->freslots) >= SEM_TIMOUT) {
+	if ((retval = rt_sem_wait(&mq->freslots)) >= RTE_LOWERR) {
 		rt_sem_signal(&mq->senders);
-                return 0;
+		return TBX_RET(0, retval);
 	}
 	return _broadcast(mq, msg, msg_size, msgpri, -(mq->received.count + mq->receivers.count), space);
 }
@@ -362,16 +372,18 @@ int _rt_msg_broadcast_if(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, int s
 
 int _rt_msg_broadcast_until(RT_MSGQ *mq, void *msg, int msg_size, int msgpri, RTIME until, int space)
 {
-	if (rt_sem_wait_until(&mq->senders, until) >= SEM_TIMOUT) {
-                return 0;
+	int retval;
+
+	if ((retval = rt_sem_wait_until(&mq->senders, until)) >= RTE_LOWERR) {
+		return TBX_RET(0, retval);
         }
 	if (mq->received.count >= 0) {
 		rt_sem_signal(&mq->senders);
 		return 0;
 	}
-	if (rt_sem_wait_until(&mq->freslots, until) >= SEM_TIMOUT) {
+	if ((retval = rt_sem_wait_until(&mq->freslots, until)) >= RTE_LOWERR) {
 		rt_sem_signal(&mq->senders);
-                return 0;
+		return TBX_RET(0, retval);
 	}
 	return _broadcast(mq, msg, msg_size, msgpri, -(mq->received.count + mq->receivers.count), space);
 }

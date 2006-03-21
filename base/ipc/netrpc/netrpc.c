@@ -367,7 +367,7 @@ static void soft_stub_fun(struct portslot_t *portslotp)
 	task = (RT_TASK *)portslotp->task;
 	sprintf(current->comm, "SFTSTB-%d", sock);
 
-	while (soft_rt_fun_call(task, rt_sem_wait, sem) != SEM_ERR) {
+	while (soft_rt_fun_call(task, rt_sem_wait, sem) < RTE_LOWERR) {
 		wsize = soft_rt_recvfrom(sock, msg, MAX_MSG_SIZE, 0, addr, &w2size);
 		if (decode) {
 			decode(portslotp, msg, wsize, RPC_SRV);
@@ -437,7 +437,7 @@ static void hard_stub_fun(struct portslot_t *portslotp)
 	task = (RT_TASK *)portslotp->task;
 	sprintf(current->comm, "HRDSTB-%d", sock);
 
-	while (rt_sem_wait(sem) != SEM_ERR) {
+	while (rt_sem_wait(sem) < RTE_LOWERR) {
 		wsize = hard_rt_recvfrom(sock, msg, MAX_MSG_SIZE, 0, addr, &w2size);
 		if (decode) {
 			decode(portslotp, msg, wsize, RPC_SRV);
@@ -509,7 +509,7 @@ static void port_server_fun(RT_TASK *port_server)
 	addr = (struct sockaddr *)&portslot[0].addr;
 	sprintf(current->comm, "PRTSRV");
 
-while (soft_rt_fun_call(port_server, rt_sem_wait, &portslot[0].sem) != SEM_ERR) {
+while (soft_rt_fun_call(port_server, rt_sem_wait, &portslot[0].sem) < RTE_LOWERR) {
 	if ((rsize = hard_rt_recvfrom(portslot[0].socket[1], &msg, sizeof(msg), MSG_DONTWAIT, addr, &i)) <= 0) {
 		rsize = soft_rt_recvfrom(portslot[0].socket[0], &msg, sizeof(msg), 0, addr, &i);
 	}

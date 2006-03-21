@@ -42,6 +42,28 @@ MODULE_LICENSE("GPL");
 
 /* +++++++++++++++++++++++ SHORT INTERTASK MESSAGES +++++++++++++++++++++++++ */
 
+#define TASK_INVAL  ((RT_TASK *)RTE_OBJINV)
+
+#define msg_not_sent() \
+do { \
+	void *retp; \
+	if ((retp = rt_current->blocked_on) != RTP_OBJREM) { \
+		set_task_prio_from_resq(task); \
+		dequeue_blocked(rt_current); \
+		task = (void *)(CONFIG_RTAI_USE_NEWERR ? ((likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD)) : 0); \
+	} else { \
+		rt_current->prio_passed_to = NULL; \
+		task = (void *)(CONFIG_RTAI_USE_NEWERR ? RTE_OBJREM : 0); \
+	} \
+	rt_current->msg_queue.task = rt_current; \
+} while (0)
+
+#define msg_not_received() \
+do { \
+	rt_current->ret_queue.task = NOTHING; \
+	task = (void *)(CONFIG_RTAI_USE_NEWERR ? (((void *)rt_current->blocked_on != RTP_UNBLKD) ? RTE_TIMOUT : RTE_UNBLKD) : 0); \
+} while (0)
+
 /* +++++++++++++++++++++++++++++ ASYNC SENDS ++++++++++++++++++++++++++++++++ */
 
 /**
@@ -80,7 +102,7 @@ RT_TASK *rt_send(RT_TASK *task, unsigned long msg)
 	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -106,8 +128,7 @@ RT_TASK *rt_send(RT_TASK *task, unsigned long msg)
 		rt_schedule();
 	}
 	if (rt_current->msg_queue.task != rt_current) {
-		rt_current->msg_queue.task = rt_current;
-		task = (RT_TASK *)0;
+		msg_not_sent();
 	}
 	rt_global_restore_flags(flags);
 	return task;
@@ -147,7 +168,7 @@ RT_TASK *rt_send_if(RT_TASK *task, unsigned long msg)
 	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -164,10 +185,10 @@ RT_TASK *rt_send_if(RT_TASK *task, unsigned long msg)
 		}
 		if (rt_current->msg_queue.task != rt_current) {
 			rt_current->msg_queue.task = rt_current;
-			task = (RT_TASK *)0;
+			task = NULL;
 		}
 	} else {
-		task = (RT_TASK *)0;
+		task = NULL;
 	}
 	rt_global_restore_flags(flags);
 	return task;
@@ -219,7 +240,7 @@ RT_TASK *rt_send_until(RT_TASK *task, unsigned long msg, RTIME time)
 	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -250,12 +271,7 @@ RT_TASK *rt_send_until(RT_TASK *task, unsigned long msg, RTIME time)
 		}
 	}
 	if (rt_current->msg_queue.task != rt_current) {
-		if ((void *)rt_current->blocked_on > SOMETHING) {
-			dequeue_blocked(rt_current);
-		}
-		set_task_prio_from_resq(task);
-		rt_current->msg_queue.task = rt_current;
-		task = (RT_TASK *)0;
+		msg_not_sent();
 	}
 	rt_global_restore_flags(flags);
 	return task;
@@ -363,7 +379,7 @@ RT_TASK *rt_rpc(RT_TASK *task, unsigned long to_do, void *result)
 	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -392,8 +408,7 @@ RT_TASK *rt_rpc(RT_TASK *task, unsigned long to_do, void *result)
 	if (rt_current->msg_queue.task == rt_current) {
 		*(unsigned long *)result = rt_current->msg;
 	} else {
-		rt_current->msg_queue.task = rt_current;
-		task = (RT_TASK *)0;
+		msg_not_sent();
 	}
 	rt_global_restore_flags(flags);
 	return task;
@@ -445,7 +460,7 @@ RT_TASK *rt_rpc_if(RT_TASK *task, unsigned long to_do, void *result)
 	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
@@ -468,11 +483,10 @@ RT_TASK *rt_rpc_if(RT_TASK *task, unsigned long to_do, void *result)
 		if (rt_current->msg_queue.task == rt_current) {
 			*(unsigned long *)result = rt_current->msg;
 		} else {
-			rt_current->msg_queue.task = rt_current;
-			task = (RT_TASK *)0;
+			msg_not_sent();
 		}
 	} else {
-		task = (RT_TASK *)0;
+		task = NULL;
 	}
 	rt_global_restore_flags(flags);
 	return task;
@@ -523,7 +537,7 @@ RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void *result, RTIME ti
 	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -556,12 +570,7 @@ RT_TASK *rt_rpc_until(RT_TASK *task, unsigned long to_do, void *result, RTIME ti
 	if (rt_current->msg_queue.task == rt_current) {
 		*(unsigned long *)result = rt_current->msg;
 	} else {
-		if ((void *)rt_current->blocked_on > SOMETHING) {
-			dequeue_blocked(rt_current);
-		}
-		set_task_prio_from_resq(task);
-		rt_current->msg_queue.task = rt_current;
-		task = (RT_TASK *)0;
+		msg_not_sent();
 	}
 	rt_global_restore_flags(flags);
 	return task;
@@ -684,7 +693,7 @@ RT_TASK *rt_return(RT_TASK *task, unsigned long result)
 	unsigned long flags;
 
 	if (task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -707,7 +716,7 @@ RT_TASK *rt_return(RT_TASK *task, unsigned long result)
                         rt_schedule();
                 }
 	} else {
-		task = (RT_TASK *)0;
+		task = NULL;
 	}
 	rt_global_restore_flags(flags);
 	return task;
@@ -748,7 +757,7 @@ RT_TASK *rt_evdrp(RT_TASK *task, void *msg)
 	DECLARE_RT_CURRENT;
 
 	if (task && task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	ASSIGN_RT_CURRENT;
@@ -756,7 +765,7 @@ RT_TASK *rt_evdrp(RT_TASK *task, void *msg)
 	if ((task->state & (RT_SCHED_SEND | RT_SCHED_RPC)) && task->msg_queue.task == rt_current) {
 		*(unsigned long *)msg = task->msg;
 	} else {
-		task = (RT_TASK *)0;
+		task = NULL;
 	}
 	return task;
 }
@@ -803,7 +812,7 @@ RT_TASK *rt_receive(RT_TASK *task, void *msg)
 	unsigned long flags;
 
 	if (task && task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -831,7 +840,7 @@ RT_TASK *rt_receive(RT_TASK *task, void *msg)
 			task->state = (task->state & ~(RT_SCHED_RPC | RT_SCHED_DELAYED)) | RT_SCHED_RETURN;
 		}
 	} else {
-		rt_current->ret_queue.task = SOMETHING;
+		rt_current->ret_queue.task = RTP_HIGERR;
 		rt_current->state |= RT_SCHED_RECEIVE;
 		rem_ready_current(rt_current);
 		rt_current->msg_queue.task = task != rt_current ? task : (RT_TASK *)0;
@@ -839,8 +848,7 @@ RT_TASK *rt_receive(RT_TASK *task, void *msg)
 		*(unsigned long *)msg = rt_current->msg;
 	}
 	if (rt_current->ret_queue.task) {
-		rt_current->ret_queue.task = NOTHING;
-		task = (RT_TASK *)0;
+		msg_not_received();
 	} else {
 		task = rt_current->msg_queue.task;
 	}
@@ -892,7 +900,7 @@ RT_TASK *rt_receive_if(RT_TASK *task, void *msg)
 	unsigned long flags;
 
 	if (task && task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -915,13 +923,13 @@ RT_TASK *rt_receive_if(RT_TASK *task, void *msg)
 		}
 		if (rt_current->ret_queue.task) {
 			rt_current->ret_queue.task = NOTHING;
-			task = (RT_TASK *)0;
+			task = NULL;
 		} else {
 			task = rt_current->msg_queue.task;
 		}
 		rt_current->msg_queue.task = rt_current;
 	} else {
-		task = (RT_TASK *)0;
+		task = NULL;
 	}
 	rt_global_restore_flags(flags);
 	if (task && (struct proxy_t *)task->stack_bottom) {
@@ -980,7 +988,7 @@ RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time)
 	unsigned long flags;
 
 	if (task && task->magic != RT_TASK_MAGIC) {
-		return MSG_ERR;
+		return TASK_INVAL;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -1008,7 +1016,7 @@ RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time)
 			task->state = (task->state & ~(RT_SCHED_RPC | RT_SCHED_DELAYED)) | RT_SCHED_RETURN;
 		}
 	} else {
-		rt_current->ret_queue.task = SOMETHING;
+		rt_current->ret_queue.task = RTP_HIGERR;
 		if ((rt_current->resume_time = time) > rt_time_h) {
 			rt_current->state |= (RT_SCHED_RECEIVE | RT_SCHED_DELAYED);
 			rem_ready_current(rt_current);
@@ -1019,8 +1027,7 @@ RT_TASK *rt_receive_until(RT_TASK *task, void *msg, RTIME time)
 		}
 	}
 	if (rt_current->ret_queue.task) {
-		rt_current->ret_queue.task = NOTHING;
-		task = (RT_TASK *)0;
+		msg_not_received();
 	} else {
 		task = rt_current->msg_queue.task;
 	}

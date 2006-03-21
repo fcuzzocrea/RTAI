@@ -1,9 +1,28 @@
+2006-03-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: allow changing the default irq ack.
+	* base/arch/i386/Kconfig: added configuration and helper for the new 
+	  error returns of blocking functions.
+	* base/include/rtai_bits.h, rtai_msg.h, rtai_sched.h, rtai_sem.h,
+	  rtai_schedcore.h: defines and cleanups to support configuring 
+	  return errors, chosing between the legacy and new scheme.
+	* base/sched/api.c: new configurable error returns and revision of 
+	  suspend services.
+	* base/sched/sys.c: new configurable error returns and revision of 
+	  the LXRT function calls layout.
+	* base/sched/sched.c: new configurable error returns support.
+	* base/ipc/bits/bits.c base/ipc/mbx/mbx.c base/ipc/msg/msg.c
+CVS:    base/ipc/netrpc/netrpc.c base/ipc/sem/sem.c base/ipc/tbx/tbx.c
+
+
+
+
 2006-03-21  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/asm/rtai_hal.h: added declarations to support simple 
-	  acks for the 8259A PIC.
-	* base/arch/i386/hal/hal.immed: added support for simple acks for the 
-	  8259A PIC
+	* base/include-i386/asm/rtai_hal.h: added declarations to support 
+	  simple acks for the 8259A PIC.
+	* base/arch/i386/hal/hal.immed: added support for simple acks for 
+	  the 8259A PIC
 	* base/arch/i386/patches/hal-linux-2.6.15-i386-1.2-01.patch, 
 	  hal-linux-2.6.14-i386-1.1-02.patch,
 	  hal-linux-2.4.32-i386-1.1-01.patch: export i8259 spinlock.

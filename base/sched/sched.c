@@ -1055,7 +1055,7 @@ int clr_rtext(RT_TASK *task)
 			if ((q->task)->state != RT_SCHED_READY && ((q->task)->state &= ~(RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(q->task);
 			}       
-			(q->task)->blocked_on = SOMETHING;
+			(q->task)->blocked_on = RTP_OBJREM;
 		}       
                 q = &(task->ret_queue);
                 while ((q = q->next) != &(task->ret_queue)) {
@@ -1063,7 +1063,7 @@ int clr_rtext(RT_TASK *task)
                        	if ((q->task)->state != RT_SCHED_READY && ((q->task)->state &= ~(RT_SCHED_RETURN | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
 				enq_ready_task(q->task);
 			}       
-			(q->task)->blocked_on = SOMETHING;
+			(q->task)->blocked_on = RTP_OBJREM;
                	}
 		if (!((task->prev)->next = task->next)) {
 			rt_smp_linux_task[task->runnable_on_cpus].prev = task->prev;
@@ -1930,6 +1930,9 @@ static void kthread_fun(int cpuid)
 
 #define NEW_WAKE_UP_TASKs
 #ifdef NEW_WAKE_UP_TASKs
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+#define SCHED_NORMAL  SCHED_OTHER
+#endif
 #define WAKE_UP_TASKs(klist) \
 do { \
 	struct klist_t *p = &klist[cpuid]; \

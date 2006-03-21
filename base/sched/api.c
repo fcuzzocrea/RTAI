@@ -147,7 +147,7 @@ int rt_change_prio(RT_TASK *task, int priority)
 #else
 				schedmap = 1;
 #endif
-			} else if ((q = task->blocked_on) && !((task->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
+			} else if ((void *)(q = task->blocked_on) > RTP_HIGERR && !((task->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
 				(task->queue.prev)->next = task->queue.next;
 				(task->queue.next)->prev = task->queue.prev;
 				while ((q = q->next) != task->blocked_on && (q->task)->priority <= priority);
@@ -265,13 +265,25 @@ int rt_task_suspend(RT_TASK *task)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!task->owndres) {
-		if (!task->suspdepth++) {
+		if (task->suspdepth >= 0) {
+			if (!task->suspdepth) {
+				task->suspdepth++;
+			}
 			rem_ready_task(task);
 			rem_timed_task(task);
 			task->state |= RT_SCHED_SUSPENDED;
 			if (task == RT_CURRENT) {
 				rt_schedule();
+				if (unlikely(task->blocked_on)) {
+					task->suspdepth = 0;
+					rt_global_restore_flags(flags);
+					return RTE_UNBLKD;
+				}
+			} else {
+				send_sched_ipi(1 << task->runnable_on_cpus);
 			}
+		} else {
+			task->suspdepth++;
 		}
 	} else if (task->suspdepth < 0) {
 		task->suspdepth++;
@@ -312,24 +324,37 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!task->owndres) {
-		if (!task->suspdepth) {
+		if (task->suspdepth >= 0) {
 #ifdef CONFIG_SMP
 			int cpuid = rtai_cpuid();
 #endif
 			if ((task->resume_time = time) > rt_time_h) {
-				task->suspdepth++;
+				if (!task->suspdepth) {
+					task->suspdepth++;
+				}
 				rem_ready_task(task);
 				enq_timed_task(task);
 				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
-				task->blocked_on = (void *)task;
 				if (task == RT_CURRENT) {
-					rt_schedule();
-					if (task->blocked_on) {
-						task->suspdepth--;
+					while (1) {
+						rt_schedule();
+						if (unlikely(task->blocked_on)) {
+							task->suspdepth = 0;
+							rt_global_restore_flags(flags);
+							return RTE_UNBLKD;
+						}
+						if (task->suspdepth) {
+							continue;
+						}
 						rt_global_restore_flags(flags);
-						return SEM_TIMOUT;
+						return task->resume_time < rt_smp_time_h[rtai_cpuid()] ? RTE_TIMOUT : 0;
 					}
+				} else {
+					send_sched_ipi(1 << task->runnable_on_cpus);
 				}
+			} else {
+				rt_global_restore_flags(flags);
+				return RTE_TIMOUT;
 			}
 		} else {
 			task->suspdepth++;
@@ -696,15 +721,18 @@ int rt_task_wait_period(void)
 		rt_current->resume_time = oneshot_timer ? rtai_rdtsc() : rt_times.tick_time;
 #endif
 	} else if ((rt_current->resume_time += rt_current->period) > rt_time_h) {
+		void *blocked_on;
+		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		blocked_on = rt_current->blocked_on;
 		rt_global_restore_flags(flags);
-		return 0;
+		return likely(!blocked_on) ? 0 : RTE_UNBLKD;
 	}
 	rt_global_restore_flags(flags);
-	return 1;
+	return RTE_TMROVRN;
 }
 
 void rt_task_set_resume_end_times(RTIME resume, RTIME end)
@@ -838,15 +866,18 @@ int rt_sleep(RTIME delay)
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((rt_current->resume_time = get_time() + delay) > rt_time_h) {
+		void *blocked_on;
+		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		blocked_on = rt_current->blocked_on;
 		rt_global_restore_flags(flags);
-		return 0;
+		return likely(!blocked_on) ? 0 : RTE_UNBLKD;
 	}
 	rt_global_restore_flags(flags);
-	return 1;
+	return RTE_TMROVRN;
 }
 
 /**
@@ -872,15 +903,18 @@ int rt_sleep_until(RTIME time)
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((rt_current->resume_time = time) > rt_time_h) {
+		void *blocked_on;
+		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		blocked_on = rt_current->blocked_on;
 		rt_global_restore_flags(flags);
-		return 0;
+		return likely(!blocked_on) ? 0 : RTE_UNBLKD;
 	}
 	rt_global_restore_flags(flags);
-	return 1;
+	return RTE_TMROVRN;
 }
 
 int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
@@ -896,22 +930,12 @@ int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 		if (mask & RT_SCHED_DELAYED) {
 			rem_timed_task(task);
 		}
-		if (task->blocked_on && (mask & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN))) {
-			(task->queue.prev)->next = task->queue.next;
-			(task->queue.next)->prev = task->queue.prev;
-			if (task->state & RT_SCHED_SEMAPHORE) {
-				SEM *sem = (SEM *)task->blocked_on;
-				if (++sem->count > 1 && sem->type) {
-					sem->count = 1;
-				}
-			}
-		}
 		if (task->state != RT_SCHED_READY && (task->state &= ~mask) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
 		}
 		rt_global_restore_flags(flags);
-		return task->unblocked = 1;
+		return (int)((unsigned long)(task->blocked_on = RTP_UNBLKD));
 	}
 	return 0;
 }
@@ -1868,7 +1892,7 @@ RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
 		enqueue_blocked(task, &rt_current->ret_queue, 1);
 		task->state = (task->state & ~RT_SCHED_RPC) | RT_SCHED_RETURN;
 	} else {
-		rt_current->ret_queue.task = SOMETHING;
+		rt_current->ret_queue.task = RTP_OBJREM;
 		rt_current->state |= RT_SCHED_RECEIVE;
 		rem_ready_current(rt_current);
 		rt_current->msg_queue.task = task != rt_current ? task : NULL;

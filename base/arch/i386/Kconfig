@@ -651,17 +651,17 @@ endmenu
 
 menu "Other features"
 
-config RTAI_NEW_RETERR
-	bool "New values for error returns of blocking RTAI APIs"
+config RTAI_USE_NEWERR
+	bool "New return values of blocking RTAI APIs"
 	default n
 	help
-	RTAI error returns for its blocking APIs are a bit sketchy. That 
+	Return values for RTAI blocking APIs are a bit sketchy. That 
 	is due to a long standing legacy dating back to DOS and 8 bits PCs,
 	when saving a few "if"s might have been important. Whatever one's 
-	opinion such a legacy has now been likley inheredited by many well
-	working existing RTAI applications, that might go broken with a new 
+	opinion such a legacy has now been likely inheredited by many well
+	working existing RTAI applications, that might break with a new 
 	error return scheme. In any case a better set of error return values 
-	might be useful nowdays, so it has been added. With it one will be
+	might be useful nowadays, so it has been added. With it one will be
 	able to correctly infer more detailed reasons for error returns i.e.:
 	- invalid requests,
 	- async unblocking,

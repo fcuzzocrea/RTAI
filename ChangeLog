@@ -27,7 +27,7 @@
 
 2006-03-20  Jan Kiszka  <kiszka@rts.uni-hannover.de>
 
-	* addons/rtdm/drvlib.c: fixed incongrencies in sleep and sleep_until
+	* addons/rtdm/drvlib.c: fixed incongruencies in sleep and sleep_until
 	  services.
 
 2006-03-17  Albert Veli A <Albert.Veli@afconsult.com>

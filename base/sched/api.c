@@ -246,8 +246,10 @@ void rt_task_yield(void)
  *
  * @param task pointer to a task structure.
  *
- * @return 0 on success. A negative value on failure as described below:
- * - @b EINVAL: task does not refer to a valid task.
+ * @return the task suspend depth. An abnormal termination returns as 
+ * described below:
+ * - @b -EINVAL: task does not refer to a valid task.
+ * - @b RTE_UNBLKD:  the task was unblocked while suspended;
  *
  * @note the new RTAI 24.1.xx (FIXME) development releases take into
  * account multiple suspend and require as many @ref rt_task_resume()
@@ -703,6 +705,12 @@ int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
  * been previously marked for a periodic execution by calling
  * @ref rt_task_make_periodic() or @ref rt_task_make_periodic_relative_ns().
  *
+ * @return 0 if the period expires as expected. An abnormal termination 
+ * returns as described below:
+ * - @b RTE_UNBLKD:  the task was unblocked while sleeping;
+ * - @b RTE_TMROVRN: an immediate return was taken because the next period
+ *   has already expired.
+ *
  * @note The task is suspended only temporarily, i.e. it simply gives
  * up control until the next time period.
  */
@@ -855,6 +863,12 @@ void rt_busy_sleep(int ns)
  *
  * See also: @ref rt_busy_sleep(), @ref rt_sleep_until().
  *
+ * @return 0 if the delay expires as expected. An abnormal termination returns
+ *  as described below:
+ * - @b RTE_UNBLKD:  the task was unblocked while sleeping;
+ * - @b RTE_TMROVRN: an immediate return was taken because the delay is too
+ *   short to be honoured.
+ *
  * @note A higher priority task or interrupt handler can run before
  *	 the task goes to sleep, so the actual time spent in these
  *	 functions may be longer than the the one specified.
@@ -891,6 +905,12 @@ int rt_sleep(RTIME delay)
  * @param time Absolute time till the task have to be suspended
  *
  * See also: @ref rt_busy_sleep(), @ref rt_sleep_until().
+ *
+ * @return 0 if the sleeping expires as expected. An abnormal termination 
+ * returns as described below:
+ * - @b RTE_UNBLKD:  the task was unblocked while sleeping;
+ * - @b RTE_TMROVRN: an immediate return was taken because the time deadline
+ *   has already expired.
  *
  * @note A higher priority task or interrupt handler can run before
  *	 the task goes to sleep, so the actual time spent in these

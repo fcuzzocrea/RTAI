@@ -663,11 +663,11 @@ config RTAI_USE_NEWERR
 	error return scheme. In any case a better set of error return values 
 	might be useful nowadays, so it has been added. With it one will be
 	able to correctly infer more detailed reasons for error returns i.e.:
-	- invalid requests,
-	- async unblocking,
-	- timeouts,
-	- timer overruns,
-	- deletion of blocking objects.
+	- invalid requests (RTE_OBJINV),
+	- async unblocking (RTE_UNBLKD),
+	- timeouts (RTE_TIMOUT),
+	- timer overruns (RTE_TMROVRN),
+	- deletion of blocking objects (RTE_OBJREM).
 	Thus the new scheme has been made configurable to allow RTAI users
 	to choose what to do, without forcing any adaption for already 
 	existing working applications.

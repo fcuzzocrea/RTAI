@@ -24,6 +24,7 @@
 #ifdef __KERNEL__
 
 #include <asm/atomic.h>
+#undef atomic_xchg /* they might have decided to use one of our names */
 #undef atomic_cmpxchg /* they might have decided to use one of our names */
 
 #include <asm/system.h>
@@ -49,6 +50,7 @@ typedef struct { volatile unsigned long val; } rtai_atomic_t;
 #endif /* !likely */
 
 #include <asm/atomic.h>
+#undef atomic_xchg /* they might have decided to use one of our names */
 #undef atomic_cmpxchg /* they might have decided to use one of our names */
 
 struct __rtai_xchg_dummy { unsigned long a[100]; };

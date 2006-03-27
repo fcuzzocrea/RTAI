@@ -332,12 +332,19 @@ extern "C" {
 
 RTAI_PROTO(struct rt_tasklet_struct *, rt_init_tasklet,(void))
 {
+	int is_hard;
 	struct { struct rt_tasklet_struct *tasklet; long thread; } arg;
 
 	arg.tasklet = (struct rt_tasklet_struct*)rtai_lxrt(TSKIDX, SIZARG, INIT, &arg).v[LOW];
+	if ((is_hard = rt_is_hard_real_time(NULL))) {
+		rt_make_soft_real_time();
+	}
 	arg.thread = rt_thread_create((void *)support_tasklet, arg.tasklet, TASKLET_STACK_SIZE);
 //	arg.thread = clone(support_tasklet, sp + TASKLET_STACK_SIZE - 1, CLONE_VM | CLONE_FS | CLONE_FILES, arg.tasklet);
 	rtai_lxrt(TSKIDX, SIZARG, WAIT_IS_HARD, &arg);
+	if (is_hard) {
+		rt_make_hard_real_time();
+	}
 
 	return arg.tasklet;
 }

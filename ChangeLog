@@ -1,3 +1,10 @@
+2006-03-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklet.h: care of forcing to soft a hard task
+	  initting a tasklet/timer.
+	* base/sched/sys.c: allow NULL for checking soft/hard real time mode
+	  of the current task.
+
 2006-03-20  Jan Kiszka  <kiszka@rts.uni-hannover.de>
 	
 	* addons/rtdm/drvlib.c: fixed incongrencies in sleep and sleep_until

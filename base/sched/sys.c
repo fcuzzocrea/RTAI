@@ -525,7 +525,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
                 }
 
 		case IS_HARD: {
-			return arg0.rt_task->is_hard;
+			return arg0.rt_task || (arg0.rt_task = current->rtai_tskext(TSKEXT0)) ? arg0.rt_task->is_hard : 0;
 		}
 		case GET_EXECTIME: {
 			struct arg { RT_TASK *task; RTIME *exectime; };

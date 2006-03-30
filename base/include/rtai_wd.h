@@ -55,6 +55,18 @@ typedef struct bad_rt_task {
     struct bad_rt_task	*next;		// Next in list
 } BAD_RT_TASK;
 
+#define WD_INDX          3
+
+#define WD_SET_GRACE     1
+#define WD_SET_GRACEDIV  2 
+#define WD_SET_SAFETY    3 
+#define WD_SET_POLICY    4
+#define WD_SET_SLIP      5
+#define WD_SET_STRETCH   6
+#define WD_SET_LIMIT     7 
+
+#ifdef __KERNEL__
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -81,5 +93,60 @@ int rt_wdset_safety(int new_value);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
+
+#else /* !__KERNEL__ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+// API for setting parameters
+static inline int rt_wdset_grace(int new_value)
+{
+	struct { long new_value; } arg = { new_value };
+	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_GRACE, &arg).i[LOW];
+}
+
+static inline int rt_wdset_gracediv(int new_value)
+{
+	struct { long new_value; } arg = { new_value };
+	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_GRACEDIV, &arg).i[LOW];
+}
+
+static inline wd_policy rt_wdset_policy(wd_policy new_value)
+{
+	struct { long new_value; } arg = { new_value };
+	return (wd_policy)rtai_lxrt(WD_INDX, SIZARG, WD_SET_POLICY, &arg).i[LOW];
+}
+
+static inline int rt_wdset_slip(int new_value)
+{
+	struct { long new_value; } arg = { new_value };
+	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_SLIP, &arg).i[LOW];
+}
+
+static inline int rt_wdset_stretch(int new_value)
+{
+	struct { long new_value; } arg = { new_value };
+	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_STRETCH, &arg).i[LOW];
+}
+
+static inline int rt_wdset_limit(int new_value)
+{
+	struct { long new_value; } arg = { new_value };
+	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_LIMIT, &arg).i[LOW];
+}
+
+static inline int rt_wdset_safety(int new_value)
+{
+	struct { long new_value; } arg = { new_value };
+	return rtai_lxrt(WD_INDX, SIZARG, WD_SET_SAFETY, &arg).i[LOW];
+}
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+
+#endif /* __KERNEL__ */
 
 #endif /* !_RTAI_WD_H */

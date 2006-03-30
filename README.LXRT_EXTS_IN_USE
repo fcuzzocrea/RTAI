@@ -8,6 +8,7 @@ Those already used by modules found in this distributions are:
 0  - RTAI itself (hardwired),
 1  - tasklets    (hardwired),
 2  - signals     (hardwired),
+3  - watchdog    (hardwired),
 9  - comedi,
 10 - fifos,
 14 - serial,

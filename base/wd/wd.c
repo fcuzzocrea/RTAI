@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.4 2005/12/29 01:12:45 ando Exp $
+ * ID: @(#)$Id: wd.c,v 1.5 2006/03/30 13:00:57 mante Exp $
  *
  *******************************************************************************/
 
@@ -137,7 +137,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.4 $";
+static char version[] = "$Revision: 1.5 $";
 static char ver[10];
 
 // User friendly policy names
@@ -661,6 +661,22 @@ static int wdog_read_proc(char *page, char **start, off_t off, int count,
 }
 #endif
 
+// ------------------------ WATCHDOG ENTRIES TABLE -----------------------------
+
+#include <rtai_lxrt.h>
+
+static struct rt_fun_entry rt_watchdog_fun[]  __attribute__ ((__unused__));
+
+static struct rt_fun_entry rt_watchdog_fun[] = {
+        [WD_SET_GRACE]	  = { 0, rt_wdset_grace },
+        [WD_SET_GRACEDIV] = { 0, rt_wdset_gracediv },
+        [WD_SET_SAFETY]   = { 0, rt_wdset_safety },
+        [WD_SET_POLICY]   = { 0, rt_wdset_policy },
+        [WD_SET_SLIP]     = { 0, rt_wdset_slip },
+        [WD_SET_STRETCH]  = { 0, rt_wdset_stretch },
+        [WD_SET_LIMIT]    = { 0, rt_wdset_limit }
+};
+
 // ----------------------------- MODULE CONTROL --------------------------------
 int __rtai_wd_init(void)
 {
@@ -670,6 +686,10 @@ int __rtai_wd_init(void)
     struct apic_timer_setup_data apic_data[NR_RT_CPUS];
     char	*c;
 
+    if(set_rt_fun_ext_index(rt_watchdog_fun, WD_INDX)) {
+	printk("Recompile your module with a different index\n");
+	return -EACCES;
+    }
     // Some parameters have to be forced
     if (Policy <= WD_STRETCH) Grace  = GraceDiv = 1;
     if (Policy == WD_DEBUG)   Safety = Limit = -1;
@@ -802,6 +822,8 @@ void __rtai_wd_exit(void)
 	    }
 	}
     }
+
+    reset_rt_fun_ext_index(rt_watchdog_fun, WD_INDX);
 
     // It's all over :(
     WDLOG("unloaded.\n");

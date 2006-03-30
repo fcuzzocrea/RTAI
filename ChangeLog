@@ -1,3 +1,9 @@
+2006-03-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_wd.h: added user space extension declarations.
+	* base/wd/wd.c: added entries table for user space.
+	* README.LXRT_EXT_IN_USE: added info about the watchdog extension.
+
 2006-03-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_tasklet.h: care of forcing to soft a hard task

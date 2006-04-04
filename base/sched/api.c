@@ -271,10 +271,9 @@ int rt_task_suspend(RT_TASK *task)
 			if (!task->suspdepth) {
 				task->suspdepth++;
 			}
-			rem_ready_task(task);
-			rem_timed_task(task);
-			task->state |= RT_SCHED_SUSPENDED;
 			if (task == RT_CURRENT) {
+				rem_ready_current(task);
+				task->state |= RT_SCHED_SUSPENDED;
 				rt_schedule();
 				if (unlikely(task->blocked_on)) {
 					task->suspdepth = 0;
@@ -282,7 +281,12 @@ int rt_task_suspend(RT_TASK *task)
 					return RTE_UNBLKD;
 				}
 			} else {
-				send_sched_ipi(1 << task->runnable_on_cpus);
+				rem_ready_task(task);
+				rem_timed_task(task);
+				task->state |= RT_SCHED_SUSPENDED;
+				if (task->runnable_on_cpus != rtai_cpuid()) {
+					send_sched_ipi(1 << task->runnable_on_cpus);
+				}
 			}
 		} else {
 			task->suspdepth++;
@@ -334,10 +338,10 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 				if (!task->suspdepth) {
 					task->suspdepth++;
 				}
-				rem_ready_task(task);
-				enq_timed_task(task);
-				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
 				if (task == RT_CURRENT) {
+					rem_ready_current(task);
+					enq_timed_task(task);
+					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
 					while (1) {
 						rt_schedule();
 						if (unlikely(task->blocked_on)) {
@@ -352,7 +356,12 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 						return task->resume_time < rt_smp_time_h[rtai_cpuid()] ? RTE_TIMOUT : 0;
 					}
 				} else {
-					send_sched_ipi(1 << task->runnable_on_cpus);
+					rem_ready_task(task);
+					enq_timed_task(task);
+					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+					if (task->runnable_on_cpus != rtai_cpuid()) {
+						send_sched_ipi(1 << task->runnable_on_cpus);
+					}
 				}
 			} else {
 				rt_global_restore_flags(flags);

@@ -332,7 +332,7 @@ static inline int rt_dev_close_forced(int fd)
 
 static inline int rt_dev_ioctl(int fd, int request, ...)
 {
-        struct { long fd; long request; void *arg; } arg = { fd, request };
+        struct { long fd; long request; void *arg; } arg = { fd, request, NULL };
 	va_list ap;
 	va_start(ap, request);
 	arg.arg = va_arg(ap, void *);
@@ -369,7 +369,7 @@ static inline ssize_t rt_dev_sendmsg(int fd, const struct msghdr *msg, int flags
 static inline ssize_t rt_dev_recvfrom(int fd, void *buf, size_t len, int flags, struct sockaddr *from, socklen_t *fromlen)
 {
 	struct iovec iov = { buf, len };
-	struct msghdr msg = { from, from && fromlen ? *fromlen : 0, &iov, 1, NULL, 0 };
+	struct msghdr msg = { from, from && fromlen ? *fromlen : 0, &iov, 1, NULL, 0, 0 };
 	int ret;
 
 	if ((ret = rt_dev_recvmsg(fd, &msg, flags)) >= 0 && from && fromlen) {
@@ -400,7 +400,7 @@ static inline ssize_t rt_dev_sendto(int fd, const void *buf, size_t len,
 {
     struct iovec    iov = {(void *)buf, len};
     struct msghdr   msg =
-        {(struct sockaddr *)to, tolen, &iov, 1, NULL, 0};
+        {(struct sockaddr *)to, tolen, &iov, 1, NULL, 0, 0 };
 
     return rt_dev_sendmsg(fd, &msg, flags);
 }

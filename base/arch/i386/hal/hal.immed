@@ -1469,8 +1469,8 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 
 	CHECK_KERCTX();
 
-	HAL_LOCK_LINUX();
 	if (rtai_realtime_irq[irq = regs.orig_eax & 0xFF].handler) {
+		HAL_LOCK_LINUX();
 		rtai_realtime_irq[irq].irq_ack(irq); mb();
 //		hal_root_domain->irqs[irq].acknowledge(irq); mb();
 		RTAI_SCHED_ISR_LOCK();
@@ -1487,10 +1487,11 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 			}
 		}
 	} else {
+		lflags = xchg(ipipe_status[cpuid = rtai_cpuid()], (1 << IPIPE_STALL_FLAG));
 		rtai_realtime_irq[irq].irq_ack(irq); mb();
 //		hal_root_domain->irqs[irq].acknowledge(irq); mb();
 		hal_pend_uncond(irq, cpuid);
-		HAL_UNLOCK_LINUX();
+		*ipipe_status[cpuid] = lflags;
 		if (test_bit(IPIPE_STALL_FLAG, &lflags)) {
 			return 0;
 		}

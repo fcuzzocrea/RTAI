@@ -605,7 +605,7 @@ do { \
 #define LOCK_LINUX(cpuid)    do { rt_switch_to_real_time(cpuid); } while (0)
 #define UNLOCK_LINUX(cpuid)  do { rt_switch_to_linux(cpuid);     } while (0)
 
-#if 0 //def LOCKED_LINUX_IN_IRQ_HANDLER
+#ifdef LOCKED_LINUX_IN_IRQ_HANDLER
 #define LOCK_LINUX_IN_IRQ(cpuid)
 #define UNLOCK_LINUX_IN_IRQ(cpuid)
 #else

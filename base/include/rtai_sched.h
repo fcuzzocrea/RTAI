@@ -45,6 +45,7 @@
 #define RT_SCHED_RETURN     128
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
+#define RT_SCHED_SELFSUSP  1024
 
 #define RT_RWLINV   (6)
 #define RT_OBJINV   (5)

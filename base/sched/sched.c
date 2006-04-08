@@ -605,12 +605,26 @@ do { \
 #define LOCK_LINUX(cpuid)    do { rt_switch_to_real_time(cpuid); } while (0)
 #define UNLOCK_LINUX(cpuid)  do { rt_switch_to_linux(cpuid);     } while (0)
 
+#define SELF_SUSP() \
+	if (rt_current->state & RT_SCHED_SELFSUSP) { \
+		rt_current->state &= ~RT_SCHED_SELFSUSP; \
+		rem_ready_current(rt_current); \
+		rt_schedule(); \
+	} \
+
 #ifdef LOCKED_LINUX_IN_IRQ_HANDLER
 #define LOCK_LINUX_IN_IRQ(cpuid)
 #define UNLOCK_LINUX_IN_IRQ(cpuid)
+#define SELF_SUSP_IN_IRQ() \
+	do { \
+		UNLOCK_LINUX(cpuid); \
+		SELF_SUSP(); \
+		LOCK_LINUX(cpuid); \
+	} while (0)
 #else
 #define LOCK_LINUX_IN_IRQ(cpuid)    LOCK_LINUX(cpuid)    
 #define UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
+#define SELF_SUSP_IN_IRQ  SELF_SUSP
 #endif
 
 #if CONFIG_RTAI_MONITOR_EXECTIME
@@ -813,6 +827,7 @@ static void rt_schedule_on_schedule_ipi(void)
 	}
 sched_exit:
 	rtai_cli();
+	SELF_SUSP_IN_IRQ();
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
 		rt_current->trap_handler_data = 0;
@@ -924,6 +939,7 @@ sched_soft:
 sched_exit:
 	rtai_cli();
 	sched_get_global_lock(cpuid);
+	SELF_SUSP();
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
 		rt_current->trap_handler_data = 0;
@@ -1210,6 +1226,7 @@ static void rt_timer_handler(void)
         }
 sched_exit:
 	rtai_cli();
+	SELF_SUSP_IN_IRQ();
 }
 
 
@@ -3067,6 +3084,7 @@ static int __rtai_lxrt_init(void)
 #endif
 
 	retval = rtai_init_features(); /* see rtai_schedcore.h */
+
 exit:
 	return retval;
 free_sched_ipi:

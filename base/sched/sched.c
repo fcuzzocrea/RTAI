@@ -818,6 +818,9 @@ static void rt_schedule_on_schedule_ipi(void)
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
+			if (rt_current->signal) {
+				rt_current->signal();
+			}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (lnxtsk_uses_fpu(prev)) {
@@ -910,6 +913,9 @@ void rt_schedule(void)
 			}
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
+			if (rt_current->signal) {
+				rt_current->signal();
+			}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX(cpuid);
 				if (rt_current->state != RT_SCHED_READY) {
@@ -1217,6 +1223,9 @@ static void rt_timer_handler(void)
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
+			if (rt_current->signal) {
+				rt_current->signal();
+			}
 			if (!rt_current->is_hard) {
 				UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (lnxtsk_uses_fpu(prev)) {

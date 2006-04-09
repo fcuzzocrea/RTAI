@@ -179,7 +179,7 @@ struct rt_times rt_smp_times[RTAI_NR_CPUS];
 
 struct rtai_switch_data rtai_linux_context[RTAI_NR_CPUS];
 
-static unsigned long *ipipe_status[RTAI_NR_CPUS];
+volatile unsigned long *ipipe_status[RTAI_NR_CPUS];
 
 struct calibration_data rtai_tunables;
 
@@ -2334,9 +2334,11 @@ EXPORT_SYMBOL(rtai_catch_event);
 EXPORT_SYMBOL(rtai_lxrt_dispatcher);
 EXPORT_SYMBOL(rt_scheduling);
 EXPORT_SYMBOL(hal_pended);
+EXPORT_SYMBOL(ipipe_status);
+
 #ifdef CONFIG_SMP
 EXPORT_SYMBOL(rt_set_sched_ipi_gate);
 EXPORT_SYMBOL(rt_reset_sched_ipi_gate);
-
 #endif
+
 /*@}*/

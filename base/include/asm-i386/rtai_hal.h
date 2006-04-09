@@ -282,6 +282,8 @@ do { \
 	} \
 } while (0)
 
+extern volatile unsigned long *ipipe_status[];
+
 #ifdef RTAI_TRIOSS
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
@@ -293,7 +295,7 @@ do { \
 #else
 #define hal_test_and_fast_flush_pipeline(cpuid) \
 do { \
-       	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) { \
+       	if (!test_bit(IPIPE_STALL_FLAG, ipipe_status[cpuid])) { \
 		hal_fast_flush_pipeline(cpuid); \
 		rtai_sti(); \
 	} \
@@ -637,7 +639,7 @@ static inline void rt_switch_to_real_time_notskpri(int cpuid)
 		rtai_linux_context[cpuid].oldflags = xchg(&DOMAIN_TO_STALL->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 		rtai_linux_context[cpuid].oldomain = hal_current_domain[cpuid];
 #else
-		rtai_linux_context[cpuid].oldflags = xchg(&hal_root_domain->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
+		rtai_linux_context[cpuid].oldflags = xchg(ipipe_status[cpuid], (1 << IPIPE_STALL_FLAG));
 #endif
 		hal_current_domain[cpuid] = &rtai_domain;
 //		test_and_set_bit(cpuid, &rtai_cpu_realtime);
@@ -655,7 +657,7 @@ static inline void rt_switch_to_linux_notskpri(int cpuid)
 			DOMAIN_TO_STALL->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 #else
 			hal_current_domain[cpuid] = hal_root_domain;
-			hal_root_domain->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
+			*ipipe_status[cpuid] = rtai_linux_context[cpuid].oldflags;
 #endif
 		}
 		return;

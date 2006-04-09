@@ -48,6 +48,14 @@
  *
  * @return The system time in nanoseconds is returned
  *
+ * @note The resolution of this service depends on the system timer. In
+ * particular, if the system timer is running in periodic mode, the return
+ * value will be limited to multiples of the timer tick period.
+ *
+ * @note The system timer may have to be started to obtain valid results.
+ * Wether this happens automatically (as on Xenomai) or is controlled by the
+ * application depends on the RTDM host environment.
+ *
  * Environments:
  *
  * This service can be called from:
@@ -1141,9 +1149,9 @@ static int rtdm_mmap_buffer(struct file *filp, struct vm_area_struct *vma)
     vma->vm_ops = mmap_data->vm_ops;
     vma->vm_private_data = mmap_data->vm_private_data;
 
-    return xnarch_remap_page_range(vma, vma->vm_start,
-                                   virt_to_phys(mmap_data->src_addr),
-                                   vma->vm_end - vma->vm_start, PAGE_SHARED);
+    return xnarch_remap_io_page_range(vma, vma->vm_start,
+                                      virt_to_phys(mmap_data->src_addr),
+                                      vma->vm_end - vma->vm_start, PAGE_SHARED);
 }
 
 static struct file_operations rtdm_mmap_fops = {

@@ -22,6 +22,7 @@
 #ifdef CONFIG_PROC_FS
 
 #include <linux/proc_fs.h>
+
 #include <rtdm/core.h>
 #include <rtdm/device.h>
 
@@ -126,9 +127,6 @@ static int proc_read_open_fildes(char* buf, char** start, off_t offset,
     RTDM_PROC_PRINT_VARS(80);
 
 
-    if (down_interruptible(&nrt_dev_lock))
-        return -ERESTARTSYS;
-
     if (!RTDM_PROC_PRINT("Index\tLocked\tDevice\n"))
         goto done;
 
@@ -153,8 +151,6 @@ static int proc_read_open_fildes(char* buf, char** start, off_t offset,
     }
 
   done:
-    up(&nrt_dev_lock);
-
     RTDM_PROC_PRINT_DONE;
 }
 
@@ -194,13 +190,8 @@ static int proc_read_fildes(char* buf, char** start, off_t offset,
     RTDM_PROC_PRINT_VARS(80);
 
 
-    if (down_interruptible(&nrt_dev_lock))
-        return -ERESTARTSYS;
-
     RTDM_PROC_PRINT("total:\t%d\nopen:\t%d\nfree:\t%d\n", fd_count,
                     open_fildes, fd_count - open_fildes);
-
-    up(&nrt_dev_lock);
 
     RTDM_PROC_PRINT_DONE;
 }
@@ -212,9 +203,6 @@ static int proc_read_dev_info(char* buf, char** start, off_t offset,
     struct rtdm_device  *device = data;
     RTDM_PROC_PRINT_VARS(256);
 
-
-    if (down_interruptible(&nrt_dev_lock))
-        return -ERESTARTSYS;
 
     if (!RTDM_PROC_PRINT("driver:\t\t%s\nversion:\t%d.%d.%d\n",
                          device->driver_name,
@@ -240,8 +228,6 @@ static int proc_read_dev_info(char* buf, char** start, off_t offset,
                     atomic_read(&device->reserved.refcount));
 
   done:
-    up(&nrt_dev_lock);
-
     RTDM_PROC_PRINT_DONE;
 }
 

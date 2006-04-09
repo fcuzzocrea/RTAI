@@ -130,52 +130,116 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 
 // interrupt setup/management
 
-struct xnintr_struct {
-	unsigned long irq; int (*isr)(void *); void *iack; unsigned long hits; void *cookie; 
-};
+#define XN_ISR_NONE   	 0x1
+#define XN_ISR_HANDLED	 0x2
 
-typedef struct xnintr_struct xnintr_t;
+#define XN_ISR_PROPAGATE 0x100
+#define XN_ISR_NOENABLE  0x200
+#define XN_ISR_BITMASK	 ~0xff
 
-#define xnflags_t long
+#define XN_ISR_SHARED	 0x1
+#define XN_ISR_EDGE	 0x2
 
-extern int xnintr_irq_handler(unsigned long irq, xnintr_t *intr);
+#define XN_ISR_ATTACHED	 0x10000
 
-static inline int xnintr_init(xnintr_t *intr, unsigned long irq, void *isr, void *iack, xnflags_t flags)
+struct xnintr;
+
+typedef int (*xnisr_t)(struct xnintr *intr);
+
+typedef int (*xniack_t)(unsigned irq);
+
+typedef long xnflags_t;
+
+typedef struct xnintr {
+    struct xnintr *next;
+    xnisr_t isr;
+    void *cookie;
+    unsigned long hits;
+    xnflags_t flags;
+    unsigned irq;
+    xniack_t iack;
+    const char *name;
+} xnintr_t;
+
+int xnintr_shirq_attach(xnintr_t *intr, void *cookie);
+int xnintr_shirq_detach(xnintr_t *intr);
+
+static inline int xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)
 {
-	*intr = (xnintr_t){ irq, isr, iack, 0, NULL };
+	*intr = (xnintr_t) { NULL, isr, NULL, 0, flags, irq, iack, name };
 	return 0;
 }
 
-static inline int xnintr_attach(xnintr_t *intr, void *cookie)
+static inline int xnintr_attach (xnintr_t *intr, void *cookie)
 {
-	intr->hits   = 0;
+	intr->hits = 0;
 	intr->cookie = cookie;
-	return rt_request_irq(intr->irq, (void *)xnintr_irq_handler, intr, 0);
+	return xnintr_shirq_attach(intr, cookie);
 }
 
-static inline int xnintr_detach(xnintr_t *intr)
+static inline int xnintr_detach (xnintr_t *intr)
 {
-	xnprintf("INFO > IRQ: %lu, INTRCNT: %lu\n", intr->irq, intr->hits);
-	return rt_release_irq(intr->irq);
+	return xnintr_shirq_detach(intr);
 }
 
-static inline int xnintr_enable(xnintr_t *intr)
+static inline int xnintr_destroy (xnintr_t *intr)
+{
+	xnintr_detach(intr);
+	return 0;
+}
+
+static int xnintr_enable (xnintr_t *intr)
 {
 	rt_enable_irq(intr->irq);
 	return 0;
 }
 
-static inline int xnintr_disable(xnintr_t *intr)
+static int xnintr_disable (xnintr_t *intr)
 {
 	rt_disable_irq(intr->irq);
 	return 0;
 }
 
-static inline int xnintr_destroy(xnintr_t *intr)
+#ifdef CONFIG_SMP
+
+typedef struct xnintr_shirq {
+	xnintr_t *handlers;
+	atomic_t active;
+} xnintr_shirq_t;
+
+static inline void xnintr_shirq_lock(xnintr_shirq_t *shirq)
 {
-	return xnintr_detach(intr);
+    atomic_inc(&shirq->active);
 }
 
-#define testbits(var, mask)  ((var) & (mask))
+static inline void xnintr_shirq_unlock(xnintr_shirq_t *shirq)
+{
+    atomic_dec(&shirq->active);
+}
+
+static inline void xnintr_shirq_spin(xnintr_shirq_t *shirq)
+{
+	while (atomic_read(&shirq->active)) {
+		cpu_relax();
+	}
+}
+
+#else /* !CONFIG_SMP */
+
+typedef struct xnintr_shirq {
+	xnintr_t *handlers;
+} xnintr_shirq_t;
+
+static inline void xnintr_shirq_lock(xnintr_shirq_t *shirq)   { }
+
+static inline void xnintr_shirq_unlock(xnintr_shirq_t *shirq) { }
+
+static inline void xnintr_shirq_spin(xnintr_shirq_t *shirq)   { }
+
+#endif /* CONFIG_SMP */
+
+#define testbits(flags, mask)  ((flags) & (mask))
+#define setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
+#define clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)
 
 #endif /* !_RTAI_XNSTUFF_H */

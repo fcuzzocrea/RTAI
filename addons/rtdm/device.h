@@ -20,9 +20,8 @@
 #ifndef _RTDM_DEVICE_H
 #define _RTDM_DEVICE_H
 
-#include <linux/sem.h>
-
 #include <rtdm/rtdm_driver.h>
+#include <linux/sem.h>
 
 
 #define DEF_DEVNAME_HASHTAB_SIZE    256 /* entries in name hash table */

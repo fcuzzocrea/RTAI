@@ -152,17 +152,17 @@ static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigne
 
 // interrupt setup/management (adopted_&|_adapted from RTDM pet system)
 
-#define XN_ISR_NONE   	 0x1
-#define XN_ISR_HANDLED	 0x2
+#define XN_ISR_NONE       0x1
+#define XN_ISR_HANDLED    0x2
 
-#define XN_ISR_PROPAGATE 0x100
-#define XN_ISR_NOENABLE  0x200
-#define XN_ISR_BITMASK	 ~0xff
+#define XN_ISR_PROPAGATE  0x100
+#define XN_ISR_NOENABLE   0x200
+#define XN_ISR_BITMASK    ~0xff
 
-#define XN_ISR_SHARED	 0x1
-#define XN_ISR_EDGE	 0x2
+#define XN_ISR_SHARED     0x1
+#define XN_ISR_EDGE       0x2
 
-#define XN_ISR_ATTACHED	 0x10000
+#define XN_ISR_ATTACHED   0x10000
 
 struct xnintr;
 
@@ -170,7 +170,7 @@ typedef int (*xnisr_t)(struct xnintr *intr);
 
 typedef int (*xniack_t)(unsigned irq);
 
-typedef long xnflags_t;
+typedef unsigned long xnflags_t;
 
 typedef struct xnintr {
     struct xnintr *next;

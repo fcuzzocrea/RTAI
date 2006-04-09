@@ -147,7 +147,7 @@ static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigne
 	return remap_page_range(vma, from, to, size, prot);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
 
-#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0) */
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 }
 
 // interrupt setup/management (adopted_&|_adapted from RTDM pet system)

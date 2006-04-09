@@ -186,10 +186,9 @@ typedef struct xnintr {
 int xnintr_shirq_attach(xnintr_t *intr, void *cookie);
 int xnintr_shirq_detach(xnintr_t *intr);
 
-static inline int xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)
+static inline void xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)
 {
 	*intr = (xnintr_t) { NULL, isr, NULL, 0, flags, irq, iack, name };
-	return 0;
 }
 
 static inline int xnintr_attach (xnintr_t *intr, void *cookie)
@@ -206,8 +205,7 @@ static inline int xnintr_detach (xnintr_t *intr)
 
 static inline int xnintr_destroy (xnintr_t *intr)
 {
-	xnintr_detach(intr);
-	return 0;
+	return xnintr_detach(intr);
 }
 
 static int xnintr_enable (xnintr_t *intr)
@@ -236,11 +234,7 @@ typedef struct xnintr_shirq {
 	do { atomic_dec(&shirq->active); } while (0)
 
 #define xnintr_shirq_spin(shirq) \
-do { \
-	while (atomic_read(&shirq->active)) { \
-		cpu_relax(); \
-	} \
-} while (0)
+	do { while (atomic_read(&shirq->active)) cpu_relax(); } while (0)
 
 #else /* !CONFIG_SMP */
 

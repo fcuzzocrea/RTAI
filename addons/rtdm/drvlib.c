@@ -969,7 +969,7 @@ EXPORT_SYMBOL(rtdm_mutex_unlock);
  * @param[in,out] irq_handle IRQ handle
  * @param[in] irq_no Line number of the addressed IRQ
  * @param[in] handler Interrupt handler
- * @param[in] flags Currently unused, pass 0
+ * @param[in] flags Registration flags, see @ref RTDM_IRQTYPE_xxx for details
  * @param[in] device_name Optional device name to show up in real-time IRQ
  * lists (not yet implemented)
  * @param[in] arg Pointer to be passed to the interrupt handler on invocation
@@ -1055,7 +1055,7 @@ int rtdm_irq_enable(rtdm_irq_t *irq_handle);
  * Rescheduling: never.
  */
 int rtdm_irq_disable(rtdm_irq_t *irq_handle);
-/** @} */
+/** @} Interrupt Management Services */
 
 
 /*!
@@ -1127,7 +1127,9 @@ void rtdm_nrtsig_destroy(rtdm_nrtsig_t *nrt_sig);
  * environments.
  */
 void rtdm_nrtsig_pend(rtdm_nrtsig_t *nrt_sig);
-/** @} */
+/** @} Non-Real-Time Signalling Services */
+
+#endif /* DOXYGEN_CPP */
 
 
 /*!
@@ -1280,6 +1282,8 @@ int rtdm_munmap(rtdm_user_info_t *user_info, void *ptr, size_t len)
 
 EXPORT_SYMBOL(rtdm_munmap);
 
+
+#ifdef DOXYGEN_CPP /* Only used for doxygen doc generation */
 
 /**
  * Real-time safe message printing on kernel console
@@ -1497,6 +1501,6 @@ int rtdm_strncpy_from_user(rtdm_user_info_t *user_info, char *dst,
  */
 int rtdm_in_rt_context(void);
 
-/** @} */
-
 #endif /* DOXYGEN_CPP */
+
+/** @} Utility Services */

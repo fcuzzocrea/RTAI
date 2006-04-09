@@ -17,7 +17,7 @@
  */
 
 
-// A few wrappers and inlines to avoid too much an editing. 
+// Wrappers and inlines to avoid too much an editing of RTDM code. 
 // The core stuff is just RTAI in disguise.
 
 #ifndef _RTAI_XNSTUFF_H
@@ -25,6 +25,7 @@
 
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
+#include <asm/mman.h>
 
 //recursive smp locks, as for RTAI global stuff + a name
 
@@ -98,7 +99,7 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 #define xnmalloc  rt_malloc
 #define xnfree    rt_free
 
-// in kernel printing (taken from fusion)
+// in kernel printing (taken from RTDM pet system)
 
 #define XNARCH_PROMPT "RTDM: "
 
@@ -106,7 +107,7 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 #define xnlogerr(fmt, args...)  printk(KERN_ERR  XNARCH_PROMPT fmt, ##args)
 #define xnlogwarn               xnlogerr
 
-// user space access, taken from Linux
+// user space access (taken from Linux)
 
 #define __xn_access_ok(task, type, addr, size) \
 	(access_ok(type, addr, size))
@@ -128,7 +129,28 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 #define __xn_strncpy_from_user(task, dstP, srcP, n) \
 	({ long err = __strncpy_from_user(dstP, srcP, n); err; })
 
-// interrupt setup/management
+static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size, pgprot_t prot)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(from, to, size, prot);
+
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
+	return remap_pfn_range(vma, from, (to) >> PAGE_SHIFT, size, prot);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
+	return remap_pfn_range(vma, from, (to) >> PAGE_SHIFT, size, prot);
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10) */
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(vma, from, to, size, prot);
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
+
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,5,0) */
+}
+
+// interrupt setup/management (adopted_&|_adapted from RTDM pet system)
 
 #define XN_ISR_NONE   	 0x1
 #define XN_ISR_HANDLED	 0x2
@@ -207,22 +229,18 @@ typedef struct xnintr_shirq {
 	atomic_t active;
 } xnintr_shirq_t;
 
-static inline void xnintr_shirq_lock(xnintr_shirq_t *shirq)
-{
-    atomic_inc(&shirq->active);
-}
+#define xnintr_shirq_lock(shirq) \
+	do { atomic_inc(&shirq->active); } while (0)
 
-static inline void xnintr_shirq_unlock(xnintr_shirq_t *shirq)
-{
-    atomic_dec(&shirq->active);
-}
+#define xnintr_shirq_unlock(shirq) \
+	do { atomic_dec(&shirq->active); } while (0)
 
-static inline void xnintr_shirq_spin(xnintr_shirq_t *shirq)
-{
-	while (atomic_read(&shirq->active)) {
-		cpu_relax();
-	}
-}
+#define xnintr_shirq_spin(shirq) \
+do { \
+	while (atomic_read(&shirq->active)) { \
+		cpu_relax(); \
+	} \
+} while (0)
 
 #else /* !CONFIG_SMP */
 
@@ -230,11 +248,11 @@ typedef struct xnintr_shirq {
 	xnintr_t *handlers;
 } xnintr_shirq_t;
 
-static inline void xnintr_shirq_lock(xnintr_shirq_t *shirq)   { }
+#define xnintr_shirq_lock(shirq)
 
-static inline void xnintr_shirq_unlock(xnintr_shirq_t *shirq) { }
+#define xnintr_shirq_unlock(shirq)
 
-static inline void xnintr_shirq_spin(xnintr_shirq_t *shirq)   { }
+#define xnintr_shirq_spin(shirq)
 
 #endif /* CONFIG_SMP */
 

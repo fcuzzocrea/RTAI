@@ -161,7 +161,13 @@ xnlock_t nklock = XNARCH_LOCK_UNLOCKED;
  *   to act in the same way but might not have been enabled to do so; 
  * - may not reenable the PIC directly, assuming it will be done here;
  * - may not propagate, assuming it will be done here as well.
- * REMINDER: the RTAI dispatcher has cared of the mask/ack anyhow. */
+ * - might use shared interrupts its own way;
+ * REMARK: RTDM irqs management is as generic as its pet system dictates 
+ *         and there is no choice but doing the same as closely as possible; 
+ *         so this is an as verbatim as possible copy of what is needed from 
+ *         the RTDM pet system.
+ * REMINDER: the RTAI dispatcher cares mask/ack-ing anyhow, but RTDM will
+ *           (must) provide the most suitable one for the shared case. */
 
 #ifndef CONFIG_RTAI_SCHED_ISR_LOCK
 extern struct { volatile int locked, rqsted; } rt_scheduling[];
@@ -169,12 +175,11 @@ extern void rtai_handle_isched_lock(int);
 
 #define RTAI_SCHED_ISR_LOCK() \
         do { \
+		int cpuid = rtai_cpuid(); \
                 if (!rt_scheduling[cpuid].locked++) { \
                         rt_scheduling[cpuid].rqsted = 0; \
-                } \
-        } while (0)
+                }
 #define RTAI_SCHED_ISR_UNLOCK() \
-        do { \
                 rtai_cli(); \
                 if (rt_scheduling[cpuid].locked && !(--rt_scheduling[cpuid].locked)) { \
                         if (rt_scheduling[cpuid].rqsted > 0) { \
@@ -196,12 +201,12 @@ static xnintr_shirq_t xnshirqs[RTAI_NR_IRQS];
 static void xnintr_irq_handler(unsigned irq, void *cookie)
 {
 	xnintr_t *intr = (xnintr_t *)cookie;
-	int cpuid, s;
+	int s;
 
 	smp_mb();
 
-	cpuid = rtai_cpuid();
 	RTAI_SCHED_ISR_LOCK();
+
 	s = intr->isr(intr);
 	++intr->hits;
 
@@ -214,17 +219,14 @@ static void xnintr_irq_handler(unsigned irq, void *cookie)
 	RTAI_SCHED_ISR_UNLOCK();
 }
 
-EXPORT_SYMBOL(xnintr_irq_handler);
-
-void xnintr_shirq_handler (unsigned irq, void *cookie)
+static void xnintr_shirq_handler (unsigned irq, void *cookie)
 {
 	xnintr_shirq_t *shirq = &xnshirqs[irq];
 	xnintr_t *intr;
-	int cpuid, s = 0;
+	int s = 0;
 
 	smp_mb();
 
-	cpuid = rtai_cpuid();
 	RTAI_SCHED_ISR_LOCK();
 
 	xnintr_shirq_lock(shirq);
@@ -246,18 +248,15 @@ void xnintr_shirq_handler (unsigned irq, void *cookie)
 	RTAI_SCHED_ISR_UNLOCK();
 }
 
-EXPORT_SYMBOL(xnintr_shirq_handler);
-
-void xnintr_edge_shirq_handler (unsigned irq, void *cookie)
+static void xnintr_edge_shirq_handler (unsigned irq, void *cookie)
 {
 	const int MAX_EDGEIRQ_COUNTER = 128;
 	xnintr_shirq_t *shirq = &xnshirqs[irq];
 	xnintr_t *intr, *end = NULL;
-	int cpuid, s = 0, counter = 0;
+	int s = 0, counter = 0;
 
 	smp_mb();
 
-	cpuid = rtai_cpuid();
 	RTAI_SCHED_ISR_LOCK();
 
 	xnintr_shirq_lock(shirq);
@@ -285,7 +284,7 @@ void xnintr_edge_shirq_handler (unsigned irq, void *cookie)
 	xnintr_shirq_unlock(shirq);
 
 	if (counter > MAX_EDGEIRQ_COUNTER) {
-		rt_printk("xnintr_edge_shirq_handler() : failed to get the IRQ%d line free.\n", irq);
+		xnlogerr("xnintr_edge_shirq_handler() : failed to get the IRQ%d line free.\n", irq);
 	}
 
 	if (s & XN_ISR_PROPAGATE) {
@@ -296,8 +295,6 @@ void xnintr_edge_shirq_handler (unsigned irq, void *cookie)
 
 	RTAI_SCHED_ISR_UNLOCK();
 }
-
-EXPORT_SYMBOL(xnintr_edge_shirq_handler);
 
 int xnintr_shirq_attach (xnintr_t *intr, void *cookie)
 {
@@ -312,7 +309,7 @@ int xnintr_shirq_attach (xnintr_t *intr, void *cookie)
 
 	flags = rtai_critical_enter(NULL);
 
-	if (testbits(intr->flags,XN_ISR_ATTACHED)) {
+	if (testbits(intr->flags, XN_ISR_ATTACHED)) {
 		err = -EPERM;
 		goto unlock_and_exit;
 	}
@@ -338,11 +335,9 @@ int xnintr_shirq_attach (xnintr_t *intr, void *cookie)
 			}
 		}
 
-		err = rt_request_irq(intr->irq, (void *)xnintr_irq_handler, intr, 0);
-		if (err) {
+		if ((err = rt_request_irq_wack(intr->irq, (void *)xnintr_irq_handler, intr, 0, intr->iack))) {
 			goto unlock_and_exit;
 		}
-		rt_set_irq_ack(intr->irq, intr->iack);
 	}
 
 	setbits(intr->flags, XN_ISR_ATTACHED);
@@ -371,7 +366,7 @@ int xnintr_shirq_detach (xnintr_t *intr)
 
 	flags = rtai_critical_enter(NULL);
 
-	if (!testbits(intr->flags,XN_ISR_ATTACHED)) {
+	if (!testbits(intr->flags, XN_ISR_ATTACHED)) {
 		rtai_critical_exit(flags);
 		return -EPERM;
 	}
@@ -394,7 +389,7 @@ int xnintr_shirq_detach (xnintr_t *intr)
 
 	rtai_critical_exit(flags);
 
-	rt_printk("attempted to detach a non previously attached interrupt object.\n");
+	xnlogerr("attempted to detach a non previously attached interrupt object.\n");
 	return err;
 }
 

@@ -2,8 +2,8 @@
 
 	* drivers/16550A/16550A.c: updated to the latest.
 	* rtdm/core.c, rtdm/device.c, rtdm/device.h, rtdm/drvlib.c,
-	  rtdm/module.c, rtdm/proc.c, rtdm/rtdm_driver.h, rtdm/xn.h:
-	  updated to the latest.
+	  rtdm/module.c, rtdm/proc.c, rtdm/rtdm_driver.h, rtdm/xn.h,
+	  rtserial.h: updated to the latest.
 
 2006-04-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

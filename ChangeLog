@@ -1,3 +1,17 @@
+2006-04-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* drivers/16550A/16550A.c: updated to the latest.
+	* rtdm/core.c, rtdm/device.c, rtdm/device.h, rtdm/drvlib.c,
+	  rtdm/module.c, rtdm/proc.c, rtdm/rtdm_driver.h, rtdm/xn.h:
+	  updated to the latest.
+
+2006-04-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h: added self suspend state.
+	* base/sched/api.c: defer non self suspending to the sceduling
+	  functions.
+	* base/sched/sched.c: care of rescheduling deferred suspends.
+
 2006-03-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_wd.h: added user space extension declarations.

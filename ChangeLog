@@ -8,7 +8,7 @@
 2006-04-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sched.h: added self suspend state.
-	* base/sched/api.c: defer non self suspending to the sceduling
+	* base/sched/api.c: defer non self suspending to the scheduling
 	  functions.
 	* base/sched/sched.c: care of rescheduling deferred suspends.
 

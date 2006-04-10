@@ -607,7 +607,6 @@ do { \
 
 #define SELF_SUSP() \
 	if (rt_current->state & RT_SCHED_SELFSUSP) { \
-		rt_current->state &= ~RT_SCHED_SELFSUSP; \
 		rem_ready_current(rt_current); \
 		rt_schedule(); \
 	} \

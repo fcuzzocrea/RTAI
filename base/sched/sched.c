@@ -611,19 +611,27 @@ do { \
 		rt_schedule(); \
 	} \
 
+#define _SELF_SUSP_IN_IRQ() \
+	if (rt_current->state & RT_SCHED_SELFSUSP) { \
+		rem_ready_current(rt_current); \
+		sched_get_global_lock(cpuid); \
+		rt_schedule(); \
+		sched_release_global_lock(cpuid); \
+	} \
+
 #ifdef LOCKED_LINUX_IN_IRQ_HANDLER
 #define LOCK_LINUX_IN_IRQ(cpuid)
 #define UNLOCK_LINUX_IN_IRQ(cpuid)
 #define SELF_SUSP_IN_IRQ() \
 	do { \
 		UNLOCK_LINUX(cpuid); \
-		SELF_SUSP(); \
+		_SELF_SUSP_IN_IRQ(); \
 		LOCK_LINUX(cpuid); \
 	} while (0)
 #else
 #define LOCK_LINUX_IN_IRQ(cpuid)    LOCK_LINUX(cpuid)    
 #define UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
-#define SELF_SUSP_IN_IRQ  SELF_SUSP
+#define SELF_SUSP_IN_IRQ  _SELF_SUSP_IN_IRQ
 #endif
 
 #if CONFIG_RTAI_MONITOR_EXECTIME

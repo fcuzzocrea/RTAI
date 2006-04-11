@@ -1,3 +1,15 @@
+2006-04-10  Jan Kiszka  <jan.kiszka@web.de>
+
+	* addons/drivers/16550A/16550A.c: Fix leaking lock in 
+	  rt_16550_read().
+
+2006-04-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed: deferred scheduling in interrupt
+	  handlers (if configured) wraps Linux locking.
+	* base/sched/sched.c: do not call rt_schedule if locked in deferred
+	  suspend.
+
 2006-04-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* drivers/16550A/16550A.c: updated to the latest.

@@ -608,15 +608,19 @@ do { \
 #define SELF_SUSP() \
 	if (rt_current->state & RT_SCHED_SELFSUSP) { \
 		rem_ready_current(rt_current); \
-		rt_schedule(); \
+		if (!rt_scheduling[cpuid].locked) { \
+			rt_schedule(); \
+		} \
 	} \
 
 #define _SELF_SUSP_IN_IRQ() \
 	if (rt_current->state & RT_SCHED_SELFSUSP) { \
 		rem_ready_current(rt_current); \
-		sched_get_global_lock(cpuid); \
-		rt_schedule(); \
-		sched_release_global_lock(cpuid); \
+		if (!rt_scheduling[cpuid].locked) { \
+			sched_get_global_lock(cpuid); \
+			rt_schedule(); \
+			sched_release_global_lock(cpuid); \
+		} \
 	} \
 
 #ifdef LOCKED_LINUX_IN_IRQ_HANDLER

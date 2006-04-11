@@ -809,7 +809,7 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 #ifdef CONFIG_RTAI_SCHED_ISR_LOCK
 #define RTAI_SCHED_ISR_LOCK() \
 	do { \
-		if (!rt_scheduling[cpuid].locked++) { \
+		if (!rt_scheduling[cpuid = rtai_cpuid()].locked++) { \
 			rt_scheduling[cpuid].rqsted = 0; \
 		} \
 	} while (0)
@@ -823,9 +823,9 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 	} while (0)
 #else  /* !CONFIG_RTAI_SCHED_ISR_LOCK */
 #define RTAI_SCHED_ISR_LOCK() \
-	do { } while (0)
+	do { cpuid = rtai_cpuid(); } while (0)
 #define RTAI_SCHED_ISR_UNLOCK() \
-	do { } while (0)
+	do {                       } while (0)
 #endif /* CONFIG_RTAI_SCHED_ISR_LOCK */
 
 #if (LINUX_VERSION_CODE > KERNEL_VERSION(2,4,31) && LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)) || LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,9) 
@@ -836,12 +836,12 @@ irqreturn_t rtai_broadcast_to_local_timers (int irq, void *dev_id, struct pt_reg
 
 #ifdef LOCKED_LINUX_IN_IRQ_HANDLER
 #define BEGIN_LOCK_LINUX()
-#define HAL_LOCK_LINUX()  do { rt_switch_to_real_time(cpuid = rtai_cpuid()); } while (0)
+#define HAL_LOCK_LINUX()  do { rt_switch_to_real_time(cpuid); } while (0)
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); rt_switch_to_linux(cpuid); } while (0)
 #define END_LOCK_LINUX()
 #else
 #define BEGIN_LOCK_LINUX()  do { unsigned long lflags;
-#define HAL_LOCK_LINUX()  do { lflags = xchg(ipipe_root_status[cpuid = rtai_cpuid()], (1 << IPIPE_STALL_FLAG));
+#define HAL_LOCK_LINUX()  do { lflags = xchg(ipipe_root_status[cpuid], (1 << IPIPE_STALL_FLAG));
 #define HAL_UNLOCK_LINUX()  do { rtai_cli(); *ipipe_root_status[cpuid] = lflags; } while (0)
 #define END_LOCK_LINUX()  } while (0)
 #endif

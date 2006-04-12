@@ -179,6 +179,7 @@ int __devinit rthal_smi_init(void)
 	printk("RTAI: Intel chipset found, enabling SMI workaround.\n");
 	rthal_smi_en_addr = get_smi_en_addr(dev);
 	smi_dev = dev;
+	rthal_smi_disable();
   	return 0;
 }
 

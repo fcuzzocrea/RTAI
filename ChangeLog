@@ -1,3 +1,7 @@
+2006-04-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* addons/rtdm/core.c, core.h, module.c, proc.c: updated to the latest.
+
 2006-04-12  Alberto Sechi  <sechi@aero.polimi.it>
 
 	* base/iarch/i386/calibration/smi-module.c: added missing

@@ -280,9 +280,9 @@ int rt_task_suspend(RT_TASK *task)
 					return RTE_UNBLKD;
 				}
 			} else {
-//				rem_ready_task(task);
+				rem_ready_task(task);
 				rem_timed_task(task);
-				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_SELFSUSP);
+				task->state |= RT_SCHED_SUSPENDED;
 				if (task->runnable_on_cpus != rtai_cpuid()) {
 					send_sched_ipi(1 << task->runnable_on_cpus);
 				}
@@ -355,9 +355,9 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 						return task->resume_time < rt_smp_time_h[rtai_cpuid()] ? RTE_TIMOUT : 0;
 					}
 				} else {
-//					rem_ready_task(task);
+					rem_ready_task(task);
 					enq_timed_task(task);
-					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED | RT_SCHED_SELFSUSP);
+					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
 					if (task->runnable_on_cpus != rtai_cpuid()) {
 						send_sched_ipi(1 << task->runnable_on_cpus);
 					}

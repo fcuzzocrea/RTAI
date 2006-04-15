@@ -55,7 +55,7 @@ MODULE_LICENSE("GPL");
 
 static int _rtdm_fdcount(void)
 {
-	return fd_count;
+	return RTDM_FD_MAX;
 }
 
 #ifdef TRUE_LXRT_WAY
@@ -406,9 +406,6 @@ int __init rtdm_skin_init(void)
 	if ((err = rtdm_dev_init())) {
 	        goto fail;
 	}
-	if ((err = rtdm_core_init())) {
-	        goto cleanup_dev;
-	}
 #ifdef CONFIG_PROC_FS
 	if ((err = rtdm_proc_init())) {
 	        goto cleanup_core;
@@ -422,8 +419,6 @@ int __init rtdm_skin_init(void)
 	rtdm_proc_cleanup();
 #endif /* CONFIG_PROC_FS */
 cleanup_core:
-	rtdm_core_cleanup();
-cleanup_dev:
 	rtdm_dev_cleanup();
 fail:
 	return err;
@@ -431,7 +426,6 @@ fail:
 
 void rtdm_skin_exit(void)
 {
-	rtdm_core_cleanup();
 	rtdm_dev_cleanup();
         reset_rt_fun_ext_index(rtdm, RTDM_INDX);
 #ifdef CONFIG_PROC_FS

@@ -1,5 +1,14 @@
 2006-04-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
+	* base/include/asm-i386/rtai_hal.h: revised support for switches 
+	  back-forth Linux.
+	* base/arch/i386/hal/hal.immed, rtc.c: use new switching back-forth 
+	  Linux, when Linux locking is set directly from real time interrupts
+	  handling;
+	* base/sched/sched.c: use new switching back-forth Linux.
+
+2006-04-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
 	* addons/rtdm/core.c, core.h, module.c, proc.c: updated to the latest.
 
 2006-04-12  Alberto Sechi  <sechi@aero.polimi.it>

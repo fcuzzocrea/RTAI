@@ -590,55 +590,50 @@ do { \
 	} \
 } while (0)
 
-#ifdef RTAI_TASKPRI
-#define LOCK_LINUX_NOTSKPRI(cpuid) \
-	do { rt_switch_to_real_time_notskpri(cpuid); } while (0)
-#define UNLOCK_LINUX_NOTSKPRI(cpuid) \
-	do { rt_switch_to_linux_notskpri(cpuid);     } while (0)
-#else
-#define LOCK_LINUX_NOTSKPRI(cpuid) \
+#define LOCK_LINUX(cpuid) \
 	do { rt_switch_to_real_time(cpuid); } while (0)
-#define UNLOCK_LINUX_NOTSKPRI(cpuid) \
+#define UNLOCK_LINUX(cpuid) \
 	do { rt_switch_to_linux(cpuid);     } while (0)
-#endif
 
-#define LOCK_LINUX(cpuid)    do { rt_switch_to_real_time(cpuid); } while (0)
-#define UNLOCK_LINUX(cpuid)  do { rt_switch_to_linux(cpuid);     } while (0)
+#define SAVE_LOCK_LINUX(cpuid) \
+	do { sflags = rt_save_switch_to_real_time(cpuid); } while (0)
+#define RESTORE_UNLOCK_LINUX(cpuid) \
+	do { rt_restore_switch_to_linux(sflags, cpuid);   } while (0)
 
 #define SELF_SUSP() \
+do { \
 	if (rt_current->state & RT_SCHED_SELFSUSP) { \
 		rem_ready_current(rt_current); \
 		if (!rt_scheduling[cpuid].locked) { \
 			rt_schedule(); \
 		} \
 	} \
+	if (rt_current->signal) { \
+		(*rt_current->signal)(); \
+	} \
+} while (0)
+
+#define SELF_SUSP_IN_IRQ() \
+do { \
+	if (rt_current->state & RT_SCHED_SELFSUSP) { \
+		rem_ready_current(rt_current); \
+		if (!rt_scheduling[cpuid].locked) { \
+			sched_get_global_lock(cpuid); \
+			rt_schedule(); \
+			sched_release_global_lock(cpuid); \
+		} \
+	} \
+	if (rt_current->signal) { \
+		(*rt_current->signal)(); \
+	} \
+} while (0)
 
 #ifdef LOCKED_LINUX_IN_IRQ_HANDLER
-#define LOCK_LINUX_IN_IRQ(cpuid)
-#define UNLOCK_LINUX_IN_IRQ(cpuid)
-#define SELF_SUSP_IN_IRQ() \
-	if (rt_current->state & RT_SCHED_SELFSUSP) { \
-		rem_ready_current(rt_current); \
-		if (!rt_scheduling[cpuid].locked) { \
-			UNLOCK_LINUX(cpuid); \
-			sched_get_global_lock(cpuid); \
-			rt_schedule(); \
-			sched_release_global_lock(cpuid); \
-			LOCK_LINUX(cpuid); \
-		} \
-	}
+#define SAVE_LOCK_LINUX_IN_IRQ(cpuid)
+#define RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid)
 #else
-#define LOCK_LINUX_IN_IRQ(cpuid)    LOCK_LINUX(cpuid)    
-#define UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
-#define SELF_SUSP_IN_IRQ() \
-	if (rt_current->state & RT_SCHED_SELFSUSP) { \
-		rem_ready_current(rt_current); \
-		if (!rt_scheduling[cpuid].locked) { \
-			sched_get_global_lock(cpuid); \
-			rt_schedule(); \
-			sched_release_global_lock(cpuid); \
-		} \
-	}
+#define SAVE_LOCK_LINUX_IN_IRQ(cpuid)    LOCK_LINUX(cpuid)    
+#define RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid)  UNLOCK_LINUX(cpuid)
 #endif
 
 #if CONFIG_RTAI_MONITOR_EXECTIME
@@ -711,7 +706,7 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
         hal_schedule_back_root(rt_current->lnxtsk);
 // now make it as if it was scheduled soft, the tail is cared in sys_lxrt.c
 	rt_global_cli();
-	LOCK_LINUX_NOTSKPRI(cpuid);
+	LOCK_LINUX(cpuid);
 	rt_current->state |= RT_SCHED_READY;
 	rt_smp_current[cpuid] = rt_current;
         if (rt_current->state != RT_SCHED_READY) {
@@ -725,7 +720,8 @@ static inline void make_current_soft(RT_TASK *rt_current, int cpuid)
 static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cpuid)
 {
 	if (rt_current->lnxtsk) {
-		LOCK_LINUX(cpuid);
+		unsigned long sflags;
+		SAVE_LOCK_LINUX(cpuid);
 		rt_linux_task.prevp = rt_current;
 		save_fpcr_and_enable_fpu(linux_cr0);
 		if (new_task->uses_fpu) {
@@ -736,7 +732,7 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 		KEXECTIME();
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
 		restore_fpcr(linux_cr0);
-		UNLOCK_LINUX(cpuid);
+		RESTORE_UNLOCK_LINUX(cpuid);
 		if (rt_linux_task.nextp != rt_current) {
 			return rt_linux_task.nextp;
 		}
@@ -756,9 +752,6 @@ static RT_TASK *switch_rtai_tasks(RT_TASK *rt_current, RT_TASK *new_task, int cp
 		}
 		KEXECTIME();
 		rt_exchange_tasks(rt_smp_current[cpuid], new_task);
-	}
-	if (rt_current->signal) {
-		(*rt_current->signal)();
 	}
 	return NULL;
 }
@@ -823,20 +816,19 @@ static void rt_schedule_on_schedule_ipi(void)
 		}
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
+			unsigned long sflags;
 			if (!rt_current->is_hard) {
-				LOCK_LINUX_IN_IRQ(cpuid);
+				SAVE_LOCK_LINUX_IN_IRQ(cpuid);
 				rt_linux_task.lnxtsk = prev = current;
 			} else {
+				sflags = rtai_linux_context[cpuid].sflags;
 				prev = rt_current->lnxtsk;
 			}
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			if (rt_current->signal) {
-				rt_current->signal();
-			}
 			if (!rt_current->is_hard) {
-				UNLOCK_LINUX_IN_IRQ(cpuid);
+				RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (lnxtsk_uses_fpu(prev)) {
 				restore_fpu(prev);
 			}
@@ -919,19 +911,18 @@ void rt_schedule(void)
 		rt_smp_current[cpuid] = new_task;
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
+			unsigned long sflags;
 			if (!rt_current->is_hard) {
-				LOCK_LINUX(cpuid);
+				SAVE_LOCK_LINUX(cpuid);
 				rt_linux_task.lnxtsk = prev = current;
 			} else {
+				sflags = rtai_linux_context[cpuid].sflags;
 				prev = rt_current->lnxtsk;
 			}
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			if (rt_current->signal) {
-				rt_current->signal();
-			}
 			if (!rt_current->is_hard) {
-				UNLOCK_LINUX(cpuid);
+				RESTORE_UNLOCK_LINUX(cpuid);
 				if (rt_current->state != RT_SCHED_READY) {
 					goto sched_soft;
 				}
@@ -945,13 +936,13 @@ void rt_schedule(void)
 			}
 		} else if (rt_current->state != RT_SCHED_READY) {
 sched_soft:
-			UNLOCK_LINUX_NOTSKPRI(cpuid);
+			UNLOCK_LINUX(cpuid);
 			rt_global_sti();
 			hal_test_and_fast_flush_pipeline(cpuid);
 			NON_RTAI_SCHEDULE(cpuid);
 			rt_global_cli();
 			rt_current->state = (rt_current->state & ~RT_SCHED_SFTRDY) | RT_SCHED_READY;
-			LOCK_LINUX_NOTSKPRI(cpuid);
+			LOCK_LINUX(cpuid);
 			enq_soft_ready_task(rt_current);
 			rt_smp_current[cpuid] = rt_current;
 		}
@@ -1228,20 +1219,19 @@ static void rt_timer_handler(void)
 		}
 		if (new_task->is_hard || rt_current->is_hard) {
 			struct task_struct *prev;
+			unsigned long sflags;
 			if (!rt_current->is_hard) {
-				LOCK_LINUX_IN_IRQ(cpuid);
+				SAVE_LOCK_LINUX_IN_IRQ(cpuid);
 				rt_linux_task.lnxtsk = prev = current;
 			} else {
+				sflags = rtai_linux_context[cpuid].sflags;
 				prev = rt_current->lnxtsk;
 			}
 			rt_smp_current[cpuid] = new_task;
 			UEXECTIME();
 			lxrt_context_switch(prev, new_task->lnxtsk, cpuid);
-			if (rt_current->signal) {
-				rt_current->signal();
-			}
 			if (!rt_current->is_hard) {
-				UNLOCK_LINUX_IN_IRQ(cpuid);
+				RESTORE_UNLOCK_LINUX_IN_IRQ(cpuid);
 			} else if (lnxtsk_uses_fpu(prev)) {
 				restore_fpu(prev);
 			}
@@ -1814,7 +1804,7 @@ static inline void _rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid)
 	(rt_task->rnext)->rprev = rt_task->rprev;
 	rt_smp_current[cpuid] = &rt_linux_task;
 	rt_schedule();
-	UNLOCK_LINUX_NOTSKPRI(cpuid);
+	UNLOCK_LINUX(cpuid);
 	rt_global_sti();
 }
 
@@ -1831,7 +1821,7 @@ void rt_schedule_soft(RT_TASK *rt_task)
 		schedule();
 		rt_global_cli();
 	}
-	LOCK_LINUX_NOTSKPRI(cpuid = rt_task->runnable_on_cpus);
+	LOCK_LINUX(cpuid = rt_task->runnable_on_cpus);
 	enq_soft_ready_task(rt_task);
 	rt_smp_current[cpuid] = rt_task;
 	rt_global_sti();
@@ -1852,19 +1842,20 @@ static inline void fast_schedule(RT_TASK *new_task, struct task_struct *lnxtsk, 
 	enq_soft_ready_task(new_task);
 	sched_release_global_lock(cpuid);
 if (!new_task->is_hard) {
+	unsigned long sflags;
+	SAVE_LOCK_LINUX(cpuid);
+	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
+	UEXECTIME();
+	rt_smp_current[cpuid] = new_task;
+	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
+	RESTORE_UNLOCK_LINUX(cpuid);
+} else {
 	LOCK_LINUX(cpuid);
 	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
 	UEXECTIME();
 	rt_smp_current[cpuid] = new_task;
 	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
 	UNLOCK_LINUX(cpuid);
-} else {
-	LOCK_LINUX_NOTSKPRI(cpuid);
-	(rt_current = &rt_linux_task)->lnxtsk = lnxtsk;
-	UEXECTIME();
-	rt_smp_current[cpuid] = new_task;
-	lxrt_context_switch(lnxtsk, new_task->lnxtsk, cpuid);
-	UNLOCK_LINUX_NOTSKPRI(cpuid);
 }
 }
 

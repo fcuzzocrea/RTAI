@@ -41,16 +41,17 @@ static void (*usr_rtc_handler)(void);
 int _rtai_rtc_timer_handler(void)
 {
 	unsigned long cpuid = rtai_cpuid();
-	rt_switch_to_real_time(cpuid);
+	unsigned long sflags;
 	RTAI_SCHED_ISR_LOCK();
+	HAL_LOCK_LINUX();
 
 	rt_mask_and_ack_irq(RTC_IRQ);
  	CMOS_READ(RTC_INTR_FLAGS);
 	rt_enable_irq(RTC_IRQ);
 	usr_rtc_handler();
 
+	HAL_UNLOCK_LINUX();
 	RTAI_SCHED_ISR_UNLOCK();
-	rt_switch_to_linux(cpuid);
 #if 1 //LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 	if (!test_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status)) {
 		rtai_sti();

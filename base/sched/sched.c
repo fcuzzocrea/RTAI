@@ -777,8 +777,8 @@ static void rt_schedule_on_schedule_ipi(void)
 
 		RR_INTR_TIME();
 		task = &rt_linux_task;
-		while ((task = task->tnext) != &rt_linux_task) {
-			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
+		while ((task = task->tnext) != &rt_linux_task && task->resume_time < rt_times.intr_time) {
+			if (task->priority <= prio) {
 				rt_times.intr_time = task->resume_time;
 				preempt = 1;
 				break;
@@ -861,8 +861,8 @@ void rt_schedule(void)
 
 		RR_INTR_TIME();
 		task = &rt_linux_task;
-		while ((task = task->tnext) != &rt_linux_task) {
-			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
+		while ((task = task->tnext) != &rt_linux_task && task->resume_time < rt_times.intr_time) {
+			if (task->priority <= prio) {
 				rt_times.intr_time = task->resume_time;
 				preempt = 1;
 				break;
@@ -945,11 +945,13 @@ sched_soft:
 			LOCK_LINUX(cpuid);
 			enq_soft_ready_task(rt_current);
 			rt_smp_current[cpuid] = rt_current;
+			goto sched_exit1;
 		}
 	}
 sched_exit:
 	rtai_cli();
 	sched_get_global_lock(cpuid);
+sched_exit1:
 	SELF_SUSP();
 #if CONFIG_RTAI_BUSY_TIME_ALIGN
 	if (rt_current->trap_handler_data) {
@@ -1166,8 +1168,8 @@ static void rt_timer_handler(void)
 		rt_times.intr_time = rt_times.tick_time + ONESHOT_SPAN;
 		RR_INTR_TIME();
 		task = &rt_linux_task;
-		while ((task = task->tnext) != &rt_linux_task) {
-			if (task->priority <= prio && task->resume_time < rt_times.intr_time) {
+		while ((task = task->tnext) != &rt_linux_task && task->resume_time < rt_times.intr_time) {
+			if (task->priority <= prio) {
 				rt_times.intr_time = task->resume_time;
 				preempt = 1;
 				break;

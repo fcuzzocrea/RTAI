@@ -1,6 +1,11 @@
+2006-04-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sched.c: reordered the test for searching the next 
+	  oneshot firing, to avoid useless searches.
+
 2006-04-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/include/asm-i386/rtai_hal.h: revised support for switches 
+	* base/include/asm-i386/rtai_hal.h: revised support for switching 
 	  back-forth Linux.
 	* base/arch/i386/hal/hal.immed, rtc.c: use new switching back-forth 
 	  Linux, when Linux locking is set directly from real time interrupts

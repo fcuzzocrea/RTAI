@@ -8,16 +8,5 @@ obj-m += $(rtai_target).o
 
 rtai_sched-objs := $(rtai_objs)
 
-#rtai_up-objs := $(rtai_objs)
-
-#rtai_mup-objs := $(rtai_objs)
-
-#rtai_mup-noapic-objs := $(rtai_objs)
-
-#rtai_smp-objs := $(rtai_objs)
-
-#rtai_smp-noapic-objs := $(rtai_objs)
-
 rtai_lxrt-objs := $(rtai_objs)
 
-#rtai_lxrt-noapic-objs := $(rtai_objs)

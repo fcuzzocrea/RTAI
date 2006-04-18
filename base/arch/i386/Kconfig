@@ -234,9 +234,9 @@ config RTAI_SCHED_LXRT_
 	bool "Kernel/User space scheduler without RTAI own kernel tasks (KEEP)"
 	default y
 	help
-	This scheduler supports hard real time for all Linux schedulable
-	objects, i.e. processes/threads/kthreads. All of RTAI APIs are 
-	available simmetrically inter/intra kernel and user space.
+	This scheduler (rtai_lxrt) supports hard real time for all Linux
+	schedulable objects, i.e. processes/threads/kthreads. All of RTAI 
+	APIs are available simmetrically inter/intra kernel and user space.
 
 	This configuration parameter is ignored by the build process and
 	this scheduler will be made anyhow, along with the related liblxrt.
@@ -245,9 +245,10 @@ config RTAI_KTASKS_SCHED_LXRT_
 	bool "Kernel/User space scheduler with RTAI own kernel tasks (KEEP)"
 	default y
 	help
-	After enabling this option, the scheduler supports not only hard
-	real time for all Linux schedulable objects, i.e.
-	processes/threads/kthreads, but also for RTAI own kernel tasks.
+	This scheduler (rtai_sched) supports not only hard real time for 
+	all Linux schedulable objects, i.e.  processes/threads/kthreads, 
+	but also for RTAI own kernel tasks. As such is the most complete
+	scheduler available within RTAI.
 
 	A secondary effect is that rt_task_init() will generate RTAI
 	own kernel tasks instead of real time hardened Linux kernel threads.
@@ -257,6 +258,9 @@ config RTAI_KTASKS_SCHED_LXRT_
 	Users wanting to use both RTAI own tasks and real time hardened
 	Linux kernel threads must specifically use rt_task_init for the 
 	former and rt_thread_init for the latter.
+
+	For backward compatibility old named schedulers, i.e.: up, smp, mup,
+	ksched; are all linked to this one.
 
 	This configuration parameter is ignored by the build process and
 	this scheduler will be made anyhow, along with the related liblxrt.

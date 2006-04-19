@@ -1,6 +1,6 @@
 2006-04-19  Alberto Sechi <sechi@aero.polimi.it>
 
-	* addons/comedi/rtai_comedi.h, Kcomedi-module.c: added i
+	* addons/comedi/rtai_comedi.h, Kcomedi-module.c: added
 	  comedi_data_read_delayed() support.
 
 2006-04-17  Paolo Mantegazza <mantegazza@aero.polimi.it>

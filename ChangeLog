@@ -1,3 +1,8 @@
+2006-04-19  Alberto Sechi <sechi@aero.polimi.it>
+
+	* addons/comedi/rtai_comedi.h, Kcomedi-module.c: added i
+	  comedi_data_read_delayed() support.
+
 2006-04-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: reordered the test for searching the next 

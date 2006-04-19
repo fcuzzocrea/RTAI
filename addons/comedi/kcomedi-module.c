@@ -175,6 +175,8 @@ static struct rt_fun_entry rtai_comedi_fun[] = {
 */
 	,[_KCOMEDI_DATA_WRITE]          = { 0, comedi_data_write}
 	,[_KCOMEDI_DATA_READ]           = { 0, comedi_data_read }
+	,[_KCOMEDI_DATA_READ_DELAYED]   = { 0, comedi_data_read_delayed }       
+	,[_KCOMEDI_DATA_READ_HINT]      = { 0, comedi_data_read_hint }          
 	,[_KCOMEDI_DIO_CONFIG]          = { 0, comedi_dio_config }
 	,[_KCOMEDI_DIO_READ]            = { 0, comedi_dio_read }
 	,[_KCOMEDI_DIO_WRITE]           = { 0, comedi_dio_write }

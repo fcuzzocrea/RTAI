@@ -42,44 +42,46 @@
 
 #define _KCOMEDI_DATA_WRITE 		 9
 #define _KCOMEDI_DATA_READ 		10
-#define _KCOMEDI_DIO_CONFIG 		11
-#define _KCOMEDI_DIO_READ 		12
-#define _KCOMEDI_DIO_WRITE 		13
-#define _KCOMEDI_DIO_BITFIELD 		14
-#define _KCOMEDI_GET_N_SUBDEVICES 	15
-#define _KCOMEDI_GET_VERSION_CODE 	16
-#define _KCOMEDI_GET_DRIVER_NAME 	17
-#define _KCOMEDI_GET_BOARD_NAME 	18
-#define _KCOMEDI_GET_SUBDEVICE_TYPE 	19
-#define _KCOMEDI_FIND_SUBDEVICE_TYPE	20
-#define _KCOMEDI_GET_N_CHANNELS 	21
-#define _KCOMEDI_GET_MAXDATA 		22
-#define _KCOMEDI_GET_N_RANGES 		23
-#define _KCOMEDI_DO_INSN 		24
-#define _KCOMEDI_DO_INSN_LIST		25  // not yet in kcomedilib... (tl) 
-#define _KCOMEDI_POLL 			26
+#define _KCOMEDI_DATA_READ_DELAYED	11
+#define _KCOMEDI_DATA_READ_HINT         12
+#define _KCOMEDI_DIO_CONFIG 		13
+#define _KCOMEDI_DIO_READ 		14
+#define _KCOMEDI_DIO_WRITE 		15
+#define _KCOMEDI_DIO_BITFIELD 		16
+#define _KCOMEDI_GET_N_SUBDEVICES 	17
+#define _KCOMEDI_GET_VERSION_CODE 	18
+#define _KCOMEDI_GET_DRIVER_NAME 	19
+#define _KCOMEDI_GET_BOARD_NAME 	20
+#define _KCOMEDI_GET_SUBDEVICE_TYPE 	21
+#define _KCOMEDI_FIND_SUBDEVICE_TYPE	22
+#define _KCOMEDI_GET_N_CHANNELS 	23
+#define _KCOMEDI_GET_MAXDATA 		24
+#define _KCOMEDI_GET_N_RANGES 		25
+#define _KCOMEDI_DO_INSN 		26
+#define _KCOMEDI_DO_INSN_LIST		27  // not yet in kcomedilib... (tl) 
+#define _KCOMEDI_POLL 			28
 
 /* DEPRECATED function */
-#define _KCOMEDI_GET_RANGETYPE 		27
+#define _KCOMEDI_GET_RANGETYPE 		29
 
 /* ALPHA functions */
-#define _KCOMEDI_GET_SUBDEVICE_FLAGS 	28
-#define _KCOMEDI_GET_LEN_CHANLIST 	29
-#define _KCOMEDI_GET_KRANGE 		30
-#define _KCOMEDI_GET_BUF_HEAD_POS	31
-#define _KCOMEDI_SET_USER_INT_COUNT	32
-#define _KCOMEDI_MAP 			33
-#define _KCOMEDI_UNMAP 			34
+#define _KCOMEDI_GET_SUBDEVICE_FLAGS 	30
+#define _KCOMEDI_GET_LEN_CHANLIST 	31
+#define _KCOMEDI_GET_KRANGE 		32
+#define _KCOMEDI_GET_BUF_HEAD_POS	33
+#define _KCOMEDI_SET_USER_INT_COUNT	34
+#define _KCOMEDI_MAP 			35
+#define _KCOMEDI_UNMAP 			36
 
 /* RTAI specific callbacks from kcomedi to user space */
-#define _KCOMEDI_WAIT        		35
-#define _KCOMEDI_WAIT_IF     		36
-#define _KCOMEDI_WAIT_UNTIL  		37
-#define _KCOMEDI_WAIT_TIMED  		38
+#define _KCOMEDI_WAIT        		37
+#define _KCOMEDI_WAIT_IF     		38
+#define _KCOMEDI_WAIT_UNTIL  		39
+#define _KCOMEDI_WAIT_TIMED  		40
 
 /* RTAI specific functions to allocate/free comedi_cmd */
-#define _KCOMEDI_ALLOC_CMD  		39
-#define _KCOMEDI_FREE_CMD  		40
+#define _KCOMEDI_ALLOC_CMD  		41
+#define _KCOMEDI_FREE_CMD  		42
 
 #ifdef __KERNEL__ /* For kernel module build. */
 
@@ -245,6 +247,26 @@ RTAI_PROTO(int, comedi_data_read,(void *dev, unsigned int subdev, unsigned int c
 	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int range; unsigned int aref; lsampl_t *data; } arg = { dev, subdev, chan, range, aref, &ldata };
 	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ, &arg).i[LOW];
 	memcpy(data, &ldata, sizeof(lsampl_t));
+	return retval;
+}
+
+RTAI_PROTO(int, comedi_data_read_delayed,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref, lsampl_t *data, unsigned int nanosec))
+{
+	int retval;
+	lsampl_t ldata;
+	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int range; unsigned int aref; lsampl_t *data; unsigned int nanosec;} arg = { dev, subdev, chan, range, aref, &ldata, nanosec };
+	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_DELAYED, &arg).i[LOW];
+	memcpy(data, &ldata, sizeof(lsampl_t));
+	return retval;
+}
+
+RTAI_PROTO(int, comedi_data_read_hint,(void *dev, unsigned int subdev, unsigned int chan, unsigned int range, unsigned int aref))
+{
+	int retval;
+	//lsampl_t ldata;
+	struct { void *dev; unsigned int subdev; unsigned int chan; unsigned int range; unsigned int aref;} arg = { dev, subdev, chan, range, aref};
+	retval = rtai_lxrt(FUN_COMEDI_LXRT_INDX, COMEDI_LXRT_SIZARG, _KCOMEDI_DATA_READ_HINT, &arg).i[LOW];
+	//memcpy(data, &ldata, sizeof(lsampl_t));
 	return retval;
 }
 

@@ -644,9 +644,8 @@ int rt_printk_sync(const char *format, ...);
 extern struct hal_domain_struct rtai_domain;
 extern struct hal_domain_struct *fusion_domain;
 
-static inline void rt_switch_to_real_time(int cpuid)
+static inline void _rt_switch_to_real_time(int cpuid)
 {
-	TRACE_RTAI_SWITCHTO_RT(cpuid);
 #ifdef RTAI_TRIOSS
 	rtai_linux_context[cpuid].oldflags = xchg(&DOMAIN_TO_STALL->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
 	rtai_linux_context[cpuid].oldomain = hal_current_domain[cpuid];
@@ -657,17 +656,26 @@ static inline void rt_switch_to_real_time(int cpuid)
 	hal_current_domain[cpuid] = &rtai_domain;
 }
 
+static inline void rt_switch_to_real_time(int cpuid)
+{
+	if (!rtai_linux_context[cpuid].sflags) {
+		_rt_switch_to_real_time(cpuid);
+	}
+}
+
 static inline void rt_switch_to_linux(int cpuid)
 {
+	if (rtai_linux_context[cpuid].sflags) {
 #ifdef RTAI_TRIOSS
-	hal_current_domain[cpuid] = (void *)rtai_linux_context[cpuid].oldomain;
-	DOMAIN_TO_STALL->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
+		hal_current_domain[cpuid] = (void *)rtai_linux_context[cpuid].oldomain;
+		DOMAIN_TO_STALL->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
 #else
-	hal_current_domain[cpuid] = hal_root_domain;
-	*ipipe_root_status[cpuid] = rtai_linux_context[cpuid].oldflags;
+		hal_current_domain[cpuid] = hal_root_domain;
+		*ipipe_root_status[cpuid] = rtai_linux_context[cpuid].oldflags;
 #endif
-	rtai_linux_context[cpuid].sflags = 0;
-	CLR_TASKPRI(cpuid);
+		rtai_linux_context[cpuid].sflags = 0;
+		CLR_TASKPRI(cpuid);
+	}
 }
 
 #define rtai_get_intr_handler(v) \
@@ -685,11 +693,11 @@ do { \
 static inline int rt_save_switch_to_real_time(int cpuid)
 {
 	SET_TASKPRI(cpuid);
-	if (rtai_linux_context[cpuid].sflags) {
-		return 1;
+	if (!rtai_linux_context[cpuid].sflags) {
+		_rt_switch_to_real_time(cpuid);
+		return 0;
 	} 
-	rt_switch_to_real_time(cpuid);
-	return 0;
+	return 1;
 }
 
 static inline void rt_restore_switch_to_linux(int sflags, int cpuid)
@@ -698,7 +706,7 @@ static inline void rt_restore_switch_to_linux(int sflags, int cpuid)
 		rt_switch_to_linux(cpuid);
 	} else if (!rtai_linux_context[cpuid].sflags) {
 		SET_TASKPRI(cpuid);
-		rt_switch_to_real_time(cpuid); 
+		_rt_switch_to_real_time(cpuid); 
 	}
 }
 

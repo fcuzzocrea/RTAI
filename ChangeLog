@@ -3,6 +3,11 @@
 	* addons/comedi/rtai_comedi.h, Kcomedi-module.c: added
 	  comedi_data_read_delayed() support.
 
+2006-04-18  Pierangelo Masarati <masarati@aero.polimi.it>
+	* base/sched/GNUmakefile.am: reworked scheduler build; only
+	  build rtai_sched and rtai_lxrt, create symlinks to legacy
+	  schedulers.
+
 2006-04-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: reordered the test for searching the next 

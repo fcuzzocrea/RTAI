@@ -383,7 +383,7 @@ extern volatile unsigned long rtai_cpu_lock;
 
 extern struct rtai_switch_data {
 	volatile unsigned long sflags;
-	volatile unsigned long oldflags;
+	volatile unsigned long lflags;
 #if defined(CONFIG_X86_LOCAL_APIC) && defined(RTAI_TASKPRI)
 	volatile unsigned long set_taskpri;
 #endif
@@ -644,39 +644,53 @@ int rt_printk_sync(const char *format, ...);
 extern struct hal_domain_struct rtai_domain;
 extern struct hal_domain_struct *fusion_domain;
 
-static inline void _rt_switch_to_real_time(int cpuid)
-{
 #ifdef RTAI_TRIOSS
-	rtai_linux_context[cpuid].oldflags = xchg(&DOMAIN_TO_STALL->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG));
-	rtai_linux_context[cpuid].oldomain = hal_current_domain[cpuid];
-#else
-	rtai_linux_context[cpuid].oldflags = xchg(ipipe_root_status[cpuid], (1 << IPIPE_STALL_FLAG));
-#endif
-	rtai_linux_context[cpuid].sflags = 1;
-	hal_current_domain[cpuid] = &rtai_domain;
-}
 
-static inline void rt_switch_to_real_time(int cpuid)
-{
-	if (!rtai_linux_context[cpuid].sflags) {
-		_rt_switch_to_real_time(cpuid);
-	}
-}
+#define _rt_switch_to_real_time(cpuid) \
+do { \
+	rtai_linux_context[cpuid].lflags = xchg(&DOMAIN_TO_STALL->cpudata[cpuid].status, (1 << IPIPE_STALL_FLAG)); \
+	rtai_linux_context[cpuid].oldomain = hal_current_domain[cpuid]; \
+	rtai_linux_context[cpuid].sflags = 1; \
+	hal_current_domain[cpuid] = &rtai_domain; \
+} while (0)
 
-static inline void rt_switch_to_linux(int cpuid)
-{
-	if (rtai_linux_context[cpuid].sflags) {
-#ifdef RTAI_TRIOSS
-		hal_current_domain[cpuid] = (void *)rtai_linux_context[cpuid].oldomain;
-		DOMAIN_TO_STALL->cpudata[cpuid].status = rtai_linux_context[cpuid].oldflags;
+#define rt_switch_to_linux(cpuid) \
+do { \
+	if (rtai_linux_context[cpuid].sflags) { \
+		hal_current_domain[cpuid] = (void *)rtai_linux_context[cpuid].oldomain; \
+		DOMAIN_TO_STALL->cpudata[cpuid].status = rtai_linux_context[cpuid].lflags; \
+		rtai_linux_context[cpuid].sflags = 0; \
+		CLR_TASKPRI(cpuid); \
+	} \
+} while (0)
+
 #else
-		hal_current_domain[cpuid] = hal_root_domain;
-		*ipipe_root_status[cpuid] = rtai_linux_context[cpuid].oldflags;
+
+#define _rt_switch_to_real_time(cpuid) \
+do { \
+	rtai_linux_context[cpuid].lflags = xchg(ipipe_root_status[cpuid], (1 << IPIPE_STALL_FLAG)); \
+	rtai_linux_context[cpuid].sflags = 1; \
+	hal_current_domain[cpuid] = &rtai_domain; \
+} while (0)
+
+#define rt_switch_to_linux(cpuid) \
+do { \
+	if (rtai_linux_context[cpuid].sflags) { \
+		hal_current_domain[cpuid] = hal_root_domain; \
+		*ipipe_root_status[cpuid] = rtai_linux_context[cpuid].lflags; \
+		rtai_linux_context[cpuid].sflags = 0; \
+		CLR_TASKPRI(cpuid); \
+	} \
+} while (0)
+
 #endif
-		rtai_linux_context[cpuid].sflags = 0;
-		CLR_TASKPRI(cpuid);
-	}
-}
+
+#define rt_switch_to_real_time(cpuid) \
+do { \
+	if (!rtai_linux_context[cpuid].sflags) { \
+		_rt_switch_to_real_time(cpuid); \
+	} \
+} while (0)
 
 #define rtai_get_intr_handler(v) \
 	((idt_table[v].b & 0xFFFF0000) | (idt_table[v].a & 0x0000FFFF))
@@ -700,15 +714,15 @@ static inline int rt_save_switch_to_real_time(int cpuid)
 	return 1;
 }
 
-static inline void rt_restore_switch_to_linux(int sflags, int cpuid)
-{
-	if (!sflags) {
-		rt_switch_to_linux(cpuid);
-	} else if (!rtai_linux_context[cpuid].sflags) {
-		SET_TASKPRI(cpuid);
-		_rt_switch_to_real_time(cpuid); 
-	}
-}
+#define rt_restore_switch_to_linux(sflags, cpuid) \
+do { \
+	if (!sflags) { \
+		rt_switch_to_linux(cpuid); \
+	} else if (!rtai_linux_context[cpuid].sflags) { \
+		SET_TASKPRI(cpuid); \
+		_rt_switch_to_real_time(cpuid); \
+	} \
+} while (0)
 
 #define in_hrt_mode(cpuid)  (rtai_linux_context[cpuid].sflags)
 

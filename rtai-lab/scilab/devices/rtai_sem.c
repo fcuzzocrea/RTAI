@@ -49,7 +49,7 @@ void * inp_rtai_sem_init(char * sName,char * IP)
   else {
     inet_aton(IP, &addr.sin_addr);
     sem->tNode = addr.sin_addr.s_addr;
-    while ((sem->tPort = rt_request_port_id(sem->tNode,nam2num(sName))) <= 0
+    while ((sem->tPort = rt_request_port(sem->tNode)) <= 0
 	   && sem->tPort != -EINVAL);
   }
 
@@ -99,7 +99,7 @@ void * out_rtai_sem_init(char * sName,char * IP)
   else {
     inet_aton(IP, &addr.sin_addr);
     sem->tNode = addr.sin_addr.s_addr;
-    while ((sem->tPort = rt_request_port_id(sem->tNode,nam2num(sName))) <= 0
+    while ((sem->tPort = rt_request_port(sem->tNode)) <= 0
 	   && sem->tPort != -EINVAL);
   }
 

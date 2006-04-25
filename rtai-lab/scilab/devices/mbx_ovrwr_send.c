@@ -52,7 +52,7 @@ void * out_mbx_ovrwr_send_init(int nch,char * sName,char * IP)
   else {
     inet_aton(IP, &addr.sin_addr);
     mbx->tNode = addr.sin_addr.s_addr;
-    while ((mbx->tPort = rt_request_port_id(mbx->tNode,nam2num(sName))) <= 0 && mbx->tPort != -EINVAL);
+    while ((mbx->tPort = rt_request_port(mbx->tNode)) <= 0 && mbx->tPort != -EINVAL);
   }
 
   mbx->mbx = (MBX *) RT_typed_named_mbx_init(mbx->tNode,mbx->tPort,sName,nch*sizeof(double),FIFO_Q);

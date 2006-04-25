@@ -55,7 +55,7 @@ void * out_mbx_ovrwr_send_init(int nch,char * sName,char * IP);
 void out_mbx_ovrwr_send_output(void * ptr, double * u,double t);
 void out_mbx_ovrwr_send_end(void * ptr);
 
-void * inp_mbx_receive_if_init(int nch,char * sName,char * IPs);
+void * inp_mbx_receive_if_init(int nch,char * sName,char * IP);
 void inp_mbx_receive_if_input(void * ptr, double * y, double t);
 void inp_mbx_receive_if_update(void);
 void inp_mbx_receive_if_end(void * ptr);

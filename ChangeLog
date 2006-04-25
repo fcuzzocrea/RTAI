@@ -1,3 +1,8 @@
+2006-04-25  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/devices: request_port_id substituted by request_port in sem 
+	and mbx files.
+
 2006-04-24  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_netrpc.h: deleted useless argument from the call 

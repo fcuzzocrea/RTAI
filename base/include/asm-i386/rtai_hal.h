@@ -765,7 +765,7 @@ void rtai_set_linux_task_priority(struct task_struct *task,
 				  int policy,
 				  int prio);
 
-int rtai_catch_event (struct hal_domain_struct *ipd, unsigned long event, int (*handler)(unsigned long, void *));
+long rtai_catch_event (struct hal_domain_struct *ipd, unsigned long event, int (*handler)(unsigned long, void *));
 
 #endif /* __KERNEL__ && !__cplusplus */
 

@@ -2062,9 +2062,9 @@ FIRST_LINE_OF_RTAI_DOMAIN_ENTRY
 }
 LAST_LINE_OF_RTAI_DOMAIN_ENTRY
 
-int rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int (*handler)(unsigned long, void *))
+long rtai_catch_event (struct hal_domain_struct *from, unsigned long event, int (*handler)(unsigned long, void *))
 {
-	return hal_catch_event(from, event, (void *)handler);
+	return (long)hal_catch_event(from, event, (void *)handler);
 }
 
 static void *saved_hal_irq_handler;

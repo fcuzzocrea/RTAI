@@ -877,7 +877,7 @@ int _rtai_sched_on_ipi_handler(void)
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-		set_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid]);
+		__set_bit(IPIPE_STALL_FLAG, ipipe_root_status[rtai_cpuid()]);
 #endif
 		return 1;
 	}
@@ -949,7 +949,7 @@ int _rtai_apic_timer_handler(void)
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-		set_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid]);
+		__set_bit(IPIPE_STALL_FLAG, ipipe_root_status[rtai_cpuid()]);
 #endif
 		return 1;
 	}
@@ -1015,7 +1015,7 @@ int _rtai_8254_timer_handler(struct pt_regs regs)
 #endif /* CONFIG_SMP && CONFIG_FRAME_POINTER */
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) && LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-		set_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid]);
+		__set_bit(IPIPE_STALL_FLAG, ipipe_root_status[rtai_cpuid()]);
 #endif
 		return 1;
 	}
@@ -1511,7 +1511,7 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 	}
 	hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-	set_bit(IPIPE_STALL_FLAG, ipipe_root_status[cpuid]);
+	__set_bit(IPIPE_STALL_FLAG, ipipe_root_status[rtai_cpuid()]);
 #endif
 	return 1;
 }

@@ -57,7 +57,7 @@ int _rtai_rtc_timer_handler(void)
 		rtai_sti();
 		hal_fast_flush_pipeline(cpuid);
 #if defined(CONFIG_SMP) &&  LINUX_VERSION_CODE >= KERNEL_VERSION(2,4,32)
-		set_bit(IPIPE_STALL_FLAG, &hal_root_domain->cpudata[cpuid].status);
+		__set_bit(IPIPE_STALL_FLAG, ipipe_root_status[rtai_cpuid()]);
 #endif
 		return 1;
 	}

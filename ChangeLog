@@ -1,3 +1,10 @@
+2006-04-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/arch/i386/hal/hal.immed, rtc.c: no need to use atomic bit 
+	  setting on return from interrupt handling/dispatching.
+	* base/ipc/mbx/mabx.c: safer direct acquisition of acces semaphores 
+	  in all nonblocking send/receive.
+
 2006-04-25  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/devices: request_port_id substituted by request_port 

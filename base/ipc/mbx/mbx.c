@@ -448,7 +448,7 @@ int _rt_mbx_send_wp(MBX *mbx, void *msg, int msg_size, int space)
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->sndsem.count && mbx->frbs) {
+	if (mbx->sndsem.count > 0 && mbx->frbs) {
 		mbx->sndsem.count = 0;
 		if (mbx->sndsem.type > 0) {
 			mbx->sndsem.owndby = rt_current;
@@ -485,7 +485,7 @@ int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int space)
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->sndsem.count && msg_size <= mbx->frbs) {
+	if (mbx->sndsem.count > 0 && msg_size <= mbx->frbs) {
 		mbx->sndsem.count = 0;
 		if (mbx->sndsem.type > 0) {
 			mbx->sndsem.owndby = rt_current;
@@ -645,7 +645,7 @@ int _rt_mbx_receive_wp(MBX *mbx, void *msg, int msg_size, int space)
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->rcvsem.count && mbx->avbs) {
+	if (mbx->rcvsem.count > 0 && mbx->avbs) {
 		mbx->rcvsem.count = 0;
 		if (mbx->rcvsem.type > 0) {
 			mbx->rcvsem.owndby = rt_current;
@@ -687,7 +687,7 @@ int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int space)
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->rcvsem.count && msg_size <= mbx->avbs) {
+	if (mbx->rcvsem.count > 0 && msg_size <= mbx->avbs) {
 		mbx->rcvsem.count = 0;
 		if (mbx->rcvsem.type > 0) {
 			mbx->rcvsem.owndby = rt_current;
@@ -801,7 +801,7 @@ int _rt_mbx_ovrwr_send(MBX *mbx, void *msg, int msg_size, int space)
 	CHK_MBX_MAGIC;
 
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->sndsem.count) {
+	if (mbx->sndsem.count > 0) {
 		mbx->sndsem.count = 0;
 		if (mbx->sndsem.type > 0) {
 			mbx->sndsem.owndby = rt_current;

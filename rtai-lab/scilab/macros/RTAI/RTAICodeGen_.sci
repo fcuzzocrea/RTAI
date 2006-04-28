@@ -1570,7 +1570,7 @@ function  [ok,XX,alreadyran]=do_compile_superblock(XX,all_scs_m,numk,alreadyran)
 
   [bllst,connectmat,clkconnect,cor,corinv,ok]=c_pass1(scs_m);
 
-if ok==%f then message('Sorry: problem in the pre-compilation step.'),return, end
+  if ok==%f then message('Sorry: problem in the pre-compilation step.'),return, end
   a=[];b=[];tt=[];howclk=[];allhowclk=[];cap=[];act=[];
 
   ///**********************************

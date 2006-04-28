@@ -1,6 +1,0 @@
-square inp 1 1 0 0 1 10 5 0 0
-rtai_scope out 1 2 IO 0 0 0 0 0 0
-rtai_scope out 2 1 U 0 0 0 0 0 0
-rtai_led out 3 1 LED 0 0 0 0 0 0
-rtai_meter out 4 1 METER 0 0 0 0 0 0
-end

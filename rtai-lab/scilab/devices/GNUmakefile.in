@@ -381,8 +381,7 @@ libsciblk_a_SOURCES = rtai_scope.c rtai_led.c rtai_meter.c rtai_fifo.c \
 	mbx_send_if.c rtmain.h rtai_sem.c $(am__append_1)
 libsciblk_a_AR = $(CROSS_COMPILE)ar cru
 include_HEADERS = \
-	devices.h \
-	devstruct.h
+	devices.h 
 
 INCLUDES = \
 	@RTAI_USER_CFLAGS@ \

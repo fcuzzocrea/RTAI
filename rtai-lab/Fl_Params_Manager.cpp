@@ -42,12 +42,12 @@ int Fl_Parameters_Manager::y()
 
 int Fl_Parameters_Manager::w()
 {
-	return PWin->w();
+	return PWin->w()- PWin->box()->dw();                          //see Fl_MDI_Window.cpp line 374 for more information;
 }
 
 int Fl_Parameters_Manager::h()
 {
-	return PWin->h();
+	return PWin->h()- PWin->titlebar()->h() - PWin->box()->dh();  //see Fl_MDI_Window.cpp line 374 for more information;
 }
 
 void Fl_Parameters_Manager::show()

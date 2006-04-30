@@ -32,12 +32,12 @@ int Fl_Meter_Window::y()
 
 int Fl_Meter_Window::w()
 {
-	return MWin->w();
+	return MWin->w() - MWin->box()->dw();
 }
 
 int Fl_Meter_Window::h()
 {
-	return MWin->h();
+	return MWin->h() - MWin->titlebar()->h() - MWin->box()->dh();
 }
 
 void Fl_Meter_Window::resize(int x, int y, int w, int h)

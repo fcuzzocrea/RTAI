@@ -168,7 +168,7 @@ SimStruct *rtaiLed[MAX_RTAI_LEDS];
 SimStruct *rtaiMeter[MAX_RTAI_METERS];
 SimStruct *rtaiSynchronoscope[MAX_RTAI_SYNCHS];
 
-#define MAX_COMEDI_DEVICES	4
+#define MAX_COMEDI_DEVICES        10	
 
 void *ComediDev[MAX_COMEDI_DEVICES];
 int ComediDev_InUse[MAX_COMEDI_DEVICES] = {0};

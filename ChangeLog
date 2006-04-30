@@ -1,3 +1,10 @@
+2006-04-27  Alberto Sechi <albertosechi@libero.it>
+	
+	* /rtai-lab/Fl_Scope_Window.cpp, /rtai-lab/Fl_Meter_Window.cpp
+	  /rtai-lab/Fl_Synch_Window.cpp, /rtai-lab/Fl_Led_Window.cpp, 
+	  /rtai-lab/Fl_Params_Manager.cpp: adjusting of windows dimensions
+	  after profiles loading
+
 2006-04-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed, rtc.c: no need to use atomic bit 

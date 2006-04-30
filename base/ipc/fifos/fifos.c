@@ -1690,6 +1690,7 @@ static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_GET_IF]       = { 0, rtf_get_if }
 };
 
+#if 1  // disable this to use fifos in stand alone mode
 static int register_lxrt_fifos_support(void)
 {
 	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
@@ -1709,6 +1710,10 @@ static void unregister_lxrt_fifos_support(void)
 		((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rtai_fifos_fun, FUN_FIFOS_LXRT_INDX);
 	}
 }
+#else
+static int register_lxrt_fifos_support(void) { return 0; }
+static void unregister_lxrt_fifos_support(void) { }
+#endif
 
 int __rtai_fifos_init(void)
 {

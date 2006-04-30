@@ -4,6 +4,7 @@
 	  /rtai-lab/Fl_Synch_Window.cpp, /rtai-lab/Fl_Led_Window.cpp, 
 	  /rtai-lab/Fl_Params_Manager.cpp: adjusting of windows dimensions
 	  after profiles loading
+	* /rtai-lab/matlab/rtmain.c: max comedi devices changed to 10
 
 2006-04-27  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -1,3 +1,8 @@
+2006-05-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: changed test for priority passed 
+	  to a task further blocked either on sems or intertask messages.
+
 2006-04-27  Alberto Sechi <albertosechi@libero.it>
 	
 	* /rtai-lab/Fl_Scope_Window.cpp, /rtai-lab/Fl_Meter_Window.cpp

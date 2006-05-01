@@ -397,7 +397,7 @@ static inline void rem_ready_current(RT_TASK *rt_current)
 	if (!rt_current->is_hard) {
 		NON_RTAI_TASK_SUSPEND(rt_current);
 	}
-//	rt_current->lnx_signald = 0;
+//	rt_current->unblocked = 0;
 	(rt_current->rprev)->rnext = rt_current->rnext;
 	(rt_current->rnext)->rprev = rt_current->rprev;
 }
@@ -553,8 +553,9 @@ static inline unsigned long pass_prio(RT_TASK *to, RT_TASK *from)
 #ifdef CONFIG_SMP
                         set_bit(to->runnable_on_cpus & 0x1F, &schedmap);
 #endif
-                } else if ((void *)(q = to->blocked_on) > RTP_HIGERR && !((to->state & RT_SCHED_SEMAPHORE) &&
- ((SEM *)q)->qtype)) {
+//		} else if ((void *)(q = to->blocked_on) > RTP_HIGERR && !((to->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
+		} else if ((to->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN | RT_SCHED_SEMAPHORE))) {
+			q = to->blocked_on;
                         (to->queue.prev)->next = to->queue.next;
                         (to->queue.next)->prev = to->queue.prev;
                         while ((q = q->next) != to->blocked_on && (q->task)->priority <= to->priority);

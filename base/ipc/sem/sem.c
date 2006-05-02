@@ -801,7 +801,7 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
 	enqueue_blocked(rt_current, &cnd->queue, cnd->qtype);
 	type = rt_cndmtx_signal(mtx, rt_current);
 	if (likely((retp = rt_current->blocked_on) != RTP_OBJREM)) { 
-		if (unlikely(retp)) {
+		if (unlikely(retp != NULL)) {
 			dequeue_blocked(rt_current);
 			++cnd->count;
                         retval = RTE_UNBLKD;
@@ -862,7 +862,7 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 		type = rt_cndmtx_signal(mtx, rt_current);
 		if (unlikely((retp = rt_current->blocked_on) == RTP_OBJREM)) { 
                         retval = RTE_OBJREM;
-		} else if (unlikely(retp)) {
+		} else if (unlikely(retp != NULL)) {
 			dequeue_blocked(rt_current);
 			++cnd->count;
 			return likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;

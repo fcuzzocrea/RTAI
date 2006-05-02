@@ -274,7 +274,7 @@ int rt_task_suspend(RT_TASK *task)
 				rem_ready_current(task);
 				task->state |= RT_SCHED_SUSPENDED;
 				rt_schedule();
-				if (unlikely(task->blocked_on)) {
+				if (unlikely(task->blocked_on != NULL)) {
 					task->suspdepth = 0;
 					rt_global_restore_flags(flags);
 					return RTE_UNBLKD;
@@ -343,7 +343,7 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
 					while (1) {
 						rt_schedule();
-						if (unlikely(task->blocked_on)) {
+						if (unlikely(task->blocked_on != NULL)) {
 							task->suspdepth = 0;
 							rt_global_restore_flags(flags);
 							return RTE_UNBLKD;

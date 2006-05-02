@@ -101,7 +101,7 @@ static int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current
 			enq_timed_task(rt_current);
 			rt_schedule();
 		}
-		if (unlikely(retp = rt_current->blocked_on)) {
+		if (unlikely((retp = rt_current->blocked_on) != NULL)) {
 			mbx->waiting_task = NULL;
 			rt_global_restore_flags(flags);
 			return likely(retp > RTP_HIGERR) ? RTE_TIMOUT : (retp == RTP_UNBLKD ? RTE_UNBLKD : RTE_OBJREM);

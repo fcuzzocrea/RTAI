@@ -4901,7 +4901,18 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
  	__schedule_tail(prev);
  
  same_process:
-@@ -991,6 +1045,7 @@ static int setscheduler(pid_t pid, int p
+@@ -702,6 +756,10 @@ same_process:
+ 	return;
+ }
+ 
++#define EXPORT_SYMTAB
++#include <linux/module.h>
++EXPORT_SYMBOL(context_switch);
++
+ /*
+  * The core wakeup function.  Non-exclusive wakeups (nr_exclusive == 0) just wake everything
+  * up.  If it's an exclusive wakeup (nr_exclusive == small +ve number) then we wake all the
+@@ -991,6 +1049,7 @@ static int setscheduler(pid_t pid, int p
  	retval = 0;
  	p->policy = policy;
  	p->rt_priority = lp.sched_priority;
@@ -4909,7 +4920,7 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
  
  	current->need_resched = 1;
  
-@@ -1395,3 +1450,33 @@ void __init sched_init(void)
+@@ -1395,3 +1454,33 @@ void __init sched_init(void)
  	atomic_inc(&init_mm.mm_count);
  	enter_lazy_tlb(&init_mm, current, cpu);
  }

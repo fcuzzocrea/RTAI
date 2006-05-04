@@ -1803,6 +1803,9 @@ zcptr=cpr.sim.zcptr;
     end
   
     rpat=stripblanks(rpat);
+    rdnom=strsubst(rdnom,'-','_');
+    rpat=strsubst(rpat,'-','_');
+
     dirinfo=fileinfo(rpat)
     if dirinfo==[] then
       [pathrp,fnamerp,extensionrp]=fileparts(rpat)

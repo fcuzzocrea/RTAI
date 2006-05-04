@@ -451,7 +451,7 @@ int rt_sem_wait(SEM *sem)
 		} else {
 			if (likely(retp != RTP_OBJREM)) { 
 				dequeue_blocked(rt_current);
-				if(++sem->count > 1 && sem->type) {
+				if (++sem->count > 1 && sem->type) {
 					sem->count = 1;
 				}
 				if (sem->owndby) {
@@ -600,7 +600,7 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 			count = sem->count;
 		} else if (likely(retp != RTP_OBJREM)) { 
 			dequeue_blocked(rt_current);
-			if(++sem->count > 1 && sem->type) {
+			if (++sem->count > 1 && sem->type) {
 				sem->count = 1;
 			}
 			if (sem->owndby) {
@@ -1247,15 +1247,15 @@ int rt_rwl_unlock(RWL *rwl)
 		wtask = (rwl->wrsem.queue.next)->task;
 		rtask = (rwl->rdsem.queue.next)->task;
 		if (wtask && rtask) {
-			if (wtask->priority < rtask->priority) {
+			if (wtask->priority <= rtask->priority) {
 				rt_sem_signal(&rwl->wrsem);
 			} else {
-				rt_sem_signal(&rwl->rdsem);
+				rt_sem_broadcast(&rwl->rdsem);
 			}
 		} else if (wtask) {
 			rt_sem_signal(&rwl->wrsem);
 		} else if (rtask) {
-			rt_sem_signal(&rwl->rdsem);
+			rt_sem_broadcast(&rwl->rdsem);
 		}
         }
 	rt_global_restore_flags(flags);

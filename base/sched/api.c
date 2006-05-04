@@ -632,7 +632,7 @@ int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME pe
 	start_delay = nano2count_cpuid(start_delay, task->runnable_on_cpus);
 	period = nano2count_cpuid(period, task->runnable_on_cpus);
 	flags = rt_global_save_flags_and_cli();
-	task->resume_time = rt_get_time_cpuid(task->runnable_on_cpus) + start_delay;
+	task->periodic_resume_time = task->resume_time = rt_get_time_cpuid(task->runnable_on_cpus) + start_delay;
 	task->period = period;
 	task->suspdepth = 0;
         if (!(task->state & RT_SCHED_DELAYED)) {
@@ -689,7 +689,7 @@ int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
 		return -EINVAL;
 	}
 	flags = rt_global_save_flags_and_cli();
-	task->resume_time = start_time;
+	task->periodic_resume_time = task->resume_time = start_time;
 	task->period = period;
 	task->suspdepth = 0;
         if (!(task->state & RT_SCHED_DELAYED)) {
@@ -731,12 +731,14 @@ int rt_task_wait_period(void)
 	ASSIGN_RT_CURRENT;
 	if (rt_current->resync_frame) { // Request from watchdog
 	    	rt_current->resync_frame = 0;
+		rt_current->periodic_resume_time = rt_current->resume_time = oneshot_timer ? rtai_rdtsc() :
 #ifdef CONFIG_SMP
-		rt_current->resume_time = oneshot_timer ? rtai_rdtsc() : rt_smp_times[cpuid].tick_time;
+		rt_smp_times[cpuid].tick_time;
 #else
-		rt_current->resume_time = oneshot_timer ? rtai_rdtsc() : rt_times.tick_time;
+		rt_times.tick_time;
 #endif
-	} else if ((rt_current->resume_time += rt_current->period) > rt_time_h) {
+	} else if ((rt_current->periodic_resume_time += rt_current->period) > rt_time_h) {
+		rt_current->resume_time = rt_current->periodic_resume_time;
 		void *blocked_on;
 		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
@@ -830,7 +832,7 @@ RTIME next_period(void)
 	flags = rt_global_save_flags_and_cli();
 	rt_current = RT_CURRENT;
 	rt_global_restore_flags(flags);
-	return rt_current->resume_time + rt_current->period;
+	return rt_current->periodic_resume_time + rt_current->period;
 }
 
 /**

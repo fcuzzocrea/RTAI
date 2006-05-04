@@ -149,6 +149,7 @@ typedef struct rt_task_struct {
     struct rt_task_struct *prio_passed_to;
     RTIME period;
     RTIME resume_time;
+    RTIME periodic_resume_time;
     RTIME yield_time;
     int rr_quantum;
     int rr_remaining;

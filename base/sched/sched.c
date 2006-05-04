@@ -277,6 +277,7 @@ int set_rtext(RT_TASK *task, int priority, int uses_fpu, void(*signal)(void), un
 	task->prio_passed_to = 0;
 	task->period = 0;
 	task->resume_time = RT_TIME_END;
+	task->periodic_resume_time = RT_TIME_END;
 	task->queue.prev = task->queue.next = &(task->queue);      
 	task->queue.task = task;
 	task->msg_queue.prev = task->msg_queue.next = &(task->msg_queue);      
@@ -402,6 +403,7 @@ int rt_task_init_cpuid(RT_TASK *task, void (*rt_thread)(long), long data, int st
 	task->prio_passed_to = 0;
 	task->period = 0;
 	task->resume_time = RT_TIME_END;
+	task->periodic_resume_time = RT_TIME_END;
 	task->queue.prev = &(task->queue);      
 	task->queue.next = &(task->queue);      
 	task->queue.task = task;
@@ -486,10 +488,12 @@ void rt_set_runnable_on_cpuid(RT_TASK *task, unsigned int cpuid)
                 case 1:
                         task->period = llimd(task->period, TIMER_FREQ, tuned.cpu_freq);
                         task->resume_time = llimd(task->resume_time, TIMER_FREQ, tuned.cpu_freq);
+                        task->periodic_resume_time = llimd(task->periodic_resume_time, TIMER_FREQ, tuned.cpu_freq);
                         break;
                 case 2:
                         task->period = llimd(task->period, tuned.cpu_freq, TIMER_FREQ);
                         task->resume_time = llimd(task->resume_time, tuned.cpu_freq, TIMER_FREQ);
+                        task->periodic_resume_time = llimd(task->periodic_resume_time, tuned.cpu_freq, TIMER_FREQ);
 			break;
 	}
 	if (!((task->prev)->next = task->next)) {
@@ -637,7 +641,7 @@ do { \
 #endif
 
 #if CONFIG_RTAI_MONITOR_EXECTIME
-static RTIME switch_time[NR_RT_CPUS];
+RTIME switch_time[NR_RT_CPUS];
 #define KEXECTIME() \
 do { \
 	RTIME now; \
@@ -3033,6 +3037,7 @@ static int __rtai_lxrt_init(void)
 		rt_linux_task.signal = 0;
 		rt_linux_task.prev = &rt_linux_task;
                 rt_linux_task.resume_time = RT_TIME_END;
+                rt_linux_task.periodic_resume_time = RT_TIME_END;
                 rt_linux_task.tprev = rt_linux_task.tnext =
                 rt_linux_task.rprev = rt_linux_task.rnext = &rt_linux_task;
 #ifdef CONFIG_RTAI_LONG_TIMED_LIST
@@ -3167,5 +3172,6 @@ EXPORT_SYMBOL(rt_do_force_soft);
 EXPORT_SYMBOL(rt_schedule_soft_tail);
 EXPORT_SYMBOL(rt_sched_timed);
 EXPORT_SYMBOL(rtai_handle_isched_lock);
+EXPORT_SYMBOL(switch_time);
 
 #endif /* CONFIG_KBUILD */

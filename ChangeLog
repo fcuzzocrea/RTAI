@@ -1,3 +1,10 @@
+2006-05-05  Bernd Gassmann <gassmann@fzi.de>
+
+	* base/include/rtai_sched.h: add declaration of periodic_resume_time
+	  in task structure.
+	* base/sched/api.c and sched.c: keep an independent resume time in
+	  all functions involved in periodic tasks scheduling.
+
 2006-05-04  Bernd Gassmann <gassmann@fzi.de>
 
 	* base/ipc/sem/sem.c: fix possible deadlock conditions in 

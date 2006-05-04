@@ -66,7 +66,7 @@ case 'define' then
   out=1
   outsz = 1
   name = 'SEM'
-  ipaddr = '127.0.0.1'
+  ipaddr = '0'
 
   model=scicos_model()
   model.sim=list(' ',2004)

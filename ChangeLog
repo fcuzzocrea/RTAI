@@ -1,3 +1,8 @@
+2006-05-04  Bernd Gassmann <gassmann@fzi.de>
+
+	* base/ipc/sem/sem.c: fix possible deadlock conditions in 
+	  rt_rwl_unlock.
+
 2006-05-04  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/devices: request_port substituted by request_port_id 

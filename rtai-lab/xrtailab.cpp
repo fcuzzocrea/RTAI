@@ -69,6 +69,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <Fl_Params_Manager.h>
 #include <Fl_Scopes_Manager.h>
 #include <Fl_Logs_Manager.h>
+#include <Fl_ALogs_Manager.h>
 #include <Fl_Leds_Manager.h>
 #include <Fl_Meters_Manager.h>
 #include <Fl_Synchs_Manager.h>
@@ -77,6 +78,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 #include <icons/stop_icon.xpm>
 #include <icons/parameters_icon.xpm>
 #include <icons/log_icon.xpm>
+#include <icons/auto_log_icon.xpm>
 #include <icons/connect_icon.xpm>
 #include <icons/connect_wprofile_icon.xpm>
 #include <icons/disconnect_icon.xpm>
@@ -91,6 +93,7 @@ static RT_TASK *RLG_Main_Task;
 static pthread_t Target_Interface_Thread;
 static pthread_t *Get_Scope_Data_Thread;
 static pthread_t *Get_Log_Data_Thread;
+static pthread_t *Get_ALog_Data_Thread;
 static pthread_t *Get_Led_Data_Thread;
 static pthread_t *Get_Meter_Data_Thread;
 static pthread_t *Get_Synch_Data_Thread;
@@ -109,6 +112,7 @@ int Num_Tunable_Parameters;
 int Num_Tunable_Blocks;
 int Num_Scopes;
 int Num_Logs;
+int Num_ALogs;
 int Num_Leds;
 int Num_Meters;
 int Num_Synchs;
@@ -117,6 +121,7 @@ Target_Parameters_T *Tunable_Parameters;
 Target_Blocks_T *Tunable_Blocks;
 Target_Scopes_T *Scopes;
 Target_Logs_T *Logs;
+Target_ALogs_T *ALogs;
 Target_Leds_T *Leds;
 Target_Meters_T *Meters;
 Target_Synchs_T *Synchs;
@@ -129,6 +134,7 @@ Profile_T *Profile;
 Fl_Parameters_Manager *Parameters_Manager;
 Fl_Scopes_Manager *Scopes_Manager;
 Fl_Logs_Manager *Logs_Manager;
+Fl_ALogs_Manager *ALogs_Manager;
 Fl_Leds_Manager *Leds_Manager;
 Fl_Meters_Manager *Meters_Manager;
 Fl_Synchs_Manager *Synchs_Manager;
@@ -149,6 +155,7 @@ Fl_Tool_Button *RLG_Stop_Button;
 Fl_Tool_Button *RLG_Params_Mgr_Button;
 Fl_Tool_Button *RLG_Scopes_Mgr_Button;
 Fl_Tool_Button *RLG_Logs_Mgr_Button;
+Fl_Tool_Button *RLG_ALogs_Mgr_Button;
 Fl_Tool_Button *RLG_Leds_Mgr_Button;
 Fl_Tool_Button *RLG_Meters_Mgr_Button;
 Fl_Tool_Button *RLG_Synchs_Mgr_Button;
@@ -164,6 +171,7 @@ Fl_Input *RLG_Target_IP_Address;
 Fl_Input *RLG_Target_Task_ID;
 Fl_Input *RLG_Target_Scope_ID;
 Fl_Input *RLG_Target_Log_ID;
+Fl_Input *RLG_Target_ALog_ID;
 Fl_Input *RLG_Target_Led_ID;
 Fl_Input *RLG_Target_Meter_ID;
 Fl_Input *RLG_Target_Synch_ID;
@@ -192,6 +200,7 @@ Fl_Menu_Item RLG_Main_Menu_Table[] = {
 		{" Parameters ",     FL_ALT+'p', rlg_params_mgr_cb, 0, FL_MENU_INACTIVE|FL_MENU_TOGGLE},
 		{" Scopes ",         FL_ALT+'s', rlg_scopes_mgr_cb, 0, FL_MENU_INACTIVE|FL_MENU_TOGGLE},
 		{" Logs ",           FL_ALT+'l', rlg_logs_mgr_cb,   0, FL_MENU_INACTIVE|FL_MENU_TOGGLE},
+		{" Auto Logs ",      FL_ALT+'a', rlg_alogs_mgr_cb,  0, FL_MENU_INACTIVE|FL_MENU_TOGGLE}, //aggiunto 4/5
 		{" Leds ",           FL_ALT+'e', rlg_leds_mgr_cb,   0, FL_MENU_INACTIVE|FL_MENU_TOGGLE},
 		{" Meters ",         FL_ALT+'m', rlg_meters_mgr_cb, 0, FL_MENU_INACTIVE|FL_MENU_TOGGLE},
 		{" Synchs ",         FL_ALT+'y', rlg_synchs_mgr_cb, 0, FL_MENU_INACTIVE|FL_MENU_TOGGLE|FL_MENU_DIVIDER},
@@ -259,6 +268,7 @@ void rlg_read_pref(int p_type, const char *c_file, int p_idx)
 			App.read("task_id",      Preferences.Target_Interface_Task_Name, "IFTASK");
 			App.read("scope_mbx_id", Preferences.Target_Scope_Mbx_ID, "RTS");
 			App.read("log_mbx_id",   Preferences.Target_Log_Mbx_ID, "RTL");
+			App.read("auto_log_mbx_id",Preferences.Target_ALog_Mbx_ID, "RAL"); //aggiunto 4/5
 			App.read("led_mbx_id",   Preferences.Target_Led_Mbx_ID, "RTE");
 			App.read("meter_mbx_id", Preferences.Target_Meter_Mbx_ID, "RTM");
 			App.read("synch_mbx_id", Preferences.Target_Synch_Mbx_ID, "RTY");
@@ -266,6 +276,7 @@ void rlg_read_pref(int p_type, const char *c_file, int p_idx)
 			RLG_Target_Task_ID->value(Preferences.Target_Interface_Task_Name);
 			RLG_Target_Scope_ID->value(Preferences.Target_Scope_Mbx_ID);
 			RLG_Target_Log_ID->value(Preferences.Target_Log_Mbx_ID);
+			RLG_Target_ALog_ID->value(Preferences.Target_ALog_Mbx_ID);
 			RLG_Target_Led_ID->value(Preferences.Target_Led_Mbx_ID);
 			RLG_Target_Meter_ID->value(Preferences.Target_Meter_Mbx_ID);
 			RLG_Target_Synch_ID->value(Preferences.Target_Synch_Mbx_ID);
@@ -292,6 +303,7 @@ void rlg_read_pref(int p_type, const char *c_file, int p_idx)
 			App.read("task_id",      Profile[p_idx].Target_Interface_Task_Name, "IFTASK");
 			App.read("scope_mbx_id", Profile[p_idx].Target_Scope_Mbx_ID, "RTS");
 			App.read("log_mbx_id",   Profile[p_idx].Target_Log_Mbx_ID, "RTL");
+			App.read("auto_log_mbx_id",Profile[p_idx].Target_ALog_Mbx_ID, "RAL");
 			App.read("led_mbx_id",   Profile[p_idx].Target_Led_Mbx_ID, "RTE");
 			App.read("meter_mbx_id", Profile[p_idx].Target_Meter_Mbx_ID, "RTM");
 			App.read("synch_mbx_id", Profile[p_idx].Target_Synch_Mbx_ID, "RTY");
@@ -299,6 +311,7 @@ void rlg_read_pref(int p_type, const char *c_file, int p_idx)
 			App.read("n_blocks",	 Profile[p_idx].n_blocks, 0);
 			App.read("n_scopes",	 Profile[p_idx].n_scopes, 0);
 			App.read("n_logs",	 Profile[p_idx].n_logs, 0);
+			App.read("n_alogs",	 Profile[p_idx].n_alogs, 0);
 			App.read("n_leds",	 Profile[p_idx].n_leds, 0);
 			App.read("n_meters",	 Profile[p_idx].n_meters, 0);
 			App.read("n_synchs",	 Profile[p_idx].n_synchs, 0);
@@ -394,6 +407,17 @@ void rlg_read_pref(int p_type, const char *c_file, int p_idx)
 				App.read(buf, Profile[p_idx].Log_Mgr_TSave[i], 1.0);
 				sprintf(buf, "log widget n.%d filename", i + 1);
 				App.read(buf, Profile[p_idx].Log_Mgr_File[i], "filename");
+			}
+			App.set_section("Auto Logs Manager");
+			App.read("x", Profile[p_idx].ALog_Mgr_W.x, 480);
+			App.read("y", Profile[p_idx].ALog_Mgr_W.y, 0);
+			App.read("w", Profile[p_idx].ALog_Mgr_W.w, 380);
+			App.read("h", Profile[p_idx].ALog_Mgr_W.h, 250);
+			App.read("visible", Profile[p_idx].ALog_Mgr_W.visible, 0);
+			for (int i = 0; i < Profile[p_idx].n_alogs; i++) {
+				char buf[100];
+				sprintf(buf, "auto log widget n.%d filename", i + 1);
+				App.read(buf, Profile[p_idx].ALog_Mgr_File[i], "filename");
 			}
 			App.set_section("Leds Manager");
 			App.read("x", Profile[p_idx].Led_Mgr_W.x, 500);
@@ -500,6 +524,7 @@ void rlg_write_pref(int p_type, const char *c_file)
 			App.write("task_id",      RLG_Target_Task_ID->value());
 			App.write("scope_mbx_id", RLG_Target_Scope_ID->value());
 			App.write("log_mbx_id",   RLG_Target_Log_ID->value());
+			App.write("alog_mbx_id",  RLG_Target_ALog_ID->value());
 			App.write("led_mbx_id",   RLG_Target_Led_ID->value());
 			App.write("meter_mbx_id", RLG_Target_Meter_ID->value());
 			App.write("synch_mbx_id", RLG_Target_Synch_ID->value());
@@ -526,6 +551,7 @@ void rlg_write_pref(int p_type, const char *c_file)
 			App.write("task_id",      RLG_Target_Task_ID->value());
 			App.write("scope_mbx_id", RLG_Target_Scope_ID->value());
 			App.write("log_mbx_id",   RLG_Target_Log_ID->value());
+			App.write("alog_mbx_id",  RLG_Target_ALog_ID->value());
 			App.write("led_mbx_id",   RLG_Target_Led_ID->value());
 			App.write("meter_mbx_id", RLG_Target_Meter_ID->value());
 			App.write("synch_mbx_id", RLG_Target_Synch_ID->value());
@@ -533,6 +559,7 @@ void rlg_write_pref(int p_type, const char *c_file)
 			App.write("n_blocks",	  Num_Tunable_Blocks);
 			App.write("n_scopes",	  Num_Scopes);
 			App.write("n_logs",	  Num_Logs);
+			App.write("n_alogs",	  Num_ALogs);
 			App.write("n_leds",	  Num_Leds);
 			App.write("n_meters",	  Num_Meters);
 			App.write("n_synchs",	  Num_Synchs);
@@ -632,6 +659,19 @@ void rlg_write_pref(int p_type, const char *c_file)
 					App.write(buf, Logs_Manager->t_save(i));
 					sprintf(buf, "log widget n.%d filename", i + 1);
 					App.write(buf, Logs_Manager->file_name(i));
+				}
+			}
+			if (ALogs_Manager) {
+				App.set_section("Auto Logs Manager");
+				App.write("x", ALogs_Manager->x());
+				App.write("y", ALogs_Manager->y());
+				App.write("w", ALogs_Manager->w());
+				App.write("h", ALogs_Manager->h());
+				App.write("visible", ALogs_Manager->visible());
+				for (int i = 0; i < Num_ALogs; i++) {
+					char buf[100];
+					sprintf(buf, "auto log widget n.%d filename", i + 1);
+					App.write(buf, ALogs_Manager->file_name(i));
 				}
 			}
 			if (Leds_Manager) {
@@ -739,6 +779,9 @@ void rlg_quit_cb(Fl_Widget*, void*)
 	for (int n = 0; n < Num_Logs; n++) {
 		pthread_join(Get_Log_Data_Thread[n], NULL);
 	}
+	for (int n = 0; n < Num_ALogs; n++) {
+		pthread_join(Get_ALog_Data_Thread[n], NULL);
+	}
 	for (int n = 0; n < Num_Leds; n++) {
 		pthread_join(Get_Led_Data_Thread[n], NULL);
 	}
@@ -751,6 +794,7 @@ void rlg_quit_cb(Fl_Widget*, void*)
 	if (Parameters_Manager) Parameters_Manager->hide();
 	if (Scopes_Manager) Scopes_Manager->hide();
 	if (Logs_Manager) Logs_Manager->hide();
+	if (ALogs_Manager) ALogs_Manager->hide();
 	if (Leds_Manager) Leds_Manager->hide();
 	if (Meters_Manager) Meters_Manager->hide();
 	if (Synchs_Manager) Synchs_Manager->hide();
@@ -815,13 +859,13 @@ void rlg_upload_parameters_cb(Fl_Widget *o, void *v)
 
 void rlg_synchs_mgr_cb(Fl_Widget *, void *)
 {
-	if (RLG_Main_Menu_Table[14].checked()) {
+	if (RLG_Main_Menu_Table[15].checked()) {
 		if (Synchs_Manager) Synchs_Manager->hide();
-		RLG_Main_Menu_Table[14].clear();
+		RLG_Main_Menu_Table[15].clear();
 		RLG_Synchs_Mgr_Button->clear();
 	} else {
 		if (Synchs_Manager) Synchs_Manager->show();
-		RLG_Main_Menu_Table[14].set();
+		RLG_Main_Menu_Table[15].set();
 		RLG_Synchs_Mgr_Button->set();
 	}
 	RLG_Main_Menu->menu(RLG_Main_Menu_Table);
@@ -831,13 +875,13 @@ void rlg_synchs_mgr_cb(Fl_Widget *, void *)
 
 void rlg_meters_mgr_cb(Fl_Widget *, void *)
 {
-	if (RLG_Main_Menu_Table[13].checked()) {
+	if (RLG_Main_Menu_Table[14].checked()) {
 		if (Meters_Manager) Meters_Manager->hide();
-		RLG_Main_Menu_Table[13].clear();
+		RLG_Main_Menu_Table[14].clear();
 		RLG_Meters_Mgr_Button->clear();
 	} else {
 		if (Meters_Manager) Meters_Manager->show();
-		RLG_Main_Menu_Table[13].set();
+		RLG_Main_Menu_Table[14].set();
 		RLG_Meters_Mgr_Button->set();
 	}
 	RLG_Main_Menu->menu(RLG_Main_Menu_Table);
@@ -847,13 +891,13 @@ void rlg_meters_mgr_cb(Fl_Widget *, void *)
 
 void rlg_leds_mgr_cb(Fl_Widget *, void *)
 {
-	if (RLG_Main_Menu_Table[12].checked()) {
+	if (RLG_Main_Menu_Table[13].checked()) {
 		if (Leds_Manager) Leds_Manager->hide();
-		RLG_Main_Menu_Table[12].clear();
+		RLG_Main_Menu_Table[13].clear();
 		RLG_Leds_Mgr_Button->clear();
 	} else {
 		if (Leds_Manager) Leds_Manager->show();
-		RLG_Main_Menu_Table[12].set();
+		RLG_Main_Menu_Table[13].set();
 		RLG_Leds_Mgr_Button->set();
 	}
 	RLG_Main_Menu->menu(RLG_Main_Menu_Table);
@@ -876,7 +920,21 @@ void rlg_logs_mgr_cb(Fl_Widget *, void *)
 	RLG_Main_Menu->redraw();
 	RLG_Main_Window->redraw();
 }
-
+void rlg_alogs_mgr_cb(Fl_Widget *, void *)                     
+{
+	if (RLG_Main_Menu_Table[12].checked()) {
+		if (ALogs_Manager) ALogs_Manager->hide();
+		RLG_Main_Menu_Table[12].clear();
+		RLG_ALogs_Mgr_Button->clear();
+	} else {
+		if (ALogs_Manager) ALogs_Manager->show();
+		RLG_Main_Menu_Table[12].set();
+		RLG_ALogs_Mgr_Button->set();
+	}
+	RLG_Main_Menu->menu(RLG_Main_Menu_Table);
+	RLG_Main_Menu->redraw();
+	RLG_Main_Window->redraw();
+}
 void rlg_scopes_mgr_cb(Fl_Widget *, void *)
 {
 	if (RLG_Main_Menu_Table[10].checked()) {
@@ -1376,7 +1434,100 @@ end:
 
 	return 0;
 }
+static void *rt_get_alog_data(void *arg)
+{
+	RT_TASK *GetALogDataTask;				
+	MBX *GetALogDataMbx;
+	char GetALogDataMbxName[7];
+	long GetALogDataPort;
+	int MsgData = 0, MsgLen, MaxMsgLen, DataBytes;
+	float MsgBuf[MAX_MSG_LEN/sizeof(float)];
+	int n, i, j, k;
+	int index = ((Alog_T *)arg)->index;
+	char *mbx_id = strdup(((Alog_T *)arg)->mbx_id);
+	char *alog_file_name = strdup(((Alog_T *)arg)->alog_name);   //read alog block name and set it to file name
+	FILE *saving;
+	long size_counter = 0;
+	long logging = 0;
+	
+	
+	if((saving = fopen(alog_file_name, "a+")) == NULL){
+		printf("Error opening auto log file %s\n", alog_file_name);
+		}
+	
+	rt_allow_nonroot_hrt();
+	
+	if (!(GetALogDataTask = rt_task_init_schmod(get_an_id("HGA"), 99, 0, 0, SCHED_RR, 0xFF))) {
+		printf("Cannot init Host GetALogData Task\n");
+		return (void *)1;
+	}
 
+	if (Target_Node == 0) GetALogDataPort = 0;
+	else GetALogDataPort = rt_request_port(Target_Node);
+	sprintf(GetALogDataMbxName, "%s%d", mbx_id, index);
+
+	if (!(GetALogDataMbx = (MBX *)RT_get_adr(Target_Node, GetALogDataPort, GetALogDataMbxName))) {
+		printf("Error in getting %s mailbox address\n", GetALogDataMbxName);
+		exit(1);
+	}
+	DataBytes = (ALogs[index].nrow*ALogs[index].ncol)*sizeof(float)+sizeof(float);
+	MaxMsgLen = (MAX_MSG_LEN/DataBytes)*DataBytes;
+	MsgLen = (((int)(DataBytes*REFRESH_RATE*(1./ALogs[index].dt)))/DataBytes)*DataBytes;
+	if (MsgLen < DataBytes) MsgLen = DataBytes;
+	if (MsgLen > MaxMsgLen) MsgLen = MaxMsgLen;
+	MsgData = MsgLen/DataBytes;
+	
+	//printf("MsgData %d MsgLen %d MaxMsgLen %d DataBytes %d DimBuf= %d\n", MsgData, MsgLen, MaxMsgLen, DataBytes,MAX_MSG_LEN/sizeof(float));
+	
+	rt_send(Target_Interface_Task, 0);
+	mlockall(MCL_CURRENT | MCL_FUTURE);
+	
+	while (true) {
+		if (End_App || !Is_Target_Connected) break;
+		while (RT_mbx_receive_if(Target_Node, GetALogDataPort, GetALogDataMbx, &MsgBuf, MsgLen)) {
+			if (End_App || !Is_Target_Connected) goto end;
+			if (!ALogs_Manager->visible()) {
+				Fl::lock();
+				RLG_ALogs_Mgr_Button->activate();
+				Fl::unlock();
+			}
+			msleep(10);
+		}
+			for (n = 0; n < MsgData; n++) {
+				size_counter=ftell(saving);    			//get file dimension in bytes
+				//printf("Size counter: %d\n", size_counter);
+				if(((int)MsgBuf[(((n+1)*ALogs[index].nrow*ALogs[index].ncol + (n+1))-1)]) &&
+				size_counter<=1000000){
+					for (i = 0; i < ALogs[index].nrow; i++) {
+						j = n*ALogs[index].nrow*ALogs[index].ncol + i;
+						for (k = 0; k < ALogs[index].ncol; k++) {
+							fprintf(saving,"%1.5f ",MsgBuf[j]); 
+							j += ALogs[index].nrow;
+						}
+						fprintf(saving, "\n");
+						j++;
+					}
+				}
+				/*if (size_counter > 100000){
+					fclose(saving);
+					system("tar -czvf logged.tgz RTAI_ALOG");
+					if((saving = fopen(alog_file_name, "a+")) == NULL){
+						printf("Error opening auto log file %s\n", alog_file_name);
+						}
+				}*/		
+			}
+			
+	}
+end:
+	if (Verbose) {
+		printf("Deleting auto log thread number...%d\n", index);
+	}
+	fclose(saving);
+	rt_release_port(Target_Node, GetALogDataPort);
+	rt_task_delete(GetALogDataTask);
+
+	return 0;
+}
 static void *rt_get_scope_data(void *arg)
 {
 	RT_TASK *GetScopeDataTask;
@@ -1639,6 +1790,32 @@ static int get_log_blocks_info(long port, RT_TASK *task, const char *mbx_id)
 	return n_logs;
 }
 
+static int get_alog_blocks_info(long port, RT_TASK *task, const char *mbx_id)            //added il 4/5/2005
+{
+	int n_alogs = 0;
+	int req = -1, msg;
+	for (int n = 0; n < MAX_RTAI_LOGS; n++) {
+		char mbx_name[7];
+		sprintf(mbx_name, "%s%d", mbx_id, n);
+		if (!RT_get_adr(Target_Node, port, mbx_name)) {
+			n_alogs = n;
+			break;
+		}
+	}
+	if (n_alogs > 0) ALogs = new Target_ALogs_T [n_alogs];
+	for (int n = 0; n < n_alogs; n++) {
+		char alog_name[MAX_NAMES_SIZE];
+		RT_rpcx(Target_Node, port, task, &n, &ALogs[n].nrow, sizeof(int), sizeof(int));
+		RT_rpcx(Target_Node, port, task, &n, &ALogs[n].ncol, sizeof(int), sizeof(int));
+		RT_rpcx(Target_Node, port, task, &n, &alog_name, sizeof(int), sizeof(alog_name));
+		strncpy(ALogs[n].name, alog_name, MAX_NAMES_SIZE);
+		RT_rpcx(Target_Node, port, task, &n, &ALogs[n].dt, sizeof(int), sizeof(float));
+	}
+	RT_rpcx(Target_Node, port, task, &req, &msg, sizeof(int), sizeof(int));
+
+	return n_alogs;
+}
+
 static int get_led_blocks_info(long port, RT_TASK *task, const char *mbx_id)
 {
 	int n_leds = 0;
@@ -1754,13 +1931,23 @@ static void rlg_manager_window(int n_elems, int type, int view_flag, int x, int 
 					RLG_Logs_Mgr_Button->set();
 				}
 				break;
+			case ALOGS_MANAGER:
+				ALogs_Manager = new Fl_ALogs_Manager(x, y, w, h, v, "ALogs Manager");
+				ALogs_Manager->show();
+				if (!view_flag) {
+					ALogs_Manager->hide();
+				} else {
+					RLG_Main_Menu_Table[12].set();
+					RLG_ALogs_Mgr_Button->set();
+				}
+				break;	
 			case LEDS_MANAGER:
 				Leds_Manager = new Fl_Leds_Manager(x, y, w, h, v, "Leds Manager");
 				Leds_Manager->show();
 				if (!view_flag) {
 					Leds_Manager->hide();
 				} else {
-					RLG_Main_Menu_Table[12].set();
+					RLG_Main_Menu_Table[13].set();
 					RLG_Leds_Mgr_Button->set();
 				}
 				break;
@@ -1770,7 +1957,7 @@ static void rlg_manager_window(int n_elems, int type, int view_flag, int x, int 
 				if (!view_flag) {
 					Meters_Manager->hide();
 				} else {
-					RLG_Main_Menu_Table[13].set();
+					RLG_Main_Menu_Table[14].set();
 					RLG_Meters_Mgr_Button->set();
 				}
 				break;
@@ -1780,7 +1967,7 @@ static void rlg_manager_window(int n_elems, int type, int view_flag, int x, int 
 				if (!view_flag) {
 					Synchs_Manager->hide();
 				} else {
-					RLG_Main_Menu_Table[14].set();
+					RLG_Main_Menu_Table[15].set();
 					RLG_Synchs_Mgr_Button->set();
 				}
 				break;
@@ -1799,6 +1986,7 @@ static void rlg_update_after_connect(void)
 	RLG_Delete_Profile_Button->deactivate();
 	RLG_Scopes_Mgr_Button->activate();
 	RLG_Logs_Mgr_Button->activate();
+	RLG_ALogs_Mgr_Button->activate();
 	RLG_Leds_Mgr_Button->activate();
 	RLG_Meters_Mgr_Button->activate();
 	RLG_Synchs_Mgr_Button->activate();
@@ -1910,6 +2098,16 @@ static void *rt_target_interface(void *args)
 						printf(" Sampling time...%f\n", Logs[n].dt);
 					}
 				}
+				Num_ALogs = get_alog_blocks_info(Target_Port, If_Task, Preferences.Target_ALog_Mbx_ID);
+				if (Verbose) {
+					printf("Number of target real time automatic logs: %d\n", Num_ALogs);
+					for (int n = 0; n < Num_ALogs; n++) {
+						printf("Log: %s\n", ALogs[n].name);
+						printf(" Number of rows...%d\n", ALogs[n].nrow);
+						printf(" Number of cols...%d\n", ALogs[n].ncol);
+						printf(" Sampling time...%f\n", ALogs[n].dt);
+					}
+				}
 				Num_Leds = get_led_blocks_info(Target_Port, If_Task, Preferences.Target_Led_Mbx_ID);
 				if (Verbose) {
 					printf("Number of target real time leds: %d\n", Num_Leds);
@@ -1939,6 +2137,7 @@ static void *rt_target_interface(void *args)
 				rlg_manager_window(Num_Tunable_Parameters, PARAMS_MANAGER, false, 0, 0, 430, 260);
 				rlg_manager_window(Num_Scopes, SCOPES_MANAGER, false, 0, 290, 480, 300);
 				rlg_manager_window(Num_Logs, LOGS_MANAGER, false, 440, 0, 380, 250);
+				rlg_manager_window(Num_ALogs, ALOGS_MANAGER, false, 460, 0, 380, 250);
 				rlg_manager_window(Num_Leds, LEDS_MANAGER, false, 500, 290, 320, 250);
 				rlg_manager_window(Num_Meters, METERS_MANAGER, false, 530, 320, 320, 250);
 				rlg_manager_window(Num_Synchs, SYNCHS_MANAGER, false, 530, 320, 320, 250);
@@ -1965,6 +2164,17 @@ static void *rt_target_interface(void *args)
 					thr_args.index = n;
 					thr_args.mbx_id = strdup(Preferences.Target_Log_Mbx_ID);
 					pthread_create(&Get_Log_Data_Thread[n], NULL, rt_get_log_data, &thr_args);
+					rt_receive(0, &msg);
+				}
+				if (Num_ALogs > 0) Get_ALog_Data_Thread = new pthread_t [Num_ALogs];
+				for (int n = 0; n < Num_ALogs; n++) {
+					unsigned int msg;
+					Alog_T thr_args;
+					thr_args.index = n;
+					thr_args.mbx_id = strdup(Preferences.Target_ALog_Mbx_ID);
+					thr_args.alog_name = strdup(ALogs[n].name);
+					printf("%s alog name\n", ALogs[n].name);
+					pthread_create(&Get_ALog_Data_Thread[n], NULL, rt_get_alog_data, &thr_args);
 					rt_receive(0, &msg);
 				}
 				if (Num_Leds > 0) Get_Led_Data_Thread = new pthread_t [Num_Leds];
@@ -2061,6 +2271,7 @@ static void *rt_target_interface(void *args)
 				Num_Tunable_Parameters = get_parameters_info(Target_Port, If_Task);
 				Num_Scopes = get_scope_blocks_info(Target_Port, If_Task, Profile[p_idx].Target_Scope_Mbx_ID);
 				Num_Logs = get_log_blocks_info(Target_Port, If_Task, Profile[p_idx].Target_Log_Mbx_ID);
+				Num_ALogs = get_alog_blocks_info(Target_Port, If_Task, Profile[p_idx].Target_ALog_Mbx_ID);
 				Num_Leds = get_led_blocks_info(Target_Port, If_Task, Profile[p_idx].Target_Led_Mbx_ID);
 				Num_Meters = get_meter_blocks_info(Target_Port, If_Task, Profile[p_idx].Target_Meter_Mbx_ID);
 				Num_Synchs = get_synch_blocks_info(Target_Port, If_Task, Profile[p_idx].Target_Synch_Mbx_ID);
@@ -2083,6 +2294,9 @@ static void *rt_target_interface(void *args)
 				rlg_manager_window(Num_Logs, LOGS_MANAGER, Profile[p_idx].Log_Mgr_W.visible,
 						   Profile[p_idx].Log_Mgr_W.x, Profile[p_idx].Log_Mgr_W.y,
 						   Profile[p_idx].Log_Mgr_W.w, Profile[p_idx].Log_Mgr_W.h);
+				rlg_manager_window(Num_ALogs, ALOGS_MANAGER, Profile[p_idx].ALog_Mgr_W.visible,
+						   Profile[p_idx].ALog_Mgr_W.x, Profile[p_idx].ALog_Mgr_W.y,
+						   Profile[p_idx].ALog_Mgr_W.w, Profile[p_idx].ALog_Mgr_W.h);
 				rlg_manager_window(Num_Leds, LEDS_MANAGER, Profile[p_idx].Led_Mgr_W.visible,
 						   Profile[p_idx].Led_Mgr_W.x, Profile[p_idx].Led_Mgr_W.y,
 						   Profile[p_idx].Led_Mgr_W.w, Profile[p_idx].Led_Mgr_W.h);
@@ -2164,6 +2378,18 @@ static void *rt_target_interface(void *args)
 					Logs_Manager->t_save(n, Profile[p_idx].Log_Mgr_TSave[n]);
 					Logs_Manager->file_name(n, Profile[p_idx].Log_Mgr_File[n]);
 				}
+				if (Num_ALogs > 0) Get_ALog_Data_Thread = new pthread_t [Num_ALogs];
+				for (int n = 0; n < Num_ALogs; n++) {
+					unsigned int msg;
+					Alog_T thr_args;
+					thr_args.alog_name = strdup(ALogs[n].name);
+					printf("%s alog name\n", ALogs[n].name);
+					thr_args.index = n;
+					thr_args.mbx_id = strdup(Profile[p_idx].Target_ALog_Mbx_ID);
+					pthread_create(&Get_ALog_Data_Thread[n], NULL, rt_get_alog_data, &thr_args);
+					rt_receive(0, &msg);
+					ALogs_Manager->file_name(n, Profile[p_idx].ALog_Mgr_File[n]);
+				}
 				if (Num_Leds > 0) Get_Led_Data_Thread = new pthread_t [Num_Leds];
 				for (int n = 0; n < Num_Leds; n++) {
 					unsigned int msg;
@@ -2227,6 +2453,9 @@ static void *rt_target_interface(void *args)
 				for (int n = 0; n < Num_Logs; n++) {
 					pthread_join(Get_Log_Data_Thread[n], NULL);
 				}
+				for (int n = 0; n < Num_ALogs; n++) {				//modifiche 29/06/05
+					pthread_join(Get_ALog_Data_Thread[n], NULL);
+				}
 				for (int n = 0; n < Num_Leds; n++) {
 					pthread_join(Get_Led_Data_Thread[n], NULL);
 				}
@@ -2241,6 +2470,7 @@ static void *rt_target_interface(void *args)
 				if (Parameters_Manager) Parameters_Manager->hide();
 				if (Scopes_Manager) Scopes_Manager->hide();
 				if (Logs_Manager) Logs_Manager->hide();
+				if (ALogs_Manager) ALogs_Manager->hide();
 				if (Leds_Manager) Leds_Manager->hide();
 				if (Meters_Manager) Meters_Manager->hide();
 				if (Synchs_Manager) Synchs_Manager->hide();
@@ -2253,7 +2483,7 @@ static void *rt_target_interface(void *args)
 				RLG_Main_Menu_Table[3].activate();
 				RLG_Main_Menu_Table[4].deactivate();
 				RLG_Main_Menu_Table[5].activate();
-				for (int i = 9; i <= 14; i++) RLG_Main_Menu_Table[i].deactivate();
+				for (int i = 9; i <= 15; i++) RLG_Main_Menu_Table[i].deactivate();
 				RLG_Main_Menu->menu(RLG_Main_Menu_Table);
 				RLG_Main_Menu->redraw();
 				RLG_Start_Button->deactivate();
@@ -2263,6 +2493,7 @@ static void *rt_target_interface(void *args)
 				RLG_Params_Mgr_Button->deactivate();
 				RLG_Scopes_Mgr_Button->deactivate();
 				RLG_Logs_Mgr_Button->deactivate();
+				RLG_ALogs_Mgr_Button->deactivate();
 				RLG_Leds_Mgr_Button->deactivate();
 				RLG_Meters_Mgr_Button->deactivate();
 				RLG_Synchs_Mgr_Button->deactivate();
@@ -2306,6 +2537,9 @@ static void *rt_target_interface(void *args)
 					for (int n = 0; n < Num_Logs; n++) {
 						pthread_join(Get_Log_Data_Thread[n], NULL);
 					}
+					for (int n = 0; n < Num_ALogs; n++) {			//modifiche 29/06/05
+						pthread_join(Get_ALog_Data_Thread[n], NULL);
+					}
 					for (int n = 0; n < Num_Leds; n++) {
 						pthread_join(Get_Led_Data_Thread[n], NULL);
 					}
@@ -2337,7 +2571,7 @@ static void *rt_target_interface(void *args)
 					RLG_Main_Menu_Table[2].deactivate();
 					RLG_Main_Menu_Table[4].deactivate();
 					RLG_Main_Menu_Table[5].activate();
-					for (int i = 9; i <= 14; i++) RLG_Main_Menu_Table[i].deactivate();
+					for (int i = 9; i <= 15; i++) RLG_Main_Menu_Table[i].deactivate();
 					RLG_Main_Menu->menu(RLG_Main_Menu_Table);
 					RLG_Main_Menu->redraw();
 					RLG_Start_Button->deactivate();
@@ -2347,6 +2581,7 @@ static void *rt_target_interface(void *args)
 					RLG_Params_Mgr_Button->deactivate();
 					RLG_Scopes_Mgr_Button->deactivate();
 					RLG_Logs_Mgr_Button->deactivate();
+					RLG_ALogs_Mgr_Button->deactivate();
 					RLG_Leds_Mgr_Button->deactivate();
 					RLG_Meters_Mgr_Button->deactivate();
 					RLG_Synchs_Mgr_Button->deactivate();
@@ -2518,15 +2753,19 @@ Fl_Dialog *rlg_connect_dialog(int w, int h)
 	  o->align(FL_ALIGN_RIGHT);
 	  o->maximum_size(3);
 	}
-	{ Fl_Input *o = RLG_Target_Led_ID = new Fl_Input(10, 20 + 27*4, 70, 20, " Led Identifier");
+	{ Fl_Input *o = RLG_Target_ALog_ID = new Fl_Input(10, 20 + 27*4, 70, 20, " ALog Identifier");
 	  o->align(FL_ALIGN_RIGHT);
 	  o->maximum_size(3);
 	}
-	{ Fl_Input *o = RLG_Target_Meter_ID = new Fl_Input(10, 20 + 27*5, 70, 20, " Meter Identifier");
+	{ Fl_Input *o = RLG_Target_Led_ID = new Fl_Input(10, 20 + 27*5, 70, 20, " Led Identifier");
 	  o->align(FL_ALIGN_RIGHT);
 	  o->maximum_size(3);
 	}
-	{ Fl_Input *o = RLG_Target_Synch_ID = new Fl_Input(10, 20 + 27*6, 70, 20, " Synch Identifier");
+	{ Fl_Input *o = RLG_Target_Meter_ID = new Fl_Input(10, 20 + 27*6, 70, 20, " Meter Identifier");
+	  o->align(FL_ALIGN_RIGHT);
+	  o->maximum_size(3);
+	}
+	{ Fl_Input *o = RLG_Target_Synch_ID = new Fl_Input(10, 20 + 27*7, 70, 20, " Synch Identifier");
 	  o->align(FL_ALIGN_RIGHT);
 	  o->maximum_size(3);
 	}
@@ -2610,6 +2849,13 @@ void rlg_main_toolbar(Fl_Tool_Bar *RLG_MT)
 						 "Logs", "Open/close log manager");
 	RLG_Logs_Mgr_Button->callback((Fl_Callback *)rlg_logs_mgr_cb);
 	RLG_Logs_Mgr_Button->deactivate();
+	
+/* Target automatic real time logging blocks manager */						//aggiunto 3/5
+	RLG_ALogs_Mgr_Button = RLG_MT->add_toggle(Fl_Image::read_xpm(0, auto_log_icon_xpm), 0,
+						 "Logs", "Open/close automatic log manager");
+	RLG_ALogs_Mgr_Button->callback((Fl_Callback *)rlg_alogs_mgr_cb);
+	RLG_ALogs_Mgr_Button->deactivate();
+	
 
 /* Target real time leds manager */
 	RLG_Leds_Mgr_Button = RLG_MT->add_toggle(Fl_Image::read_xpm(0, led_icon), 0,

@@ -3,6 +3,7 @@ COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
 		    Paolo Mantegazza (mantegazza@aero.polimi.it)
 		    Roberto Bucher (roberto.bucher@supsi.ch)
 		    Peter Brier (pbrier@dds.nl)
+		    Alberto Sechi (albertosechi@libero.it)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public

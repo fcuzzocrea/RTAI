@@ -45,6 +45,7 @@ typedef struct Target_Parameters_Struct Target_Parameters_T;
 typedef struct Target_Blocks_Struct Target_Blocks_T;
 typedef struct Target_Scopes_Struct Target_Scopes_T;
 typedef struct Target_Logs_Struct Target_Logs_T;
+typedef struct Target_ALogs_Struct Target_ALogs_T;
 typedef struct Target_Leds_Struct Target_Leds_T;
 typedef struct Target_Meters_Struct Target_Meters_T;
 typedef struct Target_Synchs_Struct Target_Synchs_T;
@@ -56,6 +57,7 @@ typedef struct W_Geometry_Struct W_Geometry_T;
 typedef struct RGB_Color_Struct RGB_Color_T;
 
 typedef struct Args_Struct Args_T;
+typedef struct Args_Struct_ALog Alog_T;             //aggiunta 5/5 per nomi alog
 
 typedef struct s_idx_T {
 	int scope_idx;
@@ -78,7 +80,13 @@ struct Args_Struct
 	int index;
 	int x, y, w, h;
 };
-
+struct Args_Struct_ALog
+{
+	const char *mbx_id;
+	int index;
+	int x, y, w, h;
+	const char *alog_name;
+};
 struct Target_Parameters_Struct
 {
 	char model_name[MAX_NAMES_SIZE];
@@ -106,6 +114,14 @@ struct Target_Scopes_Struct
 };
 
 struct Target_Logs_Struct
+{
+	char name[MAX_NAMES_SIZE];
+	int nrow;
+	int ncol;
+	float dt;
+};
+
+struct Target_ALogs_Struct
 {
 	char name[MAX_NAMES_SIZE];
 	int nrow;
@@ -148,6 +164,7 @@ struct Preferences_Struct
 	char *Target_Interface_Task_Name;
 	char *Target_Scope_Mbx_ID;
 	char *Target_Log_Mbx_ID;
+	char *Target_ALog_Mbx_ID;
 	char *Target_Led_Mbx_ID;
 	char *Target_Meter_Mbx_ID;
 	char *Target_Synch_Mbx_ID;
@@ -174,13 +191,14 @@ struct Profile_Struct
 	char *Target_Interface_Task_Name;
 	char *Target_Scope_Mbx_ID;
 	char *Target_Log_Mbx_ID;
+	char *Target_ALog_Mbx_ID;
 	char *Target_Led_Mbx_ID;
 	char *Target_Meter_Mbx_ID;
 	char *Target_Synch_Mbx_ID;
 	char *Target_Name;
 
 	int n_params, n_blocks;
-	int n_scopes, n_logs;
+	int n_scopes, n_logs, n_alogs;           //aggiunto 4/5
 	int n_meters, n_leds;
 	int n_synchs;
 
@@ -214,6 +232,9 @@ struct Profile_Struct
 	int Log_Mgr_PSave[MAX_RTAI_LOGS];	/* logs manager n points to save */
 	float Log_Mgr_TSave[MAX_RTAI_LOGS];	/* logs manager n seconds to save */
 	char *Log_Mgr_File[MAX_RTAI_LOGS];	/* logs manager save file name */
+	
+	W_Geometry_T ALog_Mgr_W;		/* logs manager geometry */			//added 4/5
+	char *ALog_Mgr_File[MAX_RTAI_LOGS];	/* logs manager save file name */
 
 	W_Geometry_T Led_Mgr_W;			/* leds manager geometry */
 	int Led_Mgr_Show[MAX_RTAI_LEDS];	/* leds manager show-hide buttons */
@@ -274,6 +295,7 @@ typedef enum {
 	PARAMS_MANAGER,
 	SCOPES_MANAGER,
 	LOGS_MANAGER,
+	ALOGS_MANAGER,
 	LEDS_MANAGER,
 	METERS_MANAGER,
 	SYNCHS_MANAGER
@@ -289,6 +311,7 @@ void rlg_start_stop_cb(Fl_Widget *, void *);
 void rlg_params_mgr_cb(Fl_Widget *, void *);
 void rlg_scopes_mgr_cb(Fl_Widget *, void *);
 void rlg_logs_mgr_cb(Fl_Widget *, void *);
+void rlg_alogs_mgr_cb(Fl_Widget *, void *); //aggiunto 4/5
 void rlg_leds_mgr_cb(Fl_Widget *, void *);
 void rlg_meters_mgr_cb(Fl_Widget *, void *);
 void rlg_synchs_mgr_cb(Fl_Widget *, void *);

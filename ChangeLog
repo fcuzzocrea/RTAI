@@ -1,3 +1,7 @@
+2006-05-08  Roberto Bucher <roberto.bucher@supsi.ch>
+
+	* rtai-lab/scilab/rtmain.c: Fit new xrtailab with automatic Log.
+
 2006-05-07  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/matlab/setup.m: Automatically compile the C-Mex S-Function.

@@ -3172,6 +3172,8 @@ EXPORT_SYMBOL(rt_do_force_soft);
 EXPORT_SYMBOL(rt_schedule_soft_tail);
 EXPORT_SYMBOL(rt_sched_timed);
 EXPORT_SYMBOL(rtai_handle_isched_lock);
+#if CONFIG_RTAI_MONITOR_EXECTIME
 EXPORT_SYMBOL(switch_time);
+#endif
 
 #endif /* CONFIG_KBUILD */

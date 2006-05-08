@@ -2,6 +2,7 @@
   COPYRIGHT (C) 2002  Lorenzo Dozio (dozio@aero.polimi.it)
   Paolo Mantegazza (mantegazza@aero.polimi.it)
   Roberto Bucher (roberto.bucher@supsi.ch)
+  Daniele Gasperini (daniele.gasperini@elet.polimi.it)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -72,6 +73,7 @@ static RT_TASK    *rt_MainTask, *rt_HostInterfaceTask, *rt_BaseRateTask;
 static char *HostInterfaceTaskName = "IFTASK";
 char *TargetMbxID                  = "RTS";
 char *TargetLogMbxID               = "RTL";
+char *TargetALogMbxID              = "RAL";
 char *TargetLedMbxID               = "RTE";
 char *TargetMeterMbxID	           = "RTM";
 char *TargetSynchronoscopeMbxID    = "RTY";
@@ -94,6 +96,7 @@ static volatile int endex;
 static double TIME;
 static struct { char name[MAX_NAME_SIZE]; int ntraces; } rtaiScope[MAX_SCOPES];
 static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiLogData[MAX_LOGS];
+static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiALogData[MAX_LOGS];
 static struct { char name[MAX_NAME_SIZE]; int nleds; } rtaiLed[MAX_LEDS];
 static struct { char name[MAX_NAME_SIZE]; int nmeters; } rtaiMeter[MAX_METERS];
 
@@ -102,7 +105,7 @@ static struct { char name[MAX_NAME_SIZE]; int nmeters; } rtaiMeter[MAX_METERS];
 
 #define msleep(t)  do { poll(0, 0, t); } while (0)
 
-#define MAX_COMEDI_DEVICES      4
+#define MAX_COMEDI_DEVICES      11
 
 void *ComediDev[MAX_COMEDI_DEVICES];
 int ComediDev_InUse[MAX_COMEDI_DEVICES] = {0};
@@ -384,6 +387,22 @@ static void *rt_HostInterface(void *args)
 			rt_returnx(task, &Idx, sizeof(int));
 			break;
 		    } else {
+			rt_returnx(task, &rtaiALogData[Idx].nrow, sizeof(int));
+			rt_receivex(task, &Idx, sizeof(int), &len);
+			rt_returnx(task, &rtaiALogData[Idx].ncol, sizeof(int));
+			rt_receivex(task, &Idx, sizeof(int), &len);
+			rt_returnx(task, rtaiALogData[Idx].name, MAX_NAME_SIZE);
+			rt_receivex(task, &Idx, sizeof(int), &len);
+			samplingTime = get_tsamp();
+			rt_returnx(task, &samplingTime, sizeof(float));
+		    }
+		}
+		while (1) {
+		    rt_receivex(task, &Idx, sizeof(int), &len);
+		    if (Idx < 0) {
+			rt_returnx(task, &Idx, sizeof(int));
+			break;
+		    } else {
 			rt_returnx(task, &rtaiLed[Idx].nleds, sizeof(int));
 			rt_receivex(task, &Idx, sizeof(int), &len);
 			rt_returnx(task, rtaiLed[Idx].name, MAX_NAME_SIZE);
@@ -639,6 +658,7 @@ struct option options[] = {
     { "name",       1, 0, 'n' },
     { "idscope",    1, 0, 'i' },
     { "idlog",      1, 0, 'l' },
+    { "idalog",     1, 0, 'a' },
     { "idmeter",    1, 0, 't' },
     { "idled",      1, 0, 'd' },
     { "idsynch",    1, 0, 'y' },
@@ -674,6 +694,8 @@ void print_usage(void)
 	 "      set the scope mailboxes identifier (default RTS)\n"
 	 "  -l <logid>, --idlog <logid>\n"
 	 "      set the log mailboxes identifier (default RTL)\n"
+	 "  -a <alogid>, --idalog <logid>\n"
+	 "      set the alog mailboxes identifier (default RAL)\n"
 	 "  -t <meterid>, --idmeter <meterid>\n"
 	 "      set the meter mailboxes identifier (default RTM)\n"
 	 "  -d <ledid>, --idled <ledid>\n"
@@ -716,7 +738,7 @@ int main(int argc, char *argv[])
     signal(SIGTERM, endme);
 
     do {
-	c = getopt_long(argc, argv, "euvVswop:f:m:n:i:l:t:d:y:c:", options, NULL);
+	c = getopt_long(argc, argv, "euvVswop:f:m:n:i:l:a:t:d:y:c:", options, NULL);
 	switch (c) {
 	    case 'c':
 		if ((CpuMap = atoi(optarg)) <= 0) {
@@ -741,6 +763,9 @@ int main(int argc, char *argv[])
 	    case 'l':
 		TargetLogMbxID = strdup(optarg);
 		break;
+	    case 'a':
+		TargetALogMbxID = strdup(optarg);
+		break;	
 	    case 't':
 		TargetMeterMbxID = strdup(optarg);
 		break;

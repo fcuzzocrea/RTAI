@@ -1,3 +1,8 @@
+2006-05-08  Bernd Gassmann <gassmann@fzi.de>
+
+	* base/sched/sched.c: export switch_time for independent use, but 
+	  only if execution time monitoring is configured.
+
 2006-05-08  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/rtmain.c: Fit new xrtailab with automatic Log.

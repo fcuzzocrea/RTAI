@@ -27,11 +27,11 @@
  */
 
 #include <linux/module.h>
-//#include <linux/moduleparam.h>
 
 #include <rtdm/rtdm_driver.h>
-#include <rtdm/core.h>
-#include <rtdm/device.h>
+
+#include "rtdm/core.h"
+#include "rtdm/device.h"
 
 
 #define FD_BITMAP_SIZE  ((RTDM_FD_MAX + BITS_PER_LONG-1) / BITS_PER_LONG)

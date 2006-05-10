@@ -1,3 +1,10 @@
+2006-05-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_lxrt.h: fixed unused stack allocation when 
+	  rt_thread_create, user space only, uses clone.
+	* base/arch/i386/Kconfig: present direct vectoring and scheduling 
+	  configuration options unconditionally.
+
 2006-05-08  Bernd Gassmann <gassmann@fzi.de>
 
 	* base/sched/sched.c: export switch_time for independent use, but 

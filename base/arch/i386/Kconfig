@@ -192,7 +192,7 @@ menu "Machine (x86)"
 
 config RTAI_DONT_DISPATCH_CORE_IRQS
 	bool "Direct vectoring of RTAI native interrupts"
-	depends on RTAI_EXTENDED
+#	depends on RTAI_EXTENDED
 	default y
 	help
 	RTAI dispatches real time interrupts immediately to achieve as
@@ -267,7 +267,7 @@ config RTAI_KTASKS_SCHED_LXRT_
 
 menu "Scheduling options"
 
-	depends on RTAI_EXTENDED
+#	depends on RTAI_EXTENDED
 
 config RTAI_SCHED_ISR_LOCK
 	bool "Disable rescheduling from ISRs"

@@ -1525,6 +1525,11 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #define HINT_DIAG_MSG(x)
 #endif
 
+static int PrintFpuTrap = 0;
+MODULE_PARM(PrintFpuTrap, "i");
+static int PrintFpuInit = 0;
+MODULE_PARM(PrintFpuInit, "i");
+
 #ifdef UNWRAPPED_CATCH_EVENT
 static int rtai_trap_fault (unsigned event, void *evdata)
 {
@@ -1611,10 +1616,14 @@ static int rtai_trap_fault (unsigned event, void *evdata)
 		rtai_hw_cli(); /* in task context, so we can be preempted */
 		if (lnxtsk_uses_fpu(linux_task)) {
 			restore_fpu(linux_task);
-			rt_printk("\nWARNING: FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
+			if (PrintFpuTrap) {
+				rt_printk("\nWARNING: FPU TRAP FROM HARD PID = %d\n", linux_task->pid);
+			}
 		} else {
 			init_hard_fpu(linux_task);
-			rt_printk("\nWARNING: FPU INITIALIZATION FROM HARD PID = %d\n", linux_task->pid);
+			if (PrintFpuInit) {
+				rt_printk("\nWARNING: FPU INITIALIZATION FROM HARD PID = %d\n", linux_task->pid);
+			}
 		}
 		rtai_hw_sti();
 		goto endtrap;

@@ -1,3 +1,9 @@
+2006-05-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* testsuite/user/switches/switches.c and 
+	* testsuite/kern/switches/switches.c: added taskswitching time 
+	  measures for intertask rpc/receive/return.
+
 2006-05-14  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/arch/i386/hal/hal.immed: make available module parms for 

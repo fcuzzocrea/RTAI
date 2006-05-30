@@ -538,7 +538,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 		case GET_TIMEORIG: {
 			struct arg { RTIME *time_orig; };
-			rt_gettimeorig(larg->time_orig);
+			RTIME time_orig[2];
+			rt_gettimeorig(time_orig);
+			rt_copy_to_user(larg->time_orig, time_orig, sizeof(time_orig));
                         return 0;
 		}
 

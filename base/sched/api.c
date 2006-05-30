@@ -124,7 +124,7 @@ int rt_get_inher_prio(RT_TASK *task)
 int rt_change_prio(RT_TASK *task, int priority)
 {
 	unsigned long flags;
-	int prio;
+	int prio, base_priority;
 
 	if (task->magic != RT_TASK_MAGIC || priority < 0) {
 		return -EINVAL;
@@ -132,7 +132,12 @@ int rt_change_prio(RT_TASK *task, int priority)
 
 	prio = task->base_priority;
 	flags = rt_global_save_flags_and_cli();
-	if ((task->base_priority = priority) < task->priority) {
+	if (!task->is_hard && priority < BASE_SOFT_PRIORITY) {
+		priority += BASE_SOFT_PRIORITY;
+	}
+	base_priority = task->base_priority;
+	task->base_priority = priority;
+	if (base_priority == task->priority || priority < task->priority) {
 		unsigned long schedmap;
 		QUEUE *q;
 		schedmap = 0;

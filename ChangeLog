@@ -1,3 +1,8 @@
+2006-05-30  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/api.c: fixed wrong priority changed, that did not allow
+	  less prioritary changes.
+
 2006-05-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* addons/rtdm/rtdm_driver.h: fixed wrong test in 

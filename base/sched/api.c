@@ -33,6 +33,9 @@
 
 void rt_set_sched_policy(RT_TASK *task, int policy, int rr_quantum_ns)
 {
+	if (!task) {
+		task = RT_CURRENT;
+	}
 	if ((task->policy = policy ? 1 : 0)) {
 		task->rr_quantum = nano2count_cpuid(rr_quantum_ns, task->runnable_on_cpus);
 		if ((task->rr_quantum & 0xF0000000) || !task->rr_quantum) {

@@ -181,6 +181,9 @@
 #undef CONFIG_RTAI_RTDM
 
 /* Kconfig */
+#undef CONFIG_RTAI_RTDM_FD_MAX
+
+/* Kconfig */
 #undef CONFIG_RTAI_SCHED_8254_LATENCY
 
 /* Kconfig */

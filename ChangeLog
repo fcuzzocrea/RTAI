@@ -1,5 +1,9 @@
 2006-06-01  Pierangelo Masarati <masarati@aero.polimi.it>
 
+	* added RTDM_FD_MAX as Kconfig parameter
+
+2006-06-01  Pierangelo Masarati <masarati@aero.polimi.it>
+
 	* Cleanup suggested by Paul <paul_c AT tuxcnc DOT org>
 	  (mostly GNUmakefile.am install paths; silence warnings;
 	  add #!bin/sh to scripts and so).

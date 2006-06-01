@@ -1,4 +1,4 @@
-2006-06-01  Pierangelo Masarati <masarati@aero.polimi.it>
+2006-06-02  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* added RTDM_FD_MAX as Kconfig parameter
 

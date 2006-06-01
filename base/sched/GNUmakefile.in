@@ -361,7 +361,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 schedulers = rtai_sched$(modext) rtai_lxrt$(modext)
 legacy_schedulers = up mup smp ksched
@@ -869,11 +869,11 @@ all-local: $(schedulers)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	done
 
 install-exec-local: $(schedulers)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $(schedulers) $(moduledir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $(schedulers) $(DESTDIR)$(moduledir)
 	for s in $(legacy_schedulers) ; do \
-		rm -f $(moduledir)/rtai_$$s$(modext) ; \
-		$(LN_S) rtai_sched$(modext) $(moduledir)/rtai_$$s$(modext) ; \
+		rm -f $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
+		$(LN_S) rtai_sched$(modext) $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
 	done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

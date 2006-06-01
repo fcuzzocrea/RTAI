@@ -402,7 +402,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 include_HEADERS = rtai_cpp.h
 noinst_HEADERS = \
@@ -1301,8 +1301,8 @@ all-local: $(modules) $(crtobjs)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
 install-exec-local: $(modules) $(crtobjs)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $(modules) $(moduledir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $(modules) $(DESTDIR)$(moduledir)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	$(INSTALL_DATA) $(crtobjs) $(DESTDIR)$(libdir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

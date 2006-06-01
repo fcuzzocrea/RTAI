@@ -347,7 +347,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libhal_a_SOURCES = hal.c hal.immed hal.piped rtc.c
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libhal.a
@@ -625,8 +625,8 @@ all-local: rtai_hal$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
 install-exec-local: rtai_hal$(modext)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

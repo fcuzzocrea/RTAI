@@ -363,7 +363,7 @@ subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 calibrationdir = $(prefix)/calibration
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libcalibrate_rt_a_SOURCES = calibrate-module.c calibrate.h
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libcalibrate_rt.a
@@ -745,7 +745,8 @@ install-exec-local: calibrate_rt$(modext)
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
-	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" > $(DESTDIR)$(calibrationdir)/run
+	@echo '#!/bin/sh' > $(DESTDIR)$(calibrationdir)/run
+	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" >> $(DESTDIR)$(calibrationdir)/run
 	@chmod +x $(DESTDIR)$(calibrationdir)/run
 
 run: all

@@ -1,5 +1,5 @@
 calibrationdir = $(prefix)/calibration
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 
 modext = @RTAI_MODULE_EXT@
 
@@ -63,7 +63,8 @@ install-exec-local: calibrate_rt$(modext)
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)$(calibrationdir)
 	$(INSTALL_DATA) $(srcdir)/runinfo $(DESTDIR)$(calibrationdir)/.runinfo
-	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" > $(DESTDIR)$(calibrationdir)/run
+	@echo '#!/bin/sh' > $(DESTDIR)$(calibrationdir)/run
+	@echo "\$${DESTDIR}$(prefix)/bin/rtai-load \$$*" >> $(DESTDIR)$(calibrationdir)/run
 	@chmod +x $(DESTDIR)$(calibrationdir)/run
 
 run: all

@@ -1,4 +1,4 @@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 
 modext = @RTAI_MODULE_EXT@
 
@@ -90,11 +90,11 @@ if CONFIG_RTAI_OLD_FASHIONED_BUILD
 endif
 
 install-exec-local: $(schedulers)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $(schedulers) $(moduledir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $(schedulers) $(DESTDIR)$(moduledir)
 	for s in $(legacy_schedulers) ; do \
-		rm -f $(moduledir)/rtai_$$s$(modext) ; \
-		$(LN_S) rtai_sched$(modext) $(moduledir)/rtai_$$s$(modext) ; \
+		rm -f $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
+		$(LN_S) rtai_sched$(modext) $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
 	done
 
 if CONFIG_RTAI_SCHED_LXRT

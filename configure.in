@@ -1441,6 +1441,30 @@ fi
 AC_MSG_CHECKING([for kernel module extension])
 AC_MSG_RESULT([$RTAI_MODULE_EXT])
 
+dnl gcc 3.3 and above needs -D_FORTIFY_SOURCE=0 in math
+dnl (suggested by Paul <paul_c AT tuxcnc DOT org>);
+dnl not sure about the implications, in general I'd prefer
+dnl that code causing warnings gets fixed...
+RTAI_FP_CFLAGS=
+AC_MSG_CHECKING(for gcc version >= 3.3)
+AC_CACHE_VAL(ac_cv_gcc33,
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+[AC_TRY_COMPILE(
+[#if !( __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3))
+#error GCC does not need _FORTIFY_SOURCE
+#endif],
+[return 0;],
+[ac_cv_gcc33=yes],
+[ac_cv_gcc33=no])]
+AC_LANG_RESTORE)
+if [[ $ac_cv_gcc33 = no ]]; then
+  AC_MSG_RESULT([no])
+else
+  RTAI_FP_CFLAGS="-D_FORTIFY_SOURCE=0"
+  AC_MSG_RESULT([ok])
+fi
+
 dnl FIXME: used in rtai-config.in but never defined
 RTAI_COMPAT_CPPFLAGS=
 
@@ -1459,9 +1483,9 @@ case $RTAI_TARGET_ARCH in
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
 	if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
-	   RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -mhard-float"
 	else
-	   RTAI_FP_CFLAGS="-ffast-math -msoft-float"
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -msoft-float"
 	fi
         ;;
  x86_64)
@@ -1469,9 +1493,9 @@ case $RTAI_TARGET_ARCH in
         RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
         RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
         if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
-           RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+           RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -mhard-float"
         else
-           RTAI_FP_CFLAGS="-ffast-math -msoft-float"
+           RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -msoft-float"
         fi
         ;;
 
@@ -1489,7 +1513,7 @@ case $RTAI_TARGET_ARCH in
 	fi
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
-	RTAI_FP_CFLAGS="-ffast-math -msoft-float"
+	RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -msoft-float"
 	AC_CONFIG_LINKS(base/include/asm-arm/arch:base/include/asm-arm/arch-$RTAI_TARGET_SUBARCH)
         ;;
  ppc)
@@ -1498,9 +1522,9 @@ case $RTAI_TARGET_ARCH in
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
 	if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
-	   RTAI_FP_CFLAGS="-mhard-float"
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -mhard-float"
 	else
-	   RTAI_FP_CFLAGS="-msoft-float"
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -msoft-float"
 	fi
 	;;
 esac

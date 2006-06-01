@@ -1,4 +1,4 @@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 includedir = $(prefix)/include/rtdm
 
 modext = @RTAI_MODULE_EXT@
@@ -62,11 +62,11 @@ if CONFIG_RTAI_OLD_FASHIONED_BUILD
 endif
 
 install-exec-local: rtai_rtdm$(modext)
-	$(mkinstalldirs) $(moduledir) $(DESTDIR)$(includedir)
-	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir) $(DESTDIR)$(includedir)
+	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 
 uninstall-local:
-	$(RM) $(moduledir)/rtai_rtdm$(modext)
+	$(RM) $(DESTDIR)$(moduledir)/rtai_rtdm$(modext)
 
 .PHONY: FORCE
 

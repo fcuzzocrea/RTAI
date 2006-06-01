@@ -348,7 +348,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 lib16550A_a_SOURCES = 16550A.c
 distfiles = $(lib16550A_a_SOURCES)
@@ -545,8 +545,8 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@CONFIG_KBUILD_FALSE@distclean-local:
 @CONFIG_KBUILD_FALSE@clean-local:
+@CONFIG_KBUILD_FALSE@distclean-local:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-local \
@@ -632,11 +632,11 @@ all-local: rtai_16550A$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
 install-exec-local: rtai_16550A$(modext)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 
 uninstall-local:
-	$(RM) $(moduledir)/rtai_16550A$(modext)
+	$(RM) $(DESTDIR)$(moduledir)/rtai_16550A$(modext)
 
 .PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

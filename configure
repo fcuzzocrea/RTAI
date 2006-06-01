@@ -24755,6 +24755,84 @@ echo $ECHO_N "checking for kernel module extension... $ECHO_C" >&6
 echo "$as_me:$LINENO: result: $RTAI_MODULE_EXT" >&5
 echo "${ECHO_T}$RTAI_MODULE_EXT" >&6
 
+RTAI_FP_CFLAGS=
+echo "$as_me:$LINENO: checking for gcc version >= 3.3" >&5
+echo $ECHO_N "checking for gcc version >= 3.3... $ECHO_C" >&6
+if test "${ac_cv_gcc33+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#if !( __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 3))
+#error GCC does not need _FORTIFY_SOURCE
+#endif
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_gcc33=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_gcc33=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+fi
+
+if [ $ac_cv_gcc33 = no ]; then
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+else
+  RTAI_FP_CFLAGS="-D_FORTIFY_SOURCE=0"
+  echo "$as_me:$LINENO: result: ok" >&5
+echo "${ECHO_T}ok" >&6
+fi
+
 RTAI_COMPAT_CPPFLAGS=
 
 echo "$as_me:$LINENO: checking for RTAI target architecture" >&5
@@ -24773,9 +24851,9 @@ case $RTAI_TARGET_ARCH in
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
 	if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
-	   RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -mhard-float"
 	else
-	   RTAI_FP_CFLAGS="-ffast-math -msoft-float"
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -msoft-float"
 	fi
         ;;
  x86_64)
@@ -24783,9 +24861,9 @@ case $RTAI_TARGET_ARCH in
         RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
         RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
         if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
-           RTAI_FP_CFLAGS="-ffast-math -mhard-float"
+           RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -mhard-float"
         else
-           RTAI_FP_CFLAGS="-ffast-math -msoft-float"
+           RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -msoft-float"
         fi
         ;;
 
@@ -24803,7 +24881,7 @@ case $RTAI_TARGET_ARCH in
 	fi
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
-	RTAI_FP_CFLAGS="-ffast-math -msoft-float"
+	RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -ffast-math -msoft-float"
 	          ac_config_links="$ac_config_links base/include/asm-arm/arch:base/include/asm-arm/arch-$RTAI_TARGET_SUBARCH"
 
         ;;
@@ -24813,9 +24891,9 @@ case $RTAI_TARGET_ARCH in
 	RTAI_KMOD_CXXFLAGS="$RTAI_KMOD_CFLAGS -fno-rtti -fno-exceptions -fno-strength-reduce -pipe"
 	RTAI_USER_CFLAGS="$RTAI_USER_CFLAGS -Wall -Wstrict-prototypes -pipe"
 	if test x$CONFIG_RTAI_FPU_SUPPORT = xy; then
-	   RTAI_FP_CFLAGS="-mhard-float"
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -mhard-float"
 	else
-	   RTAI_FP_CFLAGS="-msoft-float"
+	   RTAI_FP_CFLAGS="$RTAI_FP_CFLAGS -msoft-float"
 	fi
 	;;
 esac

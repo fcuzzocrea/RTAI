@@ -351,7 +351,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libtasklets_a_SOURCES = tasklets.c
 libsignal_a_SOURCES = signal.c
@@ -649,8 +649,8 @@ all-local: rtai_tasklets$(modext) rtai_signal$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
 @CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@install-exec-local: rtai_tasklets$(modext) rtai_signal$(modext)
-@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(mkinstalldirs) $(moduledir)
-@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $^ $(moduledir)
+@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+@CONFIG_RTAI_TASKLETS_BUILTIN_FALSE@	$(INSTALL_DATA) $^ $(DESTDIR)$(moduledir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

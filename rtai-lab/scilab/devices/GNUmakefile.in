@@ -374,7 +374,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 lib_LIBRARIES = libsciblk.a
 libsciblk_a_SOURCES = rtai_scope.c rtai_led.c rtai_meter.c rtai_fifo.c \
 	extdata.c mbx_receive_if.c mbx_receive.c mbx_ovrwr_send.c \

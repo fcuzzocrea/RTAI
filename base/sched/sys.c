@@ -569,7 +569,14 @@ static inline void force_soft(RT_TASK *task)
 	}
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,16)
 extern int FASTCALL(do_signal(struct pt_regs *regs, sigset_t *oldset));
+#define RT_DO_SIGNAL(regs)  do_signal(regs, NULL)
+#else
+__attribute__((regparm(3))) void do_notify_resume(struct pt_regs *regs, void *_unused, __u32 thread_info_flags);
+#define RT_DO_SIGNAL(regs)  do_notify_resume(regs, NULL, (_TIF_SIGPENDING | _TIF_RESTORE_SIGMASK));
+#endif
+
 static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
 	if (unlikely(task->unblocked)) {
@@ -577,18 +584,21 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 		if (task->is_hard > 0) {
 			give_back_to_linux(task, -1);
 		}
-		task->unblocked = 0;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(0,0,0)
-		if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
-			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
-			regs->LINUX_SYSCALL_RETREG = -EINTR;
-			do_signal(regs, NULL);
-			regs->LINUX_SYSCALL_RETREG = saved_eax;
-			if (task->is_hard < 0) {
-				steal_from_linux(task);
+#if 0
+		if (task->unblocked > 0) {
+			if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
+				unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
+				regs->LINUX_SYSCALL_RETREG = -EINTR;
+//				regs->LINUX_SYSCALL_RETREG = -ERESTARTSYS;
+				RT_DO_SIGNAL(regs);
+				regs->LINUX_SYSCALL_RETREG = saved_eax;
+				if (task->is_hard < 0) {
+					steal_from_linux(task);
+				}
 			}
 		}
 #endif
+		task->unblocked = 0;
 		return retval;
 	}
 	return 1;

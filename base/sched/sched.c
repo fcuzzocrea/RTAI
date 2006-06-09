@@ -2080,6 +2080,10 @@ void steal_from_linux(RT_TASK *rt_task)
 #else
 	(lnxtsk = rt_task->lnxtsk)->state = TASK_HARDREALTIME;
 #endif
+	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
+		rt_task->base_priority -= BASE_SOFT_PRIORITY;
+		rt_task->priority      -= BASE_SOFT_PRIORITY;
+	}
 	rtai_sti();
 	do {
 		schedule();
@@ -2088,10 +2092,6 @@ void steal_from_linux(RT_TASK *rt_task)
 		rt_task->exectime[1] = rdtsc();
 	}
 	rtai_cli();
-	if (rt_task->base_priority >= BASE_SOFT_PRIORITY) {
-		rt_task->base_priority -= BASE_SOFT_PRIORITY;
-		rt_task->priority      -= BASE_SOFT_PRIORITY;
-	}
 	rt_task->is_hard = 1;
 	if (lnxtsk_uses_fpu(lnxtsk)) {
 		restore_fpu(lnxtsk);

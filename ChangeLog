@@ -1,4 +1,4 @@
-2006-06-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+2006-06-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: fixed the test to reposition a blocked task in a 
 	  prioq after a priority change.

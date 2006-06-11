@@ -141,9 +141,8 @@ int rt_change_prio(RT_TASK *task, int priority)
 	base_priority = task->base_priority;
 	task->base_priority = priority;
 	if (base_priority == task->priority || priority < task->priority) {
-		unsigned long schedmap;
 		QUEUE *q;
-		schedmap = 0;
+		unsigned long schedmap = 0;
 		do {
 			task->priority = priority;
 			if (task->state == RT_SCHED_READY) {
@@ -151,21 +150,16 @@ int rt_change_prio(RT_TASK *task, int priority)
 				(task->rnext)->rprev = task->rprev;
 				enq_ready_task(task);
 #ifdef CONFIG_SMP
-				set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
+				__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 #else
 				schedmap = 1;
 #endif
-			} else if ((void *)(q = task->blocked_on) > RTP_HIGERR && (((task->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype) || (task->state & (RT_SCHED_SEND | RT_SCHED_RPC)))) {
+			} else if ((void *)(q = task->blocked_on) > RTP_HIGERR && (((task->state & RT_SCHED_SEMAPHORE) && !((SEM *)q)->qtype) || (task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)))) {
 				(task->queue.prev)->next = task->queue.next;
 				(task->queue.next)->prev = task->queue.prev;
 				while ((q = q->next) != task->blocked_on && (q->task)->priority <= priority);
 				q->prev = (task->queue.prev = q->prev)->next  = &(task->queue);
 				task->queue.next = q;
-#ifdef CONFIG_SMP
-//				set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
-#else
-//				schedmap = 1;
-#endif
 			}
 		} while ((task = task->prio_passed_to) && task->priority > priority);
 		if (schedmap) {

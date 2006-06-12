@@ -5,7 +5,7 @@
 
 2006-06-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* addons/drivers/serial/rtai_serial.h: structer typing in struct
+	* addons/drivers/serial/rtai_serial.h: stricter typing in struct
 	  supporting the call to callback function management.
 
 2006-06-09  Paolo Mantegazza <mantegazza@aero.polimi.it>

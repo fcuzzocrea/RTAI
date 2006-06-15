@@ -1,3 +1,8 @@
+2006-06-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/iipc/fifos.c: use a module parm to decide if an LXRT extension 
+	  should be created or not.
+
 2006-06-11  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/api.c: fixed the test to reposition a blocked task in a 

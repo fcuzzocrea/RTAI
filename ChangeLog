@@ -99,13 +99,13 @@
 2006-05-04  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/macros/RTAI/RTAICodeGeneration_.sci: Solved problem
-	with "_" in model name.
-	* rtai-lab/scilab/macros/RTAI/rtai_mbx_rcv_if.sci: Changed default values
-	in parameter dialog.
+	  with "_" in model name.
+	* rtai-lab/scilab/macros/RTAI/rtai_mbx_rcv_if.sci: Changed default 
+	  values in parameter dialog.
 	* rtai-lab/scilab/macros/RTAI/rtai_mbx_rcv.sci: Changed default values
-	in parameter dialog.
+	  in parameter dialog.
 	* rtai-lab/scilab/macros/RTAI/rtai_sem_wait.sci: Changed default values
-	in parameter dialog.
+	  in parameter dialog.
 
 2006-05-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

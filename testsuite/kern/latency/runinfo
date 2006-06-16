@@ -1,1 +1,1 @@
-latency:lxrt+fifos:push latency_rt;./display;popall:control_c
+latency:sched+fifos:push latency_rt;./display;popall:control_c

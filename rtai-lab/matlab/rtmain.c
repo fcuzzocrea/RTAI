@@ -134,6 +134,7 @@ static RT_TASK **rt_SubRateTasks;
 
 char *HostInterfaceTaskName     = "IFTASK";
 char *TargetScopeMbxID	        = "RTS";
+char *TargetALogMbxID           = "RAL";
 char *TargetLogMbxID            = "RTL";
 char *TargetLedMbxID            = "RTE";
 char *TargetMeterMbxID	        = "RTM";
@@ -163,12 +164,13 @@ static volatile int endex;
 #define MAX_RTAI_METERS	1000
 #define MAX_RTAI_SYNCHS	1000
 SimStruct *rtaiScope[MAX_RTAI_SCOPES];
+SimStruct *rtaiALog[MAX_RTAI_LOGS];
 SimStruct *rtaiLog[MAX_RTAI_LOGS];
 SimStruct *rtaiLed[MAX_RTAI_LEDS];
 SimStruct *rtaiMeter[MAX_RTAI_METERS];
 SimStruct *rtaiSynchronoscope[MAX_RTAI_SYNCHS];
 
-#define MAX_COMEDI_DEVICES	4
+#define MAX_COMEDI_DEVICES        10	
 
 void *ComediDev[MAX_COMEDI_DEVICES];
 int ComediDev_InUse[MAX_COMEDI_DEVICES] = {0};
@@ -576,6 +578,30 @@ static void *rt_HostInterface(void *args)
 						}
 					  }
 					}
+					{ int alogIdx, Reply;  /* section added to support automatic log block  taken from log code */
+					  float samplingTime;
+					  int nrow, ncol, *dim;
+					  while (1) {
+						rt_receivex(task, &alogIdx, sizeof(int), &len);
+						if (alogIdx < 0) {
+							Reply = alogIdx;
+							rt_returnx(task, &Reply, sizeof(int));
+							break;
+						} else {
+							dim = ssGetInputPortDimensions(rtaiALog[alogIdx],0);
+							nrow = dim[0];
+							ncol = dim[1];
+							rt_returnx(task, &nrow, sizeof(int));
+							rt_receivex(task, &alogIdx, sizeof(int), &len);
+							rt_returnx(task, &ncol, sizeof(int));
+							rt_receivex(task, &alogIdx, sizeof(int), &len);
+							rt_returnx(task, (char *)ssGetModelName(rtaiALog[alogIdx]), MAX_NAMES_SIZE*sizeof(char));
+							rt_receivex(task, &alogIdx, sizeof(int), &len);
+							samplingTime = ssGetSampleTime(rtaiALog[alogIdx],0);
+							rt_returnx(task, &samplingTime, sizeof(float));
+						}
+					  }
+					}
 					{ int ledIdx, Reply;
 					  float samplingTime;
 					  int n_leds;
@@ -958,6 +984,7 @@ struct option options[] = {
         { "name",       1, 0, 'n' },
         { "idscope",    1, 0, 'i' },
         { "idlog",      1, 0, 'l' },
+	{ "idalog",     1, 0, 'a' },
         { "idmeter",    1, 0, 't' },
         { "idled",      1, 0, 'd' },
         { "idsynch",    1, 0, 'y' },
@@ -993,6 +1020,8 @@ void print_usage(void)
 "      set the scope mailboxes identifier (default RTS)\n"
 "  -l <logid>, --idlog <logid>\n"
 "      set the log mailboxes identifier (default RTL)\n"
+"  -a <alogid>, --idalog <alogid>\n"
+"      set the automatic log mailboxes identifier (default RAL)\n"
 "  -t <meterid>, --idmeter <meterid>\n"
 "      set the meter mailboxes identifier (default RTM)\n"
 "  -d <ledid>, --idled <ledid>\n"
@@ -1021,7 +1050,7 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, endme);
 
 	while (1) {
-		c = getopt_long(argc, argv, "uvVsweop:f:n:i:l:d:t:y:c:m:", options, &option_index);
+		c = getopt_long(argc, argv, "uvVsweop:f:n:i:l:a:d:t:y:c:m:", options, &option_index);
                 if (c == -1)
 			break;
                 switch (c) {
@@ -1074,6 +1103,9 @@ int main(int argc, char *argv[])
 			case 't':
 				TargetMeterMbxID = strdup(optarg);
 				break;
+			case 'a':
+				TargetALogMbxID = strdup(optarg);
+				break;	
 			case 'd':
 				TargetLedMbxID = strdup(optarg);
 				break;

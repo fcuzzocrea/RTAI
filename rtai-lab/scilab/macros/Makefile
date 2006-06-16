@@ -1,6 +1,6 @@
 all: install
 
-SCILAB_VERSION = 3.1.1
+SCILAB_VERSION = 4.0
 SCILAB_DIR = /usr/local/scilab-$(SCILAB_VERSION)
 MACROS_DIR = $(PWD)
 

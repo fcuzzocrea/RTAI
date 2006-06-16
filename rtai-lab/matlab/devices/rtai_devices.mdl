@@ -23,10 +23,10 @@ Library {
   Creator		  "dozio"
   UpdateHistory		  "UpdateHistoryNever"
   ModifiedByFormat	  "%<Auto>"
-  LastModifiedBy	  "dozio"
+  LastModifiedBy	  "root"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Mon Jan  5 14:15:48 2004"
-  ModelVersionFormat	  "1.%<AutoIncrement:2>"
+  LastModifiedDate	  "Mon May  5 14:31:22 2003"
+  ModelVersionFormat	  "1.%<AutoIncrement:3>"
   ConfigurationManager	  "None"
   SimParamPage		  "Solver"
   LinearizationMsg	  "none"
@@ -125,7 +125,7 @@ Library {
   }
   System {
     Name		    "rtai_devices"
-    Location		    [103, 134, 443, 580]
+    Location		    [651, 165, 991, 757]
     Open		    on
     ModelBrowserVisibility  off
     ModelBrowserWidth	    200
@@ -140,7 +140,7 @@ Library {
       BlockType		      "S-Function"
       Name		      "COMEDI_DATA_READ"
       Ports		      [0, 1]
-      Position		      [20, 282, 135, 328]
+      Position		      [20, 357, 135, 403]
       FunctionName	      "sfun_comedi_data_read"
       Parameters	      "dev,chan,range,aref,dt"
       MaskType		      "COMEDI_DATA_READ"
@@ -166,7 +166,7 @@ Library {
       BlockType		      "S-Function"
       Name		      "COMEDI_DATA_WRITE"
       Ports		      [1]
-      Position		      [185, 280, 305, 330]
+      Position		      [185, 355, 305, 405]
       FunctionName	      "sfun_comedi_data_write"
       Parameters	      "dev,chan,range,aref"
       MaskType		      "COMEDI_DATA_WRITE"
@@ -191,7 +191,7 @@ Library {
       BlockType		      "S-Function"
       Name		      "COMEDI_DIO_READ"
       Ports		      [0, 1]
-      Position		      [20, 357, 135, 403]
+      Position		      [20, 432, 135, 478]
       FunctionName	      "sfun_comedi_dio_read"
       Parameters	      "dev,chan,dt"
       MaskType		      "COMEDI_DIO_READ"
@@ -216,7 +216,7 @@ Library {
       BlockType		      "S-Function"
       Name		      "COMEDI_DIO_WRITE"
       Ports		      [1]
-      Position		      [185, 357, 305, 403]
+      Position		      [185, 432, 305, 478]
       FunctionName	      "sfun_comedi_dio_write"
       Parameters	      "dev,chan,threshold"
       MaskType		      "COMEDI_DIO_WRITE"
@@ -239,9 +239,37 @@ Library {
     }
     Block {
       BlockType		      "S-Function"
+      Name		      "RTAI_AUTO_LOG"
+      Ports		      [2]
+      Position		      [25, 186, 125, 239]
+      AncestorBlock	      "rtai_devices_mai/RTAI_AUTO_LOG"
+      FunctionName	      "sfun_rtai_automatic_log"
+      Parameters	      "dt"
+      MaskType		      "RTAI-LOG"
+      MaskDescription	      "RTAI run-time automatic log. Allows to log data"
+" driven by zero/one flag. \nIt's useful in order to save data automatically. "
+"\nFile name is the name of the block and is saved in the directory\nwhere tar"
+"get is running.\n\n"
+      MaskPromptString	      "Sampling Time (-1 for inherited)"
+      MaskStyleString	      "edit"
+      MaskTunableValueString  "off"
+      MaskEnableString	      "on"
+      MaskVisibilityString    "on"
+      MaskToolTipString	      "on"
+      MaskVariables	      "dt=@1;"
+      MaskDisplay	      "port_label('input', 2, 'flag')\nport_label('inp"
+"ut', 1, 'data')"
+      MaskIconFrame	      on
+      MaskIconOpaque	      on
+      MaskIconRotate	      "none"
+      MaskIconUnits	      "autoscale"
+      MaskValueString	      "-1"
+    }
+    Block {
+      BlockType		      "S-Function"
       Name		      "RTAI_LED"
       Ports		      [5]
-      Position		      [155, 23, 235, 157]
+      Position		      [195, 43, 275, 177]
       FunctionName	      "sfun_rtai_led"
       Parameters	      "n_leds,dt"
       MaskType		      "RTAI_LED"
@@ -288,7 +316,7 @@ Library {
       BlockType		      "S-Function"
       Name		      "RTAI_METER"
       Ports		      [1]
-      Position		      [25, 179, 125, 231]
+      Position		      [25, 269, 125, 321]
       FunctionName	      "sfun_rtai_meter"
       Parameters	      "dt"
       MaskType		      "RTAI_METER"
@@ -336,7 +364,7 @@ Library {
       BlockType		      "S-Function"
       Name		      "RTAI_SYNCHRONOSCOPE"
       Ports		      [1]
-      Position		      [155, 178, 310, 232]
+      Position		      [160, 223, 315, 277]
       FunctionName	      "sfun_rtai_synchronoscope"
       Parameters	      "dt"
       MaskType		      "RTAI_SYNCHRONOSCOPE"

@@ -366,7 +366,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 librtdm_a_SOURCES = \
 	core.c \
@@ -805,11 +805,11 @@ all-local: rtai_rtdm$(modext)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
 install-exec-local: rtai_rtdm$(modext)
-	$(mkinstalldirs) $(moduledir) $(DESTDIR)$(includedir)
-	$(INSTALL_DATA) $< $(moduledir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir) $(DESTDIR)$(includedir)
+	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 
 uninstall-local:
-	$(RM) $(moduledir)/rtai_rtdm$(modext)
+	$(RM) $(DESTDIR)$(moduledir)/rtai_rtdm$(modext)
 
 .PHONY: FORCE
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

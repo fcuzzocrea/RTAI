@@ -346,7 +346,7 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
 libnetrpc_a_SOURCES = netrpc.c rtnetP.h
 @CONFIG_KBUILD_FALSE@noinst_LIBRARIES = libnetrpc.a
@@ -541,9 +541,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+@CONFIG_RTAI_NETRPC_BUILTIN_TRUE@install-exec-local:
 @CONFIG_KBUILD_FALSE@clean-local:
 @CONFIG_RTAI_NETRPC_BUILTIN_TRUE@clean-local:
-@CONFIG_RTAI_NETRPC_BUILTIN_TRUE@install-exec-local:
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-local \
@@ -627,8 +627,8 @@ all-local: rtai_netrpc$(modext)
 @CONFIG_RTAI_NETRPC_BUILTIN_FALSE@@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
 
 @CONFIG_RTAI_NETRPC_BUILTIN_FALSE@install-exec-local: rtai_netrpc$(modext)
-@CONFIG_RTAI_NETRPC_BUILTIN_FALSE@	$(mkinstalldirs) $(moduledir)
-@CONFIG_RTAI_NETRPC_BUILTIN_FALSE@	$(INSTALL_DATA) $< $(moduledir)
+@CONFIG_RTAI_NETRPC_BUILTIN_FALSE@	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+@CONFIG_RTAI_NETRPC_BUILTIN_FALSE@	$(INSTALL_DATA) $< $(DESTDIR)$(moduledir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

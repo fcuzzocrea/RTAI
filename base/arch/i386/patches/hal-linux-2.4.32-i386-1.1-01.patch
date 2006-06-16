@@ -1090,7 +1090,7 @@ diff -uNrp 2.4.32/arch/i386/kernel/ipipe-core.c 2.4.32-i386-ipipe/arch/i386/kern
 diff -uNrp 2.4.32/arch/i386/kernel/ipipe-root.c 2.4.32-i386-ipipe/arch/i386/kernel/ipipe-root.c
 --- 2.4.32/arch/i386/kernel/ipipe-root.c	1970-01-01 01:00:00.000000000 +0100
 +++ 2.4.32-i386-ipipe/arch/i386/kernel/ipipe-root.c	2006-01-04 17:42:23.000000000 +0100
-@@ -0,0 +1,594 @@
+@@ -0,0 +1,596 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/i386/kernel/ipipe-root.c
 + *
@@ -1665,6 +1665,8 @@ diff -uNrp 2.4.32/arch/i386/kernel/ipipe-root.c 2.4.32-i386-ipipe/arch/i386/kern
 +EXPORT_SYMBOL(ret_from_intr);
 +extern struct desc_struct idt_table[];
 +EXPORT_SYMBOL(idt_table);
++extern spinlock_t i8259A_lock;
++EXPORT_SYMBOL(i8259A_lock);
 +#ifdef CONFIG_VT
 +extern void (*kd_mksound)(unsigned int hz, unsigned int ticks);
 +EXPORT_SYMBOL_NOVERS(kd_mksound);

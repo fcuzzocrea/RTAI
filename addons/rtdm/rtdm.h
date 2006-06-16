@@ -400,7 +400,7 @@ static inline ssize_t rt_dev_sendto(int fd, const void *buf, size_t len,
 {
     struct iovec    iov = {(void *)buf, len};
     struct msghdr   msg =
-        {(struct sockaddr *)to, tolen, &iov, 1, NULL, 0, 0 };
+        {(struct sockaddr *)to, tolen, &iov, 1, NULL, 0, 0};
 
     return rt_dev_sendmsg(fd, &msg, flags);
 }

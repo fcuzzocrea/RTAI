@@ -45,8 +45,47 @@
 #define RT_SCHED_RETURN     128
 #define RT_SCHED_MBXSUSP    256
 #define RT_SCHED_SFTRDY     512
+#define RT_SCHED_SELFSUSP  1024
 
-#define RT_EINTR  (0xFff0)
+#define RT_RWLINV   (6)
+#define RT_OBJINV   (5)
+#define RT_OBJREM   (4)
+#define RT_TIMOUT   (3)
+#define RT_UNBLKD   (2)
+#define RT_TMROVRN  (1)
+#define RTP_RWLINV  ((void *)RT_RWLINV)
+#define RTP_OBJINV  ((void *)RT_OBJINV)
+#define RTP_OBJREM  ((void *)RT_OBJREM)
+#define RTP_TIMOUT  ((void *)RT_TIMOUT)
+#define RTP_UNBLKD  ((void *)RT_UNBLKD)
+#define RTP_TMROVRN ((void *)RT_TMROVRN)
+#define RTP_HIGERR  (RTP_RWLINV)
+#define RTP_LOWERR  (RTP_TMROVRN)
+#if CONFIG_RTAI_USE_NEWERR
+#define RTE_BASE     (0x3FFFFF00)
+#define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
+#define RTE_OBJINV   (RTE_BASE + RT_OBJINV)
+#define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
+#define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)
+#define RTE_UNBLKD   (RTE_BASE + RT_UNBLKD)
+#define RTE_TMROVRN  (RTE_BASE + RT_TMROVRN)
+#define RTE_HIGERR   (RTE_RWLINV)
+#define RTE_LOWERR   (RTE_TMROVRN)
+#else
+#define RTE_BASE     (0xFFFB)
+#define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
+#define RTE_OBJINV   (RTE_BASE + RT_OBJREM)
+#define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
+#define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)
+#define RTE_UNBLKD   (RTE_BASE + RT_UNBLKD)
+#define RTE_TMROVRN  (RTE_BASE + RT_TMROVRN)
+#define RTE_HIGERR   (RTE_RWLINV)
+#define RTE_LOWERR   (RTE_TMROVRN)
+#endif
+
+#define RT_EINTR    (RTE_UNBLKD)
+
+#define rt_is_reterr(i)  (i >= RTE_LOWERR)
 
 #define RT_IRQ_TASK         0
 #define RT_IRQ_TASKLET      1
@@ -110,6 +149,7 @@ typedef struct rt_task_struct {
     struct rt_task_struct *prio_passed_to;
     RTIME period;
     RTIME resume_time;
+    RTIME periodic_resume_time;
     RTIME yield_time;
     int rr_quantum;
     int rr_remaining;
@@ -175,6 +215,7 @@ typedef struct rt_task_struct {
     rb_root_t rbr;
     rb_node_t rbn;
 #endif
+    struct rt_queue resq;
 } RT_TASK __attribute__ ((__aligned__ (L1_CACHE_BYTES)));
 
 #else /* __cplusplus */
@@ -197,6 +238,23 @@ int rt_task_init_cpuid(struct rt_task_struct *task,
 		       int uses_fpu,
 		       void(*signal)(void),
 		       unsigned run_on_cpu);
+
+int rt_kthread_init(struct rt_task_struct *task,
+		    void (*rt_thread)(long),
+		    long data,
+		    int stack_size,
+		    int priority,
+		    int uses_fpu,
+		    void(*signal)(void));
+
+int rt_kthread_init_cpuid(struct rt_task_struct *task,
+		          void (*rt_thread)(long),
+		          long data,
+		          int stack_size,
+		          int priority,
+		          int uses_fpu,
+		          void(*signal)(void),
+		          unsigned run_on_cpu);
 
 void rt_set_runnable_on_cpus(struct rt_task_struct *task,
 			     unsigned long cpu_mask);

@@ -20,8 +20,8 @@
 #define _RTAI_SANITY_H
 
 #if !( __GNUC__ == 2 && __GNUC_MINOR__ > 8 && __GNUC_MINOR__ < 96 ) && \
-	__GNUC__ != 3
-#warning: You are likely using an unsuported GCC version! \
+	__GNUC__ > 4
+#warning: You are likely using an unsupported GCC version! \
           Please read GCC-WARNINGS carefully.
 #endif
 

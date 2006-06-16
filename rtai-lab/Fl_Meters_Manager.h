@@ -1,5 +1,7 @@
 /*
 COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
+		    Roberto Bucher (roberto.bucher@supsi.ch)
+		    Peter Brier (pbrier@dds.nl)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -74,6 +76,9 @@ class Fl_Meters_Manager
 		Fl_Button **Bg_Color;
 		Fl_Button **Arrow_Color;
 		Fl_Button **Grid_Color;
+		Fl_Choice **Meter_Style;
+		Fl_Menu_Button **Meter_Options;
+
 		Fl_Button *Help, *Close;
 		inline void select_meter_i(Fl_Browser *, void *);
 		static void select_meter(Fl_Browser *, void *);
@@ -83,6 +88,10 @@ class Fl_Meters_Manager
 		static void enter_minval(Fl_Float_Input *, void *);
 		inline void enter_maxval_i(Fl_Float_Input *, void *);
 		static void enter_maxval(Fl_Float_Input *, void *);
+		inline void enter_options_i(Fl_Menu_Button *, void *);
+		static void enter_options(Fl_Menu_Button *, void *);
+		inline void enter_meter_style_i(Fl_Choice *, void *);
+		static void enter_meter_style(Fl_Choice *, void *);
 		inline void select_bg_color_i(Fl_Button *, void *);
 		static void select_bg_color(Fl_Button *, void *);
 		inline void select_grid_color_i(Fl_Button *, void *);

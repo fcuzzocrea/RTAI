@@ -1,4 +1,4 @@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 
 modext = @RTAI_MODULE_EXT@
 
@@ -219,8 +219,8 @@ if CONFIG_RTAI_OLD_FASHIONED_BUILD
 endif
 
 install-exec-local: $(modules) $(crtobjs)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $(modules) $(moduledir)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $(modules) $(DESTDIR)$(moduledir)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	$(INSTALL_DATA) $(crtobjs) $(DESTDIR)$(libdir)
 

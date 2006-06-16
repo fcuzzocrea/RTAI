@@ -26,11 +26,10 @@
  */
 
 #include <linux/module.h>
-#include <linux/moduleparam.h>
 #include <linux/delay.h>
 
-#include <rtdm/device.h>
-#include <rtdm/proc.h>
+#include "rtdm/device.h"
+#include "rtdm/proc.h"
 
 
 #define SET_DEFAULT_OP(device, operation)                               \
@@ -57,15 +56,15 @@ MODULE_PARM_DESC(devname_hashtab_size,
 MODULE_PARM_DESC(protocol_hashtab_size,
    "Size of hash table for protocol devices (must be power of 2)");
 
-struct list_head     *rtdm_named_devices;    /* hash table */
-struct list_head     *rtdm_protocol_devices; /* hash table */
-static int           name_hashkey_mask;
-static int           proto_hashkey_mask;
+struct list_head    *rtdm_named_devices;    /* hash table */
+struct list_head    *rtdm_protocol_devices; /* hash table */
+static int          name_hashkey_mask;
+static int          proto_hashkey_mask;
 
 DECLARE_MUTEX(nrt_dev_lock);
 
 #ifdef CONFIG_SMP
-xnlock_t             rt_dev_lock = XNARCH_LOCK_UNLOCKED;
+xnlock_t            rt_dev_lock = XNARCH_LOCK_UNLOCKED;
 #endif /* CONFIG_SMP */
 
 
@@ -331,6 +330,8 @@ int rtdm_dev_register(struct rtdm_device* device)
     return ret;
 }
 
+EXPORT_SYMBOL(rtdm_dev_register);
+
 
 /**
  * @brief Unregisters a RTDM device
@@ -371,19 +372,13 @@ int rtdm_dev_unregister(struct rtdm_device* device, unsigned int poll_delay)
         return -ENODEV;
 
     down(&nrt_dev_lock);
-
-#ifdef CONFIG_PROC_FS
-    remove_proc_entry("information", device->proc_entry);
-    remove_proc_entry(device->proc_name, rtdm_proc_root);
-#endif /* CONFIG_PROC_FS */
-
     xnlock_get_irqsave(&rt_dev_lock, s);
 
     while (atomic_read(&reg_dev->reserved.refcount) > 1) {
         xnlock_put_irqrestore(&rt_dev_lock, s);
+        up(&nrt_dev_lock);
 
         if (!poll_delay) {
-            up(&nrt_dev_lock);
             rtdm_dereference_device(reg_dev);
             return -EAGAIN;
         }
@@ -393,12 +388,19 @@ int rtdm_dev_unregister(struct rtdm_device* device, unsigned int poll_delay)
                       "release...\n", reg_dev->device_name);
         msleep(poll_delay);
 
+        down(&nrt_dev_lock);
         xnlock_get_irqsave(&rt_dev_lock, s);
     }
 
     list_del(&reg_dev->reserved.entry);
 
     xnlock_put_irqrestore(&rt_dev_lock, s);
+
+#ifdef CONFIG_PROC_FS
+    remove_proc_entry("information", device->proc_entry);
+    remove_proc_entry(device->proc_name, rtdm_proc_root);
+#endif /* CONFIG_PROC_FS */
+
     up(&nrt_dev_lock);
 
     if (reg_dev->reserved.exclusive_context)
@@ -406,6 +408,8 @@ int rtdm_dev_unregister(struct rtdm_device* device, unsigned int poll_delay)
 
     return 0;
 }
+
+EXPORT_SYMBOL(rtdm_dev_unregister);
 /** @} */
 
 
@@ -441,6 +445,3 @@ int __init rtdm_dev_init(void)
     return 0;
 }
 /*@}*/
-
-EXPORT_SYMBOL(rtdm_dev_register);
-EXPORT_SYMBOL(rtdm_dev_unregister);

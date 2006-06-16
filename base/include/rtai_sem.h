@@ -30,9 +30,8 @@
 
 #define RT_SEM_MAGIC 0x3f83ebb  // nam2num("rtsem")
 
-#define SEM_TIMOUT (0xFffe)
-
-#define SEM_ERR (0xFfff)
+#define SEM_ERR     (RTE_OBJINV)
+#define SEM_TIMOUT  (RTE_TIMOUT)
 
 #if defined(__KERNEL__) && !defined(__cplusplus)
 
@@ -43,6 +42,7 @@ typedef struct rt_semaphore {
     int count;
     struct rt_task_struct *owndby;
     int qtype;
+    struct rt_queue resq;
 } SEM;
 
 #else /* !__KERNEL__ || __cplusplus */

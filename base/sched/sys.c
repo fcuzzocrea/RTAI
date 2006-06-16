@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2002  Paolo Mantegazza <mantegazza@aero.polimi.it>,
- *		         Pierre Cloutier <pcloutier@poseidoncontrols.com>,
- *		         Steve Papacharalambous <stevep@zentropix.com>.
+ * Copyright (C) 2001-2006  Paolo Mantegazza <mantegazza@aero.polimi.it>,
+ *		            Pierre Cloutier <pcloutier@poseidoncontrols.com>,
+ *		            Steve Papacharalambous <stevep@zentropix.com>.
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -121,94 +121,86 @@ static inline int GENERIC_DELETE(int index, void *object)
 #define lxrt_mbx_delete(mbx)        GENERIC_DELETE(MBX_DELETE, mbx)
 #define lxrt_named_mbx_delete(mbx)  GENERIC_DELETE(NAMED_MBX_DELETE, mbx)
 
-static inline void lxrt_resume(void *fun, int narg, long *arg, unsigned long type, RT_TASK *rt_task)
+extern void rt_schedule_soft_tail(RT_TASK *, int);
+static inline void lxrt_fun_call(RT_TASK *task, void *fun, int narg, long *arg)
 {
-	if (NEED_TO_RW(type)) {
-		int rsize, r2size, wsize, w2size, msg_size;
-		long *wmsg_adr, *w2msg_adr, *fun_args;
-		
-		rsize = r2size = wsize = w2size = 0 ;
-		wmsg_adr = w2msg_adr = NULL;
-		fun_args = arg - 1;
-		if (NEED_TO_R(type)) {			
-			rsize = USP_RSZ1(type);
-			rsize = rsize ? fun_args[rsize] : sizeof(long);
-			if (NEED_TO_R2ND(type)) {
-				r2size = USP_RSZ2(type);
-				r2size = r2size ? fun_args[r2size] : sizeof(long);
-			}
-		}
-		if (NEED_TO_W(type)) {
-			wsize = USP_WSZ1(type);
-			wsize = wsize ? fun_args[wsize] : sizeof(long);
-			if (NEED_TO_W2ND(type)) {
-				w2size = USP_WSZ2(type);
-				w2size = w2size ? fun_args[w2size] : sizeof(long);
-			}
-		}
-		if ((msg_size = rsize > wsize ? rsize : wsize) > 0) {
-			if (msg_size > rt_task->max_msg_size[0]) {
-				rt_free(rt_task->msg_buf[0]);
-				rt_task->max_msg_size[0] = (msg_size << 7)/100;
-				rt_task->msg_buf[0] = rt_malloc(rt_task->max_msg_size[0]);
-			}
-			if (rsize) {			
-				long *buf_arg = fun_args + USP_RBF1(type);
-				rt_copy_from_user(rt_task->msg_buf[0], (long *)buf_arg[0], rsize);
-				buf_arg[0] = (long)rt_task->msg_buf[0];
-			}
-			if (wsize) {
-				long *buf_arg = fun_args + USP_WBF1(type);
-				wmsg_adr = (long *)buf_arg[0];
-				buf_arg[0] = (long)rt_task->msg_buf[0];
-			}
-		}
-		if ((msg_size = r2size > w2size ? r2size : w2size) > 0) {
-			if (msg_size > rt_task->max_msg_size[1]) {
-				rt_free(rt_task->msg_buf[1]);
-				rt_task->max_msg_size[1] = (msg_size << 7)/100;
-				rt_task->msg_buf[1] = rt_malloc(rt_task->max_msg_size[1]);
-			}
-			if (r2size) {
-				long *buf_arg = fun_args + USP_RBF2(type);
-				rt_copy_from_user(rt_task->msg_buf[1], (long *)buf_arg[0], r2size);
-				buf_arg[0] = (long)rt_task->msg_buf[1];
-       			}
-			if (w2size) {
-				long *buf_arg = fun_args + USP_WBF2(type);
-				w2msg_adr = (long *)buf_arg[0];
-       		        	buf_arg[0] = (long)rt_task->msg_buf[1];
-       			}
-		}
-		if (likely(rt_task->is_hard > 0)) {
-			rt_task->retval = ((long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
-			if (unlikely(!rt_task->is_hard)) {
-extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
-				rt_schedule_soft_tail(rt_task, rt_task->runnable_on_cpus);
-			}
-		} else {
-			struct fun_args *funarg;
-			memcpy(funarg = (void *)rt_task->fun_args, arg, narg);
-			funarg->fun = fun;
-			rt_schedule_soft(rt_task);
-		}
-		if (wsize) {
-			rt_copy_to_user(wmsg_adr, rt_task->msg_buf[0], wsize);
-			if (w2size) {
-				rt_copy_to_user(w2msg_adr, rt_task->msg_buf[1], w2size);
-			}
-		}
-	} else if (likely(rt_task->is_hard > 0)) {
-		rt_task->retval = ((long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
-		if (unlikely(!rt_task->is_hard)) {
-extern void rt_schedule_soft_tail(RT_TASK *rt_task, int cpuid);
-			rt_schedule_soft_tail(rt_task, rt_task->runnable_on_cpus);
+	if (likely(task->is_hard > 0)) {
+		task->retval = ((long long (*)(unsigned long, ...))fun)(RTAI_FUN_ARGS);
+		if (unlikely(!task->is_hard)) {
+			rt_schedule_soft_tail(task, task->runnable_on_cpus);
 		}
 	} else {
 		struct fun_args *funarg;
-		memcpy(funarg = (void *)rt_task->fun_args, arg, narg);
+		memcpy(funarg = (void *)task->fun_args, arg, narg);
 		funarg->fun = fun;
-		rt_schedule_soft(rt_task);
+		rt_schedule_soft(task);
+	}
+}
+
+static inline void lxrt_fun_call_wbuf(RT_TASK *rt_task, void *fun, int narg, long *arg, unsigned long type)
+{
+	int rsize, r2size, wsize, w2size, msg_size;
+	long *wmsg_adr, *w2msg_adr, *fun_args;
+		
+	rsize = r2size = wsize = w2size = 0 ;
+	wmsg_adr = w2msg_adr = NULL;
+	fun_args = arg - 1;
+	if (NEED_TO_R(type)) {			
+		rsize = USP_RSZ1(type);
+		rsize = rsize ? fun_args[rsize] : sizeof(long);
+		if (NEED_TO_R2ND(type)) {
+			r2size = USP_RSZ2(type);
+			r2size = r2size ? fun_args[r2size] : sizeof(long);
+		}
+	}
+	if (NEED_TO_W(type)) {
+		wsize = USP_WSZ1(type);
+		wsize = wsize ? fun_args[wsize] : sizeof(long);
+		if (NEED_TO_W2ND(type)) {
+			w2size = USP_WSZ2(type);
+			w2size = w2size ? fun_args[w2size] : sizeof(long);
+		}
+	}
+	if ((msg_size = rsize > wsize ? rsize : wsize) > 0) {
+		if (msg_size > rt_task->max_msg_size[0]) {
+			rt_free(rt_task->msg_buf[0]);
+			rt_task->max_msg_size[0] = (msg_size << 7)/100;
+			rt_task->msg_buf[0] = rt_malloc(rt_task->max_msg_size[0]);
+		}
+		if (rsize) {			
+			long *buf_arg = fun_args + USP_RBF1(type);
+			rt_copy_from_user(rt_task->msg_buf[0], (long *)buf_arg[0], rsize);
+			buf_arg[0] = (long)rt_task->msg_buf[0];
+		}
+		if (wsize) {
+			long *buf_arg = fun_args + USP_WBF1(type);
+			wmsg_adr = (long *)buf_arg[0];
+			buf_arg[0] = (long)rt_task->msg_buf[0];
+		}
+	}
+	if ((msg_size = r2size > w2size ? r2size : w2size) > 0) {
+		if (msg_size > rt_task->max_msg_size[1]) {
+			rt_free(rt_task->msg_buf[1]);
+			rt_task->max_msg_size[1] = (msg_size << 7)/100;
+			rt_task->msg_buf[1] = rt_malloc(rt_task->max_msg_size[1]);
+		}
+		if (r2size) {
+			long *buf_arg = fun_args + USP_RBF2(type);
+			rt_copy_from_user(rt_task->msg_buf[1], (long *)buf_arg[0], r2size);
+			buf_arg[0] = (long)rt_task->msg_buf[1];
+       		}
+		if (w2size) {
+			long *buf_arg = fun_args + USP_WBF2(type);
+			w2msg_adr = (long *)buf_arg[0];
+       	        	buf_arg[0] = (long)rt_task->msg_buf[1];
+       		}
+	}
+	lxrt_fun_call(rt_task, fun, narg, arg);
+	if (wsize) {
+		rt_copy_to_user(wmsg_adr, rt_task->msg_buf[0], wsize);
+		if (w2size) {
+			rt_copy_to_user(w2msg_adr, rt_task->msg_buf[1], w2size);
+		}
 	}
 }
 
@@ -288,6 +280,15 @@ static int __task_delete(RT_TASK *rt_task)
 #define SYSW_DIAG_MSG(x)
 #endif
 
+#define recover_hardrt(chktsk, task) \
+do { \
+	if ((chktsk) && unlikely(((task)->is_hard) < 0)) { \
+		SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, DIRECT), PID = %d.\n", current->pid);); \
+		steal_from_linux(task); \
+		SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid);); \
+	} \
+} while(0)
+
 static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_TASK *task)
 {
 #define larg ((struct arg *)arg)
@@ -295,8 +296,7 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 	union {unsigned long name; RT_TASK *rt_task; SEM *sem; MBX *mbx; RWL *rwl; SPL *spl; } arg0;
 	int srq;
 
-	srq = SRQ(lxsrq);
-	if (likely(srq < MAX_LXRT_FUN)) {
+	if (likely((srq = SRQ(lxsrq)) < MAX_LXRT_FUN)) {
 		unsigned long type;
 		struct rt_fun_entry *funcm;
 /*
@@ -305,28 +305,21 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
  * hard real time. Concept contributed and copyrighted by: Giuseppe Renoldi 
  * (giuseppe@renoldi.org).
  */
-		funcm = rt_fun_ext[INDX(lxsrq)];
-		if (unlikely(!funcm)) {
+		if (unlikely(!(funcm = rt_fun_ext[INDX(lxsrq)]))) {
 			rt_printk("BAD: null rt_fun_ext[%d]\n", INDX(lxsrq));
 			return -ENOSYS;
 		}
-		type = funcm[srq].type;
-		if (likely(type)) {
-			if (unlikely(task->is_hard < 0)) {
-				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, RESUME), PID = %d.\n", current->pid););
-				steal_from_linux(task);
-				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
-			}
-			lxrt_resume(funcm[srq].fun, NARG(lxsrq), arg, type, task);
-			return task->retval;
-		} else {
-			if (unlikely(task && task->is_hard < 0)) {
-				SYSW_DIAG_MSG(rt_printk("GOING BACK TO HARD (SYSLXRT, DIRECT), PID = %d.\n", current->pid););
-				steal_from_linux(task);
-				SYSW_DIAG_MSG(rt_printk("GONE BACK TO HARD (SYSLXRT),  PID = %d.\n", current->pid););
-			}
+		if (!(type = funcm[srq].type)) {
+			recover_hardrt(task, task);
 			return ((long long (*)(unsigned long, ...))funcm[srq].fun)(RTAI_FUN_ARGS);
+		}
+		recover_hardrt(1, task);
+		if (unlikely(NEED_TO_RW(type))) {
+			lxrt_fun_call_wbuf(task, funcm[srq].fun, NARG(lxsrq), arg, type);
+		} else {
+			lxrt_fun_call(task, funcm[srq].fun, NARG(lxsrq), arg);
 	        }
+		return task->retval;
 	}
 
 	arg0.name = arg[0];
@@ -545,7 +538,9 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 		}
 		case GET_TIMEORIG: {
 			struct arg { RTIME *time_orig; };
-			rt_gettimeorig(larg->time_orig);
+			RTIME time_orig[2];
+			rt_gettimeorig(time_orig);
+			rt_copy_to_user(larg->time_orig, time_orig, sizeof(time_orig));
                         return 0;
 		}
 
@@ -574,7 +569,14 @@ static inline void force_soft(RT_TASK *task)
 	}
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,16)
 extern int FASTCALL(do_signal(struct pt_regs *regs, sigset_t *oldset));
+#define RT_DO_SIGNAL(regs)  do_signal(regs, NULL)
+#else
+__attribute__((regparm(3))) void do_notify_resume(struct pt_regs *regs, void *_unused, __u32 thread_info_flags);
+#define RT_DO_SIGNAL(regs)  do_notify_resume(regs, NULL, (_TIF_SIGPENDING | _TIF_RESTORE_SIGMASK));
+#endif
+
 static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 {
 	if (unlikely(task->unblocked)) {
@@ -582,18 +584,21 @@ static inline int rt_do_signal(struct pt_regs *regs, RT_TASK *task)
 		if (task->is_hard > 0) {
 			give_back_to_linux(task, -1);
 		}
-		task->unblocked = 0;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(0,0,0)
-		if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
-			unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
-			regs->LINUX_SYSCALL_RETREG = -EINTR;
-			do_signal(regs, NULL);
-			regs->LINUX_SYSCALL_RETREG = saved_eax;
-			if (task->is_hard < 0) {
-				steal_from_linux(task);
+#if 0
+		if (task->unblocked > 0) {
+			if (likely(regs->LINUX_SYSCALL_NR < RTAI_SYSCALL_NR)) {
+				unsigned long saved_eax = regs->LINUX_SYSCALL_RETREG;
+				regs->LINUX_SYSCALL_RETREG = -EINTR;
+//				regs->LINUX_SYSCALL_RETREG = -ERESTARTSYS;
+				RT_DO_SIGNAL(regs);
+				regs->LINUX_SYSCALL_RETREG = saved_eax;
+				if (task->is_hard < 0) {
+					steal_from_linux(task);
+				}
 			}
 		}
 #endif
+		task->unblocked = 0;
 		return retval;
 	}
 	return 1;

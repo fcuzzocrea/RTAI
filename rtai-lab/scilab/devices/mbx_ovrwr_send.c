@@ -27,53 +27,48 @@
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
 
-#include "devstruct.h"
 #include "rtmain.h"
 
-extern devStr outDevStr[];
-extern int pout_cnt;
-
-int out_mbx_ovrwr_send_init(int nch,char * sName,char * IP)
-{
-  long Target_Node;
-  long Target_Port=0;
+struct MbxOwS{
+  int nch;
+  char mbxName[10];
   MBX * mbx;
-  struct sockaddr_in addr;
-  int port=pout_cnt++;
+  long tNode;
+  long tPort;
+};
 
-  outDevStr[port].nch=nch;
-  strcpy(outDevStr[port].sName,sName);
-  strcpy(outDevStr[port].sParam,IP);
-  strcpy(outDevStr[port].IOName,"mbx_ovrwr_send out");
+void * out_mbx_ovrwr_send_init(int nch,char * sName,char * IP)
+{
+  struct MbxOwS * mbx = (struct MbxOwS *) malloc(sizeof(struct MbxOwS));
+  mbx->nch=nch;
+  strcpy(mbx->mbxName,sName);
+
+  struct sockaddr_in addr;
 
   if(!strcmp(IP,"0")) {
-    Target_Node = 0;
-    Target_Port = 0;
+    mbx->tNode = 0;
+    mbx->tPort = 0;
   }
   else {
     inet_aton(IP, &addr.sin_addr);
-    Target_Node = addr.sin_addr.s_addr;
-    while ((Target_Port = rt_request_port_id(Target_Node,nam2num(sName))) <= 0 && Target_Port != -EINVAL);
+    mbx->tNode = addr.sin_addr.s_addr;
+    while ((mbx->tPort = rt_request_port(mbx->tNode)) <= 0 && mbx->tPort != -EINVAL);
   }
 
-  mbx = (MBX *) RT_typed_named_mbx_init(Target_Node,Target_Port,sName,nch*sizeof(double),FIFO_Q);
+  mbx->mbx = (MBX *) RT_typed_named_mbx_init(mbx->tNode,mbx->tPort,sName,nch*sizeof(double),FIFO_Q);
 
-  if(mbx == NULL) {
+  if(mbx->mbx == NULL) {
     fprintf(stderr, "Error in getting %s mailbox address\n", sName);
     exit_on_error();
   }
 
-  outDevStr[port].ptr1 = (void *) mbx;
-  outDevStr[port].l1 = Target_Node;
-  outDevStr[port].l2 = Target_Port;
-
-  return(port);
+  return((void *) mbx);
 }
 
-void out_mbx_ovrwr_send_output(int port, double * u,double t)
-{ 
-  MBX *mbx = (MBX *) outDevStr[port].ptr1;
-  int ntraces = outDevStr[port].nch;
+void out_mbx_ovrwr_send_output(void * ptr, double * u,double t)
+{
+  struct MbxOwS * mbx = (struct MbxOwS *) ptr;
+  int ntraces = mbx->nch;
   struct{
     double u[ntraces];
   } data;
@@ -82,20 +77,19 @@ void out_mbx_ovrwr_send_output(int port, double * u,double t)
   for(i=0;i<ntraces;i++){
     data.u[i] = u[i];
   }
-  RT_mbx_ovrwr_send(outDevStr[port].l1, outDevStr[port].l2,mbx,&data,sizeof(data));
+  RT_mbx_ovrwr_send(mbx->tNode, mbx->tPort,mbx->mbx,&data,sizeof(data));
 }
 
-void out_mbx_ovrwr_send_end(int port)
+void out_mbx_ovrwr_send_end(void * ptr)
 {
-  MBX *mbx;
+  struct MbxOwS * mbx = (struct MbxOwS *) ptr;
 
-  mbx = (MBX *) outDevStr[port].ptr1;
-
-  RT_named_mbx_delete(outDevStr[port].l1, outDevStr[port].l2,mbx);
-  printf("%s closed\n",outDevStr[port].IOName);
-  if(outDevStr[port].l1){
-    rt_release_port(outDevStr[port].l1, outDevStr[port].l2);
+  RT_named_mbx_delete(mbx->tNode, mbx->tPort,mbx->mbx);
+  printf("OVRWR MBX %s closed\n",mbx->mbxName);
+  if(mbx->tNode){
+    rt_release_port(mbx->tNode,mbx->tPort);
   }
+  free(mbx);
 }
 
 

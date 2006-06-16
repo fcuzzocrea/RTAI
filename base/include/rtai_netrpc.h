@@ -232,7 +232,7 @@ static inline void RT_sleep_until(unsigned long node, int port, RTIME time)
 static inline SEM *RT_typed_named_sem_init(unsigned long node, int port, const char *sem_name, int value, int type)
 {
 	if (node) {
-		struct { unsigned long sem_name; long value; long type; long namelen; } arg = { nam2num(sem_name), value, type };
+		struct { unsigned long sem_name; long value; long type; } arg = { nam2num(sem_name), value, type };
 		return (SEM *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, NAMED_SEM_INIT, 0), 0, &arg, SIZARG, 1);
 	}
 	return rt_typed_named_sem_init(sem_name, value, type);
@@ -561,7 +561,7 @@ static inline RT_TASK *RT_receivex_timed(unsigned long node, int port, RT_TASK *
 static inline MBX *RT_typed_named_mbx_init(unsigned long node, int port, const char *mbx_name, int size, int qtype)
 {
 	if (node) {
-		struct { unsigned long mbx_name; long size; long qype; long namelen; } arg = { nam2num(mbx_name), size, qtype };
+		struct { unsigned long mbx_name; long size; long qype; } arg = { nam2num(mbx_name), size, qtype };
 		return (MBX *)(unsigned long)rt_net_rpc(PACKPORT(port, NET_RPC_EXT, NAMED_MBX_INIT, 0), 0, &arg, SIZARG, 1);
 	}
 	return rt_typed_named_mbx_init(mbx_name, size, qtype);
@@ -833,7 +833,7 @@ static inline void RT_sleep_until(unsigned long node, int port, RTIME time)
 static inline SEM *RT_typed_named_sem_init(unsigned long node, int port, const char *sem_name, int value, int type)
 {
 	if (node) {
-		struct { unsigned long sem_name; long value; long type; long namelen; } arg = { nam2num(sem_name), value, type };
+		struct { unsigned long sem_name; long value; long type; } arg = { nam2num(sem_name), value, type };
 		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, NAMED_SEM_INIT, 0), 0, &arg, SIZARG, 0 };
 		return (SEM *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}
@@ -1189,7 +1189,7 @@ static inline RT_TASK *RT_receivex_timed(unsigned long node, int port, RT_TASK *
 static inline MBX *RT_typed_named_mbx_init(unsigned long node, int port, const char *mbx_name, int size, int qtype)
 {
 	if (node) {
-		struct { unsigned long mbx_name; long size; long qype; long namelen; } arg = { nam2num(mbx_name), size, qtype, strlen(mbx_name) };
+		struct { unsigned long mbx_name; long size; long qype; } arg = { nam2num(mbx_name), size, qtype, };
 		struct { unsigned long fun; long type; void *args; long argsize; long space; } args = { PACKPORT(port, NET_RPC_EXT, NAMED_MBX_INIT, 0), 0, &arg, SIZARG, 0 };
 		return (MBX *)rtai_lxrt(NET_RPC_IDX, SIZARGS, NETRPC, &args).v[LOW];
 	}

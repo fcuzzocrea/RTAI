@@ -35,12 +35,12 @@ int Fl_Led_Window::y()
 
 int Fl_Led_Window::w()
 {
-	return LWin->w();
+	return LWin->w()- LWin->box()->dw();
 }
 
 int Fl_Led_Window::h()
 {
-	return LWin->h();
+	return LWin->h()- LWin->titlebar()->h() - LWin->box()->dh();
 }
 
 void Fl_Led_Window::resize(int x, int y, int w, int h)

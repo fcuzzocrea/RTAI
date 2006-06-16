@@ -1,5 +1,7 @@
 /*
 COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
+		    Roberto Bucher (roberto.bucher@supsi.ch)
+		    Peter Brier (pbrier@dds.nl)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -24,6 +26,14 @@ extern Fl_Tool_Button *RLG_Meters_Mgr_Button;
 extern Fl_Menu_Bar *RLG_Main_Menu;
 extern Fl_Main_Window *RLG_Main_Window;
 extern Fl_Menu_Item RLG_Main_Menu_Table[];
+
+Fl_Menu_Item Meter_Opts[] = {
+  	  {"Show Value",       0, 0, (void*)2, FL_MENU_TOGGLE},
+  	  {"Show ticmarks",   0, 0, (void*)32, FL_MENU_TOGGLE},
+	  {0}
+	};
+
+
 
 int Fl_Meters_Manager::x()
 {
@@ -300,6 +310,40 @@ void Fl_Meters_Manager::select_arrow_color(Fl_Button *bb, void *v)
 	((Fl_Meters_Manager *)(bb->parent()->parent()->parent()->parent()->user_data()))->select_arrow_color_i(bb,v);
 }
 
+inline void Fl_Meters_Manager::enter_meter_style_i(Fl_Choice *b, void *v)
+{
+	int styles[] = {MS_DIAL, MS_BAR, MS_BARCENTER, MS_ANGLE, MS_VALUE};
+	int n = (int)v;
+	int val = b->value();
+	Meter_Windows[n]->Meter->meter_style(styles[val]);
+	
+}
+
+void Fl_Meters_Manager::enter_meter_style(Fl_Choice *b, void *v)
+{
+	((Fl_Meters_Manager *)(b->parent()->parent()->parent()->parent()->user_data()))->enter_meter_style_i(b,v);
+}
+
+inline void Fl_Meters_Manager::enter_options_i(Fl_Menu_Button *b, void *v)
+{
+	int n = (int)v;
+	int val = 0;
+        int i;
+ 	
+        for(i=0;i<b->children();i++) { // loop through all menu items, and add checked items to the value
+	  if( b->child(i)->value() ) val |= (int)b->child(i)->user_data();
+	} 
+	
+	Meter_Windows[n]->Meter->meter_style( 
+	Meter_Windows[n]->Meter->meter_style() | val); 
+}
+
+void Fl_Meters_Manager::enter_options(Fl_Menu_Button *b, void *v)
+{
+	((Fl_Meters_Manager *)(b->parent()->parent()->parent()->parent()->user_data()))->enter_options_i(b,v);
+}
+
+
 inline void Fl_Meters_Manager::close_i(Fl_Button *b, void *v)
 {
 	MWin->hide();
@@ -336,6 +380,8 @@ Fl_Meters_Manager::Fl_Meters_Manager(int x, int y, int width, int height, Fl_MDI
 	Arrow_Color = new Fl_Button*[Num_Meters];
 	Grid_Color = new Fl_Button*[Num_Meters];
 	Meter_Windows = new Fl_Meter_Window*[Num_Meters];
+	Meter_Style = new Fl_Choice*[Num_Meters];
+	Meter_Options = new  Fl_Menu_Button*[Num_Meters];
 
 	for (int i = 0; i < Num_Meters; i++) {
 		{ Fl_Tabs *o = Meters_Tabs[i] = new Fl_Tabs(160, 5, width-165, height-40);
@@ -356,15 +402,28 @@ Fl_Meters_Manager::Fl_Meters_Manager(int x, int y, int width, int height, Fl_MDI
 		    o->when(FL_WHEN_ENTER_KEY);
 		    o->callback((Fl_Callback *)enter_maxval, (void *)i);
 		  }
-		  { Fl_Button *o = Bg_Color[i] = new Fl_Button(10, 90, 90, 25, "Bg Color");
+  		  {  Fl_Choice *o = Meter_Style[i] = new Fl_Choice(10, 90, 90, 25, "");
+                    o->add("Dial|Bar|+- Bar|Rotameter|Value");
+                    o->align(FL_ALIGN_LEFT);
+                    o->value(0);
+                    o->when(FL_WHEN_ENTER_KEY);
+                    o->callback((Fl_Callback *)enter_meter_style, (void *)i);
+                  }
+		  { Fl_Button *o = Bg_Color[i] = new Fl_Button(10, 120, 90, 25, "Bg Color");
 		    o->callback((Fl_Callback *)select_bg_color, (void *)i);
 		  }
-		  { Fl_Button *o = Arrow_Color[i] = new Fl_Button(10, 120, 90, 25, "Arrow Color");
+		  { Fl_Button *o = Arrow_Color[i] = new Fl_Button(10, 150, 90, 25, "Arrow Color");
 		    o->callback((Fl_Callback *)select_arrow_color, (void *)i);
 		  }
-		  { Fl_Button *o = Grid_Color[i] = new Fl_Button(10, 150, 90, 25, "Grid Color");
+		  { Fl_Button *o = Grid_Color[i] = new Fl_Button(10, 180, 90, 25, "Grid Color");
 		    o->callback((Fl_Callback *)select_grid_color, (void *)i);
 		  }
+		  {
+		    Fl_Menu_Button *o = Meter_Options[i] = new Fl_Menu_Button(10, 210, 90, 25, "Options ");
+	 	    o->menu(Meter_Opts);
+	            o->when(FL_WHEN_ENTER_KEY);
+		    o->callback((Fl_Callback *)enter_options, (void *)i);
+	           }
 		  o->end();
 		  Fl_Group::current()->resizable(w);
 		}

@@ -143,7 +143,7 @@ extern int signgam;
 
 
 /* ISO C99 defines some generic macros which work on any data type.  */
-#if __USE_ISOC99
+#if defined(__USE_ISOC99) && __USE_ISOC99
 
 /* Get the architecture specific values describing the floating-point
    evaluation.  The following symbols will get defined:
@@ -379,7 +379,7 @@ extern int matherr (struct exception *__exc);
 #endif
 
 
-#if __USE_ISOC99
+#if defined(__USE_ISOC99) && __USE_ISOC99
 /* ISO C99 defines some macros to compare number while taking care
    for unordered numbers.  Since many FPUs provide special
    instructions to support these operations and these tests are

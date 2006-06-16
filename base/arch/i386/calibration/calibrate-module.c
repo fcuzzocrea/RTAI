@@ -128,18 +128,24 @@ static long long user_srq(unsigned long whatever)
 {
 	extern int calibrate_8254(void);
 	unsigned long args[MAXARGS];
+	int ret;
 
-	copy_from_user(args, (unsigned long *)whatever, MAXARGS*sizeof(unsigned long));
+	ret = copy_from_user(args, (unsigned long *)whatever, MAXARGS*sizeof(unsigned long));
 	switch (args[0]) {
 		case CAL_8254: {
 			return calibrate_8254();
 			break;
 		}
 
+		case KTHREADS:
 		case KLATENCY: {
 			rt_set_oneshot_mode();
 			period = start_rt_timer(nano2count(args[1]));
-			rt_task_init_cpuid(&rtask, spv, args[2], STACKSIZE, 0, 0, 0, hard_cpu_id());
+			if (args[0] == KLATENCY) {
+				rt_task_init_cpuid(&rtask, spv, args[2], STACKSIZE, 0, 0, 0, hard_cpu_id());
+			} else {
+				rt_kthread_init_cpuid(&rtask, spv, args[2], STACKSIZE, 0, 0, 0, hard_cpu_id());	
+			}
 			expected = rt_get_time() + 100*period;
 			rt_task_make_periodic(&rtask, expected, period);
 			break;

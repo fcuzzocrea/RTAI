@@ -30,12 +30,12 @@ int Fl_Synch_Window::y()
 
 int Fl_Synch_Window::w()
 {
-	return SWin->w();
+	return SWin->w() - SWin->box()->dw();
 }
 
 int Fl_Synch_Window::h()
 {
-	return SWin->h();
+	return SWin->h() - SWin->titlebar()->h() - SWin->box()->dh();
 }
 
 void Fl_Synch_Window::show()

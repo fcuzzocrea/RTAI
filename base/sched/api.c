@@ -33,6 +33,9 @@
 
 void rt_set_sched_policy(RT_TASK *task, int policy, int rr_quantum_ns)
 {
+	if (!task) {
+		task = RT_CURRENT;
+	}
 	if ((task->policy = policy ? 1 : 0)) {
 		task->rr_quantum = nano2count_cpuid(rr_quantum_ns, task->runnable_on_cpus);
 		if ((task->rr_quantum & 0xF0000000) || !task->rr_quantum) {
@@ -124,7 +127,7 @@ int rt_get_inher_prio(RT_TASK *task)
 int rt_change_prio(RT_TASK *task, int priority)
 {
 	unsigned long flags;
-	int prio;
+	int prio, base_priority;
 
 	if (task->magic != RT_TASK_MAGIC || priority < 0) {
 		return -EINVAL;
@@ -132,10 +135,14 @@ int rt_change_prio(RT_TASK *task, int priority)
 
 	prio = task->base_priority;
 	flags = rt_global_save_flags_and_cli();
-	if ((task->base_priority = priority) < task->priority) {
-		unsigned long schedmap;
+	if (!task->is_hard && priority < BASE_SOFT_PRIORITY) {
+		priority += BASE_SOFT_PRIORITY;
+	}
+	base_priority = task->base_priority;
+	task->base_priority = priority;
+	if (base_priority == task->priority || priority < task->priority) {
 		QUEUE *q;
-		schedmap = 0;
+		unsigned long schedmap = 0;
 		do {
 			task->priority = priority;
 			if (task->state == RT_SCHED_READY) {
@@ -143,21 +150,16 @@ int rt_change_prio(RT_TASK *task, int priority)
 				(task->rnext)->rprev = task->rprev;
 				enq_ready_task(task);
 #ifdef CONFIG_SMP
-				set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
+				__set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
 #else
 				schedmap = 1;
 #endif
-			} else if ((q = task->blocked_on) && !((task->state & RT_SCHED_SEMAPHORE) && ((SEM *)q)->qtype)) {
+			} else if ((void *)(q = task->blocked_on) > RTP_HIGERR && (((task->state & RT_SCHED_SEMAPHORE) && !((SEM *)q)->qtype) || (task->state & (RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN)))) {
 				(task->queue.prev)->next = task->queue.next;
 				(task->queue.next)->prev = task->queue.prev;
 				while ((q = q->next) != task->blocked_on && (q->task)->priority <= priority);
 				q->prev = (task->queue.prev = q->prev)->next  = &(task->queue);
 				task->queue.next = q;
-#ifdef CONFIG_SMP
-				set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
-#else
-				schedmap = 1;
-#endif
 			}
 		} while ((task = task->prio_passed_to) && task->priority > priority);
 		if (schedmap) {
@@ -233,7 +235,6 @@ void rt_task_yield(void)
 }
 
 
-
 /**
  * @anchor rt_task_suspend
  * rt_task_suspend suspends execution of the task task.
@@ -246,8 +247,10 @@ void rt_task_yield(void)
  *
  * @param task pointer to a task structure.
  *
- * @return 0 on success. A negative value on failure as described below:
- * - @b EINVAL: task does not refer to a valid task.
+ * @return the task suspend depth. An abnormal termination returns as 
+ * described below:
+ * - @b -EINVAL: task does not refer to a valid task.
+ * - @b RTE_UNBLKD:  the task was unblocked while suspended;
  *
  * @note the new RTAI 24.1.xx (FIXME) development releases take into
  * account multiple suspend and require as many @ref rt_task_resume()
@@ -265,13 +268,29 @@ int rt_task_suspend(RT_TASK *task)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!task->owndres) {
-		if (!task->suspdepth++) {
-			rem_ready_task(task);
-			rem_timed_task(task);
-			task->state |= RT_SCHED_SUSPENDED;
-			if (task == RT_CURRENT) {
-				rt_schedule();
+		if (task->suspdepth >= 0) {
+			if (!task->suspdepth) {
+				task->suspdepth++;
 			}
+			if (task == RT_CURRENT) {
+				rem_ready_current(task);
+				task->state |= RT_SCHED_SUSPENDED;
+				rt_schedule();
+				if (unlikely(task->blocked_on != NULL)) {
+					task->suspdepth = 0;
+					rt_global_restore_flags(flags);
+					return RTE_UNBLKD;
+				}
+			} else {
+				rem_ready_task(task);
+				rem_timed_task(task);
+				task->state |= RT_SCHED_SUSPENDED;
+				if (task->runnable_on_cpus != rtai_cpuid()) {
+					send_sched_ipi(1 << task->runnable_on_cpus);
+				}
+			}
+		} else {
+			task->suspdepth++;
 		}
 	} else if (task->suspdepth < 0) {
 		task->suspdepth++;
@@ -312,24 +331,42 @@ int rt_task_suspend_until(RT_TASK *task, RTIME time)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!task->owndres) {
-		if (!task->suspdepth) {
+		if (task->suspdepth >= 0) {
 #ifdef CONFIG_SMP
 			int cpuid = rtai_cpuid();
 #endif
 			if ((task->resume_time = time) > rt_time_h) {
-				task->suspdepth++;
-				rem_ready_task(task);
-				enq_timed_task(task);
-				task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
-				task->blocked_on = (void *)task;
+				if (!task->suspdepth) {
+					task->suspdepth++;
+				}
 				if (task == RT_CURRENT) {
-					rt_schedule();
-					if (task->blocked_on) {
-						task->suspdepth--;
+					rem_ready_current(task);
+					enq_timed_task(task);
+					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+					while (1) {
+						rt_schedule();
+						if (unlikely(task->blocked_on != NULL)) {
+							task->suspdepth = 0;
+							rt_global_restore_flags(flags);
+							return RTE_UNBLKD;
+						}
+						if (task->suspdepth) {
+							continue;
+						}
 						rt_global_restore_flags(flags);
-						return SEM_TIMOUT;
+						return task->resume_time < rt_smp_time_h[rtai_cpuid()] ? RTE_TIMOUT : 0;
+					}
+				} else {
+					rem_ready_task(task);
+					enq_timed_task(task);
+					task->state |= (RT_SCHED_SUSPENDED | RT_SCHED_DELAYED);
+					if (task->runnable_on_cpus != rtai_cpuid()) {
+						send_sched_ipi(1 << task->runnable_on_cpus);
 					}
 				}
+			} else {
+				rt_global_restore_flags(flags);
+				return RTE_TIMOUT;
 			}
 		} else {
 			task->suspdepth++;
@@ -378,7 +415,7 @@ int rt_task_resume(RT_TASK *task)
 	flags = rt_global_save_flags_and_cli();
 	if (!(--task->suspdepth)) {
 		rem_timed_task(task);
-		if ((task->state &= ~(RT_SCHED_SUSPENDED | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+		if ((task->state &= ~(RT_SCHED_SUSPENDED | RT_SCHED_DELAYED | RT_SCHED_SELFSUSP)) == RT_SCHED_READY) {
 			task->blocked_on = NOTHING;
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
@@ -597,7 +634,7 @@ int rt_task_make_periodic_relative_ns(RT_TASK *task, RTIME start_delay, RTIME pe
 	start_delay = nano2count_cpuid(start_delay, task->runnable_on_cpus);
 	period = nano2count_cpuid(period, task->runnable_on_cpus);
 	flags = rt_global_save_flags_and_cli();
-	task->resume_time = rt_get_time_cpuid(task->runnable_on_cpus) + start_delay;
+	task->periodic_resume_time = task->resume_time = rt_get_time_cpuid(task->runnable_on_cpus) + start_delay;
 	task->period = period;
 	task->suspdepth = 0;
         if (!(task->state & RT_SCHED_DELAYED)) {
@@ -654,7 +691,7 @@ int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
 		return -EINVAL;
 	}
 	flags = rt_global_save_flags_and_cli();
-	task->resume_time = start_time;
+	task->periodic_resume_time = task->resume_time = start_time;
 	task->period = period;
 	task->suspdepth = 0;
         if (!(task->state & RT_SCHED_DELAYED)) {
@@ -678,6 +715,12 @@ int rt_task_make_periodic(RT_TASK *task, RTIME start_time, RTIME period)
  * been previously marked for a periodic execution by calling
  * @ref rt_task_make_periodic() or @ref rt_task_make_periodic_relative_ns().
  *
+ * @return 0 if the period expires as expected. An abnormal termination 
+ * returns as described below:
+ * - @b RTE_UNBLKD:  the task was unblocked while sleeping;
+ * - @b RTE_TMROVRN: an immediate return was taken because the next period
+ *   has already expired.
+ *
  * @note The task is suspended only temporarily, i.e. it simply gives
  * up control until the next time period.
  */
@@ -690,21 +733,26 @@ int rt_task_wait_period(void)
 	ASSIGN_RT_CURRENT;
 	if (rt_current->resync_frame) { // Request from watchdog
 	    	rt_current->resync_frame = 0;
+		rt_current->periodic_resume_time = rt_current->resume_time = oneshot_timer ? rtai_rdtsc() :
 #ifdef CONFIG_SMP
-		rt_current->resume_time = oneshot_timer ? rtai_rdtsc() : rt_smp_times[cpuid].tick_time;
+		rt_smp_times[cpuid].tick_time;
 #else
-		rt_current->resume_time = oneshot_timer ? rtai_rdtsc() : rt_times.tick_time;
+		rt_times.tick_time;
 #endif
-	} else if ((rt_current->resume_time += rt_current->period) > rt_time_h) {
+	} else if ((rt_current->periodic_resume_time += rt_current->period) > rt_time_h) {
+		rt_current->resume_time = rt_current->periodic_resume_time;
+		void *blocked_on;
+		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		blocked_on = rt_current->blocked_on;
 		rt_global_restore_flags(flags);
-		return 0;
+		return likely(!blocked_on) ? 0 : RTE_UNBLKD;
 	}
 	rt_global_restore_flags(flags);
-	return 1;
+	return RTE_TMROVRN;
 }
 
 void rt_task_set_resume_end_times(RTIME resume, RTIME end)
@@ -786,7 +834,7 @@ RTIME next_period(void)
 	flags = rt_global_save_flags_and_cli();
 	rt_current = RT_CURRENT;
 	rt_global_restore_flags(flags);
-	return rt_current->resume_time + rt_current->period;
+	return rt_current->periodic_resume_time + rt_current->period;
 }
 
 /**
@@ -827,6 +875,12 @@ void rt_busy_sleep(int ns)
  *
  * See also: @ref rt_busy_sleep(), @ref rt_sleep_until().
  *
+ * @return 0 if the delay expires as expected. An abnormal termination returns
+ *  as described below:
+ * - @b RTE_UNBLKD:  the task was unblocked while sleeping;
+ * - @b RTE_TMROVRN: an immediate return was taken because the delay is too
+ *   short to be honoured.
+ *
  * @note A higher priority task or interrupt handler can run before
  *	 the task goes to sleep, so the actual time spent in these
  *	 functions may be longer than the the one specified.
@@ -838,15 +892,18 @@ int rt_sleep(RTIME delay)
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((rt_current->resume_time = get_time() + delay) > rt_time_h) {
+		void *blocked_on;
+		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		blocked_on = rt_current->blocked_on;
 		rt_global_restore_flags(flags);
-		return 0;
+		return likely(!blocked_on) ? 0 : RTE_UNBLKD;
 	}
 	rt_global_restore_flags(flags);
-	return 1;
+	return RTE_TMROVRN;
 }
 
 /**
@@ -861,6 +918,12 @@ int rt_sleep(RTIME delay)
  *
  * See also: @ref rt_busy_sleep(), @ref rt_sleep_until().
  *
+ * @return 0 if the sleeping expires as expected. An abnormal termination 
+ * returns as described below:
+ * - @b RTE_UNBLKD:  the task was unblocked while sleeping;
+ * - @b RTE_TMROVRN: an immediate return was taken because the time deadline
+ *   has already expired.
+ *
  * @note A higher priority task or interrupt handler can run before
  *	 the task goes to sleep, so the actual time spent in these
  *	 functions may be longer than the the one specified.
@@ -872,15 +935,18 @@ int rt_sleep_until(RTIME time)
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
 	if ((rt_current->resume_time = time) > rt_time_h) {
+		void *blocked_on;
+		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
 		rem_ready_current(rt_current);
 		enq_timed_task(rt_current);
 		rt_schedule();
+		blocked_on = rt_current->blocked_on;
 		rt_global_restore_flags(flags);
-		return 0;
+		return likely(!blocked_on) ? 0 : RTE_UNBLKD;
 	}
 	rt_global_restore_flags(flags);
-	return 1;
+	return RTE_TMROVRN;
 }
 
 int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
@@ -896,22 +962,12 @@ int rt_task_masked_unblock(RT_TASK *task, unsigned long mask)
 		if (mask & RT_SCHED_DELAYED) {
 			rem_timed_task(task);
 		}
-		if (task->blocked_on && (mask & (RT_SCHED_SEMAPHORE | RT_SCHED_SEND | RT_SCHED_RPC | RT_SCHED_RETURN))) {
-			(task->queue.prev)->next = task->queue.next;
-			(task->queue.next)->prev = task->queue.prev;
-			if (task->state & RT_SCHED_SEMAPHORE) {
-				SEM *sem = (SEM *)task->blocked_on;
-				if (++sem->count > 1 && sem->type) {
-					sem->count = 1;
-				}
-			}
-		}
 		if (task->state != RT_SCHED_READY && (task->state &= ~mask) == RT_SCHED_READY) {
 			enq_ready_task(task);
 			RT_SCHEDULE(task, rtai_cpuid());
 		}
 		rt_global_restore_flags(flags);
-		return task->unblocked = 1;
+		return (int)((unsigned long)(task->blocked_on = RTP_UNBLKD));
 	}
 	return 0;
 }
@@ -1868,7 +1924,7 @@ RT_TASK *rt_receive_linux_syscall(RT_TASK *task, struct pt_regs *regs)
 		enqueue_blocked(task, &rt_current->ret_queue, 1);
 		task->state = (task->state & ~RT_SCHED_RPC) | RT_SCHED_RETURN;
 	} else {
-		rt_current->ret_queue.task = SOMETHING;
+		rt_current->ret_queue.task = RTP_OBJREM;
 		rt_current->state |= RT_SCHED_RECEIVE;
 		rem_ready_current(rt_current);
 		rt_current->msg_queue.task = task != rt_current ? task : NULL;
@@ -2058,6 +2114,7 @@ EXPORT_SYMBOL(count2nano_cpuid);
 EXPORT_SYMBOL(nano2count_cpuid);
 
 EXPORT_SYMBOL(rt_kthread_init);
+EXPORT_SYMBOL(rt_kthread_init_cpuid);
 EXPORT_SYMBOL(rt_smp_linux_task);
 EXPORT_SYMBOL(rt_smp_current);
 EXPORT_SYMBOL(rt_smp_time_h);

@@ -3,7 +3,7 @@
  * Mailbox functions.
  * @author Paolo Mantegazza
  *
- * @note Copyright (C) 1999-2003 Paolo Mantegazza
+ * @note Copyright (C) 1999-2006 Paolo Mantegazza
  * <mantegazza@aero.polimi.it> 
  *
  * This program is free software; you can redistribute it and/or
@@ -31,90 +31,37 @@
 #include <asm/uaccess.h>
 
 #include <rtai_schedcore.h>
+#include <rtai_prinher.h>
 
 MODULE_LICENSE("GPL");
 
 /* +++++++++++++++++++++++++++++ MAIL BOXES ++++++++++++++++++++++++++++++++ */
 
+#define _mbx_signal(mbx, blckdon) \
+do { \
+	unsigned long flags; \
+	RT_TASK *task; \
+	flags = rt_global_save_flags_and_cli(); \
+	if ((task = mbx->waiting_task)) { \
+		rem_timed_task(task); \
+		task->blocked_on  = blckdon; \
+		mbx->waiting_task = NOTHING; \
+		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) { \
+			enq_ready_task(task); \
+			RT_SCHEDULE(task, rtai_cpuid()); \
+		} \
+	} \
+	rt_global_restore_flags(flags); \
+} while (0)
+
 static void mbx_delete_signal(MBX *mbx)
 {
-	unsigned long flags;
-	RT_TASK *task;
-
-	flags = rt_global_save_flags_and_cli();
-	if ((task = mbx->waiting_task)) {
-		rem_timed_task(task);
-		task->blocked_on = SOMETHING;
-		task->prio_passed_to = mbx->waiting_task = NOTHING;
-		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-			enq_ready_task(task);
-			RT_SCHEDULE(task, rtai_cpuid());
-			rt_global_restore_flags(flags);
-			return;
-		}
-	}
-	rt_global_restore_flags(flags);
+	_mbx_signal(mbx, RTP_OBJREM);
 }
 
 static void mbx_signal(MBX *mbx)
 {
-	unsigned long flags;
-	RT_TASK *task;
-	int tosched;
-
-	flags = rt_global_save_flags_and_cli();
-	if ((task = mbx->waiting_task)) {
-		rem_timed_task(task);
-		task->blocked_on  = NOTHING;
-		task->prio_passed_to = mbx->waiting_task = NOTHING;
-		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_MBXSUSP | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
-			enq_ready_task(task);
-			if (mbx->sndsem.type <= 0) {
-				RT_SCHEDULE(task, rtai_cpuid());
-				rt_global_restore_flags(flags);
-				return;
-			}
-			tosched = 1;
-			goto res;
-		}
-	}
-	tosched = 0;
-res:	if (mbx->sndsem.type > 0) {
-		DECLARE_RT_CURRENT;
-		int sched;
-		ASSIGN_RT_CURRENT;
-		mbx->owndby = 0;
-		if (rt_current->owndres & SEMHLF) {
-			--rt_current->owndres;
-		}
-		if (!rt_current->owndres) {
-			sched = renq_current(rt_current, rt_current->base_priority);
-		} else if (!(rt_current->owndres & SEMHLF)) {
-			int priority;
-			sched = renq_current(rt_current, rt_current->base_priority > (priority = ((rt_current->msg_queue.next)->task)->priority) ? priority : rt_current->base_priority);
-		} else {
-			sched = 0;
-		}
-		if (rt_current->suspdepth) {
-			if (rt_current->suspdepth > 0) {
-				rt_current->state |= RT_SCHED_SUSPENDED;
-				rem_ready_current(rt_current);
-                        	sched = 1;
-			} else {
-				rt_task_delete(rt_current);
-			}
-		}
-		if (sched) {
-			if (tosched) {
-				RT_SCHEDULE_BOTH(task, cpuid);
-			} else {
-				rt_schedule();
-			}
-		} else if (tosched) {
-			RT_SCHEDULE(task, cpuid);
-		}
-	}
-	rt_global_restore_flags(flags);
+	_mbx_signal(mbx, NOTHING);
 }
 
 static int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)
@@ -123,25 +70,17 @@ static int mbx_wait(MBX *mbx, int *fravbs, RT_TASK *rt_current)
 
 	flags = rt_global_save_flags_and_cli();
 	if (!(*fravbs)) {
-		unsigned long schedmap;
-		if (mbx->sndsem.type > 0) {
-			schedmap = pass_prio(mbx->owndby, rt_current);
-		} else {
-			schedmap = 0;
-		}
+		unsigned long retval;
 		rt_current->state |= RT_SCHED_MBXSUSP;
 		rem_ready_current(rt_current);
 		rt_current->blocked_on = (void *)mbx;
 		mbx->waiting_task = rt_current;
-		RT_SCHEDULE_MAP_BOTH(schedmap);
-		if (rt_current->blocked_on) {
-			rt_current->prio_passed_to = NOTHING;
+		rt_schedule();
+		if (unlikely(retval = (unsigned long)rt_current->blocked_on)) {
+			mbx->waiting_task = NULL;
 			rt_global_restore_flags(flags);
-			return SEM_ERR;
+			return retval;
 		}
-	}
-	if (mbx->sndsem.type > 0) {
-		(mbx->owndby = rt_current)->owndres++;
 	}
 	rt_global_restore_flags(flags);
 	return 0;
@@ -153,33 +92,20 @@ static int mbx_wait_until(MBX *mbx, int *fravbs, RTIME time, RT_TASK *rt_current
 
 	flags = rt_global_save_flags_and_cli();
 	if (!(*fravbs)) {
+		void *retp;
 		rt_current->blocked_on = (void *)mbx;
 		mbx->waiting_task = rt_current;
 		if ((rt_current->resume_time = time) > rt_smp_time_h[rtai_cpuid()]) {
-			unsigned long schedmap;
-			if (mbx->sndsem.type > 0) {
-				schedmap = pass_prio(mbx->owndby, rt_current);
-			} else {
-				schedmap = 0;
-			}
 			rt_current->state |= (RT_SCHED_MBXSUSP | RT_SCHED_DELAYED);
 			rem_ready_current(rt_current);
 			enq_timed_task(rt_current);
-			RT_SCHEDULE_MAP_BOTH(schedmap);
+			rt_schedule();
 		}
-		if (rt_current->blocked_on) {
-			rt_current->prio_passed_to = NOTHING;
-			if ((void *)rt_current->blocked_on > SOMETHING) {
-				mbx->waiting_task = NOTHING;
-				rt_global_restore_flags(flags);
-				return SEM_TIMOUT;
-			}
+		if (unlikely((retp = rt_current->blocked_on) != NULL)) {
+			mbx->waiting_task = NULL;
 			rt_global_restore_flags(flags);
-			return SEM_ERR;
+			return likely(retp > RTP_HIGERR) ? RTE_TIMOUT : (retp == RTP_UNBLKD ? RTE_UNBLKD : RTE_OBJREM);
 		}
-	}
-	if (mbx->sndsem.type > 0) {
-		(mbx->owndby = rt_current)->owndres++;
 	}
 	rt_global_restore_flags(flags);
 	return 0;
@@ -343,8 +269,11 @@ int _rt_mbx_evdrp(MBX *mbx, void *msg, int msg_size, int space)
 }
 
 
-#define CHK_MBX_MAGIC { if (mbx->magic != RT_MBX_MAGIC) { return -EINVAL; } }
+#define CHK_MBX_MAGIC { if (mbx->magic != RT_MBX_MAGIC) \
+	{ return CONFIG_RTAI_USE_NEWERR ? RTE_OBJINV : -EINVAL; } }
 
+#define MBX_RET(msg_size, retval) \
+	(CONFIG_RTAI_USE_NEWERR ? retval : msg_size)
 
 /**
  * @brief Initializes a fully typed mailbox queueing tasks
@@ -375,7 +304,7 @@ int rt_typed_mbx_init(MBX *mbx, int size, int type)
 	rt_typed_sem_init(&(mbx->rcvsem), 1, type & 3 ? type : BIN_SEM | type);
 	mbx->magic = RT_MBX_MAGIC;
 	mbx->size = mbx->frbs = size;
-	mbx->waiting_task = mbx->owndby = 0;
+	mbx->owndby = mbx->waiting_task = NULL;
 	mbx->fbyte = mbx->lbyte = mbx->avbs = 0;
         spin_lock_init(&(mbx->lock));
 	return 0;
@@ -475,15 +404,18 @@ int rt_mbx_delete(MBX *mbx)
 int _rt_mbx_send(MBX *mbx, void *msg, int msg_size, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
+	int retval;
 
 	CHK_MBX_MAGIC;
-	if (rt_sem_wait(&mbx->sndsem) > 1) {
-		return msg_size;
+	if ((retval = rt_sem_wait(&mbx->sndsem)) > 1) {
+		return MBX_RET(msg_size, retval);
 	}
 	while (msg_size) {
-		if (mbx_wait(mbx, &mbx->frbs, rt_current)) {
-			rt_sem_signal(&mbx->sndsem);
-			return msg_size;
+		if ((retval = mbx_wait(mbx, &mbx->frbs, rt_current))) {
+			if (retval >= RTE_LOWERR) {
+				rt_sem_signal(&mbx->sndsem);
+			}
+			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
@@ -516,10 +448,11 @@ int _rt_mbx_send_wp(MBX *mbx, void *msg, int msg_size, int space)
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->sndsem.count && mbx->frbs) {
+	if (mbx->sndsem.count > 0 && mbx->frbs) {
 		mbx->sndsem.count = 0;
 		if (mbx->sndsem.type > 0) {
-			(mbx->sndsem.owndby = mbx->owndby = rt_current)->owndres += 2;
+			mbx->sndsem.owndby = rt_current;
+			enqueue_resqel(&mbx->sndsem.resq, rt_current);
 		}
 		rt_global_restore_flags(flags);
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
@@ -552,10 +485,11 @@ int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int space)
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->sndsem.count && msg_size <= mbx->frbs) {
+	if (mbx->sndsem.count > 0 && msg_size <= mbx->frbs) {
 		mbx->sndsem.count = 0;
 		if (mbx->sndsem.type > 0) {
-			(mbx->sndsem.owndby = mbx->owndby = rt_current)->owndres += 2;
+			mbx->sndsem.owndby = rt_current;
+			enqueue_resqel(&mbx->sndsem.resq, rt_current);
 		}
 		rt_global_restore_flags(flags);
 		mbxput(mbx, (char **)(&msg), msg_size, space);
@@ -594,17 +528,18 @@ int _rt_mbx_send_if(MBX *mbx, void *msg, int msg_size, int space)
 int _rt_mbx_send_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
+	int retval;
+
 	CHK_MBX_MAGIC;
-	if (rt_sem_wait_until(&mbx->sndsem, time) > 1) {
-		return msg_size;
+	if ((retval = rt_sem_wait_until(&mbx->sndsem, time)) > 1) {
+		return MBX_RET(msg_size, retval);
 	}
 	while (msg_size) {
-		int retval;
 		if ((retval = mbx_wait_until(mbx, &mbx->frbs, time, rt_current))) {
-			if (retval != SEM_ERR) {
+			if (retval >= RTE_LOWERR) {
 				rt_sem_signal(&mbx->sndsem);
 			}
-			return msg_size;
+			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxput(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
@@ -665,14 +600,18 @@ int _rt_mbx_send_timed(MBX *mbx, void *msg, int msg_size, RTIME delay, int space
 int _rt_mbx_receive(MBX *mbx, void *msg, int msg_size, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
+	int retval;
+
 	CHK_MBX_MAGIC;
-	if (rt_sem_wait(&mbx->rcvsem) > 1) {
+	if ((retval = rt_sem_wait(&mbx->rcvsem)) > 1) {
 		return msg_size;
 	}
 	while (msg_size) {
-		if (mbx_wait(mbx, &mbx->avbs, rt_current)) {
-			rt_sem_signal(&mbx->rcvsem);
-			return msg_size;
+		if ((retval = mbx_wait(mbx, &mbx->avbs, rt_current))) {
+			if (retval >= RTE_LOWERR) {
+				rt_sem_signal(&mbx->rcvsem);
+			}
+			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
@@ -706,10 +645,11 @@ int _rt_mbx_receive_wp(MBX *mbx, void *msg, int msg_size, int space)
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->rcvsem.count && mbx->avbs) {
+	if (mbx->rcvsem.count > 0 && mbx->avbs) {
 		mbx->rcvsem.count = 0;
 		if (mbx->rcvsem.type > 0) {
-			(mbx->rcvsem.owndby = mbx->owndby = rt_current)->owndres += 2;
+			mbx->rcvsem.owndby = rt_current;
+			enqueue_resqel(&mbx->rcvsem.resq, rt_current);
 		}
 		rt_global_restore_flags(flags);
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
@@ -747,10 +687,11 @@ int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int space)
 
 	CHK_MBX_MAGIC;
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->rcvsem.count && msg_size <= mbx->avbs) {
+	if (mbx->rcvsem.count > 0 && msg_size <= mbx->avbs) {
 		mbx->rcvsem.count = 0;
 		if (mbx->rcvsem.type > 0) {
-			(mbx->rcvsem.owndby = mbx->owndby = rt_current)->owndres += 2;
+			mbx->rcvsem.owndby = rt_current;
+			enqueue_resqel(&mbx->rcvsem.resq, rt_current);
 		}
 		rt_global_restore_flags(flags);
 		mbxget(mbx, (char **)(&msg), msg_size, space);
@@ -789,17 +730,18 @@ int _rt_mbx_receive_if(MBX *mbx, void *msg, int msg_size, int space)
 int _rt_mbx_receive_until(MBX *mbx, void *msg, int msg_size, RTIME time, int space)
 {
 	RT_TASK *rt_current = RT_CURRENT;
+	int retval;
+
 	CHK_MBX_MAGIC;
-	if (rt_sem_wait_until(&mbx->rcvsem, time) > 1) {
-		return msg_size;
+	if ((retval = rt_sem_wait_until(&mbx->rcvsem, time)) > 1) {
+		return MBX_RET(msg_size, retval);
 	}
 	while (msg_size) {
-		int retval;
 		if ((retval = mbx_wait_until(mbx, &mbx->avbs, time, rt_current))) {
-			if (retval != SEM_ERR) {
+			if (retval >= RTE_LOWERR) {
 				rt_sem_signal(&mbx->rcvsem);
 			}
-			return msg_size;
+			return MBX_RET(msg_size, retval);
 		}
 		msg_size = mbxget(mbx, (char **)(&msg), msg_size, space);
 		mbx_signal(mbx);
@@ -859,10 +801,11 @@ int _rt_mbx_ovrwr_send(MBX *mbx, void *msg, int msg_size, int space)
 	CHK_MBX_MAGIC;
 
 	flags = rt_global_save_flags_and_cli();
-	if (mbx->sndsem.count) {
+	if (mbx->sndsem.count > 0) {
 		mbx->sndsem.count = 0;
 		if (mbx->sndsem.type > 0) {
-			(mbx->sndsem.owndby = mbx->owndby = rt_current)->owndres += 2;
+			mbx->sndsem.owndby = rt_current;
+			enqueue_resqel(&mbx->sndsem.resq, rt_current);
 		}
 		rt_global_restore_flags(flags);
 		msg_size = mbxovrwrput(mbx, (char **)(&msg), msg_size, space);

@@ -2,11 +2,11 @@
  * @ingroup tasklets
  * @file
  *
- * Implementation of the @ref tasklets "mini LXRT RTAI tasklets module".
+ * Implementation of the @ref tasklets "RTAI tasklets module".
  *
  * @author Paolo Mantegazza
  *
- * @note Copyright &copy;1999-2003 Paolo Mantegazza <mantegazza@aero.polimi.it>
+ * @note Copyright &copy; 1999-2006 Paolo Mantegazza <mantegazza@aero.polimi.it>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -24,75 +24,53 @@
  */
 
 /**
- * @defgroup tasklets mini RTAI LXRT tasklets module
+ * @defgroup tasklets module
  *
- * The MINI_RTAI_LXRT tasklets module adds an interesting new feature along the
- * line, pioneered by RTAI, of a symmetric usage of all its services inter-intra
- * kernel and user space, both for soft and hard real time applications.   In
- * such a way you have opened a whole spectrum of development and implementation
+ * The tasklets module adds an interesting feature along the line, pioneered
+ * by RTAI, of a symmetric usage of all its services inter-intra kernel and 
+ * user space, both for soft and hard real time applications.   In such a way 
+ * you have opened a whole spectrum of development and implementation
  * lanes, allowing maximum flexibility with uncompromized performances.
  *
- * The new services provided can be useful when you have many tasks, both in
- * kernel and user space, that must execute in soft/hard real time but do not
- * need any RTAI scheduler service that could lead to a task block. Such tasks
- * are here called tasklets and can be of two kinds: normal tasklets and timed
- * tasklets (timers).
+ * The new services provided can be useful when you have many tasks, both 
+ * in kernel and user space, that must execute simple, often ripetitive, 
+ * functions, both in soft and hard real time, asynchronously within their 
+ * parent application. Such tasks are here called tasklets and can be of 
+ * two kinds: normal tasklets and timed tasklets (timers).
  *
  * It must be noted that only timers should need to be made available both in
  * user and kernel space.   In fact normal tasklets in kernel space are nothing
  * but standard functions that can be directly executed by calling them, so
  * there would be no need for any special treatment.   However to maintain full
- * usage symmetry, and to ease any possible porting from one address space to
- * the other, also normal tasklet functions can be used in whatever address
+ * usage symmetry and to ease any possible porting from one address space to
+ * the other, plain tasklets can be used in the same way from whatever address 
  * space.
  *
- * Note that if, at this point, you are reminded to similar Linux kernel
- * services you are not totally wrong.  They are not exactly the same, because
- * of their symmetric availability in kernel and user space, but the basic idea
- * behind them  is clearly fairly similar.
- *
- * Tasklets should be used whenever the standard hard real time tasks available
- * with RTAI and LXRT schedulers can be a waist of resources and the execution
- * of simple, possibly timed, functions could often be more than
- * enough. Instances of such applications are timed polling and simple
- * Programmable Logic Controllers (PLC) like sequences of services.   Obviously
- * there are many others instances that can make it sufficient the use of
- * tasklets, either normal or timers.   In general such an approach can be a
- * very useful complement to fully featured tasks in controlling complex
+ * Tasklets should be used where and whenever the standard hard real time 
+ * RTAI tasks are used.  Instances of such applications are timed polling and 
+ * simple Programmable Logic Controllers (PLC) like sequences of services.   
+ * Obviously there are many others instances that can make it sufficient the 
+ * use of tasklets, either normal or timers.   In general such an approach can 
+ * be a very useful complement to fully featured tasks in controlling complex
  * machines and systems, both for basic and support services.
  *
  * It is remarked that the implementation found here for timed tasklets rely on
- * a server support task that executes the related timer functions, either in
- * oneshot or periodic mode, on the base of their time deadline and according to
- * their, user assigned, priority. Instead, as told above, plain tasklets are
- * just functions executed from kernel space; their execution needs no server
- * and is simply triggered by calling a given service function at due time,
- * either from a kernel task or interrupt handler requiring, or in charge of,
- * their execution when they are needed. Once more it is important to recall
- * that all non blocking RTAI scheduler services can be used in any tasklet
- * function.   Blocking services must absolutely be avoided.   They will
- * deadlock the timers server task, executing task or interrupt handler,
- * whichever applies, so that no more tasklet functions will be executed.
- *
- * User and kernel space MINI_RTAI_LXRT applications can cooperate and
- * synchronize by using shared memory. It has been called MINI_RTAI_LXRT because
- * it is a kind of light soft/hard real time server that can partially
- * substitute RTAI and LXRT in simple applications, i.e. if the constraints
- * hinted above are wholly satisfied. So MINI_RTAI_LXRT can be used in kernel
- * and user space, with any RTAI scheduler. Its implementations has been very
- * easy, as it is nothing but what its name implies.   LXRT made all the needed
- * tools already available.   In fact it duplicates a lot of LXRT so that its
- * final production version will be fully integrated with it, ASAP.   However,
- * at the moment, it cannot work with LXRT yet.
+ * server support tasks, one per cpu, that execute the related timer functions, 
+ * either in oneshot or periodic mode, on the base of their time deadline and 
+ * according to their, user assigned, priority. Instead, as told above, plain 
+ * tasklets are just functions executed from kernel space; their execution 
+ * needs no server and is simply triggered by calling a given service function 
+ * at due time, either from a kernel task or interrupt handler requiring, or in
+ * charge of, their execution whenever they are needed.
  *
  * Note that in user space you run within the memory of the process owning the
- * tasklet function so you MUST lock all of your processes memory in core, by
- * using mlockall, to prevent it being swapped out.   Also abundantly pre grow
- * your stack to the largest size needed during the execution of your
- * application, see mlockall usage in Linux manuals.
+ * tasklet function so you MUST lock all of your tasks memory in core, by
+ * using mlockall, to prevent it being swapped out.   Pre grow also your stack 
+ * to the largest size needed during the execution of your application, see 
+ * mlockall usage in Linux mans.
  *
  * The RTAI distribution contains many useful examples that demonstrate the use
- * of most services, both in kernel and user space.
+ * of most tasklets services, both in kernel and user space.
  *
  *@{*/
 
@@ -122,18 +100,31 @@ MODULE_LICENSE("GPL");
 
 DEFINE_LINUX_CR0
 
-static struct rt_tasklet_struct timers_list =
-{ &timers_list, &timers_list, RT_SCHED_LOWEST_PRIORITY, 0, RT_TIME_END, 0LL, 0, 0, 0, 
-#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
-/**/0, NULL, NULL, { NULL } 
+#ifdef CONFIG_SMP
+#define NUM_CPUS           RTAI_NR_CPUS
+#define TIMED_TIMER_CPUID  (timed_timer->cpuid)
+#define TIMER_CPUID        (timer->cpuid)
+#define LIST_CPUID         (cpuid)
+#else
+#define NUM_CPUS           1
+#define TIMED_TIMER_CPUID  (0)
+#define TIMER_CPUID        (0)
+#define LIST_CPUID         (0)
 #endif
-};
+
+
+static struct rt_tasklet_struct timers_list[NUM_CPUS] =
+{ { &timers_list[0], &timers_list[0], RT_SCHED_LOWEST_PRIORITY, 0, 0, RT_TIME_END, 0LL, 0, 0, 0, 
+#ifdef  CONFIG_RTAI_LONG_TIMED_LIST
+0, NULL, NULL, { NULL } 
+#endif
+}, };
 
 static struct rt_tasklet_struct tasklets_list =
 { &tasklets_list, &tasklets_list, };
 
+static spinlock_t timers_lock[NUM_CPUS] = { SPIN_LOCK_UNLOCKED, };
 static spinlock_t tasklets_lock = SPIN_LOCK_UNLOCKED;
-static spinlock_t timers_lock   = SPIN_LOCK_UNLOCKED;
 
 static struct rt_fun_entry rt_tasklet_fun[]  __attribute__ ((__unused__));
 
@@ -156,14 +147,14 @@ static struct rt_fun_entry rt_tasklet_fun[] = {
 	{ 0, rt_register_task },	  	//  15
 };
 
-#ifdef CONFIG_RTAI_LONG_TIMED_LIST
+#ifdef _CONFIG_RTAI_LONG_TIMED_LIST
 
 /* BINARY TREE */
 static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 {
 	struct rt_tasklet_struct *timerh, *tmrnxt, *timer;
 	rb_node_t **rbtn, *rbtpn = NULL;
-	timer = timerh = &timers_list;
+	timer = timerh = &timers_list[TIMED_TIMER_CPUID];
 	rbtn = &timerh->rbr.rb_node;
 
 	while (*rbtn) {
@@ -182,13 +173,7 @@ static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 	timed_timer->next = timer;
 }
 
-static inline void rem_timer(struct rt_tasklet_struct *timer)
-{
-	(timer->next)->prev = timer->prev;
-	(timer->prev)->next = timer->next;
-	timer->next = timer->prev = timer;
-	rb_erase(&timer->rbn, &timers_list.rbr);
-}
+#define rb_erase_timer(timer)  rb_erase(&(timer)->rbn, &timers_list[NUM_CPUS > 1 ? (timer)->cpuid].rbr : 0)
 
 #else /* !CONFIG_RTAI_LONG_TIMED_LIST */
 
@@ -196,20 +181,23 @@ static inline void rem_timer(struct rt_tasklet_struct *timer)
 static inline void enq_timer(struct rt_tasklet_struct *timed_timer)
 {
 	struct rt_tasklet_struct *timer;
-	timer = &timers_list;
+	timer = &timers_list[TIMED_TIMER_CPUID];
         while (timed_timer->firing_time >= (timer = timer->next)->firing_time);
 	timer->prev = (timed_timer->prev = timer->prev)->next = timed_timer;
 	timed_timer->next = timer;
 }
+
+#define rb_erase_timer(timer)
+
+#endif /* CONFIG_RTAI_LONG_TIMED_LIST */
 
 static inline void rem_timer(struct rt_tasklet_struct *timer)
 {
 	(timer->next)->prev = timer->prev;
 	(timer->prev)->next = timer->next;
 	timer->next = timer->prev = timer;
+	rb_erase_timer(timer);
 }
-
-#endif /* CONFIG_RTAI_LONG_TIMED_LIST */
 
 /**
  * Insert a tasklet in the list of tasklets to be processed.
@@ -387,31 +375,33 @@ RT_TASK *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet, int use_fpu)
 	return tasklet->task;
 }
 
-static RT_TASK timers_manager;
+static RT_TASK timers_manager[NUM_CPUS];
 
-static inline void asgn_min_prio(void)
+static inline void asgn_min_prio(int cpuid)
 {
 // find minimum priority in timers_struct 
-	struct rt_tasklet_struct *timer;
+	RT_TASK *timer_manager;
+	struct rt_tasklet_struct *timer, *timerl;
+	spinlock_t *lock;
 	unsigned long flags;
 	int priority;
 
-	priority = (timer = timers_list.next)->priority;
-	flags = rt_spin_lock_irqsave(&timers_lock);
-	while ((timer = timer->next) != &timers_list) {
+	priority = (timer = (timerl = &timers_list[LIST_CPUID])->next)->priority;
+	flags = rt_spin_lock_irqsave(lock = &timers_lock[LIST_CPUID]);
+	while ((timer = timer->next) != timerl) {
 		if (timer->priority < priority) {
 			priority = timer->priority;
 		}
-		rt_spin_unlock_irqrestore(flags, &timers_lock);
-		flags = rt_spin_lock_irqsave(&timers_lock);
+		rt_spin_unlock_irqrestore(flags, lock);
+		flags = rt_spin_lock_irqsave(lock);
 	}
-	rt_spin_unlock_irqrestore(flags, &timers_lock);
+	rt_spin_unlock_irqrestore(flags, lock);
 	flags = rt_global_save_flags_and_cli();
-	if (timers_manager.priority > priority) {
-		timers_manager.priority = priority;
-		if (timers_manager.state == RT_SCHED_READY) {
-			rem_ready_task(&timers_manager);
-			enq_ready_task(&timers_manager);
+	if ((timer_manager = &timers_manager[LIST_CPUID])->priority > priority) {
+		timer_manager->priority = priority;
+		if (timer_manager->state == RT_SCHED_READY) {
+			rem_ready_task(timer_manager);
+			enq_ready_task(timer_manager);
 		}
 	}
 	rt_global_restore_flags(flags);
@@ -420,13 +410,14 @@ static inline void asgn_min_prio(void)
 static inline void set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time)
 {
 	if (timer->next != timer && timer->prev != timer) {
+		spinlock_t *lock;
 		unsigned long flags;
 
 		timer->firing_time = firing_time;
-		flags = rt_spin_lock_irqsave(&timers_lock);
+		flags = rt_spin_lock_irqsave(lock = &timers_lock[TIMER_CPUID]);
 		rem_timer(timer);
 		enq_timer(timer);
-		rt_spin_unlock_irqrestore(flags, &timers_lock);
+		rt_spin_unlock_irqrestore(flags, lock);
 	}
 }
 
@@ -469,7 +460,9 @@ static inline void set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME 
 
 int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_time, RTIME period, void (*handler)(unsigned long), unsigned long data, int pid)
 {
-	unsigned long flags;
+	spinlock_t *lock;
+	unsigned long flags, cpuid;
+	RT_TASK *timer_manager;
 
 // timer initialization
 	if (!handler) {
@@ -483,24 +476,26 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
 	timer->data        = data;
 	if (!pid) {
 		timer->task = 0;
+		timer->cpuid = cpuid = NUM_CPUS > 1 ? rtai_cpuid() : 0;
 	} else {
+		timer->cpuid = cpuid = NUM_CPUS > 1 ? (timer->task)->runnable_on_cpus : 0;
 		(timer->task)->priority = priority;
 		rt_copy_to_user(timer->usptasklet, timer, sizeof(struct rt_tasklet_struct));
 	}
 // timer insertion in timers_list
-	flags = rt_spin_lock_irqsave(&timers_lock);
+	flags = rt_spin_lock_irqsave(lock = &timers_lock[LIST_CPUID]);
 	enq_timer(timer);
-	rt_spin_unlock_irqrestore(flags, &timers_lock);
+	rt_spin_unlock_irqrestore(flags, lock);
 // timers_manager priority inheritance
-	if (timer->priority < timers_manager.priority) {
-		timers_manager.priority = timer->priority;
+	if (timer->priority < (timer_manager = &timers_manager[LIST_CPUID])->priority) {
+		timer_manager->priority = timer->priority;
 	}
 // timers_task deadline inheritance
 	flags = rt_global_save_flags_and_cli();
-	if (timers_list.next == timer && (timers_manager.state & RT_SCHED_DELAYED) && firing_time < timers_manager.resume_time) {
-		timers_manager.resume_time = firing_time;
-		rem_timed_task(&timers_manager);
-		enq_timed_task(&timers_manager);
+	if (timers_list[LIST_CPUID].next == timer && (timer_manager->state & RT_SCHED_DELAYED) && firing_time < timer_manager->resume_time) {
+		timer_manager->resume_time = firing_time;
+		rem_timed_task(timer_manager);
+		enq_timed_task(timer_manager);
 		rt_schedule();
 	}
 	rt_global_restore_flags(flags);
@@ -520,11 +515,12 @@ int rt_insert_timer(struct rt_tasklet_struct *timer, int priority, RTIME firing_
 void rt_remove_timer(struct rt_tasklet_struct *timer)
 {
 	if (timer->next != timer && timer->prev != timer) {
+		spinlock_t *lock;
 		unsigned long flags;
-		flags = rt_spin_lock_irqsave(&timers_lock);
+		flags = rt_spin_lock_irqsave(lock = &timers_lock[TIMER_CPUID]);
 		rem_timer(timer);
-		rt_spin_unlock_irqrestore(flags, &timers_lock);
-		asgn_min_prio();
+		rt_spin_unlock_irqrestore(flags, lock);
+		asgn_min_prio(TIMER_CPUID);
 	}
 }
 
@@ -550,7 +546,7 @@ void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
 	if (timer->task) {
 		(timer->task)->priority = priority;
 	}
-	asgn_min_prio();
+	asgn_min_prio(TIMER_CPUID);
 }
 
 /**
@@ -576,13 +572,14 @@ void rt_set_timer_priority(struct rt_tasklet_struct *timer, int priority)
 void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time)
 {
 	unsigned long flags;
+	RT_TASK *timer_manager;
 
 	set_timer_firing_time(timer, firing_time);
 	flags = rt_global_save_flags_and_cli();
-	if (timers_list.next == timer && (timers_manager.state & RT_SCHED_DELAYED) && firing_time < timers_manager.resume_time) {
-		timers_manager.resume_time = firing_time;
-		rem_timed_task(&timers_manager);
-		enq_timed_task(&timers_manager);
+	if (timers_list[TIMER_CPUID].next == timer && ((timer_manager = &timers_manager[TIMER_CPUID])->state & RT_SCHED_DELAYED) && firing_time < timer_manager->resume_time) {
+		timer_manager->resume_time = firing_time;
+		rem_timed_task(timer_manager);
+		enq_timed_task(timer_manager);
 		rt_schedule();
 	}
 	rt_global_restore_flags(flags);
@@ -614,44 +611,52 @@ void rt_set_timer_firing_time(struct rt_tasklet_struct *timer, RTIME firing_time
 
 void rt_set_timer_period(struct rt_tasklet_struct *timer, RTIME period)
 {
+	spinlock_t *lock;
 	unsigned long flags;
-	flags = rt_spin_lock_irqsave(&timers_lock);
+	flags = rt_spin_lock_irqsave(lock = &timers_lock[TIMER_CPUID]);
 	timer->period = period;
-	rt_spin_unlock_irqrestore(flags, &timers_lock);
+	rt_spin_unlock_irqrestore(flags, lock);
 }
 
 // the timers_manager task function
 
-static void rt_timers_manager(long dummy)
+static void rt_timers_manager(long cpuid)
 {
 	RTIME now;
-	struct rt_tasklet_struct *tmr, *timer;
-	unsigned long flags;
+	RT_TASK *timer_manager;
+	struct rt_tasklet_struct *tmr, *timer, *timerl;
+	spinlock_t *lock;
+	unsigned long flags, timer_tol;
 	int priority, used_fpu;
 
+	timer_manager = &timers_manager[LIST_CPUID];
+	timerl = &timers_list[LIST_CPUID];
+	lock = &timers_lock[LIST_CPUID];
+	timer_tol = tuned.timers_tol[LIST_CPUID];
+
 	while (1) {
-		rt_sleep_until((timers_list.next)->firing_time);
-		now = timers_manager.resume_time + tuned.timers_tol[0];
+		rt_sleep_until((timerl->next)->firing_time);
+		now = timer_manager->resume_time + timer_tol;
 // find all the timers to be fired, in priority order
 		while (1) {
 			used_fpu = 0;
-			tmr = timer = &timers_list;
+			tmr = timer = timerl;
 			priority = RT_SCHED_LOWEST_PRIORITY;
-			flags = rt_spin_lock_irqsave(&timers_lock);
+			flags = rt_spin_lock_irqsave(lock);
 			while ((tmr = tmr->next)->firing_time <= now) {
 				if (tmr->priority < priority) {
 					priority = (timer = tmr)->priority;
 				}
 			}
-			timers_manager.priority = priority;
-			rt_spin_unlock_irqrestore(flags, &timers_lock);
-			if (timer == &timers_list) {
+			timer_manager->priority = priority;
+			rt_spin_unlock_irqrestore(flags, lock);
+			if (timer == timerl) {
 				break;
 			}
 			if (!timer->period) {
-				flags = rt_spin_lock_irqsave(&timers_lock);
+				flags = rt_spin_lock_irqsave(lock);
 				rem_timer(timer);
-				rt_spin_unlock_irqrestore(flags, &timers_lock);
+				rt_spin_unlock_irqrestore(flags, lock);
 			} else {
 				set_timer_firing_time(timer, timer->firing_time + timer->period);
 			}
@@ -659,7 +664,7 @@ static void rt_timers_manager(long dummy)
 				if (!used_fpu && timer->uses_fpu) {
 					used_fpu = 1;
 					save_fpcr_and_enable_fpu(linux_cr0);
-					save_fpenv(timers_manager.fpu_reg);
+					save_fpenv(timer_manager->fpu_reg);
 				}
 				timer->handler(timer->data);
 			} else {
@@ -667,11 +672,11 @@ static void rt_timers_manager(long dummy)
 			}
 		}
 		if (used_fpu) {
-			restore_fpenv(timers_manager.fpu_reg);
+			restore_fpenv(timer_manager->fpu_reg);
 			restore_fpcr(linux_cr0);
 		}
 // set next timers_manager priority according to the highest priority timer
-		asgn_min_prio();
+		asgn_min_prio(LIST_CPUID);
 // if no more timers in timers_struct remove timers_manager from tasks list
 	}
 }
@@ -749,25 +754,32 @@ static RT_TASK *rt_base_linux_task;
 int __rtai_tasklets_init(void)
 {
 	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
+	int cpuid;
+
 	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
-	if (rt_sched_type() == RT_SCHED_MUP) {
-		tuned.timers_tol[0] = tuned.timers_tol[timers_manager.runnable_on_cpus];
-	}
         if(rt_base_linux_task->task_trap_handler[0]) {
                 if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rt_tasklet_fun, TSKIDX)) {
                         printk("Recompile your module with a different index\n");
                         return -EACCES;
                 }
         }
-	rt_task_init(&timers_manager, rt_timers_manager, 0, tasklets_stacksize, RT_SCHED_LOWEST_PRIORITY, 0, 0);
-	rt_task_resume(&timers_manager);
+	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
+		timers_lock[cpuid] = timers_lock[0];
+		timers_list[cpuid] = timers_list[0];
+		timers_list[cpuid].next = timers_list[cpuid].prev = &timers_list[cpuid];
+		rt_task_init_cpuid(&timers_manager[cpuid], rt_timers_manager, cpuid, tasklets_stacksize, RT_SCHED_LOWEST_PRIORITY, 0, 0, cpuid);
+		rt_task_resume(&timers_manager[cpuid]);
+	}
 	printk(KERN_INFO "RTAI[tasklets]: loaded.\n");
 	return 0;
 }
 
 void __rtai_tasklets_exit(void)
 {
-	rt_task_delete(&timers_manager);
+	int cpuid;
+	for (cpuid = 0; cpuid < NUM_CPUS; cpuid++) {
+		rt_task_delete(&timers_manager[cpuid]);
+	}
         if(rt_base_linux_task->task_trap_handler[1]) {
                 ((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rt_tasklet_fun, TSKIDX);
         }

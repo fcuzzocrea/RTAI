@@ -2,6 +2,7 @@
   COPYRIGHT (C) 2002  Lorenzo Dozio (dozio@aero.polimi.it)
   Paolo Mantegazza (mantegazza@aero.polimi.it)
   Roberto Bucher (roberto.bucher@supsi.ch)
+  Daniele Gasperini (daniele.gasperini@elet.polimi.it)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Lesser General Public
@@ -38,10 +39,7 @@
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
 
-#include <devstruct.h>
-#include <devices.h>
-
-#define RTAILAB_VERSION   "3.2.1"
+#define RTAILAB_VERSION   "3.3.1"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -75,6 +73,7 @@ static RT_TASK    *rt_MainTask, *rt_HostInterfaceTask, *rt_BaseRateTask;
 static char *HostInterfaceTaskName = "IFTASK";
 char *TargetMbxID                  = "RTS";
 char *TargetLogMbxID               = "RTL";
+char *TargetALogMbxID              = "RAL";
 char *TargetLedMbxID               = "RTE";
 char *TargetMeterMbxID	           = "RTM";
 char *TargetSynchronoscopeMbxID    = "RTY";
@@ -87,7 +86,6 @@ static volatile int verbose      = 0;
 static volatile int endBaseRate  = 0;
 static volatile int endInterface = 0;
 static volatile int stackinc     = 100000;
-static volatile int NUPAR1       = 0;
 static volatile int ClockTick    = 0;
 static volatile int InternTimer  = 1;
 static RTIME rt_BaseRateTick;
@@ -95,9 +93,10 @@ static float FinalTime           = 0.0;
 
 static volatile int endex;
 
-static double TIME, *UPAR1;
+static double TIME;
 static struct { char name[MAX_NAME_SIZE]; int ntraces; } rtaiScope[MAX_SCOPES];
 static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiLogData[MAX_LOGS];
+static struct { char name[MAX_NAME_SIZE]; int nrow, ncol; } rtaiALogData[MAX_LOGS];
 static struct { char name[MAX_NAME_SIZE]; int nleds; } rtaiLed[MAX_LEDS];
 static struct { char name[MAX_NAME_SIZE]; int nmeters; } rtaiMeter[MAX_METERS];
 
@@ -106,18 +105,13 @@ static struct { char name[MAX_NAME_SIZE]; int nmeters; } rtaiMeter[MAX_METERS];
 
 #define msleep(t)  do { poll(0, 0, t); } while (0)
 
-#define MAX_COMEDI_DEVICES      4
+#define MAX_COMEDI_DEVICES      11
 
 void *ComediDev[MAX_COMEDI_DEVICES];
 int ComediDev_InUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AIInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_AOInUse[MAX_COMEDI_DEVICES] = {0};
 int ComediDev_DIOInUse[MAX_COMEDI_DEVICES] = {0};
-
-devStr inpDevStr[40];
-devStr outDevStr[40];
-int pinp_cnt = 0;
-int pout_cnt = 0;
 
 static void DummyWait(void) { }
 static void DummySend(void) { }
@@ -149,15 +143,6 @@ char *get_a_name(const char *root, char *name)
 	if (!rt_get_adr(nam2num(name))) {
 	    return name;
 	}
-    }
-    return 0;
-}
-
-static unsigned long get_an_id(const char *root)
-{
-    char name[7];
-    if (get_a_name(root, name)) {
-	return nam2num(name);
     }
     return 0;
 }
@@ -214,40 +199,6 @@ static int rtRegisterLogData(const char *name, int nrow, int ncol)
     }
     return -1;
 }
-
-#if 0  // this avoids annoying libc functions
-static unsigned long udn2nl(double dudn)
-{
-    char ip[16];
-    unsigned long r0, r1, r2, r3;
-
-    if (!(r0 = dudn/1000000000.0)) {;
-    return 0;
-    }
-    r1 = ((unsigned long)(dudn/1000000.0))%1000;
-    r2 = (r3 = (unsigned long)(dudn/1000.0))%1000;
-    r3 = dudn - (double)r3*1000.0;
-    sprintf(ip, "%lu.%lu.%lu.%lu", r0, r1, r2, r3);
-    return ddn2nl(ip);
-}
-#else  // this avoids using much FP
-static unsigned long udn2nl(double dudn)
-{
-    char ip[16];
-    unsigned long long udn;
-    unsigned long r0, r1, r2, r3;
-
-    udn = dudn;
-    if (!(r0 = udn/1000000000)) {
-	return 0;
-    }
-    r1 = ((unsigned long)(udn/1000000))%1000;
-    r2 = (r3 = (unsigned long)(udn/1000))%1000;
-    r3 = udn - r3*1000ULL;
-    sprintf(ip, "%lu.%lu.%lu.%lu", r0, r1, r2, r3);
-    return ddn2nl(ip);
-}
-#endif
 
 static void grow_and_lock_stack(int inc)
 {
@@ -350,9 +301,6 @@ static void *rt_HostInterface(void *args)
   RT_TASK *task;
   unsigned int Request;
   int Reply, len;
-  int totRPar = 0;
-  int totIPar = 0;
-  int i;
 
     if (!(rt_HostInterfaceTask = rt_task_init_schmod(nam2num(HostInterfaceTaskName), rt_HostInterfaceTaskPriority, 0, 0, SCHED_RR, 0xFF))) {
 	fprintf(stderr,"Cannot init rt_HostInterfaceTask.\n");
@@ -428,6 +376,22 @@ static void *rt_HostInterface(void *args)
 			rt_returnx(task, &rtaiLogData[Idx].ncol, sizeof(int));
 			rt_receivex(task, &Idx, sizeof(int), &len);
 			rt_returnx(task, rtaiLogData[Idx].name, MAX_NAME_SIZE);
+			rt_receivex(task, &Idx, sizeof(int), &len);
+			samplingTime = get_tsamp();
+			rt_returnx(task, &samplingTime, sizeof(float));
+		    }
+		}
+		while (1) {
+		    rt_receivex(task, &Idx, sizeof(int), &len);
+		    if (Idx < 0) {
+			rt_returnx(task, &Idx, sizeof(int));
+			break;
+		    } else {
+			rt_returnx(task, &rtaiALogData[Idx].nrow, sizeof(int));
+			rt_receivex(task, &Idx, sizeof(int), &len);
+			rt_returnx(task, &rtaiALogData[Idx].ncol, sizeof(int));
+			rt_receivex(task, &Idx, sizeof(int), &len);
+			rt_returnx(task, rtaiALogData[Idx].name, MAX_NAME_SIZE);
 			rt_receivex(task, &Idx, sizeof(int), &len);
 			samplingTime = get_tsamp();
 			rt_returnx(task, &samplingTime, sizeof(float));
@@ -694,6 +658,7 @@ struct option options[] = {
     { "name",       1, 0, 'n' },
     { "idscope",    1, 0, 'i' },
     { "idlog",      1, 0, 'l' },
+    { "idalog",     1, 0, 'a' },
     { "idmeter",    1, 0, 't' },
     { "idled",      1, 0, 'd' },
     { "idsynch",    1, 0, 'y' },
@@ -729,6 +694,8 @@ void print_usage(void)
 	 "      set the scope mailboxes identifier (default RTS)\n"
 	 "  -l <logid>, --idlog <logid>\n"
 	 "      set the log mailboxes identifier (default RTL)\n"
+	 "  -a <alogid>, --idalog <logid>\n"
+	 "      set the alog mailboxes identifier (default RAL)\n"
 	 "  -t <meterid>, --idmeter <meterid>\n"
 	 "      set the meter mailboxes identifier (default RTM)\n"
 	 "  -d <ledid>, --idled <ledid>\n"
@@ -771,7 +738,7 @@ int main(int argc, char *argv[])
     signal(SIGTERM, endme);
 
     do {
-	c = getopt_long(argc, argv, "euvVswop:f:m:n:i:l:t:d:y:c:", options, NULL);
+	c = getopt_long(argc, argv, "euvVswop:f:m:n:i:l:a:t:d:y:c:", options, NULL);
 	switch (c) {
 	    case 'c':
 		if ((CpuMap = atoi(optarg)) <= 0) {
@@ -796,6 +763,9 @@ int main(int argc, char *argv[])
 	    case 'l':
 		TargetLogMbxID = strdup(optarg);
 		break;
+	    case 'a':
+		TargetALogMbxID = strdup(optarg);
+		break;	
 	    case 't':
 		TargetMeterMbxID = strdup(optarg);
 		break;

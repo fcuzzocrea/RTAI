@@ -38,7 +38,7 @@ longer you can verify that more and more digits remain stable. In about a
 quarter of an hour you should get a precision to the least significant
 digit. For a very precise and safe calibration let it run for an hour or so.
 
-Such a high precision is not strictly required for RTAI to work appropriately,
+Such a high precision is not strictly required for RTAI to work appropriately, 
 in fact RTAI is enough with Linux calibration values it uses as defaults. 
 However we (DIAPM) always use the most precise calibration obtainable by 
 running it for an appropriate amount of time. The highest precision is needed 

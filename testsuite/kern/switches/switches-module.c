@@ -21,6 +21,7 @@
 #include <linux/init.h>
 #include <linux/slab.h>
 #include <rtai_sem.h>
+#include <rtai_msg.h>
 
 MODULE_DESCRIPTION("Measures task switching times");
 MODULE_AUTHOR("Paolo Mantegazza <mantegazza@aero.polimi.it>");
@@ -63,11 +64,18 @@ static volatile int change;
 
 static void pend_task (long t)
 {
+	unsigned long msg;
 	while(1) {
-		if (change) {
-			rt_sem_wait(&sem);
-		} else {
-			rt_task_suspend(thread + t);
+		switch (change) {
+			case 0:
+				rt_task_suspend(thread + t);
+				break;
+			case 1:
+				rt_sem_wait(&sem);
+				break;
+			case 2:
+				rt_return(rt_receive(NULL, &msg), 0);
+				break;
 		}
 		cpu_used[hard_cpu_id()]++;
 	}
@@ -75,6 +83,8 @@ static void pend_task (long t)
 
 static void sched_task(long t) {
 	int i, k;
+	unsigned long msg;
+
 	change = 0;
 	t = rdtsc();
 	for (i = 0; i < loops; i++) {
@@ -101,6 +111,22 @@ static void sched_task(long t) {
 	t = rdtsc() - t;
 	rt_printk("\nFOR %d TASKS: ", ntasks);
 	rt_printk("TIME %d (ms), SEM SIG/WAIT SWITCHES %d, ", (int)llimd(t, 1000, CPU_FREQ), 2*ntasks*loops);
+	rt_printk("SWITCH TIME%s %d (ns)\n", use_fpu ? " (INCLUDING FULL FP SUPPORT)":"",
+	       (int)llimd(llimd(t, 1000000000, CPU_FREQ), 1, 2*ntasks*loops));
+
+	change = 2;
+	for (k = 0; k < ntasks; k++) {
+		rt_sem_signal(&sem);
+	}
+	t = rdtsc();
+	for (i = 0; i < loops; i++) {
+		for (k = 0; k < ntasks; k++) {
+			rt_rpc(thread + k, 0, &msg);
+		}
+	}
+	t = rdtsc() - t;
+	rt_printk("\nFOR %d TASKS: ", ntasks);
+	rt_printk("TIME %d (ms), RPC/RCV-RET SWITCHES %d, ", (int)llimd(t, 1000, CPU_FREQ), 2*ntasks*loops);
 	rt_printk("SWITCH TIME%s %d (ns)\n\n", use_fpu ? " (INCLUDING FULL FP SUPPORT)":"",
 	       (int)llimd(llimd(t, 1000000000, CPU_FREQ), 1, 2*ntasks*loops));
 }
@@ -128,7 +154,7 @@ static int __switches_init(void)
 		    return -1;
 		}
 	}
-	e = rt_task_init_cpuid(&task, sched_task, i, stack_size, 1, 0, 0, hard_cpu_id());
+	e = rt_task_init_cpuid(&task, sched_task, i, stack_size, 1, use_fpu, 0, hard_cpu_id());
 	if (e < 0)
 	    goto task_init_has_failed;
 	rt_task_resume(&task);

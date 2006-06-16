@@ -1,1 +1,1 @@
-display:ksched+fifos:push preempt_rt;./display;popall:control_c
+display:lxrt+fifos:push preempt_rt;./display;popall:control_c

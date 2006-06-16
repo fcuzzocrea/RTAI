@@ -33,8 +33,50 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 typedef struct rtPointStruct rtPoint;
 
 struct rtPointStruct {
-        float x;
-        float y;
+  float x;
+  float y;
+};
+
+typedef struct trStatStruct {
+	float t1, t2, dx, n, min, max, sum, avg, sum2, pkpk, y1, y2, dy, dt, dydt, rms;
+} trStat;
+
+/* Trigger modes, 1st 8bits: mode, 2nd 8bits: options+signals */
+enum {
+  tmHold=         (0),
+  tmRoll=	   (1<<1),
+  tmOverwrite=     (1<<2),
+  tmTriggerCh1Pos= (1<<3),
+  tmTriggerCh1Neg= (1<<4),
+};
+
+/* Scope flags */
+enum {
+  sfNone =     (1<<0),
+  sfDrawGrid = (1<<1),
+  sfCursors =  (1<<2),
+  sfHorBar = (1<<3),
+  sfVerBar = (1<<4),
+  sfDrawTics = (1<<5),
+};
+
+/* Trace flags */
+enum {
+  tfNone=      (0<<0), 
+  tfDrawZero=  (1<<2), 
+  tfDrawLabel= (1<<3),
+  tfStatUd=    (1<<4),
+  tfStatMin=   (1<<5),
+  tfStatMax=   (1<<6),
+  tfStatPpk=   (1<<7),
+  tfStatAvg=   (1<<8),
+  tfStatRms=   (1<<9),
+  tfStatY1=    (1<<10),
+  tfStatY2=    (1<<11),
+  tfStatDy=    (1<<12),
+  tfStatDyDt=  (1<<13),
+  tfAC=	       (1<<16),
+  tfStats=     (1<<3)|(1<<4)|(1<<5)|(1<<6)|(1<<7)|(1<<8)|(1<<9)|(1<<10)|(1<<11)|(1<<11)|(1<<12)|(1<<13), 
 };
 
 class Fl_Scope : public Fl_Gl_Window
@@ -47,11 +89,9 @@ class Fl_Scope : public Fl_Gl_Window
 		float getdx();
 		void trace_length(int);
 		int trace_length();
-		void trace_pointer(int pos);
-		int trace_pointer();
-		int increment_trace_pointer();
-		void add_to_trace(int pos, int n, float val);
+		
 		void add_to_trace(int n, float val);
+		
 		void pause(int);
 		int pause();
 		void oneshot(int);
@@ -81,14 +121,24 @@ class Fl_Scope : public Fl_Gl_Window
 		float tr_g(int);
 		float tr_b(int);
 		void trace_offset(int, float);
+		void trace_width(int, float);
+  		void trigger_mode(int);
+		int trigger_mode(void);
+		void trace_flags(int,int);
+		int trace_flags(int);
+		void scope_flags(int);
+		int scope_flags(void);
+
 	private:
+		int handle(int e);
 		float Sampling_Frequency;
 		float dx;
 		int Trace_Len, Trace_Ptr;
 		float **Trace;
+		int *Write_Ptr;
 		int Pause_Flag;
 		int OneShot_Flag;
-		int Grid_Visible;
+		int Scope_Flags;
 		float Grid_rgb[3];
 		Fl_Color Grid_Color;
 		float Bg_rgb[3];
@@ -96,15 +146,35 @@ class Fl_Scope : public Fl_Gl_Window
 		float Time_Range;
 		int num_of_traces;
 		int *Trace_Visible;
+		int *Trace_Flags;
 		float *Y_Div;
 		float *Y_Range_Sup;
 		float *Y_Range_Inf;
 		float **Trace_rgb;
 		Fl_Color *Trace_Color;
 		float *Trace_Offset;
+		float *Trace_Width;
 		float *Trace_Offset_Value;
+	
+ 		trStat *Stats;
+		int *Data_Ptr;
+                float Prev_Val;
+		float *DC_Val;
+                int Trigger_Mode;
+		int Trigger;
+		rtPoint cursors[2];
+
 	protected:
+		void trace_pointer(int pos);
+		int trace_pointer();
+		int increment_trace_pointer();
+		void write_to_trace(int n, float val);
+		void add_to_trace(int pos, int n, float val);
+
 		void initgl();
+		void drawhline(float y, float c[], float w, GLushort p);
+		void drawvline(float x, float c[], float w, GLushort p);
+		void drawstats();
 		void drawticks();
 		void drawgrid();
 		void draw();

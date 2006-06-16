@@ -192,7 +192,7 @@ menu "Machine (x86)"
 
 config RTAI_DONT_DISPATCH_CORE_IRQS
 	bool "Direct vectoring of RTAI native interrupts"
-	depends on RTAI_EXTENDED
+#	depends on RTAI_EXTENDED
 	default y
 	help
 	RTAI dispatches real time interrupts immediately to achieve as
@@ -234,9 +234,9 @@ config RTAI_SCHED_LXRT_
 	bool "Kernel/User space scheduler without RTAI own kernel tasks (KEEP)"
 	default y
 	help
-	This scheduler supports hard real time for all Linux schedulable
-	objects, i.e. processes/threads/kthreads. All of RTAI APIs are 
-	available simmetrically inter/intra kernel and user space.
+	This scheduler (rtai_lxrt) supports hard real time for all Linux
+	schedulable objects, i.e. processes/threads/kthreads. All of RTAI 
+	APIs are available simmetrically inter/intra kernel and user space.
 
 	This configuration parameter is ignored by the build process and
 	this scheduler will be made anyhow, along with the related liblxrt.
@@ -245,9 +245,10 @@ config RTAI_KTASKS_SCHED_LXRT_
 	bool "Kernel/User space scheduler with RTAI own kernel tasks (KEEP)"
 	default y
 	help
-	After enabling this option, the scheduler supports not only hard
-	real time for all Linux schedulable objects, i.e.
-	processes/threads/kthreads, but also for RTAI own kernel tasks.
+	This scheduler (rtai_sched) supports not only hard real time for 
+	all Linux schedulable objects, i.e.  processes/threads/kthreads, 
+	but also for RTAI own kernel tasks. As such is the most complete
+	scheduler available within RTAI.
 
 	A secondary effect is that rt_task_init() will generate RTAI
 	own kernel tasks instead of real time hardened Linux kernel threads.
@@ -258,12 +259,15 @@ config RTAI_KTASKS_SCHED_LXRT_
 	Linux kernel threads must specifically use rt_task_init for the 
 	former and rt_thread_init for the latter.
 
+	For backward compatibility old named schedulers, i.e.: up, smp, mup,
+	ksched; are all linked to this one.
+
 	This configuration parameter is ignored by the build process and
 	this scheduler will be made anyhow, along with the related liblxrt.
 
-menu "Scheduler options"
+menu "Scheduling options"
 
-	depends on RTAI_EXTENDED
+#	depends on RTAI_EXTENDED
 
 config RTAI_SCHED_ISR_LOCK
 	bool "Disable rescheduling from ISRs"
@@ -359,16 +363,29 @@ config RTAI_ALLOW_RR
 	in RTAI, after enabling such a mode on a task by task basis through a
 	call to a suitable scheduler function.
 
-config RTAI_ONE_SHOT
-	bool "One-shot timer mode"
+config RTAI_FULL_PRINHER
+	bool "Enable full priority inheritance"
 	default n
 	help
-	Set to enable one-shot timer mode as the default. If not set, the 
-	hard timer will run in periodic mode according to the period used 
-	in start_rt_timer().
-	Notice that whatever the default setting chosen it is possible to
-	override it by specifically calling either rt_set_oneshot_mode() or 
-	rt_set_periodic_mode() at run time.
+	In RTAI resource semaphores can be recursively nested and support 
+	full priority inheritance, both among themselves and intertask 
+	messages sent to the task owning a resource, but for a singly owned 
+	resource only. Notice that the task itself becomes a kind of resource 
+	when tasks block on it to exchange messages. For multi ownerships 
+	priority inheritance becomes an adaptive or dynamic priority ceiling. 
+	In such a case in fact the task priority is returned to its base one 
+	only when all owned resources are released. This is a compromise 
+	design choice aimed at avoiding searches for the new priority to be 
+	inheredited across multiply owned resources and blocked tasks sending 
+	messages to a task.
+	By enabling this configuration option you'll allows full priority
+	inheritance instead, so that when a task releases any resource it
+	owns it will acquire the priority of the most prioritary task, either
+	waiting on any resource that it is still owned by the task or blocked
+	sending to it.
+	The choice is mostly dependent on your needs. Just take into account
+	that the default dynamic priority ceiling is simpler, a bit more 
+	effective and less deadlock prone than full priority inheritance.
 
 config RTAI_BUSY_TIME_ALIGN
 	bool "Busy wait to ensure resume time alignment"
@@ -410,13 +427,26 @@ config RTAI_LXRT_USE_LINUX_SYSCALL
 	
 	If in doubt, say no.
 
+config RTAI_ONE_SHOT
+	bool "One-shot timer mode"
+	default n
+	help
+	Set to enable one-shot timer mode as the default. If not set, the 
+	hard timer will run in periodic mode according to the period used 
+	in start_rt_timer().
+	Notice that whatever the default setting chosen it is possible to
+	override it by specifically calling either rt_set_oneshot_mode() or 
+	rt_set_periodic_mode() at run time.
+
 config RTAI_CAL_FREQS_FACT
 	string "Cure loosely calibrated frequencies - see help"
 	default 0
 	help
-	In oneshot mode using the APIC timer, i.e. always for SMP, a precise 
-	scheduling time depends also on the ratio cpu_freq/apic_freq. The best
-	results can be achieved by using the RTAI calibration tool. 
+	This configuration parameter is meaningful for the oneshot mode only
+	where it has two effects:
+	1 - in oneshot mode using the APIC timer, i.e. always for SMP, a 
+	precise scheduling time depends also on the ratio cpu_freq/apic_freq. 
+	The best results can be achieved by using the RTAI calibration tool. 
 	If no calibration is run one will rely on what Linux makes available 
 	by default, which could be not precise enough, especially for not so 
 	short timed intervals.
@@ -426,7 +456,11 @@ config RTAI_CAL_FREQS_FACT
 	even when relatively large idle periods are enconuntered, thus
 	limiting the overall latency with which long sleeping tasks might
 	be awaken in case of unprecise calibrations of the above cited
-	frequencies. The granted firing interval will be roughly equal to:
+	frequencies;
+	2 - in the case of very long timed list it will limit the search 
+	for the next firing time in the case of widely scattered tasks with 
+	lowest priorities, thus avoiding useless scheduling delays.
+	The granted firing interval will be roughly equal to:
 	1.0/(RTAI_CAL_FREQS_FACT + 2.0) (seconds).
 
 endmenu
@@ -627,6 +661,27 @@ endmenu
 
 menu "Other features"
 
+config RTAI_USE_NEWERR
+	bool "New return values of blocking RTAI APIs"
+	default n
+	help
+	Return values for RTAI blocking APIs are a bit sketchy. That 
+	is due to a long standing legacy dating back to DOS and 8 bits PCs,
+	when saving a few "if"s might have been important. Whatever one's 
+	opinion such a legacy has now been likely inheredited by many well
+	working existing RTAI applications, that might break with a new 
+	error return scheme. In any case a better set of error return values 
+	might be useful nowadays, so it has been added. With it one will be
+	able to correctly infer more detailed reasons for error returns i.e.:
+	- invalid requests (RTE_OBJINV),
+	- async unblocking (RTE_UNBLKD),
+	- timeouts (RTE_TIMOUT),
+	- timer overruns (RTE_TMROVRN),
+	- deletion of blocking objects (RTE_OBJREM).
+	Thus the new scheme has been made configurable to allow RTAI users
+	to choose what to do, without forcing any adaption for already 
+	existing working applications.
+
 config RTAI_MATH
 	bool "Math support"
 	depends on RTAI_FPU_SUPPORT
@@ -777,6 +832,13 @@ config RTAI_RTDM
 	default n
 	help
 	Real Time Drive Model specific implementation for RTAI.
+
+config RTAI_RTDM_FD_MAX
+	depends on RTAI_RTDM
+	string "Number of RTDM file descriptors"
+	default 128
+	help
+	The maximum number of file descriptors in RTDM.
 
 menu "Drivers"
 

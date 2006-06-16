@@ -18,6 +18,7 @@ function  RTAICodeGen_()
     k=getobj(scs_m,[xc;yc])
     if k<>[] then break,end
   end
+  
   if scs_m.objs(k).model.sim(1)=='super' then
     disablemenus()
     all_scs_m=scs_m;
@@ -30,7 +31,7 @@ function  RTAICodeGen_()
       needcompile=4
       Cmenu='Replot';
     else
-      Cmenu='Open/Set' 
+      Cmenu=[] 
     end     
   else
     message('Generation Code only work for a Superblock ! ')
@@ -473,7 +474,7 @@ if (x <> []) then
 	 '  kiwa = 0; ';];
 
  //////////////////////////////////////////////////
-  
+
   for ii=1:noord
     fun=oord(ii,1);
     if outptr(fun+1)-outptr(fun)>0  then
@@ -1569,7 +1570,7 @@ function  [ok,XX,alreadyran]=do_compile_superblock(XX,all_scs_m,numk,alreadyran)
 
   [bllst,connectmat,clkconnect,cor,corinv,ok]=c_pass1(scs_m);
 
-if ok==%f then message('Sorry: problem in the pre-compilation step.'),return, end
+  if ok==%f then message('Sorry: problem in the pre-compilation step.'),return, end
   a=[];b=[];tt=[];howclk=[];allhowclk=[];cap=[];act=[];
 
   ///**********************************
@@ -1802,6 +1803,9 @@ zcptr=cpr.sim.zcptr;
     end
   
     rpat=stripblanks(rpat);
+    rdnom=strsubst(rdnom,'-','_');
+    rpat=strsubst(rpat,'-','_');
+
     dirinfo=fileinfo(rpat)
     if dirinfo==[] then
       [pathrp,fnamerp,extensionrp]=fileparts(rpat)
@@ -2225,7 +2229,7 @@ function Code=make_decl_standalone()
 	'';
 	cformatline('void '+rdnom+'_end(scicos_block *block_'+rdnom+',double *z, double *t) ;',70);
 	''
-	cformatline('int '+rdnom+'_init_blk()"+...
+	cformatline('int '+rdnom+'_init_blk(void)"+...
 		    " ;',70);
 	''
 	cformatline('int '+rdnom+'_rt_exec(scicos_block *block_'+rdnom+',double *z, double *t)"+...
@@ -2460,6 +2464,7 @@ function Code=make_standalone()
 //Author : Rachid Djenidi
 //Modified for RTAI by Paolo Mantegazza (mantegazza@aero.polimi.it)
 //and Roberto Bucher (roberto.bucher@die.supsi.ch)
+//Les fonction zdoit, cdoit, doit sont pas utilisée pour le moment
 
 x=cpr.state.x;
 nX=size(x,'*');
@@ -2499,7 +2504,6 @@ niwa=size(z,'*')+size(outtb,'*');
 	 rdnom+'_init_blk()';
 	 '{'
 	 '  double t;'
-	 '  int nevprt=1;'
 	 '']
   Code=[Code
 	'  void **work;'
@@ -2604,7 +2608,7 @@ end
 
   Code=[Code;
 	'  '+rdnom+'_init(block_'+rdnom+',z,&t);'
-	'  return ;'
+	'  return 0;'
 	'}' 
 	''
 	'int '+rdnom+'_rt_exec(scicos_block *block_'+rdnom+',double *z, double *t)'
@@ -2632,7 +2636,8 @@ end
         '    he=*t+dt-tout;'
         '    '+odefun+'(C2F('+rdnom+'simblk),tout,he);']
   end
-  Code=[Code	
+  Code=[Code
+	'return 0;'	
 	'}'
 	'' 
 	'/*'+part('-',ones(1,40))+'  Lapack messag function */ ';
@@ -2701,6 +2706,7 @@ Code=[Code
       '{ '
       '  /* int iwa[1]={0}; */'
       '  int phase=2;'
+      '  neq='+string(nX)+';'
       '  C2F(dset)(&neq, &c_b14,xcdot , &c__1);'
       '  '+rdnom+'odoit(t, '+rdnom+'_block_outtb,'+rdnom+'_iwa,phase,xcdot, xc, xcdot);'
       ' '
@@ -2898,7 +2904,7 @@ function Code=make_static_standalone()
 
 	  RCode=[RCode;cformatline('rpar= {'+strcat(string(rpar(rpptr(i):rpptr(i+1)-1)),",")+'};',70)];
 	  RCode($+1)='*/';
-	  RCode=[RCode;cformatline(strcat(string(rpar(rpptr(i):rpptr(i+1)-1))+','),70)];
+	  RCode=[RCode;cformatline(strcat(msprintf('%.16g,\n',rpar(rpptr(i):rpptr(i+1)-1))),70)];
 	  strRCode = strRCode + '""' + str_id + '"",';
 	  lenRCode = lenRCode + string(rpptr(i+1)-rpptr(i)) + ',';
 //	end

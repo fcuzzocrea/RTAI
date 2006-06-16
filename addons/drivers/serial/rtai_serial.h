@@ -395,7 +395,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spset_callback_fun, (unsigned int tty, void (*c
 {
 	int ret;
 	pthread_t thread;
-	struct { int tty; void *callback_fun; int rxthrs, txthrs, code; void *task; } arg = { tty, callback_fun, rxthrs, txthrs, _SPSET_CALLBACK, 0 };
+	struct { int tty; void (*callback_fun)(int, int); int rxthrs, txthrs, code; void *task; } arg = { tty, callback_fun, rxthrs, txthrs, _SPSET_CALLBACK, 0 };
 	if ((ret = rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_CALLBACK, &arg).i[LOW]) == EINVAL) {
 		void *argp;
 		argp = (void *)malloc(sizeof(arg));
@@ -409,7 +409,7 @@ RTAI_PROTO_ALWAYS_INLINE(int, rt_spset_err_callback_fun, (unsigned int tty, void
 {
 	int ret;
 	pthread_t thread;
-	struct { int tty; void *err_callback_fun; int dummy1, dummy2, code; void *task; } arg = { tty, err_callback_fun, 0, 0, _SPSET_ERR_CALLBACK, 0 };
+	struct { int tty; void (*err_callback_fun)(int); int dummy1, dummy2, code; void *task; } arg = { tty, err_callback_fun, 0, 0, _SPSET_ERR_CALLBACK, 0 };
 	if ((ret = rtai_lxrt(FUN_EXT_RTAI_SP, SIZARG, _SPSET_ERR_CALLBACK, &arg).i[LOW]) == EINVAL) {
 		void *argp;
 		argp = (void *)malloc(sizeof(arg));

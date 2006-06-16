@@ -17,54 +17,57 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <rtai_netrpc.h>
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
 #include <string.h>
 #include "rtmain.h"
-#include "devstruct.h"
 
 #define MAX_RTAI_METERS               1000
 #define MBX_RTAI_METER_SIZE           5000
 
-extern char *TargetMeterMbxID;
-extern devStr outDevStr[];
-extern int pout_cnt;
-
-int out_rtai_meter_init(char * sName)
-{
+struct meter{
+  char meterName[20];
   MBX * mbx;
-  char name[7];
-  int port=pout_cnt++;
+};
 
-  strcpy(outDevStr[port].IOName,"Meter");
+extern char *TargetMeterMbxID;
+
+void * out_rtai_meter_init(char * sName)
+{
+  struct meter * met;
+  char name[7];
+
+  met = (struct meter *) malloc(sizeof(struct meter));
+  strcpy(met->meterName,sName);
   rtRegisterMeter(sName,1);
   get_a_name(TargetMeterMbxID,name);
 
-  mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(MBX_RTAI_METER_SIZE/(sizeof(float)))*(sizeof(float)),FIFO_Q);
-  if(mbx == NULL) {
+  met->mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(MBX_RTAI_METER_SIZE/(sizeof(float)))*(sizeof(float)),FIFO_Q);
+  if(met->mbx == NULL) {
     fprintf(stderr, "Cannot init mailbox\n");
     exit_on_error();
   }
-  outDevStr[port].ptr1 = (void *) mbx;
 
-  return(port);
+  return((void *) met);
 }
 
-void out_rtai_meter_output(int port, double * u, double t)
+void out_rtai_meter_output(void * ptr, double * u, double t)
 {
-  MBX *mbx = (MBX *) outDevStr[port].ptr1;
+  struct meter * met = (struct meter *) ptr;
   float data;
 
   data = (float) *u;
-  RT_mbx_send_if(0, 0, mbx, &data, sizeof(data));
+  RT_mbx_send_if(0, 0, met->mbx, &data, sizeof(data));
 }
 
-void out_rtai_meter_end(int port)
+void out_rtai_meter_end(void * ptr)
 {
-  MBX *mbx = (MBX *) outDevStr[port].ptr1;
-  RT_named_mbx_delete(0, 0, mbx);
-  printf("%s closed\n",outDevStr[port].IOName);
+  struct meter * met = (struct meter *) ptr;
+  RT_named_mbx_delete(0, 0, met->mbx);
+  printf("Meter %s closed\n",met->meterName);
+  free(met);
 }
 
 

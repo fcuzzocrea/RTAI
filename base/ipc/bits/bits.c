@@ -164,7 +164,7 @@ int rt_bits_delete(BITS *bits)
 	QUEUE *q;
 
 	if (bits->magic != RT_BITS_MAGIC) {
-		return BITS_ERR;
+		return RTE_OBJINV;
 	}
 
 	schedmap = 0;
@@ -174,6 +174,7 @@ int rt_bits_delete(BITS *bits)
 	while ((q = q->next) != &bits->queue && (task = q->task)) {
 		rem_timed_task(task);
 		if (task->state != RT_SCHED_READY && (task->state &= ~(RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED)) == RT_SCHED_READY) {
+			task->blocked_on = RTP_OBJREM;
 			enq_ready_task(task);	
 #ifdef CONFIG_SMP
 			set_bit(task->runnable_on_cpus & 0x1F, &schedmap);
@@ -201,7 +202,7 @@ int rt_bits_reset(BITS *bits, unsigned long mask)
 	QUEUE *q;
 
 	if (bits->magic != RT_BITS_MAGIC) {
-		return BITS_ERR;
+		return RTE_OBJINV;
 	}
 
 	schedmap = 0;
@@ -232,7 +233,7 @@ unsigned long rt_bits_signal(BITS *bits, int setfun, unsigned long masks)
 	QUEUE *q;
 
 	if (bits->magic != RT_BITS_MAGIC) {
-		return BITS_ERR;
+		return RTE_OBJINV;
 	}
 
 	schedmap = 0;
@@ -264,7 +265,7 @@ int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun,
 	unsigned long flags, mask;
 
 	if (bits->magic != RT_BITS_MAGIC) {
-		return BITS_ERR;
+		return RTE_OBJINV;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -279,10 +280,14 @@ int _rt_bits_wait(BITS *bits, int testfun, unsigned long testmasks, int exitfun,
 		enqueue_blocked(rt_current, &bits->queue, 1);
 		rt_schedule();
 		mask = bits->mask;
-		if (rt_current->blocked_on || bits->magic != RT_BITS_MAGIC) {
-			rt_current->prio_passed_to = NOTHING;
+		if ((void *)rt_current->blocked_on != RTP_OBJREM) {
+			dequeue_blocked(rt_current);
 			rt_global_restore_flags(flags);
-			return BITS_ERR;
+			return RTE_UNBLKD;
+		} else {
+			rt_current->prio_passed_to = NULL;
+			rt_global_restore_flags(flags);
+			return RTE_OBJREM;
 		}
 	} else {
 		mask = bits->mask;
@@ -304,7 +309,7 @@ int _rt_bits_wait_if(BITS *bits, int testfun, unsigned long testmasks, int exitf
 	unsigned long flags, mask;
 
 	if (bits->magic != RT_BITS_MAGIC) {
-		return BITS_ERR;
+		return RTE_OBJINV;
 	}
 
 	flags = rt_global_save_flags_and_cli();
@@ -331,11 +336,12 @@ int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int ex
 	unsigned long flags, mask;
 
 	if (bits->magic != RT_BITS_MAGIC) {
-		return BITS_ERR;
+		return RTE_OBJINV;
 	}
 
 	flags = rt_global_save_flags_and_cli();
 	if (!test_fun[testfun](bits, testmasks)) {
+		void *retval;
 		long bits_test[2];
 		rt_current = RT_CURRENT;
 		TEST_BUF(rt_current, bits_test);
@@ -352,14 +358,14 @@ int _rt_bits_wait_until(BITS *bits, int testfun, unsigned long testmasks, int ex
 			rt_current->queue.prev = rt_current->queue.next = &rt_current->queue;
 		}
 		mask = bits->mask;
-		if (bits->magic != RT_BITS_MAGIC) {
-			rt_current->prio_passed_to = NOTHING;
-			rt_global_restore_flags(flags);
-			return BITS_ERR;
-		} else if (rt_current->blocked_on) {
+		if ((retval = rt_current->blocked_on) != RTP_OBJREM) {
 			dequeue_blocked(rt_current);
 			rt_global_restore_flags(flags);
-			return BITS_TIMOUT;
+			return likely(retval > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
+		} else {
+			rt_current->prio_passed_to = NULL;
+			rt_global_restore_flags(flags);
+			return RTE_OBJREM;
 		}
 	} else {
 		mask = bits->mask;
@@ -401,7 +407,7 @@ BITS *rt_named_bits_init(const char *bits_name, unsigned long mask)
 		rt_bits_delete(bits);
 	}
 	rt_free(bits);
-	return (BITS *)0;
+	return NULL;
 }
 
 int rt_named_bits_delete(BITS *bits)

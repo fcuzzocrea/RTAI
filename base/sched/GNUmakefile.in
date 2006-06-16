@@ -36,23 +36,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@am__append_1 = libsched_up.a
-@CONFIG_RTAI_SCHED_UP_TRUE@am__append_2 = rtai_up$(modext)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@am__append_3 = libsched_mup.a
-@CONFIG_RTAI_SCHED_MUP_TRUE@am__append_4 = rtai_mup$(modext)
-@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_5 = -D__USE_APIC__
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_6 = libsched_mup-noapic.a
-@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_7 = rtai_mup-noapic$(modext)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@am__append_8 = libsched_smp.a
-@CONFIG_RTAI_SCHED_SMP_TRUE@am__append_9 = rtai_smp$(modext)
-@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_10 = -D__USE_APIC__
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_11 = libsched_smp-noapic.a
-@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_12 = rtai_smp-noapic$(modext)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@am__append_13 = libsched_lxrt.a
-@CONFIG_RTAI_SCHED_LXRT_TRUE@am__append_14 = rtai_lxrt$(modext)
-@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_15 = -D__USE_APIC__
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_16 = libsched_lxrt-noapic.a
-@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am__append_17 = rtai_lxrt-noapic$(modext)
+@CONFIG_KBUILD_FALSE@am__append_1 = libsched_sched.a libsched_lxrt.a
 subdir = base/sched
 DIST_COMMON = $(srcdir)/GNUmakefile.am $(srcdir)/GNUmakefile.in \
 	$(srcdir)/Makefile.kbuild
@@ -68,52 +52,14 @@ CONFIG_HEADER = $(top_builddir)/rtai_config.h
 CONFIG_CLEAN_FILES = Makefile
 LIBRARIES = $(noinst_LIBRARIES)
 ARFLAGS = cru
-libsched_lxrt_noapic_a_LIBADD =
-am__libsched_lxrt_noapic_a_SOURCES_DIST = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am_libsched_lxrt_noapic_a_OBJECTS = libsched_lxrt_noapic_a-sched.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	libsched_lxrt_noapic_a-sys.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	libsched_lxrt_noapic_a-api.$(OBJEXT)
-libsched_lxrt_noapic_a_OBJECTS = $(am_libsched_lxrt_noapic_a_OBJECTS)
 libsched_lxrt_a_LIBADD =
-am__libsched_lxrt_a_SOURCES_DIST = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_LXRT_TRUE@am_libsched_lxrt_a_OBJECTS =  \
-@CONFIG_RTAI_SCHED_LXRT_TRUE@	libsched_lxrt_a-sched.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_LXRT_TRUE@	libsched_lxrt_a-sys.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_LXRT_TRUE@	libsched_lxrt_a-api.$(OBJEXT)
+am_libsched_lxrt_a_OBJECTS = libsched_lxrt_a-sched.$(OBJEXT) \
+	libsched_lxrt_a-sys.$(OBJEXT) libsched_lxrt_a-api.$(OBJEXT)
 libsched_lxrt_a_OBJECTS = $(am_libsched_lxrt_a_OBJECTS)
-libsched_mup_noapic_a_LIBADD =
-am__libsched_mup_noapic_a_SOURCES_DIST = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am_libsched_mup_noapic_a_OBJECTS = libsched_mup_noapic_a-sched.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	libsched_mup_noapic_a-sys.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	libsched_mup_noapic_a-api.$(OBJEXT)
-libsched_mup_noapic_a_OBJECTS = $(am_libsched_mup_noapic_a_OBJECTS)
-libsched_mup_a_LIBADD =
-am__libsched_mup_a_SOURCES_DIST = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_MUP_TRUE@am_libsched_mup_a_OBJECTS =  \
-@CONFIG_RTAI_SCHED_MUP_TRUE@	libsched_mup_a-sched.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_MUP_TRUE@	libsched_mup_a-sys.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_MUP_TRUE@	libsched_mup_a-api.$(OBJEXT)
-libsched_mup_a_OBJECTS = $(am_libsched_mup_a_OBJECTS)
-libsched_smp_noapic_a_LIBADD =
-am__libsched_smp_noapic_a_SOURCES_DIST = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@am_libsched_smp_noapic_a_OBJECTS = libsched_smp_noapic_a-sched.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	libsched_smp_noapic_a-sys.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	libsched_smp_noapic_a-api.$(OBJEXT)
-libsched_smp_noapic_a_OBJECTS = $(am_libsched_smp_noapic_a_OBJECTS)
-libsched_smp_a_LIBADD =
-am__libsched_smp_a_SOURCES_DIST = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_SMP_TRUE@am_libsched_smp_a_OBJECTS =  \
-@CONFIG_RTAI_SCHED_SMP_TRUE@	libsched_smp_a-sched.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_SMP_TRUE@	libsched_smp_a-sys.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_SMP_TRUE@	libsched_smp_a-api.$(OBJEXT)
-libsched_smp_a_OBJECTS = $(am_libsched_smp_a_OBJECTS)
-libsched_up_a_LIBADD =
-am__libsched_up_a_SOURCES_DIST = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_UP_TRUE@am_libsched_up_a_OBJECTS =  \
-@CONFIG_RTAI_SCHED_UP_TRUE@	libsched_up_a-sched.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_UP_TRUE@	libsched_up_a-sys.$(OBJEXT) \
-@CONFIG_RTAI_SCHED_UP_TRUE@	libsched_up_a-api.$(OBJEXT)
-libsched_up_a_OBJECTS = $(am_libsched_up_a_OBJECTS)
+libsched_sched_a_LIBADD =
+am_libsched_sched_a_OBJECTS = libsched_sched_a-sched.$(OBJEXT) \
+	libsched_sched_a-sys.$(OBJEXT) libsched_sched_a-api.$(OBJEXT)
+libsched_sched_a_OBJECTS = $(am_libsched_sched_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/base/config/autoconf/depcomp
 am__depfiles_maybe = depfiles
@@ -125,17 +71,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libsched_lxrt_noapic_a_SOURCES) $(libsched_lxrt_a_SOURCES) \
-	$(libsched_mup_noapic_a_SOURCES) $(libsched_mup_a_SOURCES) \
-	$(libsched_smp_noapic_a_SOURCES) $(libsched_smp_a_SOURCES) \
-	$(libsched_up_a_SOURCES)
-DIST_SOURCES = $(am__libsched_lxrt_noapic_a_SOURCES_DIST) \
-	$(am__libsched_lxrt_a_SOURCES_DIST) \
-	$(am__libsched_mup_noapic_a_SOURCES_DIST) \
-	$(am__libsched_mup_a_SOURCES_DIST) \
-	$(am__libsched_smp_noapic_a_SOURCES_DIST) \
-	$(am__libsched_smp_a_SOURCES_DIST) \
-	$(am__libsched_up_a_SOURCES_DIST)
+SOURCES = $(libsched_lxrt_a_SOURCES) $(libsched_sched_a_SOURCES)
+DIST_SOURCES = $(libsched_lxrt_a_SOURCES) $(libsched_sched_a_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -422,80 +359,34 @@ sharedstatedir = @sharedstatedir@
 subdirs = @subdirs@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
-moduledir = $(DESTDIR)@RTAI_MODULE_DIR@
+moduledir = @RTAI_MODULE_DIR@
 modext = @RTAI_MODULE_EXT@
-schedulers = $(am__append_2) $(am__append_4) $(am__append_7) \
-	$(am__append_9) $(am__append_12) $(am__append_14) \
-	$(am__append_17)
-noinst_LIBRARIES = $(am__append_1) $(am__append_3) $(am__append_6) \
-	$(am__append_8) $(am__append_11) $(am__append_13) \
-	$(am__append_16)
+schedulers = rtai_sched$(modext) rtai_lxrt$(modext)
+legacy_schedulers = up mup smp ksched
+noinst_LIBRARIES = $(am__append_1)
 builtins = @RTAI_BUILTIN_MODLIST@
-@CONFIG_SMP_FALSE@default_ksched = rtai_up$(modext)
-@CONFIG_SMP_TRUE@default_ksched = rtai_smp$(modext)
 @CONFIG_KBUILD_TRUE@builtins_srclist = $(wildcard $(foreach mod,$(builtins),$(patsubst %,$(top_srcdir)/base/%/*.[chS],$(mod))))
 @CONFIG_KBUILD_FALSE@builtins_objlist = $(foreach mod,$(builtins),$(patsubst %,../%/rtai_$(notdir $(mod)).o,$(mod)))
-@CONFIG_RTAI_SCHED_UP_TRUE@libsched_up_a_SOURCES = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_UP_TRUE@rtai_up_extradef = -DUSE_RTAI_TASKS=1
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@libsched_up_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@libsched_up_a_CPPFLAGS = \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@	@RTAI_KMOD_CFLAGS@ \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@	-DUSE_RTAI_TASKS=1 \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@	-I$(top_srcdir)/base/include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@	-I../include
 
-@CONFIG_RTAI_SCHED_MUP_TRUE@libsched_mup_a_SOURCES = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_MUP_TRUE@rtai_mup_extradef = -DUSE_RTAI_TASKS=1 \
-@CONFIG_RTAI_SCHED_MUP_TRUE@	$(am__append_5)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@libsched_mup_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@libsched_mup_a_CPPFLAGS = @RTAI_KMOD_CFLAGS@ \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@	-DUSE_RTAI_TASKS=1 \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@	-I$(top_srcdir)/base/include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@	-I../include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@	$(rtai_mup_extradef)
-@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_mup_noapic_a_SOURCES = sched.c sys.c api.c
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_mup_noapic_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_mup_noapic_a_CPPFLAGS = \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KMOD_CFLAGS@ \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-DUSE_RTAI_TASKS=1 \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-I$(top_srcdir)/base/include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-I../include
+# SCHED
+libsched_sched_a_SOURCES = sched.c sys.c api.c
+rtai_sched_extradef = -DUSE_RTAI_TASKS=1
+@CONFIG_KBUILD_FALSE@libsched_sched_a_AR = $(CROSS_COMPILE)ar cru
+@CONFIG_KBUILD_FALSE@libsched_sched_a_CPPFLAGS = \
+@CONFIG_KBUILD_FALSE@	@RTAI_KMOD_CFLAGS@ \
+@CONFIG_KBUILD_FALSE@	-DUSE_RTAI_TASKS=1 \
+@CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include \
+@CONFIG_KBUILD_FALSE@	-I../include
 
-@CONFIG_RTAI_SCHED_SMP_TRUE@libsched_smp_a_SOURCES = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_SMP_TRUE@rtai_smp_extradef = -DUSE_RTAI_TASKS=1 \
-@CONFIG_RTAI_SCHED_SMP_TRUE@	$(am__append_10)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@libsched_smp_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@libsched_smp_a_CPPFLAGS = @RTAI_KMOD_CFLAGS@ \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@	-DUSE_RTAI_TASKS=1 \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@	-I$(top_srcdir)/base/include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@	-I../include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@	$(rtai_smp_extradef)
-@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_smp_noapic_a_SOURCES = sched.c sys.c api.c
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_smp_noapic_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_smp_noapic_a_CPPFLAGS = \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KMOD_CFLAGS@ \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-DUSE_RTAI_TASKS=1 \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-I$(top_srcdir)/base/include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-I../include
 
-@CONFIG_RTAI_SCHED_LXRT_TRUE@libsched_lxrt_a_SOURCES = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_LXRT_TRUE@rtai_lxrt_extradef = -D__RTAI_LXRT__ \
-@CONFIG_RTAI_SCHED_LXRT_TRUE@	-DUSE_RTAI_TASKS=0 \
-@CONFIG_RTAI_SCHED_LXRT_TRUE@	$(am__append_15)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@libsched_lxrt_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@libsched_lxrt_a_CPPFLAGS = @RTAI_KMOD_CFLAGS@ \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@	-DUSE_RTAI_TASKS=0 \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@	-I$(top_srcdir)/base/include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@	-I../include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@	$(rtai_lxrt_extradef)
-@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_lxrt_noapic_a_SOURCES = sched.c sys.c api.c
-@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_lxrt_noapic_extradef = -D__RTAI_LXRT__ -DUSE_RTAI_TASKS=0
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_lxrt_noapic_a_AR = $(CROSS_COMPILE)ar cru
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@libsched_lxrt_noapic_a_CPPFLAGS = @RTAI_KMOD_CFLAGS@ \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-DUSE_RTAI_TASKS=0 \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-I$(top_srcdir)/base/include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	-I../include \
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	$(rtai_lxrt_noapic_extradef)
+# LXRT
+libsched_lxrt_a_SOURCES = sched.c sys.c api.c
+rtai_lxrt_extradef = -DUSE_RTAI_TASKS=0 # -D__RTAI_LXRT__
+@CONFIG_KBUILD_FALSE@libsched_lxrt_a_AR = $(CROSS_COMPILE)ar cru
+@CONFIG_KBUILD_FALSE@libsched_lxrt_a_CPPFLAGS = @RTAI_KMOD_CFLAGS@ \
+@CONFIG_KBUILD_FALSE@	-DUSE_RTAI_TASKS=0 \
+@CONFIG_KBUILD_FALSE@	-I$(top_srcdir)/base/include -I../include \
+@CONFIG_KBUILD_FALSE@	$(rtai_lxrt_extradef)
 @CONFIG_RTAI_SCHED_LXRT_TRUE@OPTDIRS = liblxrt
 SUBDIRS = $(OPTDIRS)
 EXTRA_DIST = Makefile.kbuild sched.piped sched.immed
@@ -535,34 +426,14 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libsched_lxrt-noapic.a: $(libsched_lxrt_noapic_a_OBJECTS) $(libsched_lxrt_noapic_a_DEPENDENCIES) 
-	-rm -f libsched_lxrt-noapic.a
-	$(libsched_lxrt_noapic_a_AR) libsched_lxrt-noapic.a $(libsched_lxrt_noapic_a_OBJECTS) $(libsched_lxrt_noapic_a_LIBADD)
-	$(RANLIB) libsched_lxrt-noapic.a
 libsched_lxrt.a: $(libsched_lxrt_a_OBJECTS) $(libsched_lxrt_a_DEPENDENCIES) 
 	-rm -f libsched_lxrt.a
 	$(libsched_lxrt_a_AR) libsched_lxrt.a $(libsched_lxrt_a_OBJECTS) $(libsched_lxrt_a_LIBADD)
 	$(RANLIB) libsched_lxrt.a
-libsched_mup-noapic.a: $(libsched_mup_noapic_a_OBJECTS) $(libsched_mup_noapic_a_DEPENDENCIES) 
-	-rm -f libsched_mup-noapic.a
-	$(libsched_mup_noapic_a_AR) libsched_mup-noapic.a $(libsched_mup_noapic_a_OBJECTS) $(libsched_mup_noapic_a_LIBADD)
-	$(RANLIB) libsched_mup-noapic.a
-libsched_mup.a: $(libsched_mup_a_OBJECTS) $(libsched_mup_a_DEPENDENCIES) 
-	-rm -f libsched_mup.a
-	$(libsched_mup_a_AR) libsched_mup.a $(libsched_mup_a_OBJECTS) $(libsched_mup_a_LIBADD)
-	$(RANLIB) libsched_mup.a
-libsched_smp-noapic.a: $(libsched_smp_noapic_a_OBJECTS) $(libsched_smp_noapic_a_DEPENDENCIES) 
-	-rm -f libsched_smp-noapic.a
-	$(libsched_smp_noapic_a_AR) libsched_smp-noapic.a $(libsched_smp_noapic_a_OBJECTS) $(libsched_smp_noapic_a_LIBADD)
-	$(RANLIB) libsched_smp-noapic.a
-libsched_smp.a: $(libsched_smp_a_OBJECTS) $(libsched_smp_a_DEPENDENCIES) 
-	-rm -f libsched_smp.a
-	$(libsched_smp_a_AR) libsched_smp.a $(libsched_smp_a_OBJECTS) $(libsched_smp_a_LIBADD)
-	$(RANLIB) libsched_smp.a
-libsched_up.a: $(libsched_up_a_OBJECTS) $(libsched_up_a_DEPENDENCIES) 
-	-rm -f libsched_up.a
-	$(libsched_up_a_AR) libsched_up.a $(libsched_up_a_OBJECTS) $(libsched_up_a_LIBADD)
-	$(RANLIB) libsched_up.a
+libsched_sched.a: $(libsched_sched_a_OBJECTS) $(libsched_sched_a_DEPENDENCIES) 
+	-rm -f libsched_sched.a
+	$(libsched_sched_a_AR) libsched_sched.a $(libsched_sched_a_OBJECTS) $(libsched_sched_a_LIBADD)
+	$(RANLIB) libsched_sched.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -573,24 +444,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_lxrt_a-api.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_lxrt_a-sched.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_lxrt_a-sys.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_lxrt_noapic_a-api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_lxrt_noapic_a-sched.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_lxrt_noapic_a-sys.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_mup_a-api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_mup_a-sched.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_mup_a-sys.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_mup_noapic_a-api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_mup_noapic_a-sched.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_mup_noapic_a-sys.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_smp_a-api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_smp_a-sched.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_smp_a-sys.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_smp_noapic_a-api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_smp_noapic_a-sched.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_smp_noapic_a-sys.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_up_a-api.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_up_a-sched.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_up_a-sys.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_sched_a-api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_sched_a-sched.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsched_sched_a-sys.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -612,48 +468,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-libsched_lxrt_noapic_a-sched.o: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_lxrt_noapic_a-sched.o -MD -MP -MF "$(DEPDIR)/libsched_lxrt_noapic_a-sched.Tpo" -c -o libsched_lxrt_noapic_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_lxrt_noapic_a-sched.Tpo" "$(DEPDIR)/libsched_lxrt_noapic_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_lxrt_noapic_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_lxrt_noapic_a-sched.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_lxrt_noapic_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c
-
-libsched_lxrt_noapic_a-sched.obj: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_lxrt_noapic_a-sched.obj -MD -MP -MF "$(DEPDIR)/libsched_lxrt_noapic_a-sched.Tpo" -c -o libsched_lxrt_noapic_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_lxrt_noapic_a-sched.Tpo" "$(DEPDIR)/libsched_lxrt_noapic_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_lxrt_noapic_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_lxrt_noapic_a-sched.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_lxrt_noapic_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`
-
-libsched_lxrt_noapic_a-sys.o: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_lxrt_noapic_a-sys.o -MD -MP -MF "$(DEPDIR)/libsched_lxrt_noapic_a-sys.Tpo" -c -o libsched_lxrt_noapic_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_lxrt_noapic_a-sys.Tpo" "$(DEPDIR)/libsched_lxrt_noapic_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_lxrt_noapic_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_lxrt_noapic_a-sys.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_lxrt_noapic_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c
-
-libsched_lxrt_noapic_a-sys.obj: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_lxrt_noapic_a-sys.obj -MD -MP -MF "$(DEPDIR)/libsched_lxrt_noapic_a-sys.Tpo" -c -o libsched_lxrt_noapic_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_lxrt_noapic_a-sys.Tpo" "$(DEPDIR)/libsched_lxrt_noapic_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_lxrt_noapic_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_lxrt_noapic_a-sys.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_lxrt_noapic_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`
-
-libsched_lxrt_noapic_a-api.o: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_lxrt_noapic_a-api.o -MD -MP -MF "$(DEPDIR)/libsched_lxrt_noapic_a-api.Tpo" -c -o libsched_lxrt_noapic_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_lxrt_noapic_a-api.Tpo" "$(DEPDIR)/libsched_lxrt_noapic_a-api.Po"; else rm -f "$(DEPDIR)/libsched_lxrt_noapic_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_lxrt_noapic_a-api.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_lxrt_noapic_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c
-
-libsched_lxrt_noapic_a-api.obj: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_lxrt_noapic_a-api.obj -MD -MP -MF "$(DEPDIR)/libsched_lxrt_noapic_a-api.Tpo" -c -o libsched_lxrt_noapic_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_lxrt_noapic_a-api.Tpo" "$(DEPDIR)/libsched_lxrt_noapic_a-api.Po"; else rm -f "$(DEPDIR)/libsched_lxrt_noapic_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_lxrt_noapic_a-api.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_lxrt_noapic_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`
 
 libsched_lxrt_a-sched.o: sched.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_lxrt_a-sched.o -MD -MP -MF "$(DEPDIR)/libsched_lxrt_a-sched.Tpo" -c -o libsched_lxrt_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c; \
@@ -697,215 +511,47 @@ libsched_lxrt_a-api.obj: api.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_lxrt_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_lxrt_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`
 
-libsched_mup_noapic_a-sched.o: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_noapic_a-sched.o -MD -MP -MF "$(DEPDIR)/libsched_mup_noapic_a-sched.Tpo" -c -o libsched_mup_noapic_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_noapic_a-sched.Tpo" "$(DEPDIR)/libsched_mup_noapic_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_mup_noapic_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_mup_noapic_a-sched.o' libtool=no @AMDEPBACKSLASH@
+libsched_sched_a-sched.o: sched.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_sched_a-sched.o -MD -MP -MF "$(DEPDIR)/libsched_sched_a-sched.Tpo" -c -o libsched_sched_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_sched_a-sched.Tpo" "$(DEPDIR)/libsched_sched_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_sched_a-sched.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_sched_a-sched.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_noapic_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_sched_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c
 
-libsched_mup_noapic_a-sched.obj: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_noapic_a-sched.obj -MD -MP -MF "$(DEPDIR)/libsched_mup_noapic_a-sched.Tpo" -c -o libsched_mup_noapic_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_noapic_a-sched.Tpo" "$(DEPDIR)/libsched_mup_noapic_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_mup_noapic_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_mup_noapic_a-sched.obj' libtool=no @AMDEPBACKSLASH@
+libsched_sched_a-sched.obj: sched.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_sched_a-sched.obj -MD -MP -MF "$(DEPDIR)/libsched_sched_a-sched.Tpo" -c -o libsched_sched_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_sched_a-sched.Tpo" "$(DEPDIR)/libsched_sched_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_sched_a-sched.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_sched_a-sched.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_noapic_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_sched_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`
 
-libsched_mup_noapic_a-sys.o: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_noapic_a-sys.o -MD -MP -MF "$(DEPDIR)/libsched_mup_noapic_a-sys.Tpo" -c -o libsched_mup_noapic_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_noapic_a-sys.Tpo" "$(DEPDIR)/libsched_mup_noapic_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_mup_noapic_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_mup_noapic_a-sys.o' libtool=no @AMDEPBACKSLASH@
+libsched_sched_a-sys.o: sys.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_sched_a-sys.o -MD -MP -MF "$(DEPDIR)/libsched_sched_a-sys.Tpo" -c -o libsched_sched_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_sched_a-sys.Tpo" "$(DEPDIR)/libsched_sched_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_sched_a-sys.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_sched_a-sys.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_noapic_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_sched_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c
 
-libsched_mup_noapic_a-sys.obj: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_noapic_a-sys.obj -MD -MP -MF "$(DEPDIR)/libsched_mup_noapic_a-sys.Tpo" -c -o libsched_mup_noapic_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_noapic_a-sys.Tpo" "$(DEPDIR)/libsched_mup_noapic_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_mup_noapic_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_mup_noapic_a-sys.obj' libtool=no @AMDEPBACKSLASH@
+libsched_sched_a-sys.obj: sys.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_sched_a-sys.obj -MD -MP -MF "$(DEPDIR)/libsched_sched_a-sys.Tpo" -c -o libsched_sched_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_sched_a-sys.Tpo" "$(DEPDIR)/libsched_sched_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_sched_a-sys.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_sched_a-sys.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_noapic_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_sched_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`
 
-libsched_mup_noapic_a-api.o: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_noapic_a-api.o -MD -MP -MF "$(DEPDIR)/libsched_mup_noapic_a-api.Tpo" -c -o libsched_mup_noapic_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_noapic_a-api.Tpo" "$(DEPDIR)/libsched_mup_noapic_a-api.Po"; else rm -f "$(DEPDIR)/libsched_mup_noapic_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_mup_noapic_a-api.o' libtool=no @AMDEPBACKSLASH@
+libsched_sched_a-api.o: api.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_sched_a-api.o -MD -MP -MF "$(DEPDIR)/libsched_sched_a-api.Tpo" -c -o libsched_sched_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_sched_a-api.Tpo" "$(DEPDIR)/libsched_sched_a-api.Po"; else rm -f "$(DEPDIR)/libsched_sched_a-api.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_sched_a-api.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_noapic_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_sched_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c
 
-libsched_mup_noapic_a-api.obj: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_noapic_a-api.obj -MD -MP -MF "$(DEPDIR)/libsched_mup_noapic_a-api.Tpo" -c -o libsched_mup_noapic_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_noapic_a-api.Tpo" "$(DEPDIR)/libsched_mup_noapic_a-api.Po"; else rm -f "$(DEPDIR)/libsched_mup_noapic_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_mup_noapic_a-api.obj' libtool=no @AMDEPBACKSLASH@
+libsched_sched_a-api.obj: api.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_sched_a-api.obj -MD -MP -MF "$(DEPDIR)/libsched_sched_a-api.Tpo" -c -o libsched_sched_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_sched_a-api.Tpo" "$(DEPDIR)/libsched_sched_a-api.Po"; else rm -f "$(DEPDIR)/libsched_sched_a-api.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_sched_a-api.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_noapic_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`
-
-libsched_mup_a-sched.o: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_a-sched.o -MD -MP -MF "$(DEPDIR)/libsched_mup_a-sched.Tpo" -c -o libsched_mup_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_a-sched.Tpo" "$(DEPDIR)/libsched_mup_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_mup_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_mup_a-sched.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c
-
-libsched_mup_a-sched.obj: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_a-sched.obj -MD -MP -MF "$(DEPDIR)/libsched_mup_a-sched.Tpo" -c -o libsched_mup_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_a-sched.Tpo" "$(DEPDIR)/libsched_mup_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_mup_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_mup_a-sched.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`
-
-libsched_mup_a-sys.o: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_a-sys.o -MD -MP -MF "$(DEPDIR)/libsched_mup_a-sys.Tpo" -c -o libsched_mup_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_a-sys.Tpo" "$(DEPDIR)/libsched_mup_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_mup_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_mup_a-sys.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c
-
-libsched_mup_a-sys.obj: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_a-sys.obj -MD -MP -MF "$(DEPDIR)/libsched_mup_a-sys.Tpo" -c -o libsched_mup_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_a-sys.Tpo" "$(DEPDIR)/libsched_mup_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_mup_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_mup_a-sys.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`
-
-libsched_mup_a-api.o: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_a-api.o -MD -MP -MF "$(DEPDIR)/libsched_mup_a-api.Tpo" -c -o libsched_mup_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_a-api.Tpo" "$(DEPDIR)/libsched_mup_a-api.Po"; else rm -f "$(DEPDIR)/libsched_mup_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_mup_a-api.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c
-
-libsched_mup_a-api.obj: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_mup_a-api.obj -MD -MP -MF "$(DEPDIR)/libsched_mup_a-api.Tpo" -c -o libsched_mup_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_mup_a-api.Tpo" "$(DEPDIR)/libsched_mup_a-api.Po"; else rm -f "$(DEPDIR)/libsched_mup_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_mup_a-api.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_mup_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_mup_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`
-
-libsched_smp_noapic_a-sched.o: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_noapic_a-sched.o -MD -MP -MF "$(DEPDIR)/libsched_smp_noapic_a-sched.Tpo" -c -o libsched_smp_noapic_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_noapic_a-sched.Tpo" "$(DEPDIR)/libsched_smp_noapic_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_smp_noapic_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_smp_noapic_a-sched.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_noapic_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c
-
-libsched_smp_noapic_a-sched.obj: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_noapic_a-sched.obj -MD -MP -MF "$(DEPDIR)/libsched_smp_noapic_a-sched.Tpo" -c -o libsched_smp_noapic_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_noapic_a-sched.Tpo" "$(DEPDIR)/libsched_smp_noapic_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_smp_noapic_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_smp_noapic_a-sched.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_noapic_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`
-
-libsched_smp_noapic_a-sys.o: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_noapic_a-sys.o -MD -MP -MF "$(DEPDIR)/libsched_smp_noapic_a-sys.Tpo" -c -o libsched_smp_noapic_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_noapic_a-sys.Tpo" "$(DEPDIR)/libsched_smp_noapic_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_smp_noapic_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_smp_noapic_a-sys.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_noapic_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c
-
-libsched_smp_noapic_a-sys.obj: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_noapic_a-sys.obj -MD -MP -MF "$(DEPDIR)/libsched_smp_noapic_a-sys.Tpo" -c -o libsched_smp_noapic_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_noapic_a-sys.Tpo" "$(DEPDIR)/libsched_smp_noapic_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_smp_noapic_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_smp_noapic_a-sys.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_noapic_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`
-
-libsched_smp_noapic_a-api.o: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_noapic_a-api.o -MD -MP -MF "$(DEPDIR)/libsched_smp_noapic_a-api.Tpo" -c -o libsched_smp_noapic_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_noapic_a-api.Tpo" "$(DEPDIR)/libsched_smp_noapic_a-api.Po"; else rm -f "$(DEPDIR)/libsched_smp_noapic_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_smp_noapic_a-api.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_noapic_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c
-
-libsched_smp_noapic_a-api.obj: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_noapic_a-api.obj -MD -MP -MF "$(DEPDIR)/libsched_smp_noapic_a-api.Tpo" -c -o libsched_smp_noapic_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_noapic_a-api.Tpo" "$(DEPDIR)/libsched_smp_noapic_a-api.Po"; else rm -f "$(DEPDIR)/libsched_smp_noapic_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_smp_noapic_a-api.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_noapic_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_noapic_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`
-
-libsched_smp_a-sched.o: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_a-sched.o -MD -MP -MF "$(DEPDIR)/libsched_smp_a-sched.Tpo" -c -o libsched_smp_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_a-sched.Tpo" "$(DEPDIR)/libsched_smp_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_smp_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_smp_a-sched.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c
-
-libsched_smp_a-sched.obj: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_a-sched.obj -MD -MP -MF "$(DEPDIR)/libsched_smp_a-sched.Tpo" -c -o libsched_smp_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_a-sched.Tpo" "$(DEPDIR)/libsched_smp_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_smp_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_smp_a-sched.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`
-
-libsched_smp_a-sys.o: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_a-sys.o -MD -MP -MF "$(DEPDIR)/libsched_smp_a-sys.Tpo" -c -o libsched_smp_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_a-sys.Tpo" "$(DEPDIR)/libsched_smp_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_smp_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_smp_a-sys.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c
-
-libsched_smp_a-sys.obj: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_a-sys.obj -MD -MP -MF "$(DEPDIR)/libsched_smp_a-sys.Tpo" -c -o libsched_smp_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_a-sys.Tpo" "$(DEPDIR)/libsched_smp_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_smp_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_smp_a-sys.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`
-
-libsched_smp_a-api.o: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_a-api.o -MD -MP -MF "$(DEPDIR)/libsched_smp_a-api.Tpo" -c -o libsched_smp_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_a-api.Tpo" "$(DEPDIR)/libsched_smp_a-api.Po"; else rm -f "$(DEPDIR)/libsched_smp_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_smp_a-api.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c
-
-libsched_smp_a-api.obj: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_smp_a-api.obj -MD -MP -MF "$(DEPDIR)/libsched_smp_a-api.Tpo" -c -o libsched_smp_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_smp_a-api.Tpo" "$(DEPDIR)/libsched_smp_a-api.Po"; else rm -f "$(DEPDIR)/libsched_smp_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_smp_a-api.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_smp_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_smp_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`
-
-libsched_up_a-sched.o: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_up_a-sched.o -MD -MP -MF "$(DEPDIR)/libsched_up_a-sched.Tpo" -c -o libsched_up_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_up_a-sched.Tpo" "$(DEPDIR)/libsched_up_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_up_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_up_a-sched.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_up_a-sched.o `test -f 'sched.c' || echo '$(srcdir)/'`sched.c
-
-libsched_up_a-sched.obj: sched.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_up_a-sched.obj -MD -MP -MF "$(DEPDIR)/libsched_up_a-sched.Tpo" -c -o libsched_up_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_up_a-sched.Tpo" "$(DEPDIR)/libsched_up_a-sched.Po"; else rm -f "$(DEPDIR)/libsched_up_a-sched.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sched.c' object='libsched_up_a-sched.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_up_a-sched.obj `if test -f 'sched.c'; then $(CYGPATH_W) 'sched.c'; else $(CYGPATH_W) '$(srcdir)/sched.c'; fi`
-
-libsched_up_a-sys.o: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_up_a-sys.o -MD -MP -MF "$(DEPDIR)/libsched_up_a-sys.Tpo" -c -o libsched_up_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_up_a-sys.Tpo" "$(DEPDIR)/libsched_up_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_up_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_up_a-sys.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_up_a-sys.o `test -f 'sys.c' || echo '$(srcdir)/'`sys.c
-
-libsched_up_a-sys.obj: sys.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_up_a-sys.obj -MD -MP -MF "$(DEPDIR)/libsched_up_a-sys.Tpo" -c -o libsched_up_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_up_a-sys.Tpo" "$(DEPDIR)/libsched_up_a-sys.Po"; else rm -f "$(DEPDIR)/libsched_up_a-sys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='sys.c' object='libsched_up_a-sys.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_up_a-sys.obj `if test -f 'sys.c'; then $(CYGPATH_W) 'sys.c'; else $(CYGPATH_W) '$(srcdir)/sys.c'; fi`
-
-libsched_up_a-api.o: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_up_a-api.o -MD -MP -MF "$(DEPDIR)/libsched_up_a-api.Tpo" -c -o libsched_up_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_up_a-api.Tpo" "$(DEPDIR)/libsched_up_a-api.Po"; else rm -f "$(DEPDIR)/libsched_up_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_up_a-api.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_up_a-api.o `test -f 'api.c' || echo '$(srcdir)/'`api.c
-
-libsched_up_a-api.obj: api.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libsched_up_a-api.obj -MD -MP -MF "$(DEPDIR)/libsched_up_a-api.Tpo" -c -o libsched_up_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/libsched_up_a-api.Tpo" "$(DEPDIR)/libsched_up_a-api.Po"; else rm -f "$(DEPDIR)/libsched_up_a-api.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='api.c' object='libsched_up_a-api.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_up_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_up_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libsched_sched_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libsched_sched_a-api.obj `if test -f 'api.c'; then $(CYGPATH_W) 'api.c'; else $(CYGPATH_W) '$(srcdir)/api.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1194,80 +840,39 @@ uninstall-info: uninstall-info-recursive
 @CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CLEAN@
 @CONFIG_KBUILD_TRUE@	@$(RM) -f $(foreach src,$(builtins_srclist),$(notdir $(src)))
 
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_UP_TRUE@rtai_up.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_UP_TRUE@rtai_up.ko: $(libsched_up_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_UP_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_UP_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_up_extradef)" \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_UP_TRUE@	@RTAI_KBUILD_BOTTOM@
+@CONFIG_KBUILD_TRUE@rtai_sched.ko: @RTAI_KBUILD_ENV@
+@CONFIG_KBUILD_TRUE@rtai_sched.ko: $(libsched_sched_a_SOURCES) $(builtins_srclist)
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_sched_extradef)" \
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@
 
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@rtai_up.o: libsched_up.a $(builtins_objlist)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_UP_TRUE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
+@CONFIG_KBUILD_FALSE@rtai_sched.o: libsched_sched.a $(builtins_objlist)
+@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
 
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@rtai_mup.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@rtai_mup.ko: $(libsched_mup_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_mup_extradef)" \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@	@RTAI_KBUILD_BOTTOM@
+@CONFIG_KBUILD_TRUE@rtai_lxrt.ko: @RTAI_KBUILD_ENV@
+@CONFIG_KBUILD_TRUE@rtai_lxrt.ko: $(libsched_lxrt_a_SOURCES) $(builtins_srclist)
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_TOP@ \
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_lxrt_extradef)" \
+@CONFIG_KBUILD_TRUE@	@RTAI_KBUILD_BOTTOM@
 
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@rtai_mup.o: libsched_mup.a $(builtins_objlist)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
-
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_mup-noapic.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_mup-noapic.ko: $(libsched_mup_noapic_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_mup_extradef)" \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_BOTTOM@
-
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_mup-noapic.o: libsched_mup-noapic.a $(builtins_objlist)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_MUP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
-
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@rtai_smp.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@rtai_smp.ko: $(libsched_smp_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_smp_extradef)" \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@	@RTAI_KBUILD_BOTTOM@
-
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@rtai_smp.o: libsched_smp.a $(builtins_objlist)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
-
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_smp-noapic.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_smp-noapic.ko: $(libsched_smp_noapic_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_smp_extradef)" \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_BOTTOM@
-
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_smp-noapic.o: libsched_smp-noapic.a $(builtins_objlist)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_SMP_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
-
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@rtai_lxrt.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@rtai_lxrt.ko: $(libsched_lxrt_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_lxrt_extradef)" \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@	@RTAI_KBUILD_BOTTOM@
-
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@rtai_lxrt.o: libsched_lxrt.a $(builtins_objlist)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
-
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_lxrt-noapic.ko: @RTAI_KBUILD_ENV@
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_lxrt-noapic.ko: $(libsched_lxrt_noapic_a_SOURCES) $(builtins_srclist)
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_TOP@ \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_CMD@ rtai_extradef="$(rtai_lxrt_noapic_extradef)" \
-@CONFIG_KBUILD_TRUE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	@RTAI_KBUILD_BOTTOM@
-
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@rtai_lxrt-noapic.o: libsched_lxrt-noapic.a $(builtins_objlist)
-@CONFIG_KBUILD_FALSE@@CONFIG_RTAI_SCHED_LXRT_TRUE@@CONFIG_SMP_TRUE@@CONFIG_X86_TRUE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
+@CONFIG_KBUILD_FALSE@rtai_lxrt.o: libsched_lxrt.a $(builtins_objlist)
+@CONFIG_KBUILD_FALSE@	$(CROSS_COMPILE)$(LD) --whole-archive $< -r -o $@ $(builtins_objlist)
 
 all-local: $(schedulers)
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(mkinstalldirs) $(top_srcdir)/modules
 @CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(INSTALL_DATA) $^ $(top_srcdir)/modules
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	rm -f $(top_srcdir)/modules/rtai_ksched$(modext)
-@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	$(LN_S) $(default_ksched) $(top_srcdir)/modules/rtai_ksched$(modext)
+@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	for s in $(legacy_schedulers) ; do \
+@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@		rm -f $(top_srcdir)/modules/rtai_$$s$(modext) ; \
+@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@		$(LN_S) rtai_sched$(modext) $(top_srcdir)/modules/rtai_$$s$(modext) ; \
+@CONFIG_RTAI_OLD_FASHIONED_BUILD_TRUE@	done
 
 install-exec-local: $(schedulers)
-	$(mkinstalldirs) $(moduledir)
-	$(INSTALL_DATA) $(schedulers) $(moduledir)
-	rm -f $(moduledir)/rtai_ksched$(modext)
-	$(LN_S) $(default_ksched) $(moduledir)/rtai_ksched$(modext)
+	$(mkinstalldirs) $(DESTDIR)$(moduledir)
+	$(INSTALL_DATA) $(schedulers) $(DESTDIR)$(moduledir)
+	for s in $(legacy_schedulers) ; do \
+		rm -f $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
+		$(LN_S) rtai_sched$(modext) $(DESTDIR)$(moduledir)/rtai_$$s$(modext) ; \
+	done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

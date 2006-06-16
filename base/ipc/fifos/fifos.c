@@ -152,6 +152,9 @@ ACKNOWLEDGEMENTS:
 #include <linux/devfs_fs_kernel.h>
 #include <linux/stat.h>
 #include <linux/proc_fs.h>
+#ifdef CONFIG_SYSFS
+#include <linux/device.h>
+#endif
 
 #include <rtai_fifos.h>
 #include <rtai_trace.h>
@@ -217,6 +220,10 @@ typedef struct rt_fifo_struct {
 	F_SEM sem;
 	char name[RTF_NAMELEN+1];
 } FIFO;
+
+#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+static class_t *fifo_class = NULL;
+#endif
 
 static int fifo_srq, async_sig;
 static spinlock_t rtf_lock = SPIN_LOCK_UNLOCKED;
@@ -442,7 +449,7 @@ static inline int mbx_put(F_MBX *mbx, char **msg, int msg_size, int lnx)
 			tocpy = mbx->frbs;
 		}
 		if (lnx) {
-			copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+			rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		} else {
 			memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 		}
@@ -475,7 +482,7 @@ static inline int mbx_ovrwr_put(F_MBX *mbx, char **msg, int msg_size, int lnx)
 				tocpy = mbx->frbs;
 			}
 			if (lnx) {
-				copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
+				rt_copy_from_user(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 			} else {
 				memcpy(mbx->bufadr + mbx->lbyte, *msg, tocpy);
 			}
@@ -519,7 +526,7 @@ static inline int mbx_get(F_MBX *mbx, char **msg, int msg_size, int lnx)
 			tocpy = mbx->avbs;
 		}
 		if (lnx) {
-			copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
+			rt_copy_to_user(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		} else {
 			memcpy(*msg, mbx->bufadr + mbx->fbyte, tocpy);
 		}
@@ -548,7 +555,7 @@ static inline int mbx_evdrp(F_MBX *mbx, char **msg, int msg_size, int lnx)
 			tocpy = avbs;
 		}
 		if (lnx) {
-			copy_to_user(*msg, mbx->bufadr + fbyte, tocpy);
+			rt_copy_to_user(*msg, mbx->bufadr + fbyte, tocpy);
 		} else {
 			memcpy(*msg, mbx->bufadr + fbyte, tocpy);
 		}
@@ -1433,7 +1440,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			struct { char *buf; int count; } args;
 			int handler_ret;
 			TRACE_RTAI_FIFO(TRACE_RTAI_EV_FIFO_READ_ALLATONCE, 0, 0);
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			args.count -= mbx_receive(&(fifop->mbx), args.buf, args.count, 1);
 			if (args.count) {
 				inode->i_atime = CURRENT_TIME;
@@ -1446,13 +1453,13 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		}
 		case EAVESDROP: {
 			struct { char *buf; int count; } args;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			return args.count - mbx_evdrp(&(fifop->mbx), (char **)&args.buf, args.count, 1);
 		}
 		case READ_TIMED: {
 			struct { char *buf; int count, delay; } args;
 			int handler_ret;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			TRACE_RTAI_FIFO(TRACE_RTAI_EV_FIFO_READ_TIMED, args.count, DELAY(args.delay));
 			if (!args.delay) {
 				args.count -= mbx_receive_wp(&(fifop->mbx), args.buf, args.count, 1);
@@ -1475,7 +1482,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		case READ_IF: {
 			struct { char *buf; int count; } args;
 			int handler_ret;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			args.count -= mbx_receive_if(&(fifop->mbx), args.buf, args.count, 1);
 			if (args.count) {
 				inode->i_atime = CURRENT_TIME;
@@ -1489,7 +1496,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		case WRITE_TIMED: {
 			struct { char *buf; int count, delay; } args;
 			int handler_ret;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			TRACE_RTAI_FIFO(TRACE_RTAI_EV_FIFO_WRITE_TIMED, args.count, DELAY(args.delay));
 			if (!args.delay) {
 				args.count -= mbx_send_wp(&(fifop->mbx), args.buf, args.count, 1);
@@ -1509,7 +1516,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		case WRITE_IF: {
 			struct { char *buf; int count, delay; } args;
 			int handler_ret;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			if (args.count) {
 				args.count -= mbx_send_wp(&(fifop->mbx), args.buf, args.count, 1);
 				if (!args.count) {
@@ -1524,7 +1531,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 		}
 		case OVRWRITE: {
 			struct { char *buf; int count; } args;
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			return mbx_ovrwr_send(&(fifop->mbx), (char **)&args.buf, args.count, 1);
 		}
 		case RTF_SEM_INIT: {
@@ -1573,7 +1580,7 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 			struct rt_fifo_get_info_struct req;
 			int i, n;
 
-			copy_from_user(&req, (void *)arg, sizeof(req));
+			rt_copy_from_user(&req, (void *)arg, sizeof(req));
 			for ( i = req.fifo, n = 0; 
 			      i < MAX_FIFOS && n < req.n; 
 			      i++, n++
@@ -1584,26 +1591,26 @@ static int rtf_ioctl(struct inode *inode, struct file *filp, unsigned int cmd, u
 				info.size        = fifo[i].mbx.size;
 				info.opncnt      = fifo[i].opncnt;
 				strncpy(info.name, fifo[i].name, RTF_NAMELEN+1);
-				copy_to_user(req.ptr + n, &info, sizeof(info));
+				rt_copy_to_user(req.ptr + n, &info, sizeof(info));
 			}
 			return n;
 		}
 		case RTF_NAMED_CREATE: {
 			struct { char name[RTF_NAMELEN+1]; int size; } args;
 
-			copy_from_user(&args, (void *)arg, sizeof(args));
+			rt_copy_from_user(&args, (void *)arg, sizeof(args));
 			return rtf_named_create(args.name, args.size);
 	        }
 		case RTF_CREATE_NAMED: {
 			char name[RTF_NAMELEN+1];
 
-			copy_from_user(name, (void *)arg, RTF_NAMELEN+1);
+			rt_copy_from_user(name, (void *)arg, RTF_NAMELEN+1);
 			return rtf_create_named(name);
 	        }
 		case RTF_NAME_LOOKUP: {
 			char name[RTF_NAMELEN+1];
 
-			copy_from_user(name, (void *)arg, RTF_NAMELEN+1);
+			rt_copy_from_user(name, (void *)arg, RTF_NAMELEN+1);
 			return rtf_getfifobyname(name);
 		}
 	        case TCGETS:
@@ -1683,22 +1690,25 @@ static struct rt_fun_entry rtai_fifos_fun[] = {
 	[_GET_IF]       = { 0, rtf_get_if }
 };
 
+static int LxrtXten = 1;
+MODULE_PARM(LxrtXten, "i");
+
 static int register_lxrt_fifos_support(void)
 {
 	RT_TASK *rt_linux_tasks[NR_RT_CPUS];
 	rt_base_linux_task = rt_get_base_linux_task(rt_linux_tasks);
-	if(rt_base_linux_task->task_trap_handler[0]) {
+	if(LxrtXten && rt_base_linux_task->task_trap_handler[0]) {
 		if(((int (*)(void *, int))rt_base_linux_task->task_trap_handler[0])(rtai_fifos_fun, FUN_FIFOS_LXRT_INDX)) {
 			printk("LXRT EXTENSION SLOT FOR FIFOS (%d) ALREADY USED\n", FUN_FIFOS_LXRT_INDX);
 			return -EACCES;
 		}
 	}
-	return(0);
+	return 0;
 }
 
 static void unregister_lxrt_fifos_support(void)
 {
-	if(rt_base_linux_task->task_trap_handler[1]) {
+	if(LxrtXten && rt_base_linux_task->task_trap_handler[1]) {
 		((int (*)(void *, int))rt_base_linux_task->task_trap_handler[1])(rtai_fifos_fun, FUN_FIFOS_LXRT_INDX);
 	}
 }
@@ -1706,6 +1716,17 @@ static void unregister_lxrt_fifos_support(void)
 int __rtai_fifos_init(void)
 {
 	int minor;
+
+#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+	fifo_class = class_create(THIS_MODULE, "rtai_fifos");
+	if (!fifo_class) {
+		printk("RTAI-FIFO: cannot register major %d.\n", RTAI_FIFOS_MAJOR);
+		return -EIO;
+	}
+	for (minor = 0; minor < MAX_FIFOS; minor++) {
+		CLASS_DEVICE_CREATE(fifo_class, MKDEV(RTAI_FIFOS_MAJOR, minor), NULL, "rtf%d", minor);
+	}
+#endif /* CONFIG_SYSFS && !CONFIG_DEVFS_FS */
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS
 	if (register_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo",&rtf_fops)) {
@@ -1790,6 +1811,15 @@ void __rtai_fifos_exit(void)
 	devfs_unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
 #endif  /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) || !CONFIG_DEVFS_FS */
 #else /* !CONFIG_DEVFS_FS */
+#if defined(CONFIG_SYSFS) && defined(CONFIG_DEVFS_SYSFS) && !CONFIG_DEVFS_FS
+	{
+		int minor;
+		for (minor = 0; minor < MAX_FIFOS; minor++) {
+			class_device_destroy(fifo_class, MKDEV(RTAI_FIFOS_MAJOR, minor));
+		}
+	}
+	class_destroy(fifo_class);
+#endif /* CONFIG_SYSFS */
 	unregister_chrdev(RTAI_FIFOS_MAJOR,"rtai_fifo");
 #endif /* CONFIG_DEVFS_FS */
 

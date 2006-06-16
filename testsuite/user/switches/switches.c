@@ -49,10 +49,11 @@ static int indx[NR_RT_TASKS];
 static void *thread_fun(void *arg)
 {
 	int mytask_indx;
+	unsigned long msg;
 
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 	mytask_indx = ((int *)arg)[0];
- 	if (!(mytask[mytask_indx] = rt_task_init_schmod(taskname(mytask_indx), 0, 1000, 0, SCHED_FIFO, 1))) {
+ 	if (!(mytask[mytask_indx] = rt_task_init_schmod(taskname(mytask_indx), 0, 1000, 0, SCHED_FIFO, 0x1))) {
 		printf("CANNOT INIT TASK %u\n", taskname(mytask_indx));
 		exit(1);
 	}
@@ -61,10 +62,16 @@ static void *thread_fun(void *arg)
 	rt_make_hard_real_time();
 	hrt[mytask_indx] = 1;
 	while (!end) {
-		if (change) {
-			rt_sem_wait(sem);
-		} else {
-		 	rt_task_suspend(mytask[mytask_indx]);
+		switch (change) {
+			case 0:
+				rt_task_suspend(mytask[mytask_indx]);
+				break;
+			case 1:
+				rt_sem_wait(sem);
+				break;
+			case 2:
+				rt_return(rt_receive(NULL, &msg), 0);
+				break;
 		}
 	}
 	rt_make_soft_real_time();
@@ -82,18 +89,13 @@ static void msleep(int ms)
 
 int main(void)
 {
-	RTIME tsr, tsm;
+	RTIME tsr, tss, tsm;
 	RT_TASK *mainbuddy;
 	int i, k, s;       
- 	struct sched_param mysched;
 	pthread_attr_t attr;
+	unsigned long msg;
 
 	printf("\n\nWait for it ...\n");
- 	mysched.sched_priority = sched_get_priority_max(SCHED_FIFO) - 1;
-	if (sched_setscheduler( 0, SCHED_FIFO, &mysched ) == -1 ) {
-		printf("ERROR IN SETTING THE POSIX SCHEDULER\n");
-		exit(1);
- 	}       
 
 	pthread_attr_init(&attr);	// set default values for all attribute
 	// Set max. stack size of thread to 64 KB (default is 2 MB).
@@ -104,7 +106,7 @@ int main(void)
 		exit(1);
 	}
 
- 	if (!(mainbuddy = rt_task_init(nam2num("MASTER"), 1, 1000, 0))) {
+ 	if (!(mainbuddy = rt_task_init_schmod(nam2num("MASTER"), 1, 1000, 0, SCHED_FIFO, 0x1))) {
 		printf("CANNOT INIT TASK %lu\n", nam2num("MASTER"));
 		exit(1);
 	}
@@ -146,13 +148,28 @@ int main(void)
 		rt_task_resume(mytask[k]);
 	} 
 
-	tsm = rt_get_cpu_time_ns();
+	tss = rt_get_cpu_time_ns();
 	for (i = 0; i < LOOPS; i++) {
 		for (k = 0; k < NR_RT_TASKS; k++) {
 	        	rt_sem_signal(sem);
 		}
 	}
+	tss = rt_get_cpu_time_ns() - tss;
+
+	change = 2;
+
+	for (k = 0; k < NR_RT_TASKS; k++) {
+		rt_sem_signal(sem);
+	}
+
+	tsm = rt_get_cpu_time_ns();
+	for (i = 0; i < LOOPS; i++) {
+		for (k = 0; k < NR_RT_TASKS; k++) {
+			rt_rpc(mytask[k], 0, &msg);
+		}
+	}
 	tsm = rt_get_cpu_time_ns() - tsm;
+
 	rt_make_soft_real_time();
 
 	printf("\n\nFOR %d TASKS: ", NR_RT_TASKS);
@@ -160,13 +177,18 @@ int main(void)
 	printf("SWITCH TIME %d (ns)\n", (int)(tsr/(2*NR_RT_TASKS*LOOPS)));
 
 	printf("\nFOR %d TASKS: ", NR_RT_TASKS);
-	printf("TIME %d (ms), SEM SIG/WAIT SWITCHES %d, ", (int)(tsm/1000000), 2*NR_RT_TASKS*LOOPS);
+	printf("TIME %d (ms), SEM SIG/WAIT SWITCHES %d, ", (int)(tss/1000000), 2*NR_RT_TASKS*LOOPS);
+	printf("SWITCH TIME %d (ns)\n", (int)(tss/(2*NR_RT_TASKS*LOOPS)));
+
+	printf("\nFOR %d TASKS: ", NR_RT_TASKS);
+	printf("TIME %d (ms), RPC/RCV-RET SWITCHES %d, ", (int)(tsm/1000000), 2*NR_RT_TASKS*LOOPS);
 	printf("SWITCH TIME %d (ns)\n\n", (int)(tsm/(2*NR_RT_TASKS*LOOPS)));
+
 	fflush(stdout);
 
 	end = 1;
 	for (i = 0; i < NR_RT_TASKS; i++) {
-	        rt_sem_signal(sem);
+		rt_rpc(mytask[i], 0, &msg);
 	} 
 	do {
 		msleep(50);

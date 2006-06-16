@@ -48,6 +48,7 @@ struct option options[] = {
     { "help",       0, 0, 'h' },
     { "r8254",      0, 0, 'r' },
     { "kernel",     0, 0, 'k' },
+    { "kthreads",   0, 0, 'x' },
     { "user",       0, 0, 'u' },
     { "period",     1, 0, 'p' },
     { "time",       1, 0, 't' },
@@ -70,7 +71,9 @@ void print_usage(void)
 	 "  -r, --r8254\n"
 	 "      calibrate 8254 oneshot programming type\n"
 	 "  -k, --kernel\n"
-	 "      oneshot latency calibrated for scheduling kernel space tasks\n"
+	 "      oneshot latency calibrated for scheduling RTAI own kernel space tasks\n"
+	 "  -x, --kthreads\n"
+	 "      oneshot latency calibrated for scheduling hardened Linux kthreads\n"
 	 "  -u, --user\n"
 	 "      oneshot latency calibrated for scheduling user space tasks\n"
 	 "  -p <period (us)>, --period <period (us)>\n"
@@ -113,7 +116,7 @@ int main(int argc, char *argv[])
 
 	option_index = ncommands = 0;
 	while (1) {
-		if ((c = getopt_long(argc, argv, "hrkucabip:t:s:", options, &option_index)) == -1) {
+		if ((c = getopt_long(argc, argv, "hrkxucabip:t:s:", options, &option_index)) == -1) {
 			break;
 		}
 		switch(c) {
@@ -127,6 +130,7 @@ int main(int argc, char *argv[])
 			case 'b':
 			case 'a':
 			case 'i':
+			case 'x':
 			case 'k': {
 				commands[ncommands++] = c;
 				break;
@@ -178,12 +182,13 @@ int main(int argc, char *argv[])
 				break;
 			}
 
+			case 'x':
 			case 'k': {
 				int average;
-				args[0] = KLATENCY;
+				args[0] = command == 'k' ? KLATENCY : KTHREADS;
 				args[1] = period;
 				args[2] = duration;
-				printf("\n*** KERNEL SPACE LATENCY CALIBRATION, wait %lu seconds for it ... ***\n", args[2]);
+				printf("\n*** KERNEL SPACE LATENCY CALIBRATION (%s), wait %lu seconds for it ... ***\n", command == 'k' ? "RTAI TASKS" : "KTHREADS", args[2]);
 				args[2] = (1000000*args[2])/args[1];
 				args[1] *= 1000;
 				rtai_srq(srq, (unsigned long)args);

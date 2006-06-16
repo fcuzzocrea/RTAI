@@ -1,5 +1,7 @@
 /*
 COPYRIGHT (C) 2003  Lorenzo Dozio (dozio@aero.polimi.it)
+		    Roberto Bucher (roberto.bucher@supsi.ch)
+		    Peter Brier (pbrier@dds.nl)
 
 This library is free software; you can redistribute it and/or
 modify it under the terms of the GNU Lesser General Public
@@ -30,12 +32,12 @@ int Fl_Scope_Window::y()
 
 int Fl_Scope_Window::w()
 {
-	return SWin->w();
+	return SWin->w() - SWin->box()->dw();                          //see Fl_MDI_Window.cpp line 374 for more information
 }
 
 int Fl_Scope_Window::h()
 {
-	return SWin->h();
+	return SWin->h() - SWin->titlebar()->h() - SWin->box()->dh(); //see Fl_MDI_Window.cpp line 374 for more information
 }
 
 void Fl_Scope_Window::resize(int x, int y, int w, int h)

@@ -17,7 +17,7 @@
  */
 
 
-// A few wrappers and inlines to avoid too much an editing. 
+// Wrappers and inlines to avoid too much an editing of RTDM code. 
 // The core stuff is just RTAI in disguise.
 
 #ifndef _RTAI_XNSTUFF_H
@@ -25,6 +25,7 @@
 
 #include <linux/proc_fs.h>
 #include <asm/uaccess.h>
+#include <asm/mman.h>
 
 //recursive smp locks, as for RTAI global stuff + a name
 
@@ -98,7 +99,7 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 #define xnmalloc  rt_malloc
 #define xnfree    rt_free
 
-// in kernel printing (taken from fusion)
+// in kernel printing (taken from RTDM pet system)
 
 #define XNARCH_PROMPT "RTDM: "
 
@@ -106,7 +107,7 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 #define xnlogerr(fmt, args...)  printk(KERN_ERR  XNARCH_PROMPT fmt, ##args)
 #define xnlogwarn               xnlogerr
 
-// user space access, taken from Linux
+// user space access (taken from Linux)
 
 #define __xn_access_ok(task, type, addr, size) \
 	(access_ok(type, addr, size))
@@ -128,54 +129,129 @@ static inline void xnlock_put_irqrestore(xnlock_t *lock, spl_t flags)
 #define __xn_strncpy_from_user(task, dstP, srcP, n) \
 	({ long err = __strncpy_from_user(dstP, srcP, n); err; })
 
-// interrupt setup/management
-
-struct xnintr_struct {
-	unsigned long irq; int (*isr)(void *); void *iack; unsigned long hits; void *cookie; 
-};
-
-typedef struct xnintr_struct xnintr_t;
-
-#define xnflags_t long
-
-extern int xnintr_irq_handler(unsigned long irq, xnintr_t *intr);
-
-static inline int xnintr_init(xnintr_t *intr, unsigned long irq, void *isr, void *iack, xnflags_t flags)
+static inline int xnarch_remap_io_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size, pgprot_t prot)
 {
-	*intr = (xnintr_t){ irq, isr, iack, 0, NULL };
-	return 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(from, to, size, prot);
+
+#else /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0) */
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15)
+	return remap_pfn_range(vma, from, (to) >> PAGE_SHIFT, size, prot);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,10)
+	return remap_pfn_range(vma, from, (to) >> PAGE_SHIFT, size, prot);
+#else /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10) */
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(vma, from, to, size, prot);
+#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,15) */
+
+#endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0) */
 }
 
-static inline int xnintr_attach(xnintr_t *intr, void *cookie)
+// interrupt setup/management (adopted_&|_adapted from RTDM pet system)
+
+#define XN_ISR_NONE       0x1
+#define XN_ISR_HANDLED    0x2
+
+#define XN_ISR_PROPAGATE  0x100
+#define XN_ISR_NOENABLE   0x200
+#define XN_ISR_BITMASK    ~0xff
+
+#define XN_ISR_SHARED     0x1
+#define XN_ISR_EDGE       0x2
+
+#define XN_ISR_ATTACHED   0x10000
+
+struct xnintr;
+
+typedef int (*xnisr_t)(struct xnintr *intr);
+
+typedef int (*xniack_t)(unsigned irq);
+
+typedef unsigned long xnflags_t;
+
+typedef struct xnintr {
+    struct xnintr *next;
+    xnisr_t isr;
+    void *cookie;
+    unsigned long hits;
+    xnflags_t flags;
+    unsigned irq;
+    xniack_t iack;
+    const char *name;
+} xnintr_t;
+
+int xnintr_shirq_attach(xnintr_t *intr, void *cookie);
+int xnintr_shirq_detach(xnintr_t *intr);
+
+static inline void xnintr_init (xnintr_t *intr, const char *name, unsigned irq, xnisr_t isr, xniack_t iack, xnflags_t flags)
 {
-	intr->hits   = 0;
+	*intr = (xnintr_t) { NULL, isr, NULL, 0, flags, irq, iack, name };
+}
+
+static inline int xnintr_attach (xnintr_t *intr, void *cookie)
+{
+	intr->hits = 0;
 	intr->cookie = cookie;
-	return rt_request_irq(intr->irq, (void *)xnintr_irq_handler, intr, 0);
+	return xnintr_shirq_attach(intr, cookie);
 }
 
-static inline int xnintr_detach(xnintr_t *intr)
+static inline int xnintr_detach (xnintr_t *intr)
 {
-	xnprintf("INFO > IRQ: %lu, INTRCNT: %lu\n", intr->irq, intr->hits);
-	return rt_release_irq(intr->irq);
+	return xnintr_shirq_detach(intr);
 }
 
-static inline int xnintr_enable(xnintr_t *intr)
+static inline int xnintr_destroy (xnintr_t *intr)
+{
+	return xnintr_detach(intr);
+}
+
+static int xnintr_enable (xnintr_t *intr)
 {
 	rt_enable_irq(intr->irq);
 	return 0;
 }
 
-static inline int xnintr_disable(xnintr_t *intr)
+static int xnintr_disable (xnintr_t *intr)
 {
 	rt_disable_irq(intr->irq);
 	return 0;
 }
 
-static inline int xnintr_destroy(xnintr_t *intr)
-{
-	return xnintr_detach(intr);
-}
+#ifdef CONFIG_SMP
 
-#define testbits(var, mask)  ((var) & (mask))
+typedef struct xnintr_shirq {
+	xnintr_t *handlers;
+	atomic_t active;
+} xnintr_shirq_t;
+
+#define xnintr_shirq_lock(shirq) \
+	do { atomic_inc(&shirq->active); } while (0)
+
+#define xnintr_shirq_unlock(shirq) \
+	do { atomic_dec(&shirq->active); } while (0)
+
+#define xnintr_shirq_spin(shirq) \
+	do { while (atomic_read(&shirq->active)) cpu_relax(); } while (0)
+
+#else /* !CONFIG_SMP */
+
+typedef struct xnintr_shirq {
+	xnintr_t *handlers;
+} xnintr_shirq_t;
+
+#define xnintr_shirq_lock(shirq)
+
+#define xnintr_shirq_unlock(shirq)
+
+#define xnintr_shirq_spin(shirq)
+
+#endif /* CONFIG_SMP */
+
+#define testbits(flags, mask)  ((flags) & (mask))
+#define setbits(flags, mask)   do { (flags) |= (mask);  } while(0)
+#define clrbits(flags, mask)   do { (flags) &= ~(mask); } while(0)
 
 #endif /* !_RTAI_XNSTUFF_H */

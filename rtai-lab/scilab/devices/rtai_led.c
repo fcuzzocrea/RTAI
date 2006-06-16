@@ -17,45 +17,50 @@
 */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <rtai_netrpc.h>
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
 #include <string.h>
 #include "rtmain.h"
-#include "devstruct.h"
 
 #define MAX_RTAI_LEDS               1000
 #define MBX_RTAI_LED_SIZE           5000
 
-extern char *TargetLedMbxID;
-extern devStr outDevStr[];
-extern int pout_cnt;
-
-int out_rtai_led_init(int nch,char * sName)
-{
+struct Led{
+  int nch;
+  char ledName[20];
   MBX * mbx;
-  int port=pout_cnt++;
-  outDevStr[port].nch=nch;
-  strcpy(outDevStr[port].IOName,"Led");
+};
+
+extern char *TargetLedMbxID;
+
+void * out_rtai_led_init(int nch,char * sName)
+{
+  struct Led * led;
+
+  led=(struct Led *) malloc(sizeof(struct Led));
+
+  led->nch=nch;
+  strcpy(led->ledName,sName);
   char name[7];
 
   rtRegisterLed(sName,nch);
   get_a_name(TargetLedMbxID,name);
 
-  mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(MBX_RTAI_LED_SIZE/(sizeof(unsigned int)))*(sizeof(unsigned int)),FIFO_Q);
-  if(mbx == NULL) {
+  led->mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(MBX_RTAI_LED_SIZE/(sizeof(unsigned int)))*(sizeof(unsigned int)),FIFO_Q);
+  if(led->mbx == NULL) {
     fprintf(stderr, "Cannot init mailbox\n");
     exit_on_error();
   }
-  outDevStr[port].ptr1 = (void *) mbx;
 
-  return(port);
+  return((void *) led);
 }
 
-void out_rtai_led_output(int port, double * u, double t)
+void out_rtai_led_output(void * ptr, double * u, double t)
 {
-  MBX *mbx = (MBX *) outDevStr[port].ptr1;
-  int nleds=outDevStr[port].nch;
+  struct Led * led = (struct Led *) ptr;
+  int nleds=led->nch;
   int i;
   unsigned int led_mask = 0;
 
@@ -66,14 +71,15 @@ void out_rtai_led_output(int port, double * u, double t)
       led_mask += (0 << i);
     }
   }
-  RT_mbx_send_if(0, 0, mbx, &led_mask, sizeof(led_mask));
+  RT_mbx_send_if(0, 0, led->mbx, &led_mask, sizeof(led_mask));
 }
 
-void out_rtai_led_end(int port)
+void out_rtai_led_end(void * ptr)
 {
-  MBX *mbx = (MBX *) outDevStr[port].ptr1;
-  RT_named_mbx_delete(0, 0, mbx);
-  printf("%s closed\n",outDevStr[port].IOName);
+  struct Led * led = (struct Led *) ptr;
+  RT_named_mbx_delete(0, 0, led->mbx);
+  printf("Led %s closed\n",led->ledName);
+  free(led);
 }
 
 

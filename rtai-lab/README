@@ -55,32 +55,6 @@ to run both distributed multiple RTW and SCICOS and RTAI-Lab applications.
 For further informations refer to specific READMEs within the specific 
 "matlab" and "scilab" directories found here.
 
-There are 2 versions of the monitor/supervisor program:
-- a very simple alpha mode to be run on any screen, i.e. both aplhanumeric 
-  consoles and xterminals (rtailab);
-- a graphic mode to be run under xterminals only (xrtailab).
-The former is made under the name "rtailab" the latter as "xrtailab". To make
-"xrtailab" you need to have both FLTK and OPENGL installed on your computer,
-telling the path to them in the Makefile in this directory. They should be
-available in any of the Linux distribution, their installation being simple 
-anyhow, i.e. even if they must be recovered from their home sites.
-The usage of "(x)rtailab" should come self explained by looking at the 
-various buttons captions in "xrtailab" and by reading the, somewhat rough 
-but understandable, alpha menus of "rtailab". 
-
-Production work will likely be done under "xrtailab" mostly, while "rtailab" 
-might be useful to start/stop and quickly change parameters from anywhere. 
-Another use of "rtailab" is in making it easier debugging and testing, as it 
-allows to properly divide problems coming from the basics of the various RTAI 
-tools used from specific problems related to the FLTK/OPENGL interface of 
-"xrtailab". That is possible because both are using the same structure and 
-interface to "net_rpc", to receive/send what has to be exchanged with the 
-control application. A further help could come from the simpler "rtailab" 
-when one needs to set up an interaface to tuning an monitoring that must be 
-embedded in a specific user application. It is then simple to cut and paste 
-what is needed from "rtailab" in such a case, without being encumbered by the 
-somewhat deceiving code used in "xrtailab" to interface to FLTK C++ APIs.
-
 RTAI-Lab has been used already at DIAPM but it might be possible that its
 commit to the RTAI CVS still needs some tuning. Its testing has been mostly
 done by using LXRT under UP and NEWLXRT-NOBUDDY under MP. 
@@ -186,4 +160,5 @@ any of the most recent RTAI official releases.
 
 Lorenzo Dozio    (dozio@aero.polimi.it)
 Paolo Mantegazza (mantegazza@aero.polimi.it)
+Roberto Bucher   (roberto.bucher@supsi.ch)
 Dec. 22th, 2002.

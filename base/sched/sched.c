@@ -3011,10 +3011,8 @@ static int __rtai_lxrt_init(void)
 	int cpuid, retval;
 	
 #ifdef CONFIG_REGPARM
-	if (!USE_RTAI_TASKS) {
-		printk(KERN_INFO "RTAI[sched_lxrt]: Linux kernel REGPARM configuration enabled, RTAI will not work in user space, disable it.\n");
-		return -EINVAL;
-	}
+	printk(KERN_INFO "RTAI[sched]: Linux kernel REGPARM configuration enabled, RTAI will not work in user space, disable it.\n");
+	return -EINVAL;
 #endif
 	sched_mem_init();
 	rt_registry_alloc();
@@ -3088,18 +3086,18 @@ static int __rtai_lxrt_init(void)
 
 	register_reboot_notifier(&lxrt_notifier_reboot);
 #ifdef CONFIG_SMP
-	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (IMMEDIATE, MP, USER/KERNEL SPACE%s).\n", USE_RTAI_TASKS ? " <with RTAI TASKs>" : "");
+	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, MP, USER/KERNEL SPACE%s).\n", USE_RTAI_TASKS ? " <with RTAI TASKs>" : "");
 #else
-	printk(KERN_INFO "RTAI[sched_lxrt]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE%s).\n", USE_RTAI_TASKS ? " <with RTAI TASKs>" : "");
+	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE%s).\n", USE_RTAI_TASKS ? " <with RTAI TASKs>" : "");
 #endif
-	printk(KERN_INFO "RTAI[sched_lxrt]: hard timer type/freq = %s/%d(Hz); default timing mode is %s; ", TIMER_NAME, (int)TIMER_FREQ, OneShot ? "oneshot" : "periodic");
+	printk(KERN_INFO "RTAI[sched]: hard timer type/freq = %s/%d(Hz); default timing mode is %s; ", TIMER_NAME, (int)TIMER_FREQ, OneShot ? "oneshot" : "periodic");
 #ifdef CONFIG_RTAI_LONG_TIMED_LIST
 	printk("binary tree ordering of timed lists.\n");
 #else
 	printk("linear ordering of timed lists.\n");
 #endif
-	printk(KERN_INFO "RTAI[sched_lxrt]: Linux timer freq = %d (Hz), CPU freq = %lu hz.\n", HZ, (unsigned long)tuned.cpu_freq);
-	printk(KERN_INFO "RTAI[sched_lxrt]: timer setup = %d ns, resched latency = %d ns.\n", (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq), (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
+	printk(KERN_INFO "RTAI[sched]: Linux timer freq = %d (Hz), CPU freq = %lu hz.\n", HZ, (unsigned long)tuned.cpu_freq);
+	printk(KERN_INFO "RTAI[sched]: timer setup = %d ns, resched latency = %d ns.\n", (int)imuldiv(tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq), (int)imuldiv(tuned.latency - tuned.setup_time_TIMER_CPUNIT, 1000000000, tuned.cpu_freq));
 
 #ifdef DECLR_8254_TSC_EMULATION
 	SETUP_8254_TSC_EMULATION;
@@ -3155,7 +3153,7 @@ static void __rtai_lxrt_exit(void)
 	CLEAR_8254_TSC_EMULATION;
 #endif
 
-	printk(KERN_INFO "RTAI[sched_lxrt]: unloaded (forced hard/soft/hard transitions: traps %lu, syscalls %lu).\n", traptrans, systrans);
+	printk(KERN_INFO "RTAI[sched]: unloaded (forced hard/soft/hard transitions: traps %lu, syscalls %lu).\n", traptrans, systrans);
 }
 
 module_init(__rtai_lxrt_init);

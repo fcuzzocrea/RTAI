@@ -138,7 +138,7 @@ static int rt_shm_alloc_usp(unsigned long name, int size, int suprt)
 	TRACE_RTAI_SHM(TRACE_RTAI_EV_SHM_MALLOC, name, size, current->pid);
 
 	if (_rt_shm_alloc(name, size, suprt)) {
-		((current->mm)->mmap)->vm_private_data = (void *)name;
+		current->rtai_tskext(TSKEXT3) = (void *)name;
 		return abs(rt_get_type(name));
 	}
 	return 0;
@@ -232,8 +232,8 @@ static int rtai_shm_f_mmap(struct file *file, struct vm_area_struct *vma)
 	if (!vma->vm_ops) {
 		vma->vm_ops = &rtai_shm_vm_ops;
 		vma->vm_flags |= VM_LOCKED;
-		name = (unsigned long)(vma->vm_private_data = ((current->mm)->mmap)->vm_private_data);
-		((current->mm)->mmap)->vm_private_data = NULL;
+		name = (unsigned long)(vma->vm_private_data = current->rtai_tskext(TSKEXT3));
+		current->rtai_tskext(TSKEXT3) = NULL;
 		return (size = rt_get_type(name)) < 0 ? rkmmap(ALIGN2PAGE(rt_get_adr(name)), -size, vma) : rvmmap(rt_get_adr(name), size, vma);
 	}
 	return -EFAULT;
@@ -650,6 +650,7 @@ static class_t *shm_class = NULL;
 
 int __rtai_shm_init (void)
 {
+#if 0
 	if (!(shm_class = class_create(THIS_MODULE, "rtai_shm"))) {
 		printk("RTAI-SHM: cannot create class.\n");
 		return -EBUSY;
@@ -659,6 +660,7 @@ int __rtai_shm_init (void)
 		class_destroy(shm_class);
 		return -EBUSY;
 	}
+#endif
 
 	if (misc_register(&rtai_shm_dev) < 0) {
 		printk("***** UNABLE TO REGISTER THE SHARED MEMORY DEVICE (miscdev minor: %d) *****\n", RTAI_SHM_MISC_MINOR);
@@ -694,8 +696,10 @@ void __rtai_shm_exit (void)
 	}
 	reset_rt_fun_entries(rt_shm_entries);
 	misc_deregister(&rtai_shm_dev);
+#if 0
 	class_device_destroy(shm_class, MKDEV(MISC_MAJOR, RTAI_SHM_MISC_MINOR));
 	class_destroy(shm_class);
+#endif
 	return;
 }
 

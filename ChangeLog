@@ -1,6 +1,17 @@
+2006-06-17  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+        * base/include/rtai_hal_names.h: define the fourth task extension,
+	  i.e. TSKEXT3.
+        * base/ipc/shm.c: use TSKEXT3 to keep the link for mmapping a user
+	  space allocated shared memory.
+
+2006-06-16  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* beginning of RTAI 3.4 release process.
+
 2006-06-15  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/iipc/fifos.c: use a module parm to decide if an LXRT extension 
+	* base/ipc/fifos.c: use a module parm to decide if an LXRT extension 
 	  should be created or not.
 
 2006-06-11  Paolo Mantegazza <mantegazza@aero.polimi.it>

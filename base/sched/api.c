@@ -1203,7 +1203,7 @@ static void *hash_find_name(unsigned long name, struct rt_registry_entry *list, 
 	i = hash_fun(name, lstlen);
 	while (1) {
 		k = i;
-		while (list[k].name > NONAME && list[k].name != name) {
+		while (list[k].name && list[k].name != name) {
 COLLISION_COUNT();
 			if (++k > lstlen) {
 				k = 1;
@@ -1237,7 +1237,7 @@ static unsigned long hash_find_adr(void *adr, struct rt_registry_entry *list, lo
 	i = hash_fun((unsigned long)adr, lstlen);
 	while (1) {
 		k = i;
-		while (list[k].adr > NOADR && list[k].adr != adr) {
+		while (list[k].adr && list[k].adr != adr) {
 COLLISION_COUNT();
 			if (++k > lstlen) {
 				k = 1;

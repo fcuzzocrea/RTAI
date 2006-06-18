@@ -3086,10 +3086,14 @@ static int __rtai_lxrt_init(void)
 
 	register_reboot_notifier(&lxrt_notifier_reboot);
 #ifdef CONFIG_SMP
-	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, MP, USER/KERNEL SPACE%s).\n", USE_RTAI_TASKS ? " <with RTAI TASKs>" : "");
+	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, MP, USER/KERNEL SPACE: <%s RTAI OWN KTASKs>", USE_RTAI_TASKS ? "with" : "without");
 #else
-	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE%s).\n", USE_RTAI_TASKS ? " <with RTAI TASKs>" : "");
+	printk(KERN_INFO "RTAI[sched]: loaded (IMMEDIATE, UP, USER/KERNEL SPACE%s: ", USE_RTAI_TASKS ? "<with RTAI TASKs>" : "");
 #endif
+#ifdef CONFIG_RTAI_LXRT_USE_LINUX_SYSCALL
+	printk(", <uses LINUX SYSCALLs>");
+#endif
+	printk(").\n");
 	printk(KERN_INFO "RTAI[sched]: hard timer type/freq = %s/%d(Hz); default timing mode is %s; ", TIMER_NAME, (int)TIMER_FREQ, OneShot ? "oneshot" : "periodic");
 #ifdef CONFIG_RTAI_LONG_TIMED_LIST
 	printk("binary tree ordering of timed lists.\n");

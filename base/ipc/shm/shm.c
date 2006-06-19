@@ -644,9 +644,11 @@ struct rt_native_fun_entry rt_shm_entries[] = {
 extern int set_rt_fun_entries(struct rt_native_fun_entry *entry);
 extern void reset_rt_fun_entries(struct rt_native_fun_entry *entry);
 
-#include <linux/device.h>
+#if 0
 #include <linux/devfs_fs_kernel.h>
+#include <linux/device.h>
 static class_t *shm_class = NULL;
+#endif
 
 int __rtai_shm_init (void)
 {

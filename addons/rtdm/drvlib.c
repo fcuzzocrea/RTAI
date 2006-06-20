@@ -1214,7 +1214,7 @@ int rtdm_mmap_to_user(rtdm_user_info_t *user_info, void *src_addr, size_t len,
 {
     struct rtdm_mmap_data   mmap_data = {src_addr, vm_ops, vm_private_data};
     struct file             *filp;
-    struct file_operations  *old_fops;
+    const struct file_operations  *old_fops;
     void                    *old_priv_data;
     void                    *user_ptr;
 

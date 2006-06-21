@@ -89,7 +89,7 @@
  * 5. Keeps a record of bad tasks (apart from those that have been killed) that 
  *    can be examined via a /proc interface. (/proc/rtai/watchdog)
  * 
- * ID: @(#)$Id: wd.c,v 1.6 2006/06/16 16:01:27 ando Exp $
+ * ID: @(#)$Id: wd.c,v 1.7 2006/06/21 16:33:39 mante Exp $
  *
  *******************************************************************************/
 
@@ -137,7 +137,7 @@ static BAD_RT_TASK bad_task_pool[BAD_TASK_MAX];
 #endif
 
 // The current version number
-static char version[] = "$Revision: 1.6 $";
+static char version[] = "$Revision: 1.7 $";
 static char ver[10];
 
 // User friendly policy names
@@ -155,31 +155,31 @@ static int          sched;		// Scheduler type (UP, SMP or MUP)
 // -------------------------- CONFIGURABLE PARAMETERS --------------------------
 // Module parameters
 static int TickPeriod = 10000000;	// Task period in nano seconds
-MODULE_PARM(TickPeriod, "i");		// (should be shorter than all others)
+RTAI_MODULE_PARM(TickPeriod, int);	// (should be shorter than all others)
 
-static int wd_OneShot = 1;			// One shot timer mode or not (periodic)
-MODULE_PARM(wd_OneShot, "i");		// (should be the same as other tasks)
+static int wd_OneShot = 1;		// One shot timer mode or not (periodic)
+RTAI_MODULE_PARM(wd_OneShot, int);	// (should be the same as other tasks)
 
 static int Grace = 3;			// How much a task can be overdue
-MODULE_PARM(Grace, "i");		// (in periods, always 1 in some modes)
+RTAI_MODULE_PARM(Grace, int);		// (in periods, always 1 in some modes)
 
 static int GraceDiv = 1;		// Divisor to allow Gracevalues < 1
-MODULE_PARM(GraceDiv, "i");		// overrun = period * Grace / Gracediv
+RTAI_MODULE_PARM(GraceDiv, int);	// overrun = period * Grace / Gracediv
 
 static int Safety = 100;		// Safety net to suspend infinite loops
-MODULE_PARM(Safety, "i");		// (overrides policy, -ve disables)
+RTAI_MODULE_PARM(Safety, int);		// (overrides policy, -ve disables)
 
-static wd_policy Policy = WD_SUSPEND;	// How to punish misbehavers
-MODULE_PARM(Policy, "i");		// (see above and header for details)
+static int Policy = WD_SUSPEND;		// How to punish misbehavers
+RTAI_MODULE_PARM(Policy, int);		// (see above and header for details)
 
 static int Stretch = 10;		// %ge to increase period by
-MODULE_PARM(Stretch, "i");		// (can be over 100%, 100% is doubling)
+RTAI_MODULE_PARM(Stretch, int);		// (can be over 100%, 100% is doubling)
 
 static int Slip = 10;			// %ge of period to slip a task
-MODULE_PARM(Slip, "i");			// (can be over 100%)
+RTAI_MODULE_PARM(Slip, int);			// (can be over 100%)
 
 static int Limit = 100;			// Maximum number of offences
-MODULE_PARM(Limit, "i");		// (-ve means disabled ie. no limit)
+RTAI_MODULE_PARM(Limit, int);		// (-ve means disabled ie. no limit)
 
 // Parameter configuring API
 int rt_wdset_grace(int new)		// How much a task can be overdue

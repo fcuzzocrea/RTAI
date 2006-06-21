@@ -82,15 +82,14 @@
 MODULE_LICENSE("GPL");
 
 static unsigned long rtai_cpufreq_arg = RTAI_CALIBRATED_CPU_FREQ;
-MODULE_PARM(rtai_cpufreq_arg,"i");
+RTAI_MODULE_PARM(rtai_cpufreq_arg, ulong);
 
 #define RTAI_NR_IRQS  IPIPE_NR_XIRQS
 
 #ifdef CONFIG_X86_LOCAL_APIC
 
 static unsigned long rtai_apicfreq_arg = RTAI_CALIBRATED_APIC_FREQ;
-
-MODULE_PARM(rtai_apicfreq_arg, "i");
+RTAI_MODULE_PARM(rtai_apicfreq_arg, ulong);
 
 static inline void rtai_setup_periodic_apic (unsigned count, unsigned vector)
 {
@@ -207,7 +206,7 @@ void rtai_critical_exit (unsigned long flags)
 }
 
 static unsigned long IsolCpusMask = 0;
-MODULE_PARM(IsolCpusMask, "i");
+RTAI_MODULE_PARM(IsolCpusMask, ulong);
 
 int rt_request_irq (unsigned irq, int (*handler)(unsigned irq, void *cookie), void *cookie, int retmode)
 {
@@ -1526,9 +1525,9 @@ static int rtai_hirq_dispatcher (struct pt_regs regs)
 #endif
 
 static int PrintFpuTrap = 0;
-MODULE_PARM(PrintFpuTrap, "i");
+RTAI_MODULE_PARM(PrintFpuTrap, int);
 static int PrintFpuInit = 0;
-MODULE_PARM(PrintFpuInit, "i");
+RTAI_MODULE_PARM(PrintFpuInit, int);
 
 #ifdef UNWRAPPED_CATCH_EVENT
 static int rtai_trap_fault (unsigned event, void *evdata)

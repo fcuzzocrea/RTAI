@@ -747,7 +747,7 @@ int rt_delete_tasklet(struct rt_tasklet_struct *tasklet)
 }
 
 static int tasklets_stacksize = TASKLET_STACK_SIZE;
-MODULE_PARM(tasklets_stacksize, "i");
+RTAI_MODULE_PARM(tasklets_stacksize, int);
 
 static RT_TASK *rt_base_linux_task;
 

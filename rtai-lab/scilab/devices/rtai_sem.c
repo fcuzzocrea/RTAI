@@ -68,7 +68,7 @@ void inp_rtai_sem_input(void * ptr, double * y, double t)
   int ret;
 
   ret = RT_sem_wait(sem->tNode, sem->tPort,sem->sem);
-  y[0]=0.0;
+  y[0]=1.0;
 }
 
 void inp_rtai_sem_update(void)

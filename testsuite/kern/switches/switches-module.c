@@ -31,23 +31,23 @@ MODULE_LICENSE("GPL");
  * Command line parameters
  */
 int ntasks = 10;
-MODULE_PARM(ntasks, "i");
+RTAI_MODULE_PARM(ntasks, int);
 MODULE_PARM_DESC(ntasks, "Number of tasks to switch (default: 30)");
 
 int loops = 2000;
-MODULE_PARM(loops, "i");
+RTAI_MODULE_PARM(loops, int);
 MODULE_PARM_DESC(loops, "Number of switches per task (default: 2000)");
 
 #ifdef CONFIG_RTAI_FPU_SUPPORT
 int use_fpu = 1;
-MODULE_PARM(use_fpu, "i");
+RTAI_MODULE_PARM(use_fpu, int);
 MODULE_PARM_DESC(use_fpu, "Use full FPU support (default: 1)");
 #else
 int use_fpu = 0;
 #endif
 
 int stack_size = 4096;
-MODULE_PARM(stack_size, "i");
+RTAI_MODULE_PARM(stack_size, int);
 MODULE_PARM_DESC(stack_size, "Task stack size in bytes (default: 2000)");
 
 #undef DISTRIBUTE /* Define this to have tasks distributed among CPUs */

@@ -987,7 +987,7 @@ int rtf_create(unsigned int minor, int size)
 		return -ENODEV;
 	}
 	TRACE_RTAI_FIFO(TRACE_RTAI_EV_FIFO_CREATE, minor, size);
-	if (!atomic_cmpxchg(&fifo[minor].opncnt, 0, 1)) {
+	if (!atomic_cmpxchg((atomic_t *)&fifo[minor].opncnt, 0, 1)) {
 		if (size <= PAGE_SIZE*32) {
 			if (!(buf = kmalloc(size, GFP_KERNEL))) {
 				fifo[minor].opncnt = 0;

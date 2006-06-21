@@ -1332,7 +1332,7 @@ int rt_spl_lock(SPL *spl)
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
-		while (atomic_cmpxchg(&spl->owndby, 0, rt_current));
+		while (atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current));
 		spl->flags = flags;
 	}
 	return 0;
@@ -1362,7 +1362,7 @@ int rt_spl_lock_if(SPL *spl)
 	if (spl->owndby == (rt_current = RT_CURRENT)) {
 		spl->count++;
 	} else {
-		if (atomic_cmpxchg(&spl->owndby, 0, rt_current)) {
+		if (atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current)) {
 			rtai_restore_flags(flags);
 			return -1;
 		}
@@ -1402,9 +1402,9 @@ int rt_spl_lock_timed(SPL *spl, unsigned long ns)
 		spl->count++;
 	} else {
 		RTIME end_time;
-		void *locked;
+		int locked;
 		end_time = rdtsc() + imuldiv(ns, tuned.cpu_freq, 1000000000);
-		while ((locked = atomic_cmpxchg(&spl->owndby, 0, rt_current)) && rdtsc() < end_time);
+		while ((locked = atomic_cmpxchg((atomic_t *)&spl->owndby, 0, rt_current)) && rdtsc() < end_time);
 		if (locked) {
 			rtai_restore_flags(flags);
 			return -1;

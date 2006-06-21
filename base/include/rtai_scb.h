@@ -91,7 +91,7 @@ RTAI_PROTO(void *, rt_scb_init, (unsigned long name, int size, unsigned long sup
 {	
 	void *scb;
 	scb = suprt > 1000 ? (void *)suprt : rt_shm_alloc(name, size + HDRSIZ + 1, suprt);
-	if (scb && !atomic_cmpxchg((int *)scb, 0, name)) {
+	if (scb && !atomic_cmpxchg((atomic_t *)scb, 0, name)) {
 		((int *)scb)[1] = ((int *)scb)[2] = 0;
 		((int *)scb)[0] = size + 1;
 	} else {

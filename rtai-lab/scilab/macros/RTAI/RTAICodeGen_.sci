@@ -1931,11 +1931,11 @@ zcptr=cpr.sim.zcptr;
   //Compile and link
   //*****************
 
-  files=['rtmain']
+  files=[]
   [fd,ierr]=mopen(rpat+'/'+rdnom+'f.f','r')
   if ierr==0 then mclose(fd),files=[files,rdnom+'f'],end
-  [fd,ierr]=mopen(rpat+'/'+rdnom+'c.c','r')
-  if ierr==0 then mclose(fd),files=[files,rdnom+'c'],end
+  [fd,ierr]=mopen(rpat+'/'+rdnom+'_Cblocks.c','r')
+  if ierr==0 then mclose(fd),files=[files,rdnom+'_Cblocks'],end
 
   Makename=gen_make(rdnom,files,archname,rpat+'/Makefile')
   [ok] = compile_rt_standalone();
@@ -2062,7 +2062,7 @@ function ok=gen_ccode();
           '#endif';
 	  '';
 	  CCode];
-    ierr=execstr('mputl(CCode,rpat+''/''+rdnom+''c.c'')','errcatch')
+    ierr=execstr('mputl(CCode,rpat+''/''+rdnom+''_Cblocks.c'')','errcatch')
     if ierr<>0 then
       message(lasterror())
       ok=%f
@@ -2677,10 +2677,6 @@ end
 	'void scicos_free(void *p)'
 	'{'
 	'  free(p);'
-	'}'
-	'double get_scicos_time()'
-	'{'
-  	'  return(TIME);'
 	'}'
 	'void do_cold_restart()'
 	'{'

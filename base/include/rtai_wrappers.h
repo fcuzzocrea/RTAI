@@ -28,10 +28,18 @@
 #endif /* !__cplusplus */
 
 #include <linux/moduleparam.h>
-#define RTAI_MODULE_PARM(name, type) module_param(name, type, 0444)
-#define _MODULE_PARM_STRING_charp "s"
+#define RTAI_MODULE_PARM(name, type) \
+	module_param(name, type, 0444)
+#define RTAI_MODULE_PARM_ARRAY(name, type, addr) \
+	module_param_array(name, type, addr, 0400);
+
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
+
+#define module_param_array(name, type, addr, perm) \
+        static inline void *__check_existence_##name(void) { return &name; } \
+	MODULE_PARM(name, "1-" __MODULE_STRING(*addr) _MODULE_PARM_STRING_ ## type);
+#define _MODULE_PARM_STRING_charp "s"
 
 #define PID_MAX_LIMIT     PID_MAX
 #define num_online_cpus() smp_num_cpus

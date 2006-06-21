@@ -1563,13 +1563,13 @@ RT_TRAP_HANDLER rt_set_task_trap_handler( RT_TASK *task, unsigned int vec, RT_TR
 }
 
 static int OneShot = CONFIG_RTAI_ONE_SHOT;
-MODULE_PARM(OneShot, "i");
+RTAI_MODULE_PARM(OneShot, int);
 
 static int Latency = TIMER_LATENCY;
-MODULE_PARM(Latency, "i");
+RTAI_MODULE_PARM(Latency, int);
 
 static int SetupTimeTIMER = TIMER_SETUP_TIME;
-MODULE_PARM(SetupTimeTIMER, "i");
+RTAI_MODULE_PARM(SetupTimeTIMER, int);
 
 extern void krtai_objects_release(void);
 
@@ -1876,9 +1876,9 @@ static int rsvr_cnt[NR_RT_CPUS];
 #define RESERVOIR 6
 #endif
 static int Reservoir = RESERVOIR;
-MODULE_PARM(Reservoir, "i");
+RTAI_MODULE_PARM(Reservoir, int);
 static int SpareKthreads = 100;
-MODULE_PARM(SpareKthreads, "i");
+RTAI_MODULE_PARM(SpareKthreads, int);
 
 static int taskidx[NR_RT_CPUS];
 static struct task_struct **taskav[NR_RT_CPUS];

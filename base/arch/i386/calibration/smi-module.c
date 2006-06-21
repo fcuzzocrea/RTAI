@@ -28,6 +28,8 @@
 #include <linux/pci.h>
 #include <linux/pci_ids.h>
 
+#include <rtai_wrappers.h>
+
 int smiReset = 0;
 RTAI_MODULE_PARM(smiReset, int);
 

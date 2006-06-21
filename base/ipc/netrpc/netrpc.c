@@ -100,23 +100,23 @@ MODULE_LICENSE("GPL");
 #define NETRPC_STACK_SIZE  6000
 
 static unsigned long MaxStubs = MAX_STUBS;
-MODULE_PARM(MaxStubs, "i");
+RTAI_MODULE_PARM(MaxStubs, ulong);
 static int MaxStubsMone;
 
 static unsigned long MaxSocks = MAX_SOCKS;
-MODULE_PARM(MaxSocks, "i");
+RTAI_MODULE_PARM(MaxSocks, ulong);
 
 static int StackSize = NETRPC_STACK_SIZE;
-MODULE_PARM(StackSize, "i");
+RTAI_MODULE_PARM(StackSize, int);
 
 static char *ThisNode = LOCALHOST;
-MODULE_PARM(ThisNode, "s");
+RTAI_MODULE_PARM(ThisNode, charp);
 
 static char *ThisSoftNode = 0;
-MODULE_PARM(ThisSoftNode, "s");
+RTAI_MODULE_PARM(ThisSoftNode, charp);
 
 static char *ThisHardNode = 0;
-MODULE_PARM(ThisHardNode, "s");
+RTAI_MODULE_PARM(ThisHardNode, charp);
 
 #define MAX_DFUN_EXT  16
 static struct rt_fun_entry *rt_net_rpc_fun_ext[MAX_DFUN_EXT];

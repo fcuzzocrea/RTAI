@@ -27,6 +27,10 @@
 #include <linux/module.h>
 #endif /* !__cplusplus */
 
+#include <linux/moduleparam.h>
+#define RTAI_MODULE_PARM(name, type) module_param(name, type, 0444)
+#define _MODULE_PARM_STRING_charp "s"
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,0)
 
 #define PID_MAX_LIMIT     PID_MAX

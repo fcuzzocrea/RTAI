@@ -44,14 +44,14 @@ MODULE_LICENSE("GPL");
 
 static unsigned long spconfig[CONFIG_SIZE] = RT_SP_CONFIG_INIT; 
 static int spconfig_size = CONFIG_SIZE; 
-RTAI_MODULE_PARM_ARRAY(spconfig, ulong, &spconfig_size);
+RTAI_MODULE_PARM_ARRAY(spconfig, ulong, &spconfig_size, CONFIG_SIZE);
 
 static int spbufsiz = SPBUFSIZ;
 RTAI_MODULE_PARM(spbufsiz, int);
 
 static int sptxdepth[CONFIG_SIZE] = { 0 };
 static int sptxdepth_size = CONFIG_SIZE; 
-RTAI_MODULE_PARM_ARRAY(sptxdepth, int, &sptxdepth_size);
+RTAI_MODULE_PARM_ARRAY(sptxdepth, int, &sptxdepth_size, CONFIG_SIZE);
 
 struct rt_spct_t *spct;
 

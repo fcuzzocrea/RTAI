@@ -7,8 +7,8 @@ xrtailab_SOURCES = \
 	Fl_Led_Window.cpp \
 	Fl_Leds_Manager.cpp \
 	Fl_Leds_Manager.h \
-	Fl_Alog_Manager.cpp\
-	Fl_Alog_Manager.h\
+	Fl_ALogs_Manager.cpp\
+	Fl_ALogs_Manager.h\
 	Fl_Logs_Manager.cpp \
 	Fl_Logs_Manager.h \
 	Fl_Meter.h \

@@ -1233,7 +1233,7 @@ int rtdm_mmap_to_user(rtdm_user_info_t *user_info, void *src_addr, size_t len,
                                MAP_SHARED, 0);
     up_write(&user_info->mm->mmap_sem);
 
-    filp->f_op = old_fops;
+    filp->f_op = (typeof(filp->f_op))old_fops;
     filp->private_data = old_priv_data;
 
     filp_close(filp, user_info->files);

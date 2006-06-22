@@ -740,8 +740,8 @@ int rt_task_wait_period(void)
 		rt_times.tick_time;
 #endif
 	} else if ((rt_current->periodic_resume_time += rt_current->period) > rt_time_h) {
-		rt_current->resume_time = rt_current->periodic_resume_time;
 		void *blocked_on;
+		rt_current->resume_time = rt_current->periodic_resume_time;
 		rt_current->blocked_on = NULL;
 		rt_current->state |= RT_SCHED_DELAYED;
 		rem_ready_current(rt_current);

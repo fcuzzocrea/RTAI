@@ -682,6 +682,12 @@ config RTAI_USE_NEWERR
 	to choose what to do, without forcing any adaption for already 
 	existing working applications.
 
+config RTAI_IMMEDIATE_LINUX_SYSCALL
+	bool "Immediate Linux syscall in hard real time"
+	default y
+	help
+	To be done.
+
 config RTAI_MATH
 	bool "Math support"
 	depends on RTAI_FPU_SUPPORT

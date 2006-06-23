@@ -341,7 +341,7 @@ config RTAI_SCHED_APIC_LATENCY
 
 config RTAI_SCHED_LXRT_NUMSLOTS
 	string "Number of registrable RTAI objects"
-	default 100
+	default 150
 	help
 	The maximum number of registrable objects in RTAI.
 

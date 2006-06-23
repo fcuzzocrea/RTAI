@@ -1,3 +1,9 @@
+2006-06-23  Pierangelo Masarati <masarati@aero.polimi.it>
+
+	* default of RTAI_SCHED_LXRT_NUMSLOTS set to 150
+	* added check for syntax compliance of RTAI_RTDM_FD_MAX
+	* added configure/Kconfig support for RTAI_IMMEDIATE_LINUX_SYSCALL
+
 2006-06-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_wrappers.h: added support to use the newer

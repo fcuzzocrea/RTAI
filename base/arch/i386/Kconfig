@@ -686,7 +686,25 @@ config RTAI_IMMEDIATE_LINUX_SYSCALL
 	bool "Immediate Linux syscall in hard real time"
 	default y
 	help
-	To be done.
+	This parameter allow to control RTAI behaviour when a Linux syscall
+	is made while in hard real time, according to the following two ways:
+	- 1) 	- if it is set RTAI will put the task back into Linux hands,
+		  i.e pass it to soft mode; 
+		- call the related sys service immediately, i.e. without 
+		  going through the Linux syscall path;
+		- put the task back to hard real time, so that it will return
+		  to user space in hard real time mode again.
+	- 2) 	- if it is not set RTAI will put the task back into Linux hands,
+		  i.e pass it to soft mode; 
+		- call the related sys service through the Linux syscall path;
+		- return to user space in soft real time mode;
+		- resume hard real time at the next call of an RTAI function.
+	The most efficient behaviour is 1 but 2 can be useful in relation to
+	specific RTAI users extensions.
+	It is remarked that nothing is changed if hard/soft transitions 
+	are called controlled by an application task through 
+	rtai_make_hard_real_time/rtai_make_soft_real_time.
+	The default is 1.
 
 config RTAI_MATH
 	bool "Math support"

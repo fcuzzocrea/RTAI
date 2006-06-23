@@ -60,6 +60,12 @@
 #ifndef _RTAI_SCHED_XN_H
 #define _RTAI_SCHED_XN_H
 
+#ifdef CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL
+#define SKIP_IMMEDIATE_LINUX_SYSCALL()
+#else
+#define SKIP_IMMEDIATE_LINUX_SYSCALL()  do { return 0; } while (0)
+#endif
+
 #ifdef RTAI_TRIOSS
 
 extern int nkgkptd;

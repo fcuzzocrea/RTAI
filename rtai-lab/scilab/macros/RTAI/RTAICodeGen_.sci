@@ -2479,7 +2479,7 @@ nztotal=size(z,1);
 niwa=size(z,'*')+size(outtb,'*');
 //Generates simulation routine for standalone simulation
   work=zeros(nblk,1)
-  iwa=zeros(clkptr($),1),Z=[z;outtb;iwa]';
+  iwa=zeros(clkptr($),1),Z=[z;outtb;iwa;work]';
   nact = size(act,'*');
   ncap = size(cap,'*');
 

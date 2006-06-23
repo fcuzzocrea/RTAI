@@ -1,3 +1,11 @@
+2006-06-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_schedcore.h: added common support for linux 
+	  syscalls from hard real time, according to the setting of the
+	  new parameter CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL.
+	* base/include/asm-i386/rtai_lxrt.h: removed i386 specific support 
+	  for linux syscalls from hard real time.
+
 2006-06-23  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* default of RTAI_SCHED_LXRT_NUMSLOTS set to 150

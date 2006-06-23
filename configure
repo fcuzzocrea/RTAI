@@ -20536,7 +20536,7 @@ echo "$as_me: error: Bad argument to option: --enable-sched-lxrt-numslots=<numbe
 fi;
 if test x$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS = x ; then
   # Use a reasonable default if unset
-  CONFIG_RTAI_SCHED_LXRT_NUMSLOTS=100
+  CONFIG_RTAI_SCHED_LXRT_NUMSLOTS=150
 fi
 echo "$as_me:$LINENO: result: $CONFIG_RTAI_SCHED_LXRT_NUMSLOTS" >&5
 echo "${ECHO_T}$CONFIG_RTAI_SCHED_LXRT_NUMSLOTS" >&6
@@ -20547,7 +20547,7 @@ echo $ECHO_N "checking for maximum file descriptors in RTDM... $ECHO_C" >&6
 if test "${enable_rtdm_fd_max+set}" = set; then
   enableval="$enable_rtdm_fd_max"
   case "$enableval" in
- 	[0-9]*) CONFIG_RTAI_RTDM_FD_MAX=$enableval ;;
+ 	[1-9][0-9]*) CONFIG_RTAI_RTDM_FD_MAX=$enableval ;;
  	*) { { echo "$as_me:$LINENO: error: Bad argument to option: --enable-rtdm-fd-max=<number>" >&5
 echo "$as_me: error: Bad argument to option: --enable-rtdm-fd-max=<number>" >&2;}
    { (exit 1); exit 1; }; } ;;
@@ -20556,6 +20556,13 @@ fi;
 if test x$CONFIG_RTAI_RTDM_FD_MAX = x ; then
   # Use a reasonable default if unset
   CONFIG_RTAI_RTDM_FD_MAX=128
+else
+	case $CONFIG_RTAI_RTDM_FD_MAX in
+		[1-9][0-9]*) ;;
+		*) { { echo "$as_me:$LINENO: error: Bad value $CONFIG_RTAI_RTDM_FD_MAX for RTAI_RTDM_FD_MAX" >&5
+echo "$as_me: error: Bad value $CONFIG_RTAI_RTDM_FD_MAX for RTAI_RTDM_FD_MAX" >&2;}
+   { (exit 1); exit 1; }; } ;;
+	esac
 fi
 echo "$as_me:$LINENO: result: $CONFIG_RTAI_RTDM_FD_MAX" >&5
 echo "${ECHO_T}$CONFIG_RTAI_RTDM_FD_MAX" >&6
@@ -24038,6 +24045,15 @@ esac
 
 cat >>confdefs.h <<_ACEOF
 #define CONFIG_RTAI_USE_NEWERR $CONFIG_RTAI_USE_NEWERR
+_ACEOF
+
+case $CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL in
+	y) CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL=1 ;;
+	n|*) CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL=0 ;;
+esac
+
+cat >>confdefs.h <<_ACEOF
+#define CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL $CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL
 _ACEOF
 
 

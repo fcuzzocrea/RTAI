@@ -64,6 +64,9 @@
 #undef CONFIG_RTAI_HOST_STRING
 
 /* Kconfig */
+#undef CONFIG_RTAI_IMMEDIATE_LINUX_SYSCALL
+
+/* Kconfig */
 #undef CONFIG_RTAI_INTERNAL_LEDS_SUPPORT
 
 /* Kconfig */

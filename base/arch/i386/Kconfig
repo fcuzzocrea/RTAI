@@ -686,7 +686,7 @@ config RTAI_IMMEDIATE_LINUX_SYSCALL
 	bool "Immediate Linux syscall in hard real time"
 	default y
 	help
-	This parameter allow to control RTAI behaviour when a Linux syscall
+	This parameter allows to control RTAI behaviour when a Linux syscall
 	is made while in hard real time, according to the following two ways:
 	- 1) 	- if it is set RTAI will put the task back into Linux hands,
 		  i.e pass it to soft mode; 

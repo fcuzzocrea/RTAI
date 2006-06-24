@@ -39,7 +39,7 @@
 #include <rtai_msg.h>
 #include <rtai_mbx.h>
 
-#define RTAILAB_VERSION   "3.3.1"
+#define RTAILAB_VERSION   "3.4.3"
 #define MAX_ADR_SRCH      500
 #define MAX_NAME_SIZE     256
 #define MAX_SCOPES        100
@@ -217,8 +217,13 @@ static unsigned long TimingEventArg;
 #define XSTR(x)    #x
 #define STR(x)     XSTR(x)
 
-#define MODELNAME  STR(NAME(MODEL, _standalone.c))
+#define MODELNAME  STR(MODELN)
 #include MODELNAME
+
+double get_scicos_time()
+{
+  return(TIME);
+}
 
 static inline int rtModifyRParam(int i, double *param)
 {

@@ -111,6 +111,7 @@ function [ok,tt]=getCode_sem_wait(funam)
   textmp($+1)='    blk=inp_rtai_sem_init(""' + name + '"",""'+ipaddr+'"");'
   textmp($+1)='    break;'; 
   textmp($+1)='  case 1:'
+  textmp($+1)='    block->outptr[0][0]=0.0;'
   textmp($+1)='    inp_rtai_sem_input(blk,y,t);'
   textmp($+1)='    block->outptr[0][0]=y[0];'
   textmp($+1)='    break;'

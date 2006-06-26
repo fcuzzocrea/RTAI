@@ -1,3 +1,5 @@
+2006-06-26 RTAI-3.4-test1 released.
+
 2006-06-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_schedcore.h: added common support for linux 

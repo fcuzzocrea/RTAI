@@ -1,3 +1,14 @@
+diff -uNrp 2.4.32/arch/i386/defconfig 2.4.32-i386-ipipe/arch/i386/defconfig
+--- 2.4.32/arch/i386/defconfig  2004-11-17 12:54:21.000000000 +0100
++++ 2.4.32-i386-ipipe/arch/i386/defconfig	2006-06-25 09:34:43.000000000 +0200
+@@ -74,6 +74,7 @@ CONFIG_HAVE_DEC_LOCK=y
+ #
+ # General setup
+ #
++CONFIG_IPIPE=y
+ CONFIG_NET=y
+ CONFIG_X86_IO_APIC=y
+ CONFIG_X86_LOCAL_APIC=y
 diff -uNrp 2.4.32/arch/i386/config.in 2.4.32-i386-ipipe/arch/i386/config.in
 --- 2.4.32/arch/i386/config.in	2004-11-17 12:54:21.000000000 +0100
 +++ 2.4.32-i386-ipipe/arch/i386/config.in	2006-06-25 09:34:43.000000000 +0200
@@ -911,7 +922,7 @@ diff -uNrp 2.4.32/arch/i386/kernel/ipipe-core.c 2.4.32-i386-ipipe/arch/i386/kern
 diff -uNrp 2.4.32/arch/i386/kernel/ipipe-root.c 2.4.32-i386-ipipe/arch/i386/kernel/ipipe-root.c
 --- 2.4.32/arch/i386/kernel/ipipe-root.c	1970-01-01 01:00:00.000000000 +0100
 +++ 2.4.32-i386-ipipe/arch/i386/kernel/ipipe-root.c	2006-06-24 19:49:46.000000000 +0200
-@@ -0,0 +1,565 @@
+@@ -0,0 +1,570 @@
 +/*   -*- linux-c -*-
 + *   linux/arch/i386/kernel/ipipe-root.c
 + *
@@ -1266,9 +1277,14 @@ diff -uNrp 2.4.32/arch/i386/kernel/ipipe-root.c 2.4.32-i386-ipipe/arch/i386/kern
 +
 +typedef __ipipe_exhandler *__ipipe_exptr;
 +
++extern asmlinkage void do_debug(struct pt_regs *regs, long error_code);
++extern asmlinkage void do_int3(struct pt_regs *regs, long error_code);
++
 +static __ipipe_exptr __ipipe_std_extable[] = {
 +
 +	[ex_do_divide_error] = &do_divide_error,
++       [ex_do_debug] = &do_debug,
++       [ex_do_int3] = &do_int3,
 +	[ex_do_overflow] = &do_overflow,
 +	[ex_do_bounds] = &do_bounds,
 +	[ex_do_invalid_op] = &do_invalid_op,
@@ -4831,7 +4847,7 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
  /*
   *  'schedule()' is the scheduler function. It's a very simple and nice
   * scheduler: it's not perfect, but certainly works for most things.
-@@ -544,6 +586,14 @@ asmlinkage void schedule_tail(struct tas
+@@ -544,6 +586,18 @@ asmlinkage void schedule_tail(struct tas
   * tasks can run. It can not be killed, and it cannot sleep. The 'state'
   * information in task[0] is never used.
   */
@@ -4843,10 +4859,14 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
 +	return prev;
 +}
 +
++#define EXPORT_SYMTAB
++#include <linux/module.h>
++EXPORT_SYMBOL(context_switch);
++
  asmlinkage void schedule(void)
  {
  	struct schedule_data * sched_data;
-@@ -668,7 +718,8 @@ repeat_schedule:
+@@ -668,7 +722,8 @@ repeat_schedule:
  	 * but prev is set to (the just run) 'last' process by switch_to().
  	 * This might sound slightly confusing but makes tons of sense.
  	 */
@@ -4856,7 +4876,7 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
  	{
  		struct mm_struct *mm = next->mm;
  		struct mm_struct *oldmm = prev->active_mm;
-@@ -692,7 +743,10 @@ repeat_schedule:
+@@ -692,7 +747,10 @@ repeat_schedule:
  	 * This just switches the register state and the
  	 * stack.
  	 */
@@ -4868,7 +4888,7 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
  	__schedule_tail(prev);
  
  same_process:
-@@ -991,6 +1045,7 @@ static int setscheduler(pid_t pid, int p
+@@ -991,6 +1049,7 @@ static int setscheduler(pid_t pid, int p
  	retval = 0;
  	p->policy = policy;
  	p->rt_priority = lp.sched_priority;
@@ -4876,7 +4896,7 @@ diff -uNrp 2.4.32/kernel/sched.c 2.4.32-i386-ipipe/kernel/sched.c
  
  	current->need_resched = 1;
  
-@@ -1395,3 +1450,33 @@ void __init sched_init(void)
+@@ -1395,3 +1454,33 @@ void __init sched_init(void)
  	atomic_inc(&init_mm.mm_count);
  	enter_lazy_tlb(&init_mm, current, cpu);
  }

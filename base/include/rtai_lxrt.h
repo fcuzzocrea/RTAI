@@ -1145,14 +1145,15 @@ RTAI_PROTO(int,rt_set_linux_signal_handler,(RT_TASK *task, void (*handler)(int s
     return rtai_lxrt(BIDX, SIZARG, RT_SET_LINUX_SIGNAL_HANDLER, &arg).i[LOW];
 }
 
+#define VSNPRINTF_BUF_SIZE 256
 RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))
 {
-	char display[256];
+	char display[VSNPRINTF_BUF_SIZE];
 	struct { const char *display; long nch; } arg = { display, 0 };
 	va_list args;
 
 	va_start(args, format);
-	arg.nch = vsprintf(display, format, args);
+	arg.nch = vsnprintf(display, VSNPRINTF_BUF_SIZE, format, args);
 	va_end(args);
 	rtai_lxrt(BIDX, SIZARG, PRINT_TO_SCREEN, &arg);
 	return arg.nch;
@@ -1160,12 +1161,12 @@ RTAI_PROTO(int,rtai_print_to_screen,(const char *format, ...))
 
 RTAI_PROTO(int,rt_printk,(const char *format, ...))
 {
-	char display[256];
+	char display[VSNPRINTF_BUF_SIZE];
 	struct { const char *display; long nch; } arg = { display, 0 };
 	va_list args;
 
 	va_start(args, format);
-	arg.nch = vsprintf(display, format, args);
+	arg.nch = vsnprintf(display, VSNPRINTF_BUF_SIZE, format, args);
 	va_end(args);
 	rtai_lxrt(BIDX, SIZARG, PRINTK, &arg);
 	return arg.nch;

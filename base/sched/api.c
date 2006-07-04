@@ -1807,6 +1807,7 @@ extern struct {
     void *cookie;
     int retmode;
     int cpumask;
+    int (*irq_ack)(unsigned int);
 } rtai_realtime_irq[];
 
 int rt_irq_wait(unsigned irq)

@@ -1,3 +1,8 @@
+2006-06-28  Matthijs ten Berge <m.h.tenberge@alumnus.utwente.nl>
+
+	* base/include/rtai_lxrt.h: use vsnprintf in place of vsprintf
+	  to guard against possible memory leaks.
+
 2006-06-26 RTAI-3.4-test1 released.
 
 2006-06-23  Paolo Mantegazza <mantegazza@aero.polimi.it>

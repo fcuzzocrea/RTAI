@@ -1,3 +1,11 @@
+2006-07-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/asm-i386/rtai_hal.h: declare support structure for
+	  interrupts handling here.
+	* base/arch/i386/hal/hal.immed and base/sched/api.c: remove redundant 
+	  local declarations of support structure for interrupts handling and 
+	  use the one defined in arch specific rtai_hal.h.
+
 2006-06-28  Matthijs ten Berge <m.h.tenberge@alumnus.utwente.nl>
 
 	* base/include/rtai_lxrt.h: use vsnprintf in place of vsprintf

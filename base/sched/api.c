@@ -1802,13 +1802,7 @@ void krtai_objects_release(void)
 
 #include <rtai_tasklets.h>
 
-extern struct {
-    int (*handler)(unsigned irq, void *cookie);
-    void *cookie;
-    int retmode;
-    int cpumask;
-    int (*irq_ack)(unsigned int);
-} rtai_realtime_irq[];
+extern struct rtai_realtime_irq_s rtai_realtime_irq[];
 
 int rt_irq_wait(unsigned irq)
 {	

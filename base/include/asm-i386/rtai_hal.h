@@ -181,6 +181,14 @@ static inline unsigned long long rtai_u64div32c(unsigned long long a,
 #endif /* CONFIG_X86_LOCAL_APIC */
 #include <rtai_trace.h>
 
+struct rtai_realtime_irq_s {
+        int (*handler)(unsigned irq, void *cookie);
+        void *cookie;
+        int retmode;
+        int cpumask;
+        int (*irq_ack)(unsigned int);
+};
+
 /* 
  * Linux has this information in io_apic.c, but it does not export it;
  * on the other hand it should be fairly stable this way and so we try

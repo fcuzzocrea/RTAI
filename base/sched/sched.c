@@ -1316,21 +1316,16 @@ RTIME start_rt_timer(int period)
 
 void stop_rt_timer(void)
 {
-	unsigned long flags, cpuid;
-
-	if (!rt_sched_timed) {
-		return;
+	if (rt_sched_timed) {
+		int cpuid;
+		rt_sched_timed = 0;
+		rt_release_rtc();
+		rt_release_irq(RTAI_APIC_TIMER_IPI);
+		for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+			rt_time_h = RT_TIME_END;
+			oneshot_running = 0;
+		}
 	}
-	rt_release_rtc();
-	rt_release_irq(RTAI_APIC_TIMER_IPI);
-	rt_sched_timed = 0;
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		rt_time_h = RT_TIME_END;
-		oneshot_running = 0;
-	}
-	flags = rt_global_save_flags_and_cli();
-	RT_SCHEDULE_MAP_BOTH(0xFF & ~(1 << rtai_cpuid()));
-	rt_global_restore_flags(flags);
 }
 
 #else /* !CONFIG_SMP */
@@ -1354,17 +1349,12 @@ RTIME start_rt_timer(int period)
 
 void stop_rt_timer(void)
 {
-	unsigned long flags;
-
-	if (!rt_sched_timed) {
-		return;
+	if (rt_sched_timed) {
+		rt_sched_timed = 0;
+		rt_release_rtc();
+		rt_time_h = RT_TIME_END;
+		rt_smp_oneshot_timer[0] = 0;
 	}
-	rt_release_rtc();
-	rt_time_h = RT_TIME_END;
-	rt_sched_timed = rt_smp_oneshot_timer[0] = 0;
-       	flags = rt_global_save_flags_and_cli();
-	rt_schedule();
-	rt_global_restore_flags(flags);
 }
 
 #endif /* CONFIG_SMP */
@@ -1419,20 +1409,15 @@ RTIME start_rt_timer(int period)
 
 void stop_rt_timer(void)
 {
-	unsigned long flags, cpuid;
-
-	if (!rt_sched_timed) {
-		return;
+	if (rt_sched_timed) {
+		int cpuid; 
+		rt_sched_timed = 0;
+		rt_free_apic_timers();
+		for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+			rt_time_h = RT_TIME_END;
+			oneshot_running = 0;
+		}
 	}
-	rt_free_apic_timers();
-	rt_sched_timed = 0;
-	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
-		rt_time_h = RT_TIME_END;
-		oneshot_running = 0;
-	}
-	flags = rt_global_save_flags_and_cli();
-	RT_SCHEDULE_MAP_BOTH(0xFF & ~(1 << rtai_cpuid()));
-	rt_global_restore_flags(flags);
 }
 
 #else /* !CONFIG_SMP */
@@ -1505,20 +1490,15 @@ void start_rt_apic_timers(struct apic_timer_setup_data *setup_mode, unsigned int
 
 void stop_rt_timer(void)
 {
-	unsigned long flags;
-
-	if (!rt_sched_timed) {
-		return;
-	}
+	if (rt_sched_timed) {
+		rt_sched_timed = 0;
 #ifdef USE_LINUX_TIMER
-	rt_free_linux_irq(TIMER_8254_IRQ, recover_jiffies);
+		rt_free_linux_irq(TIMER_8254_IRQ, recover_jiffies);
 #endif
-	rt_free_timer();
-	rt_time_h = RT_TIME_END;
-	rt_sched_timed = rt_smp_oneshot_timer[0] = 0;
-       	flags = rt_global_save_flags_and_cli();
-	rt_schedule();
-	rt_global_restore_flags(flags);
+		rt_free_timer();
+		rt_time_h = RT_TIME_END;
+		rt_smp_oneshot_timer[0] = 0;
+	}
 }
 
 #endif /* CONFIG_SMP */
@@ -1623,13 +1603,14 @@ void *rt_get_lxrt_fun_entry(int index) {
 
 static void lxrt_killall (void)
 {
-    int cpuid;
-
-    stop_rt_timer();
-
-    for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++)
-	while (rt_linux_task.next)
-	    rt_task_delete(rt_linux_task.next);
+	int cpuid;
+	
+	stop_rt_timer();
+	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
+		while (rt_linux_task.next) {
+			rt_task_delete(rt_linux_task.next);
+		}
+	}
 }
 
 static int lxrt_notify_reboot (struct notifier_block *nb, unsigned long event, void *p)

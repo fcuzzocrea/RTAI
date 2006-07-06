@@ -49,6 +49,10 @@ RTAI_MODULE_PARM(smiReset, int);
 #define CONFIG_RTAI_HW_SMI_LEGACY_USB	0
 #define CONFIG_RTAI_HW_SMI_BIOS		0
 
+#ifndef PCI_DEVICE_ID_INTEL_ICH7_0
+#define PCI_DEVICE_ID_INTEL_ICH7_0  0x27b8
+#endif
+
 static struct pci_device_id rthal_smi_pci_tbl[] __initdata = {
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AA_0) },
 { PCI_DEVICE(PCI_VENDOR_ID_INTEL, PCI_DEVICE_ID_INTEL_82801AB_0) },

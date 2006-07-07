@@ -1,3 +1,8 @@
+2006-07-08  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_tasklets.h, base/ipc/sem/sem.c, base/sched/api.c:
+	  cleaned faky/misleading documentation comments.	
+
 2006-07-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: revised all "stop_rt_timer", to remove 

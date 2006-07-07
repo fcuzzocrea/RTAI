@@ -1,7 +1,8 @@
 2006-07-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sched.c: revised all "stop_rt_timer", to remove 
-	  forgotten dead code.
+	  forgotten dead code; ensure period is zero in "start_rt_timer"
+	  when oneshot mode is assigned at starting the timer.
 
 2006-07-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

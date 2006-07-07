@@ -92,10 +92,12 @@ MODULE_LICENSE("GPL");
  * posed on it is just registered. An owner task will go into suspend
  * state only when it releases all the owned resources.
  *
- * @note RTAI counting semaphores assume that their counter will never
- *	 exceed 0xFFFF, such a number being used to signal returns in
- *	 error. Thus also the initial count value cannot be greater
- *	 than 0xFFFF. To be used only with RTAI24.x.xx (FIXME).
+ * @note if the legacy error return values scheme is used RTAI counting 
+ *       semaphores assume that their counter will never exceed 0xFFFF, 
+ *       such a number being used to signal returns in error. Thus also 
+ *       the initial count value cannot be greater 0xFFFF. The new error
+ *       return scheme allows counts in the order of billions instead.
+ *
  */
 void rt_typed_sem_init(SEM *sem, int value, int type)
 {

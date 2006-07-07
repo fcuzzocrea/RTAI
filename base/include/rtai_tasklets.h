@@ -133,8 +133,6 @@ do { \
  *
  * This function and macro can be used within the timer handler.
  *
- *
- * @note To be used only with RTAI24.x.xx.
  */
 struct rt_task_struct *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet,
 					  int use_fpu);
@@ -153,7 +151,6 @@ struct rt_task_struct *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet,
  * @return the pointer to the timer structure the user space application must
  * use to access all its related services.
  *
- * @note To be used only with RTAI24.x.xx.
  */
 #define rt_init_timer rt_init_tasklet 
 
@@ -171,7 +168,6 @@ struct rt_task_struct *rt_tasklet_use_fpu(struct rt_tasklet_struct *tasklet,
  * it is just an empty macro, as the user can, and must allocate the related
  * structure directly, either statically or dynamically.
  *
- * @note To be used only with RTAI24.x.xx.
  */
 #define rt_delete_timer rt_delete_tasklet
 
@@ -220,7 +216,6 @@ do { \
  *
  * @retval 0 on success.
  *
- * @note To be used only with RTAI24.x.xx.
  */
 #define rt_set_timer_handler rt_set_tasklet_handler
 
@@ -246,7 +241,6 @@ do { \
  *
  * @retval 0 on success.
  *
- * @note To be used only with RTAI24.x.xx.
  */
 #define rt_set_timer_data rt_set_tasklet_data
 

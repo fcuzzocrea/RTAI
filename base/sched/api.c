@@ -65,7 +65,6 @@ void rt_set_sched_policy(RT_TASK *task, int policy, int rr_quantum_ns)
  *
  * @return rt_get_prio returns the priority of task @e task.
  *
- * @note To be used only with RTAI24.x.xx.
  */
 int rt_get_prio(RT_TASK *task)
 {
@@ -92,7 +91,6 @@ int rt_get_prio(RT_TASK *task)
  *
  * @return rt_get_inher_prio returns the priority of task @e task.
  *
- * @note To be used only with RTAI24.x.xx.
  */
 int rt_get_inher_prio(RT_TASK *task)
 {
@@ -122,7 +120,6 @@ int rt_get_inher_prio(RT_TASK *task)
  * @return rt_change_prio returns the base priority task @e task had
  * before the change.
  *
- * @note To be used only with RTAI24.x.xx (FIXME).
  */
 int rt_change_prio(RT_TASK *task, int priority)
 {

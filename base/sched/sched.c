@@ -1396,6 +1396,7 @@ RTIME start_rt_timer(int period)
 	int cpuid;
 	struct apic_timer_setup_data setup_data[NR_RT_CPUS];
 	if (period <= 0) {
+		period = 0;
 		rt_set_oneshot_mode();
 	}
 	for (cpuid = 0; cpuid < NR_RT_CPUS; cpuid++) {
@@ -1435,6 +1436,7 @@ RTIME start_rt_timer(int period)
 
         unsigned long flags;
 	if (period <= 0) {
+		period = 0;
 		rt_set_oneshot_mode();
 	}
         flags = rt_global_save_flags_and_cli();

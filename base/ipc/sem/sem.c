@@ -145,7 +145,7 @@ void rt_typed_sem_init(SEM *sem, int value, int type)
  *	 exceed 0xFFFF, such a number being used to signal returns in
  *	 error. Thus also the initial count value cannot be greater
  *	 than 0xFFFF.
- *	 This is an old legacy function. RTAI 24.1.xx has also 
+ *	 This is an old legacy functioni, there is also 
  *	 @ref rt_typed_sem_init(), allowing to
  *	 choose among counting, binary and resource
  *	 semaphores. Resource semaphores have priority inherithance. 

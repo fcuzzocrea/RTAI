@@ -237,10 +237,8 @@ void rt_task_yield(void)
  * rt_task_suspend suspends execution of the task task.
  *
  * It will not be executed until a call to @ref rt_task_resume() or
- * @ref rt_task_make_periodic() is made. No account is made for
- * multiple suspends, i.e. a multiply suspended task is made ready as
- * soon as it is rt_task_resumed, thus immediately resuming its
- * execution if it is the highest in priority.
+ * @ref rt_task_make_periodic() is made. Multiple suspends and require as 
+ * many @ref rt_task_resume() as the rt_task_suspends placed on a task.
  *
  * @param task pointer to a task structure.
  *
@@ -249,9 +247,6 @@ void rt_task_yield(void)
  * - @b -EINVAL: task does not refer to a valid task.
  * - @b RTE_UNBLKD:  the task was unblocked while suspended;
  *
- * @note the new RTAI 24.1.xx (FIXME) development releases take into
- * account multiple suspend and require as many @ref rt_task_resume()
- * as the rt_task_suspends placed on a task.
  */
 int rt_task_suspend(RT_TASK *task)
 {
@@ -397,9 +392,6 @@ int rt_task_suspend_timed(RT_TASK *task, RTIME delay)
  * @return 0 on success. A negative value on failure as described below:
  * - @b EINVAL: task does not refer to a valid task.
  *
- * @note the new RTAI 24.1.xx (FIXME) development releases take into
- *       account multiple suspend and require as many rt_task_resumes
- *	 as the rt_task_suspends placed on a task.
  */
 int rt_task_resume(RT_TASK *task)
 {

@@ -270,15 +270,18 @@ menu "Scheduling options"
 #	depends on RTAI_EXTENDED
 
 config RTAI_SCHED_ISR_LOCK
-	bool "Disable rescheduling from ISRs"
+	bool "Disable immediate rescheduling from within ISRs"
 	default n
 	help
 	RTAI schedules as soon as a higher priority task is awaken in an 
 	interrupt handler, i.e. it does not wait to exit the handler itself.
-	This is the best way since a user that does not want it has just to
-	care calling any scheduling API at the very end of her/his handler.
-	Those not wanting to care when/where to call any scheduling API in
-	their handler should enable this options to be happy.
+	This is believed to be the best way, since a user that does not want 
+	it has just to care calling any scheduling API at the very end of 
+	her/his handler.
+	Those wanting to have any awaken higher priority task scheduled only
+	after exiting the ISR, regardless from where a scheduling API is
+	called within the handler, should disable immediate rescheduling 
+	from ISRs by enabling this configuration option.
 
 config RTAI_RTC_FREQ
 	string "Set RTC clock tick frequency and use RTC as the only timer"

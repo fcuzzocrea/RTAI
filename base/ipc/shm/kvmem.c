@@ -18,6 +18,40 @@
 
 #include <rtai_shm.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10)
+
+static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to)
+{
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(vma, from, kvirt_to_pa(to), PAGE_SIZE, PAGE_SHARED);
+}
+
+static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size)
+{
+	vma->vm_flags |= VM_RESERVED;
+	return remap_page_range(vma, from, to, size, PAGE_SHARED);
+}
+
+#else
+
+static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to)
+{
+	vma->vm_flags |= VM_RESERVED;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,14)
+	return vm_insert_page(vma, from, vmalloc_to_page((void *)to));
+#else
+	return  remap_pfn_range(vma, from, virt_to_phys((void *)__va_to_kva(to)) >> PAGE_SHIFT, PAGE_SHIFT, PAGE_SHARED);
+#endif
+}
+
+static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size)
+{
+	vma->vm_flags |= VM_RESERVED;
+	return remap_pfn_range(vma, from, (to) >> PAGE_SHIFT, size, PAGE_SHARED);
+}
+
+#endif
+
 /* allocate user space mmapable block of memory in the kernel space */
 void *rvmalloc(unsigned long size)
 {
@@ -69,7 +103,8 @@ int rvmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
 		return -EFAULT;
 	}
 	while (size > 0) {
-	                if (mm_remap_page_range(vma, start, kvirt_to_pa(pos), PAGE_SIZE, PAGE_SHARED)) {
+//		if (mm_remap_page_range(vma, start, kvirt_to_pa(pos), PAGE_SIZE, PAGE_SHARED)) {
+		if (vm_remap_page_range(vma, start, pos)) {
 			return -EAGAIN;
 		}
 		start += PAGE_SIZE;
@@ -130,7 +165,8 @@ int rkmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
 	if (pos%PAGE_SIZE || start%PAGE_SIZE || size%PAGE_SIZE) {
 		return -EFAULT;
 	}
-	if (mm_remap_page_range(vma, start, virt_to_phys((void *)pos), size, PAGE_SHARED)) {
+//	if (mm_remap_page_range(vma, start, virt_to_phys((void *)pos), size, PAGE_SHARED)) {
+	if (km_remap_page_range(vma, start, virt_to_phys((void *)pos), size)) {
 		return -EAGAIN;
 	}
 	return 0;

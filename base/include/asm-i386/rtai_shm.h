@@ -69,8 +69,6 @@ static inline unsigned long uvirt_to_kva(pgd_t *pgd, unsigned long adr)
 
 static inline unsigned long uvirt_to_bus(unsigned long adr)
 {
-	unsigned long kva;
-
 	return virt_to_bus((void *)uvirt_to_kva(pgd_offset(current->mm, adr), adr));
 }
 

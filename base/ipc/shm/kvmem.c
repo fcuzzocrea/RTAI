@@ -18,39 +18,21 @@
 
 #include <rtai_shm.h>
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,10)
-
-static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to)
-{
-	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(vma, from, kvirt_to_pa(to), PAGE_SIZE, PAGE_SHARED);
-}
-
-static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size)
-{
-	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(vma, from, virt_to_phys((void *)to), size, PAGE_SHARED);
-}
-
-#else
-
 static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to)
 {
 	vma->vm_flags |= VM_RESERVED;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,14)
 	return vm_insert_page(vma, from, vmalloc_to_page((void *)to));
 #else
-	return remap_pfn_range(vma, from, kvirt_to_pa(to) >> PAGE_SHIFT, PAGE_SHIFT, PAGE_SHARED);
+	return mm_remap_page_range(vma, from, kvirt_to_pa(to), PAGE_SIZE, PAGE_SHARED);
 #endif
 }
 
 static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size)
 {
 	vma->vm_flags |= VM_RESERVED;
-	return remap_pfn_range(vma, from, virt_to_phys((void *)to) >> PAGE_SHIFT, size, PAGE_SHARED);
+	return mm_remap_page_range(vma, from, virt_to_phys((void *)to), size, PAGE_SHARED);
 }
-
-#endif
 
 /* allocate user space mmapable block of memory in the kernel space */
 void *rvmalloc(unsigned long size)

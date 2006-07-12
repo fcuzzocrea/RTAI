@@ -29,7 +29,7 @@ static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned l
 static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size)
 {
 	vma->vm_flags |= VM_RESERVED;
-	return remap_page_range(vma, from, to, size, PAGE_SHARED);
+	return remap_page_range(vma, from, virt_to_phys((void *)to), size, PAGE_SHARED);
 }
 
 #else
@@ -47,7 +47,7 @@ static __inline__ int vm_remap_page_range(struct vm_area_struct *vma, unsigned l
 static __inline__ int km_remap_page_range(struct vm_area_struct *vma, unsigned long from, unsigned long to, unsigned long size)
 {
 	vma->vm_flags |= VM_RESERVED;
-	return remap_pfn_range(vma, from, to >> PAGE_SHIFT, size, PAGE_SHARED);
+	return remap_pfn_range(vma, from, virt_to_phys((void *)to) >> PAGE_SHIFT, size, PAGE_SHARED);
 }
 
 #endif
@@ -166,7 +166,7 @@ int rkmmap(void *mem, unsigned long memsize, struct vm_area_struct *vma) {
 		return -EFAULT;
 	}
 //	if (mm_remap_page_range(vma, start, virt_to_phys((void *)pos), size, PAGE_SHARED)) {
-	if (km_remap_page_range(vma, start, virt_to_phys((void *)pos), size)) {
+	if (km_remap_page_range(vma, start, pos, size)) {
 		return -EAGAIN;
 	}
 	return 0;

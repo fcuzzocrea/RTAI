@@ -1,8 +1,14 @@
+2006-07-18  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: adapted to the new --posix-wrap making,
+	  that allows to use standard Posix APIs names for what RTAI supports.
+
 2006-07-17  Pierangelo Masarati <masarati@aero.polimi.it>
 
 	* add --posix-wrap support to rtai-config, so that it is possible to
 	  use supported plain Posix APIs names, i.e. without the need of
 	  postpending "_rt".
+	* add new /base/posix directory and POSIX_WRAPS support file.
 
 2006-07-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

@@ -1,6 +1,8 @@
 2006-07-17  Pierangelo Masarati <masarati@aero.polimi.it>
 
-	* add --posix-wrap support to rtai-config
+	* add --posix-wrap support to rtai-config, so that it is possible to
+	  use supported plain Posix APIs names, i.e. without the need of
+	  postpending "_rt".
 
 2006-07-12  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

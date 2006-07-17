@@ -1623,7 +1623,7 @@ fi
 dnl
 dnl POSIX wraps
 dnl
-RTAI_POSIX_WRAP=`for f in \`cat "${srcdir}/base/posix/POSIX_WRAPS"\`; do echo -n " --Wl,--wrap --Wl,$f" ; done`
+RTAI_POSIX_WRAP=`for f in \`cat "${srcdir}/base/posix/POSIX_WRAPS"\`; do echo -n " -Wl,--wrap -Wl,$f" ; done`
 
 dnl
 dnl Build the Makefiles

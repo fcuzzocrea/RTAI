@@ -812,6 +812,7 @@ RTAI_PROTO(int, __wrap_pthread_cancel,(pthread_t thread))
 	int hs, ret;
 	hs = MAKE_SOFT();
 	ret = pthread_cancel(thread);
+	pthread_kill(thread, SIGKILL);
 	MAKE_HARD(hs);
 	return ret;
 }

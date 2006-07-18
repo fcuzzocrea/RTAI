@@ -607,9 +607,40 @@ static inline void pthread_testcancel(void)
 	pthread_exit(NULL);
 }
 
-static inline void clock_gettime(int clockid, struct timespec *current_time)
+static inline int clock_getres(int clockid, struct timespec *res)
 {
-	count2timespec(rt_get_time(), current_time);
+	res->tv_sec = 0;
+	if (!(res->tv_nsec = count2nano(1))) {
+		res->tv_nsec = 1;
+	}
+	return 0;
+}
+
+static inline int clock_gettime(int clockid, struct timespec *tp)
+{
+	count2timespec(rt_get_time(), tp);
+	return 0;
+}
+
+static inline int clock_settime(int clockid, const struct timespec *tp)
+{
+	return 0;
+}
+
+static inline int clock_nanosleep(int clockid, int flags, const struct timespec *rqtp, struct timespec *rmtp)
+{
+	RTIME expire;
+	if (rqtp->tv_nsec >= 1000000000L || rqtp->tv_nsec < 0 || rqtp->tv_sec < 0) {
+		return -EINVAL;
+	}
+	rt_sleep_until(expire = flags ? timespec2count(rqtp) : rt_get_time() + timespec2count(rqtp));
+	if ((expire -= rt_get_time()) > 0) {
+		if (rmtp) {
+			count2timespec(expire, rmtp);
+		}
+		return -EINTR;
+	}
+        return 0;
 }
 
 static inline int nanosleep(const struct timespec *rqtp, struct timespec *rmtp)
@@ -699,7 +730,7 @@ RTAI_PROTO(RTIME, timespec2nanos,(const struct timespec *t))
  * FUNCTIONS MADE SAFELY USABLE IN HARD REAL TIME, BUT BREAKING HARD REAL TIME
  */
 
-RTAI_PROTO(sem_t *,__wrap_sem_open,(const char *name, int oflags, int value, int type))
+RTAI_PROTO(sem_t *, __wrap_sem_open,(const char *name, int oflags, int value, int type))
 {
 	int hs, fd;
 	sem_t *sem;
@@ -1294,9 +1325,40 @@ RTAI_PROTO(int, __wrap_pthread_spin_unlock,(pthread_spinlock_t *lock))
 }
 #endif
 
-RTAI_PROTO(void, __wrap_clock_gettime,(int clockid, struct timespec *current_time))
+RTAI_PROTO(int, __wrap_clock_getres,(clockid_t clockid, struct timespec *res))
 {
-	count2timespec(rt_get_time(), current_time);
+	res->tv_sec = 0;
+	if (!(res->tv_nsec = count2nano(1))) {
+		res->tv_nsec = 1;
+	}
+	return 0;
+}
+
+RTAI_PROTO(int, __wrap_clock_gettime,(clockid_t clockid, struct timespec *tp))
+{
+	count2timespec(rt_get_time(), tp);
+	return 0;
+}
+
+RTAI_PROTO(int, __wrap_clock_settime,(clockid_t clockid, const struct timespec *tp))
+{
+	return 0;
+}
+
+RTAI_PROTO(int, __wrap_clock_nanosleep,(clockid_t clockid, int flags, const struct timespec *rqtp, struct timespec *rmtp))
+{
+	RTIME expire;
+	if (rqtp->tv_nsec >= 1000000000L || rqtp->tv_nsec < 0 || rqtp->tv_sec < 0) {
+		return -EINVAL;
+	}
+	rt_sleep_until(expire = flags ? timespec2count(rqtp) : rt_get_time() + timespec2count(rqtp));
+	if ((expire -= rt_get_time()) > 0) {
+		if (rmtp) {
+			count2timespec(expire, rmtp);
+		}
+		return -EINTR;
+	}
+        return 0;
 }
 
 RTAI_PROTO(int, __wrap_nanosleep,(const struct timespec *rqtp, struct timespec *rmtp))

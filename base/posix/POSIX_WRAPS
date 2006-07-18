@@ -9,7 +9,10 @@ pthread_exit
 pthread_join
 pthread_signal
 
+clock_getres
 clock_gettime
+clock_settime
+clock_nanosleep
 nanosleep
 
 pthread_barrier_open

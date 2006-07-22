@@ -1,3 +1,8 @@
+2006-07-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/mq/mq.c: do not return receive priorities if the related 
+	  pointer is NULL.
+
 2006-07-18  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h: adapted to the new --posix-wrap making,

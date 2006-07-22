@@ -453,10 +453,14 @@ size_t _mq_receive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int *msgp
 		size = msg_ptr->hdr.size;
 		if (space) {
 			memcpy(msg_buffer, &msg_ptr->data, size);
-			*msgprio = msg_ptr->hdr.priority;
+			if (msgprio) {
+				*msgprio = msg_ptr->hdr.priority;
+			}
 		} else {
 			rt_copy_to_user(msg_buffer, &msg_ptr->data, size);
-			rt_copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
+			if (msgprio) {
+				rt_copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
+			}
 		}
 	} else {
 		size = ERROR;
@@ -518,10 +522,14 @@ size_t _mq_timedreceive(mqd_t mq, char *msg_buffer, size_t buflen, unsigned int 
 		size = msg_ptr->hdr.size;
 		if (space) {
 			memcpy(msg_buffer, &msg_ptr->data, size);
-			*msgprio = msg_ptr->hdr.priority;
+			if (msgprio) {
+				*msgprio = msg_ptr->hdr.priority;
+			}
 		} else {
 			rt_copy_to_user(msg_buffer, &msg_ptr->data, size);
-			rt_copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
+			if (msgprio) {
+				rt_copy_to_user(msgprio, &msg_ptr->hdr.priority, sizeof(msgprio));
+			}
 		}
 	} else {
 		size = ERROR;

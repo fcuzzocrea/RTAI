@@ -733,33 +733,40 @@ RTAI_PROTO(RTIME, timespec2nanos,(const struct timespec *t))
 RTAI_PROTO(sem_t *, __wrap_sem_open,(const char *name, int oflags, int value, int type))
 {
 	int hs, fd;
-	sem_t *sem;
+	sem_t *sem = NULL;
 	hs = MAKE_SOFT();
-	if ((fd = open(name, O_RDONLY)) > 0) {
-		read(fd, &sem, sizeof(int));
-		close(fd); 
-        	atomic_inc((atomic_t *)(&((int *)sem)[1]));
-	} else {
+repeat:
+	if ((fd = open(name, O_CREAT | O_EXCL | O_WRONLY)) > 0) {
 	        struct { unsigned long name, value, type; } arg = { nam2num(name), value, (type == SEM_BINARY ? BIN_SEM : CNT_SEM) | PRIO_Q };
 		sem = (sem_t *)malloc(sizeof(sem_t));
-	        if ((((int *)sem)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).i[LOW]) && (fd = open(name, O_WRONLY | O_CREAT))) {
+	        if ((((int *)sem)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).i[LOW])) {
 			write(fd, &sem, sizeof(int));
 			close(fd); 
         		((int *)sem)[1] = 1;
 		} else {
 			free(sem);
-			sem = 0;
 		}
+	} else {
+		if (!rt_get_adr(nam2num(name))) {
+			unlink(name);
+			goto repeat;
+		}
+		while ((fd = open(name, O_RDONLY)) <= 0);
+		read(fd, &sem, sizeof(int));
+		close(fd); 
+       		atomic_inc((atomic_t *)(&((int *)sem)[1]));
 	}
 	MAKE_HARD(hs);
 	return sem;
 }
 
-RTAI_PROTO(int, __wrap_sem_init,(sem_t *sem, int pshared, unsigned int value))
+static inline int __sem_init(sem_t *sem, int pshared, unsigned int value, int type)
 {
 	int hs;
+	unsigned long name;
+	name = pshared ? pshared : rt_get_name(0);
 	if (value <= SEM_VALUE_MAX) {
-	        struct { unsigned long name, value, type; } arg = { rt_get_name(0), value, (pshared == SEM_BINARY ? BIN_SEM : CNT_SEM) | PRIO_Q };
+	        struct { unsigned long name, value, type; } arg = { name, value, type };
 		hs = MAKE_SOFT();
 		((int *)sem)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).i[LOW];
        		((int *)sem)[1] = 0;
@@ -768,6 +775,11 @@ RTAI_PROTO(int, __wrap_sem_init,(sem_t *sem, int pshared, unsigned int value))
 	}
 	errno = EINVAL;
 	return -1;
+}
+
+RTAI_PROTO(int, __wrap_sem_init,(sem_t *sem, int pshared, unsigned int value))
+{
+	return __sem_init(sem, pshared, value, CNT_SEM | PRIO_Q);
 }
 
 RTAI_PROTO(int, __wrap_sem_close,(sem_t *sem))
@@ -784,8 +796,8 @@ RTAI_PROTO(int, __wrap_sem_close,(sem_t *sem))
 		hs = MAKE_SOFT();
 		num2nam(rt_get_name(((void **)sem)[0]), name);
 		rtai_lxrt(BIDX, SIZARG, LXRT_SEM_DELETE, &arg);
+		unlink(name);
 	        if (cnt) {
-			unlink(name);
 			free((void *)sem);
 		}
 		MAKE_HARD(hs);
@@ -918,7 +930,7 @@ RTAI_PROTO(pthread_cond_t *, __wrap_pthread_cond_open,(const char *name))
 
 RTAI_PROTO(int, __wrap_pthread_cond_init,(pthread_cond_t *cond, pthread_condattr_t *cond_attr))
 {
-	return __wrap_sem_init((sem_t *)cond, SEM_BINARY, 0);
+	return __sem_init((sem_t *)cond, 0, 0, BIN_SEM | PRIO_Q);
 }
 
 RTAI_PROTO(int, __wrap_pthread_cond_destroy,(pthread_cond_t *cond))
@@ -941,7 +953,7 @@ RTAI_PROTO(pthread_barrier_t *, __wrap_pthread_barrier_open,(const char *name, u
 
 RTAI_PROTO(int, __wrap_pthread_barrier_init,(pthread_barrier_t *barrier, const pthread_barrierattr_t *attr, unsigned int count))
 {
-	return __wrap_sem_init((sem_t *)barrier, 0, count);
+	return __sem_init((sem_t *)barrier, 0, count, CNT_SEM | PRIO_Q);
 }
 
 RTAI_PROTO(int, __wrap_pthread_barrier_destroy,(pthread_barrier_t *barrier))

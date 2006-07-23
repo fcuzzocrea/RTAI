@@ -764,9 +764,9 @@ static inline int __sem_init(sem_t *sem, int pshared, unsigned int value, int ty
 {
 	int hs;
 	unsigned long name;
-	name = pshared ? pshared : rt_get_name(0);
+	name = pshared != SEM_BINARY ? pshared : rt_get_name(0);
 	if (value <= SEM_VALUE_MAX) {
-	        struct { unsigned long name, value, type; } arg = { name, value, type };
+	        struct { unsigned long name, value, type; } arg = { name, value, pshared != SEM_BINARY ? type : (BIN_SEM | PRIO_Q) };
 		hs = MAKE_SOFT();
 		((int *)sem)[0] = rtai_lxrt(BIDX, SIZARG, LXRT_SEM_INIT, &arg).i[LOW];
        		((int *)sem)[1] = 0;

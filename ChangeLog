@@ -1,7 +1,8 @@
-2006-07-22  Paolo Mantegazza <mantegazza@aero.polimi.it>
+2006-07-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
-	* base/ipc/mq/mq.c: do not return receive priorities if the related 
-	  pointer is NULL.
+	* base/include/rtai_posix: added a few APIs related to timing
+	  functions to improve plain POSIX compatibility (see posix user 
+	  examples in showroom, new sem_clock added also).
 
 2006-07-18  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

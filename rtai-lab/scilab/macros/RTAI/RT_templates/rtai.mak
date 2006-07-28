@@ -14,15 +14,15 @@ CC = gcc
 CC_OPTIONS = -O -DNDEBUG -Dlinux -DNARROWPROTO -D_GNU_SOURCE
 
 MODEL = $$MODEL$$
-OBJSSTAN = $$OBJ$$
+OBJSSTAN = rtmain.o $$OBJ$$
 
-SCILIBS = $(SCIDIR)/libs/scicos.a $(SCIDIR)/libs/lapack.a $(SCIDIR)/libs/poly.a $(SCIDIR)/libs/calelm.a $(SCIDIR)/libs/blas.a $(SCIDIR)/libs/lapack.a
+SCILIBS = $(SCIDIR)/libs/scicos.a $(SCIDIR)/libs/poly.a $(SCIDIR)/libs/calelm.a $(SCIDIR)/libs/blas.a $(SCIDIR)/libs/lapack.a $(SCIDIR)/libs/os_specific.a
 OTHERLIBS = 
 ULIBRARY = $(RTAIDIR)/lib/libsciblk.a $(RTAIDIR)/lib/liblxrt.a
 
-CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/routines $(C_FLAGS) -I$(RTAIDIR)/include/scicos -DMODEL=$(MODEL)
+CFLAGS = $(CC_OPTIONS) -O2 -I$(SCIDIR)/routines $(C_FLAGS) -I$(RTAIDIR)/include/scicos -DMODEL=$(MODEL) -DMODELN=$(MODEL).c
 
-rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL)_standalone.c $(MODEL)_io.c
+rtmain.c: $(RTAIDIR)/share/rtai/scicos/rtmain.c $(MODEL).c $(MODEL)_io.c
 	cp $< .
 
 ../$$MODEL$$: $(OBJSSTAN) $(ULIBRARY)

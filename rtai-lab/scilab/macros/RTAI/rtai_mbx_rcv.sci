@@ -70,7 +70,7 @@ case 'define' then
   out=1
   outsz = 1
   name = 'MBX'
-  ipaddr = '0'
+  ipaddr = '127.0.0.1'
 
   model=scicos_model()
   model.sim=list(' ',2004)

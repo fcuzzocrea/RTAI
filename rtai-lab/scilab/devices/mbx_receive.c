@@ -1,36 +1,16 @@
-/*
-  COPYRIGHT (C) 2003  Roberto Bucher (roberto.bucher@die.supsi.ch)
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-*/
-
+#include <machine.h>
+#include <scicos_block.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <rtai_netrpc.h>
-#include <rtai_msg.h>
-#include <rtai_mbx.h>
-
-#include "rtmain.h"
+#include <rtai_sem.h>
 
 struct MbxR{
-  int nch;
   char mbxName[10];
   MBX * mbx;
   long tNode;
@@ -38,68 +18,80 @@ struct MbxR{
   double * oldVal;
 };
 
-void * inp_mbx_receive_init(int nch,char * sName,char * IP)
+static void init(scicos_block *block)
 {
+  char str[20];
   struct MbxR * mbx = (struct MbxR *) malloc(sizeof(struct MbxR));
-  mbx->nch=nch;
-  strcpy(mbx->mbxName,sName);
+  int nch=block->nout;
+  getstr(str,block->ipar,2,block->ipar[0]);
+  strcpy(mbx->mbxName,str);
+  getstr(str,block->ipar,2+block->ipar[0],block->ipar[1]);
 
   struct sockaddr_in addr;
 
-  if(!strcmp(IP,"0")) {
+  if(!strcmp(str,"0")) {
     mbx->tNode = 0;
     mbx->tPort = 0;
   }
   else {
-    inet_aton(IP, &addr.sin_addr);
+    inet_aton(str, &addr.sin_addr);
     mbx->tNode = addr.sin_addr.s_addr;
-    while ((mbx->tPort = rt_request_port_id(mbx->tNode,nam2num(sName))) <= 0 && mbx->tPort != -EINVAL);
+    while ((mbx->tPort = rt_request_port(mbx->tNode)) <= 0
+           && mbx->tPort != -EINVAL);
   }
 
-  mbx->mbx = (MBX *) RT_typed_named_mbx_init(mbx->tNode,mbx->tPort,sName,nch*sizeof(double),FIFO_Q);
+  mbx->mbx = (MBX *) RT_typed_named_mbx_init(mbx->tNode,mbx->tPort,mbx->mbxName,nch*sizeof(double),FIFO_Q);
 
   if(mbx->mbx == NULL) {
-    fprintf(stderr, "Error in getting %s mailbox address\n", sName);
+    fprintf(stderr, "Error in getting %s mailbox address\n", mbx->mbxName);
     exit_on_error();
   }
   mbx->oldVal = calloc(nch,sizeof(double));
 
-  return((void *) mbx);
+  *block->work=(void *) mbx;
 }
 
-void inp_mbx_receive_input(void * ptr, double * y, double t)
+static void inout(scicos_block *block)
 {
-  struct MbxR * mbx = (struct MbxR *) ptr;
-
-  int ntraces = mbx->nch;
+  struct MbxR * mbx = (struct MbxR *) (*block->work);
+  int ntraces = block->nout;
   struct{
     double u[ntraces];
   } data;
   int i;
 
   if(!RT_mbx_receive(mbx->tNode, mbx->tPort, mbx->mbx, &data, sizeof(data))) {
-  for(i=0;i<ntraces;i++){
+    for(i=0;i<ntraces;i++){
       mbx->oldVal[i] = data.u[i];
+    }
   }
-  }
-  for(i=0;i<ntraces;i++) y[i] = mbx->oldVal[i];
+  for(i=0;i<ntraces;i++) block->outptr[i][0] = mbx->oldVal[i];
 }
 
-void inp_mbx_receive_update(void)
+static void end(scicos_block *block)
 {
-}
-
-void inp_mbx_receive_end(void * ptr)
-{
-  struct MbxR * mbx = (struct MbxR *) ptr;
+  struct MbxR * mbx = (struct MbxR *) (*block->work);
 
   RT_named_mbx_delete(mbx->tNode, mbx->tPort,mbx->mbx);
-  printf("RECEIVE MBX %s closed\n",mbx->mbxName);
+  printf("OVRWR MBX %s closed\n",mbx->mbxName);
   if(mbx->tNode){
     rt_release_port(mbx->tNode,mbx->tPort);
   }
   free(mbx->oldVal);
   free(mbx);
+}
+
+void rtai_mbx_rcv(scicos_block *block,int flag)
+{
+  if (flag==1){          /* set output */
+    inout(block);
+  }
+  else if (flag==5){     /* termination */ 
+    end(block);
+  }
+  else if (flag ==4){    /* initialisation */
+    init(block);
+  }
 }
 
 

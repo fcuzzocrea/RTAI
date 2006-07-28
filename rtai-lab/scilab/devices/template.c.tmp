@@ -1,0 +1,34 @@
+#include <machine.h>
+#include <scicos_block.h>
+
+static void init(scicos_block *block)
+{
+}
+
+static void inout(scicos_block *block)
+{
+}
+
+static void end(scicos_block *block)
+{
+}
+
+
+
+void xxxx(scicos_block *block,int flag)
+{
+  if (flag==1){          /* set output */
+    inout(block);
+  }
+  if (flag==2){          /* get input */
+    inout(block);
+  }
+  else if (flag==5){     /* termination */ 
+    end(block);
+  }
+  else if (flag ==4){    /* initialisation */
+    init(block);
+  }
+}
+
+

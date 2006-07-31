@@ -815,10 +815,10 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
 			++cnd->count;
                         retval = RTE_UNBLKD;
 		} else {
-                        retval = RTE_OBJREM;
+			retval = 0;
 		}
 	} else {
-		retval = 0;
+		retval = RTE_OBJREM;
 	}
 	rt_global_restore_flags(flags);
 	if (rt_sem_wait(mtx) < RTE_LOWERR) {

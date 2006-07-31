@@ -209,6 +209,9 @@ static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size,
 	void *msg_buf0, *msg_buf1;
 	RT_TASK *rt_task;
 
+	if ((rt_task = current->rtai_tskext(TSKEXT0))) {
+		return rt_task;
+	}
 	if (rt_get_adr(name)) {
 		return 0;
 	}

@@ -77,12 +77,13 @@ void rt_typed_sem_init(SEM *sem,
 
 SEM *_rt_typed_named_sem_init(unsigned long sem_name,
 			     int value,
-			     int type);
+			     int type,
+			     unsigned long *handle);
 
 static inline SEM *rt_typed_named_sem_init(const char *sem_name,
 					   int value,
 					   int type) {
-    return _rt_typed_named_sem_init(nam2num(sem_name), value, type);
+    return _rt_typed_named_sem_init(nam2num(sem_name), value, type, NULL);
 }
 
 void rt_sem_init(SEM *sem,
@@ -265,7 +266,7 @@ RTAI_PROTO(int, rt_sem_delete,(SEM *sem))
 
 RTAI_PROTO(SEM *, rt_typed_named_sem_init,(const char *name, int value, int type))
 {
-	struct { unsigned long name; long value, type; } arg = { nam2num(name), value, type };
+	struct { unsigned long name; long value, type; unsigned long *handle; } arg = { nam2num(name), value, type, NULL };
 	return (SEM *)rtai_lxrt(BIDX, SIZARG, NAMED_SEM_INIT, &arg).v[LOW];
 }
 

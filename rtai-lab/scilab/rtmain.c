@@ -676,7 +676,7 @@ struct option options[] = {
 void print_usage(void)
 {
     fputs(
-	("\nUsage:  'RT-model-name_standalone' [OPTIONS]\n"
+	("\nUsage:  'RT-model-name' [OPTIONS]\n"
 	 "\n"
 	 "OPTIONS:\n"
 	 "  -u, --usage\n"

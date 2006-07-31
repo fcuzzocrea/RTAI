@@ -4,9 +4,11 @@
 	  task extension if already set.
 	* base/ipc/sem.c: barrier returns mark the unleashing task and 
 	  unlished tasks with different values; typed named semphore 
-	  initialization tell if it existed already.
+	  initialization tell if it existed already; do not let non owner 
+	  unlocking of an owned RES_SEM.
 	* base/include/rtai_sem.h, rtai_posix.h: declarations of typed named
 	  semaphores redifined according to the new prototype.
+	* base/include/rtai_sched.h: add permission error definition.
 
 2006-07-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
 

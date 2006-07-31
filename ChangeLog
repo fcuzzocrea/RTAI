@@ -1,3 +1,13 @@
+2006-07-31  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: __task_init returns immediately the available 
+	  task extension if already set.
+	* base/ipc/sem.c: barrier returns mark the unleashing task and 
+	  unlished tasks with different values; typed named semphore 
+	  initialization tell if it existed already.
+	* base/include/rtai_sem.h, rtai_posix.h: declarations of typed named
+	  semaphores redifined according to the new prototype.
+
 2006-07-23  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix: added a few APIs related to timing

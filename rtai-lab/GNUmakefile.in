@@ -56,7 +56,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_xrtailab_OBJECTS = xrtailab-Fl_Led.$(OBJEXT) \
 	xrtailab-Fl_Led_Window.$(OBJEXT) \
 	xrtailab-Fl_Leds_Manager.$(OBJEXT) \
-	xrtailab-Fl_Alog_Manager.$(OBJEXT) \
+	xrtailab-Fl_ALogs_Manager.$(OBJEXT) \
 	xrtailab-Fl_Logs_Manager.$(OBJEXT) xrtailab-Fl_Meter.$(OBJEXT) \
 	xrtailab-Fl_Meter_Window.$(OBJEXT) \
 	xrtailab-Fl_Meters_Manager.$(OBJEXT) \

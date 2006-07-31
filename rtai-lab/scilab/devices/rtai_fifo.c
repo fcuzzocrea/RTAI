@@ -1,89 +1,50 @@
-/*
-  COPYRIGHT (C) 2003  Roberto Bucher (roberto.bucher@die.supsi.ch)
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-*/
-
+#include <machine.h>
+#include <scicos_block.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <rtai_fifos.h>
 
 #define FIFO_SIZE   50000
 
-struct Fifo{
-  int nch;
-  int fifon;
-};
-
-void * inp_rtai_fifo_init(int nch,char * sName,char * sParam,double p1,
-		       double p2, double p3, double p4, double p5)
+static void init(scicos_block *block)
 {
-  return(NULL);
+  rtf_create(block->ipar[0],FIFO_SIZE);
+  rtf_reset(block->ipar[0]);
 }
 
-void inp_rtai_fifo_input(void * ptr, double * y, double t)
+static void inout(scicos_block *block)
 {
-  /*     *y=XXXX; */
-}
-
-void inp_rtai_fifo_update(void)
-{
-}
-
-void inp_rtai_fifo_end(void * ptr)
-{
-}
-
-void * out_rtai_fifo_init(int nch, int fifon)
-{
-  struct Fifo * fifo = (struct Fifo *) malloc(sizeof(struct Fifo));
-  fifo->nch=nch;
-  fifo->fifon=fifon;
-
-  rtf_create(fifon,FIFO_SIZE);
-  rtf_reset(fifon);
-
-  return((void *) fifo);
-}
-
-void out_rtai_fifo_output(void * ptr, double * u,double t)
-{
-  struct Fifo * fifo = (struct Fifo *) ptr;
-  int ntraces=fifo->nch;
+  int ntraces=block->nin;
   struct {
     float t;
     float u[ntraces];
   } data;
   int i;
 
-  data.t=(float) t;
+  data.t=(float) get_scicos_time();
   for (i = 0; i < ntraces; i++) {
-    data.u[i] = (float) u[i];
+    data.u[i] = (float) block->inptr[i][0];
   }
-  rtf_put(fifo->fifon,&data, sizeof(data));
+  rtf_put(block->ipar[0],&data, sizeof(data));
 }
 
-void out_rtai_fifo_end(void * ptr)
+static void end(scicos_block *block)
 {
-  struct Fifo * fifo = (struct Fifo *) ptr;
-  rtf_destroy(fifo->fifon);
-  printf("FIFO %d closed\n",fifo->fifon);
-  free(fifo);
+  rtf_destroy(block->ipar[0]);
+  printf("FIFO %d closed\n",block->ipar[0]);
 }
 
-
+void rtfifo(scicos_block *block,int flag)
+{
+  if (flag==2){          
+    inout(block);
+  }
+  else if (flag==5){     /* termination */ 
+    end(block);
+  }
+  else if (flag ==4){    /* initialisation */
+    init(block);
+  }
+}
 
 

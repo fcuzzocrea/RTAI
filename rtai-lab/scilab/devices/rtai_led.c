@@ -1,21 +1,5 @@
-/*
-  COPYRIGHT (C) 2003  Roberto Bucher (roberto.bucher@die.supsi.ch)
-
-  This library is free software; you can redistribute it and/or
-  modify it under the terms of the GNU Lesser General Public
-  License as published by the Free Software Foundation; either
-  version 2 of the License, or (at your option) any later version.
-
-  This library is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-  Lesser General Public License for more details.
-
-  You should have received a copy of the GNU Lesser General Public
-  License along with this library; if not, write to the Free Software
-  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
-*/
-
+#include <machine.h>
+#include <scicos_block.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <rtai_netrpc.h>
@@ -27,60 +11,67 @@
 #define MAX_RTAI_LEDS               1000
 #define MBX_RTAI_LED_SIZE           5000
 
-struct Led{
-  int nch;
-  char ledName[20];
-  MBX * mbx;
-};
-
 extern char *TargetLedMbxID;
 
-void * out_rtai_led_init(int nch,char * sName)
+void getstr(char * str, int par[], int init, int len);
+
+static void init(scicos_block *block)
 {
-  struct Led * led;
-
-  led=(struct Led *) malloc(sizeof(struct Led));
-
-  led->nch=nch;
-  strcpy(led->ledName,sName);
+  char ledName[10];
   char name[7];
+  int nch = block->nin;
+  MBX *mbx;
 
-  rtRegisterLed(sName,nch);
+  getstr(ledName,block->ipar,1,block->ipar[0]);
+  rtRegisterLed(ledName,nch);
   get_a_name(TargetLedMbxID,name);
 
-  led->mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,(MBX_RTAI_LED_SIZE/(sizeof(unsigned int)))*(sizeof(unsigned int)),FIFO_Q);
-  if(led->mbx == NULL) {
+  mbx = (MBX *) RT_typed_named_mbx_init(0,0,name,MBX_RTAI_LED_SIZE/sizeof(unsigned int)*sizeof(unsigned int),FIFO_Q);
+  if(mbx == NULL) {
     fprintf(stderr, "Cannot init mailbox\n");
     exit_on_error();
   }
 
-  return((void *) led);
+  *block->work=(void *) mbx;
 }
 
-void out_rtai_led_output(void * ptr, double * u, double t)
+static void inout(scicos_block *block)
 {
-  struct Led * led = (struct Led *) ptr;
-  int nleds=led->nch;
+  MBX * mbx = (MBX *) (*block->work);
+  int nleds=block->nin;
   int i;
   unsigned int led_mask = 0;
 
   for (i = 0; i < nleds; i++) {
-    if (u[i] > 0.) {
+    if (block->inptr[i][0] > 0.) {
       led_mask += (1 << i);
     } else {
       led_mask += (0 << i);
     }
   }
-  RT_mbx_send_if(0, 0, led->mbx, &led_mask, sizeof(led_mask));
+  RT_mbx_send_if(0, 0, mbx, &led_mask, sizeof(led_mask));
 }
 
-void out_rtai_led_end(void * ptr)
+static void end(scicos_block *block)
 {
-  struct Led * led = (struct Led *) ptr;
-  RT_named_mbx_delete(0, 0, led->mbx);
-  printf("Led %s closed\n",led->ledName);
-  free(led);
+  char ledName[10];
+  MBX * mbx = (MBX *) (*block->work);
+  RT_named_mbx_delete(0, 0, mbx);
+  getstr(ledName,block->ipar,1,block->ipar[0]);
+  printf("Led %s closed\n",ledName);
 }
 
+void rtled(scicos_block *block,int flag)
+{
+  if (flag==2){          
+    inout(block);
+  }
+  else if (flag==5){     /* termination */ 
+    end(block);
+  }
+  else if (flag ==4){    /* initialisation */
+    init(block);
+  }
+}
 
 

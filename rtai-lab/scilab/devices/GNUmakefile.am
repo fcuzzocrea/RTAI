@@ -9,18 +9,26 @@ libsciblk_a_SOURCES = \
 	rtai_led.c \
 	rtai_meter.c \
 	rtai_fifo.c \
-	extdata.c \
+	rtai_sinus.c \
+	rtai_square.c \
+	rtai_step.c \
+	rtai_extdata.c \
 	mbx_receive_if.c \
 	mbx_receive.c \
 	mbx_ovrwr_send.c \
 	mbx_send_if.c \
+	getstr.c \
 	rtmain.h \
-	rtai_sem.c
+	rtai_sem_signal.c \
+	rtai_sem_wait.c \
+	olddevices.c
 
 if CONFIG_RTAI_COMEDI_LXRT
 libsciblk_a_SOURCES += \
-	rtai_comedi_data.c \
-	rtai_comedi_dio.c
+	rtai_comedi_datain.c \
+	rtai_comedi_dataout.c \
+	rtai_comedi_dioin.c \
+	rtai_comedi_dioout.c
 endif
 
 libsciblk_a_AR = $(CROSS_COMPILE)ar cru
@@ -37,4 +45,4 @@ INCLUDES = \
 	-I$(top_srcdir)/addons/comedi \
 	-I@COMEDI_DIR@/include
 
-EXTRA_DIST = template.c README.devices devtmpl.h
+EXTRA_DIST = template.c.tmp README.devices devtmpl.h

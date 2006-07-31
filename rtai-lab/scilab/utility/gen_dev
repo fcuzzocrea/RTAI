@@ -1,5 +1,2 @@
-sed s/xxx/$1/ template.c > $1.c
-cat devices.h devtmpl.h > dev.h
-sed s/xxx/$1/ dev.h > devices.h
-rm dev.h
+sed s/xxxx/$1/ template.c.tmp > $1.c
 

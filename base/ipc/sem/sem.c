@@ -29,6 +29,8 @@
  *
  *@{*/
 
+#include <asm/uaccess.h>
+
 #include <rtai_schedcore.h>
 #include <rtai_prinher.h>
 #include <rtai_sem.h>
@@ -676,7 +678,8 @@ int rt_sem_wait_timed(SEM *sem, RTIME delay)
  * a request will be blocked till a number of tasks equal to the semaphore
  * count set at rt_sem_init is reached.
  *
- * @returns 0 always.
+ * @returns -1 for tasks that waited on the barrier, 0 for the tasks that 
+ * completed the barrier count.
  */
 int rt_sem_wait_barrier(SEM *sem)
 {
@@ -692,9 +695,9 @@ int rt_sem_wait_barrier(SEM *sem)
 		sem->count = sem->type = 0;
 	}
 	if ((1 - sem->count) < (long)sem->owndby) {
-		int retval = rt_sem_wait(sem);
+		rt_sem_wait(sem);
 		rt_global_restore_flags(flags);
-		return retval;
+		return -1;
 	}
 	rt_sem_broadcast(sem);
 	rt_global_restore_flags(flags);
@@ -1498,11 +1501,18 @@ int rt_spl_unlock(SPL *spl)
  *
  */
 
-SEM *_rt_typed_named_sem_init(unsigned long sem_name, int value, int type)
+SEM *_rt_typed_named_sem_init(unsigned long sem_name, int value, int type, unsigned long *handle)
 {
 	SEM *sem;
 
 	if ((sem = rt_get_adr_cnt(sem_name))) {
+		if (handle) {
+			if ((unsigned long)handle > PAGE_OFFSET) {
+				*handle = 1;
+			} else {
+				rt_copy_to_user(handle, sem, sizeof(SEM *));
+			}
+		}
 		return sem;
 	}
 	if ((sem = rt_malloc(sizeof(SEM)))) {

@@ -47,13 +47,15 @@
 #define RT_SCHED_SFTRDY     512
 #define RT_SCHED_SELFSUSP  1024
 
-#define RT_RWLINV   (6)
+#define RT_RWLINV   (7)  // keep this the highest
+#define RT_PERM     (6)
 #define RT_OBJINV   (5)
 #define RT_OBJREM   (4)
 #define RT_TIMOUT   (3)
 #define RT_UNBLKD   (2)
 #define RT_TMROVRN  (1)
 #define RTP_RWLINV  ((void *)RT_RWLINV)
+#define RTP_PERM    ((void *)RT_PERM)
 #define RTP_OBJINV  ((void *)RT_OBJINV)
 #define RTP_OBJREM  ((void *)RT_OBJREM)
 #define RTP_TIMOUT  ((void *)RT_TIMOUT)
@@ -64,6 +66,7 @@
 #if CONFIG_RTAI_USE_NEWERR
 #define RTE_BASE     (0x3FFFFF00)
 #define RTE_RWLINV   (RTE_BASE + RT_RWLINV)
+#define RTE_PERM     (RTE_BASE + RT_PERM)
 #define RTE_OBJINV   (RTE_BASE + RT_OBJINV)
 #define RTE_OBJREM   (RTE_BASE + RT_OBJREM)
 #define RTE_TIMOUT   (RTE_BASE + RT_TIMOUT)

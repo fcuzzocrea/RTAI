@@ -272,6 +272,10 @@ int rt_sem_signal(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if (sem->type) {
+		if (sem->owndby != RT_CURRENT) {
+			rt_global_restore_flags(flags);
+			return RTE_PERM;
+		}
 		if (sem->type > 1) {
 			sem->type--;
 			rt_global_restore_flags(flags);

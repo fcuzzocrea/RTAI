@@ -1,3 +1,10 @@
+2006-08-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/ipc/sem.c: do not let unlocking of RES_SEM, either by non 
+	  owner or by owner if unlocked already; reset recursion depth only 
+	  for RES_SEM in rt_cndmtx_signal; reorder return values in cond_wait 
+	  and cond_wait_until.
+
 2006-07-31  Roberto Bucher <roberto.bucher@supsi.ch>
 
 	* rtai-lab/scilab/: Changed most of the file because of the new Code 
@@ -12,8 +19,7 @@
 	  task extension if already set.
 	* base/ipc/sem.c: barrier returns mark the unleashing task and 
 	  unlished tasks with different values; typed named semphore 
-	  initialization tell if it existed already; do not let non owner 
-	  unlocking of an owned RES_SEM.
+	  initialization tell if it existed already.
 	* base/include/rtai_sem.h, rtai_posix.h: declarations of typed named
 	  semaphores redifined according to the new prototype.
 	* base/include/rtai_sched.h: add permission error definition.

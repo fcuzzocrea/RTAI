@@ -272,7 +272,7 @@ int rt_sem_signal(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if (sem->type) {
-		if ((sem->type > 0 && !sem->owndby) || (sem->owndby && sem->owndby != RT_CURRENT)) {
+		if ((sem->type > 0 && (!sem->owndby || sem->owndby != RT_CURRENT)) {
 			rt_global_restore_flags(flags);
 			return RTE_PERM;
 		}
@@ -751,8 +751,9 @@ static inline int rt_cndmtx_signal(SEM *mtx, RT_TASK *rt_current)
 	int type;
 	RT_TASK *task;
 
-	type = mtx->type;
-	mtx->type = 1;
+	if ((type = mtx->type) > 1) {
+		mtx->type = 1;
+	}
 	if (++mtx->count > 1) {
 		mtx->count = 1;
 	}
@@ -874,18 +875,17 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 		} else if (unlikely(retp != NULL)) {
 			dequeue_blocked(rt_current);
 			++cnd->count;
-			return likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
+			retval = likely(retp > RTP_HIGERR) ? RTE_TIMOUT : RTE_UNBLKD;
 		} else {
 			retval = 0;
 		}
+		if (rt_sem_wait(mtx) < RTE_LOWERR) {
+			mtx->type = type;
+		}
 	} else {
-		rt_global_restore_flags(flags);
-		return retval = RTE_TIMOUT;
+		retval = RTE_TIMOUT;
 	}
 	rt_global_restore_flags(flags);
-	if (rt_sem_wait(mtx) < RTE_LOWERR) {
-		mtx->type = type;
-	}
 	return retval;
 }
 

@@ -15,19 +15,15 @@ clock_settime
 clock_nanosleep
 nanosleep
 
-pthread_barrier_open
 pthread_barrier_init
 pthread_barrier_destroy
-pthread_barrier_close
 pthread_barrier_wait
 pthread_barrierattr_init
 pthread_barrierattr_destroy
 pthread_barrierattr_getpshared
 pthread_barrierattr_setpshared
 
-pthread_mutex_open
 pthread_mutex_init
-pthread_mutex_close
 pthread_mutex_destroy
 pthread_mutex_lock
 pthread_mutex_timedlock
@@ -40,10 +36,8 @@ pthread_mutexattr_setpshared
 pthread_mutexattr_settype
 pthread_mutexattr_gettype
 
-pthread_cond_open
 pthread_cond_init
 pthread_cond_destroy
-pthread_cond_close
 pthread_cond_signal
 pthread_cond_broadcast
 pthread_cond_wait
@@ -52,10 +46,10 @@ pthread_condattr_init
 pthread_condattr_destroy
 pthread_condattr_getpshared
 pthread_condattr_setpshared
+pthread_condattr_getclock
+pthread_condattr_setclock
 
-pthread_rwlock_open
 pthread_rwlock_init
-pthread_rwlock_close
 pthread_rwlock_destroy
 pthread_rwlock_rdlock
 pthread_rwlock_tryrdlock
@@ -78,8 +72,9 @@ pthread_spin_trylock
 pthread_spin_unlock
 
 sem_open
-sem_init
 sem_close
+sem_unlink
+sem_init
 sem_destroy
 sem_wait
 sem_trywait

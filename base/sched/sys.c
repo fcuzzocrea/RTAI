@@ -204,12 +204,20 @@ static inline void lxrt_fun_call_wbuf(RT_TASK *rt_task, void *fun, int narg, lon
 	}
 }
 
+void put_current_on_cpu(int cpuid);
+
 static inline RT_TASK* __task_init(unsigned long name, int prio, int stack_size, int max_msg_size, int cpus_allowed)
 {
 	void *msg_buf0, *msg_buf1;
 	RT_TASK *rt_task;
 
 	if ((rt_task = current->rtai_tskext(TSKEXT0))) {
+		if (num_online_cpus() > 1 && cpus_allowed) {
+	    		cpus_allowed = hweight32(cpus_allowed) > 1 ? get_min_tasks_cpuid() : ffnz(cpus_allowed);
+		} else {
+			cpus_allowed = smp_processor_id();
+		}
+		put_current_on_cpu(cpus_allowed);
 		return rt_task;
 	}
 	if (rt_get_adr(name)) {

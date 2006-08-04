@@ -233,7 +233,7 @@ int get_min_tasks_cpuid(void)
 	return cpuid;
 }
 
-static void put_current_on_cpu(int cpuid)
+void put_current_on_cpu(int cpuid)
 {
 #ifdef CONFIG_SMP
 	struct task_struct *task = current;
@@ -3152,6 +3152,7 @@ EXPORT_SYMBOL(rt_fun_lxrt);
 EXPORT_SYMBOL(clr_rtext);
 EXPORT_SYMBOL(set_rtext);
 EXPORT_SYMBOL(get_min_tasks_cpuid);
+EXPORT_SYMBOL(put_current_on_cpu);
 EXPORT_SYMBOL(rt_schedule_soft);
 EXPORT_SYMBOL(rt_do_force_soft);
 EXPORT_SYMBOL(rt_schedule_soft_tail);

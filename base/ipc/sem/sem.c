@@ -965,9 +965,9 @@ int rt_rwl_delete(RWL *rwl)
 	int ret;
 
 	ret  =  rt_sem_delete(&rwl->rdsem);
-	ret |= !rt_sem_delete(&rwl->wrsem);
-	ret |= !rt_sem_delete(&rwl->wrmtx);
-	return ret ? 0 : RTE_OBJINV;
+	ret |= rt_sem_delete(&rwl->wrsem);
+	ret |= rt_sem_delete(&rwl->wrmtx);
+	return !ret ? 0 : RTE_OBJINV;
 }
 
 /**

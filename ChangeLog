@@ -1,3 +1,11 @@
+2006-08-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: revised user space posix interface 
+	  (see the many tests in showroom).
+	* base/ipc/sem.c: fix wrong return value in rt_rwl_delete.
+	* base/sched/sys.c: extend use of __task_init to move user space 
+	  tasks to a cpus_allowed.
+
 2006-08-01  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/ipc/sem.c: do not let unlocking of RES_SEM, either by non 

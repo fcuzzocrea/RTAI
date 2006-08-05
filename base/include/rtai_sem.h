@@ -38,7 +38,7 @@
 typedef struct rt_semaphore {
     struct rt_queue queue; /* <= Must be first in struct. */
     int magic;
-    int type;
+    int type, restype;
     int count;
     struct rt_task_struct *owndby;
     int qtype;

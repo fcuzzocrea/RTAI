@@ -30,6 +30,10 @@
 #define CNT_SEM   2 
 #define RES_SEM   3
 
+#define RESEM_RECURS   1
+#define RESEM_BINSEM   0
+#define RESEM_CHEKWT  -1
+
 #define RT_SCHED_FIFO  0 
 #define RT_SCHED_RR    1 
 

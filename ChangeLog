@@ -1,3 +1,9 @@
+2006-08-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sched.h,rtai_sem.h,rtai_types.h: macros and 
+	  declarations extensions to support non recursive RES_SEMs types 
+	  also.
+
 2006-08-04  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_posix.h: revised user space posix interface 

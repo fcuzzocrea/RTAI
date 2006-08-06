@@ -92,9 +92,9 @@ static inline int lxrt_typed_mbx_init(MBX *mbx, int bufsize, int type)
 	return ((int (*)(MBX *, int, int))rt_get_lxrt_fun_entry(TYPED_MBX_INIT))(mbx, bufsize, type);
 }
 
-static inline int lxrt_rwl_init(RWL *rwl)
+static inline int lxrt_typed_rwl_init(RWL *rwl, int type)
 {
-	return ((int (*)(RWL *))rt_get_lxrt_fun_entry(RWL_INIT))(rwl);
+	return ((int (*)(RWL *, int))rt_get_lxrt_fun_entry(RWL_INIT))(rwl, type);
 }
 
 static inline int lxrt_spl_init(SPL *spl)
@@ -408,8 +408,8 @@ static inline long long handle_lxrt_request (unsigned int lxsrq, long *arg, RT_T
 				return 0;
 			}
 			if ((arg0.rwl = rt_malloc(sizeof(RWL)))) {
-				struct arg { unsigned long name; };
-				lxrt_rwl_init(arg0.rwl);
+				struct arg { unsigned long name; long type; };
+				lxrt_typed_rwl_init(arg0.rwl, larg->type);
 				if (rt_register(larg->name, arg0.rwl, IS_SEM, current)) {
 					return arg0.name;
 				} else {

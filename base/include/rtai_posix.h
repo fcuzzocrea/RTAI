@@ -735,6 +735,16 @@ RTAI_PROTO(RTIME, timespec2nanos,(const struct timespec *t))
 	return t->tv_sec*1000000000LL + t->tv_nsec;
 }
 
+RTAI_PROTO(int, pthread_get_name_np, (void *adr, unsigned long *nameid))
+{
+	return (*nameid = rt_get_name(SET_ADR(adr))) ? 0 : EINVAL;
+}
+
+RTAI_PROTO(int, pthread_get_adr_np, (unsigned long nameid, void *adr))
+{
+	return (SET_ADR(adr) = rt_get_adr(nameid)) ? 0 : EINVAL;
+}
+
 /*
  * SEMAPHORES
  */
@@ -929,13 +939,14 @@ RTAI_PROTO(int, __wrap_sem_getvalue, (sem_t *sem, int *sval))
  * MUTEXES
  */
 
-#define RTAI_MUTEX_NORMAL     (1 << 0)
-#define RTAI_MUTEX_RECURSIVE  (1 << 1)
-#define RTAI_MUTEX_PSHARED    (1 << 2)
+#define RTAI_MUTEX_DEFAULT    (1 << 0)
+#define RTAI_MUTEX_ERRCHECK   (1 << 1)
+#define RTAI_MUTEX_RECURSIVE  (1 << 2)
+#define RTAI_MUTEX_PSHARED    (1 << 3)
 
 RTAI_PROTO(int, __wrap_pthread_mutex_init, (pthread_mutex_t *mutex, const pthread_mutexattr_t *mutexattr))
 {
-	struct { unsigned long name; long value, type; unsigned long *handle; } arg = { rt_get_name(0), 1, !mutexattr || (((long *)mutexattr)[0] & RTAI_MUTEX_NORMAL) ? BIN_SEM | PRIO_Q : RES_SEM, NULL };
+	struct { unsigned long name; long value, type; unsigned long *handle; } arg = { rt_get_name(0), !mutexattr || (((long *)mutexattr)[0] & RTAI_MUTEX_DEFAULT) ? RESEM_BINSEM : (((long *)mutexattr)[0] & RTAI_MUTEX_ERRCHECK) ? RESEM_CHEKWT : RESEM_RECURS, RES_SEM, NULL };
 	SET_VAL(mutex) = 0;
 	if (!(SET_ADR(mutex) = rtai_lxrt(BIDX, SIZARG, NAMED_SEM_INIT, &arg).v[LOW])) {
 		return ENOMEM;
@@ -952,7 +963,7 @@ RTAI_PROTO(int, __wrap_pthread_mutex_destroy, (pthread_mutex_t *mutex))
 			return EBUSY;
 		}
 		if ((count = rtai_lxrt(BIDX, SIZARG, SEM_WAIT_IF, &arg).i[LOW]) <= 0 || count > 1) {
-			if (count > 1) {
+			if (count > 1 && count != RTE_DEADLOK) {
 				rtai_lxrt(BIDX, SIZARG, SEM_SIGNAL, &arg);
 			}
 			return EBUSY;
@@ -968,10 +979,9 @@ RTAI_PROTO(int, __wrap_pthread_mutex_lock, (pthread_mutex_t *mutex))
 {
 	struct { void *mutex; } arg = { SET_ADR(mutex) };
 	if (arg.mutex) {
-		if (abs(rtai_lxrt(BIDX, SIZARG, SEM_WAIT, &arg).i[LOW] >= RTE_BASE)) {
-			return EINTR;
-		}
-		return 0;
+		int retval;
+		while ((retval = rtai_lxrt(BIDX, SIZARG, SEM_WAIT, &arg).i[LOW]) == RTE_UNBLKD);
+		return abs(retval) < RTE_BASE ? 0 : EDEADLOCK;
 	}
 	return EINVAL;
 }
@@ -980,11 +990,7 @@ RTAI_PROTO(int, __wrap_pthread_mutex_trylock, (pthread_mutex_t *mutex))
 {
 	struct { void *mutex; } arg = { SET_ADR(mutex) };
 	if (arg.mutex) {
-		int retval;
-		if (abs(retval = rtai_lxrt(BIDX, SIZARG, SEM_WAIT_IF, &arg).i[LOW]) >= RTE_BASE) {
-			return EINTR;
-		}
-		if (retval <= 0) {
+		if (rtai_lxrt(BIDX, SIZARG, SEM_WAIT_IF, &arg).i[LOW] <= 0) {
 			return EBUSY;
 		}
 		return 0;
@@ -998,13 +1004,13 @@ RTAI_PROTO(int, __wrap_pthread_mutex_timedlock, (pthread_mutex_t *mutex, const s
 	struct { void *mutex; RTIME time; } arg = { SET_ADR(mutex), timespec2count(abstime) };
 	if (arg.mutex && abstime->tv_nsec >= 0 && abstime->tv_nsec < 1000000000) {
 		int retval;
-		if (abs(retval = rtai_lxrt(BIDX, SIZARG, SEM_WAIT_UNTIL, &arg).i[LOW]) == RTE_TIMOUT) {
+		while ((retval = rtai_lxrt(BIDX, SIZARG, SEM_WAIT_UNTIL, &arg).i[LOW]) == RTE_UNBLKD);
+		if (abs(retval) < RTE_BASE) {
+			return 0;
+		}
+		if (retval == RTE_TIMOUT) {
 			return ETIMEDOUT;
 		}
-		if (retval >= RTE_BASE) {
-			return EINTR;
-		}
-		return 0;
 	}
 	return EINVAL;
 }
@@ -1021,7 +1027,7 @@ RTAI_PROTO(int, __wrap_pthread_mutex_unlock, (pthread_mutex_t *mutex))
 
 RTAI_PROTO(int, __wrap_pthread_mutexattr_init, (pthread_mutexattr_t *attr))
 {
-	((long *)attr)[0] = RTAI_MUTEX_NORMAL;
+	((long *)attr)[0] = RTAI_MUTEX_DEFAULT;
 	return 0;
 }
 
@@ -1052,11 +1058,14 @@ RTAI_PROTO(int, __wrap_pthread_mutexattr_setpshared, (pthread_mutexattr_t *attr,
 RTAI_PROTO(int, __wrap_pthread_mutexattr_settype, (pthread_mutexattr_t *attr, int kind))
 {
 	switch (kind) {
-		case PTHREAD_MUTEX_NORMAL:
-			((long *)attr)[0] = (((long *)attr)[0] & ~RTAI_MUTEX_RECURSIVE) | RTAI_MUTEX_NORMAL;
+		case PTHREAD_MUTEX_DEFAULT:
+			((long *)attr)[0] = (((long *)attr)[0] & ~(RTAI_MUTEX_RECURSIVE | RTAI_MUTEX_ERRCHECK)) | RTAI_MUTEX_DEFAULT;
+			break;
+		case PTHREAD_MUTEX_ERRORCHECK:
+			((long *)attr)[0] = (((long *)attr)[0] & ~(RTAI_MUTEX_RECURSIVE | RTAI_MUTEX_DEFAULT)) | RTAI_MUTEX_ERRCHECK;
 			break;
 		case PTHREAD_MUTEX_RECURSIVE:
-			((long *)attr)[0] = (((long *)attr)[0] & ~RTAI_MUTEX_NORMAL) | RTAI_MUTEX_RECURSIVE;
+			((long *)attr)[0] = (((long *)attr)[0] & ~(RTAI_MUTEX_DEFAULT | RTAI_MUTEX_ERRCHECK)) | RTAI_MUTEX_RECURSIVE;
 			break;
 		default:
 			return EINVAL;
@@ -1066,9 +1075,12 @@ RTAI_PROTO(int, __wrap_pthread_mutexattr_settype, (pthread_mutexattr_t *attr, in
 
 RTAI_PROTO(int, __wrap_pthread_mutexattr_gettype, (const pthread_mutexattr_t *attr, int *kind))
 {
-	switch (((long *)attr)[0] & (RTAI_MUTEX_NORMAL | RTAI_MUTEX_RECURSIVE)) {
-		case RTAI_MUTEX_NORMAL:
-			*kind = PTHREAD_MUTEX_NORMAL;
+	switch (((long *)attr)[0] & (RTAI_MUTEX_DEFAULT | RTAI_MUTEX_ERRCHECK | RTAI_MUTEX_RECURSIVE)) {
+		case RTAI_MUTEX_DEFAULT:
+			*kind = PTHREAD_MUTEX_DEFAULT;
+			break;
+		case RTAI_MUTEX_ERRCHECK:
+			*kind = PTHREAD_MUTEX_ERRORCHECK;
 			break;
 		case RTAI_MUTEX_RECURSIVE:
 			*kind = PTHREAD_MUTEX_RECURSIVE;
@@ -1130,9 +1142,7 @@ RTAI_PROTO(int, __wrap_pthread_cond_wait, (pthread_cond_t *cond, pthread_mutex_t
 	pthread_testcancel();
 	if (arg.cond && arg.mutex) {
 		INC_VAL(mutex);
-		if (abs(rtai_lxrt(BIDX, SIZARG, COND_WAIT, &arg).i[LOW] >= RTE_BASE)) {
-			retval = EINTR;
-		}
+		retval = !rtai_lxrt(BIDX, SIZARG, COND_WAIT, &arg).i[LOW] ? 0 : EPERM;
 		DEC_VAL(mutex);
 		pthread_testcancel();
 	} else {
@@ -1150,9 +1160,8 @@ RTAI_PROTO(int, __wrap_pthread_cond_timedwait, (pthread_cond_t *cond, pthread_mu
 		INC_VAL(mutex);
 		if (abs(retval = rtai_lxrt(BIDX, SIZARG, COND_WAIT_UNTIL, &arg).i[LOW]) == RTE_TIMOUT) {
 			retval = ETIMEDOUT;
-		}
-		if (retval >= RTE_BASE) {
-			retval = EINTR;
+		} else {
+			retval = !retval ? 0 : EPERM;
 		}
 		DEC_VAL(mutex);
 		pthread_testcancel();
@@ -1214,7 +1223,7 @@ RTAI_PROTO(int, __wrap_pthread_condattr_getclock, (pthread_condattr_t *condattr,
 
 RTAI_PROTO(int, __wrap_pthread_rwlock_init, (pthread_rwlock_t *rwlock, pthread_rwlockattr_t *attr))
 {
-	struct { unsigned long name; } arg = { rt_get_name(0) };
+	struct { unsigned long name; long type; } arg = { rt_get_name(0), RESEM_CHEKWT };
 	((pthread_rwlock_t **)rwlock)[0] = (pthread_rwlock_t *)rtai_lxrt(BIDX, SIZARG, LXRT_RWL_INIT, &arg).v[LOW];
         return 0;
 }

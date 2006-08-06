@@ -1,3 +1,23 @@
+2006-08-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/sched/sys.c: rework LXRT rwl_init to take into account its
+	  type.
+	* base/ipc/sem.c: manage "restype" (recursive, ewrrorcheck, normal).
+	  Transform rt_rwl_init to rt_typed_rwl_init, to allow typed 
+	  rwlockers. Full backward compatibility kept for all.
+
+
+2006-08-06  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_sem.h: add "restype" to the RTAI semaphore
+	  structure.
+	* base/include/rtai_types.h: add "restype" macros.
+	* base/include/rtai_rwl.h: changes declarations and users space call
+	  of rt_rwl_init to rt_typed_rwl_init; rt_rwl_init compatibility 
+	  kept through a macro.
+	* base/include/rtai_posix.h: further enhance adherence to the
+	  standard.
+
 2006-08-05  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/include/rtai_sched.h,rtai_sem.h,rtai_types.h: macros and 

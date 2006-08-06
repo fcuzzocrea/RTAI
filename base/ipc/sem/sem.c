@@ -115,6 +115,9 @@ void rt_typed_sem_init(SEM *sem, int value, int type)
 		sem->count = 1;
 	} else if (type > 0) {
 		sem->type = sem->count = 1;
+		sem->restype = value;
+	} else {
+		sem->restype = 0;
 	}
 	sem->queue.prev = &(sem->queue);
 	sem->queue.next = &(sem->queue);
@@ -272,7 +275,7 @@ int rt_sem_signal(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if (sem->type) {
-		if (sem->type > 0 && (!sem->owndby || sem->owndby != RT_CURRENT)) {
+		if (sem->restype && (!sem->owndby || sem->owndby != RT_CURRENT)) {
 			rt_global_restore_flags(flags);
 			return RTE_PERM;
 		}
@@ -439,11 +442,15 @@ int rt_sem_wait(SEM *sem)
 	if ((count = sem->count) <= 0) {
 		void *retp;
 		unsigned long schedmap;
-		if (sem->type > 0) {
+		if (sem->restype) {
 			if (sem->owndby == rt_current) {
-				count = sem->type++;
+				if (sem->restype > 0) {
+					count = sem->type++;
+					rt_global_restore_flags(flags);
+					return count + 1;
+				}
 				rt_global_restore_flags(flags);
-				return count + 1;
+				return RTE_DEADLOK;
 			}
 			schedmap = pass_prio(sem->owndby, rt_current);
 		} else {
@@ -517,10 +524,14 @@ int rt_sem_wait_if(SEM *sem)
 
 	flags = rt_global_save_flags_and_cli();
 	if ((count = sem->count) <= 0) {
-		if (sem->type > 0 && sem->owndby == RT_CURRENT) {
-			count = sem->type++;
+		if (sem->restype && sem->owndby == RT_CURRENT) {
+			if (sem->restype > 0) {
+				count = sem->type++;
+				rt_global_restore_flags(flags);
+				return count + 1;
+			}
 			rt_global_restore_flags(flags);
-			return count + 1;
+			return RTE_DEADLOK;
 		}
 	} else {
 		sem->count--;
@@ -584,11 +595,15 @@ int rt_sem_wait_until(SEM *sem, RTIME time)
 		rt_current->blocked_on = &sem->queue;
 		if ((rt_current->resume_time = time) > rt_time_h) {
 			unsigned long schedmap;
-			if (sem->type > 0) {
+			if (sem->restype) {
 				if (sem->owndby == rt_current) {
-					count = sem->type++;
+					if (sem->restype > 0) {
+						count = sem->type++;
+						rt_global_restore_flags(flags);
+						return count + 1;
+					}
 					rt_global_restore_flags(flags);
-					return count + 1;
+					return RTE_DEADLOK;
 				}
 				schedmap = pass_prio(sem->owndby, rt_current);
 			} else {
@@ -806,6 +821,10 @@ int rt_cond_wait(CND *cnd, SEM *mtx)
 	}
 	flags = rt_global_save_flags_and_cli();
 	rt_current = RT_CURRENT;
+	if (mtx->owndby != rt_current) {
+		rt_global_restore_flags(flags);
+		return RTE_PERM;
+	}
 	rt_current->state |= RT_SCHED_SEMAPHORE;
 	rem_ready_current(rt_current);
 	enqueue_blocked(rt_current, &cnd->queue, cnd->qtype);
@@ -864,6 +883,10 @@ int rt_cond_wait_until(CND *cnd, SEM *mtx, RTIME time)
 	}
 	flags = rt_global_save_flags_and_cli();
 	ASSIGN_RT_CURRENT;
+	if (mtx->owndby != rt_current) {
+		rt_global_restore_flags(flags);
+		return RTE_PERM;
+	}
 	if ((rt_current->resume_time = time) > rt_time_h) {
 		rt_current->state |= (RT_SCHED_SEMAPHORE | RT_SCHED_DELAYED);
 		rem_ready_current(rt_current);
@@ -940,9 +963,9 @@ int rt_cond_wait_timed(CND *cnd, SEM *mtx, RTIME delay)
  *
  */
 
-int rt_rwl_init(RWL *rwl)
+int rt_typed_rwl_init(RWL *rwl, int type)
 {
-	rt_typed_sem_init(&rwl->wrmtx, 1, RES_SEM);
+	rt_typed_sem_init(&rwl->wrmtx, type, RES_SEM);
 	rt_typed_sem_init(&rwl->wrsem, 0, CNT_SEM);
 	rt_typed_sem_init(&rwl->rdsem, 0, CNT_SEM);
 	return 0;
@@ -1152,9 +1175,10 @@ int rt_rwl_wrlock(RWL *rwl)
 int rt_rwl_wrlock_if(RWL *rwl)
 {
 	unsigned long flags;
+	int ret;
 
 	flags = rt_global_save_flags_and_cli();
-	if (!rwl->rdsem.owndby && rt_sem_wait_if(&rwl->wrmtx) >= 0) {
+	if (!rwl->rdsem.owndby && (ret = rt_sem_wait_if(&rwl->wrmtx)) > 0 && ret  < RTE_LOWERR) {
 		rt_global_restore_flags(flags);
 		return 0;
 	}
@@ -1740,7 +1764,7 @@ struct rt_native_fun_entry rt_sem_entries[] = {
         { { 1, rt_cond_wait },             COND_WAIT },
         { { 1, rt_cond_wait_until },       COND_WAIT_UNTIL },
         { { 1, rt_cond_wait_timed },       COND_WAIT_TIMED },
-        { { 0, rt_rwl_init },              RWL_INIT },
+        { { 0, rt_typed_rwl_init },        RWL_INIT },
         { { 0, rt_rwl_delete },            RWL_DELETE },
 	{ { 0, _rt_named_rwl_init },	   NAMED_RWL_INIT },
 	{ { 0, rt_named_rwl_delete },      NAMED_RWL_DELETE },
@@ -1807,7 +1831,7 @@ EXPORT_SYMBOL(rt_cond_wait);
 EXPORT_SYMBOL(rt_cond_wait_until);
 EXPORT_SYMBOL(rt_cond_wait_timed);
 
-EXPORT_SYMBOL(rt_rwl_init);
+EXPORT_SYMBOL(rt_typed_rwl_init);
 EXPORT_SYMBOL(rt_rwl_delete);
 EXPORT_SYMBOL(rt_rwl_rdlock);
 EXPORT_SYMBOL(rt_rwl_rdlock_if);

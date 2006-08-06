@@ -37,7 +37,9 @@ typedef struct rtai_rwlock {
 extern "C" {
 #endif /* !__cplusplus */
 
-int rt_rwl_init(struct rtai_rwlock *rwl);
+int rt_typed_rwl_init(RWL *rwl, int type);
+
+#define rt_rwl_init(rwl)  rt_typed_rwl_init(rwl, RESEM_RECURS)
 
 int rt_rwl_delete(struct rtai_rwlock *rwl);
 
@@ -73,9 +75,11 @@ int rt_rwl_unlock(struct rtai_rwlock *rwl);
 extern "C" {
 #endif /* __cplusplus */
 
-RTAI_PROTO(struct rtai_rwlock *, rt_rwl_init,(unsigned long name))
+#define rt_rwl_init(rwl)  rt_typed_rwl_init(rwl, RESEM_RECURS)
+
+RTAI_PROTO(struct rtai_rwlock *, rt_typed_rwl_init,(unsigned long name, int type))
 {
-        struct { unsigned long name; } arg = { name };
+        struct { unsigned long name; long type; } arg = { name, type };
        	return (struct rtai_rwlock *)rtai_lxrt(BIDX, SIZARG, LXRT_RWL_INIT, &arg).v[LOW];
 }
 

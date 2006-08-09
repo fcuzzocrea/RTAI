@@ -105,6 +105,7 @@ void rt_typed_sem_init(SEM *sem, int value, int type)
 {
 	sem->magic = RT_SEM_MAGIC;
 	sem->count = value;
+	sem->restype = 0;
 	if ((type & RES_SEM) == RES_SEM) {
 		sem->qtype = 0;
 	} else {
@@ -116,8 +117,6 @@ void rt_typed_sem_init(SEM *sem, int value, int type)
 	} else if (type > 0) {
 		sem->type = sem->count = 1;
 		sem->restype = value;
-	} else {
-		sem->restype = 0;
 	}
 	sem->queue.prev = &(sem->queue);
 	sem->queue.next = &(sem->queue);

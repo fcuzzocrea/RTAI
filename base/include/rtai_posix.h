@@ -863,7 +863,7 @@ RTAI_PROTO(int, __wrap_sem_wait, (sem_t *sem))
 	struct { void *sem; } arg = { SET_ADR(sem) };
 	pthread_testcancel();
 	if (arg.sem) {
-		if (abs(rtai_lxrt(BIDX, SIZARG, SEM_WAIT, &arg).i[LOW] >= RTE_BASE)) {
+		if (abs(rtai_lxrt(BIDX, SIZARG, SEM_WAIT, &arg).i[LOW]) >= RTE_BASE) {
 			errno =  EINTR;
 			pthread_testcancel();
 			return -1;

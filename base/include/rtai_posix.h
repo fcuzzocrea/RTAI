@@ -1527,6 +1527,7 @@ RTAI_PROTO(int, __wrap_pthread_cancel,(pthread_t thread))
 {
 	int hs, ret;
 	hs = MAKE_SOFT();
+	pthread_kill(thread, -9);
 	ret = pthread_cancel(thread);
 	MAKE_HARD(hs);
 	return ret;
@@ -1608,33 +1609,42 @@ RTAI_PROTO(int, __wrap_pthread_join,(pthread_t thread, void **thread_return))
 
 #ifdef __USE_XOPEN2K
 
-RTAI_PROTO(int, __wrap_pthread_spin_init,(pthread_spinlock_t *lock))
+RTAI_PROTO(int, __wrap_pthread_spin_init,(pthread_spinlock_t *lock, int pshared))
 {
-	return (((int *)lock)[0] = 0);
+	return lock ? ((int *)lock)[0] = 0 : EINVAL;
 }
 
 RTAI_PROTO(int, __wrap_pthread_spin_destroy,(pthread_spinlock_t *lock))
 {
-	return ((int *)lock)[0] = 0;
+	if (lock) {
+		return ((int *)lock)[0] ? EBUSY : (((int *)lock)[0] = 0);
+	}
+	return EINVAL;
 }
 
 RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
 {
-	while (atomic_cmpxchg(&lock, 0, 1));
-	return 0;
+	if (lock) {
+		while (atomic_cmpxchg(lock, 0, 1));
+		return 0;
+	}
+	return EINVAL;
 }
 
 RTAI_PROTO(int, __wrap_pthread_spin_trylock,(pthread_spinlock_t *lock))
 {
-	if (atomic_cmpxchg(&lock, 0, 1)) {
-		return EAGAIN;
+	if (lock) {
+		return atomic_cmpxchg(lock, 0, 1) ? EBUSY : 0;
 	}
-	return 0;
+	return EINVAL;
 }
 
 RTAI_PROTO(int, __wrap_pthread_spin_unlock,(pthread_spinlock_t *lock))
 {
-	return ((int *)lock)[0] = 0;
+	if (lock) {
+		return ((int *)lock)[0] = 0;
+	}
+	return EINVAL;
 }
 
 #endif

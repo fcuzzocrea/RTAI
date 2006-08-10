@@ -1,3 +1,8 @@
+2006-08-10  Paolo Mantegazza <mantegazza@aero.polimi.it>
+
+	* base/include/rtai_posix.h: further enhance adherence to the
+	  standard for spin locks.
+
 2006-08-07  Paolo Mantegazza <mantegazza@aero.polimi.it>
 
 	* base/sched/sys.c: rework LXRT rwl_init to take into account its

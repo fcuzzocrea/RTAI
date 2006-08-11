@@ -1609,15 +1609,17 @@ RTAI_PROTO(int, __wrap_pthread_join,(pthread_t thread, void **thread_return))
 
 #ifdef __USE_XOPEN2K
 
-RTAI_PROTO(int, __wrap_pthread_spin_init,(pthread_spinlock_t *lock, int pshared))
+#if 0
+#define ORIGINAL_TEST
+RTAI_PROTO(int, __wrap_pthread_spin_init, (pthread_spinlock_t *lock, int pshared))
 {
-	return lock ? ((int *)lock)[0] = 0 : EINVAL;
+	return lock ? (((pid_t *)lock)[0] = 0) : EINVAL;
 }
 
-RTAI_PROTO(int, __wrap_pthread_spin_destroy,(pthread_spinlock_t *lock))
+RTAI_PROTO(int, __wrap_pthread_spin_destroy, (pthread_spinlock_t *lock))
 {
 	if (lock) {
-		return ((int *)lock)[0] ? EBUSY : (((int *)lock)[0] = 0);
+		return ((pid_t *)lock)[0] ? EBUSY : (((pid_t *)lock)[0] = 0);
 	}
 	return EINVAL;
 }
@@ -1642,10 +1644,60 @@ RTAI_PROTO(int, __wrap_pthread_spin_trylock,(pthread_spinlock_t *lock))
 RTAI_PROTO(int, __wrap_pthread_spin_unlock,(pthread_spinlock_t *lock))
 {
 	if (lock) {
-		return ((int *)lock)[0] = 0;
+		return ((pid_t *)lock)[0] = 0;
 	}
 	return EINVAL;
 }
+#else
+RTAI_PROTO(int, __wrap_pthread_spin_init, (pthread_spinlock_t *lock, int pshared))
+{
+	return lock ? (((pid_t *)lock)[0] = 0) : EINVAL;
+}
+
+RTAI_PROTO(int, __wrap_pthread_spin_destroy, (pthread_spinlock_t *lock))
+{
+	if (lock) {
+		return ((pid_t *)lock)[0] ? EBUSY : (((pid_t *)lock)[0] = 0);
+	}
+	return EINVAL;
+}
+
+RTAI_PROTO(int, __wrap_pthread_spin_lock,(pthread_spinlock_t *lock))
+{
+	if (lock) {
+		pid_t tid;
+		_syscall0(pid_t, gettid)
+		if (((pid_t *)lock)[0] == (tid = gettid())) {
+			return EDEADLOCK;
+		}
+		while (atomic_cmpxchg(lock, 0, tid));
+		return 0;
+	}
+	return EINVAL;
+}
+
+RTAI_PROTO(int, __wrap_pthread_spin_trylock,(pthread_spinlock_t *lock))
+{
+	if (lock) {
+		_syscall0(pid_t, gettid)
+		return atomic_cmpxchg(lock, 0, gettid()) ? EBUSY : 0;
+	}
+	return EINVAL;
+}
+
+RTAI_PROTO(int, __wrap_pthread_spin_unlock,(pthread_spinlock_t *lock))
+{
+	if (lock) {
+#if 0
+		return ((pid_t *)lock)[0] = 0;
+#else
+		_syscall0(pid_t, gettid)
+		return ((pid_t *)lock)[0] != gettid() ? EPERM : (((pid_t *)lock)[0] = 0);
+#endif
+	}
+	return EINVAL;
+}
+#endif
 
 #endif
 
